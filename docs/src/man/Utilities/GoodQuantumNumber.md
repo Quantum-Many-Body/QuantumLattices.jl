@@ -4,15 +4,17 @@ CurrentModule=Hamiltonian.Utilities.GoodQuantumNumber
 
 # Good quantum numbers
 
-Good qunatum numbers can be considered as the conserved labels for the bases of a Hilbert space when a quantum system hosts some symmetries. Here we only implement Abelian good quantum numbers because non-Abelian ones are far more complicated yet much less used. In practice, good quantum numbers are usually integers or half integers. Whereas we use real numbers to represent half integers in this module for simplicity. Independent quantum numbers, such as the particle number and the spin z-component, can coexist at the same time. We use type `QuantumNumber` to represent the complete set of independent ones for a single basis of a Hilbert space, and type `QuantumNumbers` to represent the whole quantum numbers for the total bases.
+Good qunatum numbers can be considered as the conserved labels for the bases of a Hilbert space when a quantum system hosts some symmetries. Here we only implement Abelian good quantum numbers because non-Abelian ones are far more complicated yet much less used. In practice, good quantum numbers can be integers or half integers, therefore, we use real numbers to denote them in this module for simplicity. Independent quantum numbers, such as the particle number and the spin z-component, can coexist at the same time. We use type `QuantumNumber` to represent the complete set of independent ones for a single basis of a Hilbert space, and type `QuantumNumbers` to represent the whole quantum numbers for the total bases.
 
 ## QuantumNumber
 
-The base type for the complete set of independent good quantum numbers for a single basis. Main features include:
+The abstract type for the complete set of independent good quantum numbers for a single basis.
+
+Main features include:
 * function `names`: get the names of the quantum numbers
 * function `periods`: get the periods of the quantum numbers
 * arithmetic operations: `+`,`-`,`*`
-* hashable: concrete instances can be used as keys for a dict
+* hashable: concrete instances can be used as keys for a dict or a set
 
 ## QuantumNumbers
 
