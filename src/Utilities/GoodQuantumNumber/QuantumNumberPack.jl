@@ -1,4 +1,4 @@
-export SPQN,periods,N,Sz
+export SPQN,periods
 
 """
     SPQN(n::T1,sz::T2) where {T1<:Real,T2<:Real}
@@ -10,19 +10,5 @@ struct SPQN <: QuantumNumber
     SPQN(n::T1,sz::T2) where {T1<:Real,T2<:Real}=new((Float64(n),Float64(sz)))
 end
 
-fieldnames(::Type{SPQN})=("N","Sz")
+Base.fieldnames(::Type{SPQN},private=false)=private ? (:N,:Sz,:values) : (:N,:Sz)
 periods(::Type{SPQN})=(nothing,nothing)
-
-"""
-    N(qn:SPQN)
-
-Get the particle number.
-"""
-N(qn::SPQN)=qn.values[1]
-
-"""
-    Sz(qn:SPQN)
-
-Get the spin z-component.
-"""
-Sz(qn::SPQN)=qn.values[2]
