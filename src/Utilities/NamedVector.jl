@@ -19,7 +19,7 @@ Abstract type for all concrete named vectors. To subtype it, please note:
     ```
     Base.fieldnames(::Type{YourNamedVector},private=false)=private ? tuple(YourNames...,:values) : YourNames
     ```
-3. Arithmetic operations, such as `+`, `-`, `*`, `\`, `%`, `÷`, etc. are **NOT** supported. Thus users have to overload these operations themselves if needed.
+3. Arithmetic operations, such as `+`, `-`, `*`, `\\`, `%`, `÷`, etc. are **NOT** supported. Thus users have to overload these operations themselves if needed.
 """
 abstract type AbstractNamedVector{T,A<:AbstractVector{T}} end
 
