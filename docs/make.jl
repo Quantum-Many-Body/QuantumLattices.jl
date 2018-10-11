@@ -28,5 +28,5 @@ deploydocs(
     deps=       Deps.pip("mkdocs", "python-markdown-math"),
     repo=       "github.com/Quantum-Many-Body/Hamiltonian.jl.git",
     julia=      "1.0",
-    osname=     "windows"
+    osname=     "linux"
 )
