@@ -8,7 +8,8 @@ Utilities of the Hamiltonian package.
 
 ```@contents
 Pages=  [
+        "NamedVector.md",
         "GoodQuantumNumber.md",
         ]
-Depth=1
+Depth=2
 ```

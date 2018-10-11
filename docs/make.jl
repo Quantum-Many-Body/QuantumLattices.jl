@@ -17,6 +17,7 @@ makedocs(
                 "Manual"    =>  [
                         "Utilities" =>  [
                                 "man/Utilities/Introduction.md",
+                                "man/Utilities/NamedVector.md",
                                 "man/Utilities/GoodQuantumNumber.md",
                                 ],
                         ],

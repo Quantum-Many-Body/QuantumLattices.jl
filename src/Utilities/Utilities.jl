@@ -1,5 +1,5 @@
 module Utilities
-    include("DataStructure/DataStructure.jl")
-    include("MathStructure/MathStructure.jl")
-    include("GoodQuantumNumber/GoodQuantumNumber.jl")
+    include("NamedVector.jl")
+    include("Tree.jl")
+    include("GoodQuantumNumber.jl")
 end # module
