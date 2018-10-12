@@ -1,0 +1,29 @@
+{
+    "docs": [
+        {
+            "location": "/", 
+            "text": "Hamiltonian\n\n\nJulia package for constructing and solving the Hamiltonians of quantum lattice systems.\n\n\nWe provide a general framework to construct the \nsymbolic representation\n of the Hamiltonian of any \nquantum lattice system\n, with the inputs as simple as its description by natural language. Based on this symbolic representation, we implement several algorithms, such as \nTBA\n, \nED\n, \nCPT/VCA\n, \nDMRG\n, etc., to solve the quantum lattice system. Generic interfaces are offered to access to these algorithms. Only minor modifications need be made when the user alters from an algorithm to another.\n\n\n\n\nPackage Features\n\n\n\n\nUnitcell Description Framework\n: by telling the information of the quantum lattice system within a unitcell, the construction of the symbolic representation of the Hamiltonian is just as simple as describing the system in a usual research paper;\n\n\nGeneric Engine-App Interfaces\n: by regarding the relation between algorithms and tasks as that between engines and apps, automatic project management is realized, including that of result recording, data caching, parameter updating, code logging, task dependency, etc, furthermore, all algorithms are initialized in quite similiar ways with only minor modifications needed.\n\n\n\n\n\n\nSupported Algorithms\n\n\n\n\nTBA\n: tight-binding approximation for fermionic/bosonic systems;\n\n\nED\n: exact diagonalizaiton for fermionic/hard-core-bosonic/spin systems;\n\n\nCPT/VCA\n: cluster perturbation theory and variational cluster approach for fermionic systems;\n\n\nDMRG\n: density matrix renormalization group for fermionic/hard-core-bosonic/spin systems;\n\n\nFBFM\n: spin wave theory for flatband ferromagnets.\n\n\n\n\n\n\nPython counterpart\n\n\nHamiltonianPy\n: in fact, the authors of this Julia package worked on the python package at first and only turned to Julia later.", 
+            "title": "Home"
+        }, 
+        {
+            "location": "/#hamiltonian", 
+            "text": "Julia package for constructing and solving the Hamiltonians of quantum lattice systems.  We provide a general framework to construct the  symbolic representation  of the Hamiltonian of any  quantum lattice system , with the inputs as simple as its description by natural language. Based on this symbolic representation, we implement several algorithms, such as  TBA ,  ED ,  CPT/VCA ,  DMRG , etc., to solve the quantum lattice system. Generic interfaces are offered to access to these algorithms. Only minor modifications need be made when the user alters from an algorithm to another.", 
+            "title": "Hamiltonian"
+        }, 
+        {
+            "location": "/#package-features", 
+            "text": "Unitcell Description Framework : by telling the information of the quantum lattice system within a unitcell, the construction of the symbolic representation of the Hamiltonian is just as simple as describing the system in a usual research paper;  Generic Engine-App Interfaces : by regarding the relation between algorithms and tasks as that between engines and apps, automatic project management is realized, including that of result recording, data caching, parameter updating, code logging, task dependency, etc, furthermore, all algorithms are initialized in quite similiar ways with only minor modifications needed.", 
+            "title": "Package Features"
+        }, 
+        {
+            "location": "/#supported-algorithms", 
+            "text": "TBA : tight-binding approximation for fermionic/bosonic systems;  ED : exact diagonalizaiton for fermionic/hard-core-bosonic/spin systems;  CPT/VCA : cluster perturbation theory and variational cluster approach for fermionic systems;  DMRG : density matrix renormalization group for fermionic/hard-core-bosonic/spin systems;  FBFM : spin wave theory for flatband ferromagnets.", 
+            "title": "Supported Algorithms"
+        }, 
+        {
+            "location": "/#python-counterpart", 
+            "text": "HamiltonianPy : in fact, the authors of this Julia package worked on the python package at first and only turned to Julia later.", 
+            "title": "Python counterpart"
+        }
+    ]
+}
