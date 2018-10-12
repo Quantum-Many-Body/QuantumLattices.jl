@@ -8,4 +8,4 @@ julia:
 
 after_success:
   - julia -e 'using Pkg; Pkg.add("Documenter")'
-  - julia -e 'using Pkg; cd(Pkg.dir("Hamiltonian")); include(joinpath("docs", "make.jl"))'
+  - julia -e 'import Hamiltonian; joinpath(dirname(pathof(Hamiltonian))); include(joinpath("docs","make.jl"))'

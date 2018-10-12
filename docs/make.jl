@@ -4,7 +4,7 @@ using Documenter
 using Hamiltonian,Hamiltonian.Utilities.GoodQuantumNumber
 
 makedocs(
-    format=     :html,
+#    format=     :html,
     sitename=   "Hamiltonian.jl",
     modules=    [Hamiltonian,Hamiltonian.Utilities,Hamiltonian.Utilities.GoodQuantumNumber],
     clean=      false,
