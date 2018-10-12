@@ -8,6 +8,7 @@ makedocs(
     clean=              false,
     sitename=           "Hamiltonian.jl",
     modules=            [Hamiltonian,Hamiltonian.Utilities,Hamiltonian.Utilities.GoodQuantumNumber],
+    clean=              false,
     pages=              [
                         "Home"      =>  "index.md",
                         "Tutorial"  =>  [
