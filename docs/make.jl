@@ -25,13 +25,6 @@ makedocs(
     html_canonical=     "https://quantum-many-body.github.io/Hamiltonian.jl/latest/"
 )
 
-# deploydocs(
-#     deps=       Deps.pip("pygments","mkdocs","python-markdown-math"),
-#     repo=       "github.com/Quantum-Many-Body/Hamiltonian.jl.git",
-#     julia=      "1.0",
-#     osname=     "linux"
-# )
-
 deploydocs(
     repo=       "github.com/Quantum-Many-Body/Hamiltonian.jl.git",
     target=     "build",
