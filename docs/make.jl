@@ -1,13 +1,12 @@
 push!(LOAD_PATH,"../src/")
 
 using Documenter
-using Hamiltonian,Hamiltonian.Utilities.GoodQuantumNumber
+using Hamiltonian
 
 makedocs(
     format=             :html,
     clean=              false,
     sitename=           "Hamiltonian.jl",
-    modules=            [Hamiltonian,Hamiltonian.Utilities,Hamiltonian.Utilities.GoodQuantumNumber],
     pages=              [
                         "Home"      =>  "index.md",
                         "Tutorial"  =>  [
@@ -22,7 +21,8 @@ makedocs(
                                         ],
                                 ],
                         ],
-    html_canonical=     "https://quantum-many-body.github.io/Hamiltonian.jl/latest/"
+    html_canonical=     "https://quantum-many-body.github.io/Hamiltonian.jl/latest/",
+    assets=             ["assets/favicon.ico"]
 )
 
 deploydocs(

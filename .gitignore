@@ -1,5 +1,10 @@
 *.jl.cov
 *.jl.*.cov
 *.jl.mem
+
 deps/deps.jl
 docs/build/
+
+.ipynb_checkpoints/
+
+desktop.ini
