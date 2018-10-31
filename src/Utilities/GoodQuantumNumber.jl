@@ -35,17 +35,17 @@ dimension(::QuantumNumber)=1
 Regularize the elements of an array in place so that it can represent quantum numbers.
 """
 function regularize!(::Type{QN},array::AbstractVector{Float64}) where QN<:QuantumNumber
-    @assert size(array,1)==QN|>length
+    @assert size(array,1)==QN|>length "regularize! error: not consistent shape of input array and $QN."
     for (i,period) in enumerate(QN|>periods)
-        period!=Inf && (array[i]=array[i]%period+(array[i]%period<0 ? period : 0))
+        @inbounds period!=Inf && (array[i]=array[i]%period+(array[i]%period<0 ? period : 0))
     end
 end
 function regularize!(::Type{QN},array::AbstractMatrix{Float64}) where QN<:QuantumNumber
-    @assert size(array,1)==QN|>length
+    @assert size(array,1)==QN|>length "regularize! error: not consistent shape of input array and $QN."
     for (i,period) in enumerate(QN|>periods)
         if period!=Inf
             for j in 1:size(array,2)
-                array[i,j]=array[i,j]%period+(array[i,j]%period<0 ? period : 0)
+                @inbounds array[i,j]=array[i,j]%period+(array[i,j]%period<0 ? period : 0)
             end
         end
     end
@@ -120,29 +120,29 @@ Z2QN
 @quantumnumber "Z2QN" (:N,) (2,)
 
 "Choice associated with `QuantumNumbers`, meaning 'by indptr'."
-const qnsindptr=1
+const qnsindptr=Val(1)
 
 "Choice associated with `QuantumNumbers`, meaning 'by counts'."
-const qnscounts=2
+const qnscounts=Val(2)
 
 "Choice associated with `QuantumNumbers`, meaning 'for contents'."
-const qnscontents=3
+const qnscontents=Val(3)
 
 "Choice associated with `QuantumNumbers`, meaning 'for expansion'."
-const qnsexpansion=4
+const qnsexpansion=Val(4)
 
 "Choice associated with `QuantumNumbers`, meaning 'for indices'."
-const qnsindices=5
+const qnsindices=Val(5)
 
 "Choice associated with `QuantumNumbers`, meaning 'by brute force'."
-const qnsbruteforce=6
+const qnsbruteforce=Val(6)
 
 "Choice associated with `quantumnumbers`, meaning 'by Monte Carlo'."
-const qnsmontecarlo=7
+const qnsmontecarlo=Val(7)
 
 """
-    QuantumNumbers(form::Char,contents::Vector{QN},counts::Vector{Int},::Val{qnscounts}) where QN<:QuantumNumber
-    QuantumNumbers(form::Char,contents::Vector{QN},indptr::Vector{Int},::Val{qnsindptr}) where QN<:QuantumNumber
+    QuantumNumbers(form::Char,contents::Vector{<:QuantumNumber},counts::Vector{Int},::typeof(qnscounts))
+    QuantumNumbers(form::Char,contents::Vector{<:QuantumNumber},indptr::Vector{Int},::typeof(qnsindptr))
 
 The whole quantum numbers of the total bases of a Hilbert space. The default constructors construct a `QuantumNumbers` from a vector of concrete quantum numbers and an vector containing their counts or indptr.
 """
@@ -150,24 +150,17 @@ struct QuantumNumbers{QN<:QuantumNumber}
     form::Char
     contents::Vector{QN}
     indptr::Vector{Int}
-    function QuantumNumbers(form::Char,contents::Vector{QN},counts::Vector{Int},::Val{qnscounts}) where QN<:QuantumNumber
+    function QuantumNumbers(form::Char,contents::Vector{<:QuantumNumber},counts::Vector{Int},::typeof(qnscounts))
         @assert form|>uppercase ∈ ('G','U','C') "QuantumNumbers error: 'form'($form) is not 'G','U' or 'C'."
         @assert length(contents)==length(counts) "QuantumNumbers error: dismatch lengths of contents and counts ($(length(contents))!=$length(counts))."
-        return new{QN}(form|>uppercase,contents,[0,cumsum(counts)...])
+        return new{contents|>eltype}(form|>uppercase,contents,[0,cumsum(counts)...])
     end
-    function QuantumNumbers(form::Char,contents::Vector{QN},indptr::Vector{Int},::Val{qnsindptr}) where QN<:QuantumNumber
+    function QuantumNumbers(form::Char,contents::Vector{<:QuantumNumber},indptr::Vector{Int},::typeof(qnsindptr))
         @assert form|>uppercase ∈ ('G','U','C') "QuantumNumbers error: 'form'($form) is not 'G','U' or 'C'."
         @assert length(contents)+1==length(indptr) "QuantumNumbers error: dismatch shapes of contents and indptr ($(length(contents))+1!=$length(indptr))."
-        return new{QN}(form|>uppercase,contents,indptr)
+        return new{contents|>eltype}(form|>uppercase,contents,indptr)
     end
 end
-
-"""
-    QuantumNumbers(form::Char,contents::Vector{QN},counts::Vector{Int},choice::Int) where QN<:QuantumNumber
-
-The wrapper of the default constructors of `QuantumNumbers`.
-"""
-QuantumNumbers(form::Char,contents::Vector{QN},info::Vector{Int},choice::Int) where QN<:QuantumNumber=QuantumNumbers(form,contents,info,Val(choice))
 
 """
     QuantumNumbers(qn::QuantumNumber,count::Int=1)
@@ -177,32 +170,32 @@ Construct a `QuantumNumbers` with one unique quantum number which occurs `count`
 QuantumNumbers(qn::QuantumNumber,count::Int=1)=QuantumNumbers('C',[qn],[0,count],qnsindptr)
 
 """
-    QuantumNumbers(od::OrderedDict{QN,Int}) where QN<:QuantumNumber
+    QuantumNumbers(od::OrderedDict{<:QuantumNumber,Int})
 
 Construct a `QuantumNumbers` from an ordered dict containing concrete quantum numbers and their counts.
 """
-function QuantumNumbers(od::OrderedDict{QN,Int}) where QN<:QuantumNumber
-    contents=Vector{QN}(undef,length(od))
+function QuantumNumbers(od::OrderedDict{<:QuantumNumber,Int})
+    contents=Vector{od|>keytype}(undef,length(od))
     indptr=zeros(Int,length(od)+1)
     for (i,(qn,count)) in enumerate(od)
-        contents[i]=qn
-        indptr[i+1]=indptr[i]+count
+        @inbounds contents[i]=qn
+        @inbounds indptr[i+1]=indptr[i]+count
     end
     QuantumNumbers('U',contents,indptr,qnsindptr)
 end
 
 """
-    QuantumNumbers(od::OrderedDict{QN,UnitRange{Int}}) where QN<:QuantumNumber
+    QuantumNumbers(od::OrderedDict{<:QuantumNumber,UnitRange{Int}})
 
 Construct a `QuantumNumbers` from an ordered dict containing concrete quantum numbers and their slices.
 """
-function QuantumNumbers(od::OrderedDict{QN,UnitRange{Int}}) where QN<:QuantumNumber
-    contents=Vector{QN}(undef,length(od))
+function QuantumNumbers(od::OrderedDict{<:QuantumNumber,UnitRange{Int}})
+    contents=Vector{od|>keytype}(undef,length(od))
     indptr=zeros(Int,length(od)+1)
     for (i,(qn,slice)) in enumerate(od)
-        contents[i]=qn
-        @assert indptr[i]+1==slice.start "QuantumNumbers error: slice not consistent."
-        indptr[i+1]=slice.stop
+        @inbounds contents[i]=qn
+        @inbounds @assert indptr[i]+1==slice.start "QuantumNumbers error: slice not consistent."
+        @inbounds indptr[i+1]=slice.stop
     end
     QuantumNumbers('U',contents,indptr,qnsindptr)
 end
@@ -221,7 +214,7 @@ Base.:(==)(qns1::QuantumNumbers,qns2::QuantumNumbers)=all(qns1.contents.==qns2.c
 
 Show a `QuantumNumbers`.
 """
-Base.show(io::IO,qns::QuantumNumbers)=@printf io "QNS(%s)" join((@sprintf("%s=>%s",qn,slice) for (qn,slice) in pairs(qns)),',')
+Base.show(io::IO,qns::QuantumNumbers)=@printf io "QNS(%s)" join((@sprintf("%s=>%s",qn,slice) for (qn,slice) in pairs(qns,qnsindptr)),',')
 
 """
     string(qns::QuantumNumbers) -> String
@@ -279,8 +272,8 @@ end
 
 Iterate or reversely iterate over the concrete `QuantumNumber`s contained in a `QuantumNumbers`.
 """
-Base.iterate(qns::QuantumNumbers,state::Int=1)=state>length(qns) ? nothing : (qns.contents[state],state+1)
-Base.iterate(rv::Reverse{<:QuantumNumbers},state::Int=length(rv.itr))=state<1 ? nothing : (rv.itr.contents[state],state-1)
+Base.iterate(qns::QuantumNumbers,state::Int=1)=state>length(qns) ? nothing : (@inbounds(qns.contents[state]),state+1)
+Base.iterate(rv::Reverse{<:QuantumNumbers},state::Int=length(rv.itr))=state<1 ? nothing : (@inbounds(rv.itr.contents[state]),state-1)
 
 """
     keys(qns::QuantumNumbers) -> Vector{qns|>eltype}
@@ -290,27 +283,27 @@ Iterate over the concrete `QuantumNumber`s contained in a `QuantumNumbers`.
 Base.keys(qns::QuantumNumbers)=qns.contents
 
 """
-    values(qns::QuantumNumbers,choice::Int=qnsindptr)
+    values(qns::QuantumNumbers,::typeof(qnsindptr))
+    values(qns::QuantumNumbers,::typeof(qnscounts))
 
 Iterate over the slices/counts of the `QuantumNumbers`.
 """
-Base.values(qns::QuantumNumbers,choice::Int=qnsindptr)=_values_(qns,Val(choice))
-@views _values_(qns::QuantumNumbers,::Val{qnsindptr})=((start+1):stop for (start,stop) in zip(qns.indptr[1:end-1],qns.indptr[2:end]))
-@views _values_(qns::QuantumNumbers,::Val{qnscounts})=(stop-start for (start,stop) in zip(qns.indptr[1:end-1],qns.indptr[2:end]))
+@views Base.values(qns::QuantumNumbers,::typeof(qnsindptr))=((start+1):stop for (start,stop) in zip(qns.indptr[1:end-1],qns.indptr[2:end]))
+@views Base.values(qns::QuantumNumbers,::typeof(qnscounts))=(stop-start for (start,stop) in zip(qns.indptr[1:end-1],qns.indptr[2:end]))
 
 """
-    pairs(qns::QuantumNumbers,choice::Int=qnsindptr)
+    pairs(qns::QuantumNumbers,choice::Union{typeof(qnsindptr),typeof(qnscounts)})
 
 Iterate over the `QuantumNumber=>slice` or `QuantumNumber=>count` pairs.
 """
-Base.pairs(qns::QuantumNumbers,choice::Int=qnsindptr)=Base.Generator(=>,keys(qns),values(qns,choice))
+Base.pairs(qns::QuantumNumbers,choice::Union{typeof(qnsindptr),typeof(qnscounts)})=Base.Generator(=>,keys(qns),values(qns,choice))
 
 """
     dimension(qns::QuantumNumbers) -> Int
 
 The dimension of the Hilbert space a `QuantumNumbers` represents.
 """
-dimension(qns::QuantumNumbers)=qns.indptr[end]
+dimension(qns::QuantumNumbers)=@inbounds(qns.indptr[end])
 
 """
     sort(qns::QuantumNumbers) -> QuantumNumbers,Vector{Int}
@@ -322,33 +315,33 @@ function Base.sort(qns::QuantumNumbers)
     masks=Vector{Bool}(undef,length(qns.contents));masks[1]=true
     unduplicate=1
     for i=2:length(ctpts)
-        masks[i]=qns.contents[ctpts[i]]≠qns.contents[ctpts[i-1]]
-        masks[i] && (unduplicate+=1)
+        @inbounds masks[i]=qns.contents[ctpts[i]]≠qns.contents[ctpts[i-1]]
+        @inbounds masks[i] && (unduplicate+=1)
     end
     contents=Vector{qns|>eltype}(undef,unduplicate)
     indptr=zeros(Int,unduplicate+1)
     permutation=Vector{Int}(undef,dimension(qns))
     qncount,ptcount=0,0
     for (mask,index) in zip(masks,ctpts)
-        mask && (qncount+=1;contents[qncount]=qns.contents[index];indptr[qncount+1]=indptr[qncount])
-        indptr[qncount+1]+=qns.indptr[index+1]-qns.indptr[index]
-        for (i,p) in enumerate(qns.indptr[index]+1:qns.indptr[index+1])
-            permutation[ptcount+i]=p
+        @inbounds mask && (qncount+=1;contents[qncount]=qns.contents[index];indptr[qncount+1]=indptr[qncount])
+        @inbounds indptr[qncount+1]+=qns.indptr[index+1]-qns.indptr[index]
+        for (i,p) in enumerate(@inbounds(qns.indptr[index]+1:qns.indptr[index+1]))
+            @inbounds permutation[ptcount+i]=p
         end
-        ptcount+=qns.indptr[index+1]-qns.indptr[index]
+        @inbounds ptcount+=qns.indptr[index+1]-qns.indptr[index]
     end
     return QuantumNumbers('C',contents,indptr,qnsindptr),permutation
 end
 
 """
-    findall(qns::QuantumNumbers{QN},target::QN,choice::Int=qnscontents) where QN<:QuantumNumber -> Vector{Int}
-    findall(qns::QuantumNumbers{QN},targets::NTuple{N,QN},choice::Int=qnscontents) where QN<:QuantumNumber -> Vector{Int}
+    findall(qns::QuantumNumbers{QN},target::QN,choice::Union{typeof(qnscontents),typeof(qnsexpansion)}) where QN<:QuantumNumber -> Vector{Int}
+    findall(qns::QuantumNumbers{QN},targets::NTuple{N,QN},::typeof(qnscontents)) where {N,QN<:QuantumNumber} -> Vector{Int}
+    findall(qns::QuantumNumbers{QN},targets::NTuple{N,QN},::typeof(qnsexpansion)) where {N,QN<:QuantumNumber} -> Vector{Int}
 
-Find all the indices of the target quantum numbers in the contents (when `choice==qnscontents`) or the expansion (when `choice==qnsexpansion`) of a `QuantumNumbers`.
+Find all the indices of the target quantum numbers in the contents (`qnscontents` case) or the expansion (`qnsexpansion` case) of a `QuantumNumbers`.
 """
-Base.findall(qns::QuantumNumbers{QN},target::QN,choice::Int=qnscontents) where QN<:QuantumNumber=_findall_(qns,(target,),Val(choice))
-Base.findall(qns::QuantumNumbers{QN},targets::NTuple{N,QN},choice::Int=qnscontents) where {N,QN<:QuantumNumber}=_findall_(qns,targets,Val(choice))
-function _findall_(qns::QuantumNumbers{QN},targets::NTuple{N,QN},::Val{qnscontents}) where {N,QN<:QuantumNumber}
+Base.findall(qns::QuantumNumbers{QN},target::QN,choice::Union{typeof(qnscontents),typeof(qnsexpansion)}) where QN<:QuantumNumber=findall(qns,(target,),choice)
+function Base.findall(qns::QuantumNumbers{QN},targets::NTuple{N,QN},::typeof(qnscontents)) where {N,QN<:QuantumNumber}
     result=Int[]
     if qns.form=='C'
         for qn in targets
@@ -362,10 +355,10 @@ function _findall_(qns::QuantumNumbers{QN},targets::NTuple{N,QN},::Val{qnsconten
     end
     result
 end
-function _findall_(qns::QuantumNumbers{QN},targets::NTuple{N,QN},::Val{qnsexpansion}) where {N,QN<:QuantumNumber}
+function Base.findall(qns::QuantumNumbers{QN},targets::NTuple{N,QN},::typeof(qnsexpansion)) where {N,QN<:QuantumNumber}
     result=Int[]
     for index in findall(qns,targets,qnscontents)
-        append!(result,(qns.indptr[index]+1):qns.indptr[index+1])
+        @inbounds append!(result,(qns.indptr[index]+1):qns.indptr[index+1])
     end
     result
 end
@@ -436,7 +429,7 @@ Base.:^(qn::QuantumNumber,factor::Integer)=⊗(NTuple{factor,qn|>typeof}(qn for 
 Base.:^(qns::QuantumNumbers,factor::Integer)=⊗(NTuple{factor,qns|>typeof}(qns for i=1:factor))
 
 """
-    ⊕(qns::NTuple{N,QN},signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:QuantumNumber} -> QuantumNumbers{QN}
+    ⊕(qns::NTuple{N,<:QuantumNumber},signs::NTuple{N,Int}=ntuple(i->1,N)) where N -> QuantumNumbers
     ⊕(qnses::NTuple{N,QuantumNumbers{QN}},signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:QuantumNumber} -> QuantumNumbers{QN}
 
 Get the direct sum of some `QuantumNumber`s or `QuantumNumbers`es.
@@ -445,7 +438,7 @@ Get the direct sum of some `QuantumNumber`s or `QuantumNumbers`es.
     2. Apparently, the dimension of the result equals the summation of those of the inputs, which means, even for `QuantumNumber`s, the result will be naturally a `QuantumNumbers` because the dimension of the result is largeer than 1.
     3. Signs of `QuantumNumber`s or `QuantumNumbers`es can be provided when getting their direct sums.
 """
-function ⊕(qns::NTuple{N,QN},signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:QuantumNumber}
+function ⊕(qns::NTuple{N,<:QuantumNumber},signs::NTuple{N,Int}=ntuple(i->1,N)) where N
     QuantumNumbers('G',[sign==1 ? qn : -qn for (sign,qn) in zip(signs,qns)],fill(1,qns|>length),qnscounts)
 end
 function ⊕(qnses::NTuple{N,QuantumNumbers{QN}},signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:QuantumNumber}
@@ -465,7 +458,7 @@ end
 
 """
     ⊗(::Type{QN},qn1::QuantumNumber,qn2::QuantumNumber) where QN<:QuantumNumber -> QN
-    ⊗(qns::NTuple{N,QN},signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:QuantumNumber} -> QN
+    ⊗(qns::NTuple{N,<:QuantumNumber},signs::NTuple{N,Int}=ntuple(i->1,N)) where N -> QuantumNumber
     ⊗(qnses::NTuple{N,QuantumNumbers{QN}},signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:QuantumNumber} -> QuantumNumbers{QN}
 
 Get the direct product of some `QuantumNumber`s or `QuantumNumbers`es.
@@ -481,13 +474,13 @@ function ⊗(::Type{QN},qn1::QuantumNumber,qn2::QuantumNumber) where QN<:Quantum
     @assert qnperiods==NTuple{QN|>length,Float64}(flatten((qn1periods,qn2periods))) "⊗ error: periods not match ($(qnperiods),$(qn1periods),$(qn2periods))."
     QN(qn1...,qn2...)
 end
-⊗(qns::NTuple{N,QN},signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:QuantumNumber}=sum(sign==1 ? qn : -qn for (sign,qn) in zip(signs,qns))
+⊗(qns::NTuple{N,<:QuantumNumber},signs::NTuple{N,Int}=ntuple(i->1,N)) where N=sum(sign==1 ? qn : -qn for (sign,qn) in zip(signs,qns))
 function ⊗(qnses::NTuple{N,QuantumNumbers{QN}},signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:QuantumNumber}
     lengths=NTuple{N,Int}(i<N ? dimension(qns) : length(qns) for (i,qns) in enumerate(qnses))
     contents=Vector{QN}(undef,prod(lengths))
     indptr=zeros(Int,prod(lengths)+1)
     cache=Vector{QN}(undef,N)
-    expansions=NTuple{N-1,Vector{Int}}(expand(qnses[i],qnsindices) for i=1:(N-1))
+    @inbounds expansions=NTuple{N-1,Vector{Int}}(expand(qnses[i],qnsindices) for i=1:(N-1))
     for (i,indices) in enumerate(product(NTuple{N,UnitRange{Int64}}(1:length for length in reverse(lengths))...))
         for (j,(sign,qns,index)) in enumerate(zip(signs,qnses,reverse(indices)))
             @inbounds pos=j<N ? expansions[j][index] : index
@@ -501,13 +494,13 @@ end
 
 """
     kron(::Type{QN},qn1::QuantumNumber,qn2::QuantumNumber) where QN<:QuantumNumber -> QN
-    kron(qns::NTuple{N,QN},signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:QuantumNumber} -> QN
+    kron(qns::NTuple{N,<:QuantumNumber},signs::NTuple{N,Int}=ntuple(i->1,N)) where N -> QuantumNumber
     kron(qnses::NTuple{N,QuantumNumbers{QN}},signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:QuantumNumber} -> QuantumNumbers{QN}
 
 Kronecker product of some `QuantumNumber`s or `QuantumNumbers`es. This is defined to be equivalent to the direct product `⊗`.
 """
 Base.kron(::Type{QN},qn1::QuantumNumber,qn2::QuantumNumber) where QN<:QuantumNumber=⊗(QN,qn1,qn2)
-Base.kron(qns::NTuple{N,QN},signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:QuantumNumber}=⊗(qns,signs)
+Base.kron(qns::NTuple{N,<:QuantumNumber},signs::NTuple{N,Int}=ntuple(i->1,N)) where N=⊗(qns,signs)
 Base.kron(qnses::NTuple{N,QuantumNumbers{QN}},signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:QuantumNumber}=⊗(qnses,signs)
 
 """
@@ -539,38 +532,39 @@ function ukron(qnses::NTuple{N,QuantumNumbers{QN}},signs::NTuple{N,Int}=ntuple(i
     sort!(contents)
     indptr=zeros(Int,length(container)+1)
     for (i,qn) in enumerate(contents)
-        indptr[i+1]=indptr[i]+container[qn]
+        @inbounds indptr[i+1]=indptr[i]+container[qn]
     end
     QuantumNumbers('C',contents,indptr,qnsindptr),records
 end
 
 """
-    expand(qns::QuantumNumbers,choice::Int=qnscontents) -> Vector{qns|>eltype} | Vector{Int}
+    expand(qns::QuantumNumbers,::typeof(qnscontents)) -> Vector{qns|>eltype}
+    expand(qns::QuantumNumbers,::typeof(qnsindices)) -> Vector{Int}
 
-Expand the contents (when `choice==qnscontents`) or indices (when `choice==qnsindices`) of a `QuantumNumbers` to the uncompressed form.
+Expand the contents (`qnscontents` case) or indices (`qnsindices` case) of a `QuantumNumbers` to the uncompressed form.
 """
-expand(qns::QuantumNumbers,choice::Int=qnscontents)=_expand_(qns,Val(choice))
-function _expand_(qns::QuantumNumbers,::Val{qnscontents})
+function expand(qns::QuantumNumbers,::typeof(qnscontents))
     result=Vector{qns|>eltype}(undef,dimension(qns))
     for i=1:length(qns)
-        for j=(qns.indptr[i]+1):qns.indptr[i+1]
-            result[j]=qns.contents[i]
+        for j=@inbounds((qns.indptr[i]+1):qns.indptr[i+1])
+            @inbounds result[j]=qns.contents[i]
         end
     end
     return result
 end
-function _expand_(qns::QuantumNumbers,::Val{qnsindices})
+function expand(qns::QuantumNumbers,::typeof(qnsindices))
     result=Vector{Int}(undef,dimension(qns))
     for i=1:length(qns)
-        for j=(qns.indptr[i]+1):qns.indptr[i+1]
-            result[j]=i
+        for j=@inbounds((qns.indptr[i]+1):qns.indptr[i+1])
+            @inbounds result[j]=i
         end
     end
     return result
 end
 
 """
-    decompose(qnses::NTuple{N,QuantumNumbers{QN}},target::QN,signs::NTuple{N,Int}=ntuple(i->1,N),nmax::Int=200,method::Int=qnsmontecarlo) where {N,QN<:QuantumNumber}-> Vector{NTuple{N,Int}}
+    decompose(qnses::NTuple{N,QuantumNumbers{QN}},target::QN,signs::NTuple{N,Int},::typeof(qnsbruteforce);nmax::Int=20) where {N,QN<:QuantumNumber} -> Vector{NTuple{N,Int}}
+    decompose(qnses::NTuple{N,QuantumNumbers{QN}},target::QN,signs::NTuple{N,Int},::typeof(qnsmontecarlo);nmax::Int=20) where {N,QN<:QuantumNumber} -> Vector{NTuple{N,Int}}
 
 Find a couple of decompositions of `target` with respect to `qnses`.
 !!! note
@@ -578,12 +572,9 @@ Find a couple of decompositions of `target` with respect to `qnses`.
     ```math
     \\sum_\\text{j} \\text{signs}[\\text{j}]\\times\\text{qnses}[\\text{j}][\\text{i}_{\\text{j}}]==\\text{target}
     ```
-    This equation is in fact a kind of a set of restricted [linear Diophantine equations](https://en.wikipedia.org/wiki/Diophantine_equation#Linear_Diophantine_equations). Indeed, our quantum numbers are always discrete Abelian ones and all instances of a concrete `QuantumNumber` forms a [module](https://en.wikipedia.org/wiki/Module_(mathematics)) over the [ring](https://en.wikipedia.org/wiki/Ring_(mathematics)) of integers. Therefore, each quantum number can be represented as a integral multiple of the unit element of the Abelian module, which results in the final reduction of the above equation to a set of linear Diophantine equations. Then finding a decomposition is equivalent to find a solution of the reduced linear Diophantine equations, with the restriction that the quantum numbers constructed from the solution should be in the corresponding `qnses`. Here we provide two methods to find such decompositions, one is by brute force (when `method==qnsbruteforce`), and the other is by Monte Carlo simultatioins (when `method==qnsmontecarlo`).
+    This equation is in fact a kind of a set of restricted [linear Diophantine equations](https://en.wikipedia.org/wiki/Diophantine_equation#Linear_Diophantine_equations). Indeed, our quantum numbers are always discrete Abelian ones and all instances of a concrete `QuantumNumber` forms a [module](https://en.wikipedia.org/wiki/Module_(mathematics)) over the [ring](https://en.wikipedia.org/wiki/Ring_(mathematics)) of integers. Therefore, each quantum number can be represented as a integral multiple of the unit element of the Abelian module, which results in the final reduction of the above equation to a set of linear Diophantine equations. Then finding a decomposition is equivalent to find a solution of the reduced linear Diophantine equations, with the restriction that the quantum numbers constructed from the solution should be in the corresponding `qnses`. Here we provide two methods to find such decompositions, one is by brute force (`qnsbruteforce` case), and the other is by Monte Carlo simultatioins (`qnsmontecarlo` case).
 """
-function decompose(qnses::NTuple{N,QuantumNumbers{QN}},target::QN,signs::NTuple{N,Int}=ntuple(i->1,N),nmax::Int=200,method::Int=qnsmontecarlo) where {N,QN<:QuantumNumber}
-   _decompose_(qnses,target,signs,nmax,Val(method))
-end
-function _decompose_(qnses::NTuple{N,QuantumNumbers{QN}},target::QN,signs::NTuple{N,Int},nmax::Int,::Val{qnsbruteforce}) where {N,QN<:QuantumNumber}
+function decompose(qnses::NTuple{N,QuantumNumbers{QN}},target::QN,signs::NTuple{N,Int},::typeof(qnsbruteforce);nmax::Int=20) where {N,QN<:QuantumNumber}
     result=Set{NTuple{N,Int}}()
     cache=Vector{Int}(undef,N)
     dimensions=NTuple{N,Int}(dimension(qns) for qns in reverse(qnses))
@@ -591,14 +582,14 @@ function _decompose_(qnses::NTuple{N,QuantumNumbers{QN}},target::QN,signs::NTupl
     nmax<length(indices) && (shuffle!(MersenneTwister(),indices);indices=@views indices[1:nmax])
     for index in indices
         for (i,dimension) in enumerate(dimensions)
-            cache[end+1-i]=(index-1)%dimension+1
-            index=(index-1)÷dimension+1
+            @inbounds cache[end+1-i]=(index-1)%dimension+1
+            @inbounds index=(index-1)÷dimension+1
         end
         push!(result,NTuple{N,Int}(cache))
     end
     return collect(NTuple{N,Int},result)
 end
-function _decompose_(qnses::NTuple{N,QuantumNumbers{QN}},target::QN,signs::NTuple{N,Int},nmax::Int,::Val{qnsmontecarlo}) where {N,QN<:QuantumNumber}
+function decompose(qnses::NTuple{N,QuantumNumbers{QN}},target::QN,signs::NTuple{N,Int},::typeof(qnsmontecarlo);nmax::Int=20) where {N,QN<:QuantumNumber}
     seed!()
     result=Set{NTuple{N,Int}}()
     expansions=Vector{QN}[expand(qns,qnscontents) for qns in qnses]
@@ -611,7 +602,7 @@ function _decompose_(qnses::NTuple{N,QuantumNumbers{QN}},target::QN,signs::NTupl
         while newdiff>0
             pos=rand(1:N)
             index=rand(1:dimensions[pos]-1)
-            newindices[pos]=index<newindices[pos] ? index : index+1
+            @inbounds newindices[pos]=index<newindices[pos] ? index : index+1
             newdiff=diff(newindices)
             if newdiff<=olddiff || exp(olddiff-newdiff)>rand()
                 oldindices[:]=newindices
@@ -627,7 +618,7 @@ function _decompose_(qnses::NTuple{N,QuantumNumbers{QN}},target::QN,signs::NTupl
 end
 
 """
-    subset(qns::QuantumNumbers{QN},target::QN) where QN<:QuantumNumber
+    subset(qns::QuantumNumbers{QN},target::QN) where QN<:QuantumNumber -> QuantumNumbers{QN}
     subset(qns::QuantumNumbers{QN},targets::NTuple{N,QN}) where {N,QN<:QuantumNumber} -> QuantumNumbers{QN}
 
 Find a subset of a `QuantumNumbers` by picking out the quantum numbers in targets.
@@ -636,13 +627,13 @@ subset(qns::QuantumNumbers{QN},target::QN) where QN<:QuantumNumber=qns[findall(q
 subset(qns::QuantumNumbers{QN},targets::NTuple{N,QN}) where {N,QN<:QuantumNumber}=qns[findall(qns,targets,qnscontents)]
 
 """
-    reorder(qns::QuantumNumbers,permutation::Vector{Int},choice::Int=qnscontents) -> QuantumNumbers
+    reorder(qns::QuantumNumbers,permutation::Vector{Int},::typeof(qnscontents)) -> QuantumNumbers
+    reorder(qns::QuantumNumbers,permutation::Vector{Int},::typeof(qnsexpansion)) -> QuantumNumbers
 
-Reorder the quantum numbers contained in a `QuantumNumbers` with a permutation and return the new one. When `choice==qnscontents`, the permutation is for the contents of the original `QuantumNumbers` while when `choice==qnsexpansion`, the permutation is for the expansion of the original `QuantumNumbers`.
+Reorder the quantum numbers contained in a `QuantumNumbers` with a permutation and return the new one. For `qnscontents` case, the permutation is for the contents of the original `QuantumNumbers` while for `qnsexpansion` case, the permutation is for the expansion of the original `QuantumNumbers`.
 """
-reorder(qns::QuantumNumbers,permutation::Vector{Int},choice::Int=qnscontents)=_reorder_(qns,permutation,Val(choice))
-_reorder_(qns::QuantumNumbers,permutation::Vector{Int},::Val{qnscontents})=qns[permutation]
-function _reorder_(qns::QuantumNumbers,permutation::Vector{Int},::Val{qnsexpansion})
+reorder(qns::QuantumNumbers,permutation::Vector{Int},::typeof(qnscontents))=qns[permutation]
+function reorder(qns::QuantumNumbers,permutation::Vector{Int},::typeof(qnsexpansion))
     contents=Vector{qns|>eltype}(undef,length(permutation))
     indptr=zeros(Int,length(permutation)+1)
     expansion=expand(qns,qnsindices)
@@ -654,25 +645,24 @@ function _reorder_(qns::QuantumNumbers,permutation::Vector{Int},::Val{qnsexpansi
 end
 
 """
-    toordereddict(qns::QuantumNumbers,choice::Int=qnsindptr) -> OrderedDict{qns|>eltype,UnitRange{Int}} | OrderedDict{qns|>eltype,Int}
+    toordereddict(qns::QuantumNumbers,::typeof(qnsindptr)) -> OrderedDict{qns|>eltype,UnitRange{Int}}
+    toordereddict(qns::QuantumNumbers,::typeof(qnscounts)) -> OrderedDict{qns|>eltype,Int}
 
 Convert a `QuantumNumbers` to an ordered dict.
 """
-function toordereddict(qns::QuantumNumbers,choice::Int=qnsindptr)
+function toordereddict(qns::QuantumNumbers,::typeof(qnsindptr))
     @assert qns.form != 'G' "toordereddict error: input `QuantumNumbers` cannot be `G` formed."
-    _toordereddict_(qns,Val(choice))
-end
-function _toordereddict_(qns::QuantumNumbers,::Val{qnsindptr})
     result=OrderedDict{qns|>eltype,UnitRange{Int}}()
     for i=1:length(qns)
-        result[qns.contents[i]]=qns.indptr[i]+1:qns.indptr[i+1]
+        @inbounds result[qns.contents[i]]=qns.indptr[i]+1:qns.indptr[i+1]
     end
     return result
 end
-function _toordereddict_(qns::QuantumNumbers,::Val{qnscounts})
+function toordereddict(qns::QuantumNumbers,::typeof(qnscounts))
+    @assert qns.form != 'G' "toordereddict error: input `QuantumNumbers` cannot be `G` formed."
     result=OrderedDict{qns|>eltype,Int}()
     for i=1:length(qns)
-        result[qns.contents[i]]=qns.indptr[i+1]-qns.indptr[i]
+        @inbounds result[qns.contents[i]]=qns.indptr[i+1]-qns.indptr[i]
     end
     return result
 end

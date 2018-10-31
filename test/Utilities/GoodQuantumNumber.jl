@@ -176,8 +176,8 @@ end
     qns=QuantumNumbers('U',[qn1,qn2],[0,1,2],qnsindptr)
     target=CNZ4(2.0,2.0)
     result=Set(((1,1,2,2),(1,2,1,2),(1,2,2,1),(2,1,1,2),(2,1,2,1),(2,2,1,1)))
-    @test ⊆(Set(decompose((qns,qns,qns,qns),target,(1,1,1,1),10,qnsbruteforce)),result)
-    @test ⊆(Set(decompose((qns,qns,qns,qns),target,(1,1,1,1),10,qnsmontecarlo)),result)
+    @test ⊆(Set(decompose((qns,qns,qns,qns),target,(1,1,1,1),qnsbruteforce,nmax=10)),result)
+    @test ⊆(Set(decompose((qns,qns,qns,qns),target,(1,1,1,1),qnsmontecarlo,nmax=10)),result)
 end
 
 @testset "subset" begin

@@ -97,7 +97,7 @@ Base.length(nv::AbstractNamedVector)=nv|>typeof|>length
 
 Get the type parameter of a concrete `AbstractNamedVector`.
 """
-Base.eltype(::Type{NV}) where NV<:AbstractNamedVector{T} where T=T
+Base.eltype(::Type{<:AbstractNamedVector{T}}) where T=T
 Base.eltype(nv::AbstractNamedVector)=nv|>typeof|>eltype
 
 """
