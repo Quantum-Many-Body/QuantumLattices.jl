@@ -90,23 +90,23 @@ var documenterSearchIndex = {"docs": [
 
 {
     "location": "man/Utilities/NamedVector.html#",
-    "page": "NamedVector",
-    "title": "NamedVector",
+    "page": "Named vector",
+    "title": "Named vector",
     "category": "page",
     "text": "CurrentModule=Hamiltonian.Utilities.NamedVector"
 },
 
 {
-    "location": "man/Utilities/NamedVector.html#NamedVector-1",
-    "page": "NamedVector",
-    "title": "NamedVector",
+    "location": "man/Utilities/NamedVector.html#Named-vector-1",
+    "page": "Named vector",
+    "title": "Named vector",
     "category": "section",
     "text": "A named vector is similiar to a named tuple, which associate each of its values with a name. Although the names of a named vector cannot be changed, the values can be modified if needed. In contrast to the predefined NamedTuple in Julia, which employs the names as type parameters, we just implement a named vector as a composite struct equipped with the getindex and setindex! functions, with the fieldnames being its names. This simple implementation makes it possible to define your own concrete named vector with any of your preferred type names, and ensures that all instances of a certain concrete named vector share the same names. Therefore, if you are familiar with Python, you will find that our named vector is more qualified to be the counterpart of the namedtuple in Python than the default Julia implementation. Specifically, we also define a macro @namedvector as the type factory to help users to define their own concrete named vectors. Last but not least important, it is also worth noted that a named vector is not a vector, as is similar to that a named tuple is not a tuple in Julia. This results from our basic expectation that a named vector should be more like a tuple other than a vector so that not all operations valid to vectors are also valid to named vectors."
 },
 
 {
     "location": "man/Utilities/NamedVector.html#AbstractNamedVector-1",
-    "page": "NamedVector",
+    "page": "Named vector",
     "title": "AbstractNamedVector",
     "category": "section",
     "text": "AbstractNamedVector defines the abstract type for all concrete named vectors.Main features include:Values can be accessed or modified either by the . operator or by the [] operator.\nComparisons, such as ≡, ≢, ==, ≠, >, <, ≥, ≤ are supported. Therefore a vector of named vectors can be sorted by the default sort function.\nHash is supported by hash. Therefore, a named vector can be used as the key of a dict or set.\nIteration over its fieldnames is supported by keys, over its values is supported by values, over its field-value pairs is supported by pairs. A reverse iteration is also supported.To subtype it, please note:A concrete type can be either mutable or immutable as you need, but all its fields should be of the same type. A recommended template for the subtype is\n[mutable] struct YourNamedVector{T} <: AbstractNamedVector{T}\n    filedname1::T\n    filedname2::T\n    ...\nend\nIt is recommended to overload the Base.fieldnames function for concrete subtypes to ensure type stability and improve efficiency, which though is not a necessity. A template for such an overloading is\nBase.fieldnames(Type{YourNamedVector})=(:fieldname1,:fieldname2,...)\nFor all concrete subtypes, if inner constructors are defined, the one which has the same interface with the default one must be implemented. Otherwise, some functionalities will not work.\nArithmetic operations, such as +, -, *, /, %, ÷, etc. are NOT supported. However, an efficient map function  is implemented, which can help users do the overloadings of these operations."
@@ -114,7 +114,7 @@ var documenterSearchIndex = {"docs": [
 
 {
     "location": "man/Utilities/NamedVector.html#Hamiltonian.Utilities.NamedVector.AbstractNamedVector",
-    "page": "NamedVector",
+    "page": "Named vector",
     "title": "Hamiltonian.Utilities.NamedVector.AbstractNamedVector",
     "category": "type",
     "text": "AbstractNamedVector{T}\n\nAbstract type for all concrete named vectors.\n\n\n\n\n\n"
@@ -122,7 +122,7 @@ var documenterSearchIndex = {"docs": [
 
 {
     "location": "man/Utilities/NamedVector.html#Hamiltonian.Utilities.NamedVector.@namedvector",
-    "page": "NamedVector",
+    "page": "Named vector",
     "title": "Hamiltonian.Utilities.NamedVector.@namedvector",
     "category": "macro",
     "text": "@namedvector mutableornot::Bool typename fieldnames dtype::Union{Expr,Symbol}=:nothing supertypename=:AbstractNamedVector\n\nConstruct a mutable or immutable concrete named vector with the type name being typename and the fieldnames specified by fieldnames, and optionally, the type parameters specified by dtype and the supertype specified by supertypename.\n\n\n\n\n\n"
@@ -130,7 +130,7 @@ var documenterSearchIndex = {"docs": [
 
 {
     "location": "man/Utilities/NamedVector.html#Core.Type-Union{Tuple{Tuple{Vararg{T,N}}}, Tuple{T}, Tuple{N}, Tuple{NV}} where T where N where NV<:Hamiltonian.Utilities.NamedVector.AbstractNamedVector",
-    "page": "NamedVector",
+    "page": "Named vector",
     "title": "Core.Type",
     "category": "method",
     "text": "(::Type{NV})(values::NTuple{N,T}) where {NV<:AbstractNamedVector,N,T}\n\nConstruct a concrete named vector by a tuple.\n\n\n\n\n\n"
@@ -138,7 +138,7 @@ var documenterSearchIndex = {"docs": [
 
 {
     "location": "man/Utilities/NamedVector.html#Base.:<-Union{Tuple{NV}, Tuple{NV,NV}} where NV<:Hamiltonian.Utilities.NamedVector.AbstractNamedVector",
-    "page": "NamedVector",
+    "page": "Named vector",
     "title": "Base.:<",
     "category": "method",
     "text": "<(nv1:NV,nv2:NV) where NV<:AbstractNamedVector -> Bool\n\nOverloaded < operator.\n\n\n\n\n\n"
@@ -146,7 +146,7 @@ var documenterSearchIndex = {"docs": [
 
 {
     "location": "man/Utilities/NamedVector.html#Base.:==-Tuple{Hamiltonian.Utilities.NamedVector.AbstractNamedVector,Hamiltonian.Utilities.NamedVector.AbstractNamedVector}",
-    "page": "NamedVector",
+    "page": "Named vector",
     "title": "Base.:==",
     "category": "method",
     "text": "==(nv1::AbstractNamedVector,nv2::AbstractNamedVector) -> Bool\n\nOverloaded == operator. Two named vector are equal to each other if and only if their keys as well as their values are equal to each other.\n\nnote: Note\nIt is not necessary for two named vectors to be of the same concrete type to be equal to each other.\n\n\n\n\n\n"
@@ -154,15 +154,15 @@ var documenterSearchIndex = {"docs": [
 
 {
     "location": "man/Utilities/NamedVector.html#Base.convert-Tuple{Type{Tuple},Hamiltonian.Utilities.NamedVector.AbstractNamedVector}",
-    "page": "NamedVector",
+    "page": "Named vector",
     "title": "Base.convert",
     "category": "method",
     "text": "convert(::Type{Tuple},nv::AbstractNamedVector) -> NTuple{nv|>length,nv|>eltype}\nconvert(::Type{NTuple},nv::AbstractNamedVector) -> NTuple{nv|>length,nv|>eltype}\nconvert(::Type{NTuple{N,T}},nv::AbstractNamedVector{T}) where {N,T} -> NTuple{nv|>length,nv|>eltype}\n\nConvert a named vector to tuple.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/NamedVector.html#Base.eltype-Union{Tuple{Type{NV}}, Tuple{NV}, Tuple{T}} where NV<:Hamiltonian.Utilities.NamedVector.AbstractNamedVector{T} where T",
-    "page": "NamedVector",
+    "location": "man/Utilities/NamedVector.html#Base.eltype-Union{Tuple{Type{#s13} where #s13<:AbstractNamedVector{T}}, Tuple{T}} where T",
+    "page": "Named vector",
     "title": "Base.eltype",
     "category": "method",
     "text": "eltype(::Type{NV}) where NV<:AbstractNamedVector{T} where T\neltype(nv::AbstractNamedVector)\n\nGet the type parameter of a concrete AbstractNamedVector.\n\n\n\n\n\n"
@@ -170,7 +170,7 @@ var documenterSearchIndex = {"docs": [
 
 {
     "location": "man/Utilities/NamedVector.html#Base.getindex-Tuple{Hamiltonian.Utilities.NamedVector.AbstractNamedVector,Int64}",
-    "page": "NamedVector",
+    "page": "Named vector",
     "title": "Base.getindex",
     "category": "method",
     "text": "getindex(nv::AbstractNamedVector,index::Int)\n\nGet the value by the [] syntax.\n\n\n\n\n\n"
@@ -178,7 +178,7 @@ var documenterSearchIndex = {"docs": [
 
 {
     "location": "man/Utilities/NamedVector.html#Base.hash-Tuple{Hamiltonian.Utilities.NamedVector.AbstractNamedVector,UInt64}",
-    "page": "NamedVector",
+    "page": "Named vector",
     "title": "Base.hash",
     "category": "method",
     "text": "hash(nv::AbstractNamedVector,h::UInt)\n\nHash a concrete AbstractNamedVector.\n\n\n\n\n\n"
@@ -186,7 +186,7 @@ var documenterSearchIndex = {"docs": [
 
 {
     "location": "man/Utilities/NamedVector.html#Base.isless-Union{Tuple{NV}, Tuple{NV,NV}} where NV<:Hamiltonian.Utilities.NamedVector.AbstractNamedVector",
-    "page": "NamedVector",
+    "page": "Named vector",
     "title": "Base.isless",
     "category": "method",
     "text": "isless(nv1::NV,nv2::NV) where NV<:AbstractNamedVector -> Bool\n\nOverloaded isless function.\n\n\n\n\n\n"
@@ -194,7 +194,7 @@ var documenterSearchIndex = {"docs": [
 
 {
     "location": "man/Utilities/NamedVector.html#Base.iterate",
-    "page": "NamedVector",
+    "page": "Named vector",
     "title": "Base.iterate",
     "category": "function",
     "text": "iterate(nv::AbstractNamedVector,state=1)\niterate(rv::Iterators.Reverse{<:AbstractNamedVector},state=length(rv.itr))\n\nIterate or reversely iterate over the values of a concrete AbstractNamedVector.\n\n\n\n\n\n"
@@ -202,7 +202,7 @@ var documenterSearchIndex = {"docs": [
 
 {
     "location": "man/Utilities/NamedVector.html#Base.keys-Tuple{Hamiltonian.Utilities.NamedVector.AbstractNamedVector}",
-    "page": "NamedVector",
+    "page": "Named vector",
     "title": "Base.keys",
     "category": "method",
     "text": "keys(nv::AbstractNamedVector) -> NTuple(nv|>length,Symbol)\n\nIterate over the names.\n\n\n\n\n\n"
@@ -210,7 +210,7 @@ var documenterSearchIndex = {"docs": [
 
 {
     "location": "man/Utilities/NamedVector.html#Base.length-Union{Tuple{Type{NV}}, Tuple{NV}} where NV<:Hamiltonian.Utilities.NamedVector.AbstractNamedVector",
-    "page": "NamedVector",
+    "page": "Named vector",
     "title": "Base.length",
     "category": "method",
     "text": "length(::Type{NV}) where NV<:AbstractNamedVector -> Int\nlength(nv::AbstractNamedVector) -> Int\n\nGet the length of a concrete AbstractNamedVector.\n\n\n\n\n\n"
@@ -218,7 +218,7 @@ var documenterSearchIndex = {"docs": [
 
 {
     "location": "man/Utilities/NamedVector.html#Base.map-Union{Tuple{NV}, Tuple{Any,Vararg{NV,N} where N}} where NV<:Hamiltonian.Utilities.NamedVector.AbstractNamedVector",
-    "page": "NamedVector",
+    "page": "Named vector",
     "title": "Base.map",
     "category": "method",
     "text": "map(f,nvs::NV...) where NV<:AbstractNamedVector -> NV\n\nApply function f elementwise on the input named vectors.\n\n\n\n\n\n"
@@ -226,7 +226,7 @@ var documenterSearchIndex = {"docs": [
 
 {
     "location": "man/Utilities/NamedVector.html#Base.pairs-Tuple{Hamiltonian.Utilities.NamedVector.AbstractNamedVector}",
-    "page": "NamedVector",
+    "page": "Named vector",
     "title": "Base.pairs",
     "category": "method",
     "text": "pairs(nv::AbstractNamedVector)\n\nIterate over the name=>value pairs.\n\n\n\n\n\n"
@@ -234,7 +234,7 @@ var documenterSearchIndex = {"docs": [
 
 {
     "location": "man/Utilities/NamedVector.html#Base.replace-Tuple{Hamiltonian.Utilities.NamedVector.AbstractNamedVector}",
-    "page": "NamedVector",
+    "page": "Named vector",
     "title": "Base.replace",
     "category": "method",
     "text": "replace(nv::AbstractNamedVector;kwargs...) -> typeof(nv)\n\nReturn a copy of a concrete AbstractNamedVector with some of the filed values replaced by the keyword arguments.\n\n\n\n\n\n"
@@ -242,7 +242,7 @@ var documenterSearchIndex = {"docs": [
 
 {
     "location": "man/Utilities/NamedVector.html#Base.setindex!-Tuple{Hamiltonian.Utilities.NamedVector.AbstractNamedVector,Any,Int64}",
-    "page": "NamedVector",
+    "page": "Named vector",
     "title": "Base.setindex!",
     "category": "method",
     "text": "setindex!(nv::AbstractNamedVector,value,index::Int)\n\nSet the value by the [] syntax if mutable.\n\n\n\n\n\n"
@@ -250,7 +250,7 @@ var documenterSearchIndex = {"docs": [
 
 {
     "location": "man/Utilities/NamedVector.html#Base.show-Tuple{IO,Hamiltonian.Utilities.NamedVector.AbstractNamedVector}",
-    "page": "NamedVector",
+    "page": "Named vector",
     "title": "Base.show",
     "category": "method",
     "text": "show(io::IO,nv::AbstractNamedVector)\n\nShow a concrete AbstractNamedVector.\n\n\n\n\n\n"
@@ -258,7 +258,7 @@ var documenterSearchIndex = {"docs": [
 
 {
     "location": "man/Utilities/NamedVector.html#Base.values-Tuple{Hamiltonian.Utilities.NamedVector.AbstractNamedVector}",
-    "page": "NamedVector",
+    "page": "Named vector",
     "title": "Base.values",
     "category": "method",
     "text": "values(nv::AbstractNamedVector) -> NTuple{nv|>length,nv|>eltype}\n\nIterate over the values.\n\n\n\n\n\n"
@@ -266,7 +266,7 @@ var documenterSearchIndex = {"docs": [
 
 {
     "location": "man/Utilities/NamedVector.html#Base.zero-Union{Tuple{Type{NV}}, Tuple{NV}} where NV<:Hamiltonian.Utilities.NamedVector.AbstractNamedVector",
-    "page": "NamedVector",
+    "page": "Named vector",
     "title": "Base.zero",
     "category": "method",
     "text": "zero(::Type{NV}) where NV<:AbstractNamedVector\nzero(nv::AbstractNamedVector)\n\nGet a concrete AbstractNamedVector with all values being zero.\n\n\n\n\n\n"
@@ -274,7 +274,7 @@ var documenterSearchIndex = {"docs": [
 
 {
     "location": "man/Utilities/NamedVector.html#Manual-1",
-    "page": "NamedVector",
+    "page": "Named vector",
     "title": "Manual",
     "category": "section",
     "text": "Modules=[NamedVector]\nOrder=  [:module,:constant,:type,:macro,:function]"
@@ -389,7 +389,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Good quantum numbers",
     "title": "Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumbers",
     "category": "type",
-    "text": "QuantumNumbers(form::Char,contents::Vector{QN},counts::Vector{Int},::Val{qnscounts}) where QN<:QuantumNumber\nQuantumNumbers(form::Char,contents::Vector{QN},indptr::Vector{Int},::Val{qnsindptr}) where QN<:QuantumNumber\n\nThe whole quantum numbers of the total bases of a Hilbert space. The default constructors construct a QuantumNumbers from a vector of concrete quantum numbers and an vector containing their counts or indptr.\n\n\n\n\n\n"
+    "text": "QuantumNumbers(form::Char,contents::Vector{<:QuantumNumber},counts::Vector{Int},::typeof(qnscounts))\nQuantumNumbers(form::Char,contents::Vector{<:QuantumNumber},indptr::Vector{Int},::typeof(qnsindptr))\n\nThe whole quantum numbers of the total bases of a Hilbert space. The default constructors construct a QuantumNumbers from a vector of concrete quantum numbers and an vector containing their counts or indptr.\n\n\n\n\n\n"
 },
 
 {
@@ -401,27 +401,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/GoodQuantumNumber.html#Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumbers-Union{Tuple{OrderedDict{QN,Int64}}, Tuple{QN}} where QN<:Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumber",
+    "location": "man/Utilities/GoodQuantumNumber.html#Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumbers-Tuple{OrderedCollections.OrderedDict{#s13,Int64} where #s13<:Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumber}",
     "page": "Good quantum numbers",
     "title": "Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumbers",
     "category": "method",
-    "text": "QuantumNumbers(od::OrderedDict{QN,Int}) where QN<:QuantumNumber\n\nConstruct a QuantumNumbers from an ordered dict containing concrete quantum numbers and their counts.\n\n\n\n\n\n"
+    "text": "QuantumNumbers(od::OrderedDict{<:QuantumNumber,Int})\n\nConstruct a QuantumNumbers from an ordered dict containing concrete quantum numbers and their counts.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/GoodQuantumNumber.html#Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumbers-Union{Tuple{OrderedDict{QN,UnitRange{Int64}}}, Tuple{QN}} where QN<:Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumber",
+    "location": "man/Utilities/GoodQuantumNumber.html#Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumbers-Tuple{OrderedCollections.OrderedDict{#s13,UnitRange{Int64}} where #s13<:Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumber}",
     "page": "Good quantum numbers",
     "title": "Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumbers",
     "category": "method",
-    "text": "QuantumNumbers(od::OrderedDict{QN,UnitRange{Int}}) where QN<:QuantumNumber\n\nConstruct a QuantumNumbers from an ordered dict containing concrete quantum numbers and their slices.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/GoodQuantumNumber.html#Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumbers-Union{Tuple{QN}, Tuple{Char,Array{QN,1},Array{Int64,1},Int64}} where QN<:Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumber",
-    "page": "Good quantum numbers",
-    "title": "Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumbers",
-    "category": "method",
-    "text": "QuantumNumbers(form::Char,contents::Vector{QN},counts::Vector{Int},choice::Int) where QN<:QuantumNumber\n\nThe wrapper of the default constructors of QuantumNumbers.\n\n\n\n\n\n"
+    "text": "QuantumNumbers(od::OrderedDict{<:QuantumNumber,UnitRange{Int}})\n\nConstruct a QuantumNumbers from an ordered dict containing concrete quantum numbers and their slices.\n\n\n\n\n\n"
 },
 
 {
@@ -457,11 +449,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/GoodQuantumNumber.html#Hamiltonian.Utilities.GoodQuantumNumber.:⊕-Union{Tuple{Tuple{Vararg{QN,N}}}, Tuple{QN}, Tuple{N}, Tuple{Tuple{Vararg{QN,N}},Tuple{Vararg{Int64,N}}}} where QN<:Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumber where N",
+    "location": "man/Utilities/GoodQuantumNumber.html#Hamiltonian.Utilities.GoodQuantumNumber.:⊕-Union{Tuple{Tuple{Vararg{#s14,N}} where #s14<:QuantumNumber}, Tuple{N}, Tuple{Tuple{Vararg{#s13,N}} where #s13<:QuantumNumber,Tuple{Vararg{Int64,N}}}} where N",
     "page": "Good quantum numbers",
     "title": "Hamiltonian.Utilities.GoodQuantumNumber.:⊕",
     "category": "method",
-    "text": "⊕(qns::NTuple{N,QN},signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:QuantumNumber} -> QuantumNumbers{QN}\n⊕(qnses::NTuple{N,QuantumNumbers{QN}},signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:QuantumNumber} -> QuantumNumbers{QN}\n\nGet the direct sum of some QuantumNumbers or QuantumNumberses.\n\nnote: Note\nPhysically, the direct sum of a couple of QuantumNumbers or QuantumNumberses is defined by the direct sum of the bases of the Hilbert spaces they represent. Therefore, the input QuantumNumbers or QuantumNumberses must be homogenous. Inhomogenous \'QuantumNumber\'s must be direct producted first to ensure homogenity before the direct sum.\nApparently, the dimension of the result equals the summation of those of the inputs, which means, even for QuantumNumbers, the result will be naturally a QuantumNumbers because the dimension of the result is largeer than 1.\nSigns of QuantumNumbers or QuantumNumberses can be provided when getting their direct sums.\n\n\n\n\n\n"
+    "text": "⊕(qns::NTuple{N,<:QuantumNumber},signs::NTuple{N,Int}=ntuple(i->1,N)) where N -> QuantumNumbers\n⊕(qnses::NTuple{N,QuantumNumbers{QN}},signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:QuantumNumber} -> QuantumNumbers{QN}\n\nGet the direct sum of some QuantumNumbers or QuantumNumberses.\n\nnote: Note\nPhysically, the direct sum of a couple of QuantumNumbers or QuantumNumberses is defined by the direct sum of the bases of the Hilbert spaces they represent. Therefore, the input QuantumNumbers or QuantumNumberses must be homogenous. Inhomogenous \'QuantumNumber\'s must be direct producted first to ensure homogenity before the direct sum.\nApparently, the dimension of the result equals the summation of those of the inputs, which means, even for QuantumNumbers, the result will be naturally a QuantumNumbers because the dimension of the result is largeer than 1.\nSigns of QuantumNumbers or QuantumNumberses can be provided when getting their direct sums.\n\n\n\n\n\n"
 },
 
 {
@@ -469,7 +461,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Good quantum numbers",
     "title": "Hamiltonian.Utilities.GoodQuantumNumber.:⊗",
     "category": "method",
-    "text": "⊗(::Type{QN},qn1::QuantumNumber,qn2::QuantumNumber) where QN<:QuantumNumber -> QN\n⊗(qns::NTuple{N,QN},signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:QuantumNumber} -> QN\n⊗(qnses::NTuple{N,QuantumNumbers{QN}},signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:QuantumNumber} -> QuantumNumbers{QN}\n\nGet the direct product of some QuantumNumbers or QuantumNumberses.\n\nnote: Note\nPhysically, the direct product of a couple of QuantumNumbers or QuantumNumberses are defined by the direct product of the bases of the Hilbert spaces they represent. Therefore, QuantumNumbers with differenct types or QuantumNumberses with differenct eltypes are allowed to be direct producted in principle. However, for simplicity, we only implement a method which handle the situation of two QuantumNumbers with differenct types. The type of the result should be provided as the first parameter. Note that in this situation, the fieldnames and periods of the result type must be exactly equal to the flattened fieldnames and periods of the two input QuantumNumbers, which means, even the order of the input QuantumNumbers matters.\nApparently, the dimension of the result equals the product of those of the inputs. Therefore, the direct product of QuantumNumbers is also a QuantumNumber since its dimension is still one.\nFor other situations except the one mentioned in Note.1, the input QuantumNumbers or QuantumNumberses must be homogenous. Meanwhile, signs can also be provided for these situations. Note that each quantum number in the contents of the result is obtained by a summation of the corresponding quanum numbers out of the inputs with the correct signs. This is a direct observation of the Abelian nature of our quantum numbers.\n\n\n\n\n\n"
+    "text": "⊗(::Type{QN},qn1::QuantumNumber,qn2::QuantumNumber) where QN<:QuantumNumber -> QN\n⊗(qns::NTuple{N,<:QuantumNumber},signs::NTuple{N,Int}=ntuple(i->1,N)) where N -> QuantumNumber\n⊗(qnses::NTuple{N,QuantumNumbers{QN}},signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:QuantumNumber} -> QuantumNumbers{QN}\n\nGet the direct product of some QuantumNumbers or QuantumNumberses.\n\nnote: Note\nPhysically, the direct product of a couple of QuantumNumbers or QuantumNumberses are defined by the direct product of the bases of the Hilbert spaces they represent. Therefore, QuantumNumbers with differenct types or QuantumNumberses with differenct eltypes are allowed to be direct producted in principle. However, for simplicity, we only implement a method which handle the situation of two QuantumNumbers with differenct types. The type of the result should be provided as the first parameter. Note that in this situation, the fieldnames and periods of the result type must be exactly equal to the flattened fieldnames and periods of the two input QuantumNumbers, which means, even the order of the input QuantumNumbers matters.\nApparently, the dimension of the result equals the product of those of the inputs. Therefore, the direct product of QuantumNumbers is also a QuantumNumber since its dimension is still one.\nFor other situations except the one mentioned in Note.1, the input QuantumNumbers or QuantumNumberses must be homogenous. Meanwhile, signs can also be provided for these situations. Note that each quantum number in the contents of the result is obtained by a summation of the corresponding quanum numbers out of the inputs with the correct signs. This is a direct observation of the Abelian nature of our quantum numbers.\n\n\n\n\n\n"
 },
 
 {
@@ -513,11 +505,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/GoodQuantumNumber.html#Hamiltonian.Utilities.GoodQuantumNumber.decompose-Union{Tuple{QN}, Tuple{N}, Tuple{Tuple{Vararg{QuantumNumbers{QN},N}},QN}, Tuple{Tuple{Vararg{QuantumNumbers{QN},N}},QN,Tuple{Vararg{Int64,N}}}, Tuple{Tuple{Vararg{QuantumNumbers{QN},N}},QN,Tuple{Vararg{Int64,N}},Int64}, Tuple{Tuple{Vararg{QuantumNumbers{QN},N}},QN,Tuple{Vararg{Int64,N}},Int64,Int64}} where QN<:Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumber where N",
+    "location": "man/Utilities/GoodQuantumNumber.html#Hamiltonian.Utilities.GoodQuantumNumber.decompose-Union{Tuple{QN}, Tuple{N}, Tuple{Tuple{Vararg{QuantumNumbers{QN},N}},QN,Tuple{Vararg{Int64,N}},Val{6}}} where QN<:Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumber where N",
     "page": "Good quantum numbers",
     "title": "Hamiltonian.Utilities.GoodQuantumNumber.decompose",
     "category": "method",
-    "text": "decompose(qnses::NTuple{N,QuantumNumbers{QN}},target::QN,signs::NTuple{N,Int}=ntuple(i->1,N),nmax::Int=200,method::Int=qnsmontecarlo) where {N,QN<:QuantumNumber}-> Vector{NTuple{N,Int}}\n\nFind a couple of decompositions of target with respect to qnses.\n\nnote: Note\nA tuple of integers (i₁,i₂,...) is called a decomposition of a given target with respect to the given qnses if and only if they satisfy the \"decomposition rule\":sum_textj textsignstextjtimestextqnsestextjtexti_textj==texttargetThis equation is in fact a kind of a set of restricted linear Diophantine equations. Indeed, our quantum numbers are always discrete Abelian ones and all instances of a concrete QuantumNumber forms a module over the ring of integers. Therefore, each quantum number can be represented as a integral multiple of the unit element of the Abelian module, which results in the final reduction of the above equation to a set of linear Diophantine equations. Then finding a decomposition is equivalent to find a solution of the reduced linear Diophantine equations, with the restriction that the quantum numbers constructed from the solution should be in the corresponding qnses. Here we provide two methods to find such decompositions, one is by brute force (when method==qnsbruteforce), and the other is by Monte Carlo simultatioins (when method==qnsmontecarlo).\n\n\n\n\n\n"
+    "text": "decompose(qnses::NTuple{N,QuantumNumbers{QN}},target::QN,signs::NTuple{N,Int},::typeof(qnsbruteforce);nmax::Int=20) where {N,QN<:QuantumNumber} -> Vector{NTuple{N,Int}}\ndecompose(qnses::NTuple{N,QuantumNumbers{QN}},target::QN,signs::NTuple{N,Int},::typeof(qnsmontecarlo);nmax::Int=20) where {N,QN<:QuantumNumber} -> Vector{NTuple{N,Int}}\n\nFind a couple of decompositions of target with respect to qnses.\n\nnote: Note\nA tuple of integers (i₁,i₂,...) is called a decomposition of a given target with respect to the given qnses if and only if they satisfy the \"decomposition rule\":sum_textj textsignstextjtimestextqnsestextjtexti_textj==texttargetThis equation is in fact a kind of a set of restricted linear Diophantine equations. Indeed, our quantum numbers are always discrete Abelian ones and all instances of a concrete QuantumNumber forms a module over the ring of integers. Therefore, each quantum number can be represented as a integral multiple of the unit element of the Abelian module, which results in the final reduction of the above equation to a set of linear Diophantine equations. Then finding a decomposition is equivalent to find a solution of the reduced linear Diophantine equations, with the restriction that the quantum numbers constructed from the solution should be in the corresponding qnses. Here we provide two methods to find such decompositions, one is by brute force (qnsbruteforce case), and the other is by Monte Carlo simultatioins (qnsmontecarlo case).\n\n\n\n\n\n"
 },
 
 {
@@ -537,11 +529,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/GoodQuantumNumber.html#Hamiltonian.Utilities.GoodQuantumNumber.expand",
+    "location": "man/Utilities/GoodQuantumNumber.html#Hamiltonian.Utilities.GoodQuantumNumber.expand-Tuple{Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumbers,Val{3}}",
     "page": "Good quantum numbers",
     "title": "Hamiltonian.Utilities.GoodQuantumNumber.expand",
-    "category": "function",
-    "text": "expand(qns::QuantumNumbers,choice::Int=qnscontents) -> Vector{qns|>eltype} | Vector{Int}\n\nExpand the contents (when choice==qnscontents) or indices (when choice==qnsindices) of a QuantumNumbers to the uncompressed form.\n\n\n\n\n\n"
+    "category": "method",
+    "text": "expand(qns::QuantumNumbers,::typeof(qnscontents)) -> Vector{qns|>eltype}\nexpand(qns::QuantumNumbers,::typeof(qnsindices)) -> Vector{Int}\n\nExpand the contents (qnscontents case) or indices (qnsindices case) of a QuantumNumbers to the uncompressed form.\n\n\n\n\n\n"
 },
 
 {
@@ -561,11 +553,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/GoodQuantumNumber.html#Hamiltonian.Utilities.GoodQuantumNumber.reorder",
+    "location": "man/Utilities/GoodQuantumNumber.html#Hamiltonian.Utilities.GoodQuantumNumber.reorder-Tuple{Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumbers,Array{Int64,1},Val{3}}",
     "page": "Good quantum numbers",
     "title": "Hamiltonian.Utilities.GoodQuantumNumber.reorder",
-    "category": "function",
-    "text": "reorder(qns::QuantumNumbers,permutation::Vector{Int},choice::Int=qnscontents) -> QuantumNumbers\n\nReorder the quantum numbers contained in a QuantumNumbers with a permutation and return the new one. When choice==qnscontents, the permutation is for the contents of the original QuantumNumbers while when choice==qnsexpansion, the permutation is for the expansion of the original QuantumNumbers.\n\n\n\n\n\n"
+    "category": "method",
+    "text": "reorder(qns::QuantumNumbers,permutation::Vector{Int},::typeof(qnscontents)) -> QuantumNumbers\nreorder(qns::QuantumNumbers,permutation::Vector{Int},::typeof(qnsexpansion)) -> QuantumNumbers\n\nReorder the quantum numbers contained in a QuantumNumbers with a permutation and return the new one. For qnscontents case, the permutation is for the contents of the original QuantumNumbers while for qnsexpansion case, the permutation is for the expansion of the original QuantumNumbers.\n\n\n\n\n\n"
 },
 
 {
@@ -573,15 +565,15 @@ var documenterSearchIndex = {"docs": [
     "page": "Good quantum numbers",
     "title": "Hamiltonian.Utilities.GoodQuantumNumber.subset",
     "category": "method",
-    "text": "subset(qns::QuantumNumbers{QN},target::QN) where QN<:QuantumNumber\nsubset(qns::QuantumNumbers{QN},targets::NTuple{N,QN}) where {N,QN<:QuantumNumber} -> QuantumNumbers{QN}\n\nFind a subset of a QuantumNumbers by picking out the quantum numbers in targets.\n\n\n\n\n\n"
+    "text": "subset(qns::QuantumNumbers{QN},target::QN) where QN<:QuantumNumber -> QuantumNumbers{QN}\nsubset(qns::QuantumNumbers{QN},targets::NTuple{N,QN}) where {N,QN<:QuantumNumber} -> QuantumNumbers{QN}\n\nFind a subset of a QuantumNumbers by picking out the quantum numbers in targets.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/GoodQuantumNumber.html#Hamiltonian.Utilities.GoodQuantumNumber.toordereddict",
+    "location": "man/Utilities/GoodQuantumNumber.html#Hamiltonian.Utilities.GoodQuantumNumber.toordereddict-Tuple{Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumbers,Val{1}}",
     "page": "Good quantum numbers",
     "title": "Hamiltonian.Utilities.GoodQuantumNumber.toordereddict",
-    "category": "function",
-    "text": "toordereddict(qns::QuantumNumbers,choice::Int=qnsindptr) -> OrderedDict{qns|>eltype,UnitRange{Int}} | OrderedDict{qns|>eltype,Int}\n\nConvert a QuantumNumbers to an ordered dict.\n\n\n\n\n\n"
+    "category": "method",
+    "text": "toordereddict(qns::QuantumNumbers,::typeof(qnsindptr)) -> OrderedDict{qns|>eltype,UnitRange{Int}}\ntoordereddict(qns::QuantumNumbers,::typeof(qnscounts)) -> OrderedDict{qns|>eltype,Int}\n\nConvert a QuantumNumbers to an ordered dict.\n\n\n\n\n\n"
 },
 
 {
@@ -641,11 +633,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/GoodQuantumNumber.html#Base.findall-Union{Tuple{QN}, Tuple{QuantumNumbers{QN},QN}, Tuple{QuantumNumbers{QN},QN,Int64}} where QN<:Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumber",
+    "location": "man/Utilities/GoodQuantumNumber.html#Base.findall-Union{Tuple{QN}, Tuple{QuantumNumbers{QN},QN,Union{Val{3}, Val{4}}}} where QN<:Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumber",
     "page": "Good quantum numbers",
     "title": "Base.findall",
     "category": "method",
-    "text": "findall(qns::QuantumNumbers{QN},target::QN,choice::Int=qnscontents) where QN<:QuantumNumber -> Vector{Int}\nfindall(qns::QuantumNumbers{QN},targets::NTuple{N,QN},choice::Int=qnscontents) where QN<:QuantumNumber -> Vector{Int}\n\nFind all the indices of the target quantum numbers in the contents (when choice==qnscontents) or the expansion (when choice==qnsexpansion) of a QuantumNumbers.\n\n\n\n\n\n"
+    "text": "findall(qns::QuantumNumbers{QN},target::QN,choice::Union{typeof(qnscontents),typeof(qnsexpansion)}) where QN<:QuantumNumber -> Vector{Int}\nfindall(qns::QuantumNumbers{QN},targets::NTuple{N,QN},::typeof(qnscontents)) where {N,QN<:QuantumNumber} -> Vector{Int}\nfindall(qns::QuantumNumbers{QN},targets::NTuple{N,QN},::typeof(qnsexpansion)) where {N,QN<:QuantumNumber} -> Vector{Int}\n\nFind all the indices of the target quantum numbers in the contents (qnscontents case) or the expansion (qnsexpansion case) of a QuantumNumbers.\n\n\n\n\n\n"
 },
 
 {
@@ -677,7 +669,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Good quantum numbers",
     "title": "Base.kron",
     "category": "method",
-    "text": "kron(::Type{QN},qn1::QuantumNumber,qn2::QuantumNumber) where QN<:QuantumNumber -> QN\nkron(qns::NTuple{N,QN},signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:QuantumNumber} -> QN\nkron(qnses::NTuple{N,QuantumNumbers{QN}},signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:QuantumNumber} -> QuantumNumbers{QN}\n\nKronecker product of some QuantumNumbers or QuantumNumberses. This is defined to be equivalent to the direct product ⊗.\n\n\n\n\n\n"
+    "text": "kron(::Type{QN},qn1::QuantumNumber,qn2::QuantumNumber) where QN<:QuantumNumber -> QN\nkron(qns::NTuple{N,<:QuantumNumber},signs::NTuple{N,Int}=ntuple(i->1,N)) where N -> QuantumNumber\nkron(qnses::NTuple{N,QuantumNumbers{QN}},signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:QuantumNumber} -> QuantumNumbers{QN}\n\nKronecker product of some QuantumNumbers or QuantumNumberses. This is defined to be equivalent to the direct product ⊗.\n\n\n\n\n\n"
 },
 
 {
@@ -689,11 +681,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/GoodQuantumNumber.html#Base.pairs",
+    "location": "man/Utilities/GoodQuantumNumber.html#Base.pairs-Tuple{Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumbers,Union{Val{1}, Val{2}}}",
     "page": "Good quantum numbers",
     "title": "Base.pairs",
-    "category": "function",
-    "text": "pairs(qns::QuantumNumbers,choice::Int=qnsindptr)\n\nIterate over the QuantumNumber=>slice or QuantumNumber=>count pairs.\n\n\n\n\n\n"
+    "category": "method",
+    "text": "pairs(qns::QuantumNumbers,choice::Union{typeof(qnsindptr),typeof(qnscounts)})\n\nIterate over the QuantumNumber=>slice or QuantumNumber=>count pairs.\n\n\n\n\n\n"
 },
 
 {
@@ -721,11 +713,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/GoodQuantumNumber.html#Base.values",
+    "location": "man/Utilities/GoodQuantumNumber.html#Base.values-Tuple{Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumbers,Val{1}}",
     "page": "Good quantum numbers",
     "title": "Base.values",
-    "category": "function",
-    "text": "values(qns::QuantumNumbers,choice::Int=qnsindptr)\n\nIterate over the slices/counts of the QuantumNumbers.\n\n\n\n\n\n"
+    "category": "method",
+    "text": "values(qns::QuantumNumbers,::typeof(qnsindptr))\nvalues(qns::QuantumNumbers,::typeof(qnscounts))\n\nIterate over the slices/counts of the QuantumNumbers.\n\n\n\n\n\n"
 },
 
 {
