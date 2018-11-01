@@ -8,6 +8,8 @@ Utilities of the Hamiltonian package.
 
 ```@contents
 Pages=  [
+        "Factory.md",
+        "Tree.md",
         "NamedVector.md",
         "GoodQuantumNumber.md",
         ]
