@@ -85,7 +85,87 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "Introduction",
     "category": "section",
-    "text": "Utilities of the Hamiltonian package.Pages=  [\n        \"NamedVector.md\",\n        \"GoodQuantumNumber.md\",\n        ]\nDepth=2"
+    "text": "Utilities of the Hamiltonian package.Pages=  [\n        \"Factory.md\",\n        \"Tree.md\",\n        \"NamedVector.md\",\n        \"GoodQuantumNumber.md\",\n        ]\nDepth=2"
+},
+
+{
+    "location": "man/Utilities/Factory.html#",
+    "page": "Factory",
+    "title": "Factory",
+    "category": "page",
+    "text": "CurrentModule=Hamiltonian.Utilities.Factory"
+},
+
+{
+    "location": "man/Utilities/Factory.html#Factory-1",
+    "page": "Factory",
+    "title": "Factory",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Utilities/Factory.html#Type-factory-1",
+    "page": "Factory",
+    "title": "Type factory",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Utilities/Factory.html#Function-factory-1",
+    "page": "Factory",
+    "title": "Function factory",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Utilities/Factory.html#Manual-1",
+    "page": "Factory",
+    "title": "Manual",
+    "category": "section",
+    "text": "Modules=[Factory]\nOrder=  [:module,:constant,:type,:macro,:function]"
+},
+
+{
+    "location": "man/Utilities/Tree.html#",
+    "page": "Tree",
+    "title": "Tree",
+    "category": "page",
+    "text": "CurrentModule=Hamiltonian.Utilities.Tree"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Tree-1",
+    "page": "Tree",
+    "title": "Tree",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Utilities/Tree.html#AbstractTree-1",
+    "page": "Tree",
+    "title": "AbstractTree",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Utilities/Tree.html#Hamiltonian.Utilities.Tree.AbstractTree",
+    "page": "Tree",
+    "title": "Hamiltonian.Utilities.Tree.AbstractTree",
+    "category": "type",
+    "text": "AbstractTree{Node,Data}\n\nAbstract type for all concrete trees.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Manual-1",
+    "page": "Tree",
+    "title": "Manual",
+    "category": "section",
+    "text": "Modules=[Tree]\nOrder=  [:module,:constant,:type,:macro,:function]"
 },
 
 {
