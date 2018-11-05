@@ -31,7 +31,7 @@ Any expression can be passed to the constructor of `Block`, such as:
       y=2
   end
   ```
-Or you can construct a `Block` instance directly from any code by the macro [@block](@ref):
+Or you can construct a `Block` instance directly from any code by the macro [`@block`](@ref):
 ```julia
 @block x=1 y=2
 ```
@@ -63,7 +63,7 @@ Valid expressions that can be passed to the constructor include:
 * ```julia
   :(arg::ArgType=default)
   ```
-Or you can use the macro [@argument](@ref) for construction directly from an argument declaration:
+Or you can use the macro [`@argument`](@ref) for construction directly from an argument declaration:
 ```julia
 @argument arg::ArgType=default
 ```
