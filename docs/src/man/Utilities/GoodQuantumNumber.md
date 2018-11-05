@@ -48,6 +48,7 @@ Main features include:
 For a complete summation of its features, please refer to the [manual](@ref qnmanual).
 
 ## [Manual](@id qnmanual)
+
 ```@autodocs
 Modules=[GoodQuantumNumber]
 Order=  [:module,:constant,:type,:macro,:function]

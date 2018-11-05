@@ -4,11 +4,200 @@ CurrentModule=Hamiltonian.Utilities.Factory
 
 # Factory
 
-## Type factory
+The aim of `Factory` is to provide tools to hack into Julia codes without knowing the details of their abstract syntax trees, so that users can somewhat manipulate the existing codes, modify them and generate new ones. In particular, `Factory` in this module means the representation of certain blocks of Julia codes by a usual Julia struct. This representation is much easier to comprehend than the canonical `Expr` representation. In general, we propose two basic requirements that any factory must satisfy:
+* Besides the default constructor, a concrete factory can be constructed from any legal `Expr` expression that represents the block of codes it aims to represent;
+* The canonical `Expr` expression of the block of codes that a concrete factory represents can be obtained by "calling" the factory itself.
+These two requirements also defines the basic interfaces to interact with factories.
 
-## Function factory
+Out of practical purposes, we only implemente 5 kinds of factories, i.e. *[`Block`](@ref)*, *[`Argument`](@ref)*, *[`FunctionFactory`](@ref)*, *[`Field`](@ref)* and *[`TypeFactory`](@ref)*, which represent *a `begin ... end` block*, *an argument of a function*, *a function itself*, *a field of a struct* and *a struct itself*, respectively. Some of the basic methods making the above requirements fulfilled with these types are based on the powerful functions defined in [`MacroTools`](https://github.com/MikeInnes/MacroTools.jl).
+
+## Block
+
+A `Block` has only one attribute:
+* `body::Vector{Any}`: the body of the `begin ... end` block
+Any expression can be passed to the constructor of `Block`, such as:
+* ```julia
+  :(x=1)
+  ```
+* ```julia
+  :(x=1;y=2)
+  ```
+* ```julia
+  :(begin x=1 end)
+  ```
+* ```julia
+  quote
+      x=1
+      y=2
+  end
+  ```
+Or you can construct a `Block` instance directly from any code by the macro [@block](@ref):
+```julia
+@block x=1 y=2
+```
+whose result is equivalent to
+```julia
+Block(Expr(:block,:(x=1),:(y=2)))
+```
+The body of a `block` can also be extended by the [`push!`](@ref) function or the [`@push!`](@ref) macro.
+!!! note
+    The body of a `Block` is somewhat "flattened", i.e. it contains no `begin ... end` blocks. During the initialization, any such input block will be unblocked and added to the body part by part. So is the [`push!`](@ref) and [`@push!`](@ref) processes.
+
+## Argument
+
+An `Argument` has 4 attributes:
+* `name::Symbol`: the name of the argument
+* `type::Union{Symbol,Expr}`: the type of the argument
+* `slurp::Bool`: whether the argument should be expanded by `...`
+* `default::Any`: the default value of the argument, `nothing` for those with no default values
+Valid expressions that can be passed to the constructor include:
+* ```julia
+  :(arg)
+  ```
+* ```julia
+  :(arg::ArgType)
+  ```
+* ```julia
+  :(arg::ArgType...)
+  ```
+* ```julia
+  :(arg::ArgType=default)
+  ```
+Or you can use the macro [@argument](@ref) for construction directly from an argument declaration:
+```julia
+@argument arg::ArgType=default
+```
+The construction from such expressions is based on the the `MacroTools.splitarg` function. On the other hand, calling an instance of `Argument` will get the corresponding `Expr` expression, e.g.,
+```julia
+Argument(:arg,:ArgType,false,default)()
+```
+will return
+```julia
+:(arg::ArgType=default)
+```
+This feature is based on the `MacroTools.combinearg` function.
+
+## FunctionFactory
+
+A `FunctionFactory` has 6 attributes:
+* `name::Symbol`: the name of the function
+* `args::Vector{Union{Symbol,Expr}}`: the positional arguments of the function
+* `kwargs::Vector{Union{Symbol,Expr}}`: the keyword arguments of the function
+* `rtype::Union{Symbol,Expr}`: the return type of the function
+* `params::Vector{Union{Symbol,Expr}}`: the method parameters specified by the `where` keyword
+* `body::Union{Symbol,Expr}`: the body of the function
+All expressions that represent functions are allowed to be passed to the constructor, such as:
+* ```julia
+  :(f()=nothing)
+  ```
+* ```julia
+  :(f(x)=x)
+  ```
+* ```julia
+  :(f(x::Int,y::Int;choice::Function=sum)=choice(x,y))
+  ```
+* ```julia
+  :(f(x::T,y::T;choice::Function=sum) where T<:Number=choice(x,y))
+  ```
+* ```julia
+  :((f(x::T,y::T;choice::Function=sum)::T) where T<:Number=choice(x,y))
+  ```
+* ```julia
+  :(function (f(x::T,y::T;choice::Function=sum)::T) where T<:Numbe
+        choice(x,y)
+    end
+  )
+  ```
+* ```julia
+  quote
+      function (f(x::T,y::T;choice::Function=sum)::T) where T<:Numbe
+          choice(x,y)
+      end
+  end
+  ```
+Similarly, an instance can also be constructed from the macro [`@functionfactory`](@ref):
+```julia
+@functionfactory (f(x::T,y::T;choice::Function=sum)::T) where T<:Number=choice(x,y)
+```
+The construction from and the convertion to such expressions are based on the `MacroTools.splitdef` and `MacroTools.combinedef` functions, respectively.
+!!! note
+    Because the form `f{T}(x::T,y::T;choice::Function=sum)` has no longer been supported since Julia 0.7, the entry `:params` in the returned dict by `MacroTools.splitarg` is always missing. Therefore, we abandon its corresponding field in `FunctionFactory` but use the attribute `:params` to denote the `:whereparams` entry.
+
+Other features include:
+* Positional arguments can be added by [`addargs!`](@ref) or [`@addargs!`](@ref)
+* Keyword arguments can be added by [`addkwargs!`](@ref) or [`@addkwargs!`](@ref)
+* Body can be extended by [`extendbody!`](@ref) or [`@extendbody!`](@ref)
+
+## Field
+
+A [`Field`](@ref) has 2 attributes:
+* `name::Symbol`: the name of the field
+* `type::Union{Symbol,Expr}`: the type of the field
+Legal expressions that can be passed to the constructor includes the following forms:
+* ```julia
+  :(field)
+  ```
+* ```julia
+  :(field::FieldType)
+  ```
+* ```julia
+  :(field::ParametricType{Parameter})
+  ```
+The macro [`@field`](@ref) is also provided to help the construction directly from a field declaration:
+```julia
+@field field::FieldType
+```
+The construction from these expressions is based on the `MacroTools.splitarg` function and the convertion to these expressions is based on the `MacroTools.combinefield` function.
+
+## Type Factory
+
+A [`TypeFactory`](@ref) has 6 attributes:
+* `name::Symbol`: the name of the struct
+* `mutable::Bool`: whether or not the struct is mutable
+* `params::Vector{Union{Symbol,Expr}}`: the type parameters of the struct
+* `supertype::Union{Symbol,Expr}`: the supertype of the struct
+* `fields::Vector{Tuple{Symbol,Union{Symbol,Expr}}}`: the fields of the struct
+* `constructors::Vector{Expr}`: the inner constructors of the struct
+Any expression representing valid struct definitions can be passed to the constructor, whose common forms include the followings:
+* ```julia
+  :(struct StructName end)
+  ```
+* ```julia
+  :(struct StructName{T} end)
+  ```
+* ```julia
+  :(struct Child{T} <: Parent{T} where T end)
+  ```
+* ```julia
+  :(struct Child{T} <: Parent{T} where T<:TypeParameter
+        field1::FiledType1
+        filed2::FieldType2
+    end
+  )
+  ```
+* ```julia
+  quote
+      struct Child{T} <: Parent{T} where T<:TypeParameter
+          field1::FiledType1
+          filed2::FieldType2
+      end
+  end
+  ```
+Also, the macro [`@typefactory`](@ref) simplifies the construction directly from a type definition:
+```julia
+@typefactory struct Child{T} <: Parent{T} where T<:TypeParameter
+                field1::FiledType1
+                filed2::FieldType2
+            end
+```
+The construction from these expressions is based on the `MacroTools.splitstructdef` function. Meanwhile, the convertion to the corresponding expression from a `TypeFactory` is based on the `MacroTools.combinestructdef` function.
+
+Other features include:
+* Fields can be added by [`addfields!`](@ref) or [`@addfields!`](@ref)
+* Inner constructors can be added by [`addconstructors!`](@ref) or [`@addconstructors!`](@ref)
 
 ## Manual
+
 ```@autodocs
 Modules=[Factory]
 Order=  [:module,:constant,:type,:macro,:function]

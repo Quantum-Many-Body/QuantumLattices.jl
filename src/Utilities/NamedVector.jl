@@ -142,7 +142,7 @@ Base.pairs(nv::AbstractNamedVector)=Base.Generator(=>,keys(nv),values(nv))
 """
     replace(nv::AbstractNamedVector;kwargs...) -> typeof(nv)
 
-Return a copy of a concrete `AbstractNamedVector` with some of the filed values replaced by the keyword arguments.
+Return a copy of a concrete `AbstractNamedVector` with some of the field values replaced by the keyword arguments.
 """
 Base.replace(nv::AbstractNamedVector;kwargs...)=(nv|>typeof)((get(kwargs,key,getfield(nv,key)) for key in nv|>keys)...)
 
