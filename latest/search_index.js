@@ -101,23 +101,303 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Factory",
     "category": "section",
-    "text": ""
+    "text": "The aim of Factory is to provide tools to hack into Julia codes without knowing the details of their abstract syntax trees, so that users can somewhat manipulate the existing codes, modify them and generate new ones. In particular, Factory in this module means the representation of certain blocks of Julia codes by a usual Julia struct. This representation is much easier to comprehend than the canonical Expr representation. In general, we propose two basic requirements that any factory must satisfy:Besides the default constructor, a concrete factory can be constructed from any legal Expr expression that represents the block of codes it aims to represent;\nThe canonical Expr expression of the block of codes that a concrete factory represents can be obtained by \"calling\" the factory itself.These two requirements also defines the basic interfaces to interact with factories.Out of practical purposes, we only implemente 5 kinds of factories, i.e. Block, Argument, FunctionFactory, Field and TypeFactory, which represent a begin ... end block, an argument of a function, a function itself, a field of a struct and a struct itself, respectively. Some of the basic methods making the above requirements fulfilled with these types are based on the powerful functions defined in MacroTools."
 },
 
 {
-    "location": "man/Utilities/Factory.html#Type-factory-1",
+    "location": "man/Utilities/Factory.html#Block-1",
     "page": "Factory",
-    "title": "Type factory",
+    "title": "Block",
     "category": "section",
-    "text": ""
+    "text": "A Block has only one attribute:body::Vector{Any}: the body of the begin ... end blockAny expression can be passed to the constructor of Block, such as::(x=1)\n:(x=1;y=2)\n:(begin x=1 end)\nquote\n    x=1\n    y=2\nendOr you can construct a Block instance directly from any code by the macro @block:@block x=1 y=2whose result is equivalent toBlock(Expr(:block,:(x=1),:(y=2)))The body of a block can also be extended by the push! function or the @push! macro.note: Note\nThe body of a Block is somewhat \"flattened\", i.e. it contains no begin ... end blocks. During the initialization, any such input block will be unblocked and added to the body part by part. So is the push! and @push! processes."
 },
 
 {
-    "location": "man/Utilities/Factory.html#Function-factory-1",
+    "location": "man/Utilities/Factory.html#Argument-1",
     "page": "Factory",
-    "title": "Function factory",
+    "title": "Argument",
     "category": "section",
-    "text": ""
+    "text": "An Argument has 4 attributes:name::Symbol: the name of the argument\ntype::Union{Symbol,Expr}: the type of the argument\nslurp::Bool: whether the argument should be expanded by ...\ndefault::Any: the default value of the argument, nothing for those with no default valuesValid expressions that can be passed to the constructor include::(arg)\n:(arg::ArgType)\n:(arg::ArgType...)\n:(arg::ArgType=default)Or you can use the macro @argument for construction directly from an argument declaration:@argument arg::ArgType=defaultThe construction from such expressions is based on the the MacroTools.splitarg function. On the other hand, calling an instance of Argument will get the corresponding Expr expression, e.g.,Argument(:arg,:ArgType,false,default)()will return:(arg::ArgType=default)This feature is based on the MacroTools.combinearg function."
+},
+
+{
+    "location": "man/Utilities/Factory.html#FunctionFactory-1",
+    "page": "Factory",
+    "title": "FunctionFactory",
+    "category": "section",
+    "text": "A FunctionFactory has 6 attributes:name::Symbol: the name of the function\nargs::Vector{Union{Symbol,Expr}}: the positional arguments of the function\nkwargs::Vector{Union{Symbol,Expr}}: the keyword arguments of the function\nrtype::Union{Symbol,Expr}: the return type of the function\nparams::Vector{Union{Symbol,Expr}}: the method parameters specified by the where keyword\nbody::Union{Symbol,Expr}: the body of the functionAll expressions that represent functions are allowed to be passed to the constructor, such as::(f()=nothing)\n:(f(x)=x)\n:(f(x::Int,y::Int;choice::Function=sum)=choice(x,y))\n:(f(x::T,y::T;choice::Function=sum) where T<:Number=choice(x,y))\n:((f(x::T,y::T;choice::Function=sum)::T) where T<:Number=choice(x,y))\n:(function (f(x::T,y::T;choice::Function=sum)::T) where T<:Numbe\n      choice(x,y)\n  end\n)\nquote\n    function (f(x::T,y::T;choice::Function=sum)::T) where T<:Numbe\n        choice(x,y)\n    end\nendSimilarly, an instance can also be constructed from the macro @functionfactory:@functionfactory (f(x::T,y::T;choice::Function=sum)::T) where T<:Number=choice(x,y)The construction from and the convertion to such expressions are based on the MacroTools.splitdef and MacroTools.combinedef functions, respectively.note: Note\nBecause the form f{T}(x::T,y::T;choice::Function=sum) has no longer been supported since Julia 0.7, the entry :params in the returned dict by MacroTools.splitarg is always missing. Therefore, we abandon its corresponding field in FunctionFactory but use the attribute :params to denote the :whereparams entry.Other features include:Positional arguments can be added by addargs! or @addargs!\nKeyword arguments can be added by addkwargs! or @addkwargs!\nBody can be extended by extendbody! or @extendbody!"
+},
+
+{
+    "location": "man/Utilities/Factory.html#Field-1",
+    "page": "Factory",
+    "title": "Field",
+    "category": "section",
+    "text": "A Field has 2 attributes:name::Symbol: the name of the field\ntype::Union{Symbol,Expr}: the type of the fieldLegal expressions that can be passed to the constructor includes the following forms::(field)\n:(field::FieldType)\n:(field::ParametricType{Parameter})The macro @field is also provided to help the construction directly from a field declaration:@field field::FieldTypeThe construction from these expressions is based on the MacroTools.splitarg function and the convertion to these expressions is based on the MacroTools.combinefield function."
+},
+
+{
+    "location": "man/Utilities/Factory.html#Type-Factory-1",
+    "page": "Factory",
+    "title": "Type Factory",
+    "category": "section",
+    "text": "A TypeFactory has 6 attributes:name::Symbol: the name of the struct\nmutable::Bool: whether or not the struct is mutable\nparams::Vector{Union{Symbol,Expr}}: the type parameters of the struct\nsupertype::Union{Symbol,Expr}: the supertype of the struct\nfields::Vector{Tuple{Symbol,Union{Symbol,Expr}}}: the fields of the struct\nconstructors::Vector{Expr}: the inner constructors of the structAny expression representing valid struct definitions can be passed to the constructor, whose common forms include the followings::(struct StructName end)\n:(struct StructName{T} end)\n:(struct Child{T} <: Parent{T} where T end)\n:(struct Child{T} <: Parent{T} where T<:TypeParameter\n      field1::FiledType1\n      filed2::FieldType2\n  end\n)\nquote\n    struct Child{T} <: Parent{T} where T<:TypeParameter\n        field1::FiledType1\n        filed2::FieldType2\n    end\nendAlso, the macro @typefactory simplifies the construction directly from a type definition:@typefactory struct Child{T} <: Parent{T} where T<:TypeParameter\n                field1::FiledType1\n                filed2::FieldType2\n            endThe construction from these expressions is based on the MacroTools.splitstructdef function. Meanwhile, the convertion to the corresponding expression from a TypeFactory is based on the MacroTools.combinestructdef function.Other features include:Fields can be added by addfields! or @addfields!\nInner constructors can be added by addconstructors! or @addconstructors!"
+},
+
+{
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.Argument",
+    "page": "Factory",
+    "title": "Hamiltonian.Utilities.Factory.Argument",
+    "category": "type",
+    "text": "Argument(name::Symbol,type::FExpr,slurp::Bool,default::Any)\nArgument(name::Symbol;type::FExpr=:Any,slurp::Bool=false,default::Any=nothing)\nArgument(expr::Expr)\n\nThe struct to describe a argument of a function.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.Argument-Tuple{}",
+    "page": "Factory",
+    "title": "Hamiltonian.Utilities.Factory.Argument",
+    "category": "method",
+    "text": "(a::Argument)()\n\nConvert a Argument to the Expr representation of the argument it describes.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.Block",
+    "page": "Factory",
+    "title": "Hamiltonian.Utilities.Factory.Block",
+    "category": "type",
+    "text": "Block(parts::FExpr...)\n\nThe struct to describe a begin ... end block.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.Block-Tuple{}",
+    "page": "Factory",
+    "title": "Hamiltonian.Utilities.Factory.Block",
+    "category": "method",
+    "text": "(b::Block)()\n\nConvert a Block to the Expr representation of the begin ... end block it describes.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.Field",
+    "page": "Factory",
+    "title": "Hamiltonian.Utilities.Factory.Field",
+    "category": "type",
+    "text": "Field(name::Symbol,type::FExpr)\nField(name::Symbol;type::FExpr=:Any)\nField(expr::Expr)\n\nThe struct to describe a field of a struct.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.Field-Tuple{}",
+    "page": "Factory",
+    "title": "Hamiltonian.Utilities.Factory.Field",
+    "category": "method",
+    "text": "(f::Field)()\n\nConvert a Field to the Expr representation of the field it describes.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.FunctionFactory",
+    "page": "Factory",
+    "title": "Hamiltonian.Utilities.Factory.FunctionFactory",
+    "category": "type",
+    "text": "FunctionFactory(name::Symbol,args::Vector,kwargs::Vector,rtype::FExpr,params::Vector,body::FExpr)\nFunctionFactory(name::Symbol;args::Vector=Any[],kwargs::Vector=Any[],rtype::FExpr=:Any,params::Vector=Any[],body::FExpr)\nFunctionFactory(expr::Expr)\n\nThe struct to describe a function.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.FunctionFactory-Tuple{}",
+    "page": "Factory",
+    "title": "Hamiltonian.Utilities.Factory.FunctionFactory",
+    "category": "method",
+    "text": "(ff::FunctionFactory)()\n\nConvert a FunctionFactory to the Expr representation of the function it describes.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.TypeFactory",
+    "page": "Factory",
+    "title": "Hamiltonian.Utilities.Factory.TypeFactory",
+    "category": "type",
+    "text": "TypeFactory(name::Symbol,mutable::Bool,params::Vector,supertype::FExpr,fields::Vector,constructors::Vector)\nTypeFactory(name::Symbol;mutable::Bool=false,params::Vector=Any[],supertype::FExpr=:Any,fields::Vector=Any[],constructors::Vector=Any[])\nTypeFactory(expr::Expr)\n\nThe struct to describe a struct.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.TypeFactory-Tuple{}",
+    "page": "Factory",
+    "title": "Hamiltonian.Utilities.Factory.TypeFactory",
+    "category": "method",
+    "text": "(tf::TypeFactory)()\n\nConvert a TypeFactory to the Expr representation of the struct it describes.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.@addargs!-Tuple{Any,Vararg{Union{Expr, Symbol},N} where N}",
+    "page": "Factory",
+    "title": "Hamiltonian.Utilities.Factory.@addargs!",
+    "category": "macro",
+    "text": "@addargs! ff args::FExpr...\n\nAdd a couple of positional arguments to a function factory.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.@addconstructors!-Tuple{Any,Vararg{Expr,N} where N}",
+    "page": "Factory",
+    "title": "Hamiltonian.Utilities.Factory.@addconstructors!",
+    "category": "macro",
+    "text": "@addconstructors! rf constructors::Expr...\n\nAdd a couple of constructors to a type factory.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.@addfields!-Tuple{Any,Vararg{Union{Expr, Symbol},N} where N}",
+    "page": "Factory",
+    "title": "Hamiltonian.Utilities.Factory.@addfields!",
+    "category": "macro",
+    "text": "@addfields! rf fields::FExpr...\n\nAdd a couple of fields to a type factory.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.@addkwargs!-Tuple{Any,Vararg{Union{Expr, Symbol},N} where N}",
+    "page": "Factory",
+    "title": "Hamiltonian.Utilities.Factory.@addkwargs!",
+    "category": "macro",
+    "text": "@addkwargs! ff kwargs::FExpr...\n\nAdd a couple of keyword arguments to a function factory.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.@argument-Tuple{Union{Expr, Symbol}}",
+    "page": "Factory",
+    "title": "Hamiltonian.Utilities.Factory.@argument",
+    "category": "macro",
+    "text": "@argument expr::FExpr\n\nConstruct an Argument directly from an argument statement.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.@block-Tuple{Vararg{Union{Expr, Symbol},N} where N}",
+    "page": "Factory",
+    "title": "Hamiltonian.Utilities.Factory.@block",
+    "category": "macro",
+    "text": "@block parts::FExpr...\n\nConstruct a Block directly from a begin ... end block definition.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.@extendbody!-Tuple{Any,Vararg{Union{Expr, Symbol},N} where N}",
+    "page": "Factory",
+    "title": "Hamiltonian.Utilities.Factory.@extendbody!",
+    "category": "macro",
+    "text": "@extendbody! ff parts::FExpr...\n\nExtend the body of a function factory.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.@field-Tuple{Union{Expr, Symbol}}",
+    "page": "Factory",
+    "title": "Hamiltonian.Utilities.Factory.@field",
+    "category": "macro",
+    "text": "@field expr::FExpr\n\nConstruct a Field directly from a field statement.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.@functionfactory-Tuple{Expr}",
+    "page": "Factory",
+    "title": "Hamiltonian.Utilities.Factory.@functionfactory",
+    "category": "macro",
+    "text": "@functionfactory expr::Expr\n\nConstruct a FunctionFactory directly from a function definition.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.@push!-Tuple{Any,Vararg{Union{Expr, Symbol},N} where N}",
+    "page": "Factory",
+    "title": "Hamiltonian.Utilities.Factory.@push!",
+    "category": "macro",
+    "text": "@push! b parts::FExpr...\n\nPush other parts into the body of a block.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.@typefactory-Tuple{Expr}",
+    "page": "Factory",
+    "title": "Hamiltonian.Utilities.Factory.@typefactory",
+    "category": "macro",
+    "text": "@typefactory expr::Expr\n\nConstruct a TypeFactory directly from a type definition.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.addargs!-Tuple{Hamiltonian.Utilities.Factory.FunctionFactory,Vararg{Union{Expr, Symbol},N} where N}",
+    "page": "Factory",
+    "title": "Hamiltonian.Utilities.Factory.addargs!",
+    "category": "method",
+    "text": "addargs!(ff::FunctionFactory,args::FExpr...)\naddargs!(ff::FunctionFactory,args::Argument...)\n\nAdd a couple of positional arguments to a function factory.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.addconstructors!-Tuple{Hamiltonian.Utilities.Factory.TypeFactory,Vararg{Expr,N} where N}",
+    "page": "Factory",
+    "title": "Hamiltonian.Utilities.Factory.addconstructors!",
+    "category": "method",
+    "text": "addconstructors!(rf::TypeFactory,constructors::Expr...)\naddconstructors!(rf::TypeFactory,constructors::FunctionFactory...)\n\nAdd a couple of constructors to a type factory.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.addfields!-Tuple{Hamiltonian.Utilities.Factory.TypeFactory,Vararg{Union{Expr, Symbol},N} where N}",
+    "page": "Factory",
+    "title": "Hamiltonian.Utilities.Factory.addfields!",
+    "category": "method",
+    "text": "addfields!(rf::TypeFactory,fields::FExpr...)\naddfields!(rf::TypeFactory,fields::Field...)\n\nAdd a couple of fields to a type factory.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.addkwargs!-Tuple{Hamiltonian.Utilities.Factory.FunctionFactory,Vararg{Union{Expr, Symbol},N} where N}",
+    "page": "Factory",
+    "title": "Hamiltonian.Utilities.Factory.addkwargs!",
+    "category": "method",
+    "text": "addkwargs!(ff::FunctionFactory,kwargs::FExpr...)\naddkwargs!(ff::FunctionFactory,kwargs::Argument...)\n\nAdd a couple of keyword arguments to a function factory.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.extendbody!-Tuple{Hamiltonian.Utilities.Factory.FunctionFactory,Vararg{Union{Expr, Symbol},N} where N}",
+    "page": "Factory",
+    "title": "Hamiltonian.Utilities.Factory.extendbody!",
+    "category": "method",
+    "text": "extendbody!(ff::FunctionFactory,parts::FExpr...)\nextendbody!(ff::FunctionFactory,parts::Block...)\n\nExtend the body of a function factory.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.FExpr",
+    "page": "Factory",
+    "title": "Hamiltonian.Utilities.Factory.FExpr",
+    "category": "constant",
+    "text": "Factory expression types.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.AbstractFactory",
+    "page": "Factory",
+    "title": "Hamiltonian.Utilities.Factory.AbstractFactory",
+    "category": "type",
+    "text": "AbstractFactory\n\nAbstract type for all concrete factories.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Factory.html#Base.:==-Union{Tuple{F}, Tuple{F,F}} where F<:Hamiltonian.Utilities.Factory.AbstractFactory",
+    "page": "Factory",
+    "title": "Base.:==",
+    "category": "method",
+    "text": "==(f1::F,f2::F) where F<:AbstractFactory\n\nOverloaded == operator.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Factory.html#Base.push!-Tuple{Hamiltonian.Utilities.Factory.Block,Vararg{Union{Expr, Symbol},N} where N}",
+    "page": "Factory",
+    "title": "Base.push!",
+    "category": "method",
+    "text": "push!(b::Block,parts::FExpr...)\npush!(b::Block,parts::Block...)\n\nPush other parts into the body of a block.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Factory.html#Base.replace-Tuple{Hamiltonian.Utilities.Factory.AbstractFactory}",
+    "page": "Factory",
+    "title": "Base.replace",
+    "category": "method",
+    "text": "replace(f::AbstractFactory;kwargs...)\n\nReturn a copy of a concrete AbstractFactory with some of the field values replaced by the keyword arguments.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Factory.html#Base.show-Tuple{IO,Hamiltonian.Utilities.Factory.AbstractFactory}",
+    "page": "Factory",
+    "title": "Base.show",
+    "category": "method",
+    "text": "show(io::IO,f::AbstractFactory)\n\nShow a concrete AbstractFactory.\n\n\n\n\n\n"
 },
 
 {
@@ -241,7 +521,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/NamedVector.html#Base.eltype-Union{Tuple{Type{#s13} where #s13<:AbstractNamedVector{T}}, Tuple{T}} where T",
+    "location": "man/Utilities/NamedVector.html#Base.eltype-Union{Tuple{Type{#s27} where #s27<:AbstractNamedVector{T}}, Tuple{T}} where T",
     "page": "Named vector",
     "title": "Base.eltype",
     "category": "method",
@@ -317,7 +597,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Named vector",
     "title": "Base.replace",
     "category": "method",
-    "text": "replace(nv::AbstractNamedVector;kwargs...) -> typeof(nv)\n\nReturn a copy of a concrete AbstractNamedVector with some of the filed values replaced by the keyword arguments.\n\n\n\n\n\n"
+    "text": "replace(nv::AbstractNamedVector;kwargs...) -> typeof(nv)\n\nReturn a copy of a concrete AbstractNamedVector with some of the field values replaced by the keyword arguments.\n\n\n\n\n\n"
 },
 
 {
@@ -481,7 +761,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/GoodQuantumNumber.html#Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumbers-Tuple{OrderedCollections.OrderedDict{#s13,Int64} where #s13<:Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumber}",
+    "location": "man/Utilities/GoodQuantumNumber.html#Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumbers-Tuple{OrderedCollections.OrderedDict{#s23,Int64} where #s23<:Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumber}",
     "page": "Good quantum numbers",
     "title": "Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumbers",
     "category": "method",
@@ -489,7 +769,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/GoodQuantumNumber.html#Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumbers-Tuple{OrderedCollections.OrderedDict{#s13,UnitRange{Int64}} where #s13<:Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumber}",
+    "location": "man/Utilities/GoodQuantumNumber.html#Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumbers-Tuple{OrderedCollections.OrderedDict{#s23,UnitRange{Int64}} where #s23<:Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumber}",
     "page": "Good quantum numbers",
     "title": "Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumbers",
     "category": "method",
@@ -529,7 +809,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/GoodQuantumNumber.html#Hamiltonian.Utilities.GoodQuantumNumber.:⊕-Union{Tuple{Tuple{Vararg{#s14,N}} where #s14<:QuantumNumber}, Tuple{N}, Tuple{Tuple{Vararg{#s13,N}} where #s13<:QuantumNumber,Tuple{Vararg{Int64,N}}}} where N",
+    "location": "man/Utilities/GoodQuantumNumber.html#Hamiltonian.Utilities.GoodQuantumNumber.:⊕-Union{Tuple{Tuple{Vararg{#s24,N}} where #s24<:QuantumNumber}, Tuple{N}, Tuple{Tuple{Vararg{#s23,N}} where #s23<:QuantumNumber,Tuple{Vararg{Int64,N}}}} where N",
     "page": "Good quantum numbers",
     "title": "Hamiltonian.Utilities.GoodQuantumNumber.:⊕",
     "category": "method",
@@ -601,7 +881,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/GoodQuantumNumber.html#Hamiltonian.Utilities.GoodQuantumNumber.dimension-Tuple{Type{#s38} where #s38<:Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumber}",
+    "location": "man/Utilities/GoodQuantumNumber.html#Hamiltonian.Utilities.GoodQuantumNumber.dimension-Tuple{Type{#s27} where #s27<:Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumber}",
     "page": "Good quantum numbers",
     "title": "Hamiltonian.Utilities.GoodQuantumNumber.dimension",
     "category": "method",
@@ -705,7 +985,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/GoodQuantumNumber.html#Base.eltype-Union{Tuple{Type{#s38} where #s38<:QuantumNumbers{QN}}, Tuple{QN}} where QN",
+    "location": "man/Utilities/GoodQuantumNumber.html#Base.eltype-Union{Tuple{Type{#s27} where #s27<:QuantumNumbers{QN}}, Tuple{QN}} where QN",
     "page": "Good quantum numbers",
     "title": "Base.eltype",
     "category": "method",
