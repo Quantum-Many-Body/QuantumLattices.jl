@@ -4,13 +4,24 @@ using MacroTools: block
 using MacroTools: splitarg,combinefield,combinearg
 using MacroTools: splitstructdef,combinestructdef
 using MacroTools: splitdef,combinedef
-using Printf: @printf
+using Printf: @printf,@sprintf
+import MacroTools: rmlines
 
-export Block,@block,@push!
 export Argument,@argument
-export FunctionFactory,@functionfactory,addargs!,@addargs!,addkwargs!,@addkwargs!,extendbody!,@extendbody!
+export Parameter,@parameter
 export Field,@field
+export Block,@block,@push!,rmlines!,@rmlines!,rmlines,@rmlines
+export FunctionFactory,@functionfactory,addargs!,@addargs!,addkwargs!,@addkwargs!,extendbody!,@extendbody!
 export TypeFactory,@typefactory,addfields!,@addfields!,addconstructors!,@addconstructors!
+export addparams!,@addparams!
+
+@generated function maxfieldnamelength(::T) where T
+    result=1
+    for name in T|>fieldnames
+        result=max(result,name|>string|>length)
+    end
+    return :($result)
+end
 
 "Factory expression types."
 const FExpr=Union{Symbol,Expr}
@@ -34,7 +45,31 @@ Base.:(==)(f1::F,f2::F) where F<:AbstractFactory=all(getfield(f1,name)==getfield
 
 Show a concrete `AbstractFactory`.
 """
-Base.show(io::IO,f::AbstractFactory)=@printf io "%s(\n%s\n)" f|>typeof|>Base.typename join(("$name: $(getfield(f,name))" for name in f|>typeof|>fieldnames),'\n')
+function Base.show(io::IO,f::AbstractFactory)
+    @printf io "%s(\n" f|>typeof|>nameof
+    for name in f|>typeof|>fieldnames
+        nstr=" "^2*string(name)*":"*" "^((f|>maxfieldnamelength)+1-(name|>string|>length))
+        value=getfield(f,name)
+        if isa(value,Nothing)
+            vstr="nothing"
+        elseif isa(value,AbstractFactory)
+            vstr=string(value())
+        elseif isa(value,Vector{<:AbstractFactory})
+            eltypename=value|>eltype|>nameof
+            strings=Tuple(string(af()) for af in value)
+            if (length(strings)>0 ? sum(map(length,strings)) : 0)<90-(f|>maxfieldnamelength)
+                vstr=@sprintf "%s[%s]" eltypename join(strings,", ")
+            else
+                vstr=replace((@sprintf "%s[\n%s\n]" eltypename join(strings,"\n")),"\n"=>"\n  ")
+            end
+        else
+            vstr=string(value)
+        end
+        '\n' in vstr && (vstr=replace(vstr,"\n"=>"\n"*" "^((f|>maxfieldnamelength)+4)))
+        @printf(io,"%s%s\n",nstr,vstr)
+    end
+    @printf io ")"
+end
 
 """
     replace(f::AbstractFactory;kwargs...)
@@ -42,6 +77,103 @@ Base.show(io::IO,f::AbstractFactory)=@printf io "%s(\n%s\n)" f|>typeof|>Base.typ
 Return a copy of a concrete `AbstractFactory` with some of the field values replaced by the keyword arguments.
 """
 Base.replace(f::AbstractFactory;kwargs...)=(f|>typeof)((get(kwargs,key,getfield(f,name)) for name in f|>typeof|>fieldnames)...)
+
+"""
+    Argument(name::Symbol,type::FExpr,slurp::Bool,default::Any)
+    Argument(name::Symbol;type::FExpr=:Any,slurp::Bool=false,default::Any=nothing)
+    Argument(expr::Expr)
+
+The struct to describe a argument of a `function`.
+"""
+struct Argument <: AbstractFactory
+    name::Symbol
+    type::FExpr
+    slurp::Bool
+    default::Any
+    Argument(name::Symbol,type::FExpr,slurp::Bool,default::Any)=new(name,type,slurp,default)
+    Argument(name::Symbol;type::FExpr=:Any,slurp::Bool=false,default::Any=nothing)=new(name,type,slurp,default)
+    Argument(expr::Expr)=(cache=splitarg(expr);new(cache[1],cache[2],cache[3],cache[4]))
+end
+
+"""
+    @argument expr::FExpr
+
+Construct an `Argument` directly from an argument statement.
+"""
+macro argument(expr::FExpr) expr=[expr];:(Argument($expr...)) end
+
+"""
+    (a::Argument)()
+
+Convert an `Argument` to the `Expr` representation of the argument it describes.
+"""
+(a::Argument)()=combinearg((getfield(a,name) for name in a|>typeof|>fieldnames)...)
+
+"""
+    Parameter(name::Symbol,type::FExpr)
+    Parameter(name::Symbol;type::FExpr=:Any)
+    Parameter(expr::FExpr)
+
+The struct to describe a parameter of a `function` or a `type`.
+"""
+struct Parameter <: AbstractFactory
+    name::Symbol
+    type::FExpr
+    Parameter(name::Symbol,type::FExpr)=new(name,type)
+    Parameter(name::Symbol;type::FExpr=:nothing)=new(name,type)
+    function Parameter(expr::FExpr)
+        if isa(expr,Symbol)
+            name,type=expr,:nothing
+        else
+            @assert expr.head==:(<:) "Parameter error: wrong formed input expression."
+            (name,type)=length(expr.args)==2 ? expr.args : (:nothing,expr.args[1])
+        end
+        new(name,type)
+    end
+end
+
+"""
+    @parameter expr::FExpr
+
+Construct a `Parameter` directly from an parameter statement.
+"""
+macro parameter(expr::FExpr) expr=[expr];:(Parameter($expr...)) end
+
+"""
+    (p::Parameter)()
+
+Convert a `Parameter` to the `Expr` representation of the parameter it describes.
+"""
+(p::Parameter)()=p.name==:nothing ? :(<:$(p.type)) : p.type==:nothing ? :($(p.name)) : :($(p.name)<:$(p.type))
+
+"""
+    Field(name::Symbol,type::FExpr)
+    Field(name::Symbol;type::FExpr=:Any)
+    Field(expr::Expr)
+
+The struct to describe a field of a `struct`.
+"""
+struct Field <: AbstractFactory
+    name::Symbol
+    type::FExpr
+    Field(name::Symbol,type::FExpr)=new(name,type)
+    Field(name::Symbol;type::FExpr=:Any)=new(name,type)
+    Field(expr::Expr)=(cache=splitarg(expr);new(cache[1],cache[2]))
+end
+
+"""
+    @field expr::FExpr
+
+Construct a `Field` directly from a field statement.
+"""
+macro field(expr::FExpr) expr=[expr];:(Field($expr...)) end
+
+"""
+    (f::Field)()
+
+Convert a `Field` to the `Expr` representation of the field it describes.
+"""
+(f::Field)()=combinefield((f.name,f.type))
 
 """
     Block(parts::FExpr...)
@@ -88,60 +220,74 @@ Push other parts into the body of a block.
 macro push!(b,parts::FExpr...) :(push!($(esc(b)),$parts...)) end
 
 """
-    Argument(name::Symbol,type::FExpr,slurp::Bool,default::Any)
-    Argument(name::Symbol;type::FExpr=:Any,slurp::Bool=false,default::Any=nothing)
-    Argument(expr::Expr)
+    rmlines!(b::Block)
 
-The struct to describe a argument of a `function`.
+Remove line number nodes in the body of a block.
 """
-struct Argument <: AbstractFactory
-    name::Symbol
-    type::FExpr
-    slurp::Bool
-    default::Any
-    Argument(name::Symbol,type::FExpr,slurp::Bool,default::Any)=new(name,type,slurp,default)
-    Argument(name::Symbol;type::FExpr=:Any,slurp::Bool=false,default::Any=nothing)=new(name,type,slurp,default)
-    Argument(expr::Expr)=(cache=splitarg(expr);new(cache[1],cache[2],cache[3],cache[4]))
-end
+rmlines!(b::Block)=filter!(part->!isa(part,LineNumberNode),b.body)
 
 """
-    @argument expr::FExpr
+    @rmlines! b::Expr
 
-Construct an `Argument` directly from an argument statement.
+Remove line number nodes in the body of a block.
 """
-macro argument(expr::FExpr)
-    expr=[expr]
-    :(Argument($expr...))
-end
+macro rmlines!(b::Expr) :(rmlines!($(esc(b)))) end
 
 """
-    (a::Argument)()
+    rmlines(b::Block)
 
-Convert a `Argument` to the `Expr` representation of the argument it describes.
+Return a copy of a block with the line number nodes removed.
 """
-(a::Argument)()=combinearg((getfield(a,name) for name in a|>typeof|>fieldnames)...)
+rmlines(b::Block)=Block(filter(part->!isa(part,LineNumberNode),b.body)...)
 
 """
-    FunctionFactory(name::Symbol,args::Vector,kwargs::Vector,rtype::FExpr,params::Vector,body::FExpr)
-    FunctionFactory(name::Symbol;args::Vector=Any[],kwargs::Vector=Any[],rtype::FExpr=:Any,params::Vector=Any[],body::FExpr)
+    @rmlines b::Expr
+
+Return a copy of a block with the line number nodes removed.
+"""
+macro rmlines(b::Expr) :(rmlines($(esc(b)))) end
+
+"""
+    FunctionFactory(name::Symbol,args::Vector{Argument},kwargs::Vector{Argument},rtype::FExpr,params::Vector{Parameter},body::Block)
+    FunctionFactory(    name::Symbol;
+                        args::Vector{Argument}=Argument[],
+                        kwargs::Vector{Argument}=Argument[],
+                        rtype::FExpr=:Any,
+                        params::Vector{Parameter}=Parameter[],
+                        body::Block=Block()
+                        )
     FunctionFactory(expr::Expr)
 
 The struct to describe a `function`.
 """
 struct FunctionFactory <: AbstractFactory
     name::Symbol
-    args::Vector{FExpr}
-    kwargs::Vector{FExpr}
+    args::Vector{Argument}
+    kwargs::Vector{Argument}
     rtype::FExpr
-    params::Vector{FExpr}
-    body::Expr
-    FunctionFactory(name::Symbol,args::Vector,kwargs::Vector,rtype::FExpr,params::Vector,body::FExpr)=new(name,args,kwargs,rtype,params,block(body))
-    function FunctionFactory(name::Symbol;args::Vector=Any[],kwargs::Vector=Any[],rtype::FExpr=:Any,params::Vector=Any[],body::FExpr)
-        new(name,args,kwargs,rtype,params,block(body))
+    params::Vector{Parameter}
+    body::Block
+    function FunctionFactory(name::Symbol,args::Vector{Argument},kwargs::Vector{Argument},rtype::FExpr,params::Vector{Parameter},body::Block)
+        new(name,args,kwargs,rtype,params,body)
+    end
+    function FunctionFactory(   name::Symbol;
+                                args::Vector{Argument}=Argument[],
+                                kwargs::Vector{Argument}=Argument[],
+                                rtype::FExpr=:Any,
+                                params::Vector{Parameter}=Parameter[],
+                                body::Block=Block()
+                                )
+        new(name,args,kwargs,rtype,params,body)
     end
     function FunctionFactory(expr::Expr)
         dict=splitdef(expr)
-        FunctionFactory(dict[:name],dict[:args],dict[:kwargs],get(dict,:rtype,:Any),[v for v in dict[:whereparams]],dict[:body])
+        new(    dict[:name],
+                Argument.(dict[:args]),
+                Argument.(dict[:kwargs]),
+                get(dict,:rtype,:Any),
+                Parameter[Parameter(param) for param in dict[:whereparams]],
+                Block(dict[:body])
+                )
     end
 end
 
@@ -150,17 +296,23 @@ end
 
 Construct a `FunctionFactory` directly from a function definition.
 """
-macro functionfactory(expr::Expr)
-    expr=[expr]
-    :(FunctionFactory($expr...))
-end
+macro functionfactory(expr::Expr) expr=[expr];:(FunctionFactory($expr...)) end
 
 """
     (ff::FunctionFactory)()
 
 Convert a `FunctionFactory` to the `Expr` representation of the `function` it describes.
 """
-(ff::FunctionFactory)()=combinedef(Dict(name=>getfield(ff,name) for name in ff|>typeof|>fieldnames))
+function (ff::FunctionFactory)()
+    combinedef(Dict(
+        :name           =>      ff.name,
+        :args           =>      [arg() for arg in ff.args],
+        :kwargs         =>      [kwarg() for kwarg in ff.kwargs],
+        :rtype          =>      ff.rtype,
+        :whereparams    =>      [param() for param in ff.params],
+        :body           =>      ff.body()
+    ))
+end
 
 """
     addargs!(ff::FunctionFactory,args::FExpr...)
@@ -169,7 +321,7 @@ Convert a `FunctionFactory` to the `Expr` representation of the `function` it de
 Add a couple of positional arguments to a function factory.
 """
 addargs!(ff::FunctionFactory,args::FExpr...)=addargs!(ff,Argument.(args)...)
-addargs!(ff::FunctionFactory,args::Argument...)=push!(ff.args,(arg() for arg in args)...)
+addargs!(ff::FunctionFactory,args::Argument...)=push!(ff.args,args...)
 
 """
     @addargs! ff args::FExpr...
@@ -185,7 +337,7 @@ macro addargs!(ff,args::FExpr...) :(addargs!($(esc(ff)),$args...)) end
 Add a couple of keyword arguments to a function factory.
 """
 addkwargs!(ff::FunctionFactory,kwargs::FExpr...)=addkwargs!(ff,Argument.(kwargs)...)
-addkwargs!(ff::FunctionFactory,kwargs::Argument...)=push!(ff.kwargs,(kwarg() for kwarg in kwargs)...)
+addkwargs!(ff::FunctionFactory,kwargs::Argument...)=push!(ff.kwargs,kwargs...)
 
 """
     @addkwargs! ff kwargs::FExpr...
@@ -201,11 +353,7 @@ macro addkwargs!(ff,kwargs::FExpr...) :(addkwargs!($(esc(ff)),$kwargs...)) end
 Extend the body of a function factory.
 """
 extendbody!(ff::FunctionFactory,parts::FExpr...)=extendbody!(ff,Block.(parts)...)
-function extendbody!(ff::FunctionFactory,parts::Block...)
-    for part in parts
-        append!(ff.body.args,part.body)
-    end
-end
+extendbody!(ff::FunctionFactory,parts::Block...)=push!(ff.body,parts...)
 
 """
     @extendbody! ff parts::FExpr...
@@ -215,40 +363,14 @@ Extend the body of a function factory.
 macro extendbody!(ff,parts::FExpr...) :(extendbody!($(esc(ff)),$parts...)) end
 
 """
-    Field(name::Symbol,type::FExpr)
-    Field(name::Symbol;type::FExpr=:Any)
-    Field(expr::Expr)
-
-The struct to describe a field of a `struct`.
-"""
-struct Field <: AbstractFactory
-    name::Symbol
-    type::FExpr
-    Field(name::Symbol,type::FExpr)=new(name,type)
-    Field(name::Symbol;type::FExpr=:Any)=new(name,type)
-    Field(expr::Expr)=(cache=splitarg(expr);new(cache[1],cache[2]))
-end
-
-"""
-    @field expr::FExpr
-
-Construct a `Field` directly from a field statement.
-"""
-macro field(expr::FExpr)
-    expr=[expr]
-    :(Field($expr...))
-end
-
-"""
-    (f::Field)()
-
-Convert a `Field` to the `Expr` representation of the field it describes.
-"""
-(f::Field)()=combinefield((f.name,f.type))
-
-"""
-    TypeFactory(name::Symbol,mutable::Bool,params::Vector,supertype::FExpr,fields::Vector,constructors::Vector)
-    TypeFactory(name::Symbol;mutable::Bool=false,params::Vector=Any[],supertype::FExpr=:Any,fields::Vector=Any[],constructors::Vector=Any[])
+    TypeFactory(name::Symbol,mutable::Bool,params::Vector{Parameter},supertype::FExpr,fields::Vector{Field},constructors::Vector{FunctionFactory})
+    TypeFactory(    name::Symbol;
+                    mutable::Bool=false,
+                    params::Vector{Parameter}=Parameter[],
+                    supertype::FExpr=:Any,
+                    fields::Vector{Field}=Field[],
+                    constructors::Vector{FunctionFactory}=FunctionFactory[]
+                    )
     TypeFactory(expr::Expr)
 
 The struct to describe a `struct`.
@@ -256,17 +378,31 @@ The struct to describe a `struct`.
 struct TypeFactory <: AbstractFactory
     name::Symbol
     mutable::Bool
-    params::Vector{FExpr}
+    params::Vector{Parameter}
     supertype::FExpr
-    fields::Vector{Tuple{Symbol,FExpr}}
-    constructors::Vector{Expr}
-    TypeFactory(name::Symbol,mutable::Bool,params::Vector,supertype::FExpr,fields::Vector,constructors::Vector)=new(name,mutable,params,supertype,fields,constructors)
-    function TypeFactory(name::Symbol;mutable::Bool=false,params::Vector=Any[],supertype::FExpr=:Any,fields::Vector=Any[],constructors::Vector=Any[])
+    fields::Vector{Field}
+    constructors::Vector{FunctionFactory}
+    function TypeFactory(name::Symbol,mutable::Bool,params::Vector{Parameter},supertype::FExpr,fields::Vector{Field},constructors::Vector{FunctionFactory})
+        new(name,mutable,params,supertype,fields,constructors)
+    end
+    function TypeFactory(   name::Symbol;
+                            mutable::Bool=false,
+                            params::Vector{Parameter}=Parameter[],
+                            supertype::FExpr=:Any,
+                            fields::Vector{Field}=Field[],
+                            constructors::Vector{FunctionFactory}=FunctionFactory[]
+                            )
         new(mutable,name,params,supertype,fields,constructors)
     end
     function TypeFactory(expr::Expr)
         dict=splitstructdef(expr)
-        new(dict[:name],dict[:mutable],dict[:params],dict[:supertype],dict[:fields],dict[:constructors])
+        new(    dict[:name],
+                dict[:mutable],
+                Parameter.(dict[:params]),
+                dict[:supertype],
+                Field[Field(field...) for field in dict[:fields]],
+                FunctionFactory.(dict[:constructors])
+        )
     end
 end
 
@@ -275,48 +411,70 @@ end
 
 Construct a `TypeFactory` directly from a type definition.
 """
-macro typefactory(expr::Expr)
-    expr=[expr]
-    :(TypeFactory($expr...))
-end
+macro typefactory(expr::Expr) expr=[expr];:(TypeFactory($expr...)) end
 
 """
     (tf::TypeFactory)()
 
 Convert a `TypeFactory` to the `Expr` representation of the `struct` it describes.
 """
-(tf::TypeFactory)()=combinestructdef(Dict(name=>getfield(tf,name) for name in tf|>typeof|>fieldnames))
+function (tf::TypeFactory)()
+    combinestructdef(Dict(
+        :name           =>      tf.name,
+        :mutable        =>      tf.mutable,
+        :params         =>      [param() for param in tf.params],
+        :supertype      =>      tf.supertype,
+        :fields         =>      [(field.name,field.type) for field in tf.fields],
+        :constructors   =>      [constructor() for constructor in tf.constructors]
+        ))
+end
 
 """
-    addfields!(rf::TypeFactory,fields::FExpr...)
-    addfields!(rf::TypeFactory,fields::Field...)
+    addfields!(tf::TypeFactory,fields::FExpr...)
+    addfields!(tf::TypeFactory,fields::Field...)
 
 Add a couple of fields to a type factory.
 """
-addfields!(rf::TypeFactory,fields::FExpr...)=addfields!(rf,Field.(fields)...)
-addfields!(rf::TypeFactory,fields::Field...)=push!(rf.fields,((field.name,field.type) for field in fields)...)
+addfields!(tf::TypeFactory,fields::FExpr...)=addfields!(tf,Field.(fields)...)
+addfields!(tf::TypeFactory,fields::Field...)=push!(tf.fields,fields...)
 
 """
-    @addfields! rf fields::FExpr...
+    @addfields! tf fields::FExpr...
 
 Add a couple of fields to a type factory.
 """
-macro addfields!(rf,fields::FExpr...) :(addfields!($(esc(rf)),$fields...)) end
+macro addfields!(tf,fields::FExpr...) :(addfields!($(esc(tf)),$fields...)) end
 
 """
-    addconstructors!(rf::TypeFactory,constructors::Expr...)
-    addconstructors!(rf::TypeFactory,constructors::FunctionFactory...)
-
-Add a couple of constructors to a type factory.
-"""
-addconstructors!(rf::TypeFactory,constructors::Expr...)=addconstructors!(rf,FunctionFactory.(constructors)...)
-addconstructors!(rf::TypeFactory,constructors::FunctionFactory...)=push!(rf.constructors,(constructor() for constructor in constructors)...)
-
-"""
-    @addconstructors! rf constructors::Expr...
+    addconstructors!(tf::TypeFactory,constructors::Expr...)
+    addconstructors!(tf::TypeFactory,constructors::FunctionFactory...)
 
 Add a couple of constructors to a type factory.
 """
-macro addconstructors!(rf,constructors::Expr...) :(addconstructors!($(esc(rf)),$constructors...)) end
+addconstructors!(tf::TypeFactory,constructors::Expr...)=addconstructors!(tf,FunctionFactory.(constructors)...)
+addconstructors!(tf::TypeFactory,constructors::FunctionFactory...)=push!(tf.constructors,constructors...)
+
+"""
+    @addconstructors! tf constructors::Expr...
+
+Add a couple of constructors to a type factory.
+"""
+macro addconstructors!(tf,constructors::Expr...) :(addconstructors!($(esc(tf)),$constructors...)) end
+
+"""
+    addparams!(f::Union{FunctionFactory,TypeFactory},params::FExpr...)
+    addparams!(f::Union{FunctionFactory,TypeFactory},params::Parameter...)
+
+Add a couple of method parameters to a function factory or a type factory.
+"""
+addparams!(f::Union{FunctionFactory,TypeFactory},params::FExpr...)=addparams!(f,Parameter.(params)...)
+addparams!(f::Union{FunctionFactory,TypeFactory},params::Parameter...)=push!(f.params,params...)
+
+"""
+    @addparams! f params::FExpr...
+
+Add a couple of method parameters to a function factory or a type factory.
+"""
+macro addparams!(ff,params::FExpr...) :(addparams!($(esc(ff)),$params...)) end
 
 end #module
