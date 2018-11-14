@@ -62,7 +62,7 @@ end
 
 Show a concrete `AbstractNamedVector`.
 """
-Base.show(io::IO,nv::AbstractNamedVector)=@printf io "%s(%s)" nv|>typeof|>Base.typename join(nv|>values,',')
+Base.show(io::IO,nv::AbstractNamedVector)=@printf io "%s(%s)" nv|>typeof|>nameof join(nv|>values,',')
 
 """
     hash(nv::AbstractNamedVector,h::UInt)
@@ -187,8 +187,9 @@ macro namedvector(mutableornot::Bool,typename,fieldnames,dtype::Union{Expr,Symbo
         super=supertypename==:AbstractNamedVector ? :(AbstractNamedVector{$dname}) : :($(esc(supertypename)){$dname})
         body=(:($field::$dname) for field in fieldnames)
     end
+    structdef=Expr(:struct,mutableornot,Expr(:<:,new,super),Expr(:block,body...))
     functions=:(Base.fieldnames(::Type{<:$(esc(typename))})=$fieldnames)
-    return Expr(:block,Expr(:struct,mutableornot,Expr(:<:,new,super),Expr(:block,body...)),functions)
+    return Expr(:block,:(Base.@__doc__($structdef)),functions)
 end
 
 end #module

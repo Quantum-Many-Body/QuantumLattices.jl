@@ -84,7 +84,7 @@ macro quantumnumber(typename,fieldnames,fieldperiods)
     end
     newtype=Expr(:struct,false,:($(esc(typename))<:QuantumNumber),Expr(:block,(:($field::Float64) for field in fieldnames)...,Expr(:(=),title,body)))
     functions=Expr(:block,:(Base.fieldnames(::Type{<:$(esc(typename))})=$fieldnames),:(periods(::Type{<:$(esc(typename))})=$fieldperiods))
-    return Expr(:block,:(global periods),newtype,functions)
+    return Expr(:block,:(global periods),:(Base.@__doc__($newtype)),functions)
 end
 
 """
@@ -92,7 +92,6 @@ end
 
 The concrete `QuantumNumber` of a quantum system with spin z-component `Sz` conserved.
 """
-SQN
 @quantumnumber "SQN" (:Sz,) (Inf,)
 
 """
@@ -100,7 +99,6 @@ SQN
 
 The concrete `QuantumNumber` of a quantum system with particle number `N` conserved.
 """
-PQN
 @quantumnumber "PQN" (:N,) (Inf,)
 
 """
@@ -108,7 +106,6 @@ PQN
 
 The concrete `QuantumNumber` of a quantum system with both particle number `N` and spin z-component `Sz` conserved.
 """
-SPQN
 @quantumnumber "SPQN" (:N,:Sz) (Inf,Inf)
 
 """
@@ -116,7 +113,6 @@ SPQN
 
 The concrete `QuantumNumber` of a quantum system with a Z₂-like conserved quantity.
 """
-Z2QN
 @quantumnumber "Z2QN" (:N,) (2,)
 
 "Choice associated with `QuantumNumbers`, meaning 'by indptr'."
