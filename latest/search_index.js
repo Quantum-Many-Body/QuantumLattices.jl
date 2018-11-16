@@ -101,7 +101,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Factory",
     "category": "section",
-    "text": "The aim of Factory is to provide tools to hack into Julia codes without knowing the details of their abstract syntax trees and regularize the mechanism to \"escape\" variables in Expr expressions, so that users can manipulate the existing codes, modify them and generate new ones in macros. In particular, Factory in this module means the representation of certain blocks of Julia codes by a usual Julia struct. This representation is much easier to comprehend than the canonical Expr representation and makes it far more convenient to define macros. In general, we propose two basic requirements that any factory must satisfy:FEATURE-1: A concrete factory can be constructed from a legal Expr expression that represents the block of codes it aims to represent;\nFEATURE-2: The canonical Expr expression of a block of codes that a concrete factory represents can be obtained by \"calling\" the factory itself.Also, we propose a simple mechanism to implement the escape of variables in factories:FEATURE-3: During the construction from Expr expressions, a keyword argument unescaped, which is a tuple of Symbols, can be passed to the constructor, and all variables whose names are not in this keyword argument will be escaped.Different from the former two requirements, this mechanism is just an optional feature of concrete factories. Meanwhile, all of these features also defines the basic interfaces to interact with factories.Out of practical purposes, we implemente 7 kinds of factories, i.e. Inference, Argument, Parameter, Field, Block, FunctionFactory and TypeFactory, which represent a type inference, a function argument, a method or type parameter, a struct field, a begin ... end block, a function itself and a struct itself, respectively. Some of the basic methods making the above requirements fulfilled with these types are based on the powerful functions defined in MacroTools."
+    "text": "The aim of Factory is to provide tools to hack into Julia codes without knowing the details of their abstract syntax trees and regularize the mechanism to \"escape\" variables in Expr expressions, so that users can manipulate the existing codes, modify them and generate new ones in macros. In particular, Factory in this module means the representation of certain blocks of Julia codes by a usual Julia struct. This representation is much easier to comprehend than the canonical Expr representation and makes it far more convenient to define macros. In general, we propose the following requirements that any factory must satisfy:DECOMPOSITION - An Expr expression can be decomposed into its corresponding factory by the factory\'s constructor.\nCOMPOSITION - A factory can compose its corresponding Expr expression by calling itself.\nESCAPE - A variable should be escaped or not in the composed Expr expression by a factory depends on keyword arguments escaped or unescaped passed to the factory call, which are tuple of Symbols. Specifically, when escaped is provided, a variable should be escaped if its name is in escaped, whereas, when unescaped is provided, a variable should be escaped if its name is not in unescaped. A factory can choose which keyword arguments should be used for convenience, or can choose both with different keyword arguments for different parts of it.The first two requirements define the basic interfaces to interact with factories, and the third requirement proposes the escape mechanism of variables.Out of practical purposes, we implemente 7 kinds of factories, i.e. Inference, Argument, Parameter, Field, Block, FunctionFactory and TypeFactory, which represent a type inference, a function argument, a method or type parameter, a struct field, a begin ... end block, a function itself and a struct itself, respectively. Some of the basic methods making the above requirements fulfilled with these types are based on the powerful functions defined in MacroTools."
 },
 
 {
@@ -109,7 +109,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Inference",
     "category": "section",
-    "text": "An Inference has 4 attributes:head::Union{Symbol,Nothing}: the head of the type inference, which must be one of (nothing,:(::),:(<:),:curly)\nname::Union{Symbol,Nothing}: the name of the type inference\nparams::Union{Inference,Vector{Inference},Nothing}: the parameters of the type inference\nescape::Bool: whether the name of the type inference should be escaped when calling the factoryAll valid expressions representing type inferences can be passed to the constructor:Inference(:T,unescaped=(:T,))\nInference(:(::T),unescaped=(:T,))\nInference(:(<:Number))\nInference(:(Vector{T}),unescaped=(:T,))\nInference(:(Vector{Tuple{String,Int}}))\nInference(:(Type{<:Number}))On the other hand, you can use the macro @inference to construct an Inference directly from a type inference:@inference Vector{Tuple{String,Int}}note: Note\nInference is a recursive struct, i.e. it recursively decomposes a type inference until the final type inference is just a Symbol.\nWhen the input expression representing a type inference is a Symbol, the head and params attributes of the resulting Inference is nothing. Otherwise, its head is the same with that of the input expression, and the args of the input expression will be further decomposed, whose result will be stored in params.\nWhen the head of the input expression is :(::) or :(<:), the params is an Inference whereas when the head of the input expression is :curly, the params is a Vector{Inference}."
+    "text": "An Inference has 3 attributes:head::Union{Symbol,Nothing}: the head of the type inference, which must be one of (nothing,:(::),:(<:),:curly)\nname::Union{Symbol,Nothing}: the name of the type inference\nparams::Union{Inference,Vector{Inference},Nothing}: the parameters of the type inferenceAll valid expressions representing type inferences can be passed to the constructor:Inference(:T)\nInference(:(::T))\nInference(:(<:Number))\nInference(:(Vector{T}))\nInference(:(Vector{Tuple{String,Int}}))\nInference(:(Type{<:Number}))On the other hand, you can use the macro @inference to construct an Inference directly from a type inference:@inference Vector{Tuple{String,Int}}note: Note\nInference is a recursive struct, i.e. it recursively decomposes a type inference until the final type inference is just a Symbol.\nWhen the input expression is a Symbol, the head and params attributes of the resulting Inference is nothing. Otherwise, its head is the same with that of the input expression, and the args of the input expression will be further decomposed, whose result will be stored in params.\nWhen the head of the input expression is :(::) or :(<:), the params is an Inference whereas when the head of the input expression is :curly, the params is a Vector{Inference}.Inference uses the keyword argument unescaped to escape variables, e.g.Inference(:(Vector{T}))() |> println\nInference(:(Vector{T}))(unescaped=(:T,)) |> println\nInference(:(Vector{T}))(unescaped=(:Vector,:T)) |> println"
 },
 
 {
@@ -117,7 +117,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Argument",
     "category": "section",
-    "text": "An Argument has 4 attributes:name::Union{Symbol,Nothing}: the name of the argument\ntype::Inference: the type inference of the argument\nslurp::Bool: whether the argument should be expanded by ...\ndefault::Any: the default value of the argument, nothing for those with no default valuesAll valid expressions representing the arguments of functions can be passed to the constructor:Argument(:arg)\nArgument(:(arg::ArgType),unescaped=(:ArgType,))\nArgument(:(arg::ArgType...),unescaped=(:ArgType,))\nArgument(:(arg::ArgType=default),unescaped=(:ArgType,:default))Or you can use the macro @argument for construction directly from an argument declaration:@argument arg::ArgType=default (:ArgType,:default)The construction from such expressions is based on the the MacroTools.splitarg function. On the other hand, calling an instance of Argument will get the corresponding Expr expression, e.g.,julia> Argument(:(arg::ArgType=default),unescaped=(:ArgType,:default))()\n:(arg::ArgType=default)This feature is based on the MacroTools.combinearg function."
+    "text": "An Argument has 4 attributes:name::Union{Symbol,Nothing}: the name of the argument\ntype::Inference: the type inference of the argument\nslurp::Bool: whether the argument should be expanded by ...\ndefault::Any: the default value of the argument, nothing for those with no default valuesAll valid expressions representing the arguments of functions can be passed to the constructor:Argument(:arg)\nArgument(:(arg::ArgType))\nArgument(:(arg::ArgType...))\nArgument(:(arg::ArgType=default))Or you can use the macro @argument for a direct construction from an argument declaration:@argument arg::ArgType=defaultThe construction from such expressions is based on the the MacroTools.splitarg function.Argument also uses the keyword argument unescaped to escape variables, e.g.Argument(:(arg::ArgType=default))(unescaped=(:ArgType,:default)) |> printlnIt can be seen the name of an argument will never be escaped even though it is not in the unescaped tuple. This is obvious since the name of a function argument is always local. By the way, the composition of an Argument expression is based on the MacroTools.combinearg function."
 },
 
 {
@@ -125,7 +125,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Parameter",
     "category": "section",
-    "text": "A Parameter has 2 attributes:name::Union{Symbol,Nothing}: the name of the parameter\ntype::Union{Inference,Nothing}: the type inference of the parameterAll expressions that represent a type parameter or a method parameter are allowed to be passed to the constructor:Parameter(:T)\nParameter(:(<:Number))\nParameter(:(T<:Number))\nParameter(:(::Int))The macro @parameter completes the construction directly from a parameter declaration:@parameter T<:Numbernote: Note\nWe use nothing to denote a missing name or type.\nTwo subtle situations of type/method parameters, e.g. MyType{T} and MyType{Int}, are distinguished by Parameter(:T) and Parameter(:(::Int)). For the first case, Parameter(:T).name==:T and Parameter(:T).type==:nothing while for the second case, Parameter(:(::Int)).name==:nothing and Parameter(:(::Int)).name==:Int. Moreover, the callings of them return different forms, e.g. Parameter(:T)()==:T and Parameter(:(::Int))==:(<:$(esc(Int)))."
+    "text": "A Parameter has 2 attributes:name::Union{Symbol,Nothing}: the name of the parameter\ntype::Union{Inference,Nothing}: the type inference of the parameterAll expressions that represent type parameters or method parameters are allowed to be passed to the constructor:Parameter(:T)\nParameter(:(<:Number))\nParameter(:(T<:Number))\nParameter(:(::Int))The macro @parameter completes the construction directly from a parameter declaration:@parameter T<:Numbernote: Note\nWe use nothing to denote a missing name or type.\nTwo subtle situations of type/method parameters, e.g. MyType{T} and MyType{Int}, are distinguished by Parameter(:T) and Parameter(:(::Int)). The name and type attributes of the resulting Parameters are, for the first case, :T and nothing, while for the second case, nothing and :T, respectively. Moreover, the callings of the factories for these two cases are also different, e.g. Parameter(:T)()==:T and Parameter(:(::Int))==:(<:$(esc(Int))).Parameter uses the keyword argument unescaped to escape variables, too, e.g.Parameter(:(N<:Vector{T}))(unescaped=(:T,)) |> printlnAs is similar to Argument, the name of a method/type parameter will never be escaped because of its local scope."
 },
 
 {
@@ -133,7 +133,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Field",
     "category": "section",
-    "text": "A Field has 2 attributes:name::Symbol: the name of the field\ntype::Inference: the type inference of the fieldLegal expressions can be used to construct a Field instance by its constructor:Field(:field)\nField(:(field::FieldType),unescaped=(:FieldType,))\nField(:(field::ParametricType{T}),unescaped=(:ParametricType,:T))The macro @field is also provided to help the construction directly from a field declaration:@field field::FieldType (:FieldType,)The construction from these expressions is based on the MacroTools.splitarg function and the convertion to these expressions is based on the MacroTools.combinefield function."
+    "text": "A Field has 2 attributes:name::Symbol: the name of the field\ntype::Inference: the type inference of the fieldLegal expressions can be used to construct a Field instance by its constructor:Field(:field)\nField(:(field::FieldType))\nField(:(field::ParametricType{T}))The macro @field is also provided to help the construction directly from a field declaration:@field field::FieldTypeThe construction from these expressions is based on the MacroTools.splitarg function.Field uses the keyword argument unescaped to escape variables as well, e.g.Field(:(field::Dict{N,D}))(unescaped=(:N,:D)) |> printlnThe name of a struct will never be escaped either because it is a local variable tightly binding to a struct. It is noted that the composition of field expressions is based on the MacroTools.combinefield function."
 },
 
 {
@@ -141,7 +141,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Block",
     "category": "section",
-    "text": "A Block has only one attribute:body::Vector{Any}: the body of the begin ... end blockAny expression can be passed to the constructor of Block:Block(:(x=1))\nBlock(:(x=1;y=2))\nBlock(:(begin x=1 end))\nBlock(quote\n        x=1\n        y=2\n    end)Or you can construct a Block instance directly from any code by the macro @block:@block x=1 y=2The body of a block can also be extended by the push! function or the @push! macro.note: Note\nThe body of a Block is somewhat \"flattened\", i.e. it contains no begin ... end blocks. During the initialization, any such input block will be unblocked and added to the body part by part. So is the push! and @push! processes.\nAll LineNumberNodes generated by the input codes will also be included in the block\'s body. However, you can use rmlines! or @rmlines! to remove them from the body of an existing Block, or use rmlines or @rmlines to get a copy with them removed in the body.\nBlock is the only factory that DOES NOT cope with the \"escape\" mechanism we propose, because usually variables in a block are local ones and should not be escaped. However, the function escape is provided to escape the variables in a Expr expression with a reverse mechanism, where a tuple of variables to be escaped should be transmitted."
+    "text": "A Block has only one attribute:body::Vector{Any}: the body of the begin ... end blockAny expression can be passed to the constructor of Block:Block(:(x=1))\nBlock(:(x=1;y=2))\nBlock(:(begin x=1 end))\nBlock(quote\n        x=1\n        y=2\n    end)Or you can construct a Block instance directly from any code by the macro @block:@block x=1 y=2The body of a block can also be extended by the push! function or the @push! macro.note: Note\nThe body of a Block is somewhat \"flattened\", i.e. it contains no begin ... end blocks. During the initialization, any such input block will be unblocked and added to the body part by part. So is the push! and @push! procedures.\nAll LineNumberNodes generated by the input codes will also be included in the block\'s body. However, you can use rmlines! or @rmlines! to remove them from the body of an existing Block, or use rmlines or @rmlines to get a copy with them removed in the body.Different from previous factories, Block uses the keyword argument escaped to escape variables. This is because variables in a block are often local ones and should not be escaped. Therefore, only those defined in other modules should be noted and escaped, which usually constitute the minority. For example,Block(:(x=1;y=2;z=Int[1,2,3]))(escaped=(:Int,)) |> println"
 },
 
 {
@@ -149,7 +149,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "FunctionFactory",
     "category": "section",
-    "text": "A FunctionFactory has 6 attributes:name::Symbol: the name of the function\nargs::Vector{Argument}: the positional arguments of the function\nkwargs::Vector{Argument}: the keyword arguments of the function\nrtype::Inference: the return type of the function\nparams::Vector{Parameter}: the method parameters specified by the where keyword\nbody::Block: the body of the functionAll expressions that represent functions are allowed to be passed to the constructor:FunctionFactory(:(f()=nothing))\nFunctionFactory(:(f(x)=x))\nFunctionFactory(:(f(x::Int,y::Int;choice::Function=sum)=choice(x,y)))\nFunctionFactory(:(f(x::T,y::T;choice::Function=sum) where T<:Number=choice(x,y)),unescaped=(:T,))\nFunctionFactory(:((f(x::T,y::T;choice::Function=sum)::T) where T<:Number=choice(x,y)),unescaped=(:T,))\nFunctionFactory(:(\n    function (f(x::T,y::T;choice::Function=sum)::T) where T<:Number\n        choice(x,y)\n    end\n    ),\n    unescaped=(:T,)\n)\nFunctionFactory(\n    quote\n        function (f(x::T,y::T;choice::Function=sum)::T) where T<:Number\n            choice(x,y)\n        end\n    end,\n    unescaped=(:T,)\n)Similarly, an instance can also be constructed from the macro @functionfactory:@functionfactory (f(x::T,y::T;choice::Function=sum)::T) where T<:Number=choice(x,y) (:T,)The construction from and the convertion to such expressions are based on the MacroTools.splitdef and MacroTools.combinedef functions, respectively.note: Note\nBecause the form f{T}(x::T,y::T;choice::Function=sum) has no longer been supported since Julia 0.7, the entry :params in the returned dict by MacroTools.splitarg is always missing. Therefore, we abandon its corresponding field in FunctionFactory but use the attribute :params to denote the :whereparams entry.Other features include:Positional arguments can be added by addargs! or @addargs!\nKeyword arguments can be added by addkwargs! or @addkwargs!\nMethod parameters can be added by addparams! or @addparams!\nBody can be extended by extendbody! or @extendbody!"
+    "text": "A FunctionFactory has 7 attributes:name::Union{Symbol,Expr}: the name of the function\nparams::Vector{Inference}: the method parameters of the function\nargs::Vector{Argument}: the positional arguments of the function\nkwargs::Vector{Argument}: the keyword arguments of the function\nrtype::Inference: the return type of the function\nwhereparams::Vector{Parameter}: the method parameters specified by the where keyword\nbody::Block: the body of the functionAll expressions that represent functions are allowed to be passed to the constructor:FunctionFactory(:(f()=nothing))\nFunctionFactory(:(f(x)=x))\nFunctionFactory(:(f(x::Int,y::Int;choice::Function=sum)=choice(x,y)))\nFunctionFactory(:(f(x::T,y::T;choice::Function=sum) where T<:Number=choice(x,y)))\nFunctionFactory(:((f(x::T,y::T;choice::Function=sum)::T) where T<:Number=choice(x,y)))\nFunctionFactory(:(\n    function (f(x::T,y::T;choice::Function=sum)::T) where T<:Number\n        choice(x,y)\n    end\n))\nFunctionFactory(\n    quote\n        function (f(x::T,y::T;choice::Function=sum)::T) where T<:Number\n            choice(x,y)\n        end\n    end\n)Similarly, an instance can also be constructed from the macro @functionfactory:@functionfactory (f(x::T,y::T;choice::Function=sum)::T) where T<:Number=choice(x,y)The construction from such expressions are based on the MacroTools.splitdef function.note: Note\nSince Julia 0.7, the form MyType{D}(data::D) where D only appears in struct constructors, therefore, the attribute :params of a function factory is nonempty only when this factory aims to represent a struct constructor.\nUsually, the name of a function factory is a Symbol. However, if the factory aims to extend some methods of a function defined in another module, e.g., Base.eltype, the name will be an Expr.Since FunctionFactory involves not only factories using unescaped but also factories using escaped, it adopts both to escape variables, with unescaped for params, args, kwargs, rtype and whereparams while escaped for name and body. It is worth to emphasize that the name of a function factory is affected by the escaped argument. Specifically, when the name is a Symbol and is in the escaped tuple, it will be escaped. Otherwise it will not, especially when it is an Expr, it will never be escaped because an Expr cannot be a element of a NTuple{N,Symbol} where N. See examples,FunctionFactory(:((f(x::T,y::T;choice::Function=sum)::T) where T<:Number=max(x,y,choice(x,y))))(unescaped=(:T,),escaped=(:f,:max,)) |> println\nFunctionFactory(:((f(x::T,y::T;choice::Function=sum)::T) where T<:Number=max(x,y,choice(x,y))))(unescaped=(:T,),escaped=(:max,)) |> printlnThe compositions of function expressions are based on the MacroTools.combinedef function.Other features include:Positional arguments can be added by addargs! or @addargs!\nKeyword arguments can be added by addkwargs! or @addkwargs!\nWhere parameters can be added by addwhereparams! or @addwhereparams!\nBody can be extended by extendbody! or @extendbody!"
 },
 
 {
@@ -157,15 +157,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "TypeFactory",
     "category": "section",
-    "text": "A TypeFactory has 6 attributes:name::Symbol: the name of the struct\nmutable::Bool: whether or not the struct is mutable\nparams::Vector{Parameter}: the type parameters of the struct\nsupertype::Inference: the supertype of the struct\nfields::Vector{Field}: the fields of the struct\nconstructors::Vector{FunctionFactory}: the inner constructors of the structAny expression representing valid struct definitions can be passed to the constructor:TypeFactory(:(struct StructName end))\nTypeFactory(:(struct StructName{T} end),unescaped=(:T,))\nTypeFactory(:(struct Child{T} <: Parent{T} end),unescaped=(:T,))\nTypeFactory(:(\n    struct Child{T<:Number} <: Parent{T}\n        field1::T\n        field2::T\n    end\n    ),\n    unescaped=(:T,)\n)\nTypeFactory(\n    quote\n        struct Child{T<:Number} <: Parent{T}\n            field1::T\n            field2::T\n        end\n    end,\n    unescaped=(:T,)\n)Also, the macro @typefactory supports the construction directly from a type definition:@typefactory struct Child{T<:Number} <: Parent{T} field1::T; field2::T; Child(field1::T,field2::T=zero(T)) where T=new{T}(field1,field2) end (:T,)The construction from these expressions is based on the MacroTools.splitstructdef function. Meanwhile, the convertion to the corresponding expression from a TypeFactory is based on the MacroTools.combinestructdef function.Other features include:Fields can be added by addfields! or @addfields!\nType parameters can be added by addparams! or @addparams!\nInner constructors can be added by addconstructors! or @addconstructors!"
-},
-
-{
-    "location": "man/Utilities/Factory.html#More-about-escape-1",
-    "page": "Factory",
-    "title": "More about escape",
-    "category": "section",
-    "text": "As you may have noticed, during the construction of factoies, we often provide a keyword argument unescaped to tell what variables should not be escaped. The criterion to determine such variables is quite direct and simple: if a variable is local to current module, or to be defined, or to be declared, it should not be escaped, while if it has been defined or declared in other modules, it should be escaped. Therefore, the name of a function argument, or a type/method parameter, or a struct field, should not be escaped because the first is a local variable and the latter two are to-be-declared ones. In fact, by design, these names will NEVER be escaped even when they are not provided in the unescaped keyword argument. Another common situation where unescaped variables exist occurs when methods or structs have parameters. In this case, the type inferences specified by these method/type parameters should not be escaped because they are also local ones. Note that this situation is not automatically handled by the above factories, because the method/type parameters can be modified after the factoies are constructed, which means, you have to offer the unescaped tuple by hand. To help decorate existing methods or structs, we define an inquiry function paramnames to obtain the method/type parameter names. By the way, the factory Block does not support variable escape by design, because it is usually used as the body of a function, which is always a local environment. This is in sharp contrast to the method/type declaration, where type inferences are usually involved with variables that are defined or declared in other modules. This also explains the philosophy behind our design that for such factories, variables that are not escaped should be assigned while for the function escape, variables to be escaped should be assigned."
+    "text": "A TypeFactory has 6 attributes:name::Symbol: the name of the struct\nmutable::Bool: whether or not the struct is mutable\nparams::Vector{Parameter}: the type parameters of the struct\nsupertype::Inference: the supertype of the struct\nfields::Vector{Field}: the fields of the struct\nconstructors::Vector{FunctionFactory}: the inner constructors of the structAny expression representing valid struct definitions can be passed to the constructor:TypeFactory(:(struct StructName end))\nTypeFactory(:(struct StructName{T} end))\nTypeFactory(:(struct Child{T} <: Parent{T} end))\nTypeFactory(:(\n    struct Child{T<:Number} <: Parent{T}\n        field1::T\n        field2::T\n    end\n))\nTypeFactory(\n    quote\n        struct Child{T<:Number} <: Parent{T}\n            field1::T\n            field2::T\n        end\n    end\n)Also, the macro @typefactory supports the construction directly from a type definition:@typefactory struct Child{T<:Number} <: Parent{T}\n                field1::T\n                field2::T\n                Child(field1::T,field2::T=zero(T)) where T=new{T}(field1,field2)\n            endThe construction from these expressions is based on the MacroTools.splitstructdef function.TypeFactory also uses both keyword arguments, i.e. unescaped and escaped, to escape variables, with the former for params, supertype and fields, the latter for name, and both for constructors. For example,(@typefactory struct Child{T<:Number} <: Parent{T} field::T; Child(field::T) where T=new{T}(field) end)(unescaped=(:T,),escaped=(:Child,)) |>printlnThe composition of a type expression is based on the MacroTools.combinestructdef function.Other features include:Fields can be added by addfields! or @addfields!\nType parameters can be added by addparams! or @addparams!\nInner constructors can be added by addconstructors! or @addconstructors!"
 },
 
 {
@@ -177,19 +169,27 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.RawExpr",
+    "page": "Factory",
+    "title": "Hamiltonian.Utilities.Factory.RawExpr",
+    "category": "constant",
+    "text": "Whether or not to show raw expressions of factoies.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.Argument",
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.Argument",
     "category": "type",
-    "text": "Argument(name::Union{Symbol,Nothing},type::Inference,slurp::Bool,default::Any)\nArgument(;name::Union{Symbol,Nothing}=nothing,type::Inference=Inference(:Any),slurp::Bool=false,default::Any=nothing)\nArgument(expr::FExpr;unescaped::NTuple{N,Symbol}=()) where N)\n\nThe struct to describe a argument of a function.\n\n\n\n\n\n"
+    "text": "Argument(name::Union{Symbol,Nothing},type::Inference,slurp::Bool,default::Any)\nArgument(;name::Union{Symbol,Nothing}=nothing,type::Inference=Inference(:Any),slurp::Bool=false,default::Any=nothing)\nArgument(expr::FExpr)\n\nThe struct to describe a argument of a function.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.Argument-Tuple{}",
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.Argument-Tuple{Val{true}}",
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.Argument",
     "category": "method",
-    "text": "(a::Argument)()\n\nConvert an Argument to the Expr representation of the argument it describes.\n\n\n\n\n\n"
+    "text": "(a::Argument)(::typeof(RawExpr))\n(a::Argument)(;unescaped::NTuple{N,Symbol}=()) where N\n\nConvert an Argument to the Expr representation of the argument it describes.\n\n\n\n\n\n"
 },
 
 {
@@ -201,11 +201,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.Block-Tuple{}",
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.Block-Tuple{Val{true}}",
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.Block",
     "category": "method",
-    "text": "(b::Block)()\n\nConvert a Block to the Expr representation of the begin ... end block it describes.\n\n\n\n\n\n"
+    "text": "(b::Block)(::typeof(RawExpr))\n(b::Block)(;escaped::NTuple{N,Symbol}=()) where N\n\nConvert a Block to the Expr representation of the begin ... end block it describes.\n\n\n\n\n\n"
 },
 
 {
@@ -213,15 +213,15 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.Field",
     "category": "type",
-    "text": "Field(name::Symbol,type::Inference)\nField(name::Symbol;type::FExpr=Inference(:Any))\nField(expr::Expr;unescaped::NTuple{N,Symbol}=()) where N\n\nThe struct to describe a field of a struct.\n\n\n\n\n\n"
+    "text": "Field(name::Symbol,type::Inference)\nField(;name::Symbol,type::FExpr=Inference(:Any))\nField(expr::Expr)\n\nThe struct to describe a field of a struct.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.Field-Tuple{}",
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.Field-Tuple{Val{true}}",
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.Field",
     "category": "method",
-    "text": "(f::Field)()\n\nConvert a Field to the Expr representation of the field it describes.\n\n\n\n\n\n"
+    "text": "(f::Field)(::typeof(RawExpr))\n(f::Field)(;unescaped::NTuple{N,Symbol}=()) where N\n\nConvert a Field to the Expr representation of the field it describes.\n\n\n\n\n\n"
 },
 
 {
@@ -229,15 +229,15 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.FunctionFactory",
     "category": "type",
-    "text": "FunctionFactory(name::Symbol,args::Vector{Argument},kwargs::Vector{Argument},rtype::Inference,params::Vector{Parameter},body::Block)\nFunctionFactory(    name::Symbol;\n                    args::Vector{Argument}=Argument[],\n                    kwargs::Vector{Argument}=Argument[],\n                    rtype::Inference=Inference(:Any),\n                    params::Vector{Parameter}=Parameter[],\n                    body::Block=Block()\n                    )\nFunctionFactory(expr::Expr;unescaped::NTuple{N,Symbol}=()) where N\n\nThe struct to describe a function.\n\n\n\n\n\n"
+    "text": "FunctionFactory(name::FExpr,params::Vector{Inference},args::Vector{Argument},kwargs::Vector{Argument},rtype::Inference,whereparams::Vector{Parameter},body::Block)\nFunctionFactory(    ;name::FExpr,\n                    params::Vector{Inference}=Inference[],\n                    args::Vector{Argument}=Argument[],\n                    kwargs::Vector{Argument}=Argument[],\n                    rtype::Inference=Inference(:Any),\n                    whereparams::Vector{Parameter}=Parameter[],\n                    body::Block=Block()\n                    )\nFunctionFactory(expr::Expr)\n\nThe struct to describe a function.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.FunctionFactory-Tuple{}",
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.FunctionFactory-Tuple{Val{true}}",
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.FunctionFactory",
     "category": "method",
-    "text": "(ff::FunctionFactory)()\n\nConvert a FunctionFactory to the Expr representation of the function it describes.\n\n\n\n\n\n"
+    "text": "(ff::FunctionFactory)(::typeof(RawExpr))\n(ff::FunctionFactory)(;unescaped::NTuple{N,Symbol}=(),escaped::NTuple{M,Symbol}=()) where {N,M}\n\nConvert a FunctionFactory to the Expr representation of the function it describes.\n\n\n\n\n\n"
 },
 
 {
@@ -245,15 +245,15 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.Inference",
     "category": "type",
-    "text": "Inference(head::Union{Symbol,Nothing},name::Union{Symbol,Nothing},params::Union{Inference,Vector{Inference},Nothing},escape::Bool)\nInference(;\n        head::Union{Symbol,Nothing}=nothing,\n        name::Union{Symbol,Nothing}=nothing,\n        params::Union{Inference,Vector{Inference},Nothing}=nothing,\n        escape::Bool=true\n        )\nInference(expr::FExpr;unescaped::NTuple{N,Symbol}=()) where N\n\nThe struct to describe a type inference.\n\n\n\n\n\n"
+    "text": "Inference(head::Union{Symbol,Nothing},name::Union{Symbol,Nothing},params::Union{Inference,Vector{Inference},Nothing})\nInference(;\n        head::Union{Symbol,Nothing}=nothing,\n        name::Union{Symbol,Nothing}=nothing,\n        params::Union{Inference,Vector{Inference},Nothing}=nothing,\n        )\nInference(expr::FExpr)\n\nThe struct to describe a type inference.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.Inference-Tuple{}",
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.Inference-Tuple{Val{true}}",
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.Inference",
     "category": "method",
-    "text": "(i::Inference)()\n\nConvert a Inference to the Expr representation of the type inference it describes.\n\n\n\n\n\n"
+    "text": "(i::Inference)(::typeof(RawExpr))\n(i::Inference)(;unescaped::NTuple{N,Symbol}=()) where N\n\nConvert a Inference to the Expr representation of the type inference it describes.\n\n\n\n\n\n"
 },
 
 {
@@ -261,15 +261,15 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.Parameter",
     "category": "type",
-    "text": "Parameter(name::Union{Symbol,Nothing},type::Union{Inference,Nothing})\nParameter(;name::Union{Symbol,Nothing}=nothing,type::Union{Inference,Nothing}=nothing)\nParameter(expr::FExpr;unescaped::NTuple{N,Symbol}=()) where N\n\nThe struct to describe a parameter of a function or a type.\n\n\n\n\n\n"
+    "text": "Parameter(name::Union{Symbol,Nothing},type::Union{Inference,Nothing})\nParameter(;name::Union{Symbol,Nothing}=nothing,type::Union{Inference,Nothing}=nothing)\nParameter(expr::FExpr)\n\nThe struct to describe a parameter of a function or a type.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.Parameter-Tuple{}",
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.Parameter-Tuple{Val{true}}",
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.Parameter",
     "category": "method",
-    "text": "(p::Parameter)()\n\nConvert a Parameter to the Expr representation of the parameter it describes.\n\n\n\n\n\n"
+    "text": "(p::Parameter)(::typeof(RawExpr))\n(p::Parameter)(;unescaped::NTuple{N,Symbol}=()) where N\n\nConvert a Parameter to the Expr representation of the parameter it describes.\n\n\n\n\n\n"
 },
 
 {
@@ -277,15 +277,15 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.TypeFactory",
     "category": "type",
-    "text": "TypeFactory(name::Symbol,mutable::Bool,params::Vector{Parameter},supertype::Inference,fields::Vector{Field},constructors::Vector{FunctionFactory})\nTypeFactory(    name::Symbol;\n                mutable::Bool=false,\n                params::Vector{Parameter}=Parameter[],\n                supertype::Inference=Inference(:Any),\n                fields::Vector{Field}=Field[],\n                constructors::Vector{FunctionFactory}=FunctionFactory[],\n                )\nTypeFactory(expr::Expr;unescaped::NTuple{N,Symbol}=()) where N\n\nThe struct to describe a struct.\n\n\n\n\n\n"
+    "text": "TypeFactory(name::Symbol,mutable::Bool,params::Vector{Parameter},supertype::Inference,fields::Vector{Field},constructors::Vector{FunctionFactory})\nTypeFactory(    ;name::Symbol,\n                mutable::Bool=false,\n                params::Vector{Parameter}=Parameter[],\n                supertype::Inference=Inference(:Any),\n                fields::Vector{Field}=Field[],\n                constructors::Vector{FunctionFactory}=FunctionFactory[],\n                )\nTypeFactory(expr::Expr)\n\nThe struct to describe a struct.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.TypeFactory-Tuple{}",
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.TypeFactory-Tuple{Val{true}}",
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.TypeFactory",
     "category": "method",
-    "text": "(tf::TypeFactory)()\n\nConvert a TypeFactory to the Expr representation of the struct it describes.\n\n\n\n\n\n"
+    "text": "(tf::TypeFactory)(::typeof(RawExpr))\n(tf::TypeFactory)(;unescaped::NTuple{N,Symbol}=()) where N\n\nConvert a TypeFactory to the Expr representation of the struct it describes.\n\n\n\n\n\n"
 },
 
 {
@@ -329,11 +329,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.@argument",
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.@addwhereparams!-Tuple{Any,Vararg{Union{Expr, Symbol},N} where N}",
+    "page": "Factory",
+    "title": "Hamiltonian.Utilities.Factory.@addwhereparams!",
+    "category": "macro",
+    "text": "@addwhereparams! f whereparams::FExpr...\n\nAdd a couple of method parameters to a function factory or a type factory.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.@argument-Tuple{Union{Expr, Symbol}}",
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.@argument",
     "category": "macro",
-    "text": "@argument expr::FExpr unescaped::FExpr=:()\n\nConstruct an Argument directly from an argument statement.\n\n\n\n\n\n"
+    "text": "@argument expr::FExpr\n\nConstruct an Argument directly from an argument statement.\n\n\n\n\n\n"
 },
 
 {
@@ -353,35 +361,35 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.@field",
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.@field-Tuple{Union{Expr, Symbol}}",
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.@field",
     "category": "macro",
-    "text": "@field expr::FExpr unescaped::FExpr=:()\n\nConstruct a Field directly from a field statement.\n\n\n\n\n\n"
+    "text": "@field expr::FExpr\n\nConstruct a Field directly from a field statement.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.@functionfactory",
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.@functionfactory-Tuple{Expr}",
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.@functionfactory",
     "category": "macro",
-    "text": "@functionfactory expr::FExpr unescaped::FExpr=:()\n\nConstruct a FunctionFactory directly from a function definition.\n\n\n\n\n\n"
+    "text": "@functionfactory expr::FExpr\n\nConstruct a FunctionFactory directly from a function definition.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.@inference",
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.@inference-Tuple{Union{Expr, Symbol}}",
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.@inference",
     "category": "macro",
-    "text": "@inference expr::FExpr unescaped::FExpr=:()\n\nConstruct an Inference directly from a type inference.\n\n\n\n\n\n"
+    "text": "@inference expr::FExpr\n\nConstruct an Inference directly from a type inference.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.@parameter",
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.@parameter-Tuple{Union{Expr, Symbol}}",
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.@parameter",
     "category": "macro",
-    "text": "@parameter expr::FExpr unescaped::FExpr=:()\n\nConstruct a Parameter directly from an parameter statement.\n\n\n\n\n\n"
+    "text": "@parameter expr::FExpr\n\nConstruct a Parameter directly from an parameter statement.\n\n\n\n\n\n"
 },
 
 {
@@ -409,11 +417,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.@typefactory",
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.@typefactory-Tuple{Expr}",
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.@typefactory",
     "category": "macro",
-    "text": "@typefactory expr::Expr unescaped::FExpr=:()\n\nConstruct a TypeFactory directly from a type definition.\n\n\n\n\n\n"
+    "text": "@typefactory expr::Expr\n\nConstruct a TypeFactory directly from a type definition.\n\n\n\n\n\n"
 },
 
 {
@@ -421,7 +429,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.addargs!",
     "category": "method",
-    "text": "addargs!(ff::FunctionFactory,args::Argument...)\naddargs!(ff::FunctionFactory,args::FExpr...;unescaped::NTuple{N,Symbol}=()) where N\n\nAdd a couple of positional arguments to a function factory.\n\n\n\n\n\n"
+    "text": "addargs!(ff::FunctionFactory,args::Argument...)\naddargs!(ff::FunctionFactory,args::FExpr...)\n\nAdd a couple of positional arguments to a function factory.\n\n\n\n\n\n"
 },
 
 {
@@ -429,7 +437,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.addconstructors!",
     "category": "method",
-    "text": "addconstructors!(tf::TypeFactory,constructors::FunctionFactory...)\naddconstructors!(tf::TypeFactory,constructors::Expr...;unescaped::NTuple{N,Symbol}=()) where N\n\nAdd a couple of constructors to a type factory.\n\n\n\n\n\n"
+    "text": "addconstructors!(tf::TypeFactory,constructors::FunctionFactory...)\naddconstructors!(tf::TypeFactory,constructors::Expr...)\n\nAdd a couple of constructors to a type factory.\n\n\n\n\n\n"
 },
 
 {
@@ -437,7 +445,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.addfields!",
     "category": "method",
-    "text": "addfields!(tf::TypeFactory,fields::Field...)\naddfields!(tf::TypeFactory,fields::FExpr...;unescaped::NTuple{N,Symbol}=()) where N\n\nAdd a couple of fields to a type factory.\n\n\n\n\n\n"
+    "text": "addfields!(tf::TypeFactory,fields::Field...)\naddfields!(tf::TypeFactory,fields::FExpr...)\n\nAdd a couple of fields to a type factory.\n\n\n\n\n\n"
 },
 
 {
@@ -445,7 +453,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.addkwargs!",
     "category": "method",
-    "text": "addkwargs!(ff::FunctionFactory,kwargs::Argument...)\naddkwargs!(ff::FunctionFactory,kwargs::FExpr...;unescaped::NTuple{N,Symbol}=()) where N\n\nAdd a couple of keyword arguments to a function factory.\n\n\n\n\n\n"
+    "text": "addkwargs!(ff::FunctionFactory,kwargs::Argument...)\naddkwargs!(ff::FunctionFactory,kwargs::FExpr...)\n\nAdd a couple of keyword arguments to a function factory.\n\n\n\n\n\n"
 },
 
 {
@@ -453,7 +461,15 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.addparams!",
     "category": "method",
-    "text": "addparams!(f::Union{FunctionFactory,TypeFactory},params::Parameter...)\naddparams!(f::Union{FunctionFactory,TypeFactory},params::FExpr...;unescaped::NTuple{N,Symbol}=()) where N\n\nAdd a couple of method parameters to a function factory or a type factory.\n\n\n\n\n\n"
+    "text": "addparams!(f::FunctionFactory,params::Inference...)\naddparams!(f::TypeFactory,params::Parameter...)\naddparams!(f::Union{FunctionFactory,TypeFactory},params::FExpr...)\n\nAdd a couple of parameters to a function factory or a type factory.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.addwhereparams!-Tuple{Hamiltonian.Utilities.Factory.FunctionFactory}",
+    "page": "Factory",
+    "title": "Hamiltonian.Utilities.Factory.addwhereparams!",
+    "category": "method",
+    "text": "addwhereparams!(f::FunctionFactory,whereparams::Parameter...)\naddwhereparams!(f::FunctionFactory,whereparams::FExpr...)\n\nAdd a couple of method where parameters to a function factory or a type factory.\n\n\n\n\n\n"
 },
 
 {
@@ -461,7 +477,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.escape",
     "category": "method",
-    "text": "escape(expr,::NTuple{N,Symbol}=()) where N\nescape(expr::Symbol,escaped::NTuple{N,Symbol}=()) where N\nescape(expr::Expr,escaped::NTuple{N,Symbol}=()) where N\n\nEscape the symbols sepecified by escaped in the input expression.\n\n\n\n\n\n"
+    "text": "escape(expr,::NTuple{N,Symbol}=()) where N\nescape(expr::Symbol,escaped::NTuple{N,Symbol}=()) where N\nescape(expr::Expr,escaped::NTuple{N,Symbol}=()) where N\n\nEscape the variables sepecified by escaped in the input expression.\n\n\n\n\n\n"
 },
 
 {
@@ -473,27 +489,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.paramnames-Tuple{Union{FunctionFactory, TypeFactory}}",
-    "page": "Factory",
-    "title": "Hamiltonian.Utilities.Factory.paramnames",
-    "category": "method",
-    "text": "paramnames(expr::Union{Expr,FunctionFactory,TypeFactory}) -> NTuple{N,Symbol} where N\n\nGet the type/method parameters names.\n\n\n\n\n\n"
-},
-
-{
     "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.rmlines!-Tuple{Hamiltonian.Utilities.Factory.Block}",
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.rmlines!",
     "category": "method",
     "text": "rmlines!(b::Block)\n\nRemove line number nodes in the body of a block.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.symbols-Tuple{Any}",
-    "page": "Factory",
-    "title": "Hamiltonian.Utilities.Factory.symbols",
-    "category": "method",
-    "text": "symbols(expr)\n\n\n\n\n\n"
 },
 
 {
@@ -521,19 +521,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Factory.html#Base.Broadcast.broadcasted-Union{Tuple{N}, Tuple{Type{#s62} where #s62<:AbstractFactory,Array{Union{Expr, Symbol},1}}} where N",
+    "location": "man/Utilities/Factory.html#Base.names-Tuple{Any}",
     "page": "Factory",
-    "title": "Base.Broadcast.broadcasted",
+    "title": "Base.names",
     "category": "method",
-    "text": "SubTypeofAbstractFactory.(exprs::Vector{FExpr};unescaped::NTuple{N,Symbol}=()) where N\nSubTypeofAbstractFactory.(exprs::NTuple{N,FExpr};unescaped::NTuple{M,Symbol}=()) where {N,M}\n\nBroadcast construction of concrete subtypes of AbstractFactory.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/Factory.html#Base.convert-Tuple{Type{Tuple},Hamiltonian.Utilities.Factory.Field}",
-    "page": "Factory",
-    "title": "Base.convert",
-    "category": "method",
-    "text": "convert(::Type{Tuple},f::Field)\nconvert(::Type{Tuple{Symbol,FExpr}},f::Field)\n\nConvert a Field to tuple.\n\n\n\n\n\n"
+    "text": "names(expr::Union{Symbol,Expr})\n\nGet all the variable names in an Expr.\n\n\n\n\n\n"
 },
 
 {
@@ -573,7 +565,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Tree",
     "title": "Tree",
     "category": "page",
-    "text": "CurrentModule=Hamiltonian.Utilities.Tree"
+    "text": "CurrentModule=Hamiltonian.Utilities.Treepush!(LOAD_PATH,\"../../../../src/\")\nusing Hamiltonian.Utilities.Tree"
 },
 
 {
@@ -581,7 +573,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Tree",
     "title": "Tree",
     "category": "section",
-    "text": ""
+    "text": "The aim of the tree in this module is to represent the standard tree structure in efficiency-non-sensitive cases. Please note that the default implementation of tree methods are far from optimal in efficiency. Therefore, please DO NOT use it if you need an efficient tree for addition, deletion, sort and inquiry. This module of codes apply only when the structure of tree matters but not the efficiency."
 },
 
 {
@@ -589,7 +581,47 @@ var documenterSearchIndex = {"docs": [
     "page": "Tree",
     "title": "AbstractTree",
     "category": "section",
-    "text": ""
+    "text": "AbstractTree{N,D} is the abstract type for all concrete trees. By design, it has two type parameters:N: the type of the tree\'s node\nD: the type of the tree\'s dataTo fully utilize the methods designed for a tree structure, in our protocol, a concrete subtype must implement the following methods:inquiry related methods\neltype(tree::AbstractTree) -> NTuple\nroot(tree::AbstractTree{N,D}) where {N,D} -> Union{N,Nothing}\nhaskey(tree::AbstractTree{N,D},node::N) where {N,D} -> Bool\nlength(tree::AbstractTree) -> Int\nparent(tree::AbstractTree{N,D},node::N,superparent::Union{N,Nothing}=nothing) where {N,D} -> Union{N,Nothing}\nchildren(tree::AbstractTree{N,D},node::N) where {N,D} -> Vector{N}\nGet a tree\'s type parameters.\nGet a tree\'s root node (nothing for empty trees)\nGet the number of a tree\'s nodes.\nCheck whether a node is in a tree.\nGet the parent of a tree\'s node or return superparent when the input node is the tree\'s root.\nGet the children of a tree\'s node.\nstructure modification related methods\naddnode!(tree::AbstractTree{N,D},parent::Union{N,Nothing},node::N) where {N,D}\ndeletenode!(tree::AbstractTree{N,D},node::N) where {N,D}\nUpdate the structure of a tree by adding a node. When the parent is nothing, the input tree must be empty and the input node becomes the tree\'s root.\nUpdate the structure of a tree by deleting a node.\nindex related methods\ngetindex(tree::AbstractTree{N,D},node::N) where {N,D} -> D\nsetindex!(tree::AbstractTree{N,D},node::N,data::D) where {N,D}\nGet the data of a tree\'s node\nSet the data of a tree\'s node.Based on these methods, we implement several generic functions for inquiries and manipulationsinquiry for type parameters: keytype, valtype\nexpansion over nodes/data-records: keys, values, pairs\ninquiry for info of nodes: isleaf, level\ninquiry for nodes: ancestor, descendants, siblings, leaves\nmodification: push!, append!, delete!, empty!And optionally, when a subtype implement the following method,empty(tree::AbstractTree) -> typeof(tree)which constructs an empty tree of the same type with the input one, two more more methods are supported:subtree: Get a subtree starting from a node.\nmove!: Move a subtree to a new position."
+},
+
+{
+    "location": "man/Utilities/Tree.html#TreeCore-and-SimpleTree-1",
+    "page": "Tree",
+    "title": "TreeCore and SimpleTree",
+    "category": "section",
+    "text": "To implement all the prerequisites listed above costs a bit efforts. We provide two lazy ways to get over this:Inheritance with a specific attribute TREECORE::TreeCore\nInclusion an attribute which is an instance of SimpleTree"
+},
+
+{
+    "location": "man/Utilities/Tree.html#TreeCore-1",
+    "page": "Tree",
+    "title": "TreeCore",
+    "category": "section",
+    "text": "TreeCore{N,D}, as the literal meaning indicates, is the core of a tree. It encapsulates all the data structures needed by the default implementation, which constains 4 attributes:root::N: the tree\'s root node\ncontents::Dict{N,D}: the tree\'s (node,data) pairs\nparent::Dict{N,N}: records of the parent of each of the tree\'s nodes\nchildren::Dict{N,Vector{N}}: records of the children of each of the tree\'s nodesAs above, the first lazy way is to include this struct with the special attribute name :TREECORE in your concrete subtype. This process can be even lazier, in that we provide a macro @tree to decorate your \"raw\" struct automatically, e.g.@tree struct SimpleSubTree end\n@tree struct SubTreeWithTreeParameters end {N<:AbstractString,D<:Number}\n@tree struct SubTreeWithCertainTreeParameters end {::String,::Int}\n@tree struct SubTreeWithFields info::Vector{Int} end {N<:AbstractString,D<:Number}\n@tree struct SubTreeWithParametricFields{T} info::Vector{T} end {N<:AbstractString,D<:Number}\n@tree struct SubTreeWithOverlappedParametricFields{N} info::Vector{N} end {N<:AbstractString,D<:Number}"
+},
+
+{
+    "location": "man/Utilities/Tree.html#SimpleTree-1",
+    "page": "Tree",
+    "title": "SimpleTree",
+    "category": "section",
+    "text": "SimpleTree{N,D} is the minimum struct that implements all the default tree methods. You can include an instance of it as an attribute in your own type to utilize all the tree methods."
+},
+
+{
+    "location": "man/Utilities/Tree.html#Hamiltonian.Utilities.Tree.treedepth",
+    "page": "Tree",
+    "title": "Hamiltonian.Utilities.Tree.treedepth",
+    "category": "constant",
+    "text": "Depth first search or iteration.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Hamiltonian.Utilities.Tree.treewidth",
+    "page": "Tree",
+    "title": "Hamiltonian.Utilities.Tree.treewidth",
+    "category": "constant",
+    "text": "Width first search or iteration.\n\n\n\n\n\n"
 },
 
 {
@@ -598,6 +630,270 @@ var documenterSearchIndex = {"docs": [
     "title": "Hamiltonian.Utilities.Tree.AbstractTree",
     "category": "type",
     "text": "AbstractTree{Node,Data}\n\nAbstract type for all concrete trees.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Hamiltonian.Utilities.Tree.SimpleTree",
+    "page": "Tree",
+    "title": "Hamiltonian.Utilities.Tree.SimpleTree",
+    "category": "type",
+    "text": "SimpleTree()\n\nThe minimum tree structure that implements all the default tree methods.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Hamiltonian.Utilities.Tree.TreeCore",
+    "page": "Tree",
+    "title": "Hamiltonian.Utilities.Tree.TreeCore",
+    "category": "type",
+    "text": "TreeCore()\n\nThe core of a tree.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Hamiltonian.Utilities.Tree.@tree",
+    "page": "Tree",
+    "title": "Hamiltonian.Utilities.Tree.@tree",
+    "category": "macro",
+    "text": "@tree structdef treeparams::Union{Expr,Nothing}=nothing\n\nDecorate a \"raw\" struct to be a subtype of AbstractTree.\n\nnote: Note\nA \"raw\" struct means:\nIt has no explicit supertype;\nIt has no inner constructor;\nIt has no attribute :TREECORE.\nThe keytype and valtype can be assigned by the argument treeparams in the form {keytype,valtype}.\nWhen the formal argument names of keytype and valtype are not assigned, those of the type parameters of the raw struct, if any, cannot be :N or :D. For example, all of the following codes\n@tree struct SubTreeWithWrongTypeParameterNames{N} info::Vector{N} end\n@tree struct SubTreeWithWrongTypeParameterNames{N} info::Vector{N} end {::String,::Int}\n@tree struct SubTreeWithWrongTypeParameterNames{N} info::Vector{N} end {<:AbstractString,<:Number}\nwill get the same error message: \"@tree error: :N and :D are reserved type parameter names.\"\nWhen the formal argument names of keytype and valtype overlap with those of the raw struct type parameters, the duplicates will be considered as the same. For example, the decorated struct SubTreeWithOverlappedParametricFields by the following code\n@tree struct SubTreeWithOverlappedParametricFields{N} info::Vector{N} end {N<:AbstractString,D<:Number}\nonly has two type parameters N<:AbstractString and D<:Number, where the N in the info::Vector{N} is the same N with that in the decorated attribute TREECORE::TreeCore{N,D}. While, if the formal names of keytype and valtype have no intersection with those of the raw struct type parameters, the type parameters of the decorated struct will be just extended by keytype and valtype. For example, the decorated struct SubTreeWithParametricFields by the following code\n@tree struct SubTreeWithParametricFields{T} info::Vector{T} end {N<:AbstractString,D<:Number}\nhave 3 type parameters, T, N<:AbstractString and D<:Number.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Hamiltonian.Utilities.Tree.addnode!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
+    "page": "Tree",
+    "title": "Hamiltonian.Utilities.Tree.addnode!",
+    "category": "method",
+    "text": "addnode!(tree::AbstractTree{N,D},node::N) where {N,D}\naddnode!(tree::AbstractTree{N,D},::Nothing,node::N) where {N,D}\naddnode!(tree::AbstractTree{N,D},parent::N,node::N) where {N,D}\n\nUpdate the structure of a tree by adding a node. When the parent is nothing, the input tree must be empty and the input node becomes the tree\'s root.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Hamiltonian.Utilities.Tree.ancestor-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}, Tuple{AbstractTree{N,D},N,Int64}} where D where N",
+    "page": "Tree",
+    "title": "Hamiltonian.Utilities.Tree.ancestor",
+    "category": "method",
+    "text": "ancestor(tree::AbstractTree{N,D},node::N,generation::Int=1) where {N,D} -> N\n\nGet the ancestor of a tree\'s node of the n-th generation.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Hamiltonian.Utilities.Tree.children-Tuple{Hamiltonian.Utilities.Tree.AbstractTree}",
+    "page": "Tree",
+    "title": "Hamiltonian.Utilities.Tree.children",
+    "category": "method",
+    "text": "children(tree::AbstractTree) -> Vector\nchildren(tree::AbstractTree,::Nothing) -> Vector\nchildren(tree::AbstractTree{N,D},node::N) where {N,D} -> Vector{N}\n\nGet the children of a tree\'s node.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Hamiltonian.Utilities.Tree.deletenode!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
+    "page": "Tree",
+    "title": "Hamiltonian.Utilities.Tree.deletenode!",
+    "category": "method",
+    "text": "deletenode!(tree::AbstractTree{N,D},node::N) where {N,D}\n\nUpdate the structure of a tree by deleting a node.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Hamiltonian.Utilities.Tree.descendants-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}, Tuple{AbstractTree{N,D},N,Int64}} where D where N",
+    "page": "Tree",
+    "title": "Hamiltonian.Utilities.Tree.descendants",
+    "category": "method",
+    "text": "descendants(tree::AbstractTree{N,D},node::N,generation::Int=1) where {N,D} -> Vector{N}\n\nGet the descendants of a tree\'s node of the n-th generation.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Hamiltonian.Utilities.Tree.empty-Tuple{Hamiltonian.Utilities.Tree.AbstractTree}",
+    "page": "Tree",
+    "title": "Hamiltonian.Utilities.Tree.empty",
+    "category": "method",
+    "text": "empty(tree::AbstractTree)\n\nConstruct an empty tree of the same type with the input one.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Hamiltonian.Utilities.Tree.isleaf-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
+    "page": "Tree",
+    "title": "Hamiltonian.Utilities.Tree.isleaf",
+    "category": "method",
+    "text": "isleaf(tree::AbstractTree{N,D},node::N) where{N,D} -> Bool\n\nJudge whether a tree\'s node is a leaf (a node without children) or not.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Hamiltonian.Utilities.Tree.leaves-Tuple{Hamiltonian.Utilities.Tree.AbstractTree}",
+    "page": "Tree",
+    "title": "Hamiltonian.Utilities.Tree.leaves",
+    "category": "method",
+    "text": "leaves(tree::AbstractTree)\n\nGet a tree\'s leaves.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Hamiltonian.Utilities.Tree.level-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
+    "page": "Tree",
+    "title": "Hamiltonian.Utilities.Tree.level",
+    "category": "method",
+    "text": "level(tree::AbstractTree{N,D},node::N) where {N,D} -> Int\n\nGet the level of tree\'s node.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Hamiltonian.Utilities.Tree.move!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N,N}} where D where N",
+    "page": "Tree",
+    "title": "Hamiltonian.Utilities.Tree.move!",
+    "category": "method",
+    "text": "move!(tree::AbstractTree{N,D},node::N,parent::N) where {N,D}\n\nMove a subtree to a new position.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Hamiltonian.Utilities.Tree.parent-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}, Tuple{AbstractTree{N,D},N,Union{Nothing, N}}} where D where N",
+    "page": "Tree",
+    "title": "Hamiltonian.Utilities.Tree.parent",
+    "category": "method",
+    "text": "parent(tree::AbstractTree{N,D},node::N,superparent::Union{N,Nothing}=nothing) where {N,D} -> Union{N,Nothing}\n\nGet the parent of a tree\'s node. When node is the tree\'s root, return superparent.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Hamiltonian.Utilities.Tree.root-Tuple{Hamiltonian.Utilities.Tree.AbstractTree}",
+    "page": "Tree",
+    "title": "Hamiltonian.Utilities.Tree.root",
+    "category": "method",
+    "text": "root(tree::AbstractTree)\n\nGet a tree\'s root node.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Hamiltonian.Utilities.Tree.siblings-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
+    "page": "Tree",
+    "title": "Hamiltonian.Utilities.Tree.siblings",
+    "category": "method",
+    "text": "siblings(tree::AbstractTree{N,D},node::N) where{N,D} -> Vector{N}\n\nGet the siblings (other nodes sharing the same parent) of a tree\'s node.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Hamiltonian.Utilities.Tree.subtree-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
+    "page": "Tree",
+    "title": "Hamiltonian.Utilities.Tree.subtree",
+    "category": "method",
+    "text": "subtree(tree::AbstractTree{N,D},node::N) where{N,D}\n\nGet a subtree whose root is node.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Base.:==-Union{Tuple{TC}, Tuple{TC,TC}} where TC<:Hamiltonian.Utilities.Tree.TreeCore",
+    "page": "Tree",
+    "title": "Base.:==",
+    "category": "method",
+    "text": "==(tc1::TC,tc2::TC) where TC<:TreeCore -> Bool\n\nOverloaded == operator.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Base.:==-Union{Tuple{T}, Tuple{T,T}} where T<:Hamiltonian.Utilities.Tree.AbstractTree",
+    "page": "Tree",
+    "title": "Base.:==",
+    "category": "method",
+    "text": "==(t1::T,t2::T) where T<:AbstractTree -> Bool\n\nOverloaded == operator.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Base.append!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},AbstractTree{N,D}}} where D where N",
+    "page": "Tree",
+    "title": "Base.append!",
+    "category": "method",
+    "text": "append!(tree::AbstractTree{N,D},subtree::AbstractTree{N,D}) where {N,D}\nappend!(tree::AbstractTree{N,D},node::Union{N,Nothing},subtree::AbstractTree{N,D}) where {N,D}\n\nAppend a subtree to a tree.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Base.delete!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
+    "page": "Tree",
+    "title": "Base.delete!",
+    "category": "method",
+    "text": "delete!(tree::AbstractTree{N,D},node::N) where {N,D}\n\nDelete a node and all its descendants from a tree.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Base.eltype-Tuple{Hamiltonian.Utilities.Tree.AbstractTree}",
+    "page": "Tree",
+    "title": "Base.eltype",
+    "category": "method",
+    "text": "eltype(tree::AbstractTree)\neltype(::Type{<:AbstractTree{N,D}}) where {N,D}\n\nGet the eltype of a tree.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Base.empty!-Tuple{Hamiltonian.Utilities.Tree.AbstractTree}",
+    "page": "Tree",
+    "title": "Base.empty!",
+    "category": "method",
+    "text": "empty!(tree::AbstractTree)\n\nEmpty a tree.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Base.getindex-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
+    "page": "Tree",
+    "title": "Base.getindex",
+    "category": "method",
+    "text": "getindex(tree::AbstractTree{N,D},node::N) where {N,D} -> N\n\nGet the data of a tree\'s node.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Base.haskey-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
+    "page": "Tree",
+    "title": "Base.haskey",
+    "category": "method",
+    "text": "haskey(tree::AbstractTree{N,D},node::N) where {N,D} -> Bool\n\nCheck whether a node is in a tree.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Base.keys-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},Val{0}}, Tuple{AbstractTree{N,D},Val{0},Union{Nothing, N}}} where D where N",
+    "page": "Tree",
+    "title": "Base.keys",
+    "category": "method",
+    "text": "keys(tree::AbstractTree{N,D},::typeof(treedepth),node::Union{N,Nothing}=tree|>root) where {N,D}\nkeys(tree::AbstractTree{N,D},::typeof(treewidth),node::Union{N,Nothing}=tree|>root) where {N,D}\n\nIterate over a tree\'s nodes starting from a certain node by depth first search or width first search.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Base.keytype-Tuple{Hamiltonian.Utilities.Tree.AbstractTree}",
+    "page": "Tree",
+    "title": "Base.keytype",
+    "category": "method",
+    "text": "keytype(tree::AbstractTree)\nkeytype(::Type{<:AbstractTree{N,D}}) where {N,D}\n\nGet a tree\'s node type.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Base.length-Tuple{Hamiltonian.Utilities.Tree.AbstractTree}",
+    "page": "Tree",
+    "title": "Base.length",
+    "category": "method",
+    "text": "length(tree::AbstractTree)\n\nGet the number of a tree\'s nodes.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Base.pairs-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree,Val{0}}, Tuple{AbstractTree,Val{0},Union{Nothing, N}}} where D where N",
+    "page": "Tree",
+    "title": "Base.pairs",
+    "category": "method",
+    "text": "pairs(tree::AbstractTree,::typeof(treedepth),node::Union{N,Nothing}=tree|>root) where {N,D}\npairs(tree::AbstractTree,::typeof(treewidth),node::Union{N,Nothing}=tree|>root) where {N,D}\n\nIterate over a tree\'s (node,data) pairs starting from a certain node by depth first search or width first search.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Base.push!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N,D}} where D where N",
+    "page": "Tree",
+    "title": "Base.push!",
+    "category": "method",
+    "text": "push!(tree::AbstractTree{N,D},node::N,data::D) where {N,D}\npush!(tree::AbstractTree{N,D},parent::Union{N,Nothing},node::N,data::D) where {N,D}\n\nPush a new node to a tree. When parent is nothing, this function set the root node of an empty tree.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Base.setindex!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},D,N}} where D where N",
+    "page": "Tree",
+    "title": "Base.setindex!",
+    "category": "method",
+    "text": "setindex!(tree::AbstractTree{N,D},data::D,node::N) where {N,D}\n\nSet the data of a tree\'s node.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Base.valtype-Tuple{Hamiltonian.Utilities.Tree.AbstractTree}",
+    "page": "Tree",
+    "title": "Base.valtype",
+    "category": "method",
+    "text": "valtype(tree::AbstractTree)\nvaltype(::Type{<:AbstractTree{N,D}}) where {N,D}\n\nGet a tree\'s data type.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Base.values-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree,Val{0}}, Tuple{AbstractTree,Val{0},Union{Nothing, N}}} where D where N",
+    "page": "Tree",
+    "title": "Base.values",
+    "category": "method",
+    "text": "values(tree::AbstractTree,::typeof(treedepth),node::Union{N,Nothing}=tree|>root) where {N,D}\nvalues(tree::AbstractTree,::typeof(treewidth),node::Union{N,Nothing}=tree|>root) where {N,D}\n\nIterate over a tree\'s data starting from a certain node by depth first search or width first search.\n\n\n\n\n\n"
 },
 
 {
@@ -681,7 +977,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/NamedVector.html#Base.eltype-Union{Tuple{Type{#s62} where #s62<:AbstractNamedVector{T}}, Tuple{T}} where T",
+    "location": "man/Utilities/NamedVector.html#Base.eltype-Union{Tuple{Type{#s68} where #s68<:AbstractNamedVector{T}}, Tuple{T}} where T",
     "page": "Named vector",
     "title": "Base.eltype",
     "category": "method",
@@ -909,7 +1205,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Good quantum numbers",
     "title": "Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumbers",
     "category": "type",
-    "text": "QuantumNumbers(qn::QuantumNumber,count::Int=1)\n\nConstruct a QuantumNumbers with one unique quantum number which occurs count times.\n\n\n\n\n\n"
+    "text": "QuantumNumbers(form::Char,contents::Vector{<:QuantumNumber},counts::Vector{Int},::typeof(qnscounts))\nQuantumNumbers(form::Char,contents::Vector{<:QuantumNumber},indptr::Vector{Int},::typeof(qnsindptr))\n\nThe whole quantum numbers of the total bases of a Hilbert space. The default constructors construct a QuantumNumbers from a vector of concrete quantum numbers and an vector containing their counts or indptr.\n\n\n\n\n\n"
 },
 
 {
@@ -917,11 +1213,11 @@ var documenterSearchIndex = {"docs": [
     "page": "Good quantum numbers",
     "title": "Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumbers",
     "category": "type",
-    "text": "QuantumNumbers(form::Char,contents::Vector{<:QuantumNumber},counts::Vector{Int},::typeof(qnscounts))\nQuantumNumbers(form::Char,contents::Vector{<:QuantumNumber},indptr::Vector{Int},::typeof(qnsindptr))\n\nThe whole quantum numbers of the total bases of a Hilbert space. The default constructors construct a QuantumNumbers from a vector of concrete quantum numbers and an vector containing their counts or indptr.\n\n\n\n\n\n"
+    "text": "QuantumNumbers(qn::QuantumNumber,count::Int=1)\n\nConstruct a QuantumNumbers with one unique quantum number which occurs count times.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/GoodQuantumNumber.html#Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumbers-Tuple{OrderedCollections.OrderedDict{#s13,Int64} where #s13<:Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumber}",
+    "location": "man/Utilities/GoodQuantumNumber.html#Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumbers-Tuple{OrderedCollections.OrderedDict{#s61,Int64} where #s61<:Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumber}",
     "page": "Good quantum numbers",
     "title": "Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumbers",
     "category": "method",
@@ -929,7 +1225,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/GoodQuantumNumber.html#Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumbers-Tuple{OrderedCollections.OrderedDict{#s13,UnitRange{Int64}} where #s13<:Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumber}",
+    "location": "man/Utilities/GoodQuantumNumber.html#Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumbers-Tuple{OrderedCollections.OrderedDict{#s61,UnitRange{Int64}} where #s61<:Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumber}",
     "page": "Good quantum numbers",
     "title": "Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumbers",
     "category": "method",
@@ -969,7 +1265,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/GoodQuantumNumber.html#Hamiltonian.Utilities.GoodQuantumNumber.:⊕-Union{Tuple{Tuple{Vararg{#s14,N}} where #s14<:QuantumNumber}, Tuple{N}, Tuple{Tuple{Vararg{#s13,N}} where #s13<:QuantumNumber,Tuple{Vararg{Int64,N}}}} where N",
+    "location": "man/Utilities/GoodQuantumNumber.html#Hamiltonian.Utilities.GoodQuantumNumber.:⊕-Union{Tuple{Tuple{Vararg{#s61,N}} where #s61<:QuantumNumber}, Tuple{N}, Tuple{Tuple{Vararg{#s14,N}} where #s14<:QuantumNumber,Tuple{Vararg{Int64,N}}}} where N",
     "page": "Good quantum numbers",
     "title": "Hamiltonian.Utilities.GoodQuantumNumber.:⊕",
     "category": "method",
@@ -1041,7 +1337,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/GoodQuantumNumber.html#Hamiltonian.Utilities.GoodQuantumNumber.dimension-Tuple{Type{#s62} where #s62<:Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumber}",
+    "location": "man/Utilities/GoodQuantumNumber.html#Hamiltonian.Utilities.GoodQuantumNumber.dimension-Tuple{Type{#s68} where #s68<:Hamiltonian.Utilities.GoodQuantumNumber.QuantumNumber}",
     "page": "Good quantum numbers",
     "title": "Hamiltonian.Utilities.GoodQuantumNumber.dimension",
     "category": "method",
@@ -1145,7 +1441,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/GoodQuantumNumber.html#Base.eltype-Union{Tuple{Type{#s62} where #s62<:QuantumNumbers{QN}}, Tuple{QN}} where QN",
+    "location": "man/Utilities/GoodQuantumNumber.html#Base.eltype-Union{Tuple{Type{#s68} where #s68<:QuantumNumbers{QN}}, Tuple{QN}} where QN",
     "page": "Good quantum numbers",
     "title": "Base.eltype",
     "category": "method",
