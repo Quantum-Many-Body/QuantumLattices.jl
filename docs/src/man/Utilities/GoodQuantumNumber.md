@@ -18,7 +18,7 @@ Main features include:
 * iterable: concrete instances are iterable over their values
 * comparable: two concrete instances can be compared
 
-In particular, `QuantumNumber <: AbstractNamedVector{Float64}`, all features supported by `AbstractNamedVector` are also available for `QuantumNumber`. See also [`AbstractNamedVector`](@ref).
+In particular, `QuantumNumber <: AbstractNamedVector{Float64}`, all features supported by `AbstractNamedVector` are also available for `QuantumNumber`. See also [AbstractNamedVector](@ref).
 
 For convenience, **4** kinds of good quantum numbers are predefined in this module, i.e.
 * [`SQN`](@ref): for spin z-component reserved systems

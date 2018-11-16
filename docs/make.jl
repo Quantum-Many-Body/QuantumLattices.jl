@@ -10,8 +10,8 @@ makedocs(
     pages=              [
                         "Home"      =>  "index.md",
                         "Tutorial"  =>  [
-                                "tutorial/Unitcell Description.md",
-                                "tutorial/Engine App Interface.md",
+                                "tutorial/UnitcellDescription.md",
+                                "tutorial/EngineAppInterface.md",
                                 ],
                         "Manual"    =>  [
                                 "Utilities" =>  [

@@ -1,16 +1,17 @@
 module NamedVector
 
 import Printf: @printf
+import ..Factory: Inference,TypeFactory,FunctionFactory,addargs!,extendbody!
 
-export AbstractNamedVector
-export @namedvector
+export AbstractNamedVector,@namedvector
+export HomoNamedVector,@homonamedvector
 
 """
-    AbstractNamedVector{T}
+    AbstractNamedVector
 
-Abstract type for all concrete named vectors.
+Abstract type for all named vectors.
 """
-abstract type AbstractNamedVector{T} end
+abstract type AbstractNamedVector end
 
 """
     getindex(nv::AbstractNamedVector,index::Int)
@@ -72,15 +73,16 @@ Hash a concrete `AbstractNamedVector`.
 Base.hash(nv::AbstractNamedVector,h::UInt)=hash(nv|>values,h)
 
 """
-    convert(::Type{Tuple},nv::AbstractNamedVector) -> NTuple{nv|>length,nv|>eltype}
-    convert(::Type{NTuple},nv::AbstractNamedVector) -> NTuple{nv|>length,nv|>eltype}
-    convert(::Type{NTuple{N,T}},nv::AbstractNamedVector{T}) where {N,T} -> NTuple{nv|>length,nv|>eltype}
+    convert(::Type{Tuple},nv::AbstractNamedVector) -> Tuple
+    convert(::Type{NV},nv::Tuple) where NV<:AbstractNamedVector -> NV
 
-Convert a named vector to tuple.
+Convert a named vector to tuple and vice versa.
 """
-Base.convert(::Type{Tuple},nv::AbstractNamedVector)=NTuple{nv|>length,nv|>eltype}(getfield(nv,i) for i=1:length(nv))
-Base.convert(::Type{NTuple},nv::AbstractNamedVector)=convert(Tuple,nv)
-Base.convert(::Type{NTuple{N,T}},nv::AbstractNamedVector{T}) where {N,T}=convert(Tuple,nv)
+@generated Base.convert(::Type{Tuple},nv::AbstractNamedVector)=Expr(:tuple,(:(getfield(nv,$i)) for i=1:(nv|>fieldnames|>length))...)
+function Base.convert(::Type{NV},nv::Tuple) where NV<:AbstractNamedVector
+    @assert length(NV)==length(nv) "convert error: dismatched length between $(NV|>typeof)($(NV|>length)) and input tuple($(nv|>length))."
+    return NV(nv...)
+end
 
 """
     length(::Type{NV}) where NV<:AbstractNamedVector -> Int
@@ -92,21 +94,12 @@ Base.length(::Type{NV}) where NV<:AbstractNamedVector=NV|>fieldnames|>length
 Base.length(nv::AbstractNamedVector)=nv|>typeof|>length
 
 """
-    eltype(::Type{NV}) where NV<:AbstractNamedVector{T} where T
-    eltype(nv::AbstractNamedVector)
-
-Get the type parameter of a concrete `AbstractNamedVector`.
-"""
-Base.eltype(::Type{<:AbstractNamedVector{T}}) where T=T
-Base.eltype(nv::AbstractNamedVector)=nv|>typeof|>eltype
-
-"""
     zero(::Type{NV}) where NV<:AbstractNamedVector
     zero(nv::AbstractNamedVector)
 
 Get a concrete `AbstractNamedVector` with all values being zero.
 """
-@generated Base.zero(::Type{NV}) where NV<:AbstractNamedVector=(zeros=(zero(NV|>eltype) for i=1:length(NV|>fieldnames));:(NV($(zeros...))))
+@generated Base.zero(::Type{NV}) where NV<:AbstractNamedVector=(zeros=(zero(fieldtype(NV,i)) for i=1:(NV|>fieldnames|>length));:(NV($(zeros...))))
 Base.zero(nv::AbstractNamedVector)=nv|>typeof|>zero
 
 """
@@ -126,11 +119,11 @@ Iterate over the names.
 Base.keys(nv::AbstractNamedVector)=nv|>typeof|>fieldnames
 
 """
-    values(nv::AbstractNamedVector) -> NTuple{nv|>length,nv|>eltype}
+    values(nv::AbstractNamedVector) -> Tuple
 
 Iterate over the values.
 """
-Base.values(nv::AbstractNamedVector)=NTuple{nv|>length,nv|>typeof|>eltype}(getfield(nv,i) for i=1:length(nv))
+Base.values(nv::AbstractNamedVector)=convert(Tuple,nv)
 
 """
     pairs(nv::AbstractNamedVector)
@@ -161,33 +154,63 @@ Apply function `f` elementwise on the input named vectors.
 end
 
 """
-    (::Type{NV})(values::NTuple{N,T}) where {NV<:AbstractNamedVector,N,T}
+    @namedvector structdef::Expr
 
-Construct a concrete named vector by a tuple.
+Decorate a "raw" struct to be a subtype of `AbstractNamedVector`. Here, "raw" means that the input struct has no explicit supertype and no inner constructors.
 """
-(::Type{NV})(values::NTuple{N,T}) where {NV<:AbstractNamedVector,N,T}=NV(values...)
+macro namedvector(structdef::Expr)
+    tf=TypeFactory(structdef)
+    @assert tf.supertype==Inference(:Any) "@namedvector error: no explicit supertype except `Any` is allowed."
+    @assert length(tf.constructors)==0 "@namedvector error: no inner constructor is allowed."
+    tf.supertype=Inference(:AbstractNamedVector)
+    paramnames=tuple((param.name for param in tf.params)...)
+    fieldnames=tuple((field.name for field in tf.fields)...)
+    fldnm=FunctionFactory(name=:(Base.fieldnames))
+    addargs!(fldnm,:(::Type{<:$(tf.name)}))
+    extendbody!(fldnm,Expr(:tuple,QuoteNode.(fieldnames)...))
+    structdef=tf(unescaped=tuple(paramnames...,:AbstractNamedVector),escaped=(tf.name,))
+    fldnmdef=fldnm(escaped=(:tuple,))
+    return Expr(:block,:(Base.@__doc__($structdef)),fldnmdef)
+end
 
 """
-    @namedvector mutableornot::Bool typename fieldnames dtype::Union{Expr,Symbol}=:nothing supertypename=:AbstractNamedVector
+    HomoNamedVector{T}
 
-Construct a mutable or immutable concrete named vector with the type name being `typename` and the fieldnames specified by `fieldnames`, and optionally, the type parameters specified by `dtype` and the supertype specified by `supertypename`.
+Abstract type for all homogeneous named vectors.
 """
-macro namedvector(mutableornot::Bool,typename,fieldnames,dtype::Union{Expr,Symbol}=:nothing,supertypename=:AbstractNamedVector)
-    typename,supertypename=Symbol(typename),Symbol(supertypename)
+abstract type HomoNamedVector{T} <: AbstractNamedVector end
+
+"""
+    eltype(::Type{NV}) where NV<:HomoNamedVector{T} where T
+    eltype(nv::HomoNamedVector)
+
+Get the type parameter of a concrete `HomoNamedVector`.
+"""
+Base.eltype(::Type{<:HomoNamedVector{T}}) where T=T
+Base.eltype(nv::HomoNamedVector)=nv|>typeof|>eltype
+
+"""
+    @homonamedvector typename fieldnames dtype::Union{Expr,Symbol}=:nothing mutable::Union{Expr,Bool}=false
+
+Construct a concrete homogeneous named vector with the type name being `typename` and the fieldnames specified by `fieldnames`, and optionally, the type parameters specified by `dtype`.`mutable` can be used as a keyword argument to determine whether the concrete type is mutable.
+"""
+macro homonamedvector(typename,fieldnames,dtype::Union{Expr,Symbol}=:nothing,mutable::Union{Expr,Bool}=false)
+    typename=Symbol(typename)
     fieldnames=tuple(eval(fieldnames)...)
-    @assert all(isa(name,Symbol) for name in fieldnames) "namedvector error: every field name should be a `Symbol`."
-    isa(dtype,Expr) && (@assert (dtype.head==:(<:) && dtype.args|>length==1) "namedvector error: not supported `dtype`.")
+    @assert all(isa(name,Symbol) for name in fieldnames) "homonamedvector error: every field name should be a `Symbol`."
+    isa(dtype,Expr) && (@assert (dtype.head==:(<:) && dtype.args|>length==1) "homonamedvector error: wrong `dtype`.")
     dname,dscope=isa(dtype,Expr) ? (:T,dtype.args[1]) : (dtype==:nothing ? (:T,:Any) : (dtype,:concrete))
+    isa(mutable,Expr) && ((@assert mutable.head==:(=) && mutable.args[1]==:mutable && isa(mutable.args[2],Bool) "homonamedvector error: wrong `mutable`.");mutable=mutable.args[2])
     if dscope==:concrete
         new=:($(esc(typename)))
-        super=supertypename==:AbstractNamedVector ? :(AbstractNamedVector{$(esc(dname))}) : :($(esc(supertypename)){$(esc(dname))})
+        super=:(HomoNamedVector{$(esc(dname))})
         body=(:($field::$(esc(dname))) for field in fieldnames)
     else
         new=:($(esc(typename)){$dname<:$(esc(dscope))})
-        super=supertypename==:AbstractNamedVector ? :(AbstractNamedVector{$dname}) : :($(esc(supertypename)){$dname})
+        super=:(HomoNamedVector{$dname})
         body=(:($field::$dname) for field in fieldnames)
     end
-    structdef=Expr(:struct,mutableornot,Expr(:<:,new,super),Expr(:block,body...))
+    structdef=Expr(:struct,mutable,Expr(:<:,new,super),Expr(:block,body...))
     functions=:(Base.fieldnames(::Type{<:$(esc(typename))})=$fieldnames)
     return Expr(:block,:(Base.@__doc__($structdef)),functions)
 end

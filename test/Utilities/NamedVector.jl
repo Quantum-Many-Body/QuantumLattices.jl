@@ -1,8 +1,36 @@
 using Test
 using Hamiltonian.Utilities.NamedVector
 
-@namedvector true "FPID" (:scope,:site) Float64
-@namedvector true "RPID" (:scope,:site) (<:Real)
+@namedvector mutable struct PID
+    scope::String
+    site::Int
+end
+
+@testset "PID" begin
+    @test PID|>fieldnames==(:scope,:site)
+    @test PID|>length==2
+
+    pid=PID("A",0)
+    @test pid|>string=="PID(A,0)"
+    @test pid|>length==2
+    @test pid[1]==pid.scope=="A"
+    @test pid[2]==pid.site==0
+    @test replace(pid,scope="B")==PID("B",0)
+    @test replace(pid,site=1)==PID("A",1)
+    @test replace(pid,scope="B",site=1)==PID("B",1)
+    @test (pid[1]="B";pid[1]=="B")
+    @test (pid.site=2;pid.site==2)
+
+    @test PID("A",2.0)<PID("B",0.0)
+    @test PID("A",2.0)<PID("A",3.0)
+
+    dict=Dict(PID("A",0)=>1,PID("A",1)=>2)
+    @test dict[PID("A",0)]==1
+    @test dict[PID("A",1)]==2
+end
+
+@homonamedvector "FPID" (:scope,:site) Float64 mutable=true
+@homonamedvector "RPID" (:scope,:site) (<:Real) mutable=true
 
 @testset "FPID" begin
     @test FPID|>fieldnames==(:scope,:site)

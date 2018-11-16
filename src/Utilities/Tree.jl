@@ -139,7 +139,7 @@ Construct an empty tree of the same type with the input one.
 @generated function empty(tree::AbstractTree)
     treename=tree|>nameof
     treeparams=tree|>eltype
-    contents=Expr[:(getfield($tree,$field)) for field in (tree|>fieldnames) if field!=:TREECORE]
+    contents=Expr[:(getfield(tree,$field)) for field in (tree|>fieldnames) if field!=:TREECORE]
     return :(($treename){$(treeparams...)}($(contents...)))
 end
 
@@ -392,7 +392,7 @@ macro tree(structdef,treeparams::Union{Expr,Nothing}=nothing)
     tf=TypeFactory(structdef)
     fieldnames=[field.name for field in tf.fields]
     paramnames=[param.name for param in tf.params]
-    @assert tf.supertype==Inference(:Any) "@tree error: no explicit supertype is allowed."
+    @assert tf.supertype==Inference(:Any) "@tree error: no explicit supertype except `Any` is allowed."
     @assert length(tf.constructors)==0 "@tree error: no inner constructor is allowed."
     @assert :TREECORE ∉ fieldnames "@tree error: :TREECORE is a reserved attribute name."
     if treeparams==nothing

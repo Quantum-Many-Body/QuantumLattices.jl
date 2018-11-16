@@ -6,7 +6,7 @@ using DataStructures: OrderedDict
 using Random: MersenneTwister,seed!,shuffle!
 using LinearAlgebra: norm
 using Combinatorics: combinations
-using ..NamedVector: AbstractNamedVector
+using ..NamedVector: HomoNamedVector
 
 export QuantumNumber
 export regularize!,regularize
@@ -17,7 +17,7 @@ export ⊕,⊗,ukron,dimension,expand,decompose,subset,reorder,toordereddict
 export SQNS,PQNS,SzPQNS,SPQNS,Z2QNS
 
 "Abstract type for all concrete quantum numbers for a single basis."
-abstract type QuantumNumber <: AbstractNamedVector{Float64} end
+abstract type QuantumNumber <: HomoNamedVector{Float64} end
 
 """
     dimension(::Type{<:QuantumNumber}) -> Int
