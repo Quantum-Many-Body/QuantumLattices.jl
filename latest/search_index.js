@@ -41,7 +41,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "tutorial/Unitcell Description.html#",
+    "location": "tutorial/UnitcellDescription.html#",
     "page": "Unitcell Description",
     "title": "Unitcell Description",
     "category": "page",
@@ -49,7 +49,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "tutorial/Unitcell Description.html#Unitcell-Description-1",
+    "location": "tutorial/UnitcellDescription.html#Unitcell-Description-1",
     "page": "Unitcell Description",
     "title": "Unitcell Description",
     "category": "section",
@@ -57,7 +57,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "tutorial/Engine App Interface.html#",
+    "location": "tutorial/EngineAppInterface.html#",
     "page": "Engine App Interface",
     "title": "Engine App Interface",
     "category": "page",
@@ -65,7 +65,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "tutorial/Engine App Interface.html#Engine-App-Interface-1",
+    "location": "tutorial/EngineAppInterface.html#Engine-App-Interface-1",
     "page": "Engine App Interface",
     "title": "Engine App Interface",
     "category": "section",
@@ -909,7 +909,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Named vector",
     "title": "Named vector",
     "category": "page",
-    "text": "CurrentModule=Hamiltonian.Utilities.NamedVector"
+    "text": "CurrentModule=Hamiltonian.Utilities.NamedVectorpush!(LOAD_PATH,\"../../../../src/\")\nusing Hamiltonian.Utilities.NamedVector"
 },
 
 {
@@ -917,7 +917,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Named vector",
     "title": "Named vector",
     "category": "section",
-    "text": "A named vector is similiar to a named tuple, which associate each of its values with a name. Although the names of a named vector cannot be changed, the values can be modified if needed. In contrast to the predefined NamedTuple in Julia, which employs the names as type parameters, we just implement a named vector as a composite struct equipped with the getindex and setindex! functions, with the fieldnames being its names. This simple implementation makes it possible to define your own concrete named vector with any of your preferred type names, and ensures that all instances of a certain concrete named vector share the same names. Therefore, if you are familiar with Python, you will find that our named vector is more qualified to be the counterpart of the namedtuple in Python than the default Julia implementation. Specifically, we also define a macro @namedvector as the type factory to help users to define their own concrete named vectors. Last but not least important, it is also worth noted that a named vector is not a vector, as is similar to that a named tuple is not a tuple in Julia. This results from our basic expectation that a named vector should be more like a tuple other than a vector so that not all operations valid to vectors are also valid to named vectors."
+    "text": "A named vector is similiar to a named tuple, which associate each of its values with a name. Although the names of a named vector cannot be changed, the values can be modified if needed. In contrast to the predefined NamedTuple in Julia, which employs the names as type parameters, we just implement a named vector as a composite struct equipped with the getindex and setindex! functions, with the fieldnames being its names. This simple implementation makes it possible to define your own concrete named vector with any of your preferred type names, and ensures that all instances of a certain concrete named vector share the same names. Therefore, if you are familiar with Python, you will find that our named vector is more qualified to be the counterpart of the namedtuple in Python than the default Julia implementation. Last but not least important, it is also worth noted that a named vector is not a vector, as is similar to that a named tuple is not a tuple in Julia. This results from our basic expectation that a named vector should be more like a tuple other than a vector so that not all operations valid to vectors are also valid to named vectors."
 },
 
 {
@@ -925,7 +925,15 @@ var documenterSearchIndex = {"docs": [
     "page": "Named vector",
     "title": "AbstractNamedVector",
     "category": "section",
-    "text": "AbstractNamedVector defines the abstract type for all concrete named vectors.Main features include:Values can be accessed or modified either by the . operator or by the [] operator.\nComparisons, such as ≡, ≢, ==, ≠, >, <, ≥, ≤ are supported. Therefore a vector of named vectors can be sorted by the default sort function.\nHash is supported by hash. Therefore, a named vector can be used as the key of a dict or set.\nIteration over its fieldnames is supported by keys, over its values is supported by values, over its field-value pairs is supported by pairs. A reverse iteration is also supported.To subtype it, please note:A concrete type can be either mutable or immutable as you need, but all its fields should be of the same type. A recommended template for the subtype is\n[mutable] struct YourNamedVector{T} <: AbstractNamedVector{T}\n    filedname1::T\n    filedname2::T\n    ...\nend\nIt is recommended to overload the Base.fieldnames function for concrete subtypes to ensure type stability and improve efficiency, which though is not a necessity. A template for such an overloading is\nBase.fieldnames(Type{YourNamedVector})=(:fieldname1,:fieldname2,...)\nFor all concrete subtypes, if inner constructors are defined, the one which has the same interface with the default one must be implemented. Otherwise, some functionalities will not work.\nArithmetic operations, such as +, -, *, /, %, ÷, etc. are NOT supported. However, an efficient map function  is implemented, which can help users do the overloadings of these operations."
+    "text": "AbstractNamedVector defines the abstract type for all concrete named vectors.Main features include:Values can be accessed or modified either by the . operator or by the [] operator.\nComparisons, such as ≡, ≢, ==, ≠, >, <, ≥, ≤ are supported. Therefore a vector of named vectors can be sorted by the default sort function.\nHash is supported by hash. Therefore, a named vector can be used as the key of a dict or set.\nIteration over its fieldnames is supported by keys, over its values is supported by values, over its field-value pairs is supported by pairs. A reverse iteration is also supported.To subtype it, please note:A concrete type can be either mutable or immutable as you need, which is different from tuples.\nThe fields of a concrete type can be of the same type or not. For the former, we denote the named vector as \"homogeneous\" while for the latter as \"inhomogeneous\". For homogeneous ones, we define a sub abstract type, HomoNamedVector for further optimization of the default methods. See HomoNamedVector below.\nIt is recommended to overload the Base.fieldnames function for concrete subtypes to ensure type stability and improve efficiency, which though is not a necessity. A template for such an overloading is\nBase.fieldnames(Type{<:YourNamedVector})=(:fieldname1,:fieldname2,...)\nFor all concrete subtypes, if inner constructors are defined, the one which has the same interface with the default one must be implemented. Otherwise, some functionalities will not work.\nArithmetic operations, such as +, -, *, /, %, ÷, etc. are NOT supported. However, the function map is implemented, which can help users do the overloadings of these operations.We define a macro @namedvector as the type factory to decorate a \"raw\" struct to be a subtype of AbstractNamedVector. Here, \"raw\" means the struct to be decorated has no explicit supertype other than Any, neither inner constructors as well. For example,@namedvector mutable struct InHomoNV\n    scope::String\n    site::Int\nendThis macro encapsulate the overloading of Base.fieldnames, and you have no need to do this by hand any more."
+},
+
+{
+    "location": "man/Utilities/NamedVector.html#HomoNamedVector-1",
+    "page": "Named vector",
+    "title": "HomoNamedVector",
+    "category": "section",
+    "text": "HomoNamedVector is the subtype of [AbstractNamedVector] that of all its fields share the same type. Compared to AbstractNamedVector, one more default method is implemented with HomoNamedVector, i.e. eltype, which returns the type of its fields. This function ensures the type stability of all the methods that involves an iteration of the field values of a named vector. Therefore, homogeneous named vector are usually more efficient than inhomogeneous ones. Use homogeneous ones as much as possible unless the code efficiency does not matter.To subtype [HomoNamedVector], all the suggestions mentioned in the previous subsection for AbstractNamedVector also applies. A recommended template for a subtype is[mutable] struct YourNamedVector{T} <: HomoNamedVector{T}\n    filed1::T\n    filed2::T\n    ...\nendWe also provide a macro @homonamedvector to help the definition of concrete homogeneous named vector, where you only need specify the type name, field names, data type and optionally whether the subtype is mutable. For example,@homonamedvector HomoNVWithoutParameter (:scope,:site) Int mutable=true\n@homonamedvector HomoNVWithParameter (:scope,:site) (<:Real) mutable=trueThis macro also integrates the Base.fieldnames function, thus its overloading by hand is on longer needed."
 },
 
 {
@@ -933,23 +941,31 @@ var documenterSearchIndex = {"docs": [
     "page": "Named vector",
     "title": "Hamiltonian.Utilities.NamedVector.AbstractNamedVector",
     "category": "type",
-    "text": "AbstractNamedVector{T}\n\nAbstract type for all concrete named vectors.\n\n\n\n\n\n"
+    "text": "AbstractNamedVector\n\nAbstract type for all named vectors.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/NamedVector.html#Hamiltonian.Utilities.NamedVector.@namedvector",
+    "location": "man/Utilities/NamedVector.html#Hamiltonian.Utilities.NamedVector.HomoNamedVector",
+    "page": "Named vector",
+    "title": "Hamiltonian.Utilities.NamedVector.HomoNamedVector",
+    "category": "type",
+    "text": "HomoNamedVector{T}\n\nAbstract type for all homogeneous named vectors.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/NamedVector.html#Hamiltonian.Utilities.NamedVector.@homonamedvector",
+    "page": "Named vector",
+    "title": "Hamiltonian.Utilities.NamedVector.@homonamedvector",
+    "category": "macro",
+    "text": "@homonamedvector typename fieldnames dtype::Union{Expr,Symbol}=:nothing mutable::Union{Expr,Bool}=false\n\nConstruct a concrete homogeneous named vector with the type name being typename and the fieldnames specified by fieldnames, and optionally, the type parameters specified by dtype.mutable can be used as a keyword argument to determine whether the concrete type is mutable.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/NamedVector.html#Hamiltonian.Utilities.NamedVector.@namedvector-Tuple{Expr}",
     "page": "Named vector",
     "title": "Hamiltonian.Utilities.NamedVector.@namedvector",
     "category": "macro",
-    "text": "@namedvector mutableornot::Bool typename fieldnames dtype::Union{Expr,Symbol}=:nothing supertypename=:AbstractNamedVector\n\nConstruct a mutable or immutable concrete named vector with the type name being typename and the fieldnames specified by fieldnames, and optionally, the type parameters specified by dtype and the supertype specified by supertypename.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/NamedVector.html#Core.Type-Union{Tuple{Tuple{Vararg{T,N}}}, Tuple{T}, Tuple{N}, Tuple{NV}} where T where N where NV<:Hamiltonian.Utilities.NamedVector.AbstractNamedVector",
-    "page": "Named vector",
-    "title": "Core.Type",
-    "category": "method",
-    "text": "(::Type{NV})(values::NTuple{N,T}) where {NV<:AbstractNamedVector,N,T}\n\nConstruct a concrete named vector by a tuple.\n\n\n\n\n\n"
+    "text": "@namedvector structdef::Expr\n\nDecorate a \"raw\" struct to be a subtype of AbstractNamedVector. Here, \"raw\" means that the input struct has no explicit supertype and no inner constructors.\n\n\n\n\n\n"
 },
 
 {
@@ -973,15 +989,15 @@ var documenterSearchIndex = {"docs": [
     "page": "Named vector",
     "title": "Base.convert",
     "category": "method",
-    "text": "convert(::Type{Tuple},nv::AbstractNamedVector) -> NTuple{nv|>length,nv|>eltype}\nconvert(::Type{NTuple},nv::AbstractNamedVector) -> NTuple{nv|>length,nv|>eltype}\nconvert(::Type{NTuple{N,T}},nv::AbstractNamedVector{T}) where {N,T} -> NTuple{nv|>length,nv|>eltype}\n\nConvert a named vector to tuple.\n\n\n\n\n\n"
+    "text": "convert(::Type{Tuple},nv::AbstractNamedVector) -> Tuple\nconvert(::Type{NV},nv::Tuple) where NV<:AbstractNamedVector -> NV\n\nConvert a named vector to tuple and vice versa.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/NamedVector.html#Base.eltype-Union{Tuple{Type{#s68} where #s68<:AbstractNamedVector{T}}, Tuple{T}} where T",
+    "location": "man/Utilities/NamedVector.html#Base.eltype-Union{Tuple{Type{#s68} where #s68<:HomoNamedVector{T}}, Tuple{T}} where T",
     "page": "Named vector",
     "title": "Base.eltype",
     "category": "method",
-    "text": "eltype(::Type{NV}) where NV<:AbstractNamedVector{T} where T\neltype(nv::AbstractNamedVector)\n\nGet the type parameter of a concrete AbstractNamedVector.\n\n\n\n\n\n"
+    "text": "eltype(::Type{NV}) where NV<:HomoNamedVector{T} where T\neltype(nv::HomoNamedVector)\n\nGet the type parameter of a concrete HomoNamedVector.\n\n\n\n\n\n"
 },
 
 {
@@ -1077,7 +1093,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Named vector",
     "title": "Base.values",
     "category": "method",
-    "text": "values(nv::AbstractNamedVector) -> NTuple{nv|>length,nv|>eltype}\n\nIterate over the values.\n\n\n\n\n\n"
+    "text": "values(nv::AbstractNamedVector) -> Tuple\n\nIterate over the values.\n\n\n\n\n\n"
 },
 
 {
