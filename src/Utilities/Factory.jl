@@ -7,17 +7,16 @@ using MacroTools: splitdef,combinedef
 using Printf: @printf,@sprintf
 import MacroTools: rmlines
 
-export FExpr
-export symbols,escape
+export FExpr,RawExpr
+export escape
 export Inference,@inference
 export Argument,@argument
 export Parameter,@parameter
 export Field,@field
 export Block,@block,@push!,rmlines!,@rmlines!,rmlines,@rmlines
-export FunctionFactory,@functionfactory,addargs!,@addargs!,addkwargs!,@addkwargs!,extendbody!,@extendbody!
+export FunctionFactory,@functionfactory,addargs!,@addargs!,addkwargs!,@addkwargs!,addwhereparams!,@addwhereparams!,extendbody!,@extendbody!
 export TypeFactory,@typefactory,addfields!,@addfields!,addconstructors!,@addconstructors!
 export addparams!,@addparams!
-export paramnames
 
 @generated function maxfieldnamelength(::T) where T
     result=1
@@ -30,19 +29,22 @@ end
 "Factory expression types, which is defined as `Union{Symbol,Expr}`."
 const FExpr=Union{Symbol,Expr}
 
+"Whether or not to show raw expressions of factoies."
+const RawExpr=Val(true)
+
 """
-    symbols(expr)
+    names(expr::Union{Symbol,Expr})
+
+Get all the variable names in an `Expr`.
 """
-function symbols(expr)
+Base.names(expr)=[]
+Base.names(expr::Symbol)=[expr]
+function Base.names(expr::Expr)
     result=[]
-    if isa(expr,Symbol)
-        push!(result,expr)
-    elseif isa(expr,Expr)
-        for arg in expr.args
-            append!(result,symbols(arg))
-        end
+    for arg in expr.args
+        append!(result,names(arg))
     end
-    return result
+    result
 end
 
 """
@@ -50,7 +52,7 @@ end
     escape(expr::Symbol,escaped::NTuple{N,Symbol}=()) where N
     escape(expr::Expr,escaped::NTuple{N,Symbol}=()) where N
 
-Escape the symbols sepecified by `escaped` in the input expression.
+Escape the variables sepecified by `escaped` in the input expression.
 """
 escape(expr,::NTuple{N,Symbol}=()) where N=expr
 escape(expr::Symbol,escaped::NTuple{N,Symbol}=()) where N=expr ∈ escaped ? :($(esc(expr))) : expr
@@ -83,10 +85,10 @@ function Base.show(io::IO,f::AbstractFactory)
         if isa(value,Nothing)
             vstr="nothing"
         elseif isa(value,AbstractFactory)
-            vstr=string(value())
+            vstr=string(value(RawExpr))
         elseif isa(value,Vector{<:AbstractFactory})
             eltypename=value|>eltype|>nameof
-            strings=Tuple(string(af()) for af in value)
+            strings=Tuple(string(af(RawExpr)) for af in value)
             if (length(strings)>0 ? sum(map(length,strings)) : 0)<90-(f|>maxfieldnamelength)
                 vstr=@sprintf "%s[%s]" eltypename join(strings,", ")
             else
@@ -109,23 +111,13 @@ Return a copy of a concrete `AbstractFactory` with some of the field values repl
 Base.replace(f::AbstractFactory;kwargs...)=(f|>typeof)((get(kwargs,key,getfield(f,name)) for name in f|>typeof|>fieldnames)...)
 
 """
-    SubTypeofAbstractFactory.(exprs::Vector{FExpr};unescaped::NTuple{N,Symbol}=()) where N
-    SubTypeofAbstractFactory.(exprs::NTuple{N,FExpr};unescaped::NTuple{M,Symbol}=()) where {N,M}
-
-Broadcast construction of concrete subtypes of `AbstractFactory`.
-"""
-Base.Broadcast.broadcasted(f::Type{<:AbstractFactory},exprs::Vector{FExpr};unescaped::NTuple{N,Symbol}=()) where N=[f(expr,unescaped=unescaped) for expr in exprs]
-Base.Broadcast.broadcasted(f::Type{<:AbstractFactory},exprs::NTuple{N,FExpr};unescaped::NTuple{M,Symbol}=()) where {N,M}=NTuple{N,f}(f(expr,unescaped=unescaped) for expr in exprs)
-
-"""
-    Inference(head::Union{Symbol,Nothing},name::Union{Symbol,Nothing},params::Union{Inference,Vector{Inference},Nothing},escape::Bool)
+    Inference(head::Union{Symbol,Nothing},name::Union{Symbol,Nothing},params::Union{Inference,Vector{Inference},Nothing})
     Inference(;
             head::Union{Symbol,Nothing}=nothing,
             name::Union{Symbol,Nothing}=nothing,
             params::Union{Inference,Vector{Inference},Nothing}=nothing,
-            escape::Bool=true
             )
-    Inference(expr::FExpr;unescaped::NTuple{N,Symbol}=()) where N
+    Inference(expr::FExpr)
 
 The struct to describe a type inference.
 """
@@ -133,57 +125,65 @@ mutable struct Inference <: AbstractFactory
     head::Union{Symbol,Nothing}
     name::Union{Symbol,Nothing}
     params::Union{Inference,Vector{Inference},Nothing}
-    escape::Bool
-    function Inference(head::Union{Symbol,Nothing},name::Union{Symbol,Nothing},params::Union{Inference,Vector{Inference},Nothing},escape::Bool)
+    function Inference(head::Union{Symbol,Nothing},name::Union{Symbol,Nothing},params::Union{Inference,Vector{Inference},Nothing})
         @assert (head===nothing)==(params===nothing) "Inference error: `head` and `params` must be or not be `nothing` at the same time."
-        new(head,name,params,escape)
+        new(head,name,params)
     end
 end
 Inference(;
         head::Union{Symbol,Nothing}=nothing,
         name::Union{Symbol,Nothing}=nothing,
-        params::Union{Inference,Vector{Inference},Nothing}=nothing,
-        escape::Bool=true
-        )=Inference(head,name,params,escape)
-function Inference(expr::FExpr;unescaped::NTuple{N,Symbol}=()) where N
+        params::Union{Inference,Vector{Inference},Nothing}=nothing
+        )=Inference(head,name,params)
+function Inference(expr::FExpr)
     if isa(expr,Symbol)
-        return Inference(nothing,expr,nothing,expr ∉ unescaped)
+        return Inference(nothing,expr,nothing)
     elseif expr.head==:(<:) || expr.head==:(::)
         @assert length(expr.args)==1 "Inference error: wrong input expr."
-        return Inference(expr.head,nothing,Inference(expr.args[1],unescaped=unescaped),false)
+        return Inference(expr.head,nothing,Inference(expr.args[1]))
     elseif expr.head==:curly
-        return Inference(expr.head,expr.args[1],Inference.(expr.args[2:end],unescaped=unescaped),expr.args[1] ∉ unescaped)
+        return Inference(expr.head,expr.args[1],Inference.(expr.args[2:end]))
     else
         error("Inference error: wrong input expr.")
     end
 end
 
 """
-    @inference expr::FExpr unescaped::FExpr=:()
+    @inference expr::FExpr
 
 Construct an `Inference` directly from a type inference.
 """
-macro inference(expr::FExpr,unescaped::FExpr=:()) expr=[expr];:(Inference($expr...;unescaped=$(esc(unescaped)))) end
+macro inference(expr::FExpr) expr=[expr];:(Inference($expr...)) end
 
 """
-    (i::Inference)()
+    (i::Inference)(::typeof(RawExpr))
+    (i::Inference)(;unescaped::NTuple{N,Symbol}=()) where N
 
 Convert a `Inference` to the `Expr` representation of the type inference it describes.
 """
-function (i::Inference)()
+function (i::Inference)(::typeof(RawExpr))
     if i.head===nothing
-        return i.escape ? :($(esc(i.name))) : i.name
+        return i.name
     elseif i.head==:(::) || i.head==:(<:)
-        return Expr(i.head,i.params())
-    elseif i.head==:curly
-        return Expr(i.head,i.escape ? :($(esc(i.name))) : i.name,[param() for param in i.params]...)
+        return Expr(i.head,i.params(RawExpr))
+    else
+        return Expr(i.head,i.name,[param(RawExpr) for param in i.params]...)
+    end
+end
+function (i::Inference)(;unescaped::NTuple{N,Symbol}=()) where N
+    if i.head===nothing
+        return i.name ∉ unescaped ? :($(esc(i.name))) : i.name
+    elseif i.head==:(::) || i.head==:(<:)
+        return Expr(i.head,i.params(unescaped=unescaped))
+    else
+        return Expr(i.head,i.name ∉ unescaped ? :($(esc(i.name))) : i.name,[param(unescaped=unescaped) for param in i.params]...)
     end
 end
 
 """
     Argument(name::Union{Symbol,Nothing},type::Inference,slurp::Bool,default::Any)
     Argument(;name::Union{Symbol,Nothing}=nothing,type::Inference=Inference(:Any),slurp::Bool=false,default::Any=nothing)
-    Argument(expr::FExpr;unescaped::NTuple{N,Symbol}=()) where N)
+    Argument(expr::FExpr)
 
 The struct to describe a argument of a `function`.
 """
@@ -194,29 +194,28 @@ mutable struct Argument <: AbstractFactory
     default::Any
 end
 Argument(;name::Union{Symbol,Nothing}=nothing,type::Inference=Inference(:Any),slurp::Bool=false,default::Any=nothing)=Argument(name,type,slurp,default)
-function Argument(expr::FExpr;unescaped::NTuple{N,Symbol}=()) where N
-    cache=splitarg(expr)
-    Argument(cache[1],Inference(cache[2],unescaped=unescaped),cache[3],escape(cache[4],tuple(setdiff(symbols(cache[4]),unescaped)...)))
-end
+Argument(expr::FExpr)=(cache=splitarg(expr);Argument(cache[1],Inference(cache[2]),cache[3],cache[4]))
 
 """
-    @argument expr::FExpr unescaped::FExpr=:()
+    @argument expr::FExpr
 
 Construct an `Argument` directly from an argument statement.
 """
-macro argument(expr::FExpr,unescaped::FExpr=:()) expr=[expr];:(Argument($expr...;unescaped=$(esc(unescaped)))) end
+macro argument(expr::FExpr) expr=[expr];:(Argument($expr...)) end
 
 """
-    (a::Argument)()
+    (a::Argument)(::typeof(RawExpr))
+    (a::Argument)(;unescaped::NTuple{N,Symbol}=()) where N
 
 Convert an `Argument` to the `Expr` representation of the argument it describes.
 """
-(a::Argument)()=combinearg(a.name,a.type(),a.slurp,a.default)
+(a::Argument)(::typeof(RawExpr))=combinearg(a.name,a.type(RawExpr),a.slurp,a.default)
+(a::Argument)(;unescaped::NTuple{N,Symbol}=()) where N=combinearg(a.name,a.type(unescaped=unescaped),a.slurp,escape(a.default,tuple(setdiff(names(a.default),unescaped)...)))
 
 """
     Parameter(name::Union{Symbol,Nothing},type::Union{Inference,Nothing})
     Parameter(;name::Union{Symbol,Nothing}=nothing,type::Union{Inference,Nothing}=nothing)
-    Parameter(expr::FExpr;unescaped::NTuple{N,Symbol}=()) where N
+    Parameter(expr::FExpr)
 
 The struct to describe a parameter of a `function` or a `type`.
 """
@@ -225,15 +224,15 @@ mutable struct Parameter <: AbstractFactory
     type::Union{Inference,Nothing}
 end
 Parameter(;name::Union{Symbol,Nothing}=nothing,type::Union{Inference,Nothing}=nothing)=Parameter(name,type)
-function Parameter(expr::FExpr;unescaped::NTuple{N,Symbol}=()) where N
+function Parameter(expr::FExpr)
     if isa(expr,Symbol)
         name,type=expr,nothing
     elseif expr.head==:(<:)
         (name,type)=length(expr.args)==2 ? expr.args : (nothing,expr.args[1])
-        type=Inference(type,unescaped=unescaped)
+        type=Inference(type)
     elseif expr.head==:(::)
         @assert length(expr.args)==1 "Parameter error: wrong input expr."
-        name,type=nothing,Inference(expr.args[1],unescaped=unescaped)
+        name,type=nothing,Inference(expr.args[1])
     else
         error("Parameter error: wrong input expr.")
     end
@@ -241,23 +240,33 @@ function Parameter(expr::FExpr;unescaped::NTuple{N,Symbol}=()) where N
 end
 
 """
-    @parameter expr::FExpr unescaped::FExpr=:()
+    @parameter expr::FExpr
 
 Construct a `Parameter` directly from an parameter statement.
 """
-macro parameter(expr::FExpr,unescaped::FExpr=:()) expr=[expr];:(Parameter($expr...;unescaped=$(esc(unescaped)))) end
+macro parameter(expr::FExpr) expr=[expr];:(Parameter($expr...)) end
 
 """
-    (p::Parameter)()
+    (p::Parameter)(::typeof(RawExpr))
+    (p::Parameter)(;unescaped::NTuple{N,Symbol}=()) where N
 
 Convert a `Parameter` to the `Expr` representation of the parameter it describes.
 """
-(p::Parameter)()=p.name===nothing ? Expr(:(<:),p.type()) : p.type===nothing ? p.name : Expr(:(<:),p.name,p.type())
+(p::Parameter)(::typeof(RawExpr))=p.name===nothing ? Expr(:(<:),p.type(RawExpr)) : p.type===nothing ? p.name : Expr(:(<:),p.name,p.type(RawExpr))
+function (p::Parameter)(;unescaped::NTuple{N,Symbol}=()) where N
+    if p.name===nothing
+        Expr(:(<:),p.type(unescaped=unescaped))
+    elseif p.type===nothing
+        p.name
+    else
+        Expr(:(<:),p.name,p.type(unescaped=unescaped))
+    end
+end
 
 """
     Field(name::Symbol,type::Inference)
-    Field(name::Symbol;type::FExpr=Inference(:Any))
-    Field(expr::Expr;unescaped::NTuple{N,Symbol}=()) where N
+    Field(;name::Symbol,type::FExpr=Inference(:Any))
+    Field(expr::Expr)
 
 The struct to describe a field of a `struct`.
 """
@@ -265,31 +274,24 @@ mutable struct Field <: AbstractFactory
     name::Symbol
     type::Inference
 end
-Field(name::Symbol,type::FExpr=Inference(:Any))=Field(name,type)
-Field(expr::FExpr;unescaped::NTuple{N,Symbol}=()) where N=(cache=splitarg(expr);Field(cache[1],Inference(cache[2],unescaped=unescaped)))
+Field(;name::Symbol,type::FExpr=Inference(:Any))=Field(name,type)
+Field(expr::FExpr)=(cache=splitarg(expr);Field(cache[1],Inference(cache[2])))
 
 """
-    @field expr::FExpr unescaped::FExpr=:()
+    @field expr::FExpr
 
 Construct a `Field` directly from a field statement.
 """
-macro field(expr::FExpr,unescaped::FExpr=:()) expr=[expr];:(Field($expr...;unescaped=$(esc(unescaped)))) end
+macro field(expr::FExpr) expr=[expr];:(Field($expr...)) end
 
 """
-    (f::Field)()
+    (f::Field)(::typeof(RawExpr))
+    (f::Field)(;unescaped::NTuple{N,Symbol}=()) where N
 
 Convert a `Field` to the `Expr` representation of the field it describes.
 """
-(f::Field)()=combinefield((f.name,f.type()))
-
-"""
-    convert(::Type{Tuple},f::Field)
-    convert(::Type{Tuple{Symbol,FExpr}},f::Field)
-
-Convert a `Field` to tuple.
-"""
-Base.convert(::Type{Tuple},f::Field)=(f.name,f.type())
-Base.convert(::Type{Tuple{Symbol,FExpr}},f::Field)=convert(Tuple,f)
+(f::Field)(::typeof(RawExpr))=combinefield((f.name,f.type(RawExpr)))
+(f::Field)(;unescaped::NTuple{N,Symbol}=()) where N=combinefield((f.name,f.type(unescaped=unescaped)))
 
 """
     Block(parts::FExpr...)
@@ -309,11 +311,13 @@ Construct a `Block` directly from a `begin ... end` block definition.
 macro block(parts::FExpr...) :(Block($parts...)) end
 
 """
-    (b::Block)()
+    (b::Block)(::typeof(RawExpr))
+    (b::Block)(;escaped::NTuple{N,Symbol}=()) where N
 
 Convert a `Block` to the `Expr` representation of the `begin ... end` block it describes.
 """
-(b::Block)()=Expr(:block,b.body...)
+(b::Block)(::typeof(RawExpr))=Expr(:block,b.body...)
+(b::Block)(;escaped::NTuple{N,Symbol}=()) where N=Expr(:block,(escape(part,escaped) for part in b.body)...)
 
 """
     push!(b::Block,parts::FExpr...)
@@ -365,78 +369,95 @@ Return a copy of a block with the line number nodes removed.
 macro rmlines(b::Expr) :(rmlines($(esc(b)))) end
 
 """
-    FunctionFactory(name::Symbol,args::Vector{Argument},kwargs::Vector{Argument},rtype::Inference,params::Vector{Parameter},body::Block)
-    FunctionFactory(    name::Symbol;
+    FunctionFactory(name::FExpr,params::Vector{Inference},args::Vector{Argument},kwargs::Vector{Argument},rtype::Inference,whereparams::Vector{Parameter},body::Block)
+    FunctionFactory(    ;name::FExpr,
+                        params::Vector{Inference}=Inference[],
                         args::Vector{Argument}=Argument[],
                         kwargs::Vector{Argument}=Argument[],
                         rtype::Inference=Inference(:Any),
-                        params::Vector{Parameter}=Parameter[],
+                        whereparams::Vector{Parameter}=Parameter[],
                         body::Block=Block()
                         )
-    FunctionFactory(expr::Expr;unescaped::NTuple{N,Symbol}=()) where N
+    FunctionFactory(expr::Expr)
 
 The struct to describe a `function`.
 """
 mutable struct FunctionFactory <: AbstractFactory
-    name::Symbol
+    name::FExpr
+    params::Vector{Inference}
     args::Vector{Argument}
     kwargs::Vector{Argument}
     rtype::Inference
-    params::Vector{Parameter}
+    whereparams::Vector{Parameter}
     body::Block
 end
-function FunctionFactory(   name::Symbol;
+function FunctionFactory(   ;name::FExpr,
+                            params::Vector{Inference}=Inference[],
                             args::Vector{Argument}=Argument[],
                             kwargs::Vector{Argument}=Argument[],
                             rtype::Inference=Inference(:Any),
-                            params::Vector{Parameter}=Parameter[],
+                            whereparams::Vector{Parameter}=Parameter[],
                             body::Block=Block(),
                             )
-    FunctionFactory(name,args,kwargs,rtype,params,body)
+    FunctionFactory(name,params,args,kwargs,rtype,whereparams,body)
 end
-function FunctionFactory(expr::Expr;unescaped::NTuple{N,Symbol}=()) where N
+function FunctionFactory(expr::Expr)
     dict=splitdef(expr)
     FunctionFactory(    dict[:name],
-                        Argument.(dict[:args],unescaped=unescaped),
-                        Argument.(dict[:kwargs],unescaped=unescaped),
-                        Inference(get(dict,:rtype,:Any),unescaped=unescaped),
-                        Parameter.(collect(FExpr,dict[:whereparams]),unescaped=unescaped),
+                        Inference.(get(dict,:params,[])),
+                        Argument.(dict[:args]),
+                        Argument.(dict[:kwargs]),
+                        Inference(get(dict,:rtype,:Any)),
+                        Parameter.(collect(FExpr,dict[:whereparams])),
                         Block(dict[:body]),
                         )
 end
 
 """
-    @functionfactory expr::FExpr unescaped::FExpr=:()
+    @functionfactory expr::FExpr
 
 Construct a `FunctionFactory` directly from a function definition.
 """
-macro functionfactory(expr::Expr,unescaped::FExpr=:()) expr=[expr];:(FunctionFactory($expr...;unescaped=$(esc(unescaped)))) end
+macro functionfactory(expr::Expr) expr=[expr];:(FunctionFactory($expr...)) end
 
 """
-    (ff::FunctionFactory)()
+    (ff::FunctionFactory)(::typeof(RawExpr))
+    (ff::FunctionFactory)(;unescaped::NTuple{N,Symbol}=(),escaped::NTuple{M,Symbol}=()) where {N,M}
 
 Convert a `FunctionFactory` to the `Expr` representation of the `function` it describes.
 """
-function (ff::FunctionFactory)()
+function (ff::FunctionFactory)(::typeof(RawExpr))
     combinedef(Dict(
         :name           =>      ff.name,
-        :args           =>      [arg() for arg in ff.args],
-        :kwargs         =>      [kwarg() for kwarg in ff.kwargs],
-        :rtype          =>      ff.rtype(),
-        :whereparams    =>      [param() for param in ff.params],
-        :body           =>      ff.body()
+        :params         =>      [param(RawExpr) for param in ff.params],
+        :args           =>      [arg(RawExpr) for arg in ff.args],
+        :kwargs         =>      [kwarg(RawExpr) for kwarg in ff.kwargs],
+        :rtype          =>      ff.rtype(RawExpr),
+        :whereparams    =>      [whereparam(RawExpr) for whereparam in ff.whereparams],
+        :body           =>      ff.body(RawExpr)
+    ))
+end
+function (ff::FunctionFactory)(;unescaped::NTuple{N,Symbol}=(),escaped::NTuple{M,Symbol}=()) where {N,M}
+    combinedef(Dict(
+        :name           =>      ff.name ∈ escaped ? :($(esc(ff.name))) : ff.name,
+        :params         =>      [param(unescaped=unescaped) for param in ff.params],
+        :args           =>      [arg(unescaped=unescaped) for arg in ff.args],
+        :kwargs         =>      [kwarg(unescaped=unescaped) for kwarg in ff.kwargs],
+        :rtype          =>      ff.rtype(unescaped=unescaped),
+        :whereparams    =>      [whereparam(unescaped=unescaped) for whereparam in ff.whereparams],
+        :body           =>      ff.body(escaped=escaped)
     ))
 end
 
 """
     addargs!(ff::FunctionFactory,args::Argument...)
-    addargs!(ff::FunctionFactory,args::FExpr...;unescaped::NTuple{N,Symbol}=()) where N
+    addargs!(ff::FunctionFactory,args::FExpr...)
 
 Add a couple of positional arguments to a function factory.
 """
 addargs!(::FunctionFactory)=nothing
 addargs!(ff::FunctionFactory,args::Argument...)=push!(ff.args,args...)
-addargs!(ff::FunctionFactory,args::FExpr...;unescaped::NTuple{N,Symbol}=()) where N=addargs!(ff,Argument.(args,unescaped=unescaped)...)
+addargs!(ff::FunctionFactory,args::FExpr...)=addargs!(ff,Argument.(args)...)
 
 """
     @addargs! ff args::FExpr...
@@ -447,13 +468,13 @@ macro addargs!(ff,args::FExpr...) :(addargs!($(esc(ff)),$args...)) end
 
 """
     addkwargs!(ff::FunctionFactory,kwargs::Argument...)
-    addkwargs!(ff::FunctionFactory,kwargs::FExpr...;unescaped::NTuple{N,Symbol}=()) where N
+    addkwargs!(ff::FunctionFactory,kwargs::FExpr...)
 
 Add a couple of keyword arguments to a function factory.
 """
 addkwargs!(::FunctionFactory)=nothing
 addkwargs!(ff::FunctionFactory,kwargs::Argument...)=push!(ff.kwargs,kwargs...)
-addkwargs!(ff::FunctionFactory,kwargs::FExpr...;unescaped::NTuple{N,Symbol}=()) where N=addkwargs!(ff,Argument.(kwargs,unescaped=unescaped)...)
+addkwargs!(ff::FunctionFactory,kwargs::FExpr...)=addkwargs!(ff,Argument.(kwargs)...)
 
 """
     @addkwargs! ff kwargs::FExpr...
@@ -473,6 +494,23 @@ extendbody!(ff::FunctionFactory,parts::FExpr...)=extendbody!(ff,Block(parts...))
 extendbody!(ff::FunctionFactory,parts::Block...)=push!(ff.body,parts...)
 
 """
+    addwhereparams!(f::FunctionFactory,whereparams::Parameter...)
+    addwhereparams!(f::FunctionFactory,whereparams::FExpr...)
+
+Add a couple of method where parameters to a function factory or a type factory.
+"""
+addwhereparams!(::FunctionFactory)=nothing
+addwhereparams!(f::FunctionFactory,whereparams::Parameter...)=push!(f.whereparams,whereparams...)
+addwhereparams!(f::FunctionFactory,whereparams::FExpr...)=addwhereparams!(f,Parameter.(whereparams)...)
+
+"""
+    @addwhereparams! f whereparams::FExpr...
+
+Add a couple of method parameters to a function factory or a type factory.
+"""
+macro addwhereparams!(ff,whereparams::FExpr...) :(addwhereparams!($(esc(ff)),$whereparams...)) end
+
+"""
     @extendbody! ff parts::FExpr...
 
 Extend the body of a function factory.
@@ -481,14 +519,14 @@ macro extendbody!(ff,parts::FExpr...) :(extendbody!($(esc(ff)),$parts...)) end
 
 """
     TypeFactory(name::Symbol,mutable::Bool,params::Vector{Parameter},supertype::Inference,fields::Vector{Field},constructors::Vector{FunctionFactory})
-    TypeFactory(    name::Symbol;
+    TypeFactory(    ;name::Symbol,
                     mutable::Bool=false,
                     params::Vector{Parameter}=Parameter[],
                     supertype::Inference=Inference(:Any),
                     fields::Vector{Field}=Field[],
                     constructors::Vector{FunctionFactory}=FunctionFactory[],
                     )
-    TypeFactory(expr::Expr;unescaped::NTuple{N,Symbol}=()) where N
+    TypeFactory(expr::Expr)
 
 The struct to describe a `struct`.
 """
@@ -500,7 +538,7 @@ mutable struct TypeFactory <: AbstractFactory
     fields::Vector{Field}
     constructors::Vector{FunctionFactory}
 end
-function TypeFactory(   name::Symbol;
+function TypeFactory(   ;name::Symbol,
                         mutable::Bool=false,
                         params::Vector{Parameter}=Parameter[],
                         supertype::Inference=Inference(:Any),
@@ -509,49 +547,60 @@ function TypeFactory(   name::Symbol;
                         )
     TypeFactory(name,mutable,params,supertype,fields,constructors)
 end
-function TypeFactory(expr::Expr;unescaped::NTuple{N,Symbol}=()) where N
+function TypeFactory(expr::Expr)
     dict=splitstructdef(expr)
     TypeFactory(    dict[:name],
                     dict[:mutable],
-                    Parameter.(dict[:params],unescaped=unescaped),
-                    Inference(dict[:supertype],unescaped=unescaped),
-                    [Field(field[1],Inference(field[2],unescaped=unescaped)) for field in dict[:fields]],
-                    FunctionFactory.(dict[:constructors],unescaped=unescaped)
+                    Parameter.(dict[:params]),
+                    Inference(dict[:supertype]),
+                    [Field(field[1],Inference(field[2])) for field in dict[:fields]],
+                    FunctionFactory.(dict[:constructors])
     )
 end
 
 """
-    @typefactory expr::Expr unescaped::FExpr=:()
+    @typefactory expr::Expr
 
 Construct a `TypeFactory` directly from a type definition.
 """
-macro typefactory(expr::Expr,unescaped::FExpr=:()) expr=[expr];:(TypeFactory($expr...;unescaped=$(esc(unescaped)))) end
+macro typefactory(expr::Expr) expr=[expr];:(TypeFactory($expr...)) end
 
 """
-    (tf::TypeFactory)()
+    (tf::TypeFactory)(::typeof(RawExpr))
+    (tf::TypeFactory)(;unescaped::NTuple{N,Symbol}=()) where N
 
 Convert a `TypeFactory` to the `Expr` representation of the `struct` it describes.
 """
-function (tf::TypeFactory)()
+function (tf::TypeFactory)(::typeof(RawExpr))
     combinestructdef(Dict(
         :name           =>      tf.name,
         :mutable        =>      tf.mutable,
-        :params         =>      [param() for param in tf.params],
-        :supertype      =>      tf.supertype(),
-        :fields         =>      [convert(Tuple,field) for field in tf.fields],
-        :constructors   =>      [constructor() for constructor in tf.constructors]
+        :params         =>      [param(RawExpr) for param in tf.params],
+        :supertype      =>      tf.supertype(RawExpr),
+        :fields         =>      [(field.name,field.type(RawExpr)) for field in tf.fields],
+        :constructors   =>      [constructor(RawExpr) for constructor in tf.constructors]
+        ))
+end
+function (tf::TypeFactory)(;unescaped::NTuple{N,Symbol}=(),escaped::NTuple{M,Symbol}=()) where {N,M}
+    combinestructdef(Dict(
+        :name           =>      tf.name ∈ escaped ? :($(esc(tf.name))) : tf.name,
+        :mutable        =>      tf.mutable,
+        :params         =>      [param(unescaped=unescaped) for param in tf.params],
+        :supertype      =>      tf.supertype(unescaped=unescaped),
+        :fields         =>      [(field.name,field.type(unescaped=unescaped)) for field in tf.fields],
+        :constructors   =>      [constructor(unescaped=unescaped,escaped=escaped) for constructor in tf.constructors]
         ))
 end
 
 """
     addfields!(tf::TypeFactory,fields::Field...)
-    addfields!(tf::TypeFactory,fields::FExpr...;unescaped::NTuple{N,Symbol}=()) where N
+    addfields!(tf::TypeFactory,fields::FExpr...)
 
 Add a couple of fields to a type factory.
 """
 addfields!(::TypeFactory)=nothing
 addfields!(tf::TypeFactory,fields::Field...)=push!(tf.fields,fields...)
-addfields!(tf::TypeFactory,fields::FExpr...;unescaped::NTuple{N,Symbol}=()) where N=addfields!(tf,Field.(fields,unescaped=unescaped)...)
+addfields!(tf::TypeFactory,fields::FExpr...)=addfields!(tf,Field.(fields)...)
 
 """
     @addfields! tf fields::FExpr...
@@ -562,13 +611,13 @@ macro addfields!(tf,fields::FExpr...) :(addfields!($(esc(tf)),$fields...)) end
 
 """
     addconstructors!(tf::TypeFactory,constructors::FunctionFactory...)
-    addconstructors!(tf::TypeFactory,constructors::Expr...;unescaped::NTuple{N,Symbol}=()) where N
+    addconstructors!(tf::TypeFactory,constructors::Expr...)
 
 Add a couple of constructors to a type factory.
 """
 addconstructors!(::TypeFactory)=nothing
 addconstructors!(tf::TypeFactory,constructors::FunctionFactory...)=push!(tf.constructors,constructors...)
-addconstructors!(tf::TypeFactory,constructors::Expr...;unescaped::NTuple{N,Symbol}=()) where N=addconstructors!(tf,FunctionFactory.(constructors,unescaped=unescaped)...)
+addconstructors!(tf::TypeFactory,constructors::Expr...)=addconstructors!(tf,FunctionFactory.(constructors)...)
 
 """
     @addconstructors! tf constructors::Expr...
@@ -578,14 +627,17 @@ Add a couple of constructors to a type factory.
 macro addconstructors!(tf,constructors::Expr...) :(addconstructors!($(esc(tf)),$constructors...)) end
 
 """
-    addparams!(f::Union{FunctionFactory,TypeFactory},params::Parameter...)
-    addparams!(f::Union{FunctionFactory,TypeFactory},params::FExpr...;unescaped::NTuple{N,Symbol}=()) where N
+    addparams!(f::FunctionFactory,params::Inference...)
+    addparams!(f::TypeFactory,params::Parameter...)
+    addparams!(f::Union{FunctionFactory,TypeFactory},params::FExpr...)
 
-Add a couple of method parameters to a function factory or a type factory.
+Add a couple of parameters to a function factory or a type factory.
 """
 addparams!(::Union{FunctionFactory,TypeFactory})=nothing
-addparams!(f::Union{FunctionFactory,TypeFactory},params::Parameter...)=push!(f.params,params...)
-addparams!(f::Union{FunctionFactory,TypeFactory},params::FExpr...;unescaped::NTuple{N,Symbol}=()) where N=addparams!(f,Parameter.(params,unescaped=unescaped)...)
+addparams!(f::FunctionFactory,params::Inference...)=push!(f.params,params...)
+addparams!(f::FunctionFactory,params::FExpr...)=addparams!(f,Inference.(params)...)
+addparams!(f::TypeFactory,params::Parameter...)=push!(f.params,params...)
+addparams!(f::TypeFactory,params::FExpr...)=addparams!(f,Parameter.(params)...)
 
 """
     @addparams! f params::FExpr...
@@ -593,13 +645,5 @@ addparams!(f::Union{FunctionFactory,TypeFactory},params::FExpr...;unescaped::NTu
 Add a couple of method parameters to a function factory or a type factory.
 """
 macro addparams!(ff,params::FExpr...) :(addparams!($(esc(ff)),$params...)) end
-
-"""
-    paramnames(expr::Union{Expr,FunctionFactory,TypeFactory}) -> NTuple{N,Symbol} where N
-
-Get the type/method parameters names.
-"""
-paramnames(f::Union{FunctionFactory,TypeFactory})=NTuple{f.params|>length,Symbol}(param.name for param in f.params)
-paramnames(expr::Expr)=paramnames(expr.head==:struct ? TypeFactory(expr) : FunctionFactory(expr))
 
 end #module

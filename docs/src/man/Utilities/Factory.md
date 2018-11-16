@@ -9,28 +9,27 @@ using Hamiltonian.Utilities.Factory
 
 # Factory
 
-The aim of `Factory` is to provide tools to hack into Julia codes without knowing the details of their abstract syntax trees and regularize the mechanism to "escape" variables in `Expr` expressions, so that users can manipulate the existing codes, modify them and generate new ones in macros. In particular, `Factory` in this module means the representation of certain blocks of Julia codes by a usual Julia struct. This representation is much easier to comprehend than the canonical `Expr` representation and makes it far more convenient to define macros. In general, we propose two basic requirements that any factory must satisfy:
-* **FEATURE-1**: A concrete factory can be constructed from a legal `Expr` expression that represents the block of codes it aims to represent;
-* **FEATURE-2**: The canonical `Expr` expression of a block of codes that a concrete factory represents can be obtained by "calling" the factory itself.
-Also, we propose a simple mechanism to implement the escape of variables in factories:
-* **FEATURE-3**: During the construction from `Expr` expressions, a keyword argument `unescaped`, which is a tuple of `Symbol`s, can be passed to the constructor, and all variables whose names are not in this keyword argument will be escaped.
-Different from the former two requirements, this mechanism is just an optional feature of concrete factories. Meanwhile, all of these features also defines the basic interfaces to interact with factories.
+The aim of `Factory` is to provide tools to hack into Julia codes without knowing the details of their abstract syntax trees and regularize the mechanism to "escape" variables in `Expr` expressions, so that users can manipulate the existing codes, modify them and generate new ones in macros. In particular, `Factory` in this module means the representation of certain blocks of Julia codes by a usual Julia struct. This representation is much easier to comprehend than the canonical `Expr` representation and makes it far more convenient to define macros. In general, we propose the following requirements that any factory must satisfy:
+* *DECOMPOSITION* - An `Expr` expression can be decomposed into its corresponding factory by the factory's constructor.
+* *COMPOSITION* - A factory can compose its corresponding `Expr` expression by calling itself.
+* *ESCAPE* - A variable should be escaped or not in the composed `Expr` expression by a factory depends on keyword arguments `escaped` or `unescaped` passed to the factory call, which are tuple of `Symbols`. Specifically, when `escaped` is provided, a variable should be escaped if its name is in `escaped`, whereas, when `unescaped` is provided, a variable should be escaped if its name is not in `unescaped`. A factory can choose which keyword arguments should be used for convenience, or can choose both with different keyword arguments for different parts of it.
+The first two requirements define the basic interfaces to interact with factories, and the third requirement proposes the escape mechanism of variables.
 
 Out of practical purposes, we implemente 7 kinds of factories, i.e. *[`Inference`](@ref)*, *[`Argument`](@ref)*, *[`Parameter`](@ref)*, *[`Field`](@ref)*, *[`Block`](@ref)*, *[`FunctionFactory`](@ref)* and *[`TypeFactory`](@ref)*, which represent *a type inference*, *a function argument*, *a method or type parameter*, *a struct field*, *a `begin ... end` block*, *a function itself* and *a struct itself*, respectively. Some of the basic methods making the above requirements fulfilled with these types are based on the powerful functions defined in [`MacroTools`](https://github.com/MikeInnes/MacroTools.jl).
 
 ## Inference
 
-An [`Inference`](@ref) has 4 attributes:
+An [`Inference`](@ref) has 3 attributes:
 * `head::Union{Symbol,Nothing}`: the head of the type inference, which must be one of `(nothing,:(::),:(<:),:curly)`
 * `name::Union{Symbol,Nothing}`: the name of the type inference
 * `params::Union{Inference,Vector{Inference},Nothing}`: the parameters of the type inference
-* `escape::Bool`: whether the name of the type inference should be escaped when calling the factory
+
 All valid expressions representing type inferences can be passed to the constructor:
 ```@repl factory
-Inference(:T,unescaped=(:T,))
-Inference(:(::T),unescaped=(:T,))
+Inference(:T)
+Inference(:(::T))
 Inference(:(<:Number))
-Inference(:(Vector{T}),unescaped=(:T,))
+Inference(:(Vector{T}))
 Inference(:(Vector{Tuple{String,Int}}))
 Inference(:(Type{<:Number}))
 ```
@@ -40,8 +39,15 @@ On the other hand, you can use the macro [`@inference`](@ref) to construct an `I
 ```
 !!! note
     1. `Inference` is a recursive struct, i.e. it recursively decomposes a type inference until the final type inference is just a `Symbol`.
-    2. When the input expression representing a type inference is a `Symbol`, the `head` and `params` attributes of the resulting `Inference` is `nothing`. Otherwise, its `head` is the same with that of the input expression, and the `args` of the input expression will be further decomposed, whose result will be stored in `params`.
+    2. When the input expression is a `Symbol`, the `head` and `params` attributes of the resulting `Inference` is `nothing`. Otherwise, its `head` is the same with that of the input expression, and the `args` of the input expression will be further decomposed, whose result will be stored in `params`.
     3. When the head of the input expression is `:(::)` or `:(<:)`, the `params` is an `Inference` whereas when the head of the input expression is `:curly`, the `params` is a `Vector{Inference}`.
+
+[`Inference`](@ref) uses the keyword argument `unescaped` to escape variables, e.g.
+```@repl factory
+Inference(:(Vector{T}))() |> println
+Inference(:(Vector{T}))(unescaped=(:T,)) |> println
+Inference(:(Vector{T}))(unescaped=(:Vector,:T)) |> println
+```
 
 ## Argument
 
@@ -50,30 +56,33 @@ An [`Argument`](@ref) has 4 attributes:
 * `type::Inference`: the type inference of the argument
 * `slurp::Bool`: whether the argument should be expanded by `...`
 * `default::Any`: the default value of the argument, `nothing` for those with no default values
+
 All valid expressions representing the arguments of functions can be passed to the constructor:
 ```@repl factory
 Argument(:arg)
-Argument(:(arg::ArgType),unescaped=(:ArgType,))
-Argument(:(arg::ArgType...),unescaped=(:ArgType,))
-Argument(:(arg::ArgType=default),unescaped=(:ArgType,:default))
+Argument(:(arg::ArgType))
+Argument(:(arg::ArgType...))
+Argument(:(arg::ArgType=default))
 ```
-Or you can use the macro [`@argument`](@ref) for construction directly from an argument declaration:
+Or you can use the macro [`@argument`](@ref) for a direct construction from an argument declaration:
 ```@repl factory
-@argument arg::ArgType=default (:ArgType,:default)
+@argument arg::ArgType=default
 ```
-The construction from such expressions is based on the the `MacroTools.splitarg` function. On the other hand, calling an instance of `Argument` will get the corresponding `Expr` expression, e.g.,
-```julia-repl
-julia> Argument(:(arg::ArgType=default),unescaped=(:ArgType,:default))()
-:(arg::ArgType=default)
+The construction from such expressions is based on the the `MacroTools.splitarg` function.
+
+[`Argument`](@ref) also uses the keyword argument `unescaped` to escape variables, e.g.
+```@repl factory
+Argument(:(arg::ArgType=default))(unescaped=(:ArgType,:default)) |> println
 ```
-This feature is based on the `MacroTools.combinearg` function.
+It can be seen the name of an argument will never be escaped even though it is not in the `unescaped` tuple. This is obvious since the name of a function argument is always local. By the way, the composition of an [`Argument`](@ref) expression is based on the `MacroTools.combinearg` function.
 
 ## Parameter
 
 A [`Parameter`](@ref) has 2 attributes:
 * `name::Union{Symbol,Nothing}`: the name of the parameter
 * `type::Union{Inference,Nothing}`: the type inference of the parameter
-All expressions that represent a type parameter or a method parameter are allowed to be passed to the constructor:
+
+All expressions that represent type parameters or method parameters are allowed to be passed to the constructor:
 ```@repl factory
 Parameter(:T)
 Parameter(:(<:Number))
@@ -86,29 +95,43 @@ The macro [`@parameter`](@ref) completes the construction directly from a parame
 ```
 !!! note
     1. We use `nothing` to denote a missing `name` or `type.`
-    2. Two subtle situations of type/method parameters, e.g. `MyType{T}` and `MyType{Int}`, are distinguished by `Parameter(:T)` and `Parameter(:(::Int))`. For the first case, `Parameter(:T).name==:T` and `Parameter(:T).type==:nothing` while for the second case, `Parameter(:(::Int)).name==:nothing` and `Parameter(:(::Int)).name==:Int`. Moreover, the callings of them return different forms, e.g. `Parameter(:T)()==:T` and `Parameter(:(::Int))==:(<:$(esc(Int)))`.
+    2. Two subtle situations of type/method parameters, e.g. `MyType{T}` and `MyType{Int}`, are distinguished by `Parameter(:T)` and `Parameter(:(::Int))`. The `name` and `type` attributes of the resulting `Parameter`s are, for the first case, `:T` and `nothing`, while for the second case, `nothing` and `:T`, respectively. Moreover, the callings of the factories for these two cases are also different, e.g. `Parameter(:T)()==:T` and `Parameter(:(::Int))==:(<:$(esc(Int)))`.
+
+[`Parameter`](@ref) uses the keyword argument `unescaped` to escape variables, too, e.g.
+```@repl factory
+Parameter(:(N<:Vector{T}))(unescaped=(:T,)) |> println
+```
+As is similar to [`Argument`](@ref), the `name` of a method/type parameter will never be escaped because of its local scope.
 
 ## Field
 
 A [`Field`](@ref) has 2 attributes:
 * `name::Symbol`: the name of the field
 * `type::Inference`: the type inference of the field
+
 Legal expressions can be used to construct a `Field` instance by its constructor:
 ```@repl factory
 Field(:field)
-Field(:(field::FieldType),unescaped=(:FieldType,))
-Field(:(field::ParametricType{T}),unescaped=(:ParametricType,:T))
+Field(:(field::FieldType))
+Field(:(field::ParametricType{T}))
 ```
 The macro [`@field`](@ref) is also provided to help the construction directly from a field declaration:
 ```@repl factory
-@field field::FieldType (:FieldType,)
+@field field::FieldType
 ```
-The construction from these expressions is based on the `MacroTools.splitarg` function and the convertion to these expressions is based on the `MacroTools.combinefield` function.
+The construction from these expressions is based on the `MacroTools.splitarg` function.
+
+[`Field`](@ref) uses the keyword argument `unescaped` to escape variables as well, e.g.
+```@repl factory
+Field(:(field::Dict{N,D}))(unescaped=(:N,:D)) |> println
+```
+The name of a struct will never be escaped either because it is a local variable tightly binding to a struct. It is noted that the composition of field expressions is based on the `MacroTools.combinefield` function.
 
 ## Block
 
 A [`Block`](@ref) has only one attribute:
 * `body::Vector{Any}`: the body of the `begin ... end` block
+
 Any expression can be passed to the constructor of `Block`:
 ```@repl factory
 Block(:(x=1))
@@ -125,54 +148,65 @@ Or you can construct a `Block` instance directly from any code by the macro [`@b
 ```
 The body of a `block` can also be extended by the [`push!`](@ref) function or the [`@push!`](@ref) macro.
 !!! note
-    1. The body of a `Block` is somewhat "flattened", i.e. it contains no `begin ... end` blocks. During the initialization, any such input block will be unblocked and added to the body part by part. So is the [`push!`](@ref) and [`@push!`](@ref) processes.
+    1. The body of a `Block` is somewhat "flattened", i.e. it contains no `begin ... end` blocks. During the initialization, any such input block will be unblocked and added to the body part by part. So is the [`push!`](@ref) and [`@push!`](@ref) procedures.
     2. All `LineNumberNode`s generated by the input codes will also be included in the block's body. However, you can use [`rmlines!`](@ref) or [`@rmlines!`](@ref) to remove them from the body of an existing `Block`, or use [`rmlines`](@ref) or [`@rmlines`](@ref) to get a copy with them removed in the body.
-    3. `Block` is the only factory that **DOES NOT** cope with the "escape" mechanism we propose, because usually variables in a block are local ones and should not be escaped. However, the function [`escape`](@ref) is provided to escape the variables in a `Expr` expression with a reverse mechanism, where a tuple of variables to be escaped should be transmitted.
+
+Different from previous factories, [`Block`](@ref) uses the keyword argument `escaped` to escape variables. This is because variables in a block are often local ones and should not be escaped. Therefore, only those defined in other modules should be noted and escaped, which usually constitute the minority. For example,
+```@repl factory
+Block(:(x=1;y=2;z=Int[1,2,3]))(escaped=(:Int,)) |> println
+```
 
 ## FunctionFactory
 
-A [`FunctionFactory`](@ref) has 6 attributes:
-* `name::Symbol`: the name of the function
+A [`FunctionFactory`](@ref) has 7 attributes:
+* `name::Union{Symbol,Expr}`: the name of the function
+* `params::Vector{Inference}`: the method parameters of the function
 * `args::Vector{Argument}`: the positional arguments of the function
 * `kwargs::Vector{Argument}`: the keyword arguments of the function
 * `rtype::Inference`: the return type of the function
-* `params::Vector{Parameter}`: the method parameters specified by the `where` keyword
+* `whereparams::Vector{Parameter}`: the method parameters specified by the `where` keyword
 * `body::Block`: the body of the function
+
 All expressions that represent functions are allowed to be passed to the constructor:
 ```@repl factory
 FunctionFactory(:(f()=nothing))
 FunctionFactory(:(f(x)=x))
 FunctionFactory(:(f(x::Int,y::Int;choice::Function=sum)=choice(x,y)))
-FunctionFactory(:(f(x::T,y::T;choice::Function=sum) where T<:Number=choice(x,y)),unescaped=(:T,))
-FunctionFactory(:((f(x::T,y::T;choice::Function=sum)::T) where T<:Number=choice(x,y)),unescaped=(:T,))
+FunctionFactory(:(f(x::T,y::T;choice::Function=sum) where T<:Number=choice(x,y)))
+FunctionFactory(:((f(x::T,y::T;choice::Function=sum)::T) where T<:Number=choice(x,y)))
 FunctionFactory(:(
     function (f(x::T,y::T;choice::Function=sum)::T) where T<:Number
         choice(x,y)
     end
-    ),
-    unescaped=(:T,)
-)
+))
 FunctionFactory(
     quote
         function (f(x::T,y::T;choice::Function=sum)::T) where T<:Number
             choice(x,y)
         end
-    end,
-    unescaped=(:T,)
+    end
 )
 ```
 Similarly, an instance can also be constructed from the macro [`@functionfactory`](@ref):
 ```@repl factory
-@functionfactory (f(x::T,y::T;choice::Function=sum)::T) where T<:Number=choice(x,y) (:T,)
+@functionfactory (f(x::T,y::T;choice::Function=sum)::T) where T<:Number=choice(x,y)
 ```
-The construction from and the convertion to such expressions are based on the `MacroTools.splitdef` and `MacroTools.combinedef` functions, respectively.
+The construction from such expressions are based on the `MacroTools.splitdef` function.
 !!! note
-    Because the form `f{T}(x::T,y::T;choice::Function=sum)` has no longer been supported since Julia 0.7, the entry `:params` in the returned dict by `MacroTools.splitarg` is always missing. Therefore, we abandon its corresponding field in `FunctionFactory` but use the attribute `:params` to denote the `:whereparams` entry.
+    1. Since Julia 0.7, the form `MyType{D}(data::D) where D` only appears in struct constructors, therefore, the attribute `:params` of a function factory is nonempty only when this factory aims to represent a struct constructor.
+    2. Usually, the name of a function factory is a `Symbol`. However, if the factory aims to extend some methods of a function defined in another module, e.g., `Base.eltype`, the name will be an `Expr`.
+
+Since [`FunctionFactory`](@ref) involves not only factories using `unescaped` but also factories using `escaped`, it adopts both to escape variables, with `unescaped` for `params`, `args`, `kwargs`, `rtype` and `whereparams` while `escaped` for `name` and `body`. It is worth to emphasize that the name of a function factory is affected by the `escaped` argument. Specifically, when the name is a `Symbol` and is in the `escaped` tuple, it will be escaped. Otherwise it will not, especially when it is an `Expr`, it will never be escaped because an `Expr` cannot be a element of a `NTuple{N,Symbol} where N`. See examples,
+```@repl factory
+FunctionFactory(:((f(x::T,y::T;choice::Function=sum)::T) where T<:Number=max(x,y,choice(x,y))))(unescaped=(:T,),escaped=(:f,:max,)) |> println
+FunctionFactory(:((f(x::T,y::T;choice::Function=sum)::T) where T<:Number=max(x,y,choice(x,y))))(unescaped=(:T,),escaped=(:max,)) |> println
+```
+The compositions of function expressions are based on the `MacroTools.combinedef` function.
 
 Other features include:
 * Positional arguments can be added by [`addargs!`](@ref) or [`@addargs!`](@ref)
 * Keyword arguments can be added by [`addkwargs!`](@ref) or [`@addkwargs!`](@ref)
-* Method parameters can be added by [`addparams!`](@ref) or [`@addparams!`](@ref)
+* Where parameters can be added by [`addwhereparams!`](@ref) or [`@addwhereparams!`](@ref)
 * Body can be extended by [`extendbody!`](@ref) or [`@extendbody!`](@ref)
 
 ## TypeFactory
@@ -184,43 +218,47 @@ A [`TypeFactory`](@ref) has 6 attributes:
 * `supertype::Inference`: the supertype of the struct
 * `fields::Vector{Field}`: the fields of the struct
 * `constructors::Vector{FunctionFactory}`: the inner constructors of the struct
+
 Any expression representing valid struct definitions can be passed to the constructor:
 ```@repl factory
 TypeFactory(:(struct StructName end))
-TypeFactory(:(struct StructName{T} end),unescaped=(:T,))
-TypeFactory(:(struct Child{T} <: Parent{T} end),unescaped=(:T,))
+TypeFactory(:(struct StructName{T} end))
+TypeFactory(:(struct Child{T} <: Parent{T} end))
 TypeFactory(:(
     struct Child{T<:Number} <: Parent{T}
         field1::T
         field2::T
     end
-    ),
-    unescaped=(:T,)
-)
+))
 TypeFactory(
     quote
         struct Child{T<:Number} <: Parent{T}
             field1::T
             field2::T
         end
-    end,
-    unescaped=(:T,)
+    end
 )
 ```
 Also, the macro [`@typefactory`](@ref) supports the construction directly from a type definition:
 ```@repl factory
-@typefactory struct Child{T<:Number} <: Parent{T} field1::T; field2::T; Child(field1::T,field2::T=zero(T)) where T=new{T}(field1,field2) end (:T,)
+@typefactory struct Child{T<:Number} <: Parent{T}
+                field1::T
+                field2::T
+                Child(field1::T,field2::T=zero(T)) where T=new{T}(field1,field2)
+            end
 ```
-The construction from these expressions is based on the `MacroTools.splitstructdef` function. Meanwhile, the convertion to the corresponding expression from a `TypeFactory` is based on the `MacroTools.combinestructdef` function.
+The construction from these expressions is based on the `MacroTools.splitstructdef` function.
+
+[`TypeFactory`](@ref) also uses both keyword arguments, i.e. `unescaped` and `escaped`, to escape variables, with the former for `params`, `supertype` and `fields`, the latter for `name`, and both for `constructors`. For example,
+```@repl factory
+(@typefactory struct Child{T<:Number} <: Parent{T} field::T; Child(field::T) where T=new{T}(field) end)(unescaped=(:T,),escaped=(:Child,)) |>println
+```
+The composition of a type expression is based on the `MacroTools.combinestructdef` function.
 
 Other features include:
 * Fields can be added by [`addfields!`](@ref) or [`@addfields!`](@ref)
 * Type parameters can be added by [`addparams!`](@ref) or [`@addparams!`](@ref)
 * Inner constructors can be added by [`addconstructors!`](@ref) or [`@addconstructors!`](@ref)
-
-## More about escape
-
-As you may have noticed, during the construction of factoies, we often provide a keyword argument `unescaped` to tell what variables should not be escaped. The criterion to determine such variables is quite direct and simple: if a variable is local to current module, or to be defined, or to be declared, it should not be escaped, while if it has been defined or declared in other modules, it should be escaped. Therefore, the name of a function argument, or a type/method parameter, or a struct field, should not be escaped because the first is a local variable and the latter two are to-be-declared ones. In fact, by design, these names will **NEVER** be escaped even when they are not provided in the `unescaped` keyword argument. Another common situation where unescaped variables exist occurs when methods or structs have parameters. In this case, the type inferences specified by these method/type parameters should not be escaped because they are also local ones. Note that this situation is not automatically handled by the above factories, because the method/type parameters can be modified after the factoies are constructed, which means, you have to offer the `unescaped` tuple by hand. To help decorate existing methods or structs, we define an inquiry function [`paramnames`](@ref) to obtain the method/type parameter names. By the way, the factory [`Block`](@ref) does not support variable escape by design, because it is usually used as the body of a function, which is always a local environment. This is in sharp contrast to the method/type declaration, where type inferences are usually involved with variables that are defined or declared in other modules. This also explains the philosophy behind our design that for such factories, variables that are not escaped should be assigned while for the function [`escape`](@ref), variables to be escaped should be assigned.
 
 ## Manual
 

@@ -2,77 +2,65 @@ using Test
 using Hamiltonian.Utilities.Factory
 
 @testset "Inference" begin
-    unescaped=(:Vector,:Tuple,:Int,:String)
-    @test (@inference Vector{Tuple{Int,String}} unescaped)()==:(Vector{Tuple{Int,String}})
-    unescaped=(:Type,:Real)
-    @test (@inference Type{<:Real} unescaped)()==:(Type{<:Real})
+    @test (@inference Vector{Tuple{Int,String}})(unescaped=(:Vector,:Tuple,:Int,:String))==:(Vector{Tuple{Int,String}})
+    @test (@inference Type{<:Real})(unescaped=(:Type,:Real))==:(Type{<:Real})
 end
 
 @testset "Argument" begin
-    unescaped=(:Vector,:Int)
-    argument=Argument(:(phone::Vector{Int}=[9,1,1]),unescaped=unescaped)
+    argument=Argument(:(phone::Vector{Int}=[9,1,1]))
     @test argument.name==:phone
-    @test argument.type==Inference(:(Vector{Int}),unescaped=unescaped)
+    @test argument.type==Inference(:(Vector{Int}))
     @test argument.slurp==false
     @test argument.default==:([9,1,1])
-    @test argument()==Expr(:kw,:(phone::Vector{Int}),:[9,1,1])
+    @test argument(unescaped=(:Vector,:Int))==Expr(:kw,:(phone::Vector{Int}),:[9,1,1])
 
-    unescaped=(:Int,)
-    argument=Argument(:(properties::Int...),unescaped=unescaped)
+    argument=Argument(:(properties::Int...))
     @test argument.name==:properties
-    @test argument.type==Inference(:Int,unescaped=unescaped)
+    @test argument.type==Inference(:Int)
     @test argument.slurp==true
     @test argument.default==nothing
-    @test argument()==:(properties::Int...)
+    @test argument(unescaped=(:Int,))==:(properties::Int...)
 
-    unescaped=(:String,)
-    argument1=@argument address::String unescaped
-    argument2=Argument(:(address::String),unescaped=unescaped)
+    argument1=@argument address::String
+    argument2=Argument(:(address::String))
     @test argument1==argument2
 end
 
 @testset "Parameter" begin
-    unescaped=()
-    parameter=Parameter(:T,unescaped=unescaped)
+    parameter=Parameter(:T)
     @test parameter.name==:T
     @test parameter.type==nothing
     @test parameter()==:T
 
-    unescaped=(:Real,)
-    parameter=Parameter(:(T<:Real),unescaped=unescaped)
+    parameter=Parameter(:(T<:Real))
     @test parameter.name==:T
-    @test parameter.type==Inference(:Real,unescaped=unescaped)
-    @test parameter()==:(T<:Real)
+    @test parameter.type==Inference(:Real)
+    @test parameter(unescaped=(:Real,))==:(T<:Real)
 
-    unescaped=(:Real,)
-    parameter=Parameter(:(<:Real),unescaped=unescaped)
+    parameter=Parameter(:(<:Real))
     @test parameter.name==nothing
-    @test parameter.type==Inference(:Real,unescaped=unescaped)
-    @test parameter()==:(<:Real)
+    @test parameter.type==Inference(:Real)
+    @test parameter(unescaped=(:Real,))==:(<:Real)
 
-    unescaped=(:Int,)
-    parameter=@parameter ::Int unescaped=unescaped
+    parameter=@parameter ::Int
     @test parameter.name==nothing
-    @test parameter.type==Inference(:Int,unescaped=unescaped)
-    @test parameter()==:(<:Int)
+    @test parameter.type==Inference(:Int)
+    @test parameter(unescaped=(:Int,))==:(<:Int)
 end
 
 @testset "Field" begin
-    unescaped=(:Any,)
-    field=Field(:xs,unescaped=unescaped)
+    field=Field(:xs)
     @test field.name==:xs
-    @test field.type==Inference(:Any,unescaped=unescaped)
-    @test field()==:(xs::Any)
+    @test field.type==Inference(:Any)
+    @test field(unescaped=(:Any,))==:(xs::Any)
 
-    unescaped=(:Vector,:Int)
-    field=Field(:(xs::Vector{Int}),unescaped=unescaped)
+    field=Field(:(xs::Vector{Int}))
     @test field.name==:xs
-    @test field.type==Inference(:(Vector{Int}),unescaped=unescaped)
-    @test field()==:(xs::Vector{Int})
+    @test field.type==Inference(:(Vector{Int}))
+    @test field(unescaped=(:Vector,:Int))==:(xs::Vector{Int})
 
-    unescaped=(:Vector,:Int)
-    field1=@field xs::Vector{Int} unescaped
-    field2=Field(:(xs::Vector{Int}),unescaped=unescaped)
+    field1=@field xs::Vector{Int}
+    field2=Field(:(xs::Vector{Int}))
     @test field1==field2
 end
 
@@ -87,38 +75,36 @@ end
 end
 
 @testset "FunctionFactory" begin
-    unescaped=()
-    ff=FunctionFactory(:(fx(x::Int,y::Int;choice::Function=sum)=choice(x,y)),unescaped=unescaped)
+    ff=FunctionFactory(:(fx(x::Int,y::Int;choice::Function=sum)=choice(x,y)))
     @test ff.name==:fx
-    @test ff.args==Argument.([:(x::Int),:(y::Int)],unescaped=unescaped)
-    @test ff.kwargs==Argument.([:(choice::Function=sum)],unescaped=unescaped)
-    @test ff.rtype==Inference(:Any,unescaped=unescaped)
-    @test ff.params==Parameter[]
+    @test ff.args==Argument.([:(x::Int),:(y::Int)])
+    @test ff.kwargs==Argument.([:(choice::Function=sum)])
+    @test ff.rtype==Inference(:Any)
+    @test ff.whereparams==Parameter[]
     @test ff.body==Block(:(begin choice(x,y) end))
 
-    unescaped=(:T,)
     ff=FunctionFactory(:(
         function fx(x::T,y::T;choice::Function=sum) where T
             choice(x,y)
         end
-    ),unescaped=unescaped)
+    ))
     @test ff.name==:fx
-    @test ff.args==Argument.([:(x::T),:(y::T)],unescaped=unescaped)
-    @test ff.kwargs==Argument.([:(choice::Function=sum)],unescaped=unescaped)
-    @test ff.rtype==Inference(:Any,unescaped=unescaped)
-    @test ff.params==Parameter.([:T],unescaped=unescaped)
+    @test ff.args==Argument.([:(x::T),:(y::T)])
+    @test ff.kwargs==Argument.([:(choice::Function=sum)])
+    @test ff.rtype==Inference(:Any)
+    @test ff.whereparams==Parameter.([:T])
     @test ff.body|>rmlines==Block(:(begin choice(x,y) end))
 
     ff=@functionfactory (fx()::T)=nothing
     @addargs! ff x::T y::T z::T
     @addkwargs! ff sign::Int=1 choice::Function=sum
-    @addparams! ff T<:Number
+    @addwhereparams! ff T<:Number
     @extendbody! ff result=choice(x,y,z) result*=sign
     @test ff.name==:fx
     @test ff.args==Argument.([:(x::T),:(y::T),:(z::T)])
     @test ff.kwargs==Argument.([:(sign::Int=1),:(choice::Function=sum)])
     @test ff.rtype==Inference(:T)
-    @test ff.params==Parameter.([:(T<:Number)])
+    @test ff.whereparams==Parameter.([:(T<:Number)])
     @test ff.body|>rmlines==Block(:nothing,:(result=choice(x,y,z)),:(result*=sign))
 end
 
@@ -130,12 +116,12 @@ end
             phone::Vector{Int}
             properties::Vector{T}
         end
-    ),unescaped=unescaped)
+    ))
     @test tf.name==:Child
     @test tf.mutable==false
-    @test tf.params==Parameter.([:(T<:Real)],unescaped=unescaped)
-    @test tf.supertype==Inference(:(Parent{T}),unescaped=unescaped)
-    @test tf.fields==Field.([:(address::String),:(phone::Vector{Int}),:(properties::Vector{T})],unescaped=unescaped)
+    @test tf.params==Parameter.([:(T<:Real)])
+    @test tf.supertype==Inference(:(Parent{T}))
+    @test tf.fields==Field.([:(address::String),:(phone::Vector{Int}),:(properties::Vector{T})])
     @test tf.constructors==FunctionFactory[]
 
     tf=@typefactory struct Child <: Parent{T} end
@@ -149,7 +135,7 @@ end
     @test tf.fields==Field.([:(address::String),:(phone::Vector{Int}),:(properties::Vector{T})])
 end
 
-eval((@typefactory struct Child name::String; seniority::Int; Child(name::String,seniority::Int=1)=new(name,seniority) end (:String,:Int,:Any))())
+eval((@typefactory struct Child name::String; seniority::Int; Child(name::String,seniority::Int=1)=new(name,seniority) end)(unescaped=(:String,:Int,:Any)))
 
 @testset "call" begin
     c=Child("Tuanzi")
