@@ -11,7 +11,7 @@ Pages=  [
         "Factory.md",
         "Tree.md",
         "NamedVector.md",
-        "GoodQuantumNumber.md",
+        "QuantumNumber.md",
         ]
 Depth=2
 ```

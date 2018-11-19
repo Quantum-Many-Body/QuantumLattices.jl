@@ -1,14 +1,14 @@
 ```@meta
-CurrentModule=Hamiltonian.Utilities.GoodQuantumNumber
+CurrentModule=Hamiltonian.Utilities.QuantumNumber
 ```
 
-# Good quantum numbers
+# Quantum numbers
 
-Good qunatum numbers can be considered as the conserved labels for the bases of a Hilbert space when a quantum system hosts some symmetries. Here we only implement Abelian good quantum numbers because non-Abelian ones are far more complicated yet much less used. In practice, good quantum numbers can be integers or half integers, therefore, we use real numbers to denote them in this module for simplicity. Independent quantum numbers, such as the particle number and the spin z-component, can coexist at the same time. We use type [`QuantumNumber`](@ref) to represent the complete set of independent ones for a single basis of a Hilbert space, and type [`QuantumNumbers`](@ref) to represent the whole quantum numbers for the total bases.
+Qunatum numbers can be considered as the conserved labels for the bases of a Hilbert space when a quantum system hosts some symmetries. Here we only implement Abelian quantum numbers because non-Abelian ones are far more complicated yet much less used. In practice, quantum numbers can be integers or half integers, therefore, we use real numbers to denote them in this module for simplicity. Independent quantum numbers, such as the particle number and the spin z-component, can coexist at the same time. We use type [`AbstractQuantumNumber`](@ref) to represent the complete set of independent ones for a single basis of a Hilbert space, and type [`QuantumNumbers`](@ref) to represent the whole quantum numbers for the total bases.
 
-## QuantumNumber
+## AbstractQuantumNumber
 
-The abstract type for the complete set of independent good quantum numbers for a single basis.
+The abstract type for the complete set of independent quantum numbers for a single basis.
 
 Main features include:
 * function `fieldnames`: get the names of the quantum numbers
@@ -18,29 +18,29 @@ Main features include:
 * iterable: concrete instances are iterable over their values
 * comparable: two concrete instances can be compared
 
-In particular, `QuantumNumber <: AbstractNamedVector{Float64}`, all features supported by `AbstractNamedVector` are also available for `QuantumNumber`. See also [AbstractNamedVector](@ref).
+In particular, `AbstractQuantumNumber <: AbstractNamedVector{Float64}`, all features supported by `AbstractNamedVector` are also available for `AbstractQuantumNumber`. See also [AbstractNamedVector](@ref).
 
-For convenience, **4** kinds of good quantum numbers are predefined in this module, i.e.
+For convenience, **4** kinds of quantum numbers are predefined in this module, i.e.
 * [`SQN`](@ref): for spin z-component reserved systems
 * [`PQN`](@ref): for particle number reserved systems
 * [`SPQN`](@ref): for both particle number and spin-z component reserved systems
 * [`Z2QN`](@ref): for systems with a ``Z_2`` conservation quantum number
 
-Users who want to define their own ``Z_N``-like quantum numbers must handle the periodicities in the construction function, otherwise, wrong results will be get when arithmetic operations, such as `+` or `-`, are involved. It is highly recommended to use the macro [`@quantumnumber`](@ref) to define your own concrete `QuantumNumber`s.
+Users who want to define their own ``Z_N``-like quantum numbers must handle the periodicities in the construction function, otherwise, wrong results will be get when arithmetic operations, such as `+` or `-`, are involved. It is highly recommended to use the macro [`@quantumnumber`](@ref) to define your own concrete `AbstractQuantumNumber`s.
 
 ## QuantumNumbers
 
 The whole quantum numbers for the total bases.
 
 By design, a [`QuantumNumbers{QN}`](@ref) has one type parameter:
-* `QN<:QuantumNumber`: the type of the quantum numbers contained in it
+* `QN<:AbstractQuantumNumber`: the type of the quantum numbers contained in it
 And 3 attributes:
 * `form::Char`: Its form, whose value must be one of the followings
   - `'G'`: the general form, which has no restriction for its `contents`
   - `'U'`: the unitary form, which requires no duplicates in its `contents`
   - `'C'`: the canonical form, which requires not only no duplicates but also accending-order storage in its `contents`
   Usually, `'G'`-formed and `'U'`-formed `QuantumNumbers`es can be transformed to the corresponding `'C'`-formed ones by the [`sort`](@ref) function.
-* `contents::Vector{QN}`: The quantum numbers contained in it. To achieve high efficiency, it is required to be an homogenous array of a certain kind of concrete `QuantumNumber`.
+* `contents::Vector{QN}`: The quantum numbers contained in it. To achieve high efficiency, it is required to be an homogenous array of a certain kind of concrete `AbstractQuantumNumber`.
 * `indptr::Vector{Int}`: The indptr of the quantum numbers contained in it, which is similar to the `colptr` attribute of a [CSC sparse matrix](https://docs.julialang.org/en/v1/stdlib/SparseArrays/#man-csc-1) and records the compression info of its `contents`.
 
 Main features include:
@@ -61,6 +61,6 @@ For convenience, **5** functions are predefined to generate the `QuantumNumbers`
 ## [Manual](@id qnmanual)
 
 ```@autodocs
-Modules=[GoodQuantumNumber]
+Modules=[QuantumNumber]
 Order=  [:module,:constant,:type,:macro,:function]
 ```

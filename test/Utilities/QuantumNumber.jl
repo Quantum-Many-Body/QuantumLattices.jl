@@ -1,5 +1,5 @@
 using Test
-using Hamiltonian.Utilities.GoodQuantumNumber
+using Hamiltonian.Utilities.QuantumNumber
 using DataStructures: OrderedDict
 using Printf: @sprintf
 using Base.Iterators: reverse

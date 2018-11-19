@@ -19,7 +19,7 @@ makedocs(
                                         "man/Utilities/Factory.md",
                                         "man/Utilities/Tree.md",
                                         "man/Utilities/NamedVector.md",
-                                        "man/Utilities/GoodQuantumNumber.md",
+                                        "man/Utilities/QuantumNumber.md",
                                         ],
                                 ],
                         ],
