@@ -85,7 +85,119 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "Introduction",
     "category": "section",
-    "text": "Utilities of the Hamiltonian package.Pages=  [\n        \"Factory.md\",\n        \"Tree.md\",\n        \"NamedVector.md\",\n        \"QuantumNumber.md\",\n        ]\nDepth=2"
+    "text": "This module contains the Utilities of the Hamiltonian package, all of whose variables will NOT be exported by Hamiltonian."
+},
+
+{
+    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.atol",
+    "page": "Introduction",
+    "title": "Hamiltonian.Utilities.atol",
+    "category": "constant",
+    "text": "Absolute tolerance for float numbers.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.rtol",
+    "page": "Introduction",
+    "title": "Hamiltonian.Utilities.rtol",
+    "category": "constant",
+    "text": "Relative tolerance for float numbers.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.Float",
+    "page": "Introduction",
+    "title": "Hamiltonian.Utilities.Float",
+    "category": "type",
+    "text": "Default float type.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.FOrder",
+    "page": "Introduction",
+    "title": "Hamiltonian.Utilities.FOrder",
+    "category": "type",
+    "text": "Fortran order.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.COrder",
+    "page": "Introduction",
+    "title": "Hamiltonian.Utilities.COrder",
+    "category": "type",
+    "text": "C order.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.ind2sub",
+    "page": "Introduction",
+    "title": "Hamiltonian.Utilities.ind2sub",
+    "category": "function",
+    "text": "ind2sub(dims::Tuple,ind::Int,::Type{FOrder}) -> Tuple\nind2sub(dims::Tuple,ind::Int,::Type{COrder}) -> Tuple\n\nConvert an linear index to Cartesian index. Fortran-order or C-order can be assigned.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.sub2ind",
+    "page": "Introduction",
+    "title": "Hamiltonian.Utilities.sub2ind",
+    "category": "function",
+    "text": "sub2ind(dims::NTuple{N,Int},inds::NTuple{N,Int},::Type{FOrder}) where N -> Int\nsub2ind(dims::NTuple{N,Int},inds::NTuple{N,Int},::Type{COrder}) where N -> Int\n\nConvert an Cartesian index to linear index. Fortran-order or C-order can be assigned.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.decimaltostr",
+    "page": "Introduction",
+    "title": "Hamiltonian.Utilities.decimaltostr",
+    "category": "function",
+    "text": "decimaltostr(number::Integer,n::Int=5)\ndecimaltostr(number::Rational,n::Int=5)\ndecimaltostr(number::AbstractFloat,n::Int=5)\ndecimaltostr(number::Complex,n::Int=5)\n\nConvert a number to a string with at most n decimal places.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.ordinal",
+    "page": "Introduction",
+    "title": "Hamiltonian.Utilities.ordinal",
+    "category": "function",
+    "text": "ordinal(number::Interger)\n\nConvert a positive number to its corresponding ordinal.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Introduction.html#Useful-constants-and-functions-1",
+    "page": "Introduction",
+    "title": "Useful constants and functions",
+    "category": "section",
+    "text": "atol\nrtol\nFloat\nFOrder\nCOrder\nind2sub\nsub2ind\ndecimaltostr\nordinal"
+},
+
+{
+    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.dimension",
+    "page": "Introduction",
+    "title": "Hamiltonian.Utilities.dimension",
+    "category": "function",
+    "text": "Generic interface of the dimension of some types.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Introduction.html#Generic-functions-for-overloading-1",
+    "page": "Introduction",
+    "title": "Generic functions for overloading",
+    "category": "section",
+    "text": "dimension"
+},
+
+{
+    "location": "man/Utilities/Introduction.html#Prerequisites-for-Essentials-1",
+    "page": "Introduction",
+    "title": "Prerequisites for Essentials",
+    "category": "section",
+    "text": "Pages=[\n    \"Factory.md\",\n    \"Tree.md\",\n    \"NamedVector.md\",\n    ]\nDepth=2"
+},
+
+{
+    "location": "man/Utilities/Introduction.html#Necessities-for-Algorithms-1",
+    "page": "Introduction",
+    "title": "Necessities for Algorithms",
+    "category": "section",
+    "text": "Pages=[\n    \"QuantumNumber.md\",\n    ]\nDepth=2"
 },
 
 {
@@ -189,7 +301,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.Argument",
     "category": "method",
-    "text": "(a::Argument)(::typeof(RawExpr))\n(a::Argument)(;unescaped::NTuple{N,Symbol}=()) where N\n\nConvert an Argument to the Expr representation of the argument it describes.\n\n\n\n\n\n"
+    "text": "(a::Argument)(::typeof(RawExpr)) -> Expr\n(a::Argument)(;unescaped::NTuple{N,Symbol}=()) where N -> Expr\n\nConvert an Argument to the Expr representation of the argument it describes.\n\n\n\n\n\n"
 },
 
 {
@@ -205,7 +317,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.Block",
     "category": "method",
-    "text": "(b::Block)(::typeof(RawExpr))\n(b::Block)(;escaped::NTuple{N,Symbol}=()) where N\n\nConvert a Block to the Expr representation of the begin ... end block it describes.\n\n\n\n\n\n"
+    "text": "(b::Block)(::typeof(RawExpr)) -> Expr\n(b::Block)(;escaped::NTuple{N,Symbol}=()) where N -> Expr\n\nConvert a Block to the Expr representation of the begin ... end block it describes.\n\n\n\n\n\n"
 },
 
 {
@@ -213,7 +325,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.Field",
     "category": "type",
-    "text": "Field(name::Symbol,type::Inference)\nField(;name::Symbol,type::FExpr=Inference(:Any))\nField(expr::Expr)\n\nThe struct to describe a field of a struct.\n\n\n\n\n\n"
+    "text": "Field(name::Symbol,type::Inference)\nField(;name::Symbol,type::FExpr=Inference(:Any))\nField(expr::FExpr)\n\nThe struct to describe a field of a struct.\n\n\n\n\n\n"
 },
 
 {
@@ -221,7 +333,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.Field",
     "category": "method",
-    "text": "(f::Field)(::typeof(RawExpr))\n(f::Field)(;unescaped::NTuple{N,Symbol}=()) where N\n\nConvert a Field to the Expr representation of the field it describes.\n\n\n\n\n\n"
+    "text": "(f::Field)(::typeof(RawExpr)) -> Expr\n(f::Field)(;unescaped::NTuple{N,Symbol}=()) where N -> Expr\n\nConvert a Field to the Expr representation of the field it describes.\n\n\n\n\n\n"
 },
 
 {
@@ -237,7 +349,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.FunctionFactory",
     "category": "method",
-    "text": "(ff::FunctionFactory)(::typeof(RawExpr))\n(ff::FunctionFactory)(;unescaped::NTuple{N,Symbol}=(),escaped::NTuple{M,Symbol}=()) where {N,M}\n\nConvert a FunctionFactory to the Expr representation of the function it describes.\n\n\n\n\n\n"
+    "text": "(ff::FunctionFactory)(::typeof(RawExpr)) -> Expr\n(ff::FunctionFactory)(;unescaped::NTuple{N,Symbol}=(),escaped::NTuple{M,Symbol}=()) where {N,M} -> Expr\n\nConvert a FunctionFactory to the Expr representation of the function it describes.\n\n\n\n\n\n"
 },
 
 {
@@ -253,7 +365,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.Inference",
     "category": "method",
-    "text": "(i::Inference)(::typeof(RawExpr))\n(i::Inference)(;unescaped::NTuple{N,Symbol}=()) where N\n\nConvert a Inference to the Expr representation of the type inference it describes.\n\n\n\n\n\n"
+    "text": "(i::Inference)(::typeof(RawExpr)) -> FExpr\n(i::Inference)(;unescaped::NTuple{N,Symbol}=()) where N -> FExpr\n\nConvert a Inference to the Expr representation of the type inference it describes.\n\n\n\n\n\n"
 },
 
 {
@@ -269,7 +381,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.Parameter",
     "category": "method",
-    "text": "(p::Parameter)(::typeof(RawExpr))\n(p::Parameter)(;unescaped::NTuple{N,Symbol}=()) where N\n\nConvert a Parameter to the Expr representation of the parameter it describes.\n\n\n\n\n\n"
+    "text": "(p::Parameter)(::typeof(RawExpr)) -> FExpr\n(p::Parameter)(;unescaped::NTuple{N,Symbol}=()) where N -> FExpr\n\nConvert a Parameter to the Expr representation of the parameter it describes.\n\n\n\n\n\n"
 },
 
 {
@@ -285,7 +397,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.TypeFactory",
     "category": "method",
-    "text": "(tf::TypeFactory)(::typeof(RawExpr))\n(tf::TypeFactory)(;unescaped::NTuple{N,Symbol}=()) where N\n\nConvert a TypeFactory to the Expr representation of the struct it describes.\n\n\n\n\n\n"
+    "text": "(tf::TypeFactory)(::typeof(RawExpr)) -> Expr\n(tf::TypeFactory)(;unescaped::NTuple{N,Symbol}=()) where N -> Expr\n\nConvert a TypeFactory to the Expr representation of the struct it describes.\n\n\n\n\n\n"
 },
 
 {
@@ -333,7 +445,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.@addwhereparams!",
     "category": "macro",
-    "text": "@addwhereparams! f whereparams::FExpr...\n\nAdd a couple of method parameters to a function factory or a type factory.\n\n\n\n\n\n"
+    "text": "@addwhereparams! ff whereparams::FExpr...\n\nAdd a couple of method parameters to a function factory or a type factory.\n\n\n\n\n\n"
 },
 
 {
@@ -429,7 +541,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.addargs!",
     "category": "method",
-    "text": "addargs!(ff::FunctionFactory,args::Argument...)\naddargs!(ff::FunctionFactory,args::FExpr...)\n\nAdd a couple of positional arguments to a function factory.\n\n\n\n\n\n"
+    "text": "addargs!(ff::FunctionFactory,args::Argument...) -> FunctionFactory\naddargs!(ff::FunctionFactory,args::FExpr...) -> FunctionFactory\n\nAdd a couple of positional arguments to a function factory.\n\n\n\n\n\n"
 },
 
 {
@@ -437,7 +549,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.addconstructors!",
     "category": "method",
-    "text": "addconstructors!(tf::TypeFactory,constructors::FunctionFactory...)\naddconstructors!(tf::TypeFactory,constructors::Expr...)\n\nAdd a couple of constructors to a type factory.\n\n\n\n\n\n"
+    "text": "addconstructors!(tf::TypeFactory,constructors::FunctionFactory...) -> TypeFactory\naddconstructors!(tf::TypeFactory,constructors::Expr...) -> TypeFactory\n\nAdd a couple of constructors to a type factory.\n\n\n\n\n\n"
 },
 
 {
@@ -445,7 +557,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.addfields!",
     "category": "method",
-    "text": "addfields!(tf::TypeFactory,fields::Field...)\naddfields!(tf::TypeFactory,fields::FExpr...)\n\nAdd a couple of fields to a type factory.\n\n\n\n\n\n"
+    "text": "addfields!(tf::TypeFactory,fields::Field...) -> TypeFactory\naddfields!(tf::TypeFactory,fields::FExpr...) -> TypeFactory\n\nAdd a couple of fields to a type factory.\n\n\n\n\n\n"
 },
 
 {
@@ -453,7 +565,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.addkwargs!",
     "category": "method",
-    "text": "addkwargs!(ff::FunctionFactory,kwargs::Argument...)\naddkwargs!(ff::FunctionFactory,kwargs::FExpr...)\n\nAdd a couple of keyword arguments to a function factory.\n\n\n\n\n\n"
+    "text": "addkwargs!(ff::FunctionFactory,kwargs::Argument...) -> FunctionFactory\naddkwargs!(ff::FunctionFactory,kwargs::FExpr...) -> FunctionFactory\n\nAdd a couple of keyword arguments to a function factory.\n\n\n\n\n\n"
 },
 
 {
@@ -461,7 +573,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.addparams!",
     "category": "method",
-    "text": "addparams!(f::FunctionFactory,params::Inference...)\naddparams!(f::TypeFactory,params::Parameter...)\naddparams!(f::Union{FunctionFactory,TypeFactory},params::FExpr...)\n\nAdd a couple of parameters to a function factory or a type factory.\n\n\n\n\n\n"
+    "text": "addparams!(f::FunctionFactory,params::Inference...) ->FunctionFactory\naddparams!(f::FunctionFactory,params::FExpr...) -> FunctionFactory\naddparams!(f::TypeFactory,params::Parameter...) -> TypeFactory\naddparams!(f::TypeFactory,params::FExpr...) -> TypeFactory\n\nAdd a couple of parameters to a function factory or a type factory.\n\n\n\n\n\n"
 },
 
 {
@@ -469,7 +581,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.addwhereparams!",
     "category": "method",
-    "text": "addwhereparams!(f::FunctionFactory,whereparams::Parameter...)\naddwhereparams!(f::FunctionFactory,whereparams::FExpr...)\n\nAdd a couple of method where parameters to a function factory or a type factory.\n\n\n\n\n\n"
+    "text": "addwhereparams!(ff::FunctionFactory,whereparams::Parameter...) -> FunctionFactory\naddwhereparams!(ff::FunctionFactory,whereparams::FExpr...) -> FunctionFactory\n\nAdd a couple of method where parameters to a function factory or a type factory.\n\n\n\n\n\n"
 },
 
 {
@@ -477,7 +589,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.escape",
     "category": "method",
-    "text": "escape(expr,::NTuple{N,Symbol}=()) where N\nescape(expr::Symbol,escaped::NTuple{N,Symbol}=()) where N\nescape(expr::Expr,escaped::NTuple{N,Symbol}=()) where N\n\nEscape the variables sepecified by escaped in the input expression.\n\n\n\n\n\n"
+    "text": "escape(expr,::NTuple{N,Symbol}=()) where N -> Any\nescape(expr::Symbol,escaped::NTuple{N,Symbol}=()) where N -> FExpr\nescape(expr::Expr,escaped::NTuple{N,Symbol}=()) where N -> Expr\n\nEscape the variables sepecified by escaped in the input expression.\n\n\n\n\n\n"
 },
 
 {
@@ -485,7 +597,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.extendbody!",
     "category": "method",
-    "text": "extendbody!(ff::FunctionFactory,parts::FExpr...)\nextendbody!(ff::FunctionFactory,parts::Block...)\n\nExtend the body of a function factory.\n\n\n\n\n\n"
+    "text": "extendbody!(ff::FunctionFactory,parts::FExpr...) -> FunctionFactory\nextendbody!(ff::FunctionFactory,parts::Block...) -> FunctionFactory\n\nExtend the body of a function factory.\n\n\n\n\n\n"
 },
 
 {
@@ -493,7 +605,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.rmlines!",
     "category": "method",
-    "text": "rmlines!(b::Block)\n\nRemove line number nodes in the body of a block.\n\n\n\n\n\n"
+    "text": "rmlines!(b::Block) -> Block\n\nRemove line number nodes in the body of a block.\n\n\n\n\n\n"
 },
 
 {
@@ -501,7 +613,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "MacroTools.rmlines",
     "category": "method",
-    "text": "rmlines(b::Block)\n\nReturn a copy of a block with the line number nodes removed.\n\n\n\n\n\n"
+    "text": "rmlines(b::Block) -> Block\n\nReturn a copy of a block with the line number nodes removed.\n\n\n\n\n\n"
 },
 
 {
@@ -517,7 +629,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Base.:==",
     "category": "method",
-    "text": "==(f1::F,f2::F) where F<:AbstractFactory\n\nOverloaded == operator.\n\n\n\n\n\n"
+    "text": "==(f1::F,f2::F) where F<:AbstractFactory -> Bool\n\nOverloaded == operator.\n\n\n\n\n\n"
 },
 
 {
@@ -525,7 +637,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Base.names",
     "category": "method",
-    "text": "names(expr::Union{Symbol,Expr})\n\nGet all the variable names in an Expr.\n\n\n\n\n\n"
+    "text": "names(expr::Union{Symbol,Expr}) -> Vector{Symbol}\n\nGet all the variable names in an Expr.\n\n\n\n\n\n"
 },
 
 {
@@ -533,7 +645,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Base.push!",
     "category": "method",
-    "text": "push!(b::Block,parts::FExpr...)\npush!(b::Block,parts::Block...)\n\nPush other parts into the body of a block.\n\n\n\n\n\n"
+    "text": "push!(b::Block,parts::FExpr...) -> Block\npush!(b::Block,parts::Block...) -> Block\n\nPush other parts into the body of a block.\n\n\n\n\n\n"
 },
 
 {
@@ -541,7 +653,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Base.replace",
     "category": "method",
-    "text": "replace(f::AbstractFactory;kwargs...)\n\nReturn a copy of a concrete AbstractFactory with some of the field values replaced by the keyword arguments.\n\n\n\n\n\n"
+    "text": "replace(f::AbstractFactory;kwargs...) -> typeof(f)\n\nReturn a copy of a concrete AbstractFactory with some of the field values replaced by the keyword arguments.\n\n\n\n\n\n"
 },
 
 {
@@ -661,7 +773,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Tree",
     "title": "Hamiltonian.Utilities.Tree.addnode!",
     "category": "method",
-    "text": "addnode!(tree::AbstractTree{N,D},node::N) where {N,D}\naddnode!(tree::AbstractTree{N,D},::Nothing,node::N) where {N,D}\naddnode!(tree::AbstractTree{N,D},parent::N,node::N) where {N,D}\n\nUpdate the structure of a tree by adding a node. When the parent is nothing, the input tree must be empty and the input node becomes the tree\'s root.\n\n\n\n\n\n"
+    "text": "addnode!(tree::AbstractTree{N,D},node::N) where {N,D} -> typeof(tree)\naddnode!(tree::AbstractTree{N,D},::Nothing,node::N) where {N,D} -> typeof(tree)\naddnode!(tree::AbstractTree{N,D},parent::N,node::N) where {N,D} -> typeof(tree)\n\nUpdate the structure of a tree by adding a node. When the parent is nothing, the input tree must be empty and the input node becomes the tree\'s root.\n\n\n\n\n\n"
 },
 
 {
@@ -677,7 +789,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Tree",
     "title": "Hamiltonian.Utilities.Tree.children",
     "category": "method",
-    "text": "children(tree::AbstractTree) -> Vector\nchildren(tree::AbstractTree,::Nothing) -> Vector\nchildren(tree::AbstractTree{N,D},node::N) where {N,D} -> Vector{N}\n\nGet the children of a tree\'s node.\n\n\n\n\n\n"
+    "text": "children(tree::AbstractTree) -> Vector{keytype(tree)}\nchildren(tree::AbstractTree,::Nothing) -> Vector{keytype(tree)}\nchildren(tree::AbstractTree{N,D},node::N) where {N,D} -> Vector{N}\n\nGet the children of a tree\'s node.\n\n\n\n\n\n"
 },
 
 {
@@ -685,7 +797,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Tree",
     "title": "Hamiltonian.Utilities.Tree.deletenode!",
     "category": "method",
-    "text": "deletenode!(tree::AbstractTree{N,D},node::N) where {N,D}\n\nUpdate the structure of a tree by deleting a node.\n\n\n\n\n\n"
+    "text": "deletenode!(tree::AbstractTree{N,D},node::N) where {N,D} -> typeof(tree)\n\nUpdate the structure of a tree by deleting a node.\n\n\n\n\n\n"
 },
 
 {
@@ -717,7 +829,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Tree",
     "title": "Hamiltonian.Utilities.Tree.leaves",
     "category": "method",
-    "text": "leaves(tree::AbstractTree)\n\nGet a tree\'s leaves.\n\n\n\n\n\n"
+    "text": "leaves(tree::AbstractTree) -> Vector{keytype(tree)}\n\nGet a tree\'s leaves.\n\n\n\n\n\n"
 },
 
 {
@@ -733,7 +845,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Tree",
     "title": "Hamiltonian.Utilities.Tree.move!",
     "category": "method",
-    "text": "move!(tree::AbstractTree{N,D},node::N,parent::N) where {N,D}\n\nMove a subtree to a new position.\n\n\n\n\n\n"
+    "text": "move!(tree::AbstractTree{N,D},node::N,parent::N) where {N,D} -> typeof(tree)\n\nMove a subtree to a new position.\n\n\n\n\n\n"
 },
 
 {
@@ -749,7 +861,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Tree",
     "title": "Hamiltonian.Utilities.Tree.root",
     "category": "method",
-    "text": "root(tree::AbstractTree)\n\nGet a tree\'s root node.\n\n\n\n\n\n"
+    "text": "root(tree::AbstractTree) -> Union{keytype(tree),Nothing}\n\nGet a tree\'s root node.\n\n\n\n\n\n"
 },
 
 {
@@ -765,7 +877,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Tree",
     "title": "Hamiltonian.Utilities.Tree.subtree",
     "category": "method",
-    "text": "subtree(tree::AbstractTree{N,D},node::N) where{N,D}\n\nGet a subtree whose root is node.\n\n\n\n\n\n"
+    "text": "subtree(tree::AbstractTree{N,D},node::N) where{N,D} -> typeof(tree)\n\nGet a subtree whose root is node.\n\n\n\n\n\n"
 },
 
 {
@@ -789,7 +901,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Tree",
     "title": "Base.append!",
     "category": "method",
-    "text": "append!(tree::AbstractTree{N,D},subtree::AbstractTree{N,D}) where {N,D}\nappend!(tree::AbstractTree{N,D},node::Union{N,Nothing},subtree::AbstractTree{N,D}) where {N,D}\n\nAppend a subtree to a tree.\n\n\n\n\n\n"
+    "text": "append!(tree::AbstractTree{N,D},subtree::AbstractTree{N,D}) where {N,D} -> typeof(tree)\nappend!(tree::AbstractTree{N,D},node::Union{N,Nothing},subtree::AbstractTree{N,D}) where {N,D} -> typeof(tree)\n\nAppend a subtree to a tree.\n\n\n\n\n\n"
 },
 
 {
@@ -797,7 +909,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Tree",
     "title": "Base.delete!",
     "category": "method",
-    "text": "delete!(tree::AbstractTree{N,D},node::N) where {N,D}\n\nDelete a node and all its descendants from a tree.\n\n\n\n\n\n"
+    "text": "delete!(tree::AbstractTree{N,D},node::N) where {N,D} -> typeof(tree)\n\nDelete a node and all its descendants from a tree.\n\n\n\n\n\n"
 },
 
 {
@@ -813,7 +925,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Tree",
     "title": "Base.empty!",
     "category": "method",
-    "text": "empty!(tree::AbstractTree)\n\nEmpty a tree.\n\n\n\n\n\n"
+    "text": "empty!(tree::AbstractTree) -> typeof(tree)\n\nEmpty a tree.\n\n\n\n\n\n"
 },
 
 {
@@ -853,7 +965,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Tree",
     "title": "Base.length",
     "category": "method",
-    "text": "length(tree::AbstractTree)\n\nGet the number of a tree\'s nodes.\n\n\n\n\n\n"
+    "text": "length(tree::AbstractTree) -> Int\n\nGet the number of a tree\'s nodes.\n\n\n\n\n\n"
 },
 
 {
@@ -869,7 +981,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Tree",
     "title": "Base.push!",
     "category": "method",
-    "text": "push!(tree::AbstractTree{N,D},node::N,data::D) where {N,D}\npush!(tree::AbstractTree{N,D},parent::Union{N,Nothing},node::N,data::D) where {N,D}\n\nPush a new node to a tree. When parent is nothing, this function set the root node of an empty tree.\n\n\n\n\n\n"
+    "text": "push!(tree::AbstractTree{N,D},node::N,data::D) where {N,D} -> typeof(tree)\npush!(tree::AbstractTree{N,D},parent::Union{N,Nothing},node::N,data::D) where {N,D} -> typeof(tree)\n\nPush a new node to a tree. When parent is nothing, this function set the root node of an empty tree.\n\n\n\n\n\n"
 },
 
 {
@@ -1101,7 +1213,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Named vector",
     "title": "Base.zero",
     "category": "method",
-    "text": "zero(::Type{NV}) where NV<:AbstractNamedVector\nzero(nv::AbstractNamedVector)\n\nGet a concrete AbstractNamedVector with all values being zero.\n\n\n\n\n\n"
+    "text": "zero(::Type{NV}) where NV<:AbstractNamedVector -> NV\nzero(nv::AbstractNamedVector) -> typeof(nv)\n\nGet a concrete AbstractNamedVector with all values being zero.\n\n\n\n\n\n"
 },
 
 {
@@ -1233,7 +1345,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.QuantumNumber.QuantumNumbers-Tuple{OrderedCollections.OrderedDict{#s61,Int64} where #s61<:Hamiltonian.Utilities.QuantumNumber.AbstractQuantumNumber}",
+    "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.QuantumNumber.QuantumNumbers-Tuple{OrderedCollections.OrderedDict{#s15,Int64} where #s15<:Hamiltonian.Utilities.QuantumNumber.AbstractQuantumNumber}",
     "page": "Quantum numbers",
     "title": "Hamiltonian.Utilities.QuantumNumber.QuantumNumbers",
     "category": "method",
@@ -1241,7 +1353,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.QuantumNumber.QuantumNumbers-Tuple{OrderedCollections.OrderedDict{#s61,UnitRange{Int64}} where #s61<:Hamiltonian.Utilities.QuantumNumber.AbstractQuantumNumber}",
+    "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.QuantumNumber.QuantumNumbers-Tuple{OrderedCollections.OrderedDict{#s15,UnitRange{Int64}} where #s15<:Hamiltonian.Utilities.QuantumNumber.AbstractQuantumNumber}",
     "page": "Quantum numbers",
     "title": "Hamiltonian.Utilities.QuantumNumber.QuantumNumbers",
     "category": "method",
@@ -1281,7 +1393,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.QuantumNumber.:⊕-Union{Tuple{Tuple{Vararg{#s61,N}} where #s61<:AbstractQuantumNumber}, Tuple{N}, Tuple{Tuple{Vararg{#s14,N}} where #s14<:AbstractQuantumNumber,Tuple{Vararg{Int64,N}}}} where N",
+    "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.QuantumNumber.:⊕-Union{Tuple{Tuple{Vararg{#s15,N}} where #s15<:AbstractQuantumNumber}, Tuple{N}, Tuple{Tuple{Vararg{#s14,N}} where #s14<:AbstractQuantumNumber,Tuple{Vararg{Int64,N}}}} where N",
     "page": "Quantum numbers",
     "title": "Hamiltonian.Utilities.QuantumNumber.:⊕",
     "category": "method",
@@ -1293,7 +1405,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Quantum numbers",
     "title": "Hamiltonian.Utilities.QuantumNumber.:⊗",
     "category": "method",
-    "text": "⊗(::Type{QN},qn1::AbstractQuantumNumber,qn2::AbstractQuantumNumber) where QN<:AbstractQuantumNumber -> QN\n⊗(qns::NTuple{N,<:AbstractQuantumNumber},signs::NTuple{N,Int}=ntuple(i->1,N)) where N -> AbstractQuantumNumber\n⊗(qnses::NTuple{N,QuantumNumbers{QN}},signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:AbstractQuantumNumber} -> QuantumNumbers{QN}\n\nGet the direct product of some AbstractQuantumNumbers or QuantumNumberses.\n\nnote: Note\nPhysically, the direct product of a couple of AbstractQuantumNumbers or QuantumNumberses are defined by the direct product of the bases of the Hilbert spaces they represent. Therefore, QuantumNumbers with differenct types or QuantumNumberses with differenct eltypes are allowed to be direct producted in principle. However, for simplicity, we only implement a method which handle the situation of two AbstractQuantumNumbers with differenct types. The type of the result should be provided as the first parameter. Note that in this situation, the fieldnames and periods of the result type must be exactly equal to the flattened fieldnames and periods of the two input AbstractQuantumNumbers, which means, even the order of the input AbstractQuantumNumbers matters.\nApparently, the dimension of the result equals the product of those of the inputs. Therefore, the direct product of AbstractQuantumNumbers is also a AbstractQuantumNumber since its dimension is still one.\nFor other situations except the one mentioned in Note.1, the input AbstractQuantumNumbers or QuantumNumberses must be homogenous. Meanwhile, signs can also be provided for these situations. Note that each quantum number in the contents of the result is obtained by a summation of the corresponding quanum numbers out of the inputs with the correct signs. This is a direct observation of the Abelian nature of our quantum numbers.\n\n\n\n\n\n"
+    "text": "⊗(::Type{QN},qn1::AbstractQuantumNumber,qn2::AbstractQuantumNumber) where QN<:AbstractQuantumNumber -> QN\n⊗(qns::NTuple{N,<:AbstractQuantumNumber},signs::NTuple{N,Int}=ntuple(i->1,N)) where N -> eltype(qns)\n⊗(qnses::NTuple{N,QuantumNumbers{QN}},signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:AbstractQuantumNumber} -> QuantumNumbers{QN}\n\nGet the direct product of some AbstractQuantumNumbers or QuantumNumberses.\n\nnote: Note\nPhysically, the direct product of a couple of AbstractQuantumNumbers or QuantumNumberses are defined by the direct product of the bases of the Hilbert spaces they represent. Therefore, QuantumNumbers with differenct types or QuantumNumberses with differenct eltypes are allowed to be direct producted in principle. However, for simplicity, we only implement a method which handle the situation of two AbstractQuantumNumbers with differenct types. The type of the result should be provided as the first parameter. Note that in this situation, the fieldnames and periods of the result type must be exactly equal to the flattened fieldnames and periods of the two input AbstractQuantumNumbers, which means, even the order of the input AbstractQuantumNumbers matters.\nApparently, the dimension of the result equals the product of those of the inputs. Therefore, the direct product of AbstractQuantumNumbers is also a AbstractQuantumNumber since its dimension is still one.\nFor other situations except the one mentioned in Note.1, the input AbstractQuantumNumbers or QuantumNumberses must be homogenous. Meanwhile, signs can also be provided for these situations. Note that each quantum number in the contents of the result is obtained by a summation of the corresponding quanum numbers out of the inputs with the correct signs. This is a direct observation of the Abelian nature of our quantum numbers.\n\n\n\n\n\n"
 },
 
 {
@@ -1301,7 +1413,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Quantum numbers",
     "title": "Hamiltonian.Utilities.QuantumNumber.PQNS",
     "category": "method",
-    "text": "PQNS(N::Real)\n\nConstruct the QuantumNumbers of the Hilbert space of a single-particle state with at most N identical particles.\n\n\n\n\n\n"
+    "text": "PQNS(N::Real) -> QuantumNumbers{PQN}\n\nConstruct the QuantumNumbers of the Hilbert space of a single-particle state with at most N identical particles.\n\n\n\n\n\n"
 },
 
 {
@@ -1309,7 +1421,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Quantum numbers",
     "title": "Hamiltonian.Utilities.QuantumNumber.SPQNS",
     "category": "method",
-    "text": "SPQNS(S::Real)\n\nConstruct the QuantumNumbers of the Hilbert space of a single site with internal degrees of freedom that can be ascribed to a spin S.\n\n\n\n\n\n"
+    "text": "SPQNS(S::Real) -> QuantumNumbers{SPQN}\n\nConstruct the QuantumNumbers of the Hilbert space of a single site with internal degrees of freedom that can be ascribed to a spin S.\n\n\n\n\n\n"
 },
 
 {
@@ -1317,7 +1429,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Quantum numbers",
     "title": "Hamiltonian.Utilities.QuantumNumber.SQNS",
     "category": "method",
-    "text": "SQNS(S::Real)\n\nConstruct the QuantumNumbers of the Hilbert space of a signle spin S.\n\n\n\n\n\n"
+    "text": "SQNS(S::Real) -> QuantumNumbers{SQN}\n\nConstruct the QuantumNumbers of the Hilbert space of a signle spin S.\n\n\n\n\n\n"
 },
 
 {
@@ -1325,7 +1437,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Quantum numbers",
     "title": "Hamiltonian.Utilities.QuantumNumber.SzPQNS",
     "category": "method",
-    "text": "SzPQNS(Sz::Real)\n\nConstruct the QuantumNumbers of the Hilbert space of a single-paritcle state with at most one particle whose spin-z component is Sz.\n\n\n\n\n\n"
+    "text": "SzPQNS(Sz::Real) -> QuantumNumbers{SPQN}\n\nConstruct the QuantumNumbers of the Hilbert space of a single-paritcle state with at most one particle whose spin-z component is Sz.\n\n\n\n\n\n"
 },
 
 {
@@ -1333,7 +1445,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Quantum numbers",
     "title": "Hamiltonian.Utilities.QuantumNumber.Z2QNS",
     "category": "method",
-    "text": "Z2QNS()\n\nConstruct the QuantumNumbers of a Z_2 Hilbert space.\n\n\n\n\n\n"
+    "text": "Z2QNS() -> QuantumNumbers{Z2QN}\n\nConstruct the QuantumNumbers of a Z_2 Hilbert space.\n\n\n\n\n\n"
 },
 
 {
@@ -1342,22 +1454,6 @@ var documenterSearchIndex = {"docs": [
     "title": "Hamiltonian.Utilities.QuantumNumber.decompose",
     "category": "method",
     "text": "decompose(qnses::NTuple{N,QuantumNumbers{QN}},target::QN,signs::NTuple{N,Int},::typeof(qnsbruteforce);nmax::Int=20) where {N,QN<:AbstractQuantumNumber} -> Vector{NTuple{N,Int}}\ndecompose(qnses::NTuple{N,QuantumNumbers{QN}},target::QN,signs::NTuple{N,Int},::typeof(qnsmontecarlo);nmax::Int=20) where {N,QN<:AbstractQuantumNumber} -> Vector{NTuple{N,Int}}\n\nFind a couple of decompositions of target with respect to qnses.\n\nnote: Note\nA tuple of integers (i₁,i₂,...) is called a decomposition of a given target with respect to the given qnses if and only if they satisfy the \"decomposition rule\":sum_textj textsignstextjtimestextqnsestextjtexti_textj==texttargetThis equation is in fact a kind of a set of restricted linear Diophantine equations. Indeed, our quantum numbers are always discrete Abelian ones and all instances of a concrete AbstractQuantumNumber forms a module over the ring of integers. Therefore, each quantum number can be represented as a integral multiple of the unit element of the Abelian module, which results in the final reduction of the above equation to a set of linear Diophantine equations. Then finding a decomposition is equivalent to find a solution of the reduced linear Diophantine equations, with the restriction that the quantum numbers constructed from the solution should be in the corresponding qnses. Here we provide two methods to find such decompositions, one is by brute force (qnsbruteforce case), and the other is by Monte Carlo simultatioins (qnsmontecarlo case).\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.QuantumNumber.dimension-Tuple{Hamiltonian.Utilities.QuantumNumber.QuantumNumbers}",
-    "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.QuantumNumber.dimension",
-    "category": "method",
-    "text": "dimension(qns::QuantumNumbers) -> Int\n\nThe dimension of the Hilbert space a QuantumNumbers represents.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.QuantumNumber.dimension-Tuple{Type{#s68} where #s68<:Hamiltonian.Utilities.QuantumNumber.AbstractQuantumNumber}",
-    "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.QuantumNumber.dimension",
-    "category": "method",
-    "text": "dimension(::Type{<:AbstractQuantumNumber}) -> Int\ndimension(::AbstractQuantumNumber) -> Int\n\nThe dimension of the Hilbert space a AbstractQuantumNumber represents. Apparently, this is always 1.\n\n\n\n\n\n"
 },
 
 {
@@ -1373,7 +1469,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Quantum numbers",
     "title": "Hamiltonian.Utilities.QuantumNumber.regularize!",
     "category": "method",
-    "text": "regularize!(::Type{QN},array::AbstractVector{Float64}) where QN<:AbstractQuantumNumber\nregularize!(::Type{QN},array::AbstractMatrix{Float64}) where QN<:AbstractQuantumNumber\n\nRegularize the elements of an array in place so that it can represent quantum numbers.\n\n\n\n\n\n"
+    "text": "regularize!(::Type{QN},array::AbstractVector{Float}) where QN<:AbstractQuantumNumber -> typeof(array)\nregularize!(::Type{QN},array::AbstractMatrix{Float}) where QN<:AbstractQuantumNumber -> typeof(array)\n\nRegularize the elements of an array in place so that it can represent quantum numbers.\n\n\n\n\n\n"
 },
 
 {
@@ -1381,7 +1477,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Quantum numbers",
     "title": "Hamiltonian.Utilities.QuantumNumber.regularize",
     "category": "method",
-    "text": "regularize(::Type{QN},array::Union{AbstractVector{Float64},AbstractMatrix{Float64}}) where {QN<:AbstractQuantumNumber}\n\nRegularize the elements of an array and return a copy that can represent quantum numbers.\n\n\n\n\n\n"
+    "text": "regularize(::Type{QN},array::Union{AbstractVector{Float},AbstractMatrix{Float}}) where {QN<:AbstractQuantumNumber} -> typeof(array)\n\nRegularize the elements of an array and return a copy that can represent quantum numbers.\n\n\n\n\n\n"
 },
 
 {
@@ -1417,11 +1513,27 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.dimension-Tuple{Hamiltonian.Utilities.QuantumNumber.QuantumNumbers}",
+    "page": "Quantum numbers",
+    "title": "Hamiltonian.Utilities.dimension",
+    "category": "method",
+    "text": "dimension(qns::QuantumNumbers) -> Int\n\nThe dimension of the Hilbert space a QuantumNumbers represents.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.dimension-Tuple{Type{#s68} where #s68<:Hamiltonian.Utilities.QuantumNumber.AbstractQuantumNumber}",
+    "page": "Quantum numbers",
+    "title": "Hamiltonian.Utilities.dimension",
+    "category": "method",
+    "text": "dimension(::Type{<:AbstractQuantumNumber}) -> Int\ndimension(::AbstractQuantumNumber) -> Int\n\nThe dimension of the Hilbert space a AbstractQuantumNumber represents. Apparently, this is always 1.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Utilities/QuantumNumber.html#Base.:*-Tuple{Hamiltonian.Utilities.QuantumNumber.AbstractQuantumNumber,Integer}",
     "page": "Quantum numbers",
     "title": "Base.:*",
     "category": "method",
-    "text": "*(qn::AbstractQuantumNumber,factor::Integer) -> AbstractQuantumNumber\n*(factor::Integer,qn::AbstractQuantumNumber) -> AbstractQuantumNumber\n*(qns::QuantumNumbers,factor::Integer) -> QuantumNumbers\n*(factor::Integer,qns::QuantumNumbers) -> QuantumNumbers\n\nOverloaded * operator for the multiplication between an integer and a AbstractQuantumNumber or a QuantumNumbers.\n\n\n\n\n\n"
+    "text": "*(qn::AbstractQuantumNumber,factor::Integer) -> typeof(qn)\n*(factor::Integer,qn::AbstractQuantumNumber) -> typeof(qn)\n*(qns::QuantumNumbers,factor::Integer) -> QuantumNumbers\n*(factor::Integer,qns::QuantumNumbers) -> QuantumNumbers\n\nOverloaded * operator for the multiplication between an integer and a AbstractQuantumNumber or a QuantumNumbers.\n\n\n\n\n\n"
 },
 
 {
@@ -1429,7 +1541,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Quantum numbers",
     "title": "Base.:+",
     "category": "method",
-    "text": "+(qn::AbstractQuantumNumber) -> AbstractQuantumNumber\n+(qn::QN,qns::QN...) where QN<:AbstractQuantumNumber -> QN\n+(qns::QuantumNumbers) -> QuantumNumbers\n+(qn::QN,qns::QuantumNumbers{QN}) where QN<:AbstractQuantumNumber -> QuantumNumbers{QN}\n+(qns::QuantumNumbers{QN},qn::QN) where QN<:AbstractQuantumNumber -> QuantumNumbers{QN}\n\nOverloaded + operator for AbstractQuantumNumber and QuantumNumbers.\n\nnote: Note\nThe addition between a QuantumNumbers and a AbstractQuantumNumber is just a global shift of the contents of the QuantumNumbers by the AbstractQuantumNumber, therefore, the result is a QuantumNumbers.\n+ cannot be used between two QuantumNumbers because the result is ambiguous. Instead, use ⊕ for direct sum and ⊗ for direct product.\nTo ensure type stability, two AbstractQuantumNumber can be added together if and only if they are of the same type.\nSimilarly, a AbstractQuantumNumber and a QuantumNumbers can be added together if and only if the former\'s type is the same with the latter\'s eltype.\n\n\n\n\n\n"
+    "text": "+(qn::AbstractQuantumNumber) -> typeof(qn)\n+(qn::QN,qns::QN...) where QN<:AbstractQuantumNumber -> QN\n+(qns::QuantumNumbers) -> QuantumNumbers\n+(qn::QN,qns::QuantumNumbers{QN}) where QN<:AbstractQuantumNumber -> QuantumNumbers{QN}\n+(qns::QuantumNumbers{QN},qn::QN) where QN<:AbstractQuantumNumber -> QuantumNumbers{QN}\n\nOverloaded + operator for AbstractQuantumNumber and QuantumNumbers.\n\nnote: Note\nThe addition between a QuantumNumbers and a AbstractQuantumNumber is just a global shift of the contents of the QuantumNumbers by the AbstractQuantumNumber, therefore, the result is a QuantumNumbers.\n+ cannot be used between two QuantumNumbers because the result is ambiguous. Instead, use ⊕ for direct sum and ⊗ for direct product.\nTo ensure type stability, two AbstractQuantumNumber can be added together if and only if they are of the same type.\nSimilarly, a AbstractQuantumNumber and a QuantumNumbers can be added together if and only if the former\'s type is the same with the latter\'s eltype.\n\n\n\n\n\n"
 },
 
 {
@@ -1437,7 +1549,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Quantum numbers",
     "title": "Base.:-",
     "category": "method",
-    "text": "-(qn::AbstractQuantumNumber) -> AbstractQuantumNumber\n-(qn1::QN,qn2::QN) where QN<:AbstractQuantumNumber -> QN\n-(qns::QuantumNumbers) -> QuantumNumbers\n-(qn::QN,qns::QuantumNumbers{QN}) where QN<:AbstractQuantumNumber -> QuantumNumbers{QN}\n-(qns::QuantumNumbers{QN},qn::QN) where QN<:AbstractQuantumNumber -> QuantumNumbers{QN}\n\nOverloaded - operator for AbstractQuantumNumber and QuantumNumbers.\n\nnote: Note\nThe subtraction between a QuantumNumbers and a AbstractQuantumNumber is just a global shift of the contents of the QuantumNumbers by the AbstractQuantumNumber, therefore, the result is a QuantumNumbers.\n- cannot be used between two QuantumNumbers because the result is ambiguous. Instead, use ⊕ with signs for direct sum and ⊗ with signs for direct product.\nTo ensure type stability, a AbstractQuantumNumber can be subtracted by another AbstractQuantumNumber if and only if they are of the same type.\nSimilarly, a AbstractQuantumNumber can be subtracted by a QuantumNumbers or vice versa if and only if the former\'s type is the same with the latter\'s eltype.\n\n\n\n\n\n"
+    "text": "-(qn::AbstractQuantumNumber) -> typeof(qn)\n-(qn1::QN,qn2::QN) where QN<:AbstractQuantumNumber -> QN\n-(qns::QuantumNumbers) -> QuantumNumbers\n-(qn::QN,qns::QuantumNumbers{QN}) where QN<:AbstractQuantumNumber -> QuantumNumbers{QN}\n-(qns::QuantumNumbers{QN},qn::QN) where QN<:AbstractQuantumNumber -> QuantumNumbers{QN}\n\nOverloaded - operator for AbstractQuantumNumber and QuantumNumbers.\n\nnote: Note\nThe subtraction between a QuantumNumbers and a AbstractQuantumNumber is just a global shift of the contents of the QuantumNumbers by the AbstractQuantumNumber, therefore, the result is a QuantumNumbers.\n- cannot be used between two QuantumNumbers because the result is ambiguous. Instead, use ⊕ with signs for direct sum and ⊗ with signs for direct product.\nTo ensure type stability, a AbstractQuantumNumber can be subtracted by another AbstractQuantumNumber if and only if they are of the same type.\nSimilarly, a AbstractQuantumNumber can be subtracted by a QuantumNumbers or vice versa if and only if the former\'s type is the same with the latter\'s eltype.\n\n\n\n\n\n"
 },
 
 {
@@ -1453,7 +1565,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Quantum numbers",
     "title": "Base.:^",
     "category": "method",
-    "text": "^(qn::AbstractQuantumNumber,factor::Integer) -> AbstractQuantumNumber\n^(qns::QuantumNumbers,factor::Integer) -> QuantumNumbers\n\nOverloaded ^ operator for AbstractQuantumNumber and QuantumNumbers. This operation translates into the direct product ⊗ of factor copies of qn or qns.\n\n\n\n\n\n"
+    "text": "^(qn::AbstractQuantumNumber,factor::Integer) -> typeof(qn)\n^(qns::QuantumNumbers,factor::Integer) -> QuantumNumbers\n\nOverloaded ^ operator for AbstractQuantumNumber and QuantumNumbers. This operation translates into the direct product ⊗ of factor copies of qn or qns.\n\n\n\n\n\n"
 },
 
 {
@@ -1477,7 +1589,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Quantum numbers",
     "title": "Base.getindex",
     "category": "method",
-    "text": "getindex(qns::QuantumNumbers,index::Int) -> AbstractQuantumNumber\ngetindex(qns::QuantumNumbers,slice::UnitRange{Int}) -> QuantumNumbers\ngetindex(qns::QuantumNumbers,indices::Vector{Int}) -> QuantumNumbers\n\nOverloaded [] operator.\n\nnote: Note\nFor a QuantumNumbers, all these getindex functions act on its contents, i.e. its compressed data, but not on its expansion, i.e. the uncompressed data. This definition is consistent with the length function.\nWhen the index is an integer, the result is a AbstractQuantumNumber, while when the index is a unit range or a vector of intgers, the result is a QuantumNumbers. The logic is quite reasonable because such behaviors are much alike to those of a vector container.\n\n\n\n\n\n"
+    "text": "getindex(qns::QuantumNumbers,index::Int) -> eltype(qns)\ngetindex(qns::QuantumNumbers,slice::UnitRange{Int}) -> QuantumNumbers\ngetindex(qns::QuantumNumbers,indices::Vector{Int}) -> QuantumNumbers\n\nOverloaded [] operator.\n\nnote: Note\nFor a QuantumNumbers, all these getindex functions act on its contents, i.e. its compressed data, but not on its expansion, i.e. the uncompressed data. This definition is consistent with the length function.\nWhen the index is an integer, the result is a AbstractQuantumNumber, while when the index is a unit range or a vector of intgers, the result is a QuantumNumbers. The logic is quite reasonable because such behaviors are much alike to those of a vector container.\n\n\n\n\n\n"
 },
 
 {
@@ -1501,7 +1613,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Quantum numbers",
     "title": "Base.kron",
     "category": "method",
-    "text": "kron(::Type{QN},qn1::AbstractQuantumNumber,qn2::AbstractQuantumNumber) where QN<:AbstractQuantumNumber -> QN\nkron(qns::NTuple{N,<:AbstractQuantumNumber},signs::NTuple{N,Int}=ntuple(i->1,N)) where N -> AbstractQuantumNumber\nkron(qnses::NTuple{N,QuantumNumbers{QN}},signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:AbstractQuantumNumber} -> QuantumNumbers{QN}\n\nKronecker product of some AbstractQuantumNumbers or QuantumNumberses. This is defined to be equivalent to the direct product ⊗.\n\n\n\n\n\n"
+    "text": "kron(::Type{QN},qn1::AbstractQuantumNumber,qn2::AbstractQuantumNumber) where QN<:AbstractQuantumNumber -> QN\nkron(qns::NTuple{N,<:AbstractQuantumNumber},signs::NTuple{N,Int}=ntuple(i->1,N)) where N -> eltype(qns)\nkron(qnses::NTuple{N,QuantumNumbers{QN}},signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:AbstractQuantumNumber} -> QuantumNumbers{QN}\n\nKronecker product of some AbstractQuantumNumbers or QuantumNumberses. This is defined to be equivalent to the direct product ⊗.\n\n\n\n\n\n"
 },
 
 {
