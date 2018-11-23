@@ -1,4 +1,3 @@
-using Test
 using Hamiltonian.Utilities.Factory
 
 @testset "Inference" begin

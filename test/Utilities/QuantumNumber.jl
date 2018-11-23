@@ -1,4 +1,3 @@
-using Test
 using Hamiltonian.Utilities.QuantumNumber
 using DataStructures: OrderedDict
 using Printf: @sprintf
@@ -63,6 +62,7 @@ end
     @test qns1==qns2==qns3==qns4
 
     qns=QuantumNumbers('U',[qn1,qn2],[0,3,5],qnsindptr)
+    @test qns|>dimension==5
     @test qns|>string=="QNS(2,5)"
     @test @sprintf("%s",qns)=="QNS(CNZ4(1.0,3.0)=>1:3,CNZ4(-1.0,1.0)=>4:5)"
     @test qns[1]==qn1
@@ -80,6 +80,7 @@ end
 
 @testset "arithmetic" begin
     qn=CNZ4(1.0,3.0)
+    @test qn|>dimension==1
     @test +qn==CNZ4(+1.0,+3.0)
     @test -qn==CNZ4(-1.0,+1.0)
     @test qn*4==4*qn==CNZ4(4.0,0.0)

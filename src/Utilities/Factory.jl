@@ -33,7 +33,7 @@ const FExpr=Union{Symbol,Expr}
 const RawExpr=Val(true)
 
 """
-    names(expr::Union{Symbol,Expr})
+    names(expr::Union{Symbol,Expr}) -> Vector{Symbol}
 
 Get all the variable names in an `Expr`.
 """
@@ -48,9 +48,9 @@ function Base.names(expr::Expr)
 end
 
 """
-    escape(expr,::NTuple{N,Symbol}=()) where N
-    escape(expr::Symbol,escaped::NTuple{N,Symbol}=()) where N
-    escape(expr::Expr,escaped::NTuple{N,Symbol}=()) where N
+    escape(expr,::NTuple{N,Symbol}=()) where N -> Any
+    escape(expr::Symbol,escaped::NTuple{N,Symbol}=()) where N -> FExpr
+    escape(expr::Expr,escaped::NTuple{N,Symbol}=()) where N -> Expr
 
 Escape the variables sepecified by `escaped` in the input expression.
 """
@@ -66,7 +66,7 @@ Abstract type for all concrete factories.
 abstract type AbstractFactory end
 
 """
-    ==(f1::F,f2::F) where F<:AbstractFactory
+    ==(f1::F,f2::F) where F<:AbstractFactory -> Bool
 
 Overloaded `==` operator.
 """
@@ -104,7 +104,7 @@ function Base.show(io::IO,f::AbstractFactory)
 end
 
 """
-    replace(f::AbstractFactory;kwargs...)
+    replace(f::AbstractFactory;kwargs...) -> typeof(f)
 
 Return a copy of a concrete `AbstractFactory` with some of the field values replaced by the keyword arguments.
 """
@@ -156,8 +156,8 @@ Construct an `Inference` directly from a type inference.
 macro inference(expr::FExpr) expr=[expr];:(Inference($expr...)) end
 
 """
-    (i::Inference)(::typeof(RawExpr))
-    (i::Inference)(;unescaped::NTuple{N,Symbol}=()) where N
+    (i::Inference)(::typeof(RawExpr)) -> FExpr
+    (i::Inference)(;unescaped::NTuple{N,Symbol}=()) where N -> FExpr
 
 Convert a `Inference` to the `Expr` representation of the type inference it describes.
 """
@@ -204,8 +204,8 @@ Construct an `Argument` directly from an argument statement.
 macro argument(expr::FExpr) expr=[expr];:(Argument($expr...)) end
 
 """
-    (a::Argument)(::typeof(RawExpr))
-    (a::Argument)(;unescaped::NTuple{N,Symbol}=()) where N
+    (a::Argument)(::typeof(RawExpr)) -> Expr
+    (a::Argument)(;unescaped::NTuple{N,Symbol}=()) where N -> Expr
 
 Convert an `Argument` to the `Expr` representation of the argument it describes.
 """
@@ -247,8 +247,8 @@ Construct a `Parameter` directly from an parameter statement.
 macro parameter(expr::FExpr) expr=[expr];:(Parameter($expr...)) end
 
 """
-    (p::Parameter)(::typeof(RawExpr))
-    (p::Parameter)(;unescaped::NTuple{N,Symbol}=()) where N
+    (p::Parameter)(::typeof(RawExpr)) -> FExpr
+    (p::Parameter)(;unescaped::NTuple{N,Symbol}=()) where N -> FExpr
 
 Convert a `Parameter` to the `Expr` representation of the parameter it describes.
 """
@@ -266,7 +266,7 @@ end
 """
     Field(name::Symbol,type::Inference)
     Field(;name::Symbol,type::FExpr=Inference(:Any))
-    Field(expr::Expr)
+    Field(expr::FExpr)
 
 The struct to describe a field of a `struct`.
 """
@@ -285,8 +285,8 @@ Construct a `Field` directly from a field statement.
 macro field(expr::FExpr) expr=[expr];:(Field($expr...)) end
 
 """
-    (f::Field)(::typeof(RawExpr))
-    (f::Field)(;unescaped::NTuple{N,Symbol}=()) where N
+    (f::Field)(::typeof(RawExpr)) -> Expr
+    (f::Field)(;unescaped::NTuple{N,Symbol}=()) where N -> Expr
 
 Convert a `Field` to the `Expr` representation of the field it describes.
 """
@@ -311,8 +311,8 @@ Construct a `Block` directly from a `begin ... end` block definition.
 macro block(parts::FExpr...) :(Block($parts...)) end
 
 """
-    (b::Block)(::typeof(RawExpr))
-    (b::Block)(;escaped::NTuple{N,Symbol}=()) where N
+    (b::Block)(::typeof(RawExpr)) -> Expr
+    (b::Block)(;escaped::NTuple{N,Symbol}=()) where N -> Expr
 
 Convert a `Block` to the `Expr` representation of the `begin ... end` block it describes.
 """
@@ -320,17 +320,18 @@ Convert a `Block` to the `Expr` representation of the `begin ... end` block it d
 (b::Block)(;escaped::NTuple{N,Symbol}=()) where N=Expr(:block,(escape(part,escaped) for part in b.body)...)
 
 """
-    push!(b::Block,parts::FExpr...)
-    push!(b::Block,parts::Block...)
+    push!(b::Block,parts::FExpr...) -> Block
+    push!(b::Block,parts::Block...) -> Block
 
 Push other parts into the body of a block.
 """
-Base.push!(::Block)=nothing
+Base.push!(b::Block)=b
 Base.push!(b::Block,parts::FExpr...)=push!(b,Block(parts...))
 function Base.push!(b::Block,parts::Block...)
     for part in parts
         append!(b.body,part.body)
     end
+    return b
 end
 
 """
@@ -341,11 +342,11 @@ Push other parts into the body of a block.
 macro push!(b,parts::FExpr...) :(push!($(esc(b)),$parts...)) end
 
 """
-    rmlines!(b::Block)
+    rmlines!(b::Block) -> Block
 
 Remove line number nodes in the body of a block.
 """
-rmlines!(b::Block)=filter!(part->!isa(part,LineNumberNode),b.body)
+rmlines!(b::Block)=(filter!(part->!isa(part,LineNumberNode),b.body);b)
 
 """
     @rmlines! b::Expr
@@ -355,7 +356,7 @@ Remove line number nodes in the body of a block.
 macro rmlines!(b::Expr) :(rmlines!($(esc(b)))) end
 
 """
-    rmlines(b::Block)
+    rmlines(b::Block) -> Block
 
 Return a copy of a block with the line number nodes removed.
 """
@@ -421,8 +422,8 @@ Construct a `FunctionFactory` directly from a function definition.
 macro functionfactory(expr::Expr) expr=[expr];:(FunctionFactory($expr...)) end
 
 """
-    (ff::FunctionFactory)(::typeof(RawExpr))
-    (ff::FunctionFactory)(;unescaped::NTuple{N,Symbol}=(),escaped::NTuple{M,Symbol}=()) where {N,M}
+    (ff::FunctionFactory)(::typeof(RawExpr)) -> Expr
+    (ff::FunctionFactory)(;unescaped::NTuple{N,Symbol}=(),escaped::NTuple{M,Symbol}=()) where {N,M} -> Expr
 
 Convert a `FunctionFactory` to the `Expr` representation of the `function` it describes.
 """
@@ -450,13 +451,13 @@ function (ff::FunctionFactory)(;unescaped::NTuple{N,Symbol}=(),escaped::NTuple{M
 end
 
 """
-    addargs!(ff::FunctionFactory,args::Argument...)
-    addargs!(ff::FunctionFactory,args::FExpr...)
+    addargs!(ff::FunctionFactory,args::Argument...) -> FunctionFactory
+    addargs!(ff::FunctionFactory,args::FExpr...) -> FunctionFactory
 
 Add a couple of positional arguments to a function factory.
 """
-addargs!(::FunctionFactory)=nothing
-addargs!(ff::FunctionFactory,args::Argument...)=push!(ff.args,args...)
+addargs!(ff::FunctionFactory)=ff
+addargs!(ff::FunctionFactory,args::Argument...)=(push!(ff.args,args...);ff)
 addargs!(ff::FunctionFactory,args::FExpr...)=addargs!(ff,Argument.(args)...)
 
 """
@@ -467,13 +468,13 @@ Add a couple of positional arguments to a function factory.
 macro addargs!(ff,args::FExpr...) :(addargs!($(esc(ff)),$args...)) end
 
 """
-    addkwargs!(ff::FunctionFactory,kwargs::Argument...)
-    addkwargs!(ff::FunctionFactory,kwargs::FExpr...)
+    addkwargs!(ff::FunctionFactory,kwargs::Argument...) -> FunctionFactory
+    addkwargs!(ff::FunctionFactory,kwargs::FExpr...) -> FunctionFactory
 
 Add a couple of keyword arguments to a function factory.
 """
-addkwargs!(::FunctionFactory)=nothing
-addkwargs!(ff::FunctionFactory,kwargs::Argument...)=push!(ff.kwargs,kwargs...)
+addkwargs!(ff::FunctionFactory)=ff
+addkwargs!(ff::FunctionFactory,kwargs::Argument...)=(push!(ff.kwargs,kwargs...);ff)
 addkwargs!(ff::FunctionFactory,kwargs::FExpr...)=addkwargs!(ff,Argument.(kwargs)...)
 
 """
@@ -484,31 +485,14 @@ Add a couple of keyword arguments to a function factory.
 macro addkwargs!(ff,kwargs::FExpr...) :(addkwargs!($(esc(ff)),$kwargs...)) end
 
 """
-    extendbody!(ff::FunctionFactory,parts::FExpr...)
-    extendbody!(ff::FunctionFactory,parts::Block...)
+    extendbody!(ff::FunctionFactory,parts::FExpr...) -> FunctionFactory
+    extendbody!(ff::FunctionFactory,parts::Block...) -> FunctionFactory
 
 Extend the body of a function factory.
 """
-extendbody!(::FunctionFactory)=nothing
+extendbody!(ff::FunctionFactory)=ff
 extendbody!(ff::FunctionFactory,parts::FExpr...)=extendbody!(ff,Block(parts...))
-extendbody!(ff::FunctionFactory,parts::Block...)=push!(ff.body,parts...)
-
-"""
-    addwhereparams!(f::FunctionFactory,whereparams::Parameter...)
-    addwhereparams!(f::FunctionFactory,whereparams::FExpr...)
-
-Add a couple of method where parameters to a function factory or a type factory.
-"""
-addwhereparams!(::FunctionFactory)=nothing
-addwhereparams!(f::FunctionFactory,whereparams::Parameter...)=push!(f.whereparams,whereparams...)
-addwhereparams!(f::FunctionFactory,whereparams::FExpr...)=addwhereparams!(f,Parameter.(whereparams)...)
-
-"""
-    @addwhereparams! f whereparams::FExpr...
-
-Add a couple of method parameters to a function factory or a type factory.
-"""
-macro addwhereparams!(ff,whereparams::FExpr...) :(addwhereparams!($(esc(ff)),$whereparams...)) end
+extendbody!(ff::FunctionFactory,parts::Block...)=(push!(ff.body,parts...);ff)
 
 """
     @extendbody! ff parts::FExpr...
@@ -516,6 +500,23 @@ macro addwhereparams!(ff,whereparams::FExpr...) :(addwhereparams!($(esc(ff)),$wh
 Extend the body of a function factory.
 """
 macro extendbody!(ff,parts::FExpr...) :(extendbody!($(esc(ff)),$parts...)) end
+
+"""
+    addwhereparams!(ff::FunctionFactory,whereparams::Parameter...) -> FunctionFactory
+    addwhereparams!(ff::FunctionFactory,whereparams::FExpr...) -> FunctionFactory
+
+Add a couple of method where parameters to a function factory or a type factory.
+"""
+addwhereparams!(ff::FunctionFactory)=ff
+addwhereparams!(ff::FunctionFactory,whereparams::Parameter...)=(push!(ff.whereparams,whereparams...);ff)
+addwhereparams!(ff::FunctionFactory,whereparams::FExpr...)=addwhereparams!(ff,Parameter.(whereparams)...)
+
+"""
+    @addwhereparams! ff whereparams::FExpr...
+
+Add a couple of method parameters to a function factory or a type factory.
+"""
+macro addwhereparams!(ff,whereparams::FExpr...) :(addwhereparams!($(esc(ff)),$whereparams...)) end
 
 """
     TypeFactory(name::Symbol,mutable::Bool,params::Vector{Parameter},supertype::Inference,fields::Vector{Field},constructors::Vector{FunctionFactory})
@@ -566,8 +567,8 @@ Construct a `TypeFactory` directly from a type definition.
 macro typefactory(expr::Expr) expr=[expr];:(TypeFactory($expr...)) end
 
 """
-    (tf::TypeFactory)(::typeof(RawExpr))
-    (tf::TypeFactory)(;unescaped::NTuple{N,Symbol}=()) where N
+    (tf::TypeFactory)(::typeof(RawExpr)) -> Expr
+    (tf::TypeFactory)(;unescaped::NTuple{N,Symbol}=()) where N -> Expr
 
 Convert a `TypeFactory` to the `Expr` representation of the `struct` it describes.
 """
@@ -593,13 +594,13 @@ function (tf::TypeFactory)(;unescaped::NTuple{N,Symbol}=(),escaped::NTuple{M,Sym
 end
 
 """
-    addfields!(tf::TypeFactory,fields::Field...)
-    addfields!(tf::TypeFactory,fields::FExpr...)
+    addfields!(tf::TypeFactory,fields::Field...) -> TypeFactory
+    addfields!(tf::TypeFactory,fields::FExpr...) -> TypeFactory
 
 Add a couple of fields to a type factory.
 """
-addfields!(::TypeFactory)=nothing
-addfields!(tf::TypeFactory,fields::Field...)=push!(tf.fields,fields...)
+addfields!(tf::TypeFactory)=tf
+addfields!(tf::TypeFactory,fields::Field...)=(push!(tf.fields,fields...);tf)
 addfields!(tf::TypeFactory,fields::FExpr...)=addfields!(tf,Field.(fields)...)
 
 """
@@ -610,13 +611,13 @@ Add a couple of fields to a type factory.
 macro addfields!(tf,fields::FExpr...) :(addfields!($(esc(tf)),$fields...)) end
 
 """
-    addconstructors!(tf::TypeFactory,constructors::FunctionFactory...)
-    addconstructors!(tf::TypeFactory,constructors::Expr...)
+    addconstructors!(tf::TypeFactory,constructors::FunctionFactory...) -> TypeFactory
+    addconstructors!(tf::TypeFactory,constructors::Expr...) -> TypeFactory
 
 Add a couple of constructors to a type factory.
 """
-addconstructors!(::TypeFactory)=nothing
-addconstructors!(tf::TypeFactory,constructors::FunctionFactory...)=push!(tf.constructors,constructors...)
+addconstructors!(tf::TypeFactory)=tf
+addconstructors!(tf::TypeFactory,constructors::FunctionFactory...)=(push!(tf.constructors,constructors...);tf)
 addconstructors!(tf::TypeFactory,constructors::Expr...)=addconstructors!(tf,FunctionFactory.(constructors)...)
 
 """
@@ -627,16 +628,18 @@ Add a couple of constructors to a type factory.
 macro addconstructors!(tf,constructors::Expr...) :(addconstructors!($(esc(tf)),$constructors...)) end
 
 """
-    addparams!(f::FunctionFactory,params::Inference...)
-    addparams!(f::TypeFactory,params::Parameter...)
-    addparams!(f::Union{FunctionFactory,TypeFactory},params::FExpr...)
+    addparams!(f::FunctionFactory,params::Inference...) ->FunctionFactory
+    addparams!(f::FunctionFactory,params::FExpr...) -> FunctionFactory
+    addparams!(f::TypeFactory,params::Parameter...) -> TypeFactory
+    addparams!(f::TypeFactory,params::FExpr...) -> TypeFactory
+
 
 Add a couple of parameters to a function factory or a type factory.
 """
-addparams!(::Union{FunctionFactory,TypeFactory})=nothing
-addparams!(f::FunctionFactory,params::Inference...)=push!(f.params,params...)
+addparams!(f::Union{FunctionFactory,TypeFactory})=f
+addparams!(f::FunctionFactory,params::Inference...)=(push!(f.params,params...);f)
 addparams!(f::FunctionFactory,params::FExpr...)=addparams!(f,Inference.(params)...)
-addparams!(f::TypeFactory,params::Parameter...)=push!(f.params,params...)
+addparams!(f::TypeFactory,params::Parameter...)=(push!(f.params,params...);f)
 addparams!(f::TypeFactory,params::FExpr...)=addparams!(f,Parameter.(params)...)
 
 """
@@ -644,6 +647,6 @@ addparams!(f::TypeFactory,params::FExpr...)=addparams!(f,Parameter.(params)...)
 
 Add a couple of method parameters to a function factory or a type factory.
 """
-macro addparams!(ff,params::FExpr...) :(addparams!($(esc(ff)),$params...)) end
+macro addparams!(f,params::FExpr...) :(addparams!($(esc(f)),$params...)) end
 
 end #module

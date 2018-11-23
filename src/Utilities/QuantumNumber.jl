@@ -6,7 +6,10 @@ using DataStructures: OrderedDict
 using Random: MersenneTwister,seed!,shuffle!
 using LinearAlgebra: norm
 using Combinatorics: combinations
+using ..Utilities: Float
 using ..NamedVector: HomoNamedVector
+
+import ..Utilities: dimension
 
 export AbstractQuantumNumber
 export regularize!,regularize
@@ -17,7 +20,7 @@ export ⊕,⊗,ukron,dimension,expand,decompose,subset,reorder,toordereddict
 export SQNS,PQNS,SzPQNS,SPQNS,Z2QNS
 
 "Abstract type for all concrete quantum numbers for a single basis."
-abstract type AbstractQuantumNumber <: HomoNamedVector{Float64} end
+abstract type AbstractQuantumNumber <: HomoNamedVector{Float} end
 
 """
     dimension(::Type{<:AbstractQuantumNumber}) -> Int
@@ -29,18 +32,19 @@ dimension(::Type{<:AbstractQuantumNumber})=1
 dimension(::AbstractQuantumNumber)=1
 
 """
-    regularize!(::Type{QN},array::AbstractVector{Float64}) where QN<:AbstractQuantumNumber
-    regularize!(::Type{QN},array::AbstractMatrix{Float64}) where QN<:AbstractQuantumNumber
+    regularize!(::Type{QN},array::AbstractVector{Float}) where QN<:AbstractQuantumNumber -> typeof(array)
+    regularize!(::Type{QN},array::AbstractMatrix{Float}) where QN<:AbstractQuantumNumber -> typeof(array)
 
 Regularize the elements of an array in place so that it can represent quantum numbers.
 """
-function regularize!(::Type{QN},array::AbstractVector{Float64}) where QN<:AbstractQuantumNumber
+function regularize!(::Type{QN},array::AbstractVector{Float}) where QN<:AbstractQuantumNumber
     @assert size(array,1)==QN|>length "regularize! error: not consistent shape of input array and $QN."
     for (i,period) in enumerate(QN|>periods)
         @inbounds period!=Inf && (array[i]=array[i]%period+(array[i]%period<0 ? period : 0))
     end
+    return array
 end
-function regularize!(::Type{QN},array::AbstractMatrix{Float64}) where QN<:AbstractQuantumNumber
+function regularize!(::Type{QN},array::AbstractMatrix{Float}) where QN<:AbstractQuantumNumber
     @assert size(array,1)==QN|>length "regularize! error: not consistent shape of input array and $QN."
     for (i,period) in enumerate(QN|>periods)
         if period!=Inf
@@ -49,14 +53,15 @@ function regularize!(::Type{QN},array::AbstractMatrix{Float64}) where QN<:Abstra
             end
         end
     end
+    return array
 end
 
 """
-    regularize(::Type{QN},array::Union{AbstractVector{Float64},AbstractMatrix{Float64}}) where {QN<:AbstractQuantumNumber}
+    regularize(::Type{QN},array::Union{AbstractVector{Float},AbstractMatrix{Float}}) where {QN<:AbstractQuantumNumber} -> typeof(array)
 
 Regularize the elements of an array and return a copy that can represent quantum numbers.
 """
-function regularize(::Type{QN},array::Union{AbstractVector{Float64},AbstractMatrix{Float64}}) where {QN<:AbstractQuantumNumber}
+function regularize(::Type{QN},array::Union{AbstractVector{Float},AbstractMatrix{Float}}) where {QN<:AbstractQuantumNumber}
     result=copy(array)
     regularize!(QN,result)
     return result
@@ -76,13 +81,13 @@ macro quantumnumber(typename,fieldnames,fieldperiods)
     @assert all(isa(name,Symbol) for name in fieldnames) "quantumnumber error: all field names should be Symbol."
     @assert all(fieldperiods.>0) "quantumnumber error: all field periods should be positive."
     if all(fieldperiods.==Inf)
-        title=Expr(:call,:($(esc(typename))),(:($arg::Float64) for arg in arguments)...)
+        title=Expr(:call,:($(esc(typename))),(:($arg::Float) for arg in arguments)...)
         body=Expr(:call,:new,arguments...)
     else
-        title=Expr(:call,:($(esc(typename))),(:($arg::Float64) for arg in arguments)...,Expr(:kw,:(regularize::Bool),:true))
+        title=Expr(:call,:($(esc(typename))),(:($arg::Float) for arg in arguments)...,Expr(:kw,:(regularize::Bool),:true))
         body=Expr(:call,:new,(p==Inf ? arg : :(regularize ? ($arg)%($p)+(($arg)%($p)<0 ? $p : 0) : $arg) for (p,arg) in zip(fieldperiods,arguments))...)
     end
-    newtype=Expr(:struct,false,:($(esc(typename))<:AbstractQuantumNumber),Expr(:block,(:($field::Float64) for field in fieldnames)...,Expr(:(=),title,body)))
+    newtype=Expr(:struct,false,:($(esc(typename))<:AbstractQuantumNumber),Expr(:block,(:($field::Float) for field in fieldnames)...,Expr(:(=),title,body)))
     functions=Expr(:block,:(Base.fieldnames(::Type{<:$(esc(typename))})=$fieldnames),:(periods(::Type{<:$(esc(typename))})=$fieldperiods))
     return Expr(:block,:(global periods),:(Base.@__doc__($newtype)),functions)
 end
@@ -236,7 +241,7 @@ Base.eltype(::Type{<:QuantumNumbers{QN}}) where QN=QN
 Base.eltype(qns::QuantumNumbers)=qns|>typeof|>eltype
 
 """
-    getindex(qns::QuantumNumbers,index::Int) -> AbstractQuantumNumber
+    getindex(qns::QuantumNumbers,index::Int) -> eltype(qns)
     getindex(qns::QuantumNumbers,slice::UnitRange{Int}) -> QuantumNumbers
     getindex(qns::QuantumNumbers,indices::Vector{Int}) -> QuantumNumbers
 
@@ -360,7 +365,7 @@ function Base.findall(qns::QuantumNumbers{QN},targets::NTuple{N,QN},::typeof(qns
 end
 
 """
-    +(qn::AbstractQuantumNumber) -> AbstractQuantumNumber
+    +(qn::AbstractQuantumNumber) -> typeof(qn)
     +(qn::QN,qns::QN...) where QN<:AbstractQuantumNumber -> QN
     +(qns::QuantumNumbers) -> QuantumNumbers
     +(qn::QN,qns::QuantumNumbers{QN}) where QN<:AbstractQuantumNumber -> QuantumNumbers{QN}
@@ -380,7 +385,7 @@ Base.:+(qn::QN,qns::QuantumNumbers{QN}) where QN<:AbstractQuantumNumber=qns+qn
 Base.:+(qns::QuantumNumbers{QN},qn::QN) where QN<:AbstractQuantumNumber=QuantumNumbers(qns.form=='G' ? 'G' : 'U',[iqn+qn for iqn in qns],qns.indptr,qnsindptr)
 
 """
-    -(qn::AbstractQuantumNumber) -> AbstractQuantumNumber
+    -(qn::AbstractQuantumNumber) -> typeof(qn)
     -(qn1::QN,qn2::QN) where QN<:AbstractQuantumNumber -> QN
     -(qns::QuantumNumbers) -> QuantumNumbers
     -(qn::QN,qns::QuantumNumbers{QN}) where QN<:AbstractQuantumNumber -> QuantumNumbers{QN}
@@ -400,8 +405,8 @@ Base.:-(qn::QN,qns::QuantumNumbers{QN}) where QN<:AbstractQuantumNumber=QuantumN
 Base.:-(qns::QuantumNumbers{QN},qn::QN) where QN<:AbstractQuantumNumber=QuantumNumbers(qns.form=='G' ? 'G' : 'U',[iqn-qn for iqn in qns],qns.indptr,qnsindptr)
 
 """
-    *(qn::AbstractQuantumNumber,factor::Integer) -> AbstractQuantumNumber
-    *(factor::Integer,qn::AbstractQuantumNumber) -> AbstractQuantumNumber
+    *(qn::AbstractQuantumNumber,factor::Integer) -> typeof(qn)
+    *(factor::Integer,qn::AbstractQuantumNumber) -> typeof(qn)
     *(qns::QuantumNumbers,factor::Integer) -> QuantumNumbers
     *(factor::Integer,qns::QuantumNumbers) -> QuantumNumbers
 
@@ -416,7 +421,7 @@ Base.:*(qns::QuantumNumbers,factor::Integer)=QuantumNumbers(qns.form=='G' ? 'G' 
 Base.:*(factor::Integer,qns::QuantumNumbers)=qns*factor
 
 """
-    ^(qn::AbstractQuantumNumber,factor::Integer) -> AbstractQuantumNumber
+    ^(qn::AbstractQuantumNumber,factor::Integer) -> typeof(qn)
     ^(qns::QuantumNumbers,factor::Integer) -> QuantumNumbers
 
 Overloaded `^` operator for `AbstractQuantumNumber` and `QuantumNumbers`. This operation translates into the direct product `⊗` of `factor` copies of `qn` or `qns`.
@@ -454,7 +459,7 @@ end
 
 """
     ⊗(::Type{QN},qn1::AbstractQuantumNumber,qn2::AbstractQuantumNumber) where QN<:AbstractQuantumNumber -> QN
-    ⊗(qns::NTuple{N,<:AbstractQuantumNumber},signs::NTuple{N,Int}=ntuple(i->1,N)) where N -> AbstractQuantumNumber
+    ⊗(qns::NTuple{N,<:AbstractQuantumNumber},signs::NTuple{N,Int}=ntuple(i->1,N)) where N -> eltype(qns)
     ⊗(qnses::NTuple{N,QuantumNumbers{QN}},signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:AbstractQuantumNumber} -> QuantumNumbers{QN}
 
 Get the direct product of some `AbstractQuantumNumber`s or `QuantumNumbers`es.
@@ -467,7 +472,7 @@ function ⊗(::Type{QN},qn1::AbstractQuantumNumber,qn2::AbstractQuantumNumber) w
     qnnames,qn1names,qn2names=QN|>fieldnames,qn1|>typeof|>fieldnames,qn2|>typeof|>fieldnames
     qnperiods,qn1periods,qn2periods=QN|>periods,qn1|>typeof|>periods,qn2|>typeof|>periods
     @assert qnnames==NTuple{QN|>length,Symbol}(flatten((qn1names,qn2names))) "⊗ error: fieldnames not match ($(qnnames),$(qn1names),$(qn2names))."
-    @assert qnperiods==NTuple{QN|>length,Float64}(flatten((qn1periods,qn2periods))) "⊗ error: periods not match ($(qnperiods),$(qn1periods),$(qn2periods))."
+    @assert qnperiods==NTuple{QN|>length,Float}(flatten((qn1periods,qn2periods))) "⊗ error: periods not match ($(qnperiods),$(qn1periods),$(qn2periods))."
     QN(qn1...,qn2...)
 end
 ⊗(qns::NTuple{N,<:AbstractQuantumNumber},signs::NTuple{N,Int}=ntuple(i->1,N)) where N=sum(sign==1 ? qn : -qn for (sign,qn) in zip(signs,qns))
@@ -490,7 +495,7 @@ end
 
 """
     kron(::Type{QN},qn1::AbstractQuantumNumber,qn2::AbstractQuantumNumber) where QN<:AbstractQuantumNumber -> QN
-    kron(qns::NTuple{N,<:AbstractQuantumNumber},signs::NTuple{N,Int}=ntuple(i->1,N)) where N -> AbstractQuantumNumber
+    kron(qns::NTuple{N,<:AbstractQuantumNumber},signs::NTuple{N,Int}=ntuple(i->1,N)) where N -> eltype(qns)
     kron(qnses::NTuple{N,QuantumNumbers{QN}},signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:AbstractQuantumNumber} -> QuantumNumbers{QN}
 
 Kronecker product of some `AbstractQuantumNumber`s or `QuantumNumbers`es. This is defined to be equivalent to the direct product `⊗`.
@@ -664,28 +669,28 @@ function toordereddict(qns::QuantumNumbers,::typeof(qnscounts))
 end
 
 """
-    SQNS(S::Real)
+    SQNS(S::Real) -> QuantumNumbers{SQN}
 
 Construct the `QuantumNumbers` of the Hilbert space of a signle spin `S`.
 """
 SQNS(S::Real)=QuantumNumbers('C',[SQN(sz) for sz=-S:S],collect(0:Int(2*S+1)),qnsindptr)
 
 """
-    PQNS(N::Real)
+    PQNS(N::Real) -> QuantumNumbers{PQN}
 
 Construct the `QuantumNumbers` of the Hilbert space of a single-particle state with at most `N` identical particles.
 """
 PQNS(N::Real)=QuantumNumbers('C',[PQN(np) for np=0:N],collect(0:Int(N)+1),qnsindptr)
 
 """
-    SzPQNS(Sz::Real)
+    SzPQNS(Sz::Real) -> QuantumNumbers{SPQN}
 
 Construct the `QuantumNumbers` of the Hilbert space of a single-paritcle state with at most one particle whose spin-z component is `Sz`.
 """
 SzPQNS(Sz::Real)=QuantumNumbers('C',[SPQN(0.0,0.0),SPQN(1.0,Sz)],[0,1,2],qnsindptr)
 
 """
-    SPQNS(S::Real)
+    SPQNS(S::Real) -> QuantumNumbers{SPQN}
 
 Construct the `QuantumNumbers` of the Hilbert space of a single site with internal degrees of freedom that can be ascribed to a spin `S`.
 """
@@ -702,7 +707,7 @@ function SPQNS(S::Real)
 end
 
 """
-    Z2QNS()
+    Z2QNS() -> QuantumNumbers{Z2QN}
 
 Construct the `QuantumNumbers` of a ``Z_2`` Hilbert space.
 """

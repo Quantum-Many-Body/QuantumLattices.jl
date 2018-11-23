@@ -40,7 +40,7 @@ Base.eltype(tree::AbstractTree)=tree|>typeof|>eltype
 Base.eltype(::Type{<:AbstractTree{N,D}}) where {N,D}=(N,D)
 
 """
-    root(tree::AbstractTree)
+    root(tree::AbstractTree) -> Union{keytype(tree),Nothing}
 
 Get a tree's root node.
 """
@@ -54,7 +54,7 @@ Check whether a node is in a tree.
 Base.haskey(tree::AbstractTree{N,D},node::N) where {N,D}=haskey(tree.TREECORE.contents,node)
 
 """
-    length(tree::AbstractTree)
+    length(tree::AbstractTree) -> Int
 
 Get the number of a tree's nodes.
 """
@@ -68,8 +68,8 @@ Get the parent of a tree's node. When `node` is the tree's root, return `superpa
 parent(tree::AbstractTree{N,D},node::N,superparent::Union{N,Nothing}=nothing) where {N,D}=(node==tree|>root ? superparent : tree.TREECORE.parent[node])
 
 """
-    children(tree::AbstractTree) -> Vector
-    children(tree::AbstractTree,::Nothing) -> Vector
+    children(tree::AbstractTree) -> Vector{keytype(tree)}
+    children(tree::AbstractTree,::Nothing) -> Vector{keytype(tree)}
     children(tree::AbstractTree{N,D},node::N) where {N,D} -> Vector{N}
 
 Get the children of a tree's node.
@@ -79,9 +79,9 @@ children(tree::AbstractTree,::Nothing)=(tree|>root===nothing ? error("children e
 children(tree::AbstractTree{N,D},node::N) where {N,D}=tree.TREECORE.children[node]
 
 """
-    addnode!(tree::AbstractTree{N,D},node::N) where {N,D}
-    addnode!(tree::AbstractTree{N,D},::Nothing,node::N) where {N,D}
-    addnode!(tree::AbstractTree{N,D},parent::N,node::N) where {N,D}
+    addnode!(tree::AbstractTree{N,D},node::N) where {N,D} -> typeof(tree)
+    addnode!(tree::AbstractTree{N,D},::Nothing,node::N) where {N,D} -> typeof(tree)
+    addnode!(tree::AbstractTree{N,D},parent::N,node::N) where {N,D} -> typeof(tree)
 
 Update the structure of a tree by adding a node. When the parent is `nothing`, the input tree must be empty and the input node becomes the tree's root.
 """
@@ -90,6 +90,7 @@ function addnode!(tree::AbstractTree{N,D},::Nothing,node::N) where {N,D}
     @assert tree|>root===nothing "addnode! error: not empty tree."
     tree.TREECORE.root=node
     tree.TREECORE.children[node]=N[]
+    return tree
 end
 function addnode!(tree::AbstractTree{N,D},parent::N,node::N) where {N,D}
     @assert haskey(tree,parent) "addnode! error: parent($parent) not in tree."
@@ -97,10 +98,11 @@ function addnode!(tree::AbstractTree{N,D},parent::N,node::N) where {N,D}
     push!(tree.TREECORE.children[parent],node)
     tree.TREECORE.parent[node]=parent
     tree.TREECORE.children[node]=N[]
+    return tree
 end
 
 """
-    deletenode!(tree::AbstractTree{N,D},node::N) where {N,D}
+    deletenode!(tree::AbstractTree{N,D},node::N) where {N,D} -> typeof(tree)
 
 Update the structure of a tree by deleting a node.
 """
@@ -115,6 +117,7 @@ function deletenode!(tree::AbstractTree{N,D},node::N) where {N,D}
     pop!(tree.TREECORE.contents,node)
     pop!(tree.TREECORE.parent,node,nothing)
     pop!(tree.TREECORE.children,node)
+    return tree
 end
 
 """
@@ -266,15 +269,15 @@ Get the siblings (other nodes sharing the same parent) of a tree's node.
 siblings(tree::AbstractTree{N,D},node::N) where{N,D}=filter(x->x!=node,children(tree,parent(tree,node)))
 
 """
-    leaves(tree::AbstractTree)
+    leaves(tree::AbstractTree) -> Vector{keytype(tree)}
 
 Get a tree's leaves.
 """
 leaves(tree::AbstractTree)=keytype(tree)[node for node in keys(tree,treedepth) if isleaf(tree,node)]
 
 """
-    push!(tree::AbstractTree{N,D},node::N,data::D) where {N,D}
-    push!(tree::AbstractTree{N,D},parent::Union{N,Nothing},node::N,data::D) where {N,D}
+    push!(tree::AbstractTree{N,D},node::N,data::D) where {N,D} -> typeof(tree)
+    push!(tree::AbstractTree{N,D},parent::Union{N,Nothing},node::N,data::D) where {N,D} -> typeof(tree)
 
 Push a new node to a tree. When `parent` is `nothing`, this function set the root node of an empty tree.
 """
@@ -282,11 +285,12 @@ Base.push!(tree::AbstractTree{N,D},node::N,data::D) where {N,D}=push!(tree,nothi
 function Base.push!(tree::AbstractTree{N,D},parent::Union{N,Nothing},node::N,data::D) where {N,D}
     addnode!(tree,parent,node)
     tree[node]=data
+    return tree
 end
 
 """
-    append!(tree::AbstractTree{N,D},subtree::AbstractTree{N,D}) where {N,D}
-    append!(tree::AbstractTree{N,D},node::Union{N,Nothing},subtree::AbstractTree{N,D}) where {N,D}
+    append!(tree::AbstractTree{N,D},subtree::AbstractTree{N,D}) where {N,D} -> typeof(tree)
+    append!(tree::AbstractTree{N,D},node::Union{N,Nothing},subtree::AbstractTree{N,D}) where {N,D} -> typeof(tree)
 
 Append a subtree to a tree.
 """
@@ -295,10 +299,11 @@ function Base.append!(tree::AbstractTree{N,D},node::Union{N,Nothing},subtree::Ab
     for (key,value) in pairs(subtree,treewidth)
         push!(tree,parent(subtree,key,node),key,value)
     end
+    return tree
 end
 
 """
-    delete!(tree::AbstractTree{N,D},node::N) where {N,D}
+    delete!(tree::AbstractTree{N,D},node::N) where {N,D} -> typeof(tree)
 
 Delete a node and all its descendants from a tree.
 """
@@ -306,17 +311,18 @@ function Base.delete!(tree::AbstractTree{N,D},node::N) where {N,D}
     for key in collect(N,keys(tree,treedepth,node))
         deletenode!(tree,key)
     end
+    return tree
 end
 
 """
-    empty!(tree::AbstractTree)
+    empty!(tree::AbstractTree) -> typeof(tree)
 
 Empty a tree.
 """
 Base.empty!(tree::AbstractTree)=delete!(tree,tree|>root)
 
 """
-    subtree(tree::AbstractTree{N,D},node::N) where{N,D}
+    subtree(tree::AbstractTree{N,D},node::N) where{N,D} -> typeof(tree)
 
 Get a subtree whose root is `node`.
 """
@@ -325,11 +331,11 @@ function subtree(tree::AbstractTree{N,D},node::N) where{N,D}
     for (i,(key,value)) in enumerate(pairs(tree,treedepth,node))
         push!(result,i==1 ? nothing : parent(tree,key),key,value)
     end
-    result
+    return result
 end
 
 """
-    move!(tree::AbstractTree{N,D},node::N,parent::N) where {N,D}
+    move!(tree::AbstractTree{N,D},node::N,parent::N) where {N,D} -> typeof(tree)
 
 Move a subtree to a new position.
 """
@@ -337,6 +343,7 @@ function move!(tree::AbstractTree{N,D},node::N,parent::N) where {N,D}
     sub=subtree(tree,node)
     delete!(tree,node)
     append!(tree,parent,sub)
+    return tree
 end
 
 """

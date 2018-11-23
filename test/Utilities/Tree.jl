@@ -1,4 +1,3 @@
-using Test
 using Hamiltonian.Utilities.Tree
 
 @testset "SimpleTree" begin

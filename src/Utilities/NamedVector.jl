@@ -94,8 +94,8 @@ Base.length(::Type{NV}) where NV<:AbstractNamedVector=NV|>fieldnames|>length
 Base.length(nv::AbstractNamedVector)=nv|>typeof|>length
 
 """
-    zero(::Type{NV}) where NV<:AbstractNamedVector
-    zero(nv::AbstractNamedVector)
+    zero(::Type{NV}) where NV<:AbstractNamedVector -> NV
+    zero(nv::AbstractNamedVector) -> typeof(nv)
 
 Get a concrete `AbstractNamedVector` with all values being zero.
 """
