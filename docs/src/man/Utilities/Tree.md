@@ -79,7 +79,7 @@ As above, the first lazy way is to include this struct with the special attribut
 ```@repl tree
 @tree struct SimpleSubTree end
 @tree struct SubTreeWithTreeParameters end {N<:AbstractString,D<:Number}
-@tree struct SubTreeWithCertainTreeParameters end {::String,::Int}
+@tree struct SubTreeWithCertainTreeParameters end {<:String,<:Int}
 @tree struct SubTreeWithFields info::Vector{Int} end {N<:AbstractString,D<:Number}
 @tree struct SubTreeWithParametricFields{T} info::Vector{T} end {N<:AbstractString,D<:Number}
 @tree struct SubTreeWithOverlappedParametricFields{N} info::Vector{N} end {N<:AbstractString,D<:Number}

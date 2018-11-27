@@ -1,7 +1,8 @@
 module NamedVector
 
-import Printf: @printf
-import ..Factory: Inference,TypeFactory,FunctionFactory,addargs!,extendbody!
+using Printf: @printf
+using ..Factory: Inference,TypeFactory,FunctionFactory,addargs!,extendbody!
+using ..Factory: MixEscaped,Escaped,UnEscaped
 
 export AbstractNamedVector,@namedvector
 export HomoNamedVector,@homonamedvector
@@ -168,8 +169,8 @@ macro namedvector(structdef::Expr)
     fldnm=FunctionFactory(name=:(Base.fieldnames))
     addargs!(fldnm,:(::Type{<:$(tf.name)}))
     extendbody!(fldnm,Expr(:tuple,QuoteNode.(fieldnames)...))
-    structdef=tf(unescaped=tuple(paramnames...,:AbstractNamedVector),escaped=(tf.name,))
-    fldnmdef=fldnm(escaped=(:tuple,))
+    structdef=tf(MixEscaped(Escaped(tf.name),UnEscaped(paramnames...,:AbstractNamedVector)))
+    fldnmdef=fldnm(MixEscaped(Escaped(:tuple)))
     return Expr(:block,:(Base.@__doc__($structdef)),fldnmdef)
 end
 

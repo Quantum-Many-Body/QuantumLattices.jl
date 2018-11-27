@@ -1,8 +1,10 @@
 using Hamiltonian.Utilities.Factory
 
 @testset "Inference" begin
-    @test (@inference Vector{Tuple{Int,String}})(unescaped=(:Vector,:Tuple,:Int,:String))==:(Vector{Tuple{Int,String}})
-    @test (@inference Type{<:Real})(unescaped=(:Type,:Real))==:(Type{<:Real})
+    @test (@inference Vector{Tuple{Int,String}})(UnEscaped(:Vector,:Tuple,:Int,:String))==:(Vector{Tuple{Int,String}})
+    @test (@inference Type{<:Real})(UnEscaped(:Type,:Real))==:(Type{<:Real})
+    @test Inference(:(SVector{N,<:Real}))|>string=="Inference(\n  head:   curly\n  name:   SVector\n  params: Inference[N, <:Real]\n)"
+    @test replace(@inference(Vector{<:Real}),name=:AbstractVector)==@inference(AbstractVector{<:Real})
 end
 
 @testset "Argument" begin
@@ -11,14 +13,14 @@ end
     @test argument.type==Inference(:(Vector{Int}))
     @test argument.slurp==false
     @test argument.default==:([9,1,1])
-    @test argument(unescaped=(:Vector,:Int))==Expr(:kw,:(phone::Vector{Int}),:[9,1,1])
+    @test argument(MixEscaped(UnEscaped(:Vector,:Int)))==Expr(:kw,:(phone::Vector{Int}),:[9,1,1])
 
     argument=Argument(:(properties::Int...))
     @test argument.name==:properties
     @test argument.type==Inference(:Int)
     @test argument.slurp==true
     @test argument.default==nothing
-    @test argument(unescaped=(:Int,))==:(properties::Int...)
+    @test argument(MixEscaped(UnEscaped(:Int)))==:(properties::Int...)
 
     argument1=@argument address::String
     argument2=Argument(:(address::String))
@@ -29,34 +31,34 @@ end
     parameter=Parameter(:T)
     @test parameter.name==:T
     @test parameter.type==nothing
-    @test parameter()==:T
+    @test parameter(UnEscaped(:T))==:T
 
     parameter=Parameter(:(T<:Real))
     @test parameter.name==:T
     @test parameter.type==Inference(:Real)
-    @test parameter(unescaped=(:Real,))==:(T<:Real)
+    @test parameter(UnEscaped(:Real))==:(T<:Real)
 
     parameter=Parameter(:(<:Real))
     @test parameter.name==nothing
     @test parameter.type==Inference(:Real)
-    @test parameter(unescaped=(:Real,))==:(<:Real)
+    @test parameter(UnEscaped(:Real))==:(<:Real)
 
     parameter=@parameter ::Int
     @test parameter.name==nothing
     @test parameter.type==Inference(:Int)
-    @test parameter(unescaped=(:Int,))==:(<:Int)
+    @test parameter(UnEscaped(:Int))==:(<:Int)
 end
 
 @testset "Field" begin
     field=Field(:xs)
     @test field.name==:xs
     @test field.type==Inference(:Any)
-    @test field(unescaped=(:Any,))==:(xs::Any)
+    @test field(UnEscaped(:Any))==:(xs::Any)
 
     field=Field(:(xs::Vector{Int}))
     @test field.name==:xs
     @test field.type==Inference(:(Vector{Int}))
-    @test field(unescaped=(:Vector,:Int))==:(xs::Vector{Int})
+    @test field(UnEscaped(:Vector,:Int))==:(xs::Vector{Int})
 
     field1=@field xs::Vector{Int}
     field2=Field(:(xs::Vector{Int}))
@@ -66,7 +68,7 @@ end
 @testset "Block" begin
     block=@rmlines Block(:(x=1;y=2))
     @test block.body==Any[:(x=1),:(y=2)]
-    @test block()==Expr(:block,:(x=1),:(y=2))
+    @test block(Escaped())==Expr(:block,:(x=1),:(y=2))
 
     block=@block a=1
     @push! block b=2 c=3 d=4
@@ -108,7 +110,6 @@ end
 end
 
 @testset "TypeFactory" begin
-    unescaped=(:T,)
     tf=TypeFactory(:(
         struct Child{T<:Real} <: Parent{T}
             address::String
@@ -134,7 +135,13 @@ end
     @test tf.fields==Field.([:(address::String),:(phone::Vector{Int}),:(properties::Vector{T})])
 end
 
-eval((@typefactory struct Child name::String; seniority::Int; Child(name::String,seniority::Int=1)=new(name,seniority) end)(unescaped=(:String,:Int,:Any)))
+eval((
+    @typefactory struct Child
+        name::String
+        seniority::Int
+        Child(name::String,seniority::Int=1)=new(name,seniority)
+    end
+)(MixEscaped(UnEscaped(:String,:Int,:Any))))
 
 @testset "call" begin
     c=Child("Tuanzi")

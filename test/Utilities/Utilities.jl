@@ -5,10 +5,10 @@
         dims=(2,2,2)
         finds=[(1,1,1),(2,1,1),(1,2,1),(2,2,1),(1,1,2),(2,1,2),(1,2,2),(2,2,2)]
         cinds=[(1,1,1),(1,1,2),(1,2,1),(1,2,2),(2,1,1),(2,1,2),(2,2,1),(2,2,2)]
-        @test collect(ind2sub(dims,i,FOrder) for i=1:prod(dims))==finds
-        @test collect(ind2sub(dims,i,COrder) for i=1:prod(dims))==cinds
-        @test collect(sub2ind(dims,inds,FOrder) for inds in finds)==collect(1:prod(dims))
-        @test collect(sub2ind(dims,inds,COrder) for inds in cinds)==collect(1:prod(dims))
+        @test collect(ind2sub(dims,i,forder) for i=1:prod(dims))==finds
+        @test collect(ind2sub(dims,i,corder) for i=1:prod(dims))==cinds
+        @test collect(sub2ind(dims,inds,forder) for inds in finds)==collect(1:prod(dims))
+        @test collect(sub2ind(dims,inds,corder) for inds in cinds)==collect(1:prod(dims))
         @test decimaltostr(1)=="1"
         @test decimaltostr(10^6)=="1000000"
         @test decimaltostr(1//7)=="1//7"

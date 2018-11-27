@@ -1,7 +1,7 @@
 using Hamiltonian.Utilities.QuantumNumber
 using DataStructures: OrderedDict
 using Printf: @sprintf
-using Base.Iterators: reverse
+import Base.Iterators: Iterators
 
 @testset "SQN" begin
     @test SQN|>fieldnames==(:Sz,)
@@ -70,7 +70,7 @@ end
     @test qns[1:2]==QuantumNumbers('G',[qn1,qn2],[0,3,5],qnsindptr)
     @test qns[[2,1]]==QuantumNumbers('G',[qn2,qn1],[0,2,5],qnsindptr)
     @test qns|>collect==[qn1,qn2]
-    @test qns|>reverse|>collect==[qn2,qn1]
+    @test qns|>Iterators.reverse|>collect==[qn2,qn1]
     @test qns|>keys|>collect==[qn1,qn2]
     @test values(qns,qnsindptr)|>collect==[1:3,4:5]
     @test values(qns,qnscounts)|>collect==[3,2]
@@ -136,17 +136,17 @@ end
 @testset "findall" begin
     qn1,qn2,qn3=CNZ4(2.0,3.0),CNZ4(1.0,2.0),CNZ4(0.0,0.0)
     qns=QuantumNumbers('C',[qn2,qn1],[2,3],qnscounts)
-    @test findall(qns,qn1,qnscontents)==[2]
-    @test findall(qns,qn2,qnscontents)==[1]
-    @test findall(qns,qn3,qnscontents)==[]
+    @test findall(qns,qn1,qnscompression)==[2]
+    @test findall(qns,qn2,qnscompression)==[1]
+    @test findall(qns,qn3,qnscompression)==[]
     @test findall(qns,qn1,qnsexpansion)==[3,4,5]
     @test findall(qns,qn2,qnsexpansion)==[1,2]
     @test findall(qns,qn3,qnsexpansion)==[]
 
     qns=QuantumNumbers('G',[qn1,qn2,qn1],[2,2,1],qnscounts)
-    @test findall(qns,qn1,qnscontents)==[1,3]
-    @test findall(qns,qn2,qnscontents)==[2]
-    @test findall(qns,qn3,qnscontents)==[]
+    @test findall(qns,qn1,qnscompression)==[1,3]
+    @test findall(qns,qn2,qnscompression)==[2]
+    @test findall(qns,qn3,qnscompression)==[]
     @test findall(qns,qn1,qnsexpansion)==[1,2,5]
     @test findall(qns,qn2,qnsexpansion)==[3,4]
     @test findall(qns,qn3,qnsexpansion)==[]
@@ -191,7 +191,7 @@ end
 @testset "reorder" begin
     qn1,qn2,qn3=CNZ4(1.0,2.0),CNZ4(3.0,0.0),CNZ4(4.0,1.0)
     qns=QuantumNumbers('G',[qn1,qn2,qn3],[2,3,4],qnscounts)
-    @test reorder(qns,[3,2,1],qnscontents)==QuantumNumbers('G',[qn3,qn2,qn1],[4,3,2],qnscounts)
+    @test reorder(qns,[3,2,1],qnscompression)==QuantumNumbers('G',[qn3,qn2,qn1],[4,3,2],qnscounts)
     @test reorder(qns,[4,6,9,8],qnsexpansion)==QuantumNumbers('G',[qn2,qn3,qn3,qn3],[1,1,1,1],qnscounts)
 end
 

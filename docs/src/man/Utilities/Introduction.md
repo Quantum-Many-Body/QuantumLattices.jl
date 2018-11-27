@@ -12,8 +12,8 @@ This module contains the Utilities of the Hamiltonian package, all of whose vari
 atol
 rtol
 Float
-FOrder
-COrder
+forder
+corder
 ind2sub
 sub2ind
 decimaltostr

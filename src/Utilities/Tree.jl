@@ -2,6 +2,7 @@ module Tree
 
 using ..Factory: Inference,Argument,Parameter,FunctionFactory,TypeFactory
 using ..Factory: addfields!,addparams!,addargs!,addwhereparams!,extendbody!,addconstructors!
+using ..Factory: MixEscaped,Escaped,UnEscaped
 
 export treedepth,treewidth
 export AbstractTree
@@ -13,15 +14,23 @@ export ancestor,descendants,siblings,leaves
 export subtree,move!
 export TreeCore,@tree,SimpleTree
 
-"""
-Depth first search or iteration.
-"""
-const treedepth=Val(0)
+abstract type TreeIteration end
+struct TreeDepth <: TreeIteration end
+struct TreeWidth <: TreeIteration end
 
 """
-Width first search or iteration.
+    treedepth
+
+Indicate that the iteration over a tree is depth-first.
 """
-const treewidth=Val(1)
+const treedepth=TreeDepth()
+
+"""
+    treewidth
+
+Indicate that the iteration over a tree is width-first.
+"""
+const treewidth=TreeWidth()
 
 """
     AbstractTree{Node,Data}
@@ -172,45 +181,42 @@ Overloaded `==` operator.
 Base.:(==)(t1::T,t2::T) where T<:AbstractTree=all(getfield(t1,name)==getfield(t2,name) for name in T|>fieldnames)
 
 """
-    keys(tree::AbstractTree{N,D},::typeof(treedepth),node::Union{N,Nothing}=tree|>root) where {N,D}
-    keys(tree::AbstractTree{N,D},::typeof(treewidth),node::Union{N,Nothing}=tree|>root) where {N,D}
+    keys(tree::AbstractTree{N,D},::TreeDepth,node::Union{N,Nothing}=tree|>root) where {N,D}
+    keys(tree::AbstractTree{N,D},::TreeWidth,node::Union{N,Nothing}=tree|>root) where {N,D}
 
 Iterate over a tree's nodes starting from a certain `node` by depth first search or width first search.
 """
-Base.keys(tree::AbstractTree{N,D},::typeof(treedepth),node::Union{N,Nothing}=tree|>root) where {N,D}=TreeKeys{typeof(treedepth),N,D,typeof(tree)}(tree,node)
-Base.keys(tree::AbstractTree{N,D},::typeof(treewidth),node::Union{N,Nothing}=tree|>root) where {N,D}=TreeKeys{typeof(treewidth),N,D,typeof(tree)}(tree,node)
+Base.keys(tree::AbstractTree{N,D},ti::TreeIteration,node::Union{N,Nothing}=tree|>root) where {N,D}=TreeKeys{typeof(ti),N,D,typeof(tree)}(tree,node)
 
-struct TreeKeys{P<:Union{typeof(treedepth),typeof(treewidth)},N,D,T<:AbstractTree{N,D}}
+struct TreeKeys{P<:TreeIteration,N,D,T<:AbstractTree{N,D}}
     tree::T
     node::Union{N,Nothing}
 end
 Base.eltype(::Type{TreeKeys{P,N,D,T}}) where {P,N,D,T}=N
 Base.IteratorSize(::Type{<:TreeKeys})=Base.SizeUnknown()
 Base.iterate(tk::TreeKeys)=tk.tree|>root==nothing ? nothing : (tk.node,copy(children(tk.tree,tk.node)))
-function Base.iterate(tk::TreeKeys{typeof(treedepth),N,D,T},state::Vector{N}) where {N,D,T}
+function Base.iterate(tk::TreeKeys{TreeDepth,N,D,T},state::Vector{N}) where {N,D,T}
     length(state)==0 ? nothing : (node=popfirst!(state);prepend!(state,children(tk.tree,node));(node,state))
 end
-function Base.iterate(tk::TreeKeys{typeof(treewidth),N,D,T},state::Vector{N}) where {N,D,T}
+function Base.iterate(tk::TreeKeys{TreeWidth,N,D,T},state::Vector{N}) where {N,D,T}
     length(state)==0 ? nothing : (node=popfirst!(state);append!(state,children(tk.tree,node));(node,state))
 end
 
 """
-    values(tree::AbstractTree,::typeof(treedepth),node::Union{N,Nothing}=tree|>root) where {N,D}
-    values(tree::AbstractTree,::typeof(treewidth),node::Union{N,Nothing}=tree|>root) where {N,D}
+    values(tree::AbstractTree,::TreeDepth,node::Union{N,Nothing}=tree|>root) where {N,D}
+    values(tree::AbstractTree,::TreeWidth,node::Union{N,Nothing}=tree|>root) where {N,D}
 
 Iterate over a tree's data starting from a certain `node` by depth first search or width first search.
 """
-Base.values(tree::AbstractTree,::typeof(treedepth),node::Union{N,Nothing}=tree|>root) where {N,D}=(tree[key] for key in keys(tree,treedepth,node))
-Base.values(tree::AbstractTree,::typeof(treewidth),node::Union{N,Nothing}=tree|>root) where {N,D}=(tree[key] for key in keys(tree,treewidth,node))
+Base.values(tree::AbstractTree,ti::TreeIteration,node::Union{N,Nothing}=tree|>root) where {N,D}=(tree[key] for key in keys(tree,ti,node))
 
 """
-    pairs(tree::AbstractTree,::typeof(treedepth),node::Union{N,Nothing}=tree|>root) where {N,D}
-    pairs(tree::AbstractTree,::typeof(treewidth),node::Union{N,Nothing}=tree|>root) where {N,D}
+    pairs(tree::AbstractTree,::TreeDepth,node::Union{N,Nothing}=tree|>root) where {N,D}
+    pairs(tree::AbstractTree,::TreeWidth,node::Union{N,Nothing}=tree|>root) where {N,D}
 
 Iterate over a tree's (node,data) pairs starting from a certain `node` by depth first search or width first search.
 """
-Base.pairs(tree::AbstractTree,::typeof(treedepth),node::Union{N,Nothing}=tree|>root) where {N,D}=((key,tree[key]) for key in keys(tree,treedepth,node))
-Base.pairs(tree::AbstractTree,::typeof(treewidth),node::Union{N,Nothing}=tree|>root) where {N,D}=((key,tree[key]) for key in keys(tree,treewidth,node))
+Base.pairs(tree::AbstractTree,ti::TreeIteration,node::Union{N,Nothing}=tree|>root) where {N,D}=((key,tree[key]) for key in keys(tree,ti,node))
 
 """
     isleaf(tree::AbstractTree{N,D},node::N) where{N,D} -> Bool
@@ -376,20 +382,23 @@ Decorate a "raw" struct to be a subtype of `AbstractTree`.
        - It has no inner constructor;
        - It has no attribute `:TREECORE`.
     2. The keytype and valtype can be assigned by the argument `treeparams` in the form `{keytype,valtype}`.
-       - When the formal argument names of keytype and valtype are not assigned, those of the type parameters of the raw struct, if any, cannot be `:N` or `:D`.
-         For example, all of the following codes
+       - When the formal argument names of keytype and valtype are not assigned, they can be automatically generated by the functioin `gensym`.
+         For example, all of the structs after the decration by the following codes
          ```julia
          @tree struct SubTreeWithWrongTypeParameterNames{N} info::Vector{N} end
          @tree struct SubTreeWithWrongTypeParameterNames{N} info::Vector{N} end {::String,::Int}
          @tree struct SubTreeWithWrongTypeParameterNames{N} info::Vector{N} end {<:AbstractString,<:Number}
          ```
-         will get the same error message: "@tree error: :N and :D are reserved type parameter names."
+         will have three type parameters.
        - When the formal argument names of keytype and valtype overlap with those of the raw struct type parameters, the duplicates will be considered as the same.
          For example, the decorated struct `SubTreeWithOverlappedParametricFields` by the following code
          ```julia
          @tree struct SubTreeWithOverlappedParametricFields{N} info::Vector{N} end {N<:AbstractString,D<:Number}
          ```
-         only has two type parameters `N<:AbstractString` and `D<:Number`, where the `N` in the `info::Vector{N}` is the same `N` with that in the decorated attribute `TREECORE::TreeCore{N,D}`. While, if the formal names of keytype and valtype have no intersection with those of the raw struct type parameters, the type parameters of the decorated struct will be just extended by keytype and valtype. For example, the decorated struct `SubTreeWithParametricFields` by the following code
+         only has two type parameters `N<:AbstractString` and `D<:Number`, where the `N` in the `info::Vector{N}` is the same `N` with that in the decorated attribute `TREECORE::TreeCore{N,D}`.
+       - When the formal argument names of keytype and valtype have no intersection with those of the raw struct type parameters,
+         the type parameters of the decorated struct will be just extended by keytype and valtype.
+         For example, the decorated struct `SubTreeWithParametricFields` by the following code
          ```julia
          @tree struct SubTreeWithParametricFields{T} info::Vector{T} end {N<:AbstractString,D<:Number}
          ```
@@ -403,14 +412,13 @@ macro tree(structdef,treeparams::Union{Expr,Nothing}=nothing)
     @assert length(tf.constructors)==0 "@tree error: no inner constructor is allowed."
     @assert :TREECORE ∉ fieldnames "@tree error: :TREECORE is a reserved attribute name."
     if treeparams==nothing
-        @assert (:N ∉ paramnames && :D ∉ paramnames) "@tree error: :N and :D are reserved type parameter names."
-        treeparams=[Parameter(:N),Parameter(:D)]
-        treeparamnames=(:N,:D)
+        treeparamnames=(gensym(),gensym())
+        treeparams=[Parameter(treeparamnames[1]),Parameter(treeparamnames[2])]
     else
         @assert (treeparams.head==:braces && length(treeparams.args)==2) "@tree error: not supported treeparams."
         treeparams=[Parameter(arg) for arg in treeparams.args]
-        treeparams[1].name===nothing && ((@assert :N ∉ paramnames "@tree error: :N is a reserved type parameter name.");treeparams[1].name=:N)
-        treeparams[2].name===nothing && ((@assert :D ∉ paramnames "@tree error: :D is a reserved type parameter name.");treeparams[2].name=:D)
+        treeparams[1].name===nothing && (treeparams[1].name=gensym())
+        treeparams[2].name===nothing && (treeparams[2].name=gensym())
         treeparamnames=tuple((tp.name for tp in treeparams)...)
         filter!(tp->tp.name ∉ paramnames,treeparams)
     end
@@ -428,16 +436,19 @@ macro tree(structdef,treeparams::Union{Expr,Nothing}=nothing)
     addargs!(eltype,:(::Type{$(tf.name){$(paramnames...)}}))
     addwhereparams!(eltype,tf.params...)
     extendbody!(eltype,:(tuple($(paramnames...))))
-    sbtreedef=tf(unescaped=tuple(paramnames...,:AbstractTree,:TreeCore),escaped=(tf.name,))
-    eltypedef=eltype(unescaped=tuple(paramnames...),escaped=(:tuple,))
+    sbtreedef=tf(MixEscaped(Escaped(tf.name),UnEscaped(paramnames...,:AbstractTree,:TreeCore)))
+    eltypedef=eltype(MixEscaped(Escaped(:tuple),UnEscaped(paramnames...)))
     return Expr(:block,:(Base.@__doc__($sbtreedef)),eltypedef)
 end
 
 """
-    SimpleTree()
+    SimpleTree{N,D}() where {N,D}
 
 The minimum tree structure that implements all the default tree methods.
 """
-@tree struct SimpleTree end
+struct SimpleTree{N,D} <: AbstractTree{N,D}
+    TREECORE::TreeCore{N,D}
+    SimpleTree{N,D}() where {N,D}=new{N,D}(TreeCore{N,D}())
+end
 
 end #module

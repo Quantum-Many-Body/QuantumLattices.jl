@@ -3,7 +3,7 @@ module Utilities
 using Formatting: FormatSpec,fmt
 
 export atol,rtol,Float
-export FOrder,COrder,ind2sub,sub2ind
+export forder,corder,ind2sub,sub2ind
 export decimaltostr,ordinal
 
 "Absolute tolerance for float numbers."
@@ -15,40 +15,52 @@ const rtol=√atol
 "Default float type."
 const Float=Float64
 
-"Fortran order."
-struct FOrder end
-
-"C order."
-struct COrder end
+abstract type MemoryOrder end
+struct FOrder <: MemoryOrder end
+struct COrder <: MemoryOrder end
 
 """
-    ind2sub(dims::Tuple,ind::Int,::Type{FOrder}) -> Tuple
-    ind2sub(dims::Tuple,ind::Int,::Type{COrder}) -> Tuple
+    forder
+
+Indicate that the convertion between Cartesian index and linear index is using the Fortran order.
+"""
+const forder=FOrder()
+
+"""
+    corder
+
+Indicate that the convertion between Cartesian index and linear index is using the C/C++ order.
+"""
+const corder=COrder()
+
+"""
+    ind2sub(dims::Tuple,ind::Int,order::FOrder) -> Tuple
+    ind2sub(dims::Tuple,ind::Int,order::COrder) -> Tuple
 
 Convert an linear index to Cartesian index. Fortran-order or C-order can be assigned.
 """
-function ind2sub(dims::Tuple,ind::Int,::Type{FOrder})
+function ind2sub(dims::Tuple,ind::Int,order::FOrder)
     length(dims)==0 && return ()
-    ((ind-1)%dims[1]+1,ind2sub(dims[2:end],(ind-1)÷dims[1]+1,FOrder)...)
+    ((ind-1)%dims[1]+1,ind2sub(dims[2:end],(ind-1)÷dims[1]+1,order)...)
 end
-function ind2sub(dims::Tuple,ind::Int,::Type{COrder})
+function ind2sub(dims::Tuple,ind::Int,order::COrder)
     length(dims)==0 && return ()
-    (ind2sub(dims[1:end-1],(ind-1)÷dims[end]+1,COrder)...,(ind-1)%dims[end]+1)
+    (ind2sub(dims[1:end-1],(ind-1)÷dims[end]+1,order)...,(ind-1)%dims[end]+1)
 end
 
 """
-    sub2ind(dims::NTuple{N,Int},inds::NTuple{N,Int},::Type{FOrder}) where N -> Int
-    sub2ind(dims::NTuple{N,Int},inds::NTuple{N,Int},::Type{COrder}) where N -> Int
+    sub2ind(dims::NTuple{N,Int},inds::NTuple{N,Int},order::FOrder) where N -> Int
+    sub2ind(dims::NTuple{N,Int},inds::NTuple{N,Int},order::COrder) where N -> Int
 
 Convert an Cartesian index to linear index. Fortran-order or C-order can be assigned.
 """
-function sub2ind(dims::NTuple{N,Int},inds::NTuple{N,Int},::Type{FOrder}) where N
+function sub2ind(dims::NTuple{N,Int},inds::NTuple{N,Int},order::FOrder) where N
     length(dims)==0 && return 1
-    (sub2ind(dims[2:end],inds[2:end],FOrder)-1)*dims[1]+inds[1]
+    (sub2ind(dims[2:end],inds[2:end],order)-1)*dims[1]+inds[1]
 end
-function sub2ind(dims::NTuple{N,Int},inds::NTuple{N,Int},::Type{COrder}) where N
+function sub2ind(dims::NTuple{N,Int},inds::NTuple{N,Int},order::COrder) where N
     length(dims)==0 && return 1
-    (sub2ind(dims[1:end-1],inds[1:end-1],COrder)-1)*dims[end]+inds[end]
+    (sub2ind(dims[1:end-1],inds[1:end-1],order)-1)*dims[end]+inds[end]
 end
 
 """

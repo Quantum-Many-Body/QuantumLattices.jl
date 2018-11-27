@@ -7,8 +7,9 @@ using MacroTools: splitdef,combinedef
 using Printf: @printf,@sprintf
 import MacroTools: rmlines
 
-export FExpr,RawExpr
-export escape
+export FExpr,escape
+export Escaped,UnEscaped,MixEscaped
+export RawExpr,rawexpr
 export Inference,@inference
 export Argument,@argument
 export Parameter,@parameter
@@ -29,34 +30,79 @@ end
 "Factory expression types, which is defined as `Union{Symbol,Expr}`."
 const FExpr=Union{Symbol,Expr}
 
-"Whether or not to show raw expressions of factoies."
-const RawExpr=Val(true)
+"Abstract escape mechanism."
+abstract type EscapeMechanism end
 
 """
-    names(expr::Union{Symbol,Expr}) -> Vector{Symbol}
+    Escaped(names::Symbol...)
 
-Get all the variable names in an `Expr`.
+Indicate that symbols of a factory should be escaped if they are in `names`.
 """
-Base.names(expr)=[]
-Base.names(expr::Symbol)=[expr]
-function Base.names(expr::Expr)
-    result=[]
-    for arg in expr.args
-        append!(result,names(arg))
-    end
-    result
+struct Escaped{N} <: EscapeMechanism
+    names::NTuple{N,Symbol}
+    Escaped(names::Symbol...)=new{names|>length}(names)
 end
 
 """
-    escape(expr,::NTuple{N,Symbol}=()) where N -> Any
-    escape(expr::Symbol,escaped::NTuple{N,Symbol}=()) where N -> FExpr
-    escape(expr::Expr,escaped::NTuple{N,Symbol}=()) where N -> Expr
+    UnEscaped(names::Symbol...)
 
-Escape the variables sepecified by `escaped` in the input expression.
+IIndicate that symbols of a factory should be escaped if they are not in `names`.
 """
-escape(expr,::NTuple{N,Symbol}=()) where N=expr
-escape(expr::Symbol,escaped::NTuple{N,Symbol}=()) where N=expr ∈ escaped ? :($(esc(expr))) : expr
-escape(expr::Expr,escaped::NTuple{N,Symbol}=()) where N=(expr.head==:escape ? expr : Expr(expr.head,(escape(arg,escaped) for arg in expr.args)...))
+struct UnEscaped{N} <: EscapeMechanism
+    names::NTuple{N,Symbol}
+    UnEscaped(names::Symbol...)=new{names|>length}(names)
+end
+
+"""
+    MixEscaped(escaped::Escaped)
+    MixEscaped(unescaped::UnEscaped)
+    MixEscaped(escaped::Escaped,unescaped::UnEscaped)
+    MixEscaped(unescaped::UnEscaped,escaped::Escaped)
+
+Indicate that some parts of a factory use the `Escaped` mechanism while other parts use the `UnEscaped` mechanism.
+"""
+struct MixEscaped{N,M} <: EscapeMechanism
+    escaped::Escaped{N}
+    unescaped::UnEscaped{M}
+end
+MixEscaped(escaped::Escaped)=MixEscaped(escaped,UnEscaped())
+MixEscaped(unescaped::UnEscaped)=MixEscaped(Escaped(),unescaped)
+MixEscaped(unescaped::UnEscaped,escaped::Escaped)=MixEscaped(escaped,unescaped)
+
+"Raw expression without any variable escaped."
+struct RawExpr <: EscapeMechanism end
+"""
+    rawexpr
+
+Indicate that no variable in a factory should be escaped.
+"""
+const rawexpr=RawExpr()
+
+"""
+    escape(expr,::RawExpr) -> Any
+    escape(expr,::Escaped) -> Any
+    escape(expr,::UnEscaped) -> Any
+    escape(expr::Symbol,em::Escaped) -> FExpr
+    escape(expr::Expr,em::Escaped) -> Expr
+    escape(expr::Symbol,em::UnEscaped) -> FExpr
+    escape(expr::Expr,em::UnEscaped) -> Expr
+
+Escape the variables in the input expression.
+"""
+escape(expr,::RawExpr)=expr
+escape(expr,::Escaped)=expr
+escape(expr,::UnEscaped)=expr
+escape(expr::Symbol,em::Escaped)=expr ∈ em.names ? :($(esc(expr))) : expr
+escape(expr::Expr,em::Escaped)=(expr.head==:escape ? expr : Expr(expr.head,(escape(arg,em) for arg in expr.args)...))
+escape(expr::Symbol,em::UnEscaped)=expr ∉ em.names ? :($(esc(expr))) : expr
+function escape(expr::Expr,em::UnEscaped)
+    if expr.head==:escape
+        @assert length(expr.args)==1 "escape error: internal error..."
+        escape(expr.args[1],em)
+    else
+        Expr(expr.head,(escape(arg,em) for arg in expr.args)...)
+    end
+end
 
 """
     AbstractFactory
@@ -85,10 +131,10 @@ function Base.show(io::IO,f::AbstractFactory)
         if isa(value,Nothing)
             vstr="nothing"
         elseif isa(value,AbstractFactory)
-            vstr=string(value(RawExpr))
+            vstr=string(value(rawexpr))
         elseif isa(value,Vector{<:AbstractFactory})
             eltypename=value|>eltype|>nameof
-            strings=Tuple(string(af(RawExpr)) for af in value)
+            strings=Tuple(string(af(rawexpr)) for af in value)
             if (length(strings)>0 ? sum(map(length,strings)) : 0)<90-(f|>maxfieldnamelength)
                 vstr=@sprintf "%s[%s]" eltypename join(strings,", ")
             else
@@ -108,7 +154,7 @@ end
 
 Return a copy of a concrete `AbstractFactory` with some of the field values replaced by the keyword arguments.
 """
-Base.replace(f::AbstractFactory;kwargs...)=(f|>typeof)((get(kwargs,key,getfield(f,name)) for name in f|>typeof|>fieldnames)...)
+Base.replace(f::AbstractFactory;kwargs...)=(f|>typeof)((get(kwargs,name,getfield(f,name)) for name in f|>typeof|>fieldnames)...)
 
 """
     Inference(head::Union{Symbol,Nothing},name::Union{Symbol,Nothing},params::Union{Inference,Vector{Inference},Nothing})
@@ -138,11 +184,11 @@ Inference(;
 function Inference(expr::FExpr)
     if isa(expr,Symbol)
         return Inference(nothing,expr,nothing)
-    elseif expr.head==:(<:) || expr.head==:(::)
+    elseif expr.head==:(<:)
         @assert length(expr.args)==1 "Inference error: wrong input expr."
         return Inference(expr.head,nothing,Inference(expr.args[1]))
     elseif expr.head==:curly
-        return Inference(expr.head,expr.args[1],Inference.(expr.args[2:end]))
+        return Inference(expr.head,expr.args[1],Inference.(@views(expr.args[2:end])))
     else
         error("Inference error: wrong input expr.")
     end
@@ -156,27 +202,20 @@ Construct an `Inference` directly from a type inference.
 macro inference(expr::FExpr) expr=[expr];:(Inference($expr...)) end
 
 """
-    (i::Inference)(::typeof(RawExpr)) -> FExpr
-    (i::Inference)(;unescaped::NTuple{N,Symbol}=()) where N -> FExpr
+    (i::Inference)(em::RawExpr) -> FExpr
+    (i::Inference)(em::UnEscaped) -> FExpr
+    (i::Inference)(em::MixEscaped) -> FExpr
 
 Convert a `Inference` to the `Expr` representation of the type inference it describes.
 """
-function (i::Inference)(::typeof(RawExpr))
+(i::Inference)(em::MixEscaped)=i(em.unescaped)
+function (i::Inference)(em::Union{RawExpr,<:UnEscaped})
     if i.head===nothing
-        return i.name
-    elseif i.head==:(::) || i.head==:(<:)
-        return Expr(i.head,i.params(RawExpr))
+        return escape(i.name,em)
+    elseif i.head==:(<:)
+        return Expr(i.head,i.params(em))
     else
-        return Expr(i.head,i.name,[param(RawExpr) for param in i.params]...)
-    end
-end
-function (i::Inference)(;unescaped::NTuple{N,Symbol}=()) where N
-    if i.head===nothing
-        return i.name ∉ unescaped ? :($(esc(i.name))) : i.name
-    elseif i.head==:(::) || i.head==:(<:)
-        return Expr(i.head,i.params(unescaped=unescaped))
-    else
-        return Expr(i.head,i.name ∉ unescaped ? :($(esc(i.name))) : i.name,[param(unescaped=unescaped) for param in i.params]...)
+        return Expr(i.head,escape(i.name,em),[param(em) for param in i.params]...)
     end
 end
 
@@ -204,13 +243,13 @@ Construct an `Argument` directly from an argument statement.
 macro argument(expr::FExpr) expr=[expr];:(Argument($expr...)) end
 
 """
-    (a::Argument)(::typeof(RawExpr)) -> Expr
-    (a::Argument)(;unescaped::NTuple{N,Symbol}=()) where N -> Expr
+    (a::Argument)(em::RawExpr) -> Expr
+    (a::Argument)(em::MixEscaped) -> Expr
 
 Convert an `Argument` to the `Expr` representation of the argument it describes.
 """
-(a::Argument)(::typeof(RawExpr))=combinearg(a.name,a.type(RawExpr),a.slurp,a.default)
-(a::Argument)(;unescaped::NTuple{N,Symbol}=()) where N=combinearg(a.name,a.type(unescaped=unescaped),a.slurp,escape(a.default,tuple(setdiff(names(a.default),unescaped)...)))
+(a::Argument)(em::RawExpr)=combinearg(a.name,a.type(em),a.slurp,escape(a.default,em))
+(a::Argument)(em::MixEscaped)=combinearg(a.name,a.type(em.unescaped),a.slurp,escape(a.default,em.escaped))
 
 """
     Parameter(name::Union{Symbol,Nothing},type::Union{Inference,Nothing})
@@ -247,21 +286,13 @@ Construct a `Parameter` directly from an parameter statement.
 macro parameter(expr::FExpr) expr=[expr];:(Parameter($expr...)) end
 
 """
-    (p::Parameter)(::typeof(RawExpr)) -> FExpr
-    (p::Parameter)(;unescaped::NTuple{N,Symbol}=()) where N -> FExpr
+    (p::Parameter)(em::RawExpr) -> FExpr
+    (p::Parameter)(em::UnEscaped) -> FExpr
+    (p::Parameter)(em::MixEscaped) -> FExpr
 
 Convert a `Parameter` to the `Expr` representation of the parameter it describes.
 """
-(p::Parameter)(::typeof(RawExpr))=p.name===nothing ? Expr(:(<:),p.type(RawExpr)) : p.type===nothing ? p.name : Expr(:(<:),p.name,p.type(RawExpr))
-function (p::Parameter)(;unescaped::NTuple{N,Symbol}=()) where N
-    if p.name===nothing
-        Expr(:(<:),p.type(unescaped=unescaped))
-    elseif p.type===nothing
-        p.name
-    else
-        Expr(:(<:),p.name,p.type(unescaped=unescaped))
-    end
-end
+(p::Parameter)(em::Union{RawExpr,<:UnEscaped,<:MixEscaped})=p.name===nothing ? Expr(:(<:),p.type(em)) : p.type===nothing ? p.name : Expr(:(<:),p.name,p.type(em))
 
 """
     Field(name::Symbol,type::Inference)
@@ -285,13 +316,13 @@ Construct a `Field` directly from a field statement.
 macro field(expr::FExpr) expr=[expr];:(Field($expr...)) end
 
 """
-    (f::Field)(::typeof(RawExpr)) -> Expr
-    (f::Field)(;unescaped::NTuple{N,Symbol}=()) where N -> Expr
+    (f::Field)(em::RawExpr) -> Expr
+    (f::Field)(em::UnEscaped) -> Expr
+    (f::Field)(em::MixEscaped) -> Expr
 
 Convert a `Field` to the `Expr` representation of the field it describes.
 """
-(f::Field)(::typeof(RawExpr))=combinefield((f.name,f.type(RawExpr)))
-(f::Field)(;unescaped::NTuple{N,Symbol}=()) where N=combinefield((f.name,f.type(unescaped=unescaped)))
+(f::Field)(em::Union{RawExpr,<:UnEscaped,<:MixEscaped})=combinefield((f.name,f.type(em)))
 
 """
     Block(parts::FExpr...)
@@ -311,13 +342,14 @@ Construct a `Block` directly from a `begin ... end` block definition.
 macro block(parts::FExpr...) :(Block($parts...)) end
 
 """
-    (b::Block)(::typeof(RawExpr)) -> Expr
-    (b::Block)(;escaped::NTuple{N,Symbol}=()) where N -> Expr
+    (b::Block)(em::RawExpr) -> Expr
+    (b::Block)(em::Escaped) -> Expr
+    (b::Block)(em::MixEscaped) -> Expr
 
 Convert a `Block` to the `Expr` representation of the `begin ... end` block it describes.
 """
-(b::Block)(::typeof(RawExpr))=Expr(:block,b.body...)
-(b::Block)(;escaped::NTuple{N,Symbol}=()) where N=Expr(:block,(escape(part,escaped) for part in b.body)...)
+(b::Block)(em::MixEscaped)=b(em.escaped)
+(b::Block)(em::Union{RawExpr,<:Escaped})=Expr(:block,(escape(part,em) for part in b.body)...)
 
 """
     push!(b::Block,parts::FExpr...) -> Block
@@ -422,31 +454,20 @@ Construct a `FunctionFactory` directly from a function definition.
 macro functionfactory(expr::Expr) expr=[expr];:(FunctionFactory($expr...)) end
 
 """
-    (ff::FunctionFactory)(::typeof(RawExpr)) -> Expr
-    (ff::FunctionFactory)(;unescaped::NTuple{N,Symbol}=(),escaped::NTuple{M,Symbol}=()) where {N,M} -> Expr
+    (ff::FunctionFactory)(em::RawExpr) -> Expr
+    (ff::FunctionFactory)(em::MixEscaped) -> Expr
 
 Convert a `FunctionFactory` to the `Expr` representation of the `function` it describes.
 """
-function (ff::FunctionFactory)(::typeof(RawExpr))
+function (ff::FunctionFactory)(em::Union{RawExpr,<:MixEscaped})
     combinedef(Dict(
-        :name           =>      ff.name,
-        :params         =>      [param(RawExpr) for param in ff.params],
-        :args           =>      [arg(RawExpr) for arg in ff.args],
-        :kwargs         =>      [kwarg(RawExpr) for kwarg in ff.kwargs],
-        :rtype          =>      ff.rtype(RawExpr),
-        :whereparams    =>      [whereparam(RawExpr) for whereparam in ff.whereparams],
-        :body           =>      ff.body(RawExpr)
-    ))
-end
-function (ff::FunctionFactory)(;unescaped::NTuple{N,Symbol}=(),escaped::NTuple{M,Symbol}=()) where {N,M}
-    combinedef(Dict(
-        :name           =>      ff.name ∈ escaped ? :($(esc(ff.name))) : ff.name,
-        :params         =>      [param(unescaped=unescaped) for param in ff.params],
-        :args           =>      [arg(unescaped=unescaped) for arg in ff.args],
-        :kwargs         =>      [kwarg(unescaped=unescaped) for kwarg in ff.kwargs],
-        :rtype          =>      ff.rtype(unescaped=unescaped),
-        :whereparams    =>      [whereparam(unescaped=unescaped) for whereparam in ff.whereparams],
-        :body           =>      ff.body(escaped=escaped)
+        :name           =>      escape(ff.name,isa(em,RawExpr) ? em : em.escaped),
+        :params         =>      [param(em) for param in ff.params],
+        :args           =>      [arg(em) for arg in ff.args],
+        :kwargs         =>      [kwarg(em) for kwarg in ff.kwargs],
+        :rtype          =>      ff.rtype(em),
+        :whereparams    =>      [whereparam(em) for whereparam in ff.whereparams],
+        :body           =>      ff.body(em)
     ))
 end
 
@@ -567,29 +588,19 @@ Construct a `TypeFactory` directly from a type definition.
 macro typefactory(expr::Expr) expr=[expr];:(TypeFactory($expr...)) end
 
 """
-    (tf::TypeFactory)(::typeof(RawExpr)) -> Expr
-    (tf::TypeFactory)(;unescaped::NTuple{N,Symbol}=()) where N -> Expr
+    (tf::TypeFactory)(em::RawExpr) -> Expr
+    (tf::TypeFactory)(em::MixEscaped) -> Expr
 
 Convert a `TypeFactory` to the `Expr` representation of the `struct` it describes.
 """
-function (tf::TypeFactory)(::typeof(RawExpr))
+function (tf::TypeFactory)(em::Union{RawExpr,<:MixEscaped})
     combinestructdef(Dict(
-        :name           =>      tf.name,
+        :name           =>      escape(tf.name,isa(em,RawExpr) ? em : em.escaped),
         :mutable        =>      tf.mutable,
-        :params         =>      [param(RawExpr) for param in tf.params],
-        :supertype      =>      tf.supertype(RawExpr),
-        :fields         =>      [(field.name,field.type(RawExpr)) for field in tf.fields],
-        :constructors   =>      [constructor(RawExpr) for constructor in tf.constructors]
-        ))
-end
-function (tf::TypeFactory)(;unescaped::NTuple{N,Symbol}=(),escaped::NTuple{M,Symbol}=()) where {N,M}
-    combinestructdef(Dict(
-        :name           =>      tf.name ∈ escaped ? :($(esc(tf.name))) : tf.name,
-        :mutable        =>      tf.mutable,
-        :params         =>      [param(unescaped=unescaped) for param in tf.params],
-        :supertype      =>      tf.supertype(unescaped=unescaped),
-        :fields         =>      [(field.name,field.type(unescaped=unescaped)) for field in tf.fields],
-        :constructors   =>      [constructor(unescaped=unescaped,escaped=escaped) for constructor in tf.constructors]
+        :params         =>      [param(em) for param in tf.params],
+        :supertype      =>      tf.supertype(em),
+        :fields         =>      [(field.name,field.type(em)) for field in tf.fields],
+        :constructors   =>      [constructor(em) for constructor in tf.constructors]
         ))
 end
 
