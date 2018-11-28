@@ -200,8 +200,11 @@ macro homonamedvector(typename,fieldnames,dtype::Union{Expr,Symbol}=:nothing,mut
     fieldnames=tuple(eval(fieldnames)...)
     @assert all(isa(name,Symbol) for name in fieldnames) "homonamedvector error: every field name should be a `Symbol`."
     isa(dtype,Expr) && (@assert (dtype.head==:(<:) && dtype.args|>length==1) "homonamedvector error: wrong `dtype`.")
-    dname,dscope=isa(dtype,Expr) ? (:T,dtype.args[1]) : (dtype==:nothing ? (:T,:Any) : (dtype,:concrete))
-    isa(mutable,Expr) && ((@assert mutable.head==:(=) && mutable.args[1]==:mutable && isa(mutable.args[2],Bool) "homonamedvector error: wrong `mutable`.");mutable=mutable.args[2])
+    dname,dscope=isa(dtype,Expr) ? (:T,dtype.args[1]) : dtype==:nothing ? (:T,:Any) : (dtype,:concrete)
+    if isa(mutable,Expr)
+        @assert mutable.head==:(=) && mutable.args[1]==:mutable && isa(mutable.args[2],Bool) "homonamedvector error: wrong `mutable`."
+        mutable=mutable.args[2]
+    end
     if dscope==:concrete
         new=:($(esc(typename)))
         super=:(HomoNamedVector{$(esc(dname))})
