@@ -1429,7 +1429,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Quantum numbers",
     "title": "Hamiltonian.Utilities.QuantumNumber.QuantumNumbers",
     "category": "type",
-    "text": "QuantumNumbers(form::Char,contents::Vector{<:AbstractQuantumNumber},counts::Vector{Int},::QnsCounts)\nQuantumNumbers(form::Char,contents::Vector{<:AbstractQuantumNumber},indptr::Vector{Int},::QnsIndptr)\n\nThe whole quantum numbers of the total bases of a Hilbert space.\n\nThe default constructors construct a QuantumNumbers from a vector of concrete quantum numbers and an vector containing their counts or indptr.\n\n\n\n\n\n"
+    "text": "QuantumNumbers(qn::AbstractQuantumNumber,count::Int=1)\n\nConstruct a QuantumNumbers with one unique quantum number which occurs count times.\n\n\n\n\n\n"
 },
 
 {
@@ -1437,7 +1437,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Quantum numbers",
     "title": "Hamiltonian.Utilities.QuantumNumber.QuantumNumbers",
     "category": "type",
-    "text": "QuantumNumbers(qn::AbstractQuantumNumber,count::Int=1)\n\nConstruct a QuantumNumbers with one unique quantum number which occurs count times.\n\n\n\n\n\n"
+    "text": "QuantumNumbers(form::Char,contents::Vector{<:AbstractQuantumNumber},counts::Vector{Int},::QnsCounts)\nQuantumNumbers(form::Char,contents::Vector{<:AbstractQuantumNumber},indptr::Vector{Int},::QnsIndptr)\n\nThe whole quantum numbers of the total bases of a Hilbert space.\n\nThe default constructors construct a QuantumNumbers from a vector of concrete quantum numbers and an vector containing their counts or indptr.\n\n\n\n\n\n"
 },
 
 {
@@ -1766,6 +1766,550 @@ var documenterSearchIndex = {"docs": [
     "title": "Manual",
     "category": "section",
     "text": "Modules=[QuantumNumber]\nOrder=  [:module,:constant,:type,:macro,:function]"
+},
+
+{
+    "location": "man/Essentials/Introduction.html#",
+    "page": "Introduction",
+    "title": "Introduction",
+    "category": "page",
+    "text": "CurrentModule=Hamiltonian.Essentials"
+},
+
+{
+    "location": "man/Essentials/Introduction.html#Introduction-1",
+    "page": "Introduction",
+    "title": "Introduction",
+    "category": "section",
+    "text": "Essentials of the Hamiltonian package, which defines all the imported constants, types and functions when using import Hamiltonian or using Hamiltonian. Note that this submodule depends on the Utilities submodule although the variables in the latter are not exported to the scope of Hamiltonian by default.Pages=  [\n        \"Spatial.md\",\n        ]\nDepth=2"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#",
+    "page": "Spatial",
+    "title": "Spatial",
+    "category": "page",
+    "text": "CurrentModule=Hamiltonian.Essentials.Spatialpush!(LOAD_PATH,\"../../../../src/\")\nusing Hamiltonian"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Spatial-1",
+    "page": "Spatial",
+    "title": "Spatial",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Point-1",
+    "page": "Spatial",
+    "title": "Point",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Bond-and-Link-1",
+    "page": "Spatial",
+    "title": "Bond and Link",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/Spatial.html#AbstractLattice-1",
+    "page": "Spatial",
+    "title": "AbstractLattice",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Lattice-1",
+    "page": "Spatial",
+    "title": "Lattice",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/Spatial.html#SuperLattice-1",
+    "page": "Spatial",
+    "title": "SuperLattice",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Cylinder-1",
+    "page": "Spatial",
+    "title": "Cylinder",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.acrossbonds",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.acrossbonds",
+    "category": "constant",
+    "text": "acrossbonds\n\nIndicate that bonds across the unitcell are inquired, which are in fact those across the periodic boundaries.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.insidebonds",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.insidebonds",
+    "category": "constant",
+    "text": "insidebonds\n\nIndicate that bonds inside the unitcell are inquired, which do not contain those across the periodic boundaries.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.interbonds",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.interbonds",
+    "category": "constant",
+    "text": "interbonds\n\nIndicate that bonds inter the sublattices are inquired.\n\nnotes: Notes\nThese bonds do not contain those accorss the periodic boundaries.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.intrabonds",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.intrabonds",
+    "category": "constant",
+    "text": "intrabonds\n\nIndicate that bonds intra the sublattices are inquired.\n\nnotes: Notes\nThese bonds do not contain those accorss the periodic boundaries.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.AbstractLattice",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.AbstractLattice",
+    "category": "type",
+    "text": "AbstractLattice{P<:PID,N}\n\nAbstract type for all lattices.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.AbstractLatticeIndex",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.AbstractLatticeIndex",
+    "category": "type",
+    "text": "AbstractLatticeIndex{I<:Union{<:PID,Int}}\n\nAbstract index type for a lattice.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.Bond",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.Bond",
+    "category": "type",
+    "text": "Bond(neighbor::Int,spoint::Point,epoint::Point)\n\nA bond in a lattice.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.Cylinder",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.Cylinder",
+    "category": "type",
+    "text": "Cylinder{P}(    name::String,\n                block::AbstractMatrix{<:Real},\n                translation::AbstractVector{<:Real};\n                vector::Union{AbstractVector{<:Real},Nothing}=nothing,\n                neighbors::Union{Dict{Int,<:Real},Int}=1,\n                ) where P<:PID\n\nCylinder of 1d and quasi 2d lattices.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.Cylinder-Tuple",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.Cylinder",
+    "category": "method",
+    "text": "(cylinder::Cylinder)(scopes::Any...;coordination::Int=8) -> Lattice\n\nConstruct a lattice from a cylinder with the assigned scopes.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.ICoordIndex",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.ICoordIndex",
+    "category": "type",
+    "text": "ICoordIndex(index::Union{<:PID,Int})\n\nIndex for getting an icoord of a lattice.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.Lattice",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.Lattice",
+    "category": "type",
+    "text": "Lattice(    name::String,\n            pids::Vector{<:PID},\n            rcoords::AbstractMatrix{<:Real};\n            icoords::AbstractMatrix{<:Real}=SMatrix{0,0,Float}(),\n            vectors::AbstractVector{<:AbstractVector{<:Real}}=SVector{0,SVector{size(rcoords,1),Float}}(),\n            neighbors::Union{Dict{Int,<:Real},Int}=1,\n            coordination::Int=8\n        )\nLattice(    name::String,\n            points::AbstractVector{<:Point};\n            vectors::AbstractVector{<:AbstractVector{<:Real}}=SVector{0,SVector{points|>eltype|>dimension,Float}}(),\n            neighbors::Union{Dict{Int,<:Real},Int}=1,\n            coordination::Int=8\n            )\nLattice(    name::String,\n            sublattices::AbstractVector{<:AbstractLattice};\n            vectors::AbstractVector{<:AbstractVector{<:Real}}=SVector{0,SVector{sublattices|>eltype|>dimension,Float}}(),\n            neighbors::Union{Dict{Int,<:Real},Int}=1,\n            coordination::Int=8\n            )\n\nSimplest lattice.\n\nA simplest lattice can be construted from its contents, i.e. pids, rcoords and icoords, or from a couple of points, or from a couple of sublattices.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.Link",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.Link",
+    "category": "type",
+    "text": "Link(neighbor::Int,sindex::Int,eindex::Int,disp::AbstractVector{<:Real})\n\nA link in a lattice.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.PID",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.PID",
+    "category": "type",
+    "text": "PID(scope,site::Int)\nPID(;scope=\"tz\",site::Int=1)\n\nThe id of a point.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.Point",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.Point",
+    "category": "type",
+    "text": "Point(pid::PID,rcoord::SVector{N,<:Real},icoord::SVector{N,<:Real}) where N\nPoint(pid::PID,rcoord::NTuple{N,<:Real},icoord::NTuple{N,<:Real}=ntuple(i->0.0,N)) where N\nPoint(pid::PID,rcoord::AbstractVector{<:Real},icoord::AbstractVector{<:Real}=zero(SVector{length(rcoord),Float}))\n\nLabeled point.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.PointIndex",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.PointIndex",
+    "category": "type",
+    "text": "PointIndex(index::Union{<:PID,Int})\n\nIndex for getting a point of a lattice.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.RCoordIndex",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.RCoordIndex",
+    "category": "type",
+    "text": "RCoordIndex(index::Union{<:PID,Int})\n\nIndex for getting a rcoord of a lattice.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.SuperLattice",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.SuperLattice",
+    "category": "type",
+    "text": "SuperLattice(   name::String,\n                sublattices::AbstractVector{<:AbstractLattice};\n                vectors::AbstractVector{<:AbstractVector{<:Real}}=SVector{0,SVector{sublattices|>eltype|>dimension,Float}}(),\n                neighbors::Dict{Int,<:Real}=Dict{Int,Float}()\n                )\n\nSuperLattice that is composed of serveral sublattices.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.@lattice-Tuple{Expr}",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.@lattice",
+    "category": "macro",
+    "text": "@lattice structdef::Expr\n\nDecorate a raw struct to be a subtype of AbstractLattice.\n\nnotes: Notes\nHere, a \"raw\" struct means:It has no explicit supertype except Any;\nIt has none of the required attributes by AbstractLattice, i.e. :name, :pids, :rcoords, :icoords, :vectors, :reciprocals and :neighbors;\nIt has no inner constructor.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.azimuth-Tuple{AbstractArray{#s187,1} where #s187<:Real}",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.azimuth",
+    "category": "method",
+    "text": "azimuth(v::AbstractVector{<:Real}) -> Float\n\nGet the azimuth angle in radians of a vector.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.azimuthd-Tuple{AbstractArray{#s187,1} where #s187<:Real}",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.azimuthd",
+    "category": "method",
+    "text": "azimuthd(v::AbstractVector{<:Real}) -> Float\n\nGet the azimuth angle in degrees of a vector.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.bonds-Tuple{AbstractLattice}",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.bonds",
+    "category": "method",
+    "text": "bonds(lattice::AbstractLattice) -> Vector{Bond}\nbonds(lattice::AbstractLattice,::InsideBonds) -> Vector{Bond}\nbonds(lattice::AbstractLattice,::AcrossBonds) -> Vector{Bond}\n\nGet the bonds of a lattice.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.bonds-Tuple{SuperLattice,Hamiltonian.Essentials.Spatial.IntraBonds}",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.bonds",
+    "category": "method",
+    "text": "bonds(lattice::SuperLattice,::IntraBonds) -> Vector{Bond}\nbonds(lattice::SuperLattice,::InterBonds) -> Vector{Bond}\n\nGet the bonds of a superlattice.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.distance-Tuple{AbstractArray{#s185,1} where #s185<:Real,AbstractArray{#s181,1} where #s181<:Real}",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.distance",
+    "category": "method",
+    "text": "distance(p1::AbstractVector{<:Real},p2::AbstractVector{<:Real}) -> Float\n\nGet the distance between two points.\n\nnote: Note\nCompared to norm(p1-p2), this function avoids the memory allocation for p1-p2, thus is more efficient.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.icoord-Tuple{Bond}",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.icoord",
+    "category": "method",
+    "text": "icoord(bond::Bond) -> SVector\n\nGet the icoord of the bond.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.interlinks-Tuple{AbstractArray{#s196,2} where #s196<:Real,AbstractArray{#s195,2} where #s195<:Real,Dict{Int64,Float64}}",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.interlinks",
+    "category": "method",
+    "text": "interlinks(cluster1::AbstractMatrix{<:Real},cluster2::AbstractMatrix{<:Real},neighbors::Dict{Int,Float}) -> Vector{Link}\n\nUse kdtree to get the intercluster nearest neighbors.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.intralinks-Union{Tuple{N}, Tuple{AbstractArray{#s191,2} where #s191<:Real,AbstractArray{#s190,1} where #s190<:(AbstractArray{#s189,1} where #s189<:Real),Dict{Int64,Float64}}, Tuple{AbstractArray{#s188,2} where #s188<:Real,AbstractArray{#s187,1} where #s187<:(AbstractArray{#s186,1} where #s186<:Real),Dict{Int64,Float64},Tuple{Vararg{Int64,N}}}} where N",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.intralinks",
+    "category": "method",
+    "text": "intralinks( cluster::AbstractMatrix{<:Real},\n            vectors::AbstractVector{<:AbstractVector{<:Real}},\n            neighbors::Dict{Int,Float},\n            maxtranslations::NTuple{N,Int}=ntuple(i->length(neighbors)-1,length(vectors))\n            ) where N -> Vector{Link}\n\nUse kdtree to get the intracluster nearest neighbors.\n\nAs is similar to minimumlengths, when vectors is nonempty, the cluster assumes periodic boundaries. neighbors provides the map between the bond length and the order of nearest neighbors. Note only those with the lengths present in neighbors will be included in the result. maxtranslations determines the maximum number of translations along those directions specified by vectors when the tiled supercluster is construted (See minimumlengths for the explanation of the method for periodic lattices).\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.isintracell-Tuple{Bond}",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.isintracell",
+    "category": "method",
+    "text": "isintracell(bond::Bond) -> Bool\n\nJudge whether a bond is intra the unit cell of a lattice.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.isintratriangle-Tuple{AbstractArray{#s15,1} where #s15<:Real,AbstractArray{#s14,1} where #s14<:Real,AbstractArray{#s13,1} where #s13<:Real,AbstractArray{#s12,1} where #s12<:Real}",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.isintratriangle",
+    "category": "method",
+    "text": "isintratriangle(p::AbstractVector{<:Real},\n                p1::AbstractVector{<:Real},\n                p2::AbstractVector{<:Real},\n                p3::AbstractVector{<:Real};\n                vertexes::NTuple{3,Bool}=(true,true,true),\n                edges::NTuple{3,Bool}=(true,true,true),\n                atol::Real=atol,\n                rtol::Real=rtol\n                ) -> Bool\n\nJudge whether a point belongs to the interior of a triangle whose vertexes are p1, \'p2\' and p3 with the give tolerance. vertexes and edges define whether the interior should contain the vertexes or edges, respectively.\n\nnotes: Notes\nThe vertexes are in the order (p1,p2,p3) and the edges are in the order (p1p2,p2p3,p3p1).\nThe edges do not contain the vertexes.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.isonline-Tuple{AbstractArray{#s15,1} where #s15<:Real,AbstractArray{#s14,1} where #s14<:Real,AbstractArray{#s13,1} where #s13<:Real}",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.isonline",
+    "category": "method",
+    "text": "isonline(p::AbstractVector{<:Real},p1::AbstractVector{<:Real},p2::AbstractVector{<:Real};ends::Tuple{Bool,Bool}=(true,true),atol::Real=atol,rtol::Real=rtol) -> Bool\n\nJudge whether a point is on a line segment whose end points are p1 and p2 with the given tolerance. ends defines whether the line segment should contain its ends.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.isparallel-Tuple{AbstractArray{#s68,1} where #s68<:Real,AbstractArray{#s67,1} where #s67<:Real}",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.isparallel",
+    "category": "method",
+    "text": "isparallel(v1::AbstractVector{<:Real},v2::AbstractVector{<:Real};atol::Real=atol,rtol::Real=rtol) -> Bool\n\nJudge whether two vectors are parallel to each other with the given tolerance, 0 for not parallel, 1 for parallel and -1 for antiparallel.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.issubordinate-Tuple{AbstractArray{#s191,1} where #s191<:Real,AbstractArray{#s190,1} where #s190<:(AbstractArray{#s189,1} where #s189<:Real)}",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.issubordinate",
+    "category": "method",
+    "text": "issubordinate(rcoord::AbstractVector{<:Real},vectors::AbstractVector{<:AbstractVector{<:Real}};atol::Real=atol,rtol::Real=rtol) -> Bool\n\nJudge whether a coordinate belongs to a lattice defined by vectors with the given tolerance.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.minimumlengths",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.minimumlengths",
+    "category": "function",
+    "text": "minimumlengths(cluster::AbstractMatrix{<:Real},vectors::AbstractVector{<:AbstractVector{<:Real}},nneighbor::Int=1;coordination::Int=8) -> Vector{Float}\n\nUse kdtree to search the lowest several minimum bond lengths within a lattice translated by a cluster.\n\nWhen the translation vectors are not empty, the lattice will be considered periodic in the corresponding directions. Otherwise the lattice will be open in all directions. To search for the bonds accorss the periodic boundaries, the cluster will be pretranslated to become a supercluster, which has open boundaries but is large enough to contain all the nearest neighbors within the required order. The coordination parameter sets the average number of each order of nearest neighbors. If it is to small, larger bond lengths may not be searched, and the result will contain Inf. This is a sign that you may need a larger coordination. Another situation that Inf appears in the result occurs when the minimum lengths are searched in open lattices. Indeed, the cluster may be too small so that the required order just goes beyond it. In this case the warning message can be safely ignored.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.nneighbor-Tuple{AbstractLattice}",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.nneighbor",
+    "category": "method",
+    "text": "nneighbor(lattice::AbstractLattice) -> Int\n\nGet the highest order of nearest neighbors.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.points-Tuple{AbstractLattice}",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.points",
+    "category": "method",
+    "text": "points(lattice::AbstractLattice) -> Vector{Point}\n\nGet the points contained in a lattice.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.polar-Tuple{AbstractArray{#s187,1} where #s187<:Real}",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.polar",
+    "category": "method",
+    "text": "polar(v::AbstractVector{<:Real}) -> Float\n\nGet the polar angle in radians of a vector.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.polard-Tuple{AbstractArray{#s187,1} where #s187<:Real}",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.polard",
+    "category": "method",
+    "text": "polard(v::AbstractVector{<:Real}) -> Float\n\nGet the polar angle in degrees of a vector.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.rcoord-Tuple{Bond}",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.rcoord",
+    "category": "method",
+    "text": "rcoord(bond::Bond) -> SVector\n\nGet the rcoord of the bond.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.reciprocals-Tuple{AbstractArray{#s201,1} where #s201<:(AbstractArray{#s200,1} where #s200<:Real)}",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.reciprocals",
+    "category": "method",
+    "text": "reciprocals(vectors::AbstractVector{AbstractVector{<:Real}}) -> Vector{Vector{Float}}\n\nGet the reciprocals dual to the input vectors.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.rotate-Tuple{AbstractArray{#s190,2} where #s190<:Real,Real}",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.rotate",
+    "category": "method",
+    "text": "rotate(cluster::AbstractMatrix{<:Real},angle::Real;axis::Tuple{Union{AbstractVector{<:Real},Nothing},Tuple{<:Real,<:Real}}=(nothing,(0,0))) -> Matrix{Float}\n\nGet a rotated cluster of the original one by a certain angle around an axis.\n\nThe axis is determined by a point it gets through (nothing can be used to denote the origin), and its polar as well as azimuth angles in radians. The default axis is the z axis.\n\nnotes: Notes\nThe result is given by the Rodrigues\' rotation formula.\nOnly 2 and 3 dimensional vectors can be rotated.\nWhen the input vectors are 2 dimensional, both the polar and azimuth of the axis must be 0.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.tile-Union{Tuple{M}, Tuple{N}, Tuple{AbstractArray{#s192,2} where #s192<:Real,AbstractArray{#s191,1} where #s191<:(AbstractArray{#s190,1} where #s190<:Real)}, Tuple{AbstractArray{#s189,2} where #s189<:Real,AbstractArray{#s188,1} where #s188<:(AbstractArray{#s187,1} where #s187<:Real),Tuple{Vararg{Tuple{Vararg{#s186,N}} where #s186<:Real,M}}}} where M where N",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.tile",
+    "category": "method",
+    "text": "tile(cluster::AbstractMatrix{<:Real},vectors::AbstractVector{<:AbstractVector{<:Real}},translations::NTuple{M,NTuple{N,<:Real}}=()) where {N,M} -> Matrix{Float}\n\nTile a supercluster by translations of the input cluster.\n\nBasically, the final supercluster is composed of several parts, each of which is a translation of the original cluster, with the translation vectors specified by vectors and each set of the translation indices contained in translations. When translation vectors are empty, a copy of the original cluster will be returned.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.translate-Tuple{AbstractArray{#s201,2} where #s201<:Real,AbstractArray{#s200,1} where #s200<:Real}",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.translate",
+    "category": "method",
+    "text": "translate(cluster::AbstractMatrix{<:Real},vector::AbstractVector{<:Real}) -> Matrix{vector|>eltype}\n\nGet the translated cluster of the original one by a vector.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.volume-Tuple{AbstractArray{#s185,1} where #s185<:Real,AbstractArray{#s181,1} where #s181<:Real,AbstractArray{#s174,1} where #s174<:Real}",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.volume",
+    "category": "method",
+    "text": "volume(v1::AbstractVector{<:Real},v2::AbstractVector{<:Real},v3::AbstractVector{<:Real}) -> Real\n\nGet the volume spanned by three vectors.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Utilities.dimension-Tuple{AbstractLattice}",
+    "page": "Spatial",
+    "title": "Hamiltonian.Utilities.dimension",
+    "category": "method",
+    "text": "dimension(lattice::AbstractLattice) -> Int\ndimension(::Type{<:AbstractLattice{P,N}}) where {P,N}-> Int\n\nGet the space dimension of the lattice.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Utilities.dimension-Tuple{Point}",
+    "page": "Spatial",
+    "title": "Hamiltonian.Utilities.dimension",
+    "category": "method",
+    "text": "dimension(p::Point) -> Int\ndimension(::Type{<:Point{P,N}}) where {P,N} -> Int\n\nGet the space dimension of the point.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Base.:==-Tuple{Bond,Bond}",
+    "page": "Spatial",
+    "title": "Base.:==",
+    "category": "method",
+    "text": "==(b1::Bond,b2::Bond) -> Bool\n\nOverloaded == operator.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Base.:==-Tuple{Link,Link}",
+    "page": "Spatial",
+    "title": "Base.:==",
+    "category": "method",
+    "text": "==(l1::Link,l2::Link) -> Bool\n\nOverloaded == operator.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Base.:==-Tuple{Point,Point}",
+    "page": "Spatial",
+    "title": "Base.:==",
+    "category": "method",
+    "text": "==(p1::Point,p2::Point) -> Bool\n\nOverloaded == operator.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Base.getindex-Tuple{AbstractLattice,RCoordIndex{Int64}}",
+    "page": "Spatial",
+    "title": "Base.getindex",
+    "category": "method",
+    "text": "getindex(lattice::AbstractLattice,i::RCoordIndex) -> SVector\ngetindex(lattice::AbstractLattice,i::ICoordIndex) -> SVector\ngetindex(lattice::AbstractLattice,i::PointIndex) -> Point\n\nGet a rcoord, an icoord or a point of a lattice according to the type of the input index.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Base.insert!-Union{Tuple{S}, Tuple{Cylinder,Vararg{S,N} where N}} where S",
+    "page": "Spatial",
+    "title": "Base.insert!",
+    "category": "method",
+    "text": "insert!(cylinder::Cylinder,ps::S...;cut::Int=length(cylinder)÷2+1,scopes::Union{<:AbstractVector{S},Nothing}=nothing,coordination::Int=9) where S -> Cylinder\n\nInsert a couple of blocks into a cylinder.\n\nThe position of the cut of the cylinder is specified by the keyword argument cut, which is the center of the cylinder by default. All pids corresponding to a same newly inserted block share the same scope, which is specified by the parameter ps. Optionally, the scopes of the old pids in the cylinder can be replaced if the parameter scopes is assigned other than nothing. Note the length of ps is equal to the number of newly inserted blocks, while that of scopes should be equal to the old length of the cylinder.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Base.keytype-Tuple{AbstractLattice}",
+    "page": "Spatial",
+    "title": "Base.keytype",
+    "category": "method",
+    "text": "keytype(lattice::AbstractLattice)\nkeytype(::Type{<:AbstractLattice{P,N}}) where {P,N}\n\nGet the pid type of the lattice.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Base.length-Tuple{AbstractLattice}",
+    "page": "Spatial",
+    "title": "Base.length",
+    "category": "method",
+    "text": "length(lattice::AbstractLattice) -> Int\n\nGet the number of points contained in a lattice.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Base.reverse-Tuple{Bond}",
+    "page": "Spatial",
+    "title": "Base.reverse",
+    "category": "method",
+    "text": "reverse(bond::Bond) -> Bond\n\nGet the reversed bond.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Base.show-Tuple{IO,AbstractLattice}",
+    "page": "Spatial",
+    "title": "Base.show",
+    "category": "method",
+    "text": "show(io::IO,lattice::AbstractLattice)\n\nShow a lattice.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Base.show-Tuple{IO,Bond}",
+    "page": "Spatial",
+    "title": "Base.show",
+    "category": "method",
+    "text": "show(io::IO,bond::Bond)\n\nShow a bond.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Base.show-Tuple{IO,Link}",
+    "page": "Spatial",
+    "title": "Base.show",
+    "category": "method",
+    "text": "show(io::IO,link::Link)\n\nShow a link.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Base.show-Tuple{IO,Point}",
+    "page": "Spatial",
+    "title": "Base.show",
+    "category": "method",
+    "text": "show(io::IO,p::Point)\n\nShow a labeled point.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Base.valtype-Tuple{AbstractLattice}",
+    "page": "Spatial",
+    "title": "Base.valtype",
+    "category": "method",
+    "text": "valtype(lattice::AbstractLattice)\nvaltype(::Type{<:AbstractLattice{P,N}}) where {P,N}\n\nGet the point type of the lattice.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Manul-1",
+    "page": "Spatial",
+    "title": "Manul",
+    "category": "section",
+    "text": "Modules=[Spatial]\nOrder=  [:module,:constant,:type,:macro,:function]"
 },
 
 ]}
