@@ -1,5 +1,6 @@
 using Test
 
-@testset "utilities" begin
-include("Utilities/Utilities.jl")
+@testset "all" begin
+    include("Utilities/Utilities.jl")
+    include("Essentials/Essentials.jl")
 end

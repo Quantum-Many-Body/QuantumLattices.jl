@@ -21,6 +21,10 @@ makedocs(
                                         "man/Utilities/NamedVector.md",
                                         "man/Utilities/QuantumNumber.md",
                                         ],
+                                "Essentials" => [
+                                        "man/Essentials/Introduction.md",
+                                        "man/Essentials/Spatial.md",
+                                        ],
                                 ],
                         ],
     html_canonical=     "https://quantum-many-body.github.io/Hamiltonian.jl/latest/",
