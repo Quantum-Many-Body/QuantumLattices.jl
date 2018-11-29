@@ -1,14 +1,13 @@
 module Tree
 
 using ..Factory: Inference,Argument,Parameter,FunctionFactory,TypeFactory
-using ..Factory: addfields!,addparams!,addargs!,addwhereparams!,extendbody!,addconstructors!
+using ..Factory: addfields!,addparams!,addargs!,addwhereparams!,extendbody!
 using ..Factory: MixEscaped,Escaped,UnEscaped
 
 export treedepth,treewidth
 export AbstractTree
 export root,parent,children
 export addnode!,deletenode!
-export empty
 export isleaf,level
 export ancestor,descendants,siblings,leaves
 export subtree,move!
@@ -46,7 +45,7 @@ abstract type AbstractTree{N,D} end
 Get the eltype of a tree.
 """
 Base.eltype(tree::AbstractTree)=tree|>typeof|>eltype
-Base.eltype(::Type{<:AbstractTree{N,D}}) where {N,D}=(N,D)
+Base.eltype(::Type{<:AbstractTree{N,D}}) where {N,D}=Pair{N,D}
 
 """
     root(tree::AbstractTree) -> Union{keytype(tree),Nothing}
@@ -148,11 +147,9 @@ Base.setindex!(tree::AbstractTree{N,D},data::D,node::N) where {N,D}=(tree.TREECO
 
 Construct an empty tree of the same type with the input one.
 """
-@generated function empty(tree::AbstractTree)
-    treename=tree|>nameof
-    treeparams=tree|>eltype
-    contents=Expr[:(getfield(tree,$field)) for field in (tree|>fieldnames) if field!=:TREECORE]
-    return :(($treename){$(treeparams...)}($(contents...)))
+@generated function Base.empty(tree::AbstractTree{N,D}) where {N,D}
+    contents=Expr[:(getfield(tree,$i)) for i=1:length(tree|>fieldnames)-1]
+    return :(($tree)($(contents...),TreeCore{$N,$D}()))
 end
 
 """
@@ -426,19 +423,14 @@ macro tree(structdef,treeparams::Union{Expr,Nothing}=nothing)
     append!(paramnames,(tp.name for tp in treeparams))
     addfields!(tf,:(TREECORE::TreeCore{$(treeparamnames...)}))
     addparams!(tf,treeparams...)
-    inner=FunctionFactory(name=tf.name)
-    addparams!(inner,treeparamnames...)
-    addargs!(inner,(Argument(name=field.name,type=field.type) for field in tf.fields[1:end-1])...)
-    addwhereparams!(inner,tf.params...)
-    extendbody!(inner,:(new{$(paramnames...)}($(fieldnames...),TreeCore{$(treeparamnames...)}())))
-    addconstructors!(tf,inner)
-    eltype=FunctionFactory(name=:(Base.eltype))
-    addargs!(eltype,:(::Type{$(tf.name){$(paramnames...)}}))
-    addwhereparams!(eltype,tf.params...)
-    extendbody!(eltype,:(tuple($(paramnames...))))
+    outer=FunctionFactory(name=tf.name)
+    addparams!(outer,treeparamnames...)
+    addargs!(outer,(Argument(name=field.name,type=field.type) for field in tf.fields[1:end-1])...)
+    addwhereparams!(outer,tf.params...)
+    extendbody!(outer,:($(tf.name)($(fieldnames...),TreeCore{$(treeparamnames...)}())))
     sbtreedef=tf(MixEscaped(Escaped(tf.name),UnEscaped(paramnames...,:AbstractTree,:TreeCore)))
-    eltypedef=eltype(MixEscaped(Escaped(:tuple),UnEscaped(paramnames...)))
-    return Expr(:block,:(Base.@__doc__($sbtreedef)),eltypedef)
+    outerdef=outer(MixEscaped(Escaped(tf.name),UnEscaped(paramnames...)))
+    return Expr(:block,:(Base.@__doc__($sbtreedef)),outerdef)
 end
 
 """
@@ -448,7 +440,7 @@ The minimum tree structure that implements all the default tree methods.
 """
 struct SimpleTree{N,D} <: AbstractTree{N,D}
     TREECORE::TreeCore{N,D}
-    SimpleTree{N,D}() where {N,D}=new{N,D}(TreeCore{N,D}())
 end
+SimpleTree{N,D}() where {N,D}=SimpleTree(TreeCore{N,D}())
 
 end #module

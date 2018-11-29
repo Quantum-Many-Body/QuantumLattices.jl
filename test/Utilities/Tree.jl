@@ -3,7 +3,7 @@ using Hamiltonian.Utilities.Tree
 @testset "SimpleTree" begin
     tree=SimpleTree{String,Int}()
 
-    @test tree|>eltype==(String,Int)
+    @test tree|>eltype==Pair{String,Int}
     @test tree|>keytype==String
     @test tree|>valtype==Int
     @test tree|>root==nothing

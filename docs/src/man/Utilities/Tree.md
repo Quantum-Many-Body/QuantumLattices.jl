@@ -19,14 +19,12 @@ The aim of the tree in this module is to represent the standard tree structure i
 To fully utilize the methods designed for a tree structure, in our protocol, a concrete subtype must implement the following methods:
 * inquiry related methods
   ```julia
-  eltype(tree::AbstractTree) -> NTuple
   root(tree::AbstractTree{N,D}) where {N,D} -> Union{N,Nothing}
   haskey(tree::AbstractTree{N,D},node::N) where {N,D} -> Bool
   length(tree::AbstractTree) -> Int
   parent(tree::AbstractTree{N,D},node::N,superparent::Union{N,Nothing}=nothing) where {N,D} -> Union{N,Nothing}
   children(tree::AbstractTree{N,D},node::N) where {N,D} -> Vector{N}
   ```
-  - Get a tree's type parameters.
   - Get a tree's root node (`nothing` for empty trees)
   - Get the number of a tree's nodes.
   - Check whether a node is in a tree.
@@ -48,7 +46,7 @@ To fully utilize the methods designed for a tree structure, in our protocol, a c
   - Set the data of a tree's node.
 
 Based on these methods, we implement several generic functions for inquiries and manipulations
-* inquiry for type parameters: [`keytype`](@ref), [`valtype`](@ref)
+* inquiry for type parameters: [`keytype`](@ref), [`valtype`](@ref), `eltype`
 * expansion over nodes/data-records: `keys`, `values`, `pairs`
 * inquiry for info of nodes: [`isleaf`](@ref), [`level`](@ref)
 * inquiry for nodes: [`ancestor`](@ref), [`descendants`](@ref), [`siblings`](@ref), [`leaves`](@ref)
@@ -65,7 +63,7 @@ which constructs an empty tree of the same type with the input one, two more mor
 ## TreeCore and SimpleTree
 
 To implement all the prerequisites listed above costs a bit efforts. We provide two lazy ways to get over this:
-1. Inheritance with a specific attribute `TREECORE::TreeCore`
+1. Inheritance `AbstractTree` with `TREECORE::TreeCore` as the **last** attribute
 2. Inclusion an attribute which is an instance of [`SimpleTree`](@ref)
 
 ### TreeCore
@@ -75,7 +73,7 @@ To implement all the prerequisites listed above costs a bit efforts. We provide 
 * `contents::Dict{N,D}`: the tree's (node,data) pairs
 * `parent::Dict{N,N}`: records of the parent of each of the tree's nodes
 * `children::Dict{N,Vector{N}}`: records of the children of each of the tree's nodes
-As above, the first lazy way is to include this struct with the special attribute name `:TREECORE` in your concrete subtype. This process can be even lazier, in that we provide a macro [`@tree`](@ref) to decorate your "raw" struct automatically, e.g.
+As above, the first lazy way is to include this struct with the special name `:TREECORE` in your concrete subtype as the **last** attribute. This process can be even lazier, in that we provide a macro [`@tree`](@ref) to decorate your "raw" struct automatically, e.g.
 ```@repl tree
 @tree struct SimpleSubTree end
 @tree struct SubTreeWithTreeParameters end {N<:AbstractString,D<:Number}
