@@ -23,7 +23,10 @@ ordinal
 ## Generic functions for overloading
 
 ```@docs
+⊕
+⊗
 dimension
+permute
 ```
 
 ## Prerequisites for Essentials

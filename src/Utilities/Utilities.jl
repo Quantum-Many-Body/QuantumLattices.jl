@@ -107,8 +107,17 @@ function ordinal(number)
     number==1 ? "1st" : number==2 ? "2nd" : number==3 ? "3rd" : "$(number)th"
 end
 
+"Generic interface of the direct sum of some types."
+function ⊕ end
+
+"Generic interface of the direct product of some types."
+function ⊗ end
+
 "Generic interface of the dimension of some types."
 function dimension end
+
+"Generic interface of permuting of some types."
+function permute end
 
 include("Factory.jl")
 include("Tree.jl")

@@ -9,14 +9,14 @@ using Combinatorics: combinations
 using ..Utilities: Float
 using ..NamedVector: HomoNamedVector
 
-import ..Utilities: dimension
+import ..Utilities: ⊕,⊗,dimension,permute
 
 export AbstractQuantumNumber
 export regularize!,regularize
 export @quantumnumber,periods,SQN,PQN,SPQN,Z2QN
 export qnscounts,qnsindptr,qnscompression,qnsexpansion,qnscontents,qnsindices,qnsbruteforce,qnsmontecarlo
 export QuantumNumbers
-export ⊕,⊗,ukron,dimension,expand,decompose,subset,reorder,toordereddict
+export ⊕,⊗,ukron,dimension,expand,decompose,permute,toordereddict
 export SQNS,PQNS,SzPQNS,SPQNS,Z2QNS
 
 "Abstract type for all concrete quantum numbers for a single basis."
@@ -359,25 +359,27 @@ struct QnsExpansion     <: QnsProtocol end
 """
     qnscompression
 
-Indicate that [`findall`](@ref) and [`reorder`](@ref) use the compressed contents.
+Indicate that [`findall`](@ref) and [`permute`](@ref) use the compressed contents.
 """
 const qnscompression=QnsCompression()
 """
     qnsexpansion
 
-Indicate that [`findall`](@ref) and [`reorder`](@ref) use the expanded contents.
+Indicate that [`findall`](@ref) and [`permute`](@ref) use the expanded contents.
 """
 const qnsexpansion=QnsExpansion()
 
 """
-    findall(qns::QuantumNumbers{QN},target::QN,choice::Union{QnsCompression,QnsExpansion}) where QN<:AbstractQuantumNumber -> Vector{Int}
-    findall(qns::QuantumNumbers{QN},targets::NTuple{N,QN},::QnsCompression) where {N,QN<:AbstractQuantumNumber} -> Vector{Int}
-    findall(qns::QuantumNumbers{QN},targets::NTuple{N,QN},::QnsExpansion) where {N,QN<:AbstractQuantumNumber} -> Vector{Int}
+    findall(target::QN,qns::QuantumNumbers{QN},::QnsCompression) where QN<:AbstractQuantumNumber -> Vector{Int}
+    findall(target::QN,qns::QuantumNumbers{QN},::QnsExpansion) where QN<:AbstractQuantumNumber -> Vector{Int}
+    findall(targets::NTuple{N,QN},qns::QuantumNumbers{QN},::QnsCompression) where {N,QN<:AbstractQuantumNumber} -> Vector{Int}
+    findall(targets::NTuple{N,QN},qns::QuantumNumbers{QN},::QnsExpansion) where {N,QN<:AbstractQuantumNumber} -> Vector{Int}
 
 Find all the indices of the target quantum numbers in the contents ([`qnscompression`](@ref) case) or the expansion ([`qnsexpansion`](@ref) case) of a `QuantumNumbers`.
 """
-Base.findall(qns::QuantumNumbers{QN},target::QN,choice::Union{QnsCompression,QnsExpansion}) where QN<:AbstractQuantumNumber=findall(qns,(target,),choice)
-function Base.findall(qns::QuantumNumbers{QN},targets::NTuple{N,QN},::QnsCompression) where {N,QN<:AbstractQuantumNumber}
+Base.findall(target::QN,qns::QuantumNumbers{QN},::QnsCompression) where QN<:AbstractQuantumNumber=findall((target,),qns,QnsCompression())
+Base.findall(target::QN,qns::QuantumNumbers{QN},::QnsExpansion) where QN<:AbstractQuantumNumber=findall((target,),qns,QnsExpansion())
+function Base.findall(targets::NTuple{N,QN},qns::QuantumNumbers{QN},::QnsCompression) where {N,QN<:AbstractQuantumNumber}
     result=Int[]
     if qns.form=='C'
         for qn in targets
@@ -385,30 +387,39 @@ function Base.findall(qns::QuantumNumbers{QN},targets::NTuple{N,QN},::QnsCompres
             range.start<=range.stop && push!(result,range.start)
         end
     else
-        for qn in targets
-            append!(result,findall(isequal(qn),qns.contents))
+        for (i,qn) in enumerate(qns)
+            qn ∈ targets && push!(result,i)
         end
     end
     result
 end
-function Base.findall(qns::QuantumNumbers{QN},targets::NTuple{N,QN},::QnsExpansion) where {N,QN<:AbstractQuantumNumber}
+function Base.findall(targets::NTuple{N,QN},qns::QuantumNumbers{QN},::QnsExpansion) where {N,QN<:AbstractQuantumNumber}
     result=Int[]
-    for index in findall(qns,targets,qnscompression)
+    for index in findall(targets,qns,qnscompression)
         @inbounds append!(result,(qns.indptr[index]+1):qns.indptr[index+1])
     end
     result
 end
 
 """
-    reorder(qns::QuantumNumbers,permutation::Vector{Int},::QnsCompression) -> QuantumNumbers
-    reorder(qns::QuantumNumbers,permutation::Vector{Int},::QnsExpansion) -> QuantumNumbers
+    filter(target::QN,qns::QuantumNumbers{QN}) where QN<:AbstractQuantumNumber -> QuantumNumbers{QN}
+    filter(targets::NTuple{N,QN},qns::QuantumNumbers{QN}) where {N,QN<:AbstractQuantumNumber} -> QuantumNumbers{QN}
+
+Find a subset of a `QuantumNumbers` by picking out the quantum numbers in targets.
+"""
+Base.filter(target::QN,qns::QuantumNumbers{QN}) where QN<:AbstractQuantumNumber=qns[findall(target,qns,qnscompression)]
+Base.filter(targets::NTuple{N,QN},qns::QuantumNumbers{QN}) where {N,QN<:AbstractQuantumNumber}=qns[findall(targets,qns,qnscompression)]
+
+"""
+    permute(qns::QuantumNumbers,permutation::Vector{Int},::QnsCompression) -> QuantumNumbers
+    permute(qns::QuantumNumbers,permutation::Vector{Int},::QnsExpansion) -> QuantumNumbers
 
 Reorder the quantum numbers contained in a `QuantumNumbers` with a permutation and return the new one.
 
 For [`qnscompression`](@ref) case, the permutation is for the compressed contents of the original `QuantumNumbers` while for [`qnsexpansion`](@ref) case, the permutation is for the expanded contents of the original `QuantumNumbers`.
 """
-reorder(qns::QuantumNumbers,permutation::Vector{Int},::QnsCompression)=qns[permutation]
-function reorder(qns::QuantumNumbers,permutation::Vector{Int},::QnsExpansion)
+permute(qns::QuantumNumbers,permutation::Vector{Int},::QnsCompression)=qns[permutation]
+function permute(qns::QuantumNumbers,permutation::Vector{Int},::QnsExpansion)
     contents=Vector{qns|>eltype}(undef,length(permutation))
     indptr=zeros(Int,length(permutation)+1)
     expansion=expand(qns,qnsindices)
@@ -468,7 +479,7 @@ end
 
 Overloaded `+` operator for `AbstractQuantumNumber` and `QuantumNumbers`.
 !!! note
-    1. The addition between a `QuantumNumbers` and a `AbstractQuantumNumber` is just a global shift of the contents of the `QuantumNumbers` by the `AbstractQuantumNumber`, therefore, the result is a `QuantumNumbers`.
+    1. The addition between a `QuantumNumbers` and an `AbstractQuantumNumber` is just a global shift of the contents of the `QuantumNumbers` by the `AbstractQuantumNumber`, therefore, the result is a `QuantumNumbers`.
     2. `+` cannot be used between two `QuantumNumbers` because the result is ambiguous. Instead, use `⊕` for direct sum and `⊗` for direct product.
     3. To ensure type stability, two `AbstractQuantumNumber` can be added together if and only if they are of the same type.
     4. Similarly, a `AbstractQuantumNumber` and a `QuantumNumbers` can be added together if and only if the former's type is the same with the latter's eltype.
@@ -665,7 +676,7 @@ function decompose(qnses::NTuple{N,QuantumNumbers{QN}},target::QN,signs::NTuple{
     result=Set{NTuple{N,Int}}()
     cache=Vector{Int}(undef,N)
     dimensions=NTuple{N,Int}(dimension(qns) for qns in reverse(qnses))
-    indices=findall(⊗(qnses,signs),(target,),qnsexpansion)
+    indices=findall(target,⊗(qnses,signs),qnsexpansion)
     nmax<length(indices) && (shuffle!(MersenneTwister(),indices);indices=@views indices[1:nmax])
     for index in indices
         for (i,dimension) in enumerate(dimensions)
@@ -703,15 +714,6 @@ function decompose(qnses::NTuple{N,QuantumNumbers{QN}},target::QN,signs::NTuple{
     end
     return collect(NTuple{N,Int},result)
 end
-
-"""
-    subset(qns::QuantumNumbers{QN},target::QN) where QN<:AbstractQuantumNumber -> QuantumNumbers{QN}
-    subset(qns::QuantumNumbers{QN},targets::NTuple{N,QN}) where {N,QN<:AbstractQuantumNumber} -> QuantumNumbers{QN}
-
-Find a subset of a `QuantumNumbers` by picking out the quantum numbers in targets.
-"""
-subset(qns::QuantumNumbers{QN},target::QN) where QN<:AbstractQuantumNumber=qns[findall(qns,target,qnscompression)]
-subset(qns::QuantumNumbers{QN},targets::NTuple{N,QN}) where {N,QN<:AbstractQuantumNumber}=qns[findall(qns,targets,qnscompression)]
 
 """
     SQNS(S::Real) -> QuantumNumbers{SQN}

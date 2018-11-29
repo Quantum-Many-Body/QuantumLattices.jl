@@ -78,6 +78,13 @@ end
     @test pairs(qns,qnscounts)|>collect==[qn1=>3,qn2=>2]
 end
 
+@testset "toordereddict" begin
+    qn1,qn2=CNZ4(1.0,2.0),CNZ4(2.0,3.0)
+    qns=QuantumNumbers('U',[qn1,qn2],[2,3],qnscounts)
+    @test toordereddict(qns,qnsindptr)==OrderedDict(qn1=>1:2,qn2=>3:5)
+    @test toordereddict(qns,qnscounts)==OrderedDict(qn1=>2,qn2=>3)
+end
+
 @testset "arithmetic" begin
     qn=CNZ4(1.0,3.0)
     @test qn|>dimension==1
@@ -136,20 +143,27 @@ end
 @testset "findall" begin
     qn1,qn2,qn3=CNZ4(2.0,3.0),CNZ4(1.0,2.0),CNZ4(0.0,0.0)
     qns=QuantumNumbers('C',[qn2,qn1],[2,3],qnscounts)
-    @test findall(qns,qn1,qnscompression)==[2]
-    @test findall(qns,qn2,qnscompression)==[1]
-    @test findall(qns,qn3,qnscompression)==[]
-    @test findall(qns,qn1,qnsexpansion)==[3,4,5]
-    @test findall(qns,qn2,qnsexpansion)==[1,2]
-    @test findall(qns,qn3,qnsexpansion)==[]
+    @test findall(qn1,qns,qnscompression)==[2]
+    @test findall(qn2,qns,qnscompression)==[1]
+    @test findall(qn3,qns,qnscompression)==[]
+    @test findall(qn1,qns,qnsexpansion)==[3,4,5]
+    @test findall(qn2,qns,qnsexpansion)==[1,2]
+    @test findall(qn3,qns,qnsexpansion)==[]
 
     qns=QuantumNumbers('G',[qn1,qn2,qn1],[2,2,1],qnscounts)
-    @test findall(qns,qn1,qnscompression)==[1,3]
-    @test findall(qns,qn2,qnscompression)==[2]
-    @test findall(qns,qn3,qnscompression)==[]
-    @test findall(qns,qn1,qnsexpansion)==[1,2,5]
-    @test findall(qns,qn2,qnsexpansion)==[3,4]
-    @test findall(qns,qn3,qnsexpansion)==[]
+    @test findall(qn1,qns,qnscompression)==[1,3]
+    @test findall(qn2,qns,qnscompression)==[2]
+    @test findall(qn3,qns,qnscompression)==[]
+    @test findall(qn1,qns,qnsexpansion)==[1,2,5]
+    @test findall(qn2,qns,qnsexpansion)==[3,4]
+    @test findall(qn3,qns,qnsexpansion)==[]
+end
+
+@testset "filter" begin
+    qn1,qn2=CNZ4(1.0,2.0),CNZ4(3.0,0.0)
+    qns=QuantumNumbers('G',[qn1,qn2,qn1,qn2],[1,2,3,4],qnscounts)
+    @test filter((qn1,qn2),qns)==QuantumNumbers('G',[qn1,qn2,qn1,qn2],[1,2,3,4],qnscounts)
+    @test filter(qn2,qns)==QuantumNumbers('G',[qn2,qn2],[2,4],qnscounts)
 end
 
 @testset "ukron" begin
@@ -181,23 +195,9 @@ end
     @test ⊆(Set(decompose((qns,qns,qns,qns),target,(1,1,1,1),qnsmontecarlo,nmax=10)),result)
 end
 
-@testset "subset" begin
-    qn1,qn2=CNZ4(1.0,2.0),CNZ4(3.0,0.0)
-    qns=QuantumNumbers('G',[qn1,qn2,qn1,qn2],[1,2,3,4],qnscounts)
-    @test subset(qns,qn1)==QuantumNumbers('G',[qn1,qn1],[1,3],qnscounts)
-    @test subset(qns,qn2)==QuantumNumbers('G',[qn2,qn2],[2,4],qnscounts)
-end
-
-@testset "reorder" begin
+@testset "permute" begin
     qn1,qn2,qn3=CNZ4(1.0,2.0),CNZ4(3.0,0.0),CNZ4(4.0,1.0)
     qns=QuantumNumbers('G',[qn1,qn2,qn3],[2,3,4],qnscounts)
-    @test reorder(qns,[3,2,1],qnscompression)==QuantumNumbers('G',[qn3,qn2,qn1],[4,3,2],qnscounts)
-    @test reorder(qns,[4,6,9,8],qnsexpansion)==QuantumNumbers('G',[qn2,qn3,qn3,qn3],[1,1,1,1],qnscounts)
-end
-
-@testset "toordereddict" begin
-    qn1,qn2=CNZ4(1.0,2.0),CNZ4(2.0,3.0)
-    qns=QuantumNumbers('U',[qn1,qn2],[2,3],qnscounts)
-    @test toordereddict(qns,qnsindptr)==OrderedDict(qn1=>1:2,qn2=>3:5)
-    @test toordereddict(qns,qnscounts)==OrderedDict(qn1=>2,qn2=>3)
+    @test permute(qns,[3,2,1],qnscompression)==QuantumNumbers('G',[qn3,qn2,qn1],[4,3,2],qnscounts)
+    @test permute(qns,[4,6,9,8],qnsexpansion)==QuantumNumbers('G',[qn2,qn3,qn3,qn3],[1,1,1,1],qnscounts)
 end
