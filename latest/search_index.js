@@ -169,6 +169,22 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.:⊕",
+    "page": "Introduction",
+    "title": "Hamiltonian.Utilities.:⊕",
+    "category": "function",
+    "text": "Generic interface of the direct sum of some types.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.:⊗",
+    "page": "Introduction",
+    "title": "Hamiltonian.Utilities.:⊗",
+    "category": "function",
+    "text": "Generic interface of the direct product of some types.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.dimension",
     "page": "Introduction",
     "title": "Hamiltonian.Utilities.dimension",
@@ -177,11 +193,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.permute",
+    "page": "Introduction",
+    "title": "Hamiltonian.Utilities.permute",
+    "category": "function",
+    "text": "Generic interface of permuting of some types.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Utilities/Introduction.html#Generic-functions-for-overloading-1",
     "page": "Introduction",
     "title": "Generic functions for overloading",
     "category": "section",
-    "text": "dimension"
+    "text": "⊕\n⊗\ndimension\npermute"
 },
 
 {
@@ -781,7 +805,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Tree",
     "title": "AbstractTree",
     "category": "section",
-    "text": "AbstractTree{N,D} is the abstract type for all concrete trees. By design, it has two type parameters:N: the type of the tree\'s node\nD: the type of the tree\'s dataTo fully utilize the methods designed for a tree structure, in our protocol, a concrete subtype must implement the following methods:inquiry related methods\neltype(tree::AbstractTree) -> NTuple\nroot(tree::AbstractTree{N,D}) where {N,D} -> Union{N,Nothing}\nhaskey(tree::AbstractTree{N,D},node::N) where {N,D} -> Bool\nlength(tree::AbstractTree) -> Int\nparent(tree::AbstractTree{N,D},node::N,superparent::Union{N,Nothing}=nothing) where {N,D} -> Union{N,Nothing}\nchildren(tree::AbstractTree{N,D},node::N) where {N,D} -> Vector{N}\nGet a tree\'s type parameters.\nGet a tree\'s root node (nothing for empty trees)\nGet the number of a tree\'s nodes.\nCheck whether a node is in a tree.\nGet the parent of a tree\'s node or return superparent when the input node is the tree\'s root.\nGet the children of a tree\'s node.\nstructure modification related methods\naddnode!(tree::AbstractTree{N,D},parent::Union{N,Nothing},node::N) where {N,D}\ndeletenode!(tree::AbstractTree{N,D},node::N) where {N,D}\nUpdate the structure of a tree by adding a node. When the parent is nothing, the input tree must be empty and the input node becomes the tree\'s root.\nUpdate the structure of a tree by deleting a node.\nindex related methods\ngetindex(tree::AbstractTree{N,D},node::N) where {N,D} -> D\nsetindex!(tree::AbstractTree{N,D},node::N,data::D) where {N,D}\nGet the data of a tree\'s node\nSet the data of a tree\'s node.Based on these methods, we implement several generic functions for inquiries and manipulationsinquiry for type parameters: keytype, valtype\nexpansion over nodes/data-records: keys, values, pairs\ninquiry for info of nodes: isleaf, level\ninquiry for nodes: ancestor, descendants, siblings, leaves\nmodification: push!, append!, delete!, empty!And optionally, when a subtype implement the following method,empty(tree::AbstractTree) -> typeof(tree)which constructs an empty tree of the same type with the input one, two more more methods are supported:subtree: Get a subtree starting from a node.\nmove!: Move a subtree to a new position."
+    "text": "AbstractTree{N,D} is the abstract type for all concrete trees. By design, it has two type parameters:N: the type of the tree\'s node\nD: the type of the tree\'s dataTo fully utilize the methods designed for a tree structure, in our protocol, a concrete subtype must implement the following methods:inquiry related methods\nroot(tree::AbstractTree{N,D}) where {N,D} -> Union{N,Nothing}\nhaskey(tree::AbstractTree{N,D},node::N) where {N,D} -> Bool\nlength(tree::AbstractTree) -> Int\nparent(tree::AbstractTree{N,D},node::N,superparent::Union{N,Nothing}=nothing) where {N,D} -> Union{N,Nothing}\nchildren(tree::AbstractTree{N,D},node::N) where {N,D} -> Vector{N}\nGet a tree\'s root node (nothing for empty trees)\nGet the number of a tree\'s nodes.\nCheck whether a node is in a tree.\nGet the parent of a tree\'s node or return superparent when the input node is the tree\'s root.\nGet the children of a tree\'s node.\nstructure modification related methods\naddnode!(tree::AbstractTree{N,D},parent::Union{N,Nothing},node::N) where {N,D}\ndeletenode!(tree::AbstractTree{N,D},node::N) where {N,D}\nUpdate the structure of a tree by adding a node. When the parent is nothing, the input tree must be empty and the input node becomes the tree\'s root.\nUpdate the structure of a tree by deleting a node.\nindex related methods\ngetindex(tree::AbstractTree{N,D},node::N) where {N,D} -> D\nsetindex!(tree::AbstractTree{N,D},node::N,data::D) where {N,D}\nGet the data of a tree\'s node\nSet the data of a tree\'s node.Based on these methods, we implement several generic functions for inquiries and manipulationsinquiry for type parameters: keytype, valtype, eltype\nexpansion over nodes/data-records: keys, values, pairs\ninquiry for info of nodes: isleaf, level\ninquiry for nodes: ancestor, descendants, siblings, leaves\nmodification: push!, append!, delete!, empty!And optionally, when a subtype implement the following method,empty(tree::AbstractTree) -> typeof(tree)which constructs an empty tree of the same type with the input one, two more more methods are supported:subtree: Get a subtree starting from a node.\nmove!: Move a subtree to a new position."
 },
 
 {
@@ -789,7 +813,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Tree",
     "title": "TreeCore and SimpleTree",
     "category": "section",
-    "text": "To implement all the prerequisites listed above costs a bit efforts. We provide two lazy ways to get over this:Inheritance with a specific attribute TREECORE::TreeCore\nInclusion an attribute which is an instance of SimpleTree"
+    "text": "To implement all the prerequisites listed above costs a bit efforts. We provide two lazy ways to get over this:Inheritance AbstractTree with TREECORE::TreeCore as the last attribute\nInclusion an attribute which is an instance of SimpleTree"
 },
 
 {
@@ -797,7 +821,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Tree",
     "title": "TreeCore",
     "category": "section",
-    "text": "TreeCore{N,D}, as the literal meaning indicates, is the core of a tree. It encapsulates all the data structures needed by the default implementation, which constains 4 attributes:root::N: the tree\'s root node\ncontents::Dict{N,D}: the tree\'s (node,data) pairs\nparent::Dict{N,N}: records of the parent of each of the tree\'s nodes\nchildren::Dict{N,Vector{N}}: records of the children of each of the tree\'s nodesAs above, the first lazy way is to include this struct with the special attribute name :TREECORE in your concrete subtype. This process can be even lazier, in that we provide a macro @tree to decorate your \"raw\" struct automatically, e.g.@tree struct SimpleSubTree end\n@tree struct SubTreeWithTreeParameters end {N<:AbstractString,D<:Number}\n@tree struct SubTreeWithCertainTreeParameters end {<:String,<:Int}\n@tree struct SubTreeWithFields info::Vector{Int} end {N<:AbstractString,D<:Number}\n@tree struct SubTreeWithParametricFields{T} info::Vector{T} end {N<:AbstractString,D<:Number}\n@tree struct SubTreeWithOverlappedParametricFields{N} info::Vector{N} end {N<:AbstractString,D<:Number}"
+    "text": "TreeCore{N,D}, as the literal meaning indicates, is the core of a tree. It encapsulates all the data structures needed by the default implementation, which constains 4 attributes:root::N: the tree\'s root node\ncontents::Dict{N,D}: the tree\'s (node,data) pairs\nparent::Dict{N,N}: records of the parent of each of the tree\'s nodes\nchildren::Dict{N,Vector{N}}: records of the children of each of the tree\'s nodesAs above, the first lazy way is to include this struct with the special name :TREECORE in your concrete subtype as the last attribute. This process can be even lazier, in that we provide a macro @tree to decorate your \"raw\" struct automatically, e.g.@tree struct SimpleSubTree end\n@tree struct SubTreeWithTreeParameters end {N<:AbstractString,D<:Number}\n@tree struct SubTreeWithCertainTreeParameters end {<:String,<:Int}\n@tree struct SubTreeWithFields info::Vector{Int} end {N<:AbstractString,D<:Number}\n@tree struct SubTreeWithParametricFields{T} info::Vector{T} end {N<:AbstractString,D<:Number}\n@tree struct SubTreeWithOverlappedParametricFields{N} info::Vector{N} end {N<:AbstractString,D<:Number}"
 },
 
 {
@@ -894,14 +918,6 @@ var documenterSearchIndex = {"docs": [
     "title": "Hamiltonian.Utilities.Tree.descendants",
     "category": "method",
     "text": "descendants(tree::AbstractTree{N,D},node::N,generation::Int=1) where {N,D} -> Vector{N}\n\nGet the descendants of a tree\'s node of the n-th generation.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/Tree.html#Hamiltonian.Utilities.Tree.empty-Tuple{Hamiltonian.Utilities.Tree.AbstractTree}",
-    "page": "Tree",
-    "title": "Hamiltonian.Utilities.Tree.empty",
-    "category": "method",
-    "text": "empty(tree::AbstractTree)\n\nConstruct an empty tree of the same type with the input one.\n\n\n\n\n\n"
 },
 
 {
@@ -1014,6 +1030,14 @@ var documenterSearchIndex = {"docs": [
     "title": "Base.empty!",
     "category": "method",
     "text": "empty!(tree::AbstractTree) -> typeof(tree)\n\nEmpty a tree.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Tree.html#Base.empty-Union{Tuple{AbstractTree{N,D}}, Tuple{D}, Tuple{N}} where D where N",
+    "page": "Tree",
+    "title": "Base.empty",
+    "category": "method",
+    "text": "empty(tree::AbstractTree)\n\nConstruct an empty tree of the same type with the input one.\n\n\n\n\n\n"
 },
 
 {
@@ -1357,7 +1381,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Quantum numbers",
     "title": "Hamiltonian.Utilities.QuantumNumber.qnscompression",
     "category": "constant",
-    "text": "qnscompression\n\nIndicate that findall and reorder use the compressed contents.\n\n\n\n\n\n"
+    "text": "qnscompression\n\nIndicate that findall and permute use the compressed contents.\n\n\n\n\n\n"
 },
 
 {
@@ -1381,7 +1405,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Quantum numbers",
     "title": "Hamiltonian.Utilities.QuantumNumber.qnsexpansion",
     "category": "constant",
-    "text": "qnsexpansion\n\nIndicate that findall and reorder use the expanded contents.\n\n\n\n\n\n"
+    "text": "qnsexpansion\n\nIndicate that findall and permute use the expanded contents.\n\n\n\n\n\n"
 },
 
 {
@@ -1429,7 +1453,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Quantum numbers",
     "title": "Hamiltonian.Utilities.QuantumNumber.QuantumNumbers",
     "category": "type",
-    "text": "QuantumNumbers(qn::AbstractQuantumNumber,count::Int=1)\n\nConstruct a QuantumNumbers with one unique quantum number which occurs count times.\n\n\n\n\n\n"
+    "text": "QuantumNumbers(form::Char,contents::Vector{<:AbstractQuantumNumber},counts::Vector{Int},::QnsCounts)\nQuantumNumbers(form::Char,contents::Vector{<:AbstractQuantumNumber},indptr::Vector{Int},::QnsIndptr)\n\nThe whole quantum numbers of the total bases of a Hilbert space.\n\nThe default constructors construct a QuantumNumbers from a vector of concrete quantum numbers and an vector containing their counts or indptr.\n\n\n\n\n\n"
 },
 
 {
@@ -1437,7 +1461,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Quantum numbers",
     "title": "Hamiltonian.Utilities.QuantumNumber.QuantumNumbers",
     "category": "type",
-    "text": "QuantumNumbers(form::Char,contents::Vector{<:AbstractQuantumNumber},counts::Vector{Int},::QnsCounts)\nQuantumNumbers(form::Char,contents::Vector{<:AbstractQuantumNumber},indptr::Vector{Int},::QnsIndptr)\n\nThe whole quantum numbers of the total bases of a Hilbert space.\n\nThe default constructors construct a QuantumNumbers from a vector of concrete quantum numbers and an vector containing their counts or indptr.\n\n\n\n\n\n"
+    "text": "QuantumNumbers(qn::AbstractQuantumNumber,count::Int=1)\n\nConstruct a QuantumNumbers with one unique quantum number which occurs count times.\n\n\n\n\n\n"
 },
 
 {
@@ -1489,17 +1513,17 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.QuantumNumber.:⊕-Union{Tuple{Tuple{Vararg{#s15,N}} where #s15<:AbstractQuantumNumber}, Tuple{N}, Tuple{Tuple{Vararg{#s14,N}} where #s14<:AbstractQuantumNumber,Tuple{Vararg{Int64,N}}}} where N",
+    "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.:⊕-Union{Tuple{Tuple{Vararg{#s15,N}} where #s15<:AbstractQuantumNumber}, Tuple{N}, Tuple{Tuple{Vararg{#s14,N}} where #s14<:AbstractQuantumNumber,Tuple{Vararg{Int64,N}}}} where N",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.QuantumNumber.:⊕",
+    "title": "Hamiltonian.Utilities.:⊕",
     "category": "method",
     "text": "⊕(qns::NTuple{N,<:AbstractQuantumNumber},signs::NTuple{N,Int}=ntuple(i->1,N)) where N -> QuantumNumbers\n⊕(qnses::NTuple{N,QuantumNumbers{QN}},signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:AbstractQuantumNumber} -> QuantumNumbers{QN}\n\nGet the direct sum of some AbstractQuantumNumbers or QuantumNumberses.\n\nnote: Note\nPhysically, the direct sum of a couple of AbstractQuantumNumbers or QuantumNumberses is defined by the direct sum of the bases of the Hilbert spaces they represent. Therefore, the input AbstractQuantumNumbers or QuantumNumberses must be homogenous. Inhomogenous \'AbstractQuantumNumber\'s must be direct producted first to ensure homogenity before the direct sum.\nApparently, the dimension of the result equals the summation of those of the inputs, which means, even for AbstractQuantumNumbers, the result will be naturally a QuantumNumbers because the dimension of the result is largeer than 1.\nSigns of AbstractQuantumNumbers or QuantumNumberses can be provided when getting their direct sums.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.QuantumNumber.:⊗-Union{Tuple{QN}, Tuple{Type{QN},AbstractQuantumNumber,AbstractQuantumNumber}} where QN<:Hamiltonian.Utilities.QuantumNumber.AbstractQuantumNumber",
+    "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.:⊗-Union{Tuple{QN}, Tuple{Type{QN},AbstractQuantumNumber,AbstractQuantumNumber}} where QN<:Hamiltonian.Utilities.QuantumNumber.AbstractQuantumNumber",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.QuantumNumber.:⊗",
+    "title": "Hamiltonian.Utilities.:⊗",
     "category": "method",
     "text": "⊗(::Type{QN},qn1::AbstractQuantumNumber,qn2::AbstractQuantumNumber) where QN<:AbstractQuantumNumber -> QN\n⊗(qns::NTuple{N,<:AbstractQuantumNumber},signs::NTuple{N,Int}=ntuple(i->1,N)) where N -> eltype(qns)\n⊗(qnses::NTuple{N,QuantumNumbers{QN}},signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:AbstractQuantumNumber} -> QuantumNumbers{QN}\n\nGet the direct product of some AbstractQuantumNumbers or QuantumNumberses.\n\nnote: Note\nPhysically, the direct product of a couple of AbstractQuantumNumbers or QuantumNumberses are defined by the direct product of the bases of the Hilbert spaces they represent. Therefore, QuantumNumbers with differenct types or QuantumNumberses with differenct eltypes are allowed to be direct producted in principle. However, for simplicity, we only implement a method which handle the situation of two AbstractQuantumNumbers with differenct types. The type of the result should be provided as the first parameter. Note that in this situation, the fieldnames and periods of the result type must be exactly equal to the flattened fieldnames and periods of the two input AbstractQuantumNumbers, which means, even the order of the input AbstractQuantumNumbers matters.\nApparently, the dimension of the result equals the product of those of the inputs. Therefore, the direct product of AbstractQuantumNumbers is also a AbstractQuantumNumber since its dimension is still one.\nFor other situations except the one mentioned in Note.1, the input AbstractQuantumNumbers or QuantumNumberses must be homogenous. Meanwhile, signs can also be provided for these situations. Note that each quantum number in the contents of the result is obtained by a summation of the corresponding quanum numbers out of the inputs with the correct signs. This is a direct observation of the Abelian nature of our quantum numbers.\n\n\n\n\n\n"
 },
@@ -1577,22 +1601,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.QuantumNumber.reorder-Tuple{Hamiltonian.Utilities.QuantumNumber.QuantumNumbers,Array{Int64,1},Hamiltonian.Utilities.QuantumNumber.QnsCompression}",
-    "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.QuantumNumber.reorder",
-    "category": "method",
-    "text": "reorder(qns::QuantumNumbers,permutation::Vector{Int},::QnsCompression) -> QuantumNumbers\nreorder(qns::QuantumNumbers,permutation::Vector{Int},::QnsExpansion) -> QuantumNumbers\n\nReorder the quantum numbers contained in a QuantumNumbers with a permutation and return the new one.\n\nFor qnscompression case, the permutation is for the compressed contents of the original QuantumNumbers while for qnsexpansion case, the permutation is for the expanded contents of the original QuantumNumbers.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.QuantumNumber.subset-Union{Tuple{QN}, Tuple{QuantumNumbers{QN},QN}} where QN<:Hamiltonian.Utilities.QuantumNumber.AbstractQuantumNumber",
-    "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.QuantumNumber.subset",
-    "category": "method",
-    "text": "subset(qns::QuantumNumbers{QN},target::QN) where QN<:AbstractQuantumNumber -> QuantumNumbers{QN}\nsubset(qns::QuantumNumbers{QN},targets::NTuple{N,QN}) where {N,QN<:AbstractQuantumNumber} -> QuantumNumbers{QN}\n\nFind a subset of a QuantumNumbers by picking out the quantum numbers in targets.\n\n\n\n\n\n"
-},
-
-{
     "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.QuantumNumber.toordereddict-Tuple{Hamiltonian.Utilities.QuantumNumber.QuantumNumbers,Hamiltonian.Utilities.QuantumNumber.QnsIndptr}",
     "page": "Quantum numbers",
     "title": "Hamiltonian.Utilities.QuantumNumber.toordereddict",
@@ -1625,6 +1633,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.permute-Tuple{Hamiltonian.Utilities.QuantumNumber.QuantumNumbers,Array{Int64,1},Hamiltonian.Utilities.QuantumNumber.QnsCompression}",
+    "page": "Quantum numbers",
+    "title": "Hamiltonian.Utilities.permute",
+    "category": "method",
+    "text": "permute(qns::QuantumNumbers,permutation::Vector{Int},::QnsCompression) -> QuantumNumbers\npermute(qns::QuantumNumbers,permutation::Vector{Int},::QnsExpansion) -> QuantumNumbers\n\nReorder the quantum numbers contained in a QuantumNumbers with a permutation and return the new one.\n\nFor qnscompression case, the permutation is for the compressed contents of the original QuantumNumbers while for qnsexpansion case, the permutation is for the expanded contents of the original QuantumNumbers.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Utilities/QuantumNumber.html#Base.:*-Tuple{Hamiltonian.Utilities.QuantumNumber.AbstractQuantumNumber,Integer}",
     "page": "Quantum numbers",
     "title": "Base.:*",
@@ -1637,7 +1653,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Quantum numbers",
     "title": "Base.:+",
     "category": "method",
-    "text": "+(qn::AbstractQuantumNumber) -> typeof(qn)\n+(qn::QN,qns::QN...) where QN<:AbstractQuantumNumber -> QN\n+(qns::QuantumNumbers) -> QuantumNumbers\n+(qn::QN,qns::QuantumNumbers{QN}) where QN<:AbstractQuantumNumber -> QuantumNumbers{QN}\n+(qns::QuantumNumbers{QN},qn::QN) where QN<:AbstractQuantumNumber -> QuantumNumbers{QN}\n\nOverloaded + operator for AbstractQuantumNumber and QuantumNumbers.\n\nnote: Note\nThe addition between a QuantumNumbers and a AbstractQuantumNumber is just a global shift of the contents of the QuantumNumbers by the AbstractQuantumNumber, therefore, the result is a QuantumNumbers.\n+ cannot be used between two QuantumNumbers because the result is ambiguous. Instead, use ⊕ for direct sum and ⊗ for direct product.\nTo ensure type stability, two AbstractQuantumNumber can be added together if and only if they are of the same type.\nSimilarly, a AbstractQuantumNumber and a QuantumNumbers can be added together if and only if the former\'s type is the same with the latter\'s eltype.\n\n\n\n\n\n"
+    "text": "+(qn::AbstractQuantumNumber) -> typeof(qn)\n+(qn::QN,qns::QN...) where QN<:AbstractQuantumNumber -> QN\n+(qns::QuantumNumbers) -> QuantumNumbers\n+(qn::QN,qns::QuantumNumbers{QN}) where QN<:AbstractQuantumNumber -> QuantumNumbers{QN}\n+(qns::QuantumNumbers{QN},qn::QN) where QN<:AbstractQuantumNumber -> QuantumNumbers{QN}\n\nOverloaded + operator for AbstractQuantumNumber and QuantumNumbers.\n\nnote: Note\nThe addition between a QuantumNumbers and an AbstractQuantumNumber is just a global shift of the contents of the QuantumNumbers by the AbstractQuantumNumber, therefore, the result is a QuantumNumbers.\n+ cannot be used between two QuantumNumbers because the result is ambiguous. Instead, use ⊕ for direct sum and ⊗ for direct product.\nTo ensure type stability, two AbstractQuantumNumber can be added together if and only if they are of the same type.\nSimilarly, a AbstractQuantumNumber and a QuantumNumbers can be added together if and only if the former\'s type is the same with the latter\'s eltype.\n\n\n\n\n\n"
 },
 
 {
@@ -1673,11 +1689,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/QuantumNumber.html#Base.findall-Union{Tuple{QN}, Tuple{QuantumNumbers{QN},QN,Union{QnsCompression, QnsExpansion}}} where QN<:Hamiltonian.Utilities.QuantumNumber.AbstractQuantumNumber",
+    "location": "man/Utilities/QuantumNumber.html#Base.filter-Union{Tuple{QN}, Tuple{QN,QuantumNumbers{QN}}} where QN<:Hamiltonian.Utilities.QuantumNumber.AbstractQuantumNumber",
+    "page": "Quantum numbers",
+    "title": "Base.filter",
+    "category": "method",
+    "text": "filter(target::QN,qns::QuantumNumbers{QN}) where QN<:AbstractQuantumNumber -> QuantumNumbers{QN}\nfilter(targets::NTuple{N,QN},qns::QuantumNumbers{QN}) where {N,QN<:AbstractQuantumNumber} -> QuantumNumbers{QN}\n\nFind a subset of a QuantumNumbers by picking out the quantum numbers in targets.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/QuantumNumber.html#Base.findall-Union{Tuple{QN}, Tuple{QN,QuantumNumbers{QN},QnsCompression}} where QN<:Hamiltonian.Utilities.QuantumNumber.AbstractQuantumNumber",
     "page": "Quantum numbers",
     "title": "Base.findall",
     "category": "method",
-    "text": "findall(qns::QuantumNumbers{QN},target::QN,choice::Union{QnsCompression,QnsExpansion}) where QN<:AbstractQuantumNumber -> Vector{Int}\nfindall(qns::QuantumNumbers{QN},targets::NTuple{N,QN},::QnsCompression) where {N,QN<:AbstractQuantumNumber} -> Vector{Int}\nfindall(qns::QuantumNumbers{QN},targets::NTuple{N,QN},::QnsExpansion) where {N,QN<:AbstractQuantumNumber} -> Vector{Int}\n\nFind all the indices of the target quantum numbers in the contents (qnscompression case) or the expansion (qnsexpansion case) of a QuantumNumbers.\n\n\n\n\n\n"
+    "text": "findall(target::QN,qns::QuantumNumbers{QN},::QnsCompression) where QN<:AbstractQuantumNumber -> Vector{Int}\nfindall(target::QN,qns::QuantumNumbers{QN},::QnsExpansion) where QN<:AbstractQuantumNumber -> Vector{Int}\nfindall(targets::NTuple{N,QN},qns::QuantumNumbers{QN},::QnsCompression) where {N,QN<:AbstractQuantumNumber} -> Vector{Int}\nfindall(targets::NTuple{N,QN},qns::QuantumNumbers{QN},::QnsExpansion) where {N,QN<:AbstractQuantumNumber} -> Vector{Int}\n\nFind all the indices of the target quantum numbers in the contents (qnscompression case) or the expansion (qnsexpansion case) of a QuantumNumbers.\n\n\n\n\n\n"
 },
 
 {
