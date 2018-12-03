@@ -64,7 +64,7 @@ end
 
 Show a concrete `AbstractNamedVector`.
 """
-Base.show(io::IO,nv::AbstractNamedVector)=@printf io "%s(%s)" nv|>typeof|>nameof join(nv|>values,',')
+Base.show(io::IO,nv::AbstractNamedVector)=@printf io "%s(%s)" nv|>typeof|>nameof join(repr.(nv|>values),',')
 
 """
     hash(nv::AbstractNamedVector,h::UInt)
@@ -138,7 +138,7 @@ Base.pairs(nv::AbstractNamedVector)=Base.Generator(=>,keys(nv),values(nv))
 
 Return a copy of a concrete `AbstractNamedVector` with some of the field values replaced by the keyword arguments.
 """
-Base.replace(nv::AbstractNamedVector;kwargs...)=(nv|>typeof)((get(kwargs,key,getfield(nv,key)) for key in nv|>keys)...)
+Base.replace(nv::AbstractNamedVector;kwargs...)=typeof(nv).name.wrapper((get(kwargs,key,getfield(nv,key)) for key in nv|>keys)...)
 
 """
     map(f,nvs::NV...) where NV<:AbstractNamedVector -> NV

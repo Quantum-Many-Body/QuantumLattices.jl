@@ -106,7 +106,7 @@ end
 end
 
 @testset "PID" begin
-    @test PID(scope="tz",site=1)|>string=="PID(tz,1)"
+    @test PID(scope="tz",site=1)|>string=="PID(\"tz\",1)"
 end
 
 @testset "Point" begin

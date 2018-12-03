@@ -10,7 +10,7 @@ end
     @test NHPID|>length==2
 
     pid=NHPID("A",0)
-    @test pid|>string=="NHPID(A,0)"
+    @test pid|>string=="NHPID(\"A\",0)"
     @test pid|>length==2
     @test pid[1]==pid.scope=="A"
     @test pid[2]==pid.site==0
