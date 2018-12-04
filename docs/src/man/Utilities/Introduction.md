@@ -4,7 +4,7 @@ CurrentModule=Hamiltonian.Utilities
 
 # Introduction
 
-This module contains the Utilities of the Hamiltonian package, all of whose variables will **NOT** be exported by `Hamiltonian`.
+This module contains the utilities of the Hamiltonian package, all of whose variables will **NOT** be exported by `Hamiltonian`.
 
 ## Useful constants and functions
 
@@ -34,6 +34,7 @@ permute
 ```@contents
 Pages=[
     "Factory.md",
+    "CompositeStructure.md",
     "Tree.md",
     "NamedVector.md",
     ]

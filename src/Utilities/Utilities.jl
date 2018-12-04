@@ -120,6 +120,7 @@ function dimension end
 function permute end
 
 include("Factory.jl")
+include("CompositeStructure.jl")
 include("Tree.jl")
 include("NamedVector.jl")
 include("QuantumNumber.jl")

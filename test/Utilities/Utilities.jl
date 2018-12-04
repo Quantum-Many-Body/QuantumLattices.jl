@@ -34,6 +34,10 @@
         include("Factory.jl")
     end
 
+    @testset "CompositeStructure" begin
+        include("CompositeStructure.jl")
+    end
+
     @testset "Tree" begin
         include("Tree.jl")
     end

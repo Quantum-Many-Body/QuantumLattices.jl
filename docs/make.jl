@@ -17,6 +17,7 @@ makedocs(
                                 "Utilities" =>  [
                                         "man/Utilities/Introduction.md",
                                         "man/Utilities/Factory.md",
+                                        "man/Utilities/CompositeStructure.md",
                                         "man/Utilities/Tree.md",
                                         "man/Utilities/NamedVector.md",
                                         "man/Utilities/QuantumNumber.md",
