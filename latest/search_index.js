@@ -85,7 +85,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "Introduction",
     "category": "section",
-    "text": "This module contains the Utilities of the Hamiltonian package, all of whose variables will NOT be exported by Hamiltonian."
+    "text": "This module contains the utilities of the Hamiltonian package, all of whose variables will NOT be exported by Hamiltonian."
 },
 
 {
@@ -213,7 +213,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "Prerequisites for Essentials",
     "category": "section",
-    "text": "Pages=[\n    \"Factory.md\",\n    \"Tree.md\",\n    \"NamedVector.md\",\n    ]\nDepth=2"
+    "text": "Pages=[\n    \"Factory.md\",\n    \"CompositeStructure.md\",\n    \"Tree.md\",\n    \"NamedVector.md\",\n    ]\nDepth=2"
 },
 
 {
@@ -782,6 +782,62 @@ var documenterSearchIndex = {"docs": [
     "title": "Manual",
     "category": "section",
     "text": "Modules=[Factory]\nOrder=  [:module,:constant,:type,:macro,:function]"
+},
+
+{
+    "location": "man/Utilities/CompositeStructure.html#",
+    "page": "Composite structure",
+    "title": "Composite structure",
+    "category": "page",
+    "text": "CurrentModule=Hamiltonian.Utilities.CompositeStructure"
+},
+
+{
+    "location": "man/Utilities/CompositeStructure.html#Composite-structure-1",
+    "page": "Composite structure",
+    "title": "Composite structure",
+    "category": "section",
+    "text": "In principle, Julia is not an object-oriented programming language. For example, only abstract types can be inherited so that subtype cannot inherit fields from their parents. Therefore, Julia prefers composition over inheritance. However, to make a new concrete type behaves much alike another one, tedious reputitions of redifining the generic interfaces are usually not avoidable, especially for the basic types in Julia base. In this module, we implement two such composited types, CompositeVector and CompositeDict, for the sake of future usages."
+},
+
+{
+    "location": "man/Utilities/CompositeStructure.html#Composite-vector-1",
+    "page": "Composite structure",
+    "title": "Composite vector",
+    "category": "section",
+    "text": "A composite vector is a vector that is implemented by including an ordinary Vector as one of its attributes with the name :contents.To take full advantages of the Julia base, the following interfaces are redined:inquiry of info: size, length\ncomparison between objects: ==, isequal\nobtainment of old elements: getindex\nmodification of old elements: setindex!\naddition of new elements: push!, pushfirst!, insert!, append!, prepend!\nremoval of old elements: splice!, deleteat!, pop!, popfirst!, empty!\nconstruction of new objects: empty, reverse, similar\niteration: iterate, keys, values, pairsComposite vectors are suited for the situations where other attributes are not affected by the modification of the elements. Note that arithmatic operations and logical operations excluding == and isequal are not supported."
+},
+
+{
+    "location": "man/Utilities/CompositeStructure.html#Composite-dict-1",
+    "page": "Composite structure",
+    "title": "Composite dict",
+    "category": "section",
+    "text": "A composite dict is a dict that is implemented by including an ordinary Dict as one of its attributes with the name :contents.To take full advantages of the Julia base, the following interfaces are redined:inquiry of info: isempty, length, haskey, in, hash\ncomparison between objects: ==, isequal\nobtainment of old elements: get, getkey, getindex\nmodification and addition of elements: push!, get!, setindex!\nremoval of old elements: pop!, delete!, empty!\nconstruction of new objects: merge, empty\niteration: iterate, keys, values, pairsAs is similar to composite vectors, composite dicts are suited for the situations where other attributes are not affected by the modification of the elements."
+},
+
+{
+    "location": "man/Utilities/CompositeStructure.html#Hamiltonian.Utilities.CompositeStructure.CompositeDict",
+    "page": "Composite structure",
+    "title": "Hamiltonian.Utilities.CompositeStructure.CompositeDict",
+    "category": "type",
+    "text": "CompositeDict{K,V}\n\nA composite dict is a dict that is implemented by including an ordinary Dict as one of its attributes with the name :contents.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/CompositeStructure.html#Hamiltonian.Utilities.CompositeStructure.CompositeVector",
+    "page": "Composite structure",
+    "title": "Hamiltonian.Utilities.CompositeStructure.CompositeVector",
+    "category": "type",
+    "text": "CompositeVector{T}\n\nA composite vector is a vector that is implemented by including an ordinary Vector as one of its attributes with the name :contents.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/CompositeStructure.html#Manul-1",
+    "page": "Composite structure",
+    "title": "Manul",
+    "category": "section",
+    "text": "Modules=[CompositeStructure]\nOrder=  [:module,:constant,:type,:macro,:function]"
 },
 
 {
