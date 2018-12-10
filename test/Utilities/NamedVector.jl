@@ -22,6 +22,8 @@ end
 
     @test NHPID("A",2.0)<NHPID("B",0.0)
     @test NHPID("A",2.0)<NHPID("A",3.0)
+    @test isless(NHPID("A",2.0),NHPID("B",0.0))
+    @test isless(NHPID("A",2.0),NHPID("A",3.0))
 
     dict=Dict(NHPID("A",0)=>1,NHPID("A",1)=>2)
     @test dict[NHPID("A",0)]==1
@@ -36,6 +38,7 @@ end
     @test FPID|>length==2
     @test FPID|>eltype==Float64
     @test FPID|>zero==FPID(0.0,0.0)
+    @test isequal(FPID|>zero,FPID(0.0,0.0))
 
     pid=FPID(1.0,0.0)
     @test pid|>string=="FPID(1.0,0.0)"
@@ -52,6 +55,8 @@ end
 
     @test FPID(1.0,2.0)<FPID(2.0,0.0)
     @test FPID(1.0,2.0)<FPID(1.0,3.0)
+    @test isless(FPID(1.0,2.0),FPID(2.0,0.0))
+    @test isless(FPID(1.0,2.0),FPID(1.0,3.0))
 
     dict=Dict(FPID(0.0,0.0)=>1,FPID(0.0,1.0)=>2)
     @test dict[FPID(0.0,0.0)]==1

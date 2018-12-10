@@ -38,11 +38,28 @@ Overloaded `==` operator. Two named vector are equal to each other if and only i
 Base.:(==)(nv1::AbstractNamedVector,nv2::AbstractNamedVector)=nv1|>keys==nv2|>keys && nv1|>values==nv2|>values
 
 """
+    isequal(nv1::AbstractNamedVector,nv2::AbstractNamedVector) -> Bool
+
+Judge whehter two named vectors are equal to each other. Two named vector are equal to each other if and only if their keys as well as their values are equal to each other.
+!!! note
+    It is not necessary for two named vectors to be of the same concrete type to be equal to each other.
+"""
+Base.isequal(nv1::AbstractNamedVector,nv2::AbstractNamedVector)=isequal(nv1|>keys,nv2|>keys) && isequal(nv1|>values,nv2|>values)
+
+"""
     <(nv1:NV,nv2:NV) where NV<:AbstractNamedVector -> Bool
 
 Overloaded `<` operator.
 """
-Base.:<(nv1::NV,nv2::NV) where NV<:AbstractNamedVector=isless(nv1,nv2)
+@generated function Base.:<(nv1::NV,nv2::NV) where NV<:AbstractNamedVector
+    N=NV|>fieldnames|>length
+    expr=Expr(:if,:(getfield(nv1,$N)<getfield(nv2,$N)),true,false)
+    for i in range(N-1,stop=1,step=-1)
+        expr=Expr(:if,:(getfield(nv1,$i)>getfield(nv2,$i)),false,expr)
+        expr=Expr(:if,:(getfield(nv1,$i)<getfield(nv2,$i)),true,expr)
+    end
+    return expr
+end
 
 """
     isless(nv1::NV,nv2::NV) where NV<:AbstractNamedVector -> Bool
@@ -51,10 +68,10 @@ Overloaded `isless` function.
 """
 @generated function Base.isless(nv1::NV,nv2::NV) where NV<:AbstractNamedVector
     N=NV|>fieldnames|>length
-    expr=Expr(:if,:(getfield(nv1,$N)<getfield(nv2,$N)),true,false)
+    expr=Expr(:if,:(isless(getfield(nv1,$N),getfield(nv2,$N))),true,false)
     for i in range(N-1,stop=1,step=-1)
-        expr=Expr(:if,:(getfield(nv1,$i)>getfield(nv2,$i)),false,expr)
-        expr=Expr(:if,:(getfield(nv1,$i)<getfield(nv2,$i)),true,expr)
+        expr=Expr(:if,:(isless(getfield(nv2,$i),getfield(nv1,$i))),false,expr)
+        expr=Expr(:if,:(isless(getfield(nv1,$i),getfield(nv2,$i))),true,expr)
     end
     return expr
 end
