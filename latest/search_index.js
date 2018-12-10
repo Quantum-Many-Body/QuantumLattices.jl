@@ -1297,6 +1297,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Utilities/NamedVector.html#Base.isequal-Tuple{Hamiltonian.Utilities.NamedVector.AbstractNamedVector,Hamiltonian.Utilities.NamedVector.AbstractNamedVector}",
+    "page": "Named vector",
+    "title": "Base.isequal",
+    "category": "method",
+    "text": "isequal(nv1::AbstractNamedVector,nv2::AbstractNamedVector) -> Bool\n\nJudge whehter two named vectors are equal to each other. Two named vector are equal to each other if and only if their keys as well as their values are equal to each other.\n\nnote: Note\nIt is not necessary for two named vectors to be of the same concrete type to be equal to each other.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Utilities/NamedVector.html#Base.isless-Union{Tuple{NV}, Tuple{NV,NV}} where NV<:Hamiltonian.Utilities.NamedVector.AbstractNamedVector",
     "page": "Named vector",
     "title": "Base.isless",
