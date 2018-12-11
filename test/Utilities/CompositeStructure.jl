@@ -1,5 +1,26 @@
 using Hamiltonian.Utilities.CompositeStructure
 
+struct FT{S,N,T} <: CompositeNTuple{N,T}
+    info::S
+    contents::NTuple{N,T}
+end
+
+@testset "CompositeNTuple" begin
+    t=FT("Info",(1,2,3,4))
+    @test t|>length==4
+    @test t|>typeof|>length==4
+    @test t|>eltype==Int
+    @test t|>typeof|>eltype==Int
+    @test t==deepcopy(t)
+    @test isequal(t,deepcopy(t))
+    @test t[1]==1
+    @test t[1:3]==FT("Info",(1,2,3))
+    @test collect(t)==[1,2,3,4]
+    @test t|>keys==t.contents|>keys
+    @test t|>values==t.contents|>values
+    @test t|>pairs==t.contents|>pairs
+end
+
 struct FV{S,T} <: CompositeVector{T}
     info::S
     contents::Vector{T}
