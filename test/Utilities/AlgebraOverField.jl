@@ -31,6 +31,8 @@ end
 
     @test SMPID(1,2)<SMPID(1,Inf)
     @test SMPID(2,1)<SMPID(1,2)⊗SMPID(1,Inf)
+    @test isless(SMPID(1,2),SMPID(1,Inf))
+    @test isless(SMPID(2,1),SMPID(1,2)⊗SMPID(1,Inf))
     @test SMPID(2,1)⊗SMPID(1,Inf)<SMPID(2,1)⊗SMPID(2,Inf)
 end
 
