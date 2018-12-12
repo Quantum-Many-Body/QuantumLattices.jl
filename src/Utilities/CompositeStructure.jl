@@ -25,6 +25,7 @@ Base.iterate(ct::CompositeNTuple,state)=iterate(ct.contents,state)
 Base.keys(ct::CompositeNTuple)=keys(ct.contents)
 Base.values(ct::CompositeNTuple)=values(ct.contents)
 Base.pairs(ct::CompositeNTuple)=pairs(ct.contents)
+Base.convert(::Type{Tuple},ct::CompositeNTuple)=ct.contents
 
 """
     CompositeVector{T}
@@ -67,6 +68,7 @@ Base.iterate(cv::CompositeVector,state=1)=iterate(cv.contents,state)
 Base.keys(cv::CompositeVector)=keys(cv.contents)
 Base.values(cv::CompositeVector)=values(cv.contents)
 Base.pairs(cv::CompositeVector)=pairs(cv.contents)
+Base.convert(::Type{Vector},cv::CompositeVector)=cv.contents
 
 """
     CompositeDict{K,V}
@@ -106,5 +108,6 @@ Base.iterate(cd::CompositeDict,state)=iterate(cd.contents,state)
 Base.keys(cd::CompositeDict)=keys(cd.contents)
 Base.values(cd::CompositeDict)=values(cd.contents)
 Base.pairs(cd::CompositeDict)=pairs(cd.contents)
+Base.convert(::Type{Dict},cd::CompositeDict)=cd.contents
 
 end #module

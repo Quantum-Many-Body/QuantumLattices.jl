@@ -16,9 +16,10 @@ end
     @test t[1]==1
     @test t[1:3]==FT("Info",(1,2,3))
     @test collect(t)==[1,2,3,4]
-    @test t|>keys==t.contents|>keys
-    @test t|>values==t.contents|>values
-    @test t|>pairs==t.contents|>pairs
+    @test t|>keys==(1,2,3,4)|>keys
+    @test t|>values==(1,2,3,4)|>values
+    @test t|>pairs==(1,2,3,4)|>pairs
+    @test convert(Tuple,t)==(1,2,3,4)
 end
 
 struct FV{S,T} <: CompositeVector{T}
@@ -57,9 +58,10 @@ end
     v=FV("Info",[1,3,2,2,4])
     @test empty(v)==FV("Info",Int[])
     @test v|>collect==[1,3,2,2,4]
-    @test v|>keys==v.contents|>keys
-    @test v|>values==v.contents|>values
-    @test v|>pairs==v.contents|>pairs
+    @test v|>keys==[1,3,2,2,4]|>keys
+    @test v|>values==[1,3,2,2,4]|>values
+    @test v|>pairs==[1,3,2,2,4]|>pairs
+    @test convert(Vector,v)==[1,3,2,2,4]
     @test v|>reverse==FV("Info",[4,2,2,3,1])
     @test sort(v)==FV("Info",[1,2,2,3,4]) && v==FV("Info",[1,3,2,2,4])
     @test sort!(v)==FV("Info",[1,2,2,3,4]) && v==FV("Info",[1,2,2,3,4])
@@ -102,10 +104,11 @@ end
     @test merge(FD("Info",Dict("a"=>1,"b"=>2)),FD("Info",Dict("c"=>3,"d"=>4)))==d
     @test merge(+,FD("Info",Dict("a"=>1,"b"=>2,"c"=>1)),FD("Info",Dict("c"=>2,"d"=>4)))==d
     @test empty(d)==FD("Info",Dict{String,Int}())
-    @test d|>collect==d.contents|>collect
-    @test d|>keys==d.contents|>keys
-    @test d|>values==d.contents|>values
-    @test d|>pairs==d.contents|>pairs
+    @test d|>collect==Dict("a"=>1,"b"=>2,"c"=>3,"d"=>4)|>collect
+    @test d|>keys|>collect==Dict("a"=>1,"b"=>2,"c"=>3,"d"=>4)|>keys|>collect
+    @test d|>values|>collect==Dict("a"=>1,"b"=>2,"c"=>3,"d"=>4)|>values|>collect
+    @test d|>pairs|>collect==Dict("a"=>1,"b"=>2,"c"=>3,"d"=>4)|>pairs|>collect
+    @test convert(Dict,d)==Dict("a"=>1,"b"=>2,"c"=>3,"d"=>4)
     @test filter(p->p.second<=3,d)==FD("Info",Dict("a"=>1,"b"=>2,"c"=>3)) && d==FD("Info",Dict("a"=>1,"b"=>2,"c"=>3,"d"=>4))
     @test filter!(p->p.second<=3,d)==FD("Info",Dict("a"=>1,"b"=>2,"c"=>3)) && d==FD("Info",Dict("a"=>1,"b"=>2,"c"=>3))
 end
