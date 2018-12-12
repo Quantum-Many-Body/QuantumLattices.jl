@@ -47,13 +47,15 @@ Judge whehter two named vectors are equal to each other. Two named vector are eq
 Base.isequal(nv1::AbstractNamedVector,nv2::AbstractNamedVector)=isequal(nv1|>keys,nv2|>keys) && isequal(nv1|>values,nv2|>values)
 
 """
-    <(nv1:NV,nv2:NV) where NV<:AbstractNamedVector -> Bool
+    <(nv1::AbstractNamedVector,nv2::AbstractNamedVector) -> Bool
 
 Overloaded `<` operator.
 """
-@generated function Base.:<(nv1::NV,nv2::NV) where NV<:AbstractNamedVector
-    N=NV|>fieldnames|>length
-    expr=Expr(:if,:(getfield(nv1,$N)<getfield(nv2,$N)),true,false)
+@generated function Base.:<(nv1::AbstractNamedVector,nv2::AbstractNamedVector)
+    n1,n2=nv1|>fieldcount,nv2|>fieldcount
+    N=min(n1,n2)
+    expr=n1<n2 ? Expr(:if,:(getfield(nv1,$N)==getfield(nv2,$N)),true,false) : false
+    expr=Expr(:if,:(getfield(nv1,$N)<getfield(nv2,$N)),true,expr)
     for i in range(N-1,stop=1,step=-1)
         expr=Expr(:if,:(getfield(nv1,$i)>getfield(nv2,$i)),false,expr)
         expr=Expr(:if,:(getfield(nv1,$i)<getfield(nv2,$i)),true,expr)
@@ -62,13 +64,15 @@ Overloaded `<` operator.
 end
 
 """
-    isless(nv1::NV,nv2::NV) where NV<:AbstractNamedVector -> Bool
+    isless(nv1::AbstractNamedVector,nv2::AbstractNamedVector) -> Bool
 
 Overloaded `isless` function.
 """
-@generated function Base.isless(nv1::NV,nv2::NV) where NV<:AbstractNamedVector
-    N=NV|>fieldnames|>length
-    expr=Expr(:if,:(isless(getfield(nv1,$N),getfield(nv2,$N))),true,false)
+@generated function Base.isless(nv1::AbstractNamedVector,nv2::AbstractNamedVector)
+    n1,n2=nv1|>fieldcount,nv2|>fieldcount
+    N=min(n1,n2)
+    expr=n1<n2 ? Expr(:if,:(getfield(nv1,$N)==getfield(nv2,$N)),true,false) : false
+    expr=Expr(:if,:(isless(getfield(nv1,$N),getfield(nv2,$N))),true,expr)
     for i in range(N-1,stop=1,step=-1)
         expr=Expr(:if,:(isless(getfield(nv2,$i),getfield(nv1,$i))),false,expr)
         expr=Expr(:if,:(isless(getfield(nv1,$i),getfield(nv2,$i))),true,expr)
@@ -96,9 +100,9 @@ Base.hash(nv::AbstractNamedVector,h::UInt)=hash(nv|>values,h)
 
 Convert a named vector to tuple and vice versa.
 """
-@generated Base.convert(::Type{Tuple},nv::AbstractNamedVector)=Expr(:tuple,(:(getfield(nv,$i)) for i=1:(nv|>fieldnames|>length))...)
+@generated Base.convert(::Type{Tuple},nv::AbstractNamedVector)=Expr(:tuple,(:(getfield(nv,$i)) for i=1:(nv|>fieldcount))...)
 function Base.convert(::Type{NV},nv::Tuple) where NV<:AbstractNamedVector
-    @assert length(NV)==length(nv) "convert error: dismatched length between $(NV|>typeof)($(NV|>length)) and input tuple($(nv|>length))."
+    @assert NV|>fieldcount==nv|>length "convert error: dismatched length between $NV($(NV|>fieldcount)) and input tuple($(nv|>length))."
     return NV(nv...)
 end
 
@@ -108,7 +112,7 @@ end
 
 Get the length of a concrete `AbstractNamedVector`.
 """
-Base.length(::Type{NV}) where NV<:AbstractNamedVector=NV|>fieldnames|>length
+Base.length(::Type{NV}) where NV<:AbstractNamedVector=NV|>fieldcount
 Base.length(nv::AbstractNamedVector)=nv|>typeof|>length
 
 """
@@ -117,7 +121,7 @@ Base.length(nv::AbstractNamedVector)=nv|>typeof|>length
 
 Get a concrete `AbstractNamedVector` with all values being zero.
 """
-@generated Base.zero(::Type{NV}) where NV<:AbstractNamedVector=(zeros=(zero(fieldtype(NV,i)) for i=1:(NV|>fieldnames|>length));:(NV($(zeros...))))
+@generated Base.zero(::Type{NV}) where NV<:AbstractNamedVector=(zeros=(zero(fieldtype(NV,i)) for i=1:(NV|>fieldcount));:(NV($(zeros...))))
 Base.zero(nv::AbstractNamedVector)=nv|>typeof|>zero
 
 """
@@ -130,7 +134,7 @@ Base.iterate(nv::AbstractNamedVector,state=1)=state>length(nv) ? nothing : (getf
 Base.iterate(rv::Iterators.Reverse{<:AbstractNamedVector},state=length(rv.itr))=state<1 ? nothing : (getfield(rv.itr,state),state-1)
 
 """
-    keys(nv::AbstractNamedVector) -> NTuple(nv|>length,Symbol)
+    keys(nv::AbstractNamedVector) -> NTuple(nv|>fieldcount,Symbol)
 
 Iterate over the names.
 """
@@ -163,7 +167,7 @@ Base.replace(nv::AbstractNamedVector;kwargs...)=typeof(nv).name.wrapper((get(kwa
 Apply function `f` elementwise on the input named vectors.
 """
 @generated function Base.map(f,nvs::NV...) where NV<:AbstractNamedVector
-    exprs=Vector{Expr}(undef,NV|>fieldnames|>length)
+    exprs=Vector{Expr}(undef,NV|>fieldcount)
     for i=1:length(exprs)
         tmp=[:(nvs[$j][$i]) for j=1:length(nvs)]
         exprs[i]=:(f($(tmp...)))
