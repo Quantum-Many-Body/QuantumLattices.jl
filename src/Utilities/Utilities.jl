@@ -113,6 +113,9 @@ function ⊕ end
 "Generic interface of the direct product of some types."
 function ⊗ end
 
+"Generic interface of the rank of some types."
+function rank end
+
 "Generic interface of the dimension of some types."
 function dimension end
 
@@ -123,6 +126,7 @@ include("Factory.jl")
 include("CompositeStructure.jl")
 include("Tree.jl")
 include("NamedVector.jl")
+include("AlgebraOverField.jl")
 include("QuantumNumber.jl")
 
 end # module

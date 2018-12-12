@@ -37,6 +37,7 @@ Pages=[
     "CompositeStructure.md",
     "Tree.md",
     "NamedVector.md",
+    "AlgebraOverField.md",
     ]
 Depth=2
 ```

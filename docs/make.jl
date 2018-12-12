@@ -20,6 +20,7 @@ makedocs(
                                         "man/Utilities/CompositeStructure.md",
                                         "man/Utilities/Tree.md",
                                         "man/Utilities/NamedVector.md",
+                                        "man/Utilities/AlgebraOverField.md",
                                         "man/Utilities/QuantumNumber.md",
                                         ],
                                 "Essentials" => [
