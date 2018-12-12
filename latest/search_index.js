@@ -213,7 +213,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "Prerequisites for Essentials",
     "category": "section",
-    "text": "Pages=[\n    \"Factory.md\",\n    \"CompositeStructure.md\",\n    \"Tree.md\",\n    \"NamedVector.md\",\n    ]\nDepth=2"
+    "text": "Pages=[\n    \"Factory.md\",\n    \"CompositeStructure.md\",\n    \"Tree.md\",\n    \"NamedVector.md\",\n    \"AlgebraOverField.md\",\n    ]\nDepth=2"
 },
 
 {
@@ -797,21 +797,29 @@ var documenterSearchIndex = {"docs": [
     "page": "Composite structure",
     "title": "Composite structure",
     "category": "section",
-    "text": "In principle, Julia is not an object-oriented programming language. For example, only abstract types can be inherited so that subtype cannot inherit fields from their parents. Therefore, Julia prefers composition over inheritance. However, to make a new concrete type behaves much alike another one, tedious reputitions of redifining the generic interfaces are usually not avoidable, especially for the basic types in Julia base. In this module, we implement two such composited types, CompositeVector and CompositeDict, for the sake of future usages."
+    "text": "In principle, Julia is not an object-oriented programming language. For example, only abstract types can be inherited so that subtype cannot inherit fields from their parents. Therefore, Julia prefers composition over inheritance. However, to make a new concrete type behaves much alike another one, tedious reputitions of redifining the generic interfaces are usually not avoidable, especially for the basic types in Julia base. In this module, we implement three such composited types, CompositeNTuple, CompositeVector and CompositeDict, for the sake of future usages."
 },
 
 {
-    "location": "man/Utilities/CompositeStructure.html#Composite-vector-1",
+    "location": "man/Utilities/CompositeStructure.html#CompositeNTuple-1",
     "page": "Composite structure",
-    "title": "Composite vector",
+    "title": "CompositeNTuple",
+    "category": "section",
+    "text": "A composite ntuple is a ntuple that is implemented by including an ordinary NTuple as one of its attributes with the name :contents.To take full advantages of the Julia base, the following interfaces are defined:inquiry of info: length, eltype\ncomparison between objects: ==, isequal\nobtainment of old elements: getindex\niteration: iterate, keys, values, pairsComposite ntuples are suited for the situations where other attributes are not affected by the modification of the elements. Note that arithmatic operations and logical operations excluding == and isequal are not supported. Besides, a composite ntuple is not a tuple since Julia has no abstract tuples."
+},
+
+{
+    "location": "man/Utilities/CompositeStructure.html#CompositeVector-1",
+    "page": "Composite structure",
+    "title": "CompositeVector",
     "category": "section",
     "text": "A composite vector is a vector that is implemented by including an ordinary Vector as one of its attributes with the name :contents.To take full advantages of the Julia base, the following interfaces are redined:inquiry of info: size, length\ncomparison between objects: ==, isequal\nobtainment of old elements: getindex\nmodification of old elements: setindex!\naddition of new elements: push!, pushfirst!, insert!, append!, prepend!\nremoval of old elements: splice!, deleteat!, pop!, popfirst!, empty!\nconstruction of new objects: empty, reverse, similar\niteration: iterate, keys, values, pairsComposite vectors are suited for the situations where other attributes are not affected by the modification of the elements. Note that arithmatic operations and logical operations excluding == and isequal are not supported."
 },
 
 {
-    "location": "man/Utilities/CompositeStructure.html#Composite-dict-1",
+    "location": "man/Utilities/CompositeStructure.html#CompositeDict-1",
     "page": "Composite structure",
-    "title": "Composite dict",
+    "title": "CompositeDict",
     "category": "section",
     "text": "A composite dict is a dict that is implemented by including an ordinary Dict as one of its attributes with the name :contents.To take full advantages of the Julia base, the following interfaces are redined:inquiry of info: isempty, length, haskey, in, hash\ncomparison between objects: ==, isequal\nobtainment of old elements: get, getkey, getindex\nmodification and addition of elements: push!, get!, setindex!\nremoval of old elements: pop!, delete!, empty!\nconstruction of new objects: merge, empty\niteration: iterate, keys, values, pairsAs is similar to composite vectors, composite dicts are suited for the situations where other attributes are not affected by the modification of the elements."
 },
@@ -822,6 +830,14 @@ var documenterSearchIndex = {"docs": [
     "title": "Hamiltonian.Utilities.CompositeStructure.CompositeDict",
     "category": "type",
     "text": "CompositeDict{K,V}\n\nA composite dict is a dict that is implemented by including an ordinary Dict as one of its attributes with the name :contents.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/CompositeStructure.html#Hamiltonian.Utilities.CompositeStructure.CompositeNTuple",
+    "page": "Composite structure",
+    "title": "Hamiltonian.Utilities.CompositeStructure.CompositeNTuple",
+    "category": "type",
+    "text": "CompositeNTuple{N,T}\n\nA composite ntuple is a ntuple that is implemented by including an ordinary NTuple as one of its attributes with the name :contents.\n\n\n\n\n\n"
 },
 
 {
@@ -1249,11 +1265,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/NamedVector.html#Base.:<-Union{Tuple{NV}, Tuple{NV,NV}} where NV<:Hamiltonian.Utilities.NamedVector.AbstractNamedVector",
+    "location": "man/Utilities/NamedVector.html#Base.:<-Tuple{Hamiltonian.Utilities.NamedVector.AbstractNamedVector,Hamiltonian.Utilities.NamedVector.AbstractNamedVector}",
     "page": "Named vector",
     "title": "Base.:<",
     "category": "method",
-    "text": "<(nv1:NV,nv2:NV) where NV<:AbstractNamedVector -> Bool\n\nOverloaded < operator.\n\n\n\n\n\n"
+    "text": "<(nv1::AbstractNamedVector,nv2::AbstractNamedVector) -> Bool\n\nOverloaded < operator.\n\n\n\n\n\n"
 },
 
 {
@@ -1305,11 +1321,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/NamedVector.html#Base.isless-Union{Tuple{NV}, Tuple{NV,NV}} where NV<:Hamiltonian.Utilities.NamedVector.AbstractNamedVector",
+    "location": "man/Utilities/NamedVector.html#Base.isless-Tuple{Hamiltonian.Utilities.NamedVector.AbstractNamedVector,Hamiltonian.Utilities.NamedVector.AbstractNamedVector}",
     "page": "Named vector",
     "title": "Base.isless",
     "category": "method",
-    "text": "isless(nv1::NV,nv2::NV) where NV<:AbstractNamedVector -> Bool\n\nOverloaded isless function.\n\n\n\n\n\n"
+    "text": "isless(nv1::AbstractNamedVector,nv2::AbstractNamedVector) -> Bool\n\nOverloaded isless function.\n\n\n\n\n\n"
 },
 
 {
@@ -1325,7 +1341,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Named vector",
     "title": "Base.keys",
     "category": "method",
-    "text": "keys(nv::AbstractNamedVector) -> NTuple(nv|>length,Symbol)\n\nIterate over the names.\n\n\n\n\n\n"
+    "text": "keys(nv::AbstractNamedVector) -> NTuple(nv|>fieldcount,Symbol)\n\nIterate over the names.\n\n\n\n\n\n"
 },
 
 {
@@ -1398,6 +1414,54 @@ var documenterSearchIndex = {"docs": [
     "title": "Manual",
     "category": "section",
     "text": "Modules=[NamedVector]\nOrder=  [:module,:constant,:type,:macro,:function]"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#",
+    "page": "Algebra over fields",
+    "title": "Algebra over fields",
+    "category": "page",
+    "text": "CurrentModule=Hamiltonian.Utilities.AlgebraOverFieldpush!(LOAD_PATH,\"../../../../src/\")\nusing Hamiltonian.Utilities.AlgebraOverField"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Algebra-over-fields-1",
+    "page": "Algebra over fields",
+    "title": "Algebra over fields",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#ID-1",
+    "page": "Algebra over fields",
+    "title": "ID",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#VectorSpace-1",
+    "page": "Algebra over fields",
+    "title": "VectorSpace",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Element-and-Elements-1",
+    "page": "Algebra over fields",
+    "title": "Element and Elements",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Manual-1",
+    "page": "Algebra over fields",
+    "title": "Manual",
+    "category": "section",
+    "text": "Modules=[AlgebraOverField]\nOrder=  [:module,:constant,:type,:macro,:function]"
 },
 
 {
@@ -2081,7 +2145,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.azimuth-Tuple{AbstractArray{#s187,1} where #s187<:Real}",
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.azimuth-Tuple{AbstractArray{#s198,1} where #s198<:Real}",
     "page": "Spatial",
     "title": "Hamiltonian.Essentials.Spatial.azimuth",
     "category": "method",
@@ -2089,7 +2153,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.azimuthd-Tuple{AbstractArray{#s187,1} where #s187<:Real}",
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.azimuthd-Tuple{AbstractArray{#s198,1} where #s198<:Real}",
     "page": "Spatial",
     "title": "Hamiltonian.Essentials.Spatial.azimuthd",
     "category": "method",
@@ -2113,7 +2177,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.distance-Tuple{AbstractArray{#s185,1} where #s185<:Real,AbstractArray{#s181,1} where #s181<:Real}",
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.distance-Tuple{AbstractArray{#s196,1} where #s196<:Real,AbstractArray{#s192,1} where #s192<:Real}",
     "page": "Spatial",
     "title": "Hamiltonian.Essentials.Spatial.distance",
     "category": "method",
@@ -2129,7 +2193,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.interlinks-Tuple{AbstractArray{#s196,2} where #s196<:Real,AbstractArray{#s195,2} where #s195<:Real,Dict{Int64,Float64}}",
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.interlinks-Tuple{AbstractArray{#s207,2} where #s207<:Real,AbstractArray{#s206,2} where #s206<:Real,Dict{Int64,Float64}}",
     "page": "Spatial",
     "title": "Hamiltonian.Essentials.Spatial.interlinks",
     "category": "method",
@@ -2137,7 +2201,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.intralinks-Union{Tuple{N}, Tuple{AbstractArray{#s191,2} where #s191<:Real,AbstractArray{#s190,1} where #s190<:(AbstractArray{#s189,1} where #s189<:Real),Dict{Int64,Float64}}, Tuple{AbstractArray{#s188,2} where #s188<:Real,AbstractArray{#s187,1} where #s187<:(AbstractArray{#s186,1} where #s186<:Real),Dict{Int64,Float64},Tuple{Vararg{Int64,N}}}} where N",
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.intralinks-Union{Tuple{N}, Tuple{AbstractArray{#s202,2} where #s202<:Real,AbstractArray{#s201,1} where #s201<:(AbstractArray{#s200,1} where #s200<:Real),Dict{Int64,Float64}}, Tuple{AbstractArray{#s199,2} where #s199<:Real,AbstractArray{#s198,1} where #s198<:(AbstractArray{#s197,1} where #s197<:Real),Dict{Int64,Float64},Tuple{Vararg{Int64,N}}}} where N",
     "page": "Spatial",
     "title": "Hamiltonian.Essentials.Spatial.intralinks",
     "category": "method",
@@ -2177,7 +2241,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.issubordinate-Tuple{AbstractArray{#s191,1} where #s191<:Real,AbstractArray{#s190,1} where #s190<:(AbstractArray{#s189,1} where #s189<:Real)}",
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.issubordinate-Tuple{AbstractArray{#s202,1} where #s202<:Real,AbstractArray{#s201,1} where #s201<:(AbstractArray{#s200,1} where #s200<:Real)}",
     "page": "Spatial",
     "title": "Hamiltonian.Essentials.Spatial.issubordinate",
     "category": "method",
@@ -2209,7 +2273,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.polar-Tuple{AbstractArray{#s187,1} where #s187<:Real}",
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.polar-Tuple{AbstractArray{#s198,1} where #s198<:Real}",
     "page": "Spatial",
     "title": "Hamiltonian.Essentials.Spatial.polar",
     "category": "method",
@@ -2217,7 +2281,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.polard-Tuple{AbstractArray{#s187,1} where #s187<:Real}",
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.polard-Tuple{AbstractArray{#s198,1} where #s198<:Real}",
     "page": "Spatial",
     "title": "Hamiltonian.Essentials.Spatial.polard",
     "category": "method",
@@ -2233,7 +2297,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.reciprocals-Tuple{AbstractArray{#s201,1} where #s201<:(AbstractArray{#s200,1} where #s200<:Real)}",
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.reciprocals-Tuple{AbstractArray{#s212,1} where #s212<:(AbstractArray{#s211,1} where #s211<:Real)}",
     "page": "Spatial",
     "title": "Hamiltonian.Essentials.Spatial.reciprocals",
     "category": "method",
@@ -2241,7 +2305,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.rotate-Tuple{AbstractArray{#s190,2} where #s190<:Real,Real}",
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.rotate-Tuple{AbstractArray{#s201,2} where #s201<:Real,Real}",
     "page": "Spatial",
     "title": "Hamiltonian.Essentials.Spatial.rotate",
     "category": "method",
@@ -2249,7 +2313,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.tile-Union{Tuple{M}, Tuple{N}, Tuple{AbstractArray{#s192,2} where #s192<:Real,AbstractArray{#s191,1} where #s191<:(AbstractArray{#s190,1} where #s190<:Real)}, Tuple{AbstractArray{#s189,2} where #s189<:Real,AbstractArray{#s188,1} where #s188<:(AbstractArray{#s187,1} where #s187<:Real),Tuple{Vararg{Tuple{Vararg{#s186,N}} where #s186<:Real,M}}}} where M where N",
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.tile-Union{Tuple{M}, Tuple{N}, Tuple{AbstractArray{#s203,2} where #s203<:Real,AbstractArray{#s202,1} where #s202<:(AbstractArray{#s201,1} where #s201<:Real)}, Tuple{AbstractArray{#s200,2} where #s200<:Real,AbstractArray{#s199,1} where #s199<:(AbstractArray{#s198,1} where #s198<:Real),Tuple{Vararg{Tuple{Vararg{#s197,N}} where #s197<:Real,M}}}} where M where N",
     "page": "Spatial",
     "title": "Hamiltonian.Essentials.Spatial.tile",
     "category": "method",
@@ -2257,7 +2321,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.translate-Tuple{AbstractArray{#s201,2} where #s201<:Real,AbstractArray{#s200,1} where #s200<:Real}",
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.translate-Tuple{AbstractArray{#s212,2} where #s212<:Real,AbstractArray{#s211,1} where #s211<:Real}",
     "page": "Spatial",
     "title": "Hamiltonian.Essentials.Spatial.translate",
     "category": "method",
@@ -2265,7 +2329,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.volume-Tuple{AbstractArray{#s185,1} where #s185<:Real,AbstractArray{#s181,1} where #s181<:Real,AbstractArray{#s174,1} where #s174<:Real}",
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.volume-Tuple{AbstractArray{#s196,1} where #s196<:Real,AbstractArray{#s192,1} where #s192<:Real,AbstractArray{#s185,1} where #s185<:Real}",
     "page": "Spatial",
     "title": "Hamiltonian.Essentials.Spatial.volume",
     "category": "method",
