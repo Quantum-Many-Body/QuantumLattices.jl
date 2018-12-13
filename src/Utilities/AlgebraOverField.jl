@@ -77,6 +77,13 @@ Show a composite id.
 Base.show(io::IO,cid::CompositeID)=@printf io "%s(%s)" cid|>typeof|>nameof join(cid,",")
 
 """
+    hash(cid::CompositeID,h::UInt)
+
+Hash a composite id.
+"""
+Base.hash(cid::CompositeID,h::UInt)=hash(convert(Tuple,cid),h)
+
+"""
     rank(::Type{<:CompositeID{N,I}}) where {N,I} -> Int
     rank(id::CompositeID) -> Int
 

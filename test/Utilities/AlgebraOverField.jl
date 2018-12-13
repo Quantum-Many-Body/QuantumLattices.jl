@@ -22,6 +22,7 @@ end
     @test cid|>eltype==SMPID{Int,<:Real}
     @test cid|>rank==2
     @test cid|>typeof|>rank==2
+    @test hash(cid,UInt(1))==hash(cid.contents,UInt(1))
 
     @test typejoin(sid|>typeof,cid|>typeof)==Union{sid|>typeof,cid|>typeof}
     @test typejoin(cid|>typeof,sid|>typeof)==Union{cid|>typeof,sid|>typeof}
