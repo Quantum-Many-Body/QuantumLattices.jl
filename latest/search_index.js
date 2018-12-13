@@ -1641,19 +1641,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.:⊕-Union{Tuple{Tuple{Vararg{#s15,N}} where #s15<:AbstractQuantumNumber}, Tuple{N}, Tuple{Tuple{Vararg{#s14,N}} where #s14<:AbstractQuantumNumber,Tuple{Vararg{Int64,N}}}} where N",
+    "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.:⊕-Tuple{Vararg{Hamiltonian.Utilities.QuantumNumber.AbstractQuantumNumber,N} where N}",
     "page": "Quantum numbers",
     "title": "Hamiltonian.Utilities.:⊕",
     "category": "method",
-    "text": "⊕(qns::NTuple{N,<:AbstractQuantumNumber},signs::NTuple{N,Int}=ntuple(i->1,N)) where N -> QuantumNumbers\n⊕(qnses::NTuple{N,QuantumNumbers{QN}},signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:AbstractQuantumNumber} -> QuantumNumbers{QN}\n\nGet the direct sum of some AbstractQuantumNumbers or QuantumNumberses.\n\nnote: Note\nPhysically, the direct sum of a couple of AbstractQuantumNumbers or QuantumNumberses is defined by the direct sum of the bases of the Hilbert spaces they represent. Therefore, the input AbstractQuantumNumbers or QuantumNumberses must be homogenous. Inhomogenous \'AbstractQuantumNumber\'s must be direct producted first to ensure homogenity before the direct sum.\nApparently, the dimension of the result equals the summation of those of the inputs, which means, even for AbstractQuantumNumbers, the result will be naturally a QuantumNumbers because the dimension of the result is largeer than 1.\nSigns of AbstractQuantumNumbers or QuantumNumberses can be provided when getting their direct sums.\n\n\n\n\n\n"
+    "text": "⊕(qns::AbstractQuantumNumber...) -> QuantumNumbers{qns|>eltype}\n⊕(qnses::QuantumNumbers...) -> qnses|>eltype\n\nGet the direct sum of some AbstractQuantumNumbers or QuantumNumberses.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.:⊗-Union{Tuple{QN}, Tuple{Type{QN},AbstractQuantumNumber,AbstractQuantumNumber}} where QN<:Hamiltonian.Utilities.QuantumNumber.AbstractQuantumNumber",
+    "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.:⊗-Tuple{Vararg{Hamiltonian.Utilities.QuantumNumber.AbstractQuantumNumber,N} where N}",
     "page": "Quantum numbers",
     "title": "Hamiltonian.Utilities.:⊗",
     "category": "method",
-    "text": "⊗(::Type{QN},qn1::AbstractQuantumNumber,qn2::AbstractQuantumNumber) where QN<:AbstractQuantumNumber -> QN\n⊗(qns::NTuple{N,<:AbstractQuantumNumber},signs::NTuple{N,Int}=ntuple(i->1,N)) where N -> eltype(qns)\n⊗(qnses::NTuple{N,QuantumNumbers{QN}},signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:AbstractQuantumNumber} -> QuantumNumbers{QN}\n\nGet the direct product of some AbstractQuantumNumbers or QuantumNumberses.\n\nnote: Note\nPhysically, the direct product of a couple of AbstractQuantumNumbers or QuantumNumberses are defined by the direct product of the bases of the Hilbert spaces they represent. Therefore, QuantumNumbers with differenct types or QuantumNumberses with differenct eltypes are allowed to be direct producted in principle. However, for simplicity, we only implement a method which handle the situation of two AbstractQuantumNumbers with differenct types. The type of the result should be provided as the first parameter. Note that in this situation, the fieldnames and periods of the result type must be exactly equal to the flattened fieldnames and periods of the two input AbstractQuantumNumbers, which means, even the order of the input AbstractQuantumNumbers matters.\nApparently, the dimension of the result equals the product of those of the inputs. Therefore, the direct product of AbstractQuantumNumbers is also a AbstractQuantumNumber since its dimension is still one.\nFor other situations except the one mentioned in Note.1, the input AbstractQuantumNumbers or QuantumNumberses must be homogenous. Meanwhile, signs can also be provided for these situations. Note that each quantum number in the contents of the result is obtained by a summation of the corresponding quanum numbers out of the inputs with the correct signs. This is a direct observation of the Abelian nature of our quantum numbers.\n\n\n\n\n\n"
+    "text": "⊗(qns::AbstractQuantumNumber...) -> eltype(qns)\n⊗(qnses::QuantumNumbers...) -> eltype(qnses)\n\nGet the direct product of some AbstractQuantumNumbers or QuantumNumberses.\n\n\n\n\n\n"
 },
 
 {
@@ -1805,7 +1805,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Quantum numbers",
     "title": "Base.:^",
     "category": "method",
-    "text": "^(qn::AbstractQuantumNumber,factor::Integer) -> typeof(qn)\n^(qns::QuantumNumbers,factor::Integer) -> QuantumNumbers\n\nOverloaded ^ operator for AbstractQuantumNumber and QuantumNumbers. This operation translates into the direct product ⊗ of factor copies of qn or qns.\n\n\n\n\n\n"
+    "text": "^(qn::AbstractQuantumNumber,factor::Integer) -> typeof(qn)\n^(qns::QuantumNumbers,factor::Integer) -> QuantumNumbers\n\nOverloaded ^ operator for AbstractQuantumNumber and QuantumNumbers. This operation translates into the direct product of factor copies of qn or qns.\n\n\n\n\n\n"
 },
 
 {
@@ -1861,7 +1861,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Quantum numbers",
     "title": "Base.kron",
     "category": "method",
-    "text": "kron(::Type{QN},qn1::AbstractQuantumNumber,qn2::AbstractQuantumNumber) where QN<:AbstractQuantumNumber -> QN\nkron(qns::NTuple{N,<:AbstractQuantumNumber},signs::NTuple{N,Int}=ntuple(i->1,N)) where N -> eltype(qns)\nkron(qnses::NTuple{N,QuantumNumbers{QN}},signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:AbstractQuantumNumber} -> QuantumNumbers{QN}\n\nKronecker product of some AbstractQuantumNumbers or QuantumNumberses. This is defined to be equivalent to the direct product ⊗.\n\n\n\n\n\n"
+    "text": "kron(::Type{QN},qn1::AbstractQuantumNumber,qn2::AbstractQuantumNumber) where QN<:AbstractQuantumNumber -> QN\nkron(qns::Vararg{<:AbstractQuantumNumber,N};signs::NTuple{N,Int}=ntuple(i->1,N)) where N -> eltype(qns)\nkron(qnses::Vararg{QuantumNumbers{QN},N};signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:AbstractQuantumNumber} -> QuantumNumbers{QN}\n\nGet the direct product of some AbstractQuantumNumbers or QuantumNumberses.\n\nnote: Note\nPhysically, the direct product of a couple of AbstractQuantumNumbers or QuantumNumberses are defined by the direct product of the bases of the Hilbert spaces they represent. Therefore, QuantumNumbers with differenct types or QuantumNumberses with differenct eltypes are allowed to be direct producted in principle. However, for simplicity, we only implement a method which handle the situation of two AbstractQuantumNumbers with differenct types. The type of the result should be provided as the first parameter. Note that in this situation, the fieldnames and periods of the result type must be exactly equal to the flattened fieldnames and periods of the two input AbstractQuantumNumbers, which means, even the order of the input AbstractQuantumNumbers matters.\nApparently, the dimension of the result equals the product of those of the inputs. Therefore, the direct product of AbstractQuantumNumbers is also a AbstractQuantumNumber since its dimension is still one.\nFor other situations except the one mentioned in Note.1, the input AbstractQuantumNumbers or QuantumNumberses must be homogenous. Meanwhile, signs can also be provided for these situations. Note that each quantum number in the contents of the result is obtained by a summation of the corresponding quanum numbers out of the inputs with the correct signs. This is a direct observation of the Abelian nature of our quantum numbers.\n\n\n\n\n\n"
 },
 
 {
@@ -1902,6 +1902,14 @@ var documenterSearchIndex = {"docs": [
     "title": "Base.string",
     "category": "method",
     "text": "string(qns::QuantumNumbers) -> String\n\nConvert a QuantumNumbers to string.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/QuantumNumber.html#Base.union-Union{Tuple{Vararg{AbstractQuantumNumber,N}}, Tuple{N}} where N",
+    "page": "Quantum numbers",
+    "title": "Base.union",
+    "category": "method",
+    "text": "union(qns::Vararg{<:AbstractQuantumNumber,N};signs::NTuple{N,Int}=ntuple(i->1,N)) where N -> QuantumNumbers\nunion(qnses::Vararg{QuantumNumbers{QN},N};signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:AbstractQuantumNumber} -> QuantumNumbers{QN}\n\nGet the direct sum of some AbstractQuantumNumbers or QuantumNumberses.\n\nnote: Note\nPhysically, the direct sum of a couple of AbstractQuantumNumbers or QuantumNumberses is defined by the direct sum of the bases of the Hilbert spaces they represent. Therefore, the input AbstractQuantumNumbers or QuantumNumberses must be homogenous. Inhomogenous \'AbstractQuantumNumber\'s must be direct producted first to ensure homogenity before the direct sum.\nApparently, the dimension of the result equals the summation of those of the inputs, which means, even for AbstractQuantumNumbers, the result will be naturally a QuantumNumbers because the dimension of the result is larger than 1.\nSigns of AbstractQuantumNumbers or QuantumNumberses can be provided when getting their direct sums.\n\n\n\n\n\n"
 },
 
 {
@@ -2177,7 +2185,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.distance-Tuple{AbstractArray{#s196,1} where #s196<:Real,AbstractArray{#s192,1} where #s192<:Real}",
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.distance-Tuple{AbstractArray{#s187,1} where #s187<:Real,AbstractArray{#s186,1} where #s186<:Real}",
     "page": "Spatial",
     "title": "Hamiltonian.Essentials.Spatial.distance",
     "category": "method",
@@ -2329,7 +2337,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.volume-Tuple{AbstractArray{#s196,1} where #s196<:Real,AbstractArray{#s192,1} where #s192<:Real,AbstractArray{#s185,1} where #s185<:Real}",
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.volume-Tuple{AbstractArray{#s187,1} where #s187<:Real,AbstractArray{#s186,1} where #s186<:Real,AbstractArray{#s185,1} where #s185<:Real}",
     "page": "Spatial",
     "title": "Hamiltonian.Essentials.Spatial.volume",
     "category": "method",
