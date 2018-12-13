@@ -1,4 +1,5 @@
 using Hamiltonian.Utilities.NamedVector
+using Hamiltonian.Utilities: Float
 
 @namedvector mutable struct NHPID
     scope::String
@@ -10,8 +11,10 @@ end
     @test NHPID|>length==2
 
     pid=NHPID("A",0)
+    @test pid==convert(NHPID,("A",0))
     @test pid|>string=="NHPID(\"A\",0)"
     @test pid|>length==2
+    @test pid|>Iterators.reverse|>collect==[0,"A"]
     @test pid[1]==pid.scope=="A"
     @test pid[2]==pid.site==0
     @test replace(pid,scope="B")==NHPID("B",0)
@@ -41,6 +44,7 @@ end
     @test isequal(FPID|>zero,FPID(0.0,0.0))
 
     pid=FPID(1.0,0.0)
+    @test pid==convert(FPID,(1.0,0.0))
     @test pid|>string=="FPID(1.0,0.0)"
     @test pid|>length==2
     @test pid|>eltype==Float64
@@ -72,6 +76,7 @@ end
     @test RPID{Float64}|>zero==RPID(0.0,0.0)
 
     pid=RPID(1,0)
+    @test pid==convert(RPID{Int},(1,0))
     @test pid|>string=="RPID(1,0)"
     @test pid|>length==2
     @test pid|>eltype==Int
