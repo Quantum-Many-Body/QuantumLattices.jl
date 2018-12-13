@@ -25,6 +25,7 @@ ordinal
 ```@docs
 ⊕
 ⊗
+rank
 dimension
 permute
 ```
