@@ -681,7 +681,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.addparams!-Tuple{Union{FunctionFactory, TypeFactory}}",
+    "location": "man/Utilities/Factory.html#Hamiltonian.Utilities.Factory.addparams!-Tuple{Hamiltonian.Utilities.Factory.FunctionFactory}",
     "page": "Factory",
     "title": "Hamiltonian.Utilities.Factory.addparams!",
     "category": "method",
