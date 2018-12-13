@@ -64,6 +64,9 @@ end
     qns=QuantumNumbers('U',[qn1,qn2],[0,3,5],qnsindptr)
     @test qns|>dimension==5
     @test qns|>string=="QNS(2,5)"
+    @test qns|>length==2
+    @test qns|>eltype==CNZ4
+    @test qns|>typeof|>eltype==CNZ4
     @test @sprintf("%s",qns)=="QNS(CNZ4(1.0,3.0)=>1:3,CNZ4(-1.0,1.0)=>4:5)"
     @test qns[1]==qn1
     @test qns[2]==qn2
@@ -88,23 +91,26 @@ end
 @testset "arithmetic" begin
     qn=CNZ4(1.0,3.0)
     @test qn|>dimension==1
+    @test qn|>typeof|>dimension==1
     @test +qn==CNZ4(+1.0,+3.0)
     @test -qn==CNZ4(-1.0,+1.0)
     @test qn*4==4*qn==CNZ4(4.0,0.0)
     @test qn^3==CNZ4(3.0,1.0)
-    @test ⊗(CNZ4,CN(1.0),Z4(3.0))==qn
+    @test kron(CNZ4,CN(1.0),Z4(3.0))==qn
 
     qn1,qn2=CNZ4(1.0,2.0),CNZ4(2.0,3.0)
     @test qn1+qn2==CNZ4(3.0,1.0)
     @test qn1-qn2==CNZ4(-1.0,3.0)
-    @test ⊗((qn1,qn2),(+1,+1))==CNZ4(+3.0,1.0)
-    @test ⊗((qn1,qn2),(+1,-1))==CNZ4(-1.0,3.0)
-    @test ⊗((qn1,qn2),(-1,+1))==CNZ4(+1.0,1.0)
-    @test ⊗((qn1,qn2),(-1,-1))==CNZ4(-3.0,3.0)
-    @test ⊕((qn1,qn2),(+1,+1))==QuantumNumbers('G',[+qn1,+qn2],[0,1,2],qnsindptr)
-    @test ⊕((qn1,qn2),(+1,-1))==QuantumNumbers('G',[+qn1,-qn2],[0,1,2],qnsindptr)
-    @test ⊕((qn1,qn2),(-1,+1))==QuantumNumbers('G',[-qn1,+qn2],[0,1,2],qnsindptr)
-    @test ⊕((qn1,qn2),(-1,-1))==QuantumNumbers('G',[-qn1,-qn2],[0,1,2],qnsindptr)
+    @test kron(qn1,qn2,signs=(+1,+1))==CNZ4(+3.0,1.0)
+    @test kron(qn1,qn2,signs=(+1,-1))==CNZ4(-1.0,3.0)
+    @test kron(qn1,qn2,signs=(-1,+1))==CNZ4(+1.0,1.0)
+    @test kron(qn1,qn2,signs=(-1,-1))==CNZ4(-3.0,3.0)
+    @test union(qn1,qn2,signs=(+1,+1))==QuantumNumbers('G',[+qn1,+qn2],[0,1,2],qnsindptr)
+    @test union(qn1,qn2,signs=(+1,-1))==QuantumNumbers('G',[+qn1,-qn2],[0,1,2],qnsindptr)
+    @test union(qn1,qn2,signs=(-1,+1))==QuantumNumbers('G',[-qn1,+qn2],[0,1,2],qnsindptr)
+    @test union(qn1,qn2,signs=(-1,-1))==QuantumNumbers('G',[-qn1,-qn2],[0,1,2],qnsindptr)
+    @test ⊗(qn1,qn2)==kron(qn1,qn2)
+    @test ⊕(qn1,qn2)==union(qn1,qn2)
 
     qns=QuantumNumbers('U',[qn1,qn2],[0,2,4],qnsindptr)
     @test +qns==QuantumNumbers('U',[+qn1,+qn2],[0,2,4],qnsindptr)
@@ -118,18 +124,16 @@ end
 
     qns1=QuantumNumbers('U',[+qn1,-qn2],[0,2,4],qnsindptr)
     qns2=QuantumNumbers('U',[-qn1,+qn2],[0,3,4],qnsindptr)
-    @test ⊕((qns1,qns2),(+1,+1))==QuantumNumbers('G',[+qn1,-qn2,-qn1,+qn2],[2,2,3,1],qnscounts)
-    @test ⊕((qns1,qns2),(+1,-1))==QuantumNumbers('G',[+qn1,-qn2,+qn1,-qn2],[2,2,3,1],qnscounts)
-    @test ⊕((qns1,qns2),(-1,+1))==QuantumNumbers('G',[-qn1,+qn2,-qn1,+qn2],[2,2,3,1],qnscounts)
-    @test ⊕((qns1,qns2),(-1,-1))==QuantumNumbers('G',[-qn1,+qn2,+qn1,-qn2],[2,2,3,1],qnscounts)
-    @test ⊗((qns1,qns2),(+1,+1))==QuantumNumbers('G',[+qn1-qn1,+qn1+qn2,+qn1-qn1,+qn1+qn2,-qn2-qn1,-qn2+qn2,-qn2-qn1,-qn2+qn2],[3,1,3,1,3,1,3,1],qnscounts)
-    @test ⊗((qns1,qns2),(+1,-1))==QuantumNumbers('G',[+qn1+qn1,+qn1-qn2,+qn1+qn1,+qn1-qn2,-qn2+qn1,-qn2-qn2,-qn2+qn1,-qn2-qn2],[3,1,3,1,3,1,3,1],qnscounts)
-    @test ⊗((qns1,qns2),(-1,+1))==QuantumNumbers('G',[-qn1-qn1,-qn1+qn2,-qn1-qn1,-qn1+qn2,+qn2-qn1,+qn2+qn2,+qn2-qn1,+qn2+qn2],[3,1,3,1,3,1,3,1],qnscounts)
-    @test ⊗((qns1,qns2),(-1,-1))==QuantumNumbers('G',[-qn1+qn1,-qn1-qn2,-qn1+qn1,-qn1-qn2,+qn2+qn1,+qn2-qn2,+qn2+qn1,+qn2-qn2],[3,1,3,1,3,1,3,1],qnscounts)
-    @test kron((qns1,qns2),(+1,+1))==⊗((qns1,qns2),(+1,+1))
-    @test kron((qns1,qns2),(+1,-1))==⊗((qns1,qns2),(+1,-1))
-    @test kron((qns1,qns2),(-1,+1))==⊗((qns1,qns2),(-1,+1))
-    @test kron((qns1,qns2),(-1,-1))==⊗((qns1,qns2),(-1,-1))
+    @test union(qns1,qns2,signs=(+1,+1))==QuantumNumbers('G',[+qn1,-qn2,-qn1,+qn2],[2,2,3,1],qnscounts)
+    @test union(qns1,qns2,signs=(+1,-1))==QuantumNumbers('G',[+qn1,-qn2,+qn1,-qn2],[2,2,3,1],qnscounts)
+    @test union(qns1,qns2,signs=(-1,+1))==QuantumNumbers('G',[-qn1,+qn2,-qn1,+qn2],[2,2,3,1],qnscounts)
+    @test union(qns1,qns2,signs=(-1,-1))==QuantumNumbers('G',[-qn1,+qn2,+qn1,-qn2],[2,2,3,1],qnscounts)
+    @test kron(qns1,qns2,signs=(+1,+1))==QuantumNumbers('G',[+qn1-qn1,+qn1+qn2,+qn1-qn1,+qn1+qn2,-qn2-qn1,-qn2+qn2,-qn2-qn1,-qn2+qn2],[3,1,3,1,3,1,3,1],qnscounts)
+    @test kron(qns1,qns2,signs=(+1,-1))==QuantumNumbers('G',[+qn1+qn1,+qn1-qn2,+qn1+qn1,+qn1-qn2,-qn2+qn1,-qn2-qn2,-qn2+qn1,-qn2-qn2],[3,1,3,1,3,1,3,1],qnscounts)
+    @test kron(qns1,qns2,signs=(-1,+1))==QuantumNumbers('G',[-qn1-qn1,-qn1+qn2,-qn1-qn1,-qn1+qn2,+qn2-qn1,+qn2+qn2,+qn2-qn1,+qn2+qn2],[3,1,3,1,3,1,3,1],qnscounts)
+    @test kron(qns1,qns2,signs=(-1,-1))==QuantumNumbers('G',[-qn1+qn1,-qn1-qn2,-qn1+qn1,-qn1-qn2,+qn2+qn1,+qn2-qn2,+qn2+qn1,+qn2-qn2],[3,1,3,1,3,1,3,1],qnscounts)
+    @test ⊕(qns1,qns2)==union(qns1,qns2)
+    @test ⊗(qns1,qns2)==kron(qns1,qns2)
 end
 
 @testset "sort" begin
