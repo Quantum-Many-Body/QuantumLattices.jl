@@ -1,6 +1,20 @@
 using Hamiltonian.Utilities.Factory
 
+@testset "escape" begin
+    @test escape(true,RawExpr())==true
+    @test escape(true,Escaped())==true
+    @test escape(true,UnEscaped())==true
+    @test escape(:Int,Escaped(:Int))==:($(Expr(:escape, :Int)))
+    @test escape(:Int,Escaped())==:Int
+    @test escape(:(Vector{Int}),Escaped(:Vector))==:(($(Expr(:escape, :Vector))){Int})
+    @test escape(:Int,UnEscaped(:Int))==:Int
+    @test escape(:Int,UnEscaped())==:($(Expr(:escape, :Int)))
+    @test escape(:(Vector{Int}),UnEscaped(:Vector))==:(Vector{$(Expr(:escape, :Int))})
+end
+
+
 @testset "Inference" begin
+    @test Inference(name=:T)==Inference(nothing,:T,nothing)
     @test (@inference Vector{Tuple{Int,String}})(UnEscaped(:Vector,:Tuple,:Int,:String))==:(Vector{Tuple{Int,String}})
     @test (@inference Type{<:Real})(UnEscaped(:Type,:Real))==:(Type{<:Real})
     @test Inference(:(SVector{N,<:Real}))|>string=="Inference(\n  head:   curly\n  name:   SVector\n  params: Inference[N, <:Real]\n)"
@@ -8,12 +22,15 @@ using Hamiltonian.Utilities.Factory
 end
 
 @testset "Argument" begin
+    argument=Argument(name=:name,default=nothing)
+    @test argument|>string=="Argument(\n  name:    name\n  type:    Any\n  slurp:   false\n  default: nothing\n)"
+
     argument=Argument(:(phone::Vector{Int}=[9,1,1]))
     @test argument.name==:phone
     @test argument.type==Inference(:(Vector{Int}))
     @test argument.slurp==false
     @test argument.default==:([9,1,1])
-    @test argument(MixEscaped(UnEscaped(:Vector,:Int)))==Expr(:kw,:(phone::Vector{Int}),:[9,1,1])
+    @test argument(MixEscaped(UnEscaped(:Vector),Escaped(:Int)))==Expr(:kw,:(phone::Vector{$(Expr(:escape,:Int))}),:[9,1,1])
 
     argument=Argument(:(properties::Int...))
     @test argument.name==:properties
@@ -28,6 +45,9 @@ end
 end
 
 @testset "Parameter" begin
+    parameter=Parameter(name=:name,type=Inference(:T))
+    @test parameter|>string=="Parameter(\n  name: name\n  type: T\n)"
+
     parameter=Parameter(:T)
     @test parameter.name==:T
     @test parameter.type==nothing
@@ -50,6 +70,9 @@ end
 end
 
 @testset "Field" begin
+    field=Field(name=:name)
+    @test field|>string=="Field(\n  name: name\n  type: Any\n)"
+
     field=Field(:xs)
     @test field.name==:xs
     @test field.type==Inference(:Any)
@@ -66,8 +89,12 @@ end
 end
 
 @testset "Block" begin
-    block=@rmlines Block(:(x=1;y=2))
+    block=Block(:(x=1;y=2))
+    push!(block)
+    rmlines!(block)
     @test block.body==Any[:(x=1),:(y=2)]
+    @test block==@rmlines Block(:(x=1;y=2))
+    @test block(MixEscaped())==Expr(:block,:(x=1),:(y=2))
     @test block(Escaped())==Expr(:block,:(x=1),:(y=2))
 
     block=@block a=1
@@ -76,6 +103,14 @@ end
 end
 
 @testset "FunctionFactory" begin
+    ff=FunctionFactory(name=:fx)
+    addargs!(ff)
+    addkwargs!(ff)
+    extendbody!(ff)
+    addwhereparams!(ff)
+    addparams!(ff)
+    @test ff==FunctionFactory(name=:fx)
+
     ff=FunctionFactory(:(fx(x::Int,y::Int;choice::Function=sum)=choice(x,y)))
     @test ff.name==:fx
     @test ff.args==Argument.([:(x::Int),:(y::Int)])
@@ -99,17 +134,25 @@ end
     ff=@functionfactory (fx()::T)=nothing
     @addargs! ff x::T y::T z::T
     @addkwargs! ff sign::Int=1 choice::Function=sum
+    @addparams! ff T
     @addwhereparams! ff T<:Number
     @extendbody! ff result=choice(x,y,z) result*=sign
     @test ff.name==:fx
     @test ff.args==Argument.([:(x::T),:(y::T),:(z::T)])
     @test ff.kwargs==Argument.([:(sign::Int=1),:(choice::Function=sum)])
     @test ff.rtype==Inference(:T)
+    @test ff.params==[Inference(:T)]
     @test ff.whereparams==Parameter.([:(T<:Number)])
     @test ff.body|>rmlines==Block(:nothing,:(result=choice(x,y,z)),:(result*=sign))
 end
 
 @testset "TypeFactory" begin
+    tf=TypeFactory(name=:Child)
+    addfields!(tf)
+    addconstructors!(tf)
+    addparams!(tf)
+    @test tf==TypeFactory(name=:Child)
+
     tf=TypeFactory(:(
         struct Child{T<:Real} <: Parent{T}
             address::String

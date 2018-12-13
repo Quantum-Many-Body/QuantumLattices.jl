@@ -65,6 +65,7 @@ struct MixEscaped{N,M} <: EscapeMechanism
     escaped::Escaped{N}
     unescaped::UnEscaped{M}
 end
+MixEscaped()=MixEscaped(Escaped(),UnEscaped())
 MixEscaped(escaped::Escaped)=MixEscaped(escaped,UnEscaped())
 MixEscaped(unescaped::UnEscaped)=MixEscaped(Escaped(),unescaped)
 MixEscaped(unescaped::UnEscaped,escaped::Escaped)=MixEscaped(escaped,unescaped)
@@ -305,7 +306,7 @@ mutable struct Field <: AbstractFactory
     name::Symbol
     type::Inference
 end
-Field(;name::Symbol,type::FExpr=Inference(:Any))=Field(name,type)
+Field(;name::Symbol,type::Inference=Inference(:Any))=Field(name,type)
 Field(expr::FExpr)=(cache=splitarg(expr);Field(cache[1],Inference(cache[2])))
 
 """
@@ -647,9 +648,10 @@ macro addconstructors!(tf,constructors::Expr...) :(addconstructors!($(esc(tf)),$
 
 Add a couple of parameters to a function factory or a type factory.
 """
-addparams!(f::Union{FunctionFactory,TypeFactory})=f
+addparams!(f::FunctionFactory)=f
 addparams!(f::FunctionFactory,params::Inference...)=(push!(f.params,params...);f)
 addparams!(f::FunctionFactory,params::FExpr...)=addparams!(f,Inference.(params)...)
+addparams!(f::TypeFactory)=f
 addparams!(f::TypeFactory,params::Parameter...)=(push!(f.params,params...);f)
 addparams!(f::TypeFactory,params::FExpr...)=addparams!(f,Parameter.(params)...)
 
