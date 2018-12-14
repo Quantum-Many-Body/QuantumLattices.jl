@@ -141,34 +141,24 @@ function Base.:<(cid1::ID,cid2::ID)
 end
 
 """
-    SimpleVectorSpace{I<:ID} <: AbstractVector{I}
-
-The vector space spanned by a set of bases specified by their ids.
-
-Alias for `Vector{I}`.
-"""
-const SimpleVectorSpace{I<:ID}=Vector{I}
-"""
     SimpleVectorSpace(ids::ID...)
 
-Get the simple vector space spanned by a set of bases specified by their ids.
+The vector space spanned by a set of bases specified by their ids.
 """
-SimpleVectorSpace(ids::ID...)=collect(ids)
+struct SimpleVectorSpace{I<:ID,N} <: CompositeNTuple{N,I}
+    contents::NTuple{N,I}
+end
+SimpleVectorSpace(ids::ID...)=SimpleVectorSpace(ids)
 
-"""
-    CompositeVectorSpace{SVS<:SimpleVectorSpace} <: AbstractVector{SVS}
-
-The vector space spanned by the direct product of simple vector spaces.
-
-Alias for `Vector{SVS}`.
-"""
-const CompositeVectorSpace{SVS<:SimpleVectorSpace}=Vector{SVS}
 """
     CompositeVectorSpace(svses::SimpleVectorSpace...)
 
-Get the vector space spanned by the direct product of simple vector spaces.
+The vector space spanned by the direct product of simple vector spaces.
 """
-CompositeVectorSpace(svses::SimpleVectorSpace...)=collect(svses)
+struct CompositeVectorSpace{SVS<:SimpleVectorSpace,N} <: CompositeNTuple{N,SVS}
+    contents::NTuple{N,SVS}
+end
+CompositeVectorSpace(svses::SimpleVectorSpace...)=CompositeVectorSpace(svses)
 
 """
     VectorSpace
@@ -204,10 +194,10 @@ dimension(cvs::CompositeVectorSpace)=prod(length(svs) for svs in cvs)
 
 Get the direct sum of bases or simple vector spaces.
 """
-⊕(id1::I,id2::I) where {I<:ID}=push!(SimpleVectorSpace{I}(),id1,id2)
-⊕(id::I,svs::SimpleVectorSpace{I}) where {I<:ID}=append!(push!(SimpleVectorSpace{I}(),id),svs)
-⊕(svs::SimpleVectorSpace{I},id::I) where {I<:ID}=push!(append!(SimpleVectorSpace{I}(),svs),id)
-⊕(svs1::SVS,svs2::SVS) where {SVS<:SimpleVectorSpace}=append!(append!(SimpleVectorSpace{SVS|>eltype}(),svs1),svs2)
+⊕(id1::I,id2::I) where {I<:ID}=SimpleVectorSpace(id1,id2)
+⊕(id::I,svs::SimpleVectorSpace{I}) where {I<:ID}=SimpleVectorSpace(id,convert(Tuple,svs)...)
+⊕(svs::SimpleVectorSpace{I},id::I) where {I<:ID}=SimpleVectorSpace(convert(Tuple,svs)...,id)
+⊕(svs1::SVS,svs2::SVS) where {SVS<:SimpleVectorSpace}=SimpleVectorSpace(convert(Tuple,svs1)...,convert(Tuple,svs2)...)
 
 """
     ⊗(svs1::SimpleVectorSpace,svs2::SimpleVectorSpace) -> CompositeVectorSpace
@@ -217,10 +207,10 @@ Get the direct sum of bases or simple vector spaces.
 
 Get the direct product of simple vector spaces or composite vector spaces.
 """
-⊗(svs1::SimpleVectorSpace,svs2::SimpleVectorSpace)=push!(CompositeVectorSpace{typejoin(svs1|>typeof,svs2|>typeof)}(),svs1,svs2)
-⊗(svs::SimpleVectorSpace,cvs::CompositeVectorSpace)=append!(push!(CompositeVectorSpace{typejoin(svs|>typeof,cvs|>typeof|>eltype)}(),svs),cvs)
-⊗(cvs::CompositeVectorSpace,svs::SimpleVectorSpace)=push!(append!(CompositeVectorSpace{typejoin(cvs|>typeof|>eltype,svs|>typeof)}(),cvs),svs)
-⊗(cvs1::CompositeVectorSpace,cvs2::CompositeVectorSpace)=append!(append!(CompositeVectorSpace{typejoin(cvs1|>typeof|>eltype,cvs2|>typeof|>eltype)}(),cvs1),cvs2)
+⊗(svs1::SimpleVectorSpace,svs2::SimpleVectorSpace)=CompositeVectorSpace(svs1,svs2)
+⊗(svs::SimpleVectorSpace,cvs::CompositeVectorSpace)=CompositeVectorSpace(svs,convert(Tuple,cvs)...)
+⊗(cvs::CompositeVectorSpace,svs::SimpleVectorSpace)=CompositeVectorSpace(convert(Tuple,cvs)...,svs)
+⊗(cvs1::CompositeVectorSpace,cvs2::CompositeVectorSpace)=CompositeVectorSpace(convert(Tuple,cvs1)...,convert(Tuple,cvs2)...)
 
 """
     Element{V<:Number,I<:ID}
