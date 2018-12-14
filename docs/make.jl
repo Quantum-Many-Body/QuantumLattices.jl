@@ -26,6 +26,7 @@ makedocs(
                                 "Essentials" => [
                                         "man/Essentials/Introduction.md",
                                         "man/Essentials/Spatial.md",
+                                        "man/Essentials/DegreeOfFreedom.md",
                                         ],
                                 ],
                         ],

@@ -9,6 +9,7 @@ Essentials of the Hamiltonian package, which defines all the imported constants,
 ```@contents
 Pages=  [
         "Spatial.md",
+        "DegreeOfFreedom.md",
         ]
 Depth=2
 ```
