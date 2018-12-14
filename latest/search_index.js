@@ -185,6 +185,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.rank",
+    "page": "Introduction",
+    "title": "Hamiltonian.Utilities.rank",
+    "category": "function",
+    "text": "Generic interface of the rank of some types.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.dimension",
     "page": "Introduction",
     "title": "Hamiltonian.Utilities.dimension",
@@ -205,7 +213,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "Generic functions for overloading",
     "category": "section",
-    "text": "⊕\n⊗\ndimension\npermute"
+    "text": "⊕\n⊗\nrank\ndimension\npermute"
 },
 
 {
@@ -1229,7 +1237,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Named vector",
     "title": "HomoNamedVector",
     "category": "section",
-    "text": "HomoNamedVector is the subtype of [AbstractNamedVector] that of all its fields share the same type. Compared to AbstractNamedVector, one more default method is implemented with HomoNamedVector, i.e. eltype, which returns the type of its fields. This function ensures the type stability of all the methods that involves an iteration of the field values of a named vector. Therefore, homogeneous named vector are usually more efficient than inhomogeneous ones. Use homogeneous ones as much as possible unless the code efficiency does not matter.To subtype [HomoNamedVector], all the suggestions mentioned in the previous subsection for AbstractNamedVector also applies. A recommended template for a subtype is[mutable] struct YourNamedVector{T} <: HomoNamedVector{T}\n    filed1::T\n    filed2::T\n    ...\nendWe also provide a macro @homonamedvector to help the definition of concrete homogeneous named vector, where you only need specify the type name, field names, data type and optionally whether the subtype is mutable. For example,@homonamedvector HomoNVWithoutParameter (:scope,:site) Int mutable=true\n@homonamedvector HomoNVWithParameter (:scope,:site) (<:Real) mutable=trueThis macro also integrates the Base.fieldnames function, thus its overloading by hand is on longer needed."
+    "text": "HomoNamedVector is the subtype of [AbstractNamedVector] that of all its fields share the same type. Compared to AbstractNamedVector, one more default method is implemented with HomoNamedVector, i.e. eltype, which returns the type of its fields. This function ensures the type stability of all the methods that involves an iteration of the field values of a named vector. Therefore, homogeneous named vector are usually more efficient than inhomogeneous ones. Use homogeneous ones as much as possible unless the code efficiency does not matter.To subtype HomoNamedVector, all the suggestions mentioned in the previous subsection for AbstractNamedVector also applies. A recommended template for a subtype is[mutable] struct YourNamedVector{T} <: HomoNamedVector{T}\n    filed1::T\n    filed2::T\n    ...\nendWe also provide a macro @homonamedvector to help the definition of concrete homogeneous named vector, where you only need specify the type name, field names, data type and optionally whether the subtype is mutable. For example,@homonamedvector HomoNVWithoutParameter (:scope,:site) Int mutable=true\n@homonamedvector HomoNVWithParameter (:scope,:site) (<:Real) mutable=trueThis macro also integrates the Base.fieldnames function, thus its overloading by hand is on longer needed."
 },
 
 {
@@ -1454,6 +1462,278 @@ var documenterSearchIndex = {"docs": [
     "title": "Element and Elements",
     "category": "section",
     "text": ""
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.ID",
+    "page": "Algebra over fields",
+    "title": "Hamiltonian.Utilities.AlgebraOverField.ID",
+    "category": "constant",
+    "text": "ID\n\nThe id system of an algebra over a field.\n\nIt is a type alias for Union{<:SimpleID,<:CompositeID}.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.VectorSpace",
+    "page": "Algebra over fields",
+    "title": "Hamiltonian.Utilities.AlgebraOverField.VectorSpace",
+    "category": "constant",
+    "text": "VectorSpace\n\nThe corresponding vector space of an algebra over a field.\n\nAlias for Union{SimpleVectorSpace,CompositeVectorSpace}.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.VectorSpace-Tuple{Vararg{Union{#s69, #s68} where #s68<:Hamiltonian.Utilities.AlgebraOverField.CompositeID where #s69<:Hamiltonian.Utilities.AlgebraOverField.SimpleID,N} where N}",
+    "page": "Algebra over fields",
+    "title": "Hamiltonian.Utilities.AlgebraOverField.VectorSpace",
+    "category": "method",
+    "text": "VectorSpace(ids::ID...) -> SimpleVectorSpace\nVectorSpace(svses::SimpleVectorSpace...) -> CompositeVectorSpace\n\nGet the corresponding vector space of an algebra over a field.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.CompositeID",
+    "page": "Algebra over fields",
+    "title": "Hamiltonian.Utilities.AlgebraOverField.CompositeID",
+    "category": "type",
+    "text": "CompositeID(ids::NTuple{N,SimpleID}) where N\nCompositeID(ids::SimpleID...)\n\nA composite id is the id of the multiplication of bases of an algebra over a field.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.CompositeVectorSpace",
+    "page": "Algebra over fields",
+    "title": "Hamiltonian.Utilities.AlgebraOverField.CompositeVectorSpace",
+    "category": "type",
+    "text": "CompositeVectorSpace(svses::SimpleVectorSpace...)\n\nThe vector space spanned by the direct product of simple vector spaces.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.Element",
+    "page": "Algebra over fields",
+    "title": "Hamiltonian.Utilities.AlgebraOverField.Element",
+    "category": "type",
+    "text": "Element{V<:Number,I<:ID}\n\nAn element of an algebra over a field.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.Elements",
+    "page": "Algebra over fields",
+    "title": "Hamiltonian.Utilities.AlgebraOverField.Elements",
+    "category": "type",
+    "text": "Elements{I<:ID,M<:Element} -> AbstractDict{I,M}\n\nAn set of elements of an algebra over a field.\n\nSimilar iterms are automatically merged thanks to the id system.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.Elements-Tuple{Any}",
+    "page": "Algebra over fields",
+    "title": "Hamiltonian.Utilities.AlgebraOverField.Elements",
+    "category": "method",
+    "text": "Elements(ms)\nElements(ms::Pair{I,M}...) where {I<:ID,M<:Element}\nElements(ms::Element...)\n\nGet the set of elements with similar items merged.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.SimpleID",
+    "page": "Algebra over fields",
+    "title": "Hamiltonian.Utilities.AlgebraOverField.SimpleID",
+    "category": "type",
+    "text": "SimpleID <: AbstractNamedVector\n\nA simple id is the id of a single basis of a vector space or algebra over a field.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.SimpleVectorSpace",
+    "page": "Algebra over fields",
+    "title": "Hamiltonian.Utilities.AlgebraOverField.SimpleVectorSpace",
+    "category": "type",
+    "text": "SimpleVectorSpace(ids::ID...)\n\nThe vector space spanned by a set of bases specified by their ids.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.:⊕-Union{Tuple{I}, Tuple{I,I}} where I<:(Union{#s69, #s68} where #s68<:Hamiltonian.Utilities.AlgebraOverField.CompositeID where #s69<:Hamiltonian.Utilities.AlgebraOverField.SimpleID)",
+    "page": "Algebra over fields",
+    "title": "Hamiltonian.Utilities.:⊕",
+    "category": "method",
+    "text": "⊕(id1::I,id2::I) where {I<:ID} -> SimpleVectorSpace{I}\n⊕(id::I,svs::SimpleVectorSpace{I}) where {I<:ID} -> SimpleVectorSpace{I}\n⊕(svs::SimpleVectorSpace{I},id::I) where {I<:ID} -> SimpleVectorSpace{I}\n⊕(svs1::SVS,svs2::SVS) where {SVS<:SimpleVectorSpace} -> SVS\n\nGet the direct sum of bases or simple vector spaces.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.:⊗-Tuple{Hamiltonian.Utilities.AlgebraOverField.SimpleID,Hamiltonian.Utilities.AlgebraOverField.SimpleID}",
+    "page": "Algebra over fields",
+    "title": "Hamiltonian.Utilities.:⊗",
+    "category": "method",
+    "text": "⊗(sid1::SimpleID,sid2::SimpleID) -> CompositeID\n⊗(sid::SimpleID,cid::CompositeID) -> CompositeID\n⊗(cid::CompositeID,sid::SimpleID) -> CompositeID\n⊗(cid1::CompositeID,cid2::CompositeID) -> CompositeID\n\nGet the direct product of the id system.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.:⊗-Tuple{Hamiltonian.Utilities.AlgebraOverField.SimpleVectorSpace,Hamiltonian.Utilities.AlgebraOverField.SimpleVectorSpace}",
+    "page": "Algebra over fields",
+    "title": "Hamiltonian.Utilities.:⊗",
+    "category": "method",
+    "text": "⊗(svs1::SimpleVectorSpace,svs2::SimpleVectorSpace) -> CompositeVectorSpace\n⊗(svs::SimpleVectorSpace,cvs::CompositeVectorSpace) -> CompositeVectorSpace\n⊗(cvs::CompositeVectorSpace,svs::SimpleVectorSpace) -> CompositeVectorSpace\n⊗(cvs1::CompositeVectorSpace,cvs2::CompositeVectorSpace) -> CompositeVectorSpace\n\nGet the direct product of simple vector spaces or composite vector spaces.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.add!-Tuple{Dict{I,M} where M<:Hamiltonian.Utilities.AlgebraOverField.Element where I<:(Union{#s69, #s68} where #s68<:Hamiltonian.Utilities.AlgebraOverField.CompositeID where #s69<:Hamiltonian.Utilities.AlgebraOverField.SimpleID)}",
+    "page": "Algebra over fields",
+    "title": "Hamiltonian.Utilities.AlgebraOverField.add!",
+    "category": "method",
+    "text": "add!(ms::Elements) -> typeof(ms)\nadd!(ms::Elements,mms::Element...) -> typeof(ms)\nadd!(ms::Elements,mses::Elements...) -> typeof(ms)\n\nGet the inplace addition of elements to a set.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.id-Tuple{Hamiltonian.Utilities.AlgebraOverField.Element}",
+    "page": "Algebra over fields",
+    "title": "Hamiltonian.Utilities.AlgebraOverField.id",
+    "category": "method",
+    "text": "id(m::Element) -> ID\n\nGet the id of an element.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.idtype-Union{Tuple{Type{#s68} where #s68<:Element{V,I}}, Tuple{I}, Tuple{V}} where I where V",
+    "page": "Algebra over fields",
+    "title": "Hamiltonian.Utilities.AlgebraOverField.idtype",
+    "category": "method",
+    "text": "idtype(::Type{<:Element{V,I}}) where {V,I}\nidtype(m::Element)\n\nThe type of the id of an element.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.sub!-Tuple{Dict{I,M} where M<:Hamiltonian.Utilities.AlgebraOverField.Element where I<:(Union{#s69, #s68} where #s68<:Hamiltonian.Utilities.AlgebraOverField.CompositeID where #s69<:Hamiltonian.Utilities.AlgebraOverField.SimpleID)}",
+    "page": "Algebra over fields",
+    "title": "Hamiltonian.Utilities.AlgebraOverField.sub!",
+    "category": "method",
+    "text": "sub!(ms::Elements) -> typeof(ms) -> typeof(ms)\nsub!(ms::Elements,m::Element) -> typeof(ms)\nsub!(ms::Elements,mms::Elements) -> typeof(ms)\n\nGet the inplace subtraction of elements from a set.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.dimension-Tuple{Hamiltonian.Utilities.AlgebraOverField.SimpleVectorSpace}",
+    "page": "Algebra over fields",
+    "title": "Hamiltonian.Utilities.dimension",
+    "category": "method",
+    "text": "dimension(svs::SimpleVectorSpace) -> Int\ndimension(cvs::CompositeVectorSpace) -> Int\n\nGet the dimension of a vector space.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.rank-Tuple{Type{#s68} where #s68<:Hamiltonian.Utilities.AlgebraOverField.SimpleID}",
+    "page": "Algebra over fields",
+    "title": "Hamiltonian.Utilities.rank",
+    "category": "method",
+    "text": "rank(::Type{<:SimpleID}) -> Int\nrank(id::SimpleID) -> Int\n\nGet the rank of a simple id, which is defined to be 1.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.rank-Union{Tuple{Type{#s68} where #s68<:CompositeID{N,I}}, Tuple{I}, Tuple{N}} where I where N",
+    "page": "Algebra over fields",
+    "title": "Hamiltonian.Utilities.rank",
+    "category": "method",
+    "text": "rank(::Type{<:CompositeID{N,I}}) where {N,I} -> Int\nrank(id::CompositeID) -> Int\n\nGet the rank of a composite id.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.rank-Union{Tuple{Type{#s68} where #s68<:Element{V,I}}, Tuple{I}, Tuple{V}} where I where V",
+    "page": "Algebra over fields",
+    "title": "Hamiltonian.Utilities.rank",
+    "category": "method",
+    "text": "rank(::Type{<:Element{V,I}}) where {V,I} -> Int\nrank(m::Element) -> Int\n\nGet the rank of an element.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Base.:*-Tuple{Number,Hamiltonian.Utilities.AlgebraOverField.Element}",
+    "page": "Algebra over fields",
+    "title": "Base.:*",
+    "category": "method",
+    "text": "*(factor::Number,m::Element)\n*(factor::Number,ms::Elements)\n*(m::Element,factor::Number)\n*(ms::Elements,factor::Number)\n*(m::Element,ms::Elements)\n*(ms::Elements,m::Element)\n*(ms1::Elements,ms2::Elements)\n*(m1::Element,m2::Element)\n\nOverloaded * operator for element-scalar multiplications and element-element multiplications of an algebra over a field.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Base.:+-Tuple{Hamiltonian.Utilities.AlgebraOverField.Element}",
+    "page": "Algebra over fields",
+    "title": "Base.:+",
+    "category": "method",
+    "text": "+(m::Element)\n+(ms::Elements)\n+(ms::Elements,m::Element)\n+(m1::Element,m2::Element)\n+(m::Element,ms::Elements)\n+(ms1::Elements,ms2::Elements)\n\nOverloaded + operator between elements of an algebra over a field.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Base.:--Tuple{Hamiltonian.Utilities.AlgebraOverField.Element}",
+    "page": "Algebra over fields",
+    "title": "Base.:-",
+    "category": "method",
+    "text": "-(m::Element)\n-(ms::Elements)\n-(m1::Element,m2::Element)\n-(m::Element,ms::Elements)\n-(ms::Elements,m::Element)\n-(ms1::Elements,ms2::Elements)\n\nOverloaded - operator between elements of an algebra over a field.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Base.:/-Tuple{Hamiltonian.Utilities.AlgebraOverField.Element,Number}",
+    "page": "Algebra over fields",
+    "title": "Base.:/",
+    "category": "method",
+    "text": "/(m::Element,factor::Number)\n/(ms::Elements,factor::Number)\n\nOverloaded / operator for element-sclar division of an algebra over a field.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Base.eltype-Tuple{Hamiltonian.Utilities.AlgebraOverField.SimpleID}",
+    "page": "Algebra over fields",
+    "title": "Base.eltype",
+    "category": "method",
+    "text": "eltype(id::SimpleID)\neltype(::Type{I}) where I\n\nGet the eltype of a simple id, which is defined to be the type of itself.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Base.hash-Tuple{Hamiltonian.Utilities.AlgebraOverField.CompositeID,UInt64}",
+    "page": "Algebra over fields",
+    "title": "Base.hash",
+    "category": "method",
+    "text": "hash(cid::CompositeID,h::UInt)\n\nHash a composite id.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Base.isless-Tuple{Union{#s69, #s68} where #s68<:Hamiltonian.Utilities.AlgebraOverField.CompositeID where #s69<:Hamiltonian.Utilities.AlgebraOverField.SimpleID,Union{#s69, #s68} where #s68<:Hamiltonian.Utilities.AlgebraOverField.CompositeID where #s69<:Hamiltonian.Utilities.AlgebraOverField.SimpleID}",
+    "page": "Algebra over fields",
+    "title": "Base.isless",
+    "category": "method",
+    "text": "isless(cid1::ID,cid2::ID) -> Bool\n<(cid1::ID,cid2::ID) -> Bool\n\nCompare two ids and judge whether the first is less than the second.\n\nWe assume that ids with smaller ranks are always less than those with higher ranks. If two ids are of the same rank, the comparison goes just like that between tuples.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Base.iterate",
+    "page": "Algebra over fields",
+    "title": "Base.iterate",
+    "category": "function",
+    "text": "iterate(id::SimpleID,state::Integer=1)\niterate(rv::Iterators.Reverse{<:SimpleID},state::Integer=1)\n\nIterate over a simple id.\n\nThe iteration is defined to give itself.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Base.length-Tuple{Hamiltonian.Utilities.AlgebraOverField.SimpleID}",
+    "page": "Algebra over fields",
+    "title": "Base.length",
+    "category": "method",
+    "text": "length(id::SimpleID) -> Int\nlength(::Type{<:SimpleID}) -> Int\n\nGet the length of a simple id, which is defined to be 1.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Base.show-Tuple{IO,Hamiltonian.Utilities.AlgebraOverField.CompositeID}",
+    "page": "Algebra over fields",
+    "title": "Base.show",
+    "category": "method",
+    "text": "show(io::IO,cid::CompositeID)\n\nShow a composite id.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Base.typejoin-Tuple{Type{#s67} where #s67<:Hamiltonian.Utilities.AlgebraOverField.SimpleID,Type{#s63} where #s63<:Hamiltonian.Utilities.AlgebraOverField.CompositeID}",
+    "page": "Algebra over fields",
+    "title": "Base.typejoin",
+    "category": "method",
+    "text": "typejoin(SID::Type{<:SimpleID},CID::Type{<:CompositeID})\ntypejoin(CID::Type{<:CompositeID},SID::Type{<:SimpleID})\n\nGet the type join of a simple id and a composite id.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Base.valtype-Union{Tuple{Type{#s68} where #s68<:Element{V,I}}, Tuple{I}, Tuple{V}} where I where V",
+    "page": "Algebra over fields",
+    "title": "Base.valtype",
+    "category": "method",
+    "text": "valtype(::Type{<:Element{V,I}}) where {V,I}\nvaltype(m::Element)\n\nGet the type of the value of an element.\n\nThe result is also the type of the field over which the algebra is defined.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Base.zero-Tuple{Dict{I,M} where M<:Hamiltonian.Utilities.AlgebraOverField.Element where I<:(Union{#s69, #s68} where #s68<:Hamiltonian.Utilities.AlgebraOverField.CompositeID where #s69<:Hamiltonian.Utilities.AlgebraOverField.SimpleID)}",
+    "page": "Algebra over fields",
+    "title": "Base.zero",
+    "category": "method",
+    "text": "zero(ms::Elements) -> typeof(ms)\nzero(::Type{Elements{I,M}}) where {I,M} -> Elements{I,M}\n\nGet a zero set of elements.\n\nA zero set of elements is defined to be the empty one.\n\n\n\n\n\n"
 },
 
 {
@@ -1941,7 +2221,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "Introduction",
     "category": "section",
-    "text": "Essentials of the Hamiltonian package, which defines all the imported constants, types and functions when using import Hamiltonian or using Hamiltonian. Note that this submodule depends on the Utilities submodule although the variables in the latter are not exported to the scope of Hamiltonian by default.Pages=  [\n        \"Spatial.md\",\n        ]\nDepth=2"
+    "text": "Essentials of the Hamiltonian package, which defines all the imported constants, types and functions when using import Hamiltonian or using Hamiltonian. Note that this submodule depends on the Utilities submodule although the variables in the latter are not exported to the scope of Hamiltonian by default.Pages=  [\n        \"Spatial.md\",\n        \"DegreeOfFreedom.md\",\n        ]\nDepth=2"
 },
 
 {
@@ -2470,6 +2750,270 @@ var documenterSearchIndex = {"docs": [
     "title": "Manul",
     "category": "section",
     "text": "Modules=[Spatial]\nOrder=  [:module,:constant,:type,:macro,:function]"
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#",
+    "page": "DegreeOfFreedom",
+    "title": "DegreeOfFreedom",
+    "category": "page",
+    "text": "CurrentModule=Hamiltonian.Essentials.DegreeOfFreedompush!(LOAD_PATH,\"../../../../src/\")\nusing Hamiltonian"
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#DegreeOfFreedom-1",
+    "page": "DegreeOfFreedom",
+    "title": "DegreeOfFreedom",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#Table-1",
+    "page": "DegreeOfFreedom",
+    "title": "Table",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#Internal-and-Index-1",
+    "page": "DegreeOfFreedom",
+    "title": "Internal and Index",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#IDFConfig-1",
+    "page": "DegreeOfFreedom",
+    "title": "IDFConfig",
+    "category": "section",
+    "text": "There are two purposes with IDFConfigprovide a complete set of internal degrees of freedom on a lattice\noffer the ordering of the internal degrees of freedom on a lattice"
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#IndexPack-and-IndexPacks-1",
+    "page": "DegreeOfFreedom",
+    "title": "IndexPack and IndexPacks",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#Hamiltonian.Essentials.DegreeOfFreedom.Coupling",
+    "page": "DegreeOfFreedom",
+    "title": "Hamiltonian.Essentials.DegreeOfFreedom.Coupling",
+    "category": "type",
+    "text": "Coupling\n\nThe coupling intra/inter interanl degrees of freedom at different lattice points.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#Hamiltonian.Essentials.DegreeOfFreedom.Couplings",
+    "page": "DegreeOfFreedom",
+    "title": "Hamiltonian.Essentials.DegreeOfFreedom.Couplings",
+    "category": "type",
+    "text": "Couplings{I,C<:Coupling} <: AbstractDict{I,C}\n\nA pack of couplings intra/inter interanl degrees of freedom at different lattice points.\n\nAlias for Elements{I,C}.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#Hamiltonian.Essentials.DegreeOfFreedom.DirectIndexToTuple",
+    "page": "DegreeOfFreedom",
+    "title": "Hamiltonian.Essentials.DegreeOfFreedom.DirectIndexToTuple",
+    "category": "type",
+    "text": "DirectIndexToTuple\n\nDirect index to tuple.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#Hamiltonian.Essentials.DegreeOfFreedom.DirectIndexToTuple-Tuple{Index}",
+    "page": "DegreeOfFreedom",
+    "title": "Hamiltonian.Essentials.DegreeOfFreedom.DirectIndexToTuple",
+    "category": "method",
+    "text": "(indextotuple::DirectIndexToTuple)(index::Index) -> Tuple\n(indextotuple::DirectIndexToTuple)(index::Index,mask::Symbol...) -> Tuple\n\nConvert an index to tuple directly.\n\nWhen mask is nonempty, those attributes of Index whose names are in mask will be omitted during the conversion.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#Hamiltonian.Essentials.DegreeOfFreedom.IDFConfig",
+    "page": "DegreeOfFreedom",
+    "title": "Hamiltonian.Essentials.DegreeOfFreedom.IDFConfig",
+    "category": "type",
+    "text": "IDFConfig{I}(indextotuple::IndexToTuple,map::Function,pids::AbstractVector{<:PID}=[]) where I<:Internal\n\nConfiguration of the internal degrees of freedom at a lattice.\n\nmap maps a PID to an Internal, while indextotuple maps an Index to a tuple.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#Hamiltonian.Essentials.DegreeOfFreedom.IID",
+    "page": "DegreeOfFreedom",
+    "title": "Hamiltonian.Essentials.DegreeOfFreedom.IID",
+    "category": "type",
+    "text": "IID\n\nThe id of an internal degree of freedom.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#Hamiltonian.Essentials.DegreeOfFreedom.Index",
+    "page": "DegreeOfFreedom",
+    "title": "Hamiltonian.Essentials.DegreeOfFreedom.Index",
+    "category": "type",
+    "text": "Index{P,I}\n\nThe complete index of a degree of freedom, which consist of the spatial part and the internal part.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#Hamiltonian.Essentials.DegreeOfFreedom.IndexToTuple",
+    "page": "DegreeOfFreedom",
+    "title": "Hamiltonian.Essentials.DegreeOfFreedom.IndexToTuple",
+    "category": "type",
+    "text": "IndexToTuple\n\nThe rules for converting an index to a tuple.\n\nAs a function, every instance should accept two positional arguments\n\nindex::Index: the index to be converted to a tuple\nmask::NTuple{N,Symbol}: the names of the attributes of an index to be omitted during the conversion\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#Hamiltonian.Essentials.DegreeOfFreedom.Internal",
+    "page": "DegreeOfFreedom",
+    "title": "Hamiltonian.Essentials.DegreeOfFreedom.Internal",
+    "category": "type",
+    "text": "Internal\n\nThe whole internal degrees of freedom at a single point.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#Hamiltonian.Essentials.DegreeOfFreedom.Table",
+    "page": "DegreeOfFreedom",
+    "title": "Hamiltonian.Essentials.DegreeOfFreedom.Table",
+    "category": "type",
+    "text": "Table{I<:Index} <: AbstractDict{I,Int}\n\nIndex-sequence table. Alias for Dict{I<:Index,Int}.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#Hamiltonian.Essentials.DegreeOfFreedom.Table-Union{Tuple{AbstractArray{#s209,1} where #s209<:Index}, Tuple{N}} where N",
+    "page": "DegreeOfFreedom",
+    "title": "Hamiltonian.Essentials.DegreeOfFreedom.Table",
+    "category": "method",
+    "text": "Table(indices::AbstractVector{<:Index};by::IndexToTuple=directindextotuple,mask::NTuple{N,Symbol}=()) where N -> Table\n\nConvert an sequence of indices to the corresponding index-sequence table.\n\nThe input indices will be converted to tuples by the by function along with the mask parameter, which contains the names of omitted attributes of the indices during this conversion. Then duplicates are removed and the resulting unique tuples are sorted, which determines the sequence of the input indices. Note that two indices have the same sequence if their converted tupels are equal to each other.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#Hamiltonian.Essentials.DegreeOfFreedom.Table-Union{Tuple{IDFConfig}, Tuple{N}} where N",
+    "page": "DegreeOfFreedom",
+    "title": "Hamiltonian.Essentials.DegreeOfFreedom.Table",
+    "category": "method",
+    "text": "Table(config::IDFConfig;mask::NTuple{N,Symbol}=()) where N -> Table\n\nGet the index-sequence table of the whole internal Hilbert spaces at a lattice.\n\nWhen mask is nonempty, it contains the names of the attributes that will be omitted during the conversion from an index to tuple.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#Hamiltonian.Essentials.DegreeOfFreedom.directindextotuple",
+    "page": "DegreeOfFreedom",
+    "title": "Hamiltonian.Essentials.DegreeOfFreedom.directindextotuple",
+    "category": "function",
+    "text": "directindextotuple\n\nIndicate that the conversion from an index to a tuple is direct.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#Hamiltonian.Essentials.DegreeOfFreedom.iid-Tuple{Index}",
+    "page": "DegreeOfFreedom",
+    "title": "Hamiltonian.Essentials.DegreeOfFreedom.iid",
+    "category": "method",
+    "text": "iid(index::Index) -> IID\n\nThe internal part of an index.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#Hamiltonian.Essentials.DegreeOfFreedom.iidtype-Tuple{Index}",
+    "page": "DegreeOfFreedom",
+    "title": "Hamiltonian.Essentials.DegreeOfFreedom.iidtype",
+    "category": "method",
+    "text": "iidtype(index::Index)\niidtype(::Type{<:Index{P,I}}) where {P,I}\n\nThe type of the internal part of an index.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#Hamiltonian.Essentials.DegreeOfFreedom.pid-Tuple{Index}",
+    "page": "DegreeOfFreedom",
+    "title": "Hamiltonian.Essentials.DegreeOfFreedom.pid",
+    "category": "method",
+    "text": "pid(index::Index) -> PID\n\nThe spatial part of an index.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#Hamiltonian.Essentials.DegreeOfFreedom.pidtype-Tuple{Index}",
+    "page": "DegreeOfFreedom",
+    "title": "Hamiltonian.Essentials.DegreeOfFreedom.pidtype",
+    "category": "method",
+    "text": "pidtype(index::Index)\npidtype(::Type{<:Index{P,I}}) where {P,I}\n\nThe type of the spatial part of an index.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#Core.Type-Tuple{PID,IID}",
+    "page": "DegreeOfFreedom",
+    "title": "Core.Type",
+    "category": "method",
+    "text": "(INDEX::Type{<:Index})(pid::PID,iid::IID) -> INDEX\n\nGet the corresponding index from a pid and an iid.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#Base.:==-Union{Tuple{I}, Tuple{I,I}} where I<:Internal",
+    "page": "DegreeOfFreedom",
+    "title": "Base.:==",
+    "category": "method",
+    "text": "==(i1::I,i2::I) where I<:Internal\nisequal(i1::I,i2::I) where I<:Internal\n\nCompare two internals and judge whether they are equal to each other.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#Base.convert-Union{Tuple{N}, Tuple{Type{Tuple},Index}} where N",
+    "page": "DegreeOfFreedom",
+    "title": "Base.convert",
+    "category": "method",
+    "text": "convert(::Type{Tuple},index::Index;by::IndexToTuple=directindextotuple,mask::NTuple{N,Symbol}=()) where N -> Tuple\n\nConvert an index to tuple.\n\nby specifies the algorithm to convert an index to tuple, while mask contains the names of the omitted attributes of an index during the conversion.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#Base.eltype-Tuple{Internal}",
+    "page": "DegreeOfFreedom",
+    "title": "Base.eltype",
+    "category": "method",
+    "text": "eltype(internal::Internal)\neltype(::Type{<:Internal{I}}) where I\n\nGet the type of the IIDs that an Internal contains.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#Base.replace!-Tuple{IDFConfig,Vararg{PID,N} where N}",
+    "page": "DegreeOfFreedom",
+    "title": "Base.replace!",
+    "category": "method",
+    "text": "replace!(config::IDFConfig,pids::PID...) -> IDFConfig\n\nReset the idfconfig with new pids.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#Base.reverse-Tuple{Dict{I,Int64} where I<:Index}",
+    "page": "DegreeOfFreedom",
+    "title": "Base.reverse",
+    "category": "method",
+    "text": "reverse(table::Table) -> Dict{Int,Set{<:Index}}\n\nConvert an index-sequence table to a sequence-indices table.\n\nSince different indices may correspond to the same sequence, the reverse is a one-to-many map.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#Base.show-Tuple{IO,Internal}",
+    "page": "DegreeOfFreedom",
+    "title": "Base.show",
+    "category": "method",
+    "text": "show(io::IO,i::Internal)\n\nShow an internal.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#Base.union-Union{Tuple{I}, Tuple{P}, Tuple{Type{P},Type{I}}} where I<:IID where P<:PID",
+    "page": "DegreeOfFreedom",
+    "title": "Base.union",
+    "category": "method",
+    "text": "union(::Type{P},::Type{I}) where {P<:PID,I<:IID}\n\nCombine a concrete PID type and a concrete IID type to a concrete Index type.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#Base.union-Union{Tuple{Vararg{Dict{I,Int64} where I<:Index,N} where N}, Tuple{N}} where N",
+    "page": "DegreeOfFreedom",
+    "title": "Base.union",
+    "category": "method",
+    "text": "union(tables::Table...;by::IndexToTuple=directindextotuple,mask::NTuple{N,Symbol}=()) where N -> Table\n\nUnite several index-sequence tables.\n\nSee Table for more details.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#Manul-1",
+    "page": "DegreeOfFreedom",
+    "title": "Manul",
+    "category": "section",
+    "text": "Modules=[DegreeOfFreedom]\nOrder=  [:module,:constant,:type,:macro,:function]"
 },
 
 ]}
