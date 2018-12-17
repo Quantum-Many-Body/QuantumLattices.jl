@@ -18,6 +18,8 @@ end
     @test sid|>typeof|>rank==1
 
     cid=SMPID(2,1)⊗SMPID(1,Inf)
+    @test cid|>propertynames==(:contents,)
+    @test cid.contents==(SMPID(2,1),SMPID(1,Inf))
     @test cid|>string=="CompositeID(SMPID(2,1),SMPID(1,Inf))"
     @test cid|>eltype==SMPID{Int,<:Real}
     @test cid|>rank==2
@@ -35,6 +37,12 @@ end
     @test isless(SMPID(1,2),SMPID(1,Inf))
     @test isless(SMPID(2,1),SMPID(1,2)⊗SMPID(1,Inf))
     @test SMPID(2,1)⊗SMPID(1,Inf)<SMPID(2,1)⊗SMPID(2,Inf)
+
+    cid=SMPID(2,1)⊗SMPID(3,4)
+    @test propertynames(cid|>typeof,false)==(:orbitals,:spins)
+    @test propertynames(cid|>typeof,true)==(:contents,:orbitals,:spins)
+    @test cid.orbitals==(2,3)
+    @test cid.spins==(1,4)
 end
 
 @testset "VectorSpace" begin

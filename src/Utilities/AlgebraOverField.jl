@@ -70,6 +70,36 @@ end
 CompositeID(ids::SimpleID...)=CompositeID(ids)
 
 """
+    propertynames(::Type{CID},private::Bool=false) where CID<:CompositeID -> Tuple
+
+Get the property names of a composite id.
+"""
+Base.propertynames(::Type{CID},private::Bool=false) where CID<:CompositeID=CID|>eltype|>isconcretetype ? cidpropertynames(CID,Val(private)) : (:contents,)
+@generated function cidpropertynames(::Type{CID},::Val{true}) where CID<:CompositeID
+    @assert CID|>eltype|>isconcretetype "cidpropertynames error: not homogeneous input CID($(CID|>nameof)) ."
+    exprs=[QuoteNode(Symbol(name,'s')) for name in CID|>eltype|>fieldnames]
+    return Expr(:tuple,QuoteNode(:contents),exprs...)
+end
+@generated function cidpropertynames(::Type{CID},::Val{false}) where CID<:CompositeID
+    @assert CID|>eltype|>isconcretetype "cidpropertynames error: not homogeneous input CID($(CID|>nameof))."
+    exprs=[QuoteNode(Symbol(name,'s')) for name in CID|>eltype|>fieldnames]
+    return Expr(:tuple,exprs...)
+end
+
+"""
+    getproperty(cid::CompositeID,name::Symbol)
+
+Get the property of a composite id.
+"""
+Base.getproperty(cid::CompositeID,name::Symbol)=name==:contents ? getfield(cid,:contents) : cidgetproperty(cid,name)
+cidpropertyindex(::Type{CID},name::Symbol) where CID<:CompositeID=findfirst(isequal(name),CID|>propertynames)::Int
+@generated function cidgetproperty(cid::CompositeID,name::Symbol)
+    index=:(index=cidpropertyindex(cid|>typeof,name))
+    exprs=[:(getfield(cid[$i],index)) for i=1:length(cid)]
+    return Expr(:block,index,Expr(:tuple,exprs...))
+end
+
+"""
     show(io::IO,cid::CompositeID)
 
 Show a composite id.
