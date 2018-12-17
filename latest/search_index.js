@@ -1673,6 +1673,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Utilities/AlgebraOverField.html#Base.getproperty-Tuple{Hamiltonian.Utilities.AlgebraOverField.CompositeID,Symbol}",
+    "page": "Algebra over fields",
+    "title": "Base.getproperty",
+    "category": "method",
+    "text": "getproperty(cid::CompositeID,name::Symbol)\n\nGet the property of a composite id.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Utilities/AlgebraOverField.html#Base.hash-Tuple{Hamiltonian.Utilities.AlgebraOverField.CompositeID,UInt64}",
     "page": "Algebra over fields",
     "title": "Base.hash",
@@ -1702,6 +1710,14 @@ var documenterSearchIndex = {"docs": [
     "title": "Base.length",
     "category": "method",
     "text": "length(id::SimpleID) -> Int\nlength(::Type{<:SimpleID}) -> Int\n\nGet the length of a simple id, which is defined to be 1.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Base.propertynames-Union{Tuple{Type{CID}}, Tuple{CID}, Tuple{Type{CID},Bool}} where CID<:Hamiltonian.Utilities.AlgebraOverField.CompositeID",
+    "page": "Algebra over fields",
+    "title": "Base.propertynames",
+    "category": "method",
+    "text": "propertynames(::Type{CID},private::Bool=false) where CID<:CompositeID -> Tuple\n\nGet the property names of a composite id.\n\n\n\n\n\n"
 },
 
 {
@@ -2805,7 +2821,7 @@ var documenterSearchIndex = {"docs": [
     "page": "DegreeOfFreedom",
     "title": "Hamiltonian.Essentials.DegreeOfFreedom.Coupling",
     "category": "type",
-    "text": "Coupling\n\nThe coupling intra/inter interanl degrees of freedom at different lattice points.\n\n\n\n\n\n"
+    "text": "Coupling{V,I}\n\nThe coupling intra/inter interanl degrees of freedom at different lattice points.\n\n\n\n\n\n"
 },
 
 {
@@ -2829,7 +2845,23 @@ var documenterSearchIndex = {"docs": [
     "page": "DegreeOfFreedom",
     "title": "Hamiltonian.Essentials.DegreeOfFreedom.DirectIndexToTuple",
     "category": "method",
-    "text": "(indextotuple::DirectIndexToTuple)(index::Index) -> Tuple\n(indextotuple::DirectIndexToTuple)(index::Index,mask::Symbol...) -> Tuple\n\nConvert an index to tuple directly.\n\nWhen mask is nonempty, those attributes of Index whose names are in mask will be omitted during the conversion.\n\n\n\n\n\n"
+    "text": "(indextotuple::DirectIndexToTuple)(index::Index) -> Tuple\n\nConvert an index to tuple directly.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#Hamiltonian.Essentials.DegreeOfFreedom.FilteredAttributes",
+    "page": "DegreeOfFreedom",
+    "title": "Hamiltonian.Essentials.DegreeOfFreedom.FilteredAttributes",
+    "category": "type",
+    "text": "FilteredAttributes(::Type{I}) where I<:Index\n\nA method that converts an arbitary index to a tuple, by iterating over the selected attributes in a specific order.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#Hamiltonian.Essentials.DegreeOfFreedom.FilteredAttributes-Tuple{Index}",
+    "page": "DegreeOfFreedom",
+    "title": "Hamiltonian.Essentials.DegreeOfFreedom.FilteredAttributes",
+    "category": "method",
+    "text": "(indextotuple::FilteredAttributes)(index::Index) -> Tuple\n\nConvert an index to tuple by the \"filtered attributes\" method.\n\n\n\n\n\n"
 },
 
 {
@@ -2837,7 +2869,7 @@ var documenterSearchIndex = {"docs": [
     "page": "DegreeOfFreedom",
     "title": "Hamiltonian.Essentials.DegreeOfFreedom.IDFConfig",
     "category": "type",
-    "text": "IDFConfig{I}(indextotuple::IndexToTuple,map::Function,pids::AbstractVector{<:PID}=[]) where I<:Internal\n\nConfiguration of the internal degrees of freedom at a lattice.\n\nmap maps a PID to an Internal, while indextotuple maps an Index to a tuple.\n\n\n\n\n\n"
+    "text": "IDFConfig(map::Function,::Type{I},pids::AbstractVector{<:PID}=[]) where I<:Internal\n\nConfiguration of the internal degrees of freedom at a lattice.\n\nmap maps a PID to an Internal.\n\n\n\n\n\n"
 },
 
 {
@@ -2861,7 +2893,7 @@ var documenterSearchIndex = {"docs": [
     "page": "DegreeOfFreedom",
     "title": "Hamiltonian.Essentials.DegreeOfFreedom.IndexToTuple",
     "category": "type",
-    "text": "IndexToTuple\n\nThe rules for converting an index to a tuple.\n\nAs a function, every instance should accept two positional arguments\n\nindex::Index: the index to be converted to a tuple\nmask::NTuple{N,Symbol}: the names of the attributes of an index to be omitted during the conversion\n\n\n\n\n\n"
+    "text": "IndexToTuple\n\nThe rules for converting an index to a tuple.\n\nAs a function, every instance should accept only one positional argument, i.e. the index to be converted to a tuple.\n\n\n\n\n\n"
 },
 
 {
@@ -2881,19 +2913,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreeOfFreedom.html#Hamiltonian.Essentials.DegreeOfFreedom.Table-Union{Tuple{AbstractArray{#s209,1} where #s209<:Index}, Tuple{N}} where N",
+    "location": "man/Essentials/DegreeOfFreedom.html#Hamiltonian.Essentials.DegreeOfFreedom.Table-Tuple{AbstractArray{#s209,1} where #s209<:Index}",
     "page": "DegreeOfFreedom",
     "title": "Hamiltonian.Essentials.DegreeOfFreedom.Table",
     "category": "method",
-    "text": "Table(indices::AbstractVector{<:Index};by::IndexToTuple=directindextotuple,mask::NTuple{N,Symbol}=()) where N -> Table\n\nConvert an sequence of indices to the corresponding index-sequence table.\n\nThe input indices will be converted to tuples by the by function along with the mask parameter, which contains the names of omitted attributes of the indices during this conversion. Then duplicates are removed and the resulting unique tuples are sorted, which determines the sequence of the input indices. Note that two indices have the same sequence if their converted tupels are equal to each other.\n\n\n\n\n\n"
+    "text": "Table(indices::AbstractVector{<:Index};by::IndexToTuple=directindextotuple) -> Table\n\nConvert an sequence of indices to the corresponding index-sequence table.\n\nThe input indices will be converted to tuples by the by function with the duplicates removed. The resulting unique tuples are sorted, which determines the sequence of the input indices. Note that two indices have the same sequence if their converted tupels are equal to each other.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/DegreeOfFreedom.html#Hamiltonian.Essentials.DegreeOfFreedom.Table-Union{Tuple{IDFConfig}, Tuple{N}} where N",
+    "location": "man/Essentials/DegreeOfFreedom.html#Hamiltonian.Essentials.DegreeOfFreedom.Table-Tuple{IDFConfig}",
     "page": "DegreeOfFreedom",
     "title": "Hamiltonian.Essentials.DegreeOfFreedom.Table",
     "category": "method",
-    "text": "Table(config::IDFConfig;mask::NTuple{N,Symbol}=()) where N -> Table\n\nGet the index-sequence table of the whole internal Hilbert spaces at a lattice.\n\nWhen mask is nonempty, it contains the names of the attributes that will be omitted during the conversion from an index to tuple.\n\n\n\n\n\n"
+    "text": "Table(config::IDFConfig;by::IndexToTuple=directindextotuple) -> Table\n\nGet the index-sequence table of the whole internal Hilbert spaces at a lattice.\n\n\n\n\n\n"
 },
 
 {
@@ -2909,7 +2941,7 @@ var documenterSearchIndex = {"docs": [
     "page": "DegreeOfFreedom",
     "title": "Hamiltonian.Essentials.DegreeOfFreedom.iid",
     "category": "method",
-    "text": "iid(index::Index) -> IID\n\nThe internal part of an index.\n\n\n\n\n\n"
+    "text": "iid(index::Index) -> IID\n\nGet the internal part of an index.\n\n\n\n\n\n"
 },
 
 {
@@ -2917,7 +2949,7 @@ var documenterSearchIndex = {"docs": [
     "page": "DegreeOfFreedom",
     "title": "Hamiltonian.Essentials.DegreeOfFreedom.iidtype",
     "category": "method",
-    "text": "iidtype(index::Index)\niidtype(::Type{<:Index{P,I}}) where {P,I}\n\nThe type of the internal part of an index.\n\n\n\n\n\n"
+    "text": "iidtype(index::Index)\niidtype(::Type{<:Index{P,I}}) where {P,I}\n\nGet the type of the internal part of an index.\n\n\n\n\n\n"
 },
 
 {
@@ -2925,7 +2957,7 @@ var documenterSearchIndex = {"docs": [
     "page": "DegreeOfFreedom",
     "title": "Hamiltonian.Essentials.DegreeOfFreedom.pid",
     "category": "method",
-    "text": "pid(index::Index) -> PID\n\nThe spatial part of an index.\n\n\n\n\n\n"
+    "text": "pid(index::Index) -> PID\n\nGet the spatial part of an index.\n\n\n\n\n\n"
 },
 
 {
@@ -2933,7 +2965,7 @@ var documenterSearchIndex = {"docs": [
     "page": "DegreeOfFreedom",
     "title": "Hamiltonian.Essentials.DegreeOfFreedom.pidtype",
     "category": "method",
-    "text": "pidtype(index::Index)\npidtype(::Type{<:Index{P,I}}) where {P,I}\n\nThe type of the spatial part of an index.\n\n\n\n\n\n"
+    "text": "pidtype(index::Index)\npidtype(::Type{<:Index{P,I}}) where {P,I}\n\nGet the type of the spatial part of an index.\n\n\n\n\n\n"
 },
 
 {
@@ -2953,11 +2985,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreeOfFreedom.html#Base.convert-Union{Tuple{N}, Tuple{Type{Tuple},Index}} where N",
+    "location": "man/Essentials/DegreeOfFreedom.html#Base.adjoint-Tuple{Index}",
     "page": "DegreeOfFreedom",
-    "title": "Base.convert",
+    "title": "Base.adjoint",
     "category": "method",
-    "text": "convert(::Type{Tuple},index::Index;by::IndexToTuple=directindextotuple,mask::NTuple{N,Symbol}=()) where N -> Tuple\n\nConvert an index to tuple.\n\nby specifies the algorithm to convert an index to tuple, while mask contains the names of the omitted attributes of an index during the conversion.\n\n\n\n\n\n"
+    "text": "adjoint(index::Index) -> typeof(index)\n\nGet the adjoint of an index.\n\n\n\n\n\n"
 },
 
 {
@@ -2966,6 +2998,22 @@ var documenterSearchIndex = {"docs": [
     "title": "Base.eltype",
     "category": "method",
     "text": "eltype(internal::Internal)\neltype(::Type{<:Internal{I}}) where I\n\nGet the type of the IIDs that an Internal contains.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#Base.filter-Tuple{Function,FilteredAttributes}",
+    "page": "DegreeOfFreedom",
+    "title": "Base.filter",
+    "category": "method",
+    "text": "filter(f::Function,indextotuple::FilteredAttributes)\n\nFilter the attributes of a \"filtered attributes\" method.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#Base.length-Tuple{FilteredAttributes}",
+    "page": "DegreeOfFreedom",
+    "title": "Base.length",
+    "category": "method",
+    "text": "length(indextotuple::FilteredAttributes) -> Int\nlength(::Type{<:FilteredAttributes{N}}) where N -> Int\n\nGet the length of the filtered attributes.\n\n\n\n\n\n"
 },
 
 {
@@ -2993,19 +3041,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Essentials/DegreeOfFreedom.html#Base.union-Tuple{Vararg{Dict{I,Int64} where I<:Index,N} where N}",
+    "page": "DegreeOfFreedom",
+    "title": "Base.union",
+    "category": "method",
+    "text": "union(tables::Table...;by::IndexToTuple=directindextotuple) -> Table\n\nUnite several index-sequence tables.\n\nSee Table for more details.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Essentials/DegreeOfFreedom.html#Base.union-Union{Tuple{I}, Tuple{P}, Tuple{Type{P},Type{I}}} where I<:IID where P<:PID",
     "page": "DegreeOfFreedom",
     "title": "Base.union",
     "category": "method",
     "text": "union(::Type{P},::Type{I}) where {P<:PID,I<:IID}\n\nCombine a concrete PID type and a concrete IID type to a concrete Index type.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/DegreeOfFreedom.html#Base.union-Union{Tuple{Vararg{Dict{I,Int64} where I<:Index,N} where N}, Tuple{N}} where N",
-    "page": "DegreeOfFreedom",
-    "title": "Base.union",
-    "category": "method",
-    "text": "union(tables::Table...;by::IndexToTuple=directindextotuple,mask::NTuple{N,Symbol}=()) where N -> Table\n\nUnite several index-sequence tables.\n\nSee Table for more details.\n\n\n\n\n\n"
 },
 
 {
