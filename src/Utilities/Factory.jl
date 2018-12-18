@@ -5,6 +5,8 @@ using MacroTools: splitarg,combinefield,combinearg
 using MacroTools: splitstructdef,combinestructdef
 using MacroTools: splitdef,combinedef
 using Printf: @printf,@sprintf
+using ..Utilities: comparison
+
 import MacroTools: rmlines
 
 export FExpr,escape
@@ -114,10 +116,12 @@ abstract type AbstractFactory end
 
 """
     ==(f1::F,f2::F) where F<:AbstractFactory -> Bool
+    isequal(f1::F,f2::F) where F<:AbstractFactory -> Bool
 
-Overloaded `==` operator.
+Overloaded equivalent operator.
 """
-Base.:(==)(f1::F,f2::F) where F<:AbstractFactory=all(getfield(f1,name)==getfield(f2,name) for name in F|>fieldnames)
+Base.:(==)(f1::F,f2::F) where F<:AbstractFactory = ==(comparison,f1,f2)
+Base.isequal(f1::F,f2::F) where F<:AbstractFactory=isequal(comparison,f1,f2)
 
 """
     show(io::IO,f::AbstractFactory)

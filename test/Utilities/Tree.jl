@@ -43,10 +43,12 @@ using Hamiltonian.Utilities.Tree
     empty!(tree)
     append!(tree,sub)
     @test tree==backup
+    @test isequal(tree,backup)
 
     sub=subtree(tree,"L1-1")
     delete!(tree,"L1-1")
     append!(tree,"L0",sub)
     move!(tree,"L1-2","L0")
     @test tree==backup
+    @test isequal(tree,backup)
 end

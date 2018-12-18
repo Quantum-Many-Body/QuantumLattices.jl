@@ -200,12 +200,14 @@ end
 
 """
     ==(qns1::QuantumNumbers,qns2::QuantumNumbers) -> Bool
+    isequal(qns1::QuantumNumbers,qns2::QuantumNumbers) -> Bool
 
-Overloaded `==` operator. Two `QuantumNumbers`es are equal to each other if and only if both their `contents`es and `indptr`s are elementwise equal to each other.
+Overloaded equivalent operator. Two `QuantumNumbers`es are equal to each other if and only if both their `contents`es and `indptr`s are elementwise equal to each other.
 !!! note
     It is not necessary for two `QuantumNumbers`es to have the same eltype nor the same form to be equal to each other.
 """
-Base.:(==)(qns1::QuantumNumbers,qns2::QuantumNumbers)=all(qns1.contents.==qns2.contents) && all(qns1.indptr.==qns2.indptr)
+Base.:(==)(qns1::QuantumNumbers,qns2::QuantumNumbers)=qns1.contents==qns2.contents && qns1.indptr==qns2.indptr
+Base.isequal(qns1::QuantumNumbers,qns2::QuantumNumbers)=isequal(qns1.contents,qns2.contents) && isequal(qns1.indptr,qns2.indptr)
 
 """
     show(io::IO,qns::QuantumNumbers)

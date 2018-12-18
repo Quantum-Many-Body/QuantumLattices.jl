@@ -3,6 +3,7 @@ module Tree
 using ..Factory: Inference,Argument,Parameter,FunctionFactory,TypeFactory
 using ..Factory: addfields!,addparams!,addargs!,addwhereparams!,extendbody!
 using ..Factory: MixEscaped,Escaped,UnEscaped
+using ..Utilities: comparison
 
 export treedepth,treewidth
 export AbstractTree
@@ -172,10 +173,12 @@ Base.valtype(::Type{<:AbstractTree{N,D}}) where {N,D}=D
 
 """
     ==(t1::T,t2::T) where T<:AbstractTree -> Bool
+    isequal(t1::T,t2::T) where T<:AbstractTree -> Bool
 
-Overloaded `==` operator.
+Overloaded equivalent operator.
 """
-Base.:(==)(t1::T,t2::T) where T<:AbstractTree=all(getfield(t1,name)==getfield(t2,name) for name in T|>fieldnames)
+Base.:(==)(t1::T,t2::T) where T<:AbstractTree = ==(comparison,t1,t2)
+Base.isequal(t1::T,t2::T) where T<:AbstractTree=isequal(comparison,t1,t2)
 
 """
     keys(tree::AbstractTree{N,D},::TreeDepth,node::Union{N,Nothing}=tree|>root) where {N,D}
@@ -364,10 +367,12 @@ end
 
 """
     ==(tc1::TC,tc2::TC) where TC<:TreeCore -> Bool
+    isequal(tc1::TC,tc2::TC) where TC<:TreeCore -> Bool
 
-Overloaded `==` operator.
+Overloaded equivalent operator.
 """
-Base.:(==)(tc1::TC,tc2::TC) where TC<:TreeCore=all(getfield(tc1,name)==getfield(tc2,name) for name in TC|>fieldnames)
+Base.:(==)(tc1::TC,tc2::TC) where TC<:TreeCore = ==(comparison,tc1,tc2)
+Base.isequal(tc1::TC,tc2::TC) where TC<:TreeCore=isequal(comparison,tc1,tc2)
 
 """
     @tree structdef treeparams::Union{Expr,Nothing}=nothing

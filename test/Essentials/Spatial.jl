@@ -111,6 +111,7 @@ end
 
 @testset "Point" begin
     @test Point(PID(0,1),(0.0,0.0),(0.0,0.0))==Point(PID(0,1),[0.0,0.0],[0.0,0.0])
+    @test isequal(Point(PID(0,1),(0.0,0.0),(0.0,0.0)),Point(PID(0,1),[0.0,0.0],[0.0,0.0]))
     @test Point{PID{Int},2}|>dimension==2
     @test Point(PID(0,1),(0.0,0.0))|>dimension==2
     @test Point(PID(0,1),(0.0,0.0),(0.0,0.0))|>string=="Point(PID(0,1),[0.0,0.0],[0.0,0.0])"
@@ -118,6 +119,8 @@ end
 
 @testset "Bond" begin
     bond=Bond(1,Point(PID(1,1),(0.0,0.0),(0.0,0.0)),Point(PID(1,2),(0.0,1.0),(0.0,1.0)))
+    @test bond|>deepcopy==bond
+    @test isequal(bond|>deepcopy,bond)
     @test bond|>string=="Bond(1,Point(PID(1,1),[0.0,0.0],[0.0,0.0]),Point(PID(1,2),[0.0,1.0],[0.0,1.0]))"
     @test bond|>reverse==Bond(1,Point(PID(1,2),(0.0,1.0),(0.0,1.0)),Point(PID(1,1),(0.0,0.0),(0.0,0.0)))
     @test bond|>rcoord==[0.0,1.0]
@@ -129,6 +132,7 @@ end
     link=Link(1,1,2,[0.0,1.0])
     @test link|>string=="Link(1,1,2,[0.0,1.0])"
     @test link==deepcopy(link)
+    @test isequal(link,link|>deepcopy)
 end
 
 @testset "intralinks" begin
@@ -148,6 +152,8 @@ end
 
 @testset "Lattice" begin
     lattice=Lattice("Tuanzi",[Point(PID(1,1),(0.5,0.5),(0.0,0.0))],vectors=[[1.0,0.0],[0.0,1.0]],neighbors=1)
+    @test lattice|>deepcopy==lattice
+    @test isequal(lattice|>deepcopy,lattice)
     @test lattice|>string=="Lattice(Tuanzi)"
     @test lattice|>length==1
     @test lattice|>dimension==2

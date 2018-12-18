@@ -6,7 +6,7 @@ using Printf: @printf,@sprintf
 using NearestNeighbors: KDTree,knn,inrange
 using Base.Iterators: flatten,product
 using Combinatorics: combinations
-using ...Utilities: atol,rtol,Float
+using ...Utilities: atol,rtol,Float,comparison
 using ...Utilities.NamedVector: AbstractNamedVector
 using ...Utilities.Factory: Inference,TypeFactory,FunctionFactory,Argument,MixEscaped,Escaped,UnEscaped
 using ...Utilities.Factory: addparams!,addfields!,addwhereparams!,addargs!,addkwargs!,extendbody!,addconstructors!
@@ -365,10 +365,12 @@ Base.show(io::IO,p::Point)=@printf io "Point(%s,[%s],[%s])" p.pid join(string.(p
 
 """
     ==(p1::Point,p2::Point) -> Bool
+    isequal(p1::Point,p2::Point) -> Bool
 
-Overloaded `==` operator.
+Overloaded equivalent operator.
 """
-Base.:(==)(p1::Point,p2::Point)=p1.pid==p2.pid && p1.rcoord==p2.rcoord && p1.icoord==p2.icoord
+Base.:(==)(p1::Point,p2::Point) = ==(comparison,p1,p2)
+Base.isequal(p1::Point,p2::Point)=isequal(comparison,p1,p2)
 
 """
     dimension(p::Point) -> Int
@@ -399,10 +401,12 @@ Base.show(io::IO,bond::Bond)=@printf io "Bond(%s,%s,%s)" bond.neighbor bond.spoi
 
 """
     ==(b1::Bond,b2::Bond) -> Bool
+    isequal(b1::Bond,b2::Bond) -> Bool
 
-Overloaded `==` operator.
+Overloaded equivalent operator.
 """
-Base.:(==)(b1::Bond,b2::Bond)=b1.neighbor==b2.neighbor && b1.spoint==b2.spoint && b1.epoint==b2.epoint
+Base.:(==)(b1::Bond,b2::Bond) = ==(comparison,b1,b2)
+Base.isequal(b1::Bond,b2::Bond)=isequal(comparison,b1,b2)
 
 """
     reverse(bond::Bond) -> Bond
@@ -454,10 +458,12 @@ Base.show(io::IO,link::Link)=@printf io "Link(%s,%s,%s,[%s])" link.neighbor link
 
 """
     ==(l1::Link,l2::Link) -> Bool
+    isequal(l1::Link,l2::Link) -> Bool
 
-Overloaded `==` operator.
+Overloaded equivalent operator.
 """
-Base.:(==)(l1::Link,l2::Link)=l1.neighbor==l2.neighbor && l1.sindex==l2.sindex && l1.eindex==l2.eindex && l1.disp==l2.disp
+Base.:(==)(l1::Link,l2::Link) = ==(comparison,l1,l2)
+Base.isequal(l1::Link,l2::Link)=isequal(comparison,l1,l2)
 
 """
     intralinks( cluster::AbstractMatrix{<:Real},
@@ -540,6 +546,15 @@ Base.show(io::IO,lattice::AbstractLattice)=@printf io "%s(%s)" lattice|>typeof|>
 Get the number of points contained in a lattice.
 """
 Base.length(lattice::AbstractLattice)=length(lattice.pids)
+
+"""
+    ==(lattice1::AbstractLattice,lattice2::AbstractLattice) -> Bool
+    isequal(lattice1::AbstractLattice,lattice2::AbstractLattice) -> Bool
+
+Overloaded equivalent operator.
+"""
+Base.:(==)(lattice1::AbstractLattice,lattice2::AbstractLattice) = ==(comparison,lattice1,lattice2)
+Base.isequal(lattice1::AbstractLattice,lattice2::AbstractLattice)=isequal(comparison,lattice1,lattice2)
 
 """
     dimension(lattice::AbstractLattice) -> Int

@@ -3,6 +3,7 @@ module NamedVector
 using Printf: @printf
 using ..Factory: Inference,TypeFactory,FunctionFactory,addargs!,extendbody!
 using ..Factory: MixEscaped,Escaped,UnEscaped
+using ..Utilities: comparison
 
 export AbstractNamedVector,@namedvector
 export HomoNamedVector,@homonamedvector
@@ -30,55 +31,23 @@ Base.setindex!(nv::AbstractNamedVector,value,index::Int)=setfield!(nv,index,valu
 
 """
     ==(nv1::AbstractNamedVector,nv2::AbstractNamedVector) -> Bool
+    isequal(nv1::AbstractNamedVector,nv2::AbstractNamedVector) -> Bool
 
-Overloaded `==` operator. Two named vector are equal to each other if and only if their keys as well as their values are equal to each other.
+Overloaded equivalent operator. Two named vector are equal to each other if and only if their keys as well as their values are equal to each other.
 !!! note
     It is not necessary for two named vectors to be of the same concrete type to be equal to each other.
 """
 Base.:(==)(nv1::AbstractNamedVector,nv2::AbstractNamedVector)=nv1|>keys==nv2|>keys && nv1|>values==nv2|>values
-
-"""
-    isequal(nv1::AbstractNamedVector,nv2::AbstractNamedVector) -> Bool
-
-Judge whehter two named vectors are equal to each other. Two named vector are equal to each other if and only if their keys as well as their values are equal to each other.
-!!! note
-    It is not necessary for two named vectors to be of the same concrete type to be equal to each other.
-"""
 Base.isequal(nv1::AbstractNamedVector,nv2::AbstractNamedVector)=isequal(nv1|>keys,nv2|>keys) && isequal(nv1|>values,nv2|>values)
 
 """
     <(nv1::AbstractNamedVector,nv2::AbstractNamedVector) -> Bool
-
-Overloaded `<` operator.
-"""
-@generated function Base.:<(nv1::AbstractNamedVector,nv2::AbstractNamedVector)
-    n1,n2=nv1|>fieldcount,nv2|>fieldcount
-    N=min(n1,n2)
-    expr=n1<n2 ? Expr(:if,:(getfield(nv1,$N)==getfield(nv2,$N)),true,false) : false
-    expr=Expr(:if,:(getfield(nv1,$N)<getfield(nv2,$N)),true,expr)
-    for i in range(N-1,stop=1,step=-1)
-        expr=Expr(:if,:(getfield(nv1,$i)>getfield(nv2,$i)),false,expr)
-        expr=Expr(:if,:(getfield(nv1,$i)<getfield(nv2,$i)),true,expr)
-    end
-    return expr
-end
-
-"""
     isless(nv1::AbstractNamedVector,nv2::AbstractNamedVector) -> Bool
 
-Overloaded `isless` function.
+Compare two named vectors and judge whether the first is less than the second.
 """
-@generated function Base.isless(nv1::AbstractNamedVector,nv2::AbstractNamedVector)
-    n1,n2=nv1|>fieldcount,nv2|>fieldcount
-    N=min(n1,n2)
-    expr=n1<n2 ? Expr(:if,:(getfield(nv1,$N)==getfield(nv2,$N)),true,false) : false
-    expr=Expr(:if,:(isless(getfield(nv1,$N),getfield(nv2,$N))),true,expr)
-    for i in range(N-1,stop=1,step=-1)
-        expr=Expr(:if,:(isless(getfield(nv2,$i),getfield(nv1,$i))),false,expr)
-        expr=Expr(:if,:(isless(getfield(nv1,$i),getfield(nv2,$i))),true,expr)
-    end
-    return expr
-end
+Base.:<(nv1::AbstractNamedVector,nv2::AbstractNamedVector) = <(comparison,nv1,nv2)
+Base.isless(nv1::AbstractNamedVector,nv2::AbstractNamedVector)=isless(comparison,nv1,nv2)
 
 """
     show(io::IO,nv::AbstractNamedVector)

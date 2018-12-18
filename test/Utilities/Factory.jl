@@ -15,6 +15,7 @@ end
 
 @testset "Inference" begin
     @test Inference(name=:T)==Inference(nothing,:T,nothing)
+    @test isequal(Inference(name=:T),Inference(nothing,:T,nothing))
     @test (@inference Vector{Tuple{Int,String}})(UnEscaped(:Vector,:Tuple,:Int,:String))==:(Vector{Tuple{Int,String}})
     @test (@inference Type{<:Real})(UnEscaped(:Type,:Real))==:(Type{<:Real})
     @test Inference(:(SVector{N,<:Real}))|>string=="Inference(\n  head:   curly\n  name:   SVector\n  params: Inference[N, <:Real]\n)"

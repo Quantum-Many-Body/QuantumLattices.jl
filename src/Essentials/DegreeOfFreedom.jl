@@ -1,7 +1,7 @@
 module DegreeOfFreedom
 
 using Printf: @printf
-using ...Utilities: Float
+using ...Utilities: Float,comparison
 using ...Utilities.NamedVector: AbstractNamedVector
 using ...Utilities.CompositeStructure: CompositeDict
 using ...Utilities.AlgebraOverField: SimpleID, Element, Elements
@@ -167,13 +167,13 @@ Base.eltype(internal::Internal)=internal|>typeof|>eltype
 Base.eltype(::Type{<:Internal{I}}) where I=I
 
 """
-    ==(i1::I,i2::I) where I<:Internal
-    isequal(i1::I,i2::I) where I<:Internal
+    ==(i1::I,i2::I) where I<:Internal -> Bool
+    isequal(i1::I,i2::I) where I<:Internal -> Bool
 
 Compare two internals and judge whether they are equal to each other.
 """
-Base.:(==)(i1::I,i2::I) where I<:Internal=all(getfield(i1,i)==getfield(i2,i) for i=1:fieldcount(I))
-Base.isequal(i1::I,i2::I) where I<:Internal=all(isequal(getfield(i1,i),getfield(i2,i)) for i=1:fieldcount(I))
+Base.:(==)(i1::I,i2::I) where I<:Internal = ==(comparison,i1,i2)
+Base.isequal(i1::I,i2::I) where I<:Internal=isequal(comparison,i1,i2)
 
 """
     show(io::IO,i::Internal)

@@ -4,7 +4,7 @@ using Formatting: FormatSpec,fmt
 
 export atol,rtol,Float
 export forder,corder,ind2sub,sub2ind
-export decimaltostr,ordinal
+export decimaltostr,ordinal,comparison
 
 "Absolute tolerance for float numbers."
 const atol=5*10^-14
@@ -16,9 +16,8 @@ const rtol=√atol
 const Float=Float64
 
 abstract type MemoryOrder end
-struct FOrder <: MemoryOrder end
-struct COrder <: MemoryOrder end
 
+struct FOrder <: MemoryOrder end
 """
     forder
 
@@ -26,6 +25,7 @@ Indicate that the convertion between Cartesian index and linear index is using t
 """
 const forder=FOrder()
 
+struct COrder <: MemoryOrder end
 """
     corder
 
@@ -105,6 +105,82 @@ Convert a positive number to its corresponding ordinal.
 function ordinal(number)
     @assert number>0
     number==1 ? "1st" : number==2 ? "2nd" : number==3 ? "3rd" : "$(number)th"
+end
+
+struct Comparison end
+"""
+    comparison
+
+Indicate that the comparison methods, i.e. "=="/"isequal" or "<"/"isless", will be used.
+"""
+const comparison=Comparison()
+
+"""
+    ==(::Comparison,o1,o2) -> Bool
+    isequal(::Comparison,o1,o2) -> Bool
+
+Compare two objects and judge whether they are eqaul to each other.
+"""
+@generated function Base.:(==)(::Comparison,o1,o2)
+    fcount=o1|>fieldcount
+    if fcount==o2|>fieldcount
+        if fcount==0
+            return :(true)
+        else
+            expr=:(getfield(o1,1)==getfield(o2,1))
+            for i=2:fcount
+                expr=Expr(:&&,expr,:(getfield(o1,$i)==getfield(o2,$i)))
+            end
+            return expr
+        end
+    else
+        return :(false)
+    end
+end
+@generated function Base.isequal(::Comparison,o1,o2)
+    fcount=o1|>fieldcount
+    if fcount==o2|>fieldcount
+        if fcount==0
+            return :(true)
+        else
+            expr=:(isequal(getfield(o1,1),getfield(o2,1)))
+            for i=2:fcount
+                expr=Expr(:&&,expr,:(isequal(getfield(o1,$i),getfield(o2,$i))))
+            end
+            return expr
+        end
+    else
+        return :(false)
+    end
+end
+
+"""
+    <(::Comparison,o1,o2) -> Bool
+    isless(::Comparison,o1,o2) -> Bool
+
+Compare two objects and judge whether the first is less than the second.
+"""
+@generated function Base.:<(::Comparison,o1,o2)
+    n1,n2=o1|>fieldcount,o2|>fieldcount
+    N=min(n1,n2)
+    expr=n1<n2 ? Expr(:if,:(getfield(o1,$N)==getfield(o2,$N)),true,false) : false
+    expr=Expr(:if,:(getfield(o1,$N)<getfield(o2,$N)),true,expr)
+    for i in range(N-1,stop=1,step=-1)
+        expr=Expr(:if,:(getfield(o1,$i)>getfield(o2,$i)),false,expr)
+        expr=Expr(:if,:(getfield(o1,$i)<getfield(o2,$i)),true,expr)
+    end
+    return expr
+end
+@generated function Base.isless(::Comparison,o1,o2)
+    n1,n2=o1|>fieldcount,o2|>fieldcount
+    N=min(n1,n2)
+    expr=n1<n2 ? Expr(:if,:(getfield(o1,$N)==getfield(o2,$N)),true,false) : false
+    expr=Expr(:if,:(isless(getfield(o1,$N),getfield(o2,$N))),true,expr)
+    for i in range(N-1,stop=1,step=-1)
+        expr=Expr(:if,:(isless(getfield(o2,$i),getfield(o1,$i))),false,expr)
+        expr=Expr(:if,:(isless(getfield(o1,$i),getfield(o2,$i))),true,expr)
+    end
+    return expr
 end
 
 "Generic interface of the direct sum of some types."

@@ -57,6 +57,7 @@ end
     qn1,qn2=CNZ4(+1.0,+3.0),CNZ4(-1.0,+1.0)
     qns1=QuantumNumbers('U',[qn1,qn2],[0,2,5],qnsindptr)
     qns2=QuantumNumbers('U',[qn1,qn2],[2,3],qnscounts)
+    @test isequal(qns1,qns2)
     qns3=QuantumNumbers(OrderedDict(qn1=>2,qn2=>3))
     qns4=QuantumNumbers(OrderedDict(qn1=>1:2,qn2=>3:5))
     @test qns1==qns2==qns3==qns4

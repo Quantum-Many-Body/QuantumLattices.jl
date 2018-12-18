@@ -74,6 +74,8 @@ end
 
 @testset "Elements" begin
     opt=BasicOperator(1.0,SMPID(1,1))
+    @test opt|>deepcopy==opt
+    @test isequal(opt|>deepcopy,opt)
     @test opt|>valtype==Float
     @test opt|>typeof|>valtype==Float
     @test opt|>idtype==SMPID{Int,Int}

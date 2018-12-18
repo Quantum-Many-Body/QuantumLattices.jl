@@ -1,5 +1,7 @@
 module CompositeStructure
 
+using ..Utilities: comparison
+
 export CompositeNTuple,CompositeVector,CompositeDict
 
 """
@@ -12,12 +14,8 @@ Base.length(::CompositeNTuple{N,T}) where {N,T}=N
 Base.length(::Type{<:CompositeNTuple{N,T}}) where {N,T}=N
 Base.eltype(::CompositeNTuple{N,T}) where {N,T}=T
 Base.eltype(::Type{<:CompositeNTuple{N,T}}) where {N,T}=T
-function Base.:(==)(ct1::CompositeNTuple,ct2::CompositeNTuple)
-    fieldcount(ct1|>typeof)==fieldcount(ct2|>typeof) ? all(getfield(ct1,i)==getfield(ct2,i) for i=1:fieldcount(ct1|>typeof)) : false
-end
-function Base.isequal(ct1::CompositeNTuple,ct2::CompositeNTuple)
-    fieldcount(ct1|>typeof)==fieldcount(ct2|>typeof) ? all(isequal(getfield(ct1,i),getfield(ct2,i)) for i=1:fieldcount(ct1|>typeof)) : false
-end
+Base.:(==)(ct1::CompositeNTuple,ct2::CompositeNTuple) = ==(comparison,ct1,ct2)
+Base.isequal(ct1::CompositeNTuple,ct2::CompositeNTuple)=isequal(comparison,ct1,ct2)
 Base.getindex(ct::CompositeNTuple,i::Union{<:Integer,CartesianIndex})=getfield(ct,:contents)[i]
 @generated function Base.getindex(ct::CompositeNTuple,inds)
     exprs=[name==:contents ? :(getfield(ct,:contents)[inds]) : :(getfield(ct,$i)) for (i,name) in enumerate(ct|>fieldnames)]
@@ -39,12 +37,8 @@ abstract type CompositeVector{T} <:AbstractVector{T} end
 Base.size(cv::CompositeVector)=size(getfield(cv,:contents))
 Base.size(cv::CompositeVector,i)=size(getfield(cv,:contents),i)
 Base.length(cv::CompositeVector)=length(getfield(cv,:contents))
-function Base.:(==)(cv1::CompositeVector,cv2::CompositeVector)
-    fieldcount(cv1|>typeof)==fieldcount(cv2|>typeof) ? all(getfield(cv1,i)==getfield(cv2,i) for i=1:fieldcount(cv1|>typeof)) : false
-end
-function Base.isequal(cv1::CompositeVector,cv2::CompositeVector)
-    fieldcount(cv1|>typeof)==fieldcount(cv2|>typeof) ? all(isequal(getfield(cv1,i),getfield(cv2,i)) for i=1:fieldcount(cv1|>typeof)) : false
-end
+Base.:(==)(cv1::CompositeVector,cv2::CompositeVector) = ==(comparison,cv1,cv2)
+Base.isequal(cv1::CompositeVector,cv2::CompositeVector)=isequal(comparison,cv1,cv2)
 Base.getindex(cv::CompositeVector,i::Union{<:Integer,CartesianIndex})=getfield(cv,:contents)[i]
 @generated function Base.getindex(cv::CompositeVector,inds)
     exprs=[name==:contents ? :(getfield(cv,:contents)[inds]) : :(getfield(cv,$i)) for (i,name) in enumerate(cv|>fieldnames)]
@@ -94,12 +88,8 @@ Base.length(cd::CompositeDict)=length(getfield(cd,:contents))
 Base.haskey(cd::CompositeDict,key)=haskey(getfield(cd,:contents),key)
 Base.in(p::Pair,cd::CompositeDict,valcmp=(==))=in(p,getfield(cd,:contents),valcmp)
 Base.hash(cd::CompositeDict,h::UInt)=hash(Tuple(getfield(cd,name) for name in cd|>typeof|>fieldnames),h)
-function Base.:(==)(cd1::CompositeDict,cd2::CompositeDict)
-    fieldcount(cd1|>typeof)==fieldcount(cd2|>typeof) ? all(getfield(cd1,i)==getfield(cd2,i) for i=1:fieldcount(cd1|>typeof)) : false
-end
-function Base.isequal(cd1::CompositeDict,cd2::CompositeDict)
-    fieldcount(cd1|>typeof)==fieldcount(cd2|>typeof) ? all(isequal(getfield(cd1,i),getfield(cd2,i)) for i=1:fieldcount(cd1|>typeof)) : false
-end
+Base.:(==)(cd1::CompositeDict,cd2::CompositeDict) = ==(comparison,cd1,cd2)
+Base.isequal(cd1::CompositeDict,cd2::CompositeDict)=isequal(comparison,cd1,cd2)
 Base.get(cd::CompositeDict,key,default)=get(getfield(cd,:contents),key,default)
 Base.get(f::Base.Callable,cd::CompositeDict,key)=get(f,getfield(cd,:contents),key)
 Base.getkey(cd::CompositeDict,key,default)=getkey(getfield(cd,:contents),key,default)

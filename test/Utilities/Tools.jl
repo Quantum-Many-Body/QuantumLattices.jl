@@ -34,3 +34,27 @@ end
     @test ordinal(4)=="4th"
     @test ordinal(5)=="5th"
 end
+
+struct ForCompare{F1,F2,F3}
+    f1::F1
+    f2::F2
+    f3::F3
+end
+Base.:(==)(fc1::ForCompare,fc2::ForCompare) = ==(comparison,fc1,fc2)
+Base.isequal(fc1::ForCompare,fc2::ForCompare) = isequal(comparison,fc1,fc2)
+Base.:<(fc1::ForCompare,fc2::ForCompare) = <(comparison,fc1,fc2)
+Base.:isless(fc1::ForCompare,fc2::ForCompare) = isless(comparison,fc1,fc2)
+
+@testset "comparison" begin
+    @test ==(comparison,(),())
+    @test isequal(comparison,(),())
+    @test ==(comparison,(1,2),(1,2,3))==false
+    @test isequal(comparison,(1,2),(1,2,3))==false
+
+    fc1,fc2=ForCompare(1.0,2,3),ForCompare(1,2,3)
+    @test fc1==fc2
+    @test isequal(fc1,fc2)
+    fc1,fc2=ForCompare(1.0,2,3),ForCompare(1,2,4.0)
+    @test fc1<fc2
+    @test isless(fc1,fc2)
+end

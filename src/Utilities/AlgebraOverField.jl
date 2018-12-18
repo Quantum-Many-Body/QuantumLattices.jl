@@ -3,6 +3,7 @@ module AlgebraOverField
 using Printf: @printf
 using ..NamedVector: AbstractNamedVector
 using ..CompositeStructure: CompositeNTuple
+using ..Utilities: comparison
 
 import ..Utilities: rank,⊕,⊗,dimension
 
@@ -285,6 +286,14 @@ Get the id of an element.
 """
 id(m::Element)=m.id
 
+"""
+    ==(m1::M,m2::M) where M<:Element -> Bool
+    isequal(m1::M,m2::M) where M<:Element -> Bool
+
+Compare two elements and judge whether they are equal to each other.
+"""
+Base.:(==)(m1::M,m2::M) where M<:Element = ==(comparison,m1,m2)
+Base.isequal(m1::M,m2::M) where M<:Element=isequal(comparison,m1,m2)
 
 """
     Elements{I<:ID,M<:Element} -> AbstractDict{I,M}
