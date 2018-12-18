@@ -757,7 +757,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factory",
     "title": "Base.:==",
     "category": "method",
-    "text": "==(f1::F,f2::F) where F<:AbstractFactory -> Bool\n\nOverloaded == operator.\n\n\n\n\n\n"
+    "text": "==(f1::F,f2::F) where F<:AbstractFactory -> Bool\nisequal(f1::F,f2::F) where F<:AbstractFactory -> Bool\n\nOverloaded equivalent operator.\n\n\n\n\n\n"
 },
 
 {
@@ -1069,7 +1069,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Tree",
     "title": "Base.:==",
     "category": "method",
-    "text": "==(tc1::TC,tc2::TC) where TC<:TreeCore -> Bool\n\nOverloaded == operator.\n\n\n\n\n\n"
+    "text": "==(tc1::TC,tc2::TC) where TC<:TreeCore -> Bool\nisequal(tc1::TC,tc2::TC) where TC<:TreeCore -> Bool\n\nOverloaded equivalent operator.\n\n\n\n\n\n"
 },
 
 {
@@ -1077,7 +1077,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Tree",
     "title": "Base.:==",
     "category": "method",
-    "text": "==(t1::T,t2::T) where T<:AbstractTree -> Bool\n\nOverloaded == operator.\n\n\n\n\n\n"
+    "text": "==(t1::T,t2::T) where T<:AbstractTree -> Bool\nisequal(t1::T,t2::T) where T<:AbstractTree -> Bool\n\nOverloaded equivalent operator.\n\n\n\n\n\n"
 },
 
 {
@@ -1277,7 +1277,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Named vector",
     "title": "Base.:<",
     "category": "method",
-    "text": "<(nv1::AbstractNamedVector,nv2::AbstractNamedVector) -> Bool\n\nOverloaded < operator.\n\n\n\n\n\n"
+    "text": "<(nv1::AbstractNamedVector,nv2::AbstractNamedVector) -> Bool\nisless(nv1::AbstractNamedVector,nv2::AbstractNamedVector) -> Bool\n\nCompare two named vectors and judge whether the first is less than the second.\n\n\n\n\n\n"
 },
 
 {
@@ -1285,7 +1285,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Named vector",
     "title": "Base.:==",
     "category": "method",
-    "text": "==(nv1::AbstractNamedVector,nv2::AbstractNamedVector) -> Bool\n\nOverloaded == operator. Two named vector are equal to each other if and only if their keys as well as their values are equal to each other.\n\nnote: Note\nIt is not necessary for two named vectors to be of the same concrete type to be equal to each other.\n\n\n\n\n\n"
+    "text": "==(nv1::AbstractNamedVector,nv2::AbstractNamedVector) -> Bool\nisequal(nv1::AbstractNamedVector,nv2::AbstractNamedVector) -> Bool\n\nOverloaded equivalent operator. Two named vector are equal to each other if and only if their keys as well as their values are equal to each other.\n\nnote: Note\nIt is not necessary for two named vectors to be of the same concrete type to be equal to each other.\n\n\n\n\n\n"
 },
 
 {
@@ -1318,22 +1318,6 @@ var documenterSearchIndex = {"docs": [
     "title": "Base.hash",
     "category": "method",
     "text": "hash(nv::AbstractNamedVector,h::UInt)\n\nHash a concrete AbstractNamedVector.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/NamedVector.html#Base.isequal-Tuple{Hamiltonian.Utilities.NamedVector.AbstractNamedVector,Hamiltonian.Utilities.NamedVector.AbstractNamedVector}",
-    "page": "Named vector",
-    "title": "Base.isequal",
-    "category": "method",
-    "text": "isequal(nv1::AbstractNamedVector,nv2::AbstractNamedVector) -> Bool\n\nJudge whehter two named vectors are equal to each other. Two named vector are equal to each other if and only if their keys as well as their values are equal to each other.\n\nnote: Note\nIt is not necessary for two named vectors to be of the same concrete type to be equal to each other.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/NamedVector.html#Base.isless-Tuple{Hamiltonian.Utilities.NamedVector.AbstractNamedVector,Hamiltonian.Utilities.NamedVector.AbstractNamedVector}",
-    "page": "Named vector",
-    "title": "Base.isless",
-    "category": "method",
-    "text": "isless(nv1::AbstractNamedVector,nv2::AbstractNamedVector) -> Bool\n\nOverloaded isless function.\n\n\n\n\n\n"
 },
 
 {
@@ -1665,6 +1649,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Utilities/AlgebraOverField.html#Base.:==-Union{Tuple{M}, Tuple{M,M}} where M<:Hamiltonian.Utilities.AlgebraOverField.Element",
+    "page": "Algebra over fields",
+    "title": "Base.:==",
+    "category": "method",
+    "text": "==(m1::M,m2::M) where M<:Element -> Bool\nisequal(m1::M,m2::M) where M<:Element -> Bool\n\nCompare two elements and judge whether they are equal to each other.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Utilities/AlgebraOverField.html#Base.eltype-Tuple{Hamiltonian.Utilities.AlgebraOverField.SimpleID}",
     "page": "Algebra over fields",
     "title": "Base.eltype",
@@ -1729,7 +1721,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/AlgebraOverField.html#Base.typejoin-Tuple{Type{#s67} where #s67<:Hamiltonian.Utilities.AlgebraOverField.SimpleID,Type{#s63} where #s63<:Hamiltonian.Utilities.AlgebraOverField.CompositeID}",
+    "location": "man/Utilities/AlgebraOverField.html#Base.typejoin-Tuple{Type{#s67} where #s67<:Hamiltonian.Utilities.AlgebraOverField.SimpleID,Type{#s16} where #s16<:Hamiltonian.Utilities.AlgebraOverField.CompositeID}",
     "page": "Algebra over fields",
     "title": "Base.typejoin",
     "category": "method",
@@ -2093,7 +2085,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Quantum numbers",
     "title": "Base.:==",
     "category": "method",
-    "text": "==(qns1::QuantumNumbers,qns2::QuantumNumbers) -> Bool\n\nOverloaded == operator. Two QuantumNumberses are equal to each other if and only if both their contentses and indptrs are elementwise equal to each other.\n\nnote: Note\nIt is not necessary for two QuantumNumberses to have the same eltype nor the same form to be equal to each other.\n\n\n\n\n\n"
+    "text": "==(qns1::QuantumNumbers,qns2::QuantumNumbers) -> Bool\nisequal(qns1::QuantumNumbers,qns2::QuantumNumbers) -> Bool\n\nOverloaded equivalent operator. Two QuantumNumberses are equal to each other if and only if both their contentses and indptrs are elementwise equal to each other.\n\nnote: Note\nIt is not necessary for two QuantumNumberses to have the same eltype nor the same form to be equal to each other.\n\n\n\n\n\n"
 },
 
 {
@@ -2657,11 +2649,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Essentials/Spatial.html#Base.:==-Tuple{AbstractLattice,AbstractLattice}",
+    "page": "Spatial",
+    "title": "Base.:==",
+    "category": "method",
+    "text": "==(lattice1::AbstractLattice,lattice2::AbstractLattice) -> Bool\nisequal(lattice1::AbstractLattice,lattice2::AbstractLattice) -> Bool\n\nOverloaded equivalent operator.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Essentials/Spatial.html#Base.:==-Tuple{Bond,Bond}",
     "page": "Spatial",
     "title": "Base.:==",
     "category": "method",
-    "text": "==(b1::Bond,b2::Bond) -> Bool\n\nOverloaded == operator.\n\n\n\n\n\n"
+    "text": "==(b1::Bond,b2::Bond) -> Bool\nisequal(b1::Bond,b2::Bond) -> Bool\n\nOverloaded equivalent operator.\n\n\n\n\n\n"
 },
 
 {
@@ -2669,7 +2669,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatial",
     "title": "Base.:==",
     "category": "method",
-    "text": "==(l1::Link,l2::Link) -> Bool\n\nOverloaded == operator.\n\n\n\n\n\n"
+    "text": "==(l1::Link,l2::Link) -> Bool\nisequal(l1::Link,l2::Link) -> Bool\n\nOverloaded equivalent operator.\n\n\n\n\n\n"
 },
 
 {
@@ -2677,7 +2677,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatial",
     "title": "Base.:==",
     "category": "method",
-    "text": "==(p1::Point,p2::Point) -> Bool\n\nOverloaded == operator.\n\n\n\n\n\n"
+    "text": "==(p1::Point,p2::Point) -> Bool\nisequal(p1::Point,p2::Point) -> Bool\n\nOverloaded equivalent operator.\n\n\n\n\n\n"
 },
 
 {
@@ -2981,7 +2981,7 @@ var documenterSearchIndex = {"docs": [
     "page": "DegreeOfFreedom",
     "title": "Base.:==",
     "category": "method",
-    "text": "==(i1::I,i2::I) where I<:Internal\nisequal(i1::I,i2::I) where I<:Internal\n\nCompare two internals and judge whether they are equal to each other.\n\n\n\n\n\n"
+    "text": "==(i1::I,i2::I) where I<:Internal -> Bool\nisequal(i1::I,i2::I) where I<:Internal -> Bool\n\nCompare two internals and judge whether they are equal to each other.\n\n\n\n\n\n"
 },
 
 {
