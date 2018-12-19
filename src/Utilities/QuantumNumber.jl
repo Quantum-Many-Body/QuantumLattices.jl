@@ -9,14 +9,15 @@ using Combinatorics: combinations
 using ..Utilities: Float
 using ..NamedVector: HomoNamedVector
 
-import ..Utilities: ⊕,⊗,dimension,permute
+import ..Utilities: ⊕,⊗,dimension,expand,permute
 
 export AbstractQuantumNumber
 export regularize!,regularize
 export @quantumnumber,periods,SQN,PQN,SPQN,Z2QN
 export qnscounts,qnsindptr,qnscompression,qnsexpansion,qnscontents,qnsindices,qnsbruteforce,qnsmontecarlo
 export QuantumNumbers
-export ⊕,⊗,ukron,dimension,expand,decompose,permute,toordereddict
+export ⊕,⊗,dimension,expand,permute
+export ukron,decompose,toordereddict
 export SQNS,PQNS,SzPQNS,SPQNS,Z2QNS
 
 "Abstract type for all concrete quantum numbers for a single basis."

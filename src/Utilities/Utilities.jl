@@ -33,6 +33,9 @@ Indicate that the convertion between Cartesian index and linear index is using t
 """
 const corder=COrder()
 
+@generated tail(ts::NTuple{N}) where N=Expr(:tuple,[:(ts[$i]) for i=2:N]...)
+@generated head(ts::NTuple{N}) where N=Expr(:tuple,[:(ts[$i]) for i=1:N-1]...)
+
 """
     ind2sub(dims::Tuple,ind::Int,order::FOrder) -> Tuple
     ind2sub(dims::Tuple,ind::Int,order::COrder) -> Tuple
@@ -41,11 +44,11 @@ Convert an linear index to Cartesian index. Fortran-order or C-order can be assi
 """
 function ind2sub(dims::Tuple,ind::Int,order::FOrder)
     length(dims)==0 && return ()
-    ((ind-1)%dims[1]+1,ind2sub(dims[2:end],(ind-1)÷dims[1]+1,order)...)
+    ((ind-1)%dims[1]+1,ind2sub(tail(dims),(ind-1)÷dims[1]+1,order)...)
 end
 function ind2sub(dims::Tuple,ind::Int,order::COrder)
     length(dims)==0 && return ()
-    (ind2sub(dims[1:end-1],(ind-1)÷dims[end]+1,order)...,(ind-1)%dims[end]+1)
+    (ind2sub(head(dims),(ind-1)÷dims[end]+1,order)...,(ind-1)%dims[end]+1)
 end
 
 """
@@ -56,11 +59,11 @@ Convert an Cartesian index to linear index. Fortran-order or C-order can be assi
 """
 function sub2ind(dims::NTuple{N,Int},inds::NTuple{N,Int},order::FOrder) where N
     length(dims)==0 && return 1
-    (sub2ind(dims[2:end],inds[2:end],order)-1)*dims[1]+inds[1]
+    (sub2ind(tail(dims),tail(inds),order)-1)*dims[1]+inds[1]
 end
 function sub2ind(dims::NTuple{N,Int},inds::NTuple{N,Int},order::COrder) where N
     length(dims)==0 && return 1
-    (sub2ind(dims[1:end-1],inds[1:end-1],order)-1)*dims[end]+inds[end]
+    (sub2ind(head(dims),head(inds),order)-1)*dims[end]+inds[end]
 end
 
 """
@@ -195,7 +198,10 @@ function rank end
 "Generic interface of the dimension of some types."
 function dimension end
 
-"Generic interface of permuting of some types."
+"Generic interface of the expansion of some types."
+function expand end
+
+"Generic interface of the permutation of some types."
 function permute end
 
 include("Factory.jl")

@@ -18,6 +18,7 @@ ind2sub
 sub2ind
 decimaltostr
 ordinal
+comparison
 ```
 
 ## Generic functions for overloading
@@ -27,6 +28,7 @@ ordinal
 ⊗
 rank
 dimension
+expand
 permute
 ```
 
