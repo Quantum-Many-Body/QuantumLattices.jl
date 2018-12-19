@@ -293,7 +293,7 @@ end
 
 The coupling intra/inter interanl degrees of freedom at different lattice points.
 """
-abstract type Coupling{V,I} <: Element{V,I} end
+abstract type Coupling{V,I,N} <: Element{V,I,N} end
 
 """
     Couplings{I,C<:Coupling} <: AbstractDict{I,C}

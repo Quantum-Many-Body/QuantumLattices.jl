@@ -61,6 +61,7 @@ rank(id::SimpleID)=id|>typeof|>rank
 """
     CompositeID(ids::NTuple{N,SimpleID}) where N
     CompositeID(ids::SimpleID...)
+    CompositeID(::Type{SID},attrs::Vararg{NTuple{N},M}) where {SID<:SimpleID,N,M}
 
 A composite id is the id of the multiplication of bases of an algebra over a field.
 """
@@ -69,6 +70,14 @@ struct CompositeID{N,I<:SimpleID} <: CompositeNTuple{N,I}
     CompositeID(ids::NTuple{N,SimpleID}) where N=new{N,ids|>eltype}(ids)
 end
 CompositeID(ids::SimpleID...)=CompositeID(ids)
+@generated function CompositeID(::Type{SID},attrs::Vararg{NTuple{N},M}) where {SID<:SimpleID,N,M}
+    exprs=[]
+    for i=1:N
+        args=[:(attrs[$j][$i]) for j=1:M]
+        push!(exprs,:(SID($(args...))))
+    end
+    return :(CompositeID($(exprs...)))
+end
 
 """
     propertynames(::Type{CID},private::Bool=false) where CID<:CompositeID -> Tuple
@@ -248,35 +257,35 @@ Get the direct product of simple vector spaces or composite vector spaces.
 
 An element of an algebra over a field.
 """
-abstract type Element{V<:Number,I<:ID} end
+abstract type Element{V<:Number,I<:ID,N} end
 
 """
-    valtype(::Type{<:Element{V,I}}) where {V,I}
+    valtype(::Type{<:Element{V,I,N}}) where {V,I,N}
     valtype(m::Element)
 
 Get the type of the value of an element.
 
 The result is also the type of the field over which the algebra is defined.
 """
-Base.valtype(::Type{<:Element{V,I}}) where {V,I}=V
+Base.valtype(::Type{<:Element{V,I,N}}) where {V,I,N}=V
 Base.valtype(m::Element)=m|>typeof|>valtype
 
 """
-    idtype(::Type{<:Element{V,I}}) where {V,I}
+    idtype(::Type{<:Element{V,I,N}}) where {V,I,N}
     idtype(m::Element)
 
 The type of the id of an element.
 """
-idtype(::Type{<:Element{V,I}}) where {V,I}=I
+idtype(::Type{<:Element{V,I,N}}) where {V,I,N}=I
 idtype(m::Element)=m|>typeof|>idtype
 
 """
-    rank(::Type{<:Element{V,I}}) where {V,I} -> Int
+    rank(::Type{<:Element{V,I,N}}) where {V,I,N} -> Int
     rank(m::Element) -> Int
 
 Get the rank of an element.
 """
-rank(::Type{<:Element{V,I}}) where {V,I}=I|>rank
+rank(::Type{<:Element{V,I,N}}) where {V,I,N}=N
 rank(m::Element)=m|>typeof|>rank
 
 """
@@ -345,7 +354,7 @@ function add!(ms::Elements,mms::Element...)
     mms|>length>0 && @assert ms|>valtype==mms|>eltype "add! error: dismatched type, $(ms|>valtype) and $(mms|>eltype)."
     for mm in mms
         mid=mm|>id
-        ms[mid]=haskey(ms,mid) ? (mm|>typeof)(ms[mid].value+mm.value,(getfield(mm,i) for i=2:(mm|>typeof|>fieldcount))...) : mm
+        ms[mid]=haskey(ms,mid) ? typeof(mm).name.wrapper(ms[mid].value+mm.value,(getfield(mm,i) for i=2:(mm|>typeof|>fieldcount))...) : mm
         abs(ms[mid].value)==0.0 && delete!(ms,mid)
     end
     ms
@@ -363,7 +372,7 @@ sub!(ms::Elements)=ms
 function sub!(ms::Elements,m::Element)
     @assert ms|>valtype==m|>typeof "sub! error: dismatched type, $(ms|>valtype) and $(m|>typeof)."
     mid=m|>id
-    ms[mid]=haskey(ms,mid) ? (m|>typeof)(ms[mid].value-m.value,(getfield(m,i) for i=2:(m|>typeof|>fieldcount))...) : -m
+    ms[mid]=haskey(ms,mid) ? typeof(m).name.wrapper(ms[mid].value-m.value,(getfield(m,i) for i=2:(m|>typeof|>fieldcount))...) : -m
     abs(ms[mid].value)==0.0 && delete!(ms,mid)
     ms
 end

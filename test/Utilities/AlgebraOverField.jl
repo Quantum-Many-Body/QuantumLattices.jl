@@ -18,6 +18,7 @@ end
     @test sid|>typeof|>rank==1
 
     cid=SMPID(2,1)⊗SMPID(1,Inf)
+    @test cid==CompositeID(SMPID(2,1),SMPID(1,Inf))
     @test cid|>propertynames==(:contents,)
     @test cid.contents==(SMPID(2,1),SMPID(1,Inf))
     @test cid|>string=="CompositeID(SMPID(2,1),SMPID(1,Inf))"
@@ -39,6 +40,7 @@ end
     @test SMPID(2,1)⊗SMPID(1,Inf)<SMPID(2,1)⊗SMPID(2,Inf)
 
     cid=SMPID(2,1)⊗SMPID(3,4)
+    @test cid==CompositeID(SMPID,(2,3),(1,4))
     @test propertynames(cid|>typeof,false)==(:orbitals,:spins)
     @test propertynames(cid|>typeof,true)==(:contents,:orbitals,:spins)
     @test cid.orbitals==(2,3)
@@ -67,9 +69,10 @@ end
     @test VectorSpace(svs1,svs2)==cvs
 end
 
-struct BasicOperator{V,I} <: Element{V,I}
+struct BasicOperator{V,I,N} <: Element{V,I,N}
     value::V
     id::I
+    BasicOperator(value::Number,id::ID)=new{value|>typeof,id|>typeof,id|>typeof|>rank}(value,id)
 end
 
 @testset "Elements" begin
