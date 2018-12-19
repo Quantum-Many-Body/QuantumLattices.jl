@@ -159,7 +159,10 @@ end
 
 Return a copy of a concrete `AbstractFactory` with some of the field values replaced by the keyword arguments.
 """
-Base.replace(f::AbstractFactory;kwargs...)=(f|>typeof)((get(kwargs,name,getfield(f,name)) for name in f|>typeof|>fieldnames)...)
+@generated function Base.replace(f::AbstractFactory;kwargs...)
+    exprs=[:(get(kwargs,$name,getfield(f,$name))) for name in QuoteNode.(f|>fieldnames)]
+    return :(typeof(f)($(exprs...)))
+end
 
 """
     Inference(head::Union{Symbol,Nothing},name::Union{Symbol,Nothing},params::Union{Inference,Vector{Inference},Nothing})

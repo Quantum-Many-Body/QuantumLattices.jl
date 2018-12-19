@@ -128,7 +128,10 @@ Base.pairs(nv::AbstractNamedVector)=Base.Generator(=>,keys(nv),values(nv))
 
 Return a copy of a concrete `AbstractNamedVector` with some of the field values replaced by the keyword arguments.
 """
-Base.replace(nv::AbstractNamedVector;kwargs...)=typeof(nv).name.wrapper((get(kwargs,key,getfield(nv,key)) for key in nv|>keys)...)
+@generated function Base.replace(nv::AbstractNamedVector;kwargs...)
+    exprs=[:(get(kwargs,$name,getfield(nv,$name))) for name in QuoteNode.(nv|>fieldnames)]
+    return :(typeof(nv).name.wrapper($(exprs...)))
+end
 
 """
     map(f,nvs::NV...) where NV<:AbstractNamedVector -> NV
