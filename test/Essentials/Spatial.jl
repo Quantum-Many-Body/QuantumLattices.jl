@@ -102,30 +102,7 @@ end
 end
 
 @testset "minimumlengths" begin
-    @test minimumlengths(reshape([0.0,0.0],2,1),[[1.0,0.0],[0.0,1.0]],7)≈[0.0,1.0,√2,2.0,√5,2*√2,3.0,√10]
-end
-
-@testset "PID" begin
-    @test PID(scope="tz",site=1)|>string=="PID(\"tz\",1)"
-end
-
-@testset "Point" begin
-    @test Point(PID(0,1),(0.0,0.0),(0.0,0.0))==Point(PID(0,1),[0.0,0.0],[0.0,0.0])
-    @test isequal(Point(PID(0,1),(0.0,0.0),(0.0,0.0)),Point(PID(0,1),[0.0,0.0],[0.0,0.0]))
-    @test Point{PID{Int},2}|>dimension==2
-    @test Point(PID(0,1),(0.0,0.0))|>dimension==2
-    @test Point(PID(0,1),(0.0,0.0),(0.0,0.0))|>string=="Point(PID(0,1),[0.0,0.0],[0.0,0.0])"
-end
-
-@testset "Bond" begin
-    bond=Bond(1,Point(PID(1,1),(0.0,0.0),(0.0,0.0)),Point(PID(1,2),(0.0,1.0),(0.0,1.0)))
-    @test bond|>deepcopy==bond
-    @test isequal(bond|>deepcopy,bond)
-    @test bond|>string=="Bond(1,Point(PID(1,1),[0.0,0.0],[0.0,0.0]),Point(PID(1,2),[0.0,1.0],[0.0,1.0]))"
-    @test bond|>reverse==Bond(1,Point(PID(1,2),(0.0,1.0),(0.0,1.0)),Point(PID(1,1),(0.0,0.0),(0.0,0.0)))
-    @test bond|>rcoord==[0.0,1.0]
-    @test bond|>icoord==[0.0,1.0]
-    @test bond|>isintracell==false
+    @test minimumlengths(reshape([0.0,0.0],2,1),[[1.0,0.0],[0.0,1.0]],7)≈[1.0,√2,2.0,√5,2*√2,3.0,√10]
 end
 
 @testset "Link" begin
@@ -137,8 +114,8 @@ end
 
 @testset "intralinks" begin
     ps,a1,a2=[0.0 0.5; 0.0 0.5],[1.0,0.0],[0.0,1.0]
-    neighbors=Dict(0=>0.0,1=>1.0)
-    links=[Link(0,1,1,[0.0,0.0]),Link(1,1,1,[0.0,-1.0]),Link(1,1,1,[-1.0,0.0]),Link(0,2,2,[0.0,0.0]),Link(1,2,2,[0.0,-1.0]),Link(1,2,2,[-1.0,0.0])]
+    neighbors=Dict(1=>1.0)
+    links=[Link(1,1,1,[0.0,-1.0]),Link(1,1,1,[-1.0,0.0]),Link(1,2,2,[0.0,-1.0]),Link(1,2,2,[-1.0,0.0])]
     @test intralinks(ps,[a1,a2],neighbors)==links
 end
 
@@ -148,6 +125,39 @@ end
     neighbors=Dict(0=>0.0,1=>1.0)
     links=[Link(1,1,1,[0.0,0.0]),Link(1,2,2,[0.0,0.0])]
     @test interlinks(ps1,ps2,neighbors)==links
+end
+
+@testset "PID" begin
+    @test PID(scope="tz",site=1)|>string=="PID(\"tz\",1)"
+end
+
+@testset "Point" begin
+    @test Point(PID(0,1),(0.0,0.0),(0.0,0.0))==Point(PID(0,1),[0.0,0.0],[0.0,0.0])
+    @test isequal(Point(PID(0,1),(0.0,0.0),(0.0,0.0)),Point(PID(0,1),[0.0,0.0],[0.0,0.0]))
+    @test Point{PID{Int},2}|>rank==1
+    @test Point{PID{Int},2}|>pidtype==PID{Int}
+    @test Point{PID{Int},2}|>dimension==2
+    @test Point(PID(0,1),(0.0,0.0))|>rank==1
+    @test Point(PID(0,1),(0.0,0.0))|>pidtype==PID{Int}
+    @test Point(PID(0,1),(0.0,0.0))|>dimension==2
+    @test Point(PID(0,1),(0.0,0.0),(0.0,0.0))|>string=="Point(PID(0,1),[0.0,0.0],[0.0,0.0])"
+end
+
+@testset "Bond" begin
+    bond=Bond(1,Point(PID(1,1),(0.0,0.0),(0.0,0.0)),Point(PID(1,2),(0.0,1.0),(0.0,1.0)))
+    @test bond|>deepcopy==bond
+    @test isequal(bond|>deepcopy,bond)
+    @test bond|>string=="Bond(1,Point(PID(1,1),[0.0,0.0],[0.0,0.0]),Point(PID(1,2),[0.0,1.0],[0.0,1.0]))"
+    @test bond|>reverse==Bond(1,Point(PID(1,2),(0.0,1.0),(0.0,1.0)),Point(PID(1,1),(0.0,0.0),(0.0,0.0)))
+    @test bond|>rank==2
+    @test bond|>typeof|>rank==2
+    @test bond|>pidtype==PID{Int}
+    @test bond|>typeof|>pidtype==PID{Int}
+    @test bond|>dimension==2
+    @test bond|>typeof|>dimension==2
+    @test bond|>rcoord==[0.0,1.0]
+    @test bond|>icoord==[0.0,1.0]
+    @test bond|>isintracell==false
 end
 
 @testset "Lattice" begin
@@ -166,8 +176,7 @@ end
     @test lattice[PointIndex(1)]==Point(PID(1,1),(0.5,0.5),(0.0,0.0))
     @test lattice[PointIndex(PID(1,1))]==Point(PID(1,1),(0.5,0.5),(0.0,0.0))
     @test lattice|>nneighbor==1
-    @test lattice|>points==[Point(PID(1,1),(0.5,0.5),(0.0,0.0))]
-    @test lattice|>bonds==[ Bond(0,Point(PID(1,1),[0.5,0.5],[0.0,0.0]),Point(PID(1,1),[0.5,0.5],[0.0,0.0])),
+    @test lattice|>bonds==[ Point(PID(1,1),(0.5,0.5),(0.0,0.0)),
                             Bond(1,Point(PID(1,1),[0.5,0.5],[0.0,0.0]),Point(PID(1,1),[0.5,-0.5],[0.0,-1.0])),
                             Bond(1,Point(PID(1,1),[0.5,0.5],[0.0,0.0]),Point(PID(1,1),[-0.5,0.5],[-1.0,0.0]))
                             ]
@@ -178,7 +187,7 @@ end
                         vectors=    [[1.0,0.0],[0.0,1.0]],
                         neighbors=  2,
                             )
-    @test setdiff(bonds(lattice),[bonds(lattice,insidebonds);bonds(lattice,acrossbonds)])|>length==0
+    @test setdiff(bonds(lattice),[bonds(lattice,zerothbonds);bonds(lattice,insidebonds);bonds(lattice,acrossbonds)])|>length==0
 end
 
 @testset "SuperLattice" begin
@@ -187,9 +196,9 @@ end
                                 Lattice("TuanziEnv",[Point(PID(2,1),(-0.05,-0.05)),Point(PID(2,2),(0.55,0.55))],neighbors=Dict(0=>0.0)),
                                 ],
                             vectors=[[1.0,0.0],[0.0,1.0]],
-                            neighbors=Dict(0=>0.0,1=>√2/2,-1=>√2/20)
+                            neighbors=Dict(1=>√2/2,-1=>√2/20)
                         )
-    @test setdiff(bonds(lattice),[bonds(lattice,insidebonds);bonds(lattice,acrossbonds)])|>length==0
+    @test setdiff(bonds(lattice),[bonds(lattice,zerothbonds);bonds(lattice,insidebonds);bonds(lattice,acrossbonds)])|>length==0
     @test setdiff(bonds(lattice,insidebonds),[bonds(lattice,intrabonds);bonds(lattice,interbonds)])|>length==0
 end
 

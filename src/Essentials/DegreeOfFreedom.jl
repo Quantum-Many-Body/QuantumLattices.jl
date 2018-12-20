@@ -7,6 +7,8 @@ using ...Utilities.CompositeStructure: CompositeDict
 using ...Utilities.AlgebraOverField: SimpleID, Element, Elements
 using ..Spatial: PID
 
+import ..Spatial: pidtype
+
 export IID,Index,pidtype,pid,iidtype,iid
 export IndexToTuple,DirectIndexToTuple,directindextotuple,FilteredAttributes
 export Internal,IDFConfig,Table,Coupling,Couplings

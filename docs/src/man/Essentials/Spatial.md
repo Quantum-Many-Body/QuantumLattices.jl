@@ -9,9 +9,7 @@ using Hamiltonian
 
 # Spatial
 
-## Point
-
-## Bond and Link
+## Point and Bond
 
 ## AbstractLattice
 
