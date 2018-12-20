@@ -161,11 +161,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.comparison",
+    "page": "Introduction",
+    "title": "Hamiltonian.Utilities.comparison",
+    "category": "constant",
+    "text": "comparison\n\nIndicate that the comparison methods, i.e. \"==\"/\"isequal\" or \"<\"/\"isless\", will be used.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Utilities/Introduction.html#Useful-constants-and-functions-1",
     "page": "Introduction",
     "title": "Useful constants and functions",
     "category": "section",
-    "text": "atol\nrtol\nFloat\nforder\ncorder\nind2sub\nsub2ind\ndecimaltostr\nordinal"
+    "text": "atol\nrtol\nFloat\nforder\ncorder\nind2sub\nsub2ind\ndecimaltostr\nordinal\ncomparison"
 },
 
 {
@@ -201,11 +209,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.expand",
+    "page": "Introduction",
+    "title": "Hamiltonian.Utilities.expand",
+    "category": "function",
+    "text": "Generic interface of the expansion of some types.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.permute",
     "page": "Introduction",
     "title": "Hamiltonian.Utilities.permute",
     "category": "function",
-    "text": "Generic interface of permuting of some types.\n\n\n\n\n\n"
+    "text": "Generic interface of the permutation of some types.\n\n\n\n\n\n"
 },
 
 {
@@ -213,7 +229,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "Generic functions for overloading",
     "category": "section",
-    "text": "⊕\n⊗\nrank\ndimension\npermute"
+    "text": "⊕\n⊗\nrank\ndimension\nexpand\npermute"
 },
 
 {
@@ -1477,7 +1493,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Algebra over fields",
     "title": "Hamiltonian.Utilities.AlgebraOverField.CompositeID",
     "category": "type",
-    "text": "CompositeID(ids::NTuple{N,SimpleID}) where N\nCompositeID(ids::SimpleID...)\n\nA composite id is the id of the multiplication of bases of an algebra over a field.\n\n\n\n\n\n"
+    "text": "CompositeID(ids::NTuple{N,SimpleID}) where N\nCompositeID(ids::SimpleID...)\nCompositeID(::Type{SID},attrs::Vararg{NTuple{N},M}) where {SID<:SimpleID,N,M}\n\nA composite id is the id of the multiplication of bases of an algebra over a field.\n\n\n\n\n\n"
 },
 
 {
@@ -1493,7 +1509,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Algebra over fields",
     "title": "Hamiltonian.Utilities.AlgebraOverField.Element",
     "category": "type",
-    "text": "Element{V<:Number,I<:ID}\n\nAn element of an algebra over a field.\n\n\n\n\n\n"
+    "text": "Element{V<:Number,I<:ID}\n\nAn element of an algebra over a field.\n\nThe first and second attributes of an element must be\n\nvalue::Nuber: the coefficient of the element\nid::ID: the id of the element\n\n\n\n\n\n"
 },
 
 {
@@ -1569,11 +1585,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.idtype-Union{Tuple{Type{#s68} where #s68<:Element{V,I}}, Tuple{I}, Tuple{V}} where I where V",
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.idtype-Union{Tuple{Type{#s68} where #s68<:Element{V,I,N}}, Tuple{N}, Tuple{I}, Tuple{V}} where N where I where V",
     "page": "Algebra over fields",
     "title": "Hamiltonian.Utilities.AlgebraOverField.idtype",
     "category": "method",
-    "text": "idtype(::Type{<:Element{V,I}}) where {V,I}\nidtype(m::Element)\n\nThe type of the id of an element.\n\n\n\n\n\n"
+    "text": "idtype(::Type{<:Element{V,I,N}}) where {V,I,N}\nidtype(m::Element)\n\nThe type of the id of an element.\n\n\n\n\n\n"
 },
 
 {
@@ -1609,11 +1625,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.rank-Union{Tuple{Type{#s68} where #s68<:Element{V,I}}, Tuple{I}, Tuple{V}} where I where V",
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.rank-Union{Tuple{Type{#s68} where #s68<:Element{V,I,N}}, Tuple{N}, Tuple{I}, Tuple{V}} where N where I where V",
     "page": "Algebra over fields",
     "title": "Hamiltonian.Utilities.rank",
     "category": "method",
-    "text": "rank(::Type{<:Element{V,I}}) where {V,I} -> Int\nrank(m::Element) -> Int\n\nGet the rank of an element.\n\n\n\n\n\n"
+    "text": "rank(::Type{<:Element{V,I,N}}) where {V,I,N} -> Int\nrank(m::Element) -> Int\n\nGet the rank of an element.\n\n\n\n\n\n"
 },
 
 {
@@ -1729,11 +1745,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/AlgebraOverField.html#Base.valtype-Union{Tuple{Type{#s68} where #s68<:Element{V,I}}, Tuple{I}, Tuple{V}} where I where V",
+    "location": "man/Utilities/AlgebraOverField.html#Base.valtype-Union{Tuple{Type{#s68} where #s68<:Element{V,I,N}}, Tuple{N}, Tuple{I}, Tuple{V}} where N where I where V",
     "page": "Algebra over fields",
     "title": "Base.valtype",
     "category": "method",
-    "text": "valtype(::Type{<:Element{V,I}}) where {V,I}\nvaltype(m::Element)\n\nGet the type of the value of an element.\n\nThe result is also the type of the field over which the algebra is defined.\n\n\n\n\n\n"
+    "text": "valtype(::Type{<:Element{V,I,N}}) where {V,I,N}\nvaltype(m::Element)\n\nGet the type of the value of an element.\n\nThe result is also the type of the field over which the algebra is defined.\n\n\n\n\n\n"
 },
 
 {
@@ -1993,14 +2009,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.QuantumNumber.expand-Tuple{Hamiltonian.Utilities.QuantumNumber.QuantumNumbers,Hamiltonian.Utilities.QuantumNumber.QnsContents}",
-    "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.QuantumNumber.expand",
-    "category": "method",
-    "text": "expand(qns::QuantumNumbers,::QnsContents) -> Vector{qns|>eltype}\nexpand(qns::QuantumNumbers,::QnsIndices) -> Vector{Int}\n\nExpand the contents (qnscontents case) or indices (qnsindices case) of a QuantumNumbers to the uncompressed form.\n\n\n\n\n\n"
-},
-
-{
     "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.QuantumNumber.regularize!-Union{Tuple{QN}, Tuple{Type{QN},AbstractArray{Float64,1}}} where QN<:Hamiltonian.Utilities.QuantumNumber.AbstractQuantumNumber",
     "page": "Quantum numbers",
     "title": "Hamiltonian.Utilities.QuantumNumber.regularize!",
@@ -2046,6 +2054,14 @@ var documenterSearchIndex = {"docs": [
     "title": "Hamiltonian.Utilities.dimension",
     "category": "method",
     "text": "dimension(::Type{<:AbstractQuantumNumber}) -> Int\ndimension(::AbstractQuantumNumber) -> Int\n\nThe dimension of the Hilbert space a AbstractQuantumNumber represents. Apparently, this is always 1.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.expand-Tuple{Hamiltonian.Utilities.QuantumNumber.QuantumNumbers,Hamiltonian.Utilities.QuantumNumber.QnsContents}",
+    "page": "Quantum numbers",
+    "title": "Hamiltonian.Utilities.expand",
+    "category": "method",
+    "text": "expand(qns::QuantumNumbers,::QnsContents) -> Vector{qns|>eltype}\nexpand(qns::QuantumNumbers,::QnsIndices) -> Vector{Int}\n\nExpand the contents (qnscontents case) or indices (qnsindices case) of a QuantumNumbers to the uncompressed form.\n\n\n\n\n\n"
 },
 
 {
@@ -2249,17 +2265,9 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Point-1",
+    "location": "man/Essentials/Spatial.html#Point-and-Bond-1",
     "page": "Spatial",
-    "title": "Point",
-    "category": "section",
-    "text": ""
-},
-
-{
-    "location": "man/Essentials/Spatial.html#Bond-and-Link-1",
-    "page": "Spatial",
-    "title": "Bond and Link",
+    "title": "Point and Bond",
     "category": "section",
     "text": ""
 },
@@ -2329,11 +2337,27 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.zerothbonds",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.zerothbonds",
+    "category": "constant",
+    "text": "zerothbonds\n\nIndicate that zeroth bonds, i.e. the points are inquired.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.AbstractBond",
+    "page": "Spatial",
+    "title": "Hamiltonian.Essentials.Spatial.AbstractBond",
+    "category": "type",
+    "text": "AbstractBond{R,P<:PID,N}\n\nAbstract bond.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.AbstractLattice",
     "page": "Spatial",
     "title": "Hamiltonian.Essentials.Spatial.AbstractLattice",
     "category": "type",
-    "text": "AbstractLattice{P<:PID,N}\n\nAbstract type for all lattices.\n\n\n\n\n\n"
+    "text": "AbstractLattice{P<:PID,N}\n\nAbstract type for all lattices.\n\nIt should have the following attributes\n\nname::String: the name of the lattice\npids::Vector{P}: the pids of the lattice\nrcoords::Matrix{Float}: the rcoords of the lattice\nicoords::Matrix{Float}: the icoords of the lattice\nvectors::Vector{SVector{N,Float}}: the translation vectors of the lattice\nreciprocals::Vector{SVector{N,Float}}: the reciprocals of the lattice\nneighbors::Dict{Int,Float}: the order-distance map of the nearest neighbors of the lattice\n\n\n\n\n\n"
 },
 
 {
@@ -2433,15 +2457,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.@lattice-Tuple{Expr}",
-    "page": "Spatial",
-    "title": "Hamiltonian.Essentials.Spatial.@lattice",
-    "category": "macro",
-    "text": "@lattice structdef::Expr\n\nDecorate a raw struct to be a subtype of AbstractLattice.\n\nnotes: Notes\nHere, a \"raw\" struct means:It has no explicit supertype except Any;\nIt has none of the required attributes by AbstractLattice, i.e. :name, :pids, :rcoords, :icoords, :vectors, :reciprocals and :neighbors;\nIt has no inner constructor.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.azimuth-Tuple{AbstractArray{#s198,1} where #s198<:Real}",
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.azimuth-Tuple{AbstractArray{#s199,1} where #s199<:Real}",
     "page": "Spatial",
     "title": "Hamiltonian.Essentials.Spatial.azimuth",
     "category": "method",
@@ -2449,7 +2465,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.azimuthd-Tuple{AbstractArray{#s198,1} where #s198<:Real}",
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.azimuthd-Tuple{AbstractArray{#s199,1} where #s199<:Real}",
     "page": "Spatial",
     "title": "Hamiltonian.Essentials.Spatial.azimuthd",
     "category": "method",
@@ -2461,7 +2477,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatial",
     "title": "Hamiltonian.Essentials.Spatial.bonds",
     "category": "method",
-    "text": "bonds(lattice::AbstractLattice) -> Vector{Bond}\nbonds(lattice::AbstractLattice,::InsideBonds) -> Vector{Bond}\nbonds(lattice::AbstractLattice,::AcrossBonds) -> Vector{Bond}\n\nGet the bonds of a lattice.\n\n\n\n\n\n"
+    "text": "bonds(lattice::AbstractLattice) -> Vector{AbstractBond}\nbonds(lattice::AbstractLattice,::ZerothBonds) -> Vector{Point}\nbonds(lattice::AbstractLattice,::InsideBonds) -> Vector{Bond}\nbonds(lattice::AbstractLattice,::AcrossBonds) -> Vector{Bond}\n\nGet the bonds of a lattice.\n\n\n\n\n\n"
 },
 
 {
@@ -2473,7 +2489,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.distance-Tuple{AbstractArray{#s187,1} where #s187<:Real,AbstractArray{#s186,1} where #s186<:Real}",
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.distance-Tuple{AbstractArray{#s188,1} where #s188<:Real,AbstractArray{#s187,1} where #s187<:Real}",
     "page": "Spatial",
     "title": "Hamiltonian.Essentials.Spatial.distance",
     "category": "method",
@@ -2489,7 +2505,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.interlinks-Tuple{AbstractArray{#s207,2} where #s207<:Real,AbstractArray{#s206,2} where #s206<:Real,Dict{Int64,Float64}}",
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.interlinks-Tuple{AbstractArray{#s209,2} where #s209<:Real,AbstractArray{#s208,2} where #s208<:Real,Dict{Int64,Float64}}",
     "page": "Spatial",
     "title": "Hamiltonian.Essentials.Spatial.interlinks",
     "category": "method",
@@ -2497,11 +2513,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.intralinks-Union{Tuple{N}, Tuple{AbstractArray{#s202,2} where #s202<:Real,AbstractArray{#s201,1} where #s201<:(AbstractArray{#s200,1} where #s200<:Real),Dict{Int64,Float64}}, Tuple{AbstractArray{#s199,2} where #s199<:Real,AbstractArray{#s198,1} where #s198<:(AbstractArray{#s197,1} where #s197<:Real),Dict{Int64,Float64},Tuple{Vararg{Int64,N}}}} where N",
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.intralinks-Union{Tuple{N}, Tuple{AbstractArray{#s204,2} where #s204<:Real,AbstractArray{#s203,1} where #s203<:(AbstractArray{#s202,1} where #s202<:Real),Dict{Int64,Float64}}, Tuple{AbstractArray{#s201,2} where #s201<:Real,AbstractArray{#s200,1} where #s200<:(AbstractArray{#s199,1} where #s199<:Real),Dict{Int64,Float64},Tuple{Vararg{Int64,N}}}} where N",
     "page": "Spatial",
     "title": "Hamiltonian.Essentials.Spatial.intralinks",
     "category": "method",
-    "text": "intralinks( cluster::AbstractMatrix{<:Real},\n            vectors::AbstractVector{<:AbstractVector{<:Real}},\n            neighbors::Dict{Int,Float},\n            maxtranslations::NTuple{N,Int}=ntuple(i->length(neighbors)-1,length(vectors))\n            ) where N -> Vector{Link}\n\nUse kdtree to get the intracluster nearest neighbors.\n\nAs is similar to minimumlengths, when vectors is nonempty, the cluster assumes periodic boundaries. neighbors provides the map between the bond length and the order of nearest neighbors. Note only those with the lengths present in neighbors will be included in the result. maxtranslations determines the maximum number of translations along those directions specified by vectors when the tiled supercluster is construted (See minimumlengths for the explanation of the method for periodic lattices).\n\n\n\n\n\n"
+    "text": "intralinks( cluster::AbstractMatrix{<:Real},\n            vectors::AbstractVector{<:AbstractVector{<:Real}},\n            neighbors::Dict{Int,Float},\n            maxtranslations::NTuple{N,Int}=ntuple(i->length(neighbors),length(vectors))\n            ) where N -> Vector{Link}\n\nUse kdtree to get the intracluster nearest neighbors.\n\nAs is similar to minimumlengths, when vectors is nonempty, the cluster assumes periodic boundaries. neighbors provides the map between the bond length and the order of nearest neighbors. Note only those with the lengths present in neighbors will be included in the result. maxtranslations determines the maximum number of translations along those directions specified by vectors when the tiled supercluster is construted (See minimumlengths for the explanation of the method for periodic lattices).\n\n\n\n\n\n"
 },
 
 {
@@ -2537,7 +2553,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.issubordinate-Tuple{AbstractArray{#s202,1} where #s202<:Real,AbstractArray{#s201,1} where #s201<:(AbstractArray{#s200,1} where #s200<:Real)}",
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.issubordinate-Tuple{AbstractArray{#s203,1} where #s203<:Real,AbstractArray{#s202,1} where #s202<:(AbstractArray{#s201,1} where #s201<:Real)}",
     "page": "Spatial",
     "title": "Hamiltonian.Essentials.Spatial.issubordinate",
     "category": "method",
@@ -2561,15 +2577,15 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.points-Tuple{AbstractLattice}",
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.pidtype-Tuple{AbstractBond}",
     "page": "Spatial",
-    "title": "Hamiltonian.Essentials.Spatial.points",
+    "title": "Hamiltonian.Essentials.Spatial.pidtype",
     "category": "method",
-    "text": "points(lattice::AbstractLattice) -> Vector{Point}\n\nGet the points contained in a lattice.\n\n\n\n\n\n"
+    "text": "pidtype(b::AbstractBond)\npidtype(::Type{<:AbstractBond{R,P,N}}) where {R,P,N}\n\nGet the pid type of a concrete bond.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.polar-Tuple{AbstractArray{#s198,1} where #s198<:Real}",
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.polar-Tuple{AbstractArray{#s199,1} where #s199<:Real}",
     "page": "Spatial",
     "title": "Hamiltonian.Essentials.Spatial.polar",
     "category": "method",
@@ -2577,7 +2593,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.polard-Tuple{AbstractArray{#s198,1} where #s198<:Real}",
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.polard-Tuple{AbstractArray{#s199,1} where #s199<:Real}",
     "page": "Spatial",
     "title": "Hamiltonian.Essentials.Spatial.polard",
     "category": "method",
@@ -2593,7 +2609,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.reciprocals-Tuple{AbstractArray{#s212,1} where #s212<:(AbstractArray{#s211,1} where #s211<:Real)}",
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.reciprocals-Tuple{AbstractArray{#s213,1} where #s213<:(AbstractArray{#s212,1} where #s212<:Real)}",
     "page": "Spatial",
     "title": "Hamiltonian.Essentials.Spatial.reciprocals",
     "category": "method",
@@ -2601,7 +2617,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.rotate-Tuple{AbstractArray{#s201,2} where #s201<:Real,Real}",
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.rotate-Tuple{AbstractArray{#s202,2} where #s202<:Real,Real}",
     "page": "Spatial",
     "title": "Hamiltonian.Essentials.Spatial.rotate",
     "category": "method",
@@ -2609,7 +2625,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.tile-Union{Tuple{M}, Tuple{N}, Tuple{AbstractArray{#s203,2} where #s203<:Real,AbstractArray{#s202,1} where #s202<:(AbstractArray{#s201,1} where #s201<:Real)}, Tuple{AbstractArray{#s200,2} where #s200<:Real,AbstractArray{#s199,1} where #s199<:(AbstractArray{#s198,1} where #s198<:Real),Tuple{Vararg{Tuple{Vararg{#s197,N}} where #s197<:Real,M}}}} where M where N",
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.tile-Union{Tuple{M}, Tuple{N}, Tuple{AbstractArray{#s204,2} where #s204<:Real,AbstractArray{#s203,1} where #s203<:(AbstractArray{#s202,1} where #s202<:Real)}, Tuple{AbstractArray{#s201,2} where #s201<:Real,AbstractArray{#s200,1} where #s200<:(AbstractArray{#s199,1} where #s199<:Real),Tuple{Vararg{Tuple{Vararg{#s198,N}} where #s198<:Real,M}}}} where M where N",
     "page": "Spatial",
     "title": "Hamiltonian.Essentials.Spatial.tile",
     "category": "method",
@@ -2617,7 +2633,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.translate-Tuple{AbstractArray{#s212,2} where #s212<:Real,AbstractArray{#s211,1} where #s211<:Real}",
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.translate-Tuple{AbstractArray{#s213,2} where #s213<:Real,AbstractArray{#s212,1} where #s212<:Real}",
     "page": "Spatial",
     "title": "Hamiltonian.Essentials.Spatial.translate",
     "category": "method",
@@ -2625,11 +2641,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.volume-Tuple{AbstractArray{#s187,1} where #s187<:Real,AbstractArray{#s186,1} where #s186<:Real,AbstractArray{#s185,1} where #s185<:Real}",
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Essentials.Spatial.volume-Tuple{AbstractArray{#s188,1} where #s188<:Real,AbstractArray{#s187,1} where #s187<:Real,AbstractArray{#s186,1} where #s186<:Real}",
     "page": "Spatial",
     "title": "Hamiltonian.Essentials.Spatial.volume",
     "category": "method",
     "text": "volume(v1::AbstractVector{<:Real},v2::AbstractVector{<:Real},v3::AbstractVector{<:Real}) -> Real\n\nGet the volume spanned by three vectors.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Utilities.dimension-Tuple{AbstractBond}",
+    "page": "Spatial",
+    "title": "Hamiltonian.Utilities.dimension",
+    "category": "method",
+    "text": "dimension(b::AbstractBond) -> Int\ndimension(::Type{<:AbstractBond{R,P,N}}) where {R,P,N} -> Int\n\nGet the space dimension of a concrete bond.\n\n\n\n\n\n"
 },
 
 {
@@ -2641,11 +2665,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Hamiltonian.Utilities.dimension-Tuple{Point}",
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Utilities.dimension-Tuple{Link}",
     "page": "Spatial",
     "title": "Hamiltonian.Utilities.dimension",
     "category": "method",
-    "text": "dimension(p::Point) -> Int\ndimension(::Type{<:Point{P,N}}) where {P,N} -> Int\n\nGet the space dimension of the point.\n\n\n\n\n\n"
+    "text": "dimension(link::Link) -> Int\ndimension(::Type{<:Link{N}}) where N -> Int\n\nGet the space dimension of a link.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Utilities.rank-Tuple{AbstractBond}",
+    "page": "Spatial",
+    "title": "Hamiltonian.Utilities.rank",
+    "category": "method",
+    "text": "rank(b::AbstractBond) -> Int\nrank(::Type{<:AbstractBond{R,P,N}}) where {R,P,N} -> Int\n\nGet the rank of a concrete bond.\n\n\n\n\n\n"
 },
 
 {
@@ -2657,14 +2689,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Base.:==-Tuple{Bond,Bond}",
-    "page": "Spatial",
-    "title": "Base.:==",
-    "category": "method",
-    "text": "==(b1::Bond,b2::Bond) -> Bool\nisequal(b1::Bond,b2::Bond) -> Bool\n\nOverloaded equivalent operator.\n\n\n\n\n\n"
-},
-
-{
     "location": "man/Essentials/Spatial.html#Base.:==-Tuple{Link,Link}",
     "page": "Spatial",
     "title": "Base.:==",
@@ -2673,11 +2697,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Base.:==-Tuple{Point,Point}",
+    "location": "man/Essentials/Spatial.html#Base.:==-Union{Tuple{R}, Tuple{AbstractBond{R,P,N} where N where P<:PID,AbstractBond{R,P,N} where N where P<:PID}} where R",
     "page": "Spatial",
     "title": "Base.:==",
     "category": "method",
-    "text": "==(p1::Point,p2::Point) -> Bool\nisequal(p1::Point,p2::Point) -> Bool\n\nOverloaded equivalent operator.\n\n\n\n\n\n"
+    "text": "==(b1::AbstractBond{R},b1::AbstractBond{R}) where R -> Bool\nisequal(b1::AbstractBond{R},b1::AbstractBond{R}) where R -> Bool\n\nOverloaded equivalent operator.\n\n\n\n\n\n"
 },
 
 {
@@ -2913,7 +2937,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreeOfFreedom.html#Hamiltonian.Essentials.DegreeOfFreedom.Table-Tuple{AbstractArray{#s209,1} where #s209<:Index}",
+    "location": "man/Essentials/DegreeOfFreedom.html#Hamiltonian.Essentials.DegreeOfFreedom.Table-Tuple{AbstractArray{#s211,1} where #s211<:Index}",
     "page": "DegreeOfFreedom",
     "title": "Hamiltonian.Essentials.DegreeOfFreedom.Table",
     "category": "method",
@@ -2961,9 +2985,9 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreeOfFreedom.html#Hamiltonian.Essentials.DegreeOfFreedom.pidtype-Tuple{Index}",
+    "location": "man/Essentials/DegreeOfFreedom.html#Hamiltonian.Essentials.Spatial.pidtype-Tuple{Index}",
     "page": "DegreeOfFreedom",
-    "title": "Hamiltonian.Essentials.DegreeOfFreedom.pidtype",
+    "title": "Hamiltonian.Essentials.Spatial.pidtype",
     "category": "method",
     "text": "pidtype(index::Index)\npidtype(::Type{<:Index{P,I}}) where {P,I}\n\nGet the type of the spatial part of an index.\n\n\n\n\n\n"
 },
