@@ -256,6 +256,10 @@ Get the direct product of simple vector spaces or composite vector spaces.
     Element{V<:Number,I<:ID}
 
 An element of an algebra over a field.
+
+The first and second attributes of an element must be
+- `value::Nuber`: the coefficient of the element
+- `id::ID`: the id of the element
 """
 abstract type Element{V<:Number,I<:ID,N} end
 
