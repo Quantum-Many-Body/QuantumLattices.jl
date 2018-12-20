@@ -1,7 +1,9 @@
 using Hamiltonian.Utilities.Tree
 
-@testset "SimpleTree" begin
-    tree=SimpleTree{String,Int}()
+@tree struct ATree end
+
+@testset "AbstractTree" begin
+    tree=ATree{String,Int}()
 
     @test tree|>eltype==Pair{String,Int}
     @test tree|>keytype==String
@@ -51,4 +53,12 @@ using Hamiltonian.Utilities.Tree
     move!(tree,"L1-2","L0")
     @test tree==backup
     @test isequal(tree,backup)
+end
+
+@testset "SimpleTree" begin
+    tree=SimpleTree{String,Int}()
+    @test tree|>eltype==Pair{String,Int}
+    @test tree|>keytype==String
+    @test tree|>valtype==Int
+    @test tree|>root==nothing
 end
