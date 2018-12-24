@@ -1,6 +1,5 @@
 using Random: seed!
 using StaticArrays: SVector
-using Base: reverse
 using Hamiltonian.Essentials.Spatial
 
 @testset "distance" begin

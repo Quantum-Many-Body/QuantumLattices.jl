@@ -10,6 +10,7 @@ Essentials of the Hamiltonian package, which defines all the imported constants,
 Pages=  [
         "Spatial.md",
         "DegreeOfFreedom.md",
+        "FockPackage.md",
         ]
 Depth=2
 ```

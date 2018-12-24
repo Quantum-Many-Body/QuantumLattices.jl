@@ -36,6 +36,7 @@ end
     index=SlIndex(PID('S',4),SlID(1))
     @test directindextotuple(index)==('S',4,1)
     filteredindextotuple=FilteredAttributes(SlIndex)
+    @test filteredindextotuple==FilteredAttributes(:scope,:site,:nambu)
     @test filteredindextotuple|>length==3
     @test filteredindextotuple|>typeof|>length==3
     @test filteredindextotuple(index)==('S',4,1)

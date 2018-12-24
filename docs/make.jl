@@ -27,6 +27,7 @@ makedocs(
                                         "man/Essentials/Introduction.md",
                                         "man/Essentials/Spatial.md",
                                         "man/Essentials/DegreeOfFreedom.md",
+                                        "man/Essentials/FockPackage.md",
                                         ],
                                 ],
                         ],

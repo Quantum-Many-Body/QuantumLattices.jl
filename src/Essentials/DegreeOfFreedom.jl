@@ -4,7 +4,7 @@ using Printf: @printf
 using ...Utilities: Float,comparison
 using ...Utilities.NamedVector: AbstractNamedVector
 using ...Utilities.CompositeStructure: CompositeDict
-using ...Utilities.AlgebraOverField: SimpleID, Element, Elements
+using ...Utilities.AlgebraOverField: SimpleID, ID, Element, Elements
 using ..Spatial: PID
 
 import ..Spatial: pidtype
@@ -124,6 +124,7 @@ A method that converts an arbitary index to a tuple, by iterating over the selec
 struct FilteredAttributes{N} <: IndexToTuple
     attributes::NTuple{N,Symbol}
 end
+FilteredAttributes(attrs::Symbol...)=FilteredAttributes(attrs)
 FilteredAttributes(::Type{I}) where I<:Index=FilteredAttributes(I|>fieldnames)
 
 """
@@ -295,15 +296,16 @@ end
 
 The coupling intra/inter interanl degrees of freedom at different lattice points.
 """
-abstract type Coupling{V,I,N} <: Element{V,I,N} end
+abstract type Coupling{V<:Number,I<:ID,N} <: Element{V,I,N} end
 
 """
-    Couplings{I,C<:Coupling} <: AbstractDict{I,C}
+    Couplings{I<:ID,C<:Coupling} <: AbstractDict{I,C}
 
 A pack of couplings intra/inter interanl degrees of freedom at different lattice points.
 
 Alias for `Elements{I,C}`.
 """
-const Couplings{I,C<:Coupling}=Elements{I,C}
+const Couplings{I<:ID,C<:Coupling}=Elements{I,C}
+Couplings(cps::Coupling...)=Elements(cps...)
 
 end #module
