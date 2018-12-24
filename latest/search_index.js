@@ -2245,7 +2245,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "Introduction",
     "category": "section",
-    "text": "Essentials of the Hamiltonian package, which defines all the imported constants, types and functions when using import Hamiltonian or using Hamiltonian. Note that this submodule depends on the Utilities submodule although the variables in the latter are not exported to the scope of Hamiltonian by default.Pages=  [\n        \"Spatial.md\",\n        \"DegreeOfFreedom.md\",\n        ]\nDepth=2"
+    "text": "Essentials of the Hamiltonian package, which defines all the imported constants, types and functions when using import Hamiltonian or using Hamiltonian. Note that this submodule depends on the Utilities submodule although the variables in the latter are not exported to the scope of Hamiltonian by default.Pages=  [\n        \"Spatial.md\",\n        \"DegreeOfFreedom.md\",\n        \"FockPackage.md\",\n        ]\nDepth=2"
 },
 
 {
@@ -2265,9 +2265,25 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Point-and-Bond-1",
+    "location": "man/Essentials/Spatial.html#AbstractBond-1",
     "page": "Spatial",
-    "title": "Point and Bond",
+    "title": "AbstractBond",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Point-1",
+    "page": "Spatial",
+    "title": "Point",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/Spatial.html#Bond-1",
+    "page": "Spatial",
+    "title": "Bond",
     "category": "section",
     "text": ""
 },
@@ -2853,7 +2869,7 @@ var documenterSearchIndex = {"docs": [
     "page": "DegreeOfFreedom",
     "title": "Hamiltonian.Essentials.DegreeOfFreedom.Couplings",
     "category": "type",
-    "text": "Couplings{I,C<:Coupling} <: AbstractDict{I,C}\n\nA pack of couplings intra/inter interanl degrees of freedom at different lattice points.\n\nAlias for Elements{I,C}.\n\n\n\n\n\n"
+    "text": "Couplings{I<:ID,C<:Coupling} <: AbstractDict{I,C}\n\nA pack of couplings intra/inter interanl degrees of freedom at different lattice points.\n\nAlias for Elements{I,C}.\n\n\n\n\n\n"
 },
 
 {
@@ -3086,6 +3102,270 @@ var documenterSearchIndex = {"docs": [
     "title": "Manul",
     "category": "section",
     "text": "Modules=[DegreeOfFreedom]\nOrder=  [:module,:constant,:type,:macro,:function]"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#",
+    "page": "Fock Package",
+    "title": "Fock Package",
+    "category": "page",
+    "text": "CurrentModule=Hamiltonian.Essentials.FockPackagepush!(LOAD_PATH,\"../../../../src/\")\nusing Hamiltonian"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Fock-Package-1",
+    "page": "Fock Package",
+    "title": "Fock Package",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.ANNIHILATION",
+    "page": "Fock Package",
+    "title": "Hamiltonian.Essentials.FockPackage.ANNIHILATION",
+    "category": "constant",
+    "text": "ANNIHILATION\n\nIndicate that the nambu index is ANNIHILATION.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.CREATION",
+    "page": "Fock Package",
+    "title": "Hamiltonian.Essentials.FockPackage.CREATION",
+    "category": "constant",
+    "text": "CREATION\n\nIndicate that the nambu index is CREATION.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.FCID",
+    "page": "Fock Package",
+    "title": "Hamiltonian.Essentials.FockPackage.FCID",
+    "category": "type",
+    "text": "FCID{A,O,S,N} <: SimpleID\n\nThe id of a Fock coupling.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.FCID-Tuple{}",
+    "page": "Fock Package",
+    "title": "Hamiltonian.Essentials.FockPackage.FCID",
+    "category": "method",
+    "text": "FCID(;atom=nothing,orbital=nothing,spin=nothing,nambu=nothing)\n\nConstruct an id of a Fock coupling.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.FID",
+    "page": "Fock Package",
+    "title": "Hamiltonian.Essentials.FockPackage.FID",
+    "category": "type",
+    "text": "FID <: IID\n\nThe Fock id.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.FID-Tuple{}",
+    "page": "Fock Package",
+    "title": "Hamiltonian.Essentials.FockPackage.FID",
+    "category": "method",
+    "text": "FID(;orbital::Int=1,spin::Int=1,nambu::Int=ANNIHILATION)\n\nCreate a Fock id.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.FIndex",
+    "page": "Fock Package",
+    "title": "Hamiltonian.Essentials.FockPackage.FIndex",
+    "category": "type",
+    "text": "FIndex{S} <: Index{PID{S},FID}\n\nThe Fock index.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.Fock",
+    "page": "Fock Package",
+    "title": "Hamiltonian.Essentials.FockPackage.Fock",
+    "category": "type",
+    "text": "Fock <: Internal{FID}\n\nThe Fock interanl degrees of freedom.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.Fock-Tuple{}",
+    "page": "Fock Package",
+    "title": "Hamiltonian.Essentials.FockPackage.Fock",
+    "category": "method",
+    "text": "Fock(;atom::Int=1,norbital::Int=1,nspin::Int=2,nnambu::Int=2)\n\nConstruct a Fock degrees of freedom.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.FockCoupling",
+    "page": "Fock Package",
+    "title": "Hamiltonian.Essentials.FockPackage.FockCoupling",
+    "category": "type",
+    "text": "FockCoupling{N,V,I<:CompositeID{N,<:FCID}} <: Coupling{V,I,N}\n\nA Fock coupling.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.FockCoupling-Union{Tuple{Number}, Tuple{N}} where N",
+    "page": "Fock Package",
+    "title": "Hamiltonian.Essentials.FockPackage.FockCoupling",
+    "category": "method",
+    "text": "FockCoupling{N}(    value::Number;\n                    atoms::Union{NTuple{N,Int},Nothing}=nothing,\n                    orbitals::Union{NTuple{N,Int},Nothing}=nothing,\n                    spins::Union{NTuple{N,Int},Nothing}=nothing,\n                    nambus::Union{NTuple{N,Int},Nothing}=nothing) where N\n\nConstruct a Fock coupling.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.nambufockindextotuple",
+    "page": "Fock Package",
+    "title": "Hamiltonian.Essentials.FockPackage.nambufockindextotuple",
+    "category": "function",
+    "text": "nambufockindextotuple\n\nIndicate that the filtered attributes are (:scope,:nambu,:site,:orbital,:spin) when converting a Fock index to tuple.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.usualfockindextotuple",
+    "page": "Fock Package",
+    "title": "Hamiltonian.Essentials.FockPackage.usualfockindextotuple",
+    "category": "function",
+    "text": "usualfockindextotuple\n\nIndicate that the filtered attributes are (:scope,:site,:orbital,:spin) when converting a Fock index to tuple.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.σʸ-Tuple{String}",
+    "page": "Fock Package",
+    "title": "Hamiltonian.Essentials.FockPackage.σʸ",
+    "category": "method",
+    "text": "σʸ(mode::String)\n\nThe Pauli matrix σʸ, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.σˣ-Tuple{String}",
+    "page": "Fock Package",
+    "title": "Hamiltonian.Essentials.FockPackage.σˣ",
+    "category": "method",
+    "text": "σˣ(mode::String)\n\nThe Pauli matrix σˣ, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.σᶻ-Tuple{String}",
+    "page": "Fock Package",
+    "title": "Hamiltonian.Essentials.FockPackage.σᶻ",
+    "category": "method",
+    "text": "σᶻ(mode::String)\n\nThe Pauli matrix σᶻ, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.σ⁰-Tuple{String}",
+    "page": "Fock Package",
+    "title": "Hamiltonian.Essentials.FockPackage.σ⁰",
+    "category": "method",
+    "text": "σ⁰(mode::String)\n\nThe Pauli matrix σ⁰, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.σ⁺-Tuple{String}",
+    "page": "Fock Package",
+    "title": "Hamiltonian.Essentials.FockPackage.σ⁺",
+    "category": "method",
+    "text": "σ⁺(mode::String)\n\nThe Pauli matrix σ⁺, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.σ⁻-Tuple{String}",
+    "page": "Fock Package",
+    "title": "Hamiltonian.Essentials.FockPackage.σ⁻",
+    "category": "method",
+    "text": "σ⁻(mode::String)\n\nThe Pauli matrix σ⁻, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Utilities.expand-Tuple{FockCoupling,AbstractBond,Vararg{Fock,N} where N}",
+    "page": "Fock Package",
+    "title": "Hamiltonian.Utilities.expand",
+    "category": "method",
+    "text": "expand(fc::FockCoupling,bond::AbstractBond,focks::Fock...) -> FCExpand\n\nExpand a Fock coupling on a bond with the given Fock degrees of freedom.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Base.:*-Tuple{FockCoupling{2,V,I} where I<:(Hamiltonian.Utilities.AlgebraOverField.CompositeID{2,#s232} where #s232<:FCID) where V,FockCoupling{2,V,I} where I<:(Hamiltonian.Utilities.AlgebraOverField.CompositeID{2,#s232} where #s232<:FCID) where V}",
+    "page": "Fock Package",
+    "title": "Base.:*",
+    "category": "method",
+    "text": "*(fc1::FockCoupling{2},fc2::FockCoupling{2}) -> FockCoupling{2}\n\nGet the multiplication between two rank-2 Fock couplings.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Base.adjoint-Tuple{FID}",
+    "page": "Fock Package",
+    "title": "Base.adjoint",
+    "category": "method",
+    "text": "adjoint(fid::FID) -> FID\n\nGet the adjoint of a Fock id.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Base.fieldnames-Tuple{Type{#s215} where #s215<:FCID}",
+    "page": "Fock Package",
+    "title": "Base.fieldnames",
+    "category": "method",
+    "text": "fieldnames(::Type{<:FCID}) -> NTuple{4,Symbol}\n\nGet the fieldnames of FCID.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Base.fieldnames-Tuple{Type{#s215} where #s215<:FIndex}",
+    "page": "Fock Package",
+    "title": "Base.fieldnames",
+    "category": "method",
+    "text": "fieldnames(::Type{<:FIndex}) -> NTuple{5,Symbol}\n\nGet the fieldnames of a Fock index.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Base.fieldnames-Tuple{Type{FID}}",
+    "page": "Fock Package",
+    "title": "Base.fieldnames",
+    "category": "method",
+    "text": "fieldnames(::Type{FID}) -> NTuple{3,Symbol}\n\nGet the fieldnames of FID.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Base.iterate",
+    "page": "Fock Package",
+    "title": "Base.iterate",
+    "category": "function",
+    "text": "iterate(fock::Fock,state=1)\n\nIterate over a Fock degrees of freedom.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Base.length-Tuple{Fock}",
+    "page": "Fock Package",
+    "title": "Base.length",
+    "category": "method",
+    "text": "length(fock::Fock) -> Int\n\nGet the dimension of a Fock degrees of freedom.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Base.repr-Tuple{FockCoupling}",
+    "page": "Fock Package",
+    "title": "Base.repr",
+    "category": "method",
+    "text": "repr(fc::FockCoupling) -> String\n\nGet the repr representation of a Fock coupling.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Base.show-Tuple{IO,FockCoupling}",
+    "page": "Fock Package",
+    "title": "Base.show",
+    "category": "method",
+    "text": "show(io::IO,fc::FockCoupling)\n\nShow a Fock coupling.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Base.union-Union{Tuple{P}, Tuple{Type{P},Type{FID}}} where P<:PID",
+    "page": "Fock Package",
+    "title": "Base.union",
+    "category": "method",
+    "text": "union(::Type{P},::Type{FID})\n\nGet the union type of PID and FID.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Fock-Degree-of-Freedom-1",
+    "page": "Fock Package",
+    "title": "Fock Degree of Freedom",
+    "category": "section",
+    "text": "Modules=[FockPackage]\nOrder=  [:module,:constant,:type,:macro,:function]"
 },
 
 ]}
