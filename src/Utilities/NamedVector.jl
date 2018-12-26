@@ -3,7 +3,7 @@ module NamedVector
 using Printf: @printf
 using ..Factory: Inference,TypeFactory,FunctionFactory,addargs!,extendbody!
 using ..Factory: MixEscaped,Escaped,UnEscaped
-using ..Utilities: comparison
+using ..Utilities: efficientoperations
 
 export AbstractNamedVector,@namedvector
 export HomoNamedVector,@homonamedvector
@@ -46,8 +46,8 @@ Base.isequal(nv1::AbstractNamedVector,nv2::AbstractNamedVector)=isequal(nv1|>key
 
 Compare two named vectors and judge whether the first is less than the second.
 """
-Base.:<(nv1::AbstractNamedVector,nv2::AbstractNamedVector) = <(comparison,nv1,nv2)
-Base.isless(nv1::AbstractNamedVector,nv2::AbstractNamedVector)=isless(comparison,nv1,nv2)
+Base.:<(nv1::AbstractNamedVector,nv2::AbstractNamedVector) = <(efficientoperations,nv1,nv2)
+Base.isless(nv1::AbstractNamedVector,nv2::AbstractNamedVector)=isless(efficientoperations,nv1,nv2)
 
 """
     show(io::IO,nv::AbstractNamedVector)
@@ -128,10 +128,7 @@ Base.pairs(nv::AbstractNamedVector)=Base.Generator(=>,keys(nv),values(nv))
 
 Return a copy of a concrete `AbstractNamedVector` with some of the field values replaced by the keyword arguments.
 """
-@generated function Base.replace(nv::AbstractNamedVector;kwargs...)
-    exprs=[:(get(kwargs,$name,getfield(nv,$name))) for name in QuoteNode.(nv|>fieldnames)]
-    return :(typeof(nv).name.wrapper($(exprs...)))
-end
+Base.replace(nv::AbstractNamedVector;kwargs...)=replace(efficientoperations,nv;kwargs...)
 
 """
     map(f,nvs::NV...) where NV<:AbstractNamedVector -> NV

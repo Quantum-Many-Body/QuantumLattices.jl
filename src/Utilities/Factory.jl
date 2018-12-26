@@ -5,7 +5,7 @@ using MacroTools: splitarg,combinefield,combinearg
 using MacroTools: splitstructdef,combinestructdef
 using MacroTools: splitdef,combinedef
 using Printf: @printf,@sprintf
-using ..Utilities: comparison
+using ..Utilities: efficientoperations
 
 import MacroTools: rmlines
 
@@ -120,8 +120,8 @@ abstract type AbstractFactory end
 
 Overloaded equivalent operator.
 """
-Base.:(==)(f1::F,f2::F) where F<:AbstractFactory = ==(comparison,f1,f2)
-Base.isequal(f1::F,f2::F) where F<:AbstractFactory=isequal(comparison,f1,f2)
+Base.:(==)(f1::F,f2::F) where F<:AbstractFactory = ==(efficientoperations,f1,f2)
+Base.isequal(f1::F,f2::F) where F<:AbstractFactory=isequal(efficientoperations,f1,f2)
 
 """
     show(io::IO,f::AbstractFactory)
@@ -159,10 +159,7 @@ end
 
 Return a copy of a concrete `AbstractFactory` with some of the field values replaced by the keyword arguments.
 """
-@generated function Base.replace(f::AbstractFactory;kwargs...)
-    exprs=[:(get(kwargs,$name,getfield(f,$name))) for name in QuoteNode.(f|>fieldnames)]
-    return :(typeof(f)($(exprs...)))
-end
+Base.replace(f::AbstractFactory;kwargs...)=replace(efficientoperations,f;kwargs...)
 
 """
     Inference(head::Union{Symbol,Nothing},name::Union{Symbol,Nothing},params::Union{Inference,Vector{Inference},Nothing})

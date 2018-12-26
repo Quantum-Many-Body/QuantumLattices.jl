@@ -1,8 +1,8 @@
 using Printf: @printf,@sprintf
 using ..Spatial: PID,AbstractBond,Point,Bond,pidtype
 using ..DegreeOfFreedom: IID,Index,Internal,FilteredAttributes,Coupling,Couplings
-using ...Utilities: ind2sub,corder,decimaltostr
-using ...Utilities.AlgebraOverField: SimpleID,CompositeID
+using ...Utilities: delta,ind2sub,corder,decimaltostr
+using ...Utilities.AlgebraOverField: SimpleID,ID
 
 import ...Utilities: expand
 
@@ -156,14 +156,14 @@ Get the fieldnames of `FCID`.
 Base.fieldnames(::Type{<:FCID})=(:atom,:orbital,:spin,:nambu)
 
 """
-    FockCoupling{N,V,I<:CompositeID{N,<:FCID}} <: Coupling{V,I,N}
+    FockCoupling{N,V,I<:ID{N,<:FCID}} <: Coupling{V,I,N}
 
 A Fock coupling.
 """
-struct FockCoupling{N,V,I<:CompositeID{N,<:FCID}} <: Coupling{V,I,N}
+struct FockCoupling{N,V,I<:ID{N,<:FCID}} <: Coupling{V,I,N}
     value::V
     id::I
-    FockCoupling(value::Number,id::CompositeID{N,I}) where {N,I<:FCID}=new{N,value|>typeof,id|>typeof}(value,id)
+    FockCoupling(value::Number,id::ID{N,I}) where {N,I<:FCID}=new{N,value|>typeof,id|>typeof}(value,id)
 end
 
 """
@@ -184,7 +184,7 @@ function FockCoupling{N}(   value::Number;
     orbitals==nothing && (orbitals=ntuple(i->nothing,N))
     spins==nothing && (spins=ntuple(i->nothing,N))
     nambus==nothing && (nambus=ntuple(i->nothing,N))
-    return FockCoupling(value,CompositeID(FCID,atoms,orbitals,spins,nambus))
+    return FockCoupling(value,ID(FCID,atoms,orbitals,spins,nambus))
 end
 
 """
@@ -223,7 +223,6 @@ Get the multiplication between two rank-2 Fock couplings.
 """
 function Base.:*(fc1::FockCoupling{2},fc2::FockCoupling{2})
     value=fc1.value*fc2.value
-    delta=(i,j)->i==j ? 1 : 0
     attrpairs=[]
     for attrname in (:atoms,:orbitals,:spins,:nambus)
         attrvalue1=getproperty(fc1.id,attrname)

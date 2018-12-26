@@ -1,7 +1,7 @@
 module DegreeOfFreedom
 
 using Printf: @printf
-using ...Utilities: Float,comparison
+using ...Utilities: Float,efficientoperations
 using ...Utilities.NamedVector: AbstractNamedVector
 using ...Utilities.CompositeStructure: CompositeDict
 using ...Utilities.AlgebraOverField: SimpleID, ID, Element, Elements
@@ -175,8 +175,8 @@ Base.eltype(::Type{<:Internal{I}}) where I=I
 
 Compare two internals and judge whether they are equal to each other.
 """
-Base.:(==)(i1::I,i2::I) where I<:Internal = ==(comparison,i1,i2)
-Base.isequal(i1::I,i2::I) where I<:Internal=isequal(comparison,i1,i2)
+Base.:(==)(i1::I,i2::I) where I<:Internal = ==(efficientoperations,i1,i2)
+Base.isequal(i1::I,i2::I) where I<:Internal=isequal(efficientoperations,i1,i2)
 
 """
     show(io::IO,i::Internal)
@@ -292,7 +292,7 @@ function Base.reverse(table::Table)
 end
 
 """
-    Coupling{V,I}
+    Coupling{V,I,N} <: Element{V,I,N}
 
 The coupling intra/inter interanl degrees of freedom at different lattice points.
 """

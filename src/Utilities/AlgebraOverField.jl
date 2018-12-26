@@ -3,11 +3,11 @@ module AlgebraOverField
 using Printf: @printf
 using ..NamedVector: AbstractNamedVector
 using ..CompositeStructure: CompositeNTuple
-using ..Utilities: comparison
+using ..Utilities: efficientoperations
 
 import ..Utilities: rank,⊕,⊗,dimension
 
-export SimpleID,CompositeID,ID
+export SimpleID,ID
 export SimpleVectorSpace,CompositeVectorSpace,VectorSpace
 export rank,⊕,⊗,dimension
 export Element,Elements
@@ -16,152 +16,76 @@ export idtype,id,add!,sub!
 """
     SimpleID <: AbstractNamedVector
 
-A simple id is the id of a single basis of a vector space or algebra over a field.
+A simple id is the building block of the id system of an algebra over a field.
 """
 abstract type SimpleID <: AbstractNamedVector end
 
 """
-    eltype(id::SimpleID)
-    eltype(::Type{I}) where I
+    ID(ids::NTuple{N,SimpleID}) where N
+    ID(ids::SimpleID...)
+    ID(::Type{SID},attrs::Vararg{NTuple{N},M}) where {SID<:SimpleID,N,M}
 
-Get the eltype of a simple id, which is defined to be the type of itself.
+The id system of an algebra over a field.
+
+Usually, a simple id corresponds to a single generator of the algebra while an id corresponds to an element of the algebra.
 """
-Base.eltype(id::SimpleID)=id|>typeof|>eltype
-Base.eltype(::Type{I}) where I<:SimpleID=I
-
-"""
-    length(id::SimpleID) -> Int
-    length(::Type{<:SimpleID}) -> Int
-
-Get the length of a simple id, which is defined to be 1.
-"""
-Base.length(id::SimpleID)=id|>typeof|>length
-Base.length(::Type{<:SimpleID})=1
-
-"""
-    iterate(id::SimpleID,state::Integer=1)
-    iterate(rv::Iterators.Reverse{<:SimpleID},state::Integer=1)
-
-Iterate over a simple id.
-
-The iteration is defined to give itself.
-"""
-Base.iterate(id::SimpleID,state::Integer=1)=state>1 ? nothing : (id,state+1)
-Base.iterate(rv::Iterators.Reverse{<:SimpleID},state::Integer=1)=state<1 ? nothing : (rv.itr,state-1)
-
-"""
-    rank(::Type{<:SimpleID}) -> Int
-    rank(id::SimpleID) -> Int
-
-Get the rank of a simple id, which is defined to be 1.
-"""
-rank(::Type{<:SimpleID})=1
-rank(id::SimpleID)=id|>typeof|>rank
-
-"""
-    CompositeID(ids::NTuple{N,SimpleID}) where N
-    CompositeID(ids::SimpleID...)
-    CompositeID(::Type{SID},attrs::Vararg{NTuple{N},M}) where {SID<:SimpleID,N,M}
-
-A composite id is the id of the multiplication of bases of an algebra over a field.
-"""
-struct CompositeID{N,I<:SimpleID} <: CompositeNTuple{N,I}
+struct ID{N,I<:SimpleID} <: CompositeNTuple{N,I}
     contents::NTuple{N,I}
-    CompositeID(ids::NTuple{N,SimpleID}) where N=new{N,ids|>eltype}(ids)
+    ID(ids::NTuple{N,SimpleID}) where N=new{N,ids|>eltype}(ids)
 end
-CompositeID(ids::SimpleID...)=CompositeID(ids)
-@generated function CompositeID(::Type{SID},attrs::Vararg{NTuple{N},M}) where {SID<:SimpleID,N,M}
+ID(ids::SimpleID...)=ID(ids)
+@generated function ID(::Type{SID},attrs::Vararg{NTuple{N},M}) where {SID<:SimpleID,N,M}
     exprs=[]
     for i=1:N
         args=[:(attrs[$j][$i]) for j=1:M]
         push!(exprs,:(SID($(args...))))
     end
-    return :(CompositeID($(exprs...)))
+    return :(ID($(exprs...)))
 end
 
 """
-    propertynames(::Type{CID},private::Bool=false) where CID<:CompositeID -> Tuple
+    propertynames(::Type{I},private::Bool=false) where I<:ID -> Tuple
 
 Get the property names of a composite id.
 """
-Base.propertynames(::Type{CID},private::Bool=false) where CID<:CompositeID=CID|>eltype|>isconcretetype ? cidpropertynames(CID,Val(private)) : (:contents,)
-@generated function cidpropertynames(::Type{CID},::Val{true}) where CID<:CompositeID
-    @assert CID|>eltype|>isconcretetype "cidpropertynames error: not homogeneous input CID($(CID|>nameof)) ."
-    exprs=[QuoteNode(Symbol(name,'s')) for name in CID|>eltype|>fieldnames]
+Base.propertynames(::Type{I},private::Bool=false) where I<:ID=I|>eltype|>isconcretetype ? cidpropertynames(I,Val(private)) : (:contents,)
+@generated function cidpropertynames(::Type{I},::Val{true}) where I<:ID
+    @assert I|>eltype|>isconcretetype "cidpropertynames error: not homogeneous input I($(I|>nameof)) ."
+    exprs=[QuoteNode(Symbol(name,'s')) for name in I|>eltype|>fieldnames]
     return Expr(:tuple,QuoteNode(:contents),exprs...)
 end
-@generated function cidpropertynames(::Type{CID},::Val{false}) where CID<:CompositeID
-    @assert CID|>eltype|>isconcretetype "cidpropertynames error: not homogeneous input CID($(CID|>nameof))."
-    exprs=[QuoteNode(Symbol(name,'s')) for name in CID|>eltype|>fieldnames]
+@generated function cidpropertynames(::Type{I},::Val{false}) where I<:ID
+    @assert I|>eltype|>isconcretetype "cidpropertynames error: not homogeneous input I($(I|>nameof))."
+    exprs=[QuoteNode(Symbol(name,'s')) for name in I|>eltype|>fieldnames]
     return Expr(:tuple,exprs...)
 end
 
 """
-    getproperty(cid::CompositeID,name::Symbol)
+    getproperty(cid::ID,name::Symbol)
 
 Get the property of a composite id.
 """
-Base.getproperty(cid::CompositeID,name::Symbol)=name==:contents ? getfield(cid,:contents) : cidgetproperty(cid,name)
-cidpropertyindex(::Type{CID},name::Symbol) where CID<:CompositeID=findfirst(isequal(name),CID|>propertynames)::Int
-@generated function cidgetproperty(cid::CompositeID,name::Symbol)
+Base.getproperty(cid::ID,name::Symbol)=name==:contents ? getfield(cid,:contents) : cidgetproperty(cid,name)
+cidpropertyindex(::Type{I},name::Symbol) where I<:ID=findfirst(isequal(name),I|>propertynames)::Int
+@generated function cidgetproperty(cid::ID,name::Symbol)
     index=:(index=cidpropertyindex(cid|>typeof,name))
     exprs=[:(getfield(cid[$i],index)) for i=1:length(cid)]
     return Expr(:block,index,Expr(:tuple,exprs...))
 end
 
 """
-    show(io::IO,cid::CompositeID)
+    show(io::IO,cid::ID)
 
 Show a composite id.
 """
-Base.show(io::IO,cid::CompositeID)=@printf io "%s(%s)" cid|>typeof|>nameof join(cid,",")
+Base.show(io::IO,cid::ID)=@printf io "%s(%s)" cid|>typeof|>nameof join(cid,",")
 
 """
-    hash(cid::CompositeID,h::UInt)
+    hash(cid::ID,h::UInt)
 
 Hash a composite id.
 """
-Base.hash(cid::CompositeID,h::UInt)=hash(convert(Tuple,cid),h)
-
-"""
-    rank(::Type{<:CompositeID{N,I}}) where {N,I} -> Int
-    rank(id::CompositeID) -> Int
-
-Get the rank of a composite id.
-"""
-rank(::Type{<:CompositeID{N,I}}) where {N,I}=N
-rank(id::CompositeID)=id|>typeof|>rank
-
-"""
-    typejoin(SID::Type{<:SimpleID},CID::Type{<:CompositeID})
-    typejoin(CID::Type{<:CompositeID},SID::Type{<:SimpleID})
-
-Get the type join of a simple id and a composite id.
-"""
-Base.typejoin(SID::Type{<:SimpleID},CID::Type{<:CompositeID})=Union{SID,CID}
-Base.typejoin(CID::Type{<:CompositeID},SID::Type{<:SimpleID})=Union{CID,SID}
-
-"""
-    ID
-
-The id system of an algebra over a field.
-
-It is a type alias for `Union{<:SimpleID,<:CompositeID}`.
-"""
-const ID=Union{<:SimpleID,<:CompositeID}
-
-"""
-    ⊗(sid1::SimpleID,sid2::SimpleID) -> CompositeID
-    ⊗(sid::SimpleID,cid::CompositeID) -> CompositeID
-    ⊗(cid::CompositeID,sid::SimpleID) -> CompositeID
-    ⊗(cid1::CompositeID,cid2::CompositeID) -> CompositeID
-
-Get the direct product of the id system.
-"""
-⊗(sid1::SimpleID,sid2::SimpleID)=CompositeID(sid1,sid2)
-⊗(sid::SimpleID,cid::CompositeID)=CompositeID(sid,convert(Tuple,cid)...)
-⊗(cid::CompositeID,sid::SimpleID)=CompositeID(convert(Tuple,cid)...,sid)
-⊗(cid1::CompositeID,cid2::CompositeID)=CompositeID(convert(Tuple,cid1)...,convert(Tuple,cid2)...)
+Base.hash(cid::ID,h::UInt)=hash(convert(Tuple,cid),h)
 
 """
     isless(cid1::ID,cid2::ID) -> Bool
@@ -181,14 +105,36 @@ function Base.:<(cid1::ID,cid2::ID)
 end
 
 """
-    SimpleVectorSpace(ids::ID...)
+    rank(::Type{<:ID{N,I}}) where {N,I} -> Int
+    rank(id::ID) -> Int
+
+Get the rank of a composite id.
+"""
+rank(::Type{<:ID{N,I}}) where {N,I}=N
+rank(id::ID)=id|>typeof|>rank
+
+"""
+    ⊗(sid1::SimpleID,sid2::SimpleID) -> ID
+    ⊗(sid::SimpleID,cid::ID) -> ID
+    ⊗(cid::ID,sid::SimpleID) -> ID
+    ⊗(cid1::ID,cid2::ID) -> ID
+
+Get the direct product of the id system.
+"""
+⊗(sid1::SimpleID,sid2::SimpleID)=ID(sid1,sid2)
+⊗(sid::SimpleID,cid::ID)=ID(sid,convert(Tuple,cid)...)
+⊗(cid::ID,sid::SimpleID)=ID(convert(Tuple,cid)...,sid)
+⊗(cid1::ID,cid2::ID)=ID(convert(Tuple,cid1)...,convert(Tuple,cid2)...)
+
+"""
+    SimpleVectorSpace(ids::SimpleID...)
 
 The vector space spanned by a set of bases specified by their ids.
 """
-struct SimpleVectorSpace{I<:ID,N} <: CompositeNTuple{N,I}
+struct SimpleVectorSpace{I<:SimpleID,N} <: CompositeNTuple{N,I}
     contents::NTuple{N,I}
 end
-SimpleVectorSpace(ids::ID...)=SimpleVectorSpace(ids)
+SimpleVectorSpace(ids::SimpleID...)=SimpleVectorSpace(ids)
 
 """
     CompositeVectorSpace(svses::SimpleVectorSpace...)
@@ -209,12 +155,12 @@ Alias for `Union{SimpleVectorSpace,CompositeVectorSpace}`.
 """
 const VectorSpace=Union{SimpleVectorSpace,CompositeVectorSpace}
 """
-    VectorSpace(ids::ID...) -> SimpleVectorSpace
+    VectorSpace(ids::SimpleID...) -> SimpleVectorSpace
     VectorSpace(svses::SimpleVectorSpace...) -> CompositeVectorSpace
 
 Get the corresponding vector space of an algebra over a field.
 """
-VectorSpace(ids::ID...)=SimpleVectorSpace(ids...)
+VectorSpace(ids::SimpleID...)=SimpleVectorSpace(ids...)
 VectorSpace(svses::SimpleVectorSpace...)=CompositeVectorSpace(svses...)
 
 """
@@ -227,16 +173,16 @@ dimension(svs::SimpleVectorSpace)=length(svs)
 dimension(cvs::CompositeVectorSpace)=prod(length(svs) for svs in cvs)
 
 """
-    ⊕(id1::I,id2::I) where {I<:ID} -> SimpleVectorSpace{I}
-    ⊕(id::I,svs::SimpleVectorSpace{I}) where {I<:ID} -> SimpleVectorSpace{I}
-    ⊕(svs::SimpleVectorSpace{I},id::I) where {I<:ID} -> SimpleVectorSpace{I}
+    ⊕(id1::I,id2::I) where {I<:SimpleID} -> SimpleVectorSpace{I}
+    ⊕(id::I,svs::SimpleVectorSpace{I}) where {I<:SimpleID} -> SimpleVectorSpace{I}
+    ⊕(svs::SimpleVectorSpace{I},id::I) where {I<:SimpleID} -> SimpleVectorSpace{I}
     ⊕(svs1::SVS,svs2::SVS) where {SVS<:SimpleVectorSpace} -> SVS
 
 Get the direct sum of bases or simple vector spaces.
 """
-⊕(id1::I,id2::I) where {I<:ID}=SimpleVectorSpace(id1,id2)
-⊕(id::I,svs::SimpleVectorSpace{I}) where {I<:ID}=SimpleVectorSpace(id,convert(Tuple,svs)...)
-⊕(svs::SimpleVectorSpace{I},id::I) where {I<:ID}=SimpleVectorSpace(convert(Tuple,svs)...,id)
+⊕(id1::I,id2::I) where {I<:SimpleID}=SimpleVectorSpace(id1,id2)
+⊕(id::I,svs::SimpleVectorSpace{I}) where {I<:SimpleID}=SimpleVectorSpace(id,convert(Tuple,svs)...)
+⊕(svs::SimpleVectorSpace{I},id::I) where {I<:SimpleID}=SimpleVectorSpace(convert(Tuple,svs)...,id)
 ⊕(svs1::SVS,svs2::SVS) where {SVS<:SimpleVectorSpace}=SimpleVectorSpace(convert(Tuple,svs1)...,convert(Tuple,svs2)...)
 
 """
@@ -264,23 +210,23 @@ The first and second attributes of an element must be
 abstract type Element{V<:Number,I<:ID,N} end
 
 """
-    valtype(::Type{<:Element{V,I,N}}) where {V,I,N}
+    valtype(::Type{<:Element{V}}) where {V}
     valtype(m::Element)
 
 Get the type of the value of an element.
 
 The result is also the type of the field over which the algebra is defined.
 """
-Base.valtype(::Type{<:Element{V,I,N}}) where {V,I,N}=V
+Base.valtype(::Type{<:Element{V}}) where V=V
 Base.valtype(m::Element)=m|>typeof|>valtype
 
 """
-    idtype(::Type{<:Element{V,I,N}}) where {V,I,N}
+    idtype(::Type{<:Element{V,I}}) where {V,I}
     idtype(m::Element)
 
 The type of the id of an element.
 """
-idtype(::Type{<:Element{V,I,N}}) where {V,I,N}=I
+idtype(::Type{<:Element{V,I}}) where {V,I}=I
 idtype(m::Element)=m|>typeof|>idtype
 
 """
@@ -293,27 +239,27 @@ rank(::Type{<:Element{V,I,N}}) where {V,I,N}=N
 rank(m::Element)=m|>typeof|>rank
 
 """
-    id(m::Element) -> ID
-
-Get the id of an element.
-"""
-id(m::Element)=m.id
-
-"""
     ==(m1::M,m2::M) where M<:Element -> Bool
     isequal(m1::M,m2::M) where M<:Element -> Bool
 
 Compare two elements and judge whether they are equal to each other.
 """
-Base.:(==)(m1::M,m2::M) where M<:Element = ==(comparison,m1,m2)
-Base.isequal(m1::M,m2::M) where M<:Element=isequal(comparison,m1,m2)
+Base.:(==)(m1::M,m2::M) where M<:Element = ==(efficientoperations,m1,m2)
+Base.isequal(m1::M,m2::M) where M<:Element=isequal(efficientoperations,m1,m2)
 
 """
-    Elements{I<:ID,M<:Element} -> AbstractDict{I,M}
+    replace(m::Element;kwargs...) -> typeof(m)
+
+Return a copy of a concrete `Element` with some of the field values replaced by the keyword arguments.
+"""
+Base.replace(m::Element;kwargs...)=replace(efficientoperations,m;kwargs...)
+
+"""
+    Elements{I<:ID,M<:Element} <: AbstractDict{I,M}
 
 An set of elements of an algebra over a field.
 
-Similar iterms are automatically merged thanks to the id system.
+Alias for `Dict{I<:ID,M<:Element}`. Similar iterms are automatically merged thanks to the id system.
 """
 const Elements{I<:ID,M<:Element}=Dict{I,M}
 """
@@ -348,22 +294,20 @@ Base.zero(::Type{Elements{I,M}}) where {I,M}=Elements{I,M}()
 
 """
     add!(ms::Elements) -> typeof(ms)
-    add!(ms::Elements,mms::Element...) -> typeof(ms)
-    add!(ms::Elements,mses::Elements...) -> typeof(ms)
+    add!(ms::Elements,m::Element) -> typeof(ms)
+    add!(ms::Elements,mms::Elements) -> typeof(ms)
 
 Get the inplace addition of elements to a set.
 """
 add!(ms::Elements)=ms
-function add!(ms::Elements,mms::Element...)
-    mms|>length>0 && @assert ms|>valtype==mms|>eltype "add! error: dismatched type, $(ms|>valtype) and $(mms|>eltype)."
-    for mm in mms
-        mid=mm|>id
-        ms[mid]=haskey(ms,mid) ? typeof(mm).name.wrapper(ms[mid].value+mm.value,(getfield(mm,i) for i=2:(mm|>typeof|>fieldcount))...) : mm
-        abs(ms[mid].value)==0.0 && delete!(ms,mid)
-    end
+function add!(ms::Elements,m::Element)
+    @assert ms|>valtype==m|>typeof "add! error: dismatched type, $(ms|>valtype) and $(m|>typeof)."
+    mid=m.id
+    ms[mid]=haskey(ms,mid) ? replace(m,value=ms[mid].value+m.value) : m
+    abs(ms[mid].value)==0.0 && delete!(ms,mid)
     ms
 end
-add!(ms::Elements,mses::Elements...)=(for mms in mses for m in mms|>values add!(ms,m) end end; ms)
+add!(ms::Elements,mms::Elements)=(for m in mms|>values add!(ms,m) end; ms)
 
 """
     sub!(ms::Elements) -> typeof(ms) -> typeof(ms)
@@ -375,45 +319,45 @@ Get the inplace subtraction of elements from a set.
 sub!(ms::Elements)=ms
 function sub!(ms::Elements,m::Element)
     @assert ms|>valtype==m|>typeof "sub! error: dismatched type, $(ms|>valtype) and $(m|>typeof)."
-    mid=m|>id
-    ms[mid]=haskey(ms,mid) ? typeof(m).name.wrapper(ms[mid].value-m.value,(getfield(m,i) for i=2:(m|>typeof|>fieldcount))...) : -m
+    mid=m.id
+    ms[mid]=haskey(ms,mid) ? replace(m,value=ms[mid].value-m.value) : -m
     abs(ms[mid].value)==0.0 && delete!(ms,mid)
     ms
 end
 sub!(ms::Elements,mms::Elements)=(for m in mms|>values sub!(ms,m) end; ms)
 
 """
-    +(m::Element)
-    +(ms::Elements)
-    +(ms::Elements,m::Element)
-    +(m1::Element,m2::Element)
-    +(m::Element,ms::Elements)
-    +(ms1::Elements,ms2::Elements)
+    +(m::Element) -> typeof(m)
+    +(ms::Elements) -> typeof(ms)
+    +(ms::Elements,m::Element) -> Elements
+    +(m1::Element,m2::Element) -> Elements
+    +(m::Element,ms::Elements) -> Elements
+    +(ms1::Elements,ms2::Elements) -> Elements
 
 Overloaded `+` operator between elements of an algebra over a field.
 """
 Base.:+(m::Element)=m
 Base.:+(ms::Elements)=ms
 Base.:+(ms::Elements,m::Element)=m+ms
-Base.:+(m1::Element,m2::Element)=add!(Elements{typejoin(m1|>idtype,m2|>idtype),typejoin(m1|>typeof,m2|>typeof)}(m1|>id=>m1),m2)
+Base.:+(m1::Element,m2::Element)=add!(Elements{typejoin(m1|>idtype,m2|>idtype),typejoin(m1|>typeof,m2|>typeof)}(m1.id=>m1),m2)
 Base.:+(m::Element,ms::Elements)=add!(Elements{typejoin(m|>idtype,ms|>keytype),typejoin(m|>typeof,ms|>valtype)}(ms),m)
 Base.:+(ms1::Elements,ms2::Elements)=add!(Elements{typejoin(ms1|>keytype,ms2|>keytype),typejoin(ms1|>valtype,ms2|>valtype)}(ms1),ms2)
 
 """
-    *(factor::Number,m::Element)
-    *(factor::Number,ms::Elements)
-    *(m::Element,factor::Number)
-    *(ms::Elements,factor::Number)
-    *(m::Element,ms::Elements)
-    *(ms::Elements,m::Element)
-    *(ms1::Elements,ms2::Elements)
-    *(m1::Element,m2::Element)
+    *(factor::Number,m::Element) -> Element
+    *(m::Element,factor::Number) -> Element
+    *(m1::Element,m2::Element) -> Element
+    *(factor::Number,ms::Elements) -> Elements
+    *(ms::Elements,factor::Number) -> Elements
+    *(m::Element,ms::Elements) -> Elements
+    *(ms::Elements,m::Element) -> Elements
+    *(ms1::Elements,ms2::Elements) -> Elements
 
 Overloaded `*` operator for element-scalar multiplications and element-element multiplications of an algebra over a field.
 """
 Base.:*(factor::Number,m::Element)=m*factor
 Base.:*(factor::Number,ms::Elements)=ms*factor
-Base.:*(m::Element,factor::Number)=typeof(m).name.wrapper(m.value*factor,(getfield(m,i) for i=2:(m|>typeof|>fieldcount))...)
+Base.:*(m::Element,factor::Number)=replace(m,value=m.value*factor)
 Base.:*(ms::Elements,factor::Number)=abs(factor)==0.0 ? zero(Elements) : Elements(id=>m*factor for (id,m) in ms)
 Base.:*(m::Element,ms::Elements)=Elements((m*mm for mm in ms|>values)...)
 Base.:*(ms::Elements,m::Element)=Elements((mm*m for mm in ms|>values)...)
@@ -426,19 +370,19 @@ function Base.:*(m1::Element,m2::Element)
 end
 
 """
-    -(m::Element)
-    -(ms::Elements)
-    -(m1::Element,m2::Element)
-    -(m::Element,ms::Elements)
-    -(ms::Elements,m::Element)
-    -(ms1::Elements,ms2::Elements)
+    -(m::Element) -> typeof(m)
+    -(ms::Elements) -> typeof(ms)
+    -(m1::Element,m2::Element) -> Elements
+    -(m::Element,ms::Elements) -> Elements
+    -(ms::Elements,m::Element) -> Elements
+    -(ms1::Elements,ms2::Elements) -> Elements
 
 Overloaded `-` operator between elements of an algebra over a field.
 """
 Base.:-(m::Element)=m*(-1)
 Base.:-(ms::Elements)=ms*(-1)
-Base.:-(m1::Element,m2::Element)=sub!(Elements{typejoin(m1|>idtype,m2|>idtype),typejoin(m1|>typeof,m2|>typeof)}(m1|>id=>m1),m2)
-Base.:-(m::Element,ms::Elements)=sub!(Elements{typejoin(m|>idtype,ms|>keytype),typejoin(m|>typeof,ms|>valtype)}(m|>id=>m),ms)
+Base.:-(m1::Element,m2::Element)=sub!(Elements{typejoin(m1|>idtype,m2|>idtype),typejoin(m1|>typeof,m2|>typeof)}(m1.id=>m1),m2)
+Base.:-(m::Element,ms::Elements)=sub!(Elements{typejoin(m|>idtype,ms|>keytype),typejoin(m|>typeof,ms|>valtype)}(m.id=>m),ms)
 Base.:-(ms::Elements,m::Element)=sub!(Elements{typejoin(m|>idtype,ms|>keytype),typejoin(m|>typeof,ms|>valtype)}(ms),m)
 Base.:-(ms1::Elements,ms2::Elements)=sub!(Elements{typejoin(ms1|>keytype,ms2|>keytype),typejoin(ms1|>valtype,ms2|>valtype)}(ms1),ms2)
 

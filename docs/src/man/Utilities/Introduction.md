@@ -18,7 +18,8 @@ ind2sub
 sub2ind
 decimaltostr
 ordinal
-comparison
+efficientoperations
+delta
 ```
 
 ## Generic functions for overloading
@@ -30,6 +31,8 @@ rank
 dimension
 expand
 permute
+vector
+matrix
 ```
 
 ## Prerequisites for Essentials

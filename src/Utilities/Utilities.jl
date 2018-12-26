@@ -4,7 +4,7 @@ using Formatting: FormatSpec,fmt
 
 export atol,rtol,Float
 export forder,corder,ind2sub,sub2ind
-export decimaltostr,ordinal,comparison
+export decimaltostr,ordinal,efficientoperations,delta
 
 "Absolute tolerance for float numbers."
 const atol=5*10^-14
@@ -110,21 +110,21 @@ function ordinal(number)
     number==1 ? "1st" : number==2 ? "2nd" : number==3 ? "3rd" : "$(number)th"
 end
 
-struct Comparison end
+struct EfficientOperations end
 """
-    comparison
+    efficientoperations
 
-Indicate that the comparison methods, i.e. "=="/"isequal" or "<"/"isless", will be used.
+Indicate that the efficient operations, i.e. "=="/"isequal", "<"/"isless" or "replace", will be used.
 """
-const comparison=Comparison()
+const efficientoperations=EfficientOperations()
 
 """
-    ==(::Comparison,o1,o2) -> Bool
-    isequal(::Comparison,o1,o2) -> Bool
+    ==(::EfficientOperations,o1,o2) -> Bool
+    isequal(::EfficientOperations,o1,o2) -> Bool
 
 Compare two objects and judge whether they are eqaul to each other.
 """
-@generated function Base.:(==)(::Comparison,o1,o2)
+@generated function Base.:(==)(::EfficientOperations,o1,o2)
     fcount=o1|>fieldcount
     if fcount==o2|>fieldcount
         if fcount==0
@@ -140,7 +140,7 @@ Compare two objects and judge whether they are eqaul to each other.
         return :(false)
     end
 end
-@generated function Base.isequal(::Comparison,o1,o2)
+@generated function Base.isequal(::EfficientOperations,o1,o2)
     fcount=o1|>fieldcount
     if fcount==o2|>fieldcount
         if fcount==0
@@ -158,12 +158,12 @@ end
 end
 
 """
-    <(::Comparison,o1,o2) -> Bool
-    isless(::Comparison,o1,o2) -> Bool
+    <(::EfficientOperations,o1,o2) -> Bool
+    isless(::EfficientOperations,o1,o2) -> Bool
 
 Compare two objects and judge whether the first is less than the second.
 """
-@generated function Base.:<(::Comparison,o1,o2)
+@generated function Base.:<(::EfficientOperations,o1,o2)
     n1,n2=o1|>fieldcount,o2|>fieldcount
     N=min(n1,n2)
     expr=n1<n2 ? Expr(:if,:(getfield(o1,$N)==getfield(o2,$N)),true,false) : false
@@ -174,7 +174,7 @@ Compare two objects and judge whether the first is less than the second.
     end
     return expr
 end
-@generated function Base.isless(::Comparison,o1,o2)
+@generated function Base.isless(::EfficientOperations,o1,o2)
     n1,n2=o1|>fieldcount,o2|>fieldcount
     N=min(n1,n2)
     expr=n1<n2 ? Expr(:if,:(getfield(o1,$N)==getfield(o2,$N)),true,false) : false
@@ -185,6 +185,23 @@ end
     end
     return expr
 end
+
+"""
+    replace(::EfficientOperations,o;kwargs...) -> typeof(o)
+
+Return a copy of the input object with some of the field values replaced by the keyword arguments.
+"""
+@generated function Base.replace(::EfficientOperations,o;kwargs...)
+    exprs=[:(get(kwargs,$name,getfield(o,$name))) for name in QuoteNode.(o|>fieldnames)]
+    return :(typeof(o).name.wrapper($(exprs...)))
+end
+
+"""
+    delta(i,j) -> Int
+
+Kronecker delta function.
+"""
+delta(i,j)=i==j ? 1 : 0
 
 "Generic interface of the direct sum of some types."
 function ⊕ end
@@ -203,6 +220,12 @@ function expand end
 
 "Generic interface of the permutation of some types."
 function permute end
+
+"Generic interface of the vector representation of some types."
+function vector end
+
+"Generic interface of the matrix representation of some types."
+function matrix end
 
 include("Factory.jl")
 include("CompositeStructure.jl")

@@ -6,7 +6,7 @@ using Printf: @printf,@sprintf
 using NearestNeighbors: KDTree,knn,inrange
 using Base.Iterators: flatten,product
 using Combinatorics: combinations
-using ...Utilities: atol,rtol,Float,comparison
+using ...Utilities: atol,rtol,Float,efficientoperations
 using ...Utilities.NamedVector: AbstractNamedVector
 using ...Utilities.Factory: Inference,TypeFactory,FunctionFactory,Argument,MixEscaped,Escaped,UnEscaped
 using ...Utilities.Factory: addparams!,addfields!,addwhereparams!,addargs!,addkwargs!,extendbody!,addconstructors!
@@ -350,8 +350,8 @@ Base.show(io::IO,link::Link)=@printf io "Link(%s,%s,%s,[%s])" link.neighbor link
 
 Overloaded equivalent operator.
 """
-Base.:(==)(l1::Link,l2::Link) = ==(comparison,l1,l2)
-Base.isequal(l1::Link,l2::Link)=isequal(comparison,l1,l2)
+Base.:(==)(l1::Link,l2::Link) = ==(efficientoperations,l1,l2)
+Base.isequal(l1::Link,l2::Link)=isequal(efficientoperations,l1,l2)
 
 """
     dimension(link::Link) -> Int
@@ -449,8 +449,8 @@ abstract type AbstractBond{R,P<:PID,N} end
 
 Overloaded equivalent operator.
 """
-Base.:(==)(b1::AbstractBond{R},b2::AbstractBond{R}) where R = ==(comparison,b1,b2)
-Base.isequal(b1::AbstractBond{R},b2::AbstractBond{R}) where R=isequal(comparison,b1,b2)
+Base.:(==)(b1::AbstractBond{R},b2::AbstractBond{R}) where R = ==(efficientoperations,b1,b2)
+Base.isequal(b1::AbstractBond{R},b2::AbstractBond{R}) where R=isequal(efficientoperations,b1,b2)
 
 """
     rank(b::AbstractBond) -> Int
@@ -587,8 +587,8 @@ Base.length(lattice::AbstractLattice)=length(lattice.pids)
 
 Overloaded equivalent operator.
 """
-Base.:(==)(lattice1::AbstractLattice,lattice2::AbstractLattice) = ==(comparison,lattice1,lattice2)
-Base.isequal(lattice1::AbstractLattice,lattice2::AbstractLattice)=isequal(comparison,lattice1,lattice2)
+Base.:(==)(lattice1::AbstractLattice,lattice2::AbstractLattice) = ==(efficientoperations,lattice1,lattice2)
+Base.isequal(lattice1::AbstractLattice,lattice2::AbstractLattice)=isequal(efficientoperations,lattice1,lattice2)
 
 """
     dimension(lattice::AbstractLattice) -> Int

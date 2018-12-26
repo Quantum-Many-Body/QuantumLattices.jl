@@ -13,6 +13,7 @@ end
     @test t|>typeof|>eltype==Int
     @test t==deepcopy(t)
     @test isequal(t,deepcopy(t))
+    @test hash(t)==hash(deepcopy(t))
     @test t[1]==1
     @test t[1:3]==FT("Info",(1,2,3))
     @test collect(t)==[1,2,3,4]
@@ -85,7 +86,6 @@ end
     @test length(d)==2
     @test haskey(d,"a")==true && haskey(d,"d")==false
     @test Pair("a",1) ∈ d && Pair("d",4) ∉ d
-    @test hash(d)==hash(deepcopy(d))
     @test get(d,"a",2)==1
     @test get(d,"d",4)==4
     @test get(()->4,d,"d")==4

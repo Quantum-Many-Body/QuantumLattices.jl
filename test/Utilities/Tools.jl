@@ -35,26 +35,34 @@ end
     @test ordinal(5)=="5th"
 end
 
-struct ForCompare{F1,F2,F3}
+struct ForTest{F1,F2,F3}
     f1::F1
     f2::F2
     f3::F3
 end
-Base.:(==)(fc1::ForCompare,fc2::ForCompare) = ==(comparison,fc1,fc2)
-Base.isequal(fc1::ForCompare,fc2::ForCompare) = isequal(comparison,fc1,fc2)
-Base.:<(fc1::ForCompare,fc2::ForCompare) = <(comparison,fc1,fc2)
-Base.:isless(fc1::ForCompare,fc2::ForCompare) = isless(comparison,fc1,fc2)
+Base.:(==)(fc1::ForTest,fc2::ForTest) = ==(efficientoperations,fc1,fc2)
+Base.isequal(fc1::ForTest,fc2::ForTest) = isequal(efficientoperations,fc1,fc2)
+Base.:<(fc1::ForTest,fc2::ForTest) = <(efficientoperations,fc1,fc2)
+Base.:isless(fc1::ForTest,fc2::ForTest) = isless(efficientoperations,fc1,fc2)
+Base.replace(fc::ForTest;kwargs...) = replace(efficientoperations,fc;kwargs...)
 
-@testset "comparison" begin
-    @test ==(comparison,(),())
-    @test isequal(comparison,(),())
-    @test ==(comparison,(1,2),(1,2,3))==false
-    @test isequal(comparison,(1,2),(1,2,3))==false
+@testset "efficientoperations" begin
+    @test ==(efficientoperations,(),())
+    @test isequal(efficientoperations,(),())
+    @test ==(efficientoperations,(1,2),(1,2,3))==false
+    @test isequal(efficientoperations,(1,2),(1,2,3))==false
 
-    fc1,fc2=ForCompare(1.0,2,3),ForCompare(1,2,3)
+    fc1,fc2=ForTest(1.0,2,3),ForTest(1,2,3)
     @test fc1==fc2
     @test isequal(fc1,fc2)
-    fc1,fc2=ForCompare(1.0,2,3),ForCompare(1,2,4.0)
+    fc1,fc2=ForTest(1.0,2,3),ForTest(1,2,4.0)
     @test fc1<fc2
     @test isless(fc1,fc2)
+
+    @test replace(ForTest(1,2,3),f1='c')==ForTest('c',2,3)
+end
+
+@testset "delta" begin
+    @test delta(1,2)==0
+    @test delta(1,1)==1
 end
