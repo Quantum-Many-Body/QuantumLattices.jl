@@ -161,11 +161,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.comparison",
+    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.efficientoperations",
     "page": "Introduction",
-    "title": "Hamiltonian.Utilities.comparison",
+    "title": "Hamiltonian.Utilities.efficientoperations",
     "category": "constant",
-    "text": "comparison\n\nIndicate that the comparison methods, i.e. \"==\"/\"isequal\" or \"<\"/\"isless\", will be used.\n\n\n\n\n\n"
+    "text": "efficientoperations\n\nIndicate that the efficient operations, i.e. \"==\"/\"isequal\", \"<\"/\"isless\" or \"replace\", will be used.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.delta",
+    "page": "Introduction",
+    "title": "Hamiltonian.Utilities.delta",
+    "category": "function",
+    "text": "delta(i,j) -> Int\n\nKronecker delta function.\n\n\n\n\n\n"
 },
 
 {
@@ -173,7 +181,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "Useful constants and functions",
     "category": "section",
-    "text": "atol\nrtol\nFloat\nforder\ncorder\nind2sub\nsub2ind\ndecimaltostr\nordinal\ncomparison"
+    "text": "atol\nrtol\nFloat\nforder\ncorder\nind2sub\nsub2ind\ndecimaltostr\nordinal\nefficientoperations\ndelta"
 },
 
 {
@@ -225,11 +233,27 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.vector",
+    "page": "Introduction",
+    "title": "Hamiltonian.Utilities.vector",
+    "category": "function",
+    "text": "Generic interface of the vector representation of some types.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.matrix",
+    "page": "Introduction",
+    "title": "Hamiltonian.Utilities.matrix",
+    "category": "function",
+    "text": "Generic interface of the matrix representation of some types.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Utilities/Introduction.html#Generic-functions-for-overloading-1",
     "page": "Introduction",
     "title": "Generic functions for overloading",
     "category": "section",
-    "text": "⊕\n⊗\nrank\ndimension\nexpand\npermute"
+    "text": "⊕\n⊗\nrank\ndimension\nexpand\npermute\nvector\nmatrix"
 },
 
 {
@@ -1465,14 +1489,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.ID",
-    "page": "Algebra over fields",
-    "title": "Hamiltonian.Utilities.AlgebraOverField.ID",
-    "category": "constant",
-    "text": "ID\n\nThe id system of an algebra over a field.\n\nIt is a type alias for Union{<:SimpleID,<:CompositeID}.\n\n\n\n\n\n"
-},
-
-{
     "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.VectorSpace",
     "page": "Algebra over fields",
     "title": "Hamiltonian.Utilities.AlgebraOverField.VectorSpace",
@@ -1481,19 +1497,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.VectorSpace-Tuple{Vararg{Union{#s69, #s68} where #s68<:Hamiltonian.Utilities.AlgebraOverField.CompositeID where #s69<:Hamiltonian.Utilities.AlgebraOverField.SimpleID,N} where N}",
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.VectorSpace-Tuple{Vararg{Hamiltonian.Utilities.AlgebraOverField.SimpleID,N} where N}",
     "page": "Algebra over fields",
     "title": "Hamiltonian.Utilities.AlgebraOverField.VectorSpace",
     "category": "method",
-    "text": "VectorSpace(ids::ID...) -> SimpleVectorSpace\nVectorSpace(svses::SimpleVectorSpace...) -> CompositeVectorSpace\n\nGet the corresponding vector space of an algebra over a field.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.CompositeID",
-    "page": "Algebra over fields",
-    "title": "Hamiltonian.Utilities.AlgebraOverField.CompositeID",
-    "category": "type",
-    "text": "CompositeID(ids::NTuple{N,SimpleID}) where N\nCompositeID(ids::SimpleID...)\nCompositeID(::Type{SID},attrs::Vararg{NTuple{N},M}) where {SID<:SimpleID,N,M}\n\nA composite id is the id of the multiplication of bases of an algebra over a field.\n\n\n\n\n\n"
+    "text": "VectorSpace(ids::SimpleID...) -> SimpleVectorSpace\nVectorSpace(svses::SimpleVectorSpace...) -> CompositeVectorSpace\n\nGet the corresponding vector space of an algebra over a field.\n\n\n\n\n\n"
 },
 
 {
@@ -1517,7 +1525,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Algebra over fields",
     "title": "Hamiltonian.Utilities.AlgebraOverField.Elements",
     "category": "type",
-    "text": "Elements{I<:ID,M<:Element} -> AbstractDict{I,M}\n\nAn set of elements of an algebra over a field.\n\nSimilar iterms are automatically merged thanks to the id system.\n\n\n\n\n\n"
+    "text": "Elements{I<:ID,M<:Element} <: AbstractDict{I,M}\n\nAn set of elements of an algebra over a field.\n\nAlias for Dict{I<:ID,M<:Element}. Similar iterms are automatically merged thanks to the id system.\n\n\n\n\n\n"
 },
 
 {
@@ -1529,11 +1537,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.ID",
+    "page": "Algebra over fields",
+    "title": "Hamiltonian.Utilities.AlgebraOverField.ID",
+    "category": "type",
+    "text": "ID(ids::NTuple{N,SimpleID}) where N\nID(ids::SimpleID...)\nID(::Type{SID},attrs::Vararg{NTuple{N},M}) where {SID<:SimpleID,N,M}\n\nThe id system of an algebra over a field.\n\nUsually, a simple id corresponds to a single generator of the algebra while an id corresponds to an element of the algebra.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.SimpleID",
     "page": "Algebra over fields",
     "title": "Hamiltonian.Utilities.AlgebraOverField.SimpleID",
     "category": "type",
-    "text": "SimpleID <: AbstractNamedVector\n\nA simple id is the id of a single basis of a vector space or algebra over a field.\n\n\n\n\n\n"
+    "text": "SimpleID <: AbstractNamedVector\n\nA simple id is the building block of the id system of an algebra over a field.\n\n\n\n\n\n"
 },
 
 {
@@ -1541,15 +1557,15 @@ var documenterSearchIndex = {"docs": [
     "page": "Algebra over fields",
     "title": "Hamiltonian.Utilities.AlgebraOverField.SimpleVectorSpace",
     "category": "type",
-    "text": "SimpleVectorSpace(ids::ID...)\n\nThe vector space spanned by a set of bases specified by their ids.\n\n\n\n\n\n"
+    "text": "SimpleVectorSpace(ids::SimpleID...)\n\nThe vector space spanned by a set of bases specified by their ids.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.:⊕-Union{Tuple{I}, Tuple{I,I}} where I<:(Union{#s69, #s68} where #s68<:Hamiltonian.Utilities.AlgebraOverField.CompositeID where #s69<:Hamiltonian.Utilities.AlgebraOverField.SimpleID)",
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.:⊕-Union{Tuple{I}, Tuple{I,I}} where I<:Hamiltonian.Utilities.AlgebraOverField.SimpleID",
     "page": "Algebra over fields",
     "title": "Hamiltonian.Utilities.:⊕",
     "category": "method",
-    "text": "⊕(id1::I,id2::I) where {I<:ID} -> SimpleVectorSpace{I}\n⊕(id::I,svs::SimpleVectorSpace{I}) where {I<:ID} -> SimpleVectorSpace{I}\n⊕(svs::SimpleVectorSpace{I},id::I) where {I<:ID} -> SimpleVectorSpace{I}\n⊕(svs1::SVS,svs2::SVS) where {SVS<:SimpleVectorSpace} -> SVS\n\nGet the direct sum of bases or simple vector spaces.\n\n\n\n\n\n"
+    "text": "⊕(id1::I,id2::I) where {I<:SimpleID} -> SimpleVectorSpace{I}\n⊕(id::I,svs::SimpleVectorSpace{I}) where {I<:SimpleID} -> SimpleVectorSpace{I}\n⊕(svs::SimpleVectorSpace{I},id::I) where {I<:SimpleID} -> SimpleVectorSpace{I}\n⊕(svs1::SVS,svs2::SVS) where {SVS<:SimpleVectorSpace} -> SVS\n\nGet the direct sum of bases or simple vector spaces.\n\n\n\n\n\n"
 },
 
 {
@@ -1557,7 +1573,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Algebra over fields",
     "title": "Hamiltonian.Utilities.:⊗",
     "category": "method",
-    "text": "⊗(sid1::SimpleID,sid2::SimpleID) -> CompositeID\n⊗(sid::SimpleID,cid::CompositeID) -> CompositeID\n⊗(cid::CompositeID,sid::SimpleID) -> CompositeID\n⊗(cid1::CompositeID,cid2::CompositeID) -> CompositeID\n\nGet the direct product of the id system.\n\n\n\n\n\n"
+    "text": "⊗(sid1::SimpleID,sid2::SimpleID) -> ID\n⊗(sid::SimpleID,cid::ID) -> ID\n⊗(cid::ID,sid::SimpleID) -> ID\n⊗(cid1::ID,cid2::ID) -> ID\n\nGet the direct product of the id system.\n\n\n\n\n\n"
 },
 
 {
@@ -1569,31 +1585,23 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.add!-Tuple{Dict{I,M} where M<:Hamiltonian.Utilities.AlgebraOverField.Element where I<:(Union{#s69, #s68} where #s68<:Hamiltonian.Utilities.AlgebraOverField.CompositeID where #s69<:Hamiltonian.Utilities.AlgebraOverField.SimpleID)}",
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.add!-Tuple{Dict{I,M} where M<:Hamiltonian.Utilities.AlgebraOverField.Element where I<:Hamiltonian.Utilities.AlgebraOverField.ID}",
     "page": "Algebra over fields",
     "title": "Hamiltonian.Utilities.AlgebraOverField.add!",
     "category": "method",
-    "text": "add!(ms::Elements) -> typeof(ms)\nadd!(ms::Elements,mms::Element...) -> typeof(ms)\nadd!(ms::Elements,mses::Elements...) -> typeof(ms)\n\nGet the inplace addition of elements to a set.\n\n\n\n\n\n"
+    "text": "add!(ms::Elements) -> typeof(ms)\nadd!(ms::Elements,m::Element) -> typeof(ms)\nadd!(ms::Elements,mms::Elements) -> typeof(ms)\n\nGet the inplace addition of elements to a set.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.id-Tuple{Hamiltonian.Utilities.AlgebraOverField.Element}",
-    "page": "Algebra over fields",
-    "title": "Hamiltonian.Utilities.AlgebraOverField.id",
-    "category": "method",
-    "text": "id(m::Element) -> ID\n\nGet the id of an element.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.idtype-Union{Tuple{Type{#s68} where #s68<:Element{V,I,N}}, Tuple{N}, Tuple{I}, Tuple{V}} where N where I where V",
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.idtype-Union{Tuple{Type{#s68} where #s68<:(Element{V,I,N} where N)}, Tuple{I}, Tuple{V}} where I where V",
     "page": "Algebra over fields",
     "title": "Hamiltonian.Utilities.AlgebraOverField.idtype",
     "category": "method",
-    "text": "idtype(::Type{<:Element{V,I,N}}) where {V,I,N}\nidtype(m::Element)\n\nThe type of the id of an element.\n\n\n\n\n\n"
+    "text": "idtype(::Type{<:Element{V,I}}) where {V,I}\nidtype(m::Element)\n\nThe type of the id of an element.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.sub!-Tuple{Dict{I,M} where M<:Hamiltonian.Utilities.AlgebraOverField.Element where I<:(Union{#s69, #s68} where #s68<:Hamiltonian.Utilities.AlgebraOverField.CompositeID where #s69<:Hamiltonian.Utilities.AlgebraOverField.SimpleID)}",
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.sub!-Tuple{Dict{I,M} where M<:Hamiltonian.Utilities.AlgebraOverField.Element where I<:Hamiltonian.Utilities.AlgebraOverField.ID}",
     "page": "Algebra over fields",
     "title": "Hamiltonian.Utilities.AlgebraOverField.sub!",
     "category": "method",
@@ -1609,22 +1617,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.rank-Tuple{Type{#s68} where #s68<:Hamiltonian.Utilities.AlgebraOverField.SimpleID}",
-    "page": "Algebra over fields",
-    "title": "Hamiltonian.Utilities.rank",
-    "category": "method",
-    "text": "rank(::Type{<:SimpleID}) -> Int\nrank(id::SimpleID) -> Int\n\nGet the rank of a simple id, which is defined to be 1.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.rank-Union{Tuple{Type{#s68} where #s68<:CompositeID{N,I}}, Tuple{I}, Tuple{N}} where I where N",
-    "page": "Algebra over fields",
-    "title": "Hamiltonian.Utilities.rank",
-    "category": "method",
-    "text": "rank(::Type{<:CompositeID{N,I}}) where {N,I} -> Int\nrank(id::CompositeID) -> Int\n\nGet the rank of a composite id.\n\n\n\n\n\n"
-},
-
-{
     "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.rank-Union{Tuple{Type{#s68} where #s68<:Element{V,I,N}}, Tuple{N}, Tuple{I}, Tuple{V}} where N where I where V",
     "page": "Algebra over fields",
     "title": "Hamiltonian.Utilities.rank",
@@ -1633,11 +1625,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.rank-Union{Tuple{Type{#s68} where #s68<:ID{N,I}}, Tuple{I}, Tuple{N}} where I where N",
+    "page": "Algebra over fields",
+    "title": "Hamiltonian.Utilities.rank",
+    "category": "method",
+    "text": "rank(::Type{<:ID{N,I}}) where {N,I} -> Int\nrank(id::ID) -> Int\n\nGet the rank of a composite id.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Utilities/AlgebraOverField.html#Base.:*-Tuple{Number,Hamiltonian.Utilities.AlgebraOverField.Element}",
     "page": "Algebra over fields",
     "title": "Base.:*",
     "category": "method",
-    "text": "*(factor::Number,m::Element)\n*(factor::Number,ms::Elements)\n*(m::Element,factor::Number)\n*(ms::Elements,factor::Number)\n*(m::Element,ms::Elements)\n*(ms::Elements,m::Element)\n*(ms1::Elements,ms2::Elements)\n*(m1::Element,m2::Element)\n\nOverloaded * operator for element-scalar multiplications and element-element multiplications of an algebra over a field.\n\n\n\n\n\n"
+    "text": "*(factor::Number,m::Element) -> Element\n*(m::Element,factor::Number) -> Element\n*(m1::Element,m2::Element) -> Element\n*(factor::Number,ms::Elements) -> Elements\n*(ms::Elements,factor::Number) -> Elements\n*(m::Element,ms::Elements) -> Elements\n*(ms::Elements,m::Element) -> Elements\n*(ms1::Elements,ms2::Elements) -> Elements\n\nOverloaded * operator for element-scalar multiplications and element-element multiplications of an algebra over a field.\n\n\n\n\n\n"
 },
 
 {
@@ -1645,7 +1645,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Algebra over fields",
     "title": "Base.:+",
     "category": "method",
-    "text": "+(m::Element)\n+(ms::Elements)\n+(ms::Elements,m::Element)\n+(m1::Element,m2::Element)\n+(m::Element,ms::Elements)\n+(ms1::Elements,ms2::Elements)\n\nOverloaded + operator between elements of an algebra over a field.\n\n\n\n\n\n"
+    "text": "+(m::Element) -> typeof(m)\n+(ms::Elements) -> typeof(ms)\n+(ms::Elements,m::Element) -> Elements\n+(m1::Element,m2::Element) -> Elements\n+(m::Element,ms::Elements) -> Elements\n+(ms1::Elements,ms2::Elements) -> Elements\n\nOverloaded + operator between elements of an algebra over a field.\n\n\n\n\n\n"
 },
 
 {
@@ -1653,7 +1653,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Algebra over fields",
     "title": "Base.:-",
     "category": "method",
-    "text": "-(m::Element)\n-(ms::Elements)\n-(m1::Element,m2::Element)\n-(m::Element,ms::Elements)\n-(ms::Elements,m::Element)\n-(ms1::Elements,ms2::Elements)\n\nOverloaded - operator between elements of an algebra over a field.\n\n\n\n\n\n"
+    "text": "-(m::Element) -> typeof(m)\n-(ms::Elements) -> typeof(ms)\n-(m1::Element,m2::Element) -> Elements\n-(m::Element,ms::Elements) -> Elements\n-(ms::Elements,m::Element) -> Elements\n-(ms1::Elements,ms2::Elements) -> Elements\n\nOverloaded - operator between elements of an algebra over a field.\n\n\n\n\n\n"
 },
 
 {
@@ -1673,31 +1673,23 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/AlgebraOverField.html#Base.eltype-Tuple{Hamiltonian.Utilities.AlgebraOverField.SimpleID}",
-    "page": "Algebra over fields",
-    "title": "Base.eltype",
-    "category": "method",
-    "text": "eltype(id::SimpleID)\neltype(::Type{I}) where I\n\nGet the eltype of a simple id, which is defined to be the type of itself.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/AlgebraOverField.html#Base.getproperty-Tuple{Hamiltonian.Utilities.AlgebraOverField.CompositeID,Symbol}",
+    "location": "man/Utilities/AlgebraOverField.html#Base.getproperty-Tuple{Hamiltonian.Utilities.AlgebraOverField.ID,Symbol}",
     "page": "Algebra over fields",
     "title": "Base.getproperty",
     "category": "method",
-    "text": "getproperty(cid::CompositeID,name::Symbol)\n\nGet the property of a composite id.\n\n\n\n\n\n"
+    "text": "getproperty(cid::ID,name::Symbol)\n\nGet the property of a composite id.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/AlgebraOverField.html#Base.hash-Tuple{Hamiltonian.Utilities.AlgebraOverField.CompositeID,UInt64}",
+    "location": "man/Utilities/AlgebraOverField.html#Base.hash-Tuple{Hamiltonian.Utilities.AlgebraOverField.ID,UInt64}",
     "page": "Algebra over fields",
     "title": "Base.hash",
     "category": "method",
-    "text": "hash(cid::CompositeID,h::UInt)\n\nHash a composite id.\n\n\n\n\n\n"
+    "text": "hash(cid::ID,h::UInt)\n\nHash a composite id.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/AlgebraOverField.html#Base.isless-Tuple{Union{#s69, #s68} where #s68<:Hamiltonian.Utilities.AlgebraOverField.CompositeID where #s69<:Hamiltonian.Utilities.AlgebraOverField.SimpleID,Union{#s69, #s68} where #s68<:Hamiltonian.Utilities.AlgebraOverField.CompositeID where #s69<:Hamiltonian.Utilities.AlgebraOverField.SimpleID}",
+    "location": "man/Utilities/AlgebraOverField.html#Base.isless-Tuple{Hamiltonian.Utilities.AlgebraOverField.ID,Hamiltonian.Utilities.AlgebraOverField.ID}",
     "page": "Algebra over fields",
     "title": "Base.isless",
     "category": "method",
@@ -1705,55 +1697,39 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/AlgebraOverField.html#Base.iterate",
-    "page": "Algebra over fields",
-    "title": "Base.iterate",
-    "category": "function",
-    "text": "iterate(id::SimpleID,state::Integer=1)\niterate(rv::Iterators.Reverse{<:SimpleID},state::Integer=1)\n\nIterate over a simple id.\n\nThe iteration is defined to give itself.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/AlgebraOverField.html#Base.length-Tuple{Hamiltonian.Utilities.AlgebraOverField.SimpleID}",
-    "page": "Algebra over fields",
-    "title": "Base.length",
-    "category": "method",
-    "text": "length(id::SimpleID) -> Int\nlength(::Type{<:SimpleID}) -> Int\n\nGet the length of a simple id, which is defined to be 1.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/AlgebraOverField.html#Base.propertynames-Union{Tuple{Type{CID}}, Tuple{CID}, Tuple{Type{CID},Bool}} where CID<:Hamiltonian.Utilities.AlgebraOverField.CompositeID",
+    "location": "man/Utilities/AlgebraOverField.html#Base.propertynames-Union{Tuple{Type{I}}, Tuple{I}, Tuple{Type{I},Bool}} where I<:Hamiltonian.Utilities.AlgebraOverField.ID",
     "page": "Algebra over fields",
     "title": "Base.propertynames",
     "category": "method",
-    "text": "propertynames(::Type{CID},private::Bool=false) where CID<:CompositeID -> Tuple\n\nGet the property names of a composite id.\n\n\n\n\n\n"
+    "text": "propertynames(::Type{I},private::Bool=false) where I<:ID -> Tuple\n\nGet the property names of a composite id.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/AlgebraOverField.html#Base.show-Tuple{IO,Hamiltonian.Utilities.AlgebraOverField.CompositeID}",
+    "location": "man/Utilities/AlgebraOverField.html#Base.replace-Tuple{Hamiltonian.Utilities.AlgebraOverField.Element}",
+    "page": "Algebra over fields",
+    "title": "Base.replace",
+    "category": "method",
+    "text": "replace(m::Element;kwargs...) -> typeof(m)\n\nReturn a copy of a concrete Element with some of the field values replaced by the keyword arguments.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Base.show-Tuple{IO,Hamiltonian.Utilities.AlgebraOverField.ID}",
     "page": "Algebra over fields",
     "title": "Base.show",
     "category": "method",
-    "text": "show(io::IO,cid::CompositeID)\n\nShow a composite id.\n\n\n\n\n\n"
+    "text": "show(io::IO,cid::ID)\n\nShow a composite id.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/AlgebraOverField.html#Base.typejoin-Tuple{Type{#s67} where #s67<:Hamiltonian.Utilities.AlgebraOverField.SimpleID,Type{#s16} where #s16<:Hamiltonian.Utilities.AlgebraOverField.CompositeID}",
-    "page": "Algebra over fields",
-    "title": "Base.typejoin",
-    "category": "method",
-    "text": "typejoin(SID::Type{<:SimpleID},CID::Type{<:CompositeID})\ntypejoin(CID::Type{<:CompositeID},SID::Type{<:SimpleID})\n\nGet the type join of a simple id and a composite id.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/AlgebraOverField.html#Base.valtype-Union{Tuple{Type{#s68} where #s68<:Element{V,I,N}}, Tuple{N}, Tuple{I}, Tuple{V}} where N where I where V",
+    "location": "man/Utilities/AlgebraOverField.html#Base.valtype-Union{Tuple{Type{#s68} where #s68<:(Element{V,I,N} where N where I<:ID)}, Tuple{V}} where V",
     "page": "Algebra over fields",
     "title": "Base.valtype",
     "category": "method",
-    "text": "valtype(::Type{<:Element{V,I,N}}) where {V,I,N}\nvaltype(m::Element)\n\nGet the type of the value of an element.\n\nThe result is also the type of the field over which the algebra is defined.\n\n\n\n\n\n"
+    "text": "valtype(::Type{<:Element{V}}) where {V}\nvaltype(m::Element)\n\nGet the type of the value of an element.\n\nThe result is also the type of the field over which the algebra is defined.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/AlgebraOverField.html#Base.zero-Tuple{Dict{I,M} where M<:Hamiltonian.Utilities.AlgebraOverField.Element where I<:(Union{#s69, #s68} where #s68<:Hamiltonian.Utilities.AlgebraOverField.CompositeID where #s69<:Hamiltonian.Utilities.AlgebraOverField.SimpleID)}",
+    "location": "man/Utilities/AlgebraOverField.html#Base.zero-Tuple{Dict{I,M} where M<:Hamiltonian.Utilities.AlgebraOverField.Element where I<:Hamiltonian.Utilities.AlgebraOverField.ID}",
     "page": "Algebra over fields",
     "title": "Base.zero",
     "category": "method",
@@ -2861,7 +2837,7 @@ var documenterSearchIndex = {"docs": [
     "page": "DegreeOfFreedom",
     "title": "Hamiltonian.Essentials.DegreeOfFreedom.Coupling",
     "category": "type",
-    "text": "Coupling{V,I}\n\nThe coupling intra/inter interanl degrees of freedom at different lattice points.\n\n\n\n\n\n"
+    "text": "Coupling{V,I,N} <: Element{V,I,N}\n\nThe coupling intra/inter interanl degrees of freedom at different lattice points.\n\n\n\n\n\n"
 },
 
 {
@@ -3197,7 +3173,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock Package",
     "title": "Hamiltonian.Essentials.FockPackage.FockCoupling",
     "category": "type",
-    "text": "FockCoupling{N,V,I<:CompositeID{N,<:FCID}} <: Coupling{V,I,N}\n\nA Fock coupling.\n\n\n\n\n\n"
+    "text": "FockCoupling{N,V,I<:ID{N,<:FCID}} <: Coupling{V,I,N}\n\nA Fock coupling.\n\n\n\n\n\n"
 },
 
 {
@@ -3281,7 +3257,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Base.:*-Tuple{FockCoupling{2,V,I} where I<:(Hamiltonian.Utilities.AlgebraOverField.CompositeID{2,#s232} where #s232<:FCID) where V,FockCoupling{2,V,I} where I<:(Hamiltonian.Utilities.AlgebraOverField.CompositeID{2,#s232} where #s232<:FCID) where V}",
+    "location": "man/Essentials/FockPackage.html#Base.:*-Tuple{FockCoupling{2,V,I} where I<:(Hamiltonian.Utilities.AlgebraOverField.ID{2,#s232} where #s232<:FCID) where V,FockCoupling{2,V,I} where I<:(Hamiltonian.Utilities.AlgebraOverField.ID{2,#s232} where #s232<:FCID) where V}",
     "page": "Fock Package",
     "title": "Base.:*",
     "category": "method",
