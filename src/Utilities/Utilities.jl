@@ -3,7 +3,7 @@ module Utilities
 using Formatting: FormatSpec,fmt
 
 export atol,rtol,Float
-export forder,corder,ind2sub,sub2ind
+export forder,corder,indtosub,subtoind
 export decimaltostr,ordinal,efficientoperations,delta
 
 "Absolute tolerance for float numbers."
@@ -37,33 +37,33 @@ const corder=COrder()
 @generated head(ts::NTuple{N}) where N=Expr(:tuple,[:(ts[$i]) for i=1:N-1]...)
 
 """
-    ind2sub(dims::Tuple,ind::Int,order::FOrder) -> Tuple
-    ind2sub(dims::Tuple,ind::Int,order::COrder) -> Tuple
+    indtosub(dims::Tuple,ind::Int,order::FOrder) -> Tuple
+    indtosub(dims::Tuple,ind::Int,order::COrder) -> Tuple
 
 Convert an linear index to Cartesian index. Fortran-order or C-order can be assigned.
 """
-function ind2sub(dims::Tuple,ind::Int,order::FOrder)
+function indtosub(dims::Tuple,ind::Int,order::FOrder)
     length(dims)==0 && return ()
-    ((ind-1)%dims[1]+1,ind2sub(tail(dims),(ind-1)÷dims[1]+1,order)...)
+    ((ind-1)%dims[1]+1,indtosub(tail(dims),(ind-1)÷dims[1]+1,order)...)
 end
-function ind2sub(dims::Tuple,ind::Int,order::COrder)
+function indtosub(dims::Tuple,ind::Int,order::COrder)
     length(dims)==0 && return ()
-    (ind2sub(head(dims),(ind-1)÷dims[end]+1,order)...,(ind-1)%dims[end]+1)
+    (indtosub(head(dims),(ind-1)÷dims[end]+1,order)...,(ind-1)%dims[end]+1)
 end
 
 """
-    sub2ind(dims::NTuple{N,Int},inds::NTuple{N,Int},order::FOrder) where N -> Int
-    sub2ind(dims::NTuple{N,Int},inds::NTuple{N,Int},order::COrder) where N -> Int
+    subtoind(dims::NTuple{N,Int},inds::NTuple{N,Int},order::FOrder) where N -> Int
+    subtoind(dims::NTuple{N,Int},inds::NTuple{N,Int},order::COrder) where N -> Int
 
 Convert an Cartesian index to linear index. Fortran-order or C-order can be assigned.
 """
-function sub2ind(dims::NTuple{N,Int},inds::NTuple{N,Int},order::FOrder) where N
+function subtoind(dims::NTuple{N,Int},inds::NTuple{N,Int},order::FOrder) where N
     length(dims)==0 && return 1
-    (sub2ind(tail(dims),tail(inds),order)-1)*dims[1]+inds[1]
+    (subtoind(tail(dims),tail(inds),order)-1)*dims[1]+inds[1]
 end
-function sub2ind(dims::NTuple{N,Int},inds::NTuple{N,Int},order::COrder) where N
+function subtoind(dims::NTuple{N,Int},inds::NTuple{N,Int},order::COrder) where N
     length(dims)==0 && return 1
-    (sub2ind(head(dims),head(inds),order)-1)*dims[end]+inds[end]
+    (subtoind(head(dims),head(inds),order)-1)*dims[end]+inds[end]
 end
 
 """
@@ -208,6 +208,18 @@ function ⊕ end
 
 "Generic interface of the direct product of some types."
 function ⊗ end
+
+"Generic interface of the inplace addition of some types."
+function add! end
+
+"Generic interface of the inplace subtraction of some types."
+function sub! end
+
+"Generic interface of the inplace multiplication of some types."
+function mul! end
+
+"Generic interface of the inplace division of some types."
+function div! end
 
 "Generic interface of the rank of some types."
 function rank end

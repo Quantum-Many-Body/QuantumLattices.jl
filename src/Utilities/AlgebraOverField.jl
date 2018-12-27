@@ -5,13 +5,12 @@ using ..NamedVector: AbstractNamedVector
 using ..CompositeStructure: CompositeNTuple
 using ..Utilities: efficientoperations
 
-import ..Utilities: rank,⊕,⊗,dimension
+import ..Utilities: rank,⊕,⊗,dimension,add!,sub!
 
 export SimpleID,ID
-export SimpleVectorSpace,CompositeVectorSpace,VectorSpace
-export rank,⊕,⊗,dimension
-export Element,Elements
-export idtype,id,add!,sub!
+export AbstractVectorSpace,VectorSpace
+export Element,Elements,idtype
+export rank,⊕,⊗,dimension,add!,sub!
 
 """
     SimpleID <: AbstractNamedVector
@@ -127,76 +126,111 @@ Get the direct product of the id system.
 ⊗(cid1::ID,cid2::ID)=ID(convert(Tuple,cid1)...,convert(Tuple,cid2)...)
 
 """
-    SimpleVectorSpace(ids::SimpleID...)
+    AbstractVectorSpace{I<:SimpleID}
 
-The vector space spanned by a set of bases specified by their ids.
+Abstract vector space.
+
+Subtypes should implement the following methods:
+1) `Base.getindex(nv::AbstractVectorSpace,i::Int)`
+2) `Base.findfirst(sid::SimpleID,nv::AbstractVectorSpace)`
+3) `dimension(nv::AbstractVectorSpace)`
 """
-struct SimpleVectorSpace{I<:SimpleID,N} <: CompositeNTuple{N,I}
+abstract type AbstractVectorSpace{I<:SimpleID} end
+
+"""
+    ==(vs1::AbstractVectorSpace,vs2::AbstractVectorSpace) -> Bool
+    isequal(vs1::AbstractVectorSpace,vs2::AbstractVectorSpace) -> Bool
+
+Compare two vector spaces and judge whether they are equivalent to each other.
+"""
+Base.:(==)(vs1::AbstractVectorSpace,vs2::AbstractVectorSpace) = ==(efficientoperations,vs1,vs2)
+Base.isequal(vs1::AbstractVectorSpace,vs2::AbstractVectorSpace)=isequal(efficientoperations,vs1,vs2)
+
+"""
+    eltype(vs::AbstractVectorSpace)
+    eltype(::Type{AbstractVectorSpace{I}}) where I
+
+Get the eltype of a vector space.
+"""
+Base.eltype(vs::AbstractVectorSpace)=vs|>typeof|>eltype
+Base.eltype(::Type{<:AbstractVectorSpace{I}}) where I=I
+
+"""
+    length(vs::AbstractVectorSpace) -> Int
+
+Get the number of bases of a vector space.
+"""
+Base.length(vs::AbstractVectorSpace)=vs|>dimension
+
+"""
+    iterate(vs::AbstractVectorSpace,state::Integer=1)
+    iterate(rv::Iterators.Reverse{<:AbstractVectorSpace},state=length(rv.itr))
+
+Iterate over the bases of a vector space.
+"""
+Base.iterate(vs::AbstractVectorSpace,state::Integer=1)=state>length(vs) ? nothing : (vs[state],state+1)
+Base.iterate(rv::Iterators.Reverse{<:AbstractVectorSpace},state=length(rv.itr))=state<1 ? nothing : (rv.itr[state],state-1)
+
+"""
+    in(sid::SimpleID,vs::AbstractVectorSpace) -> Bool
+
+Judge whether a basis is in a vector space.
+"""
+Base.in(sid::SimpleID,vs::AbstractVectorSpace)=(index=findfirst(sid,vs);isa(index,Integer) && 1<=index<=length(vs))
+
+"""
+    VectorSpace(ids::SimpleID...)
+
+The vector space spanned by a set of bases specified by their simple ids.
+"""
+struct VectorSpace{I<:SimpleID,N} <: AbstractVectorSpace{I}
     contents::NTuple{N,I}
+    VectorSpace(ids::NTuple{N,SimpleID}) where N=new{ids|>eltype,N}(ids)
 end
-SimpleVectorSpace(ids::SimpleID...)=SimpleVectorSpace(ids)
+VectorSpace(ids::SimpleID...)=VectorSpace(ids)
 
 """
-    CompositeVectorSpace(svses::SimpleVectorSpace...)
+    getindex(vs::VectorSpace,i::Int) -> eltype(vs)
 
-The vector space spanned by the direct product of simple vector spaces.
+Get the i-th simple id of a vector space.
 """
-struct CompositeVectorSpace{SVS<:SimpleVectorSpace,N} <: CompositeNTuple{N,SVS}
-    contents::NTuple{N,SVS}
-end
-CompositeVectorSpace(svses::SimpleVectorSpace...)=CompositeVectorSpace(svses)
+Base.getindex(vs::VectorSpace,i::Int)=vs.contents[i]
 
 """
-    VectorSpace
+    findfirst(sid::I,vs::VectorSpace{I}) where I -> Int
 
-The corresponding vector space of an algebra over a field.
-
-Alias for `Union{SimpleVectorSpace,CompositeVectorSpace}`.
+Find the (first) index of the input simple id of a vector space.
 """
-const VectorSpace=Union{SimpleVectorSpace,CompositeVectorSpace}
-"""
-    VectorSpace(ids::SimpleID...) -> SimpleVectorSpace
-    VectorSpace(svses::SimpleVectorSpace...) -> CompositeVectorSpace
-
-Get the corresponding vector space of an algebra over a field.
-"""
-VectorSpace(ids::SimpleID...)=SimpleVectorSpace(ids...)
-VectorSpace(svses::SimpleVectorSpace...)=CompositeVectorSpace(svses...)
+Base.findfirst(sid::I,vs::VectorSpace{I}) where I=findfirst(isequal(sid),vs.contents)
 
 """
-    dimension(svs::SimpleVectorSpace) -> Int
-    dimension(cvs::CompositeVectorSpace) -> Int
+    dimension(vs::VectorSpace) -> Int
+    dimension(::Type{<:VectorSpace{I,N}}) where {I,N} -> Int
 
 Get the dimension of a vector space.
 """
-dimension(svs::SimpleVectorSpace)=length(svs)
-dimension(cvs::CompositeVectorSpace)=prod(length(svs) for svs in cvs)
+dimension(vs::VectorSpace)=vs|>typeof|>dimension
+dimension(::Type{<:VectorSpace{I,N}}) where {I,N}=N
 
 """
-    ⊕(id1::I,id2::I) where {I<:SimpleID} -> SimpleVectorSpace{I}
-    ⊕(id::I,svs::SimpleVectorSpace{I}) where {I<:SimpleID} -> SimpleVectorSpace{I}
-    ⊕(svs::SimpleVectorSpace{I},id::I) where {I<:SimpleID} -> SimpleVectorSpace{I}
-    ⊕(svs1::SVS,svs2::SVS) where {SVS<:SimpleVectorSpace} -> SVS
+    convert(::Type{Tuple},vs::VectorSpace)
 
-Get the direct sum of bases or simple vector spaces.
+Convert a vector space to tuple.
 """
-⊕(id1::I,id2::I) where {I<:SimpleID}=SimpleVectorSpace(id1,id2)
-⊕(id::I,svs::SimpleVectorSpace{I}) where {I<:SimpleID}=SimpleVectorSpace(id,convert(Tuple,svs)...)
-⊕(svs::SimpleVectorSpace{I},id::I) where {I<:SimpleID}=SimpleVectorSpace(convert(Tuple,svs)...,id)
-⊕(svs1::SVS,svs2::SVS) where {SVS<:SimpleVectorSpace}=SimpleVectorSpace(convert(Tuple,svs1)...,convert(Tuple,svs2)...)
+Base.convert(::Type{Tuple},vs::VectorSpace)=getfield(vs,:contents)
 
 """
-    ⊗(svs1::SimpleVectorSpace,svs2::SimpleVectorSpace) -> CompositeVectorSpace
-    ⊗(svs::SimpleVectorSpace,cvs::CompositeVectorSpace) -> CompositeVectorSpace
-    ⊗(cvs::CompositeVectorSpace,svs::SimpleVectorSpace) -> CompositeVectorSpace
-    ⊗(cvs1::CompositeVectorSpace,cvs2::CompositeVectorSpace) -> CompositeVectorSpace
+    ⊕(sid1::I,sid2::I) where {I<:SimpleID} -> VectorSpace{I}
+    ⊕(sid::I,vs::VectorSpace{I}) where {I<:SimpleID} -> VectorSpace{I}
+    ⊕(vs::VectorSpace{I},sid::I) where {I<:SimpleID} -> VectorSpace{I}
+    ⊕(vs1::VS,vs2::VS) where {VS<:VectorSpace} -> VS
 
-Get the direct product of simple vector spaces or composite vector spaces.
+Get the direct sum of bases or vector spaces.
 """
-⊗(svs1::SimpleVectorSpace,svs2::SimpleVectorSpace)=CompositeVectorSpace(svs1,svs2)
-⊗(svs::SimpleVectorSpace,cvs::CompositeVectorSpace)=CompositeVectorSpace(svs,convert(Tuple,cvs)...)
-⊗(cvs::CompositeVectorSpace,svs::SimpleVectorSpace)=CompositeVectorSpace(convert(Tuple,cvs)...,svs)
-⊗(cvs1::CompositeVectorSpace,cvs2::CompositeVectorSpace)=CompositeVectorSpace(convert(Tuple,cvs1)...,convert(Tuple,cvs2)...)
+⊕(sid1::I,sid2::I) where {I<:SimpleID}=VectorSpace(sid1,sid2)
+⊕(sid::I,vs::VectorSpace{I}) where {I<:SimpleID}=VectorSpace(sid,convert(Tuple,vs)...)
+⊕(vs::VectorSpace{I},sid::I) where {I<:SimpleID}=VectorSpace(convert(Tuple,vs)...,sid)
+⊕(vs1::VS,vs2::VS) where {VS<:VectorSpace}=VectorSpace(convert(Tuple,vs1)...,convert(Tuple,vs2)...)
 
 """
     Element{V<:Number,I<:ID}

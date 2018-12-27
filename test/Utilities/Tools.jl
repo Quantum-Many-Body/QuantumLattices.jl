@@ -4,10 +4,10 @@ using Hamiltonian.Utilities
     dims=(2,2,2)
     finds=[(1,1,1),(2,1,1),(1,2,1),(2,2,1),(1,1,2),(2,1,2),(1,2,2),(2,2,2)]
     cinds=[(1,1,1),(1,1,2),(1,2,1),(1,2,2),(2,1,1),(2,1,2),(2,2,1),(2,2,2)]
-    @test collect(ind2sub(dims,i,forder) for i=1:prod(dims))==finds
-    @test collect(ind2sub(dims,i,corder) for i=1:prod(dims))==cinds
-    @test collect(sub2ind(dims,inds,forder) for inds in finds)==collect(1:prod(dims))
-    @test collect(sub2ind(dims,inds,corder) for inds in cinds)==collect(1:prod(dims))
+    @test collect(indtosub(dims,i,forder) for i=1:prod(dims))==finds
+    @test collect(indtosub(dims,i,corder) for i=1:prod(dims))==cinds
+    @test collect(subtoind(dims,inds,forder) for inds in finds)==collect(1:prod(dims))
+    @test collect(subtoind(dims,inds,corder) for inds in cinds)==collect(1:prod(dims))
 end
 
 @testset "decimaltostr" begin

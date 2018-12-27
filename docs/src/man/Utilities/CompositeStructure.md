@@ -11,10 +11,11 @@ In principle, Julia is not an object-oriented programming language. For example,
 A composite ntuple is a ntuple that is implemented by including an ordinary `NTuple` as one of its attributes with the name `:contents`.
 
 To take full advantages of the Julia base, the following interfaces are defined:
-* inquiry of info: `length`, `eltype`
+* inquiry of info: `length`, `eltype`, `hash`
 * comparison between objects: `==`, `isequal`
 * obtainment of old elements: `getindex`
 * iteration: `iterate`, `keys`, `values`, `pairs`
+* construction of new objects: `reverse`
 
 Composite ntuples are suited for the situations where other attributes are not affected by the modification of the elements. Note that arithmatic operations and logical operations excluding `==` and `isequal` are not supported. Besides, a composite ntuple is **not** a tuple since Julia has no abstract tuples.
 
@@ -39,7 +40,7 @@ Composite vectors are suited for the situations where other attributes are not a
 A composite dict is a dict that is implemented by including an ordinary `Dict` as one of its attributes with the name `:contents`.
 
 To take full advantages of the Julia base, the following interfaces are redined:
-* inquiry of info: `isempty`, `length`, `haskey`, `in`, `hash`
+* inquiry of info: `isempty`, `length`, `haskey`, `in`
 * comparison between objects: `==`, `isequal`
 * obtainment of old elements: `get`, `getkey`, `getindex`
 * modification and addition of elements: `push!`, `get!`, `setindex!`

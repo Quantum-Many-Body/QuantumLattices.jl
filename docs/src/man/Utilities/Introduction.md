@@ -14,8 +14,8 @@ rtol
 Float
 forder
 corder
-ind2sub
-sub2ind
+indtosub
+subtoind
 decimaltostr
 ordinal
 efficientoperations
@@ -27,6 +27,10 @@ delta
 ```@docs
 ⊕
 ⊗
+add!
+sub!
+mul!
+div!
 rank
 dimension
 expand

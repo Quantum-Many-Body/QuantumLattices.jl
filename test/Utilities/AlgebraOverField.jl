@@ -38,24 +38,24 @@ end
 
 @testset "VectorSpace" begin
     id1,id2,id3=SMPID(1,1),SMPID(1,2),SMPID(1,3)
-    svs=SimpleVectorSpace(id1,id2)
-    @test dimension(svs)==2
-    @test svs==id1⊕id2
-    @test svs⊕id3==id1⊕id2⊕id3
-    @test id3⊕svs==id3⊕id1⊕id2
-    @test (id2⊕id3)⊕svs==id2⊕id3⊕id1⊕id2
-    @test VectorSpace(id1,id2)==svs
-
-    svs1=SimpleVectorSpace(SMPID(1,1),SMPID(1,2))
-    svs2=SimpleVectorSpace(SMPID(2,1),SMPID(2,2))
-    svs3=SimpleVectorSpace(SMPID(3,1),SMPID(3,2))
-    cvs=CompositeVectorSpace(svs1,svs2)
-    @test dimension(cvs)==4
-    @test cvs==svs1⊗svs2
-    @test cvs⊗svs3==svs1⊗svs2⊗svs3
-    @test svs3⊗cvs==svs3⊗svs1⊗svs2
-    @test (svs2⊗svs3)⊗cvs==svs2⊗svs3⊗svs1⊗svs2
-    @test VectorSpace(svs1,svs2)==cvs
+    vs=VectorSpace(id1,id2)
+    @test vs==deepcopy(vs)
+    @test isequal(vs,deepcopy(vs))
+    @test vs|>eltype==SMPID{Int,Int}
+    @test vs|>typeof|>eltype==SMPID{Int,Int}
+    @test vs|>length==2
+    @test vs|>collect==[id1,id2]
+    @test vs|>Iterators.reverse|>collect==[id2,id1]
+    @test id1 ∈ vs && id2 ∈ vs && id3 ∉ vs
+    @test vs[1]==id1 && vs[2]==id2
+    @test findfirst(id1,vs)==1 && findfirst(id2,vs)==2
+    @test vs|>dimension==2
+    @test vs|>typeof|>dimension==2
+    @test convert(Tuple,vs)==(id1,id2)
+    @test vs==id1⊕id2
+    @test vs⊕id3==id1⊕id2⊕id3
+    @test id3⊕vs==id3⊕id1⊕id2
+    @test (id2⊕id3)⊕vs==id2⊕id3⊕id1⊕id2
 end
 
 struct BasicOperator{V,I,N} <: Element{V,I,N}

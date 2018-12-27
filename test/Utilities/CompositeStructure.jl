@@ -17,9 +17,11 @@ end
     @test t[1]==1
     @test t[1:3]==FT("Info",(1,2,3))
     @test collect(t)==[1,2,3,4]
+    @test collect(t|>Iterators.reverse)==[4,3,2,1]
     @test t|>keys==(1,2,3,4)|>keys
     @test t|>values==(1,2,3,4)|>values
     @test t|>pairs==(1,2,3,4)|>pairs
+    @test t|>reverse==FT("Info",(4,3,2,1))
     @test convert(Tuple,t)==(1,2,3,4)
 end
 

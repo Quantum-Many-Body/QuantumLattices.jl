@@ -102,7 +102,7 @@ function volume(v1::AbstractVector{<:Real},v2::AbstractVector{<:Real},v3::Abstra
 end
 
 """
-    isparallel(v1::AbstractVector{<:Real},v2::AbstractVector{<:Real};atol::Real=atol,rtol::Real=rtol) -> Bool
+    isparallel(v1::AbstractVector{<:Real},v2::AbstractVector{<:Real};atol::Real=atol,rtol::Real=rtol) -> Int
 
 Judge whether two vectors are parallel to each other with the given tolerance, `0` for not parallel, `1` for parallel and `-1` for antiparallel.
 """

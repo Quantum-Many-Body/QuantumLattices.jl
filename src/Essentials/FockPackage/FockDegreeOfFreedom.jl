@@ -1,7 +1,7 @@
 using Printf: @printf,@sprintf
 using ..Spatial: PID,AbstractBond,Point,Bond,pidtype
 using ..DegreeOfFreedom: IID,Index,Internal,FilteredAttributes,Coupling,Couplings
-using ...Utilities: delta,ind2sub,corder,decimaltostr
+using ...Utilities: delta,indtosub,corder,decimaltostr
 using ...Utilities.AlgebraOverField: SimpleID,ID
 
 import ...Utilities: expand
@@ -114,7 +114,7 @@ Base.length(fock::Fock)=prod((fock.norbital,fock.nspin,fock.nnambu))
 
 Iterate over a Fock degrees of freedom.
 """
-Base.iterate(fock::Fock,state=1)=state>length(fock) ? nothing : (FID(ind2sub((fock.norbital,fock.nspin,fock.nnambu),state,corder)...),state+1)
+Base.iterate(fock::Fock,state=1)=state>length(fock) ? nothing : (FID(indtosub((fock.norbital,fock.nspin,fock.nnambu),state,corder)...),state+1)
 
 """
     usualfockindextotuple
@@ -292,11 +292,11 @@ Base.length(fce::FCExpand)=fce.length
     exprs=[:(FIndex(pids[$i],FID(obs[$i],sps[$i],nbs[$i]))) for i=1:N]
     return Expr(:tuple,exprs...)
 end
-Base.iterate(fce::FCExpand{'E'},st::Int=1)=nothing
-Base.iterate(fce::FCExpand{'U'},st::Int=1)=st>length(fce) ? nothing : ((fce.value,FCExpandIndex(fce.pids,fce.obs,fce.sps,fce.nbs)),st+1)
-Base.iterate(fce::FCExpand{'O'},st::Int=1)=st>length(fce) ? nothing : ((fce.value,FCExpandIndex(fce.pids,fce.obs,(st,st),fce.nbs)),st+1)
-Base.iterate(fce::FCExpand{'S'},st::Int=1)=st>length(fce) ? nothing : ((fce.value,FCExpandIndex(fce.pids,(st,st),fce.sps,fce.nbs)),st+1)
-Base.iterate(fce::FCExpand{'F'},st::Int=1)=st>length(fce) ? nothing : ((ob,sp)=ind2sub((fce.obs,fce.sps),st,corder);((fce.value,FCExpandIndex(fce.pids,(ob,ob),(sp,sp),fce.nbs)),st+1))
+Base.iterate(fce::FCExpand{'E'},t::Int=1)=nothing
+Base.iterate(fce::FCExpand{'U'},t::Int=1)=t>length(fce) ? nothing : ((fce.value,FCExpandIndex(fce.pids,fce.obs,fce.sps,fce.nbs)),t+1)
+Base.iterate(fce::FCExpand{'O'},t::Int=1)=t>length(fce) ? nothing : ((fce.value,FCExpandIndex(fce.pids,fce.obs,(t,t),fce.nbs)),t+1)
+Base.iterate(fce::FCExpand{'S'},t::Int=1)=t>length(fce) ? nothing : ((fce.value,FCExpandIndex(fce.pids,(t,t),fce.sps,fce.nbs)),t+1)
+Base.iterate(fce::FCExpand{'F'},t::Int=1)=t>length(fce) ? nothing : ((o,p)=indtosub((fce.obs,fce.sps),t,corder);((fce.value,FCExpandIndex(fce.pids,(o,o),(p,p),fce.nbs)),t+1))
 
 """
     σ⁰(mode::String)
