@@ -129,19 +129,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.ind2sub",
+    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.indtosub",
     "page": "Introduction",
-    "title": "Hamiltonian.Utilities.ind2sub",
+    "title": "Hamiltonian.Utilities.indtosub",
     "category": "function",
-    "text": "ind2sub(dims::Tuple,ind::Int,order::FOrder) -> Tuple\nind2sub(dims::Tuple,ind::Int,order::COrder) -> Tuple\n\nConvert an linear index to Cartesian index. Fortran-order or C-order can be assigned.\n\n\n\n\n\n"
+    "text": "indtosub(dims::Tuple,ind::Int,order::FOrder) -> Tuple\nindtosub(dims::Tuple,ind::Int,order::COrder) -> Tuple\n\nConvert an linear index to Cartesian index. Fortran-order or C-order can be assigned.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.sub2ind",
+    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.subtoind",
     "page": "Introduction",
-    "title": "Hamiltonian.Utilities.sub2ind",
+    "title": "Hamiltonian.Utilities.subtoind",
     "category": "function",
-    "text": "sub2ind(dims::NTuple{N,Int},inds::NTuple{N,Int},order::FOrder) where N -> Int\nsub2ind(dims::NTuple{N,Int},inds::NTuple{N,Int},order::COrder) where N -> Int\n\nConvert an Cartesian index to linear index. Fortran-order or C-order can be assigned.\n\n\n\n\n\n"
+    "text": "subtoind(dims::NTuple{N,Int},inds::NTuple{N,Int},order::FOrder) where N -> Int\nsubtoind(dims::NTuple{N,Int},inds::NTuple{N,Int},order::COrder) where N -> Int\n\nConvert an Cartesian index to linear index. Fortran-order or C-order can be assigned.\n\n\n\n\n\n"
 },
 
 {
@@ -161,14 +161,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.efficientoperations",
-    "page": "Introduction",
-    "title": "Hamiltonian.Utilities.efficientoperations",
-    "category": "constant",
-    "text": "efficientoperations\n\nIndicate that the efficient operations, i.e. \"==\"/\"isequal\", \"<\"/\"isless\" or \"replace\", will be used.\n\n\n\n\n\n"
-},
-
-{
     "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.delta",
     "page": "Introduction",
     "title": "Hamiltonian.Utilities.delta",
@@ -181,95 +173,199 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "Useful constants and functions",
     "category": "section",
-    "text": "atol\nrtol\nFloat\nforder\ncorder\nind2sub\nsub2ind\ndecimaltostr\nordinal\nefficientoperations\ndelta"
+    "text": "atol\nrtol\nFloat\nforder\ncorder\nindtosub\nsubtoind\ndecimaltostr\nordinal\ndelta"
 },
 
 {
-    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.:⊕",
+    "location": "man/Utilities/Introduction.html#Generic-interfaces-1",
     "page": "Introduction",
-    "title": "Hamiltonian.Utilities.:⊕",
-    "category": "function",
-    "text": "Generic interface of the direct sum of some types.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.:⊗",
-    "page": "Introduction",
-    "title": "Hamiltonian.Utilities.:⊗",
-    "category": "function",
-    "text": "Generic interface of the direct product of some types.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.rank",
-    "page": "Introduction",
-    "title": "Hamiltonian.Utilities.rank",
-    "category": "function",
-    "text": "Generic interface of the rank of some types.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.dimension",
-    "page": "Introduction",
-    "title": "Hamiltonian.Utilities.dimension",
-    "category": "function",
-    "text": "Generic interface of the dimension of some types.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.expand",
-    "page": "Introduction",
-    "title": "Hamiltonian.Utilities.expand",
-    "category": "function",
-    "text": "Generic interface of the expansion of some types.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.permute",
-    "page": "Introduction",
-    "title": "Hamiltonian.Utilities.permute",
-    "category": "function",
-    "text": "Generic interface of the permutation of some types.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.vector",
-    "page": "Introduction",
-    "title": "Hamiltonian.Utilities.vector",
-    "category": "function",
-    "text": "Generic interface of the vector representation of some types.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.matrix",
-    "page": "Introduction",
-    "title": "Hamiltonian.Utilities.matrix",
-    "category": "function",
-    "text": "Generic interface of the matrix representation of some types.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/Introduction.html#Generic-functions-for-overloading-1",
-    "page": "Introduction",
-    "title": "Generic functions for overloading",
+    "title": "Generic interfaces",
     "category": "section",
-    "text": "⊕\n⊗\nrank\ndimension\nexpand\npermute\nvector\nmatrix"
+    "text": "Pages=[\n    \"Interface.md\",\n    ]\nDepth=2"
 },
 
 {
-    "location": "man/Utilities/Introduction.html#Prerequisites-for-Essentials-1",
+    "location": "man/Utilities/Introduction.html#Basic-structures-1",
     "page": "Introduction",
-    "title": "Prerequisites for Essentials",
+    "title": "Basic structures",
     "category": "section",
-    "text": "Pages=[\n    \"Factory.md\",\n    \"CompositeStructure.md\",\n    \"Tree.md\",\n    \"NamedVector.md\",\n    \"AlgebraOverField.md\",\n    ]\nDepth=2"
+    "text": "Pages=[\n    \"TypeTrait.md\",\n    \"Factory.md\",\n    \"CompositeStructure.md\",\n    \"Tree.md\",\n    \"NamedVector.md\",\n    ]\nDepth=2"
 },
 
 {
-    "location": "man/Utilities/Introduction.html#Necessities-for-Algorithms-1",
+    "location": "man/Utilities/Introduction.html#Mathematical-structures-1",
     "page": "Introduction",
-    "title": "Necessities for Algorithms",
+    "title": "Mathematical structures",
     "category": "section",
-    "text": "Pages=[\n    \"QuantumNumber.md\",\n    ]\nDepth=2"
+    "text": "Pages=[\n    \"Combinatorics.md\",\n    \"AlgebraOverField.md\",\n    \"QuantumNumber.md\",\n    ]\nDepth=2"
+},
+
+{
+    "location": "man/Utilities/Interface.html#",
+    "page": "Interface",
+    "title": "Interface",
+    "category": "page",
+    "text": "CurrentModule=Hamiltonian.Utilities.Interface"
+},
+
+{
+    "location": "man/Utilities/Interface.html#Hamiltonian.Utilities.Interface.:⊕",
+    "page": "Interface",
+    "title": "Hamiltonian.Utilities.Interface.:⊕",
+    "category": "function",
+    "text": "Direct sum.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Interface.html#Hamiltonian.Utilities.Interface.:⊗",
+    "page": "Interface",
+    "title": "Hamiltonian.Utilities.Interface.:⊗",
+    "category": "function",
+    "text": "Direct product.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Interface.html#Hamiltonian.Utilities.Interface.add!",
+    "page": "Interface",
+    "title": "Hamiltonian.Utilities.Interface.add!",
+    "category": "function",
+    "text": "Inplace addition.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Interface.html#Hamiltonian.Utilities.Interface.dimension",
+    "page": "Interface",
+    "title": "Hamiltonian.Utilities.Interface.dimension",
+    "category": "function",
+    "text": "Dimension.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Interface.html#Hamiltonian.Utilities.Interface.div!",
+    "page": "Interface",
+    "title": "Hamiltonian.Utilities.Interface.div!",
+    "category": "function",
+    "text": "Inplace division.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Interface.html#Hamiltonian.Utilities.Interface.expand",
+    "page": "Interface",
+    "title": "Hamiltonian.Utilities.Interface.expand",
+    "category": "function",
+    "text": "Get the expansion.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Interface.html#Hamiltonian.Utilities.Interface.matrix",
+    "page": "Interface",
+    "title": "Hamiltonian.Utilities.Interface.matrix",
+    "category": "function",
+    "text": "Matrix representation.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Interface.html#Hamiltonian.Utilities.Interface.mul!",
+    "page": "Interface",
+    "title": "Hamiltonian.Utilities.Interface.mul!",
+    "category": "function",
+    "text": "Inplace multiplication.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Interface.html#Hamiltonian.Utilities.Interface.permute",
+    "page": "Interface",
+    "title": "Hamiltonian.Utilities.Interface.permute",
+    "category": "function",
+    "text": "Get the permutation.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Interface.html#Hamiltonian.Utilities.Interface.rank",
+    "page": "Interface",
+    "title": "Hamiltonian.Utilities.Interface.rank",
+    "category": "function",
+    "text": "Rank.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Interface.html#Hamiltonian.Utilities.Interface.sub!",
+    "page": "Interface",
+    "title": "Hamiltonian.Utilities.Interface.sub!",
+    "category": "function",
+    "text": "Inplace subtraction.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Interface.html#Hamiltonian.Utilities.Interface.vector",
+    "page": "Interface",
+    "title": "Hamiltonian.Utilities.Interface.vector",
+    "category": "function",
+    "text": "Vector representation.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Interface.html#Interface-1",
+    "page": "Interface",
+    "title": "Interface",
+    "category": "section",
+    "text": "Modules=[Interface]\nOrder=  [:module,:constant,:type,:macro,:function]"
+},
+
+{
+    "location": "man/Utilities/TypeTrait.html#",
+    "page": "Type trait",
+    "title": "Type trait",
+    "category": "page",
+    "text": "CurrentModule=Hamiltonian.Utilities.TypeTraitpush!(LOAD_PATH,\"../../../../src/\")\nusing Hamiltonian.Utilities.TypeTrait"
+},
+
+{
+    "location": "man/Utilities/TypeTrait.html#Type-trait-1",
+    "page": "Type trait",
+    "title": "Type trait",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Utilities/TypeTrait.html#Hamiltonian.Utilities.TypeTrait.efficientoperations",
+    "page": "Type trait",
+    "title": "Hamiltonian.Utilities.TypeTrait.efficientoperations",
+    "category": "constant",
+    "text": "efficientoperations\n\nIndicate that the efficient operations, i.e. \"==\"/\"isequal\", \"<\"/\"isless\" or \"replace\", will be used.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/TypeTrait.html#Base.:<-Tuple{Hamiltonian.Utilities.TypeTrait.EfficientOperations,Any,Any}",
+    "page": "Type trait",
+    "title": "Base.:<",
+    "category": "method",
+    "text": "<(::EfficientOperations,o1,o2) -> Bool\nisless(::EfficientOperations,o1,o2) -> Bool\n\nCompare two objects and judge whether the first is less than the second.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/TypeTrait.html#Base.:==-Tuple{Hamiltonian.Utilities.TypeTrait.EfficientOperations,Any,Any}",
+    "page": "Type trait",
+    "title": "Base.:==",
+    "category": "method",
+    "text": "==(::EfficientOperations,o1,o2) -> Bool\nisequal(::EfficientOperations,o1,o2) -> Bool\n\nCompare two objects and judge whether they are eqaul to each other.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/TypeTrait.html#Base.replace-Tuple{Hamiltonian.Utilities.TypeTrait.EfficientOperations,Any}",
+    "page": "Type trait",
+    "title": "Base.replace",
+    "category": "method",
+    "text": "replace(::EfficientOperations,o;kwargs...) -> typeof(o)\n\nReturn a copy of the input object with some of the field values replaced by the keyword arguments.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/TypeTrait.html#EfficientOperations-1",
+    "page": "Type trait",
+    "title": "EfficientOperations",
+    "category": "section",
+    "text": "Modules=[TypeTrait]\nOrder=  [:module,:constant,:type,:macro,:function]"
 },
 
 {
@@ -853,7 +949,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Composite structure",
     "title": "CompositeNTuple",
     "category": "section",
-    "text": "A composite ntuple is a ntuple that is implemented by including an ordinary NTuple as one of its attributes with the name :contents.To take full advantages of the Julia base, the following interfaces are defined:inquiry of info: length, eltype\ncomparison between objects: ==, isequal\nobtainment of old elements: getindex\niteration: iterate, keys, values, pairsComposite ntuples are suited for the situations where other attributes are not affected by the modification of the elements. Note that arithmatic operations and logical operations excluding == and isequal are not supported. Besides, a composite ntuple is not a tuple since Julia has no abstract tuples."
+    "text": "A composite ntuple is a ntuple that is implemented by including an ordinary NTuple as one of its attributes with the name :contents.To take full advantages of the Julia base, the following interfaces are defined:inquiry of info: length, eltype, hash\ncomparison between objects: ==, isequal\nobtainment of old elements: getindex\niteration: iterate, keys, values, pairs\nconstruction of new objects: reverseComposite ntuples are suited for the situations where other attributes are not affected by the modification of the elements. Note that arithmatic operations and logical operations excluding == and isequal are not supported. Besides, a composite ntuple is not a tuple since Julia has no abstract tuples."
 },
 
 {
@@ -869,7 +965,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Composite structure",
     "title": "CompositeDict",
     "category": "section",
-    "text": "A composite dict is a dict that is implemented by including an ordinary Dict as one of its attributes with the name :contents.To take full advantages of the Julia base, the following interfaces are redined:inquiry of info: isempty, length, haskey, in, hash\ncomparison between objects: ==, isequal\nobtainment of old elements: get, getkey, getindex\nmodification and addition of elements: push!, get!, setindex!\nremoval of old elements: pop!, delete!, empty!\nconstruction of new objects: merge, empty\niteration: iterate, keys, values, pairsAs is similar to composite vectors, composite dicts are suited for the situations where other attributes are not affected by the modification of the elements."
+    "text": "A composite dict is a dict that is implemented by including an ordinary Dict as one of its attributes with the name :contents.To take full advantages of the Julia base, the following interfaces are redined:inquiry of info: isempty, length, haskey, in\ncomparison between objects: ==, isequal\nobtainment of old elements: get, getkey, getindex\nmodification and addition of elements: push!, get!, setindex!\nremoval of old elements: pop!, delete!, empty!\nconstruction of new objects: merge, empty\niteration: iterate, keys, values, pairsAs is similar to composite vectors, composite dicts are suited for the situations where other attributes are not affected by the modification of the elements."
 },
 
 {
@@ -1449,6 +1545,86 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Utilities/Combinatorics.html#",
+    "page": "Combinatorics",
+    "title": "Combinatorics",
+    "category": "page",
+    "text": "CurrentModule=Hamiltonian.Utilities.Combinatorics"
+},
+
+{
+    "location": "man/Utilities/Combinatorics.html#Combinatorics-1",
+    "page": "Combinatorics",
+    "title": "Combinatorics",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Utilities/Combinatorics.html#Combinations-and-DulCombinations-1",
+    "page": "Combinatorics",
+    "title": "Combinations and DulCombinations",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Utilities/Combinatorics.html#Permutations-and-DulPermutations-1",
+    "page": "Combinatorics",
+    "title": "Permutations and DulPermutations",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Utilities/Combinatorics.html#Hamiltonian.Utilities.Combinatorics.Combinations",
+    "page": "Combinatorics",
+    "title": "Hamiltonian.Utilities.Combinatorics.Combinations",
+    "category": "type",
+    "text": "Combinations{M}(contents::C) where {M,C}\n\nCombinations of M elements from contents. Duplicates are not allowed.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Combinatorics.html#Hamiltonian.Utilities.Combinatorics.DulCombinations",
+    "page": "Combinatorics",
+    "title": "Hamiltonian.Utilities.Combinatorics.DulCombinations",
+    "category": "type",
+    "text": "DulCombinations{M}(contents::C) where {M,C}\n\nCombinations of M elements from contents. Duplicates are allowed.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Combinatorics.html#Hamiltonian.Utilities.Combinatorics.DulPermutations",
+    "page": "Combinatorics",
+    "title": "Hamiltonian.Utilities.Combinatorics.DulPermutations",
+    "category": "type",
+    "text": "Permutations{M}(contents::C) where {M,C}\n\nPermutations of M elements from contents. Duplicates are not allowed.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Combinatorics.html#Hamiltonian.Utilities.Combinatorics.Permutations",
+    "page": "Combinatorics",
+    "title": "Hamiltonian.Utilities.Combinatorics.Permutations",
+    "category": "type",
+    "text": "Permutations{M}(contents::C) where {M,C}\n\nPermutations of M elements from contents. Duplicates are allowed.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Combinatorics.html#Hamiltonian.Utilities.Combinatorics.AbstractCombinatorics",
+    "page": "Combinatorics",
+    "title": "Hamiltonian.Utilities.Combinatorics.AbstractCombinatorics",
+    "category": "type",
+    "text": "AbstractCombinatorics{M,C}\n\nAbstract combinatoric algorithms.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/Combinatorics.html#Manul-1",
+    "page": "Combinatorics",
+    "title": "Manul",
+    "category": "section",
+    "text": "Modules=[Combinatorics]\nOrder=  [:module,:constant,:type,:macro,:function]"
+},
+
+{
     "location": "man/Utilities/AlgebraOverField.html#",
     "page": "Algebra over fields",
     "title": "Algebra over fields",
@@ -1489,27 +1665,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.VectorSpace",
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.AbstractVectorSpace",
     "page": "Algebra over fields",
-    "title": "Hamiltonian.Utilities.AlgebraOverField.VectorSpace",
-    "category": "constant",
-    "text": "VectorSpace\n\nThe corresponding vector space of an algebra over a field.\n\nAlias for Union{SimpleVectorSpace,CompositeVectorSpace}.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.VectorSpace-Tuple{Vararg{Hamiltonian.Utilities.AlgebraOverField.SimpleID,N} where N}",
-    "page": "Algebra over fields",
-    "title": "Hamiltonian.Utilities.AlgebraOverField.VectorSpace",
-    "category": "method",
-    "text": "VectorSpace(ids::SimpleID...) -> SimpleVectorSpace\nVectorSpace(svses::SimpleVectorSpace...) -> CompositeVectorSpace\n\nGet the corresponding vector space of an algebra over a field.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.CompositeVectorSpace",
-    "page": "Algebra over fields",
-    "title": "Hamiltonian.Utilities.AlgebraOverField.CompositeVectorSpace",
+    "title": "Hamiltonian.Utilities.AlgebraOverField.AbstractVectorSpace",
     "category": "type",
-    "text": "CompositeVectorSpace(svses::SimpleVectorSpace...)\n\nThe vector space spanned by the direct product of simple vector spaces.\n\n\n\n\n\n"
+    "text": "AbstractVectorSpace{I<:SimpleID}\n\nAbstract vector space.\n\nSubtypes should implement the following methods:\n\nBase.getindex(nv::AbstractVectorSpace,i::Int)\nBase.findfirst(sid::SimpleID,nv::AbstractVectorSpace)\ndimension(nv::AbstractVectorSpace)\n\n\n\n\n\n"
 },
 
 {
@@ -1553,43 +1713,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.SimpleVectorSpace",
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.VectorSpace",
     "page": "Algebra over fields",
-    "title": "Hamiltonian.Utilities.AlgebraOverField.SimpleVectorSpace",
+    "title": "Hamiltonian.Utilities.AlgebraOverField.VectorSpace",
     "category": "type",
-    "text": "SimpleVectorSpace(ids::SimpleID...)\n\nThe vector space spanned by a set of bases specified by their ids.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.:⊕-Union{Tuple{I}, Tuple{I,I}} where I<:Hamiltonian.Utilities.AlgebraOverField.SimpleID",
-    "page": "Algebra over fields",
-    "title": "Hamiltonian.Utilities.:⊕",
-    "category": "method",
-    "text": "⊕(id1::I,id2::I) where {I<:SimpleID} -> SimpleVectorSpace{I}\n⊕(id::I,svs::SimpleVectorSpace{I}) where {I<:SimpleID} -> SimpleVectorSpace{I}\n⊕(svs::SimpleVectorSpace{I},id::I) where {I<:SimpleID} -> SimpleVectorSpace{I}\n⊕(svs1::SVS,svs2::SVS) where {SVS<:SimpleVectorSpace} -> SVS\n\nGet the direct sum of bases or simple vector spaces.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.:⊗-Tuple{Hamiltonian.Utilities.AlgebraOverField.SimpleID,Hamiltonian.Utilities.AlgebraOverField.SimpleID}",
-    "page": "Algebra over fields",
-    "title": "Hamiltonian.Utilities.:⊗",
-    "category": "method",
-    "text": "⊗(sid1::SimpleID,sid2::SimpleID) -> ID\n⊗(sid::SimpleID,cid::ID) -> ID\n⊗(cid::ID,sid::SimpleID) -> ID\n⊗(cid1::ID,cid2::ID) -> ID\n\nGet the direct product of the id system.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.:⊗-Tuple{Hamiltonian.Utilities.AlgebraOverField.SimpleVectorSpace,Hamiltonian.Utilities.AlgebraOverField.SimpleVectorSpace}",
-    "page": "Algebra over fields",
-    "title": "Hamiltonian.Utilities.:⊗",
-    "category": "method",
-    "text": "⊗(svs1::SimpleVectorSpace,svs2::SimpleVectorSpace) -> CompositeVectorSpace\n⊗(svs::SimpleVectorSpace,cvs::CompositeVectorSpace) -> CompositeVectorSpace\n⊗(cvs::CompositeVectorSpace,svs::SimpleVectorSpace) -> CompositeVectorSpace\n⊗(cvs1::CompositeVectorSpace,cvs2::CompositeVectorSpace) -> CompositeVectorSpace\n\nGet the direct product of simple vector spaces or composite vector spaces.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.add!-Tuple{Dict{I,M} where M<:Hamiltonian.Utilities.AlgebraOverField.Element where I<:Hamiltonian.Utilities.AlgebraOverField.ID}",
-    "page": "Algebra over fields",
-    "title": "Hamiltonian.Utilities.AlgebraOverField.add!",
-    "category": "method",
-    "text": "add!(ms::Elements) -> typeof(ms)\nadd!(ms::Elements,m::Element) -> typeof(ms)\nadd!(ms::Elements,mms::Elements) -> typeof(ms)\n\nGet the inplace addition of elements to a set.\n\n\n\n\n\n"
+    "text": "VectorSpace(ids::SimpleID...)\n\nThe vector space spanned by a set of bases specified by their simple ids.\n\n\n\n\n\n"
 },
 
 {
@@ -1601,35 +1729,59 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.AlgebraOverField.sub!-Tuple{Dict{I,M} where M<:Hamiltonian.Utilities.AlgebraOverField.Element where I<:Hamiltonian.Utilities.AlgebraOverField.ID}",
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.Interface.:⊕-Union{Tuple{I}, Tuple{I,I}} where I<:Hamiltonian.Utilities.AlgebraOverField.SimpleID",
     "page": "Algebra over fields",
-    "title": "Hamiltonian.Utilities.AlgebraOverField.sub!",
+    "title": "Hamiltonian.Utilities.Interface.:⊕",
     "category": "method",
-    "text": "sub!(ms::Elements) -> typeof(ms) -> typeof(ms)\nsub!(ms::Elements,m::Element) -> typeof(ms)\nsub!(ms::Elements,mms::Elements) -> typeof(ms)\n\nGet the inplace subtraction of elements from a set.\n\n\n\n\n\n"
+    "text": "⊕(sid1::I,sid2::I) where {I<:SimpleID} -> VectorSpace{I}\n⊕(sid::I,vs::VectorSpace{I}) where {I<:SimpleID} -> VectorSpace{I}\n⊕(vs::VectorSpace{I},sid::I) where {I<:SimpleID} -> VectorSpace{I}\n⊕(vs1::VS,vs2::VS) where {VS<:VectorSpace} -> VS\n\nGet the direct sum of bases or vector spaces.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.dimension-Tuple{Hamiltonian.Utilities.AlgebraOverField.SimpleVectorSpace}",
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.Interface.:⊗-Tuple{Hamiltonian.Utilities.AlgebraOverField.SimpleID,Hamiltonian.Utilities.AlgebraOverField.SimpleID}",
     "page": "Algebra over fields",
-    "title": "Hamiltonian.Utilities.dimension",
+    "title": "Hamiltonian.Utilities.Interface.:⊗",
     "category": "method",
-    "text": "dimension(svs::SimpleVectorSpace) -> Int\ndimension(cvs::CompositeVectorSpace) -> Int\n\nGet the dimension of a vector space.\n\n\n\n\n\n"
+    "text": "⊗(sid1::SimpleID,sid2::SimpleID) -> ID\n⊗(sid::SimpleID,cid::ID) -> ID\n⊗(cid::ID,sid::SimpleID) -> ID\n⊗(cid1::ID,cid2::ID) -> ID\n\nGet the direct product of the id system.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.rank-Union{Tuple{Type{#s68} where #s68<:Element{V,I,N}}, Tuple{N}, Tuple{I}, Tuple{V}} where N where I where V",
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.Interface.add!-Tuple{Dict{I,M} where M<:Hamiltonian.Utilities.AlgebraOverField.Element where I<:Hamiltonian.Utilities.AlgebraOverField.ID}",
     "page": "Algebra over fields",
-    "title": "Hamiltonian.Utilities.rank",
+    "title": "Hamiltonian.Utilities.Interface.add!",
+    "category": "method",
+    "text": "add!(ms::Elements) -> typeof(ms)\nadd!(ms::Elements,m::Element) -> typeof(ms)\nadd!(ms::Elements,mms::Elements) -> typeof(ms)\n\nGet the inplace addition of elements to a set.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.Interface.dimension-Tuple{Hamiltonian.Utilities.AlgebraOverField.VectorSpace}",
+    "page": "Algebra over fields",
+    "title": "Hamiltonian.Utilities.Interface.dimension",
+    "category": "method",
+    "text": "dimension(vs::VectorSpace) -> Int\ndimension(::Type{<:VectorSpace{I,N}}) where {I,N} -> Int\n\nGet the dimension of a vector space.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.Interface.rank-Union{Tuple{Type{#s68} where #s68<:Element{V,I,N}}, Tuple{N}, Tuple{I}, Tuple{V}} where N where I where V",
+    "page": "Algebra over fields",
+    "title": "Hamiltonian.Utilities.Interface.rank",
     "category": "method",
     "text": "rank(::Type{<:Element{V,I,N}}) where {V,I,N} -> Int\nrank(m::Element) -> Int\n\nGet the rank of an element.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.rank-Union{Tuple{Type{#s68} where #s68<:ID{N,I}}, Tuple{I}, Tuple{N}} where I where N",
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.Interface.rank-Union{Tuple{Type{#s68} where #s68<:ID{N,I}}, Tuple{I}, Tuple{N}} where I where N",
     "page": "Algebra over fields",
-    "title": "Hamiltonian.Utilities.rank",
+    "title": "Hamiltonian.Utilities.Interface.rank",
     "category": "method",
     "text": "rank(::Type{<:ID{N,I}}) where {N,I} -> Int\nrank(id::ID) -> Int\n\nGet the rank of a composite id.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Hamiltonian.Utilities.Interface.sub!-Tuple{Dict{I,M} where M<:Hamiltonian.Utilities.AlgebraOverField.Element where I<:Hamiltonian.Utilities.AlgebraOverField.ID}",
+    "page": "Algebra over fields",
+    "title": "Hamiltonian.Utilities.Interface.sub!",
+    "category": "method",
+    "text": "sub!(ms::Elements) -> typeof(ms) -> typeof(ms)\nsub!(ms::Elements,m::Element) -> typeof(ms)\nsub!(ms::Elements,mms::Elements) -> typeof(ms)\n\nGet the inplace subtraction of elements from a set.\n\n\n\n\n\n"
 },
 
 {
@@ -1665,11 +1817,51 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Utilities/AlgebraOverField.html#Base.:==-Tuple{Hamiltonian.Utilities.AlgebraOverField.AbstractVectorSpace,Hamiltonian.Utilities.AlgebraOverField.AbstractVectorSpace}",
+    "page": "Algebra over fields",
+    "title": "Base.:==",
+    "category": "method",
+    "text": "==(vs1::AbstractVectorSpace,vs2::AbstractVectorSpace) -> Bool\nisequal(vs1::AbstractVectorSpace,vs2::AbstractVectorSpace) -> Bool\n\nCompare two vector spaces and judge whether they are equivalent to each other.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Utilities/AlgebraOverField.html#Base.:==-Union{Tuple{M}, Tuple{M,M}} where M<:Hamiltonian.Utilities.AlgebraOverField.Element",
     "page": "Algebra over fields",
     "title": "Base.:==",
     "category": "method",
     "text": "==(m1::M,m2::M) where M<:Element -> Bool\nisequal(m1::M,m2::M) where M<:Element -> Bool\n\nCompare two elements and judge whether they are equal to each other.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Base.convert-Tuple{Type{Tuple},Hamiltonian.Utilities.AlgebraOverField.VectorSpace}",
+    "page": "Algebra over fields",
+    "title": "Base.convert",
+    "category": "method",
+    "text": "convert(::Type{Tuple},vs::VectorSpace)\n\nConvert a vector space to tuple.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Base.eltype-Tuple{Hamiltonian.Utilities.AlgebraOverField.AbstractVectorSpace}",
+    "page": "Algebra over fields",
+    "title": "Base.eltype",
+    "category": "method",
+    "text": "eltype(vs::AbstractVectorSpace)\neltype(::Type{AbstractVectorSpace{I}}) where I\n\nGet the eltype of a vector space.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Base.findfirst-Union{Tuple{I}, Tuple{I,VectorSpace{I,N} where N}} where I",
+    "page": "Algebra over fields",
+    "title": "Base.findfirst",
+    "category": "method",
+    "text": "findfirst(sid::I,vs::VectorSpace{I}) where I -> Int\n\nFind the (first) index of the input simple id of a vector space.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Base.getindex-Tuple{Hamiltonian.Utilities.AlgebraOverField.VectorSpace,Int64}",
+    "page": "Algebra over fields",
+    "title": "Base.getindex",
+    "category": "method",
+    "text": "getindex(vs::VectorSpace,i::Int) -> eltype(vs)\n\nGet the i-th simple id of a vector space.\n\n\n\n\n\n"
 },
 
 {
@@ -1689,11 +1881,35 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Utilities/AlgebraOverField.html#Base.in-Tuple{Hamiltonian.Utilities.AlgebraOverField.SimpleID,Hamiltonian.Utilities.AlgebraOverField.AbstractVectorSpace}",
+    "page": "Algebra over fields",
+    "title": "Base.in",
+    "category": "method",
+    "text": "in(sid::SimpleID,vs::AbstractVectorSpace) -> Bool\n\nJudge whether a basis is in a vector space.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Utilities/AlgebraOverField.html#Base.isless-Tuple{Hamiltonian.Utilities.AlgebraOverField.ID,Hamiltonian.Utilities.AlgebraOverField.ID}",
     "page": "Algebra over fields",
     "title": "Base.isless",
     "category": "method",
     "text": "isless(cid1::ID,cid2::ID) -> Bool\n<(cid1::ID,cid2::ID) -> Bool\n\nCompare two ids and judge whether the first is less than the second.\n\nWe assume that ids with smaller ranks are always less than those with higher ranks. If two ids are of the same rank, the comparison goes just like that between tuples.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Base.iterate",
+    "page": "Algebra over fields",
+    "title": "Base.iterate",
+    "category": "function",
+    "text": "iterate(vs::AbstractVectorSpace,state::Integer=1)\niterate(rv::Iterators.Reverse{<:AbstractVectorSpace},state=length(rv.itr))\n\nIterate over the bases of a vector space.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/AlgebraOverField.html#Base.length-Tuple{Hamiltonian.Utilities.AlgebraOverField.AbstractVectorSpace}",
+    "page": "Algebra over fields",
+    "title": "Base.length",
+    "category": "method",
+    "text": "length(vs::AbstractVectorSpace) -> Int\n\nGet the number of bases of a vector space.\n\n\n\n\n\n"
 },
 
 {
@@ -1921,19 +2137,51 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.:⊕-Tuple{Vararg{Hamiltonian.Utilities.QuantumNumber.AbstractQuantumNumber,N} where N}",
+    "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.Interface.:⊕-Tuple{Vararg{Hamiltonian.Utilities.QuantumNumber.AbstractQuantumNumber,N} where N}",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.:⊕",
+    "title": "Hamiltonian.Utilities.Interface.:⊕",
     "category": "method",
     "text": "⊕(qns::AbstractQuantumNumber...) -> QuantumNumbers{qns|>eltype}\n⊕(qnses::QuantumNumbers...) -> qnses|>eltype\n\nGet the direct sum of some AbstractQuantumNumbers or QuantumNumberses.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.:⊗-Tuple{Vararg{Hamiltonian.Utilities.QuantumNumber.AbstractQuantumNumber,N} where N}",
+    "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.Interface.:⊗-Tuple{Vararg{Hamiltonian.Utilities.QuantumNumber.AbstractQuantumNumber,N} where N}",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.:⊗",
+    "title": "Hamiltonian.Utilities.Interface.:⊗",
     "category": "method",
     "text": "⊗(qns::AbstractQuantumNumber...) -> eltype(qns)\n⊗(qnses::QuantumNumbers...) -> eltype(qnses)\n\nGet the direct product of some AbstractQuantumNumbers or QuantumNumberses.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.Interface.dimension-Tuple{Hamiltonian.Utilities.QuantumNumber.QuantumNumbers}",
+    "page": "Quantum numbers",
+    "title": "Hamiltonian.Utilities.Interface.dimension",
+    "category": "method",
+    "text": "dimension(qns::QuantumNumbers) -> Int\n\nThe dimension of the Hilbert space a QuantumNumbers represents.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.Interface.dimension-Tuple{Type{#s68} where #s68<:Hamiltonian.Utilities.QuantumNumber.AbstractQuantumNumber}",
+    "page": "Quantum numbers",
+    "title": "Hamiltonian.Utilities.Interface.dimension",
+    "category": "method",
+    "text": "dimension(::Type{<:AbstractQuantumNumber}) -> Int\ndimension(::AbstractQuantumNumber) -> Int\n\nThe dimension of the Hilbert space a AbstractQuantumNumber represents. Apparently, this is always 1.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.Interface.expand-Tuple{Hamiltonian.Utilities.QuantumNumber.QuantumNumbers,Hamiltonian.Utilities.QuantumNumber.QnsContents}",
+    "page": "Quantum numbers",
+    "title": "Hamiltonian.Utilities.Interface.expand",
+    "category": "method",
+    "text": "expand(qns::QuantumNumbers,::QnsContents) -> Vector{qns|>eltype}\nexpand(qns::QuantumNumbers,::QnsIndices) -> Vector{Int}\n\nExpand the contents (qnscontents case) or indices (qnsindices case) of a QuantumNumbers to the uncompressed form.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.Interface.permute-Tuple{Hamiltonian.Utilities.QuantumNumber.QuantumNumbers,Array{Int64,1},Hamiltonian.Utilities.QuantumNumber.QnsCompression}",
+    "page": "Quantum numbers",
+    "title": "Hamiltonian.Utilities.Interface.permute",
+    "category": "method",
+    "text": "permute(qns::QuantumNumbers,permutation::Vector{Int},::QnsCompression) -> QuantumNumbers\npermute(qns::QuantumNumbers,permutation::Vector{Int},::QnsExpansion) -> QuantumNumbers\n\nReorder the quantum numbers contained in a QuantumNumbers with a permutation and return the new one.\n\nFor qnscompression case, the permutation is for the compressed contents of the original QuantumNumbers while for qnsexpansion case, the permutation is for the expanded contents of the original QuantumNumbers.\n\n\n\n\n\n"
 },
 
 {
@@ -2014,38 +2262,6 @@ var documenterSearchIndex = {"docs": [
     "title": "Hamiltonian.Utilities.QuantumNumber.ukron",
     "category": "method",
     "text": "ukron(qnses::NTuple{N,QuantumNumbers{QN}},signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:AbstractQuantumNumber} -> QuantumNumbers{QN},Dict{QN,Dict{NTuple{N,QN},UnitRange{Int}}}\n\nUnitary Kronecker product of several QuantumNumberses. The product result as well as the records of the product will be returned.\n\nnote: Note\nAll input QuantumNumbers must be \'U\' formed or \'C\' formed.\nSince duplicate quantum number are not allowed in \'U\' formed and \'C\' formed QuantumNumberses, in general, there exists a merge process of duplicate quantum numbers in the product result. Therefore, records are needed to keep track of this process, which will be returned along with the product result. The records are stored in a Dict{QN,Dict{NTuple{N,QN},UnitRange{Int}}} typed dict, in which, for each unduplicate quantum number qn in the product result, there exist a record Dict((qn₁,qn₂,...)=>start:stop,...) telling what quantum numbers (qn₁,qn₂,...) a mereged duplicate qn comes from and what slice start:stop this merged duplicate corresponds.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.dimension-Tuple{Hamiltonian.Utilities.QuantumNumber.QuantumNumbers}",
-    "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.dimension",
-    "category": "method",
-    "text": "dimension(qns::QuantumNumbers) -> Int\n\nThe dimension of the Hilbert space a QuantumNumbers represents.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.dimension-Tuple{Type{#s68} where #s68<:Hamiltonian.Utilities.QuantumNumber.AbstractQuantumNumber}",
-    "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.dimension",
-    "category": "method",
-    "text": "dimension(::Type{<:AbstractQuantumNumber}) -> Int\ndimension(::AbstractQuantumNumber) -> Int\n\nThe dimension of the Hilbert space a AbstractQuantumNumber represents. Apparently, this is always 1.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.expand-Tuple{Hamiltonian.Utilities.QuantumNumber.QuantumNumbers,Hamiltonian.Utilities.QuantumNumber.QnsContents}",
-    "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.expand",
-    "category": "method",
-    "text": "expand(qns::QuantumNumbers,::QnsContents) -> Vector{qns|>eltype}\nexpand(qns::QuantumNumbers,::QnsIndices) -> Vector{Int}\n\nExpand the contents (qnscontents case) or indices (qnsindices case) of a QuantumNumbers to the uncompressed form.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/QuantumNumber.html#Hamiltonian.Utilities.permute-Tuple{Hamiltonian.Utilities.QuantumNumber.QuantumNumbers,Array{Int64,1},Hamiltonian.Utilities.QuantumNumber.QnsCompression}",
-    "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.permute",
-    "category": "method",
-    "text": "permute(qns::QuantumNumbers,permutation::Vector{Int},::QnsCompression) -> QuantumNumbers\npermute(qns::QuantumNumbers,permutation::Vector{Int},::QnsExpansion) -> QuantumNumbers\n\nReorder the quantum numbers contained in a QuantumNumbers with a permutation and return the new one.\n\nFor qnscompression case, the permutation is for the compressed contents of the original QuantumNumbers while for qnsexpansion case, the permutation is for the expanded contents of the original QuantumNumbers.\n\n\n\n\n\n"
 },
 
 {
@@ -2541,7 +2757,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatial",
     "title": "Hamiltonian.Essentials.Spatial.isparallel",
     "category": "method",
-    "text": "isparallel(v1::AbstractVector{<:Real},v2::AbstractVector{<:Real};atol::Real=atol,rtol::Real=rtol) -> Bool\n\nJudge whether two vectors are parallel to each other with the given tolerance, 0 for not parallel, 1 for parallel and -1 for antiparallel.\n\n\n\n\n\n"
+    "text": "isparallel(v1::AbstractVector{<:Real},v2::AbstractVector{<:Real};atol::Real=atol,rtol::Real=rtol) -> Int\n\nJudge whether two vectors are parallel to each other with the given tolerance, 0 for not parallel, 1 for parallel and -1 for antiparallel.\n\n\n\n\n\n"
 },
 
 {
@@ -2641,33 +2857,33 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Hamiltonian.Utilities.dimension-Tuple{AbstractBond}",
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Utilities.Interface.dimension-Tuple{AbstractBond}",
     "page": "Spatial",
-    "title": "Hamiltonian.Utilities.dimension",
+    "title": "Hamiltonian.Utilities.Interface.dimension",
     "category": "method",
     "text": "dimension(b::AbstractBond) -> Int\ndimension(::Type{<:AbstractBond{R,P,N}}) where {R,P,N} -> Int\n\nGet the space dimension of a concrete bond.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Hamiltonian.Utilities.dimension-Tuple{AbstractLattice}",
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Utilities.Interface.dimension-Tuple{AbstractLattice}",
     "page": "Spatial",
-    "title": "Hamiltonian.Utilities.dimension",
+    "title": "Hamiltonian.Utilities.Interface.dimension",
     "category": "method",
     "text": "dimension(lattice::AbstractLattice) -> Int\ndimension(::Type{<:AbstractLattice{P,N}}) where {P,N}-> Int\n\nGet the space dimension of the lattice.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Hamiltonian.Utilities.dimension-Tuple{Link}",
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Utilities.Interface.dimension-Tuple{Link}",
     "page": "Spatial",
-    "title": "Hamiltonian.Utilities.dimension",
+    "title": "Hamiltonian.Utilities.Interface.dimension",
     "category": "method",
     "text": "dimension(link::Link) -> Int\ndimension(::Type{<:Link{N}}) where N -> Int\n\nGet the space dimension of a link.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatial.html#Hamiltonian.Utilities.rank-Tuple{AbstractBond}",
+    "location": "man/Essentials/Spatial.html#Hamiltonian.Utilities.Interface.rank-Tuple{AbstractBond}",
     "page": "Spatial",
-    "title": "Hamiltonian.Utilities.rank",
+    "title": "Hamiltonian.Utilities.Interface.rank",
     "category": "method",
     "text": "rank(b::AbstractBond) -> Int\nrank(::Type{<:AbstractBond{R,P,N}}) where {R,P,N} -> Int\n\nGet the rank of a concrete bond.\n\n\n\n\n\n"
 },
@@ -2801,14 +3017,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreeOfFreedom.html#Table-1",
-    "page": "DegreeOfFreedom",
-    "title": "Table",
-    "category": "section",
-    "text": ""
-},
-
-{
     "location": "man/Essentials/DegreeOfFreedom.html#Internal-and-Index-1",
     "page": "DegreeOfFreedom",
     "title": "Internal and Index",
@@ -2825,9 +3033,17 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreeOfFreedom.html#IndexPack-and-IndexPacks-1",
+    "location": "man/Essentials/DegreeOfFreedom.html#Table-1",
     "page": "DegreeOfFreedom",
-    "title": "IndexPack and IndexPacks",
+    "title": "Table",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/DegreeOfFreedom.html#Coupling-and-Couplings-1",
+    "page": "DegreeOfFreedom",
+    "title": "Coupling and Couplings",
     "category": "section",
     "text": ""
 },
@@ -3249,9 +3465,9 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Utilities.expand-Tuple{FockCoupling,AbstractBond,Vararg{Fock,N} where N}",
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Utilities.Interface.expand-Tuple{FockCoupling,AbstractBond,Vararg{Fock,N} where N}",
     "page": "Fock Package",
-    "title": "Hamiltonian.Utilities.expand",
+    "title": "Hamiltonian.Utilities.Interface.expand",
     "category": "method",
     "text": "expand(fc::FockCoupling,bond::AbstractBond,focks::Fock...) -> FCExpand\n\nExpand a Fock coupling on a bond with the given Fock degrees of freedom.\n\n\n\n\n\n"
 },
