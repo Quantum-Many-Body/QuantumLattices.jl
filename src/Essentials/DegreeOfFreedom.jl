@@ -1,7 +1,8 @@
 module DegreeOfFreedom
 
 using Printf: @printf
-using ...Utilities: Float,efficientoperations
+using ...Utilities: Float
+using ...Utilities.TypeTrait: efficientoperations
 using ...Utilities.NamedVector: AbstractNamedVector
 using ...Utilities.CompositeStructure: CompositeDict
 using ...Utilities.AlgebraOverField: SimpleID, ID, Element, Elements

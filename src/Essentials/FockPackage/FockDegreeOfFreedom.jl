@@ -4,7 +4,7 @@ using ..DegreeOfFreedom: IID,Index,Internal,FilteredAttributes,Coupling,Coupling
 using ...Utilities: delta,indtosub,corder,decimaltostr
 using ...Utilities.AlgebraOverField: SimpleID,ID
 
-import ...Utilities: expand
+import ...Utilities.Interface: expand
 
 export ANNIHILATION,CREATION,FID,FIndex,Fock
 export usualfockindextotuple,nambufockindextotuple

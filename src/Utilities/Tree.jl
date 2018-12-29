@@ -3,7 +3,7 @@ module Tree
 using ..Factory: Inference,Argument,Parameter,FunctionFactory,TypeFactory
 using ..Factory: addfields!,addparams!,addargs!,addwhereparams!,extendbody!
 using ..Factory: MixEscaped,Escaped,UnEscaped
-using ..Utilities: efficientoperations
+using ..TypeTrait: efficientoperations
 
 export treedepth,treewidth
 export AbstractTree

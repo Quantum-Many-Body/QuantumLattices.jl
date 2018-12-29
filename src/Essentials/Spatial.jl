@@ -5,13 +5,14 @@ using StaticArrays: SVector,SMatrix
 using Printf: @printf,@sprintf
 using NearestNeighbors: KDTree,knn,inrange
 using Base.Iterators: flatten,product
-using Combinatorics: combinations
-using ...Utilities: atol,rtol,Float,efficientoperations
+using ...Utilities: atol,rtol,Float
+using ...Utilities.TypeTrait: efficientoperations
+using ...Utilities.Combinatorics: Combinations
 using ...Utilities.NamedVector: AbstractNamedVector
 using ...Utilities.Factory: Inference,TypeFactory,FunctionFactory,Argument,MixEscaped,Escaped,UnEscaped
 using ...Utilities.Factory: addparams!,addfields!,addwhereparams!,addargs!,addkwargs!,extendbody!,addconstructors!
 
-import ...Utilities: rank,dimension
+import ...Utilities.Interface: rank,dimension
 
 export rank,dimension
 export distance,azimuthd,azimuth,polard,polar,volume
@@ -896,7 +897,7 @@ Get the bonds of a superlattice.
 bonds(lattice::SuperLattice,::IntraBonds)=vcat((sublattice|>bonds for sublattice in lattice.sublattices)...)
 function bonds(lattice::SuperLattice,::InterBonds)
     result=Bond{lattice|>keytype,lattice|>dimension}[]
-    for (i,j) in combinations(1:length(lattice.sublattices),2)
+    for (i,j) in Combinations{2}(1:length(lattice.sublattices))
         sub1,sub2=lattice.sublattices[i],lattice.sublattices[j]
         for link in interlinks(sub1.rcoords,sub2.rcoords,lattice.neighbors)
             @views spoint=Point(sub1.pids[link.sindex],sub1.rcoords[:,link.sindex],sub1.icoords[:,link.sindex])

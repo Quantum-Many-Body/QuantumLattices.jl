@@ -1,6 +1,6 @@
 module CompositeStructure
 
-using ..Utilities: efficientoperations
+using ..TypeTrait: efficientoperations
 
 export CompositeNTuple,CompositeVector,CompositeDict
 

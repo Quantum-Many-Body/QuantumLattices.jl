@@ -5,7 +5,7 @@ using MacroTools: splitarg,combinefield,combinearg
 using MacroTools: splitstructdef,combinestructdef
 using MacroTools: splitdef,combinedef
 using Printf: @printf,@sprintf
-using ..Utilities: efficientoperations
+using ..TypeTrait: efficientoperations
 
 import MacroTools: rmlines
 

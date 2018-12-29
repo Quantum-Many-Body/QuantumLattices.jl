@@ -3,7 +3,7 @@ module NamedVector
 using Printf: @printf
 using ..Factory: Inference,TypeFactory,FunctionFactory,addargs!,extendbody!
 using ..Factory: MixEscaped,Escaped,UnEscaped
-using ..Utilities: efficientoperations
+using ..TypeTrait: efficientoperations
 
 export AbstractNamedVector,@namedvector
 export HomoNamedVector,@homonamedvector

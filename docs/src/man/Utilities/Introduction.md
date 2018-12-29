@@ -18,44 +18,37 @@ indtosub
 subtoind
 decimaltostr
 ordinal
-efficientoperations
 delta
 ```
 
-## Generic functions for overloading
-
-```@docs
-⊕
-⊗
-add!
-sub!
-mul!
-div!
-rank
-dimension
-expand
-permute
-vector
-matrix
-```
-
-## Prerequisites for Essentials
+## Generic interfaces
 
 ```@contents
 Pages=[
-    "Factory.md",
-    "CompositeStructure.md",
-    "Tree.md",
-    "NamedVector.md",
-    "AlgebraOverField.md",
+    "Interface.md",
     ]
 Depth=2
 ```
 
-## Necessities for Algorithms
+## Basic structures
 
 ```@contents
 Pages=[
+    "TypeTrait.md",
+    "Factory.md",
+    "CompositeStructure.md",
+    "Tree.md",
+    "NamedVector.md",
+    ]
+Depth=2
+```
+
+## Mathematical structures
+
+```@contents
+Pages=[
+    "Combinatorics.md",
+    "AlgebraOverField.md",
     "QuantumNumber.md",
     ]
 Depth=2

@@ -9,7 +9,7 @@ using Combinatorics: combinations
 using ..Utilities: Float
 using ..NamedVector: HomoNamedVector
 
-import ..Utilities: ⊕,⊗,dimension,expand,permute
+import ..Utilities.Interface: ⊕,⊗,dimension,expand,permute
 
 export AbstractQuantumNumber
 export regularize!,regularize

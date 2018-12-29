@@ -16,10 +16,13 @@ makedocs(
                         "Manual"    =>  [
                                 "Utilities" =>  [
                                         "man/Utilities/Introduction.md",
+                                        "man/Utilities/Interface.md",
+                                        "man/Utilities/TypeTrait.md",
                                         "man/Utilities/Factory.md",
                                         "man/Utilities/CompositeStructure.md",
                                         "man/Utilities/Tree.md",
                                         "man/Utilities/NamedVector.md",
+                                        "man/Utilities/Combinatorics.md",
                                         "man/Utilities/AlgebraOverField.md",
                                         "man/Utilities/QuantumNumber.md",
                                         ],
