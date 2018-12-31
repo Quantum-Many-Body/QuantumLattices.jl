@@ -18,7 +18,7 @@ Main features include:
 * iterable: concrete instances are iterable over their values
 * comparable: two concrete instances can be compared
 
-In particular, `AbstractQuantumNumber <: AbstractNamedVector{Float64}`, all features supported by `AbstractNamedVector` are also available for `AbstractQuantumNumber`. See also [AbstractNamedVector](@ref).
+In particular, `AbstractQuantumNumber <: HomoNamedVector{Float}`, all features supported by `HomoNamedVector` are also available for `HomoNamedVector`. See also [HomoNamedVector](@ref).
 
 For convenience, **4** kinds of quantum numbers are predefined in this module, i.e.
 * [`SQN`](@ref): for spin z-component reserved systems
@@ -38,8 +38,8 @@ And 3 attributes:
 * `form::Char`: Its form, whose value must be one of the followings
   - `'G'`: the general form, which has no restriction for its `contents`
   - `'U'`: the unitary form, which requires no duplicates in its `contents`
-  - `'C'`: the canonical form, which requires not only no duplicates but also accending-order storage in its `contents`
-  Usually, `'G'`-formed and `'U'`-formed `QuantumNumbers`es can be transformed to the corresponding `'C'`-formed ones by the [`sort`](@ref) function.
+  - `'C'`: the canonical form, which requires both no duplicates and accending-order in its `contents`
+  Usually, G-formed and U-formed `QuantumNumbers`es can be transformed to the corresponding C-formed ones by the [`sort`](@ref) function.
 * `contents::Vector{QN}`: The quantum numbers contained in it. To achieve high efficiency, it is required to be an homogenous array of a certain kind of concrete `AbstractQuantumNumber`.
 * `indptr::Vector{Int}`: The indptr of the quantum numbers contained in it, which is similar to the `colptr` attribute of a [CSC sparse matrix](https://docs.julialang.org/en/v1/stdlib/SparseArrays/#man-csc-1) and records the compression info of its `contents`.
 
@@ -47,8 +47,7 @@ Main features include:
 * function `eltype`: get the concrete type of the quantum numbers it contains
 * index access: get the contents directly by the `getindex` function
 * arithmetic operations: `+`, `-`, `*`, `^`, `⊗`, `⊕`
-* iterable: various iteration supports, including functions such as [`iterate`](@ref), [`keys`](@ref), [`values`](@ref) and [`pairs`](@ref)
-* ...
+* iterable: various iteration supports, including functions such as `iterate`, `keys`, `values` and `pairs`
 For a complete summation of its features, please refer to the [manual](@ref qnmanual).
 
 For convenience, **5** functions are predefined to generate the `QuantumNumbers` of common physical systems, i.e.

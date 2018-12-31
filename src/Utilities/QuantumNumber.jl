@@ -621,14 +621,14 @@ function Base.kron(qnses::Vararg{QuantumNumbers{QN},N};signs::NTuple{N,Int}=ntup
 end
 
 """
-    ukron(qnses::NTuple{N,QuantumNumbers{QN}},signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:AbstractQuantumNumber} -> QuantumNumbers{QN},Dict{QN,Dict{NTuple{N,QN},UnitRange{Int}}}
+    ukron(qnses::Vararg{QuantumNumbers{QN},N};signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:AbstractQuantumNumber} -> QuantumNumbers{QN},Dict{QN,Dict{NTuple{N,QN},UnitRange{Int}}}
 
 Unitary Kronecker product of several `QuantumNumbers`es. The product result as well as the records of the product will be returned.
 !!! note
     1. All input `QuantumNumbers` must be 'U' formed or 'C' formed.
     2. Since duplicate quantum number are not allowed in 'U' formed and 'C' formed `QuantumNumbers`es, in general, there exists a merge process of duplicate quantum numbers in the product result. Therefore, records are needed to keep track of this process, which will be returned along with the product result. The records are stored in a `Dict{QN,Dict{NTuple{N,QN},UnitRange{Int}}}` typed dict, in which, for each unduplicate quantum number `qn` in the product result, there exist a record `Dict((qn₁,qn₂,...)=>start:stop,...)` telling what quantum numbers `(qn₁,qn₂,...)` a mereged duplicate `qn` comes from and what slice `start:stop` this merged duplicate corresponds.
 """
-function ukron(qnses::NTuple{N,QuantumNumbers{QN}},signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:AbstractQuantumNumber}
+function ukron(qnses::Vararg{QuantumNumbers{QN},N};signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:AbstractQuantumNumber}
     @assert all(qns.form=='U' || qns.form=='C' for qns in qnses) "ukron error: all input qnses should be 'U' formed or 'C' formed."
     lengths=NTuple{N,Int}(length(qns) for qns in qnses)
     cache=Vector{QN}(undef,N)

@@ -175,7 +175,7 @@ end
     qn1,qn2=CNZ4(1.0,1.0),CNZ4(2.0,3.0)
     qns1=QuantumNumbers('U',[qn2,qn1],[4,5],qnscounts)
     qns2=QuantumNumbers('U',[qn1,qn2],[2,3],qnscounts)
-    qns,records=ukron((qns1,qns2),(+1,-1))
+    qns,records=ukron(qns1,qns2,signs=(+1,-1))
     @test qns==QuantumNumbers('C',[qn1-qn2,CNZ4|>zero,qn2-qn1],[15,22,8],qnscounts)
     @test records==Dict(
         (qn1-qn2) => Dict((qn1,qn2)=>1:15),

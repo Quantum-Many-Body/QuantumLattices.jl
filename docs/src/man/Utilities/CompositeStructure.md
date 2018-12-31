@@ -23,7 +23,7 @@ Composite ntuples are suited for the situations where other attributes are not a
 
 A composite vector is a vector that is implemented by including an ordinary `Vector` as one of its attributes with the name `:contents`.
 
-To take full advantages of the Julia base, the following interfaces are redined:
+To take full advantages of the Julia base, the following interfaces are redefined:
 * inquiry of info: `size`, `length`
 * comparison between objects: `==`, `isequal`
 * obtainment of old elements: `getindex`
@@ -39,7 +39,7 @@ Composite vectors are suited for the situations where other attributes are not a
 
 A composite dict is a dict that is implemented by including an ordinary `Dict` as one of its attributes with the name `:contents`.
 
-To take full advantages of the Julia base, the following interfaces are redined:
+To take full advantages of the Julia base, the following interfaces are redefined:
 * inquiry of info: `isempty`, `length`, `haskey`, `in`
 * comparison between objects: `==`, `isequal`
 * obtainment of old elements: `get`, `getkey`, `getindex`

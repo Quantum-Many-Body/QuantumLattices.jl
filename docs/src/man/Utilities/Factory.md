@@ -34,7 +34,7 @@ This mechanism suits a factory whose variables should be unescaped by default.
 
 [`UnEscaped`](@ref) also has only on attribute:
 * `names::NTuple{N,Symbol} where N`: the names of variables not to be escaped
-Obviously, on the contrary to [`Escaped`], a variable should be escaped if its name is not in the `names` of an `UnEscaped`.
+Obviously, on the contrary to [`Escaped`](@ref), a variable should be escaped if its name is not in the `names` of an `UnEscaped`.
 This mechanism suits a factory whose variables should be escaped by default.
 
 ### MixEscaped
@@ -50,7 +50,7 @@ This mechanism suits complex factories that parts of it suit the "escaped" mecha
 
 ## Concrete factories
 
-Out of practical purposes, we implemente 7 kinds of factories, i.e. *[`Inference`](@ref)*, *[`Argument`](@ref)*, *[`Parameter`](@ref)*, *[`Field`](@ref)*, *[`Block`](@ref)*, *[`FunctionFactory`](@ref)* and *[`TypeFactory`](@ref)*, which represent *a type inference*, *a function argument*, *a method or type parameter*, *a struct field*, *a `begin ... end` block*, *a function itself* and *a struct itself*, respectively. Some of the basic methods making the above requirements fulfilled with these types are based on the powerful functions defined in [`MacroTools`](https://github.com/MikeInnes/MacroTools.jl).
+Out of practical purposes, we implemente 7 kinds of factories, i.e. *[`Inference`](@ref)*, *[`Argument`](@ref)*, *[`Parameter`](@ref)*, *[`Field`](@ref)*, *[`Block`](@ref)*, *[`FunctionFactory`](@ref)* and *[`TypeFactory`](@ref)*, which represent *a type inference*, *a function argument*, *a method or type parameter*, *a struct field*, *a `begin ... end` block*, *a function itself* and *a struct itself*, respectively. Some of the basic methods making the above three requirements fulfilled with these types are based on the powerful functions defined in [`MacroTools`](https://github.com/MikeInnes/MacroTools.jl).
 
 We want to give a remark that although the types and functions provided in this module helps a lot for the definition of macros, macros should not be abused. On the one hand, some macros may change the language specifications, which makes it hard to understand the codes, and even splits the community; on the one hand, macros usually increases the precompiling/jit time, which means enormous uses of macros in a module may lead to an extremely long load time. Besides, due to the limited ability of the author, the codes in this module are not optimal, which adds to the jit overhead. Any promotion that keeps the interfaces unchanged is welcomed.
 
@@ -110,7 +110,7 @@ The construction from such expressions is based on the the `MacroTools.splitarg`
 ```@repl factory
 Argument(:(arg::Real=zero(Int)))(MixEscaped(UnEscaped(),Escaped(:zero,:Int))) |> println
 ```
-It can be seen the name of an argument will never be escaped, which is obvious since the name of a function argument is always local. By the way, the composition of an [`Argument`](@ref) expression is based on the `MacroTools.combinearg` function.
+It can be seen that the name of an argument will never be escaped, which is obvious since the name of a function argument is always local. By the way, the composition of an [`Argument`](@ref) expression is based on the `MacroTools.combinearg` function.
 
 ### Parameter
 
@@ -231,10 +231,14 @@ The construction from such expressions are based on the `MacroTools.splitdef` fu
     1. Since Julia 0.7, the form `MyType{D}(data::D) where D` only appears in struct constructors, therefore, the attribute `:params` of a function factory is nonempty only when this factory aims to represent a struct constructor.
     2. Usually, the name of a function factory is a `Symbol`. However, if the factory aims to extend some methods of a function defined in another module, e.g., `Base.eltype`, the name will be an `Expr`.
 
-Since [`FunctionFactory`](@ref) adopts the [`MixEscaped`](@ref) mechanism to escape variables, with [`UnEscaped`](@ref) for `params`, `args`, `kwargs`, `rtype` and `whereparams` while [`Escaped`](@ref) for `name` and `body`. It is worth to emphasize that the name of a function factory belongs to the `Escaped` part. Therefore, when it is an `Expr`, it will never be escaped because an `Expr` cannot be a element of a `NTuple{N,Symbol} where N`. See examples,
+[`FunctionFactory`](@ref) adopts the [`MixEscaped`](@ref) mechanism to escape variables, with [`UnEscaped`](@ref) for `params`, `args`, `kwargs`, `rtype` and `whereparams` while [`Escaped`](@ref) for `name` and `body`. It is worth to emphasize that the name of a function factory belongs to the `Escaped` part. Therefore, when it is an `Expr`, it will never be escaped because an `Expr` cannot be a element of a `NTuple{N,Symbol} where N`. See examples,
 ```@repl factory
-FunctionFactory(:((f(x::T,y::T;choice::Function=sum)::T) where T<:Number=max(x,y,choice(x,y))))(MixEscaped(UnEscaped(:T),Escaped(:f,:max,))) |> println
-FunctionFactory(:((f(x::T,y::T;choice::Function=sum)::T) where T<:Number=max(x,y,choice(x,y))))(MixEscaped(UnEscaped(:T),Escaped(:max))) |> println
+FunctionFactory(:(
+    (f(x::T,y::T;choice::Function=sum)::T) where T<:Number=max(x,y,choice(x,y))
+    ))(MixEscaped(UnEscaped(:T),Escaped(:f,:max,))) |> println
+FunctionFactory(:(
+    (f(x::T,y::T;choice::Function=sum)::T) where T<:Number=max(x,y,choice(x,y))
+    ))(MixEscaped(UnEscaped(:T),Escaped(:max))) |> println
 ```
 The compositions of function expressions are based on the `MacroTools.combinedef` function.
 

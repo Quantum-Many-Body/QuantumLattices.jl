@@ -47,7 +47,7 @@ This macro encapsulate the overloading of `Base.fieldnames`, and you have no nee
 
 ## HomoNamedVector
 
-[`HomoNamedVector`](@ref) is the subtype of [`AbstractNamedVector`] that of all its fields share the same type. Compared to `AbstractNamedVector`, one more default method is implemented with [`HomoNamedVector`](@ref), i.e. `eltype`, which returns the type of its fields. This function ensures the type stability of all the methods that involves an iteration of the field values of a named vector. Therefore, homogeneous named vector are usually more efficient than inhomogeneous ones. Use homogeneous ones as much as possible unless the code efficiency does not matter.
+[`HomoNamedVector`](@ref) is the subtype of [`AbstractNamedVector`](@ref) that of all its fields share the same type. Compared to `AbstractNamedVector`, one more default method is implemented with [`HomoNamedVector`](@ref), i.e. `eltype`, which returns the type of its fields. This function ensures the type stability of all the methods that involves an iteration of the field values of a named vector. Therefore, homogeneous named vector are usually more efficient than inhomogeneous ones. Use homogeneous ones as much as possible unless the code efficiency does not matter.
 
 To subtype [`HomoNamedVector`](@ref), all the suggestions mentioned in the previous subsection for [`AbstractNamedVector`](@ref) also applies. A recommended template for a subtype is
 ```julia
