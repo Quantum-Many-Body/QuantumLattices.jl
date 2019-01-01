@@ -1,12 +1,12 @@
-module AlgebraOverField
+module AlgebraOverFields
 
 using Printf: @printf
-using ..NamedVector: AbstractNamedVector
-using ..CompositeStructure: CompositeNTuple
-using ..TypeTrait: efficientoperations
+using ..NamedVectors: AbstractNamedVector
+using ..CompositeStructures: CompositeNTuple
+using ..TypeTraits: efficientoperations
 using ..Utilities: subtoind,corder
 
-import ..Utilities.Interface: rank,⊕,⊗,dimension,add!,sub!
+import ..Utilities.Interfaces: rank,⊕,⊗,dimension,add!,sub!
 
 export SimpleID,ID
 export AbstractVectorSpace,VectorSpace

@@ -115,14 +115,14 @@ Kronecker delta function.
 """
 delta(i,j)=i==j ? 1 : 0
 
-include("Interface.jl")
-include("TypeTrait.jl")
-include("Factory.jl")
-include("CompositeStructure.jl")
-include("Tree.jl")
-include("NamedVector.jl")
+include("Interfaces.jl")
+include("TypeTraits.jl")
+include("Factories.jl")
+include("CompositeStructures.jl")
+include("Trees.jl")
+include("NamedVectors.jl")
 include("Combinatorics.jl")
-include("AlgebraOverField.jl")
-include("QuantumNumber.jl")
+include("AlgebraOverFields.jl")
+include("QuantumNumbers.jl")
 
 end # module

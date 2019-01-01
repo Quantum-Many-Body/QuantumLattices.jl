@@ -1,5 +1,5 @@
 module FockPackage
 
-include("FockDegreeOfFreedom.jl")
+include("FockDegreesOfFreedom.jl")
 
 end # module

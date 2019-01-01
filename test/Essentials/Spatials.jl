@@ -1,6 +1,6 @@
 using Random: seed!
 using StaticArrays: SVector
-using Hamiltonian.Essentials.Spatial
+using Hamiltonian.Essentials.Spatials
 
 @testset "distance" begin
     @test distance([0.0,0.0],[1.0,1.0])≈sqrt(2.0)

@@ -2,12 +2,12 @@ module Essentials
 
 using Reexport: @reexport
 
-include("Spatial.jl")
-include("DegreeOfFreedom.jl")
+include("Spatials.jl")
+include("DegreesOfFreedom.jl")
 include("FockPackage/FockPackage.jl")
 
-@reexport using .Spatial
-@reexport using .DegreeOfFreedom
+@reexport using .Spatials
+@reexport using .DegreesOfFreedom
 @reexport using .FockPackage
 
 end # module

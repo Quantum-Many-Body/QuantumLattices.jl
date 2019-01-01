@@ -1,4 +1,4 @@
-using Hamiltonian.Utilities.AlgebraOverField
+using Hamiltonian.Utilities.AlgebraOverFields
 using Hamiltonian.Utilities: Float
 
 struct SMPID{O<:Real,S<:Real} <: SimpleID

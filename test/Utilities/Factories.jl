@@ -1,4 +1,4 @@
-using Hamiltonian.Utilities.Factory
+using Hamiltonian.Utilities.Factories
 
 @testset "escape" begin
     @test escape(true,RawExpr())==true

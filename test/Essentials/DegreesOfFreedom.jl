@@ -1,5 +1,5 @@
-using Hamiltonian.Essentials.DegreeOfFreedom
-using Hamiltonian.Essentials.Spatial: PID
+using Hamiltonian.Essentials.DegreesOfFreedom
+using Hamiltonian.Essentials.Spatials: PID
 
 struct SlID <: IID nambu::Int end
 Base.adjoint(sl::SlID)=SlID(3-sl.nambu)

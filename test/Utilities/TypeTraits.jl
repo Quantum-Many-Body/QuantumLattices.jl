@@ -1,4 +1,4 @@
-using Hamiltonian.Utilities.TypeTrait
+using Hamiltonian.Utilities.TypeTraits
 
 struct WithTrait{F1,F2,F3}
     f1::F1

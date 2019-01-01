@@ -1,4 +1,4 @@
-module Spatial
+module Spatials
 
 using LinearAlgebra: norm,dot,cross,inv
 using StaticArrays: SVector,SMatrix
@@ -6,13 +6,13 @@ using Printf: @printf,@sprintf
 using NearestNeighbors: KDTree,knn,inrange
 using Base.Iterators: flatten,product
 using ...Utilities: atol,rtol,Float
-using ...Utilities.TypeTrait: efficientoperations
+using ...Utilities.TypeTraits: efficientoperations
 using ...Utilities.Combinatorics: Combinations
-using ...Utilities.NamedVector: AbstractNamedVector
-using ...Utilities.Factory: Inference,TypeFactory,FunctionFactory,Argument,MixEscaped,Escaped,UnEscaped
-using ...Utilities.Factory: addparams!,addfields!,addwhereparams!,addargs!,addkwargs!,extendbody!,addconstructors!
+using ...Utilities.NamedVectors: AbstractNamedVector
+using ...Utilities.Factories: Inference,TypeFactory,FunctionFactory,Argument,MixEscaped,Escaped,UnEscaped
+using ...Utilities.Factories: addparams!,addfields!,addwhereparams!,addargs!,addkwargs!,extendbody!,addconstructors!
 
-import ...Utilities.Interface: rank,dimension
+import ...Utilities.Interfaces: rank,dimension
 
 export rank,dimension
 export distance,azimuthd,azimuth,polard,polar,volume

@@ -1,13 +1,8 @@
 ```@meta
-CurrentModule=Hamiltonian.Essentials.DegreeOfFreedom
+CurrentModule=Hamiltonian.Essentials.DegreesOfFreedom
 ```
 
-```@setup spatial
-push!(LOAD_PATH,"../../../../src/")
-using Hamiltonian
-```
-
-# DegreeOfFreedom
+# Degrees of freedom
 
 ## Internal and Index
 
@@ -23,6 +18,6 @@ There are two purposes with `IDFConfig`
 ## Manul
 
 ```@autodocs
-Modules=[DegreeOfFreedom]
+Modules=[DegreesOfFreedom]
 Order=  [:module,:constant,:type,:macro,:function]
 ```

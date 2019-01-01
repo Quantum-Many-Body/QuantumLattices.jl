@@ -1,4 +1,4 @@
-using Hamiltonian.Utilities.CompositeStructure
+using Hamiltonian.Utilities.CompositeStructures
 
 struct FT{S,N,T} <: CompositeNTuple{N,T}
     info::S

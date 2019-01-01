@@ -1,4 +1,4 @@
-using Hamiltonian.Utilities.NamedVector
+using Hamiltonian.Utilities.NamedVectors
 using Hamiltonian.Utilities: Float
 
 @namedvector mutable struct NHPID

@@ -1,5 +1,5 @@
 @testset "Essentials" begin
-    @testset "Spatial" begin include("Spatial.jl") end
-    @testset "DegreeOfFreedom" begin include("DegreeOfFreedom.jl") end
+    @testset "Spatials" begin include("Spatials.jl") end
+    @testset "DegreesOfFreedom" begin include("DegreesOfFreedom.jl") end
     include("FockPackage/FockPackage.jl")
 end

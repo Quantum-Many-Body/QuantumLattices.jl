@@ -1,7 +1,7 @@
 using Hamiltonian.Utilities: Float
 using Hamiltonian.Essentials.FockPackage
-using Hamiltonian.Essentials.Spatial: PID,Point,Bond
-using Hamiltonian.Essentials.DegreeOfFreedom: Couplings
+using Hamiltonian.Essentials.Spatials: PID,Point,Bond
+using Hamiltonian.Essentials.DegreesOfFreedom: Couplings
 
 @testset "FID" begin
     fid=FID(orbital=1,spin=1)

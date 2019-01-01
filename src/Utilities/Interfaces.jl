@@ -1,4 +1,4 @@
-module Interface
+module Interfaces
 
 export ⊕,⊗
 export add!,sub!,mul!,div!

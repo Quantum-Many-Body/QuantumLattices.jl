@@ -1,11 +1,11 @@
-module Factory
+module Factories
 
 using MacroTools: block
 using MacroTools: splitarg,combinefield,combinearg
 using MacroTools: splitstructdef,combinestructdef
 using MacroTools: splitdef,combinedef
 using Printf: @printf,@sprintf
-using ..TypeTrait: efficientoperations
+using ..TypeTraits: efficientoperations
 
 import MacroTools: rmlines
 

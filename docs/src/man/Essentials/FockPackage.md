@@ -2,14 +2,9 @@
 CurrentModule=Hamiltonian.Essentials.FockPackage
 ```
 
-```@setup spatial
-push!(LOAD_PATH,"../../../../src/")
-using Hamiltonian
-```
+# Fock package
 
-# Fock Package
-
-## Fock Degree of Freedom
+## Fock degrees of freedom
 
 ```@autodocs
 Modules=[FockPackage]

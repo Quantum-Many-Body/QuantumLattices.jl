@@ -1,10 +1,10 @@
 ```@meta
-CurrentModule=Hamiltonian.Utilities.AlgebraOverField
+CurrentModule=Hamiltonian.Utilities.AlgebraOverFields
 ```
 
-```@setup algebraoverfield
+```@setup algebraoverfields
 push!(LOAD_PATH,"../../../../src/")
-using Hamiltonian.Utilities.AlgebraOverField
+using Hamiltonian.Utilities.AlgebraOverFields
 ```
 
 # Algebra over fields
@@ -18,6 +18,6 @@ using Hamiltonian.Utilities.AlgebraOverField
 ## Manual
 
 ```@autodocs
-Modules=[AlgebraOverField]
+Modules=[AlgebraOverFields]
 Order=  [:module,:constant,:type,:macro,:function]
 ```

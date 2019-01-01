@@ -33,10 +33,10 @@ delta
 
 ## Generic interfaces
 
-For details, please refer to the page [Interface](@ref):
+For details, please refer to the page [Interfaces](@ref):
 ```@contents
 Pages=[
-    "Interface.md",
+    "Interfaces.md",
     ]
 Depth=2
 ```
@@ -46,11 +46,11 @@ Depth=2
 Here lists the table of contents of the basic data structures that are supplements to the Julia.Base and other common packages:
 ```@contents
 Pages=[
-    "TypeTrait.md",
-    "Factory.md",
-    "CompositeStructure.md",
-    "Tree.md",
-    "NamedVector.md",
+    "TypeTraits.md",
+    "Factories.md",
+    "CompositeStructures.md",
+    "Trees.md",
+    "NamedVectors.md",
     ]
 Depth=2
 ```
@@ -61,8 +61,8 @@ The following lists the submodules containing the mathematical algorithms or str
 ```@contents
 Pages=[
     "Combinatorics.md",
-    "AlgebraOverField.md",
-    "QuantumNumber.md",
+    "AlgebraOverFields.md",
+    "QuantumNumbers.md",
     ]
 Depth=2
 ```

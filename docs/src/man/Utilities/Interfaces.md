@@ -1,8 +1,8 @@
 ```@meta
-CurrentModule=Hamiltonian.Utilities.Interface
+CurrentModule=Hamiltonian.Utilities.Interfaces
 ```
 
-# Interface
+# Interfaces
 
 This submodule contains the generic functions that are extended by the package.
 
@@ -11,6 +11,6 @@ Due to the multidispatch feature of Julia, generic functions can be extended by 
 ## Manual
 
 ```@autodocs
-Modules=[Interface]
+Modules=[Interfaces]
 Order=  [:module,:constant,:type,:macro,:function]
 ```

@@ -1,13 +1,13 @@
 ```@meta
-CurrentModule=Hamiltonian.Utilities.Tree
+CurrentModule=Hamiltonian.Utilities.Trees
 ```
 
-```@setup tree
+```@setup trees
 push!(LOAD_PATH,"../../../../src/")
-using Hamiltonian.Utilities.Tree
+using Hamiltonian.Utilities.Trees
 ```
 
-# Tree
+# Trees
 
 The aim of this module is to represent the standard tree structure in efficiency-non-sensitive cases. Please note that the default implementation of tree methods are far from optimal in efficiency. Therefore, please **DO NOT** use it if you need an efficient tree for addition, deletion, sort and inquiry. This module of codes apply only when the structure of tree matters but not the efficiency.
 
@@ -85,7 +85,7 @@ To implement all the prerequisites listed above costs a bit efforts. We provide 
 * `parent::Dict{N,N}`: records of the parent of each of the tree's nodes
 * `children::Dict{N,Vector{N}}`: records of the children of each of the tree's nodes
 As above, the first lazy way is to include this struct with the special name `:TREECORE` in your concrete subtype as the **last** attribute. This process can be even lazier, in that we provide a macro [`@tree`](@ref) to decorate your "raw" struct automatically, e.g.
-```@repl tree
+```@repl trees
 @tree(struct SimpleSubTree end)
 @tree(struct SubTreeWithTreeParameters end,
       {N<:AbstractString,D<:Number}
@@ -111,6 +111,6 @@ As above, the first lazy way is to include this struct with the special name `:T
 ## Manual
 
 ```@autodocs
-Modules=[Tree]
+Modules=[Trees]
 Order=  [:module,:constant,:type,:macro,:function]
 ```

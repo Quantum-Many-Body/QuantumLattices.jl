@@ -1,13 +1,13 @@
 ```@meta
-CurrentModule=Hamiltonian.Essentials.Spatial
+CurrentModule=Hamiltonian.Essentials.Spatials
 ```
 
-```@setup spatial
+```@setup spatials
 push!(LOAD_PATH,"../../../../src/")
 using Hamiltonian
 ```
 
-# Spatial
+# Spatials
 
 ## AbstractBond
 
@@ -26,6 +26,6 @@ using Hamiltonian
 ## Manul
 
 ```@autodocs
-Modules=[Spatial]
+Modules=[Spatials]
 Order=  [:module,:constant,:type,:macro,:function]
 ```

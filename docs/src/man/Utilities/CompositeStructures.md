@@ -1,8 +1,8 @@
 ```@meta
-CurrentModule=Hamiltonian.Utilities.CompositeStructure
+CurrentModule=Hamiltonian.Utilities.CompositeStructures
 ```
 
-# Composite structure
+# Composite structures
 
 In principle, Julia is not an object-oriented programming language. For example, only abstract types can be inherited so that subtype cannot inherit fields from their parents. Therefore, Julia prefers composition over inheritance. However, to make a new concrete type behaves much alike another one, tedious reputitions of redifining the generic interfaces are usually not avoidable, especially for the basic types in Julia base. In this module, we implement three such composited types, [`CompositeNTuple`](@ref), [`CompositeVector`](@ref) and [`CompositeDict`](@ref), for the sake of future usages.
 
@@ -53,6 +53,6 @@ As is similar to composite vectors, composite dicts are suited for the situation
 ## Manul
 
 ```@autodocs
-Modules=[CompositeStructure]
+Modules=[CompositeStructures]
 Order=  [:module,:constant,:type,:macro,:function]
 ```

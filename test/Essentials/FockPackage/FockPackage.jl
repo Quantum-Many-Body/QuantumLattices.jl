@@ -1,3 +1,3 @@
 @testset "FockPackage" begin
-    @testset "FockDegreeOfFreedom" begin include("FockDegreeOfFreedom.jl") end
+    @testset "FockDegreesOfFreedom" begin include("FockDegreesOfFreedom.jl") end
 end

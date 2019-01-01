@@ -1,8 +1,8 @@
 ```@meta
-CurrentModule=Hamiltonian.Utilities.TypeTrait
+CurrentModule=Hamiltonian.Utilities.TypeTraits
 ```
 
-# Type trait
+# Type traits
 
 This module defines generic type traits that are useful to the package.
 
@@ -39,6 +39,6 @@ Then type stability can be ensured. We use this trick to implement the methods s
 ## Manual
 
 ```@autodocs
-Modules=[TypeTrait]
+Modules=[TypeTraits]
 Order=  [:module,:constant,:type,:macro,:function]
 ```

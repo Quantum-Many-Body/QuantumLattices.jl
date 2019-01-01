@@ -1,14 +1,14 @@
-module DegreeOfFreedom
+module DegreesOfFreedom
 
 using Printf: @printf
 using ...Utilities: Float
-using ...Utilities.TypeTrait: efficientoperations
-using ...Utilities.NamedVector: AbstractNamedVector
-using ...Utilities.CompositeStructure: CompositeDict
-using ...Utilities.AlgebraOverField: SimpleID, ID, Element, Elements
-using ..Spatial: PID
+using ...Utilities.TypeTraits: efficientoperations
+using ...Utilities.NamedVectors: AbstractNamedVector
+using ...Utilities.CompositeStructures: CompositeDict
+using ...Utilities.AlgebraOverFields: SimpleID, ID, Element, Elements
+using ..Spatials: PID
 
-import ..Spatial: pidtype
+import ..Spatials: pidtype
 
 export IID,Index,pidtype,pid,iidtype,iid
 export IndexToTuple,DirectIndexToTuple,directindextotuple,FilteredAttributes

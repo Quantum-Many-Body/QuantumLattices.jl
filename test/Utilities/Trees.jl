@@ -1,4 +1,4 @@
-using Hamiltonian.Utilities.Tree
+using Hamiltonian.Utilities.Trees
 
 @tree struct ATree end
 

@@ -1,9 +1,9 @@
-module Tree
+module Trees
 
-using ..Factory: Inference,Argument,Parameter,FunctionFactory,TypeFactory
-using ..Factory: addfields!,addparams!,addargs!,addwhereparams!,extendbody!
-using ..Factory: MixEscaped,Escaped,UnEscaped
-using ..TypeTrait: efficientoperations
+using ..Factories: Inference,Argument,Parameter,FunctionFactory,TypeFactory
+using ..Factories: addfields!,addparams!,addargs!,addwhereparams!,extendbody!
+using ..Factories: MixEscaped,Escaped,UnEscaped
+using ..TypeTraits: efficientoperations
 
 export treedepth,treewidth
 export AbstractTree

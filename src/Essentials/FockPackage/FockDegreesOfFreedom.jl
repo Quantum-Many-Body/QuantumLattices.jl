@@ -1,10 +1,10 @@
 using Printf: @printf,@sprintf
-using ..Spatial: PID,AbstractBond,Point,Bond,pidtype
-using ..DegreeOfFreedom: IID,Index,Internal,FilteredAttributes,Coupling,Couplings
+using ..Spatials: PID,AbstractBond,Point,Bond,pidtype
+using ..DegreesOfFreedom: IID,Index,Internal,FilteredAttributes,Coupling,Couplings
 using ...Utilities: delta,indtosub,corder,decimaltostr
-using ...Utilities.AlgebraOverField: SimpleID,ID
+using ...Utilities.AlgebraOverFields: SimpleID,ID
 
-import ...Utilities.Interface: expand
+import ...Utilities.Interfaces: expand
 
 export ANNIHILATION,CREATION,FID,FIndex,Fock
 export usualfockindextotuple,nambufockindextotuple

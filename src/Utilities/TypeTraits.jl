@@ -1,4 +1,4 @@
-module TypeTrait
+module TypeTraits
 
 export efficientoperations
 
