@@ -1,7 +1,8 @@
 using Printf: @printf,@sprintf
 using ..Spatials: PID,AbstractBond,Point,Bond,pidtype
 using ..DegreesOfFreedom: IID,Index,Internal,FilteredAttributes,Coupling,Couplings
-using ...Utilities: delta,indtosub,corder,decimaltostr
+using ...Utilities: delta,decimaltostr
+using ...Utilities.TypeTraits: indtosub,corder
 using ...Utilities.AlgebraOverFields: SimpleID,ID
 
 import ...Utilities.Interfaces: expand

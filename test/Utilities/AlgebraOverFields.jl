@@ -15,7 +15,6 @@ end
     @test cid|>eltype==SMPID{Int,<:Real}
     @test cid|>rank==2
     @test cid|>typeof|>rank==2
-    @test hash(cid,UInt(1))==hash(cid.contents,UInt(1))
 
     sid=SMPID(1,1)
     @test sid⊗cid==ID(SMPID(1,1),SMPID(2,1),SMPID(1,Inf))
@@ -34,28 +33,6 @@ end
     @test propertynames(cid|>typeof,true)==(:contents,:orbitals,:spins)
     @test cid.orbitals==(2,3)
     @test cid.spins==(1,4)
-end
-
-@testset "VectorSpace" begin
-    id1,id2,id3=SMPID(1,1),SMPID(1,2),SMPID(1,3)
-    vs=VectorSpace(id1,id2)
-    @test vs==deepcopy(vs)
-    @test isequal(vs,deepcopy(vs))
-    @test vs|>eltype==SMPID{Int,Int}
-    @test vs|>typeof|>eltype==SMPID{Int,Int}
-    @test vs|>length==2
-    @test vs|>collect==[id1,id2]
-    @test vs|>Iterators.reverse|>collect==[id2,id1]
-    @test id1 ∈ vs && id2 ∈ vs && id3 ∉ vs
-    @test vs[1]==id1 && vs[2]==id2
-    @test findfirst(id1,vs)==1 && findfirst(id2,vs)==2
-    @test vs|>dimension==2
-    @test vs|>typeof|>dimension==2
-    @test convert(Tuple,vs)==(id1,id2)
-    @test vs==id1⊕id2
-    @test vs⊕id3==id1⊕id2⊕id3
-    @test id3⊕vs==id3⊕id1⊕id2
-    @test (id2⊕id3)⊕vs==id2⊕id3⊕id1⊕id2
 end
 
 struct BasicOperator{V,I,N} <: Element{V,I,N}

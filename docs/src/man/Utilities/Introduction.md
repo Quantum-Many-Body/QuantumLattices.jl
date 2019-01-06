@@ -22,10 +22,6 @@ All the following constants and functions in this section are defined in the mai
 atol
 rtol
 Float
-forder
-corder
-indtosub
-subtoind
 decimaltostr
 ordinal
 delta

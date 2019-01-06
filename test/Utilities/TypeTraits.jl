@@ -26,3 +26,13 @@ Base.replace(fc::WithTrait;kwargs...) = replace(efficientoperations,fc;kwargs...
 
     @test replace(WithTrait(1,2,3),f1='c')==WithTrait('c',2,3)
 end
+
+@testset "forder/corder" begin
+    dims=(2,2,2)
+    finds=[(1,1,1),(2,1,1),(1,2,1),(2,2,1),(1,1,2),(2,1,2),(1,2,2),(2,2,2)]
+    cinds=[(1,1,1),(1,1,2),(1,2,1),(1,2,2),(2,1,1),(2,1,2),(2,2,1),(2,2,2)]
+    @test collect(indtosub(dims,i,forder) for i=1:prod(dims))==finds
+    @test collect(indtosub(dims,i,corder) for i=1:prod(dims))==cinds
+    @test collect(subtoind(dims,inds,forder) for inds in finds)==collect(1:prod(dims))
+    @test collect(subtoind(dims,inds,corder) for inds in cinds)==collect(1:prod(dims))
+end

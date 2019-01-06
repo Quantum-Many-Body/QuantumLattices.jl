@@ -11,8 +11,6 @@ using Hamiltonian.Utilities.AlgebraOverFields
 
 ## ID
 
-## VectorSpace
-
 ## Element and Elements
 
 ## Manual

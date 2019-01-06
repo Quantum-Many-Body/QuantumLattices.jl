@@ -1,7 +1,8 @@
 module Combinatorics
 
-using ..Utilities: indtosub,corder
+using ..Utilities.TypeTraits: corder,indtosub
 
+export AbstractCombinatorics
 export Combinations,DulCombinations,Permutations,DulPermutations
 
 """
@@ -10,7 +11,7 @@ export Combinations,DulCombinations,Permutations,DulPermutations
 Abstract combinatoric algorithms.
 """
 abstract type AbstractCombinatorics{M,C} end
-Base.eltype(::Type{AbstractCombinatorics{M,C}}) where {M,C}=NTuple{M,C|>eltype}
+Base.eltype(::Type{<:AbstractCombinatorics{M,C}}) where {M,C}=NTuple{M,C|>eltype}
 @generated gettuple(contents,inds,::Val{M}) where M=Expr(:tuple,[:(contents[inds[$i]]) for i=1:M]...)
 
 """
@@ -98,7 +99,7 @@ function nextpstate!(state::Vector{Int},N::Int,M::Int)
 end
 
 """
-    Permutations{M}(contents::C) where {M,C}
+    DulPermutations{M}(contents::C) where {M,C}
 
 Permutations of M elements from contents. Duplicates are not allowed.
 """

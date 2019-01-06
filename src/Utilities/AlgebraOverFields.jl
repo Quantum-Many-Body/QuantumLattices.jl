@@ -2,16 +2,14 @@ module AlgebraOverFields
 
 using Printf: @printf
 using ..NamedVectors: AbstractNamedVector
-using ..CompositeStructures: CompositeNTuple
 using ..TypeTraits: efficientoperations
-using ..Utilities: subtoind,corder
+using ..CompositeStructures: CompositeNTuple,CompositeVector
 
-import ..Utilities.Interfaces: rank,⊕,⊗,dimension,add!,sub!
+import ..Utilities.Interfaces: rank,⊗,add!,sub!
 
 export SimpleID,ID
-export AbstractVectorSpace,VectorSpace
 export Element,Elements,idtype
-export rank,⊕,⊗,dimension,add!,sub!
+export rank,⊗,add!,sub!
 
 """
     SimpleID <: AbstractNamedVector
@@ -50,7 +48,7 @@ Get the property names of a composite id.
 """
 Base.propertynames(::Type{I},private::Bool=false) where I<:ID=I|>eltype|>isconcretetype ? cidpropertynames(I,Val(private)) : (:contents,)
 @generated function cidpropertynames(::Type{I},::Val{true}) where I<:ID
-    @assert I|>eltype|>isconcretetype "cidpropertynames error: not homogeneous input I($(I|>nameof)) ."
+    @assert I|>eltype|>isconcretetype "cidpropertynames error: not homogeneous input I($(I|>nameof))."
     exprs=[QuoteNode(Symbol(name,'s')) for name in I|>eltype|>fieldnames]
     return Expr(:tuple,QuoteNode(:contents),exprs...)
 end
@@ -66,9 +64,8 @@ end
 Get the property of a composite id.
 """
 Base.getproperty(cid::ID,name::Symbol)=name==:contents ? getfield(cid,:contents) : cidgetproperty(cid,name)
-cidpropertyindex(::Type{I},name::Symbol) where I<:ID=findfirst(isequal(name),I|>propertynames)::Int
 @generated function cidgetproperty(cid::ID,name::Symbol)
-    index=:(index=cidpropertyindex(cid|>typeof,name))
+    index=:(index=findfirst(isequal(name),cid|>typeof|>propertynames)::Int)
     exprs=[:(getfield(cid[$i],index)) for i=1:length(cid)]
     return Expr(:block,index,Expr(:tuple,exprs...))
 end
@@ -79,13 +76,6 @@ end
 Show a composite id.
 """
 Base.show(io::IO,cid::ID)=@printf io "%s(%s)" cid|>typeof|>nameof join(cid,",")
-
-"""
-    hash(cid::ID,h::UInt)
-
-Hash a composite id.
-"""
-Base.hash(cid::ID,h::UInt)=hash(convert(Tuple,cid),h)
 
 """
     isless(cid1::ID,cid2::ID) -> Bool
@@ -125,113 +115,6 @@ Get the direct product of the id system.
 ⊗(sid::SimpleID,cid::ID)=ID(sid,convert(Tuple,cid)...)
 ⊗(cid::ID,sid::SimpleID)=ID(convert(Tuple,cid)...,sid)
 ⊗(cid1::ID,cid2::ID)=ID(convert(Tuple,cid1)...,convert(Tuple,cid2)...)
-
-"""
-    AbstractVectorSpace{I<:SimpleID}
-
-Abstract vector space.
-
-Subtypes should implement the following methods:
-1) `Base.getindex(nv::AbstractVectorSpace,i::Int)`
-2) `Base.findfirst(sid::SimpleID,nv::AbstractVectorSpace)`
-3) `dimension(nv::AbstractVectorSpace)`
-"""
-abstract type AbstractVectorSpace{I<:SimpleID} end
-
-"""
-    ==(vs1::AbstractVectorSpace,vs2::AbstractVectorSpace) -> Bool
-    isequal(vs1::AbstractVectorSpace,vs2::AbstractVectorSpace) -> Bool
-
-Compare two vector spaces and judge whether they are equivalent to each other.
-"""
-Base.:(==)(vs1::AbstractVectorSpace,vs2::AbstractVectorSpace) = ==(efficientoperations,vs1,vs2)
-Base.isequal(vs1::AbstractVectorSpace,vs2::AbstractVectorSpace)=isequal(efficientoperations,vs1,vs2)
-
-"""
-    eltype(vs::AbstractVectorSpace)
-    eltype(::Type{AbstractVectorSpace{I}}) where I
-
-Get the eltype of a vector space.
-"""
-Base.eltype(vs::AbstractVectorSpace)=vs|>typeof|>eltype
-Base.eltype(::Type{<:AbstractVectorSpace{I}}) where I=I
-
-"""
-    length(vs::AbstractVectorSpace) -> Int
-
-Get the number of bases of a vector space.
-"""
-Base.length(vs::AbstractVectorSpace)=vs|>dimension
-
-"""
-    iterate(vs::AbstractVectorSpace,state::Integer=1)
-    iterate(rv::Iterators.Reverse{<:AbstractVectorSpace},state=length(rv.itr))
-
-Iterate over the bases of a vector space.
-"""
-Base.iterate(vs::AbstractVectorSpace,state::Integer=1)=state>length(vs) ? nothing : (vs[state],state+1)
-Base.iterate(rv::Iterators.Reverse{<:AbstractVectorSpace},state=length(rv.itr))=state<1 ? nothing : (rv.itr[state],state-1)
-
-"""
-    in(sid::SimpleID,vs::AbstractVectorSpace) -> Bool
-
-Judge whether a basis is in a vector space.
-"""
-Base.in(sid::SimpleID,vs::AbstractVectorSpace)=(index=findfirst(sid,vs);isa(index,Integer) && 1<=index<=length(vs))
-
-"""
-    VectorSpace(ids::SimpleID...)
-
-The vector space spanned by a set of bases specified by their simple ids.
-"""
-struct VectorSpace{I<:SimpleID,N} <: AbstractVectorSpace{I}
-    contents::NTuple{N,I}
-    VectorSpace(ids::NTuple{N,SimpleID}) where N=new{ids|>eltype,N}(ids)
-end
-VectorSpace(ids::SimpleID...)=VectorSpace(ids)
-
-"""
-    getindex(vs::VectorSpace,i::Int) -> eltype(vs)
-
-Get the i-th simple id of a vector space.
-"""
-Base.getindex(vs::VectorSpace,i::Int)=vs.contents[i]
-
-"""
-    findfirst(sid::I,vs::VectorSpace{I}) where I -> Int
-
-Find the (first) index of the input simple id of a vector space.
-"""
-Base.findfirst(sid::I,vs::VectorSpace{I}) where I=findfirst(isequal(sid),vs.contents)
-
-"""
-    dimension(vs::VectorSpace) -> Int
-    dimension(::Type{<:VectorSpace{I,N}}) where {I,N} -> Int
-
-Get the dimension of a vector space.
-"""
-dimension(vs::VectorSpace)=vs|>typeof|>dimension
-dimension(::Type{<:VectorSpace{I,N}}) where {I,N}=N
-
-"""
-    convert(::Type{Tuple},vs::VectorSpace)
-
-Convert a vector space to tuple.
-"""
-Base.convert(::Type{Tuple},vs::VectorSpace)=getfield(vs,:contents)
-
-"""
-    ⊕(sid1::I,sid2::I) where {I<:SimpleID} -> VectorSpace{I}
-    ⊕(sid::I,vs::VectorSpace{I}) where {I<:SimpleID} -> VectorSpace{I}
-    ⊕(vs::VectorSpace{I},sid::I) where {I<:SimpleID} -> VectorSpace{I}
-    ⊕(vs1::VS,vs2::VS) where {VS<:VectorSpace} -> VS
-
-Get the direct sum of bases or vector spaces.
-"""
-⊕(sid1::I,sid2::I) where {I<:SimpleID}=VectorSpace(sid1,sid2)
-⊕(sid::I,vs::VectorSpace{I}) where {I<:SimpleID}=VectorSpace(sid,convert(Tuple,vs)...)
-⊕(vs::VectorSpace{I},sid::I) where {I<:SimpleID}=VectorSpace(convert(Tuple,vs)...,sid)
-⊕(vs1::VS,vs2::VS) where {VS<:VectorSpace}=VectorSpace(convert(Tuple,vs1)...,convert(Tuple,vs2)...)
 
 """
     Element{V<:Number,I<:ID}
