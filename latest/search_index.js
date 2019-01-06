@@ -113,38 +113,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.forder",
-    "page": "Introduction",
-    "title": "Hamiltonian.Utilities.forder",
-    "category": "constant",
-    "text": "forder\n\nIndicate that the convertion between Cartesian index and linear index is using the Fortran order.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.corder",
-    "page": "Introduction",
-    "title": "Hamiltonian.Utilities.corder",
-    "category": "constant",
-    "text": "corder\n\nIndicate that the convertion between Cartesian index and linear index is using the C/C++ order.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.indtosub",
-    "page": "Introduction",
-    "title": "Hamiltonian.Utilities.indtosub",
-    "category": "function",
-    "text": "indtosub(dims::Tuple,ind::Int,order::FOrder) -> Tuple\nindtosub(dims::Tuple,ind::Int,order::COrder) -> Tuple\n\nConvert an linear index to Cartesian index. Fortran-order or C-order can be assigned.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.subtoind",
-    "page": "Introduction",
-    "title": "Hamiltonian.Utilities.subtoind",
-    "category": "function",
-    "text": "subtoind(dims::NTuple{N,Int},inds::NTuple{N,Int},order::FOrder) where N -> Int\nsubtoind(dims::NTuple{N,Int},inds::NTuple{N,Int},order::COrder) where N -> Int\n\nConvert an Cartesian index to linear index. Fortran-order or C-order can be assigned.\n\n\n\n\n\n"
-},
-
-{
     "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.decimaltostr",
     "page": "Introduction",
     "title": "Hamiltonian.Utilities.decimaltostr",
@@ -173,7 +141,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "Constants and functions",
     "category": "section",
-    "text": "All the following constants and functions in this section are defined in the main body and are exported by this module.atol\nrtol\nFloat\nforder\ncorder\nindtosub\nsubtoind\ndecimaltostr\nordinal\ndelta"
+    "text": "All the following constants and functions in this section are defined in the main body and are exported by this module.atol\nrtol\nFloat\ndecimaltostr\nordinal\ndelta"
 },
 
 {
@@ -333,7 +301,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Type traits",
     "title": "Type traits",
     "category": "section",
-    "text": "This module defines generic type traits that are useful to the package.Julia does not support multi-inheritance, which is sometimes not convenient. A way around this is to use traits, i.e. by utilizing the dispatch on certain singleton types known as traits to simulate multi-inheritance. Although this method cannot aviod small repetitive codes, it suits methods well that are complicated and lengthy."
+    "text": "This module defines generic type traits that are useful to the package.Julia does not support multi-inheritance, which is sometimes not convenient. A way around this is to use traits, i.e. by utilizing the dispatch on certain (singleton) types known as traits to simulate multi-inheritance. Although this method cannot aviod small repetitive codes, it suits methods well that are complicated and lengthy."
 },
 
 {
@@ -345,11 +313,51 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Utilities/TypeTraits.html#MemoryOrder-1",
+    "page": "Type traits",
+    "title": "MemoryOrder",
+    "category": "section",
+    "text": "MemoryOrder provides the convertions, subtoind and indtosub, between a Cartesian index represented by a tuple and a linear index represented by an integer. C/C++ order or Fortran order can be specified, though the constant instances corder or forder of singleton types COrder and FOrder, which are both subtypes of the abstract type MemoryOrder."
+},
+
+{
+    "location": "man/Utilities/TypeTraits.html#Hamiltonian.Utilities.TypeTraits.corder",
+    "page": "Type traits",
+    "title": "Hamiltonian.Utilities.TypeTraits.corder",
+    "category": "constant",
+    "text": "corder\n\nIndicate that the convertion between Cartesian index and linear index is using the C/C++ order.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Utilities/TypeTraits.html#Hamiltonian.Utilities.TypeTraits.efficientoperations",
     "page": "Type traits",
     "title": "Hamiltonian.Utilities.TypeTraits.efficientoperations",
     "category": "constant",
     "text": "efficientoperations\n\nIndicate that the efficient operations, i.e. \"==\"/\"isequal\", \"<\"/\"isless\" or \"replace\", will be used.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/TypeTraits.html#Hamiltonian.Utilities.TypeTraits.forder",
+    "page": "Type traits",
+    "title": "Hamiltonian.Utilities.TypeTraits.forder",
+    "category": "constant",
+    "text": "forder\n\nIndicate that the convertion between Cartesian index and linear index is using the Fortran order.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/TypeTraits.html#Hamiltonian.Utilities.TypeTraits.indtosub-Tuple{Tuple,Int64,Hamiltonian.Utilities.TypeTraits.FOrder}",
+    "page": "Type traits",
+    "title": "Hamiltonian.Utilities.TypeTraits.indtosub",
+    "category": "method",
+    "text": "indtosub(dims::Tuple,ind::Int,order::FOrder) -> Tuple\nindtosub(dims::Tuple,ind::Int,order::COrder) -> Tuple\n\nConvert an linear index to Cartesian index. Fortran-order or C-order can be assigned.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Utilities/TypeTraits.html#Hamiltonian.Utilities.TypeTraits.subtoind-Union{Tuple{N}, Tuple{Tuple{Vararg{Int64,N}},Tuple{Vararg{Int64,N}},FOrder}} where N",
+    "page": "Type traits",
+    "title": "Hamiltonian.Utilities.TypeTraits.subtoind",
+    "category": "method",
+    "text": "subtoind(dims::NTuple{N,Int},inds::NTuple{N,Int},order::FOrder) where N -> Int\nsubtoind(dims::NTuple{N,Int},inds::NTuple{N,Int},order::COrder) where N -> Int\n\nConvert an Cartesian index to linear index. Fortran-order or C-order can be assigned.\n\n\n\n\n\n"
 },
 
 {
@@ -1601,6 +1609,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Utilities/Combinatorics.html#Hamiltonian.Utilities.Combinatorics.AbstractCombinatorics",
+    "page": "Combinatorics",
+    "title": "Hamiltonian.Utilities.Combinatorics.AbstractCombinatorics",
+    "category": "type",
+    "text": "AbstractCombinatorics{M,C}\n\nAbstract combinatoric algorithms.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Utilities/Combinatorics.html#Hamiltonian.Utilities.Combinatorics.Combinations",
     "page": "Combinatorics",
     "title": "Hamiltonian.Utilities.Combinatorics.Combinations",
@@ -1621,7 +1637,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Combinatorics",
     "title": "Hamiltonian.Utilities.Combinatorics.DulPermutations",
     "category": "type",
-    "text": "Permutations{M}(contents::C) where {M,C}\n\nPermutations of M elements from contents. Duplicates are not allowed.\n\n\n\n\n\n"
+    "text": "DulPermutations{M}(contents::C) where {M,C}\n\nPermutations of M elements from contents. Duplicates are not allowed.\n\n\n\n\n\n"
 },
 
 {
@@ -1630,14 +1646,6 @@ var documenterSearchIndex = {"docs": [
     "title": "Hamiltonian.Utilities.Combinatorics.Permutations",
     "category": "type",
     "text": "Permutations{M}(contents::C) where {M,C}\n\nPermutations of M elements from contents. Duplicates are allowed.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/Combinatorics.html#Hamiltonian.Utilities.Combinatorics.AbstractCombinatorics",
-    "page": "Combinatorics",
-    "title": "Hamiltonian.Utilities.Combinatorics.AbstractCombinatorics",
-    "category": "type",
-    "text": "AbstractCombinatorics{M,C}\n\nAbstract combinatoric algorithms.\n\n\n\n\n\n"
 },
 
 {
@@ -1673,27 +1681,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/AlgebraOverFields.html#VectorSpace-1",
-    "page": "Algebra over fields",
-    "title": "VectorSpace",
-    "category": "section",
-    "text": ""
-},
-
-{
     "location": "man/Utilities/AlgebraOverFields.html#Element-and-Elements-1",
     "page": "Algebra over fields",
     "title": "Element and Elements",
     "category": "section",
     "text": ""
-},
-
-{
-    "location": "man/Utilities/AlgebraOverFields.html#Hamiltonian.Utilities.AlgebraOverFields.AbstractVectorSpace",
-    "page": "Algebra over fields",
-    "title": "Hamiltonian.Utilities.AlgebraOverFields.AbstractVectorSpace",
-    "category": "type",
-    "text": "AbstractVectorSpace{I<:SimpleID}\n\nAbstract vector space.\n\nSubtypes should implement the following methods:\n\nBase.getindex(nv::AbstractVectorSpace,i::Int)\nBase.findfirst(sid::SimpleID,nv::AbstractVectorSpace)\ndimension(nv::AbstractVectorSpace)\n\n\n\n\n\n"
 },
 
 {
@@ -1737,27 +1729,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/AlgebraOverFields.html#Hamiltonian.Utilities.AlgebraOverFields.VectorSpace",
-    "page": "Algebra over fields",
-    "title": "Hamiltonian.Utilities.AlgebraOverFields.VectorSpace",
-    "category": "type",
-    "text": "VectorSpace(ids::SimpleID...)\n\nThe vector space spanned by a set of bases specified by their simple ids.\n\n\n\n\n\n"
-},
-
-{
     "location": "man/Utilities/AlgebraOverFields.html#Hamiltonian.Utilities.AlgebraOverFields.idtype-Union{Tuple{Type{#s68} where #s68<:(Element{V,I,N} where N)}, Tuple{I}, Tuple{V}} where I where V",
     "page": "Algebra over fields",
     "title": "Hamiltonian.Utilities.AlgebraOverFields.idtype",
     "category": "method",
     "text": "idtype(::Type{<:Element{V,I}}) where {V,I}\nidtype(m::Element)\n\nThe type of the id of an element.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/AlgebraOverFields.html#Hamiltonian.Utilities.Interfaces.:⊕-Union{Tuple{I}, Tuple{I,I}} where I<:Hamiltonian.Utilities.AlgebraOverFields.SimpleID",
-    "page": "Algebra over fields",
-    "title": "Hamiltonian.Utilities.Interfaces.:⊕",
-    "category": "method",
-    "text": "⊕(sid1::I,sid2::I) where {I<:SimpleID} -> VectorSpace{I}\n⊕(sid::I,vs::VectorSpace{I}) where {I<:SimpleID} -> VectorSpace{I}\n⊕(vs::VectorSpace{I},sid::I) where {I<:SimpleID} -> VectorSpace{I}\n⊕(vs1::VS,vs2::VS) where {VS<:VectorSpace} -> VS\n\nGet the direct sum of bases or vector spaces.\n\n\n\n\n\n"
 },
 
 {
@@ -1774,14 +1750,6 @@ var documenterSearchIndex = {"docs": [
     "title": "Hamiltonian.Utilities.Interfaces.add!",
     "category": "method",
     "text": "add!(ms::Elements) -> typeof(ms)\nadd!(ms::Elements,m::Element) -> typeof(ms)\nadd!(ms::Elements,mms::Elements) -> typeof(ms)\n\nGet the inplace addition of elements to a set.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/AlgebraOverFields.html#Hamiltonian.Utilities.Interfaces.dimension-Tuple{Hamiltonian.Utilities.AlgebraOverFields.VectorSpace}",
-    "page": "Algebra over fields",
-    "title": "Hamiltonian.Utilities.Interfaces.dimension",
-    "category": "method",
-    "text": "dimension(vs::VectorSpace) -> Int\ndimension(::Type{<:VectorSpace{I,N}}) where {I,N} -> Int\n\nGet the dimension of a vector space.\n\n\n\n\n\n"
 },
 
 {
@@ -1841,51 +1809,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/AlgebraOverFields.html#Base.:==-Tuple{Hamiltonian.Utilities.AlgebraOverFields.AbstractVectorSpace,Hamiltonian.Utilities.AlgebraOverFields.AbstractVectorSpace}",
-    "page": "Algebra over fields",
-    "title": "Base.:==",
-    "category": "method",
-    "text": "==(vs1::AbstractVectorSpace,vs2::AbstractVectorSpace) -> Bool\nisequal(vs1::AbstractVectorSpace,vs2::AbstractVectorSpace) -> Bool\n\nCompare two vector spaces and judge whether they are equivalent to each other.\n\n\n\n\n\n"
-},
-
-{
     "location": "man/Utilities/AlgebraOverFields.html#Base.:==-Union{Tuple{M}, Tuple{M,M}} where M<:Hamiltonian.Utilities.AlgebraOverFields.Element",
     "page": "Algebra over fields",
     "title": "Base.:==",
     "category": "method",
     "text": "==(m1::M,m2::M) where M<:Element -> Bool\nisequal(m1::M,m2::M) where M<:Element -> Bool\n\nCompare two elements and judge whether they are equal to each other.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/AlgebraOverFields.html#Base.convert-Tuple{Type{Tuple},Hamiltonian.Utilities.AlgebraOverFields.VectorSpace}",
-    "page": "Algebra over fields",
-    "title": "Base.convert",
-    "category": "method",
-    "text": "convert(::Type{Tuple},vs::VectorSpace)\n\nConvert a vector space to tuple.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/AlgebraOverFields.html#Base.eltype-Tuple{Hamiltonian.Utilities.AlgebraOverFields.AbstractVectorSpace}",
-    "page": "Algebra over fields",
-    "title": "Base.eltype",
-    "category": "method",
-    "text": "eltype(vs::AbstractVectorSpace)\neltype(::Type{AbstractVectorSpace{I}}) where I\n\nGet the eltype of a vector space.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/AlgebraOverFields.html#Base.findfirst-Union{Tuple{I}, Tuple{I,VectorSpace{I,N} where N}} where I",
-    "page": "Algebra over fields",
-    "title": "Base.findfirst",
-    "category": "method",
-    "text": "findfirst(sid::I,vs::VectorSpace{I}) where I -> Int\n\nFind the (first) index of the input simple id of a vector space.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/AlgebraOverFields.html#Base.getindex-Tuple{Hamiltonian.Utilities.AlgebraOverFields.VectorSpace,Int64}",
-    "page": "Algebra over fields",
-    "title": "Base.getindex",
-    "category": "method",
-    "text": "getindex(vs::VectorSpace,i::Int) -> eltype(vs)\n\nGet the i-th simple id of a vector space.\n\n\n\n\n\n"
 },
 
 {
@@ -1897,43 +1825,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/AlgebraOverFields.html#Base.hash-Tuple{Hamiltonian.Utilities.AlgebraOverFields.ID,UInt64}",
-    "page": "Algebra over fields",
-    "title": "Base.hash",
-    "category": "method",
-    "text": "hash(cid::ID,h::UInt)\n\nHash a composite id.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/AlgebraOverFields.html#Base.in-Tuple{Hamiltonian.Utilities.AlgebraOverFields.SimpleID,Hamiltonian.Utilities.AlgebraOverFields.AbstractVectorSpace}",
-    "page": "Algebra over fields",
-    "title": "Base.in",
-    "category": "method",
-    "text": "in(sid::SimpleID,vs::AbstractVectorSpace) -> Bool\n\nJudge whether a basis is in a vector space.\n\n\n\n\n\n"
-},
-
-{
     "location": "man/Utilities/AlgebraOverFields.html#Base.isless-Tuple{Hamiltonian.Utilities.AlgebraOverFields.ID,Hamiltonian.Utilities.AlgebraOverFields.ID}",
     "page": "Algebra over fields",
     "title": "Base.isless",
     "category": "method",
     "text": "isless(cid1::ID,cid2::ID) -> Bool\n<(cid1::ID,cid2::ID) -> Bool\n\nCompare two ids and judge whether the first is less than the second.\n\nWe assume that ids with smaller ranks are always less than those with higher ranks. If two ids are of the same rank, the comparison goes just like that between tuples.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/AlgebraOverFields.html#Base.iterate",
-    "page": "Algebra over fields",
-    "title": "Base.iterate",
-    "category": "function",
-    "text": "iterate(vs::AbstractVectorSpace,state::Integer=1)\niterate(rv::Iterators.Reverse{<:AbstractVectorSpace},state=length(rv.itr))\n\nIterate over the bases of a vector space.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/AlgebraOverFields.html#Base.length-Tuple{Hamiltonian.Utilities.AlgebraOverFields.AbstractVectorSpace}",
-    "page": "Algebra over fields",
-    "title": "Base.length",
-    "category": "method",
-    "text": "length(vs::AbstractVectorSpace) -> Int\n\nGet the number of bases of a vector space.\n\n\n\n\n\n"
 },
 
 {
