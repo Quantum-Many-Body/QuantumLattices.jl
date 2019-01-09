@@ -73,71 +73,71 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Introduction.html#",
+    "location": "man/Prerequisites/Introduction.html#",
     "page": "Introduction",
     "title": "Introduction",
     "category": "page",
-    "text": "CurrentModule=Hamiltonian.Utilities"
+    "text": "CurrentModule=Hamiltonian.Prerequisites"
 },
 
 {
-    "location": "man/Utilities/Introduction.html#Introduction-1",
+    "location": "man/Prerequisites/Introduction.html#Introduction-1",
     "page": "Introduction",
     "title": "Introduction",
     "category": "section",
-    "text": "This module contains the utilities of the Hamiltonian package.The constants, types, macros, functions or submodules defined in this module will NOT be exported by the package. Instead, they serve as the prerequisites and fundamentals. The range of the utilities\' contents are quite wide, but basically, they fall into four categories:Global constants and miscellaneous tiny useful functions;\nGeneric functions that are extended by other parts of the package;\nBasic data structures as supplements to the Julia.Base and other common packages;\nBasic mathematical algorithms or structures that are needed by or specific to this package.The first category is contained in the main body of this module, while the others come in separate submodules."
+    "text": "This module contains the prerequisites of the Hamiltonian package.The constants, types, macros, functions or submodules defined in this module will NOT be exported by the package. Instead, they serve as the prerequisites and fundamentals. The range of the contents are quite wide, but basically, they fall into 3 categories:Global constants and miscellaneous tiny useful functions;\nGeneric functions that are extended by other parts of the package;\nBasic data structures as supplements to the Julia.Base and other common packages.The first category is contained in the main body of this module, while the others come in separate submodules."
 },
 
 {
-    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.atol",
+    "location": "man/Prerequisites/Introduction.html#Hamiltonian.Prerequisites.atol",
     "page": "Introduction",
-    "title": "Hamiltonian.Utilities.atol",
+    "title": "Hamiltonian.Prerequisites.atol",
     "category": "constant",
     "text": "Absolute tolerance for float numbers.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.rtol",
+    "location": "man/Prerequisites/Introduction.html#Hamiltonian.Prerequisites.rtol",
     "page": "Introduction",
-    "title": "Hamiltonian.Utilities.rtol",
+    "title": "Hamiltonian.Prerequisites.rtol",
     "category": "constant",
     "text": "Relative tolerance for float numbers.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.Float",
+    "location": "man/Prerequisites/Introduction.html#Hamiltonian.Prerequisites.Float",
     "page": "Introduction",
-    "title": "Hamiltonian.Utilities.Float",
+    "title": "Hamiltonian.Prerequisites.Float",
     "category": "type",
     "text": "Default float type.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.decimaltostr",
+    "location": "man/Prerequisites/Introduction.html#Hamiltonian.Prerequisites.decimaltostr",
     "page": "Introduction",
-    "title": "Hamiltonian.Utilities.decimaltostr",
+    "title": "Hamiltonian.Prerequisites.decimaltostr",
     "category": "function",
     "text": "decimaltostr(number::Integer,n::Int=5)\ndecimaltostr(number::Rational,n::Int=5)\ndecimaltostr(number::AbstractFloat,n::Int=5)\ndecimaltostr(number::Complex,n::Int=5)\n\nConvert a number to a string with at most n decimal places.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.ordinal",
+    "location": "man/Prerequisites/Introduction.html#Hamiltonian.Prerequisites.ordinal",
     "page": "Introduction",
-    "title": "Hamiltonian.Utilities.ordinal",
+    "title": "Hamiltonian.Prerequisites.ordinal",
     "category": "function",
     "text": "ordinal(number::Interger)\n\nConvert a positive number to its corresponding ordinal.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Introduction.html#Hamiltonian.Utilities.delta",
+    "location": "man/Prerequisites/Introduction.html#Hamiltonian.Prerequisites.delta",
     "page": "Introduction",
-    "title": "Hamiltonian.Utilities.delta",
+    "title": "Hamiltonian.Prerequisites.delta",
     "category": "function",
     "text": "delta(i,j) -> Int\n\nKronecker delta function.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Introduction.html#Constants-and-functions-1",
+    "location": "man/Prerequisites/Introduction.html#Constants-and-functions-1",
     "page": "Introduction",
     "title": "Constants and functions",
     "category": "section",
@@ -145,7 +145,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Introduction.html#Generic-interfaces-1",
+    "location": "man/Prerequisites/Introduction.html#Generic-interfaces-1",
     "page": "Introduction",
     "title": "Generic interfaces",
     "category": "section",
@@ -153,7 +153,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Introduction.html#Basic-structures-1",
+    "location": "man/Prerequisites/Introduction.html#Basic-structures-1",
     "page": "Introduction",
     "title": "Basic structures",
     "category": "section",
@@ -161,23 +161,15 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Introduction.html#Mathematical-supplements-1",
-    "page": "Introduction",
-    "title": "Mathematical supplements",
-    "category": "section",
-    "text": "The following lists the submodules containing the mathematical algorithms or structures that are needed by or specific to this package:Pages=[\n    \"Combinatorics.md\",\n    \"AlgebraOverFields.md\",\n    \"QuantumNumbers.md\",\n    ]\nDepth=2"
-},
-
-{
-    "location": "man/Utilities/Interfaces.html#",
+    "location": "man/Prerequisites/Interfaces.html#",
     "page": "Interfaces",
     "title": "Interfaces",
     "category": "page",
-    "text": "CurrentModule=Hamiltonian.Utilities.Interfaces"
+    "text": "CurrentModule=Hamiltonian.Prerequisites.Interfaces"
 },
 
 {
-    "location": "man/Utilities/Interfaces.html#Interfaces-1",
+    "location": "man/Prerequisites/Interfaces.html#Interfaces-1",
     "page": "Interfaces",
     "title": "Interfaces",
     "category": "section",
@@ -185,103 +177,127 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Interfaces.html#Hamiltonian.Utilities.Interfaces.:⊕",
+    "location": "man/Prerequisites/Interfaces.html#Hamiltonian.Prerequisites.Interfaces.:⊕",
     "page": "Interfaces",
-    "title": "Hamiltonian.Utilities.Interfaces.:⊕",
+    "title": "Hamiltonian.Prerequisites.Interfaces.:⊕",
     "category": "function",
     "text": "Direct sum.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Interfaces.html#Hamiltonian.Utilities.Interfaces.:⊗",
+    "location": "man/Prerequisites/Interfaces.html#Hamiltonian.Prerequisites.Interfaces.:⊗",
     "page": "Interfaces",
-    "title": "Hamiltonian.Utilities.Interfaces.:⊗",
+    "title": "Hamiltonian.Prerequisites.Interfaces.:⊗",
     "category": "function",
     "text": "Direct product.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Interfaces.html#Hamiltonian.Utilities.Interfaces.add!",
+    "location": "man/Prerequisites/Interfaces.html#Hamiltonian.Prerequisites.Interfaces.add!",
     "page": "Interfaces",
-    "title": "Hamiltonian.Utilities.Interfaces.add!",
+    "title": "Hamiltonian.Prerequisites.Interfaces.add!",
     "category": "function",
     "text": "Inplace addition.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Interfaces.html#Hamiltonian.Utilities.Interfaces.dimension",
+    "location": "man/Prerequisites/Interfaces.html#Hamiltonian.Prerequisites.Interfaces.dimension",
     "page": "Interfaces",
-    "title": "Hamiltonian.Utilities.Interfaces.dimension",
+    "title": "Hamiltonian.Prerequisites.Interfaces.dimension",
     "category": "function",
     "text": "Dimension.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Interfaces.html#Hamiltonian.Utilities.Interfaces.div!",
+    "location": "man/Prerequisites/Interfaces.html#Hamiltonian.Prerequisites.Interfaces.dims",
     "page": "Interfaces",
-    "title": "Hamiltonian.Utilities.Interfaces.div!",
+    "title": "Hamiltonian.Prerequisites.Interfaces.dims",
+    "category": "function",
+    "text": "Dimensions.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Prerequisites/Interfaces.html#Hamiltonian.Prerequisites.Interfaces.div!",
+    "page": "Interfaces",
+    "title": "Hamiltonian.Prerequisites.Interfaces.div!",
     "category": "function",
     "text": "Inplace division.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Interfaces.html#Hamiltonian.Utilities.Interfaces.expand",
+    "location": "man/Prerequisites/Interfaces.html#Hamiltonian.Prerequisites.Interfaces.expand",
     "page": "Interfaces",
-    "title": "Hamiltonian.Utilities.Interfaces.expand",
+    "title": "Hamiltonian.Prerequisites.Interfaces.expand",
     "category": "function",
     "text": "Get the expansion.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Interfaces.html#Hamiltonian.Utilities.Interfaces.matrix",
+    "location": "man/Prerequisites/Interfaces.html#Hamiltonian.Prerequisites.Interfaces.index",
     "page": "Interfaces",
-    "title": "Hamiltonian.Utilities.Interfaces.matrix",
+    "title": "Hamiltonian.Prerequisites.Interfaces.index",
+    "category": "function",
+    "text": "Index.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Prerequisites/Interfaces.html#Hamiltonian.Prerequisites.Interfaces.inds",
+    "page": "Interfaces",
+    "title": "Hamiltonian.Prerequisites.Interfaces.inds",
+    "category": "function",
+    "text": "Indices.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Prerequisites/Interfaces.html#Hamiltonian.Prerequisites.Interfaces.matrix",
+    "page": "Interfaces",
+    "title": "Hamiltonian.Prerequisites.Interfaces.matrix",
     "category": "function",
     "text": "Matrix representation.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Interfaces.html#Hamiltonian.Utilities.Interfaces.mul!",
+    "location": "man/Prerequisites/Interfaces.html#Hamiltonian.Prerequisites.Interfaces.mul!",
     "page": "Interfaces",
-    "title": "Hamiltonian.Utilities.Interfaces.mul!",
+    "title": "Hamiltonian.Prerequisites.Interfaces.mul!",
     "category": "function",
     "text": "Inplace multiplication.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Interfaces.html#Hamiltonian.Utilities.Interfaces.permute",
+    "location": "man/Prerequisites/Interfaces.html#Hamiltonian.Prerequisites.Interfaces.permute",
     "page": "Interfaces",
-    "title": "Hamiltonian.Utilities.Interfaces.permute",
+    "title": "Hamiltonian.Prerequisites.Interfaces.permute",
     "category": "function",
     "text": "Get the permutation.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Interfaces.html#Hamiltonian.Utilities.Interfaces.rank",
+    "location": "man/Prerequisites/Interfaces.html#Hamiltonian.Prerequisites.Interfaces.rank",
     "page": "Interfaces",
-    "title": "Hamiltonian.Utilities.Interfaces.rank",
+    "title": "Hamiltonian.Prerequisites.Interfaces.rank",
     "category": "function",
     "text": "Rank.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Interfaces.html#Hamiltonian.Utilities.Interfaces.sub!",
+    "location": "man/Prerequisites/Interfaces.html#Hamiltonian.Prerequisites.Interfaces.sub!",
     "page": "Interfaces",
-    "title": "Hamiltonian.Utilities.Interfaces.sub!",
+    "title": "Hamiltonian.Prerequisites.Interfaces.sub!",
     "category": "function",
     "text": "Inplace subtraction.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Interfaces.html#Hamiltonian.Utilities.Interfaces.vector",
+    "location": "man/Prerequisites/Interfaces.html#Hamiltonian.Prerequisites.Interfaces.vector",
     "page": "Interfaces",
-    "title": "Hamiltonian.Utilities.Interfaces.vector",
+    "title": "Hamiltonian.Prerequisites.Interfaces.vector",
     "category": "function",
     "text": "Vector representation.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Interfaces.html#Manual-1",
+    "location": "man/Prerequisites/Interfaces.html#Manual-1",
     "page": "Interfaces",
     "title": "Manual",
     "category": "section",
@@ -289,15 +305,15 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/TypeTraits.html#",
+    "location": "man/Prerequisites/TypeTraits.html#",
     "page": "Type traits",
     "title": "Type traits",
     "category": "page",
-    "text": "CurrentModule=Hamiltonian.Utilities.TypeTraits"
+    "text": "CurrentModule=Hamiltonian.Prerequisites.TypeTraits"
 },
 
 {
-    "location": "man/Utilities/TypeTraits.html#Type-traits-1",
+    "location": "man/Prerequisites/TypeTraits.html#Type-traits-1",
     "page": "Type traits",
     "title": "Type traits",
     "category": "section",
@@ -305,7 +321,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/TypeTraits.html#EfficientOperations-1",
+    "location": "man/Prerequisites/TypeTraits.html#EfficientOperations-1",
     "page": "Type traits",
     "title": "EfficientOperations",
     "category": "section",
@@ -313,7 +329,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/TypeTraits.html#MemoryOrder-1",
+    "location": "man/Prerequisites/TypeTraits.html#MemoryOrder-1",
     "page": "Type traits",
     "title": "MemoryOrder",
     "category": "section",
@@ -321,47 +337,47 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/TypeTraits.html#Hamiltonian.Utilities.TypeTraits.corder",
+    "location": "man/Prerequisites/TypeTraits.html#Hamiltonian.Prerequisites.TypeTraits.corder",
     "page": "Type traits",
-    "title": "Hamiltonian.Utilities.TypeTraits.corder",
+    "title": "Hamiltonian.Prerequisites.TypeTraits.corder",
     "category": "constant",
     "text": "corder\n\nIndicate that the convertion between Cartesian index and linear index is using the C/C++ order.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/TypeTraits.html#Hamiltonian.Utilities.TypeTraits.efficientoperations",
+    "location": "man/Prerequisites/TypeTraits.html#Hamiltonian.Prerequisites.TypeTraits.efficientoperations",
     "page": "Type traits",
-    "title": "Hamiltonian.Utilities.TypeTraits.efficientoperations",
+    "title": "Hamiltonian.Prerequisites.TypeTraits.efficientoperations",
     "category": "constant",
     "text": "efficientoperations\n\nIndicate that the efficient operations, i.e. \"==\"/\"isequal\", \"<\"/\"isless\" or \"replace\", will be used.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/TypeTraits.html#Hamiltonian.Utilities.TypeTraits.forder",
+    "location": "man/Prerequisites/TypeTraits.html#Hamiltonian.Prerequisites.TypeTraits.forder",
     "page": "Type traits",
-    "title": "Hamiltonian.Utilities.TypeTraits.forder",
+    "title": "Hamiltonian.Prerequisites.TypeTraits.forder",
     "category": "constant",
     "text": "forder\n\nIndicate that the convertion between Cartesian index and linear index is using the Fortran order.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/TypeTraits.html#Hamiltonian.Utilities.TypeTraits.indtosub-Tuple{Tuple,Int64,Hamiltonian.Utilities.TypeTraits.FOrder}",
+    "location": "man/Prerequisites/TypeTraits.html#Hamiltonian.Prerequisites.TypeTraits.indtosub-Tuple{Tuple,Int64,Hamiltonian.Prerequisites.TypeTraits.FOrder}",
     "page": "Type traits",
-    "title": "Hamiltonian.Utilities.TypeTraits.indtosub",
+    "title": "Hamiltonian.Prerequisites.TypeTraits.indtosub",
     "category": "method",
     "text": "indtosub(dims::Tuple,ind::Int,order::FOrder) -> Tuple\nindtosub(dims::Tuple,ind::Int,order::COrder) -> Tuple\n\nConvert an linear index to Cartesian index. Fortran-order or C-order can be assigned.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/TypeTraits.html#Hamiltonian.Utilities.TypeTraits.subtoind-Union{Tuple{N}, Tuple{Tuple{Vararg{Int64,N}},Tuple{Vararg{Int64,N}},FOrder}} where N",
+    "location": "man/Prerequisites/TypeTraits.html#Hamiltonian.Prerequisites.TypeTraits.subtoind-Union{Tuple{N}, Tuple{Tuple{Vararg{Int64,N}},Tuple{Vararg{Int64,N}},FOrder}} where N",
     "page": "Type traits",
-    "title": "Hamiltonian.Utilities.TypeTraits.subtoind",
+    "title": "Hamiltonian.Prerequisites.TypeTraits.subtoind",
     "category": "method",
     "text": "subtoind(dims::NTuple{N,Int},inds::NTuple{N,Int},order::FOrder) where N -> Int\nsubtoind(dims::NTuple{N,Int},inds::NTuple{N,Int},order::COrder) where N -> Int\n\nConvert an Cartesian index to linear index. Fortran-order or C-order can be assigned.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/TypeTraits.html#Base.:<-Tuple{Hamiltonian.Utilities.TypeTraits.EfficientOperations,Any,Any}",
+    "location": "man/Prerequisites/TypeTraits.html#Base.:<-Tuple{Hamiltonian.Prerequisites.TypeTraits.EfficientOperations,Any,Any}",
     "page": "Type traits",
     "title": "Base.:<",
     "category": "method",
@@ -369,7 +385,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/TypeTraits.html#Base.:==-Tuple{Hamiltonian.Utilities.TypeTraits.EfficientOperations,Any,Any}",
+    "location": "man/Prerequisites/TypeTraits.html#Base.:==-Tuple{Hamiltonian.Prerequisites.TypeTraits.EfficientOperations,Any,Any}",
     "page": "Type traits",
     "title": "Base.:==",
     "category": "method",
@@ -377,7 +393,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/TypeTraits.html#Base.replace-Tuple{Hamiltonian.Utilities.TypeTraits.EfficientOperations,Any}",
+    "location": "man/Prerequisites/TypeTraits.html#Base.replace-Tuple{Hamiltonian.Prerequisites.TypeTraits.EfficientOperations,Any}",
     "page": "Type traits",
     "title": "Base.replace",
     "category": "method",
@@ -385,7 +401,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/TypeTraits.html#Manual-1",
+    "location": "man/Prerequisites/TypeTraits.html#Manual-1",
     "page": "Type traits",
     "title": "Manual",
     "category": "section",
@@ -393,15 +409,15 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Factories.html#",
+    "location": "man/Prerequisites/Factories.html#",
     "page": "Factories",
     "title": "Factories",
     "category": "page",
-    "text": "CurrentModule=Hamiltonian.Utilities.Factoriespush!(LOAD_PATH,\"../../../../src/\")\nusing Hamiltonian.Utilities.Factories"
+    "text": "CurrentModule=Hamiltonian.Prerequisites.Factoriespush!(LOAD_PATH,\"../../../../src/\")\nusing Hamiltonian.Prerequisites.Factories"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Factories-1",
+    "location": "man/Prerequisites/Factories.html#Factories-1",
     "page": "Factories",
     "title": "Factories",
     "category": "section",
@@ -409,7 +425,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Factories.html#Escape-mechanisms-1",
+    "location": "man/Prerequisites/Factories.html#Escape-mechanisms-1",
     "page": "Factories",
     "title": "Escape mechanisms",
     "category": "section",
@@ -417,7 +433,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Factories.html#EscapeMechanism-1",
+    "location": "man/Prerequisites/Factories.html#EscapeMechanism-1",
     "page": "Factories",
     "title": "EscapeMechanism",
     "category": "section",
@@ -425,7 +441,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Factories.html#Escaped-1",
+    "location": "man/Prerequisites/Factories.html#Escaped-1",
     "page": "Factories",
     "title": "Escaped",
     "category": "section",
@@ -433,7 +449,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Factories.html#UnEscaped-1",
+    "location": "man/Prerequisites/Factories.html#UnEscaped-1",
     "page": "Factories",
     "title": "UnEscaped",
     "category": "section",
@@ -441,7 +457,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Factories.html#MixEscaped-1",
+    "location": "man/Prerequisites/Factories.html#MixEscaped-1",
     "page": "Factories",
     "title": "MixEscaped",
     "category": "section",
@@ -449,7 +465,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Factories.html#RawExpr-1",
+    "location": "man/Prerequisites/Factories.html#RawExpr-1",
     "page": "Factories",
     "title": "RawExpr",
     "category": "section",
@@ -457,7 +473,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Factories.html#Concrete-factories-1",
+    "location": "man/Prerequisites/Factories.html#Concrete-factories-1",
     "page": "Factories",
     "title": "Concrete factories",
     "category": "section",
@@ -465,7 +481,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Factories.html#Inference-1",
+    "location": "man/Prerequisites/Factories.html#Inference-1",
     "page": "Factories",
     "title": "Inference",
     "category": "section",
@@ -473,7 +489,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Factories.html#Argument-1",
+    "location": "man/Prerequisites/Factories.html#Argument-1",
     "page": "Factories",
     "title": "Argument",
     "category": "section",
@@ -481,7 +497,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Factories.html#Parameter-1",
+    "location": "man/Prerequisites/Factories.html#Parameter-1",
     "page": "Factories",
     "title": "Parameter",
     "category": "section",
@@ -489,7 +505,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Factories.html#Field-1",
+    "location": "man/Prerequisites/Factories.html#Field-1",
     "page": "Factories",
     "title": "Field",
     "category": "section",
@@ -497,7 +513,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Factories.html#Block-1",
+    "location": "man/Prerequisites/Factories.html#Block-1",
     "page": "Factories",
     "title": "Block",
     "category": "section",
@@ -505,7 +521,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Factories.html#FunctionFactory-1",
+    "location": "man/Prerequisites/Factories.html#FunctionFactory-1",
     "page": "Factories",
     "title": "FunctionFactory",
     "category": "section",
@@ -513,7 +529,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Factories.html#TypeFactory-1",
+    "location": "man/Prerequisites/Factories.html#TypeFactory-1",
     "page": "Factories",
     "title": "TypeFactory",
     "category": "section",
@@ -521,375 +537,375 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.FExpr",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.FExpr",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.FExpr",
+    "title": "Hamiltonian.Prerequisites.Factories.FExpr",
     "category": "constant",
     "text": "Factory expression types, which is defined as Union{Symbol,Expr}.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.rawexpr",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.rawexpr",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.rawexpr",
+    "title": "Hamiltonian.Prerequisites.Factories.rawexpr",
     "category": "constant",
     "text": "rawexpr\n\nIndicate that no variable in a factory should be escaped.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.Argument",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.Argument",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.Argument",
+    "title": "Hamiltonian.Prerequisites.Factories.Argument",
     "category": "type",
     "text": "Argument(name::Union{Symbol,Nothing},type::Inference,slurp::Bool,default::Any)\nArgument(;name::Union{Symbol,Nothing}=nothing,type::Inference=Inference(:Any),slurp::Bool=false,default::Any=nothing)\nArgument(expr::FExpr)\n\nThe struct to describe a argument of a function.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.Argument-Tuple{Hamiltonian.Utilities.Factories.RawExpr}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.Argument-Tuple{Hamiltonian.Prerequisites.Factories.RawExpr}",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.Argument",
+    "title": "Hamiltonian.Prerequisites.Factories.Argument",
     "category": "method",
     "text": "(a::Argument)(em::RawExpr) -> Expr\n(a::Argument)(em::MixEscaped) -> Expr\n\nConvert an Argument to the Expr representation of the argument it describes.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.Block",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.Block",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.Block",
+    "title": "Hamiltonian.Prerequisites.Factories.Block",
     "category": "type",
     "text": "Block(parts::FExpr...)\n\nThe struct to describe a begin ... end block.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.Block-Tuple{Hamiltonian.Utilities.Factories.MixEscaped}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.Block-Tuple{Hamiltonian.Prerequisites.Factories.MixEscaped}",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.Block",
+    "title": "Hamiltonian.Prerequisites.Factories.Block",
     "category": "method",
     "text": "(b::Block)(em::RawExpr) -> Expr\n(b::Block)(em::Escaped) -> Expr\n(b::Block)(em::MixEscaped) -> Expr\n\nConvert a Block to the Expr representation of the begin ... end block it describes.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.Escaped",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.Escaped",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.Escaped",
+    "title": "Hamiltonian.Prerequisites.Factories.Escaped",
     "category": "type",
     "text": "Escaped(names::Symbol...)\n\nIndicate that symbols of a factory should be escaped if they are in names.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.Field",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.Field",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.Field",
+    "title": "Hamiltonian.Prerequisites.Factories.Field",
     "category": "type",
     "text": "Field(name::Symbol,type::Inference)\nField(;name::Symbol,type::FExpr=Inference(:Any))\nField(expr::FExpr)\n\nThe struct to describe a field of a struct.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.Field-Tuple{Union{RawExpr, #s14, #s13} where #s13<:Hamiltonian.Utilities.Factories.MixEscaped where #s14<:Hamiltonian.Utilities.Factories.UnEscaped}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.Field-Tuple{Union{RawExpr, #s14, #s13} where #s13<:Hamiltonian.Prerequisites.Factories.MixEscaped where #s14<:Hamiltonian.Prerequisites.Factories.UnEscaped}",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.Field",
+    "title": "Hamiltonian.Prerequisites.Factories.Field",
     "category": "method",
     "text": "(f::Field)(em::RawExpr) -> Expr\n(f::Field)(em::UnEscaped) -> Expr\n(f::Field)(em::MixEscaped) -> Expr\n\nConvert a Field to the Expr representation of the field it describes.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.FunctionFactory",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.FunctionFactory",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.FunctionFactory",
+    "title": "Hamiltonian.Prerequisites.Factories.FunctionFactory",
     "category": "type",
     "text": "FunctionFactory(name::FExpr,params::Vector{Inference},args::Vector{Argument},kwargs::Vector{Argument},rtype::Inference,whereparams::Vector{Parameter},body::Block)\nFunctionFactory(    ;name::FExpr,\n                    params::Vector{Inference}=Inference[],\n                    args::Vector{Argument}=Argument[],\n                    kwargs::Vector{Argument}=Argument[],\n                    rtype::Inference=Inference(:Any),\n                    whereparams::Vector{Parameter}=Parameter[],\n                    body::Block=Block()\n                    )\nFunctionFactory(expr::Expr)\n\nThe struct to describe a function.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.FunctionFactory-Tuple{Union{RawExpr, #s68} where #s68<:Hamiltonian.Utilities.Factories.MixEscaped}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.FunctionFactory-Tuple{Union{RawExpr, #s68} where #s68<:Hamiltonian.Prerequisites.Factories.MixEscaped}",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.FunctionFactory",
+    "title": "Hamiltonian.Prerequisites.Factories.FunctionFactory",
     "category": "method",
     "text": "(ff::FunctionFactory)(em::RawExpr) -> Expr\n(ff::FunctionFactory)(em::MixEscaped) -> Expr\n\nConvert a FunctionFactory to the Expr representation of the function it describes.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.Inference",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.Inference",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.Inference",
+    "title": "Hamiltonian.Prerequisites.Factories.Inference",
     "category": "type",
     "text": "Inference(head::Union{Symbol,Nothing},name::Union{Symbol,Nothing},params::Union{Inference,Vector{Inference},Nothing})\nInference(;\n        head::Union{Symbol,Nothing}=nothing,\n        name::Union{Symbol,Nothing}=nothing,\n        params::Union{Inference,Vector{Inference},Nothing}=nothing,\n        )\nInference(expr::FExpr)\n\nThe struct to describe a type inference.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.Inference-Tuple{Hamiltonian.Utilities.Factories.MixEscaped}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.Inference-Tuple{Hamiltonian.Prerequisites.Factories.MixEscaped}",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.Inference",
+    "title": "Hamiltonian.Prerequisites.Factories.Inference",
     "category": "method",
     "text": "(i::Inference)(em::RawExpr) -> FExpr\n(i::Inference)(em::UnEscaped) -> FExpr\n(i::Inference)(em::MixEscaped) -> FExpr\n\nConvert a Inference to the Expr representation of the type inference it describes.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.MixEscaped",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.MixEscaped",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.MixEscaped",
+    "title": "Hamiltonian.Prerequisites.Factories.MixEscaped",
     "category": "type",
     "text": "MixEscaped(escaped::Escaped)\nMixEscaped(unescaped::UnEscaped)\nMixEscaped(escaped::Escaped,unescaped::UnEscaped)\nMixEscaped(unescaped::UnEscaped,escaped::Escaped)\n\nIndicate that some parts of a factory use the Escaped mechanism while other parts use the UnEscaped mechanism.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.Parameter",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.Parameter",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.Parameter",
+    "title": "Hamiltonian.Prerequisites.Factories.Parameter",
     "category": "type",
     "text": "Parameter(name::Union{Symbol,Nothing},type::Union{Inference,Nothing})\nParameter(;name::Union{Symbol,Nothing}=nothing,type::Union{Inference,Nothing}=nothing)\nParameter(expr::FExpr)\n\nThe struct to describe a parameter of a function or a type.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.Parameter-Tuple{Union{RawExpr, #s14, #s13} where #s13<:Hamiltonian.Utilities.Factories.MixEscaped where #s14<:Hamiltonian.Utilities.Factories.UnEscaped}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.Parameter-Tuple{Union{RawExpr, #s14, #s13} where #s13<:Hamiltonian.Prerequisites.Factories.MixEscaped where #s14<:Hamiltonian.Prerequisites.Factories.UnEscaped}",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.Parameter",
+    "title": "Hamiltonian.Prerequisites.Factories.Parameter",
     "category": "method",
     "text": "(p::Parameter)(em::RawExpr) -> FExpr\n(p::Parameter)(em::UnEscaped) -> FExpr\n(p::Parameter)(em::MixEscaped) -> FExpr\n\nConvert a Parameter to the Expr representation of the parameter it describes.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.RawExpr",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.RawExpr",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.RawExpr",
+    "title": "Hamiltonian.Prerequisites.Factories.RawExpr",
     "category": "type",
     "text": "Raw expression without any variable escaped.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.TypeFactory",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.TypeFactory",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.TypeFactory",
+    "title": "Hamiltonian.Prerequisites.Factories.TypeFactory",
     "category": "type",
     "text": "TypeFactory(name::Symbol,mutable::Bool,params::Vector{Parameter},supertype::Inference,fields::Vector{Field},constructors::Vector{FunctionFactory})\nTypeFactory(    ;name::Symbol,\n                mutable::Bool=false,\n                params::Vector{Parameter}=Parameter[],\n                supertype::Inference=Inference(:Any),\n                fields::Vector{Field}=Field[],\n                constructors::Vector{FunctionFactory}=FunctionFactory[],\n                )\nTypeFactory(expr::Expr)\n\nThe struct to describe a struct.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.TypeFactory-Tuple{Union{RawExpr, #s68} where #s68<:Hamiltonian.Utilities.Factories.MixEscaped}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.TypeFactory-Tuple{Union{RawExpr, #s68} where #s68<:Hamiltonian.Prerequisites.Factories.MixEscaped}",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.TypeFactory",
+    "title": "Hamiltonian.Prerequisites.Factories.TypeFactory",
     "category": "method",
     "text": "(tf::TypeFactory)(em::RawExpr) -> Expr\n(tf::TypeFactory)(em::MixEscaped) -> Expr\n\nConvert a TypeFactory to the Expr representation of the struct it describes.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.UnEscaped",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.UnEscaped",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.UnEscaped",
+    "title": "Hamiltonian.Prerequisites.Factories.UnEscaped",
     "category": "type",
     "text": "UnEscaped(names::Symbol...)\n\nIIndicate that symbols of a factory should be escaped if they are not in names.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.@addargs!-Tuple{Any,Vararg{Union{Expr, Symbol},N} where N}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.@addargs!-Tuple{Any,Vararg{Union{Expr, Symbol},N} where N}",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.@addargs!",
+    "title": "Hamiltonian.Prerequisites.Factories.@addargs!",
     "category": "macro",
     "text": "@addargs! ff args::FExpr...\n\nAdd a couple of positional arguments to a function factory.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.@addconstructors!-Tuple{Any,Vararg{Expr,N} where N}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.@addconstructors!-Tuple{Any,Vararg{Expr,N} where N}",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.@addconstructors!",
+    "title": "Hamiltonian.Prerequisites.Factories.@addconstructors!",
     "category": "macro",
     "text": "@addconstructors! tf constructors::Expr...\n\nAdd a couple of constructors to a type factory.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.@addfields!-Tuple{Any,Vararg{Union{Expr, Symbol},N} where N}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.@addfields!-Tuple{Any,Vararg{Union{Expr, Symbol},N} where N}",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.@addfields!",
+    "title": "Hamiltonian.Prerequisites.Factories.@addfields!",
     "category": "macro",
     "text": "@addfields! tf fields::FExpr...\n\nAdd a couple of fields to a type factory.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.@addkwargs!-Tuple{Any,Vararg{Union{Expr, Symbol},N} where N}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.@addkwargs!-Tuple{Any,Vararg{Union{Expr, Symbol},N} where N}",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.@addkwargs!",
+    "title": "Hamiltonian.Prerequisites.Factories.@addkwargs!",
     "category": "macro",
     "text": "@addkwargs! ff kwargs::FExpr...\n\nAdd a couple of keyword arguments to a function factory.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.@addparams!-Tuple{Any,Vararg{Union{Expr, Symbol},N} where N}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.@addparams!-Tuple{Any,Vararg{Union{Expr, Symbol},N} where N}",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.@addparams!",
+    "title": "Hamiltonian.Prerequisites.Factories.@addparams!",
     "category": "macro",
     "text": "@addparams! f params::FExpr...\n\nAdd a couple of method parameters to a function factory or a type factory.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.@addwhereparams!-Tuple{Any,Vararg{Union{Expr, Symbol},N} where N}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.@addwhereparams!-Tuple{Any,Vararg{Union{Expr, Symbol},N} where N}",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.@addwhereparams!",
+    "title": "Hamiltonian.Prerequisites.Factories.@addwhereparams!",
     "category": "macro",
     "text": "@addwhereparams! ff whereparams::FExpr...\n\nAdd a couple of method parameters to a function factory or a type factory.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.@argument-Tuple{Union{Expr, Symbol}}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.@argument-Tuple{Union{Expr, Symbol}}",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.@argument",
+    "title": "Hamiltonian.Prerequisites.Factories.@argument",
     "category": "macro",
     "text": "@argument expr::FExpr\n\nConstruct an Argument directly from an argument statement.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.@block-Tuple{Vararg{Union{Expr, Symbol},N} where N}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.@block-Tuple{Vararg{Union{Expr, Symbol},N} where N}",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.@block",
+    "title": "Hamiltonian.Prerequisites.Factories.@block",
     "category": "macro",
     "text": "@block parts::FExpr...\n\nConstruct a Block directly from a begin ... end block definition.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.@extendbody!-Tuple{Any,Vararg{Union{Expr, Symbol},N} where N}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.@extendbody!-Tuple{Any,Vararg{Union{Expr, Symbol},N} where N}",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.@extendbody!",
+    "title": "Hamiltonian.Prerequisites.Factories.@extendbody!",
     "category": "macro",
     "text": "@extendbody! ff parts::FExpr...\n\nExtend the body of a function factory.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.@field-Tuple{Union{Expr, Symbol}}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.@field-Tuple{Union{Expr, Symbol}}",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.@field",
+    "title": "Hamiltonian.Prerequisites.Factories.@field",
     "category": "macro",
     "text": "@field expr::FExpr\n\nConstruct a Field directly from a field statement.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.@functionfactory-Tuple{Expr}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.@functionfactory-Tuple{Expr}",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.@functionfactory",
+    "title": "Hamiltonian.Prerequisites.Factories.@functionfactory",
     "category": "macro",
     "text": "@functionfactory expr::FExpr\n\nConstruct a FunctionFactory directly from a function definition.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.@inference-Tuple{Union{Expr, Symbol}}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.@inference-Tuple{Union{Expr, Symbol}}",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.@inference",
+    "title": "Hamiltonian.Prerequisites.Factories.@inference",
     "category": "macro",
     "text": "@inference expr::FExpr\n\nConstruct an Inference directly from a type inference.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.@parameter-Tuple{Union{Expr, Symbol}}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.@parameter-Tuple{Union{Expr, Symbol}}",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.@parameter",
+    "title": "Hamiltonian.Prerequisites.Factories.@parameter",
     "category": "macro",
     "text": "@parameter expr::FExpr\n\nConstruct a Parameter directly from an parameter statement.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.@push!-Tuple{Any,Vararg{Union{Expr, Symbol},N} where N}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.@push!-Tuple{Any,Vararg{Union{Expr, Symbol},N} where N}",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.@push!",
+    "title": "Hamiltonian.Prerequisites.Factories.@push!",
     "category": "macro",
     "text": "@push! b parts::FExpr...\n\nPush other parts into the body of a block.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.@rmlines!-Tuple{Expr}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.@rmlines!-Tuple{Expr}",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.@rmlines!",
+    "title": "Hamiltonian.Prerequisites.Factories.@rmlines!",
     "category": "macro",
     "text": "@rmlines! b::Expr\n\nRemove line number nodes in the body of a block.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.@rmlines-Tuple{Expr}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.@rmlines-Tuple{Expr}",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.@rmlines",
+    "title": "Hamiltonian.Prerequisites.Factories.@rmlines",
     "category": "macro",
     "text": "@rmlines b::Expr\n\nReturn a copy of a block with the line number nodes removed.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.@typefactory-Tuple{Expr}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.@typefactory-Tuple{Expr}",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.@typefactory",
+    "title": "Hamiltonian.Prerequisites.Factories.@typefactory",
     "category": "macro",
     "text": "@typefactory expr::Expr\n\nConstruct a TypeFactory directly from a type definition.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.addargs!-Tuple{Hamiltonian.Utilities.Factories.FunctionFactory}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.addargs!-Tuple{Hamiltonian.Prerequisites.Factories.FunctionFactory}",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.addargs!",
+    "title": "Hamiltonian.Prerequisites.Factories.addargs!",
     "category": "method",
     "text": "addargs!(ff::FunctionFactory,args::Argument...) -> FunctionFactory\naddargs!(ff::FunctionFactory,args::FExpr...) -> FunctionFactory\n\nAdd a couple of positional arguments to a function factory.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.addconstructors!-Tuple{Hamiltonian.Utilities.Factories.TypeFactory}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.addconstructors!-Tuple{Hamiltonian.Prerequisites.Factories.TypeFactory}",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.addconstructors!",
+    "title": "Hamiltonian.Prerequisites.Factories.addconstructors!",
     "category": "method",
     "text": "addconstructors!(tf::TypeFactory,constructors::FunctionFactory...) -> TypeFactory\naddconstructors!(tf::TypeFactory,constructors::Expr...) -> TypeFactory\n\nAdd a couple of constructors to a type factory.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.addfields!-Tuple{Hamiltonian.Utilities.Factories.TypeFactory}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.addfields!-Tuple{Hamiltonian.Prerequisites.Factories.TypeFactory}",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.addfields!",
+    "title": "Hamiltonian.Prerequisites.Factories.addfields!",
     "category": "method",
     "text": "addfields!(tf::TypeFactory,fields::Field...) -> TypeFactory\naddfields!(tf::TypeFactory,fields::FExpr...) -> TypeFactory\n\nAdd a couple of fields to a type factory.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.addkwargs!-Tuple{Hamiltonian.Utilities.Factories.FunctionFactory}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.addkwargs!-Tuple{Hamiltonian.Prerequisites.Factories.FunctionFactory}",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.addkwargs!",
+    "title": "Hamiltonian.Prerequisites.Factories.addkwargs!",
     "category": "method",
     "text": "addkwargs!(ff::FunctionFactory,kwargs::Argument...) -> FunctionFactory\naddkwargs!(ff::FunctionFactory,kwargs::FExpr...) -> FunctionFactory\n\nAdd a couple of keyword arguments to a function factory.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.addparams!-Tuple{Hamiltonian.Utilities.Factories.FunctionFactory}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.addparams!-Tuple{Hamiltonian.Prerequisites.Factories.FunctionFactory}",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.addparams!",
+    "title": "Hamiltonian.Prerequisites.Factories.addparams!",
     "category": "method",
     "text": "addparams!(f::FunctionFactory,params::Inference...) ->FunctionFactory\naddparams!(f::FunctionFactory,params::FExpr...) -> FunctionFactory\naddparams!(f::TypeFactory,params::Parameter...) -> TypeFactory\naddparams!(f::TypeFactory,params::FExpr...) -> TypeFactory\n\nAdd a couple of parameters to a function factory or a type factory.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.addwhereparams!-Tuple{Hamiltonian.Utilities.Factories.FunctionFactory}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.addwhereparams!-Tuple{Hamiltonian.Prerequisites.Factories.FunctionFactory}",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.addwhereparams!",
+    "title": "Hamiltonian.Prerequisites.Factories.addwhereparams!",
     "category": "method",
     "text": "addwhereparams!(ff::FunctionFactory,whereparams::Parameter...) -> FunctionFactory\naddwhereparams!(ff::FunctionFactory,whereparams::FExpr...) -> FunctionFactory\n\nAdd a couple of method where parameters to a function factory or a type factory.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.escape-Tuple{Any,Hamiltonian.Utilities.Factories.RawExpr}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.escape-Tuple{Any,Hamiltonian.Prerequisites.Factories.RawExpr}",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.escape",
+    "title": "Hamiltonian.Prerequisites.Factories.escape",
     "category": "method",
     "text": "escape(expr,::RawExpr) -> Any\nescape(expr,::Escaped) -> Any\nescape(expr,::UnEscaped) -> Any\nescape(expr::Symbol,em::Escaped) -> FExpr\nescape(expr::Expr,em::Escaped) -> Expr\nescape(expr::Symbol,em::UnEscaped) -> FExpr\nescape(expr::Expr,em::UnEscaped) -> Expr\n\nEscape the variables in the input expression.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.extendbody!-Tuple{Hamiltonian.Utilities.Factories.FunctionFactory}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.extendbody!-Tuple{Hamiltonian.Prerequisites.Factories.FunctionFactory}",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.extendbody!",
+    "title": "Hamiltonian.Prerequisites.Factories.extendbody!",
     "category": "method",
     "text": "extendbody!(ff::FunctionFactory,parts::FExpr...) -> FunctionFactory\nextendbody!(ff::FunctionFactory,parts::Block...) -> FunctionFactory\n\nExtend the body of a function factory.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.rmlines!-Tuple{Hamiltonian.Utilities.Factories.Block}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.rmlines!-Tuple{Hamiltonian.Prerequisites.Factories.Block}",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.rmlines!",
+    "title": "Hamiltonian.Prerequisites.Factories.rmlines!",
     "category": "method",
     "text": "rmlines!(b::Block) -> Block\n\nRemove line number nodes in the body of a block.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#MacroTools.rmlines-Tuple{Hamiltonian.Utilities.Factories.Block}",
+    "location": "man/Prerequisites/Factories.html#MacroTools.rmlines-Tuple{Hamiltonian.Prerequisites.Factories.Block}",
     "page": "Factories",
     "title": "MacroTools.rmlines",
     "category": "method",
@@ -897,23 +913,23 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.AbstractFactory",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.AbstractFactory",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.AbstractFactory",
+    "title": "Hamiltonian.Prerequisites.Factories.AbstractFactory",
     "category": "type",
     "text": "AbstractFactory\n\nAbstract type for all concrete factories.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Hamiltonian.Utilities.Factories.EscapeMechanism",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.EscapeMechanism",
     "page": "Factories",
-    "title": "Hamiltonian.Utilities.Factories.EscapeMechanism",
+    "title": "Hamiltonian.Prerequisites.Factories.EscapeMechanism",
     "category": "type",
     "text": "Abstract escape mechanism.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Factories.html#Base.:==-Union{Tuple{F}, Tuple{F,F}} where F<:Hamiltonian.Utilities.Factories.AbstractFactory",
+    "location": "man/Prerequisites/Factories.html#Base.:==-Union{Tuple{F}, Tuple{F,F}} where F<:Hamiltonian.Prerequisites.Factories.AbstractFactory",
     "page": "Factories",
     "title": "Base.:==",
     "category": "method",
@@ -921,7 +937,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Factories.html#Base.push!-Tuple{Hamiltonian.Utilities.Factories.Block}",
+    "location": "man/Prerequisites/Factories.html#Base.push!-Tuple{Hamiltonian.Prerequisites.Factories.Block}",
     "page": "Factories",
     "title": "Base.push!",
     "category": "method",
@@ -929,7 +945,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Factories.html#Base.replace-Tuple{Hamiltonian.Utilities.Factories.AbstractFactory}",
+    "location": "man/Prerequisites/Factories.html#Base.replace-Tuple{Hamiltonian.Prerequisites.Factories.AbstractFactory}",
     "page": "Factories",
     "title": "Base.replace",
     "category": "method",
@@ -937,7 +953,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Factories.html#Base.show-Tuple{IO,Hamiltonian.Utilities.Factories.AbstractFactory}",
+    "location": "man/Prerequisites/Factories.html#Base.show-Tuple{IO,Hamiltonian.Prerequisites.Factories.AbstractFactory}",
     "page": "Factories",
     "title": "Base.show",
     "category": "method",
@@ -945,7 +961,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Factories.html#Manual-1",
+    "location": "man/Prerequisites/Factories.html#Manual-1",
     "page": "Factories",
     "title": "Manual",
     "category": "section",
@@ -953,15 +969,15 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/CompositeStructures.html#",
+    "location": "man/Prerequisites/CompositeStructures.html#",
     "page": "Composite structures",
     "title": "Composite structures",
     "category": "page",
-    "text": "CurrentModule=Hamiltonian.Utilities.CompositeStructures"
+    "text": "CurrentModule=Hamiltonian.Prerequisites.CompositeStructures"
 },
 
 {
-    "location": "man/Utilities/CompositeStructures.html#Composite-structures-1",
+    "location": "man/Prerequisites/CompositeStructures.html#Composite-structures-1",
     "page": "Composite structures",
     "title": "Composite structures",
     "category": "section",
@@ -969,7 +985,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/CompositeStructures.html#CompositeNTuple-1",
+    "location": "man/Prerequisites/CompositeStructures.html#CompositeNTuple-1",
     "page": "Composite structures",
     "title": "CompositeNTuple",
     "category": "section",
@@ -977,7 +993,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/CompositeStructures.html#CompositeVector-1",
+    "location": "man/Prerequisites/CompositeStructures.html#CompositeVector-1",
     "page": "Composite structures",
     "title": "CompositeVector",
     "category": "section",
@@ -985,7 +1001,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/CompositeStructures.html#CompositeDict-1",
+    "location": "man/Prerequisites/CompositeStructures.html#CompositeDict-1",
     "page": "Composite structures",
     "title": "CompositeDict",
     "category": "section",
@@ -993,31 +1009,31 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/CompositeStructures.html#Hamiltonian.Utilities.CompositeStructures.CompositeDict",
+    "location": "man/Prerequisites/CompositeStructures.html#Hamiltonian.Prerequisites.CompositeStructures.CompositeDict",
     "page": "Composite structures",
-    "title": "Hamiltonian.Utilities.CompositeStructures.CompositeDict",
+    "title": "Hamiltonian.Prerequisites.CompositeStructures.CompositeDict",
     "category": "type",
     "text": "CompositeDict{K,V}\n\nA composite dict is a dict that is implemented by including an ordinary Dict as one of its attributes with the name :contents.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/CompositeStructures.html#Hamiltonian.Utilities.CompositeStructures.CompositeNTuple",
+    "location": "man/Prerequisites/CompositeStructures.html#Hamiltonian.Prerequisites.CompositeStructures.CompositeNTuple",
     "page": "Composite structures",
-    "title": "Hamiltonian.Utilities.CompositeStructures.CompositeNTuple",
+    "title": "Hamiltonian.Prerequisites.CompositeStructures.CompositeNTuple",
     "category": "type",
     "text": "CompositeNTuple{N,T}\n\nA composite ntuple is a ntuple that is implemented by including an ordinary NTuple as one of its attributes with the name :contents.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/CompositeStructures.html#Hamiltonian.Utilities.CompositeStructures.CompositeVector",
+    "location": "man/Prerequisites/CompositeStructures.html#Hamiltonian.Prerequisites.CompositeStructures.CompositeVector",
     "page": "Composite structures",
-    "title": "Hamiltonian.Utilities.CompositeStructures.CompositeVector",
+    "title": "Hamiltonian.Prerequisites.CompositeStructures.CompositeVector",
     "category": "type",
     "text": "CompositeVector{T}\n\nA composite vector is a vector that is implemented by including an ordinary Vector as one of its attributes with the name :contents.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/CompositeStructures.html#Manul-1",
+    "location": "man/Prerequisites/CompositeStructures.html#Manul-1",
     "page": "Composite structures",
     "title": "Manul",
     "category": "section",
@@ -1025,15 +1041,15 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Trees.html#",
+    "location": "man/Prerequisites/Trees.html#",
     "page": "Trees",
     "title": "Trees",
     "category": "page",
-    "text": "CurrentModule=Hamiltonian.Utilities.Treespush!(LOAD_PATH,\"../../../../src/\")\nusing Hamiltonian.Utilities.Trees"
+    "text": "CurrentModule=Hamiltonian.Prerequisites.Treespush!(LOAD_PATH,\"../../../../src/\")\nusing Hamiltonian.Prerequisites.Trees"
 },
 
 {
-    "location": "man/Utilities/Trees.html#Trees-1",
+    "location": "man/Prerequisites/Trees.html#Trees-1",
     "page": "Trees",
     "title": "Trees",
     "category": "section",
@@ -1041,15 +1057,15 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Trees.html#AbstractTree-1",
+    "location": "man/Prerequisites/Trees.html#AbstractTree-1",
     "page": "Trees",
     "title": "AbstractTree",
     "category": "section",
-    "text": "AbstractTree{N,D} is the abstract type for all concrete trees. By design, it has two type parameters:N: the type of the tree\'s node\nD: the type of the tree\'s dataTo fully utilize the methods designed for a tree structure, in our protocol, a concrete subtype must implement the following methods:inquiry related methods\nroot(tree::AbstractTree{N,D}) where {N,D} -> Union{N,Nothing}\nGet a tree\'s root node (nothing for empty trees)\nhaskey(tree::AbstractTree{N,D},node::N) where {N,D} -> Bool\nCheck whether a node is in a tree.\nlength(tree::AbstractTree) -> Int\nGet the number of a tree\'s nodes.\nparent(tree::AbstractTree{N,D},node::N,superparent::Union{N,Nothing}=nothing) where {N,D} -> Union{N,Nothing}\nGet the parent of a tree\'s node or return superparent when the input node is the tree\'s root.\nchildren(tree::AbstractTree{N,D},node::N) where {N,D} -> Vector{N}\nGet the children of a tree\'s node.\nstructure modification related methods\naddnode!(tree::AbstractTree{N,D},parent::Union{N,Nothing},node::N) where {N,D}\nUpdate the structure of a tree by adding a node. When the parent is nothing, the input tree must be empty and the input node becomes the tree\'s root.\ndeletenode!(tree::AbstractTree{N,D},node::N) where {N,D}\nUpdate the structure of a tree by deleting a node.\nindex related methods\ngetindex(tree::AbstractTree{N,D},node::N) where {N,D} -> D\nGet the data of a tree\'s node\nsetindex!(tree::AbstractTree{N,D},node::N,data::D) where {N,D}\nSet the data of a tree\'s node.Based on these methods, we implement several generic functions for inquiries and manipulationsinquiry for type parameters: keytype, valtype, eltype\nexpansion over nodes/data-records: keys, values, pairs\ninquiry for info of nodes: isleaf, level\ninquiry for nodes: ancestor, descendants, siblings, leaves\nmodification: push!, append!, delete!, empty!And optionally, when a subtype implement the following method,empty(tree::AbstractTree) -> typeof(tree)which constructs an empty tree of the same type with the input one, two more more methods are supported:subtree: Get a subtree starting from a node.\nmove!: Move a subtree to a new position."
+    "text": "AbstractTree{N,D} is the abstract type for all concrete trees. By design, it has two type parameters:N: the type of the tree\'s node\nD: the type of the tree\'s dataTo fully utilize the methods designed for a tree structure, in our protocol, a concrete subtype must implement the following methods:inquiry related methods\nroot(tree::AbstractTree{N,D}) where {N,D} -> Union{N,Nothing}\nGet a tree\'s root node (nothing for empty trees)\nhaskey(tree::AbstractTree{N,D},node::N) where {N,D} -> Bool\nCheck whether a node is in a tree.\nlength(tree::AbstractTree) -> Int\nGet the number of a tree\'s nodes.\nparent(tree::AbstractTree{N,D},\n       node::N,\n       superparent::Union{N,Nothing}=nothing\n       ) where {N,D} -> Union{N,Nothing}\nGet the parent of a tree\'s node or return superparent when the input node is the tree\'s root.\nchildren(tree::AbstractTree{N,D},node::N) where {N,D} -> Vector{N}\nGet the children of a tree\'s node.\nstructure modification related methods\naddnode!(tree::AbstractTree{N,D},\n         parent::Union{N,Nothing},\n         node::N\n         ) where {N,D}\nUpdate the structure of a tree by adding a node. When the parent is nothing, the input tree must be empty and the input node becomes the tree\'s root.\ndeletenode!(tree::AbstractTree{N,D},node::N) where {N,D}\nUpdate the structure of a tree by deleting a node.\nindex related methods\ngetindex(tree::AbstractTree{N,D},node::N) where {N,D} -> D\nGet the data of a tree\'s node\nsetindex!(tree::AbstractTree{N,D},node::N,data::D) where {N,D}\nSet the data of a tree\'s node.Based on these methods, we implement several generic functions for inquiries and manipulationsinquiry for type parameters: keytype, valtype, eltype\nexpansion over nodes/data-records: keys, values, pairs\ninquiry for info of nodes: isleaf, level\ninquiry for nodes: ancestor, descendants, siblings, leaves\nmodification: push!, append!, delete!, empty!And optionally, when a subtype implement the following method,empty(tree::AbstractTree) -> typeof(tree)which constructs an empty tree of the same type with the input one, two more more methods are supported:subtree: Get a subtree starting from a node.\nmove!: Move a subtree to a new position."
 },
 
 {
-    "location": "man/Utilities/Trees.html#TreeCore-and-SimpleTree-1",
+    "location": "man/Prerequisites/Trees.html#TreeCore-and-SimpleTree-1",
     "page": "Trees",
     "title": "TreeCore and SimpleTree",
     "category": "section",
@@ -1057,7 +1073,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Trees.html#TreeCore-1",
+    "location": "man/Prerequisites/Trees.html#TreeCore-1",
     "page": "Trees",
     "title": "TreeCore",
     "category": "section",
@@ -1065,7 +1081,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Trees.html#SimpleTree-1",
+    "location": "man/Prerequisites/Trees.html#SimpleTree-1",
     "page": "Trees",
     "title": "SimpleTree",
     "category": "section",
@@ -1073,159 +1089,159 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Trees.html#Hamiltonian.Utilities.Trees.treedepth",
+    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.treedepth",
     "page": "Trees",
-    "title": "Hamiltonian.Utilities.Trees.treedepth",
+    "title": "Hamiltonian.Prerequisites.Trees.treedepth",
     "category": "constant",
     "text": "treedepth\n\nIndicate that the iteration over a tree is depth-first.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Trees.html#Hamiltonian.Utilities.Trees.treewidth",
+    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.treewidth",
     "page": "Trees",
-    "title": "Hamiltonian.Utilities.Trees.treewidth",
+    "title": "Hamiltonian.Prerequisites.Trees.treewidth",
     "category": "constant",
     "text": "treewidth\n\nIndicate that the iteration over a tree is width-first.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Trees.html#Hamiltonian.Utilities.Trees.AbstractTree",
+    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.AbstractTree",
     "page": "Trees",
-    "title": "Hamiltonian.Utilities.Trees.AbstractTree",
+    "title": "Hamiltonian.Prerequisites.Trees.AbstractTree",
     "category": "type",
     "text": "AbstractTree{Node,Data}\n\nAbstract type for all concrete trees.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Trees.html#Hamiltonian.Utilities.Trees.SimpleTree",
+    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.SimpleTree",
     "page": "Trees",
-    "title": "Hamiltonian.Utilities.Trees.SimpleTree",
+    "title": "Hamiltonian.Prerequisites.Trees.SimpleTree",
     "category": "type",
     "text": "SimpleTree{N,D}() where {N,D}\n\nThe minimum tree structure that implements all the default tree methods.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Trees.html#Hamiltonian.Utilities.Trees.TreeCore",
+    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.TreeCore",
     "page": "Trees",
-    "title": "Hamiltonian.Utilities.Trees.TreeCore",
+    "title": "Hamiltonian.Prerequisites.Trees.TreeCore",
     "category": "type",
     "text": "TreeCore()\n\nThe core of a tree.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Trees.html#Hamiltonian.Utilities.Trees.@tree",
+    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.@tree",
     "page": "Trees",
-    "title": "Hamiltonian.Utilities.Trees.@tree",
+    "title": "Hamiltonian.Prerequisites.Trees.@tree",
     "category": "macro",
     "text": "@tree structdef treeparams::Union{Expr,Nothing}=nothing\n\nDecorate a \"raw\" struct to be a subtype of AbstractTree.\n\nnote: Note\nA \"raw\" struct means:\nIt has no explicit supertype;\nIt has no inner constructor;\nIt has no attribute :TREECORE.\nThe keytype and valtype can be assigned by the argument treeparams in the form {keytype,valtype}.\nWhen the formal argument names of keytype and valtype are not assigned, they can be automatically generated by the functioin gensym. For example, all of the structs after the decration by the following codes\n@tree(struct TreeWithWrongTypeParameterNames{N} info::Vector{N} end)\n@tree(struct TreeWithWrongTypeParameterNames{N} info::Vector{N} end,\n      {::String,::Int}\n      )\n@tree(struct TreeWithWrongTypeParameterNames{N} info::Vector{N} end,\n      {<:AbstractString,<:Number}\n      )\nwill have three type parameters.\nWhen the formal argument names of keytype and valtype overlap with those of the raw struct type parameters, the duplicates will be considered as the same. For example, the decorated struct SubTreeWithOverlappedParametricFields by the following code\n@tree(struct TreeWithOverlappedParametricFields{N} info::Vector{N} end,\n      {N<:AbstractString,D<:Number}\n      )\nonly has two type parameters N<:AbstractString and D<:Number, where the N in the info::Vector{N} is the same N with that in the decorated attribute TREECORE::TreeCore{N,D}.\nWhen the formal argument names of keytype and valtype have no intersection with those of the raw struct type parameters, the type parameters of the decorated struct will be just extended by keytype and valtype. For example, the decorated struct SubTreeWithParametricFields by the following code\n@tree(struct TreeWithParametricFields{T} info::Vector{T} end,\n      {N<:AbstractString,D<:Number}\n      )\nhave 3 type parameters, T, N<:AbstractString and D<:Number.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Trees.html#Hamiltonian.Utilities.Trees.addnode!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
+    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.addnode!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
     "page": "Trees",
-    "title": "Hamiltonian.Utilities.Trees.addnode!",
+    "title": "Hamiltonian.Prerequisites.Trees.addnode!",
     "category": "method",
     "text": "addnode!(tree::AbstractTree{N,D},node::N) where {N,D} -> typeof(tree)\naddnode!(tree::AbstractTree{N,D},::Nothing,node::N) where {N,D} -> typeof(tree)\naddnode!(tree::AbstractTree{N,D},parent::N,node::N) where {N,D} -> typeof(tree)\n\nUpdate the structure of a tree by adding a node. When the parent is nothing, the input tree must be empty and the input node becomes the tree\'s root.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Trees.html#Hamiltonian.Utilities.Trees.ancestor-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}, Tuple{AbstractTree{N,D},N,Int64}} where D where N",
+    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.ancestor-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}, Tuple{AbstractTree{N,D},N,Int64}} where D where N",
     "page": "Trees",
-    "title": "Hamiltonian.Utilities.Trees.ancestor",
+    "title": "Hamiltonian.Prerequisites.Trees.ancestor",
     "category": "method",
     "text": "ancestor(tree::AbstractTree{N,D},node::N,generation::Int=1) where {N,D} -> N\n\nGet the ancestor of a tree\'s node of the n-th generation.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Trees.html#Hamiltonian.Utilities.Trees.children-Tuple{Hamiltonian.Utilities.Trees.AbstractTree}",
+    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.children-Tuple{Hamiltonian.Prerequisites.Trees.AbstractTree}",
     "page": "Trees",
-    "title": "Hamiltonian.Utilities.Trees.children",
+    "title": "Hamiltonian.Prerequisites.Trees.children",
     "category": "method",
     "text": "children(tree::AbstractTree) -> Vector{keytype(tree)}\nchildren(tree::AbstractTree,::Nothing) -> Vector{keytype(tree)}\nchildren(tree::AbstractTree{N,D},node::N) where {N,D} -> Vector{N}\n\nGet the children of a tree\'s node.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Trees.html#Hamiltonian.Utilities.Trees.deletenode!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
+    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.deletenode!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
     "page": "Trees",
-    "title": "Hamiltonian.Utilities.Trees.deletenode!",
+    "title": "Hamiltonian.Prerequisites.Trees.deletenode!",
     "category": "method",
     "text": "deletenode!(tree::AbstractTree{N,D},node::N) where {N,D} -> typeof(tree)\n\nUpdate the structure of a tree by deleting a node.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Trees.html#Hamiltonian.Utilities.Trees.descendants-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}, Tuple{AbstractTree{N,D},N,Int64}} where D where N",
+    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.descendants-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}, Tuple{AbstractTree{N,D},N,Int64}} where D where N",
     "page": "Trees",
-    "title": "Hamiltonian.Utilities.Trees.descendants",
+    "title": "Hamiltonian.Prerequisites.Trees.descendants",
     "category": "method",
     "text": "descendants(tree::AbstractTree{N,D},node::N,generation::Int=1) where {N,D} -> Vector{N}\n\nGet the descendants of a tree\'s node of the n-th generation.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Trees.html#Hamiltonian.Utilities.Trees.isleaf-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
+    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.isleaf-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
     "page": "Trees",
-    "title": "Hamiltonian.Utilities.Trees.isleaf",
+    "title": "Hamiltonian.Prerequisites.Trees.isleaf",
     "category": "method",
     "text": "isleaf(tree::AbstractTree{N,D},node::N) where{N,D} -> Bool\n\nJudge whether a tree\'s node is a leaf (a node without children) or not.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Trees.html#Hamiltonian.Utilities.Trees.leaves-Tuple{Hamiltonian.Utilities.Trees.AbstractTree}",
+    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.leaves-Tuple{Hamiltonian.Prerequisites.Trees.AbstractTree}",
     "page": "Trees",
-    "title": "Hamiltonian.Utilities.Trees.leaves",
+    "title": "Hamiltonian.Prerequisites.Trees.leaves",
     "category": "method",
     "text": "leaves(tree::AbstractTree) -> Vector{keytype(tree)}\n\nGet a tree\'s leaves.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Trees.html#Hamiltonian.Utilities.Trees.level-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
+    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.level-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
     "page": "Trees",
-    "title": "Hamiltonian.Utilities.Trees.level",
+    "title": "Hamiltonian.Prerequisites.Trees.level",
     "category": "method",
     "text": "level(tree::AbstractTree{N,D},node::N) where {N,D} -> Int\n\nGet the level of tree\'s node.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Trees.html#Hamiltonian.Utilities.Trees.move!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N,N}} where D where N",
+    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.move!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N,N}} where D where N",
     "page": "Trees",
-    "title": "Hamiltonian.Utilities.Trees.move!",
+    "title": "Hamiltonian.Prerequisites.Trees.move!",
     "category": "method",
     "text": "move!(tree::AbstractTree{N,D},node::N,parent::N) where {N,D} -> typeof(tree)\n\nMove a subtree to a new position.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Trees.html#Hamiltonian.Utilities.Trees.parent-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}, Tuple{AbstractTree{N,D},N,Union{Nothing, N}}} where D where N",
+    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.parent-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}, Tuple{AbstractTree{N,D},N,Union{Nothing, N}}} where D where N",
     "page": "Trees",
-    "title": "Hamiltonian.Utilities.Trees.parent",
+    "title": "Hamiltonian.Prerequisites.Trees.parent",
     "category": "method",
     "text": "parent(tree::AbstractTree{N,D},node::N,superparent::Union{N,Nothing}=nothing) where {N,D} -> Union{N,Nothing}\n\nGet the parent of a tree\'s node. When node is the tree\'s root, return superparent.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Trees.html#Hamiltonian.Utilities.Trees.root-Tuple{Hamiltonian.Utilities.Trees.AbstractTree}",
+    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.root-Tuple{Hamiltonian.Prerequisites.Trees.AbstractTree}",
     "page": "Trees",
-    "title": "Hamiltonian.Utilities.Trees.root",
+    "title": "Hamiltonian.Prerequisites.Trees.root",
     "category": "method",
     "text": "root(tree::AbstractTree) -> Union{keytype(tree),Nothing}\n\nGet a tree\'s root node.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Trees.html#Hamiltonian.Utilities.Trees.siblings-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
+    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.siblings-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
     "page": "Trees",
-    "title": "Hamiltonian.Utilities.Trees.siblings",
+    "title": "Hamiltonian.Prerequisites.Trees.siblings",
     "category": "method",
     "text": "siblings(tree::AbstractTree{N,D},node::N) where{N,D} -> Vector{N}\n\nGet the siblings (other nodes sharing the same parent) of a tree\'s node.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Trees.html#Hamiltonian.Utilities.Trees.subtree-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
+    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.subtree-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
     "page": "Trees",
-    "title": "Hamiltonian.Utilities.Trees.subtree",
+    "title": "Hamiltonian.Prerequisites.Trees.subtree",
     "category": "method",
     "text": "subtree(tree::AbstractTree{N,D},node::N) where{N,D} -> typeof(tree)\n\nGet a subtree whose root is node.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Trees.html#Base.:==-Union{Tuple{TC}, Tuple{TC,TC}} where TC<:Hamiltonian.Utilities.Trees.TreeCore",
+    "location": "man/Prerequisites/Trees.html#Base.:==-Union{Tuple{TC}, Tuple{TC,TC}} where TC<:Hamiltonian.Prerequisites.Trees.TreeCore",
     "page": "Trees",
     "title": "Base.:==",
     "category": "method",
@@ -1233,7 +1249,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Trees.html#Base.:==-Union{Tuple{T}, Tuple{T,T}} where T<:Hamiltonian.Utilities.Trees.AbstractTree",
+    "location": "man/Prerequisites/Trees.html#Base.:==-Union{Tuple{T}, Tuple{T,T}} where T<:Hamiltonian.Prerequisites.Trees.AbstractTree",
     "page": "Trees",
     "title": "Base.:==",
     "category": "method",
@@ -1241,7 +1257,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Trees.html#Base.append!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},AbstractTree{N,D}}} where D where N",
+    "location": "man/Prerequisites/Trees.html#Base.append!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},AbstractTree{N,D}}} where D where N",
     "page": "Trees",
     "title": "Base.append!",
     "category": "method",
@@ -1249,7 +1265,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Trees.html#Base.delete!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
+    "location": "man/Prerequisites/Trees.html#Base.delete!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
     "page": "Trees",
     "title": "Base.delete!",
     "category": "method",
@@ -1257,7 +1273,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Trees.html#Base.eltype-Tuple{Hamiltonian.Utilities.Trees.AbstractTree}",
+    "location": "man/Prerequisites/Trees.html#Base.eltype-Tuple{Hamiltonian.Prerequisites.Trees.AbstractTree}",
     "page": "Trees",
     "title": "Base.eltype",
     "category": "method",
@@ -1265,7 +1281,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Trees.html#Base.empty!-Tuple{Hamiltonian.Utilities.Trees.AbstractTree}",
+    "location": "man/Prerequisites/Trees.html#Base.empty!-Tuple{Hamiltonian.Prerequisites.Trees.AbstractTree}",
     "page": "Trees",
     "title": "Base.empty!",
     "category": "method",
@@ -1273,7 +1289,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Trees.html#Base.empty-Union{Tuple{AbstractTree{N,D}}, Tuple{D}, Tuple{N}} where D where N",
+    "location": "man/Prerequisites/Trees.html#Base.empty-Union{Tuple{AbstractTree{N,D}}, Tuple{D}, Tuple{N}} where D where N",
     "page": "Trees",
     "title": "Base.empty",
     "category": "method",
@@ -1281,7 +1297,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Trees.html#Base.getindex-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
+    "location": "man/Prerequisites/Trees.html#Base.getindex-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
     "page": "Trees",
     "title": "Base.getindex",
     "category": "method",
@@ -1289,7 +1305,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Trees.html#Base.haskey-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
+    "location": "man/Prerequisites/Trees.html#Base.haskey-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
     "page": "Trees",
     "title": "Base.haskey",
     "category": "method",
@@ -1297,7 +1313,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Trees.html#Base.keys-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},TreeIteration}, Tuple{AbstractTree{N,D},TreeIteration,Union{Nothing, N}}} where D where N",
+    "location": "man/Prerequisites/Trees.html#Base.keys-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},TreeIteration}, Tuple{AbstractTree{N,D},TreeIteration,Union{Nothing, N}}} where D where N",
     "page": "Trees",
     "title": "Base.keys",
     "category": "method",
@@ -1305,7 +1321,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Trees.html#Base.keytype-Tuple{Hamiltonian.Utilities.Trees.AbstractTree}",
+    "location": "man/Prerequisites/Trees.html#Base.keytype-Tuple{Hamiltonian.Prerequisites.Trees.AbstractTree}",
     "page": "Trees",
     "title": "Base.keytype",
     "category": "method",
@@ -1313,7 +1329,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Trees.html#Base.length-Tuple{Hamiltonian.Utilities.Trees.AbstractTree}",
+    "location": "man/Prerequisites/Trees.html#Base.length-Tuple{Hamiltonian.Prerequisites.Trees.AbstractTree}",
     "page": "Trees",
     "title": "Base.length",
     "category": "method",
@@ -1321,7 +1337,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Trees.html#Base.pairs-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree,TreeIteration}, Tuple{AbstractTree,TreeIteration,Union{Nothing, N}}} where D where N",
+    "location": "man/Prerequisites/Trees.html#Base.pairs-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree,TreeIteration}, Tuple{AbstractTree,TreeIteration,Union{Nothing, N}}} where D where N",
     "page": "Trees",
     "title": "Base.pairs",
     "category": "method",
@@ -1329,7 +1345,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Trees.html#Base.push!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N,D}} where D where N",
+    "location": "man/Prerequisites/Trees.html#Base.push!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N,D}} where D where N",
     "page": "Trees",
     "title": "Base.push!",
     "category": "method",
@@ -1337,7 +1353,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Trees.html#Base.setindex!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},D,N}} where D where N",
+    "location": "man/Prerequisites/Trees.html#Base.setindex!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},D,N}} where D where N",
     "page": "Trees",
     "title": "Base.setindex!",
     "category": "method",
@@ -1345,7 +1361,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Trees.html#Base.valtype-Tuple{Hamiltonian.Utilities.Trees.AbstractTree}",
+    "location": "man/Prerequisites/Trees.html#Base.valtype-Tuple{Hamiltonian.Prerequisites.Trees.AbstractTree}",
     "page": "Trees",
     "title": "Base.valtype",
     "category": "method",
@@ -1353,7 +1369,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Trees.html#Base.values-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree,TreeIteration}, Tuple{AbstractTree,TreeIteration,Union{Nothing, N}}} where D where N",
+    "location": "man/Prerequisites/Trees.html#Base.values-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree,TreeIteration}, Tuple{AbstractTree,TreeIteration,Union{Nothing, N}}} where D where N",
     "page": "Trees",
     "title": "Base.values",
     "category": "method",
@@ -1361,7 +1377,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Trees.html#Manual-1",
+    "location": "man/Prerequisites/Trees.html#Manual-1",
     "page": "Trees",
     "title": "Manual",
     "category": "section",
@@ -1369,15 +1385,15 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/NamedVectors.html#",
+    "location": "man/Prerequisites/NamedVectors.html#",
     "page": "Named vectors",
     "title": "Named vectors",
     "category": "page",
-    "text": "CurrentModule=Hamiltonian.Utilities.NamedVectorspush!(LOAD_PATH,\"../../../../src/\")\nusing Hamiltonian.Utilities.NamedVectors"
+    "text": "CurrentModule=Hamiltonian.Prerequisites.NamedVectorspush!(LOAD_PATH,\"../../../../src/\")\nusing Hamiltonian.Prerequisites.NamedVectors"
 },
 
 {
-    "location": "man/Utilities/NamedVectors.html#Named-vectors-1",
+    "location": "man/Prerequisites/NamedVectors.html#Named-vectors-1",
     "page": "Named vectors",
     "title": "Named vectors",
     "category": "section",
@@ -1385,7 +1401,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/NamedVectors.html#AbstractNamedVector-1",
+    "location": "man/Prerequisites/NamedVectors.html#AbstractNamedVector-1",
     "page": "Named vectors",
     "title": "AbstractNamedVector",
     "category": "section",
@@ -1393,7 +1409,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/NamedVectors.html#HomoNamedVector-1",
+    "location": "man/Prerequisites/NamedVectors.html#HomoNamedVector-1",
     "page": "Named vectors",
     "title": "HomoNamedVector",
     "category": "section",
@@ -1401,39 +1417,39 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/NamedVectors.html#Hamiltonian.Utilities.NamedVectors.AbstractNamedVector",
+    "location": "man/Prerequisites/NamedVectors.html#Hamiltonian.Prerequisites.NamedVectors.AbstractNamedVector",
     "page": "Named vectors",
-    "title": "Hamiltonian.Utilities.NamedVectors.AbstractNamedVector",
+    "title": "Hamiltonian.Prerequisites.NamedVectors.AbstractNamedVector",
     "category": "type",
     "text": "AbstractNamedVector\n\nAbstract type for all named vectors.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/NamedVectors.html#Hamiltonian.Utilities.NamedVectors.HomoNamedVector",
+    "location": "man/Prerequisites/NamedVectors.html#Hamiltonian.Prerequisites.NamedVectors.HomoNamedVector",
     "page": "Named vectors",
-    "title": "Hamiltonian.Utilities.NamedVectors.HomoNamedVector",
+    "title": "Hamiltonian.Prerequisites.NamedVectors.HomoNamedVector",
     "category": "type",
     "text": "HomoNamedVector{T}\n\nAbstract type for all homogeneous named vectors.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/NamedVectors.html#Hamiltonian.Utilities.NamedVectors.@homonamedvector",
+    "location": "man/Prerequisites/NamedVectors.html#Hamiltonian.Prerequisites.NamedVectors.@homonamedvector",
     "page": "Named vectors",
-    "title": "Hamiltonian.Utilities.NamedVectors.@homonamedvector",
+    "title": "Hamiltonian.Prerequisites.NamedVectors.@homonamedvector",
     "category": "macro",
     "text": "@homonamedvector typename fieldnames dtype::Union{Expr,Symbol}=:nothing mutable::Union{Expr,Bool}=false\n\nConstruct a concrete homogeneous named vector with the type name being typename and the fieldnames specified by fieldnames, and optionally, the type parameters specified by dtype.mutable can be used as a keyword argument to determine whether the concrete type is mutable.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/NamedVectors.html#Hamiltonian.Utilities.NamedVectors.@namedvector-Tuple{Expr}",
+    "location": "man/Prerequisites/NamedVectors.html#Hamiltonian.Prerequisites.NamedVectors.@namedvector-Tuple{Expr}",
     "page": "Named vectors",
-    "title": "Hamiltonian.Utilities.NamedVectors.@namedvector",
+    "title": "Hamiltonian.Prerequisites.NamedVectors.@namedvector",
     "category": "macro",
     "text": "@namedvector structdef::Expr\n\nDecorate a \"raw\" struct to be a subtype of AbstractNamedVector. Here, \"raw\" means that the input struct has no explicit supertype and no inner constructors.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/NamedVectors.html#Base.:<-Tuple{Hamiltonian.Utilities.NamedVectors.AbstractNamedVector,Hamiltonian.Utilities.NamedVectors.AbstractNamedVector}",
+    "location": "man/Prerequisites/NamedVectors.html#Base.:<-Tuple{Hamiltonian.Prerequisites.NamedVectors.AbstractNamedVector,Hamiltonian.Prerequisites.NamedVectors.AbstractNamedVector}",
     "page": "Named vectors",
     "title": "Base.:<",
     "category": "method",
@@ -1441,7 +1457,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/NamedVectors.html#Base.:==-Tuple{Hamiltonian.Utilities.NamedVectors.AbstractNamedVector,Hamiltonian.Utilities.NamedVectors.AbstractNamedVector}",
+    "location": "man/Prerequisites/NamedVectors.html#Base.:==-Tuple{Hamiltonian.Prerequisites.NamedVectors.AbstractNamedVector,Hamiltonian.Prerequisites.NamedVectors.AbstractNamedVector}",
     "page": "Named vectors",
     "title": "Base.:==",
     "category": "method",
@@ -1449,7 +1465,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/NamedVectors.html#Base.convert-Tuple{Type{Tuple},Hamiltonian.Utilities.NamedVectors.AbstractNamedVector}",
+    "location": "man/Prerequisites/NamedVectors.html#Base.convert-Tuple{Type{Tuple},Hamiltonian.Prerequisites.NamedVectors.AbstractNamedVector}",
     "page": "Named vectors",
     "title": "Base.convert",
     "category": "method",
@@ -1457,7 +1473,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/NamedVectors.html#Base.eltype-Union{Tuple{Type{#s68} where #s68<:HomoNamedVector{T}}, Tuple{T}} where T",
+    "location": "man/Prerequisites/NamedVectors.html#Base.eltype-Union{Tuple{Type{#s68} where #s68<:HomoNamedVector{T}}, Tuple{T}} where T",
     "page": "Named vectors",
     "title": "Base.eltype",
     "category": "method",
@@ -1465,7 +1481,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/NamedVectors.html#Base.getindex-Tuple{Hamiltonian.Utilities.NamedVectors.AbstractNamedVector,Int64}",
+    "location": "man/Prerequisites/NamedVectors.html#Base.getindex-Tuple{Hamiltonian.Prerequisites.NamedVectors.AbstractNamedVector,Int64}",
     "page": "Named vectors",
     "title": "Base.getindex",
     "category": "method",
@@ -1473,7 +1489,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/NamedVectors.html#Base.hash-Tuple{Hamiltonian.Utilities.NamedVectors.AbstractNamedVector,UInt64}",
+    "location": "man/Prerequisites/NamedVectors.html#Base.hash-Tuple{Hamiltonian.Prerequisites.NamedVectors.AbstractNamedVector,UInt64}",
     "page": "Named vectors",
     "title": "Base.hash",
     "category": "method",
@@ -1481,7 +1497,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/NamedVectors.html#Base.iterate",
+    "location": "man/Prerequisites/NamedVectors.html#Base.iterate",
     "page": "Named vectors",
     "title": "Base.iterate",
     "category": "function",
@@ -1489,7 +1505,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/NamedVectors.html#Base.keys-Tuple{Hamiltonian.Utilities.NamedVectors.AbstractNamedVector}",
+    "location": "man/Prerequisites/NamedVectors.html#Base.keys-Tuple{Hamiltonian.Prerequisites.NamedVectors.AbstractNamedVector}",
     "page": "Named vectors",
     "title": "Base.keys",
     "category": "method",
@@ -1497,7 +1513,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/NamedVectors.html#Base.length-Union{Tuple{Type{NV}}, Tuple{NV}} where NV<:Hamiltonian.Utilities.NamedVectors.AbstractNamedVector",
+    "location": "man/Prerequisites/NamedVectors.html#Base.length-Union{Tuple{Type{NV}}, Tuple{NV}} where NV<:Hamiltonian.Prerequisites.NamedVectors.AbstractNamedVector",
     "page": "Named vectors",
     "title": "Base.length",
     "category": "method",
@@ -1505,7 +1521,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/NamedVectors.html#Base.map-Union{Tuple{NV}, Tuple{Any,Vararg{NV,N} where N}} where NV<:Hamiltonian.Utilities.NamedVectors.AbstractNamedVector",
+    "location": "man/Prerequisites/NamedVectors.html#Base.map-Union{Tuple{NV}, Tuple{Any,Vararg{NV,N} where N}} where NV<:Hamiltonian.Prerequisites.NamedVectors.AbstractNamedVector",
     "page": "Named vectors",
     "title": "Base.map",
     "category": "method",
@@ -1513,7 +1529,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/NamedVectors.html#Base.pairs-Tuple{Hamiltonian.Utilities.NamedVectors.AbstractNamedVector}",
+    "location": "man/Prerequisites/NamedVectors.html#Base.pairs-Tuple{Hamiltonian.Prerequisites.NamedVectors.AbstractNamedVector}",
     "page": "Named vectors",
     "title": "Base.pairs",
     "category": "method",
@@ -1521,7 +1537,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/NamedVectors.html#Base.replace-Tuple{Hamiltonian.Utilities.NamedVectors.AbstractNamedVector}",
+    "location": "man/Prerequisites/NamedVectors.html#Base.replace-Tuple{Hamiltonian.Prerequisites.NamedVectors.AbstractNamedVector}",
     "page": "Named vectors",
     "title": "Base.replace",
     "category": "method",
@@ -1529,7 +1545,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/NamedVectors.html#Base.setindex!-Tuple{Hamiltonian.Utilities.NamedVectors.AbstractNamedVector,Any,Int64}",
+    "location": "man/Prerequisites/NamedVectors.html#Base.setindex!-Tuple{Hamiltonian.Prerequisites.NamedVectors.AbstractNamedVector,Any,Int64}",
     "page": "Named vectors",
     "title": "Base.setindex!",
     "category": "method",
@@ -1537,7 +1553,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/NamedVectors.html#Base.show-Tuple{IO,Hamiltonian.Utilities.NamedVectors.AbstractNamedVector}",
+    "location": "man/Prerequisites/NamedVectors.html#Base.show-Tuple{IO,Hamiltonian.Prerequisites.NamedVectors.AbstractNamedVector}",
     "page": "Named vectors",
     "title": "Base.show",
     "category": "method",
@@ -1545,7 +1561,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/NamedVectors.html#Base.values-Tuple{Hamiltonian.Utilities.NamedVectors.AbstractNamedVector}",
+    "location": "man/Prerequisites/NamedVectors.html#Base.values-Tuple{Hamiltonian.Prerequisites.NamedVectors.AbstractNamedVector}",
     "page": "Named vectors",
     "title": "Base.values",
     "category": "method",
@@ -1553,7 +1569,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/NamedVectors.html#Base.zero-Union{Tuple{Type{NV}}, Tuple{NV}} where NV<:Hamiltonian.Utilities.NamedVectors.AbstractNamedVector",
+    "location": "man/Prerequisites/NamedVectors.html#Base.zero-Union{Tuple{Type{NV}}, Tuple{NV}} where NV<:Hamiltonian.Prerequisites.NamedVectors.AbstractNamedVector",
     "page": "Named vectors",
     "title": "Base.zero",
     "category": "method",
@@ -1561,7 +1577,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/NamedVectors.html#Manual-1",
+    "location": "man/Prerequisites/NamedVectors.html#Manual-1",
     "page": "Named vectors",
     "title": "Manual",
     "category": "section",
@@ -1569,15 +1585,31 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Combinatorics.html#",
-    "page": "Combinatorics",
-    "title": "Combinatorics",
+    "location": "man/Mathematics/Introduction.html#",
+    "page": "Introduction",
+    "title": "Introduction",
     "category": "page",
-    "text": "CurrentModule=Hamiltonian.Utilities.Combinatorics"
+    "text": "CurrentModule=Hamiltonian.Mathematics"
 },
 
 {
-    "location": "man/Utilities/Combinatorics.html#Combinatorics-1",
+    "location": "man/Mathematics/Introduction.html#Introduction-1",
+    "page": "Introduction",
+    "title": "Introduction",
+    "category": "section",
+    "text": "This module contains the mathematical prerequisites of the Hamiltonian package.Pages=[\n    \"Combinatorics.md\",\n    \"VectorSpaces.md\",\n    \"AlgebraOverFields.md\",\n    \"QuantumNumbers.md\",\n    ]\nDepth=2"
+},
+
+{
+    "location": "man/Mathematics/Combinatorics.html#",
+    "page": "Combinatorics",
+    "title": "Combinatorics",
+    "category": "page",
+    "text": "CurrentModule=Hamiltonian.Mathematics.Combinatorics"
+},
+
+{
+    "location": "man/Mathematics/Combinatorics.html#Combinatorics-1",
     "page": "Combinatorics",
     "title": "Combinatorics",
     "category": "section",
@@ -1585,7 +1617,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Combinatorics.html#AbstractCombinatorics-1",
+    "location": "man/Mathematics/Combinatorics.html#AbstractCombinatorics-1",
     "page": "Combinatorics",
     "title": "AbstractCombinatorics",
     "category": "section",
@@ -1593,7 +1625,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Combinatorics.html#Combinations-and-DulCombinations-1",
+    "location": "man/Mathematics/Combinatorics.html#Combinations-and-DulCombinations-1",
     "page": "Combinatorics",
     "title": "Combinations and DulCombinations",
     "category": "section",
@@ -1601,7 +1633,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Combinatorics.html#Permutations-and-DulPermutations-1",
+    "location": "man/Mathematics/Combinatorics.html#Permutations-and-DulPermutations-1",
     "page": "Combinatorics",
     "title": "Permutations and DulPermutations",
     "category": "section",
@@ -1609,47 +1641,47 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/Combinatorics.html#Hamiltonian.Utilities.Combinatorics.AbstractCombinatorics",
+    "location": "man/Mathematics/Combinatorics.html#Hamiltonian.Mathematics.Combinatorics.AbstractCombinatorics",
     "page": "Combinatorics",
-    "title": "Hamiltonian.Utilities.Combinatorics.AbstractCombinatorics",
+    "title": "Hamiltonian.Mathematics.Combinatorics.AbstractCombinatorics",
     "category": "type",
     "text": "AbstractCombinatorics{M,C}\n\nAbstract combinatoric algorithms.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Combinatorics.html#Hamiltonian.Utilities.Combinatorics.Combinations",
+    "location": "man/Mathematics/Combinatorics.html#Hamiltonian.Mathematics.Combinatorics.Combinations",
     "page": "Combinatorics",
-    "title": "Hamiltonian.Utilities.Combinatorics.Combinations",
+    "title": "Hamiltonian.Mathematics.Combinatorics.Combinations",
     "category": "type",
     "text": "Combinations{M}(contents::C) where {M,C}\n\nCombinations of M elements from contents. Duplicates are not allowed.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Combinatorics.html#Hamiltonian.Utilities.Combinatorics.DulCombinations",
+    "location": "man/Mathematics/Combinatorics.html#Hamiltonian.Mathematics.Combinatorics.DulCombinations",
     "page": "Combinatorics",
-    "title": "Hamiltonian.Utilities.Combinatorics.DulCombinations",
+    "title": "Hamiltonian.Mathematics.Combinatorics.DulCombinations",
     "category": "type",
     "text": "DulCombinations{M}(contents::C) where {M,C}\n\nCombinations of M elements from contents. Duplicates are allowed.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Combinatorics.html#Hamiltonian.Utilities.Combinatorics.DulPermutations",
+    "location": "man/Mathematics/Combinatorics.html#Hamiltonian.Mathematics.Combinatorics.DulPermutations",
     "page": "Combinatorics",
-    "title": "Hamiltonian.Utilities.Combinatorics.DulPermutations",
+    "title": "Hamiltonian.Mathematics.Combinatorics.DulPermutations",
     "category": "type",
     "text": "DulPermutations{M}(contents::C) where {M,C}\n\nPermutations of M elements from contents. Duplicates are not allowed.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Combinatorics.html#Hamiltonian.Utilities.Combinatorics.Permutations",
+    "location": "man/Mathematics/Combinatorics.html#Hamiltonian.Mathematics.Combinatorics.Permutations",
     "page": "Combinatorics",
-    "title": "Hamiltonian.Utilities.Combinatorics.Permutations",
+    "title": "Hamiltonian.Mathematics.Combinatorics.Permutations",
     "category": "type",
     "text": "Permutations{M}(contents::C) where {M,C}\n\nPermutations of M elements from contents. Duplicates are allowed.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/Combinatorics.html#Manul-1",
+    "location": "man/Mathematics/Combinatorics.html#Manul-1",
     "page": "Combinatorics",
     "title": "Manul",
     "category": "section",
@@ -1657,15 +1689,199 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/AlgebraOverFields.html#",
-    "page": "Algebra over fields",
-    "title": "Algebra over fields",
+    "location": "man/Mathematics/VectorSpaces.html#",
+    "page": "Vector spaces",
+    "title": "Vector spaces",
     "category": "page",
-    "text": "CurrentModule=Hamiltonian.Utilities.AlgebraOverFieldspush!(LOAD_PATH,\"../../../../src/\")\nusing Hamiltonian.Utilities.AlgebraOverFields"
+    "text": "CurrentModule=Hamiltonian.Mathematics.VectorSpaces"
 },
 
 {
-    "location": "man/Utilities/AlgebraOverFields.html#Algebra-over-fields-1",
+    "location": "man/Mathematics/VectorSpaces.html#Vector-spaces-1",
+    "page": "Vector spaces",
+    "title": "Vector spaces",
+    "category": "section",
+    "text": "A vector space is a linear space, in which the addition of vectors and multiplication of a vector by a scalar are defined.Vector spaces are frequently encountered in physics, e.g. the Hilbert space in quantum mechanics. In this submodule, we only implement those with finite dimensions. We want to remark that in our implementation, a vector space is a subtype of an abstract vector, therefore, the bases always possess a order, which means, two vector spaces are not considered to be equal to each other even if their corresponding actual mathmatical spaces are the same but the the orders of the bases are different."
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#AbstractVectorSpace-1",
+    "page": "Vector spaces",
+    "title": "AbstractVectorSpace",
+    "category": "section",
+    "text": "AbstractVectorSpace{B} is the abstaction of a vector space, which has only one type parameter:B<:Any: the type of the bases of the vector spaceBasically, a subtype should implement the following 3 methods:dimension(vs::AbstractVectorSpace) -> Int\nGet the dimension of a vector space\nBase.getindex(vs::AbstractVectorSpace{B},i::Int)  where B -> B\nGet the ith basis of a vector space\nBase.searchsortedfirst(vs::AbstractVectorSpace{B},basis::B) where B -> Int\nSearch the index of a basis in a vector spaceHowever, we provide several interfaces, including type traits and methods to deal with common situations:A vector space whose bases are stored in a table under the attribute name :table can be ascribed to the HasTable trait and the TableSorted trait. Specifically, the first trait must be implemented as\nHasTable(::Type{SubType})=HasTable(true)\nWhile, the second should be implemented as\nTableSorted(::Type{SubType})=TableSorted(false)\nif the table is unsorted, and as\nTableSorted(::Type{SubType})=TableSorted(true)\nif the table is sorted.\nA vector space whose bases may be represented by a multiindex (Cartesian index) can be ascribed to the traits IsMultiIndexable and MultiIndexOrderStyle. Specifically, the first trait must be implemented as\nMultiIndexOrderStyle(::Type{SubType})=MultiIndexOrderStyle(\'C\')\nWhile, the second shoule be implemented as\nMultiIndexOrderStyle(::Type{SubType})=MultiIndexOrderStyle(\'C\')\nif the order style of the multiindex is C/C++ like, and as\nMultiIndexOrderStyle(::Type{SubType})=MultiIndexOrderStyle(\'F\')\nif the order style is Fortran like. Furthermore, it should implement the following methods\nrank(::Type{SubType}) -> Int\nGet the rank of a multiindexable vector space.\ndims(vs::SubType) -> NTuple{vs|>typeof|>rank,Int}\nGet the dimensions along each axes of a multiindexable vector space.\ninds(basis,vs::SubType) ->  NTuple{vs|>typeof|>rank,Int}\nGet the Cartesian index representation of a basis in a multiindexable vector space.\neltype(SubType).name.wrapper(index::NTuple{N,Int},vs::SubType)\nConstruct a basis from a tuple of integers and a multiindexable vector space.\nNote that a multiindexable vector space can also have a sorted or unsorted table. But then the trait MultiIndexOrderStyle takes no effects and the sequences of its bases will be completely determined by its attribute :table.If the type taits and methods are defined properly as stated above, the dimension, getindex and searchsortedfirst methods get default implementations. No need to worry about them any more.Other features includecomparison: == and isequal\niteration: iterate\ninquiry: size, findfirst and in"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#DirectVectorSpace-1",
+    "page": "Vector spaces",
+    "title": "DirectVectorSpace",
+    "category": "section",
+    "text": "DirectVectorSpace{S,B,N} is the simplest vector space, whose bases are stored in the attribute :table as an ntuple.The :table attribute can be sorted or unsorted, which is determined by the type parameter S, with \'T\' for sorted and \'F\' for unsorted."
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#AbstractOrderedIndices-1",
+    "page": "Vector spaces",
+    "title": "AbstractOrderedIndices",
+    "category": "section",
+    "text": "AbstractOrderedIndices{N} defines a simplest class of multiindexable vector spaces, whose bases are just tuples of integers.This class of vector spaces must have the following attribute: dims::NTuple{N,Int}: the dimesnions of the Cartesian indices along all axes"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#DirectOrderedIndices-1",
+    "page": "Vector spaces",
+    "title": "DirectOrderedIndices",
+    "category": "section",
+    "text": "DirectOrderedIndices{M,N} is the direct ordered Cartesian indices.It is worth noting thatIt can be C/C++ ordered or Fortran ordered depending on the first type parameter M, with \'C\' for the former and \'F\' the latter.\nFor its bases (Cartesian indices), there is no restriction except that they should be in the proper range defined by its dims."
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#TabledOrderedIndices-1",
+    "page": "Vector spaces",
+    "title": "TabledOrderedIndices",
+    "category": "section",
+    "text": "TabledOrderedIndices{S,N} defines the tabled ordered Cartesian indices.Compared to DirectOrderedIndices, the bases of this kind of vector spaces are stored in the attribute :table, which must be a vector of tuple of integers. The :table attribute can be sorted or unsorted, which is determined by the type parameter S, with \'T\' for sorted and \'F\' for unsorted. This type suits the situations when the Cartesian indices are restricted by extra conditions except that propoesed by the attribute :dims."
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Mathematics.VectorSpaces.AbstractOrderedIndices",
+    "page": "Vector spaces",
+    "title": "Hamiltonian.Mathematics.VectorSpaces.AbstractOrderedIndices",
+    "category": "type",
+    "text": "AbstractOrderedIndices{N} <: AbstractVectorSpace{NTuple{N,Int}}\n\nA simplest class of multiindexable vector spaces, whose bases are just tuples of integers.\n\nThis class of vector spaces must have the following attribute: dims::NTuple{N,Int}: the dimesnions of the Cartesian indices along all axes\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Mathematics.VectorSpaces.AbstractVectorSpace",
+    "page": "Vector spaces",
+    "title": "Hamiltonian.Mathematics.VectorSpaces.AbstractVectorSpace",
+    "category": "type",
+    "text": "AbstractVectorSpace{B} <: AbstractVector{B}\n\nAbstract vector space.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Mathematics.VectorSpaces.DirectOrderedIndices",
+    "page": "Vector spaces",
+    "title": "Hamiltonian.Mathematics.VectorSpaces.DirectOrderedIndices",
+    "category": "type",
+    "text": "DirectOrderedIndices{M}(dims::NTuple{N,Int}) where {M,N}\n\nDirect ordered Cartesian indices.\n\nnote: Note\nIt can be C/C++ ordered or Fortran ordered depending on the first type parameter M, with \'C\' for the former and \'F\' the latter.\nFor its bases (Cartesian indices), there is no restriction except that they should be in the proper range defined by its dims.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Mathematics.VectorSpaces.DirectVectorSpace",
+    "page": "Vector spaces",
+    "title": "Hamiltonian.Mathematics.VectorSpaces.DirectVectorSpace",
+    "category": "type",
+    "text": "DirectVectorSpace{S}(table::NTuple{N,B}) where {S,B,N}\nDirectVectorSpace{S}(table...) where S\n\nSimplest vector space, whose bases are stored in the attribute :table as an ntuple.\n\nThe :table attribute can be sorted or unsorted, which is determined by the type parameter S, with \'T\' for sorted and \'F\' for unsorted.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Mathematics.VectorSpaces.HasTable",
+    "page": "Vector spaces",
+    "title": "Hamiltonian.Mathematics.VectorSpaces.HasTable",
+    "category": "type",
+    "text": "HasTable(B::Bool)\nHasTable(::Type{<:AbstractVectorSpace})\n\nTrait of whether a subtype of AbstractVectorSpace has the attribute :table.\n\nOnly two instances are allowed, the first of which is the default for a subtype:\n\nHasTable(false): indication of not having the attribute :table\nHasTable(true): indication of having the attribute :table\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Mathematics.VectorSpaces.IsMultiIndexable",
+    "page": "Vector spaces",
+    "title": "Hamiltonian.Mathematics.VectorSpaces.IsMultiIndexable",
+    "category": "type",
+    "text": "IsMultiIndexable(B::Bool)\nIsMultiIndexable(::Type{<:AbstractVectorSpace})\n\nTrait of whether the bases of a subtype of AbstractVectorSpace can be represented by multiindices (Cartesian indices).\n\nOnly two instances are allowed, the first of which is the default for a subtype:\n\nIsMultiIndexable(false): indication of irrepresentability by Cartesian indices\nIsMultiIndexable(true): indication of representability by Cartesian indices\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Mathematics.VectorSpaces.MultiIndexOrderStyle",
+    "page": "Vector spaces",
+    "title": "Hamiltonian.Mathematics.VectorSpaces.MultiIndexOrderStyle",
+    "category": "type",
+    "text": "MultiIndexOrderStyle(M::Char)\nMultiIndexOrderStyle(::Type{<:AbstractVectorSpace})\n\nTrait of the order style of the Cartesian-index representation of the bases of a subtype of AbstractVectorSpace.\n\nOnly two instances are allowed, the first of which is the default for a subtype:\n\nMultiIndexOrderStyle(C): indication of C/C++ order style\nMultiIndexOrderStyle(F): indication of Fortran order style\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Mathematics.VectorSpaces.TableSorted",
+    "page": "Vector spaces",
+    "title": "Hamiltonian.Mathematics.VectorSpaces.TableSorted",
+    "category": "type",
+    "text": "TableSorted(B::Bool)\nTableSorted(::Type{<:AbstractVectorSpace})\n\nTrait of whether the attribute :table of a subtype of AbstractVectorSpace is sorted.\n\nOnly two instances are allowed, the first of which is the default for a subtype:\n\nTableSorted(false): indication of unsorted attribute :table\nTableSorted(true): indication of sorted attribute :table\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Mathematics.VectorSpaces.TabledOrderedIndices",
+    "page": "Vector spaces",
+    "title": "Hamiltonian.Mathematics.VectorSpaces.TabledOrderedIndices",
+    "category": "type",
+    "text": "TabledOrderedIndices{S}(dims::NTuple{N,Int},table::Vector{NTuple{N,Int}}) where {S,N}\nTabledOrderedIndices{N}(::Type{M},len::Int) where {N,M<:AbstractCombinatorics}\n\nTabled ordered Cartesian indices.\n\nCompared to DirectOrderedIndices, the bases of this kind of vector spaces are stored in the attribute :table, which must be a vector of tuple of integers. The :table attribute can be sorted or unsorted, which is determined by the type parameter S, with \'T\' for sorted and \'F\' for unsorted. This type suits the situations when the Cartesian indices are restricted by extra conditions except that propoesed by the attribute :dims.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Prerequisites.Interfaces.:⊕-Union{Tuple{B}, Tuple{B,B}} where B",
+    "page": "Vector spaces",
+    "title": "Hamiltonian.Prerequisites.Interfaces.:⊕",
+    "category": "method",
+    "text": "⊕(basis1::B,basis2::B) where B\n⊕(basis::B,vs::DirectVectorSpace{<:Any,B}) where B\n⊕(vs::DirectVectorSpace{<:Any,B},basis::B) where B\n⊕(vs1::DirectVectorSpace{<:Any,B},vs2::DirectVectorSpace{<:Any,B}) where B\n\nGet the direct sum between bases or direct vector spaces.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Prerequisites.Interfaces.dimension-Tuple{Hamiltonian.Mathematics.VectorSpaces.AbstractVectorSpace}",
+    "page": "Vector spaces",
+    "title": "Hamiltonian.Prerequisites.Interfaces.dimension",
+    "category": "method",
+    "text": "dimension(vs::AbstractVectorSpace)\n\nThe dimension of a vector space.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Base.Sort.searchsortedfirst-Union{Tuple{B}, Tuple{AbstractVectorSpace{B},B}} where B",
+    "page": "Vector spaces",
+    "title": "Base.Sort.searchsortedfirst",
+    "category": "method",
+    "text": "searchsortedfirst(vs::AbstractVectorSpace{B},basis::B) where B -> Int\nsearchsortedfirst(vs,basis) -> Int\n\nSearch the index of a basis in a vector space.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Base.findfirst-Union{Tuple{B}, Tuple{B,AbstractVectorSpace{B}}} where B",
+    "page": "Vector spaces",
+    "title": "Base.findfirst",
+    "category": "method",
+    "text": "findfirst(basis::B,vs::AbstractVectorSpace{B}) where B -> Int\nfindfirst(bases,vs::AbstractVectorSpace) -> NTuple{length(bases),Int}\n\nGet the index of a basis or the indices of a couple of bases in a vector space.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Base.getindex-Tuple{Hamiltonian.Mathematics.VectorSpaces.AbstractVectorSpace,Int64}",
+    "page": "Vector spaces",
+    "title": "Base.getindex",
+    "category": "method",
+    "text": "getindex(vs::AbstractVectorSpace,i::Int)\n\nGet the ith basis of a vector space by the [] operator.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Base.in-Union{Tuple{B}, Tuple{B,AbstractVectorSpace{B}}} where B",
+    "page": "Vector spaces",
+    "title": "Base.in",
+    "category": "method",
+    "text": "in(basis::B,vs::AbstractVectorSpace{B}) where B\n\nJudge whether a basis belongs to a vector space.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Manul-1",
+    "page": "Vector spaces",
+    "title": "Manul",
+    "category": "section",
+    "text": "Modules=[VectorSpaces]\nOrder=  [:module,:constant,:type,:macro,:function]"
+},
+
+{
+    "location": "man/Mathematics/AlgebraOverFields.html#",
+    "page": "Algebra over fields",
+    "title": "Algebra over fields",
+    "category": "page",
+    "text": "CurrentModule=Hamiltonian.Mathematics.AlgebraOverFieldspush!(LOAD_PATH,\"../../../../src/\")\nusing Hamiltonian.Mathematics.AlgebraOverFields"
+},
+
+{
+    "location": "man/Mathematics/AlgebraOverFields.html#Algebra-over-fields-1",
     "page": "Algebra over fields",
     "title": "Algebra over fields",
     "category": "section",
@@ -1673,7 +1889,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/AlgebraOverFields.html#ID-1",
+    "location": "man/Mathematics/AlgebraOverFields.html#ID-1",
     "page": "Algebra over fields",
     "title": "ID",
     "category": "section",
@@ -1681,7 +1897,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/AlgebraOverFields.html#Element-and-Elements-1",
+    "location": "man/Mathematics/AlgebraOverFields.html#Element-and-Elements-1",
     "page": "Algebra over fields",
     "title": "Element and Elements",
     "category": "section",
@@ -1689,95 +1905,95 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/AlgebraOverFields.html#Hamiltonian.Utilities.AlgebraOverFields.Element",
+    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Mathematics.AlgebraOverFields.Element",
     "page": "Algebra over fields",
-    "title": "Hamiltonian.Utilities.AlgebraOverFields.Element",
+    "title": "Hamiltonian.Mathematics.AlgebraOverFields.Element",
     "category": "type",
     "text": "Element{V<:Number,I<:ID}\n\nAn element of an algebra over a field.\n\nThe first and second attributes of an element must be\n\nvalue::Nuber: the coefficient of the element\nid::ID: the id of the element\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/AlgebraOverFields.html#Hamiltonian.Utilities.AlgebraOverFields.Elements",
+    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Mathematics.AlgebraOverFields.Elements",
     "page": "Algebra over fields",
-    "title": "Hamiltonian.Utilities.AlgebraOverFields.Elements",
+    "title": "Hamiltonian.Mathematics.AlgebraOverFields.Elements",
     "category": "type",
     "text": "Elements{I<:ID,M<:Element} <: AbstractDict{I,M}\n\nAn set of elements of an algebra over a field.\n\nAlias for Dict{I<:ID,M<:Element}. Similar iterms are automatically merged thanks to the id system.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/AlgebraOverFields.html#Hamiltonian.Utilities.AlgebraOverFields.Elements-Tuple{Any}",
+    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Mathematics.AlgebraOverFields.Elements-Tuple{Any}",
     "page": "Algebra over fields",
-    "title": "Hamiltonian.Utilities.AlgebraOverFields.Elements",
+    "title": "Hamiltonian.Mathematics.AlgebraOverFields.Elements",
     "category": "method",
     "text": "Elements(ms)\nElements(ms::Pair{I,M}...) where {I<:ID,M<:Element}\nElements(ms::Element...)\n\nGet the set of elements with similar items merged.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/AlgebraOverFields.html#Hamiltonian.Utilities.AlgebraOverFields.ID",
+    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Mathematics.AlgebraOverFields.ID",
     "page": "Algebra over fields",
-    "title": "Hamiltonian.Utilities.AlgebraOverFields.ID",
+    "title": "Hamiltonian.Mathematics.AlgebraOverFields.ID",
     "category": "type",
     "text": "ID(ids::NTuple{N,SimpleID}) where N\nID(ids::SimpleID...)\nID(::Type{SID},attrs::Vararg{NTuple{N},M}) where {SID<:SimpleID,N,M}\n\nThe id system of an algebra over a field.\n\nUsually, a simple id corresponds to a single generator of the algebra while an id corresponds to an element of the algebra.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/AlgebraOverFields.html#Hamiltonian.Utilities.AlgebraOverFields.SimpleID",
+    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Mathematics.AlgebraOverFields.SimpleID",
     "page": "Algebra over fields",
-    "title": "Hamiltonian.Utilities.AlgebraOverFields.SimpleID",
+    "title": "Hamiltonian.Mathematics.AlgebraOverFields.SimpleID",
     "category": "type",
     "text": "SimpleID <: AbstractNamedVector\n\nA simple id is the building block of the id system of an algebra over a field.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/AlgebraOverFields.html#Hamiltonian.Utilities.AlgebraOverFields.idtype-Union{Tuple{Type{#s68} where #s68<:(Element{V,I,N} where N)}, Tuple{I}, Tuple{V}} where I where V",
+    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Mathematics.AlgebraOverFields.idtype-Union{Tuple{Type{#s68} where #s68<:(Element{V,I,N} where N)}, Tuple{I}, Tuple{V}} where I where V",
     "page": "Algebra over fields",
-    "title": "Hamiltonian.Utilities.AlgebraOverFields.idtype",
+    "title": "Hamiltonian.Mathematics.AlgebraOverFields.idtype",
     "category": "method",
     "text": "idtype(::Type{<:Element{V,I}}) where {V,I}\nidtype(m::Element)\n\nThe type of the id of an element.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/AlgebraOverFields.html#Hamiltonian.Utilities.Interfaces.:⊗-Tuple{Hamiltonian.Utilities.AlgebraOverFields.SimpleID,Hamiltonian.Utilities.AlgebraOverFields.SimpleID}",
+    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Prerequisites.Interfaces.:⊗-Tuple{Hamiltonian.Mathematics.AlgebraOverFields.SimpleID,Hamiltonian.Mathematics.AlgebraOverFields.SimpleID}",
     "page": "Algebra over fields",
-    "title": "Hamiltonian.Utilities.Interfaces.:⊗",
+    "title": "Hamiltonian.Prerequisites.Interfaces.:⊗",
     "category": "method",
     "text": "⊗(sid1::SimpleID,sid2::SimpleID) -> ID\n⊗(sid::SimpleID,cid::ID) -> ID\n⊗(cid::ID,sid::SimpleID) -> ID\n⊗(cid1::ID,cid2::ID) -> ID\n\nGet the direct product of the id system.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/AlgebraOverFields.html#Hamiltonian.Utilities.Interfaces.add!-Tuple{Dict{I,M} where M<:Hamiltonian.Utilities.AlgebraOverFields.Element where I<:Hamiltonian.Utilities.AlgebraOverFields.ID}",
+    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Prerequisites.Interfaces.add!-Tuple{Dict{I,M} where M<:Hamiltonian.Mathematics.AlgebraOverFields.Element where I<:Hamiltonian.Mathematics.AlgebraOverFields.ID}",
     "page": "Algebra over fields",
-    "title": "Hamiltonian.Utilities.Interfaces.add!",
+    "title": "Hamiltonian.Prerequisites.Interfaces.add!",
     "category": "method",
     "text": "add!(ms::Elements) -> typeof(ms)\nadd!(ms::Elements,m::Element) -> typeof(ms)\nadd!(ms::Elements,mms::Elements) -> typeof(ms)\n\nGet the inplace addition of elements to a set.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/AlgebraOverFields.html#Hamiltonian.Utilities.Interfaces.rank-Union{Tuple{Type{#s68} where #s68<:Element{V,I,N}}, Tuple{N}, Tuple{I}, Tuple{V}} where N where I where V",
+    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Prerequisites.Interfaces.rank-Union{Tuple{Type{#s68} where #s68<:Element{V,I,N}}, Tuple{N}, Tuple{I}, Tuple{V}} where N where I where V",
     "page": "Algebra over fields",
-    "title": "Hamiltonian.Utilities.Interfaces.rank",
+    "title": "Hamiltonian.Prerequisites.Interfaces.rank",
     "category": "method",
     "text": "rank(::Type{<:Element{V,I,N}}) where {V,I,N} -> Int\nrank(m::Element) -> Int\n\nGet the rank of an element.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/AlgebraOverFields.html#Hamiltonian.Utilities.Interfaces.rank-Union{Tuple{Type{#s68} where #s68<:ID{N,I}}, Tuple{I}, Tuple{N}} where I where N",
+    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Prerequisites.Interfaces.rank-Union{Tuple{Type{#s68} where #s68<:ID{N,I}}, Tuple{I}, Tuple{N}} where I where N",
     "page": "Algebra over fields",
-    "title": "Hamiltonian.Utilities.Interfaces.rank",
+    "title": "Hamiltonian.Prerequisites.Interfaces.rank",
     "category": "method",
     "text": "rank(::Type{<:ID{N,I}}) where {N,I} -> Int\nrank(id::ID) -> Int\n\nGet the rank of a composite id.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/AlgebraOverFields.html#Hamiltonian.Utilities.Interfaces.sub!-Tuple{Dict{I,M} where M<:Hamiltonian.Utilities.AlgebraOverFields.Element where I<:Hamiltonian.Utilities.AlgebraOverFields.ID}",
+    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Prerequisites.Interfaces.sub!-Tuple{Dict{I,M} where M<:Hamiltonian.Mathematics.AlgebraOverFields.Element where I<:Hamiltonian.Mathematics.AlgebraOverFields.ID}",
     "page": "Algebra over fields",
-    "title": "Hamiltonian.Utilities.Interfaces.sub!",
+    "title": "Hamiltonian.Prerequisites.Interfaces.sub!",
     "category": "method",
     "text": "sub!(ms::Elements) -> typeof(ms) -> typeof(ms)\nsub!(ms::Elements,m::Element) -> typeof(ms)\nsub!(ms::Elements,mms::Elements) -> typeof(ms)\n\nGet the inplace subtraction of elements from a set.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/AlgebraOverFields.html#Base.:*-Tuple{Number,Hamiltonian.Utilities.AlgebraOverFields.Element}",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.:*-Tuple{Number,Hamiltonian.Mathematics.AlgebraOverFields.Element}",
     "page": "Algebra over fields",
     "title": "Base.:*",
     "category": "method",
@@ -1785,7 +2001,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/AlgebraOverFields.html#Base.:+-Tuple{Hamiltonian.Utilities.AlgebraOverFields.Element}",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.:+-Tuple{Hamiltonian.Mathematics.AlgebraOverFields.Element}",
     "page": "Algebra over fields",
     "title": "Base.:+",
     "category": "method",
@@ -1793,7 +2009,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/AlgebraOverFields.html#Base.:--Tuple{Hamiltonian.Utilities.AlgebraOverFields.Element}",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.:--Tuple{Hamiltonian.Mathematics.AlgebraOverFields.Element}",
     "page": "Algebra over fields",
     "title": "Base.:-",
     "category": "method",
@@ -1801,7 +2017,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/AlgebraOverFields.html#Base.:/-Tuple{Hamiltonian.Utilities.AlgebraOverFields.Element,Number}",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.:/-Tuple{Hamiltonian.Mathematics.AlgebraOverFields.Element,Number}",
     "page": "Algebra over fields",
     "title": "Base.:/",
     "category": "method",
@@ -1809,7 +2025,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/AlgebraOverFields.html#Base.:==-Union{Tuple{M}, Tuple{M,M}} where M<:Hamiltonian.Utilities.AlgebraOverFields.Element",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.:==-Union{Tuple{M}, Tuple{M,M}} where M<:Hamiltonian.Mathematics.AlgebraOverFields.Element",
     "page": "Algebra over fields",
     "title": "Base.:==",
     "category": "method",
@@ -1817,7 +2033,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/AlgebraOverFields.html#Base.getproperty-Tuple{Hamiltonian.Utilities.AlgebraOverFields.ID,Symbol}",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.getproperty-Tuple{Hamiltonian.Mathematics.AlgebraOverFields.ID,Symbol}",
     "page": "Algebra over fields",
     "title": "Base.getproperty",
     "category": "method",
@@ -1825,7 +2041,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/AlgebraOverFields.html#Base.isless-Tuple{Hamiltonian.Utilities.AlgebraOverFields.ID,Hamiltonian.Utilities.AlgebraOverFields.ID}",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.isless-Tuple{Hamiltonian.Mathematics.AlgebraOverFields.ID,Hamiltonian.Mathematics.AlgebraOverFields.ID}",
     "page": "Algebra over fields",
     "title": "Base.isless",
     "category": "method",
@@ -1833,7 +2049,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/AlgebraOverFields.html#Base.propertynames-Union{Tuple{Type{I}}, Tuple{I}, Tuple{Type{I},Bool}} where I<:Hamiltonian.Utilities.AlgebraOverFields.ID",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.propertynames-Union{Tuple{Type{I}}, Tuple{I}, Tuple{Type{I},Bool}} where I<:Hamiltonian.Mathematics.AlgebraOverFields.ID",
     "page": "Algebra over fields",
     "title": "Base.propertynames",
     "category": "method",
@@ -1841,7 +2057,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/AlgebraOverFields.html#Base.replace-Tuple{Hamiltonian.Utilities.AlgebraOverFields.Element}",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.replace-Tuple{Hamiltonian.Mathematics.AlgebraOverFields.Element}",
     "page": "Algebra over fields",
     "title": "Base.replace",
     "category": "method",
@@ -1849,7 +2065,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/AlgebraOverFields.html#Base.show-Tuple{IO,Hamiltonian.Utilities.AlgebraOverFields.ID}",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.show-Tuple{IO,Hamiltonian.Mathematics.AlgebraOverFields.ID}",
     "page": "Algebra over fields",
     "title": "Base.show",
     "category": "method",
@@ -1857,7 +2073,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/AlgebraOverFields.html#Base.valtype-Union{Tuple{Type{#s68} where #s68<:(Element{V,I,N} where N where I<:ID)}, Tuple{V}} where V",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.valtype-Union{Tuple{Type{#s68} where #s68<:(Element{V,I,N} where N where I<:ID)}, Tuple{V}} where V",
     "page": "Algebra over fields",
     "title": "Base.valtype",
     "category": "method",
@@ -1865,7 +2081,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/AlgebraOverFields.html#Base.zero-Tuple{Dict{I,M} where M<:Hamiltonian.Utilities.AlgebraOverFields.Element where I<:Hamiltonian.Utilities.AlgebraOverFields.ID}",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.zero-Tuple{Dict{I,M} where M<:Hamiltonian.Mathematics.AlgebraOverFields.Element where I<:Hamiltonian.Mathematics.AlgebraOverFields.ID}",
     "page": "Algebra over fields",
     "title": "Base.zero",
     "category": "method",
@@ -1873,7 +2089,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/AlgebraOverFields.html#Manual-1",
+    "location": "man/Mathematics/AlgebraOverFields.html#Manual-1",
     "page": "Algebra over fields",
     "title": "Manual",
     "category": "section",
@@ -1881,15 +2097,15 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#",
+    "location": "man/Mathematics/QuantumNumbers.html#",
     "page": "Quantum numbers",
     "title": "Quantum numbers",
     "category": "page",
-    "text": "CurrentModule=Hamiltonian.Utilities.QuantumNumbers"
+    "text": "CurrentModule=Hamiltonian.Mathematics.QuantumNumbers"
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Quantum-numbers-1",
+    "location": "man/Mathematics/QuantumNumbers.html#Quantum-numbers-1",
     "page": "Quantum numbers",
     "title": "Quantum numbers",
     "category": "section",
@@ -1897,7 +2113,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#AbelianNumber-1",
+    "location": "man/Mathematics/QuantumNumbers.html#AbelianNumber-1",
     "page": "Quantum numbers",
     "title": "AbelianNumber",
     "category": "section",
@@ -1905,7 +2121,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#AbelianNumbers-1",
+    "location": "man/Mathematics/QuantumNumbers.html#AbelianNumbers-1",
     "page": "Quantum numbers",
     "title": "AbelianNumbers",
     "category": "section",
@@ -1913,279 +2129,279 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Hamiltonian.Utilities.QuantumNumbers.qnsbruteforce",
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.qnsbruteforce",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.QuantumNumbers.qnsbruteforce",
+    "title": "Hamiltonian.Mathematics.QuantumNumbers.qnsbruteforce",
     "category": "constant",
     "text": "qnsbruteforce\n\nIndicate that decompose uses the brute force method.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Hamiltonian.Utilities.QuantumNumbers.qnscompression",
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.qnscompression",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.QuantumNumbers.qnscompression",
+    "title": "Hamiltonian.Mathematics.QuantumNumbers.qnscompression",
     "category": "constant",
     "text": "qnscompression\n\nIndicate that findall and permute use the compressed contents.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Hamiltonian.Utilities.QuantumNumbers.qnscontents",
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.qnscontents",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.QuantumNumbers.qnscontents",
+    "title": "Hamiltonian.Mathematics.QuantumNumbers.qnscontents",
     "category": "constant",
     "text": "qnscontents\n\nIndicate that expand uses the compressed/expanded contents.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Hamiltonian.Utilities.QuantumNumbers.qnscounts",
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.qnscounts",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.QuantumNumbers.qnscounts",
+    "title": "Hamiltonian.Mathematics.QuantumNumbers.qnscounts",
     "category": "constant",
     "text": "qnscounts\n\nIndicate that methods with AbelianNumbers use the count number of the compressed contents.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Hamiltonian.Utilities.QuantumNumbers.qnsexpansion",
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.qnsexpansion",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.QuantumNumbers.qnsexpansion",
+    "title": "Hamiltonian.Mathematics.QuantumNumbers.qnsexpansion",
     "category": "constant",
     "text": "qnsexpansion\n\nIndicate that findall and permute use the expanded contents.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Hamiltonian.Utilities.QuantumNumbers.qnsindices",
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.qnsindices",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.QuantumNumbers.qnsindices",
+    "title": "Hamiltonian.Mathematics.QuantumNumbers.qnsindices",
     "category": "constant",
     "text": "qnsindices\n\nIndicate that expand uses the indices of the compressed/expanded contents.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Hamiltonian.Utilities.QuantumNumbers.qnsindptr",
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.qnsindptr",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.QuantumNumbers.qnsindptr",
+    "title": "Hamiltonian.Mathematics.QuantumNumbers.qnsindptr",
     "category": "constant",
     "text": "qnsindptr\n\nIndicate that methods with AbelianNumbers use the index pointer of the compressed contents.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Hamiltonian.Utilities.QuantumNumbers.qnsmontecarlo",
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.qnsmontecarlo",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.QuantumNumbers.qnsmontecarlo",
+    "title": "Hamiltonian.Mathematics.QuantumNumbers.qnsmontecarlo",
     "category": "constant",
     "text": "qnsmontecarlo\n\nIndicate that decompose uses the Monte Carlo method.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Hamiltonian.Utilities.QuantumNumbers.AbelianNumber",
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.QuantumNumbers.AbelianNumber",
+    "title": "Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber",
     "category": "type",
     "text": "Abstract type for all concrete quantum numbers for a single basis.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Hamiltonian.Utilities.QuantumNumbers.AbelianNumbers",
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.QuantumNumbers.AbelianNumbers",
+    "title": "Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers",
     "category": "type",
     "text": "AbelianNumbers(form::Char,contents::Vector{<:AbelianNumber},counts::Vector{Int},::QnsCounts)\nAbelianNumbers(form::Char,contents::Vector{<:AbelianNumber},indptr::Vector{Int},::QnsIndptr)\n\nThe whole quantum numbers of the total bases of a Hilbert space.\n\nThe default constructors construct a AbelianNumbers from a vector of concrete quantum numbers and an vector containing their counts or indptr.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Hamiltonian.Utilities.QuantumNumbers.AbelianNumbers",
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.QuantumNumbers.AbelianNumbers",
+    "title": "Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers",
     "category": "type",
     "text": "AbelianNumbers(qn::AbelianNumber,count::Int=1)\n\nConstruct a AbelianNumbers with one unique quantum number which occurs count times.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Hamiltonian.Utilities.QuantumNumbers.AbelianNumbers-Tuple{OrderedCollections.OrderedDict{#s15,Int64} where #s15<:Hamiltonian.Utilities.QuantumNumbers.AbelianNumber}",
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers-Tuple{OrderedCollections.OrderedDict{#s15,Int64} where #s15<:Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber}",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.QuantumNumbers.AbelianNumbers",
+    "title": "Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers",
     "category": "method",
     "text": "AbelianNumbers(od::OrderedDict{<:AbelianNumber,Int})\n\nConstruct a AbelianNumbers from an ordered dict containing concrete quantum numbers and their counts.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Hamiltonian.Utilities.QuantumNumbers.AbelianNumbers-Tuple{OrderedCollections.OrderedDict{#s15,UnitRange{Int64}} where #s15<:Hamiltonian.Utilities.QuantumNumbers.AbelianNumber}",
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers-Tuple{OrderedCollections.OrderedDict{#s15,UnitRange{Int64}} where #s15<:Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber}",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.QuantumNumbers.AbelianNumbers",
+    "title": "Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers",
     "category": "method",
     "text": "AbelianNumbers(od::OrderedDict{<:AbelianNumber,UnitRange{Int}})\n\nConstruct a AbelianNumbers from an ordered dict containing concrete quantum numbers and their slices.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Hamiltonian.Utilities.QuantumNumbers.PQN",
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.PQN",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.QuantumNumbers.PQN",
+    "title": "Hamiltonian.Mathematics.QuantumNumbers.PQN",
     "category": "type",
     "text": "PQN(N::Real)\n\nThe concrete AbelianNumber of a quantum system with particle number N conserved.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Hamiltonian.Utilities.QuantumNumbers.SPQN",
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.SPQN",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.QuantumNumbers.SPQN",
+    "title": "Hamiltonian.Mathematics.QuantumNumbers.SPQN",
     "category": "type",
     "text": "SPQN(N::Real,Sz::Real)\n\nThe concrete AbelianNumber of a quantum system with both particle number N and spin z-component Sz conserved.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Hamiltonian.Utilities.QuantumNumbers.SQN",
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.SQN",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.QuantumNumbers.SQN",
+    "title": "Hamiltonian.Mathematics.QuantumNumbers.SQN",
     "category": "type",
     "text": "SQN(Sz::Real)\n\nThe concrete AbelianNumber of a quantum system with spin z-component Sz conserved.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Hamiltonian.Utilities.QuantumNumbers.Z2QN",
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.Z2QN",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.QuantumNumbers.Z2QN",
+    "title": "Hamiltonian.Mathematics.QuantumNumbers.Z2QN",
     "category": "type",
     "text": "Z2QN(N::Real)\n\nThe concrete AbelianNumber of a quantum system with a Z₂-like conserved quantity.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Hamiltonian.Utilities.QuantumNumbers.@quantumnumber-Tuple{Any,Any,Any}",
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.@quantumnumber-Tuple{Any,Any,Any}",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.QuantumNumbers.@quantumnumber",
+    "title": "Hamiltonian.Mathematics.QuantumNumbers.@quantumnumber",
     "category": "macro",
     "text": "@quantumnumber typename fieldnames fieldperiods\n\nConstruct a concrete AbelianNumber with the type name being typename, fieldnames specified by fieldnames and periods specified by fieldperiods.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Hamiltonian.Utilities.Interfaces.:⊕-Tuple{Vararg{Hamiltonian.Utilities.QuantumNumbers.AbelianNumber,N} where N}",
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.PQNS-Tuple{Real}",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.Interfaces.:⊕",
-    "category": "method",
-    "text": "⊕(qns::AbelianNumber...) -> AbelianNumbers{qns|>eltype}\n⊕(qnses::AbelianNumbers...) -> qnses|>eltype\n\nGet the direct sum of some AbelianNumbers or AbelianNumberses.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/QuantumNumbers.html#Hamiltonian.Utilities.Interfaces.:⊗-Tuple{Vararg{Hamiltonian.Utilities.QuantumNumbers.AbelianNumber,N} where N}",
-    "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.Interfaces.:⊗",
-    "category": "method",
-    "text": "⊗(qns::AbelianNumber...) -> eltype(qns)\n⊗(qnses::AbelianNumbers...) -> eltype(qnses)\n\nGet the direct product of some AbelianNumbers or AbelianNumberses.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/QuantumNumbers.html#Hamiltonian.Utilities.Interfaces.dimension-Tuple{Hamiltonian.Utilities.QuantumNumbers.AbelianNumbers}",
-    "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.Interfaces.dimension",
-    "category": "method",
-    "text": "dimension(qns::AbelianNumbers) -> Int\n\nThe dimension of the Hilbert space a AbelianNumbers represents.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/QuantumNumbers.html#Hamiltonian.Utilities.Interfaces.dimension-Tuple{Type{#s68} where #s68<:Hamiltonian.Utilities.QuantumNumbers.AbelianNumber}",
-    "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.Interfaces.dimension",
-    "category": "method",
-    "text": "dimension(::Type{<:AbelianNumber}) -> Int\ndimension(::AbelianNumber) -> Int\n\nThe dimension of the Hilbert space a AbelianNumber represents. Apparently, this is always 1.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/QuantumNumbers.html#Hamiltonian.Utilities.Interfaces.expand-Tuple{Hamiltonian.Utilities.QuantumNumbers.AbelianNumbers,Hamiltonian.Utilities.QuantumNumbers.QnsContents}",
-    "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.Interfaces.expand",
-    "category": "method",
-    "text": "expand(qns::AbelianNumbers,::QnsContents) -> Vector{qns|>eltype}\nexpand(qns::AbelianNumbers,::QnsIndices) -> Vector{Int}\n\nExpand the contents (qnscontents case) or indices (qnsindices case) of a AbelianNumbers to the uncompressed form.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/QuantumNumbers.html#Hamiltonian.Utilities.Interfaces.permute-Tuple{Hamiltonian.Utilities.QuantumNumbers.AbelianNumbers,Array{Int64,1},Hamiltonian.Utilities.QuantumNumbers.QnsCompression}",
-    "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.Interfaces.permute",
-    "category": "method",
-    "text": "permute(qns::AbelianNumbers,permutation::Vector{Int},::QnsCompression) -> AbelianNumbers\npermute(qns::AbelianNumbers,permutation::Vector{Int},::QnsExpansion) -> AbelianNumbers\n\nReorder the quantum numbers contained in a AbelianNumbers with a permutation and return the new one.\n\nFor qnscompression case, the permutation is for the compressed contents of the original AbelianNumbers while for qnsexpansion case, the permutation is for the expanded contents of the original AbelianNumbers.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Utilities/QuantumNumbers.html#Hamiltonian.Utilities.QuantumNumbers.PQNS-Tuple{Real}",
-    "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.QuantumNumbers.PQNS",
+    "title": "Hamiltonian.Mathematics.QuantumNumbers.PQNS",
     "category": "method",
     "text": "PQNS(N::Real) -> AbelianNumbers{PQN}\n\nConstruct the AbelianNumbers of the Hilbert space of a single-particle state with at most N identical particles.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Hamiltonian.Utilities.QuantumNumbers.SPQNS-Tuple{Real}",
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.SPQNS-Tuple{Real}",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.QuantumNumbers.SPQNS",
+    "title": "Hamiltonian.Mathematics.QuantumNumbers.SPQNS",
     "category": "method",
     "text": "SPQNS(S::Real) -> AbelianNumbers{SPQN}\n\nConstruct the AbelianNumbers of the Hilbert space of a single site with internal degrees of freedom that can be ascribed to a spin S.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Hamiltonian.Utilities.QuantumNumbers.SQNS-Tuple{Real}",
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.SQNS-Tuple{Real}",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.QuantumNumbers.SQNS",
+    "title": "Hamiltonian.Mathematics.QuantumNumbers.SQNS",
     "category": "method",
     "text": "SQNS(S::Real) -> AbelianNumbers{SQN}\n\nConstruct the AbelianNumbers of the Hilbert space of a signle spin S.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Hamiltonian.Utilities.QuantumNumbers.SzPQNS-Tuple{Real}",
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.SzPQNS-Tuple{Real}",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.QuantumNumbers.SzPQNS",
+    "title": "Hamiltonian.Mathematics.QuantumNumbers.SzPQNS",
     "category": "method",
     "text": "SzPQNS(Sz::Real) -> AbelianNumbers{SPQN}\n\nConstruct the AbelianNumbers of the Hilbert space of a single-paritcle state with at most one particle whose spin-z component is Sz.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Hamiltonian.Utilities.QuantumNumbers.Z2QNS-Tuple{}",
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.Z2QNS-Tuple{}",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.QuantumNumbers.Z2QNS",
+    "title": "Hamiltonian.Mathematics.QuantumNumbers.Z2QNS",
     "category": "method",
     "text": "Z2QNS() -> AbelianNumbers{Z2QN}\n\nConstruct the AbelianNumbers of a Z_2 Hilbert space.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Hamiltonian.Utilities.QuantumNumbers.decompose-Union{Tuple{QN}, Tuple{N}, Tuple{Tuple{Vararg{AbelianNumbers{QN},N}},QN,Tuple{Vararg{Int64,N}},QnsBruteForce}} where QN<:Hamiltonian.Utilities.QuantumNumbers.AbelianNumber where N",
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.decompose-Union{Tuple{QN}, Tuple{N}, Tuple{Tuple{Vararg{AbelianNumbers{QN},N}},QN,Tuple{Vararg{Int64,N}},QnsBruteForce}} where QN<:Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber where N",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.QuantumNumbers.decompose",
+    "title": "Hamiltonian.Mathematics.QuantumNumbers.decompose",
     "category": "method",
     "text": "decompose(qnses::NTuple{N,AbelianNumbers{QN}},target::QN,signs::NTuple{N,Int},::QnsBruteForce;nmax::Int=20) where {N,QN<:AbelianNumber} -> Vector{NTuple{N,Int}}\ndecompose(qnses::NTuple{N,AbelianNumbers{QN}},target::QN,signs::NTuple{N,Int},::QnsMonteCarlo;nmax::Int=20) where {N,QN<:AbelianNumber} -> Vector{NTuple{N,Int}}\n\nFind a couple of decompositions of target with respect to qnses.\n\nnote: Note\nA tuple of integers (i₁,i₂,...) is called a decomposition of a given target with respect to the given qnses if and only if they satisfy the \"decomposition rule\":sum_textj textsignstextjtimestextqnsestextjtexti_textj==texttargetThis equation is in fact a kind of a set of restricted linear Diophantine equations. Indeed, our quantum numbers are always discrete Abelian ones and all instances of a concrete AbelianNumber forms a module over the ring of integers. Therefore, each quantum number can be represented as a integral multiple of the unit element of the Abelian module, which results in the final reduction of the above equation to a set of linear Diophantine equations. Then finding a decomposition is equivalent to find a solution of the reduced linear Diophantine equations, with the restriction that the quantum numbers constructed from the solution should be in the corresponding qnses. Here we provide two methods to find such decompositions, one is by brute force (qnsbruteforce case), and the other is by Monte Carlo simultatioins (qnsmontecarlo case).\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Hamiltonian.Utilities.QuantumNumbers.regularize!-Union{Tuple{QN}, Tuple{Type{QN},AbstractArray{Float64,1}}} where QN<:Hamiltonian.Utilities.QuantumNumbers.AbelianNumber",
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.regularize!-Union{Tuple{QN}, Tuple{Type{QN},AbstractArray{Float64,1}}} where QN<:Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.QuantumNumbers.regularize!",
+    "title": "Hamiltonian.Mathematics.QuantumNumbers.regularize!",
     "category": "method",
     "text": "regularize!(::Type{QN},array::AbstractVector{Float}) where QN<:AbelianNumber -> typeof(array)\nregularize!(::Type{QN},array::AbstractMatrix{Float}) where QN<:AbelianNumber -> typeof(array)\n\nRegularize the elements of an array in place so that it can represent quantum numbers.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Hamiltonian.Utilities.QuantumNumbers.regularize-Union{Tuple{QN}, Tuple{Type{QN},Union{AbstractArray{Float64,1}, AbstractArray{Float64,2}}}} where QN<:Hamiltonian.Utilities.QuantumNumbers.AbelianNumber",
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.regularize-Union{Tuple{QN}, Tuple{Type{QN},Union{AbstractArray{Float64,1}, AbstractArray{Float64,2}}}} where QN<:Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.QuantumNumbers.regularize",
+    "title": "Hamiltonian.Mathematics.QuantumNumbers.regularize",
     "category": "method",
     "text": "regularize(::Type{QN},array::Union{AbstractVector{Float},AbstractMatrix{Float}}) where {QN<:AbelianNumber} -> typeof(array)\n\nRegularize the elements of an array and return a copy that can represent quantum numbers.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Hamiltonian.Utilities.QuantumNumbers.toordereddict-Tuple{Hamiltonian.Utilities.QuantumNumbers.AbelianNumbers,Hamiltonian.Utilities.QuantumNumbers.QnsIndptr}",
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.toordereddict-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers,Hamiltonian.Mathematics.QuantumNumbers.QnsIndptr}",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.QuantumNumbers.toordereddict",
+    "title": "Hamiltonian.Mathematics.QuantumNumbers.toordereddict",
     "category": "method",
     "text": "toordereddict(qns::AbelianNumbers,::QnsIndptr) -> OrderedDict{qns|>eltype,UnitRange{Int}}\ntoordereddict(qns::AbelianNumbers,::QnsCounts) -> OrderedDict{qns|>eltype,Int}\n\nConvert a AbelianNumbers to an ordered dict.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Hamiltonian.Utilities.QuantumNumbers.ukron-Union{Tuple{Vararg{AbelianNumbers{QN},N}}, Tuple{QN}, Tuple{N}} where QN<:Hamiltonian.Utilities.QuantumNumbers.AbelianNumber where N",
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.ukron-Union{Tuple{Vararg{AbelianNumbers{QN},N}}, Tuple{QN}, Tuple{N}} where QN<:Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber where N",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Utilities.QuantumNumbers.ukron",
+    "title": "Hamiltonian.Mathematics.QuantumNumbers.ukron",
     "category": "method",
     "text": "ukron(qnses::Vararg{AbelianNumbers{QN},N};signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:AbelianNumber} -> AbelianNumbers{QN},Dict{QN,Dict{NTuple{N,QN},UnitRange{Int}}}\n\nUnitary Kronecker product of several AbelianNumberses. The product result as well as the records of the product will be returned.\n\nnote: Note\nAll input AbelianNumbers must be \'U\' formed or \'C\' formed.\nSince duplicate quantum number are not allowed in \'U\' formed and \'C\' formed AbelianNumberses, in general, there exists a merge process of duplicate quantum numbers in the product result. Therefore, records are needed to keep track of this process, which will be returned along with the product result. The records are stored in a Dict{QN,Dict{NTuple{N,QN},UnitRange{Int}}} typed dict, in which, for each unduplicate quantum number qn in the product result, there exist a record Dict((qn₁,qn₂,...)=>start:stop,...) telling what quantum numbers (qn₁,qn₂,...) a mereged duplicate qn comes from and what slice start:stop this merged duplicate corresponds.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Base.:*-Tuple{Hamiltonian.Utilities.QuantumNumbers.AbelianNumber,Integer}",
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Prerequisites.Interfaces.:⊕-Tuple{Vararg{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber,N} where N}",
+    "page": "Quantum numbers",
+    "title": "Hamiltonian.Prerequisites.Interfaces.:⊕",
+    "category": "method",
+    "text": "⊕(qns::AbelianNumber...) -> AbelianNumbers{qns|>eltype}\n⊕(qnses::AbelianNumbers...) -> qnses|>eltype\n\nGet the direct sum of some AbelianNumbers or AbelianNumberses.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Prerequisites.Interfaces.:⊗-Tuple{Vararg{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber,N} where N}",
+    "page": "Quantum numbers",
+    "title": "Hamiltonian.Prerequisites.Interfaces.:⊗",
+    "category": "method",
+    "text": "⊗(qns::AbelianNumber...) -> eltype(qns)\n⊗(qnses::AbelianNumbers...) -> eltype(qnses)\n\nGet the direct product of some AbelianNumbers or AbelianNumberses.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Prerequisites.Interfaces.dimension-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers}",
+    "page": "Quantum numbers",
+    "title": "Hamiltonian.Prerequisites.Interfaces.dimension",
+    "category": "method",
+    "text": "dimension(qns::AbelianNumbers) -> Int\n\nThe dimension of the Hilbert space a AbelianNumbers represents.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Prerequisites.Interfaces.dimension-Tuple{Type{#s68} where #s68<:Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber}",
+    "page": "Quantum numbers",
+    "title": "Hamiltonian.Prerequisites.Interfaces.dimension",
+    "category": "method",
+    "text": "dimension(::Type{<:AbelianNumber}) -> Int\ndimension(::AbelianNumber) -> Int\n\nThe dimension of the Hilbert space a AbelianNumber represents. Apparently, this is always 1.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Prerequisites.Interfaces.expand-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers,Hamiltonian.Mathematics.QuantumNumbers.QnsContents}",
+    "page": "Quantum numbers",
+    "title": "Hamiltonian.Prerequisites.Interfaces.expand",
+    "category": "method",
+    "text": "expand(qns::AbelianNumbers,::QnsContents) -> Vector{qns|>eltype}\nexpand(qns::AbelianNumbers,::QnsIndices) -> Vector{Int}\n\nExpand the contents (qnscontents case) or indices (qnsindices case) of a AbelianNumbers to the uncompressed form.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Prerequisites.Interfaces.permute-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers,Array{Int64,1},Hamiltonian.Mathematics.QuantumNumbers.QnsCompression}",
+    "page": "Quantum numbers",
+    "title": "Hamiltonian.Prerequisites.Interfaces.permute",
+    "category": "method",
+    "text": "permute(qns::AbelianNumbers,permutation::Vector{Int},::QnsCompression) -> AbelianNumbers\npermute(qns::AbelianNumbers,permutation::Vector{Int},::QnsExpansion) -> AbelianNumbers\n\nReorder the quantum numbers contained in a AbelianNumbers with a permutation and return the new one.\n\nFor qnscompression case, the permutation is for the compressed contents of the original AbelianNumbers while for qnsexpansion case, the permutation is for the expanded contents of the original AbelianNumbers.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/QuantumNumbers.html#Base.:*-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber,Integer}",
     "page": "Quantum numbers",
     "title": "Base.:*",
     "category": "method",
@@ -2193,7 +2409,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Base.:+-Tuple{Hamiltonian.Utilities.QuantumNumbers.AbelianNumber}",
+    "location": "man/Mathematics/QuantumNumbers.html#Base.:+-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber}",
     "page": "Quantum numbers",
     "title": "Base.:+",
     "category": "method",
@@ -2201,7 +2417,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Base.:--Tuple{Hamiltonian.Utilities.QuantumNumbers.AbelianNumber}",
+    "location": "man/Mathematics/QuantumNumbers.html#Base.:--Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber}",
     "page": "Quantum numbers",
     "title": "Base.:-",
     "category": "method",
@@ -2209,7 +2425,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Base.:==-Tuple{Hamiltonian.Utilities.QuantumNumbers.AbelianNumbers,Hamiltonian.Utilities.QuantumNumbers.AbelianNumbers}",
+    "location": "man/Mathematics/QuantumNumbers.html#Base.:==-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers,Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers}",
     "page": "Quantum numbers",
     "title": "Base.:==",
     "category": "method",
@@ -2217,7 +2433,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Base.:^-Tuple{Hamiltonian.Utilities.QuantumNumbers.AbelianNumber,Integer}",
+    "location": "man/Mathematics/QuantumNumbers.html#Base.:^-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber,Integer}",
     "page": "Quantum numbers",
     "title": "Base.:^",
     "category": "method",
@@ -2225,7 +2441,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Base.eltype-Union{Tuple{Type{#s68} where #s68<:AbelianNumbers{QN}}, Tuple{QN}} where QN",
+    "location": "man/Mathematics/QuantumNumbers.html#Base.eltype-Union{Tuple{Type{#s68} where #s68<:AbelianNumbers{QN}}, Tuple{QN}} where QN",
     "page": "Quantum numbers",
     "title": "Base.eltype",
     "category": "method",
@@ -2233,7 +2449,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Base.filter-Union{Tuple{QN}, Tuple{QN,AbelianNumbers{QN}}} where QN<:Hamiltonian.Utilities.QuantumNumbers.AbelianNumber",
+    "location": "man/Mathematics/QuantumNumbers.html#Base.filter-Union{Tuple{QN}, Tuple{QN,AbelianNumbers{QN}}} where QN<:Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber",
     "page": "Quantum numbers",
     "title": "Base.filter",
     "category": "method",
@@ -2241,7 +2457,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Base.findall-Union{Tuple{QN}, Tuple{QN,AbelianNumbers{QN},QnsCompression}} where QN<:Hamiltonian.Utilities.QuantumNumbers.AbelianNumber",
+    "location": "man/Mathematics/QuantumNumbers.html#Base.findall-Union{Tuple{QN}, Tuple{QN,AbelianNumbers{QN},QnsCompression}} where QN<:Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber",
     "page": "Quantum numbers",
     "title": "Base.findall",
     "category": "method",
@@ -2249,7 +2465,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Base.getindex-Tuple{Hamiltonian.Utilities.QuantumNumbers.AbelianNumbers,Int64}",
+    "location": "man/Mathematics/QuantumNumbers.html#Base.getindex-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers,Int64}",
     "page": "Quantum numbers",
     "title": "Base.getindex",
     "category": "method",
@@ -2257,7 +2473,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Base.iterate",
+    "location": "man/Mathematics/QuantumNumbers.html#Base.iterate",
     "page": "Quantum numbers",
     "title": "Base.iterate",
     "category": "function",
@@ -2265,7 +2481,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Base.keys-Tuple{Hamiltonian.Utilities.QuantumNumbers.AbelianNumbers}",
+    "location": "man/Mathematics/QuantumNumbers.html#Base.keys-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers}",
     "page": "Quantum numbers",
     "title": "Base.keys",
     "category": "method",
@@ -2273,7 +2489,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Base.kron-Union{Tuple{QN}, Tuple{Type{QN},AbelianNumber,AbelianNumber}} where QN<:Hamiltonian.Utilities.QuantumNumbers.AbelianNumber",
+    "location": "man/Mathematics/QuantumNumbers.html#Base.kron-Union{Tuple{QN}, Tuple{Type{QN},AbelianNumber,AbelianNumber}} where QN<:Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber",
     "page": "Quantum numbers",
     "title": "Base.kron",
     "category": "method",
@@ -2281,7 +2497,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Base.length-Tuple{Hamiltonian.Utilities.QuantumNumbers.AbelianNumbers}",
+    "location": "man/Mathematics/QuantumNumbers.html#Base.length-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers}",
     "page": "Quantum numbers",
     "title": "Base.length",
     "category": "method",
@@ -2289,7 +2505,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Base.pairs-Tuple{Hamiltonian.Utilities.QuantumNumbers.AbelianNumbers,Union{QnsCounts, QnsIndptr}}",
+    "location": "man/Mathematics/QuantumNumbers.html#Base.pairs-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers,Union{QnsCounts, QnsIndptr}}",
     "page": "Quantum numbers",
     "title": "Base.pairs",
     "category": "method",
@@ -2297,7 +2513,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Base.show-Tuple{IO,Hamiltonian.Utilities.QuantumNumbers.AbelianNumbers}",
+    "location": "man/Mathematics/QuantumNumbers.html#Base.show-Tuple{IO,Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers}",
     "page": "Quantum numbers",
     "title": "Base.show",
     "category": "method",
@@ -2305,7 +2521,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Base.sort-Tuple{Hamiltonian.Utilities.QuantumNumbers.AbelianNumbers}",
+    "location": "man/Mathematics/QuantumNumbers.html#Base.sort-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers}",
     "page": "Quantum numbers",
     "title": "Base.sort",
     "category": "method",
@@ -2313,7 +2529,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Base.string-Tuple{Hamiltonian.Utilities.QuantumNumbers.AbelianNumbers}",
+    "location": "man/Mathematics/QuantumNumbers.html#Base.string-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers}",
     "page": "Quantum numbers",
     "title": "Base.string",
     "category": "method",
@@ -2321,7 +2537,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Base.union-Union{Tuple{Vararg{AbelianNumber,N}}, Tuple{N}} where N",
+    "location": "man/Mathematics/QuantumNumbers.html#Base.union-Union{Tuple{Vararg{AbelianNumber,N}}, Tuple{N}} where N",
     "page": "Quantum numbers",
     "title": "Base.union",
     "category": "method",
@@ -2329,7 +2545,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#Base.values-Tuple{Hamiltonian.Utilities.QuantumNumbers.AbelianNumbers,Hamiltonian.Utilities.QuantumNumbers.QnsIndptr}",
+    "location": "man/Mathematics/QuantumNumbers.html#Base.values-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers,Hamiltonian.Mathematics.QuantumNumbers.QnsIndptr}",
     "page": "Quantum numbers",
     "title": "Base.values",
     "category": "method",
@@ -2337,7 +2553,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Utilities/QuantumNumbers.html#qnmanual-1",
+    "location": "man/Mathematics/QuantumNumbers.html#qnmanual-1",
     "page": "Quantum numbers",
     "title": "Manual",
     "category": "section",
@@ -2453,7 +2669,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.interbonds",
     "category": "constant",
-    "text": "interbonds\n\nIndicate that bonds inter the sublattices are inquired.\n\nnotes: Notes\nThese bonds do not contain those accorss the periodic boundaries.\n\n\n\n\n\n"
+    "text": "interbonds\n\nIndicate that bonds inter the sublattices are inquired.\n\nnote: Note\nThese bonds do not contain those accorss the periodic boundaries.\n\n\n\n\n\n"
 },
 
 {
@@ -2461,7 +2677,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.intrabonds",
     "category": "constant",
-    "text": "intrabonds\n\nIndicate that bonds intra the sublattices are inquired.\n\nnotes: Notes\nThese bonds do not contain those accorss the periodic boundaries.\n\n\n\n\n\n"
+    "text": "intrabonds\n\nIndicate that bonds intra the sublattices are inquired.\n\nnote: Note\nThese bonds do not contain those accorss the periodic boundaries.\n\n\n\n\n\n"
 },
 
 {
@@ -2585,7 +2801,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.azimuth-Tuple{AbstractArray{#s199,1} where #s199<:Real}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.azimuth-Tuple{AbstractArray{#s200,1} where #s200<:Real}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.azimuth",
     "category": "method",
@@ -2593,7 +2809,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.azimuthd-Tuple{AbstractArray{#s199,1} where #s199<:Real}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.azimuthd-Tuple{AbstractArray{#s200,1} where #s200<:Real}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.azimuthd",
     "category": "method",
@@ -2617,7 +2833,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.distance-Tuple{AbstractArray{#s188,1} where #s188<:Real,AbstractArray{#s187,1} where #s187<:Real}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.distance-Tuple{AbstractArray{#s189,1} where #s189<:Real,AbstractArray{#s188,1} where #s188<:Real}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.distance",
     "category": "method",
@@ -2633,7 +2849,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.interlinks-Tuple{AbstractArray{#s209,2} where #s209<:Real,AbstractArray{#s208,2} where #s208<:Real,Dict{Int64,Float64}}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.interlinks-Tuple{AbstractArray{#s210,2} where #s210<:Real,AbstractArray{#s209,2} where #s209<:Real,Dict{Int64,Float64}}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.interlinks",
     "category": "method",
@@ -2641,7 +2857,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.intralinks-Union{Tuple{N}, Tuple{AbstractArray{#s204,2} where #s204<:Real,AbstractArray{#s203,1} where #s203<:(AbstractArray{#s202,1} where #s202<:Real),Dict{Int64,Float64}}, Tuple{AbstractArray{#s201,2} where #s201<:Real,AbstractArray{#s200,1} where #s200<:(AbstractArray{#s199,1} where #s199<:Real),Dict{Int64,Float64},Tuple{Vararg{Int64,N}}}} where N",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.intralinks-Union{Tuple{N}, Tuple{AbstractArray{#s205,2} where #s205<:Real,AbstractArray{#s204,1} where #s204<:(AbstractArray{#s203,1} where #s203<:Real),Dict{Int64,Float64}}, Tuple{AbstractArray{#s202,2} where #s202<:Real,AbstractArray{#s201,1} where #s201<:(AbstractArray{#s200,1} where #s200<:Real),Dict{Int64,Float64},Tuple{Vararg{Int64,N}}}} where N",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.intralinks",
     "category": "method",
@@ -2661,7 +2877,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.isintratriangle",
     "category": "method",
-    "text": "isintratriangle(p::AbstractVector{<:Real},\n                p1::AbstractVector{<:Real},\n                p2::AbstractVector{<:Real},\n                p3::AbstractVector{<:Real};\n                vertexes::NTuple{3,Bool}=(true,true,true),\n                edges::NTuple{3,Bool}=(true,true,true),\n                atol::Real=atol,\n                rtol::Real=rtol\n                ) -> Bool\n\nJudge whether a point belongs to the interior of a triangle whose vertexes are p1, \'p2\' and p3 with the give tolerance. vertexes and edges define whether the interior should contain the vertexes or edges, respectively.\n\nnotes: Notes\nThe vertexes are in the order (p1,p2,p3) and the edges are in the order (p1p2,p2p3,p3p1).\nThe edges do not contain the vertexes.\n\n\n\n\n\n"
+    "text": "isintratriangle(p::AbstractVector{<:Real},\n                p1::AbstractVector{<:Real},\n                p2::AbstractVector{<:Real},\n                p3::AbstractVector{<:Real};\n                vertexes::NTuple{3,Bool}=(true,true,true),\n                edges::NTuple{3,Bool}=(true,true,true),\n                atol::Real=atol,\n                rtol::Real=rtol\n                ) -> Bool\n\nJudge whether a point belongs to the interior of a triangle whose vertexes are p1, \'p2\' and p3 with the give tolerance. vertexes and edges define whether the interior should contain the vertexes or edges, respectively.\n\nnote: Note\nThe vertexes are in the order (p1,p2,p3) and the edges are in the order (p1p2,p2p3,p3p1).\nThe edges do not contain the vertexes.\n\n\n\n\n\n"
 },
 
 {
@@ -2681,7 +2897,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.issubordinate-Tuple{AbstractArray{#s203,1} where #s203<:Real,AbstractArray{#s202,1} where #s202<:(AbstractArray{#s201,1} where #s201<:Real)}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.issubordinate-Tuple{AbstractArray{#s204,1} where #s204<:Real,AbstractArray{#s203,1} where #s203<:(AbstractArray{#s202,1} where #s202<:Real)}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.issubordinate",
     "category": "method",
@@ -2713,7 +2929,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.polar-Tuple{AbstractArray{#s199,1} where #s199<:Real}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.polar-Tuple{AbstractArray{#s200,1} where #s200<:Real}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.polar",
     "category": "method",
@@ -2721,7 +2937,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.polard-Tuple{AbstractArray{#s199,1} where #s199<:Real}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.polard-Tuple{AbstractArray{#s200,1} where #s200<:Real}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.polard",
     "category": "method",
@@ -2737,7 +2953,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.reciprocals-Tuple{AbstractArray{#s213,1} where #s213<:(AbstractArray{#s212,1} where #s212<:Real)}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.reciprocals-Tuple{AbstractArray{#s214,1} where #s214<:(AbstractArray{#s213,1} where #s213<:Real)}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.reciprocals",
     "category": "method",
@@ -2745,15 +2961,15 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.rotate-Tuple{AbstractArray{#s202,2} where #s202<:Real,Real}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.rotate-Tuple{AbstractArray{#s203,2} where #s203<:Real,Real}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.rotate",
     "category": "method",
-    "text": "rotate(cluster::AbstractMatrix{<:Real},angle::Real;axis::Tuple{Union{AbstractVector{<:Real},Nothing},Tuple{<:Real,<:Real}}=(nothing,(0,0))) -> Matrix{Float}\n\nGet a rotated cluster of the original one by a certain angle around an axis.\n\nThe axis is determined by a point it gets through (nothing can be used to denote the origin), and its polar as well as azimuth angles in radians. The default axis is the z axis.\n\nnotes: Notes\nThe result is given by the Rodrigues\' rotation formula.\nOnly 2 and 3 dimensional vectors can be rotated.\nWhen the input vectors are 2 dimensional, both the polar and azimuth of the axis must be 0.\n\n\n\n\n\n"
+    "text": "rotate(cluster::AbstractMatrix{<:Real},angle::Real;axis::Tuple{Union{AbstractVector{<:Real},Nothing},Tuple{<:Real,<:Real}}=(nothing,(0,0))) -> Matrix{Float}\n\nGet a rotated cluster of the original one by a certain angle around an axis.\n\nThe axis is determined by a point it gets through (nothing can be used to denote the origin), and its polar as well as azimuth angles in radians. The default axis is the z axis.\n\nnote: Note\nThe result is given by the Rodrigues\' rotation formula.\nOnly 2 and 3 dimensional vectors can be rotated.\nWhen the input vectors are 2 dimensional, both the polar and azimuth of the axis must be 0.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.tile-Union{Tuple{M}, Tuple{N}, Tuple{AbstractArray{#s204,2} where #s204<:Real,AbstractArray{#s203,1} where #s203<:(AbstractArray{#s202,1} where #s202<:Real)}, Tuple{AbstractArray{#s201,2} where #s201<:Real,AbstractArray{#s200,1} where #s200<:(AbstractArray{#s199,1} where #s199<:Real),Tuple{Vararg{Tuple{Vararg{#s195,N}} where #s195<:Real,M}}}} where M where N",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.tile-Union{Tuple{M}, Tuple{N}, Tuple{AbstractArray{#s205,2} where #s205<:Real,AbstractArray{#s204,1} where #s204<:(AbstractArray{#s203,1} where #s203<:Real)}, Tuple{AbstractArray{#s202,2} where #s202<:Real,AbstractArray{#s201,1} where #s201<:(AbstractArray{#s200,1} where #s200<:Real),Tuple{Vararg{Tuple{Vararg{#s196,N}} where #s196<:Real,M}}}} where M where N",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.tile",
     "category": "method",
@@ -2761,7 +2977,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.translate-Tuple{AbstractArray{#s213,2} where #s213<:Real,AbstractArray{#s212,1} where #s212<:Real}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.translate-Tuple{AbstractArray{#s214,2} where #s214<:Real,AbstractArray{#s213,1} where #s213<:Real}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.translate",
     "category": "method",
@@ -2769,7 +2985,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.volume-Tuple{AbstractArray{#s188,1} where #s188<:Real,AbstractArray{#s187,1} where #s187<:Real,AbstractArray{#s186,1} where #s186<:Real}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.volume-Tuple{AbstractArray{#s189,1} where #s189<:Real,AbstractArray{#s188,1} where #s188<:Real,AbstractArray{#s187,1} where #s187<:Real}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.volume",
     "category": "method",
@@ -2777,33 +2993,33 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Utilities.Interfaces.dimension-Tuple{AbstractBond}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Prerequisites.Interfaces.dimension-Tuple{AbstractBond}",
     "page": "Spatials",
-    "title": "Hamiltonian.Utilities.Interfaces.dimension",
+    "title": "Hamiltonian.Prerequisites.Interfaces.dimension",
     "category": "method",
     "text": "dimension(b::AbstractBond) -> Int\ndimension(::Type{<:AbstractBond{R,P,N}}) where {R,P,N} -> Int\n\nGet the space dimension of a concrete bond.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Utilities.Interfaces.dimension-Tuple{AbstractLattice}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Prerequisites.Interfaces.dimension-Tuple{AbstractLattice}",
     "page": "Spatials",
-    "title": "Hamiltonian.Utilities.Interfaces.dimension",
+    "title": "Hamiltonian.Prerequisites.Interfaces.dimension",
     "category": "method",
     "text": "dimension(lattice::AbstractLattice) -> Int\ndimension(::Type{<:AbstractLattice{P,N}}) where {P,N}-> Int\n\nGet the space dimension of the lattice.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Utilities.Interfaces.dimension-Tuple{Link}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Prerequisites.Interfaces.dimension-Tuple{Link}",
     "page": "Spatials",
-    "title": "Hamiltonian.Utilities.Interfaces.dimension",
+    "title": "Hamiltonian.Prerequisites.Interfaces.dimension",
     "category": "method",
     "text": "dimension(link::Link) -> Int\ndimension(::Type{<:Link{N}}) where N -> Int\n\nGet the space dimension of a link.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Utilities.Interfaces.rank-Tuple{AbstractBond}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Prerequisites.Interfaces.rank-Tuple{AbstractBond}",
     "page": "Spatials",
-    "title": "Hamiltonian.Utilities.Interfaces.rank",
+    "title": "Hamiltonian.Prerequisites.Interfaces.rank",
     "category": "method",
     "text": "rank(b::AbstractBond) -> Int\nrank(::Type{<:AbstractBond{R,P,N}}) where {R,P,N} -> Int\n\nGet the rank of a concrete bond.\n\n\n\n\n\n"
 },
@@ -3065,7 +3281,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.Table-Tuple{AbstractArray{#s211,1} where #s211<:Index}",
+    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.Table-Tuple{AbstractArray{#s212,1} where #s212<:Index}",
     "page": "Degrees of freedom",
     "title": "Hamiltonian.Essentials.DegreesOfFreedom.Table",
     "category": "method",
@@ -3385,15 +3601,15 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Utilities.Interfaces.expand-Tuple{FockCoupling,AbstractBond,Vararg{Fock,N} where N}",
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Prerequisites.Interfaces.expand-Tuple{FockCoupling,AbstractBond,Vararg{Fock,N} where N}",
     "page": "Fock package",
-    "title": "Hamiltonian.Utilities.Interfaces.expand",
+    "title": "Hamiltonian.Prerequisites.Interfaces.expand",
     "category": "method",
     "text": "expand(fc::FockCoupling,bond::AbstractBond,focks::Fock...) -> FCExpand\n\nExpand a Fock coupling on a bond with the given Fock degrees of freedom.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Base.:*-Tuple{FockCoupling{2,V,I} where I<:(Hamiltonian.Utilities.AlgebraOverFields.ID{2,#s232} where #s232<:FCID) where V,FockCoupling{2,V,I} where I<:(Hamiltonian.Utilities.AlgebraOverFields.ID{2,#s232} where #s232<:FCID) where V}",
+    "location": "man/Essentials/FockPackage.html#Base.:*-Tuple{FockCoupling{2,V,I} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{2,#s233} where #s233<:FCID) where V,FockCoupling{2,V,I} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{2,#s233} where #s233<:FCID) where V}",
     "page": "Fock package",
     "title": "Base.:*",
     "category": "method",
@@ -3409,7 +3625,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Base.fieldnames-Tuple{Type{#s215} where #s215<:FCID}",
+    "location": "man/Essentials/FockPackage.html#Base.fieldnames-Tuple{Type{#s216} where #s216<:FCID}",
     "page": "Fock package",
     "title": "Base.fieldnames",
     "category": "method",
@@ -3417,7 +3633,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Base.fieldnames-Tuple{Type{#s215} where #s215<:FIndex}",
+    "location": "man/Essentials/FockPackage.html#Base.fieldnames-Tuple{Type{#s216} where #s216<:FIndex}",
     "page": "Fock package",
     "title": "Base.fieldnames",
     "category": "method",
