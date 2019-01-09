@@ -14,17 +14,21 @@ makedocs(
                                 "tutorial/EngineAppInterface.md",
                                 ],
                         "Manual"    =>  [
-                                "Utilities" =>  [
-                                        "man/Utilities/Introduction.md",
-                                        "man/Utilities/Interfaces.md",
-                                        "man/Utilities/TypeTraits.md",
-                                        "man/Utilities/Factories.md",
-                                        "man/Utilities/CompositeStructures.md",
-                                        "man/Utilities/Trees.md",
-                                        "man/Utilities/NamedVectors.md",
-                                        "man/Utilities/Combinatorics.md",
-                                        "man/Utilities/AlgebraOverFields.md",
-                                        "man/Utilities/QuantumNumbers.md",
+                                "Prerequisites" =>  [
+                                        "man/Prerequisites/Introduction.md",
+                                        "man/Prerequisites/Interfaces.md",
+                                        "man/Prerequisites/TypeTraits.md",
+                                        "man/Prerequisites/Factories.md",
+                                        "man/Prerequisites/CompositeStructures.md",
+                                        "man/Prerequisites/Trees.md",
+                                        "man/Prerequisites/NamedVectors.md",
+                                        ],
+                                "Mathematics" =>  [
+                                        "man/Mathematics/Introduction.md",
+                                        "man/Mathematics/Combinatorics.md",
+                                        "man/Mathematics/VectorSpaces.md",
+                                        "man/Mathematics/AlgebraOverFields.md",
+                                        "man/Mathematics/QuantumNumbers.md",
                                         ],
                                 "Essentials" => [
                                         "man/Essentials/Introduction.md",

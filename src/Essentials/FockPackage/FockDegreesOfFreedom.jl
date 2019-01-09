@@ -1,11 +1,11 @@
 using Printf: @printf,@sprintf
 using ..Spatials: PID,AbstractBond,Point,Bond,pidtype
 using ..DegreesOfFreedom: IID,Index,Internal,FilteredAttributes,Coupling,Couplings
-using ...Utilities: delta,decimaltostr
-using ...Utilities.TypeTraits: indtosub,corder
-using ...Utilities.AlgebraOverFields: SimpleID,ID
+using ...Prerequisites: delta,decimaltostr
+using ...Prerequisites.TypeTraits: indtosub,corder
+using ...Mathematics.AlgebraOverFields: SimpleID,ID
 
-import ...Utilities.Interfaces: expand
+import ...Prerequisites.Interfaces: expand
 
 export ANNIHILATION,CREATION,FID,FIndex,Fock
 export usualfockindextotuple,nambufockindextotuple

@@ -1,11 +1,11 @@
 module DegreesOfFreedom
 
 using Printf: @printf
-using ...Utilities: Float
-using ...Utilities.TypeTraits: efficientoperations
-using ...Utilities.NamedVectors: AbstractNamedVector
-using ...Utilities.CompositeStructures: CompositeDict
-using ...Utilities.AlgebraOverFields: SimpleID, ID, Element, Elements
+using ...Prerequisites: Float
+using ...Prerequisites.TypeTraits: efficientoperations
+using ...Prerequisites.NamedVectors: AbstractNamedVector
+using ...Prerequisites.CompositeStructures: CompositeDict
+using ...Mathematics.AlgebraOverFields: SimpleID, ID, Element, Elements
 using ..Spatials: PID
 
 import ..Spatials: pidtype

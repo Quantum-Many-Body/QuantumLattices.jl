@@ -5,14 +5,14 @@ using StaticArrays: SVector,SMatrix
 using Printf: @printf,@sprintf
 using NearestNeighbors: KDTree,knn,inrange
 using Base.Iterators: flatten,product
-using ...Utilities: atol,rtol,Float
-using ...Utilities.TypeTraits: efficientoperations
-using ...Utilities.Combinatorics: Combinations
-using ...Utilities.NamedVectors: AbstractNamedVector
-using ...Utilities.Factories: Inference,TypeFactory,FunctionFactory,Argument,MixEscaped,Escaped,UnEscaped
-using ...Utilities.Factories: addparams!,addfields!,addwhereparams!,addargs!,addkwargs!,extendbody!,addconstructors!
+using ...Prerequisites: atol,rtol,Float
+using ...Prerequisites.TypeTraits: efficientoperations
+using ...Prerequisites.NamedVectors: AbstractNamedVector
+using ...Prerequisites.Factories: Inference,TypeFactory,FunctionFactory,Argument,MixEscaped,Escaped,UnEscaped
+using ...Prerequisites.Factories: addparams!,addfields!,addwhereparams!,addargs!,addkwargs!,extendbody!,addconstructors!
+using ...Mathematics.Combinatorics: Combinations
 
-import ...Utilities.Interfaces: rank,dimension
+import ...Prerequisites.Interfaces: rank,dimension
 
 export rank,dimension
 export distance,azimuthd,azimuth,polard,polar,volume
@@ -145,7 +145,7 @@ end
                     ) -> Bool
 
 Judge whether a point belongs to the interior of a triangle whose vertexes are `p1`, 'p2' and `p3` with the give tolerance. `vertexes` and `edges` define whether the interior should contain the vertexes or edges, respectively.
-!!! notes
+!!! note
     1. The vertexes are in the order (p1,p2,p3) and the edges are in the order (p1p2,p2p3,p3p1).
     2. The edges do not contain the vertexes.
 """
@@ -243,7 +243,7 @@ translate(cluster::AbstractMatrix{<:Real},vector::AbstractVector{<:Real})=cluste
 Get a rotated cluster of the original one by a certain angle around an axis.
 
 The axis is determined by a point it gets through (`nothing` can be used to denote the origin), and its polar as well as azimuth angles in radians. The default axis is the z axis.
-!!! notes
+!!! note
     1. The result is given by the [Rodrigues' rotation formula](https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula).
     2. Only 2 and 3 dimensional vectors can be rotated.
     3. When the input vectors are 2 dimensional, both the polar and azimuth of the axis must be 0.
@@ -875,7 +875,7 @@ struct InterBonds <: LatticeBonds end
     intrabonds
 
 Indicate that bonds intra the sublattices are inquired.
-!!! notes
+!!! note
     These bonds do not contain those accorss the periodic boundaries.
 """
 const intrabonds=IntraBonds()
@@ -883,7 +883,7 @@ const intrabonds=IntraBonds()
     interbonds
 
 Indicate that bonds inter the sublattices are inquired.
-!!! notes
+!!! note
     These bonds do not contain those accorss the periodic boundaries.
 """
 const interbonds=InterBonds()

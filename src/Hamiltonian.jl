@@ -1,7 +1,8 @@
 module Hamiltonian
     using Reexport: @reexport
 
-    include("Utilities/Utilities.jl")
+    include("Prerequisites/Prerequisites.jl")
+    include("Mathematics/Mathematics.jl")
     include("Essentials/Essentials.jl")
 
     @reexport using .Essentials
