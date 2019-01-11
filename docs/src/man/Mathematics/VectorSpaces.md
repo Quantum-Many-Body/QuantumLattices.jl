@@ -86,26 +86,41 @@ Other features include
 
 The `:table` attribute can be sorted or unsorted, which is determined by the type parameter `S`, with `'T'` for sorted and `'F'` for unsorted.
 
-## AbstractOrderedIndices
+## OrderedIndices
 
-[`AbstractOrderedIndices{N}`](@ref) defines a simplest class of multiindexable vector spaces, whose bases are just tuples of integers.
+[`OrderedIndices{N}`](@ref) defines the simplest abstract class of multiindexable vector spaces, whose bases are just tuples of integers.
 
 This class of vector spaces must have the following attribute:
 `dims::NTuple{N,Int}`: the dimesnions of the Cartesian indices along all axes
 
-### DirectOrderedIndices
+### DirectIndices
 
-[`DirectOrderedIndices{M,N}`](@ref) is the direct ordered Cartesian indices.
+[`DirectIndices{M,N}`](@ref) is the direct ordered Cartesian indices.
 
 It is worth noting that
 1) It can be C/C++ ordered or Fortran ordered depending on the first type parameter `M`, with `'C'` for the former and `'F'` the latter.
 2) For its bases (Cartesian indices), there is no restriction except that they should be in the proper range defined by its `dims`.
 
-### TabledOrderedIndices
+### TabledIndices
 
-[`TabledOrderedIndices{S,N}`](@ref) defines the tabled ordered Cartesian indices.
+[`TabledIndices{S,N}`](@ref) defines the tabled ordered Cartesian indices.
 
-Compared to [`DirectOrderedIndices`](@ref), the bases of this kind of vector spaces are stored in the attribute `:table`, which must be a vector of tuple of integers. The `:table` attribute can be sorted or unsorted, which is determined by the type parameter `S`, with `'T'` for sorted and `'F'` for unsorted. This type suits the situations when the Cartesian indices are restricted by extra conditions except that propoesed by the attribute `:dims`.
+Compared to [`DirectIndices`](@ref), the bases of this kind of vector spaces are stored in the attribute `:table`, which must be a vector of tuple of integers. The `:table` attribute can be sorted or unsorted, which is determined by the type parameter `S`, with `'T'` for sorted and `'F'` for unsorted. This type suits the situations when the Cartesian indices are restricted by extra conditions except that propoesed by the attribute `:dims`.
+
+## GradedVectorSpace
+
+[`GradedVectorSpace{G,B,V,T}`](@ref) defines the abstract type of graded vector spaces, which are vector spaces that have the extra structure of a grading, which is a decomposition of the vector space into a direct sum of vector subspaces.
+
+It has 4 type parameters
+* `G`: the type of the grades
+* `B`: the eltype of the subspaces
+* `V<:AbstractVectorSpace`: the type of the subspaces
+* `T<:GradedTables{G,V}`: the type of the subspaces' contents
+
+Concrete subtypes must have the following attribute:
+* `:tables::T`: the contents of the subspaces, which must be a [`GradedTables`](@ref).
+
+Specifically, the `dimension`, `getindex` and `searchsortedfirst` methods are overloaded in support of various purposes. For details, please refer to the manual.
 
 ## Manul
 

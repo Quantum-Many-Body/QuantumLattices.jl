@@ -3,13 +3,14 @@ module VectorSpaces
 using ..Combinatorics: AbstractCombinatorics
 using ...Prerequisites.TypeTraits: efficientoperations,forder,corder,subtoind,indtosub
 
-import ...Prerequisites.Interfaces: dimension,⊕,rank,dims,inds
+import ...Prerequisites.Interfaces: dimension,⊕,rank,dims,inds,degree
 
-export dimension,⊕,rank,dims,inds
+export dimension,⊕,rank,dims,inds,degree
 export AbstractVectorSpace
 export HasTable,TableSorted,IsMultiIndexable,MultiIndexOrderStyle
 export DirectVectorSpace
-export AbstractOrderedIndices,DirectOrderedIndices,TabledOrderedIndices
+export OrderedIndices,DirectIndices,TabledIndices
+export GradedTables,GradedVectorSpace
 
 """
     AbstractVectorSpace{B} <: AbstractVector{B}
@@ -79,7 +80,7 @@ MultiIndexOrderStyle(M::Char)=M∈('C','F') ? MultiIndexOrderStyle{M}() : error(
 MultiIndexOrderStyle(::Type{<:AbstractVectorSpace})=MultiIndexOrderStyle{'C'}()
 
 """
-    dimension(vs::AbstractVectorSpace)
+    dimension(vs::AbstractVectorSpace) -> Int
 
 The dimension of a vector space.
 """
@@ -139,13 +140,19 @@ end
 
 Get the index of a basis or the indices of a couple of bases in a vector space.
 """
-Base.findfirst(basis::B,vs::AbstractVectorSpace{B}) where B=_find_(basis,vs,vs|>typeof|>TableSorted)
+Base.findfirst(basis::B,vs::AbstractVectorSpace{B}) where B=_find_(basis,vs,vs|>typeof|>HasTable)
 Base.findfirst(bases,vs::AbstractVectorSpace)=NTuple{length(bases),Int}(findfirst(basis,vs)::Int for basis in bases)
-_find_(basis::B,vs::AbstractVectorSpace{B},::TableSorted{true}) where B=(index=searchsortedfirst(vs,basis);0<index<=dimension(vs) && vs[index]==basis ? index : missing)
-_find_(basis::B,vs::AbstractVectorSpace{B},::TableSorted{false}) where B=searchsortedfirst(vs,basis)
+_find_(basis::B,vs::AbstractVectorSpace{B},::HasTable{true}) where B=_find_(basis,vs,vs|>typeof|>TableSorted)
+_find_(basis::B,vs::AbstractVectorSpace{B},::TableSorted{true}) where B=_findwithmissing_(basis,vs)
+_find_(basis::B,vs::AbstractVectorSpace{B},::TableSorted{false}) where B=_findwithoutmissing_(basis,vs)
+_find_(basis::B,vs::AbstractVectorSpace{B},::HasTable{false}) where B=_find_(basis,vs,vs|>typeof|>IsMultiIndexable)
+_find_(basis::B,vs::AbstractVectorSpace{B},::IsMultiIndexable{true}) where B=_findwithoutmissing_(basis,vs)
+_find_(basis::B,vs::AbstractVectorSpace{B},::IsMultiIndexable{false}) where B=_findwithmissing_(basis,vs)
+_findwithmissing_(basis::B,vs::AbstractVectorSpace{B}) where B=(index=searchsortedfirst(vs,basis);0<index<=dimension(vs) && vs[index]==basis ? index : missing)
+_findwithoutmissing_(basis::B,vs::AbstractVectorSpace{B}) where B=searchsortedfirst(vs,basis)
 
 """
-    in(basis::B,vs::AbstractVectorSpace{B}) where B
+    in(basis::B,vs::AbstractVectorSpace{B}) where B -> Bool
 
 Judge whether a basis belongs to a vector space.
 """
@@ -180,10 +187,10 @@ TableSorted(::Type{<:DirectVectorSpace{'T'}})=TableSorted(true)
 TableSorted(::Type{<:DirectVectorSpace{'F'}})=TableSorted(false)
 
 """
-    ⊕(basis1::B,basis2::B) where B
-    ⊕(basis::B,vs::DirectVectorSpace{<:Any,B}) where B
-    ⊕(vs::DirectVectorSpace{<:Any,B},basis::B) where B
-    ⊕(vs1::DirectVectorSpace{<:Any,B},vs2::DirectVectorSpace{<:Any,B}) where B
+    ⊕(basis1::B,basis2::B) where B -> DirectVectorSpace{'F',B,2}
+    ⊕(basis::B,vs::DirectVectorSpace{<:Any,B}) where B -> DirectVectorSpace{'F',B}
+    ⊕(vs::DirectVectorSpace{<:Any,B},basis::B) where B -> DirectVectorSpace{'F',B}
+    ⊕(vs1::DirectVectorSpace{<:Any,B},vs2::DirectVectorSpace{<:Any,B}) where B -> DirectVectorSpace{'F',B}
 
 Get the direct sum between bases or direct vector spaces.
 """
@@ -193,22 +200,22 @@ Get the direct sum between bases or direct vector spaces.
 ⊕(vs1::DirectVectorSpace{<:Any,B},vs2::DirectVectorSpace{<:Any,B}) where B=DirectVectorSpace{'F'}(vs1.table...,vs2.table...)
 
 """
-    AbstractOrderedIndices{N} <: AbstractVectorSpace{NTuple{N,Int}}
+    OrderedIndices{N} <: AbstractVectorSpace{NTuple{N,Int}}
 
-A simplest class of multiindexable vector spaces, whose bases are just tuples of integers.
+The simplest abstract class of multiindexable vector spaces, whose bases are just tuples of integers.
 
 This class of vector spaces must have the following attribute:
 `dims::NTuple{N,Int}`: the dimesnions of the Cartesian indices along all axes
 """
-abstract type AbstractOrderedIndices{N} <: AbstractVectorSpace{NTuple{N,Int}} end
-IsMultiIndexable(::Type{<:AbstractOrderedIndices})=IsMultiIndexable(true)
-dims(vs::AbstractOrderedIndices)=vs.dims
-inds(basis::NTuple{N,Int},::AbstractOrderedIndices{N}) where N=basis
-rank(::Type{<:AbstractOrderedIndices{N}}) where N=N
-Tuple(index::NTuple{N,Int},::AbstractOrderedIndices{N}) where N=index
+abstract type OrderedIndices{N} <: AbstractVectorSpace{NTuple{N,Int}} end
+IsMultiIndexable(::Type{<:OrderedIndices})=IsMultiIndexable(true)
+dims(vs::OrderedIndices)=vs.dims
+inds(basis::NTuple{N,Int},::OrderedIndices{N}) where N=basis
+rank(::Type{<:OrderedIndices{N}}) where N=N
+Tuple(index::NTuple{N,Int},::OrderedIndices{N}) where N=index
 
 """
-    DirectOrderedIndices{M}(dims::NTuple{N,Int}) where {M,N}
+    DirectIndices{M}(dims::NTuple{N,Int}) where {M,N}
 
 Direct ordered Cartesian indices.
 
@@ -216,29 +223,198 @@ Direct ordered Cartesian indices.
     1) It can be C/C++ ordered or Fortran ordered depending on the first type parameter `M`, with `'C'` for the former and `'F'` the latter.
     2) For its bases (Cartesian indices), there is no restriction except that they should be in the proper range defined by its `dims`.
 """
-struct DirectOrderedIndices{M,N} <: AbstractOrderedIndices{N}
+struct DirectIndices{M,N} <: OrderedIndices{N}
     dims::NTuple{N,Int}
-    DirectOrderedIndices{M}(dims::NTuple{N,Int}) where {M,N}=(@assert(M∈('C','F'),"DirectOrderedIndices error: wrong type parameter M($M).");new{M,N}(dims))
+    DirectIndices{M}(dims::NTuple{N,Int}) where {M,N}=(@assert(M∈('C','F'),"DirectIndices error: wrong type parameter M($M).");new{M,N}(dims))
 end
-DirectOrderedIndices{M}(dims::Int...) where M=DirectOrderedIndices{M}(dims)
-MultiIndexOrderStyle(::Type{<:DirectOrderedIndices{M}}) where M=MultiIndexOrderStyle(M)
+DirectIndices{M}(dims::Int...) where M=DirectIndices{M}(dims)
+DirectIndices{M,N}(dims::NTuple{N,Int}) where {M,N}=DirectIndices{M}(dims)
+MultiIndexOrderStyle(::Type{<:DirectIndices{M}}) where M=MultiIndexOrderStyle(M)
 
 """
-    TabledOrderedIndices{S}(dims::NTuple{N,Int},table::Vector{NTuple{N,Int}}) where {S,N}
-    TabledOrderedIndices{N}(::Type{M},len::Int) where {N,M<:AbstractCombinatorics}
+    TabledIndices{S}(dims::NTuple{N,Int},table::Vector{NTuple{N,Int}}) where {S,N}
+    TabledIndices{N}(::Type{M},len::Int) where {N,M<:AbstractCombinatorics}
 
 Tabled ordered Cartesian indices.
 
-Compared to [`DirectOrderedIndices`](@ref), the bases of this kind of vector spaces are stored in the attribute `:table`, which must be a vector of tuple of integers. The `:table` attribute can be sorted or unsorted, which is determined by the type parameter `S`, with `'T'` for sorted and `'F'` for unsorted. This type suits the situations when the Cartesian indices are restricted by extra conditions except that propoesed by the attribute `:dims`.
+Compared to [`DirectIndices`](@ref), the bases of this kind of vector spaces are stored in the attribute `:table`, which must be a vector of tuple of integers. The `:table` attribute can be sorted or unsorted, which is determined by the type parameter `S`, with `'T'` for sorted and `'F'` for unsorted. This type suits the situations when the Cartesian indices are restricted by extra conditions except that propoesed by the attribute `:dims`.
 """
-struct TabledOrderedIndices{S,N} <: AbstractOrderedIndices{N}
+struct TabledIndices{S,N} <: OrderedIndices{N}
     dims::NTuple{N,Int}
     table::Vector{NTuple{N,Int}}
-    TabledOrderedIndices{S}(dims::NTuple{N,Int},table::Vector{NTuple{N,Int}}) where {S,N}=new{S,N}(dims,table)
+    TabledIndices{S}(dims::NTuple{N,Int},table::Vector{NTuple{N,Int}}) where {S,N}=new{S,N}(dims,table)
 end
-TabledOrderedIndices{N}(::Type{M},len::Int) where {N,M<:AbstractCombinatorics}=TabledOrderedIndices{'T'}(ntuple(i->len,N),M{N}(1:len)|>collect)
-HasTable(::Type{<:TabledOrderedIndices})=HasTable(true)
-TableSorted(::Type{<:TabledOrderedIndices{'T'}})=TableSorted(true)
-TableSorted(::Type{<:TabledOrderedIndices{'F'}})=TableSorted(false)
+TabledIndices{N}(::Type{M},len::Int) where {N,M<:AbstractCombinatorics}=TabledIndices{'T'}(ntuple(i->len,N),M{N}(1:len)|>collect)
+HasTable(::Type{<:TabledIndices})=HasTable(true)
+TableSorted(::Type{<:TabledIndices{'T'}})=TableSorted(true)
+TableSorted(::Type{<:TabledIndices{'F'}})=TableSorted(false)
+
+"""
+    GradedTables(vs::Tuple,ks::Tuple)
+    GradedTables(::Type{M},n::Int,gs::Val{GS}) where {M<:AbstractCombinatorics,GS}
+
+The tables of a graded vector space.
+
+Alias for `Base.Iterators.Pairs{G,V,KS<:Tuple,VS<:Tuple}`.
+"""
+const GradedTables{G,V,KS<:Tuple,VS<:Tuple}=Base.Iterators.Pairs{G,V,KS,VS}
+GradedTables(vs::Tuple,ks::Tuple)=Base.Iterators.Pairs(vs,ks)
+GradedTables(::Type{M},n::Int,gs::Val{GS}) where {M<:AbstractCombinatorics,GS}=GradedTables(comdata(M,n,gs),GS)
+@generated comdata(::Type{M},n::Int,::Val{GS}) where {M<:AbstractCombinatorics,GS}=Expr(:tuple,[:(TabledIndices{$g}(M,n)) for g in GS]...)
+
+"""
+    keytype(tables::GradedTables,g::Int)
+    keytype(::Type{T},g::Int) where {T<:GradedTables}
+
+Get the gth keytype of a graded tables.
+"""
+Base.keytype(tables::GradedTables,g::Int)=keytype(typeof(tables),g)
+Base.keytype(::Type{T},g::Int) where {T<:GradedTables}=fieldtype(fieldtype(T,:itr),g)
+
+"""
+    valtype(tables::GradedTables,g::Int)
+    valtype(::Type{T},g::Int) where {T<:GradedTables}
+
+Get the gth valtype of a graded tables.
+"""
+Base.valtype(tables::GradedTables,g::Int)=valtype(typeof(tables),g)
+Base.valtype(::Type{T},g::Int) where {T<:GradedTables}=fieldtype(fieldtype(T,:data),g)
+
+"""
+    rank(tables::GradedTables) -> Int
+    rank(::Type{T}) where {T<:GradedTables} -> Int
+
+Get the total number of keys or values of a graded tables.
+"""
+rank(tables::GradedTables)=tables|>typeof|>rank
+rank(::Type{T}) where {T<:GradedTables}=fieldcount(fieldtype(T,:data))
+
+"""
+    GradedVectorSpace{G,B,V<:AbstractVectorSpace,T<:GradedTables{G,V}} <: AbstractVectorSpace{Tuple{G,B}}
+
+Abstract type of graded vector spaces.
+
+A graded vector space is a vector space that has the extra structure of a grading, which is a decomposition of the vector space into a direct sum of vector subspaces.
+
+Concrete subtypes must have the following attribute:
+* `:tables::GradedTables{G,V} where {G,V<:AbstractVectorSpace}`: the tables of the subspaces.
+"""
+abstract type GradedVectorSpace{G,B,V<:AbstractVectorSpace,T<:GradedTables{G,V}} <: AbstractVectorSpace{Tuple{G,B}} end
+
+"""
+    keys(vs::GradedVectorSpace) -> Tuple
+    values(vs::GradedVectorSpace) -> Tuple
+    pairs(vs::GradedVectorSpace) -> GradedTables
+
+Iterate over the keys, values or pairs of a graded vector space.
+"""
+Base.keys(vs::GradedVectorSpace)=keys(vs.tables)
+Base.values(vs::GradedVectorSpace)=values(vs.tables)
+Base.pairs(vs::GradedVectorSpace)=pairs(vs.tables)
+
+"""
+    keytype(vs::GradedVectorSpace,g::Int)
+    keytype(::Type{V},g::Int) where {V<:GradedVectorSpace}
+
+Get the gth keytype of a graded vector space.
+"""
+Base.keytype(vs::GradedVectorSpace,g::Int)=keytype(typeof(vs),g)
+Base.keytype(::Type{V},g::Int) where {V<:GradedVectorSpace}=keytype(fieldtype(V,:tables),g)
+
+"""
+    valtype(vs::GradedVectorSpace,g::Int)
+    valtype(::Type{V},g::Int) where {V<:GradedVectorSpace}
+
+Get the gth valtype of a graded vector space.
+"""
+Base.valtype(vs::GradedVectorSpace,g::Int)=valtype(typeof(vs),g)
+Base.valtype(::Type{V},g::Int) where {V<:GradedVectorSpace}=valtype(fieldtype(V,:tables),g)
+
+"""
+    eltype(vs::GradedVectorSpace,g::Int)
+    eltype(::Type{V},g::Int) where {V<:GradedVectorSpace}
+
+Get the gth eltype of a graded vector space.
+"""
+Base.eltype(vs::GradedVectorSpace,g::Int)=eltype(typeof(vs),g)
+Base.eltype(::Type{V},g::Int) where {V<:GradedVectorSpace}=Tuple{keytype(V,g),eltype(valtype(V,g))}
+
+"""
+    rank(vs::GradedVectorSpace) -> Int
+    rank(::Type{V}) where {V<:GradedVectorSpace} -> Int
+
+Get the rank, i.e. the total number of vector subspaces.
+"""
+rank(vs::GradedVectorSpace)=vs|>typeof|>rank
+rank(::Type{V}) where {V<:GradedVectorSpace}=rank(fieldtype(V,:tables))
+
+"""
+    degree(g::G,vs::GradedVectorSpace{G}) where G -> Int
+
+Get the degree of a vector subspace whose grade are represented by g.
+"""
+degree(g::G,vs::GradedVectorSpace{G}) where G=findfirst(isequal(g),keys(vs))
+
+"""
+    dimension(vs::GradedVectorSpace) -> Int
+    dimension(vs::GradedVectorSpace{G},g::G) where G -> Int
+    dimension(vs::GradedVectorSpace{G},gs::NTuple{N,G}) where {G,N} -> Int
+
+Get the dimension of the whole graded vector space or some vector subspaces.
+"""
+dimension(vs::GradedVectorSpace)=sum(NTuple{rank(typeof(vs)),Int}(dimension(v) for v in values(vs)))::Int
+dimension(vs::GradedVectorSpace{G},g::G) where G=(index=degree(g,vs);isa(index,Int) ? dimension(values(vs)[index]) : 0)::Int
+function dimension(vs::GradedVectorSpace{G},gs::NTuple{N,G}) where {G,N}
+    result=0
+    for g in gs
+        result=result+dimension(vs,g)::Int
+    end
+    result
+end
+
+"""
+    iterate(vs::GradedVectorSpace,state=(1,1))
+
+Iterate over the whole graded vector space.
+"""
+function Base.iterate(vs::GradedVectorSpace,state=(1,1))
+    tables,degree,index=values(vs),state[1],state[2]
+    while index>length(tables[degree])
+        degree=degree+1
+        degree>length(tables) && return nothing
+        index=1
+    end
+    return (keys(vs)[degree],tables[degree][index]),(degree,index+1)
+end
+
+"""
+    getindex(vs::GradedVectorSpace{B},pair::Tuple{B,Int}) where B
+    getindex(vs::GradedVectorSpace,i::Int)
+
+Get the basis of a graded vector space by a grade-index pair or by an index.
+"""
+Base.getindex(vs::GradedVectorSpace{B},pair::Tuple{B,Int}) where B=values(vs)[degree(pair[1],vs)][pair[2]]
+function Base.getindex(vs::GradedVectorSpace,i::Int)
+    degree,dimensions=1,NTuple{rank(typeof(vs)),Int}(dimension(v) for v in values(vs))
+    while i>dimensions[degree]
+        i=i-dimensions[degree]
+        degree=degree+1
+        degree>length(dimensions) && error("getindex error: input index($i) out of range.")
+    end
+    return (keys(vs)[degree],values(vs)[degree][i])
+end
+
+"""
+    searchsortedfirst(vs::GradedVectorSpace{G,B},pair::Tuple{G,B}) where {G,B} -> Int
+
+Find the index of a grade-basis pair in a graded vector space.
+"""
+function Base.searchsortedfirst(vs::GradedVectorSpace{G,B},pair::Tuple{G,B}) where {G,B}
+    dim,tables,index,basis=0,values(vs),degree(pair[1],vs),pair[2]
+    for i=1:(index-1)
+        dim=dim+dimension(tables[i])
+    end
+    searchsortedfirst(tables[index],basis)+dim
+end
 
 end # module
