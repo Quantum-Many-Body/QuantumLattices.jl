@@ -1,5 +1,8 @@
 using Hamiltonian.Mathematics.AlgebraOverFields
 using Hamiltonian.Prerequisites: Float
+using Hamiltonian.Prerequisites.Interfaces: dimension
+using Hamiltonian.Mathematics.Combinatorics: Combinations
+using Hamiltonian.Mathematics.VectorSpaces: DirectVectorSpace
 
 struct SMPID{O<:Real,S<:Real} <: SimpleID
     orbital::O
@@ -33,6 +36,15 @@ end
     @test propertynames(cid|>typeof,true)==(:contents,:orbitals,:spins)
     @test cid.orbitals==(2,3)
     @test cid.spins==(1,4)
+end
+
+@testset "IdSpace" begin
+    sids=DirectVectorSpace{'F'}((SMPID(i,1) for i=1:4)...)
+    idspace=IdSpace(Combinations,sids,Val((0,2,4)))
+    for i=1:dimension(idspace)
+        @test searchsortedfirst(idspace,idspace[i])==i
+        @test findfirst(idspace[i],idspace)==i
+    end
 end
 
 struct BasicOperator{V,I,N} <: Element{V,I,N}
