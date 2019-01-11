@@ -201,6 +201,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Prerequisites/Interfaces.html#Hamiltonian.Prerequisites.Interfaces.degree",
+    "page": "Interfaces",
+    "title": "Hamiltonian.Prerequisites.Interfaces.degree",
+    "category": "function",
+    "text": "Degree\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Prerequisites/Interfaces.html#Hamiltonian.Prerequisites.Interfaces.dimension",
     "page": "Interfaces",
     "title": "Hamiltonian.Prerequisites.Interfaces.dimension",
@@ -1721,35 +1729,35 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/VectorSpaces.html#AbstractOrderedIndices-1",
+    "location": "man/Mathematics/VectorSpaces.html#OrderedIndices-1",
     "page": "Vector spaces",
-    "title": "AbstractOrderedIndices",
+    "title": "OrderedIndices",
     "category": "section",
-    "text": "AbstractOrderedIndices{N} defines a simplest class of multiindexable vector spaces, whose bases are just tuples of integers.This class of vector spaces must have the following attribute: dims::NTuple{N,Int}: the dimesnions of the Cartesian indices along all axes"
+    "text": "OrderedIndices{N} defines the simplest abstract class of multiindexable vector spaces, whose bases are just tuples of integers.This class of vector spaces must have the following attribute: dims::NTuple{N,Int}: the dimesnions of the Cartesian indices along all axes"
 },
 
 {
-    "location": "man/Mathematics/VectorSpaces.html#DirectOrderedIndices-1",
+    "location": "man/Mathematics/VectorSpaces.html#DirectIndices-1",
     "page": "Vector spaces",
-    "title": "DirectOrderedIndices",
+    "title": "DirectIndices",
     "category": "section",
-    "text": "DirectOrderedIndices{M,N} is the direct ordered Cartesian indices.It is worth noting thatIt can be C/C++ ordered or Fortran ordered depending on the first type parameter M, with \'C\' for the former and \'F\' the latter.\nFor its bases (Cartesian indices), there is no restriction except that they should be in the proper range defined by its dims."
+    "text": "DirectIndices{M,N} is the direct ordered Cartesian indices.It is worth noting thatIt can be C/C++ ordered or Fortran ordered depending on the first type parameter M, with \'C\' for the former and \'F\' the latter.\nFor its bases (Cartesian indices), there is no restriction except that they should be in the proper range defined by its dims."
 },
 
 {
-    "location": "man/Mathematics/VectorSpaces.html#TabledOrderedIndices-1",
+    "location": "man/Mathematics/VectorSpaces.html#TabledIndices-1",
     "page": "Vector spaces",
-    "title": "TabledOrderedIndices",
+    "title": "TabledIndices",
     "category": "section",
-    "text": "TabledOrderedIndices{S,N} defines the tabled ordered Cartesian indices.Compared to DirectOrderedIndices, the bases of this kind of vector spaces are stored in the attribute :table, which must be a vector of tuple of integers. The :table attribute can be sorted or unsorted, which is determined by the type parameter S, with \'T\' for sorted and \'F\' for unsorted. This type suits the situations when the Cartesian indices are restricted by extra conditions except that propoesed by the attribute :dims."
+    "text": "TabledIndices{S,N} defines the tabled ordered Cartesian indices.Compared to DirectIndices, the bases of this kind of vector spaces are stored in the attribute :table, which must be a vector of tuple of integers. The :table attribute can be sorted or unsorted, which is determined by the type parameter S, with \'T\' for sorted and \'F\' for unsorted. This type suits the situations when the Cartesian indices are restricted by extra conditions except that propoesed by the attribute :dims."
 },
 
 {
-    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Mathematics.VectorSpaces.AbstractOrderedIndices",
+    "location": "man/Mathematics/VectorSpaces.html#GradedVectorSpace-1",
     "page": "Vector spaces",
-    "title": "Hamiltonian.Mathematics.VectorSpaces.AbstractOrderedIndices",
-    "category": "type",
-    "text": "AbstractOrderedIndices{N} <: AbstractVectorSpace{NTuple{N,Int}}\n\nA simplest class of multiindexable vector spaces, whose bases are just tuples of integers.\n\nThis class of vector spaces must have the following attribute: dims::NTuple{N,Int}: the dimesnions of the Cartesian indices along all axes\n\n\n\n\n\n"
+    "title": "GradedVectorSpace",
+    "category": "section",
+    "text": "GradedVectorSpace{G,B,V,T} defines the abstract type of graded vector spaces, which are vector spaces that have the extra structure of a grading, which is a decomposition of the vector space into a direct sum of vector subspaces.It has 4 type parametersG: the type of the grades\nB: the eltype of the subspaces\nV<:AbstractVectorSpace: the type of the subspaces\nT<:GradedTables{G,V}: the type of the subspaces\' contentsConcrete subtypes must have the following attribute::tables::T: the contents of the subspaces, which must be a GradedTables.Specifically, the dimension, getindex and searchsortedfirst methods are overloaded in support of various purposes. For details, please refer to the manual."
 },
 
 {
@@ -1761,11 +1769,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Mathematics.VectorSpaces.DirectOrderedIndices",
+    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Mathematics.VectorSpaces.DirectIndices",
     "page": "Vector spaces",
-    "title": "Hamiltonian.Mathematics.VectorSpaces.DirectOrderedIndices",
+    "title": "Hamiltonian.Mathematics.VectorSpaces.DirectIndices",
     "category": "type",
-    "text": "DirectOrderedIndices{M}(dims::NTuple{N,Int}) where {M,N}\n\nDirect ordered Cartesian indices.\n\nnote: Note\nIt can be C/C++ ordered or Fortran ordered depending on the first type parameter M, with \'C\' for the former and \'F\' the latter.\nFor its bases (Cartesian indices), there is no restriction except that they should be in the proper range defined by its dims.\n\n\n\n\n\n"
+    "text": "DirectIndices{M}(dims::NTuple{N,Int}) where {M,N}\n\nDirect ordered Cartesian indices.\n\nnote: Note\nIt can be C/C++ ordered or Fortran ordered depending on the first type parameter M, with \'C\' for the former and \'F\' the latter.\nFor its bases (Cartesian indices), there is no restriction except that they should be in the proper range defined by its dims.\n\n\n\n\n\n"
 },
 
 {
@@ -1774,6 +1782,22 @@ var documenterSearchIndex = {"docs": [
     "title": "Hamiltonian.Mathematics.VectorSpaces.DirectVectorSpace",
     "category": "type",
     "text": "DirectVectorSpace{S}(table::NTuple{N,B}) where {S,B,N}\nDirectVectorSpace{S}(table...) where S\n\nSimplest vector space, whose bases are stored in the attribute :table as an ntuple.\n\nThe :table attribute can be sorted or unsorted, which is determined by the type parameter S, with \'T\' for sorted and \'F\' for unsorted.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Mathematics.VectorSpaces.GradedTables",
+    "page": "Vector spaces",
+    "title": "Hamiltonian.Mathematics.VectorSpaces.GradedTables",
+    "category": "type",
+    "text": "GradedTables(vs::Tuple,ks::Tuple)\nGradedTables(::Type{M},n::Int,gs::Val{GS}) where {M<:AbstractCombinatorics,GS}\n\nThe tables of a graded vector space.\n\nAlias for Base.Iterators.Pairs{G,V,KS<:Tuple,VS<:Tuple}.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Mathematics.VectorSpaces.GradedVectorSpace",
+    "page": "Vector spaces",
+    "title": "Hamiltonian.Mathematics.VectorSpaces.GradedVectorSpace",
+    "category": "type",
+    "text": "GradedVectorSpace{G,B,V<:AbstractVectorSpace,T<:GradedTables{G,V}} <: AbstractVectorSpace{Tuple{G,B}}\n\nAbstract type of graded vector spaces.\n\nA graded vector space is a vector space that has the extra structure of a grading, which is a decomposition of the vector space into a direct sum of vector subspaces.\n\nConcrete subtypes must have the following attribute:\n\n:tables::GradedTables{G,V} where {G,V<:AbstractVectorSpace}: the tables of the subspaces.\n\n\n\n\n\n"
 },
 
 {
@@ -1801,6 +1825,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Mathematics.VectorSpaces.OrderedIndices",
+    "page": "Vector spaces",
+    "title": "Hamiltonian.Mathematics.VectorSpaces.OrderedIndices",
+    "category": "type",
+    "text": "OrderedIndices{N} <: AbstractVectorSpace{NTuple{N,Int}}\n\nThe simplest abstract class of multiindexable vector spaces, whose bases are just tuples of integers.\n\nThis class of vector spaces must have the following attribute: dims::NTuple{N,Int}: the dimesnions of the Cartesian indices along all axes\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Mathematics.VectorSpaces.TableSorted",
     "page": "Vector spaces",
     "title": "Hamiltonian.Mathematics.VectorSpaces.TableSorted",
@@ -1809,11 +1841,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Mathematics.VectorSpaces.TabledOrderedIndices",
+    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Mathematics.VectorSpaces.TabledIndices",
     "page": "Vector spaces",
-    "title": "Hamiltonian.Mathematics.VectorSpaces.TabledOrderedIndices",
+    "title": "Hamiltonian.Mathematics.VectorSpaces.TabledIndices",
     "category": "type",
-    "text": "TabledOrderedIndices{S}(dims::NTuple{N,Int},table::Vector{NTuple{N,Int}}) where {S,N}\nTabledOrderedIndices{N}(::Type{M},len::Int) where {N,M<:AbstractCombinatorics}\n\nTabled ordered Cartesian indices.\n\nCompared to DirectOrderedIndices, the bases of this kind of vector spaces are stored in the attribute :table, which must be a vector of tuple of integers. The :table attribute can be sorted or unsorted, which is determined by the type parameter S, with \'T\' for sorted and \'F\' for unsorted. This type suits the situations when the Cartesian indices are restricted by extra conditions except that propoesed by the attribute :dims.\n\n\n\n\n\n"
+    "text": "TabledIndices{S}(dims::NTuple{N,Int},table::Vector{NTuple{N,Int}}) where {S,N}\nTabledIndices{N}(::Type{M},len::Int) where {N,M<:AbstractCombinatorics}\n\nTabled ordered Cartesian indices.\n\nCompared to DirectIndices, the bases of this kind of vector spaces are stored in the attribute :table, which must be a vector of tuple of integers. The :table attribute can be sorted or unsorted, which is determined by the type parameter S, with \'T\' for sorted and \'F\' for unsorted. This type suits the situations when the Cartesian indices are restricted by extra conditions except that propoesed by the attribute :dims.\n\n\n\n\n\n"
 },
 
 {
@@ -1821,7 +1853,15 @@ var documenterSearchIndex = {"docs": [
     "page": "Vector spaces",
     "title": "Hamiltonian.Prerequisites.Interfaces.:⊕",
     "category": "method",
-    "text": "⊕(basis1::B,basis2::B) where B\n⊕(basis::B,vs::DirectVectorSpace{<:Any,B}) where B\n⊕(vs::DirectVectorSpace{<:Any,B},basis::B) where B\n⊕(vs1::DirectVectorSpace{<:Any,B},vs2::DirectVectorSpace{<:Any,B}) where B\n\nGet the direct sum between bases or direct vector spaces.\n\n\n\n\n\n"
+    "text": "⊕(basis1::B,basis2::B) where B -> DirectVectorSpace{\'F\',B,2}\n⊕(basis::B,vs::DirectVectorSpace{<:Any,B}) where B -> DirectVectorSpace{\'F\',B}\n⊕(vs::DirectVectorSpace{<:Any,B},basis::B) where B -> DirectVectorSpace{\'F\',B}\n⊕(vs1::DirectVectorSpace{<:Any,B},vs2::DirectVectorSpace{<:Any,B}) where B -> DirectVectorSpace{\'F\',B}\n\nGet the direct sum between bases or direct vector spaces.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Prerequisites.Interfaces.degree-Union{Tuple{G}, Tuple{G,GradedVectorSpace{G,B,V,T} where T<:(Pairs{G,V,KS,VS} where VS<:Tuple where KS<:Tuple) where V<:AbstractVectorSpace where B}} where G",
+    "page": "Vector spaces",
+    "title": "Hamiltonian.Prerequisites.Interfaces.degree",
+    "category": "method",
+    "text": "degree(g::G,vs::GradedVectorSpace{G}) where G -> Int\n\nGet the degree of a vector subspace whose grade are represented by g.\n\n\n\n\n\n"
 },
 
 {
@@ -1829,7 +1869,31 @@ var documenterSearchIndex = {"docs": [
     "page": "Vector spaces",
     "title": "Hamiltonian.Prerequisites.Interfaces.dimension",
     "category": "method",
-    "text": "dimension(vs::AbstractVectorSpace)\n\nThe dimension of a vector space.\n\n\n\n\n\n"
+    "text": "dimension(vs::AbstractVectorSpace) -> Int\n\nThe dimension of a vector space.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Prerequisites.Interfaces.dimension-Tuple{Hamiltonian.Mathematics.VectorSpaces.GradedVectorSpace}",
+    "page": "Vector spaces",
+    "title": "Hamiltonian.Prerequisites.Interfaces.dimension",
+    "category": "method",
+    "text": "dimension(vs::GradedVectorSpace) -> Int\ndimension(vs::GradedVectorSpace{G},g::G) where G -> Int\ndimension(vs::GradedVectorSpace{G},gs::NTuple{N,G}) where {G,N} -> Int\n\nGet the dimension of the whole graded vector space or some vector subspaces.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Prerequisites.Interfaces.rank-Tuple{Base.Iterators.Pairs{G,V,KS,VS} where VS<:Tuple where KS<:Tuple where V where G}",
+    "page": "Vector spaces",
+    "title": "Hamiltonian.Prerequisites.Interfaces.rank",
+    "category": "method",
+    "text": "rank(tables::GradedTables) -> Int\nrank(::Type{T}) where {T<:GradedTables} -> Int\n\nGet the total number of keys or values of a graded tables.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Prerequisites.Interfaces.rank-Tuple{Hamiltonian.Mathematics.VectorSpaces.GradedVectorSpace}",
+    "page": "Vector spaces",
+    "title": "Hamiltonian.Prerequisites.Interfaces.rank",
+    "category": "method",
+    "text": "rank(vs::GradedVectorSpace) -> Int\nrank(::Type{V}) where {V<:GradedVectorSpace} -> Int\n\nGet the rank, i.e. the total number of vector subspaces.\n\n\n\n\n\n"
 },
 
 {
@@ -1838,6 +1902,22 @@ var documenterSearchIndex = {"docs": [
     "title": "Base.Sort.searchsortedfirst",
     "category": "method",
     "text": "searchsortedfirst(vs::AbstractVectorSpace{B},basis::B) where B -> Int\nsearchsortedfirst(vs,basis) -> Int\n\nSearch the index of a basis in a vector space.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Base.Sort.searchsortedfirst-Union{Tuple{B}, Tuple{G}, Tuple{GradedVectorSpace{G,B,V,T} where T<:(Pairs{G,V,KS,VS} where VS<:Tuple where KS<:Tuple) where V<:AbstractVectorSpace,Tuple{G,B}}} where B where G",
+    "page": "Vector spaces",
+    "title": "Base.Sort.searchsortedfirst",
+    "category": "method",
+    "text": "searchsortedfirst(vs::GradedVectorSpace{G,B},pair::Tuple{G,B}) where {G,B} -> Int\n\nFind the index of a grade-basis pair in a graded vector space.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Base.eltype-Tuple{Hamiltonian.Mathematics.VectorSpaces.GradedVectorSpace,Int64}",
+    "page": "Vector spaces",
+    "title": "Base.eltype",
+    "category": "method",
+    "text": "eltype(vs::GradedVectorSpace,g::Int)\neltype(::Type{V},g::Int) where {V<:GradedVectorSpace}\n\nGet the gth eltype of a graded vector space.\n\n\n\n\n\n"
 },
 
 {
@@ -1857,11 +1937,67 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Mathematics/VectorSpaces.html#Base.getindex-Union{Tuple{B}, Tuple{GradedVectorSpace{B,B1,V,T} where T<:(Pairs{B,V,KS,VS} where VS<:Tuple where KS<:Tuple) where V<:AbstractVectorSpace where B1,Tuple{B,Int64}}} where B",
+    "page": "Vector spaces",
+    "title": "Base.getindex",
+    "category": "method",
+    "text": "getindex(vs::GradedVectorSpace{B},pair::Tuple{B,Int}) where B\ngetindex(vs::GradedVectorSpace,i::Int)\n\nGet the basis of a graded vector space by a grade-index pair or by an index.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Mathematics/VectorSpaces.html#Base.in-Union{Tuple{B}, Tuple{B,AbstractVectorSpace{B}}} where B",
     "page": "Vector spaces",
     "title": "Base.in",
     "category": "method",
-    "text": "in(basis::B,vs::AbstractVectorSpace{B}) where B\n\nJudge whether a basis belongs to a vector space.\n\n\n\n\n\n"
+    "text": "in(basis::B,vs::AbstractVectorSpace{B}) where B -> Bool\n\nJudge whether a basis belongs to a vector space.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Base.iterate",
+    "page": "Vector spaces",
+    "title": "Base.iterate",
+    "category": "function",
+    "text": "iterate(vs::GradedVectorSpace,state=(1,1))\n\nIterate over the whole graded vector space.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Base.keys-Tuple{Hamiltonian.Mathematics.VectorSpaces.GradedVectorSpace}",
+    "page": "Vector spaces",
+    "title": "Base.keys",
+    "category": "method",
+    "text": "keys(vs::GradedVectorSpace) -> Tuple\nvalues(vs::GradedVectorSpace) -> Tuple\npairs(vs::GradedVectorSpace) -> GradedTables\n\nIterate over the keys, values or pairs of a graded vector space.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Base.keytype-Tuple{Base.Iterators.Pairs{G,V,KS,VS} where VS<:Tuple where KS<:Tuple where V where G,Int64}",
+    "page": "Vector spaces",
+    "title": "Base.keytype",
+    "category": "method",
+    "text": "keytype(tables::GradedTables,g::Int)\nkeytype(::Type{T},g::Int) where {T<:GradedTables}\n\nGet the gth keytype of a graded tables.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Base.keytype-Tuple{Hamiltonian.Mathematics.VectorSpaces.GradedVectorSpace,Int64}",
+    "page": "Vector spaces",
+    "title": "Base.keytype",
+    "category": "method",
+    "text": "keytype(vs::GradedVectorSpace,g::Int)\nkeytype(::Type{V},g::Int) where {V<:GradedVectorSpace}\n\nGet the gth keytype of a graded vector space.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Base.valtype-Tuple{Base.Iterators.Pairs{G,V,KS,VS} where VS<:Tuple where KS<:Tuple where V where G,Int64}",
+    "page": "Vector spaces",
+    "title": "Base.valtype",
+    "category": "method",
+    "text": "valtype(tables::GradedTables,g::Int)\nvaltype(::Type{T},g::Int) where {T<:GradedTables}\n\nGet the gth valtype of a graded tables.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Base.valtype-Tuple{Hamiltonian.Mathematics.VectorSpaces.GradedVectorSpace,Int64}",
+    "page": "Vector spaces",
+    "title": "Base.valtype",
+    "category": "method",
+    "text": "valtype(vs::GradedVectorSpace,g::Int)\nvaltype(::Type{V},g::Int) where {V<:GradedVectorSpace}\n\nGet the gth valtype of a graded vector space.\n\n\n\n\n\n"
 },
 
 {
@@ -2801,7 +2937,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.azimuth-Tuple{AbstractArray{#s200,1} where #s200<:Real}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.azimuth-Tuple{AbstractArray{#s201,1} where #s201<:Real}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.azimuth",
     "category": "method",
@@ -2809,7 +2945,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.azimuthd-Tuple{AbstractArray{#s200,1} where #s200<:Real}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.azimuthd-Tuple{AbstractArray{#s201,1} where #s201<:Real}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.azimuthd",
     "category": "method",
@@ -2833,7 +2969,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.distance-Tuple{AbstractArray{#s189,1} where #s189<:Real,AbstractArray{#s188,1} where #s188<:Real}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.distance-Tuple{AbstractArray{#s190,1} where #s190<:Real,AbstractArray{#s189,1} where #s189<:Real}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.distance",
     "category": "method",
@@ -2849,7 +2985,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.interlinks-Tuple{AbstractArray{#s210,2} where #s210<:Real,AbstractArray{#s209,2} where #s209<:Real,Dict{Int64,Float64}}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.interlinks-Tuple{AbstractArray{#s211,2} where #s211<:Real,AbstractArray{#s210,2} where #s210<:Real,Dict{Int64,Float64}}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.interlinks",
     "category": "method",
@@ -2857,7 +2993,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.intralinks-Union{Tuple{N}, Tuple{AbstractArray{#s205,2} where #s205<:Real,AbstractArray{#s204,1} where #s204<:(AbstractArray{#s203,1} where #s203<:Real),Dict{Int64,Float64}}, Tuple{AbstractArray{#s202,2} where #s202<:Real,AbstractArray{#s201,1} where #s201<:(AbstractArray{#s200,1} where #s200<:Real),Dict{Int64,Float64},Tuple{Vararg{Int64,N}}}} where N",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.intralinks-Union{Tuple{N}, Tuple{AbstractArray{#s206,2} where #s206<:Real,AbstractArray{#s205,1} where #s205<:(AbstractArray{#s204,1} where #s204<:Real),Dict{Int64,Float64}}, Tuple{AbstractArray{#s203,2} where #s203<:Real,AbstractArray{#s202,1} where #s202<:(AbstractArray{#s201,1} where #s201<:Real),Dict{Int64,Float64},Tuple{Vararg{Int64,N}}}} where N",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.intralinks",
     "category": "method",
@@ -2897,7 +3033,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.issubordinate-Tuple{AbstractArray{#s204,1} where #s204<:Real,AbstractArray{#s203,1} where #s203<:(AbstractArray{#s202,1} where #s202<:Real)}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.issubordinate-Tuple{AbstractArray{#s205,1} where #s205<:Real,AbstractArray{#s204,1} where #s204<:(AbstractArray{#s203,1} where #s203<:Real)}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.issubordinate",
     "category": "method",
@@ -2929,7 +3065,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.polar-Tuple{AbstractArray{#s200,1} where #s200<:Real}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.polar-Tuple{AbstractArray{#s201,1} where #s201<:Real}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.polar",
     "category": "method",
@@ -2937,7 +3073,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.polard-Tuple{AbstractArray{#s200,1} where #s200<:Real}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.polard-Tuple{AbstractArray{#s201,1} where #s201<:Real}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.polard",
     "category": "method",
@@ -2953,7 +3089,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.reciprocals-Tuple{AbstractArray{#s214,1} where #s214<:(AbstractArray{#s213,1} where #s213<:Real)}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.reciprocals-Tuple{AbstractArray{#s215,1} where #s215<:(AbstractArray{#s214,1} where #s214<:Real)}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.reciprocals",
     "category": "method",
@@ -2961,7 +3097,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.rotate-Tuple{AbstractArray{#s203,2} where #s203<:Real,Real}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.rotate-Tuple{AbstractArray{#s204,2} where #s204<:Real,Real}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.rotate",
     "category": "method",
@@ -2969,7 +3105,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.tile-Union{Tuple{M}, Tuple{N}, Tuple{AbstractArray{#s205,2} where #s205<:Real,AbstractArray{#s204,1} where #s204<:(AbstractArray{#s203,1} where #s203<:Real)}, Tuple{AbstractArray{#s202,2} where #s202<:Real,AbstractArray{#s201,1} where #s201<:(AbstractArray{#s200,1} where #s200<:Real),Tuple{Vararg{Tuple{Vararg{#s196,N}} where #s196<:Real,M}}}} where M where N",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.tile-Union{Tuple{M}, Tuple{N}, Tuple{AbstractArray{#s206,2} where #s206<:Real,AbstractArray{#s205,1} where #s205<:(AbstractArray{#s204,1} where #s204<:Real)}, Tuple{AbstractArray{#s203,2} where #s203<:Real,AbstractArray{#s202,1} where #s202<:(AbstractArray{#s201,1} where #s201<:Real),Tuple{Vararg{Tuple{Vararg{#s197,N}} where #s197<:Real,M}}}} where M where N",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.tile",
     "category": "method",
@@ -2977,7 +3113,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.translate-Tuple{AbstractArray{#s214,2} where #s214<:Real,AbstractArray{#s213,1} where #s213<:Real}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.translate-Tuple{AbstractArray{#s215,2} where #s215<:Real,AbstractArray{#s214,1} where #s214<:Real}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.translate",
     "category": "method",
@@ -2985,7 +3121,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.volume-Tuple{AbstractArray{#s189,1} where #s189<:Real,AbstractArray{#s188,1} where #s188<:Real,AbstractArray{#s187,1} where #s187<:Real}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.volume-Tuple{AbstractArray{#s190,1} where #s190<:Real,AbstractArray{#s189,1} where #s189<:Real,AbstractArray{#s188,1} where #s188<:Real}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.volume",
     "category": "method",
@@ -3281,7 +3417,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.Table-Tuple{AbstractArray{#s212,1} where #s212<:Index}",
+    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.Table-Tuple{AbstractArray{#s213,1} where #s213<:Index}",
     "page": "Degrees of freedom",
     "title": "Hamiltonian.Essentials.DegreesOfFreedom.Table",
     "category": "method",
@@ -3609,7 +3745,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Base.:*-Tuple{FockCoupling{2,V,I} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{2,#s233} where #s233<:FCID) where V,FockCoupling{2,V,I} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{2,#s233} where #s233<:FCID) where V}",
+    "location": "man/Essentials/FockPackage.html#Base.:*-Tuple{FockCoupling{2,V,I} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{2,#s234} where #s234<:FCID) where V,FockCoupling{2,V,I} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{2,#s234} where #s234<:FCID) where V}",
     "page": "Fock package",
     "title": "Base.:*",
     "category": "method",
@@ -3625,7 +3761,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Base.fieldnames-Tuple{Type{#s216} where #s216<:FCID}",
+    "location": "man/Essentials/FockPackage.html#Base.fieldnames-Tuple{Type{#s217} where #s217<:FCID}",
     "page": "Fock package",
     "title": "Base.fieldnames",
     "category": "method",
@@ -3633,7 +3769,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Base.fieldnames-Tuple{Type{#s216} where #s216<:FIndex}",
+    "location": "man/Essentials/FockPackage.html#Base.fieldnames-Tuple{Type{#s217} where #s217<:FIndex}",
     "page": "Fock package",
     "title": "Base.fieldnames",
     "category": "method",
