@@ -3,13 +3,16 @@ using ..Spatials: PID,AbstractBond,Point,Bond,pidtype
 using ..DegreesOfFreedom: IID,Index,Internal,FilteredAttributes,Coupling,Couplings
 using ...Prerequisites: delta,decimaltostr
 using ...Prerequisites.TypeTraits: indtosub,corder
+using ...Prerequisites.Interfaces: dims,inds
 using ...Mathematics.AlgebraOverFields: SimpleID,ID
+using ...Mathematics.VectorSpaces: IsMultiIndexable,MultiIndexOrderStyle
 
-import ...Prerequisites.Interfaces: expand
+import ...Prerequisites.Interfaces: dims,inds,expand
 
+export dims,inds,expand
 export ANNIHILATION,CREATION,FID,FIndex,Fock
 export usualfockindextotuple,nambufockindextotuple
-export FCID,FockCoupling,expand
+export FCID,FockCoupling
 export σ⁰,σˣ,σʸ,σᶻ,σ⁺,σ⁻
 
 """
@@ -58,6 +61,48 @@ Get the adjoint of a Fock id.
 Base.adjoint(fid::FID)=FID(fid.orbital,fid.spin,3-fid.nambu)
 
 """
+    Fock <: Internal{FID}
+
+The Fock interanl degrees of freedom.
+"""
+struct Fock <: Internal{FID}
+    atom::Int
+    norbital::Int
+    nspin::Int
+    nnambu::Int
+end
+IsMultiIndexable(::Type{Fock})=IsMultiIndexable(true)
+MultiIndexOrderStyle(::Type{Fock})=MultiIndexOrderStyle('C')
+
+"""
+    Fock(;atom::Int=1,norbital::Int=1,nspin::Int=2,nnambu::Int=2)
+
+Construct a Fock degrees of freedom.
+"""
+Fock(;atom::Int=1,norbital::Int=1,nspin::Int=2,nnambu::Int=2)=Fock(atom,norbital,nspin,nnambu)
+
+"""
+    dims(fock::Fock) -> NTuple{3,Int}
+
+Get the number of the orbital, spin and nambu indices of a Fock space.
+"""
+dims(fock::Fock)=(fock.norbital,fock.nspin,fock.nnambu)
+
+"""
+    inds(fid::FID,::Fock) -> NTuple{3,Int}
+
+Get the Cartesian index representation of a Fock id.
+"""
+inds(fid::FID,::Fock)=(fid.orbital,fid.spin,fid.nambu)
+
+"""
+    FID(inds::NTuple{3,Int},::Fock) -> FID
+
+Construct a Fock id from its Cartesian index representation.
+"""
+FID(inds::NTuple{3,Int},::Fock)=FID(inds[1],inds[2],inds[3])
+
+"""
     FIndex{S} <: Index{PID{S},FID}
 
 The Fock index.
@@ -83,39 +128,6 @@ Base.fieldnames(::Type{<:FIndex})=(:scope,:site,:orbital,:spin,:nambu)
 Get the union type of `PID` and `FID`.
 """
 Base.union(::Type{P},::Type{FID}) where P<:PID=FIndex{fieldtype(P,:scope)}
-
-"""
-    Fock <: Internal{FID}
-
-The Fock interanl degrees of freedom.
-"""
-struct Fock <: Internal{FID}
-    atom::Int
-    norbital::Int
-    nspin::Int
-    nnambu::Int
-end
-
-"""
-    Fock(;atom::Int=1,norbital::Int=1,nspin::Int=2,nnambu::Int=2)
-
-Construct a Fock degrees of freedom.
-"""
-Fock(;atom::Int=1,norbital::Int=1,nspin::Int=2,nnambu::Int=2)=Fock(atom,norbital,nspin,nnambu)
-
-"""
-    length(fock::Fock) -> Int
-
-Get the dimension of a Fock degrees of freedom.
-"""
-Base.length(fock::Fock)=prod((fock.norbital,fock.nspin,fock.nnambu))
-
-"""
-    iterate(fock::Fock,state=1)
-
-Iterate over a Fock degrees of freedom.
-"""
-Base.iterate(fock::Fock,state=1)=state>length(fock) ? nothing : (FID(indtosub((fock.norbital,fock.nspin,fock.nnambu),state,corder)...),state+1)
 
 """
     usualfockindextotuple
@@ -157,11 +169,11 @@ Get the fieldnames of `FCID`.
 Base.fieldnames(::Type{<:FCID})=(:atom,:orbital,:spin,:nambu)
 
 """
-    FockCoupling{N,V,I<:ID{N,<:FCID}} <: Coupling{V,I,N}
+    FockCoupling{N,V<:Number,I<:ID{N,<:FCID}} <: Coupling{V,I}
 
 A Fock coupling.
 """
-struct FockCoupling{N,V,I<:ID{N,<:FCID}} <: Coupling{V,I,N}
+struct FockCoupling{N,V<:Number,I<:ID{N,<:FCID}} <: Coupling{V,I}
     value::V
     id::I
     FockCoupling(value::Number,id::ID{N,I}) where {N,I<:FCID}=new{N,value|>typeof,id|>typeof}(value,id)

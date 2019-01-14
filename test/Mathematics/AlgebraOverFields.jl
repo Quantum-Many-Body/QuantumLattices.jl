@@ -47,10 +47,9 @@ end
     end
 end
 
-struct BasicOperator{V,I,N} <: Element{V,I,N}
+struct BasicOperator{V,I} <: Element{V,I}
     value::V
     id::I
-    BasicOperator(value::Number,id::ID)=new{value|>typeof,id|>typeof,id|>typeof|>rank}(value,id)
 end
 
 @testset "Elements" begin

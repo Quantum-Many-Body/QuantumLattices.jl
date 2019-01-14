@@ -1,7 +1,8 @@
-using Hamiltonian.Prerequisites: Float
 using Hamiltonian.Essentials.FockPackage
+using Hamiltonian.Prerequisites: Float
 using Hamiltonian.Essentials.Spatials: PID,Point,Bond
 using Hamiltonian.Essentials.DegreesOfFreedom: Couplings
+using Hamiltonian.Mathematics.VectorSpaces: IsMultiIndexable,MultiIndexOrderStyle
 
 @testset "FID" begin
     fid=FID(orbital=1,spin=1)
@@ -17,8 +18,13 @@ end
 
 @testset "Fock" begin
     fock=Fock(norbital=1,nspin=2,nnambu=2)
-    @test fock|>length==4
+    @test IsMultiIndexable(Fock)==IsMultiIndexable(true)
+    @test MultiIndexOrderStyle(Fock)==MultiIndexOrderStyle('C')
+    @test dims(fock)==(1,2,2)
+    @test inds(FID(1,1,1),fock)==(1,1,1)
+    @test FID((1,1,1),fock)==FID(1,1,1)
     @test fock|>collect==[FID(1,1,1),FID(1,1,2),FID(1,2,1),FID(1,2,2)]
+
 end
 
 @testset "FCID" begin

@@ -5,6 +5,7 @@ using ...Prerequisites: Float
 using ...Prerequisites.TypeTraits: efficientoperations
 using ...Prerequisites.NamedVectors: AbstractNamedVector
 using ...Prerequisites.CompositeStructures: CompositeDict
+using ...Mathematics.VectorSpaces: AbstractVectorSpace
 using ...Mathematics.AlgebraOverFields: SimpleID, ID, Element, Elements
 using ..Spatials: PID
 
@@ -19,7 +20,21 @@ export Internal,IDFConfig,Table,Coupling,Couplings
 
 The id of an internal degree of freedom.
 """
-abstract type IID <: AbstractNamedVector end
+abstract type IID <: SimpleID end
+
+"""
+    Internal
+
+The whole internal degrees of freedom at a single point.
+"""
+abstract type Internal{I<:IID} <: AbstractVectorSpace{I} end
+
+"""
+    show(io::IO,i::Internal)
+
+Show an internal.
+"""
+Base.show(io::IO,i::Internal)=@printf io "%s(%s)" i|>typeof|>nameof join(("$name=$(getfield(i,name))" for name in i|>typeof|>fieldnames),",")
 
 """
     Index{P,I}
@@ -155,38 +170,6 @@ Filter the attributes of a "filtered attributes" method.
 Base.filter(f::Function,indextotuple::FilteredAttributes)=FilteredAttributes(Tuple(attr for attr in indextotuple.attributes if f(attr)))
 
 """
-    Internal
-
-The whole internal degrees of freedom at a single point.
-"""
-abstract type Internal{I<:IID} end
-
-"""
-    eltype(internal::Internal)
-    eltype(::Type{<:Internal{I}}) where I
-
-Get the type of the `IID`s that an `Internal` contains.
-"""
-Base.eltype(internal::Internal)=internal|>typeof|>eltype
-Base.eltype(::Type{<:Internal{I}}) where I=I
-
-"""
-    ==(i1::I,i2::I) where I<:Internal -> Bool
-    isequal(i1::I,i2::I) where I<:Internal -> Bool
-
-Compare two internals and judge whether they are equal to each other.
-"""
-Base.:(==)(i1::I,i2::I) where I<:Internal = ==(efficientoperations,i1,i2)
-Base.isequal(i1::I,i2::I) where I<:Internal=isequal(efficientoperations,i1,i2)
-
-"""
-    show(io::IO,i::Internal)
-
-Show an internal.
-"""
-Base.show(io::IO,i::Internal)=@printf io "%s(%s)" i|>typeof|>nameof join(("$name=$(getfield(i,name))" for name in i|>typeof|>fieldnames),",")
-
-"""
     IDFConfig(map::Function,::Type{I},pids::AbstractVector{<:PID}=[]) where I<:Internal
 
 Configuration of the internal degrees of freedom at a lattice.
@@ -293,11 +276,11 @@ function Base.reverse(table::Table)
 end
 
 """
-    Coupling{V,I,N} <: Element{V,I,N}
+    Coupling{V,I} <: Element{V,I}
 
 The coupling intra/inter interanl degrees of freedom at different lattice points.
 """
-abstract type Coupling{V<:Number,I<:ID,N} <: Element{V,I,N} end
+abstract type Coupling{V<:Number,I<:ID} <: Element{V,I} end
 
 """
     Couplings{I<:ID,C<:Coupling} <: AbstractDict{I,C}

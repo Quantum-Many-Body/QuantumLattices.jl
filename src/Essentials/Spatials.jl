@@ -11,6 +11,7 @@ using ...Prerequisites.NamedVectors: AbstractNamedVector
 using ...Prerequisites.Factories: Inference,TypeFactory,FunctionFactory,Argument,MixEscaped,Escaped,UnEscaped
 using ...Prerequisites.Factories: addparams!,addfields!,addwhereparams!,addargs!,addkwargs!,extendbody!,addconstructors!
 using ...Mathematics.Combinatorics: Combinations
+using ...Mathematics.AlgebraOverFields: SimpleID
 
 import ...Prerequisites.Interfaces: rank,dimension
 
@@ -430,7 +431,7 @@ end
 
 The id of a point.
 """
-struct PID{S} <: AbstractNamedVector
+struct PID{S} <: SimpleID
     scope::S
     site::Int
 end

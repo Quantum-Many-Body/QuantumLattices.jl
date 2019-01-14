@@ -28,8 +28,6 @@ abstract type SimpleID <: AbstractNamedVector end
     ID(::Type{SID},attrs::Vararg{NTuple{N},M}) where {SID<:SimpleID,N,M}
 
 The id system of an algebra over a field.
-
-Usually, a simple id corresponds to a single generator of the algebra while an id corresponds to an element of the algebra.
 """
 struct ID{N,I<:SimpleID} <: CompositeNTuple{N,I}
     contents::NTuple{N,I}
@@ -156,10 +154,10 @@ Base.searchsortedfirst(idspace::IdSpace,id::ID)=searchsortedfirst(idspace,(rank(
 An element of an algebra over a field.
 
 The first and second attributes of an element must be
-- `value::Nuber`: the coefficient of the element
+- `value::Number`: the coefficient of the element
 - `id::ID`: the id of the element
 """
-abstract type Element{V<:Number,I<:ID,N} end
+abstract type Element{V<:Number,I<:ID} end
 
 """
     valtype(::Type{<:Element{V}}) where {V}
@@ -182,12 +180,12 @@ idtype(::Type{<:Element{V,I}}) where {V,I}=I
 idtype(m::Element)=m|>typeof|>idtype
 
 """
-    rank(::Type{<:Element{V,I,N}}) where {V,I,N} -> Int
+    rank(::Type{<:Element}) -> Int
     rank(m::Element) -> Int
 
 Get the rank of an element.
 """
-rank(::Type{<:Element{V,I,N}}) where {V,I,N}=N
+rank(::Type{M}) where M<:Element=rank(fieldtype(M,:id))
 rank(m::Element)=m|>typeof|>rank
 
 """

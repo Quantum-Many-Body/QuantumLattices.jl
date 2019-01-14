@@ -1,5 +1,6 @@
 using Hamiltonian.Essentials.DegreesOfFreedom
 using Hamiltonian.Essentials.Spatials: PID
+import Hamiltonian.Prerequisites.Interfaces: dimension
 
 struct SlID <: IID nambu::Int end
 Base.adjoint(sl::SlID)=SlID(3-sl.nambu)
@@ -16,8 +17,8 @@ struct SlFock <: Internal{SlID}
     atom::Int
     nnambu::Int
 end
-Base.length(f::SlFock)=f.nnambu
-Base.iterate(f::SlFock,state=1)=state>length(f) ? nothing : (SlID(state),state+1)
+dimension(f::SlFock)=f.nnambu
+Base.getindex(f::SlFock,i::Int)=SlID(i)
 
 @testset "Index" begin
     index=SlIndex(PID('S',4),SlID(1))

@@ -9,6 +9,8 @@ using Hamiltonian
 
 # Spatials
 
+## Utilities
+
 ## AbstractBond
 
 ### Point
