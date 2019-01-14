@@ -2021,15 +2021,15 @@ var documenterSearchIndex = {"docs": [
     "page": "Algebra over fields",
     "title": "Algebra over fields",
     "category": "section",
-    "text": ""
+    "text": "An algebra over a field is a vector space over that field, in which a bilinear operator (often called the \"multiplication\") between vectors is defined.With the help of the structure constants of the algebra, the result of the bilinear operation between any arbitary two vectors can be expressed by a sum of individual ones. Therefore, in principle, an algebra can be represented by the complete basis set of its corresponding vector space and a rank-3 tensor encapsulating its structure constants. It is noted that the \"bilinear operation\" is not restriced to the usual multiplication only. For example, it is the commutator, which is a composition of the usual multiplication and subtraction (for any A and B, the commutator [A,B] is defined as [A,B]≝AB-BA) that serves as the bilinear operator for Lie algebras. In this module, for scalars in the field and elements in the algebra, we only provide the interfaces of the scalar multiplication (including the scalar division) bwteen a sclar and an element, the addition (including the subtraction) and the usual multiplication between two elements. Other complicated operations should be composed from these basic ones."
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#ID-1",
+    "location": "man/Mathematics/AlgebraOverFields.html#SimpleID-and-ID-1",
     "page": "Algebra over fields",
-    "title": "ID",
+    "title": "SimpleID and ID",
     "category": "section",
-    "text": ""
+    "text": "SimpleID is the building block of the id system of an algebra over a field, while ID defines the specific identifier of an element in that algebra.Generally, the usual multiplication between two elements of an algebra is not commutable, and the rank of the multiplication is just the add-up before the simplication with the help of the algebra structure. We thus use a simple id to denote a single basis of the corresponding vector space, and an id to denote the identifier of an element. With the help of the direct product (⊗) of two ids, an over complete id system designed for the whole algebra is constructed. This id system is redundant because it does not reflects the structure constants of the algebra, which reduces independent basis elements. Extra mechanisms should be provided to kill this redundancy, which goes beyond the current module. Users should define them themselves."
 },
 
 {
@@ -2037,7 +2037,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Algebra over fields",
     "title": "IdSpace",
     "category": "section",
-    "text": ""
+    "text": "IdSpace defines the complete vector space that corresponds to an algebra.An id space uses a set of simple id bases to generated all ranked ids, with the former represented by an instance of DirectVectorSpace and stored in the attribute :sids, while the latter by an instance of GradedTables in the attribute :tables. For the sick of the orderings among different ids, an id will be represented by a multiindex, which are determined by the corresponding sequences of its simple ids in the basis set. The id system can be complete or over complete, depending on whether the attribute :tables contain multiindices that actually represent the same basis of the algebra. Besides, the methodsBase.getindex(idspace::IdSpace,i::Int) -> IDandBase.findfirst(id::ID,idspace::IdSpace) -> Intare provided to get the ith id and to find the index of an id of a idspace, respectively."
 },
 
 {
@@ -2045,7 +2045,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Algebra over fields",
     "title": "Element and Elements",
     "category": "section",
-    "text": ""
+    "text": "Element defines a single element of an algebra while Elements defines an exprssion composed of several elements from an algebra.The first and second attributes of an Element must bevalue::Number: the coefficient of the element\nid::ID: the id of the elementArithmetic operations (+, -, *, /) bwteen a scalar, an Element or an Elements is defined. See Manual for details."
 },
 
 {
@@ -2053,7 +2053,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Algebra over fields",
     "title": "Hamiltonian.Mathematics.AlgebraOverFields.Element",
     "category": "type",
-    "text": "Element{V<:Number,I<:ID}\n\nAn element of an algebra over a field.\n\nThe first and second attributes of an element must be\n\nvalue::Nuber: the coefficient of the element\nid::ID: the id of the element\n\n\n\n\n\n"
+    "text": "Element{V<:Number,I<:ID}\n\nAn element of an algebra over a field.\n\nThe first and second attributes of an element must be\n\nvalue::Number: the coefficient of the element\nid::ID: the id of the element\n\n\n\n\n\n"
 },
 
 {
@@ -2077,7 +2077,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Algebra over fields",
     "title": "Hamiltonian.Mathematics.AlgebraOverFields.ID",
     "category": "type",
-    "text": "ID(ids::NTuple{N,SimpleID}) where N\nID(ids::SimpleID...)\nID(::Type{SID},attrs::Vararg{NTuple{N},M}) where {SID<:SimpleID,N,M}\n\nThe id system of an algebra over a field.\n\nUsually, a simple id corresponds to a single generator of the algebra while an id corresponds to an element of the algebra.\n\n\n\n\n\n"
+    "text": "ID(ids::NTuple{N,SimpleID}) where N\nID(ids::SimpleID...)\nID(::Type{SID},attrs::Vararg{NTuple{N},M}) where {SID<:SimpleID,N,M}\n\nThe id system of an algebra over a field.\n\n\n\n\n\n"
 },
 
 {
@@ -2097,7 +2097,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Mathematics.AlgebraOverFields.idtype-Union{Tuple{Type{#s68} where #s68<:(Element{V,I,N} where N)}, Tuple{I}, Tuple{V}} where I where V",
+    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Mathematics.AlgebraOverFields.idtype-Union{Tuple{Type{#s68} where #s68<:Element{V,I}}, Tuple{I}, Tuple{V}} where I where V",
     "page": "Algebra over fields",
     "title": "Hamiltonian.Mathematics.AlgebraOverFields.idtype",
     "category": "method",
@@ -2121,19 +2121,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Prerequisites.Interfaces.rank-Union{Tuple{Type{#s68} where #s68<:Element{V,I,N}}, Tuple{N}, Tuple{I}, Tuple{V}} where N where I where V",
-    "page": "Algebra over fields",
-    "title": "Hamiltonian.Prerequisites.Interfaces.rank",
-    "category": "method",
-    "text": "rank(::Type{<:Element{V,I,N}}) where {V,I,N} -> Int\nrank(m::Element) -> Int\n\nGet the rank of an element.\n\n\n\n\n\n"
-},
-
-{
     "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Prerequisites.Interfaces.rank-Union{Tuple{Type{#s68} where #s68<:ID{N,I}}, Tuple{I}, Tuple{N}} where I where N",
     "page": "Algebra over fields",
     "title": "Hamiltonian.Prerequisites.Interfaces.rank",
     "category": "method",
     "text": "rank(::Type{<:ID{N,I}}) where {N,I} -> Int\nrank(id::ID) -> Int\n\nGet the rank of a composite id.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Prerequisites.Interfaces.rank-Union{Tuple{Type{M}}, Tuple{M}} where M<:Hamiltonian.Mathematics.AlgebraOverFields.Element",
+    "page": "Algebra over fields",
+    "title": "Hamiltonian.Prerequisites.Interfaces.rank",
+    "category": "method",
+    "text": "rank(::Type{<:Element}) -> Int\nrank(m::Element) -> Int\n\nGet the rank of an element.\n\n\n\n\n\n"
 },
 
 {
@@ -2241,7 +2241,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Base.valtype-Union{Tuple{Type{#s68} where #s68<:(Element{V,I,N} where N where I<:ID)}, Tuple{V}} where V",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.valtype-Union{Tuple{Type{#s68} where #s68<:(Element{V,I} where I<:ID)}, Tuple{V}} where V",
     "page": "Algebra over fields",
     "title": "Base.valtype",
     "category": "method",
@@ -2741,7 +2741,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "Introduction",
     "category": "section",
-    "text": "Essentials of the Hamiltonian package, which defines all the imported constants, types and functions when using import Hamiltonian or using Hamiltonian. Note that this submodule depends on the Utilities submodule although the variables in the latter are not exported to the scope of Hamiltonian by default.Pages=  [\n        \"Spatials.md\",\n        \"DegreesOfFreedom.md\",\n        \"FockPackage.md\",\n        ]\nDepth=2"
+    "text": "Essentials of the Hamiltonian package, which defines all the imported constants, types and functions when using import Hamiltonian or using Hamiltonian. Note that this submodule depends on the Prerequisites and Mathematics submodules although the variables in them are not exported to the scope of Hamiltonian by default.Pages=  [\n        \"Spatials.md\",\n        \"DegreesOfFreedom.md\",\n        \"FockPackage.md\",\n        ]\nDepth=2"
 },
 
 {
@@ -2756,6 +2756,14 @@ var documenterSearchIndex = {"docs": [
     "location": "man/Essentials/Spatials.html#Spatials-1",
     "page": "Spatials",
     "title": "Spatials",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/Spatials.html#Utilities-1",
+    "page": "Spatials",
+    "title": "Utilities",
     "category": "section",
     "text": ""
 },
@@ -3321,9 +3329,17 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Internal-and-Index-1",
+    "location": "man/Essentials/DegreesOfFreedom.html#IID-and-Internal-1",
     "page": "Degrees of freedom",
-    "title": "Internal and Index",
+    "title": "IID and Internal",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/DegreesOfFreedom.html#Index-1",
+    "page": "Degrees of freedom",
+    "title": "Index",
     "category": "section",
     "text": ""
 },
@@ -3333,7 +3349,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Degrees of freedom",
     "title": "IDFConfig",
     "category": "section",
-    "text": "There are two purposes with IDFConfigprovide a complete set of internal degrees of freedom on a lattice\noffer the ordering of the internal degrees of freedom on a lattice"
+    "text": ""
 },
 
 {
@@ -3357,7 +3373,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Degrees of freedom",
     "title": "Hamiltonian.Essentials.DegreesOfFreedom.Coupling",
     "category": "type",
-    "text": "Coupling{V,I,N} <: Element{V,I,N}\n\nThe coupling intra/inter interanl degrees of freedom at different lattice points.\n\n\n\n\n\n"
+    "text": "Coupling{V,I} <: Element{V,I}\n\nThe coupling intra/inter interanl degrees of freedom at different lattice points.\n\n\n\n\n\n"
 },
 
 {
@@ -3513,27 +3529,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Base.:==-Union{Tuple{I}, Tuple{I,I}} where I<:Internal",
-    "page": "Degrees of freedom",
-    "title": "Base.:==",
-    "category": "method",
-    "text": "==(i1::I,i2::I) where I<:Internal -> Bool\nisequal(i1::I,i2::I) where I<:Internal -> Bool\n\nCompare two internals and judge whether they are equal to each other.\n\n\n\n\n\n"
-},
-
-{
     "location": "man/Essentials/DegreesOfFreedom.html#Base.adjoint-Tuple{Index}",
     "page": "Degrees of freedom",
     "title": "Base.adjoint",
     "category": "method",
     "text": "adjoint(index::Index) -> typeof(index)\n\nGet the adjoint of an index.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/DegreesOfFreedom.html#Base.eltype-Tuple{Internal}",
-    "page": "Degrees of freedom",
-    "title": "Base.eltype",
-    "category": "method",
-    "text": "eltype(internal::Internal)\neltype(::Type{<:Internal{I}}) where I\n\nGet the type of the IIDs that an Internal contains.\n\n\n\n\n\n"
 },
 
 {
@@ -3617,6 +3617,46 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Essentials/FockPackage.html#Fock-degrees-of-freedom-1",
+    "page": "Fock package",
+    "title": "Fock degrees of freedom",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#FID-and-Fock-1",
+    "page": "Fock package",
+    "title": "FID and Fock",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#FIndex-1",
+    "page": "Fock package",
+    "title": "FIndex",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#FCID-and-FockCoupling-1",
+    "page": "Fock package",
+    "title": "FCID and FockCoupling",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#σ,σˣ,σʸ,σᶻ,σ,σ-1",
+    "page": "Fock package",
+    "title": "σ⁰,σˣ,σʸ,σᶻ,σ⁺,σ⁻",
+    "category": "section",
+    "text": ""
+},
+
+{
     "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.ANNIHILATION",
     "page": "Fock package",
     "title": "Hamiltonian.Essentials.FockPackage.ANNIHILATION",
@@ -3657,6 +3697,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.FID-Tuple{Tuple{Int64,Int64,Int64},Fock}",
+    "page": "Fock package",
+    "title": "Hamiltonian.Essentials.FockPackage.FID",
+    "category": "method",
+    "text": "FID(inds::NTuple{3,Int},::Fock) -> FID\n\nConstruct a Fock id from its Cartesian index representation.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.FID-Tuple{}",
     "page": "Fock package",
     "title": "Hamiltonian.Essentials.FockPackage.FID",
@@ -3693,7 +3741,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "Hamiltonian.Essentials.FockPackage.FockCoupling",
     "category": "type",
-    "text": "FockCoupling{N,V,I<:ID{N,<:FCID}} <: Coupling{V,I,N}\n\nA Fock coupling.\n\n\n\n\n\n"
+    "text": "FockCoupling{N,V<:Number,I<:ID{N,<:FCID}} <: Coupling{V,I}\n\nA Fock coupling.\n\n\n\n\n\n"
 },
 
 {
@@ -3769,6 +3817,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Prerequisites.Interfaces.dims-Tuple{Fock}",
+    "page": "Fock package",
+    "title": "Hamiltonian.Prerequisites.Interfaces.dims",
+    "category": "method",
+    "text": "dims(fock::Fock) -> NTuple{3,Int}\n\nGet the number of the orbital, spin and nambu indices of a Fock space.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Essentials/FockPackage.html#Hamiltonian.Prerequisites.Interfaces.expand-Tuple{FockCoupling,AbstractBond,Vararg{Fock,N} where N}",
     "page": "Fock package",
     "title": "Hamiltonian.Prerequisites.Interfaces.expand",
@@ -3777,7 +3833,15 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Base.:*-Tuple{FockCoupling{2,V,I} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{2,#s234} where #s234<:FCID) where V,FockCoupling{2,V,I} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{2,#s234} where #s234<:FCID) where V}",
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Prerequisites.Interfaces.inds-Tuple{FID,Fock}",
+    "page": "Fock package",
+    "title": "Hamiltonian.Prerequisites.Interfaces.inds",
+    "category": "method",
+    "text": "inds(fid::FID,::Fock) -> NTuple{3,Int}\n\nGet the Cartesian index representation of a Fock id.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Base.:*-Tuple{FockCoupling{2,V,I} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{2,#s234} where #s234<:FCID) where V<:Number,FockCoupling{2,V,I} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{2,#s234} where #s234<:FCID) where V<:Number}",
     "page": "Fock package",
     "title": "Base.:*",
     "category": "method",
@@ -3817,22 +3881,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Base.iterate",
-    "page": "Fock package",
-    "title": "Base.iterate",
-    "category": "function",
-    "text": "iterate(fock::Fock,state=1)\n\nIterate over a Fock degrees of freedom.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/FockPackage.html#Base.length-Tuple{Fock}",
-    "page": "Fock package",
-    "title": "Base.length",
-    "category": "method",
-    "text": "length(fock::Fock) -> Int\n\nGet the dimension of a Fock degrees of freedom.\n\n\n\n\n\n"
-},
-
-{
     "location": "man/Essentials/FockPackage.html#Base.repr-Tuple{FockCoupling}",
     "page": "Fock package",
     "title": "Base.repr",
@@ -3857,9 +3905,9 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Fock-degrees-of-freedom-1",
+    "location": "man/Essentials/FockPackage.html#Manual-1",
     "page": "Fock package",
-    "title": "Fock degrees of freedom",
+    "title": "Manual",
     "category": "section",
     "text": "Modules=[FockPackage]\nOrder=  [:module,:constant,:type,:macro,:function]"
 },
