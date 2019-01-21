@@ -6,9 +6,9 @@ CurrentModule=Hamiltonian.Prerequisites.CompositeStructures
 
 In principle, Julia is not an object-oriented programming language. For example, only abstract types can be inherited so that subtype cannot inherit fields from their parents. Therefore, Julia prefers composition over inheritance. However, to make a new concrete type behaves much alike another one, tedious reputitions of redifining the generic interfaces are usually not avoidable, especially for the basic types in Julia base. In this module, we implement three such composited types, [`CompositeNTuple`](@ref), [`CompositeVector`](@ref) and [`CompositeDict`](@ref), for the sake of future usages.
 
-## CompositeNTuple
+## CompositeTuple and CompositeNTuple
 
-A composite ntuple is a ntuple that is implemented by including an ordinary `NTuple` as one of its attributes with the name `:contents`.
+A composite tuple (ntuple) is a tuple (ntuple) that is implemented by including an ordinary `Tuple` (`NTuple`) as one of its attributes with the name `:contents`.
 
 To take full advantages of the Julia base, the following interfaces are defined:
 * inquiry of info: `length`, `eltype`, `hash`

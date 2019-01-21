@@ -94,12 +94,12 @@ _dimension_(vs::AbstractVectorSpace,::IsMultiIndexable{true})=prod(dims(vs))
 
 Get the ith basis of a vector space by the `[]` operator.
 """
-Base.getindex(vs::AbstractVectorSpace,i::Int)=_index_(vs,i,vs|>typeof|>HasTable,vs|>typeof|>IsMultiIndexable)
-_index_(vs::AbstractVectorSpace,i::Int,::HasTable{true},::IsMultiIndexable{false})=vs.table[i]
-_index_(vs::AbstractVectorSpace,i::Int,::HasTable{true},::IsMultiIndexable{true})=eltype(vs).name.wrapper(vs.table[i],vs)
-_index_(vs::AbstractVectorSpace,i::Int,::HasTable{false},::IsMultiIndexable{true})=_index_(vs,i,vs|>typeof|>MultiIndexOrderStyle)
-_index_(vs::AbstractVectorSpace,i::Int,::MultiIndexOrderStyle{'F'})=eltype(vs).name.wrapper(indtosub(dims(vs),i,forder),vs)
-_index_(vs::AbstractVectorSpace,i::Int,::MultiIndexOrderStyle{'C'})=eltype(vs).name.wrapper(indtosub(dims(vs),i,corder),vs)
+Base.getindex(vs::AbstractVectorSpace,i::Int)=_getindex_(vs,i,vs|>typeof|>HasTable,vs|>typeof|>IsMultiIndexable)
+_getindex_(vs::AbstractVectorSpace,i::Int,::HasTable{true},::IsMultiIndexable{false})=vs.table[i]
+_getindex_(vs::AbstractVectorSpace,i::Int,::HasTable{true},::IsMultiIndexable{true})=eltype(vs).name.wrapper(vs.table[i],vs)
+_getindex_(vs::AbstractVectorSpace,i::Int,::HasTable{false},::IsMultiIndexable{true})=_getindex_(vs,i,vs|>typeof|>MultiIndexOrderStyle)
+_getindex_(vs::AbstractVectorSpace,i::Int,::MultiIndexOrderStyle{'F'})=eltype(vs).name.wrapper(indtosub(dims(vs),i,forder),vs)
+_getindex_(vs::AbstractVectorSpace,i::Int,::MultiIndexOrderStyle{'C'})=eltype(vs).name.wrapper(indtosub(dims(vs),i,corder),vs)
 
 """
     searchsortedfirst(vs::AbstractVectorSpace{B},basis::B) where B -> Int
@@ -120,6 +120,11 @@ function _search_(vs::AbstractVectorSpace{B},basis::B,::MultiIndexOrderStyle{'F'
 end
 function _search_(vs::AbstractVectorSpace{B},basis::B,::MultiIndexOrderStyle{'C'}) where B
     basis ∈ vs ? subtoind(dims(vs),inds(basis,vs),corder) : error("searchsortedfirst error: input basis($basis) not found.")
+end
+function _search_(vs::AbstractVectorSpace{B},basis::B,::IsMultiIndexable{false}) where B
+    for i=1:dimension(vs)
+        vs[i]==basis && return i
+    end
 end
 function Base.searchsortedfirst(vs,basis)
     lo,hi=0,length(vs)+1

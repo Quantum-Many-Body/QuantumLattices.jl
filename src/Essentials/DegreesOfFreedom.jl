@@ -66,7 +66,7 @@ Get the spatial part of an index.
 """
 @generated function pid(index::Index)
     exprs=[:(getfield(index,$i)) for i=1:fieldcount(index|>pidtype)]
-    return :(pidtype(index)($(exprs...)))
+    return :(pidtype(index).name.wrapper($(exprs...)))
 end
 
 """
@@ -85,7 +85,7 @@ Get the internal part of an index.
 """
 @generated function iid(index::Index)
     exprs=[:(getfield(index,$i)) for i=fieldcount(index|>pidtype)+1:fieldcount(index)]
-    return :(iidtype(index)($(exprs...)))
+    return :(iidtype(index).name.wrapper($(exprs...)))
 end
 
 """

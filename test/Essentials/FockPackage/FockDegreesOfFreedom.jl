@@ -27,8 +27,60 @@ end
 
 end
 
+@testset "Subscript" begin
+    sub=@subscript (x1,x2)=>(x1,4,4,x2) with x1<x2
+    @test sub==deepcopy(sub)
+    @test isequal(sub,deepcopy(sub))
+    @test rank(sub)==rank(typeof(sub))==2
+    @test dimension(sub)==dimension(typeof(sub))==4
+    @test string(sub)=="(x1,x2)=>(x1,4,4,x2) with $(sub.identifier)"
+    @test sub(Val('M'),1,2)==(1,4,4,2)
+    @test sub(Val('C'),1,2)==true
+    @test sub(Val('C'),2,1)==false
+
+    sub=@subscript (x1,x2)=>(x1,x2,x1,x2)
+    @test sub(Val('M'),1,2)==(1,2,1,2)
+    @test sub(Val('C'),1,2)==true
+
+    sub=Subscript{4}()
+    @test rank(sub)==1 && dimension(sub)==4
+    @test string(sub)=="*=>(*,*,*,*)"
+    @test sub(Val('M'),2)==(2,2,2,2)
+    @test sub(Val('C'),2)==true
+
+    sub=Subscript((1,2,2,1))
+    @test rank(sub)==0 && dimension(sub)==4
+    @test string(sub)=="(1,2,2,1)"
+    @test sub(Val('M'))==(1,2,2,1)
+    @test sub(Val('C'))==true
+end
+
+@testset "Subscripts" begin
+    sub1=@subscript (x1,)=>(x1,2) with x1<2
+    sub2=@subscript (y1,y2)=>(y1,y2,y1,y2) with y1<y2
+    subs=Subscripts(sub1,sub2)
+    @test rank(subs)==rank(typeof(subs))==3
+    @test rank(subs,1)==rank(typeof(subs),1)==1
+    @test rank(subs,2)==rank(typeof(subs),2)==2
+    @test dimension(subs)==dimension(typeof(subs))==6
+    @test dimension(subs,1)==dimension(typeof(subs),1)==2
+    @test dimension(subs,2)==dimension(typeof(subs),2)==4
+    @test subs(Val('M'),(1,2,3))==(1,2,2,3,2,3)
+    @test subs(Val('C'),(1,2,3))==true
+    @test subs(Val('C'),(2,2,3))==false
+    @test subs(Val('C'),(1,3,2))==false
+    @test subs(Val('C'),(2,3,2))==false
+
+    sub3=Subscript((6,6))
+    @test subs==sub1*sub2
+    @test subs*sub3==Subscripts(sub1,sub2,sub3)
+    @test sub3*subs==Subscripts(sub3,sub1,sub2)
+    @test subs*Subscripts(sub3)==Subscripts(sub1,sub2,sub3)
+    @test expand(subs*sub3,(3,3,2,3,2,3,8,9))|>collect==[(1,2,1,2,1,2,6,6),(1,2,1,3,1,3,6,6),(1,2,2,3,2,3,6,6)]
+end
+
 @testset "FCID" begin
-    @test FCID(atom=1,orbital=1,spin=1,nambu=1)|>typeof|>fieldnames==(:atom,:orbital,:spin,:nambu)
+    @test FCID(atom=1,orbital=1,spin=1,nambu=1)|>typeof|>fieldnames==(:center,:atom,:orbital,:spin,:nambu,:obsub,:spsub)
 end
 
 @testset "FockCoupling" begin
@@ -36,75 +88,50 @@ end
     @test FockCoupling{2}(1.0,atoms=(1,1))|>string=="FockCoupling(value=1.0,atoms=(1,1))"
     @test FockCoupling{2}(1.0,atoms=(1,1),spins=(1,2))|>string=="FockCoupling(value=1.0,atoms=(1,1),spins=(1,2))"
     @test FockCoupling{2}(2.0)|>repr=="2.0"
-    @test FockCoupling{2}(2.0,atoms=(1,1))|>repr=="2.0 sl11"
-    @test FockCoupling{2}(2.0,atoms=(1,1),orbitals=(2,2),spins=(1,2),nambus=(1,2))|>repr=="2.0 sl11⊗ob22⊗sp12⊗ph12"
 
-    fc1=FockCoupling{2}(1.5,atoms=(1,2),orbitals=(1,1),spins=(1,1))
-    fc2=FockCoupling{2}(2.0,atoms=(2,1),orbitals=(1,2),nambus=(1,2))
-    @test fc1*fc2==FockCoupling{2}(3.0,atoms=(1,1),orbitals=(1,2),spins=(1,1),nambus=(1,2))
-    fc1=FockCoupling{2}(1.5,atoms=(1,2))
-    fc2=FockCoupling{2}(2.0,atoms=(1,2))
-    @test fc1*fc2==FockCoupling{2}(0.0,atoms=(1,2))
+    fc1=FockCoupling{2}(1.5,atoms=(2,1),spins=(@subscript (x,)=>(x,1)),centers=(1,2))
+    fc2=FockCoupling{2}(2.0,atoms=(1,2),orbitals=(@subscript (x,y)=>(x,y) with x<y),centers=(1,2))
+    @test fc1|>repr=="1.5 sl(2:1)⊗sp(x:1)@(1-2) with (*,$(fc1.id[1].spsub)) && (*,$(fc1.id[1].spsub))"
+    @test fc2|>repr=="2.0 sl(1:2)⊗ob(x:y)@(1-2) with ($(fc2.id[2].obsub),*) && ($(fc2.id[2].obsub),*)"
+    fc=fc1*fc2
+    @test fc|>repr=="3.0 sl(2:1:1:2)⊗ob(*:*:x:y)⊗sp(x:1:*:*)@(1-2-1-2) with (*,$(fc1.id[1].spsub)) && (*,$(fc1.id[2].spsub)) && ($(fc2.id[2].obsub),*) && ($(fc2.id[2].obsub),*)"
+    fc=fc1⊗fc2
+    @test fc|>repr=="3.0 sl(2:2)⊗ob(x:y)⊗sp(x:1)@(1-2) with ($(fc2.id[2].obsub),$(fc1.id[1].spsub)) && ($(fc2.id[2].obsub),$(fc1.id[1].spsub))"
 
-    point,fock=Point(PID(1,1),(0.0,0.0)),Fock(atom=2,norbital=2,nspin=2,nnambu=2)
-    ex=expand(FockCoupling{2}(2.0,atoms=(1,1)),point,fock)
-    @test ex|>typeof|>eltype==Tuple{Float,NTuple{2,FIndex{Int}}}
-    @test ex|>length==0
-    @test ex|>collect==[]
+    ex=expand(FockCoupling{2}(2.0,atoms=(1,1)),PID(1,1),Fock(atom=2,norbital=2,nspin=2,nnambu=2))
+    @test IsMultiIndexable(typeof(ex))==IsMultiIndexable(true)
+    @test MultiIndexOrderStyle(typeof(ex))==MultiIndexOrderStyle('C')
+    @test dims(ex)==(0,0)
+    @test collect(ex)==[]
 
-    ex=expand(FockCoupling{2}(2.0,atoms=(2,2)),point,fock)
-    @test ex|>length==4
-    @test ex|>collect==[(2.0,(FIndex(1,1,1,1,2),FIndex(1,1,1,1,1))),
-                        (2.0,(FIndex(1,1,1,2,2),FIndex(1,1,1,2,1))),
-                        (2.0,(FIndex(1,1,2,1,2),FIndex(1,1,2,1,1))),
-                        (2.0,(FIndex(1,1,2,2,2),FIndex(1,1,2,2,1)))
-                        ]
+    ex=expand(FockCoupling{2}(2.0,atoms=(1,2),orbitals=(1,2)),(PID(1,1),PID(1,2)),(Fock(atom=1,norbital=2,nspin=2,nnambu=2),Fock(atom=2,norbital=2,nspin=2,nnambu=2)))
+    @test dims(ex)==(1,2)
+    @test collect(ex)==[(2.0,(FIndex(1,1,1,1,2),FIndex(1,2,2,1,1))),
+                        (2.0,(FIndex(1,1,1,2,2),FIndex(1,2,2,2,1)))
+    ]
 
-    ex=expand(FockCoupling{2}(2.0,orbitals=(1,2)),point,fock)
-    @test ex|>length==2
-    @test ex|>collect==[(2.0,(FIndex(1,1,1,1,2),FIndex(1,1,2,1,1))),
-                        (2.0,(FIndex(1,1,1,2,2),FIndex(1,1,2,2,1)))
-                        ]
+    ex=expand(FockCoupling{4}(2.0,centers=(1,1,1,1),spins=(2,2,1,1)),PID(1,1),Fock(atom=1,norbital=2,nspin=2,nnambu=2))
+    @test dims(ex)==(2,1)
+    @test collect(ex)==[(2.0,(FIndex(1,1,1,2,2),FIndex(1,1,1,2,1),FIndex(1,1,1,1,2),FIndex(1,1,1,1,1))),
+                        (2.0,(FIndex(1,1,2,2,2),FIndex(1,1,2,2,1),FIndex(1,1,2,1,2),FIndex(1,1,2,1,1)))
+    ]
 
-    ex=expand(FockCoupling{2}(2.0,spins=(1,2)),point,fock)
-    @test ex|>length==2
-    @test ex|>collect==[(2.0,(FIndex(1,1,1,1,2),FIndex(1,1,1,2,1))),
-                        (2.0,(FIndex(1,1,2,1,2),FIndex(1,1,2,2,1)))
-                        ]
+    ex=expand(FockCoupling{4}(2.0,orbitals=(@subscript (α,β)=>(α,α,β,β) with α<β),spins=(2,1,1,2),nambus=(2,2,1,1)),PID(1,1),Fock(atom=1,norbital=3,nspin=2,nnambu=2))
+    @test dims(ex)==(3,1)
+    @test collect(ex)==[(2.0,(FIndex(1,1,1,2,2),FIndex(1,1,1,1,2),FIndex(1,1,2,1,1),FIndex(1,1,2,2,1))),
+                        (2.0,(FIndex(1,1,1,2,2),FIndex(1,1,1,1,2),FIndex(1,1,3,1,1),FIndex(1,1,3,2,1))),
+                        (2.0,(FIndex(1,1,2,2,2),FIndex(1,1,2,1,2),FIndex(1,1,3,1,1),FIndex(1,1,3,2,1)))
+    ]
 
-    ex=expand(FockCoupling{2}(2.0,orbitals=(2,1),spins=(1,2)),point,fock)
-    @test ex|>length==1
-    @test ex|>collect==[(2.0,(FIndex(1,1,2,1,2),FIndex(1,1,1,2,1)))]
-
-    bond=Bond(1,Point(PID(1,1),(0.0,0.0)),Point(PID(1,2),(0.0,0.0)))
-    sfock,efock=Fock(atom=1,norbital=2,nspin=2,nnambu=2),Fock(atom=2,norbital=2,nspin=2,nnambu=2)
-    ex=expand(FockCoupling{2}(2.0,atoms=(2,2)),bond,sfock,efock)
-    @test ex|>length==0
-    @test ex|>collect==[]
-
-    ex=expand(FockCoupling{2}(2.0,atoms=(2,1)),bond,sfock,efock)
-    @test ex|>length==4
-    @test ex|>collect==[(2.0,(FIndex(1,2,1,1,2),FIndex(1,1,1,1,1))),
-                        (2.0,(FIndex(1,2,1,2,2),FIndex(1,1,1,2,1))),
-                        (2.0,(FIndex(1,2,2,1,2),FIndex(1,1,2,1,1))),
-                        (2.0,(FIndex(1,2,2,2,2),FIndex(1,1,2,2,1)))
-                        ]
-
-    ex=expand(FockCoupling{2}(2.0,orbitals=(1,2)),bond,sfock,efock)
-    @test ex|>length==2
-    @test ex|>collect==[(2.0,(FIndex(1,2,1,1,2),FIndex(1,1,2,1,1))),
-                        (2.0,(FIndex(1,2,1,2,2),FIndex(1,1,2,2,1)))
-                        ]
-
-    ex=expand(FockCoupling{2}(2.0,spins=(1,2)),bond,sfock,efock)
-    @test ex|>length==2
-    @test ex|>collect==[(2.0,(FIndex(1,2,1,1,2),FIndex(1,1,1,2,1))),
-                        (2.0,(FIndex(1,2,2,1,2),FIndex(1,1,2,2,1)))
-                        ]
-
-    ex=expand(FockCoupling{2}(2.0,orbitals=(2,1),spins=(1,2)),bond,sfock,efock)
-    @test ex|>length==1
-    @test ex|>collect==[(2.0,(FIndex(1,2,2,1,2),FIndex(1,1,1,2,1)))]
+    fc1=FockCoupling{2}(1.0,spins=(2,2))
+    fc2=FockCoupling{2}(-1.0,spins=(1,1))
+    ex=expand(fc1*fc2,PID(1,1),Fock(atom=1,norbital=2,nspin=2,nnambu=2))
+    @test dims(ex)==(4,1)
+    @test collect(ex)==[(-1.0,(FIndex(1,1,1,2,2),FIndex(1,1,1,2,1),FIndex(1,1,1,1,2),FIndex(1,1,1,1,1))),
+                        (-1.0,(FIndex(1,1,1,2,2),FIndex(1,1,1,2,1),FIndex(1,1,2,1,2),FIndex(1,1,2,1,1))),
+                        (-1.0,(FIndex(1,1,2,2,2),FIndex(1,1,2,2,1),FIndex(1,1,1,1,2),FIndex(1,1,1,1,1))),
+                        (-1.0,(FIndex(1,1,2,2,2),FIndex(1,1,2,2,1),FIndex(1,1,2,1,2),FIndex(1,1,2,1,1)))
+    ]
 end
 
 @testset "σ⁰" begin

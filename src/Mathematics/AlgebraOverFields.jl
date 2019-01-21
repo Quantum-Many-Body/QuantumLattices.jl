@@ -8,12 +8,12 @@ using ...Prerequisites.CompositeStructures: CompositeNTuple,CompositeVector
 using ..Combinatorics: AbstractCombinatorics
 using ..VectorSpaces: GradedTables,GradedVectorSpace,DirectVectorSpace,TabledIndices
 
-import ...Prerequisites.Interfaces: rank,⊗,add!,sub!
+import ...Prerequisites.Interfaces: rank,add!,sub!,⊗
 
 export SimpleID,ID
 export IdSpace
 export Element,Elements,idtype
-export rank,⊗,add!,sub!
+export rank,add!,sub!,⊗
 
 """
     SimpleID <: AbstractNamedVector
@@ -34,7 +34,7 @@ struct ID{N,I<:SimpleID} <: CompositeNTuple{N,I}
     ID(ids::NTuple{N,SimpleID}) where N=new{N,ids|>eltype}(ids)
 end
 ID(ids::SimpleID...)=ID(ids)
-@generated function ID(::Type{SID},attrs::Vararg{NTuple{N},M}) where {SID<:SimpleID,N,M}
+@generated function ID(::Type{SID},attrs::Vararg{NTuple{N,Any},M}) where {SID<:SimpleID,N,M}
     exprs=[]
     for i=1:N
         args=[:(attrs[$j][$i]) for j=1:M]
@@ -48,14 +48,12 @@ end
 
 Get the property names of a composite id.
 """
-Base.propertynames(::Type{I},private::Bool=false) where I<:ID=I|>eltype|>isconcretetype ? cidpropertynames(I,Val(private)) : (:contents,)
-@generated function cidpropertynames(::Type{I},::Val{true}) where I<:ID
-    @assert I|>eltype|>isconcretetype "cidpropertynames error: not homogeneous input I($(I|>nameof))."
+Base.propertynames(::Type{I},private::Bool=false) where I<:ID=idpropertynames(I,Val(private))
+@generated function idpropertynames(::Type{I},::Val{true}) where I<:ID
     exprs=[QuoteNode(Symbol(name,'s')) for name in I|>eltype|>fieldnames]
     return Expr(:tuple,QuoteNode(:contents),exprs...)
 end
-@generated function cidpropertynames(::Type{I},::Val{false}) where I<:ID
-    @assert I|>eltype|>isconcretetype "cidpropertynames error: not homogeneous input I($(I|>nameof))."
+@generated function idpropertynames(::Type{I},::Val{false}) where I<:ID
     exprs=[QuoteNode(Symbol(name,'s')) for name in I|>eltype|>fieldnames]
     return Expr(:tuple,exprs...)
 end
@@ -65,8 +63,8 @@ end
 
 Get the property of a composite id.
 """
-Base.getproperty(cid::ID,name::Symbol)=name==:contents ? getfield(cid,:contents) : cidgetproperty(cid,name)
-@generated function cidgetproperty(cid::ID,name::Symbol)
+Base.getproperty(cid::ID,name::Symbol)=name==:contents ? getfield(cid,:contents) : idgetproperty(cid,name)
+@generated function idgetproperty(cid::ID,name::Symbol)
     index=:(index=findfirst(isequal(name),cid|>typeof|>propertynames)::Int)
     exprs=[:(getfield(cid[$i],index)) for i=1:length(cid)]
     return Expr(:block,index,Expr(:tuple,exprs...))
@@ -106,17 +104,17 @@ rank(::Type{<:ID{N,I}}) where {N,I}=N
 rank(id::ID)=id|>typeof|>rank
 
 """
-    ⊗(sid1::SimpleID,sid2::SimpleID) -> ID
-    ⊗(sid::SimpleID,cid::ID) -> ID
-    ⊗(cid::ID,sid::SimpleID) -> ID
-    ⊗(cid1::ID,cid2::ID) -> ID
+    *(sid1::SimpleID,sid2::SimpleID) -> ID
+    *(sid::SimpleID,cid::ID) -> ID
+    *(cid::ID,sid::SimpleID) -> ID
+    *(cid1::ID,cid2::ID) -> ID
 
-Get the direct product of the id system.
+Get the product of the id system.
 """
-⊗(sid1::SimpleID,sid2::SimpleID)=ID(sid1,sid2)
-⊗(sid::SimpleID,cid::ID)=ID(sid,convert(Tuple,cid)...)
-⊗(cid::ID,sid::SimpleID)=ID(convert(Tuple,cid)...,sid)
-⊗(cid1::ID,cid2::ID)=ID(convert(Tuple,cid1)...,convert(Tuple,cid2)...)
+Base.:*(sid1::SimpleID,sid2::SimpleID)=ID(sid1,sid2)
+Base.:*(sid::SimpleID,cid::ID)=ID(sid,convert(Tuple,cid)...)
+Base.:*(cid::ID,sid::SimpleID)=ID(convert(Tuple,cid)...,sid)
+Base.:*(cid1::ID,cid2::ID)=ID(convert(Tuple,cid1)...,convert(Tuple,cid2)...)
 
 """
     IdSpace(sids::DirectVectorSpace,tables::GradedTables)
@@ -316,7 +314,7 @@ function Base.:*(m1::Element,m2::Element)
     @assert(    m1|>typeof|>nameof==m2|>typeof|>nameof && m1|>typeof|>fieldcount==m2|>typeof|>fieldcount==2,
                 "\"*\" error: not implemented between $(m1|>typeof|>nameof) and $(m2|>typeof|>nameof)."
                 )
-    typeof(m1).name.wrapper(m1.value*m2.value,m1.id⊗m2.id)
+    typeof(m1).name.wrapper(m1.value*m2.value,m1.id*m2.id)
 end
 
 """
@@ -344,5 +342,25 @@ Overloaded `/` operator for element-sclar division of an algebra over a field.
 """
 Base.:/(m::Element,factor::Number)=m*(1/factor)
 Base.:/(ms::Elements,factor::Number)=ms*(1/factor)
+
+"""
+    ^(m::Element,n::Int)
+    ^(ms::Elements,n::Int)
+
+Overloaded `^` operator for element-integer power of an algebra over a field.
+"""
+Base.:^(m::Element,n::Int)=(@assert n>0 "^ error: non-positive integers are not allowed."; prod(ntuple(i->m,n)))
+Base.:^(ms::Elements,n::Int)=(@assert n>0 "^ error: non-positive integers are not allowed."; prod(ntuple(i->ms,n)))
+
+"""
+    ⊗(m::Element,ms::Elements) -> Elements
+    ⊗(ms::Elements,m::Element) -> Elements
+    ⊗(ms1::Elements,ms2::Elements) -> Elements
+
+Overloaded `⊗` operator for element-element multiplications of an algebra over a field.
+"""
+⊗(m::Element,ms::Elements)=Elements((m⊗mm for mm in ms|>values)...)
+⊗(ms::Elements,m::Element)=Elements((mm⊗m for mm in ms|>values)...)
+⊗(ms1::Elements,ms2::Elements)=Elements((m1⊗m2 for m1 in ms1|>values for m2 in ms2|>values)...)
 
 end #module

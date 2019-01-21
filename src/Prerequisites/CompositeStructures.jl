@@ -2,40 +2,49 @@ module CompositeStructures
 
 using ..TypeTraits: efficientoperations
 
-export CompositeNTuple,CompositeVector,CompositeDict
+export CompositeTuple,CompositeNTuple,CompositeVector,CompositeDict
+
+"""
+    CompositeTuple{T<:Tuple}
+
+A composite tuple is a tuple that is implemented by including an ordinary `Tuple` as one of its attributes with the name `:contents`.
+"""
+abstract type CompositeTuple{T<:Tuple} end
+Base.length(::CompositeTuple{T}) where T=fieldcount(T)
+Base.length(::Type{<:CompositeTuple{T}}) where T=fieldcount(T)
+Base.eltype(::CompositeTuple{T}) where T=eltype(T)
+Base.eltype(::Type{<:CompositeTuple{T}}) where T=eltype(T)
+@generated function Base.hash(ct::CompositeTuple,h::UInt)
+    ts=Expr(:tuple,[:(getfield(ct,$i)) for i=1:fieldcount(ct)]...)
+    return :(hash($ts,h))
+end
+Base.:(==)(ct1::CompositeTuple,ct2::CompositeTuple) = ==(efficientoperations,ct1,ct2)
+Base.isequal(ct1::CompositeTuple,ct2::CompositeTuple)=isequal(efficientoperations,ct1,ct2)
+Base.getindex(ct::CompositeTuple,i::Union{<:Integer,CartesianIndex})=getfield(ct,:contents)[i]
+@generated function Base.getindex(ct::CompositeTuple,inds)
+    exprs=[name==:contents ? :(getfield(ct,:contents)[inds]) : :(getfield(ct,$i)) for (i,name) in enumerate(ct|>fieldnames)]
+    return :(typeof(ct).name.wrapper($(exprs...)))
+end
+Base.iterate(ct::CompositeTuple)=iterate(getfield(ct,:contents))
+Base.iterate(ct::CompositeTuple,state)=iterate(getfield(ct,:contents),state)
+Base.iterate(rv::Iterators.Reverse{<:CompositeTuple},state=length(rv.itr))=state<1 ? nothing : (rv.itr[state],state-1)
+Base.keys(ct::CompositeTuple)=keys(getfield(ct,:contents))
+Base.values(ct::CompositeTuple)=values(getfield(ct,:contents))
+Base.pairs(ct::CompositeTuple)=pairs(getfield(ct,:contents))
+@generated function Base.reverse(ct::CompositeTuple)
+    exprs=[name==:contents ? :(reverse(getfield(ct,:contents))) : :(getfield(ct,$i)) for (i,name) in enumerate(ct|>fieldnames)]
+    return :(typeof(ct).name.wrapper($(exprs...)))
+end
+Base.convert(::Type{Tuple},ct::CompositeTuple)=getfield(ct,:contents)
 
 """
     CompositeNTuple{N,T}
 
 A composite ntuple is a ntuple that is implemented by including an ordinary `NTuple` as one of its attributes with the name `:contents`.
+
+Alias for `CompositeTuple{NTuple{N,T}}`.
 """
-abstract type CompositeNTuple{N,T} end
-Base.length(::CompositeNTuple{N,T}) where {N,T}=N
-Base.length(::Type{<:CompositeNTuple{N,T}}) where {N,T}=N
-Base.eltype(::CompositeNTuple{N,T}) where {N,T}=T
-Base.eltype(::Type{<:CompositeNTuple{N,T}}) where {N,T}=T
-@generated function Base.hash(ct::CompositeNTuple,h::UInt)
-    ts=Expr(:tuple,[:(getfield(ct,$i)) for i=1:fieldcount(ct)]...)
-    return :(hash($ts,h))
-end
-Base.:(==)(ct1::CompositeNTuple,ct2::CompositeNTuple) = ==(efficientoperations,ct1,ct2)
-Base.isequal(ct1::CompositeNTuple,ct2::CompositeNTuple)=isequal(efficientoperations,ct1,ct2)
-Base.getindex(ct::CompositeNTuple,i::Union{<:Integer,CartesianIndex})=getfield(ct,:contents)[i]
-@generated function Base.getindex(ct::CompositeNTuple,inds)
-    exprs=[name==:contents ? :(getfield(ct,:contents)[inds]) : :(getfield(ct,$i)) for (i,name) in enumerate(ct|>fieldnames)]
-    return :(typeof(ct).name.wrapper($(exprs...)))
-end
-Base.iterate(ct::CompositeNTuple)=iterate(getfield(ct,:contents))
-Base.iterate(ct::CompositeNTuple,state)=iterate(getfield(ct,:contents),state)
-Base.iterate(rv::Iterators.Reverse{<:CompositeNTuple},state=length(rv.itr))=state<1 ? nothing : (rv.itr[state],state-1)
-Base.keys(ct::CompositeNTuple)=keys(getfield(ct,:contents))
-Base.values(ct::CompositeNTuple)=values(getfield(ct,:contents))
-Base.pairs(ct::CompositeNTuple)=pairs(getfield(ct,:contents))
-@generated function Base.reverse(ct::CompositeNTuple)
-    exprs=[name==:contents ? :(reverse(getfield(ct,:contents))) : :(getfield(ct,$i)) for (i,name) in enumerate(ct|>fieldnames)]
-    return :(typeof(ct).name.wrapper($(exprs...)))
-end
-Base.convert(::Type{Tuple},ct::CompositeNTuple)=getfield(ct,:contents)
+const CompositeNTuple{N,T}=CompositeTuple{NTuple{N,T}}
 
 """
     CompositeVector{T}

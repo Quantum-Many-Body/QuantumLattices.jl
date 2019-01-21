@@ -12,7 +12,6 @@ using Hamiltonian.Prerequisites.Factories
     @test escape(:(Vector{Int}),UnEscaped(:Vector))==:(Vector{$(Expr(:escape, :Int))})
 end
 
-
 @testset "Inference" begin
     @test Inference(name=:T)==Inference(nothing,:T,nothing)
     @test isequal(Inference(name=:T),Inference(nothing,:T,nothing))
