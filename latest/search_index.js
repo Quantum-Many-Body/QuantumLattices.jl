@@ -993,11 +993,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/CompositeStructures.html#CompositeNTuple-1",
+    "location": "man/Prerequisites/CompositeStructures.html#CompositeTuple-and-CompositeNTuple-1",
     "page": "Composite structures",
-    "title": "CompositeNTuple",
+    "title": "CompositeTuple and CompositeNTuple",
     "category": "section",
-    "text": "A composite ntuple is a ntuple that is implemented by including an ordinary NTuple as one of its attributes with the name :contents.To take full advantages of the Julia base, the following interfaces are defined:inquiry of info: length, eltype, hash\ncomparison between objects: ==, isequal\nobtainment of old elements: getindex\niteration: iterate, keys, values, pairs\nconstruction of new objects: reverseComposite ntuples are suited for the situations where other attributes are not affected by the modification of the elements. Note that arithmatic operations and logical operations excluding == and isequal are not supported. Besides, a composite ntuple is not a tuple since Julia has no abstract tuples."
+    "text": "A composite tuple (ntuple) is a tuple (ntuple) that is implemented by including an ordinary Tuple (NTuple) as one of its attributes with the name :contents.To take full advantages of the Julia base, the following interfaces are defined:inquiry of info: length, eltype, hash\ncomparison between objects: ==, isequal\nobtainment of old elements: getindex\niteration: iterate, keys, values, pairs\nconstruction of new objects: reverseComposite ntuples are suited for the situations where other attributes are not affected by the modification of the elements. Note that arithmatic operations and logical operations excluding == and isequal are not supported. Besides, a composite ntuple is not a tuple since Julia has no abstract tuples."
 },
 
 {
@@ -1029,7 +1029,15 @@ var documenterSearchIndex = {"docs": [
     "page": "Composite structures",
     "title": "Hamiltonian.Prerequisites.CompositeStructures.CompositeNTuple",
     "category": "type",
-    "text": "CompositeNTuple{N,T}\n\nA composite ntuple is a ntuple that is implemented by including an ordinary NTuple as one of its attributes with the name :contents.\n\n\n\n\n\n"
+    "text": "CompositeNTuple{N,T}\n\nA composite ntuple is a ntuple that is implemented by including an ordinary NTuple as one of its attributes with the name :contents.\n\nAlias for CompositeTuple{NTuple{N,T}}.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Prerequisites/CompositeStructures.html#Hamiltonian.Prerequisites.CompositeStructures.CompositeTuple",
+    "page": "Composite structures",
+    "title": "Hamiltonian.Prerequisites.CompositeStructures.CompositeTuple",
+    "category": "type",
+    "text": "CompositeTuple{T<:Tuple}\n\nA composite tuple is a tuple that is implemented by including an ordinary Tuple as one of its attributes with the name :contents.\n\n\n\n\n\n"
 },
 
 {
@@ -2105,11 +2113,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Prerequisites.Interfaces.:⊗-Tuple{Hamiltonian.Mathematics.AlgebraOverFields.SimpleID,Hamiltonian.Mathematics.AlgebraOverFields.SimpleID}",
+    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Prerequisites.Interfaces.:⊗-Tuple{Hamiltonian.Mathematics.AlgebraOverFields.Element,Dict{I,M} where M<:Hamiltonian.Mathematics.AlgebraOverFields.Element where I<:Hamiltonian.Mathematics.AlgebraOverFields.ID}",
     "page": "Algebra over fields",
     "title": "Hamiltonian.Prerequisites.Interfaces.:⊗",
     "category": "method",
-    "text": "⊗(sid1::SimpleID,sid2::SimpleID) -> ID\n⊗(sid::SimpleID,cid::ID) -> ID\n⊗(cid::ID,sid::SimpleID) -> ID\n⊗(cid1::ID,cid2::ID) -> ID\n\nGet the direct product of the id system.\n\n\n\n\n\n"
+    "text": "⊗(m::Element,ms::Elements) -> Elements\n⊗(ms::Elements,m::Element) -> Elements\n⊗(ms1::Elements,ms2::Elements) -> Elements\n\nOverloaded ⊗ operator for element-element multiplications of an algebra over a field.\n\n\n\n\n\n"
 },
 
 {
@@ -2142,6 +2150,14 @@ var documenterSearchIndex = {"docs": [
     "title": "Hamiltonian.Prerequisites.Interfaces.sub!",
     "category": "method",
     "text": "sub!(ms::Elements) -> typeof(ms) -> typeof(ms)\nsub!(ms::Elements,m::Element) -> typeof(ms)\nsub!(ms::Elements,mms::Elements) -> typeof(ms)\n\nGet the inplace subtraction of elements from a set.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.:*-Tuple{Hamiltonian.Mathematics.AlgebraOverFields.SimpleID,Hamiltonian.Mathematics.AlgebraOverFields.SimpleID}",
+    "page": "Algebra over fields",
+    "title": "Base.:*",
+    "category": "method",
+    "text": "*(sid1::SimpleID,sid2::SimpleID) -> ID\n*(sid::SimpleID,cid::ID) -> ID\n*(cid::ID,sid::SimpleID) -> ID\n*(cid1::ID,cid2::ID) -> ID\n\nGet the product of the id system.\n\n\n\n\n\n"
 },
 
 {
@@ -2182,6 +2198,14 @@ var documenterSearchIndex = {"docs": [
     "title": "Base.:==",
     "category": "method",
     "text": "==(m1::M,m2::M) where M<:Element -> Bool\nisequal(m1::M,m2::M) where M<:Element -> Bool\n\nCompare two elements and judge whether they are equal to each other.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.:^-Tuple{Hamiltonian.Mathematics.AlgebraOverFields.Element,Int64}",
+    "page": "Algebra over fields",
+    "title": "Base.:^",
+    "category": "method",
+    "text": "^(m::Element,n::Int)\n^(ms::Elements,n::Int)\n\nOverloaded ^ operator for element-integer power of an algebra over a field.\n\n\n\n\n\n"
 },
 
 {
@@ -2977,7 +3001,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.azimuth-Tuple{AbstractArray{#s201,1} where #s201<:Real}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.azimuth-Tuple{AbstractArray{#s202,1} where #s202<:Real}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.azimuth",
     "category": "method",
@@ -2985,7 +3009,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.azimuthd-Tuple{AbstractArray{#s201,1} where #s201<:Real}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.azimuthd-Tuple{AbstractArray{#s202,1} where #s202<:Real}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.azimuthd",
     "category": "method",
@@ -3009,7 +3033,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.distance-Tuple{AbstractArray{#s190,1} where #s190<:Real,AbstractArray{#s189,1} where #s189<:Real}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.distance-Tuple{AbstractArray{#s191,1} where #s191<:Real,AbstractArray{#s190,1} where #s190<:Real}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.distance",
     "category": "method",
@@ -3025,7 +3049,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.interlinks-Tuple{AbstractArray{#s211,2} where #s211<:Real,AbstractArray{#s210,2} where #s210<:Real,Dict{Int64,Float64}}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.interlinks-Tuple{AbstractArray{#s212,2} where #s212<:Real,AbstractArray{#s211,2} where #s211<:Real,Dict{Int64,Float64}}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.interlinks",
     "category": "method",
@@ -3033,7 +3057,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.intralinks-Union{Tuple{N}, Tuple{AbstractArray{#s206,2} where #s206<:Real,AbstractArray{#s205,1} where #s205<:(AbstractArray{#s204,1} where #s204<:Real),Dict{Int64,Float64}}, Tuple{AbstractArray{#s203,2} where #s203<:Real,AbstractArray{#s202,1} where #s202<:(AbstractArray{#s201,1} where #s201<:Real),Dict{Int64,Float64},Tuple{Vararg{Int64,N}}}} where N",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.intralinks-Union{Tuple{N}, Tuple{AbstractArray{#s207,2} where #s207<:Real,AbstractArray{#s206,1} where #s206<:(AbstractArray{#s205,1} where #s205<:Real),Dict{Int64,Float64}}, Tuple{AbstractArray{#s204,2} where #s204<:Real,AbstractArray{#s203,1} where #s203<:(AbstractArray{#s202,1} where #s202<:Real),Dict{Int64,Float64},Tuple{Vararg{Int64,N}}}} where N",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.intralinks",
     "category": "method",
@@ -3073,7 +3097,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.issubordinate-Tuple{AbstractArray{#s205,1} where #s205<:Real,AbstractArray{#s204,1} where #s204<:(AbstractArray{#s203,1} where #s203<:Real)}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.issubordinate-Tuple{AbstractArray{#s206,1} where #s206<:Real,AbstractArray{#s205,1} where #s205<:(AbstractArray{#s204,1} where #s204<:Real)}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.issubordinate",
     "category": "method",
@@ -3105,7 +3129,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.polar-Tuple{AbstractArray{#s201,1} where #s201<:Real}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.polar-Tuple{AbstractArray{#s202,1} where #s202<:Real}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.polar",
     "category": "method",
@@ -3113,7 +3137,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.polard-Tuple{AbstractArray{#s201,1} where #s201<:Real}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.polard-Tuple{AbstractArray{#s202,1} where #s202<:Real}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.polard",
     "category": "method",
@@ -3129,7 +3153,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.reciprocals-Tuple{AbstractArray{#s215,1} where #s215<:(AbstractArray{#s214,1} where #s214<:Real)}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.reciprocals-Tuple{AbstractArray{#s216,1} where #s216<:(AbstractArray{#s215,1} where #s215<:Real)}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.reciprocals",
     "category": "method",
@@ -3137,7 +3161,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.rotate-Tuple{AbstractArray{#s204,2} where #s204<:Real,Real}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.rotate-Tuple{AbstractArray{#s205,2} where #s205<:Real,Real}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.rotate",
     "category": "method",
@@ -3145,7 +3169,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.tile-Union{Tuple{M}, Tuple{N}, Tuple{AbstractArray{#s206,2} where #s206<:Real,AbstractArray{#s205,1} where #s205<:(AbstractArray{#s204,1} where #s204<:Real)}, Tuple{AbstractArray{#s203,2} where #s203<:Real,AbstractArray{#s202,1} where #s202<:(AbstractArray{#s201,1} where #s201<:Real),Tuple{Vararg{Tuple{Vararg{#s197,N}} where #s197<:Real,M}}}} where M where N",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.tile-Union{Tuple{M}, Tuple{N}, Tuple{AbstractArray{#s207,2} where #s207<:Real,AbstractArray{#s206,1} where #s206<:(AbstractArray{#s205,1} where #s205<:Real)}, Tuple{AbstractArray{#s204,2} where #s204<:Real,AbstractArray{#s203,1} where #s203<:(AbstractArray{#s202,1} where #s202<:Real),Tuple{Vararg{Tuple{Vararg{#s198,N}} where #s198<:Real,M}}}} where M where N",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.tile",
     "category": "method",
@@ -3153,7 +3177,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.translate-Tuple{AbstractArray{#s215,2} where #s215<:Real,AbstractArray{#s214,1} where #s214<:Real}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.translate-Tuple{AbstractArray{#s216,2} where #s216<:Real,AbstractArray{#s215,1} where #s215<:Real}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.translate",
     "category": "method",
@@ -3161,7 +3185,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.volume-Tuple{AbstractArray{#s190,1} where #s190<:Real,AbstractArray{#s189,1} where #s189<:Real,AbstractArray{#s188,1} where #s188<:Real}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.volume-Tuple{AbstractArray{#s191,1} where #s191<:Real,AbstractArray{#s190,1} where #s190<:Real,AbstractArray{#s189,1} where #s189<:Real}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.volume",
     "category": "method",
@@ -3465,7 +3489,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.Table-Tuple{AbstractArray{#s213,1} where #s213<:Index}",
+    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.Table-Tuple{AbstractArray{#s214,1} where #s214<:Index}",
     "page": "Degrees of freedom",
     "title": "Hamiltonian.Essentials.DegreesOfFreedom.Table",
     "category": "method",
@@ -3641,6 +3665,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Essentials/FockPackage.html#Subscript-and-Subscripts-1",
+    "page": "Fock package",
+    "title": "Subscript and Subscripts",
+    "category": "section",
+    "text": ""
+},
+
+{
     "location": "man/Essentials/FockPackage.html#FCID-and-FockCoupling-1",
     "page": "Fock package",
     "title": "FCID and FockCoupling",
@@ -3677,15 +3709,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "Hamiltonian.Essentials.FockPackage.FCID",
     "category": "type",
-    "text": "FCID{A,O,S,N} <: SimpleID\n\nThe id of a Fock coupling.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.FCID-Tuple{}",
-    "page": "Fock package",
-    "title": "Hamiltonian.Essentials.FockPackage.FCID",
-    "category": "method",
-    "text": "FCID(;atom=nothing,orbital=nothing,spin=nothing,nambu=nothing)\n\nConstruct an id of a Fock coupling.\n\n\n\n\n\n"
+    "text": "FCID(;center=wildcard,atom=wildcard,orbital=wildcard,spin=wildcard,nambu=wildcard,obsub=wildcard,spsub=wildcard)\n\nThe id of a Fock coupling.\n\n\n\n\n\n"
 },
 
 {
@@ -3694,14 +3718,6 @@ var documenterSearchIndex = {"docs": [
     "title": "Hamiltonian.Essentials.FockPackage.FID",
     "category": "type",
     "text": "FID <: IID\n\nThe Fock id.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.FID-Tuple{Tuple{Int64,Int64,Int64},Fock}",
-    "page": "Fock package",
-    "title": "Hamiltonian.Essentials.FockPackage.FID",
-    "category": "method",
-    "text": "FID(inds::NTuple{3,Int},::Fock) -> FID\n\nConstruct a Fock id from its Cartesian index representation.\n\n\n\n\n\n"
 },
 
 {
@@ -3741,15 +3757,47 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "Hamiltonian.Essentials.FockPackage.FockCoupling",
     "category": "type",
-    "text": "FockCoupling{N,V<:Number,I<:ID{N,<:FCID}} <: Coupling{V,I}\n\nA Fock coupling.\n\n\n\n\n\n"
+    "text": "FockCoupling(value::Number,id::ID{N,I},obsubscripts::Subscripts,spsubscripts::Subscripts) where {N,I<:FCID}\nFockCoupling{N}(value::Number;\n                centers::Union{NTuple{N,Int},Nothing}=nothing,\n                atoms::Union{NTuple{N,Int},Nothing}=nothing,\n                orbitals::Union{NTuple{N,Int},Subscript,Nothing}=nothing,\n                spins::Union{NTuple{N,Int},Subscript,Nothing}=nothing,\n                nambus::Union{NTuple{N,Int},Nothing}=nothing) where N\n\nFock coupling.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.FockCoupling-Union{Tuple{Number}, Tuple{N}} where N",
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.Subscript",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.FockPackage.FockCoupling",
+    "title": "Hamiltonian.Essentials.FockPackage.Subscript",
+    "category": "type",
+    "text": "Subscript(  ipattern::NTuple{N1,Any},\n            opattern::NTuple{N2,Any},\n            mapping::Union{Function,Nothing}=nothing,\n            constrain::Union{Function,Nothing}=nothing,\n            identifier::Union{Symbol,Char}=wildcard\n            ) where {N1,N2}\nSubscript{N}() where N\nSubscript(opattern::NTuple{N,Int}) where N\n\nThe subscripts of some orbital/spin degrees of freedom.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.Subscript-Tuple{}",
+    "page": "Fock package",
+    "title": "Hamiltonian.Essentials.FockPackage.Subscript",
     "category": "method",
-    "text": "FockCoupling{N}(    value::Number;\n                    atoms::Union{NTuple{N,Int},Nothing}=nothing,\n                    orbitals::Union{NTuple{N,Int},Nothing}=nothing,\n                    spins::Union{NTuple{N,Int},Nothing}=nothing,\n                    nambus::Union{NTuple{N,Int},Nothing}=nothing) where N\n\nConstruct a Fock coupling.\n\n\n\n\n\n"
+    "text": "(subscript::Subscript{N})(::Val{\'M\'},values::Vararg{Int,N}) where N -> NTuple{dimension(subscript),Int}\n(subscript::Subscript{N})(::Val{\'C\'},values::Vararg{Int,N}) where N -> Bool\n\nConstruct the subscripts from a set of independent variables.\nJudge whether a set of independent variables are valid to construct the subscripts.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.Subscripts",
+    "page": "Fock package",
+    "title": "Hamiltonian.Essentials.FockPackage.Subscripts",
+    "category": "type",
+    "text": "Subscripts(contents::Subscript...)\n\nA complete set of all the independent subscripts of the orbital/spin degrees of freedom.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.Subscripts-Tuple{}",
+    "page": "Fock package",
+    "title": "Hamiltonian.Essentials.FockPackage.Subscripts",
+    "category": "method",
+    "text": "(subscripts::Subscripts)(::Val{\'M\'},values::NTuple{N,Int}) where N -> NTuple{dimension(subscripts),Int}\n(subscripts::Subscripts)(::Val{\'C\'},values::NTuple{N,Int}) where N -> Bool\n\nConstruct the complete set of subscripts from a complete set of independent variables.\nJudge whether a complete set of independent variables are valid to construct the complete subscripts.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.@subscript",
+    "page": "Fock package",
+    "title": "Hamiltonian.Essentials.FockPackage.@subscript",
+    "category": "macro",
+    "text": "@subscript expr::Expr with constrain::Expr -> Subscript\n\nConstruct a subscript from a map and optionally with a constrain.\n\n\n\n\n\n"
 },
 
 {
@@ -3773,7 +3821,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "Hamiltonian.Essentials.FockPackage.σʸ",
     "category": "method",
-    "text": "σʸ(mode::String)\n\nThe Pauli matrix σʸ, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
+    "text": "σʸ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{2,FCID},FockCoupling{2,Int,ID{2,FCID}}}\n\nThe Pauli matrix σʸ, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
 },
 
 {
@@ -3781,7 +3829,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "Hamiltonian.Essentials.FockPackage.σˣ",
     "category": "method",
-    "text": "σˣ(mode::String)\n\nThe Pauli matrix σˣ, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
+    "text": "σˣ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{2,FCID},FockCoupling{2,Int,ID{2,FCID}}}\n\nThe Pauli matrix σˣ, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
 },
 
 {
@@ -3789,7 +3837,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "Hamiltonian.Essentials.FockPackage.σᶻ",
     "category": "method",
-    "text": "σᶻ(mode::String)\n\nThe Pauli matrix σᶻ, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
+    "text": "σᶻ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{2,FCID},FockCoupling{2,Int,ID{2,FCID}}}\n\nThe Pauli matrix σᶻ, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
 },
 
 {
@@ -3797,7 +3845,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "Hamiltonian.Essentials.FockPackage.σ⁰",
     "category": "method",
-    "text": "σ⁰(mode::String)\n\nThe Pauli matrix σ⁰, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
+    "text": "σ⁰(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{2,FCID},FockCoupling{2,Int,ID{2,FCID}}}\n\nThe Pauli matrix σ⁰, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
 },
 
 {
@@ -3805,7 +3853,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "Hamiltonian.Essentials.FockPackage.σ⁺",
     "category": "method",
-    "text": "σ⁺(mode::String)\n\nThe Pauli matrix σ⁺, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
+    "text": "σ⁺(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{2,FCID},FockCoupling{2,Int,ID{2,FCID}}}\n\nThe Pauli matrix σ⁺, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
 },
 
 {
@@ -3813,39 +3861,103 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "Hamiltonian.Essentials.FockPackage.σ⁻",
     "category": "method",
-    "text": "σ⁻(mode::String)\n\nThe Pauli matrix σ⁻, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
+    "text": "σ⁻(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{2,FCID},FockCoupling{2,Int,ID{2,FCID}}}\n\nThe Pauli matrix σ⁻, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Prerequisites.Interfaces.dims-Tuple{Fock}",
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Prerequisites.Interfaces.:⊗-Union{Tuple{N}, Tuple{FockCoupling{N,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(ID{N,#s235} where #s235<:FCID) where V<:Number,FockCoupling{N,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(ID{N,#s235} where #s235<:FCID) where V<:Number}} where N",
     "page": "Fock package",
-    "title": "Hamiltonian.Prerequisites.Interfaces.dims",
+    "title": "Hamiltonian.Prerequisites.Interfaces.:⊗",
     "category": "method",
-    "text": "dims(fock::Fock) -> NTuple{3,Int}\n\nGet the number of the orbital, spin and nambu indices of a Fock space.\n\n\n\n\n\n"
+    "text": "⊗(fc1::FockCoupling{N},fc2::FockCoupling{N}) where N -> FockCoupling\n\nGet the direct product between two Fock couplings.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Prerequisites.Interfaces.expand-Tuple{FockCoupling,AbstractBond,Vararg{Fock,N} where N}",
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Prerequisites.Interfaces.dimension-Tuple{Subscripts,Int64}",
+    "page": "Fock package",
+    "title": "Hamiltonian.Prerequisites.Interfaces.dimension",
+    "category": "method",
+    "text": "dimension(subscripts::Subscripts,i::Int) -> Int\ndimension(::Type{<:Subscripts{T}},i::Int) where T -> Int\n\nGet the total number of the whole variables of a component of the complete subscript set.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Prerequisites.Interfaces.dimension-Tuple{Subscripts}",
+    "page": "Fock package",
+    "title": "Hamiltonian.Prerequisites.Interfaces.dimension",
+    "category": "method",
+    "text": "dimension(subscripts::Subscripts) -> Int\ndimension(::Type{S}) where S<:Subscripts -> Int\n\nGet the total number of the whole variables of the complete subscript set.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Prerequisites.Interfaces.dimension-Tuple{Subscript}",
+    "page": "Fock package",
+    "title": "Hamiltonian.Prerequisites.Interfaces.dimension",
+    "category": "method",
+    "text": "dimension(subscript::Subscript) -> Int\ndimension(::Type{<:Subscript{N1,N2}}) where {N1,N2} -> Int\n\nGet the number of the whole variables that are used to describe the subscripts of some orbital/spin degrees of freedom.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Prerequisites.Interfaces.expand-Tuple{FockCoupling,PID,Fock}",
     "page": "Fock package",
     "title": "Hamiltonian.Prerequisites.Interfaces.expand",
     "category": "method",
-    "text": "expand(fc::FockCoupling,bond::AbstractBond,focks::Fock...) -> FCExpand\n\nExpand a Fock coupling on a bond with the given Fock degrees of freedom.\n\n\n\n\n\n"
+    "text": "expand(fc::FockCoupling,pid::PID,fock::Fock) -> FCExpand\nexpand(fc::FockCoupling,pids::NTuple{R,PID},focks::NTuple{R,Fock}) where R -> FCExpand\n\nExpand a Fock coupling with the given set of point ids and Fock degrees of freedom.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Prerequisites.Interfaces.inds-Tuple{FID,Fock}",
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Prerequisites.Interfaces.expand-Union{Tuple{N}, Tuple{Subscripts,Tuple{Vararg{Int64,N}}}} where N",
     "page": "Fock package",
-    "title": "Hamiltonian.Prerequisites.Interfaces.inds",
+    "title": "Hamiltonian.Prerequisites.Interfaces.expand",
     "category": "method",
-    "text": "inds(fid::FID,::Fock) -> NTuple{3,Int}\n\nGet the Cartesian index representation of a Fock id.\n\n\n\n\n\n"
+    "text": "expand(subscripts::Subscripts,dimensions::NTuple{N,Int}) where N -> SbExpand\n\nExpand a complete set of subscripts with a given set of variable ranges.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Base.:*-Tuple{FockCoupling{2,V,I} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{2,#s234} where #s234<:FCID) where V<:Number,FockCoupling{2,V,I} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{2,#s234} where #s234<:FCID) where V<:Number}",
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Prerequisites.Interfaces.rank-Tuple{Subscripts,Int64}",
+    "page": "Fock package",
+    "title": "Hamiltonian.Prerequisites.Interfaces.rank",
+    "category": "method",
+    "text": "rank(subscripts::Subscripts,i::Int) -> Int\nrank(::Type{<:Subscripts{T}},i::Int) where T -> Int\n\nGet the number of the independent variables of a component of the complete subscript set.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Prerequisites.Interfaces.rank-Tuple{Subscripts}",
+    "page": "Fock package",
+    "title": "Hamiltonian.Prerequisites.Interfaces.rank",
+    "category": "method",
+    "text": "rank(subscripts::Subscripts) -> Int\nrank(::Type{S}) where S<:Subscripts -> Int\n\nGet the total number of the independent variables of the complete subscript set.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Prerequisites.Interfaces.rank-Tuple{Subscript}",
+    "page": "Fock package",
+    "title": "Hamiltonian.Prerequisites.Interfaces.rank",
+    "category": "method",
+    "text": "rank(subscript::Subscript) -> Int\nrank(::Type{<:Subscript{N}}) where N -> Int\n\nGet the number of the independent variables that are used to describe the subscripts of some orbital/spin degrees of freedom.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Base.:*-Tuple{FockCoupling,FockCoupling}",
     "page": "Fock package",
     "title": "Base.:*",
     "category": "method",
-    "text": "*(fc1::FockCoupling{2},fc2::FockCoupling{2}) -> FockCoupling{2}\n\nGet the multiplication between two rank-2 Fock couplings.\n\n\n\n\n\n"
+    "text": "*(fc1::FockCoupling,fc2::FockCoupling) -> FockCoupling\n\nGet the multiplication between two Fock couplings.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Base.:*-Tuple{Subscript,Subscript}",
+    "page": "Fock package",
+    "title": "Base.:*",
+    "category": "method",
+    "text": "*(sub1::Subscript,sub2::Subscript) -> Subscripts\n*(subs::Subscripts,sub::Subscript) -> Subscripts\n*(sub::Subscript,subs::Subscripts) -> Subscripts\n*(subs1::Subscripts,subs2::Subscripts) -> Subscripts\n\nGet the multiplication between subscripts or complete sets of subscripts.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Base.:==-Tuple{Subscript,Subscript}",
+    "page": "Fock package",
+    "title": "Base.:==",
+    "category": "method",
+    "text": "==(sub1::Subscript,sub2::Subscript) -> Bool\nisequal(sub1::Subscript,sub2::Subscript) -> Bool\n\nJudge whether two subscripts are equivalent to each other.\n\n\n\n\n\n"
 },
 
 {
@@ -3854,30 +3966,6 @@ var documenterSearchIndex = {"docs": [
     "title": "Base.adjoint",
     "category": "method",
     "text": "adjoint(fid::FID) -> FID\n\nGet the adjoint of a Fock id.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/FockPackage.html#Base.fieldnames-Tuple{Type{#s217} where #s217<:FCID}",
-    "page": "Fock package",
-    "title": "Base.fieldnames",
-    "category": "method",
-    "text": "fieldnames(::Type{<:FCID}) -> NTuple{4,Symbol}\n\nGet the fieldnames of FCID.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/FockPackage.html#Base.fieldnames-Tuple{Type{#s217} where #s217<:FIndex}",
-    "page": "Fock package",
-    "title": "Base.fieldnames",
-    "category": "method",
-    "text": "fieldnames(::Type{<:FIndex}) -> NTuple{5,Symbol}\n\nGet the fieldnames of a Fock index.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/FockPackage.html#Base.fieldnames-Tuple{Type{FID}}",
-    "page": "Fock package",
-    "title": "Base.fieldnames",
-    "category": "method",
-    "text": "fieldnames(::Type{FID}) -> NTuple{3,Symbol}\n\nGet the fieldnames of FID.\n\n\n\n\n\n"
 },
 
 {
@@ -3894,6 +3982,14 @@ var documenterSearchIndex = {"docs": [
     "title": "Base.show",
     "category": "method",
     "text": "show(io::IO,fc::FockCoupling)\n\nShow a Fock coupling.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Base.show-Tuple{IO,Subscript}",
+    "page": "Fock package",
+    "title": "Base.show",
+    "category": "method",
+    "text": "show(io::IO,subscript::Subscript)\n\nShow a subscript.\n\n\n\n\n\n"
 },
 
 {
