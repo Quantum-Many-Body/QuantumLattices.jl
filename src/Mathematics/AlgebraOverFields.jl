@@ -4,7 +4,7 @@ using Printf: @printf
 using ...Prerequisites.Interfaces: dimension
 using ...Prerequisites.NamedVectors: AbstractNamedVector
 using ...Prerequisites.TypeTraits: efficientoperations
-using ...Prerequisites.CompositeStructures: CompositeNTuple,CompositeVector
+using ...Prerequisites.CompositeStructures: CompositeTuple,CompositeVector
 using ..Combinatorics: AbstractCombinatorics
 using ..VectorSpaces: GradedTables,GradedVectorSpace,DirectVectorSpace,TabledIndices
 
@@ -29,9 +29,9 @@ abstract type SimpleID <: AbstractNamedVector end
 
 The id system of an algebra over a field.
 """
-struct ID{N,I<:SimpleID} <: CompositeNTuple{N,I}
-    contents::NTuple{N,I}
-    ID(ids::NTuple{N,SimpleID}) where N=new{N,ids|>eltype}(ids)
+struct ID{N,I<:SimpleID,T<:Tuple} <: CompositeTuple{T}
+    contents::T
+    ID(ids::NTuple{N,SimpleID}) where N=new{N,eltype(ids),typeof(ids)}(ids)
 end
 ID(ids::SimpleID...)=ID(ids)
 @generated function ID(::Type{SID},attrs::Vararg{NTuple{N,Any},M}) where {SID<:SimpleID,N,M}
@@ -63,11 +63,11 @@ end
 
 Get the property of a composite id.
 """
-Base.getproperty(cid::ID,name::Symbol)=name==:contents ? getfield(cid,:contents) : idgetproperty(cid,name)
-@generated function idgetproperty(cid::ID,name::Symbol)
-    index=:(index=findfirst(isequal(name),cid|>typeof|>propertynames)::Int)
-    exprs=[:(getfield(cid[$i],index)) for i=1:length(cid)]
-    return Expr(:block,index,Expr(:tuple,exprs...))
+Base.getproperty(cid::ID,name::Symbol)=name==:contents ? getfield(cid,:contents) : idgetproperty(cid,Val(name))
+@generated function idgetproperty(cid::ID{N,<:SimpleID},::Val{name}) where {N,name}
+    index=findfirst(isequal(name),cid|>propertynames)::Int
+    exprs=[:(getfield(cid[$i],$index)) for i=1:N]
+    return Expr(:tuple,exprs...)
 end
 
 """

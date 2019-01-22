@@ -10,8 +10,6 @@ CurrentModule=Hamiltonian.Essentials.FockPackage
 
 ### FIndex
 
-### Subscript and Subscripts
-
 ### FCID and FockCoupling
 
 ### σ⁰,σˣ,σʸ,σᶻ,σ⁺,σ⁻

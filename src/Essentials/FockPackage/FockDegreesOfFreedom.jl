@@ -1,18 +1,16 @@
 using Printf: @printf,@sprintf
 using ..Spatials: PID,AbstractBond,Point,Bond,pidtype
-using ..DegreesOfFreedom: IID,Index,Internal,FilteredAttributes,Coupling,Couplings
+using ..DegreesOfFreedom: IID,Index,Internal,FilteredAttributes,Subscript,Subscripts,Coupling,Couplings
 using ...Prerequisites: delta,decimaltostr
-using ...Prerequisites.TypeTraits: indtosub,corder
-using ...Prerequisites.CompositeStructures: CompositeTuple
 using ...Mathematics.AlgebraOverFields: SimpleID,ID
 using ...Mathematics.VectorSpaces: AbstractVectorSpace,IsMultiIndexable,MultiIndexOrderStyle
 
-import ...Prerequisites.Interfaces: dims,inds,rank,dimension,⊗,expand
+import ..DegreesOfFreedom: wildcard,constant,defaultcenter,propercenters
+import ...Prerequisites.Interfaces: dims,inds,rank,⊗,expand
 
-export dims,inds,rank,dimension,⊗,expand
+export dims,inds,⊗,expand
 export ANNIHILATION,CREATION,FID,FIndex,Fock
 export usualfockindextotuple,nambufockindextotuple
-export Subscript,Subscripts,@subscript
 export FCID,FockCoupling
 export σ⁰,σˣ,σʸ,σᶻ,σ⁺,σ⁻
 
@@ -112,260 +110,6 @@ const usualfockindextotuple=FilteredAttributes(:scope,:site,:orbital,:spin)
 Indicate that the filtered attributes are `(:scope,:nambu,:site,:orbital,:spin)` when converting a Fock index to tuple.
 """
 const nambufockindextotuple=FilteredAttributes(:scope,:nambu,:site,:orbital,:spin)
-
-const wildcard='*'
-const constant=':'
-"""
-    Subscript(  ipattern::NTuple{N1,Any},
-                opattern::NTuple{N2,Any},
-                mapping::Union{Function,Nothing}=nothing,
-                constrain::Union{Function,Nothing}=nothing,
-                identifier::Union{Symbol,Char}=wildcard
-                ) where {N1,N2}
-    Subscript{N}() where N
-    Subscript(opattern::NTuple{N,Int}) where N
-
-The subscripts of some orbital/spin degrees of freedom.
-"""
-struct Subscript{N1,N2,I<:Tuple,O<:Tuple,M<:Union{Function,Nothing},C<:Union{Function,Nothing},D<:Union{Symbol,Char}}
-    ipattern::I
-    opattern::O
-    mapping::M
-    constrain::C
-    identifier::D
-    function Subscript( ipattern::NTuple{N1,Any},
-                        opattern::NTuple{N2,Any},
-                        mapping::Union{Function,Nothing}=nothing,
-                        constrain::Union{Function,Nothing}=nothing,
-                        identifier::Union{Symbol,Char}=wildcard
-                        ) where {N1,N2}
-        new{N1,N2,typeof(ipattern),typeof(opattern),typeof(mapping),typeof(constrain),typeof(identifier)}(ipattern,opattern,mapping,constrain,identifier)
-    end
-end
-Subscript{N}() where N=Subscript((wildcard,),NTuple{N,Char}(wildcard for i=1:N),nothing,nothing,wildcard)
-Subscript(opattern::NTuple{N,Int}) where N=Subscript((),opattern,nothing,nothing,constant)
-
-"""
-    ==(sub1::Subscript,sub2::Subscript) -> Bool
-    isequal(sub1::Subscript,sub2::Subscript) -> Bool
-
-Judge whether two subscripts are equivalent to each other.
-"""
-Base.:(==)(sub1::Subscript,sub2::Subscript)=sub1.ipattern==sub2.ipattern && sub1.opattern==sub2.opattern && sub1.identifier==sub2.identifier
-Base.isequal(sub1::Subscript,sub2::Subscript)=isequal(sub1.ipattern,sub2.ipattern) && isequal(sub1.opattern,sub2.opattern) && isequal(sub1.identifier,sub2.identifier)
-
-"""
-    show(io::IO,subscript::Subscript)
-
-Show a subscript.
-"""
-function Base.show(io::IO,subscript::Subscript)
-    if subscript.identifier==constant
-        @printf io "(%s)" join(subscript.opattern,',')
-    elseif subscript.identifier==wildcard
-        @printf io "%s=>(%s)" join(subscript.ipattern,',') join(subscript.opattern,',')
-    else
-        @printf io "(%s)=>(%s) with %s" join(subscript.ipattern,',') join(subscript.opattern,',') subscript.identifier
-    end
-end
-
-"""
-    rank(subscript::Subscript) -> Int
-    rank(::Type{<:Subscript{N}}) where N -> Int
-
-Get the number of the independent variables that are used to describe the subscripts of some orbital/spin degrees of freedom.
-"""
-rank(subscript::Subscript)=subscript|>typeof|>rank
-rank(::Type{<:Subscript{N}}) where N=N
-
-"""
-    dimension(subscript::Subscript) -> Int
-    dimension(::Type{<:Subscript{N1,N2}}) where {N1,N2} -> Int
-
-Get the number of the whole variables that are used to describe the subscripts of some orbital/spin degrees of freedom.
-"""
-dimension(subscript::Subscript)=subscript|>typeof|>dimension
-dimension(::Type{<:Subscript{N1,N2}}) where {N1,N2}=N2
-
-"""
-    (subscript::Subscript{N})(::Val{'M'},values::Vararg{Int,N}) where N -> NTuple{dimension(subscript),Int}
-    (subscript::Subscript{N})(::Val{'C'},values::Vararg{Int,N}) where N -> Bool
-
-* Construct the subscripts from a set of independent variables.
-* Judge whether a set of independent variables are valid to construct the subscripts.
-"""
-function (subscript::Subscript)() end
-(subscript::Subscript{N})(::Val{'M'},values::Vararg{Int,N}) where N=subscript.mapping(values...)
-(subscript::Subscript{0,N,<:Tuple,<:Tuple,Nothing,Nothing})(::Val{'M'}) where N=subscript.opattern
-(subscript::Subscript{1,N,<:Tuple,<:Tuple,Nothing,Nothing})(::Val{'M'},value::Int) where N=NTuple{N,Int}(value for i=1:N)
-(subscript::Subscript{N})(::Val{'C'},values::Vararg{Int,N}) where N=subscript.constrain(values...)
-(subscript::Subscript{N1,N2,<:Tuple,<:Tuple,<:Union{Function,Nothing},Nothing})(::Val{'C'},values::Vararg{Int,N1}) where {N1,N2}=true
-
-"""
-    @subscript expr::Expr with constrain::Expr -> Subscript
-
-Construct a subscript from a map and optionally with a constrain.
-"""
-macro subscript(expr::Expr,with::Symbol=:with,constrain::Union{Expr,Symbol}=:nothing,gensym::Expr=:(gensym=false))
-    @assert expr.head==:call && expr.args[1]==:(=>)
-    @assert isa(expr.args[2],Expr) && expr.args[2].head==:tuple && all(expr.args[2].args.≠Symbol(wildcard)) && all(expr.args[2].args.≠Symbol(constant))
-    @assert isa(expr.args[3],Expr) && expr.args[3].head==:tuple && all(expr.args[3].args.≠Symbol(wildcard)) && all(expr.args[3].args.≠Symbol(constant))
-    @assert with==:with
-    @assert isa(gensym,Expr) && gensym.head==:(=) && gensym.args[1]==:gensym && isa(gensym.args[2],Bool)
-    ip=gensym.args[2] ? Tuple(Base.gensym(arg) for arg in expr.args[2].args) : Tuple(expr.args[2].args)
-    op=gensym.args[2] ? Tuple(ip[findfirst(isequal(arg),expr.args[2].args)] for arg in expr.args[3].args) : Tuple(expr.args[3].args)
-    mapname,identifier=Base.gensym(),QuoteNode(Base.gensym())
-    if constrain===:nothing
-        return quote
-            $mapname($(expr.args[2].args...))=$(expr.args[3])
-            Subscript($ip,$op,$mapname,nothing,$identifier)
-        end
-    else
-        constrainname=Base.gensym()
-        return quote
-            $mapname($(expr.args[2].args...))=$(expr.args[3])
-            $constrainname($(expr.args[2].args...))=$(constrain)
-            Subscript($ip,$op,$mapname,$constrainname,$identifier)
-        end
-    end
-end
-
-"""
-    Subscripts(contents::Subscript...)
-
-A complete set of all the independent subscripts of the orbital/spin degrees of freedom.
-"""
-struct Subscripts{T<:Tuple} <: CompositeTuple{T}
-    contents::T
-end
-Subscripts(contents::Subscript...)=Subscripts(contents)
-
-"""
-    rank(subscripts::Subscripts) -> Int
-    rank(::Type{S}) where S<:Subscripts -> Int
-
-Get the total number of the independent variables of the complete subscript set.
-"""
-rank(subscripts::Subscripts)=subscripts|>typeof|>rank
-rank(::Type{S}) where S<:Subscripts=sum(rank(S,i) for i=1:length(S))
-
-"""
-    rank(subscripts::Subscripts,i::Int) -> Int
-    rank(::Type{<:Subscripts{T}},i::Int) where T -> Int
-
-Get the number of the independent variables of a component of the complete subscript set.
-"""
-rank(subscripts::Subscripts,i::Int)=rank(typeof(subscripts),i)
-rank(::Type{<:Subscripts{T}},i::Int) where T=rank(fieldtype(T,i))
-
-"""
-    dimension(subscripts::Subscripts) -> Int
-    dimension(::Type{S}) where S<:Subscripts -> Int
-
-Get the total number of the whole variables of the complete subscript set.
-"""
-dimension(subscripts::Subscripts)=subscripts|>typeof|>dimension
-dimension(::Type{S}) where S<:Subscripts=sum(dimension(S,i) for i=1:length(S))
-
-"""
-    dimension(subscripts::Subscripts,i::Int) -> Int
-    dimension(::Type{<:Subscripts{T}},i::Int) where T -> Int
-
-Get the total number of the whole variables of a component of the complete subscript set.
-"""
-dimension(subscripts::Subscripts,i::Int)=dimension(typeof(subscripts),i)
-dimension(::Type{<:Subscripts{T}},i::Int) where T=dimension(fieldtype(T,i))
-
-"""
-    (subscripts::Subscripts)(::Val{'M'},values::NTuple{N,Int}) where N -> NTuple{dimension(subscripts),Int}
-    (subscripts::Subscripts)(::Val{'C'},values::NTuple{N,Int}) where N -> Bool
-
-* Construct the complete set of subscripts from a complete set of independent variables.
-* Judge whether a complete set of independent variables are valid to construct the complete subscripts.
-"""
-function (subscripts::Subscripts)() end
-@generated function (subscripts::Subscripts)(::Val{'M'},values::NTuple{N,Int}) where N
-    @assert rank(subscripts)==N
-    exprs,count=[],1
-    for i=1:length(subscripts)
-        vs=Tuple(:(values[$j]) for j=count:(count+rank(subscripts,i)-1))
-        push!(exprs,:(subscripts.contents[$i](Val('M'),$(vs...))...))
-        count=count+rank(subscripts,i)
-    end
-    return Expr(:tuple,exprs...)
-end
-@generated function (subscripts::Subscripts)(::Val{'C'},values::NTuple{N,Int}) where N
-    @assert rank(subscripts)==N
-    length(subscripts)==0 && return :(true)
-    count=rank(subscripts,1)
-    vs=Tuple(:(values[$j]) for j=1:count)
-    expr=:(subscripts.contents[1](Val('C'),$(vs...)))
-    for i=2:length(subscripts)
-        vs=Tuple(:(values[$j]) for j=(count+1):(count+rank(subscripts,i)))
-        expr=Expr(:(&&),expr,:(subscripts.contents[$i](Val('C'),$(vs...))))
-        count=count+rank(subscripts,i)
-    end
-    return expr
-end
-
-"""
-    *(sub1::Subscript,sub2::Subscript) -> Subscripts
-    *(subs::Subscripts,sub::Subscript) -> Subscripts
-    *(sub::Subscript,subs::Subscripts) -> Subscripts
-    *(subs1::Subscripts,subs2::Subscripts) -> Subscripts
-
-Get the multiplication between subscripts or complete sets of subscripts.
-"""
-Base.:*(sub1::Subscript,sub2::Subscript)=Subscripts(sub1,sub2)
-Base.:*(subs::Subscripts,sub::Subscript)=Subscripts(subs.contents...,sub)
-Base.:*(sub::Subscript,subs::Subscripts)=Subscripts(sub,subs.contents...)
-Base.:*(subs1::Subscripts,subs2::Subscripts)=Subscripts(subs1.contents...,subs2.contents...)
-
-"""
-    expand(subscripts::Subscripts,dimensions::NTuple{N,Int}) where N -> SbExpand
-
-Expand a complete set of subscripts with a given set of variable ranges.
-"""
-function expand(subscripts::Subscripts,dimensions::NTuple{N,Int}) where N
-    @assert dimension(subscripts)==N "expand error: dismatched input dimensions $dimensions."
-    dims,dcount,rcount=Vector{Int}(undef,rank(subscripts)),0,0
-    for i=1:length(subscripts)
-        ipattern=subscripts[i].ipattern
-        opattern=subscripts[i].opattern
-        for j=1:dimension(subscripts,i)
-            isa(opattern[j],Int) && @assert 0<opattern[j]<=dimensions[dcount+j] "expand error: opattern($opattern) out of range."
-        end
-        for j=1:rank(subscripts,i)
-            index,flag=1,false
-            while (index=findnext(isequal(ipattern[j]),opattern,index))≠nothing
-                flag || (dims[rcount+j]=dimensions[dcount+index];flag=true)
-                flag && @assert dimensions[dcount+index]==dims[rcount+j] "expand error: dismatched input dimensions."
-                index=index+1
-            end
-        end
-        dcount=dcount+dimension(subscripts,i)
-        rcount=rcount+rank(subscripts,i)
-    end
-    return SbExpand(subscripts,NTuple{rank(subscripts),Int}(dims))
-end
-struct SbExpand{N,S<:Subscripts,D}
-    subscripts::S
-    dims::NTuple{D,Int}
-    function SbExpand(subscripts::Subscripts,dims::NTuple{D,Int}) where D
-        @assert D==rank(subscripts) "SbExpand error: dismatched inputs."
-        new{dimension(subscripts),typeof(subscripts),D}(subscripts,dims)
-    end
-end
-Base.eltype(::Type{<:SbExpand{N}}) where N=NTuple{N,Int}
-Base.IteratorSize(::Type{<:SbExpand})=Base.SizeUnknown()
-function Base.iterate(sbe::SbExpand,state::Int=1)
-    while state<=prod(sbe.dims)
-        inds=indtosub(sbe.dims,state,corder)
-        sbe.subscripts(Val('C'),inds) && return (sbe.subscripts(Val('M'),inds),state+1)
-        state=state+1
-    end
-    return nothing
-end
 
 """
     FCID(;center=wildcard,atom=wildcard,orbital=wildcard,spin=wildcard,nambu=wildcard,obsub=wildcard,spsub=wildcard)
@@ -508,36 +252,25 @@ Expand a Fock coupling with the given set of point ids and Fock degrees of freed
 """
 expand(fc::FockCoupling,pid::PID,fock::Fock)=expand(fc,(pid,),(fock,))
 function expand(fc::FockCoupling,pids::NTuple{R,PID},focks::NTuple{R,Fock}) where R
-    centers=propercenters(fc.id.centers,Val(R))
+    centers=propercenters(typeof(fc),fc.id.centers,Val(R))
     rpids=NTuple{rank(fc),eltype(pids)}(pids[centers[i]] for i=1:rank(fc))
     rfocks=NTuple{rank(fc),eltype(focks)}(focks[centers[i]] for i=1:rank(fc))
     nambus=propernambus(fc.id.nambus,NTuple{rank(fc),Int}(rfocks[i].nnambu for i=1:rank(fc)))
     for (i,atom) in enumerate(fc.id.atoms)
-        isa(atom,Int) && (atom≠rfocks[i].atom) && return FCExpand(fc.value,rpids,emptyexpands(rank(fc)),emptyexpands(rank(fc)),nambus)
+       isa(atom,Int) && (atom≠rfocks[i].atom) && (ex=Vector{NTuple{rank(fc),Int}}(); return FCExpand(fc.value,rpids,ex,ex,nambus))
     end
     obsbexpands=expand(fc.obsubscripts,NTuple{rank(fc),Int}(rfocks[i].norbital for i=1:rank(fc)))|>collect
     spsbexpands=expand(fc.spsubscripts,NTuple{rank(fc),Int}(rfocks[i].nspin for i=1:rank(fc)))|>collect
     return FCExpand(fc.value,rpids,obsbexpands,spsbexpands,nambus)
 end
-
-defaultcenter(i::Int,n::Int,::Val{1})=1
-defaultcenter(i::Int,n::Int,::Val{2})=i<=n/2 ? 1 : 2
-defaultcenter(i::Int,n::Int,::Val{R}) where R=error("defaultcenter error: not defined default center for rank-$R bond.")
-@generated function propercenters(centers::NTuple{N,Any},::Val{R}) where {N,R}
-    exprs=[:(isa(centers[$i],Int) ? (0<centers[$i]<=R ? centers[$i] : error("propercenters error: center out of range.")) : defaultcenter($i,N,Val(R))) for i=1:N]
-    return Expr(:tuple,exprs...)
-end
-
-defaultnambu(i::Int,nnambu::Int)=i%2==1 ? min(CREATION,nnambu) : ANNIHILATION
+defaultcenter(::Type{<:FockCoupling},i::Int,n::Int,::Val{2})=i<=n/2 ? 1 : 2
 @generated function propernambus(nambus::NTuple{N,Any},ranges::NTuple{N,Int}) where N
-    exprs=[:(isa(nambus[$i],Int) ? (0<nambus[$i]<=ranges[$i] ? nambus[$i] : error("propernambus error: nambu out of range.")) : defaultnambu($i,ranges[$i])) for i=1:N]
+    exprs=[:(isa(nambus[$i],Int) ?
+            (0<nambus[$i]<=ranges[$i] ? nambus[$i] : error(" error: nambu out of range.")) :
+            (($i)%2==1 ? min(CREATION,ranges[$i]) : ANNIHILATION)
+            ) for i=1:N]
     return Expr(:tuple,exprs...)
 end
-
-const empty2expands=Vector{NTuple{2,Int}}()
-const empty4expands=Vector{NTuple{4,Int}}()
-emptyexpands(n::Int)=n==2 ? empty2expands : n==4 ? empty4expands : Vector{NTuple{n,Int}}()
-
 struct FCExpand{V<:Number,N,S} <: AbstractVectorSpace{Tuple{V,NTuple{N,FIndex{S}}}}
     value::V
     pids::NTuple{N,PID{S}}

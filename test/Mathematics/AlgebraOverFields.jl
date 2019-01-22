@@ -60,8 +60,8 @@ end
     @test isequal(opt|>deepcopy,opt)
     @test opt|>valtype==Float
     @test opt|>typeof|>valtype==Float
-    @test opt|>idtype==ID{1,SMPID{Int,Int}}
-    @test opt|>typeof|>idtype==ID{1,SMPID{Int,Int}}
+    @test opt|>idtype==ID{1,SMPID{Int,Int},Tuple{SMPID{Int,Int}}}
+    @test opt|>typeof|>idtype==ID{1,SMPID{Int,Int},Tuple{SMPID{Int,Int}}}
     @test opt|>rank==1
     @test opt|>typeof|>rank==1
     @test +opt==opt
