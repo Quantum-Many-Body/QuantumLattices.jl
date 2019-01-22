@@ -11,6 +11,7 @@ Pages=  [
         "Spatials.md",
         "DegreesOfFreedom.md",
         "FockPackage.md",
+        "SpinPackage.md",
         ]
 Depth=2
 ```

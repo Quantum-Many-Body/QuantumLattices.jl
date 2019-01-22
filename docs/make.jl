@@ -35,6 +35,7 @@ makedocs(
                                         "man/Essentials/Spatials.md",
                                         "man/Essentials/DegreesOfFreedom.md",
                                         "man/Essentials/FockPackage.md",
+                                        "man/Essentials/SpinPackage.md",
                                         ],
                                 ],
                         ],
