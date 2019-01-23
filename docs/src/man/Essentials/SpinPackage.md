@@ -6,6 +6,14 @@ CurrentModule=Hamiltonian.Essentials.SpinPackage
 
 ## Spin degrees of freedom
 
+### SID and Spin
+
+### SIndex
+
+### SCID and SpinCoupling
+
+### Predefined spin couplings
+
 ## Manual
 
 ```@autodocs

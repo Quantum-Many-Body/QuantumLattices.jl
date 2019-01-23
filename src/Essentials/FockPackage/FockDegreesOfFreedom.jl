@@ -92,7 +92,7 @@ end
 Base.fieldnames(::Type{<:FIndex})=(:scope,:site,:orbital,:spin,:nambu)
 
 """
-    union(::Type{P},::Type{FID})
+    union(::Type{P},::Type{FID}) where P<:PID
 
 Get the union type of `PID` and `FID`.
 """

@@ -1,6 +1,5 @@
 using Hamiltonian.Essentials.FockPackage
-using Hamiltonian.Prerequisites: Float
-using Hamiltonian.Essentials.Spatials: PID,Point,Bond
+using Hamiltonian.Essentials.Spatials: PID
 using Hamiltonian.Essentials.DegreesOfFreedom: Couplings
 using Hamiltonian.Mathematics.VectorSpaces: IsMultiIndexable,MultiIndexOrderStyle
 
@@ -11,11 +10,6 @@ using Hamiltonian.Mathematics.VectorSpaces: IsMultiIndexable,MultiIndexOrderStyl
     @test fid''==FID(1,1,1)
 end
 
-@testset "FIndex" begin
-    @test FIndex|>fieldnames==(:scope,:site,:orbital,:spin,:nambu)
-    @test union(PID{Int},FID)==FIndex{Int}
-end
-
 @testset "Fock" begin
     fock=Fock(norbital=1,nspin=2,nnambu=2)
     @test IsMultiIndexable(Fock)==IsMultiIndexable(true)
@@ -24,7 +18,11 @@ end
     @test inds(FID(1,1,1),fock)==(1,1,1)
     @test FID((1,1,1),fock)==FID(1,1,1)
     @test fock|>collect==[FID(1,1,1),FID(1,1,2),FID(1,2,1),FID(1,2,2)]
+end
 
+@testset "FIndex" begin
+    @test FIndex|>fieldnames==(:scope,:site,:orbital,:spin,:nambu)
+    @test union(PID{Int},FID)==FIndex{Int}
 end
 
 @testset "FCID" begin
@@ -39,12 +37,12 @@ end
 
     fc1=FockCoupling{2}(1.5,atoms=(2,1),spins=(@subscript (x,)=>(x,1)),centers=(1,2))
     fc2=FockCoupling{2}(2.0,atoms=(1,2),orbitals=(@subscript (x,y)=>(x,y) with x<y),centers=(1,2))
-    @test fc1|>repr=="1.5 sl(2:1)⊗sp(x:1)@(1-2) with (*,$(fc1.id[1].spsub)) && (*,$(fc1.id[1].spsub))"
-    @test fc2|>repr=="2.0 sl(1:2)⊗ob(x:y)@(1-2) with ($(fc2.id[2].obsub),*) && ($(fc2.id[2].obsub),*)"
+    @test fc1|>repr=="1.5 sl(2:1)⊗sp(x:1)@(1-2) with (*,$(fc1.id[1].spsub)) && (*,$(fc1.id[2].spsub))"
+    @test fc2|>repr=="2.0 sl(1:2)⊗ob(x:y)@(1-2) with ($(fc2.id[1].obsub),*) && ($(fc2.id[2].obsub),*)"
     fc=fc1*fc2
-    @test fc|>repr=="3.0 sl(2:1:1:2)⊗ob(*:*:x:y)⊗sp(x:1:*:*)@(1-2-1-2) with (*,$(fc1.id[1].spsub)) && (*,$(fc1.id[2].spsub)) && ($(fc2.id[2].obsub),*) && ($(fc2.id[2].obsub),*)"
+    @test fc|>repr=="3.0 sl(2:1:1:2)⊗ob(*:*:x:y)⊗sp(x:1:*:*)@(1-2-1-2) with (*,$(fc1.id[1].spsub)) && (*,$(fc1.id[2].spsub)) && ($(fc2.id[1].obsub),*) && ($(fc2.id[2].obsub),*)"
     fc=fc1⊗fc2
-    @test fc|>repr=="3.0 sl(2:2)⊗ob(x:y)⊗sp(x:1)@(1-2) with ($(fc2.id[2].obsub),$(fc1.id[1].spsub)) && ($(fc2.id[2].obsub),$(fc1.id[1].spsub))"
+    @test fc|>repr=="3.0 sl(2:2)⊗ob(x:y)⊗sp(x:1)@(1-2) with ($(fc2.id[1].obsub),$(fc1.id[2].spsub)) && ($(fc2.id[1].obsub),$(fc1.id[2].spsub))"
 
     ex=expand(FockCoupling{2}(2.0,atoms=(1,1)),PID(1,1),Fock(atom=2,norbital=2,nspin=2,nnambu=2))
     @test IsMultiIndexable(typeof(ex))==IsMultiIndexable(true)

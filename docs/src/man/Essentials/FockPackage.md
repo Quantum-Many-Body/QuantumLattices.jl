@@ -12,7 +12,7 @@ CurrentModule=Hamiltonian.Essentials.FockPackage
 
 ### FCID and FockCoupling
 
-### σ⁰,σˣ,σʸ,σᶻ,σ⁺,σ⁻
+### Predefined Fock couplings
 
 ## Manual
 
