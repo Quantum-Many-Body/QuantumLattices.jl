@@ -2765,7 +2765,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "Introduction",
     "category": "section",
-    "text": "Essentials of the Hamiltonian package, which defines all the imported constants, types and functions when using import Hamiltonian or using Hamiltonian. Note that this submodule depends on the Prerequisites and Mathematics submodules although the variables in them are not exported to the scope of Hamiltonian by default.Pages=  [\n        \"Spatials.md\",\n        \"DegreesOfFreedom.md\",\n        \"FockPackage.md\",\n        ]\nDepth=2"
+    "text": "Essentials of the Hamiltonian package, which defines all the imported constants, types and functions when using import Hamiltonian or using Hamiltonian. Note that this submodule depends on the Prerequisites and Mathematics submodules although the variables in them are not exported to the scope of Hamiltonian by default.Pages=  [\n        \"Spatials.md\",\n        \"DegreesOfFreedom.md\",\n        \"FockPackage.md\",\n        \"SpinPackage.md\",\n        ]\nDepth=2"
 },
 
 {
@@ -3801,9 +3801,9 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#σ,σˣ,σʸ,σᶻ,σ,σ-1",
+    "location": "man/Essentials/FockPackage.html#Predefined-Fock-couplings-1",
     "page": "Fock package",
-    "title": "σ⁰,σˣ,σʸ,σᶻ,σ⁺,σ⁻",
+    "title": "Predefined Fock couplings",
     "category": "section",
     "text": ""
 },
@@ -3997,7 +3997,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "Base.union",
     "category": "method",
-    "text": "union(::Type{P},::Type{FID})\n\nGet the union type of PID and FID.\n\n\n\n\n\n"
+    "text": "union(::Type{P},::Type{FID}) where P<:PID\n\nGet the union type of PID and FID.\n\n\n\n\n\n"
 },
 
 {
@@ -4006,6 +4006,222 @@ var documenterSearchIndex = {"docs": [
     "title": "Manual",
     "category": "section",
     "text": "Modules=[FockPackage]\nOrder=  [:module,:constant,:type,:macro,:function]"
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#",
+    "page": "Spin package",
+    "title": "Spin package",
+    "category": "page",
+    "text": "CurrentModule=Hamiltonian.Essentials.SpinPackage"
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Spin-package-1",
+    "page": "Spin package",
+    "title": "Spin package",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Spin-degrees-of-freedom-1",
+    "page": "Spin package",
+    "title": "Spin degrees of freedom",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#SID-and-Spin-1",
+    "page": "Spin package",
+    "title": "SID and Spin",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#SIndex-1",
+    "page": "Spin package",
+    "title": "SIndex",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#SCID-and-SpinCoupling-1",
+    "page": "Spin package",
+    "title": "SCID and SpinCoupling",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Predefined-spin-couplings-1",
+    "page": "Spin package",
+    "title": "Predefined spin couplings",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.SpinPackage.SCID",
+    "page": "Spin package",
+    "title": "Hamiltonian.Essentials.SpinPackage.SCID",
+    "category": "type",
+    "text": "SCID(;center=wildcard,atom=wildcard,orbital=wildcard,tag=\'i\',subscript=wildcard)=SCID(center,atom,orbital,tag,subscript)\n\nThe id of a spin coupling.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.SpinPackage.SID",
+    "page": "Spin package",
+    "title": "Hamiltonian.Essentials.SpinPackage.SID",
+    "category": "type",
+    "text": "SID <: IID\n\nThe spin id.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.SpinPackage.SID-Tuple{}",
+    "page": "Spin package",
+    "title": "Hamiltonian.Essentials.SpinPackage.SID",
+    "category": "method",
+    "text": "SID(;orbital::Int=1,spin::Real=0.5,tag::Char=\'i\')\n\nCreate a spin id.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.SpinPackage.SIndex",
+    "page": "Spin package",
+    "title": "Hamiltonian.Essentials.SpinPackage.SIndex",
+    "category": "type",
+    "text": "SIndex{S} <: Index{PID{S},SID}\n\nThe spin index.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.SpinPackage.Spin",
+    "page": "Spin package",
+    "title": "Hamiltonian.Essentials.SpinPackage.Spin",
+    "category": "type",
+    "text": "Spin <: Internal{SID}\n\nThe spin interanl degrees of freedom.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.SpinPackage.Spin-Tuple{}",
+    "page": "Spin package",
+    "title": "Hamiltonian.Essentials.SpinPackage.Spin",
+    "category": "method",
+    "text": "Spin(;atom::Int=1,norbital::Int=1,spin::Real=0.5)\n\nConstruct a spin degrees of freedom.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.SpinPackage.SpinCoupling",
+    "page": "Spin package",
+    "title": "Hamiltonian.Essentials.SpinPackage.SpinCoupling",
+    "category": "type",
+    "text": "SpinCoupling(value::Number,id::ID{N,I},subscripts::Subscripts) where {N,I<:SCID}\nSpinCoupling{N}(    value::Number;\n                    tags::NTuple{N,Char},\n                    centers::Union{NTuple{N,Int},Nothing}=nothing,\n                    atoms::Union{NTuple{N,Int},Nothing}=nothing,\n                    orbitals::Union{NTuple{N,Int},Subscript,Nothing}=nothing\n                    ) where N\n\nSpin coupling.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.SpinPackage.Heisenberg-Tuple{}",
+    "page": "Spin package",
+    "title": "Hamiltonian.Essentials.SpinPackage.Heisenberg",
+    "category": "method",
+    "text": "Heisenberg(;centers::Union{NTuple{2,Int},Nothing}=nothing,\n            atoms::Union{NTuple{2,Int},Nothing}=nothing,\n            orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing\n            ) -> Couplings{ID{2,SCID},SpinCoupling{2,Float,ID{2,SCID}}}\n\nThe Heisenberg couplings.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.SpinPackage.Ising-Tuple{Char}",
+    "page": "Spin package",
+    "title": "Hamiltonian.Essentials.SpinPackage.Ising",
+    "category": "method",
+    "text": "Ising(  tag::Char;\n        centers::Union{NTuple{2,Int},Nothing}=nothing,\n        atoms::Union{NTuple{2,Int},Nothing}=nothing,\n        orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing\n        ) -> Couplings{ID{2,SCID},SpinCoupling{2,Float,ID{2,SCID}}}\n\nThe Ising couplings.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.SpinPackage.Sʸ-Tuple{}",
+    "page": "Spin package",
+    "title": "Hamiltonian.Essentials.SpinPackage.Sʸ",
+    "category": "method",
+    "text": "Sʸ(;center::Union{Int,Nothing}=nothing,atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID{1,SCID},SpinCoupling{1,Float,ID{1,SCID}}}\n\nThe single Sʸ coupling.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.SpinPackage.Sˣ-Tuple{}",
+    "page": "Spin package",
+    "title": "Hamiltonian.Essentials.SpinPackage.Sˣ",
+    "category": "method",
+    "text": "Sˣ(;center::Union{Int,Nothing}=nothing,atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID{1,SCID},SpinCoupling{1,Float,ID{1,SCID}}}\n\nThe single Sˣ coupling.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.SpinPackage.Sᶻ-Tuple{}",
+    "page": "Spin package",
+    "title": "Hamiltonian.Essentials.SpinPackage.Sᶻ",
+    "category": "method",
+    "text": "Sᶻ(;center::Union{Int,Nothing}=nothing,atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID{1,SCID},SpinCoupling{1,Float,ID{1,SCID}}}\n\nThe single Sᶻ coupling.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.SpinPackage.usualspinindextotuple",
+    "page": "Spin package",
+    "title": "Hamiltonian.Essentials.SpinPackage.usualspinindextotuple",
+    "category": "function",
+    "text": "usualspinindextotuple\n\nIndicate that the filtered attributes are (:scope,:site,:orbital) when converting a spin index to tuple.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Prerequisites.Interfaces.expand-Tuple{SpinCoupling,PID,Spin}",
+    "page": "Spin package",
+    "title": "Hamiltonian.Prerequisites.Interfaces.expand",
+    "category": "method",
+    "text": "expand(sc::SpinCoupling,pid::PID,spin::Spin) -> SCExpand\nexpand(sc::SpinCoupling,pids::NTuple{N,PID},spins::NTuple{N,Spin}) where N -> SCExpand\n\nExpand a spin coupling with the given set of point ids and spin degrees of freedom.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Base.:*-Tuple{SpinCoupling,SpinCoupling}",
+    "page": "Spin package",
+    "title": "Base.:*",
+    "category": "method",
+    "text": "*(sc1::SpinCoupling,sc2::SpinCoupling) -> SpinCoupling\n\nGet the multiplication between two spin couplings.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Base.adjoint-Tuple{SID}",
+    "page": "Spin package",
+    "title": "Base.adjoint",
+    "category": "method",
+    "text": "adjoint(sid::SID) -> SID\n\nGet the adjoint of a spin id.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Base.repr-Tuple{SpinCoupling}",
+    "page": "Spin package",
+    "title": "Base.repr",
+    "category": "method",
+    "text": "repr(sc::SpinCoupling) -> String\n\nGet the repr representation of a spin coupling.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Base.show-Tuple{IO,SpinCoupling}",
+    "page": "Spin package",
+    "title": "Base.show",
+    "category": "method",
+    "text": "show(io::IO,sc::SpinCoupling)\n\nShow a spin coupling.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Base.union-Union{Tuple{P}, Tuple{Type{P},Type{SID}}} where P<:PID",
+    "page": "Spin package",
+    "title": "Base.union",
+    "category": "method",
+    "text": "union(::Type{P},::Type{SID}) where {P<:PID}\n\nGet the union type of PID and SID.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Manual-1",
+    "page": "Spin package",
+    "title": "Manual",
+    "category": "section",
+    "text": "Modules=[SpinPackage]\nOrder=  [:module,:constant,:type,:macro,:function]"
 },
 
 ]}
