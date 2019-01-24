@@ -158,23 +158,23 @@ The first and second attributes of an element must be
 abstract type Element{V<:Number,I<:ID} end
 
 """
-    valtype(::Type{<:Element{V}}) where {V}
+    valtype(::Type{<:Element{V}}) where {V<:Number}
     valtype(m::Element)
 
 Get the type of the value of an element.
 
 The result is also the type of the field over which the algebra is defined.
 """
-Base.valtype(::Type{<:Element{V}}) where V=V
+Base.valtype(::Type{<:Element{V}}) where {V<:Number}=V
 Base.valtype(m::Element)=m|>typeof|>valtype
 
 """
-    idtype(::Type{<:Element{V,I}}) where {V,I}
+    idtype(::Type{<:Element{<:Number,I}}) where {I<:ID}
     idtype(m::Element)
 
 The type of the id of an element.
 """
-idtype(::Type{<:Element{V,I}}) where {V,I}=I
+idtype(::Type{<:Element{<:Number,I}}) where {I<:ID}=I
 idtype(m::Element)=m|>typeof|>idtype
 
 """
@@ -187,13 +187,13 @@ rank(::Type{M}) where M<:Element=rank(fieldtype(M,:id))
 rank(m::Element)=m|>typeof|>rank
 
 """
-    ==(m1::M,m2::M) where M<:Element -> Bool
-    isequal(m1::M,m2::M) where M<:Element -> Bool
+    (m1::Element,m2::Element) -> Bool
+    isequal(m1::Element,m2::Element) -> Bool
 
 Compare two elements and judge whether they are equal to each other.
 """
-Base.:(==)(m1::M,m2::M) where M<:Element = ==(efficientoperations,m1,m2)
-Base.isequal(m1::M,m2::M) where M<:Element=isequal(efficientoperations,m1,m2)
+Base.:(==)(m1::Element,m2::Element) = ==(efficientoperations,m1,m2)
+Base.isequal(m1::Element,m2::Element)=isequal(efficientoperations,m1,m2)
 
 """
     replace(m::Element;kwargs...) -> typeof(m)
@@ -261,7 +261,7 @@ Get the inplace addition of elements to a set.
 """
 add!(ms::Elements)=ms
 function add!(ms::Elements,m::Element)
-    @assert ms|>valtype==m|>typeof "add! error: dismatched type, $(ms|>valtype) and $(m|>typeof)."
+    @assert ms|>valtype >: m|>typeof "add! error: dismatched type, $(ms|>valtype) and $(m|>typeof)."
     mid=m.id
     ms[mid]=haskey(ms,mid) ? replace(m,value=ms[mid].value+m.value) : m
     abs(ms[mid].value)==0.0 && delete!(ms,mid)
@@ -278,7 +278,7 @@ Get the inplace subtraction of elements from a set.
 """
 sub!(ms::Elements)=ms
 function sub!(ms::Elements,m::Element)
-    @assert ms|>valtype==m|>typeof "sub! error: dismatched type, $(ms|>valtype) and $(m|>typeof)."
+    @assert ms|>valtype >: m|>typeof "sub! error: dismatched type, $(ms|>valtype) and $(m|>typeof)."
     mid=m.id
     ms[mid]=haskey(ms,mid) ? replace(m,value=ms[mid].value-m.value) : -m
     abs(ms[mid].value)==0.0 && delete!(ms,mid)

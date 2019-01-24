@@ -180,8 +180,8 @@ Configuration of the internal degrees of freedom at a lattice.
 
 `map` maps a `PID` to an `Internal`.
 """
-struct IDFConfig{P<:PID,I<:Internal} <: CompositeDict{P,I}
-    map::Function
+struct IDFConfig{M<:Function,P<:PID,I<:Internal} <: CompositeDict{P,I}
+    map::M
     contents::Dict{P,I}
 end
 function IDFConfig(map::Function,::Type{I},pids::AbstractVector{<:PID}=[]) where I<:Internal
