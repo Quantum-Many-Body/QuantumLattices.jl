@@ -104,17 +104,10 @@ end
     @test minimumlengths(reshape([0.0,0.0],2,1),[[1.0,0.0],[0.0,1.0]],7)≈[1.0,√2,2.0,√5,2*√2,3.0,√10]
 end
 
-@testset "Link" begin
-    link=Link(1,1,2,[0.0,1.0])
-    @test link|>string=="Link(1,1,2,[0.0,1.0])"
-    @test link==deepcopy(link)
-    @test isequal(link,link|>deepcopy)
-end
-
 @testset "intralinks" begin
     ps,a1,a2=[0.0 0.5; 0.0 0.5],[1.0,0.0],[0.0,1.0]
     neighbors=Dict(1=>1.0)
-    links=[Link(1,1,1,[0.0,-1.0]),Link(1,1,1,[-1.0,0.0]),Link(1,2,2,[0.0,-1.0]),Link(1,2,2,[-1.0,0.0])]
+    links=[(1,1,1,SVector(0.0,-1.0)),(1,1,1,SVector(-1.0,0.0)),(1,2,2,SVector(0.0,-1.0)),(1,2,2,SVector(-1.0,0.0))]
     @test intralinks(ps,[a1,a2],neighbors)==links
 end
 
@@ -122,7 +115,7 @@ end
     ps1=[0.0 1.0; 0.0 0.0]
     ps2=[0.0 1.0; 1.0 1.0]
     neighbors=Dict(0=>0.0,1=>1.0)
-    links=[Link(1,1,1,[0.0,0.0]),Link(1,2,2,[0.0,0.0])]
+    links=[(1,1,1,SVector(0.0,0.0)),(1,2,2,SVector(0.0,0.0))]
     @test interlinks(ps1,ps2,neighbors)==links
 end
 
@@ -133,13 +126,20 @@ end
 @testset "Point" begin
     @test Point(PID(0,1),(0.0,0.0),(0.0,0.0))==Point(PID(0,1),[0.0,0.0],[0.0,0.0])
     @test isequal(Point(PID(0,1),(0.0,0.0),(0.0,0.0)),Point(PID(0,1),[0.0,0.0],[0.0,0.0]))
+    @test Point{PID{Int},2}|>length==1
+    @test Point{PID{Int},2}|>eltype==Point{PID{Int},2}
     @test Point{PID{Int},2}|>rank==1
     @test Point{PID{Int},2}|>pidtype==PID{Int}
     @test Point{PID{Int},2}|>dimension==2
+    @test Point{PID{Int},2}|>neighbor==0
+    @test Point(PID(0,1),(0.0,0.0))|>length==1
+    @test Point(PID(0,1),(0.0,0.0))|>eltype==Point{PID{Int},2}
     @test Point(PID(0,1),(0.0,0.0))|>rank==1
     @test Point(PID(0,1),(0.0,0.0))|>pidtype==PID{Int}
     @test Point(PID(0,1),(0.0,0.0))|>dimension==2
+    @test Point(PID(0,1),(0.0,0.0))|>neighbor==0
     @test Point(PID(0,1),(0.0,0.0),(0.0,0.0))|>string=="Point(PID(0,1),[0.0,0.0],[0.0,0.0])"
+    @test Point(PID(0,1),(0.0,0.0))|>collect==[Point(PID(0,1),(0.0,0.0))]
 end
 
 @testset "Bond" begin
@@ -148,15 +148,21 @@ end
     @test isequal(bond|>deepcopy,bond)
     @test bond|>string=="Bond(1,Point(PID(1,1),[0.0,0.0],[0.0,0.0]),Point(PID(1,2),[0.0,1.0],[0.0,1.0]))"
     @test bond|>reverse==Bond(1,Point(PID(1,2),(0.0,1.0),(0.0,1.0)),Point(PID(1,1),(0.0,0.0),(0.0,0.0)))
+    @test bond|>length==2
+    @test bond|>typeof|>length==2
+    @test bond|>eltype==Point{PID{Int},2}
+    @test bond|>typeof|>eltype==Point{PID{Int},2}
     @test bond|>rank==2
     @test bond|>typeof|>rank==2
     @test bond|>pidtype==PID{Int}
+    @test bond|>neighbor==1
     @test bond|>typeof|>pidtype==PID{Int}
     @test bond|>dimension==2
     @test bond|>typeof|>dimension==2
     @test bond|>rcoord==[0.0,1.0]
     @test bond|>icoord==[0.0,1.0]
     @test bond|>isintracell==false
+    @test bond|>collect==[Point(PID(1,1),(0.0,0.0),(0.0,0.0)),Point(PID(1,2),(0.0,1.0),(0.0,1.0))]
 end
 
 @testset "Lattice" begin

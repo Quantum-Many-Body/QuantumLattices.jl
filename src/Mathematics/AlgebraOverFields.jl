@@ -63,9 +63,9 @@ end
 
 Get the property of a composite id.
 """
-Base.getproperty(cid::ID,name::Symbol)=name==:contents ? getfield(cid,:contents) : idgetproperty(cid,Val(name))
-@generated function idgetproperty(cid::ID{N,<:SimpleID},::Val{name}) where {N,name}
-    index=findfirst(isequal(name),cid|>propertynames)::Int
+Base.getproperty(cid::ID,name::Symbol)=name==:contents ? getfield(cid,:contents) : idgetproperty(cid,Val(name),Val(cid|>typeof|>propertynames))
+@generated function idgetproperty(cid::ID{N,<:SimpleID},::Val{name},::Val{names}) where {N,name,names}
+    index=findfirst(isequal(name),names)::Int
     exprs=[:(getfield(cid[$i],$index)) for i=1:N]
     return Expr(:tuple,exprs...)
 end
@@ -227,6 +227,18 @@ function Elements(ms::Element...)
     result=Elements{ms|>eltype|>idtype,ms|>eltype}()
     for m in ms add!(result,m) end
     return result
+end
+
+"""
+    show(io::IO,ms::Elements)
+
+Show a set of elements.
+"""
+function Base.show(io::IO,ms::Elements)
+    @printf io "Elements with %s entries:\n" length(ms)
+    for m in values(ms)
+        @printf io "  %s\n" m
+    end
 end
 
 """
