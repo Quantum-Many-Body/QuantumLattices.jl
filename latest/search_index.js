@@ -2061,7 +2061,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Algebra over fields",
     "title": "Hamiltonian.Mathematics.AlgebraOverFields.Element",
     "category": "type",
-    "text": "Element{V<:Number,I<:ID}\n\nAn element of an algebra over a field.\n\nThe first and second attributes of an element must be\n\nvalue::Number: the coefficient of the element\nid::ID: the id of the element\n\n\n\n\n\n"
+    "text": "Element{N,V<:Number,I<:ID{N}}\n\nAn element of an algebra over a field.\n\nThe first and second attributes of an element must be\n\nvalue::Number: the coefficient of the element\nid::ID: the id of the element\n\n\n\n\n\n"
 },
 
 {
@@ -2105,11 +2105,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Mathematics.AlgebraOverFields.idtype-Union{Tuple{Type{#s67} where #s67<:(Element{#s16,I} where #s16<:Number)}, Tuple{I}} where I<:Hamiltonian.Mathematics.AlgebraOverFields.ID",
+    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Mathematics.AlgebraOverFields.idtype-Union{Tuple{Type{#s67} where #s67<:(Element{N,#s16,I} where #s16<:Number)}, Tuple{I}, Tuple{N}} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{N,I,T} where T<:Tuple where I<:Hamiltonian.Mathematics.AlgebraOverFields.SimpleID) where N",
     "page": "Algebra over fields",
     "title": "Hamiltonian.Mathematics.AlgebraOverFields.idtype",
     "category": "method",
-    "text": "idtype(::Type{<:Element{<:Number,I}}) where {I<:ID}\nidtype(m::Element)\n\nThe type of the id of an element.\n\n\n\n\n\n"
+    "text": "idtype(::Type{<:Element{N,<:Number,I}}) where {N,I<:ID{N}}\nidtype(m::Element)\n\nThe type of the id of an element.\n\n\n\n\n\n"
 },
 
 {
@@ -2129,19 +2129,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Prerequisites.Interfaces.rank-Union{Tuple{Type{#s68} where #s68<:(Element{N,V,I} where I<:(ID{N,I,T} where T<:Tuple where I<:SimpleID) where V<:Number)}, Tuple{N}} where N",
+    "page": "Algebra over fields",
+    "title": "Hamiltonian.Prerequisites.Interfaces.rank",
+    "category": "method",
+    "text": "rank(::Type{<:Element{N}}) where N -> Int\nrank(m::Element) -> Int\n\nGet the rank of an element.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Prerequisites.Interfaces.rank-Union{Tuple{Type{#s68} where #s68<:(ID{N,I,T} where T<:Tuple)}, Tuple{I}, Tuple{N}} where I where N",
     "page": "Algebra over fields",
     "title": "Hamiltonian.Prerequisites.Interfaces.rank",
     "category": "method",
     "text": "rank(::Type{<:ID{N,I}}) where {N,I} -> Int\nrank(id::ID) -> Int\n\nGet the rank of a composite id.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Prerequisites.Interfaces.rank-Union{Tuple{Type{M}}, Tuple{M}} where M<:Hamiltonian.Mathematics.AlgebraOverFields.Element",
-    "page": "Algebra over fields",
-    "title": "Hamiltonian.Prerequisites.Interfaces.rank",
-    "category": "method",
-    "text": "rank(::Type{<:Element}) -> Int\nrank(m::Element) -> Int\n\nGet the rank of an element.\n\n\n\n\n\n"
 },
 
 {
@@ -2273,11 +2273,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Base.valtype-Union{Tuple{Type{#s68} where #s68<:(Element{V,I} where I<:ID)}, Tuple{V}} where V<:Number",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.valtype-Union{Tuple{Type{#s68} where #s68<:(Element{N,V,I} where I<:(ID{N,I,T} where T<:Tuple where I<:SimpleID))}, Tuple{V}, Tuple{N}} where V<:Number where N",
     "page": "Algebra over fields",
     "title": "Base.valtype",
     "category": "method",
-    "text": "valtype(::Type{<:Element{V}}) where {V<:Number}\nvaltype(m::Element)\n\nGet the type of the value of an element.\n\nThe result is also the type of the field over which the algebra is defined.\n\n\n\n\n\n"
+    "text": "valtype(::Type{<:Element{N,V}}) where {N,V<:Number}\nvaltype(m::Element)\n\nGet the type of the value of an element.\n\nThe result is also the type of the field over which the algebra is defined.\n\n\n\n\n\n"
 },
 
 {
@@ -3277,7 +3277,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatials",
     "title": "Base.iterate",
     "category": "function",
-    "text": "iterate(p::Point,state=1)\n\nIterate over the point.\n\n\n\n\n\n"
+    "text": "iterate(bond::Bond,state=1)\n\nIterate over the points in a bond.\n\n\n\n\n\n"
 },
 
 {
@@ -3285,7 +3285,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatials",
     "title": "Base.iterate",
     "category": "function",
-    "text": "iterate(bond::Bond,state=1)\n\nIterate over the points in a bond.\n\n\n\n\n\n"
+    "text": "iterate(p::Point,state=1)\n\nIterate over the point.\n\n\n\n\n\n"
 },
 
 {
@@ -3429,7 +3429,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Degrees of freedom",
     "title": "Hamiltonian.Essentials.DegreesOfFreedom.Coupling",
     "category": "type",
-    "text": "Coupling{V,I} <: Element{V,I}\n\nThe coupling intra/inter interanl degrees of freedom at different lattice points.\n\n\n\n\n\n"
+    "text": "Coupling{N,V<:Number,I<:ID{N}} <: Element{N,V,I}\n\nThe coupling intra/inter interanl degrees of freedom at different lattice points.\n\n\n\n\n\n"
 },
 
 {
@@ -3829,7 +3829,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Terms",
     "title": "Hamiltonian.Essentials.Terms.Operator",
     "category": "type",
-    "text": "Operator{N,V<:Number,I<:ID} <: Element{V,I}\n\nAbstract type for an operator.\n\n\n\n\n\n"
+    "text": "Operator{N,V<:Number,I<:ID{N,<:OID}} <: Element{N,V,I}\n\nAbstract type for an operator.\n\n\n\n\n\n"
 },
 
 {
@@ -3845,7 +3845,39 @@ var documenterSearchIndex = {"docs": [
     "page": "Terms",
     "title": "Hamiltonian.Essentials.Terms.Term",
     "category": "type",
-    "text": "Term{ST,SP,RK}(id::Symbol,value::Number,neighbor::Any,couplings::Function,amplitude::Function,modulate::Union{Function,Nothing},factor::Number) where {ST,SP,RK}\nTerm{ST,SP,RK}( id::Symbol,value::Number,neighbor::Any;\n                couplings::Union{Function,Couplings},\n                amplitude::Union{Function,Nothing}=nothing,\n                modulate::Union{Function,Bool}=false,\n                factor::Number=1\n                ) where {ST,SP,RK}\n\nA term of a quantum lattice system.\n\n\n\n\n\n"
+    "text": "Term{ST,SP}(id::Symbol,value::Number,neighbor::Any,couplings::TermCouplings,amplitude::Function,modulate::Union{Function,Nothing},factor::Number) where {ST,SP}\nTerm{ST,SP}(id::Symbol,value::Number,neighbor::Any;\n            couplings::Union{TermCouplings,Couplings},\n            amplitude::Union{Function,Nothing}=nothing,\n            modulate::Union{Function,Bool}=false,\n            factor::Number=1\n            ) where {ST,SP}\n\nA term of a quantum lattice system.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.TermAmplitude",
+    "page": "Terms",
+    "title": "Hamiltonian.Essentials.Terms.TermAmplitude",
+    "category": "type",
+    "text": "TermAmplitude <: TermFunction\n\nThe function for the amplitude of a term.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.TermCouplings",
+    "page": "Terms",
+    "title": "Hamiltonian.Essentials.Terms.TermCouplings",
+    "category": "type",
+    "text": "TermCouplings(candidate::Couplings)\nTermCouplings(candidates::NTuple{N,<:Couplings},choice::Function) where N\n\nThe function for the couplings of a term.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.TermFunction",
+    "page": "Terms",
+    "title": "Hamiltonian.Essentials.Terms.TermFunction",
+    "category": "type",
+    "text": "TermFunction <: Function\n\nAbstract type for concrete term functions.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.TermModulate",
+    "page": "Terms",
+    "title": "Hamiltonian.Essentials.Terms.TermModulate",
+    "category": "type",
+    "text": "TermModulate(id::Symbol)\n\nThe function for the modulation of a term.\n\n\n\n\n\n"
 },
 
 {
@@ -3873,6 +3905,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.isHermitian-Union{Tuple{ID{N,#s236,T} where T<:Tuple where #s236<:OID}, Tuple{N}} where N",
+    "page": "Terms",
+    "title": "Hamiltonian.Essentials.Terms.isHermitian",
+    "category": "method",
+    "text": "isHermitian(id::ID{N,<:OID}) where N -> Bool\n\nJudge whether an operator id is Hermitian.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.species-Tuple{Term}",
     "page": "Terms",
     "title": "Hamiltonian.Essentials.Terms.species",
@@ -3889,11 +3929,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Prerequisites.Interfaces.rank-Tuple{Term}",
+    "location": "man/Essentials/Terms.html#Hamiltonian.Prerequisites.Interfaces.expand",
     "page": "Terms",
-    "title": "Hamiltonian.Prerequisites.Interfaces.rank",
-    "category": "method",
-    "text": "rank(term::Term) -> Int\nrank(::Type{<:Term{ST,SP,RK}}) where {ST,SP,RK}\n\nGet the rank of a term.\n\n\n\n\n\n"
+    "title": "Hamiltonian.Prerequisites.Interfaces.expand",
+    "category": "function",
+    "text": "expand(otype::Type{<:Operator},term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Union{Bool,Nothing}=nothing)\n\nExpand the operators of a term on a bond with a given config.\n\n\n\n\n\n"
 },
 
 {
@@ -3913,15 +3953,31 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Essentials/Terms.html#Base.:==-Tuple{TermFunction,TermFunction}",
+    "page": "Terms",
+    "title": "Base.:==",
+    "category": "method",
+    "text": "==(tf1::TermFunction,tf2::TermFunction) -> Bool\nisequal(tf1::TermFunction,tf2::TermFunction) -> Bool\n\nJudge whether two concrete term functions are equivalent to each other.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Terms.html#Base.adjoint-Tuple{Dict{I,O} where O<:Operator where I<:Hamiltonian.Mathematics.AlgebraOverFields.ID}",
+    "page": "Terms",
+    "title": "Base.adjoint",
+    "category": "method",
+    "text": "adjoint(opts::Operators) -> Operators\n\nGet the adjoint of a set of operators.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Essentials/Terms.html#Base.adjoint-Tuple{OID}",
     "page": "Terms",
     "title": "Base.adjoint",
     "category": "method",
-    "text": "adjoint(oid::OID) -> OID\n\nGet the adjoint of an operator id.\n\n\n\n\n\n"
+    "text": "adjoint(oid::OID) -> OID\nadjoint(id::ID{N,<:OID}) where N -> ID{N,<:OID}\n\nGet the adjoint of an operator id.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Terms.html#Base.adjoint-Union{Tuple{Operator{N,V,I} where I<:ID where V<:Number}, Tuple{N}} where N",
+    "location": "man/Essentials/Terms.html#Base.adjoint-Tuple{Operator}",
     "page": "Terms",
     "title": "Base.adjoint",
     "category": "method",
@@ -3937,11 +3993,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Terms.html#Base.replace-Union{Tuple{Term{ST,SP,RK,V,N,C,A,M,F} where F<:Number where M<:Union{Nothing, Function} where A<:Function where C<:Function where N where V<:Number}, Tuple{RK}, Tuple{SP}, Tuple{ST}} where RK where SP where ST",
+    "location": "man/Essentials/Terms.html#Base.replace-Union{Tuple{Term{ST,SP,V,N,C,A,M,F} where F<:Number where M<:Union{Nothing, Function} where A<:Function where C<:TermCouplings where N where V<:Number}, Tuple{SP}, Tuple{ST}} where SP where ST",
     "page": "Terms",
     "title": "Base.replace",
     "category": "method",
-    "text": "replace(term::Term{ST,SP,RK};kwargs...) where {ST,SP,RK} -> Term\n\nReplace some attributes of a term with key word arguments.\n\n\n\n\n\n"
+    "text": "replace(term::Term{ST,SP};kwargs...) where {ST,SP} -> Term\n\nReplace some attributes of a term with key word arguments.\n\n\n\n\n\n"
 },
 
 {
@@ -3950,6 +4006,22 @@ var documenterSearchIndex = {"docs": [
     "title": "Base.repr",
     "category": "method",
     "text": "repr(term::Term,bond::AbstractBond,config::IDFConfig) -> String\n\nGet the repr representation of a term on a bond with a given config.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Terms.html#Base.show-Tuple{IO,OID}",
+    "page": "Terms",
+    "title": "Base.show",
+    "category": "method",
+    "text": "show(io::IO,oid::OID)\n\nShow an operator id.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Terms.html#Base.show-Tuple{IO,Operator}",
+    "page": "Terms",
+    "title": "Base.show",
+    "category": "method",
+    "text": "show(io::IO,opt::Operator)\n\nShow an operator.\n\n\n\n\n\n"
 },
 
 {
