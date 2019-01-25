@@ -532,7 +532,7 @@ Base.reverse(bond::Bond)=Bond(bond.neighbor,bond.epoint,bond.spoint)
 
 Iterate over the points in a bond.
 """
-Base.iterate(bond::Bond,state=1)=state==1 ? (bond.spoint,state+1) : state==2 ? (bond.epoint,state+1) : nothing
+Base.iterate(bond::Bond,state=1)=state==1 ? (bond.epoint,state+1) : state==2 ? (bond.spoint,state+1) : nothing
 
 """
     neighbor(bond::Bond) -> Int

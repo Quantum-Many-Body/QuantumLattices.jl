@@ -127,7 +127,7 @@ struct DirectIndexToTuple <: IndexToTuple end
 
 Convert an index to tuple directly.
 """
-(indextotuple::DirectIndexToTuple)(index::Index)=invoke(convert,Tuple{Type{Tuple},AbstractNamedVector},Tuple,index)
+(indextotuple::DirectIndexToTuple)(index::Index)=convert(Tuple,index)
 
 """
     directindextotuple
@@ -539,11 +539,11 @@ function Base.iterate(sbe::SbExpand,state::Int=1)
 end
 
 """
-    Coupling{V,I} <: Element{V,I}
+    Coupling{N,V<:Number,I<:ID{N}} <: Element{N,V,I}
 
 The coupling intra/inter interanl degrees of freedom at different lattice points.
 """
-abstract type Coupling{V<:Number,I<:ID} <: Element{V,I} end
+abstract type Coupling{N,V<:Number,I<:ID{N}} <: Element{N,V,I} end
 
 defaultcenter(::Type{<:Coupling},i::Int,n::Int,::Val{1})=1
 defaultcenter(::Type{<:Coupling},i::Int,n::Int,::Val{R}) where R=error("defaultcenter error: no default center for a rank-$R bond.")

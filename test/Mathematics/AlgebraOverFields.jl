@@ -48,7 +48,7 @@ end
     end
 end
 
-struct BasicOperator{V,I} <: Element{V,I}
+struct BasicOperator{N,V<:Number,I<:ID{N}} <: Element{N,V,I}
     value::V
     id::I
 end

@@ -162,7 +162,7 @@ end
     @test bond|>rcoord==[0.0,1.0]
     @test bond|>icoord==[0.0,1.0]
     @test bond|>isintracell==false
-    @test bond|>collect==[Point(PID(1,1),(0.0,0.0),(0.0,0.0)),Point(PID(1,2),(0.0,1.0),(0.0,1.0))]
+    @test bond|>collect==[Point(PID(1,2),(0.0,1.0),(0.0,1.0)),Point(PID(1,1),(0.0,0.0),(0.0,0.0))]
 end
 
 @testset "Lattice" begin

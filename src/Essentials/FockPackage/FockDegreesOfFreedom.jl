@@ -139,7 +139,7 @@ FCID(;center=wildcard,atom=wildcard,orbital=wildcard,spin=wildcard,nambu=wildcar
 
 Fock coupling.
 """
-struct FockCoupling{N,V<:Number,I<:ID{N,<:FCID},OS<:Subscripts,SS<:Subscripts} <: Coupling{V,I}
+struct FockCoupling{N,V<:Number,I<:ID{N,<:FCID},OS<:Subscripts,SS<:Subscripts} <: Coupling{N,V,I}
     value::V
     id::I
     obsubscripts::OS

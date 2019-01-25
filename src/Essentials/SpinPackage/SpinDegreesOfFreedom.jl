@@ -128,7 +128,7 @@ Base.fieldnames(::Type{<:SCID})=(:center,:atom,:orbital,:tag,:subscript)
 
 Spin coupling.
 """
-struct SpinCoupling{N,V<:Number,I<:ID{N,<:SCID},S<:Subscripts} <: Coupling{V,I}
+struct SpinCoupling{N,V<:Number,I<:ID{N,<:SCID},S<:Subscripts} <: Coupling{N,V,I}
     value::V
     id::I
     subscripts::S

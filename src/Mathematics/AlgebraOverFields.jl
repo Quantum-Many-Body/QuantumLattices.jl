@@ -147,7 +147,7 @@ Base.findfirst(id::ID,idspace::IdSpace)=searchsortedfirst(idspace,id)
 Base.searchsortedfirst(idspace::IdSpace,id::ID)=searchsortedfirst(idspace,(rank(id),findfirst(id,idspace.sids)))
 
 """
-    Element{V<:Number,I<:ID}
+    Element{N,V<:Number,I<:ID{N}}
 
 An element of an algebra over a field.
 
@@ -155,35 +155,35 @@ The first and second attributes of an element must be
 - `value::Number`: the coefficient of the element
 - `id::ID`: the id of the element
 """
-abstract type Element{V<:Number,I<:ID} end
+abstract type Element{N,V<:Number,I<:ID{N}} end
 
 """
-    valtype(::Type{<:Element{V}}) where {V<:Number}
+    valtype(::Type{<:Element{N,V}}) where {N,V<:Number}
     valtype(m::Element)
 
 Get the type of the value of an element.
 
 The result is also the type of the field over which the algebra is defined.
 """
-Base.valtype(::Type{<:Element{V}}) where {V<:Number}=V
+Base.valtype(::Type{<:Element{N,V}}) where {N,V<:Number}=V
 Base.valtype(m::Element)=m|>typeof|>valtype
 
 """
-    idtype(::Type{<:Element{<:Number,I}}) where {I<:ID}
+    idtype(::Type{<:Element{N,<:Number,I}}) where {N,I<:ID{N}}
     idtype(m::Element)
 
 The type of the id of an element.
 """
-idtype(::Type{<:Element{<:Number,I}}) where {I<:ID}=I
+idtype(::Type{<:Element{N,<:Number,I}}) where {N,I<:ID{N}}=I
 idtype(m::Element)=m|>typeof|>idtype
 
 """
-    rank(::Type{<:Element}) -> Int
+    rank(::Type{<:Element{N}}) where N -> Int
     rank(m::Element) -> Int
 
 Get the rank of an element.
 """
-rank(::Type{M}) where M<:Element=rank(fieldtype(M,:id))
+rank(::Type{<:Element{N}}) where N=N
 rank(m::Element)=m|>typeof|>rank
 
 """
@@ -262,10 +262,10 @@ Get the inplace addition of elements to a set.
 add!(ms::Elements)=ms
 function add!(ms::Elements,m::Element)
     @assert ms|>valtype >: m|>typeof "add! error: dismatched type, $(ms|>valtype) and $(m|>typeof)."
-    mid=m.id
-    ms[mid]=haskey(ms,mid) ? replace(m,value=ms[mid].value+m.value) : m
-    abs(ms[mid].value)==0.0 && delete!(ms,mid)
-    ms
+    old=get(ms,m.id,nothing)
+    new=old===nothing ? m : replace(m,value=old.value+m.value)
+    abs(new.value)==0.0 ? delete!(ms,m.id) : ms[m.id]=new
+    return ms
 end
 add!(ms::Elements,mms::Elements)=(for m in mms|>values add!(ms,m) end; ms)
 
@@ -279,10 +279,10 @@ Get the inplace subtraction of elements from a set.
 sub!(ms::Elements)=ms
 function sub!(ms::Elements,m::Element)
     @assert ms|>valtype >: m|>typeof "sub! error: dismatched type, $(ms|>valtype) and $(m|>typeof)."
-    mid=m.id
-    ms[mid]=haskey(ms,mid) ? replace(m,value=ms[mid].value-m.value) : -m
-    abs(ms[mid].value)==0.0 && delete!(ms,mid)
-    ms
+    old=get(ms,m.id,nothing)
+    new=old==nothing ? -m : replace(m,value=old.value-m.value)
+    abs(new.value)==0.0 ? delete!(ms,m.id) : ms[m.id]=new
+    return ms
 end
 sub!(ms::Elements,mms::Elements)=(for m in mms|>values sub!(ms,m) end; ms)
 
