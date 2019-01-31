@@ -121,3 +121,7 @@ end
     @test σ⁻("sl")==Couplings(FockCoupling{2}(1,atoms=(1,2)))
     @test σ⁻("ph")==Couplings(FockCoupling{2}(1,nambus=(1,1)))
 end
+
+@testset "FockCouplings" begin
+    @test FockCouplings(Val(2),spins=(2,1))==Couplings(FockCoupling{2}(spins=(2,1)))
+end

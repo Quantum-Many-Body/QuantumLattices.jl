@@ -31,9 +31,18 @@ end
     @test opt'==TOperator(-1.0im,(FIndex(1,1,1,1,2),FIndex(1,1,1,2,1)),rcoords=(SVector(0.0,0.0),SVector(1.0,0.0)),seqs=(1,2))
     @test isHermitian(opt)==false
     @test string(opt)=="TOperator(value=1.0im,id=ID(OID(FIndex(1,1,1,2,2),[1.0,0.0],:,2),OID(FIndex(1,1,1,1,1),[0.0,0.0],:,1)))"
-    opt=TOperator(1.0,(FIndex(1,1,1,1,2),FIndex(1,1,1,1,1)),rcoords=(SVector(0.0,0.0),SVector(0.0,0.0)),seqs=(1,1))
+
+    opt=TOperator(1.0,(FIndex(1,1,1,1,2),FIndex(1,1,1,1,1)),rcoords=(SVector(0.5,0.5),SVector(0.5,0.5)),icoords=(SVector(1.0,1.0),SVector(1.0,1.0)),seqs=(1,1))
     @test opt'==opt
     @test isHermitian(opt)==true
+
+    opt=TOperator(1.0,(FIndex(1,1,1,1,2),FIndex(1,1,1,1,1)),rcoords=(SVector(0.5,0.5),SVector(0.0,0.5)),icoords=(SVector(1.0,1.0),SVector(0.0,1.0)),seqs=(1,1))
+    @test rcoord(opt)==SVector(0.5,0.0)
+    @test icoord(opt)==SVector(1.0,0.0)
+
+    opt=TOperator(1.0,ID(OID(FIndex(1,1,1,1,2),SVector(0.5,0.0),SVector(1.0,0.0),1)))
+    @test rcoord(opt)==SVector(0.5,0.0)
+    @test icoord(opt)==SVector(1.0,0.0)
 end
 
 @testset "Operators" begin
@@ -53,6 +62,7 @@ end
 
     termcouplings=TermCouplings(σˣ("sp"))
     @test termcouplings()==σˣ("sp")
+    @test termcouplings|>rank==termcouplings|>typeof|>rank==2
 
     termcouplings=TermCouplings((σˣ("sp"),σᶻ("sp")),i->(i-1)%2+1)
     @test termcouplings(1)==σˣ("sp")
@@ -71,10 +81,12 @@ end
     term=Term{'F',:Term}(:mu,1.5,0,couplings=σˣ("sp"),amplitude=(bond->3),modulate=false)
     @test term|>statistics==term|>typeof|>statistics=='F'
     @test term|>species==term|>typeof|>species==:Term
-    @test term|>abbr==:tm
+    @test term|>valtype==term|>typeof|>valtype==Float
+    @test term|>rank==term|>typeof|>rank==2
+    @test term|>abbr==term|>typeof|>abbr==:tm
     @test term==deepcopy(term)
     @test isequal(term,deepcopy(term))
-    @test string(term)=="Term{F}(id=mu,value=1.5,neighbor=0,factor=1)"
+    @test string(term)=="Term{F}(id=mu,value=1.5,neighbor=0,factor=1.0)"
     @test repr(term,point,config)=="tm: 4.5 sp(2:1)\ntm: 4.5 sp(1:2)"
     @test +term==term
     @test -term==term*(-1)==replace(term,factor=-term.factor)
@@ -91,6 +103,8 @@ end
     @test zero(term)==replace(term,value=0.0)
     @test term.modulate(mu=4.0)==4.0
     @test term.modulate(t=1.0)==nothing
+    @test update!(term,mu=4.25)==replace(term,value=4.25)
+    @test term.value==4.25
 end
 
 @testset "expand" begin

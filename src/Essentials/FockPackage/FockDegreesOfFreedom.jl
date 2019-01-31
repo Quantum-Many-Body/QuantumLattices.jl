@@ -13,6 +13,7 @@ export ANNIHILATION,CREATION,FID,FIndex,Fock
 export usualfockindextotuple,nambufockindextotuple
 export FCID,FockCoupling
 export σ⁰,σˣ,σʸ,σᶻ,σ⁺,σ⁻
+export FockCouplings
 
 """
     ANNIHILATION
@@ -130,7 +131,7 @@ FCID(;center=wildcard,atom=wildcard,orbital=wildcard,spin=wildcard,nambu=wildcar
 
 """
     FockCoupling(value::Number,id::ID{N,I},obsubscripts::Subscripts,spsubscripts::Subscripts) where {N,I<:FCID}
-    FockCoupling{N}(value::Number;
+    FockCoupling{N}(value::Number=1;
                     centers::Union{NTuple{N,Int},Nothing}=nothing,
                     atoms::Union{NTuple{N,Int},Nothing}=nothing,
                     orbitals::Union{NTuple{N,Int},Subscript,Nothing}=nothing,
@@ -148,7 +149,7 @@ struct FockCoupling{N,V<:Number,I<:ID{N,<:FCID},OS<:Subscripts,SS<:Subscripts} <
         new{N,value|>typeof,id|>typeof,obsubscripts|>typeof,spsubscripts|>typeof}(value,id,obsubscripts,spsubscripts)
     end
 end
-function FockCoupling{N}(   value::Number;
+function FockCoupling{N}(   value::Number=1;
                             centers::Union{NTuple{N,Int},Nothing}=nothing,
                             atoms::Union{NTuple{N,Int},Nothing}=nothing,
                             orbitals::Union{NTuple{N,Int},Subscript,Nothing}=nothing,
@@ -356,4 +357,23 @@ function σ⁻(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing)
     attrname=mode=="sp" ? :spins : mode=="ob" ? :orbitals : mode=="sl" ? :atoms : :nambus
     attrval=mode=="ph" ? (ANNIHILATION,ANNIHILATION) : (1,2)
     Couplings(FockCoupling{2}(1;attrname=>attrval,:centers=>centers))
+end
+
+"""
+    FockCouplings(  ::Val{N},value::Number=1;
+                    centers::Union{NTuple{N,Int},Nothing}=nothing,
+                    atoms::Union{NTuple{N,Int},Nothing}=nothing,
+                    orbitals::Union{NTuple{N,Int},Subscript,Nothing}=nothing,
+                    spins::Union{NTuple{N,Int},Subscript,Nothing}=nothing,
+                    nambus::Union{NTuple{N,Int},Nothing}=nothing) where N -> Couplings
+
+Construct an instance of `Couplings` that contains only one element of `FockCoupling`.
+"""
+function FockCouplings( ::Val{N},value::Number=1;
+                        centers::Union{NTuple{N,Int},Nothing}=nothing,
+                        atoms::Union{NTuple{N,Int},Nothing}=nothing,
+                        orbitals::Union{NTuple{N,Int},Subscript,Nothing}=nothing,
+                        spins::Union{NTuple{N,Int},Subscript,Nothing}=nothing,
+                        nambus::Union{NTuple{N,Int},Nothing}=nothing) where N
+    return Couplings(FockCoupling{N}(value,centers=centers,atoms=atoms,orbitals=orbitals,spins=spins,nambus=nambus))
 end

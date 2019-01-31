@@ -8,10 +8,11 @@ using ...Prerequisites: Float,atol,decimaltostr
 using ...Prerequisites.TypeTraits: efficientoperations
 using ...Mathematics.AlgebraOverFields: SimpleID,ID,Element,Elements,idtype
 
-import ...Prerequisites.Interfaces: expand,dimension,rank,add!
+import ...Prerequisites.Interfaces: rank,expand,dimension,add!,update!
+import ..Spatials: rcoord,icoord
 
-export expand
-export OID,Operator,Operators,isHermitian
+export rank,expand,rcood,icoord,update!
+export OID,Operator,Operators,isHermitian,oidtype,otype
 export TermFunction,TermAmplitude,TermCouplings,TermModulate
 export Term,statistics,species,abbr
 
@@ -75,6 +76,13 @@ function isHermitian(id::ID{N,<:OID}) where N
 end
 
 """
+    oidtype
+
+Get the compatible oid type from a bond type and a table type.
+"""
+function oidtype end
+
+"""
     Operator{N,V<:Number,I<:ID{N,<:OID}} <: Element{N,V,I}
 
 Abstract type for an operator.
@@ -112,6 +120,31 @@ Base.adjoint(opt::Operator)=typeof(opt).name.wrapper(opt.value',opt.id')
 Judge whether an operator is Hermitian.
 """
 isHermitian(opt::Operator)=isa(opt.value,Real) && isHermitian(opt.id)
+
+"""
+    rcoord(opt::Operator{1}) -> SVector
+    rcoord(opt::Operator{2}) -> SVector
+
+Get the whole rcoord of an operator.
+"""
+rcoord(opt::Operator{1})=opt.id[1].rcoord
+rcoord(opt::Operator{2})=opt.id[1].rcoord-opt.id[2].rcoord
+
+"""
+    icoord(opt::Operator{1}) -> SVector
+    icoord(opt::Operator{2}) -> SVector
+
+Get the whole icoord of an operator.
+"""
+icoord(opt::Operator{1})=opt.id[1].icoord
+icoord(opt::Operator{2})=opt.id[1].icoord-opt.id[2].icoord
+
+"""
+    otype
+
+Get the compatible operator type from a term type, a bond type and a table type.
+"""
+function otype end
 
 """
     Operators(opts::Operator...)
@@ -185,6 +218,15 @@ end
 (termcouplings::TermCouplings{<:Tuple,<:Function})(args...;kwargs...)=termcouplings.candidates[termcouplings.choice(args...;kwargs...)]
 
 """
+    rank(tcs::TermCouplings) -> Int
+    rank(TCS::Type{<:TermCouplings}) -> Int
+
+Get the rank of the couplings it contained.
+"""
+rank(tcs::TermCouplings)=tcs|>typeof|>rank
+rank(TCS::Type{<:TermCouplings})=fieldtype(TCS,:candidates)|>eltype|>valtype|>rank
+
+"""
     TermModulate(id::Symbol)
 
 The function for the modulation of a term.
@@ -205,17 +247,17 @@ end
 
 A term of a quantum lattice system.
 """
-struct Term{Statistics,Species,V<:Number,N<:Any,C<:TermCouplings,A<:Function,M<:Union{Function,Nothing},F<:Number}
+mutable struct Term{Statistics,Species,V<:Number,N<:Any,C<:TermCouplings,A<:Function,M<:Union{Function,Nothing}}
     id::Symbol
     value::V
     neighbor::N
     couplings::C
     amplitude::A
     modulate::M
-    factor::F
+    factor::V
     function Term{ST,SP}(id::Symbol,value::Number,neighbor::Any,couplings::TermCouplings,amplitude::Function,modulate::Union{Function,Nothing},factor::Number) where {ST,SP}
         @assert ST in ('F','B') && isa(SP,Symbol) "Term error: not supported type parameter."
-        new{ST,SP,typeof(value),typeof(neighbor),typeof(couplings),typeof(amplitude),typeof(modulate),typeof(factor)}(id,value,neighbor,couplings,amplitude,modulate,factor)
+        new{ST,SP,typeof(value),typeof(neighbor),typeof(couplings),typeof(amplitude),typeof(modulate)}(id,value,neighbor,couplings,amplitude,modulate,factor)
     end
 end
 function Term{ST,SP}(   id::Symbol,value::Number,neighbor::Any;
@@ -249,11 +291,31 @@ species(term::Term)=term|>typeof|>species
 species(::Type{<:Term{ST,SP}}) where {ST,SP}=SP
 
 """
-    abbr(::Term) -> Symbol
+    valtype(term::Term)
+    valtype(::Type{<:Term{ST,SP,V}}) where {ST,SP,V<:Number}
+
+Get the value type of a term.
+"""
+Base.valtype(term::Term)=term|>typeof|>valtype
+Base.valtype(::Type{<:Term{ST,SP,V}}) where {ST,SP,V<:Number}=V
+
+"""
+    rank(term::Term) -> Int
+    rank(::Type{T}) where T<:Term -> Int
+
+Get the rank of a term.
+"""
+rank(term::Term)=term|>typeof|>rank
+rank(::Type{T}) where T<:Term=fieldtype(T,:couplings)|>rank
+
+"""
+    abbr(term::Term) -> Symbol
+    abbr(::Type{<:Term}) -> Symbol
 
 Get the abbreviation of the species of a term.
 """
-abbr(::Term)=:tm
+abbr(term::Term)=term|>typeof|>abbr
+abbr(::Type{<:Term})=:tm
 
 """
     ==(term1::Term,term2::Term) -> Bool
@@ -281,10 +343,10 @@ Get the repr representation of a term on a bond with a given config.
 function Base.repr(term::Term,bond::AbstractBond,config::IDFConfig)
     cache=String[]
     if term.neighbor==bond|>neighbor
-        pids=NTuple{length(bond),pidtype(bond)}(point.pid for point in bond)
-        interanls=NTuple{length(bond),valtype(config)}(config[pid] for pid in pids)
         value=term.value*term.amplitude(bond)*term.factor
         if !isapprox(abs(value),0.0,atol=atol)
+            pids=NTuple{length(bond),pidtype(bond)}(point.pid for point in bond)
+            interanls=NTuple{length(bond),valtype(config)}(config[pid] for pid in pids)
             for coupling in values(term.couplings(bond))
                 length(expand(coupling,pids,interanls))>0 &&  push!(cache,@sprintf "%s: %s" abbr(term) repr(value*coupling))
             end
@@ -333,31 +395,38 @@ Get a zero term.
 Base.zero(term::Term)=replace(term,value=zero(term.value))
 
 """
-    expand(otype::Type{<:Operator},term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Union{Bool,Nothing}=nothing)
+    expand(otype::Type{<:Operator},term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Union{Bool,Nothing}=false)
 
 Expand the operators of a term on a bond with a given config.
+
+The `half` parameter determines the behavior of generating operators, which falls into the following three categories
+* `false`: no extra operations on the generated operators
+* `true`: an extra multiplication by 0.5 with the generated operators
+* `nothing`: "Hermitian half" of the generated operators
 """
-function expand(otype::Type{<:Operator},term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Union{Bool,Nothing}=nothing)
+function expand(otype::Type{<:Operator},term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Union{Bool,Nothing}=false)
     result=Operators{idtype(otype),otype}()
     if term.neighbor==bond|>neighbor
         value=term.value*term.amplitude(bond)*term.factor
         if !isapprox(abs(value),0.0,atol=atol)
             @assert (fieldtype(eltype(idtype(otype)),:seq)===Nothing)==(table===nothing) "expand error: `table` must be assigned if the sequences are required."
+            @assert rank(otype)==rank(term) "expand error: dismatched ranks between operator and term."
             rtype,itype=fieldtype(eltype(idtype(otype)),:rcoord),fieldtype(eltype(idtype(otype)),:icoord)
             pids=NTuple{length(bond),pidtype(bond)}(point.pid for point in bond)
             rcoords=NTuple{length(bond),SVector{dimension(bond),Float}}(point.rcoord for point in bond)
             icoords=NTuple{length(bond),SVector{dimension(bond),Float}}(point.icoord for point in bond)
             interanls=NTuple{length(bond),valtype(config)}(config[pid] for pid in pids)
             for coupling in values(term.couplings(bond))
-                @assert rank(coupling)==rank(otype) "expand error: dismatched ranks between operator and coupling."
                 perm=propercenters(typeof(coupling),coupling.id.centers,Val(rank(bond)))::NTuple{rank(otype),Int}
                 orcoords=getcoords(rtype,rcoords,perm)
                 oicoords=getcoords(itype,icoords,perm)
                 for (coeff,oindexes) in expand(coupling,pids,interanls)
                     isa(table,Table) && any(NTuple{rank(otype),Bool}(!haskey(table,index) for index in oindexes)) && continue
                     id=ID(OID,oindexes,orcoords,oicoords,getseqs(table,oindexes))
-                    ovalue=valtype(otype)(value*coeff*getfactor(half,id))
-                    add!(result,otype.name.wrapper(ovalue,id))
+                    if !(half===nothing && haskey(result,id'))
+                        ovalue=valtype(otype)(value*coeff*getfactor(half,id))
+                        add!(result,otype.name.wrapper(ovalue,id))
+                    end
                 end
             end
         end
@@ -370,5 +439,12 @@ getseqs(::Nothing,indexes::NTuple{N,<:OID}) where N=NTuple{N,Nothing}(nothing fo
 getseqs(table::Table{I},indexes::NTuple{N,I}) where {N,I<:Index}=NTuple{N,Int}(table[index] for index in indexes)
 getfactor(half::Bool,::ID)=half ? 0.5 : 1.0
 getfactor(::Nothing,id::ID)=isHermitian(id) ? 0.5 : 1.0
+
+"""
+    update!(term::Term,args...;kwargs...) -> Term
+
+Update the value of a term by its `modulate` function.
+"""
+update!(term::Term,args...;kwargs...)=(term.value=term.modulate(args...;kwargs...)::valtype(term);term)
 
 end  # module

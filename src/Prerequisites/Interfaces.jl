@@ -24,6 +24,9 @@ function mul! end
 "Inplace division."
 function div! end
 
+"Inplace Update."
+function update! end
+
 "Rank."
 function rank end
 

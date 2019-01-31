@@ -45,7 +45,7 @@ However, we provide several interfaces, including type traits and methods to dea
 2) A vector space whose bases may be represented by a multiindex (Cartesian index) can be ascribed to the traits [`IsMultiIndexable`](@ref) and [`MultiIndexOrderStyle`](@ref).
    Specifically, the first trait must be implemented as
    ```julia
-   MultiIndexOrderStyle(::Type{SubType})=MultiIndexOrderStyle('C')
+   IsMultiIndexable(::Type{SubType})=IsMultiIndexable(true)
    ```
    While, the second shoule be implemented as
    ```julia

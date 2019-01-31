@@ -12,6 +12,7 @@ export dims,inds,expand
 export SID,Spin,SIndex,usualspinindextotuple
 export SCID,SpinCoupling
 export Heisenberg,Ising,Sˣ,Sʸ,Sᶻ
+export SpinCouplings
 
 const sidtagmap=Dict(1=>'i',2=>'x',3=>'y',4=>'z',5=>'+',6=>'-')
 const sidseqmap=Dict(v=>k for (k,v) in sidtagmap)
@@ -119,7 +120,7 @@ Base.fieldnames(::Type{<:SCID})=(:center,:atom,:orbital,:tag,:subscript)
 
 """
     SpinCoupling(value::Number,id::ID{N,I},subscripts::Subscripts) where {N,I<:SCID}
-    SpinCoupling{N}(    value::Number;
+    SpinCoupling{N}(    value::Number=1;
                         tags::NTuple{N,Char},
                         centers::Union{NTuple{N,Int},Nothing}=nothing,
                         atoms::Union{NTuple{N,Int},Nothing}=nothing,
@@ -134,8 +135,7 @@ struct SpinCoupling{N,V<:Number,I<:ID{N,<:SCID},S<:Subscripts} <: Coupling{N,V,I
     subscripts::S
     SpinCoupling(value::Number,id::ID{N,I},subscripts::Subscripts) where {N,I<:SCID}=new{N,value|>typeof,id|>typeof,typeof(subscripts)}(value,id,subscripts)
 end
-
-function SpinCoupling{N}(   value::Number;
+function SpinCoupling{N}(   value::Number=1;
                             tags::NTuple{N,Char},
                             centers::Union{NTuple{N,Int},Nothing}=nothing,
                             atoms::Union{NTuple{N,Int},Nothing}=nothing,
@@ -291,4 +291,23 @@ function Sᶻ(;center::Union{Int,Nothing}=nothing,atom::Union{Int,Nothing}=nothi
                                 atoms=atom===nothing ? nothing : (atom,),
                                 orbitals=orbital==nothing ? nothing : (orbital,)
                                 ))
+end
+
+"""
+    SpinCouplings(  ::Val{N},value::Number=1;
+                    tags::NTuple{N,Char},
+                    centers::Union{NTuple{N,Int},Nothing}=nothing,
+                    atoms::Union{NTuple{N,Int},Nothing}=nothing,
+                    orbitals::Union{NTuple{N,Int},Subscript,Nothing}=nothing
+                    ) where N -> Couplings
+
+Construct an instance of `Couplings` that contains only one element of `SpinCoupling`.
+"""
+function SpinCouplings( ::Val{N},value::Number=1;
+                        tags::NTuple{N,Char},
+                        centers::Union{NTuple{N,Int},Nothing}=nothing,
+                        atoms::Union{NTuple{N,Int},Nothing}=nothing,
+                        orbitals::Union{NTuple{N,Int},Subscript,Nothing}=nothing
+                        ) where N
+    return Couplings(SpinCoupling{N}(value,tags=tags,centers=centers,atoms=atoms,orbitals=orbitals))
 end

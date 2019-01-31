@@ -83,3 +83,7 @@ end
     @test Sʸ(atom=1)==Couplings(SpinCoupling{1}(1.0,tags=('y',),atoms=(1,)))
     @test Sᶻ(orbital=1)==Couplings(SpinCoupling{1}(1.0,tags=('z',),orbitals=(1,)))
 end
+
+@testset "SpinCouplings" begin
+    @test SpinCouplings(Val(2),tags=('+','-'))==Couplings(SpinCoupling{2}(tags=('+','-')))
+end
