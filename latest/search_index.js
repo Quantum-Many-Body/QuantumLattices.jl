@@ -305,6 +305,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Prerequisites/Interfaces.html#Hamiltonian.Prerequisites.Interfaces.update!",
+    "page": "Interfaces",
+    "title": "Hamiltonian.Prerequisites.Interfaces.update!",
+    "category": "function",
+    "text": "Inplace Update.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Prerequisites/Interfaces.html#Manual-1",
     "page": "Interfaces",
     "title": "Manual",
@@ -1725,7 +1733,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Vector spaces",
     "title": "AbstractVectorSpace",
     "category": "section",
-    "text": "AbstractVectorSpace{B} is the abstaction of a vector space, which has only one type parameter:B<:Any: the type of the bases of the vector spaceBasically, a subtype should implement the following 3 methods:dimension(vs::AbstractVectorSpace) -> Int\nGet the dimension of a vector space\nBase.getindex(vs::AbstractVectorSpace{B},i::Int)  where B -> B\nGet the ith basis of a vector space\nBase.searchsortedfirst(vs::AbstractVectorSpace{B},basis::B) where B -> Int\nSearch the index of a basis in a vector spaceHowever, we provide several interfaces, including type traits and methods to deal with common situations:A vector space whose bases are stored in a table under the attribute name :table can be ascribed to the HasTable trait and the TableSorted trait. Specifically, the first trait must be implemented as\nHasTable(::Type{SubType})=HasTable(true)\nWhile, the second should be implemented as\nTableSorted(::Type{SubType})=TableSorted(false)\nif the table is unsorted, and as\nTableSorted(::Type{SubType})=TableSorted(true)\nif the table is sorted.\nA vector space whose bases may be represented by a multiindex (Cartesian index) can be ascribed to the traits IsMultiIndexable and MultiIndexOrderStyle. Specifically, the first trait must be implemented as\nMultiIndexOrderStyle(::Type{SubType})=MultiIndexOrderStyle(\'C\')\nWhile, the second shoule be implemented as\nMultiIndexOrderStyle(::Type{SubType})=MultiIndexOrderStyle(\'C\')\nif the order style of the multiindex is C/C++ like, and as\nMultiIndexOrderStyle(::Type{SubType})=MultiIndexOrderStyle(\'F\')\nif the order style is Fortran like. Furthermore, it should implement the following methods\nrank(::Type{SubType}) -> Int\nGet the rank of a multiindexable vector space.\ndims(vs::SubType) -> NTuple{vs|>typeof|>rank,Int}\nGet the dimensions along each axes of a multiindexable vector space.\ninds(basis,vs::SubType) ->  NTuple{vs|>typeof|>rank,Int}\nGet the Cartesian index representation of a basis in a multiindexable vector space.\neltype(SubType).name.wrapper(index::NTuple{N,Int},vs::SubType)\nConstruct a basis from a tuple of integers and a multiindexable vector space.\nNote that a multiindexable vector space can also have a sorted or unsorted table. But then the trait MultiIndexOrderStyle takes no effects and the sequences of its bases will be completely determined by its attribute :table.If the type taits and methods are defined properly as stated above, the dimension, getindex and searchsortedfirst methods get default implementations. No need to worry about them any more.Other features includecomparison: == and isequal\niteration: iterate\ninquiry: size, findfirst and in"
+    "text": "AbstractVectorSpace{B} is the abstaction of a vector space, which has only one type parameter:B<:Any: the type of the bases of the vector spaceBasically, a subtype should implement the following 3 methods:dimension(vs::AbstractVectorSpace) -> Int\nGet the dimension of a vector space\nBase.getindex(vs::AbstractVectorSpace{B},i::Int)  where B -> B\nGet the ith basis of a vector space\nBase.searchsortedfirst(vs::AbstractVectorSpace{B},basis::B) where B -> Int\nSearch the index of a basis in a vector spaceHowever, we provide several interfaces, including type traits and methods to deal with common situations:A vector space whose bases are stored in a table under the attribute name :table can be ascribed to the HasTable trait and the TableSorted trait. Specifically, the first trait must be implemented as\nHasTable(::Type{SubType})=HasTable(true)\nWhile, the second should be implemented as\nTableSorted(::Type{SubType})=TableSorted(false)\nif the table is unsorted, and as\nTableSorted(::Type{SubType})=TableSorted(true)\nif the table is sorted.\nA vector space whose bases may be represented by a multiindex (Cartesian index) can be ascribed to the traits IsMultiIndexable and MultiIndexOrderStyle. Specifically, the first trait must be implemented as\nIsMultiIndexable(::Type{SubType})=IsMultiIndexable(true)\nWhile, the second shoule be implemented as\nMultiIndexOrderStyle(::Type{SubType})=MultiIndexOrderStyle(\'C\')\nif the order style of the multiindex is C/C++ like, and as\nMultiIndexOrderStyle(::Type{SubType})=MultiIndexOrderStyle(\'F\')\nif the order style is Fortran like. Furthermore, it should implement the following methods\nrank(::Type{SubType}) -> Int\nGet the rank of a multiindexable vector space.\ndims(vs::SubType) -> NTuple{vs|>typeof|>rank,Int}\nGet the dimensions along each axes of a multiindexable vector space.\ninds(basis,vs::SubType) ->  NTuple{vs|>typeof|>rank,Int}\nGet the Cartesian index representation of a basis in a multiindexable vector space.\neltype(SubType).name.wrapper(index::NTuple{N,Int},vs::SubType)\nConstruct a basis from a tuple of integers and a multiindexable vector space.\nNote that a multiindexable vector space can also have a sorted or unsorted table. But then the trait MultiIndexOrderStyle takes no effects and the sequences of its bases will be completely determined by its attribute :table.If the type taits and methods are defined properly as stated above, the dimension, getindex and searchsortedfirst methods get default implementations. No need to worry about them any more.Other features includecomparison: == and isequal\niteration: iterate\ninquiry: size, findfirst and in"
 },
 
 {
@@ -3277,7 +3285,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatials",
     "title": "Base.iterate",
     "category": "function",
-    "text": "iterate(bond::Bond,state=1)\n\nIterate over the points in a bond.\n\n\n\n\n\n"
+    "text": "iterate(p::Point,state=1)\n\nIterate over the point.\n\n\n\n\n\n"
 },
 
 {
@@ -3285,7 +3293,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatials",
     "title": "Base.iterate",
     "category": "function",
-    "text": "iterate(p::Point,state=1)\n\nIterate over the point.\n\n\n\n\n\n"
+    "text": "iterate(bond::Bond,state=1)\n\nIterate over the points in a bond.\n\n\n\n\n\n"
 },
 
 {
@@ -3881,11 +3889,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Spatials.icoord-Tuple{Operator{1,V,I} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{1,#s254,T} where T<:Tuple where #s254<:OID) where V<:Number}",
+    "page": "Terms",
+    "title": "Hamiltonian.Essentials.Spatials.icoord",
+    "category": "method",
+    "text": "icoord(opt::Operator{1}) -> SVector\nicoord(opt::Operator{2}) -> SVector\n\nGet the whole icoord of an operator.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.abbr-Tuple{Term}",
     "page": "Terms",
     "title": "Hamiltonian.Essentials.Terms.abbr",
     "category": "method",
-    "text": "abbr(::Term) -> Symbol\n\nGet the abbreviation of the species of a term.\n\n\n\n\n\n"
+    "text": "abbr(term::Term) -> Symbol\nabbr(::Type{<:Term}) -> Symbol\n\nGet the abbreviation of the species of a term.\n\n\n\n\n\n"
 },
 
 {
@@ -3913,6 +3929,22 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.oidtype",
+    "page": "Terms",
+    "title": "Hamiltonian.Essentials.Terms.oidtype",
+    "category": "function",
+    "text": "oidtype\n\nGet the compatible oid type from a bond type and a table type.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.otype",
+    "page": "Terms",
+    "title": "Hamiltonian.Essentials.Terms.otype",
+    "category": "function",
+    "text": "otype\n\nGet the compatible operator type from a term type, a bond type and a table type.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.species-Tuple{Term}",
     "page": "Terms",
     "title": "Hamiltonian.Essentials.Terms.species",
@@ -3933,7 +3965,31 @@ var documenterSearchIndex = {"docs": [
     "page": "Terms",
     "title": "Hamiltonian.Prerequisites.Interfaces.expand",
     "category": "function",
-    "text": "expand(otype::Type{<:Operator},term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Union{Bool,Nothing}=nothing)\n\nExpand the operators of a term on a bond with a given config.\n\n\n\n\n\n"
+    "text": "expand(otype::Type{<:Operator},term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Union{Bool,Nothing}=false)\n\nExpand the operators of a term on a bond with a given config.\n\nThe half parameter determines the behavior of generating operators, which falls into the following three categories\n\nfalse: no extra operations on the generated operators\ntrue: an extra multiplication by 0.5 with the generated operators\nnothing: \"Hermitian half\" of the generated operators\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Terms.html#Hamiltonian.Prerequisites.Interfaces.rank-Tuple{TermCouplings}",
+    "page": "Terms",
+    "title": "Hamiltonian.Prerequisites.Interfaces.rank",
+    "category": "method",
+    "text": "rank(tcs::TermCouplings) -> Int\nrank(TCS::Type{<:TermCouplings}) -> Int\n\nGet the rank of the couplings it contained.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Terms.html#Hamiltonian.Prerequisites.Interfaces.rank-Tuple{Term}",
+    "page": "Terms",
+    "title": "Hamiltonian.Prerequisites.Interfaces.rank",
+    "category": "method",
+    "text": "rank(term::Term) -> Int\nrank(::Type{T}) where T<:Term -> Int\n\nGet the rank of a term.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Terms.html#Hamiltonian.Prerequisites.Interfaces.update!-Tuple{Term,Vararg{Any,N} where N}",
+    "page": "Terms",
+    "title": "Hamiltonian.Prerequisites.Interfaces.update!",
+    "category": "method",
+    "text": "update!(term::Term,args...;kwargs...) -> Term\n\nUpdate the value of a term by its modulate function.\n\n\n\n\n\n"
 },
 
 {
@@ -3993,7 +4049,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Terms.html#Base.replace-Union{Tuple{Term{ST,SP,V,N,C,A,M,F} where F<:Number where M<:Union{Nothing, Function} where A<:Function where C<:TermCouplings where N where V<:Number}, Tuple{SP}, Tuple{ST}} where SP where ST",
+    "location": "man/Essentials/Terms.html#Base.replace-Union{Tuple{Term{ST,SP,V,N,C,A,M} where M<:Union{Nothing, Function} where A<:Function where C<:TermCouplings where N where V<:Number}, Tuple{SP}, Tuple{ST}} where SP where ST",
     "page": "Terms",
     "title": "Base.replace",
     "category": "method",
@@ -4033,11 +4089,27 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Essentials/Terms.html#Base.valtype-Tuple{Term}",
+    "page": "Terms",
+    "title": "Base.valtype",
+    "category": "method",
+    "text": "valtype(term::Term)\nvaltype(::Type{<:Term{ST,SP,V}}) where {ST,SP,V<:Number}\n\nGet the value type of a term.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Essentials/Terms.html#Base.zero-Tuple{Term}",
     "page": "Terms",
     "title": "Base.zero",
     "category": "method",
     "text": "zero(term::Term) -> Term\n\nGet a zero term.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Spatials.rcoord-Tuple{Operator{1,V,I} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{1,#s254,T} where T<:Tuple where #s254<:OID) where V<:Number}",
+    "page": "Terms",
+    "title": "Hamiltonian.Essentials.Spatials.rcoord",
+    "category": "method",
+    "text": "rcoord(opt::Operator{1}) -> SVector\nrcoord(opt::Operator{2}) -> SVector\n\nGet the whole rcoord of an operator.\n\n\n\n\n\n"
 },
 
 {
@@ -4173,7 +4245,15 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "Hamiltonian.Essentials.FockPackage.FockCoupling",
     "category": "type",
-    "text": "FockCoupling(value::Number,id::ID{N,I},obsubscripts::Subscripts,spsubscripts::Subscripts) where {N,I<:FCID}\nFockCoupling{N}(value::Number;\n                centers::Union{NTuple{N,Int},Nothing}=nothing,\n                atoms::Union{NTuple{N,Int},Nothing}=nothing,\n                orbitals::Union{NTuple{N,Int},Subscript,Nothing}=nothing,\n                spins::Union{NTuple{N,Int},Subscript,Nothing}=nothing,\n                nambus::Union{NTuple{N,Int},Nothing}=nothing) where N\n\nFock coupling.\n\n\n\n\n\n"
+    "text": "FockCoupling(value::Number,id::ID{N,I},obsubscripts::Subscripts,spsubscripts::Subscripts) where {N,I<:FCID}\nFockCoupling{N}(value::Number=1;\n                centers::Union{NTuple{N,Int},Nothing}=nothing,\n                atoms::Union{NTuple{N,Int},Nothing}=nothing,\n                orbitals::Union{NTuple{N,Int},Subscript,Nothing}=nothing,\n                spins::Union{NTuple{N,Int},Subscript,Nothing}=nothing,\n                nambus::Union{NTuple{N,Int},Nothing}=nothing) where N\n\nFock coupling.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.FockCouplings-Union{Tuple{Val{N}}, Tuple{N}, Tuple{Val{N},Number}} where N",
+    "page": "Fock package",
+    "title": "Hamiltonian.Essentials.FockPackage.FockCouplings",
+    "category": "method",
+    "text": "FockCouplings(  ::Val{N},value::Number=1;\n                centers::Union{NTuple{N,Int},Nothing}=nothing,\n                atoms::Union{NTuple{N,Int},Nothing}=nothing,\n                orbitals::Union{NTuple{N,Int},Subscript,Nothing}=nothing,\n                spins::Union{NTuple{N,Int},Subscript,Nothing}=nothing,\n                nambus::Union{NTuple{N,Int},Nothing}=nothing) where N -> Couplings\n\nConstruct an instance of Couplings that contains only one element of FockCoupling.\n\n\n\n\n\n"
 },
 
 {
@@ -4413,7 +4493,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spin package",
     "title": "Hamiltonian.Essentials.SpinPackage.SpinCoupling",
     "category": "type",
-    "text": "SpinCoupling(value::Number,id::ID{N,I},subscripts::Subscripts) where {N,I<:SCID}\nSpinCoupling{N}(    value::Number;\n                    tags::NTuple{N,Char},\n                    centers::Union{NTuple{N,Int},Nothing}=nothing,\n                    atoms::Union{NTuple{N,Int},Nothing}=nothing,\n                    orbitals::Union{NTuple{N,Int},Subscript,Nothing}=nothing\n                    ) where N\n\nSpin coupling.\n\n\n\n\n\n"
+    "text": "SpinCoupling(value::Number,id::ID{N,I},subscripts::Subscripts) where {N,I<:SCID}\nSpinCoupling{N}(    value::Number=1;\n                    tags::NTuple{N,Char},\n                    centers::Union{NTuple{N,Int},Nothing}=nothing,\n                    atoms::Union{NTuple{N,Int},Nothing}=nothing,\n                    orbitals::Union{NTuple{N,Int},Subscript,Nothing}=nothing\n                    ) where N\n\nSpin coupling.\n\n\n\n\n\n"
 },
 
 {
@@ -4430,6 +4510,14 @@ var documenterSearchIndex = {"docs": [
     "title": "Hamiltonian.Essentials.SpinPackage.Ising",
     "category": "method",
     "text": "Ising(  tag::Char;\n        centers::Union{NTuple{2,Int},Nothing}=nothing,\n        atoms::Union{NTuple{2,Int},Nothing}=nothing,\n        orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing\n        ) -> Couplings{ID{2,SCID},SpinCoupling{2,Float,ID{2,SCID}}}\n\nThe Ising couplings.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.SpinPackage.SpinCouplings-Union{Tuple{Val{N}}, Tuple{N}, Tuple{Val{N},Number}} where N",
+    "page": "Spin package",
+    "title": "Hamiltonian.Essentials.SpinPackage.SpinCouplings",
+    "category": "method",
+    "text": "SpinCouplings(  ::Val{N},value::Number=1;\n                tags::NTuple{N,Char},\n                centers::Union{NTuple{N,Int},Nothing}=nothing,\n                atoms::Union{NTuple{N,Int},Nothing}=nothing,\n                orbitals::Union{NTuple{N,Int},Subscript,Nothing}=nothing\n                ) where N -> Couplings\n\nConstruct an instance of Couplings that contains only one element of SpinCoupling.\n\n\n\n\n\n"
 },
 
 {
