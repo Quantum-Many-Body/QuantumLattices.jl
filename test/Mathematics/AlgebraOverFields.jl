@@ -48,7 +48,7 @@ end
     end
 end
 
-struct BasicOperator{N,V<:Number,I<:ID{N}} <: Element{N,V,I}
+struct BasicOperator{N,V<:Number,I<:ID{<:NTuple{N,SimpleID}}} <: Element{N,V,I}
     value::V
     id::I
 end
@@ -60,13 +60,13 @@ end
     @test isequal(opt|>deepcopy,opt)
     @test opt|>valtype==Float
     @test opt|>typeof|>valtype==Float
-    @test opt|>idtype==ID{1,SMPID{Int,Int},Tuple{SMPID{Int,Int}}}
-    @test opt|>typeof|>idtype==ID{1,SMPID{Int,Int},Tuple{SMPID{Int,Int}}}
+    @test opt|>idtype==ID{Tuple{SMPID{Int,Int}}}
+    @test opt|>typeof|>idtype==ID{Tuple{SMPID{Int,Int}}}
     @test opt|>rank==1
     @test opt|>typeof|>rank==1
-    @test +opt==opt
+    @test +opt==opt+nothing==nothing+opt==opt==opt-nothing
     @test opt*2==2*opt==BasicOperator(2.0,ID(SMPID(1,1)))
-    @test -opt==BasicOperator(-1.0,ID(SMPID(1,1)))
+    @test -opt==BasicOperator(-1.0,ID(SMPID(1,1)))==nothing-opt
     @test opt/2==BasicOperator(0.5,ID(SMPID(1,1)))
     @test opt^2==opt*opt
 
@@ -76,12 +76,14 @@ end
     @test opts|>zero==Elements{opt|>idtype,opt|>typeof}()
     @test opts|>typeof|>zero==Elements{opt|>idtype,opt|>typeof}()
     @test add!(deepcopy(opts))==opts
+    @test add!(deepcopy(opts),nothing)==opts
     @test sub!(deepcopy(opts))==opts
-    @test +opts==opts
+    @test sub!(deepcopy(opts),nothing)==opts
+    @test +opts==opts+nothing==nothing+opts==opts==opts-nothing
     @test opt1+opt2==opts
     @test opt1+opts+opt2==Elements(opt1*2,opt2*2)
     @test opts+opts==Elements(opt1*2,opt2*2)
-    @test -opts==Elements(-opt1,-opt2)
+    @test -opts==Elements(-opt1,-opt2)==nothing-opts
     @test opts|>zero==opt1-opt1==opts-opts
     @test opts-opt1==Elements(opt2)
     @test opt1-opts==Elements(-opt2)

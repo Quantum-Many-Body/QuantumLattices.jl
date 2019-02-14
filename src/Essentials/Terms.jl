@@ -39,8 +39,9 @@ struct OID{I<:Index,RC<:Union{Nothing,SVector},IC<:Union{Nothing,SVector},S<:Uni
     end
 end
 OID(index::Index;rcoord::Union{Nothing,SVector}=nothing,icoord::Union{Nothing,SVector}=nothing,seq::Union{Nothing,Int}=nothing)=OID(index,rcoord,icoord,seq)
+Base.hash(oid::OID,h::UInt)=hash(oid|>values,h)
 Base.fieldnames(::Type{<:OID})=(:index,:rcoord,:icoord,:seq)
-Base.propertynames(::Type{<:ID{N,<:OID}},private::Bool=false) where N=private ? (:contents,:indexes,:rcoords,:icoords) : (:indexes,:rcoords,:icoords)
+Base.propertynames(::Type{<:ID{<:NTuple{N,OID}}},private::Bool=false) where N=private ? (:contents,:indexes,:rcoords,:icoords) : (:indexes,:rcoords,:icoords)
 
 """
     show(io::IO,oid::OID)
@@ -55,22 +56,22 @@ function Base.show(io::IO,oid::OID)
 end
 
 """
-    adjoint(oid::OID) -> OID
-    adjoint(id::ID{N,<:OID}) where N -> ID{N,<:OID}
+    adjoint(oid::OID) -> typeof(oid)
+    adjoint(oid::ID{<:NTuple{N,OID}}) where N -> typeof(oid)
 
 Get the adjoint of an operator id.
 """
 Base.adjoint(oid::OID)=OID(oid.index',oid.rcoord,oid.icoord,oid.seq)
-@generated Base.adjoint(id::ID{N,<:OID}) where N=Expr(:call,:ID,[:(id[$i]') for i=N:-1:1]...)
+@generated Base.adjoint(oid::ID{<:NTuple{N,OID}}) where N=Expr(:call,:ID,[:(oid[$i]') for i=N:-1:1]...)
 
 """
-    isHermitian(id::ID{N,<:OID}) where N -> Bool
+    isHermitian(oid::ID{<:NTuple{N,OID}}) where N -> Bool
 
 Judge whether an operator id is Hermitian.
 """
-function isHermitian(id::ID{N,<:OID}) where N
+function isHermitian(oid::ID{<:NTuple{N,OID}}) where N
     for i=1:((N+1)÷2)
-        id[i]'==id[N+1-i] || return false
+        oid[i]'==oid[N+1-i] || return false
     end
     return true
 end
@@ -83,11 +84,11 @@ Get the compatible oid type from a bond type and a table type.
 function oidtype end
 
 """
-    Operator{N,V<:Number,I<:ID{N,<:OID}} <: Element{N,V,I}
+    Operator{N,V<:Number,I<:ID{<:NTuple{N,OID}}} <: Element{N,V,I}
 
 Abstract type for an operator.
 """
-abstract type Operator{N,V<:Number,I<:ID{N,<:OID}} <: Element{N,V,I} end
+abstract type Operator{N,V<:Number,I<:ID{<:NTuple{N,OID}}} <: Element{N,V,I} end
 function (O::Type{<:Operator})( value::Number,
                                 indexes::NTuple{N,Index};
                                 rcoords::Union{Nothing,NTuple{N,SVector{M,Float}}}=nothing,
@@ -405,10 +406,11 @@ The `half` parameter determines the behavior of generating operators, which fall
 * `nothing`: "Hermitian half" of the generated operators
 """
 function expand(otype::Type{<:Operator},term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Union{Bool,Nothing}=false)
-    result=Operators{idtype(otype),otype}()
+    result=nothing
     if term.neighbor==bond|>neighbor
         value=term.value*term.amplitude(bond)*term.factor
         if !isapprox(abs(value),0.0,atol=atol)
+            result=Operators{idtype(otype),otype}()
             @assert (fieldtype(eltype(idtype(otype)),:seq)===Nothing)==(table===nothing) "expand error: `table` must be assigned if the sequences are required."
             @assert rank(otype)==rank(term) "expand error: dismatched ranks between operator and term."
             rtype,itype=fieldtype(eltype(idtype(otype)),:rcoord),fieldtype(eltype(idtype(otype)),:icoord)

@@ -11,8 +11,8 @@ import Hamiltonian.Essentials.Terms: termamplitude
     oid=OID(FIndex(1,1,1,1,1),rcoord=SVector(0.0,-0.0),icoord=nothing,seq=1)
     @test oid'==OID(FIndex(1,1,1,1,2),rcoord=SVector(0.0,0.0),icoord=nothing,seq=1)
     @test hash(oid,UInt(1))==hash(OID(FIndex(1,1,1,1,1),rcoord=SVector(0.0,0.0),icoord=nothing,seq=1),UInt(1))
-    @test propertynames(ID{2,OID},true)==(:contents,:indexes,:rcoords,:icoords)
-    @test propertynames(ID{2,OID},false)==(:indexes,:rcoords,:icoords)
+    @test propertynames(ID{<:NTuple{2,OID}},true)==(:contents,:indexes,:rcoords,:icoords)
+    @test propertynames(ID{<:NTuple{2,OID}},false)==(:indexes,:rcoords,:icoords)
     @test fieldnames(OID)==(:index,:rcoord,:icoord,:seq)
     @test string(oid)=="OID(FIndex(1,1,1,1,1),[0.0,0.0],:,1)"
     @test ID(oid',oid)'==ID(oid',oid)
@@ -20,10 +20,10 @@ import Hamiltonian.Essentials.Terms: termamplitude
     @test isHermitian(ID(oid,oid))==false
 end
 
-struct TOperator{N,V<:Number,I<:ID{N,<:OID}} <: Operator{N,V,I}
+struct TOperator{N,V<:Number,I<:ID{<:NTuple{N,OID}}} <: Operator{N,V,I}
     value::V
     id::I
-    TOperator(value::Number,id::ID{N,<:OID}) where N=new{N,typeof(value),typeof(id)}(value,id)
+    TOperator(value::Number,id::ID{<:NTuple{N,OID}}) where N=new{N,typeof(value),typeof(id)}(value,id)
 end
 
 @testset "Operator" begin
@@ -118,9 +118,9 @@ end
                         TOperator(-2.25,(FIndex(1,1,1,2,2),FIndex(1,1,1,2,1)),rcoords=(SVector(0.0,0.0),SVector(0.0,0.0)),seqs=(2,2)),
                         TOperator(+2.25,(FIndex(1,1,1,1,2),FIndex(1,1,1,1,1)),rcoords=(SVector(0.0,0.0),SVector(0.0,0.0)),seqs=(1,1))
     )
-    @test expand(TOperator{2,Float,ID{2,O,NTuple{2,O}}},term,point,config,table,nothing)==operators
-    @test expand(TOperator{2,Float,ID{2,O,NTuple{2,O}}},term,point,config,table,true)==operators
-    @test expand(TOperator{2,Float,ID{2,O,NTuple{2,O}}},term,point,config,table,false)==operators*2
+    @test expand(TOperator{2,Float,ID{NTuple{2,O}}},term,point,config,table,nothing)==operators
+    @test expand(TOperator{2,Float,ID{NTuple{2,O}}},term,point,config,table,true)==operators
+    @test expand(TOperator{2,Float,ID{NTuple{2,O}}},term,point,config,table,false)==operators*2
 
     bond=Bond(1,Point(PID('b',2),(1.5,1.5),(1.0,1.0)),Point(PID('a',1),(0.5,0.5),(0.0,0.0)))
     config=IDFConfig(pid->Fock(norbital=2,nspin=2,nnambu=2),Fock,[PID('a',1),PID('b',2)])
@@ -132,7 +132,7 @@ end
                         TOperator(+4.5,(FIndex('a',1,2,2,2),FIndex('b',2,2,2,1)),rcoords=(SVector(0.5,0.5),SVector(1.5,1.5)),icoords=(SVector(0.0,0.0),SVector(1.0,1.0)),seqs=(4,8)),
                         TOperator(-4.5,(FIndex('a',1,2,1,2),FIndex('b',2,2,1,1)),rcoords=(SVector(0.5,0.5),SVector(1.5,1.5)),icoords=(SVector(0.0,0.0),SVector(1.0,1.0)),seqs=(3,7))
     )
-    @test expand(TOperator{2,Float,ID{2,O,NTuple{2,O}}},term,bond,config,table,nothing)==operators
-    @test expand(TOperator{2,Float,ID{2,O,NTuple{2,O}}},term,bond,config,table,true)==operators/2
-    @test expand(TOperator{2,Float,ID{2,O,NTuple{2,O}}},term,bond,config,table,false)==operators
+    @test expand(TOperator{2,Float,ID{NTuple{2,O}}},term,bond,config,table,nothing)==operators
+    @test expand(TOperator{2,Float,ID{NTuple{2,O}}},term,bond,config,table,true)==operators/2
+    @test expand(TOperator{2,Float,ID{NTuple{2,O}}},term,bond,config,table,false)==operators
 end

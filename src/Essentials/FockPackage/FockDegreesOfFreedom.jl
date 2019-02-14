@@ -130,7 +130,7 @@ Base.fieldnames(::Type{<:FCID})=(:center,:atom,:orbital,:spin,:nambu,:obsub,:sps
 FCID(;center=wildcard,atom=wildcard,orbital=wildcard,spin=wildcard,nambu=wildcard,obsub=wildcard,spsub=wildcard)=FCID(center,atom,orbital,spin,nambu,obsub,spsub)
 
 """
-    FockCoupling(value::Number,id::ID{N,I},obsubscripts::Subscripts,spsubscripts::Subscripts) where {N,I<:FCID}
+    FockCoupling(value::Number,id::ID{<:NTuple{N,FCID}},obsubscripts::Subscripts,spsubscripts::Subscripts) where N
     FockCoupling{N}(value::Number=1;
                     centers::Union{NTuple{N,Int},Nothing}=nothing,
                     atoms::Union{NTuple{N,Int},Nothing}=nothing,
@@ -140,12 +140,12 @@ FCID(;center=wildcard,atom=wildcard,orbital=wildcard,spin=wildcard,nambu=wildcar
 
 Fock coupling.
 """
-struct FockCoupling{N,V<:Number,I<:ID{N,<:FCID},OS<:Subscripts,SS<:Subscripts} <: Coupling{N,V,I}
+struct FockCoupling{N,V<:Number,I<:ID{<:NTuple{N,FCID}},OS<:Subscripts,SS<:Subscripts} <: Coupling{N,V,I}
     value::V
     id::I
     obsubscripts::OS
     spsubscripts::SS
-    function FockCoupling(value::Number,id::ID{N,I},obsubscripts::Subscripts,spsubscripts::Subscripts) where {N,I<:FCID}
+    function FockCoupling(value::Number,id::ID{<:NTuple{N,FCID}},obsubscripts::Subscripts,spsubscripts::Subscripts) where N
         new{N,value|>typeof,id|>typeof,obsubscripts|>typeof,spsubscripts|>typeof}(value,id,obsubscripts,spsubscripts)
     end
 end
@@ -246,8 +246,8 @@ function ⊗(fc1::FockCoupling{N},fc2::FockCoupling{N}) where N
 end
 
 """
-    expand(fc::FockCoupling,pid::PID,fock::Fock) -> FCExpand
-    expand(fc::FockCoupling,pids::NTuple{R,PID},focks::NTuple{R,Fock}) where R -> FCExpand
+    expand(fc::FockCoupling,pid::PID,fock::Fock) -> Union{FCExpand,Tuple{}}
+    expand(fc::FockCoupling,pids::NTuple{R,PID},focks::NTuple{R,Fock}) where R -> Union{FCExpand,Tuple{}}
 
 Expand a Fock coupling with the given set of point ids and Fock degrees of freedom.
 """
@@ -258,7 +258,7 @@ function expand(fc::FockCoupling,pids::NTuple{R,PID},focks::NTuple{R,Fock}) wher
     rfocks=NTuple{rank(fc),eltype(focks)}(focks[centers[i]] for i=1:rank(fc))
     nambus=propernambus(fc.id.nambus,NTuple{rank(fc),Int}(rfocks[i].nnambu for i=1:rank(fc)))
     for (i,atom) in enumerate(fc.id.atoms)
-       isa(atom,Int) && (atom≠rfocks[i].atom) && (ex=Vector{NTuple{rank(fc),Int}}(); return FCExpand(fc.value,rpids,ex,ex,nambus))
+       isa(atom,Int) && (atom≠rfocks[i].atom) && return ()
     end
     obsbexpands=expand(fc.obsubscripts,NTuple{rank(fc),Int}(rfocks[i].norbital for i=1:rank(fc)))|>collect
     spsbexpands=expand(fc.spsubscripts,NTuple{rank(fc),Int}(rfocks[i].nspin for i=1:rank(fc)))|>collect
@@ -288,7 +288,7 @@ dims(fce::FCExpand)=(length(fce.obsbexpands),length(fce.spsbexpands))
 end
 
 """
-    σ⁰(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{2,FCID},FockCoupling{2,Int,ID{2,FCID}}}
+    σ⁰(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{<:NTuple{2,FCID}},FockCoupling{2,Int,ID{<:NTuple{2,FCID}}}}
 
 The Pauli matrix σ⁰, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
 """
@@ -300,7 +300,7 @@ function σ⁰(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing)
 end
 
 """
-    σˣ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{2,FCID},FockCoupling{2,Int,ID{2,FCID}}}
+    σˣ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{<:NTuple{2,FCID}},FockCoupling{2,Int,ID{<:NTuple{2,FCID}}}}
 
 The Pauli matrix σˣ, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
 """
@@ -312,7 +312,7 @@ function σˣ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing)
 end
 
 """
-    σʸ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{2,FCID},FockCoupling{2,Int,ID{2,FCID}}}
+    σʸ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{<:NTuple{2,FCID}},FockCoupling{2,Int,ID{<:NTuple{2,FCID}}}}
 
 The Pauli matrix σʸ, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
 """
@@ -324,7 +324,7 @@ function σʸ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing)
 end
 
 """
-    σᶻ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{2,FCID},FockCoupling{2,Int,ID{2,FCID}}}
+    σᶻ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{<:NTuple{2,FCID}},FockCoupling{2,Int,ID{<:NTuple{2,FCID}}}}
 
 The Pauli matrix σᶻ, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
 """
@@ -336,7 +336,7 @@ function σᶻ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing)
 end
 
 """
-    σ⁺(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{2,FCID},FockCoupling{2,Int,ID{2,FCID}}}
+    σ⁺(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{<:NTuple{2,FCID}},FockCoupling{2,Int,ID{<:NTuple{2,FCID}}}}
 
 The Pauli matrix σ⁺, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
 """
@@ -348,7 +348,7 @@ function σ⁺(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing)
 end
 
 """
-    σ⁻(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{2,FCID},FockCoupling{2,Int,ID{2,FCID}}}
+    σ⁻(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{<:NTuple{2,FCID}},FockCoupling{2,Int,ID{<:NTuple{2,FCID}}}}
 
 The Pauli matrix σ⁻, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
 """

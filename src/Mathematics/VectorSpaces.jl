@@ -153,7 +153,7 @@ _find_(basis::B,vs::AbstractVectorSpace{B},::TableSorted{false}) where B=_findwi
 _find_(basis::B,vs::AbstractVectorSpace{B},::HasTable{false}) where B=_find_(basis,vs,vs|>typeof|>IsMultiIndexable)
 _find_(basis::B,vs::AbstractVectorSpace{B},::IsMultiIndexable{true}) where B=_findwithoutmissing_(basis,vs)
 _find_(basis::B,vs::AbstractVectorSpace{B},::IsMultiIndexable{false}) where B=_findwithmissing_(basis,vs)
-_findwithmissing_(basis::B,vs::AbstractVectorSpace{B}) where B=(index=searchsortedfirst(vs,basis);0<index<=dimension(vs) && vs[index]==basis ? index : missing)
+_findwithmissing_(basis::B,vs::AbstractVectorSpace{B}) where B=(index=searchsortedfirst(vs,basis);0<index<=dimension(vs) && vs[index]==basis ? index : nothing)
 _findwithoutmissing_(basis::B,vs::AbstractVectorSpace{B}) where B=searchsortedfirst(vs,basis)
 
 """

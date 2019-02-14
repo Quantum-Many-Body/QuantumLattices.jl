@@ -2,7 +2,7 @@ module AlgebraOverFields
 
 using Printf: @printf
 using ...Prerequisites.Interfaces: dimension
-using ...Prerequisites.NamedVectors: AbstractNamedVector
+using ...Prerequisites.NamedVectors: NamedVector
 using ...Prerequisites.TypeTraits: efficientoperations
 using ...Prerequisites.CompositeStructures: CompositeTuple,CompositeVector
 using ..Combinatorics: AbstractCombinatorics
@@ -16,11 +16,11 @@ export Element,Elements,idtype
 export rank,add!,sub!,⊗
 
 """
-    SimpleID <: AbstractNamedVector
+    SimpleID <: NamedVector
 
 A simple id is the building block of the id system of an algebra over a field.
 """
-abstract type SimpleID <: AbstractNamedVector end
+abstract type SimpleID <: NamedVector end
 
 """
     ID(ids::NTuple{N,SimpleID}) where N
@@ -29,9 +29,9 @@ abstract type SimpleID <: AbstractNamedVector end
 
 The id system of an algebra over a field.
 """
-struct ID{N,I<:SimpleID,T<:Tuple} <: CompositeTuple{T}
+struct ID{T<:Tuple{Vararg{SimpleID}}} <: CompositeTuple{T}
     contents::T
-    ID(ids::NTuple{N,SimpleID}) where N=new{N,eltype(ids),typeof(ids)}(ids)
+    ID(ids::NTuple{N,SimpleID}) where N=new{typeof(ids)}(ids)
 end
 ID(ids::SimpleID...)=ID(ids)
 @generated function ID(::Type{SID},attrs::Vararg{NTuple{N,Any},M}) where {SID<:SimpleID,N,M}
@@ -64,7 +64,7 @@ end
 Get the property of a composite id.
 """
 Base.getproperty(cid::ID,name::Symbol)=name==:contents ? getfield(cid,:contents) : idgetproperty(cid,Val(name),Val(cid|>typeof|>propertynames))
-@generated function idgetproperty(cid::ID{N,<:SimpleID},::Val{name},::Val{names}) where {N,name,names}
+@generated function idgetproperty(cid::ID{<:NTuple{N,SimpleID}},::Val{name},::Val{names}) where {N,name,names}
     index=findfirst(isequal(name),names)::Int
     exprs=[:(getfield(cid[$i],$index)) for i=1:N]
     return Expr(:tuple,exprs...)
@@ -95,12 +95,12 @@ function Base.:<(cid1::ID,cid2::ID)
 end
 
 """
-    rank(::Type{<:ID{N,I}}) where {N,I} -> Int
+    rank(::Type{<:ID{T}}) where T<:Tuple{Vararg{SimpleID}} -> Int
     rank(id::ID) -> Int
 
 Get the rank of a composite id.
 """
-rank(::Type{<:ID{N,I}}) where {N,I}=N
+rank(::Type{<:ID{T}}) where T<:Tuple{Vararg{SimpleID}}=fieldcount(T)
 rank(id::ID)=id|>typeof|>rank
 
 """
@@ -147,7 +147,7 @@ Base.findfirst(id::ID,idspace::IdSpace)=searchsortedfirst(idspace,id)
 Base.searchsortedfirst(idspace::IdSpace,id::ID)=searchsortedfirst(idspace,(rank(id),findfirst(id,idspace.sids)))
 
 """
-    Element{N,V<:Number,I<:ID{N}}
+    Element{N,V<:Number,I<:ID{<:NTuple{N,SimpleID}}}
 
 An element of an algebra over a field.
 
@@ -155,7 +155,7 @@ The first and second attributes of an element must be
 - `value::Number`: the coefficient of the element
 - `id::ID`: the id of the element
 """
-abstract type Element{N,V<:Number,I<:ID{N}} end
+abstract type Element{N,V<:Number,I<:ID{<:NTuple{N,SimpleID}}} end
 
 """
     valtype(::Type{<:Element{N,V}}) where {N,V<:Number}
@@ -169,12 +169,12 @@ Base.valtype(::Type{<:Element{N,V}}) where {N,V<:Number}=V
 Base.valtype(m::Element)=m|>typeof|>valtype
 
 """
-    idtype(::Type{<:Element{N,<:Number,I}}) where {N,I<:ID{N}}
+    idtype(::Type{<:Element{N,<:Number,I}}) where {N,I<:ID{<:NTuple{N,SimpleID}}}
     idtype(m::Element)
 
 The type of the id of an element.
 """
-idtype(::Type{<:Element{N,<:Number,I}}) where {N,I<:ID{N}}=I
+idtype(::Type{<:Element{N,<:Number,I}}) where {N,I<:ID{<:NTuple{N,SimpleID}}}=I
 idtype(m::Element)=m|>typeof|>idtype
 
 """
@@ -254,12 +254,14 @@ Base.zero(::Type{Elements{I,M}}) where {I,M}=Elements{I,M}()
 
 """
     add!(ms::Elements) -> typeof(ms)
+    add!(ms::Elements,::Nothing) -> typeof(ms)
     add!(ms::Elements,m::Element) -> typeof(ms)
     add!(ms::Elements,mms::Elements) -> typeof(ms)
 
 Get the inplace addition of elements to a set.
 """
 add!(ms::Elements)=ms
+add!(ms::Elements,::Nothing)=ms
 function add!(ms::Elements,m::Element)
     @assert ms|>valtype >: m|>typeof "add! error: dismatched type, $(ms|>valtype) and $(m|>typeof)."
     old=get(ms,m.id,nothing)
@@ -270,13 +272,15 @@ end
 add!(ms::Elements,mms::Elements)=(for m in mms|>values add!(ms,m) end; ms)
 
 """
-    sub!(ms::Elements) -> typeof(ms) -> typeof(ms)
+    sub!(ms::Elements) -> typeof(ms)
+    sub!(ms::Elements,::Nothing) -> typeof(ms)
     sub!(ms::Elements,m::Element) -> typeof(ms)
     sub!(ms::Elements,mms::Elements) -> typeof(ms)
 
 Get the inplace subtraction of elements from a set.
 """
 sub!(ms::Elements)=ms
+sub!(ms::Elements,::Nothing)=ms
 function sub!(ms::Elements,m::Element)
     @assert ms|>valtype >: m|>typeof "sub! error: dismatched type, $(ms|>valtype) and $(m|>typeof)."
     old=get(ms,m.id,nothing)
@@ -289,6 +293,10 @@ sub!(ms::Elements,mms::Elements)=(for m in mms|>values sub!(ms,m) end; ms)
 """
     +(m::Element) -> typeof(m)
     +(ms::Elements) -> typeof(ms)
+    +(m::Element,::Nothing) -> typeof(m)
+    +(::Nothing,m::Element) -> typeof(m)
+    +(ms::Elements,::Nothing) -> typeof(ms)
+    +(::Nothing,ms::Elements) -> typeof(ms)
     +(ms::Elements,m::Element) -> Elements
     +(m1::Element,m2::Element) -> Elements
     +(m::Element,ms::Elements) -> Elements
@@ -298,6 +306,10 @@ Overloaded `+` operator between elements of an algebra over a field.
 """
 Base.:+(m::Element)=m
 Base.:+(ms::Elements)=ms
+Base.:+(m::Element,::Nothing)=m
+Base.:+(::Nothing,m::Element)=m
+Base.:+(ms::Elements,::Nothing)=ms
+Base.:+(::Nothing,ms::Elements)=ms
 Base.:+(ms::Elements,m::Element)=m+ms
 Base.:+(m1::Element,m2::Element)=add!(Elements{typejoin(m1|>idtype,m2|>idtype),typejoin(m1|>typeof,m2|>typeof)}(m1.id=>m1),m2)
 Base.:+(m::Element,ms::Elements)=add!(Elements{typejoin(m|>idtype,ms|>keytype),typejoin(m|>typeof,ms|>valtype)}(ms),m)
@@ -332,6 +344,10 @@ end
 """
     -(m::Element) -> typeof(m)
     -(ms::Elements) -> typeof(ms)
+    -(m::Element,::Nothing) -> typeof(m)
+    -(::Nothing,m::Element) -> typeof(m)
+    -(ms::Elements,::Nothing) -> typeof(ms)
+    -(::Nothing,ms::Elements) -> typeof(ms)
     -(m1::Element,m2::Element) -> Elements
     -(m::Element,ms::Elements) -> Elements
     -(ms::Elements,m::Element) -> Elements
@@ -341,6 +357,10 @@ Overloaded `-` operator between elements of an algebra over a field.
 """
 Base.:-(m::Element)=m*(-1)
 Base.:-(ms::Elements)=ms*(-1)
+Base.:-(m::Element,::Nothing)=m
+Base.:-(::Nothing,m::Element)=-m
+Base.:-(ms::Elements,::Nothing)=ms
+Base.:-(::Nothing,ms::Elements)=-ms
 Base.:-(m1::Element,m2::Element)=sub!(Elements{typejoin(m1|>idtype,m2|>idtype),typejoin(m1|>typeof,m2|>typeof)}(m1.id=>m1),m2)
 Base.:-(m::Element,ms::Elements)=sub!(Elements{typejoin(m|>idtype,ms|>keytype),typejoin(m|>typeof,ms|>valtype)}(m.id=>m),ms)
 Base.:-(ms::Elements,m::Element)=sub!(Elements{typejoin(m|>idtype,ms|>keytype),typejoin(m|>typeof,ms|>valtype)}(ms),m)

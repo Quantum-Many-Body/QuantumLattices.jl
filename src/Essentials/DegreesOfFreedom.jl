@@ -2,10 +2,9 @@ module DegreesOfFreedom
 
 using Printf: @printf
 using ...Prerequisites.TypeTraits: efficientoperations
-using ...Prerequisites.NamedVectors: AbstractNamedVector
 using ...Prerequisites.CompositeStructures: CompositeDict,CompositeTuple
 using ...Mathematics.VectorSpaces: AbstractVectorSpace
-using ...Mathematics.AlgebraOverFields: SimpleID, ID, Element, Elements
+using ...Mathematics.AlgebraOverFields: SimpleID,ID,Element,Elements
 using ...Prerequisites.TypeTraits: indtosub,corder
 using ..Spatials: PID
 
@@ -539,11 +538,11 @@ function Base.iterate(sbe::SbExpand,state::Int=1)
 end
 
 """
-    Coupling{N,V<:Number,I<:ID{N}} <: Element{N,V,I}
+    Coupling{N,V<:Number,I<:ID{<:NTuple{N,SimpleID}}} <: Element{N,V,I}
 
 The coupling intra/inter interanl degrees of freedom at different lattice points.
 """
-abstract type Coupling{N,V<:Number,I<:ID{N}} <: Element{N,V,I} end
+abstract type Coupling{N,V<:Number,I<:ID{<:NTuple{N,SimpleID}}} <: Element{N,V,I} end
 
 defaultcenter(::Type{<:Coupling},i::Int,n::Int,::Val{1})=1
 defaultcenter(::Type{<:Coupling},i::Int,n::Int,::Val{R}) where R=error("defaultcenter error: no default center for a rank-$R bond.")

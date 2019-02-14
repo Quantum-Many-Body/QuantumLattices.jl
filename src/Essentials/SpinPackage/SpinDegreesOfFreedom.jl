@@ -119,7 +119,7 @@ SCID(;center=wildcard,atom=wildcard,orbital=wildcard,tag='i',subscript=wildcard)
 Base.fieldnames(::Type{<:SCID})=(:center,:atom,:orbital,:tag,:subscript)
 
 """
-    SpinCoupling(value::Number,id::ID{N,I},subscripts::Subscripts) where {N,I<:SCID}
+    SpinCoupling(value::Number,id::ID{<:NTuple{N,SCID}},subscripts::Subscripts) where N
     SpinCoupling{N}(    value::Number=1;
                         tags::NTuple{N,Char},
                         centers::Union{NTuple{N,Int},Nothing}=nothing,
@@ -129,11 +129,11 @@ Base.fieldnames(::Type{<:SCID})=(:center,:atom,:orbital,:tag,:subscript)
 
 Spin coupling.
 """
-struct SpinCoupling{N,V<:Number,I<:ID{N,<:SCID},S<:Subscripts} <: Coupling{N,V,I}
+struct SpinCoupling{N,V<:Number,I<:ID{<:NTuple{N,SCID}},S<:Subscripts} <: Coupling{N,V,I}
     value::V
     id::I
     subscripts::S
-    SpinCoupling(value::Number,id::ID{N,I},subscripts::Subscripts) where {N,I<:SCID}=new{N,value|>typeof,id|>typeof,typeof(subscripts)}(value,id,subscripts)
+    SpinCoupling(value::Number,id::ID{<:NTuple{N,SCID}},subscripts::Subscripts) where N=new{N,value|>typeof,id|>typeof,typeof(subscripts)}(value,id,subscripts)
 end
 function SpinCoupling{N}(   value::Number=1;
                             tags::NTuple{N,Char},
@@ -192,8 +192,8 @@ Get the multiplication between two spin couplings.
 Base.:*(sc1::SpinCoupling,sc2::SpinCoupling)=SpinCoupling(sc1.value*sc2.value,sc1.id*sc2.id,sc1.subscripts*sc2.subscripts)
 
 """
-    expand(sc::SpinCoupling,pid::PID,spin::Spin) -> SCExpand
-    expand(sc::SpinCoupling,pids::NTuple{N,PID},spins::NTuple{N,Spin}) where N -> SCExpand
+    expand(sc::SpinCoupling,pid::PID,spin::Spin) -> Union{SCExpand,Tuple{}}
+    expand(sc::SpinCoupling,pids::NTuple{N,PID},spins::NTuple{N,Spin}) where N -> Union{SCExpand,Tuple{}}
 
 Expand a spin coupling with the given set of point ids and spin degrees of freedom.
 """
@@ -204,7 +204,7 @@ function expand(sc::SpinCoupling,pids::NTuple{N,PID},spins::NTuple{N,Spin}) wher
     rspins=NTuple{rank(sc),eltype(spins)}(spins[centers[i]] for i=1:rank(sc))
     sps=NTuple{rank(sc),Float}(rspins[i].spin for i=1:rank(sc))
     for (i,atom) in enumerate(sc.id.atoms)
-        isa(atom,Int) && (atom≠rspins[i].atom) && return SCExpand(sc.value,rpids,Vector{NTuple{rank(sc),Int}}(),sps,sc.id.tags)
+        isa(atom,Int) && (atom≠rspins[i].atom) && return ()
     end
     sbexpands=expand(sc.subscripts,NTuple{rank(sc),Int}(rspins[i].norbital for i=1:rank(sc)))|>collect
     return SCExpand(sc.value,rpids,sbexpands,sps,sc.id.tags)
@@ -229,7 +229,7 @@ end
     Heisenberg(;centers::Union{NTuple{2,Int},Nothing}=nothing,
                 atoms::Union{NTuple{2,Int},Nothing}=nothing,
                 orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing
-                ) -> Couplings{ID{2,SCID},SpinCoupling{2,Float,ID{2,SCID}}}
+                ) -> Couplings{ID{<:NTuple{2,SCID}},SpinCoupling{2,Float,ID{<:NTuple{2,SCID}}}}
 
 The Heisenberg couplings.
 """
@@ -245,7 +245,7 @@ end
             centers::Union{NTuple{2,Int},Nothing}=nothing,
             atoms::Union{NTuple{2,Int},Nothing}=nothing,
             orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing
-            ) -> Couplings{ID{2,SCID},SpinCoupling{2,Float,ID{2,SCID}}}
+            ) -> Couplings{ID{<:NTuple{2,SCID}},SpinCoupling{2,Float,ID{<:NTuple{2,SCID}}}}
 
 The Ising couplings.
 """
@@ -255,7 +255,7 @@ function Ising(tag::Char;centers::Union{NTuple{2,Int},Nothing}=nothing,atoms::Un
 end
 
 """
-    Sˣ(;center::Union{Int,Nothing}=nothing,atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID{1,SCID},SpinCoupling{1,Float,ID{1,SCID}}}
+    Sˣ(;center::Union{Int,Nothing}=nothing,atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID{<:NTuple{2,SCID}},SpinCoupling{2,Float,ID{<:NTuple{2,SCID}}}}
 
 The single Sˣ coupling.
 """
@@ -268,7 +268,7 @@ function Sˣ(;center::Union{Int,Nothing}=nothing,atom::Union{Int,Nothing}=nothin
 end
 
 """
-    Sʸ(;center::Union{Int,Nothing}=nothing,atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID{1,SCID},SpinCoupling{1,Float,ID{1,SCID}}}
+    Sʸ(;center::Union{Int,Nothing}=nothing,atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID{<:NTuple{2,SCID}},SpinCoupling{2,Float,ID{<:NTuple{2,SCID}}}}
 
 The single Sʸ coupling.
 """
@@ -281,7 +281,7 @@ function Sʸ(;center::Union{Int,Nothing}=nothing,atom::Union{Int,Nothing}=nothin
 end
 
 """
-    Sᶻ(;center::Union{Int,Nothing}=nothing,atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID{1,SCID},SpinCoupling{1,Float,ID{1,SCID}}}
+    Sᶻ(;center::Union{Int,Nothing}=nothing,atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID{<:NTuple{2,SCID}},SpinCoupling{2,Float,ID{<:NTuple{2,SCID}}}}
 
 The single Sᶻ coupling.
 """

@@ -48,12 +48,11 @@ end
     @test sc|>repr=="3.0 S+S-S+S- sl(1:2:1:2)⊗ob(x:y:x:y)@(1-2-1-2) with $(sc1.id[1].subscript) && $(sc1.id[2].subscript) && $(sc2.id[1].subscript) && $(sc2.id[2].subscript)"
 
     ex=expand(SpinCoupling{2}(2.0,tags=('+','-'),atoms=(1,1)),PID(1,1),Spin(atom=2,norbital=2,spin=1.0))
-    @test IsMultiIndexable(typeof(ex))==IsMultiIndexable(true)
-    @test MultiIndexOrderStyle(typeof(ex))==MultiIndexOrderStyle('C')
-    @test dims(ex)==(0,)
     @test collect(ex)==[]
 
     ex=expand(SpinCoupling{2}(2.0,tags=('+','-'),atoms=(1,2),orbitals=(1,2)),(PID(1,1),PID(1,2)),(Spin(atom=1,norbital=2,spin=1.0),Spin(atom=2,norbital=2,spin=1.0)))
+    @test IsMultiIndexable(typeof(ex))==IsMultiIndexable(true)
+    @test MultiIndexOrderStyle(typeof(ex))==MultiIndexOrderStyle('C')
     @test dims(ex)==(1,)
     @test collect(ex)==[(2.0,(SIndex(1,1,1,1.0,'+'),SIndex(1,2,2,1.0,'-')))]
 

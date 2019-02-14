@@ -45,12 +45,11 @@ end
     @test fc|>repr=="3.0 sl(2:2)⊗ob(x:y)⊗sp(x:1)@(1-2) with ($(fc2.id[1].obsub),$(fc1.id[2].spsub)) && ($(fc2.id[1].obsub),$(fc1.id[2].spsub))"
 
     ex=expand(FockCoupling{2}(2.0,atoms=(1,1)),PID(1,1),Fock(atom=2,norbital=2,nspin=2,nnambu=2))
-    @test IsMultiIndexable(typeof(ex))==IsMultiIndexable(true)
-    @test MultiIndexOrderStyle(typeof(ex))==MultiIndexOrderStyle('C')
-    @test dims(ex)==(0,0)
     @test collect(ex)==[]
 
     ex=expand(FockCoupling{2}(2.0,atoms=(1,2),orbitals=(1,2)),(PID(1,1),PID(1,2)),(Fock(atom=1,norbital=2,nspin=2,nnambu=2),Fock(atom=2,norbital=2,nspin=2,nnambu=2)))
+    @test IsMultiIndexable(typeof(ex))==IsMultiIndexable(true)
+    @test MultiIndexOrderStyle(typeof(ex))==MultiIndexOrderStyle('C')
     @test dims(ex)==(1,2)
     @test collect(ex)==[(2.0,(FIndex(1,1,1,1,2),FIndex(1,2,2,1,1))),
                         (2.0,(FIndex(1,1,1,2,2),FIndex(1,2,2,2,1)))
