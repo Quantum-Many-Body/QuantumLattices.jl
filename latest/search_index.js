@@ -1425,11 +1425,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/NamedVectors.html#AbstractNamedVector-1",
+    "location": "man/Prerequisites/NamedVectors.html#NamedVector-1",
     "page": "Named vectors",
-    "title": "AbstractNamedVector",
+    "title": "NamedVector",
     "category": "section",
-    "text": "AbstractNamedVector defines the abstract type for all concrete named vectors.Main features include:Values can be accessed or modified either by the . operator or by the [] operator.\nComparisons, such as ≡, ≢, ==, ≠, >, <, ≥, ≤ are supported. Therefore a vector of named vectors can be sorted by the default sort function.\nHash is supported by hash. Therefore, a named vector can be used as the key of a dict or set.\nIteration over its fieldnames is supported by keys, over its values is supported by values, over its field-value pairs is supported by pairs. A reverse iteration is also supported.To subtype it, please note:A concrete type can be either mutable or immutable as you need, which is different from tuples.\nThe fields of a concrete type can be of the same type or not. For the former, we denote the named vector as \"homogeneous\" while for the latter as \"inhomogeneous\". For homogeneous ones, we define a sub abstract type, HomoNamedVector for further optimization of the default methods. See HomoNamedVector below.\nIt is recommended to overload the Base.fieldnames function for concrete subtypes to ensure type stability and improve efficiency, which though is not a necessity. A template for such an overloading is\nBase.fieldnames(Type{<:YourNamedVector})=(:fieldname1,:fieldname2,...)\nFor all concrete subtypes, if inner constructors are defined, the one which has the same interface with the default one must be implemented. Otherwise, some functionalities will not work.\nArithmetic operations, such as +, -, *, /, %, ÷, etc. are NOT supported. However, the function map is implemented, which can help users do the overloadings of these operations.We define a macro @namedvector as the type factory to decorate a \"raw\" struct to be a subtype of AbstractNamedVector. Here, \"raw\" means the struct to be decorated has no explicit supertype other than Any, neither inner constructors as well. For example,@namedvector mutable struct InHomoNV\n    scope::String\n    site::Int\nendThis macro encapsulate the overloading of Base.fieldnames, and you have no need to do this by hand any more."
+    "text": "NamedVector defines the abstract type for all concrete named vectors.Main features include:Values can be accessed or modified either by the . operator or by the [] operator.\nComparisons, such as ≡, ≢, ==, ≠, >, <, ≥, ≤ are supported. Therefore a vector of named vectors can be sorted by the default sort function.\nHash is supported by hash. Therefore, a named vector can be used as the key of a dict or set.\nIteration over its fieldnames is supported by keys, over its values is supported by values, over its field-value pairs is supported by pairs. A reverse iteration is also supported.To subtype it, please note:A concrete type can be either mutable or immutable as you need, which is different from tuples.\nThe fields of a concrete type can be of the same type or not. For the former, we denote the named vector as \"homogeneous\" while for the latter as \"inhomogeneous\". For homogeneous ones, we define a sub abstract type, HomoNamedVector for further optimization of the default methods. See HomoNamedVector below.\nIt is recommended to overload the Base.fieldnames function for concrete subtypes to ensure type stability and improve efficiency, which though is not a necessity. A template for such an overloading is\nBase.fieldnames(Type{<:YourNamedVector})=(:fieldname1,:fieldname2,...)\nFor all concrete subtypes, if inner constructors are defined, the one which has the same interface with the default one must be implemented. Otherwise, some functionalities will not work.\nArithmetic operations, such as +, -, *, /, %, ÷, etc. are NOT supported. However, the function map is implemented, which can help users do the overloadings of these operations.We define a macro @namedvector as the type factory to decorate a \"raw\" struct to be a subtype of NamedVector. Here, \"raw\" means the struct to be decorated has no explicit supertype other than Any, neither inner constructors as well. For example,@namedvector mutable struct InHomoNV\n    scope::String\n    site::Int\nendThis macro encapsulate the overloading of Base.fieldnames, and you have no need to do this by hand any more."
 },
 
 {
@@ -1437,15 +1437,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Named vectors",
     "title": "HomoNamedVector",
     "category": "section",
-    "text": "HomoNamedVector is the subtype of AbstractNamedVector that of all its fields share the same type. Compared to AbstractNamedVector, one more default method is implemented with HomoNamedVector, i.e. eltype, which returns the type of its fields. This function ensures the type stability of all the methods that involves an iteration of the field values of a named vector. Therefore, homogeneous named vector are usually more efficient than inhomogeneous ones. Use homogeneous ones as much as possible unless the code efficiency does not matter.To subtype HomoNamedVector, all the suggestions mentioned in the previous subsection for AbstractNamedVector also applies. A recommended template for a subtype is[mutable] struct YourNamedVector{T} <: HomoNamedVector{T}\n    filed1::T\n    filed2::T\n    ...\nendWe also provide a macro @homonamedvector to help the definition of concrete homogeneous named vector, where you only need specify the type name, field names, data type and optionally whether the subtype is mutable. For example,@homonamedvector HomoNVWithoutParameter (:scope,:site) Int mutable=true\n@homonamedvector HomoNVWithParameter (:scope,:site) (<:Real) mutable=trueThis macro also integrates the Base.fieldnames function, thus its overloading by hand is on longer needed."
-},
-
-{
-    "location": "man/Prerequisites/NamedVectors.html#Hamiltonian.Prerequisites.NamedVectors.AbstractNamedVector",
-    "page": "Named vectors",
-    "title": "Hamiltonian.Prerequisites.NamedVectors.AbstractNamedVector",
-    "category": "type",
-    "text": "AbstractNamedVector\n\nAbstract type for all named vectors.\n\n\n\n\n\n"
+    "text": "HomoNamedVector is the subtype of NamedVector that of all its fields share the same type. Compared to NamedVector, one more default method is implemented with HomoNamedVector, i.e. eltype, which returns the type of its fields. This function ensures the type stability of all the methods that involves an iteration of the field values of a named vector. Therefore, homogeneous named vector are usually more efficient than inhomogeneous ones. Use homogeneous ones as much as possible unless the code efficiency does not matter.To subtype HomoNamedVector, all the suggestions mentioned in the previous subsection for NamedVector also applies. A recommended template for a subtype is[mutable] struct YourNamedVector{T} <: HomoNamedVector{T}\n    filed1::T\n    filed2::T\n    ...\nendWe also provide a macro @homonamedvector to help the definition of concrete homogeneous named vector, where you only need specify the type name, field names, data type and optionally whether the subtype is mutable. For example,@homonamedvector HomoNVWithoutParameter (:scope,:site) Int mutable=true\n@homonamedvector HomoNVWithParameter (:scope,:site) (<:Real) mutable=trueThis macro also integrates the Base.fieldnames function, thus its overloading by hand is on longer needed."
 },
 
 {
@@ -1454,6 +1446,14 @@ var documenterSearchIndex = {"docs": [
     "title": "Hamiltonian.Prerequisites.NamedVectors.HomoNamedVector",
     "category": "type",
     "text": "HomoNamedVector{T}\n\nAbstract type for all homogeneous named vectors.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Prerequisites/NamedVectors.html#Hamiltonian.Prerequisites.NamedVectors.NamedVector",
+    "page": "Named vectors",
+    "title": "Hamiltonian.Prerequisites.NamedVectors.NamedVector",
+    "category": "type",
+    "text": "NamedVector\n\nAbstract type for all named vectors.\n\n\n\n\n\n"
 },
 
 {
@@ -1469,31 +1469,31 @@ var documenterSearchIndex = {"docs": [
     "page": "Named vectors",
     "title": "Hamiltonian.Prerequisites.NamedVectors.@namedvector",
     "category": "macro",
-    "text": "@namedvector structdef::Expr\n\nDecorate a \"raw\" struct to be a subtype of AbstractNamedVector. Here, \"raw\" means that the input struct has no explicit supertype and no inner constructors.\n\n\n\n\n\n"
+    "text": "@namedvector structdef::Expr\n\nDecorate a \"raw\" struct to be a subtype of NamedVector. Here, \"raw\" means that the input struct has no explicit supertype and no inner constructors.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/NamedVectors.html#Base.:<-Tuple{Hamiltonian.Prerequisites.NamedVectors.AbstractNamedVector,Hamiltonian.Prerequisites.NamedVectors.AbstractNamedVector}",
+    "location": "man/Prerequisites/NamedVectors.html#Base.:<-Tuple{Hamiltonian.Prerequisites.NamedVectors.NamedVector,Hamiltonian.Prerequisites.NamedVectors.NamedVector}",
     "page": "Named vectors",
     "title": "Base.:<",
     "category": "method",
-    "text": "<(nv1::AbstractNamedVector,nv2::AbstractNamedVector) -> Bool\nisless(nv1::AbstractNamedVector,nv2::AbstractNamedVector) -> Bool\n\nCompare two named vectors and judge whether the first is less than the second.\n\n\n\n\n\n"
+    "text": "<(nv1::NamedVector,nv2::NamedVector) -> Bool\nisless(nv1::NamedVector,nv2::NamedVector) -> Bool\n\nCompare two named vectors and judge whether the first is less than the second.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/NamedVectors.html#Base.:==-Tuple{Hamiltonian.Prerequisites.NamedVectors.AbstractNamedVector,Hamiltonian.Prerequisites.NamedVectors.AbstractNamedVector}",
+    "location": "man/Prerequisites/NamedVectors.html#Base.:==-Tuple{Hamiltonian.Prerequisites.NamedVectors.NamedVector,Hamiltonian.Prerequisites.NamedVectors.NamedVector}",
     "page": "Named vectors",
     "title": "Base.:==",
     "category": "method",
-    "text": "==(nv1::AbstractNamedVector,nv2::AbstractNamedVector) -> Bool\nisequal(nv1::AbstractNamedVector,nv2::AbstractNamedVector) -> Bool\n\nOverloaded equivalent operator. Two named vector are equal to each other if and only if their keys as well as their values are equal to each other.\n\nnote: Note\nIt is not necessary for two named vectors to be of the same concrete type to be equal to each other.\n\n\n\n\n\n"
+    "text": "==(nv1::NamedVector,nv2::NamedVector) -> Bool\nisequal(nv1::NamedVector,nv2::NamedVector) -> Bool\n\nOverloaded equivalent operator. Two named vector are equal to each other if and only if their keys as well as their values are equal to each other.\n\nnote: Note\nIt is not necessary for two named vectors to be of the same concrete type to be equal to each other.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/NamedVectors.html#Base.convert-Tuple{Type{Tuple},Hamiltonian.Prerequisites.NamedVectors.AbstractNamedVector}",
+    "location": "man/Prerequisites/NamedVectors.html#Base.convert-Tuple{Type{Tuple},Hamiltonian.Prerequisites.NamedVectors.NamedVector}",
     "page": "Named vectors",
     "title": "Base.convert",
     "category": "method",
-    "text": "convert(::Type{Tuple},nv::AbstractNamedVector) -> Tuple\nconvert(::Type{NV},nv::Tuple) where NV<:AbstractNamedVector -> NV\n\nConvert a named vector to tuple and vice versa.\n\n\n\n\n\n"
+    "text": "convert(::Type{Tuple},nv::NamedVector) -> Tuple\nconvert(::Type{NV},nv::Tuple) where NV<:NamedVector -> NV\n\nConvert a named vector to tuple and vice versa.\n\n\n\n\n\n"
 },
 
 {
@@ -1505,19 +1505,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/NamedVectors.html#Base.getindex-Tuple{Hamiltonian.Prerequisites.NamedVectors.AbstractNamedVector,Int64}",
+    "location": "man/Prerequisites/NamedVectors.html#Base.getindex-Tuple{Hamiltonian.Prerequisites.NamedVectors.NamedVector,Int64}",
     "page": "Named vectors",
     "title": "Base.getindex",
     "category": "method",
-    "text": "getindex(nv::AbstractNamedVector,index::Int)\n\nGet the value by the [] syntax.\n\n\n\n\n\n"
+    "text": "getindex(nv::NamedVector,index::Int)\n\nGet the value by the [] syntax.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/NamedVectors.html#Base.hash-Tuple{Hamiltonian.Prerequisites.NamedVectors.AbstractNamedVector,UInt64}",
+    "location": "man/Prerequisites/NamedVectors.html#Base.hash-Tuple{Hamiltonian.Prerequisites.NamedVectors.NamedVector,UInt64}",
     "page": "Named vectors",
     "title": "Base.hash",
     "category": "method",
-    "text": "hash(nv::AbstractNamedVector,h::UInt)\n\nHash a concrete AbstractNamedVector.\n\n\n\n\n\n"
+    "text": "hash(nv::NamedVector,h::UInt)\n\nHash a concrete NamedVector.\n\n\n\n\n\n"
 },
 
 {
@@ -1525,79 +1525,63 @@ var documenterSearchIndex = {"docs": [
     "page": "Named vectors",
     "title": "Base.iterate",
     "category": "function",
-    "text": "iterate(nv::AbstractNamedVector,state=1)\niterate(rv::Iterators.Reverse{<:AbstractNamedVector},state=length(rv.itr))\n\nIterate or reversely iterate over the values of a concrete AbstractNamedVector.\n\n\n\n\n\n"
+    "text": "iterate(nv::NamedVector,state=1)\niterate(rv::Iterators.Reverse{<:NamedVector},state=length(rv.itr))\n\nIterate or reversely iterate over the values of a concrete NamedVector.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/NamedVectors.html#Base.keys-Tuple{Hamiltonian.Prerequisites.NamedVectors.AbstractNamedVector}",
+    "location": "man/Prerequisites/NamedVectors.html#Base.keys-Tuple{Hamiltonian.Prerequisites.NamedVectors.NamedVector}",
     "page": "Named vectors",
     "title": "Base.keys",
     "category": "method",
-    "text": "keys(nv::AbstractNamedVector) -> NTuple(nv|>fieldcount,Symbol)\n\nIterate over the names.\n\n\n\n\n\n"
+    "text": "keys(nv::NamedVector) -> NTuple(nv|>fieldcount,Symbol)\nvalues(nv::NamedVector) -> Tuple\npairs(nv::NamedVector) -> Base.Generator\n\nIterate over the names.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/NamedVectors.html#Base.length-Union{Tuple{Type{NV}}, Tuple{NV}} where NV<:Hamiltonian.Prerequisites.NamedVectors.AbstractNamedVector",
+    "location": "man/Prerequisites/NamedVectors.html#Base.length-Union{Tuple{Type{NV}}, Tuple{NV}} where NV<:Hamiltonian.Prerequisites.NamedVectors.NamedVector",
     "page": "Named vectors",
     "title": "Base.length",
     "category": "method",
-    "text": "length(::Type{NV}) where NV<:AbstractNamedVector -> Int\nlength(nv::AbstractNamedVector) -> Int\n\nGet the length of a concrete AbstractNamedVector.\n\n\n\n\n\n"
+    "text": "length(::Type{NV}) where NV<:NamedVector -> Int\nlength(nv::NamedVector) -> Int\n\nGet the length of a concrete NamedVector.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/NamedVectors.html#Base.map-Union{Tuple{NV}, Tuple{Any,Vararg{NV,N} where N}} where NV<:Hamiltonian.Prerequisites.NamedVectors.AbstractNamedVector",
+    "location": "man/Prerequisites/NamedVectors.html#Base.map-Union{Tuple{NV}, Tuple{Any,Vararg{NV,N} where N}} where NV<:Hamiltonian.Prerequisites.NamedVectors.NamedVector",
     "page": "Named vectors",
     "title": "Base.map",
     "category": "method",
-    "text": "map(f,nvs::NV...) where NV<:AbstractNamedVector -> NV\n\nApply function f elementwise on the input named vectors.\n\n\n\n\n\n"
+    "text": "map(f,nvs::NV...) where NV<:NamedVector -> NV\n\nApply function f elementwise on the input named vectors.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/NamedVectors.html#Base.pairs-Tuple{Hamiltonian.Prerequisites.NamedVectors.AbstractNamedVector}",
-    "page": "Named vectors",
-    "title": "Base.pairs",
-    "category": "method",
-    "text": "pairs(nv::AbstractNamedVector)\n\nIterate over the name=>value pairs.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Prerequisites/NamedVectors.html#Base.replace-Tuple{Hamiltonian.Prerequisites.NamedVectors.AbstractNamedVector}",
+    "location": "man/Prerequisites/NamedVectors.html#Base.replace-Tuple{Hamiltonian.Prerequisites.NamedVectors.NamedVector}",
     "page": "Named vectors",
     "title": "Base.replace",
     "category": "method",
-    "text": "replace(nv::AbstractNamedVector;kwargs...) -> typeof(nv)\n\nReturn a copy of a concrete AbstractNamedVector with some of the field values replaced by the keyword arguments.\n\n\n\n\n\n"
+    "text": "replace(nv::NamedVector;kwargs...) -> typeof(nv)\n\nReturn a copy of a concrete NamedVector with some of the field values replaced by the keyword arguments.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/NamedVectors.html#Base.setindex!-Tuple{Hamiltonian.Prerequisites.NamedVectors.AbstractNamedVector,Any,Int64}",
+    "location": "man/Prerequisites/NamedVectors.html#Base.setindex!-Tuple{Hamiltonian.Prerequisites.NamedVectors.NamedVector,Any,Int64}",
     "page": "Named vectors",
     "title": "Base.setindex!",
     "category": "method",
-    "text": "setindex!(nv::AbstractNamedVector,value,index::Int)\n\nSet the value by the [] syntax if mutable.\n\n\n\n\n\n"
+    "text": "setindex!(nv::NamedVector,value,index::Int)\n\nSet the value by the [] syntax if mutable.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/NamedVectors.html#Base.show-Tuple{IO,Hamiltonian.Prerequisites.NamedVectors.AbstractNamedVector}",
+    "location": "man/Prerequisites/NamedVectors.html#Base.show-Tuple{IO,Hamiltonian.Prerequisites.NamedVectors.NamedVector}",
     "page": "Named vectors",
     "title": "Base.show",
     "category": "method",
-    "text": "show(io::IO,nv::AbstractNamedVector)\n\nShow a concrete AbstractNamedVector.\n\n\n\n\n\n"
+    "text": "show(io::IO,nv::NamedVector)\n\nShow a concrete NamedVector.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/NamedVectors.html#Base.values-Tuple{Hamiltonian.Prerequisites.NamedVectors.AbstractNamedVector}",
-    "page": "Named vectors",
-    "title": "Base.values",
-    "category": "method",
-    "text": "values(nv::AbstractNamedVector) -> Tuple\n\nIterate over the values.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Prerequisites/NamedVectors.html#Base.zero-Union{Tuple{Type{NV}}, Tuple{NV}} where NV<:Hamiltonian.Prerequisites.NamedVectors.AbstractNamedVector",
+    "location": "man/Prerequisites/NamedVectors.html#Base.zero-Union{Tuple{Type{NV}}, Tuple{NV}} where NV<:Hamiltonian.Prerequisites.NamedVectors.NamedVector",
     "page": "Named vectors",
     "title": "Base.zero",
     "category": "method",
-    "text": "zero(::Type{NV}) where NV<:AbstractNamedVector -> NV\nzero(nv::AbstractNamedVector) -> typeof(nv)\n\nGet a concrete AbstractNamedVector with all values being zero.\n\n\n\n\n\n"
+    "text": "zero(::Type{NV}) where NV<:NamedVector -> NV\nzero(nv::NamedVector) -> typeof(nv)\n\nGet a concrete NamedVector with all values being zero.\n\n\n\n\n\n"
 },
 
 {
@@ -2069,7 +2053,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Algebra over fields",
     "title": "Hamiltonian.Mathematics.AlgebraOverFields.Element",
     "category": "type",
-    "text": "Element{N,V<:Number,I<:ID{N}}\n\nAn element of an algebra over a field.\n\nThe first and second attributes of an element must be\n\nvalue::Number: the coefficient of the element\nid::ID: the id of the element\n\n\n\n\n\n"
+    "text": "Element{N,V<:Number,I<:ID{<:NTuple{N,SimpleID}}}\n\nAn element of an algebra over a field.\n\nThe first and second attributes of an element must be\n\nvalue::Number: the coefficient of the element\nid::ID: the id of the element\n\n\n\n\n\n"
 },
 
 {
@@ -2109,15 +2093,15 @@ var documenterSearchIndex = {"docs": [
     "page": "Algebra over fields",
     "title": "Hamiltonian.Mathematics.AlgebraOverFields.SimpleID",
     "category": "type",
-    "text": "SimpleID <: AbstractNamedVector\n\nA simple id is the building block of the id system of an algebra over a field.\n\n\n\n\n\n"
+    "text": "SimpleID <: NamedVector\n\nA simple id is the building block of the id system of an algebra over a field.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Mathematics.AlgebraOverFields.idtype-Union{Tuple{Type{#s67} where #s67<:(Element{N,#s16,I} where #s16<:Number)}, Tuple{I}, Tuple{N}} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{N,I,T} where T<:Tuple where I<:Hamiltonian.Mathematics.AlgebraOverFields.SimpleID) where N",
+    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Mathematics.AlgebraOverFields.idtype-Union{Tuple{Type{#s15} where #s15<:(Element{N,#s14,I} where #s14<:Number)}, Tuple{I}, Tuple{N}} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{#s16} where #s16<:Tuple{Vararg{Hamiltonian.Mathematics.AlgebraOverFields.SimpleID,N}}) where N",
     "page": "Algebra over fields",
     "title": "Hamiltonian.Mathematics.AlgebraOverFields.idtype",
     "category": "method",
-    "text": "idtype(::Type{<:Element{N,<:Number,I}}) where {N,I<:ID{N}}\nidtype(m::Element)\n\nThe type of the id of an element.\n\n\n\n\n\n"
+    "text": "idtype(::Type{<:Element{N,<:Number,I}}) where {N,I<:ID{<:NTuple{N,SimpleID}}}\nidtype(m::Element)\n\nThe type of the id of an element.\n\n\n\n\n\n"
 },
 
 {
@@ -2133,11 +2117,11 @@ var documenterSearchIndex = {"docs": [
     "page": "Algebra over fields",
     "title": "Hamiltonian.Prerequisites.Interfaces.add!",
     "category": "method",
-    "text": "add!(ms::Elements) -> typeof(ms)\nadd!(ms::Elements,m::Element) -> typeof(ms)\nadd!(ms::Elements,mms::Elements) -> typeof(ms)\n\nGet the inplace addition of elements to a set.\n\n\n\n\n\n"
+    "text": "add!(ms::Elements) -> typeof(ms)\nadd!(ms::Elements,::Nothing) -> typeof(ms)\nadd!(ms::Elements,m::Element) -> typeof(ms)\nadd!(ms::Elements,mms::Elements) -> typeof(ms)\n\nGet the inplace addition of elements to a set.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Prerequisites.Interfaces.rank-Union{Tuple{Type{#s68} where #s68<:(Element{N,V,I} where I<:(ID{N,I,T} where T<:Tuple where I<:SimpleID) where V<:Number)}, Tuple{N}} where N",
+    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Prerequisites.Interfaces.rank-Union{Tuple{Type{#s68} where #s68<:(Element{N,V,I} where I<:(ID{#s69} where #s69<:Tuple{Vararg{SimpleID,N}}) where V<:Number)}, Tuple{N}} where N",
     "page": "Algebra over fields",
     "title": "Hamiltonian.Prerequisites.Interfaces.rank",
     "category": "method",
@@ -2145,11 +2129,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Prerequisites.Interfaces.rank-Union{Tuple{Type{#s68} where #s68<:(ID{N,I,T} where T<:Tuple)}, Tuple{I}, Tuple{N}} where I where N",
+    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Prerequisites.Interfaces.rank-Union{Tuple{Type{#s68} where #s68<:ID{T}}, Tuple{T}} where T<:Tuple{Vararg{Hamiltonian.Mathematics.AlgebraOverFields.SimpleID,N} where N}",
     "page": "Algebra over fields",
     "title": "Hamiltonian.Prerequisites.Interfaces.rank",
     "category": "method",
-    "text": "rank(::Type{<:ID{N,I}}) where {N,I} -> Int\nrank(id::ID) -> Int\n\nGet the rank of a composite id.\n\n\n\n\n\n"
+    "text": "rank(::Type{<:ID{T}}) where T<:Tuple{Vararg{SimpleID}} -> Int\nrank(id::ID) -> Int\n\nGet the rank of a composite id.\n\n\n\n\n\n"
 },
 
 {
@@ -2157,7 +2141,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Algebra over fields",
     "title": "Hamiltonian.Prerequisites.Interfaces.sub!",
     "category": "method",
-    "text": "sub!(ms::Elements) -> typeof(ms) -> typeof(ms)\nsub!(ms::Elements,m::Element) -> typeof(ms)\nsub!(ms::Elements,mms::Elements) -> typeof(ms)\n\nGet the inplace subtraction of elements from a set.\n\n\n\n\n\n"
+    "text": "sub!(ms::Elements) -> typeof(ms)\nsub!(ms::Elements,::Nothing) -> typeof(ms)\nsub!(ms::Elements,m::Element) -> typeof(ms)\nsub!(ms::Elements,mms::Elements) -> typeof(ms)\n\nGet the inplace subtraction of elements from a set.\n\n\n\n\n\n"
 },
 
 {
@@ -2181,7 +2165,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Algebra over fields",
     "title": "Base.:+",
     "category": "method",
-    "text": "+(m::Element) -> typeof(m)\n+(ms::Elements) -> typeof(ms)\n+(ms::Elements,m::Element) -> Elements\n+(m1::Element,m2::Element) -> Elements\n+(m::Element,ms::Elements) -> Elements\n+(ms1::Elements,ms2::Elements) -> Elements\n\nOverloaded + operator between elements of an algebra over a field.\n\n\n\n\n\n"
+    "text": "+(m::Element) -> typeof(m)\n+(ms::Elements) -> typeof(ms)\n+(m::Element,::Nothing) -> typeof(m)\n+(::Nothing,m::Element) -> typeof(m)\n+(ms::Elements,::Nothing) -> typeof(ms)\n+(::Nothing,ms::Elements) -> typeof(ms)\n+(ms::Elements,m::Element) -> Elements\n+(m1::Element,m2::Element) -> Elements\n+(m::Element,ms::Elements) -> Elements\n+(ms1::Elements,ms2::Elements) -> Elements\n\nOverloaded + operator between elements of an algebra over a field.\n\n\n\n\n\n"
 },
 
 {
@@ -2189,7 +2173,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Algebra over fields",
     "title": "Base.:-",
     "category": "method",
-    "text": "-(m::Element) -> typeof(m)\n-(ms::Elements) -> typeof(ms)\n-(m1::Element,m2::Element) -> Elements\n-(m::Element,ms::Elements) -> Elements\n-(ms::Elements,m::Element) -> Elements\n-(ms1::Elements,ms2::Elements) -> Elements\n\nOverloaded - operator between elements of an algebra over a field.\n\n\n\n\n\n"
+    "text": "-(m::Element) -> typeof(m)\n-(ms::Elements) -> typeof(ms)\n-(m::Element,::Nothing) -> typeof(m)\n-(::Nothing,m::Element) -> typeof(m)\n-(ms::Elements,::Nothing) -> typeof(ms)\n-(::Nothing,ms::Elements) -> typeof(ms)\n-(m1::Element,m2::Element) -> Elements\n-(m::Element,ms::Elements) -> Elements\n-(ms::Elements,m::Element) -> Elements\n-(ms1::Elements,ms2::Elements) -> Elements\n\nOverloaded - operator between elements of an algebra over a field.\n\n\n\n\n\n"
 },
 
 {
@@ -2281,7 +2265,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Base.valtype-Union{Tuple{Type{#s68} where #s68<:(Element{N,V,I} where I<:(ID{N,I,T} where T<:Tuple where I<:SimpleID))}, Tuple{V}, Tuple{N}} where V<:Number where N",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.valtype-Union{Tuple{Type{#s68} where #s68<:(Element{N,V,I} where I<:(ID{#s69} where #s69<:Tuple{Vararg{SimpleID,N}}))}, Tuple{V}, Tuple{N}} where V<:Number where N",
     "page": "Algebra over fields",
     "title": "Base.valtype",
     "category": "method",
@@ -3437,7 +3421,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Degrees of freedom",
     "title": "Hamiltonian.Essentials.DegreesOfFreedom.Coupling",
     "category": "type",
-    "text": "Coupling{N,V<:Number,I<:ID{N}} <: Element{N,V,I}\n\nThe coupling intra/inter interanl degrees of freedom at different lattice points.\n\n\n\n\n\n"
+    "text": "Coupling{N,V<:Number,I<:ID{<:NTuple{N,SimpleID}}} <: Element{N,V,I}\n\nThe coupling intra/inter interanl degrees of freedom at different lattice points.\n\n\n\n\n\n"
 },
 
 {
@@ -3837,7 +3821,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Terms",
     "title": "Hamiltonian.Essentials.Terms.Operator",
     "category": "type",
-    "text": "Operator{N,V<:Number,I<:ID{N,<:OID}} <: Element{N,V,I}\n\nAbstract type for an operator.\n\n\n\n\n\n"
+    "text": "Operator{N,V<:Number,I<:ID{<:NTuple{N,OID}}} <: Element{N,V,I}\n\nAbstract type for an operator.\n\n\n\n\n\n"
 },
 
 {
@@ -3889,7 +3873,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Spatials.icoord-Tuple{Operator{1,V,I} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{1,#s254,T} where T<:Tuple where #s254<:OID) where V<:Number}",
+    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Spatials.icoord-Tuple{Operator{1,V,I} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{#s254} where #s254<:Tuple{OID}) where V<:Number}",
     "page": "Terms",
     "title": "Hamiltonian.Essentials.Spatials.icoord",
     "category": "method",
@@ -3921,11 +3905,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.isHermitian-Union{Tuple{ID{N,#s236,T} where T<:Tuple where #s236<:OID}, Tuple{N}} where N",
+    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.isHermitian-Union{Tuple{ID{#s236} where #s236<:Tuple{Vararg{OID,N}}}, Tuple{N}} where N",
     "page": "Terms",
     "title": "Hamiltonian.Essentials.Terms.isHermitian",
     "category": "method",
-    "text": "isHermitian(id::ID{N,<:OID}) where N -> Bool\n\nJudge whether an operator id is Hermitian.\n\n\n\n\n\n"
+    "text": "isHermitian(oid::ID{<:NTuple{N,OID}}) where N -> Bool\n\nJudge whether an operator id is Hermitian.\n\n\n\n\n\n"
 },
 
 {
@@ -4029,7 +4013,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Terms",
     "title": "Base.adjoint",
     "category": "method",
-    "text": "adjoint(oid::OID) -> OID\nadjoint(id::ID{N,<:OID}) where N -> ID{N,<:OID}\n\nGet the adjoint of an operator id.\n\n\n\n\n\n"
+    "text": "adjoint(oid::OID) -> typeof(oid)\nadjoint(oid::ID{<:NTuple{N,OID}}) where N -> typeof(oid)\n\nGet the adjoint of an operator id.\n\n\n\n\n\n"
 },
 
 {
@@ -4105,7 +4089,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Spatials.rcoord-Tuple{Operator{1,V,I} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{1,#s254,T} where T<:Tuple where #s254<:OID) where V<:Number}",
+    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Spatials.rcoord-Tuple{Operator{1,V,I} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{#s254} where #s254<:Tuple{OID}) where V<:Number}",
     "page": "Terms",
     "title": "Hamiltonian.Essentials.Spatials.rcoord",
     "category": "method",
@@ -4245,7 +4229,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "Hamiltonian.Essentials.FockPackage.FockCoupling",
     "category": "type",
-    "text": "FockCoupling(value::Number,id::ID{N,I},obsubscripts::Subscripts,spsubscripts::Subscripts) where {N,I<:FCID}\nFockCoupling{N}(value::Number=1;\n                centers::Union{NTuple{N,Int},Nothing}=nothing,\n                atoms::Union{NTuple{N,Int},Nothing}=nothing,\n                orbitals::Union{NTuple{N,Int},Subscript,Nothing}=nothing,\n                spins::Union{NTuple{N,Int},Subscript,Nothing}=nothing,\n                nambus::Union{NTuple{N,Int},Nothing}=nothing) where N\n\nFock coupling.\n\n\n\n\n\n"
+    "text": "FockCoupling(value::Number,id::ID{<:NTuple{N,FCID}},obsubscripts::Subscripts,spsubscripts::Subscripts) where N\nFockCoupling{N}(value::Number=1;\n                centers::Union{NTuple{N,Int},Nothing}=nothing,\n                atoms::Union{NTuple{N,Int},Nothing}=nothing,\n                orbitals::Union{NTuple{N,Int},Subscript,Nothing}=nothing,\n                spins::Union{NTuple{N,Int},Subscript,Nothing}=nothing,\n                nambus::Union{NTuple{N,Int},Nothing}=nothing) where N\n\nFock coupling.\n\n\n\n\n\n"
 },
 
 {
@@ -4277,7 +4261,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "Hamiltonian.Essentials.FockPackage.σʸ",
     "category": "method",
-    "text": "σʸ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{2,FCID},FockCoupling{2,Int,ID{2,FCID}}}\n\nThe Pauli matrix σʸ, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
+    "text": "σʸ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{<:NTuple{2,FCID}},FockCoupling{2,Int,ID{<:NTuple{2,FCID}}}}\n\nThe Pauli matrix σʸ, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
 },
 
 {
@@ -4285,7 +4269,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "Hamiltonian.Essentials.FockPackage.σˣ",
     "category": "method",
-    "text": "σˣ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{2,FCID},FockCoupling{2,Int,ID{2,FCID}}}\n\nThe Pauli matrix σˣ, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
+    "text": "σˣ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{<:NTuple{2,FCID}},FockCoupling{2,Int,ID{<:NTuple{2,FCID}}}}\n\nThe Pauli matrix σˣ, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
 },
 
 {
@@ -4293,7 +4277,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "Hamiltonian.Essentials.FockPackage.σᶻ",
     "category": "method",
-    "text": "σᶻ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{2,FCID},FockCoupling{2,Int,ID{2,FCID}}}\n\nThe Pauli matrix σᶻ, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
+    "text": "σᶻ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{<:NTuple{2,FCID}},FockCoupling{2,Int,ID{<:NTuple{2,FCID}}}}\n\nThe Pauli matrix σᶻ, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
 },
 
 {
@@ -4301,7 +4285,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "Hamiltonian.Essentials.FockPackage.σ⁰",
     "category": "method",
-    "text": "σ⁰(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{2,FCID},FockCoupling{2,Int,ID{2,FCID}}}\n\nThe Pauli matrix σ⁰, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
+    "text": "σ⁰(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{<:NTuple{2,FCID}},FockCoupling{2,Int,ID{<:NTuple{2,FCID}}}}\n\nThe Pauli matrix σ⁰, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
 },
 
 {
@@ -4309,7 +4293,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "Hamiltonian.Essentials.FockPackage.σ⁺",
     "category": "method",
-    "text": "σ⁺(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{2,FCID},FockCoupling{2,Int,ID{2,FCID}}}\n\nThe Pauli matrix σ⁺, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
+    "text": "σ⁺(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{<:NTuple{2,FCID}},FockCoupling{2,Int,ID{<:NTuple{2,FCID}}}}\n\nThe Pauli matrix σ⁺, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
 },
 
 {
@@ -4317,11 +4301,11 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "Hamiltonian.Essentials.FockPackage.σ⁻",
     "category": "method",
-    "text": "σ⁻(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{2,FCID},FockCoupling{2,Int,ID{2,FCID}}}\n\nThe Pauli matrix σ⁻, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
+    "text": "σ⁻(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{<:NTuple{2,FCID}},FockCoupling{2,Int,ID{<:NTuple{2,FCID}}}}\n\nThe Pauli matrix σ⁻, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Prerequisites.Interfaces.:⊗-Union{Tuple{N}, Tuple{FockCoupling{N,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(ID{N,#s254,T} where T<:Tuple where #s254<:FCID) where V<:Number,FockCoupling{N,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(ID{N,#s254,T} where T<:Tuple where #s254<:FCID) where V<:Number}} where N",
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Prerequisites.Interfaces.:⊗-Union{Tuple{N}, Tuple{FockCoupling{N,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(ID{#s254} where #s254<:Tuple{Vararg{FCID,N}}) where V<:Number,FockCoupling{N,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(ID{#s254} where #s254<:Tuple{Vararg{FCID,N}}) where V<:Number}} where N",
     "page": "Fock package",
     "title": "Hamiltonian.Prerequisites.Interfaces.:⊗",
     "category": "method",
@@ -4333,7 +4317,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "Hamiltonian.Prerequisites.Interfaces.expand",
     "category": "method",
-    "text": "expand(fc::FockCoupling,pid::PID,fock::Fock) -> FCExpand\nexpand(fc::FockCoupling,pids::NTuple{R,PID},focks::NTuple{R,Fock}) where R -> FCExpand\n\nExpand a Fock coupling with the given set of point ids and Fock degrees of freedom.\n\n\n\n\n\n"
+    "text": "expand(fc::FockCoupling,pid::PID,fock::Fock) -> Union{FCExpand,Tuple{}}\nexpand(fc::FockCoupling,pids::NTuple{R,PID},focks::NTuple{R,Fock}) where R -> Union{FCExpand,Tuple{}}\n\nExpand a Fock coupling with the given set of point ids and Fock degrees of freedom.\n\n\n\n\n\n"
 },
 
 {
@@ -4493,7 +4477,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spin package",
     "title": "Hamiltonian.Essentials.SpinPackage.SpinCoupling",
     "category": "type",
-    "text": "SpinCoupling(value::Number,id::ID{N,I},subscripts::Subscripts) where {N,I<:SCID}\nSpinCoupling{N}(    value::Number=1;\n                    tags::NTuple{N,Char},\n                    centers::Union{NTuple{N,Int},Nothing}=nothing,\n                    atoms::Union{NTuple{N,Int},Nothing}=nothing,\n                    orbitals::Union{NTuple{N,Int},Subscript,Nothing}=nothing\n                    ) where N\n\nSpin coupling.\n\n\n\n\n\n"
+    "text": "SpinCoupling(value::Number,id::ID{<:NTuple{N,SCID}},subscripts::Subscripts) where N\nSpinCoupling{N}(    value::Number=1;\n                    tags::NTuple{N,Char},\n                    centers::Union{NTuple{N,Int},Nothing}=nothing,\n                    atoms::Union{NTuple{N,Int},Nothing}=nothing,\n                    orbitals::Union{NTuple{N,Int},Subscript,Nothing}=nothing\n                    ) where N\n\nSpin coupling.\n\n\n\n\n\n"
 },
 
 {
@@ -4501,7 +4485,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spin package",
     "title": "Hamiltonian.Essentials.SpinPackage.Heisenberg",
     "category": "method",
-    "text": "Heisenberg(;centers::Union{NTuple{2,Int},Nothing}=nothing,\n            atoms::Union{NTuple{2,Int},Nothing}=nothing,\n            orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing\n            ) -> Couplings{ID{2,SCID},SpinCoupling{2,Float,ID{2,SCID}}}\n\nThe Heisenberg couplings.\n\n\n\n\n\n"
+    "text": "Heisenberg(;centers::Union{NTuple{2,Int},Nothing}=nothing,\n            atoms::Union{NTuple{2,Int},Nothing}=nothing,\n            orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing\n            ) -> Couplings{ID{<:NTuple{2,SCID}},SpinCoupling{2,Float,ID{<:NTuple{2,SCID}}}}\n\nThe Heisenberg couplings.\n\n\n\n\n\n"
 },
 
 {
@@ -4509,7 +4493,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spin package",
     "title": "Hamiltonian.Essentials.SpinPackage.Ising",
     "category": "method",
-    "text": "Ising(  tag::Char;\n        centers::Union{NTuple{2,Int},Nothing}=nothing,\n        atoms::Union{NTuple{2,Int},Nothing}=nothing,\n        orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing\n        ) -> Couplings{ID{2,SCID},SpinCoupling{2,Float,ID{2,SCID}}}\n\nThe Ising couplings.\n\n\n\n\n\n"
+    "text": "Ising(  tag::Char;\n        centers::Union{NTuple{2,Int},Nothing}=nothing,\n        atoms::Union{NTuple{2,Int},Nothing}=nothing,\n        orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing\n        ) -> Couplings{ID{<:NTuple{2,SCID}},SpinCoupling{2,Float,ID{<:NTuple{2,SCID}}}}\n\nThe Ising couplings.\n\n\n\n\n\n"
 },
 
 {
@@ -4525,7 +4509,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spin package",
     "title": "Hamiltonian.Essentials.SpinPackage.Sʸ",
     "category": "method",
-    "text": "Sʸ(;center::Union{Int,Nothing}=nothing,atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID{1,SCID},SpinCoupling{1,Float,ID{1,SCID}}}\n\nThe single Sʸ coupling.\n\n\n\n\n\n"
+    "text": "Sʸ(;center::Union{Int,Nothing}=nothing,atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID{<:NTuple{2,SCID}},SpinCoupling{2,Float,ID{<:NTuple{2,SCID}}}}\n\nThe single Sʸ coupling.\n\n\n\n\n\n"
 },
 
 {
@@ -4533,7 +4517,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spin package",
     "title": "Hamiltonian.Essentials.SpinPackage.Sˣ",
     "category": "method",
-    "text": "Sˣ(;center::Union{Int,Nothing}=nothing,atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID{1,SCID},SpinCoupling{1,Float,ID{1,SCID}}}\n\nThe single Sˣ coupling.\n\n\n\n\n\n"
+    "text": "Sˣ(;center::Union{Int,Nothing}=nothing,atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID{<:NTuple{2,SCID}},SpinCoupling{2,Float,ID{<:NTuple{2,SCID}}}}\n\nThe single Sˣ coupling.\n\n\n\n\n\n"
 },
 
 {
@@ -4541,7 +4525,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spin package",
     "title": "Hamiltonian.Essentials.SpinPackage.Sᶻ",
     "category": "method",
-    "text": "Sᶻ(;center::Union{Int,Nothing}=nothing,atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID{1,SCID},SpinCoupling{1,Float,ID{1,SCID}}}\n\nThe single Sᶻ coupling.\n\n\n\n\n\n"
+    "text": "Sᶻ(;center::Union{Int,Nothing}=nothing,atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID{<:NTuple{2,SCID}},SpinCoupling{2,Float,ID{<:NTuple{2,SCID}}}}\n\nThe single Sᶻ coupling.\n\n\n\n\n\n"
 },
 
 {
@@ -4557,7 +4541,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spin package",
     "title": "Hamiltonian.Prerequisites.Interfaces.expand",
     "category": "method",
-    "text": "expand(sc::SpinCoupling,pid::PID,spin::Spin) -> SCExpand\nexpand(sc::SpinCoupling,pids::NTuple{N,PID},spins::NTuple{N,Spin}) where N -> SCExpand\n\nExpand a spin coupling with the given set of point ids and spin degrees of freedom.\n\n\n\n\n\n"
+    "text": "expand(sc::SpinCoupling,pid::PID,spin::Spin) -> Union{SCExpand,Tuple{}}\nexpand(sc::SpinCoupling,pids::NTuple{N,PID},spins::NTuple{N,Spin}) where N -> Union{SCExpand,Tuple{}}\n\nExpand a spin coupling with the given set of point ids and spin degrees of freedom.\n\n\n\n\n\n"
 },
 
 {
