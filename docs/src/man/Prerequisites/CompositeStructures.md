@@ -4,7 +4,7 @@ CurrentModule=Hamiltonian.Prerequisites.CompositeStructures
 
 # Composite structures
 
-In principle, Julia is not an object-oriented programming language. For example, only abstract types can be inherited so that subtype cannot inherit fields from their parents. Therefore, Julia prefers composition over inheritance. However, to make a new concrete type behaves much alike another one, tedious reputitions of redifining the generic interfaces are usually not avoidable, especially for the basic types in Julia base. In this module, we implement three such composited types, [`CompositeNTuple`](@ref), [`CompositeVector`](@ref) and [`CompositeDict`](@ref), for the sake of future usages.
+In principle, Julia is not an object-oriented programming language. For example, only abstract types can be inherited so that subtype cannot inherit fields from their parents. Therefore, Julia prefers composition over inheritance. However, to make a new concrete type behaves much alike another one, tedious reputitions of redifining the generic interfaces are usually not avoidable, especially for the basic types in Julia base. In this module, we implement three such composited types, [`CompositeTuple`](@ref), [`CompositeVector`](@ref) and [`CompositeDict`](@ref), for the sake of future usages.
 
 ## CompositeTuple and CompositeNTuple
 

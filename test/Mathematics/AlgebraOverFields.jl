@@ -64,11 +64,13 @@ end
     @test opt|>typeof|>idtype==ID{Tuple{SMPID{Int,Int}}}
     @test opt|>rank==1
     @test opt|>typeof|>rank==1
-    @test +opt==opt+nothing==nothing+opt==opt==opt-nothing
+    @test +opt==opt
     @test opt*2==2*opt==BasicOperator(2.0,ID(SMPID(1,1)))
-    @test -opt==BasicOperator(-1.0,ID(SMPID(1,1)))==nothing-opt
+    @test -opt==BasicOperator(-1.0,ID(SMPID(1,1)))
     @test opt/2==BasicOperator(0.5,ID(SMPID(1,1)))
     @test opt^2==opt*opt
+    @test opt+empty(Elements)==empty(Elements)+opt==opt-empty(Elements)
+    @test empty(Elements)-opt==-opt
 
     opt1=BasicOperator(1.0,ID(SMPID(1,1)))
     opt2=BasicOperator(2.0,ID(SMPID(1,2)))
@@ -76,14 +78,14 @@ end
     @test opts|>zero==Elements{opt|>idtype,opt|>typeof}()
     @test opts|>typeof|>zero==Elements{opt|>idtype,opt|>typeof}()
     @test add!(deepcopy(opts))==opts
-    @test add!(deepcopy(opts),nothing)==opts
+    @test add!(deepcopy(opts),empty(Elements))==opts
     @test sub!(deepcopy(opts))==opts
-    @test sub!(deepcopy(opts),nothing)==opts
-    @test +opts==opts+nothing==nothing+opts==opts==opts-nothing
+    @test sub!(deepcopy(opts),empty(Elements))==opts
+    @test +opts==opts+empty(Elements)==empty(Elements)+opts==opts==opts-empty(Elements)
     @test opt1+opt2==opts
     @test opt1+opts+opt2==Elements(opt1*2,opt2*2)
     @test opts+opts==Elements(opt1*2,opt2*2)
-    @test -opts==Elements(-opt1,-opt2)==nothing-opts
+    @test -opts==Elements(-opt1,-opt2)==empty(Elements)-opts
     @test opts|>zero==opt1-opt1==opts-opts
     @test opts-opt1==Elements(opt2)
     @test opt1-opts==Elements(-opt2)

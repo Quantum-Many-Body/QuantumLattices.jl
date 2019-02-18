@@ -5,8 +5,8 @@ using Reexport: @reexport
 include("Spatials.jl")
 include("DegreesOfFreedom.jl")
 include("Terms.jl")
-include("FockPackage/FockPackage.jl")
-include("SpinPackage/SpinPackage.jl")
+include("FockPackage.jl")
+include("SpinPackage.jl")
 
 @reexport using .Spatials
 @reexport using .DegreesOfFreedom

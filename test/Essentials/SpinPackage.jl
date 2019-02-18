@@ -20,8 +20,9 @@ end
     @test dims(spin)==(2,6)
     @test inds(SID(1,1.0,'i'),spin)==(1,1)
     @test SID((1,2),spin)==SID(1,1.0,'x')
-    @test spin|>collect==[SID(1,1.0,'i'),SID(1,1.0,'x'),SID(1,1.0,'y'),SID(1,1.0,'z'),SID(1,1.0,'+'),SID(1,1.0,'-'),
-                          SID(2,1.0,'i'),SID(2,1.0,'x'),SID(2,1.0,'y'),SID(2,1.0,'z'),SID(2,1.0,'+'),SID(2,1.0,'-')]
+    @test spin|>collect==[  SID(1,1.0,'i'),SID(1,1.0,'x'),SID(1,1.0,'y'),SID(1,1.0,'z'),SID(1,1.0,'+'),SID(1,1.0,'-'),
+                            SID(2,1.0,'i'),SID(2,1.0,'x'),SID(2,1.0,'y'),SID(2,1.0,'z'),SID(2,1.0,'+'),SID(2,1.0,'-')
+                            ]
 end
 
 @testset "SIndex" begin
@@ -83,6 +84,18 @@ end
     @test Sᶻ(orbital=1)==Couplings(SpinCoupling{1}(1.0,tags=('z',),orbitals=(1,)))
 end
 
-@testset "SpinCouplings" begin
-    @test SpinCouplings(Val(2),tags=('+','-'))==Couplings(SpinCoupling{2}(tags=('+','-')))
+@testset "matrix" begin
+    @test isapprox(matrix(SID(1,0.5,'i')),[[1.0,0.0] [0.0,1.0]])
+    @test isapprox(matrix(SID(1,0.5,'z')),[[-0.5,0.0] [0.0,0.5]])
+    @test isapprox(matrix(SID(1,0.5,'x')),[[0.0,0.5] [0.5,0.0]])
+    @test isapprox(matrix(SID(1,0.5,'y')),[[0.0,-0.5im] [0.5im,0.0]])
+    @test isapprox(matrix(SID(1,0.5,'+')),[[0.0,1.0] [0.0,0.0]])
+    @test isapprox(matrix(SID(1,0.5,'-')),[[0.0,0.0] [1.0,0.0]])
+
+    @test isapprox(matrix(SID(1,1.0,'i')),[[1.0,0.0,0.0] [0.0,1.0,0.0] [0.0,0.0,1.0]])
+    @test isapprox(matrix(SID(1,1.0,'z')),[[-1.0,0.0,0.0] [0.0,0.0,0.0] [0.0,0.0,1.0]])
+    @test isapprox(matrix(SID(1,1.0,'x')),[[0.0,√2/2,0.0] [√2/2,0.0,√2/2] [0.0,√2/2,0.0]])
+    @test isapprox(matrix(SID(1,1.0,'y')),[[0.0,-√2im/2,0.0] [√2im/2,0.0,-√2im/2] [0.0,√2im/2,0.0]])
+    @test isapprox(matrix(SID(1,1.0,'+')),[[0.0,√2,0.0] [0.0,0.0,√2] [0.0,0.0,0.0]])
+    @test isapprox(matrix(SID(1,1.0,'-')),[[0.0,0.0,0.0] [√2,0.0,0.0] [0.0,√2,0.0]])
 end

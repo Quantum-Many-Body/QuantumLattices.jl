@@ -58,7 +58,7 @@ end
 end
 
 @testset "IDFConfig" begin
-    config=IDFConfig(pid->SlFock((pid.site-1)%2+1,2),SlFock,[PID(1,1),PID(1,2)])
+    config=IDFConfig{SlFock}(pid->SlFock((pid.site-1)%2+1,2),[PID(1,1),PID(1,2)])
     @test convert(Dict,config)==Dict(PID(1,1)=>SlFock(1,2),PID(1,2)=>SlFock(2,2))
     replace!(config,PID(2,1),PID(2,2))
     @test convert(Dict,config)==Dict(PID(2,1)=>SlFock(1,2),PID(2,2)=>SlFock(2,2))
@@ -72,7 +72,7 @@ end
     table=Table([SlIndex(1,1,1),SlIndex(1,1,2)],by=by)
     @test table==Dict(SlIndex(1,1,1)=>1,SlIndex(1,1,2)=>1)
 
-    config=IDFConfig(pid->SlFock((pid.site-1)%2+1,2),SlFock,[PID(1,1),PID(1,2)])
+    config=IDFConfig{SlFock}(pid->SlFock((pid.site-1)%2+1,2),[PID(1,1),PID(1,2)])
     inds1=(SlIndex(PID(1,1),iid) for iid in SlFock(1,2))|>collect
     inds2=(SlIndex(PID(1,2),iid) for iid in SlFock(2,2))|>collect
     @test Table(config)==Table([inds1;inds2])

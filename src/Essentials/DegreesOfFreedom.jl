@@ -173,17 +173,17 @@ Filter the attributes of a "filtered attributes" method.
 Base.filter(f::Function,indextotuple::FilteredAttributes)=FilteredAttributes(Tuple(attr for attr in indextotuple.attributes if f(attr)))
 
 """
-    IDFConfig(map::Function,::Type{I},pids::AbstractVector{<:PID}=[]) where I<:Internal
+    IDFConfig{I}(map::Function,pids::Union{AbstractVector{<:PID},Tuple{}}=()) where I<:Internal
 
 Configuration of the internal degrees of freedom at a lattice.
 
 `map` maps a `PID` to an `Internal`.
 """
-struct IDFConfig{M<:Function,P<:PID,I<:Internal} <: CompositeDict{P,I}
+struct IDFConfig{I<:Internal,M<:Function,P<:PID} <: CompositeDict{P,I}
     map::M
     contents::Dict{P,I}
 end
-function IDFConfig(map::Function,::Type{I},pids::AbstractVector{<:PID}=[]) where I<:Internal
+function IDFConfig{I}(map::Function,pids::Union{AbstractVector{<:PID},Tuple{}}=()) where I<:Internal
     contents=Dict{pids|>eltype,I}()
     for pid in pids
         contents[pid]=map(pid)

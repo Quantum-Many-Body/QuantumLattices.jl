@@ -1,18 +1,19 @@
+module SpinPackage
+
 using Printf: @printf,@sprintf
 using ..Spatials: PID
 using ..DegreesOfFreedom: IID,Internal,Index,FilteredAttributes,Subscript,Subscripts,Coupling,Couplings
-using ...Prerequisites: Float,decimaltostr
+using ...Prerequisites: Float,decimaltostr,delta
 using ...Mathematics.VectorSpaces: AbstractVectorSpace,IsMultiIndexable,MultiIndexOrderStyle
 using ...Mathematics.AlgebraOverFields: SimpleID,ID
 
 import ..DegreesOfFreedom: wildcard,constant,defaultcenter,propercenters
-import ...Prerequisites.Interfaces: dims,inds,expand,rank
+import ...Prerequisites.Interfaces: dims,inds,expand,rank,matrix
 
-export dims,inds,expand
+export dims,inds,expand,matrix
 export SID,Spin,SIndex,usualspinindextotuple
 export SCID,SpinCoupling
 export Heisenberg,Ising,Sˣ,Sʸ,Sᶻ
-export SpinCouplings
 
 const sidtagmap=Dict(1=>'i',2=>'x',3=>'y',4=>'z',5=>'+',6=>'-')
 const sidseqmap=Dict(v=>k for (k,v) in sidtagmap)
@@ -294,20 +295,24 @@ function Sᶻ(;center::Union{Int,Nothing}=nothing,atom::Union{Int,Nothing}=nothi
 end
 
 """
-    SpinCouplings(  ::Val{N},value::Number=1;
-                    tags::NTuple{N,Char},
-                    centers::Union{NTuple{N,Int},Nothing}=nothing,
-                    atoms::Union{NTuple{N,Int},Nothing}=nothing,
-                    orbitals::Union{NTuple{N,Int},Subscript,Nothing}=nothing
-                    ) where N -> Couplings
+    matrix(sid::SID,dtype::Type{<:Number}=Complex{Float}) -> Matrix{dtype}
 
-Construct an instance of `Couplings` that contains only one element of `SpinCoupling`.
+Get the matrix representation of a sid.
 """
-function SpinCouplings( ::Val{N},value::Number=1;
-                        tags::NTuple{N,Char},
-                        centers::Union{NTuple{N,Int},Nothing}=nothing,
-                        atoms::Union{NTuple{N,Int},Nothing}=nothing,
-                        orbitals::Union{NTuple{N,Int},Subscript,Nothing}=nothing
-                        ) where N
-    return Couplings(SpinCoupling{N}(value,tags=tags,centers=centers,atoms=atoms,orbitals=orbitals))
+function matrix(sid::SID,dtype::Type{<:Number}=Complex{Float})
+    N=Int(2*sid.spin+1)
+    result=zeros(dtype,(N,N))
+    for i=1:N,j=1:N
+        row,col=N+1-i,N+1-j
+        m,n=sid.spin+1-i,sid.spin+1-j
+        result[row,col]=sid.tag=='i' ? delta(i,j) :
+                        sid.tag=='x' ? (delta(i+1,j)+delta(i,j+1))*sqrt(sid.spin*(sid.spin+1)-m*n)/2 :
+                        sid.tag=='y' ? (delta(i+1,j)-delta(i,j+1))*sqrt(sid.spin*(sid.spin+1)-m*n)/2im :
+                        sid.tag=='z' ? delta(i,j)*m :
+                        sid.tag=='+' ? delta(i+1,j)*sqrt(sid.spin*(sid.spin+1)-m*n) :
+                                       delta(i,j+1)*sqrt(sid.spin*(sid.spin+1)-m*n)
+    end
+    return result
 end
+
+end # module

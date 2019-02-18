@@ -247,21 +247,30 @@ end
 
 Get a zero set of elements.
 
-A zero set of elements is defined to be the empty one.
+A zero set of elements is defined to be the one with no elements.
 """
 Base.zero(ms::Elements)=ms|>typeof|>zero
 Base.zero(::Type{Elements{I,M}}) where {I,M}=Elements{I,M}()
 
 """
+    empty(::Type{<:Elements}) -> Tuple{}
+
+Get the empty elements.
+
+The empty elements is defined to be the empty tuple.
+"""
+Base.empty(::Type{<:Elements})=()
+
+"""
     add!(ms::Elements) -> typeof(ms)
-    add!(ms::Elements,::Nothing) -> typeof(ms)
+    add!(ms::Elements,::Tuple{}) -> typeof(ms)
     add!(ms::Elements,m::Element) -> typeof(ms)
     add!(ms::Elements,mms::Elements) -> typeof(ms)
 
 Get the inplace addition of elements to a set.
 """
 add!(ms::Elements)=ms
-add!(ms::Elements,::Nothing)=ms
+add!(ms::Elements,::Tuple{})=ms
 function add!(ms::Elements,m::Element)
     @assert ms|>valtype >: m|>typeof "add! error: dismatched type, $(ms|>valtype) and $(m|>typeof)."
     old=get(ms,m.id,nothing)
@@ -273,14 +282,14 @@ add!(ms::Elements,mms::Elements)=(for m in mms|>values add!(ms,m) end; ms)
 
 """
     sub!(ms::Elements) -> typeof(ms)
-    sub!(ms::Elements,::Nothing) -> typeof(ms)
+    sub!(ms::Elements,::Tuple{}) -> typeof(ms)
     sub!(ms::Elements,m::Element) -> typeof(ms)
     sub!(ms::Elements,mms::Elements) -> typeof(ms)
 
 Get the inplace subtraction of elements from a set.
 """
 sub!(ms::Elements)=ms
-sub!(ms::Elements,::Nothing)=ms
+sub!(ms::Elements,::Tuple{})=ms
 function sub!(ms::Elements,m::Element)
     @assert ms|>valtype >: m|>typeof "sub! error: dismatched type, $(ms|>valtype) and $(m|>typeof)."
     old=get(ms,m.id,nothing)
@@ -293,10 +302,10 @@ sub!(ms::Elements,mms::Elements)=(for m in mms|>values sub!(ms,m) end; ms)
 """
     +(m::Element) -> typeof(m)
     +(ms::Elements) -> typeof(ms)
-    +(m::Element,::Nothing) -> typeof(m)
-    +(::Nothing,m::Element) -> typeof(m)
-    +(ms::Elements,::Nothing) -> typeof(ms)
-    +(::Nothing,ms::Elements) -> typeof(ms)
+    +(m::Element,::Tuple{}) -> typeof(m)
+    +(::Tuple{},m::Element) -> typeof(m)
+    +(ms::Elements,::Tuple{}) -> typeof(ms)
+    +(::Tuple{},ms::Elements) -> typeof(ms)
     +(ms::Elements,m::Element) -> Elements
     +(m1::Element,m2::Element) -> Elements
     +(m::Element,ms::Elements) -> Elements
@@ -306,10 +315,10 @@ Overloaded `+` operator between elements of an algebra over a field.
 """
 Base.:+(m::Element)=m
 Base.:+(ms::Elements)=ms
-Base.:+(m::Element,::Nothing)=m
-Base.:+(::Nothing,m::Element)=m
-Base.:+(ms::Elements,::Nothing)=ms
-Base.:+(::Nothing,ms::Elements)=ms
+Base.:+(m::Element,::Tuple{})=m
+Base.:+(::Tuple{},m::Element)=m
+Base.:+(ms::Elements,::Tuple{})=ms
+Base.:+(::Tuple{},ms::Elements)=ms
 Base.:+(ms::Elements,m::Element)=m+ms
 Base.:+(m1::Element,m2::Element)=add!(Elements{typejoin(m1|>idtype,m2|>idtype),typejoin(m1|>typeof,m2|>typeof)}(m1.id=>m1),m2)
 Base.:+(m::Element,ms::Elements)=add!(Elements{typejoin(m|>idtype,ms|>keytype),typejoin(m|>typeof,ms|>valtype)}(ms),m)
@@ -344,10 +353,10 @@ end
 """
     -(m::Element) -> typeof(m)
     -(ms::Elements) -> typeof(ms)
-    -(m::Element,::Nothing) -> typeof(m)
-    -(::Nothing,m::Element) -> typeof(m)
-    -(ms::Elements,::Nothing) -> typeof(ms)
-    -(::Nothing,ms::Elements) -> typeof(ms)
+    -(m::Element,::Tuple{}) -> typeof(m)
+    -(::Tuple{},m::Element) -> typeof(m)
+    -(ms::Elements,::Tuple{}) -> typeof(ms)
+    -(::Tuple{},ms::Elements) -> typeof(ms)
     -(m1::Element,m2::Element) -> Elements
     -(m::Element,ms::Elements) -> Elements
     -(ms::Elements,m::Element) -> Elements
@@ -357,10 +366,10 @@ Overloaded `-` operator between elements of an algebra over a field.
 """
 Base.:-(m::Element)=m*(-1)
 Base.:-(ms::Elements)=ms*(-1)
-Base.:-(m::Element,::Nothing)=m
-Base.:-(::Nothing,m::Element)=-m
-Base.:-(ms::Elements,::Nothing)=ms
-Base.:-(::Nothing,ms::Elements)=-ms
+Base.:-(m::Element,::Tuple{})=m
+Base.:-(::Tuple{},m::Element)=-m
+Base.:-(ms::Elements,::Tuple{})=ms
+Base.:-(::Tuple{},ms::Elements)=-ms
 Base.:-(m1::Element,m2::Element)=sub!(Elements{typejoin(m1|>idtype,m2|>idtype),typejoin(m1|>typeof,m2|>typeof)}(m1.id=>m1),m2)
 Base.:-(m::Element,ms::Elements)=sub!(Elements{typejoin(m|>idtype,ms|>keytype),typejoin(m|>typeof,ms|>valtype)}(m.id=>m),ms)
 Base.:-(ms::Elements,m::Element)=sub!(Elements{typejoin(m|>idtype,ms|>keytype),typejoin(m|>typeof,ms|>valtype)}(ms),m)

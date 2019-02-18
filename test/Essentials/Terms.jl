@@ -5,7 +5,6 @@ using Hamiltonian.Essentials.DegreesOfFreedom: IDFConfig,Table
 using Hamiltonian.Essentials.FockPackage: FIndex,Fock,σˣ,σᶻ,usualfockindextotuple
 using Hamiltonian.Prerequisites: Float
 using Hamiltonian.Mathematics.AlgebraOverFields: ID
-import Hamiltonian.Essentials.Terms: termamplitude
 
 @testset "OID" begin
     oid=OID(FIndex(1,1,1,1,1),rcoord=SVector(0.0,-0.0),icoord=nothing,seq=1)
@@ -56,15 +55,19 @@ end
 end
 
 @testset "TermFunction" begin
-    @test termamplitude==termamplitude
-    @test isequal(termamplitude,termamplitude)
-    @test termamplitude()==1
+    ta=TermAmplitude()
+    @test ta()==1
+
+    ta=TermAmplitude(x->x+3.0)
+    @test ta(1.0)==4.0
 
     termcouplings=TermCouplings(σˣ("sp"))
     @test termcouplings()==σˣ("sp")
     @test termcouplings|>rank==termcouplings|>typeof|>rank==2
 
     termcouplings=TermCouplings((σˣ("sp"),σᶻ("sp")),i->(i-1)%2+1)
+    @test termcouplings==TermCouplings((termcouplings.candidates,termcouplings.choice))
+    @test isequal(termcouplings,TermCouplings((termcouplings.candidates,termcouplings.choice)))
     @test termcouplings(1)==σˣ("sp")
     @test termcouplings(2)==σᶻ("sp")
 
@@ -72,11 +75,14 @@ end
     @test termmodulate(t=1)==1
     @test termmodulate(mu=1)==nothing
     @test termmodulate()==nothing
+
+    termmodulate=TermModulate(:t,t->t*2.0)
+    @test termmodulate(2)==4
 end
 
 @testset "Term" begin
     point=Point(PID(1,1),(0.0,0.0),(0.0,0.0))
-    config=IDFConfig(pid->Fock(norbital=2,nspin=2,nnambu=2),Fock,[PID(1,1)])
+    config=IDFConfig{Fock}(pid->Fock(norbital=2,nspin=2,nnambu=2),[PID(1,1)])
 
     term=Term{'F',:Term}(:mu,1.5,0,couplings=σˣ("sp"),amplitude=(bond->3),modulate=false)
     @test term|>statistics==term|>typeof|>statistics=='F'
@@ -95,8 +101,8 @@ end
 
     p1=Point(PID(1,1),(0.0,0.0),(0.0,0.0))
     p2=Point(PID(1,2),(0.0,0.0),(0.0,0.0))
-    config=IDFConfig(pid->Fock(norbital=2,nspin=2,nnambu=2),Fock,[PID(1,1),PID(1,2)])
-    term=Term{'F',:Term}(:mu,1.5,0,couplings=TermCouplings((σᶻ("sp")⊗σˣ("ob"),σˣ("sp")⊗σˣ("ob")),bond->bond.pid.site%2+1),amplitude=bond->3,modulate=true)
+    config=IDFConfig{Fock}(pid->Fock(norbital=2,nspin=2,nnambu=2),[PID(1,1),PID(1,2)])
+    term=Term{'F',:Term}(:mu,1.5,0,couplings=((σᶻ("sp")⊗σˣ("ob"),σˣ("sp")⊗σˣ("ob")),bond->bond.pid.site%2+1),amplitude=bond->3,modulate=true)
     @test repr(term,p1,config)=="tm: 4.5 ob(2:1)⊗sp(1:2)\ntm: 4.5 ob(2:1)⊗sp(2:1)\ntm: 4.5 ob(1:2)⊗sp(2:1)\ntm: 4.5 ob(1:2)⊗sp(1:2)"
     @test repr(term,p2,config)=="tm: 4.5 ob(2:1)⊗sp(2:2)\ntm: -4.5 ob(1:2)⊗sp(1:1)\ntm: -4.5 ob(2:1)⊗sp(1:1)\ntm: 4.5 ob(1:2)⊗sp(2:2)"
     @test one(term)==replace(term,value=1.0)
@@ -109,7 +115,7 @@ end
 
 @testset "expand" begin
     point=Point(PID(1,1),(0.0,0.0),(0.0,0.0))
-    config=IDFConfig(pid->Fock(norbital=2,nspin=2,nnambu=2),Fock,[PID(1,1)])
+    config=IDFConfig{Fock}(pid->Fock(norbital=2,nspin=2,nnambu=2),[PID(1,1)])
     table=Table(config,by=usualfockindextotuple)
     O=OID{FIndex{Int},SVector{2,Float},Nothing,Int}
     term=Term{'F',:Term}(:mu,1.5,0,couplings=σᶻ("sp")⊗σᶻ("ob"),amplitude=bond->3.0,modulate=true)
@@ -123,14 +129,15 @@ end
     @test expand(TOperator{2,Float,ID{NTuple{2,O}}},term,point,config,table,false)==operators*2
 
     bond=Bond(1,Point(PID('b',2),(1.5,1.5),(1.0,1.0)),Point(PID('a',1),(0.5,0.5),(0.0,0.0)))
-    config=IDFConfig(pid->Fock(norbital=2,nspin=2,nnambu=2),Fock,[PID('a',1),PID('b',2)])
+    config=IDFConfig{Fock}(pid->Fock(norbital=2,nspin=2,nnambu=2),[PID('a',1),PID('b',2)])
     table=Table(config,by=usualfockindextotuple)
     O=OID{FIndex{Char},SVector{2,Float},SVector{2,Float},Int}
     term=Term{'F',:Term}(:t,1.5,1,couplings=σᶻ("sp")⊗σᶻ("ob"),amplitude=bond->3.0,modulate=true)
-    operators=Operators(TOperator(-4.5,(FIndex('a',1,1,2,2),FIndex('b',2,1,2,1)),rcoords=(SVector(0.5,0.5),SVector(1.5,1.5)),icoords=(SVector(0.0,0.0),SVector(1.0,1.0)),seqs=(2,6)),
-                        TOperator(+4.5,(FIndex('a',1,1,1,2),FIndex('b',2,1,1,1)),rcoords=(SVector(0.5,0.5),SVector(1.5,1.5)),icoords=(SVector(0.0,0.0),SVector(1.0,1.0)),seqs=(1,5)),
-                        TOperator(+4.5,(FIndex('a',1,2,2,2),FIndex('b',2,2,2,1)),rcoords=(SVector(0.5,0.5),SVector(1.5,1.5)),icoords=(SVector(0.0,0.0),SVector(1.0,1.0)),seqs=(4,8)),
-                        TOperator(-4.5,(FIndex('a',1,2,1,2),FIndex('b',2,2,1,1)),rcoords=(SVector(0.5,0.5),SVector(1.5,1.5)),icoords=(SVector(0.0,0.0),SVector(1.0,1.0)),seqs=(3,7))
+    operators=Operators(
+                TOperator(-4.5,(FIndex('a',1,1,2,2),FIndex('b',2,1,2,1)),rcoords=(SVector(0.5,0.5),SVector(1.5,1.5)),icoords=(SVector(0.0,0.0),SVector(1.0,1.0)),seqs=(2,6)),
+                TOperator(+4.5,(FIndex('a',1,1,1,2),FIndex('b',2,1,1,1)),rcoords=(SVector(0.5,0.5),SVector(1.5,1.5)),icoords=(SVector(0.0,0.0),SVector(1.0,1.0)),seqs=(1,5)),
+                TOperator(+4.5,(FIndex('a',1,2,2,2),FIndex('b',2,2,2,1)),rcoords=(SVector(0.5,0.5),SVector(1.5,1.5)),icoords=(SVector(0.0,0.0),SVector(1.0,1.0)),seqs=(4,8)),
+                TOperator(-4.5,(FIndex('a',1,2,1,2),FIndex('b',2,2,1,1)),rcoords=(SVector(0.5,0.5),SVector(1.5,1.5)),icoords=(SVector(0.0,0.0),SVector(1.0,1.0)),seqs=(3,7))
     )
     @test expand(TOperator{2,Float,ID{NTuple{2,O}}},term,bond,config,table,nothing)==operators
     @test expand(TOperator{2,Float,ID{NTuple{2,O}}},term,bond,config,table,true)==operators/2
