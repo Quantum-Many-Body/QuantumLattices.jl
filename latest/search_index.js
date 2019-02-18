@@ -997,7 +997,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Composite structures",
     "title": "Composite structures",
     "category": "section",
-    "text": "In principle, Julia is not an object-oriented programming language. For example, only abstract types can be inherited so that subtype cannot inherit fields from their parents. Therefore, Julia prefers composition over inheritance. However, to make a new concrete type behaves much alike another one, tedious reputitions of redifining the generic interfaces are usually not avoidable, especially for the basic types in Julia base. In this module, we implement three such composited types, CompositeNTuple, CompositeVector and CompositeDict, for the sake of future usages."
+    "text": "In principle, Julia is not an object-oriented programming language. For example, only abstract types can be inherited so that subtype cannot inherit fields from their parents. Therefore, Julia prefers composition over inheritance. However, to make a new concrete type behaves much alike another one, tedious reputitions of redifining the generic interfaces are usually not avoidable, especially for the basic types in Julia base. In this module, we implement three such composited types, CompositeTuple, CompositeVector and CompositeDict, for the sake of future usages."
 },
 
 {
@@ -2117,7 +2117,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Algebra over fields",
     "title": "Hamiltonian.Prerequisites.Interfaces.add!",
     "category": "method",
-    "text": "add!(ms::Elements) -> typeof(ms)\nadd!(ms::Elements,::Nothing) -> typeof(ms)\nadd!(ms::Elements,m::Element) -> typeof(ms)\nadd!(ms::Elements,mms::Elements) -> typeof(ms)\n\nGet the inplace addition of elements to a set.\n\n\n\n\n\n"
+    "text": "add!(ms::Elements) -> typeof(ms)\nadd!(ms::Elements,::Tuple{}) -> typeof(ms)\nadd!(ms::Elements,m::Element) -> typeof(ms)\nadd!(ms::Elements,mms::Elements) -> typeof(ms)\n\nGet the inplace addition of elements to a set.\n\n\n\n\n\n"
 },
 
 {
@@ -2141,7 +2141,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Algebra over fields",
     "title": "Hamiltonian.Prerequisites.Interfaces.sub!",
     "category": "method",
-    "text": "sub!(ms::Elements) -> typeof(ms)\nsub!(ms::Elements,::Nothing) -> typeof(ms)\nsub!(ms::Elements,m::Element) -> typeof(ms)\nsub!(ms::Elements,mms::Elements) -> typeof(ms)\n\nGet the inplace subtraction of elements from a set.\n\n\n\n\n\n"
+    "text": "sub!(ms::Elements) -> typeof(ms)\nsub!(ms::Elements,::Tuple{}) -> typeof(ms)\nsub!(ms::Elements,m::Element) -> typeof(ms)\nsub!(ms::Elements,mms::Elements) -> typeof(ms)\n\nGet the inplace subtraction of elements from a set.\n\n\n\n\n\n"
 },
 
 {
@@ -2165,7 +2165,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Algebra over fields",
     "title": "Base.:+",
     "category": "method",
-    "text": "+(m::Element) -> typeof(m)\n+(ms::Elements) -> typeof(ms)\n+(m::Element,::Nothing) -> typeof(m)\n+(::Nothing,m::Element) -> typeof(m)\n+(ms::Elements,::Nothing) -> typeof(ms)\n+(::Nothing,ms::Elements) -> typeof(ms)\n+(ms::Elements,m::Element) -> Elements\n+(m1::Element,m2::Element) -> Elements\n+(m::Element,ms::Elements) -> Elements\n+(ms1::Elements,ms2::Elements) -> Elements\n\nOverloaded + operator between elements of an algebra over a field.\n\n\n\n\n\n"
+    "text": "+(m::Element) -> typeof(m)\n+(ms::Elements) -> typeof(ms)\n+(m::Element,::Tuple{}) -> typeof(m)\n+(::Tuple{},m::Element) -> typeof(m)\n+(ms::Elements,::Tuple{}) -> typeof(ms)\n+(::Tuple{},ms::Elements) -> typeof(ms)\n+(ms::Elements,m::Element) -> Elements\n+(m1::Element,m2::Element) -> Elements\n+(m::Element,ms::Elements) -> Elements\n+(ms1::Elements,ms2::Elements) -> Elements\n\nOverloaded + operator between elements of an algebra over a field.\n\n\n\n\n\n"
 },
 
 {
@@ -2173,7 +2173,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Algebra over fields",
     "title": "Base.:-",
     "category": "method",
-    "text": "-(m::Element) -> typeof(m)\n-(ms::Elements) -> typeof(ms)\n-(m::Element,::Nothing) -> typeof(m)\n-(::Nothing,m::Element) -> typeof(m)\n-(ms::Elements,::Nothing) -> typeof(ms)\n-(::Nothing,ms::Elements) -> typeof(ms)\n-(m1::Element,m2::Element) -> Elements\n-(m::Element,ms::Elements) -> Elements\n-(ms::Elements,m::Element) -> Elements\n-(ms1::Elements,ms2::Elements) -> Elements\n\nOverloaded - operator between elements of an algebra over a field.\n\n\n\n\n\n"
+    "text": "-(m::Element) -> typeof(m)\n-(ms::Elements) -> typeof(ms)\n-(m::Element,::Tuple{}) -> typeof(m)\n-(::Tuple{},m::Element) -> typeof(m)\n-(ms::Elements,::Tuple{}) -> typeof(ms)\n-(::Tuple{},ms::Elements) -> typeof(ms)\n-(m1::Element,m2::Element) -> Elements\n-(m::Element,ms::Elements) -> Elements\n-(ms::Elements,m::Element) -> Elements\n-(ms1::Elements,ms2::Elements) -> Elements\n\nOverloaded - operator between elements of an algebra over a field.\n\n\n\n\n\n"
 },
 
 {
@@ -2198,6 +2198,14 @@ var documenterSearchIndex = {"docs": [
     "title": "Base.:^",
     "category": "method",
     "text": "^(m::Element,n::Int)\n^(ms::Elements,n::Int)\n\nOverloaded ^ operator for element-integer power of an algebra over a field.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.empty-Tuple{Type{#s68} where #s68<:(Dict{I,M} where M<:Hamiltonian.Mathematics.AlgebraOverFields.Element where I<:Hamiltonian.Mathematics.AlgebraOverFields.ID)}",
+    "page": "Algebra over fields",
+    "title": "Base.empty",
+    "category": "method",
+    "text": "empty(::Type{<:Elements}) -> Tuple{}\n\nGet the empty elements.\n\nThe empty elements is defined to be the empty tuple.\n\n\n\n\n\n"
 },
 
 {
@@ -2277,7 +2285,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Algebra over fields",
     "title": "Base.zero",
     "category": "method",
-    "text": "zero(ms::Elements) -> typeof(ms)\nzero(::Type{Elements{I,M}}) where {I,M} -> Elements{I,M}\n\nGet a zero set of elements.\n\nA zero set of elements is defined to be the empty one.\n\n\n\n\n\n"
+    "text": "zero(ms::Elements) -> typeof(ms)\nzero(::Type{Elements{I,M}}) where {I,M} -> Elements{I,M}\n\nGet a zero set of elements.\n\nA zero set of elements is defined to be the one with no elements.\n\n\n\n\n\n"
 },
 
 {
@@ -3469,7 +3477,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Degrees of freedom",
     "title": "Hamiltonian.Essentials.DegreesOfFreedom.IDFConfig",
     "category": "type",
-    "text": "IDFConfig(map::Function,::Type{I},pids::AbstractVector{<:PID}=[]) where I<:Internal\n\nConfiguration of the internal degrees of freedom at a lattice.\n\nmap maps a PID to an Internal.\n\n\n\n\n\n"
+    "text": "IDFConfig{I}(map::Function,pids::Union{AbstractVector{<:PID},Tuple{}}=()) where I<:Internal\n\nConfiguration of the internal degrees of freedom at a lattice.\n\nmap maps a PID to an Internal.\n\n\n\n\n\n"
 },
 
 {
@@ -3813,7 +3821,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Terms",
     "title": "Hamiltonian.Essentials.Terms.OID",
     "category": "type",
-    "text": "OID(index::Index,rcoord::Union{Nothing,SVector{N,Float}},icoord::Union{Nothing,SVector{N,Float}},seq::Union{Nothing,Int}) where N\nOID(index::Index;rcoord::Union{Nothing,SVector}=nothing,icoord::Union{Nothing,SVector}=nothing,seq::Union{Nothing,Int}=nothing)\n\nOperator id.\n\n\n\n\n\n"
+    "text": "OID(index::Index,rcoord::Union{Nothing,SVector{N,Float},Vector{Float}},icoord::Union{Nothing,SVector{N,Float},Vector{Float}},seq::Union{Nothing,Int}) where N\nOID(index::Index;rcoord::Union{Nothing,SVector,Vector{Float}}=nothing,icoord::Union{Nothing,SVector,Vector{Float}}=nothing,seq::Union{Nothing,Int}=nothing)\n\nOperator id.\n\n\n\n\n\n"
 },
 
 {
@@ -3837,7 +3845,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Terms",
     "title": "Hamiltonian.Essentials.Terms.Term",
     "category": "type",
-    "text": "Term{ST,SP}(id::Symbol,value::Number,neighbor::Any,couplings::TermCouplings,amplitude::Function,modulate::Union{Function,Nothing},factor::Number) where {ST,SP}\nTerm{ST,SP}(id::Symbol,value::Number,neighbor::Any;\n            couplings::Union{TermCouplings,Couplings},\n            amplitude::Union{Function,Nothing}=nothing,\n            modulate::Union{Function,Bool}=false,\n            factor::Number=1\n            ) where {ST,SP}\n\nA term of a quantum lattice system.\n\n\n\n\n\n"
+    "text": "Term{ST,SP}(id::Symbol,value::Number,neighbor::Any,couplings::TermCouplings,amplitude::TermAmplitude,modulate::Union{TermModulate,Nothing},factor::Number) where {ST,SP}\nTerm{ST,SP}(id::Symbol,value::Number,neighbor::Any;\n            couplings::Union{Tuple{<:Tuple{Vararg{Couplings}},<:Function},Coupling,Couplings,TermCouplings},\n            amplitude::Union{Function,Nothing}=nothing,\n            modulate::Union{Function,Bool}=false,\n            factor::Number=1\n            ) where {ST,SP}\n\nA term of a quantum lattice system.\n\n\n\n\n\n"
 },
 
 {
@@ -3845,7 +3853,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Terms",
     "title": "Hamiltonian.Essentials.Terms.TermAmplitude",
     "category": "type",
-    "text": "TermAmplitude <: TermFunction\n\nThe function for the amplitude of a term.\n\n\n\n\n\n"
+    "text": "TermAmplitude(amplitude::Union{Function,Nothing}=nothing)\n\nThe function for the amplitude of a term.\n\n\n\n\n\n"
 },
 
 {
@@ -3853,7 +3861,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Terms",
     "title": "Hamiltonian.Essentials.Terms.TermCouplings",
     "category": "type",
-    "text": "TermCouplings(candidate::Couplings)\nTermCouplings(candidates::NTuple{N,<:Couplings},choice::Function) where N\n\nThe function for the couplings of a term.\n\n\n\n\n\n"
+    "text": "TermCouplings(candidate::Coupling)\nTermCouplings(candidate::Couplings)\nTermCouplings(contents::Tuple{<:Tuple{Vararg{Couplings}},<:Function})\nTermCouplings(candidates::NTuple{N,<:Couplings},choice::Function) where N\n\nThe function for the couplings of a term.\n\n\n\n\n\n"
 },
 
 {
@@ -3869,7 +3877,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Terms",
     "title": "Hamiltonian.Essentials.Terms.TermModulate",
     "category": "type",
-    "text": "TermModulate(id::Symbol)\n\nThe function for the modulation of a term.\n\n\n\n\n\n"
+    "text": "TermModulate(id::Symbol,modulate::Union{Function,Nothing}=nothing)\nTermModulate(id::Symbol,modulate::Bool)\n\nThe function for the modulation of a term.\n\n\n\n\n\n"
 },
 
 {
@@ -3917,7 +3925,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Terms",
     "title": "Hamiltonian.Essentials.Terms.oidtype",
     "category": "function",
-    "text": "oidtype\n\nGet the compatible oid type from a bond type and a table type.\n\n\n\n\n\n"
+    "text": "oidtype\n\nGet the compatible oid type.\n\n\n\n\n\n"
 },
 
 {
@@ -3949,7 +3957,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Terms",
     "title": "Hamiltonian.Prerequisites.Interfaces.expand",
     "category": "function",
-    "text": "expand(otype::Type{<:Operator},term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Union{Bool,Nothing}=false)\n\nExpand the operators of a term on a bond with a given config.\n\nThe half parameter determines the behavior of generating operators, which falls into the following three categories\n\nfalse: no extra operations on the generated operators\ntrue: an extra multiplication by 0.5 with the generated operators\nnothing: \"Hermitian half\" of the generated operators\n\n\n\n\n\n"
+    "text": "expand(otype::Type{<:Operator},term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Union{Bool,Nothing}=nothing)\n\nExpand the operators of a term on a bond with a given config.\n\nThe half parameter determines the behavior of generating operators, which falls into the following three categories\n\nfalse: no extra operations on the generated operators\ntrue: an extra multiplication by 0.5 with the generated operators\nnothing: \"Hermitian half\" of the generated operators\n\n\n\n\n\n"
 },
 
 {
@@ -4033,7 +4041,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Terms.html#Base.replace-Union{Tuple{Term{ST,SP,V,N,C,A,M} where M<:Union{Nothing, Function} where A<:Function where C<:TermCouplings where N where V<:Number}, Tuple{SP}, Tuple{ST}} where SP where ST",
+    "location": "man/Essentials/Terms.html#Base.replace-Union{Tuple{Term{ST,SP,V,N,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where N where V<:Number}, Tuple{SP}, Tuple{ST}} where SP where ST",
     "page": "Terms",
     "title": "Base.replace",
     "category": "method",
@@ -4161,6 +4169,30 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Essentials/FockPackage.html#Fock-terms-1",
+    "page": "Fock package",
+    "title": "Fock terms",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Predefined-Fock-operators-1",
+    "page": "Fock package",
+    "title": "Predefined Fock operators",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Predefined-Fock-terms-1",
+    "page": "Fock package",
+    "title": "Predefined Fock terms",
+    "category": "section",
+    "text": ""
+},
+
+{
     "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.ANNIHILATION",
     "page": "Fock package",
     "title": "Hamiltonian.Essentials.FockPackage.ANNIHILATION",
@@ -4174,6 +4206,22 @@ var documenterSearchIndex = {"docs": [
     "title": "Hamiltonian.Essentials.FockPackage.CREATION",
     "category": "constant",
     "text": "CREATION\n\nIndicate that the nambu index is CREATION.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.BOperator",
+    "page": "Fock package",
+    "title": "Hamiltonian.Essentials.FockPackage.BOperator",
+    "category": "type",
+    "text": "BOperator(value::Number,id::ID{<:NTuple{N,OID}}) where N\n\nBosonic Fock operator.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.Coulomb",
+    "page": "Fock package",
+    "title": "Hamiltonian.Essentials.FockPackage.Coulomb",
+    "category": "type",
+    "text": "Coulomb{ST}(    id::Symbol,value::Number;\n                neighbor::Int=1,\n                couplings::Union{Tuple{<:Tuple{Vararg{Couplings}},<:Function},Coupling,Couplings,Nothing}=nothing,\n                amplitude::Union{Function,Nothing}=nothing,\n                modulate::Union{Function,Bool}=false,\n                factor::Number=1\n                ) where {ST}\n\nCoulomb term.\n\nType alias for Term{Statistics,:Coulomb,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
 },
 
 {
@@ -4209,6 +4257,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.FOperator",
+    "page": "Fock package",
+    "title": "Hamiltonian.Essentials.FockPackage.FOperator",
+    "category": "type",
+    "text": "FOperator(value::Number,id::ID{<:NTuple{N,OID}}) where N\n\nFermionic Fock operator.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.Fock",
     "page": "Fock package",
     "title": "Hamiltonian.Essentials.FockPackage.Fock",
@@ -4233,11 +4289,83 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.FockCouplings-Union{Tuple{Val{N}}, Tuple{N}, Tuple{Val{N},Number}} where N",
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.FockOperator",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.FockPackage.FockCouplings",
+    "title": "Hamiltonian.Essentials.FockPackage.FockOperator",
+    "category": "type",
+    "text": "FockOperator{N,V<:Number,I<:ID{<:NTuple{N,OID}}} <: Operator{N,V,I}\n\nAbstract type for all Fock operators.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.Hopping",
+    "page": "Fock package",
+    "title": "Hamiltonian.Essentials.FockPackage.Hopping",
+    "category": "type",
+    "text": "Hopping{ST}(id::Symbol,value::Number;\n            neighbor::Int=1,\n            couplings::Union{Tuple{<:Tuple{Vararg{Couplings}},<:Function},Coupling,Couplings,Nothing}=nothing,\n            amplitude::Union{Function,Nothing}=nothing,\n            modulate::Union{Function,Bool}=false,\n            factor::Number=1\n            ) where {ST}\n\nHopping term.\n\nType alias for Term{Statistics,:Hopping,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.Hubbard",
+    "page": "Fock package",
+    "title": "Hamiltonian.Essentials.FockPackage.Hubbard",
+    "category": "type",
+    "text": "Hubbard{ST}(id::Symbol,value::Real;\n            amplitude::Union{Function,Nothing}=nothing,\n            modulate::Union{Function,Bool}=false,\n            factor::Number=1\n            ) where {ST}\n\nHubbard term.\n\nType alias for Term{Statistics,:Hubbard,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.InterOrbitalInterSpin",
+    "page": "Fock package",
+    "title": "Hamiltonian.Essentials.FockPackage.InterOrbitalInterSpin",
+    "category": "type",
+    "text": "InterOrbitalInterSpin{ST}(  id::Symbol,value::Real;\n                            amplitude::Union{Function,Nothing}=nothing,\n                            modulate::Union{Function,Bool}=false,\n                            factor::Number=1\n                            ) where {ST}\n\nInterorbital-interspin term.\n\nType alias for Term{Statistics,:InterOrbitalInterSpin,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.InterOrbitalIntraSpin",
+    "page": "Fock package",
+    "title": "Hamiltonian.Essentials.FockPackage.InterOrbitalIntraSpin",
+    "category": "type",
+    "text": "InterOrbitalIntraSpin{ST}(  id::Symbol,value::Real;\n                            amplitude::Union{Function,Nothing}=nothing,\n                            modulate::Union{Function,Bool}=false,\n                            factor::Number=1\n                            ) where {ST}\n\nInterorbital-intraspin term.\n\nType alias for Term{Statistics,:InterOrbitalIntraSpin,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.Onsite",
+    "page": "Fock package",
+    "title": "Hamiltonian.Essentials.FockPackage.Onsite",
+    "category": "type",
+    "text": "Onsite{ST}( id::Symbol,value::Number;\n            couplings::Union{Tuple{<:Tuple{Vararg{Couplings}},<:Function},Coupling,Couplings,Nothing}=nothing,\n            amplitude::Union{Function,Nothing}=nothing,\n            modulate::Union{Function,Bool}=false,\n            factor::Number=1\n            ) where {ST}\n\nOnsite term.\n\nType alias for Term{Statistics,:Onsite,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.PairHopping",
+    "page": "Fock package",
+    "title": "Hamiltonian.Essentials.FockPackage.PairHopping",
+    "category": "type",
+    "text": "PairHopping{ST}(    id::Symbol,value::Real;\n                    amplitude::Union{Function,Nothing}=nothing,\n                    modulate::Union{Function,Bool}=false,\n                    factor::Number=1\n                    ) where {ST}\n\nPair-hopping term.\n\nType alias for Term{Statistics,:PairHopping,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.Pairing",
+    "page": "Fock package",
+    "title": "Hamiltonian.Essentials.FockPackage.Pairing",
+    "category": "type",
+    "text": "Pairing{ST}(id::Symbol,value::Number;\n            neighbor::Int=0,\n            couplings::Union{Tuple{<:Tuple{Vararg{Couplings}},<:Function},Coupling,Couplings,Nothing}=nothing,\n            amplitude::Union{Function,Nothing}=nothing,\n            modulate::Union{Function,Bool}=false,\n            factor::Number=1\n            ) where {ST}\n\nPairing term.\n\nType alias for Term{Statistics,:Pairing,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.SpinFlip",
+    "page": "Fock package",
+    "title": "Hamiltonian.Essentials.FockPackage.SpinFlip",
+    "category": "type",
+    "text": "SpinFlip{ST}(   id::Symbol,value::Real;\n                amplitude::Union{Function,Nothing}=nothing,\n                modulate::Union{Function,Bool}=false,\n                factor::Number=1\n                ) where {ST}\n\nSpin-flip term.\n\nType alias for Term{Statistics,:SpinFlip,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.isnormalordered-Tuple{FockOperator}",
+    "page": "Fock package",
+    "title": "Hamiltonian.Essentials.FockPackage.isnormalordered",
     "category": "method",
-    "text": "FockCouplings(  ::Val{N},value::Number=1;\n                centers::Union{NTuple{N,Int},Nothing}=nothing,\n                atoms::Union{NTuple{N,Int},Nothing}=nothing,\n                orbitals::Union{NTuple{N,Int},Subscript,Nothing}=nothing,\n                spins::Union{NTuple{N,Int},Subscript,Nothing}=nothing,\n                nambus::Union{NTuple{N,Int},Nothing}=nothing) where N -> Couplings\n\nConstruct an instance of Couplings that contains only one element of FockCoupling.\n\n\n\n\n\n"
+    "text": "isnormalordered(opt::FockOperator) -> Bool\n\nJudge whether a FockOperator is normal ordered.\n\n\n\n\n\n"
 },
 
 {
@@ -4305,6 +4433,38 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.Terms.oidtype-Tuple{Val{:Fock},Type{#s237} where #s237<:AbstractBond,Type{Nothing}}",
+    "page": "Fock package",
+    "title": "Hamiltonian.Essentials.Terms.oidtype",
+    "category": "method",
+    "text": "oidtype(::Val{:Fock},B::Type{<:AbstractBond},::Type{Nothing})\noidtype(::Val{:Fock},B::Type{<:AbstractBond},::Type{<:Table})\n\nGet the compatible Fock OID type with an AbstractBond type and a Table/Nothing type.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.Terms.otype-Tuple{Val{:Fock},Type{#s235} where #s235<:(Term{\'F\',Species,V,N,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where N where V<:Number where Species),Type{#s234} where #s234<:AbstractBond,Type{#s233} where #s233<:Union{Nothing, Dict{I,Int64} where I<:Index}}",
+    "page": "Fock package",
+    "title": "Hamiltonian.Essentials.Terms.otype",
+    "category": "method",
+    "text": "otype(::Val{:Fock},O::Type{<:Term{\'F\'}},B::Type{<:AbstractBond},T::Type{<:Union{Nothing,Table}})\notype(::Val{:Fock},O::Type{<:Term{\'B\'}},B::Type{<:AbstractBond},T::Type{<:Union{Nothing,Table}})\n\nGet the compatible Fock operator type with a Term type, an AbstractBond type and a Table/Nothing type.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.Terms.statistics-Tuple{BOperator}",
+    "page": "Fock package",
+    "title": "Hamiltonian.Essentials.Terms.statistics",
+    "category": "method",
+    "text": "statistics(opt::BOperator)\nstatistics(::Type{<:BOperator})\n\nGet the statistics of BOperator.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.Terms.statistics-Tuple{FOperator}",
+    "page": "Fock package",
+    "title": "Hamiltonian.Essentials.Terms.statistics",
+    "category": "method",
+    "text": "statistics(opt::FOperator) -> Char\nstatistics(::Type{<:FOperator}) -> Char\n\nGet the statistics of FOperator.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Essentials/FockPackage.html#Hamiltonian.Prerequisites.Interfaces.:⊗-Union{Tuple{N}, Tuple{FockCoupling{N,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(ID{#s254} where #s254<:Tuple{Vararg{FCID,N}}) where V<:Number,FockCoupling{N,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(ID{#s254} where #s254<:Tuple{Vararg{FCID,N}}) where V<:Number}} where N",
     "page": "Fock package",
     "title": "Hamiltonian.Prerequisites.Interfaces.:⊗",
@@ -4313,11 +4473,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Prerequisites.Interfaces.expand-Tuple{FockCoupling,PID,Fock}",
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Prerequisites.Interfaces.expand-Union{Tuple{S}, Tuple{FockCoupling,PID,Fock}, Tuple{FockCoupling,PID,Fock,Union{Nothing, Val{S}}}} where S",
     "page": "Fock package",
     "title": "Hamiltonian.Prerequisites.Interfaces.expand",
     "category": "method",
-    "text": "expand(fc::FockCoupling,pid::PID,fock::Fock) -> Union{FCExpand,Tuple{}}\nexpand(fc::FockCoupling,pids::NTuple{R,PID},focks::NTuple{R,Fock}) where R -> Union{FCExpand,Tuple{}}\n\nExpand a Fock coupling with the given set of point ids and Fock degrees of freedom.\n\n\n\n\n\n"
+    "text": "expand(fc::FockCoupling,pid::PID,fock::Fock,species::Union{Val{S},Nothing}=nothing) where S -> Union{FCExpand,Tuple{}}\nexpand(fc::FockCoupling,pids::NTuple{R,PID},focks::NTuple{R,Fock},species::Union{Val{S},Nothing}=nothing) where {R,S} -> Union{FCExpand,Tuple{}}\n\nExpand a Fock coupling with the given set of point ids and Fock degrees of freedom.\n\n\n\n\n\n"
 },
 
 {
@@ -4497,14 +4657,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.SpinPackage.SpinCouplings-Union{Tuple{Val{N}}, Tuple{N}, Tuple{Val{N},Number}} where N",
-    "page": "Spin package",
-    "title": "Hamiltonian.Essentials.SpinPackage.SpinCouplings",
-    "category": "method",
-    "text": "SpinCouplings(  ::Val{N},value::Number=1;\n                tags::NTuple{N,Char},\n                centers::Union{NTuple{N,Int},Nothing}=nothing,\n                atoms::Union{NTuple{N,Int},Nothing}=nothing,\n                orbitals::Union{NTuple{N,Int},Subscript,Nothing}=nothing\n                ) where N -> Couplings\n\nConstruct an instance of Couplings that contains only one element of SpinCoupling.\n\n\n\n\n\n"
-},
-
-{
     "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.SpinPackage.Sʸ-Tuple{}",
     "page": "Spin package",
     "title": "Hamiltonian.Essentials.SpinPackage.Sʸ",
@@ -4542,6 +4694,14 @@ var documenterSearchIndex = {"docs": [
     "title": "Hamiltonian.Prerequisites.Interfaces.expand",
     "category": "method",
     "text": "expand(sc::SpinCoupling,pid::PID,spin::Spin) -> Union{SCExpand,Tuple{}}\nexpand(sc::SpinCoupling,pids::NTuple{N,PID},spins::NTuple{N,Spin}) where N -> Union{SCExpand,Tuple{}}\n\nExpand a spin coupling with the given set of point ids and spin degrees of freedom.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Prerequisites.Interfaces.matrix",
+    "page": "Spin package",
+    "title": "Hamiltonian.Prerequisites.Interfaces.matrix",
+    "category": "function",
+    "text": "matrix(sid::SID,dtype::Type{<:Number}=Complex{Float}) -> Matrix{dtype}\n\nGet the matrix representation of a sid.\n\n\n\n\n\n"
 },
 
 {
