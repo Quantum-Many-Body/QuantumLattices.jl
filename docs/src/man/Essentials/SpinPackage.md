@@ -14,6 +14,12 @@ CurrentModule=Hamiltonian.Essentials.SpinPackage
 
 ### Predefined spin couplings
 
+## Spin terms
+
+### Predefined spin operators
+
+### Predefined spin terms
+
 ## Manual
 
 ```@autodocs

@@ -11,7 +11,7 @@ using ...Mathematics.AlgebraOverFields: SimpleID,ID,Element,Elements,idtype
 import ...Prerequisites.Interfaces: rank,expand,dimension,add!,update!
 import ..Spatials: rcoord,icoord
 
-export rank,expand,rcood,icoord,update!
+export rank,expand,rcoord,icoord,update!
 export OID,Operator,Operators,isHermitian,oidtype,otype
 export TermFunction,TermAmplitude,TermCouplings,TermModulate
 export Term,statistics,species,abbr

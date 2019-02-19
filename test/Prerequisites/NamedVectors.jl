@@ -1,98 +1,98 @@
 using Hamiltonian.Prerequisites.NamedVectors
 using Hamiltonian.Prerequisites: Float
 
-@namedvector mutable struct NHPID
+@namedvector mutable struct NHNV
     scope::String
     site::Int
 end
 
-@testset "NHPID" begin
-    @test NHPID|>fieldnames==(:scope,:site)
-    @test NHPID|>length==2
+@testset "NHNV" begin
+    @test NHNV|>fieldnames==(:scope,:site)
+    @test NHNV|>length==2
 
-    pid=NHPID("A",0)
-    @test pid==convert(NHPID,("A",0))
-    @test pid|>string=="NHPID(\"A\",0)"
+    pid=NHNV("A",0)
+    @test pid==convert(NHNV,("A",0))
+    @test pid|>string=="NHNV(\"A\",0)"
     @test pid|>length==2
     @test pid|>Iterators.reverse|>collect==[0,"A"]
     @test pid[1]==pid.scope=="A"
     @test pid[2]==pid.site==0
-    @test replace(pid,scope="B")==NHPID("B",0)
-    @test replace(pid,site=1)==NHPID("A",1)
-    @test replace(pid,scope="B",site=1)==NHPID("B",1)
+    @test replace(pid,scope="B")==NHNV("B",0)
+    @test replace(pid,site=1)==NHNV("A",1)
+    @test replace(pid,scope="B",site=1)==NHNV("B",1)
     @test (pid[1]="B";pid[1]=="B")
     @test (pid.site=2;pid.site==2)
 
-    @test NHPID("A",2.0)<NHPID("B",0.0)
-    @test NHPID("A",2.0)<NHPID("A",3.0)
-    @test isless(NHPID("A",2.0),NHPID("B",0.0))
-    @test isless(NHPID("A",2.0),NHPID("A",3.0))
+    @test NHNV("A",2.0)<NHNV("B",0.0)
+    @test NHNV("A",2.0)<NHNV("A",3.0)
+    @test isless(NHNV("A",2.0),NHNV("B",0.0))
+    @test isless(NHNV("A",2.0),NHNV("A",3.0))
 
-    dict=Dict(NHPID("A",0)=>1,NHPID("A",1)=>2)
-    @test dict[NHPID("A",0)]==1
-    @test dict[NHPID("A",1)]==2
+    dict=Dict(NHNV("A",0)=>1,NHNV("A",1)=>2)
+    @test dict[NHNV("A",0)]==1
+    @test dict[NHNV("A",1)]==2
 end
 
-@homonamedvector "FPID" (:scope,:site) Float64 mutable=true
-@homonamedvector "RPID" (:scope,:site) (<:Real) mutable=true
+@homonamedvector "FHNV" (:scope,:site) Float64 mutable=true
+@homonamedvector "RHNV" (:scope,:site) (<:Real) mutable=true
 
-@testset "FPID" begin
-    @test FPID|>fieldnames==(:scope,:site)
-    @test FPID|>length==2
-    @test FPID|>eltype==Float64
-    @test FPID|>zero==FPID(0.0,0.0)
-    @test isequal(FPID|>zero,FPID(0.0,0.0))
+@testset "FHNV" begin
+    @test FHNV|>fieldnames==(:scope,:site)
+    @test FHNV|>length==2
+    @test FHNV|>eltype==Float64
+    @test FHNV|>zero==FHNV(0.0,0.0)
+    @test isequal(FHNV|>zero,FHNV(0.0,0.0))
 
-    pid=FPID(1.0,0.0)
-    @test pid==convert(FPID,(1.0,0.0))
-    @test pid|>string=="FPID(1.0,0.0)"
+    pid=FHNV(1.0,0.0)
+    @test pid==convert(FHNV,(1.0,0.0))
+    @test pid|>string=="FHNV(1.0,0.0)"
     @test pid|>length==2
     @test pid|>eltype==Float64
-    @test pid|>zero==FPID(0.0,0.0)
+    @test pid|>zero==FHNV(0.0,0.0)
     @test pid[1]==pid.scope==1.0
     @test pid[2]==pid.site==0.0
-    @test replace(pid,scope=2.0)==FPID(2.0,0.0)
-    @test replace(pid,site=1.0)==FPID(1.0,1.0)
-    @test replace(pid,scope=2.0,site=1.0)==FPID(2.0,1.0)
+    @test replace(pid,scope=2.0)==FHNV(2.0,0.0)
+    @test replace(pid,site=1.0)==FHNV(1.0,1.0)
+    @test replace(pid,scope=2.0,site=1.0)==FHNV(2.0,1.0)
     @test (pid[1]=2.0;pid[1]==2.0)
     @test (pid.site=3.0;pid.site==3.0)
 
-    @test FPID(1.0,2.0)<FPID(2.0,0.0)
-    @test FPID(1.0,2.0)<FPID(1.0,3.0)
-    @test isless(FPID(1.0,2.0),FPID(2.0,0.0))
-    @test isless(FPID(1.0,2.0),FPID(1.0,3.0))
+    @test FHNV(1.0,2.0)<FHNV(2.0,0.0)
+    @test FHNV(1.0,2.0)<FHNV(1.0,3.0)
+    @test isless(FHNV(1.0,2.0),FHNV(2.0,0.0))
+    @test isless(FHNV(1.0,2.0),FHNV(1.0,3.0))
 
-    dict=Dict(FPID(0.0,0.0)=>1,FPID(0.0,1.0)=>2)
-    @test dict[FPID(0.0,0.0)]==1
-    @test dict[FPID(0.0,1.0)]==2
+    dict=Dict(FHNV(0.0,0.0)=>1,FHNV(0.0,1.0)=>2)
+    @test dict[FHNV(0.0,0.0)]==1
+    @test dict[FHNV(0.0,1.0)]==2
 end
 
-@testset "RPID" begin
-    @test RPID|>fieldnames==(:scope,:site)
-    @test RPID|>length==2
-    @test RPID{Int}|>eltype==Int
-    @test RPID{Int}|>zero==RPID(0,0)
-    @test RPID{Float64}|>eltype==Float64
-    @test RPID{Float64}|>zero==RPID(0.0,0.0)
+@testset "RHNV" begin
+    @test RHNV|>fieldnames==(:scope,:site)
+    @test RHNV|>length==2
+    @test RHNV{Int}|>eltype==Int
+    @test RHNV{Int}|>zero==RHNV(0,0)
+    @test RHNV{Float64}|>eltype==Float64
+    @test RHNV{Float64}|>zero==RHNV(0.0,0.0)
 
-    pid=RPID(1,0)
-    @test pid==convert(RPID{Int},(1,0))
-    @test pid|>string=="RPID(1,0)"
+    pid=RHNV(1,0)
+    @test pid==convert(RHNV{Int},(1,0))
+    @test pid|>string=="RHNV(1,0)"
     @test pid|>length==2
     @test pid|>eltype==Int
-    @test pid|>zero==RPID(0,0)
+    @test pid|>zero==RHNV(0,0)
     @test pid[1]==pid.scope==1
     @test pid[2]==pid.site==0
-    @test replace(pid,scope=2)==FPID(2,0)
-    @test replace(pid,site=1)==FPID(1,1)
-    @test replace(pid,scope=2,site=1)==FPID(2,1)
+    @test replace(pid,scope=2)==FHNV(2,0)
+    @test replace(pid,site=1)==FHNV(1,1)
+    @test replace(pid,scope=2,site=1)==FHNV(2,1)
     @test (pid[1]=2;pid[1]==2)
     @test (pid.site=3;pid.site==3)
 
-    @test RPID(1.0,2.0)<RPID(2.0,0.0)
-    @test RPID(1.0,2.0)<RPID(1.0,3.0)
+    @test RHNV(1.0,2.0)<RHNV(2.0,0.0)
+    @test RHNV(1.0,2.0)<RHNV(1.0,3.0)
 
-    dict=Dict(RPID(0,0)=>1,RPID(0,1)=>2)
-    @test dict[RPID(0,0)]==1
-    @test dict[RPID(0,1)]==2
+    dict=Dict(RHNV(0,0)=>1,RHNV(0,1)=>2)
+    @test dict[RHNV(0,0)]==1
+    @test dict[RHNV(0,1)]==2
 end
