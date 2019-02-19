@@ -3889,6 +3889,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Spatials.rcoord-Tuple{Operator{1,V,I} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{#s254} where #s254<:Tuple{OID}) where V<:Number}",
+    "page": "Terms",
+    "title": "Hamiltonian.Essentials.Spatials.rcoord",
+    "category": "method",
+    "text": "rcoord(opt::Operator{1}) -> SVector\nrcoord(opt::Operator{2}) -> SVector\n\nGet the whole rcoord of an operator.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.abbr-Tuple{Term}",
     "page": "Terms",
     "title": "Hamiltonian.Essentials.Terms.abbr",
@@ -4094,14 +4102,6 @@ var documenterSearchIndex = {"docs": [
     "title": "Base.zero",
     "category": "method",
     "text": "zero(term::Term) -> Term\n\nGet a zero term.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Spatials.rcoord-Tuple{Operator{1,V,I} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{#s254} where #s254<:Tuple{OID}) where V<:Number}",
-    "page": "Terms",
-    "title": "Hamiltonian.Essentials.Spatials.rcoord",
-    "category": "method",
-    "text": "rcoord(opt::Operator{1}) -> SVector\nrcoord(opt::Operator{2}) -> SVector\n\nGet the whole rcoord of an operator.\n\n\n\n\n\n"
 },
 
 {
@@ -4580,6 +4580,30 @@ var documenterSearchIndex = {"docs": [
     "location": "man/Essentials/SpinPackage.html#Predefined-spin-couplings-1",
     "page": "Spin package",
     "title": "Predefined spin couplings",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Spin-terms-1",
+    "page": "Spin package",
+    "title": "Spin terms",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Predefined-spin-operators-1",
+    "page": "Spin package",
+    "title": "Predefined spin operators",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Predefined-spin-terms-1",
+    "page": "Spin package",
+    "title": "Predefined spin terms",
     "category": "section",
     "text": ""
 },
