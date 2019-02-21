@@ -49,7 +49,9 @@ abstract type Index{P<:PID,I<:IID} <: SimpleID end
 
 Get the corresponding index from a pid and an iid.
 """
-(INDEX::Type{<:Index})(pid::PID,iid::IID)=INDEX(convert(Tuple,pid)...,convert(Tuple,iid)...)
+@generated function (INDEX::Type{<:Index})(pid::PID,iid::IID)
+    INDEX<:UnionAll ? :(INDEX(convert(Tuple,pid)...,convert(Tuple,iid)...)) : :((INDEX.name.wrapper)(convert(Tuple,pid)...,convert(Tuple,iid)...))
+end
 
 """
     pidtype(index::Index)
@@ -282,7 +284,9 @@ end
 end
 
 """
-    OID(index::Index,rcoord::Union{Nothing,SVector{N,Float},Vector{Float}},icoord::Union{Nothing,SVector{N,Float},Vector{Float}},seq::Union{Nothing,Int}) where N
+    OID(index::Index,::Nothing,::Nothing,seq::Union{Nothing,Int})
+    OID(index::Index,rcoord::SVector{N,Float},icoord::SVector{N,Float},seq::Union{Nothing,Int}) where N
+    OID(index::Index,rcoord::Vector{Float},icoord::Vector{Float},seq::Union{Nothing,Int})
     OID(index::Index;rcoord::Union{Nothing,SVector,Vector{Float}}=nothing,icoord::Union{Nothing,SVector,Vector{Float}}=nothing,seq::Union{Nothing,Int}=nothing)
 
 Operator id.
@@ -292,14 +296,12 @@ struct OID{I<:Index,RC<:Union{Nothing,SVector},IC<:Union{Nothing,SVector},S<:Uni
     rcoord::RC
     icoord::IC
     seq::S
-    function OID(index::Index,rcoord::Union{Nothing,SVector{N,Float},Vector{Float}},icoord::Union{Nothing,SVector{N,Float},Vector{Float}},seq::Union{Nothing,Int}) where N
-        isa(rcoord,Vector{Float}) && (rcoord=SVector{length(rcoord)}(rcoord))
-        isa(icoord,Vector{Float}) && (icoord=SVector{length(icoord)}(icoord))
-        isa(rcoord,SVector) && (rcoord=propercoord(rcoord))
-        isa(icoord,SVector) && (icoord=propercoord(icoord))
-        new{typeof(index),typeof(rcoord),typeof(icoord),typeof(seq)}(index,rcoord,icoord,seq)
+    OID(index::Index,::Nothing,::Nothing,seq::Union{Nothing,Int})=new{typeof(index),Nothing,Nothing,typeof(seq)}(index,nothing,nothing,seq)
+    function OID(index::Index,rcoord::SVector{N,Float},icoord::SVector{N,Float},seq::Union{Nothing,Int}) where N
+        new{typeof(index),SVector{N,Float},SVector{N,Float},typeof(seq)}(index,propercoord(rcoord),propercoord(icoord),seq)
     end
 end
+OID(index::Index,rcoord::Vector{Float},icoord::Vector{Float},seq::Union{Nothing,Int})=OID(index,SVector{length(rcoord)}(rcoord),SVector{length(icoord)}(icoord),seq)
 function OID(index::Index;rcoord::Union{Nothing,SVector,Vector{Float}}=nothing,icoord::Union{Nothing,SVector,Vector{Float}}=nothing,seq::Union{Nothing,Int}=nothing)
     OID(index,rcoord,icoord,seq)
 end

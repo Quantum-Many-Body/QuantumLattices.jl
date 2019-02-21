@@ -89,23 +89,23 @@ end
 end
 
 @testset "OID" begin
-    oid=OID(DIndex(1,1,1),rcoord=SVector(0.0,-0.0),icoord=nothing,seq=1)
-    @test oid'==OID(DIndex(1,1,2),rcoord=SVector(0.0,0.0),icoord=nothing,seq=1)
-    @test hash(oid,UInt(1))==hash(OID(DIndex(1,1,1),rcoord=SVector(0.0,0.0),icoord=nothing,seq=1),UInt(1))
+    oid=OID(DIndex(1,1,1),rcoord=SVector(0.0,-0.0),icoord=SVector(0.0,0.0),seq=1)
+    @test oid'==OID(DIndex(1,1,2),rcoord=SVector(0.0,0.0),icoord=SVector(0.0,0.0),seq=1)
+    @test hash(oid,UInt(1))==hash(OID(DIndex(1,1,1),rcoord=SVector(0.0,0.0),icoord=SVector(0.0,0.0),seq=1),UInt(1))
     @test propertynames(ID{<:NTuple{2,OID}},true)==(:contents,:indexes,:rcoords,:icoords)
     @test propertynames(ID{<:NTuple{2,OID}},false)==(:indexes,:rcoords,:icoords)
     @test fieldnames(OID)==(:index,:rcoord,:icoord,:seq)
-    @test string(oid)=="OID(DIndex(1,1,1),[0.0,0.0],:,1)"
+    @test string(oid)=="OID(DIndex(1,1,1),[0.0,0.0],[0.0,0.0],1)"
     @test ID(oid',oid)'==ID(oid',oid)
     @test isHermitian(ID(oid',oid))==true
     @test isHermitian(ID(oid,oid))==false
 end
 
 @testset "Operator" begin
-    opt=DOperator(1.0im,(DIndex(1,2,2),DIndex(1,1,1)),rcoords=(SVector(1.0,0.0),SVector(0.0,0.0)),seqs=(2,1))
-    @test opt'==DOperator(-1.0im,(DIndex(1,1,2),DIndex(1,2,1)),rcoords=(SVector(0.0,0.0),SVector(1.0,0.0)),seqs=(1,2))
+    opt=DOperator(1.0im,(DIndex(1,2,2),DIndex(1,1,1)),rcoords=(SVector(1.0,0.0),SVector(0.0,0.0)),icoords=(SVector(2.0,0.0),SVector(0.0,0.0)),seqs=(2,1))
+    @test opt'==DOperator(-1.0im,(DIndex(1,1,2),DIndex(1,2,1)),rcoords=(SVector(0.0,0.0),SVector(1.0,0.0)),icoords=(SVector(0.0,0.0),SVector(2.0,0.0)),seqs=(1,2))
     @test isHermitian(opt)==false
-    @test string(opt)=="DOperator(value=1.0im,id=ID(OID(DIndex(1,2,2),[1.0,0.0],:,2),OID(DIndex(1,1,1),[0.0,0.0],:,1)))"
+    @test string(opt)=="DOperator(value=1.0im,id=ID(OID(DIndex(1,2,2),[1.0,0.0],[2.0,0.0],2),OID(DIndex(1,1,1),[0.0,0.0],[0.0,0.0],1)))"
 
     opt=DOperator(1.0,(DIndex(1,1,2),DIndex(1,1,1)),rcoords=(SVector(0.5,0.5),SVector(0.5,0.5)),icoords=(SVector(1.0,1.0),SVector(1.0,1.0)),seqs=(1,1))
     @test opt'==opt
@@ -121,8 +121,8 @@ end
 end
 
 @testset "Operators" begin
-    opt1=DOperator(1.0im,(DIndex(1,2,2),DIndex(1,1,1)),rcoords=(SVector(1.0,0.0),SVector(0.0,0.0)),seqs=(2,1))
-    opt2=DOperator(1.0,(DIndex(1,1,2),DIndex(1,1,1)),rcoords=(SVector(0.0,0.0),SVector(0.0,0.0)),seqs=(1,1))
+    opt1=DOperator(1.0im,(DIndex(1,2,2),DIndex(1,1,1)),rcoords=(SVector(1.0,0.0),SVector(0.0,0.0)),icoords=(SVector(2.0,0.0),SVector(0.0,0.0)),seqs=(2,1))
+    opt2=DOperator(1.0,(DIndex(1,1,2),DIndex(1,1,1)),rcoords=(SVector(0.0,0.0),SVector(0.0,0.0)),icoords=(SVector(0.0,0.0),SVector(0.0,0.0)),seqs=(1,1))
     opts=Operators(opt1,opt2)
     @test opts'==Operators(opt1',opt2')
     @test opts'+opts==Operators(opt1,opt1',opt2*2)

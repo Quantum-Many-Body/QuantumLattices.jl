@@ -49,6 +49,7 @@ struct FID <: IID
     orbital::Int
     spin::Int
     nambu::Int
+    FID(orbital::Int,spin::Int,nambu::Int)=(@assert nambu ∈ (0,1,2) "FID error: wrong input nambu($nambu).";new(orbital,spin,nambu))
 end
 Base.fieldnames(::Type{FID})=(:orbital,:spin,:nambu)
 
@@ -64,7 +65,7 @@ FID(;orbital::Int=1,spin::Int=1,nambu::Int=ANNIHILATION)=FID(orbital,spin,nambu)
 
 Get the adjoint of a Fock id.
 """
-Base.adjoint(fid::FID)=FID(fid.orbital,fid.spin,3-fid.nambu)
+Base.adjoint(fid::FID)=FID(fid.orbital,fid.spin,fid.nambu==0 ? 0 : 3-fid.nambu)
 
 """
     Fock <: Internal{FID}
@@ -76,6 +77,7 @@ struct Fock <: Internal{FID}
     norbital::Int
     nspin::Int
     nnambu::Int
+    Fock(atom::Int,norbital::Int,nspin::Int,nnambu::Int)=(@assert nnambu ∈ (1,2) "Fock error: wrong input nnambu($nnambu).";new(atom,norbital,nspin,nnambu))
 end
 IsMultiIndexable(::Type{Fock})=IsMultiIndexable(true)
 MultiIndexOrderStyle(::Type{Fock})=MultiIndexOrderStyle('C')
@@ -101,6 +103,10 @@ struct FIndex{S} <: Index{PID{S},FID}
     orbital::Int
     spin::Int
     nambu::Int
+    function FIndex(scope::S,site::Int,orbital::Int,spin::Int,nambu::Int) where S
+        @assert nambu ∈ (0,1,2) "FIndex error: wrong input nambu($nambu)."
+        new{S}(scope,site,orbital,spin,nambu)
+    end
 end
 Base.fieldnames(::Type{<:FIndex})=(:scope,:site,:orbital,:spin,:nambu)
 
@@ -358,8 +364,8 @@ end
 defaultcenter(::Type{<:FockCoupling},i::Int,n::Int,::Val{2})=i<=n/2 ? 1 : 2
 @generated function propernambus(::Union{Val{S},Nothing},nambus::NTuple{N,Any},ranges::NTuple{N,Int}) where {N,S}
     exprs=[:(isa(nambus[$i],Int) ?
-            (0<nambus[$i]<=ranges[$i] ? nambus[$i] : error(" error: nambu out of range.")) :
-            (($i)%2==1 ? min(CREATION,ranges[$i]) : ANNIHILATION)
+            ((ranges[$i]==1 && nambus[$i]==0) || (ranges[$i]==2 && 0<nambus[$i]<=2) ? nambus[$i] : error("propernambus error: nambu out of range.")) :
+            (ranges[$i]==1 ? 0 : ($i)%2==1 ? CREATION : ANNIHILATION)
             ) for i=1:N]
     return Expr(:tuple,exprs...)
 end
@@ -538,8 +544,9 @@ function Pairing{ST}(id::Symbol,value::Number;
 end
 abbr(::Type{<:Pairing})=:pr
 function propernambus(::Val{:Pairing},nambus::NTuple{2,Any},ranges::NTuple{2,Int})
-    (   isa(nambus[1],Int) ? (0<nambus[1]<=ranges[1] ? nambus[1] : error(" error: nambu out of range.")) : ANNIHILATION,
-        isa(nambus[2],Int) ? (0<nambus[2]<=ranges[2] ? nambus[2] : error(" error: nambu out of range.")) : ANNIHILATION
+    @assert ranges==(2,2) "propernambus error: ranges for Pairing terms must be (2,2)."
+    (   isa(nambus[1],Int) ? (0<nambus[1]<=2 ? nambus[1] : error("propernambus error: nambu out of range.")) : ANNIHILATION,
+        isa(nambus[2],Int) ? (0<nambus[2]<=2 ? nambus[2] : error("propernambus error: nambu out of range.")) : ANNIHILATION
         )
 end
 function expand(term::Pairing,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false)

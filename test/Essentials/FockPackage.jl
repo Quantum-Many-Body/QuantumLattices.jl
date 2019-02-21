@@ -7,12 +7,16 @@ using Hamiltonian.Essentials.Terms: Couplings,@subscript
 using Hamiltonian.Essentials.DegreesOfFreedom: Table,IDFConfig,OID,Operators
 using Hamiltonian.Prerequisites: Float
 using Hamiltonian.Prerequisites.Interfaces: ⊗
+import Hamiltonian.FockPackage: propernambus
 
 @testset "FID" begin
     fid=FID(orbital=1,spin=1)
     @test fid|>typeof|>fieldnames==(:orbital,:spin,:nambu)
     @test fid'==FID(1,1,2)
     @test fid''==FID(1,1,1)
+
+    fid=FID(1,1,0)
+    @test fid'==fid
 end
 
 @testset "Fock" begin
@@ -99,6 +103,13 @@ end
                         (-1.0,(FIndex(1,1,2,2,2),FIndex(1,1,2,2,1),FIndex(1,1,1,1,2),FIndex(1,1,1,1,1))),
                         (-1.0,(FIndex(1,1,2,2,2),FIndex(1,1,2,2,1),FIndex(1,1,2,1,2),FIndex(1,1,2,1,1)))
     ]
+end
+
+@testset "propernambus" begin
+    @test propernambus(nothing,('*','*','*','*'),(1,1,2,2))==(0,0,2,1)
+    @test propernambus(nothing,(0,0,1,1),(1,1,2,2))==(0,0,1,1)
+    @test propernambus(Val(:Pairing),('*','*'),(2,2))==(1,1)
+    @test propernambus(Val(:Pairing),(1,2),(2,2))==(1,2)
 end
 
 @testset "σ⁰" begin

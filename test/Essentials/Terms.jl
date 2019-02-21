@@ -172,9 +172,9 @@ end
     point=Point(PID(1,1),(0.0,0.0),(0.0,0.0))
     config=IDFConfig{TFock}(pid->TFock(),[PID(1,1)])
     table=Table(config,by=filter(attr->attr≠:nambu,FilteredAttributes(TIndex)))
-    O=OID{TIndex{Int},SVector{2,Float},Nothing,Int}
+    O=OID{TIndex{Int},SVector{2,Float},SVector{2,Float},Int}
     term=Term{'F',:Term}(:mu,1.5,0,couplings=TCoupling(1.0,ID(TCID(1,2),TCID(1,1))),amplitude=bond->3.0,modulate=true)
-    operators=Operators(TOperator(+2.25,(TIndex(1,1,2),TIndex(1,1,1)),rcoords=(SVector(0.0,0.0),SVector(0.0,0.0)),seqs=(1,1)))
+    operators=Operators(TOperator(+2.25,(TIndex(1,1,2),TIndex(1,1,1)),rcoords=(SVector(0.0,0.0),SVector(0.0,0.0)),icoords=(SVector(0.0,0.0),SVector(0.0,0.0)),seqs=(1,1)))
     @test expand(TOperator{2,Float,ID{NTuple{2,O}}},term,point,config,table,nothing)==operators
     @test expand(TOperator{2,Float,ID{NTuple{2,O}}},term,point,config,table,true)==operators
     @test expand(TOperator{2,Float,ID{NTuple{2,O}}},term,point,config,table,false)==operators*2

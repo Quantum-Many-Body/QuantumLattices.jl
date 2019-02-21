@@ -556,11 +556,11 @@ function expand(otype::Type{<:Operator},term::Term,bond::AbstractBond,config::ID
                 perm=propercenters(typeof(coupling),coupling.id.centers,Val(rank(bond)))::NTuple{rank(otype),Int}
                 orcoords=getcoords(rtype,rcoords,perm)
                 oicoords=getcoords(itype,icoords,perm)
-                for (coeff,oindexes) in expand(coupling,pids,interanls,term|>species|>Val)
+                for (coeff,oindexes) in expand(coupling,pids,interanls,term|>species|>Val) # needs improvement memory allocation 5->33
                     isa(table,Table) && any(NTuple{rank(otype),Bool}(!haskey(table,index) for index in oindexes)) && continue
                     id=ID(OID,oindexes,orcoords,oicoords,getseqs(table,oindexes))
                     if !(half===nothing && haskey(result,id'))
-                        ovalue=valtype(otype)(value*coeff*properfactor(half,id,term|>species|>Val))
+                        ovalue=valtype(otype)(value*coeff*properfactor(half,id,term|>species|>Val)) # needs improvement memory allocation 33->41
                         add!(result,otype.name.wrapper(ovalue,id))
                     end
                 end
@@ -572,9 +572,9 @@ end
 getcoords(::Type{<:Nothing},rcoords::NTuple{N,SVector{M,Float}},perm::NTuple{R,Int}) where {N,M,R}=NTuple{R,Nothing}(nothing for i=1:R)
 getcoords(::Type{<:SVector},rcoords::NTuple{N,SVector{M,Float}},perm::NTuple{R,Int}) where {N,M,R}=NTuple{R,SVector{M,Float}}(rcoords[p] for p in perm)
 getseqs(::Nothing,indexes::NTuple{N,<:Index}) where N=NTuple{N,Nothing}(nothing for i=1:N)
-getseqs(table::Table{I},indexes::NTuple{N,I}) where {N,I<:Index}=NTuple{N,Int}(table[index] for index in indexes)
-properfactor(half::Bool,::ID,::Val{S}) where S=half ? 0.5 : 1.0
-properfactor(::Nothing,id::ID,::Val{S}) where S=isHermitian(id) ? 0.5 : 1.0
+@generated getseqs(table::Table{I},indexes::NTuple{N,I}) where {N,I<:Index}=Expr(:tuple,[:(table[indexes[$i]]) for i=1:N]...)
+properfactor(half::Bool,::ID{<:NTuple{N,OID}},::Val{S}) where {N,S}=half ? 0.5 : 1.0
+properfactor(::Nothing,id::ID{<:NTuple{N,OID}},::Val{S}) where {N,S}=isHermitian(id) ? 0.5 : 1.0
 
 """
     update!(term::Term,args...;kwargs...) -> Term
