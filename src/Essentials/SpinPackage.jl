@@ -5,7 +5,7 @@ using ..Spatials: PID
 using ..DegreesOfFreedom: IID,Internal,Index,FilteredAttributes
 using ..Terms: Subscript,Subscripts,Coupling,Couplings
 using ...Prerequisites: Float,decimaltostr,delta
-using ...Mathematics.VectorSpaces: AbstractVectorSpace,IsMultiIndexable,MultiIndexOrderStyle
+using ...Mathematics.VectorSpaces: VectorSpace,IsMultiIndexable,MultiIndexOrderStyle
 using ...Mathematics.AlgebraOverFields: SimpleID,ID
 
 import ..Terms: wildcard,constant,defaultcenter,propercenters
@@ -212,7 +212,7 @@ function expand(sc::SpinCoupling,pids::NTuple{N,PID},spins::NTuple{N,Spin}) wher
     return SCExpand(sc.value,rpids,sbexpands,sps,sc.id.tags)
 end
 defaultcenter(::Type{<:SpinCoupling},i::Int,n::Int,::Val{2})=i%2==1 ? 1 : 2
-struct SCExpand{V<:Number,N,S} <: AbstractVectorSpace{Tuple{V,NTuple{N,SIndex{S}}}}
+struct SCExpand{V<:Number,N,S} <: VectorSpace{Tuple{V,NTuple{N,SIndex{S}}}}
     value::V
     pids::NTuple{N,PID{S}}
     sbexpands::Vector{NTuple{N,Int}}

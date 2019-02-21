@@ -5,7 +5,7 @@ using StaticArrays: SVector
 using ..Spatials: PID
 using ...Prerequisites: Float,decimaltostr
 using ...Prerequisites.CompositeStructures: CompositeDict
-using ...Mathematics.VectorSpaces: AbstractVectorSpace
+using ...Mathematics.VectorSpaces: VectorSpace
 using ...Mathematics.AlgebraOverFields: SimpleID,ID,Element,Elements
 
 import ..Spatials: pidtype,rcoord,icoord
@@ -28,7 +28,7 @@ abstract type IID <: SimpleID end
 
 The whole internal degrees of freedom at a single point.
 """
-abstract type Internal{I<:IID} <: AbstractVectorSpace{I} end
+abstract type Internal{I<:IID} <: VectorSpace{I} end
 
 """
     show(io::IO,i::Internal)

@@ -7,7 +7,7 @@ using ..DegreesOfFreedom: IID,Index,Internal,FilteredAttributes,IDFConfig,Table,
 using ..Terms: Subscript,Subscripts,Coupling,Couplings,@subscript,Term,TermCouplings,TermAmplitude,TermModulate
 using ...Prerequisites: Float,delta,decimaltostr
 using ...Mathematics.AlgebraOverFields: SimpleID,ID
-using ...Mathematics.VectorSpaces: AbstractVectorSpace,IsMultiIndexable,MultiIndexOrderStyle
+using ...Mathematics.VectorSpaces: VectorSpace,IsMultiIndexable,MultiIndexOrderStyle
 
 import ..DegreesOfFreedom: oidtype,otype
 import ..Terms: wildcard,constant,defaultcenter,propercenters,statistics,abbr,properfactor
@@ -363,7 +363,7 @@ defaultcenter(::Type{<:FockCoupling},i::Int,n::Int,::Val{2})=i<=n/2 ? 1 : 2
             ) for i=1:N]
     return Expr(:tuple,exprs...)
 end
-struct FCExpand{V<:Number,N,S} <: AbstractVectorSpace{Tuple{V,NTuple{N,FIndex{S}}}}
+struct FCExpand{V<:Number,N,S} <: VectorSpace{Tuple{V,NTuple{N,FIndex{S}}}}
     value::V
     pids::NTuple{N,PID{S}}
     obsbexpands::Vector{NTuple{N,Int}}

@@ -6,28 +6,28 @@ using ...Prerequisites.TypeTraits: efficientoperations,forder,corder,subtoind,in
 import ...Prerequisites.Interfaces: dimension,⊕,rank,dims,inds,degree
 
 export dimension,⊕,rank,dims,inds,degree
-export AbstractVectorSpace
+export VectorSpace
 export HasTable,TableSorted,IsMultiIndexable,MultiIndexOrderStyle
 export DirectVectorSpace
 export OrderedIndices,DirectIndices,TabledIndices
 export GradedTables,GradedVectorSpace
 
 """
-    AbstractVectorSpace{B} <: AbstractVector{B}
+    VectorSpace{B} <: AbstractVector{B}
 
 Abstract vector space.
 """
-abstract type AbstractVectorSpace{B} <: AbstractVector{B} end
-Base.:(==)(vs1::AbstractVectorSpace,vs2::AbstractVectorSpace) = ==(efficientoperations,vs1,vs2)
-Base.isequal(vs1::AbstractVectorSpace,vs2::AbstractVectorSpace)=isequal(efficientoperations,vs1,vs2)
-Base.size(vs::AbstractVectorSpace)=(vs|>dimension,)
-Base.iterate(vs::AbstractVectorSpace,state::Integer=1)=state>length(vs) ? nothing : (vs[state],state+1)
+abstract type VectorSpace{B} <: AbstractVector{B} end
+Base.:(==)(vs1::VectorSpace,vs2::VectorSpace) = ==(efficientoperations,vs1,vs2)
+Base.isequal(vs1::VectorSpace,vs2::VectorSpace)=isequal(efficientoperations,vs1,vs2)
+Base.size(vs::VectorSpace)=(vs|>dimension,)
+Base.iterate(vs::VectorSpace,state::Integer=1)=state>length(vs) ? nothing : (vs[state],state+1)
 
 """
     HasTable(B::Bool)
-    HasTable(::Type{<:AbstractVectorSpace})
+    HasTable(::Type{<:VectorSpace})
 
-Trait of whether a subtype of `AbstractVectorSpace` has the attribute `:table`.
+Trait of whether a subtype of `VectorSpace` has the attribute `:table`.
 
 Only two instances are allowed, the first of which is the default for a subtype:
 * `HasTable(false)`: indication of not having the attribute `:table`
@@ -35,13 +35,13 @@ Only two instances are allowed, the first of which is the default for a subtype:
 """
 struct HasTable{B} end
 HasTable(B::Bool)=HasTable{B}()
-HasTable(::Type{<:AbstractVectorSpace})=HasTable{false}()
+HasTable(::Type{<:VectorSpace})=HasTable{false}()
 
 """
     TableSorted(B::Bool)
-    TableSorted(::Type{<:AbstractVectorSpace})
+    TableSorted(::Type{<:VectorSpace})
 
-Trait of whether the attribute `:table` of a subtype of `AbstractVectorSpace` is sorted.
+Trait of whether the attribute `:table` of a subtype of `VectorSpace` is sorted.
 
 Only two instances are allowed, the first of which is the default for a subtype:
 * `TableSorted(false)`: indication of unsorted attribute `:table`
@@ -49,13 +49,13 @@ Only two instances are allowed, the first of which is the default for a subtype:
 """
 struct TableSorted{B} end
 TableSorted(B::Bool)=TableSorted{B}()
-TableSorted(::Type{<:AbstractVectorSpace})=TableSorted{false}()
+TableSorted(::Type{<:VectorSpace})=TableSorted{false}()
 
 """
     IsMultiIndexable(B::Bool)
-    IsMultiIndexable(::Type{<:AbstractVectorSpace})
+    IsMultiIndexable(::Type{<:VectorSpace})
 
-Trait of whether the bases of a subtype of `AbstractVectorSpace` can be represented by multiindices (Cartesian indices).
+Trait of whether the bases of a subtype of `VectorSpace` can be represented by multiindices (Cartesian indices).
 
 Only two instances are allowed, the first of which is the default for a subtype:
 * `IsMultiIndexable(false)`: indication of irrepresentability by Cartesian indices
@@ -63,13 +63,13 @@ Only two instances are allowed, the first of which is the default for a subtype:
 """
 struct IsMultiIndexable{B} end
 IsMultiIndexable(B::Bool)=IsMultiIndexable{B}()
-IsMultiIndexable(::Type{<:AbstractVectorSpace})=IsMultiIndexable{false}()
+IsMultiIndexable(::Type{<:VectorSpace})=IsMultiIndexable{false}()
 
 """
     MultiIndexOrderStyle(M::Char)
-    MultiIndexOrderStyle(::Type{<:AbstractVectorSpace})
+    MultiIndexOrderStyle(::Type{<:VectorSpace})
 
-Trait of the order style of the Cartesian-index representation of the bases of a subtype of `AbstractVectorSpace`.
+Trait of the order style of the Cartesian-index representation of the bases of a subtype of `VectorSpace`.
 
 Only two instances are allowed, the first of which is the default for a subtype:
 * `MultiIndexOrderStyle(`C`)`: indication of C/C++ order style
@@ -77,51 +77,51 @@ Only two instances are allowed, the first of which is the default for a subtype:
 """
 struct MultiIndexOrderStyle{M} end
 MultiIndexOrderStyle(M::Char)=M∈('C','F') ? MultiIndexOrderStyle{M}() : error("MultiIndexOrderStyle error: wrong input M($M).")
-MultiIndexOrderStyle(::Type{<:AbstractVectorSpace})=MultiIndexOrderStyle{'C'}()
+MultiIndexOrderStyle(::Type{<:VectorSpace})=MultiIndexOrderStyle{'C'}()
 
 """
-    dimension(vs::AbstractVectorSpace) -> Int
+    dimension(vs::VectorSpace) -> Int
 
 The dimension of a vector space.
 """
-dimension(vs::AbstractVectorSpace)=_dimension_(vs,vs|>typeof|>HasTable)
-_dimension_(vs::AbstractVectorSpace,::HasTable{true})=length(vs.table)
-_dimension_(vs::AbstractVectorSpace,::HasTable{false})=_dimension_(vs,vs|>typeof|>IsMultiIndexable)
-_dimension_(vs::AbstractVectorSpace,::IsMultiIndexable{true})=prod(dims(vs))
+dimension(vs::VectorSpace)=_dimension_(vs,vs|>typeof|>HasTable)
+_dimension_(vs::VectorSpace,::HasTable{true})=length(vs.table)
+_dimension_(vs::VectorSpace,::HasTable{false})=_dimension_(vs,vs|>typeof|>IsMultiIndexable)
+_dimension_(vs::VectorSpace,::IsMultiIndexable{true})=prod(dims(vs))
 
 """
-    getindex(vs::AbstractVectorSpace,i::Int)
+    getindex(vs::VectorSpace,i::Int)
 
 Get the ith basis of a vector space by the `[]` operator.
 """
-Base.getindex(vs::AbstractVectorSpace,i::Int)=_getindex_(vs,i,vs|>typeof|>HasTable,vs|>typeof|>IsMultiIndexable)
-_getindex_(vs::AbstractVectorSpace,i::Int,::HasTable{true},::IsMultiIndexable{false})=vs.table[i]
-_getindex_(vs::AbstractVectorSpace,i::Int,::HasTable{true},::IsMultiIndexable{true})=eltype(vs).name.wrapper(vs.table[i],vs)
-_getindex_(vs::AbstractVectorSpace,i::Int,::HasTable{false},::IsMultiIndexable{true})=_getindex_(vs,i,vs|>typeof|>MultiIndexOrderStyle)
-_getindex_(vs::AbstractVectorSpace,i::Int,::MultiIndexOrderStyle{'F'})=eltype(vs).name.wrapper(indtosub(dims(vs),i,forder),vs)
-_getindex_(vs::AbstractVectorSpace,i::Int,::MultiIndexOrderStyle{'C'})=eltype(vs).name.wrapper(indtosub(dims(vs),i,corder),vs)
+Base.getindex(vs::VectorSpace,i::Int)=_getindex_(vs,i,vs|>typeof|>HasTable,vs|>typeof|>IsMultiIndexable)
+_getindex_(vs::VectorSpace,i::Int,::HasTable{true},::IsMultiIndexable{false})=vs.table[i]
+_getindex_(vs::VectorSpace,i::Int,::HasTable{true},::IsMultiIndexable{true})=eltype(vs).name.wrapper(vs.table[i],vs)
+_getindex_(vs::VectorSpace,i::Int,::HasTable{false},::IsMultiIndexable{true})=_getindex_(vs,i,vs|>typeof|>MultiIndexOrderStyle)
+_getindex_(vs::VectorSpace,i::Int,::MultiIndexOrderStyle{'F'})=eltype(vs).name.wrapper(indtosub(dims(vs),i,forder),vs)
+_getindex_(vs::VectorSpace,i::Int,::MultiIndexOrderStyle{'C'})=eltype(vs).name.wrapper(indtosub(dims(vs),i,corder),vs)
 
 """
-    searchsortedfirst(vs::AbstractVectorSpace{B},basis::B) where B -> Int
+    searchsortedfirst(vs::VectorSpace{B},basis::B) where B -> Int
     searchsortedfirst(vs,basis) -> Int
 
 Search the index of a basis in a vector space.
 """
-Base.searchsortedfirst(vs::AbstractVectorSpace{B},basis::B) where B=_search_(vs,basis,vs|>typeof|>HasTable)
-_search_(vs::AbstractVectorSpace{B},basis::B,::HasTable{true}) where B=_search_(vs,basis,vs|>typeof|>TableSorted,vs|>typeof|>IsMultiIndexable)
-_search_(vs::AbstractVectorSpace{B},basis::B,::TableSorted{true},::IsMultiIndexable{false}) where B=searchsortedfirst(vs.table,basis)
-_search_(vs::AbstractVectorSpace{B},basis::B,::TableSorted{false},::IsMultiIndexable{false}) where B=findfirst(isequal(basis),vs.table)
-_search_(vs::AbstractVectorSpace{B},basis::B,::TableSorted{true},::IsMultiIndexable{true}) where B=searchsortedfirst(vs.table,inds(basis,vs))
-_search_(vs::AbstractVectorSpace{B},basis::B,::TableSorted{false},::IsMultiIndexable{true}) where B=findfirst(isequal(inds(basis,vs)),vs.table)
-_search_(vs::AbstractVectorSpace{B},basis::B,::HasTable{false}) where B=_search_(vs,basis,vs|>typeof|>IsMultiIndexable)
-_search_(vs::AbstractVectorSpace{B},basis::B,::IsMultiIndexable{true}) where B=_search_(vs,basis,vs|>typeof|>MultiIndexOrderStyle)
-function _search_(vs::AbstractVectorSpace{B},basis::B,::MultiIndexOrderStyle{'F'}) where B
+Base.searchsortedfirst(vs::VectorSpace{B},basis::B) where B=_search_(vs,basis,vs|>typeof|>HasTable)
+_search_(vs::VectorSpace{B},basis::B,::HasTable{true}) where B=_search_(vs,basis,vs|>typeof|>TableSorted,vs|>typeof|>IsMultiIndexable)
+_search_(vs::VectorSpace{B},basis::B,::TableSorted{true},::IsMultiIndexable{false}) where B=searchsortedfirst(vs.table,basis)
+_search_(vs::VectorSpace{B},basis::B,::TableSorted{false},::IsMultiIndexable{false}) where B=findfirst(isequal(basis),vs.table)
+_search_(vs::VectorSpace{B},basis::B,::TableSorted{true},::IsMultiIndexable{true}) where B=searchsortedfirst(vs.table,inds(basis,vs))
+_search_(vs::VectorSpace{B},basis::B,::TableSorted{false},::IsMultiIndexable{true}) where B=findfirst(isequal(inds(basis,vs)),vs.table)
+_search_(vs::VectorSpace{B},basis::B,::HasTable{false}) where B=_search_(vs,basis,vs|>typeof|>IsMultiIndexable)
+_search_(vs::VectorSpace{B},basis::B,::IsMultiIndexable{true}) where B=_search_(vs,basis,vs|>typeof|>MultiIndexOrderStyle)
+function _search_(vs::VectorSpace{B},basis::B,::MultiIndexOrderStyle{'F'}) where B
     basis ∈ vs ? subtoind(dims(vs),inds(basis,vs),forder) : error("searchsortedfirst error: input basis($basis) not found.")
 end
-function _search_(vs::AbstractVectorSpace{B},basis::B,::MultiIndexOrderStyle{'C'}) where B
+function _search_(vs::VectorSpace{B},basis::B,::MultiIndexOrderStyle{'C'}) where B
     basis ∈ vs ? subtoind(dims(vs),inds(basis,vs),corder) : error("searchsortedfirst error: input basis($basis) not found.")
 end
-function _search_(vs::AbstractVectorSpace{B},basis::B,::IsMultiIndexable{false}) where B
+function _search_(vs::VectorSpace{B},basis::B,::IsMultiIndexable{false}) where B
     for i=1:dimension(vs)
         vs[i]==basis && return i
     end
@@ -140,31 +140,31 @@ function Base.searchsortedfirst(vs,basis)
 end
 
 """
-    findfirst(basis::B,vs::AbstractVectorSpace{B}) where B -> Int
-    findfirst(bases,vs::AbstractVectorSpace) -> NTuple{length(bases),Int}
+    findfirst(basis::B,vs::VectorSpace{B}) where B -> Int
+    findfirst(bases,vs::VectorSpace) -> NTuple{length(bases),Int}
 
 Get the index of a basis or the indices of a couple of bases in a vector space.
 """
-Base.findfirst(basis::B,vs::AbstractVectorSpace{B}) where B=_find_(basis,vs,vs|>typeof|>HasTable)
-Base.findfirst(bases,vs::AbstractVectorSpace)=NTuple{length(bases),Int}(findfirst(basis,vs)::Int for basis in bases)
-_find_(basis::B,vs::AbstractVectorSpace{B},::HasTable{true}) where B=_find_(basis,vs,vs|>typeof|>TableSorted)
-_find_(basis::B,vs::AbstractVectorSpace{B},::TableSorted{true}) where B=_findwithmissing_(basis,vs)
-_find_(basis::B,vs::AbstractVectorSpace{B},::TableSorted{false}) where B=_findwithoutmissing_(basis,vs)
-_find_(basis::B,vs::AbstractVectorSpace{B},::HasTable{false}) where B=_find_(basis,vs,vs|>typeof|>IsMultiIndexable)
-_find_(basis::B,vs::AbstractVectorSpace{B},::IsMultiIndexable{true}) where B=_findwithoutmissing_(basis,vs)
-_find_(basis::B,vs::AbstractVectorSpace{B},::IsMultiIndexable{false}) where B=_findwithmissing_(basis,vs)
-_findwithmissing_(basis::B,vs::AbstractVectorSpace{B}) where B=(index=searchsortedfirst(vs,basis);0<index<=dimension(vs) && vs[index]==basis ? index : nothing)
-_findwithoutmissing_(basis::B,vs::AbstractVectorSpace{B}) where B=searchsortedfirst(vs,basis)
+Base.findfirst(basis::B,vs::VectorSpace{B}) where B=_find_(basis,vs,vs|>typeof|>HasTable)
+Base.findfirst(bases,vs::VectorSpace)=NTuple{length(bases),Int}(findfirst(basis,vs)::Int for basis in bases)
+_find_(basis::B,vs::VectorSpace{B},::HasTable{true}) where B=_find_(basis,vs,vs|>typeof|>TableSorted)
+_find_(basis::B,vs::VectorSpace{B},::TableSorted{true}) where B=_findwithmissing_(basis,vs)
+_find_(basis::B,vs::VectorSpace{B},::TableSorted{false}) where B=_findwithoutmissing_(basis,vs)
+_find_(basis::B,vs::VectorSpace{B},::HasTable{false}) where B=_find_(basis,vs,vs|>typeof|>IsMultiIndexable)
+_find_(basis::B,vs::VectorSpace{B},::IsMultiIndexable{true}) where B=_findwithoutmissing_(basis,vs)
+_find_(basis::B,vs::VectorSpace{B},::IsMultiIndexable{false}) where B=_findwithmissing_(basis,vs)
+_findwithmissing_(basis::B,vs::VectorSpace{B}) where B=(index=searchsortedfirst(vs,basis);0<index<=dimension(vs) && vs[index]==basis ? index : nothing)
+_findwithoutmissing_(basis::B,vs::VectorSpace{B}) where B=searchsortedfirst(vs,basis)
 
 """
-    in(basis::B,vs::AbstractVectorSpace{B}) where B -> Bool
+    in(basis::B,vs::VectorSpace{B}) where B -> Bool
 
 Judge whether a basis belongs to a vector space.
 """
-Base.in(basis::B,vs::AbstractVectorSpace{B}) where B=_in_(basis,vs,vs|>typeof|>HasTable,vs|>typeof|>IsMultiIndexable)
-_in_(basis::B,vs::AbstractVectorSpace{B},::HasTable,::IsMultiIndexable) where B=isa(findfirst(basis,vs),Integer)
-_in_(basis::B,vs::AbstractVectorSpace{B},::HasTable{false},::IsMultiIndexable{true}) where B=_in_(basis,vs,Val(vs|>typeof|>rank))
-@generated function _in_(basis::B,vs::AbstractVectorSpace{B},::Val{N}) where {B,N}
+Base.in(basis::B,vs::VectorSpace{B}) where B=_in_(basis,vs,vs|>typeof|>HasTable,vs|>typeof|>IsMultiIndexable)
+_in_(basis::B,vs::VectorSpace{B},::HasTable,::IsMultiIndexable) where B=isa(findfirst(basis,vs),Integer)
+_in_(basis::B,vs::VectorSpace{B},::HasTable{false},::IsMultiIndexable{true}) where B=_in_(basis,vs,Val(vs|>typeof|>rank))
+@generated function _in_(basis::B,vs::VectorSpace{B},::Val{N}) where {B,N}
     N==0 && return :(true)
     prepare=:(INDS=inds(basis,vs);DIMS=dims(vs))
     expr=:(0<INDS[1]<=DIMS[1])
@@ -182,7 +182,7 @@ Simplest vector space, whose bases are stored in the attribute `:table` as an nt
 
 The `:table` attribute can be sorted or unsorted, which is determined by the type parameter `S`, with `'T'` for sorted and `'F'` for unsorted.
 """
-struct DirectVectorSpace{S,B,N} <: AbstractVectorSpace{B}
+struct DirectVectorSpace{S,B,N} <: VectorSpace{B}
     table::NTuple{N,B}
     DirectVectorSpace{S}(table::NTuple{N,B}) where {S,B,N}=(@assert(S∈('T','F'),"DirectVectorSpace error: wrong type parameter S($S).");new{S,B,N}(table))
 end
@@ -205,14 +205,14 @@ Get the direct sum between bases or direct vector spaces.
 ⊕(vs1::DirectVectorSpace{<:Any,B},vs2::DirectVectorSpace{<:Any,B}) where B=DirectVectorSpace{'F'}(vs1.table...,vs2.table...)
 
 """
-    OrderedIndices{N} <: AbstractVectorSpace{NTuple{N,Int}}
+    OrderedIndices{N} <: VectorSpace{NTuple{N,Int}}
 
 The simplest abstract class of multiindexable vector spaces, whose bases are just tuples of integers.
 
 This class of vector spaces must have the following attribute:
 `dims::NTuple{N,Int}`: the dimesnions of the Cartesian indices along all axes
 """
-abstract type OrderedIndices{N} <: AbstractVectorSpace{NTuple{N,Int}} end
+abstract type OrderedIndices{N} <: VectorSpace{NTuple{N,Int}} end
 IsMultiIndexable(::Type{<:OrderedIndices})=IsMultiIndexable(true)
 dims(vs::OrderedIndices)=vs.dims
 inds(basis::NTuple{N,Int},::OrderedIndices{N}) where N=basis
@@ -295,16 +295,16 @@ rank(tables::GradedTables)=tables|>typeof|>rank
 rank(::Type{T}) where {T<:GradedTables}=fieldcount(fieldtype(T,:data))
 
 """
-    GradedVectorSpace{G,B,V<:AbstractVectorSpace,T<:GradedTables{G,V}} <: AbstractVectorSpace{Tuple{G,B}}
+    GradedVectorSpace{G,B,V<:VectorSpace,T<:GradedTables{G,V}} <: VectorSpace{Tuple{G,B}}
 
 Abstract type of graded vector spaces.
 
 A graded vector space is a vector space that has the extra structure of a grading, which is a decomposition of the vector space into a direct sum of vector subspaces.
 
 Concrete subtypes must have the following attribute:
-* `:tables::GradedTables{G,V} where {G,V<:AbstractVectorSpace}`: the tables of the subspaces.
+* `:tables::GradedTables{G,V} where {G,V<:VectorSpace}`: the tables of the subspaces.
 """
-abstract type GradedVectorSpace{G,B,V<:AbstractVectorSpace,T<:GradedTables{G,V}} <: AbstractVectorSpace{Tuple{G,B}} end
+abstract type GradedVectorSpace{G,B,V<:VectorSpace,T<:GradedTables{G,V}} <: VectorSpace{Tuple{G,B}} end
 
 """
     keys(vs::GradedVectorSpace) -> Tuple
