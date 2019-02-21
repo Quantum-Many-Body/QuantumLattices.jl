@@ -1713,11 +1713,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/VectorSpaces.html#AbstractVectorSpace-1",
+    "location": "man/Mathematics/VectorSpaces.html#VectorSpace-1",
     "page": "Vector spaces",
-    "title": "AbstractVectorSpace",
+    "title": "VectorSpace",
     "category": "section",
-    "text": "AbstractVectorSpace{B} is the abstaction of a vector space, which has only one type parameter:B<:Any: the type of the bases of the vector spaceBasically, a subtype should implement the following 3 methods:dimension(vs::AbstractVectorSpace) -> Int\nGet the dimension of a vector space\nBase.getindex(vs::AbstractVectorSpace{B},i::Int)  where B -> B\nGet the ith basis of a vector space\nBase.searchsortedfirst(vs::AbstractVectorSpace{B},basis::B) where B -> Int\nSearch the index of a basis in a vector spaceHowever, we provide several interfaces, including type traits and methods to deal with common situations:A vector space whose bases are stored in a table under the attribute name :table can be ascribed to the HasTable trait and the TableSorted trait. Specifically, the first trait must be implemented as\nHasTable(::Type{SubType})=HasTable(true)\nWhile, the second should be implemented as\nTableSorted(::Type{SubType})=TableSorted(false)\nif the table is unsorted, and as\nTableSorted(::Type{SubType})=TableSorted(true)\nif the table is sorted.\nA vector space whose bases may be represented by a multiindex (Cartesian index) can be ascribed to the traits IsMultiIndexable and MultiIndexOrderStyle. Specifically, the first trait must be implemented as\nIsMultiIndexable(::Type{SubType})=IsMultiIndexable(true)\nWhile, the second shoule be implemented as\nMultiIndexOrderStyle(::Type{SubType})=MultiIndexOrderStyle(\'C\')\nif the order style of the multiindex is C/C++ like, and as\nMultiIndexOrderStyle(::Type{SubType})=MultiIndexOrderStyle(\'F\')\nif the order style is Fortran like. Furthermore, it should implement the following methods\nrank(::Type{SubType}) -> Int\nGet the rank of a multiindexable vector space.\ndims(vs::SubType) -> NTuple{vs|>typeof|>rank,Int}\nGet the dimensions along each axes of a multiindexable vector space.\ninds(basis,vs::SubType) ->  NTuple{vs|>typeof|>rank,Int}\nGet the Cartesian index representation of a basis in a multiindexable vector space.\neltype(SubType).name.wrapper(index::NTuple{N,Int},vs::SubType)\nConstruct a basis from a tuple of integers and a multiindexable vector space.\nNote that a multiindexable vector space can also have a sorted or unsorted table. But then the trait MultiIndexOrderStyle takes no effects and the sequences of its bases will be completely determined by its attribute :table.If the type taits and methods are defined properly as stated above, the dimension, getindex and searchsortedfirst methods get default implementations. No need to worry about them any more.Other features includecomparison: == and isequal\niteration: iterate\ninquiry: size, findfirst and in"
+    "text": "VectorSpace{B} is the abstaction of a vector space, which has only one type parameter:B<:Any: the type of the bases of the vector spaceBasically, a subtype should implement the following 3 methods:dimension(vs::VectorSpace) -> Int\nGet the dimension of a vector space\nBase.getindex(vs::VectorSpace{B},i::Int)  where B -> B\nGet the ith basis of a vector space\nBase.searchsortedfirst(vs::VectorSpace{B},basis::B) where B -> Int\nSearch the index of a basis in a vector spaceHowever, we provide several interfaces, including type traits and methods to deal with common situations:A vector space whose bases are stored in a table under the attribute name :table can be ascribed to the HasTable trait and the TableSorted trait. Specifically, the first trait must be implemented as\nHasTable(::Type{SubType})=HasTable(true)\nWhile, if the table is unsorted, the second trait should be implemented as\nTableSorted(::Type{SubType})=TableSorted(false)\nand if the table is sorted, the second trait should be implemented as\nTableSorted(::Type{SubType})=TableSorted(true)\nA vector space whose bases may be represented by a multiindex (Cartesian index) can be ascribed to the traits IsMultiIndexable and MultiIndexOrderStyle. Specifically, the first trait must be implemented as\nIsMultiIndexable(::Type{SubType})=IsMultiIndexable(true)\nWhile, if the order style of the multiindex is C/C++ like, the second trait shoule be implemented as\nMultiIndexOrderStyle(::Type{SubType})=MultiIndexOrderStyle(\'C\')\nand if the order style is Fortran like, the second trait shoule be implemented as\nMultiIndexOrderStyle(::Type{SubType})=MultiIndexOrderStyle(\'F\')\nFurthermore, it should implement the following methods\nrank(::Type{SubType}) -> Int\nGet the rank of a multiindexable vector space.\ndims(vs::SubType) -> NTuple{vs|>typeof|>rank,Int}\nGet the dimensions along each axes of a multiindexable vector space.\ninds(basis,vs::SubType) ->  NTuple{vs|>typeof|>rank,Int}\nGet the Cartesian index representation of a basis in a multiindexable vector space.\neltype(SubType).name.wrapper(index::NTuple{N,Int},vs::SubType)\nConstruct a basis from a tuple of integers and a multiindexable vector space.\nNote that a multiindexable vector space can also have a sorted or unsorted table. But then the trait MultiIndexOrderStyle takes no effects and the sequences of its bases will be completely determined by its attribute :table.If the type taits and methods are defined properly as stated above, the dimension, getindex and searchsortedfirst methods get default implementations. No need to worry about them any more.Other features includecomparison: == and isequal\niteration: iterate\ninquiry: size, findfirst and in"
 },
 
 {
@@ -1757,15 +1757,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Vector spaces",
     "title": "GradedVectorSpace",
     "category": "section",
-    "text": "GradedVectorSpace{G,B,V,T} defines the abstract type of graded vector spaces, which are vector spaces that have the extra structure of a grading, which is a decomposition of the vector space into a direct sum of vector subspaces.It has 4 type parametersG: the type of the grades\nB: the eltype of the subspaces\nV<:AbstractVectorSpace: the type of the subspaces\nT<:GradedTables{G,V}: the type of the subspaces\' contentsConcrete subtypes must have the following attribute::tables::T: the contents of the subspaces, which must be a GradedTables.Specifically, the dimension, getindex and searchsortedfirst methods are overloaded in support of various purposes. For details, please refer to the manual."
-},
-
-{
-    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Mathematics.VectorSpaces.AbstractVectorSpace",
-    "page": "Vector spaces",
-    "title": "Hamiltonian.Mathematics.VectorSpaces.AbstractVectorSpace",
-    "category": "type",
-    "text": "AbstractVectorSpace{B} <: AbstractVector{B}\n\nAbstract vector space.\n\n\n\n\n\n"
+    "text": "GradedVectorSpace{G,B,V,T} defines the abstract type of graded vector spaces, which are vector spaces that have the extra structure of a grading, which is a decomposition of the vector space into a direct sum of vector subspaces.It has 4 type parametersG: the type of the grades\nB: the eltype of the subspaces\nV<:VectorSpace: the type of the subspaces\nT<:GradedTables{G,V}: the type of the subspaces\' contentsConcrete subtypes must have the following attribute::tables::T: the contents of the subspaces, which must be a GradedTables.Specifically, the dimension, getindex and searchsortedfirst methods are overloaded in support of various purposes. For details, please refer to the manual."
 },
 
 {
@@ -1797,7 +1789,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Vector spaces",
     "title": "Hamiltonian.Mathematics.VectorSpaces.GradedVectorSpace",
     "category": "type",
-    "text": "GradedVectorSpace{G,B,V<:AbstractVectorSpace,T<:GradedTables{G,V}} <: AbstractVectorSpace{Tuple{G,B}}\n\nAbstract type of graded vector spaces.\n\nA graded vector space is a vector space that has the extra structure of a grading, which is a decomposition of the vector space into a direct sum of vector subspaces.\n\nConcrete subtypes must have the following attribute:\n\n:tables::GradedTables{G,V} where {G,V<:AbstractVectorSpace}: the tables of the subspaces.\n\n\n\n\n\n"
+    "text": "GradedVectorSpace{G,B,V<:VectorSpace,T<:GradedTables{G,V}} <: VectorSpace{Tuple{G,B}}\n\nAbstract type of graded vector spaces.\n\nA graded vector space is a vector space that has the extra structure of a grading, which is a decomposition of the vector space into a direct sum of vector subspaces.\n\nConcrete subtypes must have the following attribute:\n\n:tables::GradedTables{G,V} where {G,V<:VectorSpace}: the tables of the subspaces.\n\n\n\n\n\n"
 },
 
 {
@@ -1805,7 +1797,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Vector spaces",
     "title": "Hamiltonian.Mathematics.VectorSpaces.HasTable",
     "category": "type",
-    "text": "HasTable(B::Bool)\nHasTable(::Type{<:AbstractVectorSpace})\n\nTrait of whether a subtype of AbstractVectorSpace has the attribute :table.\n\nOnly two instances are allowed, the first of which is the default for a subtype:\n\nHasTable(false): indication of not having the attribute :table\nHasTable(true): indication of having the attribute :table\n\n\n\n\n\n"
+    "text": "HasTable(B::Bool)\nHasTable(::Type{<:VectorSpace})\n\nTrait of whether a subtype of VectorSpace has the attribute :table.\n\nOnly two instances are allowed, the first of which is the default for a subtype:\n\nHasTable(false): indication of not having the attribute :table\nHasTable(true): indication of having the attribute :table\n\n\n\n\n\n"
 },
 
 {
@@ -1813,7 +1805,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Vector spaces",
     "title": "Hamiltonian.Mathematics.VectorSpaces.IsMultiIndexable",
     "category": "type",
-    "text": "IsMultiIndexable(B::Bool)\nIsMultiIndexable(::Type{<:AbstractVectorSpace})\n\nTrait of whether the bases of a subtype of AbstractVectorSpace can be represented by multiindices (Cartesian indices).\n\nOnly two instances are allowed, the first of which is the default for a subtype:\n\nIsMultiIndexable(false): indication of irrepresentability by Cartesian indices\nIsMultiIndexable(true): indication of representability by Cartesian indices\n\n\n\n\n\n"
+    "text": "IsMultiIndexable(B::Bool)\nIsMultiIndexable(::Type{<:VectorSpace})\n\nTrait of whether the bases of a subtype of VectorSpace can be represented by multiindices (Cartesian indices).\n\nOnly two instances are allowed, the first of which is the default for a subtype:\n\nIsMultiIndexable(false): indication of irrepresentability by Cartesian indices\nIsMultiIndexable(true): indication of representability by Cartesian indices\n\n\n\n\n\n"
 },
 
 {
@@ -1821,7 +1813,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Vector spaces",
     "title": "Hamiltonian.Mathematics.VectorSpaces.MultiIndexOrderStyle",
     "category": "type",
-    "text": "MultiIndexOrderStyle(M::Char)\nMultiIndexOrderStyle(::Type{<:AbstractVectorSpace})\n\nTrait of the order style of the Cartesian-index representation of the bases of a subtype of AbstractVectorSpace.\n\nOnly two instances are allowed, the first of which is the default for a subtype:\n\nMultiIndexOrderStyle(C): indication of C/C++ order style\nMultiIndexOrderStyle(F): indication of Fortran order style\n\n\n\n\n\n"
+    "text": "MultiIndexOrderStyle(M::Char)\nMultiIndexOrderStyle(::Type{<:VectorSpace})\n\nTrait of the order style of the Cartesian-index representation of the bases of a subtype of VectorSpace.\n\nOnly two instances are allowed, the first of which is the default for a subtype:\n\nMultiIndexOrderStyle(C): indication of C/C++ order style\nMultiIndexOrderStyle(F): indication of Fortran order style\n\n\n\n\n\n"
 },
 
 {
@@ -1829,7 +1821,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Vector spaces",
     "title": "Hamiltonian.Mathematics.VectorSpaces.OrderedIndices",
     "category": "type",
-    "text": "OrderedIndices{N} <: AbstractVectorSpace{NTuple{N,Int}}\n\nThe simplest abstract class of multiindexable vector spaces, whose bases are just tuples of integers.\n\nThis class of vector spaces must have the following attribute: dims::NTuple{N,Int}: the dimesnions of the Cartesian indices along all axes\n\n\n\n\n\n"
+    "text": "OrderedIndices{N} <: VectorSpace{NTuple{N,Int}}\n\nThe simplest abstract class of multiindexable vector spaces, whose bases are just tuples of integers.\n\nThis class of vector spaces must have the following attribute: dims::NTuple{N,Int}: the dimesnions of the Cartesian indices along all axes\n\n\n\n\n\n"
 },
 
 {
@@ -1837,7 +1829,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Vector spaces",
     "title": "Hamiltonian.Mathematics.VectorSpaces.TableSorted",
     "category": "type",
-    "text": "TableSorted(B::Bool)\nTableSorted(::Type{<:AbstractVectorSpace})\n\nTrait of whether the attribute :table of a subtype of AbstractVectorSpace is sorted.\n\nOnly two instances are allowed, the first of which is the default for a subtype:\n\nTableSorted(false): indication of unsorted attribute :table\nTableSorted(true): indication of sorted attribute :table\n\n\n\n\n\n"
+    "text": "TableSorted(B::Bool)\nTableSorted(::Type{<:VectorSpace})\n\nTrait of whether the attribute :table of a subtype of VectorSpace is sorted.\n\nOnly two instances are allowed, the first of which is the default for a subtype:\n\nTableSorted(false): indication of unsorted attribute :table\nTableSorted(true): indication of sorted attribute :table\n\n\n\n\n\n"
 },
 
 {
@@ -1849,6 +1841,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Mathematics.VectorSpaces.VectorSpace",
+    "page": "Vector spaces",
+    "title": "Hamiltonian.Mathematics.VectorSpaces.VectorSpace",
+    "category": "type",
+    "text": "VectorSpace{B} <: AbstractVector{B}\n\nAbstract vector space.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Prerequisites.Interfaces.:⊕-Union{Tuple{B}, Tuple{B,B}} where B",
     "page": "Vector spaces",
     "title": "Hamiltonian.Prerequisites.Interfaces.:⊕",
@@ -1857,19 +1857,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Prerequisites.Interfaces.degree-Union{Tuple{G}, Tuple{G,GradedVectorSpace{G,B,V,T} where T<:(Pairs{G,V,KS,VS} where VS<:Tuple where KS<:Tuple) where V<:AbstractVectorSpace where B}} where G",
+    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Prerequisites.Interfaces.degree-Union{Tuple{G}, Tuple{G,GradedVectorSpace{G,B,V,T} where T<:(Pairs{G,V,KS,VS} where VS<:Tuple where KS<:Tuple) where V<:VectorSpace where B}} where G",
     "page": "Vector spaces",
     "title": "Hamiltonian.Prerequisites.Interfaces.degree",
     "category": "method",
     "text": "degree(g::G,vs::GradedVectorSpace{G}) where G -> Int\n\nGet the degree of a vector subspace whose grade are represented by g.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Prerequisites.Interfaces.dimension-Tuple{Hamiltonian.Mathematics.VectorSpaces.AbstractVectorSpace}",
-    "page": "Vector spaces",
-    "title": "Hamiltonian.Prerequisites.Interfaces.dimension",
-    "category": "method",
-    "text": "dimension(vs::AbstractVectorSpace) -> Int\n\nThe dimension of a vector space.\n\n\n\n\n\n"
 },
 
 {
@@ -1878,6 +1870,14 @@ var documenterSearchIndex = {"docs": [
     "title": "Hamiltonian.Prerequisites.Interfaces.dimension",
     "category": "method",
     "text": "dimension(vs::GradedVectorSpace) -> Int\ndimension(vs::GradedVectorSpace{G},g::G) where G -> Int\ndimension(vs::GradedVectorSpace{G},gs::NTuple{N,G}) where {G,N} -> Int\n\nGet the dimension of the whole graded vector space or some vector subspaces.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Prerequisites.Interfaces.dimension-Tuple{Hamiltonian.Mathematics.VectorSpaces.VectorSpace}",
+    "page": "Vector spaces",
+    "title": "Hamiltonian.Prerequisites.Interfaces.dimension",
+    "category": "method",
+    "text": "dimension(vs::VectorSpace) -> Int\n\nThe dimension of a vector space.\n\n\n\n\n\n"
 },
 
 {
@@ -1897,19 +1897,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/VectorSpaces.html#Base.Sort.searchsortedfirst-Union{Tuple{B}, Tuple{AbstractVectorSpace{B},B}} where B",
-    "page": "Vector spaces",
-    "title": "Base.Sort.searchsortedfirst",
-    "category": "method",
-    "text": "searchsortedfirst(vs::AbstractVectorSpace{B},basis::B) where B -> Int\nsearchsortedfirst(vs,basis) -> Int\n\nSearch the index of a basis in a vector space.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Mathematics/VectorSpaces.html#Base.Sort.searchsortedfirst-Union{Tuple{B}, Tuple{G}, Tuple{GradedVectorSpace{G,B,V,T} where T<:(Pairs{G,V,KS,VS} where VS<:Tuple where KS<:Tuple) where V<:AbstractVectorSpace,Tuple{G,B}}} where B where G",
+    "location": "man/Mathematics/VectorSpaces.html#Base.Sort.searchsortedfirst-Union{Tuple{B}, Tuple{G}, Tuple{GradedVectorSpace{G,B,V,T} where T<:(Pairs{G,V,KS,VS} where VS<:Tuple where KS<:Tuple) where V<:VectorSpace,Tuple{G,B}}} where B where G",
     "page": "Vector spaces",
     "title": "Base.Sort.searchsortedfirst",
     "category": "method",
     "text": "searchsortedfirst(vs::GradedVectorSpace{G,B},pair::Tuple{G,B}) where {G,B} -> Int\n\nFind the index of a grade-basis pair in a graded vector space.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Base.Sort.searchsortedfirst-Union{Tuple{B}, Tuple{VectorSpace{B},B}} where B",
+    "page": "Vector spaces",
+    "title": "Base.Sort.searchsortedfirst",
+    "category": "method",
+    "text": "searchsortedfirst(vs::VectorSpace{B},basis::B) where B -> Int\nsearchsortedfirst(vs,basis) -> Int\n\nSearch the index of a basis in a vector space.\n\n\n\n\n\n"
 },
 
 {
@@ -1921,23 +1921,23 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/VectorSpaces.html#Base.findfirst-Union{Tuple{B}, Tuple{B,AbstractVectorSpace{B}}} where B",
+    "location": "man/Mathematics/VectorSpaces.html#Base.findfirst-Union{Tuple{B}, Tuple{B,VectorSpace{B}}} where B",
     "page": "Vector spaces",
     "title": "Base.findfirst",
     "category": "method",
-    "text": "findfirst(basis::B,vs::AbstractVectorSpace{B}) where B -> Int\nfindfirst(bases,vs::AbstractVectorSpace) -> NTuple{length(bases),Int}\n\nGet the index of a basis or the indices of a couple of bases in a vector space.\n\n\n\n\n\n"
+    "text": "findfirst(basis::B,vs::VectorSpace{B}) where B -> Int\nfindfirst(bases,vs::VectorSpace) -> NTuple{length(bases),Int}\n\nGet the index of a basis or the indices of a couple of bases in a vector space.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/VectorSpaces.html#Base.getindex-Tuple{Hamiltonian.Mathematics.VectorSpaces.AbstractVectorSpace,Int64}",
+    "location": "man/Mathematics/VectorSpaces.html#Base.getindex-Tuple{Hamiltonian.Mathematics.VectorSpaces.VectorSpace,Int64}",
     "page": "Vector spaces",
     "title": "Base.getindex",
     "category": "method",
-    "text": "getindex(vs::AbstractVectorSpace,i::Int)\n\nGet the ith basis of a vector space by the [] operator.\n\n\n\n\n\n"
+    "text": "getindex(vs::VectorSpace,i::Int)\n\nGet the ith basis of a vector space by the [] operator.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/VectorSpaces.html#Base.getindex-Union{Tuple{B}, Tuple{GradedVectorSpace{B,B1,V,T} where T<:(Pairs{B,V,KS,VS} where VS<:Tuple where KS<:Tuple) where V<:AbstractVectorSpace where B1,Tuple{B,Int64}}} where B",
+    "location": "man/Mathematics/VectorSpaces.html#Base.getindex-Union{Tuple{B}, Tuple{GradedVectorSpace{B,B1,V,T} where T<:(Pairs{B,V,KS,VS} where VS<:Tuple where KS<:Tuple) where V<:VectorSpace where B1,Tuple{B,Int64}}} where B",
     "page": "Vector spaces",
     "title": "Base.getindex",
     "category": "method",
@@ -1945,11 +1945,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/VectorSpaces.html#Base.in-Union{Tuple{B}, Tuple{B,AbstractVectorSpace{B}}} where B",
+    "location": "man/Mathematics/VectorSpaces.html#Base.in-Union{Tuple{B}, Tuple{B,VectorSpace{B}}} where B",
     "page": "Vector spaces",
     "title": "Base.in",
     "category": "method",
-    "text": "in(basis::B,vs::AbstractVectorSpace{B}) where B -> Bool\n\nJudge whether a basis belongs to a vector space.\n\n\n\n\n\n"
+    "text": "in(basis::B,vs::VectorSpace{B}) where B -> Bool\n\nJudge whether a basis belongs to a vector space.\n\n\n\n\n\n"
 },
 
 {
@@ -3409,35 +3409,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Subscript-and-Subscripts-1",
+    "location": "man/Essentials/DegreesOfFreedom.html#OID-and-Operator-1",
     "page": "Degrees of freedom",
-    "title": "Subscript and Subscripts",
+    "title": "OID and Operator",
     "category": "section",
     "text": ""
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Coupling-and-Couplings-1",
+    "location": "man/Essentials/DegreesOfFreedom.html#Operators-1",
     "page": "Degrees of freedom",
-    "title": "Coupling and Couplings",
+    "title": "Operators",
     "category": "section",
     "text": ""
-},
-
-{
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.Coupling",
-    "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.Coupling",
-    "category": "type",
-    "text": "Coupling{N,V<:Number,I<:ID{<:NTuple{N,SimpleID}}} <: Element{N,V,I}\n\nThe coupling intra/inter interanl degrees of freedom at different lattice points.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.Couplings",
-    "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.Couplings",
-    "category": "type",
-    "text": "Couplings{I<:ID,C<:Coupling} <: AbstractDict{I,C}\n\nA pack of couplings intra/inter interanl degrees of freedom at different lattice points.\n\nAlias for Elements{I,C}.\n\n\n\n\n\n"
 },
 
 {
@@ -3513,35 +3497,27 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.Subscript",
+    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.OID",
     "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.Subscript",
+    "title": "Hamiltonian.Essentials.DegreesOfFreedom.OID",
     "category": "type",
-    "text": "Subscript(  ipattern::NTuple{N1,Any},\n            opattern::NTuple{N2,Any},\n            mapping::Union{Function,Nothing}=nothing,\n            constrain::Union{Function,Nothing}=nothing,\n            identifier::Union{Symbol,Char}=wildcard\n            ) where {N1,N2}\nSubscript{N}() where N\nSubscript(opattern::NTuple{N,Int}) where N\n\nThe subscripts of some orbital/spin degrees of freedom.\n\n\n\n\n\n"
+    "text": "OID(index::Index,::Nothing,::Nothing,seq::Union{Nothing,Int})\nOID(index::Index,rcoord::SVector{N,Float},icoord::SVector{N,Float},seq::Union{Nothing,Int}) where N\nOID(index::Index,rcoord::Vector{Float},icoord::Vector{Float},seq::Union{Nothing,Int})\nOID(index::Index;rcoord::Union{Nothing,SVector,Vector{Float}}=nothing,icoord::Union{Nothing,SVector,Vector{Float}}=nothing,seq::Union{Nothing,Int}=nothing)\n\nOperator id.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.Subscript-Tuple{}",
+    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.Operator",
     "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.Subscript",
-    "category": "method",
-    "text": "(subscript::Subscript{N})(::Val{\'M\'},values::Vararg{Int,N}) where N -> NTuple{dimension(subscript),Int}\n(subscript::Subscript{N})(::Val{\'C\'},values::Vararg{Int,N}) where N -> Bool\n\nConstruct the subscripts from a set of independent variables.\nJudge whether a set of independent variables are valid to construct the subscripts.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.Subscripts",
-    "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.Subscripts",
+    "title": "Hamiltonian.Essentials.DegreesOfFreedom.Operator",
     "category": "type",
-    "text": "Subscripts(contents::Subscript...)\n\nA complete set of all the independent subscripts of the orbital/spin degrees of freedom.\n\n\n\n\n\n"
+    "text": "Operator{N,V<:Number,I<:ID{<:NTuple{N,OID}}} <: Element{N,V,I}\n\nAbstract type for an operator.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.Subscripts-Tuple{}",
+    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.Operators",
     "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.Subscripts",
-    "category": "method",
-    "text": "(subscripts::Subscripts)(::Val{\'M\'},values::NTuple{N,Int}) where N -> NTuple{dimension(subscripts),Int}\n(subscripts::Subscripts)(::Val{\'C\'},values::NTuple{N,Int}) where N -> Bool\n\nConstruct the complete set of subscripts from a complete set of independent variables.\nJudge whether a complete set of independent variables are valid to construct the complete subscripts.\n\n\n\n\n\n"
+    "title": "Hamiltonian.Essentials.DegreesOfFreedom.Operators",
+    "category": "type",
+    "text": "Operators(opts::Operator...)\n\nA set of operators.\n\nType alias of Operators{I<:ID,O<:Operator}=Elements{I,O}.\n\n\n\n\n\n"
 },
 
 {
@@ -3569,14 +3545,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.@subscript",
-    "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.@subscript",
-    "category": "macro",
-    "text": "@subscript expr::Expr with constrain::Expr -> Subscript\n\nConstruct a subscript from a map and optionally with a constrain.\n\n\n\n\n\n"
-},
-
-{
     "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.directindextotuple",
     "page": "Degrees of freedom",
     "title": "Hamiltonian.Essentials.DegreesOfFreedom.directindextotuple",
@@ -3601,11 +3569,59 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.isHermitian-Tuple{Dict{I,O} where O<:Operator where I<:Hamiltonian.Mathematics.AlgebraOverFields.ID}",
+    "page": "Degrees of freedom",
+    "title": "Hamiltonian.Essentials.DegreesOfFreedom.isHermitian",
+    "category": "method",
+    "text": "isHermitian(opts::Operators) -> Bool\n\nJudge whether a set of operators as a whole is Hermitian.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.isHermitian-Tuple{Operator}",
+    "page": "Degrees of freedom",
+    "title": "Hamiltonian.Essentials.DegreesOfFreedom.isHermitian",
+    "category": "method",
+    "text": "isHermitian(opt::Operator) -> Bool\n\nJudge whether an operator is Hermitian.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.isHermitian-Union{Tuple{ID{#s236} where #s236<:Tuple{Vararg{OID,N}}}, Tuple{N}} where N",
+    "page": "Degrees of freedom",
+    "title": "Hamiltonian.Essentials.DegreesOfFreedom.isHermitian",
+    "category": "method",
+    "text": "isHermitian(oid::ID{<:NTuple{N,OID}}) where N -> Bool\n\nJudge whether an operator id is Hermitian.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.oidtype",
+    "page": "Degrees of freedom",
+    "title": "Hamiltonian.Essentials.DegreesOfFreedom.oidtype",
+    "category": "function",
+    "text": "oidtype\n\nGet the compatible oid type.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.otype",
+    "page": "Degrees of freedom",
+    "title": "Hamiltonian.Essentials.DegreesOfFreedom.otype",
+    "category": "function",
+    "text": "otype\n\nGet the compatible operator type from a term type, a bond type and a table type.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.pid-Tuple{Index}",
     "page": "Degrees of freedom",
     "title": "Hamiltonian.Essentials.DegreesOfFreedom.pid",
     "category": "method",
     "text": "pid(index::Index) -> PID\n\nGet the spatial part of an index.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.Spatials.icoord-Tuple{Operator{1,V,I} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{#s254} where #s254<:Tuple{OID}) where V<:Number}",
+    "page": "Degrees of freedom",
+    "title": "Hamiltonian.Essentials.Spatials.icoord",
+    "category": "method",
+    "text": "icoord(opt::Operator{1}) -> SVector\nicoord(opt::Operator{2}) -> SVector\n\nGet the whole icoord of an operator.\n\n\n\n\n\n"
 },
 
 {
@@ -3617,59 +3633,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Prerequisites.Interfaces.dimension-Tuple{Subscripts,Int64}",
+    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.Spatials.rcoord-Tuple{Operator{1,V,I} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{#s254} where #s254<:Tuple{OID}) where V<:Number}",
     "page": "Degrees of freedom",
-    "title": "Hamiltonian.Prerequisites.Interfaces.dimension",
+    "title": "Hamiltonian.Essentials.Spatials.rcoord",
     "category": "method",
-    "text": "dimension(subscripts::Subscripts,i::Int) -> Int\ndimension(::Type{<:Subscripts{T}},i::Int) where T -> Int\n\nGet the total number of the whole variables of a component of the complete subscript set.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Prerequisites.Interfaces.dimension-Tuple{Subscripts}",
-    "page": "Degrees of freedom",
-    "title": "Hamiltonian.Prerequisites.Interfaces.dimension",
-    "category": "method",
-    "text": "dimension(subscripts::Subscripts) -> Int\ndimension(::Type{S}) where S<:Subscripts -> Int\n\nGet the total number of the whole variables of the complete subscript set.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Prerequisites.Interfaces.dimension-Tuple{Subscript}",
-    "page": "Degrees of freedom",
-    "title": "Hamiltonian.Prerequisites.Interfaces.dimension",
-    "category": "method",
-    "text": "dimension(subscript::Subscript) -> Int\ndimension(::Type{<:Subscript{N1,N2}}) where {N1,N2} -> Int\n\nGet the number of the whole variables that are used to describe the subscripts of some orbital/spin degrees of freedom.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Prerequisites.Interfaces.expand-Union{Tuple{N}, Tuple{Subscripts,Tuple{Vararg{Int64,N}}}} where N",
-    "page": "Degrees of freedom",
-    "title": "Hamiltonian.Prerequisites.Interfaces.expand",
-    "category": "method",
-    "text": "expand(subscripts::Subscripts,dimensions::NTuple{N,Int}) where N -> SbExpand\n\nExpand a complete set of subscripts with a given set of variable ranges.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Prerequisites.Interfaces.rank-Tuple{Subscripts,Int64}",
-    "page": "Degrees of freedom",
-    "title": "Hamiltonian.Prerequisites.Interfaces.rank",
-    "category": "method",
-    "text": "rank(subscripts::Subscripts,i::Int) -> Int\nrank(::Type{<:Subscripts{T}},i::Int) where T -> Int\n\nGet the number of the independent variables of a component of the complete subscript set.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Prerequisites.Interfaces.rank-Tuple{Subscripts}",
-    "page": "Degrees of freedom",
-    "title": "Hamiltonian.Prerequisites.Interfaces.rank",
-    "category": "method",
-    "text": "rank(subscripts::Subscripts) -> Int\nrank(::Type{S}) where S<:Subscripts -> Int\n\nGet the total number of the independent variables of the complete subscript set.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Prerequisites.Interfaces.rank-Tuple{Subscript}",
-    "page": "Degrees of freedom",
-    "title": "Hamiltonian.Prerequisites.Interfaces.rank",
-    "category": "method",
-    "text": "rank(subscript::Subscript) -> Int\nrank(::Type{<:Subscript{N}}) where N -> Int\n\nGet the number of the independent variables that are used to describe the subscripts of some orbital/spin degrees of freedom.\n\n\n\n\n\n"
+    "text": "rcoord(opt::Operator{1}) -> SVector\nrcoord(opt::Operator{2}) -> SVector\n\nGet the whole rcoord of an operator.\n\n\n\n\n\n"
 },
 
 {
@@ -3681,19 +3649,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Base.:*-Tuple{Subscript,Subscript}",
+    "location": "man/Essentials/DegreesOfFreedom.html#Base.adjoint-Tuple{Dict{I,O} where O<:Operator where I<:Hamiltonian.Mathematics.AlgebraOverFields.ID}",
     "page": "Degrees of freedom",
-    "title": "Base.:*",
+    "title": "Base.adjoint",
     "category": "method",
-    "text": "*(sub1::Subscript,sub2::Subscript) -> Subscripts\n*(subs::Subscripts,sub::Subscript) -> Subscripts\n*(sub::Subscript,subs::Subscripts) -> Subscripts\n*(subs1::Subscripts,subs2::Subscripts) -> Subscripts\n\nGet the multiplication between subscripts or complete sets of subscripts.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/DegreesOfFreedom.html#Base.:==-Tuple{Subscript,Subscript}",
-    "page": "Degrees of freedom",
-    "title": "Base.:==",
-    "category": "method",
-    "text": "==(sub1::Subscript,sub2::Subscript) -> Bool\nisequal(sub1::Subscript,sub2::Subscript) -> Bool\n\nJudge whether two subscripts are equivalent to each other.\n\n\n\n\n\n"
+    "text": "adjoint(opts::Operators) -> Operators\n\nGet the adjoint of a set of operators.\n\n\n\n\n\n"
 },
 
 {
@@ -3702,6 +3662,22 @@ var documenterSearchIndex = {"docs": [
     "title": "Base.adjoint",
     "category": "method",
     "text": "adjoint(index::Index) -> typeof(index)\n\nGet the adjoint of an index.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreesOfFreedom.html#Base.adjoint-Tuple{OID}",
+    "page": "Degrees of freedom",
+    "title": "Base.adjoint",
+    "category": "method",
+    "text": "adjoint(oid::OID) -> typeof(oid)\nadjoint(oid::ID{<:NTuple{N,OID}}) where N -> typeof(oid)\n\nGet the adjoint of an operator id.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreesOfFreedom.html#Base.adjoint-Tuple{Operator}",
+    "page": "Degrees of freedom",
+    "title": "Base.adjoint",
+    "category": "method",
+    "text": "adjoint(opt::Operator{N}) where N -> Operator\n\nGet the adjoint of an operator.\n\n\n\n\n\n"
 },
 
 {
@@ -3745,11 +3721,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Base.show-Tuple{IO,Subscript}",
+    "location": "man/Essentials/DegreesOfFreedom.html#Base.show-Tuple{IO,OID}",
     "page": "Degrees of freedom",
     "title": "Base.show",
     "category": "method",
-    "text": "show(io::IO,subscript::Subscript)\n\nShow a subscript.\n\n\n\n\n\n"
+    "text": "show(io::IO,oid::OID)\n\nShow an operator id.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreesOfFreedom.html#Base.show-Tuple{IO,Operator}",
+    "page": "Degrees of freedom",
+    "title": "Base.show",
+    "category": "method",
+    "text": "show(io::IO,opt::Operator)\n\nShow an operator.\n\n\n\n\n\n"
 },
 
 {
@@ -3793,17 +3777,17 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Terms.html#OID-1",
+    "location": "man/Essentials/Terms.html#Subscript-and-Subscripts-1",
     "page": "Terms",
-    "title": "OID",
+    "title": "Subscript and Subscripts",
     "category": "section",
     "text": ""
 },
 
 {
-    "location": "man/Essentials/Terms.html#Operator-and-Operators-1",
+    "location": "man/Essentials/Terms.html#Coupling-and-Couplings-1",
     "page": "Terms",
-    "title": "Operator and Operators",
+    "title": "Coupling and Couplings",
     "category": "section",
     "text": ""
 },
@@ -3817,27 +3801,51 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.OID",
+    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.Coupling",
     "page": "Terms",
-    "title": "Hamiltonian.Essentials.Terms.OID",
+    "title": "Hamiltonian.Essentials.Terms.Coupling",
     "category": "type",
-    "text": "OID(index::Index,rcoord::Union{Nothing,SVector{N,Float},Vector{Float}},icoord::Union{Nothing,SVector{N,Float},Vector{Float}},seq::Union{Nothing,Int}) where N\nOID(index::Index;rcoord::Union{Nothing,SVector,Vector{Float}}=nothing,icoord::Union{Nothing,SVector,Vector{Float}}=nothing,seq::Union{Nothing,Int}=nothing)\n\nOperator id.\n\n\n\n\n\n"
+    "text": "Coupling{N,V<:Number,I<:ID{<:NTuple{N,SimpleID}}} <: Element{N,V,I}\n\nThe coupling intra/inter interanl degrees of freedom at different lattice points.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.Operator",
+    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.Couplings",
     "page": "Terms",
-    "title": "Hamiltonian.Essentials.Terms.Operator",
+    "title": "Hamiltonian.Essentials.Terms.Couplings",
     "category": "type",
-    "text": "Operator{N,V<:Number,I<:ID{<:NTuple{N,OID}}} <: Element{N,V,I}\n\nAbstract type for an operator.\n\n\n\n\n\n"
+    "text": "Couplings{I<:ID,C<:Coupling} <: AbstractDict{I,C}\n\nA pack of couplings intra/inter interanl degrees of freedom at different lattice points.\n\nAlias for Elements{I,C}.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.Operators",
+    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.Subscript",
     "page": "Terms",
-    "title": "Hamiltonian.Essentials.Terms.Operators",
+    "title": "Hamiltonian.Essentials.Terms.Subscript",
     "category": "type",
-    "text": "Operators(opts::Operator...)\n\nA set of operators.\n\nType alias of Operators{I<:ID,O<:Operator}=Elements{I,O}.\n\n\n\n\n\n"
+    "text": "Subscript(  ipattern::NTuple{N1,Any},\n            opattern::NTuple{N2,Any},\n            mapping::Union{Function,Nothing}=nothing,\n            constrain::Union{Function,Nothing}=nothing,\n            identifier::Union{Symbol,Char}=wildcard\n            ) where {N1,N2}\nSubscript{N}() where N\nSubscript(opattern::NTuple{N,Int}) where N\n\nThe subscripts of some orbital/spin degrees of freedom.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.Subscript-Tuple{}",
+    "page": "Terms",
+    "title": "Hamiltonian.Essentials.Terms.Subscript",
+    "category": "method",
+    "text": "(subscript::Subscript{N})(::Val{\'M\'},values::Vararg{Int,N}) where N -> NTuple{dimension(subscript),Int}\n(subscript::Subscript{N})(::Val{\'C\'},values::Vararg{Int,N}) where N -> Bool\n\nConstruct the subscripts from a set of independent variables.\nJudge whether a set of independent variables are valid to construct the subscripts.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.Subscripts",
+    "page": "Terms",
+    "title": "Hamiltonian.Essentials.Terms.Subscripts",
+    "category": "type",
+    "text": "Subscripts(contents::Subscript...)\n\nA complete set of all the independent subscripts of the orbital/spin degrees of freedom.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.Subscripts-Tuple{}",
+    "page": "Terms",
+    "title": "Hamiltonian.Essentials.Terms.Subscripts",
+    "category": "method",
+    "text": "(subscripts::Subscripts)(::Val{\'M\'},values::NTuple{N,Int}) where N -> NTuple{dimension(subscripts),Int}\n(subscripts::Subscripts)(::Val{\'C\'},values::NTuple{N,Int}) where N -> Bool\n\nConstruct the complete set of subscripts from a complete set of independent variables.\nJudge whether a complete set of independent variables are valid to construct the complete subscripts.\n\n\n\n\n\n"
 },
 
 {
@@ -3881,19 +3889,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Spatials.icoord-Tuple{Operator{1,V,I} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{#s254} where #s254<:Tuple{OID}) where V<:Number}",
+    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.@subscript",
     "page": "Terms",
-    "title": "Hamiltonian.Essentials.Spatials.icoord",
-    "category": "method",
-    "text": "icoord(opt::Operator{1}) -> SVector\nicoord(opt::Operator{2}) -> SVector\n\nGet the whole icoord of an operator.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Spatials.rcoord-Tuple{Operator{1,V,I} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{#s254} where #s254<:Tuple{OID}) where V<:Number}",
-    "page": "Terms",
-    "title": "Hamiltonian.Essentials.Spatials.rcoord",
-    "category": "method",
-    "text": "rcoord(opt::Operator{1}) -> SVector\nrcoord(opt::Operator{2}) -> SVector\n\nGet the whole rcoord of an operator.\n\n\n\n\n\n"
+    "title": "Hamiltonian.Essentials.Terms.@subscript",
+    "category": "macro",
+    "text": "@subscript expr::Expr with constrain::Expr -> Subscript\n\nConstruct a subscript from a map and optionally with a constrain.\n\n\n\n\n\n"
 },
 
 {
@@ -3902,46 +3902,6 @@ var documenterSearchIndex = {"docs": [
     "title": "Hamiltonian.Essentials.Terms.abbr",
     "category": "method",
     "text": "abbr(term::Term) -> Symbol\nabbr(::Type{<:Term}) -> Symbol\n\nGet the abbreviation of the species of a term.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.isHermitian-Tuple{Dict{I,O} where O<:Operator where I<:Hamiltonian.Mathematics.AlgebraOverFields.ID}",
-    "page": "Terms",
-    "title": "Hamiltonian.Essentials.Terms.isHermitian",
-    "category": "method",
-    "text": "isHermitian(opts::Operators) -> Bool\n\nJudge whether a set of operators as a whole is Hermitian.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.isHermitian-Tuple{Operator}",
-    "page": "Terms",
-    "title": "Hamiltonian.Essentials.Terms.isHermitian",
-    "category": "method",
-    "text": "isHermitian(opt::Operator) -> Bool\n\nJudge whether an operator is Hermitian.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.isHermitian-Union{Tuple{ID{#s236} where #s236<:Tuple{Vararg{OID,N}}}, Tuple{N}} where N",
-    "page": "Terms",
-    "title": "Hamiltonian.Essentials.Terms.isHermitian",
-    "category": "method",
-    "text": "isHermitian(oid::ID{<:NTuple{N,OID}}) where N -> Bool\n\nJudge whether an operator id is Hermitian.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.oidtype",
-    "page": "Terms",
-    "title": "Hamiltonian.Essentials.Terms.oidtype",
-    "category": "function",
-    "text": "oidtype\n\nGet the compatible oid type.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.otype",
-    "page": "Terms",
-    "title": "Hamiltonian.Essentials.Terms.otype",
-    "category": "function",
-    "text": "otype\n\nGet the compatible operator type from a term type, a bond type and a table type.\n\n\n\n\n\n"
 },
 
 {
@@ -3969,6 +3929,38 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Essentials/Terms.html#Hamiltonian.Prerequisites.Interfaces.expand-Union{Tuple{N}, Tuple{Subscripts,Tuple{Vararg{Int64,N}}}} where N",
+    "page": "Terms",
+    "title": "Hamiltonian.Prerequisites.Interfaces.expand",
+    "category": "method",
+    "text": "expand(subscripts::Subscripts,dimensions::NTuple{N,Int}) where N -> SbExpand\n\nExpand a complete set of subscripts with a given set of variable ranges.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Terms.html#Hamiltonian.Prerequisites.Interfaces.rank-Tuple{Subscripts,Int64}",
+    "page": "Terms",
+    "title": "Hamiltonian.Prerequisites.Interfaces.rank",
+    "category": "method",
+    "text": "rank(subscripts::Subscripts,i::Int) -> Int\nrank(::Type{<:Subscripts{T}},i::Int) where T -> Int\n\nGet the number of the independent variables of a component of the complete subscript set.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Terms.html#Hamiltonian.Prerequisites.Interfaces.rank-Tuple{Subscripts}",
+    "page": "Terms",
+    "title": "Hamiltonian.Prerequisites.Interfaces.rank",
+    "category": "method",
+    "text": "rank(subscripts::Subscripts) -> Int\nrank(::Type{S}) where S<:Subscripts -> Int\n\nGet the total number of the independent variables of the complete subscript set.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Terms.html#Hamiltonian.Prerequisites.Interfaces.rank-Tuple{Subscript}",
+    "page": "Terms",
+    "title": "Hamiltonian.Prerequisites.Interfaces.rank",
+    "category": "method",
+    "text": "rank(subscript::Subscript) -> Int\nrank(::Type{<:Subscript{N}}) where N -> Int\n\nGet the number of the independent variables that are used to describe the subscripts of some orbital/spin degrees of freedom.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Essentials/Terms.html#Hamiltonian.Prerequisites.Interfaces.rank-Tuple{TermCouplings}",
     "page": "Terms",
     "title": "Hamiltonian.Prerequisites.Interfaces.rank",
@@ -3993,11 +3985,27 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Essentials/Terms.html#Base.:*-Tuple{Subscript,Subscript}",
+    "page": "Terms",
+    "title": "Base.:*",
+    "category": "method",
+    "text": "*(sub1::Subscript,sub2::Subscript) -> Subscripts\n*(subs::Subscripts,sub::Subscript) -> Subscripts\n*(sub::Subscript,subs::Subscripts) -> Subscripts\n*(subs1::Subscripts,subs2::Subscripts) -> Subscripts\n\nGet the multiplication between subscripts or complete sets of subscripts.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Essentials/Terms.html#Base.:+-Tuple{Term}",
     "page": "Terms",
     "title": "Base.:+",
     "category": "method",
     "text": "+(term::Term) -> Term\n-(term::Term) -> Term\n*(term::Term,factor::Number) -> Term\n*(factor::Number,term::Term) -> Term\n/(term::Term,factor::Number) -> Term\n\nAllowed arithmetic operations for a term.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Terms.html#Base.:==-Tuple{Subscript,Subscript}",
+    "page": "Terms",
+    "title": "Base.:==",
+    "category": "method",
+    "text": "==(sub1::Subscript,sub2::Subscript) -> Bool\nisequal(sub1::Subscript,sub2::Subscript) -> Bool\n\nJudge whether two subscripts are equivalent to each other.\n\n\n\n\n\n"
 },
 
 {
@@ -4014,30 +4022,6 @@ var documenterSearchIndex = {"docs": [
     "title": "Base.:==",
     "category": "method",
     "text": "==(tf1::TermFunction,tf2::TermFunction) -> Bool\nisequal(tf1::TermFunction,tf2::TermFunction) -> Bool\n\nJudge whether two concrete term functions are equivalent to each other.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/Terms.html#Base.adjoint-Tuple{Dict{I,O} where O<:Operator where I<:Hamiltonian.Mathematics.AlgebraOverFields.ID}",
-    "page": "Terms",
-    "title": "Base.adjoint",
-    "category": "method",
-    "text": "adjoint(opts::Operators) -> Operators\n\nGet the adjoint of a set of operators.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/Terms.html#Base.adjoint-Tuple{OID}",
-    "page": "Terms",
-    "title": "Base.adjoint",
-    "category": "method",
-    "text": "adjoint(oid::OID) -> typeof(oid)\nadjoint(oid::ID{<:NTuple{N,OID}}) where N -> typeof(oid)\n\nGet the adjoint of an operator id.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/Terms.html#Base.adjoint-Tuple{Operator}",
-    "page": "Terms",
-    "title": "Base.adjoint",
-    "category": "method",
-    "text": "adjoint(opt::Operator{N}) where N -> Operator\n\nGet the adjoint of an operator.\n\n\n\n\n\n"
 },
 
 {
@@ -4065,19 +4049,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Terms.html#Base.show-Tuple{IO,OID}",
+    "location": "man/Essentials/Terms.html#Base.show-Tuple{IO,Subscript}",
     "page": "Terms",
     "title": "Base.show",
     "category": "method",
-    "text": "show(io::IO,oid::OID)\n\nShow an operator id.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/Terms.html#Base.show-Tuple{IO,Operator}",
-    "page": "Terms",
-    "title": "Base.show",
-    "category": "method",
-    "text": "show(io::IO,opt::Operator)\n\nShow an operator.\n\n\n\n\n\n"
+    "text": "show(io::IO,subscript::Subscript)\n\nShow a subscript.\n\n\n\n\n\n"
 },
 
 {
@@ -4102,6 +4078,30 @@ var documenterSearchIndex = {"docs": [
     "title": "Base.zero",
     "category": "method",
     "text": "zero(term::Term) -> Term\n\nGet a zero term.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Terms.html#Hamiltonian.Prerequisites.Interfaces.dimension-Tuple{Subscripts,Int64}",
+    "page": "Terms",
+    "title": "Hamiltonian.Prerequisites.Interfaces.dimension",
+    "category": "method",
+    "text": "dimension(subscripts::Subscripts,i::Int) -> Int\ndimension(::Type{<:Subscripts{T}},i::Int) where T -> Int\n\nGet the total number of the whole variables of a component of the complete subscript set.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Terms.html#Hamiltonian.Prerequisites.Interfaces.dimension-Tuple{Subscripts}",
+    "page": "Terms",
+    "title": "Hamiltonian.Prerequisites.Interfaces.dimension",
+    "category": "method",
+    "text": "dimension(subscripts::Subscripts) -> Int\ndimension(::Type{S}) where S<:Subscripts -> Int\n\nGet the total number of the whole variables of the complete subscript set.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Terms.html#Hamiltonian.Prerequisites.Interfaces.dimension-Tuple{Subscript}",
+    "page": "Terms",
+    "title": "Hamiltonian.Prerequisites.Interfaces.dimension",
+    "category": "method",
+    "text": "dimension(subscript::Subscript) -> Int\ndimension(::Type{<:Subscript{N1,N2}}) where {N1,N2} -> Int\n\nGet the number of the whole variables that are used to describe the subscripts of some orbital/spin degrees of freedom.\n\n\n\n\n\n"
 },
 
 {
@@ -4153,17 +4153,9 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#FCID-and-FockCoupling-1",
+    "location": "man/Essentials/FockPackage.html#Predefined-Fock-operators-1",
     "page": "Fock package",
-    "title": "FCID and FockCoupling",
-    "category": "section",
-    "text": ""
-},
-
-{
-    "location": "man/Essentials/FockPackage.html#Predefined-Fock-couplings-1",
-    "page": "Fock package",
-    "title": "Predefined Fock couplings",
+    "title": "Predefined Fock operators",
     "category": "section",
     "text": ""
 },
@@ -4177,9 +4169,17 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Predefined-Fock-operators-1",
+    "location": "man/Essentials/FockPackage.html#FCID-and-FockCoupling-1",
     "page": "Fock package",
-    "title": "Predefined Fock operators",
+    "title": "FCID and FockCoupling",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Predefined-Fock-couplings-1",
+    "page": "Fock package",
+    "title": "Predefined Fock couplings",
     "category": "section",
     "text": ""
 },
@@ -4361,6 +4361,22 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.DegreesOfFreedom.oidtype-Tuple{Val{:Fock},Type{#s237} where #s237<:AbstractBond,Type{Nothing}}",
+    "page": "Fock package",
+    "title": "Hamiltonian.Essentials.DegreesOfFreedom.oidtype",
+    "category": "method",
+    "text": "oidtype(::Val{:Fock},B::Type{<:AbstractBond},::Type{Nothing})\noidtype(::Val{:Fock},B::Type{<:AbstractBond},::Type{<:Table})\n\nGet the compatible Fock OID type with an AbstractBond type and a Table/Nothing type.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.DegreesOfFreedom.otype-Tuple{Val{:Fock},Type{#s235} where #s235<:(Term{\'F\',Species,V,N,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where N where V<:Number where Species),Type{#s234} where #s234<:AbstractBond,Type{#s233} where #s233<:Union{Nothing, Dict{I,Int64} where I<:Index}}",
+    "page": "Fock package",
+    "title": "Hamiltonian.Essentials.DegreesOfFreedom.otype",
+    "category": "method",
+    "text": "otype(::Val{:Fock},O::Type{<:Term{\'F\'}},B::Type{<:AbstractBond},T::Type{<:Union{Nothing,Table}})\notype(::Val{:Fock},O::Type{<:Term{\'B\'}},B::Type{<:AbstractBond},T::Type{<:Union{Nothing,Table}})\n\nGet the compatible Fock operator type with a Term type, an AbstractBond type and a Table/Nothing type.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.isnormalordered-Tuple{FockOperator}",
     "page": "Fock package",
     "title": "Hamiltonian.Essentials.FockPackage.isnormalordered",
@@ -4430,22 +4446,6 @@ var documenterSearchIndex = {"docs": [
     "title": "Hamiltonian.Essentials.FockPackage.σ⁻",
     "category": "method",
     "text": "σ⁻(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{<:NTuple{2,FCID}},FockCoupling{2,Int,ID{<:NTuple{2,FCID}}}}\n\nThe Pauli matrix σ⁻, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.Terms.oidtype-Tuple{Val{:Fock},Type{#s237} where #s237<:AbstractBond,Type{Nothing}}",
-    "page": "Fock package",
-    "title": "Hamiltonian.Essentials.Terms.oidtype",
-    "category": "method",
-    "text": "oidtype(::Val{:Fock},B::Type{<:AbstractBond},::Type{Nothing})\noidtype(::Val{:Fock},B::Type{<:AbstractBond},::Type{<:Table})\n\nGet the compatible Fock OID type with an AbstractBond type and a Table/Nothing type.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.Terms.otype-Tuple{Val{:Fock},Type{#s235} where #s235<:(Term{\'F\',Species,V,N,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where N where V<:Number where Species),Type{#s234} where #s234<:AbstractBond,Type{#s233} where #s233<:Union{Nothing, Dict{I,Int64} where I<:Index}}",
-    "page": "Fock package",
-    "title": "Hamiltonian.Essentials.Terms.otype",
-    "category": "method",
-    "text": "otype(::Val{:Fock},O::Type{<:Term{\'F\'}},B::Type{<:AbstractBond},T::Type{<:Union{Nothing,Table}})\notype(::Val{:Fock},O::Type{<:Term{\'B\'}},B::Type{<:AbstractBond},T::Type{<:Union{Nothing,Table}})\n\nGet the compatible Fock operator type with a Term type, an AbstractBond type and a Table/Nothing type.\n\n\n\n\n\n"
 },
 
 {
@@ -4569,17 +4569,9 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/SpinPackage.html#SCID-and-SpinCoupling-1",
+    "location": "man/Essentials/SpinPackage.html#Predefined-spin-operators-1",
     "page": "Spin package",
-    "title": "SCID and SpinCoupling",
-    "category": "section",
-    "text": ""
-},
-
-{
-    "location": "man/Essentials/SpinPackage.html#Predefined-spin-couplings-1",
-    "page": "Spin package",
-    "title": "Predefined spin couplings",
+    "title": "Predefined spin operators",
     "category": "section",
     "text": ""
 },
@@ -4593,9 +4585,17 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/SpinPackage.html#Predefined-spin-operators-1",
+    "location": "man/Essentials/SpinPackage.html#SCID-and-SpinCoupling-1",
     "page": "Spin package",
-    "title": "Predefined spin operators",
+    "title": "SCID and SpinCoupling",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Predefined-spin-couplings-1",
+    "page": "Spin package",
+    "title": "Predefined spin couplings",
     "category": "section",
     "text": ""
 },
