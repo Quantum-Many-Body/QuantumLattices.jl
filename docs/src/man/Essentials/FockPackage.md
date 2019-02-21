@@ -10,13 +10,13 @@ CurrentModule=Hamiltonian.Essentials.FockPackage
 
 ### FIndex
 
-### FCID and FockCoupling
-
-### Predefined Fock couplings
+### Predefined Fock operators
 
 ## Fock terms
 
-### Predefined Fock operators
+### FCID and FockCoupling
+
+### Predefined Fock couplings
 
 ### Predefined Fock terms
 

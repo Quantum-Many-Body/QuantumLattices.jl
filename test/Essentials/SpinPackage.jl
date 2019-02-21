@@ -1,6 +1,6 @@
 using Hamiltonian.Essentials.SpinPackage
 using Hamiltonian.Essentials.Spatials: PID
-using Hamiltonian.Essentials.DegreesOfFreedom: Couplings
+using Hamiltonian.Essentials.Terms: Couplings,@subscript
 using Hamiltonian.Mathematics.VectorSpaces: IsMultiIndexable,MultiIndexOrderStyle
 
 @testset "SID" begin

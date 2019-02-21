@@ -1,22 +1,20 @@
 module DegreesOfFreedom
 
 using Printf: @printf
-using ...Prerequisites.TypeTraits: efficientoperations
-using ...Prerequisites.CompositeStructures: CompositeDict,CompositeTuple
+using StaticArrays: SVector
+using ..Spatials: PID
+using ...Prerequisites: Float,decimaltostr
+using ...Prerequisites.CompositeStructures: CompositeDict
 using ...Mathematics.VectorSpaces: AbstractVectorSpace
 using ...Mathematics.AlgebraOverFields: SimpleID,ID,Element,Elements
-using ...Prerequisites.TypeTraits: indtosub,corder
-using ..Spatials: PID
 
-import ..Spatials: pidtype
-import ...Prerequisites.Interfaces: rank,dimension,expand
+import ..Spatials: pidtype,rcoord,icoord
 
-export rank,dimension,expand
-export IID,Index,pidtype,pid,iidtype,iid
+export pidtype,rcoord,icoord
+export IID,Index,pid,iidtype,iid
 export IndexToTuple,DirectIndexToTuple,directindextotuple,FilteredAttributes
 export Internal,IDFConfig,Table
-export Subscript,Subscripts,@subscript
-export Coupling,Couplings
+export OID,Operator,Operators,isHermitian,oidtype,otype
 
 """
     IID
@@ -278,287 +276,170 @@ function Base.reverse(table::Table)
     result
 end
 
-const wildcard='*'
-const constant=':'
-"""
-    Subscript(  ipattern::NTuple{N1,Any},
-                opattern::NTuple{N2,Any},
-                mapping::Union{Function,Nothing}=nothing,
-                constrain::Union{Function,Nothing}=nothing,
-                identifier::Union{Symbol,Char}=wildcard
-                ) where {N1,N2}
-    Subscript{N}() where N
-    Subscript(opattern::NTuple{N,Int}) where N
+@generated function propercoord(vector::SVector{N,Float}) where N
+    exprs=[:(vector[$i]===-0.0 ? 0.0 : vector[$i]) for i=1:N]
+    return :(SVector($(exprs...)))
+end
 
-The subscripts of some orbital/spin degrees of freedom.
 """
-struct Subscript{N1,N2,I<:Tuple,O<:Tuple,M<:Union{Function,Nothing},C<:Union{Function,Nothing},D<:Union{Symbol,Char}}
-    ipattern::I
-    opattern::O
-    mapping::M
-    constrain::C
-    identifier::D
-    function Subscript( ipattern::NTuple{N1,Any},
-                        opattern::NTuple{N2,Any},
-                        mapping::Union{Function,Nothing}=nothing,
-                        constrain::Union{Function,Nothing}=nothing,
-                        identifier::Union{Symbol,Char}=wildcard
-                        ) where {N1,N2}
-        new{N1,N2,typeof(ipattern),typeof(opattern),typeof(mapping),typeof(constrain),typeof(identifier)}(ipattern,opattern,mapping,constrain,identifier)
+    OID(index::Index,rcoord::Union{Nothing,SVector{N,Float},Vector{Float}},icoord::Union{Nothing,SVector{N,Float},Vector{Float}},seq::Union{Nothing,Int}) where N
+    OID(index::Index;rcoord::Union{Nothing,SVector,Vector{Float}}=nothing,icoord::Union{Nothing,SVector,Vector{Float}}=nothing,seq::Union{Nothing,Int}=nothing)
+
+Operator id.
+"""
+struct OID{I<:Index,RC<:Union{Nothing,SVector},IC<:Union{Nothing,SVector},S<:Union{Nothing,Int}} <: SimpleID
+    index::I
+    rcoord::RC
+    icoord::IC
+    seq::S
+    function OID(index::Index,rcoord::Union{Nothing,SVector{N,Float},Vector{Float}},icoord::Union{Nothing,SVector{N,Float},Vector{Float}},seq::Union{Nothing,Int}) where N
+        isa(rcoord,Vector{Float}) && (rcoord=SVector{length(rcoord)}(rcoord))
+        isa(icoord,Vector{Float}) && (icoord=SVector{length(icoord)}(icoord))
+        isa(rcoord,SVector) && (rcoord=propercoord(rcoord))
+        isa(icoord,SVector) && (icoord=propercoord(icoord))
+        new{typeof(index),typeof(rcoord),typeof(icoord),typeof(seq)}(index,rcoord,icoord,seq)
     end
 end
-Subscript{N}() where N=Subscript((wildcard,),NTuple{N,Char}(wildcard for i=1:N),nothing,nothing,wildcard)
-Subscript(opattern::NTuple{N,Int}) where N=Subscript((),opattern,nothing,nothing,constant)
+function OID(index::Index;rcoord::Union{Nothing,SVector,Vector{Float}}=nothing,icoord::Union{Nothing,SVector,Vector{Float}}=nothing,seq::Union{Nothing,Int}=nothing)
+    OID(index,rcoord,icoord,seq)
+end
+Base.hash(oid::OID,h::UInt)=hash(oid|>values,h)
+Base.fieldnames(::Type{<:OID})=(:index,:rcoord,:icoord,:seq)
+Base.propertynames(::Type{<:ID{<:NTuple{N,OID}}},private::Bool=false) where N=private ? (:contents,:indexes,:rcoords,:icoords) : (:indexes,:rcoords,:icoords)
 
 """
-    ==(sub1::Subscript,sub2::Subscript) -> Bool
-    isequal(sub1::Subscript,sub2::Subscript) -> Bool
+    show(io::IO,oid::OID)
 
-Judge whether two subscripts are equivalent to each other.
+Show an operator id.
 """
-Base.:(==)(sub1::Subscript,sub2::Subscript)=sub1.ipattern==sub2.ipattern && sub1.opattern==sub2.opattern && sub1.identifier==sub2.identifier
-Base.isequal(sub1::Subscript,sub2::Subscript)=isequal(sub1.ipattern,sub2.ipattern) && isequal(sub1.opattern,sub2.opattern) && isequal(sub1.identifier,sub2.identifier)
+function Base.show(io::IO,oid::OID)
+    @printf io "OID(%s" oid.index
+    oid.rcoord===nothing ? (@printf io ",:") : (@printf io ",[%s]" join(oid.rcoord,","))
+    oid.icoord===nothing ? (@printf io ",:") : (@printf io ",[%s]" join(oid.icoord,","))
+    @printf io ",%s)" oid.seq===nothing ? ":" : oid.seq
+end
 
 """
-    show(io::IO,subscript::Subscript)
+    adjoint(oid::OID) -> typeof(oid)
+    adjoint(oid::ID{<:NTuple{N,OID}}) where N -> typeof(oid)
 
-Show a subscript.
+Get the adjoint of an operator id.
 """
-function Base.show(io::IO,subscript::Subscript)
-    if subscript.identifier==constant
-        @printf io "(%s)" join(subscript.opattern,',')
-    elseif subscript.identifier==wildcard
-        @printf io "%s=>(%s)" join(subscript.ipattern,',') join(subscript.opattern,',')
-    else
-        @printf io "(%s)=>(%s) with %s" join(subscript.ipattern,',') join(subscript.opattern,',') subscript.identifier
+Base.adjoint(oid::OID)=OID(oid.index',oid.rcoord,oid.icoord,oid.seq)
+@generated Base.adjoint(oid::ID{<:NTuple{N,OID}}) where N=Expr(:call,:ID,[:(oid[$i]') for i=N:-1:1]...)
+
+"""
+    isHermitian(oid::ID{<:NTuple{N,OID}}) where N -> Bool
+
+Judge whether an operator id is Hermitian.
+"""
+function isHermitian(oid::ID{<:NTuple{N,OID}}) where N
+    for i=1:((N+1)÷2)
+        oid[i]'==oid[N+1-i] || return false
     end
+    return true
 end
 
 """
-    rank(subscript::Subscript) -> Int
-    rank(::Type{<:Subscript{N}}) where N -> Int
+    oidtype
 
-Get the number of the independent variables that are used to describe the subscripts of some orbital/spin degrees of freedom.
+Get the compatible oid type.
 """
-rank(subscript::Subscript)=subscript|>typeof|>rank
-rank(::Type{<:Subscript{N}}) where N=N
+function oidtype end
 
 """
-    dimension(subscript::Subscript) -> Int
-    dimension(::Type{<:Subscript{N1,N2}}) where {N1,N2} -> Int
+    Operator{N,V<:Number,I<:ID{<:NTuple{N,OID}}} <: Element{N,V,I}
 
-Get the number of the whole variables that are used to describe the subscripts of some orbital/spin degrees of freedom.
+Abstract type for an operator.
 """
-dimension(subscript::Subscript)=subscript|>typeof|>dimension
-dimension(::Type{<:Subscript{N1,N2}}) where {N1,N2}=N2
-
-"""
-    (subscript::Subscript{N})(::Val{'M'},values::Vararg{Int,N}) where N -> NTuple{dimension(subscript),Int}
-    (subscript::Subscript{N})(::Val{'C'},values::Vararg{Int,N}) where N -> Bool
-
-* Construct the subscripts from a set of independent variables.
-* Judge whether a set of independent variables are valid to construct the subscripts.
-"""
-function (subscript::Subscript)() end
-(subscript::Subscript{N})(::Val{'M'},values::Vararg{Int,N}) where N=subscript.mapping(values...)
-(subscript::Subscript{0,N,<:Tuple,<:Tuple,Nothing,Nothing})(::Val{'M'}) where N=subscript.opattern
-(subscript::Subscript{1,N,<:Tuple,<:Tuple,Nothing,Nothing})(::Val{'M'},value::Int) where N=NTuple{N,Int}(value for i=1:N)
-(subscript::Subscript{N})(::Val{'C'},values::Vararg{Int,N}) where N=subscript.constrain(values...)
-(subscript::Subscript{N1,N2,<:Tuple,<:Tuple,<:Union{Function,Nothing},Nothing})(::Val{'C'},values::Vararg{Int,N1}) where {N1,N2}=true
+abstract type Operator{N,V<:Number,I<:ID{<:NTuple{N,OID}}} <: Element{N,V,I} end
+function (O::Type{<:Operator})( value::Number,
+                                indexes::NTuple{N,Index};
+                                rcoords::Union{Nothing,NTuple{N,SVector{M,Float}}}=nothing,
+                                icoords::Union{Nothing,NTuple{N,SVector{M,Float}}}=nothing,
+                                seqs::Union{Nothing,NTuple{N,Int}}=nothing
+                                ) where {N,M}
+    rcoords===nothing && (rcoords=ntuple(i->nothing,N))
+    icoords===nothing && (icoords=ntuple(i->nothing,N))
+    seqs===nothing && (seqs=ntuple(i->nothing,N))
+    return O(value,ID(OID,indexes,rcoords,icoords,seqs))
+end
 
 """
-    @subscript expr::Expr with constrain::Expr -> Subscript
+    show(io::IO,opt::Operator)
 
-Construct a subscript from a map and optionally with a constrain.
+Show an operator.
 """
-macro subscript(expr::Expr,with::Symbol=:with,constrain::Union{Expr,Symbol}=:nothing,gensym::Expr=:(gensym=false))
-    @assert expr.head==:call && expr.args[1]==:(=>)
-    @assert isa(expr.args[2],Expr) && expr.args[2].head==:tuple && all(expr.args[2].args.≠Symbol(wildcard)) && all(expr.args[2].args.≠Symbol(constant))
-    @assert isa(expr.args[3],Expr) && expr.args[3].head==:tuple && all(expr.args[3].args.≠Symbol(wildcard)) && all(expr.args[3].args.≠Symbol(constant))
-    @assert with==:with
-    @assert isa(gensym,Expr) && gensym.head==:(=) && gensym.args[1]==:gensym && isa(gensym.args[2],Bool)
-    ip=gensym.args[2] ? Tuple(Base.gensym(arg) for arg in expr.args[2].args) : Tuple(expr.args[2].args)
-    op=gensym.args[2] ? Tuple(ip[findfirst(isequal(arg),expr.args[2].args)] for arg in expr.args[3].args) : Tuple(expr.args[3].args)
-    mapname,identifier=Base.gensym(),QuoteNode(Base.gensym())
-    if constrain===:nothing
-        return quote
-            $mapname($(expr.args[2].args...))=$(expr.args[3])
-            Subscript($ip,$op,$mapname,nothing,$identifier)
-        end
-    else
-        constrainname=Base.gensym()
-        return quote
-            $mapname($(expr.args[2].args...))=$(expr.args[3])
-            $constrainname($(expr.args[2].args...))=$(constrain)
-            Subscript($ip,$op,$mapname,$constrainname,$identifier)
-        end
+Base.show(io::IO,opt::Operator)=@printf io "%s(value=%s,id=%s)" nameof(typeof(opt)) decimaltostr(opt.value) opt.id
+
+"""
+    adjoint(opt::Operator{N}) where N -> Operator
+
+Get the adjoint of an operator.
+"""
+Base.adjoint(opt::Operator)=typeof(opt).name.wrapper(opt.value',opt.id')
+
+"""
+    isHermitian(opt::Operator) -> Bool
+
+Judge whether an operator is Hermitian.
+"""
+isHermitian(opt::Operator)=isa(opt.value,Real) && isHermitian(opt.id)
+
+"""
+    rcoord(opt::Operator{1}) -> SVector
+    rcoord(opt::Operator{2}) -> SVector
+
+Get the whole rcoord of an operator.
+"""
+rcoord(opt::Operator{1})=opt.id[1].rcoord
+rcoord(opt::Operator{2})=opt.id[1].rcoord-opt.id[2].rcoord
+
+"""
+    icoord(opt::Operator{1}) -> SVector
+    icoord(opt::Operator{2}) -> SVector
+
+Get the whole icoord of an operator.
+"""
+icoord(opt::Operator{1})=opt.id[1].icoord
+icoord(opt::Operator{2})=opt.id[1].icoord-opt.id[2].icoord
+
+"""
+    otype
+
+Get the compatible operator type from a term type, a bond type and a table type.
+"""
+function otype end
+
+"""
+    Operators(opts::Operator...)
+
+A set of operators.
+
+Type alias of `Operators{I<:ID,O<:Operator}=Elements{I,O}`.
+"""
+const Operators{I<:ID,O<:Operator}=Elements{I,O}
+Operators(opts::Operator...)=Elements(opts...)
+
+"""
+    adjoint(opts::Operators) -> Operators
+
+Get the adjoint of a set of operators.
+"""
+function Base.adjoint(opts::Operators)
+    result=Operators{opts|>keytype,opts|>valtype}()
+    for opt in values(opts)
+        nopt=opt|>adjoint
+        result[nopt.id]=nopt
     end
+    return result
 end
 
 """
-    Subscripts(contents::Subscript...)
+    isHermitian(opts::Operators) -> Bool
 
-A complete set of all the independent subscripts of the orbital/spin degrees of freedom.
+Judge whether a set of operators as a whole is Hermitian.
 """
-struct Subscripts{T<:Tuple,R,D} <: CompositeTuple{T}
-    contents::T
-    function Subscripts(contents::T) where T<:Tuple
-        R=sum(rank(fieldtype(T,i)) for i=1:fieldcount(T))
-        D=sum(dimension(fieldtype(T,i)) for i=1:fieldcount(T))
-        new{T,R,D}(contents)
-    end
-end
-Subscripts(contents::Subscript...)=Subscripts(contents)
-
-"""
-    rank(subscripts::Subscripts) -> Int
-    rank(::Type{S}) where S<:Subscripts -> Int
-
-Get the total number of the independent variables of the complete subscript set.
-"""
-rank(subscripts::Subscripts)=subscripts|>typeof|>rank
-rank(::Type{<:Subscripts{<:Tuple,R}}) where R=R
-
-"""
-    rank(subscripts::Subscripts,i::Int) -> Int
-    rank(::Type{<:Subscripts{T}},i::Int) where T -> Int
-
-Get the number of the independent variables of a component of the complete subscript set.
-"""
-rank(subscripts::Subscripts,i::Int)=rank(typeof(subscripts),i)
-rank(::Type{<:Subscripts{T}},i::Int) where T=rank(fieldtype(T,i))
-
-"""
-    dimension(subscripts::Subscripts) -> Int
-    dimension(::Type{S}) where S<:Subscripts -> Int
-
-Get the total number of the whole variables of the complete subscript set.
-"""
-dimension(subscripts::Subscripts)=subscripts|>typeof|>dimension
-dimension(::Type{<:Subscripts{<:Tuple,R,D}}) where {R,D}=D
-
-"""
-    dimension(subscripts::Subscripts,i::Int) -> Int
-    dimension(::Type{<:Subscripts{T}},i::Int) where T -> Int
-
-Get the total number of the whole variables of a component of the complete subscript set.
-"""
-dimension(subscripts::Subscripts,i::Int)=dimension(typeof(subscripts),i)
-dimension(::Type{<:Subscripts{T}},i::Int) where T=dimension(fieldtype(T,i))
-
-"""
-    (subscripts::Subscripts)(::Val{'M'},values::NTuple{N,Int}) where N -> NTuple{dimension(subscripts),Int}
-    (subscripts::Subscripts)(::Val{'C'},values::NTuple{N,Int}) where N -> Bool
-
-* Construct the complete set of subscripts from a complete set of independent variables.
-* Judge whether a complete set of independent variables are valid to construct the complete subscripts.
-"""
-function (subscripts::Subscripts)() end
-@generated function (subscripts::Subscripts)(::Val{'M'},values::NTuple{N,Int}) where N
-    @assert rank(subscripts)==N
-    exprs,count=[],1
-    for i=1:length(subscripts)
-        vs=Tuple(:(values[$j]) for j=count:(count+rank(subscripts,i)-1))
-        push!(exprs,:(subscripts.contents[$i](Val('M'),$(vs...))...))
-        count=count+rank(subscripts,i)
-    end
-    return Expr(:tuple,exprs...)
-end
-@generated function (subscripts::Subscripts)(::Val{'C'},values::NTuple{N,Int}) where N
-    @assert rank(subscripts)==N
-    length(subscripts)==0 && return :(true)
-    count=rank(subscripts,1)
-    vs=Tuple(:(values[$j]) for j=1:count)
-    expr=:(subscripts.contents[1](Val('C'),$(vs...)))
-    for i=2:length(subscripts)
-        vs=Tuple(:(values[$j]) for j=(count+1):(count+rank(subscripts,i)))
-        expr=Expr(:(&&),expr,:(subscripts.contents[$i](Val('C'),$(vs...))))
-        count=count+rank(subscripts,i)
-    end
-    return expr
-end
-
-"""
-    *(sub1::Subscript,sub2::Subscript) -> Subscripts
-    *(subs::Subscripts,sub::Subscript) -> Subscripts
-    *(sub::Subscript,subs::Subscripts) -> Subscripts
-    *(subs1::Subscripts,subs2::Subscripts) -> Subscripts
-
-Get the multiplication between subscripts or complete sets of subscripts.
-"""
-Base.:*(sub1::Subscript,sub2::Subscript)=Subscripts(sub1,sub2)
-Base.:*(subs::Subscripts,sub::Subscript)=Subscripts(subs.contents...,sub)
-Base.:*(sub::Subscript,subs::Subscripts)=Subscripts(sub,subs.contents...)
-Base.:*(subs1::Subscripts,subs2::Subscripts)=Subscripts(subs1.contents...,subs2.contents...)
-
-"""
-    expand(subscripts::Subscripts,dimensions::NTuple{N,Int}) where N -> SbExpand
-
-Expand a complete set of subscripts with a given set of variable ranges.
-"""
-function expand(subscripts::Subscripts,dimensions::NTuple{N,Int}) where N
-    @assert dimension(subscripts)==N "expand error: dismatched input dimensions $dimensions."
-    dims,dcount,rcount=Vector{Int}(undef,rank(subscripts)),0,0
-    for i=1:length(subscripts)
-        ipattern=subscripts[i].ipattern
-        opattern=subscripts[i].opattern
-        for j=1:dimension(subscripts,i)
-            isa(opattern[j],Int) && @assert 0<opattern[j]<=dimensions[dcount+j] "expand error: opattern($opattern) out of range."
-        end
-        for j=1:rank(subscripts,i)
-            index,flag=1,false
-            while (index=findnext(isequal(ipattern[j]),opattern,index))≠nothing
-                flag || (dims[rcount+j]=dimensions[dcount+index];flag=true)
-                flag && @assert dimensions[dcount+index]==dims[rcount+j] "expand error: dismatched input dimensions."
-                index=index+1
-            end
-        end
-        dcount=dcount+dimension(subscripts,i)
-        rcount=rcount+rank(subscripts,i)
-    end
-    return SbExpand(subscripts,NTuple{rank(subscripts),Int}(dims))
-end
-struct SbExpand{N,S<:Subscripts,D}
-    subscripts::S
-    dims::NTuple{D,Int}
-    function SbExpand(subscripts::Subscripts,dims::NTuple{D,Int}) where D
-        @assert D==rank(subscripts) "SbExpand error: dismatched inputs."
-        new{dimension(subscripts),typeof(subscripts),D}(subscripts,dims)
-    end
-end
-Base.eltype(::Type{<:SbExpand{N}}) where N=NTuple{N,Int}
-Base.IteratorSize(::Type{<:SbExpand})=Base.SizeUnknown()
-function Base.iterate(sbe::SbExpand,state::Int=1)
-    while state<=prod(sbe.dims)
-        inds=indtosub(sbe.dims,state,corder)
-        sbe.subscripts(Val('C'),inds) && return (sbe.subscripts(Val('M'),inds),state+1)
-        state=state+1
-    end
-    return nothing
-end
-
-"""
-    Coupling{N,V<:Number,I<:ID{<:NTuple{N,SimpleID}}} <: Element{N,V,I}
-
-The coupling intra/inter interanl degrees of freedom at different lattice points.
-"""
-abstract type Coupling{N,V<:Number,I<:ID{<:NTuple{N,SimpleID}}} <: Element{N,V,I} end
-
-defaultcenter(::Type{<:Coupling},i::Int,n::Int,::Val{1})=1
-defaultcenter(::Type{<:Coupling},i::Int,n::Int,::Val{R}) where R=error("defaultcenter error: no default center for a rank-$R bond.")
-@generated function propercenters(::Type{C},centers::NTuple{N,Any},::Val{R}) where {C<:Coupling,N,R}
-    exprs=[:(isa(centers[$i],Int) ? (0<centers[$i]<=R ? centers[$i] : error("propercenters error: center out of range.")) : defaultcenter(C,$i,N,Val(R))) for i=1:N]
-    return Expr(:tuple,exprs...)
-end
-
-"""
-    Couplings{I<:ID,C<:Coupling} <: AbstractDict{I,C}
-
-A pack of couplings intra/inter interanl degrees of freedom at different lattice points.
-
-Alias for `Elements{I,C}`.
-"""
-const Couplings{I<:ID,C<:Coupling}=Elements{I,C}
-Couplings(cps::Coupling...)=Elements(cps...)
+isHermitian(opts::Operators)=opts==opts'
 
 end #module

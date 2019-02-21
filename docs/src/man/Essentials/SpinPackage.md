@@ -10,13 +10,13 @@ CurrentModule=Hamiltonian.Essentials.SpinPackage
 
 ### SIndex
 
-### SCID and SpinCoupling
-
-### Predefined spin couplings
+### Predefined spin operators
 
 ## Spin terms
 
-### Predefined spin operators
+### SCID and SpinCoupling
+
+### Predefined spin couplings
 
 ### Predefined spin terms
 

@@ -12,9 +12,9 @@ CurrentModule=Hamiltonian.Essentials.DegreesOfFreedom
 
 ## Table
 
-## Subscript and Subscripts
+## OID and Operator
 
-## Coupling and Couplings
+## Operators
 
 ## Manul
 

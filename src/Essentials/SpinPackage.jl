@@ -2,12 +2,13 @@ module SpinPackage
 
 using Printf: @printf,@sprintf
 using ..Spatials: PID
-using ..DegreesOfFreedom: IID,Internal,Index,FilteredAttributes,Subscript,Subscripts,Coupling,Couplings
+using ..DegreesOfFreedom: IID,Internal,Index,FilteredAttributes
+using ..Terms: Subscript,Subscripts,Coupling,Couplings
 using ...Prerequisites: Float,decimaltostr,delta
 using ...Mathematics.VectorSpaces: AbstractVectorSpace,IsMultiIndexable,MultiIndexOrderStyle
 using ...Mathematics.AlgebraOverFields: SimpleID,ID
 
-import ..DegreesOfFreedom: wildcard,constant,defaultcenter,propercenters
+import ..Terms: wildcard,constant,defaultcenter,propercenters
 import ...Prerequisites.Interfaces: dims,inds,expand,rank,matrix
 
 export dims,inds,expand,matrix

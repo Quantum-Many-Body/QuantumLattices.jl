@@ -9,9 +9,9 @@ using Hamiltonian
 
 # Terms
 
-## OID
+## Subscript and Subscripts
 
-## Operator and Operators
+## Coupling and Couplings
 
 ## Term
 

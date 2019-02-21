@@ -1,7 +1,8 @@
+using StaticArrays: SVector
 using Hamiltonian.Essentials.DegreesOfFreedom
 using Hamiltonian.Essentials.Spatials: PID
+using Hamiltonian.Mathematics.AlgebraOverFields: ID
 import Hamiltonian.Prerequisites.Interfaces: dimension
-import Hamiltonian.Essentials.DegreesOfFreedom: defaultcenter,propercenters
 
 struct DID <: IID nambu::Int end
 Base.adjoint(sl::DID)=DID(3-sl.nambu)
@@ -20,6 +21,12 @@ struct DFock <: Internal{DID}
 end
 dimension(f::DFock)=f.nnambu
 Base.getindex(f::DFock,i::Int)=DID(i)
+
+struct DOperator{N,V<:Number,I<:ID{<:NTuple{N,OID}}} <: Operator{N,V,I}
+    value::V
+    id::I
+    DOperator(value::Number,id::ID{<:NTuple{N,OID}}) where N=new{N,typeof(value),typeof(id)}(value,id)
+end
 
 @testset "Index" begin
     index=DIndex(PID('S',4),DID(1))
@@ -81,61 +88,44 @@ end
     @test Table(config,by=by)|>reverse==Dict(1=>Set([DIndex(1,1,1),DIndex(1,1,2)]),2=>Set([DIndex(1,2,1),DIndex(1,2,2)]))
 end
 
-@testset "Subscript" begin
-    sub=@subscript (x1,x2)=>(x1,4,4,x2) with x1<x2
-    @test sub==deepcopy(sub)
-    @test isequal(sub,deepcopy(sub))
-    @test rank(sub)==rank(typeof(sub))==2
-    @test dimension(sub)==dimension(typeof(sub))==4
-    @test string(sub)=="(x1,x2)=>(x1,4,4,x2) with $(sub.identifier)"
-    @test sub(Val('M'),1,2)==(1,4,4,2)
-    @test sub(Val('C'),1,2)==true
-    @test sub(Val('C'),2,1)==false
-
-    sub=@subscript (x1,x2)=>(x1,x2,x1,x2)
-    @test sub(Val('M'),1,2)==(1,2,1,2)
-    @test sub(Val('C'),1,2)==true
-
-    sub=Subscript{4}()
-    @test rank(sub)==1 && dimension(sub)==4
-    @test string(sub)=="*=>(*,*,*,*)"
-    @test sub(Val('M'),2)==(2,2,2,2)
-    @test sub(Val('C'),2)==true
-
-    sub=Subscript((1,2,2,1))
-    @test rank(sub)==0 && dimension(sub)==4
-    @test string(sub)=="(1,2,2,1)"
-    @test sub(Val('M'))==(1,2,2,1)
-    @test sub(Val('C'))==true
+@testset "OID" begin
+    oid=OID(DIndex(1,1,1),rcoord=SVector(0.0,-0.0),icoord=nothing,seq=1)
+    @test oid'==OID(DIndex(1,1,2),rcoord=SVector(0.0,0.0),icoord=nothing,seq=1)
+    @test hash(oid,UInt(1))==hash(OID(DIndex(1,1,1),rcoord=SVector(0.0,0.0),icoord=nothing,seq=1),UInt(1))
+    @test propertynames(ID{<:NTuple{2,OID}},true)==(:contents,:indexes,:rcoords,:icoords)
+    @test propertynames(ID{<:NTuple{2,OID}},false)==(:indexes,:rcoords,:icoords)
+    @test fieldnames(OID)==(:index,:rcoord,:icoord,:seq)
+    @test string(oid)=="OID(DIndex(1,1,1),[0.0,0.0],:,1)"
+    @test ID(oid',oid)'==ID(oid',oid)
+    @test isHermitian(ID(oid',oid))==true
+    @test isHermitian(ID(oid,oid))==false
 end
 
-@testset "Subscripts" begin
-    sub1=@subscript (x1,)=>(x1,2) with x1<2
-    sub2=@subscript (y1,y2)=>(y1,y2,y1,y2) with y1<y2
-    subs=Subscripts(sub1,sub2)
-    @test rank(subs)==rank(typeof(subs))==3
-    @test rank(subs,1)==rank(typeof(subs),1)==1
-    @test rank(subs,2)==rank(typeof(subs),2)==2
-    @test dimension(subs)==dimension(typeof(subs))==6
-    @test dimension(subs,1)==dimension(typeof(subs),1)==2
-    @test dimension(subs,2)==dimension(typeof(subs),2)==4
-    @test subs(Val('M'),(1,2,3))==(1,2,2,3,2,3)
-    @test subs(Val('C'),(1,2,3))==true
-    @test subs(Val('C'),(2,2,3))==false
-    @test subs(Val('C'),(1,3,2))==false
-    @test subs(Val('C'),(2,3,2))==false
+@testset "Operator" begin
+    opt=DOperator(1.0im,(DIndex(1,2,2),DIndex(1,1,1)),rcoords=(SVector(1.0,0.0),SVector(0.0,0.0)),seqs=(2,1))
+    @test opt'==DOperator(-1.0im,(DIndex(1,1,2),DIndex(1,2,1)),rcoords=(SVector(0.0,0.0),SVector(1.0,0.0)),seqs=(1,2))
+    @test isHermitian(opt)==false
+    @test string(opt)=="DOperator(value=1.0im,id=ID(OID(DIndex(1,2,2),[1.0,0.0],:,2),OID(DIndex(1,1,1),[0.0,0.0],:,1)))"
 
-    sub3=Subscript((6,6))
-    @test subs==sub1*sub2
-    @test subs*sub3==Subscripts(sub1,sub2,sub3)
-    @test sub3*subs==Subscripts(sub3,sub1,sub2)
-    @test subs*Subscripts(sub3)==Subscripts(sub1,sub2,sub3)
-    @test expand(subs*sub3,(3,3,2,3,2,3,8,9))|>collect==[(1,2,1,2,1,2,6,6),(1,2,1,3,1,3,6,6),(1,2,2,3,2,3,6,6)]
+    opt=DOperator(1.0,(DIndex(1,1,2),DIndex(1,1,1)),rcoords=(SVector(0.5,0.5),SVector(0.5,0.5)),icoords=(SVector(1.0,1.0),SVector(1.0,1.0)),seqs=(1,1))
+    @test opt'==opt
+    @test isHermitian(opt)==true
+
+    opt=DOperator(1.0,(DIndex(1,1,2),DIndex(1,1,1)),rcoords=(SVector(0.5,0.5),SVector(0.0,0.5)),icoords=(SVector(1.0,1.0),SVector(0.0,1.0)),seqs=(1,1))
+    @test rcoord(opt)==SVector(0.5,0.0)
+    @test icoord(opt)==SVector(1.0,0.0)
+
+    opt=DOperator(1.0,ID(OID(DIndex(1,1,2),SVector(0.5,0.0),SVector(1.0,0.0),1)))
+    @test rcoord(opt)==SVector(0.5,0.0)
+    @test icoord(opt)==SVector(1.0,0.0)
 end
 
-@testset "centerrelated" begin
-    @test defaultcenter(Coupling,2,2,Val(1))==1
-    @test defaultcenter(Coupling,1,2,Val(1))==1
-    @test propercenters(Coupling,('*','*'),Val(1))==(1,1)
-    @test propercenters(Coupling,(1,2,3),Val(3))==(1,2,3)
+@testset "Operators" begin
+    opt1=DOperator(1.0im,(DIndex(1,2,2),DIndex(1,1,1)),rcoords=(SVector(1.0,0.0),SVector(0.0,0.0)),seqs=(2,1))
+    opt2=DOperator(1.0,(DIndex(1,1,2),DIndex(1,1,1)),rcoords=(SVector(0.0,0.0),SVector(0.0,0.0)),seqs=(1,1))
+    opts=Operators(opt1,opt2)
+    @test opts'==Operators(opt1',opt2')
+    @test opts'+opts==Operators(opt1,opt1',opt2*2)
+    @test isHermitian(opts)==false
+    @test isHermitian(opts'+opts)==true
 end

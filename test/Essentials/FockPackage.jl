@@ -3,8 +3,8 @@ using Hamiltonian.Essentials.FockPackage
 using Hamiltonian.Mathematics.VectorSpaces: IsMultiIndexable,MultiIndexOrderStyle
 using Hamiltonian.Mathematics.AlgebraOverFields: ID
 using Hamiltonian.Essentials.Spatials: Bond,Point,PID,rcoord,azimuthd
-using Hamiltonian.Essentials.Terms: OID,Operators
-using Hamiltonian.Essentials.DegreesOfFreedom: Couplings,Table,IDFConfig,@subscript
+using Hamiltonian.Essentials.Terms: Couplings,@subscript
+using Hamiltonian.Essentials.DegreesOfFreedom: Table,IDFConfig,OID,Operators
 using Hamiltonian.Prerequisites: Float
 using Hamiltonian.Prerequisites.Interfaces: ⊗
 
@@ -28,6 +28,23 @@ end
 @testset "FIndex" begin
     @test FIndex|>fieldnames==(:scope,:site,:orbital,:spin,:nambu)
     @test union(PID{Int},FID)==FIndex{Int}
+end
+
+@testset "oidtype" begin
+    @test oidtype(Val(:Fock),Point{PID{Int},2},Nothing)==OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Nothing}
+    @test oidtype(Val(:Fock),Point{PID{Int},2},Table)==OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Int}
+end
+
+@testset "FockOperator" begin
+    opt=FOperator(1.0,(FIndex(1,1,1,1,2),FIndex(1,1,1,1,1)))
+    @test opt|>isnormalordered
+    @test opt|>statistics==opt|>typeof|>statistics=='F'
+
+    opt=FOperator(1.0,(FIndex(1,2,1,1,2),FIndex(1,2,1,1,1),FIndex(1,1,1,1,2),FIndex(1,1,1,1,1)))
+    @test opt|>isnormalordered==false
+
+    opt=BOperator(1.0,(FIndex(1,1,1,1,2),FIndex(1,1,1,1,1)))
+    @test opt|>statistics==opt|>typeof|>statistics=='B'
 end
 
 @testset "FCID" begin
@@ -124,23 +141,6 @@ end
     @test σ⁻("ob")==Couplings(FockCoupling{2}(1,orbitals=(1,2)))
     @test σ⁻("sl")==Couplings(FockCoupling{2}(1,atoms=(1,2)))
     @test σ⁻("ph")==Couplings(FockCoupling{2}(1,nambus=(1,1)))
-end
-
-@testset "oidtype" begin
-    @test oidtype(Val(:Fock),Point{PID{Int},2},Nothing)==OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Nothing}
-    @test oidtype(Val(:Fock),Point{PID{Int},2},Table)==OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Int}
-end
-
-@testset "FockOperator" begin
-    opt=FOperator(1.0,(FIndex(1,1,1,1,2),FIndex(1,1,1,1,1)))
-    @test opt|>isnormalordered
-    @test opt|>statistics==opt|>typeof|>statistics=='F'
-
-    opt=FOperator(1.0,(FIndex(1,2,1,1,2),FIndex(1,2,1,1,1),FIndex(1,1,1,1,2),FIndex(1,1,1,1,1)))
-    @test opt|>isnormalordered==false
-
-    opt=BOperator(1.0,(FIndex(1,1,1,1,2),FIndex(1,1,1,1,1)))
-    @test opt|>statistics==opt|>typeof|>statistics=='B'
 end
 
 @testset "Onsite" begin

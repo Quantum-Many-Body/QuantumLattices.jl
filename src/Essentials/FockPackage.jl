@@ -3,22 +3,22 @@ module FockPackage
 using StaticArrays: SVector
 using Printf: @printf,@sprintf
 using ..Spatials: PID,AbstractBond,Point,Bond,pidtype
-using ..DegreesOfFreedom: IID,Index,Internal,FilteredAttributes,Subscript,Subscripts,Coupling,Couplings,IDFConfig,Table,@subscript
-using ..Terms: OID,Operator,Operators,Term,TermCouplings,TermAmplitude,TermModulate
+using ..DegreesOfFreedom: IID,Index,Internal,FilteredAttributes,IDFConfig,Table,OID,Operator,Operators
+using ..Terms: Subscript,Subscripts,Coupling,Couplings,@subscript,Term,TermCouplings,TermAmplitude,TermModulate
 using ...Prerequisites: Float,delta,decimaltostr
 using ...Mathematics.AlgebraOverFields: SimpleID,ID
 using ...Mathematics.VectorSpaces: AbstractVectorSpace,IsMultiIndexable,MultiIndexOrderStyle
 
-import ..DegreesOfFreedom: wildcard,constant,defaultcenter,propercenters
-import ..Terms: statistics,abbr,oidtype,otype,properfactor
+import ..DegreesOfFreedom: oidtype,otype
+import ..Terms: wildcard,constant,defaultcenter,propercenters,statistics,abbr,properfactor
 import ...Prerequisites.Interfaces: dims,inds,rank,⊗,expand,dimension,add!
 
 export dims,inds,⊗,expand,statistics,abbr,oidtype,otype
 export ANNIHILATION,CREATION,FID,FIndex,Fock
 export usualfockindextotuple,nambufockindextotuple
+export FockOperator,FOperator,BOperator,isnormalordered
 export FCID,FockCoupling
 export σ⁰,σˣ,σʸ,σᶻ,σ⁺,σ⁻
-export FockOperator,FOperator,BOperator,isnormalordered
 export Onsite,Hopping,Pairing
 export hubbard,Hubbard
 export interorbitalinterspin,InterOrbitalInterSpin
@@ -123,6 +123,85 @@ const usualfockindextotuple=FilteredAttributes(:scope,:site,:orbital,:spin)
 Indicate that the filtered attributes are `(:scope,:nambu,:site,:orbital,:spin)` when converting a Fock index to tuple.
 """
 const nambufockindextotuple=FilteredAttributes(:scope,:nambu,:site,:orbital,:spin)
+
+"""
+    oidtype(::Val{:Fock},B::Type{<:AbstractBond},::Type{Nothing})
+    oidtype(::Val{:Fock},B::Type{<:AbstractBond},::Type{<:Table})
+
+Get the compatible Fock OID type with an AbstractBond type and a Table/Nothing type.
+"""
+oidtype(::Val{:Fock},B::Type{<:AbstractBond},::Type{Nothing})=OID{FIndex{fieldtype(B|>pidtype,:scope)},SVector{B|>dimension,Float},SVector{B|>dimension,Float},Nothing}
+oidtype(::Val{:Fock},B::Type{<:AbstractBond},::Type{<:Table})=OID{FIndex{fieldtype(B|>pidtype,:scope)},SVector{B|>dimension,Float},SVector{B|>dimension,Float},Int}
+
+"""
+    FockOperator{N,V<:Number,I<:ID{<:NTuple{N,OID}}} <: Operator{N,V,I}
+
+Abstract type for all Fock operators.
+"""
+abstract type FockOperator{N,V<:Number,I<:ID{<:NTuple{N,OID}}} <: Operator{N,V,I} end
+
+"""
+    isnormalordered(opt::FockOperator) -> Bool
+
+Judge whether a FockOperator is normal ordered.
+"""
+function isnormalordered(opt::FockOperator)
+    flag=true
+    for i=1:rank(opt)
+        flag && opt.id[i].index.nambu==ANNIHILATION && (flag=false)
+        flag || opt.id[i].index.nambu==CREATION && return false
+    end
+    return true
+end
+
+"""
+    FOperator(value::Number,id::ID{<:NTuple{N,OID}}) where N
+
+Fermionic Fock operator.
+"""
+struct FOperator{N,V<:Number,I<:ID{<:NTuple{N,OID}}} <: FockOperator{N,V,I}
+    value::V
+    id::I
+    FOperator(value::Number,id::ID{<:NTuple{N,OID}}) where N=new{N,typeof(value),typeof(id)}(value,id)
+end
+
+"""
+    statistics(opt::FOperator) -> Char
+    statistics(::Type{<:FOperator}) -> Char
+
+Get the statistics of FOperator.
+"""
+statistics(opt::FOperator)=opt|>typeof|>statistics
+statistics(::Type{<:FOperator})='F'
+
+"""
+    BOperator(value::Number,id::ID{<:NTuple{N,OID}}) where N
+
+Bosonic Fock operator.
+"""
+struct BOperator{N,V<:Number,I<:ID{<:NTuple{N,OID}}} <: FockOperator{N,V,I}
+    value::V
+    id::I
+    BOperator(value::Number,id::ID{<:NTuple{N,OID}}) where N=new{N,typeof(value),typeof(id)}(value,id)
+end
+
+"""
+    statistics(opt::BOperator)
+    statistics(::Type{<:BOperator})
+
+Get the statistics of BOperator.
+"""
+statistics(opt::BOperator)=opt|>typeof|>statistics
+statistics(::Type{<:BOperator})='B'
+
+"""
+    otype(::Val{:Fock},O::Type{<:Term{'F'}},B::Type{<:AbstractBond},T::Type{<:Union{Nothing,Table}})
+    otype(::Val{:Fock},O::Type{<:Term{'B'}},B::Type{<:AbstractBond},T::Type{<:Union{Nothing,Table}})
+
+Get the compatible Fock operator type with a Term type, an AbstractBond type and a Table/Nothing type.
+"""
+otype(::Val{:Fock},O::Type{<:Term{'F'}},B::Type{<:AbstractBond},T::Type{<:Union{Nothing,Table}})=FOperator{O|>rank,O|>valtype,ID{NTuple{O|>rank,oidtype(Val(:Fock),B,T)}}}
+otype(::Val{:Fock},O::Type{<:Term{'B'}},B::Type{<:AbstractBond},T::Type{<:Union{Nothing,Table}})=BOperator{O|>rank,O|>valtype,ID{NTuple{O|>rank,oidtype(Val(:Fock),B,T)}}}
 
 """
     FCID(;center=wildcard,atom=wildcard,orbital=wildcard,spin=wildcard,nambu=wildcard,obsub=wildcard,spsub=wildcard)
@@ -370,85 +449,6 @@ function σ⁻(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing)
     attrval=mode=="ph" ? (ANNIHILATION,ANNIHILATION) : (1,2)
     Couplings(FockCoupling{2}(1;attrname=>attrval,:centers=>centers))
 end
-
-"""
-    oidtype(::Val{:Fock},B::Type{<:AbstractBond},::Type{Nothing})
-    oidtype(::Val{:Fock},B::Type{<:AbstractBond},::Type{<:Table})
-
-Get the compatible Fock OID type with an AbstractBond type and a Table/Nothing type.
-"""
-oidtype(::Val{:Fock},B::Type{<:AbstractBond},::Type{Nothing})=OID{FIndex{fieldtype(B|>pidtype,:scope)},SVector{B|>dimension,Float},SVector{B|>dimension,Float},Nothing}
-oidtype(::Val{:Fock},B::Type{<:AbstractBond},::Type{<:Table})=OID{FIndex{fieldtype(B|>pidtype,:scope)},SVector{B|>dimension,Float},SVector{B|>dimension,Float},Int}
-
-"""
-    FockOperator{N,V<:Number,I<:ID{<:NTuple{N,OID}}} <: Operator{N,V,I}
-
-Abstract type for all Fock operators.
-"""
-abstract type FockOperator{N,V<:Number,I<:ID{<:NTuple{N,OID}}} <: Operator{N,V,I} end
-
-"""
-    isnormalordered(opt::FockOperator) -> Bool
-
-Judge whether a FockOperator is normal ordered.
-"""
-function isnormalordered(opt::FockOperator)
-    flag=true
-    for i=1:rank(opt)
-        flag && opt.id[i].index.nambu==ANNIHILATION && (flag=false)
-        flag || opt.id[i].index.nambu==CREATION && return false
-    end
-    return true
-end
-
-"""
-    FOperator(value::Number,id::ID{<:NTuple{N,OID}}) where N
-
-Fermionic Fock operator.
-"""
-struct FOperator{N,V<:Number,I<:ID{<:NTuple{N,OID}}} <: FockOperator{N,V,I}
-    value::V
-    id::I
-    FOperator(value::Number,id::ID{<:NTuple{N,OID}}) where N=new{N,typeof(value),typeof(id)}(value,id)
-end
-
-"""
-    statistics(opt::FOperator) -> Char
-    statistics(::Type{<:FOperator}) -> Char
-
-Get the statistics of FOperator.
-"""
-statistics(opt::FOperator)=opt|>typeof|>statistics
-statistics(::Type{<:FOperator})='F'
-
-"""
-    BOperator(value::Number,id::ID{<:NTuple{N,OID}}) where N
-
-Bosonic Fock operator.
-"""
-struct BOperator{N,V<:Number,I<:ID{<:NTuple{N,OID}}} <: FockOperator{N,V,I}
-    value::V
-    id::I
-    BOperator(value::Number,id::ID{<:NTuple{N,OID}}) where N=new{N,typeof(value),typeof(id)}(value,id)
-end
-
-"""
-    statistics(opt::BOperator)
-    statistics(::Type{<:BOperator})
-
-Get the statistics of BOperator.
-"""
-statistics(opt::BOperator)=opt|>typeof|>statistics
-statistics(::Type{<:BOperator})='B'
-
-"""
-    otype(::Val{:Fock},O::Type{<:Term{'F'}},B::Type{<:AbstractBond},T::Type{<:Union{Nothing,Table}})
-    otype(::Val{:Fock},O::Type{<:Term{'B'}},B::Type{<:AbstractBond},T::Type{<:Union{Nothing,Table}})
-
-Get the compatible Fock operator type with a Term type, an AbstractBond type and a Table/Nothing type.
-"""
-otype(::Val{:Fock},O::Type{<:Term{'F'}},B::Type{<:AbstractBond},T::Type{<:Union{Nothing,Table}})=FOperator{O|>rank,O|>valtype,ID{NTuple{O|>rank,oidtype(Val(:Fock),B,T)}}}
-otype(::Val{:Fock},O::Type{<:Term{'B'}},B::Type{<:AbstractBond},T::Type{<:Union{Nothing,Table}})=BOperator{O|>rank,O|>valtype,ID{NTuple{O|>rank,oidtype(Val(:Fock),B,T)}}}
 
 """
     Onsite{ST}( id::Symbol,value::Number;
