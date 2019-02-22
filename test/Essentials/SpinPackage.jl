@@ -1,6 +1,10 @@
+using StaticArrays: SVector
 using Hamiltonian.Essentials.SpinPackage
-using Hamiltonian.Essentials.Spatials: PID
+using Hamiltonian.Essentials.Spatials: PID,Point,Bond
+using Hamiltonian.Essentials.DegreesOfFreedom: Table,OID,isHermitian,IDFConfig,Operators
 using Hamiltonian.Essentials.Terms: Couplings,@subscript
+using Hamiltonian.Prerequisites: Float
+using Hamiltonian.Mathematics.AlgebraOverFields: ID
 using Hamiltonian.Mathematics.VectorSpaces: IsMultiIndexable,MultiIndexOrderStyle
 
 @testset "SID" begin
@@ -11,6 +15,22 @@ using Hamiltonian.Mathematics.VectorSpaces: IsMultiIndexable,MultiIndexOrderStyl
     @test SID(orbital=1,spin=0.5,tag='+')'==SID(orbital=1,spin=0.5,tag='-')
     @test SID(orbital=1,spin=0.5,tag='-')'==SID(orbital=1,spin=0.5,tag='+')
     @test SID(orbital=1,spin=0.5,tag='i')'==SID(orbital=1,spin=0.5,tag='i')
+end
+
+@testset "matrix" begin
+    @test isapprox(matrix(SID(1,0.5,'i')),[[1.0,0.0] [0.0,1.0]])
+    @test isapprox(matrix(SID(1,0.5,'z')),[[-0.5,0.0] [0.0,0.5]])
+    @test isapprox(matrix(SID(1,0.5,'x')),[[0.0,0.5] [0.5,0.0]])
+    @test isapprox(matrix(SID(1,0.5,'y')),[[0.0,-0.5im] [0.5im,0.0]])
+    @test isapprox(matrix(SID(1,0.5,'+')),[[0.0,1.0] [0.0,0.0]])
+    @test isapprox(matrix(SID(1,0.5,'-')),[[0.0,0.0] [1.0,0.0]])
+
+    @test isapprox(matrix(SID(1,1.0,'i')),[[1.0,0.0,0.0] [0.0,1.0,0.0] [0.0,0.0,1.0]])
+    @test isapprox(matrix(SID(1,1.0,'z')),[[-1.0,0.0,0.0] [0.0,0.0,0.0] [0.0,0.0,1.0]])
+    @test isapprox(matrix(SID(1,1.0,'x')),[[0.0,√2/2,0.0] [√2/2,0.0,√2/2] [0.0,√2/2,0.0]])
+    @test isapprox(matrix(SID(1,1.0,'y')),[[0.0,-√2im/2,0.0] [√2im/2,0.0,-√2im/2] [0.0,√2im/2,0.0]])
+    @test isapprox(matrix(SID(1,1.0,'+')),[[0.0,√2,0.0] [0.0,0.0,√2] [0.0,0.0,0.0]])
+    @test isapprox(matrix(SID(1,1.0,'-')),[[0.0,0.0,0.0] [√2,0.0,0.0] [0.0,√2,0.0]])
 end
 
 @testset "Spin" begin
@@ -28,6 +48,18 @@ end
 @testset "SIndex" begin
     @test SIndex|>fieldnames==(:scope,:site,:orbital,:spin,:tag)
     @test union(PID{Char},SID)==SIndex{Char}
+end
+
+@testset "oidtype" begin
+    @test oidtype(Val(:Spin),Point{PID{Int},2},Nothing)==OID{SIndex{Int},SVector{2,Float},SVector{2,Float},Nothing}
+    @test oidtype(Val(:Spin),Point{PID{Int},2},Table)==OID{SIndex{Int},SVector{2,Float},SVector{2,Float},Int}
+end
+
+@testset "SOperator" begin
+    opt=SOperator(1.0,(SIndex('a',1,1,0.5,'+'),SIndex('a',1,1,0.5,'-')))
+    @test opt|>statistics==opt|>typeof|>statistics=='B'
+    @test opt'==SOperator(1.0,(SIndex('a',1,1,0.5,'+'),SIndex('a',1,1,0.5,'-')))
+    @test isHermitian(opt)
 end
 
 @testset "SCID" begin
@@ -79,23 +111,36 @@ end
 end
 
 @testset "Sᵅ" begin
-    @test Sˣ(center=1)==Couplings(SpinCoupling{1}(1.0,tags=('x',),centers=(1,)))
+    @test Sˣ()==Couplings(SpinCoupling{1}(1.0,tags=('x',)))
     @test Sʸ(atom=1)==Couplings(SpinCoupling{1}(1.0,tags=('y',),atoms=(1,)))
     @test Sᶻ(orbital=1)==Couplings(SpinCoupling{1}(1.0,tags=('z',),orbitals=(1,)))
 end
 
-@testset "matrix" begin
-    @test isapprox(matrix(SID(1,0.5,'i')),[[1.0,0.0] [0.0,1.0]])
-    @test isapprox(matrix(SID(1,0.5,'z')),[[-0.5,0.0] [0.0,0.5]])
-    @test isapprox(matrix(SID(1,0.5,'x')),[[0.0,0.5] [0.5,0.0]])
-    @test isapprox(matrix(SID(1,0.5,'y')),[[0.0,-0.5im] [0.5im,0.0]])
-    @test isapprox(matrix(SID(1,0.5,'+')),[[0.0,1.0] [0.0,0.0]])
-    @test isapprox(matrix(SID(1,0.5,'-')),[[0.0,0.0] [1.0,0.0]])
+@testset "SpinTerm" begin
+    term=SpinTerm(:h,1.5,neighbor=0,couplings=Sᶻ())
+    @test term|>abbr==:sp
+    @test otype(Val(:Spin),term|>typeof,Point{PID{Int},2},Nothing)==SOperator{1,Float,ID{NTuple{1,OID{SIndex{Int},SVector{2,Float},SVector{2,Float},Nothing}}}}
+    @test otype(Val(:Spin),term|>typeof,Point{PID{Int},2},Table)==SOperator{1,Float,ID{NTuple{1,OID{SIndex{Int},SVector{2,Float},SVector{2,Float},Int}}}}
 
-    @test isapprox(matrix(SID(1,1.0,'i')),[[1.0,0.0,0.0] [0.0,1.0,0.0] [0.0,0.0,1.0]])
-    @test isapprox(matrix(SID(1,1.0,'z')),[[-1.0,0.0,0.0] [0.0,0.0,0.0] [0.0,0.0,1.0]])
-    @test isapprox(matrix(SID(1,1.0,'x')),[[0.0,√2/2,0.0] [√2/2,0.0,√2/2] [0.0,√2/2,0.0]])
-    @test isapprox(matrix(SID(1,1.0,'y')),[[0.0,-√2im/2,0.0] [√2im/2,0.0,-√2im/2] [0.0,√2im/2,0.0]])
-    @test isapprox(matrix(SID(1,1.0,'+')),[[0.0,√2,0.0] [0.0,0.0,√2] [0.0,0.0,0.0]])
-    @test isapprox(matrix(SID(1,1.0,'-')),[[0.0,0.0,0.0] [√2,0.0,0.0] [0.0,√2,0.0]])
+    point=Point(PID('a',1),(0.5,0.5),(0.0,0.0))
+    config=IDFConfig{Spin}(pid->Spin(atom=pid.site%2,norbital=2,spin=0.5),[point.pid])
+    table=Table(config,by=usualspinindextotuple)
+    term=SpinTerm(:h,1.5,neighbor=0,couplings=Sᶻ())
+    operators=Operators(SOperator(1.5,ID(OID(SIndex('a',1,1,0.5,'z'),[0.5,0.5],[0.0,0.0],1))),
+                        SOperator(1.5,ID(OID(SIndex('a',1,2,0.5,'z'),[0.5,0.5],[0.0,0.0],2)))
+    )
+    @test expand(term,point,config,table)==operators
+
+    bond=Bond(1,Point(PID('a',1),(0.0,0.0),(0.0,0.0)),Point(PID('b',1),(0.5,0.5),(0.0,0.0)))
+    config=IDFConfig{Spin}(pid->Spin(atom=pid.site%2,norbital=2,spin=0.5),[bond.spoint.pid,bond.epoint.pid])
+    table=Table(config,by=usualspinindextotuple)
+    term=SpinTerm(:J,1.5,neighbor=1,couplings=Heisenberg())
+    operators=Operators(SOperator(1.50,ID(OID(SIndex('b',1,2,0.5,'z'),[0.5,0.5],[0.0,0.0],4),OID(SIndex('a',1,2,0.5,'z'),[0.0,0.0],[0.0,0.0],2))),
+                        SOperator(0.75,ID(OID(SIndex('b',1,2,0.5,'-'),[0.5,0.5],[0.0,0.0],4),OID(SIndex('a',1,2,0.5,'+'),[0.0,0.0],[0.0,0.0],2))),
+                        SOperator(0.75,ID(OID(SIndex('b',1,1,0.5,'-'),[0.5,0.5],[0.0,0.0],3),OID(SIndex('a',1,1,0.5,'+'),[0.0,0.0],[0.0,0.0],1))),
+                        SOperator(0.75,ID(OID(SIndex('b',1,1,0.5,'+'),[0.5,0.5],[0.0,0.0],3),OID(SIndex('a',1,1,0.5,'-'),[0.0,0.0],[0.0,0.0],1))),
+                        SOperator(1.50,ID(OID(SIndex('b',1,1,0.5,'z'),[0.5,0.5],[0.0,0.0],3),OID(SIndex('a',1,1,0.5,'z'),[0.0,0.0],[0.0,0.0],1))),
+                        SOperator(0.75,ID(OID(SIndex('b',1,2,0.5,'+'),[0.5,0.5],[0.0,0.0],4),OID(SIndex('a',1,2,0.5,'-'),[0.0,0.0],[0.0,0.0],2)))
+    )
+    @test expand(term,bond,config,table)==operators
 end

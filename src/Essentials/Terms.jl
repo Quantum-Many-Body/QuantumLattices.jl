@@ -556,11 +556,11 @@ function expand(otype::Type{<:Operator},term::Term,bond::AbstractBond,config::ID
                 perm=propercenters(typeof(coupling),coupling.id.centers,Val(rank(bond)))::NTuple{rank(otype),Int}
                 orcoords=getcoords(rtype,rcoords,perm)
                 oicoords=getcoords(itype,icoords,perm)
-                for (coeff,oindexes) in expand(coupling,pids,interanls,term|>species|>Val) # needs improvement memory allocation 5->33
+                for (coeff,oindexes) in expand(coupling,pids,interanls,term|>species|>Val) # needs improvement memory allocation 7 times for each fock coupling
                     isa(table,Table) && any(NTuple{rank(otype),Bool}(!haskey(table,index) for index in oindexes)) && continue
                     id=ID(OID,oindexes,orcoords,oicoords,getseqs(table,oindexes))
                     if !(half===nothing && haskey(result,id'))
-                        ovalue=valtype(otype)(value*coeff*properfactor(half,id,term|>species|>Val)) # needs improvement memory allocation 33->41
+                        ovalue=valtype(otype)(value*coeff*properfactor(half,id,term|>species|>Val)) # needs improvement memory allocation 2 times for each
                         add!(result,otype.name.wrapper(ovalue,id))
                     end
                 end
