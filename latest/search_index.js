@@ -4641,6 +4641,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.SpinPackage.SOperator",
+    "page": "Spin package",
+    "title": "Hamiltonian.Essentials.SpinPackage.SOperator",
+    "category": "type",
+    "text": "SOperator(value::Number,id::ID{<:NTuple{N,OID}}) where N\n\nSpin operator.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.SpinPackage.Spin",
     "page": "Spin package",
     "title": "Hamiltonian.Essentials.SpinPackage.Spin",
@@ -4665,6 +4673,30 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.SpinPackage.SpinTerm",
+    "page": "Spin package",
+    "title": "Hamiltonian.Essentials.SpinPackage.SpinTerm",
+    "category": "type",
+    "text": "SpinTerm(   id::Symbol,value::Number;\n            neighbor::Int,\n            couplings::Union{Tuple{<:Tuple{Vararg{Couplings}},<:Function},Coupling,Couplings},\n            amplitude::Union{Function,Nothing}=nothing,\n            modulate::Union{Function,Bool}=false,\n            factor::Number=1\n            )\n\nSpin term.\n\nType alias for Term{\'B\',:SpinTerm,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.DegreesOfFreedom.oidtype-Tuple{Val{:Spin},Type{#s237} where #s237<:AbstractBond,Type{Nothing}}",
+    "page": "Spin package",
+    "title": "Hamiltonian.Essentials.DegreesOfFreedom.oidtype",
+    "category": "method",
+    "text": "oidtype(::Val{:Spin},B::Type{<:AbstractBond},::Type{Nothing})\noidtype(::Val{:Spin},B::Type{<:AbstractBond},::Type{<:Table})\n\nGet the compatible spin OID type with an AbstractBond type and a Table/Nothing type.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.DegreesOfFreedom.otype-Tuple{Val{:Spin},Type{#s235} where #s235<:(Term{\'B\',Species,V,N,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where N where V<:Number where Species),Type{#s234} where #s234<:AbstractBond,Type{#s233} where #s233<:Union{Nothing, Dict{I,Int64} where I<:Index}}",
+    "page": "Spin package",
+    "title": "Hamiltonian.Essentials.DegreesOfFreedom.otype",
+    "category": "method",
+    "text": "otype(::Val{:Spin},O::Type{<:Term{\'B\'}},B::Type{<:AbstractBond},T::Type{<:Union{Nothing,Table}})\n\nGet the compatible spin operator type with a Term type, an AbstractBond type and a Table/Nothing type.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.SpinPackage.Heisenberg-Tuple{}",
     "page": "Spin package",
     "title": "Hamiltonian.Essentials.SpinPackage.Heisenberg",
@@ -4685,7 +4717,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spin package",
     "title": "Hamiltonian.Essentials.SpinPackage.Sʸ",
     "category": "method",
-    "text": "Sʸ(;center::Union{Int,Nothing}=nothing,atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID{<:NTuple{2,SCID}},SpinCoupling{2,Float,ID{<:NTuple{2,SCID}}}}\n\nThe single Sʸ coupling.\n\n\n\n\n\n"
+    "text": "Sʸ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID{<:NTuple{2,SCID}},SpinCoupling{2,Float,ID{<:NTuple{2,SCID}}}}\n\nThe single Sʸ coupling.\n\n\n\n\n\n"
 },
 
 {
@@ -4693,7 +4725,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spin package",
     "title": "Hamiltonian.Essentials.SpinPackage.Sˣ",
     "category": "method",
-    "text": "Sˣ(;center::Union{Int,Nothing}=nothing,atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID{<:NTuple{2,SCID}},SpinCoupling{2,Float,ID{<:NTuple{2,SCID}}}}\n\nThe single Sˣ coupling.\n\n\n\n\n\n"
+    "text": "Sˣ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID{<:NTuple{2,SCID}},SpinCoupling{2,Float,ID{<:NTuple{2,SCID}}}}\n\nThe single Sˣ coupling.\n\n\n\n\n\n"
 },
 
 {
@@ -4701,7 +4733,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spin package",
     "title": "Hamiltonian.Essentials.SpinPackage.Sᶻ",
     "category": "method",
-    "text": "Sᶻ(;center::Union{Int,Nothing}=nothing,atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID{<:NTuple{2,SCID}},SpinCoupling{2,Float,ID{<:NTuple{2,SCID}}}}\n\nThe single Sᶻ coupling.\n\n\n\n\n\n"
+    "text": "Sᶻ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID{<:NTuple{2,SCID}},SpinCoupling{2,Float,ID{<:NTuple{2,SCID}}}}\n\nThe single Sᶻ coupling.\n\n\n\n\n\n"
 },
 
 {
@@ -4713,11 +4745,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Prerequisites.Interfaces.expand-Tuple{SpinCoupling,PID,Spin}",
+    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.Terms.statistics-Tuple{SOperator}",
+    "page": "Spin package",
+    "title": "Hamiltonian.Essentials.Terms.statistics",
+    "category": "method",
+    "text": "statistics(opt::SOperator) -> Char\nstatistics(::Type{<:SOperator}) -> Char\n\nGet the statistics of SOperator.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Prerequisites.Interfaces.expand-Union{Tuple{S}, Tuple{SpinCoupling,PID,Spin}, Tuple{SpinCoupling,PID,Spin,Union{Nothing, Val{S}}}} where S",
     "page": "Spin package",
     "title": "Hamiltonian.Prerequisites.Interfaces.expand",
     "category": "method",
-    "text": "expand(sc::SpinCoupling,pid::PID,spin::Spin) -> Union{SCExpand,Tuple{}}\nexpand(sc::SpinCoupling,pids::NTuple{N,PID},spins::NTuple{N,Spin}) where N -> Union{SCExpand,Tuple{}}\n\nExpand a spin coupling with the given set of point ids and spin degrees of freedom.\n\n\n\n\n\n"
+    "text": "expand(sc::SpinCoupling,pid::PID,spin::Spin,species::Union{Val{S},Nothing}=nothing) where S -> Union{SCExpand,Tuple{}}\nexpand(sc::SpinCoupling,pids::NTuple{N,PID},spins::NTuple{N,Spin},species::Union{Val{S},Nothing}=nothing) where {N,S} -> Union{SCExpand,Tuple{}}\n\nExpand a spin coupling with the given set of point ids and spin degrees of freedom.\n\n\n\n\n\n"
 },
 
 {
