@@ -55,6 +55,23 @@ end
     @test isonline([1.1,1.1],p1,p2,ends=(rand(Bool),rand(Bool)))==false
 end
 
+@testset "decompose" begin
+    a,c=randn(3),randn()
+    @test all(decompose(c*a,a).≈(c,))
+
+    a1,a2=randn(2),randn(2)
+    c1,c2=randn(2)
+    @test all(decompose(c1*a1+c2*a2,a1,a2).≈(c1,c2))
+
+    a1,a2=randn(3),randn(3)
+    c1,c2=randn(2)
+    @test all(decompose(c1*a1+c2*a2,a1,a2).≈(c1,c2))
+
+    a1,a2,a3=randn(3),randn(3),randn(3)
+    c1,c2,c3=randn(3)
+    @test all(decompose(c1*a1+c2*a2+c3*a3,a1,a2,a3).≈(c1,c2,c3))
+end
+
 @testset "isintratriangle" begin
     seed!()
     p1,p2,p3=[-1.0,0.0],[0.0,1.0],[1.0,0.0]
@@ -174,12 +191,12 @@ end
     @test lattice|>dimension==2
     @test lattice|>keytype==PID{Int}
     @test lattice|>valtype==Point{PID{Int},2}
-    @test lattice[RCoordIndex(1)]==SVector(0.5,0.5)
-    @test lattice[RCoordIndex(PID(1,1))]==SVector(0.5,0.5)
-    @test lattice[ICoordIndex(1)]==SVector(0.0,0.0)
-    @test lattice[ICoordIndex(PID(1,1))]==SVector(0.0,0.0)
-    @test lattice[PointIndex(1)]==Point(PID(1,1),(0.5,0.5),(0.0,0.0))
-    @test lattice[PointIndex(PID(1,1))]==Point(PID(1,1),(0.5,0.5),(0.0,0.0))
+    @test lattice[LatticeIndex{'R'}(1)]==SVector(0.5,0.5)
+    @test lattice[LatticeIndex{'R'}(PID(1,1))]==SVector(0.5,0.5)
+    @test lattice[LatticeIndex{'I'}(1)]==SVector(0.0,0.0)
+    @test lattice[LatticeIndex{'I'}(PID(1,1))]==SVector(0.0,0.0)
+    @test lattice[LatticeIndex{'P'}(1)]==Point(PID(1,1),(0.5,0.5),(0.0,0.0))
+    @test lattice[LatticeIndex{'P'}(PID(1,1))]==Point(PID(1,1),(0.5,0.5),(0.0,0.0))
     @test lattice|>nneighbor==1
     @test lattice|>bonds==[ Point(PID(1,1),(0.5,0.5),(0.0,0.0)),
                             Bond(1,Point(PID(1,1),[0.5,0.5],[0.0,0.0]),Point(PID(1,1),[0.5,-0.5],[0.0,-1.0])),

@@ -12,16 +12,15 @@ using ...Prerequisites.Factories: addparams!,addfields!,addwhereparams!,addargs!
 using ...Mathematics.Combinatorics: Combinations
 using ...Mathematics.AlgebraOverFields: SimpleID
 
-import ...Prerequisites.Interfaces: rank,dimension
+import ...Prerequisites.Interfaces: decompose,rank,dimension
 
-export rank,dimension
+export decompose,rank,dimension
 export distance,azimuthd,azimuth,polard,polar,volume
 export isparallel,isonline,isintratriangle,issubordinate
 export reciprocals,translate,rotate,tile,minimumlengths
 export intralinks,interlinks
 export PID,AbstractBond,pidtype,neighbor,Point,Bond,rcoord,icoord,isintracell
-export AbstractLattice,nneighbor,bonds
-export AbstractLatticeIndex,RCoordIndex,ICoordIndex,PointIndex
+export AbstractLattice,nneighbor,bonds,LatticeIndex
 export zerothbonds,insidebonds,acrossbonds,intrabonds,interbonds
 export Lattice,SuperLattice,Cylinder
 
@@ -95,7 +94,7 @@ function volume(v1::AbstractVector{<:Real},v2::AbstractVector{<:Real},v3::Abstra
     if length(v1) ∈ (1,2) || length(v2) ∈ (1,2) || length(v3) ∈ (1,2)
         result=zero(v1|>eltype)
     elseif length(v1)==3 && length(v2)==3 && length(v3)==3
-        result=dot(v1,cross(v2,v3))
+        result=v1[1]*(v2[2]*v3[3]-v2[3]*v3[2])+v1[2]*(v2[3]*v3[1]-v2[1]*v3[3])+v1[3]*(v2[1]*v3[2]-v2[2]*v3[1])
     else
         error("volume error: wrong dimensioned input vectors.")
     end
@@ -134,6 +133,44 @@ function isonline(p::AbstractVector{<:Real},p1::AbstractVector{<:Real},p2::Abstr
 end
 
 """
+    decompose(v0::AbstractVector{<:Real},v1::AbstractVector{<:Real}) -> Tuple{Float}
+    decompose(v0::AbstractVector{<:Real},v1::AbstractVector{<:Real},v2::AbstractVector{<:Real}) -> Tuple{Float,Float}
+    decompose(v0::AbstractVector{<:Real},v1::AbstractVector{<:Real},v2::AbstractVector{<:Real},v3::AbstractVector{<:Real}) -> Tuple{Float,Float,Float}
+
+Decompose a vector with respect to input basis vectors.
+"""
+function decompose(v0::AbstractVector{<:Real},v1::AbstractVector{<:Real})
+    @assert length(v0)==length(v1) "decompose error: dismatched length of input vectors."
+    n0,n1=norm(v0),norm(v1)
+    sign=dot(v0,v1)/n0/n1
+    @assert isapprox(abs(sign),1.0,atol=atol,rtol=rtol) "decompose error: insufficient basis vectors."
+    return (sign*n0/n1,)
+end
+function decompose(v0::AbstractVector{<:Real},v1::AbstractVector{<:Real},v2::AbstractVector{<:Real})
+    @assert length(v0)==length(v1)==length(v2) "decompose error: dismatched length of input vectors."
+    @assert length(v0)==2 || length(v0)==3 "decompose error: unsupported dimension($(length(v0))) of input vectors."
+    if length(v0)==2
+        det=v1[1]*v2[2]-v1[2]*v2[1]
+        x1=(v0[1]*v2[2]-v0[2]*v2[1])/det
+        x2=(v0[2]*v1[1]-v0[1]*v1[2])/det
+    else
+        v3=SVector{3,Float}(v1[2]*v2[3]-v1[3]*v2[2],v1[3]*v2[1]-v1[1]*v2[3],v1[1]*v2[2]-v1[2]*v2[1])
+        x1,x2,x3=decompose(v0,v1,v2,v3)
+        @assert isapprox(x3,0.0,atol=atol,rtol=rtol) "decompose error: insufficient basis vectors."
+    end
+    return x1,x2
+end
+function decompose(v0::AbstractVector{<:Real},v1::AbstractVector{<:Real},v2::AbstractVector{<:Real},v3::AbstractVector{<:Real})
+    @assert length(v0)==length(v1)==length(v2)==length(v3) "decompose error: dismatched length of input vectors."
+    @assert length(v0)==3 "decompose error: unsupported dimension($(length(v0))) of input vectors."
+    V=volume(v1,v2,v3)
+    r1=(v2[2]*v3[3]/V-v2[3]*v3[2]/V,v2[3]*v3[1]/V-v2[1]*v3[3]/V,v2[1]*v3[2]/V-v2[2]*v3[1]/V)
+    r2=(v3[2]*v1[3]/V-v3[3]*v1[2]/V,v3[3]*v1[1]/V-v3[1]*v1[3]/V,v3[1]*v1[2]/V-v3[2]*v1[1]/V)
+    r3=(v1[2]*v2[3]/V-v1[3]*v2[2]/V,v1[3]*v2[1]/V-v1[1]*v2[3]/V,v1[1]*v2[2]/V-v1[2]*v2[1]/V)
+    return dot(r1,v0),dot(r2,v0),dot(r3,v0)
+end
+
+"""
     isintratriangle(p::AbstractVector{<:Real},
                     p1::AbstractVector{<:Real},
                     p2::AbstractVector{<:Real},
@@ -157,14 +194,9 @@ function isintratriangle(p::AbstractVector{<:Real},
                 rtol::Real=rtol
                 )
     @assert length(p)==length(p1)==length(p2)==length(p3) "isintratriangle error: shape dismatch of input point and triangle."
-    ndim=length(p)
-    a,b=zeros(Float,3,3),zeros(Float,3)
-    a[1:ndim,1]=p2-p1
-    a[1:ndim,2]=p3-p1
-    a[:,3]=cross(a[:,1],a[:,2])
-    b[1:ndim]=p-p1
-    x=inv(a)*b
-    @assert isapprox(x[3],0.0,atol=atol,rtol=rtol) "isintratriangle error: internal error..."
+    @assert length(p)==2 || length(p)==3 "isintratriangle error: unsupported dimension($(length(p))) of input points."
+    x=length(p)==2 ? decompose(SVector(p[1]-p1[1],p[2]-p1[2]),SVector(p2[1]-p1[1],p2[2]-p1[2]),SVector(p3[1]-p1[1],p3[2]-p1[2])) :
+                     decompose(SVector(p[1]-p1[1],p[2]-p1[2],p[3]-p1[3]),SVector(p2[1]-p1[1],p2[2]-p1[2],p2[3]-p1[3]),SVector(p3[1]-p1[1],p3[2]-p1[2],p3[3]-p1[3]))
     x1_approx_0,x2_approx_0=isapprox(x[1],0.0,atol=atol,rtol=rtol),isapprox(x[2],0.0,atol=atol,rtol=rtol)
     x1_approx_1,x2_approx_1=isapprox(x[1],1.0,atol=atol,rtol=rtol),isapprox(x[2],1.0,atol=atol,rtol=rtol)
     x12_approx_1=isapprox(x[1]+x[2],1.0,atol=atol,rtol=rtol)
@@ -184,25 +216,16 @@ Judge whether a coordinate belongs to a lattice defined by `vectors` with the gi
 """
 function issubordinate(rcoord::AbstractVector{<:Real},vectors::AbstractVector{<:AbstractVector{<:Real}};atol::Real=atol,rtol::Real=rtol)
     @assert length(rcoord) ∈ (1,2,3) "issubordinate error: only 1, 2 and 3 dimensional coordinates are supported."
-    @assert all(length(vector)==length(rcoord) for vector in vectors) "issubordinate error: shape dismatch of input rcoord and vectors."
-    ndim,nv=length(rcoord),length(vectors)
-    a,b=zeros(Float,3,3),zeros(Float,3)
-    for i=1:nv
-        a[1:ndim,i]=vectors[i]
+    @assert length(vectors) ∈ (1,2,3) "issubordinate error: the number of input basis vectors must be 1, 2 or 3."
+    fapprox=xi->isapprox(round(xi),xi,atol=atol,rtol=rtol)
+    if length(vectors)==1
+        result=mapreduce(fapprox,&,decompose(rcoord,vectors[1]))
+    elseif length(vectors)==2
+        result=mapreduce(fapprox,&,decompose(rcoord,vectors[1],vectors[2]))
+    else
+        result=mapreduce(fapprox,&,decompose(rcoord,vectors[1],vectors[2],vectors[3]))
     end
-    if nv==1 || nv==2
-        if nv==1
-            for i=1:3
-                a[:,2].=0.0
-                a[i,2]=pi
-                isparallel(@views(a[:,1]),@views(a[:,2]),atol=atol,rtol=rtol)==0 && break
-            end
-        end
-        a[:,3]=cross(@views(a[:,1]),@views(a[:,2]))
-    end
-    b[1:ndim]=rcoord
-    x=inv(a)*b
-    return isapprox(norm(round.(x)-x),0.0,atol=atol,rtol=rtol)
+    return result
 end
 
 """
@@ -215,7 +238,7 @@ function reciprocals(vectors::AbstractVector{<:AbstractVector{<:Real}})
     @assert all(length(vector) in (1,2,3) for vector in vectors) "reciprocals error: all input vectors must be 1, 2 or 3 dimensional."
     result=Vector{Float}[]
     if length(vectors)==1
-        push!(result,2pi*vectors[1]/sum(vectors[1].^2))
+        push!(result,2pi/mapreduce(vi->vi^2,+,vectors[1])*vectors[1])
     elseif length(vectors) in (2,3)
         ndim=length(vectors[1])
         m=zeros(Float,3,3)
@@ -223,9 +246,9 @@ function reciprocals(vectors::AbstractVector{<:AbstractVector{<:Real}})
         m[1:ndim,2]=vectors[2]
         m[:,3]=length(vectors)==2 ? cross(@views(m[:,1]),@views(m[:,2])) : vectors[3]
         m=inv(m)
-        push!(result,2pi*m[1,1:ndim])
-        push!(result,2pi*m[2,1:ndim])
-        length(vectors)==3 && push!(result,2*pi*m[3,1:ndim])
+        push!(result,2pi*@views(m[1,1:ndim]))
+        push!(result,2pi*@views(m[2,1:ndim]))
+        length(vectors)==3 && push!(result,2*pi*@views(m[3,1:ndim]))
     end
     return result
 end
@@ -252,17 +275,17 @@ function rotate(cluster::AbstractMatrix{<:Real},angle::Real;axis::Tuple{Union{Ab
     @assert size(cluster,1) in (2,3) "rotate error: only 2 and 3 dimensional vectors can be rotated."
     center,theta,phi=(axis[1]===nothing ? zeros(size(cluster,1)) : axis[1]),axis[2][1],axis[2][2]
     @assert length(center)==size(cluster,1) "rotate error: dismatched shape of the input cluster and the point on axis."
-    length(center)==2 && @assert isapprox(theta,0,atol=atol) && isapprox(phi,0,atol=atol) "rotate error: both the polar and azimuth of the axis for 2 dimensional vectors must be 0."
-    cache,cosθ,sinθ=zeros(3),cos(angle),sin(angle)
-    k=[sin(theta)*cos(phi),sin(theta)*sin(phi),cos(theta)]
+    length(center)==2 && @assert isapprox(theta,0,atol=atol) && isapprox(phi,0,atol=atol) "rotate error: both the polar and azimuth of the axis for 2d vectors must be 0."
+    cosθ,sinθ=cos(angle),sin(angle)
+    k,w=SVector{3,Float}(sin(theta)*cos(phi),sin(theta)*sin(phi),cos(theta)),zeros(3)
     result=zeros(size(cluster))
     for i=1:size(cluster,2)
         for j=1:size(cluster,1)
-            cache[j]=cluster[j,i]-center[j]
+            w[j]=cluster[j,i]-center[j]
         end
-        inner,outer=dot(k,cache),cross(k,cache)
+        inner,outer=dot(k,w),(k[2]*w[3]-k[3]*w[2],k[3]*w[1]-k[1]*w[3],k[1]*w[2]-k[2]*w[1])
         for j=1:size(cluster,1)
-            result[j,i]=cache[j]*cosθ+outer[j]*sinθ+k[j]*inner*(1-cosθ)+center[j]
+            result[j,i]=w[j]*cosθ+outer[j]*sinθ+k[j]*inner*(1-cosθ)+center[j]
         end
     end
     return result
@@ -276,10 +299,17 @@ Tile a supercluster by translations of the input cluster.
 Basically, the final supercluster is composed of several parts, each of which is a translation of the original cluster, with the translation vectors specified by `vectors` and each set of the translation indices contained in `translations`. When translation vectors are empty, a copy of the original cluster will be returned.
 """
 function tile(cluster::AbstractMatrix{<:Real},vectors::AbstractVector{<:AbstractVector{<:Real}},translations::NTuple{M,NTuple{N,<:Real}}=()) where {N,M}
-    N==0 || @assert length(vectors)==N "tile error: dismatched shape of input vectors and translations."
+    N==0 && return copy(cluster)
+    @assert length(vectors)==N "tile error: dismatched shape of input vectors and translations."
     supercluster=zeros(size(cluster,1),size(cluster,2)*length(translations))
-    for (i,translation) in enumerate(N==0 ? (0,) : translations)
-        disp=N==0 ? zeros(size(cluster,1)) : sum(vectors.*translation)
+    disp=zeros(size(cluster,1))
+    for (i,translation) in enumerate(translations)
+        for i=1:length(disp)
+            disp[i]=0.0
+            for j=1:length(vectors)
+                disp[i]+=vectors[j][i]*translation[j]
+            end
+        end
         for j=1:size(cluster,2)
             col=(i-1)*size(cluster,2)+j
             for row=1:size(cluster,1)
@@ -303,7 +333,7 @@ function minimumlengths(cluster::AbstractMatrix{<:Real},vectors::AbstractVector{
     if size(cluster,2)>0
         translations=reshape(product((-nneighbor:nneighbor for i=1:length(vectors))...)|>collect,:)
         for translation in translations
-            if any(translation.!=0)
+            if length(translation)>0 && mapreduce(x->x!=0,|,translation)
                 remove=ntuple(i->-translation[i],length(translation))
                 filter!(key->key!=remove,translations)
             end
@@ -320,7 +350,7 @@ function minimumlengths(cluster::AbstractMatrix{<:Real},vectors::AbstractVector{
                 end
             end
         end
-        any(result.==Inf) && @warn "minimumlengths warning: Inf remained in the result and larger(>$coordination) coordination or smaller(<$nneighbor) nneighbor may be needed."
+        nneighbor>0 && mapreduce(isequal(Inf),|,result) && @warn "minimumlengths warning: larger(>$coordination) coordination or smaller(<$nneighbor) nneighbor may be needed."
     end
     return result
 end
@@ -345,7 +375,7 @@ function intralinks(    cluster::AbstractMatrix{<:Real},
     result=Tuple{Int,Int,Int,SVector{size(cluster,1),Float}}[]
     translations=reshape(product((-nnb:nnb for nnb in maxtranslations)...)|>collect,:)
     for translation in translations
-        if any(translation.!=0)
+        if length(translation)>0 && mapreduce(x->x!=0,|,translation)
             remove=ntuple(i->-translation[i],length(translation))
             filter!(key->key!=remove,translations)
         end
@@ -405,59 +435,61 @@ Base.fieldnames(pid::PID)=(:scope,:site)
 
 Abstract bond.
 """
-abstract type AbstractBond{R,P<:PID,N} end
+abstract type AbstractBond{P<:PID,N,R} end
 
 """
-    ==(b1::AbstractBond{R},b1::AbstractBond{R}) where R -> Bool
-    isequal(b1::AbstractBond{R},b1::AbstractBond{R}) where R -> Bool
+    ==(b1::AbstractBond{P,N,R},b2::AbstractBond{P,N,R}) where {P<:PID,N,R} -> Bool
+    isequal(b1::AbstractBond{P,N,R},b2::AbstractBond{P,N,R}) where {P<:PID,N,R} -> Bool
 
 Overloaded equivalent operator.
 """
-Base.:(==)(b1::AbstractBond{R},b2::AbstractBond{R}) where R = ==(efficientoperations,b1,b2)
-Base.isequal(b1::AbstractBond{R},b2::AbstractBond{R}) where R=isequal(efficientoperations,b1,b2)
+Base.:(==)(b1::AbstractBond{P,N,R},b2::AbstractBond{P,N,R}) where {P<:PID,N,R} = ==(efficientoperations,b1,b2)
+Base.isequal(b1::AbstractBond{P,N,R},b2::AbstractBond{P,N,R}) where {P<:PID,N,R}=isequal(efficientoperations,b1,b2)
 
 """
     length(bond::AbstractBond) -> Int
-    length(::Type{<:AbstractBond{R}}) where R -> Int
+    length(::Type{<:AbstractBond{<:PID,N,R}}) where {N,R} -> Int
 
 Get the number of points of a bond.
 """
 Base.length(bond::AbstractBond)=bond|>typeof|>length
-Base.length(::Type{<:AbstractBond{R}}) where R=R
+Base.length(::Type{<:AbstractBond{<:PID,N,R}}) where {N,R}=R
 
 """
     eltype(bond::AbstractBond)
-    eltype(::Type{<:AbstractBond})
+    eltype(::Type{<:AbstractBond{P,N}}) where {P<:PID,N}
+
+Get the eltype of a bond.
 """
 Base.eltype(bond::AbstractBond)=bond|>typeof|>eltype
-Base.eltype(::Type{<:AbstractBond{R,P,N}}) where {R,P<:PID,N}=Point{P,N}
+Base.eltype(::Type{<:AbstractBond{P,N}}) where {P<:PID,N}=Point{P,N}
 
 """
     rank(bond::AbstractBond) -> Int
-    rank(::Type{<:AbstractBond{R}}) where R -> Int
+    rank(::Type{<:AbstractBond{<:PID,N,R}}) where {N,R} -> Int
 
-Get the rank of a concrete bond.
+Get the rank of a bond.
 """
 rank(bond::AbstractBond)=bond|>typeof|>rank
-rank(::Type{<:AbstractBond{R}}) where R=R
+rank(::Type{<:AbstractBond{<:PID,N,R}}) where {N,R}=R
 
 """
     pidtype(bond::AbstractBond)
-    pidtype(::Type{<:AbstractBond{R,P}}) where {R,P<:PID}
+    pidtype(::Type{<:AbstractBond{P}}) where {P<:PID}
 
 Get the pid type of a concrete bond.
 """
 pidtype(bond::AbstractBond)=bond|>typeof|>pidtype
-pidtype(::Type{<:AbstractBond{R,P}}) where {R,P<:PID}=P
+pidtype(::Type{<:AbstractBond{P}}) where {P<:PID}=P
 
 """
     dimension(bond::AbstractBond) -> Int
-    dimension(::Type{<:AbstractBond{R,<:PID,N}}) where {R,N} -> Int
+    dimension(::Type{<:AbstractBond{<:PID,N}}) where N -> Int
 
 Get the space dimension of a concrete bond.
 """
 dimension(bond::AbstractBond)=bond|>typeof|>dimension
-dimension(::Type{<:AbstractBond{R,<:PID,N}}) where {R,N}=N
+dimension(::Type{<:AbstractBond{<:PID,N}}) where N=N
 
 """
     Point(pid::PID,rcoord::SVector{N,<:Real},icoord::SVector{N,<:Real}) where N
@@ -466,7 +498,7 @@ dimension(::Type{<:AbstractBond{R,<:PID,N}}) where {R,N}=N
 
 Labeled point.
 """
-struct Point{P<:PID,N} <: AbstractBond{1,P,N}
+struct Point{P<:PID,N} <: AbstractBond{P,N,1}
     pid::P
     rcoord::SVector{N,Float}
     icoord::SVector{N,Float}
@@ -506,7 +538,7 @@ neighbor(::Type{<:Point})=0
 
 A bond in a lattice.
 """
-struct Bond{P<:PID,N} <: AbstractBond{2,P,N}
+struct Bond{P<:PID,N} <: AbstractBond{P,N,2}
     neighbor::Int
     spoint::Point{P,N}
     epoint::Point{P,N}
@@ -628,46 +660,36 @@ Base.valtype(lattice::AbstractLattice)=lattice|>typeof|>valtype
 Base.valtype(::Type{<:AbstractLattice{P,N}}) where {P<:PID,N}=Point{P,N}
 
 """
-    AbstractLatticeIndex{I<:Union{<:PID,Int}}
+    LatticeIndex{Kind}(index::Union{PID,Int}) where Kind
 
-Abstract index type for a lattice.
-"""
-abstract type AbstractLatticeIndex{I<:Union{<:PID,Int}} end
+Lattice index.
 
+`Kind` must be one of the followings:
+* 'R': for getting the rcoord of a lattice
+* 'I': for getting the icoord of a lattice
+* 'P': for getting the point of a lattice
 """
-    RCoordIndex(index::Union{<:PID,Int})
-
-Index for getting a rcoord of a lattice.
-"""
-struct RCoordIndex{I} <: AbstractLatticeIndex{I} index::I end
-
-"""
-    ICoordIndex(index::Union{<:PID,Int})
-
-Index for getting an icoord of a lattice.
-"""
-struct ICoordIndex{I} <: AbstractLatticeIndex{I} index::I end
+struct LatticeIndex{Kind,I<:Union{PID,Int}}
+    index::I
+    function LatticeIndex{Kind}(index::Union{PID,Int}) where Kind
+        @assert Kind in ('R','I','P') "LatticeIndex error: wrong input Kind($Kind)."
+        new{Kind,typeof(index)}(index)
+    end
+end
 
 """
-    PointIndex(index::Union{<:PID,Int})
-
-Index for getting a point of a lattice.
-"""
-struct PointIndex{I} <: AbstractLatticeIndex{I} index::I end
-
-"""
-    getindex(lattice::AbstractLattice,i::RCoordIndex) -> SVector
-    getindex(lattice::AbstractLattice,i::ICoordIndex) -> SVector
-    getindex(lattice::AbstractLattice,i::PointIndex) -> Point
+    getindex(lattice::AbstractLattice,i::LatticeIndex{'R'}) -> SVector
+    getindex(lattice::AbstractLattice,i::LatticeIndex{'I'}) -> SVector
+    getindex(lattice::AbstractLattice,i::LatticeIndex{'P'}) -> Point
 
 Get a rcoord, an icoord or a point of a lattice according to the type of the input index.
 """
-Base.getindex(lattice::AbstractLattice,i::RCoordIndex{Int})=SVector{lattice|>dimension}(@views(lattice.rcoords[:,i.index]))
-Base.getindex(lattice::AbstractLattice,i::ICoordIndex{Int})=SVector{lattice|>dimension}(@views(lattice.icoords[:,i.index]))
-Base.getindex(lattice::AbstractLattice,i::PointIndex{Int})=@views Point(lattice.pids[i.index],lattice.rcoords[:,i.index],lattice.icoords[:,i.index])
-Base.getindex(lattice::AbstractLattice,i::RCoordIndex{<:PID})=lattice[RCoordIndex(findfirst(isequal(i.index),lattice.pids))]
-Base.getindex(lattice::AbstractLattice,i::ICoordIndex{<:PID})=lattice[ICoordIndex(findfirst(isequal(i.index),lattice.pids))]
-Base.getindex(lattice::AbstractLattice,i::PointIndex{<:PID})=lattice[PointIndex(findfirst(isequal(i.index),lattice.pids))]
+Base.getindex(lattice::AbstractLattice,i::LatticeIndex{'R',Int})=SVector{lattice|>dimension}(@views(lattice.rcoords[:,i.index]))
+Base.getindex(lattice::AbstractLattice,i::LatticeIndex{'I',Int})=SVector{lattice|>dimension}(@views(lattice.icoords[:,i.index]))
+Base.getindex(lattice::AbstractLattice,i::LatticeIndex{'P',Int})=@views Point(lattice.pids[i.index],lattice.rcoords[:,i.index],lattice.icoords[:,i.index])
+Base.getindex(lattice::AbstractLattice,i::LatticeIndex{'R',<:PID})=lattice[LatticeIndex{'R'}(findfirst(isequal(i.index),lattice.pids))]
+Base.getindex(lattice::AbstractLattice,i::LatticeIndex{'I',<:PID})=lattice[LatticeIndex{'I'}(findfirst(isequal(i.index),lattice.pids))]
+Base.getindex(lattice::AbstractLattice,i::LatticeIndex{'P',<:PID})=lattice[LatticeIndex{'P'}(findfirst(isequal(i.index),lattice.pids))]
 
 """
     nneighbor(lattice::AbstractLattice) -> Int
@@ -820,9 +842,11 @@ function Lattice(   name::String,
                     neighbors::Union{Dict{Int,<:Real},Int}=1,
                     coordination::Int=8
                     )
-    @assert foldl(===,dimension.(sublattices)) "Lattice error: all sublattices should have the same dimension."
-    @assert foldl(===,keytype.(sublattices)) "Lattice error: all sublattices should have the same keytype."
-    len=sum(length.(sublattices))
+    if length(sublattices)>1
+        @assert mapreduce(sl->dimension(sl)==dimension(sublattices[1]),&,sublattices) "Lattice error: all sublattices should have the same dimension."
+        @assert mapreduce(sl->keytype(sl)===keytype(sublattices[1]),&,sublattices) "Lattice error: all sublattices should have the same keytype."
+    end
+    len=mapreduce(length,+,sublattices)
     pids=Vector{sublattices|>eltype|>keytype}(undef,len)
     rcoords=zeros(Float,sublattices|>eltype|>dimension,len)
     icoords=zeros(Float,sublattices|>eltype|>dimension,len)
@@ -859,10 +883,12 @@ struct SuperLattice{L<:AbstractLattice,P<:PID,N} <: AbstractLattice{P,N}
                             vectors::AbstractVector{<:AbstractVector{<:Real}}=SVector{0,SVector{sublattices|>eltype|>dimension,Float}}(),
                             neighbors::Dict{Int,<:Real}=Dict{Int,Float}()
                             )
-        @assert foldl(===,dimension.(sublattices)) "SuperLattice error: all sublattices should have the same dimension."
-        @assert foldl(===,keytype.(sublattices)) "SuperLattice error: all sublattices should have the same keytype."
+        if length(sublattices)>1
+            @assert mapreduce(sl->dimension(sl)==dimension(sublattices[1]),&,sublattices) "SuperLattice error: all sublattices should have the same dimension."
+            @assert mapreduce(sl->keytype(sl)===keytype(sublattices[1]),&,sublattices) "SuperLattice error: all sublattices should have the same keytype."
+        end
         @assert all(length(sublattice.vectors)==0 for sublattice in sublattices) "SuperLattice error: all sublattices should assume open boundaries."
-        len=sum(length.(sublattices))
+        len=mapreduce(length,+,sublattices)
         pids=Vector{sublattices|>eltype|>keytype}(undef,len)
         rcoords=zeros(Float,sublattices|>eltype|>dimension,len)
         icoords=zeros(Float,sublattices|>eltype|>dimension,len)
@@ -993,7 +1019,7 @@ function Base.insert!(cylinder::Cylinder,ps::S...;cut::Int=length(cylinder)÷2+1
     cylinder.pids=pids
     cylinder.rcoords=rcoords
     cylinder.icoords=icoords
-    if any(values(cylinder.neighbors).==Inf)
+    if length(cylinder.neighbors)>0 && mapreduce(isequal(Inf),|,values(cylinder.neighbors))
         minlens=minimumlengths(rcoords,cylinder.vectors,cylinder|>nneighbor,coordination=coordination)
         cylinder.neighbors=Dict{Int,Float}(i=>len for (i,len) in enumerate(minlens))
     end
@@ -1013,7 +1039,7 @@ function (cylinder::Cylinder)(scopes::Any...;coordination::Int=8)
     icoords=zero(rcoords)
     vectors=cylinder.vectors
     neighbors=cylinder.neighbors
-    if any(values(neighbors).==Inf)
+    if length(neighbors)>0 && mapreduce(isequal(Inf),|,values(neighbors))
         minlens=minimumlengths(rcoords,vectors,cylinder|>nneighbor,coordination=coordination)
         neighbors=Dict{Int,Float}(i=>len for (i,len) in enumerate(minlens))
     end

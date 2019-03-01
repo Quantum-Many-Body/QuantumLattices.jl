@@ -9,16 +9,15 @@ using ..Combinatorics: Combinations
 using ...Prerequisites: Float
 using ...Prerequisites.NamedVectors: HomoNamedVector
 
-
-import ...Prerequisites.Interfaces: ⊕,⊗,dimension,expand,permute
+import ...Prerequisites.Interfaces: ⊕,⊗,dimension,expand,permute,decompose
 
 export AbelianNumber
 export regularize!,regularize
 export @quantumnumber,periods,SQN,PQN,SPQN,Z2QN
 export qnscounts,qnsindptr,qnscompression,qnsexpansion,qnscontents,qnsindices,qnsbruteforce,qnsmontecarlo
 export AbelianNumbers
-export ⊕,⊗,dimension,expand,permute
-export ukron,decompose,toordereddict
+export ⊕,⊗,dimension,expand,permute,decompose
+export ukron,toordereddict
 export SQNS,PQNS,SzPQNS,SPQNS,Z2QNS
 
 "Abstract type for all concrete quantum numbers for a single basis."

@@ -3,7 +3,7 @@ module Interfaces
 export ⊕,⊗
 export add!,sub!,mul!,div!
 export rank,degree,dimension,dims,index,inds
-export expand,permute
+export expand,decompose,permute
 export vector,matrix
 
 "Direct sum."
@@ -47,6 +47,9 @@ function inds end
 
 "Get the expansion."
 function expand end
+
+"Decompose."
+function decompose end
 
 "Get the permutation."
 function permute end
