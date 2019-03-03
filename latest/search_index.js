@@ -349,7 +349,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Type traits",
     "title": "EfficientOperations",
     "category": "section",
-    "text": "EfficientOperations defines efficient operations such as ==/isequal, </isless, replace, etc, that ensure type stability.Type stability is the key of Julia to improve the code efficiency. However, it cannot be ensured in some unexpected cases, especially where an iterator is involved. For example, the following codes appears type unstable:function Base.:(==)(o1::AbstractType,o2::AbstractType)\n    n1,n2=o1|>typeof|>fieldcount,o2|>typeof|>fieldcount\n    n1==n2 ? all(getfield(o1,i)==getfield(o2,i) for i=1:n1) : false\nendMethods like above are common when we design abstract types, but they are not type stable. To get rid of it, the generated function trick can be used:@generated function Base.:(==)(o1::AbstractType,o2::AbstractType)\n    n1,n2=o1|>typeof|>fieldcount,o2|>typeof|>fieldcount\n    if n1==n2\n        expr=:(getfield(o1,1)==getfield(o2,1))\n        for i=2:fcount\n            expr=Expr(:&&,expr,:(getfield(o1,$i)==getfield(o2,$i)))\n        end\n        return expr\n    else\n        return :(false)\n    end\nendThen type stability can be ensured. We use this trick to implement the methods such as ==/isequal, </isless, replace, etc, with the trait efficientoperations::EfficientOperations. Other types can resort to these methods by passing efficientoperations as the first argument."
+    "text": "EfficientOperations defines efficient operations such as ==/isequal, </isless, isapprox, replace, etc, that ensure type stability.Type stability is the key of Julia to improve the code efficiency. However, it cannot be ensured in some unexpected cases, especially where an iterator is involved. For example, the following codes appears type unstable:function Base.:(==)(o1::AbstractType,o2::AbstractType)\n    n1,n2=o1|>typeof|>fieldcount,o2|>typeof|>fieldcount\n    n1==n2 ? all(getfield(o1,i)==getfield(o2,i) for i=1:n1) : false\nendMethods like above are common when we design abstract types, but they are not type stable. To get rid of it, the generated function trick can be used:@generated function Base.:(==)(o1::AbstractType,o2::AbstractType)\n    n1,n2=o1|>typeof|>fieldcount,o2|>typeof|>fieldcount\n    if n1==n2\n        expr=:(getfield(o1,1)==getfield(o2,1))\n        for i=2:fcount\n            expr=Expr(:&&,expr,:(getfield(o1,$i)==getfield(o2,$i)))\n        end\n        return expr\n    else\n        return :(false)\n    end\nendThen type stability can be ensured. We use this trick to implement the methods such as ==/isequal, </isless, isapprox, replace, etc, with the trait efficientoperations::EfficientOperations. Other types can resort to these methods by passing efficientoperations as the first argument."
 },
 
 {
@@ -414,6 +414,14 @@ var documenterSearchIndex = {"docs": [
     "title": "Base.:==",
     "category": "method",
     "text": "==(::EfficientOperations,o1,o2) -> Bool\nisequal(::EfficientOperations,o1,o2) -> Bool\n\nCompare two objects and judge whether they are eqaul to each other.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Prerequisites/TypeTraits.html#Base.isapprox-Union{Tuple{Names}, Tuple{EfficientOperations,Val{Names},Any,Any}} where Names",
+    "page": "Type traits",
+    "title": "Base.isapprox",
+    "category": "method",
+    "text": "isapprox(::EfficientOperations,::Val{Names},o1,o2;atol::Real=atol,rtol::Real=rtol) where Names -> Bool\n\nCompare two objects and judge whether they are inexactly equivalent to each other.\n\n\n\n\n\n"
 },
 
 {
@@ -625,7 +633,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.Field-Tuple{Union{RawExpr, #s14, #s13} where #s13<:Hamiltonian.Prerequisites.Factories.MixEscaped where #s14<:Hamiltonian.Prerequisites.Factories.UnEscaped}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.Field-Tuple{Union{RawExpr, #s20, #s19} where #s19<:Hamiltonian.Prerequisites.Factories.MixEscaped where #s20<:Hamiltonian.Prerequisites.Factories.UnEscaped}",
     "page": "Factories",
     "title": "Hamiltonian.Prerequisites.Factories.Field",
     "category": "method",
@@ -641,7 +649,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.FunctionFactory-Tuple{Union{RawExpr, #s68} where #s68<:Hamiltonian.Prerequisites.Factories.MixEscaped}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.FunctionFactory-Tuple{Union{RawExpr, #s21} where #s21<:Hamiltonian.Prerequisites.Factories.MixEscaped}",
     "page": "Factories",
     "title": "Hamiltonian.Prerequisites.Factories.FunctionFactory",
     "category": "method",
@@ -681,7 +689,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.Parameter-Tuple{Union{RawExpr, #s14, #s13} where #s13<:Hamiltonian.Prerequisites.Factories.MixEscaped where #s14<:Hamiltonian.Prerequisites.Factories.UnEscaped}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.Parameter-Tuple{Union{RawExpr, #s20, #s19} where #s19<:Hamiltonian.Prerequisites.Factories.MixEscaped where #s20<:Hamiltonian.Prerequisites.Factories.UnEscaped}",
     "page": "Factories",
     "title": "Hamiltonian.Prerequisites.Factories.Parameter",
     "category": "method",
@@ -705,7 +713,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.TypeFactory-Tuple{Union{RawExpr, #s68} where #s68<:Hamiltonian.Prerequisites.Factories.MixEscaped}",
+    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.TypeFactory-Tuple{Union{RawExpr, #s21} where #s21<:Hamiltonian.Prerequisites.Factories.MixEscaped}",
     "page": "Factories",
     "title": "Hamiltonian.Prerequisites.Factories.TypeFactory",
     "category": "method",
@@ -1505,7 +1513,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/NamedVectors.html#Base.eltype-Union{Tuple{Type{#s68} where #s68<:HomoNamedVector{T}}, Tuple{T}} where T",
+    "location": "man/Prerequisites/NamedVectors.html#Base.eltype-Union{Tuple{Type{#s21} where #s21<:HomoNamedVector{T}}, Tuple{T}} where T",
     "page": "Named vectors",
     "title": "Base.eltype",
     "category": "method",
@@ -2105,7 +2113,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Mathematics.AlgebraOverFields.idtype-Union{Tuple{Type{#s15} where #s15<:(Element{N,#s14,I} where #s14<:Number)}, Tuple{I}, Tuple{N}} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{#s16} where #s16<:Tuple{Vararg{Hamiltonian.Mathematics.AlgebraOverFields.SimpleID,N}}) where N",
+    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Mathematics.AlgebraOverFields.idtype-Union{Tuple{Type{#s17} where #s17<:(Element{N,#s16,I} where #s16<:Number)}, Tuple{I}, Tuple{N}} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{#s19} where #s19<:Tuple{Vararg{Hamiltonian.Mathematics.AlgebraOverFields.SimpleID,N}}) where N",
     "page": "Algebra over fields",
     "title": "Hamiltonian.Mathematics.AlgebraOverFields.idtype",
     "category": "method",
@@ -2129,7 +2137,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Prerequisites.Interfaces.rank-Union{Tuple{Type{#s68} where #s68<:(Element{N,V,I} where I<:(ID{#s69} where #s69<:Tuple{Vararg{SimpleID,N}}) where V<:Number)}, Tuple{N}} where N",
+    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Prerequisites.Interfaces.rank-Union{Tuple{Type{#s21} where #s21<:(Element{N,V,I} where I<:(ID{#s22} where #s22<:Tuple{Vararg{SimpleID,N}}) where V<:Number)}, Tuple{N}} where N",
     "page": "Algebra over fields",
     "title": "Hamiltonian.Prerequisites.Interfaces.rank",
     "category": "method",
@@ -2137,7 +2145,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Prerequisites.Interfaces.rank-Union{Tuple{Type{#s68} where #s68<:ID{T}}, Tuple{T}} where T<:Tuple{Vararg{Hamiltonian.Mathematics.AlgebraOverFields.SimpleID,N} where N}",
+    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Prerequisites.Interfaces.rank-Union{Tuple{Type{#s21} where #s21<:ID{T}}, Tuple{T}} where T<:Tuple{Vararg{Hamiltonian.Mathematics.AlgebraOverFields.SimpleID,N} where N}",
     "page": "Algebra over fields",
     "title": "Hamiltonian.Prerequisites.Interfaces.rank",
     "category": "method",
@@ -2209,7 +2217,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Base.empty-Tuple{Type{#s68} where #s68<:(Dict{I,M} where M<:Hamiltonian.Mathematics.AlgebraOverFields.Element where I<:Hamiltonian.Mathematics.AlgebraOverFields.ID)}",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.empty-Tuple{Type{#s21} where #s21<:(Dict{I,M} where M<:Hamiltonian.Mathematics.AlgebraOverFields.Element where I<:Hamiltonian.Mathematics.AlgebraOverFields.ID)}",
     "page": "Algebra over fields",
     "title": "Base.empty",
     "category": "method",
@@ -2238,6 +2246,14 @@ var documenterSearchIndex = {"docs": [
     "title": "Base.getproperty",
     "category": "method",
     "text": "getproperty(cid::ID,name::Symbol)\n\nGet the property of a composite id.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.isapprox-Tuple{Hamiltonian.Mathematics.AlgebraOverFields.Element,Hamiltonian.Mathematics.AlgebraOverFields.Element}",
+    "page": "Algebra over fields",
+    "title": "Base.isapprox",
+    "category": "method",
+    "text": "isapprox(m1::Element,m2::Element;atol::Real=atol,rtol::Real=rtol) -> Bool\n\nCompare two elements and judge whether they are inexactly equivalent to each other.\n\n\n\n\n\n"
 },
 
 {
@@ -2281,7 +2297,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Base.valtype-Union{Tuple{Type{#s68} where #s68<:(Element{N,V,I} where I<:(ID{#s69} where #s69<:Tuple{Vararg{SimpleID,N}}))}, Tuple{V}, Tuple{N}} where V<:Number where N",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.valtype-Union{Tuple{Type{#s21} where #s21<:(Element{N,V,I} where I<:(ID{#s22} where #s22<:Tuple{Vararg{SimpleID,N}}))}, Tuple{V}, Tuple{N}} where V<:Number where N",
     "page": "Algebra over fields",
     "title": "Base.valtype",
     "category": "method",
@@ -2425,7 +2441,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers-Tuple{OrderedCollections.OrderedDict{#s15,Int64} where #s15<:Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber}",
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers-Tuple{OrderedCollections.OrderedDict{#s17,Int64} where #s17<:Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber}",
     "page": "Quantum numbers",
     "title": "Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers",
     "category": "method",
@@ -2433,7 +2449,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers-Tuple{OrderedCollections.OrderedDict{#s15,UnitRange{Int64}} where #s15<:Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber}",
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers-Tuple{OrderedCollections.OrderedDict{#s17,UnitRange{Int64}} where #s17<:Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber}",
     "page": "Quantum numbers",
     "title": "Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers",
     "category": "method",
@@ -2585,7 +2601,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Prerequisites.Interfaces.dimension-Tuple{Type{#s68} where #s68<:Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber}",
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Prerequisites.Interfaces.dimension-Tuple{Type{#s21} where #s21<:Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber}",
     "page": "Quantum numbers",
     "title": "Hamiltonian.Prerequisites.Interfaces.dimension",
     "category": "method",
@@ -2649,7 +2665,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Base.eltype-Union{Tuple{Type{#s68} where #s68<:AbelianNumbers{QN}}, Tuple{QN}} where QN",
+    "location": "man/Mathematics/QuantumNumbers.html#Base.eltype-Union{Tuple{Type{#s21} where #s21<:AbelianNumbers{QN}}, Tuple{QN}} where QN",
     "page": "Quantum numbers",
     "title": "Base.eltype",
     "category": "method",
@@ -2985,7 +3001,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.azimuth-Tuple{AbstractArray{#s221,1} where #s221<:Real}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.azimuth-Tuple{AbstractArray{#s222,1} where #s222<:Real}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.azimuth",
     "category": "method",
@@ -2993,7 +3009,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.azimuthd-Tuple{AbstractArray{#s221,1} where #s221<:Real}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.azimuthd-Tuple{AbstractArray{#s222,1} where #s222<:Real}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.azimuthd",
     "category": "method",
@@ -3017,7 +3033,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.distance-Tuple{AbstractArray{#s210,1} where #s210<:Real,AbstractArray{#s209,1} where #s209<:Real}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.distance-Tuple{AbstractArray{#s211,1} where #s211<:Real,AbstractArray{#s22,1} where #s22<:Real}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.distance",
     "category": "method",
@@ -3033,7 +3049,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.interlinks-Tuple{AbstractArray{#s232,2} where #s232<:Real,AbstractArray{#s231,2} where #s231<:Real,Dict{Int64,Float64}}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.interlinks-Tuple{AbstractArray{#s233,2} where #s233<:Real,AbstractArray{#s232,2} where #s232<:Real,Dict{Int64,Float64}}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.interlinks",
     "category": "method",
@@ -3041,7 +3057,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.intralinks-Union{Tuple{N}, Tuple{AbstractArray{#s227,2} where #s227<:Real,AbstractArray{#s226,1} where #s226<:(AbstractArray{#s225,1} where #s225<:Real),Dict{Int64,Float64}}, Tuple{AbstractArray{#s224,2} where #s224<:Real,AbstractArray{#s223,1} where #s223<:(AbstractArray{#s222,1} where #s222<:Real),Dict{Int64,Float64},Tuple{Vararg{Int64,N}}}} where N",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.intralinks-Union{Tuple{N}, Tuple{AbstractArray{#s228,2} where #s228<:Real,AbstractArray{#s227,1} where #s227<:(AbstractArray{#s226,1} where #s226<:Real),Dict{Int64,Float64}}, Tuple{AbstractArray{#s225,2} where #s225<:Real,AbstractArray{#s224,1} where #s224<:(AbstractArray{#s223,1} where #s223<:Real),Dict{Int64,Float64},Tuple{Vararg{Int64,N}}}} where N",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.intralinks",
     "category": "method",
@@ -3073,7 +3089,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.isparallel-Tuple{AbstractArray{#s68,1} where #s68<:Real,AbstractArray{#s67,1} where #s67<:Real}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.isparallel-Tuple{AbstractArray{#s19,1} where #s19<:Real,AbstractArray{#s17,1} where #s17<:Real}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.isparallel",
     "category": "method",
@@ -3081,7 +3097,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.issubordinate-Tuple{AbstractArray{#s229,1} where #s229<:Real,AbstractArray{#s228,1} where #s228<:(AbstractArray{#s227,1} where #s227<:Real)}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.issubordinate-Tuple{AbstractArray{#s230,1} where #s230<:Real,AbstractArray{#s229,1} where #s229<:(AbstractArray{#s228,1} where #s228<:Real)}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.issubordinate",
     "category": "method",
@@ -3129,7 +3145,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.polar-Tuple{AbstractArray{#s221,1} where #s221<:Real}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.polar-Tuple{AbstractArray{#s222,1} where #s222<:Real}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.polar",
     "category": "method",
@@ -3137,7 +3153,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.polard-Tuple{AbstractArray{#s221,1} where #s221<:Real}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.polard-Tuple{AbstractArray{#s222,1} where #s222<:Real}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.polard",
     "category": "method",
@@ -3153,7 +3169,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.reciprocals-Tuple{AbstractArray{#s237,1} where #s237<:(AbstractArray{#s236,1} where #s236<:Real)}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.reciprocals-Tuple{AbstractArray{#s238,1} where #s238<:(AbstractArray{#s237,1} where #s237<:Real)}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.reciprocals",
     "category": "method",
@@ -3161,7 +3177,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.rotate-Tuple{AbstractArray{#s226,2} where #s226<:Real,Real}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.rotate-Tuple{AbstractArray{#s227,2} where #s227<:Real,Real}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.rotate",
     "category": "method",
@@ -3169,7 +3185,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.tile-Union{Tuple{M}, Tuple{N}, Tuple{AbstractArray{#s226,2} where #s226<:Real,AbstractArray{#s225,1} where #s225<:(AbstractArray{#s224,1} where #s224<:Real)}, Tuple{AbstractArray{#s223,2} where #s223<:Real,AbstractArray{#s222,1} where #s222<:(AbstractArray{#s221,1} where #s221<:Real),Tuple{Vararg{Tuple{Vararg{#s217,N}} where #s217<:Real,M}}}} where M where N",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.tile-Union{Tuple{M}, Tuple{N}, Tuple{AbstractArray{#s227,2} where #s227<:Real,AbstractArray{#s226,1} where #s226<:(AbstractArray{#s225,1} where #s225<:Real)}, Tuple{AbstractArray{#s224,2} where #s224<:Real,AbstractArray{#s223,1} where #s223<:(AbstractArray{#s222,1} where #s222<:Real),Tuple{Vararg{Tuple{Vararg{#s218,N}} where #s218<:Real,M}}}} where M where N",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.tile",
     "category": "method",
@@ -3177,7 +3193,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.translate-Tuple{AbstractArray{#s237,2} where #s237<:Real,AbstractArray{#s236,1} where #s236<:Real}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.translate-Tuple{AbstractArray{#s238,2} where #s238<:Real,AbstractArray{#s237,1} where #s237<:Real}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.translate",
     "category": "method",
@@ -3185,7 +3201,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.volume-Tuple{AbstractArray{#s210,1} where #s210<:Real,AbstractArray{#s209,1} where #s209<:Real,AbstractArray{#s208,1} where #s208<:Real}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.volume-Tuple{AbstractArray{#s211,1} where #s211<:Real,AbstractArray{#s22,1} where #s22<:Real,AbstractArray{#s21,1} where #s21<:Real}",
     "page": "Spatials",
     "title": "Hamiltonian.Essentials.Spatials.volume",
     "category": "method",
@@ -3193,7 +3209,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Prerequisites.Interfaces.decompose-Tuple{AbstractArray{#s223,1} where #s223<:Real,AbstractArray{#s222,1} where #s222<:Real}",
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Prerequisites.Interfaces.decompose-Tuple{AbstractArray{#s224,1} where #s224<:Real,AbstractArray{#s223,1} where #s223<:Real}",
     "page": "Spatials",
     "title": "Hamiltonian.Prerequisites.Interfaces.decompose",
     "category": "method",
@@ -3521,7 +3537,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.Table-Tuple{AbstractArray{#s234,1} where #s234<:Index}",
+    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.Table-Tuple{AbstractArray{#s235,1} where #s235<:Index}",
     "page": "Degrees of freedom",
     "title": "Hamiltonian.Essentials.DegreesOfFreedom.Table",
     "category": "method",
@@ -3577,7 +3593,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.isHermitian-Union{Tuple{ID{#s237} where #s237<:Tuple{Vararg{OID,N}}}, Tuple{N}} where N",
+    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.isHermitian-Union{Tuple{ID{#s238} where #s238<:Tuple{Vararg{OID,N}}}, Tuple{N}} where N",
     "page": "Degrees of freedom",
     "title": "Hamiltonian.Essentials.DegreesOfFreedom.isHermitian",
     "category": "method",
@@ -3609,7 +3625,15 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.Spatials.icoord-Tuple{Operator{1,V,I} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{#s239} where #s239<:Tuple{OID}) where V<:Number}",
+    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.twist-Tuple{Operator,AbstractArray{#s238,1} where #s238<:AbstractArray{Float64,1},AbstractArray{Float64,1}}",
+    "page": "Degrees of freedom",
+    "title": "Hamiltonian.Essentials.DegreesOfFreedom.twist",
+    "category": "method",
+    "text": "twist(operator::Operator,vectors::AbstractVector{<:AbstractVector{Float}},values::AbstractVector{Float}) -> Operator\n\nTwist an operator.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.Spatials.icoord-Tuple{Operator{1,V,I} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{#s240} where #s240<:Tuple{OID}) where V<:Number}",
     "page": "Degrees of freedom",
     "title": "Hamiltonian.Essentials.Spatials.icoord",
     "category": "method",
@@ -3625,7 +3649,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.Spatials.rcoord-Tuple{Operator{1,V,I} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{#s239} where #s239<:Tuple{OID}) where V<:Number}",
+    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.Spatials.rcoord-Tuple{Operator{1,V,I} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{#s240} where #s240<:Tuple{OID}) where V<:Number}",
     "page": "Degrees of freedom",
     "title": "Hamiltonian.Essentials.Spatials.rcoord",
     "category": "method",
@@ -3790,6 +3814,38 @@ var documenterSearchIndex = {"docs": [
     "title": "Term",
     "category": "section",
     "text": ""
+},
+
+{
+    "location": "man/Essentials/Terms.html#Boundary-1",
+    "page": "Terms",
+    "title": "Boundary",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/Terms.html#Generator-1",
+    "page": "Terms",
+    "title": "Generator",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.Boundary",
+    "page": "Terms",
+    "title": "Hamiltonian.Essentials.Terms.Boundary",
+    "category": "type",
+    "text": "Boundary{Names}(values::AbstractVector{Float},vectors::AbstractVector{<:AbstractVector{Float}},twist::Function) where Names\n\nBoundary twist of operators.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.Boundary-Tuple{Operator}",
+    "page": "Terms",
+    "title": "Hamiltonian.Essentials.Terms.Boundary",
+    "category": "method",
+    "text": "(bound::Boundary)(operator::Operator) -> Operator\n\nGet the boundary twisted operator.\n\n\n\n\n\n"
 },
 
 {
@@ -3974,6 +4030,14 @@ var documenterSearchIndex = {"docs": [
     "title": "Hamiltonian.Prerequisites.Interfaces.update!",
     "category": "method",
     "text": "update!(term::Term,args...;kwargs...) -> Term\n\nUpdate the value of a term by its modulate function.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Terms.html#Hamiltonian.Prerequisites.Interfaces.update!-Union{Tuple{Names}, Tuple{Boundary{Names,V,T} where T<:Function where V<:AbstractArray{Float64,1},Vararg{Any,N} where N}} where Names",
+    "page": "Terms",
+    "title": "Hamiltonian.Prerequisites.Interfaces.update!",
+    "category": "method",
+    "text": "update!(bound::Boundary{Names},args...;kwargs...) where Names -> Boundary\n\nUpdate the values of the boundary twisted phase.\n\n\n\n\n\n"
 },
 
 {
@@ -4353,7 +4417,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.DegreesOfFreedom.oidtype-Tuple{Val{:Fock},Type{#s238} where #s238<:AbstractBond,Type{Nothing}}",
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.DegreesOfFreedom.oidtype-Tuple{Val{:Fock},Type{#s239} where #s239<:AbstractBond,Type{Nothing}}",
     "page": "Fock package",
     "title": "Hamiltonian.Essentials.DegreesOfFreedom.oidtype",
     "category": "method",
@@ -4361,11 +4425,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.DegreesOfFreedom.otype-Tuple{Val{:Fock},Type{#s236} where #s236<:(Term{\'F\',Species,V,N,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where N where V<:Number where Species),Type{#s235} where #s235<:AbstractBond,Type{#s234} where #s234<:Union{Nothing, Dict{I,Int64} where I<:Index}}",
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.DegreesOfFreedom.otype-Tuple{Val{:Fock},Type{#s237} where #s237<:(Term{\'F\',Species,V,N,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where N where V<:Number where Species),Type{#s236} where #s236<:AbstractBond,Type{#s235} where #s235<:Union{Nothing, Dict{I,Int64} where I<:Index}}",
     "page": "Fock package",
     "title": "Hamiltonian.Essentials.DegreesOfFreedom.otype",
     "category": "method",
     "text": "otype(::Val{:Fock},O::Type{<:Term{\'F\'}},B::Type{<:AbstractBond},T::Type{<:Union{Nothing,Table}})\notype(::Val{:Fock},O::Type{<:Term{\'B\'}},B::Type{<:AbstractBond},T::Type{<:Union{Nothing,Table}})\n\nGet the compatible Fock operator type with a Term type, an AbstractBond type and a Table/Nothing type.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.DegreesOfFreedom.twist-Tuple{OID{#s238,RC,IC,S} where S<:Union{Nothing, Int64} where IC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where RC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where #s238<:FIndex,AbstractArray{#s237,1} where #s237<:AbstractArray{Float64,1},AbstractArray{Float64,1}}",
+    "page": "Fock package",
+    "title": "Hamiltonian.Essentials.DegreesOfFreedom.twist",
+    "category": "method",
+    "text": "twist(id::OID{<:FIndex},vectors::AbstractVector{<:AbstractVector{Float}},values::AbstractVector{Float}) -> Complex{Float}\n\nGet the twist phase corresponding to a Fock oid.\n\n\n\n\n\n"
 },
 
 {
@@ -4457,7 +4529,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Prerequisites.Interfaces.:⊗-Union{Tuple{N}, Tuple{FockCoupling{N,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(ID{#s239} where #s239<:Tuple{Vararg{FCID,N}}) where V<:Number,FockCoupling{N,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(ID{#s239} where #s239<:Tuple{Vararg{FCID,N}}) where V<:Number}} where N",
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Prerequisites.Interfaces.:⊗-Union{Tuple{N}, Tuple{FockCoupling{N,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(ID{#s240} where #s240<:Tuple{Vararg{FCID,N}}) where V<:Number,FockCoupling{N,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(ID{#s240} where #s240<:Tuple{Vararg{FCID,N}}) where V<:Number}} where N",
     "page": "Fock package",
     "title": "Hamiltonian.Prerequisites.Interfaces.:⊗",
     "category": "method",
@@ -4673,7 +4745,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.DegreesOfFreedom.oidtype-Tuple{Val{:Spin},Type{#s238} where #s238<:AbstractBond,Type{Nothing}}",
+    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.DegreesOfFreedom.oidtype-Tuple{Val{:Spin},Type{#s239} where #s239<:AbstractBond,Type{Nothing}}",
     "page": "Spin package",
     "title": "Hamiltonian.Essentials.DegreesOfFreedom.oidtype",
     "category": "method",
@@ -4681,7 +4753,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.DegreesOfFreedom.otype-Tuple{Val{:Spin},Type{#s236} where #s236<:(Term{\'B\',Species,V,N,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where N where V<:Number where Species),Type{#s235} where #s235<:AbstractBond,Type{#s234} where #s234<:Union{Nothing, Dict{I,Int64} where I<:Index}}",
+    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.DegreesOfFreedom.otype-Tuple{Val{:Spin},Type{#s237} where #s237<:(Term{\'B\',Species,V,N,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where N where V<:Number where Species),Type{#s236} where #s236<:AbstractBond,Type{#s235} where #s235<:Union{Nothing, Dict{I,Int64} where I<:Index}}",
     "page": "Spin package",
     "title": "Hamiltonian.Essentials.DegreesOfFreedom.otype",
     "category": "method",
