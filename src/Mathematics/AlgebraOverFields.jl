@@ -1,6 +1,7 @@
 module AlgebraOverFields
 
 using Printf: @printf
+using ...Prerequisites: atol,rtol
 using ...Prerequisites.Interfaces: dimension
 using ...Prerequisites.NamedVectors: NamedVector
 using ...Prerequisites.TypeTraits: efficientoperations
@@ -194,6 +195,13 @@ Compare two elements and judge whether they are equal to each other.
 """
 Base.:(==)(m1::Element,m2::Element) = ==(efficientoperations,m1,m2)
 Base.isequal(m1::Element,m2::Element)=isequal(efficientoperations,m1,m2)
+
+"""
+    isapprox(m1::Element,m2::Element;atol::Real=atol,rtol::Real=rtol) -> Bool
+
+Compare two elements and judge whether they are inexactly equivalent to each other.
+"""
+Base.isapprox(m1::Element,m2::Element;atol::Real=atol,rtol::Real=rtol)=isapprox(efficientoperations,Val((:value,)),m1,m2;atol=atol,rtol=rtol)
 
 """
     replace(m::Element;kwargs...) -> typeof(m)

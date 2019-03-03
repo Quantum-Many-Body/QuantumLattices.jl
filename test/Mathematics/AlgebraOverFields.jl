@@ -58,6 +58,7 @@ end
     opt=AOFOperator(1.0,ID(AOFID(1,1)))
     @test opt|>deepcopy==opt
     @test isequal(opt|>deepcopy,opt)
+    @test isapprox(opt,replace(opt,value=opt.value+10^-6);atol=10^-5)
     @test opt|>valtype==Float
     @test opt|>typeof|>valtype==Float
     @test opt|>idtype==ID{Tuple{AOFID{Int,Int}}}

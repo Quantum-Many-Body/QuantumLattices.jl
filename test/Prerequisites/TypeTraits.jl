@@ -8,7 +8,8 @@ end
 Base.:(==)(fc1::WithTrait,fc2::WithTrait) = ==(efficientoperations,fc1,fc2)
 Base.isequal(fc1::WithTrait,fc2::WithTrait) = isequal(efficientoperations,fc1,fc2)
 Base.:<(fc1::WithTrait,fc2::WithTrait) = <(efficientoperations,fc1,fc2)
-Base.:isless(fc1::WithTrait,fc2::WithTrait) = isless(efficientoperations,fc1,fc2)
+Base.isless(fc1::WithTrait,fc2::WithTrait) = isless(efficientoperations,fc1,fc2)
+Base.isapprox(fc1::WithTrait,fc2::WithTrait;atol::Real=10^-5,rtol::Real=10^-5) = isapprox(efficientoperations,Val((:f1,:f2)),fc1,fc2;atol=atol,rtol=rtol)
 Base.replace(fc::WithTrait;kwargs...) = replace(efficientoperations,fc;kwargs...)
 
 @testset "efficientoperations" begin
@@ -23,6 +24,13 @@ Base.replace(fc::WithTrait;kwargs...) = replace(efficientoperations,fc;kwargs...
     fc1,fc2=WithTrait(1.0,2,3),WithTrait(1,2,4.0)
     @test fc1<fc2
     @test isless(fc1,fc2)
+
+    fc1,fc2=WithTrait(1.0+10^-6,2,3),WithTrait(1,2,3)
+    @test fc1≈fc2
+    fc1,fc2=WithTrait(1.0,2-10^-6,3),WithTrait(1,2,3)
+    @test fc1≈fc2
+    fc1,fc2=WithTrait(1.0,2,3-10^-6),WithTrait(1,2,3)
+    @test fc1≉ fc2
 
     @test replace(WithTrait(1,2,3),f1='c')==WithTrait('c',2,3)
 end

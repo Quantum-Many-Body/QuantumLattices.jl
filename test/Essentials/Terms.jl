@@ -1,11 +1,13 @@
 using Printf: @sprintf
+using LinearAlgebra: dot
 using StaticArrays: SVector
 using Hamiltonian.Essentials.Terms
-using Hamiltonian.Essentials.Spatials: Point,PID,Bond
+using Hamiltonian.Essentials.Spatials: Point,PID,Bond,decompose
 using Hamiltonian.Essentials.DegreesOfFreedom: IDFConfig,Table,IID,Index,Internal,FilteredAttributes,OID,Operator,Operators
 using Hamiltonian.Prerequisites: Float,decimaltostr
 using Hamiltonian.Mathematics.AlgebraOverFields: ID,SimpleID
 import Hamiltonian.Prerequisites.Interfaces: dimension,expand
+import Hamiltonian.Essentials.DegreesOfFreedom: twist
 import Hamiltonian.Essentials.Terms: defaultcenter,propercenters
 
 struct TID <: IID nambu::Int end
@@ -18,6 +20,13 @@ struct TIndex{S} <: Index{PID{S},TID}
 end
 Base.fieldnames(::Type{<:TIndex})=(:scope,:site,:nambu)
 Base.union(::Type{P},::Type{I}) where {P<:PID,I<:TID}=TIndex{fieldtype(P,:scope)}
+function twist(id::OID{<:TIndex},vectors::AbstractVector{<:AbstractVector{Float}},values::AbstractVector{Float})
+    phase=  length(vectors)==1 ? exp(2.0im*pi*dot(decompose(id.icoord,vectors[1]),values)) :
+            length(vectors)==2 ? exp(2.0im*pi*dot(decompose(id.icoord,vectors[1],vectors[2]),values)) :
+            length(vectors)==3 ? exp(2.0im*pi*dot(decompose(id.icoord,vectors[1],vectors[2],vectors[3]),values)) :
+            error("twist error: not supported number of input basis vectors.")
+    id.index.nambu==1 ? phase : conj(phase)
+end
 
 struct TFock <: Internal{TID} end
 dimension(f::TFock)=2
@@ -188,4 +197,12 @@ end
     @test expand(TOperator{2,Float,ID{NTuple{2,O}}},term,bond,config,table,nothing)==operators
     @test expand(TOperator{2,Float,ID{NTuple{2,O}}},term,bond,config,table,true)==operators/2
     @test expand(TOperator{2,Float,ID{NTuple{2,O}}},term,bond,config,table,false)==operators
+end
+
+@testset "Boundary" begin
+    opt=TOperator(4.5,(TIndex('a',1,2),TIndex('b',2,1)),rcoords=(SVector(0.5,0.5),SVector(1.5,1.5)),icoords=(SVector(0.0,0.0),SVector(1.0,1.0)),seqs=(1,2))
+    bound=Boundary{(:θ₁,:θ₂)}([0.1,0.2],[[1.0,0.0],[0.0,1.0]],twist)
+    @test bound(opt)≈replace(opt,value=4.5*exp(2im*pi*0.3))
+    update!(bound,θ₁=0.3)
+    @test bound(opt)≈replace(opt,value=4.5*exp(2im*pi*0.5))
 end

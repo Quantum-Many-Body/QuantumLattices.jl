@@ -15,6 +15,10 @@ using Hamiltonian
 
 ## Term
 
+## Boundary
+
+## Generator
+
 ## Manul
 
 ```@autodocs

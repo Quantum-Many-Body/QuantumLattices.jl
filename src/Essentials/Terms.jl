@@ -16,6 +16,7 @@ export Subscript,Subscripts,@subscript
 export Coupling,Couplings
 export TermFunction,TermAmplitude,TermCouplings,TermModulate
 export Term,statistics,species,abbr
+export Boundary
 
 const wildcard='*'
 const constant=':'
@@ -582,5 +583,36 @@ properfactor(::Nothing,id::ID{<:NTuple{N,OID}},::Val{S}) where {N,S}=isHermitian
 Update the value of a term by its `modulate` function.
 """
 update!(term::Term,args...;kwargs...)=(term.value=term.modulate(args...;kwargs...)::valtype(term);term)
+
+"""
+    Boundary{Names}(values::AbstractVector{Float},vectors::AbstractVector{<:AbstractVector{Float}},twist::Function) where Names
+
+Boundary twist of operators.
+"""
+struct Boundary{Names,V<:AbstractVector{Float},T<:Function}
+    values::Vector{Float}
+    vectors::Vector{V}
+    twist::T
+    function Boundary{Names}(values::AbstractVector{Float},vectors::AbstractVector{<:AbstractVector{Float}},twist::Function) where Names
+        @assert length(Names)==length(values)==length(vectors) "Boundary error: dismatched names, values and vectors."
+        new{Names,eltype(vectors),typeof(twist)}(convert(Vector{Float},values),vectors,twist)
+    end
+end
+
+"""
+    (bound::Boundary)(operator::Operator) -> Operator
+
+Get the boundary twisted operator.
+"""
+(bound::Boundary)(operator::Operator)=bound.twist(operator,bound.vectors,bound.values)
+
+"""
+    update!(bound::Boundary{Names},args...;kwargs...) where Names -> Boundary
+
+Update the values of the boundary twisted phase.
+"""
+@generated function update!(bound::Boundary{Names},args...;kwargs...) where Names
+    return Expr(:block,[:(bound.values[$i]=get(kwargs,$name,bound.values[$i])) for (i,name) in enumerate(QuoteNode.(Names))]...,:(bound))
+end
 
 end  # module

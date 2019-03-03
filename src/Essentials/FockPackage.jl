@@ -1,19 +1,20 @@
 module FockPackage
 
 using StaticArrays: SVector
+using LinearAlgebra: dot
 using Printf: @printf,@sprintf
-using ..Spatials: PID,AbstractBond,Point,Bond,pidtype
+using ..Spatials: PID,AbstractBond,Point,Bond,pidtype,decompose
 using ..DegreesOfFreedom: IID,Index,Internal,FilteredAttributes,IDFConfig,Table,OID,Operator,Operators
 using ..Terms: Subscript,Subscripts,Coupling,Couplings,@subscript,Term,TermCouplings,TermAmplitude,TermModulate
 using ...Prerequisites: Float,delta,decimaltostr
 using ...Mathematics.AlgebraOverFields: SimpleID,ID
 using ...Mathematics.VectorSpaces: VectorSpace,IsMultiIndexable,MultiIndexOrderStyle
 
-import ..DegreesOfFreedom: oidtype,otype
+import ..DegreesOfFreedom: twist,oidtype,otype
 import ..Terms: wildcard,constant,defaultcenter,propercenters,statistics,abbr,properfactor
 import ...Prerequisites.Interfaces: dims,inds,rank,⊗,expand,dimension,add!
 
-export dims,inds,⊗,expand,statistics,abbr,oidtype,otype
+export dims,inds,⊗,expand,twist,statistics,abbr,oidtype,otype
 export ANNIHILATION,CREATION,FID,FIndex,Fock
 export usualfockindextotuple,nambufockindextotuple
 export FockOperator,FOperator,BOperator,isnormalordered
@@ -116,6 +117,19 @@ Base.fieldnames(::Type{<:FIndex})=(:scope,:site,:orbital,:spin,:nambu)
 Get the union type of `PID` and `FID`.
 """
 Base.union(::Type{P},::Type{FID}) where P<:PID=FIndex{fieldtype(P,:scope)}
+
+"""
+    twist(id::OID{<:FIndex},vectors::AbstractVector{<:AbstractVector{Float}},values::AbstractVector{Float}) -> Complex{Float}
+
+Get the twist phase corresponding to a Fock oid.
+"""
+function twist(id::OID{<:FIndex},vectors::AbstractVector{<:AbstractVector{Float}},values::AbstractVector{Float})
+    phase=  length(vectors)==1 ? exp(2.0im*pi*dot(decompose(id.icoord,vectors[1]),values)) :
+            length(vectors)==2 ? exp(2.0im*pi*dot(decompose(id.icoord,vectors[1],vectors[2]),values)) :
+            length(vectors)==3 ? exp(2.0im*pi*dot(decompose(id.icoord,vectors[1],vectors[2],vectors[3]),values)) :
+            error("twist error: not supported number of input basis vectors.")
+    id.index.nambu==ANNIHILATION ? phase : id.index.nambu==CREATION ? conj(phase) : error("twist error: not supported Fock index.")
+end
 
 """
     usualfockindextotuple

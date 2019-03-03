@@ -10,7 +10,7 @@ Julia does not support multi-inheritance, which is sometimes not convenient. A w
 
 ## EfficientOperations
 
-`EfficientOperations` defines efficient operations such as `==/isequal`, `</isless`, `replace`, etc, that ensure type stability.
+`EfficientOperations` defines efficient operations such as `==/isequal`, `</isless`, `isapprox`, `replace`, etc, that ensure type stability.
 
 Type stability is the key of Julia to improve the code efficiency. However, it cannot be ensured in some unexpected cases, especially where an iterator is involved. For example, the following codes appears type unstable:
 ```julia
@@ -34,7 +34,7 @@ Methods like above are common when we design abstract types, but they are not ty
     end
 end
 ```
-Then type stability can be ensured. We use this trick to implement the methods such as `==/isequal`, `</isless`, `replace`, etc, with the trait `efficientoperations::EfficientOperations`. Other types can resort to these methods by passing [`efficientoperations`](@ref) as the first argument.
+Then type stability can be ensured. We use this trick to implement the methods such as `==/isequal`, `</isless`, `isapprox`, `replace`, etc, with the trait `efficientoperations::EfficientOperations`. Other types can resort to these methods by passing [`efficientoperations`](@ref) as the first argument.
 
 ## MemoryOrder
 

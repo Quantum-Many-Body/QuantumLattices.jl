@@ -1,8 +1,10 @@
 using StaticArrays: SVector
+using LinearAlgebra: dot
 using Hamiltonian.Essentials.DegreesOfFreedom
 using Hamiltonian.Essentials.Spatials: PID
 using Hamiltonian.Mathematics.AlgebraOverFields: ID
-import Hamiltonian.Prerequisites.Interfaces: dimension
+import Hamiltonian.Prerequisites.Interfaces: dimension,decompose
+import Hamiltonian.Essentials.DegreesOfFreedom: twist
 
 struct DID <: IID nambu::Int end
 Base.adjoint(sl::DID)=DID(3-sl.nambu)
@@ -14,6 +16,13 @@ struct DIndex{S} <: Index{PID{S},DID}
 end
 Base.fieldnames(::Type{<:DIndex})=(:scope,:site,:nambu)
 Base.union(::Type{P},::Type{I}) where {P<:PID,I<:DID}=DIndex{fieldtype(P,:scope)}
+function twist(id::OID{<:DIndex},vectors::AbstractVector{<:AbstractVector{Float}},values::AbstractVector{Float})
+    phase=  length(vectors)==1 ? exp(2.0im*pi*dot(decompose(id.icoord,vectors[1]),values)) :
+            length(vectors)==2 ? exp(2.0im*pi*dot(decompose(id.icoord,vectors[1],vectors[2]),values)) :
+            length(vectors)==3 ? exp(2.0im*pi*dot(decompose(id.icoord,vectors[1],vectors[2],vectors[3]),values)) :
+            error("twist error: not supported number of input basis vectors.")
+    id.index.nambu==1 ? phase : conj(phase)
+end
 
 struct DFock <: Internal{DID}
     atom::Int
@@ -106,6 +115,7 @@ end
     @test opt'==DOperator(-1.0im,(DIndex(1,1,2),DIndex(1,2,1)),rcoords=(SVector(0.0,0.0),SVector(1.0,0.0)),icoords=(SVector(0.0,0.0),SVector(2.0,0.0)),seqs=(1,2))
     @test isHermitian(opt)==false
     @test string(opt)=="DOperator(value=1.0im,id=ID(OID(DIndex(1,2,2),[1.0,0.0],[2.0,0.0],2),OID(DIndex(1,1,1),[0.0,0.0],[0.0,0.0],1)))"
+    @test twist(opt,[[1.0,0.0],[0.0,1.0]],[0.1,0.0])≈replace(opt,value=1.0im*conj(exp(2im*pi*0.2)))
 
     opt=DOperator(1.0,(DIndex(1,1,2),DIndex(1,1,1)),rcoords=(SVector(0.5,0.5),SVector(0.5,0.5)),icoords=(SVector(1.0,1.0),SVector(1.0,1.0)),seqs=(1,1))
     @test opt'==opt

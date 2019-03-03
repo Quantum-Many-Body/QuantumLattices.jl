@@ -4,6 +4,7 @@ using Printf: @printf
 using StaticArrays: SVector
 using ..Spatials: PID
 using ...Prerequisites: Float,decimaltostr
+using ...Prerequisites.Interfaces: rank
 using ...Prerequisites.CompositeStructures: CompositeDict
 using ...Mathematics.VectorSpaces: VectorSpace
 using ...Mathematics.AlgebraOverFields: SimpleID,ID,Element,Elements
@@ -14,7 +15,8 @@ export pidtype,rcoord,icoord
 export IID,Index,pid,iidtype,iid
 export IndexToTuple,DirectIndexToTuple,directindextotuple,FilteredAttributes
 export Internal,IDFConfig,Table
-export OID,Operator,Operators,isHermitian,oidtype,otype
+export OID,Operator,Operators,isHermitian,twist
+export oidtype,otype
 
 """
     IID
@@ -443,5 +445,18 @@ end
 Judge whether a set of operators as a whole is Hermitian.
 """
 isHermitian(opts::Operators)=opts==opts'
+
+"""
+    twist(operator::Operator,vectors::AbstractVector{<:AbstractVector{Float}},values::AbstractVector{Float}) -> Operator
+
+Twist an operator.
+"""
+function twist(operator::Operator,vectors::AbstractVector{<:AbstractVector{Float}},values::AbstractVector{Float})
+    phase=one(operator.value)
+    for i=1:rank(operator)
+        phase=phase*twist(operator.id[i],vectors,values)
+    end
+    return replace(operator,value=operator.value*phase)
+end
 
 end #module

@@ -32,6 +32,8 @@ end
 @testset "FIndex" begin
     @test FIndex|>fieldnames==(:scope,:site,:orbital,:spin,:nambu)
     @test union(PID{Int},FID)==FIndex{Int}
+    @test twist(OID(FIndex(1,1,1,1,1),[0.0,0.0],[1.0,2.0],1),[[1.0,0.0],[0.0,1.0]],[0.1,0.0])≈exp(2im*pi*0.1)
+    @test twist(OID(FIndex(1,1,1,1,2),[0.0,0.0],[1.0,2.0],1),[[1.0,0.0],[0.0,1.0]],[0.0,0.2])≈exp(-2im*pi*0.4)
 end
 
 @testset "oidtype" begin

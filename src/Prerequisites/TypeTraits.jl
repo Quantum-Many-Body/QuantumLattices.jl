@@ -1,5 +1,7 @@
 module TypeTraits
 
+using ..Prerequisites:atol,rtol
+
 export efficientoperations
 export MemoryOrder,FOrder,COrder
 export forder,corder,indtosub,subtoind
@@ -78,6 +80,28 @@ end
         expr=Expr(:if,:(isless(getfield(o1,$i),getfield(o2,$i))),true,expr)
     end
     return expr
+end
+
+"""
+    isapprox(::EfficientOperations,::Val{Names},o1,o2;atol::Real=atol,rtol::Real=rtol) where Names -> Bool
+
+Compare two objects and judge whether they are inexactly equivalent to each other.
+"""
+@generated function Base.isapprox(::EfficientOperations,::Val{Names},o1,o2;atol::Real=atol,rtol::Real=rtol) where Names
+    fcount=o1|>fieldcount
+    if fcount==o2|>fieldcount
+        if fcount==0
+            return :(true)
+        else
+            exprs=[(name=QuoteNode(name);:(isapprox(getfield(o1,$name),getfield(o2,$name);atol=atol,rtol=rtol))) for name in Names]
+            for name in fieldnames(o1)
+                name ∉ Names && (name=QuoteNode(name);push!(exprs,:(isequal(getfield(o1,$name),getfield(o2,$name)))))
+            end
+            return Expr(:&&,exprs...)
+        end
+    else
+        return :(false)
+    end
 end
 
 """
