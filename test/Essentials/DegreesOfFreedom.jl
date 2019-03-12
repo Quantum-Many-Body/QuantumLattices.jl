@@ -1,9 +1,10 @@
+using Test
 using StaticArrays: SVector
 using LinearAlgebra: dot
 using Hamiltonian.Essentials.DegreesOfFreedom
-using Hamiltonian.Essentials.Spatials: PID
+using Hamiltonian.Essentials.Spatials: PID,pidtype,rcoord,icoord
 using Hamiltonian.Mathematics.AlgebraOverFields: ID
-import Hamiltonian.Prerequisites.Interfaces: dimension,decompose
+import Hamiltonian.Interfaces: dimension,decompose
 import Hamiltonian.Essentials.DegreesOfFreedom: twist
 
 struct DID <: IID nambu::Int end

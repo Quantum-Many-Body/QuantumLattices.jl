@@ -14,16 +14,16 @@ makedocs(
                                 "tutorial/EngineAppInterface.md",
                                 ],
                         "Manual"    =>  [
-                                "Prerequisites" =>  [
+                                "man/Interfaces.md",
+                                "Prerequisites" => [
                                         "man/Prerequisites/Introduction.md",
-                                        "man/Prerequisites/Interfaces.md",
                                         "man/Prerequisites/TypeTraits.md",
                                         "man/Prerequisites/Factories.md",
                                         "man/Prerequisites/CompositeStructures.md",
                                         "man/Prerequisites/Trees.md",
                                         "man/Prerequisites/NamedVectors.md",
                                         ],
-                                "Mathematics" =>  [
+                                "Mathematics" => [
                                         "man/Mathematics/Introduction.md",
                                         "man/Mathematics/Combinatorics.md",
                                         "man/Mathematics/VectorSpaces.md",

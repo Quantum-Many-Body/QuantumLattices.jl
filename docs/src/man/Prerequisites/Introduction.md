@@ -7,11 +7,10 @@ CurrentModule=Hamiltonian.Prerequisites
 This module contains the prerequisites of the Hamiltonian package.
 
 The constants, types, macros, functions or submodules defined in this module will **NOT** be exported by the package. Instead, they serve as the prerequisites and fundamentals.
-The range of the contents are quite wide, but basically, they fall into 3 categories:
+The range of the contents are quite wide, but basically, they fall into 2 categories:
 * Global constants and miscellaneous tiny useful functions;
-* Generic functions that are extended by other parts of the package;
 * Basic data structures as supplements to the Julia.Base and other common packages.
-The first category is contained in the main body of this module, while the others come in separate submodules.
+The first category is contained in the main body of this module, while the other comes in separate submodules.
 
 ## Constants and functions
 
@@ -24,16 +23,6 @@ Float
 decimaltostr
 ordinal
 delta
-```
-
-## Generic interfaces
-
-For details, please refer to the page [Interfaces](@ref):
-```@contents
-Pages=[
-    "Interfaces.md",
-    ]
-Depth=2
 ```
 
 ## Basic structures

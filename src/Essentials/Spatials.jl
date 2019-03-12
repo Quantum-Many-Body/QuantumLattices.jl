@@ -12,9 +12,8 @@ using ...Prerequisites.Factories: addparams!,addfields!,addwhereparams!,addargs!
 using ...Mathematics.Combinatorics: Combinations
 using ...Mathematics.AlgebraOverFields: SimpleID
 
-import ...Prerequisites.Interfaces: decompose,rank,dimension
+import ...Interfaces: decompose,rank,dimension
 
-export decompose,rank,dimension
 export distance,azimuthd,azimuth,polard,polar,volume
 export isparallel,isonline,isintratriangle,issubordinate
 export reciprocals,translate,rotate,tile,minimumlengths

@@ -1,12 +1,14 @@
+using Test
 using Printf: @sprintf
 using LinearAlgebra: dot
 using StaticArrays: SVector
 using Hamiltonian.Essentials.Terms
 using Hamiltonian.Essentials.Spatials: Point,PID,Bond,decompose
 using Hamiltonian.Essentials.DegreesOfFreedom: IDFConfig,Table,IID,Index,Internal,FilteredAttributes,OID,Operator,Operators
+using Hamiltonian.Interfaces: rank,update!
 using Hamiltonian.Prerequisites: Float,decimaltostr
 using Hamiltonian.Mathematics.AlgebraOverFields: ID,SimpleID
-import Hamiltonian.Prerequisites.Interfaces: dimension,expand
+import Hamiltonian.Interfaces: dimension,expand
 import Hamiltonian.Essentials.DegreesOfFreedom: twist
 import Hamiltonian.Essentials.Terms: defaultcenter,propercenters
 

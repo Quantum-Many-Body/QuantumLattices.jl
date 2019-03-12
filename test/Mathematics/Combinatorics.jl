@@ -1,3 +1,4 @@
+using Test
 using Hamiltonian.Mathematics.Combinatorics
 
 @testset "Combinations" begin

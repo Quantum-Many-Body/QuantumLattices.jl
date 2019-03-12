@@ -1,3 +1,4 @@
+using Test
 using Hamiltonian.Prerequisites.Trees
 
 @tree struct ATree end

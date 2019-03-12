@@ -4,14 +4,14 @@ using Printf: @printf,@sprintf
 using StaticArrays: SVector
 using ..Spatials: AbstractBond,neighbor,pidtype
 using ..DegreesOfFreedom: Index,IDFConfig,Table,OID,Operator,Operators,isHermitian,otype
+using ...Interfaces: add!
 using ...Prerequisites: Float,atol,decimaltostr
 using ...Prerequisites.TypeTraits: efficientoperations,indtosub,corder
 using ...Prerequisites.CompositeStructures: CompositeTuple
 using ...Mathematics.AlgebraOverFields: SimpleID,ID,Element,Elements,idtype
 
-import ...Prerequisites.Interfaces: rank,expand,dimension,add!,update!
+import ...Interfaces: rank,expand,dimension,update!
 
-export rank,expand,update!
 export Subscript,Subscripts,@subscript
 export Coupling,Couplings
 export TermFunction,TermAmplitude,TermCouplings,TermModulate

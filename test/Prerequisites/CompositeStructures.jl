@@ -1,3 +1,4 @@
+using Test
 using Hamiltonian.Prerequisites.CompositeStructures
 
 struct FT{S,N,T} <: CompositeNTuple{N,T}

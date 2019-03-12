@@ -1,20 +1,19 @@
 module AlgebraOverFields
 
 using Printf: @printf
+using ...Interfaces: dimension
 using ...Prerequisites: atol,rtol
-using ...Prerequisites.Interfaces: dimension
 using ...Prerequisites.NamedVectors: NamedVector
 using ...Prerequisites.TypeTraits: efficientoperations
 using ...Prerequisites.CompositeStructures: CompositeTuple,CompositeVector
 using ..Combinatorics: AbstractCombinatorics
 using ..VectorSpaces: GradedTables,GradedVectorSpace,DirectVectorSpace,TabledIndices
 
-import ...Prerequisites.Interfaces: rank,add!,sub!,mul!,div!,⊗
+import ...Interfaces: rank,add!,sub!,mul!,div!,⊗
 
 export SimpleID,ID
 export IdSpace
 export Element,Elements,idtype
-export rank,add!,sub!,mul!,div!,⊗
 
 """
     SimpleID <: NamedVector

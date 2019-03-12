@@ -1,3 +1,4 @@
+using Test
 using Hamiltonian.Prerequisites.TypeTraits
 
 struct WithTrait{F1,F2,F3}

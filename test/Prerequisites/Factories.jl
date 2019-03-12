@@ -1,3 +1,4 @@
+using Test
 using Hamiltonian.Prerequisites.Factories
 
 @testset "escape" begin

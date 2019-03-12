@@ -65,7 +65,6 @@ Kronecker delta function.
 """
 delta(i,j)=i==j ? 1 : 0
 
-include("Interfaces.jl")
 include("TypeTraits.jl")
 include("Factories.jl")
 include("CompositeStructures.jl")

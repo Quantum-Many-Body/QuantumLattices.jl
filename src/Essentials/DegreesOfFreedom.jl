@@ -3,15 +3,14 @@ module DegreesOfFreedom
 using Printf: @printf
 using StaticArrays: SVector
 using ..Spatials: PID
+using ...Interfaces: rank
 using ...Prerequisites: Float,decimaltostr
-using ...Prerequisites.Interfaces: rank
 using ...Prerequisites.CompositeStructures: CompositeDict
 using ...Mathematics.VectorSpaces: VectorSpace
 using ...Mathematics.AlgebraOverFields: SimpleID,ID,Element,Elements
 
 import ..Spatials: pidtype,rcoord,icoord
 
-export pidtype,rcoord,icoord
 export IID,Index,pid,iidtype,iid
 export IndexToTuple,DirectIndexToTuple,directindextotuple,FilteredAttributes
 export Internal,IDFConfig,Table

@@ -9,16 +9,13 @@ using ..Combinatorics: Combinations
 using ...Prerequisites: Float
 using ...Prerequisites.NamedVectors: HomoNamedVector
 
-import ...Prerequisites.Interfaces: ⊕,⊗,dimension,expand,permute,decompose
+import ...Interfaces: ⊕,⊗,dimension,expand,permute,decompose
 
-export AbelianNumber
-export regularize!,regularize
-export @quantumnumber,periods,SQN,PQN,SPQN,Z2QN
+export AbelianNumber,@quantumnumber,SQN,PQN,SPQN,Z2QN
+export periods,regularize!,regularize
 export qnscounts,qnsindptr,qnscompression,qnsexpansion,qnscontents,qnsindices,qnsbruteforce,qnsmontecarlo
-export AbelianNumbers
-export ⊕,⊗,dimension,expand,permute,decompose
+export AbelianNumbers,SQNS,PQNS,SzPQNS,SPQNS,Z2QNS
 export ukron,toordereddict
-export SQNS,PQNS,SzPQNS,SPQNS,Z2QNS
 
 "Abstract type for all concrete quantum numbers for a single basis."
 abstract type AbelianNumber <: HomoNamedVector{Float} end

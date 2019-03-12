@@ -1,5 +1,7 @@
+using Test
 using Hamiltonian.Mathematics.VectorSpaces
 using Hamiltonian.Mathematics.Combinatorics: Combinations
+using Hamiltonian.Interfaces: dimension,⊕,rank,dims,inds,degree
 
 @testset "DirectVectorSpace" begin
     id1,id2,id3=(1,1),(1,2),(1,3)

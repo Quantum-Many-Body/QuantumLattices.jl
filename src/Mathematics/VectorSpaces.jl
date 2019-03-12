@@ -3,9 +3,8 @@ module VectorSpaces
 using ..Combinatorics: AbstractCombinatorics
 using ...Prerequisites.TypeTraits: efficientoperations,forder,corder,subtoind,indtosub
 
-import ...Prerequisites.Interfaces: dimension,⊕,rank,dims,inds,degree
+import ...Interfaces: dimension,⊕,rank,dims,inds,degree
 
-export dimension,⊕,rank,dims,inds,degree
 export VectorSpace
 export HasTable,TableSorted,IsMultiIndexable,MultiIndexOrderStyle
 export DirectVectorSpace

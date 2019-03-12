@@ -1,6 +1,8 @@
-using Hamiltonian.Mathematics.QuantumNumbers
+using Test
 using DataStructures: OrderedDict
 using Printf: @sprintf
+using Hamiltonian.Mathematics.QuantumNumbers
+using Hamiltonian.Interfaces: ⊕,⊗,dimension,expand,permute,decompose
 import Base.Iterators: Iterators
 
 @testset "SQN" begin

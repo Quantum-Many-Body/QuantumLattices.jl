@@ -4,16 +4,16 @@ using StaticArrays: SVector
 using Printf: @printf,@sprintf
 using ..Spatials: PID,AbstractBond,pidtype
 using ..DegreesOfFreedom: IID,Internal,Index,FilteredAttributes,Table,OID,Operator,IDFConfig
-using ..Terms: Subscript,Subscripts,Coupling,Couplings,Term,TermCouplings,TermAmplitude,TermModulate
+using ..Terms: wildcard,constant,Subscript,Subscripts,Coupling,Couplings,propercenters,Term,TermCouplings,TermAmplitude,TermModulate
+using ...Interfaces: rank,dimension
 using ...Prerequisites: Float,decimaltostr,delta
 using ...Mathematics.VectorSpaces: VectorSpace,IsMultiIndexable,MultiIndexOrderStyle
 using ...Mathematics.AlgebraOverFields: SimpleID,ID
 
 import ..DegreesOfFreedom: oidtype,otype
-import ..Terms: wildcard,constant,defaultcenter,propercenters,statistics,abbr
-import ...Prerequisites.Interfaces: dims,inds,expand,rank,matrix,dimension
+import ..Terms: defaultcenter,statistics,abbr
+import ...Interfaces: dims,inds,expand,matrix
 
-export oidtype,otype,statistics,abbr,dims,inds,expand,matrix
 export SID,Spin,SIndex,usualspinindextotuple
 export SOperator
 export SCID,SpinCoupling

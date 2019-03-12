@@ -1,9 +1,10 @@
+using Test
 using Hamiltonian.Mathematics.AlgebraOverFields
+using Hamiltonian.Interfaces: dimension,rank,add!,sub!,mul!,div!
 using Hamiltonian.Prerequisites: Float
-using Hamiltonian.Prerequisites.Interfaces: dimension
 using Hamiltonian.Mathematics.Combinatorics: Combinations
 using Hamiltonian.Mathematics.VectorSpaces: DirectVectorSpace
-import Hamiltonian.Prerequisites.Interfaces: ⊗
+import Hamiltonian.Interfaces: ⊗
 
 struct AOFID{O<:Real,S<:Real} <: SimpleID
     orbital::O

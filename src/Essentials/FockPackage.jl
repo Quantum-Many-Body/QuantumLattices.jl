@@ -5,16 +5,16 @@ using LinearAlgebra: dot
 using Printf: @printf,@sprintf
 using ..Spatials: PID,AbstractBond,Point,Bond,pidtype,decompose
 using ..DegreesOfFreedom: IID,Index,Internal,FilteredAttributes,IDFConfig,Table,OID,Operator,Operators
-using ..Terms: Subscript,Subscripts,Coupling,Couplings,@subscript,Term,TermCouplings,TermAmplitude,TermModulate
+using ..Terms: wildcard,constant,Subscript,Subscripts,Coupling,Couplings,@subscript,propercenters,Term,TermCouplings,TermAmplitude,TermModulate
+using ...Interfaces: rank,dimension,add!
 using ...Prerequisites: Float,delta,decimaltostr
 using ...Mathematics.AlgebraOverFields: SimpleID,ID
 using ...Mathematics.VectorSpaces: VectorSpace,IsMultiIndexable,MultiIndexOrderStyle
 
 import ..DegreesOfFreedom: twist,oidtype,otype
-import ..Terms: wildcard,constant,defaultcenter,propercenters,statistics,abbr,properfactor
-import ...Prerequisites.Interfaces: dims,inds,rank,⊗,expand,dimension,add!
+import ..Terms: defaultcenter,statistics,abbr,properfactor
+import ...Interfaces: dims,inds,⊗,expand
 
-export dims,inds,⊗,expand,twist,statistics,abbr,oidtype,otype
 export ANNIHILATION,CREATION,FID,FIndex,Fock
 export usualfockindextotuple,nambufockindextotuple
 export FockOperator,FOperator,BOperator,isnormalordered
