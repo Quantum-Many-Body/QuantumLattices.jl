@@ -7,8 +7,6 @@ using NearestNeighbors: KDTree,knn,inrange
 using Base.Iterators: flatten,product
 using ...Prerequisites: atol,rtol,Float
 using ...Prerequisites.TypeTraits: efficientoperations
-using ...Prerequisites.Factories: Inference,TypeFactory,FunctionFactory,Argument,MixEscaped,Escaped,UnEscaped
-using ...Prerequisites.Factories: addparams!,addfields!,addwhereparams!,addargs!,addkwargs!,extendbody!,addconstructors!
 using ...Mathematics.Combinatorics: Combinations
 using ...Mathematics.AlgebraOverFields: SimpleID
 
