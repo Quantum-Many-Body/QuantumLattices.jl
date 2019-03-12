@@ -82,6 +82,8 @@ end
     @test add!(deepcopy(opts),empty(Elements))==opts
     @test sub!(deepcopy(opts))==opts
     @test sub!(deepcopy(opts),empty(Elements))==opts
+    @test mul!(deepcopy(opts),2.0)==opts*2
+    @test div!(deepcopy(opts),2.0)==opts/2
     @test +opts==opts+empty(Elements)==empty(Elements)+opts==opts==opts-empty(Elements)
     @test opt1+opt2==opts
     @test opt1+opts+opt2==Elements(opt1*2,opt2*2)

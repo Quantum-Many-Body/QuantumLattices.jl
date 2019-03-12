@@ -9,12 +9,12 @@ using ...Prerequisites.CompositeStructures: CompositeTuple,CompositeVector
 using ..Combinatorics: AbstractCombinatorics
 using ..VectorSpaces: GradedTables,GradedVectorSpace,DirectVectorSpace,TabledIndices
 
-import ...Prerequisites.Interfaces: rank,add!,sub!,⊗
+import ...Prerequisites.Interfaces: rank,add!,sub!,mul!,div!,⊗
 
 export SimpleID,ID
 export IdSpace
 export Element,Elements,idtype
-export rank,add!,sub!,⊗
+export rank,add!,sub!,mul!,div!,⊗
 
 """
     SimpleID <: NamedVector
@@ -306,6 +306,26 @@ function sub!(ms::Elements,m::Element)
     return ms
 end
 sub!(ms::Elements,mms::Elements)=(for m in mms|>values sub!(ms,m) end; ms)
+
+"""
+    mul!(ms::Elements,factor::Number) -> Elements
+
+Get the inplace multiplication of elements with a scalar.
+"""
+function mul!(ms::Elements,factor::Number)
+    @assert isa(one(ms|>valtype|>valtype)*factor,ms|>valtype|>valtype) "mul! error: dismatched type, $(ms|>valtype) and $(factor|>typeof)."
+    for m in values(ms)
+        ms[m.id]=replace(m,value=m.value*factor)
+    end
+    return ms
+end
+
+"""
+    div!(ms::Elements,factor::Number) -> Elements
+
+Get the inplace division of element with a scalar.
+"""
+div!(ms::Elements,factor::Number)=mul!(ms,1/factor)
 
 """
     +(m::Element) -> typeof(m)

@@ -307,7 +307,9 @@ OID(index::Index,rcoord::Vector{Float},icoord::Vector{Float},seq::Union{Nothing,
 function OID(index::Index;rcoord::Union{Nothing,SVector,Vector{Float}}=nothing,icoord::Union{Nothing,SVector,Vector{Float}}=nothing,seq::Union{Nothing,Int}=nothing)
     OID(index,rcoord,icoord,seq)
 end
-Base.hash(oid::OID,h::UInt)=hash(oid|>values,h)
+totuple(::Nothing)=nothing
+@generated totuple(v::SVector{N}) where N=Expr(:tuple,[:(v[$i]) for i=1:N]...)
+Base.hash(oid::OID{<:Index},h::UInt)=hash((oid.index,totuple(oid.rcoord)),h)
 Base.fieldnames(::Type{<:OID})=(:index,:rcoord,:icoord,:seq)
 Base.propertynames(::Type{<:ID{<:NTuple{N,OID}}},private::Bool=false) where N=private ? (:contents,:indexes,:rcoords,:icoords) : (:indexes,:rcoords,:icoords)
 
