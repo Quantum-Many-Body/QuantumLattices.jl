@@ -73,6 +73,174 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Interfaces.html#",
+    "page": "Interfaces",
+    "title": "Interfaces",
+    "category": "page",
+    "text": "CurrentModule=Hamiltonian.Interfaces"
+},
+
+{
+    "location": "man/Interfaces.html#Interfaces-1",
+    "page": "Interfaces",
+    "title": "Interfaces",
+    "category": "section",
+    "text": "This module contains the generic functions that are extended by the package.Due to the multidispatch feature of Julia, generic functions can be extended by local methods for different types. However, a local definition of a method also claims a new generic function if the generic function is not imported to the current scope, thus ruins the definitions in other modules. Therefore, it is quite necessary to prefine the common generic functions in a separate module, so that other modules can extend them with their own by a simple import."
+},
+
+{
+    "location": "man/Interfaces.html#Hamiltonian.Interfaces.:⊕",
+    "page": "Interfaces",
+    "title": "Hamiltonian.Interfaces.:⊕",
+    "category": "function",
+    "text": "Direct sum.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Interfaces.html#Hamiltonian.Interfaces.:⊗",
+    "page": "Interfaces",
+    "title": "Hamiltonian.Interfaces.:⊗",
+    "category": "function",
+    "text": "Direct product.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Interfaces.html#Hamiltonian.Interfaces.add!",
+    "page": "Interfaces",
+    "title": "Hamiltonian.Interfaces.add!",
+    "category": "function",
+    "text": "Inplace addition.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Interfaces.html#Hamiltonian.Interfaces.decompose",
+    "page": "Interfaces",
+    "title": "Hamiltonian.Interfaces.decompose",
+    "category": "function",
+    "text": "Decompose.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Interfaces.html#Hamiltonian.Interfaces.degree",
+    "page": "Interfaces",
+    "title": "Hamiltonian.Interfaces.degree",
+    "category": "function",
+    "text": "Degree\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Interfaces.html#Hamiltonian.Interfaces.dimension",
+    "page": "Interfaces",
+    "title": "Hamiltonian.Interfaces.dimension",
+    "category": "function",
+    "text": "Dimension.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Interfaces.html#Hamiltonian.Interfaces.dims",
+    "page": "Interfaces",
+    "title": "Hamiltonian.Interfaces.dims",
+    "category": "function",
+    "text": "Dimensions.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Interfaces.html#Hamiltonian.Interfaces.div!",
+    "page": "Interfaces",
+    "title": "Hamiltonian.Interfaces.div!",
+    "category": "function",
+    "text": "Inplace division.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Interfaces.html#Hamiltonian.Interfaces.expand",
+    "page": "Interfaces",
+    "title": "Hamiltonian.Interfaces.expand",
+    "category": "function",
+    "text": "Get the expansion.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Interfaces.html#Hamiltonian.Interfaces.index",
+    "page": "Interfaces",
+    "title": "Hamiltonian.Interfaces.index",
+    "category": "function",
+    "text": "Index.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Interfaces.html#Hamiltonian.Interfaces.inds",
+    "page": "Interfaces",
+    "title": "Hamiltonian.Interfaces.inds",
+    "category": "function",
+    "text": "Indices.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Interfaces.html#Hamiltonian.Interfaces.matrix",
+    "page": "Interfaces",
+    "title": "Hamiltonian.Interfaces.matrix",
+    "category": "function",
+    "text": "Matrix representation.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Interfaces.html#Hamiltonian.Interfaces.mul!",
+    "page": "Interfaces",
+    "title": "Hamiltonian.Interfaces.mul!",
+    "category": "function",
+    "text": "Inplace multiplication.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Interfaces.html#Hamiltonian.Interfaces.permute",
+    "page": "Interfaces",
+    "title": "Hamiltonian.Interfaces.permute",
+    "category": "function",
+    "text": "Get the permutation.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Interfaces.html#Hamiltonian.Interfaces.rank",
+    "page": "Interfaces",
+    "title": "Hamiltonian.Interfaces.rank",
+    "category": "function",
+    "text": "Rank.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Interfaces.html#Hamiltonian.Interfaces.sub!",
+    "page": "Interfaces",
+    "title": "Hamiltonian.Interfaces.sub!",
+    "category": "function",
+    "text": "Inplace subtraction.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Interfaces.html#Hamiltonian.Interfaces.vector",
+    "page": "Interfaces",
+    "title": "Hamiltonian.Interfaces.vector",
+    "category": "function",
+    "text": "Vector representation.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Interfaces.html#Hamiltonian.Interfaces.update!",
+    "page": "Interfaces",
+    "title": "Hamiltonian.Interfaces.update!",
+    "category": "function",
+    "text": "Inplace Update.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Interfaces.html#Manual-1",
+    "page": "Interfaces",
+    "title": "Manual",
+    "category": "section",
+    "text": "Modules=[Interfaces]\nOrder=  [:module,:constant,:type,:macro,:function]"
+},
+
+{
     "location": "man/Prerequisites/Introduction.html#",
     "page": "Introduction",
     "title": "Introduction",
@@ -85,7 +253,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "Introduction",
     "category": "section",
-    "text": "This module contains the prerequisites of the Hamiltonian package.The constants, types, macros, functions or submodules defined in this module will NOT be exported by the package. Instead, they serve as the prerequisites and fundamentals. The range of the contents are quite wide, but basically, they fall into 3 categories:Global constants and miscellaneous tiny useful functions;\nGeneric functions that are extended by other parts of the package;\nBasic data structures as supplements to the Julia.Base and other common packages.The first category is contained in the main body of this module, while the others come in separate submodules."
+    "text": "This module contains the prerequisites of the Hamiltonian package.The constants, types, macros, functions or submodules defined in this module will NOT be exported by the package. Instead, they serve as the prerequisites and fundamentals. The range of the contents are quite wide, but basically, they fall into 2 categories:Global constants and miscellaneous tiny useful functions;\nBasic data structures as supplements to the Julia.Base and other common packages.The first category is contained in the main body of this module, while the other comes in separate submodules."
 },
 
 {
@@ -145,187 +313,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/Introduction.html#Generic-interfaces-1",
-    "page": "Introduction",
-    "title": "Generic interfaces",
-    "category": "section",
-    "text": "For details, please refer to the page Interfaces:Pages=[\n    \"Interfaces.md\",\n    ]\nDepth=2"
-},
-
-{
     "location": "man/Prerequisites/Introduction.html#Basic-structures-1",
     "page": "Introduction",
     "title": "Basic structures",
     "category": "section",
     "text": "Here lists the table of contents of the basic data structures that are supplements to the Julia.Base and other common packages:Pages=[\n    \"TypeTraits.md\",\n    \"Factories.md\",\n    \"CompositeStructures.md\",\n    \"Trees.md\",\n    \"NamedVectors.md\",\n    ]\nDepth=2"
-},
-
-{
-    "location": "man/Prerequisites/Interfaces.html#",
-    "page": "Interfaces",
-    "title": "Interfaces",
-    "category": "page",
-    "text": "CurrentModule=Hamiltonian.Prerequisites.Interfaces"
-},
-
-{
-    "location": "man/Prerequisites/Interfaces.html#Interfaces-1",
-    "page": "Interfaces",
-    "title": "Interfaces",
-    "category": "section",
-    "text": "This submodule contains the generic functions that are extended by the package.Due to the multidispatch feature of Julia, generic functions can be extended by local methods for different types. However, a local definition of a method also claims a new generic function if the generic function is not imported to the current scope, thus ruins the definitions in other modules. Therefore, it is quite necessary to prefine the common generic functions in a separate module, so that other modules can extend them with their own by a simple import."
-},
-
-{
-    "location": "man/Prerequisites/Interfaces.html#Hamiltonian.Prerequisites.Interfaces.:⊕",
-    "page": "Interfaces",
-    "title": "Hamiltonian.Prerequisites.Interfaces.:⊕",
-    "category": "function",
-    "text": "Direct sum.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Prerequisites/Interfaces.html#Hamiltonian.Prerequisites.Interfaces.:⊗",
-    "page": "Interfaces",
-    "title": "Hamiltonian.Prerequisites.Interfaces.:⊗",
-    "category": "function",
-    "text": "Direct product.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Prerequisites/Interfaces.html#Hamiltonian.Prerequisites.Interfaces.add!",
-    "page": "Interfaces",
-    "title": "Hamiltonian.Prerequisites.Interfaces.add!",
-    "category": "function",
-    "text": "Inplace addition.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Prerequisites/Interfaces.html#Hamiltonian.Prerequisites.Interfaces.decompose",
-    "page": "Interfaces",
-    "title": "Hamiltonian.Prerequisites.Interfaces.decompose",
-    "category": "function",
-    "text": "Decompose.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Prerequisites/Interfaces.html#Hamiltonian.Prerequisites.Interfaces.degree",
-    "page": "Interfaces",
-    "title": "Hamiltonian.Prerequisites.Interfaces.degree",
-    "category": "function",
-    "text": "Degree\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Prerequisites/Interfaces.html#Hamiltonian.Prerequisites.Interfaces.dimension",
-    "page": "Interfaces",
-    "title": "Hamiltonian.Prerequisites.Interfaces.dimension",
-    "category": "function",
-    "text": "Dimension.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Prerequisites/Interfaces.html#Hamiltonian.Prerequisites.Interfaces.dims",
-    "page": "Interfaces",
-    "title": "Hamiltonian.Prerequisites.Interfaces.dims",
-    "category": "function",
-    "text": "Dimensions.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Prerequisites/Interfaces.html#Hamiltonian.Prerequisites.Interfaces.div!",
-    "page": "Interfaces",
-    "title": "Hamiltonian.Prerequisites.Interfaces.div!",
-    "category": "function",
-    "text": "Inplace division.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Prerequisites/Interfaces.html#Hamiltonian.Prerequisites.Interfaces.expand",
-    "page": "Interfaces",
-    "title": "Hamiltonian.Prerequisites.Interfaces.expand",
-    "category": "function",
-    "text": "Get the expansion.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Prerequisites/Interfaces.html#Hamiltonian.Prerequisites.Interfaces.index",
-    "page": "Interfaces",
-    "title": "Hamiltonian.Prerequisites.Interfaces.index",
-    "category": "function",
-    "text": "Index.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Prerequisites/Interfaces.html#Hamiltonian.Prerequisites.Interfaces.inds",
-    "page": "Interfaces",
-    "title": "Hamiltonian.Prerequisites.Interfaces.inds",
-    "category": "function",
-    "text": "Indices.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Prerequisites/Interfaces.html#Hamiltonian.Prerequisites.Interfaces.matrix",
-    "page": "Interfaces",
-    "title": "Hamiltonian.Prerequisites.Interfaces.matrix",
-    "category": "function",
-    "text": "Matrix representation.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Prerequisites/Interfaces.html#Hamiltonian.Prerequisites.Interfaces.mul!",
-    "page": "Interfaces",
-    "title": "Hamiltonian.Prerequisites.Interfaces.mul!",
-    "category": "function",
-    "text": "Inplace multiplication.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Prerequisites/Interfaces.html#Hamiltonian.Prerequisites.Interfaces.permute",
-    "page": "Interfaces",
-    "title": "Hamiltonian.Prerequisites.Interfaces.permute",
-    "category": "function",
-    "text": "Get the permutation.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Prerequisites/Interfaces.html#Hamiltonian.Prerequisites.Interfaces.rank",
-    "page": "Interfaces",
-    "title": "Hamiltonian.Prerequisites.Interfaces.rank",
-    "category": "function",
-    "text": "Rank.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Prerequisites/Interfaces.html#Hamiltonian.Prerequisites.Interfaces.sub!",
-    "page": "Interfaces",
-    "title": "Hamiltonian.Prerequisites.Interfaces.sub!",
-    "category": "function",
-    "text": "Inplace subtraction.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Prerequisites/Interfaces.html#Hamiltonian.Prerequisites.Interfaces.vector",
-    "page": "Interfaces",
-    "title": "Hamiltonian.Prerequisites.Interfaces.vector",
-    "category": "function",
-    "text": "Vector representation.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Prerequisites/Interfaces.html#Hamiltonian.Prerequisites.Interfaces.update!",
-    "page": "Interfaces",
-    "title": "Hamiltonian.Prerequisites.Interfaces.update!",
-    "category": "function",
-    "text": "Inplace Update.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Prerequisites/Interfaces.html#Manual-1",
-    "page": "Interfaces",
-    "title": "Manual",
-    "category": "section",
-    "text": "Modules=[Interfaces]\nOrder=  [:module,:constant,:type,:macro,:function]"
 },
 
 {
@@ -1865,54 +1857,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Prerequisites.Interfaces.:⊕-Union{Tuple{B}, Tuple{B,B}} where B",
-    "page": "Vector spaces",
-    "title": "Hamiltonian.Prerequisites.Interfaces.:⊕",
-    "category": "method",
-    "text": "⊕(basis1::B,basis2::B) where B -> DirectVectorSpace{\'F\',B,2}\n⊕(basis::B,vs::DirectVectorSpace{<:Any,B}) where B -> DirectVectorSpace{\'F\',B}\n⊕(vs::DirectVectorSpace{<:Any,B},basis::B) where B -> DirectVectorSpace{\'F\',B}\n⊕(vs1::DirectVectorSpace{<:Any,B},vs2::DirectVectorSpace{<:Any,B}) where B -> DirectVectorSpace{\'F\',B}\n\nGet the direct sum between bases or direct vector spaces.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Prerequisites.Interfaces.degree-Union{Tuple{G}, Tuple{G,GradedVectorSpace{G,B,V,T} where T<:(Pairs{G,V,KS,VS} where VS<:Tuple where KS<:Tuple) where V<:VectorSpace where B}} where G",
-    "page": "Vector spaces",
-    "title": "Hamiltonian.Prerequisites.Interfaces.degree",
-    "category": "method",
-    "text": "degree(g::G,vs::GradedVectorSpace{G}) where G -> Int\n\nGet the degree of a vector subspace whose grade are represented by g.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Prerequisites.Interfaces.dimension-Tuple{Hamiltonian.Mathematics.VectorSpaces.GradedVectorSpace}",
-    "page": "Vector spaces",
-    "title": "Hamiltonian.Prerequisites.Interfaces.dimension",
-    "category": "method",
-    "text": "dimension(vs::GradedVectorSpace) -> Int\ndimension(vs::GradedVectorSpace{G},g::G) where G -> Int\ndimension(vs::GradedVectorSpace{G},gs::NTuple{N,G}) where {G,N} -> Int\n\nGet the dimension of the whole graded vector space or some vector subspaces.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Prerequisites.Interfaces.dimension-Tuple{Hamiltonian.Mathematics.VectorSpaces.VectorSpace}",
-    "page": "Vector spaces",
-    "title": "Hamiltonian.Prerequisites.Interfaces.dimension",
-    "category": "method",
-    "text": "dimension(vs::VectorSpace) -> Int\n\nThe dimension of a vector space.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Prerequisites.Interfaces.rank-Tuple{Base.Iterators.Pairs{G,V,KS,VS} where VS<:Tuple where KS<:Tuple where V where G}",
-    "page": "Vector spaces",
-    "title": "Hamiltonian.Prerequisites.Interfaces.rank",
-    "category": "method",
-    "text": "rank(tables::GradedTables) -> Int\nrank(::Type{T}) where {T<:GradedTables} -> Int\n\nGet the total number of keys or values of a graded tables.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Prerequisites.Interfaces.rank-Tuple{Hamiltonian.Mathematics.VectorSpaces.GradedVectorSpace}",
-    "page": "Vector spaces",
-    "title": "Hamiltonian.Prerequisites.Interfaces.rank",
-    "category": "method",
-    "text": "rank(vs::GradedVectorSpace) -> Int\nrank(::Type{V}) where {V<:GradedVectorSpace} -> Int\n\nGet the rank, i.e. the total number of vector subspaces.\n\n\n\n\n\n"
-},
-
-{
     "location": "man/Mathematics/VectorSpaces.html#Base.Sort.searchsortedfirst-Union{Tuple{B}, Tuple{G}, Tuple{GradedVectorSpace{G,B,V,T} where T<:(Pairs{G,V,KS,VS} where VS<:Tuple where KS<:Tuple) where V<:VectorSpace,Tuple{G,B}}} where B where G",
     "page": "Vector spaces",
     "title": "Base.Sort.searchsortedfirst",
@@ -2017,6 +1961,54 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Interfaces.:⊕-Union{Tuple{B}, Tuple{B,B}} where B",
+    "page": "Vector spaces",
+    "title": "Hamiltonian.Interfaces.:⊕",
+    "category": "method",
+    "text": "⊕(basis1::B,basis2::B) where B -> DirectVectorSpace{\'F\',B,2}\n⊕(basis::B,vs::DirectVectorSpace{<:Any,B}) where B -> DirectVectorSpace{\'F\',B}\n⊕(vs::DirectVectorSpace{<:Any,B},basis::B) where B -> DirectVectorSpace{\'F\',B}\n⊕(vs1::DirectVectorSpace{<:Any,B},vs2::DirectVectorSpace{<:Any,B}) where B -> DirectVectorSpace{\'F\',B}\n\nGet the direct sum between bases or direct vector spaces.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Interfaces.degree-Union{Tuple{G}, Tuple{G,GradedVectorSpace{G,B,V,T} where T<:(Pairs{G,V,KS,VS} where VS<:Tuple where KS<:Tuple) where V<:VectorSpace where B}} where G",
+    "page": "Vector spaces",
+    "title": "Hamiltonian.Interfaces.degree",
+    "category": "method",
+    "text": "degree(g::G,vs::GradedVectorSpace{G}) where G -> Int\n\nGet the degree of a vector subspace whose grade are represented by g.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Interfaces.dimension-Tuple{Hamiltonian.Mathematics.VectorSpaces.GradedVectorSpace}",
+    "page": "Vector spaces",
+    "title": "Hamiltonian.Interfaces.dimension",
+    "category": "method",
+    "text": "dimension(vs::GradedVectorSpace) -> Int\ndimension(vs::GradedVectorSpace{G},g::G) where G -> Int\ndimension(vs::GradedVectorSpace{G},gs::NTuple{N,G}) where {G,N} -> Int\n\nGet the dimension of the whole graded vector space or some vector subspaces.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Interfaces.dimension-Tuple{Hamiltonian.Mathematics.VectorSpaces.VectorSpace}",
+    "page": "Vector spaces",
+    "title": "Hamiltonian.Interfaces.dimension",
+    "category": "method",
+    "text": "dimension(vs::VectorSpace) -> Int\n\nThe dimension of a vector space.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Interfaces.rank-Tuple{Base.Iterators.Pairs{G,V,KS,VS} where VS<:Tuple where KS<:Tuple where V where G}",
+    "page": "Vector spaces",
+    "title": "Hamiltonian.Interfaces.rank",
+    "category": "method",
+    "text": "rank(tables::GradedTables) -> Int\nrank(::Type{T}) where {T<:GradedTables} -> Int\n\nGet the total number of keys or values of a graded tables.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Interfaces.rank-Tuple{Hamiltonian.Mathematics.VectorSpaces.GradedVectorSpace}",
+    "page": "Vector spaces",
+    "title": "Hamiltonian.Interfaces.rank",
+    "category": "method",
+    "text": "rank(vs::GradedVectorSpace) -> Int\nrank(::Type{V}) where {V<:GradedVectorSpace} -> Int\n\nGet the rank, i.e. the total number of vector subspaces.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Mathematics/VectorSpaces.html#Manul-1",
     "page": "Vector spaces",
     "title": "Manul",
@@ -2118,46 +2110,6 @@ var documenterSearchIndex = {"docs": [
     "title": "Hamiltonian.Mathematics.AlgebraOverFields.idtype",
     "category": "method",
     "text": "idtype(::Type{<:Element{N,<:Number,I}}) where {N,I<:ID{<:NTuple{N,SimpleID}}}\nidtype(m::Element)\n\nThe type of the id of an element.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Prerequisites.Interfaces.:⊗-Tuple{Hamiltonian.Mathematics.AlgebraOverFields.Element,Dict{I,M} where M<:Hamiltonian.Mathematics.AlgebraOverFields.Element where I<:Hamiltonian.Mathematics.AlgebraOverFields.ID}",
-    "page": "Algebra over fields",
-    "title": "Hamiltonian.Prerequisites.Interfaces.:⊗",
-    "category": "method",
-    "text": "⊗(m::Element,ms::Elements) -> Elements\n⊗(ms::Elements,m::Element) -> Elements\n⊗(ms1::Elements,ms2::Elements) -> Elements\n\nOverloaded ⊗ operator for element-element multiplications of an algebra over a field.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Prerequisites.Interfaces.add!-Tuple{Dict{I,M} where M<:Hamiltonian.Mathematics.AlgebraOverFields.Element where I<:Hamiltonian.Mathematics.AlgebraOverFields.ID}",
-    "page": "Algebra over fields",
-    "title": "Hamiltonian.Prerequisites.Interfaces.add!",
-    "category": "method",
-    "text": "add!(ms::Elements) -> typeof(ms)\nadd!(ms::Elements,::Tuple{}) -> typeof(ms)\nadd!(ms::Elements,m::Element) -> typeof(ms)\nadd!(ms::Elements,mms::Elements) -> typeof(ms)\n\nGet the inplace addition of elements to a set.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Prerequisites.Interfaces.rank-Union{Tuple{Type{#s21} where #s21<:(Element{N,V,I} where I<:(ID{#s22} where #s22<:Tuple{Vararg{SimpleID,N}}) where V<:Number)}, Tuple{N}} where N",
-    "page": "Algebra over fields",
-    "title": "Hamiltonian.Prerequisites.Interfaces.rank",
-    "category": "method",
-    "text": "rank(::Type{<:Element{N}}) where N -> Int\nrank(m::Element) -> Int\n\nGet the rank of an element.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Prerequisites.Interfaces.rank-Union{Tuple{Type{#s21} where #s21<:ID{T}}, Tuple{T}} where T<:Tuple{Vararg{Hamiltonian.Mathematics.AlgebraOverFields.SimpleID,N} where N}",
-    "page": "Algebra over fields",
-    "title": "Hamiltonian.Prerequisites.Interfaces.rank",
-    "category": "method",
-    "text": "rank(::Type{<:ID{T}}) where T<:Tuple{Vararg{SimpleID}} -> Int\nrank(id::ID) -> Int\n\nGet the rank of a composite id.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Prerequisites.Interfaces.sub!-Tuple{Dict{I,M} where M<:Hamiltonian.Mathematics.AlgebraOverFields.Element where I<:Hamiltonian.Mathematics.AlgebraOverFields.ID}",
-    "page": "Algebra over fields",
-    "title": "Hamiltonian.Prerequisites.Interfaces.sub!",
-    "category": "method",
-    "text": "sub!(ms::Elements) -> typeof(ms)\nsub!(ms::Elements,::Tuple{}) -> typeof(ms)\nsub!(ms::Elements,m::Element) -> typeof(ms)\nsub!(ms::Elements,mms::Elements) -> typeof(ms)\n\nGet the inplace subtraction of elements from a set.\n\n\n\n\n\n"
 },
 
 {
@@ -2310,6 +2262,62 @@ var documenterSearchIndex = {"docs": [
     "title": "Base.zero",
     "category": "method",
     "text": "zero(ms::Elements) -> typeof(ms)\nzero(::Type{Elements{I,M}}) where {I,M} -> Elements{I,M}\n\nGet a zero set of elements.\n\nA zero set of elements is defined to be the one with no elements.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Interfaces.:⊗-Tuple{Hamiltonian.Mathematics.AlgebraOverFields.Element,Dict{I,M} where M<:Hamiltonian.Mathematics.AlgebraOverFields.Element where I<:Hamiltonian.Mathematics.AlgebraOverFields.ID}",
+    "page": "Algebra over fields",
+    "title": "Hamiltonian.Interfaces.:⊗",
+    "category": "method",
+    "text": "⊗(m::Element,ms::Elements) -> Elements\n⊗(ms::Elements,m::Element) -> Elements\n⊗(ms1::Elements,ms2::Elements) -> Elements\n\nOverloaded ⊗ operator for element-element multiplications of an algebra over a field.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Interfaces.add!-Tuple{Dict{I,M} where M<:Hamiltonian.Mathematics.AlgebraOverFields.Element where I<:Hamiltonian.Mathematics.AlgebraOverFields.ID}",
+    "page": "Algebra over fields",
+    "title": "Hamiltonian.Interfaces.add!",
+    "category": "method",
+    "text": "add!(ms::Elements) -> typeof(ms)\nadd!(ms::Elements,::Tuple{}) -> typeof(ms)\nadd!(ms::Elements,m::Element) -> typeof(ms)\nadd!(ms::Elements,mms::Elements) -> typeof(ms)\n\nGet the inplace addition of elements to a set.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Interfaces.div!-Tuple{Dict{I,M} where M<:Hamiltonian.Mathematics.AlgebraOverFields.Element where I<:Hamiltonian.Mathematics.AlgebraOverFields.ID,Number}",
+    "page": "Algebra over fields",
+    "title": "Hamiltonian.Interfaces.div!",
+    "category": "method",
+    "text": "div!(ms::Elements,factor::Number) -> Elements\n\nGet the inplace division of element with a scalar.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Interfaces.mul!-Tuple{Dict{I,M} where M<:Hamiltonian.Mathematics.AlgebraOverFields.Element where I<:Hamiltonian.Mathematics.AlgebraOverFields.ID,Number}",
+    "page": "Algebra over fields",
+    "title": "Hamiltonian.Interfaces.mul!",
+    "category": "method",
+    "text": "mul!(ms::Elements,factor::Number) -> Elements\n\nGet the inplace multiplication of elements with a scalar.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Interfaces.rank-Union{Tuple{Type{#s21} where #s21<:(Element{N,V,I} where I<:(ID{#s22} where #s22<:Tuple{Vararg{SimpleID,N}}) where V<:Number)}, Tuple{N}} where N",
+    "page": "Algebra over fields",
+    "title": "Hamiltonian.Interfaces.rank",
+    "category": "method",
+    "text": "rank(::Type{<:Element{N}}) where N -> Int\nrank(m::Element) -> Int\n\nGet the rank of an element.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Interfaces.rank-Union{Tuple{Type{#s21} where #s21<:ID{T}}, Tuple{T}} where T<:Tuple{Vararg{Hamiltonian.Mathematics.AlgebraOverFields.SimpleID,N} where N}",
+    "page": "Algebra over fields",
+    "title": "Hamiltonian.Interfaces.rank",
+    "category": "method",
+    "text": "rank(::Type{<:ID{T}}) where T<:Tuple{Vararg{SimpleID}} -> Int\nrank(id::ID) -> Int\n\nGet the rank of a composite id.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Interfaces.sub!-Tuple{Dict{I,M} where M<:Hamiltonian.Mathematics.AlgebraOverFields.Element where I<:Hamiltonian.Mathematics.AlgebraOverFields.ID}",
+    "page": "Algebra over fields",
+    "title": "Hamiltonian.Interfaces.sub!",
+    "category": "method",
+    "text": "sub!(ms::Elements) -> typeof(ms)\nsub!(ms::Elements,::Tuple{}) -> typeof(ms)\nsub!(ms::Elements,m::Element) -> typeof(ms)\nsub!(ms::Elements,mms::Elements) -> typeof(ms)\n\nGet the inplace subtraction of elements from a set.\n\n\n\n\n\n"
 },
 
 {
@@ -2569,62 +2577,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Prerequisites.Interfaces.:⊕-Tuple{Vararg{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber,N} where N}",
-    "page": "Quantum numbers",
-    "title": "Hamiltonian.Prerequisites.Interfaces.:⊕",
-    "category": "method",
-    "text": "⊕(qns::AbelianNumber...) -> AbelianNumbers{qns|>eltype}\n⊕(qnses::AbelianNumbers...) -> qnses|>eltype\n\nGet the direct sum of some AbelianNumbers or AbelianNumberses.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Prerequisites.Interfaces.:⊗-Tuple{Vararg{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber,N} where N}",
-    "page": "Quantum numbers",
-    "title": "Hamiltonian.Prerequisites.Interfaces.:⊗",
-    "category": "method",
-    "text": "⊗(qns::AbelianNumber...) -> eltype(qns)\n⊗(qnses::AbelianNumbers...) -> eltype(qnses)\n\nGet the direct product of some AbelianNumbers or AbelianNumberses.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Prerequisites.Interfaces.decompose-Union{Tuple{QN}, Tuple{N}, Tuple{Tuple{Vararg{AbelianNumbers{QN},N}},QN,Tuple{Vararg{Int64,N}},QnsBruteForce}} where QN<:Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber where N",
-    "page": "Quantum numbers",
-    "title": "Hamiltonian.Prerequisites.Interfaces.decompose",
-    "category": "method",
-    "text": "decompose(qnses::NTuple{N,AbelianNumbers{QN}},target::QN,signs::NTuple{N,Int},::QnsBruteForce;nmax::Int=20) where {N,QN<:AbelianNumber} -> Vector{NTuple{N,Int}}\ndecompose(qnses::NTuple{N,AbelianNumbers{QN}},target::QN,signs::NTuple{N,Int},::QnsMonteCarlo;nmax::Int=20) where {N,QN<:AbelianNumber} -> Vector{NTuple{N,Int}}\n\nFind a couple of decompositions of target with respect to qnses.\n\nnote: Note\nA tuple of integers (i₁,i₂,...) is called a decomposition of a given target with respect to the given qnses if and only if they satisfy the \"decomposition rule\":sum_textj textsignstextjtimestextqnsestextjtexti_textj==texttargetThis equation is in fact a kind of a set of restricted linear Diophantine equations. Indeed, our quantum numbers are always discrete Abelian ones and all instances of a concrete AbelianNumber forms a module over the ring of integers. Therefore, each quantum number can be represented as a integral multiple of the unit element of the Abelian module, which results in the final reduction of the above equation to a set of linear Diophantine equations. Then finding a decomposition is equivalent to find a solution of the reduced linear Diophantine equations, with the restriction that the quantum numbers constructed from the solution should be in the corresponding qnses. Here we provide two methods to find such decompositions, one is by brute force (qnsbruteforce case), and the other is by Monte Carlo simultatioins (qnsmontecarlo case).\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Prerequisites.Interfaces.dimension-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers}",
-    "page": "Quantum numbers",
-    "title": "Hamiltonian.Prerequisites.Interfaces.dimension",
-    "category": "method",
-    "text": "dimension(qns::AbelianNumbers) -> Int\n\nThe dimension of the Hilbert space a AbelianNumbers represents.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Prerequisites.Interfaces.dimension-Tuple{Type{#s21} where #s21<:Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber}",
-    "page": "Quantum numbers",
-    "title": "Hamiltonian.Prerequisites.Interfaces.dimension",
-    "category": "method",
-    "text": "dimension(::Type{<:AbelianNumber}) -> Int\ndimension(::AbelianNumber) -> Int\n\nThe dimension of the Hilbert space a AbelianNumber represents. Apparently, this is always 1.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Prerequisites.Interfaces.expand-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers,Hamiltonian.Mathematics.QuantumNumbers.QnsContents}",
-    "page": "Quantum numbers",
-    "title": "Hamiltonian.Prerequisites.Interfaces.expand",
-    "category": "method",
-    "text": "expand(qns::AbelianNumbers,::QnsContents) -> Vector{qns|>eltype}\nexpand(qns::AbelianNumbers,::QnsIndices) -> Vector{Int}\n\nExpand the contents (qnscontents case) or indices (qnsindices case) of a AbelianNumbers to the uncompressed form.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Prerequisites.Interfaces.permute-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers,Array{Int64,1},Hamiltonian.Mathematics.QuantumNumbers.QnsCompression}",
-    "page": "Quantum numbers",
-    "title": "Hamiltonian.Prerequisites.Interfaces.permute",
-    "category": "method",
-    "text": "permute(qns::AbelianNumbers,permutation::Vector{Int},::QnsCompression) -> AbelianNumbers\npermute(qns::AbelianNumbers,permutation::Vector{Int},::QnsExpansion) -> AbelianNumbers\n\nReorder the quantum numbers contained in a AbelianNumbers with a permutation and return the new one.\n\nFor qnscompression case, the permutation is for the compressed contents of the original AbelianNumbers while for qnsexpansion case, the permutation is for the expanded contents of the original AbelianNumbers.\n\n\n\n\n\n"
-},
-
-{
     "location": "man/Mathematics/QuantumNumbers.html#Base.:*-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber,Integer}",
     "page": "Quantum numbers",
     "title": "Base.:*",
@@ -2774,6 +2726,62 @@ var documenterSearchIndex = {"docs": [
     "title": "Base.values",
     "category": "method",
     "text": "values(qns::AbelianNumbers,::QnsIndptr)\nvalues(qns::AbelianNumbers,::QnsCounts)\n\nIterate over the slices/counts of the AbelianNumbers.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Interfaces.:⊕-Tuple{Vararg{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber,N} where N}",
+    "page": "Quantum numbers",
+    "title": "Hamiltonian.Interfaces.:⊕",
+    "category": "method",
+    "text": "⊕(qns::AbelianNumber...) -> AbelianNumbers{qns|>eltype}\n⊕(qnses::AbelianNumbers...) -> qnses|>eltype\n\nGet the direct sum of some AbelianNumbers or AbelianNumberses.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Interfaces.:⊗-Tuple{Vararg{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber,N} where N}",
+    "page": "Quantum numbers",
+    "title": "Hamiltonian.Interfaces.:⊗",
+    "category": "method",
+    "text": "⊗(qns::AbelianNumber...) -> eltype(qns)\n⊗(qnses::AbelianNumbers...) -> eltype(qnses)\n\nGet the direct product of some AbelianNumbers or AbelianNumberses.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Interfaces.decompose-Union{Tuple{QN}, Tuple{N}, Tuple{Tuple{Vararg{AbelianNumbers{QN},N}},QN,Tuple{Vararg{Int64,N}},QnsBruteForce}} where QN<:Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber where N",
+    "page": "Quantum numbers",
+    "title": "Hamiltonian.Interfaces.decompose",
+    "category": "method",
+    "text": "decompose(qnses::NTuple{N,AbelianNumbers{QN}},target::QN,signs::NTuple{N,Int},::QnsBruteForce;nmax::Int=20) where {N,QN<:AbelianNumber} -> Vector{NTuple{N,Int}}\ndecompose(qnses::NTuple{N,AbelianNumbers{QN}},target::QN,signs::NTuple{N,Int},::QnsMonteCarlo;nmax::Int=20) where {N,QN<:AbelianNumber} -> Vector{NTuple{N,Int}}\n\nFind a couple of decompositions of target with respect to qnses.\n\nnote: Note\nA tuple of integers (i₁,i₂,...) is called a decomposition of a given target with respect to the given qnses if and only if they satisfy the \"decomposition rule\":sum_textj textsignstextjtimestextqnsestextjtexti_textj==texttargetThis equation is in fact a kind of a set of restricted linear Diophantine equations. Indeed, our quantum numbers are always discrete Abelian ones and all instances of a concrete AbelianNumber forms a module over the ring of integers. Therefore, each quantum number can be represented as a integral multiple of the unit element of the Abelian module, which results in the final reduction of the above equation to a set of linear Diophantine equations. Then finding a decomposition is equivalent to find a solution of the reduced linear Diophantine equations, with the restriction that the quantum numbers constructed from the solution should be in the corresponding qnses. Here we provide two methods to find such decompositions, one is by brute force (qnsbruteforce case), and the other is by Monte Carlo simultatioins (qnsmontecarlo case).\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Interfaces.dimension-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers}",
+    "page": "Quantum numbers",
+    "title": "Hamiltonian.Interfaces.dimension",
+    "category": "method",
+    "text": "dimension(qns::AbelianNumbers) -> Int\n\nThe dimension of the Hilbert space a AbelianNumbers represents.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Interfaces.dimension-Tuple{Type{#s21} where #s21<:Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber}",
+    "page": "Quantum numbers",
+    "title": "Hamiltonian.Interfaces.dimension",
+    "category": "method",
+    "text": "dimension(::Type{<:AbelianNumber}) -> Int\ndimension(::AbelianNumber) -> Int\n\nThe dimension of the Hilbert space a AbelianNumber represents. Apparently, this is always 1.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Interfaces.expand-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers,Hamiltonian.Mathematics.QuantumNumbers.QnsContents}",
+    "page": "Quantum numbers",
+    "title": "Hamiltonian.Interfaces.expand",
+    "category": "method",
+    "text": "expand(qns::AbelianNumbers,::QnsContents) -> Vector{qns|>eltype}\nexpand(qns::AbelianNumbers,::QnsIndices) -> Vector{Int}\n\nExpand the contents (qnscontents case) or indices (qnsindices case) of a AbelianNumbers to the uncompressed form.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Interfaces.permute-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers,Array{Int64,1},Hamiltonian.Mathematics.QuantumNumbers.QnsCompression}",
+    "page": "Quantum numbers",
+    "title": "Hamiltonian.Interfaces.permute",
+    "category": "method",
+    "text": "permute(qns::AbelianNumbers,permutation::Vector{Int},::QnsCompression) -> AbelianNumbers\npermute(qns::AbelianNumbers,permutation::Vector{Int},::QnsExpansion) -> AbelianNumbers\n\nReorder the quantum numbers contained in a AbelianNumbers with a permutation and return the new one.\n\nFor qnscompression case, the permutation is for the compressed contents of the original AbelianNumbers while for qnsexpansion case, the permutation is for the expanded contents of the original AbelianNumbers.\n\n\n\n\n\n"
 },
 
 {
@@ -3209,38 +3217,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Prerequisites.Interfaces.decompose-Tuple{AbstractArray{#s224,1} where #s224<:Real,AbstractArray{#s223,1} where #s223<:Real}",
-    "page": "Spatials",
-    "title": "Hamiltonian.Prerequisites.Interfaces.decompose",
-    "category": "method",
-    "text": "decompose(v0::AbstractVector{<:Real},v1::AbstractVector{<:Real}) -> Tuple{Float}\ndecompose(v0::AbstractVector{<:Real},v1::AbstractVector{<:Real},v2::AbstractVector{<:Real}) -> Tuple{Float,Float}\ndecompose(v0::AbstractVector{<:Real},v1::AbstractVector{<:Real},v2::AbstractVector{<:Real},v3::AbstractVector{<:Real}) -> Tuple{Float,Float,Float}\n\nDecompose a vector with respect to input basis vectors.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Prerequisites.Interfaces.dimension-Tuple{AbstractBond}",
-    "page": "Spatials",
-    "title": "Hamiltonian.Prerequisites.Interfaces.dimension",
-    "category": "method",
-    "text": "dimension(bond::AbstractBond) -> Int\ndimension(::Type{<:AbstractBond{<:PID,N}}) where N -> Int\n\nGet the space dimension of a concrete bond.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Prerequisites.Interfaces.dimension-Tuple{AbstractLattice}",
-    "page": "Spatials",
-    "title": "Hamiltonian.Prerequisites.Interfaces.dimension",
-    "category": "method",
-    "text": "dimension(lattice::AbstractLattice) -> Int\ndimension(::Type{<:AbstractLattice{<:PID,N}}) where N -> Int\n\nGet the space dimension of the lattice.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Prerequisites.Interfaces.rank-Tuple{AbstractBond}",
-    "page": "Spatials",
-    "title": "Hamiltonian.Prerequisites.Interfaces.rank",
-    "category": "method",
-    "text": "rank(bond::AbstractBond) -> Int\nrank(::Type{<:AbstractBond{<:PID,N,R}}) where {N,R} -> Int\n\nGet the rank of a bond.\n\n\n\n\n\n"
-},
-
-{
     "location": "man/Essentials/Spatials.html#Base.:==-Tuple{AbstractLattice,AbstractLattice}",
     "page": "Spatials",
     "title": "Base.:==",
@@ -3285,7 +3261,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatials",
     "title": "Base.iterate",
     "category": "function",
-    "text": "iterate(bond::Bond,state=1)\n\nIterate over the points in a bond.\n\n\n\n\n\n"
+    "text": "iterate(p::Point,state=1)\n\nIterate over the point.\n\n\n\n\n\n"
 },
 
 {
@@ -3293,7 +3269,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatials",
     "title": "Base.iterate",
     "category": "function",
-    "text": "iterate(p::Point,state=1)\n\nIterate over the point.\n\n\n\n\n\n"
+    "text": "iterate(bond::Bond,state=1)\n\nIterate over the points in a bond.\n\n\n\n\n\n"
 },
 
 {
@@ -3358,6 +3334,38 @@ var documenterSearchIndex = {"docs": [
     "title": "Base.valtype",
     "category": "method",
     "text": "valtype(lattice::AbstractLattice)\nvaltype(::Type{<:AbstractLattice{P,N}}) where {P<:PID,N}\n\nGet the point type of the lattice.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Interfaces.decompose-Tuple{AbstractArray{#s224,1} where #s224<:Real,AbstractArray{#s223,1} where #s223<:Real}",
+    "page": "Spatials",
+    "title": "Hamiltonian.Interfaces.decompose",
+    "category": "method",
+    "text": "decompose(v0::AbstractVector{<:Real},v1::AbstractVector{<:Real}) -> Tuple{Float}\ndecompose(v0::AbstractVector{<:Real},v1::AbstractVector{<:Real},v2::AbstractVector{<:Real}) -> Tuple{Float,Float}\ndecompose(v0::AbstractVector{<:Real},v1::AbstractVector{<:Real},v2::AbstractVector{<:Real},v3::AbstractVector{<:Real}) -> Tuple{Float,Float,Float}\n\nDecompose a vector with respect to input basis vectors.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Interfaces.dimension-Tuple{AbstractBond}",
+    "page": "Spatials",
+    "title": "Hamiltonian.Interfaces.dimension",
+    "category": "method",
+    "text": "dimension(bond::AbstractBond) -> Int\ndimension(::Type{<:AbstractBond{<:PID,N}}) where N -> Int\n\nGet the space dimension of a concrete bond.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Interfaces.dimension-Tuple{AbstractLattice}",
+    "page": "Spatials",
+    "title": "Hamiltonian.Interfaces.dimension",
+    "category": "method",
+    "text": "dimension(lattice::AbstractLattice) -> Int\ndimension(::Type{<:AbstractLattice{<:PID,N}}) where N -> Int\n\nGet the space dimension of the lattice.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatials.html#Hamiltonian.Interfaces.rank-Tuple{AbstractBond}",
+    "page": "Spatials",
+    "title": "Hamiltonian.Interfaces.rank",
+    "category": "method",
+    "text": "rank(bond::AbstractBond) -> Int\nrank(::Type{<:AbstractBond{<:PID,N,R}}) where {N,R} -> Int\n\nGet the rank of a bond.\n\n\n\n\n\n"
 },
 
 {
@@ -3633,30 +3641,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.Spatials.icoord-Tuple{Operator{1,V,I} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{#s240} where #s240<:Tuple{OID}) where V<:Number}",
-    "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.Spatials.icoord",
-    "category": "method",
-    "text": "icoord(opt::Operator{1}) -> SVector\nicoord(opt::Operator{2}) -> SVector\n\nGet the whole icoord of an operator.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.Spatials.pidtype-Tuple{Index}",
-    "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.Spatials.pidtype",
-    "category": "method",
-    "text": "pidtype(index::Index)\npidtype(::Type{<:Index{P,I}}) where {P,I}\n\nGet the type of the spatial part of an index.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.Spatials.rcoord-Tuple{Operator{1,V,I} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{#s240} where #s240<:Tuple{OID}) where V<:Number}",
-    "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.Spatials.rcoord",
-    "category": "method",
-    "text": "rcoord(opt::Operator{1}) -> SVector\nrcoord(opt::Operator{2}) -> SVector\n\nGet the whole rcoord of an operator.\n\n\n\n\n\n"
-},
-
-{
     "location": "man/Essentials/DegreesOfFreedom.html#Core.Type-Tuple{PID,IID}",
     "page": "Degrees of freedom",
     "title": "Core.Type",
@@ -3766,6 +3750,30 @@ var documenterSearchIndex = {"docs": [
     "title": "Base.union",
     "category": "method",
     "text": "union(::Type{P},::Type{I}) where {P<:PID,I<:IID}\n\nCombine a concrete PID type and a concrete IID type to a concrete Index type.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.Spatials.icoord-Tuple{Operator{1,V,I} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{#s240} where #s240<:Tuple{OID}) where V<:Number}",
+    "page": "Degrees of freedom",
+    "title": "Hamiltonian.Essentials.Spatials.icoord",
+    "category": "method",
+    "text": "icoord(opt::Operator{1}) -> SVector\nicoord(opt::Operator{2}) -> SVector\n\nGet the whole icoord of an operator.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.Spatials.pidtype-Tuple{Index}",
+    "page": "Degrees of freedom",
+    "title": "Hamiltonian.Essentials.Spatials.pidtype",
+    "category": "method",
+    "text": "pidtype(index::Index)\npidtype(::Type{<:Index{P,I}}) where {P,I}\n\nGet the type of the spatial part of an index.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.Spatials.rcoord-Tuple{Operator{1,V,I} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{#s240} where #s240<:Tuple{OID}) where V<:Number}",
+    "page": "Degrees of freedom",
+    "title": "Hamiltonian.Essentials.Spatials.rcoord",
+    "category": "method",
+    "text": "rcoord(opt::Operator{1}) -> SVector\nrcoord(opt::Operator{2}) -> SVector\n\nGet the whole rcoord of an operator.\n\n\n\n\n\n"
 },
 
 {
@@ -3969,78 +3977,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Prerequisites.Interfaces.expand",
-    "page": "Terms",
-    "title": "Hamiltonian.Prerequisites.Interfaces.expand",
-    "category": "function",
-    "text": "expand(otype::Type{<:Operator},term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Union{Bool,Nothing}=nothing)\n\nExpand the operators of a term on a bond with a given config.\n\nThe half parameter determines the behavior of generating operators, which falls into the following three categories\n\nfalse: no extra operations on the generated operators\ntrue: an extra multiplication by 0.5 with the generated operators\nnothing: \"Hermitian half\" of the generated operators\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/Terms.html#Hamiltonian.Prerequisites.Interfaces.expand-Union{Tuple{N}, Tuple{Subscripts,Tuple{Vararg{Int64,N}}}} where N",
-    "page": "Terms",
-    "title": "Hamiltonian.Prerequisites.Interfaces.expand",
-    "category": "method",
-    "text": "expand(subscripts::Subscripts,dimensions::NTuple{N,Int}) where N -> SbExpand\n\nExpand a complete set of subscripts with a given set of variable ranges.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/Terms.html#Hamiltonian.Prerequisites.Interfaces.rank-Tuple{Subscripts,Int64}",
-    "page": "Terms",
-    "title": "Hamiltonian.Prerequisites.Interfaces.rank",
-    "category": "method",
-    "text": "rank(subscripts::Subscripts,i::Int) -> Int\nrank(::Type{<:Subscripts{T}},i::Int) where T -> Int\n\nGet the number of the independent variables of a component of the complete subscript set.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/Terms.html#Hamiltonian.Prerequisites.Interfaces.rank-Tuple{Subscripts}",
-    "page": "Terms",
-    "title": "Hamiltonian.Prerequisites.Interfaces.rank",
-    "category": "method",
-    "text": "rank(subscripts::Subscripts) -> Int\nrank(::Type{S}) where S<:Subscripts -> Int\n\nGet the total number of the independent variables of the complete subscript set.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/Terms.html#Hamiltonian.Prerequisites.Interfaces.rank-Tuple{Subscript}",
-    "page": "Terms",
-    "title": "Hamiltonian.Prerequisites.Interfaces.rank",
-    "category": "method",
-    "text": "rank(subscript::Subscript) -> Int\nrank(::Type{<:Subscript{N}}) where N -> Int\n\nGet the number of the independent variables that are used to describe the subscripts of some orbital/spin degrees of freedom.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/Terms.html#Hamiltonian.Prerequisites.Interfaces.rank-Tuple{TermCouplings}",
-    "page": "Terms",
-    "title": "Hamiltonian.Prerequisites.Interfaces.rank",
-    "category": "method",
-    "text": "rank(tcs::TermCouplings) -> Int\nrank(TCS::Type{<:TermCouplings}) -> Int\n\nGet the rank of the couplings it contained.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/Terms.html#Hamiltonian.Prerequisites.Interfaces.rank-Tuple{Term}",
-    "page": "Terms",
-    "title": "Hamiltonian.Prerequisites.Interfaces.rank",
-    "category": "method",
-    "text": "rank(term::Term) -> Int\nrank(::Type{T}) where T<:Term -> Int\n\nGet the rank of a term.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/Terms.html#Hamiltonian.Prerequisites.Interfaces.update!-Tuple{Term,Vararg{Any,N} where N}",
-    "page": "Terms",
-    "title": "Hamiltonian.Prerequisites.Interfaces.update!",
-    "category": "method",
-    "text": "update!(term::Term,args...;kwargs...) -> Term\n\nUpdate the value of a term by its modulate function.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/Terms.html#Hamiltonian.Prerequisites.Interfaces.update!-Union{Tuple{Names}, Tuple{Boundary{Names,V,T} where T<:Function where V<:AbstractArray{Float64,1},Vararg{Any,N} where N}} where Names",
-    "page": "Terms",
-    "title": "Hamiltonian.Prerequisites.Interfaces.update!",
-    "category": "method",
-    "text": "update!(bound::Boundary{Names},args...;kwargs...) where Names -> Boundary\n\nUpdate the values of the boundary twisted phase.\n\n\n\n\n\n"
-},
-
-{
     "location": "man/Essentials/Terms.html#Base.:*-Tuple{Subscript,Subscript}",
     "page": "Terms",
     "title": "Base.:*",
@@ -4137,27 +4073,99 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Prerequisites.Interfaces.dimension-Tuple{Subscripts,Int64}",
+    "location": "man/Essentials/Terms.html#Hamiltonian.Interfaces.dimension-Tuple{Subscripts,Int64}",
     "page": "Terms",
-    "title": "Hamiltonian.Prerequisites.Interfaces.dimension",
+    "title": "Hamiltonian.Interfaces.dimension",
     "category": "method",
     "text": "dimension(subscripts::Subscripts,i::Int) -> Int\ndimension(::Type{<:Subscripts{T}},i::Int) where T -> Int\n\nGet the total number of the whole variables of a component of the complete subscript set.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Prerequisites.Interfaces.dimension-Tuple{Subscripts}",
+    "location": "man/Essentials/Terms.html#Hamiltonian.Interfaces.dimension-Tuple{Subscripts}",
     "page": "Terms",
-    "title": "Hamiltonian.Prerequisites.Interfaces.dimension",
+    "title": "Hamiltonian.Interfaces.dimension",
     "category": "method",
     "text": "dimension(subscripts::Subscripts) -> Int\ndimension(::Type{S}) where S<:Subscripts -> Int\n\nGet the total number of the whole variables of the complete subscript set.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Prerequisites.Interfaces.dimension-Tuple{Subscript}",
+    "location": "man/Essentials/Terms.html#Hamiltonian.Interfaces.dimension-Tuple{Subscript}",
     "page": "Terms",
-    "title": "Hamiltonian.Prerequisites.Interfaces.dimension",
+    "title": "Hamiltonian.Interfaces.dimension",
     "category": "method",
     "text": "dimension(subscript::Subscript) -> Int\ndimension(::Type{<:Subscript{N1,N2}}) where {N1,N2} -> Int\n\nGet the number of the whole variables that are used to describe the subscripts of some orbital/spin degrees of freedom.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Terms.html#Hamiltonian.Interfaces.expand",
+    "page": "Terms",
+    "title": "Hamiltonian.Interfaces.expand",
+    "category": "function",
+    "text": "expand(otype::Type{<:Operator},term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Union{Bool,Nothing}=nothing)\n\nExpand the operators of a term on a bond with a given config.\n\nThe half parameter determines the behavior of generating operators, which falls into the following three categories\n\nfalse: no extra operations on the generated operators\ntrue: an extra multiplication by 0.5 with the generated operators\nnothing: \"Hermitian half\" of the generated operators\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Terms.html#Hamiltonian.Interfaces.expand-Union{Tuple{N}, Tuple{Subscripts,Tuple{Vararg{Int64,N}}}} where N",
+    "page": "Terms",
+    "title": "Hamiltonian.Interfaces.expand",
+    "category": "method",
+    "text": "expand(subscripts::Subscripts,dimensions::NTuple{N,Int}) where N -> SbExpand\n\nExpand a complete set of subscripts with a given set of variable ranges.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Terms.html#Hamiltonian.Interfaces.rank-Tuple{Subscripts,Int64}",
+    "page": "Terms",
+    "title": "Hamiltonian.Interfaces.rank",
+    "category": "method",
+    "text": "rank(subscripts::Subscripts,i::Int) -> Int\nrank(::Type{<:Subscripts{T}},i::Int) where T -> Int\n\nGet the number of the independent variables of a component of the complete subscript set.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Terms.html#Hamiltonian.Interfaces.rank-Tuple{Subscripts}",
+    "page": "Terms",
+    "title": "Hamiltonian.Interfaces.rank",
+    "category": "method",
+    "text": "rank(subscripts::Subscripts) -> Int\nrank(::Type{S}) where S<:Subscripts -> Int\n\nGet the total number of the independent variables of the complete subscript set.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Terms.html#Hamiltonian.Interfaces.rank-Tuple{Subscript}",
+    "page": "Terms",
+    "title": "Hamiltonian.Interfaces.rank",
+    "category": "method",
+    "text": "rank(subscript::Subscript) -> Int\nrank(::Type{<:Subscript{N}}) where N -> Int\n\nGet the number of the independent variables that are used to describe the subscripts of some orbital/spin degrees of freedom.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Terms.html#Hamiltonian.Interfaces.rank-Tuple{TermCouplings}",
+    "page": "Terms",
+    "title": "Hamiltonian.Interfaces.rank",
+    "category": "method",
+    "text": "rank(tcs::TermCouplings) -> Int\nrank(TCS::Type{<:TermCouplings}) -> Int\n\nGet the rank of the couplings it contained.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Terms.html#Hamiltonian.Interfaces.rank-Tuple{Term}",
+    "page": "Terms",
+    "title": "Hamiltonian.Interfaces.rank",
+    "category": "method",
+    "text": "rank(term::Term) -> Int\nrank(::Type{T}) where T<:Term -> Int\n\nGet the rank of a term.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Terms.html#Hamiltonian.Interfaces.update!-Tuple{Term,Vararg{Any,N} where N}",
+    "page": "Terms",
+    "title": "Hamiltonian.Interfaces.update!",
+    "category": "method",
+    "text": "update!(term::Term,args...;kwargs...) -> Term\n\nUpdate the value of a term by its modulate function.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Terms.html#Hamiltonian.Interfaces.update!-Union{Tuple{Names}, Tuple{Boundary{Names,V,T} where T<:Function where V<:AbstractArray{Float64,1},Vararg{Any,N} where N}} where Names",
+    "page": "Terms",
+    "title": "Hamiltonian.Interfaces.update!",
+    "category": "method",
+    "text": "update!(bound::Boundary{Names},args...;kwargs...) where Names -> Boundary\n\nUpdate the values of the boundary twisted phase.\n\n\n\n\n\n"
 },
 
 {
@@ -4417,30 +4425,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.DegreesOfFreedom.oidtype-Tuple{Val{:Fock},Type{#s239} where #s239<:AbstractBond,Type{Nothing}}",
-    "page": "Fock package",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.oidtype",
-    "category": "method",
-    "text": "oidtype(::Val{:Fock},B::Type{<:AbstractBond},::Type{Nothing})\noidtype(::Val{:Fock},B::Type{<:AbstractBond},::Type{<:Table})\n\nGet the compatible Fock OID type with an AbstractBond type and a Table/Nothing type.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.DegreesOfFreedom.otype-Tuple{Val{:Fock},Type{#s237} where #s237<:(Term{\'F\',Species,V,N,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where N where V<:Number where Species),Type{#s236} where #s236<:AbstractBond,Type{#s235} where #s235<:Union{Nothing, Dict{I,Int64} where I<:Index}}",
-    "page": "Fock package",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.otype",
-    "category": "method",
-    "text": "otype(::Val{:Fock},O::Type{<:Term{\'F\'}},B::Type{<:AbstractBond},T::Type{<:Union{Nothing,Table}})\notype(::Val{:Fock},O::Type{<:Term{\'B\'}},B::Type{<:AbstractBond},T::Type{<:Union{Nothing,Table}})\n\nGet the compatible Fock operator type with a Term type, an AbstractBond type and a Table/Nothing type.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.DegreesOfFreedom.twist-Tuple{OID{#s238,RC,IC,S} where S<:Union{Nothing, Int64} where IC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where RC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where #s238<:FIndex,AbstractArray{#s237,1} where #s237<:AbstractArray{Float64,1},AbstractArray{Float64,1}}",
-    "page": "Fock package",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.twist",
-    "category": "method",
-    "text": "twist(id::OID{<:FIndex},vectors::AbstractVector{<:AbstractVector{Float}},values::AbstractVector{Float}) -> Complex{Float}\n\nGet the twist phase corresponding to a Fock oid.\n\n\n\n\n\n"
-},
-
-{
     "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.isnormalordered-Tuple{FockOperator}",
     "page": "Fock package",
     "title": "Hamiltonian.Essentials.FockPackage.isnormalordered",
@@ -4513,38 +4497,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.Terms.statistics-Tuple{BOperator}",
-    "page": "Fock package",
-    "title": "Hamiltonian.Essentials.Terms.statistics",
-    "category": "method",
-    "text": "statistics(opt::BOperator)\nstatistics(::Type{<:BOperator})\n\nGet the statistics of BOperator.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.Terms.statistics-Tuple{FOperator}",
-    "page": "Fock package",
-    "title": "Hamiltonian.Essentials.Terms.statistics",
-    "category": "method",
-    "text": "statistics(opt::FOperator) -> Char\nstatistics(::Type{<:FOperator}) -> Char\n\nGet the statistics of FOperator.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Prerequisites.Interfaces.:⊗-Union{Tuple{N}, Tuple{FockCoupling{N,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(ID{#s240} where #s240<:Tuple{Vararg{FCID,N}}) where V<:Number,FockCoupling{N,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(ID{#s240} where #s240<:Tuple{Vararg{FCID,N}}) where V<:Number}} where N",
-    "page": "Fock package",
-    "title": "Hamiltonian.Prerequisites.Interfaces.:⊗",
-    "category": "method",
-    "text": "⊗(fc1::FockCoupling{N},fc2::FockCoupling{N}) where N -> FockCoupling\n\nGet the direct product between two Fock couplings.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Prerequisites.Interfaces.expand-Union{Tuple{S}, Tuple{FockCoupling,PID,Fock}, Tuple{FockCoupling,PID,Fock,Union{Nothing, Val{S}}}} where S",
-    "page": "Fock package",
-    "title": "Hamiltonian.Prerequisites.Interfaces.expand",
-    "category": "method",
-    "text": "expand(fc::FockCoupling,pid::PID,fock::Fock,species::Union{Val{S},Nothing}=nothing) where S -> Union{FCExpand,Tuple{}}\nexpand(fc::FockCoupling,pids::NTuple{R,PID},focks::NTuple{R,Fock},species::Union{Val{S},Nothing}=nothing) where {R,S} -> Union{FCExpand,Tuple{}}\n\nExpand a Fock coupling with the given set of point ids and Fock degrees of freedom.\n\n\n\n\n\n"
-},
-
-{
     "location": "man/Essentials/FockPackage.html#Base.:*-Tuple{FockCoupling,FockCoupling}",
     "page": "Fock package",
     "title": "Base.:*",
@@ -4582,6 +4534,62 @@ var documenterSearchIndex = {"docs": [
     "title": "Base.union",
     "category": "method",
     "text": "union(::Type{P},::Type{FID}) where P<:PID\n\nGet the union type of PID and FID.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.DegreesOfFreedom.oidtype-Tuple{Val{:Fock},Type{#s239} where #s239<:AbstractBond,Type{Nothing}}",
+    "page": "Fock package",
+    "title": "Hamiltonian.Essentials.DegreesOfFreedom.oidtype",
+    "category": "method",
+    "text": "oidtype(::Val{:Fock},B::Type{<:AbstractBond},::Type{Nothing})\noidtype(::Val{:Fock},B::Type{<:AbstractBond},::Type{<:Table})\n\nGet the compatible Fock OID type with an AbstractBond type and a Table/Nothing type.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.DegreesOfFreedom.otype-Tuple{Val{:Fock},Type{#s237} where #s237<:(Term{\'F\',Species,V,N,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where N where V<:Number where Species),Type{#s236} where #s236<:AbstractBond,Type{#s235} where #s235<:Union{Nothing, Dict{I,Int64} where I<:Index}}",
+    "page": "Fock package",
+    "title": "Hamiltonian.Essentials.DegreesOfFreedom.otype",
+    "category": "method",
+    "text": "otype(::Val{:Fock},O::Type{<:Term{\'F\'}},B::Type{<:AbstractBond},T::Type{<:Union{Nothing,Table}})\notype(::Val{:Fock},O::Type{<:Term{\'B\'}},B::Type{<:AbstractBond},T::Type{<:Union{Nothing,Table}})\n\nGet the compatible Fock operator type with a Term type, an AbstractBond type and a Table/Nothing type.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.DegreesOfFreedom.twist-Tuple{OID{#s238,RC,IC,S} where S<:Union{Nothing, Int64} where IC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where RC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where #s238<:FIndex,AbstractArray{#s237,1} where #s237<:AbstractArray{Float64,1},AbstractArray{Float64,1}}",
+    "page": "Fock package",
+    "title": "Hamiltonian.Essentials.DegreesOfFreedom.twist",
+    "category": "method",
+    "text": "twist(id::OID{<:FIndex},vectors::AbstractVector{<:AbstractVector{Float}},values::AbstractVector{Float}) -> Complex{Float}\n\nGet the twist phase corresponding to a Fock oid.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.Terms.statistics-Tuple{BOperator}",
+    "page": "Fock package",
+    "title": "Hamiltonian.Essentials.Terms.statistics",
+    "category": "method",
+    "text": "statistics(opt::BOperator)\nstatistics(::Type{<:BOperator})\n\nGet the statistics of BOperator.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.Terms.statistics-Tuple{FOperator}",
+    "page": "Fock package",
+    "title": "Hamiltonian.Essentials.Terms.statistics",
+    "category": "method",
+    "text": "statistics(opt::FOperator) -> Char\nstatistics(::Type{<:FOperator}) -> Char\n\nGet the statistics of FOperator.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Interfaces.:⊗-Union{Tuple{N}, Tuple{FockCoupling{N,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(ID{#s240} where #s240<:Tuple{Vararg{FCID,N}}) where V<:Number,FockCoupling{N,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(ID{#s240} where #s240<:Tuple{Vararg{FCID,N}}) where V<:Number}} where N",
+    "page": "Fock package",
+    "title": "Hamiltonian.Interfaces.:⊗",
+    "category": "method",
+    "text": "⊗(fc1::FockCoupling{N},fc2::FockCoupling{N}) where N -> FockCoupling\n\nGet the direct product between two Fock couplings.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#Hamiltonian.Interfaces.expand-Union{Tuple{S}, Tuple{FockCoupling,PID,Fock}, Tuple{FockCoupling,PID,Fock,Union{Nothing, Val{S}}}} where S",
+    "page": "Fock package",
+    "title": "Hamiltonian.Interfaces.expand",
+    "category": "method",
+    "text": "expand(fc::FockCoupling,pid::PID,fock::Fock,species::Union{Val{S},Nothing}=nothing) where S -> Union{FCExpand,Tuple{}}\nexpand(fc::FockCoupling,pids::NTuple{R,PID},focks::NTuple{R,Fock},species::Union{Val{S},Nothing}=nothing) where {R,S} -> Union{FCExpand,Tuple{}}\n\nExpand a Fock coupling with the given set of point ids and Fock degrees of freedom.\n\n\n\n\n\n"
 },
 
 {
@@ -4745,22 +4753,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.DegreesOfFreedom.oidtype-Tuple{Val{:Spin},Type{#s239} where #s239<:AbstractBond,Type{Nothing}}",
-    "page": "Spin package",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.oidtype",
-    "category": "method",
-    "text": "oidtype(::Val{:Spin},B::Type{<:AbstractBond},::Type{Nothing})\noidtype(::Val{:Spin},B::Type{<:AbstractBond},::Type{<:Table})\n\nGet the compatible spin OID type with an AbstractBond type and a Table/Nothing type.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.DegreesOfFreedom.otype-Tuple{Val{:Spin},Type{#s237} where #s237<:(Term{\'B\',Species,V,N,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where N where V<:Number where Species),Type{#s236} where #s236<:AbstractBond,Type{#s235} where #s235<:Union{Nothing, Dict{I,Int64} where I<:Index}}",
-    "page": "Spin package",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.otype",
-    "category": "method",
-    "text": "otype(::Val{:Spin},O::Type{<:Term{\'B\'}},B::Type{<:AbstractBond},T::Type{<:Union{Nothing,Table}})\n\nGet the compatible spin operator type with a Term type, an AbstractBond type and a Table/Nothing type.\n\n\n\n\n\n"
-},
-
-{
     "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.SpinPackage.Heisenberg-Tuple{}",
     "page": "Spin package",
     "title": "Hamiltonian.Essentials.SpinPackage.Heisenberg",
@@ -4809,30 +4801,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.Terms.statistics-Tuple{SOperator}",
-    "page": "Spin package",
-    "title": "Hamiltonian.Essentials.Terms.statistics",
-    "category": "method",
-    "text": "statistics(opt::SOperator) -> Char\nstatistics(::Type{<:SOperator}) -> Char\n\nGet the statistics of SOperator.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Prerequisites.Interfaces.expand-Union{Tuple{S}, Tuple{SpinCoupling,PID,Spin}, Tuple{SpinCoupling,PID,Spin,Union{Nothing, Val{S}}}} where S",
-    "page": "Spin package",
-    "title": "Hamiltonian.Prerequisites.Interfaces.expand",
-    "category": "method",
-    "text": "expand(sc::SpinCoupling,pid::PID,spin::Spin,species::Union{Val{S},Nothing}=nothing) where S -> Union{SCExpand,Tuple{}}\nexpand(sc::SpinCoupling,pids::NTuple{N,PID},spins::NTuple{N,Spin},species::Union{Val{S},Nothing}=nothing) where {N,S} -> Union{SCExpand,Tuple{}}\n\nExpand a spin coupling with the given set of point ids and spin degrees of freedom.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Prerequisites.Interfaces.matrix",
-    "page": "Spin package",
-    "title": "Hamiltonian.Prerequisites.Interfaces.matrix",
-    "category": "function",
-    "text": "matrix(sid::SID,dtype::Type{<:Number}=Complex{Float}) -> Matrix{dtype}\n\nGet the matrix representation of a sid.\n\n\n\n\n\n"
-},
-
-{
     "location": "man/Essentials/SpinPackage.html#Base.:*-Tuple{SpinCoupling,SpinCoupling}",
     "page": "Spin package",
     "title": "Base.:*",
@@ -4870,6 +4838,46 @@ var documenterSearchIndex = {"docs": [
     "title": "Base.union",
     "category": "method",
     "text": "union(::Type{P},::Type{SID}) where {P<:PID}\n\nGet the union type of PID and SID.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.DegreesOfFreedom.oidtype-Tuple{Val{:Spin},Type{#s239} where #s239<:AbstractBond,Type{Nothing}}",
+    "page": "Spin package",
+    "title": "Hamiltonian.Essentials.DegreesOfFreedom.oidtype",
+    "category": "method",
+    "text": "oidtype(::Val{:Spin},B::Type{<:AbstractBond},::Type{Nothing})\noidtype(::Val{:Spin},B::Type{<:AbstractBond},::Type{<:Table})\n\nGet the compatible spin OID type with an AbstractBond type and a Table/Nothing type.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.DegreesOfFreedom.otype-Tuple{Val{:Spin},Type{#s237} where #s237<:(Term{\'B\',Species,V,N,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where N where V<:Number where Species),Type{#s236} where #s236<:AbstractBond,Type{#s235} where #s235<:Union{Nothing, Dict{I,Int64} where I<:Index}}",
+    "page": "Spin package",
+    "title": "Hamiltonian.Essentials.DegreesOfFreedom.otype",
+    "category": "method",
+    "text": "otype(::Val{:Spin},O::Type{<:Term{\'B\'}},B::Type{<:AbstractBond},T::Type{<:Union{Nothing,Table}})\n\nGet the compatible spin operator type with a Term type, an AbstractBond type and a Table/Nothing type.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.Terms.statistics-Tuple{SOperator}",
+    "page": "Spin package",
+    "title": "Hamiltonian.Essentials.Terms.statistics",
+    "category": "method",
+    "text": "statistics(opt::SOperator) -> Char\nstatistics(::Type{<:SOperator}) -> Char\n\nGet the statistics of SOperator.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Interfaces.expand-Union{Tuple{S}, Tuple{SpinCoupling,PID,Spin}, Tuple{SpinCoupling,PID,Spin,Union{Nothing, Val{S}}}} where S",
+    "page": "Spin package",
+    "title": "Hamiltonian.Interfaces.expand",
+    "category": "method",
+    "text": "expand(sc::SpinCoupling,pid::PID,spin::Spin,species::Union{Val{S},Nothing}=nothing) where S -> Union{SCExpand,Tuple{}}\nexpand(sc::SpinCoupling,pids::NTuple{N,PID},spins::NTuple{N,Spin},species::Union{Val{S},Nothing}=nothing) where {N,S} -> Union{SCExpand,Tuple{}}\n\nExpand a spin coupling with the given set of point ids and spin degrees of freedom.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Interfaces.matrix",
+    "page": "Spin package",
+    "title": "Hamiltonian.Interfaces.matrix",
+    "category": "function",
+    "text": "matrix(sid::SID,dtype::Type{<:Number}=Complex{Float}) -> Matrix{dtype}\n\nGet the matrix representation of a sid.\n\n\n\n\n\n"
 },
 
 {
