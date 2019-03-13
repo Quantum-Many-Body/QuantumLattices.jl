@@ -5,7 +5,7 @@
 [![][docs-latest-img]][docs-latest-url]
 
 ## Introduction
-Julia package for the description of quantum lattice systems, especially, the construction of their Hamiltonians.
+Julia package for the construction of quantum lattice systems.
 
 Based on the symbolic representation of the lattice Hamiltonians, algorithms/approaches, such as TBA, SCMF, ED, CPT/VCA, DMRG, etc, are implemented in other seperate packages (still in progess).
 
