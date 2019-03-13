@@ -5,15 +5,15 @@ var documenterSearchIndex = {"docs": [
     "page": "Home",
     "title": "Home",
     "category": "page",
-    "text": "CurrentModule=Hamiltonian"
+    "text": "CurrentModule=QuantumLattices"
 },
 
 {
-    "location": "index.html#Hamiltonian-1",
+    "location": "index.html#QuantumLattices-1",
     "page": "Home",
-    "title": "Hamiltonian",
+    "title": "QuantumLattices",
     "category": "section",
-    "text": "Julia package for constructing and solving the Hamiltonians of quantum lattice systems.We provide a general framework to construct the symbolic representation of the Hamiltonian of any quantum lattice system, with the inputs as simple as its description by natural language. Based on this symbolic representation, we implement several algorithms, such as TBA, ED, CPT/VCA, DMRG, etc., to solve the quantum lattice system. Generic interfaces are offered to access to these algorithms. Only minor modifications need be made when the user alters from an algorithm to another."
+    "text": "Julia package for constructing the Hamiltonians of quantum lattice systems.We provide a general framework to construct the symbolic representation of the Hamiltonian of any quantum lattice system, with the inputs as simple as its description by natural language. This symbolic representation serves as the prerequisite of solving quantum many-body problems, based on which several algorithms, such as TBA(tight-bind approximation), SCMF(self-consistent mean field theory), ED(exact diagonalizaiton), CPT/VCA(cluster perturbation theory and variational cluster approach ), DMRG(density matrix renormalization group), etc. can be implemented. Generic interfaces are defined to give a unified access to these algorithms although their real implementations come in seperate packages. Only minor modifications need be made when the user alters from one algorithm to another."
 },
 
 {
@@ -29,7 +29,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Home",
     "title": "Supported Algorithms",
     "category": "section",
-    "text": "TBA: tight-binding approximation for fermionic/bosonic systems;\nED: exact diagonalizaiton for fermionic/hard-core-bosonic/spin systems;\nCPT/VCA: cluster perturbation theory and variational cluster approach for fermionic systems;\nDMRG: density matrix renormalization group for fermionic/hard-core-bosonic/spin systems;\nFBFM: spin wave theory for flatband ferromagnets."
+    "text": "Concrete algorithms are implemented in seperate packages (still in progess):TBA: tight-binding approximation for fermionic/bosonic systems;\nSCMF: self-consistent mean field theory for fermionic systems;\nED: exact diagonalizaiton for fermionic/hard-core-bosonic/spin systems;\nCPT/VCA: cluster perturbation theory and variational cluster approach for fermionic systems;\nDMRG: density matrix renormalization group for fermionic/hard-core-bosonic/spin systems;\nFBFMSW: spin wave theory for flatband ferromagnets."
 },
 
 {
@@ -69,7 +69,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Engine App Interface",
     "title": "Engine App Interface",
     "category": "section",
-    "text": "Althogh we can get the symbolic representation of the Hamiltonian by our unitcell-description framework, there still remains a long way to implement concrete algorithms such as TBA, ED, etc. Despite the quite different techinal details, algorithms shares common functionalities to be furnished with:provide tasks to be conducted with controlling parameters;\nrecord the results of some tasks for later use or analysis;\nupdate some parameters of the Hamiltonian to reconduct tasks;\nkeep logs during code executions for debug;\ncahe intermediate data to improve efficienty;\n...We thus provide a set of generic interfaces to resolve these problems, basiscally in the so called Engine-App mode. Specifically, algorithms are treated as Engine and taks as App. Engine deals with the cores of algorithms along with file mangament, parameter updating and data caching, while App decides the concrete tasks to be conducted and provides hyper controlling parameters."
+    "text": "Althogh we can get the symbolic representation of the QuantumLattices by our unitcell-description framework, there still remains a long way to implement concrete algorithms such as TBA, ED, etc. Despite the quite different techinal details, algorithms shares common functionalities to be furnished with:provide tasks to be conducted with controlling parameters;\nrecord the results of some tasks for later use or analysis;\nupdate some parameters of the QuantumLattices to reconduct tasks;\nkeep logs during code executions for debug;\ncahe intermediate data to improve efficienty;\n...We thus provide a set of generic interfaces to resolve these problems, basiscally in the so called Engine-App mode. Specifically, algorithms are treated as Engine and taks as App. Engine deals with the cores of algorithms along with file mangament, parameter updating and data caching, while App decides the concrete tasks to be conducted and provides hyper controlling parameters."
 },
 
 {
@@ -77,7 +77,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Interfaces",
     "title": "Interfaces",
     "category": "page",
-    "text": "CurrentModule=Hamiltonian.Interfaces"
+    "text": "CurrentModule=QuantumLattices.Interfaces"
 },
 
 {
@@ -89,145 +89,145 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Interfaces.html#Hamiltonian.Interfaces.:⊕",
+    "location": "man/Interfaces.html#QuantumLattices.Interfaces.:⊕",
     "page": "Interfaces",
-    "title": "Hamiltonian.Interfaces.:⊕",
+    "title": "QuantumLattices.Interfaces.:⊕",
     "category": "function",
     "text": "Direct sum.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Interfaces.html#Hamiltonian.Interfaces.:⊗",
+    "location": "man/Interfaces.html#QuantumLattices.Interfaces.:⊗",
     "page": "Interfaces",
-    "title": "Hamiltonian.Interfaces.:⊗",
+    "title": "QuantumLattices.Interfaces.:⊗",
     "category": "function",
     "text": "Direct product.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Interfaces.html#Hamiltonian.Interfaces.add!",
+    "location": "man/Interfaces.html#QuantumLattices.Interfaces.add!",
     "page": "Interfaces",
-    "title": "Hamiltonian.Interfaces.add!",
+    "title": "QuantumLattices.Interfaces.add!",
     "category": "function",
     "text": "Inplace addition.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Interfaces.html#Hamiltonian.Interfaces.decompose",
+    "location": "man/Interfaces.html#QuantumLattices.Interfaces.decompose",
     "page": "Interfaces",
-    "title": "Hamiltonian.Interfaces.decompose",
+    "title": "QuantumLattices.Interfaces.decompose",
     "category": "function",
     "text": "Decompose.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Interfaces.html#Hamiltonian.Interfaces.degree",
+    "location": "man/Interfaces.html#QuantumLattices.Interfaces.degree",
     "page": "Interfaces",
-    "title": "Hamiltonian.Interfaces.degree",
+    "title": "QuantumLattices.Interfaces.degree",
     "category": "function",
     "text": "Degree\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Interfaces.html#Hamiltonian.Interfaces.dimension",
+    "location": "man/Interfaces.html#QuantumLattices.Interfaces.dimension",
     "page": "Interfaces",
-    "title": "Hamiltonian.Interfaces.dimension",
+    "title": "QuantumLattices.Interfaces.dimension",
     "category": "function",
     "text": "Dimension.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Interfaces.html#Hamiltonian.Interfaces.dims",
+    "location": "man/Interfaces.html#QuantumLattices.Interfaces.dims",
     "page": "Interfaces",
-    "title": "Hamiltonian.Interfaces.dims",
+    "title": "QuantumLattices.Interfaces.dims",
     "category": "function",
     "text": "Dimensions.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Interfaces.html#Hamiltonian.Interfaces.div!",
+    "location": "man/Interfaces.html#QuantumLattices.Interfaces.div!",
     "page": "Interfaces",
-    "title": "Hamiltonian.Interfaces.div!",
+    "title": "QuantumLattices.Interfaces.div!",
     "category": "function",
     "text": "Inplace division.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Interfaces.html#Hamiltonian.Interfaces.expand",
+    "location": "man/Interfaces.html#QuantumLattices.Interfaces.expand",
     "page": "Interfaces",
-    "title": "Hamiltonian.Interfaces.expand",
+    "title": "QuantumLattices.Interfaces.expand",
     "category": "function",
     "text": "Get the expansion.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Interfaces.html#Hamiltonian.Interfaces.index",
+    "location": "man/Interfaces.html#QuantumLattices.Interfaces.index",
     "page": "Interfaces",
-    "title": "Hamiltonian.Interfaces.index",
+    "title": "QuantumLattices.Interfaces.index",
     "category": "function",
     "text": "Index.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Interfaces.html#Hamiltonian.Interfaces.inds",
+    "location": "man/Interfaces.html#QuantumLattices.Interfaces.inds",
     "page": "Interfaces",
-    "title": "Hamiltonian.Interfaces.inds",
+    "title": "QuantumLattices.Interfaces.inds",
     "category": "function",
     "text": "Indices.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Interfaces.html#Hamiltonian.Interfaces.matrix",
+    "location": "man/Interfaces.html#QuantumLattices.Interfaces.matrix",
     "page": "Interfaces",
-    "title": "Hamiltonian.Interfaces.matrix",
+    "title": "QuantumLattices.Interfaces.matrix",
     "category": "function",
     "text": "Matrix representation.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Interfaces.html#Hamiltonian.Interfaces.mul!",
+    "location": "man/Interfaces.html#QuantumLattices.Interfaces.mul!",
     "page": "Interfaces",
-    "title": "Hamiltonian.Interfaces.mul!",
+    "title": "QuantumLattices.Interfaces.mul!",
     "category": "function",
     "text": "Inplace multiplication.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Interfaces.html#Hamiltonian.Interfaces.permute",
+    "location": "man/Interfaces.html#QuantumLattices.Interfaces.permute",
     "page": "Interfaces",
-    "title": "Hamiltonian.Interfaces.permute",
+    "title": "QuantumLattices.Interfaces.permute",
     "category": "function",
     "text": "Get the permutation.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Interfaces.html#Hamiltonian.Interfaces.rank",
+    "location": "man/Interfaces.html#QuantumLattices.Interfaces.rank",
     "page": "Interfaces",
-    "title": "Hamiltonian.Interfaces.rank",
+    "title": "QuantumLattices.Interfaces.rank",
     "category": "function",
     "text": "Rank.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Interfaces.html#Hamiltonian.Interfaces.sub!",
+    "location": "man/Interfaces.html#QuantumLattices.Interfaces.sub!",
     "page": "Interfaces",
-    "title": "Hamiltonian.Interfaces.sub!",
+    "title": "QuantumLattices.Interfaces.sub!",
     "category": "function",
     "text": "Inplace subtraction.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Interfaces.html#Hamiltonian.Interfaces.vector",
+    "location": "man/Interfaces.html#QuantumLattices.Interfaces.vector",
     "page": "Interfaces",
-    "title": "Hamiltonian.Interfaces.vector",
+    "title": "QuantumLattices.Interfaces.vector",
     "category": "function",
     "text": "Vector representation.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Interfaces.html#Hamiltonian.Interfaces.update!",
+    "location": "man/Interfaces.html#QuantumLattices.Interfaces.update!",
     "page": "Interfaces",
-    "title": "Hamiltonian.Interfaces.update!",
+    "title": "QuantumLattices.Interfaces.update!",
     "category": "function",
     "text": "Inplace Update.\n\n\n\n\n\n"
 },
@@ -245,7 +245,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "Introduction",
     "category": "page",
-    "text": "CurrentModule=Hamiltonian.Prerequisites"
+    "text": "CurrentModule=QuantumLattices.Prerequisites"
 },
 
 {
@@ -253,53 +253,53 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "Introduction",
     "category": "section",
-    "text": "This module contains the prerequisites of the Hamiltonian package.The constants, types, macros, functions or submodules defined in this module will NOT be exported by the package. Instead, they serve as the prerequisites and fundamentals. The range of the contents are quite wide, but basically, they fall into 2 categories:Global constants and miscellaneous tiny useful functions;\nBasic data structures as supplements to the Julia.Base and other common packages.The first category is contained in the main body of this module, while the other comes in separate submodules."
+    "text": "This module contains the prerequisites of the QuantumLattices package.The constants, types, macros, functions or submodules defined in this module will NOT be exported by the package. Instead, they serve as the prerequisites and fundamentals. The range of the contents are quite wide, but basically, they fall into 2 categories:Global constants and miscellaneous tiny useful functions;\nBasic data structures as supplements to the Julia.Base and other common packages.The first category is contained in the main body of this module, while the other comes in separate submodules."
 },
 
 {
-    "location": "man/Prerequisites/Introduction.html#Hamiltonian.Prerequisites.atol",
+    "location": "man/Prerequisites/Introduction.html#QuantumLattices.Prerequisites.atol",
     "page": "Introduction",
-    "title": "Hamiltonian.Prerequisites.atol",
+    "title": "QuantumLattices.Prerequisites.atol",
     "category": "constant",
     "text": "Absolute tolerance for float numbers.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Introduction.html#Hamiltonian.Prerequisites.rtol",
+    "location": "man/Prerequisites/Introduction.html#QuantumLattices.Prerequisites.rtol",
     "page": "Introduction",
-    "title": "Hamiltonian.Prerequisites.rtol",
+    "title": "QuantumLattices.Prerequisites.rtol",
     "category": "constant",
     "text": "Relative tolerance for float numbers.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Introduction.html#Hamiltonian.Prerequisites.Float",
+    "location": "man/Prerequisites/Introduction.html#QuantumLattices.Prerequisites.Float",
     "page": "Introduction",
-    "title": "Hamiltonian.Prerequisites.Float",
+    "title": "QuantumLattices.Prerequisites.Float",
     "category": "type",
     "text": "Default float type.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Introduction.html#Hamiltonian.Prerequisites.decimaltostr",
+    "location": "man/Prerequisites/Introduction.html#QuantumLattices.Prerequisites.decimaltostr",
     "page": "Introduction",
-    "title": "Hamiltonian.Prerequisites.decimaltostr",
+    "title": "QuantumLattices.Prerequisites.decimaltostr",
     "category": "function",
     "text": "decimaltostr(number::Integer,n::Int=5)\ndecimaltostr(number::Rational,n::Int=5)\ndecimaltostr(number::AbstractFloat,n::Int=5)\ndecimaltostr(number::Complex,n::Int=5)\n\nConvert a number to a string with at most n decimal places.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Introduction.html#Hamiltonian.Prerequisites.ordinal",
+    "location": "man/Prerequisites/Introduction.html#QuantumLattices.Prerequisites.ordinal",
     "page": "Introduction",
-    "title": "Hamiltonian.Prerequisites.ordinal",
+    "title": "QuantumLattices.Prerequisites.ordinal",
     "category": "function",
     "text": "ordinal(number::Interger)\n\nConvert a positive number to its corresponding ordinal.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Introduction.html#Hamiltonian.Prerequisites.delta",
+    "location": "man/Prerequisites/Introduction.html#QuantumLattices.Prerequisites.delta",
     "page": "Introduction",
-    "title": "Hamiltonian.Prerequisites.delta",
+    "title": "QuantumLattices.Prerequisites.delta",
     "category": "function",
     "text": "delta(i,j) -> Int\n\nKronecker delta function.\n\n\n\n\n\n"
 },
@@ -325,7 +325,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Type traits",
     "title": "Type traits",
     "category": "page",
-    "text": "CurrentModule=Hamiltonian.Prerequisites.TypeTraits"
+    "text": "CurrentModule=QuantumLattices.Prerequisites.TypeTraits"
 },
 
 {
@@ -353,47 +353,47 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/TypeTraits.html#Hamiltonian.Prerequisites.TypeTraits.corder",
+    "location": "man/Prerequisites/TypeTraits.html#QuantumLattices.Prerequisites.TypeTraits.corder",
     "page": "Type traits",
-    "title": "Hamiltonian.Prerequisites.TypeTraits.corder",
+    "title": "QuantumLattices.Prerequisites.TypeTraits.corder",
     "category": "constant",
     "text": "corder\n\nIndicate that the convertion between Cartesian index and linear index is using the C/C++ order.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/TypeTraits.html#Hamiltonian.Prerequisites.TypeTraits.efficientoperations",
+    "location": "man/Prerequisites/TypeTraits.html#QuantumLattices.Prerequisites.TypeTraits.efficientoperations",
     "page": "Type traits",
-    "title": "Hamiltonian.Prerequisites.TypeTraits.efficientoperations",
+    "title": "QuantumLattices.Prerequisites.TypeTraits.efficientoperations",
     "category": "constant",
     "text": "efficientoperations\n\nIndicate that the efficient operations, i.e. \"==\"/\"isequal\", \"<\"/\"isless\" or \"replace\", will be used.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/TypeTraits.html#Hamiltonian.Prerequisites.TypeTraits.forder",
+    "location": "man/Prerequisites/TypeTraits.html#QuantumLattices.Prerequisites.TypeTraits.forder",
     "page": "Type traits",
-    "title": "Hamiltonian.Prerequisites.TypeTraits.forder",
+    "title": "QuantumLattices.Prerequisites.TypeTraits.forder",
     "category": "constant",
     "text": "forder\n\nIndicate that the convertion between Cartesian index and linear index is using the Fortran order.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/TypeTraits.html#Hamiltonian.Prerequisites.TypeTraits.indtosub-Tuple{Tuple,Int64,Hamiltonian.Prerequisites.TypeTraits.FOrder}",
+    "location": "man/Prerequisites/TypeTraits.html#QuantumLattices.Prerequisites.TypeTraits.indtosub-Tuple{Tuple,Int64,QuantumLattices.Prerequisites.TypeTraits.FOrder}",
     "page": "Type traits",
-    "title": "Hamiltonian.Prerequisites.TypeTraits.indtosub",
+    "title": "QuantumLattices.Prerequisites.TypeTraits.indtosub",
     "category": "method",
     "text": "indtosub(dims::Tuple,ind::Int,order::FOrder) -> Tuple\nindtosub(dims::Tuple,ind::Int,order::COrder) -> Tuple\n\nConvert an linear index to Cartesian index. Fortran-order or C-order can be assigned.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/TypeTraits.html#Hamiltonian.Prerequisites.TypeTraits.subtoind-Union{Tuple{N}, Tuple{Tuple{Vararg{Int64,N}},Tuple{Vararg{Int64,N}},FOrder}} where N",
+    "location": "man/Prerequisites/TypeTraits.html#QuantumLattices.Prerequisites.TypeTraits.subtoind-Union{Tuple{N}, Tuple{Tuple{Vararg{Int64,N}},Tuple{Vararg{Int64,N}},FOrder}} where N",
     "page": "Type traits",
-    "title": "Hamiltonian.Prerequisites.TypeTraits.subtoind",
+    "title": "QuantumLattices.Prerequisites.TypeTraits.subtoind",
     "category": "method",
     "text": "subtoind(dims::NTuple{N,Int},inds::NTuple{N,Int},order::FOrder) where N -> Int\nsubtoind(dims::NTuple{N,Int},inds::NTuple{N,Int},order::COrder) where N -> Int\n\nConvert an Cartesian index to linear index. Fortran-order or C-order can be assigned.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/TypeTraits.html#Base.:<-Tuple{Hamiltonian.Prerequisites.TypeTraits.EfficientOperations,Any,Any}",
+    "location": "man/Prerequisites/TypeTraits.html#Base.:<-Tuple{QuantumLattices.Prerequisites.TypeTraits.EfficientOperations,Any,Any}",
     "page": "Type traits",
     "title": "Base.:<",
     "category": "method",
@@ -401,7 +401,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/TypeTraits.html#Base.:==-Tuple{Hamiltonian.Prerequisites.TypeTraits.EfficientOperations,Any,Any}",
+    "location": "man/Prerequisites/TypeTraits.html#Base.:==-Tuple{QuantumLattices.Prerequisites.TypeTraits.EfficientOperations,Any,Any}",
     "page": "Type traits",
     "title": "Base.:==",
     "category": "method",
@@ -417,7 +417,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/TypeTraits.html#Base.replace-Tuple{Hamiltonian.Prerequisites.TypeTraits.EfficientOperations,Any}",
+    "location": "man/Prerequisites/TypeTraits.html#Base.replace-Tuple{QuantumLattices.Prerequisites.TypeTraits.EfficientOperations,Any}",
     "page": "Type traits",
     "title": "Base.replace",
     "category": "method",
@@ -437,7 +437,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Factories",
     "title": "Factories",
     "category": "page",
-    "text": "CurrentModule=Hamiltonian.Prerequisites.Factoriespush!(LOAD_PATH,\"../../../../src/\")\nusing Hamiltonian.Prerequisites.Factories"
+    "text": "CurrentModule=QuantumLattices.Prerequisites.Factoriespush!(LOAD_PATH,\"../../../../src/\")\nusing QuantumLattices.Prerequisites.Factories"
 },
 
 {
@@ -561,375 +561,303 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.FExpr",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.FExpr",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.FExpr",
+    "title": "QuantumLattices.Prerequisites.Factories.FExpr",
     "category": "constant",
     "text": "Factory expression types, which is defined as Union{Symbol,Expr}.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.rawexpr",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.rawexpr",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.rawexpr",
+    "title": "QuantumLattices.Prerequisites.Factories.rawexpr",
     "category": "constant",
     "text": "rawexpr\n\nIndicate that no variable in a factory should be escaped.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.Argument",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.Argument",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.Argument",
+    "title": "QuantumLattices.Prerequisites.Factories.Argument",
     "category": "type",
     "text": "Argument(name::Union{Symbol,Nothing},type::Inference,slurp::Bool,default::Any)\nArgument(;name::Union{Symbol,Nothing}=nothing,type::Inference=Inference(:Any),slurp::Bool=false,default::Any=nothing)\nArgument(expr::FExpr)\n\nThe struct to describe a argument of a function.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.Argument-Tuple{Hamiltonian.Prerequisites.Factories.RawExpr}",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.Argument-Tuple{QuantumLattices.Prerequisites.Factories.RawExpr}",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.Argument",
+    "title": "QuantumLattices.Prerequisites.Factories.Argument",
     "category": "method",
     "text": "(a::Argument)(em::RawExpr) -> Expr\n(a::Argument)(em::MixEscaped) -> Expr\n\nConvert an Argument to the Expr representation of the argument it describes.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.Block",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.Block",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.Block",
+    "title": "QuantumLattices.Prerequisites.Factories.Block",
     "category": "type",
     "text": "Block(parts::FExpr...)\n\nThe struct to describe a begin ... end block.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.Block-Tuple{Hamiltonian.Prerequisites.Factories.MixEscaped}",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.Block-Tuple{QuantumLattices.Prerequisites.Factories.MixEscaped}",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.Block",
+    "title": "QuantumLattices.Prerequisites.Factories.Block",
     "category": "method",
     "text": "(b::Block)(em::RawExpr) -> Expr\n(b::Block)(em::Escaped) -> Expr\n(b::Block)(em::MixEscaped) -> Expr\n\nConvert a Block to the Expr representation of the begin ... end block it describes.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.Escaped",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.Escaped",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.Escaped",
+    "title": "QuantumLattices.Prerequisites.Factories.Escaped",
     "category": "type",
     "text": "Escaped(names::Symbol...)\n\nIndicate that symbols of a factory should be escaped if they are in names.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.Field",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.Field",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.Field",
+    "title": "QuantumLattices.Prerequisites.Factories.Field",
     "category": "type",
     "text": "Field(name::Symbol,type::Inference)\nField(;name::Symbol,type::FExpr=Inference(:Any))\nField(expr::FExpr)\n\nThe struct to describe a field of a struct.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.Field-Tuple{Union{RawExpr, #s20, #s19} where #s19<:Hamiltonian.Prerequisites.Factories.MixEscaped where #s20<:Hamiltonian.Prerequisites.Factories.UnEscaped}",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.Field-Tuple{Union{RawExpr, #s20, #s19} where #s19<:QuantumLattices.Prerequisites.Factories.MixEscaped where #s20<:QuantumLattices.Prerequisites.Factories.UnEscaped}",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.Field",
+    "title": "QuantumLattices.Prerequisites.Factories.Field",
     "category": "method",
     "text": "(f::Field)(em::RawExpr) -> Expr\n(f::Field)(em::UnEscaped) -> Expr\n(f::Field)(em::MixEscaped) -> Expr\n\nConvert a Field to the Expr representation of the field it describes.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.FunctionFactory",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.FunctionFactory",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.FunctionFactory",
+    "title": "QuantumLattices.Prerequisites.Factories.FunctionFactory",
     "category": "type",
     "text": "FunctionFactory(name::FExpr,params::Vector{Inference},args::Vector{Argument},kwargs::Vector{Argument},rtype::Inference,whereparams::Vector{Parameter},body::Block)\nFunctionFactory(    ;name::FExpr,\n                    params::Vector{Inference}=Inference[],\n                    args::Vector{Argument}=Argument[],\n                    kwargs::Vector{Argument}=Argument[],\n                    rtype::Inference=Inference(:Any),\n                    whereparams::Vector{Parameter}=Parameter[],\n                    body::Block=Block()\n                    )\nFunctionFactory(expr::Expr)\n\nThe struct to describe a function.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.FunctionFactory-Tuple{Union{RawExpr, #s21} where #s21<:Hamiltonian.Prerequisites.Factories.MixEscaped}",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.FunctionFactory-Tuple{Union{RawExpr, #s21} where #s21<:QuantumLattices.Prerequisites.Factories.MixEscaped}",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.FunctionFactory",
+    "title": "QuantumLattices.Prerequisites.Factories.FunctionFactory",
     "category": "method",
     "text": "(ff::FunctionFactory)(em::RawExpr) -> Expr\n(ff::FunctionFactory)(em::MixEscaped) -> Expr\n\nConvert a FunctionFactory to the Expr representation of the function it describes.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.Inference",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.Inference",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.Inference",
+    "title": "QuantumLattices.Prerequisites.Factories.Inference",
     "category": "type",
     "text": "Inference(head::Union{Symbol,Nothing},name::Union{Symbol,Nothing},params::Union{Inference,Vector{Inference},Nothing})\nInference(;\n        head::Union{Symbol,Nothing}=nothing,\n        name::Union{Symbol,Nothing}=nothing,\n        params::Union{Inference,Vector{Inference},Nothing}=nothing,\n        )\nInference(expr::FExpr)\n\nThe struct to describe a type inference.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.Inference-Tuple{Hamiltonian.Prerequisites.Factories.MixEscaped}",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.Inference-Tuple{QuantumLattices.Prerequisites.Factories.MixEscaped}",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.Inference",
+    "title": "QuantumLattices.Prerequisites.Factories.Inference",
     "category": "method",
     "text": "(i::Inference)(em::RawExpr) -> FExpr\n(i::Inference)(em::UnEscaped) -> FExpr\n(i::Inference)(em::MixEscaped) -> FExpr\n\nConvert a Inference to the Expr representation of the type inference it describes.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.MixEscaped",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.MixEscaped",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.MixEscaped",
+    "title": "QuantumLattices.Prerequisites.Factories.MixEscaped",
     "category": "type",
     "text": "MixEscaped(escaped::Escaped)\nMixEscaped(unescaped::UnEscaped)\nMixEscaped(escaped::Escaped,unescaped::UnEscaped)\nMixEscaped(unescaped::UnEscaped,escaped::Escaped)\n\nIndicate that some parts of a factory use the Escaped mechanism while other parts use the UnEscaped mechanism.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.Parameter",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.Parameter",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.Parameter",
+    "title": "QuantumLattices.Prerequisites.Factories.Parameter",
     "category": "type",
     "text": "Parameter(name::Union{Symbol,Nothing},type::Union{Inference,Nothing})\nParameter(;name::Union{Symbol,Nothing}=nothing,type::Union{Inference,Nothing}=nothing)\nParameter(expr::FExpr)\n\nThe struct to describe a parameter of a function or a type.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.Parameter-Tuple{Union{RawExpr, #s20, #s19} where #s19<:Hamiltonian.Prerequisites.Factories.MixEscaped where #s20<:Hamiltonian.Prerequisites.Factories.UnEscaped}",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.Parameter-Tuple{Union{RawExpr, #s20, #s19} where #s19<:QuantumLattices.Prerequisites.Factories.MixEscaped where #s20<:QuantumLattices.Prerequisites.Factories.UnEscaped}",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.Parameter",
+    "title": "QuantumLattices.Prerequisites.Factories.Parameter",
     "category": "method",
     "text": "(p::Parameter)(em::RawExpr) -> FExpr\n(p::Parameter)(em::UnEscaped) -> FExpr\n(p::Parameter)(em::MixEscaped) -> FExpr\n\nConvert a Parameter to the Expr representation of the parameter it describes.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.RawExpr",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.RawExpr",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.RawExpr",
+    "title": "QuantumLattices.Prerequisites.Factories.RawExpr",
     "category": "type",
     "text": "Raw expression without any variable escaped.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.TypeFactory",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.TypeFactory",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.TypeFactory",
+    "title": "QuantumLattices.Prerequisites.Factories.TypeFactory",
     "category": "type",
     "text": "TypeFactory(name::Symbol,mutable::Bool,params::Vector{Parameter},supertype::Inference,fields::Vector{Field},constructors::Vector{FunctionFactory})\nTypeFactory(    ;name::Symbol,\n                mutable::Bool=false,\n                params::Vector{Parameter}=Parameter[],\n                supertype::Inference=Inference(:Any),\n                fields::Vector{Field}=Field[],\n                constructors::Vector{FunctionFactory}=FunctionFactory[],\n                )\nTypeFactory(expr::Expr)\n\nThe struct to describe a struct.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.TypeFactory-Tuple{Union{RawExpr, #s21} where #s21<:Hamiltonian.Prerequisites.Factories.MixEscaped}",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.TypeFactory-Tuple{Union{RawExpr, #s21} where #s21<:QuantumLattices.Prerequisites.Factories.MixEscaped}",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.TypeFactory",
+    "title": "QuantumLattices.Prerequisites.Factories.TypeFactory",
     "category": "method",
     "text": "(tf::TypeFactory)(em::RawExpr) -> Expr\n(tf::TypeFactory)(em::MixEscaped) -> Expr\n\nConvert a TypeFactory to the Expr representation of the struct it describes.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.UnEscaped",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.UnEscaped",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.UnEscaped",
+    "title": "QuantumLattices.Prerequisites.Factories.UnEscaped",
     "category": "type",
     "text": "UnEscaped(names::Symbol...)\n\nIIndicate that symbols of a factory should be escaped if they are not in names.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.@addargs!-Tuple{Any,Vararg{Union{Expr, Symbol},N} where N}",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.@addargs!-Tuple{Any,Vararg{Union{Expr, Symbol},N} where N}",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.@addargs!",
+    "title": "QuantumLattices.Prerequisites.Factories.@addargs!",
     "category": "macro",
     "text": "@addargs! ff args::FExpr...\n\nAdd a couple of positional arguments to a function factory.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.@addconstructors!-Tuple{Any,Vararg{Expr,N} where N}",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.@addconstructors!-Tuple{Any,Vararg{Expr,N} where N}",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.@addconstructors!",
+    "title": "QuantumLattices.Prerequisites.Factories.@addconstructors!",
     "category": "macro",
     "text": "@addconstructors! tf constructors::Expr...\n\nAdd a couple of constructors to a type factory.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.@addfields!-Tuple{Any,Vararg{Union{Expr, Symbol},N} where N}",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.@addfields!-Tuple{Any,Vararg{Union{Expr, Symbol},N} where N}",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.@addfields!",
+    "title": "QuantumLattices.Prerequisites.Factories.@addfields!",
     "category": "macro",
     "text": "@addfields! tf fields::FExpr...\n\nAdd a couple of fields to a type factory.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.@addkwargs!-Tuple{Any,Vararg{Union{Expr, Symbol},N} where N}",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.@addkwargs!-Tuple{Any,Vararg{Union{Expr, Symbol},N} where N}",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.@addkwargs!",
+    "title": "QuantumLattices.Prerequisites.Factories.@addkwargs!",
     "category": "macro",
     "text": "@addkwargs! ff kwargs::FExpr...\n\nAdd a couple of keyword arguments to a function factory.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.@addparams!-Tuple{Any,Vararg{Union{Expr, Symbol},N} where N}",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.@addparams!-Tuple{Any,Vararg{Union{Expr, Symbol},N} where N}",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.@addparams!",
+    "title": "QuantumLattices.Prerequisites.Factories.@addparams!",
     "category": "macro",
     "text": "@addparams! f params::FExpr...\n\nAdd a couple of method parameters to a function factory or a type factory.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.@addwhereparams!-Tuple{Any,Vararg{Union{Expr, Symbol},N} where N}",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.@addwhereparams!-Tuple{Any,Vararg{Union{Expr, Symbol},N} where N}",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.@addwhereparams!",
+    "title": "QuantumLattices.Prerequisites.Factories.@addwhereparams!",
     "category": "macro",
     "text": "@addwhereparams! ff whereparams::FExpr...\n\nAdd a couple of method parameters to a function factory or a type factory.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.@argument-Tuple{Union{Expr, Symbol}}",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.@argument-Tuple{Union{Expr, Symbol}}",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.@argument",
+    "title": "QuantumLattices.Prerequisites.Factories.@argument",
     "category": "macro",
     "text": "@argument expr::FExpr\n\nConstruct an Argument directly from an argument statement.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.@block-Tuple{Vararg{Union{Expr, Symbol},N} where N}",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.@block-Tuple{Vararg{Union{Expr, Symbol},N} where N}",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.@block",
+    "title": "QuantumLattices.Prerequisites.Factories.@block",
     "category": "macro",
     "text": "@block parts::FExpr...\n\nConstruct a Block directly from a begin ... end block definition.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.@extendbody!-Tuple{Any,Vararg{Union{Expr, Symbol},N} where N}",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.@extendbody!-Tuple{Any,Vararg{Union{Expr, Symbol},N} where N}",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.@extendbody!",
+    "title": "QuantumLattices.Prerequisites.Factories.@extendbody!",
     "category": "macro",
     "text": "@extendbody! ff parts::FExpr...\n\nExtend the body of a function factory.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.@field-Tuple{Union{Expr, Symbol}}",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.@field-Tuple{Union{Expr, Symbol}}",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.@field",
+    "title": "QuantumLattices.Prerequisites.Factories.@field",
     "category": "macro",
     "text": "@field expr::FExpr\n\nConstruct a Field directly from a field statement.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.@functionfactory-Tuple{Expr}",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.@functionfactory-Tuple{Expr}",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.@functionfactory",
+    "title": "QuantumLattices.Prerequisites.Factories.@functionfactory",
     "category": "macro",
     "text": "@functionfactory expr::FExpr\n\nConstruct a FunctionFactory directly from a function definition.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.@inference-Tuple{Union{Expr, Symbol}}",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.@inference-Tuple{Union{Expr, Symbol}}",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.@inference",
+    "title": "QuantumLattices.Prerequisites.Factories.@inference",
     "category": "macro",
     "text": "@inference expr::FExpr\n\nConstruct an Inference directly from a type inference.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.@parameter-Tuple{Union{Expr, Symbol}}",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.@parameter-Tuple{Union{Expr, Symbol}}",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.@parameter",
+    "title": "QuantumLattices.Prerequisites.Factories.@parameter",
     "category": "macro",
     "text": "@parameter expr::FExpr\n\nConstruct a Parameter directly from an parameter statement.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.@push!-Tuple{Any,Vararg{Union{Expr, Symbol},N} where N}",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.@push!-Tuple{Any,Vararg{Union{Expr, Symbol},N} where N}",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.@push!",
+    "title": "QuantumLattices.Prerequisites.Factories.@push!",
     "category": "macro",
     "text": "@push! b parts::FExpr...\n\nPush other parts into the body of a block.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.@rmlines!-Tuple{Expr}",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.@rmlines!-Tuple{Expr}",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.@rmlines!",
+    "title": "QuantumLattices.Prerequisites.Factories.@rmlines!",
     "category": "macro",
     "text": "@rmlines! b::Expr\n\nRemove line number nodes in the body of a block.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.@rmlines-Tuple{Expr}",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.@rmlines-Tuple{Expr}",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.@rmlines",
+    "title": "QuantumLattices.Prerequisites.Factories.@rmlines",
     "category": "macro",
     "text": "@rmlines b::Expr\n\nReturn a copy of a block with the line number nodes removed.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.@typefactory-Tuple{Expr}",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.@typefactory-Tuple{Expr}",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.@typefactory",
+    "title": "QuantumLattices.Prerequisites.Factories.@typefactory",
     "category": "macro",
     "text": "@typefactory expr::Expr\n\nConstruct a TypeFactory directly from a type definition.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.addargs!-Tuple{Hamiltonian.Prerequisites.Factories.FunctionFactory}",
-    "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.addargs!",
-    "category": "method",
-    "text": "addargs!(ff::FunctionFactory,args::Argument...) -> FunctionFactory\naddargs!(ff::FunctionFactory,args::FExpr...) -> FunctionFactory\n\nAdd a couple of positional arguments to a function factory.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.addconstructors!-Tuple{Hamiltonian.Prerequisites.Factories.TypeFactory}",
-    "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.addconstructors!",
-    "category": "method",
-    "text": "addconstructors!(tf::TypeFactory,constructors::FunctionFactory...) -> TypeFactory\naddconstructors!(tf::TypeFactory,constructors::Expr...) -> TypeFactory\n\nAdd a couple of constructors to a type factory.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.addfields!-Tuple{Hamiltonian.Prerequisites.Factories.TypeFactory}",
-    "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.addfields!",
-    "category": "method",
-    "text": "addfields!(tf::TypeFactory,fields::Field...) -> TypeFactory\naddfields!(tf::TypeFactory,fields::FExpr...) -> TypeFactory\n\nAdd a couple of fields to a type factory.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.addkwargs!-Tuple{Hamiltonian.Prerequisites.Factories.FunctionFactory}",
-    "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.addkwargs!",
-    "category": "method",
-    "text": "addkwargs!(ff::FunctionFactory,kwargs::Argument...) -> FunctionFactory\naddkwargs!(ff::FunctionFactory,kwargs::FExpr...) -> FunctionFactory\n\nAdd a couple of keyword arguments to a function factory.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.addparams!-Tuple{Hamiltonian.Prerequisites.Factories.FunctionFactory}",
-    "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.addparams!",
-    "category": "method",
-    "text": "addparams!(f::FunctionFactory,params::Inference...) ->FunctionFactory\naddparams!(f::FunctionFactory,params::FExpr...) -> FunctionFactory\naddparams!(f::TypeFactory,params::Parameter...) -> TypeFactory\naddparams!(f::TypeFactory,params::FExpr...) -> TypeFactory\n\nAdd a couple of parameters to a function factory or a type factory.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.addwhereparams!-Tuple{Hamiltonian.Prerequisites.Factories.FunctionFactory}",
-    "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.addwhereparams!",
-    "category": "method",
-    "text": "addwhereparams!(ff::FunctionFactory,whereparams::Parameter...) -> FunctionFactory\naddwhereparams!(ff::FunctionFactory,whereparams::FExpr...) -> FunctionFactory\n\nAdd a couple of method where parameters to a function factory or a type factory.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.escape-Tuple{Any,Hamiltonian.Prerequisites.Factories.RawExpr}",
-    "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.escape",
-    "category": "method",
-    "text": "escape(expr,::RawExpr) -> Any\nescape(expr,::Escaped) -> Any\nescape(expr,::UnEscaped) -> Any\nescape(expr::Symbol,em::Escaped) -> FExpr\nescape(expr::Expr,em::Escaped) -> Expr\nescape(expr::Symbol,em::UnEscaped) -> FExpr\nescape(expr::Expr,em::UnEscaped) -> Expr\n\nEscape the variables in the input expression.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.extendbody!-Tuple{Hamiltonian.Prerequisites.Factories.FunctionFactory}",
-    "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.extendbody!",
-    "category": "method",
-    "text": "extendbody!(ff::FunctionFactory,parts::FExpr...) -> FunctionFactory\nextendbody!(ff::FunctionFactory,parts::Block...) -> FunctionFactory\n\nExtend the body of a function factory.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.rmlines!-Tuple{Hamiltonian.Prerequisites.Factories.Block}",
-    "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.rmlines!",
-    "category": "method",
-    "text": "rmlines!(b::Block) -> Block\n\nRemove line number nodes in the body of a block.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Prerequisites/Factories.html#MacroTools.rmlines-Tuple{Hamiltonian.Prerequisites.Factories.Block}",
+    "location": "man/Prerequisites/Factories.html#MacroTools.rmlines-Tuple{QuantumLattices.Prerequisites.Factories.Block}",
     "page": "Factories",
     "title": "MacroTools.rmlines",
     "category": "method",
@@ -937,23 +865,95 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.AbstractFactory",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.addargs!-Tuple{QuantumLattices.Prerequisites.Factories.FunctionFactory}",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.AbstractFactory",
+    "title": "QuantumLattices.Prerequisites.Factories.addargs!",
+    "category": "method",
+    "text": "addargs!(ff::FunctionFactory,args::Argument...) -> FunctionFactory\naddargs!(ff::FunctionFactory,args::FExpr...) -> FunctionFactory\n\nAdd a couple of positional arguments to a function factory.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.addconstructors!-Tuple{QuantumLattices.Prerequisites.Factories.TypeFactory}",
+    "page": "Factories",
+    "title": "QuantumLattices.Prerequisites.Factories.addconstructors!",
+    "category": "method",
+    "text": "addconstructors!(tf::TypeFactory,constructors::FunctionFactory...) -> TypeFactory\naddconstructors!(tf::TypeFactory,constructors::Expr...) -> TypeFactory\n\nAdd a couple of constructors to a type factory.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.addfields!-Tuple{QuantumLattices.Prerequisites.Factories.TypeFactory}",
+    "page": "Factories",
+    "title": "QuantumLattices.Prerequisites.Factories.addfields!",
+    "category": "method",
+    "text": "addfields!(tf::TypeFactory,fields::Field...) -> TypeFactory\naddfields!(tf::TypeFactory,fields::FExpr...) -> TypeFactory\n\nAdd a couple of fields to a type factory.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.addkwargs!-Tuple{QuantumLattices.Prerequisites.Factories.FunctionFactory}",
+    "page": "Factories",
+    "title": "QuantumLattices.Prerequisites.Factories.addkwargs!",
+    "category": "method",
+    "text": "addkwargs!(ff::FunctionFactory,kwargs::Argument...) -> FunctionFactory\naddkwargs!(ff::FunctionFactory,kwargs::FExpr...) -> FunctionFactory\n\nAdd a couple of keyword arguments to a function factory.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.addparams!-Tuple{QuantumLattices.Prerequisites.Factories.FunctionFactory}",
+    "page": "Factories",
+    "title": "QuantumLattices.Prerequisites.Factories.addparams!",
+    "category": "method",
+    "text": "addparams!(f::FunctionFactory,params::Inference...) ->FunctionFactory\naddparams!(f::FunctionFactory,params::FExpr...) -> FunctionFactory\naddparams!(f::TypeFactory,params::Parameter...) -> TypeFactory\naddparams!(f::TypeFactory,params::FExpr...) -> TypeFactory\n\nAdd a couple of parameters to a function factory or a type factory.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.addwhereparams!-Tuple{QuantumLattices.Prerequisites.Factories.FunctionFactory}",
+    "page": "Factories",
+    "title": "QuantumLattices.Prerequisites.Factories.addwhereparams!",
+    "category": "method",
+    "text": "addwhereparams!(ff::FunctionFactory,whereparams::Parameter...) -> FunctionFactory\naddwhereparams!(ff::FunctionFactory,whereparams::FExpr...) -> FunctionFactory\n\nAdd a couple of method where parameters to a function factory or a type factory.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.escape-Tuple{Any,QuantumLattices.Prerequisites.Factories.RawExpr}",
+    "page": "Factories",
+    "title": "QuantumLattices.Prerequisites.Factories.escape",
+    "category": "method",
+    "text": "escape(expr,::RawExpr) -> Any\nescape(expr,::Escaped) -> Any\nescape(expr,::UnEscaped) -> Any\nescape(expr::Symbol,em::Escaped) -> FExpr\nescape(expr::Expr,em::Escaped) -> Expr\nescape(expr::Symbol,em::UnEscaped) -> FExpr\nescape(expr::Expr,em::UnEscaped) -> Expr\n\nEscape the variables in the input expression.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.extendbody!-Tuple{QuantumLattices.Prerequisites.Factories.FunctionFactory}",
+    "page": "Factories",
+    "title": "QuantumLattices.Prerequisites.Factories.extendbody!",
+    "category": "method",
+    "text": "extendbody!(ff::FunctionFactory,parts::FExpr...) -> FunctionFactory\nextendbody!(ff::FunctionFactory,parts::Block...) -> FunctionFactory\n\nExtend the body of a function factory.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.rmlines!-Tuple{QuantumLattices.Prerequisites.Factories.Block}",
+    "page": "Factories",
+    "title": "QuantumLattices.Prerequisites.Factories.rmlines!",
+    "category": "method",
+    "text": "rmlines!(b::Block) -> Block\n\nRemove line number nodes in the body of a block.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.AbstractFactory",
+    "page": "Factories",
+    "title": "QuantumLattices.Prerequisites.Factories.AbstractFactory",
     "category": "type",
     "text": "AbstractFactory\n\nAbstract type for all concrete factories.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Hamiltonian.Prerequisites.Factories.EscapeMechanism",
+    "location": "man/Prerequisites/Factories.html#QuantumLattices.Prerequisites.Factories.EscapeMechanism",
     "page": "Factories",
-    "title": "Hamiltonian.Prerequisites.Factories.EscapeMechanism",
+    "title": "QuantumLattices.Prerequisites.Factories.EscapeMechanism",
     "category": "type",
     "text": "Abstract escape mechanism.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Base.:==-Union{Tuple{F}, Tuple{F,F}} where F<:Hamiltonian.Prerequisites.Factories.AbstractFactory",
+    "location": "man/Prerequisites/Factories.html#Base.:==-Union{Tuple{F}, Tuple{F,F}} where F<:QuantumLattices.Prerequisites.Factories.AbstractFactory",
     "page": "Factories",
     "title": "Base.:==",
     "category": "method",
@@ -961,7 +961,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Base.push!-Tuple{Hamiltonian.Prerequisites.Factories.Block}",
+    "location": "man/Prerequisites/Factories.html#Base.push!-Tuple{QuantumLattices.Prerequisites.Factories.Block}",
     "page": "Factories",
     "title": "Base.push!",
     "category": "method",
@@ -969,7 +969,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Base.replace-Tuple{Hamiltonian.Prerequisites.Factories.AbstractFactory}",
+    "location": "man/Prerequisites/Factories.html#Base.replace-Tuple{QuantumLattices.Prerequisites.Factories.AbstractFactory}",
     "page": "Factories",
     "title": "Base.replace",
     "category": "method",
@@ -977,7 +977,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/Factories.html#Base.show-Tuple{IO,Hamiltonian.Prerequisites.Factories.AbstractFactory}",
+    "location": "man/Prerequisites/Factories.html#Base.show-Tuple{IO,QuantumLattices.Prerequisites.Factories.AbstractFactory}",
     "page": "Factories",
     "title": "Base.show",
     "category": "method",
@@ -997,7 +997,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Composite structures",
     "title": "Composite structures",
     "category": "page",
-    "text": "CurrentModule=Hamiltonian.Prerequisites.CompositeStructures"
+    "text": "CurrentModule=QuantumLattices.Prerequisites.CompositeStructures"
 },
 
 {
@@ -1033,33 +1033,33 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/CompositeStructures.html#Hamiltonian.Prerequisites.CompositeStructures.CompositeDict",
+    "location": "man/Prerequisites/CompositeStructures.html#QuantumLattices.Prerequisites.CompositeStructures.CompositeDict",
     "page": "Composite structures",
-    "title": "Hamiltonian.Prerequisites.CompositeStructures.CompositeDict",
+    "title": "QuantumLattices.Prerequisites.CompositeStructures.CompositeDict",
     "category": "type",
     "text": "CompositeDict{K,V}\n\nA composite dict is a dict that is implemented by including an ordinary Dict as one of its attributes with the name :contents.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/CompositeStructures.html#Hamiltonian.Prerequisites.CompositeStructures.CompositeNTuple",
+    "location": "man/Prerequisites/CompositeStructures.html#QuantumLattices.Prerequisites.CompositeStructures.CompositeNTuple",
     "page": "Composite structures",
-    "title": "Hamiltonian.Prerequisites.CompositeStructures.CompositeNTuple",
+    "title": "QuantumLattices.Prerequisites.CompositeStructures.CompositeNTuple",
     "category": "type",
     "text": "CompositeNTuple{N,T}\n\nA composite ntuple is a ntuple that is implemented by including an ordinary NTuple as one of its attributes with the name :contents.\n\nAlias for CompositeTuple{NTuple{N,T}}.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/CompositeStructures.html#Hamiltonian.Prerequisites.CompositeStructures.CompositeTuple",
+    "location": "man/Prerequisites/CompositeStructures.html#QuantumLattices.Prerequisites.CompositeStructures.CompositeTuple",
     "page": "Composite structures",
-    "title": "Hamiltonian.Prerequisites.CompositeStructures.CompositeTuple",
+    "title": "QuantumLattices.Prerequisites.CompositeStructures.CompositeTuple",
     "category": "type",
     "text": "CompositeTuple{T<:Tuple}\n\nA composite tuple is a tuple that is implemented by including an ordinary Tuple as one of its attributes with the name :contents.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/CompositeStructures.html#Hamiltonian.Prerequisites.CompositeStructures.CompositeVector",
+    "location": "man/Prerequisites/CompositeStructures.html#QuantumLattices.Prerequisites.CompositeStructures.CompositeVector",
     "page": "Composite structures",
-    "title": "Hamiltonian.Prerequisites.CompositeStructures.CompositeVector",
+    "title": "QuantumLattices.Prerequisites.CompositeStructures.CompositeVector",
     "category": "type",
     "text": "CompositeVector{T}\n\nA composite vector is a vector that is implemented by including an ordinary Vector as one of its attributes with the name :contents.\n\n\n\n\n\n"
 },
@@ -1077,7 +1077,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Trees",
     "title": "Trees",
     "category": "page",
-    "text": "CurrentModule=Hamiltonian.Prerequisites.Treespush!(LOAD_PATH,\"../../../../src/\")\nusing Hamiltonian.Prerequisites.Trees"
+    "text": "CurrentModule=QuantumLattices.Prerequisites.Treespush!(LOAD_PATH,\"../../../../src/\")\nusing QuantumLattices.Prerequisites.Trees"
 },
 
 {
@@ -1121,159 +1121,159 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.treedepth",
+    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.treedepth",
     "page": "Trees",
-    "title": "Hamiltonian.Prerequisites.Trees.treedepth",
+    "title": "QuantumLattices.Prerequisites.Trees.treedepth",
     "category": "constant",
     "text": "treedepth\n\nIndicate that the iteration over a tree is depth-first.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.treewidth",
+    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.treewidth",
     "page": "Trees",
-    "title": "Hamiltonian.Prerequisites.Trees.treewidth",
+    "title": "QuantumLattices.Prerequisites.Trees.treewidth",
     "category": "constant",
     "text": "treewidth\n\nIndicate that the iteration over a tree is width-first.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.AbstractTree",
+    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.AbstractTree",
     "page": "Trees",
-    "title": "Hamiltonian.Prerequisites.Trees.AbstractTree",
+    "title": "QuantumLattices.Prerequisites.Trees.AbstractTree",
     "category": "type",
     "text": "AbstractTree{Node,Data}\n\nAbstract type for all concrete trees.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.SimpleTree",
+    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.SimpleTree",
     "page": "Trees",
-    "title": "Hamiltonian.Prerequisites.Trees.SimpleTree",
+    "title": "QuantumLattices.Prerequisites.Trees.SimpleTree",
     "category": "type",
     "text": "SimpleTree{N,D}() where {N,D}\n\nThe minimum tree structure that implements all the default tree methods.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.TreeCore",
+    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.TreeCore",
     "page": "Trees",
-    "title": "Hamiltonian.Prerequisites.Trees.TreeCore",
+    "title": "QuantumLattices.Prerequisites.Trees.TreeCore",
     "category": "type",
     "text": "TreeCore()\n\nThe core of a tree.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.@tree",
+    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.@tree",
     "page": "Trees",
-    "title": "Hamiltonian.Prerequisites.Trees.@tree",
+    "title": "QuantumLattices.Prerequisites.Trees.@tree",
     "category": "macro",
     "text": "@tree structdef treeparams::Union{Expr,Nothing}=nothing\n\nDecorate a \"raw\" struct to be a subtype of AbstractTree.\n\nnote: Note\nA \"raw\" struct means:\nIt has no explicit supertype;\nIt has no inner constructor;\nIt has no attribute :TREECORE.\nThe keytype and valtype can be assigned by the argument treeparams in the form {keytype,valtype}.\nWhen the formal argument names of keytype and valtype are not assigned, they can be automatically generated by the functioin gensym. For example, all of the structs after the decration by the following codes\n@tree(struct TreeWithWrongTypeParameterNames{N} info::Vector{N} end)\n@tree(struct TreeWithWrongTypeParameterNames{N} info::Vector{N} end,\n      {::String,::Int}\n      )\n@tree(struct TreeWithWrongTypeParameterNames{N} info::Vector{N} end,\n      {<:AbstractString,<:Number}\n      )\nwill have three type parameters.\nWhen the formal argument names of keytype and valtype overlap with those of the raw struct type parameters, the duplicates will be considered as the same. For example, the decorated struct SubTreeWithOverlappedParametricFields by the following code\n@tree(struct TreeWithOverlappedParametricFields{N} info::Vector{N} end,\n      {N<:AbstractString,D<:Number}\n      )\nonly has two type parameters N<:AbstractString and D<:Number, where the N in the info::Vector{N} is the same N with that in the decorated attribute TREECORE::TreeCore{N,D}.\nWhen the formal argument names of keytype and valtype have no intersection with those of the raw struct type parameters, the type parameters of the decorated struct will be just extended by keytype and valtype. For example, the decorated struct SubTreeWithParametricFields by the following code\n@tree(struct TreeWithParametricFields{T} info::Vector{T} end,\n      {N<:AbstractString,D<:Number}\n      )\nhave 3 type parameters, T, N<:AbstractString and D<:Number.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.addnode!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
+    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.addnode!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
     "page": "Trees",
-    "title": "Hamiltonian.Prerequisites.Trees.addnode!",
+    "title": "QuantumLattices.Prerequisites.Trees.addnode!",
     "category": "method",
     "text": "addnode!(tree::AbstractTree{N,D},node::N) where {N,D} -> typeof(tree)\naddnode!(tree::AbstractTree{N,D},::Nothing,node::N) where {N,D} -> typeof(tree)\naddnode!(tree::AbstractTree{N,D},parent::N,node::N) where {N,D} -> typeof(tree)\n\nUpdate the structure of a tree by adding a node. When the parent is nothing, the input tree must be empty and the input node becomes the tree\'s root.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.ancestor-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}, Tuple{AbstractTree{N,D},N,Int64}} where D where N",
+    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.ancestor-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}, Tuple{AbstractTree{N,D},N,Int64}} where D where N",
     "page": "Trees",
-    "title": "Hamiltonian.Prerequisites.Trees.ancestor",
+    "title": "QuantumLattices.Prerequisites.Trees.ancestor",
     "category": "method",
     "text": "ancestor(tree::AbstractTree{N,D},node::N,generation::Int=1) where {N,D} -> N\n\nGet the ancestor of a tree\'s node of the n-th generation.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.children-Tuple{Hamiltonian.Prerequisites.Trees.AbstractTree}",
+    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.children-Tuple{QuantumLattices.Prerequisites.Trees.AbstractTree}",
     "page": "Trees",
-    "title": "Hamiltonian.Prerequisites.Trees.children",
+    "title": "QuantumLattices.Prerequisites.Trees.children",
     "category": "method",
     "text": "children(tree::AbstractTree) -> Vector{keytype(tree)}\nchildren(tree::AbstractTree,::Nothing) -> Vector{keytype(tree)}\nchildren(tree::AbstractTree{N,D},node::N) where {N,D} -> Vector{N}\n\nGet the children of a tree\'s node.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.deletenode!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
+    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.deletenode!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
     "page": "Trees",
-    "title": "Hamiltonian.Prerequisites.Trees.deletenode!",
+    "title": "QuantumLattices.Prerequisites.Trees.deletenode!",
     "category": "method",
     "text": "deletenode!(tree::AbstractTree{N,D},node::N) where {N,D} -> typeof(tree)\n\nUpdate the structure of a tree by deleting a node.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.descendants-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}, Tuple{AbstractTree{N,D},N,Int64}} where D where N",
+    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.descendants-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}, Tuple{AbstractTree{N,D},N,Int64}} where D where N",
     "page": "Trees",
-    "title": "Hamiltonian.Prerequisites.Trees.descendants",
+    "title": "QuantumLattices.Prerequisites.Trees.descendants",
     "category": "method",
     "text": "descendants(tree::AbstractTree{N,D},node::N,generation::Int=1) where {N,D} -> Vector{N}\n\nGet the descendants of a tree\'s node of the n-th generation.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.isleaf-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
+    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.isleaf-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
     "page": "Trees",
-    "title": "Hamiltonian.Prerequisites.Trees.isleaf",
+    "title": "QuantumLattices.Prerequisites.Trees.isleaf",
     "category": "method",
     "text": "isleaf(tree::AbstractTree{N,D},node::N) where{N,D} -> Bool\n\nJudge whether a tree\'s node is a leaf (a node without children) or not.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.leaves-Tuple{Hamiltonian.Prerequisites.Trees.AbstractTree}",
+    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.leaves-Tuple{QuantumLattices.Prerequisites.Trees.AbstractTree}",
     "page": "Trees",
-    "title": "Hamiltonian.Prerequisites.Trees.leaves",
+    "title": "QuantumLattices.Prerequisites.Trees.leaves",
     "category": "method",
     "text": "leaves(tree::AbstractTree) -> Vector{keytype(tree)}\n\nGet a tree\'s leaves.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.level-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
+    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.level-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
     "page": "Trees",
-    "title": "Hamiltonian.Prerequisites.Trees.level",
+    "title": "QuantumLattices.Prerequisites.Trees.level",
     "category": "method",
     "text": "level(tree::AbstractTree{N,D},node::N) where {N,D} -> Int\n\nGet the level of tree\'s node.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.move!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N,N}} where D where N",
+    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.move!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N,N}} where D where N",
     "page": "Trees",
-    "title": "Hamiltonian.Prerequisites.Trees.move!",
+    "title": "QuantumLattices.Prerequisites.Trees.move!",
     "category": "method",
     "text": "move!(tree::AbstractTree{N,D},node::N,parent::N) where {N,D} -> typeof(tree)\n\nMove a subtree to a new position.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.parent-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}, Tuple{AbstractTree{N,D},N,Union{Nothing, N}}} where D where N",
+    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.parent-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}, Tuple{AbstractTree{N,D},N,Union{Nothing, N}}} where D where N",
     "page": "Trees",
-    "title": "Hamiltonian.Prerequisites.Trees.parent",
+    "title": "QuantumLattices.Prerequisites.Trees.parent",
     "category": "method",
     "text": "parent(tree::AbstractTree{N,D},node::N,superparent::Union{N,Nothing}=nothing) where {N,D} -> Union{N,Nothing}\n\nGet the parent of a tree\'s node. When node is the tree\'s root, return superparent.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.root-Tuple{Hamiltonian.Prerequisites.Trees.AbstractTree}",
+    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.root-Tuple{QuantumLattices.Prerequisites.Trees.AbstractTree}",
     "page": "Trees",
-    "title": "Hamiltonian.Prerequisites.Trees.root",
+    "title": "QuantumLattices.Prerequisites.Trees.root",
     "category": "method",
     "text": "root(tree::AbstractTree) -> Union{keytype(tree),Nothing}\n\nGet a tree\'s root node.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.siblings-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
+    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.siblings-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
     "page": "Trees",
-    "title": "Hamiltonian.Prerequisites.Trees.siblings",
+    "title": "QuantumLattices.Prerequisites.Trees.siblings",
     "category": "method",
     "text": "siblings(tree::AbstractTree{N,D},node::N) where{N,D} -> Vector{N}\n\nGet the siblings (other nodes sharing the same parent) of a tree\'s node.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Hamiltonian.Prerequisites.Trees.subtree-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
+    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.subtree-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
     "page": "Trees",
-    "title": "Hamiltonian.Prerequisites.Trees.subtree",
+    "title": "QuantumLattices.Prerequisites.Trees.subtree",
     "category": "method",
     "text": "subtree(tree::AbstractTree{N,D},node::N) where{N,D} -> typeof(tree)\n\nGet a subtree whose root is node.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Base.:==-Union{Tuple{TC}, Tuple{TC,TC}} where TC<:Hamiltonian.Prerequisites.Trees.TreeCore",
+    "location": "man/Prerequisites/Trees.html#Base.:==-Union{Tuple{TC}, Tuple{TC,TC}} where TC<:QuantumLattices.Prerequisites.Trees.TreeCore",
     "page": "Trees",
     "title": "Base.:==",
     "category": "method",
@@ -1281,7 +1281,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Base.:==-Union{Tuple{T}, Tuple{T,T}} where T<:Hamiltonian.Prerequisites.Trees.AbstractTree",
+    "location": "man/Prerequisites/Trees.html#Base.:==-Union{Tuple{T}, Tuple{T,T}} where T<:QuantumLattices.Prerequisites.Trees.AbstractTree",
     "page": "Trees",
     "title": "Base.:==",
     "category": "method",
@@ -1305,7 +1305,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Base.eltype-Tuple{Hamiltonian.Prerequisites.Trees.AbstractTree}",
+    "location": "man/Prerequisites/Trees.html#Base.eltype-Tuple{QuantumLattices.Prerequisites.Trees.AbstractTree}",
     "page": "Trees",
     "title": "Base.eltype",
     "category": "method",
@@ -1313,7 +1313,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Base.empty!-Tuple{Hamiltonian.Prerequisites.Trees.AbstractTree}",
+    "location": "man/Prerequisites/Trees.html#Base.empty!-Tuple{QuantumLattices.Prerequisites.Trees.AbstractTree}",
     "page": "Trees",
     "title": "Base.empty!",
     "category": "method",
@@ -1353,7 +1353,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Base.keytype-Tuple{Hamiltonian.Prerequisites.Trees.AbstractTree}",
+    "location": "man/Prerequisites/Trees.html#Base.keytype-Tuple{QuantumLattices.Prerequisites.Trees.AbstractTree}",
     "page": "Trees",
     "title": "Base.keytype",
     "category": "method",
@@ -1361,7 +1361,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Base.length-Tuple{Hamiltonian.Prerequisites.Trees.AbstractTree}",
+    "location": "man/Prerequisites/Trees.html#Base.length-Tuple{QuantumLattices.Prerequisites.Trees.AbstractTree}",
     "page": "Trees",
     "title": "Base.length",
     "category": "method",
@@ -1393,7 +1393,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Base.valtype-Tuple{Hamiltonian.Prerequisites.Trees.AbstractTree}",
+    "location": "man/Prerequisites/Trees.html#Base.valtype-Tuple{QuantumLattices.Prerequisites.Trees.AbstractTree}",
     "page": "Trees",
     "title": "Base.valtype",
     "category": "method",
@@ -1421,7 +1421,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Named vectors",
     "title": "Named vectors",
     "category": "page",
-    "text": "CurrentModule=Hamiltonian.Prerequisites.NamedVectorspush!(LOAD_PATH,\"../../../../src/\")\nusing Hamiltonian.Prerequisites.NamedVectors"
+    "text": "CurrentModule=QuantumLattices.Prerequisites.NamedVectorspush!(LOAD_PATH,\"../../../../src/\")\nusing QuantumLattices.Prerequisites.NamedVectors"
 },
 
 {
@@ -1449,39 +1449,39 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/NamedVectors.html#Hamiltonian.Prerequisites.NamedVectors.HomoNamedVector",
+    "location": "man/Prerequisites/NamedVectors.html#QuantumLattices.Prerequisites.NamedVectors.HomoNamedVector",
     "page": "Named vectors",
-    "title": "Hamiltonian.Prerequisites.NamedVectors.HomoNamedVector",
+    "title": "QuantumLattices.Prerequisites.NamedVectors.HomoNamedVector",
     "category": "type",
     "text": "HomoNamedVector{T}\n\nAbstract type for all homogeneous named vectors.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/NamedVectors.html#Hamiltonian.Prerequisites.NamedVectors.NamedVector",
+    "location": "man/Prerequisites/NamedVectors.html#QuantumLattices.Prerequisites.NamedVectors.NamedVector",
     "page": "Named vectors",
-    "title": "Hamiltonian.Prerequisites.NamedVectors.NamedVector",
+    "title": "QuantumLattices.Prerequisites.NamedVectors.NamedVector",
     "category": "type",
     "text": "NamedVector\n\nAbstract type for all named vectors.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/NamedVectors.html#Hamiltonian.Prerequisites.NamedVectors.@homonamedvector",
+    "location": "man/Prerequisites/NamedVectors.html#QuantumLattices.Prerequisites.NamedVectors.@homonamedvector",
     "page": "Named vectors",
-    "title": "Hamiltonian.Prerequisites.NamedVectors.@homonamedvector",
+    "title": "QuantumLattices.Prerequisites.NamedVectors.@homonamedvector",
     "category": "macro",
     "text": "@homonamedvector typename fieldnames dtype::Union{Expr,Symbol}=:nothing mutable::Union{Expr,Bool}=false\n\nConstruct a concrete homogeneous named vector with the type name being typename and the fieldnames specified by fieldnames, and optionally, the type parameters specified by dtype.mutable can be used as a keyword argument to determine whether the concrete type is mutable.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/NamedVectors.html#Hamiltonian.Prerequisites.NamedVectors.@namedvector-Tuple{Expr}",
+    "location": "man/Prerequisites/NamedVectors.html#QuantumLattices.Prerequisites.NamedVectors.@namedvector-Tuple{Expr}",
     "page": "Named vectors",
-    "title": "Hamiltonian.Prerequisites.NamedVectors.@namedvector",
+    "title": "QuantumLattices.Prerequisites.NamedVectors.@namedvector",
     "category": "macro",
     "text": "@namedvector structdef::Expr\n\nDecorate a \"raw\" struct to be a subtype of NamedVector. Here, \"raw\" means that the input struct has no explicit supertype and no inner constructors.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/NamedVectors.html#Base.:<-Tuple{Hamiltonian.Prerequisites.NamedVectors.NamedVector,Hamiltonian.Prerequisites.NamedVectors.NamedVector}",
+    "location": "man/Prerequisites/NamedVectors.html#Base.:<-Tuple{QuantumLattices.Prerequisites.NamedVectors.NamedVector,QuantumLattices.Prerequisites.NamedVectors.NamedVector}",
     "page": "Named vectors",
     "title": "Base.:<",
     "category": "method",
@@ -1489,7 +1489,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/NamedVectors.html#Base.:==-Tuple{Hamiltonian.Prerequisites.NamedVectors.NamedVector,Hamiltonian.Prerequisites.NamedVectors.NamedVector}",
+    "location": "man/Prerequisites/NamedVectors.html#Base.:==-Tuple{QuantumLattices.Prerequisites.NamedVectors.NamedVector,QuantumLattices.Prerequisites.NamedVectors.NamedVector}",
     "page": "Named vectors",
     "title": "Base.:==",
     "category": "method",
@@ -1497,7 +1497,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/NamedVectors.html#Base.convert-Tuple{Type{Tuple},Hamiltonian.Prerequisites.NamedVectors.NamedVector}",
+    "location": "man/Prerequisites/NamedVectors.html#Base.convert-Tuple{Type{Tuple},QuantumLattices.Prerequisites.NamedVectors.NamedVector}",
     "page": "Named vectors",
     "title": "Base.convert",
     "category": "method",
@@ -1513,7 +1513,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/NamedVectors.html#Base.getindex-Tuple{Hamiltonian.Prerequisites.NamedVectors.NamedVector,Int64}",
+    "location": "man/Prerequisites/NamedVectors.html#Base.getindex-Tuple{QuantumLattices.Prerequisites.NamedVectors.NamedVector,Int64}",
     "page": "Named vectors",
     "title": "Base.getindex",
     "category": "method",
@@ -1521,7 +1521,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/NamedVectors.html#Base.hash-Tuple{Hamiltonian.Prerequisites.NamedVectors.NamedVector,UInt64}",
+    "location": "man/Prerequisites/NamedVectors.html#Base.hash-Tuple{QuantumLattices.Prerequisites.NamedVectors.NamedVector,UInt64}",
     "page": "Named vectors",
     "title": "Base.hash",
     "category": "method",
@@ -1537,7 +1537,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/NamedVectors.html#Base.keys-Tuple{Hamiltonian.Prerequisites.NamedVectors.NamedVector}",
+    "location": "man/Prerequisites/NamedVectors.html#Base.keys-Tuple{QuantumLattices.Prerequisites.NamedVectors.NamedVector}",
     "page": "Named vectors",
     "title": "Base.keys",
     "category": "method",
@@ -1545,7 +1545,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/NamedVectors.html#Base.length-Union{Tuple{Type{NV}}, Tuple{NV}} where NV<:Hamiltonian.Prerequisites.NamedVectors.NamedVector",
+    "location": "man/Prerequisites/NamedVectors.html#Base.length-Union{Tuple{Type{NV}}, Tuple{NV}} where NV<:QuantumLattices.Prerequisites.NamedVectors.NamedVector",
     "page": "Named vectors",
     "title": "Base.length",
     "category": "method",
@@ -1553,7 +1553,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/NamedVectors.html#Base.map-Union{Tuple{NV}, Tuple{Any,Vararg{NV,N} where N}} where NV<:Hamiltonian.Prerequisites.NamedVectors.NamedVector",
+    "location": "man/Prerequisites/NamedVectors.html#Base.map-Union{Tuple{NV}, Tuple{Any,Vararg{NV,N} where N}} where NV<:QuantumLattices.Prerequisites.NamedVectors.NamedVector",
     "page": "Named vectors",
     "title": "Base.map",
     "category": "method",
@@ -1561,7 +1561,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/NamedVectors.html#Base.replace-Tuple{Hamiltonian.Prerequisites.NamedVectors.NamedVector}",
+    "location": "man/Prerequisites/NamedVectors.html#Base.replace-Tuple{QuantumLattices.Prerequisites.NamedVectors.NamedVector}",
     "page": "Named vectors",
     "title": "Base.replace",
     "category": "method",
@@ -1569,7 +1569,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/NamedVectors.html#Base.setindex!-Tuple{Hamiltonian.Prerequisites.NamedVectors.NamedVector,Any,Int64}",
+    "location": "man/Prerequisites/NamedVectors.html#Base.setindex!-Tuple{QuantumLattices.Prerequisites.NamedVectors.NamedVector,Any,Int64}",
     "page": "Named vectors",
     "title": "Base.setindex!",
     "category": "method",
@@ -1577,7 +1577,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/NamedVectors.html#Base.show-Tuple{IO,Hamiltonian.Prerequisites.NamedVectors.NamedVector}",
+    "location": "man/Prerequisites/NamedVectors.html#Base.show-Tuple{IO,QuantumLattices.Prerequisites.NamedVectors.NamedVector}",
     "page": "Named vectors",
     "title": "Base.show",
     "category": "method",
@@ -1585,7 +1585,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/NamedVectors.html#Base.zero-Union{Tuple{Type{NV}}, Tuple{NV}} where NV<:Hamiltonian.Prerequisites.NamedVectors.NamedVector",
+    "location": "man/Prerequisites/NamedVectors.html#Base.zero-Union{Tuple{Type{NV}}, Tuple{NV}} where NV<:QuantumLattices.Prerequisites.NamedVectors.NamedVector",
     "page": "Named vectors",
     "title": "Base.zero",
     "category": "method",
@@ -1605,7 +1605,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "Introduction",
     "category": "page",
-    "text": "CurrentModule=Hamiltonian.Mathematics"
+    "text": "CurrentModule=QuantumLattices.Mathematics"
 },
 
 {
@@ -1613,7 +1613,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "Introduction",
     "category": "section",
-    "text": "This module contains the mathematical prerequisites of the Hamiltonian package.Pages=[\n    \"Combinatorics.md\",\n    \"VectorSpaces.md\",\n    \"AlgebraOverFields.md\",\n    \"QuantumNumbers.md\",\n    ]\nDepth=2"
+    "text": "This module contains the mathematical prerequisites of the QuantumLattices package.Pages=[\n    \"Combinatorics.md\",\n    \"VectorSpaces.md\",\n    \"AlgebraOverFields.md\",\n    \"QuantumNumbers.md\",\n    ]\nDepth=2"
 },
 
 {
@@ -1621,7 +1621,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Combinatorics",
     "title": "Combinatorics",
     "category": "page",
-    "text": "CurrentModule=Hamiltonian.Mathematics.Combinatorics"
+    "text": "CurrentModule=QuantumLattices.Mathematics.Combinatorics"
 },
 
 {
@@ -1657,41 +1657,41 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/Combinatorics.html#Hamiltonian.Mathematics.Combinatorics.AbstractCombinatorics",
+    "location": "man/Mathematics/Combinatorics.html#QuantumLattices.Mathematics.Combinatorics.AbstractCombinatorics",
     "page": "Combinatorics",
-    "title": "Hamiltonian.Mathematics.Combinatorics.AbstractCombinatorics",
+    "title": "QuantumLattices.Mathematics.Combinatorics.AbstractCombinatorics",
     "category": "type",
     "text": "AbstractCombinatorics{M,C}\n\nAbstract combinatoric algorithms.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/Combinatorics.html#Hamiltonian.Mathematics.Combinatorics.Combinations",
+    "location": "man/Mathematics/Combinatorics.html#QuantumLattices.Mathematics.Combinatorics.Combinations",
     "page": "Combinatorics",
-    "title": "Hamiltonian.Mathematics.Combinatorics.Combinations",
+    "title": "QuantumLattices.Mathematics.Combinatorics.Combinations",
     "category": "type",
     "text": "Combinations{M}(contents::C) where {M,C}\n\nCombinations of M elements from contents. Duplicates are not allowed.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/Combinatorics.html#Hamiltonian.Mathematics.Combinatorics.DulCombinations",
+    "location": "man/Mathematics/Combinatorics.html#QuantumLattices.Mathematics.Combinatorics.DulCombinations",
     "page": "Combinatorics",
-    "title": "Hamiltonian.Mathematics.Combinatorics.DulCombinations",
+    "title": "QuantumLattices.Mathematics.Combinatorics.DulCombinations",
     "category": "type",
     "text": "DulCombinations{M}(contents::C) where {M,C}\n\nCombinations of M elements from contents. Duplicates are allowed.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/Combinatorics.html#Hamiltonian.Mathematics.Combinatorics.DulPermutations",
+    "location": "man/Mathematics/Combinatorics.html#QuantumLattices.Mathematics.Combinatorics.DulPermutations",
     "page": "Combinatorics",
-    "title": "Hamiltonian.Mathematics.Combinatorics.DulPermutations",
+    "title": "QuantumLattices.Mathematics.Combinatorics.DulPermutations",
     "category": "type",
     "text": "DulPermutations{M}(contents::C) where {M,C}\n\nPermutations of M elements from contents. Duplicates are not allowed.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/Combinatorics.html#Hamiltonian.Mathematics.Combinatorics.Permutations",
+    "location": "man/Mathematics/Combinatorics.html#QuantumLattices.Mathematics.Combinatorics.Permutations",
     "page": "Combinatorics",
-    "title": "Hamiltonian.Mathematics.Combinatorics.Permutations",
+    "title": "QuantumLattices.Mathematics.Combinatorics.Permutations",
     "category": "type",
     "text": "Permutations{M}(contents::C) where {M,C}\n\nPermutations of M elements from contents. Duplicates are allowed.\n\n\n\n\n\n"
 },
@@ -1709,7 +1709,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Vector spaces",
     "title": "Vector spaces",
     "category": "page",
-    "text": "CurrentModule=Hamiltonian.Mathematics.VectorSpaces"
+    "text": "CurrentModule=QuantumLattices.Mathematics.VectorSpaces"
 },
 
 {
@@ -1769,89 +1769,89 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Mathematics.VectorSpaces.DirectIndices",
+    "location": "man/Mathematics/VectorSpaces.html#QuantumLattices.Mathematics.VectorSpaces.DirectIndices",
     "page": "Vector spaces",
-    "title": "Hamiltonian.Mathematics.VectorSpaces.DirectIndices",
+    "title": "QuantumLattices.Mathematics.VectorSpaces.DirectIndices",
     "category": "type",
     "text": "DirectIndices{M}(dims::NTuple{N,Int}) where {M,N}\n\nDirect ordered Cartesian indices.\n\nnote: Note\nIt can be C/C++ ordered or Fortran ordered depending on the first type parameter M, with \'C\' for the former and \'F\' the latter.\nFor its bases (Cartesian indices), there is no restriction except that they should be in the proper range defined by its dims.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Mathematics.VectorSpaces.DirectVectorSpace",
+    "location": "man/Mathematics/VectorSpaces.html#QuantumLattices.Mathematics.VectorSpaces.DirectVectorSpace",
     "page": "Vector spaces",
-    "title": "Hamiltonian.Mathematics.VectorSpaces.DirectVectorSpace",
+    "title": "QuantumLattices.Mathematics.VectorSpaces.DirectVectorSpace",
     "category": "type",
     "text": "DirectVectorSpace{S}(table::NTuple{N,B}) where {S,B,N}\nDirectVectorSpace{S}(table...) where S\n\nSimplest vector space, whose bases are stored in the attribute :table as an ntuple.\n\nThe :table attribute can be sorted or unsorted, which is determined by the type parameter S, with \'T\' for sorted and \'F\' for unsorted.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Mathematics.VectorSpaces.GradedTables",
+    "location": "man/Mathematics/VectorSpaces.html#QuantumLattices.Mathematics.VectorSpaces.GradedTables",
     "page": "Vector spaces",
-    "title": "Hamiltonian.Mathematics.VectorSpaces.GradedTables",
+    "title": "QuantumLattices.Mathematics.VectorSpaces.GradedTables",
     "category": "type",
     "text": "GradedTables(vs::Tuple,ks::Tuple)\nGradedTables(::Type{M},n::Int,gs::Val{GS}) where {M<:AbstractCombinatorics,GS}\n\nThe tables of a graded vector space.\n\nAlias for Base.Iterators.Pairs{G,V,KS<:Tuple,VS<:Tuple}.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Mathematics.VectorSpaces.GradedVectorSpace",
+    "location": "man/Mathematics/VectorSpaces.html#QuantumLattices.Mathematics.VectorSpaces.GradedVectorSpace",
     "page": "Vector spaces",
-    "title": "Hamiltonian.Mathematics.VectorSpaces.GradedVectorSpace",
+    "title": "QuantumLattices.Mathematics.VectorSpaces.GradedVectorSpace",
     "category": "type",
     "text": "GradedVectorSpace{G,B,V<:VectorSpace,T<:GradedTables{G,V}} <: VectorSpace{Tuple{G,B}}\n\nAbstract type of graded vector spaces.\n\nA graded vector space is a vector space that has the extra structure of a grading, which is a decomposition of the vector space into a direct sum of vector subspaces.\n\nConcrete subtypes must have the following attribute:\n\n:tables::GradedTables{G,V} where {G,V<:VectorSpace}: the tables of the subspaces.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Mathematics.VectorSpaces.HasTable",
+    "location": "man/Mathematics/VectorSpaces.html#QuantumLattices.Mathematics.VectorSpaces.HasTable",
     "page": "Vector spaces",
-    "title": "Hamiltonian.Mathematics.VectorSpaces.HasTable",
+    "title": "QuantumLattices.Mathematics.VectorSpaces.HasTable",
     "category": "type",
     "text": "HasTable(B::Bool)\nHasTable(::Type{<:VectorSpace})\n\nTrait of whether a subtype of VectorSpace has the attribute :table.\n\nOnly two instances are allowed, the first of which is the default for a subtype:\n\nHasTable(false): indication of not having the attribute :table\nHasTable(true): indication of having the attribute :table\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Mathematics.VectorSpaces.IsMultiIndexable",
+    "location": "man/Mathematics/VectorSpaces.html#QuantumLattices.Mathematics.VectorSpaces.IsMultiIndexable",
     "page": "Vector spaces",
-    "title": "Hamiltonian.Mathematics.VectorSpaces.IsMultiIndexable",
+    "title": "QuantumLattices.Mathematics.VectorSpaces.IsMultiIndexable",
     "category": "type",
     "text": "IsMultiIndexable(B::Bool)\nIsMultiIndexable(::Type{<:VectorSpace})\n\nTrait of whether the bases of a subtype of VectorSpace can be represented by multiindices (Cartesian indices).\n\nOnly two instances are allowed, the first of which is the default for a subtype:\n\nIsMultiIndexable(false): indication of irrepresentability by Cartesian indices\nIsMultiIndexable(true): indication of representability by Cartesian indices\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Mathematics.VectorSpaces.MultiIndexOrderStyle",
+    "location": "man/Mathematics/VectorSpaces.html#QuantumLattices.Mathematics.VectorSpaces.MultiIndexOrderStyle",
     "page": "Vector spaces",
-    "title": "Hamiltonian.Mathematics.VectorSpaces.MultiIndexOrderStyle",
+    "title": "QuantumLattices.Mathematics.VectorSpaces.MultiIndexOrderStyle",
     "category": "type",
     "text": "MultiIndexOrderStyle(M::Char)\nMultiIndexOrderStyle(::Type{<:VectorSpace})\n\nTrait of the order style of the Cartesian-index representation of the bases of a subtype of VectorSpace.\n\nOnly two instances are allowed, the first of which is the default for a subtype:\n\nMultiIndexOrderStyle(C): indication of C/C++ order style\nMultiIndexOrderStyle(F): indication of Fortran order style\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Mathematics.VectorSpaces.OrderedIndices",
+    "location": "man/Mathematics/VectorSpaces.html#QuantumLattices.Mathematics.VectorSpaces.OrderedIndices",
     "page": "Vector spaces",
-    "title": "Hamiltonian.Mathematics.VectorSpaces.OrderedIndices",
+    "title": "QuantumLattices.Mathematics.VectorSpaces.OrderedIndices",
     "category": "type",
     "text": "OrderedIndices{N} <: VectorSpace{NTuple{N,Int}}\n\nThe simplest abstract class of multiindexable vector spaces, whose bases are just tuples of integers.\n\nThis class of vector spaces must have the following attribute: dims::NTuple{N,Int}: the dimesnions of the Cartesian indices along all axes\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Mathematics.VectorSpaces.TableSorted",
+    "location": "man/Mathematics/VectorSpaces.html#QuantumLattices.Mathematics.VectorSpaces.TableSorted",
     "page": "Vector spaces",
-    "title": "Hamiltonian.Mathematics.VectorSpaces.TableSorted",
+    "title": "QuantumLattices.Mathematics.VectorSpaces.TableSorted",
     "category": "type",
     "text": "TableSorted(B::Bool)\nTableSorted(::Type{<:VectorSpace})\n\nTrait of whether the attribute :table of a subtype of VectorSpace is sorted.\n\nOnly two instances are allowed, the first of which is the default for a subtype:\n\nTableSorted(false): indication of unsorted attribute :table\nTableSorted(true): indication of sorted attribute :table\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Mathematics.VectorSpaces.TabledIndices",
+    "location": "man/Mathematics/VectorSpaces.html#QuantumLattices.Mathematics.VectorSpaces.TabledIndices",
     "page": "Vector spaces",
-    "title": "Hamiltonian.Mathematics.VectorSpaces.TabledIndices",
+    "title": "QuantumLattices.Mathematics.VectorSpaces.TabledIndices",
     "category": "type",
     "text": "TabledIndices{S}(dims::NTuple{N,Int},table::Vector{NTuple{N,Int}}) where {S,N}\nTabledIndices{N}(::Type{M},len::Int) where {N,M<:AbstractCombinatorics}\n\nTabled ordered Cartesian indices.\n\nCompared to DirectIndices, the bases of this kind of vector spaces are stored in the attribute :table, which must be a vector of tuple of integers. The :table attribute can be sorted or unsorted, which is determined by the type parameter S, with \'T\' for sorted and \'F\' for unsorted. This type suits the situations when the Cartesian indices are restricted by extra conditions except that propoesed by the attribute :dims.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Mathematics.VectorSpaces.VectorSpace",
+    "location": "man/Mathematics/VectorSpaces.html#QuantumLattices.Mathematics.VectorSpaces.VectorSpace",
     "page": "Vector spaces",
-    "title": "Hamiltonian.Mathematics.VectorSpaces.VectorSpace",
+    "title": "QuantumLattices.Mathematics.VectorSpaces.VectorSpace",
     "category": "type",
     "text": "VectorSpace{B} <: AbstractVector{B}\n\nAbstract vector space.\n\n\n\n\n\n"
 },
@@ -1873,7 +1873,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/VectorSpaces.html#Base.eltype-Tuple{Hamiltonian.Mathematics.VectorSpaces.GradedVectorSpace,Int64}",
+    "location": "man/Mathematics/VectorSpaces.html#Base.eltype-Tuple{QuantumLattices.Mathematics.VectorSpaces.GradedVectorSpace,Int64}",
     "page": "Vector spaces",
     "title": "Base.eltype",
     "category": "method",
@@ -1889,7 +1889,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/VectorSpaces.html#Base.getindex-Tuple{Hamiltonian.Mathematics.VectorSpaces.VectorSpace,Int64}",
+    "location": "man/Mathematics/VectorSpaces.html#Base.getindex-Tuple{QuantumLattices.Mathematics.VectorSpaces.VectorSpace,Int64}",
     "page": "Vector spaces",
     "title": "Base.getindex",
     "category": "method",
@@ -1921,7 +1921,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/VectorSpaces.html#Base.keys-Tuple{Hamiltonian.Mathematics.VectorSpaces.GradedVectorSpace}",
+    "location": "man/Mathematics/VectorSpaces.html#Base.keys-Tuple{QuantumLattices.Mathematics.VectorSpaces.GradedVectorSpace}",
     "page": "Vector spaces",
     "title": "Base.keys",
     "category": "method",
@@ -1937,7 +1937,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/VectorSpaces.html#Base.keytype-Tuple{Hamiltonian.Mathematics.VectorSpaces.GradedVectorSpace,Int64}",
+    "location": "man/Mathematics/VectorSpaces.html#Base.keytype-Tuple{QuantumLattices.Mathematics.VectorSpaces.GradedVectorSpace,Int64}",
     "page": "Vector spaces",
     "title": "Base.keytype",
     "category": "method",
@@ -1953,7 +1953,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/VectorSpaces.html#Base.valtype-Tuple{Hamiltonian.Mathematics.VectorSpaces.GradedVectorSpace,Int64}",
+    "location": "man/Mathematics/VectorSpaces.html#Base.valtype-Tuple{QuantumLattices.Mathematics.VectorSpaces.GradedVectorSpace,Int64}",
     "page": "Vector spaces",
     "title": "Base.valtype",
     "category": "method",
@@ -1961,49 +1961,49 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Interfaces.:⊕-Union{Tuple{B}, Tuple{B,B}} where B",
+    "location": "man/Mathematics/VectorSpaces.html#QuantumLattices.Interfaces.:⊕-Union{Tuple{B}, Tuple{B,B}} where B",
     "page": "Vector spaces",
-    "title": "Hamiltonian.Interfaces.:⊕",
+    "title": "QuantumLattices.Interfaces.:⊕",
     "category": "method",
     "text": "⊕(basis1::B,basis2::B) where B -> DirectVectorSpace{\'F\',B,2}\n⊕(basis::B,vs::DirectVectorSpace{<:Any,B}) where B -> DirectVectorSpace{\'F\',B}\n⊕(vs::DirectVectorSpace{<:Any,B},basis::B) where B -> DirectVectorSpace{\'F\',B}\n⊕(vs1::DirectVectorSpace{<:Any,B},vs2::DirectVectorSpace{<:Any,B}) where B -> DirectVectorSpace{\'F\',B}\n\nGet the direct sum between bases or direct vector spaces.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Interfaces.degree-Union{Tuple{G}, Tuple{G,GradedVectorSpace{G,B,V,T} where T<:(Pairs{G,V,KS,VS} where VS<:Tuple where KS<:Tuple) where V<:VectorSpace where B}} where G",
+    "location": "man/Mathematics/VectorSpaces.html#QuantumLattices.Interfaces.degree-Union{Tuple{G}, Tuple{G,GradedVectorSpace{G,B,V,T} where T<:(Pairs{G,V,KS,VS} where VS<:Tuple where KS<:Tuple) where V<:VectorSpace where B}} where G",
     "page": "Vector spaces",
-    "title": "Hamiltonian.Interfaces.degree",
+    "title": "QuantumLattices.Interfaces.degree",
     "category": "method",
     "text": "degree(g::G,vs::GradedVectorSpace{G}) where G -> Int\n\nGet the degree of a vector subspace whose grade are represented by g.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Interfaces.dimension-Tuple{Hamiltonian.Mathematics.VectorSpaces.GradedVectorSpace}",
+    "location": "man/Mathematics/VectorSpaces.html#QuantumLattices.Interfaces.dimension-Tuple{QuantumLattices.Mathematics.VectorSpaces.GradedVectorSpace}",
     "page": "Vector spaces",
-    "title": "Hamiltonian.Interfaces.dimension",
+    "title": "QuantumLattices.Interfaces.dimension",
     "category": "method",
     "text": "dimension(vs::GradedVectorSpace) -> Int\ndimension(vs::GradedVectorSpace{G},g::G) where G -> Int\ndimension(vs::GradedVectorSpace{G},gs::NTuple{N,G}) where {G,N} -> Int\n\nGet the dimension of the whole graded vector space or some vector subspaces.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Interfaces.dimension-Tuple{Hamiltonian.Mathematics.VectorSpaces.VectorSpace}",
+    "location": "man/Mathematics/VectorSpaces.html#QuantumLattices.Interfaces.dimension-Tuple{QuantumLattices.Mathematics.VectorSpaces.VectorSpace}",
     "page": "Vector spaces",
-    "title": "Hamiltonian.Interfaces.dimension",
+    "title": "QuantumLattices.Interfaces.dimension",
     "category": "method",
     "text": "dimension(vs::VectorSpace) -> Int\n\nThe dimension of a vector space.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Interfaces.rank-Tuple{Base.Iterators.Pairs{G,V,KS,VS} where VS<:Tuple where KS<:Tuple where V where G}",
+    "location": "man/Mathematics/VectorSpaces.html#QuantumLattices.Interfaces.rank-Tuple{Base.Iterators.Pairs{G,V,KS,VS} where VS<:Tuple where KS<:Tuple where V where G}",
     "page": "Vector spaces",
-    "title": "Hamiltonian.Interfaces.rank",
+    "title": "QuantumLattices.Interfaces.rank",
     "category": "method",
     "text": "rank(tables::GradedTables) -> Int\nrank(::Type{T}) where {T<:GradedTables} -> Int\n\nGet the total number of keys or values of a graded tables.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/VectorSpaces.html#Hamiltonian.Interfaces.rank-Tuple{Hamiltonian.Mathematics.VectorSpaces.GradedVectorSpace}",
+    "location": "man/Mathematics/VectorSpaces.html#QuantumLattices.Interfaces.rank-Tuple{QuantumLattices.Mathematics.VectorSpaces.GradedVectorSpace}",
     "page": "Vector spaces",
-    "title": "Hamiltonian.Interfaces.rank",
+    "title": "QuantumLattices.Interfaces.rank",
     "category": "method",
     "text": "rank(vs::GradedVectorSpace) -> Int\nrank(::Type{V}) where {V<:GradedVectorSpace} -> Int\n\nGet the rank, i.e. the total number of vector subspaces.\n\n\n\n\n\n"
 },
@@ -2021,7 +2021,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Algebra over fields",
     "title": "Algebra over fields",
     "category": "page",
-    "text": "CurrentModule=Hamiltonian.Mathematics.AlgebraOverFieldspush!(LOAD_PATH,\"../../../../src/\")\nusing Hamiltonian.Mathematics.AlgebraOverFields"
+    "text": "CurrentModule=QuantumLattices.Mathematics.AlgebraOverFieldspush!(LOAD_PATH,\"../../../../src/\")\nusing QuantumLattices.Mathematics.AlgebraOverFields"
 },
 
 {
@@ -2057,71 +2057,63 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Mathematics.AlgebraOverFields.Element",
+    "location": "man/Mathematics/AlgebraOverFields.html#QuantumLattices.Mathematics.AlgebraOverFields.Element",
     "page": "Algebra over fields",
-    "title": "Hamiltonian.Mathematics.AlgebraOverFields.Element",
+    "title": "QuantumLattices.Mathematics.AlgebraOverFields.Element",
     "category": "type",
     "text": "Element{N,V<:Number,I<:ID{<:NTuple{N,SimpleID}}}\n\nAn element of an algebra over a field.\n\nThe first and second attributes of an element must be\n\nvalue::Number: the coefficient of the element\nid::ID: the id of the element\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Mathematics.AlgebraOverFields.Elements",
+    "location": "man/Mathematics/AlgebraOverFields.html#QuantumLattices.Mathematics.AlgebraOverFields.Elements",
     "page": "Algebra over fields",
-    "title": "Hamiltonian.Mathematics.AlgebraOverFields.Elements",
+    "title": "QuantumLattices.Mathematics.AlgebraOverFields.Elements",
     "category": "type",
     "text": "Elements{I<:ID,M<:Element} <: AbstractDict{I,M}\n\nAn set of elements of an algebra over a field.\n\nAlias for Dict{I<:ID,M<:Element}. Similar iterms are automatically merged thanks to the id system.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Mathematics.AlgebraOverFields.Elements-Tuple{Any}",
+    "location": "man/Mathematics/AlgebraOverFields.html#QuantumLattices.Mathematics.AlgebraOverFields.Elements-Tuple{Any}",
     "page": "Algebra over fields",
-    "title": "Hamiltonian.Mathematics.AlgebraOverFields.Elements",
+    "title": "QuantumLattices.Mathematics.AlgebraOverFields.Elements",
     "category": "method",
     "text": "Elements(ms)\nElements(ms::Pair{I,M}...) where {I<:ID,M<:Element}\nElements(ms::Element...)\n\nGet the set of elements with similar items merged.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Mathematics.AlgebraOverFields.ID",
+    "location": "man/Mathematics/AlgebraOverFields.html#QuantumLattices.Mathematics.AlgebraOverFields.ID",
     "page": "Algebra over fields",
-    "title": "Hamiltonian.Mathematics.AlgebraOverFields.ID",
+    "title": "QuantumLattices.Mathematics.AlgebraOverFields.ID",
     "category": "type",
     "text": "ID(ids::NTuple{N,SimpleID}) where N\nID(ids::SimpleID...)\nID(::Type{SID},attrs::Vararg{NTuple{N},M}) where {SID<:SimpleID,N,M}\n\nThe id system of an algebra over a field.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Mathematics.AlgebraOverFields.IdSpace",
+    "location": "man/Mathematics/AlgebraOverFields.html#QuantumLattices.Mathematics.AlgebraOverFields.IdSpace",
     "page": "Algebra over fields",
-    "title": "Hamiltonian.Mathematics.AlgebraOverFields.IdSpace",
+    "title": "QuantumLattices.Mathematics.AlgebraOverFields.IdSpace",
     "category": "type",
     "text": "IdSpace(sids::DirectVectorSpace,tables::GradedTables)\nIdSpace(::Type{M},sids::DirectVectorSpace,gs::Val{GS}) where {M<:AbstractCombinatorics,GS}\n\nThe graded id space for an algebra generated by a couple of basic simple ids.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Mathematics.AlgebraOverFields.SimpleID",
+    "location": "man/Mathematics/AlgebraOverFields.html#QuantumLattices.Mathematics.AlgebraOverFields.SimpleID",
     "page": "Algebra over fields",
-    "title": "Hamiltonian.Mathematics.AlgebraOverFields.SimpleID",
+    "title": "QuantumLattices.Mathematics.AlgebraOverFields.SimpleID",
     "category": "type",
     "text": "SimpleID <: NamedVector\n\nA simple id is the building block of the id system of an algebra over a field.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Mathematics.AlgebraOverFields.idtype-Union{Tuple{Type{#s17} where #s17<:(Element{N,#s16,I} where #s16<:Number)}, Tuple{I}, Tuple{N}} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{#s19} where #s19<:Tuple{Vararg{Hamiltonian.Mathematics.AlgebraOverFields.SimpleID,N}}) where N",
+    "location": "man/Mathematics/AlgebraOverFields.html#QuantumLattices.Mathematics.AlgebraOverFields.idtype-Union{Tuple{Type{#s17} where #s17<:(Element{N,#s16,I} where #s16<:Number)}, Tuple{I}, Tuple{N}} where I<:(QuantumLattices.Mathematics.AlgebraOverFields.ID{#s19} where #s19<:Tuple{Vararg{QuantumLattices.Mathematics.AlgebraOverFields.SimpleID,N}}) where N",
     "page": "Algebra over fields",
-    "title": "Hamiltonian.Mathematics.AlgebraOverFields.idtype",
+    "title": "QuantumLattices.Mathematics.AlgebraOverFields.idtype",
     "category": "method",
     "text": "idtype(::Type{<:Element{N,<:Number,I}}) where {N,I<:ID{<:NTuple{N,SimpleID}}}\nidtype(m::Element)\n\nThe type of the id of an element.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Base.:*-Tuple{Hamiltonian.Mathematics.AlgebraOverFields.SimpleID,Hamiltonian.Mathematics.AlgebraOverFields.SimpleID}",
-    "page": "Algebra over fields",
-    "title": "Base.:*",
-    "category": "method",
-    "text": "*(sid1::SimpleID,sid2::SimpleID) -> ID\n*(sid::SimpleID,cid::ID) -> ID\n*(cid::ID,sid::SimpleID) -> ID\n*(cid1::ID,cid2::ID) -> ID\n\nGet the product of the id system.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Mathematics/AlgebraOverFields.html#Base.:*-Tuple{Number,Hamiltonian.Mathematics.AlgebraOverFields.Element}",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.:*-Tuple{Number,QuantumLattices.Mathematics.AlgebraOverFields.Element}",
     "page": "Algebra over fields",
     "title": "Base.:*",
     "category": "method",
@@ -2129,7 +2121,15 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Base.:+-Tuple{Hamiltonian.Mathematics.AlgebraOverFields.Element}",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.:*-Tuple{QuantumLattices.Mathematics.AlgebraOverFields.SimpleID,QuantumLattices.Mathematics.AlgebraOverFields.SimpleID}",
+    "page": "Algebra over fields",
+    "title": "Base.:*",
+    "category": "method",
+    "text": "*(sid1::SimpleID,sid2::SimpleID) -> ID\n*(sid::SimpleID,cid::ID) -> ID\n*(cid::ID,sid::SimpleID) -> ID\n*(cid1::ID,cid2::ID) -> ID\n\nGet the product of the id system.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.:+-Tuple{QuantumLattices.Mathematics.AlgebraOverFields.Element}",
     "page": "Algebra over fields",
     "title": "Base.:+",
     "category": "method",
@@ -2137,7 +2137,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Base.:--Tuple{Hamiltonian.Mathematics.AlgebraOverFields.Element}",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.:--Tuple{QuantumLattices.Mathematics.AlgebraOverFields.Element}",
     "page": "Algebra over fields",
     "title": "Base.:-",
     "category": "method",
@@ -2145,7 +2145,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Base.:/-Tuple{Hamiltonian.Mathematics.AlgebraOverFields.Element,Number}",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.:/-Tuple{QuantumLattices.Mathematics.AlgebraOverFields.Element,Number}",
     "page": "Algebra over fields",
     "title": "Base.:/",
     "category": "method",
@@ -2153,7 +2153,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Base.:==-Tuple{Hamiltonian.Mathematics.AlgebraOverFields.Element,Hamiltonian.Mathematics.AlgebraOverFields.Element}",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.:==-Tuple{QuantumLattices.Mathematics.AlgebraOverFields.Element,QuantumLattices.Mathematics.AlgebraOverFields.Element}",
     "page": "Algebra over fields",
     "title": "Base.:==",
     "category": "method",
@@ -2161,7 +2161,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Base.:^-Tuple{Hamiltonian.Mathematics.AlgebraOverFields.Element,Int64}",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.:^-Tuple{QuantumLattices.Mathematics.AlgebraOverFields.Element,Int64}",
     "page": "Algebra over fields",
     "title": "Base.:^",
     "category": "method",
@@ -2169,7 +2169,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Base.empty-Tuple{Type{#s21} where #s21<:(Dict{I,M} where M<:Hamiltonian.Mathematics.AlgebraOverFields.Element where I<:Hamiltonian.Mathematics.AlgebraOverFields.ID)}",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.empty-Tuple{Type{#s21} where #s21<:(Dict{I,M} where M<:QuantumLattices.Mathematics.AlgebraOverFields.Element where I<:QuantumLattices.Mathematics.AlgebraOverFields.ID)}",
     "page": "Algebra over fields",
     "title": "Base.empty",
     "category": "method",
@@ -2177,7 +2177,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Base.findfirst-Tuple{Hamiltonian.Mathematics.AlgebraOverFields.ID,Hamiltonian.Mathematics.AlgebraOverFields.IdSpace}",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.findfirst-Tuple{QuantumLattices.Mathematics.AlgebraOverFields.ID,QuantumLattices.Mathematics.AlgebraOverFields.IdSpace}",
     "page": "Algebra over fields",
     "title": "Base.findfirst",
     "category": "method",
@@ -2185,7 +2185,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Base.getindex-Tuple{Hamiltonian.Mathematics.AlgebraOverFields.IdSpace,Int64}",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.getindex-Tuple{QuantumLattices.Mathematics.AlgebraOverFields.IdSpace,Int64}",
     "page": "Algebra over fields",
     "title": "Base.getindex",
     "category": "method",
@@ -2193,7 +2193,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Base.getproperty-Tuple{Hamiltonian.Mathematics.AlgebraOverFields.ID,Symbol}",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.getproperty-Tuple{QuantumLattices.Mathematics.AlgebraOverFields.ID,Symbol}",
     "page": "Algebra over fields",
     "title": "Base.getproperty",
     "category": "method",
@@ -2201,7 +2201,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Base.isapprox-Tuple{Hamiltonian.Mathematics.AlgebraOverFields.Element,Hamiltonian.Mathematics.AlgebraOverFields.Element}",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.isapprox-Tuple{QuantumLattices.Mathematics.AlgebraOverFields.Element,QuantumLattices.Mathematics.AlgebraOverFields.Element}",
     "page": "Algebra over fields",
     "title": "Base.isapprox",
     "category": "method",
@@ -2209,7 +2209,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Base.isless-Tuple{Hamiltonian.Mathematics.AlgebraOverFields.ID,Hamiltonian.Mathematics.AlgebraOverFields.ID}",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.isless-Tuple{QuantumLattices.Mathematics.AlgebraOverFields.ID,QuantumLattices.Mathematics.AlgebraOverFields.ID}",
     "page": "Algebra over fields",
     "title": "Base.isless",
     "category": "method",
@@ -2217,7 +2217,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Base.propertynames-Union{Tuple{Type{I}}, Tuple{I}, Tuple{Type{I},Bool}} where I<:Hamiltonian.Mathematics.AlgebraOverFields.ID",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.propertynames-Union{Tuple{Type{I}}, Tuple{I}, Tuple{Type{I},Bool}} where I<:QuantumLattices.Mathematics.AlgebraOverFields.ID",
     "page": "Algebra over fields",
     "title": "Base.propertynames",
     "category": "method",
@@ -2225,7 +2225,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Base.replace-Tuple{Hamiltonian.Mathematics.AlgebraOverFields.Element}",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.replace-Tuple{QuantumLattices.Mathematics.AlgebraOverFields.Element}",
     "page": "Algebra over fields",
     "title": "Base.replace",
     "category": "method",
@@ -2233,7 +2233,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Base.show-Tuple{IO,Dict{I,M} where M<:Hamiltonian.Mathematics.AlgebraOverFields.Element where I<:Hamiltonian.Mathematics.AlgebraOverFields.ID}",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.show-Tuple{IO,Dict{I,M} where M<:QuantumLattices.Mathematics.AlgebraOverFields.Element where I<:QuantumLattices.Mathematics.AlgebraOverFields.ID}",
     "page": "Algebra over fields",
     "title": "Base.show",
     "category": "method",
@@ -2241,7 +2241,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Base.show-Tuple{IO,Hamiltonian.Mathematics.AlgebraOverFields.ID}",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.show-Tuple{IO,QuantumLattices.Mathematics.AlgebraOverFields.ID}",
     "page": "Algebra over fields",
     "title": "Base.show",
     "category": "method",
@@ -2257,7 +2257,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Base.zero-Tuple{Dict{I,M} where M<:Hamiltonian.Mathematics.AlgebraOverFields.Element where I<:Hamiltonian.Mathematics.AlgebraOverFields.ID}",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.zero-Tuple{Dict{I,M} where M<:QuantumLattices.Mathematics.AlgebraOverFields.Element where I<:QuantumLattices.Mathematics.AlgebraOverFields.ID}",
     "page": "Algebra over fields",
     "title": "Base.zero",
     "category": "method",
@@ -2265,57 +2265,57 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Interfaces.:⊗-Tuple{Hamiltonian.Mathematics.AlgebraOverFields.Element,Dict{I,M} where M<:Hamiltonian.Mathematics.AlgebraOverFields.Element where I<:Hamiltonian.Mathematics.AlgebraOverFields.ID}",
+    "location": "man/Mathematics/AlgebraOverFields.html#QuantumLattices.Interfaces.:⊗-Tuple{QuantumLattices.Mathematics.AlgebraOverFields.Element,Dict{I,M} where M<:QuantumLattices.Mathematics.AlgebraOverFields.Element where I<:QuantumLattices.Mathematics.AlgebraOverFields.ID}",
     "page": "Algebra over fields",
-    "title": "Hamiltonian.Interfaces.:⊗",
+    "title": "QuantumLattices.Interfaces.:⊗",
     "category": "method",
     "text": "⊗(m::Element,ms::Elements) -> Elements\n⊗(ms::Elements,m::Element) -> Elements\n⊗(ms1::Elements,ms2::Elements) -> Elements\n\nOverloaded ⊗ operator for element-element multiplications of an algebra over a field.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Interfaces.add!-Tuple{Dict{I,M} where M<:Hamiltonian.Mathematics.AlgebraOverFields.Element where I<:Hamiltonian.Mathematics.AlgebraOverFields.ID}",
+    "location": "man/Mathematics/AlgebraOverFields.html#QuantumLattices.Interfaces.add!-Tuple{Dict{I,M} where M<:QuantumLattices.Mathematics.AlgebraOverFields.Element where I<:QuantumLattices.Mathematics.AlgebraOverFields.ID}",
     "page": "Algebra over fields",
-    "title": "Hamiltonian.Interfaces.add!",
+    "title": "QuantumLattices.Interfaces.add!",
     "category": "method",
     "text": "add!(ms::Elements) -> typeof(ms)\nadd!(ms::Elements,::Tuple{}) -> typeof(ms)\nadd!(ms::Elements,m::Element) -> typeof(ms)\nadd!(ms::Elements,mms::Elements) -> typeof(ms)\n\nGet the inplace addition of elements to a set.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Interfaces.div!-Tuple{Dict{I,M} where M<:Hamiltonian.Mathematics.AlgebraOverFields.Element where I<:Hamiltonian.Mathematics.AlgebraOverFields.ID,Number}",
+    "location": "man/Mathematics/AlgebraOverFields.html#QuantumLattices.Interfaces.div!-Tuple{Dict{I,M} where M<:QuantumLattices.Mathematics.AlgebraOverFields.Element where I<:QuantumLattices.Mathematics.AlgebraOverFields.ID,Number}",
     "page": "Algebra over fields",
-    "title": "Hamiltonian.Interfaces.div!",
+    "title": "QuantumLattices.Interfaces.div!",
     "category": "method",
     "text": "div!(ms::Elements,factor::Number) -> Elements\n\nGet the inplace division of element with a scalar.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Interfaces.mul!-Tuple{Dict{I,M} where M<:Hamiltonian.Mathematics.AlgebraOverFields.Element where I<:Hamiltonian.Mathematics.AlgebraOverFields.ID,Number}",
+    "location": "man/Mathematics/AlgebraOverFields.html#QuantumLattices.Interfaces.mul!-Tuple{Dict{I,M} where M<:QuantumLattices.Mathematics.AlgebraOverFields.Element where I<:QuantumLattices.Mathematics.AlgebraOverFields.ID,Number}",
     "page": "Algebra over fields",
-    "title": "Hamiltonian.Interfaces.mul!",
+    "title": "QuantumLattices.Interfaces.mul!",
     "category": "method",
     "text": "mul!(ms::Elements,factor::Number) -> Elements\n\nGet the inplace multiplication of elements with a scalar.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Interfaces.rank-Union{Tuple{Type{#s21} where #s21<:(Element{N,V,I} where I<:(ID{#s22} where #s22<:Tuple{Vararg{SimpleID,N}}) where V<:Number)}, Tuple{N}} where N",
+    "location": "man/Mathematics/AlgebraOverFields.html#QuantumLattices.Interfaces.rank-Union{Tuple{Type{#s21} where #s21<:(Element{N,V,I} where I<:(ID{#s22} where #s22<:Tuple{Vararg{SimpleID,N}}) where V<:Number)}, Tuple{N}} where N",
     "page": "Algebra over fields",
-    "title": "Hamiltonian.Interfaces.rank",
+    "title": "QuantumLattices.Interfaces.rank",
     "category": "method",
     "text": "rank(::Type{<:Element{N}}) where N -> Int\nrank(m::Element) -> Int\n\nGet the rank of an element.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Interfaces.rank-Union{Tuple{Type{#s21} where #s21<:ID{T}}, Tuple{T}} where T<:Tuple{Vararg{Hamiltonian.Mathematics.AlgebraOverFields.SimpleID,N} where N}",
+    "location": "man/Mathematics/AlgebraOverFields.html#QuantumLattices.Interfaces.rank-Union{Tuple{Type{#s21} where #s21<:ID{T}}, Tuple{T}} where T<:Tuple{Vararg{QuantumLattices.Mathematics.AlgebraOverFields.SimpleID,N} where N}",
     "page": "Algebra over fields",
-    "title": "Hamiltonian.Interfaces.rank",
+    "title": "QuantumLattices.Interfaces.rank",
     "category": "method",
     "text": "rank(::Type{<:ID{T}}) where T<:Tuple{Vararg{SimpleID}} -> Int\nrank(id::ID) -> Int\n\nGet the rank of a composite id.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Hamiltonian.Interfaces.sub!-Tuple{Dict{I,M} where M<:Hamiltonian.Mathematics.AlgebraOverFields.Element where I<:Hamiltonian.Mathematics.AlgebraOverFields.ID}",
+    "location": "man/Mathematics/AlgebraOverFields.html#QuantumLattices.Interfaces.sub!-Tuple{Dict{I,M} where M<:QuantumLattices.Mathematics.AlgebraOverFields.Element where I<:QuantumLattices.Mathematics.AlgebraOverFields.ID}",
     "page": "Algebra over fields",
-    "title": "Hamiltonian.Interfaces.sub!",
+    "title": "QuantumLattices.Interfaces.sub!",
     "category": "method",
     "text": "sub!(ms::Elements) -> typeof(ms)\nsub!(ms::Elements,::Tuple{}) -> typeof(ms)\nsub!(ms::Elements,m::Element) -> typeof(ms)\nsub!(ms::Elements,mms::Elements) -> typeof(ms)\n\nGet the inplace subtraction of elements from a set.\n\n\n\n\n\n"
 },
@@ -2333,7 +2333,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Quantum numbers",
     "title": "Quantum numbers",
     "category": "page",
-    "text": "CurrentModule=Hamiltonian.Mathematics.QuantumNumbers"
+    "text": "CurrentModule=QuantumLattices.Mathematics.QuantumNumbers"
 },
 
 {
@@ -2361,223 +2361,223 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.qnsbruteforce",
+    "location": "man/Mathematics/QuantumNumbers.html#QuantumLattices.Mathematics.QuantumNumbers.qnsbruteforce",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Mathematics.QuantumNumbers.qnsbruteforce",
+    "title": "QuantumLattices.Mathematics.QuantumNumbers.qnsbruteforce",
     "category": "constant",
     "text": "qnsbruteforce\n\nIndicate that decompose uses the brute force method.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.qnscompression",
+    "location": "man/Mathematics/QuantumNumbers.html#QuantumLattices.Mathematics.QuantumNumbers.qnscompression",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Mathematics.QuantumNumbers.qnscompression",
+    "title": "QuantumLattices.Mathematics.QuantumNumbers.qnscompression",
     "category": "constant",
     "text": "qnscompression\n\nIndicate that findall and permute use the compressed contents.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.qnscontents",
+    "location": "man/Mathematics/QuantumNumbers.html#QuantumLattices.Mathematics.QuantumNumbers.qnscontents",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Mathematics.QuantumNumbers.qnscontents",
+    "title": "QuantumLattices.Mathematics.QuantumNumbers.qnscontents",
     "category": "constant",
     "text": "qnscontents\n\nIndicate that expand uses the compressed/expanded contents.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.qnscounts",
+    "location": "man/Mathematics/QuantumNumbers.html#QuantumLattices.Mathematics.QuantumNumbers.qnscounts",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Mathematics.QuantumNumbers.qnscounts",
+    "title": "QuantumLattices.Mathematics.QuantumNumbers.qnscounts",
     "category": "constant",
     "text": "qnscounts\n\nIndicate that methods with AbelianNumbers use the count number of the compressed contents.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.qnsexpansion",
+    "location": "man/Mathematics/QuantumNumbers.html#QuantumLattices.Mathematics.QuantumNumbers.qnsexpansion",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Mathematics.QuantumNumbers.qnsexpansion",
+    "title": "QuantumLattices.Mathematics.QuantumNumbers.qnsexpansion",
     "category": "constant",
     "text": "qnsexpansion\n\nIndicate that findall and permute use the expanded contents.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.qnsindices",
+    "location": "man/Mathematics/QuantumNumbers.html#QuantumLattices.Mathematics.QuantumNumbers.qnsindices",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Mathematics.QuantumNumbers.qnsindices",
+    "title": "QuantumLattices.Mathematics.QuantumNumbers.qnsindices",
     "category": "constant",
     "text": "qnsindices\n\nIndicate that expand uses the indices of the compressed/expanded contents.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.qnsindptr",
+    "location": "man/Mathematics/QuantumNumbers.html#QuantumLattices.Mathematics.QuantumNumbers.qnsindptr",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Mathematics.QuantumNumbers.qnsindptr",
+    "title": "QuantumLattices.Mathematics.QuantumNumbers.qnsindptr",
     "category": "constant",
     "text": "qnsindptr\n\nIndicate that methods with AbelianNumbers use the index pointer of the compressed contents.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.qnsmontecarlo",
+    "location": "man/Mathematics/QuantumNumbers.html#QuantumLattices.Mathematics.QuantumNumbers.qnsmontecarlo",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Mathematics.QuantumNumbers.qnsmontecarlo",
+    "title": "QuantumLattices.Mathematics.QuantumNumbers.qnsmontecarlo",
     "category": "constant",
     "text": "qnsmontecarlo\n\nIndicate that decompose uses the Monte Carlo method.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber",
+    "location": "man/Mathematics/QuantumNumbers.html#QuantumLattices.Mathematics.QuantumNumbers.AbelianNumber",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber",
+    "title": "QuantumLattices.Mathematics.QuantumNumbers.AbelianNumber",
     "category": "type",
     "text": "Abstract type for all concrete quantum numbers for a single basis.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers",
+    "location": "man/Mathematics/QuantumNumbers.html#QuantumLattices.Mathematics.QuantumNumbers.AbelianNumbers",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers",
+    "title": "QuantumLattices.Mathematics.QuantumNumbers.AbelianNumbers",
     "category": "type",
     "text": "AbelianNumbers(form::Char,contents::Vector{<:AbelianNumber},counts::Vector{Int},::QnsCounts)\nAbelianNumbers(form::Char,contents::Vector{<:AbelianNumber},indptr::Vector{Int},::QnsIndptr)\n\nThe whole quantum numbers of the total bases of a Hilbert space.\n\nThe default constructors construct a AbelianNumbers from a vector of concrete quantum numbers and an vector containing their counts or indptr.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers",
+    "location": "man/Mathematics/QuantumNumbers.html#QuantumLattices.Mathematics.QuantumNumbers.AbelianNumbers",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers",
+    "title": "QuantumLattices.Mathematics.QuantumNumbers.AbelianNumbers",
     "category": "type",
     "text": "AbelianNumbers(qn::AbelianNumber,count::Int=1)\n\nConstruct a AbelianNumbers with one unique quantum number which occurs count times.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers-Tuple{OrderedCollections.OrderedDict{#s17,Int64} where #s17<:Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber}",
+    "location": "man/Mathematics/QuantumNumbers.html#QuantumLattices.Mathematics.QuantumNumbers.AbelianNumbers-Tuple{OrderedCollections.OrderedDict{#s17,Int64} where #s17<:QuantumLattices.Mathematics.QuantumNumbers.AbelianNumber}",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers",
+    "title": "QuantumLattices.Mathematics.QuantumNumbers.AbelianNumbers",
     "category": "method",
     "text": "AbelianNumbers(od::OrderedDict{<:AbelianNumber,Int})\n\nConstruct a AbelianNumbers from an ordered dict containing concrete quantum numbers and their counts.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers-Tuple{OrderedCollections.OrderedDict{#s17,UnitRange{Int64}} where #s17<:Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber}",
+    "location": "man/Mathematics/QuantumNumbers.html#QuantumLattices.Mathematics.QuantumNumbers.AbelianNumbers-Tuple{OrderedCollections.OrderedDict{#s17,UnitRange{Int64}} where #s17<:QuantumLattices.Mathematics.QuantumNumbers.AbelianNumber}",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers",
+    "title": "QuantumLattices.Mathematics.QuantumNumbers.AbelianNumbers",
     "category": "method",
     "text": "AbelianNumbers(od::OrderedDict{<:AbelianNumber,UnitRange{Int}})\n\nConstruct a AbelianNumbers from an ordered dict containing concrete quantum numbers and their slices.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.PQN",
+    "location": "man/Mathematics/QuantumNumbers.html#QuantumLattices.Mathematics.QuantumNumbers.PQN",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Mathematics.QuantumNumbers.PQN",
+    "title": "QuantumLattices.Mathematics.QuantumNumbers.PQN",
     "category": "type",
     "text": "PQN(N::Real)\n\nThe concrete AbelianNumber of a quantum system with particle number N conserved.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.SPQN",
+    "location": "man/Mathematics/QuantumNumbers.html#QuantumLattices.Mathematics.QuantumNumbers.SPQN",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Mathematics.QuantumNumbers.SPQN",
+    "title": "QuantumLattices.Mathematics.QuantumNumbers.SPQN",
     "category": "type",
     "text": "SPQN(N::Real,Sz::Real)\n\nThe concrete AbelianNumber of a quantum system with both particle number N and spin z-component Sz conserved.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.SQN",
+    "location": "man/Mathematics/QuantumNumbers.html#QuantumLattices.Mathematics.QuantumNumbers.SQN",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Mathematics.QuantumNumbers.SQN",
+    "title": "QuantumLattices.Mathematics.QuantumNumbers.SQN",
     "category": "type",
     "text": "SQN(Sz::Real)\n\nThe concrete AbelianNumber of a quantum system with spin z-component Sz conserved.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.Z2QN",
+    "location": "man/Mathematics/QuantumNumbers.html#QuantumLattices.Mathematics.QuantumNumbers.Z2QN",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Mathematics.QuantumNumbers.Z2QN",
+    "title": "QuantumLattices.Mathematics.QuantumNumbers.Z2QN",
     "category": "type",
     "text": "Z2QN(N::Real)\n\nThe concrete AbelianNumber of a quantum system with a Z₂-like conserved quantity.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.@quantumnumber-Tuple{Any,Any,Any}",
+    "location": "man/Mathematics/QuantumNumbers.html#QuantumLattices.Mathematics.QuantumNumbers.@quantumnumber-Tuple{Any,Any,Any}",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Mathematics.QuantumNumbers.@quantumnumber",
+    "title": "QuantumLattices.Mathematics.QuantumNumbers.@quantumnumber",
     "category": "macro",
     "text": "@quantumnumber typename fieldnames fieldperiods\n\nConstruct a concrete AbelianNumber with the type name being typename, fieldnames specified by fieldnames and periods specified by fieldperiods.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.PQNS-Tuple{Real}",
+    "location": "man/Mathematics/QuantumNumbers.html#QuantumLattices.Mathematics.QuantumNumbers.PQNS-Tuple{Real}",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Mathematics.QuantumNumbers.PQNS",
+    "title": "QuantumLattices.Mathematics.QuantumNumbers.PQNS",
     "category": "method",
     "text": "PQNS(N::Real) -> AbelianNumbers{PQN}\n\nConstruct the AbelianNumbers of the Hilbert space of a single-particle state with at most N identical particles.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.SPQNS-Tuple{Real}",
+    "location": "man/Mathematics/QuantumNumbers.html#QuantumLattices.Mathematics.QuantumNumbers.SPQNS-Tuple{Real}",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Mathematics.QuantumNumbers.SPQNS",
+    "title": "QuantumLattices.Mathematics.QuantumNumbers.SPQNS",
     "category": "method",
     "text": "SPQNS(S::Real) -> AbelianNumbers{SPQN}\n\nConstruct the AbelianNumbers of the Hilbert space of a single site with internal degrees of freedom that can be ascribed to a spin S.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.SQNS-Tuple{Real}",
+    "location": "man/Mathematics/QuantumNumbers.html#QuantumLattices.Mathematics.QuantumNumbers.SQNS-Tuple{Real}",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Mathematics.QuantumNumbers.SQNS",
+    "title": "QuantumLattices.Mathematics.QuantumNumbers.SQNS",
     "category": "method",
     "text": "SQNS(S::Real) -> AbelianNumbers{SQN}\n\nConstruct the AbelianNumbers of the Hilbert space of a signle spin S.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.SzPQNS-Tuple{Real}",
+    "location": "man/Mathematics/QuantumNumbers.html#QuantumLattices.Mathematics.QuantumNumbers.SzPQNS-Tuple{Real}",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Mathematics.QuantumNumbers.SzPQNS",
+    "title": "QuantumLattices.Mathematics.QuantumNumbers.SzPQNS",
     "category": "method",
     "text": "SzPQNS(Sz::Real) -> AbelianNumbers{SPQN}\n\nConstruct the AbelianNumbers of the Hilbert space of a single-paritcle state with at most one particle whose spin-z component is Sz.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.Z2QNS-Tuple{}",
+    "location": "man/Mathematics/QuantumNumbers.html#QuantumLattices.Mathematics.QuantumNumbers.Z2QNS-Tuple{}",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Mathematics.QuantumNumbers.Z2QNS",
+    "title": "QuantumLattices.Mathematics.QuantumNumbers.Z2QNS",
     "category": "method",
     "text": "Z2QNS() -> AbelianNumbers{Z2QN}\n\nConstruct the AbelianNumbers of a Z_2 Hilbert space.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.regularize!-Union{Tuple{QN}, Tuple{Type{QN},AbstractArray{Float64,1}}} where QN<:Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber",
+    "location": "man/Mathematics/QuantumNumbers.html#QuantumLattices.Mathematics.QuantumNumbers.regularize!-Union{Tuple{QN}, Tuple{Type{QN},AbstractArray{Float64,1}}} where QN<:QuantumLattices.Mathematics.QuantumNumbers.AbelianNumber",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Mathematics.QuantumNumbers.regularize!",
+    "title": "QuantumLattices.Mathematics.QuantumNumbers.regularize!",
     "category": "method",
     "text": "regularize!(::Type{QN},array::AbstractVector{Float}) where QN<:AbelianNumber -> typeof(array)\nregularize!(::Type{QN},array::AbstractMatrix{Float}) where QN<:AbelianNumber -> typeof(array)\n\nRegularize the elements of an array in place so that it can represent quantum numbers.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.regularize-Union{Tuple{QN}, Tuple{Type{QN},Union{AbstractArray{Float64,1}, AbstractArray{Float64,2}}}} where QN<:Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber",
+    "location": "man/Mathematics/QuantumNumbers.html#QuantumLattices.Mathematics.QuantumNumbers.regularize-Union{Tuple{QN}, Tuple{Type{QN},Union{AbstractArray{Float64,1}, AbstractArray{Float64,2}}}} where QN<:QuantumLattices.Mathematics.QuantumNumbers.AbelianNumber",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Mathematics.QuantumNumbers.regularize",
+    "title": "QuantumLattices.Mathematics.QuantumNumbers.regularize",
     "category": "method",
     "text": "regularize(::Type{QN},array::Union{AbstractVector{Float},AbstractMatrix{Float}}) where {QN<:AbelianNumber} -> typeof(array)\n\nRegularize the elements of an array and return a copy that can represent quantum numbers.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.toordereddict-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers,Hamiltonian.Mathematics.QuantumNumbers.QnsIndptr}",
+    "location": "man/Mathematics/QuantumNumbers.html#QuantumLattices.Mathematics.QuantumNumbers.toordereddict-Tuple{QuantumLattices.Mathematics.QuantumNumbers.AbelianNumbers,QuantumLattices.Mathematics.QuantumNumbers.QnsIndptr}",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Mathematics.QuantumNumbers.toordereddict",
+    "title": "QuantumLattices.Mathematics.QuantumNumbers.toordereddict",
     "category": "method",
     "text": "toordereddict(qns::AbelianNumbers,::QnsIndptr) -> OrderedDict{qns|>eltype,UnitRange{Int}}\ntoordereddict(qns::AbelianNumbers,::QnsCounts) -> OrderedDict{qns|>eltype,Int}\n\nConvert a AbelianNumbers to an ordered dict.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Mathematics.QuantumNumbers.ukron-Union{Tuple{Vararg{AbelianNumbers{QN},N}}, Tuple{QN}, Tuple{N}} where QN<:Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber where N",
+    "location": "man/Mathematics/QuantumNumbers.html#QuantumLattices.Mathematics.QuantumNumbers.ukron-Union{Tuple{Vararg{AbelianNumbers{QN},N}}, Tuple{QN}, Tuple{N}} where QN<:QuantumLattices.Mathematics.QuantumNumbers.AbelianNumber where N",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Mathematics.QuantumNumbers.ukron",
+    "title": "QuantumLattices.Mathematics.QuantumNumbers.ukron",
     "category": "method",
     "text": "ukron(qnses::Vararg{AbelianNumbers{QN},N};signs::NTuple{N,Int}=ntuple(i->1,N)) where {N,QN<:AbelianNumber} -> AbelianNumbers{QN},Dict{QN,Dict{NTuple{N,QN},UnitRange{Int}}}\n\nUnitary Kronecker product of several AbelianNumberses. The product result as well as the records of the product will be returned.\n\nnote: Note\nAll input AbelianNumbers must be \'U\' formed or \'C\' formed.\nSince duplicate quantum number are not allowed in \'U\' formed and \'C\' formed AbelianNumberses, in general, there exists a merge process of duplicate quantum numbers in the product result. Therefore, records are needed to keep track of this process, which will be returned along with the product result. The records are stored in a Dict{QN,Dict{NTuple{N,QN},UnitRange{Int}}} typed dict, in which, for each unduplicate quantum number qn in the product result, there exist a record Dict((qn₁,qn₂,...)=>start:stop,...) telling what quantum numbers (qn₁,qn₂,...) a mereged duplicate qn comes from and what slice start:stop this merged duplicate corresponds.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Base.:*-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber,Integer}",
+    "location": "man/Mathematics/QuantumNumbers.html#Base.:*-Tuple{QuantumLattices.Mathematics.QuantumNumbers.AbelianNumber,Integer}",
     "page": "Quantum numbers",
     "title": "Base.:*",
     "category": "method",
@@ -2585,7 +2585,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Base.:+-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber}",
+    "location": "man/Mathematics/QuantumNumbers.html#Base.:+-Tuple{QuantumLattices.Mathematics.QuantumNumbers.AbelianNumber}",
     "page": "Quantum numbers",
     "title": "Base.:+",
     "category": "method",
@@ -2593,7 +2593,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Base.:--Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber}",
+    "location": "man/Mathematics/QuantumNumbers.html#Base.:--Tuple{QuantumLattices.Mathematics.QuantumNumbers.AbelianNumber}",
     "page": "Quantum numbers",
     "title": "Base.:-",
     "category": "method",
@@ -2601,7 +2601,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Base.:==-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers,Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers}",
+    "location": "man/Mathematics/QuantumNumbers.html#Base.:==-Tuple{QuantumLattices.Mathematics.QuantumNumbers.AbelianNumbers,QuantumLattices.Mathematics.QuantumNumbers.AbelianNumbers}",
     "page": "Quantum numbers",
     "title": "Base.:==",
     "category": "method",
@@ -2609,7 +2609,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Base.:^-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber,Integer}",
+    "location": "man/Mathematics/QuantumNumbers.html#Base.:^-Tuple{QuantumLattices.Mathematics.QuantumNumbers.AbelianNumber,Integer}",
     "page": "Quantum numbers",
     "title": "Base.:^",
     "category": "method",
@@ -2625,7 +2625,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Base.filter-Union{Tuple{QN}, Tuple{QN,AbelianNumbers{QN}}} where QN<:Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber",
+    "location": "man/Mathematics/QuantumNumbers.html#Base.filter-Union{Tuple{QN}, Tuple{QN,AbelianNumbers{QN}}} where QN<:QuantumLattices.Mathematics.QuantumNumbers.AbelianNumber",
     "page": "Quantum numbers",
     "title": "Base.filter",
     "category": "method",
@@ -2633,7 +2633,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Base.findall-Union{Tuple{QN}, Tuple{QN,AbelianNumbers{QN},QnsCompression}} where QN<:Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber",
+    "location": "man/Mathematics/QuantumNumbers.html#Base.findall-Union{Tuple{QN}, Tuple{QN,AbelianNumbers{QN},QnsCompression}} where QN<:QuantumLattices.Mathematics.QuantumNumbers.AbelianNumber",
     "page": "Quantum numbers",
     "title": "Base.findall",
     "category": "method",
@@ -2641,7 +2641,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Base.getindex-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers,Int64}",
+    "location": "man/Mathematics/QuantumNumbers.html#Base.getindex-Tuple{QuantumLattices.Mathematics.QuantumNumbers.AbelianNumbers,Int64}",
     "page": "Quantum numbers",
     "title": "Base.getindex",
     "category": "method",
@@ -2657,7 +2657,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Base.keys-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers}",
+    "location": "man/Mathematics/QuantumNumbers.html#Base.keys-Tuple{QuantumLattices.Mathematics.QuantumNumbers.AbelianNumbers}",
     "page": "Quantum numbers",
     "title": "Base.keys",
     "category": "method",
@@ -2665,7 +2665,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Base.kron-Union{Tuple{QN}, Tuple{Type{QN},AbelianNumber,AbelianNumber}} where QN<:Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber",
+    "location": "man/Mathematics/QuantumNumbers.html#Base.kron-Union{Tuple{QN}, Tuple{Type{QN},AbelianNumber,AbelianNumber}} where QN<:QuantumLattices.Mathematics.QuantumNumbers.AbelianNumber",
     "page": "Quantum numbers",
     "title": "Base.kron",
     "category": "method",
@@ -2673,7 +2673,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Base.length-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers}",
+    "location": "man/Mathematics/QuantumNumbers.html#Base.length-Tuple{QuantumLattices.Mathematics.QuantumNumbers.AbelianNumbers}",
     "page": "Quantum numbers",
     "title": "Base.length",
     "category": "method",
@@ -2681,7 +2681,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Base.pairs-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers,Union{QnsCounts, QnsIndptr}}",
+    "location": "man/Mathematics/QuantumNumbers.html#Base.pairs-Tuple{QuantumLattices.Mathematics.QuantumNumbers.AbelianNumbers,Union{QnsCounts, QnsIndptr}}",
     "page": "Quantum numbers",
     "title": "Base.pairs",
     "category": "method",
@@ -2689,7 +2689,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Base.show-Tuple{IO,Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers}",
+    "location": "man/Mathematics/QuantumNumbers.html#Base.show-Tuple{IO,QuantumLattices.Mathematics.QuantumNumbers.AbelianNumbers}",
     "page": "Quantum numbers",
     "title": "Base.show",
     "category": "method",
@@ -2697,7 +2697,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Base.sort-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers}",
+    "location": "man/Mathematics/QuantumNumbers.html#Base.sort-Tuple{QuantumLattices.Mathematics.QuantumNumbers.AbelianNumbers}",
     "page": "Quantum numbers",
     "title": "Base.sort",
     "category": "method",
@@ -2705,7 +2705,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Base.string-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers}",
+    "location": "man/Mathematics/QuantumNumbers.html#Base.string-Tuple{QuantumLattices.Mathematics.QuantumNumbers.AbelianNumbers}",
     "page": "Quantum numbers",
     "title": "Base.string",
     "category": "method",
@@ -2721,7 +2721,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Base.values-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers,Hamiltonian.Mathematics.QuantumNumbers.QnsIndptr}",
+    "location": "man/Mathematics/QuantumNumbers.html#Base.values-Tuple{QuantumLattices.Mathematics.QuantumNumbers.AbelianNumbers,QuantumLattices.Mathematics.QuantumNumbers.QnsIndptr}",
     "page": "Quantum numbers",
     "title": "Base.values",
     "category": "method",
@@ -2729,57 +2729,57 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Interfaces.:⊕-Tuple{Vararg{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber,N} where N}",
+    "location": "man/Mathematics/QuantumNumbers.html#QuantumLattices.Interfaces.:⊕-Tuple{Vararg{QuantumLattices.Mathematics.QuantumNumbers.AbelianNumber,N} where N}",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Interfaces.:⊕",
+    "title": "QuantumLattices.Interfaces.:⊕",
     "category": "method",
     "text": "⊕(qns::AbelianNumber...) -> AbelianNumbers{qns|>eltype}\n⊕(qnses::AbelianNumbers...) -> qnses|>eltype\n\nGet the direct sum of some AbelianNumbers or AbelianNumberses.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Interfaces.:⊗-Tuple{Vararg{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber,N} where N}",
+    "location": "man/Mathematics/QuantumNumbers.html#QuantumLattices.Interfaces.:⊗-Tuple{Vararg{QuantumLattices.Mathematics.QuantumNumbers.AbelianNumber,N} where N}",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Interfaces.:⊗",
+    "title": "QuantumLattices.Interfaces.:⊗",
     "category": "method",
     "text": "⊗(qns::AbelianNumber...) -> eltype(qns)\n⊗(qnses::AbelianNumbers...) -> eltype(qnses)\n\nGet the direct product of some AbelianNumbers or AbelianNumberses.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Interfaces.decompose-Union{Tuple{QN}, Tuple{N}, Tuple{Tuple{Vararg{AbelianNumbers{QN},N}},QN,Tuple{Vararg{Int64,N}},QnsBruteForce}} where QN<:Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber where N",
+    "location": "man/Mathematics/QuantumNumbers.html#QuantumLattices.Interfaces.decompose-Union{Tuple{QN}, Tuple{N}, Tuple{Tuple{Vararg{AbelianNumbers{QN},N}},QN,Tuple{Vararg{Int64,N}},QnsBruteForce}} where QN<:QuantumLattices.Mathematics.QuantumNumbers.AbelianNumber where N",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Interfaces.decompose",
+    "title": "QuantumLattices.Interfaces.decompose",
     "category": "method",
     "text": "decompose(qnses::NTuple{N,AbelianNumbers{QN}},target::QN,signs::NTuple{N,Int},::QnsBruteForce;nmax::Int=20) where {N,QN<:AbelianNumber} -> Vector{NTuple{N,Int}}\ndecompose(qnses::NTuple{N,AbelianNumbers{QN}},target::QN,signs::NTuple{N,Int},::QnsMonteCarlo;nmax::Int=20) where {N,QN<:AbelianNumber} -> Vector{NTuple{N,Int}}\n\nFind a couple of decompositions of target with respect to qnses.\n\nnote: Note\nA tuple of integers (i₁,i₂,...) is called a decomposition of a given target with respect to the given qnses if and only if they satisfy the \"decomposition rule\":sum_textj textsignstextjtimestextqnsestextjtexti_textj==texttargetThis equation is in fact a kind of a set of restricted linear Diophantine equations. Indeed, our quantum numbers are always discrete Abelian ones and all instances of a concrete AbelianNumber forms a module over the ring of integers. Therefore, each quantum number can be represented as a integral multiple of the unit element of the Abelian module, which results in the final reduction of the above equation to a set of linear Diophantine equations. Then finding a decomposition is equivalent to find a solution of the reduced linear Diophantine equations, with the restriction that the quantum numbers constructed from the solution should be in the corresponding qnses. Here we provide two methods to find such decompositions, one is by brute force (qnsbruteforce case), and the other is by Monte Carlo simultatioins (qnsmontecarlo case).\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Interfaces.dimension-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers}",
+    "location": "man/Mathematics/QuantumNumbers.html#QuantumLattices.Interfaces.dimension-Tuple{QuantumLattices.Mathematics.QuantumNumbers.AbelianNumbers}",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Interfaces.dimension",
+    "title": "QuantumLattices.Interfaces.dimension",
     "category": "method",
     "text": "dimension(qns::AbelianNumbers) -> Int\n\nThe dimension of the Hilbert space a AbelianNumbers represents.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Interfaces.dimension-Tuple{Type{#s21} where #s21<:Hamiltonian.Mathematics.QuantumNumbers.AbelianNumber}",
+    "location": "man/Mathematics/QuantumNumbers.html#QuantumLattices.Interfaces.dimension-Tuple{Type{#s21} where #s21<:QuantumLattices.Mathematics.QuantumNumbers.AbelianNumber}",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Interfaces.dimension",
+    "title": "QuantumLattices.Interfaces.dimension",
     "category": "method",
     "text": "dimension(::Type{<:AbelianNumber}) -> Int\ndimension(::AbelianNumber) -> Int\n\nThe dimension of the Hilbert space a AbelianNumber represents. Apparently, this is always 1.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Interfaces.expand-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers,Hamiltonian.Mathematics.QuantumNumbers.QnsContents}",
+    "location": "man/Mathematics/QuantumNumbers.html#QuantumLattices.Interfaces.expand-Tuple{QuantumLattices.Mathematics.QuantumNumbers.AbelianNumbers,QuantumLattices.Mathematics.QuantumNumbers.QnsContents}",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Interfaces.expand",
+    "title": "QuantumLattices.Interfaces.expand",
     "category": "method",
     "text": "expand(qns::AbelianNumbers,::QnsContents) -> Vector{qns|>eltype}\nexpand(qns::AbelianNumbers,::QnsIndices) -> Vector{Int}\n\nExpand the contents (qnscontents case) or indices (qnsindices case) of a AbelianNumbers to the uncompressed form.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/QuantumNumbers.html#Hamiltonian.Interfaces.permute-Tuple{Hamiltonian.Mathematics.QuantumNumbers.AbelianNumbers,Array{Int64,1},Hamiltonian.Mathematics.QuantumNumbers.QnsCompression}",
+    "location": "man/Mathematics/QuantumNumbers.html#QuantumLattices.Interfaces.permute-Tuple{QuantumLattices.Mathematics.QuantumNumbers.AbelianNumbers,Array{Int64,1},QuantumLattices.Mathematics.QuantumNumbers.QnsCompression}",
     "page": "Quantum numbers",
-    "title": "Hamiltonian.Interfaces.permute",
+    "title": "QuantumLattices.Interfaces.permute",
     "category": "method",
     "text": "permute(qns::AbelianNumbers,permutation::Vector{Int},::QnsCompression) -> AbelianNumbers\npermute(qns::AbelianNumbers,permutation::Vector{Int},::QnsExpansion) -> AbelianNumbers\n\nReorder the quantum numbers contained in a AbelianNumbers with a permutation and return the new one.\n\nFor qnscompression case, the permutation is for the compressed contents of the original AbelianNumbers while for qnsexpansion case, the permutation is for the expanded contents of the original AbelianNumbers.\n\n\n\n\n\n"
 },
@@ -2797,7 +2797,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "Introduction",
     "category": "page",
-    "text": "CurrentModule=Hamiltonian.Essentials"
+    "text": "CurrentModule=QuantumLattices.Essentials"
 },
 
 {
@@ -2805,7 +2805,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "Introduction",
     "category": "section",
-    "text": "Essentials of the Hamiltonian package, which defines all the imported constants, types and functions when using import Hamiltonian or using Hamiltonian. Note that this submodule depends on the Prerequisites and Mathematics submodules although the variables in them are not exported to the scope of Hamiltonian by default.Pages=  [\n        \"Spatials.md\",\n        \"DegreesOfFreedom.md\",\n        \"Terms.md\",\n        \"FockPackage.md\",\n        \"SpinPackage.md\",\n        ]\nDepth=2"
+    "text": "Essentials of the QuantumLattices package, which defines all the imported constants, types and functions when using import QuantumLattices or using QuantumLattices. Note that this submodule depends on the Prerequisites and Mathematics submodules although the variables in them are not exported to the scope of QuantumLattices by default.Pages=  [\n        \"Spatials.md\",\n        \"DegreesOfFreedom.md\",\n        \"Terms.md\",\n        \"FockPackage.md\",\n        \"SpinPackage.md\",\n        ]\nDepth=2"
 },
 
 {
@@ -2813,7 +2813,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatials",
     "title": "Spatials",
     "category": "page",
-    "text": "CurrentModule=Hamiltonian.Essentials.Spatialspush!(LOAD_PATH,\"../../../../src/\")\nusing Hamiltonian"
+    "text": "CurrentModule=QuantumLattices.Essentials.Spatialspush!(LOAD_PATH,\"../../../../src/\")\nusing QuantumLattices"
 },
 
 {
@@ -2889,329 +2889,329 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.acrossbonds",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.acrossbonds",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.acrossbonds",
+    "title": "QuantumLattices.Essentials.Spatials.acrossbonds",
     "category": "constant",
     "text": "acrossbonds\n\nIndicate that bonds across the unitcell are inquired, which are in fact those across the periodic boundaries.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.insidebonds",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.insidebonds",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.insidebonds",
+    "title": "QuantumLattices.Essentials.Spatials.insidebonds",
     "category": "constant",
     "text": "insidebonds\n\nIndicate that bonds inside the unitcell are inquired, which do not contain those across the periodic boundaries.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.interbonds",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.interbonds",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.interbonds",
+    "title": "QuantumLattices.Essentials.Spatials.interbonds",
     "category": "constant",
     "text": "interbonds\n\nIndicate that bonds inter the sublattices are inquired.\n\nnote: Note\nThese bonds do not contain those accorss the periodic boundaries.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.intrabonds",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.intrabonds",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.intrabonds",
+    "title": "QuantumLattices.Essentials.Spatials.intrabonds",
     "category": "constant",
     "text": "intrabonds\n\nIndicate that bonds intra the sublattices are inquired.\n\nnote: Note\nThese bonds do not contain those accorss the periodic boundaries.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.zerothbonds",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.zerothbonds",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.zerothbonds",
+    "title": "QuantumLattices.Essentials.Spatials.zerothbonds",
     "category": "constant",
     "text": "zerothbonds\n\nIndicate that zeroth bonds, i.e. the points are inquired.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.AbstractBond",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.AbstractBond",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.AbstractBond",
+    "title": "QuantumLattices.Essentials.Spatials.AbstractBond",
     "category": "type",
     "text": "AbstractBond{R,P<:PID,N}\n\nAbstract bond.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.AbstractLattice",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.AbstractLattice",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.AbstractLattice",
+    "title": "QuantumLattices.Essentials.Spatials.AbstractLattice",
     "category": "type",
     "text": "AbstractLattice{P<:PID,N}\n\nAbstract type for all lattices.\n\nIt should have the following attributes\n\nname::String: the name of the lattice\npids::Vector{P}: the pids of the lattice\nrcoords::Matrix{Float}: the rcoords of the lattice\nicoords::Matrix{Float}: the icoords of the lattice\nvectors::Vector{SVector{N,Float}}: the translation vectors of the lattice\nreciprocals::Vector{SVector{N,Float}}: the reciprocals of the lattice\nneighbors::Dict{Int,Float}: the order-distance map of the nearest neighbors of the lattice\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.Bond",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.Bond",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.Bond",
+    "title": "QuantumLattices.Essentials.Spatials.Bond",
     "category": "type",
     "text": "Bond(neighbor::Int,spoint::Point,epoint::Point)\n\nA bond in a lattice.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.Cylinder",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.Cylinder",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.Cylinder",
+    "title": "QuantumLattices.Essentials.Spatials.Cylinder",
     "category": "type",
     "text": "Cylinder{P}(    name::String,\n                block::AbstractMatrix{<:Real},\n                translation::AbstractVector{<:Real};\n                vector::Union{AbstractVector{<:Real},Nothing}=nothing,\n                neighbors::Union{Dict{Int,<:Real},Int}=1,\n                ) where P<:PID\n\nCylinder of 1d and quasi 2d lattices.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.Cylinder-Tuple",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.Cylinder-Tuple",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.Cylinder",
+    "title": "QuantumLattices.Essentials.Spatials.Cylinder",
     "category": "method",
     "text": "(cylinder::Cylinder)(scopes::Any...;coordination::Int=8) -> Lattice\n\nConstruct a lattice from a cylinder with the assigned scopes.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.Lattice",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.Lattice",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.Lattice",
+    "title": "QuantumLattices.Essentials.Spatials.Lattice",
     "category": "type",
     "text": "Lattice(    name::String,\n            pids::Vector{<:PID},\n            rcoords::AbstractMatrix{<:Real};\n            icoords::AbstractMatrix{<:Real}=SMatrix{0,0,Float}(),\n            vectors::AbstractVector{<:AbstractVector{<:Real}}=SVector{0,SVector{size(rcoords,1),Float}}(),\n            neighbors::Union{Dict{Int,<:Real},Int}=1,\n            coordination::Int=8\n        )\nLattice(    name::String,\n            points::AbstractVector{<:Point};\n            vectors::AbstractVector{<:AbstractVector{<:Real}}=SVector{0,SVector{points|>eltype|>dimension,Float}}(),\n            neighbors::Union{Dict{Int,<:Real},Int}=1,\n            coordination::Int=8\n            )\nLattice(    name::String,\n            sublattices::AbstractVector{<:AbstractLattice};\n            vectors::AbstractVector{<:AbstractVector{<:Real}}=SVector{0,SVector{sublattices|>eltype|>dimension,Float}}(),\n            neighbors::Union{Dict{Int,<:Real},Int}=1,\n            coordination::Int=8\n            )\n\nSimplest lattice.\n\nA simplest lattice can be construted from its contents, i.e. pids, rcoords and icoords, or from a couple of points, or from a couple of sublattices.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.LatticeIndex",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.LatticeIndex",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.LatticeIndex",
+    "title": "QuantumLattices.Essentials.Spatials.LatticeIndex",
     "category": "type",
     "text": "LatticeIndex{Kind}(index::Union{PID,Int}) where Kind\n\nLattice index.\n\nKind must be one of the followings:\n\n\'R\': for getting the rcoord of a lattice\n\'I\': for getting the icoord of a lattice\n\'P\': for getting the point of a lattice\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.PID",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.PID",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.PID",
+    "title": "QuantumLattices.Essentials.Spatials.PID",
     "category": "type",
     "text": "PID(scope,site::Int)\nPID(;scope=\"tz\",site::Int=1)\n\nThe id of a point.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.Point",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.Point",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.Point",
+    "title": "QuantumLattices.Essentials.Spatials.Point",
     "category": "type",
     "text": "Point(pid::PID,rcoord::SVector{N,<:Real},icoord::SVector{N,<:Real}) where N\nPoint(pid::PID,rcoord::NTuple{N,<:Real},icoord::NTuple{N,<:Real}=ntuple(i->0.0,N)) where N\nPoint(pid::PID,rcoord::AbstractVector{<:Real},icoord::AbstractVector{<:Real}=zero(SVector{length(rcoord),Float}))\n\nLabeled point.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.SuperLattice",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.SuperLattice",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.SuperLattice",
+    "title": "QuantumLattices.Essentials.Spatials.SuperLattice",
     "category": "type",
     "text": "SuperLattice(   name::String,\n                sublattices::AbstractVector{<:AbstractLattice};\n                vectors::AbstractVector{<:AbstractVector{<:Real}}=SVector{0,SVector{sublattices|>eltype|>dimension,Float}}(),\n                neighbors::Dict{Int,<:Real}=Dict{Int,Float}()\n                )\n\nSuperLattice that is composed of serveral sublattices.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.azimuth-Tuple{AbstractArray{#s222,1} where #s222<:Real}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.azimuth-Tuple{AbstractArray{#s222,1} where #s222<:Real}",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.azimuth",
+    "title": "QuantumLattices.Essentials.Spatials.azimuth",
     "category": "method",
     "text": "azimuth(v::AbstractVector{<:Real}) -> Float\n\nGet the azimuth angle in radians of a vector.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.azimuthd-Tuple{AbstractArray{#s222,1} where #s222<:Real}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.azimuthd-Tuple{AbstractArray{#s222,1} where #s222<:Real}",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.azimuthd",
+    "title": "QuantumLattices.Essentials.Spatials.azimuthd",
     "category": "method",
     "text": "azimuthd(v::AbstractVector{<:Real}) -> Float\n\nGet the azimuth angle in degrees of a vector.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.bonds-Tuple{AbstractLattice}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.bonds-Tuple{AbstractLattice}",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.bonds",
+    "title": "QuantumLattices.Essentials.Spatials.bonds",
     "category": "method",
     "text": "bonds(lattice::AbstractLattice) -> Vector{AbstractBond}\nbonds(lattice::AbstractLattice,::ZerothBonds) -> Vector{Point}\nbonds(lattice::AbstractLattice,::InsideBonds) -> Vector{Bond}\nbonds(lattice::AbstractLattice,::AcrossBonds) -> Vector{Bond}\n\nGet the bonds of a lattice.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.bonds-Tuple{SuperLattice,Hamiltonian.Essentials.Spatials.IntraBonds}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.bonds-Tuple{SuperLattice,QuantumLattices.Essentials.Spatials.IntraBonds}",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.bonds",
+    "title": "QuantumLattices.Essentials.Spatials.bonds",
     "category": "method",
     "text": "bonds(lattice::SuperLattice,::IntraBonds) -> Vector{Bond}\nbonds(lattice::SuperLattice,::InterBonds) -> Vector{Bond}\n\nGet the bonds of a superlattice.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.distance-Tuple{AbstractArray{#s211,1} where #s211<:Real,AbstractArray{#s22,1} where #s22<:Real}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.distance-Tuple{AbstractArray{#s211,1} where #s211<:Real,AbstractArray{#s22,1} where #s22<:Real}",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.distance",
+    "title": "QuantumLattices.Essentials.Spatials.distance",
     "category": "method",
     "text": "distance(p1::AbstractVector{<:Real},p2::AbstractVector{<:Real}) -> Float\n\nGet the distance between two points.\n\nnote: Note\nCompared to norm(p1-p2), this function avoids the memory allocation for p1-p2, thus is more efficient.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.icoord-Tuple{Bond}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.icoord-Tuple{Bond}",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.icoord",
+    "title": "QuantumLattices.Essentials.Spatials.icoord",
     "category": "method",
     "text": "icoord(bond::Bond) -> SVector\n\nGet the icoord of the bond.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.interlinks-Tuple{AbstractArray{#s233,2} where #s233<:Real,AbstractArray{#s232,2} where #s232<:Real,Dict{Int64,Float64}}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.interlinks-Tuple{AbstractArray{#s233,2} where #s233<:Real,AbstractArray{#s232,2} where #s232<:Real,Dict{Int64,Float64}}",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.interlinks",
+    "title": "QuantumLattices.Essentials.Spatials.interlinks",
     "category": "method",
     "text": "interlinks(cluster1::AbstractMatrix{<:Real},cluster2::AbstractMatrix{<:Real},neighbors::Dict{Int,Float}) -> Vector{Tuple{Int,Int,Int,SVector{size(cluster1,1),Float}}}\n\nUse kdtree to get the intercluster nearest neighbors.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.intralinks-Union{Tuple{N}, Tuple{AbstractArray{#s228,2} where #s228<:Real,AbstractArray{#s227,1} where #s227<:(AbstractArray{#s226,1} where #s226<:Real),Dict{Int64,Float64}}, Tuple{AbstractArray{#s225,2} where #s225<:Real,AbstractArray{#s224,1} where #s224<:(AbstractArray{#s223,1} where #s223<:Real),Dict{Int64,Float64},Tuple{Vararg{Int64,N}}}} where N",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.intralinks-Union{Tuple{N}, Tuple{AbstractArray{#s228,2} where #s228<:Real,AbstractArray{#s227,1} where #s227<:(AbstractArray{#s226,1} where #s226<:Real),Dict{Int64,Float64}}, Tuple{AbstractArray{#s225,2} where #s225<:Real,AbstractArray{#s224,1} where #s224<:(AbstractArray{#s223,1} where #s223<:Real),Dict{Int64,Float64},Tuple{Vararg{Int64,N}}}} where N",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.intralinks",
+    "title": "QuantumLattices.Essentials.Spatials.intralinks",
     "category": "method",
     "text": "intralinks( cluster::AbstractMatrix{<:Real},\n            vectors::AbstractVector{<:AbstractVector{<:Real}},\n            neighbors::Dict{Int,Float},\n            maxtranslations::NTuple{N,Int}=ntuple(i->length(neighbors),length(vectors))\n            ) where N -> Vector{Tuple{Int,Int,Int,SVector{size(cluster,1),Float}}}\n\nUse kdtree to get the intracluster nearest neighbors.\n\nAs is similar to minimumlengths, when vectors is nonempty, the cluster assumes periodic boundaries. neighbors provides the map between the bond length and the order of nearest neighbors. Note only those with the lengths present in neighbors will be included in the result. maxtranslations determines the maximum number of translations along those directions specified by vectors when the tiled supercluster is construted (See minimumlengths for the explanation of the method for periodic lattices).\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.isintracell-Tuple{Bond}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.isintracell-Tuple{Bond}",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.isintracell",
+    "title": "QuantumLattices.Essentials.Spatials.isintracell",
     "category": "method",
     "text": "isintracell(bond::Bond) -> Bool\n\nJudge whether a bond is intra the unit cell of a lattice.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.isintratriangle-Tuple{AbstractArray{#s15,1} where #s15<:Real,AbstractArray{#s14,1} where #s14<:Real,AbstractArray{#s13,1} where #s13<:Real,AbstractArray{#s12,1} where #s12<:Real}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.isintratriangle-Tuple{AbstractArray{#s15,1} where #s15<:Real,AbstractArray{#s14,1} where #s14<:Real,AbstractArray{#s13,1} where #s13<:Real,AbstractArray{#s12,1} where #s12<:Real}",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.isintratriangle",
+    "title": "QuantumLattices.Essentials.Spatials.isintratriangle",
     "category": "method",
     "text": "isintratriangle(p::AbstractVector{<:Real},\n                p1::AbstractVector{<:Real},\n                p2::AbstractVector{<:Real},\n                p3::AbstractVector{<:Real};\n                vertexes::NTuple{3,Bool}=(true,true,true),\n                edges::NTuple{3,Bool}=(true,true,true),\n                atol::Real=atol,\n                rtol::Real=rtol\n                ) -> Bool\n\nJudge whether a point belongs to the interior of a triangle whose vertexes are p1, \'p2\' and p3 with the give tolerance. vertexes and edges define whether the interior should contain the vertexes or edges, respectively.\n\nnote: Note\nThe vertexes are in the order (p1,p2,p3) and the edges are in the order (p1p2,p2p3,p3p1).\nThe edges do not contain the vertexes.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.isonline-Tuple{AbstractArray{#s15,1} where #s15<:Real,AbstractArray{#s14,1} where #s14<:Real,AbstractArray{#s13,1} where #s13<:Real}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.isonline-Tuple{AbstractArray{#s15,1} where #s15<:Real,AbstractArray{#s14,1} where #s14<:Real,AbstractArray{#s13,1} where #s13<:Real}",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.isonline",
+    "title": "QuantumLattices.Essentials.Spatials.isonline",
     "category": "method",
     "text": "isonline(p::AbstractVector{<:Real},p1::AbstractVector{<:Real},p2::AbstractVector{<:Real};ends::Tuple{Bool,Bool}=(true,true),atol::Real=atol,rtol::Real=rtol) -> Bool\n\nJudge whether a point is on a line segment whose end points are p1 and p2 with the given tolerance. ends defines whether the line segment should contain its ends.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.isparallel-Tuple{AbstractArray{#s19,1} where #s19<:Real,AbstractArray{#s17,1} where #s17<:Real}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.isparallel-Tuple{AbstractArray{#s19,1} where #s19<:Real,AbstractArray{#s17,1} where #s17<:Real}",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.isparallel",
+    "title": "QuantumLattices.Essentials.Spatials.isparallel",
     "category": "method",
     "text": "isparallel(v1::AbstractVector{<:Real},v2::AbstractVector{<:Real};atol::Real=atol,rtol::Real=rtol) -> Int\n\nJudge whether two vectors are parallel to each other with the given tolerance, 0 for not parallel, 1 for parallel and -1 for antiparallel.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.issubordinate-Tuple{AbstractArray{#s230,1} where #s230<:Real,AbstractArray{#s229,1} where #s229<:(AbstractArray{#s228,1} where #s228<:Real)}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.issubordinate-Tuple{AbstractArray{#s230,1} where #s230<:Real,AbstractArray{#s229,1} where #s229<:(AbstractArray{#s228,1} where #s228<:Real)}",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.issubordinate",
+    "title": "QuantumLattices.Essentials.Spatials.issubordinate",
     "category": "method",
     "text": "issubordinate(rcoord::AbstractVector{<:Real},vectors::AbstractVector{<:AbstractVector{<:Real}};atol::Real=atol,rtol::Real=rtol) -> Bool\n\nJudge whether a coordinate belongs to a lattice defined by vectors with the given tolerance.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.minimumlengths",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.minimumlengths",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.minimumlengths",
+    "title": "QuantumLattices.Essentials.Spatials.minimumlengths",
     "category": "function",
     "text": "minimumlengths(cluster::AbstractMatrix{<:Real},vectors::AbstractVector{<:AbstractVector{<:Real}},nneighbor::Int=1;coordination::Int=8) -> Vector{Float}\n\nUse kdtree to search the lowest several minimum bond lengths within a lattice translated by a cluster.\n\nWhen the translation vectors are not empty, the lattice will be considered periodic in the corresponding directions. Otherwise the lattice will be open in all directions. To search for the bonds accorss the periodic boundaries, the cluster will be pretranslated to become a supercluster, which has open boundaries but is large enough to contain all the nearest neighbors within the required order. The coordination parameter sets the average number of each order of nearest neighbors. If it is to small, larger bond lengths may not be searched, and the result will contain Inf. This is a sign that you may need a larger coordination. Another situation that Inf appears in the result occurs when the minimum lengths are searched in open lattices. Indeed, the cluster may be too small so that the required order just goes beyond it. In this case the warning message can be safely ignored.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.neighbor-Tuple{Bond}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.neighbor-Tuple{Bond}",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.neighbor",
+    "title": "QuantumLattices.Essentials.Spatials.neighbor",
     "category": "method",
     "text": "neighbor(bond::Bond) -> Int\n\nGet the neighbor of a bond.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.neighbor-Tuple{Point}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.neighbor-Tuple{Point}",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.neighbor",
+    "title": "QuantumLattices.Essentials.Spatials.neighbor",
     "category": "method",
     "text": "neighbor(::Point) -> 0\nneighbor(::Type{<:Point}) -> 0\n\nGet the neighbor of a point.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.nneighbor-Tuple{AbstractLattice}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.nneighbor-Tuple{AbstractLattice}",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.nneighbor",
+    "title": "QuantumLattices.Essentials.Spatials.nneighbor",
     "category": "method",
     "text": "nneighbor(lattice::AbstractLattice) -> Int\n\nGet the highest order of nearest neighbors.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.pidtype-Tuple{AbstractBond}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.pidtype-Tuple{AbstractBond}",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.pidtype",
+    "title": "QuantumLattices.Essentials.Spatials.pidtype",
     "category": "method",
     "text": "pidtype(bond::AbstractBond)\npidtype(::Type{<:AbstractBond{P}}) where {P<:PID}\n\nGet the pid type of a concrete bond.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.polar-Tuple{AbstractArray{#s222,1} where #s222<:Real}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.polar-Tuple{AbstractArray{#s222,1} where #s222<:Real}",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.polar",
+    "title": "QuantumLattices.Essentials.Spatials.polar",
     "category": "method",
     "text": "polar(v::AbstractVector{<:Real}) -> Float\n\nGet the polar angle in radians of a vector.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.polard-Tuple{AbstractArray{#s222,1} where #s222<:Real}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.polard-Tuple{AbstractArray{#s222,1} where #s222<:Real}",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.polard",
+    "title": "QuantumLattices.Essentials.Spatials.polard",
     "category": "method",
     "text": "polard(v::AbstractVector{<:Real}) -> Float\n\nGet the polar angle in degrees of a vector.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.rcoord-Tuple{Bond}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.rcoord-Tuple{Bond}",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.rcoord",
+    "title": "QuantumLattices.Essentials.Spatials.rcoord",
     "category": "method",
     "text": "rcoord(bond::Bond) -> SVector\n\nGet the rcoord of the bond.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.reciprocals-Tuple{AbstractArray{#s238,1} where #s238<:(AbstractArray{#s237,1} where #s237<:Real)}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.reciprocals-Tuple{AbstractArray{#s238,1} where #s238<:(AbstractArray{#s237,1} where #s237<:Real)}",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.reciprocals",
+    "title": "QuantumLattices.Essentials.Spatials.reciprocals",
     "category": "method",
     "text": "reciprocals(vectors::AbstractVector{AbstractVector{<:Real}}) -> Vector{Vector{Float}}\n\nGet the reciprocals dual to the input vectors.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.rotate-Tuple{AbstractArray{#s227,2} where #s227<:Real,Real}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.rotate-Tuple{AbstractArray{#s227,2} where #s227<:Real,Real}",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.rotate",
+    "title": "QuantumLattices.Essentials.Spatials.rotate",
     "category": "method",
     "text": "rotate(cluster::AbstractMatrix{<:Real},angle::Real;axis::Tuple{Union{AbstractVector{<:Real},Nothing},Tuple{<:Real,<:Real}}=(nothing,(0,0))) -> Matrix{Float}\n\nGet a rotated cluster of the original one by a certain angle around an axis.\n\nThe axis is determined by a point it gets through (nothing can be used to denote the origin), and its polar as well as azimuth angles in radians. The default axis is the z axis.\n\nnote: Note\nThe result is given by the Rodrigues\' rotation formula.\nOnly 2 and 3 dimensional vectors can be rotated.\nWhen the input vectors are 2 dimensional, both the polar and azimuth of the axis must be 0.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.tile-Union{Tuple{M}, Tuple{N}, Tuple{AbstractArray{#s227,2} where #s227<:Real,AbstractArray{#s226,1} where #s226<:(AbstractArray{#s225,1} where #s225<:Real)}, Tuple{AbstractArray{#s224,2} where #s224<:Real,AbstractArray{#s223,1} where #s223<:(AbstractArray{#s222,1} where #s222<:Real),Tuple{Vararg{Tuple{Vararg{#s218,N}} where #s218<:Real,M}}}} where M where N",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.tile-Union{Tuple{M}, Tuple{N}, Tuple{AbstractArray{#s227,2} where #s227<:Real,AbstractArray{#s226,1} where #s226<:(AbstractArray{#s225,1} where #s225<:Real)}, Tuple{AbstractArray{#s224,2} where #s224<:Real,AbstractArray{#s223,1} where #s223<:(AbstractArray{#s222,1} where #s222<:Real),Tuple{Vararg{Tuple{Vararg{#s218,N}} where #s218<:Real,M}}}} where M where N",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.tile",
+    "title": "QuantumLattices.Essentials.Spatials.tile",
     "category": "method",
     "text": "tile(cluster::AbstractMatrix{<:Real},vectors::AbstractVector{<:AbstractVector{<:Real}},translations::NTuple{M,NTuple{N,<:Real}}=()) where {N,M} -> Matrix{Float}\n\nTile a supercluster by translations of the input cluster.\n\nBasically, the final supercluster is composed of several parts, each of which is a translation of the original cluster, with the translation vectors specified by vectors and each set of the translation indices contained in translations. When translation vectors are empty, a copy of the original cluster will be returned.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.translate-Tuple{AbstractArray{#s238,2} where #s238<:Real,AbstractArray{#s237,1} where #s237<:Real}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.translate-Tuple{AbstractArray{#s238,2} where #s238<:Real,AbstractArray{#s237,1} where #s237<:Real}",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.translate",
+    "title": "QuantumLattices.Essentials.Spatials.translate",
     "category": "method",
     "text": "translate(cluster::AbstractMatrix{<:Real},vector::AbstractVector{<:Real}) -> Matrix{vector|>eltype}\n\nGet the translated cluster of the original one by a vector.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Essentials.Spatials.volume-Tuple{AbstractArray{#s211,1} where #s211<:Real,AbstractArray{#s22,1} where #s22<:Real,AbstractArray{#s21,1} where #s21<:Real}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.volume-Tuple{AbstractArray{#s211,1} where #s211<:Real,AbstractArray{#s22,1} where #s22<:Real,AbstractArray{#s21,1} where #s21<:Real}",
     "page": "Spatials",
-    "title": "Hamiltonian.Essentials.Spatials.volume",
+    "title": "QuantumLattices.Essentials.Spatials.volume",
     "category": "method",
     "text": "volume(v1::AbstractVector{<:Real},v2::AbstractVector{<:Real},v3::AbstractVector{<:Real}) -> Real\n\nGet the volume spanned by three vectors.\n\n\n\n\n\n"
 },
@@ -3337,33 +3337,33 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Interfaces.decompose-Tuple{AbstractArray{#s224,1} where #s224<:Real,AbstractArray{#s223,1} where #s223<:Real}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Interfaces.decompose-Tuple{AbstractArray{#s224,1} where #s224<:Real,AbstractArray{#s223,1} where #s223<:Real}",
     "page": "Spatials",
-    "title": "Hamiltonian.Interfaces.decompose",
+    "title": "QuantumLattices.Interfaces.decompose",
     "category": "method",
     "text": "decompose(v0::AbstractVector{<:Real},v1::AbstractVector{<:Real}) -> Tuple{Float}\ndecompose(v0::AbstractVector{<:Real},v1::AbstractVector{<:Real},v2::AbstractVector{<:Real}) -> Tuple{Float,Float}\ndecompose(v0::AbstractVector{<:Real},v1::AbstractVector{<:Real},v2::AbstractVector{<:Real},v3::AbstractVector{<:Real}) -> Tuple{Float,Float,Float}\n\nDecompose a vector with respect to input basis vectors.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Interfaces.dimension-Tuple{AbstractBond}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Interfaces.dimension-Tuple{AbstractBond}",
     "page": "Spatials",
-    "title": "Hamiltonian.Interfaces.dimension",
+    "title": "QuantumLattices.Interfaces.dimension",
     "category": "method",
     "text": "dimension(bond::AbstractBond) -> Int\ndimension(::Type{<:AbstractBond{<:PID,N}}) where N -> Int\n\nGet the space dimension of a concrete bond.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Interfaces.dimension-Tuple{AbstractLattice}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Interfaces.dimension-Tuple{AbstractLattice}",
     "page": "Spatials",
-    "title": "Hamiltonian.Interfaces.dimension",
+    "title": "QuantumLattices.Interfaces.dimension",
     "category": "method",
     "text": "dimension(lattice::AbstractLattice) -> Int\ndimension(::Type{<:AbstractLattice{<:PID,N}}) where N -> Int\n\nGet the space dimension of the lattice.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Hamiltonian.Interfaces.rank-Tuple{AbstractBond}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Interfaces.rank-Tuple{AbstractBond}",
     "page": "Spatials",
-    "title": "Hamiltonian.Interfaces.rank",
+    "title": "QuantumLattices.Interfaces.rank",
     "category": "method",
     "text": "rank(bond::AbstractBond) -> Int\nrank(::Type{<:AbstractBond{<:PID,N,R}}) where {N,R} -> Int\n\nGet the rank of a bond.\n\n\n\n\n\n"
 },
@@ -3381,7 +3381,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Degrees of freedom",
     "title": "Degrees of freedom",
     "category": "page",
-    "text": "CurrentModule=Hamiltonian.Essentials.DegreesOfFreedom"
+    "text": "CurrentModule=QuantumLattices.Essentials.DegreesOfFreedom"
 },
 
 {
@@ -3441,201 +3441,201 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.DirectIndexToTuple",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.DirectIndexToTuple",
     "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.DirectIndexToTuple",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.DirectIndexToTuple",
     "category": "type",
     "text": "DirectIndexToTuple\n\nDirect index to tuple.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.DirectIndexToTuple-Tuple{Index}",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.DirectIndexToTuple-Tuple{Index}",
     "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.DirectIndexToTuple",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.DirectIndexToTuple",
     "category": "method",
     "text": "(indextotuple::DirectIndexToTuple)(index::Index) -> Tuple\n\nConvert an index to tuple directly.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.FilteredAttributes",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.FilteredAttributes",
     "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.FilteredAttributes",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.FilteredAttributes",
     "category": "type",
     "text": "FilteredAttributes(::Type{I}) where I<:Index\n\nA method that converts an arbitary index to a tuple, by iterating over the selected attributes in a specific order.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.FilteredAttributes-Tuple{Index}",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.FilteredAttributes-Tuple{Index}",
     "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.FilteredAttributes",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.FilteredAttributes",
     "category": "method",
     "text": "(indextotuple::FilteredAttributes)(index::Index) -> Tuple\n\nConvert an index to tuple by the \"filtered attributes\" method.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.IDFConfig",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.IDFConfig",
     "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.IDFConfig",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.IDFConfig",
     "category": "type",
     "text": "IDFConfig{I}(map::Function,pids::Union{AbstractVector{<:PID},Tuple{}}=()) where I<:Internal\n\nConfiguration of the internal degrees of freedom at a lattice.\n\nmap maps a PID to an Internal.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.IID",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.IID",
     "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.IID",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.IID",
     "category": "type",
     "text": "IID\n\nThe id of an internal degree of freedom.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.Index",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.Index",
     "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.Index",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.Index",
     "category": "type",
     "text": "Index{P,I}\n\nThe complete index of a degree of freedom, which consist of the spatial part and the internal part.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.IndexToTuple",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.IndexToTuple",
     "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.IndexToTuple",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.IndexToTuple",
     "category": "type",
     "text": "IndexToTuple\n\nThe rules for converting an index to a tuple.\n\nAs a function, every instance should accept only one positional argument, i.e. the index to be converted to a tuple.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.Internal",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.Internal",
     "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.Internal",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.Internal",
     "category": "type",
     "text": "Internal\n\nThe whole internal degrees of freedom at a single point.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.OID",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.OID",
     "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.OID",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.OID",
     "category": "type",
     "text": "OID(index::Index,::Nothing,::Nothing,seq::Union{Nothing,Int})\nOID(index::Index,rcoord::SVector{N,Float},icoord::SVector{N,Float},seq::Union{Nothing,Int}) where N\nOID(index::Index,rcoord::Vector{Float},icoord::Vector{Float},seq::Union{Nothing,Int})\nOID(index::Index;rcoord::Union{Nothing,SVector,Vector{Float}}=nothing,icoord::Union{Nothing,SVector,Vector{Float}}=nothing,seq::Union{Nothing,Int}=nothing)\n\nOperator id.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.Operator",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.Operator",
     "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.Operator",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.Operator",
     "category": "type",
     "text": "Operator{N,V<:Number,I<:ID{<:NTuple{N,OID}}} <: Element{N,V,I}\n\nAbstract type for an operator.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.Operators",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.Operators",
     "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.Operators",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.Operators",
     "category": "type",
     "text": "Operators(opts::Operator...)\n\nA set of operators.\n\nType alias of Operators{I<:ID,O<:Operator}=Elements{I,O}.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.Table",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.Table",
     "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.Table",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.Table",
     "category": "type",
     "text": "Table{I<:Index} <: AbstractDict{I,Int}\n\nIndex-sequence table. Alias for Dict{I<:Index,Int}.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.Table-Tuple{AbstractArray{#s235,1} where #s235<:Index}",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.Table-Tuple{AbstractArray{#s235,1} where #s235<:Index}",
     "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.Table",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.Table",
     "category": "method",
     "text": "Table(indices::AbstractVector{<:Index};by::IndexToTuple=directindextotuple) -> Table\n\nConvert an sequence of indices to the corresponding index-sequence table.\n\nThe input indices will be converted to tuples by the by function with the duplicates removed. The resulting unique tuples are sorted, which determines the sequence of the input indices. Note that two indices have the same sequence if their converted tupels are equal to each other.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.Table-Tuple{IDFConfig}",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.Table-Tuple{IDFConfig}",
     "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.Table",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.Table",
     "category": "method",
     "text": "Table(config::IDFConfig;by::IndexToTuple=directindextotuple) -> Table\n\nGet the index-sequence table of the whole internal Hilbert spaces at a lattice.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.directindextotuple",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.directindextotuple",
     "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.directindextotuple",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.directindextotuple",
     "category": "function",
     "text": "directindextotuple\n\nIndicate that the conversion from an index to a tuple is direct.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.iid-Tuple{Index}",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.iid-Tuple{Index}",
     "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.iid",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.iid",
     "category": "method",
     "text": "iid(index::Index) -> IID\n\nGet the internal part of an index.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.iidtype-Tuple{Index}",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.iidtype-Tuple{Index}",
     "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.iidtype",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.iidtype",
     "category": "method",
     "text": "iidtype(index::Index)\niidtype(::Type{<:Index{P,I}}) where {P,I}\n\nGet the type of the internal part of an index.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.isHermitian-Tuple{Dict{I,O} where O<:Operator where I<:Hamiltonian.Mathematics.AlgebraOverFields.ID}",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.isHermitian-Tuple{Dict{I,O} where O<:Operator where I<:QuantumLattices.Mathematics.AlgebraOverFields.ID}",
     "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.isHermitian",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.isHermitian",
     "category": "method",
     "text": "isHermitian(opts::Operators) -> Bool\n\nJudge whether a set of operators as a whole is Hermitian.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.isHermitian-Tuple{Operator}",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.isHermitian-Tuple{Operator}",
     "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.isHermitian",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.isHermitian",
     "category": "method",
     "text": "isHermitian(opt::Operator) -> Bool\n\nJudge whether an operator is Hermitian.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.isHermitian-Union{Tuple{ID{#s238} where #s238<:Tuple{Vararg{OID,N}}}, Tuple{N}} where N",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.isHermitian-Union{Tuple{ID{#s238} where #s238<:Tuple{Vararg{OID,N}}}, Tuple{N}} where N",
     "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.isHermitian",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.isHermitian",
     "category": "method",
     "text": "isHermitian(oid::ID{<:NTuple{N,OID}}) where N -> Bool\n\nJudge whether an operator id is Hermitian.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.oidtype",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.oidtype",
     "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.oidtype",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.oidtype",
     "category": "function",
     "text": "oidtype\n\nGet the compatible oid type.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.otype",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.otype",
     "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.otype",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.otype",
     "category": "function",
     "text": "otype\n\nGet the compatible operator type from a term type, a bond type and a table type.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.pid-Tuple{Index}",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.pid-Tuple{Index}",
     "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.pid",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.pid",
     "category": "method",
     "text": "pid(index::Index) -> PID\n\nGet the spatial part of an index.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.DegreesOfFreedom.twist-Tuple{Operator,AbstractArray{#s238,1} where #s238<:AbstractArray{Float64,1},AbstractArray{Float64,1}}",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.twist-Tuple{Operator,AbstractArray{#s238,1} where #s238<:AbstractArray{Float64,1},AbstractArray{Float64,1}}",
     "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.twist",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.twist",
     "category": "method",
     "text": "twist(operator::Operator,vectors::AbstractVector{<:AbstractVector{Float}},values::AbstractVector{Float}) -> Operator\n\nTwist an operator.\n\n\n\n\n\n"
 },
@@ -3649,7 +3649,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Base.adjoint-Tuple{Dict{I,O} where O<:Operator where I<:Hamiltonian.Mathematics.AlgebraOverFields.ID}",
+    "location": "man/Essentials/DegreesOfFreedom.html#Base.adjoint-Tuple{Dict{I,O} where O<:Operator where I<:QuantumLattices.Mathematics.AlgebraOverFields.ID}",
     "page": "Degrees of freedom",
     "title": "Base.adjoint",
     "category": "method",
@@ -3753,25 +3753,25 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.Spatials.icoord-Tuple{Operator{1,V,I} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{#s240} where #s240<:Tuple{OID}) where V<:Number}",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.Spatials.icoord-Tuple{Operator{1,V,I} where I<:(QuantumLattices.Mathematics.AlgebraOverFields.ID{#s240} where #s240<:Tuple{OID}) where V<:Number}",
     "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.Spatials.icoord",
+    "title": "QuantumLattices.Essentials.Spatials.icoord",
     "category": "method",
     "text": "icoord(opt::Operator{1}) -> SVector\nicoord(opt::Operator{2}) -> SVector\n\nGet the whole icoord of an operator.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.Spatials.pidtype-Tuple{Index}",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.Spatials.pidtype-Tuple{Index}",
     "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.Spatials.pidtype",
+    "title": "QuantumLattices.Essentials.Spatials.pidtype",
     "category": "method",
     "text": "pidtype(index::Index)\npidtype(::Type{<:Index{P,I}}) where {P,I}\n\nGet the type of the spatial part of an index.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#Hamiltonian.Essentials.Spatials.rcoord-Tuple{Operator{1,V,I} where I<:(Hamiltonian.Mathematics.AlgebraOverFields.ID{#s240} where #s240<:Tuple{OID}) where V<:Number}",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.Spatials.rcoord-Tuple{Operator{1,V,I} where I<:(QuantumLattices.Mathematics.AlgebraOverFields.ID{#s240} where #s240<:Tuple{OID}) where V<:Number}",
     "page": "Degrees of freedom",
-    "title": "Hamiltonian.Essentials.Spatials.rcoord",
+    "title": "QuantumLattices.Essentials.Spatials.rcoord",
     "category": "method",
     "text": "rcoord(opt::Operator{1}) -> SVector\nrcoord(opt::Operator{2}) -> SVector\n\nGet the whole rcoord of an operator.\n\n\n\n\n\n"
 },
@@ -3789,7 +3789,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Terms",
     "title": "Terms",
     "category": "page",
-    "text": "CurrentModule=Hamiltonian.Essentials.Termspush!(LOAD_PATH,\"../../../../src/\")\nusing Hamiltonian"
+    "text": "CurrentModule=QuantumLattices.Essentials.Termspush!(LOAD_PATH,\"../../../../src/\")\nusing QuantumLattices"
 },
 
 {
@@ -3841,137 +3841,137 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.Boundary",
+    "location": "man/Essentials/Terms.html#QuantumLattices.Essentials.Terms.Boundary",
     "page": "Terms",
-    "title": "Hamiltonian.Essentials.Terms.Boundary",
+    "title": "QuantumLattices.Essentials.Terms.Boundary",
     "category": "type",
     "text": "Boundary{Names}(values::AbstractVector{Float},vectors::AbstractVector{<:AbstractVector{Float}},twist::Function) where Names\n\nBoundary twist of operators.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.Boundary-Tuple{Operator}",
+    "location": "man/Essentials/Terms.html#QuantumLattices.Essentials.Terms.Boundary-Tuple{Operator}",
     "page": "Terms",
-    "title": "Hamiltonian.Essentials.Terms.Boundary",
+    "title": "QuantumLattices.Essentials.Terms.Boundary",
     "category": "method",
     "text": "(bound::Boundary)(operator::Operator) -> Operator\n\nGet the boundary twisted operator.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.Coupling",
+    "location": "man/Essentials/Terms.html#QuantumLattices.Essentials.Terms.Coupling",
     "page": "Terms",
-    "title": "Hamiltonian.Essentials.Terms.Coupling",
+    "title": "QuantumLattices.Essentials.Terms.Coupling",
     "category": "type",
     "text": "Coupling{N,V<:Number,I<:ID{<:NTuple{N,SimpleID}}} <: Element{N,V,I}\n\nThe coupling intra/inter interanl degrees of freedom at different lattice points.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.Couplings",
+    "location": "man/Essentials/Terms.html#QuantumLattices.Essentials.Terms.Couplings",
     "page": "Terms",
-    "title": "Hamiltonian.Essentials.Terms.Couplings",
+    "title": "QuantumLattices.Essentials.Terms.Couplings",
     "category": "type",
     "text": "Couplings{I<:ID,C<:Coupling} <: AbstractDict{I,C}\n\nA pack of couplings intra/inter interanl degrees of freedom at different lattice points.\n\nAlias for Elements{I,C}.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.Subscript",
+    "location": "man/Essentials/Terms.html#QuantumLattices.Essentials.Terms.Subscript",
     "page": "Terms",
-    "title": "Hamiltonian.Essentials.Terms.Subscript",
+    "title": "QuantumLattices.Essentials.Terms.Subscript",
     "category": "type",
     "text": "Subscript(  ipattern::NTuple{N1,Any},\n            opattern::NTuple{N2,Any},\n            mapping::Union{Function,Nothing}=nothing,\n            constrain::Union{Function,Nothing}=nothing,\n            identifier::Union{Symbol,Char}=wildcard\n            ) where {N1,N2}\nSubscript{N}() where N\nSubscript(opattern::NTuple{N,Int}) where N\n\nThe subscripts of some orbital/spin degrees of freedom.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.Subscript-Tuple{}",
+    "location": "man/Essentials/Terms.html#QuantumLattices.Essentials.Terms.Subscript-Tuple{}",
     "page": "Terms",
-    "title": "Hamiltonian.Essentials.Terms.Subscript",
+    "title": "QuantumLattices.Essentials.Terms.Subscript",
     "category": "method",
     "text": "(subscript::Subscript{N})(::Val{\'M\'},values::Vararg{Int,N}) where N -> NTuple{dimension(subscript),Int}\n(subscript::Subscript{N})(::Val{\'C\'},values::Vararg{Int,N}) where N -> Bool\n\nConstruct the subscripts from a set of independent variables.\nJudge whether a set of independent variables are valid to construct the subscripts.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.Subscripts",
+    "location": "man/Essentials/Terms.html#QuantumLattices.Essentials.Terms.Subscripts",
     "page": "Terms",
-    "title": "Hamiltonian.Essentials.Terms.Subscripts",
+    "title": "QuantumLattices.Essentials.Terms.Subscripts",
     "category": "type",
     "text": "Subscripts(contents::Subscript...)\n\nA complete set of all the independent subscripts of the orbital/spin degrees of freedom.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.Subscripts-Tuple{}",
+    "location": "man/Essentials/Terms.html#QuantumLattices.Essentials.Terms.Subscripts-Tuple{}",
     "page": "Terms",
-    "title": "Hamiltonian.Essentials.Terms.Subscripts",
+    "title": "QuantumLattices.Essentials.Terms.Subscripts",
     "category": "method",
     "text": "(subscripts::Subscripts)(::Val{\'M\'},values::NTuple{N,Int}) where N -> NTuple{dimension(subscripts),Int}\n(subscripts::Subscripts)(::Val{\'C\'},values::NTuple{N,Int}) where N -> Bool\n\nConstruct the complete set of subscripts from a complete set of independent variables.\nJudge whether a complete set of independent variables are valid to construct the complete subscripts.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.Term",
+    "location": "man/Essentials/Terms.html#QuantumLattices.Essentials.Terms.Term",
     "page": "Terms",
-    "title": "Hamiltonian.Essentials.Terms.Term",
+    "title": "QuantumLattices.Essentials.Terms.Term",
     "category": "type",
     "text": "Term{ST,SP}(id::Symbol,value::Number,neighbor::Any,couplings::TermCouplings,amplitude::TermAmplitude,modulate::Union{TermModulate,Nothing},factor::Number) where {ST,SP}\nTerm{ST,SP}(id::Symbol,value::Number,neighbor::Any;\n            couplings::Union{Tuple{<:Tuple{Vararg{Couplings}},<:Function},Coupling,Couplings,TermCouplings},\n            amplitude::Union{Function,Nothing}=nothing,\n            modulate::Union{Function,Bool}=false,\n            factor::Number=1\n            ) where {ST,SP}\n\nA term of a quantum lattice system.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.TermAmplitude",
+    "location": "man/Essentials/Terms.html#QuantumLattices.Essentials.Terms.TermAmplitude",
     "page": "Terms",
-    "title": "Hamiltonian.Essentials.Terms.TermAmplitude",
+    "title": "QuantumLattices.Essentials.Terms.TermAmplitude",
     "category": "type",
     "text": "TermAmplitude(amplitude::Union{Function,Nothing}=nothing)\n\nThe function for the amplitude of a term.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.TermCouplings",
+    "location": "man/Essentials/Terms.html#QuantumLattices.Essentials.Terms.TermCouplings",
     "page": "Terms",
-    "title": "Hamiltonian.Essentials.Terms.TermCouplings",
+    "title": "QuantumLattices.Essentials.Terms.TermCouplings",
     "category": "type",
     "text": "TermCouplings(candidate::Coupling)\nTermCouplings(candidate::Couplings)\nTermCouplings(contents::Tuple{<:Tuple{Vararg{Couplings}},<:Function})\nTermCouplings(candidates::NTuple{N,<:Couplings},choice::Function) where N\n\nThe function for the couplings of a term.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.TermFunction",
+    "location": "man/Essentials/Terms.html#QuantumLattices.Essentials.Terms.TermFunction",
     "page": "Terms",
-    "title": "Hamiltonian.Essentials.Terms.TermFunction",
+    "title": "QuantumLattices.Essentials.Terms.TermFunction",
     "category": "type",
     "text": "TermFunction <: Function\n\nAbstract type for concrete term functions.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.TermModulate",
+    "location": "man/Essentials/Terms.html#QuantumLattices.Essentials.Terms.TermModulate",
     "page": "Terms",
-    "title": "Hamiltonian.Essentials.Terms.TermModulate",
+    "title": "QuantumLattices.Essentials.Terms.TermModulate",
     "category": "type",
     "text": "TermModulate(id::Symbol,modulate::Union{Function,Nothing}=nothing)\nTermModulate(id::Symbol,modulate::Bool)\n\nThe function for the modulation of a term.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.@subscript",
+    "location": "man/Essentials/Terms.html#QuantumLattices.Essentials.Terms.@subscript",
     "page": "Terms",
-    "title": "Hamiltonian.Essentials.Terms.@subscript",
+    "title": "QuantumLattices.Essentials.Terms.@subscript",
     "category": "macro",
     "text": "@subscript expr::Expr with constrain::Expr -> Subscript\n\nConstruct a subscript from a map and optionally with a constrain.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.abbr-Tuple{Term}",
+    "location": "man/Essentials/Terms.html#QuantumLattices.Essentials.Terms.abbr-Tuple{Term}",
     "page": "Terms",
-    "title": "Hamiltonian.Essentials.Terms.abbr",
+    "title": "QuantumLattices.Essentials.Terms.abbr",
     "category": "method",
     "text": "abbr(term::Term) -> Symbol\nabbr(::Type{<:Term}) -> Symbol\n\nGet the abbreviation of the species of a term.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.species-Tuple{Term}",
+    "location": "man/Essentials/Terms.html#QuantumLattices.Essentials.Terms.species-Tuple{Term}",
     "page": "Terms",
-    "title": "Hamiltonian.Essentials.Terms.species",
+    "title": "QuantumLattices.Essentials.Terms.species",
     "category": "method",
     "text": "species(term::Term) -> Symbol\nspecies(::Type{<:Term{ST,SP}}) where {ST,SP} -> Symbol\n\nGet the species of a term.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Essentials.Terms.statistics-Tuple{Term}",
+    "location": "man/Essentials/Terms.html#QuantumLattices.Essentials.Terms.statistics-Tuple{Term}",
     "page": "Terms",
-    "title": "Hamiltonian.Essentials.Terms.statistics",
+    "title": "QuantumLattices.Essentials.Terms.statistics",
     "category": "method",
     "text": "statistics(term::Term) -> Char\nstatistics(::Type{<:Term{ST}}) where ST -> Char\n\nGet the statistics of a term.\n\n\n\n\n\n"
 },
@@ -4073,97 +4073,97 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Interfaces.dimension-Tuple{Subscripts,Int64}",
+    "location": "man/Essentials/Terms.html#QuantumLattices.Interfaces.dimension-Tuple{Subscripts,Int64}",
     "page": "Terms",
-    "title": "Hamiltonian.Interfaces.dimension",
+    "title": "QuantumLattices.Interfaces.dimension",
     "category": "method",
     "text": "dimension(subscripts::Subscripts,i::Int) -> Int\ndimension(::Type{<:Subscripts{T}},i::Int) where T -> Int\n\nGet the total number of the whole variables of a component of the complete subscript set.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Interfaces.dimension-Tuple{Subscripts}",
+    "location": "man/Essentials/Terms.html#QuantumLattices.Interfaces.dimension-Tuple{Subscripts}",
     "page": "Terms",
-    "title": "Hamiltonian.Interfaces.dimension",
+    "title": "QuantumLattices.Interfaces.dimension",
     "category": "method",
     "text": "dimension(subscripts::Subscripts) -> Int\ndimension(::Type{S}) where S<:Subscripts -> Int\n\nGet the total number of the whole variables of the complete subscript set.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Interfaces.dimension-Tuple{Subscript}",
+    "location": "man/Essentials/Terms.html#QuantumLattices.Interfaces.dimension-Tuple{Subscript}",
     "page": "Terms",
-    "title": "Hamiltonian.Interfaces.dimension",
+    "title": "QuantumLattices.Interfaces.dimension",
     "category": "method",
     "text": "dimension(subscript::Subscript) -> Int\ndimension(::Type{<:Subscript{N1,N2}}) where {N1,N2} -> Int\n\nGet the number of the whole variables that are used to describe the subscripts of some orbital/spin degrees of freedom.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Interfaces.expand",
+    "location": "man/Essentials/Terms.html#QuantumLattices.Interfaces.expand",
     "page": "Terms",
-    "title": "Hamiltonian.Interfaces.expand",
+    "title": "QuantumLattices.Interfaces.expand",
     "category": "function",
     "text": "expand(otype::Type{<:Operator},term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Union{Bool,Nothing}=nothing)\n\nExpand the operators of a term on a bond with a given config.\n\nThe half parameter determines the behavior of generating operators, which falls into the following three categories\n\nfalse: no extra operations on the generated operators\ntrue: an extra multiplication by 0.5 with the generated operators\nnothing: \"Hermitian half\" of the generated operators\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Interfaces.expand-Union{Tuple{N}, Tuple{Subscripts,Tuple{Vararg{Int64,N}}}} where N",
+    "location": "man/Essentials/Terms.html#QuantumLattices.Interfaces.expand-Union{Tuple{N}, Tuple{Subscripts,Tuple{Vararg{Int64,N}}}} where N",
     "page": "Terms",
-    "title": "Hamiltonian.Interfaces.expand",
+    "title": "QuantumLattices.Interfaces.expand",
     "category": "method",
     "text": "expand(subscripts::Subscripts,dimensions::NTuple{N,Int}) where N -> SbExpand\n\nExpand a complete set of subscripts with a given set of variable ranges.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Interfaces.rank-Tuple{Subscripts,Int64}",
+    "location": "man/Essentials/Terms.html#QuantumLattices.Interfaces.rank-Tuple{Subscripts,Int64}",
     "page": "Terms",
-    "title": "Hamiltonian.Interfaces.rank",
+    "title": "QuantumLattices.Interfaces.rank",
     "category": "method",
     "text": "rank(subscripts::Subscripts,i::Int) -> Int\nrank(::Type{<:Subscripts{T}},i::Int) where T -> Int\n\nGet the number of the independent variables of a component of the complete subscript set.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Interfaces.rank-Tuple{Subscripts}",
+    "location": "man/Essentials/Terms.html#QuantumLattices.Interfaces.rank-Tuple{Subscripts}",
     "page": "Terms",
-    "title": "Hamiltonian.Interfaces.rank",
+    "title": "QuantumLattices.Interfaces.rank",
     "category": "method",
     "text": "rank(subscripts::Subscripts) -> Int\nrank(::Type{S}) where S<:Subscripts -> Int\n\nGet the total number of the independent variables of the complete subscript set.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Interfaces.rank-Tuple{Subscript}",
+    "location": "man/Essentials/Terms.html#QuantumLattices.Interfaces.rank-Tuple{Subscript}",
     "page": "Terms",
-    "title": "Hamiltonian.Interfaces.rank",
+    "title": "QuantumLattices.Interfaces.rank",
     "category": "method",
     "text": "rank(subscript::Subscript) -> Int\nrank(::Type{<:Subscript{N}}) where N -> Int\n\nGet the number of the independent variables that are used to describe the subscripts of some orbital/spin degrees of freedom.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Interfaces.rank-Tuple{TermCouplings}",
+    "location": "man/Essentials/Terms.html#QuantumLattices.Interfaces.rank-Tuple{TermCouplings}",
     "page": "Terms",
-    "title": "Hamiltonian.Interfaces.rank",
+    "title": "QuantumLattices.Interfaces.rank",
     "category": "method",
     "text": "rank(tcs::TermCouplings) -> Int\nrank(TCS::Type{<:TermCouplings}) -> Int\n\nGet the rank of the couplings it contained.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Interfaces.rank-Tuple{Term}",
+    "location": "man/Essentials/Terms.html#QuantumLattices.Interfaces.rank-Tuple{Term}",
     "page": "Terms",
-    "title": "Hamiltonian.Interfaces.rank",
+    "title": "QuantumLattices.Interfaces.rank",
     "category": "method",
     "text": "rank(term::Term) -> Int\nrank(::Type{T}) where T<:Term -> Int\n\nGet the rank of a term.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Interfaces.update!-Tuple{Term,Vararg{Any,N} where N}",
+    "location": "man/Essentials/Terms.html#QuantumLattices.Interfaces.update!-Tuple{Term,Vararg{Any,N} where N}",
     "page": "Terms",
-    "title": "Hamiltonian.Interfaces.update!",
+    "title": "QuantumLattices.Interfaces.update!",
     "category": "method",
     "text": "update!(term::Term,args...;kwargs...) -> Term\n\nUpdate the value of a term by its modulate function.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Terms.html#Hamiltonian.Interfaces.update!-Union{Tuple{Names}, Tuple{Boundary{Names,V,T} where T<:Function where V<:AbstractArray{Float64,1},Vararg{Any,N} where N}} where Names",
+    "location": "man/Essentials/Terms.html#QuantumLattices.Interfaces.update!-Union{Tuple{Names}, Tuple{Boundary{Names,V,T} where T<:Function where V<:AbstractArray{Float64,1},Vararg{Any,N} where N}} where Names",
     "page": "Terms",
-    "title": "Hamiltonian.Interfaces.update!",
+    "title": "QuantumLattices.Interfaces.update!",
     "category": "method",
     "text": "update!(bound::Boundary{Names},args...;kwargs...) where Names -> Boundary\n\nUpdate the values of the boundary twisted phase.\n\n\n\n\n\n"
 },
@@ -4181,7 +4181,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "Fock package",
     "category": "page",
-    "text": "CurrentModule=Hamiltonian.Essentials.FockPackage"
+    "text": "CurrentModule=QuantumLattices.Essentials.FockPackage"
 },
 
 {
@@ -4257,241 +4257,241 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.ANNIHILATION",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.FockPackage.ANNIHILATION",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.FockPackage.ANNIHILATION",
+    "title": "QuantumLattices.Essentials.FockPackage.ANNIHILATION",
     "category": "constant",
     "text": "ANNIHILATION\n\nIndicate that the nambu index is ANNIHILATION.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.CREATION",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.FockPackage.CREATION",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.FockPackage.CREATION",
+    "title": "QuantumLattices.Essentials.FockPackage.CREATION",
     "category": "constant",
     "text": "CREATION\n\nIndicate that the nambu index is CREATION.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.BOperator",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.FockPackage.BOperator",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.FockPackage.BOperator",
+    "title": "QuantumLattices.Essentials.FockPackage.BOperator",
     "category": "type",
     "text": "BOperator(value::Number,id::ID{<:NTuple{N,OID}}) where N\n\nBosonic Fock operator.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.Coulomb",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.FockPackage.Coulomb",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.FockPackage.Coulomb",
+    "title": "QuantumLattices.Essentials.FockPackage.Coulomb",
     "category": "type",
     "text": "Coulomb{ST}(    id::Symbol,value::Number;\n                neighbor::Int=1,\n                couplings::Union{Tuple{<:Tuple{Vararg{Couplings}},<:Function},Coupling,Couplings,Nothing}=nothing,\n                amplitude::Union{Function,Nothing}=nothing,\n                modulate::Union{Function,Bool}=false,\n                factor::Number=1\n                ) where {ST}\n\nCoulomb term.\n\nType alias for Term{Statistics,:Coulomb,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.FCID",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.FockPackage.FCID",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.FockPackage.FCID",
+    "title": "QuantumLattices.Essentials.FockPackage.FCID",
     "category": "type",
     "text": "FCID(;center=wildcard,atom=wildcard,orbital=wildcard,spin=wildcard,nambu=wildcard,obsub=wildcard,spsub=wildcard)\n\nThe id of a Fock coupling.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.FID",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.FockPackage.FID",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.FockPackage.FID",
+    "title": "QuantumLattices.Essentials.FockPackage.FID",
     "category": "type",
     "text": "FID <: IID\n\nThe Fock id.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.FID-Tuple{}",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.FockPackage.FID-Tuple{}",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.FockPackage.FID",
+    "title": "QuantumLattices.Essentials.FockPackage.FID",
     "category": "method",
     "text": "FID(;orbital::Int=1,spin::Int=1,nambu::Int=ANNIHILATION)\n\nCreate a Fock id.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.FIndex",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.FockPackage.FIndex",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.FockPackage.FIndex",
+    "title": "QuantumLattices.Essentials.FockPackage.FIndex",
     "category": "type",
     "text": "FIndex{S} <: Index{PID{S},FID}\n\nThe Fock index.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.FOperator",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.FockPackage.FOperator",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.FockPackage.FOperator",
+    "title": "QuantumLattices.Essentials.FockPackage.FOperator",
     "category": "type",
     "text": "FOperator(value::Number,id::ID{<:NTuple{N,OID}}) where N\n\nFermionic Fock operator.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.Fock",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.FockPackage.Fock",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.FockPackage.Fock",
+    "title": "QuantumLattices.Essentials.FockPackage.Fock",
     "category": "type",
     "text": "Fock <: Internal{FID}\n\nThe Fock interanl degrees of freedom.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.Fock-Tuple{}",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.FockPackage.Fock-Tuple{}",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.FockPackage.Fock",
+    "title": "QuantumLattices.Essentials.FockPackage.Fock",
     "category": "method",
     "text": "Fock(;atom::Int=1,norbital::Int=1,nspin::Int=2,nnambu::Int=2)\n\nConstruct a Fock degrees of freedom.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.FockCoupling",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.FockPackage.FockCoupling",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.FockPackage.FockCoupling",
+    "title": "QuantumLattices.Essentials.FockPackage.FockCoupling",
     "category": "type",
     "text": "FockCoupling(value::Number,id::ID{<:NTuple{N,FCID}},obsubscripts::Subscripts,spsubscripts::Subscripts) where N\nFockCoupling{N}(value::Number=1;\n                centers::Union{NTuple{N,Int},Nothing}=nothing,\n                atoms::Union{NTuple{N,Int},Nothing}=nothing,\n                orbitals::Union{NTuple{N,Int},Subscript,Nothing}=nothing,\n                spins::Union{NTuple{N,Int},Subscript,Nothing}=nothing,\n                nambus::Union{NTuple{N,Int},Nothing}=nothing) where N\n\nFock coupling.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.FockOperator",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.FockPackage.FockOperator",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.FockPackage.FockOperator",
+    "title": "QuantumLattices.Essentials.FockPackage.FockOperator",
     "category": "type",
     "text": "FockOperator{N,V<:Number,I<:ID{<:NTuple{N,OID}}} <: Operator{N,V,I}\n\nAbstract type for all Fock operators.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.Hopping",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.FockPackage.Hopping",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.FockPackage.Hopping",
+    "title": "QuantumLattices.Essentials.FockPackage.Hopping",
     "category": "type",
     "text": "Hopping{ST}(id::Symbol,value::Number;\n            neighbor::Int=1,\n            couplings::Union{Tuple{<:Tuple{Vararg{Couplings}},<:Function},Coupling,Couplings,Nothing}=nothing,\n            amplitude::Union{Function,Nothing}=nothing,\n            modulate::Union{Function,Bool}=false,\n            factor::Number=1\n            ) where {ST}\n\nHopping term.\n\nType alias for Term{Statistics,:Hopping,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.Hubbard",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.FockPackage.Hubbard",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.FockPackage.Hubbard",
+    "title": "QuantumLattices.Essentials.FockPackage.Hubbard",
     "category": "type",
     "text": "Hubbard{ST}(id::Symbol,value::Real;\n            amplitude::Union{Function,Nothing}=nothing,\n            modulate::Union{Function,Bool}=false,\n            factor::Number=1\n            ) where {ST}\n\nHubbard term.\n\nType alias for Term{Statistics,:Hubbard,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.InterOrbitalInterSpin",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.FockPackage.InterOrbitalInterSpin",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.FockPackage.InterOrbitalInterSpin",
+    "title": "QuantumLattices.Essentials.FockPackage.InterOrbitalInterSpin",
     "category": "type",
     "text": "InterOrbitalInterSpin{ST}(  id::Symbol,value::Real;\n                            amplitude::Union{Function,Nothing}=nothing,\n                            modulate::Union{Function,Bool}=false,\n                            factor::Number=1\n                            ) where {ST}\n\nInterorbital-interspin term.\n\nType alias for Term{Statistics,:InterOrbitalInterSpin,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.InterOrbitalIntraSpin",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.FockPackage.InterOrbitalIntraSpin",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.FockPackage.InterOrbitalIntraSpin",
+    "title": "QuantumLattices.Essentials.FockPackage.InterOrbitalIntraSpin",
     "category": "type",
     "text": "InterOrbitalIntraSpin{ST}(  id::Symbol,value::Real;\n                            amplitude::Union{Function,Nothing}=nothing,\n                            modulate::Union{Function,Bool}=false,\n                            factor::Number=1\n                            ) where {ST}\n\nInterorbital-intraspin term.\n\nType alias for Term{Statistics,:InterOrbitalIntraSpin,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.Onsite",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.FockPackage.Onsite",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.FockPackage.Onsite",
+    "title": "QuantumLattices.Essentials.FockPackage.Onsite",
     "category": "type",
     "text": "Onsite{ST}( id::Symbol,value::Number;\n            couplings::Union{Tuple{<:Tuple{Vararg{Couplings}},<:Function},Coupling,Couplings,Nothing}=nothing,\n            amplitude::Union{Function,Nothing}=nothing,\n            modulate::Union{Function,Bool}=false,\n            factor::Number=1\n            ) where {ST}\n\nOnsite term.\n\nType alias for Term{Statistics,:Onsite,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.PairHopping",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.FockPackage.PairHopping",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.FockPackage.PairHopping",
+    "title": "QuantumLattices.Essentials.FockPackage.PairHopping",
     "category": "type",
     "text": "PairHopping{ST}(    id::Symbol,value::Real;\n                    amplitude::Union{Function,Nothing}=nothing,\n                    modulate::Union{Function,Bool}=false,\n                    factor::Number=1\n                    ) where {ST}\n\nPair-hopping term.\n\nType alias for Term{Statistics,:PairHopping,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.Pairing",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.FockPackage.Pairing",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.FockPackage.Pairing",
+    "title": "QuantumLattices.Essentials.FockPackage.Pairing",
     "category": "type",
     "text": "Pairing{ST}(id::Symbol,value::Number;\n            neighbor::Int=0,\n            couplings::Union{Tuple{<:Tuple{Vararg{Couplings}},<:Function},Coupling,Couplings,Nothing}=nothing,\n            amplitude::Union{Function,Nothing}=nothing,\n            modulate::Union{Function,Bool}=false,\n            factor::Number=1\n            ) where {ST}\n\nPairing term.\n\nType alias for Term{Statistics,:Pairing,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.SpinFlip",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.FockPackage.SpinFlip",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.FockPackage.SpinFlip",
+    "title": "QuantumLattices.Essentials.FockPackage.SpinFlip",
     "category": "type",
     "text": "SpinFlip{ST}(   id::Symbol,value::Real;\n                amplitude::Union{Function,Nothing}=nothing,\n                modulate::Union{Function,Bool}=false,\n                factor::Number=1\n                ) where {ST}\n\nSpin-flip term.\n\nType alias for Term{Statistics,:SpinFlip,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.isnormalordered-Tuple{FockOperator}",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.FockPackage.isnormalordered-Tuple{FockOperator}",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.FockPackage.isnormalordered",
+    "title": "QuantumLattices.Essentials.FockPackage.isnormalordered",
     "category": "method",
     "text": "isnormalordered(opt::FockOperator) -> Bool\n\nJudge whether a FockOperator is normal ordered.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.nambufockindextotuple",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.FockPackage.nambufockindextotuple",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.FockPackage.nambufockindextotuple",
+    "title": "QuantumLattices.Essentials.FockPackage.nambufockindextotuple",
     "category": "function",
     "text": "nambufockindextotuple\n\nIndicate that the filtered attributes are (:scope,:nambu,:site,:orbital,:spin) when converting a Fock index to tuple.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.usualfockindextotuple",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.FockPackage.usualfockindextotuple",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.FockPackage.usualfockindextotuple",
+    "title": "QuantumLattices.Essentials.FockPackage.usualfockindextotuple",
     "category": "function",
     "text": "usualfockindextotuple\n\nIndicate that the filtered attributes are (:scope,:site,:orbital,:spin) when converting a Fock index to tuple.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.σʸ-Tuple{String}",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.FockPackage.σʸ-Tuple{String}",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.FockPackage.σʸ",
+    "title": "QuantumLattices.Essentials.FockPackage.σʸ",
     "category": "method",
     "text": "σʸ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{<:NTuple{2,FCID}},FockCoupling{2,Int,ID{<:NTuple{2,FCID}}}}\n\nThe Pauli matrix σʸ, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.σˣ-Tuple{String}",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.FockPackage.σˣ-Tuple{String}",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.FockPackage.σˣ",
+    "title": "QuantumLattices.Essentials.FockPackage.σˣ",
     "category": "method",
     "text": "σˣ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{<:NTuple{2,FCID}},FockCoupling{2,Int,ID{<:NTuple{2,FCID}}}}\n\nThe Pauli matrix σˣ, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.σᶻ-Tuple{String}",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.FockPackage.σᶻ-Tuple{String}",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.FockPackage.σᶻ",
+    "title": "QuantumLattices.Essentials.FockPackage.σᶻ",
     "category": "method",
     "text": "σᶻ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{<:NTuple{2,FCID}},FockCoupling{2,Int,ID{<:NTuple{2,FCID}}}}\n\nThe Pauli matrix σᶻ, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.σ⁰-Tuple{String}",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.FockPackage.σ⁰-Tuple{String}",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.FockPackage.σ⁰",
+    "title": "QuantumLattices.Essentials.FockPackage.σ⁰",
     "category": "method",
     "text": "σ⁰(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{<:NTuple{2,FCID}},FockCoupling{2,Int,ID{<:NTuple{2,FCID}}}}\n\nThe Pauli matrix σ⁰, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.σ⁺-Tuple{String}",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.FockPackage.σ⁺-Tuple{String}",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.FockPackage.σ⁺",
+    "title": "QuantumLattices.Essentials.FockPackage.σ⁺",
     "category": "method",
     "text": "σ⁺(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{<:NTuple{2,FCID}},FockCoupling{2,Int,ID{<:NTuple{2,FCID}}}}\n\nThe Pauli matrix σ⁺, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.FockPackage.σ⁻-Tuple{String}",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.FockPackage.σ⁻-Tuple{String}",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.FockPackage.σ⁻",
+    "title": "QuantumLattices.Essentials.FockPackage.σ⁻",
     "category": "method",
     "text": "σ⁻(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{<:NTuple{2,FCID}},FockCoupling{2,Int,ID{<:NTuple{2,FCID}}}}\n\nThe Pauli matrix σ⁻, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
 },
@@ -4537,57 +4537,57 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.DegreesOfFreedom.oidtype-Tuple{Val{:Fock},Type{#s239} where #s239<:AbstractBond,Type{Nothing}}",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.oidtype-Tuple{Val{:Fock},Type{#s239} where #s239<:AbstractBond,Type{Nothing}}",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.oidtype",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.oidtype",
     "category": "method",
     "text": "oidtype(::Val{:Fock},B::Type{<:AbstractBond},::Type{Nothing})\noidtype(::Val{:Fock},B::Type{<:AbstractBond},::Type{<:Table})\n\nGet the compatible Fock OID type with an AbstractBond type and a Table/Nothing type.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.DegreesOfFreedom.otype-Tuple{Val{:Fock},Type{#s237} where #s237<:(Term{\'F\',Species,V,N,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where N where V<:Number where Species),Type{#s236} where #s236<:AbstractBond,Type{#s235} where #s235<:Union{Nothing, Dict{I,Int64} where I<:Index}}",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.otype-Tuple{Val{:Fock},Type{#s237} where #s237<:(Term{\'F\',Species,V,N,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where N where V<:Number where Species),Type{#s236} where #s236<:AbstractBond,Type{#s235} where #s235<:Union{Nothing, Dict{I,Int64} where I<:Index}}",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.otype",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.otype",
     "category": "method",
     "text": "otype(::Val{:Fock},O::Type{<:Term{\'F\'}},B::Type{<:AbstractBond},T::Type{<:Union{Nothing,Table}})\notype(::Val{:Fock},O::Type{<:Term{\'B\'}},B::Type{<:AbstractBond},T::Type{<:Union{Nothing,Table}})\n\nGet the compatible Fock operator type with a Term type, an AbstractBond type and a Table/Nothing type.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.DegreesOfFreedom.twist-Tuple{OID{#s238,RC,IC,S} where S<:Union{Nothing, Int64} where IC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where RC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where #s238<:FIndex,AbstractArray{#s237,1} where #s237<:AbstractArray{Float64,1},AbstractArray{Float64,1}}",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.twist-Tuple{OID{#s238,RC,IC,S} where S<:Union{Nothing, Int64} where IC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where RC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where #s238<:FIndex,AbstractArray{#s237,1} where #s237<:AbstractArray{Float64,1},AbstractArray{Float64,1}}",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.twist",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.twist",
     "category": "method",
     "text": "twist(id::OID{<:FIndex},vectors::AbstractVector{<:AbstractVector{Float}},values::AbstractVector{Float}) -> Complex{Float}\n\nGet the twist phase corresponding to a Fock oid.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.Terms.statistics-Tuple{BOperator}",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.Terms.statistics-Tuple{BOperator}",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.Terms.statistics",
+    "title": "QuantumLattices.Essentials.Terms.statistics",
     "category": "method",
     "text": "statistics(opt::BOperator)\nstatistics(::Type{<:BOperator})\n\nGet the statistics of BOperator.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Essentials.Terms.statistics-Tuple{FOperator}",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.Terms.statistics-Tuple{FOperator}",
     "page": "Fock package",
-    "title": "Hamiltonian.Essentials.Terms.statistics",
+    "title": "QuantumLattices.Essentials.Terms.statistics",
     "category": "method",
     "text": "statistics(opt::FOperator) -> Char\nstatistics(::Type{<:FOperator}) -> Char\n\nGet the statistics of FOperator.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Interfaces.:⊗-Union{Tuple{N}, Tuple{FockCoupling{N,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(ID{#s240} where #s240<:Tuple{Vararg{FCID,N}}) where V<:Number,FockCoupling{N,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(ID{#s240} where #s240<:Tuple{Vararg{FCID,N}}) where V<:Number}} where N",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Interfaces.:⊗-Union{Tuple{N}, Tuple{FockCoupling{N,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(ID{#s240} where #s240<:Tuple{Vararg{FCID,N}}) where V<:Number,FockCoupling{N,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(ID{#s240} where #s240<:Tuple{Vararg{FCID,N}}) where V<:Number}} where N",
     "page": "Fock package",
-    "title": "Hamiltonian.Interfaces.:⊗",
+    "title": "QuantumLattices.Interfaces.:⊗",
     "category": "method",
     "text": "⊗(fc1::FockCoupling{N},fc2::FockCoupling{N}) where N -> FockCoupling\n\nGet the direct product between two Fock couplings.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#Hamiltonian.Interfaces.expand-Union{Tuple{S}, Tuple{FockCoupling,PID,Fock}, Tuple{FockCoupling,PID,Fock,Union{Nothing, Val{S}}}} where S",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Interfaces.expand-Union{Tuple{S}, Tuple{FockCoupling,PID,Fock}, Tuple{FockCoupling,PID,Fock,Union{Nothing, Val{S}}}} where S",
     "page": "Fock package",
-    "title": "Hamiltonian.Interfaces.expand",
+    "title": "QuantumLattices.Interfaces.expand",
     "category": "method",
     "text": "expand(fc::FockCoupling,pid::PID,fock::Fock,species::Union{Val{S},Nothing}=nothing) where S -> Union{FCExpand,Tuple{}}\nexpand(fc::FockCoupling,pids::NTuple{R,PID},focks::NTuple{R,Fock},species::Union{Val{S},Nothing}=nothing) where {R,S} -> Union{FCExpand,Tuple{}}\n\nExpand a Fock coupling with the given set of point ids and Fock degrees of freedom.\n\n\n\n\n\n"
 },
@@ -4605,7 +4605,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spin package",
     "title": "Spin package",
     "category": "page",
-    "text": "CurrentModule=Hamiltonian.Essentials.SpinPackage"
+    "text": "CurrentModule=QuantumLattices.Essentials.SpinPackage"
 },
 
 {
@@ -4681,121 +4681,121 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.SpinPackage.SCID",
+    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.SpinPackage.SCID",
     "page": "Spin package",
-    "title": "Hamiltonian.Essentials.SpinPackage.SCID",
+    "title": "QuantumLattices.Essentials.SpinPackage.SCID",
     "category": "type",
     "text": "SCID(;center=wildcard,atom=wildcard,orbital=wildcard,tag=\'i\',subscript=wildcard)=SCID(center,atom,orbital,tag,subscript)\n\nThe id of a spin coupling.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.SpinPackage.SID",
+    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.SpinPackage.SID",
     "page": "Spin package",
-    "title": "Hamiltonian.Essentials.SpinPackage.SID",
+    "title": "QuantumLattices.Essentials.SpinPackage.SID",
     "category": "type",
     "text": "SID <: IID\n\nThe spin id.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.SpinPackage.SID-Tuple{}",
+    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.SpinPackage.SID-Tuple{}",
     "page": "Spin package",
-    "title": "Hamiltonian.Essentials.SpinPackage.SID",
+    "title": "QuantumLattices.Essentials.SpinPackage.SID",
     "category": "method",
     "text": "SID(;orbital::Int=1,spin::Real=0.5,tag::Char=\'i\')\n\nCreate a spin id.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.SpinPackage.SIndex",
+    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.SpinPackage.SIndex",
     "page": "Spin package",
-    "title": "Hamiltonian.Essentials.SpinPackage.SIndex",
+    "title": "QuantumLattices.Essentials.SpinPackage.SIndex",
     "category": "type",
     "text": "SIndex{S} <: Index{PID{S},SID}\n\nThe spin index.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.SpinPackage.SOperator",
+    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.SpinPackage.SOperator",
     "page": "Spin package",
-    "title": "Hamiltonian.Essentials.SpinPackage.SOperator",
+    "title": "QuantumLattices.Essentials.SpinPackage.SOperator",
     "category": "type",
     "text": "SOperator(value::Number,id::ID{<:NTuple{N,OID}}) where N\n\nSpin operator.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.SpinPackage.Spin",
+    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.SpinPackage.Spin",
     "page": "Spin package",
-    "title": "Hamiltonian.Essentials.SpinPackage.Spin",
+    "title": "QuantumLattices.Essentials.SpinPackage.Spin",
     "category": "type",
     "text": "Spin <: Internal{SID}\n\nThe spin interanl degrees of freedom.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.SpinPackage.Spin-Tuple{}",
+    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.SpinPackage.Spin-Tuple{}",
     "page": "Spin package",
-    "title": "Hamiltonian.Essentials.SpinPackage.Spin",
+    "title": "QuantumLattices.Essentials.SpinPackage.Spin",
     "category": "method",
     "text": "Spin(;atom::Int=1,norbital::Int=1,spin::Real=0.5)\n\nConstruct a spin degrees of freedom.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.SpinPackage.SpinCoupling",
+    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.SpinPackage.SpinCoupling",
     "page": "Spin package",
-    "title": "Hamiltonian.Essentials.SpinPackage.SpinCoupling",
+    "title": "QuantumLattices.Essentials.SpinPackage.SpinCoupling",
     "category": "type",
     "text": "SpinCoupling(value::Number,id::ID{<:NTuple{N,SCID}},subscripts::Subscripts) where N\nSpinCoupling{N}(    value::Number=1;\n                    tags::NTuple{N,Char},\n                    centers::Union{NTuple{N,Int},Nothing}=nothing,\n                    atoms::Union{NTuple{N,Int},Nothing}=nothing,\n                    orbitals::Union{NTuple{N,Int},Subscript,Nothing}=nothing\n                    ) where N\n\nSpin coupling.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.SpinPackage.SpinTerm",
+    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.SpinPackage.SpinTerm",
     "page": "Spin package",
-    "title": "Hamiltonian.Essentials.SpinPackage.SpinTerm",
+    "title": "QuantumLattices.Essentials.SpinPackage.SpinTerm",
     "category": "type",
     "text": "SpinTerm(   id::Symbol,value::Number;\n            neighbor::Int,\n            couplings::Union{Tuple{<:Tuple{Vararg{Couplings}},<:Function},Coupling,Couplings},\n            amplitude::Union{Function,Nothing}=nothing,\n            modulate::Union{Function,Bool}=false,\n            factor::Number=1\n            )\n\nSpin term.\n\nType alias for Term{\'B\',:SpinTerm,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.SpinPackage.Heisenberg-Tuple{}",
+    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.SpinPackage.Heisenberg-Tuple{}",
     "page": "Spin package",
-    "title": "Hamiltonian.Essentials.SpinPackage.Heisenberg",
+    "title": "QuantumLattices.Essentials.SpinPackage.Heisenberg",
     "category": "method",
     "text": "Heisenberg(;centers::Union{NTuple{2,Int},Nothing}=nothing,\n            atoms::Union{NTuple{2,Int},Nothing}=nothing,\n            orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing\n            ) -> Couplings{ID{<:NTuple{2,SCID}},SpinCoupling{2,Float,ID{<:NTuple{2,SCID}}}}\n\nThe Heisenberg couplings.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.SpinPackage.Ising-Tuple{Char}",
+    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.SpinPackage.Ising-Tuple{Char}",
     "page": "Spin package",
-    "title": "Hamiltonian.Essentials.SpinPackage.Ising",
+    "title": "QuantumLattices.Essentials.SpinPackage.Ising",
     "category": "method",
     "text": "Ising(  tag::Char;\n        centers::Union{NTuple{2,Int},Nothing}=nothing,\n        atoms::Union{NTuple{2,Int},Nothing}=nothing,\n        orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing\n        ) -> Couplings{ID{<:NTuple{2,SCID}},SpinCoupling{2,Float,ID{<:NTuple{2,SCID}}}}\n\nThe Ising couplings.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.SpinPackage.Sʸ-Tuple{}",
+    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.SpinPackage.Sʸ-Tuple{}",
     "page": "Spin package",
-    "title": "Hamiltonian.Essentials.SpinPackage.Sʸ",
+    "title": "QuantumLattices.Essentials.SpinPackage.Sʸ",
     "category": "method",
     "text": "Sʸ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID{<:NTuple{2,SCID}},SpinCoupling{2,Float,ID{<:NTuple{2,SCID}}}}\n\nThe single Sʸ coupling.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.SpinPackage.Sˣ-Tuple{}",
+    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.SpinPackage.Sˣ-Tuple{}",
     "page": "Spin package",
-    "title": "Hamiltonian.Essentials.SpinPackage.Sˣ",
+    "title": "QuantumLattices.Essentials.SpinPackage.Sˣ",
     "category": "method",
     "text": "Sˣ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID{<:NTuple{2,SCID}},SpinCoupling{2,Float,ID{<:NTuple{2,SCID}}}}\n\nThe single Sˣ coupling.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.SpinPackage.Sᶻ-Tuple{}",
+    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.SpinPackage.Sᶻ-Tuple{}",
     "page": "Spin package",
-    "title": "Hamiltonian.Essentials.SpinPackage.Sᶻ",
+    "title": "QuantumLattices.Essentials.SpinPackage.Sᶻ",
     "category": "method",
     "text": "Sᶻ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID{<:NTuple{2,SCID}},SpinCoupling{2,Float,ID{<:NTuple{2,SCID}}}}\n\nThe single Sᶻ coupling.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.SpinPackage.usualspinindextotuple",
+    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.SpinPackage.usualspinindextotuple",
     "page": "Spin package",
-    "title": "Hamiltonian.Essentials.SpinPackage.usualspinindextotuple",
+    "title": "QuantumLattices.Essentials.SpinPackage.usualspinindextotuple",
     "category": "function",
     "text": "usualspinindextotuple\n\nIndicate that the filtered attributes are (:scope,:site,:orbital) when converting a spin index to tuple.\n\n\n\n\n\n"
 },
@@ -4841,41 +4841,41 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.DegreesOfFreedom.oidtype-Tuple{Val{:Spin},Type{#s239} where #s239<:AbstractBond,Type{Nothing}}",
+    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.oidtype-Tuple{Val{:Spin},Type{#s239} where #s239<:AbstractBond,Type{Nothing}}",
     "page": "Spin package",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.oidtype",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.oidtype",
     "category": "method",
     "text": "oidtype(::Val{:Spin},B::Type{<:AbstractBond},::Type{Nothing})\noidtype(::Val{:Spin},B::Type{<:AbstractBond},::Type{<:Table})\n\nGet the compatible spin OID type with an AbstractBond type and a Table/Nothing type.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.DegreesOfFreedom.otype-Tuple{Val{:Spin},Type{#s237} where #s237<:(Term{\'B\',Species,V,N,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where N where V<:Number where Species),Type{#s236} where #s236<:AbstractBond,Type{#s235} where #s235<:Union{Nothing, Dict{I,Int64} where I<:Index}}",
+    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.otype-Tuple{Val{:Spin},Type{#s237} where #s237<:(Term{\'B\',Species,V,N,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where N where V<:Number where Species),Type{#s236} where #s236<:AbstractBond,Type{#s235} where #s235<:Union{Nothing, Dict{I,Int64} where I<:Index}}",
     "page": "Spin package",
-    "title": "Hamiltonian.Essentials.DegreesOfFreedom.otype",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.otype",
     "category": "method",
     "text": "otype(::Val{:Spin},O::Type{<:Term{\'B\'}},B::Type{<:AbstractBond},T::Type{<:Union{Nothing,Table}})\n\nGet the compatible spin operator type with a Term type, an AbstractBond type and a Table/Nothing type.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Essentials.Terms.statistics-Tuple{SOperator}",
+    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.Terms.statistics-Tuple{SOperator}",
     "page": "Spin package",
-    "title": "Hamiltonian.Essentials.Terms.statistics",
+    "title": "QuantumLattices.Essentials.Terms.statistics",
     "category": "method",
     "text": "statistics(opt::SOperator) -> Char\nstatistics(::Type{<:SOperator}) -> Char\n\nGet the statistics of SOperator.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Interfaces.expand-Union{Tuple{S}, Tuple{SpinCoupling,PID,Spin}, Tuple{SpinCoupling,PID,Spin,Union{Nothing, Val{S}}}} where S",
+    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Interfaces.expand-Union{Tuple{S}, Tuple{SpinCoupling,PID,Spin}, Tuple{SpinCoupling,PID,Spin,Union{Nothing, Val{S}}}} where S",
     "page": "Spin package",
-    "title": "Hamiltonian.Interfaces.expand",
+    "title": "QuantumLattices.Interfaces.expand",
     "category": "method",
     "text": "expand(sc::SpinCoupling,pid::PID,spin::Spin,species::Union{Val{S},Nothing}=nothing) where S -> Union{SCExpand,Tuple{}}\nexpand(sc::SpinCoupling,pids::NTuple{N,PID},spins::NTuple{N,Spin},species::Union{Val{S},Nothing}=nothing) where {N,S} -> Union{SCExpand,Tuple{}}\n\nExpand a spin coupling with the given set of point ids and spin degrees of freedom.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/SpinPackage.html#Hamiltonian.Interfaces.matrix",
+    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Interfaces.matrix",
     "page": "Spin package",
-    "title": "Hamiltonian.Interfaces.matrix",
+    "title": "QuantumLattices.Interfaces.matrix",
     "category": "function",
     "text": "matrix(sid::SID,dtype::Type{<:Number}=Complex{Float}) -> Matrix{dtype}\n\nGet the matrix representation of a sid.\n\n\n\n\n\n"
 },
