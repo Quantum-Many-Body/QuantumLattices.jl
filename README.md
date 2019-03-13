@@ -5,9 +5,9 @@
 [![][docs-latest-img]][docs-latest-url]
 
 ## Introduction
-Julia package for constructing and solving the Hamiltonians of quantum lattice systems.
+Julia package for constructing the Hamiltonians of quantum lattice systems.
 
-Supporting algorithms/approaches include TBA, ED, CPT/VCA, DMRG, etc.
+Supporting algorithms/approaches, such as TBA, SCMF, ED, CPT/VCA, DMRG, etc, are implemented in seperate packages (still in progess).
 
 For tutorial and munual of this pacakge, please refer to its docs.
 
