@@ -1,10 +1,10 @@
 ```@meta
-CurrentModule=Hamiltonian.Prerequisites.Factories
+CurrentModule=QuantumLattices.Prerequisites.Factories
 ```
 
 ```@setup factories
 push!(LOAD_PATH,"../../../../src/")
-using Hamiltonian.Prerequisites.Factories
+using QuantumLattices.Prerequisites.Factories
 ```
 
 # Factories

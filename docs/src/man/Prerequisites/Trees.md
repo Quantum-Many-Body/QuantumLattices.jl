@@ -1,10 +1,10 @@
 ```@meta
-CurrentModule=Hamiltonian.Prerequisites.Trees
+CurrentModule=QuantumLattices.Prerequisites.Trees
 ```
 
 ```@setup trees
 push!(LOAD_PATH,"../../../../src/")
-using Hamiltonian.Prerequisites.Trees
+using QuantumLattices.Prerequisites.Trees
 ```
 
 # Trees

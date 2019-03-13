@@ -1,10 +1,10 @@
 ```@meta
-CurrentModule=Hamiltonian.Mathematics
+CurrentModule=QuantumLattices.Mathematics
 ```
 
 # Introduction
 
-This module contains the mathematical prerequisites of the Hamiltonian package.
+This module contains the mathematical prerequisites of the QuantumLattices package.
 
 ```@contents
 Pages=[

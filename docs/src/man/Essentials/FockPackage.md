@@ -1,5 +1,5 @@
 ```@meta
-CurrentModule=Hamiltonian.Essentials.FockPackage
+CurrentModule=QuantumLattices.Essentials.FockPackage
 ```
 
 # Fock package

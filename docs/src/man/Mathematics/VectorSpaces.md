@@ -1,5 +1,5 @@
 ```@meta
-CurrentModule=Hamiltonian.Mathematics.VectorSpaces
+CurrentModule=QuantumLattices.Mathematics.VectorSpaces
 ```
 
 # Vector spaces

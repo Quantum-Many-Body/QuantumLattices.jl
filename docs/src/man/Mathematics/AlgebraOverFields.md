@@ -1,10 +1,10 @@
 ```@meta
-CurrentModule=Hamiltonian.Mathematics.AlgebraOverFields
+CurrentModule=QuantumLattices.Mathematics.AlgebraOverFields
 ```
 
 ```@setup algebraoverfields
 push!(LOAD_PATH,"../../../../src/")
-using Hamiltonian.Mathematics.AlgebraOverFields
+using QuantumLattices.Mathematics.AlgebraOverFields
 ```
 
 # Algebra over fields

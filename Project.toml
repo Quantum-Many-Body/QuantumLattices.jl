@@ -1,4 +1,4 @@
-name = "Hamiltonian"
+name = "QuantumLattices"
 uuid = "f2775e7e-c16f-11e8-3a27-c7174eb680e0"
 authors = ["waltergu <waltergu1989@gmail.com>"]
 version = "0.0.1"

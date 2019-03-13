@@ -1,5 +1,5 @@
 ```@meta
-CurrentModule=Hamiltonian.Essentials.SpinPackage
+CurrentModule=QuantumLattices.Essentials.SpinPackage
 ```
 
 # Spin package

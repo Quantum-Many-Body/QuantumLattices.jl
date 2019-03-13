@@ -1,5 +1,5 @@
 using Test
-using Hamiltonian.Prerequisites.Factories
+using QuantumLattices.Prerequisites.Factories
 
 @testset "escape" begin
     @test escape(true,RawExpr())==true

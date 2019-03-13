@@ -1,11 +1,11 @@
 using Test
 using StaticArrays: SVector
 using LinearAlgebra: dot
-using Hamiltonian.Essentials.DegreesOfFreedom
-using Hamiltonian.Essentials.Spatials: PID,pidtype,rcoord,icoord
-using Hamiltonian.Mathematics.AlgebraOverFields: ID
-import Hamiltonian.Interfaces: dimension,decompose
-import Hamiltonian.Essentials.DegreesOfFreedom: twist
+using QuantumLattices.Essentials.DegreesOfFreedom
+using QuantumLattices.Essentials.Spatials: PID,pidtype,rcoord,icoord
+using QuantumLattices.Mathematics.AlgebraOverFields: ID
+import QuantumLattices.Interfaces: dimension,decompose
+import QuantumLattices.Essentials.DegreesOfFreedom: twist
 
 struct DID <: IID nambu::Int end
 Base.adjoint(sl::DID)=DID(3-sl.nambu)

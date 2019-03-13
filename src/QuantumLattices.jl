@@ -1,4 +1,4 @@
-module Hamiltonian
+module QuantumLattices
     using Reexport: @reexport
 
     include("Interfaces.jl")

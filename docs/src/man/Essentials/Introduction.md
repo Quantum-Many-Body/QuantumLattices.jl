@@ -1,10 +1,10 @@
 ```@meta
-CurrentModule=Hamiltonian.Essentials
+CurrentModule=QuantumLattices.Essentials
 ```
 
 # Introduction
 
-Essentials of the Hamiltonian package, which defines all the imported constants, types and functions when using `import Hamiltonian` or `using Hamiltonian`. Note that this submodule depends on the `Prerequisites` and `Mathematics` submodules although the variables in them are not exported to the scope of `Hamiltonian` by default.
+Essentials of the QuantumLattices package, which defines all the imported constants, types and functions when using `import QuantumLattices` or `using QuantumLattices`. Note that this submodule depends on the `Prerequisites` and `Mathematics` submodules although the variables in them are not exported to the scope of `QuantumLattices` by default.
 
 ```@contents
 Pages=  [

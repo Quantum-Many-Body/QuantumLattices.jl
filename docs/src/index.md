@@ -1,8 +1,8 @@
 ```@meta
-CurrentModule=Hamiltonian
+CurrentModule=QuantumLattices
 ```
 
-# Hamiltonian
+# QuantumLattices
 
 *Julia package for constructing the Hamiltonians of quantum lattice systems.*
 

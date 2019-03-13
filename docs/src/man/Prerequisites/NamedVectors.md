@@ -1,10 +1,10 @@
 ```@meta
-CurrentModule=Hamiltonian.Prerequisites.NamedVectors
+CurrentModule=QuantumLattices.Prerequisites.NamedVectors
 ```
 
 ```@setup namedvectors
 push!(LOAD_PATH,"../../../../src/")
-using Hamiltonian.Prerequisites.NamedVectors
+using QuantumLattices.Prerequisites.NamedVectors
 ```
 
 # Named vectors

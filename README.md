@@ -1,7 +1,7 @@
-# Hamiltonian.jl
+# QuantumLattices.jl
 
-[![Build Status](https://api.travis-ci.org/Quantum-Many-Body/Hamiltonian.jl.svg?branch=master)](https://travis-ci.org/Quantum-Many-Body/Hamiltonian.jl)
-[![codecov](https://codecov.io/gh/Quantum-Many-Body/Hamiltonian.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/Quantum-Many-Body/Hamiltonian.jl)
+[![Build Status](https://api.travis-ci.org/Quantum-Many-Body/QuantumLattices.jl.svg?branch=master)](https://travis-ci.org/Quantum-Many-Body/QuantumLattices.jl)
+[![codecov](https://codecov.io/gh/Quantum-Many-Body/QuantumLattices.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/Quantum-Many-Body/QuantumLattices.jl)
 [![][docs-latest-img]][docs-latest-url]
 
 ## Introduction
@@ -18,4 +18,4 @@ waltergu1989@gmail.com
 - [**LATEST**][docs-latest-url] &mdash; **documentation of the in-development version.**
 
 [docs-latest-img]: https://img.shields.io/badge/docs-latest-blue.svg
-[docs-latest-url]: https://quantum-many-body.github.io/Hamiltonian.jl/latest/
+[docs-latest-url]: https://quantum-many-body.github.io/QuantumLattices.jl/latest/

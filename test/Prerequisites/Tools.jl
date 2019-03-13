@@ -1,5 +1,5 @@
 using Test
-using Hamiltonian.Prerequisites
+using QuantumLattices.Prerequisites
 
 @testset "decimaltostr" begin
     @test decimaltostr(1)=="1"

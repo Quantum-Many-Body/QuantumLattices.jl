@@ -1,10 +1,10 @@
 using Test
-using Hamiltonian.Mathematics.AlgebraOverFields
-using Hamiltonian.Interfaces: dimension,rank,add!,sub!,mul!,div!
-using Hamiltonian.Prerequisites: Float
-using Hamiltonian.Mathematics.Combinatorics: Combinations
-using Hamiltonian.Mathematics.VectorSpaces: DirectVectorSpace
-import Hamiltonian.Interfaces: ⊗
+using QuantumLattices.Mathematics.AlgebraOverFields
+using QuantumLattices.Interfaces: dimension,rank,add!,sub!,mul!,div!
+using QuantumLattices.Prerequisites: Float
+using QuantumLattices.Mathematics.Combinatorics: Combinations
+using QuantumLattices.Mathematics.VectorSpaces: DirectVectorSpace
+import QuantumLattices.Interfaces: ⊗
 
 struct AOFID{O<:Real,S<:Real} <: SimpleID
     orbital::O

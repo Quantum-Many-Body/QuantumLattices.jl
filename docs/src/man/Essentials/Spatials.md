@@ -1,10 +1,10 @@
 ```@meta
-CurrentModule=Hamiltonian.Essentials.Spatials
+CurrentModule=QuantumLattices.Essentials.Spatials
 ```
 
 ```@setup spatials
 push!(LOAD_PATH,"../../../../src/")
-using Hamiltonian
+using QuantumLattices
 ```
 
 # Spatials

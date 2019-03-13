@@ -1,5 +1,5 @@
 ```@meta
-CurrentModule=Hamiltonian.Prerequisites.TypeTraits
+CurrentModule=QuantumLattices.Prerequisites.TypeTraits
 ```
 
 # Type traits

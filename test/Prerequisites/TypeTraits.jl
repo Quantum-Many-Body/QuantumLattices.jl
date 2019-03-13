@@ -1,5 +1,5 @@
 using Test
-using Hamiltonian.Prerequisites.TypeTraits
+using QuantumLattices.Prerequisites.TypeTraits
 
 struct WithTrait{F1,F2,F3}
     f1::F1

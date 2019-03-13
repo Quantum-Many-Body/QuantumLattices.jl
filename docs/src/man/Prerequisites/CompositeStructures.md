@@ -1,5 +1,5 @@
 ```@meta
-CurrentModule=Hamiltonian.Prerequisites.CompositeStructures
+CurrentModule=QuantumLattices.Prerequisites.CompositeStructures
 ```
 
 # Composite structures

@@ -2,15 +2,15 @@ using Test
 using Printf: @sprintf
 using LinearAlgebra: dot
 using StaticArrays: SVector
-using Hamiltonian.Essentials.Terms
-using Hamiltonian.Essentials.Spatials: Point,PID,Bond,decompose
-using Hamiltonian.Essentials.DegreesOfFreedom: IDFConfig,Table,IID,Index,Internal,FilteredAttributes,OID,Operator,Operators
-using Hamiltonian.Interfaces: rank,update!
-using Hamiltonian.Prerequisites: Float,decimaltostr
-using Hamiltonian.Mathematics.AlgebraOverFields: ID,SimpleID
-import Hamiltonian.Interfaces: dimension,expand
-import Hamiltonian.Essentials.DegreesOfFreedom: twist
-import Hamiltonian.Essentials.Terms: defaultcenter,propercenters
+using QuantumLattices.Essentials.Terms
+using QuantumLattices.Essentials.Spatials: Point,PID,Bond,decompose
+using QuantumLattices.Essentials.DegreesOfFreedom: IDFConfig,Table,IID,Index,Internal,FilteredAttributes,OID,Operator,Operators
+using QuantumLattices.Interfaces: rank,update!
+using QuantumLattices.Prerequisites: Float,decimaltostr
+using QuantumLattices.Mathematics.AlgebraOverFields: ID,SimpleID
+import QuantumLattices.Interfaces: dimension,expand
+import QuantumLattices.Essentials.DegreesOfFreedom: twist
+import QuantumLattices.Essentials.Terms: defaultcenter,propercenters
 
 struct TID <: IID nambu::Int end
 Base.adjoint(sl::TID)=TID(3-sl.nambu)

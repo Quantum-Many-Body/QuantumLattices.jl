@@ -1,10 +1,10 @@
 ```@meta
-CurrentModule=Hamiltonian.Essentials.Terms
+CurrentModule=QuantumLattices.Essentials.Terms
 ```
 
 ```@setup terms
 push!(LOAD_PATH,"../../../../src/")
-using Hamiltonian
+using QuantumLattices
 ```
 
 # Terms

@@ -1,5 +1,5 @@
 ```@meta
-CurrentModule=Hamiltonian.Essentials.DegreesOfFreedom
+CurrentModule=QuantumLattices.Essentials.DegreesOfFreedom
 ```
 
 # Degrees of freedom

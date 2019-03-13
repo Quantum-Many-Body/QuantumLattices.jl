@@ -1,5 +1,5 @@
 ```@meta
-CurrentModule=Hamiltonian.Mathematics.Combinatorics
+CurrentModule=QuantumLattices.Mathematics.Combinatorics
 ```
 
 # Combinatorics

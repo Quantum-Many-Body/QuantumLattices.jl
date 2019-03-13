@@ -1,5 +1,5 @@
 using Test
-using Hamiltonian.Prerequisites.Trees
+using QuantumLattices.Prerequisites.Trees
 
 @tree struct ATree end
 

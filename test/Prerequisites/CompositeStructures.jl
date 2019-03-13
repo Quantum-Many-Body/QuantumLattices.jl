@@ -1,5 +1,5 @@
 using Test
-using Hamiltonian.Prerequisites.CompositeStructures
+using QuantumLattices.Prerequisites.CompositeStructures
 
 struct FT{S,N,T} <: CompositeNTuple{N,T}
     info::S

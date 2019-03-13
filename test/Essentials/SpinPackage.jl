@@ -1,13 +1,13 @@
 using Test
 using StaticArrays: SVector
-using Hamiltonian.Essentials.SpinPackage
-using Hamiltonian.Essentials.Spatials: PID,Point,Bond
-using Hamiltonian.Essentials.DegreesOfFreedom: Table,OID,isHermitian,IDFConfig,Operators,oidtype,otype
-using Hamiltonian.Essentials.Terms: Couplings,@subscript,statistics,abbr
-using Hamiltonian.Interfaces: dims,inds,expand,matrix
-using Hamiltonian.Prerequisites: Float
-using Hamiltonian.Mathematics.AlgebraOverFields: ID
-using Hamiltonian.Mathematics.VectorSpaces: IsMultiIndexable,MultiIndexOrderStyle
+using QuantumLattices.Essentials.SpinPackage
+using QuantumLattices.Essentials.Spatials: PID,Point,Bond
+using QuantumLattices.Essentials.DegreesOfFreedom: Table,OID,isHermitian,IDFConfig,Operators,oidtype,otype
+using QuantumLattices.Essentials.Terms: Couplings,@subscript,statistics,abbr
+using QuantumLattices.Interfaces: dims,inds,expand,matrix
+using QuantumLattices.Prerequisites: Float
+using QuantumLattices.Mathematics.AlgebraOverFields: ID
+using QuantumLattices.Mathematics.VectorSpaces: IsMultiIndexable,MultiIndexOrderStyle
 
 @testset "SID" begin
     @test SID|>fieldnames==(:orbital,:spin,:tag)

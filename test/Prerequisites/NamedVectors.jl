@@ -1,6 +1,6 @@
 using Test
-using Hamiltonian.Prerequisites.NamedVectors
-using Hamiltonian.Prerequisites: Float
+using QuantumLattices.Prerequisites.NamedVectors
+using QuantumLattices.Prerequisites: Float
 
 @namedvector mutable struct NHNV
     scope::String

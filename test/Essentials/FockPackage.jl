@@ -1,14 +1,14 @@
 using Test
 using StaticArrays: SVector
-using Hamiltonian.Essentials.FockPackage
-using Hamiltonian.Essentials.Spatials: Bond,Point,PID,rcoord,azimuthd
-using Hamiltonian.Essentials.DegreesOfFreedom: Table,IDFConfig,OID,Operators,twist,oidtype,otype
-using Hamiltonian.Essentials.Terms: Couplings,@subscript,statistics,abbr
-using Hamiltonian.Interfaces: dims,inds,⊗,expand
-using Hamiltonian.Prerequisites: Float
-using Hamiltonian.Mathematics.VectorSpaces: IsMultiIndexable,MultiIndexOrderStyle
-using Hamiltonian.Mathematics.AlgebraOverFields: ID
-import Hamiltonian.FockPackage: propernambus
+using QuantumLattices.Essentials.FockPackage
+using QuantumLattices.Essentials.Spatials: Bond,Point,PID,rcoord,azimuthd
+using QuantumLattices.Essentials.DegreesOfFreedom: Table,IDFConfig,OID,Operators,twist,oidtype,otype
+using QuantumLattices.Essentials.Terms: Couplings,@subscript,statistics,abbr
+using QuantumLattices.Interfaces: dims,inds,⊗,expand
+using QuantumLattices.Prerequisites: Float
+using QuantumLattices.Mathematics.VectorSpaces: IsMultiIndexable,MultiIndexOrderStyle
+using QuantumLattices.Mathematics.AlgebraOverFields: ID
+import QuantumLattices.FockPackage: propernambus
 
 @testset "FID" begin
     fid=FID(orbital=1,spin=1)

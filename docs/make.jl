@@ -1,12 +1,12 @@
 push!(LOAD_PATH,"../src/")
 
 using Documenter
-using Hamiltonian
+using QuantumLattices
 
 makedocs(
     format=             :html,
     clean=              false,
-    sitename=           "Hamiltonian.jl",
+    sitename=           "QuantumLattices.jl",
     pages=              [
                         "Home"      =>  "index.md",
                         "Tutorial"  =>  [
@@ -40,12 +40,12 @@ makedocs(
                                         ],
                                 ],
                         ],
-    html_canonical=     "https://quantum-many-body.github.io/Hamiltonian.jl/latest/",
+    html_canonical=     "https://quantum-many-body.github.io/QuantumLattices.jl/latest/",
     assets=             ["assets/favicon.ico"]
 )
 
 deploydocs(
-    repo=       "github.com/Quantum-Many-Body/Hamiltonian.jl.git",
+    repo=       "github.com/Quantum-Many-Body/QuantumLattices.jl.git",
     target=     "build",
     julia=      "1.0",
     osname=     "linux",

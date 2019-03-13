@@ -1,5 +1,5 @@
 ```@meta
-CurrentModule=Hamiltonian.Interfaces
+CurrentModule=QuantumLattices.Interfaces
 ```
 
 # Interfaces

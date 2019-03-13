@@ -1,5 +1,5 @@
 ```@meta
-CurrentModule=Hamiltonian.Mathematics.QuantumNumbers
+CurrentModule=QuantumLattices.Mathematics.QuantumNumbers
 ```
 
 # Quantum numbers
