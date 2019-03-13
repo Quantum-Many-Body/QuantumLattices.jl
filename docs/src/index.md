@@ -4,7 +4,7 @@ CurrentModule=QuantumLattices
 
 # QuantumLattices
 
-*Julia package for constructing the Hamiltonians of quantum lattice systems.*
+*Julia package for the construction of quantum lattice systems.*
 
 We provide a general framework to construct the **symbolic representation** of the Hamiltonian of any **quantum lattice system**, with the inputs as simple as its description by natural language. This symbolic representation serves as the prerequisite of solving quantum many-body problems, based on which several algorithms, such as **TBA**(tight-bind approximation), **SCMF**(self-consistent mean field theory), **ED**(exact diagonalizaiton), **CPT/VCA**(cluster perturbation theory and variational cluster approach ), **DMRG**(density matrix renormalization group), etc. can be implemented. Generic interfaces are defined to give a unified access to these algorithms although their real implementations come in seperate packages. Only minor modifications need be made when the user alters from one algorithm to another.
 
