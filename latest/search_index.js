@@ -2437,7 +2437,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Quantum numbers",
     "title": "QuantumLattices.Mathematics.QuantumNumbers.AbelianNumbers",
     "category": "type",
-    "text": "AbelianNumbers(qn::AbelianNumber,count::Int=1)\n\nConstruct a AbelianNumbers with one unique quantum number which occurs count times.\n\n\n\n\n\n"
+    "text": "AbelianNumbers(form::Char,contents::Vector{<:AbelianNumber},counts::Vector{Int},::QnsCounts)\nAbelianNumbers(form::Char,contents::Vector{<:AbelianNumber},indptr::Vector{Int},::QnsIndptr)\n\nThe whole quantum numbers of the total bases of a Hilbert space.\n\nThe default constructors construct a AbelianNumbers from a vector of concrete quantum numbers and an vector containing their counts or indptr.\n\n\n\n\n\n"
 },
 
 {
@@ -2445,7 +2445,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Quantum numbers",
     "title": "QuantumLattices.Mathematics.QuantumNumbers.AbelianNumbers",
     "category": "type",
-    "text": "AbelianNumbers(form::Char,contents::Vector{<:AbelianNumber},counts::Vector{Int},::QnsCounts)\nAbelianNumbers(form::Char,contents::Vector{<:AbelianNumber},indptr::Vector{Int},::QnsIndptr)\n\nThe whole quantum numbers of the total bases of a Hilbert space.\n\nThe default constructors construct a AbelianNumbers from a vector of concrete quantum numbers and an vector containing their counts or indptr.\n\n\n\n\n\n"
+    "text": "AbelianNumbers(qn::AbelianNumber,count::Int=1)\n\nConstruct a AbelianNumbers with one unique quantum number which occurs count times.\n\n\n\n\n\n"
 },
 
 {
@@ -3261,7 +3261,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatials",
     "title": "Base.iterate",
     "category": "function",
-    "text": "iterate(bond::Bond,state=1)\n\nIterate over the points in a bond.\n\n\n\n\n\n"
+    "text": "iterate(p::Point,state=1)\n\nIterate over the point.\n\n\n\n\n\n"
 },
 
 {
@@ -3269,7 +3269,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatials",
     "title": "Base.iterate",
     "category": "function",
-    "text": "iterate(p::Point,state=1)\n\nIterate over the point.\n\n\n\n\n\n"
+    "text": "iterate(bond::Bond,state=1)\n\nIterate over the points in a bond.\n\n\n\n\n\n"
 },
 
 {
