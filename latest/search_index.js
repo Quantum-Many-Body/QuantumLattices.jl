@@ -3261,7 +3261,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatials",
     "title": "Base.iterate",
     "category": "function",
-    "text": "iterate(bond::Bond,state=1)\n\nIterate over the points in a bond.\n\n\n\n\n\n"
+    "text": "iterate(p::Point,state=1)\n\nIterate over the point.\n\n\n\n\n\n"
 },
 
 {
@@ -3269,7 +3269,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatials",
     "title": "Base.iterate",
     "category": "function",
-    "text": "iterate(p::Point,state=1)\n\nIterate over the point.\n\n\n\n\n\n"
+    "text": "iterate(bond::Bond,state=1)\n\nIterate over the points in a bond.\n\n\n\n\n\n"
 },
 
 {
