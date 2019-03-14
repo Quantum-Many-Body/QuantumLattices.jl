@@ -1,10 +1,8 @@
 julia 1.0
-Combinatorics
 DataStructures
 Documenter
 Formatting
 MacroTools
 NearestNeighbors
-PyPlot
 Reexport
 StaticArrays
