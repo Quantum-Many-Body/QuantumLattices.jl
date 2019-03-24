@@ -9,10 +9,9 @@ using ..Combinatorics: Combinations
 using ...Prerequisites: Float
 using ...Prerequisites.NamedVectors: HomoNamedVector
 
-import ...Interfaces: ⊕,⊗,dimension,expand,permute,decompose
+import ...Interfaces: ⊕,⊗,dimension,expand,permute,decompose,regularize!,regularize
 
-export AbelianNumber,@quantumnumber,SQN,PQN,SPQN,Z2QN
-export periods,regularize!,regularize
+export AbelianNumber,@quantumnumber,SQN,PQN,SPQN,Z2QN,periods
 export qnscounts,qnsindptr,qnscompression,qnsexpansion,qnscontents,qnsindices,qnsbruteforce,qnsmontecarlo
 export AbelianNumbers,SQNS,PQNS,SzPQNS,SPQNS,Z2QNS
 export ukron,toordereddict

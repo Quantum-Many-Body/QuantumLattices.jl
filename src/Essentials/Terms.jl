@@ -10,7 +10,7 @@ using ...Prerequisites.TypeTraits: efficientoperations,indtosub,corder
 using ...Prerequisites.CompositeStructures: CompositeTuple
 using ...Mathematics.AlgebraOverFields: SimpleID,ID,Element,Elements,idtype
 
-import ...Interfaces: rank,expand,dimension,update!
+import ...Interfaces: id,rank,expand,dimension,update!
 
 export Subscript,Subscripts,@subscript
 export Coupling,Couplings
@@ -284,11 +284,15 @@ The coupling intra/inter interanl degrees of freedom at different lattice points
 """
 abstract type Coupling{N,V<:Number,I<:ID{<:NTuple{N,SimpleID}}} <: Element{N,V,I} end
 
-defaultcenter(::Type{<:Coupling},i::Int,n::Int,::Val{1})=1
-defaultcenter(::Type{<:Coupling},i::Int,n::Int,::Val{R}) where R=error("defaultcenter error: no default center for a rank-$R bond.")
-@generated function propercenters(::Type{C},centers::NTuple{N,Any},::Val{R}) where {C<:Coupling,N,R}
-    exprs=[:(isa(centers[$i],Int) ? (0<centers[$i]<=R ? centers[$i] : error("propercenters error: center out of range.")) : defaultcenter(C,$i,N,Val(R))) for i=1:N]
+couplingcenter(::Type{<:Coupling},i::Int,n::Int,::Val{1})=1
+couplingcenter(::Type{<:Coupling},i::Int,n::Int,::Val{R}) where R=error("couplingcenter error: no default center for a rank-$R bond.")
+@generated function couplingcenters(::Type{C},centers::NTuple{N,Any},::Val{R}) where {C<:Coupling,N,R}
+    exprs=[:(isa(centers[$i],Int) ? (0<centers[$i]<=R ? centers[$i] : error("couplingcenters error: center out of range.")) : couplingcenter(C,$i,N,Val(R))) for i=1:N]
     return Expr(:tuple,exprs...)
+end
+function couplingcenters(str::String)
+    @assert str[1]=='(' && str[end]==')' "couplingcenters error: wrong pattern."
+    Tuple(parse(Int,center) for center in split(str[2:end-1],'-'))
 end
 
 """
@@ -372,39 +376,38 @@ end
 (termmodulate::TermModulate{<:Function})(args...;kwargs...)=termmodulate.modulate(args...;kwargs...)
 
 """
-    Term{ST,SP}(id::Symbol,value::Number,neighbor::Any,couplings::TermCouplings,amplitude::TermAmplitude,modulate::Union{TermModulate,Nothing},factor::Number) where {ST,SP}
+    Term{ST,SP,I}(value::Number,neighbor::Any,couplings::TermCouplings,amplitude::TermAmplitude,modulate::Union{TermModulate,Nothing},factor::Number) where {ST,SP,I}
     Term{ST,SP}(id::Symbol,value::Number,neighbor::Any;
                 couplings::Union{Tuple{<:Tuple{Vararg{Couplings}},<:Function},Coupling,Couplings,TermCouplings},
                 amplitude::Union{Function,Nothing}=nothing,
                 modulate::Union{Function,Bool}=false,
-                factor::Number=1
                 ) where {ST,SP}
 
 A term of a quantum lattice system.
 """
-mutable struct Term{Statistics,Species,V<:Number,N<:Any,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}
-    id::Symbol
+mutable struct Term{statistics,species,id,V<:Number,N<:Any,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}
     value::V
     neighbor::N
     couplings::C
     amplitude::A
     modulate::M
     factor::V
-    function Term{ST,SP}(id::Symbol,value::Number,neighbor::Any,couplings::TermCouplings,amplitude::TermAmplitude,modulate::Union{TermModulate,Nothing},factor::Number) where {ST,SP}
-        @assert ST in ('F','B') && isa(SP,Symbol) "Term error: not supported type parameter."
-        new{ST,SP,typeof(value),typeof(neighbor),typeof(couplings),typeof(amplitude),typeof(modulate)}(id,value,neighbor,couplings,amplitude,modulate,factor)
+    function Term{ST,SP,I}(value::Number,neighbor::Any,couplings::TermCouplings,amplitude::TermAmplitude,modulate::Union{TermModulate,Nothing},factor::Number) where {ST,SP,I}
+        @assert ST in ('F','B') "Term error: statistics must be 'F' or 'B'."
+        @assert isa(SP,Symbol) "Term error: species must be a Symbol."
+        @assert isa(I,Symbol) "Term error: id must be a Symbol."
+        new{ST,SP,I,typeof(value),typeof(neighbor),typeof(couplings),typeof(amplitude),typeof(modulate)}(value,neighbor,couplings,amplitude,modulate,factor)
     end
 end
 function Term{ST,SP}(   id::Symbol,value::Number,neighbor::Any;
                         couplings::Union{Tuple{<:Tuple{Vararg{Couplings}},<:Function},Coupling,Couplings,TermCouplings},
                         amplitude::Union{Function,Nothing}=nothing,
                         modulate::Union{Function,Bool}=false,
-                        factor::Number=1
                         ) where {ST,SP}
     isa(couplings,TermCouplings) || (couplings=TermCouplings(couplings))
     isa(amplitude,TermAmplitude) || (amplitude=TermAmplitude(amplitude))
     isa(modulate,TermModulate) || (modulate=modulate===false ? nothing : TermModulate(id,modulate))
-    Term{ST,SP}(id,value,neighbor,couplings,amplitude,modulate,factor)
+    Term{ST,SP,id}(value,neighbor,couplings,amplitude,modulate,1)
 end
 
 """
@@ -426,13 +429,20 @@ species(term::Term)=term|>typeof|>species
 species(::Type{<:Term{ST,SP}}) where {ST,SP}=SP
 
 """
+    id(term::Term) -> Symbol
+    id(::Type{<:Term{ST,SP,I}}) where {ST,SP,I} -> Symbol
+"""
+id(term::Term)=term|>typeof|>id
+id(::Type{<:Term{ST,SP,I}}) where {ST,SP,I}=I
+
+"""
     valtype(term::Term)
-    valtype(::Type{<:Term{ST,SP,V}}) where {ST,SP,V<:Number}
+    valtype(::Type{<:Term{ST,SP,I,V}}) where {ST,SP,I,V<:Number}
 
 Get the value type of a term.
 """
 Base.valtype(term::Term)=term|>typeof|>valtype
-Base.valtype(::Type{<:Term{ST,SP,V}}) where {ST,SP,V<:Number}=V
+Base.valtype(::Type{<:Term{ST,SP,I,V}}) where {ST,SP,I,V<:Number}=V
 
 """
     rank(term::Term) -> Int
@@ -467,7 +477,7 @@ Base.isequal(term1::Term,term2::Term)=isequal(efficientoperations,term1,term2)
 Show a term.
 """
 function Base.show(io::IO,term::Term)
-    @printf io "%s{%s}(id=%s,value=%s,neighbor=%s,factor=%s)" species(term) statistics(term) term.id decimaltostr(term.value) term.neighbor decimaltostr(term.factor)
+    @printf io "%s{%s}(id=%s,value=%s,neighbor=%s,factor=%s)" species(term) statistics(term) term|>id decimaltostr(term.value) term.neighbor decimaltostr(term.factor)
 end
 
 """
@@ -491,13 +501,13 @@ function Base.repr(term::Term,bond::AbstractBond,config::IDFConfig)
 end
 
 """
-    replace(term::Term{ST,SP};kwargs...) where {ST,SP} -> Term
+    replace(term::Term{ST,SP,I};kwargs...) where {ST,SP,I} -> Term
 
 Replace some attributes of a term with key word arguments.
 """
-@generated function Base.replace(term::Term{ST,SP};kwargs...) where {ST,SP}
+@generated function Base.replace(term::Term{ST,SP,I};kwargs...) where {ST,SP,I}
     exprs=[:(get(kwargs,$name,getfield(term,$name))) for name in QuoteNode.(term|>fieldnames)]
-    return :(Term{ST,SP}($(exprs...)))
+    return :(Term{ST,SP,I}($(exprs...)))
 end
 
 """
@@ -554,14 +564,14 @@ function expand(otype::Type{<:Operator},term::Term,bond::AbstractBond,config::ID
             icoords=NTuple{length(bond),SVector{dimension(bond),Float}}(point.icoord for point in bond)
             interanls=NTuple{length(bond),valtype(config)}(config[pid] for pid in pids)
             for coupling in values(term.couplings(bond))
-                perm=propercenters(typeof(coupling),coupling.id.centers,Val(rank(bond)))::NTuple{rank(otype),Int}
-                orcoords=getcoords(rtype,rcoords,perm)
-                oicoords=getcoords(itype,icoords,perm)
+                perm=couplingcenters(typeof(coupling),coupling.id.centers,Val(rank(bond)))::NTuple{rank(otype),Int}
+                orcoords=termcoords(rtype,rcoords,perm)
+                oicoords=termcoords(itype,icoords,perm)
                 for (coeff,oindexes) in expand(coupling,pids,interanls,term|>species|>Val) # needs improvement memory allocation 7 times for each fock coupling
                     isa(table,Table) && any(NTuple{rank(otype),Bool}(!haskey(table,index) for index in oindexes)) && continue
-                    id=ID(OID,oindexes,orcoords,oicoords,getseqs(table,oindexes))
+                    id=ID(OID,oindexes,orcoords,oicoords,termseqs(table,oindexes))
                     if !(half===nothing && haskey(result,id'))
-                        ovalue=valtype(otype)(value*coeff*properfactor(half,id,term|>species|>Val)) # needs improvement memory allocation 2 times for each
+                        ovalue=valtype(otype)(value*coeff*termfactor(half,id,term|>species|>Val)) # needs improvement memory allocation 2 times for each
                         add!(result,otype.name.wrapper(ovalue,id))
                     end
                 end
@@ -570,12 +580,12 @@ function expand(otype::Type{<:Operator},term::Term,bond::AbstractBond,config::ID
     end
     return result
 end
-getcoords(::Type{<:Nothing},rcoords::NTuple{N,SVector{M,Float}},perm::NTuple{R,Int}) where {N,M,R}=NTuple{R,Nothing}(nothing for i=1:R)
-getcoords(::Type{<:SVector},rcoords::NTuple{N,SVector{M,Float}},perm::NTuple{R,Int}) where {N,M,R}=NTuple{R,SVector{M,Float}}(rcoords[p] for p in perm)
-getseqs(::Nothing,indexes::NTuple{N,<:Index}) where N=NTuple{N,Nothing}(nothing for i=1:N)
-@generated getseqs(table::Table{I},indexes::NTuple{N,I}) where {N,I<:Index}=Expr(:tuple,[:(table[indexes[$i]]) for i=1:N]...)
-properfactor(half::Bool,::ID{<:NTuple{N,OID}},::Val{S}) where {N,S}=half ? 0.5 : 1.0
-properfactor(::Nothing,id::ID{<:NTuple{N,OID}},::Val{S}) where {N,S}=isHermitian(id) ? 0.5 : 1.0
+termcoords(::Type{<:Nothing},rcoords::NTuple{N,SVector{M,Float}},perm::NTuple{R,Int}) where {N,M,R}=NTuple{R,Nothing}(nothing for i=1:R)
+termcoords(::Type{<:SVector},rcoords::NTuple{N,SVector{M,Float}},perm::NTuple{R,Int}) where {N,M,R}=NTuple{R,SVector{M,Float}}(rcoords[p] for p in perm)
+termseqs(::Nothing,indexes::NTuple{N,<:Index}) where N=NTuple{N,Nothing}(nothing for i=1:N)
+@generated termseqs(table::Table{I},indexes::NTuple{N,I}) where {N,I<:Index}=Expr(:tuple,[:(table[indexes[$i]]) for i=1:N]...)
+termfactor(half::Bool,::ID{<:NTuple{N,OID}},::Val{S}) where {N,S}=half ? 0.5 : 1.0
+termfactor(::Nothing,id::ID{<:NTuple{N,OID}},::Val{S}) where {N,S}=isHermitian(id) ? 0.5 : 1.0
 
 """
     update!(term::Term,args...;kwargs...) -> Term

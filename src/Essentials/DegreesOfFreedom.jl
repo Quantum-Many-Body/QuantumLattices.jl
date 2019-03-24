@@ -279,7 +279,7 @@ function Base.reverse(table::Table)
     result
 end
 
-@generated function propercoord(vector::SVector{N,Float}) where N
+@generated function oidcoord(vector::SVector{N,Float}) where N
     exprs=[:(vector[$i]===-0.0 ? 0.0 : vector[$i]) for i=1:N]
     return :(SVector($(exprs...)))
 end
@@ -299,7 +299,7 @@ struct OID{I<:Index,RC<:Union{Nothing,SVector},IC<:Union{Nothing,SVector},S<:Uni
     seq::S
     OID(index::Index,::Nothing,::Nothing,seq::Union{Nothing,Int})=new{typeof(index),Nothing,Nothing,typeof(seq)}(index,nothing,nothing,seq)
     function OID(index::Index,rcoord::SVector{N,Float},icoord::SVector{N,Float},seq::Union{Nothing,Int}) where N
-        new{typeof(index),SVector{N,Float},SVector{N,Float},typeof(seq)}(index,propercoord(rcoord),propercoord(icoord),seq)
+        new{typeof(index),SVector{N,Float},SVector{N,Float},typeof(seq)}(index,oidcoord(rcoord),oidcoord(icoord),seq)
     end
 end
 OID(index::Index,rcoord::Vector{Float},icoord::Vector{Float},seq::Union{Nothing,Int})=OID(index,SVector{length(rcoord)}(rcoord),SVector{length(icoord)}(icoord),seq)

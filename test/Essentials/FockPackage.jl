@@ -8,7 +8,7 @@ using QuantumLattices.Interfaces: dims,inds,⊗,expand
 using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Mathematics.VectorSpaces: IsMultiIndexable,MultiIndexOrderStyle
 using QuantumLattices.Mathematics.AlgebraOverFields: ID
-import QuantumLattices.FockPackage: propernambus
+import QuantumLattices.FockPackage: fockcouplingnambus
 
 @testset "FID" begin
     fid=FID(orbital=1,spin=1)
@@ -108,11 +108,11 @@ end
     ]
 end
 
-@testset "propernambus" begin
-    @test propernambus(nothing,('*','*','*','*'),(1,1,2,2))==(0,0,2,1)
-    @test propernambus(nothing,(0,0,1,1),(1,1,2,2))==(0,0,1,1)
-    @test propernambus(Val(:Pairing),('*','*'),(2,2))==(1,1)
-    @test propernambus(Val(:Pairing),(1,2),(2,2))==(1,2)
+@testset "fockcouplingnambus" begin
+    @test fockcouplingnambus(nothing,('*','*','*','*'),(1,1,2,2))==(0,0,2,1)
+    @test fockcouplingnambus(nothing,(0,0,1,1),(1,1,2,2))==(0,0,1,1)
+    @test fockcouplingnambus(Val(:Pairing),('*','*'),(2,2))==(1,1)
+    @test fockcouplingnambus(Val(:Pairing),(1,2),(2,2))==(1,2)
 end
 
 @testset "σ⁰" begin

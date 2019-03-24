@@ -5,14 +5,14 @@ using LinearAlgebra: dot
 using Printf: @printf,@sprintf
 using ..Spatials: PID,AbstractBond,Point,Bond,pidtype,decompose
 using ..DegreesOfFreedom: IID,Index,Internal,FilteredAttributes,IDFConfig,Table,OID,Operator,Operators
-using ..Terms: wildcard,constant,Subscript,Subscripts,Coupling,Couplings,@subscript,propercenters,Term,TermCouplings,TermAmplitude,TermModulate
+using ..Terms: wildcard,constant,Subscript,Subscripts,Coupling,Couplings,@subscript,couplingcenters,Term,TermCouplings,TermAmplitude,TermModulate
 using ...Interfaces: rank,dimension,add!
 using ...Prerequisites: Float,delta,decimaltostr
 using ...Mathematics.AlgebraOverFields: SimpleID,ID
 using ...Mathematics.VectorSpaces: VectorSpace,IsMultiIndexable,MultiIndexOrderStyle
 
 import ..DegreesOfFreedom: twist,oidtype,otype
-import ..Terms: defaultcenter,statistics,abbr,properfactor
+import ..Terms: couplingcenter,statistics,abbr,termfactor
 import ...Interfaces: dims,inds,⊗,expand
 
 export ANNIHILATION,CREATION,FID,FIndex,Fock
@@ -364,10 +364,10 @@ Expand a Fock coupling with the given set of point ids and Fock degrees of freed
 """
 expand(fc::FockCoupling,pid::PID,fock::Fock,species::Union{Val{S},Nothing}=nothing) where S=expand(fc,(pid,),(fock,),species)
 function expand(fc::FockCoupling,pids::NTuple{R,PID},focks::NTuple{R,Fock},species::Union{Val{S},Nothing}=nothing) where {R,S}
-    centers=propercenters(typeof(fc),fc.id.centers,Val(R))
+    centers=couplingcenters(typeof(fc),fc.id.centers,Val(R))
     rpids=NTuple{rank(fc),eltype(pids)}(pids[centers[i]] for i=1:rank(fc))
     rfocks=NTuple{rank(fc),eltype(focks)}(focks[centers[i]] for i=1:rank(fc))
-    nambus=propernambus(species,fc.id.nambus,NTuple{rank(fc),Int}(rfocks[i].nnambu for i=1:rank(fc)))
+    nambus=fockcouplingnambus(species,fc.id.nambus,NTuple{rank(fc),Int}(rfocks[i].nnambu for i=1:rank(fc)))
     for (i,atom) in enumerate(fc.id.atoms)
        isa(atom,Int) && (atom≠rfocks[i].atom) && return ()
     end
@@ -375,10 +375,10 @@ function expand(fc::FockCoupling,pids::NTuple{R,PID},focks::NTuple{R,Fock},speci
     spsbexpands=expand(fc.spsubscripts,NTuple{rank(fc),Int}(rfocks[i].nspin for i=1:rank(fc)))|>collect
     return FCExpand(fc.value,rpids,obsbexpands,spsbexpands,nambus)
 end
-defaultcenter(::Type{<:FockCoupling},i::Int,n::Int,::Val{2})=i<=n/2 ? 1 : 2
-@generated function propernambus(::Union{Val{S},Nothing},nambus::NTuple{N,Any},ranges::NTuple{N,Int}) where {N,S}
+couplingcenter(::Type{<:FockCoupling},i::Int,n::Int,::Val{2})=i<=n/2 ? 1 : 2
+@generated function fockcouplingnambus(::Union{Val{S},Nothing},nambus::NTuple{N,Any},ranges::NTuple{N,Int}) where {N,S}
     exprs=[:(isa(nambus[$i],Int) ?
-            ((ranges[$i]==1 && nambus[$i]==0) || (ranges[$i]==2 && 0<nambus[$i]<=2) ? nambus[$i] : error("propernambus error: nambu out of range.")) :
+            ((ranges[$i]==1 && nambus[$i]==0) || (ranges[$i]==2 && 0<nambus[$i]<=2) ? nambus[$i] : error("fockcouplingnambus error: nambu out of range.")) :
             (ranges[$i]==1 ? 0 : ($i)%2==1 ? CREATION : ANNIHILATION)
             ) for i=1:N]
     return Expr(:tuple,exprs...)
@@ -452,7 +452,7 @@ end
 The Pauli matrix σ⁺, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
 """
 function σ⁺(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing)
-    @assert (mode=="sp" || mode=="ob" || mode=="sl" || mode=="ph") "σᶻ error: not supported mode($mode)."
+    @assert (mode=="sp" || mode=="ob" || mode=="sl" || mode=="ph") "σ⁺ error: not supported mode($mode)."
     attrname=mode=="sp" ? :spins : mode=="ob" ? :orbitals : mode=="sl" ? :atoms : :nambus
     attrval=mode=="ph" ? (CREATION,CREATION) : (2,1)
     Couplings(FockCoupling{2}(1;attrname=>attrval,:centers=>centers))
@@ -464,7 +464,7 @@ end
 The Pauli matrix σ⁻, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
 """
 function σ⁻(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing)
-    @assert (mode=="sp" || mode=="ob" || mode=="sl" || mode=="ph") "σᶻ error: not supported mode($mode)."
+    @assert (mode=="sp" || mode=="ob" || mode=="sl" || mode=="ph") "σ⁻ error: not supported mode($mode)."
     attrname=mode=="sp" ? :spins : mode=="ob" ? :orbitals : mode=="sl" ? :atoms : :nambus
     attrval=mode=="ph" ? (ANNIHILATION,ANNIHILATION) : (1,2)
     Couplings(FockCoupling{2}(1;attrname=>attrval,:centers=>centers))
@@ -475,23 +475,21 @@ end
                 couplings::Union{Tuple{<:Tuple{Vararg{Couplings}},<:Function},Coupling,Couplings,Nothing}=nothing,
                 amplitude::Union{Function,Nothing}=nothing,
                 modulate::Union{Function,Bool}=false,
-                factor::Number=1
                 ) where {ST}
 
 Onsite term.
 
-Type alias for `Term{Statistics,:Onsite,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
+Type alias for `Term{statistics,:Onsite,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
 """
-const Onsite{Statistics,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{Statistics,:Onsite,V,Int,C,A,M}
+const Onsite{statistics,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:Onsite,id,V,Int,C,A,M}
 function Onsite{ST}(id::Symbol,value::Number;
                     couplings::Union{Tuple{<:Tuple{Vararg{Couplings}},<:Function},Coupling,Couplings,Nothing}=nothing,
                     amplitude::Union{Function,Nothing}=nothing,
                     modulate::Union{Function,Bool}=false,
-                    factor::Number=1
                     ) where {ST}
     couplings=TermCouplings(couplings===nothing ? FockCoupling{2}() : couplings)
     @assert rank(couplings)==2 "Onsite error: input couplings must be rank-2."
-    Term{ST,:Onsite}(id,value,0,couplings=couplings,amplitude=amplitude,modulate=modulate,factor=factor)
+    Term{ST,:Onsite}(id,value,0,couplings=couplings,amplitude=amplitude,modulate=modulate)
 end
 abbr(::Type{<:Onsite})=:st
 function expand(term::Onsite,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false)
@@ -504,25 +502,23 @@ end
                 couplings::Union{Tuple{<:Tuple{Vararg{Couplings}},<:Function},Coupling,Couplings,Nothing}=nothing,
                 amplitude::Union{Function,Nothing}=nothing,
                 modulate::Union{Function,Bool}=false,
-                factor::Number=1
                 ) where {ST}
 
 Hopping term.
 
-Type alias for `Term{Statistics,:Hopping,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
+Type alias for `Term{statistics,:Hopping,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
 """
-const Hopping{Statistics,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{Statistics,:Hopping,V,Int,C,A,M}
+const Hopping{statistics,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:Hopping,id,V,Int,C,A,M}
 function Hopping{ST}(id::Symbol,value::Number;
                     neighbor::Int=1,
                     couplings::Union{Tuple{<:Tuple{Vararg{Couplings}},<:Function},Coupling,Couplings,Nothing}=nothing,
                     amplitude::Union{Function,Nothing}=nothing,
                     modulate::Union{Function,Bool}=false,
-                    factor::Number=1
                     ) where {ST}
     couplings=TermCouplings(couplings===nothing ? FockCoupling{2}() : couplings)
     @assert rank(couplings)==2 "Hopping error: input couplings must be rank-2."
     @assert neighbor≠0 "Hopping error: input neighbor cannot be 0. Use `Onsite` instead."
-    Term{ST,:Hopping}(id,value,neighbor,couplings=couplings,amplitude=amplitude,modulate=modulate,factor=factor)
+    Term{ST,:Hopping}(id,value,neighbor,couplings=couplings,amplitude=amplitude,modulate=modulate)
 end
 abbr(::Type{<:Hopping})=:hp
 function expand(term::Hopping,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false)
@@ -537,30 +533,28 @@ end
                 couplings::Union{Tuple{<:Tuple{Vararg{Couplings}},<:Function},Coupling,Couplings,Nothing}=nothing,
                 amplitude::Union{Function,Nothing}=nothing,
                 modulate::Union{Function,Bool}=false,
-                factor::Number=1
                 ) where {ST}
 
 Pairing term.
 
-Type alias for `Term{Statistics,:Pairing,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
+Type alias for `Term{statistics,:Pairing,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
 """
-const Pairing{Statistics,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{Statistics,:Pairing,V,Int,C,A,M}
+const Pairing{statistics,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:Pairing,id,V,Int,C,A,M}
 function Pairing{ST}(id::Symbol,value::Number;
                     neighbor::Int=0,
                     couplings::Union{Tuple{<:Tuple{Vararg{Couplings}},<:Function},Coupling,Couplings,Nothing}=nothing,
                     amplitude::Union{Function,Nothing}=nothing,
                     modulate::Union{Function,Bool}=false,
-                    factor::Number=1
                     ) where {ST}
     couplings=TermCouplings(couplings===nothing ? FockCoupling{2}() : couplings)
     @assert rank(couplings)==2 "Pairing error: input couplings must be rank-2."
-    Term{ST,:Pairing}(id,value,neighbor,couplings=couplings,amplitude=amplitude,modulate=modulate,factor=factor)
+    Term{ST,:Pairing}(id,value,neighbor,couplings=couplings,amplitude=amplitude,modulate=modulate)
 end
 abbr(::Type{<:Pairing})=:pr
-function propernambus(::Val{:Pairing},nambus::NTuple{2,Any},ranges::NTuple{2,Int})
-    @assert ranges==(2,2) "propernambus error: ranges for Pairing terms must be (2,2)."
-    (   isa(nambus[1],Int) ? (0<nambus[1]<=2 ? nambus[1] : error("propernambus error: nambu out of range.")) : ANNIHILATION,
-        isa(nambus[2],Int) ? (0<nambus[2]<=2 ? nambus[2] : error("propernambus error: nambu out of range.")) : ANNIHILATION
+function fockcouplingnambus(::Val{:Pairing},nambus::NTuple{2,Any},ranges::NTuple{2,Int})
+    @assert ranges==(2,2) "fockcouplingnambus error: ranges for Pairing terms must be (2,2)."
+    (   isa(nambus[1],Int) ? (0<nambus[1]<=2 ? nambus[1] : error("fockcouplingnambus error: nambu out of range.")) : ANNIHILATION,
+        isa(nambus[2],Int) ? (0<nambus[2]<=2 ? nambus[2] : error("fockcouplingnambus error: nambu out of range.")) : ANNIHILATION
         )
 end
 function expand(term::Pairing,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false)
@@ -575,20 +569,18 @@ const hubbard=FockCoupling{4}(spins=(2,2,1,1),nambus=(CREATION,ANNIHILATION,CREA
     Hubbard{ST}(id::Symbol,value::Real;
                 amplitude::Union{Function,Nothing}=nothing,
                 modulate::Union{Function,Bool}=false,
-                factor::Number=1
                 ) where {ST}
 
 Hubbard term.
 
-Type alias for `Term{Statistics,:Hubbard,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
+Type alias for `Term{statistics,:Hubbard,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
 """
-const Hubbard{Statistics,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{Statistics,:Hubbard,V,Int,C,A,M}
+const Hubbard{statistics,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:Hubbard,id,V,Int,C,A,M}
 function Hubbard{ST}(id::Symbol,value::Real;
                     amplitude::Union{Function,Nothing}=nothing,
                     modulate::Union{Function,Bool}=false,
-                    factor::Number=1
                     ) where {ST}
-    Term{ST,:Hubbard}(id,value,0,couplings=hubbard,amplitude=amplitude,modulate=modulate,factor=factor)
+    Term{ST,:Hubbard}(id,value,0,couplings=hubbard,amplitude=amplitude,modulate=modulate)
 end
 abbr(::Type{<:Hubbard})=:hb
 function expand(term::Hubbard,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false)
@@ -603,20 +595,18 @@ const interorbitalinterspin=FockCoupling{4}(orbitals=(@subscript (α,β)=>(α,α
     InterOrbitalInterSpin{ST}(  id::Symbol,value::Real;
                                 amplitude::Union{Function,Nothing}=nothing,
                                 modulate::Union{Function,Bool}=false,
-                                factor::Number=1
                                 ) where {ST}
 
 Interorbital-interspin term.
 
-Type alias for `Term{Statistics,:InterOrbitalInterSpin,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
+Type alias for `Term{statistics,:InterOrbitalInterSpin,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
 """
-const InterOrbitalInterSpin{Statistics,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{Statistics,:InterOrbitalInterSpin,V,Int,C,A,M}
+const InterOrbitalInterSpin{statistics,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:InterOrbitalInterSpin,id,V,Int,C,A,M}
 function InterOrbitalInterSpin{ST}( id::Symbol,value::Real;
                                     amplitude::Union{Function,Nothing}=nothing,
                                     modulate::Union{Function,Bool}=false,
-                                    factor::Number=1
                                     ) where {ST}
-    Term{ST,:InterOrbitalInterSpin}(id,value,0,couplings=interorbitalinterspin,amplitude=amplitude,modulate=modulate,factor=factor)
+    Term{ST,:InterOrbitalInterSpin}(id,value,0,couplings=interorbitalinterspin,amplitude=amplitude,modulate=modulate)
 end
 abbr(::Type{<:InterOrbitalInterSpin})=:nons
 function expand(term::InterOrbitalInterSpin,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false)
@@ -630,20 +620,18 @@ const interorbitalintraspin=FockCoupling{4}(orbitals=(@subscript (α,β)=>(α,α
     InterOrbitalIntraSpin{ST}(  id::Symbol,value::Real;
                                 amplitude::Union{Function,Nothing}=nothing,
                                 modulate::Union{Function,Bool}=false,
-                                factor::Number=1
                                 ) where {ST}
 
 Interorbital-intraspin term.
 
-Type alias for `Term{Statistics,:InterOrbitalIntraSpin,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
+Type alias for `Term{statistics,:InterOrbitalIntraSpin,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
 """
-const InterOrbitalIntraSpin{Statistics,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{Statistics,:InterOrbitalIntraSpin,V,Int,C,A,M}
+const InterOrbitalIntraSpin{statistics,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:InterOrbitalIntraSpin,id,V,Int,C,A,M}
 function InterOrbitalIntraSpin{ST}( id::Symbol,value::Real;
                                     amplitude::Union{Function,Nothing}=nothing,
                                     modulate::Union{Function,Bool}=false,
-                                    factor::Number=1
                                     ) where {ST}
-    Term{ST,:InterOrbitalIntraSpin}(id,value,0,couplings=interorbitalintraspin,amplitude=amplitude,modulate=modulate,factor=factor)
+    Term{ST,:InterOrbitalIntraSpin}(id,value,0,couplings=interorbitalintraspin,amplitude=amplitude,modulate=modulate)
 end
 abbr(::Type{<:InterOrbitalIntraSpin})=:noes
 function expand(term::InterOrbitalIntraSpin,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false)
@@ -658,20 +646,18 @@ const spinflip=FockCoupling{4}( orbitals=(@subscript (α,β)=>(α,β,α,β) with
     SpinFlip{ST}(   id::Symbol,value::Real;
                     amplitude::Union{Function,Nothing}=nothing,
                     modulate::Union{Function,Bool}=false,
-                    factor::Number=1
                     ) where {ST}
 
 Spin-flip term.
 
-Type alias for `Term{Statistics,:SpinFlip,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
+Type alias for `Term{statistics,:SpinFlip,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
 """
-const SpinFlip{Statistics,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{Statistics,:SpinFlip,V,Int,C,A,M}
+const SpinFlip{statistics,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:SpinFlip,id,V,Int,C,A,M}
 function SpinFlip{ST}(  id::Symbol,value::Real;
                         amplitude::Union{Function,Nothing}=nothing,
                         modulate::Union{Function,Bool}=false,
-                        factor::Number=1
                         ) where {ST}
-    Term{ST,:SpinFlip}(id,value,0,couplings=spinflip,amplitude=amplitude,modulate=modulate,factor=factor)
+    Term{ST,:SpinFlip}(id,value,0,couplings=spinflip,amplitude=amplitude,modulate=modulate)
 end
 abbr(::Type{<:SpinFlip})=:sf
 function expand(term::SpinFlip,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false)
@@ -688,20 +674,18 @@ const pairhopping=FockCoupling{4}(  orbitals=(@subscript (α,β)=>(α,α,β,β) 
     PairHopping{ST}(    id::Symbol,value::Real;
                         amplitude::Union{Function,Nothing}=nothing,
                         modulate::Union{Function,Bool}=false,
-                        factor::Number=1
                         ) where {ST}
 
 Pair-hopping term.
 
-Type alias for `Term{Statistics,:PairHopping,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
+Type alias for `Term{statistics,:PairHopping,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
 """
-const PairHopping{Statistics,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{Statistics,:PairHopping,V,Int,C,A,M}
+const PairHopping{statistics,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:PairHopping,id,V,Int,C,A,M}
 function PairHopping{ST}(   id::Symbol,value::Real;
                             amplitude::Union{Function,Nothing}=nothing,
                             modulate::Union{Function,Bool}=false,
-                            factor::Number=1
                             ) where {ST}
-    Term{ST,:PairHopping}(id,value,0,couplings=pairhopping,amplitude=amplitude,modulate=modulate,factor=factor)
+    Term{ST,:PairHopping}(id,value,0,couplings=pairhopping,amplitude=amplitude,modulate=modulate)
 end
 abbr(::Type{<:PairHopping})=:ph
 function expand(term::PairHopping,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false)
@@ -716,28 +700,26 @@ end
                     couplings::Union{Tuple{<:Tuple{Vararg{Couplings}},<:Function},Coupling,Couplings,Nothing}=nothing,
                     amplitude::Union{Function,Nothing}=nothing,
                     modulate::Union{Function,Bool}=false,
-                    factor::Number=1
                     ) where {ST}
 
 Coulomb term.
 
-Type alias for `Term{Statistics,:Coulomb,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
+Type alias for `Term{statistics,:Coulomb,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
 """
-const Coulomb{Statistics,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{Statistics,:Coulomb,V,Int,C,A,M}
+const Coulomb{statistics,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:Coulomb,id,V,Int,C,A,M}
 function Coulomb{ST}(   id::Symbol,value::Number;
                         neighbor::Int=1,
                         couplings::Union{Tuple{<:Tuple{Vararg{Couplings}},<:Function},Coupling,Couplings,Nothing}=nothing,
                         amplitude::Union{Function,Nothing}=nothing,
                         modulate::Union{Function,Bool}=false,
-                        factor::Number=1
                         ) where {ST}
     couplings=TermCouplings(couplings===nothing ? FockCoupling{2}()*FockCoupling{2}() : couplings)
     @assert rank(couplings)==4 "Coulomb error: input couplings must be rank-4."
     @assert neighbor≠0 "Coulomb error: input neighbor cannot be 0. Use `Hubbard/InterOrbitalInterSpin/InterOrbitalIntraSpin/SpinFlip/PairHopping` instead."
-    Term{ST,:Coulomb}(id,value,neighbor,couplings=couplings,amplitude=amplitude,modulate=modulate,factor=factor)
+    Term{ST,:Coulomb}(id,value,neighbor,couplings=couplings,amplitude=amplitude,modulate=modulate)
 end
 abbr(::Type{<:Coulomb})=:cl
-properfactor(::Nothing,id::ID{<:NTuple{4,OID}},::Val{:Coulomb})=id[2]'==id[1] && id[4]'==id[3] ? 0.5 : 1.0
+termfactor(::Nothing,id::ID{<:NTuple{4,OID}},::Val{:Coulomb})=id[2]'==id[1] && id[4]'==id[3] ? 0.5 : 1.0
 function expand(term::Coulomb,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false)
     result=expand(otype(Val(:Fock),typeof(term),typeof(bond),typeof(table)),term,bond,config,table,nothing)
     half || length(result)==0 || for opt in result|>values|>collect add!(result,opt') end

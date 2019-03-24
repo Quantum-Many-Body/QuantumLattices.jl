@@ -5,12 +5,12 @@ using StaticArrays: SVector
 using QuantumLattices.Essentials.Terms
 using QuantumLattices.Essentials.Spatials: Point,PID,Bond,decompose
 using QuantumLattices.Essentials.DegreesOfFreedom: IDFConfig,Table,IID,Index,Internal,FilteredAttributes,OID,Operator,Operators
-using QuantumLattices.Interfaces: rank,update!
+using QuantumLattices.Interfaces: rank,update!,id
 using QuantumLattices.Prerequisites: Float,decimaltostr
 using QuantumLattices.Mathematics.AlgebraOverFields: ID,SimpleID
 import QuantumLattices.Interfaces: dimension,expand
 import QuantumLattices.Essentials.DegreesOfFreedom: twist
-import QuantumLattices.Essentials.Terms: defaultcenter,propercenters
+import QuantumLattices.Essentials.Terms: couplingcenter,couplingcenters
 
 struct TID <: IID nambu::Int end
 Base.adjoint(sl::TID)=TID(3-sl.nambu)
@@ -110,10 +110,12 @@ end
 end
 
 @testset "centerrelated" begin
-    @test defaultcenter(Coupling,2,2,Val(1))==1
-    @test defaultcenter(Coupling,1,2,Val(1))==1
-    @test propercenters(Coupling,('*','*'),Val(1))==(1,1)
-    @test propercenters(Coupling,(1,2,3),Val(3))==(1,2,3)
+    @test couplingcenter(Coupling,2,2,Val(1))==1
+    @test couplingcenter(Coupling,1,2,Val(1))==1
+    @test couplingcenters(Coupling,('*','*'),Val(1))==(1,1)
+    @test couplingcenters(Coupling,(1,2,3),Val(3))==(1,2,3)
+    @test couplingcenters("(1-4)")==(1,4)
+    @test couplingcenters("(1-2-3-4)")==(1,2,3,4)
 end
 
 @testset "TermFunction" begin
@@ -151,6 +153,7 @@ end
     term=Term{'F',:Term}(:mu,1.5,0,couplings=TCoupling(1.0,ID(TCID(1,2),TCID(1,1))),amplitude=(bond->3),modulate=false)
     @test term|>statistics==term|>typeof|>statistics=='F'
     @test term|>species==term|>typeof|>species==:Term
+    @test term|>id==term|>typeof|>id==:mu
     @test term|>valtype==term|>typeof|>valtype==Float
     @test term|>rank==term|>typeof|>rank==2
     @test term|>abbr==term|>typeof|>abbr==:tm

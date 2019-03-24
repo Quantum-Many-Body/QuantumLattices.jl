@@ -2,9 +2,9 @@ module Interfaces
 
 export ⊕,⊗
 export add!,sub!,mul!,div!
-export rank,degree,dimension,dims,index,inds
-export expand,decompose,permute
-export vector,matrix
+export id,rank,degree,dimension,dims,index,inds
+export expand,expand!,decompose,decompose!,regularize,regularize!
+export permute,vector,matrix
 
 "Direct sum."
 function ⊕ end
@@ -27,6 +27,9 @@ function div! end
 "Inplace Update."
 function update! end
 
+"Id."
+function id end
+
 "Rank."
 function rank end
 
@@ -48,8 +51,20 @@ function inds end
 "Get the expansion."
 function expand end
 
+"In place expansion."
+function expand! end
+
 "Decompose."
 function decompose end
+
+"In place decomposition."
+function decompose! end
+
+"Regularize."
+function regularize end
+
+"In place regularization."
+function regularize! end
 
 "Get the permutation."
 function permute end

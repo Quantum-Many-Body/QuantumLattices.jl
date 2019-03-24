@@ -4,14 +4,14 @@ using StaticArrays: SVector
 using Printf: @printf,@sprintf
 using ..Spatials: PID,AbstractBond,pidtype
 using ..DegreesOfFreedom: IID,Internal,Index,FilteredAttributes,Table,OID,Operator,IDFConfig
-using ..Terms: wildcard,constant,Subscript,Subscripts,Coupling,Couplings,propercenters,Term,TermCouplings,TermAmplitude,TermModulate
+using ..Terms: wildcard,constant,Subscript,Subscripts,Coupling,Couplings,couplingcenters,Term,TermCouplings,TermAmplitude,TermModulate
 using ...Interfaces: rank,dimension
 using ...Prerequisites: Float,decimaltostr,delta
 using ...Mathematics.VectorSpaces: VectorSpace,IsMultiIndexable,MultiIndexOrderStyle
 using ...Mathematics.AlgebraOverFields: SimpleID,ID
 
 import ..DegreesOfFreedom: oidtype,otype
-import ..Terms: defaultcenter,statistics,abbr
+import ..Terms: couplingcenter,statistics,abbr
 import ...Interfaces: dims,inds,expand,matrix
 
 export SID,Spin,SIndex,usualspinindextotuple
@@ -262,7 +262,7 @@ Expand a spin coupling with the given set of point ids and spin degrees of freed
 """
 expand(sc::SpinCoupling,pid::PID,spin::Spin,species::Union{Val{S},Nothing}=nothing) where S=expand(sc,(pid,),(spin,),species)
 function expand(sc::SpinCoupling,pids::NTuple{N,PID},spins::NTuple{N,Spin},species::Union{Val{S},Nothing}=nothing) where {N,S}
-    centers=propercenters(typeof(sc),sc.id.centers,Val(N))
+    centers=couplingcenters(typeof(sc),sc.id.centers,Val(N))
     rpids=NTuple{rank(sc),eltype(pids)}(pids[centers[i]] for i=1:rank(sc))
     rspins=NTuple{rank(sc),eltype(spins)}(spins[centers[i]] for i=1:rank(sc))
     sps=NTuple{rank(sc),Float}(rspins[i].spin for i=1:rank(sc))
@@ -272,7 +272,7 @@ function expand(sc::SpinCoupling,pids::NTuple{N,PID},spins::NTuple{N,Spin},speci
     sbexpands=expand(sc.subscripts,NTuple{rank(sc),Int}(rspins[i].norbital for i=1:rank(sc)))|>collect
     return SCExpand(sc.value,rpids,sbexpands,sps,sc.id.tags)
 end
-defaultcenter(::Type{<:SpinCoupling},i::Int,n::Int,::Val{2})=i%2==1 ? 1 : 2
+couplingcenter(::Type{<:SpinCoupling},i::Int,n::Int,::Val{2})=i%2==1 ? 1 : 2
 struct SCExpand{V<:Number,N,S} <: VectorSpace{Tuple{V,NTuple{N,SIndex{S}}}}
     value::V
     pids::NTuple{N,PID{S}}
@@ -350,22 +350,20 @@ end
                 couplings::Union{Tuple{<:Tuple{Vararg{Couplings}},<:Function},Coupling,Couplings},
                 amplitude::Union{Function,Nothing}=nothing,
                 modulate::Union{Function,Bool}=false,
-                factor::Number=1
                 )
 
 Spin term.
 
-Type alias for `Term{'B',:SpinTerm,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
+Type alias for `Term{'B',:SpinTerm,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
 """
-const SpinTerm{V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{'B',:SpinTerm,V,Int,C,A,M}
+const SpinTerm{id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{'B',:SpinTerm,id,V,Int,C,A,M}
 function SpinTerm(  id::Symbol,value::Number;
                     neighbor::Int,
                     couplings::Union{Tuple{<:Tuple{Vararg{Couplings}},<:Function},Coupling,Couplings},
                     amplitude::Union{Function,Nothing}=nothing,
                     modulate::Union{Function,Bool}=false,
-                    factor::Number=1
                     )
-    Term{'B',:SpinTerm}(id,value,neighbor,couplings=couplings,amplitude=amplitude,modulate=modulate,factor=factor)
+    Term{'B',:SpinTerm}(id,value,neighbor,couplings=couplings,amplitude=amplitude,modulate=modulate)
 end
 abbr(::Type{<:SpinTerm})=:sp
 function expand(term::SpinTerm,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false)

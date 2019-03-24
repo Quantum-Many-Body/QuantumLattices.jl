@@ -2,7 +2,7 @@ using Test
 using DataStructures: OrderedDict
 using Printf: @sprintf
 using QuantumLattices.Mathematics.QuantumNumbers
-using QuantumLattices.Interfaces: ⊕,⊗,dimension,expand,permute,decompose
+using QuantumLattices.Interfaces: ⊕,⊗,dimension,expand,permute,decompose,regularize
 import Base.Iterators: Iterators
 
 @testset "SQN" begin
