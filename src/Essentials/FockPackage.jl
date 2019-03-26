@@ -6,14 +6,14 @@ using Printf: @printf,@sprintf
 using ..Spatials: PID,AbstractBond,Point,Bond,pidtype,decompose
 using ..DegreesOfFreedom: IID,Index,Internal,FilteredAttributes,IDFConfig,Table,OID,Operator,Operators
 using ..Terms: wildcard,constant,Subscript,Subscripts,Coupling,Couplings,@subscript,couplingcenters,Term,TermCouplings,TermAmplitude,TermModulate
-using ...Interfaces: rank,dimension,add!
+using ...Interfaces: id,rank,dimension,add!
 using ...Prerequisites: Float,delta,decimaltostr
 using ...Mathematics.AlgebraOverFields: SimpleID,ID
 using ...Mathematics.VectorSpaces: VectorSpace,IsMultiIndexable,MultiIndexOrderStyle
 
-import ..DegreesOfFreedom: twist,oidtype,otype
+import ..DegreesOfFreedom: twist,otype,isHermitian
 import ..Terms: couplingcenter,statistics,abbr,termfactor
-import ...Interfaces: dims,inds,⊗,expand
+import ...Interfaces: dims,inds,⊗,expand,expand!
 
 export ANNIHILATION,CREATION,FID,FIndex,Fock
 export usualfockindextotuple,nambufockindextotuple
@@ -27,6 +27,7 @@ export interorbitalintraspin,InterOrbitalIntraSpin
 export spinflip,SpinFlip
 export pairhopping,PairHopping
 export Coulomb
+export FFockTerm,BFockTerm
 
 """
     ANNIHILATION
@@ -145,15 +146,6 @@ Indicate that the filtered attributes are `(:scope,:nambu,:site,:orbital,:spin)`
 const nambufockindextotuple=FilteredAttributes(:scope,:nambu,:site,:orbital,:spin)
 
 """
-    oidtype(::Val{:Fock},B::Type{<:AbstractBond},::Type{Nothing})
-    oidtype(::Val{:Fock},B::Type{<:AbstractBond},::Type{<:Table})
-
-Get the compatible Fock OID type with an AbstractBond type and a Table/Nothing type.
-"""
-oidtype(::Val{:Fock},B::Type{<:AbstractBond},::Type{Nothing})=OID{FIndex{fieldtype(B|>pidtype,:scope)},SVector{B|>dimension,Float},SVector{B|>dimension,Float},Nothing}
-oidtype(::Val{:Fock},B::Type{<:AbstractBond},::Type{<:Table})=OID{FIndex{fieldtype(B|>pidtype,:scope)},SVector{B|>dimension,Float},SVector{B|>dimension,Float},Int}
-
-"""
     FockOperator{N,V<:Number,I<:ID{<:NTuple{N,OID}}} <: Operator{N,V,I}
 
 Abstract type for all Fock operators.
@@ -213,15 +205,6 @@ Get the statistics of BOperator.
 """
 statistics(opt::BOperator)=opt|>typeof|>statistics
 statistics(::Type{<:BOperator})='B'
-
-"""
-    otype(::Val{:Fock},O::Type{<:Term{'F'}},B::Type{<:AbstractBond},T::Type{<:Union{Nothing,Table}})
-    otype(::Val{:Fock},O::Type{<:Term{'B'}},B::Type{<:AbstractBond},T::Type{<:Union{Nothing,Table}})
-
-Get the compatible Fock operator type with a Term type, an AbstractBond type and a Table/Nothing type.
-"""
-otype(::Val{:Fock},O::Type{<:Term{'F'}},B::Type{<:AbstractBond},T::Type{<:Union{Nothing,Table}})=FOperator{O|>rank,O|>valtype,ID{NTuple{O|>rank,oidtype(Val(:Fock),B,T)}}}
-otype(::Val{:Fock},O::Type{<:Term{'B'}},B::Type{<:AbstractBond},T::Type{<:Union{Nothing,Table}})=BOperator{O|>rank,O|>valtype,ID{NTuple{O|>rank,oidtype(Val(:Fock),B,T)}}}
 
 """
     FCID(;center=wildcard,atom=wildcard,orbital=wildcard,spin=wildcard,nambu=wildcard,obsub=wildcard,spsub=wildcard)
@@ -492,9 +475,7 @@ function Onsite{ST}(id::Symbol,value::Number;
     Term{ST,:Onsite}(id,value,0,couplings=couplings,amplitude=amplitude,modulate=modulate)
 end
 abbr(::Type{<:Onsite})=:st
-function expand(term::Onsite,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false)
-    expand(otype(Val(:Fock),typeof(term),typeof(bond),typeof(table)),term,bond,config,table,half ? nothing : false)
-end
+isHermitian(::Type{<:Onsite})=nothing
 
 """
     Hopping{ST}(id::Symbol,value::Number;
@@ -521,11 +502,7 @@ function Hopping{ST}(id::Symbol,value::Number;
     Term{ST,:Hopping}(id,value,neighbor,couplings=couplings,amplitude=amplitude,modulate=modulate)
 end
 abbr(::Type{<:Hopping})=:hp
-function expand(term::Hopping,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false)
-    result=expand(otype(Val(:Fock),typeof(term),typeof(bond),typeof(table)),term,bond,config,table,false)
-    half || length(result)==0 || for opt in result|>values|>collect add!(result,opt') end
-    return result
-end
+isHermitian(::Type{<:Hopping})=false
 
 """
     Pairing{ST}(id::Symbol,value::Number;
@@ -551,17 +528,18 @@ function Pairing{ST}(id::Symbol,value::Number;
     Term{ST,:Pairing}(id,value,neighbor,couplings=couplings,amplitude=amplitude,modulate=modulate)
 end
 abbr(::Type{<:Pairing})=:pr
+isHermitian(::Type{<:Pairing})=false
 function fockcouplingnambus(::Val{:Pairing},nambus::NTuple{2,Any},ranges::NTuple{2,Int})
     @assert ranges==(2,2) "fockcouplingnambus error: ranges for Pairing terms must be (2,2)."
     (   isa(nambus[1],Int) ? (0<nambus[1]<=2 ? nambus[1] : error("fockcouplingnambus error: nambu out of range.")) : ANNIHILATION,
         isa(nambus[2],Int) ? (0<nambus[2]<=2 ? nambus[2] : error("fockcouplingnambus error: nambu out of range.")) : ANNIHILATION
         )
 end
-function expand(term::Pairing,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false)
-    result=expand(otype(Val(:Fock),typeof(term),typeof(bond),typeof(table)),term,bond,config,table,false)
-    isa(result,Operators) && isa(bond,Bond) && add!(result,expand(otype(Val(:Fock),typeof(term),typeof(bond),typeof(table)),term,bond|>reverse,config,table,false))
-    half || length(result)==0 || for opt in result|>values|>collect add!(result,opt') end
-    return result
+function expand!(operators::Operators,term::Pairing,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false)
+    argtypes=Tuple{Operators,Term,AbstractBond,IDFConfig,Union{Table,Nothing},Bool}
+    invoke(expand!,argtypes,operators,term,bond,config,table,half)
+    isa(bond,Bond) && invoke(expand!,argtypes,operators,term,bond|>reverse,config,table,half)
+    return operators
 end
 
 const hubbard=FockCoupling{4}(spins=(2,2,1,1),nambus=(CREATION,ANNIHILATION,CREATION,ANNIHILATION))
@@ -583,9 +561,7 @@ function Hubbard{ST}(id::Symbol,value::Real;
     Term{ST,:Hubbard}(id,value,0,couplings=hubbard,amplitude=amplitude,modulate=modulate)
 end
 abbr(::Type{<:Hubbard})=:hb
-function expand(term::Hubbard,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false)
-    expand(otype(Val(:Fock),typeof(term),typeof(bond),typeof(table)),term,bond,config,table,half)
-end
+isHermitian(::Type{<:Hubbard})=true
 
 const interorbitalinterspin=FockCoupling{4}(orbitals=(@subscript (α,β)=>(α,α,β,β) with α<β),
                                             spins=(@subscript (σ₁,σ₂)=>(σ₁,σ₁,σ₂,σ₂) with σ₁≠σ₂),
@@ -609,9 +585,7 @@ function InterOrbitalInterSpin{ST}( id::Symbol,value::Real;
     Term{ST,:InterOrbitalInterSpin}(id,value,0,couplings=interorbitalinterspin,amplitude=amplitude,modulate=modulate)
 end
 abbr(::Type{<:InterOrbitalInterSpin})=:nons
-function expand(term::InterOrbitalInterSpin,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false)
-    expand(otype(Val(:Fock),typeof(term),typeof(bond),typeof(table)),term,bond,config,table,half)
-end
+isHermitian(::Type{<:InterOrbitalInterSpin})=true
 
 const interorbitalintraspin=FockCoupling{4}(orbitals=(@subscript (α,β)=>(α,α,β,β) with α<β),
                                             nambus=(CREATION,ANNIHILATION,CREATION,ANNIHILATION)
@@ -634,9 +608,7 @@ function InterOrbitalIntraSpin{ST}( id::Symbol,value::Real;
     Term{ST,:InterOrbitalIntraSpin}(id,value,0,couplings=interorbitalintraspin,amplitude=amplitude,modulate=modulate)
 end
 abbr(::Type{<:InterOrbitalIntraSpin})=:noes
-function expand(term::InterOrbitalIntraSpin,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false)
-    expand(otype(Val(:Fock),typeof(term),typeof(bond),typeof(table)),term,bond,config,table,half)
-end
+isHermitian(::Type{<:InterOrbitalIntraSpin})=true
 
 const spinflip=FockCoupling{4}( orbitals=(@subscript (α,β)=>(α,β,α,β) with α<β),
                                 spins=(2,1,1,2),
@@ -660,11 +632,7 @@ function SpinFlip{ST}(  id::Symbol,value::Real;
     Term{ST,:SpinFlip}(id,value,0,couplings=spinflip,amplitude=amplitude,modulate=modulate)
 end
 abbr(::Type{<:SpinFlip})=:sf
-function expand(term::SpinFlip,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false)
-    result=expand(otype(Val(:Fock),typeof(term),typeof(bond),typeof(table)),term,bond,config,table,false)
-    half || length(result)==0 || for opt in result|>values|>collect add!(result,opt') end
-    return result
-end
+isHermitian(::Type{<:SpinFlip})=false
 
 const pairhopping=FockCoupling{4}(  orbitals=(@subscript (α,β)=>(α,α,β,β) with α<β),
                                     spins=(2,1,1,2),
@@ -688,11 +656,7 @@ function PairHopping{ST}(   id::Symbol,value::Real;
     Term{ST,:PairHopping}(id,value,0,couplings=pairhopping,amplitude=amplitude,modulate=modulate)
 end
 abbr(::Type{<:PairHopping})=:ph
-function expand(term::PairHopping,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false)
-    result=expand(otype(Val(:Fock),typeof(term),typeof(bond),typeof(table)),term,bond,config,table,false)
-    half || length(result)==0 || for opt in result|>values|>collect add!(result,opt') end
-    return result
-end
+isHermitian(::Type{<:PairHopping})=false
 
 """
     Coulomb{ST}(    id::Symbol,value::Number;
@@ -719,11 +683,30 @@ function Coulomb{ST}(   id::Symbol,value::Number;
     Term{ST,:Coulomb}(id,value,neighbor,couplings=couplings,amplitude=amplitude,modulate=modulate)
 end
 abbr(::Type{<:Coulomb})=:cl
+isHermitian(::Type{<:Coulomb})=nothing
 termfactor(::Nothing,id::ID{<:NTuple{4,OID}},::Val{:Coulomb})=id[2]'==id[1] && id[4]'==id[3] ? 0.5 : 1.0
-function expand(term::Coulomb,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false)
-    result=expand(otype(Val(:Fock),typeof(term),typeof(bond),typeof(table)),term,bond,config,table,nothing)
-    half || length(result)==0 || for opt in result|>values|>collect add!(result,opt') end
-    return result
-end
+
+"""
+    FFockTerm
+
+Fermionic Fock term types.
+"""
+const FFockTerm=Union{Onsite{'F'},Hopping{'F'},Pairing{'F'},Hubbard{'F'},InterOrbitalInterSpin{'F'},InterOrbitalIntraSpin{'F'},SpinFlip{'F'},PairHopping{'F'},Coulomb{'F'}}
+
+"""
+    BFockTerm
+
+Bosonic Fock term types.
+"""
+const BFockTerm=Union{Onsite{'B'},Hopping{'B'},Pairing{'B'},Hubbard{'B'},InterOrbitalInterSpin{'B'},InterOrbitalIntraSpin{'B'},SpinFlip{'B'},PairHopping{'B'},Coulomb{'B'}}
+
+"""
+    otype(T::Type{<:FFockTerm},I::Type{<:OID})
+    otype(T::Type{<:BFockTerm},I::Type{<:OID})
+
+Get the operator type of a Fock term.
+"""
+otype(T::Type{<:FFockTerm},I::Type{<:OID})=FOperator{T|>rank,T|>valtype,ID{NTuple{T|>rank,I}}}
+otype(T::Type{<:BFockTerm},I::Type{<:OID})=BOperator{T|>rank,T|>valtype,ID{NTuple{T|>rank,I}}}
 
 end # module

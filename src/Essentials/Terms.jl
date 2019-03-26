@@ -3,14 +3,15 @@ module Terms
 using Printf: @printf,@sprintf
 using StaticArrays: SVector
 using ..Spatials: AbstractBond,neighbor,pidtype
-using ..DegreesOfFreedom: Index,IDFConfig,Table,OID,Operator,Operators,isHermitian,otype
+using ..DegreesOfFreedom: Index,IDFConfig,Table,OID,Operator,Operators,oidtype,otype
 using ...Interfaces: add!
 using ...Prerequisites: Float,atol,decimaltostr
 using ...Prerequisites.TypeTraits: efficientoperations,indtosub,corder
 using ...Prerequisites.CompositeStructures: CompositeTuple
 using ...Mathematics.AlgebraOverFields: SimpleID,ID,Element,Elements,idtype
 
-import ...Interfaces: id,rank,expand,dimension,update!
+import ..DegreesOfFreedom: isHermitian
+import ...Interfaces: id,rank,expand,expand!,dimension,update!
 
 export Subscript,Subscripts,@subscript
 export Coupling,Couplings
@@ -463,6 +464,13 @@ abbr(term::Term)=term|>typeof|>abbr
 abbr(::Type{<:Term})=:tm
 
 """
+    isHermitian(term::Term) -> Bool
+    isHermitian(::Type{<:Term}) -> Bool
+"""
+isHermitian(term::Term)=term|>typeof|>isHermitian
+isHermitian(::Type{<:Term})=error("isHermitian error: not implemented.")
+
+"""
     ==(term1::Term,term2::Term) -> Bool
     isequal(term1::Term,term2::Term) -> Bool
 
@@ -540,52 +548,70 @@ Get a zero term.
 Base.zero(term::Term)=replace(term,value=zero(term.value))
 
 """
-    expand(otype::Type{<:Operator},term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Union{Bool,Nothing}=nothing)
+    expand!(operators::Operators,term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false) -> Operators
 
 Expand the operators of a term on a bond with a given config.
 
-The `half` parameter determines the behavior of generating operators, which falls into the following three categories
-* `false`: no extra operations on the generated operators
-* `true`: an extra multiplication by 0.5 with the generated operators
-* `nothing`: "Hermitian half" of the generated operators
+The `half` parameter determines the behavior of generating operators, which falls into the following two categories
+* `true`: "Hermitian half" of the generated operators
+* `false`: "Hermitian whole" of the generated operators
 """
-function expand(otype::Type{<:Operator},term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Union{Bool,Nothing}=nothing)
-    result=empty(Operators)
+function expand!(operators::Operators,term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false)
     if term.neighbor==bond|>neighbor
         value=term.value*term.amplitude(bond)*term.factor
         if !isapprox(abs(value),0.0,atol=atol)
-            result=Operators{idtype(otype),otype}()
-            @assert (fieldtype(eltype(idtype(otype)),:seq)===Nothing)==(table===nothing) "expand error: `table` must be assigned if the sequences are required."
-            @assert rank(otype)==rank(term) "expand error: dismatched ranks between operator and term."
-            rtype=fieldtype(eltype(idtype(otype)),:rcoord)
-            itype=fieldtype(eltype(idtype(otype)),:icoord)
+            otype,ktype=operators|>typeof|>valtype,operators|>typeof|>keytype
+            @assert (fieldtype(ktype|>eltype,:seq)===Nothing)==(table===nothing) "expand! error: `table` must be assigned if the sequences are required."
+            @assert rank(otype)==rank(term) "expand! error: dismatched ranks between operator and term."
+            apriori=isHermitian(term)
+            record=apriori===nothing && length(operators)>0 ? Set{ktype}() : nothing
+            rtype,itype=fieldtype(ktype|>eltype,:rcoord),fieldtype(ktype|>eltype,:icoord)
             pids=NTuple{length(bond),pidtype(bond)}(point.pid for point in bond)
             rcoords=NTuple{length(bond),SVector{dimension(bond),Float}}(point.rcoord for point in bond)
             icoords=NTuple{length(bond),SVector{dimension(bond),Float}}(point.icoord for point in bond)
             interanls=NTuple{length(bond),valtype(config)}(config[pid] for pid in pids)
             for coupling in values(term.couplings(bond))
                 perm=couplingcenters(typeof(coupling),coupling.id.centers,Val(rank(bond)))::NTuple{rank(otype),Int}
-                orcoords=termcoords(rtype,rcoords,perm)
-                oicoords=termcoords(itype,icoords,perm)
+                orcoords,oicoords=termcoords(rtype,rcoords,perm),termcoords(itype,icoords,perm)
                 for (coeff,oindexes) in expand(coupling,pids,interanls,term|>species|>Val) # needs improvement memory allocation 7 times for each fock coupling
                     isa(table,Table) && any(NTuple{rank(otype),Bool}(!haskey(table,index) for index in oindexes)) && continue
                     id=ID(OID,oindexes,orcoords,oicoords,termseqs(table,oindexes))
-                    if !(half===nothing && haskey(result,id'))
-                        ovalue=valtype(otype)(value*coeff*termfactor(half,id,term|>species|>Val)) # needs improvement memory allocation 2 times for each
-                        add!(result,otype.name.wrapper(ovalue,id))
+                    if apriori===true
+                        add!(operators,otype.name.wrapper(convert(otype|>valtype,value*coeff*(half ? 0.5 : 1.0)),id))
+                    elseif apriori==false
+                        opt=otype.name.wrapper(convert(otype|>valtype,value*coeff),id)
+                        add!(operators,opt)
+                        half || add!(operators,opt')
+                    else
+                        if !(record===nothing ? haskey(operators,id') : in(id',record))
+                            record===nothing || push!(record,id)
+                            ovalue=valtype(otype)(value*coeff*termfactor(nothing,id,term|>species|>Val)) # needs improvement memory allocation 2 times for each
+                            opt=otype.name.wrapper(ovalue,id)
+                            add!(operators,opt)
+                            half || add!(operators,opt')
+                        end
                     end
                 end
             end
         end
     end
-    return result
+    return operators
 end
 termcoords(::Type{<:Nothing},rcoords::NTuple{N,SVector{M,Float}},perm::NTuple{R,Int}) where {N,M,R}=NTuple{R,Nothing}(nothing for i=1:R)
 termcoords(::Type{<:SVector},rcoords::NTuple{N,SVector{M,Float}},perm::NTuple{R,Int}) where {N,M,R}=NTuple{R,SVector{M,Float}}(rcoords[p] for p in perm)
 termseqs(::Nothing,indexes::NTuple{N,<:Index}) where N=NTuple{N,Nothing}(nothing for i=1:N)
 @generated termseqs(table::Table{I},indexes::NTuple{N,I}) where {N,I<:Index}=Expr(:tuple,[:(table[indexes[$i]]) for i=1:N]...)
-termfactor(half::Bool,::ID{<:NTuple{N,OID}},::Val{S}) where {N,S}=half ? 0.5 : 1.0
 termfactor(::Nothing,id::ID{<:NTuple{N,OID}},::Val{S}) where {N,S}=isHermitian(id) ? 0.5 : 1.0
+
+"""
+    expand(term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false) -> Operators
+
+Expand the operators of a term on a bond with a given config.
+"""
+function expand(term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false)
+    optype=otype(term|>typeof,oidtype(config|>typeof|>valtype|>eltype,bond|>typeof,table|>typeof))
+    expand!(Operators{idtype(optype),optype}(),term,bond,config,table,half)
+end
 
 """
     update!(term::Term,args...;kwargs...) -> Term

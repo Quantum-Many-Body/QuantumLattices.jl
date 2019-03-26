@@ -2,8 +2,8 @@ module DegreesOfFreedom
 
 using Printf: @printf
 using StaticArrays: SVector
-using ..Spatials: PID
-using ...Interfaces: rank
+using ..Spatials: PID,AbstractBond
+using ...Interfaces: rank,dimension
 using ...Prerequisites: Float,decimaltostr
 using ...Prerequisites.CompositeStructures: CompositeDict
 using ...Mathematics.VectorSpaces: VectorSpace
@@ -346,11 +346,13 @@ function isHermitian(oid::ID{<:NTuple{N,OID}}) where N
 end
 
 """
-    oidtype
+    oidtype(I::Type{<:IID},B::Type{<:AbstractBond},::Type{Nothing})
+    oidtype(I::Type{<:IID},B::Type{<:AbstractBond},::Type{<:Table})
 
 Get the compatible oid type.
 """
-function oidtype end
+oidtype(I::Type{<:IID},B::Type{<:AbstractBond},::Type{Nothing})=OID{union(B|>pidtype,I),SVector{B|>dimension,Float},SVector{B|>dimension,Float},Nothing}
+oidtype(I::Type{<:IID},B::Type{<:AbstractBond},::Type{<:Table})=OID{union(B|>pidtype,I),SVector{B|>dimension,Float},SVector{B|>dimension,Float},Int}
 
 """
     Operator{N,V<:Number,I<:ID{<:NTuple{N,OID}}} <: Element{N,V,I}

@@ -10,7 +10,7 @@ using ...Prerequisites: Float,decimaltostr,delta
 using ...Mathematics.VectorSpaces: VectorSpace,IsMultiIndexable,MultiIndexOrderStyle
 using ...Mathematics.AlgebraOverFields: SimpleID,ID
 
-import ..DegreesOfFreedom: oidtype,otype
+import ..DegreesOfFreedom: otype,isHermitian
 import ..Terms: couplingcenter,statistics,abbr
 import ...Interfaces: dims,inds,expand,matrix
 
@@ -127,15 +127,6 @@ Indicate that the filtered attributes are `(:scope,:site,:orbital)` when convert
 const usualspinindextotuple=FilteredAttributes(:scope,:site,:orbital)
 
 """
-    oidtype(::Val{:Spin},B::Type{<:AbstractBond},::Type{Nothing})
-    oidtype(::Val{:Spin},B::Type{<:AbstractBond},::Type{<:Table})
-
-Get the compatible spin OID type with an AbstractBond type and a Table/Nothing type.
-"""
-oidtype(::Val{:Spin},B::Type{<:AbstractBond},::Type{Nothing})=OID{SIndex{fieldtype(B|>pidtype,:scope)},SVector{B|>dimension,Float},SVector{B|>dimension,Float},Nothing}
-oidtype(::Val{:Spin},B::Type{<:AbstractBond},::Type{<:Table})=OID{SIndex{fieldtype(B|>pidtype,:scope)},SVector{B|>dimension,Float},SVector{B|>dimension,Float},Int}
-
-"""
     SOperator(value::Number,id::ID{<:NTuple{N,OID}}) where N
 
 Spin operator.
@@ -154,13 +145,6 @@ Get the statistics of SOperator.
 """
 statistics(opt::SOperator)=opt|>typeof|>statistics
 statistics(::Type{<:SOperator})='B'
-
-"""
-    otype(::Val{:Spin},O::Type{<:Term{'B'}},B::Type{<:AbstractBond},T::Type{<:Union{Nothing,Table}})
-
-Get the compatible spin operator type with a Term type, an AbstractBond type and a Table/Nothing type.
-"""
-otype(::Val{:Spin},O::Type{<:Term{'B'}},B::Type{<:AbstractBond},T::Type{<:Union{Nothing,Table}})=SOperator{O|>rank,O|>valtype,ID{NTuple{O|>rank,oidtype(Val(:Spin),B,T)}}}
 
 """
     SCID(;center=wildcard,atom=wildcard,orbital=wildcard,tag='i',subscript=wildcard)=SCID(center,atom,orbital,tag,subscript)
@@ -366,9 +350,13 @@ function SpinTerm(  id::Symbol,value::Number;
     Term{'B',:SpinTerm}(id,value,neighbor,couplings=couplings,amplitude=amplitude,modulate=modulate)
 end
 abbr(::Type{<:SpinTerm})=:sp
-function expand(term::SpinTerm,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false)
-    @assert half===false "expand error: SpinTerm expansion does not support half mode."
-    expand(otype(Val(:Spin),typeof(term),typeof(bond),typeof(table)),term,bond,config,table,half)
-end
+isHermitian(::Type{<:SpinTerm})=true
+
+"""
+    otype(T::Type{<:SpinTerm},I::Type{<:OID})
+
+Get the operator type of a spin term.
+"""
+otype(T::Type{<:SpinTerm},I::Type{<:OID})=SOperator{T|>rank,T|>valtype,ID{NTuple{T|>rank,I}}}
 
 end # module

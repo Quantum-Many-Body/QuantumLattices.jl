@@ -38,8 +38,8 @@ end
 end
 
 @testset "oidtype" begin
-    @test oidtype(Val(:Fock),Point{PID{Int},2},Nothing)==OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Nothing}
-    @test oidtype(Val(:Fock),Point{PID{Int},2},Table)==OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Int}
+    @test oidtype(FID,Point{PID{Int},2},Nothing)==OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Nothing}
+    @test oidtype(FID,Point{PID{Int},2},Table)==OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Int}
 end
 
 @testset "FockOperator" begin
@@ -160,13 +160,13 @@ end
 @testset "Onsite" begin
     term=Onsite{'F'}(:mu,1.5)
     @test term|>abbr==:st
-    @test otype(Val(:Fock),term|>typeof,Point{PID{Int},2},Nothing)==FOperator{2,Float,ID{NTuple{2,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Nothing}}}}
-    @test otype(Val(:Fock),term|>typeof,Point{PID{Int},2},Table)==FOperator{2,Float,ID{NTuple{2,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Int}}}}
+    @test otype(term|>typeof,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Nothing})==FOperator{2,Float,ID{NTuple{2,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Nothing}}}}
+    @test otype(term|>typeof,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Int})==FOperator{2,Float,ID{NTuple{2,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Int}}}}
 
     term=Onsite{'B'}(:mu,1.5,couplings=σˣ("sp")⊗σᶻ("ob"),modulate=true)
     @test term|>abbr==:st
-    @test otype(Val(:Fock),term|>typeof,Point{PID{Int},2},Nothing)==BOperator{2,Float,ID{NTuple{2,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Nothing}}}}
-    @test otype(Val(:Fock),term|>typeof,Point{PID{Int},2},Table)==BOperator{2,Float,ID{NTuple{2,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Int}}}}
+    @test otype(term|>typeof,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Nothing})==BOperator{2,Float,ID{NTuple{2,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Nothing}}}}
+    @test otype(term|>typeof,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Int})==BOperator{2,Float,ID{NTuple{2,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Int}}}}
 
     point=Point(PID('a',1),(0.5,0.5),(0.0,0.0))
     config=IDFConfig{Fock}(pid->Fock(atom=pid.site%2,norbital=2,nspin=2,nnambu=2),[point.pid])

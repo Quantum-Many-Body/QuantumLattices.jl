@@ -53,8 +53,8 @@ end
 end
 
 @testset "oidtype" begin
-    @test oidtype(Val(:Spin),Point{PID{Int},2},Nothing)==OID{SIndex{Int},SVector{2,Float},SVector{2,Float},Nothing}
-    @test oidtype(Val(:Spin),Point{PID{Int},2},Table)==OID{SIndex{Int},SVector{2,Float},SVector{2,Float},Int}
+    @test oidtype(SID,Point{PID{Int},2},Nothing)==OID{SIndex{Int},SVector{2,Float},SVector{2,Float},Nothing}
+    @test oidtype(SID,Point{PID{Int},2},Table)==OID{SIndex{Int},SVector{2,Float},SVector{2,Float},Int}
 end
 
 @testset "SOperator" begin
@@ -121,8 +121,8 @@ end
 @testset "SpinTerm" begin
     term=SpinTerm(:h,1.5,neighbor=0,couplings=Sᶻ())
     @test term|>abbr==:sp
-    @test otype(Val(:Spin),term|>typeof,Point{PID{Int},2},Nothing)==SOperator{1,Float,ID{NTuple{1,OID{SIndex{Int},SVector{2,Float},SVector{2,Float},Nothing}}}}
-    @test otype(Val(:Spin),term|>typeof,Point{PID{Int},2},Table)==SOperator{1,Float,ID{NTuple{1,OID{SIndex{Int},SVector{2,Float},SVector{2,Float},Int}}}}
+    @test otype(term|>typeof,OID{SIndex{Int},SVector{2,Float},SVector{2,Float},Nothing})==SOperator{1,Float,ID{NTuple{1,OID{SIndex{Int},SVector{2,Float},SVector{2,Float},Nothing}}}}
+    @test otype(term|>typeof,OID{SIndex{Int},SVector{2,Float},SVector{2,Float},Int})==SOperator{1,Float,ID{NTuple{1,OID{SIndex{Int},SVector{2,Float},SVector{2,Float},Int}}}}
 
     point=Point(PID('a',1),(0.5,0.5),(0.0,0.0))
     config=IDFConfig{Spin}(pid->Spin(atom=pid.site%2,norbital=2,spin=0.5),[point.pid])

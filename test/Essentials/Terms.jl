@@ -9,8 +9,8 @@ using QuantumLattices.Interfaces: rank,update!,id
 using QuantumLattices.Prerequisites: Float,decimaltostr
 using QuantumLattices.Mathematics.AlgebraOverFields: ID,SimpleID
 import QuantumLattices.Interfaces: dimension,expand
-import QuantumLattices.Essentials.DegreesOfFreedom: twist
-import QuantumLattices.Essentials.Terms: couplingcenter,couplingcenters
+import QuantumLattices.Essentials.DegreesOfFreedom: twist,isHermitian,otype
+import QuantumLattices.Essentials.Terms: couplingcenter,couplingcenters,abbr
 
 struct TID <: IID nambu::Int end
 Base.adjoint(sl::TID)=TID(3-sl.nambu)
@@ -56,6 +56,14 @@ struct TOperator{N,V<:Number,I<:ID{<:NTuple{N,OID}}} <: Operator{N,V,I}
     id::I
     TOperator(value::Number,id::ID{<:NTuple{N,OID}}) where N=new{N,typeof(value),typeof(id)}(value,id)
 end
+
+abbr(::Type{<:Term{ST,:TermMu}}) where ST=:tmu
+isHermitian(::Type{<:Term{ST,:TermMu}}) where ST=true
+otype(T::Type{<:Term{ST,:TermMu}},I::Type{<:OID}) where ST=TOperator{T|>rank,T|>valtype,ID{NTuple{T|>rank,I}}}
+
+abbr(::Type{<:Term{ST,:TermHopping}}) where ST=:thp
+isHermitian(::Type{<:Term{ST,:TermHopping}}) where ST=false
+otype(T::Type{<:Term{ST,:TermHopping}},I::Type{<:OID}) where ST=TOperator{T|>rank,T|>valtype,ID{NTuple{T|>rank,I}}}
 
 @testset "Subscript" begin
     sub=@subscript (x1,x2)=>(x1,4,4,x2) with x1<x2
@@ -150,17 +158,18 @@ end
 @testset "Term" begin
     point=Point(PID(1,1),(0.0,0.0),(0.0,0.0))
     config=IDFConfig{TFock}(pid->TFock(),[PID(1,1)])
-    term=Term{'F',:Term}(:mu,1.5,0,couplings=TCoupling(1.0,ID(TCID(1,2),TCID(1,1))),amplitude=(bond->3),modulate=false)
+    term=Term{'F',:TermMu}(:mu,1.5,0,couplings=TCoupling(1.0,ID(TCID(1,2),TCID(1,1))),amplitude=(bond->3),modulate=false)
     @test term|>statistics==term|>typeof|>statistics=='F'
-    @test term|>species==term|>typeof|>species==:Term
+    @test term|>species==term|>typeof|>species==:TermMu
     @test term|>id==term|>typeof|>id==:mu
     @test term|>valtype==term|>typeof|>valtype==Float
     @test term|>rank==term|>typeof|>rank==2
-    @test term|>abbr==term|>typeof|>abbr==:tm
+    @test term|>abbr==term|>typeof|>abbr==:tmu
+    @test term|>isHermitian==term|>typeof|>isHermitian==true
     @test term==deepcopy(term)
     @test isequal(term,deepcopy(term))
-    @test string(term)=="Term{F}(id=mu,value=1.5,neighbor=0,factor=1.0)"
-    @test repr(term,point,config)=="tm: 4.5 ph(2:1)@(1-1)"
+    @test string(term)=="TermMu{F}(id=mu,value=1.5,neighbor=0,factor=1.0)"
+    @test repr(term,point,config)=="tmu: 4.5 ph(2:1)@(1-1)"
     @test +term==term
     @test -term==term*(-1)==replace(term,factor=-term.factor)
     @test 2*term==term*2==replace(term,factor=term.factor*2)
@@ -186,22 +195,18 @@ end
     point=Point(PID(1,1),(0.0,0.0),(0.0,0.0))
     config=IDFConfig{TFock}(pid->TFock(),[PID(1,1)])
     table=Table(config,by=filter(attr->attr≠:nambu,FilteredAttributes(TIndex)))
-    O=OID{TIndex{Int},SVector{2,Float},SVector{2,Float},Int}
-    term=Term{'F',:Term}(:mu,1.5,0,couplings=TCoupling(1.0,ID(TCID(1,2),TCID(1,1))),amplitude=bond->3.0,modulate=true)
+    term=Term{'F',:TermMu}(:mu,1.5,0,couplings=TCoupling(1.0,ID(TCID(1,2),TCID(1,1))),amplitude=bond->3.0,modulate=true)
     operators=Operators(TOperator(+2.25,(TIndex(1,1,2),TIndex(1,1,1)),rcoords=(SVector(0.0,0.0),SVector(0.0,0.0)),icoords=(SVector(0.0,0.0),SVector(0.0,0.0)),seqs=(1,1)))
-    @test expand(TOperator{2,Float,ID{NTuple{2,O}}},term,point,config,table,nothing)==operators
-    @test expand(TOperator{2,Float,ID{NTuple{2,O}}},term,point,config,table,true)==operators
-    @test expand(TOperator{2,Float,ID{NTuple{2,O}}},term,point,config,table,false)==operators*2
+    @test expand(term,point,config,table,true)==operators
+    @test expand(term,point,config,table,false)==operators*2
 
     bond=Bond(1,Point(PID('b',2),(1.5,1.5),(1.0,1.0)),Point(PID('a',1),(0.5,0.5),(0.0,0.0)))
     config=IDFConfig{TFock}(pid->TFock(),[PID('a',1),PID('b',2)])
     table=Table(config,by=filter(attr->attr≠:nambu,FilteredAttributes(TIndex)))
-    O=OID{TIndex{Char},SVector{2,Float},SVector{2,Float},Int}
-    term=Term{'F',:Term}(:t,1.5,1,couplings=TCoupling(1.0,ID(TCID(1,2),TCID(2,1))),amplitude=bond->3.0,modulate=true)
+    term=Term{'F',:TermHopping}(:t,1.5,1,couplings=TCoupling(1.0,ID(TCID(1,2),TCID(2,1))),amplitude=bond->3.0,modulate=true)
     operators=Operators(TOperator(4.5,(TIndex('a',1,2),TIndex('b',2,1)),rcoords=(SVector(0.5,0.5),SVector(1.5,1.5)),icoords=(SVector(0.0,0.0),SVector(1.0,1.0)),seqs=(1,2)))
-    @test expand(TOperator{2,Float,ID{NTuple{2,O}}},term,bond,config,table,nothing)==operators
-    @test expand(TOperator{2,Float,ID{NTuple{2,O}}},term,bond,config,table,true)==operators/2
-    @test expand(TOperator{2,Float,ID{NTuple{2,O}}},term,bond,config,table,false)==operators
+    @test expand(term,bond,config,table,true)==operators
+    @test expand(term,bond,config,table,false)==operators+operators'
 end
 
 @testset "Boundary" begin

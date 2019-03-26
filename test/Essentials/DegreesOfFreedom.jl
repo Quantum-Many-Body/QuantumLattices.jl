@@ -1,8 +1,9 @@
 using Test
 using StaticArrays: SVector
 using LinearAlgebra: dot
+using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Essentials.DegreesOfFreedom
-using QuantumLattices.Essentials.Spatials: PID,pidtype,rcoord,icoord
+using QuantumLattices.Essentials.Spatials: PID,Point,pidtype,rcoord,icoord
 using QuantumLattices.Mathematics.AlgebraOverFields: ID
 import QuantumLattices.Interfaces: dimension,decompose
 import QuantumLattices.Essentials.DegreesOfFreedom: twist
@@ -109,6 +110,8 @@ end
     @test ID(oid',oid)'==ID(oid',oid)
     @test isHermitian(ID(oid',oid))==true
     @test isHermitian(ID(oid,oid))==false
+    @test oidtype(DID,Point{PID{Char},2},Nothing)==OID{DIndex{Char},SVector{2,Float},SVector{2,Float},Nothing}
+    @test oidtype(DID,Point{PID{Char},2},Table{DIndex{Char}})==OID{DIndex{Char},SVector{2,Float},SVector{2,Float},Int}
 end
 
 @testset "Operator" begin
