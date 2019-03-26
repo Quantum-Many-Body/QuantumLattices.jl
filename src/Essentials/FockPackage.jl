@@ -455,24 +455,23 @@ end
 
 """
     Onsite{ST}( id::Symbol,value::Number;
-                couplings::Union{Tuple{<:Tuple{Vararg{Couplings}},<:Function},Coupling,Couplings,Nothing}=nothing,
+                couplings::Union{Function,Coupling,Couplings,Nothing}=nothing,
                 amplitude::Union{Function,Nothing}=nothing,
                 modulate::Union{Function,Bool}=false,
                 ) where {ST}
 
 Onsite term.
 
-Type alias for `Term{statistics,:Onsite,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
+Type alias for `Term{statistics,:Onsite,2,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
 """
-const Onsite{statistics,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:Onsite,id,V,Int,C,A,M}
+const Onsite{statistics,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:Onsite,2,id,V,Int,C,A,M}
 function Onsite{ST}(id::Symbol,value::Number;
-                    couplings::Union{Tuple{<:Tuple{Vararg{Couplings}},<:Function},Coupling,Couplings,Nothing}=nothing,
+                    couplings::Union{Function,Coupling,Couplings,Nothing}=nothing,
                     amplitude::Union{Function,Nothing}=nothing,
                     modulate::Union{Function,Bool}=false,
                     ) where {ST}
     couplings=TermCouplings(couplings===nothing ? FockCoupling{2}() : couplings)
-    @assert rank(couplings)==2 "Onsite error: input couplings must be rank-2."
-    Term{ST,:Onsite}(id,value,0,couplings=couplings,amplitude=amplitude,modulate=modulate)
+    Term{ST,:Onsite,2}(id,value,0,couplings=couplings,amplitude=amplitude,modulate=modulate)
 end
 abbr(::Type{<:Onsite})=:st
 isHermitian(::Type{<:Onsite})=nothing
@@ -480,26 +479,25 @@ isHermitian(::Type{<:Onsite})=nothing
 """
     Hopping{ST}(id::Symbol,value::Number;
                 neighbor::Int=1,
-                couplings::Union{Tuple{<:Tuple{Vararg{Couplings}},<:Function},Coupling,Couplings,Nothing}=nothing,
+                couplings::Union{Function,Coupling,Couplings,Nothing}=nothing,
                 amplitude::Union{Function,Nothing}=nothing,
                 modulate::Union{Function,Bool}=false,
                 ) where {ST}
 
 Hopping term.
 
-Type alias for `Term{statistics,:Hopping,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
+Type alias for `Term{statistics,:Hopping,2,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
 """
-const Hopping{statistics,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:Hopping,id,V,Int,C,A,M}
+const Hopping{statistics,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:Hopping,2,id,V,Int,C,A,M}
 function Hopping{ST}(id::Symbol,value::Number;
                     neighbor::Int=1,
-                    couplings::Union{Tuple{<:Tuple{Vararg{Couplings}},<:Function},Coupling,Couplings,Nothing}=nothing,
+                    couplings::Union{Function,Coupling,Couplings,Nothing}=nothing,
                     amplitude::Union{Function,Nothing}=nothing,
                     modulate::Union{Function,Bool}=false,
                     ) where {ST}
     couplings=TermCouplings(couplings===nothing ? FockCoupling{2}() : couplings)
-    @assert rank(couplings)==2 "Hopping error: input couplings must be rank-2."
     @assert neighbor≠0 "Hopping error: input neighbor cannot be 0. Use `Onsite` instead."
-    Term{ST,:Hopping}(id,value,neighbor,couplings=couplings,amplitude=amplitude,modulate=modulate)
+    Term{ST,:Hopping,2}(id,value,neighbor,couplings=couplings,amplitude=amplitude,modulate=modulate)
 end
 abbr(::Type{<:Hopping})=:hp
 isHermitian(::Type{<:Hopping})=false
@@ -507,25 +505,24 @@ isHermitian(::Type{<:Hopping})=false
 """
     Pairing{ST}(id::Symbol,value::Number;
                 neighbor::Int=0,
-                couplings::Union{Tuple{<:Tuple{Vararg{Couplings}},<:Function},Coupling,Couplings,Nothing}=nothing,
+                couplings::Union{Function,Coupling,Couplings,Nothing}=nothing,
                 amplitude::Union{Function,Nothing}=nothing,
                 modulate::Union{Function,Bool}=false,
                 ) where {ST}
 
 Pairing term.
 
-Type alias for `Term{statistics,:Pairing,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
+Type alias for `Term{statistics,:Pairing,2,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
 """
-const Pairing{statistics,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:Pairing,id,V,Int,C,A,M}
+const Pairing{statistics,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:Pairing,2,id,V,Int,C,A,M}
 function Pairing{ST}(id::Symbol,value::Number;
                     neighbor::Int=0,
-                    couplings::Union{Tuple{<:Tuple{Vararg{Couplings}},<:Function},Coupling,Couplings,Nothing}=nothing,
+                    couplings::Union{Function,Coupling,Couplings,Nothing}=nothing,
                     amplitude::Union{Function,Nothing}=nothing,
                     modulate::Union{Function,Bool}=false,
                     ) where {ST}
     couplings=TermCouplings(couplings===nothing ? FockCoupling{2}() : couplings)
-    @assert rank(couplings)==2 "Pairing error: input couplings must be rank-2."
-    Term{ST,:Pairing}(id,value,neighbor,couplings=couplings,amplitude=amplitude,modulate=modulate)
+    Term{ST,:Pairing,2}(id,value,neighbor,couplings=couplings,amplitude=amplitude,modulate=modulate)
 end
 abbr(::Type{<:Pairing})=:pr
 isHermitian(::Type{<:Pairing})=false
@@ -551,14 +548,14 @@ const hubbard=FockCoupling{4}(spins=(2,2,1,1),nambus=(CREATION,ANNIHILATION,CREA
 
 Hubbard term.
 
-Type alias for `Term{statistics,:Hubbard,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
+Type alias for `Term{statistics,:Hubbard,4,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
 """
-const Hubbard{statistics,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:Hubbard,id,V,Int,C,A,M}
+const Hubbard{statistics,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:Hubbard,4,id,V,Int,C,A,M}
 function Hubbard{ST}(id::Symbol,value::Real;
                     amplitude::Union{Function,Nothing}=nothing,
                     modulate::Union{Function,Bool}=false,
                     ) where {ST}
-    Term{ST,:Hubbard}(id,value,0,couplings=hubbard,amplitude=amplitude,modulate=modulate)
+    Term{ST,:Hubbard,4}(id,value,0,couplings=hubbard,amplitude=amplitude,modulate=modulate)
 end
 abbr(::Type{<:Hubbard})=:hb
 isHermitian(::Type{<:Hubbard})=true
@@ -575,14 +572,14 @@ const interorbitalinterspin=FockCoupling{4}(orbitals=(@subscript (α,β)=>(α,α
 
 Interorbital-interspin term.
 
-Type alias for `Term{statistics,:InterOrbitalInterSpin,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
+Type alias for `Term{statistics,:InterOrbitalInterSpin,4,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
 """
-const InterOrbitalInterSpin{statistics,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:InterOrbitalInterSpin,id,V,Int,C,A,M}
+const InterOrbitalInterSpin{statistics,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:InterOrbitalInterSpin,4,id,V,Int,C,A,M}
 function InterOrbitalInterSpin{ST}( id::Symbol,value::Real;
                                     amplitude::Union{Function,Nothing}=nothing,
                                     modulate::Union{Function,Bool}=false,
                                     ) where {ST}
-    Term{ST,:InterOrbitalInterSpin}(id,value,0,couplings=interorbitalinterspin,amplitude=amplitude,modulate=modulate)
+    Term{ST,:InterOrbitalInterSpin,4}(id,value,0,couplings=interorbitalinterspin,amplitude=amplitude,modulate=modulate)
 end
 abbr(::Type{<:InterOrbitalInterSpin})=:nons
 isHermitian(::Type{<:InterOrbitalInterSpin})=true
@@ -598,14 +595,14 @@ const interorbitalintraspin=FockCoupling{4}(orbitals=(@subscript (α,β)=>(α,α
 
 Interorbital-intraspin term.
 
-Type alias for `Term{statistics,:InterOrbitalIntraSpin,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
+Type alias for `Term{statistics,:InterOrbitalIntraSpin,4,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
 """
-const InterOrbitalIntraSpin{statistics,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:InterOrbitalIntraSpin,id,V,Int,C,A,M}
+const InterOrbitalIntraSpin{statistics,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:InterOrbitalIntraSpin,4,id,V,Int,C,A,M}
 function InterOrbitalIntraSpin{ST}( id::Symbol,value::Real;
                                     amplitude::Union{Function,Nothing}=nothing,
                                     modulate::Union{Function,Bool}=false,
                                     ) where {ST}
-    Term{ST,:InterOrbitalIntraSpin}(id,value,0,couplings=interorbitalintraspin,amplitude=amplitude,modulate=modulate)
+    Term{ST,:InterOrbitalIntraSpin,4}(id,value,0,couplings=interorbitalintraspin,amplitude=amplitude,modulate=modulate)
 end
 abbr(::Type{<:InterOrbitalIntraSpin})=:noes
 isHermitian(::Type{<:InterOrbitalIntraSpin})=true
@@ -622,14 +619,14 @@ const spinflip=FockCoupling{4}( orbitals=(@subscript (α,β)=>(α,β,α,β) with
 
 Spin-flip term.
 
-Type alias for `Term{statistics,:SpinFlip,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
+Type alias for `Term{statistics,:SpinFlip,4,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
 """
-const SpinFlip{statistics,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:SpinFlip,id,V,Int,C,A,M}
+const SpinFlip{statistics,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:SpinFlip,4,id,V,Int,C,A,M}
 function SpinFlip{ST}(  id::Symbol,value::Real;
                         amplitude::Union{Function,Nothing}=nothing,
                         modulate::Union{Function,Bool}=false,
                         ) where {ST}
-    Term{ST,:SpinFlip}(id,value,0,couplings=spinflip,amplitude=amplitude,modulate=modulate)
+    Term{ST,:SpinFlip,4}(id,value,0,couplings=spinflip,amplitude=amplitude,modulate=modulate)
 end
 abbr(::Type{<:SpinFlip})=:sf
 isHermitian(::Type{<:SpinFlip})=false
@@ -646,14 +643,14 @@ const pairhopping=FockCoupling{4}(  orbitals=(@subscript (α,β)=>(α,α,β,β) 
 
 Pair-hopping term.
 
-Type alias for `Term{statistics,:PairHopping,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
+Type alias for `Term{statistics,:PairHopping,4,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
 """
-const PairHopping{statistics,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:PairHopping,id,V,Int,C,A,M}
+const PairHopping{statistics,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:PairHopping,4,id,V,Int,C,A,M}
 function PairHopping{ST}(   id::Symbol,value::Real;
                             amplitude::Union{Function,Nothing}=nothing,
                             modulate::Union{Function,Bool}=false,
                             ) where {ST}
-    Term{ST,:PairHopping}(id,value,0,couplings=pairhopping,amplitude=amplitude,modulate=modulate)
+    Term{ST,:PairHopping,4}(id,value,0,couplings=pairhopping,amplitude=amplitude,modulate=modulate)
 end
 abbr(::Type{<:PairHopping})=:ph
 isHermitian(::Type{<:PairHopping})=false
@@ -661,26 +658,25 @@ isHermitian(::Type{<:PairHopping})=false
 """
     Coulomb{ST}(    id::Symbol,value::Number;
                     neighbor::Int=1,
-                    couplings::Union{Tuple{<:Tuple{Vararg{Couplings}},<:Function},Coupling,Couplings,Nothing}=nothing,
+                    couplings::Union{Function,Coupling,Couplings,Nothing}=nothing,
                     amplitude::Union{Function,Nothing}=nothing,
                     modulate::Union{Function,Bool}=false,
                     ) where {ST}
 
 Coulomb term.
 
-Type alias for `Term{statistics,:Coulomb,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
+Type alias for `Term{statistics,:Coulomb,4,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
 """
-const Coulomb{statistics,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:Coulomb,id,V,Int,C,A,M}
+const Coulomb{statistics,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:Coulomb,4,id,V,Int,C,A,M}
 function Coulomb{ST}(   id::Symbol,value::Number;
                         neighbor::Int=1,
-                        couplings::Union{Tuple{<:Tuple{Vararg{Couplings}},<:Function},Coupling,Couplings,Nothing}=nothing,
+                        couplings::Union{Function,Coupling,Couplings,Nothing}=nothing,
                         amplitude::Union{Function,Nothing}=nothing,
                         modulate::Union{Function,Bool}=false,
                         ) where {ST}
     couplings=TermCouplings(couplings===nothing ? FockCoupling{2}()*FockCoupling{2}() : couplings)
-    @assert rank(couplings)==4 "Coulomb error: input couplings must be rank-4."
     @assert neighbor≠0 "Coulomb error: input neighbor cannot be 0. Use `Hubbard/InterOrbitalInterSpin/InterOrbitalIntraSpin/SpinFlip/PairHopping` instead."
-    Term{ST,:Coulomb}(id,value,neighbor,couplings=couplings,amplitude=amplitude,modulate=modulate)
+    Term{ST,:Coulomb,4}(id,value,neighbor,couplings=couplings,amplitude=amplitude,modulate=modulate)
 end
 abbr(::Type{<:Coulomb})=:cl
 isHermitian(::Type{<:Coulomb})=nothing

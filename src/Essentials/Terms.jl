@@ -342,25 +342,14 @@ end
 
 The function for the couplings of a term.
 """
-struct TermCouplings{T<:Tuple,C<:Union{Function,Nothing}} <: TermFunction
-    candidates::T
-    choice::C
-    TermCouplings(candidate::Coupling)=(candidate=Couplings(candidate);new{Tuple{typeof(candidate)},Nothing}((candidate,),nothing))
-    TermCouplings(candidate::Couplings)=new{Tuple{typeof(candidate)},Nothing}((candidate,),nothing)
-    TermCouplings(contents::Tuple{<:Tuple{Vararg{Couplings}},<:Function})=new{typeof(contents[1]),typeof(contents[2])}(contents[1],contents[2])
-    TermCouplings(candidates::NTuple{N,<:Couplings},choice::Function) where N=new{typeof(candidates),typeof(choice)}(candidates,choice)
+struct TermCouplings{C<:Union{Function,Couplings}} <: TermFunction
+    couplings::C
+    TermCouplings(coupling::Coupling)=new{Couplings{coupling.id|>typeof,coupling|>typeof}}(Couplings(coupling))
+    TermCouplings(couplings::Couplings)=new{couplings|>typeof}(couplings)
+    TermCouplings(couplings::Function)=new{couplings|>typeof}(couplings)
 end
-(termcouplings::TermCouplings{<:Tuple,Nothing})(args...;kwargs...)=termcouplings.candidates[1]
-(termcouplings::TermCouplings{<:Tuple,<:Function})(args...;kwargs...)=termcouplings.candidates[termcouplings.choice(args...;kwargs...)]
-
-"""
-    rank(tcs::TermCouplings) -> Int
-    rank(TCS::Type{<:TermCouplings}) -> Int
-
-Get the rank of the couplings it contained.
-"""
-rank(tcs::TermCouplings)=tcs|>typeof|>rank
-rank(TCS::Type{<:TermCouplings})=fieldtype(TCS,:candidates)|>eltype|>valtype|>rank
+(termcouplings::TermCouplings{<:Couplings})(args...;kwargs...)=termcouplings.couplings
+(termcouplings::TermCouplings{<:Function})(args...;kwargs...)=termcouplings.couplings(args...;kwargs...)
 
 """
     TermModulate(id::Symbol,modulate::Union{Function,Nothing}=nothing)
@@ -377,38 +366,38 @@ end
 (termmodulate::TermModulate{<:Function})(args...;kwargs...)=termmodulate.modulate(args...;kwargs...)
 
 """
-    Term{ST,SP,I}(value::Number,neighbor::Any,couplings::TermCouplings,amplitude::TermAmplitude,modulate::Union{TermModulate,Nothing},factor::Number) where {ST,SP,I}
-    Term{ST,SP}(id::Symbol,value::Number,neighbor::Any;
-                couplings::Union{Tuple{<:Tuple{Vararg{Couplings}},<:Function},Coupling,Couplings,TermCouplings},
-                amplitude::Union{Function,Nothing}=nothing,
-                modulate::Union{Function,Bool}=false,
-                ) where {ST,SP}
+    Term{ST,SP,R,I}(value::Number,neighbor::Any,couplings::TermCouplings,amplitude::TermAmplitude,modulate::Union{TermModulate,Nothing},factor::Number) where {ST,SP,R,I}
+    Term{ST,SP,R}(  id::Symbol,value::Number,neighbor::Any;
+                    couplings::Union{Function,Coupling,Couplings,TermCouplings},
+                    amplitude::Union{Function,Nothing}=nothing,
+                    modulate::Union{Function,Bool}=false,
+                    ) where {ST,SP,R}
 
 A term of a quantum lattice system.
 """
-mutable struct Term{statistics,species,id,V<:Number,N<:Any,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}
+mutable struct Term{statistics,species,R,id,V<:Number,N<:Any,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}
     value::V
     neighbor::N
     couplings::C
     amplitude::A
     modulate::M
     factor::V
-    function Term{ST,SP,I}(value::Number,neighbor::Any,couplings::TermCouplings,amplitude::TermAmplitude,modulate::Union{TermModulate,Nothing},factor::Number) where {ST,SP,I}
+    function Term{ST,SP,R,I}(value::Number,neighbor::Any,couplings::TermCouplings,amplitude::TermAmplitude,modulate::Union{TermModulate,Nothing},factor::Number) where {ST,SP,R,I}
         @assert ST in ('F','B') "Term error: statistics must be 'F' or 'B'."
         @assert isa(SP,Symbol) "Term error: species must be a Symbol."
         @assert isa(I,Symbol) "Term error: id must be a Symbol."
-        new{ST,SP,I,typeof(value),typeof(neighbor),typeof(couplings),typeof(amplitude),typeof(modulate)}(value,neighbor,couplings,amplitude,modulate,factor)
+        new{ST,SP,R,I,typeof(value),typeof(neighbor),typeof(couplings),typeof(amplitude),typeof(modulate)}(value,neighbor,couplings,amplitude,modulate,factor)
     end
 end
-function Term{ST,SP}(   id::Symbol,value::Number,neighbor::Any;
-                        couplings::Union{Tuple{<:Tuple{Vararg{Couplings}},<:Function},Coupling,Couplings,TermCouplings},
+function Term{ST,SP,R}( id::Symbol,value::Number,neighbor::Any;
+                        couplings::Union{Function,Coupling,Couplings,TermCouplings},
                         amplitude::Union{Function,Nothing}=nothing,
                         modulate::Union{Function,Bool}=false,
-                        ) where {ST,SP}
+                        ) where {ST,SP,R}
     isa(couplings,TermCouplings) || (couplings=TermCouplings(couplings))
     isa(amplitude,TermAmplitude) || (amplitude=TermAmplitude(amplitude))
     isa(modulate,TermModulate) || (modulate=modulate===false ? nothing : TermModulate(id,modulate))
-    Term{ST,SP,id}(value,neighbor,couplings,amplitude,modulate,1)
+    Term{ST,SP,R,id}(value,neighbor,couplings,amplitude,modulate,1)
 end
 
 """
@@ -430,11 +419,20 @@ species(term::Term)=term|>typeof|>species
 species(::Type{<:Term{ST,SP}}) where {ST,SP}=SP
 
 """
+    rank(term::Term) -> Int
+    rank(::Type{<:Term{ST,SP,R}}) where {ST,SP,R} -> Int
+
+Get the rank of a term.
+"""
+rank(term::Term)=term|>typeof|>rank
+rank(::Type{<:Term{ST,SP,R}}) where {ST,SP,R}=R
+
+"""
     id(term::Term) -> Symbol
-    id(::Type{<:Term{ST,SP,I}}) where {ST,SP,I} -> Symbol
+    id(::Type{<:Term{ST,SP,R,I}}) where {ST,SP,R,I} -> Symbol
 """
 id(term::Term)=term|>typeof|>id
-id(::Type{<:Term{ST,SP,I}}) where {ST,SP,I}=I
+id(::Type{<:Term{ST,SP,R,I}}) where {ST,SP,R,I}=I
 
 """
     valtype(term::Term)
@@ -443,16 +441,7 @@ id(::Type{<:Term{ST,SP,I}}) where {ST,SP,I}=I
 Get the value type of a term.
 """
 Base.valtype(term::Term)=term|>typeof|>valtype
-Base.valtype(::Type{<:Term{ST,SP,I,V}}) where {ST,SP,I,V<:Number}=V
-
-"""
-    rank(term::Term) -> Int
-    rank(::Type{T}) where T<:Term -> Int
-
-Get the rank of a term.
-"""
-rank(term::Term)=term|>typeof|>rank
-rank(::Type{T}) where T<:Term=fieldtype(T,:couplings)|>rank
+Base.valtype(::Type{<:Term{ST,SP,R,I,V}}) where {ST,SP,R,I,V<:Number}=V
 
 """
     abbr(term::Term) -> Symbol
@@ -485,7 +474,7 @@ Base.isequal(term1::Term,term2::Term)=isequal(efficientoperations,term1,term2)
 Show a term.
 """
 function Base.show(io::IO,term::Term)
-    @printf io "%s{%s}(id=%s,value=%s,neighbor=%s,factor=%s)" species(term) statistics(term) term|>id decimaltostr(term.value) term.neighbor decimaltostr(term.factor)
+    @printf io "%s{%s%s}(id=%s,value=%s,neighbor=%s,factor=%s)" species(term) rank(term) statistics(term) term|>id decimaltostr(term.value) term.neighbor decimaltostr(term.factor)
 end
 
 """
@@ -509,13 +498,13 @@ function Base.repr(term::Term,bond::AbstractBond,config::IDFConfig)
 end
 
 """
-    replace(term::Term{ST,SP,I};kwargs...) where {ST,SP,I} -> Term
+    replace(term::Term{ST,SP,R,I};kwargs...) where {ST,SP,R,I} -> Term
 
 Replace some attributes of a term with key word arguments.
 """
-@generated function Base.replace(term::Term{ST,SP,I};kwargs...) where {ST,SP,I}
+@generated function Base.replace(term::Term{ST,SP,R,I};kwargs...) where {ST,SP,R,I}
     exprs=[:(get(kwargs,$name,getfield(term,$name))) for name in QuoteNode.(term|>fieldnames)]
-    return :(Term{ST,SP,I}($(exprs...)))
+    return :(Term{ST,SP,R,I}($(exprs...)))
 end
 
 """

@@ -135,14 +135,13 @@ end
 
     tcs=TCoupling(1.0,ID(TCID(1,1),TCID(2,1)))+TCoupling(2.0,ID(TCID(1,2),TCID(2,2)))
     termcouplings=TermCouplings(tcs)
+    @test termcouplings==deepcopy(TermCouplings(tcs))
+    @test isequal(termcouplings,deepcopy(TermCouplings(tcs)))
     @test termcouplings()==tcs
-    @test termcouplings|>rank==termcouplings|>typeof|>rank==2
 
     tcs1=TCoupling(1.0,ID(TCID(1,1),TCID(2,1)))+TCoupling(1.0,ID(TCID(1,2),TCID(2,2)))
     tcs2=TCoupling(1.0,ID(TCID(1,2),TCID(2,1)))+TCoupling(1.0,ID(TCID(2,1),TCID(1,2)))
-    termcouplings=TermCouplings((tcs1,tcs2),i->(i-1)%2+1)
-    @test termcouplings==TermCouplings((termcouplings.candidates,termcouplings.choice))
-    @test isequal(termcouplings,TermCouplings((termcouplings.candidates,termcouplings.choice)))
+    termcouplings=TermCouplings(i->(tcs1,tcs2)[(i-1)%2+1])
     @test termcouplings(1)==tcs1
     @test termcouplings(2)==tcs2
 
@@ -158,7 +157,7 @@ end
 @testset "Term" begin
     point=Point(PID(1,1),(0.0,0.0),(0.0,0.0))
     config=IDFConfig{TFock}(pid->TFock(),[PID(1,1)])
-    term=Term{'F',:TermMu}(:mu,1.5,0,couplings=TCoupling(1.0,ID(TCID(1,2),TCID(1,1))),amplitude=(bond->3),modulate=false)
+    term=Term{'F',:TermMu,2}(:mu,1.5,0,couplings=TCoupling(1.0,ID(TCID(1,2),TCID(1,1))),amplitude=(bond->3),modulate=false)
     @test term|>statistics==term|>typeof|>statistics=='F'
     @test term|>species==term|>typeof|>species==:TermMu
     @test term|>id==term|>typeof|>id==:mu
@@ -168,7 +167,7 @@ end
     @test term|>isHermitian==term|>typeof|>isHermitian==true
     @test term==deepcopy(term)
     @test isequal(term,deepcopy(term))
-    @test string(term)=="TermMu{F}(id=mu,value=1.5,neighbor=0,factor=1.0)"
+    @test string(term)=="TermMu{2F}(id=mu,value=1.5,neighbor=0,factor=1.0)"
     @test repr(term,point,config)=="tmu: 4.5 ph(2:1)@(1-1)"
     @test +term==term
     @test -term==term*(-1)==replace(term,factor=-term.factor)
@@ -180,9 +179,9 @@ end
     config=IDFConfig{TFock}(pid->TFock(),[PID(1,1),PID(1,2)])
     tcs1=Couplings(TCoupling(1.0,ID(TCID(1,2),TCID(1,2))))
     tcs2=Couplings(TCoupling(1.0,ID(TCID(1,1),TCID(1,1))))
-    term=Term{'F',:Term}(:mu,1.5,0,couplings=((tcs1,tcs2),bond->bond.pid.site%2+1),amplitude=bond->3,modulate=true)
-    @test repr(term,p1,config)=="tm: 4.5 ph(1:1)@(1-1)"
-    @test repr(term,p2,config)=="tm: 4.5 ph(2:2)@(1-1)"
+    term=Term{'F',:TermMu,2}(:mu,1.5,0,couplings=bond->(tcs1,tcs2)[bond.pid.site%2+1],amplitude=bond->3,modulate=true)
+    @test repr(term,p1,config)=="tmu: 4.5 ph(1:1)@(1-1)"
+    @test repr(term,p2,config)=="tmu: 4.5 ph(2:2)@(1-1)"
     @test one(term)==replace(term,value=1.0)
     @test zero(term)==replace(term,value=0.0)
     @test term.modulate(mu=4.0)==4.0
@@ -195,7 +194,7 @@ end
     point=Point(PID(1,1),(0.0,0.0),(0.0,0.0))
     config=IDFConfig{TFock}(pid->TFock(),[PID(1,1)])
     table=Table(config,by=filter(attr->attr≠:nambu,FilteredAttributes(TIndex)))
-    term=Term{'F',:TermMu}(:mu,1.5,0,couplings=TCoupling(1.0,ID(TCID(1,2),TCID(1,1))),amplitude=bond->3.0,modulate=true)
+    term=Term{'F',:TermMu,2}(:mu,1.5,0,couplings=TCoupling(1.0,ID(TCID(1,2),TCID(1,1))),amplitude=bond->3.0,modulate=true)
     operators=Operators(TOperator(+2.25,(TIndex(1,1,2),TIndex(1,1,1)),rcoords=(SVector(0.0,0.0),SVector(0.0,0.0)),icoords=(SVector(0.0,0.0),SVector(0.0,0.0)),seqs=(1,1)))
     @test expand(term,point,config,table,true)==operators
     @test expand(term,point,config,table,false)==operators*2
@@ -203,7 +202,7 @@ end
     bond=Bond(1,Point(PID('b',2),(1.5,1.5),(1.0,1.0)),Point(PID('a',1),(0.5,0.5),(0.0,0.0)))
     config=IDFConfig{TFock}(pid->TFock(),[PID('a',1),PID('b',2)])
     table=Table(config,by=filter(attr->attr≠:nambu,FilteredAttributes(TIndex)))
-    term=Term{'F',:TermHopping}(:t,1.5,1,couplings=TCoupling(1.0,ID(TCID(1,2),TCID(2,1))),amplitude=bond->3.0,modulate=true)
+    term=Term{'F',:TermHopping,2}(:t,1.5,1,couplings=TCoupling(1.0,ID(TCID(1,2),TCID(2,1))),amplitude=bond->3.0,modulate=true)
     operators=Operators(TOperator(4.5,(TIndex('a',1,2),TIndex('b',2,1)),rcoords=(SVector(0.5,0.5),SVector(1.5,1.5)),icoords=(SVector(0.0,0.0),SVector(1.0,1.0)),seqs=(1,2)))
     @test expand(term,bond,config,table,true)==operators
     @test expand(term,bond,config,table,false)==operators+operators'

@@ -329,25 +329,25 @@ function Sᶻ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=noth
 end
 
 """
-    SpinTerm(   id::Symbol,value::Number;
+    SpinTerm{R}(id::Symbol,value::Number;
                 neighbor::Int,
-                couplings::Union{Tuple{<:Tuple{Vararg{Couplings}},<:Function},Coupling,Couplings},
+                couplings::Union{Function,Coupling,Couplings},
                 amplitude::Union{Function,Nothing}=nothing,
                 modulate::Union{Function,Bool}=false,
-                )
+                ) where R
 
 Spin term.
 
-Type alias for `Term{'B',:SpinTerm,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
+Type alias for `Term{'B',:SpinTerm,R,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
 """
-const SpinTerm{id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{'B',:SpinTerm,id,V,Int,C,A,M}
-function SpinTerm(  id::Symbol,value::Number;
+const SpinTerm{R,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{'B',:SpinTerm,R,id,V,Int,C,A,M}
+function SpinTerm{R}(id::Symbol,value::Number;
                     neighbor::Int,
-                    couplings::Union{Tuple{<:Tuple{Vararg{Couplings}},<:Function},Coupling,Couplings},
+                    couplings::Union{Function,Coupling,Couplings},
                     amplitude::Union{Function,Nothing}=nothing,
                     modulate::Union{Function,Bool}=false,
-                    )
-    Term{'B',:SpinTerm}(id,value,neighbor,couplings=couplings,amplitude=amplitude,modulate=modulate)
+                    ) where R
+    Term{'B',:SpinTerm,R}(id,value,neighbor,couplings=couplings,amplitude=amplitude,modulate=modulate)
 end
 abbr(::Type{<:SpinTerm})=:sp
 isHermitian(::Type{<:SpinTerm})=true

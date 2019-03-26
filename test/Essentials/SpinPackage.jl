@@ -119,7 +119,7 @@ end
 end
 
 @testset "SpinTerm" begin
-    term=SpinTerm(:h,1.5,neighbor=0,couplings=Sᶻ())
+    term=SpinTerm{1}(:h,1.5,neighbor=0,couplings=Sᶻ())
     @test term|>abbr==:sp
     @test otype(term|>typeof,OID{SIndex{Int},SVector{2,Float},SVector{2,Float},Nothing})==SOperator{1,Float,ID{NTuple{1,OID{SIndex{Int},SVector{2,Float},SVector{2,Float},Nothing}}}}
     @test otype(term|>typeof,OID{SIndex{Int},SVector{2,Float},SVector{2,Float},Int})==SOperator{1,Float,ID{NTuple{1,OID{SIndex{Int},SVector{2,Float},SVector{2,Float},Int}}}}
@@ -127,7 +127,7 @@ end
     point=Point(PID('a',1),(0.5,0.5),(0.0,0.0))
     config=IDFConfig{Spin}(pid->Spin(atom=pid.site%2,norbital=2,spin=0.5),[point.pid])
     table=Table(config,by=usualspinindextotuple)
-    term=SpinTerm(:h,1.5,neighbor=0,couplings=Sᶻ())
+    term=SpinTerm{1}(:h,1.5,neighbor=0,couplings=Sᶻ())
     operators=Operators(SOperator(1.5,ID(OID(SIndex('a',1,1,0.5,'z'),[0.5,0.5],[0.0,0.0],1))),
                         SOperator(1.5,ID(OID(SIndex('a',1,2,0.5,'z'),[0.5,0.5],[0.0,0.0],2)))
     )
@@ -136,7 +136,7 @@ end
     bond=Bond(1,Point(PID('a',1),(0.0,0.0),(0.0,0.0)),Point(PID('b',1),(0.5,0.5),(0.0,0.0)))
     config=IDFConfig{Spin}(pid->Spin(atom=pid.site%2,norbital=2,spin=0.5),[bond.spoint.pid,bond.epoint.pid])
     table=Table(config,by=usualspinindextotuple)
-    term=SpinTerm(:J,1.5,neighbor=1,couplings=Heisenberg())
+    term=SpinTerm{2}(:J,1.5,neighbor=1,couplings=Heisenberg())
     operators=Operators(SOperator(1.50,ID(OID(SIndex('b',1,2,0.5,'z'),[0.5,0.5],[0.0,0.0],4),OID(SIndex('a',1,2,0.5,'z'),[0.0,0.0],[0.0,0.0],2))),
                         SOperator(0.75,ID(OID(SIndex('b',1,2,0.5,'-'),[0.5,0.5],[0.0,0.0],4),OID(SIndex('a',1,2,0.5,'+'),[0.0,0.0],[0.0,0.0],2))),
                         SOperator(0.75,ID(OID(SIndex('b',1,1,0.5,'-'),[0.5,0.5],[0.0,0.0],3),OID(SIndex('a',1,1,0.5,'+'),[0.0,0.0],[0.0,0.0],1))),
