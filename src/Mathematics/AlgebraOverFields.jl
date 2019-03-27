@@ -1,6 +1,6 @@
 module AlgebraOverFields
 
-using Printf: @printf
+using Printf: @printf,@sprintf
 using ...Interfaces: dimension
 using ...Prerequisites: atol,rtol
 using ...Prerequisites.NamedVectors: NamedVector
@@ -246,6 +246,19 @@ function Base.show(io::IO,ms::Elements)
     for m in values(ms)
         @printf io "  %s\n" m
     end
+end
+
+"""
+    repr(ms::Elements) -> String
+
+Get the repr representation of a set of elements.
+"""
+function Base.repr(ms::Elements)
+    cache=[@sprintf("Elements with %s entries:",length(ms))]
+    for m in ms|>values
+        push!(cache,@sprintf("  %s",repr(m)))
+    end
+    return join(cache,"\n")
 end
 
 """

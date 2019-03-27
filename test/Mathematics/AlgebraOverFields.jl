@@ -1,4 +1,5 @@
 using Test
+using Printf: @printf
 using QuantumLattices.Mathematics.AlgebraOverFields
 using QuantumLattices.Interfaces: dimension,rank,add!,sub!,mul!,div!
 using QuantumLattices.Prerequisites: Float
@@ -54,6 +55,8 @@ struct AOFOperator{N,V<:Number,I<:ID{<:NTuple{N,SimpleID}}} <: Element{N,V,I}
     id::I
 end
 ⊗(m1::AOFOperator,m2::AOFOperator)=m1*m2
+Base.show(io::IO,opt::AOFOperator)=@printf io "AOFOperator(value=%s,id=%s)" opt.value opt.id
+Base.repr(opt::AOFOperator)="AOFOperator($(opt.value),$(opt.id))"
 
 @testset "Elements" begin
     opt=AOFOperator(1.0,ID(AOFID(1,1)))
@@ -76,7 +79,9 @@ end
 
     opt1=AOFOperator(1.0,ID(AOFID(1,1)))
     opt2=AOFOperator(2.0,ID(AOFID(1,2)))
-    opts=Elements(opt1,opt2)
+    opts=Elements(opt1.id=>opt1,opt2.id=>opt2)
+    @test string(opts)=="Elements with 2 entries:\n  AOFOperator(value=2.0,id=ID(AOFID(1,2)))\n  AOFOperator(value=1.0,id=ID(AOFID(1,1)))\n"
+    @test repr(opts)=="Elements with 2 entries:\n  AOFOperator(2.0,ID(AOFID(1,2)))\n  AOFOperator(1.0,ID(AOFID(1,1)))"
     @test opts|>zero==Elements{opt|>idtype,opt|>typeof}()
     @test opts|>typeof|>zero==Elements{opt|>idtype,opt|>typeof}()
     @test add!(deepcopy(opts))==opts

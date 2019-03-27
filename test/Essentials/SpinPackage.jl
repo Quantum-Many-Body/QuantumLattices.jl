@@ -76,11 +76,11 @@ end
 
     sc1=SpinCoupling{2}(1.5,tags=('+','-'),atoms=(1,2),orbitals=(@subscript (x,y)=>(x,y) with x>y),centers=(1,2))
     sc2=SpinCoupling{2}(2.0,tags=('+','-'),atoms=(1,2),orbitals=(@subscript (x,y)=>(x,y) with x<y),centers=(1,2))
-    @test sc1|>repr=="1.5 S+S- sl(1:2)⊗ob(x:y)@(1-2) with $(sc1.id[1].subscript) && $(sc1.id[2].subscript)"
-    @test sc2|>repr=="2.0 S+S- sl(1:2)⊗ob(x:y)@(1-2) with $(sc2.id[1].subscript) && $(sc2.id[2].subscript)"
+    @test sc1|>repr=="1.5 S+S- sl(1,2)⊗ob(x,y)@(1,2) with $(sc1.id[1].subscript) && $(sc1.id[2].subscript)"
+    @test sc2|>repr=="2.0 S+S- sl(1,2)⊗ob(x,y)@(1,2) with $(sc2.id[1].subscript) && $(sc2.id[2].subscript)"
 
     sc=sc1*sc2
-    @test sc|>repr=="3.0 S+S-S+S- sl(1:2:1:2)⊗ob(x:y:x:y)@(1-2-1-2) with $(sc1.id[1].subscript) && $(sc1.id[2].subscript) && $(sc2.id[1].subscript) && $(sc2.id[2].subscript)"
+    @test sc|>repr=="3.0 S+S-S+S- sl(1,2,1,2)⊗ob(x,y,x,y)@(1,2,1,2) with $(sc1.id[1].subscript) && $(sc1.id[2].subscript) && $(sc2.id[1].subscript) && $(sc2.id[2].subscript)"
 
     ex=expand(SpinCoupling{2}(2.0,tags=('+','-'),atoms=(1,1)),PID(1,1),Spin(atom=2,norbital=2,spin=1.0))
     @test collect(ex)==[]

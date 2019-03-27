@@ -221,11 +221,11 @@ function Base.repr(sc::SpinCoupling)
     cache=[]
     for (attrname,abbr) in zip((:atoms,:orbitals),("sl","ob"))
         attrvalue=getproperty(sc.id,attrname)
-        all(attrvalue.≠wildcard) && push!(cache,@sprintf "%s(%s)" abbr join(attrvalue,':'))
+        all(attrvalue.≠wildcard) && push!(cache,@sprintf "%s(%s)" abbr join(attrvalue,','))
     end
     result=@sprintf "%s S%s" decimaltostr(sc.value) join(sc.id.tags,'S')
     length(cache)>0 && (result=@sprintf "%s %s" result join(cache,"⊗"))
-    any((centers=sc.id.centers).≠wildcard) && (result=@sprintf "%s@(%s)" result join(centers,'-'))
+    any((centers=sc.id.centers).≠wildcard) && (result=@sprintf "%s@(%s)" result join(centers,','))
     subscripts=sc.id.subscripts
     all(subscripts.==wildcard) || all(subscripts.==constant) || (result=@sprintf "%s with %s" result join(subscripts," && "))
     return result

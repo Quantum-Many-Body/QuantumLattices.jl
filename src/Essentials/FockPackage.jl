@@ -286,11 +286,11 @@ Get the repr representation of a Fock coupling.
 function Base.repr(fc::FockCoupling)
     cache=[]
     for (attrname,abbr) in zip((:atoms,:orbitals,:spins,:nambus),("sl","ob","sp","ph"))
-        any((attrvalue=getproperty(fc.id,attrname)).≠wildcard) && push!(cache,@sprintf "%s(%s)" abbr join(attrvalue,':'))
+        any((attrvalue=getproperty(fc.id,attrname)).≠wildcard) && push!(cache,@sprintf "%s(%s)" abbr join(attrvalue,','))
     end
     result=decimaltostr(fc.value)
     length(cache)>0 && (result=@sprintf "%s %s" result join(cache,"⊗"))
-    any((centers=fc.id.centers).≠wildcard) && (result=@sprintf "%s@(%s)" result join(centers,'-'))
+    any((centers=fc.id.centers).≠wildcard) && (result=@sprintf "%s@(%s)" result join(centers,','))
     obsubs,spsubs=fc.id.obsubs,fc.id.spsubs
     ((all(obsubs.==wildcard) || all(obsubs.==constant)) && (all(spsubs.==wildcard) || all(spsubs.==constant))) || (
             result=@sprintf "%s with %s" result join(((@sprintf "(%s,%s)" obsub spsub) for (obsub,spsub) in zip(obsubs,spsubs))," && ")

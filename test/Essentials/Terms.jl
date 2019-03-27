@@ -44,7 +44,7 @@ struct TCoupling{N,V<:Number,I<:ID{<:NTuple{N,TCID}}} <: Coupling{N,V,I}
     value::V
     id::I
 end
-Base.repr(tc::TCoupling)=@sprintf "%s ph(%s)@(%s)" decimaltostr(tc.value) join(tc.id.nambus,':') join(tc.id.centers,'-')
+Base.repr(tc::TCoupling)=@sprintf "%s ph(%s)@(%s)" decimaltostr(tc.value) join(tc.id.nambus,',') join(tc.id.centers,',')
 function expand(tc::TCoupling,pids::NTuple{R,PID},focks::NTuple{R,TFock},species::Union{Val{S},Nothing}=nothing) where {R,S}
     nambus=tc.id.nambus
     pids=NTuple{rank(tc),eltype(pids)}(pids[tc.id.centers[i]] for i=1:rank(tc))
@@ -122,8 +122,8 @@ end
     @test couplingcenter(Coupling,1,2,Val(1))==1
     @test couplingcenters(Coupling,('*','*'),Val(1))==(1,1)
     @test couplingcenters(Coupling,(1,2,3),Val(3))==(1,2,3)
-    @test couplingcenters("(1-4)")==(1,4)
-    @test couplingcenters("(1-2-3-4)")==(1,2,3,4)
+    @test couplingcenters("(1,4)")==(1,4)
+    @test couplingcenters("(1,2,3,4)")==(1,2,3,4)
 end
 
 @testset "TermFunction" begin
@@ -168,7 +168,7 @@ end
     @test term==deepcopy(term)
     @test isequal(term,deepcopy(term))
     @test string(term)=="TermMu{2F}(id=mu,value=1.5,neighbor=0,factor=1.0)"
-    @test repr(term,point,config)=="tmu: 4.5 ph(2:1)@(1-1)"
+    @test repr(term,point,config)=="tmu: 4.5 ph(2,1)@(1,1)"
     @test +term==term
     @test -term==term*(-1)==replace(term,factor=-term.factor)
     @test 2*term==term*2==replace(term,factor=term.factor*2)
@@ -180,8 +180,8 @@ end
     tcs1=Couplings(TCoupling(1.0,ID(TCID(1,2),TCID(1,2))))
     tcs2=Couplings(TCoupling(1.0,ID(TCID(1,1),TCID(1,1))))
     term=Term{'F',:TermMu,2}(:mu,1.5,0,couplings=bond->(tcs1,tcs2)[bond.pid.site%2+1],amplitude=bond->3,modulate=true)
-    @test repr(term,p1,config)=="tmu: 4.5 ph(1:1)@(1-1)"
-    @test repr(term,p2,config)=="tmu: 4.5 ph(2:2)@(1-1)"
+    @test repr(term,p1,config)=="tmu: 4.5 ph(1,1)@(1,1)"
+    @test repr(term,p2,config)=="tmu: 4.5 ph(2,2)@(1,1)"
     @test one(term)==replace(term,value=1.0)
     @test zero(term)==replace(term,value=0.0)
     @test term.modulate(mu=4.0)==4.0

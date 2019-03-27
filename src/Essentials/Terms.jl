@@ -293,7 +293,7 @@ couplingcenter(::Type{<:Coupling},i::Int,n::Int,::Val{R}) where R=error("couplin
 end
 function couplingcenters(str::String)
     @assert str[1]=='(' && str[end]==')' "couplingcenters error: wrong pattern."
-    Tuple(parse(Int,center) for center in split(str[2:end-1],'-'))
+    Tuple(parse(Int,center) for center in split(str[2:end-1],','))
 end
 
 """
