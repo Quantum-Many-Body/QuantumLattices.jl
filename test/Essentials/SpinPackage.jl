@@ -74,8 +74,8 @@ end
     @test SpinCoupling{2}(1.0,atoms=(1,1),orbitals=(1,2),tags=('-','+'))|>string=="SpinCoupling(value=1.0,atoms=(1,1),orbitals=(1,2),tags=(-,+))"
     @test SpinCoupling{2}(2.0,tags=('x','y'))|>repr=="2.0 SxSy"
 
-    sc1=SpinCoupling{2}(1.5,tags=('+','-'),atoms=(1,2),orbitals=(@subscript (x,y)=>(x,y) with x>y),centers=(1,2))
-    sc2=SpinCoupling{2}(2.0,tags=('+','-'),atoms=(1,2),orbitals=(@subscript (x,y)=>(x,y) with x<y),centers=(1,2))
+    sc1=SpinCoupling{2}(1.5,tags=('+','-'),atoms=(1,2),orbitals=(@subscript (x,y) with x>y),centers=(1,2))
+    sc2=SpinCoupling{2}(2.0,tags=('+','-'),atoms=(1,2),orbitals=(@subscript (x,y) with x<y),centers=(1,2))
     @test sc1|>repr=="1.5 S+S- sl(1,2)⊗ob(x,y)@(1,2) with $(sc1.id[1].subscript) && $(sc1.id[2].subscript)"
     @test sc2|>repr=="2.0 S+S- sl(1,2)⊗ob(x,y)@(1,2) with $(sc2.id[1].subscript) && $(sc2.id[2].subscript)"
 
@@ -91,7 +91,7 @@ end
     @test dims(ex)==(1,)
     @test collect(ex)==[(2.0,(SIndex(1,1,1,1.0,'+'),SIndex(1,2,2,1.0,'-')))]
 
-    ex=expand(SpinCoupling{4}(2.0,tags=('+','-','+','-'),orbitals=(@subscript (α,β)=>(α,α,β,β) with α<β)),PID(1,1),Spin(norbital=3,spin=1.0))
+    ex=expand(SpinCoupling{4}(2.0,tags=('+','-','+','-'),orbitals=(@subscript (α,α,β,β) with α<β)),PID(1,1),Spin(norbital=3,spin=1.0))
     @test dims(ex)==(3,)
     @test collect(ex)==[(2.0,(SIndex(1,1,1,1.0,'+'),SIndex(1,1,1,1.0,'-'),SIndex(1,1,2,1.0,'+'),SIndex(1,1,2,1.0,'-'))),
                         (2.0,(SIndex(1,1,1,1.0,'+'),SIndex(1,1,1,1.0,'-'),SIndex(1,1,3,1.0,'+'),SIndex(1,1,3,1.0,'-'))),

@@ -1,6 +1,6 @@
 module Interfaces
 
-export ⊕,⊗
+export ⊕,⊗,⋅
 export add!,sub!,mul!,div!
 export id,rank,degree,dimension,dims,index,inds
 export expand,expand!,decompose,decompose!,regularize,regularize!
@@ -11,6 +11,9 @@ function ⊕ end
 
 "Direct product."
 function ⊗ end
+
+"Dot product."
+function ⋅ end
 
 "Inplace addition."
 function add! end

@@ -13,7 +13,7 @@ using ...Mathematics.VectorSpaces: VectorSpace,IsMultiIndexable,MultiIndexOrderS
 
 import ..DegreesOfFreedom: twist,otype,isHermitian
 import ..Terms: couplingcenter,statistics,abbr,termfactor
-import ...Interfaces: dims,inds,⊗,expand,expand!
+import ...Interfaces: dims,inds,⊗,⋅,expand,expand!
 
 export ANNIHILATION,CREATION,FID,FIndex,Fock
 export usualfockindextotuple,nambufockindextotuple
@@ -315,28 +315,48 @@ Get the direct product between two Fock couplings.
 function ⊗(fc1::FockCoupling{N},fc2::FockCoupling{N}) where N
     value,attrvalues,subscripts=fc1.value*fc2.value,[],[]
     wildcards=NTuple{N,Char}(wildcard for i=1:N)
-    constants=NTuple{N,Char}(constant for i=1:N)
     v1,v2=fc1.id.centers,fc2.id.centers; t1,t2=v1==wildcards,v2==wildcards
     push!(attrvalues,t1 && t2 ? wildcards : t1 ? v2 : t2 ? v1 : v1==v2 ? v1 : error("⊗ error: dismatched centers ($v1 and $v2)."))
     for (i,attrname) in enumerate((:atoms,:orbitals,:spins,:nambus,:obsubs,:spsubs))
         v1,v2=getproperty(fc1.id,attrname),getproperty(fc2.id,attrname)
-        if isa(v1,NTuple{2,Int}) && isa(v2,NTuple{2,Int})
-            value=value*delta(v1[2],v2[1])
-            push!(attrvalues,(v1[1],v2[2]))
+        t1,t2=v1==wildcards,v2==wildcards
+        if attrname ∉ (:obsubs,:spsubs)
+            @assert (t1 || t2) "⊗ error: dismatched $attrname ($v1 and $v2)."
         else
-            t1,t2=v1==wildcards,v2==wildcards
-            if attrname ∉ (:obsubs,:spsubs)
-                @assert (t1 || t2) "⊗ error: dismatched $attrname ($v1 and $v2)."
-            else
-                f1,f2=v1==constants,v2==constants
-                @assert t1 || t2 || (f1 && f2) "⊗ error: dismatched $attrname ($v1 and $v2)."
-                attrname==:obsubs && push!(subscripts,t1 ? fc2.obsubscripts : fc1.obsubscripts)
-                attrname==:spsubs && push!(subscripts,t1 ? fc2.spsubscripts : fc1.spsubscripts)
-            end
-            push!(attrvalues,t1 ? v2 : v1)
+            @assert t1 || t2 "⊗ error: dismatched $attrname ($v1 and $v2)."
+            attrname==:obsubs && push!(subscripts,t1 ? fc2.obsubscripts : fc1.obsubscripts)
+            attrname==:spsubs && push!(subscripts,t1 ? fc2.spsubscripts : fc1.spsubscripts)
         end
+        push!(attrvalues,t1 ? v2 : v1)
     end
     return FockCoupling(value,ID(FCID,attrvalues...),subscripts...)
+end
+
+"""
+    ⋅(fc1::FockCoupling{2},fc2::FockCoupling{2}) -> FockCoupling{2}
+
+Get the dot product of two rank-2 Fock couplings.
+
+A rank-2 FockCoupling can be considered as a matrix acting on the sublattice, orbital, spin and nambu spaces.
+The dot product here is defined as the multiplication between such matrices.
+"""
+function ⋅(fc1::FockCoupling{2},fc2::FockCoupling{2})
+    attrpairs=[]
+    value=fc1.value*fc2.value
+    wildcards=(wildcard,wildcard)
+    v1,v2=fc1.id.centers,fc2.id.centers
+    t1,t2=v1==wildcards,v2==wildcards
+    push!(attrpairs,:centers=>(t1 && t2 ? wildcards : t1 ? v2 : t2 ? v1 : v1==v2 ? v1 : error("⋅ error: dismatched centers ($v1 and $v2).")))
+    for (i,attrname) in enumerate((:atoms,:orbitals,:spins,:nambus))
+        v1,v2=getproperty(fc1.id,attrname),getproperty(fc2.id,attrname)
+        if isa(v1,NTuple{2,Int}) && isa(v2,NTuple{2,Int})
+            value=value*delta(v1[2],v2[1])
+            push!(attrpairs,attrname=>(v1[1],v2[2]))
+        else
+            @assert v1==wildcards && v2==wildcards "⋅ error: dismatched $attrname ($v1 and $v2)."
+        end
+    end
+    return FockCoupling{2}(value;attrpairs...)
 end
 
 """
@@ -560,10 +580,7 @@ end
 abbr(::Type{<:Hubbard})=:hb
 isHermitian(::Type{<:Hubbard})=true
 
-const interorbitalinterspin=FockCoupling{4}(orbitals=(@subscript (α,β)=>(α,α,β,β) with α<β),
-                                            spins=(@subscript (σ₁,σ₂)=>(σ₁,σ₁,σ₂,σ₂) with σ₁≠σ₂),
-                                            nambus=(CREATION,ANNIHILATION,CREATION,ANNIHILATION)
-                                            )
+const interorbitalinterspin=FockCoupling{4}(orbitals=(@subscript (α,α,β,β) with α<β),spins=(@subscript (σ₁,σ₁,σ₂,σ₂) with σ₁≠σ₂),nambus=(CREATION,ANNIHILATION,CREATION,ANNIHILATION))
 """
     InterOrbitalInterSpin{ST}(  id::Symbol,value::Real;
                                 amplitude::Union{Function,Nothing}=nothing,
@@ -584,9 +601,7 @@ end
 abbr(::Type{<:InterOrbitalInterSpin})=:nons
 isHermitian(::Type{<:InterOrbitalInterSpin})=true
 
-const interorbitalintraspin=FockCoupling{4}(orbitals=(@subscript (α,β)=>(α,α,β,β) with α<β),
-                                            nambus=(CREATION,ANNIHILATION,CREATION,ANNIHILATION)
-                                            )
+const interorbitalintraspin=FockCoupling{4}(orbitals=(@subscript (α,α,β,β) with α<β),nambus=(CREATION,ANNIHILATION,CREATION,ANNIHILATION))
 """
     InterOrbitalIntraSpin{ST}(  id::Symbol,value::Real;
                                 amplitude::Union{Function,Nothing}=nothing,
@@ -607,10 +622,7 @@ end
 abbr(::Type{<:InterOrbitalIntraSpin})=:noes
 isHermitian(::Type{<:InterOrbitalIntraSpin})=true
 
-const spinflip=FockCoupling{4}( orbitals=(@subscript (α,β)=>(α,β,α,β) with α<β),
-                                spins=(2,1,1,2),
-                                nambus=(CREATION,CREATION,ANNIHILATION,ANNIHILATION)
-                                )
+const spinflip=FockCoupling{4}(orbitals=(@subscript (α,β,α,β) with α<β),spins=(2,1,1,2),nambus=(CREATION,CREATION,ANNIHILATION,ANNIHILATION))
 """
     SpinFlip{ST}(   id::Symbol,value::Real;
                     amplitude::Union{Function,Nothing}=nothing,
@@ -631,10 +643,7 @@ end
 abbr(::Type{<:SpinFlip})=:sf
 isHermitian(::Type{<:SpinFlip})=false
 
-const pairhopping=FockCoupling{4}(  orbitals=(@subscript (α,β)=>(α,α,β,β) with α<β),
-                                    spins=(2,1,1,2),
-                                    nambus=(CREATION,CREATION,ANNIHILATION,ANNIHILATION)
-                                    )
+const pairhopping=FockCoupling{4}(orbitals=(@subscript (α,α,β,β) with α<β),spins=(2,1,1,2),nambus=(CREATION,CREATION,ANNIHILATION,ANNIHILATION))
 """
     PairHopping{ST}(    id::Symbol,value::Real;
                         amplitude::Union{Function,Nothing}=nothing,

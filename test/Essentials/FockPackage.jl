@@ -4,7 +4,7 @@ using QuantumLattices.Essentials.FockPackage
 using QuantumLattices.Essentials.Spatials: Bond,Point,PID,rcoord,azimuthd
 using QuantumLattices.Essentials.DegreesOfFreedom: Table,IDFConfig,OID,Operators,twist,oidtype,otype
 using QuantumLattices.Essentials.Terms: Couplings,@subscript,statistics,abbr
-using QuantumLattices.Interfaces: dims,inds,⊗,expand
+using QuantumLattices.Interfaces: dims,inds,⊗,⋅,expand
 using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Mathematics.VectorSpaces: IsMultiIndexable,MultiIndexOrderStyle
 using QuantumLattices.Mathematics.AlgebraOverFields: ID
@@ -64,14 +64,22 @@ end
     @test FockCoupling{2}(1.0,atoms=(1,1),spins=(1,2))|>string=="FockCoupling(value=1.0,atoms=(1,1),spins=(1,2))"
     @test FockCoupling{2}(2.0)|>repr=="2.0"
 
-    fc1=FockCoupling{2}(1.5,atoms=(2,1),spins=(@subscript (x,)=>(x,1)),centers=(1,2))
-    fc2=FockCoupling{2}(2.0,atoms=(1,2),orbitals=(@subscript (x,y)=>(x,y) with x<y),centers=(1,2))
+    fc1=FockCoupling{2}(1.5,atoms=(2,1),spins=(@subscript (x,1)),centers=(1,2))
+    fc2=FockCoupling{2}(2.0,atoms=(1,2),orbitals=(@subscript (x,y) with x<y),centers=(1,2))
     @test fc1|>repr=="1.5 sl(2,1)⊗sp(x,1)@(1,2) with (*,$(fc1.id[1].spsub)) && (*,$(fc1.id[2].spsub))"
     @test fc2|>repr=="2.0 sl(1,2)⊗ob(x,y)@(1,2) with ($(fc2.id[1].obsub),*) && ($(fc2.id[2].obsub),*)"
     fc=fc1*fc2
     @test fc|>repr=="3.0 sl(2,1,1,2)⊗ob(*,*,x,y)⊗sp(x,1,*,*)@(1,2,1,2) with (*,$(fc1.id[1].spsub)) && (*,$(fc1.id[2].spsub)) && ($(fc2.id[1].obsub),*) && ($(fc2.id[2].obsub),*)"
+
+    fc1=FockCoupling{2}(1.5,spins=(@subscript (x,1)),centers=(1,2))
+    fc2=FockCoupling{2}(2.0,orbitals=(@subscript (x,y) with x<y),centers=(1,2))
     fc=fc1⊗fc2
-    @test fc|>repr=="3.0 sl(2,2)⊗ob(x,y)⊗sp(x,1)@(1,2) with ($(fc2.id[1].obsub),$(fc1.id[2].spsub)) && ($(fc2.id[1].obsub),$(fc1.id[2].spsub))"
+    @test fc|>repr=="3.0 ob(x,y)⊗sp(x,1)@(1,2) with ($(fc2.id[1].obsub),$(fc1.id[2].spsub)) && ($(fc2.id[1].obsub),$(fc1.id[2].spsub))"
+
+    fc1=FockCoupling{2}(1.5,atoms=(2,1),centers=(1,2))
+    fc2=FockCoupling{2}(2.0,atoms=(1,2),centers=(1,2))
+    fc=fc1⋅fc2
+    @test fc|>repr=="3.0 sl(2,2)@(1,2)"
 
     ex=expand(FockCoupling{2}(2.0,atoms=(1,1)),PID(1,1),Fock(atom=2,norbital=2,nspin=2,nnambu=2))
     @test collect(ex)==[]
@@ -90,7 +98,7 @@ end
                         (2.0,(FIndex(1,1,2,2,2),FIndex(1,1,2,2,1),FIndex(1,1,2,1,2),FIndex(1,1,2,1,1)))
     ]
 
-    ex=expand(FockCoupling{4}(2.0,orbitals=(@subscript (α,β)=>(α,α,β,β) with α<β),spins=(2,1,1,2),nambus=(2,2,1,1)),PID(1,1),Fock(atom=1,norbital=3,nspin=2,nnambu=2))
+    ex=expand(FockCoupling{4}(2.0,orbitals=(@subscript (α,α,β,β) with α<β),spins=(2,1,1,2),nambus=(2,2,1,1)),PID(1,1),Fock(atom=1,norbital=3,nspin=2,nnambu=2))
     @test dims(ex)==(3,1)
     @test collect(ex)==[(2.0,(FIndex(1,1,1,2,2),FIndex(1,1,1,1,2),FIndex(1,1,2,1,1),FIndex(1,1,2,2,1))),
                         (2.0,(FIndex(1,1,1,2,2),FIndex(1,1,1,1,2),FIndex(1,1,3,1,1),FIndex(1,1,3,2,1))),

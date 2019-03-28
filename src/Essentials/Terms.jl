@@ -66,12 +66,10 @@ Base.isequal(sub1::Subscript,sub2::Subscript)=isequal(sub1.ipattern,sub2.ipatter
 Show a subscript.
 """
 function Base.show(io::IO,subscript::Subscript)
-    if subscript.identifier==constant
+    if subscript.identifier==constant || subscript.identifier==wildcard
         @printf io "(%s)" join(subscript.opattern,',')
-    elseif subscript.identifier==wildcard
-        @printf io "%s=>(%s)" join(subscript.ipattern,',') join(subscript.opattern,',')
     else
-        @printf io "(%s)=>(%s) with %s" join(subscript.ipattern,',') join(subscript.opattern,',') subscript.identifier
+        @printf io "(%s) with %s" join(subscript.opattern,',') subscript.identifier
     end
 end
 
@@ -112,28 +110,32 @@ function (subscript::Subscript)() end
 
 Construct a subscript from a map and optionally with a constrain.
 """
-macro subscript(expr::Expr,with::Symbol=:with,constrain::Union{Expr,Symbol}=:nothing,gensym::Expr=:(gensym=false))
-    @assert expr.head==:call && expr.args[1]==:(=>)
-    @assert isa(expr.args[2],Expr) && expr.args[2].head==:tuple && all(expr.args[2].args.≠Symbol(wildcard)) && all(expr.args[2].args.≠Symbol(constant))
-    @assert isa(expr.args[3],Expr) && expr.args[3].head==:tuple && all(expr.args[3].args.≠Symbol(wildcard)) && all(expr.args[3].args.≠Symbol(constant))
-    @assert with==:with
-    @assert isa(gensym,Expr) && gensym.head==:(=) && gensym.args[1]==:gensym && isa(gensym.args[2],Bool)
-    ip=gensym.args[2] ? Tuple(Base.gensym(arg) for arg in expr.args[2].args) : Tuple(expr.args[2].args)
-    op=gensym.args[2] ? Tuple(ip[findfirst(isequal(arg),expr.args[2].args)] for arg in expr.args[3].args) : Tuple(expr.args[3].args)
-    mapname,identifier=Base.gensym(),QuoteNode(Base.gensym())
+macro subscript(expr::Expr,with::Symbol=:with,constrain::Union{Expr,Symbol}=:nothing)
+    @assert expr.head==:tuple "@subscript error: wrong pattern."
+    @assert with==:with "@subscript error: pattern and constrain must be separated by :with."
+    ip,op=Tuple(subscriptipattern(expr.args)),Tuple(expr.args)
+    mapname,identifier=gensym(),QuoteNode(gensym())
     if constrain===:nothing
         return quote
-            $mapname($(expr.args[2].args...))=$(expr.args[3])
+            $mapname($(ip...))=$expr
             Subscript($ip,$op,$mapname,nothing,$identifier)
         end
     else
-        constrainname=Base.gensym()
+        constrainname=gensym()
         return quote
-            $mapname($(expr.args[2].args...))=$(expr.args[3])
-            $constrainname($(expr.args[2].args...))=$(constrain)
+            $mapname($(ip...))=$expr
+            $constrainname($(ip...))=$(constrain)
             Subscript($ip,$op,$mapname,$constrainname,$identifier)
         end
     end
+end
+function subscriptipattern(opattern::Vector)
+    result=[]
+    for op in opattern
+        @assert op≠Symbol(wildcard) && op≠Symbol(constant) "subscriptipattern error: wrong symbols."
+        isa(op,Symbol) && op ∉ result && push!(result,op)
+    end
+    return result
 end
 
 """

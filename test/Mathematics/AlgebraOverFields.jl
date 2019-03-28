@@ -5,7 +5,7 @@ using QuantumLattices.Interfaces: dimension,rank,add!,sub!,mul!,div!
 using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Mathematics.Combinatorics: Combinations
 using QuantumLattices.Mathematics.VectorSpaces: DirectVectorSpace
-import QuantumLattices.Interfaces: ⊗
+import QuantumLattices.Interfaces: ⊗,⋅
 
 struct AOFID{O<:Real,S<:Real} <: SimpleID
     orbital::O
@@ -55,6 +55,7 @@ struct AOFOperator{N,V<:Number,I<:ID{<:NTuple{N,SimpleID}}} <: Element{N,V,I}
     id::I
 end
 ⊗(m1::AOFOperator,m2::AOFOperator)=m1*m2
+⋅(m1::AOFOperator,m2::AOFOperator)=m1*m2
 Base.show(io::IO,opt::AOFOperator)=@printf io "AOFOperator(value=%s,id=%s)" opt.value opt.id
 Base.repr(opt::AOFOperator)="AOFOperator($(opt.value),$(opt.id))"
 
@@ -103,8 +104,8 @@ Base.repr(opt::AOFOperator)="AOFOperator($(opt.value),$(opt.id))"
     @test opts^2==opts*opts
 
     opt3=AOFOperator(3.0,ID(AOFID(1,3)))
-    @test opt1*opt2==opt1⊗opt2==AOFOperator(2.0,ID(AOFID(1,1),AOFID(1,2)))
-    @test opts*opt3==opts⊗opt3==Elements(AOFOperator(3.0,ID(AOFID(1,1),AOFID(1,3))),AOFOperator(6.0,ID(AOFID(1,2),AOFID(1,3))))
-    @test opt3*opts==opt3⊗opts==Elements(AOFOperator(3.0,ID(AOFID(1,3),AOFID(1,1))),AOFOperator(6.0,ID(AOFID(1,3),AOFID(1,2))))
-    @test opts*Elements(opt3)==opts⊗Elements(opt3)==Elements(AOFOperator(3.0,ID(AOFID(1,1),AOFID(1,3))),AOFOperator(6.0,ID(AOFID(1,2),AOFID(1,3))))
+    @test opt1*opt2==opt1⊗opt2==opt1⋅opt2===AOFOperator(2.0,ID(AOFID(1,1),AOFID(1,2)))
+    @test opts*opt3==opts⊗opt3==opts⋅opt3==Elements(AOFOperator(3.0,ID(AOFID(1,1),AOFID(1,3))),AOFOperator(6.0,ID(AOFID(1,2),AOFID(1,3))))
+    @test opt3*opts==opt3⊗opts==opt3⋅opts==Elements(AOFOperator(3.0,ID(AOFID(1,3),AOFID(1,1))),AOFOperator(6.0,ID(AOFID(1,3),AOFID(1,2))))
+    @test opts*Elements(opt3)==opts⊗Elements(opt3)==opts⋅Elements(opt3)==Elements(AOFOperator(3.0,ID(AOFID(1,1),AOFID(1,3))),AOFOperator(6.0,ID(AOFID(1,2),AOFID(1,3))))
 end

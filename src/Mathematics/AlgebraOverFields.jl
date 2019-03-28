@@ -9,7 +9,7 @@ using ...Prerequisites.CompositeStructures: CompositeTuple,CompositeVector
 using ..Combinatorics: AbstractCombinatorics
 using ..VectorSpaces: GradedTables,GradedVectorSpace,DirectVectorSpace,TabledIndices
 
-import ...Interfaces: rank,add!,sub!,mul!,div!,⊗
+import ...Interfaces: rank,add!,sub!,mul!,div!,⊗,⋅
 
 export SimpleID,ID
 export IdSpace
@@ -443,5 +443,16 @@ Overloaded `⊗` operator for element-element multiplications of an algebra over
 ⊗(m::Element,ms::Elements)=Elements((m⊗mm for mm in ms|>values)...)
 ⊗(ms::Elements,m::Element)=Elements((mm⊗m for mm in ms|>values)...)
 ⊗(ms1::Elements,ms2::Elements)=Elements((m1⊗m2 for m1 in ms1|>values for m2 in ms2|>values)...)
+
+"""
+    ⋅(m::Element,ms::Elements) -> Elements
+    ⋅(ms::Elements,m::Element) -> Elements
+    ⋅(ms1::Elements,ms2::Elements) -> Elements
+
+Overloaded `⋅` operator for element-element multiplications of an algebra over a field.
+"""
+⋅(m::Element,ms::Elements)=Elements((m⋅mm for mm in ms|>values)...)
+⋅(ms::Elements,m::Element)=Elements((mm⋅m for mm in ms|>values)...)
+⋅(ms1::Elements,ms2::Elements)=Elements((m1⋅m2 for m1 in ms1|>values for m2 in ms2|>values)...)
 
 end #module

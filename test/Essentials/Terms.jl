@@ -66,23 +66,23 @@ isHermitian(::Type{<:Term{ST,:TermHopping}}) where ST=false
 otype(T::Type{<:Term{ST,:TermHopping}},I::Type{<:OID}) where ST=TOperator{T|>rank,T|>valtype,ID{NTuple{T|>rank,I}}}
 
 @testset "Subscript" begin
-    sub=@subscript (x1,x2)=>(x1,4,4,x2) with x1<x2
+    sub=@subscript (x1,4,4,x2) with x1<x2
     @test sub==deepcopy(sub)
     @test isequal(sub,deepcopy(sub))
     @test rank(sub)==rank(typeof(sub))==2
     @test dimension(sub)==dimension(typeof(sub))==4
-    @test string(sub)=="(x1,x2)=>(x1,4,4,x2) with $(sub.identifier)"
+    @test string(sub)=="(x1,4,4,x2) with $(sub.identifier)"
     @test sub(Val('M'),1,2)==(1,4,4,2)
     @test sub(Val('C'),1,2)==true
     @test sub(Val('C'),2,1)==false
 
-    sub=@subscript (x1,x2)=>(x1,x2,x1,x2)
+    sub=@subscript (x1,x2,x1,x2)
     @test sub(Val('M'),1,2)==(1,2,1,2)
     @test sub(Val('C'),1,2)==true
 
     sub=Subscript{4}()
     @test rank(sub)==1 && dimension(sub)==4
-    @test string(sub)=="*=>(*,*,*,*)"
+    @test string(sub)=="(*,*,*,*)"
     @test sub(Val('M'),2)==(2,2,2,2)
     @test sub(Val('C'),2)==true
 
@@ -94,8 +94,8 @@ otype(T::Type{<:Term{ST,:TermHopping}},I::Type{<:OID}) where ST=TOperator{T|>ran
 end
 
 @testset "Subscripts" begin
-    sub1=@subscript (x1,)=>(x1,2) with x1<2
-    sub2=@subscript (y1,y2)=>(y1,y2,y1,y2) with y1<y2
+    sub1=@subscript (x1,2) with x1<2
+    sub2=@subscript (y1,y2,y1,y2) with y1<y2
     subs=Subscripts(sub1,sub2)
     @test rank(subs)==rank(typeof(subs))==3
     @test rank(subs,1)==rank(typeof(subs),1)==1
