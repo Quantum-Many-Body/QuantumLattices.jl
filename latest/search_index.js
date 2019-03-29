@@ -4869,7 +4869,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spin package",
     "title": "QuantumLattices.Essentials.SpinPackage.Sʸ",
     "category": "method",
-    "text": "Sʸ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID{<:NTuple{2,SCID}},SpinCoupling{2,Float,ID{<:NTuple{2,SCID}}}}\n\nThe single Sʸ coupling.\n\n\n\n\n\n"
+    "text": "Sʸ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{I,SpinCoupling{1,Float,I}}  where I<:ID{<:Tuple{SCID}}\n\nThe single Sʸ coupling.\n\n\n\n\n\n"
 },
 
 {
@@ -4877,7 +4877,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spin package",
     "title": "QuantumLattices.Essentials.SpinPackage.Sˣ",
     "category": "method",
-    "text": "Sˣ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID{<:NTuple{2,SCID}},SpinCoupling{2,Float,ID{<:NTuple{2,SCID}}}}\n\nThe single Sˣ coupling.\n\n\n\n\n\n"
+    "text": "Sˣ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{I,SpinCoupling{1,Float,I}}  where I<:ID{<:Tuple{SCID}}\n\nThe single Sˣ coupling.\n\n\n\n\n\n"
 },
 
 {
@@ -4885,7 +4885,15 @@ var documenterSearchIndex = {"docs": [
     "page": "Spin package",
     "title": "QuantumLattices.Essentials.SpinPackage.Sᶻ",
     "category": "method",
-    "text": "Sᶻ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID{<:NTuple{2,SCID}},SpinCoupling{2,Float,ID{<:NTuple{2,SCID}}}}\n\nThe single Sᶻ coupling.\n\n\n\n\n\n"
+    "text": "Sᶻ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{I,SpinCoupling{1,Float,I}}  where I<:ID{<:Tuple{SCID}}\n\nThe single Sᶻ coupling.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.SpinPackage.S⁰-Tuple{}",
+    "page": "Spin package",
+    "title": "QuantumLattices.Essentials.SpinPackage.S⁰",
+    "category": "method",
+    "text": "S⁰(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{I,SpinCoupling{1,Float,I}}  where I<:ID{<:Tuple{SCID}}\n\nThe single S⁰ coupling.\n\n\n\n\n\n"
 },
 
 {
