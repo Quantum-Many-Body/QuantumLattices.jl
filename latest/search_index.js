@@ -105,6 +105,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Interfaces.html#QuantumLattices.Interfaces.:⋅",
+    "page": "Interfaces",
+    "title": "QuantumLattices.Interfaces.:⋅",
+    "category": "function",
+    "text": "Dot product.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Interfaces.html#QuantumLattices.Interfaces.add!",
     "page": "Interfaces",
     "title": "QuantumLattices.Interfaces.add!",
@@ -2321,6 +2329,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Mathematics/AlgebraOverFields.html#QuantumLattices.Interfaces.:⋅-Tuple{QuantumLattices.Mathematics.AlgebraOverFields.Element,Dict{I,M} where M<:QuantumLattices.Mathematics.AlgebraOverFields.Element where I<:QuantumLattices.Mathematics.AlgebraOverFields.ID}",
+    "page": "Algebra over fields",
+    "title": "QuantumLattices.Interfaces.:⋅",
+    "category": "method",
+    "text": "⋅(m::Element,ms::Elements) -> Elements\n⋅(ms::Elements,m::Element) -> Elements\n⋅(ms1::Elements,ms2::Elements) -> Elements\n\nOverloaded ⋅ operator for element-element multiplications of an algebra over a field.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Mathematics/AlgebraOverFields.html#QuantumLattices.Interfaces.add!-Tuple{Dict{I,M} where M<:QuantumLattices.Mathematics.AlgebraOverFields.Element where I<:QuantumLattices.Mathematics.AlgebraOverFields.ID}",
     "page": "Algebra over fields",
     "title": "QuantumLattices.Interfaces.add!",
@@ -3057,7 +3073,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.azimuth-Tuple{AbstractArray{#s240,1} where #s240<:Real}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.azimuth-Tuple{AbstractArray{#s241,1} where #s241<:Real}",
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.azimuth",
     "category": "method",
@@ -3065,7 +3081,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.azimuthd-Tuple{AbstractArray{#s240,1} where #s240<:Real}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.azimuthd-Tuple{AbstractArray{#s241,1} where #s241<:Real}",
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.azimuthd",
     "category": "method",
@@ -3089,7 +3105,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.distance-Tuple{AbstractArray{#s229,1} where #s229<:Real,AbstractArray{#s22,1} where #s22<:Real}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.distance-Tuple{AbstractArray{#s230,1} where #s230<:Real,AbstractArray{#s22,1} where #s22<:Real}",
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.distance",
     "category": "method",
@@ -3105,7 +3121,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.interlinks-Tuple{AbstractArray{#s251,2} where #s251<:Real,AbstractArray{#s250,2} where #s250<:Real,Dict{Int64,Float64}}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.interlinks-Tuple{AbstractArray{#s252,2} where #s252<:Real,AbstractArray{#s251,2} where #s251<:Real,Dict{Int64,Float64}}",
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.interlinks",
     "category": "method",
@@ -3113,7 +3129,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.intralinks-Union{Tuple{N}, Tuple{AbstractArray{#s246,2} where #s246<:Real,AbstractArray{#s245,1} where #s245<:(AbstractArray{#s244,1} where #s244<:Real),Dict{Int64,Float64}}, Tuple{AbstractArray{#s243,2} where #s243<:Real,AbstractArray{#s242,1} where #s242<:(AbstractArray{#s241,1} where #s241<:Real),Dict{Int64,Float64},Tuple{Vararg{Int64,N}}}} where N",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.intralinks-Union{Tuple{N}, Tuple{AbstractArray{#s247,2} where #s247<:Real,AbstractArray{#s246,1} where #s246<:(AbstractArray{#s245,1} where #s245<:Real),Dict{Int64,Float64}}, Tuple{AbstractArray{#s244,2} where #s244<:Real,AbstractArray{#s243,1} where #s243<:(AbstractArray{#s242,1} where #s242<:Real),Dict{Int64,Float64},Tuple{Vararg{Int64,N}}}} where N",
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.intralinks",
     "category": "method",
@@ -3153,7 +3169,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.issubordinate-Tuple{AbstractArray{#s248,1} where #s248<:Real,AbstractArray{#s247,1} where #s247<:(AbstractArray{#s246,1} where #s246<:Real)}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.issubordinate-Tuple{AbstractArray{#s249,1} where #s249<:Real,AbstractArray{#s248,1} where #s248<:(AbstractArray{#s247,1} where #s247<:Real)}",
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.issubordinate",
     "category": "method",
@@ -3201,7 +3217,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.polar-Tuple{AbstractArray{#s240,1} where #s240<:Real}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.polar-Tuple{AbstractArray{#s241,1} where #s241<:Real}",
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.polar",
     "category": "method",
@@ -3209,7 +3225,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.polard-Tuple{AbstractArray{#s240,1} where #s240<:Real}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.polard-Tuple{AbstractArray{#s241,1} where #s241<:Real}",
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.polard",
     "category": "method",
@@ -3225,7 +3241,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.reciprocals-Tuple{AbstractArray{#s256,1} where #s256<:(AbstractArray{#s255,1} where #s255<:Real)}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.reciprocals-Tuple{AbstractArray{#s257,1} where #s257<:(AbstractArray{#s256,1} where #s256<:Real)}",
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.reciprocals",
     "category": "method",
@@ -3233,7 +3249,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.rotate-Tuple{AbstractArray{#s245,2} where #s245<:Real,Real}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.rotate-Tuple{AbstractArray{#s246,2} where #s246<:Real,Real}",
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.rotate",
     "category": "method",
@@ -3241,7 +3257,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.tile-Union{Tuple{M}, Tuple{N}, Tuple{AbstractArray{#s245,2} where #s245<:Real,AbstractArray{#s244,1} where #s244<:(AbstractArray{#s243,1} where #s243<:Real)}, Tuple{AbstractArray{#s242,2} where #s242<:Real,AbstractArray{#s241,1} where #s241<:(AbstractArray{#s240,1} where #s240<:Real),Tuple{Vararg{Tuple{Vararg{#s236,N}} where #s236<:Real,M}}}} where M where N",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.tile-Union{Tuple{M}, Tuple{N}, Tuple{AbstractArray{#s246,2} where #s246<:Real,AbstractArray{#s245,1} where #s245<:(AbstractArray{#s244,1} where #s244<:Real)}, Tuple{AbstractArray{#s243,2} where #s243<:Real,AbstractArray{#s242,1} where #s242<:(AbstractArray{#s241,1} where #s241<:Real),Tuple{Vararg{Tuple{Vararg{#s237,N}} where #s237<:Real,M}}}} where M where N",
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.tile",
     "category": "method",
@@ -3249,7 +3265,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.translate-Tuple{AbstractArray{#s256,2} where #s256<:Real,AbstractArray{#s255,1} where #s255<:Real}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.translate-Tuple{AbstractArray{#s257,2} where #s257<:Real,AbstractArray{#s256,1} where #s256<:Real}",
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.translate",
     "category": "method",
@@ -3257,7 +3273,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.volume-Tuple{AbstractArray{#s229,1} where #s229<:Real,AbstractArray{#s22,1} where #s22<:Real,AbstractArray{#s21,1} where #s21<:Real}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.volume-Tuple{AbstractArray{#s230,1} where #s230<:Real,AbstractArray{#s22,1} where #s22<:Real,AbstractArray{#s21,1} where #s21<:Real}",
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.volume",
     "category": "method",
@@ -3385,7 +3401,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#QuantumLattices.Interfaces.decompose-Tuple{AbstractArray{#s242,1} where #s242<:Real,AbstractArray{#s241,1} where #s241<:Real}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Interfaces.decompose-Tuple{AbstractArray{#s243,1} where #s243<:Real,AbstractArray{#s242,1} where #s242<:Real}",
     "page": "Spatials",
     "title": "QuantumLattices.Interfaces.decompose",
     "category": "method",
@@ -3593,7 +3609,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.Table-Tuple{AbstractArray{#s253,1} where #s253<:Index}",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.Table-Tuple{AbstractArray{#s254,1} where #s254<:Index}",
     "page": "Degrees of freedom",
     "title": "QuantumLattices.Essentials.DegreesOfFreedom.Table",
     "category": "method",
@@ -3649,7 +3665,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.isHermitian-Union{Tuple{ID{#s256} where #s256<:Tuple{Vararg{OID,N}}}, Tuple{N}} where N",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.isHermitian-Union{Tuple{ID{#s257} where #s257<:Tuple{Vararg{OID,N}}}, Tuple{N}} where N",
     "page": "Degrees of freedom",
     "title": "QuantumLattices.Essentials.DegreesOfFreedom.isHermitian",
     "category": "method",
@@ -3657,7 +3673,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.oidtype-Tuple{Type{#s256} where #s256<:IID,Type{#s255} where #s255<:AbstractBond,Type{Nothing}}",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.oidtype-Tuple{Type{#s257} where #s257<:IID,Type{#s256} where #s256<:AbstractBond,Type{Nothing}}",
     "page": "Degrees of freedom",
     "title": "QuantumLattices.Essentials.DegreesOfFreedom.oidtype",
     "category": "method",
@@ -3681,7 +3697,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.twist-Tuple{Operator,AbstractArray{#s256,1} where #s256<:AbstractArray{Float64,1},AbstractArray{Float64,1}}",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.twist-Tuple{Operator,AbstractArray{#s257,1} where #s257<:AbstractArray{Float64,1},AbstractArray{Float64,1}}",
     "page": "Degrees of freedom",
     "title": "QuantumLattices.Essentials.DegreesOfFreedom.twist",
     "category": "method",
@@ -3801,7 +3817,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.Spatials.icoord-Tuple{Operator{1,V,I} where I<:(QuantumLattices.Mathematics.AlgebraOverFields.ID{#s258} where #s258<:Tuple{OID}) where V<:Number}",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.Spatials.icoord-Tuple{Operator{1,V,I} where I<:(QuantumLattices.Mathematics.AlgebraOverFields.ID{#s259} where #s259<:Tuple{OID}) where V<:Number}",
     "page": "Degrees of freedom",
     "title": "QuantumLattices.Essentials.Spatials.icoord",
     "category": "method",
@@ -3817,7 +3833,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.Spatials.rcoord-Tuple{Operator{1,V,I} where I<:(QuantumLattices.Mathematics.AlgebraOverFields.ID{#s258} where #s258<:Tuple{OID}) where V<:Number}",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.Spatials.rcoord-Tuple{Operator{1,V,I} where I<:(QuantumLattices.Mathematics.AlgebraOverFields.ID{#s259} where #s259<:Tuple{OID}) where V<:Number}",
     "page": "Degrees of freedom",
     "title": "QuantumLattices.Essentials.Spatials.rcoord",
     "category": "method",
@@ -4617,7 +4633,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.otype-Tuple{Type{#s256} where #s256<:Union{Term{\'F\',:Onsite,2,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:Hopping,2,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:Pairing,2,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:Hubbard,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:InterOrbitalInterSpin,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:InterOrbitalIntraSpin,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:SpinFlip,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:PairHopping,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:Coulomb,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id},Type{#s255} where #s255<:OID}",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.otype-Tuple{Type{#s257} where #s257<:Union{Term{\'F\',:Onsite,2,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:Hopping,2,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:Pairing,2,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:Hubbard,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:InterOrbitalInterSpin,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:InterOrbitalIntraSpin,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:SpinFlip,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:PairHopping,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:Coulomb,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id},Type{#s256} where #s256<:OID}",
     "page": "Fock package",
     "title": "QuantumLattices.Essentials.DegreesOfFreedom.otype",
     "category": "method",
@@ -4625,7 +4641,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.twist-Tuple{OID{#s256,RC,IC,S} where S<:Union{Nothing, Int64} where IC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where RC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where #s256<:FIndex,AbstractArray{#s255,1} where #s255<:AbstractArray{Float64,1},AbstractArray{Float64,1}}",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.twist-Tuple{OID{#s257,RC,IC,S} where S<:Union{Nothing, Int64} where IC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where RC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where #s257<:FIndex,AbstractArray{#s256,1} where #s256<:AbstractArray{Float64,1},AbstractArray{Float64,1}}",
     "page": "Fock package",
     "title": "QuantumLattices.Essentials.DegreesOfFreedom.twist",
     "category": "method",
@@ -4649,11 +4665,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#QuantumLattices.Interfaces.:⊗-Union{Tuple{N}, Tuple{FockCoupling{N,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(ID{#s258} where #s258<:Tuple{Vararg{FCID,N}}) where V<:Number,FockCoupling{N,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(ID{#s258} where #s258<:Tuple{Vararg{FCID,N}}) where V<:Number}} where N",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Interfaces.:⊗-Union{Tuple{N}, Tuple{FockCoupling{N,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(ID{#s259} where #s259<:Tuple{Vararg{FCID,N}}) where V<:Number,FockCoupling{N,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(ID{#s259} where #s259<:Tuple{Vararg{FCID,N}}) where V<:Number}} where N",
     "page": "Fock package",
     "title": "QuantumLattices.Interfaces.:⊗",
     "category": "method",
     "text": "⊗(fc1::FockCoupling{N},fc2::FockCoupling{N}) where N -> FockCoupling\n\nGet the direct product between two Fock couplings.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Interfaces.:⋅-Tuple{FockCoupling{2,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(QuantumLattices.Mathematics.AlgebraOverFields.ID{#s259} where #s259<:Tuple{FCID,FCID}) where V<:Number,FockCoupling{2,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(QuantumLattices.Mathematics.AlgebraOverFields.ID{#s259} where #s259<:Tuple{FCID,FCID}) where V<:Number}",
+    "page": "Fock package",
+    "title": "QuantumLattices.Interfaces.:⋅",
+    "category": "method",
+    "text": "⋅(fc1::FockCoupling{2},fc2::FockCoupling{2}) -> FockCoupling{2}\n\nGet the dot product of two rank-2 Fock couplings.\n\nA rank-2 FockCoupling can be considered as a matrix acting on the sublattice, orbital, spin and nambu spaces. The dot product here is defined as the multiplication between such matrices.\n\n\n\n\n\n"
 },
 
 {
@@ -4913,7 +4937,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.otype-Tuple{Type{#s256} where #s256<:(Term{\'B\',:SpinTerm,R,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id where R),Type{#s255} where #s255<:OID}",
+    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.otype-Tuple{Type{#s257} where #s257<:(Term{\'B\',:SpinTerm,R,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id where R),Type{#s256} where #s256<:OID}",
     "page": "Spin package",
     "title": "QuantumLattices.Essentials.DegreesOfFreedom.otype",
     "category": "method",
