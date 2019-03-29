@@ -122,8 +122,6 @@ end
     @test couplingcenter(Coupling,1,2,Val(1))==1
     @test couplingcenters(Coupling,('*','*'),Val(1))==(1,1)
     @test couplingcenters(Coupling,(1,2,3),Val(3))==(1,2,3)
-    @test couplingcenters("(1,4)")==(1,4)
-    @test couplingcenters("(1,2,3,4)")==(1,2,3,4)
 end
 
 @testset "TermFunction" begin

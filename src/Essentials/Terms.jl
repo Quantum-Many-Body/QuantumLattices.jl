@@ -111,25 +111,29 @@ function (subscript::Subscript)() end
 Construct a subscript from a map and optionally with a constrain.
 """
 macro subscript(expr::Expr,with::Symbol=:with,constrain::Union{Expr,Symbol}=:nothing)
-    @assert expr.head==:tuple "@subscript error: wrong pattern."
     @assert with==:with "@subscript error: pattern and constrain must be separated by :with."
-    ip,op=Tuple(subscriptipattern(expr.args)),Tuple(expr.args)
+    subscriptexpr(expr,constrain)
+end
+function subscriptexpr(pattern::Expr,::Symbol)
+    @assert pattern.head==:tuple "subscriptexpr error: wrong input pattern (not a tuple)."
+    ip,op=Tuple(subscriptipattern(pattern.args)),Tuple(pattern.args)
     mapname,identifier=gensym(),QuoteNode(gensym())
-    if constrain===:nothing
-        return quote
-            $mapname($(ip...))=$expr
-            Subscript($ip,$op,$mapname,nothing,$identifier)
-        end
-    else
-        constrainname=gensym()
-        return quote
-            $mapname($(ip...))=$expr
-            $constrainname($(ip...))=$(constrain)
-            Subscript($ip,$op,$mapname,$constrainname,$identifier)
-        end
+    return quote
+        $mapname($(ip...))=$pattern
+        Subscript($ip,$op,$mapname,nothing,$identifier)
     end
 end
-function subscriptipattern(opattern::Vector)
+function subscriptexpr(pattern::Expr,constrain::Expr)
+    @assert pattern.head==:tuple "subscriptexpr error: wrong input pattern (not a tuple)."
+    ip,op=Tuple(subscriptipattern(pattern.args)),Tuple(pattern.args)
+    mapname,constrainname,identifier=gensym(),gensym(),QuoteNode(gensym())
+    return quote
+        $mapname($(ip...))=$pattern
+        $constrainname($(ip...))=$(constrain)
+        Subscript($ip,$op,$mapname,$constrainname,$identifier)
+    end
+end
+function subscriptipattern(opattern)
     result=[]
     for op in opattern
         @assert op≠Symbol(wildcard) && op≠Symbol(constant) "subscriptipattern error: wrong symbols."
@@ -292,10 +296,6 @@ couplingcenter(::Type{<:Coupling},i::Int,n::Int,::Val{R}) where R=error("couplin
 @generated function couplingcenters(::Type{C},centers::NTuple{N,Any},::Val{R}) where {C<:Coupling,N,R}
     exprs=[:(isa(centers[$i],Int) ? (0<centers[$i]<=R ? centers[$i] : error("couplingcenters error: center out of range.")) : couplingcenter(C,$i,N,Val(R))) for i=1:N]
     return Expr(:tuple,exprs...)
-end
-function couplingcenters(str::String)
-    @assert str[1]=='(' && str[end]==')' "couplingcenters error: wrong pattern."
-    Tuple(parse(Int,center) for center in split(str[2:end-1],','))
 end
 
 """

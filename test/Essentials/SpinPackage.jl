@@ -113,7 +113,8 @@ end
 end
 
 @testset "Sᵅ" begin
-    @test Sˣ()==Couplings(SpinCoupling{1}(1.0,tags=('x',)))
+    @test S⁰()==Couplings(SpinCoupling{1}(1.0,tags=('i',)))
+    @test Sˣ(atom=1,orbital=1)==Couplings(SpinCoupling{1}(1.0,tags=('x',),atoms=(1,),orbitals=(1,)))
     @test Sʸ(atom=1)==Couplings(SpinCoupling{1}(1.0,tags=('y',),atoms=(1,)))
     @test Sᶻ(orbital=1)==Couplings(SpinCoupling{1}(1.0,tags=('z',),orbitals=(1,)))
 end

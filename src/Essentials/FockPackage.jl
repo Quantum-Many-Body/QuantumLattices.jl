@@ -267,7 +267,7 @@ end
 Show a Fock coupling.
 """
 function Base.show(io::IO,fc::FockCoupling)
-    @printf io "FockCoupling(value=%s" decimaltostr(fc.value)
+    @printf io "FockCoupling{%s}(value=%s" rank(fc) decimaltostr(fc.value)
     cache=[]
     for attrname in (:centers,:atoms,:orbitals,:spins,:nambus)
         any((attrvalue=getproperty(fc.id,attrname)).≠wildcard) && @printf io ",%s=(%s)" attrname join(attrvalue,",")
@@ -285,16 +285,19 @@ Get the repr representation of a Fock coupling.
 """
 function Base.repr(fc::FockCoupling)
     cache=[]
+    flag=true
     for (attrname,abbr) in zip((:atoms,:orbitals,:spins,:nambus),("sl","ob","sp","ph"))
         any((attrvalue=getproperty(fc.id,attrname)).≠wildcard) && push!(cache,@sprintf "%s(%s)" abbr join(attrvalue,','))
     end
     result=decimaltostr(fc.value)
-    length(cache)>0 && (result=@sprintf "%s %s" result join(cache,"⊗"))
-    any((centers=fc.id.centers).≠wildcard) && (result=@sprintf "%s@(%s)" result join(centers,','))
+    length(cache)>0 && (flag=false;result=@sprintf "%s %s" result join(cache,"⊗"))
+    any((centers=fc.id.centers).≠wildcard) && (flag=false;result=@sprintf "%s%s@(%s)" result (length(cache)>0 ? "" : " ") join(centers,','))
     obsubs,spsubs=fc.id.obsubs,fc.id.spsubs
     ((all(obsubs.==wildcard) || all(obsubs.==constant)) && (all(spsubs.==wildcard) || all(spsubs.==constant))) || (
+            flag=false;
             result=@sprintf "%s with %s" result join(((@sprintf "(%s,%s)" obsub spsub) for (obsub,spsub) in zip(obsubs,spsubs))," && ")
             )
+    flag && (result=@sprintf "%s {%s}" result rank(fc))
     return result
 end
 
@@ -346,7 +349,7 @@ function ⋅(fc1::FockCoupling{2},fc2::FockCoupling{2})
     wildcards=(wildcard,wildcard)
     v1,v2=fc1.id.centers,fc2.id.centers
     t1,t2=v1==wildcards,v2==wildcards
-    push!(attrpairs,:centers=>(t1 && t2 ? wildcards : t1 ? v2 : t2 ? v1 : v1==v2 ? v1 : error("⋅ error: dismatched centers ($v1 and $v2).")))
+    push!(attrpairs,:centers=>(t1 && t2 ? nothing : t1 ? v2 : t2 ? v1 : v1==v2 ? v1 : error("⋅ error: dismatched centers ($v1 and $v2).")))
     for (i,attrname) in enumerate((:atoms,:orbitals,:spins,:nambus))
         v1,v2=getproperty(fc1.id,attrname),getproperty(fc2.id,attrname)
         if isa(v1,NTuple{2,Int}) && isa(v2,NTuple{2,Int})

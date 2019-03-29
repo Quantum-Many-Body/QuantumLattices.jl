@@ -59,10 +59,10 @@ end
 end
 
 @testset "FockCoupling" begin
-    @test FockCoupling{2}(1.0)|>string=="FockCoupling(value=1.0)"
-    @test FockCoupling{2}(1.0,atoms=(1,1))|>string=="FockCoupling(value=1.0,atoms=(1,1))"
-    @test FockCoupling{2}(1.0,atoms=(1,1),spins=(1,2))|>string=="FockCoupling(value=1.0,atoms=(1,1),spins=(1,2))"
-    @test FockCoupling{2}(2.0)|>repr=="2.0"
+    @test FockCoupling{2}(1.0)|>string=="FockCoupling{2}(value=1.0)"
+    @test FockCoupling{2}(1.0,atoms=(1,1))|>string=="FockCoupling{2}(value=1.0,atoms=(1,1))"
+    @test FockCoupling{2}(1.0,atoms=(1,1),spins=(1,2))|>string=="FockCoupling{2}(value=1.0,atoms=(1,1),spins=(1,2))"
+    @test FockCoupling{2}(2.0)|>repr=="2.0 {2}"
 
     fc1=FockCoupling{2}(1.5,atoms=(2,1),spins=(@subscript (x,1)),centers=(1,2))
     fc2=FockCoupling{2}(2.0,atoms=(1,2),orbitals=(@subscript (x,y) with x<y),centers=(1,2))

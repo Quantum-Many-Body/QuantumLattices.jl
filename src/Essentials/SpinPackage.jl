@@ -17,7 +17,7 @@ import ...Interfaces: dims,inds,expand,matrix
 export SID,Spin,SIndex,usualspinindextotuple
 export SOperator
 export SCID,SpinCoupling
-export Heisenberg,Ising,Sˣ,Sʸ,Sᶻ
+export Heisenberg,Ising,S⁰,Sˣ,Sʸ,Sᶻ
 export SpinTerm
 
 const sidtagmap=Dict(1=>'i',2=>'x',3=>'y',4=>'z',5=>'+',6=>'-')
@@ -225,7 +225,7 @@ function Base.repr(sc::SpinCoupling)
     end
     result=@sprintf "%s S%s" decimaltostr(sc.value) join(sc.id.tags,'S')
     length(cache)>0 && (result=@sprintf "%s %s" result join(cache,"⊗"))
-    any((centers=sc.id.centers).≠wildcard) && (result=@sprintf "%s@(%s)" result join(centers,','))
+    any((centers=sc.id.centers).≠wildcard) && (result=@sprintf "%s%s@(%s)" result (length(cache)>0 ? "" : " ") join(centers,','))
     subscripts=sc.id.subscripts
     all(subscripts.==wildcard) || all(subscripts.==constant) || (result=@sprintf "%s with %s" result join(subscripts," && "))
     return result
@@ -301,31 +301,43 @@ function Ising(tag::Char;centers::Union{NTuple{2,Int},Nothing}=nothing,atoms::Un
     return Couplings(SpinCoupling{2}(1.0,centers=centers,atoms=atoms,orbitals=orbitals,tags=(tag,tag)))
 end
 
+scsinglewrapper(::Nothing)=nothing
+scsinglewrapper(value::Int)=(value,)
+
 """
-    Sˣ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID{<:NTuple{2,SCID}},SpinCoupling{2,Float,ID{<:NTuple{2,SCID}}}}
+    S⁰(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{I,SpinCoupling{1,Float,I}}  where I<:ID{<:Tuple{SCID}}
+
+The single S⁰ coupling.
+"""
+function S⁰(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing)
+    Couplings(SpinCoupling{1}(1.0,tags=('i',),atoms=scsinglewrapper(atom),orbitals=scsinglewrapper(orbital)))
+end
+
+"""
+    Sˣ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{I,SpinCoupling{1,Float,I}}  where I<:ID{<:Tuple{SCID}}
 
 The single Sˣ coupling.
 """
 function Sˣ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing)
-    Couplings(SpinCoupling{1}(1.0,tags=('x',),centers=nothing,atoms=atom===nothing ? nothing : (atom,),orbitals=orbital==nothing ? nothing : (orbital,)))
+    Couplings(SpinCoupling{1}(1.0,tags=('x',),atoms=scsinglewrapper(atom),orbitals=scsinglewrapper(orbital)))
 end
 
 """
-    Sʸ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID{<:NTuple{2,SCID}},SpinCoupling{2,Float,ID{<:NTuple{2,SCID}}}}
+    Sʸ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{I,SpinCoupling{1,Float,I}}  where I<:ID{<:Tuple{SCID}}
 
 The single Sʸ coupling.
 """
 function Sʸ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing)
-    Couplings(SpinCoupling{1}(1.0,tags=('y',),centers=nothing,atoms=atom===nothing ? nothing : (atom,),orbitals=orbital==nothing ? nothing : (orbital,)))
+    Couplings(SpinCoupling{1}(1.0,tags=('y',),atoms=scsinglewrapper(atom),orbitals=scsinglewrapper(orbital)))
 end
 
 """
-    Sᶻ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID{<:NTuple{2,SCID}},SpinCoupling{2,Float,ID{<:NTuple{2,SCID}}}}
+    Sᶻ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{I,SpinCoupling{1,Float,I}}  where I<:ID{<:Tuple{SCID}}
 
 The single Sᶻ coupling.
 """
 function Sᶻ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing)
-    Couplings(SpinCoupling{1}(1.0,tags=('z',),centers=nothing,atoms=atom===nothing ? nothing : (atom,),orbitals=orbital==nothing ? nothing : (orbital,)))
+    Couplings(SpinCoupling{1}(1.0,tags=('z',),atoms=scsinglewrapper(atom),orbitals=scsinglewrapper(orbital)))
 end
 
 """
