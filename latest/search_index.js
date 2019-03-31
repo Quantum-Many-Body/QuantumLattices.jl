@@ -2869,7 +2869,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "Introduction",
     "category": "section",
-    "text": "Essentials of the QuantumLattices package, which defines all the imported constants, types and functions when using import QuantumLattices or using QuantumLattices. Note that this submodule depends on the Prerequisites and Mathematics submodules although the variables in them are not exported to the scope of QuantumLattices by default.Pages=  [\n        \"Spatials.md\",\n        \"DegreesOfFreedom.md\",\n        \"Terms.md\",\n        \"FockPackage.md\",\n        \"SpinPackage.md\",\n        ]\nDepth=2"
+    "text": "Essentials of the QuantumLattices package, which defines all the imported constants, types and functions when using import QuantumLattices or using QuantumLattices. Note that this submodule depends on the Prerequisites and Mathematics submodules although the variables in them are not exported to the scope of QuantumLattices by default.Pages=  [\n        \"Spatials.md\",\n        \"DegreesOfFreedom.md\",\n        \"Terms.md\",\n        \"FockPackage.md\",\n        \"SpinPackage.md\",\n        \"Extensions.md\",\n        ]\nDepth=2"
 },
 
 {
@@ -4982,6 +4982,134 @@ var documenterSearchIndex = {"docs": [
     "title": "Manual",
     "category": "section",
     "text": "Modules=[SpinPackage]\nOrder=  [:module,:constant,:type,:macro,:function]"
+},
+
+{
+    "location": "man/Essentials/Extensions.html#",
+    "page": "Extensions",
+    "title": "Extensions",
+    "category": "page",
+    "text": "CurrentModule=QuantumLattices.Essentials.Extensions"
+},
+
+{
+    "location": "man/Essentials/Extensions.html#Extensions-1",
+    "page": "Extensions",
+    "title": "Extensions",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/Extensions.html#Extensions-of-couplings-1",
+    "page": "Extensions",
+    "title": "Extensions of couplings",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/Essentials/Extensions.html#QuantumLattices.Essentials.Extensions.@couplings-Tuple{Any}",
+    "page": "Extensions",
+    "title": "QuantumLattices.Essentials.Extensions.@couplings",
+    "category": "macro",
+    "text": "@couplings cps -> Couplings\n\nConvert an expression/literal to a set of couplings.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Extensions.html#QuantumLattices.Essentials.Extensions.@fc_str-Tuple{Any}",
+    "page": "Extensions",
+    "title": "QuantumLattices.Essentials.Extensions.@fc_str",
+    "category": "macro",
+    "text": "fc\"...\" -> FockCoupling\n\nConstruct a FockCoupling from a literal string.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Extensions.html#QuantumLattices.Essentials.Extensions.@heisenberg_str-Tuple{String}",
+    "page": "Extensions",
+    "title": "QuantumLattices.Essentials.Extensions.@heisenberg_str",
+    "category": "macro",
+    "text": "heisenberg\"sl(a₁,a₂)⊗ob(o₁,o₂)@(c₁,c₂)\" -> Couplings\n\nThe Heisenberg couplings.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Extensions.html#QuantumLattices.Essentials.Extensions.@ising_str-Tuple{String}",
+    "page": "Extensions",
+    "title": "QuantumLattices.Essentials.Extensions.@ising_str",
+    "category": "macro",
+    "text": "ising\"x sl(a₁,a₂)⊗ob(o₁,o₂)@(c₁,c₂)\" -> Couplings\nising\"y sl(a₁,a₂)⊗ob(o₁,o₂)@(c₁,c₂)\" -> Couplings\nising\"z sl(a₁,a₂)⊗ob(o₁,o₂)@(c₁,c₂)\" -> Couplings\n\nThe Ising couplings.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Extensions.html#QuantumLattices.Essentials.Extensions.@sc_str-Tuple{String}",
+    "page": "Extensions",
+    "title": "QuantumLattices.Essentials.Extensions.@sc_str",
+    "category": "macro",
+    "text": "sc\"...\" -> SpinCoupling\n\nConstruct a SpinCoupling from a literal string.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Extensions.html#QuantumLattices.Essentials.Extensions.@s⁰_str-Tuple{String}",
+    "page": "Extensions",
+    "title": "QuantumLattices.Essentials.Extensions.@s⁰_str",
+    "category": "macro",
+    "text": "s⁰\"sl(a)⊗ob(o)\" -> Couplings\nsˣ\"sl(a)⊗ob(o)\" -> Couplings\nsʸ\"sl(a)⊗ob(o)\" -> Couplings\nsᶻ\"sl(a)⊗ob(o)\" -> Couplings\n\nThe single S⁰/Sˣ/Sʸ/Sᶻ coupling.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Extensions.html#QuantumLattices.Essentials.Extensions.@σʸ_str-Tuple{String}",
+    "page": "Extensions",
+    "title": "QuantumLattices.Essentials.Extensions.@σʸ_str",
+    "category": "macro",
+    "text": "σʸ\"sp\"/σʸ\"sp@(c₁,c₂)\" -> Couplings\nσʸ\"ob\"/σʸ\"ob@(c₁,c₂)\" -> Couplings\nσʸ\"sl\"/σʸ\"sl@(c₁,c₂)\" -> Couplings\nσʸ\"ph\"/σʸ\"ph@(c₁,c₂)\" -> Couplings\n\nThe Pauli matrix σʸ, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Extensions.html#QuantumLattices.Essentials.Extensions.@σˣ_str-Tuple{String}",
+    "page": "Extensions",
+    "title": "QuantumLattices.Essentials.Extensions.@σˣ_str",
+    "category": "macro",
+    "text": "σˣ\"sp\"/σˣ\"sp@(c₁,c₂)\" -> Couplings\nσˣ\"ob\"/σˣ\"ob@(c₁,c₂)\" -> Couplings\nσˣ\"sl\"/σˣ\"sl@(c₁,c₂)\" -> Couplings\nσˣ\"ph\"/σˣ\"ph@(c₁,c₂)\" -> Couplings\n\nThe Pauli matrix σˣ, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Extensions.html#QuantumLattices.Essentials.Extensions.@σᶻ_str-Tuple{String}",
+    "page": "Extensions",
+    "title": "QuantumLattices.Essentials.Extensions.@σᶻ_str",
+    "category": "macro",
+    "text": "σᶻ\"sp\"/σᶻ\"sp@(c₁,c₂)\" -> Couplings\nσᶻ\"ob\"/σᶻ\"ob@(c₁,c₂)\" -> Couplings\nσᶻ\"sl\"/σᶻ\"sl@(c₁,c₂)\" -> Couplings\nσᶻ\"ph\"/σᶻ\"ph@(c₁,c₂)\" -> Couplings\n\nThe Pauli matrix σᶻ, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Extensions.html#QuantumLattices.Essentials.Extensions.@σ⁰_str-Tuple{String}",
+    "page": "Extensions",
+    "title": "QuantumLattices.Essentials.Extensions.@σ⁰_str",
+    "category": "macro",
+    "text": "σ⁰\"sp\"/σ⁰\"sp@(c₁,c₂)\" -> Couplings\nσ⁰\"ob\"/σ⁰\"ob@(c₁,c₂)\" -> Couplings\nσ⁰\"sl\"/σ⁰\"sl@(c₁,c₂)\" -> Couplings\nσ⁰\"ph\"/σ⁰\"ph@(c₁,c₂)\" -> Couplings\n\nThe Pauli matrix σ⁰, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Extensions.html#QuantumLattices.Essentials.Extensions.@σ⁺_str-Tuple{String}",
+    "page": "Extensions",
+    "title": "QuantumLattices.Essentials.Extensions.@σ⁺_str",
+    "category": "macro",
+    "text": "σ⁺\"sp\"/σ⁺\"sp@(c₁,c₂)\" -> Couplings\nσ⁺\"ob\"/σ⁺\"ob@(c₁,c₂)\" -> Couplings\nσ⁺\"sl\"/σ⁺\"sl@(c₁,c₂)\" -> Couplings\nσ⁺\"ph\"/σ⁺\"ph@(c₁,c₂)\" -> Couplings\n\nThe Pauli matrix σ⁺, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Extensions.html#QuantumLattices.Essentials.Extensions.@σ⁻_str-Tuple{String}",
+    "page": "Extensions",
+    "title": "QuantumLattices.Essentials.Extensions.@σ⁻_str",
+    "category": "macro",
+    "text": "σ⁻\"sp\"/σ⁻\"sp@(c₁,c₂)\" -> Couplings\nσ⁻\"ob\"/σ⁻\"ob@(c₁,c₂)\" -> Couplings\nσ⁻\"sl\"/σ⁻\"sl@(c₁,c₂)\" -> Couplings\nσ⁻\"ph\"/σ⁻\"ph@(c₁,c₂)\" -> Couplings\n\nThe Pauli matrix σ⁻, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Extensions.html#Manual-1",
+    "page": "Extensions",
+    "title": "Manual",
+    "category": "section",
+    "text": "Modules=[Extensions]\nOrder=  [:module,:constant,:type,:macro,:function]"
 },
 
 ]}
