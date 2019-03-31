@@ -4,4 +4,5 @@
     @testset "Terms" begin include("Terms.jl") end
     @testset "FockPackage" begin include("FockPackage.jl") end
     @testset "SpinPackage" begin include("SpinPackage.jl") end
+    @testset "Extensions" begin include("Extensions.jl") end
 end
