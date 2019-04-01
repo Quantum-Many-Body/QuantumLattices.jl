@@ -10,12 +10,14 @@ using ...Mathematics.VectorSpaces: VectorSpace
 using ...Mathematics.AlgebraOverFields: SimpleID,ID,Element,Elements
 
 import ..Spatials: pidtype,rcoord,icoord
+import ...Interfaces: update!
 
 export IID,Index,pid,iidtype,iid
 export IndexToTuple,DirectIndexToTuple,directindextotuple,FilteredAttributes
 export Internal,IDFConfig,Table
 export OID,Operator,Operators,isHermitian,twist
 export oidtype,otype
+export Boundary
 
 """
     IID
@@ -460,6 +462,36 @@ function twist(operator::Operator,vectors::AbstractVector{<:AbstractVector{Float
         phase=phase*twist(operator.id[i],vectors,values)
     end
     return replace(operator,value=operator.value*phase)
+end
+
+"""
+    Boundary{Names}(values::AbstractVector{Float},vectors::AbstractVector{<:AbstractVector{Float}}) where Names
+
+Boundary twist of operators.
+"""
+struct Boundary{Names,V<:AbstractVector{Float}}
+    values::Vector{Float}
+    vectors::Vector{V}
+    function Boundary{Names}(values::AbstractVector{Float},vectors::AbstractVector{<:AbstractVector{Float}}) where Names
+        @assert length(Names)==length(values)==length(vectors) "Boundary error: dismatched names, values and vectors."
+        new{Names,eltype(vectors)}(convert(Vector{Float},values),vectors)
+    end
+end
+
+"""
+    (bound::Boundary)(operator::Operator) -> Operator
+
+Get the boundary twisted operator.
+"""
+(bound::Boundary)(operator::Operator)=twist(operator,bound.vectors,bound.values)
+
+"""
+    update!(bound::Boundary{Names},args...;kwargs...) where Names -> Boundary
+
+Update the values of the boundary twisted phase.
+"""
+@generated function update!(bound::Boundary{Names},args...;kwargs...) where Names
+    return Expr(:block,[:(bound.values[$i]=get(kwargs,$name,bound.values[$i])) for (i,name) in enumerate(QuoteNode.(Names))]...,:(bound))
 end
 
 end #module

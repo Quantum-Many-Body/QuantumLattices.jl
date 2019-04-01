@@ -5,7 +5,7 @@ using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Essentials.DegreesOfFreedom
 using QuantumLattices.Essentials.Spatials: PID,Point,pidtype,rcoord,icoord
 using QuantumLattices.Mathematics.AlgebraOverFields: ID
-import QuantumLattices.Interfaces: dimension,decompose
+import QuantumLattices.Interfaces: dimension,decompose,update!
 import QuantumLattices.Essentials.DegreesOfFreedom: twist
 
 struct DID <: IID nambu::Int end
@@ -142,4 +142,12 @@ end
     @test opts'+opts==Operators(opt1,opt1',opt2*2)
     @test isHermitian(opts)==false
     @test isHermitian(opts'+opts)==true
+end
+
+@testset "Boundary" begin
+    opt=DOperator(4.5,(DIndex('a',1,2),DIndex('b',2,1)),rcoords=(SVector(0.5,0.5),SVector(1.5,1.5)),icoords=(SVector(0.0,0.0),SVector(1.0,1.0)),seqs=(1,2))
+    bound=Boundary{(:θ₁,:θ₂)}([0.1,0.2],[[1.0,0.0],[0.0,1.0]])
+    @test bound(opt)≈replace(opt,value=4.5*exp(2im*pi*0.3))
+    update!(bound,θ₁=0.3)
+    @test bound(opt)≈replace(opt,value=4.5*exp(2im*pi*0.5))
 end
