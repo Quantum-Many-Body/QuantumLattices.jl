@@ -7,7 +7,7 @@ using ...Interfaces: ⊕,⊗,⋅
 
 export @couplings,@fc_str,@sc_str
 export @σ⁰_str,@σˣ_str,@σʸ_str,@σᶻ_str,@σ⁺_str,@σ⁻_str
-export @heisenberg_str,@ising_str,@s⁰_str,@sˣ_str,@sʸ_str,@sᶻ_str
+export @heisenberg_str,@ising_str,@gamma_str,@s⁰_str,@sˣ_str,@sʸ_str,@sᶻ_str
 
 """
     @couplings cps -> Couplings
@@ -250,6 +250,22 @@ macro ising_str(str::String)
     @assert str[1] in ('x','y','z') "@ising_str error: wrong input pattern."
     attrpairs=length(str)>1 ? (@assert str[2]==' ' "@ising_str error: wrong input pattern."; scpairs(str[3:end],Val(2))) : Pair{Symbol,NTuple{2,Int}}[]
     return Couplings(SpinCoupling{2}(1.0;:tags=>(str[1],str[1]),attrpairs...))
+end
+
+"""
+    gamma"x sl(a₁,a₂)⊗ob(o₁,o₂)@(c₁,c₂)" -> Couplings
+    gamma"y sl(a₁,a₂)⊗ob(o₁,o₂)@(c₁,c₂)" -> Couplings
+    gamma"z sl(a₁,a₂)⊗ob(o₁,o₂)@(c₁,c₂)" -> Couplings
+
+The Gamma couplings.
+"""
+macro gamma_str(str::String)
+    @assert str[1] in ('x','y','z') "@gamma_str error: wrong input pattern."
+    t1,t2=str[1]=='x' ? ('y','z') : str[1]=='y' ? ('z','x') : ('x','y')
+    attrpairs=length(str)>1 ? (@assert str[2]==' ' "@gamma_str error: wrong input pattern."; scpairs(str[3:end],Val(2))) : Pair{Symbol,NTuple{2,Int}}[]
+    sc1=SpinCoupling{2}(1.0;:tags=>(t1,t2),attrpairs...)
+    sc2=SpinCoupling{2}(1.0;:tags=>(t2,t1),attrpairs...)
+    return Couplings(sc1,sc2)
 end
 
 """

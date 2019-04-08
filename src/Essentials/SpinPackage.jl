@@ -17,7 +17,7 @@ import ...Interfaces: dims,inds,expand,matrix
 export SID,Spin,SIndex,usualspinindextotuple
 export SOperator
 export SCID,SpinCoupling
-export Heisenberg,Ising,S⁰,Sˣ,Sʸ,Sᶻ
+export Heisenberg,Ising,Gamma,S⁰,Sˣ,Sʸ,Sᶻ
 export SpinTerm
 
 const sidtagmap=Dict(1=>'i',2=>'x',3=>'y',4=>'z',5=>'+',6=>'-')
@@ -299,6 +299,23 @@ The Ising couplings.
 function Ising(tag::Char;centers::Union{NTuple{2,Int},Nothing}=nothing,atoms::Union{NTuple{2,Int},Nothing}=nothing,orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing)
     @assert tag in ('x','y','z') "Ising error: not supported input tag($tag)."
     return Couplings(SpinCoupling{2}(1.0,centers=centers,atoms=atoms,orbitals=orbitals,tags=(tag,tag)))
+end
+
+"""
+    Gamma(  tag::Char;
+            centers::Union{NTuple{2,Int},Nothing}=nothing,
+            atoms::Union{NTuple{2,Int},Nothing}=nothing,
+            orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing
+            ) -> Couplings{ID{<:NTuple{2,SCID}},SpinCoupling{2,Float,ID{<:NTuple{2,SCID}}}}
+
+The Gamma couplings.
+"""
+function Gamma(tag::Char;centers::Union{NTuple{2,Int},Nothing}=nothing,atoms::Union{NTuple{2,Int},Nothing}=nothing,orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing)
+    @assert tag in ('x','y','z') "Gamma error: not supported input tag($tag)."
+    t1,t2=tag=='x' ? ('y','z') : tag=='y' ? ('z','x') : ('x','y')
+    sc1=SpinCoupling{2}(1.0,centers=centers,atoms=atoms,orbitals=orbitals,tags=(t1,t2))
+    sc2=SpinCoupling{2}(1.0,centers=centers,atoms=atoms,orbitals=orbitals,tags=(t2,t1))
+    return Couplings(sc1,sc2)
 end
 
 scsinglewrapper(::Nothing)=nothing

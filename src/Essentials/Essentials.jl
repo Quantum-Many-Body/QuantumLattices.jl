@@ -9,7 +9,6 @@ include("FockPackage.jl")
 include("SpinPackage.jl")
 include("Extensions.jl")
 
-
 @reexport using .Spatials
 @reexport using .DegreesOfFreedom
 @reexport using .Terms

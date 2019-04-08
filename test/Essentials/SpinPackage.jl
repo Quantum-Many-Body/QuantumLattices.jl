@@ -112,6 +112,12 @@ end
     @test Ising('z',atoms=(1,2))==Couplings(SpinCoupling{2}(1.0,tags=('z','z'),atoms=(1,2)))
 end
 
+@testset "Gamma" begin
+    @test Gamma('x',orbitals=(1,1))==SpinCoupling{2}(1.0,tags=('y','z'),orbitals=(1,1))+SpinCoupling{2}(1.0,tags=('z','y'),orbitals=(1,1))
+    @test Gamma('y',atoms=(1,2))==SpinCoupling{2}(1.0,tags=('z','x'),atoms=(1,2))+SpinCoupling{2}(1.0,tags=('x','z'),atoms=(1,2))
+    @test Gamma('z')==SpinCoupling{2}(1.0,tags=('x','y'))+SpinCoupling{2}(1.0,tags=('y','x'))
+end
+
 @testset "Sᵅ" begin
     @test S⁰()==Couplings(SpinCoupling{1}(1.0,tags=('i',)))
     @test Sˣ(atom=1,orbital=1)==Couplings(SpinCoupling{1}(1.0,tags=('x',),atoms=(1,),orbitals=(1,)))
