@@ -206,7 +206,7 @@ end
     bond=Bond(1,Point(PID('a',1),(0.5,0.5),(0.0,0.0)),Point(PID('b',2),(0.0,0.0),(0.0,0.0)))
     config=IDFConfig{Fock}(pid->Fock(atom=pid.site%2,norbital=2,nspin=2,nnambu=2),[bond.spoint.pid,bond.epoint.pid])
     table=Table(config,by=usualfockindextotuple)
-    term=Hopping{'F'}(:t,1.5,neighbor=1)
+    term=Hopping{'F'}(:t,1.5,1)
     operators=Operators(FOperator(1.5,ID(OID(FIndex('b',2,2,2,2),[0.0,0.0],[0.0,0.0],8),OID(FIndex('a',1,2,2,1),[0.5,0.5],[0.0,0.0],4))),
                         FOperator(1.5,ID(OID(FIndex('b',2,2,1,2),[0.0,0.0],[0.0,0.0],7),OID(FIndex('a',1,2,1,1),[0.5,0.5],[0.0,0.0],3))),
                         FOperator(1.5,ID(OID(FIndex('b',2,1,1,2),[0.0,0.0],[0.0,0.0],5),OID(FIndex('a',1,1,1,1),[0.5,0.5],[0.0,0.0],1))),
@@ -221,7 +221,7 @@ end
     bond=Bond(1,Point(PID('a',1),(0.5,0.5),(0.0,0.0)),Point(PID('b',2),(0.0,0.0),(0.0,0.0)))
     config=IDFConfig{Fock}(pid->Fock(atom=pid.site%2,norbital=1,nspin=2,nnambu=2),[bond.spoint.pid,bond.epoint.pid])
     table=Table(config,by=nambufockindextotuple)
-    term=Pairing{'F'}(:Δ,1.5,neighbor=1,couplings=FockCoupling{2}(spins=(2,2)),amplitude=bond->bond|>rcoord|>azimuthd≈45 ? 1 : -1)
+    term=Pairing{'F'}(:Δ,1.5,1,couplings=FockCoupling{2}(spins=(2,2)),amplitude=bond->bond|>rcoord|>azimuthd≈45 ? 1 : -1)
     operators=Operators(FOperator(-1.5,ID(OID(FIndex('b',2,1,2,1),[0.0,0.0],[0.0,0.0],6),OID(FIndex('a',1,1,2,1),[0.5,0.5],[0.0,0.0],2))),
                         FOperator(+1.5,ID(OID(FIndex('a',1,1,2,1),[0.5,0.5],[0.0,0.0],2),OID(FIndex('b',2,1,2,1),[0.0,0.0],[0.0,0.0],6)))
     )
@@ -232,7 +232,7 @@ end
     point=Point(PID('a',1),(0.5,0.5),(0.0,0.0))
     config=IDFConfig{Fock}(pid->Fock(atom=pid.site%2,norbital=1,nspin=2,nnambu=2),[point.pid])
     table=Table(config,by=nambufockindextotuple)
-    term=Pairing{'F'}(:Δ,1.5,neighbor=0,couplings=FockCoupling{2}(spins=(2,1))-FockCoupling{2}(spins=(1,2)))
+    term=Pairing{'F'}(:Δ,1.5,0,couplings=FockCoupling{2}(spins=(2,1))-FockCoupling{2}(spins=(1,2)))
     operators=Operators(FOperator(+1.5,ID(OID(FIndex('a',1,1,2,1),[0.5,0.5],[0.0,0.0],2),OID(FIndex('a',1,1,1,1),[0.5,0.5],[0.0,0.0],1))),
                         FOperator(-1.5,ID(OID(FIndex('a',1,1,1,1),[0.5,0.5],[0.0,0.0],1),OID(FIndex('a',1,1,2,1),[0.5,0.5],[0.0,0.0],2)))
     )
@@ -317,7 +317,7 @@ end
     config=IDFConfig{Fock}(pid->Fock(atom=pid.site%2,norbital=1,nspin=2,nnambu=2),[bond.spoint.pid,bond.epoint.pid])
     table=Table(config,by=usualfockindextotuple)
 
-    term=Coulomb{'F'}(:V,2.5,neighbor=1,couplings=σᶻ("sp")*σᶻ("sp"))
+    term=Coulomb{'F'}(:V,2.5,1,couplings=σᶻ("sp")*σᶻ("sp"))
     operators=Operators(FOperator(-1.25,ID( OID(FIndex('b',2,1,1,2),[0.0,0.0],[0.0,0.0],3),OID(FIndex('b',2,1,1,1),[0.0,0.0],[0.0,0.0],3),
                                             OID(FIndex('a',1,1,2,2),[0.5,0.5],[0.0,0.0],2),OID(FIndex('a',1,1,2,1),[0.5,0.5],[0.0,0.0],2))),
                         FOperator(+1.25,ID( OID(FIndex('b',2,1,1,2),[0.0,0.0],[0.0,0.0],3),OID(FIndex('b',2,1,1,1),[0.0,0.0],[0.0,0.0],3),
@@ -331,7 +331,7 @@ end
     @test expand(term,bond,config,table,true)==operators
     @test expand(term,bond,config,table,false)==operators+operators'
 
-    term=Coulomb{'F'}(:V,2.5,neighbor=1,couplings=σˣ("sp")*σᶻ("sp"))
+    term=Coulomb{'F'}(:V,2.5,1,couplings=σˣ("sp")*σᶻ("sp"))
     operators=Operators(FOperator(-2.5,ID(  OID(FIndex('b',2,1,2,2),[0.0,0.0],[0.0,0.0],4),OID(FIndex('b',2,1,1,1),[0.0,0.0],[0.0,0.0],3),
                                             OID(FIndex('a',1,1,1,2),[0.5,0.5],[0.0,0.0],1),OID(FIndex('a',1,1,1,1),[0.5,0.5],[0.0,0.0],1))),
                         FOperator(+2.5,ID(  OID(FIndex('b',2,1,1,2),[0.0,0.0],[0.0,0.0],3),OID(FIndex('b',2,1,2,1),[0.0,0.0],[0.0,0.0],4),

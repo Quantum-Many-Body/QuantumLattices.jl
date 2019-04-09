@@ -2,7 +2,7 @@ using Test
 using Random: seed!
 using StaticArrays: SVector
 using QuantumLattices.Essentials.Spatials
-using QuantumLattices.Interfaces: decompose,rank,dimension
+using QuantumLattices.Interfaces: decompose,rank,dimension,kind
 
 @testset "distance" begin
     @test distance([0.0,0.0],[1.0,1.0])≈sqrt(2.0)
@@ -150,13 +150,13 @@ end
     @test Point{PID{Int},2}|>rank==1
     @test Point{PID{Int},2}|>pidtype==PID{Int}
     @test Point{PID{Int},2}|>dimension==2
-    @test Point{PID{Int},2}|>neighbor==0
+    @test Point{PID{Int},2}|>kind==0
     @test Point(PID(0,1),(0.0,0.0))|>length==1
     @test Point(PID(0,1),(0.0,0.0))|>eltype==Point{PID{Int},2}
     @test Point(PID(0,1),(0.0,0.0))|>rank==1
     @test Point(PID(0,1),(0.0,0.0))|>pidtype==PID{Int}
     @test Point(PID(0,1),(0.0,0.0))|>dimension==2
-    @test Point(PID(0,1),(0.0,0.0))|>neighbor==0
+    @test Point(PID(0,1),(0.0,0.0))|>kind==0
     @test Point(PID(0,1),(0.0,0.0),(0.0,0.0))|>string=="Point(PID(0,1),[0.0,0.0],[0.0,0.0])"
     @test Point(PID(0,1),(0.0,0.0))|>collect==[Point(PID(0,1),(0.0,0.0))]
 end
@@ -174,7 +174,7 @@ end
     @test bond|>rank==2
     @test bond|>typeof|>rank==2
     @test bond|>pidtype==PID{Int}
-    @test bond|>neighbor==1
+    @test bond|>kind==1
     @test bond|>typeof|>pidtype==PID{Int}
     @test bond|>dimension==2
     @test bond|>typeof|>dimension==2

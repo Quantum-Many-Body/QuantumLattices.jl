@@ -5,7 +5,7 @@ using Printf: @printf,@sprintf
 using ..Spatials: PID,AbstractBond,pidtype
 using ..DegreesOfFreedom: IID,Internal,Index,FilteredAttributes,Table,OID,Operator,IDFConfig
 using ..Terms: wildcard,constant,Subscript,Subscripts,Coupling,Couplings,couplingcenters,Term,TermCouplings,TermAmplitude,TermModulate
-using ...Interfaces: rank,dimension
+using ...Interfaces: rank,dimension,kind
 using ...Prerequisites: Float,decimaltostr,delta
 using ...Mathematics.VectorSpaces: VectorSpace,IsMultiIndexable,MultiIndexOrderStyle
 using ...Mathematics.AlgebraOverFields: SimpleID,ID
@@ -239,13 +239,13 @@ Get the multiplication between two spin couplings.
 Base.:*(sc1::SpinCoupling,sc2::SpinCoupling)=SpinCoupling(sc1.value*sc2.value,sc1.id*sc2.id,sc1.subscripts*sc2.subscripts)
 
 """
-    expand(sc::SpinCoupling,pid::PID,spin::Spin,species::Union{Val{S},Nothing}=nothing) where S -> Union{SCExpand,Tuple{}}
-    expand(sc::SpinCoupling,pids::NTuple{N,PID},spins::NTuple{N,Spin},species::Union{Val{S},Nothing}=nothing) where {N,S} -> Union{SCExpand,Tuple{}}
+    expand(sc::SpinCoupling,pid::PID,spin::Spin,kind::Union{Val{K},Nothing}=nothing) where K -> Union{SCExpand,Tuple{}}
+    expand(sc::SpinCoupling,pids::NTuple{N,PID},spins::NTuple{N,Spin},kind::Union{Val{K},Nothing}=nothing) where {N,K} -> Union{SCExpand,Tuple{}}
 
 Expand a spin coupling with the given set of point ids and spin degrees of freedom.
 """
-expand(sc::SpinCoupling,pid::PID,spin::Spin,species::Union{Val{S},Nothing}=nothing) where S=expand(sc,(pid,),(spin,),species)
-function expand(sc::SpinCoupling,pids::NTuple{N,PID},spins::NTuple{N,Spin},species::Union{Val{S},Nothing}=nothing) where {N,S}
+expand(sc::SpinCoupling,pid::PID,spin::Spin,kind::Union{Val{K},Nothing}=nothing) where K=expand(sc,(pid,),(spin,),kind)
+function expand(sc::SpinCoupling,pids::NTuple{N,PID},spins::NTuple{N,Spin},kind::Union{Val{K},Nothing}=nothing) where {N,K}
     centers=couplingcenters(typeof(sc),sc.id.centers,Val(N))
     rpids=NTuple{rank(sc),eltype(pids)}(pids[centers[i]] for i=1:rank(sc))
     rspins=NTuple{rank(sc),eltype(spins)}(spins[centers[i]] for i=1:rank(sc))
@@ -358,8 +358,7 @@ function Sᶻ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=noth
 end
 
 """
-    SpinTerm{R}(id::Symbol,value::Number;
-                neighbor::Int,
+    SpinTerm{R}(id::Symbol,value::Number,bondkind::Any;
                 couplings::Union{Function,Coupling,Couplings},
                 amplitude::Union{Function,Nothing}=nothing,
                 modulate::Union{Function,Bool}=false,
@@ -367,16 +366,18 @@ end
 
 Spin term.
 
-Type alias for `Term{'B',:SpinTerm,R,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
+Type alias for `Term{'B',:SpinTerm,R,id,<:Number,<:Any,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
 """
-const SpinTerm{R,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{'B',:SpinTerm,R,id,V,Int,C,A,M}
-function SpinTerm{R}(id::Symbol,value::Number;
-                    neighbor::Int,
+const SpinTerm{R,id,V<:Number,B<:Any,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{'B',:SpinTerm,R,id,V,B,C,A,M}
+function SpinTerm{R}(id::Symbol,value::Number,bondkind::Any;
                     couplings::Union{Function,Coupling,Couplings},
                     amplitude::Union{Function,Nothing}=nothing,
                     modulate::Union{Function,Bool}=false,
                     ) where R
-    Term{'B',:SpinTerm,R}(id,value,neighbor,couplings=couplings,amplitude=amplitude,modulate=modulate)
+    isa(couplings,TermCouplings) || (couplings=TermCouplings(couplings))
+    isa(amplitude,TermAmplitude) || (amplitude=TermAmplitude(amplitude))
+    isa(modulate,TermModulate) || (modulate=modulate===false ? nothing : TermModulate(id,modulate))
+    Term{'B',:SpinTerm,R,id}(value,bondkind,couplings,amplitude,modulate,1)
 end
 abbr(::Type{<:SpinTerm})=:sp
 isHermitian(::Type{<:SpinTerm})=true

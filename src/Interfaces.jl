@@ -42,6 +42,9 @@ function degree end
 "Dimension."
 function dimension end
 
+"Kind."
+function kind end
+
 "Dimensions."
 function dims end
 

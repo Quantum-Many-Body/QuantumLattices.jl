@@ -10,13 +10,13 @@ using ...Prerequisites.TypeTraits: efficientoperations
 using ...Mathematics.Combinatorics: Combinations
 using ...Mathematics.AlgebraOverFields: SimpleID
 
-import ...Interfaces: decompose,rank,dimension
+import ...Interfaces: decompose,rank,dimension,kind
 
 export distance,azimuthd,azimuth,polard,polar,volume
 export isparallel,isonline,isintratriangle,issubordinate
 export reciprocals,translate,rotate,tile,minimumlengths
 export intralinks,interlinks
-export PID,AbstractBond,pidtype,neighbor,Point,Bond,rcoord,icoord,isintracell
+export PID,AbstractBond,pidtype,Point,Bond,rcoord,icoord,isintracell
 export AbstractLattice,nneighbor,bonds,LatticeIndex
 export zerothbonds,insidebonds,acrossbonds,intrabonds,interbonds
 export Lattice,SuperLattice,Cylinder
@@ -522,13 +522,13 @@ Iterate over the point.
 Base.iterate(p::Point,state=1)=state==1 ? (p,state+1) : nothing
 
 """
-    neighbor(::Point) -> 0
-    neighbor(::Type{<:Point}) -> 0
+    kind(::Point) -> 0
+    kind(::Type{<:Point}) -> 0
 
-Get the neighbor of a point.
+Get the bond kind of a point, which is defined to be 0.
 """
-neighbor(::Point)=0
-neighbor(::Type{<:Point})=0
+kind(::Point)=0
+kind(::Type{<:Point})=0
 
 """
     Bond(neighbor::Int,spoint::Point,epoint::Point)
@@ -563,11 +563,11 @@ Iterate over the points in a bond.
 Base.iterate(bond::Bond,state=1)=state==1 ? (bond.epoint,state+1) : state==2 ? (bond.spoint,state+1) : nothing
 
 """
-    neighbor(bond::Bond) -> Int
+    kind(bond::Bond) -> Int
 
-Get the neighbor of a bond.
+Get the bond kind of a bond.
 """
-neighbor(bond::Bond)=bond.neighbor
+kind(bond::Bond)=bond.neighbor
 
 """
     rcoord(bond::Bond) -> SVector

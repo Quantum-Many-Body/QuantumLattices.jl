@@ -5,7 +5,7 @@ using StaticArrays: SVector
 using QuantumLattices.Essentials.Terms
 using QuantumLattices.Essentials.Spatials: Point,PID,Bond,decompose
 using QuantumLattices.Essentials.DegreesOfFreedom: IDFConfig,Table,IID,Index,Internal,FilteredAttributes,OID,Operator,Operators
-using QuantumLattices.Interfaces: rank,update!,id
+using QuantumLattices.Interfaces: rank,update!,id,kind
 using QuantumLattices.Prerequisites: Float,decimaltostr
 using QuantumLattices.Mathematics.AlgebraOverFields: ID,SimpleID
 import QuantumLattices.Interfaces: dimension,expand
@@ -38,7 +38,7 @@ struct TCoupling{N,V<:Number,I<:ID{<:NTuple{N,TCID}}} <: Coupling{N,V,I}
     id::I
 end
 Base.repr(tc::TCoupling)=@sprintf "%s ph(%s)@(%s)" decimaltostr(tc.value) join(tc.id.nambus,',') join(tc.id.centers,',')
-function expand(tc::TCoupling,pids::NTuple{R,PID},focks::NTuple{R,TFock},species::Union{Val{S},Nothing}=nothing) where {R,S}
+function expand(tc::TCoupling,pids::NTuple{R,PID},focks::NTuple{R,TFock},kind::Union{Val{K},Nothing}=nothing) where {R,K}
     nambus=tc.id.nambus
     pids=NTuple{rank(tc),eltype(pids)}(pids[tc.id.centers[i]] for i=1:rank(tc))
     return ((tc.value,NTuple{rank(tc),TIndex{fieldtype(pids|>eltype,:scope)}}(TIndex(pids[i].scope,pids[i].site,nambus[i]) for i=1:rank(tc))),)
@@ -150,7 +150,7 @@ end
     config=IDFConfig{TFock}(pid->TFock(),[PID(1,1)])
     term=Term{'F',:TermMu,2}(:mu,1.5,0,couplings=TCoupling(1.0,ID(TCID(1,2),TCID(1,1))),amplitude=(bond->3),modulate=false)
     @test term|>statistics==term|>typeof|>statistics=='F'
-    @test term|>species==term|>typeof|>species==:TermMu
+    @test term|>kind==term|>typeof|>kind==:TermMu
     @test term|>id==term|>typeof|>id==:mu
     @test term|>valtype==term|>typeof|>valtype==Float
     @test term|>rank==term|>typeof|>rank==2
@@ -158,7 +158,7 @@ end
     @test term|>isHermitian==term|>typeof|>isHermitian==true
     @test term==deepcopy(term)
     @test isequal(term,deepcopy(term))
-    @test string(term)=="TermMu{2F}(id=mu,value=1.5,neighbor=0,factor=1.0)"
+    @test string(term)=="TermMu{2F}(id=mu,value=1.5,bondkind=0,factor=1.0)"
     @test repr(term,point,config)=="tmu: 4.5 ph(2,1)@(1,1)"
     @test +term==term
     @test -term==term*(-1)==replace(term,factor=-term.factor)

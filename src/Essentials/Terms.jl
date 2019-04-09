@@ -2,7 +2,7 @@ module Terms
 
 using Printf: @printf,@sprintf
 using StaticArrays: SVector
-using ..Spatials: AbstractBond,neighbor,pidtype
+using ..Spatials: AbstractBond,pidtype
 using ..DegreesOfFreedom: Index,IDFConfig,Table,OID,Operator,Operators,oidtype,otype
 using ...Interfaces: add!
 using ...Prerequisites: Float,atol,decimaltostr
@@ -11,12 +11,12 @@ using ...Prerequisites.CompositeStructures: CompositeTuple
 using ...Mathematics.AlgebraOverFields: SimpleID,ID,Element,Elements,idtype
 
 import ..DegreesOfFreedom: isHermitian
-import ...Interfaces: id,rank,expand,expand!,dimension,update!
+import ...Interfaces: id,rank,kind,expand,expand!,dimension,update!
 
 export Subscript,Subscripts,@subscript
 export Coupling,Couplings
 export TermFunction,TermAmplitude,TermCouplings,TermModulate
-export Term,statistics,species,abbr
+export Term,statistics,abbr
 
 const wildcard='*'
 const constant=':'
@@ -367,38 +367,38 @@ end
 (termmodulate::TermModulate{<:Function})(args...;kwargs...)=termmodulate.modulate(args...;kwargs...)
 
 """
-    Term{ST,SP,R,I}(value::Number,neighbor::Any,couplings::TermCouplings,amplitude::TermAmplitude,modulate::Union{TermModulate,Nothing},factor::Number) where {ST,SP,R,I}
-    Term{ST,SP,R}(  id::Symbol,value::Number,neighbor::Any;
+    Term{ST,K,R,I}(value::Number,bondkind::Any,couplings::TermCouplings,amplitude::TermAmplitude,modulate::Union{TermModulate,Nothing},factor::Number) where {ST,K,R,I}
+    Term{ST,K,R}(  id::Symbol,value::Number,bondkind::Any;
                     couplings::Union{Function,Coupling,Couplings,TermCouplings},
                     amplitude::Union{Function,Nothing}=nothing,
                     modulate::Union{Function,Bool}=false,
-                    ) where {ST,SP,R}
+                    ) where {ST,K,R}
 
 A term of a quantum lattice system.
 """
-mutable struct Term{statistics,species,R,id,V<:Number,N<:Any,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}
+mutable struct Term{statistics,kind,R,id,V<:Number,B<:Any,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}
     value::V
-    neighbor::N
+    bondkind::B
     couplings::C
     amplitude::A
     modulate::M
     factor::V
-    function Term{ST,SP,R,I}(value::Number,neighbor::Any,couplings::TermCouplings,amplitude::TermAmplitude,modulate::Union{TermModulate,Nothing},factor::Number) where {ST,SP,R,I}
+    function Term{ST,K,R,I}(value::Number,bondkind::Any,couplings::TermCouplings,amplitude::TermAmplitude,modulate::Union{TermModulate,Nothing},factor::Number) where {ST,K,R,I}
         @assert ST in ('F','B') "Term error: statistics must be 'F' or 'B'."
-        @assert isa(SP,Symbol) "Term error: species must be a Symbol."
+        @assert isa(K,Symbol) "Term error: kind must be a Symbol."
         @assert isa(I,Symbol) "Term error: id must be a Symbol."
-        new{ST,SP,R,I,typeof(value),typeof(neighbor),typeof(couplings),typeof(amplitude),typeof(modulate)}(value,neighbor,couplings,amplitude,modulate,factor)
+        new{ST,K,R,I,typeof(value),typeof(bondkind),typeof(couplings),typeof(amplitude),typeof(modulate)}(value,bondkind,couplings,amplitude,modulate,factor)
     end
 end
-function Term{ST,SP,R}( id::Symbol,value::Number,neighbor::Any;
+function Term{ST,K,R}(  id::Symbol,value::Number,bondkind::Any;
                         couplings::Union{Function,Coupling,Couplings,TermCouplings},
                         amplitude::Union{Function,Nothing}=nothing,
                         modulate::Union{Function,Bool}=false,
-                        ) where {ST,SP,R}
+                        ) where {ST,K,R}
     isa(couplings,TermCouplings) || (couplings=TermCouplings(couplings))
     isa(amplitude,TermAmplitude) || (amplitude=TermAmplitude(amplitude))
     isa(modulate,TermModulate) || (modulate=modulate===false ? nothing : TermModulate(id,modulate))
-    Term{ST,SP,R,id}(value,neighbor,couplings,amplitude,modulate,1)
+    Term{ST,K,R,id}(value,bondkind,couplings,amplitude,modulate,1)
 end
 
 """
@@ -411,44 +411,44 @@ statistics(term::Term)=term|>typeof|>statistics
 statistics(::Type{<:Term{ST}}) where ST=ST
 
 """
-    species(term::Term) -> Symbol
-    species(::Type{<:Term{ST,SP}}) where {ST,SP} -> Symbol
+    kind(term::Term) -> Symbol
+    kind(::Type{<:Term{ST,K}}) where {ST,K} -> Symbol
 
-Get the species of a term.
+Get the kind of a term.
 """
-species(term::Term)=term|>typeof|>species
-species(::Type{<:Term{ST,SP}}) where {ST,SP}=SP
+kind(term::Term)=term|>typeof|>kind
+kind(::Type{<:Term{ST,K}}) where {ST,K}=K
 
 """
     rank(term::Term) -> Int
-    rank(::Type{<:Term{ST,SP,R}}) where {ST,SP,R} -> Int
+    rank(::Type{<:Term{ST,K,R}}) where {ST,K,R} -> Int
 
 Get the rank of a term.
 """
 rank(term::Term)=term|>typeof|>rank
-rank(::Type{<:Term{ST,SP,R}}) where {ST,SP,R}=R
+rank(::Type{<:Term{ST,K,R}}) where {ST,K,R}=R
 
 """
     id(term::Term) -> Symbol
-    id(::Type{<:Term{ST,SP,R,I}}) where {ST,SP,R,I} -> Symbol
+    id(::Type{<:Term{ST,K,R,I}}) where {ST,K,R,I} -> Symbol
 """
 id(term::Term)=term|>typeof|>id
-id(::Type{<:Term{ST,SP,R,I}}) where {ST,SP,R,I}=I
+id(::Type{<:Term{ST,K,R,I}}) where {ST,K,R,I}=I
 
 """
     valtype(term::Term)
-    valtype(::Type{<:Term{ST,SP,I,V}}) where {ST,SP,I,V<:Number}
+    valtype(::Type{<:Term{ST,K,I,V}}) where {ST,K,I,V<:Number}
 
 Get the value type of a term.
 """
 Base.valtype(term::Term)=term|>typeof|>valtype
-Base.valtype(::Type{<:Term{ST,SP,R,I,V}}) where {ST,SP,R,I,V<:Number}=V
+Base.valtype(::Type{<:Term{ST,K,R,I,V}}) where {ST,K,R,I,V<:Number}=V
 
 """
     abbr(term::Term) -> Symbol
     abbr(::Type{<:Term}) -> Symbol
 
-Get the abbreviation of the species of a term.
+Get the abbreviation of the kind of a term.
 """
 abbr(term::Term)=term|>typeof|>abbr
 abbr(::Type{<:Term})=:tm
@@ -475,7 +475,7 @@ Base.isequal(term1::Term,term2::Term)=isequal(efficientoperations,term1,term2)
 Show a term.
 """
 function Base.show(io::IO,term::Term)
-    @printf io "%s{%s%s}(id=%s,value=%s,neighbor=%s,factor=%s)" species(term) rank(term) statistics(term) term|>id decimaltostr(term.value) term.neighbor decimaltostr(term.factor)
+    @printf io "%s{%s%s}(id=%s,value=%s,bondkind=%s,factor=%s)" kind(term) rank(term) statistics(term) term|>id decimaltostr(term.value) term.bondkind decimaltostr(term.factor)
 end
 
 """
@@ -485,13 +485,13 @@ Get the repr representation of a term on a bond with a given config.
 """
 function Base.repr(term::Term,bond::AbstractBond,config::IDFConfig)
     cache=String[]
-    if term.neighbor==bond|>neighbor
+    if term.bondkind==bond|>kind
         value=term.value*term.amplitude(bond)*term.factor
         if !isapprox(abs(value),0.0,atol=atol)
             pids=NTuple{length(bond),pidtype(bond)}(point.pid for point in bond)
             interanls=NTuple{length(bond),valtype(config)}(config[pid] for pid in pids)
             for coupling in values(term.couplings(bond))
-                length(expand(coupling,pids,interanls,term|>species|>Val))>0 &&  push!(cache,@sprintf "%s: %s" abbr(term) repr(value*coupling))
+                length(expand(coupling,pids,interanls,term|>kind|>Val))>0 &&  push!(cache,@sprintf "%s: %s" abbr(term) repr(value*coupling))
             end
         end
     end
@@ -499,13 +499,13 @@ function Base.repr(term::Term,bond::AbstractBond,config::IDFConfig)
 end
 
 """
-    replace(term::Term{ST,SP,R,I};kwargs...) where {ST,SP,R,I} -> Term
+    replace(term::Term{ST,K,R,I};kwargs...) where {ST,K,R,I} -> Term
 
 Replace some attributes of a term with key word arguments.
 """
-@generated function Base.replace(term::Term{ST,SP,R,I};kwargs...) where {ST,SP,R,I}
+@generated function Base.replace(term::Term{ST,K,R,I};kwargs...) where {ST,K,R,I}
     exprs=[:(get(kwargs,$name,getfield(term,$name))) for name in QuoteNode.(term|>fieldnames)]
-    return :(Term{ST,SP,R,I}($(exprs...)))
+    return :(Term{ST,K,R,I}($(exprs...)))
 end
 
 """
@@ -547,7 +547,7 @@ The `half` parameter determines the behavior of generating operators, which fall
 * `false`: "Hermitian whole" of the generated operators
 """
 function expand!(operators::Operators,term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false)
-    if term.neighbor==bond|>neighbor
+    if term.bondkind==bond|>kind
         value=term.value*term.amplitude(bond)*term.factor
         if !isapprox(abs(value),0.0,atol=atol)
             otype,ktype=operators|>typeof|>valtype,operators|>typeof|>keytype
@@ -563,7 +563,7 @@ function expand!(operators::Operators,term::Term,bond::AbstractBond,config::IDFC
             for coupling in values(term.couplings(bond))
                 perm=couplingcenters(typeof(coupling),coupling.id.centers,Val(rank(bond)))::NTuple{rank(otype),Int}
                 orcoords,oicoords=termcoords(rtype,rcoords,perm),termcoords(itype,icoords,perm)
-                for (coeff,oindexes) in expand(coupling,pids,interanls,term|>species|>Val) # needs improvement memory allocation 7 times for each fock coupling
+                for (coeff,oindexes) in expand(coupling,pids,interanls,term|>kind|>Val) # needs improvement memory allocation 7 times for each fock coupling
                     isa(table,Table) && any(NTuple{rank(otype),Bool}(!haskey(table,index) for index in oindexes)) && continue
                     id=ID(OID,oindexes,orcoords,oicoords,termseqs(table,oindexes))
                     if apriori===true
@@ -575,7 +575,7 @@ function expand!(operators::Operators,term::Term,bond::AbstractBond,config::IDFC
                     else
                         if !(record===nothing ? haskey(operators,id') : in(id',record))
                             record===nothing || push!(record,id)
-                            ovalue=valtype(otype)(value*coeff*termfactor(nothing,id,term|>species|>Val)) # needs improvement memory allocation 2 times for each
+                            ovalue=valtype(otype)(value*coeff*termfactor(nothing,id,term|>kind|>Val)) # needs improvement memory allocation 2 times for each
                             opt=otype.name.wrapper(ovalue,id)
                             add!(operators,opt)
                             half || add!(operators,opt')
@@ -591,7 +591,7 @@ termcoords(::Type{<:Nothing},rcoords::NTuple{N,SVector{M,Float}},perm::NTuple{R,
 termcoords(::Type{<:SVector},rcoords::NTuple{N,SVector{M,Float}},perm::NTuple{R,Int}) where {N,M,R}=NTuple{R,SVector{M,Float}}(rcoords[p] for p in perm)
 termseqs(::Nothing,indexes::NTuple{N,<:Index}) where N=NTuple{N,Nothing}(nothing for i=1:N)
 @generated termseqs(table::Table{I},indexes::NTuple{N,I}) where {N,I<:Index}=Expr(:tuple,[:(table[indexes[$i]]) for i=1:N]...)
-termfactor(::Nothing,id::ID{<:NTuple{N,OID}},::Val{S}) where {N,S}=isHermitian(id) ? 0.5 : 1.0
+termfactor(::Nothing,id::ID{<:NTuple{N,OID}},::Val{K}) where {N,K}=isHermitian(id) ? 0.5 : 1.0
 
 """
     expand(term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false) -> Operators
