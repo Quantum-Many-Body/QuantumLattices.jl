@@ -1,6 +1,6 @@
 module TypeTraits
 
-using ..Prerequisites:atol,rtol
+using ..Prerequisites: atol,rtol
 
 export efficientoperations
 export MemoryOrder,FOrder,COrder

@@ -68,7 +68,7 @@ delta(i,j)=i==j ? 1 : 0
 include("TypeTraits.jl")
 include("Factories.jl")
 include("CompositeStructures.jl")
-include("Trees.jl")
+include("SimpleTrees.jl")
 include("NamedVectors.jl")
 
 end # module

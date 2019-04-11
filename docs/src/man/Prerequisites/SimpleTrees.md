@@ -1,65 +1,65 @@
 ```@meta
-CurrentModule=QuantumLattices.Prerequisites.Trees
+CurrentModule=QuantumLattices.Prerequisites.SimpleTrees
 ```
 
-```@setup trees
+```@setup simpletrees
 push!(LOAD_PATH,"../../../../src/")
-using QuantumLattices.Prerequisites.Trees
+using QuantumLattices.Prerequisites.SimpleTrees
 ```
 
-# Trees
+# Simple trees
 
 The aim of this module is to represent the standard tree structure in efficiency-non-sensitive cases. Please note that the default implementation of tree methods are far from optimal in efficiency. Therefore, please **DO NOT** use it if you need an efficient tree for addition, deletion, sort and inquiry. This module of codes apply only when the structure of tree matters but not the efficiency.
 
-## AbstractTree
+## AbstractSimpleTree
 
-[`AbstractTree{N,D}`](@ref) is the abstract type for all concrete trees. By design, it has two type parameters:
+[`AbstractSimpleTree{N,D}`](@ref) is the abstract type for all concrete trees. By design, it has two type parameters:
 * `N`: the type of the tree's node
 * `D`: the type of the tree's data
 To fully utilize the methods designed for a tree structure, in our protocol, a concrete subtype must implement the following methods:
 * inquiry related methods
   - ```julia
-    root(tree::AbstractTree{N,D}) where {N,D} -> Union{N,Nothing}
+    root(tree::AbstractSimpleTree{N,D}) where {N,D} -> Union{N,Nothing}
     ```
     Get a tree's root node (`nothing` for empty trees)
   - ```julia
-    haskey(tree::AbstractTree{N,D},node::N) where {N,D} -> Bool
+    haskey(tree::AbstractSimpleTree{N,D},node::N) where {N,D} -> Bool
     ```
     Check whether a node is in a tree.
   - ```julia
-    length(tree::AbstractTree) -> Int
+    length(tree::AbstractSimpleTree) -> Int
     ```
     Get the number of a tree's nodes.
   - ```julia
-    parent(tree::AbstractTree{N,D},
+    parent(tree::AbstractSimpleTree{N,D},
            node::N,
            superparent::Union{N,Nothing}=nothing
            ) where {N,D} -> Union{N,Nothing}
     ```
     Get the parent of a tree's node or return superparent when the input node is the tree's root.
   - ```julia
-    children(tree::AbstractTree{N,D},node::N) where {N,D} -> Vector{N}
+    children(tree::AbstractSimpleTree{N,D},node::N) where {N,D} -> Vector{N}
     ```
     Get the children of a tree's node.
 * structure modification related methods
   - ```julia
-    addnode!(tree::AbstractTree{N,D},
+    addnode!(tree::AbstractSimpleTree{N,D},
              parent::Union{N,Nothing},
              node::N
              ) where {N,D}
     ```
     Update the structure of a tree by adding a node. When the parent is `nothing`, the input tree must be empty and the input node becomes the tree's root.
   - ```julia
-    deletenode!(tree::AbstractTree{N,D},node::N) where {N,D}
+    deletenode!(tree::AbstractSimpleTree{N,D},node::N) where {N,D}
     ```
     Update the structure of a tree by deleting a node.
 * index related methods
   - ```julia
-    getindex(tree::AbstractTree{N,D},node::N) where {N,D} -> D
+    getindex(tree::AbstractSimpleTree{N,D},node::N) where {N,D} -> D
     ```
     Get the data of a tree's node
   - ```julia
-    setindex!(tree::AbstractTree{N,D},node::N,data::D) where {N,D}
+    setindex!(tree::AbstractSimpleTree{N,D},node::N,data::D) where {N,D}
     ```
     Set the data of a tree's node.
 Based on these methods, we implement several generic functions for inquiries and manipulations
@@ -71,41 +71,41 @@ Based on these methods, we implement several generic functions for inquiries and
 
 And optionally, when a subtype implement the following method,
 ```julia
-empty(tree::AbstractTree) -> typeof(tree)
+empty(tree::AbstractSimpleTree) -> typeof(tree)
 ```
 which constructs an empty tree of the same type with the input one, two more more methods are supported:
 * [`subtree`](@ref): Get a subtree starting from a node.
 * [`move!`](@ref): Move a subtree to a new position.
 
-## TreeCore and SimpleTree
+## SimpleTreeCore and SimpleTree
 
 To implement all the prerequisites listed above costs a bit efforts. We provide two lazy ways to get over this:
-1. Inheritance `AbstractTree` with `TREECORE::TreeCore` as the **last** attribute
+1. Inheritance `AbstractSimpleTree` with `TREECORE::SimpleTreeCore` as the **last** attribute
 2. Inclusion an attribute which is an instance of [`SimpleTree`](@ref)
 
-### TreeCore
+### SimpleTreeCore
 
-[`TreeCore{N,D}`](@ref), as the literal meaning indicates, is the core of a tree. It encapsulates all the data structures needed by the default implementation, which constains **4** attributes:
+[`SimpleTreeCore{N,D}`](@ref), as the literal meaning indicates, is the core of a tree. It encapsulates all the data structures needed by the default implementation, which constains **4** attributes:
 * `root::N`: the tree's root node
 * `contents::Dict{N,D}`: the tree's (node,data) pairs
 * `parent::Dict{N,N}`: records of the parent of each of the tree's nodes
 * `children::Dict{N,Vector{N}}`: records of the children of each of the tree's nodes
-As above, the first lazy way is to include this struct with the special name `:TREECORE` in your concrete subtype as the **last** attribute. This process can be even lazier, in that we provide a macro [`@tree`](@ref) to decorate your "raw" struct automatically, e.g.
-```@repl trees
-@tree(struct SimpleSubTree end)
-@tree(struct SubTreeWithTreeParameters end,
+As above, the first lazy way is to include this struct with the special name `:TREECORE` in your concrete subtype as the **last** attribute. This process can be even lazier, in that we provide a macro [`@simpletree`](@ref) to decorate your "raw" struct automatically, e.g.
+```@repl simpletrees
+@simpletree(struct SimpleSubTree end)
+@simpletree(struct SubTreeWithTreeParameters end,
       {N<:AbstractString,D<:Number}
       )
-@tree(struct SubTreeWithCertainTreeParameters end,
+@simpletree(struct SubTreeWithCertainTreeParameters end,
       {<:String,<:Int}
       )
-@tree(struct SubTreeWithFields info::Vector{Int} end,
+@simpletree(struct SubTreeWithFields info::Vector{Int} end,
       {N<:AbstractString,D<:Number}
       )
-@tree(struct SubTreeWithParametricFields{T} info::Vector{T} end,
+@simpletree(struct SubTreeWithParametricFields{T} info::Vector{T} end,
       {N<:AbstractString,D<:Number}
       )
-@tree(struct SubTreeWithOverlappedParametricFields{N} info::Vector{N} end,
+@simpletree(struct SubTreeWithOverlappedParametricFields{N} info::Vector{N} end,
       {N<:AbstractString,D<:Number}
       )
 ```
@@ -117,6 +117,6 @@ As above, the first lazy way is to include this struct with the special name `:T
 ## Manual
 
 ```@autodocs
-Modules=[Trees]
+Modules=[SimpleTrees]
 Order=  [:module,:constant,:type,:macro,:function]
 ```

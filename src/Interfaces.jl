@@ -2,7 +2,7 @@ module Interfaces
 
 export ⊕,⊗,⋅
 export add!,sub!,mul!,div!
-export id,rank,degree,dimension,dims,index,inds
+export id,rank,degree,dimension,kind,dims,index,inds
 export expand,expand!,decompose,decompose!,regularize,regularize!
 export permute,vector,matrix
 

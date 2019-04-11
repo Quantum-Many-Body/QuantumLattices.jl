@@ -3,7 +3,7 @@ module Terms
 using Printf: @printf,@sprintf
 using StaticArrays: SVector
 using ..Spatials: AbstractBond,pidtype
-using ..DegreesOfFreedom: Index,IDFConfig,Table,OID,Operator,Operators,oidtype,otype
+using ..DegreesOfFreedom: Index,IDFConfig,Table,OID,Operators,oidtype,otype
 using ...Interfaces: add!
 using ...Prerequisites: Float,atol,decimaltostr
 using ...Prerequisites.TypeTraits: efficientoperations,indtosub,corder

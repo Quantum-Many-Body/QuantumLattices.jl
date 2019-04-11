@@ -5,7 +5,7 @@ using ...Interfaces: dimension
 using ...Prerequisites: atol,rtol
 using ...Prerequisites.NamedVectors: NamedVector
 using ...Prerequisites.TypeTraits: efficientoperations
-using ...Prerequisites.CompositeStructures: CompositeTuple,CompositeVector
+using ...Prerequisites.CompositeStructures: CompositeTuple
 using ..Combinatorics: AbstractCombinatorics
 using ..VectorSpaces: GradedTables,GradedVectorSpace,DirectVectorSpace,TabledIndices
 

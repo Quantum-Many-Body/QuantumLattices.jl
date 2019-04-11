@@ -20,7 +20,7 @@ makedocs(
                                         "man/Prerequisites/TypeTraits.md",
                                         "man/Prerequisites/Factories.md",
                                         "man/Prerequisites/CompositeStructures.md",
-                                        "man/Prerequisites/Trees.md",
+                                        "man/Prerequisites/SimpleTrees.md",
                                         "man/Prerequisites/NamedVectors.md",
                                         ],
                                 "Mathematics" => [

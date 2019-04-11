@@ -33,7 +33,7 @@ Pages=[
     "TypeTraits.md",
     "Factories.md",
     "CompositeStructures.md",
-    "Trees.md",
+    "SimpleTrees.md",
     "NamedVectors.md",
     ]
 Depth=2

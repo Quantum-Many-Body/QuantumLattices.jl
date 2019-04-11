@@ -118,7 +118,7 @@ end
     @test ff.kwargs==Argument.([:(choice::Function=sum)])
     @test ff.rtype==Inference(:Any)
     @test ff.whereparams==Parameter[]
-    @test ff.body==Block(:(begin choice(x,y) end))
+    @test ff.body|>rmlines==Block(:(begin choice(x,y) end))
 
     ff=FunctionFactory(:(
         function fx(x::T,y::T;choice::Function=sum) where T

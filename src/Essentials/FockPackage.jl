@@ -1,12 +1,11 @@
 module FockPackage
 
-using StaticArrays: SVector
 using LinearAlgebra: dot
 using Printf: @printf,@sprintf
-using ..Spatials: PID,AbstractBond,Point,Bond,pidtype,decompose
+using ..Spatials: PID,AbstractBond,Bond,decompose
 using ..DegreesOfFreedom: IID,Index,Internal,FilteredAttributes,IDFConfig,Table,OID,Operator,Operators
 using ..Terms: wildcard,constant,Subscript,Subscripts,Coupling,Couplings,@subscript,couplingcenters,Term,TermCouplings,TermAmplitude,TermModulate
-using ...Interfaces: id,rank,dimension,add!,kind
+using ...Interfaces: id,rank,kind
 using ...Prerequisites: Float,delta,decimaltostr
 using ...Mathematics.AlgebraOverFields: SimpleID,ID
 using ...Mathematics.VectorSpaces: VectorSpace,IsMultiIndexable,MultiIndexOrderStyle

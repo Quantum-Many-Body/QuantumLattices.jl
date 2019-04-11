@@ -1,11 +1,10 @@
 module SpinPackage
 
-using StaticArrays: SVector
 using Printf: @printf,@sprintf
-using ..Spatials: PID,AbstractBond,pidtype
-using ..DegreesOfFreedom: IID,Internal,Index,FilteredAttributes,Table,OID,Operator,IDFConfig
+using ..Spatials: PID
+using ..DegreesOfFreedom: IID,Internal,Index,FilteredAttributes,OID,Operator
 using ..Terms: wildcard,constant,Subscript,Subscripts,Coupling,Couplings,couplingcenters,Term,TermCouplings,TermAmplitude,TermModulate
-using ...Interfaces: rank,dimension,kind
+using ...Interfaces: rank,kind
 using ...Prerequisites: Float,decimaltostr,delta
 using ...Mathematics.VectorSpaces: VectorSpace,IsMultiIndexable,MultiIndexOrderStyle
 using ...Mathematics.AlgebraOverFields: SimpleID,ID
