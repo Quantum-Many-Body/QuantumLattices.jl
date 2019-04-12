@@ -4,7 +4,7 @@ CurrentModule=QuantumLattices.Prerequisites
 
 # Introduction
 
-This module contains the prerequisites of the QuantumLattices package.
+This module contains the prerequisites of the package.
 
 The constants, types, macros, functions or submodules defined in this module will **NOT** be exported by the package. Instead, they serve as the prerequisites and fundamentals.
 The range of the contents are quite wide, but basically, they fall into 2 categories:

@@ -38,8 +38,8 @@ end
 end
 
 @testset "oidtype" begin
-    @test oidtype(FID,Point{PID{Int},2},Nothing)==OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Nothing}
-    @test oidtype(FID,Point{PID{Int},2},Table)==OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Int}
+    @test oidtype(FID,Point{2,PID{Int}},Nothing)==OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Nothing}
+    @test oidtype(FID,Point{2,PID{Int}},Table)==OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Int}
 end
 
 @testset "FockOperator" begin

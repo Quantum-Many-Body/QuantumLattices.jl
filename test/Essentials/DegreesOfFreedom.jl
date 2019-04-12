@@ -110,8 +110,8 @@ end
     @test ID(oid',oid)'==ID(oid',oid)
     @test isHermitian(ID(oid',oid))==true
     @test isHermitian(ID(oid,oid))==false
-    @test oidtype(DID,Point{PID{Char},2},Nothing)==OID{DIndex{Char},SVector{2,Float},SVector{2,Float},Nothing}
-    @test oidtype(DID,Point{PID{Char},2},Table{DIndex{Char}})==OID{DIndex{Char},SVector{2,Float},SVector{2,Float},Int}
+    @test oidtype(DID,Point{2,PID{Char}},Nothing)==OID{DIndex{Char},SVector{2,Float},SVector{2,Float},Nothing}
+    @test oidtype(DID,Point{2,PID{Char}},Table{DIndex{Char}})==OID{DIndex{Char},SVector{2,Float},SVector{2,Float},Int}
 end
 
 @testset "Operator" begin

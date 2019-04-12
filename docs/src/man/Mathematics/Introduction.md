@@ -4,7 +4,7 @@ CurrentModule=QuantumLattices.Mathematics
 
 # Introduction
 
-This module contains the mathematical prerequisites of the QuantumLattices package.
+This module contains the mathematical prerequisites of the package.
 
 ```@contents
 Pages=[

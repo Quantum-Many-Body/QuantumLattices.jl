@@ -53,8 +53,8 @@ end
 end
 
 @testset "oidtype" begin
-    @test oidtype(SID,Point{PID{Int},2},Nothing)==OID{SIndex{Int},SVector{2,Float},SVector{2,Float},Nothing}
-    @test oidtype(SID,Point{PID{Int},2},Table)==OID{SIndex{Int},SVector{2,Float},SVector{2,Float},Int}
+    @test oidtype(SID,Point{2,PID{Int}},Nothing)==OID{SIndex{Int},SVector{2,Float},SVector{2,Float},Nothing}
+    @test oidtype(SID,Point{2,PID{Int}},Table)==OID{SIndex{Int},SVector{2,Float},SVector{2,Float},Int}
 end
 
 @testset "SOperator" begin

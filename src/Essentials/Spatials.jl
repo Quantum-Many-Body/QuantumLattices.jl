@@ -2,23 +2,24 @@ module Spatials
 
 using LinearAlgebra: norm,dot,cross,inv
 using StaticArrays: SVector,SMatrix
-using Printf: @printf,@sprintf
+using Printf: @printf
 using NearestNeighbors: KDTree,knn,inrange
 using Base.Iterators: flatten,product
 using ...Prerequisites: atol,rtol,Float
 using ...Prerequisites.TypeTraits: efficientoperations
+using ...Prerequisites.SimpleTrees: SimpleTree,simpletreedepth,isleaf
 using ...Mathematics.Combinatorics: Combinations
 using ...Mathematics.AlgebraOverFields: SimpleID
 
-import ...Interfaces: decompose,rank,dimension,kind
+import ...Interfaces: decompose,rank,dimension,kind,expand
 
 export distance,azimuthd,azimuth,polard,polar,volume
 export isparallel,isonline,isintratriangle,issubordinate
 export reciprocals,translate,rotate,tile,minimumlengths
 export intralinks,interlinks
 export PID,AbstractBond,pidtype,Point,Bond,rcoord,icoord,isintracell
-export AbstractLattice,nneighbor,bonds,LatticeIndex
-export zerothbonds,insidebonds,acrossbonds,intrabonds,interbonds
+export AbstractLattice,nneighbor,LatticeIndex,bonds!,bonds,Bonds,latticebondsstructure
+export LatticeBonds,allbonds,zerothbonds,insidebonds,acrossbonds,intrabonds,interbonds
 export Lattice,SuperLattice,Cylinder
 
 """
@@ -45,7 +46,7 @@ Get the azimuth angle in degrees of a vector.
 """
 function azimuthd(v::AbstractVector{<:Real})
     @assert length(v) ∈ (1,2,3) "azimuthd error: wrong dimensioned input vector."
-    result=acosd(v[1]/(norm(length(v)==3 ? @views(v[1:end-1]) : v)))
+    result=acosd(v[1]/(length(v)==3 ? sqrt(v[1]^2+v[2]^2) : norm(v)))
     length(v)>1 && v[2]<0 && (result=360-result)
     return result
 end
@@ -57,7 +58,7 @@ Get the azimuth angle in radians of a vector.
 """
 function azimuth(v::AbstractVector{<:Real})
     @assert length(v) ∈ (1,2,3) "azimuth error: wrong dimensioned input vector."
-    result=acos(v[1]/(norm(length(v)==3 ? @views(v[1:end-1]) : v)))
+    result=acos(v[1]/(length(v)==3 ? sqrt(v[1]^2+v[2]^2) : norm(v)))
     length(v)>1 && v[2]<0 && (result=2pi-result)
     return result
 end
@@ -232,20 +233,29 @@ Get the reciprocals dual to the input vectors.
 """
 function reciprocals(vectors::AbstractVector{<:AbstractVector{<:Real}})
     @assert length(vectors)<4 "reciprocals error: the number of input vectors should not be greater than 3."
-    @assert all(length(vector) in (1,2,3) for vector in vectors) "reciprocals error: all input vectors must be 1, 2 or 3 dimensional."
+    @assert mapreduce(v->length(v) in (1,2,3),&,vectors,init=true) "reciprocals error: all input vectors must be 1, 2 or 3 dimensional."
     result=Vector{Float}[]
     if length(vectors)==1
         push!(result,2pi/mapreduce(vi->vi^2,+,vectors[1])*vectors[1])
-    elseif length(vectors) in (2,3)
-        ndim=length(vectors[1])
-        m=zeros(Float,3,3)
-        m[1:ndim,1]=vectors[1]
-        m[1:ndim,2]=vectors[2]
-        m[:,3]=length(vectors)==2 ? cross(@views(m[:,1]),@views(m[:,2])) : vectors[3]
-        m=inv(m)
-        push!(result,2pi*@views(m[1,1:ndim]))
-        push!(result,2pi*@views(m[2,1:ndim]))
-        length(vectors)==3 && push!(result,2*pi*@views(m[3,1:ndim]))
+    elseif length(vectors)==2
+        v1,v2=vectors[1],vectors[2]
+        @assert length(v1)==length(v2) "reciprocals error: dismatched length of input vectors."
+        if length(v1)==2
+            det=2pi/(v1[1]*v2[2]-v1[2]*v2[1])
+            push!(result,[det*v2[2],-det*v1[2]])
+            push!(result,[-det*v2[1],det*v1[1]])
+        else
+            v3=SVector{3,Float}(v1[2]*v2[3]-v1[3]*v2[2],v1[3]*v2[1]-v1[1]*v2[3],v1[1]*v2[2]-v1[2]*v2[1])
+            V=2pi/volume(v1,v2,v3)
+            push!(result,[v2[2]*v3[3]*V-v2[3]*v3[2]*V,v2[3]*v3[1]*V-v2[1]*v3[3]*V,v2[1]*v3[2]*V-v2[2]*v3[1]*V])
+            push!(result,[v3[2]*v1[3]*V-v3[3]*v1[2]*V,v3[3]*v1[1]*V-v3[1]*v1[3]*V,v3[1]*v1[2]*V-v3[2]*v1[1]*V])
+        end
+    elseif length(vectors)==3
+        v1,v2,v3=vectors
+        V=2pi/volume(v1,v2,v3)
+        push!(result,[v2[2]*v3[3]*V-v2[3]*v3[2]*V,v2[3]*v3[1]*V-v2[1]*v3[3]*V,v2[1]*v3[2]*V-v2[2]*v3[1]*V])
+        push!(result,[v3[2]*v1[3]*V-v3[3]*v1[2]*V,v3[3]*v1[1]*V-v3[1]*v1[3]*V,v3[1]*v1[2]*V-v3[2]*v1[1]*V])
+        push!(result,[v1[2]*v2[3]*V-v1[3]*v2[2]*V,v1[3]*v2[1]*V-v1[1]*v2[3]*V,v1[1]*v2[2]*V-v1[2]*v2[1]*V])
     end
     return result
 end
@@ -357,7 +367,7 @@ end
                 vectors::AbstractVector{<:AbstractVector{<:Real}},
                 neighbors::Dict{Int,Float},
                 maxtranslations::NTuple{N,Int}=ntuple(i->length(neighbors),length(vectors))
-                ) where N -> Vector{Tuple{Int,Int,Int,SVector{size(cluster,1),Float}}}
+                ) where N -> Vector{Tuple{Int,Int,Int,SubArray{<:Real,1}}}
 
 Use kdtree to get the intracluster nearest neighbors.
 
@@ -369,7 +379,8 @@ function intralinks(    cluster::AbstractMatrix{<:Real},
                         maxtranslations::NTuple{N,Int}=ntuple(i->length(neighbors),length(vectors))
                         ) where N
     @assert length(vectors)==N "intralinks error: dismatched shape of input vectors and maxtranslations."
-    result=Tuple{Int,Int,Int,SVector{size(cluster,1),Float}}[]
+    result=Tuple{Int,Int,Int,Vector{Float}}[]
+    length(neighbors)==0 && return result
     translations=reshape(product((-nnb:nnb for nnb in maxtranslations)...)|>collect,:)
     for translation in translations
         if length(translation)>0 && mapreduce(x->x!=0,|,translation)
@@ -384,9 +395,13 @@ function intralinks(    cluster::AbstractMatrix{<:Real},
     for (i,indices) in enumerate(inrange(KDTree(supercluster),cluster,max(values(neighbors)...)+atol,true))
         for j in indices
             if i<j
-                dist=norm(@views(supercluster[:,j]-cluster[:,i]))
+                dist=0.0
+                for k=1:size(cluster,1)
+                    dist=dist+(supercluster[k,j]-cluster[k,i])^2
+                end
+                dist=sqrt(dist)
                 for (nb,len) in neighbors
-                    isapprox(len,dist,atol=atol) && (push!(result,(nb,i,(j-1)%size(cluster,2)+1,SVector{size(cluster,1),Float}(disps[:,j])));break)
+                    isapprox(len,dist,atol=atol) && (push!(result,(nb,i,(j-1)%size(cluster,2)+1,disps[:,j]));break)
                 end
             end
         end
@@ -395,19 +410,23 @@ function intralinks(    cluster::AbstractMatrix{<:Real},
 end
 
 """
-    interlinks(cluster1::AbstractMatrix{<:Real},cluster2::AbstractMatrix{<:Real},neighbors::Dict{Int,Float}) -> Vector{Tuple{Int,Int,Int,SVector{size(cluster1,1),Float}}}
+    interlinks(cluster1::AbstractMatrix{<:Real},cluster2::AbstractMatrix{<:Real},neighbors::Dict{Int,Float}) -> Vector{Tuple{Int,Int,Int}}
 
 Use kdtree to get the intercluster nearest neighbors.
 """
 function interlinks(cluster1::AbstractMatrix{<:Real},cluster2::AbstractMatrix{<:Real},neighbors::Dict{Int,Float})
     @assert size(cluster1,1)==size(cluster2,1) "interlinks error: dismatched space dimension of input clusters."
-    result=Tuple{Int,Int,Int,SVector{size(cluster1,1),Float}}[]
-    zv=zero(SVector{size(cluster1,1),Float})
+    result=Tuple{Int,Int,Int}[]
+    length(neighbors)==0 && return result
     for (i,indices) in enumerate(inrange(KDTree(cluster2),cluster1,max(values(neighbors)...)+atol,true))
         for j in indices
-            dist=norm(@views(cluster2[:,j]-cluster1[:,i]))
+            dist=0.0
+            for k=1:size(cluster1,1)
+                dist=dist+(cluster2[k,j]-cluster1[k,i])^2
+            end
+            dist=sqrt(dist)
             for (nb,len) in neighbors
-                isapprox(len,dist,atol=atol) && (push!(result,(nb,i,j,zv));break)
+                isapprox(len,dist,atol=atol) && (push!(result,(nb,i,j));break)
             end
         end
     end
@@ -428,83 +447,85 @@ PID(;scope="tz",site::Int=1)=PID(scope,site)
 Base.fieldnames(pid::PID)=(:scope,:site)
 
 """
-    AbstractBond{R,P<:PID,N}
+    AbstractBond{N,P<:PID,R}
 
 Abstract bond.
 """
-abstract type AbstractBond{P<:PID,N,R} end
+abstract type AbstractBond{N,P<:PID,R} end
 
 """
-    ==(b1::AbstractBond{P,N,R},b2::AbstractBond{P,N,R}) where {P<:PID,N,R} -> Bool
-    isequal(b1::AbstractBond{P,N,R},b2::AbstractBond{P,N,R}) where {P<:PID,N,R} -> Bool
+    ==(b1::AbstractBond{N,P,R},b2::AbstractBond{N,P,R}) where {N,P<:PID,R} -> Bool
+    isequal(b1::AbstractBond{N,P,R},b2::AbstractBond{N,P,R}) where {N,P<:PID,R} -> Bool
 
 Overloaded equivalent operator.
 """
-Base.:(==)(b1::AbstractBond{P,N,R},b2::AbstractBond{P,N,R}) where {P<:PID,N,R} = ==(efficientoperations,b1,b2)
-Base.isequal(b1::AbstractBond{P,N,R},b2::AbstractBond{P,N,R}) where {P<:PID,N,R}=isequal(efficientoperations,b1,b2)
+Base.:(==)(b1::AbstractBond{N,P,R},b2::AbstractBond{N,P,R}) where {N,P<:PID,R} = ==(efficientoperations,b1,b2)
+Base.isequal(b1::AbstractBond{N,P,R},b2::AbstractBond{N,P,R}) where {N,P<:PID,R}=isequal(efficientoperations,b1,b2)
 
 """
     length(bond::AbstractBond) -> Int
-    length(::Type{<:AbstractBond{<:PID,N,R}}) where {N,R} -> Int
+    length(::Type{<:AbstractBond{N,<:PID,R}}) where {N,R} -> Int
 
 Get the number of points of a bond.
 """
 Base.length(bond::AbstractBond)=bond|>typeof|>length
-Base.length(::Type{<:AbstractBond{<:PID,N,R}}) where {N,R}=R
+Base.length(::Type{<:AbstractBond{N,<:PID,R}}) where {N,R}=R
 
 """
     eltype(bond::AbstractBond)
-    eltype(::Type{<:AbstractBond{P,N}}) where {P<:PID,N}
+    eltype(::Type{<:AbstractBond{N,P}}) where {N,P<:PID}
 
 Get the eltype of a bond.
 """
 Base.eltype(bond::AbstractBond)=bond|>typeof|>eltype
-Base.eltype(::Type{<:AbstractBond{P,N}}) where {P<:PID,N}=Point{P,N}
-
-"""
-    rank(bond::AbstractBond) -> Int
-    rank(::Type{<:AbstractBond{<:PID,N,R}}) where {N,R} -> Int
-
-Get the rank of a bond.
-"""
-rank(bond::AbstractBond)=bond|>typeof|>rank
-rank(::Type{<:AbstractBond{<:PID,N,R}}) where {N,R}=R
-
-"""
-    pidtype(bond::AbstractBond)
-    pidtype(::Type{<:AbstractBond{P}}) where {P<:PID}
-
-Get the pid type of a concrete bond.
-"""
-pidtype(bond::AbstractBond)=bond|>typeof|>pidtype
-pidtype(::Type{<:AbstractBond{P}}) where {P<:PID}=P
+Base.eltype(::Type{<:AbstractBond{N,P}}) where {N,P<:PID}=Point{N,P}
 
 """
     dimension(bond::AbstractBond) -> Int
-    dimension(::Type{<:AbstractBond{<:PID,N}}) where N -> Int
+    dimension(::Type{<:AbstractBond{N}}) where N -> Int
 
 Get the space dimension of a concrete bond.
 """
 dimension(bond::AbstractBond)=bond|>typeof|>dimension
-dimension(::Type{<:AbstractBond{<:PID,N}}) where N=N
+dimension(::Type{<:AbstractBond{N}}) where N=N
+
+"""
+    pidtype(bond::AbstractBond)
+    pidtype(::Type{<:AbstractBond{N,P}}) where {N,P<:PID}
+
+Get the pid type of a concrete bond.
+"""
+pidtype(bond::AbstractBond)=bond|>typeof|>pidtype
+pidtype(::Type{<:AbstractBond{N,P}}) where {N,P<:PID}=P
+
+"""
+    rank(bond::AbstractBond) -> Int
+    rank(::Type{<:AbstractBond{N,<:PID,R}}) where {N,R} -> Int
+
+Get the rank of a bond.
+"""
+rank(bond::AbstractBond)=bond|>typeof|>rank
+rank(::Type{<:AbstractBond{N,<:PID,R}}) where {N,R}=R
 
 """
     Point(pid::PID,rcoord::SVector{N,<:Real},icoord::SVector{N,<:Real}) where N
     Point(pid::PID,rcoord::NTuple{N,<:Real},icoord::NTuple{N,<:Real}=ntuple(i->0.0,N)) where N
     Point(pid::PID,rcoord::AbstractVector{<:Real},icoord::AbstractVector{<:Real}=zero(SVector{length(rcoord),Float}))
+    Point{N}(pid::PID,rcoord::AbstractVector{<:Real},icoord::AbstractVector{<:Real}=zero(SVector{N,Float})) where N
 
 Labeled point.
 """
-struct Point{P<:PID,N} <: AbstractBond{P,N,1}
+struct Point{N,P<:PID} <: AbstractBond{N,P,1}
     pid::P
     rcoord::SVector{N,Float}
     icoord::SVector{N,Float}
-    Point(pid::PID,rcoord::SVector{N,<:Real},icoord::SVector{N,<:Real}) where N=new{pid|>typeof,N}(pid,rcoord,icoord)
+    Point(pid::PID,rcoord::SVector{N,<:Real},icoord::SVector{N,<:Real}) where N=new{N,pid|>typeof}(pid,rcoord,icoord)
 end
 Point(pid::PID,rcoord::NTuple{N,<:Real},icoord::NTuple{N,<:Real}=ntuple(i->0.0,N)) where N=Point(pid,convert(SVector{N,Float},rcoord),convert(SVector{N,Float},icoord))
-function Point(pid::PID,rcoord::AbstractVector{<:Real},icoord::AbstractVector{<:Real}=zero(SVector{length(rcoord),Float}))
-    @assert length(rcoord)==length(icoord) "Point error: dismatched length of input rcoord and icoord."
-    Point(pid,convert(SVector{length(rcoord),Float},rcoord),convert(SVector{length(icoord),Float},icoord))
+Point(pid::PID,rcoord::AbstractVector{<:Real},icoord::AbstractVector{<:Real}=zero(SVector{length(rcoord),Float}))=Point{length(rcoord)}(pid,rcoord,icoord)
+function Point{N}(pid::PID,rcoord::AbstractVector{<:Real},icoord::AbstractVector{<:Real}=zero(SVector{N,Float})) where N
+    @assert length(rcoord)==length(icoord)==N "Point error: dismatched length of input rcoord and icoord."
+    Point(pid,convert(SVector{N,Float},rcoord),convert(SVector{N,Float},icoord))
 end
 
 """
@@ -535,10 +556,10 @@ kind(::Type{<:Point})=0
 
 A bond in a lattice.
 """
-struct Bond{P<:PID,N} <: AbstractBond{P,N,2}
+struct Bond{N,P<:PID} <: AbstractBond{N,P,2}
     neighbor::Int
-    spoint::Point{P,N}
-    epoint::Point{P,N}
+    spoint::Point{N,P}
+    epoint::Point{N,P}
 end
 
 """
@@ -604,7 +625,7 @@ It should have the following attributes
 - `reciprocals::Vector{SVector{N,Float}}`: the reciprocals of the lattice
 - `neighbors::Dict{Int,Float}`: the order-distance map of the nearest neighbors of the lattice
 """
-abstract type AbstractLattice{P<:PID,N} end
+abstract type AbstractLattice{N,P<:PID} end
 
 """
     show(io::IO,lattice::AbstractLattice)
@@ -630,31 +651,38 @@ Base.:(==)(lattice1::AbstractLattice,lattice2::AbstractLattice) = ==(efficientop
 Base.isequal(lattice1::AbstractLattice,lattice2::AbstractLattice)=isequal(efficientoperations,lattice1,lattice2)
 
 """
-    dimension(lattice::AbstractLattice) -> Int
-    dimension(::Type{<:AbstractLattice{<:PID,N}}) where N -> Int
-
-Get the space dimension of the lattice.
-"""
-dimension(lattice::AbstractLattice)=lattice|>typeof|>dimension
-dimension(::Type{<:AbstractLattice{<:PID,N}}) where N=N
-
-"""
     keytype(lattice::AbstractLattice)
-    keytype(::Type{<:AbstractLattice{P}}) where {P<:PID}
+    keytype(::Type{<:AbstractLattice{N,P}}) where {N,P<:PID}
 
 Get the pid type of the lattice.
 """
 Base.keytype(lattice::AbstractLattice)=lattice|>typeof|>keytype
-Base.keytype(::Type{<:AbstractLattice{P}}) where {P<:PID}=P
+Base.keytype(::Type{<:AbstractLattice{N,P}}) where {N,P<:PID}=P
 
 """
     valtype(lattice::AbstractLattice)
-    valtype(::Type{<:AbstractLattice{P,N}}) where {P<:PID,N}
+    valtype(::Type{<:AbstractLattice{N,P}}) where {N,P<:PID}
 
 Get the point type of the lattice.
 """
 Base.valtype(lattice::AbstractLattice)=lattice|>typeof|>valtype
-Base.valtype(::Type{<:AbstractLattice{P,N}}) where {P<:PID,N}=Point{P,N}
+Base.valtype(::Type{<:AbstractLattice{N,P}}) where {N,P<:PID}=Point{N,P}
+
+"""
+    dimension(lattice::AbstractLattice) -> Int
+    dimension(::Type{<:AbstractLattice{N}}) where N -> Int
+
+Get the space dimension of the lattice.
+"""
+dimension(lattice::AbstractLattice)=lattice|>typeof|>dimension
+dimension(::Type{<:AbstractLattice{N}}) where N=N
+
+"""
+    nneighbor(lattice::AbstractLattice) -> Int
+
+Get the highest order of nearest neighbors.
+"""
+nneighbor(lattice::AbstractLattice)=max(keys(lattice.neighbors)...)
 
 """
     LatticeIndex{Kind}(index::Union{PID,Int}) where Kind
@@ -681,24 +709,33 @@ end
 
 Get a rcoord, an icoord or a point of a lattice according to the type of the input index.
 """
-Base.getindex(lattice::AbstractLattice,i::LatticeIndex{'R',Int})=SVector{lattice|>dimension}(@views(lattice.rcoords[:,i.index]))
-Base.getindex(lattice::AbstractLattice,i::LatticeIndex{'I',Int})=SVector{lattice|>dimension}(@views(lattice.icoords[:,i.index]))
-Base.getindex(lattice::AbstractLattice,i::LatticeIndex{'P',Int})=@views Point(lattice.pids[i.index],lattice.rcoords[:,i.index],lattice.icoords[:,i.index])
+Base.getindex(lattice::AbstractLattice,i::LatticeIndex{'R',Int})=latticestaticcoords(lattice.rcoords,i.index,lattice|>dimension|>Val)
+Base.getindex(lattice::AbstractLattice,i::LatticeIndex{'I',Int})=latticestaticcoords(lattice.icoords,i.index,lattice|>dimension|>Val)
+Base.getindex(lattice::AbstractLattice,i::LatticeIndex{'P',Int})=Point(lattice.pids[i.index],lattice[LatticeIndex{'R'}(i.index)],lattice[LatticeIndex{'I'}(i.index)])
 Base.getindex(lattice::AbstractLattice,i::LatticeIndex{'R',<:PID})=lattice[LatticeIndex{'R'}(findfirst(isequal(i.index),lattice.pids))]
 Base.getindex(lattice::AbstractLattice,i::LatticeIndex{'I',<:PID})=lattice[LatticeIndex{'I'}(findfirst(isequal(i.index),lattice.pids))]
 Base.getindex(lattice::AbstractLattice,i::LatticeIndex{'P',<:PID})=lattice[LatticeIndex{'P'}(findfirst(isequal(i.index),lattice.pids))]
+@generated function latticestaticcoords(coords::Matrix{Float},i::Int,::Val{N}) where N
+    exprs=[:(coords[$j,i]) for j=1:N]
+    return :(SVector{N,Float}($(exprs...)))
+end
 
+abstract type LatticeBonds{R} end
+Base.eltype(::Type{<:LatticeBonds{0}})=AbstractBond
+Base.eltype(::Type{<:LatticeBonds{1}})=Point
+Base.eltype(::Type{<:LatticeBonds{2}})=Bond
+Base.eltype(::Type{L},::B) where {L<:AbstractLattice,B<:LatticeBonds}=eltype(B){L|>dimension,L|>keytype}
+Base.eltype(::Type{L},::Val{B}) where {L<:AbstractLattice,B}=eltype(typeof(B)){L|>dimension,L|>keytype}
+struct AllBonds <: LatticeBonds{0} end
+struct ZerothBonds <: LatticeBonds{1} end
+struct InsideBonds <: LatticeBonds{2} end
+struct AcrossBonds <: LatticeBonds{2} end
 """
-    nneighbor(lattice::AbstractLattice) -> Int
+    allbonds
 
-Get the highest order of nearest neighbors.
+Indicate that all bonds are inquired.
 """
-nneighbor(lattice::AbstractLattice)=max(keys(lattice.neighbors)...)
-
-abstract type LatticeBonds end
-struct ZerothBonds <: LatticeBonds end
-struct InsideBonds <: LatticeBonds end
-struct AcrossBonds <: LatticeBonds end
+const allbonds=AllBonds()
 """
     zerothbonds
 
@@ -719,38 +756,78 @@ Indicate that bonds across the unitcell are inquired, which are in fact those ac
 const acrossbonds=AcrossBonds()
 
 """
-    bonds(lattice::AbstractLattice) -> Vector{AbstractBond}
-    bonds(lattice::AbstractLattice,::ZerothBonds) -> Vector{Point}
-    bonds(lattice::AbstractLattice,::InsideBonds) -> Vector{Bond}
-    bonds(lattice::AbstractLattice,::AcrossBonds) -> Vector{Bond}
+    latticebondsstructure(::Type{<:AbstractLattice}) -> SimpleTree{LatticeBonds,Nothing}
 
-Get the bonds of a lattice.
+The tree structure of the lattice bonds.
 """
-function bonds(lattice::AbstractLattice)
-    result=convert(Vector{AbstractBond},bonds(lattice,zerothbonds))
-    for (neighbor,sindex,eindex,disp) in intralinks(lattice.rcoords,lattice.vectors,lattice.neighbors)
-        @views spoint=Point(lattice.pids[sindex],lattice.rcoords[:,sindex],lattice.icoords[:,sindex])
-        @views epoint=Point(lattice.pids[eindex],lattice.rcoords[:,eindex]+disp,lattice.icoords[:,eindex]+disp)
-        push!(result,Bond(neighbor,spoint,epoint))
-    end
-    result
+@generated function latticebondsstructure(::Type{<:AbstractLattice})
+    structure=SimpleTree{LatticeBonds,Nothing}()
+    push!(structure,allbonds,nothing)
+    push!(structure,allbonds,zerothbonds,nothing)
+    push!(structure,allbonds,insidebonds,nothing)
+    push!(structure,allbonds,acrossbonds,nothing)
+    return structure
 end
-function bonds(lattice::AbstractLattice,::ZerothBonds)
-    return [Point(lattice.pids[i],@views(lattice.rcoords[:,i]),@views(lattice.icoords[:,i])) for i=1:length(lattice)]
-end
-function bonds(lattice::AbstractLattice,::InsideBonds)
-    result=Bond{lattice|>keytype,lattice|>dimension}[]
-    for (neighbor,sindex,eindex,disp) in interlinks(lattice.rcoords,lattice.rcoords,lattice.neighbors)
-        if sindex<=eindex
-            @views spoint=Point(lattice.pids[sindex],lattice.rcoords[:,sindex],lattice.icoords[:,sindex])
-            @views epoint=Point(lattice.pids[eindex],lattice.rcoords[:,eindex]+disp,lattice.icoords[:,eindex]+disp)
-            push!(result,Bond(neighbor,spoint,epoint))
+
+"""
+    expand(::Type{L},::Val{VS}) where {L<:AbstractLattice,VS} -> Tuple
+
+Expand the lattice bond types to the leaf level.
+"""
+@generated function expand(::Type{L},::Val{VS}) where {L<:AbstractLattice,VS}
+    leaves=LatticeBonds[]
+    structure=latticebondsstructure(L)
+    for V in VS
+        for latticebonds in keys(structure,simpletreedepth,V)
+            isleaf(structure,latticebonds) && push!(leaves,latticebonds)
         end
     end
-    result
+    return Tuple(leaves)
 end
-function bonds(lattice::AbstractLattice,::AcrossBonds)
-    result=Bond{lattice|>keytype,lattice|>dimension}[]
+
+"""
+    bonds(lattice::AbstractLattice,inquiry=allbonds) -> Vector{eltype(lattice|>typeof,inquiry)}
+    bonds(lattice::AbstractLattice,inquiries...) -> Vector{mapreduce(inquiry->eltype(lattice|>typeof,inquiry),typejoin,inquiries)}
+
+Generate the required bonds of a lattice.
+"""
+bonds(lattice::AbstractLattice)=bonds(lattice,allbonds)
+bonds(lattice::AbstractLattice,inquiry)=bonds!(eltype(lattice|>typeof,inquiry)[],lattice,inquiry)
+bonds(lattice::AbstractLattice,inquiries...)=bonds!(mapreduce(inquiry->eltype(lattice|>typeof,inquiry),typejoin,inquiries)[],lattice,inquiries...)
+
+"""
+    bonds!(bonds::Vector,lattice::AbstractLattice,inquiries::LatticeBonds...) -> Vector
+    bonds!(bonds::Vector,lattice::AbstractLattice,::Val{zerothbonds}) -> Vector
+    bonds!(bonds::Vector,lattice::AbstractLattice,::Val{insidebonds}) -> Vector
+    bonds!(bonds::Vector,lattice::AbstractLattice,::Val{acrossbonds}) -> Vector
+
+Generate the required bonds of a lattice and append them to the input bonds.
+"""
+bonds!(bonds::Vector,lattice::AbstractLattice)=bonds!(bonds,lattice,allbonds)
+function bonds!(bonds::Vector,lattice::AbstractLattice,inquiries::LatticeBonds...)
+    leaves=expand(typeof(lattice),Val(inquiries))
+    for i=1:length(leaves)
+        bonds!(bonds,lattice,leaves[i]|>Val)
+    end
+    return bonds
+end
+function bonds!(bonds::Vector,lattice::AbstractLattice,::Val{zerothbonds})
+    for i=1:length(lattice)
+        push!(bonds,lattice[LatticeIndex{'P'}(i)])
+    end
+    return bonds
+end
+function bonds!(bonds::Vector,lattice::AbstractLattice,::Val{insidebonds})
+    for (neighbor,sindex,eindex) in interlinks(lattice.rcoords,lattice.rcoords,lattice.neighbors)
+        if sindex<eindex
+            spoint=lattice[LatticeIndex{'P'}(sindex)]
+            epoint=lattice[LatticeIndex{'P'}(eindex)]
+            push!(bonds,Bond(neighbor,spoint,epoint))
+        end
+    end
+    return bonds
+end
+function bonds!(bonds::Vector,lattice::AbstractLattice,::Val{acrossbonds})
     nnb=lattice|>nneighbor
     translations=reshape(product((-nnb:nnb for i=1:length(lattice.vectors))...)|>collect,:)
     for translation in translations
@@ -758,26 +835,27 @@ function bonds(lattice::AbstractLattice,::AcrossBonds)
         filter!(key->key!=remove,translations)
     end
     if length(translations)>0
+        dim=lattice|>dimension|>Val
         superrcoords=tile(lattice.rcoords,lattice.vectors,Tuple(translations))
         supericoords=tile(lattice.icoords,lattice.vectors,Tuple(translations))
-        for (neighbor,sindex,eindex,disp) in interlinks(lattice.rcoords,superrcoords,lattice.neighbors)
-            @views spoint=Point(lattice.pids[sindex],lattice.rcoords[:,sindex],lattice.icoords[:,sindex])
-            @views epoint=Point(lattice.pids[(eindex-1)%size(lattice.rcoords,2)+1],superrcoords[:,eindex],supericoords[:,eindex])
-            push!(result,Bond(neighbor,spoint,epoint))
+        for (neighbor,sindex,eindex) in interlinks(lattice.rcoords,superrcoords,lattice.neighbors)
+            spoint=Point(lattice.pids[sindex],latticestaticcoords(lattice.rcoords,sindex,dim),latticestaticcoords(lattice.icoords,sindex,dim))
+            epoint=Point(lattice.pids[(eindex-1)%size(lattice.rcoords,2)+1],latticestaticcoords(superrcoords,eindex,dim),latticestaticcoords(supericoords,eindex,dim))
+            push!(bonds,Bond(neighbor,spoint,epoint))
         end
     end
-    result
+    return bonds
 end
 
 """
-    Lattice(    name::String,
+    Lattice{N}( name::String,
                 pids::Vector{<:PID},
-                rcoords::AbstractMatrix{<:Real};
-                icoords::AbstractMatrix{<:Real}=SMatrix{0,0,Float}(),
-                vectors::AbstractVector{<:AbstractVector{<:Real}}=SVector{0,SVector{size(rcoords,1),Float}}(),
-                neighbors::Union{Dict{Int,<:Real},Int}=1,
+                rcoords::AbstractMatrix{<:Real},
+                icoords::AbstractMatrix{<:Real},
+                vectors::AbstractVector{<:AbstractVector{<:Real}},
+                neighbors::Union{Dict{Int,<:Real},Int}=1;
                 coordination::Int=8
-            )
+                ) where N
     Lattice(    name::String,
                 points::AbstractVector{<:Point};
                 vectors::AbstractVector{<:AbstractVector{<:Real}}=SVector{0,SVector{points|>eltype|>dimension,Float}}(),
@@ -795,7 +873,7 @@ Simplest lattice.
 
 A simplest lattice can be construted from its contents, i.e. pids, rcoords and icoords, or from a couple of points, or from a couple of sublattices.
 """
-struct Lattice{P<:PID,N} <: AbstractLattice{P,N}
+struct Lattice{N,P<:PID} <: AbstractLattice{N,P}
     name::String
     pids::Vector{P}
     rcoords::Matrix{Float}
@@ -803,18 +881,19 @@ struct Lattice{P<:PID,N} <: AbstractLattice{P,N}
     vectors::Vector{SVector{N,Float}}
     reciprocals::Vector{SVector{N,Float}}
     neighbors::Dict{Int,Float}
-    function Lattice(   name::String,
+    function Lattice{N}(name::String,
                         pids::Vector{<:PID},
-                        rcoords::AbstractMatrix{<:Real};
-                        icoords::AbstractMatrix{<:Real}=SMatrix{0,0,Float}(),
-                        vectors::AbstractVector{<:AbstractVector{<:Real}}=SVector{0,SVector{size(rcoords,1),Float}}(),
-                        neighbors::Union{Dict{Int,<:Real},Int}=1,
+                        rcoords::AbstractMatrix{<:Real},
+                        icoords::AbstractMatrix{<:Real},
+                        vectors::AbstractVector{<:AbstractVector{<:Real}},
+                        neighbors::Union{Dict{Int,<:Real},Int}=1;
                         coordination::Int=8
-                )
-        length(icoords)==0 && (icoords=zeros(Float,rcoords|>size))
-        @assert length(pids)==size(rcoords,2) && size(rcoords)==size(icoords) "Lattice error: dismatched shape of input pids, rcoords and icoords."
+                ) where N
+        @assert N==size(rcoords,1)==size(icoords,1) && length(pids)==size(rcoords,2)==size(icoords,2) "Lattice error: dismatched shape of input pids, rcoords and icoords."
         isa(neighbors,Int) && (neighbors=Dict(i=>minlen for (i,minlen) in enumerate(minimumlengths(rcoords,vectors,neighbors,coordination=coordination))))
-        new{pids|>eltype,size(rcoords,1)}(name,pids,rcoords,icoords,vectors,reciprocals(vectors),neighbors)
+        vectors=convert(Vector{SVector{N,Float}},vectors)
+        recipls=convert(Vector{SVector{N,Float}},reciprocals(vectors))
+        new{N,pids|>eltype}(name,pids,rcoords,icoords,vectors,recipls,neighbors)
     end
 end
 function Lattice(   name::String,
@@ -831,7 +910,7 @@ function Lattice(   name::String,
         rcoords[:,i]=points[i].rcoord
         icoords[:,i]=points[i].icoord
     end
-    Lattice(name,pids,rcoords,icoords=icoords,vectors=vectors,neighbors=neighbors,coordination=coordination)
+    Lattice{points|>eltype|>dimension}(name,pids,rcoords,icoords,vectors,neighbors,coordination=coordination)
 end
 function Lattice(   name::String,
                     sublattices::AbstractVector{<:AbstractLattice};
@@ -854,7 +933,7 @@ function Lattice(   name::String,
         icoords[:,pos:pos+length(sublattice)-1]=sublattice.icoords
         pos+=length(sublattice)
     end
-    Lattice(name,pids,rcoords,icoords=icoords,vectors=vectors,neighbors=neighbors,coordination=coordination)
+    Lattice{sublattices|>eltype|>dimension}(name,pids,rcoords,icoords,vectors,neighbors,coordination=coordination)
 end
 
 """
@@ -866,7 +945,7 @@ end
 
 SuperLattice that is composed of serveral sublattices.
 """
-struct SuperLattice{L<:AbstractLattice,P<:PID,N} <: AbstractLattice{P,N}
+struct SuperLattice{L<:AbstractLattice,N,P<:PID} <: AbstractLattice{N,P}
     sublattices::Vector{L}
     name::String
     pids::Vector{P}
@@ -896,13 +975,14 @@ struct SuperLattice{L<:AbstractLattice,P<:PID,N} <: AbstractLattice{P,N}
             icoords[:,pos:pos+length(sublattice)-1]=sublattice.icoords
             pos+=length(sublattice)
         end
-        recips=reciprocals(vectors)
-        new{sublattices|>eltype,sublattices|>eltype|>keytype,sublattices|>eltype|>dimension}(sublattices,name,pids,rcoords,icoords,vectors,recips,neighbors)
+        vectors=convert(Vector{SVector{sublattices|>eltype|>dimension,Float}},vectors)
+        recipls=convert(Vector{SVector{sublattices|>eltype|>dimension,Float}},reciprocals(vectors))
+        new{sublattices|>eltype,sublattices|>eltype|>dimension,sublattices|>eltype|>keytype}(sublattices,name,pids,rcoords,icoords,vectors,recipls,neighbors)
     end
 end
 
-struct IntraBonds <: LatticeBonds end
-struct InterBonds <: LatticeBonds end
+struct IntraBonds <: LatticeBonds{2} end
+struct InterBonds <: LatticeBonds{2} end
 """
     intrabonds
 
@@ -921,38 +1001,59 @@ Indicate that bonds inter the sublattices are inquired.
 const interbonds=InterBonds()
 
 """
-    bonds(lattice::SuperLattice,::IntraBonds) -> Vector{Bond}
-    bonds(lattice::SuperLattice,::InterBonds) -> Vector{Bond}
+    latticebondsstructure(::Type{<:SuperLattice}) -> SimpleTree{LatticeBonds,Nothing}
 
-Get the bonds of a superlattice.
+The tree structure of the lattice bonds.
 """
-bonds(lattice::SuperLattice,::IntraBonds)=vcat((sublattice|>bonds for sublattice in lattice.sublattices)...)
-function bonds(lattice::SuperLattice,::InterBonds)
-    result=Bond{lattice|>keytype,lattice|>dimension}[]
-    for (i,j) in Combinations{2}(1:length(lattice.sublattices))
-        sub1,sub2=lattice.sublattices[i],lattice.sublattices[j]
-        for (neighbor,sindex,eindex,disp) in interlinks(sub1.rcoords,sub2.rcoords,lattice.neighbors)
-            @views spoint=Point(sub1.pids[sindex],sub1.rcoords[:,sindex],sub1.icoords[:,sindex])
-            @views epoint=Point(sub2.pids[eindex],sub2.rcoords[:,eindex],sub2.icoords[:,eindex])
-            push!(result,Bond(neighbor,spoint,epoint))
-        end
-    end
-    result
+@generated function latticebondsstructure(::Type{<:SuperLattice})
+    structure=SimpleTree{LatticeBonds,Nothing}()
+    push!(structure,allbonds,nothing)
+    push!(structure,allbonds,zerothbonds,nothing)
+    push!(structure,allbonds,insidebonds,nothing)
+    push!(structure,allbonds,acrossbonds,nothing)
+    push!(structure,insidebonds,intrabonds,nothing)
+    push!(structure,insidebonds,interbonds,nothing)
+    return structure
 end
 
 """
-    Cylinder{P}(    name::String,
-                    block::AbstractMatrix{<:Real},
-                    translation::AbstractVector{<:Real};
-                    vector::Union{AbstractVector{<:Real},Nothing}=nothing,
-                    neighbors::Union{Dict{Int,<:Real},Int}=1,
-                    ) where P<:PID
+    bonds!(bonds::Vector,lattice::SuperLattice,::Val{intrabonds}) -> Vector
+    bonds!(bonds::Vector,lattice::SuperLattice,::Val{interbonds}) -> Vector
+
+Generate the required bonds of a superlattice and append them to the input bonds.
+"""
+function bonds!(bonds::Vector,lattice::SuperLattice,::Val{intrabonds})
+    for sublattice in lattice.sublattices
+        bonds!(bonds,sublattice,insidebonds)
+    end
+    return bonds
+end
+function bonds!(bonds::Vector,lattice::SuperLattice,::Val{interbonds})
+    dim=lattice|>dimension|>Val
+    for (i,j) in Combinations{2}(1:length(lattice.sublattices))
+        sub1,sub2=lattice.sublattices[i],lattice.sublattices[j]
+        for (neighbor,sindex,eindex) in interlinks(sub1.rcoords,sub2.rcoords,lattice.neighbors)
+            spoint=Point(sub1.pids[sindex],latticestaticcoords(sub1.rcoords,sindex,dim),latticestaticcoords(sub1.icoords,sindex,dim))
+            epoint=Point(sub2.pids[eindex],latticestaticcoords(sub2.rcoords,eindex,dim),latticestaticcoords(sub2.icoords,eindex,dim))
+            push!(bonds,Bond(neighbor,spoint,epoint))
+        end
+    end
+    return bonds
+end
+
+"""
+    Cylinder{P}(name::String,
+                block::AbstractMatrix{<:Real},
+                translation::SVector{N,<:Real};
+                vector::Union{AbstractVector{<:Real},Nothing}=nothing,
+                neighbors::Union{Dict{Int,<:Real},Int}=1
+                ) where {P<:PID,N}
 
 Cylinder of 1d and quasi 2d lattices.
 """
-mutable struct Cylinder{P<:PID,N} <: AbstractLattice{P,N}
+mutable struct Cylinder{P<:PID,N} <: AbstractLattice{N,P}
     block::Matrix{Float}
-    translation::Vector{Float}
+    translation::SVector{N,Float}
     name::String
     pids::Vector{P}
     rcoords::Matrix{Float}
@@ -962,17 +1063,17 @@ mutable struct Cylinder{P<:PID,N} <: AbstractLattice{P,N}
     neighbors::Dict{Int,Float}
     function Cylinder{P}(   name::String,
                             block::AbstractMatrix{<:Real},
-                            translation::AbstractVector{<:Real};
+                            translation::SVector{N,<:Real};
                             vector::Union{AbstractVector{<:Real},Nothing}=nothing,
                             neighbors::Union{Dict{Int,<:Real},Int}=1
-                            ) where P<:PID
+                            ) where {P<:PID,N}
         pids=Vector{P}[]
-        rcoords=zeros(Float,length(translation),0)
-        icoords=zeros(Float,length(translation),0)
-        vectors=vector===nothing ? SVector{length(translation),Float}[] : [vector]
-        recips=reciprocals(vectors)
+        rcoords=zeros(Float,N,0)
+        icoords=zeros(Float,N,0)
+        vectors=vector===nothing ? SVector{N,Float}[] : [convert(SVector{N,Float},vector)]
+        recipls=convert(Vector{SVector{N,Float}},reciprocals(vectors))
         isa(neighbors,Int) && (neighbors=Dict{Int,Float}(i=>Inf for i=1:neighbors))
-        new{P,length(translation)}(block,translation,name,pids,rcoords,icoords,vectors,recips,neighbors)
+        new{P,N}(block,translation,name,pids,rcoords,icoords,vectors,recipls,neighbors)
     end
 end
 
@@ -1040,7 +1141,97 @@ function (cylinder::Cylinder)(scopes::Any...;coordination::Int=8)
         minlens=minimumlengths(rcoords,vectors,cylinder|>nneighbor,coordination=coordination)
         neighbors=Dict{Int,Float}(i=>len for (i,len) in enumerate(minlens))
     end
-    Lattice(name,pids,rcoords,icoords=icoords,vectors=vectors,neighbors=neighbors)
+    Lattice{cylinder|>dimension}(name,pids,rcoords,icoords,vectors,neighbors)
+end
+
+"""
+    Bonds{TS,L}(bonds::Tuple{Vararg{Vector{<:AbstractBond}}}) where {TS,L<:AbstractLattice}
+    Bonds(lattice::AbstractLattice,types::LatticeBonds...)
+
+A set of lattice bonds.
+"""
+struct Bonds{TS,L<:AbstractLattice,BS<:Tuple{Vararg{Vector{<:AbstractBond}}}}
+    bonds::BS
+    function Bonds{TS,L}(bonds::Tuple{Vararg{Vector{<:AbstractBond}}}) where {TS,L<:AbstractLattice}
+        @assert isa(TS,Tuple{Vararg{LatticeBonds}}) && length(TS)==length(bonds) "Bonds error: dismatched input types and bonds."
+        new{TS,L,typeof(bonds)}(bonds)
+    end
+end
+Bonds(lattice::AbstractLattice)=Bonds(lattice,allbonds)
+Bonds(lattice::AbstractLattice,types::LatticeBonds...)=Bonds(lattice,Val(types))
+@generated function Bonds(lattice::AbstractLattice,::Val{VS}) where VS
+    types,bonds=[],[]
+    for V in expand(lattice,Val(VS))
+        push!(types,V)
+        push!(bonds,:(bonds(lattice,Val($V))))
+    end
+    types=Tuple(types)
+    bonds=Expr(:tuple,bonds...)
+    return :(Bonds{$types,typeof(lattice)}($bonds))
+end
+
+"""
+    ==(bonds1::Bonds,bonds2::Bonds) -> Bool
+    isequal(bonds1::Bonds,bonds2::Bonds) -> Bool
+
+Overloaded equivalent operator.
+"""
+Base.:(==)(bonds1::Bonds,bonds2::Bonds) = ==(efficientoperations,bonds1,bonds2)
+Base.isequal(bonds1::Bonds,bonds2::Bonds)=isequal(efficientoperations,bonds1,bonds2)
+
+"""
+    eltype(bs::Bonds)
+    eltype(::Type{<:Bonds{TS,<:AbstractLattice,BS}}) where {TS,BS<:Tuple{Vararg{Vector{<:AbstractBond}}}}
+
+Get the eltype of a set of lattice bonds.
+"""
+Base.eltype(bs::Bonds)=bs|>typeof|>eltype
+@generated function Base.eltype(::Type{<:Bonds{TS,<:AbstractLattice,BS}}) where {TS,BS<:Tuple{Vararg{Vector{<:AbstractBond}}}}
+    mapreduce(eltype,typejoin,fieldtype(BS,i) for i=1:fieldcount(BS))
+end
+
+"""
+    length(bs::Bonds)=mapreduce(length,+,bs.bonds) -> Int
+
+Get the number of lattice bonds in the set.
+"""
+Base.length(bs::Bonds)=mapreduce(length,+,bs.bonds)
+
+"""
+    iterate(bs::Bonds,state=(1,0))
+
+Iterate over the lattice bonds in the set.
+"""
+function Base.iterate(bs::Bonds,state=(1,0))
+    s1,s2=state[1],state[2]
+    while s1<=length(bs.bonds)
+        s1,s2=s2+1>length(bs.bonds[s1]) ? (s1+1,1) : (s1,s2+1)
+        (s1>length(bs.bonds) || s2<=length(bs.bonds[s1])) && break
+    end
+    s1>length(bs.bonds) && return nothing
+    return bs.bonds[s1][s2],(s1,s2)
+end
+
+"""
+    filter(select::LatticeBonds,bs::Bonds) -> Bonds
+    filter(select::Tuple{Vararg{LatticeBonds}},bs::Bonds) -> Bonds
+
+Get a subset of a set of lattice bonds.
+"""
+Base.filter(select::LatticeBonds,bs::Bonds)=bondfilter(Val((select,)),bs)
+Base.filter(select::Tuple{Vararg{LatticeBonds}},bs::Bonds)=bondfilter(Val(select),bs)
+@generated function bondfilter(::Val{VS},bs::Bonds{TS,L}) where {VS,TS,L<:Union{AbstractLattice,Nothing}}
+    types,bonds=[],[]
+    for V in expand(L,Val(VS))
+        index=findfirst(isequal(V),TS)
+        if isa(index,Int)
+            push!(types,V)
+            push!(bonds,:(bs.bonds[$index]))
+        end
+    end
+    types=Tuple(types)
+    bonds=Expr(:tuple,bonds...)
+    return :(Bonds{$types,L}($bonds))
 end
 
 end #module
