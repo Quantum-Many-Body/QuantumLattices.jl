@@ -209,6 +209,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Interfaces.html#QuantumLattices.Interfaces.kind",
+    "page": "Interfaces",
+    "title": "QuantumLattices.Interfaces.kind",
+    "category": "function",
+    "text": "Kind.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Interfaces.html#QuantumLattices.Interfaces.matrix",
     "page": "Interfaces",
     "title": "QuantumLattices.Interfaces.matrix",
@@ -301,7 +309,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "Introduction",
     "category": "section",
-    "text": "This module contains the prerequisites of the QuantumLattices package.The constants, types, macros, functions or submodules defined in this module will NOT be exported by the package. Instead, they serve as the prerequisites and fundamentals. The range of the contents are quite wide, but basically, they fall into 2 categories:Global constants and miscellaneous tiny useful functions;\nBasic data structures as supplements to the Julia.Base and other common packages.The first category is contained in the main body of this module, while the other comes in separate submodules."
+    "text": "This module contains the prerequisites of the package.The constants, types, macros, functions or submodules defined in this module will NOT be exported by the package. Instead, they serve as the prerequisites and fundamentals. The range of the contents are quite wide, but basically, they fall into 2 categories:Global constants and miscellaneous tiny useful functions;\nBasic data structures as supplements to the Julia.Base and other common packages.The first category is contained in the main body of this module, while the other comes in separate submodules."
 },
 
 {
@@ -365,7 +373,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "Basic structures",
     "category": "section",
-    "text": "Here lists the table of contents of the basic data structures that are supplements to the Julia.Base and other common packages:Pages=[\n    \"TypeTraits.md\",\n    \"Factories.md\",\n    \"CompositeStructures.md\",\n    \"Trees.md\",\n    \"NamedVectors.md\",\n    ]\nDepth=2"
+    "text": "Here lists the table of contents of the basic data structures that are supplements to the Julia.Base and other common packages:Pages=[\n    \"TypeTraits.md\",\n    \"Factories.md\",\n    \"CompositeStructures.md\",\n    \"SimpleTrees.md\",\n    \"NamedVectors.md\",\n    ]\nDepth=2"
 },
 
 {
@@ -1121,347 +1129,347 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#",
-    "page": "Trees",
-    "title": "Trees",
+    "location": "man/Prerequisites/SimpleTrees.html#",
+    "page": "Simple trees",
+    "title": "Simple trees",
     "category": "page",
-    "text": "CurrentModule=QuantumLattices.Prerequisites.Treespush!(LOAD_PATH,\"../../../../src/\")\nusing QuantumLattices.Prerequisites.Trees"
+    "text": "CurrentModule=QuantumLattices.Prerequisites.SimpleTreespush!(LOAD_PATH,\"../../../../src/\")\nusing QuantumLattices.Prerequisites.SimpleTrees"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Trees-1",
-    "page": "Trees",
-    "title": "Trees",
+    "location": "man/Prerequisites/SimpleTrees.html#Simple-trees-1",
+    "page": "Simple trees",
+    "title": "Simple trees",
     "category": "section",
     "text": "The aim of this module is to represent the standard tree structure in efficiency-non-sensitive cases. Please note that the default implementation of tree methods are far from optimal in efficiency. Therefore, please DO NOT use it if you need an efficient tree for addition, deletion, sort and inquiry. This module of codes apply only when the structure of tree matters but not the efficiency."
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#AbstractTree-1",
-    "page": "Trees",
-    "title": "AbstractTree",
+    "location": "man/Prerequisites/SimpleTrees.html#AbstractSimpleTree-1",
+    "page": "Simple trees",
+    "title": "AbstractSimpleTree",
     "category": "section",
-    "text": "AbstractTree{N,D} is the abstract type for all concrete trees. By design, it has two type parameters:N: the type of the tree\'s node\nD: the type of the tree\'s dataTo fully utilize the methods designed for a tree structure, in our protocol, a concrete subtype must implement the following methods:inquiry related methods\nroot(tree::AbstractTree{N,D}) where {N,D} -> Union{N,Nothing}\nGet a tree\'s root node (nothing for empty trees)\nhaskey(tree::AbstractTree{N,D},node::N) where {N,D} -> Bool\nCheck whether a node is in a tree.\nlength(tree::AbstractTree) -> Int\nGet the number of a tree\'s nodes.\nparent(tree::AbstractTree{N,D},\n       node::N,\n       superparent::Union{N,Nothing}=nothing\n       ) where {N,D} -> Union{N,Nothing}\nGet the parent of a tree\'s node or return superparent when the input node is the tree\'s root.\nchildren(tree::AbstractTree{N,D},node::N) where {N,D} -> Vector{N}\nGet the children of a tree\'s node.\nstructure modification related methods\naddnode!(tree::AbstractTree{N,D},\n         parent::Union{N,Nothing},\n         node::N\n         ) where {N,D}\nUpdate the structure of a tree by adding a node. When the parent is nothing, the input tree must be empty and the input node becomes the tree\'s root.\ndeletenode!(tree::AbstractTree{N,D},node::N) where {N,D}\nUpdate the structure of a tree by deleting a node.\nindex related methods\ngetindex(tree::AbstractTree{N,D},node::N) where {N,D} -> D\nGet the data of a tree\'s node\nsetindex!(tree::AbstractTree{N,D},node::N,data::D) where {N,D}\nSet the data of a tree\'s node.Based on these methods, we implement several generic functions for inquiries and manipulationsinquiry for type parameters: keytype, valtype, eltype\nexpansion over nodes/data-records: keys, values, pairs\ninquiry for info of nodes: isleaf, level\ninquiry for nodes: ancestor, descendants, siblings, leaves\nmodification: push!, append!, delete!, empty!And optionally, when a subtype implement the following method,empty(tree::AbstractTree) -> typeof(tree)which constructs an empty tree of the same type with the input one, two more more methods are supported:subtree: Get a subtree starting from a node.\nmove!: Move a subtree to a new position."
+    "text": "AbstractSimpleTree{N,D} is the abstract type for all concrete trees. By design, it has two type parameters:N: the type of the tree\'s node\nD: the type of the tree\'s dataTo fully utilize the methods designed for a tree structure, in our protocol, a concrete subtype must implement the following methods:inquiry related methods\nroot(tree::AbstractSimpleTree{N,D}) where {N,D} -> Union{N,Nothing}\nGet a tree\'s root node (nothing for empty trees)\nhaskey(tree::AbstractSimpleTree{N,D},node::N) where {N,D} -> Bool\nCheck whether a node is in a tree.\nlength(tree::AbstractSimpleTree) -> Int\nGet the number of a tree\'s nodes.\nparent(tree::AbstractSimpleTree{N,D},\n       node::N,\n       superparent::Union{N,Nothing}=nothing\n       ) where {N,D} -> Union{N,Nothing}\nGet the parent of a tree\'s node or return superparent when the input node is the tree\'s root.\nchildren(tree::AbstractSimpleTree{N,D},node::N) where {N,D} -> Vector{N}\nGet the children of a tree\'s node.\nstructure modification related methods\naddnode!(tree::AbstractSimpleTree{N,D},\n         parent::Union{N,Nothing},\n         node::N\n         ) where {N,D}\nUpdate the structure of a tree by adding a node. When the parent is nothing, the input tree must be empty and the input node becomes the tree\'s root.\ndeletenode!(tree::AbstractSimpleTree{N,D},node::N) where {N,D}\nUpdate the structure of a tree by deleting a node.\nindex related methods\ngetindex(tree::AbstractSimpleTree{N,D},node::N) where {N,D} -> D\nGet the data of a tree\'s node\nsetindex!(tree::AbstractSimpleTree{N,D},node::N,data::D) where {N,D}\nSet the data of a tree\'s node.Based on these methods, we implement several generic functions for inquiries and manipulationsinquiry for type parameters: keytype, valtype, eltype\nexpansion over nodes/data-records: keys, values, pairs\ninquiry for info of nodes: isleaf, level\ninquiry for nodes: ancestor, descendants, siblings, leaves\nmodification: push!, append!, delete!, empty!And optionally, when a subtype implement the following method,empty(tree::AbstractSimpleTree) -> typeof(tree)which constructs an empty tree of the same type with the input one, two more more methods are supported:subtree: Get a subtree starting from a node.\nmove!: Move a subtree to a new position."
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#TreeCore-and-SimpleTree-1",
-    "page": "Trees",
-    "title": "TreeCore and SimpleTree",
+    "location": "man/Prerequisites/SimpleTrees.html#SimpleTreeCore-and-SimpleTree-1",
+    "page": "Simple trees",
+    "title": "SimpleTreeCore and SimpleTree",
     "category": "section",
-    "text": "To implement all the prerequisites listed above costs a bit efforts. We provide two lazy ways to get over this:Inheritance AbstractTree with TREECORE::TreeCore as the last attribute\nInclusion an attribute which is an instance of SimpleTree"
+    "text": "To implement all the prerequisites listed above costs a bit efforts. We provide two lazy ways to get over this:Inheritance AbstractSimpleTree with TREECORE::SimpleTreeCore as the last attribute\nInclusion an attribute which is an instance of SimpleTree"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#TreeCore-1",
-    "page": "Trees",
-    "title": "TreeCore",
+    "location": "man/Prerequisites/SimpleTrees.html#SimpleTreeCore-1",
+    "page": "Simple trees",
+    "title": "SimpleTreeCore",
     "category": "section",
-    "text": "TreeCore{N,D}, as the literal meaning indicates, is the core of a tree. It encapsulates all the data structures needed by the default implementation, which constains 4 attributes:root::N: the tree\'s root node\ncontents::Dict{N,D}: the tree\'s (node,data) pairs\nparent::Dict{N,N}: records of the parent of each of the tree\'s nodes\nchildren::Dict{N,Vector{N}}: records of the children of each of the tree\'s nodesAs above, the first lazy way is to include this struct with the special name :TREECORE in your concrete subtype as the last attribute. This process can be even lazier, in that we provide a macro @tree to decorate your \"raw\" struct automatically, e.g.@tree(struct SimpleSubTree end)\n@tree(struct SubTreeWithTreeParameters end,\n      {N<:AbstractString,D<:Number}\n      )\n@tree(struct SubTreeWithCertainTreeParameters end,\n      {<:String,<:Int}\n      )\n@tree(struct SubTreeWithFields info::Vector{Int} end,\n      {N<:AbstractString,D<:Number}\n      )\n@tree(struct SubTreeWithParametricFields{T} info::Vector{T} end,\n      {N<:AbstractString,D<:Number}\n      )\n@tree(struct SubTreeWithOverlappedParametricFields{N} info::Vector{N} end,\n      {N<:AbstractString,D<:Number}\n      )"
+    "text": "SimpleTreeCore{N,D}, as the literal meaning indicates, is the core of a tree. It encapsulates all the data structures needed by the default implementation, which constains 4 attributes:root::N: the tree\'s root node\ncontents::Dict{N,D}: the tree\'s (node,data) pairs\nparent::Dict{N,N}: records of the parent of each of the tree\'s nodes\nchildren::Dict{N,Vector{N}}: records of the children of each of the tree\'s nodesAs above, the first lazy way is to include this struct with the special name :TREECORE in your concrete subtype as the last attribute. This process can be even lazier, in that we provide a macro @simpletree to decorate your \"raw\" struct automatically, e.g.@simpletree(struct SimpleSubTree end)\n@simpletree(struct SubTreeWithTreeParameters end,\n      {N<:AbstractString,D<:Number}\n      )\n@simpletree(struct SubTreeWithCertainTreeParameters end,\n      {<:String,<:Int}\n      )\n@simpletree(struct SubTreeWithFields info::Vector{Int} end,\n      {N<:AbstractString,D<:Number}\n      )\n@simpletree(struct SubTreeWithParametricFields{T} info::Vector{T} end,\n      {N<:AbstractString,D<:Number}\n      )\n@simpletree(struct SubTreeWithOverlappedParametricFields{N} info::Vector{N} end,\n      {N<:AbstractString,D<:Number}\n      )"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#SimpleTree-1",
-    "page": "Trees",
+    "location": "man/Prerequisites/SimpleTrees.html#SimpleTree-1",
+    "page": "Simple trees",
     "title": "SimpleTree",
     "category": "section",
     "text": "SimpleTree{N,D} is the minimum struct that implements all the default tree methods. You can include an instance of it as an attribute in your own type to utilize all the tree methods."
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.treedepth",
-    "page": "Trees",
-    "title": "QuantumLattices.Prerequisites.Trees.treedepth",
+    "location": "man/Prerequisites/SimpleTrees.html#QuantumLattices.Prerequisites.SimpleTrees.simpletreedepth",
+    "page": "Simple trees",
+    "title": "QuantumLattices.Prerequisites.SimpleTrees.simpletreedepth",
     "category": "constant",
-    "text": "treedepth\n\nIndicate that the iteration over a tree is depth-first.\n\n\n\n\n\n"
+    "text": "simpletreedepth\n\nIndicate that the iteration over a tree is depth-first.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.treewidth",
-    "page": "Trees",
-    "title": "QuantumLattices.Prerequisites.Trees.treewidth",
+    "location": "man/Prerequisites/SimpleTrees.html#QuantumLattices.Prerequisites.SimpleTrees.simpletreewidth",
+    "page": "Simple trees",
+    "title": "QuantumLattices.Prerequisites.SimpleTrees.simpletreewidth",
     "category": "constant",
-    "text": "treewidth\n\nIndicate that the iteration over a tree is width-first.\n\n\n\n\n\n"
+    "text": "simpletreewidth\n\nIndicate that the iteration over a tree is width-first.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.AbstractTree",
-    "page": "Trees",
-    "title": "QuantumLattices.Prerequisites.Trees.AbstractTree",
+    "location": "man/Prerequisites/SimpleTrees.html#QuantumLattices.Prerequisites.SimpleTrees.AbstractSimpleTree",
+    "page": "Simple trees",
+    "title": "QuantumLattices.Prerequisites.SimpleTrees.AbstractSimpleTree",
     "category": "type",
-    "text": "AbstractTree{Node,Data}\n\nAbstract type for all concrete trees.\n\n\n\n\n\n"
+    "text": "AbstractSimpleTree{Node,Data}\n\nAbstract type for all concrete trees.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.SimpleTree",
-    "page": "Trees",
-    "title": "QuantumLattices.Prerequisites.Trees.SimpleTree",
+    "location": "man/Prerequisites/SimpleTrees.html#QuantumLattices.Prerequisites.SimpleTrees.SimpleTree",
+    "page": "Simple trees",
+    "title": "QuantumLattices.Prerequisites.SimpleTrees.SimpleTree",
     "category": "type",
     "text": "SimpleTree{N,D}() where {N,D}\n\nThe minimum tree structure that implements all the default tree methods.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.TreeCore",
-    "page": "Trees",
-    "title": "QuantumLattices.Prerequisites.Trees.TreeCore",
+    "location": "man/Prerequisites/SimpleTrees.html#QuantumLattices.Prerequisites.SimpleTrees.SimpleTreeCore",
+    "page": "Simple trees",
+    "title": "QuantumLattices.Prerequisites.SimpleTrees.SimpleTreeCore",
     "category": "type",
-    "text": "TreeCore()\n\nThe core of a tree.\n\n\n\n\n\n"
+    "text": "SimpleTreeCore()\n\nThe core of a tree.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.@tree",
-    "page": "Trees",
-    "title": "QuantumLattices.Prerequisites.Trees.@tree",
+    "location": "man/Prerequisites/SimpleTrees.html#QuantumLattices.Prerequisites.SimpleTrees.@simpletree",
+    "page": "Simple trees",
+    "title": "QuantumLattices.Prerequisites.SimpleTrees.@simpletree",
     "category": "macro",
-    "text": "@tree structdef treeparams::Union{Expr,Nothing}=nothing\n\nDecorate a \"raw\" struct to be a subtype of AbstractTree.\n\nnote: Note\nA \"raw\" struct means:\nIt has no explicit supertype;\nIt has no inner constructor;\nIt has no attribute :TREECORE.\nThe keytype and valtype can be assigned by the argument treeparams in the form {keytype,valtype}.\nWhen the formal argument names of keytype and valtype are not assigned, they can be automatically generated by the functioin gensym. For example, all of the structs after the decration by the following codes\n@tree(struct TreeWithWrongTypeParameterNames{N} info::Vector{N} end)\n@tree(struct TreeWithWrongTypeParameterNames{N} info::Vector{N} end,\n      {::String,::Int}\n      )\n@tree(struct TreeWithWrongTypeParameterNames{N} info::Vector{N} end,\n      {<:AbstractString,<:Number}\n      )\nwill have three type parameters.\nWhen the formal argument names of keytype and valtype overlap with those of the raw struct type parameters, the duplicates will be considered as the same. For example, the decorated struct SubTreeWithOverlappedParametricFields by the following code\n@tree(struct TreeWithOverlappedParametricFields{N} info::Vector{N} end,\n      {N<:AbstractString,D<:Number}\n      )\nonly has two type parameters N<:AbstractString and D<:Number, where the N in the info::Vector{N} is the same N with that in the decorated attribute TREECORE::TreeCore{N,D}.\nWhen the formal argument names of keytype and valtype have no intersection with those of the raw struct type parameters, the type parameters of the decorated struct will be just extended by keytype and valtype. For example, the decorated struct SubTreeWithParametricFields by the following code\n@tree(struct TreeWithParametricFields{T} info::Vector{T} end,\n      {N<:AbstractString,D<:Number}\n      )\nhave 3 type parameters, T, N<:AbstractString and D<:Number.\n\n\n\n\n\n"
+    "text": "@simpletree structdef treeparams::Union{Expr,Nothing}=nothing\n\nDecorate a \"raw\" struct to be a subtype of AbstractSimpleTree.\n\nnote: Note\nA \"raw\" struct means:\nIt has no explicit supertype;\nIt has no inner constructor;\nIt has no attribute :TREECORE.\nThe keytype and valtype can be assigned by the argument treeparams in the form {keytype,valtype}.\nWhen the formal argument names of keytype and valtype are not assigned, they can be automatically generated by the functioin gensym. For example, all of the structs after the decration by the following codes\n@simpletree(struct TreeWithWrongTypeParameterNames{N} info::Vector{N} end)\n@simpletree(struct TreeWithWrongTypeParameterNames{N} info::Vector{N} end,\n      {::String,::Int}\n      )\n@simpletree(struct TreeWithWrongTypeParameterNames{N} info::Vector{N} end,\n      {<:AbstractString,<:Number}\n      )\nwill have three type parameters.\nWhen the formal argument names of keytype and valtype overlap with those of the raw struct type parameters, the duplicates will be considered as the same. For example, the decorated struct SubTreeWithOverlappedParametricFields by the following code\n@simpletree(struct TreeWithOverlappedParametricFields{N} info::Vector{N} end,\n      {N<:AbstractString,D<:Number}\n      )\nonly has two type parameters N<:AbstractString and D<:Number, where the N in the info::Vector{N} is the same N with that in the decorated attribute TREECORE::SimpleTreeCore{N,D}.\nWhen the formal argument names of keytype and valtype have no intersection with those of the raw struct type parameters, the type parameters of the decorated struct will be just extended by keytype and valtype. For example, the decorated struct SubTreeWithParametricFields by the following code\n@simpletree(struct TreeWithParametricFields{T} info::Vector{T} end,\n      {N<:AbstractString,D<:Number}\n      )\nhave 3 type parameters, T, N<:AbstractString and D<:Number.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.addnode!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
-    "page": "Trees",
-    "title": "QuantumLattices.Prerequisites.Trees.addnode!",
+    "location": "man/Prerequisites/SimpleTrees.html#QuantumLattices.Prerequisites.SimpleTrees.addnode!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractSimpleTree{N,D},N}} where D where N",
+    "page": "Simple trees",
+    "title": "QuantumLattices.Prerequisites.SimpleTrees.addnode!",
     "category": "method",
-    "text": "addnode!(tree::AbstractTree{N,D},node::N) where {N,D} -> typeof(tree)\naddnode!(tree::AbstractTree{N,D},::Nothing,node::N) where {N,D} -> typeof(tree)\naddnode!(tree::AbstractTree{N,D},parent::N,node::N) where {N,D} -> typeof(tree)\n\nUpdate the structure of a tree by adding a node. When the parent is nothing, the input tree must be empty and the input node becomes the tree\'s root.\n\n\n\n\n\n"
+    "text": "addnode!(tree::AbstractSimpleTree{N,D},node::N) where {N,D} -> typeof(tree)\naddnode!(tree::AbstractSimpleTree{N,D},::Nothing,node::N) where {N,D} -> typeof(tree)\naddnode!(tree::AbstractSimpleTree{N,D},parent::N,node::N) where {N,D} -> typeof(tree)\n\nUpdate the structure of a tree by adding a node. When the parent is nothing, the input tree must be empty and the input node becomes the tree\'s root.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.ancestor-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}, Tuple{AbstractTree{N,D},N,Int64}} where D where N",
-    "page": "Trees",
-    "title": "QuantumLattices.Prerequisites.Trees.ancestor",
+    "location": "man/Prerequisites/SimpleTrees.html#QuantumLattices.Prerequisites.SimpleTrees.ancestor-Union{Tuple{D}, Tuple{N}, Tuple{AbstractSimpleTree{N,D},N}, Tuple{AbstractSimpleTree{N,D},N,Int64}} where D where N",
+    "page": "Simple trees",
+    "title": "QuantumLattices.Prerequisites.SimpleTrees.ancestor",
     "category": "method",
-    "text": "ancestor(tree::AbstractTree{N,D},node::N,generation::Int=1) where {N,D} -> N\n\nGet the ancestor of a tree\'s node of the n-th generation.\n\n\n\n\n\n"
+    "text": "ancestor(tree::AbstractSimpleTree{N,D},node::N,generation::Int=1) where {N,D} -> N\n\nGet the ancestor of a tree\'s node of the n-th generation.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.children-Tuple{QuantumLattices.Prerequisites.Trees.AbstractTree}",
-    "page": "Trees",
-    "title": "QuantumLattices.Prerequisites.Trees.children",
+    "location": "man/Prerequisites/SimpleTrees.html#QuantumLattices.Prerequisites.SimpleTrees.children-Tuple{QuantumLattices.Prerequisites.SimpleTrees.AbstractSimpleTree}",
+    "page": "Simple trees",
+    "title": "QuantumLattices.Prerequisites.SimpleTrees.children",
     "category": "method",
-    "text": "children(tree::AbstractTree) -> Vector{keytype(tree)}\nchildren(tree::AbstractTree,::Nothing) -> Vector{keytype(tree)}\nchildren(tree::AbstractTree{N,D},node::N) where {N,D} -> Vector{N}\n\nGet the children of a tree\'s node.\n\n\n\n\n\n"
+    "text": "children(tree::AbstractSimpleTree) -> Vector{keytype(tree)}\nchildren(tree::AbstractSimpleTree,::Nothing) -> Vector{keytype(tree)}\nchildren(tree::AbstractSimpleTree{N,D},node::N) where {N,D} -> Vector{N}\n\nGet the children of a tree\'s node.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.deletenode!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
-    "page": "Trees",
-    "title": "QuantumLattices.Prerequisites.Trees.deletenode!",
+    "location": "man/Prerequisites/SimpleTrees.html#QuantumLattices.Prerequisites.SimpleTrees.deletenode!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractSimpleTree{N,D},N}} where D where N",
+    "page": "Simple trees",
+    "title": "QuantumLattices.Prerequisites.SimpleTrees.deletenode!",
     "category": "method",
-    "text": "deletenode!(tree::AbstractTree{N,D},node::N) where {N,D} -> typeof(tree)\n\nUpdate the structure of a tree by deleting a node.\n\n\n\n\n\n"
+    "text": "deletenode!(tree::AbstractSimpleTree{N,D},node::N) where {N,D} -> typeof(tree)\n\nUpdate the structure of a tree by deleting a node.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.descendants-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}, Tuple{AbstractTree{N,D},N,Int64}} where D where N",
-    "page": "Trees",
-    "title": "QuantumLattices.Prerequisites.Trees.descendants",
+    "location": "man/Prerequisites/SimpleTrees.html#QuantumLattices.Prerequisites.SimpleTrees.descendants-Union{Tuple{D}, Tuple{N}, Tuple{AbstractSimpleTree{N,D},N}, Tuple{AbstractSimpleTree{N,D},N,Int64}} where D where N",
+    "page": "Simple trees",
+    "title": "QuantumLattices.Prerequisites.SimpleTrees.descendants",
     "category": "method",
-    "text": "descendants(tree::AbstractTree{N,D},node::N,generation::Int=1) where {N,D} -> Vector{N}\n\nGet the descendants of a tree\'s node of the n-th generation.\n\n\n\n\n\n"
+    "text": "descendants(tree::AbstractSimpleTree{N,D},node::N,generation::Int=1) where {N,D} -> Vector{N}\n\nGet the descendants of a tree\'s node of the n-th generation.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.isleaf-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
-    "page": "Trees",
-    "title": "QuantumLattices.Prerequisites.Trees.isleaf",
+    "location": "man/Prerequisites/SimpleTrees.html#QuantumLattices.Prerequisites.SimpleTrees.isleaf-Union{Tuple{D}, Tuple{N}, Tuple{AbstractSimpleTree{N,D},N}} where D where N",
+    "page": "Simple trees",
+    "title": "QuantumLattices.Prerequisites.SimpleTrees.isleaf",
     "category": "method",
-    "text": "isleaf(tree::AbstractTree{N,D},node::N) where{N,D} -> Bool\n\nJudge whether a tree\'s node is a leaf (a node without children) or not.\n\n\n\n\n\n"
+    "text": "isleaf(tree::AbstractSimpleTree{N,D},node::N) where{N,D} -> Bool\n\nJudge whether a tree\'s node is a leaf (a node without children) or not.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.leaves-Tuple{QuantumLattices.Prerequisites.Trees.AbstractTree}",
-    "page": "Trees",
-    "title": "QuantumLattices.Prerequisites.Trees.leaves",
+    "location": "man/Prerequisites/SimpleTrees.html#QuantumLattices.Prerequisites.SimpleTrees.leaves-Tuple{QuantumLattices.Prerequisites.SimpleTrees.AbstractSimpleTree}",
+    "page": "Simple trees",
+    "title": "QuantumLattices.Prerequisites.SimpleTrees.leaves",
     "category": "method",
-    "text": "leaves(tree::AbstractTree) -> Vector{keytype(tree)}\n\nGet a tree\'s leaves.\n\n\n\n\n\n"
+    "text": "leaves(tree::AbstractSimpleTree) -> Vector{keytype(tree)}\n\nGet a tree\'s leaves.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.level-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
-    "page": "Trees",
-    "title": "QuantumLattices.Prerequisites.Trees.level",
+    "location": "man/Prerequisites/SimpleTrees.html#QuantumLattices.Prerequisites.SimpleTrees.level-Union{Tuple{D}, Tuple{N}, Tuple{AbstractSimpleTree{N,D},N}} where D where N",
+    "page": "Simple trees",
+    "title": "QuantumLattices.Prerequisites.SimpleTrees.level",
     "category": "method",
-    "text": "level(tree::AbstractTree{N,D},node::N) where {N,D} -> Int\n\nGet the level of tree\'s node.\n\n\n\n\n\n"
+    "text": "level(tree::AbstractSimpleTree{N,D},node::N) where {N,D} -> Int\n\nGet the level of tree\'s node.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.move!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N,N}} where D where N",
-    "page": "Trees",
-    "title": "QuantumLattices.Prerequisites.Trees.move!",
+    "location": "man/Prerequisites/SimpleTrees.html#QuantumLattices.Prerequisites.SimpleTrees.move!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractSimpleTree{N,D},N,N}} where D where N",
+    "page": "Simple trees",
+    "title": "QuantumLattices.Prerequisites.SimpleTrees.move!",
     "category": "method",
-    "text": "move!(tree::AbstractTree{N,D},node::N,parent::N) where {N,D} -> typeof(tree)\n\nMove a subtree to a new position.\n\n\n\n\n\n"
+    "text": "move!(tree::AbstractSimpleTree{N,D},node::N,parent::N) where {N,D} -> typeof(tree)\n\nMove a subtree to a new position.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.parent-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}, Tuple{AbstractTree{N,D},N,Union{Nothing, N}}} where D where N",
-    "page": "Trees",
-    "title": "QuantumLattices.Prerequisites.Trees.parent",
+    "location": "man/Prerequisites/SimpleTrees.html#QuantumLattices.Prerequisites.SimpleTrees.parent-Union{Tuple{D}, Tuple{N}, Tuple{AbstractSimpleTree{N,D},N}, Tuple{AbstractSimpleTree{N,D},N,Union{Nothing, N}}} where D where N",
+    "page": "Simple trees",
+    "title": "QuantumLattices.Prerequisites.SimpleTrees.parent",
     "category": "method",
-    "text": "parent(tree::AbstractTree{N,D},node::N,superparent::Union{N,Nothing}=nothing) where {N,D} -> Union{N,Nothing}\n\nGet the parent of a tree\'s node. When node is the tree\'s root, return superparent.\n\n\n\n\n\n"
+    "text": "parent(tree::AbstractSimpleTree{N,D},node::N,superparent::Union{N,Nothing}=nothing) where {N,D} -> Union{N,Nothing}\n\nGet the parent of a tree\'s node. When node is the tree\'s root, return superparent.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.root-Tuple{QuantumLattices.Prerequisites.Trees.AbstractTree}",
-    "page": "Trees",
-    "title": "QuantumLattices.Prerequisites.Trees.root",
+    "location": "man/Prerequisites/SimpleTrees.html#QuantumLattices.Prerequisites.SimpleTrees.root-Tuple{QuantumLattices.Prerequisites.SimpleTrees.AbstractSimpleTree}",
+    "page": "Simple trees",
+    "title": "QuantumLattices.Prerequisites.SimpleTrees.root",
     "category": "method",
-    "text": "root(tree::AbstractTree) -> Union{keytype(tree),Nothing}\n\nGet a tree\'s root node.\n\n\n\n\n\n"
+    "text": "root(tree::AbstractSimpleTree) -> Union{keytype(tree),Nothing}\n\nGet a tree\'s root node.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.siblings-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
-    "page": "Trees",
-    "title": "QuantumLattices.Prerequisites.Trees.siblings",
+    "location": "man/Prerequisites/SimpleTrees.html#QuantumLattices.Prerequisites.SimpleTrees.siblings-Union{Tuple{D}, Tuple{N}, Tuple{AbstractSimpleTree{N,D},N}} where D where N",
+    "page": "Simple trees",
+    "title": "QuantumLattices.Prerequisites.SimpleTrees.siblings",
     "category": "method",
-    "text": "siblings(tree::AbstractTree{N,D},node::N) where{N,D} -> Vector{N}\n\nGet the siblings (other nodes sharing the same parent) of a tree\'s node.\n\n\n\n\n\n"
+    "text": "siblings(tree::AbstractSimpleTree{N,D},node::N) where{N,D} -> Vector{N}\n\nGet the siblings (other nodes sharing the same parent) of a tree\'s node.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#QuantumLattices.Prerequisites.Trees.subtree-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
-    "page": "Trees",
-    "title": "QuantumLattices.Prerequisites.Trees.subtree",
+    "location": "man/Prerequisites/SimpleTrees.html#QuantumLattices.Prerequisites.SimpleTrees.subtree-Union{Tuple{D}, Tuple{N}, Tuple{AbstractSimpleTree{N,D},N}} where D where N",
+    "page": "Simple trees",
+    "title": "QuantumLattices.Prerequisites.SimpleTrees.subtree",
     "category": "method",
-    "text": "subtree(tree::AbstractTree{N,D},node::N) where{N,D} -> typeof(tree)\n\nGet a subtree whose root is node.\n\n\n\n\n\n"
+    "text": "subtree(tree::AbstractSimpleTree{N,D},node::N) where{N,D} -> typeof(tree)\n\nGet a subtree whose root is node.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Base.:==-Union{Tuple{TC}, Tuple{TC,TC}} where TC<:QuantumLattices.Prerequisites.Trees.TreeCore",
-    "page": "Trees",
+    "location": "man/Prerequisites/SimpleTrees.html#Base.:==-Union{Tuple{TC}, Tuple{TC,TC}} where TC<:QuantumLattices.Prerequisites.SimpleTrees.SimpleTreeCore",
+    "page": "Simple trees",
     "title": "Base.:==",
     "category": "method",
-    "text": "==(tc1::TC,tc2::TC) where TC<:TreeCore -> Bool\nisequal(tc1::TC,tc2::TC) where TC<:TreeCore -> Bool\n\nOverloaded equivalent operator.\n\n\n\n\n\n"
+    "text": "==(tc1::TC,tc2::TC) where TC<:SimpleTreeCore -> Bool\nisequal(tc1::TC,tc2::TC) where TC<:SimpleTreeCore -> Bool\n\nOverloaded equivalent operator.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Base.:==-Union{Tuple{T}, Tuple{T,T}} where T<:QuantumLattices.Prerequisites.Trees.AbstractTree",
-    "page": "Trees",
+    "location": "man/Prerequisites/SimpleTrees.html#Base.:==-Union{Tuple{T}, Tuple{T,T}} where T<:QuantumLattices.Prerequisites.SimpleTrees.AbstractSimpleTree",
+    "page": "Simple trees",
     "title": "Base.:==",
     "category": "method",
-    "text": "==(t1::T,t2::T) where T<:AbstractTree -> Bool\nisequal(t1::T,t2::T) where T<:AbstractTree -> Bool\n\nOverloaded equivalent operator.\n\n\n\n\n\n"
+    "text": "==(t1::T,t2::T) where T<:AbstractSimpleTree -> Bool\nisequal(t1::T,t2::T) where T<:AbstractSimpleTree -> Bool\n\nOverloaded equivalent operator.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Base.append!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},AbstractTree{N,D}}} where D where N",
-    "page": "Trees",
+    "location": "man/Prerequisites/SimpleTrees.html#Base.append!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractSimpleTree{N,D},AbstractSimpleTree{N,D}}} where D where N",
+    "page": "Simple trees",
     "title": "Base.append!",
     "category": "method",
-    "text": "append!(tree::AbstractTree{N,D},subtree::AbstractTree{N,D}) where {N,D} -> typeof(tree)\nappend!(tree::AbstractTree{N,D},node::Union{N,Nothing},subtree::AbstractTree{N,D}) where {N,D} -> typeof(tree)\n\nAppend a subtree to a tree.\n\n\n\n\n\n"
+    "text": "append!(tree::AbstractSimpleTree{N,D},subtree::AbstractSimpleTree{N,D}) where {N,D} -> typeof(tree)\nappend!(tree::AbstractSimpleTree{N,D},node::Union{N,Nothing},subtree::AbstractSimpleTree{N,D}) where {N,D} -> typeof(tree)\n\nAppend a subtree to a tree.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Base.delete!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
-    "page": "Trees",
+    "location": "man/Prerequisites/SimpleTrees.html#Base.delete!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractSimpleTree{N,D},N}} where D where N",
+    "page": "Simple trees",
     "title": "Base.delete!",
     "category": "method",
-    "text": "delete!(tree::AbstractTree{N,D},node::N) where {N,D} -> typeof(tree)\n\nDelete a node and all its descendants from a tree.\n\n\n\n\n\n"
+    "text": "delete!(tree::AbstractSimpleTree{N,D},node::N) where {N,D} -> typeof(tree)\n\nDelete a node and all its descendants from a tree.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Base.eltype-Tuple{QuantumLattices.Prerequisites.Trees.AbstractTree}",
-    "page": "Trees",
+    "location": "man/Prerequisites/SimpleTrees.html#Base.eltype-Tuple{QuantumLattices.Prerequisites.SimpleTrees.AbstractSimpleTree}",
+    "page": "Simple trees",
     "title": "Base.eltype",
     "category": "method",
-    "text": "eltype(tree::AbstractTree)\neltype(::Type{<:AbstractTree{N,D}}) where {N,D}\n\nGet the eltype of a tree.\n\n\n\n\n\n"
+    "text": "eltype(tree::AbstractSimpleTree)\neltype(::Type{<:AbstractSimpleTree{N,D}}) where {N,D}\n\nGet the eltype of a tree.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Base.empty!-Tuple{QuantumLattices.Prerequisites.Trees.AbstractTree}",
-    "page": "Trees",
+    "location": "man/Prerequisites/SimpleTrees.html#Base.empty!-Tuple{QuantumLattices.Prerequisites.SimpleTrees.AbstractSimpleTree}",
+    "page": "Simple trees",
     "title": "Base.empty!",
     "category": "method",
-    "text": "empty!(tree::AbstractTree) -> typeof(tree)\n\nEmpty a tree.\n\n\n\n\n\n"
+    "text": "empty!(tree::AbstractSimpleTree) -> typeof(tree)\n\nEmpty a tree.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Base.empty-Union{Tuple{AbstractTree{N,D}}, Tuple{D}, Tuple{N}} where D where N",
-    "page": "Trees",
+    "location": "man/Prerequisites/SimpleTrees.html#Base.empty-Union{Tuple{AbstractSimpleTree{N,D}}, Tuple{D}, Tuple{N}} where D where N",
+    "page": "Simple trees",
     "title": "Base.empty",
     "category": "method",
-    "text": "empty(tree::AbstractTree)\n\nConstruct an empty tree of the same type with the input one.\n\n\n\n\n\n"
+    "text": "empty(tree::AbstractSimpleTree)\n\nConstruct an empty tree of the same type with the input one.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Base.getindex-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
-    "page": "Trees",
+    "location": "man/Prerequisites/SimpleTrees.html#Base.getindex-Union{Tuple{D}, Tuple{N}, Tuple{AbstractSimpleTree{N,D},N}} where D where N",
+    "page": "Simple trees",
     "title": "Base.getindex",
     "category": "method",
-    "text": "getindex(tree::AbstractTree{N,D},node::N) where {N,D} -> N\n\nGet the data of a tree\'s node.\n\n\n\n\n\n"
+    "text": "getindex(tree::AbstractSimpleTree{N,D},node::N) where {N,D} -> N\n\nGet the data of a tree\'s node.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Base.haskey-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N}} where D where N",
-    "page": "Trees",
+    "location": "man/Prerequisites/SimpleTrees.html#Base.haskey-Union{Tuple{D}, Tuple{N}, Tuple{AbstractSimpleTree{N,D},N}} where D where N",
+    "page": "Simple trees",
     "title": "Base.haskey",
     "category": "method",
-    "text": "haskey(tree::AbstractTree{N,D},node::N) where {N,D} -> Bool\n\nCheck whether a node is in a tree.\n\n\n\n\n\n"
+    "text": "haskey(tree::AbstractSimpleTree{N,D},node::N) where {N,D} -> Bool\n\nCheck whether a node is in a tree.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Base.keys-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},TreeIteration}, Tuple{AbstractTree{N,D},TreeIteration,Union{Nothing, N}}} where D where N",
-    "page": "Trees",
+    "location": "man/Prerequisites/SimpleTrees.html#Base.keys-Union{Tuple{D}, Tuple{N}, Tuple{AbstractSimpleTree{N,D},SimpleTreeIteration}, Tuple{AbstractSimpleTree{N,D},SimpleTreeIteration,Union{Nothing, N}}} where D where N",
+    "page": "Simple trees",
     "title": "Base.keys",
     "category": "method",
-    "text": "keys(tree::AbstractTree{N,D},::TreeDepth,node::Union{N,Nothing}=tree|>root) where {N,D}\nkeys(tree::AbstractTree{N,D},::TreeWidth,node::Union{N,Nothing}=tree|>root) where {N,D}\n\nIterate over a tree\'s nodes starting from a certain node by depth first search or width first search.\n\n\n\n\n\n"
+    "text": "keys(tree::AbstractSimpleTree{N,D},::SimpleTreeDepth,node::Union{N,Nothing}=tree|>root) where {N,D}\nkeys(tree::AbstractSimpleTree{N,D},::SimpleTreeWidth,node::Union{N,Nothing}=tree|>root) where {N,D}\n\nIterate over a tree\'s nodes starting from a certain node by depth first search or width first search.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Base.keytype-Tuple{QuantumLattices.Prerequisites.Trees.AbstractTree}",
-    "page": "Trees",
+    "location": "man/Prerequisites/SimpleTrees.html#Base.keytype-Tuple{QuantumLattices.Prerequisites.SimpleTrees.AbstractSimpleTree}",
+    "page": "Simple trees",
     "title": "Base.keytype",
     "category": "method",
-    "text": "keytype(tree::AbstractTree)\nkeytype(::Type{<:AbstractTree{N,D}}) where {N,D}\n\nGet a tree\'s node type.\n\n\n\n\n\n"
+    "text": "keytype(tree::AbstractSimpleTree)\nkeytype(::Type{<:AbstractSimpleTree{N,D}}) where {N,D}\n\nGet a tree\'s node type.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Base.length-Tuple{QuantumLattices.Prerequisites.Trees.AbstractTree}",
-    "page": "Trees",
+    "location": "man/Prerequisites/SimpleTrees.html#Base.length-Tuple{QuantumLattices.Prerequisites.SimpleTrees.AbstractSimpleTree}",
+    "page": "Simple trees",
     "title": "Base.length",
     "category": "method",
-    "text": "length(tree::AbstractTree) -> Int\n\nGet the number of a tree\'s nodes.\n\n\n\n\n\n"
+    "text": "length(tree::AbstractSimpleTree) -> Int\n\nGet the number of a tree\'s nodes.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Base.pairs-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree,TreeIteration}, Tuple{AbstractTree,TreeIteration,Union{Nothing, N}}} where D where N",
-    "page": "Trees",
+    "location": "man/Prerequisites/SimpleTrees.html#Base.pairs-Union{Tuple{D}, Tuple{N}, Tuple{AbstractSimpleTree,SimpleTreeIteration}, Tuple{AbstractSimpleTree,SimpleTreeIteration,Union{Nothing, N}}} where D where N",
+    "page": "Simple trees",
     "title": "Base.pairs",
     "category": "method",
-    "text": "pairs(tree::AbstractTree,::TreeDepth,node::Union{N,Nothing}=tree|>root) where {N,D}\npairs(tree::AbstractTree,::TreeWidth,node::Union{N,Nothing}=tree|>root) where {N,D}\n\nIterate over a tree\'s (node,data) pairs starting from a certain node by depth first search or width first search.\n\n\n\n\n\n"
+    "text": "pairs(tree::AbstractSimpleTree,::SimpleTreeDepth,node::Union{N,Nothing}=tree|>root) where {N,D}\npairs(tree::AbstractSimpleTree,::SimpleTreeWidth,node::Union{N,Nothing}=tree|>root) where {N,D}\n\nIterate over a tree\'s (node,data) pairs starting from a certain node by depth first search or width first search.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Base.push!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},N,D}} where D where N",
-    "page": "Trees",
+    "location": "man/Prerequisites/SimpleTrees.html#Base.push!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractSimpleTree{N,D},N,D}} where D where N",
+    "page": "Simple trees",
     "title": "Base.push!",
     "category": "method",
-    "text": "push!(tree::AbstractTree{N,D},node::N,data::D) where {N,D} -> typeof(tree)\npush!(tree::AbstractTree{N,D},parent::Union{N,Nothing},node::N,data::D) where {N,D} -> typeof(tree)\n\nPush a new node to a tree. When parent is nothing, this function set the root node of an empty tree.\n\n\n\n\n\n"
+    "text": "push!(tree::AbstractSimpleTree{N,D},node::N,data::D) where {N,D} -> typeof(tree)\npush!(tree::AbstractSimpleTree{N,D},parent::Union{N,Nothing},node::N,data::D) where {N,D} -> typeof(tree)\n\nPush a new node to a tree. When parent is nothing, this function set the root node of an empty tree.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Base.setindex!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree{N,D},D,N}} where D where N",
-    "page": "Trees",
+    "location": "man/Prerequisites/SimpleTrees.html#Base.setindex!-Union{Tuple{D}, Tuple{N}, Tuple{AbstractSimpleTree{N,D},D,N}} where D where N",
+    "page": "Simple trees",
     "title": "Base.setindex!",
     "category": "method",
-    "text": "setindex!(tree::AbstractTree{N,D},data::D,node::N) where {N,D}\n\nSet the data of a tree\'s node.\n\n\n\n\n\n"
+    "text": "setindex!(tree::AbstractSimpleTree{N,D},data::D,node::N) where {N,D}\n\nSet the data of a tree\'s node.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Base.valtype-Tuple{QuantumLattices.Prerequisites.Trees.AbstractTree}",
-    "page": "Trees",
+    "location": "man/Prerequisites/SimpleTrees.html#Base.valtype-Tuple{QuantumLattices.Prerequisites.SimpleTrees.AbstractSimpleTree}",
+    "page": "Simple trees",
     "title": "Base.valtype",
     "category": "method",
-    "text": "valtype(tree::AbstractTree)\nvaltype(::Type{<:AbstractTree{N,D}}) where {N,D}\n\nGet a tree\'s data type.\n\n\n\n\n\n"
+    "text": "valtype(tree::AbstractSimpleTree)\nvaltype(::Type{<:AbstractSimpleTree{N,D}}) where {N,D}\n\nGet a tree\'s data type.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Base.values-Union{Tuple{D}, Tuple{N}, Tuple{AbstractTree,TreeIteration}, Tuple{AbstractTree,TreeIteration,Union{Nothing, N}}} where D where N",
-    "page": "Trees",
+    "location": "man/Prerequisites/SimpleTrees.html#Base.values-Union{Tuple{D}, Tuple{N}, Tuple{AbstractSimpleTree,SimpleTreeIteration}, Tuple{AbstractSimpleTree,SimpleTreeIteration,Union{Nothing, N}}} where D where N",
+    "page": "Simple trees",
     "title": "Base.values",
     "category": "method",
-    "text": "values(tree::AbstractTree,::TreeDepth,node::Union{N,Nothing}=tree|>root) where {N,D}\nvalues(tree::AbstractTree,::TreeWidth,node::Union{N,Nothing}=tree|>root) where {N,D}\n\nIterate over a tree\'s data starting from a certain node by depth first search or width first search.\n\n\n\n\n\n"
+    "text": "values(tree::AbstractSimpleTree,::SimpleTreeDepth,node::Union{N,Nothing}=tree|>root) where {N,D}\nvalues(tree::AbstractSimpleTree,::SimpleTreeWidth,node::Union{N,Nothing}=tree|>root) where {N,D}\n\nIterate over a tree\'s data starting from a certain node by depth first search or width first search.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Prerequisites/Trees.html#Manual-1",
-    "page": "Trees",
+    "location": "man/Prerequisites/SimpleTrees.html#Manual-1",
+    "page": "Simple trees",
     "title": "Manual",
     "category": "section",
-    "text": "Modules=[Trees]\nOrder=  [:module,:constant,:type,:macro,:function]"
+    "text": "Modules=[SimpleTrees]\nOrder=  [:module,:constant,:type,:macro,:function]"
 },
 
 {
@@ -1661,7 +1669,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "Introduction",
     "category": "section",
-    "text": "This module contains the mathematical prerequisites of the QuantumLattices package.Pages=[\n    \"Combinatorics.md\",\n    \"VectorSpaces.md\",\n    \"AlgebraOverFields.md\",\n    \"QuantumNumbers.md\",\n    ]\nDepth=2"
+    "text": "This module contains the mathematical prerequisites of the package.Pages=[\n    \"Combinatorics.md\",\n    \"VectorSpaces.md\",\n    \"AlgebraOverFields.md\",\n    \"QuantumNumbers.md\",\n    ]\nDepth=2"
 },
 
 {
@@ -2869,7 +2877,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "Introduction",
     "category": "section",
-    "text": "Essentials of the QuantumLattices package, which defines all the imported constants, types and functions when using import QuantumLattices or using QuantumLattices. Note that this submodule depends on the Prerequisites and Mathematics submodules although the variables in them are not exported to the scope of QuantumLattices by default.Pages=  [\n        \"Spatials.md\",\n        \"DegreesOfFreedom.md\",\n        \"Terms.md\",\n        \"FockPackage.md\",\n        \"SpinPackage.md\",\n        \"Extensions.md\",\n        ]\nDepth=2"
+    "text": "Essentials of the package, whose constants, types and functions will be imported when using import QuantumLattices or using QuantumLattices. Note that this submodule depends on the Prerequisites and Mathematics submodules although the variables in them are not exported to the scope of QuantumLattices by default.Pages=  [\n        \"Spatials.md\",\n        \"DegreesOfFreedom.md\",\n        \"Terms.md\",\n        \"FockPackage.md\",\n        \"SpinPackage.md\",\n        \"Extensions.md\",\n        ]\nDepth=2"
 },
 
 {
@@ -2961,6 +2969,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.allbonds",
+    "page": "Spatials",
+    "title": "QuantumLattices.Essentials.Spatials.allbonds",
+    "category": "constant",
+    "text": "allbonds\n\nIndicate that all bonds are inquired.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.insidebonds",
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.insidebonds",
@@ -2997,7 +3013,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.AbstractBond",
     "category": "type",
-    "text": "AbstractBond{R,P<:PID,N}\n\nAbstract bond.\n\n\n\n\n\n"
+    "text": "AbstractBond{N,P<:PID,R}\n\nAbstract bond.\n\n\n\n\n\n"
 },
 
 {
@@ -3017,11 +3033,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.Bonds",
+    "page": "Spatials",
+    "title": "QuantumLattices.Essentials.Spatials.Bonds",
+    "category": "type",
+    "text": "Bonds{TS,L}(bonds::Tuple{Vararg{Vector{<:AbstractBond}}}) where {TS,L<:AbstractLattice}\nBonds(lattice::AbstractLattice,types::LatticeBonds...)\n\nA set of lattice bonds.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.Cylinder",
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.Cylinder",
     "category": "type",
-    "text": "Cylinder{P}(    name::String,\n                block::AbstractMatrix{<:Real},\n                translation::AbstractVector{<:Real};\n                vector::Union{AbstractVector{<:Real},Nothing}=nothing,\n                neighbors::Union{Dict{Int,<:Real},Int}=1,\n                ) where P<:PID\n\nCylinder of 1d and quasi 2d lattices.\n\n\n\n\n\n"
+    "text": "Cylinder{P}(name::String,\n            block::AbstractMatrix{<:Real},\n            translation::SVector{N,<:Real};\n            vector::Union{AbstractVector{<:Real},Nothing}=nothing,\n            neighbors::Union{Dict{Int,<:Real},Int}=1\n            ) where {P<:PID,N}\n\nCylinder of 1d and quasi 2d lattices.\n\n\n\n\n\n"
 },
 
 {
@@ -3037,7 +3061,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.Lattice",
     "category": "type",
-    "text": "Lattice(    name::String,\n            pids::Vector{<:PID},\n            rcoords::AbstractMatrix{<:Real};\n            icoords::AbstractMatrix{<:Real}=SMatrix{0,0,Float}(),\n            vectors::AbstractVector{<:AbstractVector{<:Real}}=SVector{0,SVector{size(rcoords,1),Float}}(),\n            neighbors::Union{Dict{Int,<:Real},Int}=1,\n            coordination::Int=8\n        )\nLattice(    name::String,\n            points::AbstractVector{<:Point};\n            vectors::AbstractVector{<:AbstractVector{<:Real}}=SVector{0,SVector{points|>eltype|>dimension,Float}}(),\n            neighbors::Union{Dict{Int,<:Real},Int}=1,\n            coordination::Int=8\n            )\nLattice(    name::String,\n            sublattices::AbstractVector{<:AbstractLattice};\n            vectors::AbstractVector{<:AbstractVector{<:Real}}=SVector{0,SVector{sublattices|>eltype|>dimension,Float}}(),\n            neighbors::Union{Dict{Int,<:Real},Int}=1,\n            coordination::Int=8\n            )\n\nSimplest lattice.\n\nA simplest lattice can be construted from its contents, i.e. pids, rcoords and icoords, or from a couple of points, or from a couple of sublattices.\n\n\n\n\n\n"
+    "text": "Lattice{N}( name::String,\n            pids::Vector{<:PID},\n            rcoords::AbstractMatrix{<:Real},\n            icoords::AbstractMatrix{<:Real},\n            vectors::AbstractVector{<:AbstractVector{<:Real}},\n            neighbors::Union{Dict{Int,<:Real},Int}=1;\n            coordination::Int=8\n            ) where N\nLattice(    name::String,\n            points::AbstractVector{<:Point};\n            vectors::AbstractVector{<:AbstractVector{<:Real}}=SVector{0,SVector{points|>eltype|>dimension,Float}}(),\n            neighbors::Union{Dict{Int,<:Real},Int}=1,\n            coordination::Int=8\n            )\nLattice(    name::String,\n            sublattices::AbstractVector{<:AbstractLattice};\n            vectors::AbstractVector{<:AbstractVector{<:Real}}=SVector{0,SVector{sublattices|>eltype|>dimension,Float}}(),\n            neighbors::Union{Dict{Int,<:Real},Int}=1,\n            coordination::Int=8\n            )\n\nSimplest lattice.\n\nA simplest lattice can be construted from its contents, i.e. pids, rcoords and icoords, or from a couple of points, or from a couple of sublattices.\n\n\n\n\n\n"
 },
 
 {
@@ -3061,7 +3085,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.Point",
     "category": "type",
-    "text": "Point(pid::PID,rcoord::SVector{N,<:Real},icoord::SVector{N,<:Real}) where N\nPoint(pid::PID,rcoord::NTuple{N,<:Real},icoord::NTuple{N,<:Real}=ntuple(i->0.0,N)) where N\nPoint(pid::PID,rcoord::AbstractVector{<:Real},icoord::AbstractVector{<:Real}=zero(SVector{length(rcoord),Float}))\n\nLabeled point.\n\n\n\n\n\n"
+    "text": "Point(pid::PID,rcoord::SVector{N,<:Real},icoord::SVector{N,<:Real}) where N\nPoint(pid::PID,rcoord::NTuple{N,<:Real},icoord::NTuple{N,<:Real}=ntuple(i->0.0,N)) where N\nPoint(pid::PID,rcoord::AbstractVector{<:Real},icoord::AbstractVector{<:Real}=zero(SVector{length(rcoord),Float}))\nPoint{N}(pid::PID,rcoord::AbstractVector{<:Real},icoord::AbstractVector{<:Real}=zero(SVector{N,Float})) where N\n\nLabeled point.\n\n\n\n\n\n"
 },
 
 {
@@ -3089,19 +3113,27 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.bonds!-Tuple{Array{T,1} where T,AbstractLattice}",
+    "page": "Spatials",
+    "title": "QuantumLattices.Essentials.Spatials.bonds!",
+    "category": "method",
+    "text": "bonds!(bonds::Vector,lattice::AbstractLattice,inquiries::LatticeBonds...) -> Vector\nbonds!(bonds::Vector,lattice::AbstractLattice,::Val{zerothbonds}) -> Vector\nbonds!(bonds::Vector,lattice::AbstractLattice,::Val{insidebonds}) -> Vector\nbonds!(bonds::Vector,lattice::AbstractLattice,::Val{acrossbonds}) -> Vector\n\nGenerate the required bonds of a lattice and append them to the input bonds.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.bonds!-Tuple{Array{T,1} where T,SuperLattice,Val{QuantumLattices.Essentials.Spatials.IntraBonds()}}",
+    "page": "Spatials",
+    "title": "QuantumLattices.Essentials.Spatials.bonds!",
+    "category": "method",
+    "text": "bonds!(bonds::Vector,lattice::SuperLattice,::Val{intrabonds}) -> Vector\nbonds!(bonds::Vector,lattice::SuperLattice,::Val{interbonds}) -> Vector\n\nGenerate the required bonds of a superlattice and append them to the input bonds.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.bonds-Tuple{AbstractLattice}",
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.bonds",
     "category": "method",
-    "text": "bonds(lattice::AbstractLattice) -> Vector{AbstractBond}\nbonds(lattice::AbstractLattice,::ZerothBonds) -> Vector{Point}\nbonds(lattice::AbstractLattice,::InsideBonds) -> Vector{Bond}\nbonds(lattice::AbstractLattice,::AcrossBonds) -> Vector{Bond}\n\nGet the bonds of a lattice.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.bonds-Tuple{SuperLattice,QuantumLattices.Essentials.Spatials.IntraBonds}",
-    "page": "Spatials",
-    "title": "QuantumLattices.Essentials.Spatials.bonds",
-    "category": "method",
-    "text": "bonds(lattice::SuperLattice,::IntraBonds) -> Vector{Bond}\nbonds(lattice::SuperLattice,::InterBonds) -> Vector{Bond}\n\nGet the bonds of a superlattice.\n\n\n\n\n\n"
+    "text": "bonds(lattice::AbstractLattice,inquiry=allbonds) -> Vector{eltype(lattice|>typeof,inquiry)}\nbonds(lattice::AbstractLattice,inquiries...) -> Vector{mapreduce(inquiry->eltype(lattice|>typeof,inquiry),typejoin,inquiries)}\n\nGenerate the required bonds of a lattice.\n\n\n\n\n\n"
 },
 
 {
@@ -3121,19 +3153,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.interlinks-Tuple{AbstractArray{#s252,2} where #s252<:Real,AbstractArray{#s251,2} where #s251<:Real,Dict{Int64,Float64}}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.interlinks-Tuple{AbstractArray{#s251,2} where #s251<:Real,AbstractArray{#s250,2} where #s250<:Real,Dict{Int64,Float64}}",
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.interlinks",
     "category": "method",
-    "text": "interlinks(cluster1::AbstractMatrix{<:Real},cluster2::AbstractMatrix{<:Real},neighbors::Dict{Int,Float}) -> Vector{Tuple{Int,Int,Int,SVector{size(cluster1,1),Float}}}\n\nUse kdtree to get the intercluster nearest neighbors.\n\n\n\n\n\n"
+    "text": "interlinks(cluster1::AbstractMatrix{<:Real},cluster2::AbstractMatrix{<:Real},neighbors::Dict{Int,Float}) -> Vector{Tuple{Int,Int,Int}}\n\nUse kdtree to get the intercluster nearest neighbors.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.intralinks-Union{Tuple{N}, Tuple{AbstractArray{#s247,2} where #s247<:Real,AbstractArray{#s246,1} where #s246<:(AbstractArray{#s245,1} where #s245<:Real),Dict{Int64,Float64}}, Tuple{AbstractArray{#s244,2} where #s244<:Real,AbstractArray{#s243,1} where #s243<:(AbstractArray{#s242,1} where #s242<:Real),Dict{Int64,Float64},Tuple{Vararg{Int64,N}}}} where N",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.intralinks-Union{Tuple{N}, Tuple{AbstractArray{#s246,2} where #s246<:Real,AbstractArray{#s245,1} where #s245<:(AbstractArray{#s244,1} where #s244<:Real),Dict{Int64,Float64}}, Tuple{AbstractArray{#s243,2} where #s243<:Real,AbstractArray{#s242,1} where #s242<:(AbstractArray{#s241,1} where #s241<:Real),Dict{Int64,Float64},Tuple{Vararg{Int64,N}}}} where N",
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.intralinks",
     "category": "method",
-    "text": "intralinks( cluster::AbstractMatrix{<:Real},\n            vectors::AbstractVector{<:AbstractVector{<:Real}},\n            neighbors::Dict{Int,Float},\n            maxtranslations::NTuple{N,Int}=ntuple(i->length(neighbors),length(vectors))\n            ) where N -> Vector{Tuple{Int,Int,Int,SVector{size(cluster,1),Float}}}\n\nUse kdtree to get the intracluster nearest neighbors.\n\nAs is similar to minimumlengths, when vectors is nonempty, the cluster assumes periodic boundaries. neighbors provides the map between the bond length and the order of nearest neighbors. Note only those with the lengths present in neighbors will be included in the result. maxtranslations determines the maximum number of translations along those directions specified by vectors when the tiled supercluster is construted (See minimumlengths for the explanation of the method for periodic lattices).\n\n\n\n\n\n"
+    "text": "intralinks( cluster::AbstractMatrix{<:Real},\n            vectors::AbstractVector{<:AbstractVector{<:Real}},\n            neighbors::Dict{Int,Float},\n            maxtranslations::NTuple{N,Int}=ntuple(i->length(neighbors),length(vectors))\n            ) where N -> Vector{Tuple{Int,Int,Int,SubArray{<:Real,1}}}\n\nUse kdtree to get the intracluster nearest neighbors.\n\nAs is similar to minimumlengths, when vectors is nonempty, the cluster assumes periodic boundaries. neighbors provides the map between the bond length and the order of nearest neighbors. Note only those with the lengths present in neighbors will be included in the result. maxtranslations determines the maximum number of translations along those directions specified by vectors when the tiled supercluster is construted (See minimumlengths for the explanation of the method for periodic lattices).\n\n\n\n\n\n"
 },
 
 {
@@ -3177,27 +3209,27 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.latticebondsstructure-Tuple{Type{#s256} where #s256<:AbstractLattice}",
+    "page": "Spatials",
+    "title": "QuantumLattices.Essentials.Spatials.latticebondsstructure",
+    "category": "method",
+    "text": "latticebondsstructure(::Type{<:AbstractLattice}) -> SimpleTree{LatticeBonds,Nothing}\n\nThe tree structure of the lattice bonds.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.latticebondsstructure-Tuple{Type{#s315} where #s315<:SuperLattice}",
+    "page": "Spatials",
+    "title": "QuantumLattices.Essentials.Spatials.latticebondsstructure",
+    "category": "method",
+    "text": "latticebondsstructure(::Type{<:SuperLattice}) -> SimpleTree{LatticeBonds,Nothing}\n\nThe tree structure of the lattice bonds.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.minimumlengths",
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.minimumlengths",
     "category": "function",
     "text": "minimumlengths(cluster::AbstractMatrix{<:Real},vectors::AbstractVector{<:AbstractVector{<:Real}},nneighbor::Int=1;coordination::Int=8) -> Vector{Float}\n\nUse kdtree to search the lowest several minimum bond lengths within a lattice translated by a cluster.\n\nWhen the translation vectors are not empty, the lattice will be considered periodic in the corresponding directions. Otherwise the lattice will be open in all directions. To search for the bonds accorss the periodic boundaries, the cluster will be pretranslated to become a supercluster, which has open boundaries but is large enough to contain all the nearest neighbors within the required order. The coordination parameter sets the average number of each order of nearest neighbors. If it is to small, larger bond lengths may not be searched, and the result will contain Inf. This is a sign that you may need a larger coordination. Another situation that Inf appears in the result occurs when the minimum lengths are searched in open lattices. Indeed, the cluster may be too small so that the required order just goes beyond it. In this case the warning message can be safely ignored.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.neighbor-Tuple{Bond}",
-    "page": "Spatials",
-    "title": "QuantumLattices.Essentials.Spatials.neighbor",
-    "category": "method",
-    "text": "neighbor(bond::Bond) -> Int\n\nGet the neighbor of a bond.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.neighbor-Tuple{Point}",
-    "page": "Spatials",
-    "title": "QuantumLattices.Essentials.Spatials.neighbor",
-    "category": "method",
-    "text": "neighbor(::Point) -> 0\nneighbor(::Type{<:Point}) -> 0\n\nGet the neighbor of a point.\n\n\n\n\n\n"
 },
 
 {
@@ -3213,7 +3245,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.pidtype",
     "category": "method",
-    "text": "pidtype(bond::AbstractBond)\npidtype(::Type{<:AbstractBond{P}}) where {P<:PID}\n\nGet the pid type of a concrete bond.\n\n\n\n\n\n"
+    "text": "pidtype(bond::AbstractBond)\npidtype(::Type{<:AbstractBond{N,P}}) where {N,P<:PID}\n\nGet the pid type of a concrete bond.\n\n\n\n\n\n"
 },
 
 {
@@ -3241,7 +3273,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.reciprocals-Tuple{AbstractArray{#s257,1} where #s257<:(AbstractArray{#s256,1} where #s256<:Real)}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.reciprocals-Tuple{AbstractArray{#s256,1} where #s256<:(AbstractArray{#s255,1} where #s255<:Real)}",
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.reciprocals",
     "category": "method",
@@ -3289,11 +3321,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#Base.:==-Union{Tuple{R}, Tuple{N}, Tuple{P}, Tuple{AbstractBond{P,N,R},AbstractBond{P,N,R}}} where R where N where P<:PID",
+    "location": "man/Essentials/Spatials.html#Base.:==-Tuple{Bonds,Bonds}",
     "page": "Spatials",
     "title": "Base.:==",
     "category": "method",
-    "text": "==(b1::AbstractBond{P,N,R},b2::AbstractBond{P,N,R}) where {P<:PID,N,R} -> Bool\nisequal(b1::AbstractBond{P,N,R},b2::AbstractBond{P,N,R}) where {P<:PID,N,R} -> Bool\n\nOverloaded equivalent operator.\n\n\n\n\n\n"
+    "text": "==(bonds1::Bonds,bonds2::Bonds) -> Bool\nisequal(bonds1::Bonds,bonds2::Bonds) -> Bool\n\nOverloaded equivalent operator.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatials.html#Base.:==-Union{Tuple{R}, Tuple{P}, Tuple{N}, Tuple{AbstractBond{N,P,R},AbstractBond{N,P,R}}} where R where P<:PID where N",
+    "page": "Spatials",
+    "title": "Base.:==",
+    "category": "method",
+    "text": "==(b1::AbstractBond{N,P,R},b2::AbstractBond{N,P,R}) where {N,P<:PID,R} -> Bool\nisequal(b1::AbstractBond{N,P,R},b2::AbstractBond{N,P,R}) where {N,P<:PID,R} -> Bool\n\nOverloaded equivalent operator.\n\n\n\n\n\n"
 },
 
 {
@@ -3301,7 +3341,23 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatials",
     "title": "Base.eltype",
     "category": "method",
-    "text": "eltype(bond::AbstractBond)\neltype(::Type{<:AbstractBond{P,N}}) where {P<:PID,N}\n\nGet the eltype of a bond.\n\n\n\n\n\n"
+    "text": "eltype(bond::AbstractBond)\neltype(::Type{<:AbstractBond{N,P}}) where {N,P<:PID}\n\nGet the eltype of a bond.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatials.html#Base.eltype-Tuple{Bonds}",
+    "page": "Spatials",
+    "title": "Base.eltype",
+    "category": "method",
+    "text": "eltype(bs::Bonds)\neltype(::Type{<:Bonds{TS,<:AbstractLattice,BS}}) where {TS,BS<:Tuple{Vararg{Vector{<:AbstractBond}}}}\n\nGet the eltype of a set of lattice bonds.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatials.html#Base.filter-Tuple{LatticeBonds,Bonds}",
+    "page": "Spatials",
+    "title": "Base.filter",
+    "category": "method",
+    "text": "filter(select::LatticeBonds,bs::Bonds) -> Bonds\nfilter(select::Tuple{Vararg{LatticeBonds}},bs::Bonds) -> Bonds\n\nGet a subset of a set of lattice bonds.\n\n\n\n\n\n"
 },
 
 {
@@ -3337,11 +3393,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Essentials/Spatials.html#Base.iterate",
+    "page": "Spatials",
+    "title": "Base.iterate",
+    "category": "function",
+    "text": "iterate(bs::Bonds,state=(1,0))\n\nIterate over the lattice bonds in the set.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Essentials/Spatials.html#Base.keytype-Tuple{AbstractLattice}",
     "page": "Spatials",
     "title": "Base.keytype",
     "category": "method",
-    "text": "keytype(lattice::AbstractLattice)\nkeytype(::Type{<:AbstractLattice{P}}) where {P<:PID}\n\nGet the pid type of the lattice.\n\n\n\n\n\n"
+    "text": "keytype(lattice::AbstractLattice)\nkeytype(::Type{<:AbstractLattice{N,P}}) where {N,P<:PID}\n\nGet the pid type of the lattice.\n\n\n\n\n\n"
 },
 
 {
@@ -3349,7 +3413,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatials",
     "title": "Base.length",
     "category": "method",
-    "text": "length(bond::AbstractBond) -> Int\nlength(::Type{<:AbstractBond{<:PID,N,R}}) where {N,R} -> Int\n\nGet the number of points of a bond.\n\n\n\n\n\n"
+    "text": "length(bond::AbstractBond) -> Int\nlength(::Type{<:AbstractBond{N,<:PID,R}}) where {N,R} -> Int\n\nGet the number of points of a bond.\n\n\n\n\n\n"
 },
 
 {
@@ -3358,6 +3422,14 @@ var documenterSearchIndex = {"docs": [
     "title": "Base.length",
     "category": "method",
     "text": "length(lattice::AbstractLattice) -> Int\n\nGet the number of points contained in a lattice.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatials.html#Base.length-Tuple{Bonds}",
+    "page": "Spatials",
+    "title": "Base.length",
+    "category": "method",
+    "text": "length(bs::Bonds)=mapreduce(length,+,bs.bonds) -> Int\n\nGet the number of lattice bonds in the set.\n\n\n\n\n\n"
 },
 
 {
@@ -3397,7 +3469,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatials",
     "title": "Base.valtype",
     "category": "method",
-    "text": "valtype(lattice::AbstractLattice)\nvaltype(::Type{<:AbstractLattice{P,N}}) where {P<:PID,N}\n\nGet the point type of the lattice.\n\n\n\n\n\n"
+    "text": "valtype(lattice::AbstractLattice)\nvaltype(::Type{<:AbstractLattice{N,P}}) where {N,P<:PID}\n\nGet the point type of the lattice.\n\n\n\n\n\n"
 },
 
 {
@@ -3413,7 +3485,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatials",
     "title": "QuantumLattices.Interfaces.dimension",
     "category": "method",
-    "text": "dimension(bond::AbstractBond) -> Int\ndimension(::Type{<:AbstractBond{<:PID,N}}) where N -> Int\n\nGet the space dimension of a concrete bond.\n\n\n\n\n\n"
+    "text": "dimension(bond::AbstractBond) -> Int\ndimension(::Type{<:AbstractBond{N}}) where N -> Int\n\nGet the space dimension of a concrete bond.\n\n\n\n\n\n"
 },
 
 {
@@ -3421,7 +3493,31 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatials",
     "title": "QuantumLattices.Interfaces.dimension",
     "category": "method",
-    "text": "dimension(lattice::AbstractLattice) -> Int\ndimension(::Type{<:AbstractLattice{<:PID,N}}) where N -> Int\n\nGet the space dimension of the lattice.\n\n\n\n\n\n"
+    "text": "dimension(lattice::AbstractLattice) -> Int\ndimension(::Type{<:AbstractLattice{N}}) where N -> Int\n\nGet the space dimension of the lattice.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Interfaces.expand-Union{Tuple{VS}, Tuple{L}, Tuple{Type{L},Val{VS}}} where VS where L<:AbstractLattice",
+    "page": "Spatials",
+    "title": "QuantumLattices.Interfaces.expand",
+    "category": "method",
+    "text": "expand(::Type{L},::Val{VS}) where {L<:AbstractLattice,VS} -> Tuple\n\nExpand the lattice bond types to the leaf level.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Interfaces.kind-Tuple{Bond}",
+    "page": "Spatials",
+    "title": "QuantumLattices.Interfaces.kind",
+    "category": "method",
+    "text": "kind(bond::Bond) -> Int\n\nGet the bond kind of a bond.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Interfaces.kind-Tuple{Point}",
+    "page": "Spatials",
+    "title": "QuantumLattices.Interfaces.kind",
+    "category": "method",
+    "text": "kind(::Point) -> 0\nkind(::Type{<:Point}) -> 0\n\nGet the bond kind of a point, which is defined to be 0.\n\n\n\n\n\n"
 },
 
 {
@@ -3429,7 +3525,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatials",
     "title": "QuantumLattices.Interfaces.rank",
     "category": "method",
-    "text": "rank(bond::AbstractBond) -> Int\nrank(::Type{<:AbstractBond{<:PID,N,R}}) where {N,R} -> Int\n\nGet the rank of a bond.\n\n\n\n\n\n"
+    "text": "rank(bond::AbstractBond) -> Int\nrank(::Type{<:AbstractBond{N,<:PID,R}}) where {N,R} -> Int\n\nGet the rank of a bond.\n\n\n\n\n\n"
 },
 
 {
@@ -3502,6 +3598,22 @@ var documenterSearchIndex = {"docs": [
     "title": "Operators",
     "category": "section",
     "text": ""
+},
+
+{
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.Boundary",
+    "page": "Degrees of freedom",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.Boundary",
+    "category": "type",
+    "text": "Boundary{Names}(values::AbstractVector{Float},vectors::AbstractVector{<:AbstractVector{Float}}) where Names\n\nBoundary twist of operators.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.Boundary-Tuple{Operator}",
+    "page": "Degrees of freedom",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.Boundary",
+    "category": "method",
+    "text": "(bound::Boundary)(operator::Operator) -> Operator\n\nGet the boundary twisted operator.\n\n\n\n\n\n"
 },
 
 {
@@ -3609,7 +3721,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.Table-Tuple{AbstractArray{#s254,1} where #s254<:Index}",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.Table-Tuple{AbstractArray{#s259,1} where #s259<:Index}",
     "page": "Degrees of freedom",
     "title": "QuantumLattices.Essentials.DegreesOfFreedom.Table",
     "category": "method",
@@ -3665,7 +3777,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.isHermitian-Union{Tuple{ID{#s257} where #s257<:Tuple{Vararg{OID,N}}}, Tuple{N}} where N",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.isHermitian-Union{Tuple{ID{#s318} where #s318<:Tuple{Vararg{OID,N}}}, Tuple{N}} where N",
     "page": "Degrees of freedom",
     "title": "QuantumLattices.Essentials.DegreesOfFreedom.isHermitian",
     "category": "method",
@@ -3673,7 +3785,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.oidtype-Tuple{Type{#s257} where #s257<:IID,Type{#s256} where #s256<:AbstractBond,Type{Nothing}}",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.oidtype-Tuple{Type{#s318} where #s318<:IID,Type{#s315} where #s315<:AbstractBond,Type{Nothing}}",
     "page": "Degrees of freedom",
     "title": "QuantumLattices.Essentials.DegreesOfFreedom.oidtype",
     "category": "method",
@@ -3697,7 +3809,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.twist-Tuple{Operator,AbstractArray{#s257,1} where #s257<:AbstractArray{Float64,1},AbstractArray{Float64,1}}",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.twist-Tuple{Operator,AbstractArray{#s318,1} where #s318<:AbstractArray{Float64,1},AbstractArray{Float64,1}}",
     "page": "Degrees of freedom",
     "title": "QuantumLattices.Essentials.DegreesOfFreedom.twist",
     "category": "method",
@@ -3817,7 +3929,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.Spatials.icoord-Tuple{Operator{1,V,I} where I<:(QuantumLattices.Mathematics.AlgebraOverFields.ID{#s259} where #s259<:Tuple{OID}) where V<:Number}",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.Spatials.icoord-Tuple{Operator{1,V,I} where I<:(QuantumLattices.Mathematics.AlgebraOverFields.ID{#s320} where #s320<:Tuple{OID}) where V<:Number}",
     "page": "Degrees of freedom",
     "title": "QuantumLattices.Essentials.Spatials.icoord",
     "category": "method",
@@ -3833,11 +3945,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.Spatials.rcoord-Tuple{Operator{1,V,I} where I<:(QuantumLattices.Mathematics.AlgebraOverFields.ID{#s259} where #s259<:Tuple{OID}) where V<:Number}",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.Spatials.rcoord-Tuple{Operator{1,V,I} where I<:(QuantumLattices.Mathematics.AlgebraOverFields.ID{#s320} where #s320<:Tuple{OID}) where V<:Number}",
     "page": "Degrees of freedom",
     "title": "QuantumLattices.Essentials.Spatials.rcoord",
     "category": "method",
     "text": "rcoord(opt::Operator{1}) -> SVector\nrcoord(opt::Operator{2}) -> SVector\n\nGet the whole rcoord of an operator.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Interfaces.update!-Union{Tuple{Names}, Tuple{Boundary{Names,V} where V<:AbstractArray{Float64,1},Vararg{Any,N} where N}} where Names",
+    "page": "Degrees of freedom",
+    "title": "QuantumLattices.Interfaces.update!",
+    "category": "method",
+    "text": "update!(bound::Boundary{Names},args...;kwargs...) where Names -> Boundary\n\nUpdate the values of the boundary twisted phase.\n\n\n\n\n\n"
 },
 
 {
@@ -3905,22 +4025,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Terms.html#QuantumLattices.Essentials.Terms.Boundary",
-    "page": "Terms",
-    "title": "QuantumLattices.Essentials.Terms.Boundary",
-    "category": "type",
-    "text": "Boundary{Names}(values::AbstractVector{Float},vectors::AbstractVector{<:AbstractVector{Float}},twist::Function) where Names\n\nBoundary twist of operators.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/Terms.html#QuantumLattices.Essentials.Terms.Boundary-Tuple{Operator}",
-    "page": "Terms",
-    "title": "QuantumLattices.Essentials.Terms.Boundary",
-    "category": "method",
-    "text": "(bound::Boundary)(operator::Operator) -> Operator\n\nGet the boundary twisted operator.\n\n\n\n\n\n"
-},
-
-{
     "location": "man/Essentials/Terms.html#QuantumLattices.Essentials.Terms.Coupling",
     "page": "Terms",
     "title": "QuantumLattices.Essentials.Terms.Coupling",
@@ -3973,7 +4077,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Terms",
     "title": "QuantumLattices.Essentials.Terms.Term",
     "category": "type",
-    "text": "Term{ST,SP,R,I}(value::Number,neighbor::Any,couplings::TermCouplings,amplitude::TermAmplitude,modulate::Union{TermModulate,Nothing},factor::Number) where {ST,SP,R,I}\nTerm{ST,SP,R}(  id::Symbol,value::Number,neighbor::Any;\n                couplings::Union{Function,Coupling,Couplings,TermCouplings},\n                amplitude::Union{Function,Nothing}=nothing,\n                modulate::Union{Function,Bool}=false,\n                ) where {ST,SP,R}\n\nA term of a quantum lattice system.\n\n\n\n\n\n"
+    "text": "Term{ST,K,R,I}(value::Number,bondkind::Any,couplings::TermCouplings,amplitude::TermAmplitude,modulate::Union{TermModulate,Nothing},factor::Number) where {ST,K,R,I}\nTerm{ST,K,R}(  id::Symbol,value::Number,bondkind::Any;\n                couplings::Union{Function,Coupling,Couplings,TermCouplings},\n                amplitude::Union{Function,Nothing}=nothing,\n                modulate::Union{Function,Bool}=false,\n                ) where {ST,K,R}\n\nA term of a quantum lattice system.\n\n\n\n\n\n"
 },
 
 {
@@ -4021,15 +4125,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Terms",
     "title": "QuantumLattices.Essentials.Terms.abbr",
     "category": "method",
-    "text": "abbr(term::Term) -> Symbol\nabbr(::Type{<:Term}) -> Symbol\n\nGet the abbreviation of the species of a term.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/Terms.html#QuantumLattices.Essentials.Terms.species-Tuple{Term}",
-    "page": "Terms",
-    "title": "QuantumLattices.Essentials.Terms.species",
-    "category": "method",
-    "text": "species(term::Term) -> Symbol\nspecies(::Type{<:Term{ST,SP}}) where {ST,SP} -> Symbol\n\nGet the species of a term.\n\n\n\n\n\n"
+    "text": "abbr(term::Term) -> Symbol\nabbr(::Type{<:Term}) -> Symbol\n\nGet the abbreviation of the kind of a term.\n\n\n\n\n\n"
 },
 
 {
@@ -4089,11 +4185,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Terms.html#Base.replace-Union{Tuple{Term{ST,SP,R,I,V,N,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where N where V<:Number}, Tuple{I}, Tuple{R}, Tuple{SP}, Tuple{ST}} where I where R where SP where ST",
+    "location": "man/Essentials/Terms.html#Base.replace-Union{Tuple{Term{ST,K,R,I,V,B,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where B where V<:Number}, Tuple{I}, Tuple{R}, Tuple{K}, Tuple{ST}} where I where R where K where ST",
     "page": "Terms",
     "title": "Base.replace",
     "category": "method",
-    "text": "replace(term::Term{ST,SP,R,I};kwargs...) where {ST,SP,R,I} -> Term\n\nReplace some attributes of a term with key word arguments.\n\n\n\n\n\n"
+    "text": "replace(term::Term{ST,K,R,I};kwargs...) where {ST,K,R,I} -> Term\n\nReplace some attributes of a term with key word arguments.\n\n\n\n\n\n"
 },
 
 {
@@ -4125,7 +4221,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Terms",
     "title": "Base.valtype",
     "category": "method",
-    "text": "valtype(term::Term)\nvaltype(::Type{<:Term{ST,SP,I,V}}) where {ST,SP,I,V<:Number}\n\nGet the value type of a term.\n\n\n\n\n\n"
+    "text": "valtype(term::Term)\nvaltype(::Type{<:Term{ST,K,I,V}}) where {ST,K,I,V<:Number}\n\nGet the value type of a term.\n\n\n\n\n\n"
 },
 
 {
@@ -4197,7 +4293,15 @@ var documenterSearchIndex = {"docs": [
     "page": "Terms",
     "title": "QuantumLattices.Interfaces.id",
     "category": "method",
-    "text": "id(term::Term) -> Symbol\nid(::Type{<:Term{ST,SP,R,I}}) where {ST,SP,R,I} -> Symbol\n\n\n\n\n\n"
+    "text": "id(term::Term) -> Symbol\nid(::Type{<:Term{ST,K,R,I}}) where {ST,K,R,I} -> Symbol\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Terms.html#QuantumLattices.Interfaces.kind-Tuple{Term}",
+    "page": "Terms",
+    "title": "QuantumLattices.Interfaces.kind",
+    "category": "method",
+    "text": "kind(term::Term) -> Symbol\nkind(::Type{<:Term{ST,K}}) where {ST,K} -> Symbol\n\nGet the kind of a term.\n\n\n\n\n\n"
 },
 
 {
@@ -4229,7 +4333,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Terms",
     "title": "QuantumLattices.Interfaces.rank",
     "category": "method",
-    "text": "rank(term::Term) -> Int\nrank(::Type{<:Term{ST,SP,R}}) where {ST,SP,R} -> Int\n\nGet the rank of a term.\n\n\n\n\n\n"
+    "text": "rank(term::Term) -> Int\nrank(::Type{<:Term{ST,K,R}}) where {ST,K,R} -> Int\n\nGet the rank of a term.\n\n\n\n\n\n"
 },
 
 {
@@ -4238,14 +4342,6 @@ var documenterSearchIndex = {"docs": [
     "title": "QuantumLattices.Interfaces.update!",
     "category": "method",
     "text": "update!(term::Term,args...;kwargs...) -> Term\n\nUpdate the value of a term by its modulate function.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/Terms.html#QuantumLattices.Interfaces.update!-Union{Tuple{Names}, Tuple{Boundary{Names,V,T} where T<:Function where V<:AbstractArray{Float64,1},Vararg{Any,N} where N}} where Names",
-    "page": "Terms",
-    "title": "QuantumLattices.Interfaces.update!",
-    "category": "method",
-    "text": "update!(bound::Boundary{Names},args...;kwargs...) where Names -> Boundary\n\nUpdate the values of the boundary twisted phase.\n\n\n\n\n\n"
 },
 
 {
@@ -4381,7 +4477,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "QuantumLattices.Essentials.FockPackage.Coulomb",
     "category": "type",
-    "text": "Coulomb{ST}(    id::Symbol,value::Number;\n                neighbor::Int=1,\n                couplings::Union{Function,Coupling,Couplings,Nothing}=nothing,\n                amplitude::Union{Function,Nothing}=nothing,\n                modulate::Union{Function,Bool}=false,\n                ) where {ST}\n\nCoulomb term.\n\nType alias for Term{statistics,:Coulomb,4,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
+    "text": "Coulomb{ST}(    id::Symbol,value::Number,bondkind::Int=1;\n                couplings::Union{Function,Coupling,Couplings,Nothing}=nothing,\n                amplitude::Union{Function,Nothing}=nothing,\n                modulate::Union{Function,Bool}=false,\n                ) where {ST}\n\nCoulomb term.\n\nType alias for Term{statistics,:Coulomb,4,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
 },
 
 {
@@ -4461,7 +4557,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "QuantumLattices.Essentials.FockPackage.Hopping",
     "category": "type",
-    "text": "Hopping{ST}(id::Symbol,value::Number;\n            neighbor::Int=1,\n            couplings::Union{Function,Coupling,Couplings,Nothing}=nothing,\n            amplitude::Union{Function,Nothing}=nothing,\n            modulate::Union{Function,Bool}=false,\n            ) where {ST}\n\nHopping term.\n\nType alias for Term{statistics,:Hopping,2,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
+    "text": "Hopping{ST}(id::Symbol,value::Number,bondkind::Int=1;\n            couplings::Union{Function,Coupling,Couplings,Nothing}=nothing,\n            amplitude::Union{Function,Nothing}=nothing,\n            modulate::Union{Function,Bool}=false,\n            ) where {ST}\n\nHopping term.\n\nType alias for Term{statistics,:Hopping,2,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
 },
 
 {
@@ -4509,7 +4605,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "QuantumLattices.Essentials.FockPackage.Pairing",
     "category": "type",
-    "text": "Pairing{ST}(id::Symbol,value::Number;\n            neighbor::Int=0,\n            couplings::Union{Function,Coupling,Couplings,Nothing}=nothing,\n            amplitude::Union{Function,Nothing}=nothing,\n            modulate::Union{Function,Bool}=false,\n            ) where {ST}\n\nPairing term.\n\nType alias for Term{statistics,:Pairing,2,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
+    "text": "Pairing{ST}(id::Symbol,value::Number,bondkind::Int=0;\n            couplings::Union{Function,Coupling,Couplings,Nothing}=nothing,\n            amplitude::Union{Function,Nothing}=nothing,\n            modulate::Union{Function,Bool}=false,\n            ) where {ST}\n\nPairing term.\n\nType alias for Term{statistics,:Pairing,2,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
 },
 
 {
@@ -4633,7 +4729,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.otype-Tuple{Type{#s257} where #s257<:Union{Term{\'F\',:Onsite,2,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:Hopping,2,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:Pairing,2,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:Hubbard,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:InterOrbitalInterSpin,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:InterOrbitalIntraSpin,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:SpinFlip,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:PairHopping,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:Coulomb,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id},Type{#s256} where #s256<:OID}",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.otype-Tuple{Type{#s318} where #s318<:Union{Term{\'F\',:Onsite,2,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:Hopping,2,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:Pairing,2,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:Hubbard,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:InterOrbitalInterSpin,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:InterOrbitalIntraSpin,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:SpinFlip,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:PairHopping,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:Coulomb,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id},Type{#s315} where #s315<:OID}",
     "page": "Fock package",
     "title": "QuantumLattices.Essentials.DegreesOfFreedom.otype",
     "category": "method",
@@ -4641,7 +4737,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.twist-Tuple{OID{#s257,RC,IC,S} where S<:Union{Nothing, Int64} where IC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where RC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where #s257<:FIndex,AbstractArray{#s256,1} where #s256<:AbstractArray{Float64,1},AbstractArray{Float64,1}}",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.twist-Tuple{OID{#s318,RC,IC,S} where S<:Union{Nothing, Int64} where IC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where RC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where #s318<:FIndex,AbstractArray{#s315,1} where #s315<:AbstractArray{Float64,1},AbstractArray{Float64,1}}",
     "page": "Fock package",
     "title": "QuantumLattices.Essentials.DegreesOfFreedom.twist",
     "category": "method",
@@ -4665,7 +4761,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#QuantumLattices.Interfaces.:⊗-Union{Tuple{N}, Tuple{FockCoupling{N,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(ID{#s259} where #s259<:Tuple{Vararg{FCID,N}}) where V<:Number,FockCoupling{N,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(ID{#s259} where #s259<:Tuple{Vararg{FCID,N}}) where V<:Number}} where N",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Interfaces.:⊗-Union{Tuple{N}, Tuple{FockCoupling{N,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(ID{#s320} where #s320<:Tuple{Vararg{FCID,N}}) where V<:Number,FockCoupling{N,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(ID{#s320} where #s320<:Tuple{Vararg{FCID,N}}) where V<:Number}} where N",
     "page": "Fock package",
     "title": "QuantumLattices.Interfaces.:⊗",
     "category": "method",
@@ -4673,7 +4769,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#QuantumLattices.Interfaces.:⋅-Tuple{FockCoupling{2,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(QuantumLattices.Mathematics.AlgebraOverFields.ID{#s259} where #s259<:Tuple{FCID,FCID}) where V<:Number,FockCoupling{2,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(QuantumLattices.Mathematics.AlgebraOverFields.ID{#s259} where #s259<:Tuple{FCID,FCID}) where V<:Number}",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Interfaces.:⋅-Tuple{FockCoupling{2,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(QuantumLattices.Mathematics.AlgebraOverFields.ID{#s320} where #s320<:Tuple{FCID,FCID}) where V<:Number,FockCoupling{2,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(QuantumLattices.Mathematics.AlgebraOverFields.ID{#s320} where #s320<:Tuple{FCID,FCID}) where V<:Number}",
     "page": "Fock package",
     "title": "QuantumLattices.Interfaces.:⋅",
     "category": "method",
@@ -4681,11 +4777,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#QuantumLattices.Interfaces.expand-Union{Tuple{S}, Tuple{FockCoupling,PID,Fock}, Tuple{FockCoupling,PID,Fock,Union{Nothing, Val{S}}}} where S",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Interfaces.expand-Union{Tuple{K}, Tuple{FockCoupling,PID,Fock}, Tuple{FockCoupling,PID,Fock,Union{Nothing, Val{K}}}} where K",
     "page": "Fock package",
     "title": "QuantumLattices.Interfaces.expand",
     "category": "method",
-    "text": "expand(fc::FockCoupling,pid::PID,fock::Fock,species::Union{Val{S},Nothing}=nothing) where S -> Union{FCExpand,Tuple{}}\nexpand(fc::FockCoupling,pids::NTuple{R,PID},focks::NTuple{R,Fock},species::Union{Val{S},Nothing}=nothing) where {R,S} -> Union{FCExpand,Tuple{}}\n\nExpand a Fock coupling with the given set of point ids and Fock degrees of freedom.\n\n\n\n\n\n"
+    "text": "expand(fc::FockCoupling,pid::PID,fock::Fock,kind::Union{Val{K},Nothing}=nothing) where K -> Union{FCExpand,Tuple{}}\nexpand(fc::FockCoupling,pids::NTuple{R,PID},focks::NTuple{R,Fock},kind::Union{Val{K},Nothing}=nothing) where {R,K} -> Union{FCExpand,Tuple{}}\n\nExpand a Fock coupling with the given set of point ids and Fock degrees of freedom.\n\n\n\n\n\n"
 },
 
 {
@@ -4845,7 +4941,15 @@ var documenterSearchIndex = {"docs": [
     "page": "Spin package",
     "title": "QuantumLattices.Essentials.SpinPackage.SpinTerm",
     "category": "type",
-    "text": "SpinTerm{R}(id::Symbol,value::Number;\n            neighbor::Int,\n            couplings::Union{Function,Coupling,Couplings},\n            amplitude::Union{Function,Nothing}=nothing,\n            modulate::Union{Function,Bool}=false,\n            ) where R\n\nSpin term.\n\nType alias for Term{\'B\',:SpinTerm,R,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
+    "text": "SpinTerm{R}(id::Symbol,value::Number,bondkind::Any;\n            couplings::Union{Function,Coupling,Couplings},\n            amplitude::Union{Function,Nothing}=nothing,\n            modulate::Union{Function,Bool}=false,\n            ) where R\n\nSpin term.\n\nType alias for Term{\'B\',:SpinTerm,R,id,<:Number,<:Any,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.SpinPackage.Gamma-Tuple{Char}",
+    "page": "Spin package",
+    "title": "QuantumLattices.Essentials.SpinPackage.Gamma",
+    "category": "method",
+    "text": "Gamma(  tag::Char;\n        centers::Union{NTuple{2,Int},Nothing}=nothing,\n        atoms::Union{NTuple{2,Int},Nothing}=nothing,\n        orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing\n        ) -> Couplings{ID{<:NTuple{2,SCID}},SpinCoupling{2,Float,ID{<:NTuple{2,SCID}}}}\n\nThe Gamma couplings.\n\n\n\n\n\n"
 },
 
 {
@@ -4945,7 +5049,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.otype-Tuple{Type{#s257} where #s257<:(Term{\'B\',:SpinTerm,R,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id where R),Type{#s256} where #s256<:OID}",
+    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.otype-Tuple{Type{#s318} where #s318<:(Term{\'B\',:SpinTerm,R,id,V,B,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where B where V<:Number where id where R),Type{#s315} where #s315<:OID}",
     "page": "Spin package",
     "title": "QuantumLattices.Essentials.DegreesOfFreedom.otype",
     "category": "method",
@@ -4961,11 +5065,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Interfaces.expand-Union{Tuple{S}, Tuple{SpinCoupling,PID,Spin}, Tuple{SpinCoupling,PID,Spin,Union{Nothing, Val{S}}}} where S",
+    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Interfaces.expand-Union{Tuple{K}, Tuple{SpinCoupling,PID,Spin}, Tuple{SpinCoupling,PID,Spin,Union{Nothing, Val{K}}}} where K",
     "page": "Spin package",
     "title": "QuantumLattices.Interfaces.expand",
     "category": "method",
-    "text": "expand(sc::SpinCoupling,pid::PID,spin::Spin,species::Union{Val{S},Nothing}=nothing) where S -> Union{SCExpand,Tuple{}}\nexpand(sc::SpinCoupling,pids::NTuple{N,PID},spins::NTuple{N,Spin},species::Union{Val{S},Nothing}=nothing) where {N,S} -> Union{SCExpand,Tuple{}}\n\nExpand a spin coupling with the given set of point ids and spin degrees of freedom.\n\n\n\n\n\n"
+    "text": "expand(sc::SpinCoupling,pid::PID,spin::Spin,kind::Union{Val{K},Nothing}=nothing) where K -> Union{SCExpand,Tuple{}}\nexpand(sc::SpinCoupling,pids::NTuple{N,PID},spins::NTuple{N,Spin},kind::Union{Val{K},Nothing}=nothing) where {N,K} -> Union{SCExpand,Tuple{}}\n\nExpand a spin coupling with the given set of point ids and spin degrees of freedom.\n\n\n\n\n\n"
 },
 
 {
@@ -5022,6 +5126,14 @@ var documenterSearchIndex = {"docs": [
     "title": "QuantumLattices.Essentials.Extensions.@fc_str",
     "category": "macro",
     "text": "fc\"...\" -> FockCoupling\n\nConstruct a FockCoupling from a literal string.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Extensions.html#QuantumLattices.Essentials.Extensions.@gamma_str-Tuple{String}",
+    "page": "Extensions",
+    "title": "QuantumLattices.Essentials.Extensions.@gamma_str",
+    "category": "macro",
+    "text": "gamma\"x sl(a₁,a₂)⊗ob(o₁,o₂)@(c₁,c₂)\" -> Couplings\ngamma\"y sl(a₁,a₂)⊗ob(o₁,o₂)@(c₁,c₂)\" -> Couplings\ngamma\"z sl(a₁,a₂)⊗ob(o₁,o₂)@(c₁,c₂)\" -> Couplings\n\nThe Gamma couplings.\n\n\n\n\n\n"
 },
 
 {
