@@ -51,6 +51,14 @@ end
     opt=FOperator(1.0,(FIndex(1,2,1,1,2),FIndex(1,2,1,1,1),FIndex(1,1,1,1,2),FIndex(1,1,1,1,1)))
     @test opt|>isnormalordered==false
 
+    opt1=FOperator(1.5,(FIndex(1,2,1,1,2),FIndex(1,2,1,1,1)))
+    opt2=FOperator(2.0,(FIndex(1,2,1,1,1),FIndex(1,2,1,1,2)))
+    @test opt1*opt2==nothing
+
+    opt1=FOperator(1.5,(FIndex(1,2,1,1,2),FIndex(1,2,1,1,1)))
+    opt2=FOperator(2.0,(FIndex(1,2,1,1,2),FIndex(1,2,1,1,1)))
+    @test opt1*opt2==FOperator(3.0,(FIndex(1,2,1,1,2),FIndex(1,2,1,1,1),FIndex(1,2,1,1,2),FIndex(1,2,1,1,1)))
+
     @test rawelement(BOperator{N,<:Number,<:ID{<:NTuple{N,OID}}} where N)==BOperator
     opt=BOperator(1.0,(FIndex(1,1,1,1,2),FIndex(1,1,1,1,1)))
     @test opt|>statistics==opt|>typeof|>statistics=='B'

@@ -7,7 +7,7 @@ using ..DegreesOfFreedom: IID,Index,Internal,FilteredAttributes,IDFConfig,Table,
 using ..Terms: wildcard,constant,Subscript,Subscripts,Coupling,Couplings,@subscript,couplingcenters,Term,TermCouplings,TermAmplitude,TermModulate
 using ...Interfaces: id,rank,kind
 using ...Prerequisites: Float,delta,decimaltostr
-using ...Mathematics.AlgebraOverFields: SimpleID,ID
+using ...Mathematics.AlgebraOverFields: SimpleID,ID,Element
 using ...Mathematics.VectorSpaces: VectorSpace,IsMultiIndexable,MultiIndexOrderStyle
 
 import ..DegreesOfFreedom: twist,otype,isHermitian
@@ -199,6 +199,16 @@ statistics(::Type{<:FOperator})='F'
 Get the raw name of a type of FOperator.
 """
 rawelement(::Type{<:FOperator})=FOperator
+
+"""
+    *(f1::FOperator,f2::FOperator) -> Union{Nothing,FOperator}
+
+Get the multiplication of two fermionic Fock operators.
+"""
+function Base.:*(f1::FOperator,f2::FOperator)
+    rank(f1)>0 && rank(f2)>0 && f1.id[end]==f2.id[1] && return nothing
+    return invoke(*,Tuple{Element,Element},f1,f2)
+end
 
 """
     BOperator(value::Number,id::ID{<:NTuple{N,OID}}) where N

@@ -25,6 +25,7 @@ Base.getindex(ct::CompositeTuple,i::Union{<:Integer,CartesianIndex})=getfield(ct
     exprs=[name==:contents ? :(getfield(ct,:contents)[inds]) : :(getfield(ct,$i)) for (i,name) in enumerate(ct|>fieldnames)]
     return :(typeof(ct).name.wrapper($(exprs...)))
 end
+Base.lastindex(ct::CompositeTuple)=lastindex(getfield(ct,:contents))
 Base.iterate(ct::CompositeTuple)=iterate(getfield(ct,:contents))
 Base.iterate(ct::CompositeTuple,state)=iterate(getfield(ct,:contents),state)
 Base.iterate(rv::Iterators.Reverse{<:CompositeTuple},state=length(rv.itr))=state<1 ? nothing : (rv.itr[state],state-1)
@@ -62,6 +63,7 @@ Base.getindex(cv::CompositeVector,i::Union{<:Integer,CartesianIndex})=getfield(c
     exprs=[name==:contents ? :(getfield(cv,:contents)[inds]) : :(getfield(cv,$i)) for (i,name) in enumerate(cv|>fieldnames)]
     return :(typeof(cv).name.wrapper($(exprs...)))
 end
+Base.lastindex(cv::CompositeVector)=lastindex(getfield(cv,:contents))
 Base.setindex!(cv::CompositeVector,value,inds)=(getfield(cv,:contents)[inds]=value)
 Base.push!(cv::CompositeVector,values...)=(push!(getfield(cv,:contents),values...);cv)
 Base.pushfirst!(cv::CompositeVector,values...)=(pushfirst!(getfield(cv,:contents),values...);cv)

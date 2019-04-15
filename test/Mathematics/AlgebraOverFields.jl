@@ -62,6 +62,7 @@ Base.repr(opt::AOFOperator)="AOFOperator($(opt.value),$(opt.id))"
 rawelement(::Type{<:AOFOperator})=AOFOperator
 
 @testset "Elements" begin
+    @test valtype(Element)===Number
     @test rawelement(Element{N,<:Number,<:ID{<:NTuple{N,SimpleID}}} where N)==Element
     @test rawelement(AOFOperator{N,<:Number,<:ID{<:NTuple{N,SimpleID}}} where N)==AOFOperator
     @test scalartype(AOFOperator{N,Number,<:ID{<:NTuple{N,SimpleID}}} where N)==AOFOperator{0,Number,ID{Tuple{}}}
@@ -76,15 +77,17 @@ rawelement(::Type{<:AOFOperator})=AOFOperator
     @test opt|>typeof|>one==AOFOperator(1.0,ID())
     @test +opt==opt
     @test opt*2==2*opt==opt*AOFOperator(2,ID())==AOFOperator(2,ID())*opt==AOFOperator(2.0,ID(AOFID(1,1)))
-    @test opt*zero(Elements)==zero(Elements)==nothing
+    @test opt*zero(Elements)==zero(Elements)*opt==zero(Elements)==nothing
     @test -opt==AOFOperator(-1.0,ID(AOFID(1,1)))
     @test opt/2==opt/AOFOperator(2,ID())==AOFOperator(0.5,ID(AOFID(1,1)))
     @test opt^2==opt*opt
     @test opt+zero(Elements)==zero(Elements)+opt==opt-zero(Elements)
     @test zero(Elements)-opt==-opt
 
-    @test AOFOperator(1,ID())+1==1+AOFOperator(1,ID())==AOFOperator(2,ID())
-    @test AOFOperator(1,ID())-2==1-AOFOperator(2,ID())==AOFOperator(-1,ID())
+    @test AOFOperator(1,ID())+1==1+AOFOperator(1,ID())==AOFOperator(1,ID())+AOFOperator(1,ID())==AOFOperator(2,ID())
+    @test AOFOperator(1,ID())-2==1-AOFOperator(2,ID())==AOFOperator(1,ID())-AOFOperator(2,ID())==AOFOperator(-1,ID())
+    @test AOFOperator(2,ID())*AOFOperator(3,ID())==AOFOperator(6,ID())
+    @test opt+1==1+opt==opt+AOFOperator(1,ID())==AOFOperator(1,ID())+opt
 
     opt1=AOFOperator(1.0,ID(AOFID(1,1)))
     opt2=AOFOperator(2.0,ID(AOFID(1,2)))
@@ -96,8 +99,8 @@ rawelement(::Type{<:AOFOperator})=AOFOperator
     @test add!(deepcopy(opts),zero(Elements))==opts
     @test sub!(deepcopy(opts))==opts
     @test sub!(deepcopy(opts),zero(Elements))==opts
-    @test mul!(deepcopy(opts),2.0)==opts*2==opts*AOFOperator(2,ID())
-    @test div!(deepcopy(opts),2.0)==opts/2==opts/AOFOperator(2,ID())
+    @test mul!(deepcopy(opts),2.0)==mul!(deepcopy(opts),AOFOperator(2,ID()))==opts*2==opts*AOFOperator(2,ID())
+    @test div!(deepcopy(opts),2.0)==div!(deepcopy(opts),AOFOperator(2,ID()))==opts/2==opts/AOFOperator(2,ID())
     @test +opts==opts+zero(Elements)==zero(Elements)+opts==opts==opts-zero(Elements)
     @test opt1+opt2==opts
     @test opt1+opts+opt2==Elements(opt1*2,opt2*2)
@@ -105,7 +108,9 @@ rawelement(::Type{<:AOFOperator})=AOFOperator
     @test -opts==Elements(-opt1,-opt2)==zero(Elements)-opts
     @test 1.0-opts==AOFOperator(1.0,ID())-opts==-opts+1.0
     @test zero(Elements)==opt1-opt1==opts-opts
+    @test opts-opts==zero(Elements)
     @test isequal(zero(Elements),opts-opts)
+    @test isequal(opts-opts,zero(Elements))
     @test opts-opt1==Elements(opt2)
     @test opt1-opts==Elements(-opt2)
     @test 2*opts==opts*2==Elements(opt1*2,opt2*2)==AOFOperator(2,ID())*opts

@@ -435,7 +435,7 @@ Base.:+(::Nothing,ms::Elements)=ms
 Base.:+(factor::Number,m::Element)=m+factor
 Base.:+(factor::ScalarElement,m::Element)=m+factor
 function Base.:+(m::Element,factor::Union{ScalarElement,Number})
-    factor=convert(scalartype(m),factor)
+    factor=convert(scalartype(m|>typeof),factor)
     add!(Elements{typejoin(m|>idtype,factor|>idtype),typejoin(m|>typeof,factor|>typeof)}(m.id=>m),factor)
 end
 Base.:+(m::ScalarElement,factor::Number)=replace(m,value=m.value+factor)
@@ -475,7 +475,7 @@ Base.:*(factor::Number,m::Element)=m*factor
 Base.:*(factor::Number,ms::Elements)=ms*factor
 Base.:*(factor::ScalarElement,m::Element)=m*factor.value
 Base.:*(m::Element,factor::ScalarElement)=m*factor.value
-Base.:*(m1::ScalarElement,m2::ScalarElement)=m1*m2.factor
+Base.:*(m1::ScalarElement,m2::ScalarElement)=m1*m2.value
 Base.:*(ms::Elements,factor::ScalarElement)=ms*factor.value
 Base.:*(factor::ScalarElement,ms::Elements)=ms*factor.value
 Base.:*(m::Element,factor::Number)=replace(m,value=m.value*factor)

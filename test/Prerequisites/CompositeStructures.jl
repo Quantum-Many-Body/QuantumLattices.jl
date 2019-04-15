@@ -16,6 +16,7 @@ end
     @test isequal(t,deepcopy(t))
     @test hash(t)==hash(deepcopy(t))
     @test t[1]==1
+    @test t[end]==4
     @test t[1:3]==FT("Info",(1,2,3))
     @test collect(t)==[1,2,3,4]
     @test collect(t|>Iterators.reverse)==[4,3,2,1]
@@ -38,6 +39,7 @@ end
     @test length(v)==4
     @test v==deepcopy(v)
     @test isequal(v,deepcopy(v))
+    @test v[end]==4
     @test v[2]==3
     @test v[CartesianIndex(2,)]==3
     @test v[[1,3,4]]==FV("Info",[1,2,4])
