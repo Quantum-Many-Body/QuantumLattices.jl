@@ -7,7 +7,7 @@ using ...Interfaces: ⊕,⊗,⋅
 
 export @couplings,@fc_str,@sc_str
 export @σ⁰_str,@σˣ_str,@σʸ_str,@σᶻ_str,@σ⁺_str,@σ⁻_str
-export @heisenberg_str,@ising_str,@gamma_str,@s⁰_str,@sˣ_str,@sʸ_str,@sᶻ_str
+export @heisenberg_str,@ising_str,@gamma_str,@sˣ_str,@sʸ_str,@sᶻ_str
 
 """
     @couplings cps -> Couplings
@@ -269,14 +269,12 @@ macro gamma_str(str::String)
 end
 
 """
-    s⁰"sl(a)⊗ob(o)" -> Couplings
     sˣ"sl(a)⊗ob(o)" -> Couplings
     sʸ"sl(a)⊗ob(o)" -> Couplings
     sᶻ"sl(a)⊗ob(o)" -> Couplings
 
-The single S⁰/Sˣ/Sʸ/Sᶻ coupling.
+The single Sˣ/Sʸ/Sᶻ coupling.
 """
-macro s⁰_str(str::String) Couplings(SpinCoupling{1}(1.0;:tags=>('i',),scpairs(str,Val(1))...)) end
 macro sˣ_str(str::String) Couplings(SpinCoupling{1}(1.0;:tags=>('x',),scpairs(str,Val(1))...)) end
 macro sʸ_str(str::String) Couplings(SpinCoupling{1}(1.0;:tags=>('y',),scpairs(str,Val(1))...)) end
 macro sᶻ_str(str::String) Couplings(SpinCoupling{1}(1.0;:tags=>('z',),scpairs(str,Val(1))...)) end

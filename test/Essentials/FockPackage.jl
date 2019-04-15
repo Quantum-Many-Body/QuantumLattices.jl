@@ -7,7 +7,7 @@ using QuantumLattices.Essentials.Terms: Couplings,@subscript,statistics,abbr
 using QuantumLattices.Interfaces: dims,inds,⊗,⋅,expand
 using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Mathematics.VectorSpaces: IsMultiIndexable,MultiIndexOrderStyle
-using QuantumLattices.Mathematics.AlgebraOverFields: ID
+using QuantumLattices.Mathematics.AlgebraOverFields: ID,rawelement
 import QuantumLattices.FockPackage: fockcouplingnambus
 
 @testset "FID" begin
@@ -47,9 +47,11 @@ end
     @test opt|>isnormalordered
     @test opt|>statistics==opt|>typeof|>statistics=='F'
 
+    @test rawelement(FOperator{N,<:Number,<:ID{<:NTuple{N,OID}}} where N)==FOperator
     opt=FOperator(1.0,(FIndex(1,2,1,1,2),FIndex(1,2,1,1,1),FIndex(1,1,1,1,2),FIndex(1,1,1,1,1)))
     @test opt|>isnormalordered==false
 
+    @test rawelement(BOperator{N,<:Number,<:ID{<:NTuple{N,OID}}} where N)==BOperator
     opt=BOperator(1.0,(FIndex(1,1,1,1,2),FIndex(1,1,1,1,1)))
     @test opt|>statistics==opt|>typeof|>statistics=='B'
 end

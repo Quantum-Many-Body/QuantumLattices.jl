@@ -1,7 +1,7 @@
 using Test
 using QuantumLattices.Essentials.Extensions
 using QuantumLattices.Essentials.FockPackage: σ⁰,σˣ,σʸ,σᶻ,σ⁺,σ⁻
-using QuantumLattices.Essentials.SpinPackage: Heisenberg,Ising,Gamma,S⁰,Sˣ,Sʸ,Sᶻ
+using QuantumLattices.Essentials.SpinPackage: Heisenberg,Ising,Gamma,Sˣ,Sʸ,Sᶻ
 
 @testset "fockcoupling" begin
     fc=fc"1.0 sl(1,1,1,1)⊗ob(α,α,β,β)⊗sp(σ,γ,σ,γ)⊗ph(2,1,2,1)@(1,1,2,2) with (α<β,σ≠γ)"
@@ -123,7 +123,6 @@ end
     @test gamma"y"==Gamma('y') && gamma"y sl(1,1)⊗ob(1,3)@(1,2)"==Gamma('y',centers=(1,2),atoms=(1,1),orbitals=(1,3))
     @test gamma"z"==Gamma('z') && gamma"z sl(1,1)⊗ob(1,3)@(1,2)"==Gamma('z',centers=(1,2),atoms=(1,1),orbitals=(1,3))
 
-    @test s⁰""==S⁰() && s⁰"sl(1)⊗ob(2)"==S⁰(atom=1,orbital=2)
     @test sˣ""==Sˣ() && sˣ"sl(1)⊗ob(2)"==Sˣ(atom=1,orbital=2)
     @test sʸ""==Sʸ() && sʸ"sl(1)⊗ob(2)"==Sʸ(atom=1,orbital=2)
     @test sᶻ""==Sᶻ() && sᶻ"sl(1)⊗ob(2)"==Sᶻ(atom=1,orbital=2)

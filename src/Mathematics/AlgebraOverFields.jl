@@ -2,7 +2,7 @@ module AlgebraOverFields
 
 using Printf: @printf,@sprintf
 using ...Interfaces: dimension
-using ...Prerequisites: atol,rtol
+using ...Prerequisites: atol,rtol,Float
 using ...Prerequisites.NamedVectors: NamedVector
 using ...Prerequisites.TypeTraits: efficientoperations
 using ...Prerequisites.CompositeStructures: CompositeTuple
@@ -13,7 +13,8 @@ import ...Interfaces: rank,add!,sub!,mul!,div!,⊗,⋅
 
 export SimpleID,ID
 export IdSpace
-export Element,Elements,idtype
+export Element,ScalarElement,Elements
+export scalartype,idtype,rawelement
 
 """
     SimpleID <: NamedVector
@@ -158,33 +159,43 @@ The first and second attributes of an element must be
 abstract type Element{N,V<:Number,I<:ID{<:NTuple{N,SimpleID}}} end
 
 """
-    valtype(::Type{<:Element{N,V}}) where {N,V<:Number}
+    ScalarElement{V<:Number}
+
+Identity element.
+"""
+const ScalarElement{V<:Number}=Element{0,V,ID{Tuple{}}}
+scalartype(::Type{M}) where M<:Element=rawelement(M){0,M|>valtype,ID{Tuple{}}}
+
+"""
     valtype(m::Element)
+    valtype(::Type{<:Element})
+    valtype(::Type{<:Element{N,V,<:ID{<:Tuple{Vararg{SimpleID,N}}}} where N}) where {V<:Number}
 
 Get the type of the value of an element.
 
 The result is also the type of the field over which the algebra is defined.
 """
-Base.valtype(::Type{<:Element{N,V}}) where {N,V<:Number}=V
 Base.valtype(m::Element)=m|>typeof|>valtype
+Base.valtype(::Type{<:Element})=Number
+Base.valtype(::Type{<:Element{N,V,<:ID{<:Tuple{Vararg{SimpleID,N}}}} where N}) where {V<:Number}=V
 
 """
-    idtype(::Type{<:Element{N,<:Number,I}}) where {N,I<:ID{<:NTuple{N,SimpleID}}}
     idtype(m::Element)
+    idtype(::Type{<:Element{N,<:Number,I}}) where {N,I<:ID{<:NTuple{N,SimpleID}}}
 
 The type of the id of an element.
 """
-idtype(::Type{<:Element{N,<:Number,I}}) where {N,I<:ID{<:NTuple{N,SimpleID}}}=I
 idtype(m::Element)=m|>typeof|>idtype
+idtype(::Type{<:Element{N,<:Number,I}}) where {N,I<:ID{<:NTuple{N,SimpleID}}}=I
 
 """
-    rank(::Type{<:Element{N}}) where N -> Int
     rank(m::Element) -> Int
+    rank(::Type{<:Element{N}}) where N -> Int
 
 Get the rank of an element.
 """
-rank(::Type{<:Element{N}}) where N=N
 rank(m::Element)=m|>typeof|>rank
+rank(::Type{<:Element{N}}) where N=N
 
 """
     (m1::Element,m2::Element) -> Bool
@@ -208,6 +219,42 @@ Base.isapprox(m1::Element,m2::Element;atol::Real=atol,rtol::Real=rtol)=isapprox(
 Return a copy of a concrete `Element` with some of the field values replaced by the keyword arguments.
 """
 Base.replace(m::Element;kwargs...)=replace(efficientoperations,m;kwargs...)
+
+"""
+    rawelement(::Type{<:Element})
+
+Get the raw name of a type of Element.
+"""
+rawelement(::Type{<:Element})=Element
+
+"""
+    one(::Type{M},::Type{V}=Float) where {M<:Element,V<:Number} -> rawelement(M){0,V,ID{Tuple{}}}
+
+Get the identity operator.
+"""
+function Base.one(::Type{M},::Type{V}=Float) where {M<:Element,V<:Number}
+    rtype=rawelement(M)
+    vtype=isconcretetype(V) ? V : Int
+    @assert fieldnames(rtype)==(:value,:id) "one error: not supproted type($(nameof(rtype)))."
+    return rtype(one(vtype),ID())
+end
+
+"""
+    convert(::Type{M},m::ScalarElement) where M<:ScalarElement
+    convert(::Type{M},m::Number) where M<:ScalarElement
+
+Convert the type of a scalar element from one to another.
+Convert a scalar to a scalar element.
+"""
+function Base.convert(::Type{M},m::ScalarElement) where M<:ScalarElement
+    typeof(m)<:M && return m
+    @assert fieldnames(M)==(:value,:id) "convert error: not supported type($(nameof(M)))."
+    return rawelement(M)(convert(M|>valtype,m.value),m.id)
+end
+function Base.convert(::Type{M},m::Number) where M<:ScalarElement
+    @assert fieldnames(M)==(:value,:id) "convert error: not supported type($(nameof(M)))."
+    return rawelement(M)(convert(M|>valtype,m),ID())
+end
 
 """
     Elements{I<:ID,M<:Element} <: AbstractDict{I,M}
@@ -262,39 +309,49 @@ function Base.repr(ms::Elements)
 end
 
 """
-    zero(ms::Elements) -> typeof(ms)
-    zero(::Type{Elements{I,M}}) where {I,M} -> Elements{I,M}
+    zero(ms::Elements) -> Nothing
+    zero(::Type{<:Elements}) -> Nothing
 
 Get a zero set of elements.
 
 A zero set of elements is defined to be the one with no elements.
 """
 Base.zero(ms::Elements)=ms|>typeof|>zero
-Base.zero(::Type{Elements{I,M}}) where {I,M}=Elements{I,M}()
+Base.zero(::Type{<:Elements})=nothing
 
 """
-    empty(::Type{<:Elements}) -> Tuple{}
-
-Get the empty elements.
-
-The empty elements is defined to be the empty tuple.
+    ==(ms::Elements,::Nothing) -> Bool
+    ==(::Nothing,ms::Elements) -> Bool
+    isequal(ms::Elements,::Nothing) -> Bool
+    isequal(::Nothing,ms::Elements) -> Bool
 """
-Base.empty(::Type{<:Elements})=()
+Base.:(==)(ms::Elements,::Nothing)=length(ms)==0
+Base.:(==)(::Nothing,ms::Elements)=length(ms)==0
+Base.isequal(ms::Elements,::Nothing)=length(ms)==0
+Base.isequal(::Nothing,ms::Elements)=length(ms)==0
 
 """
     add!(ms::Elements) -> typeof(ms)
-    add!(ms::Elements,::Tuple{}) -> typeof(ms)
+    add!(ms::Elements,::Nothing) -> typeof(ms)
+    add!(ms::Elements,m::Number) -> typeof(ms)
     add!(ms::Elements,m::Element) -> typeof(ms)
     add!(ms::Elements,mms::Elements) -> typeof(ms)
 
 Get the inplace addition of elements to a set.
 """
 add!(ms::Elements)=ms
-add!(ms::Elements,::Tuple{})=ms
+add!(ms::Elements,::Nothing)=ms
+function add!(ms::Elements,m::Union{ScalarElement,Number})
+    m=convert(scalartype(ms|>valtype),m)
+    old=get(ms,m.id,nothing)
+    new=old===nothing ? m : replace(old,value=old.value+m.value)
+    abs(new.value)==0.0 ? delete!(ms,m.id) : ms[m.id]=new
+    return ms
+end
 function add!(ms::Elements,m::Element)
     @assert ms|>valtype >: m|>typeof "add! error: dismatched type, $(ms|>valtype) and $(m|>typeof)."
     old=get(ms,m.id,nothing)
-    new=old===nothing ? m : replace(m,value=old.value+m.value)
+    new=old===nothing ? m : replace(old,value=old.value+m.value)
     abs(new.value)==0.0 ? delete!(ms,m.id) : ms[m.id]=new
     return ms
 end
@@ -302,28 +359,38 @@ add!(ms::Elements,mms::Elements)=(for m in mms|>values add!(ms,m) end; ms)
 
 """
     sub!(ms::Elements) -> typeof(ms)
-    sub!(ms::Elements,::Tuple{}) -> typeof(ms)
+    sub!(ms::Elements,::Nothing) -> typeof(ms)
+    add!(ms::Elements,m::Number) -> typeof(ms)
     sub!(ms::Elements,m::Element) -> typeof(ms)
     sub!(ms::Elements,mms::Elements) -> typeof(ms)
 
 Get the inplace subtraction of elements from a set.
 """
 sub!(ms::Elements)=ms
-sub!(ms::Elements,::Tuple{})=ms
+sub!(ms::Elements,::Nothing)=ms
+function sub!(ms::Elements,m::Union{ScalarElement,Number})
+    m=convert(scalartype(ms|>valtype),-m)
+    old=get(ms,m.id,nothing)
+    new=old===nothing ? m : replace(old,value=old.value+m.value)
+    abs(new.value)==0.0 ? delete!(ms,m.id) : ms[m.id]=new
+    return ms
+end
 function sub!(ms::Elements,m::Element)
     @assert ms|>valtype >: m|>typeof "sub! error: dismatched type, $(ms|>valtype) and $(m|>typeof)."
     old=get(ms,m.id,nothing)
-    new=old==nothing ? -m : replace(m,value=old.value-m.value)
+    new=old==nothing ? -m : replace(old,value=old.value-m.value)
     abs(new.value)==0.0 ? delete!(ms,m.id) : ms[m.id]=new
     return ms
 end
 sub!(ms::Elements,mms::Elements)=(for m in mms|>values sub!(ms,m) end; ms)
 
 """
+    mul!(ms::Elements,factor::ScalarElement) -> Elements
     mul!(ms::Elements,factor::Number) -> Elements
 
 Get the inplace multiplication of elements with a scalar.
 """
+mul!(ms::Elements,factor::ScalarElement)=mul!(ms,factor.value)
 function mul!(ms::Elements,factor::Number)
     @assert isa(one(ms|>valtype|>valtype)*factor,ms|>valtype|>valtype) "mul! error: dismatched type, $(ms|>valtype) and $(factor|>typeof)."
     for m in values(ms)
@@ -333,19 +400,25 @@ function mul!(ms::Elements,factor::Number)
 end
 
 """
+    div!(ms::Elements,factor::ScalarElement) -> Elements
     div!(ms::Elements,factor::Number) -> Elements
 
 Get the inplace division of element with a scalar.
 """
+div!(ms::Elements,factor::ScalarElement)=mul!(ms,1/factor.value)
 div!(ms::Elements,factor::Number)=mul!(ms,1/factor)
 
 """
     +(m::Element) -> typeof(m)
     +(ms::Elements) -> typeof(ms)
-    +(m::Element,::Tuple{}) -> typeof(m)
-    +(::Tuple{},m::Element) -> typeof(m)
-    +(ms::Elements,::Tuple{}) -> typeof(ms)
-    +(::Tuple{},ms::Elements) -> typeof(ms)
+    +(m::Element,::Nothing) -> typeof(m)
+    +(::Nothing,m::Element) -> typeof(m)
+    +(m::Element,factor::Number) -> Elements
+    +(factor::Number,m::Element) -> Elements
+    +(ms::Elements,::Nothing) -> typeof(ms)
+    +(::Nothing,ms::Elements) -> typeof(ms)
+    +(ms::Elements,factor::Number) -> Elements
+    +(factor::Number,ms::Elements) -> Elements
     +(ms::Elements,m::Element) -> Elements
     +(m1::Element,m2::Element) -> Elements
     +(m::Element,ms::Elements) -> Elements
@@ -355,29 +428,56 @@ Overloaded `+` operator between elements of an algebra over a field.
 """
 Base.:+(m::Element)=m
 Base.:+(ms::Elements)=ms
-Base.:+(m::Element,::Tuple{})=m
-Base.:+(::Tuple{},m::Element)=m
-Base.:+(ms::Elements,::Tuple{})=ms
-Base.:+(::Tuple{},ms::Elements)=ms
-Base.:+(ms::Elements,m::Element)=m+ms
+Base.:+(m::Element,::Nothing)=m
+Base.:+(::Nothing,m::Element)=m
+Base.:+(ms::Elements,::Nothing)=ms
+Base.:+(::Nothing,ms::Elements)=ms
+Base.:+(factor::Number,m::Element)=m+factor
+Base.:+(factor::ScalarElement,m::Element)=m+factor
+function Base.:+(m::Element,factor::Union{ScalarElement,Number})
+    factor=convert(scalartype(m),factor)
+    add!(Elements{typejoin(m|>idtype,factor|>idtype),typejoin(m|>typeof,factor|>typeof)}(m.id=>m),factor)
+end
+Base.:+(m::ScalarElement,factor::Number)=replace(m,value=m.value+factor)
+Base.:+(m1::ScalarElement,m2::ScalarElement)=replace(m1,value=m1.value+m2.value)
+Base.:+(factor::Number,ms::Elements)=ms+factor
+Base.:+(factor::ScalarElement,ms::Elements)=ms+factor
+function Base.:+(ms::Elements,m::Union{Number,ScalarElement})
+    m=convert(scalartype(ms|>valtype),m)
+    add!(Elements{typejoin(ms|>keytype,m|>idtype),typejoin(ms|>valtype,m|>typeof)}(ms),m)
+end
 Base.:+(m1::Element,m2::Element)=add!(Elements{typejoin(m1|>idtype,m2|>idtype),typejoin(m1|>typeof,m2|>typeof)}(m1.id=>m1),m2)
-Base.:+(m::Element,ms::Elements)=add!(Elements{typejoin(m|>idtype,ms|>keytype),typejoin(m|>typeof,ms|>valtype)}(ms),m)
+Base.:+(m::Element,ms::Elements)=ms+m
+Base.:+(ms::Elements,m::Element)=add!(Elements{typejoin(ms|>keytype,m|>idtype),typejoin(ms|>valtype,m|>typeof)}(ms),m)
 Base.:+(ms1::Elements,ms2::Elements)=add!(Elements{typejoin(ms1|>keytype,ms2|>keytype),typejoin(ms1|>valtype,ms2|>valtype)}(ms1),ms2)
 
 """
     *(factor::Number,m::Element) -> Element
     *(m::Element,factor::Number) -> Element
     *(m1::Element,m2::Element) -> Element
+    *(m::Element,::Nothing) -> Nothing
+    *(::Nothing,m::Element) -> Nothing
     *(factor::Number,ms::Elements) -> Elements
     *(ms::Elements,factor::Number) -> Elements
     *(m::Element,ms::Elements) -> Elements
     *(ms::Elements,m::Element) -> Elements
     *(ms1::Elements,ms2::Elements) -> Elements
+    *(ms::Elements,::Nothing) -> Nothing
+    *(::Nothing,ms::Elements) -> Nothing
 
 Overloaded `*` operator for element-scalar multiplications and element-element multiplications of an algebra over a field.
 """
+Base.:*(m::Element,::Nothing)=nothing
+Base.:*(::Nothing,m::Element)=nothing
+Base.:*(ms::Elements,::Nothing)=nothing
+Base.:*(::Nothing,ms::Elements)=nothing
 Base.:*(factor::Number,m::Element)=m*factor
 Base.:*(factor::Number,ms::Elements)=ms*factor
+Base.:*(factor::ScalarElement,m::Element)=m*factor.value
+Base.:*(m::Element,factor::ScalarElement)=m*factor.value
+Base.:*(m1::ScalarElement,m2::ScalarElement)=m1*m2.factor
+Base.:*(ms::Elements,factor::ScalarElement)=ms*factor.value
+Base.:*(factor::ScalarElement,ms::Elements)=ms*factor.value
 Base.:*(m::Element,factor::Number)=replace(m,value=m.value*factor)
 Base.:*(ms::Elements,factor::Number)=abs(factor)==0.0 ? zero(Elements) : Elements(id=>m*factor for (id,m) in ms)
 Base.:*(m::Element,ms::Elements)=Elements((m*mm for mm in ms|>values)...)
@@ -393,10 +493,14 @@ end
 """
     -(m::Element) -> typeof(m)
     -(ms::Elements) -> typeof(ms)
-    -(m::Element,::Tuple{}) -> typeof(m)
-    -(::Tuple{},m::Element) -> typeof(m)
-    -(ms::Elements,::Tuple{}) -> typeof(ms)
-    -(::Tuple{},ms::Elements) -> typeof(ms)
+    -(m::Element,::Nothing) -> typeof(m)
+    -(::Nothing,m::Element) -> typeof(m)
+    -(ms::Elements,::Nothing) -> typeof(ms)
+    -(::Nothing,ms::Elements) -> typeof(ms)
+    -(m::Element,factor::Number) -> Elements
+    -(factor::Number,m::Element) -> Elements
+    -(ms::Elements,factor::Number) -> Elements
+    -(factor::Number,ms::Elements) -> Elements
     -(m1::Element,m2::Element) -> Elements
     -(m::Element,ms::Elements) -> Elements
     -(ms::Elements,m::Element) -> Elements
@@ -406,27 +510,36 @@ Overloaded `-` operator between elements of an algebra over a field.
 """
 Base.:-(m::Element)=m*(-1)
 Base.:-(ms::Elements)=ms*(-1)
-Base.:-(m::Element,::Tuple{})=m
-Base.:-(::Tuple{},m::Element)=-m
-Base.:-(ms::Elements,::Tuple{})=ms
-Base.:-(::Tuple{},ms::Elements)=-ms
+Base.:-(m::Element,::Nothing)=m
+Base.:-(::Nothing,m::Element)=-m
+Base.:-(ms::Elements,::Nothing)=ms
+Base.:-(::Nothing,ms::Elements)=-ms
+Base.:-(factor::Union{Number,ScalarElement},m::Element)=-m+factor
+Base.:-(m::Element,factor::Union{Number,ScalarElement})=m+(-factor)
+Base.:-(m1::ScalarElement,m2::ScalarElement)=replace(m1,value=m1.value-m2.value)
+Base.:-(ms::Elements,factor::Union{Number,ScalarElement})=ms+(-factor)
+Base.:-(factor::Union{Number,ScalarElement},ms::Elements)=-ms+factor
 Base.:-(m1::Element,m2::Element)=sub!(Elements{typejoin(m1|>idtype,m2|>idtype),typejoin(m1|>typeof,m2|>typeof)}(m1.id=>m1),m2)
 Base.:-(m::Element,ms::Elements)=sub!(Elements{typejoin(m|>idtype,ms|>keytype),typejoin(m|>typeof,ms|>valtype)}(m.id=>m),ms)
 Base.:-(ms::Elements,m::Element)=sub!(Elements{typejoin(m|>idtype,ms|>keytype),typejoin(m|>typeof,ms|>valtype)}(ms),m)
 Base.:-(ms1::Elements,ms2::Elements)=sub!(Elements{typejoin(ms1|>keytype,ms2|>keytype),typejoin(ms1|>valtype,ms2|>valtype)}(ms1),ms2)
 
 """
-    /(m::Element,factor::Number)
-    /(ms::Elements,factor::Number)
+    /(m::Element,factor::Number) -> Element
+    /(m::Element,factor::ScalarElement) -> Element
+    /(ms::Elements,factor::Number) -> Elements
+    /(ms::Elements,factor::ScalarElement) -> Elements
 
-Overloaded `/` operator for element-sclar division of an algebra over a field.
+Overloaded `/` operator for element-scalar division of an algebra over a field.
 """
 Base.:/(m::Element,factor::Number)=m*(1/factor)
+Base.:/(m::Element,factor::ScalarElement)=m*(1/factor.value)
 Base.:/(ms::Elements,factor::Number)=ms*(1/factor)
+Base.:/(ms::Elements,factor::ScalarElement)=ms*(1/factor.value)
 
 """
-    ^(m::Element,n::Int)
-    ^(ms::Elements,n::Int)
+    ^(m::Element,n::Int) -> Element
+    ^(ms::Elements,n::Int) -> Elements
 
 Overloaded `^` operator for element-integer power of an algebra over a field.
 """
@@ -454,5 +567,51 @@ Overloaded `⋅` operator for element-element multiplications of an algebra over
 ⋅(m::Element,ms::Elements)=Elements((m⋅mm for mm in ms|>values)...)
 ⋅(ms::Elements,m::Element)=Elements((mm⋅m for mm in ms|>values)...)
 ⋅(ms1::Elements,ms2::Elements)=Elements((m1⋅m2 for m1 in ms1|>values for m2 in ms2|>values)...)
+
+"""
+    split(m::Element) -> Tuple{Number,Vararg{Element}}
+
+Split an element into the coefficient and a sequence of rank-1 elements.
+"""
+@generated function Base.split(m::Element)
+    @assert m|>fieldnames==(:value,:id) "split error: not supported split of $(nameof(typeof(m)))."
+    exprs=[:(m.value)]
+    for i=1:rank(m)
+        push!(exprs,:(typeof(m).name.wrapper(one(m|>valtype),ID(m.id[$i]))))
+    end
+    return Expr(:tuple,exprs...)
+end
+
+"""
+    replace(m::Element,pairs::Pair{<:SimpleID,<:Union{Element,Elements}}...) -> Element/Elements
+    replace(ms::Elements,pairs::Pair{<:SimpleID,<:Union{Element,Elements}}...) -> Elements
+
+Replace the rank-1 components of an element with new element/elements.
+"""
+function Base.replace(m::Element,pairs::Pair{<:SimpleID,<:Union{Element,Elements}}...)
+    @assert m|>typeof|>fieldnames==(:value,:id) "replace error: not supported replacement of $(nameof(typeof(m)))."
+    replacedids=NTuple{length(pairs),idtype(m)|>eltype}(pair.first for pair in pairs)
+    result,ms=split(m)
+    for i=1:rank(m)
+        index=findfirst(isequal(m.id[i]),replacedids)
+        result=result*(isa(index,Int) ? pairs[index].second : ms[i])
+    end
+    return result
+end
+function Base.replace(ms::Elements,pairs::Pair{<:SimpleID,<:Union{Element,Elements}}...)
+    result=elementstype(pairs...)()
+    for m in values(ms)
+        add!(result,replace(m,pairs...))
+    end
+    return result
+end
+@generated function elementstype(ms::Vararg{Pair{<:SimpleID,<:Union{Element,Elements}},N}) where N
+    ms=ntuple(i->(fieldtype(ms[i],2)<:Elements) ? fieldtype(ms[i],2)|>valtype : fieldtype(ms[i],2),Val(N))
+    @assert mapreduce(m->(m|>fieldnames)==(:value,:id),&,ms) "elementscommontype error: not supported."
+    val=mapreduce(valtype,typejoin,ms)
+    sid=mapreduce(m->m|>idtype|>eltype,typejoin,ms)
+    name=reduce(typejoin,ms)|>rawelement
+    return :(Elements{ID,$name{R,$val,ID{NTuple{R,$sid}}} where R})
+end
 
 end #module

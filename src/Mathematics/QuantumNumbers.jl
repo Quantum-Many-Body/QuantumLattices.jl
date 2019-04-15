@@ -228,12 +228,12 @@ Get the number of unduplicate qunatum numbers in the `AbelianNumbers`.
 Base.length(qns::AbelianNumbers)=length(qns.contents)
 
 """
-    eltype(::Type{<:AbelianNumbers{QN}}) where QN
+    eltype(::Type{<:AbelianNumbers{QN}}) where {QN<:AbelianNumber}
     eltype(qns::AbelianNumbers)
 
 Get the type of the concrete `AbelianNumber` contained in a `AbelianNumbers`.
 """
-Base.eltype(::Type{<:AbelianNumbers{QN}}) where QN=QN
+Base.eltype(::Type{<:AbelianNumbers{QN}}) where {QN<:AbelianNumber}=QN
 Base.eltype(qns::AbelianNumbers)=qns|>typeof|>eltype
 
 """

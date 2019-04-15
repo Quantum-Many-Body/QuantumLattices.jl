@@ -6,7 +6,7 @@ using QuantumLattices.Essentials.DegreesOfFreedom: Table,OID,isHermitian,IDFConf
 using QuantumLattices.Essentials.Terms: Couplings,@subscript,statistics,abbr
 using QuantumLattices.Interfaces: dims,inds,expand,matrix
 using QuantumLattices.Prerequisites: Float
-using QuantumLattices.Mathematics.AlgebraOverFields: ID
+using QuantumLattices.Mathematics.AlgebraOverFields: ID,rawelement
 using QuantumLattices.Mathematics.VectorSpaces: IsMultiIndexable,MultiIndexOrderStyle
 
 @testset "SID" begin
@@ -16,18 +16,15 @@ using QuantumLattices.Mathematics.VectorSpaces: IsMultiIndexable,MultiIndexOrder
     @test SID(orbital=1,spin=0.5,tag='y')'==SID(orbital=1,spin=0.5,tag='y')
     @test SID(orbital=1,spin=0.5,tag='+')'==SID(orbital=1,spin=0.5,tag='-')
     @test SID(orbital=1,spin=0.5,tag='-')'==SID(orbital=1,spin=0.5,tag='+')
-    @test SID(orbital=1,spin=0.5,tag='i')'==SID(orbital=1,spin=0.5,tag='i')
 end
 
 @testset "matrix" begin
-    @test isapprox(matrix(SID(1,0.5,'i')),[[1.0,0.0] [0.0,1.0]])
     @test isapprox(matrix(SID(1,0.5,'z')),[[-0.5,0.0] [0.0,0.5]])
     @test isapprox(matrix(SID(1,0.5,'x')),[[0.0,0.5] [0.5,0.0]])
     @test isapprox(matrix(SID(1,0.5,'y')),[[0.0,-0.5im] [0.5im,0.0]])
     @test isapprox(matrix(SID(1,0.5,'+')),[[0.0,1.0] [0.0,0.0]])
     @test isapprox(matrix(SID(1,0.5,'-')),[[0.0,0.0] [1.0,0.0]])
 
-    @test isapprox(matrix(SID(1,1.0,'i')),[[1.0,0.0,0.0] [0.0,1.0,0.0] [0.0,0.0,1.0]])
     @test isapprox(matrix(SID(1,1.0,'z')),[[-1.0,0.0,0.0] [0.0,0.0,0.0] [0.0,0.0,1.0]])
     @test isapprox(matrix(SID(1,1.0,'x')),[[0.0,√2/2,0.0] [√2/2,0.0,√2/2] [0.0,√2/2,0.0]])
     @test isapprox(matrix(SID(1,1.0,'y')),[[0.0,-√2im/2,0.0] [√2im/2,0.0,-√2im/2] [0.0,√2im/2,0.0]])
@@ -39,11 +36,11 @@ end
     spin=Spin(atom=1,norbital=2,spin=1.0)
     @test IsMultiIndexable(Spin)==IsMultiIndexable(true)
     @test MultiIndexOrderStyle(Spin)==MultiIndexOrderStyle('C')
-    @test dims(spin)==(2,6)
-    @test inds(SID(1,1.0,'i'),spin)==(1,1)
-    @test SID((1,2),spin)==SID(1,1.0,'x')
-    @test spin|>collect==[  SID(1,1.0,'i'),SID(1,1.0,'x'),SID(1,1.0,'y'),SID(1,1.0,'z'),SID(1,1.0,'+'),SID(1,1.0,'-'),
-                            SID(2,1.0,'i'),SID(2,1.0,'x'),SID(2,1.0,'y'),SID(2,1.0,'z'),SID(2,1.0,'+'),SID(2,1.0,'-')
+    @test dims(spin)==(2,5)
+    @test inds(SID(1,1.0,'z'),spin)==(1,3)
+    @test SID((1,1),spin)==SID(1,1.0,'x')
+    @test spin|>collect==[  SID(1,1.0,'x'),SID(1,1.0,'y'),SID(1,1.0,'z'),SID(1,1.0,'+'),SID(1,1.0,'-'),
+                            SID(2,1.0,'x'),SID(2,1.0,'y'),SID(2,1.0,'z'),SID(2,1.0,'+'),SID(2,1.0,'-')
                             ]
 end
 
@@ -58,6 +55,7 @@ end
 end
 
 @testset "SOperator" begin
+    @test rawelement(SOperator{N,<:Number,<:ID{<:NTuple{N,OID}}} where N)==SOperator
     opt=SOperator(1.0,(SIndex('a',1,1,0.5,'+'),SIndex('a',1,1,0.5,'-')))
     @test opt|>statistics==opt|>typeof|>statistics=='B'
     @test opt'==SOperator(1.0,(SIndex('a',1,1,0.5,'+'),SIndex('a',1,1,0.5,'-')))
@@ -119,7 +117,6 @@ end
 end
 
 @testset "Sᵅ" begin
-    @test S⁰()==Couplings(SpinCoupling{1}(1.0,tags=('i',)))
     @test Sˣ(atom=1,orbital=1)==Couplings(SpinCoupling{1}(1.0,tags=('x',),atoms=(1,),orbitals=(1,)))
     @test Sʸ(atom=1)==Couplings(SpinCoupling{1}(1.0,tags=('y',),atoms=(1,)))
     @test Sᶻ(orbital=1)==Couplings(SpinCoupling{1}(1.0,tags=('z',),orbitals=(1,)))

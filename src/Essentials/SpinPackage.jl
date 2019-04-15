@@ -12,16 +12,17 @@ using ...Mathematics.AlgebraOverFields: SimpleID,ID
 import ..DegreesOfFreedom: otype,isHermitian
 import ..Terms: couplingcenter,statistics,abbr
 import ...Interfaces: dims,inds,expand,matrix
+import ...Mathematics.AlgebraOverFields: rawelement
 
 export SID,Spin,SIndex,usualspinindextotuple
 export SOperator
 export SCID,SpinCoupling
-export Heisenberg,Ising,Gamma,S⁰,Sˣ,Sʸ,Sᶻ
+export Heisenberg,Ising,Gamma,Sˣ,Sʸ,Sᶻ
 export SpinTerm
 
-const sidtagmap=Dict(1=>'i',2=>'x',3=>'y',4=>'z',5=>'+',6=>'-')
+const sidtagmap=Dict(1=>'x',2=>'y',3=>'z',4=>'+',5=>'-')
 const sidseqmap=Dict(v=>k for (k,v) in sidtagmap)
-const sidajointmap=Dict('i'=>'i','x'=>'x','y'=>'y','z'=>'z','+'=>'-','-'=>'+')
+const sidajointmap=Dict('x'=>'x','y'=>'y','z'=>'z','+'=>'-','-'=>'+')
 
 """
     SID <: IID
@@ -33,18 +34,18 @@ struct SID <: IID
     spin::Float
     tag::Char
     function SID(orbital::Int,spin::Real,tag::Char)
-        @assert tag in ('i','x','y','z','+','-') "SID error: not supported tag($tag)."
+        @assert tag in ('x','y','z','+','-') "SID error: not supported tag($tag)."
         new(orbital,spin,tag)
     end
 end
 Base.fieldnames(::Type{<:SID})=(:orbital,:spin,:tag)
 
 """
-    SID(;orbital::Int=1,spin::Real=0.5,tag::Char='i')
+    SID(;orbital::Int=1,spin::Real=0.5,tag::Char='z')
 
 Create a spin id.
 """
-SID(;orbital::Int=1,spin::Real=0.5,tag::Char='i')=SID(orbital,spin,tag)
+SID(;orbital::Int=1,spin::Real=0.5,tag::Char='z')=SID(orbital,spin,tag)
 
 """
     adjoint(sid::SID) -> SID
@@ -64,8 +65,7 @@ function matrix(sid::SID,dtype::Type{<:Number}=Complex{Float})
     for i=1:N,j=1:N
         row,col=N+1-i,N+1-j
         m,n=sid.spin+1-i,sid.spin+1-j
-        result[row,col]=sid.tag=='i' ? delta(i,j) :
-                        sid.tag=='x' ? (delta(i+1,j)+delta(i,j+1))*sqrt(sid.spin*(sid.spin+1)-m*n)/2 :
+        result[row,col]=sid.tag=='x' ? (delta(i+1,j)+delta(i,j+1))*sqrt(sid.spin*(sid.spin+1)-m*n)/2 :
                         sid.tag=='y' ? (delta(i+1,j)-delta(i,j+1))*sqrt(sid.spin*(sid.spin+1)-m*n)/2im :
                         sid.tag=='z' ? delta(i,j)*m :
                         sid.tag=='+' ? delta(i+1,j)*sqrt(sid.spin*(sid.spin+1)-m*n) :
@@ -146,7 +146,14 @@ statistics(opt::SOperator)=opt|>typeof|>statistics
 statistics(::Type{<:SOperator})='B'
 
 """
-    SCID(;center=wildcard,atom=wildcard,orbital=wildcard,tag='i',subscript=wildcard)=SCID(center,atom,orbital,tag,subscript)
+    rawelement(::Type{<:SOperator})
+
+Get the raw name of a type of SOperator.
+"""
+rawelement(::Type{<:SOperator})=SOperator
+
+"""
+    SCID(;center=wildcard,atom=wildcard,orbital=wildcard,tag='z',subscript=wildcard)=SCID(center,atom,orbital,tag,subscript)
 
 The id of a spin coupling.
 """
@@ -157,11 +164,11 @@ struct SCID{C,A,O,S} <: SimpleID
     tag::Char
     subscript::S
     function SCID(center,atom,orbital,tag::Char,subscript)
-        @assert tag in ('i','x','y','z','+','-') "SCID error: not supported tag($tag)."
+        @assert tag in ('x','y','z','+','-') "SCID error: not supported tag($tag)."
         new{typeof(center),typeof(atom),typeof(orbital),typeof(subscript)}(center,atom,orbital,tag,subscript)
     end
 end
-SCID(;center=wildcard,atom=wildcard,orbital=wildcard,tag='i',subscript=wildcard)=SCID(center,atom,orbital,tag,subscript)
+SCID(;center=wildcard,atom=wildcard,orbital=wildcard,tag='z',subscript=wildcard)=SCID(center,atom,orbital,tag,subscript)
 Base.fieldnames(::Type{<:SCID})=(:center,:atom,:orbital,:tag,:subscript)
 
 """
@@ -319,15 +326,6 @@ end
 
 scsinglewrapper(::Nothing)=nothing
 scsinglewrapper(value::Int)=(value,)
-
-"""
-    S⁰(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{I,SpinCoupling{1,Float,I}}  where I<:ID{<:Tuple{SCID}}
-
-The single S⁰ coupling.
-"""
-function S⁰(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing)
-    Couplings(SpinCoupling{1}(1.0,tags=('i',),atoms=scsinglewrapper(atom),orbitals=scsinglewrapper(orbital)))
-end
 
 """
     Sˣ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{I,SpinCoupling{1,Float,I}}  where I<:ID{<:Tuple{SCID}}

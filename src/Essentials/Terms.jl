@@ -83,12 +83,12 @@ rank(::Type{<:Subscript{N}}) where N=N
 
 """
     dimension(subscript::Subscript) -> Int
-    dimension(::Type{<:Subscript{N1,N2}}) where {N1,N2} -> Int
+    dimension(::Type{<:(Subscript{N1,N2} where N1)}) where N2 -> Int
 
 Get the number of the whole variables that are used to describe the subscripts of some orbital/spin degrees of freedom.
 """
 dimension(subscript::Subscript)=subscript|>typeof|>dimension
-dimension(::Type{<:Subscript{N1,N2}}) where {N1,N2}=N2
+dimension(::Type{<:(Subscript{N1,N2} where N1)}) where N2=N2
 
 """
     (subscript::Subscript{N})(::Val{'M'},values::Vararg{Int,N}) where N -> NTuple{dimension(subscript),Int}
@@ -176,12 +176,12 @@ rank(::Type{<:Subscripts{T}},i::Int) where T=rank(fieldtype(T,i))
 
 """
     dimension(subscripts::Subscripts) -> Int
-    dimension(::Type{S}) where S<:Subscripts -> Int
+    dimension(::Type{<:(Subscripts{<:Tuple,R,D} where R)}) where D -> Int
 
 Get the total number of the whole variables of the complete subscript set.
 """
 dimension(subscripts::Subscripts)=subscripts|>typeof|>dimension
-dimension(::Type{<:Subscripts{<:Tuple,R,D}}) where {R,D}=D
+dimension(::Type{<:(Subscripts{<:Tuple,R,D} where R)}) where D=D
 
 """
     dimension(subscripts::Subscripts,i::Int) -> Int
@@ -412,37 +412,39 @@ statistics(::Type{<:Term{ST}}) where ST=ST
 
 """
     kind(term::Term) -> Symbol
-    kind(::Type{<:Term{ST,K}}) where {ST,K} -> Symbol
+    kind(::Type{<:Term{ST,K} where ST}) where K -> Symbol
 
 Get the kind of a term.
 """
 kind(term::Term)=term|>typeof|>kind
-kind(::Type{<:Term{ST,K}}) where {ST,K}=K
+kind(::Type{<:Term{ST,K} where ST}) where K=K
 
 """
     rank(term::Term) -> Int
-    rank(::Type{<:Term{ST,K,R}}) where {ST,K,R} -> Int
+    rank(::Type{<:Term{ST,K,R} where {ST,K}}) where R -> Int
 
 Get the rank of a term.
 """
 rank(term::Term)=term|>typeof|>rank
-rank(::Type{<:Term{ST,K,R}}) where {ST,K,R}=R
+rank(::Type{<:Term{ST,K,R} where {ST,K}}) where R=R
 
 """
     id(term::Term) -> Symbol
-    id(::Type{<:Term{ST,K,R,I}}) where {ST,K,R,I} -> Symbol
+    id(::Type{<:Term{ST,K,R,I} where {ST,K,R}}) where I -> Symbol
+
+Get the id of a term.
 """
 id(term::Term)=term|>typeof|>id
-id(::Type{<:Term{ST,K,R,I}}) where {ST,K,R,I}=I
+id(::Type{<:Term{ST,K,R,I} where {ST,K,R}}) where I=I
 
 """
     valtype(term::Term)
-    valtype(::Type{<:Term{ST,K,I,V}}) where {ST,K,I,V<:Number}
+    valtype(::Type{<:Term{ST,K,R,I,V} where {ST,K,R,I}}) where {V<:Number}
 
 Get the value type of a term.
 """
 Base.valtype(term::Term)=term|>typeof|>valtype
-Base.valtype(::Type{<:Term{ST,K,R,I,V}}) where {ST,K,R,I,V<:Number}=V
+Base.valtype(::Type{<:Term{ST,K,R,I,V} where {ST,K,R,I}}) where {V<:Number}=V
 
 """
     abbr(term::Term) -> Symbol

@@ -464,12 +464,12 @@ Base.isequal(b1::AbstractBond{N,P,R},b2::AbstractBond{N,P,R}) where {N,P<:PID,R}
 
 """
     length(bond::AbstractBond) -> Int
-    length(::Type{<:AbstractBond{N,<:PID,R}}) where {N,R} -> Int
+    length(::Type{<:AbstractBond{N,<:PID,R} where N}) where R -> Int
 
 Get the number of points of a bond.
 """
 Base.length(bond::AbstractBond)=bond|>typeof|>length
-Base.length(::Type{<:AbstractBond{N,<:PID,R}}) where {N,R}=R
+Base.length(::Type{<:AbstractBond{N,<:PID,R} where N}) where R=R
 
 """
     eltype(bond::AbstractBond)
@@ -491,21 +491,21 @@ dimension(::Type{<:AbstractBond{N}}) where N=N
 
 """
     pidtype(bond::AbstractBond)
-    pidtype(::Type{<:AbstractBond{N,P}}) where {N,P<:PID}
+    pidtype(::Type{<:AbstractBond{N,P} where N}) where {P<:PID}
 
 Get the pid type of a concrete bond.
 """
 pidtype(bond::AbstractBond)=bond|>typeof|>pidtype
-pidtype(::Type{<:AbstractBond{N,P}}) where {N,P<:PID}=P
+pidtype(::Type{<:AbstractBond{N,P} where N}) where {P<:PID}=P
 
 """
     rank(bond::AbstractBond) -> Int
-    rank(::Type{<:AbstractBond{N,<:PID,R}}) where {N,R} -> Int
+    rank(::Type{<:AbstractBond{N,<:PID,R} where N}) where R -> Int
 
 Get the rank of a bond.
 """
 rank(bond::AbstractBond)=bond|>typeof|>rank
-rank(::Type{<:AbstractBond{N,<:PID,R}}) where {N,R}=R
+rank(::Type{<:AbstractBond{N,<:PID,R} where N}) where R=R
 
 """
     Point(pid::PID,rcoord::SVector{N,<:Real},icoord::SVector{N,<:Real}) where N
@@ -652,12 +652,12 @@ Base.isequal(lattice1::AbstractLattice,lattice2::AbstractLattice)=isequal(effici
 
 """
     keytype(lattice::AbstractLattice)
-    keytype(::Type{<:AbstractLattice{N,P}}) where {N,P<:PID}
+    keytype(::Type{<:AbstractLattice{N,P} where N}) where {P<:PID}
 
 Get the pid type of the lattice.
 """
 Base.keytype(lattice::AbstractLattice)=lattice|>typeof|>keytype
-Base.keytype(::Type{<:AbstractLattice{N,P}}) where {N,P<:PID}=P
+Base.keytype(::Type{<:AbstractLattice{N,P} where N}) where {P<:PID}=P
 
 """
     valtype(lattice::AbstractLattice)

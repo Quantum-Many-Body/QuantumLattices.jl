@@ -13,8 +13,9 @@ using ...Mathematics.VectorSpaces: VectorSpace,IsMultiIndexable,MultiIndexOrderS
 import ..DegreesOfFreedom: twist,otype,isHermitian
 import ..Terms: couplingcenter,statistics,abbr,termfactor
 import ...Interfaces: dims,inds,⊗,⋅,expand,expand!
+import ...Mathematics.AlgebraOverFields: rawelement
 
-export ANNIHILATION,CREATION,FID,FIndex,Fock
+export ANNIHILATION,CREATION,MAJORANA,FID,FIndex,Fock
 export usualfockindextotuple,nambufockindextotuple
 export FockOperator,FOperator,BOperator,isnormalordered
 export FCID,FockCoupling
@@ -40,6 +41,13 @@ const ANNIHILATION=1
 Indicate that the nambu index is CREATION.
 """
 const CREATION=2
+
+"""
+    MAJORANA
+
+Indicate that the nambu index is MAJORANA.
+"""
+const MAJORANA=0
 
 """
     FID <: IID
@@ -186,6 +194,13 @@ statistics(opt::FOperator)=opt|>typeof|>statistics
 statistics(::Type{<:FOperator})='F'
 
 """
+    rawelement(::Type{<:FOperator})
+
+Get the raw name of a type of FOperator.
+"""
+rawelement(::Type{<:FOperator})=FOperator
+
+"""
     BOperator(value::Number,id::ID{<:NTuple{N,OID}}) where N
 
 Bosonic Fock operator.
@@ -204,6 +219,13 @@ Get the statistics of BOperator.
 """
 statistics(opt::BOperator)=opt|>typeof|>statistics
 statistics(::Type{<:BOperator})='B'
+
+"""
+    rawelement(::Type{<:BOperator})
+
+Get the raw name of a type of BOperator.
+"""
+rawelement(::Type{<:BOperator})=BOperator
 
 """
     FCID(;center=wildcard,atom=wildcard,orbital=wildcard,spin=wildcard,nambu=wildcard,obsub=wildcard,spsub=wildcard)

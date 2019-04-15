@@ -162,7 +162,7 @@ Abstract type for all homogeneous named vectors.
 abstract type HomoNamedVector{T} <: NamedVector end
 
 """
-    eltype(::Type{NV}) where NV<:HomoNamedVector{T} where T
+    eltype(::Type{<:HomoNamedVector{T}}) where T
     eltype(nv::HomoNamedVector)
 
 Get the type parameter of a concrete `HomoNamedVector`.

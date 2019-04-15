@@ -19,11 +19,11 @@ The aim of this module is to represent the standard tree structure in efficiency
 To fully utilize the methods designed for a tree structure, in our protocol, a concrete subtype must implement the following methods:
 * inquiry related methods
   - ```julia
-    root(tree::AbstractSimpleTree{N,D}) where {N,D} -> Union{N,Nothing}
+    root(tree::AbstractSimpleTree{N}) where N -> Union{N,Nothing}
     ```
     Get a tree's root node (`nothing` for empty trees)
   - ```julia
-    haskey(tree::AbstractSimpleTree{N,D},node::N) where {N,D} -> Bool
+    haskey(tree::AbstractSimpleTree{N},node::N) where N -> Bool
     ```
     Check whether a node is in a tree.
   - ```julia
@@ -31,26 +31,26 @@ To fully utilize the methods designed for a tree structure, in our protocol, a c
     ```
     Get the number of a tree's nodes.
   - ```julia
-    parent(tree::AbstractSimpleTree{N,D},
+    parent(tree::AbstractSimpleTree{N},
            node::N,
            superparent::Union{N,Nothing}=nothing
-           ) where {N,D} -> Union{N,Nothing}
+           ) where N -> Union{N,Nothing}
     ```
     Get the parent of a tree's node or return superparent when the input node is the tree's root.
   - ```julia
-    children(tree::AbstractSimpleTree{N,D},node::N) where {N,D} -> Vector{N}
+    children(tree::AbstractSimpleTree{N},node::N) where N -> Vector{N}
     ```
     Get the children of a tree's node.
 * structure modification related methods
   - ```julia
-    addnode!(tree::AbstractSimpleTree{N,D},
+    addnode!(tree::AbstractSimpleTree{N},
              parent::Union{N,Nothing},
              node::N
-             ) where {N,D}
+             ) where N
     ```
     Update the structure of a tree by adding a node. When the parent is `nothing`, the input tree must be empty and the input node becomes the tree's root.
   - ```julia
-    deletenode!(tree::AbstractSimpleTree{N,D},node::N) where {N,D}
+    deletenode!(tree::AbstractSimpleTree{N},node::N) where N
     ```
     Update the structure of a tree by deleting a node.
 * index related methods

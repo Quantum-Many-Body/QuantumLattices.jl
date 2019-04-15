@@ -11,6 +11,7 @@ using ...Mathematics.AlgebraOverFields: SimpleID,ID,Element,Elements
 
 import ..Spatials: pidtype,rcoord,icoord
 import ...Interfaces: update!
+import ...Mathematics.AlgebraOverFields: rawelement
 
 export IID,Index,pid,iidtype,iid
 export IndexToTuple,DirectIndexToTuple,directindextotuple,FilteredAttributes
@@ -58,12 +59,12 @@ end
 
 """
     pidtype(index::Index)
-    pidtype(::Type{<:Index{P,I}}) where {P,I}
+    pidtype(::Type{<:Index{P}}) where {P<:PID}
 
 Get the type of the spatial part of an index.
 """
 pidtype(index::Index)=index|>typeof|>pidtype
-pidtype(::Type{<:Index{P,I}}) where {P,I}=P
+pidtype(::Type{<:Index{P}}) where {P<:PID}=P
 
 """
     pid(index::Index) -> PID
@@ -77,12 +78,12 @@ end
 
 """
     iidtype(index::Index)
-    iidtype(::Type{<:Index{P,I}}) where {P,I}
+    iidtype(::Type{<:Index{<:PID,I}}) where {I<:IID}
 
 Get the type of the internal part of an index.
 """
 iidtype(index::Index)=index|>typeof|>iidtype
-iidtype(::Type{<:Index{P,I}}) where {P,I}=I
+iidtype(::Type{<:Index{<:PID,I}}) where {I<:IID}=I
 
 """
     iid(index::Index) -> IID
@@ -412,6 +413,13 @@ Get the whole icoord of an operator.
 """
 icoord(opt::Operator{1})=opt.id[1].icoord
 icoord(opt::Operator{2})=opt.id[1].icoord-opt.id[2].icoord
+
+"""
+    rawelement(::Type{<:Operator})
+
+Get the raw name of a type of Operator.
+"""
+rawelement(::Type{<:Operator})=Operator
 
 """
     otype
