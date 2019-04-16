@@ -3429,7 +3429,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatials",
     "title": "Base.iterate",
     "category": "function",
-    "text": "iterate(bond::Bond,state=1)\n\nIterate over the points in a bond.\n\n\n\n\n\n"
+    "text": "iterate(bs::Bonds,state=(1,0))\n\nIterate over the lattice bonds in the set.\n\n\n\n\n\n"
 },
 
 {
@@ -3437,7 +3437,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatials",
     "title": "Base.iterate",
     "category": "function",
-    "text": "iterate(bs::Bonds,state=(1,0))\n\nIterate over the lattice bonds in the set.\n\n\n\n\n\n"
+    "text": "iterate(bond::Bond,state=1)\n\nIterate over the points in a bond.\n\n\n\n\n\n"
 },
 
 {
@@ -3737,6 +3737,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.LaTeX",
+    "page": "Degrees of freedom",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.LaTeX",
+    "category": "type",
+    "text": "LaTeX{SP,SB}(body) where {SP,SB}\n\nLaTeX string representation.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.OID",
     "page": "Degrees of freedom",
     "title": "QuantumLattices.Essentials.DegreesOfFreedom.OID",
@@ -3841,6 +3849,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.optdefaultlatex",
+    "page": "Degrees of freedom",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.optdefaultlatex",
+    "category": "function",
+    "text": "optdefaultlatex\n\nGet the default LaTeX pattern of the oids of an operator.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.otype",
     "page": "Degrees of freedom",
     "title": "QuantumLattices.Essentials.DegreesOfFreedom.otype",
@@ -3854,6 +3870,22 @@ var documenterSearchIndex = {"docs": [
     "title": "QuantumLattices.Essentials.DegreesOfFreedom.pid",
     "category": "method",
     "text": "pid(index::Index) -> PID\n\nGet the spatial part of an index.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.script-Tuple{OID,LaTeX,Val{:B}}",
+    "page": "Degrees of freedom",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.script",
+    "category": "method",
+    "text": "script(oid::OID,l::LaTeX,::Val{:B}) -> Any\nscript(oid::OID,l::LaTeX,::Val{:SP}) -> Tuple\nscript(oid::OID,l::LaTeX,::Val{:SB}) -> Tuple\n\nGet the body/superscript/subscript of the latex string representation of an oid.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.script-Union{Tuple{attr}, Tuple{OID,Val{attr}}} where attr",
+    "page": "Degrees of freedom",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.script",
+    "category": "method",
+    "text": "script(oid::OID,::Val{attr}) where attr -> String\n\nGet the :rcoord/:icoord script of an oid.\n\n\n\n\n\n"
 },
 
 {
@@ -3926,6 +3958,30 @@ var documenterSearchIndex = {"docs": [
     "title": "Base.replace!",
     "category": "method",
     "text": "replace!(config::IDFConfig,pids::PID...) -> IDFConfig\n\nReset the idfconfig with new pids.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreesOfFreedom.html#Base.repr",
+    "page": "Degrees of freedom",
+    "title": "Base.repr",
+    "category": "function",
+    "text": "repr(opt::Operator,l::Union{LaTeX,Nothing}=nothing) -> String\n\nGet the latex string representation of an operator.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreesOfFreedom.html#Base.repr",
+    "page": "Degrees of freedom",
+    "title": "Base.repr",
+    "category": "function",
+    "text": "repr(opts::Operators,l::Union{LaTeX,Nothing}=nothing) -> String\n\nGet the latex string representation of a set of operators.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreesOfFreedom.html#Base.repr-Tuple{OID,LaTeX}",
+    "page": "Degrees of freedom",
+    "title": "Base.repr",
+    "category": "method",
+    "text": "repr(oid::OID,l::LaTeX) -> String\n\nLaTeX string representation of an oid.\n\n\n\n\n\n"
 },
 
 {
@@ -4529,6 +4585,22 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.FockPackage.boptdefaultlatex",
+    "page": "Fock package",
+    "title": "QuantumLattices.Essentials.FockPackage.boptdefaultlatex",
+    "category": "constant",
+    "text": "boptdefaultlatex\n\nThe default LaTeX pattern of the oids of a bosonic operator.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.FockPackage.foptdefaultlatex",
+    "page": "Fock package",
+    "title": "QuantumLattices.Essentials.FockPackage.foptdefaultlatex",
+    "category": "constant",
+    "text": "foptdefaultlatex\n\nThe default LaTeX pattern of the oids of a fermionic operator.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.FockPackage.BOperator",
     "page": "Fock package",
     "title": "QuantumLattices.Essentials.FockPackage.BOperator",
@@ -4753,6 +4825,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Essentials/FockPackage.html#Base.:*-Tuple{FOperator,FOperator}",
+    "page": "Fock package",
+    "title": "Base.:*",
+    "category": "method",
+    "text": "*(f1::FOperator,f2::FOperator) -> Union{Nothing,FOperator}\n\nGet the multiplication of two fermionic Fock operators.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Essentials/FockPackage.html#Base.:*-Tuple{FockCoupling,FockCoupling}",
     "page": "Fock package",
     "title": "Base.:*",
@@ -4793,11 +4873,35 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.optdefaultlatex-Tuple{Type{#s331} where #s331<:BOperator}",
+    "page": "Fock package",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.optdefaultlatex",
+    "category": "method",
+    "text": "optdefaultlatex(::Type{<:BOperator}) -> LaTeX\n\nGet the default LaTeX pattern of the oids of a bosonic operator.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.optdefaultlatex-Tuple{Type{#s331} where #s331<:FOperator}",
+    "page": "Fock package",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.optdefaultlatex",
+    "category": "method",
+    "text": "optdefaultlatex(::Type{<:FOperator}) -> LaTeX\n\nGet the default LaTeX pattern of the oids of a fermionic operator.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.otype-Tuple{Type{#s330} where #s330<:Union{Term{\'F\',:Onsite,2,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:Hopping,2,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:Pairing,2,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:Hubbard,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:InterOrbitalInterSpin,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:InterOrbitalIntraSpin,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:SpinFlip,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:PairHopping,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:Coulomb,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id},Type{#s327} where #s327<:OID}",
     "page": "Fock package",
     "title": "QuantumLattices.Essentials.DegreesOfFreedom.otype",
     "category": "method",
     "text": "otype(T::Type{<:FFockTerm},I::Type{<:OID})\notype(T::Type{<:BFockTerm},I::Type{<:OID})\n\nGet the operator type of a Fock term.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.script-Tuple{OID{#s331,RC,IC,S} where S<:Union{Nothing, Int64} where IC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where RC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where #s331<:FIndex,Val{:site}}",
+    "page": "Fock package",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.script",
+    "category": "method",
+    "text": "script(oid::OID{<:FIndex},::Val{:site}) -> Int\nscript(oid::OID{<:FIndex},::Val{:orbital}) -> Int\nscript(oid::OID{<:FIndex},::Val{:spinint}) -> Int\nscript(oid::OID{<:FIndex},::Val{:spinsym}) -> String\nscript(oid::OID{<:FIndex},::Val{:nambu}) -> String\n\nGet the required script of an Fock oid.\n\n\n\n\n\n"
 },
 
 {
@@ -4950,6 +5054,14 @@ var documenterSearchIndex = {"docs": [
     "title": "Predefined spin terms",
     "category": "section",
     "text": ""
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.SpinPackage.soptdefaultlatex",
+    "page": "Spin package",
+    "title": "QuantumLattices.Essentials.SpinPackage.soptdefaultlatex",
+    "category": "constant",
+    "text": "soptdefaultlatex\n\nThe default LaTeX pattern of the oids of a spin operator.\n\n\n\n\n\n"
 },
 
 {
@@ -5121,11 +5233,27 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.optdefaultlatex-Tuple{Type{#s331} where #s331<:SOperator}",
+    "page": "Spin package",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.optdefaultlatex",
+    "category": "method",
+    "text": "optdefaultlatex(::Type{<:SOperator}) -> LaTeX\n\nGet the default LaTeX pattern of the oids of a spin operator.\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.otype-Tuple{Type{#s330} where #s330<:(Term{\'B\',:SpinTerm,R,id,V,B,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where B where V<:Number where id where R),Type{#s327} where #s327<:OID}",
     "page": "Spin package",
     "title": "QuantumLattices.Essentials.DegreesOfFreedom.otype",
     "category": "method",
     "text": "otype(T::Type{<:SpinTerm},I::Type{<:OID})\n\nGet the operator type of a spin term.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.script-Tuple{OID{#s331,RC,IC,S} where S<:Union{Nothing, Int64} where IC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where RC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where #s331<:SIndex,Val{:site}}",
+    "page": "Spin package",
+    "title": "QuantumLattices.Essentials.DegreesOfFreedom.script",
+    "category": "method",
+    "text": "script(oid::OID{<:SIndex},::Val{:site}) -> Int\nscript(oid::OID{<:SIndex},::Val{:orbital}) -> Int\nscript(oid::OID{<:SIndex},::Val{:spin}) -> Float\nscript(oid::OID{<:SIndex},::Val{:tag}) -> Char\n\nGet the required script of a spin oid.\n\n\n\n\n\n"
 },
 
 {
