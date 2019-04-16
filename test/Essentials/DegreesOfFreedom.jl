@@ -6,7 +6,7 @@ using QuantumLattices.Essentials.DegreesOfFreedom
 using QuantumLattices.Essentials.Spatials: PID,Point,pidtype,rcoord,icoord
 using QuantumLattices.Mathematics.AlgebraOverFields: ID
 import QuantumLattices.Interfaces: dimension,decompose,update!
-import QuantumLattices.Essentials.DegreesOfFreedom: twist
+import QuantumLattices.Essentials.DegreesOfFreedom: twist,script,optdefaultlatex,latexsuperscript,latexsubscript
 import QuantumLattices.Mathematics.AlgebraOverFields: rawelement
 
 struct DID <: IID nambu::Int end
@@ -27,6 +27,9 @@ function twist(id::OID{<:DIndex},vectors::AbstractVector{<:AbstractVector{Float}
     id.index.nambu==1 ? phase : conj(phase)
 end
 
+script(oid::OID{<:DIndex},::Val{:site})=oid.index.site
+script(oid::OID{<:DIndex},::Val{:nambu})=oid.index.nambu==2 ? "\\dagger" : ""
+
 struct DFock <: Internal{DID}
     atom::Int
     nnambu::Int
@@ -40,6 +43,7 @@ struct DOperator{N,V<:Number,I<:ID{<:NTuple{N,OID}}} <: Operator{N,V,I}
     DOperator(value::Number,id::ID{<:NTuple{N,OID}}) where N=new{N,typeof(value),typeof(id)}(value,id)
 end
 rawelement(::Type{<:DOperator})=DOperator
+optdefaultlatex(::Type{<:DOperator})=LaTeX{(:nambu,),(:site,)}('d')
 
 @testset "Index" begin
     index=DIndex(PID('S',4),DID(1))
@@ -147,6 +151,29 @@ end
     @test opts'+opts==Operators(opt1,opt1',opt2*2)
     @test isHermitian(opts)==false
     @test isHermitian(opts'+opts)==true
+end
+
+@testset "LaTeX" begin
+    latex=LaTeX{(:nambu,),(:site,)}('c')
+    @test latexsuperscript(latex|>typeof)==(:nambu,)
+    @test latexsubscript(latex|>typeof)==(:site,)
+
+    oid=OID(DIndex('d',1,2),rcoord=SVector(0.0,0.0),icoord=SVector(1.0,0.0),seq=1)
+    @test script(oid,Val(:rcoord))=="[0.0,0.0]"
+    @test script(oid,Val(:icoord))=="[1.0,0.0]"
+    @test script(oid,latex,Val(:B))=='c'
+    @test script(oid,latex,Val(:SP))==("\\dagger",)
+    @test script(oid,latex,Val(:SB))==(1,)
+    @test repr(oid,latex)=="c^{\\dagger}_{1}"
+
+    opt=DOperator(1.0,(DIndex('d',2,2),DIndex('d',1,1)),rcoords=(SVector(1.0,0.0),SVector(0.0,0.0)),icoords=(SVector(2.0,0.0),SVector(0.0,0.0)),seqs=(2,1))
+    @test repr(opt,LaTeX{(:nambu,),(:site,)}('c'))=="1.0c^{\\dagger}_{2}c^{}_{1}"
+    @test repr(opt,LaTeX{(:nambu,),(:site,)}())=="1.0d^{\\dagger}_{2}d^{}_{1}"
+    @test repr(opt,LaTeX{(:nambu,),(:rcoord,)}())=="1.0d^{\\dagger}_{[1.0,0.0]}d^{}_{[0.0,0.0]}"
+    @test repr(opt)=="1.0d^{\\dagger}_{2}d^{}_{1}"
+
+    opts=Operators(DOperator(1.0im,(DIndex('d',2,2),DIndex('d',1,1))),DOperator(-1.0,(DIndex('d',1,2),DIndex('d',1,1))))
+    @test repr(opts,LaTeX{(:nambu,),(:site,)}('c'))=="1.0imc^{\\dagger}_{2}c^{}_{1}-1.0c^{\\dagger}_{1}c^{}_{1}"
 end
 
 @testset "Boundary" begin

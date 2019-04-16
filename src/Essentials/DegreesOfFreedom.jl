@@ -1,6 +1,6 @@
 module DegreesOfFreedom
 
-using Printf: @printf
+using Printf: @printf,@sprintf
 using StaticArrays: SVector
 using ..Spatials: PID,AbstractBond
 using ...Interfaces: rank,dimension
@@ -16,8 +16,8 @@ import ...Mathematics.AlgebraOverFields: rawelement
 export IID,Index,pid,iidtype,iid
 export IndexToTuple,DirectIndexToTuple,directindextotuple,FilteredAttributes
 export Internal,IDFConfig,Table
-export OID,Operator,Operators,isHermitian,twist
-export oidtype,otype
+export LaTeX,OID,Operator,Operators,isHermitian,twist
+export script,oidtype,otype,optdefaultlatex
 export Boundary
 
 """
@@ -282,6 +282,21 @@ function Base.reverse(table::Table)
     result
 end
 
+"""
+    LaTeX{SP,SB}(body) where {SP,SB}
+
+LaTeX string representation.
+"""
+struct LaTeX{SP,SB,B}
+    body::B
+    function LaTeX{SP,SB}(body=nothing) where {SP,SB}
+        @assert isa(SP,Tuple{Vararg{Symbol}}) && isa(SB,Tuple{Vararg{Symbol}}) "LaTeX error: SP and SB must be tuple of symbols."
+        new{SP,SB,typeof(body)}(body)
+    end
+end
+latexsuperscript(::Type{<:LaTeX{SP}}) where SP=SP
+latexsubscript(::Type{<:LaTeX{SP,SB} where SP}) where SB=SB
+
 @generated function oidcoord(vector::SVector{N,Float}) where N
     exprs=[:(vector[$i]===-0.0 ? 0.0 : vector[$i]) for i=1:N]
     return :(SVector($(exprs...)))
@@ -328,6 +343,13 @@ function Base.show(io::IO,oid::OID)
 end
 
 """
+    repr(oid::OID,l::LaTeX) -> String
+
+LaTeX string representation of an oid.
+"""
+Base.repr(oid::OID,l::LaTeX)=@sprintf "%s^{%s}_{%s}" script(oid,l,Val(:B)) join(script(oid,l,Val(:SP)),',') join(script(oid,l,Val(:SB)),',')
+
+"""
     adjoint(oid::OID) -> typeof(oid)
     adjoint(oid::ID{<:NTuple{N,OID}}) where N -> typeof(oid)
 
@@ -347,6 +369,27 @@ function isHermitian(oid::ID{<:NTuple{N,OID}}) where N
     end
     return true
 end
+
+"""
+    script(oid::OID,::Val{attr}) where attr -> String
+
+Get the `:rcoord/:icoord` script of an oid.
+"""
+@generated function script(oid::OID,::Val{attr}) where attr
+    @assert attr in (:rcoord,:icoord) "script error: not supported attr($attr)."
+    fieldtype(oid,attr)<:Nothing ? 'N' : (attr=QuoteNode(attr);:("[$(join(getfield(oid,$attr),','))]"))
+end
+
+"""
+    script(oid::OID,l::LaTeX,::Val{:B}) -> Any
+    script(oid::OID,l::LaTeX,::Val{:SP}) -> Tuple
+    script(oid::OID,l::LaTeX,::Val{:SB}) -> Tuple
+
+Get the body/superscript/subscript of the latex string representation of an oid.
+"""
+@generated script(oid::OID,l::LaTeX,::Val{:B})=fieldtype(l,:body)<:Nothing ? :(oid.index.scope) : :(l.body)
+@generated script(oid::OID,l::LaTeX,::Val{:SP})=Expr(:tuple,[:(script(oid,Val($super))) for super in QuoteNode.(l|>latexsuperscript)]...)
+@generated script(oid::OID,l::LaTeX,::Val{:SB})=Expr(:tuple,[:(script(oid,Val($sub))) for sub in QuoteNode.(l|>latexsubscript)]...)
 
 """
     oidtype(I::Type{<:IID},B::Type{<:AbstractBond},::Type{Nothing})
@@ -388,6 +431,24 @@ Base.show(io::IO,opt::Operator)=@printf io "%s(value=%s,id=%s)" nameof(typeof(op
 Get the adjoint of an operator.
 """
 Base.adjoint(opt::Operator)=typeof(opt).name.wrapper(opt.value',opt.id')
+
+"""
+    optdefaultlatex
+
+Get the default LaTeX pattern of the oids of an operator.
+"""
+function optdefaultlatex end
+
+"""
+    repr(opt::Operator,l::Union{LaTeX,Nothing}=nothing) -> String
+
+Get the latex string representation of an operator.
+"""
+Base.repr(opt::Operator,::Nothing=nothing)=repr(opt,opt|>typeof|>optdefaultlatex)
+@generated function Base.repr(opt::Operator,l::LaTeX)
+    expr=Expr(:tuple,:(decimaltostr(opt.value)),[:(repr(opt.id[$i],l)) for i=1:rank(opt)]...)
+    return :(join($expr,""))
+end
 
 """
     isHermitian(opt::Operator) -> Bool
@@ -450,6 +511,21 @@ function Base.adjoint(opts::Operators)
         result[nopt.id]=nopt
     end
     return result
+end
+
+"""
+    repr(opts::Operators,l::Union{LaTeX,Nothing}=nothing) -> String
+
+Get the latex string representation of a set of operators.
+"""
+function Base.repr(opts::Operators,l::Union{LaTeX,Nothing}=nothing)
+    result=String[]
+    for (i,opt) in enumerate(values(opts))
+        rep=repr(opt,l)
+        i>1 && rep[1]!='-' && push!(result,"+")
+        push!(result,rep)
+    end
+    return join(result,"")
 end
 
 """

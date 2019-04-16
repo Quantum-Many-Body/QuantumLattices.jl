@@ -3,14 +3,14 @@ module FockPackage
 using LinearAlgebra: dot
 using Printf: @printf,@sprintf
 using ..Spatials: PID,AbstractBond,Bond,decompose
-using ..DegreesOfFreedom: IID,Index,Internal,FilteredAttributes,IDFConfig,Table,OID,Operator,Operators
+using ..DegreesOfFreedom: IID,Index,Internal,FilteredAttributes,IDFConfig,Table,OID,Operator,Operators,LaTeX
 using ..Terms: wildcard,constant,Subscript,Subscripts,Coupling,Couplings,@subscript,couplingcenters,Term,TermCouplings,TermAmplitude,TermModulate
 using ...Interfaces: id,rank,kind
 using ...Prerequisites: Float,delta,decimaltostr
 using ...Mathematics.AlgebraOverFields: SimpleID,ID,Element
 using ...Mathematics.VectorSpaces: VectorSpace,IsMultiIndexable,MultiIndexOrderStyle
 
-import ..DegreesOfFreedom: twist,otype,isHermitian
+import ..DegreesOfFreedom: script,twist,otype,isHermitian,optdefaultlatex
 import ..Terms: couplingcenter,statistics,abbr,termfactor
 import ...Interfaces: dims,inds,⊗,⋅,expand,expand!
 import ...Mathematics.AlgebraOverFields: rawelement
@@ -18,6 +18,7 @@ import ...Mathematics.AlgebraOverFields: rawelement
 export ANNIHILATION,CREATION,MAJORANA,FID,FIndex,Fock
 export usualfockindextotuple,nambufockindextotuple
 export FockOperator,FOperator,BOperator,isnormalordered
+export foptdefaultlatex,boptdefaultlatex
 export FCID,FockCoupling
 export σ⁰,σˣ,σʸ,σᶻ,σ⁺,σ⁻
 export Onsite,Hopping,Pairing
@@ -127,6 +128,21 @@ Get the union type of `PID` and `FID`.
 Base.union(::Type{P},::Type{FID}) where P<:PID=FIndex{fieldtype(P,:scope)}
 
 """
+    script(oid::OID{<:FIndex},::Val{:site}) -> Int
+    script(oid::OID{<:FIndex},::Val{:orbital}) -> Int
+    script(oid::OID{<:FIndex},::Val{:spinint}) -> Int
+    script(oid::OID{<:FIndex},::Val{:spinsym}) -> String
+    script(oid::OID{<:FIndex},::Val{:nambu}) -> String
+
+Get the required script of an Fock oid.
+"""
+script(oid::OID{<:FIndex},::Val{:site})=oid.index.site
+script(oid::OID{<:FIndex},::Val{:orbital})=oid.index.orbital
+script(oid::OID{<:FIndex},::Val{:spinint})=oid.index.spin
+script(oid::OID{<:FIndex},::Val{:spinsym})=oid.index.spin==1 ? "↓" : oid.index.spin==2 ? "↑" : error("script error: spin($oid.index.spin) not in (1,2).")
+script(oid::OID{<:FIndex},::Val{:nambu})=oid.index.nambu==CREATION ? "\\dagger" : ""
+
+"""
     twist(id::OID{<:FIndex},vectors::AbstractVector{<:AbstractVector{Float}},values::AbstractVector{Float}) -> Complex{Float}
 
 Get the twist phase corresponding to a Fock oid.
@@ -201,6 +217,20 @@ Get the raw name of a type of FOperator.
 rawelement(::Type{<:FOperator})=FOperator
 
 """
+    foptdefaultlatex
+
+The default LaTeX pattern of the oids of a fermionic operator.
+"""
+const foptdefaultlatex=LaTeX{(:nambu,),(:site,:orbital,:spinsym)}('c')
+
+"""
+    optdefaultlatex(::Type{<:FOperator}) -> LaTeX
+
+Get the default LaTeX pattern of the oids of a fermionic operator.
+"""
+optdefaultlatex(::Type{<:FOperator})=foptdefaultlatex
+
+"""
     *(f1::FOperator,f2::FOperator) -> Union{Nothing,FOperator}
 
 Get the multiplication of two fermionic Fock operators.
@@ -236,6 +266,20 @@ statistics(::Type{<:BOperator})='B'
 Get the raw name of a type of BOperator.
 """
 rawelement(::Type{<:BOperator})=BOperator
+
+"""
+    boptdefaultlatex
+
+The default LaTeX pattern of the oids of a bosonic operator.
+"""
+const boptdefaultlatex=LaTeX{(:nambu,),(:site,:orbital,:spinsym)}('b')
+
+"""
+    optdefaultlatex(::Type{<:BOperator}) -> LaTeX
+
+Get the default LaTeX pattern of the oids of a bosonic operator.
+"""
+optdefaultlatex(::Type{<:BOperator})=boptdefaultlatex
 
 """
     FCID(;center=wildcard,atom=wildcard,orbital=wildcard,spin=wildcard,nambu=wildcard,obsub=wildcard,spsub=wildcard)

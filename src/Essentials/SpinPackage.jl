@@ -2,20 +2,20 @@ module SpinPackage
 
 using Printf: @printf,@sprintf
 using ..Spatials: PID
-using ..DegreesOfFreedom: IID,Internal,Index,FilteredAttributes,OID,Operator
+using ..DegreesOfFreedom: IID,Internal,Index,FilteredAttributes,OID,Operator,LaTeX
 using ..Terms: wildcard,constant,Subscript,Subscripts,Coupling,Couplings,couplingcenters,Term,TermCouplings,TermAmplitude,TermModulate
 using ...Interfaces: rank,kind
 using ...Prerequisites: Float,decimaltostr,delta
 using ...Mathematics.VectorSpaces: VectorSpace,IsMultiIndexable,MultiIndexOrderStyle
 using ...Mathematics.AlgebraOverFields: SimpleID,ID
 
-import ..DegreesOfFreedom: otype,isHermitian
+import ..DegreesOfFreedom: script,otype,isHermitian,optdefaultlatex
 import ..Terms: couplingcenter,statistics,abbr
 import ...Interfaces: dims,inds,expand,matrix
 import ...Mathematics.AlgebraOverFields: rawelement
 
 export SID,Spin,SIndex,usualspinindextotuple
-export SOperator
+export SOperator,soptdefaultlatex
 export SCID,SpinCoupling
 export Heisenberg,Ising,Gamma,Sˣ,Sʸ,Sᶻ
 export SpinTerm
@@ -119,6 +119,19 @@ Get the union type of `PID` and `SID`.
 Base.union(::Type{P},::Type{SID}) where {P<:PID}=SIndex{fieldtype(P,:scope)}
 
 """
+    script(oid::OID{<:SIndex},::Val{:site}) -> Int
+    script(oid::OID{<:SIndex},::Val{:orbital}) -> Int
+    script(oid::OID{<:SIndex},::Val{:spin}) -> Float
+    script(oid::OID{<:SIndex},::Val{:tag}) -> Char
+
+Get the required script of a spin oid.
+"""
+script(oid::OID{<:SIndex},::Val{:site})=oid.index.site
+script(oid::OID{<:SIndex},::Val{:orbital})=oid.index.orbital
+script(oid::OID{<:SIndex},::Val{:spin})=oid.index.spin
+script(oid::OID{<:SIndex},::Val{:tag})=oid.index.tag
+
+"""
     usualspinindextotuple
 
 Indicate that the filtered attributes are `(:scope,:site,:orbital)` when converting a spin index to tuple.
@@ -151,6 +164,20 @@ statistics(::Type{<:SOperator})='B'
 Get the raw name of a type of SOperator.
 """
 rawelement(::Type{<:SOperator})=SOperator
+
+"""
+    soptdefaultlatex
+
+The default LaTeX pattern of the oids of a spin operator.
+"""
+const soptdefaultlatex=LaTeX{(:tag,),(:site,:orbital)}('S')
+
+"""
+    optdefaultlatex(::Type{<:SOperator}) -> LaTeX
+
+Get the default LaTeX pattern of the oids of a spin operator.
+"""
+optdefaultlatex(::Type{<:SOperator})=soptdefaultlatex
 
 """
     SCID(;center=wildcard,atom=wildcard,orbital=wildcard,tag='z',subscript=wildcard)=SCID(center,atom,orbital,tag,subscript)

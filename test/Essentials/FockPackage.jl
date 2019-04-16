@@ -2,7 +2,7 @@ using Test
 using StaticArrays: SVector
 using QuantumLattices.Essentials.FockPackage
 using QuantumLattices.Essentials.Spatials: Bond,Point,PID,rcoord,azimuthd
-using QuantumLattices.Essentials.DegreesOfFreedom: Table,IDFConfig,OID,Operators,twist,oidtype,otype
+using QuantumLattices.Essentials.DegreesOfFreedom: Table,IDFConfig,OID,Operators,twist,oidtype,otype,script,optdefaultlatex
 using QuantumLattices.Essentials.Terms: Couplings,@subscript,statistics,abbr
 using QuantumLattices.Interfaces: dims,inds,⊗,⋅,expand
 using QuantumLattices.Prerequisites: Float
@@ -37,19 +37,32 @@ end
     @test twist(OID(FIndex(1,1,1,1,2),[0.0,0.0],[1.0,2.0],1),[[1.0,0.0],[0.0,1.0]],[0.0,0.2])≈exp(-2im*pi*0.4)
 end
 
+@testset "script" begin
+    @test script(OID(FIndex('c',1,2,1,1)),Val(:site))==1
+    @test script(OID(FIndex('c',1,2,1,1)),Val(:orbital))==2
+    @test script(OID(FIndex('c',1,2,3,1)),Val(:spinint))==3
+    @test script(OID(FIndex('c',1,2,2,1)),Val(:spinsym))=="↑"
+    @test script(OID(FIndex('c',1,2,1,1)),Val(:spinsym))=="↓"
+    @test script(OID(FIndex('c',1,2,3,1)),Val(:nambu))==""
+    @test script(OID(FIndex('c',1,2,3,2)),Val(:nambu))=="\\dagger"
+end
+
 @testset "oidtype" begin
     @test oidtype(FID,Point{2,PID{Int}},Nothing)==OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Nothing}
     @test oidtype(FID,Point{2,PID{Int}},Table)==OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Int}
 end
 
 @testset "FockOperator" begin
+    @test rawelement(FOperator{N,<:Number,<:ID{<:NTuple{N,OID}}} where N)==FOperator
+    @test optdefaultlatex(FOperator)==foptdefaultlatex
+
     opt=FOperator(1.0,(FIndex(1,1,1,1,2),FIndex(1,1,1,1,1)))
     @test opt|>isnormalordered
     @test opt|>statistics==opt|>typeof|>statistics=='F'
 
-    @test rawelement(FOperator{N,<:Number,<:ID{<:NTuple{N,OID}}} where N)==FOperator
-    opt=FOperator(1.0,(FIndex(1,2,1,1,2),FIndex(1,2,1,1,1),FIndex(1,1,1,1,2),FIndex(1,1,1,1,1)))
+    opt=FOperator(1.0,(FIndex(1,2,1,1,2),FIndex(1,2,1,1,1),FIndex(1,1,1,2,2),FIndex(1,1,1,2,1)))
     @test opt|>isnormalordered==false
+    @test repr(opt)=="1.0c^{\\dagger}_{2,1,↓}c^{}_{2,1,↓}c^{\\dagger}_{1,1,↑}c^{}_{1,1,↑}"
 
     opt1=FOperator(1.5,(FIndex(1,2,1,1,2),FIndex(1,2,1,1,1)))
     opt2=FOperator(2.0,(FIndex(1,2,1,1,1),FIndex(1,2,1,1,2)))
@@ -60,8 +73,11 @@ end
     @test opt1*opt2==FOperator(3.0,(FIndex(1,2,1,1,2),FIndex(1,2,1,1,1),FIndex(1,2,1,1,2),FIndex(1,2,1,1,1)))
 
     @test rawelement(BOperator{N,<:Number,<:ID{<:NTuple{N,OID}}} where N)==BOperator
+    @test optdefaultlatex(BOperator)==boptdefaultlatex
+
     opt=BOperator(1.0,(FIndex(1,1,1,1,2),FIndex(1,1,1,1,1)))
     @test opt|>statistics==opt|>typeof|>statistics=='B'
+    @test repr(opt)=="1.0b^{\\dagger}_{1,1,↓}b^{}_{1,1,↓}"
 end
 
 @testset "FCID" begin

@@ -2,7 +2,7 @@ using Test
 using StaticArrays: SVector
 using QuantumLattices.Essentials.SpinPackage
 using QuantumLattices.Essentials.Spatials: PID,Point,Bond
-using QuantumLattices.Essentials.DegreesOfFreedom: Table,OID,isHermitian,IDFConfig,Operators,oidtype,otype
+using QuantumLattices.Essentials.DegreesOfFreedom: Table,OID,isHermitian,IDFConfig,Operators,oidtype,otype,optdefaultlatex
 using QuantumLattices.Essentials.Terms: Couplings,@subscript,statistics,abbr
 using QuantumLattices.Interfaces: dims,inds,expand,matrix
 using QuantumLattices.Prerequisites: Float
@@ -49,6 +49,13 @@ end
     @test union(PID{Char},SID)==SIndex{Char}
 end
 
+@testset "script" begin
+    @test script(OID(SIndex('S',1,2,0.5,'z')),Val(:site))==1
+    @test script(OID(SIndex('S',1,2,0.5,'z')),Val(:orbital))==2
+    @test script(OID(SIndex('S',1,2,0.5,'z')),Val(:spin))==0.5
+    @test script(OID(SIndex('S',1,2,0.5,'z')),Val(:tag))=='z'
+end
+
 @testset "oidtype" begin
     @test oidtype(SID,Point{2,PID{Int}},Nothing)==OID{SIndex{Int},SVector{2,Float},SVector{2,Float},Nothing}
     @test oidtype(SID,Point{2,PID{Int}},Table)==OID{SIndex{Int},SVector{2,Float},SVector{2,Float},Int}
@@ -56,10 +63,12 @@ end
 
 @testset "SOperator" begin
     @test rawelement(SOperator{N,<:Number,<:ID{<:NTuple{N,OID}}} where N)==SOperator
+    @test optdefaultlatex(SOperator)==soptdefaultlatex
     opt=SOperator(1.0,(SIndex('a',1,1,0.5,'+'),SIndex('a',1,1,0.5,'-')))
     @test opt|>statistics==opt|>typeof|>statistics=='B'
     @test opt'==SOperator(1.0,(SIndex('a',1,1,0.5,'+'),SIndex('a',1,1,0.5,'-')))
     @test isHermitian(opt)
+    @test repr(opt)=="1.0S^{+}_{1,1}S^{-}_{1,1}"
 end
 
 @testset "SCID" begin
