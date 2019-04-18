@@ -3477,14 +3477,6 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatials",
     "title": "Base.iterate",
     "category": "function",
-    "text": "iterate(p::Point,state=1)\n\nIterate over the point.\n\n\n\n\n\n"
-},
-
-{
-    "location": "man/Essentials/Spatials.html#Base.iterate",
-    "page": "Spatials",
-    "title": "Base.iterate",
-    "category": "function",
     "text": "iterate(bond::Bond,state=1)\n\nIterate over the points in a bond.\n\n\n\n\n\n"
 },
 
@@ -3494,6 +3486,14 @@ var documenterSearchIndex = {"docs": [
     "title": "Base.iterate",
     "category": "function",
     "text": "iterate(bs::Bonds,state=(1,0))\n\nIterate over the lattice bonds in the set.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatials.html#Base.iterate",
+    "page": "Spatials",
+    "title": "Base.iterate",
+    "category": "function",
+    "text": "iterate(p::Point,state=1)\n\nIterate over the point.\n\n\n\n\n\n"
 },
 
 {
@@ -5021,7 +5021,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "QuantumLattices.Interfaces.permute",
     "category": "function",
-    "text": "permute(::Type{<:FOperator},id1::OID{<:FIndex},id2::OID{<:FIndex},::Any=nothing) -> Tuple{Vararg{FOperator}}\n\nPermute two fermionic oid and get the result.\n\n\n\n\n\n"
+    "text": "permute(::Type{<:BOperator},id1::OID{<:FIndex},id2::OID{<:FIndex},::Any=nothing) -> Tuple{Vararg{BOperator}}\n\nPermute two bosonic oid and get the result.\n\n\n\n\n\n"
 },
 
 {
@@ -5029,7 +5029,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "QuantumLattices.Interfaces.permute",
     "category": "function",
-    "text": "permute(::Type{<:BOperator},id1::OID{<:FIndex},id2::OID{<:FIndex},::Any=nothing) -> Tuple{Vararg{BOperator}}\n\nPermute two bosonic oid and get the result.\n\n\n\n\n\n"
+    "text": "permute(::Type{<:FOperator},id1::OID{<:FIndex},id2::OID{<:FIndex},::Any=nothing) -> Tuple{Vararg{FOperator}}\n\nPermute two fermionic oid and get the result.\n\n\n\n\n\n"
 },
 
 {
