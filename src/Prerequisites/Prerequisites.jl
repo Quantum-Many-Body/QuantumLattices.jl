@@ -15,6 +15,7 @@ const rtol=√atol
 const Float=Float64
 
 """
+    decimaltostr(number,::Int=5)
     decimaltostr(number::Integer,n::Int=5)
     decimaltostr(number::Rational,n::Int=5)
     decimaltostr(number::AbstractFloat,n::Int=5)
@@ -22,6 +23,7 @@ const Float=Float64
 
 Convert a number to a string with at most `n` decimal places.
 """
+decimaltostr(number,::Int=5)=repr(number)
 decimaltostr(number::Integer,::Int=5)=string(number)
 decimaltostr(number::Rational,::Int=5)=string(number)
 function decimaltostr(number::AbstractFloat,n::Int=5)

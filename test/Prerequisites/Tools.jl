@@ -2,6 +2,7 @@ using Test
 using QuantumLattices.Prerequisites
 
 @testset "decimaltostr" begin
+    @test decimaltostr(:a)==":a"
     @test decimaltostr(1)=="1"
     @test decimaltostr(10^6)=="1000000"
     @test decimaltostr(1//7)=="1//7"

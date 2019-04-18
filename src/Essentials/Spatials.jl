@@ -1085,7 +1085,7 @@ Insert a couple of blocks into a cylinder.
 The position of the cut of the cylinder is specified by the keyword argument `cut`, which is the center of the cylinder by default. All pids corresponding to a same newly inserted block share the same scope, which is specified by the parameter `ps`. Optionally, the scopes of the old pids in the cylinder can be replaced if the parameter `scopes` is assigned other than `nothing`. Note the length of `ps` is equal to the number of newly inserted blocks, while that of `scopes` should be equal to the old length of the cylinder.
 """
 function Base.insert!(cylinder::Cylinder,ps::S...;cut::Int=length(cylinder)÷2+1,scopes::Union{<:AbstractVector{S},Nothing}=nothing,coordination::Int=8) where S
-    @assert S===fieldtype(cylinder|>keytype,:scope) "insert! error: dismatched type of input scopes and old scopes."
+    @assert S<:fieldtype(cylinder|>keytype,:scope) "insert! error: dismatched type of input scopes and old scopes."
     @assert 1<=cut<=length(cylinder)+1 "insert! error: wrong cut($cut), which should be in [1,$(length(cylinder)+1)]."
     @assert length(cylinder)%size(cylinder.block,2)==0 "insert! error: wrong cylinder length."
     scopes===nothing || @assert length(scopes)==length(cylinder) "insert! error: dismatched length of input scopes and cylinder."

@@ -4,7 +4,7 @@ using QuantumLattices.Essentials.FockPackage
 using QuantumLattices.Essentials.Spatials: Bond,Point,PID,rcoord,azimuthd
 using QuantumLattices.Essentials.DegreesOfFreedom: Table,IDFConfig,OID,Operators,twist,oidtype,otype,script,optdefaultlatex
 using QuantumLattices.Essentials.Terms: Couplings,@subscript,statistics,abbr
-using QuantumLattices.Interfaces: dims,inds,⊗,⋅,expand
+using QuantumLattices.Interfaces: dims,inds,⊗,⋅,expand,permute
 using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Mathematics.VectorSpaces: IsMultiIndexable,MultiIndexOrderStyle
 using QuantumLattices.Mathematics.AlgebraOverFields: ID,rawelement
@@ -53,7 +53,7 @@ end
 end
 
 @testset "FockOperator" begin
-    @test rawelement(FOperator{N,<:Number,<:ID{<:NTuple{N,OID}}} where N)==FOperator
+    @test rawelement(FOperator{V} where V)==FOperator
     @test optdefaultlatex(FOperator)==foptdefaultlatex
 
     opt=FOperator(1.0,(FIndex(1,1,1,1,2),FIndex(1,1,1,1,1)))
@@ -62,7 +62,7 @@ end
 
     opt=FOperator(1.0,(FIndex(1,2,1,1,2),FIndex(1,2,1,1,1),FIndex(1,1,1,2,2),FIndex(1,1,1,2,1)))
     @test opt|>isnormalordered==false
-    @test repr(opt)=="1.0c^{\\dagger}_{2,1,↓}c^{}_{2,1,↓}c^{\\dagger}_{1,1,↑}c^{}_{1,1,↑}"
+    @test repr(opt)=="c^{\\dagger}_{2,1,↓}c^{}_{2,1,↓}c^{\\dagger}_{1,1,↑}c^{}_{1,1,↑}"
 
     opt1=FOperator(1.5,(FIndex(1,2,1,1,2),FIndex(1,2,1,1,1)))
     opt2=FOperator(2.0,(FIndex(1,2,1,1,1),FIndex(1,2,1,1,2)))
@@ -72,12 +72,26 @@ end
     opt2=FOperator(2.0,(FIndex(1,2,1,1,2),FIndex(1,2,1,1,1)))
     @test opt1*opt2==FOperator(3.0,(FIndex(1,2,1,1,2),FIndex(1,2,1,1,1),FIndex(1,2,1,1,2),FIndex(1,2,1,1,1)))
 
-    @test rawelement(BOperator{N,<:Number,<:ID{<:NTuple{N,OID}}} where N)==BOperator
+    @test rawelement(BOperator{V} where V)==BOperator
     @test optdefaultlatex(BOperator)==boptdefaultlatex
 
     opt=BOperator(1.0,(FIndex(1,1,1,1,2),FIndex(1,1,1,1,1)))
     @test opt|>statistics==opt|>typeof|>statistics=='B'
-    @test repr(opt)=="1.0b^{\\dagger}_{1,1,↓}b^{}_{1,1,↓}"
+    @test repr(opt)=="b^{\\dagger}_{1,1,↓}b^{}_{1,1,↓}"
+end
+
+@testset "permute" begin
+    i1,i2=OID(FIndex(1,1,1,1,2)),OID(FIndex(1,1,1,1,1))
+    @test permute(FOperator,i1,i2)==(FOperator(1,ID()),FOperator(-1,ID(i2,i1)))
+    @test permute(FOperator,i2,i1)==(FOperator(1,ID()),FOperator(-1,ID(i1,i2)))
+    @test permute(BOperator,i1,i2)==(BOperator(1,ID()),BOperator(1,ID(i2,i1)))
+    @test permute(BOperator,i2,i1)==(BOperator(-1,ID()),BOperator(1,ID(i1,i2)))
+
+    i1,i2=OID(FIndex(1,1,1,2,2)),OID(FIndex(1,1,1,1,1))
+    @test permute(FOperator,i1,i2)==(FOperator(-1,ID(i2,i1)),)
+    @test permute(FOperator,i2,i1)==(FOperator(-1,ID(i1,i2)),)
+    @test permute(BOperator,i1,i2)==(BOperator(1,ID(i2,i1)),)
+    @test permute(BOperator,i2,i1)==(BOperator(1,ID(i1,i2)),)
 end
 
 @testset "FCID" begin
@@ -85,6 +99,8 @@ end
 end
 
 @testset "FockCoupling" begin
+    @test rawelement(FockCoupling{V} where V)==FockCoupling
+
     @test FockCoupling{2}(1.0)|>string=="FockCoupling{2}(value=1.0)"
     @test FockCoupling{2}(1.0,atoms=(1,1))|>string=="FockCoupling{2}(value=1.0,atoms=(1,1))"
     @test FockCoupling{2}(1.0,atoms=(1,1),spins=(1,2))|>string=="FockCoupling{2}(value=1.0,atoms=(1,1),spins=(1,2))"
@@ -194,13 +210,13 @@ end
 @testset "Onsite" begin
     term=Onsite{'F'}(:mu,1.5)
     @test term|>abbr==:st
-    @test otype(term|>typeof,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Nothing})==FOperator{2,Float,ID{NTuple{2,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Nothing}}}}
-    @test otype(term|>typeof,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Int})==FOperator{2,Float,ID{NTuple{2,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Int}}}}
+    @test otype(term|>typeof,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Nothing})==FOperator{Float,ID{NTuple{2,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Nothing}}}}
+    @test otype(term|>typeof,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Int})==FOperator{Float,ID{NTuple{2,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Int}}}}
 
     term=Onsite{'B'}(:mu,1.5,couplings=σˣ("sp")⊗σᶻ("ob"),modulate=true)
     @test term|>abbr==:st
-    @test otype(term|>typeof,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Nothing})==BOperator{2,Float,ID{NTuple{2,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Nothing}}}}
-    @test otype(term|>typeof,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Int})==BOperator{2,Float,ID{NTuple{2,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Int}}}}
+    @test otype(term|>typeof,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Nothing})==BOperator{Float,ID{NTuple{2,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Nothing}}}}
+    @test otype(term|>typeof,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Int})==BOperator{Float,ID{NTuple{2,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Int}}}}
 
     point=Point(PID('a',1),(0.5,0.5),(0.0,0.0))
     config=IDFConfig{Fock}(pid->Fock(atom=pid.site%2,norbital=2,nspin=2,nnambu=2),[point.pid])

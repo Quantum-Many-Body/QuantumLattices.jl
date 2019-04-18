@@ -11,7 +11,7 @@ using ...Mathematics.AlgebraOverFields: SimpleID,ID
 
 import ..DegreesOfFreedom: script,otype,isHermitian,optdefaultlatex
 import ..Terms: couplingcenter,statistics,abbr
-import ...Interfaces: dims,inds,expand,matrix
+import ...Interfaces: dims,inds,expand,matrix,permute
 import ...Mathematics.AlgebraOverFields: rawelement
 
 export SID,Spin,SIndex,usualspinindextotuple
@@ -139,14 +139,14 @@ Indicate that the filtered attributes are `(:scope,:site,:orbital)` when convert
 const usualspinindextotuple=FilteredAttributes(:scope,:site,:orbital)
 
 """
-    SOperator(value::Number,id::ID{<:NTuple{N,OID}}) where N
+    SOperator(value,id::ID{<:Tuple{Vararg{OID}}}=ID())
 
 Spin operator.
 """
-struct SOperator{N,V<:Number,I<:ID{<:NTuple{N,OID}}} <: Operator{N,V,I}
+struct SOperator{V,I<:ID} <: Operator{V,I}
     value::V
     id::I
-    SOperator(value::Number,id::ID{<:NTuple{N,OID}}) where N=new{N,typeof(value),typeof(id)}(value,id)
+    SOperator(value,id::ID{<:Tuple{Vararg{OID}}}=ID())=new{typeof(value),typeof(id)}(value,id)
 end
 
 """
@@ -180,6 +180,15 @@ Get the default LaTeX pattern of the oids of a spin operator.
 optdefaultlatex(::Type{<:SOperator})=soptdefaultlatex
 
 """
+    permute(::Type{<:SOperator},id1::OID{<:SIndex},id2::OID{<:SIndex},table) -> Tuple{Vararg{SOperator}}
+
+Permute two fermionic oid and get the result.
+"""
+function permute(::Type{<:SOperator},id1::OID{<:SIndex},id2::OID{<:SIndex},table)
+    error("permute error: not implemented yet.")
+end
+
+"""
     SCID(;center=wildcard,atom=wildcard,orbital=wildcard,tag='z',subscript=wildcard)=SCID(center,atom,orbital,tag,subscript)
 
 The id of a spin coupling.
@@ -199,8 +208,8 @@ SCID(;center=wildcard,atom=wildcard,orbital=wildcard,tag='z',subscript=wildcard)
 Base.fieldnames(::Type{<:SCID})=(:center,:atom,:orbital,:tag,:subscript)
 
 """
-    SpinCoupling(value::Number,id::ID{<:NTuple{N,SCID}},subscripts::Subscripts) where N
-    SpinCoupling{N}(    value::Number=1;
+    SpinCoupling(value,id::ID{<:Tuple{Vararg{SCID}}},subscripts::Subscripts)
+    SpinCoupling{N}(    value=1;
                         tags::NTuple{N,Char},
                         centers::Union{NTuple{N,Int},Nothing}=nothing,
                         atoms::Union{NTuple{N,Int},Nothing}=nothing,
@@ -209,13 +218,15 @@ Base.fieldnames(::Type{<:SCID})=(:center,:atom,:orbital,:tag,:subscript)
 
 Spin coupling.
 """
-struct SpinCoupling{N,V<:Number,I<:ID{<:NTuple{N,SCID}},S<:Subscripts} <: Coupling{N,V,I}
+struct SpinCoupling{V,I<:ID,S<:Subscripts} <: Coupling{V,I}
     value::V
     id::I
     subscripts::S
-    SpinCoupling(value::Number,id::ID{<:NTuple{N,SCID}},subscripts::Subscripts) where N=new{N,value|>typeof,id|>typeof,typeof(subscripts)}(value,id,subscripts)
+    function SpinCoupling(value,id::ID{<:Tuple{Vararg{SCID}}},subscripts::Subscripts)
+        new{typeof(value),typeof(id),typeof(subscripts)}(value,id,subscripts)
+    end
 end
-function SpinCoupling{N}(   value::Number=1;
+function SpinCoupling{N}(   value=1;
                             tags::NTuple{N,Char},
                             centers::Union{NTuple{N,Int},Nothing}=nothing,
                             atoms::Union{NTuple{N,Int},Nothing}=nothing,
@@ -272,6 +283,13 @@ Get the multiplication between two spin couplings.
 Base.:*(sc1::SpinCoupling,sc2::SpinCoupling)=SpinCoupling(sc1.value*sc2.value,sc1.id*sc2.id,sc1.subscripts*sc2.subscripts)
 
 """
+    rawelement(::Type{<:SpinCoupling})
+
+Get the raw name of a type of SpinCoupling.
+"""
+rawelement(::Type{<:SpinCoupling})=SpinCoupling
+
+"""
     expand(sc::SpinCoupling,pid::PID,spin::Spin,kind::Union{Val{K},Nothing}=nothing) where K -> Union{SCExpand,Tuple{}}
     expand(sc::SpinCoupling,pids::NTuple{N,PID},spins::NTuple{N,Spin},kind::Union{Val{K},Nothing}=nothing) where {N,K} -> Union{SCExpand,Tuple{}}
 
@@ -290,7 +308,7 @@ function expand(sc::SpinCoupling,pids::NTuple{N,PID},spins::NTuple{N,Spin},kind:
     return SCExpand(sc.value,rpids,sbexpands,sps,sc.id.tags)
 end
 couplingcenter(::Type{<:SpinCoupling},i::Int,n::Int,::Val{2})=i%2==1 ? 1 : 2
-struct SCExpand{V<:Number,N,S} <: VectorSpace{Tuple{V,NTuple{N,SIndex{S}}}}
+struct SCExpand{V,N,S} <: VectorSpace{Tuple{V,NTuple{N,SIndex{S}}}}
     value::V
     pids::NTuple{N,PID{S}}
     sbexpands::Vector{NTuple{N,Int}}
@@ -300,7 +318,7 @@ end
 IsMultiIndexable(::Type{<:SCExpand})=IsMultiIndexable(true)
 MultiIndexOrderStyle(::Type{<:SCExpand})=MultiIndexOrderStyle('C')
 dims(sce::SCExpand)=(length(sce.sbexpands),)
-@generated function Tuple(index::Tuple{Int},sce::SCExpand{<:Number,N}) where N
+@generated function Tuple(index::Tuple{Int},sce::SCExpand{V,N}) where {V,N}
     exprs=[:(SIndex(sce.pids[$i],SID(sce.sbexpands[index[1]][$i],sce.spins[$i],sce.tags[$i]))) for i=1:N]
     return Expr(:tuple,:(sce.value),Expr(:tuple,exprs...))
 end
@@ -382,7 +400,7 @@ function Sᶻ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=noth
 end
 
 """
-    SpinTerm{R}(id::Symbol,value::Number,bondkind::Any;
+    SpinTerm{R}(id::Symbol,value::Any,bondkind::Any;
                 couplings::Union{Function,Coupling,Couplings},
                 amplitude::Union{Function,Nothing}=nothing,
                 modulate::Union{Function,Bool}=false,
@@ -390,10 +408,10 @@ end
 
 Spin term.
 
-Type alias for `Term{'B',:SpinTerm,R,id,<:Number,<:Any,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
+Type alias for `Term{'B',:SpinTerm,R,id,V,<:Any,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
 """
-const SpinTerm{R,id,V<:Number,B<:Any,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{'B',:SpinTerm,R,id,V,B,C,A,M}
-function SpinTerm{R}(id::Symbol,value::Number,bondkind::Any;
+const SpinTerm{R,id,V,B<:Any,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{'B',:SpinTerm,R,id,V,B,C,A,M}
+function SpinTerm{R}(id::Symbol,value::Any,bondkind::Any;
                     couplings::Union{Function,Coupling,Couplings},
                     amplitude::Union{Function,Nothing}=nothing,
                     modulate::Union{Function,Bool}=false,
@@ -411,6 +429,6 @@ isHermitian(::Type{<:SpinTerm})=true
 
 Get the operator type of a spin term.
 """
-otype(T::Type{<:SpinTerm},I::Type{<:OID})=SOperator{T|>rank,T|>valtype,ID{NTuple{T|>rank,I}}}
+otype(T::Type{<:SpinTerm},I::Type{<:OID})=SOperator{T|>valtype,ID{NTuple{T|>rank,I}}}
 
 end # module

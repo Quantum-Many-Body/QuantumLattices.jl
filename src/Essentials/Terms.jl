@@ -11,6 +11,7 @@ using ...Prerequisites.CompositeStructures: CompositeTuple
 using ...Mathematics.AlgebraOverFields: SimpleID,ID,Element,Elements,idtype
 
 import ..DegreesOfFreedom: isHermitian
+import ...Mathematics.AlgebraOverFields: rawelement
 import ...Interfaces: id,rank,kind,expand,expand!,dimension,update!
 
 export Subscript,Subscripts,@subscript
@@ -284,11 +285,11 @@ function Base.iterate(sbe::SbExpand,state::Int=1)
 end
 
 """
-    Coupling{N,V<:Number,I<:ID{<:NTuple{N,SimpleID}}} <: Element{N,V,I}
+    Coupling{V,I<:ID} <: Element{V,I}
 
 The coupling intra/inter interanl degrees of freedom at different lattice points.
 """
-abstract type Coupling{N,V<:Number,I<:ID{<:NTuple{N,SimpleID}}} <: Element{N,V,I} end
+abstract type Coupling{V,I<:ID} <: Element{V,I} end
 
 couplingcenter(::Type{<:Coupling},i::Int,n::Int,::Val{1})=1
 couplingcenter(::Type{<:Coupling},i::Int,n::Int,::Val{R}) where R=error("couplingcenter error: no default center for a rank-$R bond.")
@@ -298,11 +299,18 @@ couplingcenter(::Type{<:Coupling},i::Int,n::Int,::Val{R}) where R=error("couplin
 end
 
 """
-    Couplings{I<:ID,C<:Coupling} <: AbstractDict{I,C}
+    rawelement(::Type{<:Coupling})
+
+Get the raw name of a type of Coupling.
+"""
+rawelement(::Type{<:Coupling})=Coupling
+
+"""
+    Couplings(cps::Coupling...)
 
 A pack of couplings intra/inter interanl degrees of freedom at different lattice points.
 
-Alias for `Elements{I,C}`.
+Alias for `Elements{<:ID,<:Coupling}`.
 """
 const Couplings{I<:ID,C<:Coupling}=Elements{I,C}
 Couplings(cps::Coupling...)=Elements(cps...)
@@ -367,8 +375,8 @@ end
 (termmodulate::TermModulate{<:Function})(args...;kwargs...)=termmodulate.modulate(args...;kwargs...)
 
 """
-    Term{ST,K,R,I}(value::Number,bondkind::Any,couplings::TermCouplings,amplitude::TermAmplitude,modulate::Union{TermModulate,Nothing},factor::Number) where {ST,K,R,I}
-    Term{ST,K,R}(  id::Symbol,value::Number,bondkind::Any;
+    Term{ST,K,R,I}(value::Any,bondkind::Any,couplings::TermCouplings,amplitude::TermAmplitude,modulate::Union{TermModulate,Nothing},factor::Any) where {ST,K,R,I}
+    Term{ST,K,R}(  id::Symbol,value::Any,bondkind::Any;
                     couplings::Union{Function,Coupling,Couplings,TermCouplings},
                     amplitude::Union{Function,Nothing}=nothing,
                     modulate::Union{Function,Bool}=false,
@@ -376,21 +384,21 @@ end
 
 A term of a quantum lattice system.
 """
-mutable struct Term{statistics,kind,R,id,V<:Number,B<:Any,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}
+mutable struct Term{statistics,kind,R,id,V,B<:Any,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}
     value::V
     bondkind::B
     couplings::C
     amplitude::A
     modulate::M
     factor::V
-    function Term{ST,K,R,I}(value::Number,bondkind::Any,couplings::TermCouplings,amplitude::TermAmplitude,modulate::Union{TermModulate,Nothing},factor::Number) where {ST,K,R,I}
+    function Term{ST,K,R,I}(value::Any,bondkind::Any,couplings::TermCouplings,amplitude::TermAmplitude,modulate::Union{TermModulate,Nothing},factor::Any) where {ST,K,R,I}
         @assert ST in ('F','B') "Term error: statistics must be 'F' or 'B'."
         @assert isa(K,Symbol) "Term error: kind must be a Symbol."
         @assert isa(I,Symbol) "Term error: id must be a Symbol."
         new{ST,K,R,I,typeof(value),typeof(bondkind),typeof(couplings),typeof(amplitude),typeof(modulate)}(value,bondkind,couplings,amplitude,modulate,factor)
     end
 end
-function Term{ST,K,R}(  id::Symbol,value::Number,bondkind::Any;
+function Term{ST,K,R}(  id::Symbol,value::Any,bondkind::Any;
                         couplings::Union{Function,Coupling,Couplings,TermCouplings},
                         amplitude::Union{Function,Nothing}=nothing,
                         modulate::Union{Function,Bool}=false,
@@ -439,12 +447,12 @@ id(::Type{<:Term{ST,K,R,I} where {ST,K,R}}) where I=I
 
 """
     valtype(term::Term)
-    valtype(::Type{<:Term{ST,K,R,I,V} where {ST,K,R,I}}) where {V<:Number}
+    valtype(::Type{<:Term{ST,K,R,I,V} where {ST,K,R,I}}) where V
 
 Get the value type of a term.
 """
 Base.valtype(term::Term)=term|>typeof|>valtype
-Base.valtype(::Type{<:Term{ST,K,R,I,V} where {ST,K,R,I}}) where {V<:Number}=V
+Base.valtype(::Type{<:Term{ST,K,R,I,V} where {ST,K,R,I}}) where V=V
 
 """
     abbr(term::Term) -> Symbol
@@ -489,7 +497,7 @@ function Base.repr(term::Term,bond::AbstractBond,config::IDFConfig)
     cache=String[]
     if term.bondkind==bond|>kind
         value=term.value*term.amplitude(bond)*term.factor
-        if !isapprox(abs(value),0.0,atol=atol)
+        if abs(value)≠0
             pids=NTuple{length(bond),pidtype(bond)}(point.pid for point in bond)
             interanls=NTuple{length(bond),valtype(config)}(config[pid] for pid in pids)
             for coupling in values(term.couplings(bond))
@@ -513,17 +521,17 @@ end
 """
     +(term::Term) -> Term
     -(term::Term) -> Term
-    *(term::Term,factor::Number) -> Term
-    *(factor::Number,term::Term) -> Term
-    /(term::Term,factor::Number) -> Term
+    *(term::Term,factor) -> Term
+    *(factor,term::Term) -> Term
+    /(term::Term,factor) -> Term
 
 Allowed arithmetic operations for a term.
 """
 Base.:+(term::Term)=term
 Base.:-(term::Term)=term*(-1)
-Base.:*(term::Term,factor::Number)=factor*term
-Base.:*(factor::Number,term::Term)=replace(term,factor=factor*term.factor)
-Base.:/(term::Term,factor::Number)=term*(1/factor)
+Base.:*(term::Term,factor)=factor*term
+Base.:*(factor,term::Term)=replace(term,factor=factor*term.factor)
+Base.:/(term::Term,factor)=term*(1/factor)
 
 """
     one(term::Term) -> Term
@@ -551,7 +559,7 @@ The `half` parameter determines the behavior of generating operators, which fall
 function expand!(operators::Operators,term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false)
     if term.bondkind==bond|>kind
         value=term.value*term.amplitude(bond)*term.factor
-        if !isapprox(abs(value),0.0,atol=atol)
+        if abs(value)≠0
             otype,ktype=operators|>typeof|>valtype,operators|>typeof|>keytype
             @assert (fieldtype(ktype|>eltype,:seq)===Nothing)==(table===nothing) "expand! error: `table` must be assigned if the sequences are required."
             @assert rank(otype)==rank(term) "expand! error: dismatched ranks between operator and term."

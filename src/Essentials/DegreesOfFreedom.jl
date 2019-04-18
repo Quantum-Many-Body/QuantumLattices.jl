@@ -10,7 +10,7 @@ using ...Mathematics.VectorSpaces: VectorSpace
 using ...Mathematics.AlgebraOverFields: SimpleID,ID,Element,Elements
 
 import ..Spatials: pidtype,rcoord,icoord
-import ...Interfaces: update!
+import ...Interfaces: update!,sequence
 import ...Mathematics.AlgebraOverFields: rawelement
 
 export IID,Index,pid,iidtype,iid
@@ -328,7 +328,7 @@ totuple(::Nothing)=nothing
 @generated totuple(v::SVector{N}) where N=Expr(:tuple,[:(v[$i]) for i=1:N]...)
 Base.hash(oid::OID{<:Index},h::UInt)=hash((oid.index,totuple(oid.rcoord)),h)
 Base.fieldnames(::Type{<:OID})=(:index,:rcoord,:icoord,:seq)
-Base.propertynames(::Type{<:ID{<:NTuple{N,OID}}},private::Bool=false) where N=private ? (:contents,:indexes,:rcoords,:icoords) : (:indexes,:rcoords,:icoords)
+Base.propertynames(::Type{<:ID{<:NTuple{N,OID}}},private::Bool=false) where N=private ? (:contents,:indexes,:rcoords,:icoords,:seqs) : (:indexes,:rcoords,:icoords,:seqs)
 
 """
     show(io::IO,oid::OID)
@@ -401,12 +401,12 @@ oidtype(I::Type{<:IID},B::Type{<:AbstractBond},::Type{Nothing})=OID{union(B|>pid
 oidtype(I::Type{<:IID},B::Type{<:AbstractBond},::Type{<:Table})=OID{union(B|>pidtype,I),SVector{B|>dimension,Float},SVector{B|>dimension,Float},Int}
 
 """
-    Operator{N,V<:Number,I<:ID{<:NTuple{N,OID}}} <: Element{N,V,I}
+    Operator{V,I<:ID} <: Element{V,I}
 
 Abstract type for an operator.
 """
-abstract type Operator{N,V<:Number,I<:ID{<:NTuple{N,OID}}} <: Element{N,V,I} end
-function (O::Type{<:Operator})( value::Number,
+abstract type Operator{V,I<:ID} <: Element{V,I} end
+function (O::Type{<:Operator})( value,
                                 indexes::NTuple{N,Index};
                                 rcoords::Union{Nothing,NTuple{N,SVector{M,Float}}}=nothing,
                                 icoords::Union{Nothing,NTuple{N,SVector{M,Float}}}=nothing,
@@ -446,8 +446,19 @@ Get the latex string representation of an operator.
 """
 Base.repr(opt::Operator,::Nothing=nothing)=repr(opt,opt|>typeof|>optdefaultlatex)
 @generated function Base.repr(opt::Operator,l::LaTeX)
-    expr=Expr(:tuple,:(decimaltostr(opt.value)),[:(repr(opt.id[$i],l)) for i=1:rank(opt)]...)
+    rank(opt)==0 && return :(replace(decimaltostr(opt.value)," "=>""))
+    expr=Expr(:tuple,:(valuetostr(opt.value)),[:(repr(opt.id[$i],l)) for i=1:rank(opt)]...)
     return :(join($expr,""))
+end
+function valuetostr(v)
+    v==1 && return ""
+    v==-1 && return "-"
+    result=decimaltostr(v)
+    if occursin(" ",result) || (isa(v,Complex) && real(v)≠0 && imag(v)≠0)
+        bra,ket=occursin("(",result) ? ("[","]") : ("(",")")
+        result=@sprintf "%s%s%s" bra replace(result," "=>"") ket
+    end
+    return result
 end
 
 """
@@ -458,22 +469,26 @@ Judge whether an operator is Hermitian.
 isHermitian(opt::Operator)=isa(opt.value,Real) && isHermitian(opt.id)
 
 """
-    rcoord(opt::Operator{1}) -> SVector
-    rcoord(opt::Operator{2}) -> SVector
+    rcoord(opt::Operator) -> SVector
 
 Get the whole rcoord of an operator.
 """
-rcoord(opt::Operator{1})=opt.id[1].rcoord
-rcoord(opt::Operator{2})=opt.id[1].rcoord-opt.id[2].rcoord
+@generated function rcoord(opt::Operator)
+    rank(opt)==1 && return :(opt.id[1].rcoord)
+    rank(opt)==2 && return :(opt.id[1].rcoord-opt.id[2].rcoord)
+    error("rcoord error: not supported rank($(rank(opt))) of $(nameof(opt)).")
+end
 
 """
-    icoord(opt::Operator{1}) -> SVector
-    icoord(opt::Operator{2}) -> SVector
+    icoord(opt::Operator) -> SVector
 
 Get the whole icoord of an operator.
 """
-icoord(opt::Operator{1})=opt.id[1].icoord
-icoord(opt::Operator{2})=opt.id[1].icoord-opt.id[2].icoord
+@generated function icoord(opt::Operator)
+    rank(opt)==1 && return :(opt.id[1].icoord)
+    rank(opt)==2 && return :(opt.id[1].icoord-opt.id[2].icoord)
+    error("icoord error: not supported rank($(rank(opt))) of $(nameof(opt)).")
+end
 
 """
     rawelement(::Type{<:Operator})
@@ -481,6 +496,16 @@ icoord(opt::Operator{2})=opt.id[1].icoord-opt.id[2].icoord
 Get the raw name of a type of Operator.
 """
 rawelement(::Type{<:Operator})=Operator
+
+"""
+    sequence(opt::Operator,table=nothing) -> NTuple{rank(opt),Int}
+
+Get the sequence of the oids of an operator according to a table.
+"""
+@generated function sequence(opt::Operator,table=nothing)
+    table<:Nothing && return :(opt.id.seqs::NTuple{rank(opt),Int})
+    return Expr(:tuple,[:(get(table,opt.id[$i].index,nothing)) for i=1:rank(opt)]...)
+end
 
 """
     otype
@@ -494,7 +519,7 @@ function otype end
 
 A set of operators.
 
-Type alias of `Operators{I<:ID,O<:Operator}=Elements{I,O}`.
+Type alias for `Elements{<:ID,<:Operator}`.
 """
 const Operators{I<:ID,O<:Operator}=Elements{I,O}
 Operators(opts::Operator...)=Elements(opts...)

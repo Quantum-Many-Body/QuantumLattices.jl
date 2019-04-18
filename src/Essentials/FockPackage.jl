@@ -12,7 +12,7 @@ using ...Mathematics.VectorSpaces: VectorSpace,IsMultiIndexable,MultiIndexOrderS
 
 import ..DegreesOfFreedom: script,twist,otype,isHermitian,optdefaultlatex
 import ..Terms: couplingcenter,statistics,abbr,termfactor
-import ...Interfaces: dims,inds,⊗,⋅,expand,expand!
+import ...Interfaces: dims,inds,⊗,⋅,expand,expand!,permute
 import ...Mathematics.AlgebraOverFields: rawelement
 
 export ANNIHILATION,CREATION,MAJORANA,FID,FIndex,Fock
@@ -169,11 +169,11 @@ Indicate that the filtered attributes are `(:scope,:nambu,:site,:orbital,:spin)`
 const nambufockindextotuple=FilteredAttributes(:scope,:nambu,:site,:orbital,:spin)
 
 """
-    FockOperator{N,V<:Number,I<:ID{<:NTuple{N,OID}}} <: Operator{N,V,I}
+    FockOperator{V,I<:ID} <: Operator{V,I}
 
 Abstract type for all Fock operators.
 """
-abstract type FockOperator{N,V<:Number,I<:ID{<:NTuple{N,OID}}} <: Operator{N,V,I} end
+abstract type FockOperator{V,I<:ID} <: Operator{V,I} end
 
 """
     isnormalordered(opt::FockOperator) -> Bool
@@ -190,14 +190,14 @@ function isnormalordered(opt::FockOperator)
 end
 
 """
-    FOperator(value::Number,id::ID{<:NTuple{N,OID}}) where N
+    FOperator(value,id::ID{<:Tuple{Vararg{OID}}}=ID())
 
 Fermionic Fock operator.
 """
-struct FOperator{N,V<:Number,I<:ID{<:NTuple{N,OID}}} <: FockOperator{N,V,I}
+struct FOperator{V,I<:ID} <: FockOperator{V,I}
     value::V
     id::I
-    FOperator(value::Number,id::ID{<:NTuple{N,OID}}) where N=new{N,typeof(value),typeof(id)}(value,id)
+    FOperator(value,id::ID{<:Tuple{Vararg{OID}}}=ID())=new{typeof(value),typeof(id)}(value,id)
 end
 
 """
@@ -231,6 +231,20 @@ Get the default LaTeX pattern of the oids of a fermionic operator.
 optdefaultlatex(::Type{<:FOperator})=foptdefaultlatex
 
 """
+    permute(::Type{<:FOperator},id1::OID{<:FIndex},id2::OID{<:FIndex},::Any=nothing) -> Tuple{Vararg{FOperator}}
+
+Permute two fermionic oid and get the result.
+"""
+function permute(::Type{<:FOperator},id1::OID{<:FIndex},id2::OID{<:FIndex},::Any=nothing)
+    @assert id1.index≠id2.index || id1.rcoord≠id2.rcoord || id1.icoord≠id2.icoord "permute error: permuted ids should not be equal to each other."
+    if id1.index'==id2.index && id1.rcoord==id2.rcoord && id1.icoord==id2.icoord
+        return (FOperator(1,ID()),FOperator(-1,ID(id2,id1)))
+    else
+        return (FOperator(-1,ID(id2,id1)),)
+    end
+end
+
+"""
     *(f1::FOperator,f2::FOperator) -> Union{Nothing,FOperator}
 
 Get the multiplication of two fermionic Fock operators.
@@ -241,14 +255,14 @@ function Base.:*(f1::FOperator,f2::FOperator)
 end
 
 """
-    BOperator(value::Number,id::ID{<:NTuple{N,OID}}) where N
+    BOperator(value,id::ID{<:Tuple{Vararg{OID}}}=ID())
 
 Bosonic Fock operator.
 """
-struct BOperator{N,V<:Number,I<:ID{<:NTuple{N,OID}}} <: FockOperator{N,V,I}
+struct BOperator{V,I<:ID} <: FockOperator{V,I}
     value::V
     id::I
-    BOperator(value::Number,id::ID{<:NTuple{N,OID}}) where N=new{N,typeof(value),typeof(id)}(value,id)
+    BOperator(value,id::ID{<:Tuple{Vararg{OID}}}=ID())=new{typeof(value),typeof(id)}(value,id)
 end
 
 """
@@ -282,6 +296,24 @@ Get the default LaTeX pattern of the oids of a bosonic operator.
 optdefaultlatex(::Type{<:BOperator})=boptdefaultlatex
 
 """
+    permute(::Type{<:BOperator},id1::OID{<:FIndex},id2::OID{<:FIndex},::Any=nothing) -> Tuple{Vararg{BOperator}}
+
+Permute two bosonic oid and get the result.
+"""
+function permute(::Type{<:BOperator},id1::OID{<:FIndex},id2::OID{<:FIndex},::Any=nothing)
+    @assert id1.index≠id2.index || id1.rcoord≠id2.rcoord || id1.icoord≠id2.icoord "permute error: permuted ids should not be equal to each other."
+    if id1.index'==id2.index && id1.rcoord==id2.rcoord && id1.icoord==id2.icoord
+        if id1.index.nambu==CREATION
+            return (BOperator(1,ID()),BOperator(1,ID(id2,id1)))
+        else
+            return (BOperator(-1,ID()),BOperator(1,ID(id2,id1)))
+        end
+    else
+        return (BOperator(1,ID(id2,id1)),)
+    end
+end
+
+"""
     FCID(;center=wildcard,atom=wildcard,orbital=wildcard,spin=wildcard,nambu=wildcard,obsub=wildcard,spsub=wildcard)
 
 The id of a Fock coupling.
@@ -299,8 +331,8 @@ Base.fieldnames(::Type{<:FCID})=(:center,:atom,:orbital,:spin,:nambu,:obsub,:sps
 FCID(;center=wildcard,atom=wildcard,orbital=wildcard,spin=wildcard,nambu=wildcard,obsub=wildcard,spsub=wildcard)=FCID(center,atom,orbital,spin,nambu,obsub,spsub)
 
 """
-    FockCoupling(value::Number,id::ID{<:NTuple{N,FCID}},obsubscripts::Subscripts,spsubscripts::Subscripts) where N
-    FockCoupling{N}(value::Number=1;
+    FockCoupling(value,id::ID{<:Tuple{Vararg{FCID}}},obsubscripts::Subscripts,spsubscripts::Subscripts)
+    FockCoupling{N}(value1;
                     centers::Union{NTuple{N,Int},Nothing}=nothing,
                     atoms::Union{NTuple{N,Int},Nothing}=nothing,
                     orbitals::Union{NTuple{N,Int},Subscript,Nothing}=nothing,
@@ -309,16 +341,16 @@ FCID(;center=wildcard,atom=wildcard,orbital=wildcard,spin=wildcard,nambu=wildcar
 
 Fock coupling.
 """
-struct FockCoupling{N,V<:Number,I<:ID{<:NTuple{N,FCID}},OS<:Subscripts,SS<:Subscripts} <: Coupling{N,V,I}
+struct FockCoupling{V,I<:ID,OS<:Subscripts,SS<:Subscripts} <: Coupling{V,I}
     value::V
     id::I
     obsubscripts::OS
     spsubscripts::SS
-    function FockCoupling(value::Number,id::ID{<:NTuple{N,FCID}},obsubscripts::Subscripts,spsubscripts::Subscripts) where N
-        new{N,value|>typeof,id|>typeof,obsubscripts|>typeof,spsubscripts|>typeof}(value,id,obsubscripts,spsubscripts)
+    function FockCoupling(value,id::ID{<:Tuple{Vararg{FCID}}},obsubscripts::Subscripts,spsubscripts::Subscripts)
+        new{typeof(value),typeof(id),typeof(obsubscripts),typeof(spsubscripts)}(value,id,obsubscripts,spsubscripts)
     end
 end
-function FockCoupling{N}(   value::Number=1;
+function FockCoupling{N}(   value=1;
                             centers::Union{NTuple{N,Int},Nothing}=nothing,
                             atoms::Union{NTuple{N,Int},Nothing}=nothing,
                             orbitals::Union{NTuple{N,Int},Subscript,Nothing}=nothing,
@@ -386,12 +418,13 @@ function Base.:*(fc1::FockCoupling,fc2::FockCoupling)
 end
 
 """
-    ⊗(fc1::FockCoupling{N},fc2::FockCoupling{N}) where N -> FockCoupling
+    ⊗(fc1::FockCoupling,fc2::FockCoupling) -> FockCoupling
 
 Get the direct product between two Fock couplings.
 """
-function ⊗(fc1::FockCoupling{N},fc2::FockCoupling{N}) where N
-    value,attrvalues,subscripts=fc1.value*fc2.value,[],[]
+function ⊗(fc1::FockCoupling,fc2::FockCoupling)
+    @assert fc1|>rank==fc2|>rank "⊗ error: dismatched rank."
+    value,attrvalues,subscripts,N=fc1.value*fc2.value,[],[],rank(fc1)
     wildcards=NTuple{N,Char}(wildcard for i=1:N)
     v1,v2=fc1.id.centers,fc2.id.centers; t1,t2=v1==wildcards,v2==wildcards
     push!(attrvalues,t1 && t2 ? wildcards : t1 ? v2 : t2 ? v1 : v1==v2 ? v1 : error("⊗ error: dismatched centers ($v1 and $v2)."))
@@ -411,14 +444,15 @@ function ⊗(fc1::FockCoupling{N},fc2::FockCoupling{N}) where N
 end
 
 """
-    ⋅(fc1::FockCoupling{2},fc2::FockCoupling{2}) -> FockCoupling{2}
+    ⋅(fc1::FockCoupling,fc2::FockCoupling) -> FockCoupling
 
 Get the dot product of two rank-2 Fock couplings.
 
 A rank-2 FockCoupling can be considered as a matrix acting on the sublattice, orbital, spin and nambu spaces.
 The dot product here is defined as the multiplication between such matrices.
 """
-function ⋅(fc1::FockCoupling{2},fc2::FockCoupling{2})
+function ⋅(fc1::FockCoupling,fc2::FockCoupling)
+    @assert rank(fc1)==rank(fc2)==2 "⋅ error: input fockcouplings must be rank-2."
     attrpairs=[]
     value=fc1.value*fc2.value
     wildcards=(wildcard,wildcard)
@@ -436,6 +470,13 @@ function ⋅(fc1::FockCoupling{2},fc2::FockCoupling{2})
     end
     return FockCoupling{2}(value;attrpairs...)
 end
+
+"""
+    rawelement(::Type{<:FockCoupling})
+
+Get the raw name of a type of FockCoupling.
+"""
+rawelement(::Type{<:FockCoupling})=FockCoupling
 
 """
     expand(fc::FockCoupling,pid::PID,fock::Fock,kind::Union{Val{K},Nothing}=nothing) where K -> Union{FCExpand,Tuple{}}
@@ -464,7 +505,7 @@ couplingcenter(::Type{<:FockCoupling},i::Int,n::Int,::Val{2})=i<=n/2 ? 1 : 2
             ) for i=1:N]
     return Expr(:tuple,exprs...)
 end
-struct FCExpand{V<:Number,N,S} <: VectorSpace{Tuple{V,NTuple{N,FIndex{S}}}}
+struct FCExpand{V,N,S} <: VectorSpace{Tuple{V,NTuple{N,FIndex{S}}}}
     value::V
     pids::NTuple{N,PID{S}}
     obsbexpands::Vector{NTuple{N,Int}}
@@ -474,7 +515,7 @@ end
 IsMultiIndexable(::Type{<:FCExpand})=IsMultiIndexable(true)
 MultiIndexOrderStyle(::Type{<:FCExpand})=MultiIndexOrderStyle('C')
 dims(fce::FCExpand)=(length(fce.obsbexpands),length(fce.spsbexpands))
-@generated function Tuple(inds::NTuple{2,Int},fce::FCExpand{<:Number,N}) where N
+@generated function Tuple(inds::NTuple{2,Int},fce::FCExpand{V,N}) where {V,N}
     exprs=[:(FIndex(fce.pids[$i],FID(fce.obsbexpands[inds[1]][$i],fce.spsbexpands[inds[2]][$i],fce.nambus[$i]))) for i=1:N]
     return Expr(:tuple,:(fce.value),Expr(:tuple,exprs...))
 end
@@ -552,7 +593,7 @@ function σ⁻(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing)
 end
 
 """
-    Onsite{ST}( id::Symbol,value::Number;
+    Onsite{ST}( id::Symbol,value::Any;
                 couplings::Union{Function,Coupling,Couplings,Nothing}=nothing,
                 amplitude::Union{Function,Nothing}=nothing,
                 modulate::Union{Function,Bool}=false,
@@ -560,10 +601,10 @@ end
 
 Onsite term.
 
-Type alias for `Term{statistics,:Onsite,2,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
+Type alias for `Term{statistics,:Onsite,2,id,V,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
 """
-const Onsite{statistics,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:Onsite,2,id,V,Int,C,A,M}
-function Onsite{ST}(id::Symbol,value::Number;
+const Onsite{statistics,id,V,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:Onsite,2,id,V,Int,C,A,M}
+function Onsite{ST}(id::Symbol,value::Any;
                     couplings::Union{Function,Coupling,Couplings,Nothing}=nothing,
                     amplitude::Union{Function,Nothing}=nothing,
                     modulate::Union{Function,Bool}=false,
@@ -575,7 +616,7 @@ abbr(::Type{<:Onsite})=:st
 isHermitian(::Type{<:Onsite})=nothing
 
 """
-    Hopping{ST}(id::Symbol,value::Number,bondkind::Int=1;
+    Hopping{ST}(id::Symbol,value::Any,bondkind::Int=1;
                 couplings::Union{Function,Coupling,Couplings,Nothing}=nothing,
                 amplitude::Union{Function,Nothing}=nothing,
                 modulate::Union{Function,Bool}=false,
@@ -583,10 +624,10 @@ isHermitian(::Type{<:Onsite})=nothing
 
 Hopping term.
 
-Type alias for `Term{statistics,:Hopping,2,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
+Type alias for `Term{statistics,:Hopping,2,id,V,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
 """
-const Hopping{statistics,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:Hopping,2,id,V,Int,C,A,M}
-function Hopping{ST}(id::Symbol,value::Number,bondkind::Int=1;
+const Hopping{statistics,id,V,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:Hopping,2,id,V,Int,C,A,M}
+function Hopping{ST}(id::Symbol,value::Any,bondkind::Int=1;
                     couplings::Union{Function,Coupling,Couplings,Nothing}=nothing,
                     amplitude::Union{Function,Nothing}=nothing,
                     modulate::Union{Function,Bool}=false,
@@ -599,7 +640,7 @@ abbr(::Type{<:Hopping})=:hp
 isHermitian(::Type{<:Hopping})=false
 
 """
-    Pairing{ST}(id::Symbol,value::Number,bondkind::Int=0;
+    Pairing{ST}(id::Symbol,value::Any,bondkind::Int=0;
                 couplings::Union{Function,Coupling,Couplings,Nothing}=nothing,
                 amplitude::Union{Function,Nothing}=nothing,
                 modulate::Union{Function,Bool}=false,
@@ -607,10 +648,10 @@ isHermitian(::Type{<:Hopping})=false
 
 Pairing term.
 
-Type alias for `Term{statistics,:Pairing,2,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
+Type alias for `Term{statistics,:Pairing,2,id,V,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
 """
-const Pairing{statistics,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:Pairing,2,id,V,Int,C,A,M}
-function Pairing{ST}(id::Symbol,value::Number,bondkind::Int=0;
+const Pairing{statistics,id,V,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:Pairing,2,id,V,Int,C,A,M}
+function Pairing{ST}(id::Symbol,value::Any,bondkind::Int=0;
                     couplings::Union{Function,Coupling,Couplings,Nothing}=nothing,
                     amplitude::Union{Function,Nothing}=nothing,
                     modulate::Union{Function,Bool}=false,
@@ -635,20 +676,21 @@ end
 
 const hubbard=FockCoupling{4}(spins=(2,2,1,1),nambus=(CREATION,ANNIHILATION,CREATION,ANNIHILATION))
 """
-    Hubbard{ST}(id::Symbol,value::Real;
+    Hubbard{ST}(id::Symbol,value::Any;
                 amplitude::Union{Function,Nothing}=nothing,
                 modulate::Union{Function,Bool}=false,
                 ) where {ST}
 
 Hubbard term.
 
-Type alias for `Term{statistics,:Hubbard,4,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
+Type alias for `Term{statistics,:Hubbard,4,id,V,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
 """
-const Hubbard{statistics,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:Hubbard,4,id,V,Int,C,A,M}
-function Hubbard{ST}(id::Symbol,value::Real;
+const Hubbard{statistics,id,V,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:Hubbard,4,id,V,Int,C,A,M}
+function Hubbard{ST}(id::Symbol,value::Any;
                     amplitude::Union{Function,Nothing}=nothing,
                     modulate::Union{Function,Bool}=false,
                     ) where {ST}
+    @assert value==value' "Hubbard error: only real values are allowed."
     Term{ST,:Hubbard,4}(id,value,0,couplings=hubbard,amplitude=amplitude,modulate=modulate)
 end
 abbr(::Type{<:Hubbard})=:hb
@@ -656,20 +698,21 @@ isHermitian(::Type{<:Hubbard})=true
 
 const interorbitalinterspin=FockCoupling{4}(orbitals=(@subscript (α,α,β,β) with α<β),spins=(@subscript (σ₁,σ₁,σ₂,σ₂) with σ₁≠σ₂),nambus=(CREATION,ANNIHILATION,CREATION,ANNIHILATION))
 """
-    InterOrbitalInterSpin{ST}(  id::Symbol,value::Real;
+    InterOrbitalInterSpin{ST}(  id::Symbol,value::Any;
                                 amplitude::Union{Function,Nothing}=nothing,
                                 modulate::Union{Function,Bool}=false,
                                 ) where {ST}
 
 Interorbital-interspin term.
 
-Type alias for `Term{statistics,:InterOrbitalInterSpin,4,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
+Type alias for `Term{statistics,:InterOrbitalInterSpin,4,id,V,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
 """
-const InterOrbitalInterSpin{statistics,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:InterOrbitalInterSpin,4,id,V,Int,C,A,M}
-function InterOrbitalInterSpin{ST}( id::Symbol,value::Real;
+const InterOrbitalInterSpin{statistics,id,V,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:InterOrbitalInterSpin,4,id,V,Int,C,A,M}
+function InterOrbitalInterSpin{ST}( id::Symbol,value::Any;
                                     amplitude::Union{Function,Nothing}=nothing,
                                     modulate::Union{Function,Bool}=false,
                                     ) where {ST}
+    @assert value==value' "InterOrbitalInterSpin error: only real values are allowed."
     Term{ST,:InterOrbitalInterSpin,4}(id,value,0,couplings=interorbitalinterspin,amplitude=amplitude,modulate=modulate)
 end
 abbr(::Type{<:InterOrbitalInterSpin})=:nons
@@ -677,20 +720,21 @@ isHermitian(::Type{<:InterOrbitalInterSpin})=true
 
 const interorbitalintraspin=FockCoupling{4}(orbitals=(@subscript (α,α,β,β) with α<β),nambus=(CREATION,ANNIHILATION,CREATION,ANNIHILATION))
 """
-    InterOrbitalIntraSpin{ST}(  id::Symbol,value::Real;
+    InterOrbitalIntraSpin{ST}(  id::Symbol,value::Any;
                                 amplitude::Union{Function,Nothing}=nothing,
                                 modulate::Union{Function,Bool}=false,
                                 ) where {ST}
 
 Interorbital-intraspin term.
 
-Type alias for `Term{statistics,:InterOrbitalIntraSpin,4,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
+Type alias for `Term{statistics,:InterOrbitalIntraSpin,4,id,V,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
 """
-const InterOrbitalIntraSpin{statistics,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:InterOrbitalIntraSpin,4,id,V,Int,C,A,M}
-function InterOrbitalIntraSpin{ST}( id::Symbol,value::Real;
+const InterOrbitalIntraSpin{statistics,id,V,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:InterOrbitalIntraSpin,4,id,V,Int,C,A,M}
+function InterOrbitalIntraSpin{ST}( id::Symbol,value::Any;
                                     amplitude::Union{Function,Nothing}=nothing,
                                     modulate::Union{Function,Bool}=false,
                                     ) where {ST}
+    @assert value==value' "InterOrbitalIntraSpin error: only real values are allowed."
     Term{ST,:InterOrbitalIntraSpin,4}(id,value,0,couplings=interorbitalintraspin,amplitude=amplitude,modulate=modulate)
 end
 abbr(::Type{<:InterOrbitalIntraSpin})=:noes
@@ -698,17 +742,17 @@ isHermitian(::Type{<:InterOrbitalIntraSpin})=true
 
 const spinflip=FockCoupling{4}(orbitals=(@subscript (α,β,α,β) with α<β),spins=(2,1,1,2),nambus=(CREATION,CREATION,ANNIHILATION,ANNIHILATION))
 """
-    SpinFlip{ST}(   id::Symbol,value::Real;
+    SpinFlip{ST}(   id::Symbol,value::Any;
                     amplitude::Union{Function,Nothing}=nothing,
                     modulate::Union{Function,Bool}=false,
                     ) where {ST}
 
 Spin-flip term.
 
-Type alias for `Term{statistics,:SpinFlip,4,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
+Type alias for `Term{statistics,:SpinFlip,4,id,V,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
 """
-const SpinFlip{statistics,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:SpinFlip,4,id,V,Int,C,A,M}
-function SpinFlip{ST}(  id::Symbol,value::Real;
+const SpinFlip{statistics,id,V,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:SpinFlip,4,id,V,Int,C,A,M}
+function SpinFlip{ST}(  id::Symbol,value::Any;
                         amplitude::Union{Function,Nothing}=nothing,
                         modulate::Union{Function,Bool}=false,
                         ) where {ST}
@@ -719,17 +763,17 @@ isHermitian(::Type{<:SpinFlip})=false
 
 const pairhopping=FockCoupling{4}(orbitals=(@subscript (α,α,β,β) with α<β),spins=(2,1,1,2),nambus=(CREATION,CREATION,ANNIHILATION,ANNIHILATION))
 """
-    PairHopping{ST}(    id::Symbol,value::Real;
+    PairHopping{ST}(    id::Symbol,value::Any;
                         amplitude::Union{Function,Nothing}=nothing,
                         modulate::Union{Function,Bool}=false,
                         ) where {ST}
 
 Pair-hopping term.
 
-Type alias for `Term{statistics,:PairHopping,4,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
+Type alias for `Term{statistics,:PairHopping,4,id,V,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
 """
-const PairHopping{statistics,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:PairHopping,4,id,V,Int,C,A,M}
-function PairHopping{ST}(   id::Symbol,value::Real;
+const PairHopping{statistics,id,V,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:PairHopping,4,id,V,Int,C,A,M}
+function PairHopping{ST}(   id::Symbol,value::Any;
                             amplitude::Union{Function,Nothing}=nothing,
                             modulate::Union{Function,Bool}=false,
                             ) where {ST}
@@ -739,7 +783,7 @@ abbr(::Type{<:PairHopping})=:ph
 isHermitian(::Type{<:PairHopping})=false
 
 """
-    Coulomb{ST}(    id::Symbol,value::Number,bondkind::Int=1;
+    Coulomb{ST}(    id::Symbol,value::Any,bondkind::Int=1;
                     couplings::Union{Function,Coupling,Couplings,Nothing}=nothing,
                     amplitude::Union{Function,Nothing}=nothing,
                     modulate::Union{Function,Bool}=false,
@@ -747,10 +791,10 @@ isHermitian(::Type{<:PairHopping})=false
 
 Coulomb term.
 
-Type alias for `Term{statistics,:Coulomb,4,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
+Type alias for `Term{statistics,:Coulomb,4,id,V,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}`.
 """
-const Coulomb{statistics,id,V<:Number,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:Coulomb,4,id,V,Int,C,A,M}
-function Coulomb{ST}(   id::Symbol,value::Number,bondkind::Int=1;
+const Coulomb{statistics,id,V,C<:TermCouplings,A<:TermAmplitude,M<:Union{TermModulate,Nothing}}=Term{statistics,:Coulomb,4,id,V,Int,C,A,M}
+function Coulomb{ST}(   id::Symbol,value::Any,bondkind::Int=1;
                         couplings::Union{Function,Coupling,Couplings,Nothing}=nothing,
                         amplitude::Union{Function,Nothing}=nothing,
                         modulate::Union{Function,Bool}=false,
@@ -783,7 +827,7 @@ const BFockTerm=Union{Onsite{'B'},Hopping{'B'},Pairing{'B'},Hubbard{'B'},InterOr
 
 Get the operator type of a Fock term.
 """
-otype(T::Type{<:FFockTerm},I::Type{<:OID})=FOperator{T|>rank,T|>valtype,ID{NTuple{T|>rank,I}}}
-otype(T::Type{<:BFockTerm},I::Type{<:OID})=BOperator{T|>rank,T|>valtype,ID{NTuple{T|>rank,I}}}
+otype(T::Type{<:FFockTerm},I::Type{<:OID})=FOperator{T|>valtype,ID{NTuple{T|>rank,I}}}
+otype(T::Type{<:BFockTerm},I::Type{<:OID})=BOperator{T|>valtype,ID{NTuple{T|>rank,I}}}
 
 end # module

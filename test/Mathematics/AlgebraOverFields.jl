@@ -1,19 +1,27 @@
 using Test
 using Printf: @printf
 using QuantumLattices.Mathematics.AlgebraOverFields
-using QuantumLattices.Interfaces: dimension,rank,add!,sub!,mul!,div!
+using QuantumLattices.Interfaces: dimension,rank,add!,sub!,mul!,div!,sequence
 using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Mathematics.Combinatorics: Combinations
 using QuantumLattices.Mathematics.VectorSpaces: DirectVectorSpace
-import QuantumLattices.Interfaces: ⊗,⋅
+import QuantumLattices.Interfaces: ⊗,⋅,permute
 import QuantumLattices.Mathematics.AlgebraOverFields: rawelement
 
 struct AOFID{O<:Real,S<:Real} <: SimpleID
     orbital::O
-    spin::S
+    nambu::S
 end
 
 @testset "ID" begin
+    @test ID{<:Tuple{SimpleID}}|>rank==1
+    @test ID|>rank==Any
+    @test promote_rule(ID{Tuple{AOFID{Int,Int}}},ID{<:Tuple{Vararg{AOFID{Int,Int}}}})==ID{<:Tuple{Vararg{AOFID{Int,Int}}}}
+    @test promote_rule(ID{<:Tuple{Vararg{AOFID{Int,Int}}}},ID{Tuple{AOFID{Int,Int}}})==ID{<:Tuple{Vararg{AOFID{Int,Int}}}}
+    @test promote_rule(ID{Tuple{AOFID{Int,Int}}},ID{Tuple{AOFID{Int,Float}}})==ID
+    @test promote_rule(ID{Tuple{AOFID{Int,Int}}},ID{NTuple{2,AOFID{Int,Int}}})==ID
+    @test promote_rule(ID{Tuple{}},ID{Tuple{AOFID{Int,Int}}})==ID
+
     cid=AOFID(2,1)*AOFID(1,Inf)
     @test cid==ID(AOFID(2,1),AOFID(1,Inf))
     @test cid|>propertynames==(:contents,)
@@ -36,10 +44,10 @@ end
 
     cid=AOFID(2,1)*AOFID(3,4)
     @test cid==ID(AOFID,(2,3),(1,4))
-    @test propertynames(cid|>typeof,false)==(:orbitals,:spins)
-    @test propertynames(cid|>typeof,true)==(:contents,:orbitals,:spins)
+    @test propertynames(cid|>typeof,false)==(:orbitals,:nambus)
+    @test propertynames(cid|>typeof,true)==(:contents,:orbitals,:nambus)
     @test cid.orbitals==(2,3)
-    @test cid.spins==(1,4)
+    @test cid.nambus==(1,4)
 end
 
 @testset "IdSpace" begin
@@ -51,7 +59,7 @@ end
     end
 end
 
-struct AOFOperator{N,V<:Number,I<:ID{<:NTuple{N,SimpleID}}} <: Element{N,V,I}
+struct AOFOperator{V,I<:ID} <: Element{V,I}
     value::V
     id::I
 end
@@ -61,11 +69,30 @@ Base.show(io::IO,opt::AOFOperator)=@printf io "AOFOperator(value=%s,id=%s)" opt.
 Base.repr(opt::AOFOperator)="AOFOperator($(opt.value),$(opt.id))"
 rawelement(::Type{<:AOFOperator})=AOFOperator
 
+function permute(::Type{<:AOFOperator},id1::AOFID,id2::AOFID,::Any=nothing)
+    @assert id1≠id2 "permute error: permuted ids should not be equal to each other."
+    if id1.nambu==3-id2.nambu && id1.orbital==id2.orbital
+        if id1.nambu==2
+            return (AOFOperator(1,ID()),AOFOperator(1,ID(id2,id1)))
+        else
+            return (AOFOperator(-1,ID()),AOFOperator(1,ID(id2,id1)))
+        end
+    else
+        return (AOFOperator(1,ID(id2,id1)),)
+    end
+end
+
 @testset "Elements" begin
-    @test valtype(Element)===Number
-    @test rawelement(Element{N,<:Number,<:ID{<:NTuple{N,SimpleID}}} where N)==Element
-    @test rawelement(AOFOperator{N,<:Number,<:ID{<:NTuple{N,SimpleID}}} where N)==AOFOperator
-    @test scalartype(AOFOperator{N,Number,<:ID{<:NTuple{N,SimpleID}}} where N)==AOFOperator{0,Number,ID{Tuple{}}}
+    @test valtype(Element)===Any
+    @test idtype(Element{V} where V)==ID
+    @test rawelement(Element{V} where V)==Element
+    @test rawelement(AOFOperator{V} where V)==AOFOperator
+    @test scalartype(AOFOperator{Number})==AOFOperator{Number,ID{Tuple{}}}
+    @test promote_rule(AOFOperator{Int},AOFOperator)==AOFOperator
+    @test promote_rule(AOFOperator,AOFOperator{Int})==AOFOperator
+    @test promote_rule(AOFOperator{Int},AOFOperator{Float})==AOFOperator{Float}
+    @test promote_rule(AOFOperator{Int,ID{Tuple{AOFID{Int,Int}}}},AOFOperator{Float,ID{Tuple{AOFID{Int,Int}}}})==AOFOperator{Float,ID{Tuple{AOFID{Int,Int}}}}
+    @test promote_rule(AOFOperator{Int,ID{Tuple{AOFID}}},AOFOperator{Float,ID{Tuple{AOFID}}})==AOFOperator{Float,ID{Tuple{AOFID}}}
 
     opt=AOFOperator(1.0,ID(AOFID(1,1)))
     @test opt|>deepcopy==opt
@@ -118,24 +145,39 @@ rawelement(::Type{<:AOFOperator})=AOFOperator
     @test opts^2==opts*opts
     @test opts*zero(Elements)==zero(Elements)*opts==nothing
 
-    temp=Elements{ID,AOFOperator{R,Float,ID{Tuple{Vararg{AOFID{Int,Int},R}}}} where R}(opts)
+    temp=Elements{ID,AOFOperator{Float}}(opts)
     @test add!(deepcopy(temp),1)==add!(deepcopy(temp),AOFOperator(1,ID()))==opts+1==1+opts==opts+AOFOperator(1,ID())==AOFOperator(1,ID())+opts
     @test sub!(deepcopy(temp),1)==sub!(deepcopy(temp),AOFOperator(1,ID()))==opts-1==opts-AOFOperator(1,ID())
 
-    opt3=AOFOperator(3.0,ID(AOFID(1,3)))
-    @test opt1*opt2==opt1⊗opt2==opt1⋅opt2===AOFOperator(2.0,ID(AOFID(1,1),AOFID(1,2)))
+    opt3=AOFOperator(3,ID(AOFID(1,3)))
+    @test opt1*opt2==opt1⊗opt2==opt1⋅opt2==AOFOperator(2.0,ID(AOFID(1,1),AOFID(1,2)))
     @test opts*opt3==opts⊗opt3==opts⋅opt3==Elements(AOFOperator(3.0,ID(AOFID(1,1),AOFID(1,3))),AOFOperator(6.0,ID(AOFID(1,2),AOFID(1,3))))
     @test opt3*opts==opt3⊗opts==opt3⋅opts==Elements(AOFOperator(3.0,ID(AOFID(1,3),AOFID(1,1))),AOFOperator(6.0,ID(AOFID(1,3),AOFID(1,2))))
     @test opts*Elements(opt3)==opts⊗Elements(opt3)==opts⋅Elements(opt3)==Elements(AOFOperator(3.0,ID(AOFID(1,1),AOFID(1,3))),AOFOperator(6.0,ID(AOFID(1,2),AOFID(1,3))))
+
+    table=Dict(AOFID(1,1)=>1,AOFID(1,2)=>2)
+    opt=AOFOperator(2.0,ID(AOFID(1,1),AOFID(1,2)))
+    @test sequence(opt,table)==(1,2)
+    @test split(opt)==(2.0,AOFOperator(1.0,ID(AOFID(1,1))),AOFOperator(1.0,ID(AOFID(1,2))))
 end
 
 @testset "replace" begin
     id1,id2=AOFID(1,1),AOFID(1,2)
     opt=AOFOperator(1.5,ID(id1,id2))
-    @test split(opt)==(1.5,AOFOperator(1.0,ID(id1)),AOFOperator(1.0,ID(id2)))
     id3,id4=AOFID(2,1),AOFID(2,2)
     opt1=AOFOperator(2.0,ID(id3))+AOFOperator(3.0,ID(id4))
     opt2=AOFOperator(2.0,ID(id3))-AOFOperator(3.0,ID(id4))
     @test replace(opt,id1=>opt1,id2=>opt2)==1.5*opt1*opt2
     @test replace(Elements(opt),id2=>opt2,id1=>opt1)==1.5*opt1*opt2
+end
+
+@testset "permute" begin
+    id1,id2=AOFID(1,1),AOFID(1,2)
+    opt1=AOFOperator(1.5,ID(id1,id2))
+    opt2=AOFOperator(1.5,ID(id2,id1))
+    opt0=AOFOperator(1.5,ID())
+    @test permute(opt1,Dict(id1=>1,id2=>2))==opt2-opt0
+    @test permute(opt1+opt2,Dict(id1=>1,id2=>2))==2*opt2-opt0
+    @test permute(opt2,Dict(id1=>2,id2=>1))==opt1+opt0
+    @test permute(opt1+opt2,Dict(id1=>2,id2=>1))==2*opt1+opt0
 end

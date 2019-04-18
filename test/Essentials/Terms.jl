@@ -7,7 +7,7 @@ using QuantumLattices.Essentials.Spatials: Point,PID,Bond,decompose
 using QuantumLattices.Essentials.DegreesOfFreedom: IDFConfig,Table,IID,Index,Internal,FilteredAttributes,OID,Operator,Operators
 using QuantumLattices.Interfaces: rank,update!,id,kind
 using QuantumLattices.Prerequisites: Float,decimaltostr
-using QuantumLattices.Mathematics.AlgebraOverFields: ID,SimpleID
+using QuantumLattices.Mathematics.AlgebraOverFields: ID,SimpleID,rawelement
 import QuantumLattices.Interfaces: dimension,expand
 import QuantumLattices.Essentials.DegreesOfFreedom: isHermitian,otype
 import QuantumLattices.Essentials.Terms: couplingcenter,couplingcenters,abbr
@@ -33,7 +33,7 @@ struct TCID <: SimpleID
 end
 Base.fieldnames(::Type{<:TCID})=(:center,:nambu)
 
-struct TCoupling{N,V<:Number,I<:ID{<:NTuple{N,TCID}}} <: Coupling{N,V,I}
+struct TCoupling{V,I<:ID} <: Coupling{V,I}
     value::V
     id::I
 end
@@ -44,19 +44,18 @@ function expand(tc::TCoupling,pids::NTuple{R,PID},focks::NTuple{R,TFock},kind::U
     return ((tc.value,NTuple{rank(tc),TIndex{fieldtype(pids|>eltype,:scope)}}(TIndex(pids[i].scope,pids[i].site,nambus[i]) for i=1:rank(tc))),)
 end
 
-struct TOperator{N,V<:Number,I<:ID{<:NTuple{N,OID}}} <: Operator{N,V,I}
+struct TOperator{V,I<:ID} <: Operator{V,I}
     value::V
     id::I
-    TOperator(value::Number,id::ID{<:NTuple{N,OID}}) where N=new{N,typeof(value),typeof(id)}(value,id)
 end
 
 abbr(::Type{<:Term{ST,:TermMu}}) where ST=:tmu
 isHermitian(::Type{<:Term{ST,:TermMu}}) where ST=true
-otype(T::Type{<:Term{ST,:TermMu}},I::Type{<:OID}) where ST=TOperator{T|>rank,T|>valtype,ID{NTuple{T|>rank,I}}}
+otype(T::Type{<:Term{ST,:TermMu}},I::Type{<:OID}) where ST=TOperator{T|>valtype,ID{NTuple{T|>rank,I}}}
 
 abbr(::Type{<:Term{ST,:TermHopping}}) where ST=:thp
 isHermitian(::Type{<:Term{ST,:TermHopping}}) where ST=false
-otype(T::Type{<:Term{ST,:TermHopping}},I::Type{<:OID}) where ST=TOperator{T|>rank,T|>valtype,ID{NTuple{T|>rank,I}}}
+otype(T::Type{<:Term{ST,:TermHopping}},I::Type{<:OID}) where ST=TOperator{T|>valtype,ID{NTuple{T|>rank,I}}}
 
 @testset "Subscript" begin
     sub=@subscript (x1,4,4,x2) with x1<x2
@@ -143,6 +142,10 @@ end
 
     termmodulate=TermModulate(:t,t->t*2.0)
     @test termmodulate(2)==4
+end
+
+@testset "Coupling" begin
+    @test rawelement(Coupling{V} where V)==Coupling
 end
 
 @testset "Term" begin
