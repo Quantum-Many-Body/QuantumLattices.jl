@@ -130,10 +130,13 @@ end
     @test div!(deepcopy(opts),2.0)==div!(deepcopy(opts),AOFOperator(2,ID()))==opts/2==opts/AOFOperator(2,ID())
     @test +opts==opts+zero(Elements)==zero(Elements)+opts==opts==opts-zero(Elements)
     @test opt1+opt2==opts
-    @test opt1+opts+opt2==Elements(opt1*2,opt2*2)
+    @test opt1+opts==opts+opt1==Elements(opt1*2,opt2)
     @test opts+opts==Elements(opt1*2,opt2*2)
     @test -opts==Elements(-opt1,-opt2)==zero(Elements)-opts
     @test 1.0-opts==AOFOperator(1.0,ID())-opts==-opts+1.0
+    @test opts-1.0==opts-AOFOperator(1.0,ID())
+    @test opt-1.0==opt-AOFOperator(1.0,ID())==opt+AOFOperator(-1.0,ID())
+    @test 1.0-opt==AOFOperator(1.0,ID())-opt==1.0+(-opt)
     @test zero(Elements)==opt1-opt1==opts-opts
     @test opts-opts==zero(Elements)
     @test isequal(zero(Elements),opts-opts)
