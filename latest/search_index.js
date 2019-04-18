@@ -349,7 +349,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "QuantumLattices.Prerequisites.decimaltostr",
     "category": "function",
-    "text": "decimaltostr(number::Integer,n::Int=5)\ndecimaltostr(number::Rational,n::Int=5)\ndecimaltostr(number::AbstractFloat,n::Int=5)\ndecimaltostr(number::Complex,n::Int=5)\n\nConvert a number to a string with at most n decimal places.\n\n\n\n\n\n"
+    "text": "decimaltostr(number,::Int=5)\ndecimaltostr(number::Integer,n::Int=5)\ndecimaltostr(number::Rational,n::Int=5)\ndecimaltostr(number::AbstractFloat,n::Int=5)\ndecimaltostr(number::Complex,n::Int=5)\n\nConvert a number to a string with at most n decimal places.\n\n\n\n\n\n"
 },
 
 {
@@ -2125,7 +2125,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Algebra over fields",
     "title": "QuantumLattices.Mathematics.AlgebraOverFields.Element",
     "category": "type",
-    "text": "Element{N,V<:Number,I<:ID{<:NTuple{N,SimpleID}}}\n\nAn element of an algebra over a field.\n\nThe first and second attributes of an element must be\n\nvalue::Number: the coefficient of the element\nid::ID: the id of the element\n\n\n\n\n\n"
+    "text": "Element{V,I<:ID}\n\nAn element of an algebra over a field.\n\nThe first and second attributes of an element must be\n\nvalue: the coefficient of the element\nid::ID: the id of the element\n\n\n\n\n\n"
 },
 
 {
@@ -2165,7 +2165,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Algebra over fields",
     "title": "QuantumLattices.Mathematics.AlgebraOverFields.ScalarElement",
     "category": "type",
-    "text": "ScalarElement{V<:Number}\n\nIdentity element.\n\n\n\n\n\n"
+    "text": "ScalarElement{V}\n\nIdentity element.\n\n\n\n\n\n"
 },
 
 {
@@ -2181,7 +2181,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Algebra over fields",
     "title": "QuantumLattices.Mathematics.AlgebraOverFields.idtype",
     "category": "method",
-    "text": "idtype(m::Element)\nidtype(::Type{<:Element{N,<:Number,I}}) where {N,I<:ID{<:NTuple{N,SimpleID}}}\n\nThe type of the id of an element.\n\n\n\n\n\n"
+    "text": "idtype(m::Element)\nidtype(::Type{<:Element{V,I} where V}) where I<:ID\nidtype(::Type{<:Element})\n\nThe type of the id of an element.\n\n\n\n\n\n"
 },
 
 {
@@ -2197,7 +2197,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Algebra over fields",
     "title": "Base.:*",
     "category": "method",
-    "text": "*(factor::Number,m::Element) -> Element\n*(m::Element,factor::Number) -> Element\n*(m1::Element,m2::Element) -> Element\n*(m::Element,::Nothing) -> Nothing\n*(::Nothing,m::Element) -> Nothing\n*(factor::Number,ms::Elements) -> Elements\n*(ms::Elements,factor::Number) -> Elements\n*(m::Element,ms::Elements) -> Elements\n*(ms::Elements,m::Element) -> Elements\n*(ms1::Elements,ms2::Elements) -> Elements\n*(ms::Elements,::Nothing) -> Nothing\n*(::Nothing,ms::Elements) -> Nothing\n\nOverloaded * operator for element-scalar multiplications and element-element multiplications of an algebra over a field.\n\n\n\n\n\n"
+    "text": "*(factor,m::Element) -> Element\n*(m::Element,factor) -> Element\n*(m1::Element,m2::Element) -> Element\n*(m::Element,::Nothing) -> Nothing\n*(::Nothing,m::Element) -> Nothing\n*(factor,ms::Elements) -> Elements\n*(ms::Elements,factor) -> Elements\n*(m::Element,ms::Elements) -> Elements\n*(ms::Elements,m::Element) -> Elements\n*(ms1::Elements,ms2::Elements) -> Elements\n*(ms::Elements,::Nothing) -> Nothing\n*(::Nothing,ms::Elements) -> Nothing\n\nOverloaded * operator for element-scalar multiplications and element-element multiplications of an algebra over a field.\n\n\n\n\n\n"
 },
 
 {
@@ -2213,7 +2213,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Algebra over fields",
     "title": "Base.:+",
     "category": "method",
-    "text": "+(m::Element) -> typeof(m)\n+(ms::Elements) -> typeof(ms)\n+(m::Element,::Nothing) -> typeof(m)\n+(::Nothing,m::Element) -> typeof(m)\n+(m::Element,factor::Number) -> Elements\n+(factor::Number,m::Element) -> Elements\n+(ms::Elements,::Nothing) -> typeof(ms)\n+(::Nothing,ms::Elements) -> typeof(ms)\n+(ms::Elements,factor::Number) -> Elements\n+(factor::Number,ms::Elements) -> Elements\n+(ms::Elements,m::Element) -> Elements\n+(m1::Element,m2::Element) -> Elements\n+(m::Element,ms::Elements) -> Elements\n+(ms1::Elements,ms2::Elements) -> Elements\n\nOverloaded + operator between elements of an algebra over a field.\n\n\n\n\n\n"
+    "text": "+(m::Element) -> typeof(m)\n+(ms::Elements) -> typeof(ms)\n+(m::Element,::Nothing) -> typeof(m)\n+(::Nothing,m::Element) -> typeof(m)\n+(m::Element,factor) -> Elements\n+(factor,m::Element) -> Elements\n+(ms::Elements,::Nothing) -> typeof(ms)\n+(::Nothing,ms::Elements) -> typeof(ms)\n+(ms::Elements,factor) -> Elements\n+(factor,ms::Elements) -> Elements\n+(ms::Elements,m::Element) -> Elements\n+(m1::Element,m2::Element) -> Elements\n+(m::Element,ms::Elements) -> Elements\n+(ms1::Elements,ms2::Elements) -> Elements\n\nOverloaded + operator between elements of an algebra over a field.\n\n\n\n\n\n"
 },
 
 {
@@ -2221,15 +2221,15 @@ var documenterSearchIndex = {"docs": [
     "page": "Algebra over fields",
     "title": "Base.:-",
     "category": "method",
-    "text": "-(m::Element) -> typeof(m)\n-(ms::Elements) -> typeof(ms)\n-(m::Element,::Nothing) -> typeof(m)\n-(::Nothing,m::Element) -> typeof(m)\n-(ms::Elements,::Nothing) -> typeof(ms)\n-(::Nothing,ms::Elements) -> typeof(ms)\n-(m::Element,factor::Number) -> Elements\n-(factor::Number,m::Element) -> Elements\n-(ms::Elements,factor::Number) -> Elements\n-(factor::Number,ms::Elements) -> Elements\n-(m1::Element,m2::Element) -> Elements\n-(m::Element,ms::Elements) -> Elements\n-(ms::Elements,m::Element) -> Elements\n-(ms1::Elements,ms2::Elements) -> Elements\n\nOverloaded - operator between elements of an algebra over a field.\n\n\n\n\n\n"
+    "text": "-(m::Element) -> typeof(m)\n-(ms::Elements) -> typeof(ms)\n-(m::Element,::Nothing) -> typeof(m)\n-(::Nothing,m::Element) -> typeof(m)\n-(ms::Elements,::Nothing) -> typeof(ms)\n-(::Nothing,ms::Elements) -> typeof(ms)\n-(m::Element,factor) -> Elements\n-(factor,m::Element) -> Elements\n-(ms::Elements,factor) -> Elements\n-(factor,ms::Elements) -> Elements\n-(m1::Element,m2::Element) -> Elements\n-(m::Element,ms::Elements) -> Elements\n-(ms::Elements,m::Element) -> Elements\n-(ms1::Elements,ms2::Elements) -> Elements\n\nOverloaded - operator between elements of an algebra over a field.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Base.:/-Tuple{QuantumLattices.Mathematics.AlgebraOverFields.Element,Number}",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.:/-Tuple{QuantumLattices.Mathematics.AlgebraOverFields.Element,Any}",
     "page": "Algebra over fields",
     "title": "Base.:/",
     "category": "method",
-    "text": "/(m::Element,factor::Number) -> Element\n/(m::Element,factor::ScalarElement) -> Element\n/(ms::Elements,factor::Number) -> Elements\n/(ms::Elements,factor::ScalarElement) -> Elements\n\nOverloaded / operator for element-scalar division of an algebra over a field.\n\n\n\n\n\n"
+    "text": "/(m::Element,factor) -> Element\n/(m::Element,factor::ScalarElement) -> Element\n/(ms::Elements,factor) -> Elements\n/(ms::Elements,factor::ScalarElement) -> Elements\n\nOverloaded / operator for element-scalar division of an algebra over a field.\n\n\n\n\n\n"
 },
 
 {
@@ -2257,11 +2257,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Base.convert-Union{Tuple{M}, Tuple{Type{M},Element{0,V,ID{Tuple{}}} where V<:Number}} where M<:(QuantumLattices.Mathematics.AlgebraOverFields.Element{0,V,QuantumLattices.Mathematics.AlgebraOverFields.ID{Tuple{}}} where V<:Number)",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.convert-Union{Tuple{M}, Tuple{Type{M},Element{V,ID{Tuple{}}} where V}} where M<:(QuantumLattices.Mathematics.AlgebraOverFields.Element{V,QuantumLattices.Mathematics.AlgebraOverFields.ID{Tuple{}}} where V)",
     "page": "Algebra over fields",
     "title": "Base.convert",
     "category": "method",
-    "text": "convert(::Type{M},m::ScalarElement) where M<:ScalarElement\nconvert(::Type{M},m::Number) where M<:ScalarElement\n\nConvert the type of a scalar element from one to another. Convert a scalar to a scalar element.\n\n\n\n\n\n"
+    "text": "convert(::Type{M},m::ScalarElement) where {M<:ScalarElement}\nconvert(::Type{M},m) where {M<:ScalarElement}\nconvert(::Type{M},m::Element) where {M<:Element}\n\nConvert a scalar element from one type to another;\nConvert a scalar to a scalar element;\nConvert an element from one type to another.\n\n\n\n\n\n"
 },
 
 {
@@ -2305,11 +2305,35 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Base.one-Union{Tuple{Type{M}}, Tuple{V}, Tuple{M}, Tuple{Type{M},Type{V}}} where V<:Number where M<:QuantumLattices.Mathematics.AlgebraOverFields.Element",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.one-Union{Tuple{Type{M}}, Tuple{M}} where M<:QuantumLattices.Mathematics.AlgebraOverFields.Element",
     "page": "Algebra over fields",
     "title": "Base.one",
     "category": "method",
-    "text": "one(::Type{M},::Type{V}=Float) where {M<:Element,V<:Number} -> rawelement(M){0,V,ID{Tuple{}}}\n\nGet the identity operator.\n\n\n\n\n\n"
+    "text": "one(::Type{M}) where {M<:Element}\n\nGet the identity operator.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.permute!",
+    "page": "Algebra over fields",
+    "title": "Base.permute!",
+    "category": "function",
+    "text": "permute!(result::Elements,m::Element,table=nothing) -> Elements\npermute!(result::Elements,ms::Elements,table=nothing) -> Elements\n\nPermute the ids of an-element/a-set-of-elements to the descending order according to a table, and store the permuted elements in result.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.promote_rule-Union{Tuple{I2}, Tuple{I1}, Tuple{Type{I1},Type{I2}}} where I2<:QuantumLattices.Mathematics.AlgebraOverFields.ID where I1<:QuantumLattices.Mathematics.AlgebraOverFields.ID",
+    "page": "Algebra over fields",
+    "title": "Base.promote_rule",
+    "category": "method",
+    "text": "promote_rule(::Type{I1},::Type{I2}) where {I1<:ID,I2<:ID}\n\nDefine the promote rule for ID types.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.promote_rule-Union{Tuple{M2}, Tuple{M1}, Tuple{Type{M1},Type{M2}}} where M2<:QuantumLattices.Mathematics.AlgebraOverFields.Element where M1<:QuantumLattices.Mathematics.AlgebraOverFields.Element",
+    "page": "Algebra over fields",
+    "title": "Base.promote_rule",
+    "category": "method",
+    "text": "promote_rule(::Type{M1},::Type{M2}) where {M1<:Element,M2<:Element}\n\nDefine the promote rule for Element types.\n\n\n\n\n\n"
 },
 
 {
@@ -2365,7 +2389,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Algebra over fields",
     "title": "Base.split",
     "category": "method",
-    "text": "split(m::Element) -> Tuple{Number,Vararg{Element}}\n\nSplit an element into the coefficient and a sequence of rank-1 elements.\n\n\n\n\n\n"
+    "text": "split(m::Element) -> Tuple{Any,Vararg{Element}}\n\nSplit an element into the coefficient and a sequence of rank-1 elements.\n\n\n\n\n\n"
 },
 
 {
@@ -2373,7 +2397,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Algebra over fields",
     "title": "Base.valtype",
     "category": "method",
-    "text": "valtype(m::Element)\nvaltype(::Type{<:Element})\nvaltype(::Type{<:Element{N,V,<:ID{<:Tuple{Vararg{SimpleID,N}}}} where N}) where {V<:Number}\n\nGet the type of the value of an element.\n\nThe result is also the type of the field over which the algebra is defined.\n\n\n\n\n\n"
+    "text": "valtype(m::Element)\nvaltype(::Type{<:Element})\nvaltype(::Type{<:Element{V}}) where V\n\nGet the type of the value of an element.\n\nThe result is also the type of the field over which the algebra is defined.\n\n\n\n\n\n"
 },
 
 {
@@ -2405,23 +2429,31 @@ var documenterSearchIndex = {"docs": [
     "page": "Algebra over fields",
     "title": "QuantumLattices.Interfaces.add!",
     "category": "method",
-    "text": "add!(ms::Elements) -> typeof(ms)\nadd!(ms::Elements,::Nothing) -> typeof(ms)\nadd!(ms::Elements,m::Number) -> typeof(ms)\nadd!(ms::Elements,m::Element) -> typeof(ms)\nadd!(ms::Elements,mms::Elements) -> typeof(ms)\n\nGet the inplace addition of elements to a set.\n\n\n\n\n\n"
+    "text": "add!(ms::Elements) -> typeof(ms)\nadd!(ms::Elements,::Nothing) -> typeof(ms)\nadd!(ms::Elements,m) -> typeof(ms)\nadd!(ms::Elements,m::Element) -> typeof(ms)\nadd!(ms::Elements,mms::Elements) -> typeof(ms)\n\nGet the inplace addition of elements to a set.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#QuantumLattices.Interfaces.div!-Tuple{Dict{I,M} where M<:QuantumLattices.Mathematics.AlgebraOverFields.Element where I<:QuantumLattices.Mathematics.AlgebraOverFields.ID,QuantumLattices.Mathematics.AlgebraOverFields.Element{0,V,QuantumLattices.Mathematics.AlgebraOverFields.ID{Tuple{}}} where V<:Number}",
+    "location": "man/Mathematics/AlgebraOverFields.html#QuantumLattices.Interfaces.div!-Tuple{Dict{I,M} where M<:QuantumLattices.Mathematics.AlgebraOverFields.Element where I<:QuantumLattices.Mathematics.AlgebraOverFields.ID,QuantumLattices.Mathematics.AlgebraOverFields.Element{V,QuantumLattices.Mathematics.AlgebraOverFields.ID{Tuple{}}} where V}",
     "page": "Algebra over fields",
     "title": "QuantumLattices.Interfaces.div!",
     "category": "method",
-    "text": "div!(ms::Elements,factor::ScalarElement) -> Elements\ndiv!(ms::Elements,factor::Number) -> Elements\n\nGet the inplace division of element with a scalar.\n\n\n\n\n\n"
+    "text": "div!(ms::Elements,factor::ScalarElement) -> Elements\ndiv!(ms::Elements,factor) -> Elements\n\nGet the inplace division of element with a scalar.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#QuantumLattices.Interfaces.mul!-Tuple{Dict{I,M} where M<:QuantumLattices.Mathematics.AlgebraOverFields.Element where I<:QuantumLattices.Mathematics.AlgebraOverFields.ID,QuantumLattices.Mathematics.AlgebraOverFields.Element{0,V,QuantumLattices.Mathematics.AlgebraOverFields.ID{Tuple{}}} where V<:Number}",
+    "location": "man/Mathematics/AlgebraOverFields.html#QuantumLattices.Interfaces.mul!-Tuple{Dict{I,M} where M<:QuantumLattices.Mathematics.AlgebraOverFields.Element where I<:QuantumLattices.Mathematics.AlgebraOverFields.ID,QuantumLattices.Mathematics.AlgebraOverFields.Element{V,QuantumLattices.Mathematics.AlgebraOverFields.ID{Tuple{}}} where V}",
     "page": "Algebra over fields",
     "title": "QuantumLattices.Interfaces.mul!",
     "category": "method",
-    "text": "mul!(ms::Elements,factor::ScalarElement) -> Elements\nmul!(ms::Elements,factor::Number) -> Elements\n\nGet the inplace multiplication of elements with a scalar.\n\n\n\n\n\n"
+    "text": "mul!(ms::Elements,factor::ScalarElement) -> Elements\nmul!(ms::Elements,factor) -> Elements\n\nGet the inplace multiplication of elements with a scalar.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/AlgebraOverFields.html#QuantumLattices.Interfaces.permute",
+    "page": "Algebra over fields",
+    "title": "QuantumLattices.Interfaces.permute",
+    "category": "function",
+    "text": "permute(m::Element,table=nothing) -> Elements\npermute(ms::Elements,table=nothing) -> Elements\n\nPermute the ids of an-element/a-set-of-elements to the descending order according to a table.\n\n\n\n\n\n"
 },
 
 {
@@ -2429,15 +2461,23 @@ var documenterSearchIndex = {"docs": [
     "page": "Algebra over fields",
     "title": "QuantumLattices.Interfaces.rank",
     "category": "method",
-    "text": "rank(m::Element) -> Int\nrank(::Type{<:Element{N}}) where N -> Int\n\nGet the rank of an element.\n\n\n\n\n\n"
+    "text": "rank(m::Element) -> Int\nrank(::Type{M}) where M<:Element -> Int\n\nGet the rank of an element.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#QuantumLattices.Interfaces.rank-Union{Tuple{Type{#s21} where #s21<:ID{T}}, Tuple{T}} where T<:Tuple{Vararg{QuantumLattices.Mathematics.AlgebraOverFields.SimpleID,N} where N}",
+    "location": "man/Mathematics/AlgebraOverFields.html#QuantumLattices.Interfaces.rank-Tuple{QuantumLattices.Mathematics.AlgebraOverFields.ID}",
     "page": "Algebra over fields",
     "title": "QuantumLattices.Interfaces.rank",
     "category": "method",
-    "text": "rank(::Type{<:ID{T}}) where T<:Tuple{Vararg{SimpleID}} -> Int\nrank(id::ID) -> Int\n\nGet the rank of a composite id.\n\n\n\n\n\n"
+    "text": "rank(id::ID) -> Int\nrank(::Type{<:ID}) -> Any\nrank(::Type{<:ID{T}}) where T<:Tuple{Vararg{SimpleID}} -> Int\n\nGet the rank of a composite id.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Mathematics/AlgebraOverFields.html#QuantumLattices.Interfaces.sequence-Tuple{QuantumLattices.Mathematics.AlgebraOverFields.Element,Any}",
+    "page": "Algebra over fields",
+    "title": "QuantumLattices.Interfaces.sequence",
+    "category": "method",
+    "text": "sequence(m::Element,table=nothing) -> NTuple{rank(m),Int}\n\nGet the sequence of the ids of an element according to a table.\n\n\n\n\n\n"
 },
 
 {
@@ -2445,7 +2485,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Algebra over fields",
     "title": "QuantumLattices.Interfaces.sub!",
     "category": "method",
-    "text": "sub!(ms::Elements) -> typeof(ms)\nsub!(ms::Elements,::Nothing) -> typeof(ms)\nadd!(ms::Elements,m::Number) -> typeof(ms)\nsub!(ms::Elements,m::Element) -> typeof(ms)\nsub!(ms::Elements,mms::Elements) -> typeof(ms)\n\nGet the inplace subtraction of elements from a set.\n\n\n\n\n\n"
+    "text": "sub!(ms::Elements) -> typeof(ms)\nsub!(ms::Elements,::Nothing) -> typeof(ms)\nadd!(ms::Elements,m) -> typeof(ms)\nsub!(ms::Elements,m::Element) -> typeof(ms)\nsub!(ms::Elements,mms::Elements) -> typeof(ms)\n\nGet the inplace subtraction of elements from a set.\n\n\n\n\n\n"
 },
 
 {
@@ -3153,7 +3193,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.azimuth-Tuple{AbstractArray{#s253,1} where #s253<:Real}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.azimuth-Tuple{AbstractArray{#s252,1} where #s252<:Real}",
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.azimuth",
     "category": "method",
@@ -3161,7 +3201,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.azimuthd-Tuple{AbstractArray{#s253,1} where #s253<:Real}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.azimuthd-Tuple{AbstractArray{#s252,1} where #s252<:Real}",
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.azimuthd",
     "category": "method",
@@ -3193,7 +3233,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.distance-Tuple{AbstractArray{#s242,1} where #s242<:Real,AbstractArray{#s22,1} where #s22<:Real}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.distance-Tuple{AbstractArray{#s241,1} where #s241<:Real,AbstractArray{#s22,1} where #s22<:Real}",
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.distance",
     "category": "method",
@@ -3209,7 +3249,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.interlinks-Tuple{AbstractArray{#s263,2} where #s263<:Real,AbstractArray{#s262,2} where #s262<:Real,Dict{Int64,Float64}}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.interlinks-Tuple{AbstractArray{#s262,2} where #s262<:Real,AbstractArray{#s261,2} where #s261<:Real,Dict{Int64,Float64}}",
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.interlinks",
     "category": "method",
@@ -3217,7 +3257,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.intralinks-Union{Tuple{N}, Tuple{AbstractArray{#s258,2} where #s258<:Real,AbstractArray{#s257,1} where #s257<:(AbstractArray{#s256,1} where #s256<:Real),Dict{Int64,Float64}}, Tuple{AbstractArray{#s255,2} where #s255<:Real,AbstractArray{#s254,1} where #s254<:(AbstractArray{#s253,1} where #s253<:Real),Dict{Int64,Float64},Tuple{Vararg{Int64,N}}}} where N",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.intralinks-Union{Tuple{N}, Tuple{AbstractArray{#s257,2} where #s257<:Real,AbstractArray{#s256,1} where #s256<:(AbstractArray{#s255,1} where #s255<:Real),Dict{Int64,Float64}}, Tuple{AbstractArray{#s254,2} where #s254<:Real,AbstractArray{#s253,1} where #s253<:(AbstractArray{#s252,1} where #s252<:Real),Dict{Int64,Float64},Tuple{Vararg{Int64,N}}}} where N",
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.intralinks",
     "category": "method",
@@ -3257,7 +3297,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.issubordinate-Tuple{AbstractArray{#s261,1} where #s261<:Real,AbstractArray{#s260,1} where #s260<:(AbstractArray{#s259,1} where #s259<:Real)}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.issubordinate-Tuple{AbstractArray{#s260,1} where #s260<:Real,AbstractArray{#s259,1} where #s259<:(AbstractArray{#s258,1} where #s258<:Real)}",
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.issubordinate",
     "category": "method",
@@ -3265,7 +3305,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.latticebondsstructure-Tuple{Type{#s268} where #s268<:AbstractLattice}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.latticebondsstructure-Tuple{Type{#s267} where #s267<:AbstractLattice}",
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.latticebondsstructure",
     "category": "method",
@@ -3273,7 +3313,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.latticebondsstructure-Tuple{Type{#s327} where #s327<:SuperLattice}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.latticebondsstructure-Tuple{Type{#s326} where #s326<:SuperLattice}",
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.latticebondsstructure",
     "category": "method",
@@ -3305,7 +3345,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.polar-Tuple{AbstractArray{#s253,1} where #s253<:Real}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.polar-Tuple{AbstractArray{#s252,1} where #s252<:Real}",
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.polar",
     "category": "method",
@@ -3313,7 +3353,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.polard-Tuple{AbstractArray{#s253,1} where #s253<:Real}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.polard-Tuple{AbstractArray{#s252,1} where #s252<:Real}",
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.polard",
     "category": "method",
@@ -3329,7 +3369,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.reciprocals-Tuple{AbstractArray{#s268,1} where #s268<:(AbstractArray{#s267,1} where #s267<:Real)}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.reciprocals-Tuple{AbstractArray{#s267,1} where #s267<:(AbstractArray{#s266,1} where #s266<:Real)}",
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.reciprocals",
     "category": "method",
@@ -3337,7 +3377,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.rotate-Tuple{AbstractArray{#s258,2} where #s258<:Real,Real}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.rotate-Tuple{AbstractArray{#s257,2} where #s257<:Real,Real}",
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.rotate",
     "category": "method",
@@ -3345,7 +3385,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.tile-Union{Tuple{M}, Tuple{N}, Tuple{AbstractArray{#s258,2} where #s258<:Real,AbstractArray{#s257,1} where #s257<:(AbstractArray{#s256,1} where #s256<:Real)}, Tuple{AbstractArray{#s255,2} where #s255<:Real,AbstractArray{#s254,1} where #s254<:(AbstractArray{#s253,1} where #s253<:Real),Tuple{Vararg{Tuple{Vararg{#s249,N}} where #s249<:Real,M}}}} where M where N",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.tile-Union{Tuple{M}, Tuple{N}, Tuple{AbstractArray{#s257,2} where #s257<:Real,AbstractArray{#s256,1} where #s256<:(AbstractArray{#s255,1} where #s255<:Real)}, Tuple{AbstractArray{#s254,2} where #s254<:Real,AbstractArray{#s253,1} where #s253<:(AbstractArray{#s252,1} where #s252<:Real),Tuple{Vararg{Tuple{Vararg{#s248,N}} where #s248<:Real,M}}}} where M where N",
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.tile",
     "category": "method",
@@ -3353,7 +3393,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.translate-Tuple{AbstractArray{#s269,2} where #s269<:Real,AbstractArray{#s268,1} where #s268<:Real}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.translate-Tuple{AbstractArray{#s268,2} where #s268<:Real,AbstractArray{#s267,1} where #s267<:Real}",
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.translate",
     "category": "method",
@@ -3361,7 +3401,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.volume-Tuple{AbstractArray{#s242,1} where #s242<:Real,AbstractArray{#s22,1} where #s22<:Real,AbstractArray{#s21,1} where #s21<:Real}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Essentials.Spatials.volume-Tuple{AbstractArray{#s241,1} where #s241<:Real,AbstractArray{#s22,1} where #s22<:Real,AbstractArray{#s21,1} where #s21<:Real}",
     "page": "Spatials",
     "title": "QuantumLattices.Essentials.Spatials.volume",
     "category": "method",
@@ -3529,7 +3569,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Spatials.html#QuantumLattices.Interfaces.decompose-Tuple{AbstractArray{#s255,1} where #s255<:Real,AbstractArray{#s254,1} where #s254<:Real}",
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Interfaces.decompose-Tuple{AbstractArray{#s254,1} where #s254<:Real,AbstractArray{#s253,1} where #s253<:Real}",
     "page": "Spatials",
     "title": "QuantumLattices.Interfaces.decompose",
     "category": "method",
@@ -3765,7 +3805,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Degrees of freedom",
     "title": "QuantumLattices.Essentials.DegreesOfFreedom.Operator",
     "category": "type",
-    "text": "Operator{N,V<:Number,I<:ID{<:NTuple{N,OID}}} <: Element{N,V,I}\n\nAbstract type for an operator.\n\n\n\n\n\n"
+    "text": "Operator{V,I<:ID} <: Element{V,I}\n\nAbstract type for an operator.\n\n\n\n\n\n"
 },
 
 {
@@ -3773,7 +3813,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Degrees of freedom",
     "title": "QuantumLattices.Essentials.DegreesOfFreedom.Operators",
     "category": "type",
-    "text": "Operators(opts::Operator...)\n\nA set of operators.\n\nType alias of Operators{I<:ID,O<:Operator}=Elements{I,O}.\n\n\n\n\n\n"
+    "text": "Operators(opts::Operator...)\n\nA set of operators.\n\nType alias for Elements{<:ID,<:Operator}.\n\n\n\n\n\n"
 },
 
 {
@@ -3785,7 +3825,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.Table-Tuple{AbstractArray{#s271,1} where #s271<:Index}",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.Table-Tuple{AbstractArray{#s270,1} where #s270<:Index}",
     "page": "Degrees of freedom",
     "title": "QuantumLattices.Essentials.DegreesOfFreedom.Table",
     "category": "method",
@@ -3841,7 +3881,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.isHermitian-Union{Tuple{ID{#s330} where #s330<:Tuple{Vararg{OID,N}}}, Tuple{N}} where N",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.isHermitian-Union{Tuple{ID{#s329} where #s329<:Tuple{Vararg{OID,N}}}, Tuple{N}} where N",
     "page": "Degrees of freedom",
     "title": "QuantumLattices.Essentials.DegreesOfFreedom.isHermitian",
     "category": "method",
@@ -3849,7 +3889,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.oidtype-Tuple{Type{#s330} where #s330<:IID,Type{#s327} where #s327<:AbstractBond,Type{Nothing}}",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.oidtype-Tuple{Type{#s329} where #s329<:IID,Type{#s326} where #s326<:AbstractBond,Type{Nothing}}",
     "page": "Degrees of freedom",
     "title": "QuantumLattices.Essentials.DegreesOfFreedom.oidtype",
     "category": "method",
@@ -3897,7 +3937,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.twist-Tuple{Operator,AbstractArray{#s330,1} where #s330<:AbstractArray{Float64,1},AbstractArray{Float64,1}}",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.twist-Tuple{Operator,AbstractArray{#s329,1} where #s329<:AbstractArray{Float64,1},AbstractArray{Float64,1}}",
     "page": "Degrees of freedom",
     "title": "QuantumLattices.Essentials.DegreesOfFreedom.twist",
     "category": "method",
@@ -3973,7 +4013,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Degrees of freedom",
     "title": "Base.repr",
     "category": "function",
-    "text": "repr(opts::Operators,l::Union{LaTeX,Nothing}=nothing) -> String\n\nGet the latex string representation of a set of operators.\n\n\n\n\n\n"
+    "text": "repr(opt::Operator,l::Union{LaTeX,Nothing}=nothing) -> String\n\nGet the latex string representation of an operator.\n\n\n\n\n\n"
 },
 
 {
@@ -3981,7 +4021,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Degrees of freedom",
     "title": "Base.repr",
     "category": "function",
-    "text": "repr(opt::Operator,l::Union{LaTeX,Nothing}=nothing) -> String\n\nGet the latex string representation of an operator.\n\n\n\n\n\n"
+    "text": "repr(opts::Operators,l::Union{LaTeX,Nothing}=nothing) -> String\n\nGet the latex string representation of a set of operators.\n\n\n\n\n\n"
 },
 
 {
@@ -4041,11 +4081,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.Spatials.icoord-Tuple{Operator{1,V,I} where I<:(QuantumLattices.Mathematics.AlgebraOverFields.ID{#s332} where #s332<:Tuple{OID}) where V<:Number}",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.Spatials.icoord-Tuple{Operator}",
     "page": "Degrees of freedom",
     "title": "QuantumLattices.Essentials.Spatials.icoord",
     "category": "method",
-    "text": "icoord(opt::Operator{1}) -> SVector\nicoord(opt::Operator{2}) -> SVector\n\nGet the whole icoord of an operator.\n\n\n\n\n\n"
+    "text": "icoord(opt::Operator) -> SVector\n\nGet the whole icoord of an operator.\n\n\n\n\n\n"
 },
 
 {
@@ -4057,11 +4097,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.Spatials.rcoord-Tuple{Operator{1,V,I} where I<:(QuantumLattices.Mathematics.AlgebraOverFields.ID{#s332} where #s332<:Tuple{OID}) where V<:Number}",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.Spatials.rcoord-Tuple{Operator}",
     "page": "Degrees of freedom",
     "title": "QuantumLattices.Essentials.Spatials.rcoord",
     "category": "method",
-    "text": "rcoord(opt::Operator{1}) -> SVector\nrcoord(opt::Operator{2}) -> SVector\n\nGet the whole rcoord of an operator.\n\n\n\n\n\n"
+    "text": "rcoord(opt::Operator) -> SVector\n\nGet the whole rcoord of an operator.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Interfaces.sequence",
+    "page": "Degrees of freedom",
+    "title": "QuantumLattices.Interfaces.sequence",
+    "category": "function",
+    "text": "sequence(opt::Operator,table=nothing) -> NTuple{rank(opt),Int}\n\nGet the sequence of the oids of an operator according to a table.\n\n\n\n\n\n"
 },
 
 {
@@ -4073,7 +4121,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Mathematics.AlgebraOverFields.rawelement-Tuple{Type{#s331} where #s331<:Operator}",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Mathematics.AlgebraOverFields.rawelement-Tuple{Type{#s330} where #s330<:Operator}",
     "page": "Degrees of freedom",
     "title": "QuantumLattices.Mathematics.AlgebraOverFields.rawelement",
     "category": "method",
@@ -4149,7 +4197,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Terms",
     "title": "QuantumLattices.Essentials.Terms.Coupling",
     "category": "type",
-    "text": "Coupling{N,V<:Number,I<:ID{<:NTuple{N,SimpleID}}} <: Element{N,V,I}\n\nThe coupling intra/inter interanl degrees of freedom at different lattice points.\n\n\n\n\n\n"
+    "text": "Coupling{V,I<:ID} <: Element{V,I}\n\nThe coupling intra/inter interanl degrees of freedom at different lattice points.\n\n\n\n\n\n"
 },
 
 {
@@ -4157,7 +4205,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Terms",
     "title": "QuantumLattices.Essentials.Terms.Couplings",
     "category": "type",
-    "text": "Couplings{I<:ID,C<:Coupling} <: AbstractDict{I,C}\n\nA pack of couplings intra/inter interanl degrees of freedom at different lattice points.\n\nAlias for Elements{I,C}.\n\n\n\n\n\n"
+    "text": "Couplings(cps::Coupling...)\n\nA pack of couplings intra/inter interanl degrees of freedom at different lattice points.\n\nAlias for Elements{<:ID,<:Coupling}.\n\n\n\n\n\n"
 },
 
 {
@@ -4197,7 +4245,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Terms",
     "title": "QuantumLattices.Essentials.Terms.Term",
     "category": "type",
-    "text": "Term{ST,K,R,I}(value::Number,bondkind::Any,couplings::TermCouplings,amplitude::TermAmplitude,modulate::Union{TermModulate,Nothing},factor::Number) where {ST,K,R,I}\nTerm{ST,K,R}(  id::Symbol,value::Number,bondkind::Any;\n                couplings::Union{Function,Coupling,Couplings,TermCouplings},\n                amplitude::Union{Function,Nothing}=nothing,\n                modulate::Union{Function,Bool}=false,\n                ) where {ST,K,R}\n\nA term of a quantum lattice system.\n\n\n\n\n\n"
+    "text": "Term{ST,K,R,I}(value::Any,bondkind::Any,couplings::TermCouplings,amplitude::TermAmplitude,modulate::Union{TermModulate,Nothing},factor::Any) where {ST,K,R,I}\nTerm{ST,K,R}(  id::Symbol,value::Any,bondkind::Any;\n                couplings::Union{Function,Coupling,Couplings,TermCouplings},\n                amplitude::Union{Function,Nothing}=nothing,\n                modulate::Union{Function,Bool}=false,\n                ) where {ST,K,R}\n\nA term of a quantum lattice system.\n\n\n\n\n\n"
 },
 
 {
@@ -4269,7 +4317,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Terms",
     "title": "Base.:+",
     "category": "method",
-    "text": "+(term::Term) -> Term\n-(term::Term) -> Term\n*(term::Term,factor::Number) -> Term\n*(factor::Number,term::Term) -> Term\n/(term::Term,factor::Number) -> Term\n\nAllowed arithmetic operations for a term.\n\n\n\n\n\n"
+    "text": "+(term::Term) -> Term\n-(term::Term) -> Term\n*(term::Term,factor) -> Term\n*(factor,term::Term) -> Term\n/(term::Term,factor) -> Term\n\nAllowed arithmetic operations for a term.\n\n\n\n\n\n"
 },
 
 {
@@ -4305,7 +4353,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/Terms.html#Base.replace-Union{Tuple{Term{ST,K,R,I,V,B,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where B where V<:Number}, Tuple{I}, Tuple{R}, Tuple{K}, Tuple{ST}} where I where R where K where ST",
+    "location": "man/Essentials/Terms.html#Base.replace-Union{Tuple{Term{ST,K,R,I,V,B,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where B where V}, Tuple{I}, Tuple{R}, Tuple{K}, Tuple{ST}} where I where R where K where ST",
     "page": "Terms",
     "title": "Base.replace",
     "category": "method",
@@ -4341,7 +4389,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Terms",
     "title": "Base.valtype",
     "category": "method",
-    "text": "valtype(term::Term)\nvaltype(::Type{<:Term{ST,K,R,I,V} where {ST,K,R,I}}) where {V<:Number}\n\nGet the value type of a term.\n\n\n\n\n\n"
+    "text": "valtype(term::Term)\nvaltype(::Type{<:Term{ST,K,R,I,V} where {ST,K,R,I}}) where V\n\nGet the value type of a term.\n\n\n\n\n\n"
 },
 
 {
@@ -4462,6 +4510,14 @@ var documenterSearchIndex = {"docs": [
     "title": "QuantumLattices.Interfaces.update!",
     "category": "method",
     "text": "update!(term::Term,args...;kwargs...) -> Term\n\nUpdate the value of a term by its modulate function.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Terms.html#QuantumLattices.Mathematics.AlgebraOverFields.rawelement-Tuple{Type{#s330} where #s330<:Coupling}",
+    "page": "Terms",
+    "title": "QuantumLattices.Mathematics.AlgebraOverFields.rawelement",
+    "category": "method",
+    "text": "rawelement(::Type{<:Coupling})\n\nGet the raw name of a type of Coupling.\n\n\n\n\n\n"
 },
 
 {
@@ -4613,7 +4669,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "QuantumLattices.Essentials.FockPackage.BOperator",
     "category": "type",
-    "text": "BOperator(value::Number,id::ID{<:NTuple{N,OID}}) where N\n\nBosonic Fock operator.\n\n\n\n\n\n"
+    "text": "BOperator(value,id::ID{<:Tuple{Vararg{OID}}}=ID())\n\nBosonic Fock operator.\n\n\n\n\n\n"
 },
 
 {
@@ -4621,7 +4677,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "QuantumLattices.Essentials.FockPackage.Coulomb",
     "category": "type",
-    "text": "Coulomb{ST}(    id::Symbol,value::Number,bondkind::Int=1;\n                couplings::Union{Function,Coupling,Couplings,Nothing}=nothing,\n                amplitude::Union{Function,Nothing}=nothing,\n                modulate::Union{Function,Bool}=false,\n                ) where {ST}\n\nCoulomb term.\n\nType alias for Term{statistics,:Coulomb,4,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
+    "text": "Coulomb{ST}(    id::Symbol,value::Any,bondkind::Int=1;\n                couplings::Union{Function,Coupling,Couplings,Nothing}=nothing,\n                amplitude::Union{Function,Nothing}=nothing,\n                modulate::Union{Function,Bool}=false,\n                ) where {ST}\n\nCoulomb term.\n\nType alias for Term{statistics,:Coulomb,4,id,V,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
 },
 
 {
@@ -4661,7 +4717,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "QuantumLattices.Essentials.FockPackage.FOperator",
     "category": "type",
-    "text": "FOperator(value::Number,id::ID{<:NTuple{N,OID}}) where N\n\nFermionic Fock operator.\n\n\n\n\n\n"
+    "text": "FOperator(value,id::ID{<:Tuple{Vararg{OID}}}=ID())\n\nFermionic Fock operator.\n\n\n\n\n\n"
 },
 
 {
@@ -4685,7 +4741,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "QuantumLattices.Essentials.FockPackage.FockCoupling",
     "category": "type",
-    "text": "FockCoupling(value::Number,id::ID{<:NTuple{N,FCID}},obsubscripts::Subscripts,spsubscripts::Subscripts) where N\nFockCoupling{N}(value::Number=1;\n                centers::Union{NTuple{N,Int},Nothing}=nothing,\n                atoms::Union{NTuple{N,Int},Nothing}=nothing,\n                orbitals::Union{NTuple{N,Int},Subscript,Nothing}=nothing,\n                spins::Union{NTuple{N,Int},Subscript,Nothing}=nothing,\n                nambus::Union{NTuple{N,Int},Nothing}=nothing) where N\n\nFock coupling.\n\n\n\n\n\n"
+    "text": "FockCoupling(value,id::ID{<:Tuple{Vararg{FCID}}},obsubscripts::Subscripts,spsubscripts::Subscripts)\nFockCoupling{N}(value1;\n                centers::Union{NTuple{N,Int},Nothing}=nothing,\n                atoms::Union{NTuple{N,Int},Nothing}=nothing,\n                orbitals::Union{NTuple{N,Int},Subscript,Nothing}=nothing,\n                spins::Union{NTuple{N,Int},Subscript,Nothing}=nothing,\n                nambus::Union{NTuple{N,Int},Nothing}=nothing) where N\n\nFock coupling.\n\n\n\n\n\n"
 },
 
 {
@@ -4693,7 +4749,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "QuantumLattices.Essentials.FockPackage.FockOperator",
     "category": "type",
-    "text": "FockOperator{N,V<:Number,I<:ID{<:NTuple{N,OID}}} <: Operator{N,V,I}\n\nAbstract type for all Fock operators.\n\n\n\n\n\n"
+    "text": "FockOperator{V,I<:ID} <: Operator{V,I}\n\nAbstract type for all Fock operators.\n\n\n\n\n\n"
 },
 
 {
@@ -4701,7 +4757,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "QuantumLattices.Essentials.FockPackage.Hopping",
     "category": "type",
-    "text": "Hopping{ST}(id::Symbol,value::Number,bondkind::Int=1;\n            couplings::Union{Function,Coupling,Couplings,Nothing}=nothing,\n            amplitude::Union{Function,Nothing}=nothing,\n            modulate::Union{Function,Bool}=false,\n            ) where {ST}\n\nHopping term.\n\nType alias for Term{statistics,:Hopping,2,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
+    "text": "Hopping{ST}(id::Symbol,value::Any,bondkind::Int=1;\n            couplings::Union{Function,Coupling,Couplings,Nothing}=nothing,\n            amplitude::Union{Function,Nothing}=nothing,\n            modulate::Union{Function,Bool}=false,\n            ) where {ST}\n\nHopping term.\n\nType alias for Term{statistics,:Hopping,2,id,V,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
 },
 
 {
@@ -4709,7 +4765,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "QuantumLattices.Essentials.FockPackage.Hubbard",
     "category": "type",
-    "text": "Hubbard{ST}(id::Symbol,value::Real;\n            amplitude::Union{Function,Nothing}=nothing,\n            modulate::Union{Function,Bool}=false,\n            ) where {ST}\n\nHubbard term.\n\nType alias for Term{statistics,:Hubbard,4,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
+    "text": "Hubbard{ST}(id::Symbol,value::Any;\n            amplitude::Union{Function,Nothing}=nothing,\n            modulate::Union{Function,Bool}=false,\n            ) where {ST}\n\nHubbard term.\n\nType alias for Term{statistics,:Hubbard,4,id,V,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
 },
 
 {
@@ -4717,7 +4773,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "QuantumLattices.Essentials.FockPackage.InterOrbitalInterSpin",
     "category": "type",
-    "text": "InterOrbitalInterSpin{ST}(  id::Symbol,value::Real;\n                            amplitude::Union{Function,Nothing}=nothing,\n                            modulate::Union{Function,Bool}=false,\n                            ) where {ST}\n\nInterorbital-interspin term.\n\nType alias for Term{statistics,:InterOrbitalInterSpin,4,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
+    "text": "InterOrbitalInterSpin{ST}(  id::Symbol,value::Any;\n                            amplitude::Union{Function,Nothing}=nothing,\n                            modulate::Union{Function,Bool}=false,\n                            ) where {ST}\n\nInterorbital-interspin term.\n\nType alias for Term{statistics,:InterOrbitalInterSpin,4,id,V,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
 },
 
 {
@@ -4725,7 +4781,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "QuantumLattices.Essentials.FockPackage.InterOrbitalIntraSpin",
     "category": "type",
-    "text": "InterOrbitalIntraSpin{ST}(  id::Symbol,value::Real;\n                            amplitude::Union{Function,Nothing}=nothing,\n                            modulate::Union{Function,Bool}=false,\n                            ) where {ST}\n\nInterorbital-intraspin term.\n\nType alias for Term{statistics,:InterOrbitalIntraSpin,4,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
+    "text": "InterOrbitalIntraSpin{ST}(  id::Symbol,value::Any;\n                            amplitude::Union{Function,Nothing}=nothing,\n                            modulate::Union{Function,Bool}=false,\n                            ) where {ST}\n\nInterorbital-intraspin term.\n\nType alias for Term{statistics,:InterOrbitalIntraSpin,4,id,V,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
 },
 
 {
@@ -4733,7 +4789,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "QuantumLattices.Essentials.FockPackage.Onsite",
     "category": "type",
-    "text": "Onsite{ST}( id::Symbol,value::Number;\n            couplings::Union{Function,Coupling,Couplings,Nothing}=nothing,\n            amplitude::Union{Function,Nothing}=nothing,\n            modulate::Union{Function,Bool}=false,\n            ) where {ST}\n\nOnsite term.\n\nType alias for Term{statistics,:Onsite,2,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
+    "text": "Onsite{ST}( id::Symbol,value::Any;\n            couplings::Union{Function,Coupling,Couplings,Nothing}=nothing,\n            amplitude::Union{Function,Nothing}=nothing,\n            modulate::Union{Function,Bool}=false,\n            ) where {ST}\n\nOnsite term.\n\nType alias for Term{statistics,:Onsite,2,id,V,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
 },
 
 {
@@ -4741,7 +4797,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "QuantumLattices.Essentials.FockPackage.PairHopping",
     "category": "type",
-    "text": "PairHopping{ST}(    id::Symbol,value::Real;\n                    amplitude::Union{Function,Nothing}=nothing,\n                    modulate::Union{Function,Bool}=false,\n                    ) where {ST}\n\nPair-hopping term.\n\nType alias for Term{statistics,:PairHopping,4,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
+    "text": "PairHopping{ST}(    id::Symbol,value::Any;\n                    amplitude::Union{Function,Nothing}=nothing,\n                    modulate::Union{Function,Bool}=false,\n                    ) where {ST}\n\nPair-hopping term.\n\nType alias for Term{statistics,:PairHopping,4,id,V,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
 },
 
 {
@@ -4749,7 +4805,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "QuantumLattices.Essentials.FockPackage.Pairing",
     "category": "type",
-    "text": "Pairing{ST}(id::Symbol,value::Number,bondkind::Int=0;\n            couplings::Union{Function,Coupling,Couplings,Nothing}=nothing,\n            amplitude::Union{Function,Nothing}=nothing,\n            modulate::Union{Function,Bool}=false,\n            ) where {ST}\n\nPairing term.\n\nType alias for Term{statistics,:Pairing,2,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
+    "text": "Pairing{ST}(id::Symbol,value::Any,bondkind::Int=0;\n            couplings::Union{Function,Coupling,Couplings,Nothing}=nothing,\n            amplitude::Union{Function,Nothing}=nothing,\n            modulate::Union{Function,Bool}=false,\n            ) where {ST}\n\nPairing term.\n\nType alias for Term{statistics,:Pairing,2,id,V,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
 },
 
 {
@@ -4757,7 +4813,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "QuantumLattices.Essentials.FockPackage.SpinFlip",
     "category": "type",
-    "text": "SpinFlip{ST}(   id::Symbol,value::Real;\n                amplitude::Union{Function,Nothing}=nothing,\n                modulate::Union{Function,Bool}=false,\n                ) where {ST}\n\nSpin-flip term.\n\nType alias for Term{statistics,:SpinFlip,4,id,<:Number,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
+    "text": "SpinFlip{ST}(   id::Symbol,value::Any;\n                amplitude::Union{Function,Nothing}=nothing,\n                modulate::Union{Function,Bool}=false,\n                ) where {ST}\n\nSpin-flip term.\n\nType alias for Term{statistics,:SpinFlip,4,id,V,Int,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
 },
 
 {
@@ -4881,7 +4937,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.optdefaultlatex-Tuple{Type{#s331} where #s331<:BOperator}",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.optdefaultlatex-Tuple{Type{#s330} where #s330<:BOperator}",
     "page": "Fock package",
     "title": "QuantumLattices.Essentials.DegreesOfFreedom.optdefaultlatex",
     "category": "method",
@@ -4889,7 +4945,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.optdefaultlatex-Tuple{Type{#s331} where #s331<:FOperator}",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.optdefaultlatex-Tuple{Type{#s330} where #s330<:FOperator}",
     "page": "Fock package",
     "title": "QuantumLattices.Essentials.DegreesOfFreedom.optdefaultlatex",
     "category": "method",
@@ -4897,7 +4953,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.otype-Tuple{Type{#s330} where #s330<:Union{Term{\'F\',:Onsite,2,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:Hopping,2,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:Pairing,2,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:Hubbard,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:InterOrbitalInterSpin,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:InterOrbitalIntraSpin,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:SpinFlip,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:PairHopping,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id, Term{\'F\',:Coulomb,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V<:Number where id},Type{#s327} where #s327<:OID}",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.otype-Tuple{Type{#s329} where #s329<:Union{Term{\'F\',:Onsite,2,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V where id, Term{\'F\',:Hopping,2,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V where id, Term{\'F\',:Pairing,2,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V where id, Term{\'F\',:Hubbard,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V where id, Term{\'F\',:InterOrbitalInterSpin,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V where id, Term{\'F\',:InterOrbitalIntraSpin,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V where id, Term{\'F\',:SpinFlip,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V where id, Term{\'F\',:PairHopping,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V where id, Term{\'F\',:Coulomb,4,id,V,Int64,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where V where id},Type{#s326} where #s326<:OID}",
     "page": "Fock package",
     "title": "QuantumLattices.Essentials.DegreesOfFreedom.otype",
     "category": "method",
@@ -4905,7 +4961,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.script-Tuple{OID{#s331,RC,IC,S} where S<:Union{Nothing, Int64} where IC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where RC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where #s331<:FIndex,Val{:site}}",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.script-Tuple{OID{#s330,RC,IC,S} where S<:Union{Nothing, Int64} where IC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where RC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where #s330<:FIndex,Val{:site}}",
     "page": "Fock package",
     "title": "QuantumLattices.Essentials.DegreesOfFreedom.script",
     "category": "method",
@@ -4913,7 +4969,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.twist-Tuple{OID{#s330,RC,IC,S} where S<:Union{Nothing, Int64} where IC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where RC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where #s330<:FIndex,AbstractArray{#s327,1} where #s327<:AbstractArray{Float64,1},AbstractArray{Float64,1}}",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.twist-Tuple{OID{#s329,RC,IC,S} where S<:Union{Nothing, Int64} where IC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where RC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where #s329<:FIndex,AbstractArray{#s326,1} where #s326<:AbstractArray{Float64,1},AbstractArray{Float64,1}}",
     "page": "Fock package",
     "title": "QuantumLattices.Essentials.DegreesOfFreedom.twist",
     "category": "method",
@@ -4937,19 +4993,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#QuantumLattices.Interfaces.:⊗-Union{Tuple{N}, Tuple{FockCoupling{N,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(ID{#s332} where #s332<:Tuple{Vararg{FCID,N}}) where V<:Number,FockCoupling{N,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(ID{#s332} where #s332<:Tuple{Vararg{FCID,N}}) where V<:Number}} where N",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Interfaces.:⊗-Tuple{FockCoupling,FockCoupling}",
     "page": "Fock package",
     "title": "QuantumLattices.Interfaces.:⊗",
     "category": "method",
-    "text": "⊗(fc1::FockCoupling{N},fc2::FockCoupling{N}) where N -> FockCoupling\n\nGet the direct product between two Fock couplings.\n\n\n\n\n\n"
+    "text": "⊗(fc1::FockCoupling,fc2::FockCoupling) -> FockCoupling\n\nGet the direct product between two Fock couplings.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#QuantumLattices.Interfaces.:⋅-Tuple{FockCoupling{2,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(QuantumLattices.Mathematics.AlgebraOverFields.ID{#s332} where #s332<:Tuple{FCID,FCID}) where V<:Number,FockCoupling{2,V,I,OS,SS} where SS<:Subscripts where OS<:Subscripts where I<:(QuantumLattices.Mathematics.AlgebraOverFields.ID{#s332} where #s332<:Tuple{FCID,FCID}) where V<:Number}",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Interfaces.:⋅-Tuple{FockCoupling,FockCoupling}",
     "page": "Fock package",
     "title": "QuantumLattices.Interfaces.:⋅",
     "category": "method",
-    "text": "⋅(fc1::FockCoupling{2},fc2::FockCoupling{2}) -> FockCoupling{2}\n\nGet the dot product of two rank-2 Fock couplings.\n\nA rank-2 FockCoupling can be considered as a matrix acting on the sublattice, orbital, spin and nambu spaces. The dot product here is defined as the multiplication between such matrices.\n\n\n\n\n\n"
+    "text": "⋅(fc1::FockCoupling,fc2::FockCoupling) -> FockCoupling\n\nGet the dot product of two rank-2 Fock couplings.\n\nA rank-2 FockCoupling can be considered as a matrix acting on the sublattice, orbital, spin and nambu spaces. The dot product here is defined as the multiplication between such matrices.\n\n\n\n\n\n"
 },
 
 {
@@ -4961,7 +5017,23 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#QuantumLattices.Mathematics.AlgebraOverFields.rawelement-Tuple{Type{#s331} where #s331<:BOperator}",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Interfaces.permute",
+    "page": "Fock package",
+    "title": "QuantumLattices.Interfaces.permute",
+    "category": "function",
+    "text": "permute(::Type{<:FOperator},id1::OID{<:FIndex},id2::OID{<:FIndex},::Any=nothing) -> Tuple{Vararg{FOperator}}\n\nPermute two fermionic oid and get the result.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Interfaces.permute",
+    "page": "Fock package",
+    "title": "QuantumLattices.Interfaces.permute",
+    "category": "function",
+    "text": "permute(::Type{<:BOperator},id1::OID{<:FIndex},id2::OID{<:FIndex},::Any=nothing) -> Tuple{Vararg{BOperator}}\n\nPermute two bosonic oid and get the result.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Mathematics.AlgebraOverFields.rawelement-Tuple{Type{#s330} where #s330<:BOperator}",
     "page": "Fock package",
     "title": "QuantumLattices.Mathematics.AlgebraOverFields.rawelement",
     "category": "method",
@@ -4969,11 +5041,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/FockPackage.html#QuantumLattices.Mathematics.AlgebraOverFields.rawelement-Tuple{Type{#s331} where #s331<:FOperator}",
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Mathematics.AlgebraOverFields.rawelement-Tuple{Type{#s330} where #s330<:FOperator}",
     "page": "Fock package",
     "title": "QuantumLattices.Mathematics.AlgebraOverFields.rawelement",
     "category": "method",
     "text": "rawelement(::Type{<:FOperator})\n\nGet the raw name of a type of FOperator.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/FockPackage.html#QuantumLattices.Mathematics.AlgebraOverFields.rawelement-Tuple{Type{#s330} where #s330<:FockCoupling}",
+    "page": "Fock package",
+    "title": "QuantumLattices.Mathematics.AlgebraOverFields.rawelement",
+    "category": "method",
+    "text": "rawelement(::Type{<:FockCoupling})\n\nGet the raw name of a type of FockCoupling.\n\n\n\n\n\n"
 },
 
 {
@@ -5109,7 +5189,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spin package",
     "title": "QuantumLattices.Essentials.SpinPackage.SOperator",
     "category": "type",
-    "text": "SOperator(value::Number,id::ID{<:NTuple{N,OID}}) where N\n\nSpin operator.\n\n\n\n\n\n"
+    "text": "SOperator(value,id::ID{<:Tuple{Vararg{OID}}}=ID())\n\nSpin operator.\n\n\n\n\n\n"
 },
 
 {
@@ -5133,7 +5213,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spin package",
     "title": "QuantumLattices.Essentials.SpinPackage.SpinCoupling",
     "category": "type",
-    "text": "SpinCoupling(value::Number,id::ID{<:NTuple{N,SCID}},subscripts::Subscripts) where N\nSpinCoupling{N}(    value::Number=1;\n                    tags::NTuple{N,Char},\n                    centers::Union{NTuple{N,Int},Nothing}=nothing,\n                    atoms::Union{NTuple{N,Int},Nothing}=nothing,\n                    orbitals::Union{NTuple{N,Int},Subscript,Nothing}=nothing\n                    ) where N\n\nSpin coupling.\n\n\n\n\n\n"
+    "text": "SpinCoupling(value,id::ID{<:Tuple{Vararg{SCID}}},subscripts::Subscripts)\nSpinCoupling{N}(    value=1;\n                    tags::NTuple{N,Char},\n                    centers::Union{NTuple{N,Int},Nothing}=nothing,\n                    atoms::Union{NTuple{N,Int},Nothing}=nothing,\n                    orbitals::Union{NTuple{N,Int},Subscript,Nothing}=nothing\n                    ) where N\n\nSpin coupling.\n\n\n\n\n\n"
 },
 
 {
@@ -5141,7 +5221,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spin package",
     "title": "QuantumLattices.Essentials.SpinPackage.SpinTerm",
     "category": "type",
-    "text": "SpinTerm{R}(id::Symbol,value::Number,bondkind::Any;\n            couplings::Union{Function,Coupling,Couplings},\n            amplitude::Union{Function,Nothing}=nothing,\n            modulate::Union{Function,Bool}=false,\n            ) where R\n\nSpin term.\n\nType alias for Term{\'B\',:SpinTerm,R,id,<:Number,<:Any,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
+    "text": "SpinTerm{R}(id::Symbol,value::Any,bondkind::Any;\n            couplings::Union{Function,Coupling,Couplings},\n            amplitude::Union{Function,Nothing}=nothing,\n            modulate::Union{Function,Bool}=false,\n            ) where R\n\nSpin term.\n\nType alias for Term{\'B\',:SpinTerm,R,id,V,<:Any,<:TermCouplings,<:TermAmplitude,<:Union{TermModulate,Nothing}}.\n\n\n\n\n\n"
 },
 
 {
@@ -5241,7 +5321,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.optdefaultlatex-Tuple{Type{#s331} where #s331<:SOperator}",
+    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.optdefaultlatex-Tuple{Type{#s330} where #s330<:SOperator}",
     "page": "Spin package",
     "title": "QuantumLattices.Essentials.DegreesOfFreedom.optdefaultlatex",
     "category": "method",
@@ -5249,7 +5329,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.otype-Tuple{Type{#s330} where #s330<:(Term{\'B\',:SpinTerm,R,id,V,B,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where B where V<:Number where id where R),Type{#s327} where #s327<:OID}",
+    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.otype-Tuple{Type{#s329} where #s329<:(Term{\'B\',:SpinTerm,R,id,V,B,C,A,M} where M<:Union{Nothing, TermModulate} where A<:TermAmplitude where C<:TermCouplings where B where V where id where R),Type{#s326} where #s326<:OID}",
     "page": "Spin package",
     "title": "QuantumLattices.Essentials.DegreesOfFreedom.otype",
     "category": "method",
@@ -5257,7 +5337,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.script-Tuple{OID{#s331,RC,IC,S} where S<:Union{Nothing, Int64} where IC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where RC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where #s331<:SIndex,Val{:site}}",
+    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.DegreesOfFreedom.script-Tuple{OID{#s330,RC,IC,S} where S<:Union{Nothing, Int64} where IC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where RC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where #s330<:SIndex,Val{:site}}",
     "page": "Spin package",
     "title": "QuantumLattices.Essentials.DegreesOfFreedom.script",
     "category": "method",
@@ -5289,11 +5369,27 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Mathematics.AlgebraOverFields.rawelement-Tuple{Type{#s331} where #s331<:SOperator}",
+    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Interfaces.permute-Tuple{Type{#s326} where #s326<:SOperator,OID{#s325,RC,IC,S} where S<:Union{Nothing, Int64} where IC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where RC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where #s325<:SIndex,OID{#s270,RC,IC,S} where S<:Union{Nothing, Int64} where IC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where RC<:Union{Nothing, SArray{Tuple{S},T,1,S} where T where S} where #s270<:SIndex,Any}",
+    "page": "Spin package",
+    "title": "QuantumLattices.Interfaces.permute",
+    "category": "method",
+    "text": "permute(::Type{<:SOperator},id1::OID{<:SIndex},id2::OID{<:SIndex},table) -> Tuple{Vararg{SOperator}}\n\nPermute two fermionic oid and get the result.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Mathematics.AlgebraOverFields.rawelement-Tuple{Type{#s330} where #s330<:SOperator}",
     "page": "Spin package",
     "title": "QuantumLattices.Mathematics.AlgebraOverFields.rawelement",
     "category": "method",
     "text": "rawelement(::Type{<:SOperator})\n\nGet the raw name of a type of SOperator.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Mathematics.AlgebraOverFields.rawelement-Tuple{Type{#s330} where #s330<:SpinCoupling}",
+    "page": "Spin package",
+    "title": "QuantumLattices.Mathematics.AlgebraOverFields.rawelement",
+    "category": "method",
+    "text": "rawelement(::Type{<:SpinCoupling})\n\nGet the raw name of a type of SpinCoupling.\n\n\n\n\n\n"
 },
 
 {
