@@ -233,9 +233,9 @@ The Heisenberg couplings.
 """
 macro heisenberg_str(str::String)
     attrpairs=scpairs(str,Val(2))
-    sc1=SpinCoupling{2}(0.5;:tags=>('+','-'),attrpairs...)
-    sc2=SpinCoupling{2}(0.5;:tags=>('-','+'),attrpairs...)
-    sc3=SpinCoupling{2}(1.0;:tags=>('z','z'),attrpairs...)
+    sc1=SpinCoupling{2}(1//2;:tags=>('+','-'),attrpairs...)
+    sc2=SpinCoupling{2}(1//2;:tags=>('-','+'),attrpairs...)
+    sc3=SpinCoupling{2}(1//1;:tags=>('z','z'),attrpairs...)
     return Couplings(sc1,sc2,sc3)
 end
 
@@ -249,7 +249,7 @@ The Ising couplings.
 macro ising_str(str::String)
     @assert str[1] in ('x','y','z') "@ising_str error: wrong input pattern."
     attrpairs=length(str)>1 ? (@assert str[2]==' ' "@ising_str error: wrong input pattern."; scpairs(str[3:end],Val(2))) : Pair{Symbol,NTuple{2,Int}}[]
-    return Couplings(SpinCoupling{2}(1.0;:tags=>(str[1],str[1]),attrpairs...))
+    return Couplings(SpinCoupling{2}(1;:tags=>(str[1],str[1]),attrpairs...))
 end
 
 """
@@ -263,8 +263,8 @@ macro gamma_str(str::String)
     @assert str[1] in ('x','y','z') "@gamma_str error: wrong input pattern."
     t1,t2=str[1]=='x' ? ('y','z') : str[1]=='y' ? ('z','x') : ('x','y')
     attrpairs=length(str)>1 ? (@assert str[2]==' ' "@gamma_str error: wrong input pattern."; scpairs(str[3:end],Val(2))) : Pair{Symbol,NTuple{2,Int}}[]
-    sc1=SpinCoupling{2}(1.0;:tags=>(t1,t2),attrpairs...)
-    sc2=SpinCoupling{2}(1.0;:tags=>(t2,t1),attrpairs...)
+    sc1=SpinCoupling{2}(1;:tags=>(t1,t2),attrpairs...)
+    sc2=SpinCoupling{2}(1;:tags=>(t2,t1),attrpairs...)
     return Couplings(sc1,sc2)
 end
 
@@ -275,8 +275,8 @@ end
 
 The single Sˣ/Sʸ/Sᶻ coupling.
 """
-macro sˣ_str(str::String) Couplings(SpinCoupling{1}(1.0;:tags=>('x',),scpairs(str,Val(1))...)) end
-macro sʸ_str(str::String) Couplings(SpinCoupling{1}(1.0;:tags=>('y',),scpairs(str,Val(1))...)) end
-macro sᶻ_str(str::String) Couplings(SpinCoupling{1}(1.0;:tags=>('z',),scpairs(str,Val(1))...)) end
+macro sˣ_str(str::String) Couplings(SpinCoupling{1}(1;:tags=>('x',),scpairs(str,Val(1))...)) end
+macro sʸ_str(str::String) Couplings(SpinCoupling{1}(1;:tags=>('y',),scpairs(str,Val(1))...)) end
+macro sᶻ_str(str::String) Couplings(SpinCoupling{1}(1;:tags=>('z',),scpairs(str,Val(1))...)) end
 
 end

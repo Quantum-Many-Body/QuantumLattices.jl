@@ -14,7 +14,8 @@ import ..Terms: couplingcenter,statistics,abbr
 import ...Interfaces: dims,inds,expand,matrix,permute
 import ...Mathematics.AlgebraOverFields: rawelement
 
-export SID,Spin,SIndex,usualspinindextotuple
+export SID,Spin,SIndex
+export usualspinindextotuple
 export SOperator,soptdefaultlatex
 export SCID,SpinCoupling
 export Heisenberg,Ising,Gamma,Sˣ,Sʸ,Sᶻ
@@ -185,7 +186,45 @@ optdefaultlatex(::Type{<:SOperator})=soptdefaultlatex
 Permute two fermionic oid and get the result.
 """
 function permute(::Type{<:SOperator},id1::OID{<:SIndex},id2::OID{<:SIndex},table)
-    error("permute error: not implemented yet.")
+    @assert id1.index≠id2.index || id1.rcoord≠id2.rcoord || id1.icoord≠id2.icoord "permute error: permuted ids should not be equal to each other."
+    if usualspinindextotuple(id1.index)==usualspinindextotuple(id2.index) && id1.rcoord==id2.rcoord && id1.icoord==id2.icoord
+        @assert id1.index.spin==id2.index.spin "permute error: noncommutable ids should have the same spin attribute."
+        if id1.index.tag=='x'
+            id2.index.tag=='y' && return (SOperator(+1im,ID(permutesoid(id1,'z',table))),SOperator(1,ID(id2,id1)))
+            id2.index.tag=='z' && return (SOperator(-1im,ID(permutesoid(id1,'y',table))),SOperator(1,ID(id2,id1)))
+            id2.index.tag=='+' && return (SOperator(-1,ID(permutesoid(id1,'z',table))),SOperator(1,ID(id2,id1)))
+            id2.index.tag=='-' && return (SOperator(+1,ID(permutesoid(id1,'z',table))),SOperator(1,ID(id2,id1)))
+        elseif id1.index.tag=='y'
+            id2.index.tag=='x' && return (SOperator(-1im,ID(permutesoid(id1,'z',table))),SOperator(1,ID(id2,id1)))
+            id2.index.tag=='z' && return (SOperator(+1im,ID(permutesoid(id1,'x',table))),SOperator(1,ID(id2,id1)))
+            id2.index.tag=='+' && return (SOperator(-1im,ID(permutesoid(id1,'z',table))),SOperator(1,ID(id2,id1)))
+            id2.index.tag=='-' && return (SOperator(-1im,ID(permutesoid(id1,'z',table))),SOperator(1,ID(id2,id1)))
+        elseif id1.index.tag=='z'
+            id2.index.tag=='x' && return (SOperator(+1im,ID(permutesoid(id1,'y',table))),SOperator(1,ID(id2,id1)))
+            id2.index.tag=='y' && return (SOperator(-1im,ID(permutesoid(id1,'x',table))),SOperator(1,ID(id2,id1)))
+            id2.index.tag=='+' && return (SOperator(+1,ID(id2)),SOperator(1,ID(id2,id1)))
+            id2.index.tag=='-' && return (SOperator(-1,ID(id2)),SOperator(1,ID(id2,id1)))
+        elseif id1.index.tag=='+'
+            id2.index.tag=='x' && return (SOperator(+1,ID(permutesoid(id1,'z',table))),SOperator(1,ID(id2,id1)))
+            id2.index.tag=='y' && return (SOperator(+1im,ID(permutesoid(id1,'z',table))),SOperator(1,ID(id2,id1)))
+            id2.index.tag=='z' && return (SOperator(-1,ID(id1)),SOperator(1,ID(id2,id1)))
+            id2.index.tag=='-' && return (SOperator(+2,ID(permutesoid(id1,'z',table))),SOperator(1,ID(id2,id1)))
+        elseif id1.index.tag=='-'
+            id2.index.tag=='x' && return (SOperator(-1,ID(permutesoid(id1,'z',table))),SOperator(1,ID(id2,id1)))
+            id2.index.tag=='y' && return (SOperator(1im,ID(permutesoid(id1,'z',table))),SOperator(1,ID(id2,id1)))
+            id2.index.tag=='z' && return (SOperator(+1,ID(id1)),SOperator(1,ID(id2,id1)))
+            id2.index.tag=='+' && return (SOperator(-2,ID(permutesoid(id1,'z',table))),SOperator(1,ID(id2,id1)))
+        end
+    else
+        return (SOperator(1,ID(id2,id1)),)
+    end
+end
+function permutesoid(id::OID{<:SIndex},tag::Char,table)
+    index=replace(id.index,tag=tag)
+    fieldtype(id|>typeof,:seq)<:Nothing && return replace(id,index=index)
+    seq=get(table,index,nothing)
+    seq===nothing && error("permutesoid error: incomplete index-sequence table with $index not found.")
+    return replace(id,index=index,seq=seq)
 end
 
 """
@@ -332,9 +371,9 @@ end
 The Heisenberg couplings.
 """
 function Heisenberg(;centers::Union{NTuple{2,Int},Nothing}=nothing,atoms::Union{NTuple{2,Int},Nothing}=nothing,orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing)
-    sc1=SpinCoupling{2}(0.5,centers=centers,atoms=atoms,orbitals=orbitals,tags=('+','-'))
-    sc2=SpinCoupling{2}(0.5,centers=centers,atoms=atoms,orbitals=orbitals,tags=('-','+'))
-    sc3=SpinCoupling{2}(1.0,centers=centers,atoms=atoms,orbitals=orbitals,tags=('z','z'))
+    sc1=SpinCoupling{2}(1//2,centers=centers,atoms=atoms,orbitals=orbitals,tags=('+','-'))
+    sc2=SpinCoupling{2}(1//2,centers=centers,atoms=atoms,orbitals=orbitals,tags=('-','+'))
+    sc3=SpinCoupling{2}(1//1,centers=centers,atoms=atoms,orbitals=orbitals,tags=('z','z'))
     return Couplings(sc1,sc2,sc3)
 end
 
@@ -349,7 +388,7 @@ The Ising couplings.
 """
 function Ising(tag::Char;centers::Union{NTuple{2,Int},Nothing}=nothing,atoms::Union{NTuple{2,Int},Nothing}=nothing,orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing)
     @assert tag in ('x','y','z') "Ising error: not supported input tag($tag)."
-    return Couplings(SpinCoupling{2}(1.0,centers=centers,atoms=atoms,orbitals=orbitals,tags=(tag,tag)))
+    return Couplings(SpinCoupling{2}(1,centers=centers,atoms=atoms,orbitals=orbitals,tags=(tag,tag)))
 end
 
 """
@@ -364,8 +403,8 @@ The Gamma couplings.
 function Gamma(tag::Char;centers::Union{NTuple{2,Int},Nothing}=nothing,atoms::Union{NTuple{2,Int},Nothing}=nothing,orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing)
     @assert tag in ('x','y','z') "Gamma error: not supported input tag($tag)."
     t1,t2=tag=='x' ? ('y','z') : tag=='y' ? ('z','x') : ('x','y')
-    sc1=SpinCoupling{2}(1.0,centers=centers,atoms=atoms,orbitals=orbitals,tags=(t1,t2))
-    sc2=SpinCoupling{2}(1.0,centers=centers,atoms=atoms,orbitals=orbitals,tags=(t2,t1))
+    sc1=SpinCoupling{2}(1,centers=centers,atoms=atoms,orbitals=orbitals,tags=(t1,t2))
+    sc2=SpinCoupling{2}(1,centers=centers,atoms=atoms,orbitals=orbitals,tags=(t2,t1))
     return Couplings(sc1,sc2)
 end
 
@@ -378,7 +417,7 @@ scsinglewrapper(value::Int)=(value,)
 The single Sˣ coupling.
 """
 function Sˣ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing)
-    Couplings(SpinCoupling{1}(1.0,tags=('x',),atoms=scsinglewrapper(atom),orbitals=scsinglewrapper(orbital)))
+    Couplings(SpinCoupling{1}(1,tags=('x',),atoms=scsinglewrapper(atom),orbitals=scsinglewrapper(orbital)))
 end
 
 """
@@ -387,7 +426,7 @@ end
 The single Sʸ coupling.
 """
 function Sʸ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing)
-    Couplings(SpinCoupling{1}(1.0,tags=('y',),atoms=scsinglewrapper(atom),orbitals=scsinglewrapper(orbital)))
+    Couplings(SpinCoupling{1}(1,tags=('y',),atoms=scsinglewrapper(atom),orbitals=scsinglewrapper(orbital)))
 end
 
 """
@@ -396,7 +435,7 @@ end
 The single Sᶻ coupling.
 """
 function Sᶻ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing)
-    Couplings(SpinCoupling{1}(1.0,tags=('z',),atoms=scsinglewrapper(atom),orbitals=scsinglewrapper(orbital)))
+    Couplings(SpinCoupling{1}(1,tags=('z',),atoms=scsinglewrapper(atom),orbitals=scsinglewrapper(orbital)))
 end
 
 """

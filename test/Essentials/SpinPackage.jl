@@ -2,10 +2,11 @@ using Test
 using StaticArrays: SVector
 using QuantumLattices.Essentials.SpinPackage
 using QuantumLattices.Essentials.Spatials: PID,Point,Bond
-using QuantumLattices.Essentials.DegreesOfFreedom: Table,OID,isHermitian,IDFConfig,Operators,oidtype,otype,optdefaultlatex,script
+using QuantumLattices.Essentials.DegreesOfFreedom: Table,OID,isHermitian,IDFConfig,Operators,oidtype,otype,optdefaultlatex,script,iid
 using QuantumLattices.Essentials.Terms: Couplings,@subscript,statistics,abbr
-using QuantumLattices.Interfaces: dims,inds,expand,matrix
+using QuantumLattices.Interfaces: dims,inds,expand,matrix,permute,rank
 using QuantumLattices.Prerequisites: Float
+using QuantumLattices.Mathematics.Combinatorics: Permutations
 using QuantumLattices.Mathematics.AlgebraOverFields: ID,rawelement
 using QuantumLattices.Mathematics.VectorSpaces: IsMultiIndexable,MultiIndexOrderStyle
 
@@ -71,6 +72,19 @@ end
     @test repr(opt)=="S^{+}_{1,1}S^{-}_{1,1}"
 end
 
+@testset "permute" begin
+    soptrep(opt::SOperator)=opt.value*prod([matrix(opt.id[i].index|>iid) for i=1:rank(opt)])
+    for S in (0.5,1.0,1.5)
+        oids=[OID(SIndex('S',1,2,S,tag),seq=i) for (i,tag) in enumerate(('x','y','z','+','-'))]
+        table=Dict(oid.index=>oid.seq for oid in oids)
+        for (id1,id2) in Permutations{2}(oids)
+            left=soptrep(SOperator(1,ID(id1,id2)))
+            right=sum([soptrep(opt) for opt in permute(SOperator,id1,id2,table)])
+            @test isapprox(left,right)
+        end
+    end
+end
+
 @testset "SCID" begin
     @test SCID(center=1,atom=1,orbital=1,tag='z')|>typeof|>fieldnames==(:center,:atom,:orbital,:tag,:subscript)
 end
@@ -109,28 +123,28 @@ end
 end
 
 @testset "Heisenberg" begin
-    @test Heisenberg(orbitals=(1,2))==Couplings(SpinCoupling{2}(1.0,tags=('z','z'),orbitals=(1,2)),
-                                                SpinCoupling{2}(0.5,tags=('+','-'),orbitals=(1,2)),
-                                                SpinCoupling{2}(0.5,tags=('-','+'),orbitals=(1,2))
+    @test Heisenberg(orbitals=(1,2))==Couplings(SpinCoupling{2}(1//1,tags=('z','z'),orbitals=(1,2)),
+                                                SpinCoupling{2}(1//2,tags=('+','-'),orbitals=(1,2)),
+                                                SpinCoupling{2}(1//2,tags=('-','+'),orbitals=(1,2))
                                                 )
 end
 
 @testset "Ising" begin
-    @test Ising('x',atoms=(1,2))==Couplings(SpinCoupling{2}(1.0,tags=('x','x'),atoms=(1,2)))
-    @test Ising('y',atoms=(1,2))==Couplings(SpinCoupling{2}(1.0,tags=('y','y'),atoms=(1,2)))
-    @test Ising('z',atoms=(1,2))==Couplings(SpinCoupling{2}(1.0,tags=('z','z'),atoms=(1,2)))
+    @test Ising('x',atoms=(1,2))==Couplings(SpinCoupling{2}(1,tags=('x','x'),atoms=(1,2)))
+    @test Ising('y',atoms=(1,2))==Couplings(SpinCoupling{2}(1,tags=('y','y'),atoms=(1,2)))
+    @test Ising('z',atoms=(1,2))==Couplings(SpinCoupling{2}(1,tags=('z','z'),atoms=(1,2)))
 end
 
 @testset "Gamma" begin
-    @test Gamma('x',orbitals=(1,1))==SpinCoupling{2}(1.0,tags=('y','z'),orbitals=(1,1))+SpinCoupling{2}(1.0,tags=('z','y'),orbitals=(1,1))
-    @test Gamma('y',atoms=(1,2))==SpinCoupling{2}(1.0,tags=('z','x'),atoms=(1,2))+SpinCoupling{2}(1.0,tags=('x','z'),atoms=(1,2))
-    @test Gamma('z')==SpinCoupling{2}(1.0,tags=('x','y'))+SpinCoupling{2}(1.0,tags=('y','x'))
+    @test Gamma('x',orbitals=(1,1))==SpinCoupling{2}(1,tags=('y','z'),orbitals=(1,1))+SpinCoupling{2}(1,tags=('z','y'),orbitals=(1,1))
+    @test Gamma('y',atoms=(1,2))==SpinCoupling{2}(1,tags=('z','x'),atoms=(1,2))+SpinCoupling{2}(1,tags=('x','z'),atoms=(1,2))
+    @test Gamma('z')==SpinCoupling{2}(1,tags=('x','y'))+SpinCoupling{2}(1,tags=('y','x'))
 end
 
 @testset "Sᵅ" begin
-    @test Sˣ(atom=1,orbital=1)==Couplings(SpinCoupling{1}(1.0,tags=('x',),atoms=(1,),orbitals=(1,)))
-    @test Sʸ(atom=1)==Couplings(SpinCoupling{1}(1.0,tags=('y',),atoms=(1,)))
-    @test Sᶻ(orbital=1)==Couplings(SpinCoupling{1}(1.0,tags=('z',),orbitals=(1,)))
+    @test Sˣ(atom=1,orbital=1)==Couplings(SpinCoupling{1}(1,tags=('x',),atoms=(1,),orbitals=(1,)))
+    @test Sʸ(atom=1)==Couplings(SpinCoupling{1}(1,tags=('y',),atoms=(1,)))
+    @test Sᶻ(orbital=1)==Couplings(SpinCoupling{1}(1,tags=('z',),orbitals=(1,)))
 end
 
 @testset "SpinTerm" begin
