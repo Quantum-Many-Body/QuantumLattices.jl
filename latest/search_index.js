@@ -4013,7 +4013,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Degrees of freedom",
     "title": "Base.repr",
     "category": "function",
-    "text": "repr(opt::Operator,l::Union{LaTeX,Nothing}=nothing) -> String\n\nGet the latex string representation of an operator.\n\n\n\n\n\n"
+    "text": "repr(opts::Operators,l::Union{LaTeX,Nothing}=nothing) -> String\n\nGet the latex string representation of a set of operators.\n\n\n\n\n\n"
 },
 
 {
@@ -4021,7 +4021,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Degrees of freedom",
     "title": "Base.repr",
     "category": "function",
-    "text": "repr(opts::Operators,l::Union{LaTeX,Nothing}=nothing) -> String\n\nGet the latex string representation of a set of operators.\n\n\n\n\n\n"
+    "text": "repr(opt::Operator,l::Union{LaTeX,Nothing}=nothing) -> String\n\nGet the latex string representation of an operator.\n\n\n\n\n\n"
 },
 
 {
@@ -5021,7 +5021,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "QuantumLattices.Interfaces.permute",
     "category": "function",
-    "text": "permute(::Type{<:BOperator},id1::OID{<:FIndex},id2::OID{<:FIndex},::Any=nothing) -> Tuple{Vararg{BOperator}}\n\nPermute two bosonic oid and get the result.\n\n\n\n\n\n"
+    "text": "permute(::Type{<:FOperator},id1::OID{<:FIndex},id2::OID{<:FIndex},::Any=nothing) -> Tuple{Vararg{FOperator}}\n\nPermute two fermionic oid and get the result.\n\n\n\n\n\n"
 },
 
 {
@@ -5029,7 +5029,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "QuantumLattices.Interfaces.permute",
     "category": "function",
-    "text": "permute(::Type{<:FOperator},id1::OID{<:FIndex},id2::OID{<:FIndex},::Any=nothing) -> Tuple{Vararg{FOperator}}\n\nPermute two fermionic oid and get the result.\n\n\n\n\n\n"
+    "text": "permute(::Type{<:BOperator},id1::OID{<:FIndex},id2::OID{<:FIndex},::Any=nothing) -> Tuple{Vararg{BOperator}}\n\nPermute two bosonic oid and get the result.\n\n\n\n\n\n"
 },
 
 {
