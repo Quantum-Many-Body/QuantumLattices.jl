@@ -7,7 +7,7 @@ using ...Interfaces: ⊕,⊗,⋅
 
 export @couplings,@fc_str,@sc_str
 export @σ⁰_str,@σˣ_str,@σʸ_str,@σᶻ_str,@σ⁺_str,@σ⁻_str
-export @heisenberg_str,@ising_str,@gamma_str,@sˣ_str,@sʸ_str,@sᶻ_str
+export @heisenberg_str,@ising_str,@gamma_str,@dm_str,@sˣ_str,@sʸ_str,@sᶻ_str
 
 """
     @couplings cps -> Couplings
@@ -232,10 +232,20 @@ end
 The Heisenberg couplings.
 """
 macro heisenberg_str(str::String)
+    ps=split(str," ")
+    @assert length(ps)∈(1,2) "heisenberg_str error: not supported pattern."
+    mode,str=length(ps)==2 ? (ps[1],ps[2]) : ps[1]∈("+-z","xyz") ?  (ps[1],"") : ("+-z",ps[1])
+    @assert mode=="+-z" || mode=="xyz" "heisenberg_str error: not supported mode($mode)."
     attrpairs=scpairs(str,Val(2))
-    sc1=SpinCoupling{2}(1//2;:tags=>('+','-'),attrpairs...)
-    sc2=SpinCoupling{2}(1//2;:tags=>('-','+'),attrpairs...)
-    sc3=SpinCoupling{2}(1//1;:tags=>('z','z'),attrpairs...)
+    if mode=="+-z"
+        sc1=SpinCoupling{2}(1//2;:tags=>('+','-'),attrpairs...)
+        sc2=SpinCoupling{2}(1//2;:tags=>('-','+'),attrpairs...)
+        sc3=SpinCoupling{2}(1//1;:tags=>('z','z'),attrpairs...)
+    else
+        sc1=SpinCoupling{2}(1;:tags=>('x','x'),attrpairs...)
+        sc2=SpinCoupling{2}(1;:tags=>('y','y'),attrpairs...)
+        sc3=SpinCoupling{2}(1;:tags=>('z','z'),attrpairs...)
+    end
     return Couplings(sc1,sc2,sc3)
 end
 
@@ -267,6 +277,23 @@ macro gamma_str(str::String)
     sc2=SpinCoupling{2}(1;:tags=>(t2,t1),attrpairs...)
     return Couplings(sc1,sc2)
 end
+
+"""
+    dm"x sl(a₁,a₂)⊗ob(o₁,o₂)@(c₁,c₂)" -> Couplings
+    dm"y sl(a₁,a₂)⊗ob(o₁,o₂)@(c₁,c₂)" -> Couplings
+    dm"z sl(a₁,a₂)⊗ob(o₁,o₂)@(c₁,c₂)" -> Couplings
+
+The DM couplings.
+"""
+macro dm_str(str::String)
+    @assert str[1] in ('x','y','z') "@dm_str error: wrong input pattern."
+    t1,t2=str[1]=='x' ? ('y','z') : str[1]=='y' ? ('z','x') : ('x','y')
+    attrpairs=length(str)>1 ? (@assert str[2]==' ' "@dm_str error: wrong input pattern."; scpairs(str[3:end],Val(2))) : Pair{Symbol,NTuple{2,Int}}[]
+    sc1=SpinCoupling{2}(1;:tags=>(t1,t2),attrpairs...)
+    sc2=SpinCoupling{2}(-1;:tags=>(t2,t1),attrpairs...)
+    return Couplings(sc1,sc2)
+end
+
 
 """
     sˣ"sl(a)⊗ob(o)" -> Couplings

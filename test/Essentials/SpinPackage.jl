@@ -83,6 +83,9 @@ end
             @test isapprox(left,right)
         end
     end
+    id1=OID(SIndex('S',1,2,0.5,'z'))
+    id2=OID(SIndex('S',2,2,0.5,'z'))
+    @test permute(SOperator,id1,id2,nothing)==(SOperator(1,ID(id2,id1)),)
 end
 
 @testset "SCID" begin
@@ -127,6 +130,10 @@ end
                                                 SpinCoupling{2}(1//2,tags=('+','-'),orbitals=(1,2)),
                                                 SpinCoupling{2}(1//2,tags=('-','+'),orbitals=(1,2))
                                                 )
+    @test Heisenberg("xyz")==Couplings( SpinCoupling{2}(1,tags=('x','x')),
+                                        SpinCoupling{2}(1,tags=('y','y')),
+                                        SpinCoupling{2}(1,tags=('z','z'))
+                                        )
 end
 
 @testset "Ising" begin
@@ -139,6 +146,12 @@ end
     @test Gamma('x',orbitals=(1,1))==SpinCoupling{2}(1,tags=('y','z'),orbitals=(1,1))+SpinCoupling{2}(1,tags=('z','y'),orbitals=(1,1))
     @test Gamma('y',atoms=(1,2))==SpinCoupling{2}(1,tags=('z','x'),atoms=(1,2))+SpinCoupling{2}(1,tags=('x','z'),atoms=(1,2))
     @test Gamma('z')==SpinCoupling{2}(1,tags=('x','y'))+SpinCoupling{2}(1,tags=('y','x'))
+end
+
+@testset "DM" begin
+    @test DM('x',orbitals=(1,1))==SpinCoupling{2}(1,tags=('y','z'),orbitals=(1,1))-SpinCoupling{2}(1,tags=('z','y'),orbitals=(1,1))
+    @test DM('y',atoms=(1,2))==SpinCoupling{2}(1,tags=('z','x'),atoms=(1,2))-SpinCoupling{2}(1,tags=('x','z'),atoms=(1,2))
+    @test DM('z')==SpinCoupling{2}(1,tags=('x','y'))-SpinCoupling{2}(1,tags=('y','x'))
 end
 
 @testset "Sᵅ" begin

@@ -577,7 +577,7 @@ function expand!(operators::Operators,term::Term,bond::AbstractBond,config::IDFC
                     isa(table,Table) && any(NTuple{rank(otype),Bool}(!haskey(table,index) for index in oindexes)) && continue
                     id=ID(OID,oindexes,orcoords,oicoords,termseqs(table,oindexes))
                     if apriori===true
-                        add!(operators,otype.name.wrapper(convert(otype|>valtype,value*coeff*(half ? 0.5 : 1.0)),id))
+                        add!(operators,otype.name.wrapper(convert(otype|>valtype,value*coeff/(half ? 2 : 1)),id))
                     elseif apriori==false
                         opt=otype.name.wrapper(convert(otype|>valtype,value*coeff),id)
                         add!(operators,opt)
@@ -585,7 +585,7 @@ function expand!(operators::Operators,term::Term,bond::AbstractBond,config::IDFC
                     else
                         if !(record===nothing ? haskey(operators,id') : in(id',record))
                             record===nothing || push!(record,id)
-                            ovalue=valtype(otype)(value*coeff*termfactor(nothing,id,term|>kind|>Val)) # needs improvement memory allocation 2 times for each
+                            ovalue=valtype(otype)(value*coeff/termfactor(nothing,id,term|>kind|>Val)) # needs improvement memory allocation 2 times for each
                             opt=otype.name.wrapper(ovalue,id)
                             add!(operators,opt)
                             half || add!(operators,opt')
@@ -601,7 +601,7 @@ termcoords(::Type{<:Nothing},rcoords::NTuple{N,SVector{M,Float}},perm::NTuple{R,
 termcoords(::Type{<:SVector},rcoords::NTuple{N,SVector{M,Float}},perm::NTuple{R,Int}) where {N,M,R}=NTuple{R,SVector{M,Float}}(rcoords[p] for p in perm)
 termseqs(::Nothing,indexes::NTuple{N,<:Index}) where N=NTuple{N,Nothing}(nothing for i=1:N)
 @generated termseqs(table::Table{I},indexes::NTuple{N,I}) where {N,I<:Index}=Expr(:tuple,[:(table[indexes[$i]]) for i=1:N]...)
-termfactor(::Nothing,id::ID{<:NTuple{N,OID}},::Val{K}) where {N,K}=isHermitian(id) ? 0.5 : 1.0
+termfactor(::Nothing,id::ID{<:NTuple{N,OID}},::Val{K}) where {N,K}=isHermitian(id) ? 2 : 1
 
 """
     expand(term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false) -> Operators

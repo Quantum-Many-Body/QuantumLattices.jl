@@ -521,7 +521,7 @@ dims(fce::FCExpand)=(length(fce.obsbexpands),length(fce.spsbexpands))
 end
 
 """
-    σ⁰(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{<:NTuple{2,FCID}},FockCoupling{2,Int,ID{<:NTuple{2,FCID}}}}
+    σ⁰(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID,FockCoupling{Int,ID{<:NTuple{2,FCID}}}}
 
 The Pauli matrix σ⁰, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
 """
@@ -533,7 +533,7 @@ function σ⁰(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing)
 end
 
 """
-    σˣ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{<:NTuple{2,FCID}},FockCoupling{2,Int,ID{<:NTuple{2,FCID}}}}
+    σˣ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID,FockCoupling{Int,ID{<:NTuple{2,FCID}}}}
 
 The Pauli matrix σˣ, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
 """
@@ -545,7 +545,7 @@ function σˣ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing)
 end
 
 """
-    σʸ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{<:NTuple{2,FCID}},FockCoupling{2,Int,ID{<:NTuple{2,FCID}}}}
+    σʸ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID,FockCoupling{Int,ID{<:NTuple{2,FCID}}}}
 
 The Pauli matrix σʸ, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
 """
@@ -557,7 +557,7 @@ function σʸ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing)
 end
 
 """
-    σᶻ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{<:NTuple{2,FCID}},FockCoupling{2,Int,ID{<:NTuple{2,FCID}}}}
+    σᶻ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID,FockCoupling{Int,ID{<:NTuple{2,FCID}}}}
 
 The Pauli matrix σᶻ, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
 """
@@ -569,7 +569,7 @@ function σᶻ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing)
 end
 
 """
-    σ⁺(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{<:NTuple{2,FCID}},FockCoupling{2,Int,ID{<:NTuple{2,FCID}}}}
+    σ⁺(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID,FockCoupling{Int,ID{<:NTuple{2,FCID}}}}
 
 The Pauli matrix σ⁺, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
 """
@@ -581,7 +581,7 @@ function σ⁺(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing)
 end
 
 """
-    σ⁻(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{<:NTuple{2,FCID}},FockCoupling{2,Int,ID{<:NTuple{2,FCID}}}}
+    σ⁻(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID,FockCoupling{Int,ID{<:NTuple{2,FCID}}}}
 
 The Pauli matrix σ⁻, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
 """
@@ -805,7 +805,7 @@ function Coulomb{ST}(   id::Symbol,value::Any,bondkind::Int=1;
 end
 abbr(::Type{<:Coulomb})=:cl
 isHermitian(::Type{<:Coulomb})=nothing
-termfactor(::Nothing,id::ID{<:NTuple{4,OID}},::Val{:Coulomb})=id[2]'==id[1] && id[4]'==id[3] ? 0.5 : 1.0
+termfactor(::Nothing,id::ID{<:NTuple{4,OID}},::Val{:Coulomb})=id[2]'==id[1] && id[4]'==id[3] ? 2 : 1
 
 """
     FFockTerm

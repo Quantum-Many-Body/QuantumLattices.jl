@@ -18,7 +18,7 @@ export SID,Spin,SIndex
 export usualspinindextotuple
 export SOperator,soptdefaultlatex
 export SCID,SpinCoupling
-export Heisenberg,Ising,Gamma,Sˣ,Sʸ,Sᶻ
+export Heisenberg,Ising,Gamma,DM,Sˣ,Sʸ,Sᶻ
 export SpinTerm
 
 const sidtagmap=Dict(1=>'x',2=>'y',3=>'z',4=>'+',5=>'-')
@@ -363,17 +363,29 @@ dims(sce::SCExpand)=(length(sce.sbexpands),)
 end
 
 """
-    Heisenberg(;centers::Union{NTuple{2,Int},Nothing}=nothing,
+    Heisenberg( mode::String="+-z";
+                centers::Union{NTuple{2,Int},Nothing}=nothing,
                 atoms::Union{NTuple{2,Int},Nothing}=nothing,
                 orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing
-                ) -> Couplings{ID{<:NTuple{2,SCID}},SpinCoupling{2,Float,ID{<:NTuple{2,SCID}}}}
+                ) -> Couplings{ID,SpinCoupling{Rational{Int}/Int,ID{<:NTuple{2,SCID}}}}
 
 The Heisenberg couplings.
 """
-function Heisenberg(;centers::Union{NTuple{2,Int},Nothing}=nothing,atoms::Union{NTuple{2,Int},Nothing}=nothing,orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing)
-    sc1=SpinCoupling{2}(1//2,centers=centers,atoms=atoms,orbitals=orbitals,tags=('+','-'))
-    sc2=SpinCoupling{2}(1//2,centers=centers,atoms=atoms,orbitals=orbitals,tags=('-','+'))
-    sc3=SpinCoupling{2}(1//1,centers=centers,atoms=atoms,orbitals=orbitals,tags=('z','z'))
+function Heisenberg(mode::String="+-z";
+                    centers::Union{NTuple{2,Int},Nothing}=nothing,
+                    atoms::Union{NTuple{2,Int},Nothing}=nothing,
+                    orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing
+                    )
+    @assert mode=="+-z" || mode=="xyz" "Heisenberg error: not supported mode($mode)."
+    if mode=="+-z"
+        sc1=SpinCoupling{2}(1//2,centers=centers,atoms=atoms,orbitals=orbitals,tags=('+','-'))
+        sc2=SpinCoupling{2}(1//2,centers=centers,atoms=atoms,orbitals=orbitals,tags=('-','+'))
+        sc3=SpinCoupling{2}(1//1,centers=centers,atoms=atoms,orbitals=orbitals,tags=('z','z'))
+    else
+        sc1=SpinCoupling{2}(1,centers=centers,atoms=atoms,orbitals=orbitals,tags=('x','x'))
+        sc2=SpinCoupling{2}(1,centers=centers,atoms=atoms,orbitals=orbitals,tags=('y','y'))
+        sc3=SpinCoupling{2}(1,centers=centers,atoms=atoms,orbitals=orbitals,tags=('z','z'))
+    end
     return Couplings(sc1,sc2,sc3)
 end
 
@@ -382,7 +394,7 @@ end
             centers::Union{NTuple{2,Int},Nothing}=nothing,
             atoms::Union{NTuple{2,Int},Nothing}=nothing,
             orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing
-            ) -> Couplings{ID{<:NTuple{2,SCID}},SpinCoupling{2,Float,ID{<:NTuple{2,SCID}}}}
+            ) -> Couplings{ID,SpinCoupling{Int,ID{<:NTuple{2,SCID}}}}
 
 The Ising couplings.
 """
@@ -396,7 +408,7 @@ end
             centers::Union{NTuple{2,Int},Nothing}=nothing,
             atoms::Union{NTuple{2,Int},Nothing}=nothing,
             orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing
-            ) -> Couplings{ID{<:NTuple{2,SCID}},SpinCoupling{2,Float,ID{<:NTuple{2,SCID}}}}
+            ) -> Couplings{ID,SpinCoupling{Int,ID{<:NTuple{2,SCID}}}}
 
 The Gamma couplings.
 """
@@ -408,11 +420,26 @@ function Gamma(tag::Char;centers::Union{NTuple{2,Int},Nothing}=nothing,atoms::Un
     return Couplings(sc1,sc2)
 end
 
+"""
+    DM( tag::Char;
+        centers::Union{NTuple{2,Int},Nothing}=nothing,
+        atoms::Union{NTuple{2,Int},Nothing}=nothing,
+        orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing
+        ) -> Couplings{ID,SpinCoupling{Int,ID{<:NTuple{2,SCID}}}}
+"""
+function DM(tag::Char;centers::Union{NTuple{2,Int},Nothing}=nothing,atoms::Union{NTuple{2,Int},Nothing}=nothing,orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing)
+    @assert tag in ('x','y','z') "DM error: not supported input tag($tag)."
+    t1,t2=tag=='x' ? ('y','z') : tag=='y' ? ('z','x') : ('x','y')
+    sc1=SpinCoupling{2}(1,centers=centers,atoms=atoms,orbitals=orbitals,tags=(t1,t2))
+    sc2=SpinCoupling{2}(-1,centers=centers,atoms=atoms,orbitals=orbitals,tags=(t2,t1))
+    return Couplings(sc1,sc2)
+end
+
 scsinglewrapper(::Nothing)=nothing
 scsinglewrapper(value::Int)=(value,)
 
 """
-    Sˣ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{I,SpinCoupling{1,Float,I}}  where I<:ID{<:Tuple{SCID}}
+    Sˣ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID,SpinCoupling{Int,ID{<:Tuple{SCID}}}}
 
 The single Sˣ coupling.
 """
@@ -421,7 +448,7 @@ function Sˣ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothi
 end
 
 """
-    Sʸ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{I,SpinCoupling{1,Float,I}}  where I<:ID{<:Tuple{SCID}}
+    Sʸ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID,SpinCoupling{Int,ID{<:Tuple{SCID}}}}
 
 The single Sʸ coupling.
 """
@@ -430,7 +457,7 @@ function Sʸ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothi
 end
 
 """
-    Sᶻ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{I,SpinCoupling{1,Float,I}}  where I<:ID{<:Tuple{SCID}}
+    Sᶻ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID,SpinCoupling{Int,ID{<:Tuple{SCID}}}}
 
 The single Sᶻ coupling.
 """
