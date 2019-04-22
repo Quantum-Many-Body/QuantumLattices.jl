@@ -3485,7 +3485,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatials",
     "title": "Base.iterate",
     "category": "function",
-    "text": "iterate(bs::Bonds,state=(1,0))\n\nIterate over the lattice bonds in the set.\n\n\n\n\n\n"
+    "text": "iterate(p::Point,state=1)\n\nIterate over the point.\n\n\n\n\n\n"
 },
 
 {
@@ -3493,7 +3493,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatials",
     "title": "Base.iterate",
     "category": "function",
-    "text": "iterate(p::Point,state=1)\n\nIterate over the point.\n\n\n\n\n\n"
+    "text": "iterate(bs::Bonds,state=(1,0))\n\nIterate over the lattice bonds in the set.\n\n\n\n\n\n"
 },
 
 {
@@ -3622,6 +3622,14 @@ var documenterSearchIndex = {"docs": [
     "title": "QuantumLattices.Interfaces.rank",
     "category": "method",
     "text": "rank(bond::AbstractBond) -> Int\nrank(::Type{<:AbstractBond{N,<:PID,R} where N}) where R -> Int\n\nGet the rank of a bond.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Spatials.html#QuantumLattices.Interfaces.rank-Tuple{Bonds}",
+    "page": "Spatials",
+    "title": "QuantumLattices.Interfaces.rank",
+    "category": "method",
+    "text": "rank(bs::Bonds) -> Int\nrank(::Type{<:Bonds{TS}}) where TS -> Int\n\nGet the rank of a set of lattice bonds.\n\n\n\n\n\n"
 },
 
 {
@@ -3889,11 +3897,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.oidtype-Tuple{Type{#s329} where #s329<:IID,Type{#s326} where #s326<:AbstractBond,Type{Nothing}}",
+    "location": "man/Essentials/DegreesOfFreedom.html#QuantumLattices.Essentials.DegreesOfFreedom.oidtype-Tuple{Type{#s329} where #s329<:IID,Type{#s326} where #s326<:AbstractBond,Type{Nothing},Val{true}}",
     "page": "Degrees of freedom",
     "title": "QuantumLattices.Essentials.DegreesOfFreedom.oidtype",
     "category": "method",
-    "text": "oidtype(I::Type{<:IID},B::Type{<:AbstractBond},::Type{Nothing})\noidtype(I::Type{<:IID},B::Type{<:AbstractBond},::Type{<:Table})\n\nGet the compatible oid type.\n\n\n\n\n\n"
+    "text": "oidtype(I::Type{<:IID},B::Type{<:AbstractBond},::Type{Nothing},::Val{true})\noidtype(I::Type{<:IID},B::Type{<:AbstractBond},::Type{<:Table},::Val{true})\noidtype(I::Type{<:IID},B::Type{<:AbstractBond},::Type{Nothing},::Val{false})\noidtype(I::Type{<:IID},B::Type{<:AbstractBond},::Type{<:Table},::Val{false})\n\nGet the compatible oid type.\n\n\n\n\n\n"
 },
 
 {
@@ -4437,7 +4445,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Terms",
     "title": "QuantumLattices.Interfaces.expand",
     "category": "function",
-    "text": "expand(term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false) -> Operators\n\nExpand the operators of a term on a bond with a given config.\n\n\n\n\n\n"
+    "text": "expand(term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false,coords::Bool=true) -> Operators\nexpand(term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing},half::Bool,coords::Union{Val{true},Val{false}}) -> Operators\nexpand(term::Term,bonds::Bonds,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false,coords::Bool=true) -> Operators\nexpand(term::Term,bonds::Bonds,config::IDFConfig,table::Union{Table,Nothing},half::Bool,coords::Union{Val{true},Val{false}}) -> Operators\n\nExpand the operators of a term on a bond/set-of-bonds with a given config.\n\n\n\n\n\n"
 },
 
 {
@@ -4445,7 +4453,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Terms",
     "title": "QuantumLattices.Interfaces.expand!",
     "category": "function",
-    "text": "expand!(operators::Operators,term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false) -> Operators\n\nExpand the operators of a term on a bond with a given config.\n\nThe half parameter determines the behavior of generating operators, which falls into the following two categories\n\ntrue: \"Hermitian half\" of the generated operators\nfalse: \"Hermitian whole\" of the generated operators\n\n\n\n\n\n"
+    "text": "expand!(operators::Operators,term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false) -> Operators\nexpand!(operators::Operators,term::Term,bonds::Bonds,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false) -> Operators\n\nExpand the operators of a term on a bond/set-of-bonds with a given config.\n\nThe half parameter determines the behavior of generating operators, which falls into the following two categories\n\ntrue: \"Hermitian half\" of the generated operators\nfalse: \"Hermitian whole\" of the generated operators\n\n\n\n\n\n"
 },
 
 {
@@ -4845,7 +4853,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "QuantumLattices.Essentials.FockPackage.σʸ",
     "category": "method",
-    "text": "σʸ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{<:NTuple{2,FCID}},FockCoupling{2,Int,ID{<:NTuple{2,FCID}}}}\n\nThe Pauli matrix σʸ, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
+    "text": "σʸ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID,FockCoupling{Int,ID{<:NTuple{2,FCID}}}}\n\nThe Pauli matrix σʸ, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
 },
 
 {
@@ -4853,7 +4861,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "QuantumLattices.Essentials.FockPackage.σˣ",
     "category": "method",
-    "text": "σˣ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{<:NTuple{2,FCID}},FockCoupling{2,Int,ID{<:NTuple{2,FCID}}}}\n\nThe Pauli matrix σˣ, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
+    "text": "σˣ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID,FockCoupling{Int,ID{<:NTuple{2,FCID}}}}\n\nThe Pauli matrix σˣ, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
 },
 
 {
@@ -4861,7 +4869,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "QuantumLattices.Essentials.FockPackage.σᶻ",
     "category": "method",
-    "text": "σᶻ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{<:NTuple{2,FCID}},FockCoupling{2,Int,ID{<:NTuple{2,FCID}}}}\n\nThe Pauli matrix σᶻ, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
+    "text": "σᶻ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID,FockCoupling{Int,ID{<:NTuple{2,FCID}}}}\n\nThe Pauli matrix σᶻ, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
 },
 
 {
@@ -4869,7 +4877,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "QuantumLattices.Essentials.FockPackage.σ⁰",
     "category": "method",
-    "text": "σ⁰(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{<:NTuple{2,FCID}},FockCoupling{2,Int,ID{<:NTuple{2,FCID}}}}\n\nThe Pauli matrix σ⁰, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
+    "text": "σ⁰(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID,FockCoupling{Int,ID{<:NTuple{2,FCID}}}}\n\nThe Pauli matrix σ⁰, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
 },
 
 {
@@ -4877,7 +4885,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "QuantumLattices.Essentials.FockPackage.σ⁺",
     "category": "method",
-    "text": "σ⁺(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{<:NTuple{2,FCID}},FockCoupling{2,Int,ID{<:NTuple{2,FCID}}}}\n\nThe Pauli matrix σ⁺, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
+    "text": "σ⁺(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID,FockCoupling{Int,ID{<:NTuple{2,FCID}}}}\n\nThe Pauli matrix σ⁺, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
 },
 
 {
@@ -4885,7 +4893,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "QuantumLattices.Essentials.FockPackage.σ⁻",
     "category": "method",
-    "text": "σ⁻(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{<:NTuple{2,FCID}},FockCoupling{2,Int,ID{<:NTuple{2,FCID}}}}\n\nThe Pauli matrix σ⁻, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
+    "text": "σ⁻(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID,FockCoupling{Int,ID{<:NTuple{2,FCID}}}}\n\nThe Pauli matrix σ⁻, which can act on the space of spins(\"sp\"), orbitals(\"ob\"), sublattices(\"sl\") or particle-holes(\"ph\").\n\n\n\n\n\n"
 },
 
 {
@@ -5021,7 +5029,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "QuantumLattices.Interfaces.permute",
     "category": "function",
-    "text": "permute(::Type{<:FOperator},id1::OID{<:FIndex},id2::OID{<:FIndex},::Any=nothing) -> Tuple{Vararg{FOperator}}\n\nPermute two fermionic oid and get the result.\n\n\n\n\n\n"
+    "text": "permute(::Type{<:BOperator},id1::OID{<:FIndex},id2::OID{<:FIndex},::Any=nothing) -> Tuple{Vararg{BOperator}}\n\nPermute two bosonic oid and get the result.\n\n\n\n\n\n"
 },
 
 {
@@ -5029,7 +5037,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "QuantumLattices.Interfaces.permute",
     "category": "function",
-    "text": "permute(::Type{<:BOperator},id1::OID{<:FIndex},id2::OID{<:FIndex},::Any=nothing) -> Tuple{Vararg{BOperator}}\n\nPermute two bosonic oid and get the result.\n\n\n\n\n\n"
+    "text": "permute(::Type{<:FOperator},id1::OID{<:FIndex},id2::OID{<:FIndex},::Any=nothing) -> Tuple{Vararg{FOperator}}\n\nPermute two fermionic oid and get the result.\n\n\n\n\n\n"
 },
 
 {
@@ -5225,19 +5233,27 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.SpinPackage.DM-Tuple{Char}",
+    "page": "Spin package",
+    "title": "QuantumLattices.Essentials.SpinPackage.DM",
+    "category": "method",
+    "text": "DM( tag::Char;\n    centers::Union{NTuple{2,Int},Nothing}=nothing,\n    atoms::Union{NTuple{2,Int},Nothing}=nothing,\n    orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing\n    ) -> Couplings{ID,SpinCoupling{Int,ID{<:NTuple{2,SCID}}}}\n\n\n\n\n\n"
+},
+
+{
     "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.SpinPackage.Gamma-Tuple{Char}",
     "page": "Spin package",
     "title": "QuantumLattices.Essentials.SpinPackage.Gamma",
     "category": "method",
-    "text": "Gamma(  tag::Char;\n        centers::Union{NTuple{2,Int},Nothing}=nothing,\n        atoms::Union{NTuple{2,Int},Nothing}=nothing,\n        orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing\n        ) -> Couplings{ID{<:NTuple{2,SCID}},SpinCoupling{2,Float,ID{<:NTuple{2,SCID}}}}\n\nThe Gamma couplings.\n\n\n\n\n\n"
+    "text": "Gamma(  tag::Char;\n        centers::Union{NTuple{2,Int},Nothing}=nothing,\n        atoms::Union{NTuple{2,Int},Nothing}=nothing,\n        orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing\n        ) -> Couplings{ID,SpinCoupling{Int,ID{<:NTuple{2,SCID}}}}\n\nThe Gamma couplings.\n\n\n\n\n\n"
 },
 
 {
-    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.SpinPackage.Heisenberg-Tuple{}",
+    "location": "man/Essentials/SpinPackage.html#QuantumLattices.Essentials.SpinPackage.Heisenberg",
     "page": "Spin package",
     "title": "QuantumLattices.Essentials.SpinPackage.Heisenberg",
-    "category": "method",
-    "text": "Heisenberg(;centers::Union{NTuple{2,Int},Nothing}=nothing,\n            atoms::Union{NTuple{2,Int},Nothing}=nothing,\n            orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing\n            ) -> Couplings{ID{<:NTuple{2,SCID}},SpinCoupling{2,Float,ID{<:NTuple{2,SCID}}}}\n\nThe Heisenberg couplings.\n\n\n\n\n\n"
+    "category": "function",
+    "text": "Heisenberg( mode::String=\"+-z\";\n            centers::Union{NTuple{2,Int},Nothing}=nothing,\n            atoms::Union{NTuple{2,Int},Nothing}=nothing,\n            orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing\n            ) -> Couplings{ID,SpinCoupling{Rational{Int}/Int,ID{<:NTuple{2,SCID}}}}\n\nThe Heisenberg couplings.\n\n\n\n\n\n"
 },
 
 {
@@ -5245,7 +5261,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spin package",
     "title": "QuantumLattices.Essentials.SpinPackage.Ising",
     "category": "method",
-    "text": "Ising(  tag::Char;\n        centers::Union{NTuple{2,Int},Nothing}=nothing,\n        atoms::Union{NTuple{2,Int},Nothing}=nothing,\n        orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing\n        ) -> Couplings{ID{<:NTuple{2,SCID}},SpinCoupling{2,Float,ID{<:NTuple{2,SCID}}}}\n\nThe Ising couplings.\n\n\n\n\n\n"
+    "text": "Ising(  tag::Char;\n        centers::Union{NTuple{2,Int},Nothing}=nothing,\n        atoms::Union{NTuple{2,Int},Nothing}=nothing,\n        orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing\n        ) -> Couplings{ID,SpinCoupling{Int,ID{<:NTuple{2,SCID}}}}\n\nThe Ising couplings.\n\n\n\n\n\n"
 },
 
 {
@@ -5253,7 +5269,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spin package",
     "title": "QuantumLattices.Essentials.SpinPackage.Sʸ",
     "category": "method",
-    "text": "Sʸ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{I,SpinCoupling{1,Float,I}}  where I<:ID{<:Tuple{SCID}}\n\nThe single Sʸ coupling.\n\n\n\n\n\n"
+    "text": "Sʸ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID,SpinCoupling{Int,ID{<:Tuple{SCID}}}}\n\nThe single Sʸ coupling.\n\n\n\n\n\n"
 },
 
 {
@@ -5261,7 +5277,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spin package",
     "title": "QuantumLattices.Essentials.SpinPackage.Sˣ",
     "category": "method",
-    "text": "Sˣ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{I,SpinCoupling{1,Float,I}}  where I<:ID{<:Tuple{SCID}}\n\nThe single Sˣ coupling.\n\n\n\n\n\n"
+    "text": "Sˣ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID,SpinCoupling{Int,ID{<:Tuple{SCID}}}}\n\nThe single Sˣ coupling.\n\n\n\n\n\n"
 },
 
 {
@@ -5269,7 +5285,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spin package",
     "title": "QuantumLattices.Essentials.SpinPackage.Sᶻ",
     "category": "method",
-    "text": "Sᶻ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{I,SpinCoupling{1,Float,I}}  where I<:ID{<:Tuple{SCID}}\n\nThe single Sᶻ coupling.\n\n\n\n\n\n"
+    "text": "Sᶻ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID,SpinCoupling{Int,ID{<:Tuple{SCID}}}}\n\nThe single Sᶻ coupling.\n\n\n\n\n\n"
 },
 
 {
@@ -5430,6 +5446,14 @@ var documenterSearchIndex = {"docs": [
     "title": "QuantumLattices.Essentials.Extensions.@couplings",
     "category": "macro",
     "text": "@couplings cps -> Couplings\n\nConvert an expression/literal to a set of couplings.\n\n\n\n\n\n"
+},
+
+{
+    "location": "man/Essentials/Extensions.html#QuantumLattices.Essentials.Extensions.@dm_str-Tuple{String}",
+    "page": "Extensions",
+    "title": "QuantumLattices.Essentials.Extensions.@dm_str",
+    "category": "macro",
+    "text": "dm\"x sl(a₁,a₂)⊗ob(o₁,o₂)@(c₁,c₂)\" -> Couplings\ndm\"y sl(a₁,a₂)⊗ob(o₁,o₂)@(c₁,c₂)\" -> Couplings\ndm\"z sl(a₁,a₂)⊗ob(o₁,o₂)@(c₁,c₂)\" -> Couplings\n\nThe DM couplings.\n\n\n\n\n\n"
 },
 
 {
