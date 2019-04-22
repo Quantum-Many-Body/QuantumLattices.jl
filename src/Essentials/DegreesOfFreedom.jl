@@ -392,13 +392,17 @@ Get the body/superscript/subscript of the latex string representation of an oid.
 @generated script(oid::OID,l::LaTeX,::Val{:SB})=Expr(:tuple,[:(script(oid,Val($sub))) for sub in QuoteNode.(l|>latexsubscript)]...)
 
 """
-    oidtype(I::Type{<:IID},B::Type{<:AbstractBond},::Type{Nothing})
-    oidtype(I::Type{<:IID},B::Type{<:AbstractBond},::Type{<:Table})
+    oidtype(I::Type{<:IID},B::Type{<:AbstractBond},::Type{Nothing},::Val{true})
+    oidtype(I::Type{<:IID},B::Type{<:AbstractBond},::Type{<:Table},::Val{true})
+    oidtype(I::Type{<:IID},B::Type{<:AbstractBond},::Type{Nothing},::Val{false})
+    oidtype(I::Type{<:IID},B::Type{<:AbstractBond},::Type{<:Table},::Val{false})
 
 Get the compatible oid type.
 """
-oidtype(I::Type{<:IID},B::Type{<:AbstractBond},::Type{Nothing})=OID{union(B|>pidtype,I),SVector{B|>dimension,Float},SVector{B|>dimension,Float},Nothing}
-oidtype(I::Type{<:IID},B::Type{<:AbstractBond},::Type{<:Table})=OID{union(B|>pidtype,I),SVector{B|>dimension,Float},SVector{B|>dimension,Float},Int}
+oidtype(I::Type{<:IID},B::Type{<:AbstractBond},::Type{Nothing},::Val{true})=OID{union(B|>pidtype,I),SVector{B|>dimension,Float},SVector{B|>dimension,Float},Nothing}
+oidtype(I::Type{<:IID},B::Type{<:AbstractBond},::Type{<:Table},::Val{true})=OID{union(B|>pidtype,I),SVector{B|>dimension,Float},SVector{B|>dimension,Float},Int}
+oidtype(I::Type{<:IID},B::Type{<:AbstractBond},::Type{Nothing},::Val{false})=OID{union(B|>pidtype,I),Nothing,Nothing,Nothing}
+oidtype(I::Type{<:IID},B::Type{<:AbstractBond},::Type{<:Table},::Val{false})=OID{union(B|>pidtype,I),Nothing,Nothing,Int}
 
 """
     Operator{V,I<:ID} <: Element{V,I}

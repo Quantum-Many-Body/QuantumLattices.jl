@@ -2,7 +2,7 @@ module Terms
 
 using Printf: @printf,@sprintf
 using StaticArrays: SVector
-using ..Spatials: AbstractBond,pidtype
+using ..Spatials: AbstractBond,pidtype,Bonds
 using ..DegreesOfFreedom: Index,IDFConfig,Table,OID,Operators,oidtype,otype
 using ...Interfaces: add!
 using ...Prerequisites: Float,atol,decimaltostr
@@ -549,8 +549,9 @@ Base.zero(term::Term)=replace(term,value=zero(term.value))
 
 """
     expand!(operators::Operators,term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false) -> Operators
+    expand!(operators::Operators,term::Term,bonds::Bonds,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false) -> Operators
 
-Expand the operators of a term on a bond with a given config.
+Expand the operators of a term on a bond/set-of-bonds with a given config.
 
 The `half` parameter determines the behavior of generating operators, which falls into the following two categories
 * `true`: "Hermitian half" of the generated operators
@@ -597,6 +598,14 @@ function expand!(operators::Operators,term::Term,bond::AbstractBond,config::IDFC
     end
     return operators
 end
+@generated function expand!(operators::Operators,term::Term,bonds::Bonds,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false)
+    exprs=[]
+    for i=1:rank(bonds)
+        push!(exprs,:(for bond in bonds.bonds[$i] expand!(operators,term,bond,config,table,half) end))
+    end
+    push!(exprs,:(return operators))
+    return Expr(:block,exprs...)
+end
 termcoords(::Type{<:Nothing},rcoords::NTuple{N,SVector{M,Float}},perm::NTuple{R,Int}) where {N,M,R}=NTuple{R,Nothing}(nothing for i=1:R)
 termcoords(::Type{<:SVector},rcoords::NTuple{N,SVector{M,Float}},perm::NTuple{R,Int}) where {N,M,R}=NTuple{R,SVector{M,Float}}(rcoords[p] for p in perm)
 termseqs(::Nothing,indexes::NTuple{N,<:Index}) where N=NTuple{N,Nothing}(nothing for i=1:N)
@@ -604,13 +613,22 @@ termseqs(::Nothing,indexes::NTuple{N,<:Index}) where N=NTuple{N,Nothing}(nothing
 termfactor(::Nothing,id::ID{<:NTuple{N,OID}},::Val{K}) where {N,K}=isHermitian(id) ? 2 : 1
 
 """
-    expand(term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false) -> Operators
+    expand(term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false,coords::Bool=true) -> Operators
+    expand(term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing},half::Bool,coords::Union{Val{true},Val{false}}) -> Operators
+    expand(term::Term,bonds::Bonds,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false,coords::Bool=true) -> Operators
+    expand(term::Term,bonds::Bonds,config::IDFConfig,table::Union{Table,Nothing},half::Bool,coords::Union{Val{true},Val{false}}) -> Operators
 
-Expand the operators of a term on a bond with a given config.
+Expand the operators of a term on a bond/set-of-bonds with a given config.
 """
-function expand(term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false)
-    optype=otype(term|>typeof,oidtype(config|>typeof|>valtype|>eltype,bond|>typeof,table|>typeof))
+expand(term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false,coords::Bool=true)=expand(term,bond,config,table,half,Val(coords))
+function expand(term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing},half::Bool,coords::Union{Val{true},Val{false}})
+    optype=otype(term|>typeof,oidtype(config|>typeof|>valtype|>eltype,bond|>typeof,table|>typeof,coords))
     expand!(Operators{idtype(optype),optype}(),term,bond,config,table,half)
+end
+expand(term::Term,bonds::Bonds,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false,coords::Bool=true)=expand(term,bonds,config,table,half,Val(coords))
+function expand(term::Term,bonds::Bonds,config::IDFConfig,table::Union{Table,Nothing},half::Bool,coords::Union{Val{true},Val{false}})
+    optype=otype(term|>typeof,oidtype(config|>typeof|>valtype|>eltype,bonds|>eltype,table|>typeof,coords))
+    expand!(Operators{idtype(optype),optype}(),term,bonds,config,table,half)
 end
 
 """

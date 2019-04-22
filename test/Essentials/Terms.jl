@@ -3,7 +3,7 @@ using Printf: @sprintf
 using LinearAlgebra: dot
 using StaticArrays: SVector
 using QuantumLattices.Essentials.Terms
-using QuantumLattices.Essentials.Spatials: Point,PID,Bond,decompose
+using QuantumLattices.Essentials.Spatials: Point,PID,Bond,Bonds,Lattice,decompose
 using QuantumLattices.Essentials.DegreesOfFreedom: IDFConfig,Table,IID,Index,Internal,FilteredAttributes,OID,Operator,Operators
 using QuantumLattices.Interfaces: rank,update!,id,kind
 using QuantumLattices.Prerequisites: Float,decimaltostr
@@ -189,9 +189,9 @@ end
     config=IDFConfig{TFock}(pid->TFock(),[PID(1,1)])
     table=Table(config,by=filter(attr->attr≠:nambu,FilteredAttributes(TIndex)))
     term=Term{'F',:TermMu,2}(:mu,1.5,0,couplings=TCoupling(1.0,ID(TCID(1,2),TCID(1,1))),amplitude=bond->3.0,modulate=true)
-    operators=Operators(TOperator(+2.25,(TIndex(1,1,2),TIndex(1,1,1)),rcoords=(SVector(0.0,0.0),SVector(0.0,0.0)),icoords=(SVector(0.0,0.0),SVector(0.0,0.0)),seqs=(1,1)))
-    @test expand(term,point,config,table,true)==operators
-    @test expand(term,point,config,table,false)==operators*2
+    operators=Operators(TOperator(+2.25,(TIndex(1,1,2),TIndex(1,1,1)),seqs=(1,1)))
+    @test expand(term,point,config,table,true,false)==operators
+    @test expand(term,point,config,table,false,false)==operators*2
 
     bond=Bond(1,Point(PID('b',2),(1.5,1.5),(1.0,1.0)),Point(PID('a',1),(0.5,0.5),(0.0,0.0)))
     config=IDFConfig{TFock}(pid->TFock(),[PID('a',1),PID('b',2)])
@@ -200,4 +200,13 @@ end
     operators=Operators(TOperator(4.5,(TIndex('a',1,2),TIndex('b',2,1)),rcoords=(SVector(0.5,0.5),SVector(1.5,1.5)),icoords=(SVector(0.0,0.0),SVector(1.0,1.0)),seqs=(1,2)))
     @test expand(term,bond,config,table,true)==operators
     @test expand(term,bond,config,table,false)==operators+operators'
+
+    lattice=Lattice("Tuanzi",[Point(PID(1,1),(0.0,0.0),(0.0,0.0))],vectors=[[1.0,0.0]],neighbors=1)
+    bonds=Bonds(lattice)
+    config=IDFConfig{TFock}(pid->TFock(),lattice.pids)
+    table=Table(config,by=filter(attr->attr≠:nambu,FilteredAttributes(TIndex)))
+    term=Term{'F',:TermMu,2}(:mu,1.5,0,couplings=TCoupling(1.0,ID(TCID(1,2),TCID(1,1))),amplitude=bond->3.0,modulate=true)
+    operators=Operators(TOperator(+2.25,(TIndex(1,1,2),TIndex(1,1,1)),seqs=(1,1)))
+    @test expand(term,bonds,config,table,true,false)==operators
+    @test expand(term,bonds,config,table,false,false)==operators*2
 end

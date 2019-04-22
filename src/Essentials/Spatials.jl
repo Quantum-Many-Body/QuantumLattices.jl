@@ -1191,6 +1191,15 @@ Base.eltype(bs::Bonds)=bs|>typeof|>eltype
 end
 
 """
+    rank(bs::Bonds) -> Int
+    rank(::Type{<:Bonds{TS}}) where TS -> Int
+
+Get the rank of a set of lattice bonds.
+"""
+rank(bs::Bonds)=bs|>typeof|>rank
+rank(::Type{<:Bonds{TS}}) where TS=length(TS)
+
+"""
     length(bs::Bonds)=mapreduce(length,+,bs.bonds) -> Int
 
 Get the number of lattice bonds in the set.

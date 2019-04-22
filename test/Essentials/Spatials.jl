@@ -263,6 +263,7 @@ end
     @test bs==Bonds(lattice,allbonds)
     @test isequal(bs,Bonds(lattice,allbonds))
     @test bs|>eltype==bs|>typeof|>eltype==AbstractBond{2,PID{Int}}
+    @test bs|>rank==bs|>typeof|>rank==3
     @test bs|>length==3
     @test bs|>collect==bonds(lattice)
     @test filter(allbonds,bs)==filter((zerothbonds,insidebonds,acrossbonds),bs)==bs
