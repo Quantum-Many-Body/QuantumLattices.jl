@@ -242,8 +242,8 @@ function reciprocals(vectors::AbstractVector{<:AbstractVector{<:Real}})
         @assert length(v1)==length(v2) "reciprocals error: dismatched length of input vectors."
         if length(v1)==2
             det=2pi/(v1[1]*v2[2]-v1[2]*v2[1])
-            push!(result,[det*v2[2],-det*v1[2]])
-            push!(result,[-det*v2[1],det*v1[1]])
+            push!(result,[det*v2[2],-det*v2[1]])
+            push!(result,[-det*v1[2],det*v1[1]])
         else
             v3=SVector{3,Float}(v1[2]*v2[3]-v1[3]*v2[2],v1[3]*v2[1]-v1[1]*v2[3],v1[1]*v2[2]-v1[2]*v2[1])
             V=2pi/volume(v1,v2,v3)

@@ -637,10 +637,11 @@ Replace the rank-1 components of an element with new element/elements.
 function Base.replace(m::Element,pairs::Pair{<:SimpleID,<:Union{Element,Elements}}...)
     @assert m|>typeof|>fieldnames==(:value,:id) "replace error: not supported replacement of $(nameof(typeof(m)))."
     replacedids=NTuple{length(pairs),idtype(m)|>eltype}(pair.first for pair in pairs)
-    result,ms=split(m)
+    ms=split(m)
+    result=ms[1]
     for i=1:rank(m)
         index=findfirst(isequal(m.id[i]),replacedids)
-        result=result*(isa(index,Int) ? pairs[index].second : ms[i])
+        result=result*(isa(index,Int) ? pairs[index].second : ms[i+1])
     end
     return result
 end
@@ -656,7 +657,7 @@ end
     @assert mapreduce(m->(m|>fieldnames)==(:value,:id),&,ms) "elementscommontype error: not supported."
     val=mapreduce(valtype,promote_type,ms)
     name=reduce(typejoin,ms)|>rawelement
-    return Elements{ID,name{val,<:ID}}
+    return isconcretetype(val) ? Elements{ID,name{val}} : Elements{ID,name{<:val}}
 end
 
 """

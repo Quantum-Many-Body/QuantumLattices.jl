@@ -450,19 +450,25 @@ Get the latex string representation of an operator.
 """
 Base.repr(opt::Operator,::Nothing=nothing)=repr(opt,opt|>typeof|>optdefaultlatex)
 @generated function Base.repr(opt::Operator,l::LaTeX)
-    rank(opt)==0 && return :(replace(decimaltostr(opt.value)," "=>""))
+    rank(opt)==0 && return :(replace(valuetolatextext(opt.value)," "=>""))
     expr=Expr(:tuple,:(valuetostr(opt.value)),[:(repr(opt.id[$i],l)) for i=1:rank(opt)]...)
     return :(join($expr,""))
 end
 function valuetostr(v)
     v==1 && return ""
     v==-1 && return "-"
-    result=decimaltostr(v)
+    result=valuetolatextext(v)
     if occursin(" ",result) || (isa(v,Complex) && real(v)≠0 && imag(v)≠0)
         bra,ket=occursin("(",result) ? ("[","]") : ("(",")")
         result=@sprintf "%s%s%s" bra replace(result," "=>"") ket
     end
     return result
+end
+valuetolatextext(value::Union{Real,Complex})=decimaltostr(value)
+function valuetolatextext(value)
+    io=IOBuffer()
+    showable(MIME"text/latex"(),value) ? show(IOContext(io,:limit=>false),MIME"text/latex"(),value) : show(IOContext(io,:limit=>false),MIME"text/plain"(),value)
+    return replace(replace(String(take!(io)),"\\begin{equation*}"=>""),"\\end{equation*}"=>"")
 end
 
 """

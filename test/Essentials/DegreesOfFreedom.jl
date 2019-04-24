@@ -177,6 +177,9 @@ end
 
     opts=Operators(DOperator(1.0-1.0im,(DIndex('d',2,2),DIndex('d',1,1))),DOperator(-1.0,(DIndex('d',1,2),DIndex('d',1,1))))
     @test repr(opts,LaTeX{(:nambu,),(:site,)}('c'))=="(1.0-1.0im)c^{\\dagger}_{2}c^{}_{1}-c^{\\dagger}_{1}c^{}_{1}"
+
+    opt=DOperator(:h,(DIndex('d',2,2),DIndex('d',1,1)))
+    @test repr(opt)==":hd^{\\dagger}_{2}d^{}_{1}"
 end
 
 @testset "Boundary" begin
