@@ -2345,7 +2345,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "man/Mathematics/AlgebraOverFields.html#Base.replace-Tuple{QuantumLattices.Mathematics.AlgebraOverFields.Element,Vararg{Pair{#s17,#s16} where #s16<:Union{Element, Dict{I,M} where M<:Element where I<:ID} where #s17<:QuantumLattices.Mathematics.AlgebraOverFields.SimpleID,N} where N}",
+    "location": "man/Mathematics/AlgebraOverFields.html#Base.replace-Tuple{QuantumLattices.Mathematics.AlgebraOverFields.Element,Vararg{Pair{#s19,#s17} where #s17<:Union{Element, Dict{I,M} where M<:Element where I<:ID} where #s19<:QuantumLattices.Mathematics.AlgebraOverFields.SimpleID,N} where N}",
     "page": "Algebra over fields",
     "title": "Base.replace",
     "category": "method",
@@ -3477,7 +3477,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatials",
     "title": "Base.iterate",
     "category": "function",
-    "text": "iterate(bond::Bond,state=1)\n\nIterate over the points in a bond.\n\n\n\n\n\n"
+    "text": "iterate(bs::Bonds,state=(1,0))\n\nIterate over the lattice bonds in the set.\n\n\n\n\n\n"
 },
 
 {
@@ -3493,7 +3493,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatials",
     "title": "Base.iterate",
     "category": "function",
-    "text": "iterate(bs::Bonds,state=(1,0))\n\nIterate over the lattice bonds in the set.\n\n\n\n\n\n"
+    "text": "iterate(bond::Bond,state=1)\n\nIterate over the points in a bond.\n\n\n\n\n\n"
 },
 
 {
@@ -5029,7 +5029,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "QuantumLattices.Interfaces.permute",
     "category": "function",
-    "text": "permute(::Type{<:BOperator},id1::OID{<:FIndex},id2::OID{<:FIndex},::Any=nothing) -> Tuple{Vararg{BOperator}}\n\nPermute two bosonic oid and get the result.\n\n\n\n\n\n"
+    "text": "permute(::Type{<:FOperator},id1::OID{<:FIndex},id2::OID{<:FIndex},::Any=nothing) -> Tuple{Vararg{FOperator}}\n\nPermute two fermionic oid and get the result.\n\n\n\n\n\n"
 },
 
 {
@@ -5037,7 +5037,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Fock package",
     "title": "QuantumLattices.Interfaces.permute",
     "category": "function",
-    "text": "permute(::Type{<:FOperator},id1::OID{<:FIndex},id2::OID{<:FIndex},::Any=nothing) -> Tuple{Vararg{FOperator}}\n\nPermute two fermionic oid and get the result.\n\n\n\n\n\n"
+    "text": "permute(::Type{<:BOperator},id1::OID{<:FIndex},id2::OID{<:FIndex},::Any=nothing) -> Tuple{Vararg{BOperator}}\n\nPermute two bosonic oid and get the result.\n\n\n\n\n\n"
 },
 
 {
