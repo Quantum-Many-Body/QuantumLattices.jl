@@ -4,7 +4,7 @@ os:
   - linux
 
 julia:
-  - 1.0
+  - 1.1
 
 after_success:
   - julia --inline=no -e 'using Pkg; Pkg.add("Coverage"); import QuantumLattices; joinpath(dirname(pathof(QuantumLattices))); using Coverage; Codecov.submit(Codecov.process_folder())'
