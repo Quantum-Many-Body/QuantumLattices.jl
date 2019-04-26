@@ -15,8 +15,6 @@ using QuantumLattices
 
 ## Term
 
-## Boundary
-
 ## Generator
 
 ## Manul

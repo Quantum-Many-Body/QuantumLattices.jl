@@ -10,7 +10,7 @@ using ...Prerequisites: Float,delta,decimaltostr
 using ...Mathematics.AlgebraOverFields: SimpleID,ID,Element
 using ...Mathematics.VectorSpaces: VectorSpace,IsMultiIndexable,MultiIndexOrderStyle
 
-import ..DegreesOfFreedom: script,twist,otype,isHermitian,optdefaultlatex
+import ..DegreesOfFreedom: script,otype,isHermitian,optdefaultlatex
 import ..Terms: couplingcenter,statistics,abbr,termfactor
 import ...Interfaces: dims,inds,⊗,⋅,expand,expand!,permute
 import ...Mathematics.AlgebraOverFields: rawelement
@@ -143,16 +143,16 @@ script(oid::OID{<:FIndex},::Val{:spinsym})=oid.index.spin==1 ? "↓" : oid.index
 script(oid::OID{<:FIndex},::Val{:nambu})=oid.index.nambu==CREATION ? "\\dagger" : ""
 
 """
-    twist(id::OID{<:FIndex},vectors::AbstractVector{<:AbstractVector{Float}},values::AbstractVector{Float}) -> Complex{Float}
+    angle(id::OID{<:FIndex},vectors::AbstractVector{<:AbstractVector{Float}},values::AbstractVector{Float}) -> Complex{Float}
 
 Get the twist phase corresponding to a Fock oid.
 """
-function twist(id::OID{<:FIndex},vectors::AbstractVector{<:AbstractVector{Float}},values::AbstractVector{Float})
-    phase=  length(vectors)==1 ? exp(2.0im*pi*dot(decompose(id.icoord,vectors[1]),values)) :
-            length(vectors)==2 ? exp(2.0im*pi*dot(decompose(id.icoord,vectors[1],vectors[2]),values)) :
-            length(vectors)==3 ? exp(2.0im*pi*dot(decompose(id.icoord,vectors[1],vectors[2],vectors[3]),values)) :
-            error("twist error: not supported number of input basis vectors.")
-    id.index.nambu==ANNIHILATION ? phase : id.index.nambu==CREATION ? conj(phase) : error("twist error: not supported Fock index.")
+function Base.angle(id::OID{<:FIndex},vectors::AbstractVector{<:AbstractVector{Float}},values::AbstractVector{Float})
+    phase=  length(vectors)==1 ? 2pi*dot(decompose(id.icoord,vectors[1]),values) :
+            length(vectors)==2 ? 2pi*dot(decompose(id.icoord,vectors[1],vectors[2]),values) :
+            length(vectors)==3 ? 2pi*dot(decompose(id.icoord,vectors[1],vectors[2],vectors[3]),values) :
+            error("angle error: not supported number of input basis vectors.")
+    id.index.nambu==ANNIHILATION ? phase : id.index.nambu==CREATION ? -phase : error("angle error: not supported Fock index.")
 end
 
 """

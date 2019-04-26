@@ -170,7 +170,7 @@ end
 
     point=Point(PID('a',1),(0.5,0.5),(0.0,0.0))
     config=IDFConfig{Spin}(pid->Spin(atom=pid.site%2,norbital=2,spin=0.5),[point.pid])
-    table=Table(config,by=usualspinindextotuple)
+    table=Table(config,usualspinindextotuple)
     term=SpinTerm{1}(:h,1.5,0,couplings=Sᶻ())
     operators=Operators(SOperator(1.5,ID(OID(SIndex('a',1,1,0.5,'z'),[0.5,0.5],[0.0,0.0],1))),
                         SOperator(1.5,ID(OID(SIndex('a',1,2,0.5,'z'),[0.5,0.5],[0.0,0.0],2)))
@@ -179,7 +179,7 @@ end
 
     bond=Bond(1,Point(PID('a',1),(0.0,0.0),(0.0,0.0)),Point(PID('b',1),(0.5,0.5),(0.0,0.0)))
     config=IDFConfig{Spin}(pid->Spin(atom=pid.site%2,norbital=2,spin=0.5),[bond.spoint.pid,bond.epoint.pid])
-    table=Table(config,by=usualspinindextotuple)
+    table=Table(config,usualspinindextotuple)
     term=SpinTerm{2}(:J,1.5,1,couplings=Heisenberg())
     operators=Operators(SOperator(1.50,ID(OID(SIndex('b',1,2,0.5,'z'),[0.5,0.5],[0.0,0.0],4),OID(SIndex('a',1,2,0.5,'z'),[0.0,0.0],[0.0,0.0],2))),
                         SOperator(0.75,ID(OID(SIndex('b',1,2,0.5,'-'),[0.5,0.5],[0.0,0.0],4),OID(SIndex('a',1,2,0.5,'+'),[0.0,0.0],[0.0,0.0],2))),

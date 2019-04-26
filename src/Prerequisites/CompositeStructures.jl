@@ -2,7 +2,7 @@ module CompositeStructures
 
 using ..TypeTraits: efficientoperations
 
-export CompositeTuple,CompositeNTuple,CompositeVector,CompositeDict
+export CompositeTuple,CompositeNTuple,CompositeVector,CompositeDict,NamedContainer
 
 """
     CompositeTuple{T<:Tuple}
@@ -134,5 +134,23 @@ Base.keys(cd::CompositeDict)=keys(getfield(cd,:contents))
 Base.values(cd::CompositeDict)=values(getfield(cd,:contents))
 Base.pairs(cd::CompositeDict)=pairs(getfield(cd,:contents))
 Base.convert(::Type{Dict},cd::CompositeDict)=getfield(cd,:contents)
+
+"""
+    NamedContainer{T,Names}=NamedTuple{Names,<:Tuple{Vararg{T}}}
+
+NamedContainer is just a wrapper of Julia NamedTuple, but not a composite type.
+"""
+const NamedContainer{T,Names}=NamedTuple{Names,<:Tuple{Vararg{T}}}
+
+"""
+    NamedContainer{Names}(contents...) where Names -> NamedTuple{Names,typeof(contents)}
+
+Construct a named container.
+"""
+@generated function NamedContainer{Names}(first,contents...) where Names
+    @assert length(Names)==length(contents)+1 "NamedContainer error: dismatched length between names and contents."
+    Expr(:tuple,:($(Names[1])=first),[:($name=contents[$i]) for (i,name) in enumerate(Names[2:end])]...)
+end
+NamedContainer{()}()=NamedTuple()
 
 end #module

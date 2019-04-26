@@ -2,7 +2,8 @@ using Test
 using Random: seed!
 using StaticArrays: SVector
 using QuantumLattices.Essentials.Spatials
-using QuantumLattices.Interfaces: decompose,rank,dimension,kind,expand
+using QuantumLattices.Interfaces: decompose,rank,dimension,kind,expand,reset!
+using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Prerequisites.SimpleTrees: leaves
 
 @testset "distance" begin
@@ -218,6 +219,7 @@ end
                             vectors=[[1.0,0.0],[0.0,1.0]],
                             neighbors=Dict(1=>√2/2,-1=>√2/20)
                         )
+    @test latticetype(lattice)==latticetype(typeof(lattice))==Lattice{2,PID{Int}}
     @test setdiff(bonds(lattice),bonds(lattice,zerothbonds,insidebonds,acrossbonds))|>length==0
     @test setdiff(bonds(lattice,insidebonds),bonds(lattice,intrabonds,interbonds))|>length==0
 end
@@ -260,14 +262,19 @@ end
 @testset "Bonds" begin
     lattice=Lattice("Tuanzi",[Point(PID(1,1),(0.5,0.5),(0.0,0.0))],vectors=[[1.0,0.0],[0.0,1.0]],neighbors=1)
     bs=Bonds(lattice)
-    @test bs==Bonds(lattice,allbonds)
-    @test isequal(bs,Bonds(lattice,allbonds))
     @test bs|>eltype==bs|>typeof|>eltype==AbstractBond{2,PID{Int}}
+    @test bs==Bonds(lattice,allbonds) && isequal(bs,Bonds(lattice,allbonds))
+    @test bs|>length==3 && bs|>size==(3,)
+    @test bs|>bondtypes==bs|>typeof|>bondtypes==(zerothbonds,insidebonds,acrossbonds)
+    @test bs|>latticetype==bs|>typeof|>latticetype==Lattice{2,PID{Int}}
     @test bs|>rank==bs|>typeof|>rank==3
-    @test bs|>length==3
     @test bs|>collect==bonds(lattice)
-    @test filter(allbonds,bs)==filter((zerothbonds,insidebonds,acrossbonds),bs)==bs
-    @test filter(zerothbonds,bs)==Bonds(lattice,zerothbonds)
-    @test filter(insidebonds,bs)==Bonds(lattice,insidebonds)
-    @test filter(acrossbonds,bs)==Bonds(lattice,acrossbonds)
+    @test bs[1]==bs.bonds[1][1] && bs[2]==bs.bonds[3][1] && bs[3]==bs.bonds[3][2]
+    @test filter(allbonds,bs,:include|>Val)==filter((zerothbonds,insidebonds,acrossbonds),bs,:include|>Val)==bs
+    @test filter(zerothbonds,bs,:include|>Val)==filter((insidebonds,acrossbonds),bs,:exclude|>Val)==Bonds(lattice,zerothbonds)
+    @test filter(insidebonds,bs,:include|>Val)==filter((zerothbonds,acrossbonds),bs,:exclude|>Val)==Bonds(lattice,insidebonds)
+    @test filter(acrossbonds,bs,:include|>Val)==filter((zerothbonds,insidebonds),bs,:exclude|>Val)==Bonds(lattice,acrossbonds)
+    emptybs=Bonds{(zerothbonds,insidebonds,acrossbonds),Lattice{2,PID{Int}}}((Point{2,PID{Int}}[],Bond{2,PID{Int}}[],Bond{2,PID{Int}}[]))
+    @test filter(bond->dimension(bond)==3,bs)==empty!(deepcopy(bs))==empty(bs)==emptybs
+    @test reset!(emptybs,lattice)==bs
 end

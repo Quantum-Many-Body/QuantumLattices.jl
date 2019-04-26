@@ -5,8 +5,8 @@ using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Essentials.DegreesOfFreedom
 using QuantumLattices.Essentials.Spatials: PID,Point,pidtype,rcoord,icoord
 using QuantumLattices.Mathematics.AlgebraOverFields: ID
-import QuantumLattices.Interfaces: dimension,decompose,update!,sequence
-import QuantumLattices.Essentials.DegreesOfFreedom: twist,script,optdefaultlatex,latexsuperscript,latexsubscript
+import QuantumLattices.Interfaces: dimension,decompose,update!,sequence,reset!
+import QuantumLattices.Essentials.DegreesOfFreedom: script,optdefaultlatex,latexsuperscript,latexsubscript
 import QuantumLattices.Mathematics.AlgebraOverFields: rawelement
 
 struct DID <: IID nambu::Int end
@@ -19,12 +19,12 @@ struct DIndex{S} <: Index{PID{S},DID}
 end
 Base.fieldnames(::Type{<:DIndex})=(:scope,:site,:nambu)
 Base.union(::Type{P},::Type{I}) where {P<:PID,I<:DID}=DIndex{fieldtype(P,:scope)}
-function twist(id::OID{<:DIndex},vectors::AbstractVector{<:AbstractVector{Float}},values::AbstractVector{Float})
-    phase=  length(vectors)==1 ? exp(2.0im*pi*dot(decompose(id.icoord,vectors[1]),values)) :
-            length(vectors)==2 ? exp(2.0im*pi*dot(decompose(id.icoord,vectors[1],vectors[2]),values)) :
-            length(vectors)==3 ? exp(2.0im*pi*dot(decompose(id.icoord,vectors[1],vectors[2],vectors[3]),values)) :
-            error("twist error: not supported number of input basis vectors.")
-    id.index.nambu==1 ? phase : conj(phase)
+function Base.angle(id::OID{<:DIndex},vectors::AbstractVector{<:AbstractVector{Float}},values::AbstractVector{Float})
+    phase=  length(vectors)==1 ? 2pi*dot(decompose(id.icoord,vectors[1]),values) :
+            length(vectors)==2 ? 2pi*dot(decompose(id.icoord,vectors[1],vectors[2]),values) :
+            length(vectors)==3 ? 2pi*dot(decompose(id.icoord,vectors[1],vectors[2],vectors[3]),values) :
+            error("angle error: not supported number of input basis vectors.")
+    id.index.nambu==1 ? phase : -phase
 end
 
 script(oid::OID{<:DIndex},::Val{:site})=oid.index.site
@@ -62,6 +62,7 @@ end
     @test directindextotuple(index)==('S',4,1)
     filteredindextotuple=FilteredAttributes(DIndex)
     @test filteredindextotuple==FilteredAttributes(:scope,:site,:nambu)
+    @test isequal(filteredindextotuple,FilteredAttributes(:scope,:site,:nambu))
     @test filteredindextotuple|>length==3
     @test filteredindextotuple|>typeof|>length==3
     @test filteredindextotuple(index)==('S',4,1)
@@ -83,7 +84,7 @@ end
 @testset "IDFConfig" begin
     config=IDFConfig{DFock}(pid->DFock((pid.site-1)%2+1,2),[PID(1,1),PID(1,2)])
     @test convert(Dict,config)==Dict(PID(1,1)=>DFock(1,2),PID(1,2)=>DFock(2,2))
-    replace!(config,PID(2,1),PID(2,2))
+    reset!(config,(PID(2,1),PID(2,2)))
     @test convert(Dict,config)==Dict(PID(2,1)=>DFock(1,2),PID(2,2)=>DFock(2,2))
 end
 
@@ -92,16 +93,20 @@ end
 
     table=Table([DIndex(1,1,1),DIndex(1,1,2)])
     @test table==Dict(DIndex(1,1,1)=>1,DIndex(1,1,2)=>2)
-    table=Table([DIndex(1,1,1),DIndex(1,1,2)],by=by)
+    table=Table([DIndex(1,1,1),DIndex(1,1,2)],by)
     @test table==Dict(DIndex(1,1,1)=>1,DIndex(1,1,2)=>1)
 
     config=IDFConfig{DFock}(pid->DFock((pid.site-1)%2+1,2),[PID(1,1),PID(1,2)])
     inds1=(DIndex(PID(1,1),iid) for iid in DFock(1,2))|>collect
     inds2=(DIndex(PID(1,2),iid) for iid in DFock(2,2))|>collect
     @test Table(config)==Table([inds1;inds2])
-    @test Table(config,by=by)==Table([inds1;inds2],by=by)
+    @test Table(config,by)==Table([inds1;inds2],by)
     @test Table(config)==union(Table(inds1),Table(inds2))
-    @test Table(config,by=by)|>reverse==Dict(1=>Set([DIndex(1,1,1),DIndex(1,1,2)]),2=>Set([DIndex(1,2,1),DIndex(1,2,2)]))
+    @test Table(config,by)|>reverse==Dict(1=>Set([DIndex(1,1,1),DIndex(1,1,2)]),2=>Set([DIndex(1,2,1),DIndex(1,2,2)]))
+
+    table=Table(config)
+    @test reset!(empty(table),[inds1;inds2])==table
+    @test reset!(empty(table),config)==table
 end
 
 @testset "OID" begin
@@ -185,7 +190,13 @@ end
 @testset "Boundary" begin
     opt=DOperator(4.5,(DIndex('a',1,2),DIndex('b',2,1)),rcoords=(SVector(0.5,0.5),SVector(1.5,1.5)),icoords=(SVector(0.0,0.0),SVector(1.0,1.0)),seqs=(1,2))
     bound=Boundary{(:θ₁,:θ₂)}([0.1,0.2],[[1.0,0.0],[0.0,1.0]])
+    @test bound==deepcopy(bound) && isequal(bound,deepcopy(bound))
+    @test angle(bound,opt)≈0.6pi
     @test bound(opt)≈replace(opt,value=4.5*exp(2im*pi*0.3))
     update!(bound,θ₁=0.3)
     @test bound(opt)≈replace(opt,value=4.5*exp(2im*pi*0.5))
+    bound=Boundary()
+    @test angle(bound,opt)==0
+    @test bound(opt)==opt
+    @test update!(bound)==bound
 end

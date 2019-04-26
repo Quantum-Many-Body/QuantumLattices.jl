@@ -25,6 +25,8 @@ using QuantumLattices
 
 ### Cylinder
 
+## Bonds
+
 ## Manul
 
 ```@autodocs

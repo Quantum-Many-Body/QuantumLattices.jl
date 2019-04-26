@@ -11,15 +11,15 @@ using ...Prerequisites.SimpleTrees: SimpleTree,simpletreedepth,isleaf
 using ...Mathematics.Combinatorics: Combinations
 using ...Mathematics.AlgebraOverFields: SimpleID
 
-import ...Interfaces: decompose,rank,dimension,kind,expand
+import ...Interfaces: decompose,rank,dimension,kind,expand,reset!
 
 export distance,azimuthd,azimuth,polard,polar,volume
 export isparallel,isonline,isintratriangle,issubordinate
 export reciprocals,translate,rotate,tile,minimumlengths
 export intralinks,interlinks
 export PID,AbstractBond,pidtype,Point,Bond,rcoord,icoord,isintracell
-export AbstractLattice,nneighbor,LatticeIndex,bonds!,bonds,Bonds,latticebondsstructure
-export LatticeBonds,allbonds,zerothbonds,insidebonds,acrossbonds,intrabonds,interbonds
+export AbstractLattice,nneighbor,LatticeIndex,bonds!,bonds,LatticeBonds,Bonds,latticetype,bondtypes
+export latticebondsstructure,allbonds,zerothbonds,insidebonds,acrossbonds,intrabonds,interbonds
 export Lattice,SuperLattice,Cylinder
 
 """
@@ -981,6 +981,15 @@ struct SuperLattice{L<:AbstractLattice,N,P<:PID} <: AbstractLattice{N,P}
     end
 end
 
+"""
+    latticetype(sl::SuperLattice)
+    latticetype(::Type{<:SuperLattice{L}}) where L<:AbstractLattice
+
+Get the sublattice type of a superlattice.
+"""
+latticetype(sl::SuperLattice)=sl|>typeof|>latticetype
+latticetype(::Type{<:SuperLattice{L}}) where L<:AbstractLattice=L
+
 struct IntraBonds <: LatticeBonds{2} end
 struct InterBonds <: LatticeBonds{2} end
 """
@@ -1145,16 +1154,18 @@ function (cylinder::Cylinder)(scopes::Any...;coordination::Int=8)
 end
 
 """
-    Bonds{TS,L}(bonds::Tuple{Vararg{Vector{<:AbstractBond}}}) where {TS,L<:AbstractLattice}
+    Bonds{T,L}(bonds::Tuple{Vararg{Vector{<:AbstractBond}}}) where {T,L<:AbstractLattice}
     Bonds(lattice::AbstractLattice,types::LatticeBonds...)
 
 A set of lattice bonds.
+
+`Bonds` itself is an `AbstractVector` of `AbstractBond`. The need for such a struct is to ensure the type stability during the iteration over a set of different concrete bonds. Although the default `iterate` function does not achieve this goal, users can get it with the generated function trick. Besides, it provides a high level of management of different categories of bonds based on the `LatticeBonds` system.
 """
-struct Bonds{TS,L<:AbstractLattice,BS<:Tuple{Vararg{Vector{<:AbstractBond}}}}
+struct Bonds{T,L<:AbstractLattice,BS<:Tuple{Vararg{Vector{<:AbstractBond}}},B<:AbstractBond} <: AbstractVector{B}
     bonds::BS
-    function Bonds{TS,L}(bonds::Tuple{Vararg{Vector{<:AbstractBond}}}) where {TS,L<:AbstractLattice}
-        @assert isa(TS,Tuple{Vararg{LatticeBonds}}) && length(TS)==length(bonds) "Bonds error: dismatched input types and bonds."
-        new{TS,L,typeof(bonds)}(bonds)
+    function Bonds{T,L}(bonds::Tuple{Vararg{Vector{<:AbstractBond}}}) where {T,L<:AbstractLattice}
+        @assert isa(T,Tuple{Vararg{LatticeBonds}}) && length(T)==length(bonds) "Bonds error: dismatched input types and bonds."
+        new{T,L,typeof(bonds),mapreduce(eltype,typejoin,bonds)}(bonds)
     end
 end
 Bonds(lattice::AbstractLattice)=Bonds(lattice,allbonds)
@@ -1180,31 +1191,36 @@ Base.:(==)(bonds1::Bonds,bonds2::Bonds) = ==(efficientoperations,bonds1,bonds2)
 Base.isequal(bonds1::Bonds,bonds2::Bonds)=isequal(efficientoperations,bonds1,bonds2)
 
 """
-    eltype(bs::Bonds)
-    eltype(::Type{<:Bonds{TS,<:AbstractLattice,BS}}) where {TS,BS<:Tuple{Vararg{Vector{<:AbstractBond}}}}
+    size(bs::Bonds) -> Tuple{Int}
 
-Get the eltype of a set of lattice bonds.
+Get the size of the set of lattice bonds.
 """
-Base.eltype(bs::Bonds)=bs|>typeof|>eltype
-@generated function Base.eltype(::Type{<:Bonds{TS,<:AbstractLattice,BS}}) where {TS,BS<:Tuple{Vararg{Vector{<:AbstractBond}}}}
-    mapreduce(eltype,typejoin,fieldtype(BS,i) for i=1:fieldcount(BS))
-end
+Base.size(bs::Bonds)=(mapreduce(length,+,bs.bonds),)
+
+"""
+    bondtypes(bs::Bonds) -> Tuple{Vararg{LatticeBonds}}
+    bondtypes(::Type{<:Bonds{T}}) where T -> Tuple{Vararg{LatticeBonds}}
+
+Get the bondtypes of a set of lattice bonds.
+"""
+bondtypes(bs::Bonds)=bs|>typeof|>bondtypes
+bondtypes(::Type{<:Bonds{T}}) where T=T
+
+"""
+    latticetype(bs::Bonds)
+    latticetype(::Type{<:Bonds{T,L} where T}) where L<:AbstractLattice
+"""
+latticetype(bs::Bonds)=bs|>typeof|>latticetype
+latticetype(::Type{<:Bonds{T,L} where T}) where L<:AbstractLattice=L
 
 """
     rank(bs::Bonds) -> Int
-    rank(::Type{<:Bonds{TS}}) where TS -> Int
+    rank(::Type{<:Bonds{T}}) where T -> Int
 
 Get the rank of a set of lattice bonds.
 """
 rank(bs::Bonds)=bs|>typeof|>rank
-rank(::Type{<:Bonds{TS}}) where TS=length(TS)
-
-"""
-    length(bs::Bonds)=mapreduce(length,+,bs.bonds) -> Int
-
-Get the number of lattice bonds in the set.
-"""
-Base.length(bs::Bonds)=mapreduce(length,+,bs.bonds)
+rank(::Type{<:Bonds{T}}) where T=length(T)
 
 """
     iterate(bs::Bonds,state=(1,0))
@@ -1222,17 +1238,35 @@ function Base.iterate(bs::Bonds,state=(1,0))
 end
 
 """
-    filter(select::LatticeBonds,bs::Bonds) -> Bonds
-    filter(select::Tuple{Vararg{LatticeBonds}},bs::Bonds) -> Bonds
+    getindex(bs::Bonds,i::Int) -> eltype(bs)
+
+Get the ith bond in the set.
+"""
+function Base.getindex(bs::Bonds,i::Int)
+    r,k=1,i
+    while r<=rank(bs) && k>length(bs.bonds[r])
+        k=k-length(bs.bonds[r])
+        r=r+1
+    end
+    r>rank(bs) && error("getindex error: attempt to access $(length(bs))-element Bonds at index [$k].")
+    return bs.bonds[r][k]
+end
+
+"""
+    filter(lbs::LatticeBonds,bs::Bonds,choice::Union{Val{:include},Val{:exclude}}=Val(:include)) -> Bonds
+    filter(lbs::Tuple{Vararg{LatticeBonds}},bs::Bonds,choice::Union{Val{:include},Val{:exclude}}=Val(:include)) -> Bonds
 
 Get a subset of a set of lattice bonds.
+
+When `choice=Val(:include)`, the lattice bonds indicated by `lbs` will be selected;
+When `choice=Val(:exclude)`, the lattice bonds not indicated by `lbs` will be selected.
 """
-Base.filter(select::LatticeBonds,bs::Bonds)=bondfilter(Val((select,)),bs)
-Base.filter(select::Tuple{Vararg{LatticeBonds}},bs::Bonds)=bondfilter(Val(select),bs)
-@generated function bondfilter(::Val{VS},bs::Bonds{TS,L}) where {VS,TS,L<:Union{AbstractLattice,Nothing}}
+Base.filter(lbs::LatticeBonds,bs::Bonds,choice::Union{Val{:include},Val{:exclude}}=Val(:include))=bondfilter(Val((lbs,)),bs,choice)
+Base.filter(lbs::Tuple{Vararg{LatticeBonds}},bs::Bonds,choice::Union{Val{:include},Val{:exclude}}=Val(:include))=bondfilter(Val(lbs),bs,choice)
+@generated function bondfilter(::Val{VS},bs::Bonds,::Val{:include}) where VS
     types,bonds=[],[]
-    for V in expand(L,Val(VS))
-        index=findfirst(isequal(V),TS)
+    for V in expand(latticetype(bs),Val(VS))
+        index=findfirst(isequal(V),bondtypes(bs))
         if isa(index,Int)
             push!(types,V)
             push!(bonds,:(bs.bonds[$index]))
@@ -1240,7 +1274,69 @@ Base.filter(select::Tuple{Vararg{LatticeBonds}},bs::Bonds)=bondfilter(Val(select
     end
     types=Tuple(types)
     bonds=Expr(:tuple,bonds...)
-    return :(Bonds{$types,L}($bonds))
+    return :(Bonds{$types,latticetype(bs)}($bonds))
+end
+@generated function bondfilter(::Val{VS},bs::Bonds,::Val{:exclude}) where VS
+    types,bonds=[],[]
+    excludes=expand(latticetype(bs),Val(VS))
+    for (i,V) in enumerate(bondtypes(bs))
+        if V ∉ excludes
+            push!(types,V)
+            push!(bonds,:(bs.bonds[$i]))
+        end
+    end
+    types=Tuple(types)
+    bonds=Expr(:tuple,bonds...)
+    return :(Bonds{$types,latticetype(bs)}($bonds))
+end
+
+"""
+    filter(select::Function,bs::Bonds) -> Bonds
+
+Get a filtered set of bonds by a select function.
+"""
+@generated function Base.filter(select::Function,bs::Bonds)
+    bonds=Expr(:tuple,[:(filter(select,bs.bonds[$i])) for i=1:rank(bs)]...)
+    return :(Bonds{bondtypes(bs),latticetype(bs)}($bonds))
+end
+
+"""
+    empty!(bs::Bonds) -> Bonds
+
+Empty a set of lattice bonds.
+"""
+@generated function Base.empty!(bs::Bonds)
+    exprs=[:(empty!(bs.bonds[$i])) for i=1:rank(bs)]
+    push!(exprs,:(return bs))
+    return Expr(:block,exprs...)
+end
+
+"""
+    empty(bs::Bonds) -> Bonds
+
+Get an empty copy of a set of lattice bonds.
+"""
+@generated function Base.empty(bs::Bonds)
+    bonds=Expr(:tuple,[:(empty(bs.bonds[$i])) for i=1:rank(bs)]...)
+    return :(Bonds{bondtypes(bs),latticetype(bs)}($bonds))
+end
+
+"""
+    reset!(bs::Bonds,lattice::AbstractLattice) -> Bonds
+
+Reset a set of lattice bonds by a new lattice.
+"""
+@generated function reset!(bs::Bonds,lattice::AbstractLattice)
+    exprs=[]
+    push!(exprs,quote
+        @assert latticetype(bs)>:typeof(lattice) "reset! error: dismatched bonds and lattice."
+        empty!(bs)
+    end)
+    for i=1:rank(bs)
+        push!(exprs,:(bonds!(bs.bonds[$i],lattice,bondtypes(bs)[$i])))
+    end
+    push!(exprs,:(return bs))
+    return Expr(:block,exprs...)
 end
 
 end #module

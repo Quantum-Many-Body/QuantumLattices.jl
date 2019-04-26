@@ -16,6 +16,8 @@ CurrentModule=QuantumLattices.Essentials.DegreesOfFreedom
 
 ## Operators
 
+## Boundary
+
 ## Manul
 
 ```@autodocs

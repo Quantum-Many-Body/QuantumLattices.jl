@@ -117,3 +117,8 @@ end
     @test filter(p->p.second<=3,d)==FD("Info",Dict("a"=>1,"b"=>2,"c"=>3)) && d==FD("Info",Dict("a"=>1,"b"=>2,"c"=>3,"d"=>4))
     @test filter!(p->p.second<=3,d)==FD("Info",Dict("a"=>1,"b"=>2,"c"=>3)) && d==FD("Info",Dict("a"=>1,"b"=>2,"c"=>3))
 end
+
+@testset "NamedContainer" begin
+    @test NamedContainer{(:a,:b)}(1,'h')==(a=1,b='h')
+    @test NamedContainer{()}()==NamedTuple()
+end
