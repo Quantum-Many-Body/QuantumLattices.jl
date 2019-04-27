@@ -48,7 +48,7 @@ makedocs(
 deploydocs(
     repo=       "github.com/Quantum-Many-Body/QuantumLattices.jl.git",
     target=     "build",
-    julia=      "1.0",
+    julia=      "1.1",
     osname=     "linux",
     deps=       nothing,
     make=       nothing,
