@@ -8,4 +8,4 @@ julia:
 
 after_success:
   - julia --inline=no -e 'using Pkg; Pkg.add("Coverage"); import QuantumLattices; joinpath(dirname(pathof(QuantumLattices))); using Coverage; Codecov.submit(Codecov.process_folder())'
-  - julia -e 'using Pkg; Pkg.add("Documenter"); import QuantumLattices; joinpath(dirname(pathof(QuantumLattices))); include(joinpath("docs","make.jl"))'
+  - julia -e 'using Pkg; Pkg.add("Documenter"); ENV["DOCUMENTER_DEBUG"] = "true"; import QuantumLattices; joinpath(dirname(pathof(QuantumLattices))); include(joinpath("docs","make.jl"))'
