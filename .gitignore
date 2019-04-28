@@ -8,5 +8,3 @@ docs/build/
 .ipynb_checkpoints/
 
 desktop.ini
-
-Require.jl
