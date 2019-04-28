@@ -3573,7 +3573,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatials",
     "title": "Base.iterate",
     "category": "function",
-    "text": "iterate(p::Point,state=1)\n\nIterate over the point.\n\n\n\n\n\n"
+    "text": "iterate(bs::Bonds,state=(1,0))\n\nIterate over the lattice bonds in the set.\n\n\n\n\n\n"
 },
 
 {
@@ -3581,7 +3581,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Spatials",
     "title": "Base.iterate",
     "category": "function",
-    "text": "iterate(bs::Bonds,state=(1,0))\n\nIterate over the lattice bonds in the set.\n\n\n\n\n\n"
+    "text": "iterate(p::Point,state=1)\n\nIterate over the point.\n\n\n\n\n\n"
 },
 
 {
@@ -4157,7 +4157,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Degrees of freedom",
     "title": "Base.repr",
     "category": "function",
-    "text": "repr(opt::Operator,l::Union{LaTeX,Nothing}=nothing) -> String\n\nGet the latex string representation of an operator.\n\n\n\n\n\n"
+    "text": "repr(opts::Operators,l::Union{LaTeX,Nothing}=nothing) -> String\n\nGet the latex string representation of a set of operators.\n\n\n\n\n\n"
 },
 
 {
@@ -4165,7 +4165,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Degrees of freedom",
     "title": "Base.repr",
     "category": "function",
-    "text": "repr(opts::Operators,l::Union{LaTeX,Nothing}=nothing) -> String\n\nGet the latex string representation of a set of operators.\n\n\n\n\n\n"
+    "text": "repr(opt::Operator,l::Union{LaTeX,Nothing}=nothing) -> String\n\nGet the latex string representation of an operator.\n\n\n\n\n\n"
 },
 
 {
