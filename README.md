@@ -32,7 +32,7 @@ It is noted that our implementation of the symbolic computation only involves
 
 The symbolic operations between two scalars are **not** implemented becase:
 * in condensed matter physics, for many cases, only the numerical values of operators are important because the analytical expressions can be too complicated to analyze or they may even not exist;
-* our construction process of the operators and their mathematical operations are completely **compatible the [`SymPy`](https://github.com/JuliaPy/SymPy.jl) package**, therefore, a fully symbolic computation can be acheived by a simple combination of both.
+* our construction process of the operators and their mathematical operations are **completely compatible with the [`SymPy`](https://github.com/JuliaPy/SymPy.jl) package**, therefore, a fully symbolic computation can be acheived by a simple combination of both.
 
 Specically, we provide several general functions to deal with three common kinds of systems in condensed matter physics
 * **canonical fermionic systems**
