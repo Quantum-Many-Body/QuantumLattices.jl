@@ -549,8 +549,16 @@ Get a zero term.
 Base.zero(term::Term)=replace(term,value=zero(term.value))
 
 """
-    expand!(operators::Operators,term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false) -> Operators
-    expand!(operators::Operators,term::Term,bonds::Bonds,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false) -> Operators
+    expand!(operators::Operators,term::Term,bond::AbstractBond,config::IDFConfig,
+            table::Union{Table,Nothing}=nothing,
+            half::Bool=false,
+            coord::Union{Val{true},Val{false}}=coordpresent
+            ) -> Operators
+    expand!(operators::Operators,term::Term,bonds::Bonds,config::IDFConfig,
+            table::Union{Table,Nothing}=nothing,
+            half::Bool=false,
+            coord::Union{Val{true},Val{false}}=coordpresent
+            ) -> Operators
 
 Expand the operators of a term on a bond/set-of-bonds with a given config.
 
@@ -558,37 +566,39 @@ The `half` parameter determines the behavior of generating operators, which fall
 * `true`: "Hermitian half" of the generated operators
 * `false`: "Hermitian whole" of the generated operators
 """
-function expand!(operators::Operators,term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false)
+function expand!(   operators::Operators,term::Term,bond::AbstractBond,config::IDFConfig,
+                    table::Union{Table,Nothing}=nothing,
+                    half::Bool=false,
+                    coord::Union{Val{true},Val{false}}=coordpresent
+                    )
     if term.bondkind==bond|>kind
         value=term.value*term.amplitude(bond)*term.factor
         if abs(value)≠0
-            otype,ktype=operators|>typeof|>valtype,operators|>typeof|>keytype
-            @assert (fieldtype(ktype|>eltype,:seq)===Nothing)==(table===nothing) "expand! error: `table` must be assigned if the sequences are required."
-            @assert rank(otype)==rank(term) "expand! error: dismatched ranks between operator and term."
             apriori=isHermitian(term)
-            record=apriori===nothing && length(operators)>0 ? Set{ktype}() : nothing
-            rtype,itype=fieldtype(ktype|>eltype,:rcoord),fieldtype(ktype|>eltype,:icoord)
+            ptype=otype(term|>typeof,oidtype(config|>typeof|>valtype|>eltype,bond|>typeof,table|>typeof,coord))
+            record=apriori===nothing && length(operators)>0 ? Set{ptype|>idtype}() : nothing
+            rtype,itype=fieldtype(ptype|>idtype|>eltype,:rcoord),fieldtype(ptype|>idtype|>eltype,:icoord)
             pids=NTuple{length(bond),pidtype(bond)}(point.pid for point in bond)
             rcoords=NTuple{length(bond),SVector{dimension(bond),Float}}(point.rcoord for point in bond)
             icoords=NTuple{length(bond),SVector{dimension(bond),Float}}(point.icoord for point in bond)
             interanls=NTuple{length(bond),valtype(config)}(config[pid] for pid in pids)
             for coupling in values(term.couplings(bond))
-                perm=couplingcenters(typeof(coupling),coupling.id.centers,Val(rank(bond)))::NTuple{rank(otype),Int}
+                perm=couplingcenters(typeof(coupling),coupling.id.centers,Val(rank(bond)))::NTuple{rank(ptype),Int}
                 orcoords,oicoords=termcoords(rtype,rcoords,perm),termcoords(itype,icoords,perm)
                 for (coeff,oindexes) in expand(coupling,pids,interanls,term|>kind|>Val) # needs improvement memory allocation 7 times for each fock coupling
-                    isa(table,Table) && any(NTuple{rank(otype),Bool}(!haskey(table,index) for index in oindexes)) && continue
+                    isa(table,Table) && any(NTuple{rank(ptype),Bool}(!haskey(table,index) for index in oindexes)) && continue
                     id=ID(OID,oindexes,orcoords,oicoords,termseqs(table,oindexes))
                     if apriori===true
-                        add!(operators,otype.name.wrapper(convert(otype|>valtype,value*coeff/(half ? 2 : 1)),id))
+                        add!(operators,ptype.name.wrapper(convert(ptype|>valtype,value*coeff/(half ? 2 : 1)),id))
                     elseif apriori==false
-                        opt=otype.name.wrapper(convert(otype|>valtype,value*coeff),id)
+                        opt=ptype.name.wrapper(convert(ptype|>valtype,value*coeff),id)
                         add!(operators,opt)
                         half || add!(operators,opt')
                     else
                         if !(record===nothing ? haskey(operators,id') : in(id',record))
                             record===nothing || push!(record,id)
-                            ovalue=valtype(otype)(value*coeff/termfactor(nothing,id,term|>kind|>Val)) # needs improvement memory allocation 2 times for each
-                            opt=otype.name.wrapper(ovalue,id)
+                            ovalue=valtype(ptype)(value*coeff/termfactor(nothing,id,term|>kind|>Val)) # needs improvement memory allocation 2 times for each
+                            opt=ptype.name.wrapper(ovalue,id)
                             add!(operators,opt)
                             half || add!(operators,opt')
                         end
@@ -599,10 +609,14 @@ function expand!(operators::Operators,term::Term,bond::AbstractBond,config::IDFC
     end
     return operators
 end
-@generated function expand!(operators::Operators,term::Term,bonds::Bonds,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false)
+@generated function expand!(operators::Operators,term::Term,bonds::Bonds,config::IDFConfig,
+                            table::Union{Table,Nothing}=nothing,
+                            half::Bool=false,
+                            coord::Union{Val{true},Val{false}}=coordpresent
+                            )
     exprs=[]
     for i=1:rank(bonds)
-        push!(exprs,:(for bond in bonds.bonds[$i] expand!(operators,term,bond,config,table,half) end))
+        push!(exprs,:(for bond in bonds.bonds[$i] expand!(operators,term,bond,config,table,half,coord) end))
     end
     push!(exprs,:(return operators))
     return Expr(:block,exprs...)
@@ -621,11 +635,11 @@ Expand the operators of a term on a bond/set-of-bonds with a given config.
 """
 function expand(term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false,coord::Union{Val{true},Val{false}}=coordpresent)
     optype=otype(term|>typeof,oidtype(config|>typeof|>valtype|>eltype,bond|>typeof,table|>typeof,coord))
-    expand!(Operators{idtype(optype),optype}(),term,bond,config,table,half)
+    expand!(Operators{idtype(optype),optype}(),term,bond,config,table,half,coord)
 end
 function expand(term::Term,bonds::Bonds,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false,coord::Union{Val{true},Val{false}}=coordpresent)
     optype=otype(term|>typeof,oidtype(config|>typeof|>valtype|>eltype,bonds|>eltype,table|>typeof,coord))
-    expand!(Operators{idtype(optype),optype}(),term,bonds,config,table,half)
+    expand!(Operators{idtype(optype),optype}(),term,bonds,config,table,half,coord)
 end
 
 """
@@ -787,7 +801,7 @@ end
         if fieldtype(fieldtype(terms,i),:modulate)<:TermModulate
             push!(alterops,:(expand(one(terms[$i]),innerbonds,config,table,half,coord)))
         else
-            push!(exprs,:(expand!(constops,terms[$i],innerbonds,config,table,half)))
+            push!(exprs,:(expand!(constops,terms[$i],innerbonds,config,table,half,coord)))
         end
     end
     push!(exprs,quote
@@ -829,7 +843,7 @@ expand!(operators::Operators,gen::Generator)=expand!(operators,gen.operators,gen
 """
     expand(gen::Generator) -> Operators
     expand(gen::Generator{coord},name::Symbol) where coord -> Operators
-    expand(gen::Generator,i::Int) -> Operators
+    expand(gen::Generator{coord},i::Int) where coord -> Operators
     expand(gen::Generator{coord},name::Symbol,i::Int) where coord -> Operators
 
 Expand the operators of a generator:
@@ -849,14 +863,14 @@ function expand(gen::Generator{coord},name::Symbol) where coord
         for opt in getfield(gen.operators.alterops,name)|>values add!(result,opt*term.value) end
         for opt in getfield(gen.operators.boundops,name)|>values add!(result,gen.boundary(opt)*term.value) end
     else
-        expand!(result,term,gen.bonds,gen.config,gen.table,gen.half)
+        expand!(result,term,gen.bonds,gen.config,gen.table,gen.half,coord)
     end
     return result
 end
-@generated function expand(gen::Generator,i::Int)
+@generated function expand(gen::Generator{coord},i::Int) where coord
     exprs=[:(result=Operators{idtype(eltype(gen.operators)),eltype(gen.operators)}())]
     for i=1:fieldcount(fieldtype(gen,:terms))
-        push!(exprs,:(expand!(result,gen.terms[$i],gen.bonds[i],gen.config,gen.table,gen.half)))
+        push!(exprs,:(expand!(result,gen.terms[$i],gen.bonds[i],gen.config,gen.table,gen.half,coord)))
     end
     push!(exprs,:(return result))
     return Expr(:block,exprs...)
@@ -888,11 +902,11 @@ function Base.empty(gen::Generator{coord}) where coord
 end
 
 """
-    reset!(gen::Generator,lattice::AbstractLattice) -> Generator
+    reset!(gen::Generator{coord},lattice::AbstractLattice) where coord -> Generator
 
 Reset a generator by a new lattice.
 """
-@generated function reset!(gen::Generator,lattice::AbstractLattice)
+@generated function reset!(gen::Generator{coord},lattice::AbstractLattice) where coord
     exprs=[]
     push!(exprs,quote
         reset!(gen.bonds,lattice)
@@ -904,11 +918,11 @@ Reset a generator by a new lattice.
     end)
     for (i,term) in enumerate(fieldtypes(fieldtype(gen,:terms)))
         name=QuoteNode(term|>id)
-        push!(exprs,:(expand!(getfield(gen.operators.boundops,$name),one(gen.terms[$i]),boundbonds,gen.config,gen.table,gen.half)))
+        push!(exprs,:(expand!(getfield(gen.operators.boundops,$name),one(gen.terms[$i]),boundbonds,gen.config,gen.table,gen.half,coord)))
         if fieldtype(term,:modulate)<:Nothing
-            push!(exprs,:(expand!(gen.operators.constops,gen.terms[$i],innerbonds,gen.config,gen.table,gen.half)))
+            push!(exprs,:(expand!(gen.operators.constops,gen.terms[$i],innerbonds,gen.config,gen.table,gen.half,coord)))
         else
-            push!(exprs,:(expand!(getfield(gen.operators.alterops,$name),one(gen.terms[$i]),innerbonds,gen.config,gen.table,gen.half)))
+            push!(exprs,:(expand!(getfield(gen.operators.alterops,$name),one(gen.terms[$i]),innerbonds,gen.config,gen.table,gen.half,coord)))
         end
     end
     push!(exprs,:(return gen))

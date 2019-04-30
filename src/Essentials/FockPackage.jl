@@ -3,7 +3,7 @@ module FockPackage
 using LinearAlgebra: dot
 using Printf: @printf,@sprintf
 using ..Spatials: PID,AbstractBond,Bond,decompose
-using ..DegreesOfFreedom: IID,Index,Internal,FilteredAttributes,IDFConfig,Table,OID,Operator,Operators,LaTeX
+using ..DegreesOfFreedom: IID,Index,Internal,FilteredAttributes,IDFConfig,Table,OID,Operator,Operators,LaTeX,coordpresent
 using ..Terms: wildcard,constant,Subscript,Subscripts,Coupling,Couplings,@subscript,couplingcenters,Term,TermCouplings,TermAmplitude,TermModulate
 using ...Interfaces: id,rank,kind
 using ...Prerequisites: Float,delta,decimaltostr
@@ -667,10 +667,14 @@ function fockcouplingnambus(::Val{:Pairing},nambus::NTuple{2,Any},ranges::NTuple
         isa(nambus[2],Int) ? (0<nambus[2]<=2 ? nambus[2] : error("fockcouplingnambus error: nambu out of range.")) : ANNIHILATION
         )
 end
-function expand!(operators::Operators,term::Pairing,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false)
-    argtypes=Tuple{Operators,Term,AbstractBond,IDFConfig,Union{Table,Nothing},Bool}
-    invoke(expand!,argtypes,operators,term,bond,config,table,half)
-    isa(bond,Bond) && invoke(expand!,argtypes,operators,term,bond|>reverse,config,table,half)
+function expand!(   operators::Operators,term::Pairing,bond::AbstractBond,config::IDFConfig,
+                    table::Union{Table,Nothing}=nothing,
+                    half::Bool=false,
+                    coord::Union{Val{true},Val{false}}=coordpresent
+                    )
+    argtypes=Tuple{Operators,Term,AbstractBond,IDFConfig,Union{Table,Nothing},Bool,Union{Val{true},Val{false}}}
+    invoke(expand!,argtypes,operators,term,bond,config,table,half,coord)
+    isa(bond,Bond) && invoke(expand!,argtypes,operators,term,bond|>reverse,config,table,half,coord)
     return operators
 end
 
