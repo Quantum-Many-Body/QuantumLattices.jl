@@ -435,6 +435,7 @@ end
 
 """
     PID(scope,site::Int)
+    PID(site::Int)
     PID(;scope="tz",site::Int=1)
 
 The id of a point.
@@ -443,7 +444,8 @@ struct PID{S} <: SimpleID
     scope::S
     site::Int
 end
-PID(;scope="tz",site::Int=1)=PID(scope,site)
+PID(site::Int)=PID('T',site)
+PID(;scope='T',site::Int=1)=PID(scope,site)
 Base.fieldnames(pid::PID)=(:scope,:site)
 
 """

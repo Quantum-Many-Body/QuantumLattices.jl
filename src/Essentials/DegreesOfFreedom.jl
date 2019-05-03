@@ -10,6 +10,7 @@ using ...Prerequisites.CompositeStructures: CompositeDict
 using ...Mathematics.VectorSpaces: VectorSpace
 using ...Mathematics.AlgebraOverFields: SimpleID,ID,Element,Elements
 
+import LaTeXStrings: latexstring
 import ..Spatials: pidtype,rcoord,icoord
 import ...Interfaces: reset!,update!,sequence
 import ...Mathematics.AlgebraOverFields: rawelement
@@ -637,6 +638,17 @@ Twist an operator.
 function twist(operator::Operator,vectors::AbstractVector{<:AbstractVector{Float}},values::AbstractVector{Float})
     replace(operator,value=operator.value*exp(1im*angle(operator.id,vectors,values)))
 end
+
+"""
+    latexstring(oid::OID,l::Union{LaTeX,Nothing}=nothing) -> LaTeXStrings.LaTeXString
+    latexstring(opt::Operator,l::Union{LaTeX,Nothing}=nothing) -> LaTeXStrings.LaTeXString
+    latexstring(opts::Operators,l::Union{LaTeX,Nothing}=nothing) -> LaTeXStrings.LaTeXString
+
+Get the latexstring representation of an oid/operator/operators.
+"""
+latexstring(oid::OID,l::Union{LaTeX,Nothing}=nothing)=latexstring(repr(oid,l))
+latexstring(opt::Operator,l::Union{LaTeX,Nothing}=nothing)=latexstring(repr(opt,l))
+latexstring(opts::Operators,l::Union{LaTeX,Nothing}=nothing)=latexstring(repr(opts,l))
 
 """
     Boundary{Names}(values::AbstractVector{Float},vectors::AbstractVector{<:AbstractVector{Float}}) where Names

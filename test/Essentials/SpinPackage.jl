@@ -162,6 +162,58 @@ end
     @test Sᶻ(orbital=1)==Couplings(SpinCoupling{1}(1,tags=('z',),orbitals=(1,)))
 end
 
+@testset "spincoupling" begin
+    sc=sc"1.0 S+S- sl(1,1)⊗ob(α,β)@(1,2) with α<β"
+    ob=sc.subscripts[1].identifier
+    @test repr(sc)=="1.0 S+S- sl(1,1)⊗ob(α,β)@(1,2) with $ob && $ob"
+
+    sc=sc"1.0 S+S- sl(1,1)⊗ob(α,β)@(1,2)"
+    ob=sc.subscripts[1].identifier
+    @test repr(sc)=="1.0 S+S- sl(1,1)⊗ob(α,β)@(1,2) with $ob && $ob"
+
+    sc=sc"1.0 S+S- sl(1,1)⊗ob(α,β)"
+    ob=sc.subscripts[1].identifier
+    @test repr(sc)=="1.0 S+S- sl(1,1)⊗ob(α,β) with $ob && $ob"
+
+    sc=sc"1.0 S+S- sl(1,1)⊗ob(1,2)@(1,2)"
+    @test repr(sc)=="1.0 S+S- sl(1,1)⊗ob(1,2)@(1,2)"
+
+    sc=sc"1.0 S+S- sl(1,1)@(1,2)"
+    @test repr(sc)=="1.0 S+S- sl(1,1)@(1,2)"
+
+    sc=sc"1.0 S+S- @(1,2)"
+    @test repr(sc)=="1.0 S+S- @(1,2)"
+
+    sc=sc"1.0 S+S-"
+    @test repr(sc)=="1.0 S+S-"
+end
+
+@testset "spincouplings" begin
+    @test heisenberg"sl(1,1)⊗ob(1,3)@(1,2)"==Heisenberg(centers=(1,2),atoms=(1,1),orbitals=(1,3))
+    @test heisenberg"sl(1,1)⊗ob(1,3)"==Heisenberg(atoms=(1,1),orbitals=(1,3))
+    @test heisenberg"@(1,2)"==Heisenberg(centers=(1,2))
+    @test heisenberg"ob(1,3)"==Heisenberg(orbitals=(1,3))
+    @test heisenberg"sl(1,1)"==Heisenberg(atoms=(1,1))
+    @test heisenberg""==heisenberg"+-z"==Heisenberg()
+    @test heisenberg"xyz"==Heisenberg("xyz")
+
+    @test ising"x"==Ising('x') && ising"x sl(1,1)⊗ob(1,3)@(1,2)"==Ising('x',centers=(1,2),atoms=(1,1),orbitals=(1,3))
+    @test ising"y"==Ising('y') && ising"y sl(1,1)⊗ob(1,3)@(1,2)"==Ising('y',centers=(1,2),atoms=(1,1),orbitals=(1,3))
+    @test ising"z"==Ising('z') && ising"z sl(1,1)⊗ob(1,3)@(1,2)"==Ising('z',centers=(1,2),atoms=(1,1),orbitals=(1,3))
+
+    @test gamma"x"==Gamma('x') && gamma"x sl(1,1)⊗ob(1,3)@(1,2)"==Gamma('x',centers=(1,2),atoms=(1,1),orbitals=(1,3))
+    @test gamma"y"==Gamma('y') && gamma"y sl(1,1)⊗ob(1,3)@(1,2)"==Gamma('y',centers=(1,2),atoms=(1,1),orbitals=(1,3))
+    @test gamma"z"==Gamma('z') && gamma"z sl(1,1)⊗ob(1,3)@(1,2)"==Gamma('z',centers=(1,2),atoms=(1,1),orbitals=(1,3))
+
+    @test dm"x"==DM('x') && dm"x sl(1,1)⊗ob(1,3)@(1,2)"==DM('x',centers=(1,2),atoms=(1,1),orbitals=(1,3))
+    @test dm"y"==DM('y') && dm"y sl(1,1)⊗ob(1,3)@(1,2)"==DM('y',centers=(1,2),atoms=(1,1),orbitals=(1,3))
+    @test dm"z"==DM('z') && dm"z sl(1,1)⊗ob(1,3)@(1,2)"==DM('z',centers=(1,2),atoms=(1,1),orbitals=(1,3))
+
+    @test sˣ""==Sˣ() && sˣ"sl(1)⊗ob(2)"==Sˣ(atom=1,orbital=2)
+    @test sʸ""==Sʸ() && sʸ"sl(1)⊗ob(2)"==Sʸ(atom=1,orbital=2)
+    @test sᶻ""==Sᶻ() && sᶻ"sl(1)⊗ob(2)"==Sᶻ(atom=1,orbital=2)
+end
+
 @testset "SpinTerm" begin
     term=SpinTerm{1}(:h,1.5,0,couplings=Sᶻ())
     @test term|>abbr==:sp

@@ -3,7 +3,7 @@ module SpinPackage
 using Printf: @printf,@sprintf
 using ..Spatials: PID
 using ..DegreesOfFreedom: IID,Internal,Index,FilteredAttributes,OID,Operator,LaTeX
-using ..Terms: wildcard,constant,Subscript,Subscripts,Coupling,Couplings,couplingcenters,Term,TermCouplings,TermAmplitude,TermModulate
+using ..Terms: wildcard,constant,Subscript,Subscripts,subscriptexpr,Coupling,Couplings,couplingcenters,Term,TermCouplings,TermAmplitude,TermModulate
 using ...Interfaces: rank,kind
 using ...Prerequisites: Float,decimaltostr,delta
 using ...Mathematics.VectorSpaces: VectorSpace,IsMultiIndexable,MultiIndexOrderStyle
@@ -19,6 +19,7 @@ export usualspinindextotuple
 export SOperator,soptdefaultlatex
 export SCID,SpinCoupling
 export Heisenberg,Ising,Gamma,DM,Sˣ,Sʸ,Sᶻ
+export @sc_str,@heisenberg_str,@ising_str,@gamma_str,@dm_str,@sˣ_str,@sʸ_str,@sᶻ_str
 export SpinTerm
 
 const sidtagmap=Dict(1=>'x',2=>'y',3=>'z',4=>'+',5=>'-')
@@ -464,6 +465,143 @@ The single Sᶻ coupling.
 function Sᶻ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing)
     Couplings(SpinCoupling{1}(1,tags=('z',),atoms=scsinglewrapper(atom),orbitals=scsinglewrapper(orbital)))
 end
+
+"""
+    sc"..." -> SpinCoupling
+
+Construct a SpinCoupling from a literal string.
+"""
+macro sc_str(str::String)
+    ps=split(str," with ")
+    condition=length(ps)==2 ? Meta.parse(ps[2]) : :nothing
+    ps=split(ps[1],' ')
+    coeff=eval(Meta.parse(ps[1]))
+    tags=Tuple(replace(ps[2],"S"=>""))
+    attrpairs=Any[:tags=>tags]
+    if length(ps)==3
+        components=split(ps[3],'@')
+        centers=length(components)==2 ? couplingcenters(components[2]) : nothing
+        centers===nothing || @assert length(centers)==length(tags) "@sc_str error: dismatched ranks."
+        push!(attrpairs,:centers=>centers)
+        if length(components[1])>0
+            for component in split(components[1],'⊗')
+                attrname,attrvalue=sccomponent(component)
+                if isa(attrvalue,Expr)
+                    @assert attrname==:orbitals "@sc_str error: wrong input pattern."
+                    @assert length(tags)==length(attrvalue.args) "@sc_str error: dismatched ranks."
+                    push!(attrpairs,attrname=>eval(subscriptexpr(attrvalue,condition)))
+                else
+                    @assert length(tags)==length(attrvalue) "@sc_str error: dismatched ranks."
+                    push!(attrpairs,attrname=>attrvalue)
+                end
+            end
+        end
+    end
+    return SpinCoupling{length(tags)}(coeff;attrpairs...)
+end
+function sccomponent(str::AbstractString)
+    @assert str[3]=='(' && str[end]==')' "sccomponent error: wrong input pattern."
+    attrname=str[1:2]=="sl" ? :atoms : str[1:2]=="ob" ? :orbitals : error("sccomponent error: wrong input pattern.")
+    expr=Meta.parse(str[3:end])
+    attrvalue=isa(expr,Expr) ? (all(isa(arg,Int) for arg in expr.args) ? Tuple(expr.args) : expr) : (expr,)
+    return attrname=>attrvalue
+end
+
+function scpairs(str::AbstractString,::Val{R}) where R
+    attrpairs=Pair{Symbol,NTuple{R,Int}}[]
+    if length(str)>0
+        components=split(str,'@')
+        length(components)==2 && push!(attrpairs,:centers=>couplingcenters(components[2]))
+        if length(components[1])>0
+            for component in split(components[1],'⊗')
+                attrname,attrvalue=sccomponent(component)
+                @assert isa(attrvalue,NTuple{R,Int}) "scpairs error: wrong input pattern."
+                push!(attrpairs,attrname=>attrvalue)
+            end
+        end
+    end
+    return attrpairs
+end
+
+"""
+    heisenberg"sl(a₁,a₂)⊗ob(o₁,o₂)@(c₁,c₂)" -> Couplings
+
+The Heisenberg couplings.
+"""
+macro heisenberg_str(str::String)
+    ps=split(str," ")
+    @assert length(ps)∈(1,2) "heisenberg_str error: not supported pattern."
+    mode,str=length(ps)==2 ? (ps[1],ps[2]) : ps[1]∈("+-z","xyz") ?  (ps[1],"") : ("+-z",ps[1])
+    @assert mode=="+-z" || mode=="xyz" "heisenberg_str error: not supported mode($mode)."
+    attrpairs=scpairs(str,Val(2))
+    if mode=="+-z"
+        sc1=SpinCoupling{2}(1//2;:tags=>('+','-'),attrpairs...)
+        sc2=SpinCoupling{2}(1//2;:tags=>('-','+'),attrpairs...)
+        sc3=SpinCoupling{2}(1//1;:tags=>('z','z'),attrpairs...)
+    else
+        sc1=SpinCoupling{2}(1;:tags=>('x','x'),attrpairs...)
+        sc2=SpinCoupling{2}(1;:tags=>('y','y'),attrpairs...)
+        sc3=SpinCoupling{2}(1;:tags=>('z','z'),attrpairs...)
+    end
+    return Couplings(sc1,sc2,sc3)
+end
+
+"""
+    ising"x sl(a₁,a₂)⊗ob(o₁,o₂)@(c₁,c₂)" -> Couplings
+    ising"y sl(a₁,a₂)⊗ob(o₁,o₂)@(c₁,c₂)" -> Couplings
+    ising"z sl(a₁,a₂)⊗ob(o₁,o₂)@(c₁,c₂)" -> Couplings
+
+The Ising couplings.
+"""
+macro ising_str(str::String)
+    @assert str[1] in ('x','y','z') "@ising_str error: wrong input pattern."
+    attrpairs=length(str)>1 ? (@assert str[2]==' ' "@ising_str error: wrong input pattern."; scpairs(str[3:end],Val(2))) : Pair{Symbol,NTuple{2,Int}}[]
+    return Couplings(SpinCoupling{2}(1;:tags=>(str[1],str[1]),attrpairs...))
+end
+
+"""
+    gamma"x sl(a₁,a₂)⊗ob(o₁,o₂)@(c₁,c₂)" -> Couplings
+    gamma"y sl(a₁,a₂)⊗ob(o₁,o₂)@(c₁,c₂)" -> Couplings
+    gamma"z sl(a₁,a₂)⊗ob(o₁,o₂)@(c₁,c₂)" -> Couplings
+
+The Gamma couplings.
+"""
+macro gamma_str(str::String)
+    @assert str[1] in ('x','y','z') "@gamma_str error: wrong input pattern."
+    t1,t2=str[1]=='x' ? ('y','z') : str[1]=='y' ? ('z','x') : ('x','y')
+    attrpairs=length(str)>1 ? (@assert str[2]==' ' "@gamma_str error: wrong input pattern."; scpairs(str[3:end],Val(2))) : Pair{Symbol,NTuple{2,Int}}[]
+    sc1=SpinCoupling{2}(1;:tags=>(t1,t2),attrpairs...)
+    sc2=SpinCoupling{2}(1;:tags=>(t2,t1),attrpairs...)
+    return Couplings(sc1,sc2)
+end
+
+"""
+    dm"x sl(a₁,a₂)⊗ob(o₁,o₂)@(c₁,c₂)" -> Couplings
+    dm"y sl(a₁,a₂)⊗ob(o₁,o₂)@(c₁,c₂)" -> Couplings
+    dm"z sl(a₁,a₂)⊗ob(o₁,o₂)@(c₁,c₂)" -> Couplings
+
+The DM couplings.
+"""
+macro dm_str(str::String)
+    @assert str[1] in ('x','y','z') "@dm_str error: wrong input pattern."
+    t1,t2=str[1]=='x' ? ('y','z') : str[1]=='y' ? ('z','x') : ('x','y')
+    attrpairs=length(str)>1 ? (@assert str[2]==' ' "@dm_str error: wrong input pattern."; scpairs(str[3:end],Val(2))) : Pair{Symbol,NTuple{2,Int}}[]
+    sc1=SpinCoupling{2}(1;:tags=>(t1,t2),attrpairs...)
+    sc2=SpinCoupling{2}(-1;:tags=>(t2,t1),attrpairs...)
+    return Couplings(sc1,sc2)
+end
+
+
+"""
+    sˣ"sl(a)⊗ob(o)" -> Couplings
+    sʸ"sl(a)⊗ob(o)" -> Couplings
+    sᶻ"sl(a)⊗ob(o)" -> Couplings
+
+The single Sˣ/Sʸ/Sᶻ coupling.
+"""
+macro sˣ_str(str::String) Couplings(SpinCoupling{1}(1;:tags=>('x',),scpairs(str,Val(1))...)) end
+macro sʸ_str(str::String) Couplings(SpinCoupling{1}(1;:tags=>('y',),scpairs(str,Val(1))...)) end
+macro sᶻ_str(str::String) Couplings(SpinCoupling{1}(1;:tags=>('z',),scpairs(str,Val(1))...)) end
 
 """
     SpinTerm{R}(id::Symbol,value::Any,bondkind::Any;

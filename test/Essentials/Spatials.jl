@@ -141,6 +141,7 @@ end
 end
 
 @testset "PID" begin
+    @test PID(1)==PID('T',1)==PID(scope='T',site=1)
     @test PID(scope="tz",site=1)|>string=="PID(\"tz\",1)"
     @test fieldnames(PID{String})==(:scope,:site)
 end

@@ -4,7 +4,7 @@ using LinearAlgebra: dot
 using Printf: @printf,@sprintf
 using ..Spatials: PID,AbstractBond,Bond,decompose
 using ..DegreesOfFreedom: IID,Index,Internal,FilteredAttributes,IDFConfig,Table,OID,Operator,Operators,LaTeX,coordpresent
-using ..Terms: wildcard,constant,Subscript,Subscripts,Coupling,Couplings,@subscript,couplingcenters,Term,TermCouplings,TermAmplitude,TermModulate
+using ..Terms: wildcard,constant,Subscript,Subscripts,subscriptexpr,Coupling,Couplings,@subscript,couplingcenters,Term,TermCouplings,TermAmplitude,TermModulate
 using ...Interfaces: id,rank,kind
 using ...Prerequisites: Float,delta,decimaltostr
 using ...Mathematics.AlgebraOverFields: SimpleID,ID,Element
@@ -21,6 +21,7 @@ export FockOperator,FOperator,BOperator,isnormalordered
 export foptdefaultlatex,boptdefaultlatex
 export FCID,FockCoupling
 export σ⁰,σˣ,σʸ,σᶻ,σ⁺,σ⁻
+export @fc_str,@σ⁰_str,@σˣ_str,@σʸ_str,@σᶻ_str,@σ⁺_str,@σ⁻_str
 export Onsite,Hopping,Pairing
 export hubbard,Hubbard
 export interorbitalinterspin,InterOrbitalInterSpin
@@ -588,6 +589,151 @@ The Pauli matrix σ⁻, which can act on the space of spins("sp"), orbitals("ob"
 function σ⁻(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing)
     @assert (mode=="sp" || mode=="ob" || mode=="sl" || mode=="ph") "σ⁻ error: not supported mode($mode)."
     attrname=mode=="sp" ? :spins : mode=="ob" ? :orbitals : mode=="sl" ? :atoms : :nambus
+    attrval=mode=="ph" ? (ANNIHILATION,ANNIHILATION) : (1,2)
+    Couplings(FockCoupling{2}(1;attrname=>attrval,:centers=>centers))
+end
+
+"""
+    fc"..." -> FockCoupling
+
+Construct a FockCoupling from a literal string.
+"""
+macro fc_str(str)
+    ps=split(str," with ")
+    conditions=length(ps)==2 ? fcconditions(ps[2]) : nothing
+    ps=split(ps[1],' ')
+    coeff=eval(Meta.parse(ps[1]))
+    if ps[2][1]=='{' && ps[2][3]=='}'
+        N=parse(Int,ps[2][2])
+        return FockCoupling{N}(coeff)
+    else
+        attrpairs=[]
+        components=split(ps[2],'@')
+        centers=length(components)==2 ? couplingcenters(components[2]) : nothing
+        push!(attrpairs,:centers=>centers)
+        N=centers===nothing ? nothing : length(centers)
+        count=0
+        if length(components[1])>0
+            for component in split(components[1],'⊗')
+                attrname,attrvalue=fccomponent(component)
+                N===nothing && (N=length(attrvalue))
+                if isa(attrvalue,Expr)
+                    @assert attrname==:orbitals || attrname==:spins "@fc_str error: wrong input pattern."
+                    @assert N==length(attrvalue.args) "@fc_str error: dismatched ranks."
+                    count=count+1
+                    condition=conditions===nothing ? :nothing : conditions[count]
+                    push!(attrpairs,attrname=>eval(subscriptexpr(attrvalue,condition)))
+                else
+                    @assert N==length(attrvalue) "@fc_str error: dismatched ranks."
+                    push!(attrpairs,attrname=>attrvalue)
+                end
+            end
+        end
+        return FockCoupling{N}(coeff;attrpairs...)
+    end
+end
+function fcconditions(str::AbstractString)
+    conditions=Meta.parse(str)
+    conditions=conditions.head==:tuple ? conditions.args : [conditions]
+    return [condition=="*" ? :nothing : condition for condition in conditions]
+end
+function fccomponent(str::AbstractString)
+    @assert str[3]=='(' && str[end]==')' "fccomponent error: wrong input pattern."
+    attrname=str[1:2]=="sl" ? :atoms : str[1:2]=="ob" ? :orbitals : str[1:2]=="sp" ? :spins : str[1:2]=="ph" ? :nambus : error("fccomponent error: wrong input pattern.")
+    expr=Meta.parse(str[3:end])
+    attrvalue=isa(expr,Expr) ? (all(isa(arg,Int) for arg in expr.args) ? Tuple(expr.args) : expr) : (expr,)
+    return attrname=>attrvalue
+end
+
+σᵅsplit(str::AbstractString)=(ps=split(str,'@'); length(ps)==1 ? (ps[1],nothing) : length(ps)==2 ? (ps[1],couplingcenters(ps[2])) : "σᵅsplit error: wrong input pattern.")
+σᵅname(mode::AbstractString)=mode=="sp" ? :spins : mode=="ob" ? :orbitals : mode=="sl" ? :atoms : mode=="ph" ? :nambus : error("σᵅname error: wrong input mode.")
+
+"""
+    σ⁰"sp"/σ⁰"sp@(c₁,c₂)" -> Couplings
+    σ⁰"ob"/σ⁰"ob@(c₁,c₂)" -> Couplings
+    σ⁰"sl"/σ⁰"sl@(c₁,c₂)" -> Couplings
+    σ⁰"ph"/σ⁰"ph@(c₁,c₂)" -> Couplings
+
+The Pauli matrix σ⁰, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
+"""
+macro σ⁰_str(str::String)
+    mode,centers=σᵅsplit(str)
+    attrname=σᵅname(mode)
+    (attrval1,attrval2)=mode=="ph" ? ((ANNIHILATION,CREATION),(CREATION,ANNIHILATION)) : ((1,1),(2,2))
+    FockCoupling{2}(1;attrname=>attrval1,:centers=>centers)+FockCoupling{2}(1;attrname=>attrval2,:centers=>centers)
+end
+
+"""
+    σˣ"sp"/σˣ"sp@(c₁,c₂)" -> Couplings
+    σˣ"ob"/σˣ"ob@(c₁,c₂)" -> Couplings
+    σˣ"sl"/σˣ"sl@(c₁,c₂)" -> Couplings
+    σˣ"ph"/σˣ"ph@(c₁,c₂)" -> Couplings
+
+The Pauli matrix σˣ, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
+"""
+macro σˣ_str(str::String)
+    mode,centers=σᵅsplit(str)
+    attrname=σᵅname(mode)
+    (attrval1,attrval2)=mode=="ph" ? ((ANNIHILATION,ANNIHILATION),(CREATION,CREATION)) : ((1,2),(2,1))
+    FockCoupling{2}(1;attrname=>attrval1,:centers=>centers)+FockCoupling{2}(1;attrname=>attrval2,:centers=>centers)
+end
+
+"""
+    σʸ"sp"/σʸ"sp@(c₁,c₂)" -> Couplings
+    σʸ"ob"/σʸ"ob@(c₁,c₂)" -> Couplings
+    σʸ"sl"/σʸ"sl@(c₁,c₂)" -> Couplings
+    σʸ"ph"/σʸ"ph@(c₁,c₂)" -> Couplings
+
+The Pauli matrix σʸ, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
+"""
+macro σʸ_str(str::String)
+    mode,centers=σᵅsplit(str)
+    attrname=σᵅname(mode)
+    (attrval1,attrval2)=mode=="ph" ? ((ANNIHILATION,ANNIHILATION),(CREATION,CREATION)) : ((1,2),(2,1))
+    FockCoupling{2}(1im;attrname=>attrval1,:centers=>centers)+FockCoupling{2}(-1im;attrname=>attrval2,:centers=>centers)
+end
+
+"""
+    σᶻ"sp"/σᶻ"sp@(c₁,c₂)" -> Couplings
+    σᶻ"ob"/σᶻ"ob@(c₁,c₂)" -> Couplings
+    σᶻ"sl"/σᶻ"sl@(c₁,c₂)" -> Couplings
+    σᶻ"ph"/σᶻ"ph@(c₁,c₂)" -> Couplings
+
+The Pauli matrix σᶻ, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
+"""
+macro σᶻ_str(str::String)
+    mode,centers=σᵅsplit(str)
+    attrname=σᵅname(mode)
+    (attrval1,attrval2)=mode=="ph" ? ((ANNIHILATION,CREATION),(CREATION,ANNIHILATION)) : ((1,1),(2,2))
+    FockCoupling{2}(-1;attrname=>attrval1,:centers=>centers)+FockCoupling{2}(1;attrname=>attrval2,:centers=>centers)
+end
+
+"""
+    σ⁺"sp"/σ⁺"sp@(c₁,c₂)" -> Couplings
+    σ⁺"ob"/σ⁺"ob@(c₁,c₂)" -> Couplings
+    σ⁺"sl"/σ⁺"sl@(c₁,c₂)" -> Couplings
+    σ⁺"ph"/σ⁺"ph@(c₁,c₂)" -> Couplings
+
+The Pauli matrix σ⁺, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
+"""
+macro σ⁺_str(str::String)
+    mode,centers=σᵅsplit(str)
+    attrname=σᵅname(mode)
+    attrval=mode=="ph" ? (CREATION,CREATION) : (2,1)
+    Couplings(FockCoupling{2}(1;attrname=>attrval,:centers=>centers))
+end
+
+"""
+    σ⁻"sp"/σ⁻"sp@(c₁,c₂)" -> Couplings
+    σ⁻"ob"/σ⁻"ob@(c₁,c₂)" -> Couplings
+    σ⁻"sl"/σ⁻"sl@(c₁,c₂)" -> Couplings
+    σ⁻"ph"/σ⁻"ph@(c₁,c₂)" -> Couplings
+
+The Pauli matrix σ⁻, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
+"""
+macro σ⁻_str(str::String)
+    mode,centers=σᵅsplit(str)
+    attrname=σᵅname(mode)
     attrval=mode=="ph" ? (ANNIHILATION,ANNIHILATION) : (1,2)
     Couplings(FockCoupling{2}(1;attrname=>attrval,:centers=>centers))
 end

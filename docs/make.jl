@@ -43,7 +43,6 @@ makedocs(
                         "man/Essentials/Terms.md",
                         "man/Essentials/FockPackage.md",
                         "man/Essentials/SpinPackage.md",
-                        "man/Essentials/Extensions.md",
                         ],
                     ],
                 ]

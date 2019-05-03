@@ -1,4 +1,5 @@
 using Test
+using LaTeXStrings: latexstring
 using StaticArrays: SVector
 using LinearAlgebra: dot
 using QuantumLattices.Prerequisites: Float
@@ -173,15 +174,18 @@ end
     @test script(oid,latex,Val(:SP))==("\\dagger",)
     @test script(oid,latex,Val(:SB))==(1,)
     @test repr(oid,latex)=="c^{\\dagger}_{1}"
+    @test latexstring(oid,latex)==latexstring(repr(oid,latex))
 
     opt=DOperator(1.0,(DIndex('d',2,2),DIndex('d',1,1)),rcoords=(SVector(1.0,0.0),SVector(0.0,0.0)),icoords=(SVector(2.0,0.0),SVector(0.0,0.0)),seqs=(2,1))
     @test repr(opt,LaTeX{(:nambu,),(:site,)}('c'))=="c^{\\dagger}_{2}c^{}_{1}"
     @test repr(opt,LaTeX{(:nambu,),(:site,)}())=="d^{\\dagger}_{2}d^{}_{1}"
     @test repr(opt,LaTeX{(:nambu,),(:rcoord,)}())=="d^{\\dagger}_{[1.0,0.0]}d^{}_{[0.0,0.0]}"
     @test repr(opt)=="d^{\\dagger}_{2}d^{}_{1}"
+    @test latexstring(opt)==latexstring(repr(opt))
 
     opts=Operators(DOperator(1.0-1.0im,(DIndex('d',2,2),DIndex('d',1,1))),DOperator(-1.0,(DIndex('d',1,2),DIndex('d',1,1))))
     @test repr(opts,LaTeX{(:nambu,),(:site,)}('c'))=="(1.0-1.0im)c^{\\dagger}_{2}c^{}_{1}-c^{\\dagger}_{1}c^{}_{1}"
+    @test latexstring(opts,LaTeX{(:nambu,),(:site,)}('c'))==latexstring(repr(opts,LaTeX{(:nambu,),(:site,)}('c')))
 
     opt=DOperator(:h,(DIndex('d',2,2),DIndex('d',1,1)))
     @test repr(opt)==":hd^{\\dagger}_{2}d^{}_{1}"

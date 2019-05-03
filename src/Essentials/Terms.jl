@@ -5,7 +5,7 @@ using StaticArrays: SVector
 using ..Spatials: AbstractBond,pidtype,Bonds,AbstractLattice,acrossbonds
 using ..DegreesOfFreedom: Index,IDFConfig,Table,OID,Operators,oidtype,otype,Boundary,coordpresent,coordabsent
 using ...Interfaces: add!
-using ...Prerequisites: Float,atol,decimaltostr
+using ...Prerequisites: Float,atol,rtol,decimaltostr
 using ...Prerequisites.TypeTraits: efficientoperations,indtosub,corder
 using ...Prerequisites.CompositeStructures: CompositeTuple,NamedContainer
 using ...Mathematics.AlgebraOverFields: SimpleID,ID,Element,Elements,idtype
@@ -15,10 +15,9 @@ import ...Mathematics.AlgebraOverFields: rawelement
 import ...Interfaces: id,rank,kind,expand,expand!,dimension,update!,reset!
 
 export Subscript,Subscripts,@subscript
-export Coupling,Couplings
-export TermFunction,TermAmplitude,TermCouplings,TermModulate
-export Term,statistics,abbr
-export Parameters,GenOperators,Generator
+export Coupling,Couplings,@couplings
+export TermFunction,TermAmplitude,TermCouplings,TermModulate,Term,statistics,abbr
+export Parameters,GenOperators,AbstractGenerator,Generator
 
 const wildcard='*'
 const constant=':'
@@ -298,6 +297,10 @@ couplingcenter(::Type{<:Coupling},i::Int,n::Int,::Val{R}) where R=error("couplin
     exprs=[:(isa(centers[$i],Int) ? (0<centers[$i]<=R ? centers[$i] : error("couplingcenters error: center out of range.")) : couplingcenter(C,$i,N,Val(R))) for i=1:N]
     return Expr(:tuple,exprs...)
 end
+function couplingcenters(str::AbstractString)
+    @assert str[1]=='(' && str[end]==')' "couplingcenters error: wrong input pattern."
+    return Tuple(parse(Int,center) for center in split(str[2:end-1],','))
+end
 
 """
     rawelement(::Type{<:Coupling})
@@ -315,6 +318,16 @@ Alias for `Elements{<:ID,<:Coupling}`.
 """
 const Couplings{I<:ID,C<:Coupling}=Elements{I,C}
 Couplings(cps::Coupling...)=Elements(cps...)
+
+"""
+    @couplings cps -> Couplings
+
+Convert an expression/literal to a set of couplings.
+"""
+macro couplings(cps)
+    result=@eval(__module__,$cps)
+    return isa(result,Coupling) ? Couplings(result) : isa(result,Couplings) ? result : error("@couplings error: inputs contain strangers that are not coupling/couplings.")
+end
 
 """
     TermFunction <: Function
@@ -662,14 +675,66 @@ const Parameters{Names}=NamedContainer{Number,Names}
 Parameters{Names}(values::Number...) where Names=NamedContainer{Names}(values...)
 
 """
+    match(params1::Parameters,params2::Parameters,atol=atol,rtol=rtol) -> Bool
+
+Judge whether the second set of parameters matches the first.
+"""
+@generated function Base.match(params1::Parameters,params2::Parameters,atol=atol,rtol=rtol)
+    names=intersect(fieldnames(params1),fieldnames(params2))
+    length(names)==0 && return true
+    name=QuoteNode(names[1])
+    expr=:(isapprox(getfield(params1,$name),getfield(params2,$name),atol=atol,rtol=rtol))
+    for i=2:length(names)
+        name=QuoteNode(names[i])
+        expr=Expr(:&&,expr,:(isapprox(getfield(params1,$name),getfield(params2,$name),atol=atol,rtol=rtol)))
+    end
+    return expr
+end
+
+"""
     GenOperators(constops::Operators,alterops::NamedContainer{Operators},boundops::NamedContainer{Operators})
+    GenOperators(terms::Tuple{Vararg{Term}},bonds::Bonds,config::IDFConfig,table::Union{Nothing,Table},half::Bool,::Val{coord}) where coord
 
 A set of operators. This is the core of [`Generator`](@ref).
 """
-struct GenOperators{S<:Operators,D<:NamedContainer{Operators},B<:NamedContainer{Operators}}
-    constops::S
-    alterops::D
+struct GenOperators{C<:Operators,A<:NamedContainer{Operators},B<:NamedContainer{Operators}}
+    constops::C
+    alterops::A
     boundops::B
+end
+@generated function GenOperators(terms::Tuple{Vararg{Term}},bonds::Bonds,config::IDFConfig,table::Union{Nothing,Table},half::Bool,::Val{coord}) where coord
+    @assert isa(coord,Bool) "GenOperators error: not supported coord."
+    constterms,alterterms=[],[]
+    for term in fieldtypes(terms)
+        fieldtype(term,:modulate)<:Nothing && push!(constterms,term)
+        fieldtype(term,:modulate)<:TermModulate && push!(alterterms,term)
+    end
+    names=NTuple{fieldcount(terms),Symbol}(id(term) for term in fieldtypes(terms))
+    alternames=NTuple{length(alterterms),Symbol}(id(term) for term in alterterms)
+    exprs,alterops,boundops=[],[],[]
+    push!(exprs,quote
+        oidtp=oidtype(config|>valtype|>eltype,bonds|>eltype,table|>typeof,coord|>Val)
+        choosedterms=length($constterms)>0 ? $constterms : $alterterms
+        constoptp=otype(choosedterms[1],oidtp)
+        for i=2:length(choosedterms) constoptp=promote_type(constoptp,otype(choosedterms[i],oidtp)) end
+        constops=Operators{idtype(constoptp),constoptp}()
+        innerbonds=filter(acrossbonds,bonds,Val(:exclude))
+        boundbonds=filter(acrossbonds,bonds,Val(:include))
+    end)
+    for i=1:fieldcount(terms)
+        push!(boundops,:(expand(one(terms[$i]),boundbonds,config,table,half,coord|>Val)))
+        if fieldtype(fieldtype(terms,i),:modulate)<:TermModulate
+            push!(alterops,:(expand(one(terms[$i]),innerbonds,config,table,half,coord|>Val)))
+        else
+            push!(exprs,:(expand!(constops,terms[$i],innerbonds,config,table,half,coord|>Val)))
+        end
+    end
+    push!(exprs,quote
+        alterops=NamedContainer{$alternames}($(alterops...))
+        boundops=NamedContainer{$names}($(boundops...))
+        return GenOperators(constops,alterops,boundops)
+    end)
+    return Expr(:block,exprs...)
 end
 
 """
@@ -746,105 +811,78 @@ Expand the operators with the given boundary twist and term coefficients.
 end
 
 """
-    Generator{coord}(   terms::Tuple{Vararg{Term}},bonds::Bonds,config::IDFConfig,
-                        table::Union{Nothing,Table}=nothing,
-                        half::Bool=true,
-                        boundary::Boundary=Boundary(),
-                        ) where coord
+    reset!(genops::GenOperators,terms::Tuple{Vararg{Term}},bonds::Bonds,config::IDFConfig,table::Union{Nothing,Table},half::Bool,::Val{coord}) where coord -> GenOperators
 
-A generator of operators based on terms, configuration of internal degrees of freedom, table of indices and boundary twist.
+Reset a set of operators by new terms, bonds, config, table, etc..
 """
-struct Generator{coord,TS<:NamedContainer{Term},BS<:Bonds,C<:IDFConfig,T<:Union{Nothing,Table},B<:Boundary,OS<:GenOperators}
-    terms::TS
-    bonds::BS
-    config::C
-    table::T
-    half::Bool
-    boundary::B
-    operators::OS
-    function Generator{coord}(  terms::NamedContainer{Term},
-                                bonds::Bonds,
-                                config::IDFConfig,
-                                table::Union{Nothing,Table},
-                                half::Bool,
-                                boundary::Boundary,
-                                operators::GenOperators
-                                ) where coord
-        new{coord,typeof(terms),typeof(bonds),typeof(config),typeof(table),typeof(boundary),typeof(operators)}(terms,bonds,config,table,half,boundary,operators)
-    end
-end
-@generated function Generator{coord}(   terms::Tuple{Vararg{Term}},bonds::Bonds,config::IDFConfig,
-                                        table::Union{Nothing,Table}=nothing,
-                                        half::Bool=true,
-                                        boundary::Boundary=Boundary(),
-                                        ) where coord
-    @assert coord==coordpresent || coord==coordabsent "Generator error: not supported option."
-    constterms,alterterms=[],[]
-    for term in fieldtypes(terms)
-        fieldtype(term,:modulate)<:Nothing && push!(constterms,term)
-        fieldtype(term,:modulate)<:TermModulate && push!(alterterms,term)
-    end
-    names=NTuple{fieldcount(terms),Symbol}(id(term) for term in fieldtypes(terms))
-    alternames=NTuple{length(alterterms),Symbol}(id(term) for term in alterterms)
-    exprs,alterops,boundops=[],[],[]
+@generated function reset!(genops::GenOperators,terms::Tuple{Vararg{Term}},bonds::Bonds,config::IDFConfig,table::Union{Nothing,Table},half::Bool,::Val{coord}) where coord
+    exprs=[]
     push!(exprs,quote
-        oidtp=oidtype(config|>valtype|>eltype,bonds|>eltype,table|>typeof,coord)
-        choosedterms=length($constterms)>0 ? $constterms : $alterterms
-        constoptp=otype(choosedterms[1],oidtp)
-        for i=2:length(choosedterms) constoptp=promote_type(constoptp,otype(choosedterms[i],oidtp)) end
-        constops=Operators{idtype(constoptp),constoptp}()
+        empty!(genops)
         innerbonds=filter(acrossbonds,bonds,Val(:exclude))
         boundbonds=filter(acrossbonds,bonds,Val(:include))
     end)
-    for i=1:fieldcount(terms)
-        push!(boundops,:(expand(one(terms[$i]),boundbonds,config,table,half,coord)))
-        if fieldtype(fieldtype(terms,i),:modulate)<:TermModulate
-            push!(alterops,:(expand(one(terms[$i]),innerbonds,config,table,half,coord)))
+    for (i,term) in enumerate(fieldtypes(terms))
+        name=QuoteNode(term|>id)
+        push!(exprs,:(expand!(getfield(genops.boundops,$name),one(terms[$i]),boundbonds,config,table,half,coord|>Val)))
+        if fieldtype(term,:modulate)<:Nothing
+            push!(exprs,:(expand!(genops.constops,terms[$i],innerbonds,config,table,half,coord|>Val)))
         else
-            push!(exprs,:(expand!(constops,terms[$i],innerbonds,config,table,half,coord)))
+            push!(exprs,:(expand!(getfield(genops.alterops,$name),one(terms[$i]),innerbonds,config,table,half,coord|>Val)))
         end
     end
-    push!(exprs,quote
-        terms=NamedContainer{$names}(terms...)
-        alterops=NamedContainer{$alternames}($(alterops...))
-        boundops=NamedContainer{$names}($(boundops...))
-        return Generator{coord}(terms,bonds,config,table,half,boundary,GenOperators(constops,alterops,boundops))
-    end)
+    push!(exprs,:(return genops))
     return Expr(:block,exprs...)
 end
 
 """
-    ==(gen1::Generator,gen2::Generator) -> Bool
-    isequal(gen1::Generator,gen2::Generator) -> Bool
+    AbstractGenerator{coord,TS<:NamedContainer{Term},BS<:Bonds,C<:IDFConfig,T<:Union{Nothing,Table},B<:Boundary,OS<:GenOperators}
+
+Abstract generator.
+
+By protocol, a concrete generator must have the following attributes:
+* `terms::TS`: the terms contained in a generator
+* `bonds::BS`: the bonds on which the terms are defined
+* `config::C`: the configuration of the interanl degrees of freedom
+* `table::T`: the index-sequence table, `nothing` for not using such a table
+* `half::Bool`: true for generating an Hermitian half of the operators and false for generating the whole
+* `boundary::B`: boundary twist for the generated operators, `nothing` for no twist
+* `operators::OS`: the generated operators
+"""
+abstract type AbstractGenerator{coord,TS<:NamedContainer{Term},BS<:Bonds,C<:IDFConfig,T<:Union{Nothing,Table},B<:Boundary,OS<:GenOperators} end
+
+"""
+    ==(gen1::AbstractGenerator,gen2::AbstractGenerator) -> Bool
+    isequal(gen1::AbstractGenerator,gen2::AbstractGenerator) -> Bool
 
 Judge whether generators are equivalent to each other.
 """
-Base.:(==)(gen1::Generator,gen2::Generator) = ==(efficientoperations,gen1,gen2)
-Base.isequal(gen1::Generator,gen2::Generator) = isequal(efficientoperations,gen1,gen2)
+Base.:(==)(gen1::AbstractGenerator,gen2::AbstractGenerator) = ==(efficientoperations,gen1,gen2)
+Base.isequal(gen1::AbstractGenerator,gen2::AbstractGenerator) = isequal(efficientoperations,gen1,gen2)
 
 """
-    Parameters(gen::Generator) -> Parameters
+    Parameters(gen::AbstractGenerator) -> Parameters
 
 Get the parameters of the terms of a generator.
 """
-@generated function Parameters(gen::Generator)
+@generated function Parameters(gen::AbstractGenerator)
     names=fieldnames(fieldtype(gen,:terms))
     values=[:(gen.terms[$i].value) for i=1:fieldcount(fieldtype(gen,:terms))]
     return :(Parameters{$names}($(values...)))
 end
 
 """
-    expand!(operators::Operators,gen::Generator) -> Operators
+    expand!(operators::Operators,gen::AbstractGenerator) -> Operators
 
 Expand the operators of a generator.
 """
-expand!(operators::Operators,gen::Generator)=expand!(operators,gen.operators,gen.boundary;Parameters(gen)...)
+expand!(operators::Operators,gen::AbstractGenerator)=expand!(operators,gen.operators,gen.boundary;Parameters(gen)...)
 
 """
-    expand(gen::Generator) -> Operators
-    expand(gen::Generator{coord},name::Symbol) where coord -> Operators
-    expand(gen::Generator{coord},i::Int) where coord -> Operators
-    expand(gen::Generator{coord},name::Symbol,i::Int) where coord -> Operators
+    expand(gen::AbstractGenerator) -> Operators
+    expand(gen::AbstractGenerator{coord},name::Symbol) where coord -> Operators
+    expand(gen::AbstractGenerator{coord},i::Int) where coord -> Operators
+    expand(gen::AbstractGenerator{coord},name::Symbol,i::Int) where coord -> Operators
 
 Expand the operators of a generator:
 1) the total operators;
@@ -852,10 +890,10 @@ Expand the operators of a generator:
 3) the operators on a specific bond;
 4) the operators of a specific term on a specific bond.
 """
-function expand(gen::Generator)
+function expand(gen::AbstractGenerator)
     expand!(Operators{idtype(eltype(gen.operators)),eltype(gen.operators)}(),gen)
 end
-function expand(gen::Generator{coord},name::Symbol) where coord
+function expand(gen::AbstractGenerator{coord},name::Symbol) where coord
     term=getfield(gen.terms,name)
     optp=otype(term|>typeof,oidtype(gen.config|>valtype|>eltype,gen.bonds|>eltype,gen.table|>typeof,coord))
     result=Operators{idtype(optp),optp}()
@@ -867,7 +905,7 @@ function expand(gen::Generator{coord},name::Symbol) where coord
     end
     return result
 end
-@generated function expand(gen::Generator{coord},i::Int) where coord
+@generated function expand(gen::AbstractGenerator{coord},i::Int) where coord
     exprs=[:(result=Operators{idtype(eltype(gen.operators)),eltype(gen.operators)}())]
     for i=1:fieldcount(fieldtype(gen,:terms))
         push!(exprs,:(expand!(result,gen.terms[$i],gen.bonds[i],gen.config,gen.table,gen.half,coord)))
@@ -875,8 +913,51 @@ end
     push!(exprs,:(return result))
     return Expr(:block,exprs...)
 end
-function expand(gen::Generator{coord},name::Symbol,i::Int) where coord
+function expand(gen::AbstractGenerator{coord},name::Symbol,i::Int) where coord
     expand(getfield(gen.terms,name),gen.bonds[i],gen.config,gen.table,gen.half,coord)
+end
+
+"""
+    update!(gen::AbstractGenerator;kwargs...) -> typeof(gen)
+
+Update the coefficients of the terms in a generator.
+"""
+@generated function update!(gen::AbstractGenerator;kwargs...)
+    exprs=[:(update!(gen.boundary;kwargs...))]
+    for i=1:fieldcount(fieldtype(gen,:terms))
+        fieldtype(fieldtype(fieldtype(gen,:terms),i),:modulate)<:TermModulate && push!(exprs,:(update!(gen.terms[$i];kwargs...)))
+    end
+    push!(exprs,:(return gen))
+    return Expr(:block,exprs...)
+end
+
+"""
+    Generator(terms::Tuple{Vararg{Term}},bonds::Bonds,config::IDFConfig,table::Union{Nothing,Table}=nothing,half::Bool=true,boundary::Boundary=Boundary())
+    Generator{coord}(terms::Tuple{Vararg{Term}},bonds::Bonds,config::IDFConfig,table::Union{Nothing,Table}=nothing,half::Bool=true,boundary::Boundary=Boundary()) where coord
+
+A generator of operators based on terms, configuration of internal degrees of freedom, table of indices and boundary twist.
+"""
+struct Generator{coord,TS<:NamedContainer{Term},BS<:Bonds,C<:IDFConfig,T<:Union{Nothing,Table},B<:Boundary,OS<:GenOperators} <: AbstractGenerator{coord,TS,BS,C,T,B,OS}
+    terms::TS
+    bonds::BS
+    config::C
+    table::T
+    half::Bool
+    boundary::B
+    operators::OS
+    function Generator{C}(terms::NamedContainer{Term},bonds::Bonds,config::IDFConfig,table::Union{Nothing,Table},half::Bool,boundary::Boundary,operators::GenOperators) where C
+        new{C,typeof(terms),typeof(bonds),typeof(config),typeof(table),typeof(boundary),typeof(operators)}(terms,bonds,config,table,half,boundary,operators)
+    end
+end
+function Generator(terms::Tuple{Vararg{Term}},bonds::Bonds,config::IDFConfig,table::Union{Nothing,Table}=nothing,half::Bool=true,boundary::Boundary=Boundary())
+    Generator{coordpresent}(namedterms(terms),bonds,config,table,half,boundary,GenOperators(terms,bonds,config,table,half,coordpresent))
+end
+function Generator{coord}(terms::Tuple{Vararg{Term}},bonds::Bonds,config::IDFConfig,table::Union{Nothing,Table}=nothing,half::Bool=true,boundary::Boundary=Boundary()) where coord
+    Generator{coord}(namedterms(terms),bonds,config,table,half,boundary,GenOperators(terms,bonds,config,table,half,coord))
+end
+@generated function namedterms(terms::Tuple{Vararg{Term}})
+    names=NTuple{fieldcount(terms),Symbol}(id(fieldtype(terms,i)) for i=1:fieldcount(terms))
+    return :(NamedContainer{$names}(terms...))
 end
 
 """
@@ -906,41 +987,12 @@ end
 
 Reset a generator by a new lattice.
 """
-@generated function reset!(gen::Generator{coord},lattice::AbstractLattice) where coord
-    exprs=[]
-    push!(exprs,quote
-        reset!(gen.bonds,lattice)
-        reset!(gen.config,lattice.pids)
-        isa(gen.table,Table) && reset!(gen.table,gen.config)
-        empty!(gen.operators)
-        innerbonds=filter(acrossbonds,gen.bonds,Val(:exclude))
-        boundbonds=filter(acrossbonds,gen.bonds,Val(:include))
-    end)
-    for (i,term) in enumerate(fieldtypes(fieldtype(gen,:terms)))
-        name=QuoteNode(term|>id)
-        push!(exprs,:(expand!(getfield(gen.operators.boundops,$name),one(gen.terms[$i]),boundbonds,gen.config,gen.table,gen.half,coord)))
-        if fieldtype(term,:modulate)<:Nothing
-            push!(exprs,:(expand!(gen.operators.constops,gen.terms[$i],innerbonds,gen.config,gen.table,gen.half,coord)))
-        else
-            push!(exprs,:(expand!(getfield(gen.operators.alterops,$name),one(gen.terms[$i]),innerbonds,gen.config,gen.table,gen.half,coord)))
-        end
-    end
-    push!(exprs,:(return gen))
-    return Expr(:block,exprs...)
-end
-
-"""
-    update!(gen::Generator;kwargs...) -> Generator
-
-Update the coefficients of the terms in a generator.
-"""
-@generated function update!(gen::Generator;kwargs...)
-    exprs=[:(update!(gen.boundary;kwargs...))]
-    for i=1:fieldcount(fieldtype(gen,:terms))
-        fieldtype(fieldtype(fieldtype(gen,:terms),i),:modulate)<:TermModulate && push!(exprs,:(update!(gen.terms[$i];kwargs...)))
-    end
-    push!(exprs,:(return gen))
-    return Expr(:block,exprs...)
+function reset!(gen::Generator{coord},lattice::AbstractLattice) where coord
+    reset!(gen.bonds,lattice)
+    reset!(gen.config,lattice.pids)
+    isa(gen.table,Table) && reset!(gen.table,gen.config)
+    reset!(gen.operators,Tuple(gen.terms),gen.bonds,gen.config,gen.table,gen.half,coord)
+    return gen
 end
 
 end  # module

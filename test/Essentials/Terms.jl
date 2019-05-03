@@ -115,6 +115,12 @@ end
     @test couplingcenter(Coupling,1,2,Val(1))==1
     @test couplingcenters(Coupling,('*','*'),Val(1))==(1,1)
     @test couplingcenters(Coupling,(1,2,3),Val(3))==(1,2,3)
+    @test couplingcenters("(1,2,3,4)")==(1,2,3,4)
+end
+
+@testset "couplings" begin
+    @test @couplings(TCoupling(1.0,ID(TCID(1,1),TCID(2,1))))==Couplings(TCoupling(1.0,ID(TCID(1,1),TCID(2,1))))
+    @test @couplings(TCoupling(1.0,ID(TCID(1,1),TCID(2,1)))+TCoupling(1.0,ID(TCID(1,2),TCID(2,2))))==TCoupling(1.0,ID(TCID(1,1),TCID(2,1)))+TCoupling(1.0,ID(TCID(1,2),TCID(2,2)))
 end
 
 @testset "TermFunction" begin
@@ -212,6 +218,14 @@ end
     @test expand(term,bonds,config,table,false,coordabsent)==operators*2
 end
 
+@testset "Parameters" begin
+    ps1=Parameters{(:t1,:t2,:U)}(1.0im,1.0,2.0)
+    ps2=Parameters{(:t1,:U)}(1.0im,2.0)
+    ps3=Parameters{(:t1,:U)}(1.0im,2.1)
+    @test match(ps1,ps2)==true
+    @test match(ps1,ps3)==false
+end
+
 @testset "Generator" begin
     lattice=Lattice("Tuanzi",[Point(PID(1,1),(0.0,0.0),(0.0,0.0)),Point(PID(1,2),(0.5,0.0),(0.0,0.0))],vectors=[[1.0,0.0]],neighbors=1)
     bonds=Bonds(lattice)
@@ -225,13 +239,15 @@ end
     μops=expand(one(μ),filter(zerothbonds,bonds,Val(:include)),config,table,true,coordpresent)
 
     optp=TOperator{Float,ID{NTuple{2,OID{TIndex{Int},SVector{2,Float},SVector{2,Float},Int}}}}
-    genops=GenOperators(tops1,NamedContainer{(:μ,)}(μops),NamedContainer{(:t,)}(tops2))
+    genops=GenOperators(tops1,NamedContainer{(:μ,)}(μops),NamedContainer{(:t,:μ)}(tops2,Operators{optp|>idtype,optp}()))
     @test genops==deepcopy(genops) && isequal(genops,deepcopy(genops))
+    @test genops==GenOperators((t,μ),bonds,config,table,true,coordpresent)
     @test genops|>eltype==genops|>typeof|>eltype==optp
     @test expand!(Operators{idtype(optp),optp}(),genops,boundary,t=2.0,μ=1.5)==tops1+tops2*2.0+μops*1.5
-    @test empty!(deepcopy(genops))==empty(genops)==GenOperators(empty(μops),NamedContainer{(:μ,)}(empty(μops)),NamedContainer{(:t,)}(empty(μops)))
+    @test empty!(deepcopy(genops))==empty(genops)==GenOperators(empty(μops),NamedContainer{(:μ,)}(empty(μops)),NamedContainer{(:t,:μ)}(empty(μops),empty(μops)))
+    @test reset!(deepcopy(genops),(t,μ),bonds,config,table,true,coordpresent)==genops
 
-    gen=Generator{coordpresent}((t,μ),bonds,config,table,true,boundary)
+    gen=Generator((t,μ),bonds,config,table,true,boundary)
     @test gen==deepcopy(gen) && isequal(gen,deepcopy(gen))
     @test Parameters(gen)==Parameters{(:t,:μ)}(2.0,1.0)
     @test expand!(Operators{idtype(optp),optp}(),gen)==expand(gen)==tops1+tops2*2.0+μops

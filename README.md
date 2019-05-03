@@ -49,6 +49,9 @@ For tutorials and munuals of this pacakge, please refer to its docs.
 - [**LATEST**][docs-latest-url] &mdash; **documentation of the latest version.**
 - [**STABLE**][docs-stable-url] &mdash; **documentation of the stable version.**
 
+## Note
+
+Due to the fast development of this package, releases with different minor version numbers are **not** guaranteed to be compatible with previous ones **before** the release of v1.0.0. Comments are welcomed in the issues.
 
 ## Contact
 waltergu1989@gmail.com

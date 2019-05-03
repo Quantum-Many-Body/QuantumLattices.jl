@@ -209,6 +209,84 @@ end
     @test σ⁻("ph")==Couplings(FockCoupling{2}(1,nambus=(1,1)))
 end
 
+@testset "fockcoupling" begin
+    fc=fc"1.0 sl(1,1,1,1)⊗ob(α,α,β,β)⊗sp(σ,γ,σ,γ)⊗ph(2,1,2,1)@(1,1,2,2) with (α<β,σ≠γ)"
+    ob,sp=fc.obsubscripts[1].identifier,fc.spsubscripts[1].identifier
+    @test repr(fc)=="1.0 sl(1,1,1,1)⊗ob(α,α,β,β)⊗sp(σ,γ,σ,γ)⊗ph(2,1,2,1)@(1,1,2,2) with ($ob,$sp) && ($ob,$sp) && ($ob,$sp) && ($ob,$sp)"
+
+    fc=fc"1.0 sl(1,1,1,1)⊗ob(α,α,β,β)⊗sp(σ,γ,σ,γ)⊗ph(2,1,2,1)@(1,1,2,2)"
+    ob,sp=fc.obsubscripts[1].identifier,fc.spsubscripts[1].identifier
+    @test repr(fc)=="1.0 sl(1,1,1,1)⊗ob(α,α,β,β)⊗sp(σ,γ,σ,γ)⊗ph(2,1,2,1)@(1,1,2,2) with ($ob,$sp) && ($ob,$sp) && ($ob,$sp) && ($ob,$sp)"
+
+    fc=fc"1.0 sl(1,1,1,1)⊗ob(α,α,β,β)⊗sp(σ,γ,σ,γ)⊗ph(2,1,2,1)"
+    ob,sp=fc.obsubscripts[1].identifier,fc.spsubscripts[1].identifier
+    @test repr(fc)=="1.0 sl(1,1,1,1)⊗ob(α,α,β,β)⊗sp(σ,γ,σ,γ)⊗ph(2,1,2,1) with ($ob,$sp) && ($ob,$sp) && ($ob,$sp) && ($ob,$sp)"
+
+    fc=fc"1.0 sl(1,1,1,1)⊗ob(α,α,β,β)⊗sp(σ,γ,σ,γ)⊗ph(2,1,2,1) with (α<β,σ≠γ)"
+    ob,sp=fc.obsubscripts[1].identifier,fc.spsubscripts[1].identifier
+    @test repr(fc)=="1.0 sl(1,1,1,1)⊗ob(α,α,β,β)⊗sp(σ,γ,σ,γ)⊗ph(2,1,2,1) with ($ob,$sp) && ($ob,$sp) && ($ob,$sp) && ($ob,$sp)"
+
+    fc=fc"1.0 sl(1,1,1,1)⊗ob(α,α,β,β)⊗sp(σ,γ,σ,γ)⊗ph(2,1,2,1) with α<β,σ≠γ"
+    ob,sp=fc.obsubscripts[1].identifier,fc.spsubscripts[1].identifier
+    @test repr(fc)=="1.0 sl(1,1,1,1)⊗ob(α,α,β,β)⊗sp(σ,γ,σ,γ)⊗ph(2,1,2,1) with ($ob,$sp) && ($ob,$sp) && ($ob,$sp) && ($ob,$sp)"
+
+    fc=fc"1.0 sl(1,1,1,1)⊗ob(α,α,β,β)⊗sp(σ,γ,σ,γ)⊗ph(2,1,2,1) with (α<β,*)"
+    ob,sp=fc.obsubscripts[1].identifier,fc.spsubscripts[1].identifier
+    @test repr(fc)=="1.0 sl(1,1,1,1)⊗ob(α,α,β,β)⊗sp(σ,γ,σ,γ)⊗ph(2,1,2,1) with ($ob,$sp) && ($ob,$sp) && ($ob,$sp) && ($ob,$sp)"
+
+    fc=fc"1.0 sl(1,1,1,1)⊗ob(α,α,β,β)⊗ph(2,1,2,1) with α<β"
+    ob,sp=fc.obsubscripts[1].identifier,fc.spsubscripts[1].identifier
+    @test repr(fc)=="1.0 sl(1,1,1,1)⊗ob(α,α,β,β)⊗ph(2,1,2,1) with ($ob,$sp) && ($ob,$sp) && ($ob,$sp) && ($ob,$sp)"
+
+    fc=fc"1.0 sl(1,1,1,1)⊗ob(α,α,β,β)⊗sp(2,1,2,1) with α<β"
+    ob,sp=fc.obsubscripts[1].identifier,fc.spsubscripts[1].identifier
+    @test repr(fc)=="1.0 sl(1,1,1,1)⊗ob(α,α,β,β)⊗sp(2,1,2,1) with ($ob,$sp) && ($ob,$sp) && ($ob,$sp) && ($ob,$sp)"
+
+    fc=fc"1.0 sl(1,1,1,1)⊗ob(1,1,1,1)⊗ph(2,1,2,1)"
+    @test repr(fc)=="1.0 sl(1,1,1,1)⊗ob(1,1,1,1)⊗ph(2,1,2,1)"
+
+    fc=fc"1.0 sl(1,1,1,1)⊗ph(2,1,2,1)"
+    @test repr(fc)=="1.0 sl(1,1,1,1)⊗ph(2,1,2,1)"
+
+    fc=fc"1.0 @(1,1,1,1)"
+    @test repr(fc)=="1.0 @(1,1,1,1)"
+
+    fc=fc"1.0im {2}"
+    @test repr(fc)=="1.0im {2}"
+end
+
+@testset "fockcouplings" begin
+    @test σ⁰"sp"==σ⁰("sp") && σ⁰"sp@(1,2)"==σ⁰("sp",centers=(1,2))
+    @test σ⁰"ob"==σ⁰("ob") && σ⁰"ob@(1,2)"==σ⁰("ob",centers=(1,2))
+    @test σ⁰"sl"==σ⁰("sl") && σ⁰"sl@(1,2)"==σ⁰("sl",centers=(1,2))
+    @test σ⁰"ph"==σ⁰("ph") && σ⁰"ph@(1,2)"==σ⁰("ph",centers=(1,2))
+
+    @test σˣ"sp"==σˣ("sp") && σˣ"sp@(1,2)"==σˣ("sp",centers=(1,2))
+    @test σˣ"ob"==σˣ("ob") && σˣ"ob@(1,2)"==σˣ("ob",centers=(1,2))
+    @test σˣ"sl"==σˣ("sl") && σˣ"sl@(1,2)"==σˣ("sl",centers=(1,2))
+    @test σˣ"ph"==σˣ("ph") && σˣ"ph@(1,2)"==σˣ("ph",centers=(1,2))
+
+    @test σʸ"sp"==σʸ("sp") && σʸ"sp@(1,2)"==σʸ("sp",centers=(1,2))
+    @test σʸ"ob"==σʸ("ob") && σʸ"ob@(1,2)"==σʸ("ob",centers=(1,2))
+    @test σʸ"sl"==σʸ("sl") && σʸ"sl@(1,2)"==σʸ("sl",centers=(1,2))
+    @test σʸ"ph"==σʸ("ph") && σʸ"ph@(1,2)"==σʸ("ph",centers=(1,2))
+
+    @test σᶻ"sp"==σᶻ("sp") && σᶻ"sp@(1,2)"==σᶻ("sp",centers=(1,2))
+    @test σᶻ"ob"==σᶻ("ob") && σᶻ"ob@(1,2)"==σᶻ("ob",centers=(1,2))
+    @test σᶻ"sl"==σᶻ("sl") && σᶻ"sl@(1,2)"==σᶻ("sl",centers=(1,2))
+    @test σᶻ"ph"==σᶻ("ph") && σᶻ"ph@(1,2)"==σᶻ("ph",centers=(1,2))
+
+    @test σ⁺"sp"==σ⁺("sp") && σ⁺"sp@(1,2)"==σ⁺("sp",centers=(1,2))
+    @test σ⁺"ob"==σ⁺("ob") && σ⁺"ob@(1,2)"==σ⁺("ob",centers=(1,2))
+    @test σ⁺"sl"==σ⁺("sl") && σ⁺"sl@(1,2)"==σ⁺("sl",centers=(1,2))
+    @test σ⁺"ph"==σ⁺("ph") && σ⁺"ph@(1,2)"==σ⁺("ph",centers=(1,2))
+
+    @test σ⁻"sp"==σ⁻("sp") && σ⁻"sp@(1,2)"==σ⁻("sp",centers=(1,2))
+    @test σ⁻"ob"==σ⁻("ob") && σ⁻"ob@(1,2)"==σ⁻("ob",centers=(1,2))
+    @test σ⁻"sl"==σ⁻("sl") && σ⁻"sl@(1,2)"==σ⁻("sl",centers=(1,2))
+    @test σ⁻"ph"==σ⁻("ph") && σ⁻"ph@(1,2)"==σ⁻("ph",centers=(1,2))
+end
+
 @testset "Onsite" begin
     term=Onsite{'F'}(:mu,1.5)
     @test term|>abbr==:st
