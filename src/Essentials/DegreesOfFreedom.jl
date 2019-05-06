@@ -484,10 +484,12 @@ end
 
 """
     show(io::IO,opt::Operator)
+    show(io::IO,::MIME"text/latex",opt::Operator)
 
 Show an operator.
 """
 Base.show(io::IO,opt::Operator)=@printf io "%s(value=%s,id=%s)" nameof(typeof(opt)) decimaltostr(opt.value) opt.id
+Base.show(io::IO,::MIME"text/latex",opt::Operator)=show(io,MIME"text/latex"(),latexstring(opt))
 
 """
     adjoint(opt::Operator{N}) where N -> Operator
@@ -622,6 +624,13 @@ function Base.repr(opts::Operators,l::Union{LaTeX,Nothing}=nothing)
     end
     return join(result,"")
 end
+
+"""
+    show(io::IO,::MIME"text/latex",opts::Operators)
+
+Show latex formed operators.
+"""
+Base.show(io::IO,::MIME"text/latex",opts::Operators)=show(io,MIME"text/latex"(),latexstring(opts))
 
 """
     isHermitian(opts::Operators) -> Bool
