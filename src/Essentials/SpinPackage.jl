@@ -2,14 +2,14 @@ module SpinPackage
 
 using Printf: @printf,@sprintf
 using ..Spatials: PID
-using ..DegreesOfFreedom: IID,Internal,Index,FilteredAttributes,OID,Operator,LaTeX
+using ..DegreesOfFreedom: IID,Internal,Index,FilteredAttributes,OID,Operator,LaTeX,latexformat
 using ..Terms: wildcard,constant,Subscript,Subscripts,subscriptexpr,Coupling,Couplings,couplingcenters,Term,TermCouplings,TermAmplitude,TermModulate
 using ...Interfaces: rank,kind
 using ...Prerequisites: Float,decimaltostr,delta
 using ...Mathematics.VectorSpaces: VectorSpace,IsMultiIndexable,MultiIndexOrderStyle
 using ...Mathematics.AlgebraOverFields: SimpleID,ID
 
-import ..DegreesOfFreedom: script,otype,isHermitian,optdefaultlatex
+import ..DegreesOfFreedom: script,otype,isHermitian
 import ..Terms: couplingcenter,statistics,abbr
 import ...Interfaces: dims,inds,expand,matrix,permute
 import ...Mathematics.AlgebraOverFields: rawelement
@@ -152,6 +152,14 @@ struct SOperator{V,I<:ID} <: Operator{V,I}
 end
 
 """
+    soptdefaultlatex
+
+The default LaTeX format of the oids of a spin operator.
+"""
+const soptdefaultlatex=LaTeX{(:tag,),(:site,:orbital)}('S')
+latexformat(SOperator,soptdefaultlatex)
+
+"""
     statistics(opt::SOperator) -> Char
     statistics(::Type{<:SOperator}) -> Char
 
@@ -166,20 +174,6 @@ statistics(::Type{<:SOperator})='B'
 Get the raw name of a type of SOperator.
 """
 rawelement(::Type{<:SOperator})=SOperator
-
-"""
-    soptdefaultlatex
-
-The default LaTeX pattern of the oids of a spin operator.
-"""
-const soptdefaultlatex=LaTeX{(:tag,),(:site,:orbital)}('S')
-
-"""
-    optdefaultlatex(::Type{<:SOperator}) -> LaTeX
-
-Get the default LaTeX pattern of the oids of a spin operator.
-"""
-optdefaultlatex(::Type{<:SOperator})=soptdefaultlatex
 
 """
     permute(::Type{<:SOperator},id1::OID{<:SIndex},id2::OID{<:SIndex},table) -> Tuple{Vararg{SOperator}}

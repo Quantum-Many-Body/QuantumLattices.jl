@@ -3,14 +3,14 @@ module FockPackage
 using LinearAlgebra: dot
 using Printf: @printf,@sprintf
 using ..Spatials: PID,AbstractBond,Bond,decompose
-using ..DegreesOfFreedom: IID,Index,Internal,FilteredAttributes,IDFConfig,Table,OID,Operator,Operators,LaTeX,coordpresent
+using ..DegreesOfFreedom: IID,Index,Internal,FilteredAttributes,IDFConfig,Table,OID,Operator,Operators,LaTeX,latexformat,coordpresent
 using ..Terms: wildcard,constant,Subscript,Subscripts,subscriptexpr,Coupling,Couplings,@subscript,couplingcenters,Term,TermCouplings,TermAmplitude,TermModulate
 using ...Interfaces: id,rank,kind
 using ...Prerequisites: Float,delta,decimaltostr
 using ...Mathematics.AlgebraOverFields: SimpleID,ID,Element
 using ...Mathematics.VectorSpaces: VectorSpace,IsMultiIndexable,MultiIndexOrderStyle
 
-import ..DegreesOfFreedom: script,otype,isHermitian,optdefaultlatex
+import ..DegreesOfFreedom: script,otype,isHermitian
 import ..Terms: couplingcenter,statistics,abbr,termfactor
 import ...Interfaces: dims,inds,⊗,⋅,expand,expand!,permute
 import ...Mathematics.AlgebraOverFields: rawelement
@@ -202,6 +202,14 @@ struct FOperator{V,I<:ID} <: FockOperator{V,I}
 end
 
 """
+    foptdefaultlatex
+
+The default LaTeX format of the oids of a fermionic operator.
+"""
+const foptdefaultlatex=LaTeX{(:nambu,),(:site,:orbital,:spinsym)}('c')
+latexformat(FOperator,foptdefaultlatex)
+
+"""
     statistics(opt::FOperator) -> Char
     statistics(::Type{<:FOperator}) -> Char
 
@@ -216,20 +224,6 @@ statistics(::Type{<:FOperator})='F'
 Get the raw name of a type of FOperator.
 """
 rawelement(::Type{<:FOperator})=FOperator
-
-"""
-    foptdefaultlatex
-
-The default LaTeX pattern of the oids of a fermionic operator.
-"""
-const foptdefaultlatex=LaTeX{(:nambu,),(:site,:orbital,:spinsym)}('c')
-
-"""
-    optdefaultlatex(::Type{<:FOperator}) -> LaTeX
-
-Get the default LaTeX pattern of the oids of a fermionic operator.
-"""
-optdefaultlatex(::Type{<:FOperator})=foptdefaultlatex
 
 """
     permute(::Type{<:FOperator},id1::OID{<:FIndex},id2::OID{<:FIndex},::Any=nothing) -> Tuple{Vararg{FOperator}}
@@ -267,6 +261,14 @@ struct BOperator{V,I<:ID} <: FockOperator{V,I}
 end
 
 """
+    boptdefaultlatex
+
+The default LaTeX format of the oids of a bosonic operator.
+"""
+const boptdefaultlatex=LaTeX{(:nambu,),(:site,:orbital,:spinsym)}('b')
+latexformat(BOperator,boptdefaultlatex)
+
+"""
     statistics(opt::BOperator)
     statistics(::Type{<:BOperator})
 
@@ -281,20 +283,6 @@ statistics(::Type{<:BOperator})='B'
 Get the raw name of a type of BOperator.
 """
 rawelement(::Type{<:BOperator})=BOperator
-
-"""
-    boptdefaultlatex
-
-The default LaTeX pattern of the oids of a bosonic operator.
-"""
-const boptdefaultlatex=LaTeX{(:nambu,),(:site,:orbital,:spinsym)}('b')
-
-"""
-    optdefaultlatex(::Type{<:BOperator}) -> LaTeX
-
-Get the default LaTeX pattern of the oids of a bosonic operator.
-"""
-optdefaultlatex(::Type{<:BOperator})=boptdefaultlatex
 
 """
     permute(::Type{<:BOperator},id1::OID{<:FIndex},id2::OID{<:FIndex},::Any=nothing) -> Tuple{Vararg{BOperator}}

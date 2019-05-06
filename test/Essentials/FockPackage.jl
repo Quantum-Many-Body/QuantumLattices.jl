@@ -2,7 +2,7 @@ using Test
 using StaticArrays: SVector
 using QuantumLattices.Essentials.FockPackage
 using QuantumLattices.Essentials.Spatials: Bond,Point,PID,rcoord,azimuthd
-using QuantumLattices.Essentials.DegreesOfFreedom: Table,IDFConfig,OID,Operators,oidtype,otype,script,optdefaultlatex
+using QuantumLattices.Essentials.DegreesOfFreedom: Table,IDFConfig,OID,Operators,oidtype,otype,script
 using QuantumLattices.Essentials.Terms: Couplings,@subscript,statistics,abbr
 using QuantumLattices.Interfaces: dims,inds,⊗,⋅,expand,permute
 using QuantumLattices.Prerequisites: Float
@@ -56,7 +56,7 @@ end
 
 @testset "FockOperator" begin
     @test rawelement(FOperator{V} where V)==FOperator
-    @test optdefaultlatex(FOperator)==foptdefaultlatex
+    @test latexformat(FOperator)==foptdefaultlatex
 
     opt=FOperator(1.0,(FIndex(1,1,1,1,2),FIndex(1,1,1,1,1)))
     @test opt|>isnormalordered
@@ -75,7 +75,7 @@ end
     @test opt1*opt2==FOperator(3.0,(FIndex(1,2,1,1,2),FIndex(1,2,1,1,1),FIndex(1,2,1,1,2),FIndex(1,2,1,1,1)))
 
     @test rawelement(BOperator{V} where V)==BOperator
-    @test optdefaultlatex(BOperator)==boptdefaultlatex
+    @test latexformat(BOperator)==boptdefaultlatex
 
     opt=BOperator(1.0,(FIndex(1,1,1,1,2),FIndex(1,1,1,1,1)))
     @test opt|>statistics==opt|>typeof|>statistics=='B'

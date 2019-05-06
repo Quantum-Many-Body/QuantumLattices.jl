@@ -1,5 +1,4 @@
 using Test
-using LaTeXStrings: latexstring
 using StaticArrays: SVector
 using LinearAlgebra: dot
 using QuantumLattices.Prerequisites: Float
@@ -7,7 +6,7 @@ using QuantumLattices.Essentials.DegreesOfFreedom
 using QuantumLattices.Essentials.Spatials: PID,Point,pidtype,rcoord,icoord
 using QuantumLattices.Mathematics.AlgebraOverFields: ID
 import QuantumLattices.Interfaces: dimension,decompose,update!,sequence,reset!
-import QuantumLattices.Essentials.DegreesOfFreedom: script,optdefaultlatex,latexsuperscript,latexsubscript
+import QuantumLattices.Essentials.DegreesOfFreedom: script,latexsuperscript,latexsubscript
 import QuantumLattices.Mathematics.AlgebraOverFields: rawelement
 
 struct DID <: IID nambu::Int end
@@ -43,7 +42,7 @@ struct DOperator{V,I<:ID} <: Operator{V,I}
     id::I
 end
 rawelement(::Type{<:DOperator})=DOperator
-optdefaultlatex(::Type{<:DOperator})=LaTeX{(:nambu,),(:site,)}('d')
+latexformat(DOperator,LaTeX{(:nambu,),(:site,)}('d'))
 
 @testset "Index" begin
     index=DIndex(PID('S',4),DID(1))
@@ -130,6 +129,7 @@ end
 @testset "Operator" begin
     @test rawelement(Operator{V} where V)==Operator
     @test rawelement(DOperator{V} where V)==DOperator
+    @test latexformat(DOperator)==LaTeX{(:nambu,),(:site,)}('d')
 
     opt=DOperator(1.0im,(DIndex(1,2,2),DIndex(1,1,1)),rcoords=(SVector(1.0,0.0),SVector(0.0,0.0)),icoords=(SVector(2.0,0.0),SVector(0.0,0.0)),seqs=(2,1))
     @test opt'==DOperator(-1.0im,(DIndex(1,1,2),DIndex(1,2,1)),rcoords=(SVector(0.0,0.0),SVector(1.0,0.0)),icoords=(SVector(0.0,0.0),SVector(2.0,0.0)),seqs=(1,2))
@@ -174,18 +174,15 @@ end
     @test script(oid,latex,Val(:SP))==("\\dagger",)
     @test script(oid,latex,Val(:SB))==(1,)
     @test repr(oid,latex)=="c^{\\dagger}_{1}"
-    @test latexstring(oid,latex)==latexstring(repr(oid,latex))
 
     opt=DOperator(1.0,(DIndex('d',2,2),DIndex('d',1,1)),rcoords=(SVector(1.0,0.0),SVector(0.0,0.0)),icoords=(SVector(2.0,0.0),SVector(0.0,0.0)),seqs=(2,1))
     @test repr(opt,LaTeX{(:nambu,),(:site,)}('c'))=="c^{\\dagger}_{2}c^{}_{1}"
     @test repr(opt,LaTeX{(:nambu,),(:site,)}())=="d^{\\dagger}_{2}d^{}_{1}"
     @test repr(opt,LaTeX{(:nambu,),(:rcoord,)}())=="d^{\\dagger}_{[1.0,0.0]}d^{}_{[0.0,0.0]}"
     @test repr(opt)=="d^{\\dagger}_{2}d^{}_{1}"
-    @test latexstring(opt)==latexstring(repr(opt))
 
     opts=Operators(DOperator(1.0-1.0im,(DIndex('d',2,2),DIndex('d',1,1))),DOperator(-1.0,(DIndex('d',1,2),DIndex('d',1,1))))
     @test repr(opts,LaTeX{(:nambu,),(:site,)}('c'))=="(1.0-1.0im)c^{\\dagger}_{2}c^{}_{1}-c^{\\dagger}_{1}c^{}_{1}"
-    @test latexstring(opts,LaTeX{(:nambu,),(:site,)}('c'))==latexstring(repr(opts,LaTeX{(:nambu,),(:site,)}('c')))
 
     opt=DOperator(:h,(DIndex('d',2,2),DIndex('d',1,1)))
     @test repr(opt)==":hd^{\\dagger}_{2}d^{}_{1}"

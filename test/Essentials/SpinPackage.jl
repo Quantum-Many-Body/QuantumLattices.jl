@@ -2,7 +2,7 @@ using Test
 using StaticArrays: SVector
 using QuantumLattices.Essentials.SpinPackage
 using QuantumLattices.Essentials.Spatials: PID,Point,Bond
-using QuantumLattices.Essentials.DegreesOfFreedom: Table,OID,isHermitian,IDFConfig,Operators,oidtype,otype,optdefaultlatex,script,iid
+using QuantumLattices.Essentials.DegreesOfFreedom: Table,OID,isHermitian,IDFConfig,Operators,oidtype,otype,script,iid
 using QuantumLattices.Essentials.Terms: Couplings,@subscript,statistics,abbr
 using QuantumLattices.Interfaces: dims,inds,expand,matrix,permute,rank
 using QuantumLattices.Prerequisites: Float
@@ -66,7 +66,7 @@ end
 
 @testset "SOperator" begin
     @test rawelement(SOperator{V} where V)==SOperator
-    @test optdefaultlatex(SOperator)==soptdefaultlatex
+    @test latexformat(SOperator)==soptdefaultlatex
     opt=SOperator(1.0,(SIndex('a',1,1,0.5,'+'),SIndex('a',1,1,0.5,'-')))
     @test opt|>statistics==opt|>typeof|>statistics=='B'
     @test opt'==SOperator(1.0,(SIndex('a',1,1,0.5,'+'),SIndex('a',1,1,0.5,'-')))

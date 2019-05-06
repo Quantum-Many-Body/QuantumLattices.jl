@@ -2,6 +2,7 @@ module DegreesOfFreedom
 
 using Printf: @printf,@sprintf
 using StaticArrays: SVector
+using LaTeXStrings: latexstring
 using ..Spatials: PID,AbstractBond
 using ...Interfaces: rank,dimension
 using ...Prerequisites: Float,decimaltostr
@@ -10,7 +11,7 @@ using ...Prerequisites.CompositeStructures: CompositeDict
 using ...Mathematics.VectorSpaces: VectorSpace
 using ...Mathematics.AlgebraOverFields: SimpleID,ID,Element,Elements
 
-import LaTeXStrings: latexstring
+
 import ..Spatials: pidtype,rcoord,icoord
 import ...Interfaces: reset!,update!,sequence
 import ...Mathematics.AlgebraOverFields: rawelement
@@ -20,7 +21,7 @@ export IndexToTuple,DirectIndexToTuple,directindextotuple,FilteredAttributes
 export Internal,IDFConfig,Table
 export LaTeX,OID,Operator,Operators,isHermitian,twist
 export coordpresent,coordabsent
-export script,oidtype,otype,optdefaultlatex
+export latexformat,script,oidtype,otype
 export Boundary
 
 """
@@ -482,6 +483,16 @@ function (O::Type{<:Operator})( value,
     return O(value,ID(OID,indexes,rcoords,icoords,seqs))
 end
 
+const latexformats=Dict{Symbol,LaTeX}()
+"""
+    latexformat(T::Type{<:Operator}) -> LaTeX
+    latexformat(T::Type{<:Operator},l::LaTeX) -> LaTeX
+
+Get/Set the latex format for a subtype of `Operator`.
+"""
+latexformat(T::Type{<:Operator})=latexformats[nameof(T)]
+latexformat(T::Type{<:Operator},l::LaTeX)=latexformats[nameof(T)]=l
+
 """
     show(io::IO,opt::Operator)
     show(io::IO,::MIME"text/latex",opt::Operator)
@@ -489,7 +500,7 @@ end
 Show an operator.
 """
 Base.show(io::IO,opt::Operator)=@printf io "%s(value=%s,id=%s)" nameof(typeof(opt)) decimaltostr(opt.value) opt.id
-Base.show(io::IO,::MIME"text/latex",opt::Operator)=show(io,MIME"text/latex"(),latexstring(opt))
+Base.show(io::IO,::MIME"text/latex",opt::Operator)=show(io,MIME"text/latex"(),latexstring(repr(opt)))
 
 """
     adjoint(opt::Operator{N}) where N -> Operator
@@ -499,22 +510,14 @@ Get the adjoint of an operator.
 Base.adjoint(opt::Operator)=typeof(opt).name.wrapper(opt.value',opt.id')
 
 """
-    optdefaultlatex
-
-Get the default LaTeX pattern of the oids of an operator.
-"""
-function optdefaultlatex end
-
-"""
     repr(opt::Operator,l::Union{LaTeX,Nothing}=nothing) -> String
 
 Get the latex string representation of an operator.
 """
-Base.repr(opt::Operator,::Nothing=nothing)=repr(opt,opt|>typeof|>optdefaultlatex)
-@generated function Base.repr(opt::Operator,l::LaTeX)
-    rank(opt)==0 && return :(replace(valuetolatextext(opt.value)," "=>""))
-    expr=Expr(:tuple,:(valuetostr(opt.value)),[:(repr(opt.id[$i],l)) for i=1:rank(opt)]...)
-    return :(join($expr,""))
+Base.repr(opt::Operator,::Nothing=nothing)=repr(opt,latexformat(typeof(opt)))
+function Base.repr(opt::Operator,l::LaTeX)
+    rank(opt)==0 && return replace(valuetolatextext(opt.value)," "=>"")
+    return @sprintf "%s%s" valuetostr(opt.value) join(NTuple{rank(opt),String}(repr(opt.id[i],l) for i=1:rank(opt)),"")
 end
 function valuetostr(v)
     v==1 && return ""
@@ -630,7 +633,7 @@ end
 
 Show latex formed operators.
 """
-Base.show(io::IO,::MIME"text/latex",opts::Operators)=show(io,MIME"text/latex"(),latexstring(opts))
+Base.show(io::IO,::MIME"text/latex",opts::Operators)=show(io,MIME"text/latex"(),latexstring(repr(opts)))
 
 """
     isHermitian(opts::Operators) -> Bool
@@ -647,17 +650,6 @@ Twist an operator.
 function twist(operator::Operator,vectors::AbstractVector{<:AbstractVector{Float}},values::AbstractVector{Float})
     replace(operator,value=operator.value*exp(1im*angle(operator.id,vectors,values)))
 end
-
-"""
-    latexstring(oid::OID,l::Union{LaTeX,Nothing}=nothing) -> LaTeXStrings.LaTeXString
-    latexstring(opt::Operator,l::Union{LaTeX,Nothing}=nothing) -> LaTeXStrings.LaTeXString
-    latexstring(opts::Operators,l::Union{LaTeX,Nothing}=nothing) -> LaTeXStrings.LaTeXString
-
-Get the latexstring representation of an oid/operator/operators.
-"""
-latexstring(oid::OID,l::Union{LaTeX,Nothing}=nothing)=latexstring(repr(oid,l))
-latexstring(opt::Operator,l::Union{LaTeX,Nothing}=nothing)=latexstring(repr(opt,l))
-latexstring(opts::Operators,l::Union{LaTeX,Nothing}=nothing)=latexstring(repr(opts,l))
 
 """
     Boundary{Names}(values::AbstractVector{Float},vectors::AbstractVector{<:AbstractVector{Float}}) where Names
