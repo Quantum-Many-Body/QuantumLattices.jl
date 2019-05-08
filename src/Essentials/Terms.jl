@@ -390,7 +390,7 @@ end
 
 """
     Term{ST,K,R,I}(value::Any,bondkind::Any,couplings::TermCouplings,amplitude::TermAmplitude,modulate::Union{TermModulate,Nothing},factor::Any) where {ST,K,R,I}
-    Term{ST,K,R}(  id::Symbol,value::Any,bondkind::Any;
+    Term{ST,K,R}(   id::Symbol,value::Any,bondkind::Any;
                     couplings::Union{Function,Coupling,Couplings,TermCouplings},
                     amplitude::Union{Function,Nothing}=nothing,
                     modulate::Union{Function,Bool}=false,

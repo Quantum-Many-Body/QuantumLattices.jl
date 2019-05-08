@@ -15,9 +15,9 @@ makedocs(
     sitename=   "QuantumLattices.jl",
     pages=      [
                 "Home"      =>  "index.md",
-                "Tutorial"  =>  [
-                    "tutorial/UnitcellDescription.md",
-                    "tutorial/EngineAppInterface.md",
+                "Tutorials"  =>  [
+                    "tutorials/UnitcellDescription.md",
+                    "tutorials/EngineAppInterface.md",
                         ],
                 "Manual"    =>  [
                     "man/Interfaces.md",

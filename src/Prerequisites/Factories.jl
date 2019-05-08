@@ -108,6 +108,21 @@ function escape(expr::Expr,em::UnEscaped)
 end
 
 """
+    names(expr::Symbol) -> Vector{Symbol}
+    names(expr::Expr) -> Vector{Symbol}
+
+Get all the symbols in an expression.
+"""
+Base.names(expr::Symbol)=[expr]
+function Base.names(expr::Expr)
+    result=Symbol[]
+    for arg in expr.args
+        (isa(arg,Symbol)|| isa(arg,Expr)) && append!(result,names(arg))
+    end
+    return result
+end
+
+"""
     AbstractFactory
 
 Abstract type for all concrete factories.
@@ -257,30 +272,32 @@ Convert an `Argument` to the `Expr` representation of the argument it describes.
 (a::Argument)(em::MixEscaped)=combinearg(a.name,a.type(em.unescaped),a.slurp,escape(a.default,em.escaped))
 
 """
-    Parameter(name::Union{Symbol,Nothing},type::Union{Inference,Nothing})
-    Parameter(;name::Union{Symbol,Nothing}=nothing,type::Union{Inference,Nothing}=nothing)
+    Parameter(head::Union{Symbol,Nothing},name::Union{Symbol,Nothing},type::Union{Inference,Nothing})
+    Parameter(;head::Union{Symbol,Nothing}=nothing,name::Union{Symbol,Nothing}=nothing,type::Union{Inference,Nothing}=nothing)
     Parameter(expr::FExpr)
 
 The struct to describe a parameter of a `function` or a `type`.
 """
 mutable struct Parameter <: AbstractFactory
+    head::Union{Symbol,Nothing}
     name::Union{Symbol,Nothing}
     type::Union{Inference,Nothing}
 end
-Parameter(;name::Union{Symbol,Nothing}=nothing,type::Union{Inference,Nothing}=nothing)=Parameter(name,type)
+Parameter(;head::Union{Symbol,Nothing}=nothing,name::Union{Symbol,Nothing}=nothing,type::Union{Inference,Nothing}=nothing)=Parameter(head,name,type)
 function Parameter(expr::FExpr)
     if isa(expr,Symbol)
-        name,type=expr,nothing
+        head,name,type=nothing,expr,nothing
     elseif expr.head==:(<:)
+        head=:(<:)
         (name,type)=length(expr.args)==2 ? expr.args : (nothing,expr.args[1])
         type=Inference(type)
     elseif expr.head==:(::)
         @assert length(expr.args)==1 "Parameter error: wrong input expr."
-        name,type=nothing,Inference(expr.args[1])
+        head,name,type=:(::),nothing,Inference(expr.args[1])
     else
         error("Parameter error: wrong input expr.")
     end
-    Parameter(name,type)
+    Parameter(head,name,type)
 end
 
 """
@@ -297,7 +314,9 @@ macro parameter(expr::FExpr) expr=[expr];:(Parameter($expr...)) end
 
 Convert a `Parameter` to the `Expr` representation of the parameter it describes.
 """
-(p::Parameter)(em::Union{RawExpr,<:UnEscaped,<:MixEscaped})=p.name===nothing ? Expr(:(<:),p.type(em)) : p.type===nothing ? p.name : Expr(:(<:),p.name,p.type(em))
+function (p::Parameter)(em::Union{RawExpr,<:UnEscaped,<:MixEscaped})
+    p.name===nothing ? (p.head==:(::) ? p.type(em) : Expr(:(<:),p.type(em))) : p.type===nothing ? p.name : Expr(:(<:),p.name,p.type(em))
+end
 
 """
     Field(name::Symbol,type::Inference)

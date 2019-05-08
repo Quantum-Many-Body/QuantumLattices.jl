@@ -22,10 +22,10 @@ end
 Methods like above are common when we design abstract types, but they are not type stable. To get rid of it, the generated function trick can be used:
 ```julia
 @generated function Base.:(==)(o1::AbstractType,o2::AbstractType)
-    n1,n2=o1|>typeof|>fieldcount,o2|>typeof|>fieldcount
+    n1,n2=o1|>fieldcount,o2|>fieldcount
     if n1==n2
         expr=:(getfield(o1,1)==getfield(o2,1))
-        for i=2:fcount
+        for i=2:n1
             expr=Expr(:&&,expr,:(getfield(o1,$i)==getfield(o2,$i)))
         end
         return expr

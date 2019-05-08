@@ -3,10 +3,10 @@ using QuantumLattices.Mathematics.VectorSpaces
 using QuantumLattices.Mathematics.Combinatorics: Combinations
 using QuantumLattices.Interfaces: dimension,⊕,rank,dims,inds,degree
 
-@testset "DirectVectorSpace" begin
+@testset "SimpleVectorSpace" begin
     id1,id2,id3=(1,1),(1,2),(1,3)
 
-    vs=DirectVectorSpace{'T'}(id1,id2)
+    vs=SimpleVectorSpace{'T'}(id1,id2)
     @test vs==deepcopy(vs)
     @test isequal(vs,deepcopy(vs))
     @test vs|>size==(2,)
@@ -25,7 +25,7 @@ using QuantumLattices.Interfaces: dimension,⊕,rank,dims,inds,degree
     @test id3⊕vs==id3⊕id1⊕id2
     @test (id2⊕id3)⊕vs==id2⊕id3⊕id1⊕id2
 
-    vs=DirectVectorSpace{'F'}(id1,id2)
+    vs=SimpleVectorSpace{'F'}(id1,id2)
     @test vs==deepcopy(vs)
     @test isequal(vs,deepcopy(vs))
     @test vs|>size==(2,)
@@ -45,8 +45,8 @@ using QuantumLattices.Interfaces: dimension,⊕,rank,dims,inds,degree
     @test (id2⊕id3)⊕vs==id2⊕id3⊕id1⊕id2
 end
 
-@testset "DirectIndices" begin
-    foi=DirectIndices{'F'}(2,2,2)
+@testset "SimpleIndices" begin
+    foi=SimpleIndices{'F'}(2,2,2)
     @test HasTable(typeof(foi))==HasTable(false)
     @test IsMultiIndexable(typeof(foi))==IsMultiIndexable(true)
     @test MultiIndexOrderStyle(typeof(foi))==MultiIndexOrderStyle('F')
@@ -61,7 +61,7 @@ end
         @test findfirst(finds,foi)==i
         @test searchsortedfirst(foi,foi[i])==i
     end
-    coi=DirectIndices{'C'}(2,2,2)
+    coi=SimpleIndices{'C'}(2,2,2)
     @test HasTable(typeof(coi))==HasTable(false)
     @test IsMultiIndexable(typeof(coi))==IsMultiIndexable(true)
     @test MultiIndexOrderStyle(typeof(coi))==MultiIndexOrderStyle('C')
@@ -119,21 +119,21 @@ end
     @test t[3]==TabledIndices{2}(com,2)
 end
 
-struct SimpleGradedVectorSpace{T<:GradedTables{Char,DirectVectorSpace{'F',Int,4}}} <: GradedVectorSpace{Char,Int,DirectVectorSpace{'F',Int,4},T}
+struct SimpleGradedVectorSpace{T<:GradedTables{Char,SimpleVectorSpace{'F',Int,4}}} <: GradedVectorSpace{Char,Int,SimpleVectorSpace{'F',Int,4},T}
     tables::T
 end
 
 @testset "GradedVectorSpace" begin
-    v1=DirectVectorSpace{'F'}(2,3,4,1)
-    v2=DirectVectorSpace{'F'}(8,5,6,7)
+    v1=SimpleVectorSpace{'F'}(2,3,4,1)
+    v2=SimpleVectorSpace{'F'}(8,5,6,7)
     vs=SimpleGradedVectorSpace(GradedTables((v1,v2),('a','b')))
     @test keys(vs)==('a','b')
     @test values(vs)==(v1,v2)
     @test pairs(vs)==vs.tables
     @test keytype(vs,1)==keytype(typeof(vs),1)==Char
     @test keytype(vs,2)==keytype(typeof(vs),2)==Char
-    @test valtype(vs,1)==valtype(typeof(vs),1)==DirectVectorSpace{'F',Int,4}
-    @test valtype(vs,2)==valtype(typeof(vs),2)==DirectVectorSpace{'F',Int,4}
+    @test valtype(vs,1)==valtype(typeof(vs),1)==SimpleVectorSpace{'F',Int,4}
+    @test valtype(vs,2)==valtype(typeof(vs),2)==SimpleVectorSpace{'F',Int,4}
     @test eltype(vs,1)==eltype(typeof(vs),1)==Tuple{Char,Int}
     @test eltype(vs,2)==eltype(typeof(vs),2)==Tuple{Char,Int}
     @test rank(vs)==rank(typeof(vs))==2

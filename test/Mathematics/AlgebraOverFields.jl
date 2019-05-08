@@ -4,7 +4,7 @@ using QuantumLattices.Mathematics.AlgebraOverFields
 using QuantumLattices.Interfaces: dimension,rank,add!,sub!,mul!,div!,sequence
 using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Mathematics.Combinatorics: Combinations
-using QuantumLattices.Mathematics.VectorSpaces: DirectVectorSpace
+using QuantumLattices.Mathematics.VectorSpaces: SimpleVectorSpace
 import QuantumLattices.Interfaces: ⊗,⋅,permute
 import QuantumLattices.Mathematics.AlgebraOverFields: rawelement
 
@@ -51,7 +51,7 @@ end
 end
 
 @testset "IdSpace" begin
-    sids=DirectVectorSpace{'F'}((AOFID(i,1) for i=1:4)...)
+    sids=SimpleVectorSpace{'F'}((AOFID(i,1) for i=1:4)...)
     idspace=IdSpace(Combinations,sids,Val((0,2,4)))
     for i=1:dimension(idspace)
         @test searchsortedfirst(idspace,idspace[i])==i

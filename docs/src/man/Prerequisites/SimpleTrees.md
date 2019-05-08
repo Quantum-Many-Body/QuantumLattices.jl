@@ -46,11 +46,11 @@ To fully utilize the methods designed for a tree structure, in our protocol, a c
     addnode!(tree::AbstractSimpleTree{N},
              parent::Union{N,Nothing},
              node::N
-             ) where N
+             ) where N -> typeof(tree)
     ```
     Update the structure of a tree by adding a node. When the parent is `nothing`, the input tree must be empty and the input node becomes the tree's root.
   - ```julia
-    deletenode!(tree::AbstractSimpleTree{N},node::N) where N
+    deletenode!(tree::AbstractSimpleTree{N},node::N) where N -> typeof(tree)
     ```
     Update the structure of a tree by deleting a node.
 * index related methods
@@ -91,23 +91,24 @@ To implement all the prerequisites listed above costs a bit efforts. We provide 
 * `parent::Dict{N,N}`: records of the parent of each of the tree's nodes
 * `children::Dict{N,Vector{N}}`: records of the children of each of the tree's nodes
 As above, the first lazy way is to include this struct with the special name `:TREECORE` in your concrete subtype as the **last** attribute. This process can be even lazier, in that we provide a macro [`@simpletree`](@ref) to decorate your "raw" struct automatically, e.g.
-```@repl simpletrees
-@simpletree(struct SimpleSubTree end)
-@simpletree(struct SubTreeWithTreeParameters end,
-      {N<:AbstractString,D<:Number}
-      )
-@simpletree(struct SubTreeWithCertainTreeParameters end,
-      {<:String,<:Int}
-      )
-@simpletree(struct SubTreeWithFields info::Vector{Int} end,
-      {N<:AbstractString,D<:Number}
-      )
-@simpletree(struct SubTreeWithParametricFields{T} info::Vector{T} end,
-      {N<:AbstractString,D<:Number}
-      )
-@simpletree(struct SubTreeWithOverlappedParametricFields{N} info::Vector{N} end,
-      {N<:AbstractString,D<:Number}
-      )
+```@example simpletrees
+# simple subtree
+@simpletree(struct SubTree1 end)
+
+# subtree with tree parameters
+@simpletree(struct SubTree2 end,{N<:AbstractString,D<:Number})
+
+# subtree with definite tree parameters
+@simpletree(struct SubTree3 end,{::String,::Int})
+
+# subtree with extra fields
+@simpletree(struct SubTree4 info::Vector{Int} end,{N<:AbstractString,D<:Number})
+
+# subtree with extra parametric fields
+@simpletree(struct SubTree5{T} info::Vector{T} end,{N<:AbstractString,D<:Number})
+
+# subtree with extra fields whose parameters overlap with node/data type
+@simpletree(struct SubTree6{N} info::Vector{N} end,{N<:AbstractString,D<:Number})
 ```
 
 ### SimpleTree

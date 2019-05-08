@@ -33,12 +33,19 @@ To subtype it, please note:
    ```
 4. For all concrete subtypes, if inner constructors are defined, the one which has the same interface with the default one must be implemented.
    Otherwise, some functionalities will not work.
-5. Arithmetic operations, such as `+`, `-`, `*`, `/`, `%`, `÷`, etc. are **NOT** supported.
+5. Arithmetic operations, such as `+`, `-`, `*`, `/`, `%`, `÷`, etc. are **not** supported.
    However, the function [`map`](@ref) is implemented, which can help users do the overloadings of these operations.
 
 We define a macro [`@namedvector`](@ref) as the type factory to decorate a "raw" struct to be a subtype of `NamedVector`. Here, "raw" means the struct to be decorated has no explicit supertype other than `Any`, neither inner constructors as well. For example,
-```@repl namedvectors
-@namedvector mutable struct InHomoNV
+```@example namedvectors
+# decorate an immutable "raw" struct
+@namedvector struct InHomoIMNV
+    scope::String
+    site::Int
+end
+
+# decorate a mutable "raw" struct
+@namedvector mutable struct InHomoMNV
     scope::String
     site::Int
 end
@@ -58,8 +65,11 @@ To subtype [`HomoNamedVector`](@ref), all the suggestions mentioned in the previ
 end
 ```
 We also provide a macro [`@homonamedvector`](@ref) to help the definition of concrete homogeneous named vector, where you only need specify the type name, field names, data type and optionally whether the subtype is mutable. For example,
-```@repl namedvectors
-@homonamedvector HomoNVWithoutParameter (:scope,:site) Int mutable=true
+```@example namedvectors
+# construct an immutable homogeneous named vector without type parameters
+@homonamedvector HomoNVWithoutParameter (:scope,:site) Int mutable=false
+
+# construct a mutable homogeneous named vector with type parameters
 @homonamedvector HomoNVWithParameter (:scope,:site) (<:Real) mutable=true
 ```
 This macro also integrates the `Base.fieldnames` function, thus its overloading by hand is on longer needed.

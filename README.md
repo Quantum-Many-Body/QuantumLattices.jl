@@ -8,7 +8,9 @@
 [![LICENSE](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![LICENSE](https://img.shields.io/badge/license-Anti%20996-blue.svg)](https://github.com/996icu/996.ICU/blob/master/LICENSE)
 
-Julia package for the construction of quantum lattice systems.
+*Julia package for the construction of quantum lattice systems.*
+
+Welcome to [QuantumLattices](https://github.com/Quantum-Many-Body/QuantumLattices.jl). Here we provide a general framework to construct the **symbolic representation** of the Hamiltonian (i.e. the operator formed Hamiltonian) of any **quantum lattice system**, with the inputs as simple as its description by natural language. This symbolic representation serves as the prerequisite of solving quantum many-body problems, based on which several algorithms, such as **TBA**(tight-bind approximation), **SCMF**(self-consistent mean field theory), **ED**(exact diagonalizaiton), **CPT/VCA**(cluster perturbation theory and variational cluster approach ), **DMRG**(density matrix renormalization group), etc. can be implemented. Generic interfaces are defined to give a unified access to these algorithms although their real implementations come in seperate packages. Only minor modifications need be made when users alter from one algorithm to another.
 
 ## Installation
 
@@ -20,30 +22,48 @@ pkg> add QuantumLattices
 
 ## Introduction
 
-The core of the package is the constructuion of the **symbolic representations** of **lattice Hamiltonians**. This is based on the following  mathematical observations:
-* the operators contained in the lattice Hamiltonian act on **local Hilbert spaces**, and
-* the operators contained in the lattice Hamiltonian form **algebras over the complex field**.
+The core of the package is the constructuion of the **symbolic representations** of **lattice Hamiltonians**. This is based on the following mathematical observations that the operators in a lattice Hamiltonian:
+* act on **local Hilbert spaces**, and
+* form **algebras over the complex field**.
 
-The first observation is the starting point of our construction framework (i.e. [**the unitcell description framewrok**](https://quantum-many-body.github.io/QuantumLattices.jl/dev/tutorial/UnitcellDescription/)) and the second is the mathmatical foundation of our implementation of the **symbolic computation**.
+The first observation is the starting point of our so-called [**unitcell description**](https://quantum-many-body.github.io/QuantumLattices.jl/dev/tutorials/UnitcellDescription/) framework and the second is the mathmatical foundation of our implementation of the **symbolic computation**.
 
 It is noted that our implementation of the symbolic computation only involves
-1) the mathematical operations between a scalar and an operator, and
-2) the mathematical operations between two operators.
+* the mathematical operations between a scalar and an operator, and
+* the mathematical operations between two operators.
 
 The symbolic operations between two scalars are **not** implemented becase:
 * in condensed matter physics, for many cases, only the numerical values of operators are important because the analytical expressions can be too complicated to analyze or they may even not exist;
 * our construction process of the operators and their mathematical operations are **completely compatible with the [`SymPy`](https://github.com/JuliaPy/SymPy.jl) package**, therefore, a fully symbolic computation can be acheived by a simple combination of both.
 
-Specically, we provide several general functions to deal with three common kinds of systems in condensed matter physics
+## Package Features
+
+* **Unitcell Description Framework**: by telling the information of the quantum lattice system within a unitcell, the construction of the symbolic representation of the Hamiltonian is just as simple as describing the system in a usual research paper.
+* **Generic Engine-App Interfaces**: by regarding the relation between algorithms and tasks as that between engines and apps, automatic project management is realized, including that of result recording, data caching, parameter updating, code logging, dependency managing, etc, furthermore, all algorithms are initialized in quite similiar ways with only minor modifications needed.
+* **Complete symbolic computation**: with only this package, symbolic computation between operators is realized whereas the coeffcient of any operator remains numeric; by integrating with [`SymPy`](https://github.com/JuliaPy/SymPy.jl), complete symbolic computation can be acheived and no modifications need be made on the methods in this package.
+
+## Supported Systems
+
+Three common kinds of systems in condensed matter physics are perfectly supported:
 * **canonical fermionic systems**
-* **canonical bosonic systems**
+* **canonical/hard-core bosonic systems**
 * **SU(2) spin systems**
 
-Thees functions can also be applied to other systems if you extend our "protocols", which won't cost you much effort.
+Furthermore, other systems can be supported easily by extending the generic "protocols" provided in this package.
 
-This package can serve as the **prerequisites of all quantum lattice algorithms/approaches**, e.g. TBA, SCMF, ED, CPT/VCA, DMRG, etc. Some of these algorithms have being under development by the same authors of this package elsewhere.
+## Supported Algorithms
 
-For tutorials and munuals of this pacakge, please refer to its docs.
+Concrete algorithms are implemented in seperate packages (still in progess):
+* **TBA**: tight-binding approximation for fermionic/bosonic systems;
+* **SCMF**: self-consistent mean field theory for fermionic systems;
+* **[ED](https://github.com/Quantum-Many-Body/ExactDiagonalization.jl)**: exact diagonalizaiton for fermionic/hard-core-bosonic/spin systems;
+* **CPT/VCA**: cluster perturbation theory and variational cluster approach for fermionic systems;
+* **DMRG**: density matrix renormalization group for fermionic/hard-core-bosonic/spin systems;
+* **LSWT**: linear spin wave theory for local spin systems;
+* **FBFMSW**: spin wave theory for flatband ferromagnets.
+
+## Getting Started
+[Tutorials: unitcell description](https://quantum-many-body.github.io/QuantumLattices.jl/dev/tutorials/UnitcellDescription/)
 
 ## Documentation
 - [**LATEST**][docs-latest-url] &mdash; **documentation of the latest version.**
@@ -51,11 +71,13 @@ For tutorials and munuals of this pacakge, please refer to its docs.
 
 ## Note
 
-Due to the fast development of this package, releases with different minor version numbers are **not** guaranteed to be compatible with previous ones **before** the release of v1.0.0. Comments are welcomed in the issues.
+Due to the fast development of this package, releases with different minor version numbers are **not** guaranteed to be compatible with previous ones **before** the release of v1.0.0. Comments are welcomed in the github issues.
 
 ## Contact
 waltergu1989@gmail.com
 
+## Python counterpart
+[HamiltonianPy](https://github.com/waltergu/HamiltonianPy): in fact, the authors of this Julia package worked on the python package at first and only turned to Julia later.
 
 [docs-latest-img]: https://img.shields.io/badge/docs-latest-blue.svg
 [docs-latest-url]: https://quantum-many-body.github.io/QuantumLattices.jl/latest/

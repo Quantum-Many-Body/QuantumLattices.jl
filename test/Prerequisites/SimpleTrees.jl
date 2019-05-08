@@ -2,6 +2,7 @@ using Test
 using QuantumLattices.Prerequisites.SimpleTrees
 
 @simpletree struct ATree end
+@simpletree struct BTree end {<:AbstractString,::Int}
 
 @testset "AbstractSimpleTree" begin
     tree=ATree{String,Int}()
@@ -58,8 +59,15 @@ end
 
 @testset "SimpleTree" begin
     tree=SimpleTree{String,Int}()
-    @test tree|>eltype==Pair{String,Int}
-    @test tree|>keytype==String
-    @test tree|>valtype==Int
+    @test tree|>eltype==tree|>typeof|>eltype==Pair{String,Int}
+    @test tree|>keytype==tree|>typeof|>keytype==String
+    @test tree|>valtype==tree|>typeof|>valtype==Int
     @test tree|>root==nothing
+end
+
+@testset "@simpletree" begin
+    @test BTree|>valtype==Int
+    @test BTree{String}|>keytype==String
+    @test BTree{String}|>valtype==Int
+    @test BTree{String}().TREECORE==SimpleTreeCore{String,Int}()
 end

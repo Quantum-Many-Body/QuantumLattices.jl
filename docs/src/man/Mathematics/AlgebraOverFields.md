@@ -23,7 +23,7 @@ Generally, the usual multiplication between two elements of an algebra is not co
 
 [`IdSpace`](@ref) defines the complete vector space that corresponds to an algebra.
 
-An id space uses a set of simple id bases to generated all ranked ids, with the former represented by an instance of [`DirectVectorSpace`](@ref) and stored in the attribute `:sids`, while the latter by an instance of [`GradedTables`](@ref) in the attribute `:tables`. For the sick of the orderings among different ids, an id will be represented by a multiindex, which are determined by the corresponding sequences of its simple ids in the basis set. The id system can be complete or over complete, depending on whether the attribute `:tables` contain multiindices that actually represent the same basis of the algebra. Besides, the methods
+An id space uses a set of simple id bases to generated all ranked ids, with the former represented by an instance of [`SimpleVectorSpace`](@ref) and stored in the attribute `:sids`, while the latter by an instance of [`GradedTables`](@ref) in the attribute `:tables`. For the sick of the orderings among different ids, an id will be represented by a multiindex, which are determined by the corresponding sequences of its simple ids in the basis set. The id system can be complete or over complete, depending on whether the attribute `:tables` contain multiindices that actually represent the same basis of the algebra. Besides, the methods
 ```julia
 Base.getindex(idspace::IdSpace,i::Int) -> ID
 ```

@@ -7,8 +7,8 @@ import ...Interfaces: dimension,⊕,rank,dims,inds,degree
 
 export VectorSpace
 export HasTable,TableSorted,IsMultiIndexable,MultiIndexOrderStyle
-export DirectVectorSpace
-export OrderedIndices,DirectIndices,TabledIndices
+export SimpleVectorSpace
+export OrderedIndices,SimpleIndices,TabledIndices
 export GradedTables,GradedVectorSpace
 
 """
@@ -174,34 +174,34 @@ _in_(basis::B,vs::VectorSpace{B},::HasTable{false},::IsMultiIndexable{true}) whe
 end
 
 """
-    DirectVectorSpace{S}(table::NTuple{N,B}) where {S,B,N}
-    DirectVectorSpace{S}(table...) where S
+    SimpleVectorSpace{S}(table::NTuple{N,B}) where {S,B,N}
+    SimpleVectorSpace{S}(table...) where S
 
 Simplest vector space, whose bases are stored in the attribute `:table` as an ntuple.
 
 The `:table` attribute can be sorted or unsorted, which is determined by the type parameter `S`, with `'T'` for sorted and `'F'` for unsorted.
 """
-struct DirectVectorSpace{S,B,N} <: VectorSpace{B}
+struct SimpleVectorSpace{S,B,N} <: VectorSpace{B}
     table::NTuple{N,B}
-    DirectVectorSpace{S}(table::NTuple{N,B}) where {S,B,N}=(@assert(S∈('T','F'),"DirectVectorSpace error: wrong type parameter S($S).");new{S,B,N}(table))
+    SimpleVectorSpace{S}(table::NTuple{N,B}) where {S,B,N}=(@assert(S∈('T','F'),"SimpleVectorSpace error: wrong type parameter S($S).");new{S,B,N}(table))
 end
-DirectVectorSpace{S}(table...) where S=DirectVectorSpace{S}(table)
-HasTable(::Type{<:DirectVectorSpace})=HasTable(true)
-TableSorted(::Type{<:DirectVectorSpace{'T'}})=TableSorted(true)
-TableSorted(::Type{<:DirectVectorSpace{'F'}})=TableSorted(false)
+SimpleVectorSpace{S}(table...) where S=SimpleVectorSpace{S}(table)
+HasTable(::Type{<:SimpleVectorSpace})=HasTable(true)
+TableSorted(::Type{<:SimpleVectorSpace{'T'}})=TableSorted(true)
+TableSorted(::Type{<:SimpleVectorSpace{'F'}})=TableSorted(false)
 
 """
-    ⊕(basis1::B,basis2::B) where B -> DirectVectorSpace{'F',B,2}
-    ⊕(basis::B,vs::DirectVectorSpace{<:Any,B}) where B -> DirectVectorSpace{'F',B}
-    ⊕(vs::DirectVectorSpace{<:Any,B},basis::B) where B -> DirectVectorSpace{'F',B}
-    ⊕(vs1::DirectVectorSpace{<:Any,B},vs2::DirectVectorSpace{<:Any,B}) where B -> DirectVectorSpace{'F',B}
+    ⊕(basis1::B,basis2::B) where B -> SimpleVectorSpace{'F',B,2}
+    ⊕(basis::B,vs::SimpleVectorSpace{<:Any,B}) where B -> SimpleVectorSpace{'F',B}
+    ⊕(vs::SimpleVectorSpace{<:Any,B},basis::B) where B -> SimpleVectorSpace{'F',B}
+    ⊕(vs1::SimpleVectorSpace{<:Any,B},vs2::SimpleVectorSpace{<:Any,B}) where B -> SimpleVectorSpace{'F',B}
 
-Get the direct sum between bases or direct vector spaces.
+Get the direct sum between bases or simple vector spaces.
 """
-⊕(basis1::B,basis2::B) where B=DirectVectorSpace{'F'}(basis1,basis2)
-⊕(basis::B,vs::DirectVectorSpace{<:Any,B}) where B=DirectVectorSpace{'F'}(basis,vs.table...)
-⊕(vs::DirectVectorSpace{<:Any,B},basis::B) where B=DirectVectorSpace{'F'}(vs.table...,basis)
-⊕(vs1::DirectVectorSpace{<:Any,B},vs2::DirectVectorSpace{<:Any,B}) where B=DirectVectorSpace{'F'}(vs1.table...,vs2.table...)
+⊕(basis1::B,basis2::B) where B=SimpleVectorSpace{'F'}(basis1,basis2)
+⊕(basis::B,vs::SimpleVectorSpace{<:Any,B}) where B=SimpleVectorSpace{'F'}(basis,vs.table...)
+⊕(vs::SimpleVectorSpace{<:Any,B},basis::B) where B=SimpleVectorSpace{'F'}(vs.table...,basis)
+⊕(vs1::SimpleVectorSpace{<:Any,B},vs2::SimpleVectorSpace{<:Any,B}) where B=SimpleVectorSpace{'F'}(vs1.table...,vs2.table...)
 
 """
     OrderedIndices{N} <: VectorSpace{NTuple{N,Int}}
@@ -219,21 +219,21 @@ rank(::Type{<:OrderedIndices{N}}) where N=N
 Tuple(index::NTuple{N,Int},::OrderedIndices{N}) where N=index
 
 """
-    DirectIndices{M}(dims::NTuple{N,Int}) where {M,N}
+    SimpleIndices{M}(dims::NTuple{N,Int}) where {M,N}
 
-Direct ordered Cartesian indices.
+Simple ordered Cartesian indices.
 
 !!! note
     1) It can be C/C++ ordered or Fortran ordered depending on the first type parameter `M`, with `'C'` for the former and `'F'` the latter.
     2) For its bases (Cartesian indices), there is no restriction except that they should be in the proper range defined by its `dims`.
 """
-struct DirectIndices{M,N} <: OrderedIndices{N}
+struct SimpleIndices{M,N} <: OrderedIndices{N}
     dims::NTuple{N,Int}
-    DirectIndices{M}(dims::NTuple{N,Int}) where {M,N}=(@assert(M∈('C','F'),"DirectIndices error: wrong type parameter M($M).");new{M,N}(dims))
+    SimpleIndices{M}(dims::NTuple{N,Int}) where {M,N}=(@assert(M∈('C','F'),"SimpleIndices error: wrong type parameter M($M).");new{M,N}(dims))
 end
-DirectIndices{M}(dims::Int...) where M=DirectIndices{M}(dims)
-DirectIndices{M,N}(dims::NTuple{N,Int}) where {M,N}=DirectIndices{M}(dims)
-MultiIndexOrderStyle(::Type{<:DirectIndices{M}}) where M=MultiIndexOrderStyle(M)
+SimpleIndices{M}(dims::Int...) where M=SimpleIndices{M}(dims)
+SimpleIndices{M,N}(dims::NTuple{N,Int}) where {M,N}=SimpleIndices{M}(dims)
+MultiIndexOrderStyle(::Type{<:SimpleIndices{M}}) where M=MultiIndexOrderStyle(M)
 
 """
     TabledIndices{S}(dims::NTuple{N,Int},table::Vector{NTuple{N,Int}}) where {S,N}
@@ -241,7 +241,7 @@ MultiIndexOrderStyle(::Type{<:DirectIndices{M}}) where M=MultiIndexOrderStyle(M)
 
 Tabled ordered Cartesian indices.
 
-Compared to [`DirectIndices`](@ref), the bases of this kind of vector spaces are stored in the attribute `:table`, which must be a vector of tuple of integers. The `:table` attribute can be sorted or unsorted, which is determined by the type parameter `S`, with `'T'` for sorted and `'F'` for unsorted. This type suits the situations when the Cartesian indices are restricted by extra conditions except that propoesed by the attribute `:dims`.
+Compared to [`SimpleIndices`](@ref), the bases of this kind of vector spaces are stored in the attribute `:table`, which must be a vector of tuple of integers. The `:table` attribute can be sorted or unsorted, which is determined by the type parameter `S`, with `'T'` for sorted and `'F'` for unsorted. This type suits the situations when the Cartesian indices are restricted by extra conditions except that propoesed by the attribute `:dims`.
 """
 struct TabledIndices{S,N} <: OrderedIndices{N}
     dims::NTuple{N,Int}
@@ -255,7 +255,7 @@ TableSorted(::Type{<:TabledIndices{'F'}})=TableSorted(false)
 
 """
     GradedTables(vs::Tuple,ks::Tuple)
-    GradedTables(::Type{M},n::Int,gs::Val{GS}) where {M<:AbstractCombinatorics,GS}
+    GradedTables(::Type{M},n::Int,gs::Val{grades}) where {M<:AbstractCombinatorics,grades}
 
 The tables of a graded vector space.
 
@@ -263,8 +263,13 @@ Alias for `Base.Iterators.Pairs{G,V,KS<:Tuple,VS<:Tuple}`.
 """
 const GradedTables{G,V,KS<:Tuple,VS<:Tuple}=Base.Iterators.Pairs{G,V,KS,VS}
 GradedTables(vs::Tuple,ks::Tuple)=Base.Iterators.Pairs(vs,ks)
-GradedTables(::Type{M},n::Int,gs::Val{GS}) where {M<:AbstractCombinatorics,GS}=GradedTables(comdata(M,n,gs),GS)
-@generated comdata(::Type{M},n::Int,::Val{GS}) where {M<:AbstractCombinatorics,GS}=Expr(:tuple,[:(TabledIndices{$g}(M,n)) for g in GS]...)
+function GradedTables(::Type{M},n::Int,gs::Val{grades}) where {M<:AbstractCombinatorics,grades}
+    @assert isa(grades,Tuple{Vararg{Int}}) "GradedTables error: grades should be tuple of integers."
+    return GradedTables(comdata(M,n,gs),grades)
+end
+@generated function comdata(::Type{M},n::Int,::Val{grades}) where {M<:AbstractCombinatorics,grades}
+    return Expr(:tuple,[:(TabledIndices{$g}(M,n)) for g in grades]...)
+end
 
 """
     keytype(tables::GradedTables,g::Int)

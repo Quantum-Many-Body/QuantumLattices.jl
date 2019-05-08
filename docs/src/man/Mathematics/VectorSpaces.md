@@ -79,9 +79,9 @@ Other features include
 * iteration: `iterate`
 * inquiry: `size`, `findfirst` and `in`
 
-## DirectVectorSpace
+## SimpleVectorSpace
 
-[`DirectVectorSpace{S,B,N}`](@ref) is the simplest vector space, whose bases are stored in the attribute `:table` as an ntuple.
+[`SimpleVectorSpace{S,B,N}`](@ref) is the simplest vector space, whose bases are stored in the attribute `:table::NTuple{N,B}` as an ntuple.
 
 The `:table` attribute can be sorted or unsorted, which is determined by the type parameter `S`, with `'T'` for sorted and `'F'` for unsorted.
 
@@ -92,9 +92,9 @@ The `:table` attribute can be sorted or unsorted, which is determined by the typ
 This class of vector spaces must have the following attribute:
 `dims::NTuple{N,Int}`: the dimesnions of the Cartesian indices along all axes
 
-### DirectIndices
+### SimpleIndices
 
-[`DirectIndices{M,N}`](@ref) is the direct ordered Cartesian indices.
+[`SimpleIndices{M,N}`](@ref) is the simple ordered Cartesian indices.
 
 It is worth noting that
 1) It can be C/C++ ordered or Fortran ordered depending on the first type parameter `M`, with `'C'` for the former and `'F'` the latter.
@@ -104,7 +104,7 @@ It is worth noting that
 
 [`TabledIndices{S,N}`](@ref) defines the tabled ordered Cartesian indices.
 
-Compared to [`DirectIndices`](@ref), the bases of this kind of vector spaces are stored in the attribute `:table`, which must be a vector of tuple of integers. The `:table` attribute can be sorted or unsorted, which is determined by the type parameter `S`, with `'T'` for sorted and `'F'` for unsorted. This type suits the situations when the Cartesian indices are restricted by extra conditions except that propoesed by the attribute `:dims`.
+Compared to [`SimpleIndices`](@ref), the bases of this kind of vector spaces are stored in the attribute `:table`, which must be a vector of tuple of integers. The `:table` attribute can be sorted or unsorted, which is determined by the type parameter `S`, with `'T'` for sorted and `'F'` for unsorted. This type suits the situations when the Cartesian indices are restricted by extra conditions except that propoesed by the attribute `:dims`.
 
 ## GradedVectorSpace
 

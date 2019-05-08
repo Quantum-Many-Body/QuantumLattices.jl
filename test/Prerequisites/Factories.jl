@@ -13,6 +13,11 @@ using QuantumLattices.Prerequisites.Factories
     @test escape(:(Vector{Int}),UnEscaped(:Vector))==:(Vector{$(Expr(:escape, :Int))})
 end
 
+@testset "names" begin
+    @test names(:a)==[:a]
+    @test names(:(Vector{Int}))==[:Vector,:Int]
+end
+
 @testset "Inference" begin
     @test Inference(name=:T)==Inference(nothing,:T,nothing)
     @test isequal(Inference(name=:T),Inference(nothing,:T,nothing))
@@ -46,28 +51,32 @@ end
 end
 
 @testset "Parameter" begin
-    parameter=Parameter(name=:name,type=Inference(:T))
-    @test parameter|>string=="Parameter(\n  name: name\n  type: T\n)"
+    parameter=Parameter(head=:(<:),name=:name,type=Inference(:T))
+    @test parameter|>string=="Parameter(\n  head: <:\n  name: name\n  type: T\n)"
 
     parameter=Parameter(:T)
+    @test parameter.head==nothing
     @test parameter.name==:T
     @test parameter.type==nothing
     @test parameter(UnEscaped(:T))==:T
 
     parameter=Parameter(:(T<:Real))
+    @test parameter.head==:(<:)
     @test parameter.name==:T
     @test parameter.type==Inference(:Real)
     @test parameter(UnEscaped(:Real))==:(T<:Real)
 
     parameter=Parameter(:(<:Real))
+    @test parameter.head==:(<:)
     @test parameter.name==nothing
     @test parameter.type==Inference(:Real)
     @test parameter(UnEscaped(:Real))==:(<:Real)
 
     parameter=@parameter ::Int
+    @test parameter.head==:(::)
     @test parameter.name==nothing
     @test parameter.type==Inference(:Int)
-    @test parameter(UnEscaped(:Int))==:(<:Int)
+    @test parameter(UnEscaped(:Int))==:(Int)
 end
 
 @testset "Field" begin

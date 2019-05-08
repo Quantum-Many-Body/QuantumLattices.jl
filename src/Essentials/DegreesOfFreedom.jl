@@ -499,7 +499,7 @@ latexformat(T::Type{<:Operator},l::LaTeX)=latexformats[nameof(T)]=l
 
 Show an operator.
 """
-Base.show(io::IO,opt::Operator)=@printf io "%s(value=%s,id=%s)" nameof(typeof(opt)) decimaltostr(opt.value) opt.id
+Base.show(io::IO,opt::Operator)=@printf io "%s(%s,%s)" nameof(typeof(opt)) decimaltostr(opt.value) opt.id
 Base.show(io::IO,::MIME"text/latex",opt::Operator)=show(io,MIME"text/latex"(),latexstring(repr(opt)))
 
 """
@@ -634,6 +634,13 @@ end
 Show latex formed operators.
 """
 Base.show(io::IO,::MIME"text/latex",opts::Operators)=show(io,MIME"text/latex"(),latexstring(repr(opts)))
+
+"""
+    summary(io::IO,opts::Operators)
+
+Print a brief description of a set of operators to an io.
+"""
+Base.summary(io::IO,opts::Operators)=@printf io "Operators{%s}" valtype(opts)
 
 """
     isHermitian(opts::Operators) -> Bool

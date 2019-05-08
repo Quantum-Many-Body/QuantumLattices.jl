@@ -134,7 +134,7 @@ end
     opt=DOperator(1.0im,(DIndex(1,2,2),DIndex(1,1,1)),rcoords=(SVector(1.0,0.0),SVector(0.0,0.0)),icoords=(SVector(2.0,0.0),SVector(0.0,0.0)),seqs=(2,1))
     @test opt'==DOperator(-1.0im,(DIndex(1,1,2),DIndex(1,2,1)),rcoords=(SVector(0.0,0.0),SVector(1.0,0.0)),icoords=(SVector(0.0,0.0),SVector(2.0,0.0)),seqs=(1,2))
     @test isHermitian(opt)==false
-    @test string(opt)=="DOperator(value=1.0im,id=ID(OID(DIndex(1,2,2),[1.0,0.0],[2.0,0.0],2),OID(DIndex(1,1,1),[0.0,0.0],[0.0,0.0],1)))"
+    @test string(opt)=="DOperator(1.0im,ID(OID(DIndex(1,2,2),[1.0,0.0],[2.0,0.0],2),OID(DIndex(1,1,1),[0.0,0.0],[0.0,0.0],1)))"
     @test twist(opt,[[1.0,0.0],[0.0,1.0]],[0.1,0.0])≈replace(opt,value=1.0im*conj(exp(2im*pi*0.2)))
     @test sequence(opt)==(2,1)
     @test sequence(opt,Dict(DIndex(1,2,2)=>3,DIndex(1,1,1)=>4))==(3,4)
@@ -156,6 +156,7 @@ end
     opt1=DOperator(1.0im,(DIndex(1,2,2),DIndex(1,1,1)),rcoords=(SVector(1.0,0.0),SVector(0.0,0.0)),icoords=(SVector(2.0,0.0),SVector(0.0,0.0)),seqs=(2,1))
     opt2=DOperator(1.0,(DIndex(1,1,2),DIndex(1,1,1)),rcoords=(SVector(0.0,0.0),SVector(0.0,0.0)),icoords=(SVector(0.0,0.0),SVector(0.0,0.0)),seqs=(1,1))
     opts=Operators(opt1,opt2)
+    @test summary(opts)=="Operators{$(opts|>valtype)}"
     @test opts'==Operators(opt1',opt2')
     @test opts'+opts==Operators(opt1,opt1',opt2*2)
     @test isHermitian(opts)==false
@@ -183,6 +184,12 @@ end
 
     opts=Operators(DOperator(1.0-1.0im,(DIndex('d',2,2),DIndex('d',1,1))),DOperator(-1.0,(DIndex('d',1,2),DIndex('d',1,1))))
     @test repr(opts,LaTeX{(:nambu,),(:site,)}('c'))=="(1.0-1.0im)c^{\\dagger}_{2}c^{}_{1}-c^{\\dagger}_{1}c^{}_{1}"
+
+    io=IOBuffer()
+    show(io,MIME"text/latex"(),opt)
+    @test String(take!(io))=="\$d^{\\dagger}_{2}d^{}_{1}\$"
+    show(io,MIME"text/latex"(),opts)
+    @test String(take!(io))=="\$(1.0-1.0im)d^{\\dagger}_{2}d^{}_{1}-d^{\\dagger}_{1}d^{}_{1}\$"
 
     opt=DOperator(:h,(DIndex('d',2,2),DIndex('d',1,1)))
     @test repr(opt)==":hd^{\\dagger}_{2}d^{}_{1}"
