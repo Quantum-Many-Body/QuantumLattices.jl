@@ -16,9 +16,8 @@ lattice=Lattice(&quot;L2P&quot;,[Point(PID(1),(0.0,)),Point(PID(2),(1.0,))])
 config=IDFConfig{Fock}(pid-&gt;Fock(norbital=1,nspin=2,nnambu=2),lattice.pids)
 
 # define the terms
-t,U=symbols(&quot;t,U&quot;,real=true)
-t=Hopping{&#39;F&#39;}(:t,t,1)
-U=Hubbard{&#39;F&#39;}(:U,U)
+t=Hopping{&#39;F&#39;}(:t,symbols(&quot;t&quot;,real=true),1)
+U=Hubbard{&#39;F&#39;}(:U,symbols(&quot;U&quot;,real=true))
 
 # get the Hamiltonian
 operators=expand(Generator((t,U),Bonds(lattice),config,nothing,false))</code></pre><p>The last line displays all the generated operators in the Hamiltonian in the latex form. In the following sections, we will explain in brief how these codes work. For detailed explanations, please refer to the manual of <a href="../../man/Essentials/Introduction/#essentails-1"><code>Essentials</code></a>.</p><h2><a class="nav-anchor" id="Spatial-info-of-a-unitcell-1" href="#Spatial-info-of-a-unitcell-1">Spatial info of a unitcell</a></h2><h2><a class="nav-anchor" id="Internal-degrees-of-freedom-1" href="#Internal-degrees-of-freedom-1">Internal degrees of freedom</a></h2><h2><a class="nav-anchor" id="Couplings-among-different-degrees-of-freedom-1" href="#Couplings-among-different-degrees-of-freedom-1">Couplings among different degrees of freedom</a></h2><footer><hr/><a class="previous" href="../../"><span class="direction">Previous</span><span class="title">Home</span></a><a class="next" href="../EngineAppInterface/"><span class="direction">Next</span><span class="title">Engine App Interface</span></a></footer></article></body></html>
