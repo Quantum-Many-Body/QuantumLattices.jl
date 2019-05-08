@@ -34,9 +34,8 @@ lattice=Lattice("L2P",[Point(PID(1),(0.0,)),Point(PID(2),(1.0,))])
 config=IDFConfig{Fock}(pid->Fock(norbital=1,nspin=2,nnambu=2),lattice.pids)
 
 # define the terms
-t,U=symbols("t,U",real=true)
-t=Hopping{'F'}(:t,t,1)
-U=Hubbard{'F'}(:U,U)
+t=Hopping{'F'}(:t,symbols("t",real=true),1)
+U=Hubbard{'F'}(:U,symbols("U",real=true))
 
 # get the Hamiltonian
 operators=expand(Generator((t,U),Bonds(lattice),config,nothing,false))
