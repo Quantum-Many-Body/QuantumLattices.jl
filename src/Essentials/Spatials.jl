@@ -634,7 +634,27 @@ abstract type AbstractLattice{N,P<:PID} end
 
 Show a lattice.
 """
-Base.show(io::IO,lattice::AbstractLattice)=@printf io "%s(%s)" lattice|>typeof|>nameof lattice.name
+function Base.show(io::IO,lattice::AbstractLattice)
+    @printf io "%s(%s)\n" lattice|>typeof|>nameof lattice.name
+    if length(lattice)>0
+        @printf io "  with %s %s:\n" length(lattice) length(lattice)==1 ? "point" : "points"
+        for i=1:length(lattice)
+            @printf io "    %s\n" lattice[LatticeIndex{'P'}(i)]
+        end
+    end
+    if length(lattice.vectors)>0
+        @printf io "  with %s translation %s:\n" length(lattice.vectors) length(lattice.vectors)==1 ? "vector" : "vectors"
+        for i=1:length(lattice.vectors)
+            @printf io "    [%s]\n" join(lattice.vectors[i],",")
+        end
+    end
+    if length(lattice.neighbors)>0
+        @printf io "  with %s %s of nearest neighbors:\n" length(lattice.neighbors) length(lattice.neighbors)==1 ? "order" : "orders"
+        for (order,distance) in lattice.neighbors
+            @printf io "    %s=>%s\n" order distance
+        end
+    end
+end
 
 """
     length(lattice::AbstractLattice) -> Int
@@ -1198,6 +1218,13 @@ Base.isequal(bonds1::Bonds,bonds2::Bonds)=isequal(efficientoperations,bonds1,bon
 Get the size of the set of lattice bonds.
 """
 Base.size(bs::Bonds)=(mapreduce(length,+,bs.bonds),)
+
+"""
+    summary(io::IO,bs::Bonds)
+
+Print the brief description of a set of lattice bonds to an io.
+"""
+Base.summary(io::IO,bs::Bonds)=@printf io "%s-element Bonds" length(bs)
 
 """
     bondtypes(bs::Bonds) -> Tuple{Vararg{LatticeBonds}}

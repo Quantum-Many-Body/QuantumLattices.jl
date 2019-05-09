@@ -182,7 +182,7 @@ end
     lattice=Lattice("Tuanzi",[Point(PID(1,1),(0.5,0.5),(0.0,0.0))],vectors=[[1.0,0.0],[0.0,1.0]],neighbors=1)
     @test lattice|>deepcopy==lattice
     @test isequal(lattice|>deepcopy,lattice)
-    @test lattice|>string=="Lattice(Tuanzi)"
+    @test lattice|>string=="Lattice(Tuanzi)\n  with 1 point:\n    Point(PID(1,1),[0.5,0.5],[0.0,0.0])\n  with 2 translation vectors:\n    [1.0,0.0]\n    [0.0,1.0]\n  with 1 order of nearest neighbors:\n    1=>1.0\n"
     @test lattice|>length==1
     @test lattice|>dimension==lattice|>typeof|>dimension==2
     @test lattice|>keytype==lattice|>typeof|>keytype==PID{Int}
@@ -266,6 +266,7 @@ end
     @test bs|>eltype==bs|>typeof|>eltype==AbstractBond{2,PID{Int}}
     @test bs==Bonds(lattice,allbonds) && isequal(bs,Bonds(lattice,allbonds))
     @test bs|>length==3 && bs|>size==(3,)
+    @test summary(bs)=="3-element Bonds"
     @test bs|>bondtypes==bs|>typeof|>bondtypes==(zerothbonds,insidebonds,acrossbonds)
     @test bs|>latticetype==bs|>typeof|>latticetype==Lattice{2,PID{Int}}
     @test bs|>rank==bs|>typeof|>rank==3
