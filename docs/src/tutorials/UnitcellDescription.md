@@ -88,8 +88,8 @@ Point(PID(1),(0.0,))
 * `pids::Vector{<:PID}`: the pids of the lattice
 * `rcoords::Matrix{Float64}`: the rcoords of the lattice
 * `icoords::Matrix{Float64}`: the icoords of the lattice
-* `vectors::Vector{StaticArrays.SVector}`: the translation vectors of the lattice
-* `reciprocals::Vector{StaticArrays.SVector}`: the reciprocals of the lattice
+* `vectors::Vector{<:StaticArrays.SVector}`: the translation vectors of the lattice
+* `reciprocals::Vector{<:StaticArrays.SVector}`: the reciprocals of the lattice
 * `neighbors::Dict{Int,Float64}`: the order-distance map of the nearest neighbors of the lattice
 Here, the `:pids`, `:rcoords` and `:icoords` attributes decompose the points in a lattice, which makes it convenient for global operations on the lattice.
 
