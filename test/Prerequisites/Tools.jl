@@ -31,3 +31,10 @@ end
     @test delta(1,2)==0
     @test delta(1,1)==1
 end
+
+@testset "rawtype" begin
+    @test Int|>rawtype==Int
+    @test Vector{Int}|>rawtype==Array
+    @test Vector|>rawtype==Array
+    @test Vector{<:Real}|>rawtype==Array
+end

@@ -1,6 +1,6 @@
 module TypeTraits
 
-using ..Prerequisites: atol,rtol
+using ..Prerequisites: atol,rtol,rawtype
 
 export efficientoperations
 export MemoryOrder,FOrder,COrder
@@ -111,7 +111,7 @@ Return a copy of the input object with some of the field values replaced by the 
 """
 @generated function Base.replace(::EfficientOperations,o;kwargs...)
     exprs=[:(get(kwargs,$name,getfield(o,$name))) for name in QuoteNode.(o|>fieldnames)]
-    return :(typeof(o).name.wrapper($(exprs...)))
+    return :(rawtype(typeof(o))($(exprs...)))
 end
 
 abstract type MemoryOrder end

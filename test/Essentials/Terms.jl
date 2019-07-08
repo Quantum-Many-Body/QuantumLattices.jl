@@ -8,7 +8,7 @@ using QuantumLattices.Essentials.DegreesOfFreedom: IDFConfig,Table,IID,Index,Int
 using QuantumLattices.Interfaces: rank,update!,expand!,id,kind,reset!
 using QuantumLattices.Prerequisites: Float,decimaltostr
 using QuantumLattices.Prerequisites.CompositeStructures: NamedContainer
-using QuantumLattices.Mathematics.AlgebraOverFields: ID,SimpleID,rawelement,idtype
+using QuantumLattices.Mathematics.AlgebraOverFields: ID,SimpleID,idtype
 import QuantumLattices.Interfaces: dimension,expand
 import QuantumLattices.Essentials.DegreesOfFreedom: isHermitian,otype
 import QuantumLattices.Essentials.Terms: couplingcenter,couplingcenters,abbr
@@ -34,7 +34,7 @@ struct TCID <: SimpleID
 end
 Base.fieldnames(::Type{<:TCID})=(:center,:nambu)
 
-struct TCoupling{V,I<:ID} <: Coupling{V,I}
+struct TCoupling{V<:Number,I<:ID{TCID}} <: Coupling{V,I}
     value::V
     id::I
 end
@@ -45,18 +45,18 @@ function expand(tc::TCoupling,pids::NTuple{R,PID},focks::NTuple{R,TFock},kind::U
     return ((tc.value,NTuple{rank(tc),TIndex{fieldtype(pids|>eltype,:scope)}}(TIndex(pids[i].scope,pids[i].site,nambus[i]) for i=1:rank(tc))),)
 end
 
-struct TOperator{V,I<:ID} <: Operator{V,I}
+struct TOperator{V<:Number,I<:ID{OID}} <: Operator{V,I}
     value::V
     id::I
 end
 
 abbr(::Type{<:Term{ST,:TermMu} where ST})=:tmu
 isHermitian(::Type{<:Term{ST,:TermMu} where ST})=true
-otype(T::Type{<:Term{ST,:TermMu} where ST},I::Type{<:OID})=TOperator{T|>valtype,ID{NTuple{T|>rank,I}}}
+otype(T::Type{<:Term{ST,:TermMu} where ST},I::Type{<:OID})=TOperator{T|>valtype,ID{I,T|>rank}}
 
 abbr(::Type{<:Term{ST,:TermHopping} where ST})=:thp
 isHermitian(::Type{<:Term{ST,:TermHopping} where ST})=false
-otype(T::Type{<:Term{ST,:TermHopping} where ST},I::Type{<:OID})=TOperator{T|>valtype,ID{NTuple{T|>rank,I}}}
+otype(T::Type{<:Term{ST,:TermHopping} where ST},I::Type{<:OID})=TOperator{T|>valtype,ID{I,T|>rank}}
 
 @testset "Subscript" begin
     sub=@subscript (x1,4,4,x2) with x1<x2
@@ -151,10 +151,6 @@ end
     @test termmodulate(2)==4
 end
 
-@testset "Coupling" begin
-    @test rawelement(Coupling{V} where V)==Coupling
-end
-
 @testset "Term" begin
     point=Point(PID(1,1),(0.0,0.0),(0.0,0.0))
     config=IDFConfig{TFock}(pid->TFock(),[PID(1,1)])
@@ -238,11 +234,12 @@ end
     tops2=expand(one(t),filter(acrossbonds,bonds,Val(:include)),config,table,true,coordpresent)
     μops=expand(one(μ),filter(zerothbonds,bonds,Val(:include)),config,table,true,coordpresent)
 
-    optp=TOperator{Float,ID{NTuple{2,OID{TIndex{Int},SVector{2,Float},SVector{2,Float},Int}}}}
+    optp=TOperator{Float,ID{OID{TIndex{Int},SVector{2,Float},SVector{2,Float},Int},2}}
     genops=GenOperators(tops1,NamedContainer{(:μ,)}(μops),NamedContainer{(:t,:μ)}(tops2,Operators{optp|>idtype,optp}()))
     @test genops==deepcopy(genops) && isequal(genops,deepcopy(genops))
     @test genops==GenOperators((t,μ),bonds,config,table,true,coordpresent)
     @test genops|>eltype==genops|>typeof|>eltype==optp
+    @test genops|>idtype==genops|>typeof|>idtype==optp|>idtype
     @test expand!(Operators{idtype(optp),optp}(),genops,boundary,t=2.0,μ=1.5)==tops1+tops2*2.0+μops*1.5
     @test empty!(deepcopy(genops))==empty(genops)==GenOperators(empty(μops),NamedContainer{(:μ,)}(empty(μops)),NamedContainer{(:t,:μ)}(empty(μops),empty(μops)))
     @test reset!(deepcopy(genops),(t,μ),bonds,config,table,true,coordpresent)==genops

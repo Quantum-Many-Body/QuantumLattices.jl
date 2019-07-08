@@ -4,10 +4,9 @@ using LinearAlgebra: dot
 using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Essentials.DegreesOfFreedom
 using QuantumLattices.Essentials.Spatials: PID,Point,pidtype,rcoord,icoord
-using QuantumLattices.Mathematics.AlgebraOverFields: ID
+using QuantumLattices.Mathematics.AlgebraOverFields: ID,idpropertynames
 import QuantumLattices.Interfaces: dimension,decompose,update!,sequence,reset!
 import QuantumLattices.Essentials.DegreesOfFreedom: script,latexsuperscript,latexsubscript
-import QuantumLattices.Mathematics.AlgebraOverFields: rawelement
 
 struct DID <: IID nambu::Int end
 Base.adjoint(sl::DID)=DID(3-sl.nambu)
@@ -37,11 +36,10 @@ end
 dimension(f::DFock)=f.nnambu
 Base.getindex(f::DFock,i::Int)=DID(i)
 
-struct DOperator{V,I<:ID} <: Operator{V,I}
+struct DOperator{V<:Number,I<:ID{OID}} <: Operator{V,I}
     value::V
     id::I
 end
-rawelement(::Type{<:DOperator})=DOperator
 latexformat(DOperator,LaTeX{(:nambu,),(:site,)}('d'))
 
 @testset "Index" begin
@@ -113,8 +111,7 @@ end
     oid=OID(DIndex(1,1,1),rcoord=SVector(0.0,-0.0),icoord=SVector(0.0,0.0),seq=1)
     @test oid'==OID(DIndex(1,1,2),rcoord=SVector(0.0,0.0),icoord=SVector(0.0,0.0),seq=1)
     @test hash(oid,UInt(1))==hash(OID(DIndex(1,1,1),rcoord=SVector(0.0,0.0),icoord=SVector(0.0,0.0),seq=1),UInt(1))
-    @test propertynames(ID{<:NTuple{2,OID}},true)==(:contents,:indexes,:rcoords,:icoords,:seqs)
-    @test propertynames(ID{<:NTuple{2,OID}},false)==(:indexes,:rcoords,:icoords,:seqs)
+    @test idpropertynames(ID{OID})==(:indexes,:rcoords,:icoords,:seqs)
     @test fieldnames(OID)==(:index,:rcoord,:icoord,:seq)
     @test string(oid)=="OID(DIndex(1,1,1),[0.0,0.0],[0.0,0.0],1)"
     @test ID(oid',oid)'==ID(oid',oid)
@@ -127,8 +124,6 @@ end
 end
 
 @testset "Operator" begin
-    @test rawelement(Operator{V} where V)==Operator
-    @test rawelement(DOperator{V} where V)==DOperator
     @test latexformat(DOperator)==LaTeX{(:nambu,),(:site,)}('d')
 
     opt=DOperator(1.0im,(DIndex(1,2,2),DIndex(1,1,1)),rcoords=(SVector(1.0,0.0),SVector(0.0,0.0)),icoords=(SVector(2.0,0.0),SVector(0.0,0.0)),seqs=(2,1))
@@ -190,9 +185,6 @@ end
     @test String(take!(io))=="\$d^{\\dagger}_{2}d^{}_{1}\$"
     show(io,MIME"text/latex"(),opts)
     @test String(take!(io))=="\$(1.0-1.0im)d^{\\dagger}_{2}d^{}_{1}-d^{\\dagger}_{1}d^{}_{1}\$"
-
-    opt=DOperator(:h,(DIndex('d',2,2),DIndex('d',1,1)))
-    @test repr(opt)==":hd^{\\dagger}_{2}d^{}_{1}"
 end
 
 @testset "Boundary" begin

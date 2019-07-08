@@ -22,6 +22,7 @@ Float
 decimaltostr
 ordinal
 delta
+rawtype
 ```
 
 ## Basic structures

@@ -1,6 +1,7 @@
 module VectorSpaces
 
 using ..Combinatorics: AbstractCombinatorics
+using ...Prerequisites: rawtype
 using ...Prerequisites.TypeTraits: efficientoperations,forder,corder,subtoind,indtosub
 
 import ...Interfaces: dimension,⊕,rank,dims,inds,degree
@@ -95,10 +96,10 @@ Get the ith basis of a vector space by the `[]` operator.
 """
 Base.getindex(vs::VectorSpace,i::Int)=_getindex_(vs,i,vs|>typeof|>HasTable,vs|>typeof|>IsMultiIndexable)
 _getindex_(vs::VectorSpace,i::Int,::HasTable{true},::IsMultiIndexable{false})=vs.table[i]
-_getindex_(vs::VectorSpace,i::Int,::HasTable{true},::IsMultiIndexable{true})=eltype(vs).name.wrapper(vs.table[i],vs)
+_getindex_(vs::VectorSpace,i::Int,::HasTable{true},::IsMultiIndexable{true})=rawtype(eltype(vs))(vs.table[i],vs)
 _getindex_(vs::VectorSpace,i::Int,::HasTable{false},::IsMultiIndexable{true})=_getindex_(vs,i,vs|>typeof|>MultiIndexOrderStyle)
-_getindex_(vs::VectorSpace,i::Int,::MultiIndexOrderStyle{'F'})=eltype(vs).name.wrapper(indtosub(dims(vs),i,forder),vs)
-_getindex_(vs::VectorSpace,i::Int,::MultiIndexOrderStyle{'C'})=eltype(vs).name.wrapper(indtosub(dims(vs),i,corder),vs)
+_getindex_(vs::VectorSpace,i::Int,::MultiIndexOrderStyle{'F'})=rawtype(eltype(vs))(indtosub(dims(vs),i,forder),vs)
+_getindex_(vs::VectorSpace,i::Int,::MultiIndexOrderStyle{'C'})=rawtype(eltype(vs))(indtosub(dims(vs),i,corder),vs)
 
 """
     searchsortedfirst(vs::VectorSpace{B},basis::B) where B -> Int

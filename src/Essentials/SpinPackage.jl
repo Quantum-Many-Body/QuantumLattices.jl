@@ -12,7 +12,6 @@ using ...Mathematics.AlgebraOverFields: SimpleID,ID
 import ..DegreesOfFreedom: script,otype,isHermitian
 import ..Terms: couplingcenter,statistics,abbr
 import ...Interfaces: dims,inds,expand,matrix,permute
-import ...Mathematics.AlgebraOverFields: rawelement
 
 export SID,Spin,SIndex
 export usualspinindextotuple
@@ -141,14 +140,15 @@ Indicate that the filtered attributes are `(:scope,:site,:orbital)` when convert
 const usualspinindextotuple=FilteredAttributes(:scope,:site,:orbital)
 
 """
-    SOperator(value,id::ID{<:Tuple{Vararg{OID}}}=ID())
+    SOperator(value::Number,id::ID{OID}=ID())
 
 Spin operator.
 """
-struct SOperator{V,I<:ID} <: Operator{V,I}
+struct SOperator{V<:Number,I<:ID{OID}} <: Operator{V,I}
     value::V
     id::I
-    SOperator(value,id::ID{<:Tuple{Vararg{OID}}}=ID())=new{typeof(value),typeof(id)}(value,id)
+    SOperator(value::Number)=new{typeof(vlalue),Tuple{}}(value,())
+    SOperator(value::Number,id::ID{OID})=new{typeof(value),typeof(id)}(value,id)
 end
 
 """
@@ -167,13 +167,6 @@ Get the statistics of SOperator.
 """
 statistics(opt::SOperator)=opt|>typeof|>statistics
 statistics(::Type{<:SOperator})='B'
-
-"""
-    rawelement(::Type{<:SOperator})
-
-Get the raw name of a type of SOperator.
-"""
-rawelement(::Type{<:SOperator})=SOperator
 
 """
     permute(::Type{<:SOperator},id1::OID{<:SIndex},id2::OID{<:SIndex},table) -> Tuple{Vararg{SOperator}}
@@ -242,8 +235,8 @@ SCID(;center=wildcard,atom=wildcard,orbital=wildcard,tag='z',subscript=wildcard)
 Base.fieldnames(::Type{<:SCID})=(:center,:atom,:orbital,:tag,:subscript)
 
 """
-    SpinCoupling(value,id::ID{<:Tuple{Vararg{SCID}}},subscripts::Subscripts)
-    SpinCoupling{N}(    value=1;
+    SpinCoupling(value::Number,id::ID{SCID},subscripts::Subscripts)
+    SpinCoupling{N}(    value::Number=1;
                         tags::NTuple{N,Char},
                         centers::Union{NTuple{N,Int},Nothing}=nothing,
                         atoms::Union{NTuple{N,Int},Nothing}=nothing,
@@ -252,15 +245,15 @@ Base.fieldnames(::Type{<:SCID})=(:center,:atom,:orbital,:tag,:subscript)
 
 Spin coupling.
 """
-struct SpinCoupling{V,I<:ID,S<:Subscripts} <: Coupling{V,I}
+struct SpinCoupling{V,I<:ID{SCID},S<:Subscripts} <: Coupling{V,I}
     value::V
     id::I
     subscripts::S
-    function SpinCoupling(value,id::ID{<:Tuple{Vararg{SCID}}},subscripts::Subscripts)
+    function SpinCoupling(value::Number,id::ID{SCID},subscripts::Subscripts)
         new{typeof(value),typeof(id),typeof(subscripts)}(value,id,subscripts)
     end
 end
-function SpinCoupling{N}(   value=1;
+function SpinCoupling{N}(   value::Number=1;
                             tags::NTuple{N,Char},
                             centers::Union{NTuple{N,Int},Nothing}=nothing,
                             atoms::Union{NTuple{N,Int},Nothing}=nothing,
@@ -317,13 +310,6 @@ Get the multiplication between two spin couplings.
 Base.:*(sc1::SpinCoupling,sc2::SpinCoupling)=SpinCoupling(sc1.value*sc2.value,sc1.id*sc2.id,sc1.subscripts*sc2.subscripts)
 
 """
-    rawelement(::Type{<:SpinCoupling})
-
-Get the raw name of a type of SpinCoupling.
-"""
-rawelement(::Type{<:SpinCoupling})=SpinCoupling
-
-"""
     expand(sc::SpinCoupling,pid::PID,spin::Spin,kind::Union{Val{K},Nothing}=nothing) where K -> Union{SCExpand,Tuple{}}
     expand(sc::SpinCoupling,pids::NTuple{N,PID},spins::NTuple{N,Spin},kind::Union{Val{K},Nothing}=nothing) where {N,K} -> Union{SCExpand,Tuple{}}
 
@@ -362,7 +348,7 @@ end
                 centers::Union{NTuple{2,Int},Nothing}=nothing,
                 atoms::Union{NTuple{2,Int},Nothing}=nothing,
                 orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing
-                ) -> Couplings{ID,SpinCoupling{Rational{Int}/Int,ID{<:NTuple{2,SCID}}}}
+                ) -> Couplings{ID{SCID,2},SpinCoupling{Rational{Int}/Int,<:ID{SCID,2}}}
 
 The Heisenberg couplings.
 """
@@ -389,7 +375,7 @@ end
             centers::Union{NTuple{2,Int},Nothing}=nothing,
             atoms::Union{NTuple{2,Int},Nothing}=nothing,
             orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing
-            ) -> Couplings{ID,SpinCoupling{Int,ID{<:NTuple{2,SCID}}}}
+            ) -> Couplings{ID{SCID,2},SpinCoupling{Rational{Int}/Int,<:ID{SCID,2}}}
 
 The Ising couplings.
 """
@@ -403,7 +389,7 @@ end
             centers::Union{NTuple{2,Int},Nothing}=nothing,
             atoms::Union{NTuple{2,Int},Nothing}=nothing,
             orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing
-            ) -> Couplings{ID,SpinCoupling{Int,ID{<:NTuple{2,SCID}}}}
+            ) -> Couplings{ID{SCID,2},SpinCoupling{Rational{Int}/Int,<:ID{SCID,2}}}
 
 The Gamma couplings.
 """
@@ -420,7 +406,7 @@ end
         centers::Union{NTuple{2,Int},Nothing}=nothing,
         atoms::Union{NTuple{2,Int},Nothing}=nothing,
         orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing
-        ) -> Couplings{ID,SpinCoupling{Int,ID{<:NTuple{2,SCID}}}}
+        ) -> Couplings{ID{SCID,2},SpinCoupling{Rational{Int}/Int,<:ID{SCID,2}}}
 """
 function DM(tag::Char;centers::Union{NTuple{2,Int},Nothing}=nothing,atoms::Union{NTuple{2,Int},Nothing}=nothing,orbitals::Union{NTuple{2,Int},Subscript,Nothing}=nothing)
     @assert tag in ('x','y','z') "DM error: not supported input tag($tag)."
@@ -434,7 +420,7 @@ scsinglewrapper(::Nothing)=nothing
 scsinglewrapper(value::Int)=(value,)
 
 """
-    Sˣ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID,SpinCoupling{Int,ID{<:Tuple{SCID}}}}
+    Sˣ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID{SCID,1},SpinCoupling{Rational{Int}/Int,<:ID{SCID,1}}}
 
 The single Sˣ coupling.
 """
@@ -443,7 +429,7 @@ function Sˣ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothi
 end
 
 """
-    Sʸ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID,SpinCoupling{Int,ID{<:Tuple{SCID}}}}
+    Sʸ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID{SCID,1},SpinCoupling{Rational{Int}/Int,<:ID{SCID,1}}}
 
 The single Sʸ coupling.
 """
@@ -452,7 +438,7 @@ function Sʸ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothi
 end
 
 """
-    Sᶻ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID,SpinCoupling{Int,ID{<:Tuple{SCID}}}}
+    Sᶻ(;atom::Union{Int,Nothing}=nothing,orbital::Union{Int,Nothing}=nothing) -> Couplings{ID{SCID,1},SpinCoupling{Rational{Int}/Int,<:ID{SCID,1}}}
 
 The single Sᶻ coupling.
 """
@@ -627,6 +613,6 @@ isHermitian(::Type{<:SpinTerm})=true
 
 Get the operator type of a spin term.
 """
-otype(T::Type{<:SpinTerm},I::Type{<:OID})=SOperator{T|>valtype,ID{NTuple{T|>rank,I}}}
+otype(T::Type{<:SpinTerm},I::Type{<:OID})=SOperator{T|>valtype,ID{I,T|>rank}}
 
 end # module

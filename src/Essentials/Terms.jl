@@ -5,14 +5,14 @@ using StaticArrays: SVector
 using ..Spatials: AbstractBond,pidtype,Bonds,AbstractLattice,acrossbonds
 using ..DegreesOfFreedom: Index,IDFConfig,Table,OID,Operators,oidtype,otype,Boundary,coordpresent,coordabsent
 using ...Interfaces: add!
-using ...Prerequisites: Float,atol,rtol,decimaltostr
+using ...Prerequisites: Float,atol,rtol,decimaltostr,rawtype
 using ...Prerequisites.TypeTraits: efficientoperations,indtosub,corder
 using ...Prerequisites.CompositeStructures: CompositeTuple,NamedContainer
-using ...Mathematics.AlgebraOverFields: SimpleID,ID,Element,Elements,idtype
+using ...Mathematics.AlgebraOverFields: SimpleID,ID,Element,Elements
 
 import ..DegreesOfFreedom: isHermitian
-import ...Mathematics.AlgebraOverFields: rawelement
 import ...Interfaces: id,rank,kind,expand,expand!,dimension,update!,reset!
+import ...Mathematics.AlgebraOverFields: idtype
 
 export Subscript,Subscripts,@subscript
 export Coupling,Couplings,@couplings
@@ -285,11 +285,11 @@ function Base.iterate(sbe::SbExpand,state::Int=1)
 end
 
 """
-    Coupling{V,I<:ID} <: Element{V,I}
+    Coupling{V,I<:ID{SimpleID}} <: Element{V,I}
 
 The coupling intra/inter interanl degrees of freedom at different lattice points.
 """
-abstract type Coupling{V,I<:ID} <: Element{V,I} end
+abstract type Coupling{V,I<:ID{SimpleID}} <: Element{V,I} end
 
 couplingcenter(::Type{<:Coupling},i::Int,n::Int,::Val{1})=1
 couplingcenter(::Type{<:Coupling},i::Int,n::Int,::Val{R}) where R=error("couplingcenter error: no default center for a rank-$R bond.")
@@ -303,20 +303,13 @@ function couplingcenters(str::AbstractString)
 end
 
 """
-    rawelement(::Type{<:Coupling})
-
-Get the raw name of a type of Coupling.
-"""
-rawelement(::Type{<:Coupling})=Coupling
-
-"""
     Couplings(cps::Coupling...)
 
 A pack of couplings intra/inter interanl degrees of freedom at different lattice points.
 
-Alias for `Elements{<:ID,<:Coupling}`.
+Alias for `Elements{<:ID{SimpleID},<:Coupling}`.
 """
-const Couplings{I<:ID,C<:Coupling}=Elements{I,C}
+const Couplings{I<:ID{SimpleID},C<:Coupling}=Elements{I,C}
 Couplings(cps::Coupling...)=Elements(cps...)
 
 """
@@ -602,16 +595,16 @@ function expand!(   operators::Operators,term::Term,bond::AbstractBond,config::I
                     isa(table,Table) && any(NTuple{rank(ptype),Bool}(!haskey(table,index) for index in oindexes)) && continue
                     id=ID(OID,oindexes,orcoords,oicoords,termseqs(table,oindexes))
                     if apriori===true
-                        add!(operators,ptype.name.wrapper(convert(ptype|>valtype,value*coeff/(half ? 2 : 1)),id))
+                        add!(operators,rawtype(ptype)(convert(ptype|>valtype,value*coeff/(half ? 2 : 1)),id))
                     elseif apriori==false
-                        opt=ptype.name.wrapper(convert(ptype|>valtype,value*coeff),id)
+                        opt=rawtype(ptype)(convert(ptype|>valtype,value*coeff),id)
                         add!(operators,opt)
                         half || add!(operators,opt')
                     else
                         if !(record===nothing ? haskey(operators,id') : in(id',record))
                             record===nothing || push!(record,id)
                             ovalue=valtype(ptype)(value*coeff/termfactor(nothing,id,term|>kind|>Val)) # needs improvement memory allocation 2 times for each
-                            opt=ptype.name.wrapper(ovalue,id)
+                            opt=rawtype(ptype)(ovalue,id)
                             add!(operators,opt)
                             half || add!(operators,opt')
                         end
@@ -638,7 +631,7 @@ termcoords(::Type{<:Nothing},rcoords::NTuple{N,SVector{M,Float}},perm::NTuple{R,
 termcoords(::Type{<:SVector},rcoords::NTuple{N,SVector{M,Float}},perm::NTuple{R,Int}) where {N,M,R}=NTuple{R,SVector{M,Float}}(rcoords[p] for p in perm)
 termseqs(::Nothing,indexes::NTuple{N,<:Index}) where N=NTuple{N,Nothing}(nothing for i=1:N)
 @generated termseqs(table::Table{I},indexes::NTuple{N,I}) where {N,I<:Index}=Expr(:tuple,[:(table[indexes[$i]]) for i=1:N]...)
-termfactor(::Nothing,id::ID{<:NTuple{N,OID}},::Val{K}) where {N,K}=isHermitian(id) ? 2 : 1
+termfactor(::Nothing,id::ID{OID},::Val{K}) where K=isHermitian(id) ? 2 : 1
 
 """
     expand(term::Term,bond::AbstractBond,config::IDFConfig,table::Union{Table,Nothing}=nothing,half::Bool=false,coord::Union{Val{true},Val{false}}=coordpresent) -> Operators
@@ -695,7 +688,7 @@ end
     GenOperators(constops::Operators,alterops::NamedContainer{Operators},boundops::NamedContainer{Operators})
     GenOperators(terms::Tuple{Vararg{Term}},bonds::Bonds,config::IDFConfig,table::Union{Nothing,Table},half::Bool,::Val{coord}) where coord
 
-A set of operators. This is the core of [`Generator`](@ref).
+A set of operators. This is the core of [`AbstractGenerator`](@ref).
 """
 struct GenOperators{C<:Operators,A<:NamedContainer{Operators},B<:NamedContainer{Operators}}
     constops::C
@@ -716,10 +709,16 @@ end
         oidtp=oidtype(config|>valtype|>eltype,bonds|>eltype,table|>typeof,coord|>Val)
         choosedterms=length($constterms)>0 ? $constterms : $alterterms
         constoptp=otype(choosedterms[1],oidtp)
-        for i=2:length(choosedterms) constoptp=promote_type(constoptp,otype(choosedterms[i],oidtp)) end
-        constops=Operators{idtype(constoptp),constoptp}()
+        constidtp=constoptp|>idtype
+        for i=2:length(choosedterms)
+            tempoptp=otype(choosedterms[i],oidtp)
+            constoptp=promote_type(constoptp,tempoptp)
+            constidtp=promote_type(constidtp,tempoptp|>idtype)
+        end
+        constops=Operators{constidtp,constoptp}()
         innerbonds=filter(acrossbonds,bonds,Val(:exclude))
         boundbonds=filter(acrossbonds,bonds,Val(:include))
+
     end)
     for i=1:fieldcount(terms)
         push!(boundops,:(expand(one(terms[$i]),boundbonds,config,table,half,coord|>Val)))
@@ -758,6 +757,20 @@ Base.eltype(ops::GenOperators)=ops|>typeof|>eltype
     fieldcount(D)>0 && (optp=promote_type(optp,mapreduce(valtype,promote_type,fieldtypes(D))))
     fieldcount(B)>0 && (optp=promote_type(optp,mapreduce(valtype,promote_type,fieldtypes(B))))
     return optp
+end
+
+"""
+    idtype(ops::GenOperators)
+    idtype(::Type{<:GenOperators{S,D,B}}) where {S<:Operators,D<:NamedContainer{Operators},B<:NamedContainer{Operators}}
+
+Get the idtype of a set of operators, which is defined to be the common idtype of all operators it contains.
+"""
+idtype(ops::GenOperators)=ops|>typeof|>idtype
+@generated function idtype(::Type{<:GenOperators{S,D,B}}) where {S<:Operators,D<:NamedContainer{Operators},B<:NamedContainer{Operators}}
+    idtp=S|>keytype
+    fieldcount(D)>0 && (idtp=promote_type(idtp,mapreduce(keytype,promote_type,fieldtypes(D))))
+    fieldcount(B)>0 && (idtp=promote_type(idtp,mapreduce(keytype,promote_type,fieldtypes(B))))
+    return idtp
 end
 
 """
@@ -891,7 +904,7 @@ Expand the operators of a generator:
 4) the operators of a specific term on a specific bond.
 """
 function expand(gen::AbstractGenerator)
-    expand!(Operators{idtype(eltype(gen.operators)),eltype(gen.operators)}(),gen)
+    expand!(Operators{idtype(gen.operators),eltype(gen.operators)}(),gen)
 end
 function expand(gen::AbstractGenerator{coord},name::Symbol) where coord
     term=getfield(gen.terms,name)
@@ -906,7 +919,7 @@ function expand(gen::AbstractGenerator{coord},name::Symbol) where coord
     return result
 end
 @generated function expand(gen::AbstractGenerator{coord},i::Int) where coord
-    exprs=[:(result=Operators{idtype(eltype(gen.operators)),eltype(gen.operators)}())]
+    exprs=[:(result=Operators{idtype(gen.operators),eltype(gen.operators)}())]
     for i=1:fieldcount(fieldtype(gen,:terms))
         push!(exprs,:(expand!(result,gen.terms[$i],gen.bonds[i],gen.config,gen.table,gen.half,coord)))
     end

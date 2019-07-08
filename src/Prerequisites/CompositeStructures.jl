@@ -1,5 +1,6 @@
 module CompositeStructures
 
+using ..Prerequisites: rawtype
 using ..TypeTraits: efficientoperations
 
 export CompositeTuple,CompositeNTuple,CompositeVector,CompositeDict,NamedContainer
@@ -23,7 +24,7 @@ Base.isequal(ct1::CompositeTuple,ct2::CompositeTuple)=isequal(efficientoperation
 Base.getindex(ct::CompositeTuple,i::Union{<:Integer,CartesianIndex})=getfield(ct,:contents)[i]
 @generated function Base.getindex(ct::CompositeTuple,inds)
     exprs=[name==:contents ? :(getfield(ct,:contents)[inds]) : :(getfield(ct,$i)) for (i,name) in enumerate(ct|>fieldnames)]
-    return :(typeof(ct).name.wrapper($(exprs...)))
+    return :(rawtype(typeof(ct))($(exprs...)))
 end
 Base.lastindex(ct::CompositeTuple)=lastindex(getfield(ct,:contents))
 Base.iterate(ct::CompositeTuple)=iterate(getfield(ct,:contents))
@@ -34,7 +35,7 @@ Base.values(ct::CompositeTuple)=values(getfield(ct,:contents))
 Base.pairs(ct::CompositeTuple)=pairs(getfield(ct,:contents))
 @generated function Base.reverse(ct::CompositeTuple)
     exprs=[name==:contents ? :(reverse(getfield(ct,:contents))) : :(getfield(ct,$i)) for (i,name) in enumerate(ct|>fieldnames)]
-    return :(typeof(ct).name.wrapper($(exprs...)))
+    return :(rawtype(typeof(ct))($(exprs...)))
 end
 Base.convert(::Type{Tuple},ct::CompositeTuple)=getfield(ct,:contents)
 
@@ -61,7 +62,7 @@ Base.isequal(cv1::CompositeVector,cv2::CompositeVector)=isequal(efficientoperati
 Base.getindex(cv::CompositeVector,i::Union{<:Integer,CartesianIndex})=getfield(cv,:contents)[i]
 @generated function Base.getindex(cv::CompositeVector,inds)
     exprs=[name==:contents ? :(getfield(cv,:contents)[inds]) : :(getfield(cv,$i)) for (i,name) in enumerate(cv|>fieldnames)]
-    return :(typeof(cv).name.wrapper($(exprs...)))
+    return :(rawtype(typeof(cv))($(exprs...)))
 end
 Base.lastindex(cv::CompositeVector)=lastindex(getfield(cv,:contents))
 Base.setindex!(cv::CompositeVector,value,inds)=(getfield(cv,:contents)[inds]=value)
@@ -73,7 +74,7 @@ Base.prepend!(cv::CompositeVector,values)=(prepend!(getfield(cv,:contents),value
 Base.splice!(cv::CompositeVector,index::Integer,replacement=Base._default_splice)=splice!(getfield(cv,:contents),index,replacement)
 @generated function Base.splice!(cv::CompositeVector,range::UnitRange{<:Integer},replacement=Base._default_splice)
     exprs=[name==:contents ? :(splice!(getfield(cv,:contents),range,replacement)) : :(getfield(cv,$i)) for (i,name) in enumerate(cv|>fieldnames)]
-    return :(typeof(cv).name.wrapper($(exprs...)))
+    return :(rawtype(typeof(cv))($(exprs...)))
 end
 Base.deleteat!(cv::CompositeVector,indices)=(deleteat!(getfield(cv,:contents),indices);cv)
 Base.pop!(cv::CompositeVector)=pop!(getfield(cv,:contents))
@@ -81,15 +82,15 @@ Base.popfirst!(cv::CompositeVector)=popfirst!(getfield(cv,:contents))
 Base.empty!(cv::CompositeVector)=(empty!(getfield(cv,:contents));cv)
 @generated function Base.empty(cv::CompositeVector)
     exprs=[name==:contents ? :(empty(getfield(cv,:contents))) : :(getfield(cv,$i)) for (i,name) in enumerate(cv|>fieldnames)]
-    return :(typeof(cv).name.wrapper($(exprs...)))
+    return :(rawtype(typeof(cv))($(exprs...)))
 end
 @generated function Base.reverse(cv::CompositeVector)
     exprs=[name==:contents ? :(reverse(getfield(cv,:contents))) : :(getfield(cv,$i)) for (i,name) in enumerate(cv|>fieldnames)]
-    return :(typeof(cv).name.wrapper($(exprs...)))
+    return :(rawtype(typeof(cv))($(exprs...)))
 end
 @generated function Base.similar(cv::CompositeVector,dtype::Type{T}=eltype(cv),dims::NTuple{N,Int}=size(cv)) where {T,N}
     exprs=[name==:contents ? :(similar(getfield(cv,:contents),dtype,dims)) : :(getfield(cv,$i)) for (i,name) in enumerate(cv|>fieldnames)]
-    return :(typeof(cv).name.wrapper($(exprs...)))
+    return :(rawtype(typeof(cv))($(exprs...)))
 end
 Base.iterate(cv::CompositeVector,state=1)=iterate(getfield(cv,:contents),state)
 Base.keys(cv::CompositeVector)=keys(getfield(cv,:contents))
@@ -126,7 +127,7 @@ Base.merge(cd::CD,others::CD...) where CD<:CompositeDict=merge!(empty(cd),cd,oth
 Base.merge(combine::Function,cd::CD,others::CD...) where CD<:CompositeDict=merge!(combine,empty(cd),cd,others...)
 @generated function Base.empty(cd::CompositeDict)
     exprs=[name==:contents ? :(Dict{cd|>keytype,cd|>valtype}()) : :(getfield(cd,$i)) for (i,name) in enumerate(cd|>fieldnames)]
-    return :(typeof(cd).name.wrapper($(exprs...)))
+    return :(rawtype(typeof(cd))($(exprs...)))
 end
 Base.iterate(cd::CompositeDict)=iterate(getfield(cd,:contents))
 Base.iterate(cd::CompositeDict,state)=iterate(getfield(cd,:contents),state)

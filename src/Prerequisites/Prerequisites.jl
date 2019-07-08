@@ -4,6 +4,7 @@ using Formatting: FormatSpec,fmt
 
 export atol,rtol,Float
 export decimaltostr,ordinal,delta
+export rawtype
 
 "Absolute tolerance for float numbers."
 const atol=5*10^-14
@@ -66,6 +67,15 @@ end
 Kronecker delta function.
 """
 delta(i,j)=i==j ? 1 : 0
+
+"""
+    rawtype(T::DataType) -> Union{DataType,UnionAll}
+    rawtype(T::UnionAll) -> Union{DataType,UnionAll}
+
+Get the "raw" type without the type parameters.
+"""
+rawtype(T::DataType)=T.name.wrapper
+rawtype(T::UnionAll)=T.body.name.wrapper
 
 include("TypeTraits.jl")
 include("Factories.jl")

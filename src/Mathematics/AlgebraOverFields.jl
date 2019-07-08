@@ -2,19 +2,19 @@ module AlgebraOverFields
 
 using Printf: @printf,@sprintf
 using ...Interfaces: dimension
-using ...Prerequisites: atol,rtol,Float
+using ...Prerequisites: atol,rtol,Float,rawtype
 using ...Prerequisites.NamedVectors: NamedVector
 using ...Prerequisites.TypeTraits: efficientoperations
-using ...Prerequisites.CompositeStructures: CompositeTuple
 using ..Combinatorics: AbstractCombinatorics
 using ..VectorSpaces: GradedTables,GradedVectorSpace,SimpleVectorSpace,TabledIndices
 
 import ...Interfaces: rank,add!,sub!,mul!,div!,⊗,⋅,sequence,permute
 
 export SimpleID,ID
+export idpropertynames,idisless
 export IdSpace
 export Element,ScalarElement,Elements
-export scalartype,idtype,rawelement
+export scalartype,idtype
 
 """
     SimpleID <: NamedVector
@@ -24,17 +24,26 @@ A simple id is the building block of the id system of an algebra over a field.
 abstract type SimpleID <: NamedVector end
 
 """
-    ID(ids::NTuple{N,SimpleID}) where N
+    ID{I<:SimpleID,N}
+
+The (composite) id system of an algebra over a field.
+
+Type alias for `NTuple{N,I} where {N,I<:SimpleID}`
+"""
+const ID{I<:SimpleID,N}=NTuple{N,I}
+"""
     ID(ids::SimpleID...)
+    ID(ids::NTuple{N,SimpleID}) where N
+
+Get the composite id from simple ids.
+"""
+ID(ids::SimpleID...)=ids
+ID(ids::NTuple{N,SimpleID}) where N=ids
+"""
     ID(::Type{SID},attrs::Vararg{NTuple{N},M}) where {SID<:SimpleID,N,M}
 
-The id system of an algebra over a field.
+Get the composite id from the components of simple ids.
 """
-struct ID{T<:Tuple{Vararg{SimpleID}}} <: CompositeTuple{T}
-    contents::T
-    ID(ids::NTuple{N,SimpleID}) where N=new{typeof(ids)}(ids)
-end
-ID(ids::SimpleID...)=ID(ids)
 @generated function ID(::Type{SID},attrs::Vararg{NTuple{N,Any},M}) where {SID<:SimpleID,N,M}
     exprs=[]
     for i=1:N
@@ -45,90 +54,80 @@ ID(ids::SimpleID...)=ID(ids)
 end
 
 """
-    propertynames(::Type{I},private::Bool=false) where I<:ID -> Tuple
+    idpropertynames(::Type{I}) where I<:ID{SimpleID} -> Tuple{Vararg{Symbol}}
 
 Get the property names of a composite id.
 """
-Base.propertynames(::Type{I},private::Bool=false) where I<:ID=idpropertynames(I,Val(private))
-@generated function idpropertynames(::Type{I},::Val{true}) where I<:ID
-    exprs=[QuoteNode(Symbol(name,'s')) for name in fieldtype(I,:contents)|>eltype|>fieldnames]
-    return Expr(:tuple,QuoteNode(:contents),exprs...)
-end
-@generated function idpropertynames(::Type{I},::Val{false}) where I<:ID
-    exprs=[QuoteNode(Symbol(name,'s')) for name in fieldtype(I,:contents)|>eltype|>fieldnames]
+@generated function idpropertynames(::Type{I}) where I<:ID{SimpleID}
+    exprs=[QuoteNode(Symbol(name,'s')) for name in I|>eltype|>fieldnames]
     return Expr(:tuple,exprs...)
 end
 
 """
-    getproperty(cid::ID,name::Symbol)
+    getproperty(cid::ID{SimpleID},name::Symbol)
 
 Get the property of a composite id.
 """
-Base.getproperty(cid::ID,name::Symbol)=name==:contents ? getfield(cid,:contents) : idgetproperty(cid,Val(name),Val(cid|>typeof|>propertynames))
-@generated function idgetproperty(cid::ID{<:NTuple{N,SimpleID}},::Val{name},::Val{names}) where {N,name,names}
+Base.getproperty(cid::ID{SimpleID},name::Symbol)=idgetproperty(cid,Val(name),Val(cid|>typeof|>idpropertynames))
+@generated function idgetproperty(cid::ID{SimpleID},::Val{name},::Val{names}) where {name,names}
     index=findfirst(isequal(name),names)::Int
-    exprs=[:(getfield(cid[$i],$index)) for i=1:N]
+    exprs=[:(getfield(cid[$i],$index)) for i=1:fieldcount(cid)]
     return Expr(:tuple,exprs...)
 end
 
 """
-    promote_rule(::Type{I1},::Type{I2}) where {I1<:ID,I2<:ID}
-
-Define the promote rule for ID types.
-"""
-function Base.promote_rule(::Type{I1},::Type{I2}) where {I1<:ID,I2<:ID}
-    I1<:I2 && return I2
-    I2<:I1 && return I1
-    return ID
-end
-
-"""
-    show(io::IO,cid::ID)
+    show(io::IO,cid::ID{SimpleID})
 
 Show a composite id.
 """
-Base.show(io::IO,cid::ID)=@printf io "%s(%s)" cid|>typeof|>nameof join(cid,",")
+Base.show(io::IO,cid::ID{SimpleID})=@printf io "ID(%s)" join(cid,",")
 
 """
-    isless(cid1::ID,cid2::ID) -> Bool
-    <(cid1::ID,cid2::ID) -> Bool
+    promote_type(::Type{Tuple{}},::Type{Tuple{}})
+    promote_type(::Type{Tuple{}},I::Type{<:ID{SimpleID,N}}) where N
+    promote_type(I::Type{<:ID{SimpleID,N}},::Type{Tuple{}}) where N
+
+Define the promote rule for ID types.
+"""
+Base.promote_type(::Type{Tuple{}},::Type{Tuple{}})=Tuple{}
+Base.promote_type(::Type{Tuple{}},I::Type{<:ID{SimpleID,N}}) where N=ID{I|>eltype}
+Base.promote_type(I::Type{<:ID{SimpleID,N}},::Type{Tuple{}}) where N=ID{I|>eltype}
+
+"""
+    idisless(cid1::ID{SimpleID},cid2::ID{SimpleID}) -> Bool
 
 Compare two ids and judge whether the first is less than the second.
 
-We assume that ids with smaller ranks are always less than those with higher ranks. If two ids are of the same rank, the comparison goes just like that between tuples.
+We define that ids with smaller ranks are always less than those with higher ranks. If two ids are of the same rank, the comparison goes just like that between tuples.
 """
-function Base.isless(cid1::ID,cid2::ID)
+function idisless(cid1::ID{SimpleID},cid2::ID{SimpleID})
     r1,r2=cid1|>rank,cid2|>rank
-    r1<r2 ? true : r1>r2 ? false : isless(convert(Tuple,cid1),convert(Tuple,cid2))
-end
-function Base.:<(cid1::ID,cid2::ID)
-    r1,r2=cid1|>rank,cid2|>rank
-    r1<r2 ? true : r1>r2 ? false : convert(Tuple,cid1)<convert(Tuple,cid2)
+    r1<r2 ? true : r1>r2 ? false : isless(cid1,cid2)
 end
 
 """
-    rank(id::ID) -> Int
-    rank(::Type{<:ID}) -> Any
-    rank(::Type{<:ID{T}}) where T<:Tuple{Vararg{SimpleID}} -> Int
+    rank(id::ID{SimpleID}) -> Int
+    rank(::Type{<:ID{SimpleID}}) -> Any
+    rank(::Type{<:ID{SimpleID,N}}) where N -> Int
 
 Get the rank of a composite id.
 """
-rank(id::ID)=id|>typeof|>rank
-rank(::Type{<:ID})=Any
-rank(::Type{<:ID{<:Tuple{Vararg{SimpleID,N}}}}) where N=N
+rank(id::ID{SimpleID})=id|>typeof|>rank
+rank(::Type{<:ID{SimpleID}})=Any
+rank(::Type{<:ID{SimpleID,N}}) where N=N
 
 """
-    *(sid1::SimpleID,sid2::SimpleID) -> ID
-    *(sid::SimpleID,cid::ID) -> ID
-    *(cid::ID,sid::SimpleID) -> ID
-    *(cid1::ID,cid2::ID) -> ID
+    *(sid1::SimpleID,sid2::SimpleID) -> ID{SimpleID}
+    *(sid::SimpleID,cid::ID{SimpleID}) -> ID{SimpleID}
+    *(cid::ID{SimpleID},sid::SimpleID) -> ID{SimpleID}
+    *(cid1::ID{SimpleID},cid2::ID{SimpleID}) -> ID{SimpleID}
 
 Get the product of the id system.
 """
 Base.:*(sid1::SimpleID,sid2::SimpleID)=ID(sid1,sid2)
-Base.:*(sid::SimpleID,cid::ID)=ID(sid,convert(Tuple,cid)...)
-Base.:*(cid::ID,sid::SimpleID)=ID(convert(Tuple,cid)...,sid)
-Base.:*(cid1::ID,cid2::ID)=ID(convert(Tuple,cid1)...,convert(Tuple,cid2)...)
+Base.:*(sid::SimpleID,cid::ID{SimpleID})=ID(sid,cid...)
+Base.:*(cid::ID{SimpleID},sid::SimpleID)=ID(cid...,sid)
+Base.:*(cid1::ID{SimpleID},cid2::ID{SimpleID})=ID(cid1...,cid2...)
 
 """
     IdSpace(sids::SimpleVectorSpace,tables::GradedTables)
@@ -152,32 +151,32 @@ Base.getindex(idspace::IdSpace,i::Int)=ID(_tuple_(idspace.sids.table,invoke(geti
 @generated _tuple_(sids::NTuple{M,SimpleID},index::NTuple{N,Int}) where {M,N}=Expr(:tuple,[:(sids[index[$i]]) for i=1:N]...)
 
 """
-    findfirst(id::ID,idspace::IdSpace) -> Int
-    searchsortedfirst(idspace::IdSpace,id::ID) -> Int
+    findfirst(id::ID{SimpleID},idspace::IdSpace) -> Int
+    searchsortedfirst(idspace::IdSpace,id::ID{SimpleID}) -> Int
 
 Find the index of an id in a idspace.
 """
-Base.findfirst(id::ID,idspace::IdSpace)=searchsortedfirst(idspace,id)
-Base.searchsortedfirst(idspace::IdSpace,id::ID)=searchsortedfirst(idspace,(rank(id),findfirst(id,idspace.sids)))
+Base.findfirst(id::ID{SimpleID},idspace::IdSpace)=searchsortedfirst(idspace,id)
+Base.searchsortedfirst(idspace::IdSpace,id::ID{SimpleID})=searchsortedfirst(idspace,(rank(id),findfirst(id,idspace.sids)))
 
 """
-    Element{V,I<:ID}
+    Element{V,I<:ID{SimpleID}}
 
 An element of an algebra over a field.
 
 The first and second attributes of an element must be
 - `value`: the coefficient of the element
-- `id::ID`: the id of the element
+- `id::ID{SimpleID}`: the id of the element
 """
-abstract type Element{V,I<:ID} end
+abstract type Element{V,I<:ID{SimpleID}} end
 
 """
     ScalarElement{V}
 
 Identity element.
 """
-const ScalarElement{V}=Element{V,ID{Tuple{}}}
-scalartype(::Type{M}) where M<:Element=rawelement(M){M|>valtype,ID{Tuple{}}}
+const ScalarElement{V}=Element{V,Tuple{}}
+scalartype(::Type{M}) where M<:Element=rawtype(M){M|>valtype,Tuple{}}
 
 """
     valtype(m::Element)
@@ -194,14 +193,14 @@ Base.valtype(::Type{<:Element{V}}) where V=V
 
 """
     idtype(m::Element)
-    idtype(::Type{<:Element{V,I} where V}) where I<:ID
+    idtype(::Type{<:Element{V,I} where V}) where I<:ID{SimpleID}
     idtype(::Type{<:Element})
 
 The type of the id of an element.
 """
 idtype(m::Element)=m|>typeof|>idtype
-idtype(::Type{<:Element{V,I} where V}) where I<:ID=I
-idtype(::Type{<:Element})=ID
+idtype(::Type{<:Element{V,I} where V}) where I<:ID{SimpleID}=I
+idtype(::Type{<:Element})=ID{SimpleID}
 
 """
     rank(m::Element) -> Int
@@ -213,7 +212,7 @@ rank(m::Element)=m|>typeof|>rank
 rank(::Type{M}) where M<:Element=M|>idtype|>rank
 
 """
-    (m1::Element,m2::Element) -> Bool
+    ==(m1::Element,m2::Element) -> Bool
     isequal(m1::Element,m2::Element) -> Bool
 
 Compare two elements and judge whether they are equal to each other.
@@ -245,20 +244,22 @@ function Base.promote_rule(::Type{M1},::Type{M2}) where {M1<:Element,M2<:Element
     M2<:M1 && return M1
     v1,i1,r1=M1|>valtype,M1|>idtype,M1|>rank
     v2,i2,r2=M2|>valtype,M2|>idtype,M2|>rank
-    V=promote_type(v1,v2)
-    I=promote_type(i1,i2)
-    M=r2==0 ? rawelement(M1) : r1==0 ? rawelement(M2) : typejoin(rawelement(M1),rawelement(M2))
-    isconcretetype(I) && return M{V,I}
-    I==ID && return M{V}
-    return M{V,<:I}
+    V,I=promote_type(v1,v2),promote_type(i1,i2)
+    M=r2==0 ? rawtype(M1) : r1==0 ? rawtype(M2) : typejoin(rawtype(M1),rawtype(M2))
+    return isconcretetype(I) ? M{V,I} : M{V,<:I}
 end
 
 """
-    rawelement(::Type{<:Element})
+    mul_promote_type(::Type{M},::Type{V}) where {M<:Element,V<:Number}
+    mul_promote_type(::Type{V},::Type{M}) where {M<:Element,V<:Number}
 
-Get the raw name of a type of Element.
+Define the promote rule for the multiplication between an Element and a scalar.
 """
-rawelement(::Type{<:Element})=Element
+mul_promote_type(::Type{M},::Type{V}) where {M<:Element,V<:Number}=mul_promote_type(V,M)
+function mul_promote_type(::Type{V},::Type{M}) where {M<:Element,V<:Number}
+    C,I=promote_type(M|>valtype,V),M|>idtype
+    return isconcretetype(I) ? rawtype(M){C,I} : rawtype(M){C,<:I}
+end
 
 """
     one(::Type{M}) where {M<:Element}
@@ -266,7 +267,7 @@ rawelement(::Type{<:Element})=Element
 Get the identity operator.
 """
 function Base.one(::Type{M}) where {M<:Element}
-    rtype=rawelement(M)
+    rtype=rawtype(M)
     vtype=isconcretetype(valtype(M)) ? valtype(M) : Int
     @assert fieldnames(rtype)==(:value,:id) "one error: not supproted type($(nameof(rtype)))."
     return rtype(one(vtype),ID())
@@ -274,7 +275,7 @@ end
 
 """
     convert(::Type{M},m::ScalarElement) where {M<:ScalarElement}
-    convert(::Type{M},m) where {M<:ScalarElement}
+    convert(::Type{M},m::Number) where {M<:ScalarElement}
     convert(::Type{M},m::Element) where {M<:Element}
 
 1) Convert a scalar element from one type to another;
@@ -284,36 +285,37 @@ end
 function Base.convert(::Type{M},m::ScalarElement) where {M<:ScalarElement}
     typeof(m)<:M && return m
     @assert fieldnames(M)==(:value,:id) "convert error: not supported type($(nameof(M)))."
-    return rawelement(M)(convert(M|>valtype,m.value),m.id)
+    return rawtype(M)(convert(M|>valtype,m.value),m.id)
 end
-function Base.convert(::Type{M},m) where {M<:ScalarElement}
+function Base.convert(::Type{M},m::Number) where {M<:ScalarElement}
     @assert fieldnames(M)==(:value,:id) "convert error: not supported type($(nameof(M)))."
-    return rawelement(M)(convert(M|>valtype,m),ID())
+    return rawtype(M)(convert(M|>valtype,m),ID())
 end
 function Base.convert(::Type{M},m::Element) where {M<:Element}
     typeof(m)<:M && return m
     @assert idtype(m)<:idtype(M) "convert error: dismatched ID type."
-    @assert rawelement(typeof(m))<:rawelement(M) "convert error: dismatched raw Element type."
+    @assert rawtype(typeof(m))<:rawtype(M) "convert error: dismatched raw Element type."
     return replace(m,value=convert(valtype(M),m.value))
 end
 
 """
-    Elements{I<:ID,M<:Element} <: AbstractDict{I,M}
+    Elements{I<:ID{SimpleID},M<:Element} <: AbstractDict{I,M}
 
 An set of elements of an algebra over a field.
 
-Alias for `Dict{I<:ID,M<:Element}`. Similar iterms are automatically merged thanks to the id system.
+Type alias for `Dict{I<:ID{SimpleID},M<:Element}`.
+Similar iterms are automatically merged thanks to the id system.
 """
-const Elements{I<:ID,M<:Element}=Dict{I,M}
+const Elements{I<:ID{SimpleID},M<:Element}=Dict{I,M}
 """
     Elements(ms)
-    Elements(ms::Pair{I,M}...) where {I<:ID,M<:Element}
+    Elements(ms::Pair{I,M}...) where {I<:ID{SimpleID},M<:Element}
     Elements(ms::Element...)
 
 Get the set of elements with similar items merged.
 """
 Elements(ms)=Base.dict_with_eltype((K,V)->Dict{K,V},ms,eltype(ms))
-function Elements(ms::Pair{I,M}...) where {I<:ID,M<:Element}
+function Elements(ms::Pair{I,M}...) where {I<:ID{SimpleID},M<:Element}
     result=Elements{I,M}()
     for (id,m) in ms result[id]=m end
     return result
@@ -374,7 +376,7 @@ Base.isequal(::Nothing,ms::Elements)=length(ms)==0
 """
     add!(ms::Elements) -> typeof(ms)
     add!(ms::Elements,::Nothing) -> typeof(ms)
-    add!(ms::Elements,m) -> typeof(ms)
+    add!(ms::Elements,m::Number) -> typeof(ms)
     add!(ms::Elements,m::Element) -> typeof(ms)
     add!(ms::Elements,mms::Elements) -> typeof(ms)
 
@@ -382,14 +384,7 @@ Get the inplace addition of elements to a set.
 """
 add!(ms::Elements)=ms
 add!(ms::Elements,::Nothing)=ms
-add!(ms::Elements,m)=add!(ms,convert(scalartype(ms|>valtype),m))
-function add!(ms::Elements,m::ScalarElement)
-    m=convert(scalartype(ms|>valtype),m)
-    old=get(ms,m.id,nothing)
-    new=old===nothing ? m : replace(old,value=old.value+m.value)
-    abs(new.value)==0.0 ? delete!(ms,m.id) : ms[m.id]=new
-    return ms
-end
+add!(ms::Elements,m::Number)=add!(ms,convert(scalartype(ms|>valtype),m))
 function add!(ms::Elements,m::Element)
     m=convert(ms|>valtype,m)
     old=get(ms,m.id,nothing)
@@ -402,7 +397,7 @@ add!(ms::Elements,mms::Elements)=(for m in mms|>values add!(ms,m) end; ms)
 """
     sub!(ms::Elements) -> typeof(ms)
     sub!(ms::Elements,::Nothing) -> typeof(ms)
-    add!(ms::Elements,m) -> typeof(ms)
+    add!(ms::Elements,m::Number) -> typeof(ms)
     sub!(ms::Elements,m::Element) -> typeof(ms)
     sub!(ms::Elements,mms::Elements) -> typeof(ms)
 
@@ -410,14 +405,7 @@ Get the inplace subtraction of elements from a set.
 """
 sub!(ms::Elements)=ms
 sub!(ms::Elements,::Nothing)=ms
-sub!(ms::Elements,m)=add!(ms,convert(scalartype(ms|>valtype),-m))
-function sub!(ms::Elements,m::ScalarElement)
-    m=convert(scalartype(ms|>valtype),-m)
-    old=get(ms,m.id,nothing)
-    new=old===nothing ? m : replace(old,value=old.value+m.value)
-    abs(new.value)==0.0 ? delete!(ms,m.id) : ms[m.id]=new
-    return ms
-end
+sub!(ms::Elements,m::Number)=add!(ms,convert(scalartype(ms|>valtype),-m))
 function sub!(ms::Elements,m::Element)
     m=convert(ms|>valtype,m)
     old=get(ms,m.id,nothing)
@@ -429,12 +417,12 @@ sub!(ms::Elements,mms::Elements)=(for m in mms|>values sub!(ms,m) end; ms)
 
 """
     mul!(ms::Elements,factor::ScalarElement) -> Elements
-    mul!(ms::Elements,factor) -> Elements
+    mul!(ms::Elements,factor::Number) -> Elements
 
 Get the inplace multiplication of elements with a scalar.
 """
 mul!(ms::Elements,factor::ScalarElement)=mul!(ms,factor.value)
-function mul!(ms::Elements,factor)
+function mul!(ms::Elements,factor::Number)
     @assert isa(one(ms|>valtype|>valtype)*factor,ms|>valtype|>valtype) "mul! error: dismatched type, $(ms|>valtype) and $(factor|>typeof)."
     for m in values(ms)
         ms[m.id]=replace(m,value=m.value*factor)
@@ -444,26 +432,26 @@ end
 
 """
     div!(ms::Elements,factor::ScalarElement) -> Elements
-    div!(ms::Elements,factor) -> Elements
+    div!(ms::Elements,factor::Number) -> Elements
 
 Get the inplace division of element with a scalar.
 """
 div!(ms::Elements,factor::ScalarElement)=mul!(ms,1/factor.value)
-div!(ms::Elements,factor)=mul!(ms,1/factor)
+div!(ms::Elements,factor::Number)=mul!(ms,1/factor)
 
 """
     +(m::Element) -> typeof(m)
-    +(ms::Elements) -> typeof(ms)
     +(m::Element,::Nothing) -> typeof(m)
     +(::Nothing,m::Element) -> typeof(m)
-    +(m::Element,factor) -> Elements
-    +(factor,m::Element) -> Elements
+    +(m::Element,factor::Number) -> Elements
+    +(factor::Number,m::Element) -> Elements
+    +(m1::Element,m2::Element) -> Elements
+    +(ms::Elements) -> typeof(ms)
     +(ms::Elements,::Nothing) -> typeof(ms)
     +(::Nothing,ms::Elements) -> typeof(ms)
-    +(ms::Elements,factor) -> Elements
-    +(factor,ms::Elements) -> Elements
+    +(ms::Elements,factor::Number) -> Elements
+    +(factor::Number,ms::Elements) -> Elements
     +(ms::Elements,m::Element) -> Elements
-    +(m1::Element,m2::Element) -> Elements
     +(m::Element,ms::Elements) -> Elements
     +(ms1::Elements,ms2::Elements) -> Elements
 
@@ -475,35 +463,43 @@ Base.:+(m::Element,::Nothing)=m
 Base.:+(::Nothing,m::Element)=m
 Base.:+(ms::Elements,::Nothing)=ms
 Base.:+(::Nothing,ms::Elements)=ms
-Base.:+(factor,m::Element)=m+rawelement(m|>typeof)(factor,ID())
-Base.:+(m::Element,factor)=m+rawelement(m|>typeof)(factor,ID())
-Base.:+(factor,m::ScalarElement)=replace(m,value=m.value+factor)
-Base.:+(m::ScalarElement,factor)=replace(m,value=m.value+factor)
-Base.:+(factor::ScalarElement,m::Element)=m+factor
+Base.:+(factor::Number,m::Element)=m+rawtype(m|>typeof)(factor,ID())
+Base.:+(m::Element,factor::Number)=m+rawtype(m|>typeof)(factor,ID())
+Base.:+(factor::Number,m::ScalarElement)=replace(m,value=m.value+factor)
+Base.:+(m::ScalarElement,factor::Number)=replace(m,value=m.value+factor)
 Base.:+(m1::ScalarElement,m2::ScalarElement)=replace(m1,value=m1.value+m2.value)
-Base.:+(factor,ms::Elements)=ms+rawelement(ms|>valtype)(factor,ID())
-Base.:+(ms::Elements,factor)=ms+rawelement(ms|>valtype)(factor,ID())
-Base.:+(factor::ScalarElement,ms::Elements)=ms+factor
-Base.:+(m::Element,factor::ScalarElement)=(M=promote_type(typeof(m),typeof(factor));add!(Elements{M|>idtype,M}(m.id=>m),factor))
-Base.:+(m1::Element,m2::Element)=(M=promote_type(typeof(m1),typeof(m2));add!(Elements{M|>idtype,M}(m1.id=>m1),m2))
+Base.:+(factor::Number,ms::Elements)=ms+rawtype(ms|>valtype)(factor,ID())
+Base.:+(ms::Elements,factor::Number)=ms+rawtype(ms|>valtype)(factor,ID())
+function Base.:+(m1::Element,m2::Element)
+    I=promote_type(m1|>idtype,m2|>idtype)
+    M=promote_type(typeof(m1),typeof(m2))
+    return add!(Elements{I,M}(m1.id=>m1),m2)
+end
 Base.:+(m::Element,ms::Elements)=ms+m
-Base.:+(ms::Elements,factor::ScalarElement)=(M=promote_type(valtype(ms),typeof(factor));add!(Elements{M|>idtype,M}(ms),factor))
-Base.:+(ms::Elements,m::Element)=(M=promote_type(valtype(ms),typeof(m));add!(Elements{M|>idtype,M}(ms),m))
-Base.:+(ms1::Elements,ms2::Elements)=(M=promote_type(valtype(ms1),valtype(ms2));add!(Elements{M|>idtype,M}(ms1),ms2))
+function Base.:+(ms::Elements,m::Element)
+    I=promote_type(ms|>keytype,m|>idtype)
+    M=promote_type(valtype(ms),typeof(m))
+    return add!(Elements{I,M}(ms),m)
+end
+function Base.:+(ms1::Elements,ms2::Elements)
+    I=promote_type(ms1|>keytype,ms2|>keytype)
+    M=promote_type(valtype(ms1),valtype(ms2))
+    return add!(Elements{I,M}(ms1),ms2)
+end
 
 """
-    *(factor,m::Element) -> Element
-    *(m::Element,factor) -> Element
-    *(m1::Element,m2::Element) -> Element
     *(m::Element,::Nothing) -> Nothing
     *(::Nothing,m::Element) -> Nothing
-    *(factor,ms::Elements) -> Elements
-    *(ms::Elements,factor) -> Elements
+    *(factor::Number,m::Element) -> Element
+    *(m::Element,factor::Number) -> Element
+    *(m1::Element,m2::Element) -> Element
+    *(ms::Elements,::Nothing) -> Nothing
+    *(::Nothing,ms::Elements) -> Nothing
+    *(factor::Number,ms::Elements) -> Elements
+    *(ms::Elements,factor::Number) -> Elements
     *(m::Element,ms::Elements) -> Elements
     *(ms::Elements,m::Element) -> Elements
     *(ms1::Elements,ms2::Elements) -> Elements
-    *(ms::Elements,::Nothing) -> Nothing
-    *(::Nothing,ms::Elements) -> Nothing
 
 Overloaded `*` operator for element-scalar multiplications and element-element multiplications of an algebra over a field.
 """
@@ -514,12 +510,17 @@ Base.:*(::Nothing,ms::Elements)=nothing
 Base.:*(factor::ScalarElement,m::Element)=m*factor.value
 Base.:*(m::Element,factor::ScalarElement)=m*factor.value
 Base.:*(m1::ScalarElement,m2::ScalarElement)=replace(m1,value=m1.value*m2.value)
-Base.:*(factor,m::Element)=m*factor
-Base.:*(m::Element,factor)=replace(m,value=factor*m.value)
+Base.:*(factor::Number,m::Element)=m*factor
+Base.:*(m::Element,factor::Number)=replace(m,value=factor*m.value)
 Base.:*(factor::ScalarElement,ms::Elements)=ms*factor.value
 Base.:*(ms::Elements,factor::ScalarElement)=ms*factor.value
-Base.:*(factor,ms::Elements)=ms*factor
-Base.:*(ms::Elements,factor)=abs(factor)==0 ? zero(Elements) : Elements(id=>m*factor for (id,m) in ms)
+Base.:*(factor::Number,ms::Elements)=ms*factor
+function Base.:*(ms::Elements,factor::Number)
+    abs(factor)==0 && return zero(Elements)
+    result=Elements{ms|>keytype,mul_promote_type(ms|>valtype,factor|>typeof)}()
+    for (id,m) in ms result[id]=m*factor end
+    return result
+end
 Base.:*(m::Element,ms::Elements)=Elements((m*mm for mm in ms|>values)...)
 Base.:*(ms::Elements,m::Element)=Elements((mm*m for mm in ms|>values)...)
 Base.:*(ms1::Elements,ms2::Elements)=Elements((m1*m2 for m1 in ms1|>values for m2 in ms2|>values)...)
@@ -527,21 +528,21 @@ function Base.:*(m1::Element,m2::Element)
     @assert(    m1|>typeof|>nameof==m2|>typeof|>nameof && m1|>typeof|>fieldcount==m2|>typeof|>fieldcount==2,
                 "\"*\" error: not implemented between $(m1|>typeof|>nameof) and $(m2|>typeof|>nameof)."
                 )
-    typeof(m1).name.wrapper(m1.value*m2.value,m1.id*m2.id)
+    rawtype(typeof(m1))(m1.value*m2.value,m1.id*m2.id)
 end
 
 """
     -(m::Element) -> typeof(m)
-    -(ms::Elements) -> typeof(ms)
     -(m::Element,::Nothing) -> typeof(m)
     -(::Nothing,m::Element) -> typeof(m)
+    -(m::Element,factor::Number) -> Elements
+    -(factor::Number,m::Element) -> Elements
+    -(m1::Element,m2::Element) -> Elements
+    -(ms::Elements) -> typeof(ms)
     -(ms::Elements,::Nothing) -> typeof(ms)
     -(::Nothing,ms::Elements) -> typeof(ms)
-    -(m::Element,factor) -> Elements
-    -(factor,m::Element) -> Elements
-    -(ms::Elements,factor) -> Elements
-    -(factor,ms::Elements) -> Elements
-    -(m1::Element,m2::Element) -> Elements
+    -(ms::Elements,factor::Number) -> Elements
+    -(factor::Number,ms::Elements) -> Elements
     -(m::Element,ms::Elements) -> Elements
     -(ms::Elements,m::Element) -> Elements
     -(ms1::Elements,ms2::Elements) -> Elements
@@ -554,43 +555,55 @@ Base.:-(m::Element,::Nothing)=m
 Base.:-(::Nothing,m::Element)=-m
 Base.:-(ms::Elements,::Nothing)=ms
 Base.:-(::Nothing,ms::Elements)=-ms
-Base.:-(factor,m::Element)=rawelement(m|>typeof)(factor,ID())-m
-Base.:-(m::Element,factor)=m+rawelement(m|>typeof)(-factor,ID())
-Base.:-(factor,m::ScalarElement)=replace(m,value=factor-m.value)
-Base.:-(m::ScalarElement,factor)=replace(m,value=m.value-factor)
+Base.:-(factor::Number,m::Element)=rawtype(m|>typeof)(factor,ID())-m
+Base.:-(m::Element,factor::Number)=m+rawtype(m|>typeof)(-factor,ID())
+Base.:-(factor::Number,m::ScalarElement)=replace(m,value=factor-m.value)
+Base.:-(m::ScalarElement,factor::Number)=replace(m,value=m.value-factor)
 Base.:-(m1::ScalarElement,m2::ScalarElement)=replace(m1,value=m1.value-m2.value)
-Base.:-(factor,ms::Elements)=rawelement(ms|>valtype)(factor,ID())-ms
-Base.:-(ms::Elements,factor)=ms+rawelement(ms|>valtype)(-factor,ID())
-Base.:-(factor::ScalarElement,m::Element)=(M=promote_type(typeof(factor),typeof(m));sub!(Elements{M|>idtype,M}(factor.id=>factor),m))
-Base.:-(m::Element,factor::ScalarElement)=(M=promote_type(typeof(m),typeof(factor));sub!(Elements{M|>idtype,M}(m.id=>m),factor))
-Base.:-(m1::Element,m2::Element)=(M=promote_type(typeof(m1),typeof(m2));sub!(Elements{M|>idtype,M}(m1.id=>m1),m2))
-Base.:-(factor::ScalarElement,ms::Elements)=(M=promote_type(typeof(factor),valtype(ms));sub!(Elements{M|>idtype,M}(factor.id=>factor),ms))
-Base.:-(ms::Elements,factor::ScalarElement)=(M=promote_type(valtype(ms),typeof(factor));sub!(Elements{M|>idtype,M}(ms),factor))
-Base.:-(m::Element,ms::Elements)=(M=promote_type(typeof(m),valtype(ms));sub!(Elements{M|>idtype,M}(m.id=>m),ms))
-Base.:-(ms::Elements,m::Element)=(M=promote_type(valtype(ms),typeof(m));sub!(Elements{M|>idtype,M}(ms),m))
-Base.:-(ms1::Elements,ms2::Elements)=(M=promote_type(valtype(ms1),valtype(ms2));sub!(Elements{M|>idtype,M}(ms1),ms2))
+Base.:-(factor::Number,ms::Elements)=rawtype(ms|>valtype)(factor,ID())-ms
+Base.:-(ms::Elements,factor::Number)=ms+rawtype(ms|>valtype)(-factor,ID())
+function Base.:-(m1::Element,m2::Element)
+    I=promote_type(m1|>idtype,m2|>idtype)
+    M=promote_type(typeof(m1),typeof(m2))
+    return sub!(Elements{I,M}(m1.id=>m1),m2)
+end
+function Base.:-(m::Element,ms::Elements)
+    I=promote_type(m|>idtype,ms|>keytype)
+    M=promote_type(typeof(m),valtype(ms))
+    return sub!(Elements{I,M}(m.id=>m),ms)
+end
+function Base.:-(ms::Elements,m::Element)
+    I=promote_type(ms|>keytype,m|>idtype)
+    M=promote_type(valtype(ms),typeof(m))
+    return sub!(Elements{M|>idtype,M}(ms),m)
+end
+function Base.:-(ms1::Elements,ms2::Elements)
+    I=promote_type(ms1|>keytype,ms2|>keytype)
+    M=promote_type(valtype(ms1),valtype(ms2))
+    return sub!(Elements{I,M}(ms1),ms2)
+end
 
 """
-    /(m::Element,factor) -> Element
+    /(m::Element,factor::Number) -> Element
     /(m::Element,factor::ScalarElement) -> Element
-    /(ms::Elements,factor) -> Elements
+    /(ms::Elements,factor::Number) -> Elements
     /(ms::Elements,factor::ScalarElement) -> Elements
 
 Overloaded `/` operator for element-scalar division of an algebra over a field.
 """
-Base.:/(m::Element,factor)=m*(1/factor)
+Base.:/(m::Element,factor::Number)=m*(1/factor)
 Base.:/(m::Element,factor::ScalarElement)=m*(1/factor.value)
-Base.:/(ms::Elements,factor)=ms*(1/factor)
+Base.:/(ms::Elements,factor::Number)=ms*(1/factor)
 Base.:/(ms::Elements,factor::ScalarElement)=ms*(1/factor.value)
 
 """
-    ^(m::Element,n::Int) -> Element
-    ^(ms::Elements,n::Int) -> Elements
+    ^(m::Element,n::Integer) -> Element
+    ^(ms::Elements,n::Integer) -> Elements
 
 Overloaded `^` operator for element-integer power of an algebra over a field.
 """
-Base.:^(m::Element,n::Int)=(@assert n>0 "^ error: non-positive integers are not allowed."; prod(ntuple(i->m,n)))
-Base.:^(ms::Elements,n::Int)=(@assert n>0 "^ error: non-positive integers are not allowed."; prod(ntuple(i->ms,n)))
+Base.:^(m::Element,n::Integer)=(@assert n>0 "^ error: non-positive integers are not allowed."; prod(ntuple(i->m,Val(n))))
+Base.:^(ms::Elements,n::Integer)=(@assert n>0 "^ error: non-positive integers are not allowed."; prod(ntuple(i->ms,Val(n))))
 
 """
     ⊗(m::Element,ms::Elements) -> Elements
@@ -615,6 +628,13 @@ Overloaded `⋅` operator for element-element multiplications of an algebra over
 ⋅(ms1::Elements,ms2::Elements)=Elements((m1⋅m2 for m1 in ms1|>values for m2 in ms2|>values)...)
 
 """
+    sequence(m::Element,table=nothing) -> NTuple{rank(m),Int}
+
+Get the sequence of the ids of an element according to a table.
+"""
+@generated sequence(m::Element,table)=Expr(:tuple,[:(get(table,m.id[$i],nothing)) for i=1:rank(m)]...)
+
+"""
     split(m::Element) -> Tuple{Any,Vararg{Element}}
 
 Split an element into the coefficient and a sequence of rank-1 elements.
@@ -623,7 +643,7 @@ Split an element into the coefficient and a sequence of rank-1 elements.
     @assert m|>fieldnames==(:value,:id) "split error: not supported split of $(nameof(typeof(m)))."
     exprs=[:(m.value)]
     for i=1:rank(m)
-        push!(exprs,:(typeof(m).name.wrapper(one(m|>valtype),ID(m.id[$i]))))
+        push!(exprs,:(rawtype(typeof(m))(one(m|>valtype),ID(m.id[$i]))))
     end
     return Expr(:tuple,exprs...)
 end
@@ -654,18 +674,12 @@ function Base.replace(ms::Elements,pairs::Pair{<:SimpleID,<:Union{Element,Elemen
 end
 @generated function elementstype(ms::Vararg{Pair{<:SimpleID,<:Union{Element,Elements}},N}) where N
     ms=ntuple(i->(fieldtype(ms[i],2)<:Elements) ? fieldtype(ms[i],2)|>valtype : fieldtype(ms[i],2),Val(N))
-    @assert mapreduce(m->(m|>fieldnames)==(:value,:id),&,ms) "elementscommontype error: not supported."
-    val=mapreduce(valtype,promote_type,ms)
-    name=reduce(typejoin,ms)|>rawelement
-    return isconcretetype(val) ? Elements{ID,name{val}} : Elements{ID,name{<:val}}
+    @assert mapreduce(m->(m|>fieldnames)==(:value,:id),&,ms) "elementstype error: not supported."
+    I=mapreduce(idtype,promote_type,ms)|>eltype
+    V=mapreduce(valtype,promote_type,ms)
+    M=reduce(typejoin,ms)|>rawtype
+    isconcretetype(V) && return Elements{ID{I},M{V,<:ID{I}}}
 end
-
-"""
-    sequence(m::Element,table=nothing) -> NTuple{rank(m),Int}
-
-Get the sequence of the ids of an element according to a table.
-"""
-@generated sequence(m::Element,table)=Expr(:tuple,[:(get(table,m.id[$i],nothing)) for i=1:rank(m)]...)
 
 """
     permute!(result::Elements,m::Element,table=nothing) -> Elements
@@ -704,8 +718,8 @@ function elementcommuteposition(seqs)
     end
     return nothing
 end
-elementleft(m::Element,i::Int)=typeof(m).name.wrapper(m.value,m.id[1:i-1])
-elementright(m::Element,i::Int)=typeof(m).name.wrapper(one(m.value),m.id[i+2:end])
+elementleft(m::Element,i::Int)=rawtype(typeof(m))(m.value,m.id[1:i-1])
+elementright(m::Element,i::Int)=rawtype(typeof(m))(one(m.value),m.id[i+2:end])
 
 """
     permute(m::Element,table=nothing) -> Elements
@@ -714,12 +728,12 @@ elementright(m::Element,i::Int)=typeof(m).name.wrapper(one(m.value),m.id[i+2:end
 Permute the ids of an-element/a-set-of-elements to the descending order according to a table.
 """
 function permute(m::Element,table=nothing)
-    result=Elements{ID,rawelement(m|>typeof){valtype(m),<:ID}}()
-    permute!(result,m,table)
+    M,V,I=m|>typeof|>rawtype,m|>valtype,m|>idtype|>eltype
+    permute!(Elements{ID{I},M{V,<:ID{I}}}(),m,table)
 end
 function permute(ms::Elements,table=nothing)
-    result=Elements{ID,rawelement(ms|>valtype){valtype(ms|>valtype),<:ID}}()
-    permute!(result,ms,table)
+    M,V,I=ms|>valtype|>rawtype,ms|>valtype|>valtype,ms|>keytype|>eltype
+    permute!(Elements{ID{I},M{V,<:ID{I}}}(),ms,table)
 end
 
 end #module

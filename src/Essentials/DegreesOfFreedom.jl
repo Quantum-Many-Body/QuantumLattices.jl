@@ -5,16 +5,15 @@ using StaticArrays: SVector
 using LaTeXStrings: latexstring
 using ..Spatials: PID,AbstractBond
 using ...Interfaces: rank,dimension
-using ...Prerequisites: Float,decimaltostr
+using ...Prerequisites: Float,decimaltostr,rawtype
 using ...Prerequisites.TypeTraits: efficientoperations
 using ...Prerequisites.CompositeStructures: CompositeDict
 using ...Mathematics.VectorSpaces: VectorSpace
 using ...Mathematics.AlgebraOverFields: SimpleID,ID,Element,Elements
 
-
 import ..Spatials: pidtype,rcoord,icoord
 import ...Interfaces: reset!,update!,sequence
-import ...Mathematics.AlgebraOverFields: rawelement
+import ...Mathematics.AlgebraOverFields: idpropertynames
 
 export IID,Index,pid,iidtype,iid
 export IndexToTuple,DirectIndexToTuple,directindextotuple,FilteredAttributes
@@ -58,7 +57,7 @@ abstract type Index{P<:PID,I<:IID} <: SimpleID end
 Get the corresponding index from a pid and an iid.
 """
 @generated function (INDEX::Type{<:Index})(pid::PID,iid::IID)
-    INDEX<:UnionAll ? :(INDEX(convert(Tuple,pid)...,convert(Tuple,iid)...)) : :((INDEX.name.wrapper)(convert(Tuple,pid)...,convert(Tuple,iid)...))
+    INDEX<:UnionAll ? :(INDEX(convert(Tuple,pid)...,convert(Tuple,iid)...)) : :(rawtype(INDEX)(convert(Tuple,pid)...,convert(Tuple,iid)...))
 end
 
 """
@@ -77,7 +76,7 @@ Get the spatial part of an index.
 """
 @generated function pid(index::Index)
     exprs=[:(getfield(index,$i)) for i=1:fieldcount(index|>pidtype)]
-    return :(pidtype(index).name.wrapper($(exprs...)))
+    return :(rawtype(pidtype(index))($(exprs...)))
 end
 
 """
@@ -96,7 +95,7 @@ Get the internal part of an index.
 """
 @generated function iid(index::Index)
     exprs=[:(getfield(index,$i)) for i=fieldcount(index|>pidtype)+1:fieldcount(index)]
-    return :(iidtype(index).name.wrapper($(exprs...)))
+    return :(rawtype(iidtype(index))($(exprs...)))
 end
 
 """
@@ -366,7 +365,7 @@ totuple(::Nothing)=nothing
 @generated totuple(v::SVector{N}) where N=Expr(:tuple,[:(v[$i]) for i=1:N]...)
 Base.hash(oid::OID{<:Index},h::UInt)=hash((oid.index,totuple(oid.rcoord)),h)
 Base.fieldnames(::Type{<:OID})=(:index,:rcoord,:icoord,:seq)
-Base.propertynames(::Type{<:ID{<:NTuple{N,OID}}},private::Bool=false) where N=private ? (:contents,:indexes,:rcoords,:icoords,:seqs) : (:indexes,:rcoords,:icoords,:seqs)
+idpropertynames(::Type{<:ID{OID}})=(:indexes,:rcoords,:icoords,:seqs)
 
 """
     show(io::IO,oid::OID)
@@ -389,19 +388,19 @@ Base.repr(oid::OID,l::LaTeX)=@sprintf "%s^{%s}_{%s}" script(oid,l,Val(:B)) join(
 
 """
     adjoint(oid::OID) -> typeof(oid)
-    adjoint(oid::ID{<:NTuple{N,OID}}) where N -> typeof(oid)
+    adjoint(oid::ID{OID,N}) where N -> typeof(oid)
 
 Get the adjoint of an operator id.
 """
 Base.adjoint(oid::OID)=OID(oid.index',oid.rcoord,oid.icoord,oid.seq)
-@generated Base.adjoint(oid::ID{<:NTuple{N,OID}}) where N=Expr(:call,:ID,[:(oid[$i]') for i=N:-1:1]...)
+@generated Base.adjoint(oid::ID{OID,N}) where N=Expr(:call,:ID,[:(oid[$i]') for i=N:-1:1]...)
 
 """
-    isHermitian(oid::ID{<:NTuple{N,OID}}) where N -> Bool
+    isHermitian(oid::ID{OID,N}) where N -> Bool
 
 Judge whether an operator id is Hermitian.
 """
-function isHermitian(oid::ID{<:NTuple{N,OID}}) where N
+function isHermitian(oid::ID{OID,N}) where N
     for i=1:((N+1)÷2)
         oid[i]'==oid[N+1-i] || return false
     end
@@ -457,20 +456,20 @@ oidtype(I::Type{<:IID},B::Type{<:AbstractBond},::Type{Nothing},::Val{false})=OID
 oidtype(I::Type{<:IID},B::Type{<:AbstractBond},::Type{<:Table},::Val{false})=OID{union(B|>pidtype,I),Nothing,Nothing,Int}
 
 """
-    angle(id::ID{<:Tuple{Vararg{OID}}},vectors::AbstractVector{<:AbstractVector{Float}},values::AbstractVector{Float}) -> Float
+    angle(id::ID{OID},vectors::AbstractVector{<:AbstractVector{Float}},values::AbstractVector{Float}) -> Float
 
 Get the total twist phase of an id.
 """
-@generated function Base.angle(id::ID{<:Tuple{Vararg{OID}}},vectors::AbstractVector{<:AbstractVector{Float}},values::AbstractVector{Float})
+@generated function Base.angle(id::ID{OID},vectors::AbstractVector{<:AbstractVector{Float}},values::AbstractVector{Float})
     Expr(:call,:+,[:(angle(id[$i],vectors,values)) for i=1:rank(id)]...)
 end
 
 """
-    Operator{V,I<:ID} <: Element{V,I}
+    Operator{V<:Number,I<:ID{OID}} <: Element{V,I}
 
 Abstract type for an operator.
 """
-abstract type Operator{V,I<:ID} <: Element{V,I} end
+abstract type Operator{V<:Number,I<:ID{OID}} <: Element{V,I} end
 function (O::Type{<:Operator})( value,
                                 indexes::NTuple{N,Index};
                                 rcoords::Union{Nothing,NTuple{N,SVector{M,Float}}}=nothing,
@@ -507,7 +506,7 @@ Base.show(io::IO,::MIME"text/latex",opt::Operator)=show(io,MIME"text/latex"(),la
 
 Get the adjoint of an operator.
 """
-Base.adjoint(opt::Operator)=typeof(opt).name.wrapper(opt.value',opt.id')
+Base.adjoint(opt::Operator)=rawtype(typeof(opt))(opt.value',opt.id')
 
 """
     repr(opt::Operator,l::Union{LaTeX,Nothing}=nothing) -> String
@@ -566,13 +565,6 @@ Get the whole icoord of an operator.
 end
 
 """
-    rawelement(::Type{<:Operator})
-
-Get the raw name of a type of Operator.
-"""
-rawelement(::Type{<:Operator})=Operator
-
-"""
     sequence(opt::Operator,table=nothing) -> NTuple{rank(opt),Int}
 
 Get the sequence of the oids of an operator according to a table.
@@ -594,9 +586,9 @@ function otype end
 
 A set of operators.
 
-Type alias for `Elements{<:ID,<:Operator}`.
+Type alias for `Elements{<:ID{OID},<:Operator}`.
 """
-const Operators{I<:ID,O<:Operator}=Elements{I,O}
+const Operators{I<:ID{OID},O<:Operator}=Elements{I,O}
 Operators(opts::Operator...)=Elements(opts...)
 
 """

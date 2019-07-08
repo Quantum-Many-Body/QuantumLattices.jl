@@ -2,12 +2,12 @@ using Test
 using StaticArrays: SVector
 using QuantumLattices.Essentials.FockPackage
 using QuantumLattices.Essentials.Spatials: Bond,Point,PID,rcoord,azimuthd
-using QuantumLattices.Essentials.DegreesOfFreedom: Table,IDFConfig,OID,Operators,oidtype,otype,script
+using QuantumLattices.Essentials.DegreesOfFreedom: Table,IDFConfig,OID,Operators,oidtype,otype,script,latexformat
 using QuantumLattices.Essentials.Terms: Couplings,@subscript,statistics,abbr
 using QuantumLattices.Interfaces: dims,inds,⊗,⋅,expand,permute
 using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Mathematics.VectorSpaces: IsMultiIndexable,MultiIndexOrderStyle
-using QuantumLattices.Mathematics.AlgebraOverFields: ID,rawelement
+using QuantumLattices.Mathematics.AlgebraOverFields: ID
 import QuantumLattices.FockPackage: fockcouplingnambus
 
 @testset "FID" begin
@@ -55,7 +55,6 @@ end
 end
 
 @testset "FockOperator" begin
-    @test rawelement(FOperator{V} where V)==FOperator
     @test latexformat(FOperator)==foptdefaultlatex
 
     opt=FOperator(1.0,(FIndex(1,1,1,1,2),FIndex(1,1,1,1,1)))
@@ -74,7 +73,6 @@ end
     opt2=FOperator(2.0,(FIndex(1,2,1,1,2),FIndex(1,2,1,1,1)))
     @test opt1*opt2==FOperator(3.0,(FIndex(1,2,1,1,2),FIndex(1,2,1,1,1),FIndex(1,2,1,1,2),FIndex(1,2,1,1,1)))
 
-    @test rawelement(BOperator{V} where V)==BOperator
     @test latexformat(BOperator)==boptdefaultlatex
 
     opt=BOperator(1.0,(FIndex(1,1,1,1,2),FIndex(1,1,1,1,1)))
@@ -84,10 +82,10 @@ end
 
 @testset "permute" begin
     i1,i2=OID(FIndex(1,1,1,1,2)),OID(FIndex(1,1,1,1,1))
-    @test permute(FOperator,i1,i2)==(FOperator(1,ID()),FOperator(-1,ID(i2,i1)))
-    @test permute(FOperator,i2,i1)==(FOperator(1,ID()),FOperator(-1,ID(i1,i2)))
-    @test permute(BOperator,i1,i2)==(BOperator(1,ID()),BOperator(1,ID(i2,i1)))
-    @test permute(BOperator,i2,i1)==(BOperator(-1,ID()),BOperator(1,ID(i1,i2)))
+    @test permute(FOperator,i1,i2)==(FOperator(1),FOperator(-1,ID(i2,i1)))
+    @test permute(FOperator,i2,i1)==(FOperator(1),FOperator(-1,ID(i1,i2)))
+    @test permute(BOperator,i1,i2)==(BOperator(1),BOperator(1,ID(i2,i1)))
+    @test permute(BOperator,i2,i1)==(BOperator(-1),BOperator(1,ID(i1,i2)))
 
     i1,i2=OID(FIndex(1,1,1,2,2)),OID(FIndex(1,1,1,1,1))
     @test permute(FOperator,i1,i2)==(FOperator(-1,ID(i2,i1)),)
@@ -101,8 +99,6 @@ end
 end
 
 @testset "FockCoupling" begin
-    @test rawelement(FockCoupling{V} where V)==FockCoupling
-
     @test FockCoupling{2}(1.0)|>string=="FockCoupling{2}(value=1.0)"
     @test FockCoupling{2}(1.0,atoms=(1,1))|>string=="FockCoupling{2}(value=1.0,atoms=(1,1))"
     @test FockCoupling{2}(1.0,atoms=(1,1),spins=(1,2))|>string=="FockCoupling{2}(value=1.0,atoms=(1,1),spins=(1,2))"
@@ -290,13 +286,13 @@ end
 @testset "Onsite" begin
     term=Onsite{'F'}(:mu,1.5)
     @test term|>abbr==:st
-    @test otype(term|>typeof,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Nothing})==FOperator{Float,ID{NTuple{2,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Nothing}}}}
-    @test otype(term|>typeof,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Int})==FOperator{Float,ID{NTuple{2,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Int}}}}
+    @test otype(term|>typeof,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Nothing})==FOperator{Float,ID{OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Nothing},2}}
+    @test otype(term|>typeof,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Int})==FOperator{Float,ID{OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Int},2}}
 
     term=Onsite{'B'}(:mu,1.5,couplings=σˣ("sp")⊗σᶻ("ob"),modulate=true)
     @test term|>abbr==:st
-    @test otype(term|>typeof,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Nothing})==BOperator{Float,ID{NTuple{2,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Nothing}}}}
-    @test otype(term|>typeof,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Int})==BOperator{Float,ID{NTuple{2,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Int}}}}
+    @test otype(term|>typeof,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Nothing})==BOperator{Float,ID{OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Nothing},2}}
+    @test otype(term|>typeof,OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Int})==BOperator{Float,ID{OID{FIndex{Int},SVector{2,Float},SVector{2,Float},Int},2}}
 
     point=Point(PID('a',1),(0.5,0.5),(0.0,0.0))
     config=IDFConfig{Fock}(pid->Fock(atom=pid.site%2,norbital=2,nspin=2,nnambu=2),[point.pid])
@@ -304,12 +300,12 @@ end
 
     term=Onsite{'F'}(:mu,1.5,couplings=σˣ("sp")⊗σᶻ("ob"),modulate=true)
     operators=Operators(FOperator(+1.5,ID(OID(FIndex('a',1,2,2,2),[0.5,0.5],[0.0,0.0],4),OID(FIndex('a',1,2,1,1),[0.5,0.5],[0.0,0.0],3))),
-                        FOperator(-1.5,ID(OID(FIndex('a',1,1,2,2),[0.5,0.5],[0.0,0.0],2),OID(FIndex('a',1,1,1,1),[0.5,0.5],[0.0,0.0],1)))
+                        FOperator(-1.5,ID(OID(FIndex('a',1,1,1,2),[0.5,0.5],[0.0,0.0],1),OID(FIndex('a',1,1,2,1),[0.5,0.5],[0.0,0.0],2)))
     )
     @test expand(term,point,config,table,true)==operators
     @test expand(term,point,config,table,false)==operators+operators'
     operators=Operators(FOperator(+1.5,ID(OID(FIndex('a',1,2,2,2),[0.5,0.5],[0.0,0.0],nothing),OID(FIndex('a',1,2,1,1),[0.5,0.5],[0.0,0.0],nothing))),
-                        FOperator(-1.5,ID(OID(FIndex('a',1,1,2,2),[0.5,0.5],[0.0,0.0],nothing),OID(FIndex('a',1,1,1,1),[0.5,0.5],[0.0,0.0],nothing)))
+                        FOperator(-1.5,ID(OID(FIndex('a',1,1,1,2),[0.5,0.5],[0.0,0.0],nothing),OID(FIndex('a',1,1,2,1),[0.5,0.5],[0.0,0.0],nothing)))
     )
     @test expand(term,point,config,nothing,true)==operators
     @test expand(term,point,config,nothing,false)==operators+operators'

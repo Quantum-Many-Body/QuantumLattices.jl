@@ -13,7 +13,6 @@ using ...Mathematics.VectorSpaces: VectorSpace,IsMultiIndexable,MultiIndexOrderS
 import ..DegreesOfFreedom: script,otype,isHermitian
 import ..Terms: couplingcenter,statistics,abbr,termfactor
 import ...Interfaces: dims,inds,⊗,⋅,expand,expand!,permute
-import ...Mathematics.AlgebraOverFields: rawelement
 
 export ANNIHILATION,CREATION,MAJORANA,FID,FIndex,Fock
 export usualfockindextotuple,nambufockindextotuple
@@ -170,11 +169,11 @@ Indicate that the filtered attributes are `(:scope,:nambu,:site,:orbital,:spin)`
 const nambufockindextotuple=FilteredAttributes(:scope,:nambu,:site,:orbital,:spin)
 
 """
-    FockOperator{V,I<:ID} <: Operator{V,I}
+    FockOperator{V<:Number,I<:ID{OID}} <: Operator{V,I}
 
 Abstract type for all Fock operators.
 """
-abstract type FockOperator{V,I<:ID} <: Operator{V,I} end
+abstract type FockOperator{V<:Number,I<:ID{OID}} <: Operator{V,I} end
 
 """
     isnormalordered(opt::FockOperator) -> Bool
@@ -191,14 +190,15 @@ function isnormalordered(opt::FockOperator)
 end
 
 """
-    FOperator(value,id::ID{<:Tuple{Vararg{OID}}}=ID())
+    FOperator(value::Number,id::ID{OID}=ID())
 
 Fermionic Fock operator.
 """
-struct FOperator{V,I<:ID} <: FockOperator{V,I}
+struct FOperator{V<:Number,I<:ID{OID}} <: FockOperator{V,I}
     value::V
     id::I
-    FOperator(value,id::ID{<:Tuple{Vararg{OID}}}=ID())=new{typeof(value),typeof(id)}(value,id)
+    FOperator(value::Number)=new{typeof(value),Tuple{}}(value,())
+    FOperator(value::Number,id::ID{OID})=new{typeof(value),typeof(id)}(value,id)
 end
 
 """
@@ -219,13 +219,6 @@ statistics(opt::FOperator)=opt|>typeof|>statistics
 statistics(::Type{<:FOperator})='F'
 
 """
-    rawelement(::Type{<:FOperator})
-
-Get the raw name of a type of FOperator.
-"""
-rawelement(::Type{<:FOperator})=FOperator
-
-"""
     permute(::Type{<:FOperator},id1::OID{<:FIndex},id2::OID{<:FIndex},::Any=nothing) -> Tuple{Vararg{FOperator}}
 
 Permute two fermionic oid and get the result.
@@ -233,7 +226,7 @@ Permute two fermionic oid and get the result.
 function permute(::Type{<:FOperator},id1::OID{<:FIndex},id2::OID{<:FIndex},::Any=nothing)
     @assert id1.index≠id2.index || id1.rcoord≠id2.rcoord || id1.icoord≠id2.icoord "permute error: permuted ids should not be equal to each other."
     if id1.index'==id2.index && id1.rcoord==id2.rcoord && id1.icoord==id2.icoord
-        return (FOperator(1,ID()),FOperator(-1,ID(id2,id1)))
+        return (FOperator(1),FOperator(-1,ID(id2,id1)))
     else
         return (FOperator(-1,ID(id2,id1)),)
     end
@@ -250,14 +243,15 @@ function Base.:*(f1::FOperator,f2::FOperator)
 end
 
 """
-    BOperator(value,id::ID{<:Tuple{Vararg{OID}}}=ID())
+    BOperator(value::Number,id::ID{OID}=ID())
 
 Bosonic Fock operator.
 """
-struct BOperator{V,I<:ID} <: FockOperator{V,I}
+struct BOperator{V<:Number,I<:ID{OID}} <: FockOperator{V,I}
     value::V
     id::I
-    BOperator(value,id::ID{<:Tuple{Vararg{OID}}}=ID())=new{typeof(value),typeof(id)}(value,id)
+    BOperator(value::Number)=new{typeof(value),Tuple{}}(value,())
+    BOperator(value::Number,id::ID{OID})=new{typeof(value),typeof(id)}(value,id)
 end
 
 """
@@ -278,13 +272,6 @@ statistics(opt::BOperator)=opt|>typeof|>statistics
 statistics(::Type{<:BOperator})='B'
 
 """
-    rawelement(::Type{<:BOperator})
-
-Get the raw name of a type of BOperator.
-"""
-rawelement(::Type{<:BOperator})=BOperator
-
-"""
     permute(::Type{<:BOperator},id1::OID{<:FIndex},id2::OID{<:FIndex},::Any=nothing) -> Tuple{Vararg{BOperator}}
 
 Permute two bosonic oid and get the result.
@@ -293,9 +280,9 @@ function permute(::Type{<:BOperator},id1::OID{<:FIndex},id2::OID{<:FIndex},::Any
     @assert id1.index≠id2.index || id1.rcoord≠id2.rcoord || id1.icoord≠id2.icoord "permute error: permuted ids should not be equal to each other."
     if id1.index'==id2.index && id1.rcoord==id2.rcoord && id1.icoord==id2.icoord
         if id1.index.nambu==CREATION
-            return (BOperator(1,ID()),BOperator(1,ID(id2,id1)))
+            return (BOperator(1),BOperator(1,ID(id2,id1)))
         else
-            return (BOperator(-1,ID()),BOperator(1,ID(id2,id1)))
+            return (BOperator(-1),BOperator(1,ID(id2,id1)))
         end
     else
         return (BOperator(1,ID(id2,id1)),)
@@ -320,8 +307,8 @@ Base.fieldnames(::Type{<:FCID})=(:center,:atom,:orbital,:spin,:nambu,:obsub,:sps
 FCID(;center=wildcard,atom=wildcard,orbital=wildcard,spin=wildcard,nambu=wildcard,obsub=wildcard,spsub=wildcard)=FCID(center,atom,orbital,spin,nambu,obsub,spsub)
 
 """
-    FockCoupling(value,id::ID{<:Tuple{Vararg{FCID}}},obsubscripts::Subscripts,spsubscripts::Subscripts)
-    FockCoupling{N}(value1;
+    FockCoupling(value::Number,id::ID{FCID},obsubscripts::Subscripts,spsubscripts::Subscripts)
+    FockCoupling{N}(value::Number=1;
                     centers::Union{NTuple{N,Int},Nothing}=nothing,
                     atoms::Union{NTuple{N,Int},Nothing}=nothing,
                     orbitals::Union{NTuple{N,Int},Subscript,Nothing}=nothing,
@@ -330,16 +317,16 @@ FCID(;center=wildcard,atom=wildcard,orbital=wildcard,spin=wildcard,nambu=wildcar
 
 Fock coupling.
 """
-struct FockCoupling{V,I<:ID,OS<:Subscripts,SS<:Subscripts} <: Coupling{V,I}
+struct FockCoupling{V,I<:ID{FCID},OS<:Subscripts,SS<:Subscripts} <: Coupling{V,I}
     value::V
     id::I
     obsubscripts::OS
     spsubscripts::SS
-    function FockCoupling(value,id::ID{<:Tuple{Vararg{FCID}}},obsubscripts::Subscripts,spsubscripts::Subscripts)
+    function FockCoupling(value::Number,id::ID{FCID},obsubscripts::Subscripts,spsubscripts::Subscripts)
         new{typeof(value),typeof(id),typeof(obsubscripts),typeof(spsubscripts)}(value,id,obsubscripts,spsubscripts)
     end
 end
-function FockCoupling{N}(   value=1;
+function FockCoupling{N}(   value::Number=1;
                             centers::Union{NTuple{N,Int},Nothing}=nothing,
                             atoms::Union{NTuple{N,Int},Nothing}=nothing,
                             orbitals::Union{NTuple{N,Int},Subscript,Nothing}=nothing,
@@ -461,13 +448,6 @@ function ⋅(fc1::FockCoupling,fc2::FockCoupling)
 end
 
 """
-    rawelement(::Type{<:FockCoupling})
-
-Get the raw name of a type of FockCoupling.
-"""
-rawelement(::Type{<:FockCoupling})=FockCoupling
-
-"""
     expand(fc::FockCoupling,pid::PID,fock::Fock,kind::Union{Val{K},Nothing}=nothing) where K -> Union{FCExpand,Tuple{}}
     expand(fc::FockCoupling,pids::NTuple{R,PID},focks::NTuple{R,Fock},kind::Union{Val{K},Nothing}=nothing) where {R,K} -> Union{FCExpand,Tuple{}}
 
@@ -510,7 +490,7 @@ dims(fce::FCExpand)=(length(fce.obsbexpands),length(fce.spsbexpands))
 end
 
 """
-    σ⁰(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID,FockCoupling{Int,ID{<:NTuple{2,FCID}}}}
+    σ⁰(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{FCID,2},FockCoupling{Int,<:ID{FCID,2}}}
 
 The Pauli matrix σ⁰, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
 """
@@ -522,7 +502,7 @@ function σ⁰(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing)
 end
 
 """
-    σˣ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID,FockCoupling{Int,ID{<:NTuple{2,FCID}}}}
+    σˣ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{FCID,2},FockCoupling{Int,<:ID{FCID,2}}}
 
 The Pauli matrix σˣ, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
 """
@@ -534,7 +514,7 @@ function σˣ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing)
 end
 
 """
-    σʸ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID,FockCoupling{Int,ID{<:NTuple{2,FCID}}}}
+    σʸ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{FCID,2},FockCoupling{Int,<:ID{FCID,2}}}
 
 The Pauli matrix σʸ, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
 """
@@ -546,7 +526,7 @@ function σʸ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing)
 end
 
 """
-    σᶻ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID,FockCoupling{Int,ID{<:NTuple{2,FCID}}}}
+    σᶻ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{FCID,2},FockCoupling{Int,<:ID{FCID,2}}}
 
 The Pauli matrix σᶻ, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
 """
@@ -558,7 +538,7 @@ function σᶻ(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing)
 end
 
 """
-    σ⁺(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID,FockCoupling{Int,ID{<:NTuple{2,FCID}}}}
+    σ⁺(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{FCID,2},FockCoupling{Int,<:ID{FCID,2}}}
 
 The Pauli matrix σ⁺, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
 """
@@ -570,7 +550,7 @@ function σ⁺(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing)
 end
 
 """
-    σ⁻(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID,FockCoupling{Int,ID{<:NTuple{2,FCID}}}}
+    σ⁻(mode::String;centers::Union{NTuple{2,Int},Nothing}=nothing) -> Couplings{ID{FCID,2},FockCoupling{Int,<:ID{FCID,2}}}
 
 The Pauli matrix σ⁻, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
 """
@@ -943,7 +923,7 @@ function Coulomb{ST}(   id::Symbol,value::Any,bondkind::Int=1;
 end
 abbr(::Type{<:Coulomb})=:cl
 isHermitian(::Type{<:Coulomb})=nothing
-termfactor(::Nothing,id::ID{<:NTuple{4,OID}},::Val{:Coulomb})=id[2]'==id[1] && id[4]'==id[3] ? 2 : 1
+termfactor(::Nothing,id::ID{OID,4},::Val{:Coulomb})=id[2]'==id[1] && id[4]'==id[3] ? 2 : 1
 
 """
     FFockTerm
@@ -965,7 +945,7 @@ const BFockTerm=Union{Onsite{'B'},Hopping{'B'},Pairing{'B'},Hubbard{'B'},InterOr
 
 Get the operator type of a Fock term.
 """
-otype(T::Type{<:FFockTerm},I::Type{<:OID})=FOperator{T|>valtype,ID{NTuple{T|>rank,I}}}
-otype(T::Type{<:BFockTerm},I::Type{<:OID})=BOperator{T|>valtype,ID{NTuple{T|>rank,I}}}
+otype(T::Type{<:FFockTerm},I::Type{<:OID})=FOperator{T|>valtype,ID{I,T|>rank}}
+otype(T::Type{<:BFockTerm},I::Type{<:OID})=BOperator{T|>valtype,ID{I,T|>rank}}
 
 end # module
