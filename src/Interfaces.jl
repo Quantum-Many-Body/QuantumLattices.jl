@@ -3,7 +3,7 @@ module Interfaces
 export ⊕,⊗,⋅
 export add!,sub!,mul!,div!
 export id,rank,degree,dimension,kind,sequence,dims,index,inds
-export update!,reset!,expand,expand!,decompose,decompose!,regularize,regularize!
+export update!,reset!,register!,prepare!,run!,expand,expand!,decompose,decompose!,regularize,regularize!
 export permute,vector,matrix
 
 "Direct sum."
@@ -32,6 +32,15 @@ function update! end
 
 "Inplace reset."
 function reset! end
+
+"Inplace register."
+function register! end
+
+"Inplace prepare."
+function prepare! end
+
+"Inplace run."
+function run! end
 
 "Id."
 function id end

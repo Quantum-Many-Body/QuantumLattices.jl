@@ -718,7 +718,6 @@ end
         constops=Operators{constidtp,constoptp}()
         innerbonds=filter(acrossbonds,bonds,Val(:exclude))
         boundbonds=filter(acrossbonds,bonds,Val(:include))
-
     end)
     for i=1:fieldcount(terms)
         push!(boundops,:(expand(one(terms[$i]),boundbonds,config,table,half,coord|>Val)))

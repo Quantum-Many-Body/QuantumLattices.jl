@@ -13,6 +13,7 @@ Pages=  [
         "Terms.md",
         "FockPackage.md",
         "SpinPackage.md",
+        "Frameworks.md",
         ]
 Depth=2
 ```
