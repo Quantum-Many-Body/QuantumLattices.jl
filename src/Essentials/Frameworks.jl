@@ -181,7 +181,8 @@ end
         push!(values,:(assignments[$i]))
     end
     names=NTuple{fieldcount(assignments),Symbol}(names)
-    return :(NamedContainer{$names}($(values...)))
+    values=Expr(:tuple,values...)
+    return :(NamedContainer{$names}($values))
 end
 
 """

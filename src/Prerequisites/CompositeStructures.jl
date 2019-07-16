@@ -144,14 +144,14 @@ NamedContainer is just a wrapper of Julia NamedTuple, but not a composite type.
 const NamedContainer{T,Names}=NamedTuple{Names,<:Tuple{Vararg{T}}}
 
 """
-    NamedContainer{Names}(contents...) where Names -> NamedTuple{Names,typeof(contents)}
+    NamedContainer{Names}(contents) where Names -> NamedTuple{Names,typeof(contents)}
 
 Construct a named container.
 """
-@generated function NamedContainer{Names}(first,contents...) where Names
-    @assert length(Names)==length(contents)+1 "NamedContainer error: dismatched length between names and contents."
-    Expr(:tuple,:($(Names[1])=first),[:($name=contents[$i]) for (i,name) in enumerate(Names[2:end])]...)
+@generated function NamedContainer{Names}(contents::Tuple) where Names
+    @assert length(Names)==fieldcount(contents) "NamedContainer error: dismatched length between names and contents."
+    fieldcount(contents)==0 && return NamedTuple()
+    return Expr(:tuple,[:($name=contents[$i]) for (i,name) in enumerate(Names)]...)
 end
-NamedContainer{()}()=NamedTuple()
 
 end #module

@@ -44,15 +44,6 @@ end
     @test cid.nambus==(1,4.0)
 end
 
-@testset "IdSpace" begin
-    sids=SimpleVectorSpace{'F'}((AOFID(i,1) for i=1:4)...)
-    idspace=IdSpace(Combinations,sids,Val((0,2,4)))
-    for i=1:dimension(idspace)
-        @test searchsortedfirst(idspace,idspace[i])==i
-        @test findfirst(idspace[i],idspace)==i
-    end
-end
-
 struct AOFOperator{V<:Number,I<:ID{SimpleID}} <: Element{V,I}
     value::V
     id::I

@@ -19,20 +19,6 @@ With the help of the structure constants of the algebra, the result of the bilin
 
 Generally, the usual multiplication between two elements of an algebra is not commutable, and the rank of the multiplication is just the add-up before the simplication with the help of the algebra structure. We thus use a simple id to denote a single basis of the corresponding vector space, and an id to denote the identifier of an element. With the help of the direct product (`⊗`) of two ids, an over complete id system designed for the whole algebra is constructed. This id system is redundant because it does not reflects the structure constants of the algebra, which reduces independent basis elements. Extra mechanisms should be provided to kill this redundancy, which goes beyond the current module. Users should define them themselves.
 
-## IdSpace
-
-[`IdSpace`](@ref) defines the complete vector space that corresponds to an algebra.
-
-An id space uses a set of simple id bases to generated all ranked ids, with the former represented by an instance of [`SimpleVectorSpace`](@ref) and stored in the attribute `:sids`, while the latter by an instance of [`GradedTables`](@ref) in the attribute `:tables`. For the sick of the orderings among different ids, an id will be represented by a multiindex, which are determined by the corresponding sequences of its simple ids in the basis set. The id system can be complete or over complete, depending on whether the attribute `:tables` contain multiindices that actually represent the same basis of the algebra. Besides, the methods
-```julia
-Base.getindex(idspace::IdSpace,i::Int) -> ID
-```
-and
-```julia
-Base.findfirst(id::ID,idspace::IdSpace) -> Int
-```
-are provided to get the ith id and to find the index of an id of a idspace, respectively.
-
 ## Element and Elements
 
 [`Element`](@ref) defines a single element of an algebra while [`Elements`](@ref) defines an exprssion composed of several elements from an algebra.

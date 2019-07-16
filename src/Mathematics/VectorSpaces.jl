@@ -4,13 +4,13 @@ using ..Combinatorics: AbstractCombinatorics
 using ...Prerequisites: rawtype
 using ...Prerequisites.TypeTraits: efficientoperations,forder,corder,subtoind,indtosub
 
-import ...Interfaces: dimension,⊕,rank,dims,inds,degree
+import ...Interfaces: dimension,⊕,rank,dims,inds
 
 export VectorSpace
 export HasTable,TableSorted,IsMultiIndexable,MultiIndexOrderStyle
 export SimpleVectorSpace
 export OrderedIndices,SimpleIndices,TabledIndices
-export GradedTables,GradedVectorSpace
+export NamedVectorSpace
 
 """
     VectorSpace{B} <: AbstractVector{B}
@@ -255,176 +255,82 @@ TableSorted(::Type{<:TabledIndices{'T'}})=TableSorted(true)
 TableSorted(::Type{<:TabledIndices{'F'}})=TableSorted(false)
 
 """
-    GradedTables(vs::Tuple,ks::Tuple)
-    GradedTables(::Type{M},n::Int,gs::Val{grades}) where {M<:AbstractCombinatorics,grades}
+    NamedVectorSpace{M,NS,BS<:Tuple,VS<:Tuple{Vararg{AbstractVector}}} <: VectorSpace{NamedTuple{NS,BS}}
 
-The tables of a graded vector space.
+Abstract named vector space.
 
-Alias for `Base.Iterators.Pairs{G,V,KS<:Tuple,VS<:Tuple}`.
+This is a wrapper of multiindexable vector spaces, each of whose indexable dimensions is associated with a name.
+
+It has four type parameters:
+* `M`: mode of the named vector space. It specifies how the indexable dimensions are combined to form the bases of the named vector space, and must take one of the following values:
+  - `:zip`: elements from each indexable dimensions are zipped together to form the bases,
+  - `:product`: elements from each indexable dimensions are direct producted together to form the bases.
+For the `:zip` mode, all the indexable dimensions should have the same number of elements, and the number of formed bases is equal to this number; for the `:product` mode, there are no restriction on the numbers of the indexable dimensions, and the number of the final bases is equal to their product.
+* `NS::Tuple{Vararg{Symbol}}`: the names of the indexable dimensions
+* `BS<:Tuple`: the eltypes of the indexable dimensions
+* `VS<:Tuple{Vararg{AbstractVector}}`: the contents of the indexable dimensions
+
+The concrete types must have the following attribute:
+* `:contents::VS`: storage of the contents of the indexable dimensions
+
+By default, a named vector space uses C order for the indexable dimensions when the mode is `:product`. You can change it to F order for your own subtypes by defining the [`MultiIndexOrderStyle`](@ref) trait.
 """
-const GradedTables{G,V,KS<:Tuple,VS<:Tuple}=Base.Iterators.Pairs{G,V,KS,VS}
-GradedTables(vs::Tuple,ks::Tuple)=Base.Iterators.Pairs(vs,ks)
-function GradedTables(::Type{M},n::Int,gs::Val{grades}) where {M<:AbstractCombinatorics,grades}
-    @assert isa(grades,Tuple{Vararg{Int}}) "GradedTables error: grades should be tuple of integers."
-    return GradedTables(comdata(M,n,gs),grades)
-end
-@generated function comdata(::Type{M},n::Int,::Val{grades}) where {M<:AbstractCombinatorics,grades}
-    return Expr(:tuple,[:(TabledIndices{$g}(M,n)) for g in grades]...)
-end
-
-"""
-    keytype(tables::GradedTables,g::Int)
-    keytype(::Type{T},g::Int) where {T<:GradedTables}
-
-Get the gth keytype of a graded tables.
-"""
-Base.keytype(tables::GradedTables,g::Int)=keytype(typeof(tables),g)
-Base.keytype(::Type{T},g::Int) where {T<:GradedTables}=fieldtype(fieldtype(T,:itr),g)
-
-"""
-    valtype(tables::GradedTables,g::Int)
-    valtype(::Type{T},g::Int) where {T<:GradedTables}
-
-Get the gth valtype of a graded tables.
-"""
-Base.valtype(tables::GradedTables,g::Int)=valtype(typeof(tables),g)
-Base.valtype(::Type{T},g::Int) where {T<:GradedTables}=fieldtype(fieldtype(T,:data),g)
-
-"""
-    rank(tables::GradedTables) -> Int
-    rank(::Type{T}) where {T<:GradedTables} -> Int
-
-Get the total number of keys or values of a graded tables.
-"""
-rank(tables::GradedTables)=tables|>typeof|>rank
-rank(::Type{T}) where {T<:GradedTables}=fieldcount(fieldtype(T,:data))
-
-"""
-    GradedVectorSpace{G,B,V<:VectorSpace,T<:GradedTables{G,V}} <: VectorSpace{Tuple{G,B}}
-
-Abstract type of graded vector spaces.
-
-A graded vector space is a vector space that has the extra structure of a grading, which is a decomposition of the vector space into a direct sum of vector subspaces.
-
-Concrete subtypes must have the following attribute:
-* `:tables::GradedTables{G,V} where {G,V<:VectorSpace}`: the tables of the subspaces.
-"""
-abstract type GradedVectorSpace{G,B,V<:VectorSpace,T<:GradedTables{G,V}} <: VectorSpace{Tuple{G,B}} end
-
-"""
-    keys(vs::GradedVectorSpace) -> Tuple
-    values(vs::GradedVectorSpace) -> Tuple
-    pairs(vs::GradedVectorSpace) -> GradedTables
-
-Iterate over the keys, values or pairs of a graded vector space.
-"""
-Base.keys(vs::GradedVectorSpace)=keys(vs.tables)
-Base.values(vs::GradedVectorSpace)=values(vs.tables)
-Base.pairs(vs::GradedVectorSpace)=pairs(vs.tables)
-
-"""
-    keytype(vs::GradedVectorSpace,g::Int)
-    keytype(::Type{V},g::Int) where {V<:GradedVectorSpace}
-
-Get the gth keytype of a graded vector space.
-"""
-Base.keytype(vs::GradedVectorSpace,g::Int)=keytype(typeof(vs),g)
-Base.keytype(::Type{V},g::Int) where {V<:GradedVectorSpace}=keytype(fieldtype(V,:tables),g)
-
-"""
-    valtype(vs::GradedVectorSpace,g::Int)
-    valtype(::Type{V},g::Int) where {V<:GradedVectorSpace}
-
-Get the gth valtype of a graded vector space.
-"""
-Base.valtype(vs::GradedVectorSpace,g::Int)=valtype(typeof(vs),g)
-Base.valtype(::Type{V},g::Int) where {V<:GradedVectorSpace}=valtype(fieldtype(V,:tables),g)
-
-"""
-    eltype(vs::GradedVectorSpace,g::Int)
-    eltype(::Type{V},g::Int) where {V<:GradedVectorSpace}
-
-Get the gth eltype of a graded vector space.
-"""
-Base.eltype(vs::GradedVectorSpace,g::Int)=eltype(typeof(vs),g)
-Base.eltype(::Type{V},g::Int) where {V<:GradedVectorSpace}=Tuple{keytype(V,g),eltype(valtype(V,g))}
-
-"""
-    rank(vs::GradedVectorSpace) -> Int
-    rank(::Type{V}) where {V<:GradedVectorSpace} -> Int
-
-Get the rank, i.e. the total number of vector subspaces.
-"""
-rank(vs::GradedVectorSpace)=vs|>typeof|>rank
-rank(::Type{V}) where {V<:GradedVectorSpace}=rank(fieldtype(V,:tables))
-
-"""
-    degree(g::G,vs::GradedVectorSpace{G}) where G -> Int
-
-Get the degree of a vector subspace whose grade are represented by g.
-"""
-degree(g::G,vs::GradedVectorSpace{G}) where G=findfirst(isequal(g),keys(vs))
-
-"""
-    dimension(vs::GradedVectorSpace) -> Int
-    dimension(vs::GradedVectorSpace{G},g::G) where G -> Int
-    dimension(vs::GradedVectorSpace{G},gs::NTuple{N,G}) where {G,N} -> Int
-
-Get the dimension of the whole graded vector space or some vector subspaces.
-"""
-dimension(vs::GradedVectorSpace)=sum(NTuple{rank(typeof(vs)),Int}(dimension(v) for v in values(vs)))::Int
-dimension(vs::GradedVectorSpace{G},g::G) where G=(index=degree(g,vs);isa(index,Int) ? dimension(values(vs)[index]) : 0)::Int
-function dimension(vs::GradedVectorSpace{G},gs::NTuple{N,G}) where {G,N}
-    result=0
-    for g in gs
-        result=result+dimension(vs,g)::Int
+abstract type NamedVectorSpace{M,NS,BS<:Tuple,VS<:Tuple{Vararg{AbstractVector}}} <: VectorSpace{NamedTuple{NS,BS}} end
+IsMultiIndexable(::Type{<:NamedVectorSpace})=IsMultiIndexable(true)
+MultiIndexOrderStyle(::Type{<:NamedVectorSpace})=MultiIndexOrderStyle('C')
+rank(::Type{<:NamedVectorSpace{:zip}})=1
+rank(::Type{<:NamedVectorSpace{:product,NS}}) where NS=length(NS)
+dims(nvs::NamedVectorSpace{:zip})=(length(getfield(nvs,:contents)[1]),)
+@generated dims(nvs::NamedVectorSpace{:product})=Expr(:tuple,[:(length(getfield(nvs,:contents)[$i])) for i=1:rank(nvs)]...)
+function inds(basis::NamedTuple{NS},nvs::NamedVectorSpace{:zip,NS}) where NS
+    index=findfirst(isequal(basis[1]),getfield(nvs,:contents)[1])
+    @assert isa(index,Integer) "inds error: input basis out of range."
+    for i=2:length(NS)
+        @assert getfield(nvs,:contents)[i][index]==basis[i] "inds error: input basis out of range."
     end
-    result
+    return (index,)
+end
+@generated function inds(basis::NamedTuple{NS,BS},nvs::NamedVectorSpace{:product,NS,BS}) where {NS,BS<:Tuple}
+    return Expr(:tuple,[:(findfirst(isequal(basis[$i]),getfield(nvs,:contents)[$i])) for i=1:length(NS)]...)
+end
+@generated function NamedTuple(index::Tuple{Int},nvs::NamedVectorSpace{:zip,NS}) where NS
+    return Expr(:tuple,[:($name=getfield(nvs,:contents)[$i][index[1]]) for (i,name) in enumerate(NS)]...)
+end
+@generated function NamedTuple(index::NTuple{N,Int},nvs::NamedVectorSpace{:product,NS}) where {N,NS}
+    @assert N==length(NS) "NamedTuple error: dismatched input index and rank of named vector space."
+    return Expr(:tuple,[:($name=getfield(nvs,:contents)[$i][index[$i]]) for (i,name) in enumerate(NS)]...)
 end
 
 """
-    iterate(vs::GradedVectorSpace,state=(1,1))
+    keys(nvs::NamedVectorSpace) -> Tuple{Vararg{Symbol}}
+    keys(::Type{<:NamedVectorSpace{M,NS} where M}) where NS -> Tuple{Vararg{Symbol}}
 
-Iterate over the whole graded vector space.
+Get the names of a named vector space.
 """
-function Base.iterate(vs::GradedVectorSpace,state=(1,1))
-    tables,degree,index=values(vs),state[1],state[2]
-    while index>length(tables[degree])
-        degree=degree+1
-        degree>length(tables) && return nothing
-        index=1
-    end
-    return (keys(vs)[degree],tables[degree][index]),(degree,index+1)
-end
+Base.keys(nvs::NamedVectorSpace)=nvs|>typeof|>keys
+Base.keys(::Type{<:NamedVectorSpace{M,NS} where M}) where NS=NS
 
 """
-    getindex(vs::GradedVectorSpace{B},pair::Tuple{B,Int}) where B
-    getindex(vs::GradedVectorSpace,i::Int)
+    values(nvs::NamedVectorSpace) -> Tuple{Vararg{AbstractVector}}
 
-Get the basis of a graded vector space by a grade-index pair or by an index.
+Get the contents of a named vector space.
 """
-Base.getindex(vs::GradedVectorSpace{B},pair::Tuple{B,Int}) where B=values(vs)[degree(pair[1],vs)][pair[2]]
-function Base.getindex(vs::GradedVectorSpace,i::Int)
-    degree,dimensions=1,NTuple{rank(typeof(vs)),Int}(dimension(v) for v in values(vs))
-    while i>dimensions[degree]
-        i=i-dimensions[degree]
-        degree=degree+1
-        degree>length(dimensions) && error("getindex error: input index($i) out of range.")
-    end
-    return (keys(vs)[degree],values(vs)[degree][i])
-end
+Base.values(nvs::NamedVectorSpace)=getfield(nvs,:contents)
 
 """
-    searchsortedfirst(vs::GradedVectorSpace{G,B},pair::Tuple{G,B}) where {G,B} -> Int
+    pairs(nvs::NamedVectorSpace) -> Base.Iterators.Pairs
 
-Find the index of a grade-basis pair in a graded vector space.
+Get the name-value pairs of a named vector space.
 """
-function Base.searchsortedfirst(vs::GradedVectorSpace{G,B},pair::Tuple{G,B}) where {G,B}
-    dim,tables,index,basis=0,values(vs),degree(pair[1],vs),pair[2]
-    for i=1:(index-1)
-        dim=dim+dimension(tables[i])
-    end
-    searchsortedfirst(tables[index],basis)+dim
-end
+Base.pairs(nvs::NamedVectorSpace)=Base.Generator(=>,nvs|>keys,nvs|>values)
+
+"""
+    eltype(nvs::NamedVectorSpace,i::Int)
+    eltype(::Type{<:NamedVectorSpace{M,NS,BS} where {M,NS}},i::Int) where BS
+
+Get the eltype of the ith indexable dimensions of a named vector space.
+"""
+Base.eltype(nvs::NamedVectorSpace,i::Int)=eltype(nvs|>typeof,i)
+Base.eltype(::Type{<:NamedVectorSpace{M,NS,BS} where {M,NS}},i::Int) where BS=fieldtype(BS,i)
 
 end # module

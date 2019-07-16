@@ -119,6 +119,6 @@ end
 end
 
 @testset "NamedContainer" begin
-    @test NamedContainer{(:a,:b)}(1,'h')==(a=1,b='h')
-    @test NamedContainer{()}()==NamedTuple()
+    @test NamedContainer{(:a,:b)}((1,'h'))==(a=1,b='h')
+    @test NamedContainer{()}(())==NamedTuple()
 end

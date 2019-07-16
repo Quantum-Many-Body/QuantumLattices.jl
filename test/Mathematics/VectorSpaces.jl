@@ -1,7 +1,7 @@
 using Test
 using QuantumLattices.Mathematics.VectorSpaces
 using QuantumLattices.Mathematics.Combinatorics: Combinations
-using QuantumLattices.Interfaces: dimension,⊕,rank,dims,inds,degree
+using QuantumLattices.Interfaces: dimension,⊕,rank,dims,inds
 
 @testset "SimpleVectorSpace" begin
     id1,id2,id3=(1,1),(1,2),(1,3)
@@ -104,52 +104,51 @@ end
     end
 end
 
-@testset "GradedTables" begin
-    com=Combinations
-    t=GradedTables(com,2,Val((0,1,2)))
-    @test keytype(t,1)==keytype(t|>typeof,1)==Int
-    @test keytype(t,2)==keytype(t|>typeof,2)==Int
-    @test keytype(t,3)==keytype(t|>typeof,3)==Int
-    @test valtype(t,1)==valtype(t|>typeof,1)==TabledIndices{'T',0}
-    @test valtype(t,2)==valtype(t|>typeof,2)==TabledIndices{'T',1}
-    @test valtype(t,3)==valtype(t|>typeof,3)==TabledIndices{'T',2}
-    @test rank(t)==rank(typeof(t))==3
-    @test t[1]==TabledIndices{0}(com,2)
-    @test t[2]==TabledIndices{1}(com,2)
-    @test t[3]==TabledIndices{2}(com,2)
+struct VSZNamedVectorSpace{NS,BS<:Tuple,VS<:Tuple{Vararg{Vector}}} <: NamedVectorSpace{:zip,NS,BS,VS}
+    contents::VS
+end
+@generated function VSZNamedVectorSpace{NS}(contents::Vector...) where NS
+    @assert length(NS)==length(contents) && isa(NS,Tuple{Vararg{Symbol}})
+    BS=Expr(:curly,:Tuple,[contents[i]|>eltype for i=1:length(NS)]...)
+    return quote
+        @assert mapreduce(length,==,contents)
+        VSZNamedVectorSpace{NS,$BS,typeof(contents)}(contents)
+    end
 end
 
-struct SimpleGradedVectorSpace{T<:GradedTables{Char,SimpleVectorSpace{'F',Int,4}}} <: GradedVectorSpace{Char,Int,SimpleVectorSpace{'F',Int,4},T}
-    tables::T
+struct VSPNamedVectorSpace{NS,BS<:Tuple,VS<:Tuple{Vararg{Vector}}} <: NamedVectorSpace{:product,NS,BS,VS}
+    contents::VS
+end
+@generated function VSPNamedVectorSpace{NS}(contents::Vector...) where NS
+    @assert length(NS)==length(contents) && isa(NS,Tuple{Vararg{Symbol}})
+    BS=Expr(:curly,:Tuple,[contents[i]|>eltype for i=1:length(NS)]...)
+    return :(VSPNamedVectorSpace{NS,$BS,typeof(contents)}(contents))
 end
 
-@testset "GradedVectorSpace" begin
-    v1=SimpleVectorSpace{'F'}(2,3,4,1)
-    v2=SimpleVectorSpace{'F'}(8,5,6,7)
-    vs=SimpleGradedVectorSpace(GradedTables((v1,v2),('a','b')))
-    @test keys(vs)==('a','b')
-    @test values(vs)==(v1,v2)
-    @test pairs(vs)==vs.tables
-    @test keytype(vs,1)==keytype(typeof(vs),1)==Char
-    @test keytype(vs,2)==keytype(typeof(vs),2)==Char
-    @test valtype(vs,1)==valtype(typeof(vs),1)==SimpleVectorSpace{'F',Int,4}
-    @test valtype(vs,2)==valtype(typeof(vs),2)==SimpleVectorSpace{'F',Int,4}
-    @test eltype(vs,1)==eltype(typeof(vs),1)==Tuple{Char,Int}
-    @test eltype(vs,2)==eltype(typeof(vs),2)==Tuple{Char,Int}
-    @test rank(vs)==rank(typeof(vs))==2
-    @test degree('a',vs)==1
-    @test degree('b',vs)==2
-    @test dimension(vs)==dimension(vs,('a','b'))==8
-    @test dimension(vs,'a')==dimension(vs,'b')==4
-    elements=[('a',2),('a',3),('a',4),('a',1),('b',8),('b',5),('b',6),('b',7)]
-    for (i,e) in enumerate(vs)
-        @test e==elements[i]
-        @test searchsortedfirst(vs,e)==i
-        @test findfirst(e,vs)==i
+@testset "NamedVectorSpace" begin
+    @test IsMultiIndexable(NamedVectorSpace)==IsMultiIndexable(true)
+    @test MultiIndexOrderStyle(NamedVectorSpace)==MultiIndexOrderStyle('C')
+
+    nvs=VSZNamedVectorSpace{(:t,:U)}([1,2],[8.0,9.0])
+    @test nvs|>keys==nvs|>typeof|>keys==(:t,:U)
+    @test nvs|>values==([1,2],[8.0,9.0])
+    @test nvs|>pairs|>collect==[:t=>[1,2],:U=>[8.0,9.0]]
+    @test eltype(nvs,1)==eltype(nvs|>typeof,1)==Int
+    @test eltype(nvs,2)==eltype(nvs|>typeof,2)==Float64
+    @test nvs|>typeof|>rank==1
+    @test dims(nvs)==(2,)
+    elements=[(t=1,U=8.0),(t=2,U=9.0)]
+    for i=1:dimension(nvs)
+        @test NamedTuple(inds(elements[i],nvs),nvs)==elements[i]
     end
-    @test vs|>collect==elements
-    for i=1:4
-        @test vs[('a',i)]==v1[i]
-        @test vs[('b',i)]==v2[i]
+    @test nvs|>collect==elements
+
+    nvs=VSPNamedVectorSpace{(:t,:U)}([1.0,2.0],[8.0,9.0])
+    @test nvs|>typeof|>rank==2
+    @test dims(nvs)==(2,2)
+    elements=[(t=1.0,U=8.0),(t=1.0,U=9.0),(t=2.0,U=8.0),(t=2.0,U=9.0)]
+    for i=1:dimension(nvs)
+        @test NamedTuple(inds(elements[i],nvs),nvs)==elements[i]
     end
+    @test nvs|>collect==elements
 end

@@ -665,7 +665,7 @@ end
 A NamedTuple that contain the key-value pairs.
 """
 const Parameters{Names}=NamedContainer{Number,Names}
-Parameters{Names}(values::Number...) where Names=NamedContainer{Names}(values...)
+Parameters{Names}(values::Number...) where Names=NamedContainer{Names}(values)
 
 """
     match(params1::Parameters,params2::Parameters,atol=atol,rtol=rtol) -> Bool
@@ -727,9 +727,11 @@ end
             push!(exprs,:(expand!(constops,terms[$i],innerbonds,config,table,half,coord|>Val)))
         end
     end
+    alterops=Expr(:tuple,alterops...)
+    boundops=Expr(:tuple,boundops...)
     push!(exprs,quote
-        alterops=NamedContainer{$alternames}($(alterops...))
-        boundops=NamedContainer{$names}($(boundops...))
+        alterops=NamedContainer{$alternames}($alterops)
+        boundops=NamedContainer{$names}($boundops)
         return GenOperators(constops,alterops,boundops)
     end)
     return Expr(:block,exprs...)
@@ -795,9 +797,11 @@ Get an empty copy of a set of operators.
     alterops,boundops=[],[]
     for i=1:fieldcount(fieldtype(ops,:alterops)) push!(alterops,:(empty(ops.alterops[$i]))) end
     for i=1:fieldcount(fieldtype(ops,:boundops)) push!(boundops,:(empty(ops.boundops[$i]))) end
+    alterops=Expr(:tuple,alterops...)
+    boundops=Expr(:tuple,boundops...)
     push!(exprs,quote
-        alterops=NamedContainer{fieldnames(fieldtype(ops|>typeof,:alterops))}($(alterops...))
-        boundops=NamedContainer{fieldnames(fieldtype(ops|>typeof,:boundops))}($(boundops...))
+        alterops=NamedContainer{fieldnames(fieldtype(ops|>typeof,:alterops))}($alterops)
+        boundops=NamedContainer{fieldnames(fieldtype(ops|>typeof,:boundops))}($boundops)
         return GenOperators(constops,alterops,boundops)
     end)
     return Expr(:block,exprs...)
@@ -969,7 +973,7 @@ function Generator{coord}(terms::Tuple{Vararg{Term}},bonds::Bonds,config::IDFCon
 end
 @generated function namedterms(terms::Tuple{Vararg{Term}})
     names=NTuple{fieldcount(terms),Symbol}(id(fieldtype(terms,i)) for i=1:fieldcount(terms))
-    return :(NamedContainer{$names}(terms...))
+    return :(NamedContainer{$names}(terms))
 end
 
 """

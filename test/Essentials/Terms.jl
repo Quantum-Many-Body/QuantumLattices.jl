@@ -235,13 +235,13 @@ end
     μops=expand(one(μ),filter(zerothbonds,bonds,Val(:include)),config,table,true,coordpresent)
 
     optp=TOperator{Float,ID{OID{TIndex{Int},SVector{2,Float},SVector{2,Float},Int},2}}
-    genops=GenOperators(tops1,NamedContainer{(:μ,)}(μops),NamedContainer{(:t,:μ)}(tops2,Operators{optp|>idtype,optp}()))
+    genops=GenOperators(tops1,NamedContainer{(:μ,)}((μops,)),NamedContainer{(:t,:μ)}((tops2,Operators{optp|>idtype,optp}())))
     @test genops==deepcopy(genops) && isequal(genops,deepcopy(genops))
     @test genops==GenOperators((t,μ),bonds,config,table,true,coordpresent)
     @test genops|>eltype==genops|>typeof|>eltype==optp
     @test genops|>idtype==genops|>typeof|>idtype==optp|>idtype
     @test expand!(Operators{idtype(optp),optp}(),genops,boundary,t=2.0,μ=1.5)==tops1+tops2*2.0+μops*1.5
-    @test empty!(deepcopy(genops))==empty(genops)==GenOperators(empty(μops),NamedContainer{(:μ,)}(empty(μops)),NamedContainer{(:t,:μ)}(empty(μops),empty(μops)))
+    @test empty!(deepcopy(genops))==empty(genops)==GenOperators(empty(μops),NamedContainer{(:μ,)}((empty(μops),)),NamedContainer{(:t,:μ)}((empty(μops),empty(μops))))
     @test reset!(deepcopy(genops),(t,μ),bonds,config,table,true,coordpresent)==genops
 
     gen=Generator((t,μ),bonds,config,table,true,boundary)

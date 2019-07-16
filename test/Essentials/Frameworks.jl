@@ -16,6 +16,7 @@ struct FApp <: App end
 @testset "Assignment" begin
     @test FApp()==FApp()
     @test isequal(FApp(),FApp())
+    @test update!(FApp())==FApp()
 
     assign=Assignment(:FApp,FApp(),(t=1.0,U=8.0),dependences=(:FApp1,:FApp2))
     @test deepcopy(assign)==assign
@@ -29,6 +30,7 @@ end
 @testset "Algorithm" begin
     @test FEngine()==FEngine()
     @test isequal(FEngine(),FEngine())
+    @test update!(FEngine())==FEngine()
 
     alg=Algorithm("Alg",FEngine(),parameters=(t=1.0,U=8.0))
     @test string(alg)==repr(alg)=="Alg_FEngine_1.0_8.0"
@@ -37,6 +39,8 @@ end
     register!(alg,:FApp2,FApp(),parameters=(U=6.0,),dependences=(:FApp1,))
     @test get(alg,Val(:FApp1))==get(alg,:FApp1)==Assignment(:FApp1,FApp(),(t=1.0,U=5.0),virgin=false)
     @test get(alg,Val(:FApp2))==get(alg,:FApp2)==Assignment(:FApp2,FApp(),(t=1.0,U=6.0),dependences=(:FApp1,),virgin=false)
+    @test prepare!(alg,get(alg,:FApp1))===nothing
+    @test run!(alg,get(alg,:FApp1))===nothing
     @test dependences(alg,get(alg,:FApp1))==()
     @test dependences(alg,get(alg,:FApp2))==(:FApp1,)
     @test dependences(alg,get(alg,:FApp2),(:FApp1,))==()

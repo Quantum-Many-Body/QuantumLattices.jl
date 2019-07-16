@@ -2,7 +2,7 @@ module Interfaces
 
 export ⊕,⊗,⋅
 export add!,sub!,mul!,div!
-export id,rank,degree,dimension,kind,sequence,dims,index,inds
+export id,rank,dimension,kind,sequence,dims,index,inds
 export update!,reset!,register!,prepare!,run!,expand,expand!,decompose,decompose!,regularize,regularize!
 export permute,vector,matrix
 
@@ -47,9 +47,6 @@ function id end
 
 "Rank."
 function rank end
-
-"Degree"
-function degree end
 
 "Dimension."
 function dimension end

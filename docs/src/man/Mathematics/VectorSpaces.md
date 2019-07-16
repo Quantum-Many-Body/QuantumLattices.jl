@@ -106,20 +106,23 @@ It is worth noting that
 
 Compared to [`SimpleIndices`](@ref), the bases of this kind of vector spaces are stored in the attribute `:table`, which must be a vector of tuple of integers. The `:table` attribute can be sorted or unsorted, which is determined by the type parameter `S`, with `'T'` for sorted and `'F'` for unsorted. This type suits the situations when the Cartesian indices are restricted by extra conditions except that propoesed by the attribute `:dims`.
 
-## GradedVectorSpace
+## NamedVectorSpace
 
-[`GradedVectorSpace{G,B,V,T}`](@ref) defines the abstract type of graded vector spaces, which are vector spaces that have the extra structure of a grading, which is a decomposition of the vector space into a direct sum of vector subspaces.
+[`NamedVectorSpace{M,NS,BS,VS}`](@ref) defines a multiindexable vector space, each of whose indexable dimensions is associated with a name.
 
-It has 4 type parameters
-* `G`: the type of the grades
-* `B`: the eltype of the subspaces
-* `V<:VectorSpace`: the type of the subspaces
-* `T<:GradedTables{G,V}`: the type of the subspaces' contents
+It has four type parameters:
+* `M`: mode of the named vector space. It specifies how the indexable dimensions are combined to form the bases of the named vector space, and must take one of the following values:
+  - `:zip`: elements from each indexable dimensions are zipped together to form the bases,
+  - `:product`: elements from each indexable dimensions are direct producted together to form the bases.
+For the `:zip` mode, all the indexable dimensions should have the same number of elements, and the number of formed bases is equal to this number; for the `:product` mode, there are no restriction on the numbers of the indexable dimensions, and the number of the final bases is equal to their product.
+* `NS::Tuple{Vararg{Symbol}}`: the names of the indexable dimensions
+* `BS<:Tuple`: the eltypes of the indexable dimensions
+* `VS<:Tuple{Vararg{AbstractVector}}`: the contents of the indexable dimensions
 
-Concrete subtypes must have the following attribute:
-* `:tables::T`: the contents of the subspaces, which must be a [`GradedTables`](@ref).
+The concrete types must have the following attribute:
+* `:contents::VS`: storage of the contents of the indexable dimensions
 
-Specifically, the `dimension`, `getindex` and `searchsortedfirst` methods are overloaded in support of various purposes. For details, please refer to the manual.
+By default, a named vector space uses C order for the indexable dimensions when the mode is `:product`. You can change it to F order for your own subtypes by defining the [`MultiIndexOrderStyle`](@ref) trait.
 
 ## Manul
 
