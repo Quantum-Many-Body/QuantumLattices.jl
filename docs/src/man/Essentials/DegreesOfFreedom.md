@@ -20,9 +20,9 @@ CurrentModule=QuantumLattices.Essentials.DegreesOfFreedom
 
 ## Boundary
 
-## Manul
+## Manual
 
 ```@autodocs
-Modules=[DegreesOfFreedom]
-Order=  [:module,:constant,:type,:macro,:function]
+Modules = [DegreesOfFreedom]
+Order =  [:module, :constant, :type, :macro, :function]
 ```

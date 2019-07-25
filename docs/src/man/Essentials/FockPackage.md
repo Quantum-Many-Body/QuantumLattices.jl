@@ -23,6 +23,6 @@ CurrentModule=QuantumLattices.Essentials.FockPackage
 ## Manual
 
 ```@autodocs
-Modules=[FockPackage]
-Order=  [:module,:constant,:type,:macro,:function]
+Modules = [FockPackage]
+Order =  [:module, :constant, :type, :macro, :function]
 ```

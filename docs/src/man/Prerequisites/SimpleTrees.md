@@ -73,7 +73,7 @@ And optionally, when a subtype implement the following method,
 ```julia
 empty(tree::AbstractSimpleTree) -> typeof(tree)
 ```
-which constructs an empty tree of the same type with the input one, two more more methods are supported:
+which constructs an empty tree of the same type with the input one, two more methods are supported:
 * [`subtree`](@ref): Get a subtree starting from a node.
 * [`move!`](@ref): Move a subtree to a new position.
 
@@ -85,7 +85,7 @@ To implement all the prerequisites listed above costs a bit efforts. We provide 
 
 ### SimpleTreeCore
 
-[`SimpleTreeCore{N,D}`](@ref), as the literal meaning indicates, is the core of a tree. It encapsulates all the data structures needed by the default implementation, which constains **4** attributes:
+[`SimpleTreeCore{N,D}`](@ref), as the literal meaning indicates, is the core of a tree. It encapsulates all the data structures needed by the default implementation, which contains **4** attributes:
 * `root::N`: the tree's root node
 * `contents::Dict{N,D}`: the tree's (node,data) pairs
 * `parent::Dict{N,N}`: records of the parent of each of the tree's nodes
@@ -96,19 +96,19 @@ As above, the first lazy way is to include this struct with the special name `:T
 @simpletree(struct SubTree1 end)
 
 # subtree with tree parameters
-@simpletree(struct SubTree2 end,{N<:AbstractString,D<:Number})
+@simpletree(struct SubTree2 end, {N<:AbstractString, D<:Number})
 
 # subtree with definite tree parameters
 @simpletree(struct SubTree3 end,{::String,::Int})
 
 # subtree with extra fields
-@simpletree(struct SubTree4 info::Vector{Int} end,{N<:AbstractString,D<:Number})
+@simpletree(struct SubTree4 info::Vector{Int} end, {N<:AbstractString, D<:Number})
 
 # subtree with extra parametric fields
-@simpletree(struct SubTree5{T} info::Vector{T} end,{N<:AbstractString,D<:Number})
+@simpletree(struct SubTree5{T} info::Vector{T} end, {N<:AbstractString, D<:Number})
 
 # subtree with extra fields whose parameters overlap with node/data type
-@simpletree(struct SubTree6{N} info::Vector{N} end,{N<:AbstractString,D<:Number})
+@simpletree(struct SubTree6{N} info::Vector{N} end, {N<:AbstractString, D<:Number})
 ```
 
 ### SimpleTree
@@ -118,6 +118,6 @@ As above, the first lazy way is to include this struct with the special name `:T
 ## Manual
 
 ```@autodocs
-Modules=[SimpleTrees]
-Order=  [:module,:constant,:type,:macro,:function]
+Modules = [SimpleTrees]
+Order =  [:module, :constant, :type, :macro, :function]
 ```

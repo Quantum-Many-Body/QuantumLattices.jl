@@ -15,9 +15,9 @@ using QuantumLattices
 
 ## Algorithm
 
-## Manul
+## Manual
 
 ```@autodocs
-Modules=[Frameworks]
-Order=  [:module,:constant,:type,:macro,:function]
+Modules = [Frameworks]
+Order =  [:module, :constant, :type, :macro, :function]
 ```

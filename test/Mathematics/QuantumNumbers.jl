@@ -45,9 +45,9 @@ end
     @test Z2QNS()==AbelianNumbers('C',[Z2QN(0.0),Z2QN(1.0)],[0,1,2],qnsindptr)
 end
 
-@quantumnumber "CN" (:N,) (Inf,)
-@quantumnumber "Z4" (:Z,) (4,)
-@quantumnumber "CNZ4" (:N,:Z) (Inf,4)
+@abeliannumber "CN" (:N,) (Inf,)
+@abeliannumber "Z4" (:Z,) (4,)
+@abeliannumber "CNZ4" (:N,:Z) (Inf,4)
 
 @testset "regularize" begin
     @test regularize(CNZ4,[1.5,5.0])==[1.5,1.0]

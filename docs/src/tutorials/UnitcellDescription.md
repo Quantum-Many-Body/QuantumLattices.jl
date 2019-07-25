@@ -9,9 +9,9 @@ using QuantumLattices
 
 # Unitcell Description
 
-A quantum lattice system can be completely described within its unitcell. Bascially, this description should contain three types of information:
+A quantum lattice system can be completely described within its unitcell. Basically, this description should contain three types of information:
 
-1) the spatial information, such as the the coordinates of the points contained in the unitcell;
+1) the spatial information, such as the coordinates of the points contained in the unitcell;
 2) the internal degrees of freedom, such as the local Hilbert space on each point;
 3) the couplings among different degrees of freedom, such as the interaction terms in the Hamiltonian.
 
@@ -21,26 +21,26 @@ In theory, as long as the above information is told, one could easily write down
 H=tc^†_{1↑}c_{2↑}+tc^†_{2↑}c_{1↑}+tc^†_{1↓}c_{2↓}+tc^†_{2↓}c_{1↓}+Uc^†_{1↑}c_{1↑}c^†_{1↓}c_{1↓}+Uc^†_{2↑}c_{2↑}c^†_{2↓}c_{2↓}
 ```
 
-where ``t`` is the hopping amplitude and ``U`` is the Hubbard interaction strength. Actually, the **unitcell description framework** follows exactly after the above train of thought. For example, the forementioned system can be constructed by the following codes
+where ``t`` is the hopping amplitude and ``U`` is the Hubbard interaction strength. Actually, the **unitcell description framework** follows exactly after the above train of thought. For example, the aforementioned system can be constructed by the following codes
 
 ```@example
 using QuantumLattices
 using SymPy: symbols
 
 # define the unitcell
-lattice=Lattice("L2P",[Point(PID(1),(0.0,)),Point(PID(2),(1.0,))])
+lattice = Lattice("L2P", [Point(PID(1),(0.0,)), Point(PID(2),(1.0,))])
 
 # define the internal degrees of freedom
-config=IDFConfig{Fock}(pid->Fock(norbital=1,nspin=2,nnambu=2),lattice.pids)
+config = IDFConfig{Fock}(pid->Fock(norbital=1, nspin=2, nnambu=2), lattice.pids)
 
 # define the terms
-t=Hopping{'F'}(:t,symbols("t",real=true),1)
-U=Hubbard{'F'}(:U,symbols("U",real=true))
+t = Hopping{'F'}(:t, symbols("t", real=true), 1)
+U = Hubbard{'F'}(:U, symbols("U", real=true))
 
 # get the Hamiltonian
-operators=expand(Generator((t,U),Bonds(lattice),config,nothing,false))
+operators = expand(Generator((t, U), Bonds(lattice), config, nothing, false))
 ```
-The last line displays all the generated operators in the Hamiltonian in the latex form. In the following sections, we will explain in brief how these codes work. For detailed explanations, please refer to the manual of [`Essentials`](@ref essentails).
+The last line displays all the generated operators in the Hamiltonian in the latex form. In the following sections, we will explain in brief how these codes work. For detailed explanations, please refer to the manual of [`Essentials`](@ref essentials).
 
 ## Spatial info of a unitcell
 
@@ -53,11 +53,11 @@ Theoretically, the only information that is needed to determine a point in a lat
 * `rcoord::`[`StaticArrays.SVector`](https://github.com/JuliaArrays/StaticArrays.jl): the coordinates of the point in the real space
 * `icoord::`[`StaticArrays.SVector`](https://github.com/JuliaArrays/StaticArrays.jl): the coordinates of the unitcell the point belongs to in the real space
 
-Here [`PID`](@ref) constains two attributes:
+Here [`PID`](@ref) contains two attributes:
 * `scope::Any`: the scope of a point
 * `site::Int`: the site index of a point
 
-The `:site` attribute is necessary and easy to understand for a point id. Yet sometimes it is more convenient if we can assign extra informations to a point id, e.g., a prioi
+The `:site` attribute is necessary and easy to understand for a point id. Yet sometimes it is more convenient if we can assign extra information to a point id, e.g., a priori
 knowledge of the groupings of lattice points. Therefore, we provide another attribute, `:scope`, to act as the supplement to the `:site` attribute, which can be anything you want.
 
 Let's see some examples.
@@ -93,7 +93,7 @@ Point(PID(1),(0.0,))
 * `neighbors::Dict{Int,Float64}`: the order-distance map of the nearest neighbors of the lattice
 Here, the `:pids`, `:rcoords` and `:icoords` attributes decompose the points in a lattice, which makes it convenient for global operations on the lattice.
 
-Points can be used directly to constuct a lattice, whereas `:vectors` and `neighbors` can be assigned by keyword arguments:
+Points can be used directly to construct a lattice, whereas `:vectors` and `neighbors` can be assigned by keyword arguments:
 ```@example unitcell
 Lattice("L2P",[Point(PID(1),(0.0,)),Point(PID(2),(1.0,))],
         vectors=[[2.0]],
@@ -117,13 +117,13 @@ In all cases, the `:reciprocals` attributes need not be assigned because it can 
 
 One of the most important functions of a lattice is to inquiry the bonds it contains.
 
-A usaual bond contians two points, the start point and the end point. This structure is implemented as [`Bond`](@ref), which has three attributes:
+A usual bond contains two points, the start point and the end point. This structure is implemented as [`Bond`](@ref), which has three attributes:
 * `neighbor::Int`: the nearest neighbor order of the bond
 * `spoint::Point`: the start point of the bond
 * `epoint::Point`: the end point of the bond
-The `:neighbor` provides the a prioi info of the nearest neighbor order of a bond, which proves to be quite advantageous in future uses.
+The `:neighbor` provides the a priori info of the nearest neighbor order of a bond, which proves to be quite advantageous in future uses.
 
-There are other types of generalized bonds. In fact, a single point can also be viewed as a kind of bond, namely, the zeroth order nearest neighbor bond. We can also have more complex generalized bonds, such as a plaquette (the minimum four-site square) in the square lattice. All these generalized bonds gather under the abstract type, [`AbstractBond`](@ref), and the generation from a lattice of such generalized bonds can be managed by the type [`Bonds`](@ref). In this package, we only implemente two types of concrete generalized bonds, i.e. [`Point`](@ref) and [`Bond`](@ref). Users interested in other types can define them themselves by extending our protocols. In this way, the management of the generation of these user extended bonds can be utilized by [`Bonds`](@ref) without extra modifications. See [`Bonds`](@ref) for more details.
+There are other types of generalized bonds. In fact, a single point can also be viewed as a kind of bond, namely, the zeroth order nearest neighbor bond. We can also have more complex generalized bonds, such as a plaquette (the minimum four-site square) in the square lattice. All these generalized bonds gather under the abstract type, [`AbstractBond`](@ref), and the generation from a lattice of such generalized bonds can be managed by the type [`Bonds`](@ref). In this package, we only implement two types of concrete generalized bonds, i.e. [`Point`](@ref) and [`Bond`](@ref). Users interested in other types can define them themselves by extending our protocols. In this way, the management of the generation of these user extended bonds can be utilized by [`Bonds`](@ref) without extra modifications. See [`Bonds`](@ref) for more details.
 
 Now let's see a simple example:
 ```@example unitcell

@@ -9,14 +9,14 @@ using QuantumLattices.Mathematics.Combinatorics
 
 # Combinatorics
 
-This module implements the combinations and permutations of an indexable object, with duplicate elements allowed or not. Compared to another Julia package [Combinatorics](https://github.com/JuliaMath/Combinatorics.jl), the iterators return tuples instead of vectors, which greatly decreases the momory allocation times and improves the code efficiency.
+This module implements the combinations and permutations of an indexable object, with duplicate elements allowed or not. Compared to another Julia package [Combinatorics](https://github.com/JuliaMath/Combinatorics.jl), the iterators return tuples instead of vectors, which greatly decreases the memory allocation times and improves the code efficiency.
 
 ## AbstractCombinatorics
 
 [`AbstractCombinatorics{M,C}`](@ref) is the abstract type of all combinatoric algorithms. It has two type parameters:
 * `M`: the number of elements to be taken
 * `C`: the type of the collection of candidate elements
-To avoid momery allocation, the iteration of a concrete combinatoric algorithm returns a tuple, whose length is `M` and eltype is `eltype(C)`.
+To avoid memory allocation, the iteration of a concrete combinatoric algorithm returns a tuple, whose length is `M` and eltype is `eltype(C)`.
 
 ### Combinations and DulCombinations
 
@@ -46,9 +46,9 @@ All permutations of 2 integers taken from 1 to 3 with duplicate allowed:
 DulPermutations{2}(1:3) |> collect
 ```
 
-## Manul
+## Manual
 
 ```@autodocs
-Modules=[Combinatorics]
-Order=  [:module,:constant,:type,:macro,:function]
+Modules = [Combinatorics]
+Order =  [:module, :constant, :type, :macro, :function]
 ```

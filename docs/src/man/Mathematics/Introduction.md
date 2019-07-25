@@ -7,11 +7,11 @@ CurrentModule=QuantumLattices.Mathematics
 This module contains the mathematical prerequisites of the package.
 
 ```@contents
-Pages=[
-    "Combinatorics.md",
-    "VectorSpaces.md",
-    "AlgebraOverFields.md",
-    "QuantumNumbers.md",
-    ]
-Depth=2
+Pages = [
+        "Combinatorics.md",
+        "VectorSpaces.md",
+        "AlgebraOverFields.md",
+        "QuantumNumbers.md",
+        ]
+Depth = 2
 ```

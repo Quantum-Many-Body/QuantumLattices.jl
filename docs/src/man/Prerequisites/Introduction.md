@@ -29,12 +29,12 @@ rawtype
 
 Here lists the table of contents of the basic data structures that are supplements to the `Julia.Base` and other common packages:
 ```@contents
-Pages=[
-    "TypeTraits.md",
-    "Factories.md",
-    "CompositeStructures.md",
-    "SimpleTrees.md",
-    "NamedVectors.md",
-    ]
-Depth=2
+Pages = [
+        "TypeTraits.md",
+        "Factories.md",
+        "CompositeStructures.md",
+        "SimpleTrees.md",
+        "NamedVectors.md",
+        ]
+Depth = 2
 ```

@@ -11,7 +11,7 @@ using ...Prerequisites.NamedVectors: HomoNamedVector
 
 import ...Interfaces: ⊕,⊗,dimension,expand,permute,decompose,regularize!,regularize
 
-export AbelianNumber,@quantumnumber,SQN,PQN,SPQN,Z2QN,periods
+export AbelianNumber,@abeliannumber,SQN,PQN,SPQN,Z2QN,periods
 export qnscounts,qnsindptr,qnscompression,qnsexpansion,qnscontents,qnsindices,qnsbruteforce,qnsmontecarlo
 export AbelianNumbers,SQNS,PQNS,SzPQNS,SPQNS,Z2QNS
 export ukron,toordereddict
@@ -23,60 +23,62 @@ abstract type AbelianNumber <: HomoNamedVector{Float} end
     dimension(::Type{<:AbelianNumber}) -> Int
     dimension(::AbelianNumber) -> Int
 
-The dimension of the Hilbert space a `AbelianNumber` represents. Apparently, this is always 1.
+The dimension of the Hilbert space an `AbelianNumber` represents. Apparently, this is always 1.
 """
 dimension(::Type{<:AbelianNumber})=1
 dimension(::AbelianNumber)=1
 
 """
-    regularize!(::Type{QN},array::AbstractVector{Float}) where QN<:AbelianNumber -> typeof(array)
-    regularize!(::Type{QN},array::AbstractMatrix{Float}) where QN<:AbelianNumber -> typeof(array)
+    regularize!(::Type{QN},array::AbstractVector{<:Real}) where QN<:AbelianNumber -> typeof(array)
+    regularize!(::Type{QN},array::AbstractMatrix{<:Real}) where QN<:AbelianNumber -> typeof(array)
 
 Regularize the elements of an array in place so that it can represent quantum numbers.
 """
-function regularize!(::Type{QN},array::AbstractVector{Float}) where QN<:AbelianNumber
-    @assert size(array,1)==QN|>length "regularize! error: not consistent shape of input array and $QN."
+function regularize!(::Type{QN},array::AbstractVector{<:Real}) where QN<:AbelianNumber
+    @assert array|>length==QN|>length "regularize! error: not consistent shape of input array and $QN."
     for (i,period) in enumerate(QN|>periods)
-        @inbounds period!=Inf && (array[i]=array[i]%period+(array[i]%period<0 ? period : 0))
+        period==Inf || @inbounds begin
+            remainder=array[i]%period
+            array[i]=remainder<0 ? remainder+period : remainder
+        end
     end
     return array
 end
-function regularize!(::Type{QN},array::AbstractMatrix{Float}) where QN<:AbelianNumber
+function regularize!(::Type{QN},array::AbstractMatrix{<:Real}) where QN<:AbelianNumber
     @assert size(array,1)==QN|>length "regularize! error: not consistent shape of input array and $QN."
     for (i,period) in enumerate(QN|>periods)
-        if period!=Inf
-            for j in 1:size(array,2)
-                @inbounds array[i,j]=array[i,j]%period+(array[i,j]%period<0 ? period : 0)
-            end
+        period==Inf || @inbounds for j in 1:size(array,2)
+            remainder=array[i,j]%period
+            array[i,j]=remainder<0 ? remainder+period : remainder
         end
     end
     return array
 end
 
 """
-    regularize(::Type{QN},array::Union{AbstractVector{Float},AbstractMatrix{Float}}) where {QN<:AbelianNumber} -> typeof(array)
+    regularize(::Type{QN},array::Union{AbstractVector{<:Real},AbstractMatrix{<:Real}}) where {QN<:AbelianNumber} -> typeof(array)
 
 Regularize the elements of an array and return a copy that can represent quantum numbers.
 """
-function regularize(::Type{QN},array::Union{AbstractVector{Float},AbstractMatrix{Float}}) where {QN<:AbelianNumber}
+function regularize(::Type{QN},array::Union{AbstractVector{<:Real},AbstractMatrix{<:Real}}) where {QN<:AbelianNumber}
     result=copy(array)
     regularize!(QN,result)
     return result
 end
 
 """
-    @quantumnumber typename fieldnames fieldperiods
+    @abeliannumber typename fieldnames fieldperiods
 
 Construct a concrete `AbelianNumber` with the type name being `typename`, fieldnames specified by `fieldnames` and periods specified by `fieldperiods`.
 """
-macro quantumnumber(typename,fieldnames,fieldperiods)
+macro abeliannumber(typename,fieldnames,fieldperiods)
     typename=Symbol(typename)
     fieldnames=tuple(eval(fieldnames)...)
     fieldperiods=tuple(eval(fieldperiods)...)
     arguments=ntuple(i->Symbol(:v,i),length(fieldnames))
-    @assert length(fieldnames)==length(fieldperiods) "quantumnumber error: number of fieldnames($(length(fieldnames))) and fieldperiods($(length(fieldperiods))) not equal."
-    @assert all(isa(name,Symbol) for name in fieldnames) "quantumnumber error: all field names should be Symbol."
-    @assert all(fieldperiods.>0) "quantumnumber error: all field periods should be positive."
+    @assert length(fieldnames)==length(fieldperiods) "abeliannumber error: number of fieldnames($(length(fieldnames))) and fieldperiods($(length(fieldperiods))) not equal."
+    @assert all(isa(name,Symbol) for name in fieldnames) "abeliannumber error: all field names should be Symbol."
+    @assert all(fieldperiods.>0) "abeliannumber error: all field periods should be positive."
     if all(fieldperiods.==Inf)
         title=Expr(:call,:($(esc(typename))),(:($arg::Float) for arg in arguments)...)
         body=Expr(:call,:new,arguments...)
@@ -94,28 +96,28 @@ end
 
 The concrete `AbelianNumber` of a quantum system with spin z-component `Sz` conserved.
 """
-@quantumnumber "SQN" (:Sz,) (Inf,)
+@abeliannumber "SQN" (:Sz,) (Inf,)
 
 """
     PQN(N::Real)
 
 The concrete `AbelianNumber` of a quantum system with particle number `N` conserved.
 """
-@quantumnumber "PQN" (:N,) (Inf,)
+@abeliannumber "PQN" (:N,) (Inf,)
 
 """
     SPQN(N::Real,Sz::Real)
 
 The concrete `AbelianNumber` of a quantum system with both particle number `N` and spin z-component `Sz` conserved.
 """
-@quantumnumber "SPQN" (:N,:Sz) (Inf,Inf)
+@abeliannumber "SPQN" (:N,:Sz) (Inf,Inf)
 
 """
     Z2QN(N::Real)
 
 The concrete `AbelianNumber` of a quantum system with a Z₂-like conserved quantity.
 """
-@quantumnumber "Z2QN" (:N,) (2,)
+@abeliannumber "Z2QN" (:N,) (2,)
 
 abstract type QnsProtocol end
 struct QnsIndptr <: QnsProtocol end

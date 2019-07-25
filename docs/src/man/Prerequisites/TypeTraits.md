@@ -6,11 +6,11 @@ CurrentModule=QuantumLattices.Prerequisites.TypeTraits
 
 This module defines generic type traits that are useful to the package.
 
-Julia does not support multi-inheritance, which is sometimes not convenient. A way around this is to use traits, i.e. by utilizing the dispatch on certain (singleton) types known as traits to simulate multi-inheritance. Although this method cannot aviod small repetitive codes, it suits methods well that are complicated and lengthy.
+Julia does not support multi-inheritance, which is sometimes not convenient. A way around this is to use traits, i.e. by utilizing the dispatch on certain (singleton) types known as traits to simulate multi-inheritance. Although this method cannot avoid small repetitive codes, it suits methods well that are complicated and lengthy.
 
 ## EfficientOperations
 
-`EfficientOperations` defines efficient operations such as `==/isequal`, `</isless`, `isapprox`, `replace`, etc, that ensure type stability.
+`EfficientOperations` defines efficient operations such as `==/isequal`, `</isless`, `isapprox`, `replace`, etc., that ensure type stability.
 
 Type stability is the key of Julia to improve the code efficiency. However, it cannot be ensured in some unexpected cases, especially where an iterator is involved. For example, the following codes appears type unstable:
 ```julia
@@ -34,15 +34,15 @@ Methods like above are common when we design abstract types, but they are not ty
     end
 end
 ```
-Then type stability can be ensured. We use this trick to implement the methods such as `==/isequal`, `</isless`, `isapprox`, `replace`, etc, with the trait `efficientoperations::EfficientOperations`. Other types can resort to these methods by passing [`efficientoperations`](@ref) as the first argument.
+Then type stability can be ensured. We use this trick to implement the methods such as `==/isequal`, `</isless`, `isapprox`, `replace`, etc., with the trait `efficientoperations::EfficientOperations`. Other types can resort to these methods by passing [`efficientoperations`](@ref) as the first argument.
 
 ## MemoryOrder
 
-`MemoryOrder` provides the convertions, [`subtoind`](@ref) and [`indtosub`](@ref), between a Cartesian index represented by a tuple and a linear index represented by an integer. C/C++ order or Fortran order can be specified, though the constant instances [`corder`](@ref) or [`forder`](@ref) of singleton types `COrder` and `FOrder`, which are both subtypes of the abstract type `MemoryOrder`.
+`MemoryOrder` provides the conversions, [`subtoind`](@ref) and [`indtosub`](@ref), between a Cartesian index represented by a tuple and a linear index represented by an integer. C/C++ order or Fortran order can be specified, though the constant instances [`corder`](@ref) or [`forder`](@ref) of singleton types `COrder` and `FOrder`, which are both subtypes of the abstract type `MemoryOrder`.
 
 ## Manual
 
 ```@autodocs
-Modules=[TypeTraits]
-Order=  [:module,:constant,:type,:macro,:function]
+Modules = [TypeTraits]
+Order =  [:module, :constant, :type, :macro, :function]
 ```

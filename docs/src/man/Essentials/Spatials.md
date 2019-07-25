@@ -27,9 +27,9 @@ using QuantumLattices
 
 ## Bonds
 
-## Manul
+## Manual
 
 ```@autodocs
-Modules=[Spatials]
-Order=  [:module,:constant,:type,:macro,:function]
+Modules = [Spatials]
+Order =  [:module, :constant, :type, :macro, :function]
 ```

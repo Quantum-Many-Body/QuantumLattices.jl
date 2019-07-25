@@ -17,9 +17,9 @@ using QuantumLattices
 
 ## Generator
 
-## Manul
+## Manual
 
 ```@autodocs
-Modules=[Terms]
-Order=  [:module,:constant,:type,:macro,:function]
+Modules = [Terms]
+Order =  [:module, :constant, :type, :macro, :function]
 ```

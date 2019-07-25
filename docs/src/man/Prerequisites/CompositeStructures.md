@@ -4,7 +4,7 @@ CurrentModule=QuantumLattices.Prerequisites.CompositeStructures
 
 # Composite structures
 
-In principle, Julia is not an object-oriented programming language. For example, only abstract types can be inherited so that subtype cannot inherit fields from their parents. Therefore, Julia prefers composition over inheritance. However, to make a new concrete type behaves much alike another one, tedious reputitions of redifining the generic interfaces are usually not avoidable, especially for the basic types in Julia base. In this module, we implement three such composited types, [`CompositeTuple`](@ref), [`CompositeVector`](@ref) and [`CompositeDict`](@ref), for the sake of future usages.
+In principle, Julia is not an object-oriented programming language. For example, only abstract types can be inherited so that subtype cannot inherit fields from their parents. Therefore, Julia prefers composition over inheritance. However, to make a new concrete type behaves much alike another one, tedious repetitions of redefining the generic interfaces are usually not avoidable, especially for the basic types in Julia base. In this module, we implement three such composited types, [`CompositeTuple`](@ref), [`CompositeVector`](@ref) and [`CompositeDict`](@ref), for the sake of future usages.
 
 ## CompositeTuple and CompositeNTuple
 
@@ -17,7 +17,7 @@ To take full advantages of the Julia base, the following interfaces are defined:
 * iteration: `iterate`, `keys`, `values`, `pairs`
 * construction of new objects: `reverse`
 
-Composite ntuples are suited for the situations where other attributes are not affected by the modification of the elements. Note that arithmatic operations and logical operations excluding `==` and `isequal` are not supported. Besides, a composite ntuple is **not** a tuple since Julia has no abstract tuples.
+Composite tuples are suited for the situations where other attributes are not affected by the modification of the elements. Note that arithmetic operations and logical operations excluding `==` and `isequal` are not supported. Besides, a composite tuple is **not** a tuple since Julia has no abstract tuples.
 
 ## CompositeVector
 
@@ -33,7 +33,7 @@ To take full advantages of the Julia base, the following interfaces are redefine
 * construction of new objects: `empty`, `reverse`, `similar`
 * iteration: `iterate`, `keys`, `values`, `pairs`
 
-Composite vectors are suited for the situations where other attributes are not affected by the modification of the elements. Note that arithmatic operations and logical operations excluding `==` and `isequal` are not supported.
+Composite vectors are suited for the situations where other attributes are not affected by the modification of the elements. Note that arithmetic operations and logical operations excluding `==` and `isequal` are not supported.
 
 ## CompositeDict
 
@@ -54,11 +54,11 @@ As is similar to composite vectors, composite dicts are suited for the situation
 
 [`NamedContainer`](@ref) is just a wrapper (type alias) of Julia NamedTuple, but not a composite type.
 
-Julia NamedTuple is useful to keep type stability of codes when we deal with unhomogenous immutable dict-like objects, but its default constructor is not so convenient becase the names and contents must be assigned pair by pair in a pair of parentheses explicitly. Therefore, we define a type alias of NamedTuple under the name of [`NamedContainer`](@ref), so that we can construct a NamedTuple by the usual-formed constructor [`NamedContainer`](@ref).
+Julia NamedTuple is useful to keep type stability of codes when we deal with inhomogeneous immutable dict-like objects, but its default constructor is not so convenient because the names and contents must be assigned pair by pair in a pair of parentheses explicitly. Therefore, we define a type alias of NamedTuple under the name of [`NamedContainer`](@ref), so that we can construct a NamedTuple by the usual-formed constructor [`NamedContainer`](@ref).
 
-## Manul
+## Manual
 
 ```@autodocs
-Modules=[CompositeStructures]
-Order=  [:module,:constant,:type,:macro,:function]
+Modules = [CompositeStructures]
+Order =  [:module, :constant, :type, :macro, :function]
 ```

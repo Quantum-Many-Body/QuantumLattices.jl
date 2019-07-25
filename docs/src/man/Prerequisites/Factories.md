@@ -17,7 +17,7 @@ These three requirements also define the basic interfaces to interact with facto
 
 ## Escape mechanisms
 
-We adopt Julia structs to denote escape mechanisms so that we can utilize Julia's multidispatch to implement different mechanisms whereas keeping the same interface.
+We adopt Julia structs to denote escape mechanisms so that we can utilize Julia's multi-dispatch to implement different mechanisms whereas keeping the same interface.
 
 ### EscapeMechanism
 
@@ -27,7 +27,7 @@ We adopt Julia structs to denote escape mechanisms so that we can utilize Julia'
 
 [`Escaped`](@ref) has only one attribute:
 * `names::NTuple{N,Symbol} where N`: the names of variables to be escaped
-Apprently, a variable should be escaped if its name is in the `names` of an `Escaped`.
+Apparently, a variable should be escaped if its name is in the `names` of an `Escaped`.
 This mechanism suits a factory whose variables should be unescaped by default.
 
 ### UnEscaped
@@ -50,16 +50,16 @@ This mechanism suits complex factories that parts of it suit the "escaped" mecha
 
 ## Concrete factories
 
-Out of practical purposes, we implemente 7 kinds of factories, i.e. **[`Inference`](@ref)**, **[`Argument`](@ref)**, **[`Parameter`](@ref)**, **[`Field`](@ref)**, **[`Block`](@ref)**, **[`FunctionFactory`](@ref)** and **[`TypeFactory`](@ref)**, which represent **a type inference**, **a function argument**, **a method or type parameter**, **a struct field**, **a `begin ... end` block**, **a function itself** and **a struct itself**, respectively. Some of the basic methods making the above three requirements fulfilled with these types are based on the powerful functions defined in [`MacroTools`](https://github.com/MikeInnes/MacroTools.jl).
+Out of practical purposes, we implement 7 kinds of factories, i.e. **[`Inference`](@ref)**, **[`Argument`](@ref)**, **[`Parameter`](@ref)**, **[`Field`](@ref)**, **[`Block`](@ref)**, **[`FunctionFactory`](@ref)** and **[`TypeFactory`](@ref)**, which represent **a type inference**, **a function argument**, **a method or type parameter**, **a struct field**, **a `begin ... end` block**, **a function itself** and **a struct itself**, respectively. Some of the basic methods making the above three requirements fulfilled with these types are based on the powerful functions defined in [`MacroTools`](https://github.com/MikeInnes/MacroTools.jl).
 
 We want to give a remark that although the types and functions provided in this module helps a lot for the definition of macros, macros should not be abused. On the one hand, some macros may change the language specifications, which makes it hard to understand the codes, and even splits the community; on the one hand, macros usually increases the precompiling/jit time, which means enormous uses of macros in a module may lead to an extremely long load time. Besides, due to the limited ability of the author, the codes in this module are not optimal, which adds to the jit overhead. Any promotion that keeps the interfaces unchanged is welcomed.
 
 ### Inference
 
 An [`Inference`](@ref) has 3 attributes:
-* `head::Union{Symbol,Nothing}`: the head of the type inference, which must be one of `(nothing,:(<:),:curly)`
-* `name::Union{Symbol,Nothing}`: the name of the type inference
-* `params::Union{Inference,Vector{Inference},Nothing}`: the parameters of the type inference
+* `head::Union{Symbol, Nothing}`: the head of the type inference, which must be one of `(nothing,:(<:),:curly)`
+* `name::Union{Symbol, Nothing}`: the name of the type inference
+* `params::Union{Inference, Vector{Inference},Nothing}`: the parameters of the type inference
 
 All valid expressions representing type inferences can be passed to the constructor.
 
@@ -68,7 +68,7 @@ A type variable represented by a Symbol:
 Inference(:T)
 ```
 
-A range of of types represented by a UnionAll:
+A range of types represented by a UnionAll:
 ```@example factories
 Inference(:(<:Number))
 ```
@@ -148,7 +148,7 @@ Or you can use the macro [`@argument`](@ref) for a direct construction from an a
 ```@example factories
 @argument arg::ArgType=default
 ```
-The construction from such expressions is based on the the `MacroTools.splitarg` function.
+The construction from such expressions is based on the `MacroTools.splitarg` function.
 
 [`Argument`](@ref) uses the [`MixEscaped`](@ref) mechanism to escape variables, with the [`UnEscaped`](@ref) mechanism for `type` and [`Escaped`](@ref) mechanism for `default`, e.g.
 ```@example factories
@@ -298,34 +298,34 @@ FunctionFactory(:(f(x)=x))
 
 A function with arguments that have default values:
 ```@example factories
-FunctionFactory(:(f(x::Int,y::Int;choice::Function=sum)=choice(x,y)))
+FunctionFactory(:(f(x::Int, y::Int; choice::Function=sum)=choice(x, y)))
 ```
 
 A function with arguments whose type are specified by `where` keyword:
 ```@example factories
-FunctionFactory(:(f(x::T,y::T;choice::Function=sum) where T<:Number=choice(x,y)))
+FunctionFactory(:(f(x::T, y::T; choice::Function=sum) where T<:Number=choice(x, y)))
 ```
 
 A function with return type:
 ```@example factories
-FunctionFactory(:((f(x::T,y::T;choice::Function=sum)::T) where T<:Number=choice(x,y)))
+FunctionFactory(:((f(x::T, y::T; choice::Function=sum)::T) where T<:Number=choice(x, y)))
 ```
 
 A multiline function:
 ```@example factories
 FunctionFactory(:(
-    function (f(x::T,y::T;choice::Function=sum)::T) where T<:Number
-        choice(x,y)
+    function (f(x::T, y::T; choice::Function=sum)::T) where T<:Number
+        choice(x, y)
     end
 ))
 ```
 
-A funtion in a `quote` block:
+A function in a `quote` block:
 ```@example factories
 FunctionFactory(
     quote
-        function (f(x::T,y::T;choice::Function=sum)::T) where T<:Number
-            choice(x,y)
+        function (f(x::T, y::T; choice::Function=sum)::T) where T<:Number
+            choice(x, y)
         end
     end
 )
@@ -333,7 +333,7 @@ FunctionFactory(
 
 Similarly, an instance can also be constructed from the macro [`@functionfactory`](@ref):
 ```@example factories
-@functionfactory (f(x::T,y::T;choice::Function=sum)::T) where T<:Number=choice(x,y)
+@functionfactory (f(x::T, y::T; choice::Function=sum)::T) where T<:Number=choice(x, y)
 ```
 The construction from such expressions are based on the `MacroTools.splitdef` function.
 !!! note
@@ -345,14 +345,14 @@ The construction from such expressions are based on the `MacroTools.splitdef` fu
 Escape the function name:
 ```@example factories
 FunctionFactory(:(
-    (f(x::T,y::T;choice::Function=sum)::T) where T<:Number=max(x,y,choice(x,y))
-    ))(MixEscaped(UnEscaped(:T),Escaped(:f,:max,)))
+    (f(x::T, y::T; choice::Function=sum)::T) where T<:Number=max(x, y, choice(x, y))
+    ))(MixEscaped(UnEscaped(:T),Escaped(:f, :max,)))
 ```
 
 Do not escape the function name:
 ```@example factories
 FunctionFactory(:(
-    (f(x::T,y::T;choice::Function=sum)::T) where T<:Number=max(x,y,choice(x,y))
+    (f(x::T, y::T; choice::Function=sum)::T) where T<:Number=max(x, y, choice(x, y))
     ))(MixEscaped(UnEscaped(:T),Escaped(:max)))
 ```
 
@@ -440,6 +440,6 @@ Other features include:
 ## Manual
 
 ```@autodocs
-Modules=[Factories]
-Order=  [:module,:constant,:type,:macro,:function]
+Modules = [Factories]
+Order =  [:module, :constant, :type, :macro, :function]
 ```

@@ -23,6 +23,6 @@ CurrentModule=QuantumLattices.Essentials.SpinPackage
 ## Manual
 
 ```@autodocs
-Modules=[SpinPackage]
-Order=  [:module,:constant,:type,:macro,:function]
+Modules = [SpinPackage]
+Order =  [:module, :constant, :type, :macro, :function]
 ```
