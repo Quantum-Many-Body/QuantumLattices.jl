@@ -141,7 +141,7 @@ const qnscounts=QnsCounts()
 
 The whole quantum numbers of the total bases of a Hilbert space.
 
-The default constructors construct a `AbelianNumbers` from a vector of concrete quantum numbers and an vector containing their counts or indptr.
+The default constructors construct an `AbelianNumbers` from a vector of concrete quantum numbers and an vector containing their counts or indptr.
 """
 struct AbelianNumbers{QN<:AbelianNumber}
     form::Char
@@ -162,14 +162,14 @@ end
 """
     AbelianNumbers(qn::AbelianNumber,count::Int=1)
 
-Construct a `AbelianNumbers` with one unique quantum number which occurs `count` times.
+Construct an `AbelianNumbers` with one unique quantum number which occurs `count` times.
 """
 AbelianNumbers(qn::AbelianNumber,count::Int=1)=AbelianNumbers('C',[qn],[0,count],qnsindptr)
 
 """
     AbelianNumbers(od::OrderedDict{<:AbelianNumber,Int})
 
-Construct a `AbelianNumbers` from an ordered dict containing concrete quantum numbers and their counts.
+Construct an `AbelianNumbers` from an ordered dict containing concrete quantum numbers and their counts.
 """
 function AbelianNumbers(od::OrderedDict{<:AbelianNumber,Int})
     contents=Vector{od|>keytype}(undef,length(od))
@@ -184,7 +184,7 @@ end
 """
     AbelianNumbers(od::OrderedDict{<:AbelianNumber,UnitRange{Int}})
 
-Construct a `AbelianNumbers` from an ordered dict containing concrete quantum numbers and their slices.
+Construct an `AbelianNumbers` from an ordered dict containing concrete quantum numbers and their slices.
 """
 function AbelianNumbers(od::OrderedDict{<:AbelianNumber,UnitRange{Int}})
     contents=Vector{od|>keytype}(undef,length(od))
@@ -211,14 +211,14 @@ Base.isequal(qns1::AbelianNumbers,qns2::AbelianNumbers)=isequal(qns1.contents,qn
 """
     show(io::IO,qns::AbelianNumbers)
 
-Show a `AbelianNumbers`.
+Show an `AbelianNumbers`.
 """
 Base.show(io::IO,qns::AbelianNumbers)=@printf io "QNS(%s)" join((@sprintf("%s=>%s",qn,slice) for (qn,slice) in pairs(qns,qnsindptr)),',')
 
 """
     string(qns::AbelianNumbers) -> String
 
-Convert a `AbelianNumbers` to string.
+Convert an `AbelianNumbers` to string.
 """
 Base.string(qns::AbelianNumbers)=@sprintf "QNS(%s,%s)" qns|>length qns|>dimension
 
@@ -233,7 +233,7 @@ Base.length(qns::AbelianNumbers)=length(qns.contents)
     eltype(::Type{<:AbelianNumbers{QN}}) where {QN<:AbelianNumber}
     eltype(qns::AbelianNumbers)
 
-Get the type of the concrete `AbelianNumber` contained in a `AbelianNumbers`.
+Get the type of the concrete `AbelianNumber` contained in an `AbelianNumbers`.
 """
 Base.eltype(::Type{<:AbelianNumbers{QN}}) where {QN<:AbelianNumber}=QN
 Base.eltype(qns::AbelianNumbers)=qns|>typeof|>eltype
@@ -245,8 +245,8 @@ Base.eltype(qns::AbelianNumbers)=qns|>typeof|>eltype
 
 Overloaded `[]` operator.
 !!! note
-    1. For a `AbelianNumbers`, all these `getindex` functions act on its `contents`, i.e. its compressed data, but not on its expansion, i.e. the uncompressed data. This definition is consistent with the [`length`](@ref) function.
-    2. When the index is an integer, the result is a `AbelianNumber`, while when the index is a unit range or a vector of intgers, the result is a `AbelianNumbers`. The logic is quite reasonable because such behaviors are much alike to those of a vector container.
+    1. For an `AbelianNumbers`, all these `getindex` functions act on its `contents`, i.e. its compressed data, but not on its expansion, i.e. the uncompressed data. This definition is consistent with the [`length`](@ref) function.
+    2. When the index is an integer, the result is an `AbelianNumber`, while when the index is a unit range or a vector of intgers, the result is an `AbelianNumbers`. The logic is quite reasonable because such behaviors are much alike to those of a vector container.
 """
 Base.getindex(qns::AbelianNumbers,index::Int)=qns.contents[index]
 function Base.getindex(qns::AbelianNumbers,slice::UnitRange{Int})
@@ -269,7 +269,7 @@ end
     iterate(qns::AbelianNumbers,state::Int=1)
     iterate(rv::Iterators.Reverse{<:AbelianNumbers},state::Int=length(rv.itr,false))
 
-Iterate or reversely iterate over the concrete `AbelianNumber`s contained in a `AbelianNumbers`.
+Iterate or reversely iterate over the concrete `AbelianNumber`s contained in an `AbelianNumbers`.
 """
 Base.iterate(qns::AbelianNumbers,state::Int=1)=state>length(qns) ? nothing : (@inbounds(qns.contents[state]),state+1)
 Base.iterate(rv::Reverse{<:AbelianNumbers},state::Int=length(rv.itr))=state<1 ? nothing : (@inbounds(rv.itr.contents[state]),state-1)
@@ -277,7 +277,7 @@ Base.iterate(rv::Reverse{<:AbelianNumbers},state::Int=length(rv.itr))=state<1 ? 
 """
     keys(qns::AbelianNumbers) -> Vector{qns|>eltype}
 
-Iterate over the concrete `AbelianNumber`s contained in a `AbelianNumbers`.
+Iterate over the concrete `AbelianNumber`s contained in an `AbelianNumbers`.
 """
 Base.keys(qns::AbelianNumbers)=qns.contents
 
@@ -301,7 +301,7 @@ Base.pairs(qns::AbelianNumbers,choice::Union{QnsIndptr,QnsCounts})=Base.Generato
     toordereddict(qns::AbelianNumbers,::QnsIndptr) -> OrderedDict{qns|>eltype,UnitRange{Int}}
     toordereddict(qns::AbelianNumbers,::QnsCounts) -> OrderedDict{qns|>eltype,Int}
 
-Convert a `AbelianNumbers` to an ordered dict.
+Convert an `AbelianNumbers` to an ordered dict.
 """
 function toordereddict(qns::AbelianNumbers,::QnsIndptr)
     @assert qns.form != 'G' "toordereddict error: input `AbelianNumbers` cannot be `G` formed."
@@ -323,14 +323,14 @@ end
 """
     dimension(qns::AbelianNumbers) -> Int
 
-The dimension of the Hilbert space a `AbelianNumbers` represents.
+The dimension of the Hilbert space an `AbelianNumbers` represents.
 """
 dimension(qns::AbelianNumbers)=@inbounds(qns.indptr[end])
 
 """
     sort(qns::AbelianNumbers) -> AbelianNumbers,Vector{Int}
 
-Sort the quantum numbers of a `AbelianNumber`, return the sorted `AbelianNumber` and the permutation array that sorts the expansion of the original `AbelianNumbers`.
+Sort the quantum numbers of an `AbelianNumber`, return the sorted `AbelianNumber` and the permutation array that sorts the expansion of the original `AbelianNumbers`.
 """
 function Base.sort(qns::AbelianNumbers)
     ctpts=sortperm(qns.contents,alg=Base.Sort.QuickSort)
@@ -376,7 +376,7 @@ const qnsexpansion=QnsExpansion()
     findall(targets::NTuple{N,QN},qns::AbelianNumbers{QN},::QnsCompression) where {N,QN<:AbelianNumber} -> Vector{Int}
     findall(targets::NTuple{N,QN},qns::AbelianNumbers{QN},::QnsExpansion) where {N,QN<:AbelianNumber} -> Vector{Int}
 
-Find all the indices of the target quantum numbers in the contents ([`qnscompression`](@ref) case) or the expansion ([`qnsexpansion`](@ref) case) of a `AbelianNumbers`.
+Find all the indices of the target quantum numbers in the contents ([`qnscompression`](@ref) case) or the expansion ([`qnsexpansion`](@ref) case) of an `AbelianNumbers`.
 """
 Base.findall(target::QN,qns::AbelianNumbers{QN},::QnsCompression) where QN<:AbelianNumber=findall((target,),qns,QnsCompression())
 Base.findall(target::QN,qns::AbelianNumbers{QN},::QnsExpansion) where QN<:AbelianNumber=findall((target,),qns,QnsExpansion())
@@ -406,7 +406,7 @@ end
     filter(target::QN,qns::AbelianNumbers{QN}) where QN<:AbelianNumber -> AbelianNumbers{QN}
     filter(targets::NTuple{N,QN},qns::AbelianNumbers{QN}) where {N,QN<:AbelianNumber} -> AbelianNumbers{QN}
 
-Find a subset of a `AbelianNumbers` by picking out the quantum numbers in targets.
+Find a subset of an `AbelianNumbers` by picking out the quantum numbers in targets.
 """
 Base.filter(target::QN,qns::AbelianNumbers{QN}) where QN<:AbelianNumber=qns[findall(target,qns,qnscompression)]
 Base.filter(targets::NTuple{N,QN},qns::AbelianNumbers{QN}) where {N,QN<:AbelianNumber}=qns[findall(targets,qns,qnscompression)]
@@ -415,7 +415,7 @@ Base.filter(targets::NTuple{N,QN},qns::AbelianNumbers{QN}) where {N,QN<:AbelianN
     permute(qns::AbelianNumbers,permutation::Vector{Int},::QnsCompression) -> AbelianNumbers
     permute(qns::AbelianNumbers,permutation::Vector{Int},::QnsExpansion) -> AbelianNumbers
 
-Reorder the quantum numbers contained in a `AbelianNumbers` with a permutation and return the new one.
+Reorder the quantum numbers contained in an `AbelianNumbers` with a permutation and return the new one.
 
 For [`qnscompression`](@ref) case, the permutation is for the compressed contents of the original `AbelianNumbers` while for [`qnsexpansion`](@ref) case, the permutation is for the expanded contents of the original `AbelianNumbers`.
 """
@@ -450,7 +450,7 @@ const qnsindices=QnsIndices()
     expand(qns::AbelianNumbers,::QnsContents) -> Vector{qns|>eltype}
     expand(qns::AbelianNumbers,::QnsIndices) -> Vector{Int}
 
-Expand the contents ([`qnscontents`](@ref) case) or indices ([`qnsindices`](@ref) case) of a `AbelianNumbers` to the uncompressed form.
+Expand the contents ([`qnscontents`](@ref) case) or indices ([`qnsindices`](@ref) case) of an `AbelianNumbers` to the uncompressed form.
 """
 function expand(qns::AbelianNumbers,::QnsContents)
     result=Vector{qns|>eltype}(undef,dimension(qns))
@@ -480,10 +480,10 @@ end
 
 Overloaded `+` operator for `AbelianNumber` and `AbelianNumbers`.
 !!! note
-    1. The addition between a `AbelianNumbers` and an `AbelianNumber` is just a global shift of the contents of the `AbelianNumbers` by the `AbelianNumber`, therefore, the result is a `AbelianNumbers`.
+    1. The addition between an `AbelianNumbers` and an `AbelianNumber` is just a global shift of the contents of the `AbelianNumbers` by the `AbelianNumber`, therefore, the result is an `AbelianNumbers`.
     2. `+` cannot be used between two `AbelianNumbers` because the result is ambiguous. Instead, use `⊕` for direct sum and `⊗` for direct product.
     3. To ensure type stability, two `AbelianNumber` can be added together if and only if they are of the same type.
-    4. Similarly, a `AbelianNumber` and a `AbelianNumbers` can be added together if and only if the former's type is the same with the latter's eltype.
+    4. Similarly, an `AbelianNumber` and an `AbelianNumbers` can be added together if and only if the former's type is the same with the latter's eltype.
 """
 Base.:+(qn::AbelianNumber)=qn
 Base.:+(qn::QN,qns::QN...) where QN<:AbelianNumber=map(+,qn,qns...)
@@ -500,10 +500,10 @@ Base.:+(qns::AbelianNumbers{QN},qn::QN) where QN<:AbelianNumber=AbelianNumbers(q
 
 Overloaded `-` operator for `AbelianNumber` and `AbelianNumbers`.
 !!! note
-    1. The subtraction between a `AbelianNumbers` and a `AbelianNumber` is just a global shift of the contents of the `AbelianNumbers` by the `AbelianNumber`, therefore, the result is a `AbelianNumbers`.
+    1. The subtraction between an `AbelianNumbers` and an `AbelianNumber` is just a global shift of the contents of the `AbelianNumbers` by the `AbelianNumber`, therefore, the result is an `AbelianNumbers`.
     2. `-` cannot be used between two `AbelianNumbers` because the result is ambiguous. Instead, use `⊕` with signs for direct sum and `⊗` with signs for direct product.
-    3. To ensure type stability, a `AbelianNumber` can be subtracted by another `AbelianNumber` if and only if they are of the same type.
-    4. Similarly, a `AbelianNumber` can be subtracted by a `AbelianNumbers` or vice versa if and only if the former's type is the same with the latter's eltype.
+    3. To ensure type stability, an `AbelianNumber` can be subtracted by another `AbelianNumber` if and only if they are of the same type.
+    4. Similarly, an `AbelianNumber` can be subtracted by an `AbelianNumbers` or vice versa if and only if the former's type is the same with the latter's eltype.
 """
 Base.:-(qn::AbelianNumber)=map(-,qn)
 Base.:-(qn1::QN,qn2::QN) where QN<:AbelianNumber=map(-,qn1,qn2)
@@ -517,7 +517,7 @@ Base.:-(qns::AbelianNumbers{QN},qn::QN) where QN<:AbelianNumber=AbelianNumbers(q
     *(qns::AbelianNumbers,factor::Integer) -> AbelianNumbers
     *(factor::Integer,qns::AbelianNumbers) -> AbelianNumbers
 
-Overloaded `*` operator for the multiplication between an integer and a `AbelianNumber` or a `AbelianNumbers`.
+Overloaded `*` operator for the multiplication between an integer and an `AbelianNumber` or an `AbelianNumbers`.
 """
 @generated function Base.:*(qn::AbelianNumber,factor::Integer)
     exprs=Expr[:(getfield(qn,$i)*factor) for i=1:(qn|>fieldnames|>length)]
@@ -561,7 +561,7 @@ Get the direct product of some `AbelianNumber`s or `AbelianNumbers`es.
 Get the direct sum of some `AbelianNumber`s or `AbelianNumbers`es.
 !!! note
     1. Physically, the direct sum of a couple of `AbelianNumber`s or `AbelianNumbers`es is defined by the direct sum of the bases of the Hilbert spaces they represent. Therefore, the input `AbelianNumber`s or `AbelianNumbers`es must be homogenous. Inhomogenous 'AbelianNumber's must be direct producted first to ensure homogenity before the direct sum.
-    2. Apparently, the dimension of the result equals the summation of those of the inputs, which means, even for `AbelianNumber`s, the result will be naturally a `AbelianNumbers` because the dimension of the result is larger than 1.
+    2. Apparently, the dimension of the result equals the summation of those of the inputs, which means, even for `AbelianNumber`s, the result will be naturally an `AbelianNumbers` because the dimension of the result is larger than 1.
     3. Signs of `AbelianNumber`s or `AbelianNumbers`es can be provided when getting their direct sums.
 """
 function Base.union(qns::Vararg{<:AbelianNumber,N};signs::NTuple{N,Int}=ntuple(i->1,N)) where N
@@ -590,7 +590,7 @@ end
 Get the direct product of some `AbelianNumber`s or `AbelianNumbers`es.
 !!! note
     1. Physically, the direct product of a couple of `AbelianNumber`s or `AbelianNumbers`es are defined by the direct product of the bases of the Hilbert spaces they represent. Therefore, `AbelianNumbers` with differenct types or `AbelianNumbers`es with differenct eltypes are allowed to be direct producted in principle. However, for simplicity, we only implement a method which handle the situation of two `AbelianNumber`s with differenct types. The type of the result should be provided as the first parameter. Note that in this situation, the `fieldnames` and `periods` of the result type must be exactly equal to the flattened fieldnames and periods of the two input `AbelianNumber`s, which means, even the order of the input `AbelianNumber`s matters.
-    2. Apparently, the dimension of the result equals the product of those of the inputs. Therefore, the direct product of `AbelianNumber`s is also a `AbelianNumber` since its dimension is still one.
+    2. Apparently, the dimension of the result equals the product of those of the inputs. Therefore, the direct product of `AbelianNumber`s is also an `AbelianNumber` since its dimension is still one.
     3. For other situations except the one mentioned in Note.1, the input `AbelianNumber`s or `AbelianNumbers`es must be homogenous. Meanwhile, signs can also be provided for these situations. Note that each quantum number in the contents of the result is obtained by a summation of the corresponding quanum numbers out of the inputs with the correct signs. This is a direct observation of the Abelian nature of our quantum numbers.
 """
 function Base.kron(::Type{QN},qn1::AbelianNumber,qn2::AbelianNumber) where QN<:AbelianNumber

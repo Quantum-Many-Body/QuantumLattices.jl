@@ -11,7 +11,6 @@ import ...Interfaces: rank,add!,sub!,mul!,div!,⊗,⋅,sequence,permute
 
 export SimpleID,ID
 export idpropertynames,idisless
-export IdSpace
 export Element,ScalarElement,Elements
 export scalartype,idtype
 
