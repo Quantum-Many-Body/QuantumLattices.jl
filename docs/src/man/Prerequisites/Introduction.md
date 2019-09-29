@@ -1,5 +1,5 @@
 ```@meta
-CurrentModule=QuantumLattices.Prerequisites
+CurrentModule = QuantumLattices.Prerequisites
 ```
 
 # Introduction

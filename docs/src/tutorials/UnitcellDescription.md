@@ -1,9 +1,9 @@
 ```@meta
-CurrentModule=QuantumLattices
+CurrentModule = QuantumLattices
 ```
 
 ```@setup unitcell
-push!(LOAD_PATH,"../../../src/")
+push!(LOAD_PATH, "../../../src/")
 using QuantumLattices
 ```
 
@@ -28,7 +28,7 @@ using QuantumLattices
 using SymPy: symbols
 
 # define the unitcell
-lattice = Lattice("L2P", [Point(PID(1),(0.0,)), Point(PID(2),(1.0,))])
+lattice = Lattice("L2P", [Point(PID(1), (0.0,)), Point(PID(2), (1.0,))])
 
 # define the internal degrees of freedom
 config = IDFConfig{Fock}(pid->Fock(norbital=1, nspin=2, nnambu=2), lattice.pids)
@@ -64,7 +64,7 @@ Let's see some examples.
 
 You can specify both the `:scope` attribute and the `:site` attribute during the initialization of a [`PID`](@ref):
 ```@example unitcell
-PID("WhateverYouWant",1)
+PID("WhateverYouWant", 1)
 ```
 Or, you can omit the `:scope` attribute:
 ```@example unitcell
@@ -74,11 +74,11 @@ Then the `:scope` attribute get a default value `'T'`, which is short for the ni
 
 At the construction of a [`Point`](@ref), `:rcoord` and `:icoord` can accept tuples as inputs, such as
 ```@example unitcell
-Point(PID(1),(0.0,),(0.0,))
+Point(PID(1), (0.0,), (0.0,))
 ```
 If the `:icoord` is omitted, it will be initialized by a zero [`StaticArrays.SVector`](https://github.com/JuliaArrays/StaticArrays.jl):
 ```@example unitcell
-Point(PID(1),(0.0,))
+Point(PID(1), (0.0,))
 ```
 
 ### Lattice
@@ -90,25 +90,28 @@ Point(PID(1),(0.0,))
 * `icoords::Matrix{Float64}`: the icoords of the lattice
 * `vectors::Vector{<:StaticArrays.SVector}`: the translation vectors of the lattice
 * `reciprocals::Vector{<:StaticArrays.SVector}`: the reciprocals of the lattice
-* `neighbors::Dict{Int,Float64}`: the order-distance map of the nearest neighbors of the lattice
+* `neighbors::Dict{Int, Float64}`: the order-distance map of the nearest neighbors of the lattice
 Here, the `:pids`, `:rcoords` and `:icoords` attributes decompose the points in a lattice, which makes it convenient for global operations on the lattice.
 
 Points can be used directly to construct a lattice, whereas `:vectors` and `neighbors` can be assigned by keyword arguments:
 ```@example unitcell
-Lattice("L2P",[Point(PID(1),(0.0,)),Point(PID(2),(1.0,))],
+Lattice("L2P", [Point(PID(1), (0.0,)), Point(PID(2), (1.0,))],
         vectors=[[2.0]],
-        neighbors=Dict(1=>1.0,2=>2.0)
+        neighbors=Dict(1=>1.0, 2=>2.0)
         )
 ```
 
 The `:neighbors` keyword argument can also be a natural number, which sets the highest order of nearest neighbors, and the order-distance map of nearest neighbors can be computed automatically by the construction function:
 ```@example unitcell
-Lattice("L2P",[Point(PID(1),(0.0,)),Point(PID(2),(1.0,))],vectors=[[2.0]],neighbors=2)
+Lattice("L2P", [Point(PID(1), (0.0,)), Point(PID(2), (1.0,))],
+        vectors=[[2.0]],
+        neighbors=2
+        )
 ```
 
 It is noted that the `:vectors` and `:neighbors` attributes can also be omitted at the initialization, then `:vectors` will be set to be empty and `:neighbors` to be 1 upon the call of the construction function:
 ```@example unitcell
-Lattice("L2P",[Point(PID(1),(0.0,)),Point(PID(2),(1.0,))])
+Lattice("L2P", [Point(PID(1), (0.0,)), Point(PID(2), (1.0,))])
 ```
 
 In all cases, the `:reciprocals` attributes need not be assigned because it can be deduced from the input `:vectors`.
@@ -127,7 +130,7 @@ There are other types of generalized bonds. In fact, a single point can also be 
 
 Now let's see a simple example:
 ```@example unitcell
-lattice=Lattice("L2P",[Point(PID(1),(0.0,)),Point(PID(2),(1.0,))],
+lattice = Lattice("L2P", [Point(PID(1), (0.0,)), Point(PID(2), (1.0,))],
                 vectors=[[2.0]],
                 neighbors=2
                 )
@@ -135,7 +138,7 @@ Bonds(lattice)
 ```
 By default, `Bonds(lattice::Lattice)` generates all the generalized bonds with orders of nearest neighbors specified by the attribute `:neighbors` of the input lattice, including the individual points and the bonds across the periodic boundaries. Note that the bonds whose lengths are not present in the `:neighbors` attribute of the input lattice won't be included in the result, even when their lengths are shorter:
 ```@example unitcell
-lattice=Lattice("L2P",[Point(PID(1),(0.0,)),Point(PID(2),(1.0,))],
+lattice = Lattice("L2P", [Point(PID(1), (0.0,)), Point(PID(2), (1.0,))],
                 vectors=[[2.0]],
                 neighbors=Dict(2=>2.0)
                 )
@@ -143,7 +146,7 @@ Bonds(lattice)
 ```
 In other words, the `:neighbors` attribute can be viewed as a filter of the generated bonds (but this filter only affects the [`Bond`](@ref) typed but not the [`Point`](@ref) typed generalized bonds). When the input lattice has no translation vectors, the generated bonds will only contain the individual points and the intra-unitcell bonds, just as expected:
 ```@example unitcell
-lattice=Lattice("L2P",[Point(PID(1),(0.0,)),Point(PID(2),(1.0,))])
+lattice = Lattice("L2P", [Point(PID(1), (0.0,)), Point(PID(2), (1.0,))])
 Bonds(lattice)
 ```
 

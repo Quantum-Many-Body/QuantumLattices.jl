@@ -1,9 +1,9 @@
 ```@meta
-CurrentModule=QuantumLattices.Prerequisites.SimpleTrees
+CurrentModule = QuantumLattices.Prerequisites.SimpleTrees
 ```
 
 ```@setup simpletrees
-push!(LOAD_PATH,"../../../../src/")
+push!(LOAD_PATH, "../../../../src/")
 using QuantumLattices.Prerequisites.SimpleTrees
 ```
 
@@ -13,17 +13,17 @@ The aim of this module is to represent the standard tree structure in efficiency
 
 ## AbstractSimpleTree
 
-[`AbstractSimpleTree{N,D}`](@ref) is the abstract type for all concrete trees. By design, it has two type parameters:
+[`AbstractSimpleTree{N, D}`](@ref) is the abstract type for all concrete trees. By design, it has two type parameters:
 * `N`: the type of the tree's node
 * `D`: the type of the tree's data
 To fully utilize the methods designed for a tree structure, in our protocol, a concrete subtype must implement the following methods:
 * inquiry related methods
   - ```julia
-    root(tree::AbstractSimpleTree{N}) where N -> Union{N,Nothing}
+    root(tree::AbstractSimpleTree{N}) where N -> Union{N, Nothing}
     ```
     Get a tree's root node (`nothing` for empty trees)
   - ```julia
-    haskey(tree::AbstractSimpleTree{N},node::N) where N -> Bool
+    haskey(tree::AbstractSimpleTree{N}, node::N) where N -> Bool
     ```
     Check whether a node is in a tree.
   - ```julia
@@ -33,33 +33,33 @@ To fully utilize the methods designed for a tree structure, in our protocol, a c
   - ```julia
     parent(tree::AbstractSimpleTree{N},
            node::N,
-           superparent::Union{N,Nothing}=nothing
-           ) where N -> Union{N,Nothing}
+           superparent::Union{N, Nothing}=nothing
+           ) where N -> Union{N, Nothing}
     ```
     Get the parent of a tree's node or return superparent when the input node is the tree's root.
   - ```julia
-    children(tree::AbstractSimpleTree{N},node::N) where N -> Vector{N}
+    children(tree::AbstractSimpleTree{N}, node::N) where N -> Vector{N}
     ```
     Get the children of a tree's node.
 * structure modification related methods
   - ```julia
     addnode!(tree::AbstractSimpleTree{N},
-             parent::Union{N,Nothing},
+             parent::Union{N, Nothing},
              node::N
              ) where N -> typeof(tree)
     ```
     Update the structure of a tree by adding a node. When the parent is `nothing`, the input tree must be empty and the input node becomes the tree's root.
   - ```julia
-    deletenode!(tree::AbstractSimpleTree{N},node::N) where N -> typeof(tree)
+    deletenode!(tree::AbstractSimpleTree{N}, node::N) where N -> typeof(tree)
     ```
     Update the structure of a tree by deleting a node.
 * index related methods
   - ```julia
-    getindex(tree::AbstractSimpleTree{N,D},node::N) where {N,D} -> D
+    getindex(tree::AbstractSimpleTree{N, D}, node::N) where {N, D} -> D
     ```
     Get the data of a tree's node
   - ```julia
-    setindex!(tree::AbstractSimpleTree{N,D},node::N,data::D) where {N,D}
+    setindex!(tree::AbstractSimpleTree{N, D}, node::N, data::D) where {N, D}
     ```
     Set the data of a tree's node.
 Based on these methods, we implement several generic functions for inquiries and manipulations
@@ -85,11 +85,11 @@ To implement all the prerequisites listed above costs a bit efforts. We provide 
 
 ### SimpleTreeCore
 
-[`SimpleTreeCore{N,D}`](@ref), as the literal meaning indicates, is the core of a tree. It encapsulates all the data structures needed by the default implementation, which contains **4** attributes:
+[`SimpleTreeCore{N, D}`](@ref), as the literal meaning indicates, is the core of a tree. It encapsulates all the data structures needed by the default implementation, which contains **4** attributes:
 * `root::N`: the tree's root node
-* `contents::Dict{N,D}`: the tree's (node,data) pairs
-* `parent::Dict{N,N}`: records of the parent of each of the tree's nodes
-* `children::Dict{N,Vector{N}}`: records of the children of each of the tree's nodes
+* `contents::Dict{N, D}`: the tree's (node, data) pairs
+* `parent::Dict{N, N}`: records of the parent of each of the tree's nodes
+* `children::Dict{N, Vector{N}}`: records of the children of each of the tree's nodes
 As above, the first lazy way is to include this struct with the special name `:TREECORE` in your concrete subtype as the **last** attribute. This process can be even lazier, in that we provide a macro [`@simpletree`](@ref) to decorate your "raw" struct automatically, e.g.
 ```@example simpletrees
 # simple subtree
@@ -99,7 +99,7 @@ As above, the first lazy way is to include this struct with the special name `:T
 @simpletree(struct SubTree2 end, {N<:AbstractString, D<:Number})
 
 # subtree with definite tree parameters
-@simpletree(struct SubTree3 end,{::String,::Int})
+@simpletree(struct SubTree3 end, {::String, ::Int})
 
 # subtree with extra fields
 @simpletree(struct SubTree4 info::Vector{Int} end, {N<:AbstractString, D<:Number})
@@ -113,7 +113,7 @@ As above, the first lazy way is to include this struct with the special name `:T
 
 ### SimpleTree
 
-[`SimpleTree{N,D}`](@ref) is the minimum struct that implements all the default tree methods. You can include an instance of it as an attribute in your own type to utilize all the tree methods.
+[`SimpleTree{N, D}`](@ref) is the minimum struct that implements all the default tree methods. You can include an instance of it as an attribute in your own type to utilize all the tree methods.
 
 ## Manual
 

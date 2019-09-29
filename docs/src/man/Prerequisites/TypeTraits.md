@@ -1,5 +1,5 @@
 ```@meta
-CurrentModule=QuantumLattices.Prerequisites.TypeTraits
+CurrentModule = QuantumLattices.Prerequisites.TypeTraits
 ```
 
 # Type traits
@@ -14,19 +14,19 @@ Julia does not support multi-inheritance, which is sometimes not convenient. A w
 
 Type stability is the key of Julia to improve the code efficiency. However, it cannot be ensured in some unexpected cases, especially where an iterator is involved. For example, the following codes appears type unstable:
 ```julia
-function Base.:(==)(o1::AbstractType,o2::AbstractType)
-    n1,n2=o1|>typeof|>fieldcount,o2|>typeof|>fieldcount
-    n1==n2 ? all(getfield(o1,i)==getfield(o2,i) for i=1:n1) : false
+function Base.:(==)(o1::AbstractType, o2::AbstractType)
+    n1, n2 = fieldcount(typeof(o1)), fieldcount(typeof(o2))
+    (n1 == n2) ? all(getfield(o1, i) == getfield(o2, i) for i = 1:n1) : false
 end
 ```
 Methods like above are common when we design abstract types, but they are not type stable. To get rid of it, the generated function trick can be used:
 ```julia
-@generated function Base.:(==)(o1::AbstractType,o2::AbstractType)
-    n1,n2=o1|>fieldcount,o2|>fieldcount
-    if n1==n2
-        expr=:(getfield(o1,1)==getfield(o2,1))
-        for i=2:n1
-            expr=Expr(:&&,expr,:(getfield(o1,$i)==getfield(o2,$i)))
+@generated function Base.:(==)(o1::AbstractType, o2::AbstractType)
+    n1, n2 = fieldcount(o1), fieldcount(o2)
+    if n1 == n2
+        expr=:(getfield(o1, 1) == getfield(o2, 1))
+        for i = 2:n1
+            expr = Expr(:&&, expr, :(getfield(o1, $i) == getfield(o2, $i)))
         end
         return expr
     else
@@ -38,7 +38,7 @@ Then type stability can be ensured. We use this trick to implement the methods s
 
 ## MemoryOrder
 
-`MemoryOrder` provides the conversions, [`subtoind`](@ref) and [`indtosub`](@ref), between a Cartesian index represented by a tuple and a linear index represented by an integer. C/C++ order or Fortran order can be specified, though the constant instances [`corder`](@ref) or [`forder`](@ref) of singleton types `COrder` and `FOrder`, which are both subtypes of the abstract type `MemoryOrder`.
+`MemoryOrder` provides the conversions, [`subtoind`](@ref) and [`indtosub`](@ref), between a Cartesian index represented by a tuple and a linear index represented by an integer. C/C++ order or Fortran order can be specified by use of the constants [`corder`](@ref) or [`forder`](@ref), which are instances of singleton types `COrder` and `FOrder` that are both subtypes of the abstract type `MemoryOrder`.
 
 ## Manual
 

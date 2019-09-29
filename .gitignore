@@ -6,5 +6,6 @@ deps/deps.jl
 docs/build/
 
 .ipynb_checkpoints/
+.vscode/
 
 desktop.ini

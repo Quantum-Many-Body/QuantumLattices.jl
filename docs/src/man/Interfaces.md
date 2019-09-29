@@ -1,5 +1,5 @@
 ```@meta
-CurrentModule=QuantumLattices.Interfaces
+CurrentModule = QuantumLattices.Interfaces
 ```
 
 # Interfaces

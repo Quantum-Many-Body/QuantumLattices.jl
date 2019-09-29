@@ -1,5 +1,5 @@
 ```@meta
-CurrentModule=QuantumLattices.Prerequisites.CompositeStructures
+CurrentModule = QuantumLattices.Prerequisites.CompositeStructures
 ```
 
 # Composite structures

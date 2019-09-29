@@ -1,9 +1,9 @@
 ```@meta
-CurrentModule=QuantumLattices.Prerequisites.NamedVectors
+CurrentModule = QuantumLattices.Prerequisites.NamedVectors
 ```
 
 ```@setup namedvectors
-push!(LOAD_PATH,"../../../../src/")
+push!(LOAD_PATH, "../../../../src/")
 using QuantumLattices.Prerequisites.NamedVectors
 ```
 
@@ -29,7 +29,7 @@ To subtype it, please note:
 3. It is recommended to overload the `Base.fieldnames` function for concrete subtypes to ensure type stability and improve efficiency, which though is not a necessity.
    A template for such an overloading is
    ```julia
-   Base.fieldnames(Type{<:YourNamedVector})=(:fieldname1,:fieldname2,...)
+   Base.fieldnames(Type{<:YourNamedVector}) = (:fieldname1, :fieldname2, ...)
    ```
 4. For all concrete subtypes, if inner constructors are defined, the one which has the same interface with the default one must be implemented.
    Otherwise, some functionalities will not work.
@@ -67,10 +67,10 @@ end
 We also provide a macro [`@homonamedvector`](@ref) to help the definition of concrete homogeneous named vector, where you only need specify the type name, field names, data type and optionally whether the subtype is mutable. For example,
 ```@example namedvectors
 # construct an immutable homogeneous named vector without type parameters
-@homonamedvector HomoNVWithoutParameter (:scope,:site) Int mutable=false
+@homonamedvector HomoNVWithoutParameter (:scope, :site) Int mutable=false
 
 # construct a mutable homogeneous named vector with type parameters
-@homonamedvector HomoNVWithParameter (:scope,:site) (<:Real) mutable=true
+@homonamedvector HomoNVWithParameter (:scope, :site) (<:Real) mutable=true
 ```
 This macro also integrates the `Base.fieldnames` function, thus its overloading by hand is on longer needed.
 
