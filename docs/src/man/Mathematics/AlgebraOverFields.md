@@ -1,9 +1,9 @@
 ```@meta
-CurrentModule=QuantumLattices.Mathematics.AlgebraOverFields
+CurrentModule = QuantumLattices.Mathematics.AlgebraOverFields
 ```
 
 ```@setup algebraoverfields
-push!(LOAD_PATH,"../../../../src/")
+push!(LOAD_PATH, "../../../../src/")
 using QuantumLattices.Mathematics.AlgebraOverFields
 ```
 
@@ -11,7 +11,7 @@ using QuantumLattices.Mathematics.AlgebraOverFields
 
 An algebra over a field is a vector space over that field, in which a bilinear operator (often called the "multiplication") between vectors is defined.
 
-With the help of the structure constants of the algebra, the result of the bilinear operation between any arbitrary two vectors can be expressed by a sum of individual ones. Therefore, in principle, an algebra can be represented by the complete basis set of its corresponding vector space and a rank-3 tensor encapsulating its structure constants. It is noted that the "bilinear operation" is not restricted to the usual multiplication only. For example, it is the commutator, which is a composition of the usual multiplication and subtraction (for any A and B, the commutator [A,B] is defined as [A,B]≝AB-BA) that serves as the bilinear operator for Lie algebras. In this module, for scalars in the field and elements in the algebra, we only provide the interfaces of the scalar multiplication (including the scalar division) between a scalar and an element, the addition (including the subtraction) and the usual multiplication between two elements. Other complicated operations should be composed from these basic ones.
+With the help of the structure constants of the algebra, the result of the bilinear operation between any arbitrary two vectors can be expressed by a sum of individual ones. Therefore, in principle, an algebra can be represented by the complete basis set of its corresponding vector space and a rank-3 tensor encapsulating its structure constants. It is noted that the "bilinear operation" is not restricted to the usual multiplication only. For example, it is the commutator, which is a composition of the usual multiplication and subtraction (for any A and B, the commutator [A, B] is defined as [A, B]≝AB-BA) that serves as the bilinear operator for Lie algebras. In this module, for scalars in the field and elements in the algebra, we only provide the interfaces of the scalar multiplication (including the scalar division) between a scalar and an element, the addition (including the subtraction) and the usual multiplication between two elements. Other complicated operations should be composed from these basic ones.
 
 ## SimpleID and ID
 
@@ -33,5 +33,5 @@ Arithmetic operations (`+`, `-`, `*`, `/`) between a scalar, an [`Element`](@ref
 
 ```@autodocs
 Modules = [AlgebraOverFields]
-Order =  [:module, :constant, :type, :macro, :function]
+Order = [:module, :constant, :type, :macro, :function]
 ```

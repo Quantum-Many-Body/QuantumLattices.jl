@@ -1,5 +1,5 @@
 ```@meta
-CurrentModule=QuantumLattices.Mathematics.QuantumNumbers
+CurrentModule = QuantumLattices.Mathematics.QuantumNumbers
 ```
 
 # Quantum numbers
@@ -61,5 +61,5 @@ For convenience, **5** functions are predefined to generate the `AbelianNumbers`
 
 ```@autodocs
 Modules = [QuantumNumbers]
-Order =  [:module, :constant, :type, :macro, :function]
+Order = [:module, :constant, :type, :macro, :function]
 ```
