@@ -44,5 +44,5 @@ Then type stability can be ensured. We use this trick to implement the methods s
 
 ```@autodocs
 Modules = [TypeTraits]
-Order =  [:module, :constant, :type, :macro, :function]
+Order = [:module, :constant, :type, :macro, :function]
 ```

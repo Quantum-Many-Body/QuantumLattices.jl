@@ -78,5 +78,5 @@ This macro also integrates the `Base.fieldnames` function, thus its overloading 
 
 ```@autodocs
 Modules = [NamedVectors]
-Order =  [:module, :constant, :type, :macro, :function]
+Order = [:module, :constant, :type, :macro, :function]
 ```

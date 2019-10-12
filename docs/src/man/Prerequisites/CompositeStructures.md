@@ -60,5 +60,5 @@ Julia NamedTuple is useful to keep type stability of codes when we deal with inh
 
 ```@autodocs
 Modules = [CompositeStructures]
-Order =  [:module, :constant, :type, :macro, :function]
+Order = [:module, :constant, :type, :macro, :function]
 ```

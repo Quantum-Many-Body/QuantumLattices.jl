@@ -449,5 +449,5 @@ Other features include:
 
 ```@autodocs
 Modules = [Factories]
-Order =  [:module, :constant, :type, :macro, :function]
+Order = [:module, :constant, :type, :macro, :function]
 ```

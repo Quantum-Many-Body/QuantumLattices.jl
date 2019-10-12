@@ -119,5 +119,5 @@ As above, the first lazy way is to include this struct with the special name `:T
 
 ```@autodocs
 Modules = [SimpleTrees]
-Order =  [:module, :constant, :type, :macro, :function]
+Order = [:module, :constant, :type, :macro, :function]
 ```
