@@ -1,5 +1,5 @@
 ```@meta
-CurrentModule=QuantumLattices.Essentials
+CurrentModule = QuantumLattices.Essentials
 ```
 
 # [Introduction](@id essentials)

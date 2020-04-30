@@ -679,12 +679,13 @@ function Base.replace(ms::Elements, pairs::Pair{<:SimpleID, <:Union{Element, Ele
     return result
 end
 @generated function elementstype(ms::Vararg{Pair{<:SimpleID, <:Union{Element, Elements}}, N}) where N
-    ms = ntuple(i->(fieldtype(ms[i], 2) <: Elements) ? fieldtype(ms[i], 2)|>valtype : fieldtype(ms[i], 2), Val(N))
-    @assert mapreduce(m->(m|>fieldnames) == (:value, :id), &, ms) "elementstype error: not supported."
-    I = mapreduce(idtype, promote_type, ms)|>eltype
-    V = mapreduce(valtype, promote_type, ms)
-    M = reduce(typejoin, ms)|>rawtype
-    @assert isconcretetype(V) "elementstype error: type of coefficients error."
+    mts = ntuple(i->(fieldtype(ms[i], 2) <: Elements) ? fieldtype(ms[i], 2)|>valtype : fieldtype(ms[i], 2), Val(N))
+    its = ntuple(i->(fieldtype(ms[i], 2) <: Elements) ? fieldtype(ms[i], 2)|>keytype : fieldtype(ms[i], 1), Val(N))
+    @assert mapreduce(mt->(mt|>fieldnames) == (:value, :id), &, mts) "elementstype error: not supported."
+    I = mapreduce(eltype, promote_type, its)
+    V = mapreduce(valtype, promote_type, mts)
+    M = reduce(typejoin, mts)|>rawtype
+    @assert isconcretetype(V) @sprintf "elementstype error: not concrete type of coefficients(%s)." V
     return Elements{ID{I}, M{V, <:ID{I}}}
 end
 

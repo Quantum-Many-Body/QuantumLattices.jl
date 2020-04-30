@@ -1,9 +1,9 @@
 ```@meta
-CurrentModule=QuantumLattices.Essentials.Frameworks
+CurrentModule = QuantumLattices.Essentials.Frameworks
 ```
 
 ```@setup frameworks
-push!(LOAD_PATH,"../../../../src/")
+push!(LOAD_PATH, "../../../../src/")
 using QuantumLattices
 ```
 
@@ -19,5 +19,5 @@ using QuantumLattices
 
 ```@autodocs
 Modules = [Frameworks]
-Order =  [:module, :constant, :type, :macro, :function]
+Order = [:module, :constant, :type, :macro, :function]
 ```

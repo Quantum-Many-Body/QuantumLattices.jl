@@ -1,10 +1,10 @@
 module Interfaces
 
-export ⊕,⊗,⋅
-export add!,sub!,mul!,div!
-export id,rank,dimension,kind,sequence,dims,index,inds
-export update!,reset!,register!,prepare!,run!,expand,expand!,decompose,decompose!,regularize,regularize!
-export permute,vector,matrix
+export ⊕, ⊗, ⋅
+export add!, sub!, mul!, div!
+export id, rank, dimension, kind, sequence, dims, index, inds
+export update!, reset!, register!, prepare!, run!, expand, expand!, decompose, decompose!, regularize, regularize!
+export permute, vector, matrix
 
 "Direct sum."
 function ⊕ end

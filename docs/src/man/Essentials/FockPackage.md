@@ -1,5 +1,5 @@
 ```@meta
-CurrentModule=QuantumLattices.Essentials.FockPackage
+CurrentModule = QuantumLattices.Essentials.FockPackage
 ```
 
 # Fock package
@@ -24,5 +24,5 @@ CurrentModule=QuantumLattices.Essentials.FockPackage
 
 ```@autodocs
 Modules = [FockPackage]
-Order =  [:module, :constant, :type, :macro, :function]
+Order = [:module, :constant, :type, :macro, :function]
 ```

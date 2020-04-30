@@ -75,7 +75,7 @@ delta(i, j) = (i == j) ? 1 : 0
 Get the "raw" type without the type parameters.
 """
 rawtype(T::DataType) = T.name.wrapper
-rawtype(T::UnionAll) = T.body.name.wrapper
+rawtype(T::UnionAll) = rawtype(T.body)
 
 include("TypeTraits.jl")
 include("Factories.jl")

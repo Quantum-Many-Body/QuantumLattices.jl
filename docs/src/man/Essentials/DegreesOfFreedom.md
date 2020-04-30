@@ -1,5 +1,5 @@
 ```@meta
-CurrentModule=QuantumLattices.Essentials.DegreesOfFreedom
+CurrentModule = QuantumLattices.Essentials.DegreesOfFreedom
 ```
 
 # Degrees of freedom
@@ -24,5 +24,5 @@ CurrentModule=QuantumLattices.Essentials.DegreesOfFreedom
 
 ```@autodocs
 Modules = [DegreesOfFreedom]
-Order =  [:module, :constant, :type, :macro, :function]
+Order = [:module, :constant, :type, :macro, :function]
 ```

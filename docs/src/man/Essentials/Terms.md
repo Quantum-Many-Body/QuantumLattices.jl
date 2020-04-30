@@ -1,5 +1,5 @@
 ```@meta
-CurrentModule=QuantumLattices.Essentials.Terms
+CurrentModule = QuantumLattices.Essentials.Terms
 ```
 
 ```@setup terms
@@ -21,5 +21,5 @@ using QuantumLattices
 
 ```@autodocs
 Modules = [Terms]
-Order =  [:module, :constant, :type, :macro, :function]
+Order = [:module, :constant, :type, :macro, :function]
 ```

@@ -15,10 +15,10 @@ makedocs(
     sitename=   "QuantumLattices.jl",
     pages=      [
                 "Home"      =>  "index.md",
-                "Tutorials"  =>  [
+                "Tutorials" =>  [
                     "tutorials/UnitcellDescription.md",
                     "tutorials/EngineAppInterface.md",
-                        ],
+                    ],
                 "Manual"    =>  [
                     "man/Interfaces.md",
                     "Prerequisites" => [
@@ -46,6 +46,9 @@ makedocs(
                         "man/Essentials/Frameworks.md",
                         ],
                     ],
+                "Developer Documentation"   =>  [
+                    "developer/CodeStyle.md",
+                    ]
                 ]
 )
 

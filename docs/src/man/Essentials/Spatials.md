@@ -1,5 +1,5 @@
 ```@meta
-CurrentModule=QuantumLattices.Essentials.Spatials
+CurrentModule = QuantumLattices.Essentials.Spatials
 ```
 
 ```@setup spatials
@@ -31,5 +31,5 @@ using QuantumLattices
 
 ```@autodocs
 Modules = [Spatials]
-Order =  [:module, :constant, :type, :macro, :function]
+Order = [:module, :constant, :type, :macro, :function]
 ```

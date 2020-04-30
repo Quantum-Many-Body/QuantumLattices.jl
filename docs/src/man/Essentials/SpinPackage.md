@@ -1,5 +1,5 @@
 ```@meta
-CurrentModule=QuantumLattices.Essentials.SpinPackage
+CurrentModule = QuantumLattices.Essentials.SpinPackage
 ```
 
 # Spin package
@@ -24,5 +24,5 @@ CurrentModule=QuantumLattices.Essentials.SpinPackage
 
 ```@autodocs
 Modules = [SpinPackage]
-Order =  [:module, :constant, :type, :macro, :function]
+Order = [:module, :constant, :type, :macro, :function]
 ```
