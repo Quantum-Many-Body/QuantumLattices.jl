@@ -23,7 +23,7 @@ end
 
     cid = AOFID(2, 1) * AOFID(1, Inf)
     @test cid == ID(AOFID(2, 1), AOFID(1, Inf))
-    @test cid|>string == "ID(AOFID(2,1),AOFID(1,Inf))"
+    @test cid|>string == "ID(AOFID(2, 1), AOFID(1, Inf))"
     @test cid|>eltype == AOFID{Int, <:Real}
     @test cid|>rank == 2
     @test cid|>typeof|>rank == 2
@@ -50,8 +50,8 @@ struct AOFOperator{V<:Number, I<:ID{SimpleID}} <: Element{V, I}
 end
 ⊗(m1::AOFOperator, m2::AOFOperator) = m1 * m2
 ⋅(m1::AOFOperator, m2::AOFOperator) = m1 * m2
-Base.show(io::IO, opt::AOFOperator) = @printf io "AOFOperator(value=%s,id=%s)" opt.value opt.id
-Base.repr(opt::AOFOperator) = "AOFOperator($(opt.value),$(opt.id))"
+Base.show(io::IO, opt::AOFOperator) = @printf io "AOFOperator(value=%s, id=%s)" opt.value opt.id
+Base.repr(opt::AOFOperator) = "AOFOperator($(opt.value), $(opt.id))"
 
 function permute(::Type{<:AOFOperator}, id1::AOFID, id2::AOFID, ::Any = nothing)
     @assert id1 ≠ id2 "permute error: permuted ids should not be equal to each other."
@@ -103,8 +103,8 @@ end
     opt1 = AOFOperator(1.0, ID(AOFID(1, 1)))
     opt2 = AOFOperator(2.0, ID(AOFID(1, 2)))
     opts = Elements(opt1.id=>opt1, opt2.id=>opt2)
-    @test string(opts) == "Elements with 2 entries:\n  AOFOperator(value=2.0,id=ID(AOFID(1,2)))\n  AOFOperator(value=1.0,id=ID(AOFID(1,1)))\n"
-    @test repr(opts) == "Elements with 2 entries:\n  AOFOperator(2.0,ID(AOFID(1,2)))\n  AOFOperator(1.0,ID(AOFID(1,1)))"
+    @test string(opts) == "Elements with 2 entries:\n  AOFOperator(value=2.0, id=ID(AOFID(1, 2)))\n  AOFOperator(value=1.0, id=ID(AOFID(1, 1)))\n"
+    @test repr(opts) == "Elements with 2 entries:\n  AOFOperator(2.0, ID(AOFID(1, 2)))\n  AOFOperator(1.0, ID(AOFID(1, 1)))"
     @test opts|>deepcopy == opts
     @test opts|>zero == opts|>typeof|>zero == nothing
     @test add!(deepcopy(opts)) == opts

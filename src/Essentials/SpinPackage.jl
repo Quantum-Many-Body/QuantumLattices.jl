@@ -277,10 +277,10 @@ function Base.show(io::IO, sc::SpinCoupling)
     cache = []
     for attrname in (:centers, :atoms, :orbitals, :tags)
         attrvalue = getproperty(sc.id, attrname)
-        all(attrvalue .≠ wildcard) && @printf io ",%s=(%s)" attrname join(attrvalue, ",")
+        all(attrvalue .≠ wildcard) && @printf io ", %s=(%s)" attrname join(attrvalue, ", ")
     end
     subscripts = sc.id.subscripts
-    all(subscripts .== wildcard) || all((subscripts .== constant)) || @printf io ",subscripts=(%s)" join(subscripts, ",")
+    all(subscripts .== wildcard) || all((subscripts .== constant)) || @printf io ", subscripts=(%s)" join(subscripts, ", ")
     @printf io ")"
 end
 
@@ -293,12 +293,12 @@ function Base.repr(sc::SpinCoupling)
     cache = []
     for (attrname, abbr) in zip((:atoms, :orbitals), ("sl", "ob"))
         attrvalue = getproperty(sc.id, attrname)
-        all(attrvalue .≠ wildcard) && push!(cache, @sprintf "%s(%s)" abbr join(attrvalue, ','))
+        all(attrvalue .≠ wildcard) && push!(cache, @sprintf "%s(%s)" abbr join(attrvalue, ", "))
     end
     result = @sprintf "%s S%s" decimaltostr(sc.value) join(sc.id.tags, 'S')
     (length(cache) > 0) && (result = @sprintf "%s %s" result join(cache, "⊗"))
     centers = sc.id.centers
-    any(centers .≠ wildcard) && (result = @sprintf "%s%s@(%s)" result (length(cache) > 0 ? "" : " ") join(centers, ','))
+    any(centers .≠ wildcard) && (result = @sprintf "%s%s@(%s)" result (length(cache) > 0 ? "" : " ") join(centers, ", "))
     subscripts = sc.id.subscripts
     all(subscripts .== wildcard) || all(subscripts .== constant) || (result = @sprintf "%s with %s" result join(subscripts, " && "))
     return result
@@ -455,12 +455,14 @@ Construct a SpinCoupling from a literal string.
 macro sc_str(str::String)
     ps = split(str, " with ")
     condition = (length(ps) == 2) ? Meta.parse(ps[2]) : :nothing
-    ps = split(ps[1], ' ')
-    coeff = eval(Meta.parse(ps[1]))
-    tags = Tuple(replace(ps[2], "S"=>""))
+    fpos = findfirst(r"S[+-xyz0]", ps[1]).start
+    lpos = 1 + lastindex(ps[1]) - findfirst(r"[+-xyz0]S", ps[1]|>reverse).start
+    coeff = eval(Meta.parse(ps[1][1:fpos-1]))
+    tags = Tuple(replace(ps[1][fpos:lpos], "S"=>""))
     attrpairs = Any[:tags=>tags]
-    if length(ps) == 3
-        components = split(ps[3], '@')
+    temp = replace(ps[1][lpos+1:end], " "=>"")
+    if length(temp) > 0
+        components = split(temp, '@')
         centers = (length(components) == 2) ? couplingcenters(components[2]) : nothing
         (centers === nothing) || @assert length(centers) == length(tags) "@sc_str error: dismatched ranks."
         push!(attrpairs, :centers=>centers)
@@ -476,7 +478,7 @@ macro sc_str(str::String)
                     push!(attrpairs, attrname=>attrvalue)
                 end
             end
-    end
+        end
     end
     return SpinCoupling{length(tags)}(coeff; attrpairs...)
 end
@@ -489,6 +491,7 @@ function sccomponent(str::AbstractString)
 end
 
 function scpairs(str::AbstractString, ::Val{R}) where R
+    str = replace(str, " "=>"")
     attrpairs = Pair{Symbol, NTuple{R, Int}}[]
     if length(str) > 0
         components = split(str, '@')
@@ -505,14 +508,14 @@ function scpairs(str::AbstractString, ::Val{R}) where R
 end
 
 """
-    heisenberg"sl(a₁,a₂)⊗ob(o₁,o₂)@(c₁,c₂)" -> Couplings
+    heisenberg"sl(a₁, a₂)⊗ob(o₁, o₂)@(c₁, c₂)" -> Couplings
 
 The Heisenberg couplings.
 """
 macro heisenberg_str(str::String)
-    ps = split(str, " ")
-    @assert length(ps) ∈ (1, 2) "heisenberg_str error: not supported pattern."
-    mode, str = (length(ps) == 2) ? (ps[1], ps[2]) : (ps[1] ∈ ("+-z", "xyz")) ?  (ps[1], "") : ("+-z", ps[1])
+    slice = findfirst(r"xyz|\+\-z", str)
+    mode = isnothing(slice) ? "+-z" : str[slice]
+    isnothing(slice) || (str = str[slice.stop+1:end])
     @assert (mode == "+-z") || (mode == "xyz") "heisenberg_str error: not supported mode($mode)."
     attrpairs = scpairs(str, Val(2))
     if mode == "+-z"
@@ -528,9 +531,9 @@ macro heisenberg_str(str::String)
 end
 
 """
-    ising"x sl(a₁,a₂)⊗ob(o₁,o₂)@(c₁,c₂)" -> Couplings
-    ising"y sl(a₁,a₂)⊗ob(o₁,o₂)@(c₁,c₂)" -> Couplings
-    ising"z sl(a₁,a₂)⊗ob(o₁,o₂)@(c₁,c₂)" -> Couplings
+    ising"x sl(a₁, a₂)⊗ob(o₁, o₂)@(c₁, c₂)" -> Couplings
+    ising"y sl(a₁, a₂)⊗ob(o₁, o₂)@(c₁, c₂)" -> Couplings
+    ising"z sl(a₁, a₂)⊗ob(o₁, o₂)@(c₁, c₂)" -> Couplings
 
 The Ising couplings.
 """
@@ -541,9 +544,9 @@ macro ising_str(str::String)
 end
 
 """
-    gamma"x sl(a₁,a₂)⊗ob(o₁,o₂)@(c₁,c₂)" -> Couplings
-    gamma"y sl(a₁,a₂)⊗ob(o₁,o₂)@(c₁,c₂)" -> Couplings
-    gamma"z sl(a₁,a₂)⊗ob(o₁,o₂)@(c₁,c₂)" -> Couplings
+    gamma"x sl(a₁, a₂)⊗ob(o₁, o₂)@(c₁, c₂)" -> Couplings
+    gamma"y sl(a₁, a₂)⊗ob(o₁, o₂)@(c₁, c₂)" -> Couplings
+    gamma"z sl(a₁, a₂)⊗ob(o₁, o₂)@(c₁, c₂)" -> Couplings
 
 The Gamma couplings.
 """
@@ -557,9 +560,9 @@ macro gamma_str(str::String)
 end
 
 """
-    dm"x sl(a₁,a₂)⊗ob(o₁,o₂)@(c₁,c₂)" -> Couplings
-    dm"y sl(a₁,a₂)⊗ob(o₁,o₂)@(c₁,c₂)" -> Couplings
-    dm"z sl(a₁,a₂)⊗ob(o₁,o₂)@(c₁,c₂)" -> Couplings
+    dm"x sl(a₁, a₂)⊗ob(o₁, o₂)@(c₁, c₂)" -> Couplings
+    dm"y sl(a₁, a₂)⊗ob(o₁, o₂)@(c₁, c₂)" -> Couplings
+    dm"z sl(a₁, a₂)⊗ob(o₁, o₂)@(c₁, c₂)" -> Couplings
 
 The DM couplings.
 """

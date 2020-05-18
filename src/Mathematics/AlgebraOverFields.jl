@@ -80,7 +80,7 @@ end
 
 Show a composite id.
 """
-Base.show(io::IO, cid::Tuple{SimpleID, Vararg{SimpleID}}) = @printf io "ID(%s)" join(cid, ",")
+Base.show(io::IO, cid::Tuple{SimpleID, Vararg{SimpleID}}) = @printf io "ID(%s)" join(cid, ", ")
 
 """
     promote_type(::Type{Tuple{}}, ::Type{Tuple{}})

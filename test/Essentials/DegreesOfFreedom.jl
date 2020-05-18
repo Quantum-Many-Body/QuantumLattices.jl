@@ -75,7 +75,7 @@ end
     @test it|>typeof|>eltype == DID
     @test it == deepcopy(it)
     @test isequal(it, deepcopy(it))
-    @test it|>string == "DFock(atom=1,nnambu=2)"
+    @test it|>string == "DFock(atom=1, nnambu=2)"
     @test it|>collect == [DID(1), DID(2)]
 end
 
@@ -113,7 +113,7 @@ end
     @test hash(oid, UInt(1)) == hash(OID(DIndex(1, 1, 1), rcoord=SVector(0.0, 0.0), icoord=SVector(0.0, 0.0), seq=1), UInt(1))
     @test idpropertynames(ID{OID}) == (:indexes, :rcoords, :icoords, :seqs)
     @test fieldnames(OID) == (:index, :rcoord, :icoord, :seq)
-    @test string(oid) == "OID(DIndex(1,1,1),[0.0,0.0],[0.0,0.0],1)"
+    @test string(oid) == "OID(DIndex(1, 1, 1), [0.0, 0.0], [0.0, 0.0], 1)"
     @test ID(oid', oid)' == ID(oid', oid)
     @test isHermitian(ID(oid', oid)) == true
     @test isHermitian(ID(oid, oid)) == false
@@ -129,7 +129,7 @@ end
     opt = DOperator(1.0im, (DIndex(1, 2, 2), DIndex(1, 1, 1)), rcoords=(SVector(1.0, 0.0), SVector(0.0, 0.0)), icoords=(SVector(2.0, 0.0), SVector(0.0, 0.0)), seqs=(2, 1))
     @test opt' == DOperator(-1.0im, (DIndex(1, 1, 2), DIndex(1, 2, 1)), rcoords=(SVector(0.0, 0.0), SVector(1.0, 0.0)), icoords=(SVector(0.0, 0.0), SVector(2.0, 0.0)), seqs=(1, 2))
     @test isHermitian(opt) == false
-    @test string(opt) == "DOperator(1.0im,ID(OID(DIndex(1,2,2),[1.0,0.0],[2.0,0.0],2),OID(DIndex(1,1,1),[0.0,0.0],[0.0,0.0],1)))"
+    @test string(opt) == "DOperator(1.0im, ID(OID(DIndex(1, 2, 2), [1.0, 0.0], [2.0, 0.0], 2), OID(DIndex(1, 1, 1), [0.0, 0.0], [0.0, 0.0], 1)))"
     @test twist(opt, [[1.0, 0.0], [0.0, 1.0]], [0.1, 0.0]) ≈ replace(opt, value=1.0im*conj(exp(2im*pi*0.2)))
     @test sequence(opt) == (2, 1)
     @test sequence(opt, Dict(DIndex(1, 2, 2)=>3, DIndex(1, 1, 1)=>4)) == (3, 4)
@@ -164,8 +164,8 @@ end
     @test latexsubscript(latex|>typeof) == (:site,)
 
     oid = OID(DIndex('d', 1, 2), rcoord=SVector(0.0, 0.0), icoord=SVector(1.0, 0.0), seq=1)
-    @test script(oid, Val(:rcoord)) == "[0.0,0.0]"
-    @test script(oid, Val(:icoord)) == "[1.0,0.0]"
+    @test script(oid, Val(:rcoord)) == "[0.0, 0.0]"
+    @test script(oid, Val(:icoord)) == "[1.0, 0.0]"
     @test script(oid, latex, Val(:B)) == 'c'
     @test script(oid, latex, Val(:SP)) == ("\\dagger",)
     @test script(oid, latex, Val(:SB)) == (1,)
@@ -174,7 +174,7 @@ end
     opt = DOperator(1.0, (DIndex('d', 2, 2), DIndex('d', 1, 1)), rcoords=(SVector(1.0, 0.0), SVector(0.0, 0.0)), icoords=(SVector(2.0, 0.0), SVector(0.0, 0.0)), seqs=(2, 1))
     @test repr(opt, LaTeX{(:nambu,), (:site,)}('c')) == "c^{\\dagger}_{2}c^{}_{1}"
     @test repr(opt, LaTeX{(:nambu,), (:site,)}()) == "d^{\\dagger}_{2}d^{}_{1}"
-    @test repr(opt, LaTeX{(:nambu,), (:rcoord,)}()) == "d^{\\dagger}_{[1.0,0.0]}d^{}_{[0.0,0.0]}"
+    @test repr(opt, LaTeX{(:nambu,), (:rcoord,)}()) == "d^{\\dagger}_{[1.0, 0.0]}d^{}_{[0.0, 0.0]}"
     @test repr(opt) == "d^{\\dagger}_{2}d^{}_{1}"
 
     opts = Operators(DOperator(1.0-1.0im, (DIndex('d', 2, 2), DIndex('d', 1, 1))), DOperator(-1.0, (DIndex('d', 1, 2), DIndex('d', 1, 1))))

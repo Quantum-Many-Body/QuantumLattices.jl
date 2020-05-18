@@ -223,14 +223,14 @@ Base.isequal(qns1::AbelianNumbers, qns2::AbelianNumbers) = isequal(qns1.contents
 
 Show an `AbelianNumbers`.
 """
-Base.show(io::IO, qns::AbelianNumbers) = @printf io "QNS(%s)" join((@sprintf("%s=>%s", qn, slice) for (qn, slice) in pairs(qns, qnindptr)), ',')
+Base.show(io::IO, qns::AbelianNumbers) = @printf io "QNS(%s)" join((@sprintf("%s=>%s", qn, slice) for (qn, slice) in pairs(qns, qnindptr)), ", ")
 
 """
     string(qns::AbelianNumbers) -> String
 
 Convert an `AbelianNumbers` to string.
 """
-Base.string(qns::AbelianNumbers) = @sprintf "QNS(%s,%s)" qns|>length qns|>dimension
+Base.string(qns::AbelianNumbers) = @sprintf "QNS(%s, %s)" qns|>length qns|>dimension
 
 """
     length(qns::AbelianNumbers) -> Int

@@ -74,9 +74,9 @@ Show a subscript.
 """
 function Base.show(io::IO, subscript::Subscript)
     if (subscript.identifier == constant) || (subscript.identifier == wildcard)
-        @printf io "(%s)" join(subscript.opattern, ',')
+        @printf io "(%s)" join(subscript.opattern, ", ")
     else
-        @printf io "(%s) with %s" join(subscript.opattern, ',') subscript.identifier
+        @printf io "(%s) with %s" join(subscript.opattern, ", ") subscript.identifier
     end
 end
 
@@ -305,6 +305,7 @@ couplingcenter(::Type{<:Coupling}, i::Int, n::Int, ::Val{R}) where R = error("co
     return Expr(:tuple, exprs...)
 end
 function couplingcenters(str::AbstractString)
+    str=strip(str,' ')
     @assert (str[1] == '(') && (str[end] == ')') "couplingcenters error: wrong input pattern."
     return Tuple(parse(Int, center) for center in split(str[2:end-1], ','))
 end
@@ -509,7 +510,7 @@ Base.isequal(term1::Term, term2::Term) = isequal(efficientoperations, term1, ter
 Show a term.
 """
 function Base.show(io::IO, term::Term)
-    @printf io "%s{%s%s}(id=%s,value=%s,bondkind=%s,factor=%s)" kind(term) rank(term) statistics(term) term|>id decimaltostr(term.value) term.bondkind decimaltostr(term.factor)
+    @printf io "%s{%s%s}(id=%s, value=%s, bondkind=%s, factor=%s)" kind(term) rank(term) statistics(term) term|>id decimaltostr(term.value) term.bondkind decimaltostr(term.factor)
 end
 
 """

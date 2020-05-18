@@ -13,7 +13,7 @@ end
 
     pid = NHNV("A", 0)
     @test pid == convert(NHNV, ("A", 0))
-    @test string(pid) == "NHNV(\"A\",0)"
+    @test string(pid) == "NHNV(\"A\", 0)"
     @test length(pid) == 2
     @test collect(Iterators.reverse(pid)) == [0, "A"]
     @test pid[1] == pid.scope == "A"
@@ -46,7 +46,7 @@ end
 
     pid = FHNV(1.0, 0.0)
     @test pid == convert(FHNV, (1.0, 0.0))
-    @test string(pid) == "FHNV(1.0,0.0)"
+    @test string(pid) == "FHNV(1.0, 0.0)"
     @test length(pid) == 2
     @test eltype(pid) == Float64
     @test zero(pid) == FHNV(0.0, 0.0)
@@ -78,7 +78,7 @@ end
 
     pid = RHNV(1, 0)
     @test pid == convert(RHNV{Int}, (1, 0))
-    @test string(pid) == "RHNV(1,0)"
+    @test string(pid) == "RHNV(1, 0)"
     @test length(pid) == 2
     @test eltype(pid) == Int
     @test zero(pid) == RHNV(0, 0)

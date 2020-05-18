@@ -42,7 +42,7 @@ abstract type Internal{I<:IID} <: VectorSpace{I} end
 
 Show an internal.
 """
-Base.show(io::IO, i::Internal) = @printf io "%s(%s)" i|>typeof|>nameof join(("$name=$(getfield(i, name))" for name in i|>typeof|>fieldnames), ",")
+Base.show(io::IO, i::Internal) = @printf io "%s(%s)" i|>typeof|>nameof join(("$name=$(getfield(i, name))" for name in i|>typeof|>fieldnames), ", ")
 
 """
     Index{P, I}
@@ -380,9 +380,9 @@ Show an operator id.
 """
 function Base.show(io::IO, oid::OID)
     @printf io "OID(%s" oid.index
-    (oid.rcoord === nothing) ? (@printf io ",:") : (@printf io ",[%s]" join(oid.rcoord, ","))
-    (oid.icoord === nothing) ? (@printf io ",:") : (@printf io ",[%s]" join(oid.icoord, ","))
-    @printf io ",%s)" (oid.seq === nothing) ? ":" : oid.seq
+    (oid.rcoord === nothing) ? (@printf io ", :") : (@printf io ", %s" oid.rcoord)
+    (oid.icoord === nothing) ? (@printf io ", :") : (@printf io ", %s" oid.icoord)
+    @printf io ", %s)" (oid.seq === nothing) ? ":" : oid.seq
 end
 
 """
@@ -390,7 +390,7 @@ end
 
 LaTeX string representation of an oid.
 """
-Base.repr(oid::OID, l::LaTeX) = @sprintf "%s^{%s}_{%s}" script(oid, l, Val(:B)) join(script(oid, l, Val(:SP)), ',') join(script(oid, l, Val(:SB)), ',')
+Base.repr(oid::OID, l::LaTeX) = @sprintf "%s^{%s}_{%s}" script(oid, l, Val(:B)) join(script(oid, l, Val(:SP)), ", ") join(script(oid, l, Val(:SB)), ", ")
 
 """
     adjoint(oid::OID) -> typeof(oid)
@@ -420,7 +420,7 @@ Get the `:rcoord/:icoord` script of an oid.
 """
 @generated function script(oid::OID, ::Val{attr}) where attr
     @assert attr in (:rcoord, :icoord) "script error: not supported attr($attr)."
-    (fieldtype(oid, attr) <: Nothing) ? 'N' : (attr = QuoteNode(attr); :("[$(join(getfield(oid, $attr), ','))]"))
+    (fieldtype(oid, attr) <: Nothing) ? 'N' : (attr = QuoteNode(attr); :("[$(join(getfield(oid, $attr), ", "))]"))
 end
 
 """
@@ -504,7 +504,7 @@ latexformat(T::Type{<:Operator}, l::LaTeX) = latexformats[nameof(T)] = l
 
 Show an operator.
 """
-Base.show(io::IO, opt::Operator) = @printf io "%s(%s,%s)" nameof(typeof(opt)) decimaltostr(opt.value) opt.id
+Base.show(io::IO, opt::Operator) = @printf io "%s(%s, %s)" nameof(typeof(opt)) decimaltostr(opt.value) opt.id
 Base.show(io::IO, ::MIME"text/latex", opt::Operator) = show(io, MIME"text/latex"(), latexstring(repr(opt)))
 
 """

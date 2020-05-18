@@ -562,7 +562,7 @@ end
 
 Show a labeled point.
 """
-Base.show(io::IO, p::Point) = @printf io "Point(%s,[%s],[%s])" p.pid join(string.(p.rcoord), ",") join(string.(p.icoord), ",")
+Base.show(io::IO, p::Point) = @printf io "Point(%s, %s, %s)" p.pid p.rcoord p.icoord
 
 """
     iterate(p::Point, state=1)
@@ -596,7 +596,7 @@ end
 
 Show a bond.
 """
-Base.show(io::IO, bond::Bond) = @printf io "Bond(%s,%s,%s)" bond.neighbor bond.spoint bond.epoint
+Base.show(io::IO, bond::Bond) = @printf io "Bond(%s, %s, %s)" bond.neighbor bond.spoint bond.epoint
 
 """
     reverse(bond::Bond) -> Bond
@@ -672,13 +672,14 @@ function Base.show(io::IO, lattice::AbstractLattice)
     if length(lattice.vectors) > 0
         @printf io "  with %s translation %s:\n" length(lattice.vectors) (length(lattice.vectors) == 1) ? "vector" : "vectors"
         for i = 1:length(lattice.vectors)
-            @printf io "    [%s]\n" join(lattice.vectors[i], ",")
+            #@printf io "    [%s]\n" join(lattice.vectors[i], ", ")
+            @printf io "    %s\n" lattice.vectors[i]
         end
     end
     if length(lattice.neighbors) > 0
         @printf io "  with %s %s of nearest neighbors:\n" length(lattice.neighbors) (length(lattice.neighbors) == 1) ? "order" : "orders"
         for (order, distance) in lattice.neighbors
-            @printf io "    %s=>%s\n" order distance
+            @printf io "    %s => %s\n" order distance
         end
     end
 end

@@ -63,7 +63,7 @@ end
 
     opt = FOperator(1.0, (FIndex(1, 2, 1, 1, 2), FIndex(1, 2, 1, 1, 1), FIndex(1, 1, 1, 2, 2), FIndex(1, 1, 1, 2, 1)))
     @test opt|>isnormalordered == false
-    @test repr(opt) == "c^{\\dagger}_{2,1,↓}c^{}_{2,1,↓}c^{\\dagger}_{1,1,↑}c^{}_{1,1,↑}"
+    @test repr(opt) == "c^{\\dagger}_{2, 1, ↓}c^{}_{2, 1, ↓}c^{\\dagger}_{1, 1, ↑}c^{}_{1, 1, ↑}"
 
     opt1 = FOperator(1.5, (FIndex(1, 2, 1, 1, 2), FIndex(1, 2, 1, 1, 1)))
     opt2 = FOperator(2.0, (FIndex(1, 2, 1, 1, 1), FIndex(1, 2, 1, 1, 2)))
@@ -77,7 +77,7 @@ end
 
     opt = BOperator(1.0, (FIndex(1, 1, 1, 1, 2), FIndex(1, 1, 1, 1, 1)))
     @test opt|>statistics == opt|>typeof|>statistics == 'B'
-    @test repr(opt) == "b^{\\dagger}_{1,1,↓}b^{}_{1,1,↓}"
+    @test repr(opt) == "b^{\\dagger}_{1, 1, ↓}b^{}_{1, 1, ↓}"
 end
 
 @testset "permute" begin
@@ -100,26 +100,26 @@ end
 
 @testset "FockCoupling" begin
     @test FockCoupling{2}(1.0)|>string == "FockCoupling{2}(value=1.0)"
-    @test FockCoupling{2}(1.0, atoms=(1, 1))|>string == "FockCoupling{2}(value=1.0,atoms=(1,1))"
-    @test FockCoupling{2}(1.0, atoms=(1, 1), spins=(1, 2))|>string == "FockCoupling{2}(value=1.0,atoms=(1,1),spins=(1,2))"
+    @test FockCoupling{2}(1.0, atoms=(1, 1))|>string == "FockCoupling{2}(value=1.0, atoms=(1, 1))"
+    @test FockCoupling{2}(1.0, atoms=(1, 1), spins=(1, 2))|>string == "FockCoupling{2}(value=1.0, atoms=(1, 1), spins=(1, 2))"
     @test FockCoupling{2}(2.0)|>repr == "2.0 {2}"
 
     fc1 = FockCoupling{2}(1.5, atoms=(2, 1), spins=(@subscript (x, 1)), centers=(1, 2))
     fc2 = FockCoupling{2}(2.0, atoms=(1, 2), orbitals=(@subscript (x, y) with x < y), centers=(1, 2))
-    @test fc1|>repr == "1.5 sl(2,1)⊗sp(x,1)@(1,2) with (*,$(fc1.id[1].spsub)) && (*,$(fc1.id[2].spsub))"
-    @test fc2|>repr == "2.0 sl(1,2)⊗ob(x,y)@(1,2) with ($(fc2.id[1].obsub),*) && ($(fc2.id[2].obsub),*)"
+    @test fc1|>repr == "1.5 sl(2, 1)⊗sp(x, 1)@(1, 2) with (*, $(fc1.id[1].spsub)) && (*, $(fc1.id[2].spsub))"
+    @test fc2|>repr == "2.0 sl(1, 2)⊗ob(x, y)@(1, 2) with ($(fc2.id[1].obsub), *) && ($(fc2.id[2].obsub), *)"
     fc = fc1 * fc2
-    @test fc|>repr == "3.0 sl(2,1,1,2)⊗ob(*,*,x,y)⊗sp(x,1,*,*)@(1,2,1,2) with (*,$(fc1.id[1].spsub)) && (*,$(fc1.id[2].spsub)) && ($(fc2.id[1].obsub),*) && ($(fc2.id[2].obsub),*)"
+    @test fc|>repr == "3.0 sl(2, 1, 1, 2)⊗ob(*, *, x, y)⊗sp(x, 1, *, *)@(1, 2, 1, 2) with (*, $(fc1.id[1].spsub)) && (*, $(fc1.id[2].spsub)) && ($(fc2.id[1].obsub), *) && ($(fc2.id[2].obsub), *)"
 
     fc1 = FockCoupling{2}(1.5, spins=(@subscript (x, 1)), centers=(1, 2))
     fc2 = FockCoupling{2}(2.0, orbitals=(@subscript (x, y) with x < y), centers=(1, 2))
     fc = fc1 ⊗ fc2
-    @test fc|>repr == "3.0 ob(x,y)⊗sp(x,1)@(1,2) with ($(fc2.id[1].obsub),$(fc1.id[2].spsub)) && ($(fc2.id[1].obsub),$(fc1.id[2].spsub))"
+    @test fc|>repr == "3.0 ob(x, y)⊗sp(x, 1)@(1, 2) with ($(fc2.id[1].obsub), $(fc1.id[2].spsub)) && ($(fc2.id[1].obsub), $(fc1.id[2].spsub))"
 
     fc1 = FockCoupling{2}(1.5, atoms=(2, 1), centers=(1, 2))
     fc2 = FockCoupling{2}(2.0, atoms=(1, 2), centers=(1, 2))
     fc = fc1 ⋅ fc2
-    @test fc|>repr == "3.0 sl(2,2)@(1,2)"
+    @test fc|>repr == "3.0 sl(2, 2)@(1, 2)"
 
     ex = expand(FockCoupling{2}(2.0, atoms=(1, 1)), PID(1, 1), Fock(atom=2, norbital=2, nspin=2, nnambu=2))
     @test collect(ex) == []
@@ -206,81 +206,81 @@ end
 end
 
 @testset "fockcoupling" begin
-    fc = fc"1.0 sl(1,1,1,1)⊗ob(α,α,β,β)⊗sp(σ,γ,σ,γ)⊗ph(2,1,2,1)@(1,1,2,2) with (α<β,σ≠γ)"
+    fc = fc"1.0 sl(1, 1, 1, 1)⊗ob(α, α, β, β)⊗sp(σ, γ, σ, γ)⊗ph(2, 1, 2, 1)@(1, 1, 2, 2) with (α<β, σ≠γ)"
     ob, sp = fc.obsubscripts[1].identifier, fc.spsubscripts[1].identifier
-    @test repr(fc) == "1.0 sl(1,1,1,1)⊗ob(α,α,β,β)⊗sp(σ,γ,σ,γ)⊗ph(2,1,2,1)@(1,1,2,2) with ($ob,$sp) && ($ob,$sp) && ($ob,$sp) && ($ob,$sp)"
+    @test repr(fc) == "1.0 sl(1, 1, 1, 1)⊗ob(α, α, β, β)⊗sp(σ, γ, σ, γ)⊗ph(2, 1, 2, 1)@(1, 1, 2, 2) with ($ob, $sp) && ($ob, $sp) && ($ob, $sp) && ($ob, $sp)"
 
-    fc = fc"1.0 sl(1,1,1,1)⊗ob(α,α,β,β)⊗sp(σ,γ,σ,γ)⊗ph(2,1,2,1)@(1,1,2,2)"
+    fc = fc"1.0 sl(1, 1, 1, 1)⊗ob(α, α, β, β)⊗sp(σ, γ, σ, γ)⊗ph(2, 1, 2, 1)@(1, 1, 2, 2)"
     ob, sp = fc.obsubscripts[1].identifier, fc.spsubscripts[1].identifier
-    @test repr(fc) == "1.0 sl(1,1,1,1)⊗ob(α,α,β,β)⊗sp(σ,γ,σ,γ)⊗ph(2,1,2,1)@(1,1,2,2) with ($ob,$sp) && ($ob,$sp) && ($ob,$sp) && ($ob,$sp)"
+    @test repr(fc) == "1.0 sl(1, 1, 1, 1)⊗ob(α, α, β, β)⊗sp(σ, γ, σ, γ)⊗ph(2, 1, 2, 1)@(1, 1, 2, 2) with ($ob, $sp) && ($ob, $sp) && ($ob, $sp) && ($ob, $sp)"
 
-    fc = fc"1.0 sl(1,1,1,1)⊗ob(α,α,β,β)⊗sp(σ,γ,σ,γ)⊗ph(2,1,2,1)"
+    fc = fc"1.0 sl(1, 1, 1, 1)⊗ob(α, α, β, β)⊗sp(σ, γ, σ, γ)⊗ph(2, 1, 2, 1)"
     ob, sp = fc.obsubscripts[1].identifier, fc.spsubscripts[1].identifier
-    @test repr(fc) == "1.0 sl(1,1,1,1)⊗ob(α,α,β,β)⊗sp(σ,γ,σ,γ)⊗ph(2,1,2,1) with ($ob,$sp) && ($ob,$sp) && ($ob,$sp) && ($ob,$sp)"
+    @test repr(fc) == "1.0 sl(1, 1, 1, 1)⊗ob(α, α, β, β)⊗sp(σ, γ, σ, γ)⊗ph(2, 1, 2, 1) with ($ob, $sp) && ($ob, $sp) && ($ob, $sp) && ($ob, $sp)"
 
-    fc = fc"1.0 sl(1,1,1,1)⊗ob(α,α,β,β)⊗sp(σ,γ,σ,γ)⊗ph(2,1,2,1) with (α<β,σ≠γ)"
+    fc = fc"1.0 sl(1, 1, 1, 1)⊗ob(α, α, β, β)⊗sp(σ, γ, σ, γ)⊗ph(2, 1, 2, 1) with (α<β, σ≠γ)"
     ob, sp = fc.obsubscripts[1].identifier, fc.spsubscripts[1].identifier
-    @test repr(fc) == "1.0 sl(1,1,1,1)⊗ob(α,α,β,β)⊗sp(σ,γ,σ,γ)⊗ph(2,1,2,1) with ($ob,$sp) && ($ob,$sp) && ($ob,$sp) && ($ob,$sp)"
+    @test repr(fc) == "1.0 sl(1, 1, 1, 1)⊗ob(α, α, β, β)⊗sp(σ, γ, σ, γ)⊗ph(2, 1, 2, 1) with ($ob, $sp) && ($ob, $sp) && ($ob, $sp) && ($ob, $sp)"
 
-    fc = fc"1.0 sl(1,1,1,1)⊗ob(α,α,β,β)⊗sp(σ,γ,σ,γ)⊗ph(2,1,2,1) with α<β,σ≠γ"
+    fc = fc"1.0 sl(1, 1, 1, 1)⊗ob(α, α, β, β)⊗sp(σ, γ, σ, γ)⊗ph(2, 1, 2, 1) with α<β, σ≠γ"
     ob, sp = fc.obsubscripts[1].identifier, fc.spsubscripts[1].identifier
-    @test repr(fc) == "1.0 sl(1,1,1,1)⊗ob(α,α,β,β)⊗sp(σ,γ,σ,γ)⊗ph(2,1,2,1) with ($ob,$sp) && ($ob,$sp) && ($ob,$sp) && ($ob,$sp)"
+    @test repr(fc) == "1.0 sl(1, 1, 1, 1)⊗ob(α, α, β, β)⊗sp(σ, γ, σ, γ)⊗ph(2, 1, 2, 1) with ($ob, $sp) && ($ob, $sp) && ($ob, $sp) && ($ob, $sp)"
 
-    fc = fc"1.0 sl(1,1,1,1)⊗ob(α,α,β,β)⊗sp(σ,γ,σ,γ)⊗ph(2,1,2,1) with (α<β,*)"
+    fc = fc"1.0 sl(1, 1, 1, 1)⊗ob(α, α, β, β)⊗sp(σ, γ, σ, γ)⊗ph(2, 1, 2, 1) with (α<β, *)"
     ob, sp = fc.obsubscripts[1].identifier, fc.spsubscripts[1].identifier
-    @test repr(fc) == "1.0 sl(1,1,1,1)⊗ob(α,α,β,β)⊗sp(σ,γ,σ,γ)⊗ph(2,1,2,1) with ($ob,$sp) && ($ob,$sp) && ($ob,$sp) && ($ob,$sp)"
+    @test repr(fc) == "1.0 sl(1, 1, 1, 1)⊗ob(α, α, β, β)⊗sp(σ, γ, σ, γ)⊗ph(2, 1, 2, 1) with ($ob, $sp) && ($ob, $sp) && ($ob, $sp) && ($ob, $sp)"
 
-    fc = fc"1.0 sl(1,1,1,1)⊗ob(α,α,β,β)⊗ph(2,1,2,1) with α<β"
+    fc = fc"1.0 sl(1, 1, 1, 1)⊗ob(α, α, β, β)⊗ph(2, 1, 2, 1) with α<β"
     ob, sp = fc.obsubscripts[1].identifier, fc.spsubscripts[1].identifier
-    @test repr(fc) == "1.0 sl(1,1,1,1)⊗ob(α,α,β,β)⊗ph(2,1,2,1) with ($ob,$sp) && ($ob,$sp) && ($ob,$sp) && ($ob,$sp)"
+    @test repr(fc) == "1.0 sl(1, 1, 1, 1)⊗ob(α, α, β, β)⊗ph(2, 1, 2, 1) with ($ob, $sp) && ($ob, $sp) && ($ob, $sp) && ($ob, $sp)"
 
-    fc = fc"1.0 sl(1,1,1,1)⊗ob(α,α,β,β)⊗sp(2,1,2,1) with α<β"
+    fc = fc"1.0 sl(1, 1, 1, 1)⊗ob(α, α, β, β)⊗sp(2, 1, 2, 1) with α<β"
     ob, sp = fc.obsubscripts[1].identifier, fc.spsubscripts[1].identifier
-    @test repr(fc) == "1.0 sl(1,1,1,1)⊗ob(α,α,β,β)⊗sp(2,1,2,1) with ($ob,$sp) && ($ob,$sp) && ($ob,$sp) && ($ob,$sp)"
+    @test repr(fc) == "1.0 sl(1, 1, 1, 1)⊗ob(α, α, β, β)⊗sp(2, 1, 2, 1) with ($ob, $sp) && ($ob, $sp) && ($ob, $sp) && ($ob, $sp)"
 
-    fc = fc"1.0 sl(1,1,1,1)⊗ob(1,1,1,1)⊗ph(2,1,2,1)"
-    @test repr(fc) == "1.0 sl(1,1,1,1)⊗ob(1,1,1,1)⊗ph(2,1,2,1)"
+    fc = fc"1.0 sl(1, 1, 1, 1)⊗ob(1, 1, 1, 1)⊗ph(2, 1, 2, 1)"
+    @test repr(fc) == "1.0 sl(1, 1, 1, 1)⊗ob(1, 1, 1, 1)⊗ph(2, 1, 2, 1)"
 
-    fc = fc"1.0 sl(1,1,1,1)⊗ph(2,1,2,1)"
-    @test repr(fc) == "1.0 sl(1,1,1,1)⊗ph(2,1,2,1)"
+    fc = fc"1.0 sl(1, 1, 1, 1)⊗ph(2, 1, 2, 1)"
+    @test repr(fc) == "1.0 sl(1, 1, 1, 1)⊗ph(2, 1, 2, 1)"
 
-    fc = fc"1.0 @(1,1,1,1)"
-    @test repr(fc) == "1.0 @(1,1,1,1)"
+    fc = fc"1.0 @(1, 1, 1, 1)"
+    @test repr(fc) == "1.0 @(1, 1, 1, 1)"
 
     fc = fc"1.0im {2}"
     @test repr(fc) == "1.0im {2}"
 end
 
 @testset "fockcouplings" begin
-    @test σ⁰"sp" == σ⁰("sp") && σ⁰"sp@(1,2)" == σ⁰("sp", centers=(1, 2))
-    @test σ⁰"ob" == σ⁰("ob") && σ⁰"ob@(1,2)" == σ⁰("ob", centers=(1, 2))
-    @test σ⁰"sl" == σ⁰("sl") && σ⁰"sl@(1,2)" == σ⁰("sl", centers=(1, 2))
-    @test σ⁰"ph" == σ⁰("ph") && σ⁰"ph@(1,2)" == σ⁰("ph", centers=(1, 2))
+    @test σ⁰"sp" == σ⁰("sp") && σ⁰"sp@(1, 2)" == σ⁰("sp", centers=(1, 2))
+    @test σ⁰"ob" == σ⁰("ob") && σ⁰"ob@(1, 2)" == σ⁰("ob", centers=(1, 2))
+    @test σ⁰"sl" == σ⁰("sl") && σ⁰"sl@(1, 2)" == σ⁰("sl", centers=(1, 2))
+    @test σ⁰"ph" == σ⁰("ph") && σ⁰"ph@(1, 2)" == σ⁰("ph", centers=(1, 2))
 
-    @test σˣ"sp" == σˣ("sp") && σˣ"sp@(1,2)" == σˣ("sp", centers=(1, 2))
-    @test σˣ"ob" == σˣ("ob") && σˣ"ob@(1,2)" == σˣ("ob", centers=(1, 2))
-    @test σˣ"sl" == σˣ("sl") && σˣ"sl@(1,2)" == σˣ("sl", centers=(1, 2))
-    @test σˣ"ph" == σˣ("ph") && σˣ"ph@(1,2)" == σˣ("ph", centers=(1, 2))
+    @test σˣ"sp" == σˣ("sp") && σˣ"sp@(1, 2)" == σˣ("sp", centers=(1, 2))
+    @test σˣ"ob" == σˣ("ob") && σˣ"ob@(1, 2)" == σˣ("ob", centers=(1, 2))
+    @test σˣ"sl" == σˣ("sl") && σˣ"sl@(1, 2)" == σˣ("sl", centers=(1, 2))
+    @test σˣ"ph" == σˣ("ph") && σˣ"ph@(1, 2)" == σˣ("ph", centers=(1, 2))
 
-    @test σʸ"sp" == σʸ("sp") && σʸ"sp@(1,2)" == σʸ("sp", centers=(1, 2))
-    @test σʸ"ob" == σʸ("ob") && σʸ"ob@(1,2)" == σʸ("ob", centers=(1, 2))
-    @test σʸ"sl" == σʸ("sl") && σʸ"sl@(1,2)" == σʸ("sl", centers=(1, 2))
-    @test σʸ"ph" == σʸ("ph") && σʸ"ph@(1,2)" == σʸ("ph", centers=(1, 2))
+    @test σʸ"sp" == σʸ("sp") && σʸ"sp@(1, 2)" == σʸ("sp", centers=(1, 2))
+    @test σʸ"ob" == σʸ("ob") && σʸ"ob@(1, 2)" == σʸ("ob", centers=(1, 2))
+    @test σʸ"sl" == σʸ("sl") && σʸ"sl@(1, 2)" == σʸ("sl", centers=(1, 2))
+    @test σʸ"ph" == σʸ("ph") && σʸ"ph@(1, 2)" == σʸ("ph", centers=(1, 2))
 
-    @test σᶻ"sp" == σᶻ("sp") && σᶻ"sp@(1,2)" == σᶻ("sp", centers=(1, 2))
-    @test σᶻ"ob" == σᶻ("ob") && σᶻ"ob@(1,2)" == σᶻ("ob", centers=(1, 2))
-    @test σᶻ"sl" == σᶻ("sl") && σᶻ"sl@(1,2)" == σᶻ("sl", centers=(1, 2))
-    @test σᶻ"ph" == σᶻ("ph") && σᶻ"ph@(1,2)" == σᶻ("ph", centers=(1, 2))
+    @test σᶻ"sp" == σᶻ("sp") && σᶻ"sp@(1, 2)" == σᶻ("sp", centers=(1, 2))
+    @test σᶻ"ob" == σᶻ("ob") && σᶻ"ob@(1, 2)" == σᶻ("ob", centers=(1, 2))
+    @test σᶻ"sl" == σᶻ("sl") && σᶻ"sl@(1, 2)" == σᶻ("sl", centers=(1, 2))
+    @test σᶻ"ph" == σᶻ("ph") && σᶻ"ph@(1, 2)" == σᶻ("ph", centers=(1, 2))
 
-    @test σ⁺"sp" == σ⁺("sp") && σ⁺"sp@(1,2)" == σ⁺("sp", centers=(1, 2))
-    @test σ⁺"ob" == σ⁺("ob") && σ⁺"ob@(1,2)" == σ⁺("ob", centers=(1, 2))
-    @test σ⁺"sl" == σ⁺("sl") && σ⁺"sl@(1,2)" == σ⁺("sl", centers=(1, 2))
-    @test σ⁺"ph" == σ⁺("ph") && σ⁺"ph@(1,2)" == σ⁺("ph", centers=(1, 2))
+    @test σ⁺"sp" == σ⁺("sp") && σ⁺"sp@(1, 2)" == σ⁺("sp", centers=(1, 2))
+    @test σ⁺"ob" == σ⁺("ob") && σ⁺"ob@(1, 2)" == σ⁺("ob", centers=(1, 2))
+    @test σ⁺"sl" == σ⁺("sl") && σ⁺"sl@(1, 2)" == σ⁺("sl", centers=(1, 2))
+    @test σ⁺"ph" == σ⁺("ph") && σ⁺"ph@(1, 2)" == σ⁺("ph", centers=(1, 2))
 
-    @test σ⁻"sp" == σ⁻("sp") && σ⁻"sp@(1,2)" == σ⁻("sp", centers=(1, 2))
-    @test σ⁻"ob" == σ⁻("ob") && σ⁻"ob@(1,2)" == σ⁻("ob", centers=(1, 2))
-    @test σ⁻"sl" == σ⁻("sl") && σ⁻"sl@(1,2)" == σ⁻("sl", centers=(1, 2))
-    @test σ⁻"ph" == σ⁻("ph") && σ⁻"ph@(1,2)" == σ⁻("ph", centers=(1, 2))
+    @test σ⁻"sp" == σ⁻("sp") && σ⁻"sp@(1, 2)" == σ⁻("sp", centers=(1, 2))
+    @test σ⁻"ob" == σ⁻("ob") && σ⁻"ob@(1, 2)" == σ⁻("ob", centers=(1, 2))
+    @test σ⁻"sl" == σ⁻("sl") && σ⁻"sl@(1, 2)" == σ⁻("sl", centers=(1, 2))
+    @test σ⁻"ph" == σ⁻("ph") && σ⁻"ph@(1, 2)" == σ⁻("ph", centers=(1, 2))
 end
 
 @testset "Onsite" begin

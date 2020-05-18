@@ -70,7 +70,7 @@ end
     @test opt|>statistics == opt|>typeof|>statistics == 'B'
     @test opt' == SOperator(1.0, (SIndex('a', 1, 1, 0.5, '+'), SIndex('a', 1, 1, 0.5, '-')))
     @test isHermitian(opt)
-    @test repr(opt) == "S^{+}_{1,1}S^{-}_{1,1}"
+    @test repr(opt) == "S^{+}_{1, 1}S^{-}_{1, 1}"
 end
 
 @testset "permute" begin
@@ -94,18 +94,18 @@ end
 end
 
 @testset "SpinCoupling" begin
-    @test SpinCoupling{2}(1.0, tags=('+', '-'))|>string == "SpinCoupling(value=1.0,tags=(+,-))"
-    @test SpinCoupling{2}(1.0, atoms=(1, 1), tags=('z', 'z'))|>string == "SpinCoupling(value=1.0,atoms=(1,1),tags=(z,z))"
-    @test SpinCoupling{2}(1.0, atoms=(1, 1), orbitals=(1, 2), tags=('-', '+'))|>string == "SpinCoupling(value=1.0,atoms=(1,1),orbitals=(1,2),tags=(-,+))"
+    @test SpinCoupling{2}(1.0, tags=('+', '-'))|>string == "SpinCoupling(value=1.0, tags=(+, -))"
+    @test SpinCoupling{2}(1.0, atoms=(1, 1), tags=('z', 'z'))|>string == "SpinCoupling(value=1.0, atoms=(1, 1), tags=(z, z))"
+    @test SpinCoupling{2}(1.0, atoms=(1, 1), orbitals=(1, 2), tags=('-', '+'))|>string == "SpinCoupling(value=1.0, atoms=(1, 1), orbitals=(1, 2), tags=(-, +))"
     @test SpinCoupling{2}(2.0, tags=('x', 'y'))|>repr == "2.0 SxSy"
 
     sc1 = SpinCoupling{2}(1.5, tags=('+', '-'), atoms=(1, 2), orbitals=(@subscript (x, y) with x > y), centers=(1, 2))
     sc2 = SpinCoupling{2}(2.0, tags=('+', '-'), atoms=(1, 2), orbitals=(@subscript (x, y) with x < y), centers=(1, 2))
-    @test sc1|>repr == "1.5 S+S- sl(1,2)⊗ob(x,y)@(1,2) with $(sc1.id[1].subscript) && $(sc1.id[2].subscript)"
-    @test sc2|>repr == "2.0 S+S- sl(1,2)⊗ob(x,y)@(1,2) with $(sc2.id[1].subscript) && $(sc2.id[2].subscript)"
+    @test sc1|>repr == "1.5 S+S- sl(1, 2)⊗ob(x, y)@(1, 2) with $(sc1.id[1].subscript) && $(sc1.id[2].subscript)"
+    @test sc2|>repr == "2.0 S+S- sl(1, 2)⊗ob(x, y)@(1, 2) with $(sc2.id[1].subscript) && $(sc2.id[2].subscript)"
 
     sc = sc1 * sc2
-    @test sc|>repr == "3.0 S+S-S+S- sl(1,2,1,2)⊗ob(x,y,x,y)@(1,2,1,2) with $(sc1.id[1].subscript) && $(sc1.id[2].subscript) && $(sc2.id[1].subscript) && $(sc2.id[2].subscript)"
+    @test sc|>repr == "3.0 S+S-S+S- sl(1, 2, 1, 2)⊗ob(x, y, x, y)@(1, 2, 1, 2) with $(sc1.id[1].subscript) && $(sc1.id[2].subscript) && $(sc2.id[1].subscript) && $(sc2.id[2].subscript)"
 
     ex = expand(SpinCoupling{2}(2.0, tags=('+', '-'), atoms=(1, 1)), PID(1, 1), Spin(atom=2, norbital=2, spin=1.0))
     @test collect(ex) == []
@@ -160,51 +160,51 @@ end
 end
 
 @testset "spincoupling" begin
-    sc = sc"1.0 S+S- sl(1,1)⊗ob(α,β)@(1,2) with α<β"
+    sc = sc"1.0 S+S- sl(1, 1)⊗ob(α, β)@(1, 2) with α<β"
     ob = sc.subscripts[1].identifier
-    @test repr(sc) == "1.0 S+S- sl(1,1)⊗ob(α,β)@(1,2) with $ob && $ob"
+    @test repr(sc) == "1.0 S+S- sl(1, 1)⊗ob(α, β)@(1, 2) with $ob && $ob"
 
-    sc = sc"1.0 S+S- sl(1,1)⊗ob(α,β)@(1,2)"
+    sc = sc"1.0 S+S- sl(1, 1)⊗ob(α, β)@(1, 2)"
     ob = sc.subscripts[1].identifier
-    @test repr(sc) == "1.0 S+S- sl(1,1)⊗ob(α,β)@(1,2) with $ob && $ob"
+    @test repr(sc) == "1.0 S+S- sl(1, 1)⊗ob(α, β)@(1, 2) with $ob && $ob"
 
-    sc = sc"1.0 S+S- sl(1,1)⊗ob(α,β)"
+    sc = sc"1.0 S+S- sl(1, 1)⊗ob(α, β)"
     ob = sc.subscripts[1].identifier
-    @test repr(sc) == "1.0 S+S- sl(1,1)⊗ob(α,β) with $ob && $ob"
+    @test repr(sc) == "1.0 S+S- sl(1, 1)⊗ob(α, β) with $ob && $ob"
 
-    sc = sc"1.0 S+S- sl(1,1)⊗ob(1,2)@(1,2)"
-    @test repr(sc) == "1.0 S+S- sl(1,1)⊗ob(1,2)@(1,2)"
+    sc = sc"1.0 S+S- sl(1, 1)⊗ob(1, 2)@(1, 2)"
+    @test repr(sc) == "1.0 S+S- sl(1, 1)⊗ob(1, 2)@(1, 2)"
 
-    sc = sc"1.0 S+S- sl(1,1)@(1,2)"
-    @test repr(sc) == "1.0 S+S- sl(1,1)@(1,2)"
+    sc = sc"1.0 S+S- sl(1, 1)@(1, 2)"
+    @test repr(sc) == "1.0 S+S- sl(1, 1)@(1, 2)"
 
-    sc = sc"1.0 S+S- @(1,2)"
-    @test repr(sc) == "1.0 S+S- @(1,2)"
+    sc = sc"1.0 S+S- @(1, 2)"
+    @test repr(sc) == "1.0 S+S- @(1, 2)"
 
     sc = sc"1.0 S+S-"
     @test repr(sc) == "1.0 S+S-"
 end
 
 @testset "spincouplings" begin
-    @test heisenberg"sl(1,1)⊗ob(1,3)@(1,2)" == Heisenberg(centers=(1, 2), atoms=(1, 1), orbitals=(1, 3))
-    @test heisenberg"sl(1,1)⊗ob(1,3)" == Heisenberg(atoms=(1, 1), orbitals=(1, 3))
-    @test heisenberg"@(1,2)" == Heisenberg(centers=(1, 2))
-    @test heisenberg"ob(1,3)" == Heisenberg(orbitals=(1, 3))
-    @test heisenberg"sl(1,1)" == Heisenberg(atoms=(1, 1))
+    @test heisenberg"sl(1, 1)⊗ob(1, 3)@(1, 2)" == Heisenberg(centers=(1, 2), atoms=(1, 1), orbitals=(1, 3))
+    @test heisenberg"sl(1, 1)⊗ob(1, 3)" == Heisenberg(atoms=(1, 1), orbitals=(1, 3))
+    @test heisenberg"@(1, 2)" == Heisenberg(centers=(1, 2))
+    @test heisenberg"ob(1, 3)" == Heisenberg(orbitals=(1, 3))
+    @test heisenberg"sl(1, 1)" == Heisenberg(atoms=(1, 1))
     @test heisenberg"" == heisenberg"+-z" == Heisenberg()
     @test heisenberg"xyz" == Heisenberg("xyz")
 
-    @test ising"x" == Ising('x') && ising"x sl(1,1)⊗ob(1,3)@(1,2)" == Ising('x', centers=(1, 2), atoms=(1, 1), orbitals=(1, 3))
-    @test ising"y" == Ising('y') && ising"y sl(1,1)⊗ob(1,3)@(1,2)" == Ising('y', centers=(1, 2), atoms=(1, 1), orbitals=(1, 3))
-    @test ising"z" == Ising('z') && ising"z sl(1,1)⊗ob(1,3)@(1,2)" == Ising('z', centers=(1, 2), atoms=(1, 1), orbitals=(1, 3))
+    @test ising"x" == Ising('x') && ising"x sl(1, 1)⊗ob(1, 3)@(1, 2)" == Ising('x', centers=(1, 2), atoms=(1, 1), orbitals=(1, 3))
+    @test ising"y" == Ising('y') && ising"y sl(1, 1)⊗ob(1, 3)@(1, 2)" == Ising('y', centers=(1, 2), atoms=(1, 1), orbitals=(1, 3))
+    @test ising"z" == Ising('z') && ising"z sl(1, 1)⊗ob(1, 3)@(1, 2)" == Ising('z', centers=(1, 2), atoms=(1, 1), orbitals=(1, 3))
 
-    @test gamma"x" == Gamma('x') && gamma"x sl(1,1)⊗ob(1,3)@(1,2)" == Gamma('x', centers=(1, 2), atoms=(1, 1), orbitals=(1, 3))
-    @test gamma"y" == Gamma('y') && gamma"y sl(1,1)⊗ob(1,3)@(1,2)" == Gamma('y', centers=(1, 2), atoms=(1, 1), orbitals=(1, 3))
-    @test gamma"z" == Gamma('z') && gamma"z sl(1,1)⊗ob(1,3)@(1,2)" == Gamma('z', centers=(1, 2), atoms=(1, 1), orbitals=(1, 3))
+    @test gamma"x" == Gamma('x') && gamma"x sl(1, 1)⊗ob(1, 3)@(1, 2)" == Gamma('x', centers=(1, 2), atoms=(1, 1), orbitals=(1, 3))
+    @test gamma"y" == Gamma('y') && gamma"y sl(1, 1)⊗ob(1, 3)@(1, 2)" == Gamma('y', centers=(1, 2), atoms=(1, 1), orbitals=(1, 3))
+    @test gamma"z" == Gamma('z') && gamma"z sl(1, 1)⊗ob(1, 3)@(1, 2)" == Gamma('z', centers=(1, 2), atoms=(1, 1), orbitals=(1, 3))
 
-    @test dm"x" == DM('x') && dm"x sl(1,1)⊗ob(1,3)@(1,2)" == DM('x', centers=(1, 2), atoms=(1, 1), orbitals=(1, 3))
-    @test dm"y" == DM('y') && dm"y sl(1,1)⊗ob(1,3)@(1,2)" == DM('y', centers=(1, 2), atoms=(1, 1), orbitals=(1, 3))
-    @test dm"z" == DM('z') && dm"z sl(1,1)⊗ob(1,3)@(1,2)" == DM('z', centers=(1, 2), atoms=(1, 1), orbitals=(1, 3))
+    @test dm"x" == DM('x') && dm"x sl(1, 1)⊗ob(1, 3)@(1, 2)" == DM('x', centers=(1, 2), atoms=(1, 1), orbitals=(1, 3))
+    @test dm"y" == DM('y') && dm"y sl(1, 1)⊗ob(1, 3)@(1, 2)" == DM('y', centers=(1, 2), atoms=(1, 1), orbitals=(1, 3))
+    @test dm"z" == DM('z') && dm"z sl(1, 1)⊗ob(1, 3)@(1, 2)" == DM('z', centers=(1, 2), atoms=(1, 1), orbitals=(1, 3))
 
     @test sˣ"" == Sˣ() && sˣ"sl(1)⊗ob(2)" == Sˣ(atom=1, orbital=2)
     @test sʸ"" == Sʸ() && sʸ"sl(1)⊗ob(2)" == Sʸ(atom=1, orbital=2)

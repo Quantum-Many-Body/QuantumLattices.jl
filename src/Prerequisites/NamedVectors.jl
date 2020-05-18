@@ -66,7 +66,7 @@ Base.isless(nv1::NamedVector, nv2::NamedVector) = isless(efficientoperations, nv
 
 Show a concrete `NamedVector`.
 """
-Base.show(io::IO, nv::NamedVector) = @printf io "%s(%s)" nameof(typeof(nv)) join(repr.(values(nv)), ',')
+Base.show(io::IO, nv::NamedVector) = @printf io "%s(%s)" nameof(typeof(nv)) join(repr.(values(nv)), ", ")
 
 """
     hash(nv::NamedVector, h::UInt)

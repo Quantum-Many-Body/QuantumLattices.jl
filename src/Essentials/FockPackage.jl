@@ -358,11 +358,11 @@ function Base.show(io::IO, fc::FockCoupling)
     cache = []
     for attrname in (:centers, :atoms, :orbitals, :spins, :nambus)
         attrvalue = getproperty(fc.id, attrname)
-        any(attrvalue .≠ wildcard) && @printf io ",%s=(%s)" attrname join(attrvalue, ",")
+        any(attrvalue .≠ wildcard) && @printf io ", %s=(%s)" attrname join(attrvalue, ", ")
     end
     for attrname in (:obsubs, :spsubs)
         attrvalue = getproperty(fc.id, attrname)
-        all(attrvalue .== wildcard) || all(attrvalue .== constant) || @printf io ",%s=(%s)" attrname join(attrvalue, ",")
+        all(attrvalue .== wildcard) || all(attrvalue .== constant) || @printf io ", %s=(%s)" attrname join(attrvalue, ", ")
     end
     @printf io ")"
 end
@@ -377,15 +377,15 @@ function Base.repr(fc::FockCoupling)
     flag = true
     for (attrname, abbr) in zip((:atoms, :orbitals, :spins, :nambus), ("sl", "ob", "sp", "ph"))
         attrvalue = getproperty(fc.id, attrname)
-        any(attrvalue .≠ wildcard) && push!(cache, @sprintf "%s(%s)" abbr join(attrvalue, ','))
+        any(attrvalue .≠ wildcard) && push!(cache, @sprintf "%s(%s)" abbr join(attrvalue, ", "))
     end
     result = decimaltostr(fc.value)
     length(cache) > 0 && (flag = false; result = @sprintf "%s %s" result join(cache, "⊗"))
-    any((centers = fc.id.centers) .≠ wildcard) && (flag = false; result = @sprintf "%s%s@(%s)" result ((length(cache) > 0) ? "" : " ") join(centers, ','))
+    any((centers = fc.id.centers) .≠ wildcard) && (flag = false; result = @sprintf "%s%s@(%s)" result ((length(cache) > 0) ? "" : " ") join(centers, ", "))
     obsubs, spsubs = fc.id.obsubs, fc.id.spsubs
     ((all(obsubs .== wildcard) || all(obsubs .== constant)) && (all(spsubs .== wildcard) || all(spsubs .== constant))) || (
         flag = false;
-        result = @sprintf "%s with %s" result join(((@sprintf "(%s,%s)" obsub spsub) for (obsub, spsub) in zip(obsubs, spsubs)), " && ")
+        result = @sprintf "%s with %s" result join(((@sprintf "(%s, %s)" obsub spsub) for (obsub, spsub) in zip(obsubs, spsubs)), " && ")
         )
     flag && (result = @sprintf "%s {%s}" result rank(fc))
     return result
@@ -577,10 +577,12 @@ Construct a FockCoupling from a literal string.
 macro fc_str(str)
     ps = split(str, " with ")
     conditions = (length(ps) == 2) ? fcconditions(ps[2]) : nothing
-    ps = split(ps[1], ' ')
+    pos=findfirst(x->x∈('@', '{', 's', 'o', 'p'), ps[1])
+    @assert pos<length(ps[1]) "@fc_str error: wrong input pattern."
+    ps = (ps[1][1:pos-1], replace(ps[1][pos:end], " "=>""))
     coeff = eval(Meta.parse(ps[1]))
-    if (ps[2][1] == '{') && (ps[2][3] == '}')
-        N = parse(Int, ps[2][2])
+    if (ps[2][1] == '{') && (ps[2][end] == '}')
+        N = parse(Int, ps[2][end-1])
         return FockCoupling{N}(coeff)
     else
         attrpairs = []
@@ -621,14 +623,14 @@ function fccomponent(str::AbstractString)
     return attrname => attrvalue
 end
 
-σᵅsplit(str::AbstractString) = (ps = split(str, '@');  (length(ps) == 1) ? (ps[1], nothing) : (length(ps) == 2) ? (ps[1], couplingcenters(ps[2])) : "σᵅsplit error: wrong input pattern.")
+σᵅsplit(str::AbstractString) = (ps = split(replace(str, " "=>""), '@');  (length(ps) == 1) ? (ps[1], nothing) : (length(ps) == 2) ? (ps[1], couplingcenters(ps[2])) : "σᵅsplit error: wrong input pattern.")
 σᵅname(mode::AbstractString) = (mode == "sp") ? :spins : (mode == "ob") ? :orbitals : (mode == "sl") ? :atoms : (mode == "ph") ? :nambus : error("σᵅname error: wrong input mode.")
 
 """
-    σ⁰"sp"/σ⁰"sp@(c₁,c₂)" -> Couplings
-    σ⁰"ob"/σ⁰"ob@(c₁,c₂)" -> Couplings
-    σ⁰"sl"/σ⁰"sl@(c₁,c₂)" -> Couplings
-    σ⁰"ph"/σ⁰"ph@(c₁,c₂)" -> Couplings
+    σ⁰"sp"/σ⁰"sp@(c₁, c₂)" -> Couplings
+    σ⁰"ob"/σ⁰"ob@(c₁, c₂)" -> Couplings
+    σ⁰"sl"/σ⁰"sl@(c₁, c₂)" -> Couplings
+    σ⁰"ph"/σ⁰"ph@(c₁, c₂)" -> Couplings
 
 The Pauli matrix σ⁰, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
 """
@@ -640,10 +642,10 @@ macro σ⁰_str(str::String)
 end
 
 """
-    σˣ"sp"/σˣ"sp@(c₁,c₂)" -> Couplings
-    σˣ"ob"/σˣ"ob@(c₁,c₂)" -> Couplings
-    σˣ"sl"/σˣ"sl@(c₁,c₂)" -> Couplings
-    σˣ"ph"/σˣ"ph@(c₁,c₂)" -> Couplings
+    σˣ"sp"/σˣ"sp@(c₁, c₂)" -> Couplings
+    σˣ"ob"/σˣ"ob@(c₁, c₂)" -> Couplings
+    σˣ"sl"/σˣ"sl@(c₁, c₂)" -> Couplings
+    σˣ"ph"/σˣ"ph@(c₁, c₂)" -> Couplings
 
 The Pauli matrix σˣ, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
 """
@@ -655,10 +657,10 @@ macro σˣ_str(str::String)
 end
 
 """
-    σʸ"sp"/σʸ"sp@(c₁,c₂)" -> Couplings
-    σʸ"ob"/σʸ"ob@(c₁,c₂)" -> Couplings
-    σʸ"sl"/σʸ"sl@(c₁,c₂)" -> Couplings
-    σʸ"ph"/σʸ"ph@(c₁,c₂)" -> Couplings
+    σʸ"sp"/σʸ"sp@(c₁, c₂)" -> Couplings
+    σʸ"ob"/σʸ"ob@(c₁, c₂)" -> Couplings
+    σʸ"sl"/σʸ"sl@(c₁, c₂)" -> Couplings
+    σʸ"ph"/σʸ"ph@(c₁, c₂)" -> Couplings
 
 The Pauli matrix σʸ, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
 """
@@ -670,10 +672,10 @@ macro σʸ_str(str::String)
 end
 
 """
-    σᶻ"sp"/σᶻ"sp@(c₁,c₂)" -> Couplings
-    σᶻ"ob"/σᶻ"ob@(c₁,c₂)" -> Couplings
-    σᶻ"sl"/σᶻ"sl@(c₁,c₂)" -> Couplings
-    σᶻ"ph"/σᶻ"ph@(c₁,c₂)" -> Couplings
+    σᶻ"sp"/σᶻ"sp@(c₁, c₂)" -> Couplings
+    σᶻ"ob"/σᶻ"ob@(c₁, c₂)" -> Couplings
+    σᶻ"sl"/σᶻ"sl@(c₁, c₂)" -> Couplings
+    σᶻ"ph"/σᶻ"ph@(c₁, c₂)" -> Couplings
 
 The Pauli matrix σᶻ, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
 """
@@ -685,10 +687,10 @@ macro σᶻ_str(str::String)
 end
 
 """
-    σ⁺"sp"/σ⁺"sp@(c₁,c₂)" -> Couplings
-    σ⁺"ob"/σ⁺"ob@(c₁,c₂)" -> Couplings
-    σ⁺"sl"/σ⁺"sl@(c₁,c₂)" -> Couplings
-    σ⁺"ph"/σ⁺"ph@(c₁,c₂)" -> Couplings
+    σ⁺"sp"/σ⁺"sp@(c₁, c₂)" -> Couplings
+    σ⁺"ob"/σ⁺"ob@(c₁, c₂)" -> Couplings
+    σ⁺"sl"/σ⁺"sl@(c₁, c₂)" -> Couplings
+    σ⁺"ph"/σ⁺"ph@(c₁, c₂)" -> Couplings
 
 The Pauli matrix σ⁺, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
 """
@@ -700,10 +702,10 @@ macro σ⁺_str(str::String)
 end
 
 """
-    σ⁻"sp"/σ⁻"sp@(c₁,c₂)" -> Couplings
-    σ⁻"ob"/σ⁻"ob@(c₁,c₂)" -> Couplings
-    σ⁻"sl"/σ⁻"sl@(c₁,c₂)" -> Couplings
-    σ⁻"ph"/σ⁻"ph@(c₁,c₂)" -> Couplings
+    σ⁻"sp"/σ⁻"sp@(c₁, c₂)" -> Couplings
+    σ⁻"ob"/σ⁻"ob@(c₁, c₂)" -> Couplings
+    σ⁻"sl"/σ⁻"sl@(c₁, c₂)" -> Couplings
+    σ⁻"ph"/σ⁻"ph@(c₁, c₂)" -> Couplings
 
 The Pauli matrix σ⁻, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
 """
@@ -787,7 +789,7 @@ function fockcouplingnambus(::Val{:Pairing}, nambus::NTuple{2, Any}, ranges::NTu
     @assert ranges == (2, 2) "fockcouplingnambus error: ranges for Pairing terms must be (2, 2)."
     n1 = isa(nambus[1], Int) ? ((0 < nambus[1] <= 2) ? nambus[1] : error("fockcouplingnambus error: nambu out of range.")) : ANNIHILATION
     n2 = isa(nambus[2], Int) ? ((0 < nambus[2] <= 2) ? nambus[2] : error("fockcouplingnambus error: nambu out of range.")) : ANNIHILATION
-    return (n1,n2)
+    return (n1, n2)
 end
 function expand!(operators::Operators, term::Pairing, bond::AbstractBond, config::IDFConfig,
                 table::Union{Table, Nothing}=nothing,
