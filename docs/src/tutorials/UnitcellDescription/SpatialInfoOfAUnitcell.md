@@ -2,49 +2,16 @@
 CurrentModule = QuantumLattices
 ```
 
+# Spatial info of a unitcell
+
 ```@setup unitcell
 push!(LOAD_PATH, "../../../src/")
 using QuantumLattices
 ```
 
-# Unitcell Description
+The first step toward the complete description of a quantum lattice system is the understanding of the spatial info of a unitcell.
 
-A quantum lattice system can be completely described within its unitcell. Basically, this description should contain three types of information:
-
-1) the spatial information, such as the coordinates of the points contained in the unitcell;
-2) the internal degrees of freedom, such as the local Hilbert space on each point;
-3) the couplings among different degrees of freedom, such as the interaction terms in the Hamiltonian.
-
-In theory, as long as the above information is told, one could easily write down the operator representation of the Hamiltonian of the system. For example, in the phrase *"the single orbital electronic Hubbard model with only nearest neighbor hopping on a one dimensional lattice with only two sites"*, *"one dimensional lattice with only two sites"* is the spatial information, *"single orbital electronic"* defines the local Hilbert spaces, and *"Hubbard model with only nearest neighbor hopping"* describes the terms present in the Hamiltonian. From this phrase, we also know that the Hamiltonian of the system is
-
-```math
-H=tc^†_{1↑}c_{2↑}+tc^†_{2↑}c_{1↑}+tc^†_{1↓}c_{2↓}+tc^†_{2↓}c_{1↓}+Uc^†_{1↑}c_{1↑}c^†_{1↓}c_{1↓}+Uc^†_{2↑}c_{2↑}c^†_{2↓}c_{2↓}
-```
-
-where ``t`` is the hopping amplitude and ``U`` is the Hubbard interaction strength. Actually, the **unitcell description framework** follows exactly after the above train of thought. For example, the aforementioned system can be constructed by the following codes
-
-```@example
-using QuantumLattices
-using SymPy: symbols
-
-# define the unitcell
-lattice = Lattice("L2P", [Point(PID(1), (0.0,)), Point(PID(2), (1.0,))])
-
-# define the internal degrees of freedom
-config = IDFConfig{Fock}(pid->Fock(norbital=1, nspin=2, nnambu=2), lattice.pids)
-
-# define the terms
-t = Hopping{'F'}(:t, symbols("t", real=true), 1)
-U = Hubbard{'F'}(:U, symbols("U", real=true))
-
-# get the Hamiltonian
-operators = expand(Generator((t, U), Bonds(lattice), config, nothing, false))
-```
-The last line displays all the generated operators in the Hamiltonian in the latex form. In the following sections, we will explain in brief how these codes work. For detailed explanations, please refer to the manual of [`Essentials`](@ref essentials).
-
-## Spatial info of a unitcell
-
-### Point
+## Point
 
 The basic data structure encoding the spatial info of a unitcell is [`Point`](@ref).
 
@@ -63,25 +30,25 @@ knowledge of the groupings of lattice points. Therefore, we provide another attr
 Let's see some examples.
 
 You can specify both the `:scope` attribute and the `:site` attribute during the initialization of a [`PID`](@ref):
-```@example unitcell
+```@repl unitcell
 PID("WhateverYouWant", 1)
 ```
 Or, you can omit the `:scope` attribute:
-```@example unitcell
+```@repl unitcell
 PID(1)
 ```
-Then the `:scope` attribute get a default value `'T'`, which is short for the nick name of my girl friend.
+Then the `:scope` attribute get a default value `'T'`, which is short for the nick name of my wife.
 
 At the construction of a [`Point`](@ref), `:rcoord` and `:icoord` can accept tuples as inputs, such as
-```@example unitcell
+```@repl unitcell
 Point(PID(1), (0.0,), (0.0,))
 ```
 If the `:icoord` is omitted, it will be initialized by a zero [`StaticArrays.SVector`](https://github.com/JuliaArrays/StaticArrays.jl):
-```@example unitcell
+```@repl unitcell
 Point(PID(1), (0.0,))
 ```
 
-### Lattice
+## Lattice
 
 [`Lattice`](@ref) is the simplest structure to encode all the spatial info within a unitcell. Apparently, it must contain all the points of a unitcell. Besides, a unitcell can assume either open or periodic boundary for every spatial dimension, thus a [`Lattice`](@ref) should also contain the translation vectors. Other stuff also appears to be useful, such as the name, the reciprocals dual to the translation vectors, and the bond length of each order of nearest neighbors. Therefore, in this package, [`Lattice`](@ref) gets seven attributes:
 * `name::String`: the name of the lattice
@@ -94,7 +61,7 @@ Point(PID(1), (0.0,))
 Here, the `:pids`, `:rcoords` and `:icoords` attributes decompose the points in a lattice, which makes it convenient for global operations on the lattice.
 
 Points can be used directly to construct a lattice, whereas `:vectors` and `neighbors` can be assigned by keyword arguments:
-```@example unitcell
+```@repl unitcell
 Lattice("L2P", [Point(PID(1), (0.0,)), Point(PID(2), (1.0,))],
         vectors=[[2.0]],
         neighbors=Dict(1=>1.0, 2=>2.0)
@@ -102,7 +69,7 @@ Lattice("L2P", [Point(PID(1), (0.0,)), Point(PID(2), (1.0,))],
 ```
 
 The `:neighbors` keyword argument can also be a natural number, which sets the highest order of nearest neighbors, and the order-distance map of nearest neighbors can be computed automatically by the construction function:
-```@example unitcell
+```@repl unitcell
 Lattice("L2P", [Point(PID(1), (0.0,)), Point(PID(2), (1.0,))],
         vectors=[[2.0]],
         neighbors=2
@@ -110,13 +77,13 @@ Lattice("L2P", [Point(PID(1), (0.0,)), Point(PID(2), (1.0,))],
 ```
 
 It is noted that the `:vectors` and `:neighbors` attributes can also be omitted at the initialization, then `:vectors` will be set to be empty and `:neighbors` to be 1 upon the call of the construction function:
-```@example unitcell
+```@repl unitcell
 Lattice("L2P", [Point(PID(1), (0.0,)), Point(PID(2), (1.0,))])
 ```
 
 In all cases, the `:reciprocals` attributes need not be assigned because it can be deduced from the input `:vectors`.
 
-### Bonds
+## Bonds
 
 One of the most important functions of a lattice is to inquiry the bonds it contains.
 
@@ -129,7 +96,7 @@ The `:neighbor` provides the a priori info of the nearest neighbor order of a bo
 There are other types of generalized bonds. In fact, a single point can also be viewed as a kind of bond, namely, the zeroth order nearest neighbor bond. We can also have more complex generalized bonds, such as a plaquette (the minimum four-site square) in the square lattice. All these generalized bonds gather under the abstract type, [`AbstractBond`](@ref), and the generation from a lattice of such generalized bonds can be managed by the type [`Bonds`](@ref). In this package, we only implement two types of concrete generalized bonds, i.e. [`Point`](@ref) and [`Bond`](@ref). Users interested in other types can define them themselves by extending our protocols. In this way, the management of the generation of these user extended bonds can be utilized by [`Bonds`](@ref) without extra modifications. See [`Bonds`](@ref) for more details.
 
 Now let's see a simple example:
-```@example unitcell
+```@repl unitcell
 lattice = Lattice("L2P", [Point(PID(1), (0.0,)), Point(PID(2), (1.0,))],
                 vectors=[[2.0]],
                 neighbors=2
@@ -137,7 +104,7 @@ lattice = Lattice("L2P", [Point(PID(1), (0.0,)), Point(PID(2), (1.0,))],
 Bonds(lattice)
 ```
 By default, `Bonds(lattice::Lattice)` generates all the generalized bonds with orders of nearest neighbors specified by the attribute `:neighbors` of the input lattice, including the individual points and the bonds across the periodic boundaries. Note that the bonds whose lengths are not present in the `:neighbors` attribute of the input lattice won't be included in the result, even when their lengths are shorter:
-```@example unitcell
+```@repl unitcell
 lattice = Lattice("L2P", [Point(PID(1), (0.0,)), Point(PID(2), (1.0,))],
                 vectors=[[2.0]],
                 neighbors=Dict(2=>2.0)
@@ -145,12 +112,7 @@ lattice = Lattice("L2P", [Point(PID(1), (0.0,)), Point(PID(2), (1.0,))],
 Bonds(lattice)
 ```
 In other words, the `:neighbors` attribute can be viewed as a filter of the generated bonds (but this filter only affects the [`Bond`](@ref) typed but not the [`Point`](@ref) typed generalized bonds). When the input lattice has no translation vectors, the generated bonds will only contain the individual points and the intra-unitcell bonds, just as expected:
-```@example unitcell
+```@repl unitcell
 lattice = Lattice("L2P", [Point(PID(1), (0.0,)), Point(PID(2), (1.0,))])
 Bonds(lattice)
 ```
-
-## Internal degrees of freedom
-
-
-## Couplings among different degrees of freedom

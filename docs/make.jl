@@ -16,9 +16,17 @@ makedocs(
     pages=      [
                 "Home"      =>  "index.md",
                 "Tutorials" =>  [
-                    "tutorials/UnitcellDescription.md",
-                    "tutorials/EngineAppInterface.md",
+                    "Unitcell Description" => [
+                        "tutorials/UnitcellDescription/Introduction.md",
+                        "tutorials/UnitcellDescription/SpatialInfoOfAUnitcell.md",
+                        "tutorials/UnitcellDescription/InternalDegreesOfFreedom.md",
+                        "tutorials/UnitcellDescription/CouplingsAmongDifferentDegreesOfFreedom.md",
+                        "tutorials/UnitcellDescription/GeneratorOfOperators.md",
                     ],
+                    "Engine App Interface" => [
+                        "tutorials/EngineAppInterface/Introduction.md",
+                    ]
+                ],
                 "Manual"    =>  [
                     "man/Interfaces.md",
                     "Prerequisites" => [

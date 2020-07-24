@@ -1,4 +1,4 @@
-# Engine App Interface
+# Introduction
 
 Although we can get the symbolic representation of the Hamiltonians by our *unitcell-description* framework, there still remains a long way to implement concrete algorithms such as TBA, ED, etc. Despite the quite different technical details, algorithms shares common functionalities to be furnished with:
 * provide tasks to be conducted with controlling parameters;

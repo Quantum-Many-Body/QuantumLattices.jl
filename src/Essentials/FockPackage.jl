@@ -68,7 +68,7 @@ Base.fieldnames(::Type{FID}) = (:orbital, :spin, :nambu)
 
 Create a Fock id.
 """
-FID(; orbital::Int = 1, spin::Int = 1, nambu::Int=ANNIHILATION) = FID(orbital, spin, nambu)
+FID(; orbital::Int=1, spin::Int=1, nambu::Int=ANNIHILATION) = FID(orbital, spin, nambu)
 
 """
     adjoint(fid::FID) -> FID
@@ -92,8 +92,8 @@ end
 IsMultiIndexable(::Type{Fock}) = IsMultiIndexable(true)
 MultiIndexOrderStyle(::Type{Fock}) = MultiIndexOrderStyle('C')
 dims(fock::Fock) = (fock.norbital, fock.nspin, fock.nnambu)
-inds(fid::FID, ::Fock) = (fid.orbital, fid.spin, fid.nambu)
-FID(inds::NTuple{3, Int}, ::Fock) = FID(inds[1], inds[2], inds[3])
+inds(fid::FID, fock::Fock) = (fid.orbital, fid.spin, (fock.nnambu == 1) ? 1 : fid.nambu)
+FID(inds::NTuple{3, Int}, fock::Fock) = FID(inds[1], inds[2], (fock.nnambu == 1) ? 0 : inds[3])
 
 """
     Fock(; atom::Int=1, norbital::Int=1, nspin::Int=2, nnambu::Int=2)

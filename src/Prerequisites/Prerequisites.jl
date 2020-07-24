@@ -72,7 +72,7 @@ delta(i, j) = (i == j) ? 1 : 0
     rawtype(T::DataType) -> Union{DataType, UnionAll}
     rawtype(T::UnionAll) -> Union{DataType, UnionAll}
 
-Get the "raw" type without the type parameters.
+Get the "raw part" of a type. That is, the type without all its type parameters.
 """
 rawtype(T::DataType) = T.name.wrapper
 rawtype(T::UnionAll) = rawtype(T.body)

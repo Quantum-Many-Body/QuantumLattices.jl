@@ -13,7 +13,7 @@ The aim of `Factories` is to provide tools to hack into Julia codes without know
 * *DECOMPOSITION* - An `Expr` expression can be decomposed into its corresponding factory by the factory's constructor.
 * *COMPOSITION* - A factory can compose its corresponding `Expr` expression by calling itself.
 * *ESCAPE* - A variable should be or not be escaped in the composed `Expr` expression by a factory depends on predefined escape mechanisms.
-These three requirements also define the basic interfaces to interact with factories. In practice, we combine the second and third in a single interface, i.e. by passing an instance of certain concrete [`EscapeMechanism`](@ref) as the only argument of calling a factory, the needed `Expr` expression with variables correctly escaped can be obtained.
+These three requirements also define the basic interfaces to interact with factories. In practice, we combine the second and the third in a single interface, i.e. by passing an instance of certain concrete [`EscapeMechanism`](@ref) as the only argument of calling a factory, the needed `Expr` expression with variables correctly escaped can be obtained.
 
 ## Escape mechanisms
 
@@ -26,14 +26,14 @@ We adopt Julia structs to denote escape mechanisms so that we can utilize Julia'
 ### Escaped
 
 [`Escaped`](@ref) has only one attribute:
-* `names::NTuple{N, Symbol} where N`: the names of variables to be escaped
+* `names::Tuple{Vararg{Symbol}}`: the names of variables to be escaped
 Apparently, a variable should be escaped if its name is in the `names` of an `Escaped`.
 This mechanism suits a factory whose variables should be unescaped by default.
 
 ### UnEscaped
 
 [`UnEscaped`](@ref) also has only on attribute:
-* `names::NTuple{N, Symbol} where N`: the names of variables not to be escaped
+* `names::Tuple{Vararg{Symbol}}`: the names of variables not to be escaped
 Obviously, on the contrary to [`Escaped`](@ref), a variable should be escaped if its name is not in the `names` of an `UnEscaped`.
 This mechanism suits a factory whose variables should be escaped by default.
 
@@ -60,7 +60,7 @@ Out of practical purposes, we implement 7 kinds of factories:
 * **[TypeFactory](@ref)**: **a struct itself**.
 Some of the basic methods making the above three requirements fulfilled with these types are based on the powerful functions defined in [`MacroTools`](https://github.com/MikeInnes/MacroTools.jl).
 
-We want to give a remark that although the types and functions provided in this module helps a lot for the definition of macros, macros should not be abused. On the one hand, some macros may change the language specifications, which makes it hard to understand the codes, and even splits the community; on the one hand, macros usually increases the precompiling/jit time, which means enormous uses of macros in a module may lead to an extremely long load time. Besides, due to the limited ability of the author, the codes in this module are not optimal, which adds to the jit overhead. Any promotion that keeps the interfaces unchanged is welcomed.
+We want to give a remark that although the types and functions provided in this module helps a lot for the definition of macros, macros should not be abused. On the one hand, some macros may change the language specifications, which makes it hard to understand the codes, and even splits the community; on the one hand, macros usually increases the precompiling/jit time, which means enormous uses of macros in a module may lead to an extremely long load time. Besides, due to the limited ability of the author, the codes in this module are not optimal, which adds to the jit overhead. Any promotion that keeps the interfaces unchanged is welcomed on GitHub issues.
 
 ### Inference
 
@@ -348,7 +348,7 @@ The construction from such expressions are based on the `MacroTools.splitdef` fu
     1. Since Julia 0.7, the form `MyType{D}(data::D) where D` only appears in struct constructors, therefore, the attribute `:params` of a function factory is nonempty only when this factory aims to represent a struct constructor.
     2. Usually, the name of a function factory is a `Symbol`. However, if the factory aims to extend some methods of a function defined in another module, e.g., `Base.eltype`, the name will be an `Expr`.
 
-[`FunctionFactory`](@ref) adopts the [`MixEscaped`](@ref) mechanism to escape variables, with [`UnEscaped`](@ref) for `params`, `args`, `kwargs`, `rtype` and `whereparams` while [`Escaped`](@ref) for `name` and `body`. It is worth to emphasize that the name of a function factory belongs to the `Escaped` part. Therefore, when it is an `Expr`, it will never be escaped because an `Expr` cannot be a element of a `NTuple{N, Symbol} where N`. See following examples.
+[`FunctionFactory`](@ref) adopts the [`MixEscaped`](@ref) mechanism to escape variables, with [`UnEscaped`](@ref) for `params`, `args`, `kwargs`, `rtype` and `whereparams` while [`Escaped`](@ref) for `name` and `body`. It is worth to emphasize that the name of a function factory belongs to the `Escaped` part. Therefore, when it is an `Expr`, it will never be escaped because an `Expr` cannot be a element of a `Tuple{Vararg{Symbol}}`. See following examples.
 
 Escape the function name:
 ```@example factories
