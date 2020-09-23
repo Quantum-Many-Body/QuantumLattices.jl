@@ -116,7 +116,7 @@ Base.getkey(cd::CompositeDict, key, default) = getkey(getfield(cd, :contents), k
 Base.getindex(cd::CompositeDict{K, V}, index::K) where {K, V} = getfield(cd, :contents)[index]
 Base.push!(cd::CompositeDict, ps::Pair...) = (push!(getfield(cd, :contents), ps...); cd)
 Base.get!(cd::CompositeDict, key, default) = get!(getfield(cd, :contents), key, default)
-Base.get!(default, cd::CompositeDict, key) = get!(default, getfield(cd, :contents), key)
+Base.get!(default::Union{Function, Type}, cd::CompositeDict, key) = get!(default, getfield(cd, :contents), key)
 Base.setindex!(cd::CompositeDict{K, V}, value::V, index::K) where {K, V} = (getfield(cd, :contents)[index] = value)
 Base.pop!(cd::CompositeDict) = pop!(getfield(cd, :contents))
 Base.pop!(cd::CompositeDict, key) = pop!(getfield(cd, :contents), key)

@@ -60,7 +60,7 @@ Point(PID(1), (0.0,))
 * `neighbors::Dict{Int, Float64}`: the order-distance map of the nearest neighbors of the lattice
 Here, the `:pids`, `:rcoords` and `:icoords` attributes decompose the points in a lattice, which makes it convenient for global operations on the lattice.
 
-Points can be used directly to construct a lattice, whereas `:vectors` and `neighbors` can be assigned by keyword arguments:
+Points can be used directly to construct a lattice, whereas `:vectors` and `:neighbors` can be assigned by keyword arguments:
 ```@repl unitcell
 Lattice("L2P", [Point(PID(1), (0.0,)), Point(PID(2), (1.0,))],
         vectors=[[2.0]],

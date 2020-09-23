@@ -16,7 +16,7 @@ In theory, as long as the above information is told, one could easily write down
 H=tc^†_{1↑}c_{2↑}+tc^†_{2↑}c_{1↑}+tc^†_{1↓}c_{2↓}+tc^†_{2↓}c_{1↓}+Uc^†_{1↑}c_{1↑}c^†_{1↓}c_{1↓}+Uc^†_{2↑}c_{2↑}c^†_{2↓}c_{2↓}
 ```
 
-where ``t`` is the hopping amplitude and ``U`` is the Hubbard interaction strength. Actually, the **unitcell description framework** follows exactly after the above train of thought. For example, the aforementioned system can be constructed by the following codes
+where ``t`` is the hopping amplitude， ``U`` is the Hubbard interaction strength and the electronic annihilation/creation operator carries a site index and a spin index. Actually, the **unitcell description framework** follows exactly after the above train of thought. For example, the aforementioned system can be constructed by the following codes
 
 ```@example
 using QuantumLattices
@@ -35,7 +35,7 @@ U = Hubbard{'F'}(:U, symbols("U", real=true))
 # get the Hamiltonian
 operators = expand(Generator((t, U), Bonds(lattice), config, nothing, false))
 ```
-The last line displays all the generated operators in the Hamiltonian in the latex form. In the following sections listed below, we will explain in brief how these codes work. For more detailed explanations, please refer to the manual of [`Essentials`](@ref essentials).
+The last line displays all the generated operators in the Hamiltonian in the latex form. Here, in the subscript of the electronic annihilation/creation operator, an extra orbital index is also displayed. In the following sections listed below, we will explain in brief how these codes work. Specifically, in [Spatial info of a unitcell](@ref), we will introduce how to construct the unitcell as . For more detailed explanations, the manual of [`Essentials`](@ref essentials) can also be referred.
 
 ```@contents
 Pages = [

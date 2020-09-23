@@ -26,7 +26,7 @@ The core of the package is the construction of the **operator representations of
 * **act on local Hilbert spaces**, and
 * **form algebras over the complex field**.
 
-The first observation is the starting point of our [**unitcell description framework**](https://quantum-many-body.github.io/QuantumLattices.jl/dev/tutorials/UnitcellDescription/) and the second is the mathematical foundation of our **symbolic computing system**.
+The first observation is the starting point of our [**unitcell description framework**](https://quantum-many-body.github.io/QuantumLattices.jl/dev/tutorials/UnitcellDescription/Introduction/) and the second is the mathematical foundation of our **symbolic computing system**.
 
 It is noted that our implementation of the symbolic computation only involves
 * the mathematical operations between a scalar and an operator, and
@@ -65,7 +65,7 @@ Concrete algorithms are implemented in separate packages (still in progress):
 * **FBFMSW**: spin wave theory for flatband ferromagnets.
 
 ## Getting Started
-[Tutorials: unitcell description](https://quantum-many-body.github.io/QuantumLattices.jl/dev/tutorials/UnitcellDescription/)
+[Tutorials: unitcell description](https://quantum-many-body.github.io/QuantumLattices.jl/dev/tutorials/UnitcellDescription/Introduction/)
 
 ## Documentation
 - [**LATEST**][docs-latest-url] &mdash; **documentation of the latest version.**

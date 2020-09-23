@@ -22,7 +22,7 @@ end
     @test collect(t|>Iterators.reverse) == [4, 3, 2, 1]
     @test keys(t) == keys((1, 2, 3, 4))
     @test values(t) == values((1, 2, 3, 4))
-    @test pairs(t) == pairs((1, 2, 3, 4))
+    @test pairs(t)|>collect == pairs((1, 2, 3, 4))|>collect
     @test reverse(t) == FT("Info", (4, 3, 2, 1))
     @test convert(Tuple, t) == (1, 2, 3, 4)
 end
