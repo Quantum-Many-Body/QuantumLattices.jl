@@ -31,10 +31,3 @@ end
     @test delta(1, 2) == 0
     @test delta(1, 1) == 1
 end
-
-@testset "rawtype" begin
-    @test rawtype(Int) == Int
-    @test rawtype(Vector{Int}) == Array
-    @test rawtype(Vector) == Array
-    @test rawtype(Vector{<:Real}) == Array
-end

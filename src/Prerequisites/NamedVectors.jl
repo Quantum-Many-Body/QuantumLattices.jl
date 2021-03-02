@@ -1,12 +1,9 @@
 module NamedVectors
 
 using Printf: @printf
-using ..Factories: Inference, TypeFactory, FunctionFactory, addargs!, extendbody!
-using ..Factories: MixEscaped, Escaped, UnEscaped
 using ..TypeTraits: efficientoperations
 
-export NamedVector, @namedvector
-export HomoNamedVector, @homonamedvector
+export NamedVector, HomoNamedVector
 
 """
     NamedVector
@@ -160,26 +157,6 @@ Apply function `f` elementwise on the input named vectors.
 end
 
 """
-    @namedvector structdef::Expr
-
-Decorate a "raw" struct to be a subtype of `NamedVector`. Here, "raw" means that the input struct has no explicit supertype and no inner constructors.
-"""
-macro namedvector(structdef::Expr)
-    tf = TypeFactory(structdef)
-    @assert tf.supertype == Inference(:Any) "@namedvector error: no explicit supertype except `Any` is allowed."
-    @assert length(tf.constructors) == 0 "@namedvector error: no inner constructor is allowed."
-    tf.supertype = Inference(:NamedVector)
-    paramnames = tuple((param.name for param in tf.params)...)
-    fieldnames = tuple((field.name for field in tf.fields)...)
-    fldnm = FunctionFactory(name = :(Base.fieldnames))
-    addargs!(fldnm, :(::Type{<:$(tf.name)}))
-    extendbody!(fldnm, Expr(:tuple, QuoteNode.(fieldnames)...))
-    structdef = tf(MixEscaped(Escaped(tf.name), UnEscaped(paramnames..., :NamedVector)))
-    fldnmdef = fldnm(MixEscaped(Escaped(:tuple)))
-    return Expr(:block, :(Base.@__doc__($structdef)), fldnmdef)
-end
-
-"""
     HomoNamedVector{T}
 
 Abstract type for all homogeneous named vectors.
@@ -194,34 +171,5 @@ Get the type parameter of a concrete `HomoNamedVector`.
 """
 Base.eltype(::Type{<:HomoNamedVector{T}}) where T = T
 Base.eltype(nv::HomoNamedVector) = eltype(typeof(nv))
-
-"""
-    @homonamedvector typename fieldnames dtype::Union{Expr, Symbol}=:nothing mutable::Union{Expr, Bool}=false
-
-Construct a concrete homogeneous named vector with the type name being `typename` and the fieldnames specified by `fieldnames`, and optionally, the type parameters specified by `dtype`.`mutable` can be used as a keyword argument to determine whether the concrete type is mutable.
-"""
-macro homonamedvector(typename, fieldnames, dtype::Union{Expr, Symbol}=:nothing, mutable::Union{Expr, Bool}=false)
-    typename = Symbol(typename)
-    fieldnames = tuple(eval(fieldnames)...)
-    @assert all(isa(name, Symbol) for name in fieldnames) "homonamedvector error: every field name should be a `Symbol`."
-    isa(dtype, Expr) && (dtype.head == :(<:)) && (@assert dtype.args |> length == 1 "homonamedvector error: wrong `dtype`.")
-    dname, dscope = (dtype == :nothing) ? (:T, :Any) : (isa(dtype, Expr) && (dtype.head == :(<:))) ? (:T, dtype.args[1]) : (dtype, :concrete)
-    if isa(mutable, Expr)
-        @assert (mutable.head == :(=)) && (mutable.args[1] == :mutable) && isa(mutable.args[2], Bool) "homonamedvector error: wrong `mutable`."
-        mutable = mutable.args[2]
-    end
-    if dscope == :concrete
-        new = :($(esc(typename)))
-        super = :(HomoNamedVector{$(esc(dname))})
-        body = (:($field::$(esc(dname))) for field in fieldnames)
-    else
-        new = :($(esc(typename)){$dname<:$(esc(dscope))})
-        super = :(HomoNamedVector{$dname})
-        body = (:($field::$dname) for field in fieldnames)
-    end
-    structdef = Expr(:struct, mutable, Expr(:<:, new, super), Expr(:block, body...))
-    functions = :(Base.fieldnames(::Type{<:$(esc(typename))}) = $fieldnames)
-    return Expr(:block, :(Base.@__doc__($structdef)), functions)
-end
 
 end #module

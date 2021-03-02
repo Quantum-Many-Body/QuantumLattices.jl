@@ -2,10 +2,11 @@ using Test
 using QuantumLattices.Prerequisites.NamedVectors
 using QuantumLattices.Prerequisites: Float
 
-@namedvector mutable struct NHNV
+mutable struct NHNV <: NamedVector
     scope::String
     site::Int
 end
+Base.fieldnames(::Type{<:NHNV}) = (:scope, :site)
 
 @testset "NHNV" begin
     @test fieldnames(NHNV) == (:scope, :site)
@@ -34,8 +35,17 @@ end
     @test dict[NHNV("A", 1)] == 2
 end
 
-@homonamedvector "FHNV" (:scope, :site) Float64 mutable = true
-@homonamedvector "RHNV" (:scope, :site) (<:Real) mutable = true
+mutable struct FHNV <: HomoNamedVector{Float64}
+    scope::Float64
+    site::Float64
+end
+Base.fieldnames(::Type{<:FHNV}) = (:scope, :site)
+
+mutable struct RHNV{T<:Real} <: HomoNamedVector{T}
+    scope::T
+    site::T
+end
+Base.fieldnames(::Type{<:RHNV}) = (:scope, :site)
 
 @testset "FHNV" begin
     @test fieldnames(FHNV) == (:scope, :site)

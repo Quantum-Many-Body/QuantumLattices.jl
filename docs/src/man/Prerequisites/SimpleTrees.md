@@ -80,7 +80,7 @@ which constructs an empty tree of the same type with the input one, two more met
 ## SimpleTreeCore and SimpleTree
 
 To implement all the prerequisites listed above costs a bit efforts. We provide two lazy ways to get over this:
-1. Inheritance `AbstractSimpleTree` with `TREECORE::SimpleTreeCore` as the **last** attribute
+1. Inheritance `AbstractSimpleTree` with `TREECORE::SimpleTreeCore` as one of its attribute
 2. Inclusion an attribute which is an instance of [`SimpleTree`](@ref)
 
 ### SimpleTreeCore
@@ -90,26 +90,7 @@ To implement all the prerequisites listed above costs a bit efforts. We provide 
 * `contents::Dict{N, D}`: the tree's (node, data) pairs
 * `parent::Dict{N, N}`: records of the parent of each of the tree's nodes
 * `children::Dict{N, Vector{N}}`: records of the children of each of the tree's nodes
-As above, the first lazy way is to include this struct with the special name `:TREECORE` in your concrete subtype as the **last** attribute. This process can be even lazier, in that we provide a macro [`@simpletree`](@ref) to decorate your "raw" struct automatically, e.g.
-```@example simpletrees
-# simple subtree
-@simpletree(struct SubTree1 end)
-
-# subtree with tree parameters
-@simpletree(struct SubTree2 end, {N<:AbstractString, D<:Number})
-
-# subtree with definite tree parameters
-@simpletree(struct SubTree3 end, {::String, ::Int})
-
-# subtree with extra fields
-@simpletree(struct SubTree4 info::Vector{Int} end, {N<:AbstractString, D<:Number})
-
-# subtree with extra parametric fields
-@simpletree(struct SubTree5{T} info::Vector{T} end, {N<:AbstractString, D<:Number})
-
-# subtree with extra fields whose parameters overlap with node/data type
-@simpletree(struct SubTree6{N} info::Vector{N} end, {N<:AbstractString, D<:Number})
-```
+As above, the first lazy way is to include this struct with the special name `:TREECORE` in your concrete subtype one of its attribute.
 
 ### SimpleTree
 

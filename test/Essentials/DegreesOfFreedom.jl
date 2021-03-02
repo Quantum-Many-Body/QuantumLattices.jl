@@ -4,7 +4,7 @@ using LinearAlgebra: dot
 using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Essentials.DegreesOfFreedom
 using QuantumLattices.Essentials.Spatials: PID, Point, pidtype, rcoord, icoord
-using QuantumLattices.Mathematics.AlgebraOverFields: ID, idpropertynames
+using QuantumLattices.Mathematics.AlgebraOverFields: ID
 import QuantumLattices.Interfaces: dimension, decompose, update!, sequence, reset!
 import QuantumLattices.Essentials.DegreesOfFreedom: script, latexsuperscript, latexsubscript
 
@@ -79,8 +79,8 @@ end
     @test it|>collect == [DID(1), DID(2)]
 end
 
-@testset "IDFConfig" begin
-    config = IDFConfig{DFock}(pid->DFock((pid.site-1)%2+1, 2), [PID(1, 1), PID(1, 2)])
+@testset "Config" begin
+    config = Config{DFock}(pid->DFock((pid.site-1)%2+1, 2), [PID(1, 1), PID(1, 2)])
     @test convert(Dict, config) == Dict(PID(1, 1)=>DFock(1, 2), PID(1, 2)=>DFock(2, 2))
     reset!(config, (PID(2, 1), PID(2, 2)))
     @test convert(Dict, config) == Dict(PID(2, 1)=>DFock(1, 2), PID(2, 2)=>DFock(2, 2))
@@ -94,7 +94,7 @@ end
     table = Table([DIndex(1, 1, 1), DIndex(1, 1, 2)], by)
     @test table == Dict(DIndex(1, 1, 1)=>1, DIndex(1, 1, 2)=>1)
 
-    config = IDFConfig{DFock}(pid->DFock((pid.site-1)%2+1, 2), [PID(1, 1), PID(1, 2)])
+    config = Config{DFock}(pid->DFock((pid.site-1)%2+1, 2), [PID(1, 1), PID(1, 2)])
     inds1 = (DIndex(PID(1, 1), iid) for iid in DFock(1, 2))|>collect
     inds2 = (DIndex(PID(1, 2), iid) for iid in DFock(2, 2))|>collect
     @test Table(config) == Table([inds1; inds2])
@@ -111,7 +111,7 @@ end
     oid = OID(DIndex(1, 1, 1), rcoord=SVector(0.0, -0.0), icoord=SVector(0.0, 0.0), seq=1)
     @test oid' == OID(DIndex(1, 1, 2), rcoord=SVector(0.0, 0.0), icoord=SVector(0.0, 0.0), seq=1)
     @test hash(oid, UInt(1)) == hash(OID(DIndex(1, 1, 1), rcoord=SVector(0.0, 0.0), icoord=SVector(0.0, 0.0), seq=1), UInt(1))
-    @test idpropertynames(ID{OID}) == (:indexes, :rcoords, :icoords, :seqs)
+    @test propertynames(ID(oid)) == (:indexes, :rcoords, :icoords, :seqs)
     @test fieldnames(OID) == (:index, :rcoord, :icoord, :seq)
     @test string(oid) == "OID(DIndex(1, 1, 1), [0.0, 0.0], [0.0, 0.0], 1)"
     @test ID(oid', oid)' == ID(oid', oid)

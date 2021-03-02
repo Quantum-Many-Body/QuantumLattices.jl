@@ -4,7 +4,7 @@ using LinearAlgebra: dot
 using StaticArrays: SVector
 using QuantumLattices.Essentials.Terms
 using QuantumLattices.Essentials.Spatials: Point, PID, Bond, Bonds, Lattice, decompose, acrossbonds, zerothbonds
-using QuantumLattices.Essentials.DegreesOfFreedom: IDFConfig, Table, IID, Index, Internal, FilteredAttributes, OID, Operator, Operators, coordabsent, coordpresent, Boundary
+using QuantumLattices.Essentials.DegreesOfFreedom: Config, Table, IID, Index, Internal, FilteredAttributes, OID, Operator, Operators, coordoff, coordon, Boundary
 using QuantumLattices.Interfaces: rank, update!, expand!, id, kind, reset!
 using QuantumLattices.Prerequisites: Float, decimaltostr
 using QuantumLattices.Prerequisites.CompositeStructures: NamedContainer
@@ -153,7 +153,7 @@ end
 
 @testset "Term" begin
     point = Point(PID(1, 1), (0.0, 0.0), (0.0, 0.0))
-    config = IDFConfig{TFock}(pid->TFock(), [PID(1, 1)])
+    config = Config{TFock}(pid->TFock(), [PID(1, 1)])
     term = Term{'F', :TermMu, 2}(:mu, 1.5, 0, couplings=TCoupling(1.0, ID(TCID(1, 2), TCID(1, 1))), amplitude=(bond->3), modulate=false)
     @test term|>statistics == term|>typeof|>statistics == 'F'
     @test term|>kind == term|>typeof|>kind == :TermMu
@@ -173,7 +173,7 @@ end
 
     p1 = Point(PID(1, 1), (0.0, 0.0), (0.0, 0.0))
     p2 = Point(PID(1, 2), (0.0, 0.0), (0.0, 0.0))
-    config = IDFConfig{TFock}(pid->TFock(), [PID(1, 1), PID(1, 2)])
+    config = Config{TFock}(pid->TFock(), [PID(1, 1), PID(1, 2)])
     tcs1 = Couplings(TCoupling(1.0, ID(TCID(1, 2), TCID(1, 2))))
     tcs2 = Couplings(TCoupling(1.0, ID(TCID(1, 1), TCID(1, 1))))
     term = Term{'F', :TermMu, 2}(:mu, 1.5, 0, couplings=bond->(tcs1, tcs2)[bond.pid.site%2+1], amplitude=bond->3, modulate=true)
@@ -189,15 +189,15 @@ end
 
 @testset "expand" begin
     point = Point(PID(1, 1), (0.0, 0.0), (0.0, 0.0))
-    config = IDFConfig{TFock}(pid->TFock(), [PID(1, 1)])
+    config = Config{TFock}(pid->TFock(), [PID(1, 1)])
     table = Table(config, filter(attr->(attr ≠ :nambu), FilteredAttributes(TIndex)))
     term = Term{'F', :TermMu, 2}(:mu, 1.5, 0, couplings=TCoupling(1.0, ID(TCID(1, 2), TCID(1, 1))), amplitude=bond->3.0, modulate=true)
     operators = Operators(TOperator(+2.25, (TIndex(1, 1, 2), TIndex(1, 1, 1)), seqs=(1, 1)))
-    @test expand(term, point, config, table, true, coordabsent) == operators
-    @test expand(term, point, config, table, false, coordabsent) == operators*2
+    @test expand(term, point, config, table, true, coordoff) == operators
+    @test expand(term, point, config, table, false, coordoff) == operators*2
 
     bond = Bond(1, Point(PID('b', 2), (1.5, 1.5), (1.0, 1.0)), Point(PID('a', 1), (0.5, 0.5), (0.0, 0.0)))
-    config = IDFConfig{TFock}(pid->TFock(), [PID('a', 1), PID('b', 2)])
+    config = Config{TFock}(pid->TFock(), [PID('a', 1), PID('b', 2)])
     table = Table(config, filter(attr->(attr ≠ :nambu), FilteredAttributes(TIndex)))
     term = Term{'F', :TermHopping, 2}(:t, 1.5, 1, couplings=TCoupling(1.0, ID(TCID(1, 2), TCID(2, 1))), amplitude=bond->3.0, modulate=true)
     operators = Operators(TOperator(4.5, (TIndex('a', 1, 2), TIndex('b', 2, 1)), rcoords=(SVector(0.5, 0.5), SVector(1.5, 1.5)), icoords=(SVector(0.0, 0.0), SVector(1.0, 1.0)), seqs=(1, 2)))
@@ -206,12 +206,12 @@ end
 
     lattice = Lattice("Tuanzi", [Point(PID(1, 1), (0.0, 0.0), (0.0, 0.0))], vectors=[[1.0, 0.0]], neighbors=1)
     bonds = Bonds(lattice)
-    config = IDFConfig{TFock}(pid->TFock(), lattice.pids)
+    config = Config{TFock}(pid->TFock(), lattice.pids)
     table = Table(config, filter(attr->(attr ≠ :nambu), FilteredAttributes(TIndex)))
     term = Term{'F', :TermMu, 2}(:mu, 1.5, 0, couplings=TCoupling(1.0, ID(TCID(1, 2), TCID(1, 1))), amplitude=bond->3.0, modulate=true)
     operators = Operators(TOperator(+2.25, (TIndex(1, 1, 2), TIndex(1, 1, 1)), seqs=(1, 1)))
-    @test expand(term, bonds, config, table, true, coordabsent) == operators
-    @test expand(term, bonds, config, table, false, coordabsent) == operators*2
+    @test expand(term, bonds, config, table, true, coordoff) == operators
+    @test expand(term, bonds, config, table, false, coordoff) == operators*2
 end
 
 @testset "Parameters" begin
@@ -225,24 +225,24 @@ end
 @testset "Generator" begin
     lattice = Lattice("Tuanzi", [Point(PID(1, 1), (0.0, 0.0), (0.0, 0.0)), Point(PID(1, 2), (0.5, 0.0), (0.0, 0.0))], vectors=[[1.0, 0.0]], neighbors=1)
     bonds = Bonds(lattice)
-    config = IDFConfig{TFock}(pid->TFock(), lattice.pids)
+    config = Config{TFock}(pid->TFock(), lattice.pids)
     table = Table(config, filter(attr->(attr ≠ :nambu), FilteredAttributes(TIndex)))
     boundary = Boundary()
     t = Term{'F', :TermHopping, 2}(:t, 2.0, 1, couplings=TCoupling(1.0, ID(TCID(1, 2), TCID(2, 1))))
     μ = Term{'F', :TermMu, 2}(:μ, 1.0, 0, couplings=TCoupling(1.0, ID(TCID(1, 2), TCID(1, 1))), modulate=true)
-    tops1 = expand(t, filter(acrossbonds, bonds, Val(:exclude)), config, table, true, coordpresent)
-    tops2 = expand(one(t), filter(acrossbonds, bonds, Val(:include)), config, table, true, coordpresent)
-    μops = expand(one(μ), filter(zerothbonds, bonds, Val(:include)), config, table, true, coordpresent)
+    tops1 = expand(t, filter(acrossbonds, bonds, Val(:exclude)), config, table, true, coordon)
+    tops2 = expand(one(t), filter(acrossbonds, bonds, Val(:include)), config, table, true, coordon)
+    μops = expand(one(μ), filter(zerothbonds, bonds, Val(:include)), config, table, true, coordon)
 
     optp = TOperator{Float, ID{OID{TIndex{Int}, SVector{2, Float}, SVector{2, Float}, Int}, 2}}
     genops = GenOperators(tops1, NamedContainer{(:μ,)}((μops,)), NamedContainer{(:t, :μ)}((tops2, Operators{optp|>idtype, optp}())))
     @test genops == deepcopy(genops) && isequal(genops, deepcopy(genops))
-    @test genops == GenOperators((t, μ), bonds, config, table, true, coordpresent)
+    @test genops == GenOperators((t, μ), bonds, config, table, true, coordon)
     @test genops|>eltype == genops|>typeof|>eltype == optp
     @test genops|>idtype == genops|>typeof|>idtype == optp|>idtype
     @test expand!(Operators{idtype(optp), optp}(), genops, boundary, t=2.0, μ=1.5) == tops1+tops2*2.0+μops*1.5
     @test empty!(deepcopy(genops)) == empty(genops) == GenOperators(empty(μops), NamedContainer{(:μ,)}((empty(μops),)), NamedContainer{(:t, :μ)}((empty(μops), empty(μops))))
-    @test reset!(deepcopy(genops), (t, μ), bonds, config, table, true, coordpresent) == genops
+    @test reset!(deepcopy(genops), (t, μ), bonds, config, table, true, coordon) == genops
 
     gen = Generator((t, μ), bonds, config, table, true, boundary)
     @test gen == deepcopy(gen) && isequal(gen, deepcopy(gen))
@@ -254,7 +254,7 @@ end
     @test expand(gen, :μ, 1)+expand(gen, :μ, 2) == μops
     @test expand(gen, :t, 3) == tops1
     @test expand(gen, :t, 4) == tops2*2.0
-    @test empty!(deepcopy(gen)) == Generator{coordpresent}((t, μ), empty(bonds), empty(config), empty(table), true, boundary) == empty(gen)
+    @test empty!(deepcopy(gen)) == Generator{coordon}((t, μ), empty(bonds), empty(config), empty(table), true, boundary) == empty(gen)
     @test reset!(empty(gen), lattice) == gen
     @test update!(gen, μ=1.5)|>expand == tops1+tops2*2.0+μops*1.5
 end

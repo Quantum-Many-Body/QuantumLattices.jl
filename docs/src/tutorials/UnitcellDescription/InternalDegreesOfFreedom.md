@@ -175,7 +175,7 @@ sp |> collect
 ```
 It is noted that a [`Spin`](@ref) instance generates [`SID`](@ref) instances corresponding to not only ``S^x``, ``S^y`` and ``S^z``,  but also ``S^+`` and ``S^-`` although the former three already forms a complete set of generators of local spin algebras. This overcomplete feature is for the convenience to the construction of spin Hamiltonians.
 
-## IDFConfig and Table
+## Config and Table
 
 ## Operator and Operators
 

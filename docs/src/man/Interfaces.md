@@ -2,7 +2,7 @@
 CurrentModule = QuantumLattices.Interfaces
 ```
 
-# Interfaces
+# [Interfaces](@id interfaces)
 
 This module contains the generic functions that are extended by the package.
 

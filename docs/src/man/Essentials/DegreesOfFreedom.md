@@ -8,7 +8,7 @@ CurrentModule = QuantumLattices.Essentials.DegreesOfFreedom
 
 ## Index
 
-## IDFConfig
+## Config
 
 ## Table
 

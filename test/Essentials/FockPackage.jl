@@ -2,7 +2,7 @@ using Test
 using StaticArrays: SVector
 using QuantumLattices.Essentials.FockPackage
 using QuantumLattices.Essentials.Spatials: Bond, Point, PID, rcoord, azimuthd
-using QuantumLattices.Essentials.DegreesOfFreedom: Table, IDFConfig, OID, Operators, oidtype, otype, script, latexformat
+using QuantumLattices.Essentials.DegreesOfFreedom: Table, Config, OID, Operators, oidtype, otype, script, latexformat
 using QuantumLattices.Essentials.Terms: Couplings, @subscript, statistics, abbr
 using QuantumLattices.Interfaces: dims, inds, ⊗, ⋅, expand, permute
 using QuantumLattices.Prerequisites: Float
@@ -295,7 +295,7 @@ end
     @test otype(term|>typeof, OID{FIndex{Int}, SVector{2, Float}, SVector{2, Float}, Int}) == BOperator{Float, ID{OID{FIndex{Int}, SVector{2, Float}, SVector{2, Float}, Int}, 2}}
 
     point = Point(PID('a', 1), (0.5, 0.5), (0.0, 0.0))
-    config = IDFConfig{Fock}(pid->Fock(atom=pid.site%2, norbital=2, nspin=2, nnambu=2), [point.pid])
+    config = Config{Fock}(pid->Fock(atom=pid.site%2, norbital=2, nspin=2, nnambu=2), [point.pid])
     table = Table(config, usualfockindextotuple)
 
     term = Onsite{'F'}(:mu, 1.5, couplings=σˣ("sp")⊗σᶻ("ob"), modulate=true)
@@ -322,7 +322,7 @@ end
 
 @testset "Hopping" begin
     bond = Bond(1, Point(PID('a', 1), (0.5, 0.5), (0.0, 0.0)), Point(PID('b', 2), (0.0, 0.0), (0.0, 0.0)))
-    config = IDFConfig{Fock}(pid->Fock(atom=pid.site%2, norbital=2, nspin=2, nnambu=2), [bond.spoint.pid, bond.epoint.pid])
+    config = Config{Fock}(pid->Fock(atom=pid.site%2, norbital=2, nspin=2, nnambu=2), [bond.spoint.pid, bond.epoint.pid])
     table = Table(config, usualfockindextotuple)
     term = Hopping{'F'}(:t, 1.5, 1)
     operators = Operators(  FOperator(1.5, ID(OID(FIndex('b', 2, 2, 2, 2), [0.0, 0.0], [0.0, 0.0], 8), OID(FIndex('a', 1, 2, 2, 1), [0.5, 0.5], [0.0, 0.0], 4))),
@@ -337,7 +337,7 @@ end
 
 @testset "Pairing" begin
     bond = Bond(1, Point(PID('a', 1), (0.5, 0.5), (0.0, 0.0)), Point(PID('b', 2), (0.0, 0.0), (0.0, 0.0)))
-    config = IDFConfig{Fock}(pid->Fock(atom=pid.site%2, norbital=1, nspin=2, nnambu=2), [bond.spoint.pid, bond.epoint.pid])
+    config = Config{Fock}(pid->Fock(atom=pid.site%2, norbital=1, nspin=2, nnambu=2), [bond.spoint.pid, bond.epoint.pid])
     table = Table(config, nambufockindextotuple)
     term = Pairing{'F'}(:Δ, 1.5, 1, couplings=FockCoupling{2}(spins=(2, 2)), amplitude=bond->(bond|>rcoord|>azimuthd ≈ 45 ? 1 : -1))
     operators = Operators(  FOperator(-1.5, ID(OID(FIndex('b', 2, 1, 2, 1), [0.0, 0.0], [0.0, 0.0], 6), OID(FIndex('a', 1, 1, 2, 1), [0.5, 0.5], [0.0, 0.0], 2))),
@@ -348,7 +348,7 @@ end
     @test expand(term, bond, config, table, false) == operators+operators'
 
     point = Point(PID('a', 1), (0.5, 0.5), (0.0, 0.0))
-    config = IDFConfig{Fock}(pid->Fock(atom=pid.site % 2, norbital=1, nspin=2, nnambu=2), [point.pid])
+    config = Config{Fock}(pid->Fock(atom=pid.site % 2, norbital=1, nspin=2, nnambu=2), [point.pid])
     table = Table(config, nambufockindextotuple)
     term = Pairing{'F'}(:Δ, 1.5, 0, couplings=FockCoupling{2}(spins=(2, 1))-FockCoupling{2}(spins=(1, 2)))
     operators = Operators(  FOperator(+1.5, ID(OID(FIndex('a', 1, 1, 2, 1), [0.5, 0.5], [0.0, 0.0], 2), OID(FIndex('a', 1, 1, 1, 1), [0.5, 0.5], [0.0, 0.0], 1))),
@@ -361,7 +361,7 @@ end
 
 @testset "Hubbard" begin
     point = Point(PID('a', 1), (0.5, 0.5), (0.0, 0.0))
-    config = IDFConfig{Fock}(pid->Fock(atom=pid.site%2, norbital=2, nspin=2, nnambu=2), [point.pid])
+    config = Config{Fock}(pid->Fock(atom=pid.site%2, norbital=2, nspin=2, nnambu=2), [point.pid])
     table = Table(config, usualfockindextotuple)
     term = Hubbard{'F'}(:H, 2.5)
     operators = Operators(  FOperator(1.25, ID( OID(FIndex('a', 1, 1, 2, 2), [0.5, 0.5], [0.0, 0.0], 2), OID(FIndex('a', 1, 1, 2, 1), [0.5, 0.5], [0.0, 0.0], 2),
@@ -376,7 +376,7 @@ end
 
 @testset "InterOrbitalInterSpin" begin
     point = Point(PID('a', 1), (0.5, 0.5), (0.0, 0.0))
-    config = IDFConfig{Fock}(pid->Fock(atom=pid.site%2, norbital=2, nspin=2, nnambu=2), [point.pid])
+    config = Config{Fock}(pid->Fock(atom=pid.site%2, norbital=2, nspin=2, nnambu=2), [point.pid])
     table = Table(config, usualfockindextotuple)
     term = InterOrbitalInterSpin{'F'}(:H, 2.5)
     operators = Operators(  FOperator(1.25, ID( OID(FIndex('a', 1, 1, 2, 2), [0.5, 0.5], [0.0, 0.0], 2), OID(FIndex('a', 1, 1, 2, 1), [0.5, 0.5], [0.0, 0.0], 2),
@@ -391,7 +391,7 @@ end
 
 @testset "InterOrbitalIntraSpin" begin
     point = Point(PID('a', 1), (0.5, 0.5), (0.0, 0.0))
-    config = IDFConfig{Fock}(pid->Fock(atom=pid.site%2, norbital=2, nspin=2, nnambu=2), [point.pid])
+    config = Config{Fock}(pid->Fock(atom=pid.site%2, norbital=2, nspin=2, nnambu=2), [point.pid])
     table = Table(config, usualfockindextotuple)
     term = InterOrbitalIntraSpin{'F'}(:H, 2.5)
     operators = Operators(  FOperator(1.25, ID( OID(FIndex('a', 1, 1, 1, 2), [0.5, 0.5], [0.0, 0.0], 1), OID(FIndex('a', 1, 1, 1, 1), [0.5, 0.5], [0.0, 0.0], 1),
@@ -406,7 +406,7 @@ end
 
 @testset "SpinFlip" begin
     point = Point(PID('a', 1), (0.5, 0.5), (0.0, 0.0))
-    config = IDFConfig{Fock}(pid->Fock(atom=pid.site%2, norbital=2, nspin=2, nnambu=2), [point.pid])
+    config = Config{Fock}(pid->Fock(atom=pid.site%2, norbital=2, nspin=2, nnambu=2), [point.pid])
     table = Table(config, usualfockindextotuple)
     term = SpinFlip{'F'}(:H, 2.5)
     operators = Operators(FOperator(2.5, ID(    OID(FIndex('a', 1, 1, 2, 2), [0.5, 0.5], [0.0, 0.0], 2), OID(FIndex('a', 1, 2, 1, 2), [0.5, 0.5], [0.0, 0.0], 3),
@@ -419,7 +419,7 @@ end
 
 @testset "PairHopping" begin
     point = Point(PID('a', 1), (0.5, 0.5), (0.0, 0.0))
-    config = IDFConfig{Fock}(pid->Fock(atom=pid.site%2, norbital=2, nspin=2, nnambu=2), [point.pid])
+    config = Config{Fock}(pid->Fock(atom=pid.site%2, norbital=2, nspin=2, nnambu=2), [point.pid])
     table = Table(config, usualfockindextotuple)
     term = PairHopping{'F'}(:H, 2.5)
     operators = Operators(FOperator(2.5, ID(    OID(FIndex('a', 1, 1, 2, 2), [0.5, 0.5], [0.0, 0.0], 2), OID(FIndex('a', 1, 1, 1, 2), [0.5, 0.5], [0.0, 0.0], 1),
@@ -432,7 +432,7 @@ end
 
 @testset "Coulomb" begin
     bond = Bond(1, Point(PID('a', 1), (0.5, 0.5), (0.0, 0.0)), Point(PID('b', 2), (0.0, 0.0), (0.0, 0.0)))
-    config = IDFConfig{Fock}(pid->Fock(atom=pid.site%2, norbital=1, nspin=2, nnambu=2), [bond.spoint.pid, bond.epoint.pid])
+    config = Config{Fock}(pid->Fock(atom=pid.site%2, norbital=1, nspin=2, nnambu=2), [bond.spoint.pid, bond.epoint.pid])
     table = Table(config, usualfockindextotuple)
 
     term = Coulomb{'F'}(:V, 2.5, 1, couplings=σᶻ("sp")*σᶻ("sp"))

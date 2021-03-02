@@ -4,7 +4,7 @@ export ⊕, ⊗, ⋅
 export add!, sub!, mul!, div!
 export id, rank, dimension, kind, sequence, dims, index, inds
 export update!, reset!, register!, prepare!, run!, expand, expand!, decompose, decompose!, regularize, regularize!
-export permute, vector, matrix
+export permute, scalar, vector, matrix
 
 "Direct sum."
 function ⊕ end
@@ -86,6 +86,9 @@ function regularize! end
 
 "Get the permutation."
 function permute end
+
+"Scalar representation."
+function scalar end
 
 "Vector representation."
 function vector end

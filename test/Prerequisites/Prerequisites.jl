@@ -1,8 +1,7 @@
-@testset "Prerequisites" begin
-    @testset "Tools" begin include("Tools.jl") end
-    @testset "TypeTraits" begin include("TypeTraits.jl") end
-    @testset "Factories" begin include("Factories.jl") end
-    @testset "CompositeStructures" begin include("CompositeStructures.jl") end
-    @testset "SimpleTrees" begin include("SimpleTrees.jl") end
-    @testset "NamedVectors" begin include("NamedVectors.jl") end
+@time @safetestset "Prerequisites" begin
+    @time @safetestset "Tools" begin include("Tools.jl") end
+    @time @safetestset "TypeTraits" begin include("TypeTraits.jl") end
+    @time @safetestset "CompositeStructures" begin include("CompositeStructures.jl") end
+    @time @safetestset "SimpleTrees" begin include("SimpleTrees.jl") end
+    @time @safetestset "NamedVectors" begin include("NamedVectors.jl") end
 end

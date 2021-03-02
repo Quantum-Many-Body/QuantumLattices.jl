@@ -3,10 +3,10 @@ module Terms
 using Printf: @printf, @sprintf
 using StaticArrays: SVector
 using ..Spatials: AbstractBond, pidtype, Bonds, AbstractLattice, acrossbonds
-using ..DegreesOfFreedom: Index, IDFConfig, Table, OID, Operators, oidtype, otype, Boundary, coordpresent, coordabsent
+using ..DegreesOfFreedom: Index, Config, Table, OID, Operators, oidtype, otype, Boundary, coordon
 using ...Interfaces: add!
-using ...Prerequisites: Float, atol, rtol, decimaltostr, rawtype
-using ...Prerequisites.TypeTraits: efficientoperations, indtosub, corder
+using ...Prerequisites: Float, atol, rtol, decimaltostr
+using ...Prerequisites.TypeTraits: rawtype, efficientoperations, indtosub, corder
 using ...Prerequisites.CompositeStructures: CompositeTuple, NamedContainer
 using ...Mathematics.AlgebraOverFields: SimpleID, ID, Element, Elements
 
@@ -514,11 +514,11 @@ function Base.show(io::IO, term::Term)
 end
 
 """
-    repr(term::Term, bond::AbstractBond, config::IDFConfig) -> String
+    repr(term::Term, bond::AbstractBond, config::Config) -> String
 
 Get the repr representation of a term on a bond with a given config.
 """
-function Base.repr(term::Term, bond::AbstractBond, config::IDFConfig)
+function Base.repr(term::Term, bond::AbstractBond, config::Config)
     cache = String[]
     if term.bondkind == bond|>kind
         value = term.value * term.amplitude(bond) * term.factor
@@ -573,15 +573,15 @@ Get a zero term.
 Base.zero(term::Term) = replace(term, value=zero(term.value))
 
 """
-    expand!(operators::Operators, term::Term, bond::AbstractBond, config::IDFConfig,
+    expand!(operators::Operators, term::Term, bond::AbstractBond, config::Config,
             table::Union{Table, Nothing}=nothing,
             half::Bool=false,
-            coord::Union{Val{true}, Val{false}}=coordpresent
+            coord::Union{Val{true}, Val{false}}=coordon
             ) -> Operators
-    expand!(operators::Operators, term::Term, bonds::Bonds, config::IDFConfig, 
+    expand!(operators::Operators, term::Term, bonds::Bonds, config::Config, 
             table::Union{Table, Nothing}=nothing,
             half::Bool=false,
-            coord::Union{Val{true}, Val{false}}=coordpresent
+            coord::Union{Val{true}, Val{false}}=coordon
             ) -> Operators
 
 Expand the operators of a term on a bond/set-of-bonds with a given config.
@@ -590,10 +590,10 @@ The `half` parameter determines the behavior of generating operators, which fall
 * `true`: "Hermitian half" of the generated operators
 * `false`: "Hermitian whole" of the generated operators
 """
-function expand!(   operators::Operators, term::Term, bond::AbstractBond, config::IDFConfig,
+function expand!(   operators::Operators, term::Term, bond::AbstractBond, config::Config,
                     table::Union{Table, Nothing}=nothing,
                     half::Bool=false,
-                    coord::Union{Val{true}, Val{false}}=coordpresent
+                    coord::Union{Val{true}, Val{false}}=coordon
                     )
     if term.bondkind == bond|>kind
         value = term.value * term.amplitude(bond) * term.factor
@@ -633,10 +633,10 @@ function expand!(   operators::Operators, term::Term, bond::AbstractBond, config
     end
     return operators
 end
-@generated function expand!(operators::Operators, term::Term, bonds::Bonds, config::IDFConfig,
+@generated function expand!(operators::Operators, term::Term, bonds::Bonds, config::Config,
                             table::Union{Table, Nothing}=nothing,
                             half::Bool=false,
-                            coord::Union{Val{true}, Val{false}}=coordpresent)
+                            coord::Union{Val{true}, Val{false}}=coordon)
     exprs = []
     for i = 1:rank(bonds)
         push!(exprs, :(for bond in bonds.bonds[$i] expand!(operators, term, bond, config, table, half, coord) end))
@@ -651,16 +651,16 @@ termseqs(::Nothing, indexes::NTuple{N, <:Index}) where {N} = NTuple{N, Nothing}(
 termfactor(::Nothing, id::ID{OID}, ::Val{K}) where {K} = isHermitian(id) ? 2 : 1
 
 """
-    expand(term::Term, bond::AbstractBond, config::IDFConfig, table::Union{Table, Nothing}=nothing, half::Bool=false, coord::Union{Val{true}, Val{false}}=coordpresent) -> Operators
-    expand(term::Term, bonds::Bonds, config::IDFConfig, table::Union{Table, Nothing}=nothing, half::Bool=false, coord::Union{Val{true}, Val{false}}=coordpresent) -> Operators
+    expand(term::Term, bond::AbstractBond, config::Config, table::Union{Table, Nothing}=nothing, half::Bool=false, coord::Union{Val{true}, Val{false}}=coordon) -> Operators
+    expand(term::Term, bonds::Bonds, config::Config, table::Union{Table, Nothing}=nothing, half::Bool=false, coord::Union{Val{true}, Val{false}}=coordon) -> Operators
 
 Expand the operators of a term on a bond/set-of-bonds with a given config.
 """
-function expand(term::Term, bond::AbstractBond, config::IDFConfig, table::Union{Table, Nothing}=nothing, half::Bool=false, coord::Union{Val{true}, Val{false}}=coordpresent)
+function expand(term::Term, bond::AbstractBond, config::Config, table::Union{Table, Nothing}=nothing, half::Bool=false, coord::Union{Val{true}, Val{false}}=coordon)
     optype = otype(term|>typeof, oidtype(config|>typeof|>valtype|>eltype, bond|>typeof, table|>typeof, coord))
     expand!(Operators{idtype(optype), optype}(), term, bond, config, table, half, coord)
 end
-function expand(term::Term, bonds::Bonds, config::IDFConfig, table::Union{Table, Nothing}=nothing, half::Bool=false, coord::Union{Val{true}, Val{false}}=coordpresent)
+function expand(term::Term, bonds::Bonds, config::Config, table::Union{Table, Nothing}=nothing, half::Bool=false, coord::Union{Val{true}, Val{false}}=coordon)
     optype = otype(term|>typeof, oidtype(config|>typeof|>valtype|>eltype, bonds|>eltype, table|>typeof, coord))
     expand!(Operators{idtype(optype), optype}(), term, bonds, config, table, half, coord)
 end
@@ -703,7 +703,7 @@ end
 
 """
     GenOperators(constops::Operators, alterops::NamedContainer{Operators}, boundops::NamedContainer{Operators})
-    GenOperators(terms::Tuple{Vararg{Term}}, bonds::Bonds, config::IDFConfig, table::Union{Nothing, Table}, half::Bool, ::Val{coord}) where coord
+    GenOperators(terms::Tuple{Vararg{Term}}, bonds::Bonds, config::Config, table::Union{Nothing, Table}, half::Bool, ::Val{coord}) where coord
 
 A set of operators. This is the core of [`AbstractGenerator`](@ref).
 """
@@ -712,7 +712,7 @@ struct GenOperators{C<:Operators, A<:NamedContainer{Operators}, B<:NamedContaine
     alterops::A
     boundops::B
 end
-@generated function GenOperators(terms::Tuple{Vararg{Term}}, bonds::Bonds, config::IDFConfig, table::Union{Nothing, Table}, half::Bool, ::Val{coord}) where coord
+@generated function GenOperators(terms::Tuple{Vararg{Term}}, bonds::Bonds, config::Config, table::Union{Nothing, Table}, half::Bool, ::Val{coord}) where coord
     @assert isa(coord, Bool) "GenOperators error: not supported coord."
     constterms, alterterms = [], []
     for term in fieldtypes(terms)
@@ -849,11 +849,11 @@ Expand the operators with the given boundary twist and term coefficients.
 end
 
 """
-    reset!(genops::GenOperators, terms::Tuple{Vararg{Term}}, bonds::Bonds, config::IDFConfig, table::Union{Nothing, Table}, half::Bool, ::Val{coord}) where coord -> GenOperators
+    reset!(genops::GenOperators, terms::Tuple{Vararg{Term}}, bonds::Bonds, config::Config, table::Union{Nothing, Table}, half::Bool, ::Val{coord}) where coord -> GenOperators
 
 Reset a set of operators by new terms, bonds, config, table, etc..
 """
-@generated function reset!(genops::GenOperators, terms::Tuple{Vararg{Term}}, bonds::Bonds, config::IDFConfig, table::Union{Nothing, Table}, half::Bool, ::Val{coord}) where coord
+@generated function reset!(genops::GenOperators, terms::Tuple{Vararg{Term}}, bonds::Bonds, config::Config, table::Union{Nothing, Table}, half::Bool, ::Val{coord}) where coord
     exprs = []
     push!(exprs, quote
         empty!(genops)
@@ -874,7 +874,7 @@ Reset a set of operators by new terms, bonds, config, table, etc..
 end
 
 """
-    AbstractGenerator{coord, TS<:NamedContainer{Term}, BS<:Bonds, C<:IDFConfig, T<:Union{Nothing, Table}, B<:Boundary, OS<:GenOperators}
+    AbstractGenerator{coord, TS<:NamedContainer{Term}, BS<:Bonds, C<:Config, T<:Union{Nothing, Table}, B<:Boundary, OS<:GenOperators}
 
 Abstract generator.
 
@@ -887,7 +887,7 @@ By protocol, a concrete generator must have the following attributes:
 * `boundary::B`: boundary twist for the generated operators, `nothing` for no twist
 * `operators::OS`: the generated operators
 """
-abstract type AbstractGenerator{coord, TS<:NamedContainer{Term}, BS<:Bonds, C<:IDFConfig, T<:Union{Nothing, Table}, B<:Boundary, OS<:GenOperators} end
+abstract type AbstractGenerator{coord, TS<:NamedContainer{Term}, BS<:Bonds, C<:Config, T<:Union{Nothing, Table}, B<:Boundary, OS<:GenOperators} end
 
 """
     ==(gen1::AbstractGenerator, gen2::AbstractGenerator) -> Bool
@@ -975,12 +975,12 @@ Update the coefficients of the terms in a generator.
 end
 
 """
-    Generator(terms::Tuple{Vararg{Term}}, bonds::Bonds, config::IDFConfig, table::Union{Nothing, Table}=nothing, half::Bool=true, boundary::Boundary=Boundary())
-    Generator{coord}(terms::Tuple{Vararg{Term}}, bonds::Bonds, config::IDFConfig, table::Union{Nothing, Table}=nothing, half::Bool=true, boundary::Boundary=Boundary()) where coord
+    Generator(terms::Tuple{Vararg{Term}}, bonds::Bonds, config::Config, table::Union{Nothing, Table}=nothing, half::Bool=true, boundary::Boundary=Boundary())
+    Generator{coord}(terms::Tuple{Vararg{Term}}, bonds::Bonds, config::Config, table::Union{Nothing, Table}=nothing, half::Bool=true, boundary::Boundary=Boundary()) where coord
 
 A generator of operators based on terms, configuration of internal degrees of freedom, table of indices and boundary twist.
 """
-struct Generator{coord, TS<:NamedContainer{Term}, BS<:Bonds, C<:IDFConfig, T<:Union{Nothing, Table}, B<:Boundary, OS<:GenOperators} <: AbstractGenerator{coord, TS, BS, C, T, B, OS}
+struct Generator{coord, TS<:NamedContainer{Term}, BS<:Bonds, C<:Config, T<:Union{Nothing, Table}, B<:Boundary, OS<:GenOperators} <: AbstractGenerator{coord, TS, BS, C, T, B, OS}
     terms::TS
     bonds::BS
     config::C
@@ -988,14 +988,14 @@ struct Generator{coord, TS<:NamedContainer{Term}, BS<:Bonds, C<:IDFConfig, T<:Un
     half::Bool
     boundary::B
     operators::OS
-    function Generator{C}(terms::NamedContainer{Term}, bonds::Bonds, config::IDFConfig, table::Union{Nothing, Table}, half::Bool, boundary::Boundary, operators::GenOperators) where C
+    function Generator{C}(terms::NamedContainer{Term}, bonds::Bonds, config::Config, table::Union{Nothing, Table}, half::Bool, boundary::Boundary, operators::GenOperators) where C
         new{C, typeof(terms), typeof(bonds), typeof(config), typeof(table), typeof(boundary), typeof(operators)}(terms, bonds, config, table, half, boundary, operators)
     end
 end
-function Generator(terms::Tuple{Vararg{Term}}, bonds::Bonds, config::IDFConfig, table::Union{Nothing, Table}=nothing, half::Bool=true, boundary::Boundary=Boundary())
-    Generator{coordpresent}(namedterms(terms), bonds, config, table, half, boundary, GenOperators(terms, bonds, config, table, half, coordpresent))
+function Generator(terms::Tuple{Vararg{Term}}, bonds::Bonds, config::Config, table::Union{Nothing, Table}=nothing, half::Bool=true, boundary::Boundary=Boundary())
+    Generator{coordon}(namedterms(terms), bonds, config, table, half, boundary, GenOperators(terms, bonds, config, table, half, coordon))
 end
-function Generator{coord}(terms::Tuple{Vararg{Term}}, bonds::Bonds, config::IDFConfig, table::Union{Nothing, Table}=nothing, half::Bool=true, boundary::Boundary=Boundary()) where coord
+function Generator{coord}(terms::Tuple{Vararg{Term}}, bonds::Bonds, config::Config, table::Union{Nothing, Table}=nothing, half::Bool=true, boundary::Boundary=Boundary()) where coord
     Generator{coord}(namedterms(terms), bonds, config, table, half, boundary, GenOperators(terms, bonds, config, table, half, coord))
 end
 @generated function namedterms(terms::Tuple{Vararg{Term}})

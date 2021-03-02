@@ -1,6 +1,6 @@
 using Test
 using QuantumLattices.Mathematics.VectorSpaces
-using QuantumLattices.Mathematics.Combinatorics: Combinations
+using QuantumLattices.Mathematics.Combinatorics: Combinations, DulPermutations
 using QuantumLattices.Interfaces: dimension, ⊕, rank, dims, inds
 
 @testset "SimpleVectorSpace" begin
@@ -104,7 +104,7 @@ end
     end
 end
 
-struct VSZNamedVectorSpace{NS, BS<:Tuple, VS<:Tuple{Vararg{Vector}}} <: NamedVectorSpace{:zip, NS, BS, VS}
+struct VSZNamedVectorSpace{NS, BS<:Tuple, VS<:Tuple{Vararg{Vector}}} <: NamedVectorSpace{:⊕, NS, BS, VS}
     contents::VS
 end
 @generated function VSZNamedVectorSpace{NS}(contents::Vector...) where NS
@@ -116,7 +116,7 @@ end
     end
 end
 
-struct VSPNamedVectorSpace{NS, BS<:Tuple, VS<:Tuple{Vararg{Vector}}} <: NamedVectorSpace{:product, NS, BS, VS}
+struct VSPNamedVectorSpace{NS, BS<:Tuple, VS<:Tuple{Vararg{Vector}}} <: NamedVectorSpace{:⊗, NS, BS, VS}
     contents::VS
 end
 @generated function VSPNamedVectorSpace{NS}(contents::Vector...) where NS

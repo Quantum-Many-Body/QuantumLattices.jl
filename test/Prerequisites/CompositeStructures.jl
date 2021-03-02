@@ -1,4 +1,5 @@
 using Test
+using QuantumLattices.Prerequisites.TypeTraits: Field
 using QuantumLattices.Prerequisites.CompositeStructures
 
 struct FT{S, N, T} <: CompositeNTuple{N, T}
@@ -8,13 +9,14 @@ end
 
 @testset "CompositeNTuple" begin
     t = FT("Info", (1, 2, 3, 4))
+    @test fieldnames(Field, typeof(t)) == (:contents, )
     @test length(t) == 4
     @test length(typeof(t)) == 4
     @test eltype(t) == Int
     @test eltype(typeof(t)) == Int
     @test t == deepcopy(t)
     @test isequal(t, deepcopy(t))
-    @test hash(t) == hash(deepcopy(t))
+    @test hash(t) == hash(("Info", (1, 2, 3, 4)))
     @test t[1] == 1
     @test t[end] == 4
     @test t[1:3] == FT("Info", (1, 2, 3))
@@ -34,6 +36,7 @@ end
 
 @testset "CompositeVector" begin
     v = FV("Info", [1, 3, 2, 4])
+    @test fieldnames(Field, typeof(v)) == (:contents, )
     @test size(v) == (4,)
     @test size(v, 1) == 4
     @test length(v) == 4
@@ -81,11 +84,13 @@ end
 
 struct FD{S, P, I} <: CompositeDict{P, I}
     info::S
-    contents::Dict{P, I}
+    newcontents::Dict{P, I}
 end
+Base.fieldname(::Type{<:FD}, ::Field{:contents}) = :newcontents
 
 @testset "CompositeDict" begin
     d = FD("Info", Dict("a"=>1, "b"=>2))
+    @test fieldnames(Field, typeof(d)) == (:contents, )
     @test d == deepcopy(d)
     @test isequal(d, deepcopy(d))
     @test isempty(d) == false

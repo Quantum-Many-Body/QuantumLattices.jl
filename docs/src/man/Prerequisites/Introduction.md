@@ -22,7 +22,6 @@ Float
 decimaltostr
 ordinal
 delta
-rawtype
 ```
 
 ## Basic structures
@@ -31,7 +30,6 @@ Here lists the table of contents of the basic data structures that are supplemen
 ```@contents
 Pages = [
         "TypeTraits.md",
-        "Factories.md",
         "CompositeStructures.md",
         "SimpleTrees.md",
         "NamedVectors.md",

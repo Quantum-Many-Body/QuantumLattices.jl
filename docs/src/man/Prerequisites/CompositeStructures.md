@@ -2,13 +2,18 @@
 CurrentModule = QuantumLattices.Prerequisites.CompositeStructures
 ```
 
+```@setup compositestructrues
+push!(LOAD_PATH, "../../../../src/")
+using QuantumLattices.Prerequisites.CompositeStructures
+```
+
 # Composite structures
 
-In principle, Julia is not an object-oriented programming language. For example, only abstract types can be inherited so that subtype cannot inherit fields from their parents. Therefore, Julia prefers composition over inheritance. However, to make a new concrete type behaves much alike another one, tedious repetitions of redefining the generic interfaces are usually not avoidable, especially for the basic types in Julia base. In this module, we implement three such composited types, [`CompositeTuple`](@ref), [`CompositeVector`](@ref) and [`CompositeDict`](@ref), for the sake of future usages.
+In principle, Julia is not an object-oriented programming language. For example, only abstract types can be inherited so that subtype cannot inherit fields from their parents. Therefore, Julia prefers composition over inheritance. However, to make a new concrete type behaves much alike another one, tedious repetitions of redefining the generic interfaces are usually not avoidable, especially for the basic types in Julia base. In this module, we implement three such composited types, [`CompositeTuple`](@ref), [`CompositeVector`](@ref) and [`CompositeDict`](@ref), for the sake of future usages. Besides, [`NamedContainer`](@ref), as a wrapper of Julia `NamedTuple`, is also provided here so that the construction of a Julia `NamedTuple` can be more flexible over the standard `(name=value, ... )` syntax.
 
 ## CompositeTuple and CompositeNTuple
 
-A composite tuple (ntuple) is a tuple (ntuple) that is implemented by including an ordinary `Tuple` (`NTuple`) as one of its attributes with the name `:contents`.
+A composite tuple (ntuple) can be considered as a tuple (ntuple) that is implemented by including an ordinary [`Tuple`](https://docs.julialang.org/en/v1/base/base/#Core.Tuple)([`NTuple`](https://docs.julialang.org/en/v1/manual/types/#Vararg-Tuple-Types)) as its data attribute.
 
 To take full advantages of the Julia base, the following interfaces are defined:
 * inquiry of info: `length`, `eltype`, `hash`
@@ -17,44 +22,45 @@ To take full advantages of the Julia base, the following interfaces are defined:
 * iteration: `iterate`, `keys`, `values`, `pairs`
 * construction of new objects: `reverse`
 
-Composite tuples are suited for the situations where other attributes are not affected by the modification of the elements. Note that arithmetic operations and logical operations excluding `==` and `isequal` are not supported. Besides, a composite tuple is **not** a tuple since Julia has no abstract tuples.
+Note that arithmetic operations and logical operations excluding `==` and `isequal` are not supported. Besides, a composite tuple is **not** a tuple since Julia has no abstract tuples.
 
 ## CompositeVector
 
-A composite vector is a vector that is implemented by including an ordinary `Vector` as one of its attributes with the name `:contents`.
+A composite vector can be considered as a vector that is implemented by including a concrete subtype of [`AbstractVector`](https://docs.julialang.org/en/v1/base/arrays/#Base.AbstractVector) as its data attribute, and it itself is a subtype of [`AbstractVector`](https://docs.julialang.org/en/v1/base/arrays/#Base.AbstractVector).
 
 To take full advantages of the Julia base, the following interfaces are redefined:
 * inquiry of info: `size`, `length`
 * comparison between objects: `==`, `isequal`
 * obtainment of old elements: `getindex`
-* modification of old elements: `setindex!`
+* operation of old elements: `setindex!`
 * addition of new elements: `push!`, `pushfirst!`, `insert!`, `append!`, `prepend!`
 * removal of old elements: `splice!`, `deleteat!`, `pop!`, `popfirst!`, `empty!`
 * construction of new objects: `empty`, `reverse`, `similar`
 * iteration: `iterate`, `keys`, `values`, `pairs`
 
-Composite vectors are suited for the situations where other attributes are not affected by the modification of the elements. Note that arithmetic operations and logical operations excluding `==` and `isequal` are not supported.
+Note that arithmetic operations and logical operations excluding `==` and `isequal` are not supported.
 
 ## CompositeDict
 
-A composite dict is a dict that is implemented by including an ordinary `Dict` as one of its attributes with the name `:contents`.
+A composite dict can be considered as a dict that is implemented by including a concrete subtype of [`AbstractDict`](https://docs.julialang.org/en/v1/base/collections/#Base.AbstractDict) as its data attribute and it itself is a subtype of [`AbstractDict`](https://docs.julialang.org/en/v1/base/collections/#Base.AbstractDict).
 
 To take full advantages of the Julia base, the following interfaces are redefined:
 * inquiry of info: `isempty`, `length`, `haskey`, `in`
 * comparison between objects: `==`, `isequal`
 * obtainment of old elements: `get`, `getkey`, `getindex`
-* modification and addition of elements: `push!`, `get!`, `setindex!`
+* operation and addition of elements: `push!`, `get!`, `setindex!`
 * removal of old elements: `pop!`, `delete!`, `empty!`
 * construction of new objects: `merge`, `empty`
 * iteration: `iterate`, `keys`, `values`, `pairs`
-
-As is similar to composite vectors, composite dicts are suited for the situations where other attributes are not affected by the modification of the elements.
 
 ## NamedContainer
 
 [`NamedContainer`](@ref) is just a wrapper (type alias) of Julia NamedTuple, but not a composite type.
 
-Julia NamedTuple is useful to keep type stability of codes when we deal with inhomogeneous immutable dict-like objects, but its default constructor is not so convenient because the names and contents must be assigned pair by pair in a pair of parentheses explicitly. Therefore, we define a type alias of NamedTuple under the name of [`NamedContainer`](@ref), so that we can construct a NamedTuple by the usual-formed constructor [`NamedContainer`](@ref).
+Julia NamedTuple is useful to keep type stability of codes when we deal with inhomogeneous immutable dict-like objects, but its default constructor is not so convenient because the names and contents must be assigned pair by pair in a pair of parentheses explicitly. Therefore, we define a type alias of NamedTuple under the name of [`NamedContainer`](@ref), so that we can construct a NamedTuple by the usual-formed constructor [`NamedContainer`](@ref), e.g.
+```@example compositestructrues
+NamedContainer{(:a, :b)}((1, 2))
+```
 
 ## Manual
 

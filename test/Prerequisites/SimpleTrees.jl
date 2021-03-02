@@ -1,12 +1,16 @@
 using Test
 using QuantumLattices.Prerequisites.SimpleTrees
+using QuantumLattices.Prerequisites.TypeTraits: Field
 
-@simpletree struct ATree end
-@simpletree struct BTree end {<:AbstractString, ::Int}
+struct Tree{N, D} <: AbstractSimpleTree{N, D}
+    TREECORE::SimpleTreeCore{N, D}
+end
+Tree{N, D}() where {N, D} = Tree(SimpleTreeCore{N, D}())
 
 @testset "AbstractSimpleTree" begin
-    tree = ATree{String, Int}()
+    tree = Tree{String, Int}()
 
+    @test fieldnames(Field, typeof(tree)) == (:TREECORE,)
     @test eltype(tree) == Pair{String, Int}
     @test keytype(tree) == String
     @test valtype(tree) == Int
@@ -63,11 +67,4 @@ end
     @test keytype(tree) == keytype(typeof(tree)) == String
     @test valtype(tree) == valtype(typeof(tree)) == Int
     @test root(tree) === nothing
-end
-
-@testset "@simpletree" begin
-    @test valtype(BTree) == Int
-    @test keytype(BTree{String}) == String
-    @test valtype(BTree{String}) == Int
-    @test BTree{String}().TREECORE == SimpleTreeCore{String, Int}()
 end

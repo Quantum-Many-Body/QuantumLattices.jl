@@ -10,6 +10,8 @@ using ...Prerequisites.TypeTraits: efficientoperations
 using ...Prerequisites.SimpleTrees: SimpleTree, simpletreedepth, isleaf
 using ...Mathematics.Combinatorics: Combinations
 using ...Mathematics.AlgebraOverFields: SimpleID
+using ...Mathematics.VectorSpaces: NamedVectorSpace
+using ...Mathematics.QuantumNumbers: Momentum
 
 import ...Interfaces: decompose, rank, dimension, kind, expand, reset!
 
@@ -1405,5 +1407,28 @@ Reset a set of lattice bonds by a new lattice.
     push!(exprs, :(return bs))
     return Expr(:block, exprs...)
 end
+
+struct BrillouinZone{P<:Momentum, N} <: NamedVectorSpace{:⊗, (:k,), Tuple{P}, Tuple{Vector{P}}}
+    reciprocals::Vector{SVector{N, Float}}
+    contents::Tuple{Vector{P}}
+end
+
+# abstract type NamedVectorSpace{M, NS, BS<:Tuple, VS<:Tuple{Vararg{AbstractVector}}} <: VectorSpace{NamedTuple{NS, BS}} end
+# It has four type parameters:
+#     * `M`: mode of the named vector space. It specifies how the indexable dimensions are combined to form the bases of the named vector space, and must take one of the following values:
+#       - `:⊕`: elements from each indexable dimensions are zipped together to form the bases,
+#       - `:⊗`: elements from each indexable dimensions are direct producted together to form the bases.
+#     For the `:⊕` mode, all the indexable dimensions should have the same number of elements, and the number of formed bases is equal to this number; for the `:⊗` mode, there are no restriction on the numbers of the indexable dimensions, and the number of the final bases is equal to their product.
+#     * `NS::Tuple{Vararg{Symbol}}`: the names of the indexable dimensions
+#     * `BS<:Tuple`: the eltypes of the indexable dimensions
+#     * `VS<:Tuple{Vararg{AbstractVector}}`: the contents of the indexable dimensions
+
+# Bonds{T, L<:AbstractLattice, BS<:Tuple{Vararg{Vector{<:AbstractBond}}}, B<:AbstractBond} <: AbstractVector{B}
+#     bonds::BS
+#     function Bonds{T, L}(bonds::Tuple{Vararg{Vector{<:AbstractBond}}}) where {T, L<:AbstractLattice}
+#         @assert isa(T, Tuple{Vararg{LatticeBonds}}) && (length(T) == length(bonds)) "Bonds error: dismatched input types and bonds."
+#         new{T, L, typeof(bonds), mapreduce(eltype, typejoin, bonds)}(bonds)
+#     end
+# end
 
 end #module

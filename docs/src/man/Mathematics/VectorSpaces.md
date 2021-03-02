@@ -112,9 +112,9 @@ Compared to [`SimpleIndices`](@ref), the bases of this kind of vector spaces are
 
 It has four type parameters:
 * `M`: mode of the named vector space. It specifies how the indexable dimensions are combined to form the bases of the named vector space, and must take one of the following values:
-  - `:zip`: elements from each indexable dimensions are zipped together to form the bases,
-  - `:product`: elements from each indexable dimensions are direct producted together to form the bases.
-For the `:zip` mode, all the indexable dimensions should have the same number of elements, and the number of formed bases is equal to this number; for the `:product` mode, there are no restriction on the numbers of the indexable dimensions, and the number of the final bases is equal to their product.
+  - `:⊕`: elements from each indexable dimensions are zipped together to form the bases,
+  - `:⊗`: elements from each indexable dimensions are direct producted together to form the bases.
+For the `:⊕` mode, all the indexable dimensions should have the same number of elements, and the number of formed bases is equal to this number; for the `:⊗` mode, there are no restriction on the numbers of the indexable dimensions, and the number of the final bases is equal to their product.
 * `NS::Tuple{Vararg{Symbol}}`: the names of the indexable dimensions
 * `BS<:Tuple`: the eltypes of the indexable dimensions
 * `VS<:Tuple{Vararg{AbstractVector}}`: the contents of the indexable dimensions
@@ -122,7 +122,7 @@ For the `:zip` mode, all the indexable dimensions should have the same number of
 The concrete types must have the following attribute:
 * `:contents::VS`: storage of the contents of the indexable dimensions
 
-By default, a named vector space uses C order for the indexable dimensions when the mode is `:product`. You can change it to F order for your own subtypes by defining the [`MultiIndexOrderStyle`](@ref) trait.
+By default, a named vector space uses C order for the indexable dimensions when the mode is `:⊗`. You can change it to F order for your own subtypes by defining the [`MultiIndexOrderStyle`](@ref) trait.
 
 ## Manual
 

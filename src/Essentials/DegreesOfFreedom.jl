@@ -5,21 +5,20 @@ using StaticArrays: SVector
 using LaTeXStrings: latexstring
 using ..Spatials: PID, AbstractBond
 using ...Interfaces: rank, dimension
-using ...Prerequisites: Float, decimaltostr, rawtype
-using ...Prerequisites.TypeTraits: efficientoperations
+using ...Prerequisites: Float, decimaltostr
+using ...Prerequisites.TypeTraits: rawtype, efficientoperations
 using ...Prerequisites.CompositeStructures: CompositeDict
 using ...Mathematics.VectorSpaces: VectorSpace
 using ...Mathematics.AlgebraOverFields: SimpleID, ID, Element, Elements
 
 import ..Spatials: pidtype, rcoord, icoord
 import ...Interfaces: reset!, update!, sequence
-import ...Mathematics.AlgebraOverFields: idpropertynames
 
 export IID, Index, pid, iidtype, iid
 export IndexToTuple, DirectIndexToTuple, directindextotuple, FilteredAttributes
-export Internal, IDFConfig, Table
+export Internal, Config, Table
 export LaTeX, OID, Operator, Operators, isHermitian, twist
-export coordpresent, coordabsent
+export coordon, coordoff
 export latexformat, script, oidtype, otype
 export Boundary
 
@@ -182,30 +181,30 @@ Filter the attributes of a "filtered attributes" method.
 Base.filter(f::Function, indextotuple::FilteredAttributes) = FilteredAttributes(Tuple(attr for attr in indextotuple.attributes if f(attr)))
 
 """
-    IDFConfig{I}(map::Function, pids::Union{AbstractVector{<:PID}, Tuple{}}=()) where {I<:Internal}
+    Config{I}(map::Function, pids::Union{AbstractVector{<:PID}, Tuple{}}=()) where {I<:Internal}
 
 Configuration of the internal degrees of freedom at a lattice.
 
 `map` maps a `PID` to an `Internal`.
 """
-struct IDFConfig{I<:Internal, M<:Function, P<:PID} <: CompositeDict{P, I}
+struct Config{I<:Internal, M<:Function, P<:PID} <: CompositeDict{P, I}
     map::M
     contents::Dict{P, I}
 end
-function IDFConfig{I}(map::Function, pids::Union{AbstractVector{<:PID}, Tuple{}}=()) where {I<:Internal}
+function Config{I}(map::Function, pids::Union{AbstractVector{<:PID}, Tuple{}}=()) where {I<:Internal}
     contents = Dict{pids|>eltype, I}()
     for pid in pids
         contents[pid] = map(pid)
     end
-    IDFConfig(map, contents)
+    Config(map, contents)
 end
 
 """
-    reset!(config::IDFConfig, pids) -> IDFConfig
+    reset!(config::Config, pids) -> Config
 
 Reset the idfconfig with new pids.
 """
-function reset!(config::IDFConfig, pids)
+function reset!(config::Config, pids)
     empty!(config)
     for pid in pids
         config[pid] = config.map(pid)
@@ -244,11 +243,11 @@ function Table(indices::AbstractVector{<:Index}, by::IndexToTuple=directindextot
 end
 
 """
-    Table(config::IDFConfig, by::IndexToTuple=directindextotuple) -> Table
+    Table(config::Config, by::IndexToTuple=directindextotuple) -> Table
 
 Get the index-sequence table of the whole internal Hilbert spaces at a lattice.
 """
-function Table(config::IDFConfig, by::IndexToTuple=directindextotuple)
+function Table(config::Config, by::IndexToTuple=directindextotuple)
     result = union(config|>keytype, config|>valtype|>eltype)[]
     for (pid, internal) in config
         for iid in internal
@@ -294,7 +293,7 @@ end
 
 """
     reset!(table::Table, indices::AbstractVector{<:Index}) -> Table
-    reset!(table::Table, config::IDFConfig) -> Table
+    reset!(table::Table, config::Config) -> Table
 
 Reset a table.
 """
@@ -309,7 +308,7 @@ function reset!(table::Table, indices::AbstractVector{<:Index})
     end
     table
 end
-function reset!(table::Table, config::IDFConfig)
+function reset!(table::Table, config::Config)
     indices = union(config|>keytype, config|>valtype|>eltype)[]
     for (pid, internal) in config
         for iid in internal
@@ -371,7 +370,7 @@ totuple(::Nothing) = nothing
 @generated totuple(v::SVector{N}) where {N} = Expr(:tuple, [:(v[$i]) for i = 1:N]...)
 Base.hash(oid::OID{<:Index}, h::UInt) = hash((oid.index, totuple(oid.rcoord)), h)
 Base.fieldnames(::Type{<:OID}) = (:index, :rcoord, :icoord, :seq)
-idpropertynames(::Type{<:ID{OID}}) = (:indexes, :rcoords, :icoords, :seqs)
+Base.propertynames(::ID{OID}) = (:indexes, :rcoords, :icoords, :seqs)
 
 """
     show(io::IO, oid::OID)
@@ -435,18 +434,18 @@ Get the body/superscript/subscript of the latex string representation of an oid.
 @generated script(oid::OID, l::LaTeX, ::Val{:SB}) = Expr(:tuple, [:(script(oid, Val($sub))) for sub in QuoteNode.(l|>latexsubscript)]...)
 
 """
-    coordpresent
+    coordon
 
 Indicate that the `:icoord` and `:rcoord` attributes in an oid should not be nothing.
 """
-const coordpresent = Val(true)
+const coordon = Val(true)
 
 """
-    coordabsent
+    coordoff
 
 Indicate that the `:icoord` and `:rcoord` attributes in an oid should be nothing
 """
-const coordabsent = Val(false)
+const coordoff = Val(false)
 
 """
     oidtype(I::Type{<:IID}, B::Type{<:AbstractBond}, ::Type{Nothing}, ::Val{true})

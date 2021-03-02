@@ -67,7 +67,7 @@ end
     qns = AbelianNumbers('U', [qn1, qn2], [0, 3, 5], qnindptr)
     @test qns|>dimension == 5
     @test qns|>string == "QNS(2, 5)"
-    @test qns|>length == 2
+    @test qns|>size == (2,)
     @test qns|>eltype == CNZ4
     @test qns|>typeof|>eltype == CNZ4
     @test @sprintf("%s", qns) == "QNS(CNZ4(1.0, 3.0)=>1:3, CNZ4(-1.0, 1.0)=>4:5)"

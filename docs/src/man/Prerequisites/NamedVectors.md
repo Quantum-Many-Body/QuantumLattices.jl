@@ -36,22 +36,6 @@ To subtype it, please note:
 5. Arithmetic operations, such as `+`, `-`, `*`, `/`, `%`, `÷`, etc. are **not** supported.
    However, the function [`map`](@ref) is implemented, which can help users do the overloadings of these operations.
 
-We define a macro [`@namedvector`](@ref) as the type factory to decorate a "raw" struct to be a subtype of `NamedVector`. Here, "raw" means the struct to be decorated has no explicit supertype other than `Any`, neither inner constructors as well. For example,
-```@example namedvectors
-# decorate an immutable "raw" struct
-@namedvector struct InHomoIMNV
-    scope::String
-    site::Int
-end
-
-# decorate a mutable "raw" struct
-@namedvector mutable struct InHomoMNV
-    scope::String
-    site::Int
-end
-```
-This macro encapsulate the overloading of `Base.fieldnames`, and you have no need to do this by hand any more.
-
 ## HomoNamedVector
 
 [`HomoNamedVector`](@ref) is the subtype of [`NamedVector`](@ref) that of all its fields share the same type. Compared to `NamedVector`, one more default method is implemented with [`HomoNamedVector`](@ref), i.e. `eltype`, which returns the type of its fields. This function ensures the type stability of all the methods that involves an iteration of the field values of a named vector. Therefore, homogeneous named vector are usually more efficient than inhomogeneous ones. Use homogeneous ones as much as possible unless the code efficiency does not matter.
@@ -64,15 +48,6 @@ To subtype [`HomoNamedVector`](@ref), all the suggestions mentioned in the previ
     ...
 end
 ```
-We also provide a macro [`@homonamedvector`](@ref) to help the definition of concrete homogeneous named vector, where you only need specify the type name, field names, data type and optionally whether the subtype is mutable. For example,
-```@example namedvectors
-# construct an immutable homogeneous named vector without type parameters
-@homonamedvector HomoNVWithoutParameter (:scope, :site) Int mutable=false
-
-# construct a mutable homogeneous named vector with type parameters
-@homonamedvector HomoNVWithParameter (:scope, :site) (<:Real) mutable=true
-```
-This macro also integrates the `Base.fieldnames` function, thus its overloading by hand is on longer needed.
 
 ## Manual
 

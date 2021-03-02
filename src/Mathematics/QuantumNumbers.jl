@@ -11,7 +11,7 @@ using ...Prerequisites.NamedVectors: HomoNamedVector
 
 import ...Interfaces: ⊕, ⊗, dimension, expand, permute, decompose, regularize!, regularize
 
-export AbelianNumber, @abeliannumber, SQN, PQN, SPQN, Z2QN, periods
+export AbelianNumber, periods, @abeliannumber, SQN, PQN, SPQN, Z2QN, Momentum, Momentum1D, Momentum2D, Momentum3D
 export qncounts, qnindptr, qncompression, qnexpansion, qncontents, qnindices, qnbruteforce, qnmontecarlo
 export AbelianNumbers, SQNS, PQNS, SzPQNS, SPQNS, Z2QNS
 export ukron, toordereddict
@@ -120,6 +120,57 @@ The concrete `AbelianNumber` of a quantum system with a Z₂-like conserved quan
 """
 @abeliannumber "Z2QN" (:N,) (2,)
 
+abstract type Momentum <: AbelianNumber end
+struct Momentum1D{N} <: Momentum
+    k::Float
+    function Momentum1D{N}(k::Real) where N
+        @assert isa(N, Integer) && N>0 "Momentum1D error: wrong period ($N)."
+        remainder = k % N
+        remainder < 0 && (remainder = remainder + N)
+        new{N}(remainder)
+    end
+end
+Base.fieldnames(::Type{<:Momentum1D}) = (:k,)
+periods(::Type{<:Momentum1D{N}}) where N = (N,)
+
+struct Momentum2D{N₁, N₂} <: Momentum
+    k₁::Float
+    k₂::Float
+    Momentum2D{N}(k₁::Real, k₂::Real) where N =  Momentum2D{N, N}(k₁, k₂)
+    function Momentum2D{N₁, N₂}(k₁::Real, k₂::Real) where {N₁, N₂}
+        @assert isa(N₁, Integer) && N₁>0 "Momentum2D error: wrong 1st period ($N₁)."
+        @assert isa(N₂, Integer) && N₂>0 "Momentum2D error: wrong 2nd period ($N₂)."
+        r₁ = k₁ % N₁
+        r₂ = k₂ % N₂
+        r₁ < 0 && (r₁ = r₁ + N₁)
+        r₂ < 0 && (r₂ = r₂ + N₂)
+        new{N₁, N₂}(r₁, r₂)
+    end
+end
+Base.fieldnames(::Type{<:Momentum2D}) = (:k₁, :k₂)
+periods(::Type{<:Momentum2D{N₁, N₂}}) where {N₁, N₂} = (N₁, N₂)
+
+struct Momentum3D{N₁, N₂, N₃} <: Momentum
+    k₁::Float
+    k₂::Float
+    k₃::Float
+    Momentum3D{N}(k₁::Real, k₂::Real, k₃::Real) where N =  Momentum3D{N, N, N}(k₁, k₂, k₃)
+    function Momentum3D{N₁, N₂, N₃}(k₁::Real, k₂::Real, k₃::Real) where {N₁, N₂, N₃}
+        @assert isa(N₁, Integer) && N₁>0 "Momentum3D error: wrong 1st period ($N₁)."
+        @assert isa(N₂, Integer) && N₂>0 "Momentum3D error: wrong 2nd period ($N₂)."
+        @assert isa(N₃, Integer) && N₃>0 "Momentum3D error: wrong 3rd period ($N₃)."
+        r₁ = k₁ % N₁
+        r₂ = k₂ % N₂
+        r₃ = k₃ % N₃
+        r₁ < 0 && (r₁ = r₁ + N₁)
+        r₂ < 0 && (r₂ = r₂ + N₂)
+        r₃ < 0 && (r₃ = r₃ + N₃)
+        new{N₁, N₂, N₃}(r₁, r₂, r₃)
+    end
+end
+Base.fieldnames(::Type{<:Momentum3D}) = (:k₁, :k₂, :k₃)
+periods(::Type{<:Momentum3D{N₁, N₂}}) where {N₁, N₂, N₃} = (N₁, N₂, N₃)
+
 abstract type QNProtocol end
 struct QNIndptr <: QNProtocol end
 struct QNCounts <: QNProtocol end
@@ -144,7 +195,7 @@ The whole quantum numbers of the total bases of a Hilbert space.
 
 The default constructors construct an `AbelianNumbers` from a vector of concrete quantum numbers and an vector containing their counts or indptr.
 """
-struct AbelianNumbers{QN<:AbelianNumber}
+struct AbelianNumbers{QN<:AbelianNumber} <: AbstractVector{QN}
     form::Char
     contents::Vector{QN}
     indptr::Vector{Int}
@@ -232,12 +283,19 @@ Convert an `AbelianNumbers` to string.
 """
 Base.string(qns::AbelianNumbers) = @sprintf "QNS(%s, %s)" qns|>length qns|>dimension
 
+# """
+#     length(qns::AbelianNumbers) -> Int
+
+# Get the number of unduplicate qunatum numbers in the `AbelianNumbers`.
+# """
+# Base.length(qns::AbelianNumbers) = length(qns.contents)
+
 """
-    length(qns::AbelianNumbers) -> Int
+    size(qns:AbelianNumbers) -> Tuple{Int}
 
 Get the number of unduplicate qunatum numbers in the `AbelianNumbers`.
 """
-Base.length(qns::AbelianNumbers) = length(qns.contents)
+Base.size(qns::AbelianNumbers) = (length(qns.contents),)
 
 """
     eltype(::Type{<:AbelianNumbers{QN}}) where {QN<:AbelianNumber}

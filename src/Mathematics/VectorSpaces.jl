@@ -1,8 +1,7 @@
 module VectorSpaces
 
 using ..Combinatorics: AbstractCombinatorics
-using ...Prerequisites: rawtype
-using ...Prerequisites.TypeTraits: efficientoperations, forder, corder, subtoind, indtosub
+using ...Prerequisites.TypeTraits: rawtype, efficientoperations, forder, corder, subtoind, indtosub
 
 import ...Interfaces: dimension, ⊕, rank, dims, inds
 
@@ -272,9 +271,9 @@ This is a wrapper of multiindexable vector spaces, each of whose indexable dimen
 
 It has four type parameters:
 * `M`: mode of the named vector space. It specifies how the indexable dimensions are combined to form the bases of the named vector space, and must take one of the following values:
-  - `:zip`: elements from each indexable dimensions are zipped together to form the bases,
-  - `:product`: elements from each indexable dimensions are direct producted together to form the bases.
-For the `:zip` mode, all the indexable dimensions should have the same number of elements, and the number of formed bases is equal to this number; for the `:product` mode, there are no restriction on the numbers of the indexable dimensions, and the number of the final bases is equal to their product.
+  - `:⊕`: elements from each indexable dimensions are zipped together to form the bases,
+  - `:⊗`: elements from each indexable dimensions are direct producted together to form the bases.
+For the `:⊕` mode, all the indexable dimensions should have the same number of elements, and the number of formed bases is equal to this number; for the `:⊗` mode, there are no restriction on the numbers of the indexable dimensions, and the number of the final bases is equal to their product.
 * `NS::Tuple{Vararg{Symbol}}`: the names of the indexable dimensions
 * `BS<:Tuple`: the eltypes of the indexable dimensions
 * `VS<:Tuple{Vararg{AbstractVector}}`: the contents of the indexable dimensions
@@ -282,16 +281,16 @@ For the `:zip` mode, all the indexable dimensions should have the same number of
 The concrete types must have the following attribute:
 * `:contents::VS`: storage of the contents of the indexable dimensions
 
-By default, a named vector space uses C order for the indexable dimensions when the mode is `:product`. You can change it to F order for your own subtypes by defining the [`MultiIndexOrderStyle`](@ref) trait.
+By default, a named vector space uses C order for the indexable dimensions when the mode is `:⊗`. You can change it to F order for your own subtypes by defining the [`MultiIndexOrderStyle`](@ref) trait.
 """
 abstract type NamedVectorSpace{M, NS, BS<:Tuple, VS<:Tuple{Vararg{AbstractVector}}} <: VectorSpace{NamedTuple{NS, BS}} end
 IsMultiIndexable(::Type{<:NamedVectorSpace}) = IsMultiIndexable(true)
 MultiIndexOrderStyle(::Type{<:NamedVectorSpace}) = MultiIndexOrderStyle('C')
-rank(::Type{<:NamedVectorSpace{:zip}}) = 1
-rank(::Type{<:NamedVectorSpace{:product, NS}}) where NS = length(NS)
-dims(nvs::NamedVectorSpace{:zip}) = (length(getfield(nvs, :contents)[1]),)
-@generated dims(nvs::NamedVectorSpace{:product}) = Expr(:tuple, [:(length(getfield(nvs, :contents)[$i])) for i = 1:rank(nvs)]...)
-function inds(basis::NamedTuple{NS}, nvs::NamedVectorSpace{:zip, NS}) where NS
+rank(::Type{<:NamedVectorSpace{:⊕}}) = 1
+rank(::Type{<:NamedVectorSpace{:⊗, NS}}) where NS = length(NS)
+dims(nvs::NamedVectorSpace{:⊕}) = (length(getfield(nvs, :contents)[1]),)
+@generated dims(nvs::NamedVectorSpace{:⊗}) = Expr(:tuple, [:(length(getfield(nvs, :contents)[$i])) for i = 1:rank(nvs)]...)
+function inds(basis::NamedTuple{NS}, nvs::NamedVectorSpace{:⊕, NS}) where NS
     index = findfirst(isequal(basis[1]), getfield(nvs, :contents)[1])
     @assert isa(index, Integer) "inds error: input basis out of range."
     for i = 2:length(NS)
@@ -299,13 +298,13 @@ function inds(basis::NamedTuple{NS}, nvs::NamedVectorSpace{:zip, NS}) where NS
     end
     return (index,)
 end
-@generated function inds(basis::NamedTuple{NS, BS}, nvs::NamedVectorSpace{:product, NS, BS}) where {NS, BS<:Tuple}
+@generated function inds(basis::NamedTuple{NS, BS}, nvs::NamedVectorSpace{:⊗, NS, BS}) where {NS, BS<:Tuple}
     return Expr(:tuple, [:(findfirst(isequal(basis[$i]), getfield(nvs, :contents)[$i])) for i = 1:length(NS)]...)
 end
-@generated function NamedTuple(index::Tuple{Int}, nvs::NamedVectorSpace{:zip, NS}) where NS
+@generated function NamedTuple(index::Tuple{Int}, nvs::NamedVectorSpace{:⊕, NS}) where NS
     return Expr(:tuple, [:($name = getfield(nvs, :contents)[$i][index[1]]) for (i, name) in enumerate(NS)]...)
 end
-@generated function NamedTuple(index::NTuple{N, Int}, nvs::NamedVectorSpace{:product, NS}) where {N, NS}
+@generated function NamedTuple(index::NTuple{N, Int}, nvs::NamedVectorSpace{:⊗, NS}) where {N, NS}
     @assert N == length(NS) "NamedTuple error: dismatched input index and rank of named vector space."
     return Expr(:tuple, [:($name = getfield(nvs, :contents)[$i][index[$i]]) for (i, name) in enumerate(NS)]...)
 end

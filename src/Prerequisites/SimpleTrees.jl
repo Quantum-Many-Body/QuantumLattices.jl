@@ -1,18 +1,33 @@
 module SimpleTrees
 
-using ..Factories: Inference, Argument, Parameter, FunctionFactory, TypeFactory
-using ..Factories: addfields!, addparams!, addargs!, addwhereparams!, extendbody!
-using ..Factories: MixEscaped, Escaped, UnEscaped, rawexpr
-using ..TypeTraits: efficientoperations
+using ..TypeTraits: efficientoperations, parametertype, Field
 
 export simpletreedepth, simpletreewidth
-export AbstractSimpleTree
-export root, parent, children
-export addnode!, deletenode!
-export isleaf, level
-export ancestor, descendants, siblings, leaves
-export subtree, move!
-export SimpleTreeCore, @simpletree, SimpleTree
+export SimpleTreeCore, AbstractSimpleTree, SimpleTree
+export root, parent, children, ancestor, descendants, siblings, leaves, subtree
+export isleaf, level, addnode!, deletenode!, move!
+
+"""
+    SimpleTreeCore()
+
+The core of a simple tree.
+"""
+mutable struct SimpleTreeCore{N, D}
+    root::Union{N, Nothing}
+    contents::Dict{N, D}
+    parent::Dict{N, N}
+    children::Dict{N, Vector{N}}
+    SimpleTreeCore{N, D}() where {N, D} = new{N, D}(nothing, Dict{N, D}(), Dict{N, N}(), Dict{N, Vector{N}}())
+end
+
+"""
+    ==(tc1::TC, tc2::TC) where TC<:SimpleTreeCore -> Bool
+    isequal(tc1::TC, tc2::TC) where TC<:SimpleTreeCore -> Bool
+
+Overloaded equivalent operator.
+"""
+Base.:(==)(tc1::TC, tc2::TC) where {TC<:SimpleTreeCore} = ==(efficientoperations, tc1, tc2)
+Base.isequal(tc1::TC, tc2::TC) where {TC<:SimpleTreeCore} = isequal(efficientoperations, tc1, tc2)
 
 abstract type SimpleTreeIteration end
 struct SimpleTreeDepth <: SimpleTreeIteration end
@@ -38,43 +53,69 @@ const simpletreewidth = SimpleTreeWidth()
 Abstract type for all concrete trees.
 """
 abstract type AbstractSimpleTree{N, D} end
+Base.fieldnames(::Type{Field}, ::Type{<:AbstractSimpleTree}) = (:TREECORE,)
+
+"""
+    SimpleTreeCore(tree::AbstractSimpleTree) -> SimpleTreeCore
+
+Get the core of a simple tree.
+"""
+SimpleTreeCore(tree::AbstractSimpleTree) = getproperty(tree, Field(:TREECORE))
+
+"""
+    keytype(tree::AbstractSimpleTree)
+    keytype(::Type{T}) where {T<:AbstractSimpleTree}
+
+Get a tree's node type.
+"""
+Base.keytype(tree::AbstractSimpleTree) = keytype(typeof(tree))
+@generated Base.keytype(::Type{T}) where {T<:AbstractSimpleTree} = parametertype(supertype(T, :AbstractSimpleTree), 1)
+
+"""
+    valtype(tree::AbstractSimpleTree)
+    valtype(::Type{T}) where {T<:AbstractSimpleTree}
+
+Get a tree's data type.
+"""
+Base.valtype(tree::AbstractSimpleTree) = valtype(typeof(tree))
+@generated Base.valtype(::Type{T}) where {T<:AbstractSimpleTree} = parametertype(supertype(T, :AbstractSimpleTree), 2)
 
 """
     eltype(tree::AbstractSimpleTree)
-    eltype(::Type{<:AbstractSimpleTree{N, D}}) where {N, D}
+    eltype(::Type{T}) where {T<:AbstractSimpleTree}
 
 Get the eltype of a tree.
 """
 Base.eltype(tree::AbstractSimpleTree) = eltype(typeof(tree))
-Base.eltype(::Type{<:AbstractSimpleTree{N, D}}) where {N, D} = Pair{N, D}
+Base.eltype(::Type{T}) where {T<:AbstractSimpleTree} = Pair{keytype(T), valtype(T)}
 
 """
     root(tree::AbstractSimpleTree) -> Union{keytype(tree), Nothing}
 
 Get a tree's root node.
 """
-root(tree::AbstractSimpleTree) = tree.TREECORE.root
+root(tree::AbstractSimpleTree) = SimpleTreeCore(tree).root
 
 """
     haskey(tree::AbstractSimpleTree{N}, node::N) where N -> Bool
 
 Check whether a node is in a tree.
 """
-Base.haskey(tree::AbstractSimpleTree{N}, node::N) where N = haskey(tree.TREECORE.contents, node)
+Base.haskey(tree::AbstractSimpleTree{N}, node::N) where N = haskey(SimpleTreeCore(tree).contents, node)
 
 """
     length(tree::AbstractSimpleTree) -> Int
 
 Get the number of a tree's nodes.
 """
-Base.length(tree::AbstractSimpleTree) = length(tree.TREECORE.contents)
+Base.length(tree::AbstractSimpleTree) = length(SimpleTreeCore(tree).contents)
 
 """
     parent(tree::AbstractSimpleTree{N}, node::N, superparent::Union{N, Nothing}=nothing) where N -> Union{N, Nothing}
 
 Get the parent of a tree's node. When `node` is the tree's root, return `superparent`.
 """
-parent(tree::AbstractSimpleTree{N}, node::N, superparent::Union{N, Nothing}=nothing) where {N} = (node == root(tree) ? superparent : tree.TREECORE.parent[node])
+parent(tree::AbstractSimpleTree{N}, node::N, superparent::Union{N, Nothing}=nothing) where {N} = (node == root(tree) ? superparent : SimpleTreeCore(tree).parent[node])
 
 """
     children(tree::AbstractSimpleTree) -> Vector{keytype(tree)}
@@ -85,7 +126,7 @@ Get the children of a tree's node.
 """
 children(tree::AbstractSimpleTree) = children(tree, nothing)
 children(tree::AbstractSimpleTree, ::Nothing) = (root(tree) === nothing) ? error("children error: empty tree!") : [root(tree)]
-children(tree::AbstractSimpleTree{N}, node::N) where N = tree.TREECORE.children[node]
+children(tree::AbstractSimpleTree{N}, node::N) where N = SimpleTreeCore(tree).children[node]
 
 """
     addnode!(tree::AbstractSimpleTree{N}, node::N) where N} -> typeof(tree)
@@ -97,16 +138,16 @@ Update the structure of a tree by adding a node. When the parent is `nothing`, t
 addnode!(tree::AbstractSimpleTree{N}, node::N) where {N} = addnode!(tree, nothing, node)
 function addnode!(tree::AbstractSimpleTree{N}, ::Nothing, node::N) where N
     @assert root(tree) === nothing "addnode! error: not empty tree."
-    tree.TREECORE.root = node
-    tree.TREECORE.children[node] = N[]
+    SimpleTreeCore(tree).root = node
+    SimpleTreeCore(tree).children[node] = N[]
     return tree
 end
 function addnode!(tree::AbstractSimpleTree{N}, parent::N, node::N) where N
     @assert haskey(tree, parent) "addnode! error: parent($parent) not in tree."
     @assert !haskey(tree, node) "addnode! error: node($node) already in tree."
-    push!(tree.TREECORE.children[parent], node)
-    tree.TREECORE.parent[node] = parent
-    tree.TREECORE.children[node] = N[]
+    push!(SimpleTreeCore(tree).children[parent], node)
+    SimpleTreeCore(tree).parent[node] = parent
+    SimpleTreeCore(tree).children[node] = N[]
     return tree
 end
 
@@ -118,14 +159,14 @@ Update the structure of a tree by deleting a node.
 function deletenode!(tree::AbstractSimpleTree{N}, node::N) where N
     @assert haskey(tree, node) "deletenode! error: node($node) not in tree."
     if node == root(tree)
-        tree.TREECORE.root = nothing
+        SimpleTreeCore(tree).root = nothing
     else
         pnode = parent(tree, node)
-        haskey(tree.TREECORE.children, pnode) && filter!(!=(node), tree.TREECORE.children[pnode])
+        haskey(SimpleTreeCore(tree).children, pnode) && filter!(!=(node), SimpleTreeCore(tree).children[pnode])
     end
-    pop!(tree.TREECORE.contents, node)
-    pop!(tree.TREECORE.parent, node, nothing)
-    pop!(tree.TREECORE.children, node)
+    pop!(SimpleTreeCore(tree).contents, node)
+    pop!(SimpleTreeCore(tree).parent, node, nothing)
+    pop!(SimpleTreeCore(tree).children, node)
     return tree
 end
 
@@ -134,14 +175,14 @@ end
 
 Get the data of a tree's node.
 """
-Base.getindex(tree::AbstractSimpleTree{N}, node::N) where {N} = tree.TREECORE.contents[node]
+Base.getindex(tree::AbstractSimpleTree{N}, node::N) where {N} = SimpleTreeCore(tree).contents[node]
 
 """
     setindex!(tree::AbstractSimpleTree{N, D}, data::D, node::N) where {N, D}
 
 Set the data of a tree's node.
 """
-Base.setindex!(tree::AbstractSimpleTree{N, D}, data::D, node::N) where {N, D} = (tree.TREECORE.contents[node] = data)
+Base.setindex!(tree::AbstractSimpleTree{N, D}, data::D, node::N) where {N, D} = (SimpleTreeCore(tree).contents[node] = data)
 
 """
     empty(tree::AbstractSimpleTree)
@@ -152,24 +193,6 @@ Construct an empty tree of the same type with the input one.
     contents = Expr[:(getfield(tree, $name)) for name in QuoteNode.(fieldnames(tree)) if name != QuoteNode(:TREECORE)]
     return :(($tree)($(contents...), SimpleTreeCore{$N, $D}()))
 end
-
-"""
-    keytype(tree::AbstractSimpleTree)
-    keytype(::Type{<:AbstractSimpleTree{N}}) where N
-
-Get a tree's node type.
-"""
-Base.keytype(tree::AbstractSimpleTree) = keytype(typeof(tree))
-Base.keytype(::Type{<:AbstractSimpleTree{N}}) where N = N
-
-"""
-    valtype(tree::AbstractSimpleTree)
-    valtype(::Type{<:AbstractSimpleTree{N, D} where N}) where D=D
-
-Get a tree's data type.
-"""
-Base.valtype(tree::AbstractSimpleTree) = valtype(typeof(tree))
-Base.valtype(::Type{<:AbstractSimpleTree{N, D} where N}) where D = D
 
 """
     ==(t1::T, t2::T) where T<:AbstractSimpleTree -> Bool
@@ -356,100 +379,6 @@ function move!(tree::AbstractSimpleTree{N}, node::N, parent::N) where N
     delete!(tree, node)
     append!(tree, parent, sub)
     return tree
-end
-
-"""
-    SimpleTreeCore()
-
-The core of a tree.
-"""
-mutable struct SimpleTreeCore{N, D}
-    root::Union{N, Nothing}
-    contents::Dict{N, D}
-    parent::Dict{N, N}
-    children::Dict{N, Vector{N}}
-    SimpleTreeCore{N, D}() where {N, D} = new{N, D}(nothing, Dict{N, D}(), Dict{N, N}(), Dict{N, Vector{N}}())
-end
-
-"""
-    ==(tc1::TC, tc2::TC) where TC<:SimpleTreeCore -> Bool
-    isequal(tc1::TC, tc2::TC) where TC<:SimpleTreeCore -> Bool
-
-Overloaded equivalent operator.
-"""
-Base.:(==)(tc1::TC, tc2::TC) where {TC<:SimpleTreeCore} = ==(efficientoperations, tc1, tc2)
-Base.isequal(tc1::TC, tc2::TC) where {TC<:SimpleTreeCore} = isequal(efficientoperations, tc1, tc2)
-
-"""
-    @simpletree structdef treeparams::Union{Expr, Nothing}=nothing
-
-Decorate a "raw" struct to be a subtype of `AbstractSimpleTree`.
-!!! note
-    1. A "raw" struct means:
-       - It has no explicit supertype;
-       - It has no inner constructor;
-       - It has no attribute `:TREECORE`.
-    2. The keytype and valtype can be assigned by the argument `treeparams` in the form `{keytype, valtype}`.
-       - When the formal argument names of keytype and valtype are not assigned, they can be automatically generated by the functioin `gensym`.
-         For example, the struct `Tree` after the decoration by the following code
-         ```julia
-         @simpletree(struct Tree{N} info::Vector{N} end)
-         ```
-         will have three type parameters.
-       - When the keytype or valtype is a definite type, use symbol `:(::)` before that type.
-         For example, the struct `Tree` decorated by the following code
-         ```julia
-         @simpletree(struct Tree{N} info::Vector{N} end, {::String, D<:Number})
-         ```
-         only has two type parameters `N` and `D<:Number`.
-       - When the formal argument names of keytype and valtype overlap with those of the raw struct type parameters, the duplicates will be considered as the same.
-         For example, the decorated struct `Tree` by the following code
-         ```julia
-         @simpletree(struct Tree{D} info::Vector{D} end, {::String, D<:Number})
-         ```
-         has only one type parameter `D<:Number`, where the `D` in the `info::Vector{D}` is the same `D` with that in the decorated attribute `TREECORE::SimpleTreeCore{String, D}`.
-       - When the formal argument names of keytype and valtype have no intersection with those of the raw struct type parameters,
-         the type parameters of the decorated struct will be just extended by keytype and valtype.
-         For example, the decorated struct `Tree` by the following code
-         ```julia
-         @simpletree(struct Tree{T} info::Vector{T} end, {N<:Tuple, D<:Number})
-         ```
-         has 3 type parameters, `T`, `N<:Tuple` and `D<:Number`.
-"""
-macro simpletree(structdef, treeparams::Union{Expr, Nothing}=nothing)
-    tf = TypeFactory(structdef)
-    fieldnames = [field.name for field in tf.fields]
-    paramnames = [param.name for param in tf.params]
-    @assert tf.supertype == Inference(:Any) "@simpletree error: no explicit supertype except `Any` is allowed."
-    @assert length(tf.constructors) == 0 "@simpletree error: no inner constructor is allowed."
-    @assert :TREECORE ∉ fieldnames "@simpletree error: :TREECORE is a reserved attribute name."
-    if treeparams === nothing
-        treeparamnames = (gensym(), gensym())
-        treeparams = [Parameter(treeparamnames[1]), Parameter(treeparamnames[2])]
-        truetreeparamnames = treeparamnames
-        escapednames = ()
-    else
-        @assert (treeparams.head == :braces) && (length(treeparams.args) == 2) "@simpletree error: not supported treeparams."
-        treeparams = [Parameter(arg) for arg in treeparams.args]
-        (treeparams[1].name === nothing) && (treeparams[1].head ≠ :(::)) && (treeparams[1].name = gensym())
-        (treeparams[2].name === nothing) && (treeparams[2].head ≠ :(::)) && (treeparams[2].name = gensym())
-        treeparamnames = tuple(((tp.name === nothing) ? tp(rawexpr) : tp.name for tp in treeparams)...)
-        truetreeparamnames = tuple((tp.name for tp in treeparams if tp.name ≠ nothing)...)
-        escapednames = vcat((names(tp(rawexpr)) for tp in treeparams if tp.name === nothing)...)
-        filter!(tp->(tp.name ∉ paramnames) && (tp.name ≠ nothing), treeparams)
-    end
-    tf.supertype = Inference(:(AbstractSimpleTree{$(treeparamnames...)}))
-    append!(paramnames, (tp.name for tp in treeparams))
-    addfields!(tf, :(TREECORE::SimpleTreeCore{$(treeparamnames...)}))
-    addparams!(tf, treeparams...)
-    outer = FunctionFactory(name=tf.name)
-    addparams!(outer, truetreeparamnames...)
-    addargs!(outer, (Argument(name=field.name, type=field.type) for field in tf.fields[1:end-1])...)
-    addwhereparams!(outer, tf.params...)
-    extendbody!(outer, :($(tf.name)($(fieldnames...), SimpleTreeCore{$(treeparamnames...)}())))
-    sbtreedef = tf(MixEscaped(Escaped(tf.name, escapednames...), UnEscaped(paramnames..., :AbstractSimpleTree, :SimpleTreeCore)))
-    outerdef = outer(MixEscaped(Escaped(tf.name, escapednames...), UnEscaped(paramnames...)))
-    return Expr(:block, :(Base.@__doc__($sbtreedef)), outerdef)
 end
 
 """
