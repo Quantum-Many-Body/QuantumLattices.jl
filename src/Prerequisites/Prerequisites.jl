@@ -67,7 +67,7 @@ Kronecker delta function.
 """
 delta(i, j) = (i == j) ? 1 : 0
 
-include("TypeTraits.jl")
+include("Traits.jl")
 include("CompositeStructures.jl")
 include("SimpleTrees.jl")
 include("NamedVectors.jl")

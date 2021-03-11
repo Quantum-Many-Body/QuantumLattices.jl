@@ -1,7 +1,7 @@
 module NamedVectors
 
 using Printf: @printf
-using ..TypeTraits: efficientoperations
+using ..Traits: efficientoperations
 
 export NamedVector, HomoNamedVector
 
@@ -33,7 +33,7 @@ Overloaded equivalent operator. Two named vector are equal to each other if and 
 !!! note
     It is not necessary for two named vectors to be of the same concrete type to be equal to each other.
 """
-Base.:(==)(nv1::NamedVector, nv2::NamedVector) = (keys(nv1) == keys(nv2)) && (values(nv1 ) == values(nv2))
+Base.:(==)(nv1::NamedVector, nv2::NamedVector) = (keys(nv1) == keys(nv2)) && (values(nv1) == values(nv2))
 
 """
     isequal(nv1::NamedVector, nv2::NamedVector) -> Bool

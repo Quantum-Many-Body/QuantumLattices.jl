@@ -1,9 +1,27 @@
 using Test
-using QuantumLattices.Prerequisites.TypeTraits
+using QuantumLattices.Prerequisites.Traits
 
-import QuantumLattices.Prerequisites.TypeTraits: parameternames, isparameterbound
+import QuantumLattices.Prerequisites.Traits: parameternames, isparameterbound, fieldnameofcontent, contentnames
 
-@testset "reflection" begin
+abstract type FT{T} end
+parameternames(::Type{<:FT}) = (:content,)
+isparameterbound(::Type{<:FT}, ::Val{:content}, D) = !isconcretetype(D)
+contentnames(::Type{<:FT}) = (:content,)
+
+struct SameNameField <: FT{Vector{Int}}
+    info::String
+    content::Vector{Int}
+end
+parameternames(::Type{SameNameField}) = ()
+
+struct DiffNameField <: FT{Vector{Int}}
+    info::String
+    table::Vector{Int}
+end
+fieldnameofcontent(::Type{DiffNameField}, ::Val{:content}) = :table
+parameternames(::Type{DiffNameField}) = ()
+
+@testset "abstracttypehelper" begin
     @test DataType(Int) == Int
     T = Vector{<:Integer}
     @test DataType(T) == T.body
@@ -16,9 +34,9 @@ import QuantumLattices.Prerequisites.TypeTraits: parameternames, isparameterboun
     @test parametertype(Vector{<:Real}, 2) == 1
     @test parametertypes(Vector{<:Real}) == Tuple{Real, 1}
 
-    @test replace(Vector, 1, Real, true) == Vector{<:Real}
-    @test replace(Vector, 1, Real, false) ==  Vector{Real}
-    @test replace(Vector{Int}, 2, 3, false) == Array{Int, 3}
+    @test reparameter(Vector, 1, Real, true) == Vector{<:Real}
+    @test reparameter(Vector, 1, Real, false) ==  Vector{Real}
+    @test reparameter(Vector{Int}, 2, 3, false) == Array{Int, 3}
 
     @test rawtype(Int) == Int
     @test rawtype(Vector{Int}) == Array
@@ -27,66 +45,51 @@ import QuantumLattices.Prerequisites.TypeTraits: parameternames, isparameterboun
 
     @test fulltype(Array, Tuple{Int, 1}, (false, false)) == Array{Int, 1}
     @test fulltype(Array, Tuple{Real, 2}, (true, false)) == Array{<:Real, 2}
-end
 
-abstract type FT{T} end
-Base.fieldnames(::Type{Field}, ::Type{<:FT}) = (:content,)
-parameternames(::Type{<:FT}) = (:content,)
-isparameterbound(::Type{<:FT}, ::Parameter{:content}, D) = !isconcretetype(D)
-Base.map(f::Function, m::FT, a::Field{:content}, args::Tuple, kwargs::NamedTuple) = f(getproperty(m, a), args...; kwargs...)
+    @test promoteparameters(NamedTuple{(:a, :b), Tuple{Int, Float64}}, NamedTuple{(:b, :c), Tuple{Complex{Float64}, Int}}) == NamedTuple{(:a, :b, :c), Tuple{Int, Complex{Float64}, Int}}
 
-struct SameNameField <: FT{Vector{Int}}
-    info::String
-    content::Vector{Int}
-end
-parameternames(::Type{SameNameField}) = ()
-
-struct DiffNameField <: FT{Vector{Int}}
-    info::String
-    table::Vector{Int}
-end
-Base.fieldname(::Type{DiffNameField}, ::Field{:content}) = :table
-parameternames(::Type{DiffNameField}) = ()
-
-@testset "AbstractTypeHelper" begin
-    @test fieldnames(Field, FT) == (:content,)
-    @test fieldname(FT, Field(:content)) == :content
-
-    @test promote_type(Parameter, NamedTuple{(:a, :b), Tuple{Int, Float64}}, NamedTuple{(:b, :c), Tuple{Complex{Float64}, Int}}) == NamedTuple{(:a, :b, :c), Tuple{Int, Complex{Float64}, Int}}
-
+    @test parametercount(FT) == 1
     @test parametername(FT, 1) == :content
-    @test parametertype(FT{Vector}, 1) == parametertype(FT{Vector}, Parameter(:content)) == Vector
-    @test parametertype(FT{Vector{Int}}, 1) == parametertype(FT{Vector{Int}}, Parameter(:content)) == Vector{Int}
-    @test parameterpair(FT{Vector}, Parameter(:content)) == Pair{:content, Vector}
-    @test isparameterbound(FT, Parameter(:content), Vector) == true
-    @test isparameterbound(FT, Parameter(:content), Vector{Int}) == false
-    @test hasparameter(FT, Parameter(:content)) == true
+    @test parameterorder(FT, :content) == 1
+    @test parametertype(FT{Vector}, 1) == parametertype(FT{<:Vector}, :content) == Vector
+    @test parametertype(FT{Vector{Int}}, 1) == parametertype(FT{Vector{Int}}, :content) == Vector{Int}
+    @test parameterpair(FT{Vector}, :content) == Pair{:content, Vector}
+    @test isparameterbound(FT, :content, Vector) == true
+    @test isparameterbound(FT, :content, Vector{Int}) == false
+    @test hasparameter(FT, :content) == true
+
     @test parameternames(FT) == (:content,)
     @test parametertypes(FT{Vector}) == Tuple{Vector}
     @test parameterpairs(FT{Vector}) == NamedTuple{(:content,), Tuple{Vector}}
     @test isparameterbounds(FT, NamedTuple{(:content,), Tuple{Vector}}) == (true,)
     @test isparameterbounds(FT, NamedTuple{(:content,), Tuple{Vector{Int}}}) == (false,)
-    @test findfirst(Parameter(:content), FT) == 1
-    @test replace(FT{Vector{Int}}, Parameter(:content), Vector) == FT{<:Vector}
-    @test replace(FT{Vector{Int}}, Parameter(:content), Vector{Float64}) == FT{Vector{Float64}}
+    @test reparameter(FT{Vector{Int}}, :content, Vector) == FT{<:Vector}
+    @test reparameter(FT{Vector{Int}}, :content, Vector{Float64}) == FT{Vector{Float64}}
+
     @test fulltype(FT, NamedTuple{(:content,), Tuple{Vector}}) == FT{<:Vector}
     @test fulltype(FT, NamedTuple{(:content,), Tuple{Vector{Int}}}) == FT{Vector{Int}}
 
-    @test fieldnames(Field, SameNameField) == (:content,)
-    @test fieldname(SameNameField, Field(:content)) == :content
-    @test hasparameter(SameNameField, Parameter(:content)) == false
+    @test contentnames(FT) == (:content,)
+    @test contentname(FT, 1) == :content
+    @test contentcount(FT) == 1
+    @test hascontent(FT, :content) == true
+    @test fieldnameofcontent(FT, :content) == :content
+
+    @test contentnames(SameNameField) == (:content,)
+    @test fieldnameofcontent(SameNameField, :content) == :content
+    @test hasparameter(SameNameField, :content) == false
 
     a = SameNameField("abcd", [1, 2, 3, 4])
-    @test getproperty(a, Field(:content)) == [1, 2, 3, 4]
-    @test Tuple(Field, a, getindex, ((1,))) == ("abcd", 1)
+    @test getcontent(a, :content) == [1, 2, 3, 4]
+    @test disolve(a, getindex, (1,)) == ("abcd", 1)
 
-    @test fieldnames(Field, DiffNameField) == (:content,)
-    @test fieldname(DiffNameField, Field(:content)) == :table
-    @test hasparameter(DiffNameField, Parameter(:content)) == false
+    @test contentnames(DiffNameField) == (:content,)
+    @test fieldnameofcontent(DiffNameField, :content) == :table
+    @test hasparameter(DiffNameField, :content) == false
 
     b = DiffNameField("abcd", [1, 2, 3, 4])
-    @test getproperty(b, Field(:content)) == [1, 2, 3, 4]
-    @test Tuple(Field, b, getindex, ((2,))) == ("abcd", 2)
+    @test getcontent(b, :content) == [1, 2, 3, 4]
+    @test disolve(b, getindex, (2,)) == ("abcd", 2)
 end
 
 struct EFO{F1, F2, F3}

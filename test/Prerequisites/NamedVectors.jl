@@ -6,7 +6,6 @@ mutable struct NHNV <: NamedVector
     scope::String
     site::Int
 end
-Base.fieldnames(::Type{<:NHNV}) = (:scope, :site)
 
 @testset "NHNV" begin
     @test fieldnames(NHNV) == (:scope, :site)
@@ -39,13 +38,11 @@ mutable struct FHNV <: HomoNamedVector{Float64}
     scope::Float64
     site::Float64
 end
-Base.fieldnames(::Type{<:FHNV}) = (:scope, :site)
 
 mutable struct RHNV{T<:Real} <: HomoNamedVector{T}
     scope::T
     site::T
 end
-Base.fieldnames(::Type{<:RHNV}) = (:scope, :site)
 
 @testset "FHNV" begin
     @test fieldnames(FHNV) == (:scope, :site)

@@ -1,6 +1,8 @@
 module SimpleTrees
 
-using ..TypeTraits: efficientoperations, parametertype, Field
+using ..Traits: parametertype, efficientoperations
+
+import ..Traits: contentnames
 
 export simpletreedepth, simpletreewidth
 export SimpleTreeCore, AbstractSimpleTree, SimpleTree
@@ -53,14 +55,14 @@ const simpletreewidth = SimpleTreeWidth()
 Abstract type for all concrete trees.
 """
 abstract type AbstractSimpleTree{N, D} end
-Base.fieldnames(::Type{Field}, ::Type{<:AbstractSimpleTree}) = (:TREECORE,)
+contentnames(::Type{<:AbstractSimpleTree}) = (:TREECORE,)
 
 """
     SimpleTreeCore(tree::AbstractSimpleTree) -> SimpleTreeCore
 
 Get the core of a simple tree.
 """
-SimpleTreeCore(tree::AbstractSimpleTree) = getproperty(tree, Field(:TREECORE))
+SimpleTreeCore(tree::AbstractSimpleTree) = getproperty(tree, :TREECORE)
 
 """
     keytype(tree::AbstractSimpleTree)

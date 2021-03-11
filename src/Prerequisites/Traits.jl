@@ -1,14 +1,12 @@
-module TypeTraits
+module Traits
 
 using ..Prerequisites: atol, rtol
 
-export parametercount, hasparameter, rawtype, fulltype
-export parametername, parametertype, parameterpair, isparameterbound
-export parameternames, parametertypes, parameterpairs, isparameterbounds
-export AbstractTypeHelper, Field, Parameter
+export parametercount, parametername, parameterorder, parametertype, parameterpair, isparameterbound, hasparameter
+export parameternames, parametertypes, parameterpairs, isparameterbounds, reparameter, promoteparameters, rawtype, fulltype
+export contentcount, contentname, hascontent, fieldnameofcontent, getcontent, contentnames, disolve
 export efficientoperations
-export MemoryOrder, FOrder, COrder
-export forder, corder, indtosub, subtoind
+export MemoryOrder, FOrder, COrder, forder, corder, indtosub, subtoind
 
 """
     DataType(T::DataType) -> DataType
@@ -20,7 +18,7 @@ Base.DataType(T::DataType) = T
 Base.DataType(T::UnionAll) = DataType(T.body)
 
 """
-    supertype(T::DataType, termination::Symbol) -> DataType
+    supertype(T, termination::Symbol) -> DataType
 
 Get the supertype of `T` till termination.
 """
@@ -37,15 +35,33 @@ end
 """
     parametercount(::Type{T}) where T -> Int
 
-Get the number of type parameters of type `T`.
+For a type `T`, get the number of its type parameters.
 """
 @generated parametercount(::Type{T}) where T = length(DataType(T).parameters)
 
 """
+    parametername(::Type{T}, i::Integer) where T -> Symbol
+
+For a type `T`, get the name of its ith type parameter.
+"""
+parametername(::Type{T}, i::Integer) where T = _parametername(parameternames(T)|>Val, Val(i))
+@generated _parametername(::Val{names}, ::Val{i}) where {names, i} = QuoteNode(names[i])
+
+"""
+    parameterorder(::Type{T}, name::Symbol) where T -> Int
+
+For a type `T`, get the order of one of its type parameters.
+"""
+parameterorder(::Type{T}, name::Symbol) where T = _parameterorder(Val(name), parameternames(T)|>Val)
+@generated _parameterorder(::Val{name}, ::Val{names}) where {name, names} = findfirst(isequal(name), names)::Int
+
+"""
+    parametertype(::Type{T}, name::Symbol) where T
     parametertype(::Type{T}, i::Integer) where T
 
-Get the type of the ith type parameter of type `T`.
+For a type `T`, get the type of one of its type parameters.
 """
+parametertype(::Type{T}, name::Symbol) where T = parametertype(T, parameterorder(T, name))
 parametertype(::Type{T}, i::Integer) where T = _parametertype(T, Val(i))
 @generated function _parametertype(::Type{T}, ::Val{i}) where {T, i}
     result = DataType(T).parameters[i]
@@ -53,9 +69,46 @@ parametertype(::Type{T}, i::Integer) where T = _parametertype(T, Val(i))
 end
 
 """
+    parameterpair(::Type{T}, name::Symbol) where T
+    parameterpair(::Type{T}, i::Integer) where T
+
+For type `T`, get the name-type pair of one of its type parameters.
+
+The result is stored in the type parameters of a `Pair`.
+"""
+parameterpair(::Type{T}, name::Symbol) where T = Pair{name, parametertype(T, name)}
+parameterpair(::Type{T}, i::Integer) where T = Pair{parametername(T, i), parametertype(T, i)}
+
+"""
+    isparameterbound(::Type{T}, name::Symbol, D) where T -> Bool
+    isparameterbound(::Type{T}, i::Integer, D) where T -> Bool
+    isparameterbound(::Type{T}, ::Val{name}, D) where {T, name} -> Bool
+
+For a type `T`, judge whether a type `D` should be considered as the upper bound of one of its type parameters.
+"""
+isparameterbound(::Type{}, ::Integer, ::Any) = false
+isparameterbound(::Type{T}, name::Symbol, D) where T = isparameterbound(T, Val(name), D)
+isparameterbound(::Type{}, ::Val{}, ::Any) = false
+
+"""
+    hasparameter(::Type{T}, name::Symbol) where T -> Bool
+
+For type `T`, judge whether it has a type parameter specified by `name`.
+"""
+hasparameter(::Type{T}, name::Symbol) where T = _hasparameter(Val(name), parameternames(T)|>Val)
+_hasparameter(::Val{name}, ::Val{names}) where {name, names} = name∈names
+
+"""
+    parameternames(::Type{T}) where T -> Tuple{Vararg{Symbol}}
+
+For a type `T`, get the names of all its type parameters.
+"""
+parameternames(::Type{T}) where T = error("parameternames error: not defined for $(nameof(T)).")
+
+"""
     parametertypes(::Type{T}) where T
 
-Get the types of all the type parameters of type `T`.
+For a type `T`, get the types of all its type parameters.
 
 The returned types are stored in the type parameters of a `Tuple`.
 """
@@ -69,11 +122,48 @@ parametertypes(::Type{T}) where T = _parametertypes(T, parametercount(T)|>Val)
 end
 
 """
-    replace(::Type{T}, i::Integer, P, ub::Bool) where T
+    parameterpairs(::Type{T}) where T
 
-For a type `T`, replace the type of the ith type parameter with `P`. Here, `ub` determines whether `P` should be considered as the upper bound. 
+For a type `T`, get the name-type pairs of all its type parameters.
+
+The return types are stored in the type parameters of a `NamedTuple`.
 """
-Base.replace(::Type{T}, i::Integer, P, ub::Bool) where T = _replace(T, Val(i), Tuple{P}, Val(ub))
+parameterpairs(::Type{T}) where T = NamedTuple{parameternames(T), parametertypes(T)}
+
+"""
+    isparameterbounds(::Type{T}, ::Type{PS}) where {T, PS<:Tuple}
+    isparameterbounds(::Type{T}, ::Type{PS}) where {T, PS<:NamedTuple}
+
+For a type `T`, judge whether the types specified by `PS` should be considered as the upper bounds of its corresponding type parameters.
+"""
+isparameterbounds(::Type{T}, ::Type{PS}) where {T, PS<:Tuple} = _isparameterbounds(T, PS, parametercount(T)|>Val)
+isparameterbounds(::Type{T}, ::Type{PS}) where {T, PS<:NamedTuple} = _isparameterbounds(T, PS, parameternames(T)|>Val)
+@generated function _isparameterbounds(::Type{T}, ::Type{PS}, ::Val{C}) where {T, PS<:Tuple, C}
+    exprs = []
+    for i = 1:C
+        P = fieldtype(PS, i)
+        push!(exprs, :(isparameterbound(T, $i, $P)))
+    end
+    return Expr(:tuple, exprs...)
+end
+@generated function _isparameterbounds(::Type{T}, ::Type{PS}, ::Val{names}) where {T, PS<:NamedTuple, names}
+    exprs = []
+    for i = 1:length(names)
+        N = QuoteNode(names[i])
+        P = fieldtype(PS, names[i])
+        push!(exprs, :(isparameterbound(T, $N, $P)))
+    end
+    return Expr(:tuple, exprs...)
+end
+
+"""
+    reparameter(::Type{T}, i::Integer, P, ub::Bool=isparameterbound(T, i, P)) where T
+    reparameter(::Type{T}, name::Symbol, P, ub::Bool=isparameterbound(T, name, P)) where T
+
+For a type `T`, replace the type of its ith type parameter with `P`. Here, `ub` determines whether `P` should be considered as the upper bound. 
+"""
+reparameter(::Type{T}, i::Integer, P, ub::Bool=isparameterbound(T, i, P)) where T = _replace(T, Val(i), Tuple{P}, Val(ub))
+reparameter(::Type{T}, name::Symbol, P, ub::Bool=isparameterbound(T, name, P)) where T = _replace(T, parameterorder(T, name)|>Val, Tuple{P}, Val(ub))
 @generated function _replace(::Type{T}, ::Val{i}, ::Type{P}, ::Val{ub}) where {T, i, P, ub}
     params = collect(DataType(T).parameters)
     params[i] = ub ? TypeVar(gensym(), fieldtype(P, 1)) : fieldtype(P, 1)
@@ -84,204 +174,14 @@ Base.replace(::Type{T}, i::Integer, P, ub::Bool) where T = _replace(T, Val(i), T
     return V
 end
 
-_rawtype(T::DataType) = T.name.wrapper
-_rawtype(T::UnionAll) = _rawtype(T.body)
 """
-    rawtype(::Type{T}) where T -> DataType/UnionAll
-
-Get the "raw part" of a type. That is, the type without all its type parameters.
-"""
-@generated rawtype(::Type{T}) where T = _rawtype(T)
-
-"""
-    fulltype(::Type{T}, ::Type{PS}, ubs::Tuple{Vararg{Bool}}) where {T, PS<:Tuple}
-
-Get the full type of type `T` with the type parameters replaced by those of `PS`.
-Here, `ubs` determines whether the new type parameter should be considered as the upper bound accordingly.
-"""
-function fulltype(::Type{T}, ::Type{PS}, ubs::Tuple{Vararg{Bool}}) where {T, PS<:Tuple}
-    @assert parametercount(T) == fieldcount(PS) == length(ubs) "fulltype error: length-dismatched input parameters."
-    return _fulltype(T, PS, Val(ubs))
-end
-@generated function _fulltype(::Type{T}, ::Type{PS}, ::Val{ubs}) where {T, PS, ubs}
-    VS = [ubs[i] ? TypeVar(gensym(), fieldtype(PS, i)) : fieldtype(PS, i) for i=1:length(ubs)]
-    V = Core.apply_type(T, VS...)
-    for i = 1:length(VS)
-        ubs[i] && (V = UnionAll(VS[i], V))
-    end
-    return V
-end
-
-"""
-    AbstractTypeHelper
-
-Abstract type helper.
-"""
-abstract type AbstractTypeHelper end
-
-"""
-    Field{F} <: AbstractTypeHelper
-
-Helper for the predefined fields of an abstract type.
-"""
-struct Field{F} <: AbstractTypeHelper
-    Field(F::Symbol) = new{F}()
-end
-
-"""
-    fieldnames(::Type{Field}, ::Type{T}) where T -> Tuple{Vararg{Symbol}}
-
-Define the names of the predefined fields of type `T`.
-"""
-Base.fieldnames(::Type{Field}, ::Type{}) = ()
-
-"""
-    fieldname(::Type{T}, f::Field) where T -> Symbol
-
-Get the name of a field of type `T` that corresponds to the predefined field `f`.
-"""
-Base.fieldname(::Type{}, ::Field{F}) where F = F
-
-"""
-    getproperty(m, f::Field)
-
-Get the value of a field of `m` that corresponds to the predefined field `f`. 
-"""
-Base.getproperty(m, f::Field) = getfield(m, fieldname(typeof(m), f))
-
-"""
-    Tuple(::Type{Field}, m, f::Function=identity, args::Tuple=(), kwargs::NamedTuple=NamedTuple()) -> Tuple
-
-Convert `m` to a tuple by the function `f` applied elementally to its fields with the extra positional arguments (`args`) and keyword arguments (`kwargs`). 
-
-The underlying called interface is the `map` function when `f` is applied to each field of `m`:
-```julia
-map(f, m, Field(name), args, kwargs)
-```
-Here, `name` is the name of a field of `m`:
-1. When the field corresponds to a predefined one, `name` should be the predefined name but not the actual one;
-2. When the field does not correspond to a predefined one, `name` is the actual one.
-
-Basically, the rule of how `f` operates on each field of `m` can be overriden by redefining the above `map` function.
-!!!note
-   The default `map` function ignores the operation of function `f` and just return the field value of `m`.
-"""
-function Base.Tuple(::Type{Field}, m, f::Function=identity, args::Tuple=(), kwargs::NamedTuple=NamedTuple())
-    tuplehelper(m, f, args, kwargs, fieldnamelookups(typeof(m), fieldnames(Field, typeof(m))|>Val))
-end
-@generated function fieldnamelookups(::Type{T}, ::Val{names}) where {T, names}
-    exprs = []
-    for name in QuoteNode.(names)
-        push!(exprs, :(fieldname(T, Field($name))))
-    end
-    return Expr(:curly, :NamedTuple, Expr(:tuple, exprs...), Expr(:curly, :Tuple, QuoteNode.(names)...))
-end
-@generated function tuplehelper(m, f::Function, args::Tuple, kwargs::NamedTuple, ::Type{LP}) where LP<:NamedTuple
-    exprs = []
-    for name in fieldnames(m)
-        name = QuoteNode(hasfield(LP, name) ? fieldtype(LP, name) : name)
-        push!(exprs, :(map(f, m, Field($name), args, kwargs)))
-    end
-    return Expr(:tuple, exprs...)
-end
-
-"""
-    map(f::Function, m, field::Field, ::Tuple, ::NamedTuple)
-
-The default `map` function that applies function `f` on the field specified by `field` of `m`.
-
-This function ignores the operation of `f` and just return the field value of `m`.
-"""
-Base.map(::Function, m, field::Field, ::Tuple, ::NamedTuple) = getproperty(m, field)
-
-"""
-    Parameter{P} <: AbstractTypeHelper
-
-Helper for the type parameters of an abstract type.
-"""
-struct Parameter{P} <: AbstractTypeHelper
-    Parameter(P::Symbol) = new{P}()
-end
-
-"""
-    parametername(::Type{T}, i::Integer) where T -> Symbol
-
-Get the name of the ith type parameter of type `T`.
-"""
-parametername(::Type{T}, i::Integer) where T = _parametername(parameternames(T)|>Val, Val(i))
-@generated _parametername(::Val{names}, ::Val{i}) where {names, i} = QuoteNode(names[i])
-
-"""
-    parametertype(::Type{T}, p::Parameter) where T
-
-For a type `T`, get the type of a type parameter specified by `p`.
-"""
-parametertype(::Type{T}, p::Parameter) where T = parametertype(T, findfirst(p, T))
-
-"""
-    parameterpair(::Type{T}, p::Parameter) where T
-
-For type `T`, get the name-type pair of a type parameter specified by `p`.
-
-The result is stored in the type parameters of a `Pair`.
-"""
-parameterpair(::Type{T}, ::Parameter{P}) where {T, P} = Pair{P, parametertype(T, Parameter(P))}
-
-"""
-    isparameterbound(::Type{T}, p::Parameter, D) where T -> Bool
-
-For a type `T`, judge whether a type `D` should be considered as the upper bound of the type parameter specified by `p`.
-"""
-isparameterbound(::Type{T}, ::Parameter{P}, ::Any) where {T, P} = error("isparameterbound error: $P of $(typeof(T)) not defined.")
-
-"""
-    hasparameter(::Type{T}, p::Parameter) where T
-
-For type `T`, judge whether it has a type parameter specified by `p`.
-"""
-hasparameter(::Type{T}, ::Parameter{P}) where {T, P} = _hasparameter(Val(P), parameternames(T)|>Val)
-_hasparameter(::Val{name}, ::Val{names}) where {name, names} = name∈names
-
-"""
-    parameternames(::Type{T}) where T -> Tuple{Vararg{Symbol}}
-
-Get the names of the type parameters of type `T`.
-"""
-parameternames(::Type{T}) where T = error("parameternames error: not defined for $(nameof(T)).")
-
-"""
-    parameterpairs(::Type{T}) where T
-
-For a type `T`, get the name-type pairs of the type parameters.
-
-The return types are stored in the type parameters of a `NamedTuple`.
-"""
-parameterpairs(::Type{T}) where T = NamedTuple{parameternames(T), parametertypes(T)}
-
-"""
-    isparameterbounds(::Type{T}, ::Type{PS}) where {T, PS<:NamedTuple}
-
-For a type `T`, judge whether the types specified by the type parameters of `PS` should be considered as the upper bounds of the corresponding type parameters.
-"""
-isparameterbounds(::Type{T}, ::Type{PS}) where {T, PS<:NamedTuple} = _isparameterbounds(T, PS, parameternames(T)|>Val)
-@generated function _isparameterbounds(::Type{T}, ::Type{PS}, ::Val{names}) where {T, PS<:NamedTuple, names}
-    exprs = []
-    for i = 1:length(names)
-        N = Parameter(names[i])
-        P = fieldtype(PS, names[i])
-        push!(exprs, :(isparameterbound(T, $N, $P)))
-    end
-    return Expr(:tuple, exprs...)
-end
-
-"""
-    promote_type(::Type{Parameter}, ::Type{T1}, ::Type{T2}) where {T1<:NamedTuple, T2<:NamedTuple}
+    promoteparameters(::Type{T1}, ::Type{T2}) where {T1<:NamedTuple, T2<:NamedTuple}
 
 Promote the types specified by two named tuples with the same names accordingly.
 
 The result is stored in the type parameters of a `NamedTuple`.
 """
-@generated function Base.promote_type(::Type{Parameter}, ::Type{T1}, ::Type{T2}) where {T1<:NamedTuple, T2<:NamedTuple}
+@generated function promoteparameters(::Type{T1}, ::Type{T2}) where {T1<:NamedTuple, T2<:NamedTuple}
     exprs = []
     names = Tuple(union(fieldnames(T1), fieldnames(T2)))
     for (i, name) in enumerate(names)
@@ -296,27 +196,38 @@ The result is stored in the type parameters of a `NamedTuple`.
     return Expr(:curly, :NamedTuple, names, Expr(:curly, :Tuple, exprs...))
 end
 
+_rawtype(T::DataType) = T.name.wrapper
+_rawtype(T::UnionAll) = _rawtype(T.body)
 """
-    findfirst(p::Parameter, ::Type{T}) where T -> Int
+    rawtype(::Type{T}) where T -> DataType/UnionAll
 
-For a type `T`, find the order of the type parameter `p`.
+Get the "raw part" of a type. That is, the type without all its type parameters.
 """
-Base.findfirst(p::Parameter, ::Type{T}) where T = _findfirst(p, parameternames(T)|>Val)
-@generated _findfirst(::Parameter{name}, ::Val{names}) where {name, names} = findfirst(isequal(name), names)::Int
-
-"""
-    replace(::Type{T}, p::Parameter, P) where T
-
-For a type `T`, replace the type of the type parameter specified by `p` with `P`.
-"""
-Base.replace(::Type{T}, p::Parameter, P) where T = replace(T, findfirst(p, T), P, isparameterbound(T, p, P))
+@generated rawtype(::Type{T}) where T = _rawtype(T)
 
 """
-    fulltype(::Type{T}, ::Type{PS}) where {T, PS<:NamedTuple}
+    fulltype(::Type{T}, ::Type{PS}, ubs::Tuple{Vararg{Bool}}=isparameterbounds(T, PS)) where {T, PS<:Tuple}
+    fulltype(::Type{T}, ::Type{PS}, ubs::Tuple{Vararg{Bool}}=isparameterbounds(T, PS)) where {T, PS<:NamedTuple}
 
 Get the full type of type `T` with the type parameters replaced by those of `PS`.
+
+Here, `ubs` determines whether the new type parameter should be considered as the upper bound accordingly.
 """
-fulltype(::Type{T}, ::Type{PS}) where {T, PS<:NamedTuple} = _fulltype(T, PS, parameternames(T)|>Val, isparameterbounds(T, PS)|>Val)
+function fulltype(::Type{T}, ::Type{PS}, ubs::Tuple{Vararg{Bool}}=isparameterbounds(T, PS)) where {T, PS<:Tuple}
+    @assert parametercount(T) == fieldcount(PS) == length(ubs) "fulltype error: length-dismatched input parameters."
+    return _fulltype(T, PS, Val(ubs))
+end
+function fulltype(::Type{T}, ::Type{PS}, ubs::Tuple{Vararg{Bool}}=isparameterbounds(T, PS)) where {T, PS<:NamedTuple}
+    _fulltype(T, PS, parameternames(T)|>Val, Val(ubs))
+end
+@generated function _fulltype(::Type{T}, ::Type{PS}, ::Val{ubs}) where {T, PS, ubs}
+    VS = [ubs[i] ? TypeVar(gensym(), fieldtype(PS, i)) : fieldtype(PS, i) for i=1:length(ubs)]
+    V = Core.apply_type(T, VS...)
+    for i = 1:length(VS)
+        ubs[i] && (V = UnionAll(VS[i], V))
+    end
+    return V
+end
 @generated function _fulltype(::Type{T}, ::Type{PS}, ::Val{names}, ::Val{ubs}) where {T, PS<:NamedTuple, names, ubs}
     VS = [(ubs[i] ? TypeVar(gensym(), fieldtype(PS, names[i])) : fieldtype(PS, names[i])) for i=1:length(names)]
     V = Core.apply_type(T, VS...)
@@ -325,6 +236,102 @@ fulltype(::Type{T}, ::Type{PS}) where {T, PS<:NamedTuple} = _fulltype(T, PS, par
     end
     return V
 end
+
+"""
+    contentcount(::Type{T}) where T -> Int
+
+For a type `T`, get the number of its predefined contents.
+"""
+contentcount(::Type{T}) where T = length(contentnames(T))
+
+"""
+    contentname(::Type{T}, i::Integer) where T -> Symbol
+
+For a type `T`, get the name of its ith predefined content.
+"""
+contentname(::Type{T}, i::Integer) where T = contentnames(T)[i]
+
+"""
+    hascontent(::Type{T}, name::Symbol) where T -> Bool
+
+For a type `T`, judge whether it has a predefined content specified by `name`.
+"""
+hascontent(::Type{T}, name::Symbol) where T = _hascontent(name|>Val, contentnames(T)|>Val)
+@generated _hascontent(::Val{name}, ::Val{names}) where {name, names} = name∈names
+
+"""
+    fieldnameofcontent(::Type{T}, i::Integer) where T -> Symbol
+    fieldnameofcontent(::Type{T}, name::Symbol) where T -> Symbol
+    fieldnameofcontent(::Type{T}, ::Val{name}) where {T, name} -> Symbol
+
+For a type `T`, get the field name of one of its predefined contents.
+"""
+fieldnameofcontent(::Type{T}, i::Integer) where T = fieldnameofcontent(T, contentname(T, i))
+fieldnameofcontent(::Type{T}, name::Symbol) where T = fieldnameofcontent(T, Val(name))
+fieldnameofcontent(::Type{}, ::Val{name}) where name = name
+
+"""
+    getcontent(m, i::Integer)
+    getcontent(m, name::Symbol)
+
+Get the value of the predefined content of `m`. 
+"""
+getcontent(m, i::Integer) = getcontent(m, contentname(typeof(m), i))
+getcontent(m, name::Symbol) = getfield(m, fieldnameofcontent(typeof(m), name))
+
+"""
+    contentnames(::Type{T}) where T -> Tuple{Vararg{Symbol}}
+
+For a type `T`, define the names of its predefined contents.
+"""
+contentnames(::Type{}) = ()
+
+"""
+    disolve(m, f::Function=identity, args::Tuple=(), kwargs::NamedTuple=NamedTuple()) -> Tuple
+
+Convert `m` to a tuple by the function `f` applied elementally to its fields with the extra positional arguments (`args`) and keyword arguments (`kwargs`). 
+
+The underlying called interface is the `map` function when `f` is applied to each field of `m`:
+```julia
+disolve(m, Val(name), f, args, kwargs)
+```
+Here, `name` is the name of a field of `m`:
+1. When the field corresponds to a predefined one, `name` should be the predefined name but not the actual one;
+2. When the field does not correspond to a predefined one, `name` is the actual one.
+
+Basically, the rule of how `f` operates on each field of `m` can be overriden by redefining the above `disolve` function.
+!!!note
+   The default `disolve` function ignores the operation of function `f` and just return the field value of `m`.
+"""
+function disolve(m, f::Function=identity, args::Tuple=(), kwargs::NamedTuple=NamedTuple())
+    tuplehelper(m, f, args, kwargs, fieldnamelookups(typeof(m), contentnames(typeof(m))|>Val))
+end
+@generated function fieldnamelookups(::Type{T}, ::Val{names}) where {T, names}
+    exprs = []
+    for name in QuoteNode.(names)
+        push!(exprs, :(fieldnameofcontent(T, $name)))
+    end
+    return Expr(:curly, :NamedTuple, Expr(:tuple, exprs...), Expr(:curly, :Tuple, QuoteNode.(names)...))
+end
+@generated function tuplehelper(m, f::Function, args::Tuple, kwargs::NamedTuple, ::Type{LP}) where LP<:NamedTuple
+    exprs = []
+    for name in fieldnames(m)
+        name = Val(hasfield(LP, name) ? fieldtype(LP, name) : name)
+        push!(exprs, :(disolve(m, $name, f, args, kwargs)))
+    end
+    return Expr(:tuple, exprs...)
+end
+
+"""
+    disolve(m, ::Val{name}, f::Function, args::Tuple, kwargs::NamedTuple) where name
+
+Disolve the field specified by `name` of `m` by the function `f` applied with the extra positional arguments (`args`) and keyword arguments (`kwargs`).
+"""
+function disolve(m, ::Val{name}, f::Function, args::Tuple, kwargs::NamedTuple) where name
+    _disolve(m, Val(name), f, args, kwargs, Val(hascontent(typeof(m), name)))
+end
+_disolve(m, ::Val{name}, f::Function, args::Tuple, kwargs::NamedTuple, ::Val{true}) where name = f(getcontent(m, name), args...; kwargs...)
+_disolve(m, ::Val{name}, ::Function, ::Tuple, ::NamedTuple, ::Val{false}) where name = getfield(m, name)
 
 struct EfficientOperations end
 """
