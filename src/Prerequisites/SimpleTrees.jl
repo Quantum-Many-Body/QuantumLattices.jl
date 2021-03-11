@@ -1,6 +1,6 @@
 module SimpleTrees
 
-using ..Traits: parametertype, efficientoperations
+using ..Traits: getcontent, parametertype, efficientoperations
 
 import ..Traits: contentnames
 
@@ -62,7 +62,7 @@ contentnames(::Type{<:AbstractSimpleTree}) = (:TREECORE,)
 
 Get the core of a simple tree.
 """
-SimpleTreeCore(tree::AbstractSimpleTree) = getproperty(tree, :TREECORE)
+SimpleTreeCore(tree::AbstractSimpleTree) = getcontent(tree, :TREECORE)
 
 """
     keytype(tree::AbstractSimpleTree)
