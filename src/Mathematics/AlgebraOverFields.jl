@@ -3,10 +3,10 @@ module AlgebraOverFields
 using Printf: @printf, @sprintf
 using ...Prerequisites: atol, rtol
 using ...Prerequisites.NamedVectors: NamedVector
-using ...Prerequisites.TypeTraits: efficientoperations, rawtype, fulltype, Field, Parameter, parametertype, parameterpairs
+using ...Prerequisites.Traits: efficientoperations, rawtype, fulltype, parametertype, parameterpairs, reparameter, promoteparameters, getcontent, fieldnameofcontent
 
 import ...Interfaces: rank, scalar, id, add!, sub!, mul!, div!, ⊗, ⋅, sequence, permute
-import ...Prerequisites.TypeTraits: isparameterbound, parameternames
+import ...Prerequisites.Traits: contentnames, disolve, isparameterbound, parameternames
 
 export SimpleID, ID
 export Element, Scalar, Elements
@@ -137,17 +137,17 @@ Basically, a concrete subtype should contain two attributes:
 - `id::I`: the id of the element
 """
 abstract type Element{V, I<:ID{SimpleID}} end
-Base.fieldnames(::Type{Field}, ::Type{<:Element}) = (:value, :id)
+contentnames(::Type{<:Element}) = (:value, :id)
 parameternames(::Type{<:Element}) = (:value, :id)
-isparameterbound(::Type{<:Element}, ::Parameter{:value}, ::Type{V}) where V = false
-isparameterbound(::Type{<:Element}, ::Parameter{:id}, ::Type{I}) where I<:ID{SimpleID} = !isconcretetype(I) 
+isparameterbound(::Type{<:Element}, ::Val{:value}, ::Type{V}) where V = false
+isparameterbound(::Type{<:Element}, ::Val{:id}, ::Type{I}) where I<:ID{SimpleID} = !isconcretetype(I) 
 
 """
     replace(m::Element, v::Number) -> Element
 
 Replace the value of an element.
 """
-Base.replace(m::Element, v::Number) = _replace(m, v, fieldname(typeof(m), Field(:value))|>Val)
+Base.replace(m::Element, v::Number) = _replace(m, v, fieldnameofcontent(typeof(m), :value)|>Val)
 @generated _replace(m::Element, v::Number, ::Val{name}) where name = Expr(:call, :replace, :m, Expr(:kw, name, :v))
 
 """
@@ -155,14 +155,14 @@ Base.replace(m::Element, v::Number) = _replace(m, v, fieldname(typeof(m), Field(
 
 Get the value of an element.
 """
-scalar(m::Element) = getproperty(m, Field(:value))
+scalar(m::Element) = getcontent(m, :value)
 
 """
     id(m::Element) -> idtype(m)
 
 Get the id of an element.
 """
-id(m::Element) = getproperty(m, Field(:id))
+id(m::Element) = getcontent(m, :id)
 
 """
     Scalar{V}
@@ -219,7 +219,7 @@ Base.isequal(m1::Element, m2::Element) = isequal(efficientoperations, m1, m2)
 
 Compare two elements and judge whether they are inexactly equivalent to each other.
 """
-Base.isapprox(m1::Element, m2::Element; atol::Real=atol, rtol::Real=rtol) = isapprox(efficientoperations, (fieldname(typeof(m1), Field(:value)),)|>Val, m1, m2; atol=atol, rtol=rtol)
+Base.isapprox(m1::Element, m2::Element; atol::Real=atol, rtol::Real=rtol) = isapprox(efficientoperations, (fieldnameofcontent(typeof(m1), :value),)|>Val, m1, m2; atol=atol, rtol=rtol)
 
 """
     replace(m::Element; kwargs...) -> typeof(m)
@@ -238,7 +238,7 @@ function Base.promote_rule(::Type{M1}, ::Type{M2}) where {M1<:Element, M2<:Eleme
     (M2 <: M1) && return M1
     r1, r2 = M1|>rank, M2|>rank
     M = (r2 == 0) ? rawtype(M1) : (r1 == 0) ? rawtype(M2) : typejoin(rawtype(M1), rawtype(M2))
-    return fulltype(M, promote_type(Parameter, parameterpairs(M1), parameterpairs(M2)))
+    return fulltype(M, promoteparameters(parameterpairs(M1), parameterpairs(M2)))
 end
 
 """
@@ -249,7 +249,7 @@ Define the promote rule for the multiplication between an Element and a scalar.
 """
 Base.promote_type(::Type{M}, ::Type{V}, ::Val{:*}) where {M<:Element, V<:Number} = promote_type(V, M, Val(:*))
 function Base.promote_type(::Type{V}, ::Type{M}, ::Val{:*}) where {M<:Element, V<:Number}
-    return replace(M, Parameter(:value), promote_type(valtype(M), V))
+    return reparameter(M, :value, promote_type(valtype(M), V))
 end
 
 """
@@ -257,9 +257,9 @@ end
 
 Overloaded `[]` operator.
 """
-Base.getindex(m::Element, i) = rawtype(typeof(m))(Tuple(Field, m, getindex, (i,))...)
-Base.map(::typeof(getindex), m::Element, ::Field{:value}, ::Tuple{Any}, ::NamedTuple) = one(valtype(m))
-Base.map(::typeof(getindex), m::Element, ::Field{:id}, i::Tuple{Any}, ::NamedTuple) = ID(id(m)[i[1]])
+Base.getindex(m::Element, i) = rawtype(typeof(m))(disolve(m, getindex, (i,))...)
+disolve(m::Element, ::Val{:value}, ::typeof(getindex), ::Tuple{Any}, ::NamedTuple) = one(valtype(m))
+disolve(m::Element, ::Val{:id}, ::typeof(getindex), i::Tuple{Any}, ::NamedTuple) = ID(id(m)[i[1]])
 
 """
     length(m::Element) -> Int
@@ -282,9 +282,9 @@ function Base.one(::Type{M}) where M<:Element
     @assert fieldnames(rtype) == (:value, :id) "one error: not supproted type($(nameof(rtype)))."
     return rtype(one(vtype), ID())
 end
-Base.one(m::Element) = rawtype(typeof(m))(Tuple(Field, m, one)...)
-Base.map(::typeof(one), m::Element, ::Field{:value}, ::Tuple, ::NamedTuple) = one(valtype(m))
-Base.map(::typeof(one), ::Element, ::Field{:id}, ::Tuple, ::NamedTuple) = ID()
+Base.one(m::Element) = rawtype(typeof(m))(disolve(m, one)...)
+disolve(m::Element, ::Val{:value}, ::typeof(one), ::Tuple, ::NamedTuple) = one(valtype(m))
+disolve(::Element, ::Val{:id}, ::typeof(one), ::Tuple, ::NamedTuple) = ID()
 
 """
     convert(::Type{M}, m::Scalar) where M<:Scalar
@@ -720,7 +720,7 @@ end
         E = fieldtype(ms[i], 2)
         M = promote_type(E<:Elements ? valtype(E) : E, M)
     end
-    M = replace(M, Parameter(:id), ID{eltype(idtype(M))})
+    M = reparameter(M, :id, ID{eltype(idtype(M))})
     return Elements{idtype(M), M}
 end
 
@@ -784,11 +784,11 @@ end
 Permute the ids of an-element/a-set-of-elements to the descending order according to a table.
 """
 function permute(m::Element, table=nothing)
-    M = replace(typeof(m), Parameter(:id), ID{m|>idtype|>eltype})
+    M = reparameter(typeof(m), :id, ID{m|>idtype|>eltype})
     permute!(Elements{idtype(M), M}(), m, table)
 end
 function permute(ms::Elements, table=nothing)
-    M = replace(valtype(ms), Parameter(:id), ID{ms|>keytype|>eltype})
+    M = reparameter(valtype(ms), :id, ID{ms|>keytype|>eltype})
     permute!(Elements{idtype(M), M}(), ms, table)
 end
 

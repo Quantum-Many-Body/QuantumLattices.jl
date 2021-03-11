@@ -1,7 +1,7 @@
 module VectorSpaces
 
 using ..Combinatorics: AbstractCombinatorics
-using ...Prerequisites.TypeTraits: rawtype, efficientoperations, forder, corder, subtoind, indtosub
+using ...Prerequisites.Traits: rawtype, efficientoperations, forder, corder, subtoind, indtosub
 
 import ...Interfaces: dimension, ⊕, rank, dims, inds
 

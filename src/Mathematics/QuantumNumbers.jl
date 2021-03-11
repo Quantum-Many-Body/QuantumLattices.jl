@@ -283,13 +283,6 @@ Convert an `AbelianNumbers` to string.
 """
 Base.string(qns::AbelianNumbers) = @sprintf "QNS(%s, %s)" qns|>length qns|>dimension
 
-# """
-#     length(qns::AbelianNumbers) -> Int
-
-# Get the number of unduplicate qunatum numbers in the `AbelianNumbers`.
-# """
-# Base.length(qns::AbelianNumbers) = length(qns.contents)
-
 """
     size(qns:AbelianNumbers) -> Tuple{Int}
 

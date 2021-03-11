@@ -1,6 +1,6 @@
 module Combinatorics
 
-using ...Prerequisites.TypeTraits: corder, indtosub
+using ...Prerequisites.Traits: corder, indtosub
 
 export AbstractCombinatorics
 export Combinations, DulCombinations, Permutations, DulPermutations

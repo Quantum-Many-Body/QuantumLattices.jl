@@ -3,7 +3,7 @@ using Printf: @printf
 using QuantumLattices.Mathematics.AlgebraOverFields
 using QuantumLattices.Interfaces: scalar, id, dimension, rank, add!, sub!, mul!, div!, sequence
 using QuantumLattices.Prerequisites: Float
-using QuantumLattices.Prerequisites.TypeTraits: Field, Parameter, parameternames, parametertype, isparameterbound
+using QuantumLattices.Prerequisites.Traits: contentnames, parameternames, parametertype, isparameterbound
 using QuantumLattices.Mathematics.Combinatorics: Combinations
 using QuantumLattices.Mathematics.VectorSpaces: SimpleVectorSpace
 import QuantumLattices.Interfaces: ⊗, ⋅, permute
@@ -68,15 +68,15 @@ function permute(::Type{<:AOFOperator}, id1::AOFID, id2::AOFID, ::Any = nothing)
 end
 
 @testset "Elements" begin
-    @test fieldnames(Field, Element) == (:value, :id)
+    @test contentnames(Element) == (:value, :id)
     @test parameternames(Element) == (:value, :id)
-    @test isparameterbound(Element, Parameter(:value), Any) == false
-    @test isparameterbound(Element, Parameter(:id), ID) == true
-    @test isparameterbound(Element, Parameter(:id), ID{AOFID{Int, Int}, 2}) == false
-    @test valtype(Element) == parametertype(Element, Parameter(:value)) == parametertype(Element, 1) == Any
-    @test valtype(Element{Int}) == parametertype(Element{Int}, Parameter(:value)) == parametertype(Element{Int}, 1) == Int
-    @test idtype(Element{<:Number}) == parametertype(Element{<:Number}, Parameter(:id)) == parametertype(Element{<:Number}, 2) == ID{SimpleID}
-    @test idtype(Element{<:Number, ID{AOFID}}) == parametertype(Element{<:Number, ID{AOFID}}, Parameter(:id)) == parametertype(Element{<:Number, ID{AOFID}},2) == ID{AOFID}
+    @test isparameterbound(Element, :value, Any) == false
+    @test isparameterbound(Element, :id, ID) == true
+    @test isparameterbound(Element, :id, ID{AOFID{Int, Int}, 2}) == false
+    @test valtype(Element) == parametertype(Element, :value) == parametertype(Element, 1) == Any
+    @test valtype(Element{Int}) == parametertype(Element{Int}, :value) == parametertype(Element{Int}, 1) == Int
+    @test idtype(Element{<:Number}) == parametertype(Element{<:Number}, :id) == parametertype(Element{<:Number}, 2) == ID{SimpleID}
+    @test idtype(Element{<:Number, ID{AOFID}}) == parametertype(Element{<:Number, ID{AOFID}}, :id) == parametertype(Element{<:Number, ID{AOFID}},2) == ID{AOFID}
     @test promote_type(AOFOperator{Int}, AOFOperator) == AOFOperator
     @test promote_type(AOFOperator, AOFOperator{Int}) == AOFOperator
     @test promote_type(AOFOperator{Int}, AOFOperator{Float}) == AOFOperator{Float}
@@ -89,8 +89,8 @@ end
     @test opt|>deepcopy == opt
     @test isequal(opt|>deepcopy, opt)
     @test isapprox(opt, replace(opt, value=opt.value+10^-6); atol=10^-5)
-    @test opt|>valtype == opt|>typeof|>valtype == parametertype(opt|>typeof, Parameter(:value)) == Float
-    @test opt|>idtype == opt|>typeof|>idtype == parametertype(opt|>typeof, Parameter(:id)) == ID{AOFID{Int, Int}, 1}
+    @test opt|>valtype == opt|>typeof|>valtype == parametertype(opt|>typeof, :value) == Float
+    @test opt|>idtype == opt|>typeof|>idtype == parametertype(opt|>typeof, :id) == ID{AOFID{Int, Int}, 1}
     @test opt|>rank == opt|>typeof|>rank == 1
     @test opt[1] == AOFOperator(1, ID(AOFID(1, 1)))
     @test length(opt) == 1
