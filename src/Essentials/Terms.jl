@@ -6,7 +6,7 @@ using ..Spatials: AbstractBond, pidtype, Bonds, AbstractLattice, acrossbonds
 using ..DegreesOfFreedom: Index, Config, Table, OID, Operators, oidtype, otype, Boundary, coordon
 using ...Interfaces: add!
 using ...Prerequisites: Float, atol, rtol, decimaltostr
-using ...Prerequisites.TypeTraits: rawtype, efficientoperations, indtosub, corder
+using ...Prerequisites.Traits: rawtype, efficientoperations, indtosub, corder
 using ...Prerequisites.CompositeStructures: CompositeTuple, NamedContainer
 using ...Mathematics.AlgebraOverFields: SimpleID, ID, Element, Elements
 

@@ -5,7 +5,7 @@ using TimerOutputs: TimerOutputs, TimerOutput, @timeit
 using ..Terms: Parameters
 using ...Prerequisites: decimaltostr
 using ...Prerequisites.CompositeStructures: NamedContainer
-using ...Prerequisites.TypeTraits: efficientoperations
+using ...Prerequisites.Traits: efficientoperations
 
 import ...Interfaces: id, update!, prepare!, register!, run!, add!
 

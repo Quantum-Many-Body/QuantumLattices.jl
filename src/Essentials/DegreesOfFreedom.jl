@@ -6,7 +6,7 @@ using LaTeXStrings: latexstring
 using ..Spatials: PID, AbstractBond
 using ...Interfaces: rank, dimension
 using ...Prerequisites: Float, decimaltostr
-using ...Prerequisites.TypeTraits: rawtype, efficientoperations
+using ...Prerequisites.Traits: rawtype, efficientoperations
 using ...Prerequisites.CompositeStructures: CompositeDict
 using ...Mathematics.VectorSpaces: VectorSpace
 using ...Mathematics.AlgebraOverFields: SimpleID, ID, Element, Elements
