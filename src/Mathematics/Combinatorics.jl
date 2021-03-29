@@ -1,7 +1,5 @@
 module Combinatorics
 
-using ...Prerequisites.Traits: corder, indtosub
-
 export AbstractCombinatorics
 export Combinations, DulCombinations, Permutations, DulPermutations
 
@@ -11,8 +9,8 @@ export Combinations, DulCombinations, Permutations, DulPermutations
 Abstract combinatoric algorithms.
 """
 abstract type AbstractCombinatorics{M, C} end
-Base.eltype(::Type{<:AbstractCombinatorics{M, C}}) where {M, C} = NTuple{M, eltype(C)}
-@generated gettuple(contents, inds, ::Val{M}) where {M} = Expr(:tuple, [:(contents[inds[$i]]) for i = 1:M]...)
+@inline Base.eltype(::Type{<:AbstractCombinatorics{M, C}}) where {M, C} = NTuple{M, eltype(C)}
+@inline @generated gettuple(contents, inds, ::Val{M}) where {M} = Expr(:tuple, [:(contents[inds[$i]]) for i = 1:M]...)
 
 """
     Combinations{M}(contents::C) where {M, C}
@@ -24,7 +22,7 @@ struct Combinations{M, C} <: AbstractCombinatorics{M, C}
     N::Int
     Combinations{M}(contents::C) where {M, C} = new{M, C}(contents, length(contents))
 end
-Base.length(c::Combinations{M}) where {M} = binomial(c.N, M)
+@inline Base.length(c::Combinations{M}) where {M} = binomial(c.N, M)
 Base.iterate(c::Combinations{M}) where {M} = (M > c.N) ? nothing : (M == 0) ? ((), [c.N+2]) : (gettuple(c.contents, 1:M, Val(M)), nextmstate!(collect(1:M), c.N, M))
 Base.iterate(c::Combinations{M}, state) where M = (state[1] > c.N-M+1) ? nothing : (gettuple(c.contents, state, Val(M)), nextmstate!(state, c.N, M))
 function nextmstate!(state::Vector{Int}, N::Int, M::Int)
@@ -49,7 +47,7 @@ struct DulCombinations{M, C} <: AbstractCombinatorics{M, C}
     N::Int
     DulCombinations{M}(contents::C) where {M, C} = new{M, C}(contents, length(contents))
 end
-Base.length(c::DulCombinations{M}) where {M} = binomial(c.N+M-1, c.N-1)
+@inline Base.length(c::DulCombinations{M}) where {M} = binomial(c.N+M-1, c.N-1)
 function Base.iterate(c::DulCombinations{M}) where M
     (M == 0) ? ((), [c.N+1]) : (gettuple(c.contents, ntuple(i->1, M), Val(M)), nextdmstate!(collect(ntuple(i->1, M)), c.N, M))
 end
@@ -69,14 +67,14 @@ end
 """
     Permutations{M}(contents::C) where {M, C}
 
-Permutations of M elements from contents. Duplicates are allowed.
+Permutations of M elements from contents. Duplicates are not allowed.
 """
 struct Permutations{M, C} <: AbstractCombinatorics{M, C}
     contents::C
     N::Int
     Permutations{M}(contents::C) where {M, C} = new{M, C}(contents, length(contents))
 end
-Base.length(p::Permutations{M}) where {M} = (0 <= M <= p.N) ? prod((p.N-M+1):p.N) : 0
+@inline Base.length(p::Permutations{M}) where {M} = (0 <= M <= p.N) ? prod((p.N-M+1):p.N) : 0
 function Base.iterate(p::Permutations{M}) where M
     ((p.N == 0) && (M > 0) || (0 < p.N < M)) ? nothing : (state = collect(1:p.N); (gettuple(p.contents, state, Val(M)), nextpstate!(state, p.N, M)))
 end
@@ -107,14 +105,24 @@ end
 """
     DulPermutations{M}(contents::C) where {M, C}
 
-Permutations of M elements from contents. Duplicates are not allowed.
+Permutations of M elements from contents. Duplicates are allowed.
 """
 struct DulPermutations{M, C} <: AbstractCombinatorics{M, C}
     contents::C
     N::Int
     DulPermutations{M}(contents::C) where {M, C} = new{M, C}(contents, length(contents))
 end
-Base.length(p::DulPermutations{M}) where {M} = p.N^M
-Base.iterate(p::DulPermutations{M}, state=1) where {M} = (state > length(p)) ? nothing : (indtosub(ntuple(i->p.N, M), state, corder), state+1)
+@inline Base.length(p::DulPermutations{M}) where M = p.N^M
+function Base.iterate(p::DulPermutations{M}) where M
+    indices = CartesianIndices(ntuple(i->p.N, M|>Val))
+    index = iterate(indices)
+    isnothing(index) && return nothing
+    return gettuple(p.contents, reverse(index[1].I), M|>Val), (indices, index[2])
+end
+function Base.iterate(p::DulPermutations{M}, state) where M
+    index = iterate(state[1], state[2])
+    isnothing(index) && return nothing
+    return gettuple(p.contents, reverse(index[1].I), M|>Val), (state[1], index[2])
+end
 
 end # module

@@ -55,7 +55,7 @@ end
 
 Convert a positive number to its corresponding ordinal.
 """
-function ordinal(number::Integer)
+@inline function ordinal(number::Integer)
     @assert number > 0 "ordinal error: input number must be positive."
     (number == 1) ? "1st" : (number == 2) ? "2nd" : (number == 3) ? "3rd" : "$(number)th"
 end
@@ -65,7 +65,25 @@ end
 
 Kronecker delta function.
 """
-delta(i, j) = (i == j) ? 1 : 0
+@inline delta(i, j) = (i == j) ? 1 : 0
+
+"""
+    searchsortedfirst(table, basis; compare=<) -> Int
+
+Use the binary search method to find the postion of a basis in a sorted table so that the order is preserved if the basis in inserted in that postion.
+"""
+function Base.searchsortedfirst(table, basis; compare=<)
+    lo, hi = 0, length(table)+1
+    @inbounds while lo < hi-1
+        m = (lo+hi) >>> 1
+        if compare(table[m], basis)
+            lo = m
+        else
+            hi = m
+        end
+    end
+    return hi
+end
 
 include("Traits.jl")
 include("CompositeStructures.jl")

@@ -1,8 +1,8 @@
 module SimpleTrees
 
-using ..Traits: getcontent, parametertype, efficientoperations
+using ..Traits: getcontent, parametertype, efficientoperations, rawtype
 
-import ..Traits: contentnames
+import ..Traits: contentnames, dissolve
 
 export simpletreedepth, simpletreewidth
 export SimpleTreeCore, AbstractSimpleTree, SimpleTree
@@ -28,8 +28,8 @@ end
 
 Overloaded equivalent operator.
 """
-Base.:(==)(tc1::TC, tc2::TC) where {TC<:SimpleTreeCore} = ==(efficientoperations, tc1, tc2)
-Base.isequal(tc1::TC, tc2::TC) where {TC<:SimpleTreeCore} = isequal(efficientoperations, tc1, tc2)
+@inline Base.:(==)(tc1::TC, tc2::TC) where {TC<:SimpleTreeCore} = ==(efficientoperations, tc1, tc2)
+@inline Base.isequal(tc1::TC, tc2::TC) where {TC<:SimpleTreeCore} = isequal(efficientoperations, tc1, tc2)
 
 abstract type SimpleTreeIteration end
 struct SimpleTreeDepth <: SimpleTreeIteration end
@@ -55,14 +55,14 @@ const simpletreewidth = SimpleTreeWidth()
 Abstract type for all concrete trees.
 """
 abstract type AbstractSimpleTree{N, D} end
-contentnames(::Type{<:AbstractSimpleTree}) = (:TREECORE,)
+@inline contentnames(::Type{<:AbstractSimpleTree}) = (:TREECORE,)
 
 """
     SimpleTreeCore(tree::AbstractSimpleTree) -> SimpleTreeCore
 
 Get the core of a simple tree.
 """
-SimpleTreeCore(tree::AbstractSimpleTree) = getcontent(tree, :TREECORE)
+@inline SimpleTreeCore(tree::AbstractSimpleTree) = getcontent(tree, :TREECORE)
 
 """
     keytype(tree::AbstractSimpleTree)
@@ -70,8 +70,8 @@ SimpleTreeCore(tree::AbstractSimpleTree) = getcontent(tree, :TREECORE)
 
 Get a tree's node type.
 """
-Base.keytype(tree::AbstractSimpleTree) = keytype(typeof(tree))
-@generated Base.keytype(::Type{T}) where {T<:AbstractSimpleTree} = parametertype(supertype(T, :AbstractSimpleTree), 1)
+@inline Base.keytype(tree::AbstractSimpleTree) = keytype(typeof(tree))
+@inline @generated Base.keytype(::Type{T}) where {T<:AbstractSimpleTree} = parametertype(supertype(T, :AbstractSimpleTree), 1)
 
 """
     valtype(tree::AbstractSimpleTree)
@@ -79,8 +79,8 @@ Base.keytype(tree::AbstractSimpleTree) = keytype(typeof(tree))
 
 Get a tree's data type.
 """
-Base.valtype(tree::AbstractSimpleTree) = valtype(typeof(tree))
-@generated Base.valtype(::Type{T}) where {T<:AbstractSimpleTree} = parametertype(supertype(T, :AbstractSimpleTree), 2)
+@inline Base.valtype(tree::AbstractSimpleTree) = valtype(typeof(tree))
+@inline @generated Base.valtype(::Type{T}) where {T<:AbstractSimpleTree} = parametertype(supertype(T, :AbstractSimpleTree), 2)
 
 """
     eltype(tree::AbstractSimpleTree)
@@ -88,36 +88,36 @@ Base.valtype(tree::AbstractSimpleTree) = valtype(typeof(tree))
 
 Get the eltype of a tree.
 """
-Base.eltype(tree::AbstractSimpleTree) = eltype(typeof(tree))
-Base.eltype(::Type{T}) where {T<:AbstractSimpleTree} = Pair{keytype(T), valtype(T)}
+@inline Base.eltype(tree::AbstractSimpleTree) = eltype(typeof(tree))
+@inline Base.eltype(::Type{T}) where {T<:AbstractSimpleTree} = Pair{keytype(T), valtype(T)}
 
 """
     root(tree::AbstractSimpleTree) -> Union{keytype(tree), Nothing}
 
 Get a tree's root node.
 """
-root(tree::AbstractSimpleTree) = SimpleTreeCore(tree).root
+@inline root(tree::AbstractSimpleTree) = SimpleTreeCore(tree).root
 
 """
     haskey(tree::AbstractSimpleTree{N}, node::N) where N -> Bool
 
 Check whether a node is in a tree.
 """
-Base.haskey(tree::AbstractSimpleTree{N}, node::N) where N = haskey(SimpleTreeCore(tree).contents, node)
+@inline Base.haskey(tree::AbstractSimpleTree{N}, node::N) where N = haskey(SimpleTreeCore(tree).contents, node)
 
 """
     length(tree::AbstractSimpleTree) -> Int
 
 Get the number of a tree's nodes.
 """
-Base.length(tree::AbstractSimpleTree) = length(SimpleTreeCore(tree).contents)
+@inline Base.length(tree::AbstractSimpleTree) = length(SimpleTreeCore(tree).contents)
 
 """
     parent(tree::AbstractSimpleTree{N}, node::N, superparent::Union{N, Nothing}=nothing) where N -> Union{N, Nothing}
 
 Get the parent of a tree's node. When `node` is the tree's root, return `superparent`.
 """
-parent(tree::AbstractSimpleTree{N}, node::N, superparent::Union{N, Nothing}=nothing) where {N} = (node == root(tree) ? superparent : SimpleTreeCore(tree).parent[node])
+@inline parent(tree::AbstractSimpleTree{N}, node::N, superparent::Union{N, Nothing}=nothing) where {N} = (node == root(tree) ? superparent : SimpleTreeCore(tree).parent[node])
 
 """
     children(tree::AbstractSimpleTree) -> Vector{keytype(tree)}
@@ -126,9 +126,9 @@ parent(tree::AbstractSimpleTree{N}, node::N, superparent::Union{N, Nothing}=noth
 
 Get the children of a tree's node.
 """
-children(tree::AbstractSimpleTree) = children(tree, nothing)
-children(tree::AbstractSimpleTree, ::Nothing) = (root(tree) === nothing) ? error("children error: empty tree!") : [root(tree)]
-children(tree::AbstractSimpleTree{N}, node::N) where N = SimpleTreeCore(tree).children[node]
+@inline children(tree::AbstractSimpleTree) = children(tree, nothing)
+@inline children(tree::AbstractSimpleTree, ::Nothing) = (root(tree) === nothing) ? error("children error: empty tree!") : [root(tree)]
+@inline children(tree::AbstractSimpleTree{N}, node::N) where N = SimpleTreeCore(tree).children[node]
 
 """
     addnode!(tree::AbstractSimpleTree{N}, node::N) where N} -> typeof(tree)
@@ -137,7 +137,7 @@ children(tree::AbstractSimpleTree{N}, node::N) where N = SimpleTreeCore(tree).ch
 
 Update the structure of a tree by adding a node. When the parent is `nothing`, the input tree must be empty and the input node becomes the tree's root.
 """
-addnode!(tree::AbstractSimpleTree{N}, node::N) where {N} = addnode!(tree, nothing, node)
+@inline addnode!(tree::AbstractSimpleTree{N}, node::N) where {N} = addnode!(tree, nothing, node)
 function addnode!(tree::AbstractSimpleTree{N}, ::Nothing, node::N) where N
     @assert root(tree) === nothing "addnode! error: not empty tree."
     SimpleTreeCore(tree).root = node
@@ -177,38 +177,36 @@ end
 
 Get the data of a tree's node.
 """
-Base.getindex(tree::AbstractSimpleTree{N}, node::N) where {N} = SimpleTreeCore(tree).contents[node]
+@inline Base.getindex(tree::AbstractSimpleTree{N}, node::N) where {N} = SimpleTreeCore(tree).contents[node]
 
 """
     setindex!(tree::AbstractSimpleTree{N, D}, data::D, node::N) where {N, D}
 
 Set the data of a tree's node.
 """
-Base.setindex!(tree::AbstractSimpleTree{N, D}, data::D, node::N) where {N, D} = (SimpleTreeCore(tree).contents[node] = data)
+@inline Base.setindex!(tree::AbstractSimpleTree{N, D}, data::D, node::N) where {N, D} = (SimpleTreeCore(tree).contents[node] = data)
 
 """
     empty(tree::AbstractSimpleTree)
 
 Construct an empty tree of the same type with the input one.
 """
-@generated function Base.empty(tree::AbstractSimpleTree{N, D}) where {N, D}
-    contents = Expr[:(getfield(tree, $name)) for name in QuoteNode.(fieldnames(tree)) if name != QuoteNode(:TREECORE)]
-    return :(($tree)($(contents...), SimpleTreeCore{$N, $D}()))
-end
+@inline Base.empty(tree::AbstractSimpleTree) = rawtype(typeof(tree))(dissolve(tree, empty)...)
+@inline dissolve(tree::AbstractSimpleTree{N, D}, ::Val{:TREECORE}, ::typeof(empty), args::Tuple, kwargs::NamedTuple) where {N, D} = SimpleTreeCore{N, D}()
 
 """
-    ==(t1::T, t2::T) where T<:AbstractSimpleTree -> Bool
+    ==(t1::T, t2::T) where {T<:AbstractSimpleTree} -> Bool
 
 Overloaded equivalent operator.
 """
-Base.:(==)(t1::T, t2::T) where T <: AbstractSimpleTree = ==(efficientoperations, t1, t2)
+@inline Base.:(==)(t1::T, t2::T) where {T<:AbstractSimpleTree} = ==(efficientoperations, t1, t2)
 
 """
-    isequal(t1::T, t2::T) where T<:AbstractSimpleTree -> Bool
+    isequal(t1::T, t2::T) where {T<:AbstractSimpleTree} -> Bool
 
 Overloaded equivalent operator.
 """
-Base.isequal(t1::T, t2::T) where T <: AbstractSimpleTree = isequal(efficientoperations, t1, t2)
+@inline Base.isequal(t1::T, t2::T) where {T<:AbstractSimpleTree} = isequal(efficientoperations, t1, t2)
 
 """
     keys(tree::AbstractSimpleTree{N}, ::SimpleTreeDepth, node::Union{N, Nothing}=root(tree)) where N
@@ -239,7 +237,7 @@ end
 
 Iterate over a tree's data starting from a certain `node` by depth first search or width first search.
 """
-Base.values(tree::AbstractSimpleTree{N}, ti::SimpleTreeIteration, node::Union{N, Nothing}=root(tree)) where {N} = (tree[key] for key in keys(tree, ti, node))
+@inline Base.values(tree::AbstractSimpleTree{N}, ti::SimpleTreeIteration, node::Union{N, Nothing}=root(tree)) where {N} = (tree[key] for key in keys(tree, ti, node))
 
 """
     pairs(tree::AbstractSimpleTree{N}, ::SimpleTreeDepth, node::Union{N, Nothing}=root(tree)) where N
@@ -247,21 +245,21 @@ Base.values(tree::AbstractSimpleTree{N}, ti::SimpleTreeIteration, node::Union{N,
 
 Iterate over a tree's (node, data) pairs starting from a certain `node` by depth first search or width first search.
 """
-Base.pairs(tree::AbstractSimpleTree{N}, ti::SimpleTreeIteration, node::Union{N, Nothing}=root(tree)) where {N} = ((key, tree[key]) for key in keys(tree, ti, node))
+@inline Base.pairs(tree::AbstractSimpleTree{N}, ti::SimpleTreeIteration, node::Union{N, Nothing}=root(tree)) where {N} = ((key, tree[key]) for key in keys(tree, ti, node))
 
 """
     isleaf(tree::AbstractSimpleTree{N}, node::N) where N -> Bool
 
 Judge whether a tree's node is a leaf (a node without children) or not.
 """
-isleaf(tree::AbstractSimpleTree{N}, node::N) where {N} = length(children(tree, node)) == 0
+@inline isleaf(tree::AbstractSimpleTree{N}, node::N) where {N} = length(children(tree, node)) == 0
 
 """
     level(tree::AbstractSimpleTree{N}, node::N) where N -> Int
 
 Get the level of tree's node.
 """
-function level(tree::AbstractSimpleTree{N}, node::N) where N
+@inline function level(tree::AbstractSimpleTree{N}, node::N) where N
     result = 1
     while node != root(tree)
         result += 1
@@ -275,7 +273,7 @@ end
 
 Get the ancestor of a tree's node of the n-th generation.
 """
-function ancestor(tree::AbstractSimpleTree{N}, node::N, generation::Int=1) where N
+@inline function ancestor(tree::AbstractSimpleTree{N}, node::N, generation::Int=1) where N
     @assert generation >= 0 "ancestor error: generation($generation) must be non-negative."
     result = node
     for i = 1:generation
@@ -303,14 +301,14 @@ end
 
 Get the siblings (other nodes sharing the same parent) of a tree's node.
 """
-siblings(tree::AbstractSimpleTree{N}, node::N) where N = filter(!=(node), children(tree, parent(tree, node)))
+@inline siblings(tree::AbstractSimpleTree{N}, node::N) where N = filter(!=(node), children(tree, parent(tree, node)))
 
 """
     leaves(tree::AbstractSimpleTree) -> Vector{keytype(tree)}
 
 Get a tree's leaves.
 """
-leaves(tree::AbstractSimpleTree) = keytype(tree)[node for node in keys(tree, simpletreedepth) if isleaf(tree, node)]
+@inline leaves(tree::AbstractSimpleTree) = keytype(tree)[node for node in keys(tree, simpletreedepth) if isleaf(tree, node)]
 
 """
     push!(tree::AbstractSimpleTree{N, D}, node::N, data::D) where {N, D} -> typeof(tree)
@@ -356,7 +354,7 @@ end
 
 Empty a tree.
 """
-Base.empty!(tree::AbstractSimpleTree) = delete!(tree, root(tree))
+@inline Base.empty!(tree::AbstractSimpleTree) = delete!(tree, root(tree))
 
 """
     subtree(tree::AbstractSimpleTree{N}, node::N) where N -> typeof(tree)

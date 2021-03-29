@@ -1,112 +1,72 @@
 using Test
 using QuantumLattices.Mathematics.VectorSpaces
-using QuantumLattices.Mathematics.Combinatorics: Combinations, DulPermutations
-using QuantumLattices.Interfaces: dimension, ⊕, rank, dims, inds
+using QuantumLattices.Interfaces: dimension, rank
 
-@testset "SimpleVectorSpace" begin
+import QuantumLattices.Prerequisites.Traits: contentnames, getcontent
+
+struct SimpleVectorSpace{B, N} <: EnumerativeVectorSpace{B}
+    sorted::Bool
+    table::NTuple{N, B}
+    SimpleVectorSpace(sorted::Bool, table::NTuple{N, B}) where {B, N} = new{B, N}(sorted, table)
+end
+@inline contentnames(::Type{<:SimpleVectorSpace}) = (:sorted, :table)
+@inline Base.issorted(vs::SimpleVectorSpace) = vs.sorted
+
+@testset "EnumerativeVectorSpace" begin
+    @test contentnames(EnumerativeVectorSpace) == (:table,)
+
+    id0, id4 = (1, 0), (1, 4)
     id1, id2, id3 = (1, 1), (1, 2), (1, 3)
-
-    vs = SimpleVectorSpace{'T'}(id1, id2)
+    vs = SimpleVectorSpace(true, (id1, id2, id3))
     @test vs == deepcopy(vs)
     @test isequal(vs, deepcopy(vs))
-    @test vs|>size == (2,)
-    @test vs|>dimension == 2
-    @test vs|>collect == [id1, id2]
-    @test (vs[1] == id1) && (vs[2] == id2)
-    @test (searchsortedfirst(vs, id1) == 1) && (searchsortedfirst(vs, id2) == 2)
-    @test (findfirst(id1, vs) == 1) && (findfirst(id2, vs) == 2)
-    @test findfirst((id1, id2), vs) == (1, 2)
-    @test (id1 ∈ vs) && (id2 ∈ vs) && (id3 ∉ vs)
-    @test HasTable(typeof(vs)) == HasTable(true)
-    @test TableSorted(typeof(vs)) == TableSorted(true)
-    @test IsMultiIndexable(typeof(vs)) == IsMultiIndexable(false)
-    @test vs == id1 ⊕ id2
-    @test vs ⊕ id3 == id1 ⊕ id2 ⊕ id3
-    @test id3 ⊕ vs == id3 ⊕ id1 ⊕ id2
-    @test (id2 ⊕ id3) ⊕ vs == id2 ⊕ id3 ⊕ id1 ⊕ id2
+    @test vs|>size == (3,)
+    @test vs|>dimension == 3
+    @test vs|>collect == [id1, id2, id3]
+    @test vs[1]==id1 && vs[2]==id2 && vs[3]==id3
+    @test searchsortedfirst(vs, id0)==1 && searchsortedfirst(vs, id4)==4
+    @test searchsortedfirst(vs, id1)==1 && searchsortedfirst(vs, id2)==2 && searchsortedfirst(vs, id3)==3
+    @test isnothing(findfirst(id0, vs)) && isnothing(findfirst(id4, vs))
+    @test findfirst(id1, vs)==1 && findfirst(id2, vs)==2 && findfirst(id3, vs)==3
+    @test (id0∉vs) && (id4 ∉ vs)
+    @test (id1∈vs) && (id2∈vs) && (id3 ∈ vs)
 
-    vs = SimpleVectorSpace{'F'}(id1, id2)
-    @test vs == deepcopy(vs)
-    @test isequal(vs, deepcopy(vs))
-    @test vs|>size == (2,)
-    @test vs|>dimension == 2
-    @test vs|>collect == [id1, id2]
-    @test (vs[1] == id1) && (vs[2] == id2)
-    @test (searchsortedfirst(vs, id1) == 1) && (searchsortedfirst(vs, id2) == 2)
-    @test (findfirst(id1, vs) == 1) && (findfirst(id2, vs) == 2)
-    @test findfirst((id1, id2), vs) == (1, 2)
-    @test (id1 ∈ vs) && (id2 ∈ vs) && (id3 ∉ vs)
-    @test HasTable(typeof(vs)) == HasTable(true)
-    @test TableSorted(typeof(vs)) == TableSorted(false)
-    @test IsMultiIndexable(typeof(vs)) == IsMultiIndexable(false)
-    @test vs == id1 ⊕ id2
-    @test vs ⊕ id3 == id1 ⊕ id2 ⊕ id3
-    @test id3 ⊕ vs == id3 ⊕ id1 ⊕ id2
-    @test (id2 ⊕ id3) ⊕ vs == id2 ⊕ id3 ⊕ id1 ⊕ id2
+    vs = SimpleVectorSpace(false, (id1, id2, id3))
+    @test searchsortedfirst(vs, id0)==4 && searchsortedfirst(vs, id4)==4
+    @test searchsortedfirst(vs, id1)==1 && searchsortedfirst(vs, id2)==2 && searchsortedfirst(vs, id3)==3
+    @test isnothing(findfirst(id0, vs)) && isnothing(findfirst(id4, vs))
+    @test findfirst(id1, vs)==1 && findfirst(id2, vs)==2 && findfirst(id3, vs)==3
 end
 
-@testset "SimpleIndices" begin
-    foi = SimpleIndices{'F'}(2, 2, 2)
-    @test HasTable(typeof(foi)) == HasTable(false)
-    @test IsMultiIndexable(typeof(foi)) == IsMultiIndexable(true)
-    @test MultiIndexOrderStyle(typeof(foi)) == MultiIndexOrderStyle('F')
+struct SimpleIndices{N} <: CartesianVectorSpace{CartesianIndex{N}}
+    dims::NTuple{N, Int}
+    SimpleIndices(dims::NTuple{N, Int}) where N = new{N}(dims)
+end
+SimpleIndices(dims::Int...) = SimpleIndices(dims)
+@inline Base.Dims(vs::SimpleIndices) = vs.dims
+@inline Base.CartesianIndex(basis::CartesianIndex{N}, ::SimpleIndices{N}) where N = basis
+
+@testset "CartesianVectorSpace" begin
+    foi = SimpleIndices(2, 2, 2)
     @test dimension(foi) == 8
-    @test dims(foi) == (2, 2, 2)
-    @test rank(typeof(foi)) == 3
-    @test inds((1, 1, 1), foi) == (1, 1, 1)
-    @test Tuple((1, 1, 1), foi) == (1, 1, 1)
-    @test foi|>collect == [(1, 1, 1), (2, 1, 1), (1, 2, 1), (2, 2, 1), (1, 1, 2), (2, 1, 2), (1, 2, 2), (2, 2, 2)]
-    @test ((1, 1, 1) ∈ foi) && ((1, 2, 3) ∉ foi)
-    for (i, finds) in enumerate(foi)
-        @test findfirst(finds, foi) == i
-        @test searchsortedfirst(foi, foi[i]) == i
+    @test issorted(foi) == true
+    @test foi|>collect == CartesianIndex.([(1, 1, 1), (2, 1, 1), (1, 2, 1), (2, 2, 1), (1, 1, 2), (2, 1, 2), (1, 2, 2), (2, 2, 2)])
+    for (i, index) in enumerate(CartesianIndices((2,2,2)))
+        @test foi[i] == foi[index] == index
+        @test findfirst(index, foi) == i
+        @test searchsortedfirst(foi, index) == i
+        @test index∈foi
     end
-    coi = SimpleIndices{'C'}(2, 2, 2)
-    @test HasTable(typeof(coi)) == HasTable(false)
-    @test IsMultiIndexable(typeof(coi)) == IsMultiIndexable(true)
-    @test MultiIndexOrderStyle(typeof(coi)) == MultiIndexOrderStyle('C')
-    @test dimension(coi) == 8
-    @test dims(coi) == (2, 2, 2)
-    @test rank(typeof(coi)) == 3
-    @test inds((1, 1, 1), coi) == (1, 1, 1)
-    @test Tuple((1, 1, 1), coi) == (1, 1, 1)
-    @test ((1, 1, 1) ∈ coi) && ((1, 2, 3) ∉ coi)
-    @test coi|>collect == [(1, 1, 1), (1, 1, 2), (1, 2, 1), (1, 2, 2), (2, 1, 1), (2, 1, 2), (2, 2, 1), (2, 2, 2)]
-    for (i, cinds) in enumerate(coi)
-        @test findfirst(cinds, coi) == i
-        @test searchsortedfirst(coi, coi[i]) == i
-    end
-end
-
-@testset "TabledIndices" begin
-    dims = (2, 2)
-    table = [(1, 1), (1, 2), (2, 1), (2, 2)]
-    toi = TabledIndices{'T'}(dims, table)
-    @test HasTable(typeof(toi)) == HasTable(true)
-    @test TableSorted(typeof(toi)) == TableSorted(true)
-    @test toi == TabledIndices{2}(DulPermutations, 2)
-    @test dimension(toi) == 4
-    @test toi|>collect == table
-    @test ((1, 1) ∈ toi) && ((1, 3) ∉ toi)
-    for i = 1:length(toi)
-        @test searchsortedfirst(toi, toi[i]) == i
-    end
-
-    table = [(1, 2), (2, 1), (2, 2), (1, 1)]
-    toi = TabledIndices{'F'}(dims, table)
-    @test HasTable(typeof(toi)) == HasTable(true)
-    @test TableSorted(typeof(toi)) == TableSorted(false)
-    @test dimension(toi) == 4
-    @test toi|>collect == table
-    @test ((1, 1) ∈ toi) && ((1, 3) ∉ toi)
-    for i = 1:length(toi)
-        @test searchsortedfirst(toi, toi[i]) == i
-    end
+    i1, i2 = CartesianIndex(0, 0, 0), CartesianIndex(3, 3, 3)
+    @test isnothing(findfirst(i1, foi)) && isnothing(findfirst(i2, foi))
+    @test searchsortedfirst(foi, i1) == 1 && searchsortedfirst(foi, i2) == 9
+    @test i1∉foi && i2∉foi
 end
 
 struct VSZNamedVectorSpace{NS, BS<:Tuple, VS<:Tuple{Vararg{Vector}}} <: NamedVectorSpace{:⊕, NS, BS, VS}
-    contents::VS
+    tables::VS
 end
+@inline getcontent(m::VSZNamedVectorSpace, ::Val{:contents}) = getfield(m, :tables)
 @generated function VSZNamedVectorSpace{NS}(contents::Vector...) where NS
     @assert (length(NS) == length(contents)) && isa(NS, Tuple{Vararg{Symbol}})
     BS = Expr(:curly, :Tuple, [contents[i]|>eltype for i = 1:length(NS)]...)
@@ -117,8 +77,9 @@ end
 end
 
 struct VSPNamedVectorSpace{NS, BS<:Tuple, VS<:Tuple{Vararg{Vector}}} <: NamedVectorSpace{:⊗, NS, BS, VS}
-    contents::VS
+    tables::VS
 end
+@inline getcontent(m::VSPNamedVectorSpace, ::Val{:contents}) = getfield(m, :tables)
 @generated function VSPNamedVectorSpace{NS}(contents::Vector...) where NS
     @assert (length(NS) == length(contents)) && isa(NS, Tuple{Vararg{Symbol}})
     BS = Expr(:curly, :Tuple, [contents[i]|>eltype for i = 1:length(NS)]...)
@@ -126,9 +87,6 @@ end
 end
 
 @testset "NamedVectorSpace" begin
-    @test IsMultiIndexable(NamedVectorSpace) == IsMultiIndexable(true)
-    @test MultiIndexOrderStyle(NamedVectorSpace) == MultiIndexOrderStyle('C')
-
     nvs = VSZNamedVectorSpace{(:t, :U)}([1, 2], [8.0, 9.0])
     @test nvs|>keys == nvs|>typeof|>keys == (:t, :U)
     @test nvs|>values == ([1, 2], [8.0, 9.0])
@@ -136,19 +94,19 @@ end
     @test eltype(nvs, 1) == eltype(nvs|>typeof, 1) == Int
     @test eltype(nvs, 2) == eltype(nvs|>typeof, 2) == Float64
     @test nvs|>typeof|>rank == 1
-    @test dims(nvs) == (2,)
+    @test Dims(nvs) == (2,)
     elements = [(t = 1, U = 8.0), (t = 2, U = 9.0)]
     for i = 1:dimension(nvs)
-        @test NamedTuple(inds(elements[i], nvs), nvs) == elements[i]
+        @test NamedTuple(CartesianIndex(elements[i], nvs), nvs) == elements[i]
     end
     @test nvs|>collect == elements
 
     nvs = VSPNamedVectorSpace{(:t, :U)}([1.0, 2.0], [8.0, 9.0])
     @test nvs|>typeof|>rank == 2
-    @test dims(nvs) == (2, 2)
-    elements = [(t = 1.0, U = 8.0), (t = 1.0, U = 9.0), (t = 2.0, U = 8.0), (t = 2.0, U = 9.0)]
+    @test Dims(nvs) == (2, 2)
+    elements = [(t = 1.0, U = 8.0), (t = 2.0, U = 8.0), (t = 1.0, U = 9.0), (t = 2.0, U = 9.0)]
     for i = 1:dimension(nvs)
-        @test NamedTuple(inds(elements[i], nvs), nvs) == elements[i]
+        @test NamedTuple(CartesianIndex(elements[i], nvs), nvs) == elements[i]
     end
     @test nvs|>collect == elements
 end

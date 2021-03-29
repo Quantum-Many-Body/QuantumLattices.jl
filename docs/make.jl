@@ -31,7 +31,7 @@ makedocs(
                     "man/Interfaces.md",
                     "Prerequisites" => [
                         "man/Prerequisites/Introduction.md",
-                        "man/Prerequisites/TypeTraits.md",
+                        "man/Prerequisites/Traits.md",
                         "man/Prerequisites/CompositeStructures.md",
                         "man/Prerequisites/SimpleTrees.md",
                         "man/Prerequisites/NamedVectors.md",

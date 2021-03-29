@@ -29,7 +29,7 @@ delta
 Here lists the table of contents of the basic data structures that are supplements to the `Julia.Base` and other common packages:
 ```@contents
 Pages = [
-        "TypeTraits.md",
+        "Traits.md",
         "CompositeStructures.md",
         "SimpleTrees.md",
         "NamedVectors.md",

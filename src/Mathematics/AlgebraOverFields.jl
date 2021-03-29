@@ -3,14 +3,14 @@ module AlgebraOverFields
 using Printf: @printf, @sprintf
 using ...Prerequisites: atol, rtol
 using ...Prerequisites.NamedVectors: NamedVector
-using ...Prerequisites.Traits: efficientoperations, rawtype, fulltype, parametertype, parameterpairs, reparameter, promoteparameters, getcontent, fieldnameofcontent
+using ...Prerequisites.Traits: efficientoperations, rawtype, fulltype, parametertype, parameterpairs, reparameter, promoteparameters, getcontent, contentorder
 
-import ...Interfaces: rank, scalar, id, add!, sub!, mul!, div!, ⊗, ⋅, sequence, permute
-import ...Prerequisites.Traits: contentnames, disolve, isparameterbound, parameternames
+import ...Interfaces: rank, add!, sub!, mul!, div!, ⊗, ⋅, permute
+import ...Prerequisites.Traits: contentnames, dissolve, isparameterbound, parameternames
 
 export SimpleID, ID
 export Element, Scalar, Elements
-export idtype
+export id, scalar, idtype, sequence
 
 """
     SimpleID <: NamedVector
@@ -86,8 +86,8 @@ Base.show(io::IO, cid::Tuple{SimpleID, Vararg{SimpleID}}) = @printf io "ID(%s)" 
 
 Define the promote rule for ID types.
 """
-Base.promote_type(::Type{Tuple{}}, I::Type{<:Tuple{SimpleID, Vararg{SimpleID}}}) = ID{I|>eltype}
-Base.promote_type(I::Type{<:Tuple{SimpleID, Vararg{SimpleID}}}, ::Type{Tuple{}}) = ID{I|>eltype}
+@inline Base.promote_type(::Type{Tuple{}}, I::Type{<:Tuple{SimpleID, Vararg{SimpleID}}}) = ID{I|>eltype}
+@inline Base.promote_type(I::Type{<:Tuple{SimpleID, Vararg{SimpleID}}}, ::Type{Tuple{}}) = ID{I|>eltype}
 
 """
     isless(::Type{<:SimpleID}, cid1::ID{SimpleID}, cid2::ID{SimpleID}) -> Bool
@@ -98,7 +98,7 @@ The comparison rule are as follows:
 1. ids with smaller ranks are always less than those with higher ranks;
 2. if two ids are of the same rank, the comparison goes just like that between tuples.
 """
-function Base.isless(::Type{<:SimpleID}, cid1::ID{SimpleID}, cid2::ID{SimpleID})
+@inline function Base.isless(::Type{<:SimpleID}, cid1::ID{SimpleID}, cid2::ID{SimpleID})
     r1, r2 = cid1|>rank, cid2|>rank
     (r1 < r2) ? true : (r1 > r2) ? false : isless(cid1, cid2)
 end
@@ -110,9 +110,9 @@ end
 
 Get the rank of a composite id.
 """
-rank(id::ID{SimpleID}) = id |> typeof |> rank
-rank(::Type{<:ID{SimpleID}}) = Any
-rank(::Type{<:ID{SimpleID, N}}) where {N} = N
+@inline rank(id::ID{SimpleID}) = id |> typeof |> rank
+@inline rank(::Type{<:ID{SimpleID}}) = Any
+@inline rank(::Type{<:ID{SimpleID, N}}) where {N} = N
 
 """
     *(sid1::SimpleID, sid2::SimpleID) -> ID{SimpleID}
@@ -122,10 +122,10 @@ rank(::Type{<:ID{SimpleID, N}}) where {N} = N
 
 Get the product of the id system.
 """
-Base.:*(sid1::SimpleID, sid2::SimpleID) = ID(sid1, sid2)
-Base.:*(sid::SimpleID, cid::ID{SimpleID}) = ID(sid, cid...)
-Base.:*(cid::ID{SimpleID}, sid::SimpleID) = ID(cid..., sid)
-Base.:*(cid1::ID{SimpleID}, cid2::ID{SimpleID}) = ID(cid1..., cid2...)
+@inline Base.:*(sid1::SimpleID, sid2::SimpleID) = ID(sid1, sid2)
+@inline Base.:*(sid::SimpleID, cid::ID{SimpleID}) = ID(sid, cid...)
+@inline Base.:*(cid::ID{SimpleID}, sid::SimpleID) = ID(cid..., sid)
+@inline Base.:*(cid1::ID{SimpleID}, cid2::ID{SimpleID}) = ID(cid1..., cid2...)
 
 """
     Element{V, I<:ID{SimpleID}}
@@ -137,32 +137,33 @@ Basically, a concrete subtype should contain two attributes:
 - `id::I`: the id of the element
 """
 abstract type Element{V, I<:ID{SimpleID}} end
-contentnames(::Type{<:Element}) = (:value, :id)
-parameternames(::Type{<:Element}) = (:value, :id)
-isparameterbound(::Type{<:Element}, ::Val{:value}, ::Type{V}) where V = false
-isparameterbound(::Type{<:Element}, ::Val{:id}, ::Type{I}) where I<:ID{SimpleID} = !isconcretetype(I) 
+@inline contentnames(::Type{<:Element}) = (:value, :id)
+@inline parameternames(::Type{<:Element}) = (:value, :id)
+@inline isparameterbound(::Type{<:Element}, ::Val{:value}, ::Type{V}) where V = false
+@inline isparameterbound(::Type{<:Element}, ::Val{:id}, ::Type{I}) where I<:ID{SimpleID} = !isconcretetype(I) 
 
+@inline newvalue(m::Element, v::Number) = v
 """
     replace(m::Element, v::Number) -> Element
 
 Replace the value of an element.
 """
-Base.replace(m::Element, v::Number) = _replace(m, v, fieldnameofcontent(typeof(m), :value)|>Val)
-@generated _replace(m::Element, v::Number, ::Val{name}) where name = Expr(:call, :replace, :m, Expr(:kw, name, :v))
+@inline Base.replace(m::Element, v::Number) = rawtype(typeof(m))(dissolve(m, newvalue, (v,))...)
+@inline dissolve(m::Element, ::Val{:value}, ::typeof(newvalue), args::Tuple, kwargs::NamedTuple) = newvalue(m, args...; kwargs...)
 
 """
     scalar(m::Element) -> valtype(m)
 
 Get the value of an element.
 """
-scalar(m::Element) = getcontent(m, :value)
+@inline scalar(m::Element) = getcontent(m, :value)
 
 """
     id(m::Element) -> idtype(m)
 
 Get the id of an element.
 """
-id(m::Element) = getcontent(m, :id)
+@inline id(m::Element) = getcontent(m, :id)
 
 """
     Scalar{V}
@@ -179,8 +180,8 @@ Get the type of the value of an element.
 
 The result is also the type of the field over which the algebra is defined.
 """
-Base.valtype(m::Element) = m |> typeof |> valtype
-@generated Base.valtype(::Type{T}) where {T<:Element} = parametertype(supertype(T, :Element), 1)
+@inline Base.valtype(m::Element) = m |> typeof |> valtype
+@inline @generated Base.valtype(::Type{T}) where {T<:Element} = parametertype(supertype(T, :Element), 1)
 
 """
     idtype(m::Element)
@@ -188,8 +189,8 @@ Base.valtype(m::Element) = m |> typeof |> valtype
 
 The type of the id of an element.
 """
-idtype(m::Element) = m |> typeof |> idtype
-@generated idtype(::Type{T}) where {T<:Element} = parametertype(supertype(T, :Element), 2)
+@inline idtype(m::Element) = m |> typeof |> idtype
+@inline @generated idtype(::Type{T}) where {T<:Element} = parametertype(supertype(T, :Element), 2)
 
 """
     rank(m::Element) -> Int
@@ -197,43 +198,45 @@ idtype(m::Element) = m |> typeof |> idtype
 
 Get the rank of an element.
 """
-rank(m::Element) = m |> typeof |> rank
-rank(::Type{M}) where {M<:Element} = M |> idtype |> rank
+@inline rank(m::Element) = m |> typeof |> rank
+@inline rank(::Type{M}) where {M<:Element} = M |> idtype |> rank
 
 """
     ==(m1::Element, m2::Element) -> Bool
 
 Compare two elements and judge whether they are equal to each other.
 """
-Base.:(==)(m1::Element, m2::Element) = ==(efficientoperations, m1, m2)
+@inline Base.:(==)(m1::Element, m2::Element) = ==(efficientoperations, m1, m2)
 
 """
     isequal(m1::Element, m2::Element) -> Bool
 
 Compare two elements and judge whether they are equal to each other.
 """
-Base.isequal(m1::Element, m2::Element) = isequal(efficientoperations, m1, m2)
+@inline Base.isequal(m1::Element, m2::Element) = isequal(efficientoperations, m1, m2)
 
 """
     isapprox(m1::Element, m2::Element; atol::Real=atol, rtol::Real=rtol) -> Bool
 
 Compare two elements and judge whether they are inexactly equivalent to each other.
 """
-Base.isapprox(m1::Element, m2::Element; atol::Real=atol, rtol::Real=rtol) = isapprox(efficientoperations, (fieldnameofcontent(typeof(m1), :value),)|>Val, m1, m2; atol=atol, rtol=rtol)
+@inline function Base.isapprox(m1::Element, m2::Element; atol::Real=atol, rtol::Real=rtol)
+    isapprox(efficientoperations, contentorder(typeof(m1), :value)|>Val, dissolve(m1), dissolve(m2); atol=atol, rtol=rtol)::Bool
+end
 
 """
     replace(m::Element; kwargs...) -> typeof(m)
 
 Return a copy of a concrete `Element` with some of the field values replaced by the keyword arguments.
 """
-Base.replace(m::Element; kwargs...) = replace(efficientoperations, m; kwargs...)
+@inline Base.replace(m::Element; kwargs...) = replace(efficientoperations, m; kwargs...)
 
 """
     promote_rule(::Type{M1}, ::Type{M2}) where {M1<:Element, M2<:Element}
 
 Define the promote rule for Element types.
 """
-function Base.promote_rule(::Type{M1}, ::Type{M2}) where {M1<:Element, M2<:Element}
+@inline function Base.promote_rule(::Type{M1}, ::Type{M2}) where {M1<:Element, M2<:Element}
     (M1 <: M2) && return M2
     (M2 <: M1) && return M1
     r1, r2 = M1|>rank, M2|>rank
@@ -247,8 +250,8 @@ end
 
 Define the promote rule for the multiplication between an Element and a scalar.
 """
-Base.promote_type(::Type{M}, ::Type{V}, ::Val{:*}) where {M<:Element, V<:Number} = promote_type(V, M, Val(:*))
-function Base.promote_type(::Type{V}, ::Type{M}, ::Val{:*}) where {M<:Element, V<:Number}
+@inline Base.promote_type(::Type{M}, ::Type{V}, ::Val{:*}) where {M<:Element, V<:Number} = promote_type(V, M, Val(:*))
+@inline function Base.promote_type(::Type{V}, ::Type{M}, ::Val{:*}) where {M<:Element, V<:Number}
     return reparameter(M, :value, promote_type(valtype(M), V))
 end
 
@@ -257,18 +260,18 @@ end
 
 Overloaded `[]` operator.
 """
-Base.getindex(m::Element, i) = rawtype(typeof(m))(disolve(m, getindex, (i,))...)
-disolve(m::Element, ::Val{:value}, ::typeof(getindex), ::Tuple{Any}, ::NamedTuple) = one(valtype(m))
-disolve(m::Element, ::Val{:id}, ::typeof(getindex), i::Tuple{Any}, ::NamedTuple) = ID(id(m)[i[1]])
+Base.getindex(m::Element, i) = rawtype(typeof(m))(dissolve(m, getindex, (i,))...)
+@inline dissolve(m::Element, ::Val{:value}, ::typeof(getindex), ::Tuple{Any}, ::NamedTuple) = one(valtype(m))
+@inline dissolve(m::Element, ::Val{:id}, ::typeof(getindex), i::Tuple{Any}, ::NamedTuple) = ID(id(m)[i[1]])
 
 """
     length(m::Element) -> Int
 
 Get the length of an element.
 """
-Base.length(m::Element) = rank(m)
-Base.firstindex(m::Element) = 1
-Base.lastindex(m::Element) = rank(m)
+@inline Base.length(m::Element) = rank(m)
+@inline Base.firstindex(m::Element) = 1
+@inline Base.lastindex(m::Element) = rank(m)
 
 """
     one(::Type{M}) where M<:Element
@@ -276,15 +279,15 @@ Base.lastindex(m::Element) = rank(m)
 
 Get the identity operator.
 """
-function Base.one(::Type{M}) where M<:Element
+@inline function Base.one(::Type{M}) where M<:Element
     rtype = rawtype(M)
     vtype = isconcretetype(valtype(M)) ? valtype(M) : Int
     @assert fieldnames(rtype) == (:value, :id) "one error: not supproted type($(nameof(rtype)))."
     return rtype(one(vtype), ID())
 end
-Base.one(m::Element) = rawtype(typeof(m))(disolve(m, one)...)
-disolve(m::Element, ::Val{:value}, ::typeof(one), ::Tuple, ::NamedTuple) = one(valtype(m))
-disolve(::Element, ::Val{:id}, ::typeof(one), ::Tuple, ::NamedTuple) = ID()
+@inline Base.one(m::Element) = rawtype(typeof(m))(dissolve(m, one)...)
+@inline dissolve(m::Element, ::Val{:value}, ::typeof(one), ::Tuple, ::NamedTuple) = one(valtype(m))
+@inline dissolve(::Element, ::Val{:id}, ::typeof(one), ::Tuple, ::NamedTuple) = ID()
 
 """
     convert(::Type{M}, m::Scalar) where M<:Scalar
@@ -295,9 +298,9 @@ disolve(::Element, ::Val{:id}, ::typeof(one), ::Tuple, ::NamedTuple) = ID()
 2) Convert a scalar to a scalar element;
 3) Convert an element from one type to another.
 """
-Base.convert(::Type{M}, m::Scalar) where M<:Scalar = (typeof(m) <: M) ? m : one(M)*scalar(m)
-Base.convert(::Type{M}, m::Number) where M<:Scalar = one(M)*m
-function Base.convert(::Type{M}, m::Element) where M<:Element
+@inline Base.convert(::Type{M}, m::Scalar) where M<:Scalar = (typeof(m) <: M) ? m : one(M)*scalar(m)
+@inline Base.convert(::Type{M}, m::Number) where M<:Scalar = one(M)*m
+@inline function Base.convert(::Type{M}, m::Element) where M<:Element
     (typeof(m) <: M) && return m
     @assert convertable(M, m) "convert error: $(nameof(typeof(m))) cannot be converted to $(nameof(M))."
     return replace(m, convert(valtype(M), scalar(m)))
@@ -388,8 +391,8 @@ Get a zero set of elements.
 
 A zero set of elements is defined to be the one with no elements.
 """
-Base.zero(ms::Elements) = ms |> typeof |> zero
-Base.zero(::Type{<:Elements}) = nothing
+@inline Base.zero(ms::Elements) = ms |> typeof |> zero
+@inline Base.zero(::Type{<:Elements}) = nothing
 
 """
     ==(ms::Elements, ::Nothing) -> Bool
@@ -397,8 +400,8 @@ Base.zero(::Type{<:Elements}) = nothing
 
 Judge whether a set of elements is identically empty.
 """
-Base.:(==)(ms::Elements, ::Nothing) = length(ms) == 0
-Base.:(==)(::Nothing, ms::Elements) = length(ms) == 0
+@inline Base.:(==)(ms::Elements, ::Nothing) = length(ms) == 0
+@inline Base.:(==)(::Nothing, ms::Elements) = length(ms) == 0
 
 """
     isequal(ms::Elements, ::Nothing) -> Bool
@@ -406,8 +409,8 @@ Base.:(==)(::Nothing, ms::Elements) = length(ms) == 0
 
 Judge whether a set of elements is identically empty.
 """
-Base.isequal(ms::Elements, ::Nothing) = length(ms) == 0
-Base.isequal(::Nothing, ms::Elements) = length(ms) == 0
+@inline Base.isequal(ms::Elements, ::Nothing) = length(ms) == 0
+@inline Base.isequal(::Nothing, ms::Elements) = length(ms) == 0
 
 """
     add!(ms::Elements) -> typeof(ms)
@@ -659,8 +662,8 @@ Base.://(ms::Elements, factor::Scalar) = ms * (1//scalar(factor))
 
 Overloaded `^` operator for element-integer power of an algebra over a field.
 """
-Base.:^(m::Element, n::Integer) = (@assert n > 0 "^ error: non-positive integers are not allowed."; prod(ntuple(i->m, Val(n))))
-Base.:^(ms::Elements, n::Integer) = (@assert n > 0 "^ error: non-positive integers are not allowed."; prod(ntuple(i->ms, Val(n))))
+Base.:^(m::Element, n::Integer) = (@assert n>0 "^ error: non-positive integers are not allowed."; prod(ntuple(i->m, Val(n))))
+Base.:^(ms::Elements, n::Integer) = (@assert n>0 "^ error: non-positive integers are not allowed."; prod(ntuple(i->ms, Val(n))))
 
 """
     ⊗(m::Element, ms::Elements) -> Elements
@@ -783,11 +786,11 @@ end
 
 Permute the ids of an-element/a-set-of-elements to the descending order according to a table.
 """
-function permute(m::Element, table=nothing)
+@inline function permute(m::Element, table=nothing)
     M = reparameter(typeof(m), :id, ID{m|>idtype|>eltype})
     permute!(Elements{idtype(M), M}(), m, table)
 end
-function permute(ms::Elements, table=nothing)
+@inline function permute(ms::Elements, table=nothing)
     M = reparameter(valtype(ms), :id, ID{ms|>keytype|>eltype})
     permute!(Elements{idtype(M), M}(), ms, table)
 end

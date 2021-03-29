@@ -31,3 +31,12 @@ end
     @test delta(1, 2) == 0
     @test delta(1, 1) == 1
 end
+
+@testset "searchsortedfirst" begin
+    idx = CartesianIndices((2, 2, 2))
+    for (i, index) in enumerate(idx)
+        @test searchsortedfirst(idx, index) == i
+    end
+    @test searchsortedfirst(idx, CartesianIndex(0, 0, 0)) == 1
+    @test searchsortedfirst(idx, CartesianIndex(3, 3, 3)) == 9
+end

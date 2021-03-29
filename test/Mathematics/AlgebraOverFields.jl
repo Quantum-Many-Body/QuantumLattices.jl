@@ -1,11 +1,10 @@
 using Test
 using Printf: @printf
 using QuantumLattices.Mathematics.AlgebraOverFields
-using QuantumLattices.Interfaces: scalar, id, dimension, rank, add!, sub!, mul!, div!, sequence
+using QuantumLattices.Interfaces: dimension, rank, add!, sub!, mul!, div!
 using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Prerequisites.Traits: contentnames, parameternames, parametertype, isparameterbound
 using QuantumLattices.Mathematics.Combinatorics: Combinations
-using QuantumLattices.Mathematics.VectorSpaces: SimpleVectorSpace
 import QuantumLattices.Interfaces: ⊗, ⋅, permute
 
 struct AOFID{O<:Real, S<:Real} <: SimpleID
