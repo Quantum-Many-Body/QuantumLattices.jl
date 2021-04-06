@@ -405,16 +405,19 @@ Compare two objects and judge whether the first is less than the second.
 end
 
 """
-    isapprox(::EfficientOperations, fields::Union{Union{Integer, Symbol}, Tuple{Vararg{Union{Integer, Symbol}}}}, o1, o2; atol=atol, rtol=rtol) -> Bool
+    isapprox(::EfficientOperations, o1, o2; atol=atol, rtol=rtol) -> Bool
+    isapprox(::EfficientOperations, fields::Union{Union{Nothing, Integer, Symbol}, Tuple{Vararg{Union{Integer, Symbol}}}}, o1, o2; atol=atol, rtol=rtol) -> Bool
     isapprox(::EfficientOperations, ::Val{fields}, o1, o2; atol=atol, rtol=rtol) where fields -> Bool
 
 Compare two objects and judge whether they are inexactly equivalent to each other.
 """
-@inline function Base.isapprox(::EfficientOperations, fields::Union{Union{Integer, Symbol}, Tuple{Vararg{Union{Integer, Symbol}}}}, o1, o2; atol=atol, rtol=rtol)
+@inline Base.isapprox(::EfficientOperations, o1, o2; atol=atol, rtol=rtol) = isapprox(efficientoperations, nothing, o1, o2, atol=atol, rtol=rtol)
+@inline function Base.isapprox(::EfficientOperations, fields::Union{Nothing, Union{Integer, Symbol}, Tuple{Vararg{Union{Integer, Symbol}}}}, o1, o2; atol=atol, rtol=rtol)
     isapprox(efficientoperations, fields|>Val, o1, o2; atol=atol, rtol=rtol)
 end
 @inline @generated function Base.isapprox(::EfficientOperations, ::Val{fields}, o1, o2; atol=atol, rtol=rtol) where fields
     (fieldcount(o1)≠fieldcount(o2) || fieldnames(o1)≠fieldnames(o2)) && return false
+    isnothing(fields) && (fields = ntuple(i->i, fieldcount(o1)))
     isa(fields, Union{Integer, Symbol}) && (fields = (fields,))
     fields = Set(isa(field, Symbol) ? findfirst(isequal(field), fieldnames(o1)) : field for field in fields)
     exprs = []

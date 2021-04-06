@@ -113,6 +113,7 @@ Base.replace(fc::EFO; kwargs...) = replace(efficientoperations, fc; kwargs...)
     @test isequal(efficientoperations, (), ())
     @test ==(efficientoperations, (1, 2), (1, 2, 3)) == false
     @test isequal(efficientoperations, (1, 2), (1, 2, 3)) == false
+    @test isapprox(efficientoperations, (1.0, 2.0), (1, 2)) == true
     @test isapprox(efficientoperations, (), (), ()) == true
     @test isapprox(efficientoperations, (), (), (1,)) == false
 
