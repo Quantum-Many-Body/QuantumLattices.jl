@@ -2,294 +2,347 @@ module Terms
 
 using Printf: @printf, @sprintf
 using StaticArrays: SVector
-using ..Spatials: AbstractBond, pidtype, Bonds, AbstractLattice, acrossbonds
-using ..DegreesOfFreedom: Index, Config, Table, OID, Operators, oidtype, otype, Boundary, coordon
+using MacroTools: @capture
+using ..Spatials: AbstractBond, Point, Bonds, AbstractLattice, acrossbonds, isintracell
+using ..DegreesOfFreedom: Config, AbstractOID, Operators, Table, Boundary, plain
 using ...Interfaces: add!
 using ...Prerequisites: Float, atol, rtol, decimaltostr
-using ...Prerequisites.Traits: rawtype, efficientoperations, indtosub, corder
+using ...Prerequisites.Traits: rawtype, efficientoperations
 using ...Prerequisites.CompositeStructures: CompositeTuple, NamedContainer
 using ...Mathematics.AlgebraOverFields: SimpleID, ID, Element, Elements
 
 import ..DegreesOfFreedom: isHermitian
-import ...Interfaces: id, rank, kind, expand, expand!, dimension, update!, reset!
+import ...Interfaces: id, rank, expand, expand!, dimension
+import ...Essentials: kind, update!, reset!
+import ...Prerequisites.Traits: contentnames, getcontent
 import ...Mathematics.AlgebraOverFields: idtype
 
-export Subscript, Subscripts, @subscript
-export Coupling, Couplings, @couplings
-export TermFunction, TermAmplitude, TermCouplings, TermModulate, Term, statistics, abbr
+export Subscripts, @subscripts, @subscripts_str, SubID
+export Coupling, Couplings, @couplings, couplingcenters, couplingpoints, couplinginternals
+export TermFunction, TermAmplitude, TermCouplings, TermModulate, Term, abbr, ismodulatable, otype
 export Parameters, GenOperators, AbstractGenerator, Generator
 
-const wildcard = '*'
-const constant = ':'
-"""
-    Subscript(  ipattern::NTuple{N1, Any},
-                opattern::NTuple{N2, Any},
-                mapping::Union{Function, Nothing}=nothing,
-                constrain::Union{Function, Nothing}=nothing,
-                identifier::Union{Symbol, Char}=wildcard
-                ) where {N1, N2}
-    Subscript{N}() where N
-    Subscript(opattern::NTuple{N, Int}) where N
+const wildcard = Symbol("*")
+@inline nonconstrain(_...) = true
 
-The subscripts of some orbital/spin degrees of freedom.
 """
-struct Subscript{N1, N2, I<:Tuple, O<:Tuple, M<:Union{Function, Nothing}, C<:Union{Function, Nothing}, D<:Union{Symbol, Char}}
-    ipattern::I
-    opattern::O
+    Subscripts{DS, RS, OP<:Tuple, CP<:AbstractString, M<:Tuple{Vararg{Function}}, C<:Tuple{Vararg{Function}}} <: CompositeTuple{OP}
+
+A subscript set of a certain internal degree of freedom.
+"""
+struct Subscripts{DS, RS, OP<:Tuple, CP<:Tuple, M<:Tuple{Vararg{Function}}, C<:Tuple{Vararg{Function}}} <: CompositeTuple{OP}
+    opattern::OP
+    cpattern::CP
     mapping::M
     constrain::C
-    identifier::D
-    function Subscript( ipattern::NTuple{N1, Any},
-                        opattern::NTuple{N2, Any},
-                        mapping::Union{Function, Nothing}=nothing,
-                        constrain::Union{Function, Nothing}=nothing,
-                        identifier::Union{Symbol, Char}=wildcard
-                        ) where {N1, N2}
-        new{N1, N2, typeof(ipattern), typeof(opattern), typeof(mapping), typeof(constrain), typeof(identifier)}(ipattern, opattern, mapping, constrain, identifier)
+    function Subscripts{DS, RS}(opattern::Tuple, cpattern::Tuple, mapping::Tuple{Vararg{Function}}, constrain::Tuple{Vararg{Function}}) where {DS, RS}
+        @assert isa(DS, Tuple{Vararg{Int}}) && isa(RS, Tuple{Vararg{Int}}) "Subscripts error: wrong ranks and dimensions."
+        @assert length(DS)==length(RS)==length(cpattern)==length(mapping)==length(constrain) "Subscripts error: dismatched number of segments."
+        @assert sum(DS)==length(opattern) "Subscripts error: dismatched total dimension."
+        new{DS, RS, typeof(opattern), typeof(cpattern), typeof(mapping), typeof(constrain)}(opattern, cpattern, mapping, constrain)
     end
 end
-Subscript{N}() where {N} = Subscript((wildcard,), NTuple{N, Char}(wildcard for i = 1:N), nothing, nothing, wildcard)
-Subscript(opattern::NTuple{N, Int}) where N = Subscript((), opattern, nothing, nothing, constant)
+@inline contentnames(::Type{<:Subscripts}) = (:contents, :cpattern, :mapping, :constrain)
+@inline getcontent(subscripts::Subscripts, ::Val{:contents}) = subscripts.opattern
 
 """
-    ==(sub1::Subscript, sub2::Subscript) -> Bool
+    Subscripts(N::Int)
+    Subscripts(opattern::Tuple{Vararg{Union{Integer, Symbol}}})
+    Subscripts(opattern::Tuple{Vararg{Union{Integer, Symbol}}}, cpattern::AbstractString)
 
-Judge whether two subscripts are equivalent to each other.
+Construct a subscript set of a certain internal degree of freedom.
 """
-Base.:(==)(sub1::Subscript, sub2::Subscript) = (sub1.ipattern == sub2.ipattern) && (sub1.opattern == sub2.opattern) && (sub1.identifier == sub2.identifier)
-
-"""
-    isequal(sub1::Subscript, sub2::Subscript) -> Bool
-
-Judge whether two subscripts are equivalent to each other.
-"""
-function Base.isequal(sub1::Subscript, sub2::Subscript)
-    isequal(sub1.ipattern, sub2.ipattern) && isequal(sub1.opattern, sub2.opattern) && isequal(sub1.identifier, sub2.identifier)
+@inline Subscripts(N::Int) = Subscripts(Val(N))
+function Subscripts(::Val{N}) where N
+    mapping = value::Int -> ntuple(i->value, Val(N))
+    opattern = ntuple(i->wildcard, Val(N))
+    return Subscripts{(N,), (1,)}(opattern, ("nonconstrain",), (mapping,), (nonconstrain,))
 end
-
-"""
-    show(io::IO, subscript::Subscript)
-
-Show a subscript.
-"""
-function Base.show(io::IO, subscript::Subscript)
-    if (subscript.identifier == constant) || (subscript.identifier == wildcard)
-        @printf io "(%s)" join(subscript.opattern, ", ")
-    else
-        @printf io "(%s) with %s" join(subscript.opattern, ", ") subscript.identifier
-    end
+function Subscripts(opattern::Tuple{Vararg{Union{Integer, Symbol}}})
+    ipattern = Tuple(subscriptsipattern(opattern))
+    mapping = Meta.eval(Expr(:->, Expr(:tuple, ipattern...), Expr(:block, Expr(:tuple, opattern...))))
+    cpattern = "nonconstrain"
+    return Subscripts{(length(opattern),), (length(ipattern),)}(opattern, (cpattern,), (mapping,), (nonconstrain,))
 end
-
-"""
-    rank(subscript::Subscript) -> Int
-    rank(::Type{<:Subscript{N}}) where N -> Int
-
-Get the number of the independent variables that are used to describe the subscripts of some orbital/spin degrees of freedom.
-"""
-rank(subscript::Subscript) = subscript |> typeof |> rank
-rank(::Type{<:Subscript{N}}) where {N} = N
-
-"""
-    dimension(subscript::Subscript) -> Int
-    dimension(::Type{<:(Subscript{N1, N2} where N1)}) where N2 -> Int
-
-Get the number of the whole variables that are used to describe the subscripts of some orbital/spin degrees of freedom.
-"""
-dimension(subscript::Subscript) = subscript |> typeof |> dimension
-dimension(::Type{<:(Subscript{N1, N2} where N1)}) where {N2} = N2
-
-"""
-    (subscript::Subscript{N})(::Val{'M'}, values::Vararg{Int, N}) where N -> NTuple{dimension(subscript), Int}
-    (subscript::Subscript{N})(::Val{'C'}, values::Vararg{Int, N}) where N -> Bool
-
-* Construct the subscripts from a set of independent variables.
-* Judge whether a set of independent variables are valid to construct the subscripts.
-"""
-function (subscript::Subscript)() end
-(subscript::Subscript{N})(::Val{'M'}, values::Vararg{Int, N}) where {N} = subscript.mapping(values...)
-(subscript::Subscript{0, N, <:Tuple, <:Tuple, Nothing, Nothing})(::Val{'M'}) where {N} = subscript.opattern
-(subscript::Subscript{1, N, <:Tuple, <:Tuple, Nothing, Nothing})(::Val{'M'}, value::Int) where {N} = NTuple{N, Int}(value for i = 1:N)
-(subscript::Subscript{N})(::Val{'C'}, values::Vararg{Int, N}) where N = subscript.constrain(values...)
-(subscript::Subscript{N1, N2, <:Tuple, <:Tuple, <:Union{Function, Nothing}, Nothing})(::Val{'C'}, values::Vararg{Int, N1}) where {N1, N2} = true
-
-"""
-    @subscript expr::Expr with constrain::Expr -> Subscript
-
-Construct a subscript from a map and optionally with a constrain.
-"""
-macro subscript(expr::Expr, with::Symbol=:with, constrain::Union{Expr, Symbol}=:nothing)
-    @assert with == :with "@subscript error: pattern and constrain must be separated by :with."
-    subscriptexpr(expr, constrain)
+function Subscripts(opattern::Tuple{Vararg{Union{Integer, Symbol}}}, cpattern::AbstractString)
+    ipattern = Tuple(subscriptsipattern(opattern))
+    mapping = Meta.eval(Expr(:->, Expr(:tuple, ipattern...), Expr(:block, Expr(:tuple, opattern...))))
+    constrain = Meta.eval(Expr(:->, Expr(:tuple, ipattern...), Expr(:block, Meta.parse(cpattern))))
+    return Subscripts{(length(opattern),), (length(ipattern),)}(opattern, (cpattern,), (mapping,), (constrain,))
 end
-function subscriptexpr(pattern::Expr, ::Symbol)
-    @assert pattern.head == :tuple "subscriptexpr error: wrong input pattern (not a tuple)."
-    ip, op = Tuple(subscriptipattern(pattern.args)), Tuple(pattern.args)
-    mapname, identifier = gensym(), QuoteNode(gensym())
-    return quote
-        $mapname($(ip...)) = $pattern
-        Subscript($ip, $op, $mapname, nothing, $identifier)
-    end
-end
-function subscriptexpr(pattern::Expr, constrain::Expr)
-    @assert pattern.head == :tuple "subscriptexpr error: wrong input pattern (not a tuple)."
-    ip, op = Tuple(subscriptipattern(pattern.args)), Tuple(pattern.args)
-    mapname, constrainname, identifier = gensym(), gensym(), QuoteNode(gensym())
-    return quote
-        $mapname($(ip...)) = $pattern
-        $constrainname($(ip...)) = $(constrain)
-        Subscript($ip, $op, $mapname, $constrainname, $identifier)
-    end
-end
-function subscriptipattern(opattern)
-    result = []
+function subscriptsipattern(opattern)
+    result = Symbol[]
     for op in opattern
-        @assert (op ≠ Symbol(wildcard)) && (op ≠ Symbol(constant)) "subscriptipattern error: wrong symbols."
-        isa(op, Symbol) && (op ∉ result) && push!(result, op)
+        isa(op, Symbol) && op∉result && push!(result, op)
     end
     return result
 end
 
 """
-    Subscripts(contents::Subscript...)
+    @subscripts expr::Expr -> Subscripts
 
-A complete set of all the independent subscripts of the orbital/spin degrees of freedom.
+Construct a subscript set from an opattern and optionally with a constrain.
 """
-struct Subscripts{T<:Tuple, R, D} <: CompositeTuple{T}
-    contents::T
-    function Subscripts(contents::T) where {T<:Tuple}
-        R = sum(rank(fieldtype(T, i)) for i = 1:fieldcount(T))
-        D = sum(dimension(fieldtype(T, i)) for i = 1:fieldcount(T))
-        new{T, R, D}(contents)
-    end
+macro subscripts(expr::Expr)
+    return subscriptsexpr(expr)
 end
-Subscripts(contents::Subscript...) = Subscripts(contents)
+function subscriptsexpr(expr::Expr)
+    if @capture(expr, [ops__;](cps__))
+        @assert length(ops)==length(cps) "@subscripts error: dismatched opattern and constrain."
+    elseif @capture(expr, op_(cp_))
+        ops, cps = [op], [cp]
+    elseif @capture(expr, [ops__;])
+        cps = [true for i = 1:length(ops)]
+    else
+        @capture(expr, op_)
+        ops, cps = [op], [true]
+    end
+    DS, RS, opattern, cpattern, mappings, constrains, fdefs = [], [], [], [], [], [], [], [], []
+    for (op, cp) in zip(ops, cps)
+        push!(DS, length(op.args))
+        append!(opattern, op.args)
+        ip = subscriptsipattern(op.args)
+        push!(RS, length(ip))
+        mapname = gensym("submap")
+        op = Expr(:tuple, op.args...)
+        push!(fdefs, :($mapname($(ip...)) = $op))
+        push!(mappings, mapname)
+        if isa(cp, Expr)
+            push!(cpattern, String(Symbol(cp)))
+            constrainname = gensym("subconstrain")
+            push!(fdefs, :($constrainname($(ip...)) = $cp))
+            push!(constrains, constrainname)
+        else
+            push!(cpattern, "nonconstrain")
+            push!(constrains, :nonconstrain)
+        end
+    end
+    DS, RS = Tuple(DS), Tuple(RS)
+    opattern, cpattern = Tuple(opattern), Tuple(cpattern)
+    mappings, constrains = Expr(:tuple, mappings...), Expr(:tuple, constrains...)
+    return Expr(:block, fdefs..., :(Subscripts{$DS, $RS}($opattern, $cpattern, $mappings, $constrains)))
+end
 
 """
-    rank(subscripts::Subscripts) -> Int
-    rank(::Type{<:Subscripts{<:Tuple, R}}) where R -> Int
+    subscripts"..." -> Subscripts
 
-Get the total number of the independent variables of the complete subscript set.
+Construct a subscript set from a literal string.
 """
-rank(subscripts::Subscripts) = subscripts |> typeof |> rank
-rank(::Type{<:Subscripts{<:Tuple, R}}) where {R} = R
+macro subscripts_str(str)
+    return subscriptsexpr(Meta.parse(str))
+end
 
 """
-    rank(subscripts::Subscripts, i::Int) -> Int
-    rank(::Type{<:Subscripts{T}}, i::Int) where T -> Int
+    ==(subs₁::Subscripts, subs₂::Subscripts) -> Bool
 
-Get the number of the independent variables of a component of the complete subscript set.
+Judge whether two subscript sets are equivalent to each other.
 """
-rank(subscripts::Subscripts, i::Int) = rank(typeof(subscripts), i)
-rank(::Type{<:Subscripts{T}}, i::Int) where {T} = rank(fieldtype(T, i))
+@inline function Base.:(==)(subs₁::Subscripts{DS₁}, subs₂::Subscripts{DS₂}) where {DS₁, DS₂}
+    return DS₁==DS₂ && subs₁.opattern==subs₂.opattern && subs₁.cpattern==subs₂.cpattern
+end
+
+"""
+    isequal(subs₁::Subscripts, subs₂::Subscripts) -> Bool
+
+Judge whether two subscript sets are equivalent to each other.
+"""
+@inline function Base.:isequal(subs₁::Subscripts{DS₁}, subs₂::Subscripts{DS₂}) where {DS₁, DS₂}
+    return isequal(DS₁, DS₂) && isequal(subs₁.opattern, subs₂.opattern) && isequal(subs₁.cpattern, subs₂.cpattern)
+end
 
 """
     dimension(subscripts::Subscripts) -> Int
-    dimension(::Type{<:(Subscripts{<:Tuple, R, D} where R)}) where D -> Int
+    dimension(::Type{<:Subscripts}) -> Int
 
-Get the total number of the whole variables of the complete subscript set.
+Get the total number of the whole variables of a subscript set.
 """
-dimension(subscripts::Subscripts) = subscripts |> typeof |> dimension
-dimension(::Type{<:(Subscripts{<:Tuple, R, D} where R)}) where {D} = D
+@inline dimension(subscripts::Subscripts) = dimension(typeof(subscripts))
+@inline dimension(::Type{<:Subscripts{DS}}) where DS = sum(DS)
 
 """
     dimension(subscripts::Subscripts, i::Int) -> Int
-    dimension(::Type{<:Subscripts{T}}, i::Int) where T -> Int
+    dimension(::Type{<:Subscripts}, i::Int) -> Int
 
-Get the total number of the whole variables of a component of the complete subscript set.
+Get the total number of the whole variables of the ith segment of a subscript set.
 """
-dimension(subscripts::Subscripts, i::Int) = dimension(typeof(subscripts), i)
-dimension(::Type{<:Subscripts{T}}, i::Int) where {T} = dimension(fieldtype(T, i))
+@inline dimension(subscripts::Subscripts, i::Int) = dimension(typeof(subscripts), i)
+@inline dimension(::Type{<:Subscripts{DS}}, i::Int) where DS = DS[i]
 
 """
-    (subscripts::Subscripts)(::Val{'M'}, values::NTuple{N, Int}) where N -> NTuple{dimension(subscripts), Int}
-    (subscripts::Subscripts)(::Val{'C'}, values::NTuple{N, Int}) where N -> Bool
+    rank(subscripts::Subscripts) -> Int
+    rank(::Type{<:Subscripts}) -> Int
 
-* Construct the complete set of subscripts from a complete set of independent variables.
-* Judge whether a complete set of independent variables are valid to construct the complete subscripts.
+Get the total number of the independent variables of a subscript set.
 """
-function (subscripts::Subscripts)() end
-@generated function (subscripts::Subscripts)(::Val{'M'}, values::NTuple{N, Int}) where N
-    @assert rank(subscripts) == N "subscripts error: dismatched ranks of input subscripts and values."
-    exprs, count = [], 1
-    for i = 1:length(subscripts)
-        vs = Tuple(:(values[$j]) for j = count:(count+rank(subscripts, i)-1))
-        push!(exprs, :(subscripts.contents[$i](Val('M'), $(vs...))...))
+@inline rank(subscripts::Subscripts) = rank(typeof(subscripts))
+@inline rank(::Type{<:Subscripts{DS, RS} where DS}) where RS = sum(RS)
+
+"""
+    rank(subscripts::Subscripts, i::Int) -> Int
+    rank(::Type{<:Subscripts}, i::Int) -> Int
+
+Get the number of the independent variables of the ith segment of a subscript set.
+"""
+@inline rank(subscripts::Subscripts, i::Int) = rank(typeof(subscripts), i)
+@inline rank(::Type{<:Subscripts{DS, RS} where DS}, i::Int) where RS = RS[i]
+
+"""
+    split(subscripts::Subscripts) -> Tuple{Vararg{Subscripts}}
+
+Split a subscript set into individual independent segments.
+"""
+@generated function Base.split(subscripts::Subscripts{DS, RS}) where {DS, RS}
+    exprs = []
+    count = 0
+    for i = 1:length(DS)
+        NDS, NRS = (DS[i],), (RS[i],)
+        opattern = Expr(:tuple, [:(subscripts[$j]) for j = (1+count):(DS[i]+count)]...)
+        push!(exprs, :(Subscripts{$NDS, $NRS}($opattern, (subscripts.cpattern[$i],), (subscripts.mapping[$i],), (subscripts.constrain[$i],))))
+        count += DS[i]
+    end
+    return Expr(:tuple, exprs...)
+end
+
+"""
+    show(io::IO, subscripts::Subscripts)
+
+Show a subscript set.
+"""
+function Base.show(io::IO, subscripts::Subscripts)
+    segments = split(subscripts)
+    @printf io "["
+    for (i, segment) in enumerate(segments)
+        @printf io "%s" join(segment.opattern, " ")
+        i<length(segments) && @printf io "; "
+    end
+    @printf io "]"
+    count = 1
+    cpattern = String[]
+    for segment in segments
+        if segment.cpattern[1] == "nonconstrain"
+            push!(cpattern, ":")
+        else
+            count += 1
+            push!(cpattern, String(segment.cpattern[1]))
+        end
+    end
+    count>1 && @printf io "(%s)" join(cpattern, ", ")
+end
+
+"""
+    (subscripts::Subscripts)(values::Tuple{Vararg{Int}}) -> NTuple{dimension(subscripts), Int}
+
+Construct a subscript set from an independent variable set.
+"""
+@generated function (subscripts::Subscripts)(values::Tuple{Vararg{Int}})
+    @assert rank(subscripts)==fieldcount(values) "subscripts error: dismatched rank and input arguments."
+    exprs = []
+    count = 1
+    for i = 1:fieldcount(fieldtype(subscripts, :mapping))
+        vs = [:(values[$j]) for j = count:(count+rank(subscripts, i)-1)]
+        push!(exprs, :(subscripts.mapping[$i]($(vs...))...))
         count += rank(subscripts, i)
     end
     return Expr(:tuple, exprs...)
 end
-@generated function (subscripts::Subscripts)(::Val{'C'}, values::NTuple{N, Int}) where N
-    @assert rank(subscripts) == N "subscripts error: dismatched ranks of input subscripts and values."
-    (length(subscripts) == 0) && return :(true)
+
+"""
+    isvalid(subscripts::Subscripts, values::Tuple{Vararg{Int}}) -> Bool
+
+Judge whether an independent variable set are valid to construct a subscript set.
+"""
+@generated function Base.isvalid(subscripts::Subscripts, values::Tuple{Vararg{Int}})
+    @assert rank(subscripts)==fieldcount(values) "subscripts error: dismatched rank and input arguments."
+    rank(subscripts)==0 && return true
     count = rank(subscripts, 1)
-    vs = Tuple(:(values[$j]) for j = 1:count)
-    expr = :(subscripts.contents[1](Val('C'), $(vs...)))
-    for i = 2:length(subscripts)
-        vs = Tuple(:(values[$j]) for j = (count+1):(count+rank(subscripts, i)))
-        expr = Expr(:(&&), expr, :(subscripts.contents[$i](Val('C'), $(vs...))))
+    vs = [:(values[$j]) for j = 1:count]
+    expr = :(subscripts.constrain[1]($(vs...)))
+    for i = 2:fieldcount(fieldtype(subscripts, :constrain))
+        vs = [:(values[$j]) for j = (count+1):(count+rank(subscripts, i))]
+        expr = Expr(:(&&), expr, :(subscripts.constrain[$i]($(vs...))))
         count += rank(subscripts, i)
     end
     return expr
 end
 
 """
-    *(sub1::Subscript, sub2::Subscript) -> Subscripts
-    *(subs::Subscripts, sub::Subscript) -> Subscripts
-    *(sub::Subscript, subs::Subscripts) -> Subscripts
-    *(subs1::Subscripts, subs2::Subscripts) -> Subscripts
+    *(subs₁::Subscripts, subs₂::Subscripts) -> Subscripts
 
-Get the multiplication between subscripts or complete sets of subscripts.
+Get the multiplication between two subscript sets.
 """
-Base.:*(sub1::Subscript, sub2::Subscript) = Subscripts(sub1, sub2)
-Base.:*(subs::Subscripts, sub::Subscript) = Subscripts(subs.contents..., sub)
-Base.:*(sub::Subscript, subs::Subscripts) = Subscripts(sub, subs.contents...)
-Base.:*(subs1::Subscripts, subs2::Subscripts) = Subscripts(subs1.contents..., subs2.contents...)
+@inline function Base.:*(subs₁::Subscripts{DS₁, RS₁}, subs₂::Subscripts{DS₂, RS₂}) where {DS₁, RS₁, DS₂, RS₂}
+    DS, RS = (DS₁..., DS₂...), (RS₁..., RS₂...)
+    opattern = (subs₁.opattern..., subs₂.opattern...)
+    cpattern = (subs₁.cpattern..., subs₂.cpattern...)
+    mapping = (subs₁.mapping..., subs₂.mapping...)
+    constrain = (subs₁.constrain..., subs₂.constrain...)
+    return Subscripts{DS, RS}(opattern, cpattern, mapping, constrain)
+end
 
 """
-    expand(subscripts::Subscripts, dimensions::NTuple{N, Int}) where N -> SbExpand
+    expand(subscripts::Subscripts, dimensions::Tuple{Vararg{Int}}) -> SbExpand
 
-Expand a complete set of subscripts with a given set of variable ranges.
+Expand a subscript set with the given variable ranges.
 """
-function expand(subscripts::Subscripts, dimensions::NTuple{N, Int}) where N
-    @assert dimension(subscripts) == N "expand error: dismatched input dimensions $dimensions."
+function expand(subscripts::Subscripts, dimensions::Tuple{Vararg{Int}})
+    @assert dimension(subscripts)==length(dimensions) "expand error: dismatched input dimensions $dimensions."
     dims, dcount, rcount = Vector{Int}(undef, rank(subscripts)), 0, 0
-    for i = 1:length(subscripts)
-        ipattern = subscripts[i].ipattern
-        opattern = subscripts[i].opattern
-        for j = 1:dimension(subscripts, i)
-            isa(opattern[j], Int) && @assert 0 < opattern[j] <= dimensions[dcount+j] "expand error: opattern($opattern) out of range."
+    for (i, segment) in enumerate(split(subscripts))
+        opattern = segment.opattern
+        ipattern = subscriptsipattern(opattern)
+        for j = 1:length(opattern)
+            isa(opattern[j], Int) && @assert 0<opattern[j]<=dimensions[dcount+j] "expand error: opattern($opattern) out of range."
         end
-        for j = 1:rank(subscripts, i)
+        for j = 1:length(ipattern)
             index, flag = 1, false
-            while (index = findnext(isequal(ipattern[j]), opattern, index)) ≠ nothing
+            while !isnothing((index = findnext(isequal(ipattern[j]), opattern, index); index))
                 flag || (dims[rcount+j] = dimensions[dcount+index]; flag = true)
-                flag && @assert dimensions[dcount+index] == dims[rcount+j] "expand error: dismatched input dimensions."
+                flag && @assert dimensions[dcount+index]==dims[rcount+j] "expand error: dismatched input dimensions."
                 index = index + 1
             end
         end
-        dcount = dcount + dimension(subscripts, i)
-        rcount = rcount + rank(subscripts, i)
+        dcount = dcount + length(opattern)
+        rcount = rcount + length(ipattern)
     end
     return SbExpand(subscripts, NTuple{rank(subscripts), Int}(dims))
 end
-struct SbExpand{N, S<:Subscripts, D}
+struct SbExpand{S<:Subscripts, D}
     subscripts::S
-    dims::NTuple{D, Int}
+    candidates::CartesianIndices{D, NTuple{D, Base.OneTo{Int}}}
     function SbExpand(subscripts::Subscripts, dims::NTuple{D, Int}) where D
-        @assert D == rank(subscripts) "SbExpand error: dismatched inputs."
-        new{dimension(subscripts), typeof(subscripts), D}(subscripts, dims)
+        @assert D==rank(subscripts) "SbExpand error: dismatched inputs."
+        new{typeof(subscripts), D}(subscripts, CartesianIndices(dims))
     end
 end
-Base.eltype(::Type{<:SbExpand{N}}) where {N} = NTuple{N, Int}
-Base.IteratorSize(::Type{<:SbExpand}) = Base.SizeUnknown()
+@inline Base.eltype(::Type{T}) where {T<:SbExpand} = NTuple{dimension(fieldtype(T, :subscripts)), Int}
+@inline Base.IteratorSize(::Type{<:SbExpand}) = Base.SizeUnknown()
 function Base.iterate(sbe::SbExpand, state::Int=1)
-    while state <= prod(sbe.dims)
-        inds = indtosub(sbe.dims, state, corder)
-        sbe.subscripts(Val('C'), inds) && return (sbe.subscripts(Val('M'), inds), state+1)
+    while state <= length(sbe.candidates)
+        values = Tuple(sbe.candidates[state])
+        isvalid(sbe.subscripts, values) && return (sbe.subscripts(values), state+1)
         state = state + 1
     end
     return nothing
 end
+
+"""
+    SubID{O<:Tuple, C<:Tuple, S<:Tuple{Vararg{Int}}} <: SimpleID
+
+The id of a subscript set.
+"""
+struct SubID{O<:Tuple, C<:Tuple, S<:Tuple{Vararg{Int}}} <: SimpleID
+    opattern::O
+    cpattern::C
+    segment::S
+end
+@inline SubID(subscripts::Subscripts) = id(subscripts)
+
+"""
+    id(subs::Subscripts) -> SubID
+
+Get the id of a subscript set.
+"""
+@inline id(subscripts::Subscripts{DS}) where DS = SubID(subscripts.opattern, subscripts.cpattern, DS)
 
 """
     Coupling{V, I<:ID{SimpleID}} <: Element{V, I}
@@ -298,16 +351,31 @@ The coupling intra/inter interanl degrees of freedom at different lattice points
 """
 abstract type Coupling{V, I<:ID{SimpleID}} <: Element{V, I} end
 
-couplingcenter(::Type{<:Coupling}, i::Int, n::Int, ::Val{1}) = 1
-couplingcenter(::Type{<:Coupling}, i::Int, n::Int, ::Val{R}) where R = error("couplingcenter error: no default center for a rank-$R bond.")
-@generated function couplingcenters(::Type{C}, centers::NTuple{N, Any}, ::Val{R}) where {C<:Coupling, N, R}
-    exprs = [:(isa(centers[$i], Int) ? ((0 < centers[$i] <= R) ? centers[$i] : error("couplingcenters error: center out of range.")) : couplingcenter(C, $i, N, Val(R))) for i = 1:N]
-    return Expr(:tuple, exprs...)
+"""
+    couplingcenters(coupling::Coupling, bond::AbstractBond, info::Val) -> NTuple{rank(coupling), Int}
+
+Get the centers of the coupling on a bond.
+"""
+@inline couplingcenters(coupling::Coupling, point::Point, ::Val) = ntuple(i->1, Val(rank(coupling)))
+
+"""
+    couplingpoints(coupling::Coupling, bond::AbstractBond, info::Val) -> NTuple{rank(coupling), eltype(bond)}
+
+Get the points that correspond to where each order of the coupling acts on.
+"""
+@inline function couplingpoints(coupling::Coupling, bond::AbstractBond, info::Val)
+    centers = couplingcenters(coupling, bond, info)
+    return NTuple{rank(coupling), eltype(bond)}(bond[centers[i]] for i = 1:rank(coupling))
 end
-function couplingcenters(str::AbstractString)
-    str=strip(str,' ')
-    @assert (str[1] == '(') && (str[end] == ')') "couplingcenters error: wrong input pattern."
-    return Tuple(parse(Int, center) for center in split(str[2:end-1], ','))
+
+"""
+    couplinginternals(coupling::Coupling, bond::AbstractBond, config::Config, info::Val) -> NTuple{rank(coupling), valtype(config)}
+
+Get the interanl spaces that correspond to where each order of the coupling acts on.
+"""
+@inline function couplinginternals(coupling::Coupling, bond::AbstractBond, config::Config, info::Val)
+    centers = couplingcenters(coupling, bond, info)
+    return NTuple{rank(coupling), valtype(config)}(config[bond[centers[i]].pid] for i = 1:rank(coupling))
 end
 
 """
@@ -318,7 +386,7 @@ A pack of couplings intra/inter interanl degrees of freedom at different lattice
 Alias for `Elements{<:ID{SimpleID}, <:Coupling}`.
 """
 const Couplings{I<:ID{SimpleID}, C<:Coupling} = Elements{I, C}
-Couplings(cps::Coupling...) = Elements(cps...)
+@inline Couplings(cps::Coupling...) = Elements(cps...)
 
 """
     @couplings cps -> Couplings
@@ -336,20 +404,8 @@ end
 Abstract type for concrete term functions.
 """
 abstract type TermFunction <: Function end
-
-"""
-    ==(tf1::TermFunction, tf2::TermFunction) -> Bool
-
-Judge whether two concrete term functions are equivalent to each other.
-"""
-Base.:(==)(tf1::TermFunction, tf2::TermFunction) = ==(efficientoperations, tf1, tf2)
-
-"""
-    isequal(tf1::TermFunction, tf2::TermFunction) -> Bool
-
-Judge whether two concrete term functions are equivalent to each other.
-"""
-Base.isequal(tf1::TermFunction, tf2::TermFunction) = isequal(efficientoperations, tf1, tf2)
+@inline Base.:(==)(tf1::TermFunction, tf2::TermFunction) = ==(efficientoperations, tf1, tf2)
+@inline Base.isequal(tf1::TermFunction, tf2::TermFunction) = isequal(efficientoperations, tf1, tf2)
 
 """
     TermAmplitude(amplitude::Union{Function, Nothing}=nothing)
@@ -360,119 +416,112 @@ struct TermAmplitude{A<:Union{Function, Nothing}} <: TermFunction
     amplitude::A
     TermAmplitude(amplitude::Union{Function, Nothing}=nothing) = new{typeof(amplitude)}(amplitude)
 end
-(termamplitude::TermAmplitude{Nothing})(args...; kwargs...) = 1
-(termamplitude::TermAmplitude{<:Function})(args...; kwargs...) = termamplitude.amplitude(args...; kwargs...)
+@inline (termamplitude::TermAmplitude{Nothing})(args...; kwargs...) = 1
+@inline (termamplitude::TermAmplitude{<:Function})(args...; kwargs...) = termamplitude.amplitude(args...; kwargs...)
 
 """
-    TermCouplings(candidate::Coupling)
-    TermCouplings(candidate::Couplings)
-    TermCouplings(contents::Tuple{<:Tuple{Vararg{Couplings}}, <:Function})
-    TermCouplings(candidates::NTuple{N, <:Couplings}, choice::Function) where N
+    TermCouplings(coupling::Coupling)
+    TermCouplings(couplings::Couplings)
+    TermCouplings(couplings::Function)
 
 The function for the couplings of a term.
 """
 struct TermCouplings{C<:Union{Function, Couplings}} <: TermFunction
     couplings::C
-    TermCouplings(coupling::Coupling) = new{Couplings{coupling.id|>typeof, coupling|>typeof}}(Couplings(coupling))
+    TermCouplings(coupling::Coupling) = new{Couplings{coupling|>idtype, coupling|>typeof}}(Couplings(coupling))
     TermCouplings(couplings::Couplings) = new{couplings|>typeof}(couplings)
     TermCouplings(couplings::Function) = new{couplings|>typeof}(couplings)
 end
-(termcouplings::TermCouplings{<:Couplings})(args...; kwargs...) = termcouplings.couplings
-(termcouplings::TermCouplings{<:Function})(args...; kwargs...) = termcouplings.couplings(args...; kwargs...)
+@inline (termcouplings::TermCouplings{<:Couplings})(args...; kwargs...) = termcouplings.couplings
+@inline (termcouplings::TermCouplings{<:Function})(args...; kwargs...) = termcouplings.couplings(args...; kwargs...)
 
 """
-    TermModulate(id::Symbol, modulate::Union{Function, Nothing}=nothing)
+    TermModulate(id::Symbol, modulate::Function)
     TermModulate(id::Symbol, modulate::Bool)
 
 The function for the modulation of a term.
 """
-struct TermModulate{M<:Union{Function, Nothing}, id} <: TermFunction
+struct TermModulate{M<:Union{Function, Val{true}, Val{false}}, id} <: TermFunction
     modulate::M
-    TermModulate(id::Symbol, modulate::Union{Function, Nothing}=nothing) = new{typeof(modulate), id}(modulate)
-    TermModulate(id::Symbol, modulate::Bool) = (@assert modulate "TermModulate error: input `modulate` must be `true`."; new{Nothing, id}(nothing))
+    TermModulate(id::Symbol, modulate::Function) = new{typeof(modulate), id}(modulate)
+    TermModulate(id::Symbol, modulate::Bool=true) = new{Val{modulate}, id}(modulate|>Val)
 end
-(termmodulate::TermModulate{Nothing, id})(; kwargs...) where {id} = get(kwargs, id, nothing)
-(termmodulate::TermModulate{<:Function})(args...; kwargs...) = termmodulate.modulate(args...; kwargs...)
+@inline (termmodulate::TermModulate{Val{true}, id})(; kwargs...) where id = get(kwargs, id, nothing)
+@inline (termmodulate::TermModulate{<:Function})(args...; kwargs...) = termmodulate.modulate(args...; kwargs...)
+@inline ismodulatable(termmodulate::TermModulate) = ismodulatable(typeof(termmodulate))
+@inline ismodulatable(::Type{<:TermModulate{Val{B}}}) where B = B
+@inline ismodulatable(::Type{<:TermModulate{<:Function}}) = true
 
 """
-    Term{ST, K, R, I}(value::Any, bondkind::Any, couplings::TermCouplings, amplitude::TermAmplitude, modulate::Union{TermModulate, Nothing}, factor::Any) where {ST, K, R, I}
-    Term{ST, K, R}( id::Symbol, value::Any, bondkind::Any;
-                    couplings::Union{Function, Coupling, Couplings, TermCouplings},
-                    amplitude::Union{Function, Nothing}=nothing,
-                    modulate::Union{Function, Bool}=false,
-                    ) where {ST, K, R}
+    Term{K, R, I}(value, bondkind, couplings::TermCouplings, amplitude::TermAmplitude, modulate::TermModulate, factor) where {K, R, I}
+    Term{K, R}(id::Symbol, value, bondkind;
+        couplings::Union{Function, Coupling, Couplings, TermCouplings},
+        amplitude::Union{Function, TermAmplitude, Nothing}=nothing,
+        modulate::Union{Function, TermModulate, Bool}=false
+        ) where {ST, K, R}
 
 A term of a quantum lattice system.
 """
-mutable struct Term{statistics, kind, R, id, V, B<:Any, C<:TermCouplings, A<:TermAmplitude, M<:Union{TermModulate, Nothing}}
+mutable struct Term{K, R, I, V, B, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}
     value::V
     bondkind::B
     couplings::C
     amplitude::A
     modulate::M
     factor::V
-    function Term{ST, K, R, I}(value::Any, bondkind::Any, couplings::TermCouplings, amplitude::TermAmplitude, modulate::Union{TermModulate, Nothing}, factor::Any) where {ST, K, R, I}
-        @assert ST in ('F', 'B') "Term error: statistics must be 'F' or 'B'."
+    function Term{K, R, I}(value, bondkind, couplings::TermCouplings, amplitude::TermAmplitude, modulate::TermModulate, factor) where {K, R, I}
         @assert isa(K, Symbol) "Term error: kind must be a Symbol."
         @assert isa(I, Symbol) "Term error: id must be a Symbol."
-        new{ST, K, R, I, typeof(value), typeof(bondkind), typeof(couplings), typeof(amplitude), typeof(modulate)}(value, bondkind, couplings, amplitude, modulate, factor)
+        V, B, C, A, M = typeof(value), typeof(bondkind), typeof(couplings), typeof(amplitude), typeof(modulate)
+        new{K, R, I, V, B, C, A, M}(value, bondkind, couplings, amplitude, modulate, factor)
     end
 end
-function Term{ST, K, R}(id::Symbol, value::Any, bondkind::Any;
-                        couplings::Union{Function, Coupling, Couplings, TermCouplings},
-                        amplitude::Union{Function, Nothing}=nothing,
-                        modulate::Union{Function, Bool}=false
-                        ) where {ST, K, R}
+function Term{K, R}(id::Symbol, value, bondkind;
+        couplings::Union{Function, Coupling, Couplings, TermCouplings},
+        amplitude::Union{Function, TermAmplitude, Nothing}=nothing,
+        modulate::Union{Function, TermModulate, Bool}=false
+        ) where {ST, K, R}
     isa(couplings, TermCouplings) || (couplings = TermCouplings(couplings))
     isa(amplitude, TermAmplitude) || (amplitude = TermAmplitude(amplitude))
-    isa(modulate, TermModulate) || (modulate = (modulate === false) ? nothing : TermModulate(id, modulate))
-    Term{ST, K, R, id}(value, bondkind, couplings, amplitude, modulate, 1)
+    isa(modulate, TermModulate) || (modulate = TermModulate(id, modulate))
+    Term{K, R, id}(value, bondkind, couplings, amplitude, modulate, 1)
 end
-
-"""
-    statistics(term::Term) -> Char
-    statistics(::Type{<:Term{ST}}) where ST -> Char
-
-Get the statistics of a term.
-"""
-statistics(term::Term) = term |> typeof |> statistics
-statistics(::Type{<:Term{ST}}) where {ST} = ST
 
 """
     kind(term::Term) -> Symbol
-    kind(::Type{<:Term{ST, K} where ST}) where K -> Symbol
+    kind(::Type{<:Term) -> Symbol
 
 Get the kind of a term.
 """
-kind(term::Term) = term |> typeof |> kind
-kind(::Type{<:Term{ST, K} where ST}) where {K} = K
+@inline kind(term::Term) = kind(typeof(term))
+@inline kind(::Type{<:Term{K}}) where K = K
 
 """
     rank(term::Term) -> Int
-    rank(::Type{<:Term{ST, K, R} where {ST, K}}) where R -> Int
+    rank(::Type{<:Term) -> Int
 
 Get the rank of a term.
 """
-rank(term::Term) = term |> typeof |> rank
-rank(::Type{<:Term{ST, K, R} where {ST, K}}) where {R} = R
+@inline rank(term::Term) = rank(typeof(term))
+@inline rank(::Type{<:Term{K, R} where K}) where R = R
 
 """
     id(term::Term) -> Symbol
-    id(::Type{<:Term{ST, K, R, I} where {ST, K, R}}) where I -> Symbol
+    id(::Type{<:Term) -> Symbol
 
 Get the id of a term.
 """
-id(term::Term) = term |> typeof |> id
-id(::Type{<:Term{ST, K, R, I} where {ST, K, R}}) where {I} = I
+@inline id(term::Term) = id(typeof(term))
+@inline id(::Type{<:Term{K, R, I} where {K, R}}) where I = I
 
 """
     valtype(term::Term)
-    valtype(::Type{<:Term{ST, K, R, I, V} where {ST, K, R, I}}) where V
+    valtype(::Type{<:Term)
 
 Get the value type of a term.
 """
-Base.valtype(term::Term) = term |> typeof |> valtype
-Base.valtype(::Type{<:Term{ST, K, R, I, V} where {ST, K, R, I}}) where {V} = V
+@inline Base.valtype(term::Term) = valtype(typeof(term))
+@inline Base.valtype(::Type{<:Term{K, R, I, V} where {K, R, I}}) where V = V
 
 """
     abbr(term::Term) -> Symbol
@@ -480,29 +529,38 @@ Base.valtype(::Type{<:Term{ST, K, R, I, V} where {ST, K, R, I}}) where {V} = V
 
 Get the abbreviation of the kind of a term.
 """
-abbr(term::Term) = term |> typeof |> abbr
-abbr(::Type{<:Term}) = :tm
+@inline abbr(term::Term) = abbr(typeof(term))
+@inline abbr(::Type{<:Term}) = :tm
+
+"""
+    ismodulatable(term::Term) -> Bool
+    ismodulatable(::Type{<:Term}) -> Bool
+
+Judge whether a term could be modulated by its modulate function.
+"""
+@inline ismodulatable(term::Term) = ismodulatable(typeof(term))
+@inline ismodulatable(::Type{<:Term{K, R, I, V, B, <:TermCouplings, <:TermAmplitude, M} where {K, R, I, V, B}}) where M = ismodulatable(M)
 
 """
     isHermitian(term::Term) -> Bool
     isHermitian(::Type{<:Term}) -> Bool
 """
-isHermitian(term::Term) = term |> typeof |> isHermitian
-isHermitian(::Type{<:Term}) = error("isHermitian error: not implemented.")
+@inline isHermitian(term::Term) = isHermitian(typeof(term))
+@inline isHermitian(::Type{<:Term}) = error("isHermitian error: not implemented.")
 
 """
     ==(term1::Term, term2::Term) -> Bool
 
 Judge whether two terms are equivalent to each other.
 """
-Base.:(==)(term1::Term, term2::Term) = ==(efficientoperations, term1, term2)
+@inline Base.:(==)(term1::Term, term2::Term) = ==(efficientoperations, term1, term2)
 
 """
     isequal(term1::Term, term2::Term) -> Bool
 
 Judge whether two terms are equivalent to each other.
 """
-Base.isequal(term1::Term, term2::Term) = isequal(efficientoperations, term1, term2)
+@inline Base.isequal(term1::Term, term2::Term) = isequal(efficientoperations, term1, term2)
 
 """
     show(io::IO, term::Term)
@@ -510,7 +568,7 @@ Base.isequal(term1::Term, term2::Term) = isequal(efficientoperations, term1, ter
 Show a term.
 """
 function Base.show(io::IO, term::Term)
-    @printf io "%s{%s%s}(id=%s, value=%s, bondkind=%s, factor=%s)" kind(term) rank(term) statistics(term) term|>id decimaltostr(term.value) term.bondkind decimaltostr(term.factor)
+    @printf io "%s{%s}(id=%s, value=%s, bondkind=%s, factor=%s)" kind(term) rank(term) id(term) decimaltostr(term.value) term.bondkind decimaltostr(term.factor)
 end
 
 """
@@ -523,10 +581,10 @@ function Base.repr(term::Term, bond::AbstractBond, config::Config)
     if term.bondkind == bond|>kind
         value = term.value * term.amplitude(bond) * term.factor
         if abs(value) ≠ 0
-            pids = NTuple{length(bond), pidtype(bond)}(point.pid for point in bond)
-            interanls = NTuple{length(bond), valtype(config)}(config[pid] for pid in pids)
             for coupling in values(term.couplings(bond))
-                (length(expand(coupling, pids, interanls, term|>kind|>Val)) > 0) &&  push!(cache, @sprintf "%s: %s" abbr(term) repr(value*coupling))
+                points = couplingpoints(coupling, bond, term|>kind|>Val)
+                internals = couplinginternals(coupling, bond, config, term|>kind|>Val)
+                length(expand(coupling, points, internals, term|>kind|>Val))>0 &&  push!(cache, @sprintf "%s: %s" abbr(term) repr(value*coupling))
             end
         end
     end
@@ -534,13 +592,13 @@ function Base.repr(term::Term, bond::AbstractBond, config::Config)
 end
 
 """
-    replace(term::Term{ST, K, R, I}; kwargs...) where {ST, K, R, I} -> Term
+    replace(term::Term; kwargs...) -> Term
 
 Replace some attributes of a term with key word arguments.
 """
-@generated function Base.replace(term::Term{ST, K, R, I}; kwargs...) where {ST, K, R, I}
+@inline @generated function Base.replace(term::Term; kwargs...)
     exprs = [:(get(kwargs, $name, getfield(term, $name))) for name in QuoteNode.(term|>fieldnames)]
-    return :(Term{ST, K, R, I}($(exprs...)))
+    return :(Term{kind(term), rank(term), id(term)}($(exprs...)))
 end
 
 """
@@ -552,37 +610,48 @@ end
 
 Allowed arithmetic operations for a term.
 """
-Base.:+(term::Term) = term
-Base.:-(term::Term) = term * (-1)
-Base.:*(term::Term, factor) = factor * term
-Base.:*(factor, term::Term) = replace(term, factor=factor*term.factor)
-Base.:/(term::Term, factor) = term * (1/factor)
+@inline Base.:+(term::Term) = term
+@inline Base.:-(term::Term) = term * (-1)
+@inline Base.:*(term::Term, factor) = factor * term
+@inline Base.:*(factor, term::Term) = replace(term, factor=factor*term.factor)
+@inline Base.:/(term::Term, factor) = term * (1/factor)
 
 """
     one(term::Term) -> Term
 
 Get a unit term.
 """
-Base.one(term::Term) = replace(term, value=one(term.value))
+@inline Base.one(term::Term) = replace(term, value=one(term.value))
 
 """
     zero(term::Term) -> Term
 
 Get a zero term.
 """
-Base.zero(term::Term) = replace(term, value=zero(term.value))
+@inline Base.zero(term::Term) = replace(term, value=zero(term.value))
 
 """
-    expand!(operators::Operators, term::Term, bond::AbstractBond, config::Config,
-            table::Union{Table, Nothing}=nothing,
-            half::Bool=false,
-            coord::Union{Val{true}, Val{false}}=coordon
-            ) -> Operators
-    expand!(operators::Operators, term::Term, bonds::Bonds, config::Config, 
-            table::Union{Table, Nothing}=nothing,
-            half::Bool=false,
-            coord::Union{Val{true}, Val{false}}=coordon
-            ) -> Operators
+    update!(term::Term, args...; kwargs...) -> Term
+
+Update the value of a term by its `modulate` function.
+"""
+function update!(term::Term, args...; kwargs...)
+    @assert ismodulatable(term) "update! error: not modulatable term."
+    value = term.modulate(args...; kwargs...)
+    isnothing(value) || (term.value = value)
+    return term
+end
+
+"""
+    otype(T::Type{<:Term}, C::Type{<:Config}, B::Type{<:AbstractBond})
+
+Get the compatible operator type from the type of a term, a configuration of the internal degrees of freedom and a bond.
+"""
+function otype end
+
+"""
+    expand!(operators::Operators, term::Term, bond::AbstractBond, config::Config, half::Bool=false; table::Union{Nothing, Table}=nothing) -> Operators
+    expand!(operators::Operators, term::Term, bonds::Bonds, config::Config, half::Bool=false; table::Union{Nothing, Table}=nothing) -> Operators
 
 Expand the operators of a term on a bond/set-of-bonds with a given config.
 
@@ -590,39 +659,29 @@ The `half` parameter determines the behavior of generating operators, which fall
 * `true`: "Hermitian half" of the generated operators
 * `false`: "Hermitian whole" of the generated operators
 """
-function expand!(   operators::Operators, term::Term, bond::AbstractBond, config::Config,
-                    table::Union{Table, Nothing}=nothing,
-                    half::Bool=false,
-                    coord::Union{Val{true}, Val{false}}=coordon
-                    )
+function expand!(operators::Operators, term::Term, bond::AbstractBond, config::Config, half::Bool=false; table::Union{Nothing, Table}=nothing)
     if term.bondkind == bond|>kind
         value = term.value * term.amplitude(bond) * term.factor
         if abs(value) ≠ 0
-            apriori = isHermitian(term)
-            ptype = otype(term|>typeof, oidtype(config|>typeof|>valtype|>eltype, bond|>typeof, table|>typeof, coord))
-            record = ((apriori === nothing) && (length(operators) > 0)) ? Set{ptype|>idtype}() : nothing
-            rtype, itype = fieldtype(ptype|>idtype|>eltype, :rcoord), fieldtype(ptype|>idtype|>eltype, :icoord)
-            pids = NTuple{length(bond), pidtype(bond)}(point.pid for point in bond)
-            rcoords = NTuple{length(bond), SVector{dimension(bond), Float}}(point.rcoord for point in bond)
-            icoords = NTuple{length(bond), SVector{dimension(bond), Float}}(point.icoord for point in bond)
-            interanls = NTuple{length(bond), valtype(config)}(config[pid] for pid in pids)
+            hermitian = isHermitian(term)
+            optype = otype(term|>typeof, config|>typeof, bond|>typeof)
+            record = (isnothing(hermitian) && length(operators)>0) ? Set{optype|>idtype}() : nothing
             for coupling in values(term.couplings(bond))
-                perm = couplingcenters(typeof(coupling), coupling.id.centers, Val(rank(bond)))::NTuple{rank(ptype), Int}
-                orcoords, oicoords = termcoords(rtype, rcoords, perm), termcoords(itype, icoords, perm)
-                for (coeff, oindexes) in expand(coupling, pids, interanls, term|>kind|>Val) # needs improvement memory allocation 7 times for each fock coupling
-                    isa(table, Table) && any(NTuple{rank(ptype), Bool}(!haskey(table, index) for index in oindexes)) && continue
-                    id = ID(OID, oindexes, orcoords, oicoords, termseqs(table, oindexes))
-                    if apriori === true
-                        add!(operators, rawtype(ptype)(convert(ptype|>valtype, value*coeff/(half ? 2 : 1)), id))
-                    elseif apriori == false
-                        opt = rawtype(ptype)(convert(ptype|>valtype, value*coeff), id)
+                points = couplingpoints(coupling, bond, term|>kind|>Val)
+                internals = couplinginternals(coupling, bond, config, term|>kind|>Val)
+                for (coeff, id) in expand(coupling, points, internals, term|>kind|>Val) # needs improvement memory allocation 7 times for each fock coupling
+                    !isnothing(table) && !all(haskey(table, id)) && continue
+                    if hermitian == true
+                        add!(operators, rawtype(optype)(convert(optype|>valtype, value*coeff/(half ? 2 : 1)), id))
+                    elseif hermitian == false
+                        opt = rawtype(optype)(convert(optype|>valtype, value*coeff), id)
                         add!(operators, opt)
                         half || add!(operators, opt')
                     else
-                        if !((record === nothing) ? haskey(operators, id') : in(id', record))
-                            (record === nothing) || push!(record, id)
-                            ovalue = valtype(ptype)(value*coeff/termfactor(nothing, id, term|>kind|>Val)) # needs improvement memory allocation 2 times for each
-                            opt = rawtype(ptype)(ovalue, id)
+                        if !(isnothing(record) ? haskey(operators, id') : id'∈record)
+                            isnothing(record) || push!(record, id)
+                            ovalue = valtype(optype)(value*coeff/termfactor(id, term|>kind|>Val)) # needs improvement memory allocation 2 times for each
+                            opt = rawtype(optype)(ovalue, id)
                             add!(operators, opt)
                             half || add!(operators, opt')
                         end
@@ -633,47 +692,29 @@ function expand!(   operators::Operators, term::Term, bond::AbstractBond, config
     end
     return operators
 end
-@generated function expand!(operators::Operators, term::Term, bonds::Bonds, config::Config,
-                            table::Union{Table, Nothing}=nothing,
-                            half::Bool=false,
-                            coord::Union{Val{true}, Val{false}}=coordon)
+@generated function expand!(operators::Operators, term::Term, bonds::Bonds, config::Config, half::Bool=false; table::Union{Nothing, Table}=nothing)
     exprs = []
     for i = 1:rank(bonds)
-        push!(exprs, :(for bond in bonds.bonds[$i] expand!(operators, term, bond, config, table, half, coord) end))
+        push!(exprs, :(for bond in bonds.bonds[$i] expand!(operators, term, bond, config, half; table=table) end))
     end
     push!(exprs, :(return operators))
     return Expr(:block, exprs...)
 end
-termcoords(::Type{<:Nothing}, rcoords::NTuple{N, SVector{M, Float}}, perm::NTuple{R, Int}) where {N, M, R} = NTuple{R, Nothing}(nothing for i = 1:R)
-termcoords(::Type{<:SVector}, rcoords::NTuple{N, SVector{M, Float}}, perm::NTuple{R, Int}) where {N, M, R} = NTuple{R, SVector{M, Float}}(rcoords[p] for p in perm)
-termseqs(::Nothing, indexes::NTuple{N, <:Index}) where {N} = NTuple{N, Nothing}(nothing for i = 1:N)
-@generated termseqs(table::Table{I}, indexes::NTuple{N, I}) where {N, I<:Index} = Expr(:tuple, [:(table[indexes[$i]]) for i = 1:N]...)
-termfactor(::Nothing, id::ID{OID}, ::Val{K}) where {K} = isHermitian(id) ? 2 : 1
+@inline termfactor(id::ID{AbstractOID}, ::Val) = isHermitian(id) ? 2 : 1
 
 """
-    expand(term::Term, bond::AbstractBond, config::Config, table::Union{Table, Nothing}=nothing, half::Bool=false, coord::Union{Val{true}, Val{false}}=coordon) -> Operators
-    expand(term::Term, bonds::Bonds, config::Config, table::Union{Table, Nothing}=nothing, half::Bool=false, coord::Union{Val{true}, Val{false}}=coordon) -> Operators
+    expand(term::Term, bond::AbstractBond, config::Config, half::Bool=false; table::Union{Nothing, Table}=nothing) -> Operators
+    expand(term::Term, bonds::Bonds, config::Config, half::Bool=false; table::Union{Nothing, Table}=nothing) -> Operators
 
 Expand the operators of a term on a bond/set-of-bonds with a given config.
 """
-function expand(term::Term, bond::AbstractBond, config::Config, table::Union{Table, Nothing}=nothing, half::Bool=false, coord::Union{Val{true}, Val{false}}=coordon)
-    optype = otype(term|>typeof, oidtype(config|>typeof|>valtype|>eltype, bond|>typeof, table|>typeof, coord))
-    expand!(Operators{idtype(optype), optype}(), term, bond, config, table, half, coord)
+@inline function expand(term::Term, bond::AbstractBond, config::Config, half::Bool=false; table::Union{Nothing, Table}=nothing)
+    optype = otype(term|>typeof, config|>typeof, bond|>typeof)
+    expand!(Operators{idtype(optype), optype}(), term, bond, config, half; table=table)
 end
-function expand(term::Term, bonds::Bonds, config::Config, table::Union{Table, Nothing}=nothing, half::Bool=false, coord::Union{Val{true}, Val{false}}=coordon)
-    optype = otype(term|>typeof, oidtype(config|>typeof|>valtype|>eltype, bonds|>eltype, table|>typeof, coord))
-    expand!(Operators{idtype(optype), optype}(), term, bonds, config, table, half, coord)
-end
-
-"""
-    update!(term::Term, args...; kwargs...) -> Term
-
-Update the value of a term by its `modulate` function.
-"""
-function update!(term::Term, args...; kwargs...)
-    value = term.modulate(args...; kwargs...)
-    (value === nothing) || (term.value = value)
-    return term
+@inline function expand(term::Term, bonds::Bonds, config::Config, half::Bool=false; table::Union{Nothing, Table}=nothing)
+    optype = otype(term|>typeof, config|>typeof, bonds|>eltype)
+    expand!(Operators{idtype(optype), optype}(), term, bonds, config, half, table=table)
 end
 
 """
@@ -682,28 +723,27 @@ end
 A NamedTuple that contain the key-value pairs.
 """
 const Parameters{Names} = NamedContainer{Number, Names}
-Parameters{Names}(values::Number...) where {Names} = NamedContainer{Names}(values)
+@inline Parameters{Names}(values::Number...) where {Names} = NamedContainer{Names}(values)
 
 """
-    match(params1::Parameters, params2::Parameters, atol=atol, rtol=rtol) -> Bool
+    match(params₁::Parameters, params₂::Parameters, atol=atol, rtol=rtol) -> Bool
 
 Judge whether the second set of parameters matches the first.
 """
-@generated function Base.match(params1::Parameters, params2::Parameters, atol=atol, rtol=rtol)
-    names = intersect(fieldnames(params1), fieldnames(params2))
-    (length(names) == 0) && return true
+@generated function Base.match(params₁::Parameters, params₂::Parameters, atol=atol, rtol=rtol)
+    names = intersect(fieldnames(params₁), fieldnames(params₂))
+    length(names)==0 && return true
     name = QuoteNode(names[1])
-    expr = :(isapprox(getfield(params1, $name), getfield(params2, $name), atol=atol, rtol=rtol))
+    expr = :(isapprox(getfield(params₁, $name), getfield(params₂, $name), atol=atol, rtol=rtol))
     for i = 2:length(names)
         name = QuoteNode(names[i])
-        expr = Expr(:&&, expr, :(isapprox(getfield(params1, $name), getfield(params2, $name), atol=atol, rtol=rtol)))
+        expr = Expr(:&&, expr, :(isapprox(getfield(params₁, $name), getfield(params₂, $name), atol=atol, rtol=rtol)))
     end
     return expr
 end
 
 """
-    GenOperators(constops::Operators, alterops::NamedContainer{Operators}, boundops::NamedContainer{Operators})
-    GenOperators(terms::Tuple{Vararg{Term}}, bonds::Bonds, config::Config, table::Union{Nothing, Table}, half::Bool, ::Val{coord}) where coord
+    GenOperators(terms::Tuple{Vararg{Term}}, bonds::Bonds, config::Config, half::Bool; table::Union{Nothing, Table}=nothing)
 
 A set of operators. This is the core of [`AbstractGenerator`](@ref).
 """
@@ -712,23 +752,20 @@ struct GenOperators{C<:Operators, A<:NamedContainer{Operators}, B<:NamedContaine
     alterops::A
     boundops::B
 end
-@generated function GenOperators(terms::Tuple{Vararg{Term}}, bonds::Bonds, config::Config, table::Union{Nothing, Table}, half::Bool, ::Val{coord}) where coord
-    @assert isa(coord, Bool) "GenOperators error: not supported coord."
+@generated function GenOperators(terms::Tuple{Vararg{Term}}, bonds::Bonds, config::Config, half::Bool; table::Union{Nothing, Table}=nothing)
     constterms, alterterms = [], []
     for term in fieldtypes(terms)
-        (fieldtype(term, :modulate) <: Nothing) && push!(constterms, term)
-        (fieldtype(term, :modulate) <: TermModulate) && push!(alterterms, term)
+        ismodulatable(term) ? push!(alterterms, term) : push!(constterms, term)
     end
     names = NTuple{fieldcount(terms), Symbol}(id(term) for term in fieldtypes(terms))
     alternames = NTuple{length(alterterms), Symbol}(id(term) for term in alterterms)
     exprs, alterops, boundops = [], [], []
     push!(exprs, quote
-        oidtp = oidtype(config|>valtype|>eltype, bonds|>eltype, table|>typeof, coord|>Val)
-        choosedterms = (length($constterms) > 0) ? $constterms : $alterterms
-        constoptp = otype(choosedterms[1], oidtp)
+        choosedterms = length($constterms)>0 ? $constterms : $alterterms
+        constoptp = otype(choosedterms[1], config|>typeof, bonds|>eltype)
         constidtp = constoptp |> idtype
         for i = 2:length(choosedterms)
-            tempoptp = otype(choosedterms[i], oidtp)
+            tempoptp = otype(choosedterms[i], config|>typeof, bonds|>eltype)
             constoptp = promote_type(constoptp, tempoptp)
             constidtp = promote_type(constidtp, tempoptp|>idtype)
         end
@@ -737,11 +774,11 @@ end
         boundbonds = filter(acrossbonds, bonds, Val(:include))
     end)
     for i = 1:fieldcount(terms)
-        push!(boundops, :(expand(one(terms[$i]), boundbonds, config, table, half, coord|>Val)))
-        if fieldtype(fieldtype(terms, i), :modulate) <: TermModulate
-            push!(alterops, :(expand(one(terms[$i]), innerbonds, config, table, half, coord|>Val)))
+        push!(boundops, :(expand(one(terms[$i]), boundbonds, config, half, table=table)))
+        if ismodulatable(fieldtype(terms, i))
+            push!(alterops, :(expand(one(terms[$i]), innerbonds, config, half, table=table)))
         else
-            push!(exprs, :(expand!(constops, terms[$i], innerbonds, config, table, half, coord|>Val)))
+            push!(exprs, :(expand!(constops, terms[$i], innerbonds, config, half, table=table)))
         end
     end
     alterops = Expr(:tuple, alterops...)
@@ -759,23 +796,23 @@ end
 
 Judge whether two sets of operators are equivalent to each other.
 """
-Base.:(==)(genops1::GenOperators, genops2::GenOperators) = ==(efficientoperations, genops1, genops2)
+@inline Base.:(==)(genops1::GenOperators, genops2::GenOperators) = ==(efficientoperations, genops1, genops2)
 
 """
     isequal(genops1::GenOperators, genops2::GenOperators) -> Bool
 
 Judge whether two sets of operators are equivalent to each other.
 """
-Base.isequal(genops1::GenOperators, genops2::GenOperators) = isequal(efficientoperations, genops1, genops2)
+@inline Base.isequal(genops1::GenOperators, genops2::GenOperators) = isequal(efficientoperations, genops1, genops2)
 
 """
     eltype(ops::GenOperators)
-    eltype(::Type{<:GenOperators{S, D, B}}) where {S<:Operators, D<:NamedContainer{Operators}, B<:NamedContainer{Operators}}
+    eltype(::Type{<:GenOperators})
 
 Get the eltype of a set of operators, which is defined to be the common operator type of all operators it contains.
 """
-Base.eltype(ops::GenOperators) = ops |> typeof |> eltype
-@generated function Base.eltype(::Type{<:GenOperators{S, D, B}}) where {S<:Operators, D<:NamedContainer{Operators}, B<:NamedContainer{Operators}}
+@inline Base.eltype(ops::GenOperators) = eltype(typeof(ops))
+@inline @generated function Base.eltype(::Type{<:GenOperators{S, D, B}}) where {S<:Operators, D<:NamedContainer{Operators}, B<:NamedContainer{Operators}}
     optp = S |> valtype
     (fieldcount(D) > 0) && (optp = promote_type(optp, mapreduce(valtype, promote_type, fieldtypes(D))))
     (fieldcount(B) > 0) && (optp = promote_type(optp, mapreduce(valtype, promote_type, fieldtypes(B))))
@@ -784,12 +821,12 @@ end
 
 """
     idtype(ops::GenOperators)
-    idtype(::Type{<:GenOperators{S, D, B}}) where {S<:Operators, D<:NamedContainer{Operators}, B<:NamedContainer{Operators}}
+    idtype(::Type{<:GenOperators})
 
 Get the idtype of a set of operators, which is defined to be the common idtype of all operators it contains.
 """
-idtype(ops::GenOperators) = ops |> typeof |> idtype
-@generated function idtype(::Type{<:GenOperators{S, D, B}}) where {S<:Operators, D<:NamedContainer{Operators}, B<:NamedContainer{Operators}}
+@inline idtype(ops::GenOperators) = idtype(typeof(ops))
+@inline @generated function idtype(::Type{<:GenOperators{S, D, B}}) where {S<:Operators, D<:NamedContainer{Operators}, B<:NamedContainer{Operators}}
     idtp = S |> keytype
     (fieldcount(D) > 0) && (idtp = promote_type(idtp, mapreduce(keytype, promote_type, fieldtypes(D))))
     (fieldcount(B) > 0) && (idtp = promote_type(idtp, mapreduce(keytype, promote_type, fieldtypes(B))))
@@ -849,11 +886,11 @@ Expand the operators with the given boundary twist and term coefficients.
 end
 
 """
-    reset!(genops::GenOperators, terms::Tuple{Vararg{Term}}, bonds::Bonds, config::Config, table::Union{Nothing, Table}, half::Bool, ::Val{coord}) where coord -> GenOperators
+    reset!(genops::GenOperators, terms::Tuple{Vararg{Term}}, bonds::Bonds, config::Config, half::Bool; table::Union{Nothing, Table}=nothing) -> GenOperators
 
-Reset a set of operators by new terms, bonds, config, table, etc..
+Reset a set of operators by new terms, bonds, config, etc..
 """
-@generated function reset!(genops::GenOperators, terms::Tuple{Vararg{Term}}, bonds::Bonds, config::Config, table::Union{Nothing, Table}, half::Bool, ::Val{coord}) where coord
+@generated function reset!(genops::GenOperators, terms::Tuple{Vararg{Term}}, bonds::Bonds, config::Config, half::Bool; table::Union{Nothing, Table}=nothing)
     exprs = []
     push!(exprs, quote
         empty!(genops)
@@ -862,11 +899,11 @@ Reset a set of operators by new terms, bonds, config, table, etc..
     end)
     for (i, term) in enumerate(fieldtypes(terms))
         name = QuoteNode(term|>id)
-        push!(exprs, :(expand!(getfield(genops.boundops, $name), one(terms[$i]), boundbonds, config, table, half, coord|>Val)))
-        if fieldtype(term, :modulate) <: Nothing
-            push!(exprs, :(expand!(genops.constops, terms[$i], innerbonds, config, table, half, coord|>Val)))
+        push!(exprs, :(expand!(getfield(genops.boundops, $name), one(terms[$i]), boundbonds, config, half, table=table)))
+        if ismodulatable(term)
+            push!(exprs, :(expand!(getfield(genops.alterops, $name), one(terms[$i]), innerbonds, config, half, table=table)))
         else
-            push!(exprs, :(expand!(getfield(genops.alterops, $name), one(terms[$i]), innerbonds, config, table, half, coord|>Val)))
+            push!(exprs, :(expand!(genops.constops, terms[$i], innerbonds, config, half, table=table)))
         end
     end
     push!(exprs, :(return genops))
@@ -874,43 +911,52 @@ Reset a set of operators by new terms, bonds, config, table, etc..
 end
 
 """
-    AbstractGenerator{coord, TS<:NamedContainer{Term}, BS<:Bonds, C<:Config, T<:Union{Nothing, Table}, B<:Boundary, OS<:GenOperators}
+    AbstractGenerator{TS<:NamedContainer{Term}, BS<:Bonds, C<:Config, T<:Table, B<:Boundary, OS<:GenOperators}
 
 Abstract generator.
 
-By protocol, a concrete generator must have the following attributes:
+By protocol, a concrete generator should have the following predefined contents:
 * `terms::TS`: the terms contained in a generator
 * `bonds::BS`: the bonds on which the terms are defined
 * `config::C`: the configuration of the interanl degrees of freedom
-* `table::T`: the index-sequence table, `nothing` for not using such a table
 * `half::Bool`: true for generating an Hermitian half of the operators and false for generating the whole
+* `table::Table`: the index-sequence table
 * `boundary::B`: boundary twist for the generated operators, `nothing` for no twist
 * `operators::OS`: the generated operators
 """
-abstract type AbstractGenerator{coord, TS<:NamedContainer{Term}, BS<:Bonds, C<:Config, T<:Union{Nothing, Table}, B<:Boundary, OS<:GenOperators} end
+abstract type AbstractGenerator{TS<:NamedContainer{Term}, BS<:Bonds, C<:Config, T<:Table, B<:Boundary, OS<:GenOperators} end
+@inline contentnames(::Type{<:AbstractGenerator}) = (:terms, :bonds, :config, :half, :table, :boundary, :operators)
 
 """
-    ==(gen1::AbstractGenerator, gen2::AbstractGenerator) -> Bool
-
-Judge whether generators are equivalent to each other.
-"""
-Base.:(==)(gen1::AbstractGenerator, gen2::AbstractGenerator) = ==(efficientoperations, gen1, gen2)
-
-"""
-    isequal(gen1::AbstractGenerator, gen2::AbstractGenerator) -> Bool
+    ==(gen₁::AbstractGenerator, gen₂::AbstractGenerator) -> Bool
 
 Judge whether generators are equivalent to each other.
 """
-Base.isequal(gen1::AbstractGenerator, gen2::AbstractGenerator) = isequal(efficientoperations, gen1, gen2)
+@inline Base.:(==)(gen₁::AbstractGenerator, gen₂::AbstractGenerator) = ==(efficientoperations, gen₁, gen₂)
+
+"""
+    isequal(gen₁::AbstractGenerator, gen₂::AbstractGenerator) -> Bool
+
+Judge whether generators are equivalent to each other.
+"""
+@inline Base.isequal(gen₁::AbstractGenerator, gen₂::AbstractGenerator) = isequal(efficientoperations, gen₁, gen₂)
+
+"""
+    otype(gen::AbstractGenerator)
+    otype(::Type{<:AbstractGenerator})
+
+Get the operator type of the generated opeators.
+"""
+@inline otype(gen::AbstractGenerator) = otype(typeof(gen))
+@inline otype(::Type{<:AbstractGenerator{<:NamedContainer{Term}, <:Bonds, <:Config, <:Table, <:Boundary, OS}}) where {OS<:GenOperators} = eltype(OS)
 
 """
     Parameters(gen::AbstractGenerator) -> Parameters
 
 Get the parameters of the terms of a generator.
 """
-@generated function Parameters(gen::AbstractGenerator)
-    names = fieldnames(fieldtype(gen, :terms))
-    values = [:(gen.terms[$i].value) for i = 1:fieldcount(fieldtype(gen, :terms))]
+@generated function Parameters(gen::AbstractGenerator{TS}) where {TS<:NamedContainer{Term}}
+    names, values = fieldnames(TS), [:(getcontent(gen, :terms)[$i].value) for i = 1:fieldcount(TS)]
     return :(Parameters{$names}($(values...)))
 end
 
@@ -919,13 +965,13 @@ end
 
 Expand the operators of a generator.
 """
-expand!(operators::Operators, gen::AbstractGenerator) = expand!(operators, gen.operators, gen.boundary; Parameters(gen)...)
+@inline expand!(operators::Operators, gen::AbstractGenerator) = expand!(operators, getcontent(gen, :operators), getcontent(gen, :boundary); Parameters(gen)...)
 
 """
     expand(gen::AbstractGenerator) -> Operators
-    expand(gen::AbstractGenerator{coord}, name::Symbol) where coord -> Operators
-    expand(gen::AbstractGenerator{coord}, i::Int) where coord -> Operators
-    expand(gen::AbstractGenerator{coord}, name::Symbol, i::Int) where coord -> Operators
+    expand(gen::AbstractGenerator, name::Symbol) -> Operators
+    expand(gen::AbstractGenerator, i::Int) -> Operators
+    expand(gen::AbstractGenerator, name::Symbol, i::Int) -> Operators
 
 Expand the operators of a generator:
 1) the total operators;
@@ -933,31 +979,48 @@ Expand the operators of a generator:
 3) the operators on a specific bond;
 4) the operators of a specific term on a specific bond.
 """
-function expand(gen::AbstractGenerator)
-    expand!(Operators{idtype(gen.operators), eltype(gen.operators)}(), gen)
-end
-function expand(gen::AbstractGenerator{coord}, name::Symbol) where coord
-    term = getfield(gen.terms, name)
-    optp = otype(term|>typeof, oidtype(gen.config|>valtype|>eltype, gen.bonds|>eltype, gen.table|>typeof, coord))
+@inline expand(gen::AbstractGenerator) = expand!(Operators{idtype(otype(gen)), otype(gen)}(), gen)
+function expand(gen::AbstractGenerator, name::Symbol)
+    bonds = getcontent(gen, :bonds)
+    config = getcontent(gen, :config)
+    ops = getcontent(gen, :operators)
+    term = getfield(getcontent(gen, :terms), name)
+    optp = otype(term|>typeof, config|>typeof, bonds|>eltype)
     result = Operators{idtype(optp), optp}()
-    if fieldtype(term|>typeof, :modulate) <: TermModulate
-        for opt in getfield(gen.operators.alterops, name)|>values add!(result, opt*term.value) end
-        for opt in getfield(gen.operators.boundops, name)|>values add!(result, gen.boundary(opt)*term.value) end
+    if ismodulatable(term)
+        for opt in getfield(ops.alterops, name)|>values add!(result, opt*term.value) end
     else
-        expand!(result, term, gen.bonds, gen.config, gen.table, gen.half, coord)
+        expand!(result, term, filter(acrossbonds, bonds, Val(:exclude)), config, getcontent(gen, :half), table=getcontent(gen, :table))
+    end
+    for opt in getfield(ops.boundops, name)|>values
+        add!(result, getcontent(gen, :boundary)(opt)*term.value)
     end
     return result
 end
-@generated function expand(gen::AbstractGenerator{coord}, i::Int) where coord
-    exprs = [:(result = Operators{idtype(gen.operators), eltype(gen.operators)}())]
-    for i = 1:fieldcount(fieldtype(gen, :terms))
-        push!(exprs, :(expand!(result, gen.terms[$i], gen.bonds[i], gen.config, gen.table, gen.half, coord)))
+@generated function expand(gen::AbstractGenerator{TS}, i::Int) where {TS<:NamedContainer{Term}}
+    exprs = []
+    push!(exprs, quote
+        bond = getcontent(gen, :bonds)[i]
+        result = Operators{idtype(otype(gen)), otype(gen)}()
+    end)
+    for i = 1:fieldcount(TS)
+        push!(exprs, :(expand!(result, getcontent(gen, :terms)[$i], bond, getcontent(gen, :config), getcontent(gen, :half), table=getcontent(gen, :table))))
     end
-    push!(exprs, :(return result))
+    push!(exprs, quote
+        isintracell(bond) && for opt in values(result)
+            result[id(opt)] = getcontent(gen, :boundary)(opt)
+        end
+        return result
+    end)
     return Expr(:block, exprs...)
 end
-function expand(gen::AbstractGenerator{coord}, name::Symbol, i::Int) where coord
-    expand(getfield(gen.terms, name), gen.bonds[i], gen.config, gen.table, gen.half, coord)
+function expand(gen::AbstractGenerator, name::Symbol, i::Int)
+    bond = getcontent(gen, :bonds)[i]
+    result = expand(getfield(getcontent(gen, :terms), name), bond, getcontent(gen, :config), getcontent(gen, :half), table=getcontent(gen, :table))
+    isintracell(bond) && for opt in values(result)
+        result[id(opt)] = getcontent(gen, :boundary)(opt)
+    end
+    return result
 end
 
 """
@@ -965,38 +1028,31 @@ end
 
 Update the coefficients of the terms in a generator.
 """
-@generated function update!(gen::AbstractGenerator; kwargs...)
-    exprs = [:(update!(gen.boundary; kwargs...))]
-    for i = 1:fieldcount(fieldtype(gen, :terms))
-        (fieldtype(fieldtype(fieldtype(gen, :terms), i), :modulate) <: TermModulate) && push!(exprs, :(update!(gen.terms[$i]; kwargs...)))
+@generated function update!(gen::AbstractGenerator{TS}; kwargs...) where {TS<:NamedContainer{Term}}
+    exprs = [:(update!(getcontent(gen, :boundary); kwargs...))]
+    for i = 1:fieldcount(TS)
+        ismodulatable(fieldtype(TS, i)) && push!(exprs, :(update!(getcontent(gen, :terms)[$i]; kwargs...)))
     end
     push!(exprs, :(return gen))
     return Expr(:block, exprs...)
 end
 
 """
-    Generator(terms::Tuple{Vararg{Term}}, bonds::Bonds, config::Config, table::Union{Nothing, Table}=nothing, half::Bool=true, boundary::Boundary=Boundary())
-    Generator{coord}(terms::Tuple{Vararg{Term}}, bonds::Bonds, config::Config, table::Union{Nothing, Table}=nothing, half::Bool=true, boundary::Boundary=Boundary()) where coord
+    Generator(terms::Tuple{Vararg{Term}}, bonds::Bonds, config::Config, half::Bool, table::Table, boundary::Boundary=plain)
 
-A generator of operators based on terms, configuration of internal degrees of freedom, table of indices and boundary twist.
+A generator of operators based on terms, configuration of internal degrees of freedom, and boundary twist.
 """
-struct Generator{coord, TS<:NamedContainer{Term}, BS<:Bonds, C<:Config, T<:Union{Nothing, Table}, B<:Boundary, OS<:GenOperators} <: AbstractGenerator{coord, TS, BS, C, T, B, OS}
+struct Generator{TS<:NamedContainer{Term}, BS<:Bonds, C<:Config, T<:Table, B<:Boundary, OS<:GenOperators} <: AbstractGenerator{TS, BS, C, T, B, OS}
     terms::TS
     bonds::BS
     config::C
-    table::T
     half::Bool
+    table::T
     boundary::B
     operators::OS
-    function Generator{C}(terms::NamedContainer{Term}, bonds::Bonds, config::Config, table::Union{Nothing, Table}, half::Bool, boundary::Boundary, operators::GenOperators) where C
-        new{C, typeof(terms), typeof(bonds), typeof(config), typeof(table), typeof(boundary), typeof(operators)}(terms, bonds, config, table, half, boundary, operators)
-    end
 end
-function Generator(terms::Tuple{Vararg{Term}}, bonds::Bonds, config::Config, table::Union{Nothing, Table}=nothing, half::Bool=true, boundary::Boundary=Boundary())
-    Generator{coordon}(namedterms(terms), bonds, config, table, half, boundary, GenOperators(terms, bonds, config, table, half, coordon))
-end
-function Generator{coord}(terms::Tuple{Vararg{Term}}, bonds::Bonds, config::Config, table::Union{Nothing, Table}=nothing, half::Bool=true, boundary::Boundary=Boundary()) where coord
-    Generator{coord}(namedterms(terms), bonds, config, table, half, boundary, GenOperators(terms, bonds, config, table, half, coord))
+@inline function Generator(terms::Tuple{Vararg{Term}}, bonds::Bonds, config::Config, half::Bool, table::Table, boundary::Boundary=plain)
+    Generator(namedterms(terms), bonds, config, half, table, boundary, GenOperators(terms, bonds, config, half, table=table))
 end
 @generated function namedterms(terms::Tuple{Vararg{Term}})
     names = NTuple{fieldcount(terms), Symbol}(id(fieldtype(terms, i)) for i = 1:fieldcount(terms))
@@ -1011,30 +1067,28 @@ Empty the :bonds, :config, :table and :operators of a generator.
 function Base.empty!(gen::Generator)
     empty!(gen.bonds)
     empty!(gen.config)
-    isa(gen.table, Table) && empty!(gen.table)
+    empty!(gen.table)
     empty!(gen.operators)
     return gen
 end
 
 """
-    empty(gen::Generator{coord}) where coord -> Generator
+    empty(gen::Generator) -> Generator
 
 Get an empty copy of a generator.
 """
-function Base.empty(gen::Generator{coord}) where coord
-    Generator{coord}(gen.terms, empty(gen.bonds), empty(gen.config), (gen.table === nothing) ? nothing : empty(gen.table), gen.half, gen.boundary, empty(gen.operators))
-end
+@inline Base.empty(gen::Generator) = Generator(gen.terms, empty(gen.bonds), empty(gen.config), gen.half, empty(gen.table), gen.boundary, empty(gen.operators))
 
 """
-    reset!(gen::Generator{coord}, lattice::AbstractLattice) where coord -> Generator
+    reset!(gen::Generator, lattice::AbstractLattice) -> Generator
 
 Reset a generator by a new lattice.
 """
-function reset!(gen::Generator{coord}, lattice::AbstractLattice) where coord
+function reset!(gen::Generator, lattice::AbstractLattice)
     reset!(gen.bonds, lattice)
     reset!(gen.config, lattice.pids)
-    isa(gen.table, Table) && reset!(gen.table, gen.config)
-    reset!(gen.operators, Tuple(gen.terms), gen.bonds, gen.config, gen.table, gen.half, coord)
+    reset!(gen.table, gen.config)
+    reset!(gen.operators, Tuple(gen.terms), gen.bonds, gen.config, gen.half, table=gen.table)
     return gen
 end
 

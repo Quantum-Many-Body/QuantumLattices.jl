@@ -4,7 +4,7 @@ using ..Prerequisites: atol, rtol
 
 export parametercount, parametername, parameterorder, parametertype, parameterpair, isparameterbound, hasparameter
 export parameternames, parametertypes, parameterpairs, isparameterbounds, reparameter, promoteparameters, rawtype, fulltype
-export contentcount, contentname, contentorder, hascontent, getcontent, contentnames, dissolve
+export contentcount, contentname, contentorder, contenttype, hascontent, getcontent, contentnames, contenttypes, dissolve
 export efficientoperations
 
 """
@@ -259,6 +259,15 @@ For a type `T`, get the position order of a predefined content by the name.
 @inline contentorder(::Type{T}, name::Symbol) where T = _order(Val(name), contentnames(T)|>Val)
 
 """
+    contenttype(::Type{T}, name::Symbol) where T
+    contenttype(::Type{T}, ::Val{name}) where {T, name}
+
+For a type `T`, get the type of a predefined content by the name.
+"""
+@inline contenttype(::Type{T}, name::Symbol) where T = contenttype(T, Val(name))
+@inline contenttype(::Type{T}, ::Val{name}) where {T, name} = fieldtype(T, name)
+
+"""
     hascontent(::Type{T}, name::Symbol) where T -> Bool
 
 For a type `T`, judge whether it has a predefined content specified by `name`.
@@ -283,6 +292,20 @@ Get the value of the predefined content of `m`.
 For a type `T`, define the names of its predefined contents.
 """
 @inline @generated contentnames(::Type{T}) where T = fieldnames(T)
+
+"""
+    contenttypes(::Type{T}) where T
+
+For a type `T`, get the types of its predefined contents.
+"""
+@inline contenttypes(::Type{T}) where T = _contenttypes(T, contentnames(T)|>Val)
+@inline @generated function _contenttypes(::Type{T}, ::Val{names}) where {T, names}
+    exprs = []
+    for name in QuoteNode.(names)
+        push!(exprs, :(contenttype(T, $name)))
+    end
+    return Expr(:curly, :Tuple, exprs...)
+end
 
 """
     dissolve(m, f::Function=identity, args::Tuple=(), kwargs::NamedTuple=NamedTuple()) -> Tuple

@@ -5,12 +5,12 @@ using ...Prerequisites: atol, rtol
 using ...Prerequisites.NamedVectors: NamedVector
 using ...Prerequisites.Traits: efficientoperations, rawtype, fulltype, parametertype, parameterpairs, reparameter, promoteparameters, getcontent, contentorder
 
-import ...Interfaces: rank, add!, sub!, mul!, div!, ⊗, ⋅, permute
+import ...Interfaces: id, rank, add!, sub!, mul!, div!, ⊗, ⋅, permute
 import ...Prerequisites.Traits: contentnames, dissolve, isparameterbound, parameternames
 
 export SimpleID, ID
 export Element, Scalar, Elements
-export id, scalar, idtype, sequence
+export idtype, sequence
 
 """
     SimpleID <: NamedVector
@@ -112,7 +112,7 @@ Get the rank of a composite id.
 """
 @inline rank(id::ID{SimpleID}) = id |> typeof |> rank
 @inline rank(::Type{<:ID{SimpleID}}) = Any
-@inline rank(::Type{<:ID{SimpleID, N}}) where {N} = N
+@inline rank(::Type{<:ID{SimpleID, N}}) where N = N
 
 """
     *(sid1::SimpleID, sid2::SimpleID) -> ID{SimpleID}
@@ -152,11 +152,11 @@ Replace the value of an element.
 @inline dissolve(m::Element, ::Val{:value}, ::typeof(newvalue), args::Tuple, kwargs::NamedTuple) = newvalue(m, args...; kwargs...)
 
 """
-    scalar(m::Element) -> valtype(m)
+    Number(m::Element) -> valtype(m)
 
 Get the value of an element.
 """
-@inline scalar(m::Element) = getcontent(m, :value)
+@inline Base.Number(m::Element) = getcontent(m, :value)
 
 """
     id(m::Element) -> idtype(m)
@@ -298,12 +298,12 @@ end
 2) Convert a scalar to a scalar element;
 3) Convert an element from one type to another.
 """
-@inline Base.convert(::Type{M}, m::Scalar) where M<:Scalar = (typeof(m) <: M) ? m : one(M)*scalar(m)
+@inline Base.convert(::Type{M}, m::Scalar) where M<:Scalar = (typeof(m) <: M) ? m : one(M)*Number(m)
 @inline Base.convert(::Type{M}, m::Number) where M<:Scalar = one(M)*m
 @inline function Base.convert(::Type{M}, m::Element) where M<:Element
     (typeof(m) <: M) && return m
     @assert convertable(M, m) "convert error: $(nameof(typeof(m))) cannot be converted to $(nameof(M))."
-    return replace(m, convert(valtype(M), scalar(m)))
+    return replace(m, convert(valtype(M), Number(m)))
 end
 function convertable(::Type{M}, m::Element) where M<:Element
     !(rawtype(typeof(m)) <: rawtype(M)) && return false
@@ -320,7 +320,7 @@ end
 Split an element into the coefficient and a sequence of rank-1 elements.
 """
 @generated function Base.split(m::Element)
-    exprs = [:(scalar(m))]
+    exprs = [:(Number(m))]
     for i = 1:rank(m)
         push!(exprs, :(m[$i]))
     end
@@ -427,8 +427,8 @@ add!(ms::Elements, m::Number) = add!(ms, one(valtype(ms))*m)
 function add!(ms::Elements, m::Element)
     m = convert(ms|>valtype, m)
     old = get(ms, id(m), nothing)
-    new = (old === nothing) ? m : replace(old, scalar(old)+scalar(m))
-    (abs(scalar(new)) == 0.0) ? delete!(ms, id(m)) : (ms[id(m)] = new)
+    new = (old === nothing) ? m : replace(old, Number(old)+Number(m))
+    (abs(Number(new)) == 0.0) ? delete!(ms, id(m)) : (ms[id(m)] = new)
     return ms
 end
 add!(ms::Elements, mms::Elements) = (for m in mms|>values add!(ms, m) end; ms)
@@ -448,8 +448,8 @@ sub!(ms::Elements, m::Number) = add!(ms, one(valtype(ms))*(-m))
 function sub!(ms::Elements, m::Element)
     m = convert(ms|>valtype, m)
     old = get(ms, id(m), nothing)
-    new = (old === nothing) ? -m : replace(old, scalar(old)-scalar(m))
-    (abs(scalar(new)) == 0.0) ? delete!(ms, id(m)) : (ms[id(m)] = new)
+    new = (old === nothing) ? -m : replace(old, Number(old)-Number(m))
+    (abs(Number(new)) == 0.0) ? delete!(ms, id(m)) : (ms[id(m)] = new)
     return ms
 end
 sub!(ms::Elements, mms::Elements) = (for m in mms|>values sub!(ms, m) end; ms)
@@ -460,11 +460,11 @@ sub!(ms::Elements, mms::Elements) = (for m in mms|>values sub!(ms, m) end; ms)
 
 Get the inplace multiplication of elements with a scalar.
 """
-mul!(ms::Elements, factor::Scalar) = mul!(ms, scalar(factor))
+mul!(ms::Elements, factor::Scalar) = mul!(ms, Number(factor))
 function mul!(ms::Elements, factor::Number)
     @assert isa(one(ms|>valtype|>valtype)*factor, ms|>valtype|>valtype) "mul! error: dismatched type, $(ms|>valtype) and $(factor|>typeof)."
     for m in values(ms)
-        ms[id(m)] = replace(m, scalar(m)*factor)
+        ms[id(m)] = replace(m, Number(m)*factor)
     end
     return ms
 end
@@ -475,11 +475,11 @@ end
 
 Get the inplace division of element with a scalar.
 """
-div!(ms::Elements, factor::Scalar) = div!(ms, scalar(factor))
+div!(ms::Elements, factor::Scalar) = div!(ms, Number(factor))
 function div!(ms::Elements, factor::Number)
     @assert isa(one(ms|>valtype|>valtype)/factor, ms|>valtype|>valtype) "div! error: dismatched type, $(ms|>valtype) and $(factor|>typeof)."
     for m in values(ms)
-        ms[id(m)] = replace(m, scalar(m)/factor)
+        ms[id(m)] = replace(m, Number(m)/factor)
     end
     return ms
 end
@@ -510,9 +510,9 @@ Base.:+(ms::Elements, ::Nothing) = ms
 Base.:+(::Nothing, ms::Elements) = ms
 Base.:+(factor::Number, m::Element) = m + one(m)*factor
 Base.:+(m::Element, factor::Number) = m + one(m)*factor
-Base.:+(factor::Number, m::Scalar) = replace(m, scalar(m)+factor)
-Base.:+(m::Scalar, factor::Number) = replace(m, scalar(m)+factor)
-Base.:+(m1::Scalar, m2::Scalar) = replace(m1, scalar(m1)+scalar(m2))
+Base.:+(factor::Number, m::Scalar) = replace(m, Number(m)+factor)
+Base.:+(m::Scalar, factor::Number) = replace(m, Number(m)+factor)
+Base.:+(m1::Scalar, m2::Scalar) = replace(m1, Number(m1)+Number(m2))
 Base.:+(factor::Number, ms::Elements) = ms + one(valtype(ms))*factor
 Base.:+(ms::Elements, factor::Number) = ms + one(valtype(ms))*factor
 function Base.:+(m1::Element, m2::Element)
@@ -552,13 +552,13 @@ Base.:*(m::Element, ::Nothing) = nothing
 Base.:*(::Nothing, m::Element) = nothing
 Base.:*(ms::Elements, ::Nothing) = nothing
 Base.:*(::Nothing, ms::Elements) = nothing
-Base.:*(factor::Scalar, m::Element) = m * scalar(factor)
-Base.:*(m::Element, factor::Scalar) = m * scalar(factor)
-Base.:*(m1::Scalar, m2::Scalar) = replace(m1, scalar(m1)*scalar(m2))
+Base.:*(factor::Scalar, m::Element) = m * Number(factor)
+Base.:*(m::Element, factor::Scalar) = m * Number(factor)
+Base.:*(m1::Scalar, m2::Scalar) = replace(m1, Number(m1)*Number(m2))
 Base.:*(factor::Number, m::Element) = m * factor
-Base.:*(m::Element, factor::Number) = replace(m, factor*scalar(m))
-Base.:*(factor::Scalar, ms::Elements) = ms * scalar(factor)
-Base.:*(ms::Elements, factor::Scalar) = ms * scalar(factor)
+Base.:*(m::Element, factor::Number) = replace(m, factor*Number(m))
+Base.:*(factor::Scalar, ms::Elements) = ms * Number(factor)
+Base.:*(ms::Elements, factor::Scalar) = ms * Number(factor)
 Base.:*(factor::Number, ms::Elements) = ms * factor
 function Base.:*(ms::Elements, factor::Number)
     (abs(factor) == 0) && return zero(Elements)
@@ -575,7 +575,7 @@ function Base.:*(m1::Element, m2::Element)
     @assert((m1|>typeof|>nameof == m2|>typeof|>nameof) && (m1|>typeof|>fieldcount == m2|>typeof|>fieldcount == 2),
             "\"*\" error: not implemented between $(m1|>typeof|>nameof) and $(m2|>typeof|>nameof)."
             )
-    rawtype(typeof(m1))(scalar(m1)*scalar(m2), id(m1)*id(m2))
+    rawtype(typeof(m1))(Number(m1)*Number(m2), id(m1)*id(m2))
 end
 
 """
@@ -604,9 +604,9 @@ Base.:-(ms::Elements, ::Nothing) = ms
 Base.:-(::Nothing, ms::Elements) = -ms
 Base.:-(factor::Number, m::Element) = one(m)*factor - m
 Base.:-(m::Element, factor::Number) = m + one(m)*(-factor)
-Base.:-(factor::Number, m::Scalar) = replace(m, factor-scalar(m))
-Base.:-(m::Scalar, factor::Number) = replace(m, scalar(m)-factor)
-Base.:-(m1::Scalar, m2::Scalar) = replace(m1, scalar(m1)-scalar(m2))
+Base.:-(factor::Number, m::Scalar) = replace(m, factor-Number(m))
+Base.:-(m::Scalar, factor::Number) = replace(m, Number(m)-factor)
+Base.:-(m1::Scalar, m2::Scalar) = replace(m1, Number(m1)-Number(m2))
 Base.:-(factor::Number, ms::Elements) = one(valtype(ms))*factor - ms
 Base.:-(ms::Elements, factor::Number) = ms + one(valtype(ms))*(-factor)
 function Base.:-(m1::Element, m2::Element)
@@ -639,9 +639,9 @@ end
 Overloaded `/` operator for element-scalar division of an algebra over a field.
 """
 Base.:/(m::Element, factor::Number) = m * (1/factor)
-Base.:/(m::Element, factor::Scalar) = m * (1/scalar(factor))
+Base.:/(m::Element, factor::Scalar) = m * (1/Number(factor))
 Base.:/(ms::Elements, factor::Number) = ms * (1/factor)
-Base.:/(ms::Elements, factor::Scalar) = ms * (1/scalar(factor))
+Base.:/(ms::Elements, factor::Scalar) = ms * (1/Number(factor))
 
 """
     //(m::Element, factor::Integer) -> Element
@@ -652,9 +652,9 @@ Base.:/(ms::Elements, factor::Scalar) = ms * (1/scalar(factor))
 Overloaded `//` operator for element-scalar division of an algebra over a field.
 """
 Base.://(m::Element, factor::Integer) = m * (1//factor)
-Base.://(m::Element, factor::Scalar) = m * (1//scalar(factor))
+Base.://(m::Element, factor::Scalar) = m * (1//Number(factor))
 Base.://(ms::Elements, factor::Number) = ms * (1//factor)
-Base.://(ms::Elements, factor::Scalar) = ms * (1//scalar(factor))
+Base.://(ms::Elements, factor::Scalar) = ms * (1//Number(factor))
 
 """
     ^(m::Element, n::Integer) -> Element
@@ -688,7 +688,7 @@ Overloaded `⋅` operator for element-element multiplications of an algebra over
 ⋅(ms1::Elements, ms2::Elements) = Elements((m1 ⋅ m2 for m1 in ms1|>values for m2 in ms2|>values)...)
 
 """
-    sequence(m::Element, table=nothing) -> NTuple{rank(m), Int}
+    sequence(m::Element, table) -> NTuple{rank(m), Int}
 
 Get the sequence of the ids of an element according to a table.
 """
@@ -728,26 +728,26 @@ end
 end
 
 """
-    permute(::Type{T}, id1::SimpleID, id2::SimpleID, table::Any) where T<:Element -> Tuple{Vararg{Element}}
+    permute(::Type{T}, id1::SimpleID, id2::SimpleID) where {T<:Element} -> Tuple{Vararg{Element}}
 
-Permutation rule of two ids of type `T` according to an extra table.
+Permutation rule of two ids of type `T`.
 """
-permute(::Type{T}, ::SimpleID, ::SimpleID, ::Any) where T<:Element = error("permute error: not implemented for $(nameof(T)).")
+permute(::Type{T}, ::SimpleID, ::SimpleID) where {T<:Element} = error("permute error: not implemented for $(nameof(T)).")
 
 """
-    permute!(result::Elements, m::Element, table=nothing) -> Elements
-    permute!(result::Elements, ms::Elements, table=nothing) -> Elements
+    permute!(result::Elements, m::Element, table) -> Elements
+    permute!(result::Elements, ms::Elements, table) -> Elements
 
 Permute the ids of an-element/a-set-of-elements to the descending order according to a table, and store the permuted elements in result.
 
 !!! note
     To use this function, the user must implement a method of `permute`, which computes the result of the permutation of a rank-2 element and takes the following interface:
     ```julia
-    permute(::Type{M}, id1::SimpleID, id2::SimpleID, table=nothing) -> Union{M, Elements}
+    permute(::Type{M}, id1::SimpleID, id2::SimpleID) -> Union{M, Elements}
     ```
     Here, `M` is the type of the input element `m` in `permute!`, `id1` and `id2` are two arbitary simple ids contained in `id(m)`.
 """
-function Base.permute!(result::Elements, m::Element, table=nothing)
+function Base.permute!(result::Elements, m::Element, table)
     cache = valtype(result)[m]
     while length(cache) > 0
         current = pop!(cache)
@@ -755,9 +755,9 @@ function Base.permute!(result::Elements, m::Element, table=nothing)
         if isa(pos, Nothing)
             add!(result, current)
         else
-            left = current[1:pos-1] * scalar(m)
+            left = current[1:pos-1] * Number(m)
             right = current[pos+2:end]
-            for middle in permute(typeof(current), id(current)[pos], id(current)[pos+1], table)
+            for middle in permute(typeof(current), id(current)[pos], id(current)[pos+1])
                 temp = left * middle * right
                 (temp === nothing) || push!(cache, temp)
             end
@@ -765,7 +765,7 @@ function Base.permute!(result::Elements, m::Element, table=nothing)
     end
     return result
 end
-function Base.permute!(result::Elements, ms::Elements, table=nothing)
+function Base.permute!(result::Elements, ms::Elements, table)
     for m in values(ms)
         permute!(result, m, table)
     end
@@ -781,16 +781,16 @@ function elementcommuteposition(seqs)
 end
 
 """
-    permute(m::Element, table=nothing) -> Elements
-    permute(ms::Elements, table=nothing) -> Elements
+    permute(m::Element, table) -> Elements
+    permute(ms::Elements, table) -> Elements
 
 Permute the ids of an-element/a-set-of-elements to the descending order according to a table.
 """
-@inline function permute(m::Element, table=nothing)
+@inline function permute(m::Element, table)
     M = reparameter(typeof(m), :id, ID{m|>idtype|>eltype})
     permute!(Elements{idtype(M), M}(), m, table)
 end
-@inline function permute(ms::Elements, table=nothing)
+@inline function permute(ms::Elements, table)
     M = reparameter(valtype(ms), :id, ID{ms|>keytype|>eltype})
     permute!(Elements{idtype(M), M}(), ms, table)
 end

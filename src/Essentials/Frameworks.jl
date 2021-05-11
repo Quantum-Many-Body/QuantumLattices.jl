@@ -7,11 +7,11 @@ using ...Prerequisites: decimaltostr
 using ...Prerequisites.CompositeStructures: NamedContainer
 using ...Prerequisites.Traits: efficientoperations
 
-import ...Interfaces: id, update!, prepare!, register!, run!, add!
+import ...Interfaces: id, add!
+import ...Essentials: update!
 
-export App, Engine
-export Assignment, Algorithm
-export dependences, rundependences!
+export App, Engine, Assignment, Algorithm
+export prepare!, register!, run!, dependences, rundependences!
 
 """
     App
@@ -19,27 +19,15 @@ export dependences, rundependences!
 Abstract type for all apps.
 """
 abstract type App end
-
-"""
-    ==(app1::App, app2::App) -> Bool
-
-Judge whether two apps are equivalent to each other.
-"""
-Base.:(==)(app1::App, app2::App) = ==(efficientoperations, app1, app2)
-
-"""
-    isequal(app1::App, app2::App) -> Bool
-
-Judge whether two apps are equivalent to each other.
-"""
-Base.isequal(app1::App, app2::App) = isequal(efficientoperations, app1, app2)
+@inline Base.:(==)(app₁::App, app₂::App) = ==(efficientoperations, app₁, app₂)
+@inline Base.isequal(app₁::App, app₂::App) = isequal(efficientoperations, app₁, app₂)
 
 """
     update!(app::App; kwargs...) -> App
 
 Update the status of an app.
 """
-update!(app::App; kwargs...) = app
+@inline update!(app::App; kwargs...) = app
 
 """
     Engine
@@ -47,37 +35,25 @@ update!(app::App; kwargs...) = app
 Abstract type for all engines.
 """
 abstract type Engine end
-
-"""
-    ==(engine1::Engine, engine2::Engine) -> Bool
-
-Judge whether two engines are equivalent to each other.
-"""
-Base.:(==)(engine1::Engine, engine2::Engine) = ==(efficientoperations, engine1, engine2)
-
-"""
-    isequal(engine1::Engine, engine2::Engine) -> Bool
-
-Judge whether two engines are equivalent to each other.
-"""
-Base.isequal(engine1::Engine, engine2::Engine) = isequal(efficientoperations, engine1, engine2)
+@inline Base.:(==)(engine₁::Engine, engine₂::Engine) = ==(efficientoperations, engine₁, engine₂)
+@inline Base.isequal(engine₁::Engine, engine₂::Engine) = isequal(efficientoperations, engine₁, engine₂)
 
 """
     update!(engine::Engine; kwargs...) -> Engine
 
 Update the status of an engine.
 """
-update!(engine::Engine; kwargs...) = engine
+@inline update!(engine::Engine; kwargs...) = engine
 
 """
-    Assignment( id::Symbol, app::App, parameters::Parameters;
-                map::Function=identity,
-                dependences::Tuple{Vararg{Symbol}}=(),
-                data::Any=nothing,
-                savedata::Bool=true,
-                virgin::Bool=true,
-                kwargs...
-                )
+    Assignment(id::Symbol, app::App, parameters::Parameters;
+        map::Function=identity,
+        dependences::Tuple{Vararg{Symbol}}=(),
+        data::Any=nothing,
+        savedata::Bool=true,
+        virgin::Bool=true,
+        kwargs...
+        )
 
 An assignment associated with an app.
 """
@@ -90,15 +66,14 @@ mutable struct Assignment{A<:App, P<:Parameters, M<:Function, D<:Tuple{Vararg{Sy
     savedata::Bool
     virgin::Bool
 end
-function Assignment(id::Symbol, app::App, parameters::Parameters;
-                    map::Function=identity,
-                    dependences::Tuple{Vararg{Symbol}}=(),
-                    data::Any=nothing,
-                    savedata::Bool=true,
-                    virgin::Bool=true,
-                    kwargs...)
-    A, P, M, D = app|>typeof, parameters|>typeof, map|>typeof, dependences|>typeof
-    R = (data === nothing) ? Any : data|>typeof
+@inline function Assignment(id::Symbol, app::App, parameters::Parameters;
+        map::Function=identity,
+        dependences::Tuple{Vararg{Symbol}}=(),
+        data::Any=nothing,
+        savedata::Bool=true,
+        virgin::Bool=true,
+        kwargs...)
+    A, P, M, D, R = typeof(app), typeof(parameters), typeof(map), typeof(dependences), isnothing(data) ? Any : typeof(data)
     return Assignment{A, P, M, D, R, id}(app, parameters, map, dependences, data, savedata, virgin)
 end
 
@@ -107,32 +82,32 @@ end
 
 Judge whether two assignments are equivalent to each other.
 """
-Base.:(==)(assign1::Assignment, assign2::Assignment) = ==(efficientoperations, assign1, assign2)
+@inline Base.:(==)(assign1::Assignment, assign2::Assignment) = ==(efficientoperations, assign1, assign2)
 
 """
     isequal(assign1::Assignment, assign2::Assignment) -> Bool
 
 Judge whether two assignments are equivalent to each other.
 """
-Base.isequal(assign1::Assignment, assign2::Assignment) = isequal(efficientoperations, assign1, assign2)
+@inline Base.isequal(assign1::Assignment, assign2::Assignment) = isequal(efficientoperations, assign1, assign2)
 
 """
     valtype(assign::Assignment)
-    valtype(::Type{<:Assignment{<:App, <:Parameters, <:Function, <:Tuple{Vararg{Symbol}}, R}}) where R
+    valtype(::Type{<:Assignment})
 
 The type of the data(result) of an assignment.
 """
-Base.valtype(assign::Assignment) = assign |> typeof |> valtype
-Base.valtype(::Type{<:Assignment{<:App, <:Parameters, <:Function, <:Tuple{Vararg{Symbol}}, R}}) where {R} = R
+@inline Base.valtype(assign::Assignment) = valtype(typeof(assign))
+@inline Base.valtype(::Type{<:Assignment{<:App, <:Parameters, <:Function, <:Tuple{Vararg{Symbol}}, R}}) where R = R
 
 """
     id(assign::Assignment) -> Symbol
-    id(::Type{<:Assignment{<:App, <:Parameters, <:Function, <:Tuple{Vararg{Symbol}}, <:Any, I}}) where I -> Symbol
+    id(::Type{<:Assignment}) -> Symbol
 
 The id of an assignment.
 """
-id(assign::Assignment) = assign |> typeof |> id
-id(::Type{<:Assignment{<:App, <:Parameters, <:Function, <:Tuple{Vararg{Symbol}}, <:Any, I}}) where {I} = I
+@inline id(assign::Assignment) = id(typeof(assign))
+@inline id(::Type{<:Assignment{<:App, <:Parameters, <:Function, <:Tuple{Vararg{Symbol}}, <:Any, I}}) where I = I
 
 """
     update!(assign::Assignment; kwargs...) -> Assignment
@@ -154,14 +129,14 @@ Update the parameters of an assignment and the status of its associated app.
 end
 
 """
-    Algorithm(  name::String, engine::Engine;
-                din::String=".",
-                dout::String=".",
-                parameters::Union{Parameters, Nothing}=nothing,
-                map::Function=identity,
-                assignments::Tuple{Vararg{Assignment}}=(),
-                kwargs...
-                )
+    Algorithm(name::String, engine::Engine;
+        din::String=".",
+        dout::String=".",
+        parameters::Union{Parameters, Nothing}=nothing,
+        map::Function=identity,
+        assignments::Tuple{Vararg{Assignment}}=(),
+        kwargs...
+        )
 
 An algorithm associated with an engine.
 """
@@ -176,22 +151,20 @@ mutable struct Algorithm{E<:Engine, P<:Parameters, M<:Function, S<:NamedContaine
     dassignments::Dict{Symbol, Assignment}
     timer::TimerOutput
 end
-function Algorithm( name::String, engine::Engine;
-                    din::String=".",
-                    dout::String=".",
-                    parameters::Union{Parameters, Nothing}=nothing,
-                    map::Function=identity,
-                    assignments::Tuple{Vararg{Assignment}}=(),
-                    kwargs...
-                    )
-    (parameters === nothing) && (parameters = Parameters(engine))
-    assignments = namedassignments(assignments)
-    return Algorithm(name, engine, din, dout, parameters, map, assignments, Dict{Symbol, Assignment}(), TimerOutput())
+@inline function Algorithm(name::String, engine::Engine;
+        din::String=".",
+        dout::String=".",
+        parameters::Parameters=Parameters(engine),
+        map::Function=identity,
+        assignments::Tuple{Vararg{Assignment}}=(),
+        kwargs...
+        )
+    return Algorithm(name, engine, din, dout, parameters, map, namedassignments(assignments), Dict{Symbol, Assignment}(), TimerOutput())
 end
 @generated function namedassignments(assignments::Tuple{Vararg{Assignment}})
     names, values = [], []
     for i = 1:fieldcount(assignments)
-        push!(names, fieldtype(assignments, 1)|>id)
+        push!(names, fieldtype(assignments, i)|>id)
         push!(values, :(assignments[$i]))
     end
     names = NTuple{fieldcount(assignments), Symbol}(names)
@@ -228,7 +201,7 @@ Optionally, some parameters of the algorithm can be masked. Besides, the maximum
 function Base.repr(alg::Algorithm, mask::Tuple{Vararg{Symbol}}=(); ndecimal::Int=10)
     result = [string(alg.name), repr(alg.engine)]
     for (name, value) in pairs(alg.parameters)
-        (name ∉ mask) && push!(result, decimaltostr(value, ndecimal))
+        name∉mask && push!(result, decimaltostr(value, ndecimal))
     end
     return join(result, "_")
 end
@@ -251,8 +224,10 @@ end
 
 Find the assignment registered on a algorithm by its id.
 """
-Base.get(alg::Algorithm, id::Symbol) = (id ∈ keys(alg.sassignments)) ? getfield(alg.sassignments, id) : alg.dassignments[id]
-@generated Base.get(alg::Algorithm, ::Val{id}) where {id} = (id ∈ fieldnames(fieldtype(alg, :sassignments))) ? :(getfield(alg.sassignments, id)) : :(alg.dassignments[id])
+@inline Base.get(alg::Algorithm, id::Symbol) = get(alg, id|>Val)
+@generated function Base.get(alg::Algorithm, ::Val{id}) where id
+    return id∈fieldnames(fieldtype(alg, :sassignments)) ? :(getfield(alg.sassignments, id)) : :(alg.dassignments[id])
+end
 
 """
     summary(alg::Algorithm)
@@ -269,21 +244,21 @@ end
 
 Prepare an assignment registered on a algorithm.
 """
-prepare!(alg::Algorithm, assign::Assignment) = nothing
+@inline prepare!(alg::Algorithm, assign::Assignment) = nothing
 
 """
     run!(alg::Algorithm, assign::Assignment) -> Nothing
 
 Run an assignment registered on a algorithm.
 """
-run!(alg::Algorithm, assign::Assignment) = nothing
+@inline run!(alg::Algorithm, assign::Assignment) = nothing
 
 """
     register!(alg::Algorithm, id::Symbol, app::App; kwargs...) -> Algorithm
 
 Add an assignment on a algorithm by providing the contents of the assignment, and run this assignment.
 """
-function register!(alg::Algorithm, id::Symbol, app::App; kwargs...)
+@inline function register!(alg::Algorithm, id::Symbol, app::App; kwargs...)
     add!(alg, id, app; kwargs...)
     run!(alg, id, true)
 end
@@ -296,7 +271,7 @@ Add an assignment on a algorithm by providing the contents of the assignment.
 The difference between `add!` and `register!` is that the `add!` function does not run the newly added assignment but the `register!` function does.
 """
 function add!(alg::Algorithm, id::Symbol, app::App; kwargs...)
-    @assert id ∉ keys(alg.sassignments) "add! error: id($id) conflict."
+    @assert id∉keys(alg.sassignments) "add! error: id($id) conflict."
     alg.dassignments[id] = Assignment(id, app, merge(alg.parameters, get(kwargs, :parameters, Parameters{()}())); kwargs...)
     return alg
 end
@@ -307,7 +282,7 @@ end
 
 Run an assignment with the given id registered on an algorithm. Optionally, the run process can be timed by setting the `timing` argument to be `true`.
 """
-run!(alg::Algorithm, id::Symbol, timing::Bool = true) = run!(alg, Val(id), timing)
+@inline run!(alg::Algorithm, id::Symbol, timing::Bool = true) = run!(alg, Val(id), timing)
 function run!(alg::Algorithm, ::Val{id}, timing::Bool = true) where id
     assign = get(alg, Val(id))
     if timing
@@ -333,8 +308,8 @@ end
 
 Get the dependences of an assignment and return their ids.
 """
-dependences(alg::Algorithm, assign::Assignment, ::Tuple{}=()) = assign.dependences
-dependences(alg::Algorithm, assign::Assignment, mask::Tuple{Vararg{Symbol}}) = Tuple(filter(x->(x ∉ mask), collect(assign.dependences)))
+@inline dependences(alg::Algorithm, assign::Assignment, ::Tuple{}=()) = assign.dependences
+@inline dependences(alg::Algorithm, assign::Assignment, mask::Tuple{Vararg{Symbol}}) = Tuple(filter(x->x∉mask, collect(assign.dependences)))
 
 """
     rundependences!(alg::Algorithm, assign::Assignment, mask::Tuple{Vararg{Symbol}}=()) -> Algorithm

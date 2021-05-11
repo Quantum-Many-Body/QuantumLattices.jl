@@ -2,9 +2,12 @@ using Test
 using Random: seed!
 using StaticArrays: SVector
 using QuantumLattices.Essentials.Spatials
-using QuantumLattices.Interfaces: decompose, rank, dimension, kind, expand, reset!
+using QuantumLattices.Essentials: kind, reset!
+using QuantumLattices.Interfaces: decompose, rank, dimension, expand
 using QuantumLattices.Prerequisites: Float
+using QuantumLattices.Prerequisites.Traits: contentnames, getcontent
 using QuantumLattices.Prerequisites.SimpleTrees: leaves
+using QuantumLattices.Mathematics.QuantumNumbers: Momentum2D, AbelianNumbers
 
 @testset "distance" begin
     @test distance([0.0, 0.0], [1.0, 1.0]) ≈ sqrt(2.0)
@@ -143,7 +146,6 @@ end
 @testset "PID" begin
     @test PID(1) == PID('T', 1) == PID(scope='T', site=1)
     @test PID(scope="tz", site=1)|>string == "PID(\"tz\", 1)"
-    @test fieldnames(PID{String}) == (:scope, :site)
 end
 
 @testset "Point" begin
@@ -157,7 +159,11 @@ end
     @test point|>dimension == point|>typeof|>dimension == 2
     @test point|>kind == point|>typeof|>kind == 0
     @test point|>string == "Point(PID(0, 1), [0.0, 0.0], [0.0, 0.0])"
+    @test point[1] == point
     @test point|>collect == [point]
+
+    @test isintracell(Point(PID(0, 1), (0.0, 0.0), (0.0, 0.0))) == true
+    @test isintracell(Point(PID(0, 1), (0.0, 0.0), (1.0, 0.0))) == false
 end
 
 @testset "Bond" begin
@@ -175,11 +181,13 @@ end
     @test bond|>rcoord == [0.0, 1.0]
     @test bond|>icoord == [0.0, 1.0]
     @test bond|>isintracell == false
+    @test bond[1] == bond.epoint && bond[2] == bond.spoint
     @test bond|>collect == [Point(PID(1, 2), (0.0, 1.0), (0.0, 1.0)), Point(PID(1, 1), (0.0, 0.0), (0.0, 0.0))]
 end
 
 @testset "Lattice" begin
     lattice = Lattice("Tuanzi", [Point(PID(1, 1), (0.5, 0.5), (0.0, 0.0))], vectors=[[1.0, 0.0], [0.0, 1.0]], neighbors=1)
+    @test lattice|>typeof|>contentnames == (:name, :pids, :rcoords, :icoords, :vectors, :reciprocals, :neighbors)
     @test lattice|>deepcopy == lattice
     @test isequal(lattice|>deepcopy, lattice)
     @test lattice|>string == "Lattice(Tuanzi)\n  with 1 point:\n    Point(PID(1, 1), [0.5, 0.5], [0.0, 0.0])\n  with 2 translation vectors:\n    [1.0, 0.0]\n    [0.0, 1.0]\n  with 1 order of nearest neighbors:\n    1 => 1.0\n"
@@ -202,24 +210,25 @@ end
     @test bonds(lattice, acrossbonds) == acrossbs
     @test setdiff(bonds(lattice), [zerothbs; insidebs; acrossbs])|>length == 0
 
-    lattice = Lattice(  "SuperTuanzi",
-                        [   Lattice("Tuanzi1", [Point(PID(1, 1), (0.0, 0.0))], neighbors=0),
-                            Lattice("Tuanzi2", [Point(PID(2, 1), (0.5, 0.5))], neighbors=0),
-                            ],
-                        vectors=    [[1.0, 0.0], [0.0, 1.0]],
-                        neighbors=  2,
-                        )
+    lattice = Lattice("SuperTuanzi",
+                [Lattice("Tuanzi1", [Point(PID(1, 1), (0.0, 0.0))], neighbors=0),
+                Lattice("Tuanzi2", [Point(PID(2, 1), (0.5, 0.5))], neighbors=0),
+                ],
+                vectors=[[1.0, 0.0], [0.0, 1.0]],
+                neighbors=2,
+                )
     @test setdiff(bonds(lattice), bonds(lattice, zerothbonds, insidebonds, acrossbonds))|>length == 0
 end
 
 @testset "SuperLattice" begin
-    lattice = SuperLattice( "SuperTuanzi",
-                            [   Lattice("TuanziSys", [Point(PID(1, 1), (0.0, 0.0)), Point(PID(1, 2), (0.5, 0.5))], neighbors=Dict(1=>√2/2)),
-                                Lattice("TuanziEnv", [Point(PID(2, 1), (-0.05, -0.05)), Point(PID(2, 2), (0.55, 0.55))], neighbors=Dict{Int, Float}()),
-                                ],
-                            vectors=    [[1.0, 0.0], [0.0, 1.0]],
-                            neighbors=  Dict(1=>√2/2, -1=>√2/20)
-                            )
+    lattice = SuperLattice("SuperTuanzi",
+                [Lattice("TuanziSys", [Point(PID(1, 1), (0.0, 0.0)), Point(PID(1, 2), (0.5, 0.5))], neighbors=Dict(1=>√2/2)),
+                Lattice("TuanziEnv", [Point(PID(2, 1), (-0.05, -0.05)), Point(PID(2, 2), (0.55, 0.55))], neighbors=Dict{Int, Float}()),
+                ],
+                vectors=[[1.0, 0.0], [0.0, 1.0]],
+                neighbors=Dict(1=>√2/2, -1=>√2/20)
+                )
+    @test lattice|>typeof|>contentnames == (:sublattices, :name, :pids, :rcoords, :icoords, :vectors, :reciprocals, :neighbors)
     @test latticetype(lattice) == latticetype(typeof(lattice)) == Lattice{2, PID{Int}}
     @test setdiff(bonds(lattice), bonds(lattice, zerothbonds, insidebonds, acrossbonds))|>length == 0
     @test setdiff(bonds(lattice, insidebonds), bonds(lattice, intrabonds, interbonds))|>length == 0
@@ -227,6 +236,7 @@ end
 
 @testset "Cylinder" begin
     cylinder = Cylinder{PID{String}}("Tuanzi", [0.0 0.0; 0.0 1.0], SVector(1.0, 0.0), vector=[0.0, 2.0], neighbors=1)
+    @test cylinder|>typeof|>contentnames == (:block, :translation, :name, :pids, :rcoords, :icoords, :vectors, :reciprocals, :neighbors)
     insert!(cylinder, "A", "B")
     insert!(cylinder, "C3", cut=2, scopes=["C1", "C1", "C2", "C2"])
     @test cylinder.pids == [PID("C1", 1), PID("C3", 2), PID("C3", 1), PID("C1", 2), PID("C2", 1), PID("C2", 2)]
@@ -279,4 +289,12 @@ end
     emptybs = Bonds{(zerothbonds, insidebonds, acrossbonds), Lattice{2, PID{Int}}}((Point{2, PID{Int}}[], Bond{2, PID{Int}}[], Bond{2, PID{Int}}[]))
     @test filter(bond->(dimension(bond) == 3), bs) == empty!(deepcopy(bs)) == empty(bs) == emptybs
     @test reset!(emptybs, lattice) == bs
+end
+
+@testset "BrillouinZone" begin
+    @test contentnames(BrillouinZone) == (:reciprocals, :contents)
+    bz = BrillouinZone(reciprocals([[1.0, 0.0], [0.0, 1.0]]),
+            AbelianNumbers('C', [Momentum2D{10}(j-1, i-1) for (i, j) in Iterators.flatten((Iterators.product(1:10, 1:10),))], collect(0:100), :indptr)
+            )
+    @test getcontent(bz, Val(:contents)) == (bz.momenta,)
 end

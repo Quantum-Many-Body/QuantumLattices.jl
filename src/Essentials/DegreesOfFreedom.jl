@@ -3,38 +3,38 @@ module DegreesOfFreedom
 using Printf: @printf, @sprintf
 using StaticArrays: SVector
 using LaTeXStrings: latexstring
-using ..Spatials: PID, AbstractBond
-using ...Interfaces: rank, dimension
+using ..Spatials: PID, Point
+using ...Interfaces: id, rank, dimension, decompose
 using ...Prerequisites: Float, decimaltostr
 using ...Prerequisites.Traits: rawtype, efficientoperations
 using ...Prerequisites.CompositeStructures: CompositeDict
-using ...Mathematics.VectorSpaces: VectorSpace
+using ...Mathematics.VectorSpaces: CartesianVectorSpace
 using ...Mathematics.AlgebraOverFields: SimpleID, ID, Element, Elements
 
 import ..Spatials: pidtype, rcoord, icoord
-import ...Interfaces: reset!, update!, sequence
+import ...Essentials: reset!, update!
+import ...Prerequisites.Traits: contentnames
+import ...Mathematics.AlgebraOverFields: sequence
 
-export IID, Index, pid, iidtype, iid
-export IndexToTuple, DirectIndexToTuple, directindextotuple, FilteredAttributes
-export Internal, Config, Table
-export LaTeX, OID, Operator, Operators, isHermitian, twist
-export coordon, coordoff
-export latexformat, script, oidtype, otype
-export Boundary
+export IID, Internal, Config, AbstractOID, Index, OID, Operator, Operators
+export iidtype, pid, iid, isHermitian, oidtype
+export Metric, OIDToTuple, Table
+export LaTeX, latexname, latexformat, superscript, subscript, script
+export Boundary, twist, plain
 
 """
-    IID
+    IID <: SimpleID
 
 The id of an internal degree of freedom.
 """
 abstract type IID <: SimpleID end
 
 """
-    Internal
+    Internal{I<:IID} <: CartesianVectorSpace{I}
 
 The whole internal degrees of freedom at a single point.
 """
-abstract type Internal{I<:IID} <: VectorSpace{I} end
+abstract type Internal{I<:IID} <: CartesianVectorSpace{I} end
 
 """
     show(io::IO, i::Internal)
@@ -44,165 +44,29 @@ Show an internal.
 Base.show(io::IO, i::Internal) = @printf io "%s(%s)" i|>typeof|>nameof join(("$name=$(getfield(i, name))" for name in i|>typeof|>fieldnames), ", ")
 
 """
-    Index{P, I}
-
-The complete index of a degree of freedom, which consist of the spatial part and the internal part.
-"""
-abstract type Index{P<:PID, I<:IID} <: SimpleID end
-
-"""
-    (INDEX::Type{<:Index})(pid::PID, iid::IID) -> INDEX
-
-Get the corresponding index from a pid and an iid.
-"""
-@generated function (INDEX::Type{<:Index})(pid::PID, iid::IID)
-    (INDEX <: UnionAll) ? :(INDEX(convert(Tuple, pid)..., convert(Tuple, iid)...)) : :(rawtype(INDEX)(convert(Tuple, pid)..., convert(Tuple, iid)...))
-end
-
-"""
-    pidtype(index::Index)
-    pidtype(::Type{<:Index{P}}) where {P<:PID}
-
-Get the type of the spatial part of an index.
-"""
-pidtype(index::Index) = index |> typeof |> pidtype
-pidtype(::Type{<:Index{P}}) where {P<:PID} = P
-
-"""
-    pid(index::Index) -> PID
-
-Get the spatial part of an index.
-"""
-@generated function pid(index::Index)
-    exprs = [:(getfield(index, $i)) for i = 1:fieldcount(index|>pidtype)]
-    return :(rawtype(pidtype(index))($(exprs...)))
-end
-
-"""
-    iidtype(index::Index)
-    iidtype(::Type{<:Index{<:PID, I}}) where {I<:IID}
-
-Get the type of the internal part of an index.
-"""
-iidtype(index::Index) = index |> typeof |> iidtype
-iidtype(::Type{<:Index{<:PID, I}}) where {I<:IID} = I
-
-"""
-    iid(index::Index) -> IID
-
-Get the internal part of an index.
-"""
-@generated function iid(index::Index)
-    exprs = [:(getfield(index, $i)) for i = fieldcount(index|>pidtype)+1:fieldcount(index)]
-    return :(rawtype(iidtype(index))($(exprs...)))
-end
-
-"""
-    adjoint(index::Index) -> typeof(index)
-
-Get the adjoint of an index.
-"""
-Base.adjoint(index::Index) = typeof(index)(index|>pid, index|>iid|>adjoint)
-
-"""
-    union(::Type{P}, ::Type{I}) where {P<:PID, I<:IID}
-
-Combine a concrete `PID` type and a concrete `IID` type to a concrete `Index` type.
-"""
-Base.union(::Type{P}, ::Type{I}) where {P<:PID, I<:IID} = Index{P, I}
-
-"""
-    IndexToTuple
-
-The rules for converting an index to a tuple.
-
-As a function, every instance should accept only one positional argument, i.e. the index to be converted to a tuple.
-"""
-abstract type IndexToTuple <: Function end
-Base.:(==)(itt1::T, itt2::T) where {T<:IndexToTuple} = ==(efficientoperations, itt1, itt2)
-Base.isequal(itt1::T, itt2::T) where {T<:IndexToTuple} = isequal(efficientoperations, itt1, itt2)
-
-"""
-    DirectIndexToTuple
-
-Direct index to tuple.
-"""
-struct DirectIndexToTuple <: IndexToTuple end
-
-"""
-    (indextotuple::DirectIndexToTuple)(index::Index) -> Tuple
-
-Convert an index to tuple directly.
-"""
-(indextotuple::DirectIndexToTuple)(index::Index) = convert(Tuple, index)
-
-"""
-    directindextotuple
-
-Indicate that the conversion from an index to a tuple is direct.
-"""
-const directindextotuple = DirectIndexToTuple()
-
-"""
-    FilteredAttributes(::Type{I}) where {I<:Index}
-
-A method that converts an arbitary index to a tuple, by iterating over the selected attributes in a specific order.
-"""
-struct FilteredAttributes{N} <: IndexToTuple
-    attributes::NTuple{N, Symbol}
-end
-FilteredAttributes(attrs::Symbol...) = FilteredAttributes(attrs)
-FilteredAttributes(::Type{I}) where I<:Index = FilteredAttributes(I|>fieldnames)
-
-"""
-    length(indextotuple::FilteredAttributes) -> Int
-    length(::Type{<:FilteredAttributes{N}}) where N -> Int
-
-Get the length of the filtered attributes.
-"""
-Base.length(indextotuple::FilteredAttributes) = indextotuple |> typeof |> length
-Base.length(::Type{<:FilteredAttributes{N}}) where {N} = N
-
-"""
-    (indextotuple::FilteredAttributes)(index::Index) -> Tuple
-
-Convert an index to tuple by the "filtered attributes" method.
-"""
-@generated function (indextotuple::FilteredAttributes)(index::Index)
-    exprs = [:(getfield(index, indextotuple.attributes[$i])) for i = 1:length(indextotuple)]
-    return Expr(:tuple, exprs...)
-end
-
-"""
-    filter(f::Function, indextotuple::FilteredAttributes) -> FilteredAttributes
-
-Filter the attributes of a "filtered attributes" method.
-"""
-Base.filter(f::Function, indextotuple::FilteredAttributes) = FilteredAttributes(Tuple(attr for attr in indextotuple.attributes if f(attr)))
-
-"""
-    Config{I}(map::Function, pids::Union{AbstractVector{<:PID}, Tuple{}}=()) where {I<:Internal}
+    Config{I}(map::Function, pids::AbstractVector{<:PID}) where {I<:Internal}
 
 Configuration of the internal degrees of freedom at a lattice.
 
-`map` maps a `PID` to an `Internal`.
+Here, `map` maps a `PID` to an `Internal`.
 """
 struct Config{I<:Internal, M<:Function, P<:PID} <: CompositeDict{P, I}
     map::M
     contents::Dict{P, I}
 end
-function Config{I}(map::Function, pids::Union{AbstractVector{<:PID}, Tuple{}}=()) where {I<:Internal}
+@inline contentnames(::Type{<:Config}) = (:map, :contents)
+function Config{I}(map::Function, pids::AbstractVector{<:PID}) where {I<:Internal}
     contents = Dict{pids|>eltype, I}()
     for pid in pids
         contents[pid] = map(pid)
     end
-    Config(map, contents)
+    return Config(map, contents)
 end
 
 """
     reset!(config::Config, pids) -> Config
 
-Reset the idfconfig with new pids.
+Reset the config with new pids.
 """
 function reset!(config::Config, pids)
     empty!(config)
@@ -213,183 +77,117 @@ function reset!(config::Config, pids)
 end
 
 """
-    Table{I}(by::IndexToTuple) where {I<:Index}
+    AbstractOID <: SimpleID
 
-Index-sequence table.
+Abstract type of operator id.
 """
-struct Table{I<:Index, B<:IndexToTuple} <: CompositeDict{I, Int}
-    by::B
-    contents::Dict{I, Int}
-end
-Table{I}(by::IndexToTuple) where {I<:Index} = Table(by, Dict{I, Int}())
+abstract type AbstractOID <: SimpleID end
 
 """
-    Table(indices::AbstractVector{<:Index}, by::IndexToTuple=directindextotuple) -> Table
+    isHermitian(id::ID{AbstractOID, N}) where N -> Bool
 
-Convert an sequence of indices to the corresponding index-sequence table.
-
-The input indices will be converted to tuples by the `by` function with the duplicates removed. The resulting unique tuples are sorted, which determines the sequence of the input indices. Note that two indices have the same sequence if their converted tupels are equal to each other.
+Judge whether an operator id is Hermitian.
 """
-function Table(indices::AbstractVector{<:Index}, by::IndexToTuple=directindextotuple)
-    tuples = [by(index) for index in indices]
-    permutation = sortperm(tuples, alg=Base.Sort.QuickSort)
-    result = Table{indices|>eltype}(by)
-    count = 1
-    for i = 1:length(tuples)
-        (i > 1) && (tuples[permutation[i]] != tuples[permutation[i-1]]) && (count += 1)
-        result[indices[permutation[i]]] = count
+function isHermitian(id::ID{AbstractOID, N}) where N
+    for i = 1:((N+1)÷2)
+        id[i]'==id[N+1-i] || return false
     end
-    result
+    return true
 end
 
 """
-    Table(config::Config, by::IndexToTuple=directindextotuple) -> Table
+    Index{P<:PID, I<:IID} <: SimpleID
 
-Get the index-sequence table of the whole internal Hilbert spaces at a lattice.
+The index of a degree of freedom, which consist of the spatial part and the internal part.
 """
-function Table(config::Config, by::IndexToTuple=directindextotuple)
-    result = union(config|>keytype, config|>valtype|>eltype)[]
-    for (pid, internal) in config
-        for iid in internal
-            push!(result, (result|>eltype)(pid, iid))
-        end
-    end
-    Table(result, by)
+abstract type Index{P<:PID, I<:IID} <: AbstractOID end
+
+"""
+    pidtype(index::Index)
+    pidtype(::Type{<:Index{P}}) where {P<:PID}
+
+Get the type of the spatial part of an index.
+"""
+@inline pidtype(index::Index) = pidtype(typeof(index))
+@inline pidtype(::Type{<:Index{P}}) where {P<:PID} = P
+
+"""
+    iidtype(index::Index)
+    iidtype(::Type{<:Index{<:PID, I}}) where {I<:IID}
+
+Get the type of the internal part of an index.
+"""
+@inline iidtype(index::Index) = iidtype(typeof(index))
+@inline iidtype(::Type{<:Index{<:PID, I}}) where {I<:IID} = I
+
+"""
+    (INDEX::Type{<:Index})(pid::PID, iid::IID) -> INDEX
+
+Get the corresponding index from a pid and an iid.
+"""
+@inline (INDEX::Type{<:Index})(pid::PID, iid::IID) = INDEX(values(pid)..., values(iid)...)
+
+"""
+    pid(index::Index) -> PID
+
+Get the spatial part of an index.
+"""
+@inline @generated function pid(index::Index)
+    exprs = [:(getfield(index, $name)) for name in QuoteNode.(index|>pidtype|>fieldnames)]
+    return :(pidtype(index)($(exprs...)))
 end
 
 """
-    union(tables::Table...) -> Table
+    iid(index::Index) -> IID
 
-Unite several index-sequence tables.
-
-See [`Table`](@ref) for more details.
+Get the internal part of an index.
 """
-function Base.union(tables::Table...)
-    @assert mapreduce(table->table.by, ==, tables) "union error: all input tables should have the same `by` attribute."
-    indices = (tables|>eltype|>keytype)[]
-    for table in tables
-        for index in keys(table)
-            push!(indices, index)
-        end
-    end
-    Table(indices, tables[1].by)
+@inline @generated function iid(index::Index)
+    exprs = [:(getfield(index, $name)) for name in QuoteNode.(index|>iidtype|>fieldnames)]
+    return :(iidtype(index)($(exprs...)))
 end
 
 """
-    reverse(table::Table) -> Dict{Int, Set{<:Index}}
+    adjoint(index::Index) -> typeof(index)
 
-Convert an index-sequence table to a sequence-indices table.
-
-Since different indices may correspond to the same sequence, the reverse is a one-to-many map.
+Get the adjoint of an index.
 """
-function Base.reverse(table::Table)
-    result = Dict{Int, Set{table|>keytype}}()
-    for (index, seq) in table
-        haskey(result, seq) || (result[seq] = Set{table|>keytype}())
-        push!(result[seq], index)
-    end
-    result
+@inline Base.adjoint(index::Index) = rawtype(typeof(index))(index|>pid, index|>iid|>adjoint)
+
+"""
+    union(::Type{P}, ::Type{I}) where {P<:PID, I<:IID}
+
+Combine a concrete `PID` type and a concrete `IID` type to a concrete `Index` type.
+"""
+@inline Base.union(::Type{P}, ::Type{I}) where {P<:PID, I<:IID} = Index{P, I}
+
+"""
+    OID(index::Index, rcoord, icoord)
+    OID(index::Index; rcoord, icoord)
+
+Operator id.
+"""
+struct OID{I<:Index, V<:SVector} <: AbstractOID
+    index::I
+    rcoord::V
+    icoord::V
+    OID(index::Index, rcoord::V, icoord::V) where {V<:SVector} = new{typeof(index), V}(index, oidcoord(rcoord), oidcoord(icoord))
 end
-
-"""
-    reset!(table::Table, indices::AbstractVector{<:Index}) -> Table
-    reset!(table::Table, config::Config) -> Table
-
-Reset a table.
-"""
-function reset!(table::Table, indices::AbstractVector{<:Index})
-    empty!(table)
-    tuples = [table.by(index) for index in indices]
-    permutation = sortperm(tuples, alg=Base.Sort.QuickSort)
-    count = 1
-    for i = 1:length(tuples)
-        (i > 1) && (tuples[permutation[i]] != tuples[permutation[i-1]]) && (count += 1)
-        table[indices[permutation[i]]] = count
-    end
-    table
-end
-function reset!(table::Table, config::Config)
-    indices = union(config|>keytype, config|>valtype|>eltype)[]
-    for (pid, internal) in config
-        for iid in internal
-            push!(indices, (indices|>eltype)(pid, iid))
-        end
-    end
-    reset!(table, indices)
-end
-
-"""
-    LaTeX{SP, SB}(body) where {SP, SB}
-
-LaTeX string representation.
-"""
-struct LaTeX{SP, SB, B}
-    body::B
-    function LaTeX{SP, SB}(body=nothing) where {SP, SB}
-        @assert isa(SP, Tuple{Vararg{Symbol}}) && isa(SB, Tuple{Vararg{Symbol}}) "LaTeX error: SP and SB must be tuple of symbols."
-        new{SP, SB, typeof(body)}(body)
-    end
-end
-latexsuperscript(::Type{<:LaTeX{SP}}) where {SP} = SP
-latexsubscript(::Type{<:LaTeX{SP, SB} where SP}) where {SB} = SB
-
+@inline OID(index::Index, rcoord, icoord) = OID(index, SVector{length(rcoord)}(rcoord), SVector{length(icoord)}(icoord))
+@inline OID(index::Index; rcoord, icoord) = OID(index, rcoord, icoord)
+@inline Base.hash(oid::OID, h::UInt) = hash((oid.index, Tuple(oid.rcoord)), h)
+@inline Base.propertynames(::ID{OID}) = (:indexes, :rcoords, :icoords)
 @generated function oidcoord(vector::SVector{N, Float}) where N
     exprs = [:((vector[$i] === -0.0) ? 0.0 : vector[$i]) for i = 1:N]
     return :(SVector($(exprs...)))
 end
 
 """
-    OID(index::Index, ::Nothing, ::Nothing, seq::Union{Nothing, Int})
-    OID(index::Index, rcoord::SVector{N, Float}, icoord::SVector{N, Float}, seq::Union{Nothing, Int}) where N
-    OID(index::Index, rcoord::Vector{Float}, icoord::Vector{Float}, seq::Union{Nothing, Int})
-    OID(index::Index; rcoord::Union{Nothing, SVector, Vector{Float}}=nothing, icoord::Union{Nothing, SVector, Vector{Float}}=nothing, seq::Union{Nothing, Int}=nothing)
-
-Operator id.
-"""
-struct OID{I<:Index, RC<:Union{Nothing, SVector}, IC<:Union{Nothing, SVector}, S<:Union{Nothing, Int}} <: SimpleID
-    index::I
-    rcoord::RC
-    icoord::IC
-    seq::S
-    OID(index::Index, ::Nothing, ::Nothing, seq::Union{Nothing, Int}) = new{typeof(index), Nothing, Nothing, typeof(seq)}(index, nothing, nothing, seq)
-    function OID(index::Index, rcoord::SVector{N, Float}, icoord::SVector{N, Float}, seq::Union{Nothing, Int}) where N
-        new{typeof(index), SVector{N, Float}, SVector{N, Float}, typeof(seq)}(index, oidcoord(rcoord), oidcoord(icoord), seq)
-    end
-end
-function OID(index::Index, rcoord::Vector{Float}, icoord::Vector{Float}, seq::Union{Nothing, Int})
-    OID(index, SVector{length(rcoord)}(rcoord), SVector{length(icoord)}(icoord), seq)
-end
-function OID(index::Index;
-            rcoord::Union{Nothing, SVector, Vector{Float}}=nothing,
-            icoord::Union{Nothing, SVector, Vector{Float}}=nothing,
-            seq::Union{Nothing, Int}=nothing
-            )
-    OID(index, rcoord, icoord, seq)
-end
-totuple(::Nothing) = nothing
-@generated totuple(v::SVector{N}) where {N} = Expr(:tuple, [:(v[$i]) for i = 1:N]...)
-Base.hash(oid::OID{<:Index}, h::UInt) = hash((oid.index, totuple(oid.rcoord)), h)
-Base.fieldnames(::Type{<:OID}) = (:index, :rcoord, :icoord, :seq)
-Base.propertynames(::ID{OID}) = (:indexes, :rcoords, :icoords, :seqs)
-
-"""
     show(io::IO, oid::OID)
 
 Show an operator id.
 """
-function Base.show(io::IO, oid::OID)
-    @printf io "OID(%s" oid.index
-    (oid.rcoord === nothing) ? (@printf io ", :") : (@printf io ", %s" oid.rcoord)
-    (oid.icoord === nothing) ? (@printf io ", :") : (@printf io ", %s" oid.icoord)
-    @printf io ", %s)" (oid.seq === nothing) ? ":" : oid.seq
-end
-
-"""
-    repr(oid::OID, l::LaTeX) -> String
-
-LaTeX string representation of an oid.
-"""
-Base.repr(oid::OID, l::LaTeX) = @sprintf "%s^{%s}_{%s}" script(oid, l, Val(:B)) join(script(oid, l, Val(:SP)), ", ") join(script(oid, l, Val(:SB)), ", ")
+@inline Base.show(io::IO, oid::OID) = @printf io "OID(%s, %s, %s)" oid.index oid.rcoord oid.icoord
 
 """
     adjoint(oid::OID) -> typeof(oid)
@@ -397,168 +195,52 @@ Base.repr(oid::OID, l::LaTeX) = @sprintf "%s^{%s}_{%s}" script(oid, l, Val(:B)) 
 
 Get the adjoint of an operator id.
 """
-Base.adjoint(oid::OID) = OID(oid.index', oid.rcoord, oid.icoord, oid.seq)
-@generated Base.adjoint(oid::ID{OID, N}) where {N} = Expr(:call, :ID, [:(oid[$i]') for i = N:-1:1]...)
+@inline Base.adjoint(oid::OID) = OID(oid.index', oid.rcoord, oid.icoord)
+@inline @generated Base.adjoint(oid::ID{OID, N}) where N = Expr(:call, :ID, [:(oid[$i]') for i = N:-1:1]...)
 
 """
-    isHermitian(oid::ID{OID, N}) where N -> Bool
+    oidtype(I::Type{<:Internal}, P::Type{<:Point}, ::Val)
 
-Judge whether an operator id is Hermitian.
+Get the compatible oid type from the combination of the internal part and the spatial part.
 """
-function isHermitian(oid::ID{OID, N}) where N
-    for i = 1:((N+1)÷2)
-        (oid[i]' == oid[N+1-i]) || return false
-    end
-    return true
-end
+@inline oidtype(I::Type{<:Internal}, P::Type{<:Point}, ::Val) = OID{union(P|>pidtype, I|>eltype), SVector{P|>dimension, Float}}
 
 """
-    script(oid::OID, ::Val{attr}) where attr -> String
-
-Get the `:rcoord/:icoord` script of an oid.
-"""
-@generated function script(oid::OID, ::Val{attr}) where attr
-    @assert attr in (:rcoord, :icoord) "script error: not supported attr($attr)."
-    (fieldtype(oid, attr) <: Nothing) ? 'N' : (attr = QuoteNode(attr); :("[$(join(getfield(oid, $attr), ", "))]"))
-end
-
-"""
-    script(oid::OID, l::LaTeX, ::Val{:B}) -> Any
-    script(oid::OID, l::LaTeX, ::Val{:SP}) -> Tuple
-    script(oid::OID, l::LaTeX, ::Val{:SB}) -> Tuple
-
-Get the body/superscript/subscript of the latex string representation of an oid.
-"""
-@generated script(oid::OID, l::LaTeX, ::Val{:B}) = (fieldtype(l, :body) <: Nothing) ? :(oid.index.scope) : :(l.body)
-@generated script(oid::OID, l::LaTeX, ::Val{:SP}) = Expr(:tuple, [:(script(oid, Val($super))) for super in QuoteNode.(l|>latexsuperscript)]...)
-@generated script(oid::OID, l::LaTeX, ::Val{:SB}) = Expr(:tuple, [:(script(oid, Val($sub))) for sub in QuoteNode.(l|>latexsubscript)]...)
-
-"""
-    coordon
-
-Indicate that the `:icoord` and `:rcoord` attributes in an oid should not be nothing.
-"""
-const coordon = Val(true)
-
-"""
-    coordoff
-
-Indicate that the `:icoord` and `:rcoord` attributes in an oid should be nothing
-"""
-const coordoff = Val(false)
-
-"""
-    oidtype(I::Type{<:IID}, B::Type{<:AbstractBond}, ::Type{Nothing}, ::Val{true})
-    oidtype(I::Type{<:IID}, B::Type{<:AbstractBond}, ::Type{<:Table}, ::Val{true})
-    oidtype(I::Type{<:IID}, B::Type{<:AbstractBond}, ::Type{Nothing}, ::Val{false})
-    oidtype(I::Type{<:IID}, B::Type{<:AbstractBond}, ::Type{<:Table}, ::Val{false})
-
-Get the compatible oid type.
-"""
-oidtype(I::Type{<:IID}, B::Type{<:AbstractBond}, ::Type{Nothing}, ::Val{true}) = OID{union(B|>pidtype, I), SVector{B|>dimension, Float}, SVector{B|>dimension, Float}, Nothing}
-oidtype(I::Type{<:IID}, B::Type{<:AbstractBond}, ::Type{<:Table}, ::Val{true}) = OID{union(B|>pidtype, I), SVector{B|>dimension, Float}, SVector{B|>dimension, Float}, Int}
-oidtype(I::Type{<:IID}, B::Type{<:AbstractBond}, ::Type{Nothing}, ::Val{false}) = OID{union(B|>pidtype, I), Nothing, Nothing, Nothing}
-oidtype(I::Type{<:IID}, B::Type{<:AbstractBond}, ::Type{<:Table}, ::Val{false}) = OID{union(B|>pidtype, I), Nothing, Nothing, Int}
-
-"""
-    angle(id::ID{OID}, vectors::AbstractVector{<:AbstractVector{Float}}, values::AbstractVector{Float}) -> Float
-
-Get the total twist phase of an id.
-"""
-@generated function Base.angle(id::ID{OID}, vectors::AbstractVector{<:AbstractVector{Float}}, values::AbstractVector{Float})
-    Expr(:call, :+, [:(angle(id[$i], vectors, values)) for i = 1:rank(id)]...)
-end
-
-"""
-    Operator{V<:Number, I<:ID{OID}} <: Element{V, I}
+    Operator{V<:Number, I<:ID{AbstractOID}} <: Element{V, I}
 
 Abstract type for an operator.
 """
-abstract type Operator{V<:Number, I<:ID{OID}} <: Element{V, I} end
-function (O::Type{<:Operator})( value,
-                                indexes::NTuple{N, Index};
-                                rcoords::Union{Nothing, NTuple{N, SVector{M, Float}}}=nothing,
-                                icoords::Union{Nothing, NTuple{N, SVector{M, Float}}}=nothing,
-                                seqs::Union{Nothing, NTuple{N, Int}}=nothing
-                                ) where {N, M}
-    (rcoords === nothing) && (rcoords = ntuple(i->nothing, N))
-    (icoords === nothing) && (icoords = ntuple(i->nothing, N))
-    (seqs === nothing) && (seqs = ntuple(i->nothing, N))
-    return O(value, ID(OID, indexes, rcoords, icoords, seqs))
-end
-
-const latexformats = Dict{Symbol, LaTeX}()
-"""
-    latexformat(T::Type{<:Operator}) -> LaTeX
-    latexformat(T::Type{<:Operator}, l::LaTeX) -> LaTeX
-
-Get/Set the latex format for a subtype of `Operator`.
-"""
-latexformat(T::Type{<:Operator}) = latexformats[nameof(T)]
-latexformat(T::Type{<:Operator}, l::LaTeX) = latexformats[nameof(T)] = l
+abstract type Operator{V<:Number, I<:ID{AbstractOID}} <: Element{V, I} end
 
 """
     show(io::IO, opt::Operator)
-    show(io::IO, ::MIME"text/latex", opt::Operator)
 
 Show an operator.
 """
-Base.show(io::IO, opt::Operator) = @printf io "%s(%s, %s)" nameof(typeof(opt)) decimaltostr(opt.value) opt.id
-Base.show(io::IO, ::MIME"text/latex", opt::Operator) = show(io, MIME"text/latex"(), latexstring(repr(opt)))
+Base.show(io::IO, opt::Operator) = @printf io "%s(%s, %s)" nameof(typeof(opt)) decimaltostr(Number(opt)) id(opt)
 
 """
     adjoint(opt::Operator) -> Operator
 
 Get the adjoint of an operator.
 """
-Base.adjoint(opt::Operator) = rawtype(typeof(opt))(opt.value', opt.id')
-
-"""
-    repr(opt::Operator, l::Union{LaTeX, Nothing}=nothing) -> String
-
-Get the latex string representation of an operator.
-"""
-Base.repr(opt::Operator, ::Nothing=nothing) = repr(opt, latexformat(typeof(opt)))
-function Base.repr(opt::Operator, l::LaTeX)
-    (rank(opt) == 0) && return replace(valuetolatextext(opt.value), " "=>"")
-    return @sprintf "%s%s" valuetostr(opt.value) join(NTuple{rank(opt), String}(repr(opt.id[i], l) for i = 1:rank(opt)), "")
-end
-function valuetostr(v)
-    (v == 1) && return ""
-    (v == -1) && return "-"
-    result = valuetolatextext(v)
-    if occursin(" ", result) || (isa(v, Complex) && (real(v) ≠ 0) && (imag(v) ≠ 0))
-        bra, ket = occursin("(", result) ? ("[", "]") : ("(", ")")
-        result = @sprintf "%s%s%s" bra replace(result, " "=>"") ket
-    end
-    return result
-end
-valuetolatextext(value::Union{Real, Complex}) = decimaltostr(value)
-function valuetolatextext(value)
-    io = IOBuffer()
-    if showable(MIME"text/latex"(), value)
-        show(IOContext(io, :limit=>false), MIME"text/latex"(), value)
-    else
-        show(IOContext(io, :limit=>false), MIME"text/plain"(), value)
-    end
-    return replace(replace(String(take!(io)), "\\begin{equation*}" => ""), "\\end{equation*}" => "")
-end
+@inline Base.adjoint(opt::Operator) = rawtype(typeof(opt))(Number(opt)', id(opt)')
 
 """
     isHermitian(opt::Operator) -> Bool
 
 Judge whether an operator is Hermitian.
 """
-isHermitian(opt::Operator) = isa(opt.value, Real) && isHermitian(opt.id)
+@inline isHermitian(opt::Operator) = isa(Number(opt), Real) && isHermitian(id(opt))
 
 """
     rcoord(opt::Operator) -> SVector
 
 Get the whole rcoord of an operator.
 """
-@generated function rcoord(opt::Operator)
-    (rank(opt) == 1) && return :(opt.id[1].rcoord)
-    (rank(opt) == 2) && return :(opt.id[1].rcoord - opt.id[2].rcoord)
+@inline function rcoord(opt::Operator{<:Number, <:ID{OID}})
+    rank(opt)==1 && return id(opt)[1].rcoord
+    rank(opt)==2 && return id(opt)[1].rcoord-id(opt)[2].rcoord
     error("rcoord error: not supported rank($(rank(opt))) of $(nameof(opt)).")
 end
 
@@ -567,38 +249,21 @@ end
 
 Get the whole icoord of an operator.
 """
-@generated function icoord(opt::Operator)
-    (rank(opt) == 1) && return :(opt.id[1].icoord)
-    (rank(opt) == 2) && return :(opt.id[1].icoord - opt.id[2].icoord)
+@inline function icoord(opt::Operator{<:Number, <:ID{OID}})
+    rank(opt)==1 && return id(opt)[1].icoord
+    rank(opt)==2 && return id(opt)[1].icoord-id(opt)[2].icoord
     error("icoord error: not supported rank($(rank(opt))) of $(nameof(opt)).")
 end
-
-"""
-    sequence(opt::Operator, table=nothing) -> NTuple{rank(opt), Int}
-
-Get the sequence of the oids of an operator according to a table.
-"""
-@generated function sequence(opt::Operator, table=nothing)
-    (table <: Nothing) && return :(opt.id.seqs::NTuple{rank(opt), Int})
-    return Expr(:tuple, [:(get(table, opt.id[$i].index, nothing)) for i = 1:rank(opt)]...)
-end
-
-"""
-    otype
-
-Get the compatible operator type from a term type, a bond type and a table type.
-"""
-function otype end
 
 """
     Operators(opts::Operator...)
 
 A set of operators.
 
-Type alias for `Elements{<:ID{OID}, <:Operator}`.
+Type alias for `Elements{<:ID{AbstractOID}, <:Operator}`.
 """
-const Operators{I<:ID{OID}, O<:Operator} = Elements{I, O}
-Operators(opts::Operator...) = Elements(opts...)
+const Operators{I<:ID{AbstractOID}, O<:Operator} = Elements{I, O}
+@inline Operators(opts::Operator...) = Elements(opts...)
 
 """
     adjoint(opts::Operators) -> Operators
@@ -609,32 +274,10 @@ function Base.adjoint(opts::Operators)
     result = Operators{opts|>keytype, opts|>valtype}()
     for opt in values(opts)
         nopt = opt |> adjoint
-        result[nopt.id] = nopt
+        result[id(nopt)] = nopt
     end
     return result
 end
-
-"""
-    repr(opts::Operators, l::Union{LaTeX, Nothing}=nothing) -> String
-
-Get the latex string representation of a set of operators.
-"""
-function Base.repr(opts::Operators, l::Union{LaTeX, Nothing}=nothing)
-    result = String[]
-    for (i, opt) in enumerate(values(opts))
-        rep = repr(opt, l)
-        (i > 1) && (rep[1] != '-') && push!(result, "+")
-        push!(result, rep)
-    end
-    return join(result, "")
-end
-
-"""
-    show(io::IO, ::MIME"text/latex", opts::Operators)
-
-Show latex formed operators.
-"""
-Base.show(io::IO, ::MIME"text/latex", opts::Operators) = show(io, MIME"text/latex"(), latexstring(repr(opts)))
 
 """
     summary(io::IO, opts::Operators)
@@ -648,74 +291,424 @@ Base.summary(io::IO, opts::Operators) = @printf io "Operators{%s}" valtype(opts)
 
 Judge whether a set of operators as a whole is Hermitian.
 """
-isHermitian(opts::Operators) = opts == opts'
+@inline isHermitian(opts::Operators) = opts == opts'
 
 """
-    twist(operator::Operator, vectors::AbstractVector{<:AbstractVector{Float}}, values::AbstractVector{Float}) -> Operator
+    Metric <: Function
 
-Twist an operator.
+The rules for measuring a concrete oid so that oids can be compared.
+
+As a function, every instance should accept only one positional argument, i.e. the concrete oid to be measured.
 """
-function twist(operator::Operator, vectors::AbstractVector{<:AbstractVector{Float}}, values::AbstractVector{Float})
-    replace(operator, value=operator.value*exp(1im*angle(operator.id, vectors, values)))
+abstract type Metric <: Function end
+@inline Base.:(==)(m₁::T, m₂::T) where {T<:Metric} = ==(efficientoperations, m₁, m₂)
+@inline Base.isequal(m₁::T, m₂::T) where {T<:Metric} = isequal(efficientoperations, m₁, m₂)
+@inline Base.valtype(::Type{<:Metric}, ::Type{I}) where {I<:AbstractOID}= I
+@inline (::Metric)(oid::AbstractOID) = oid
+
+"""
+    OIDToTuple{Fields} <: Metric
+
+A rule that converts an oid to a tuple by iterating over a set of selected fields in a specific order.
+"""
+struct OIDToTuple{Fields} <: Metric
+    OIDToTuple(fields::Tuple{Vararg{Symbol}}) = new{fields}()
 end
+@inline OIDToTuple(fields::Symbol...) = OIDToTuple(fields)
+
+"""
+    keys(::OIDToTuple{Fields}) where Fields -> Fields
+    keys(::Type{<:OIDToTuple{Fields}}) where Fields -> Fields
+
+Get the names of the selected fields.
+"""
+@inline Base.keys(::OIDToTuple{Fields}) where Fields = Fields
+@inline Base.keys(::Type{<:OIDToTuple{Fields}}) where Fields = Fields
+
+"""
+    filter(f::Function, oidtotuple::OIDToTuple) -> OIDToTuple
+
+Filter the selected fields.
+"""
+@inline Base.filter(f::Function, oidtotuple::OIDToTuple) = OIDToTuple(Tuple(field for field in keys(oidtotuple) if f(field)))
+
+"""
+    OIDToTuple(::Type{I}) where {I<:Index}
+    OIDToTuple(::Type{I}) where {I<:OID}
+
+Construct the convertion rule from the information of subtypes of `AbstractOID`.
+"""
+@inline OIDToTuple(::Type{I}) where {I<:Index} = OIDToTuple(I|>fieldnames)
+@inline OIDToTuple(::Type{I}) where {I<:OID} = OIDToTuple(fieldtype(I, :index))
+
+"""
+    valtype(::Type{<:OIDToTuple}, ::Type{<:Index})
+    valtype(::Type{<:OIDToTuple}, ::Type{<:OID})
+
+Get the valtype of applying an `OIDToTuple` rule to a subtype of `AbstractOID`.
+"""
+@inline @generated function Base.valtype(::Type{M}, ::Type{I}) where {M<:OIDToTuple, I<:Index}
+    types = [fieldtype(I, field) for field in keys(M)]
+    return  Expr(:curly, :Tuple, types...)
+end
+@inline @generated Base.valtype(::Type{M}, ::Type{I}) where {M<:OIDToTuple, I<:OID} = valtype(M, fieldtype(I, :index))
+
+"""
+    (oidtotuple::OIDToTuple)(index::Index) -> Tuple
+    (oidtotuple::OIDToTuple)(oid::OID) -> Tuple
+
+Convert a concrete oid to a tuple.
+"""
+@inline @generated function (oidtotuple::OIDToTuple)(index::Index)
+    exprs = [:(getfield(index, $name)) for name in QuoteNode.(keys(oidtotuple))]
+    return Expr(:tuple, exprs...)
+end
+@inline (oidtotuple::OIDToTuple)(oid::OID) = oidtotuple(oid.index)
+
+"""
+    Table{I, B<:Metric} <: CompositeDict{I, Int}
+
+The table of oid-sequence pairs.
+"""
+struct Table{I, B<:Metric} <: CompositeDict{I, Int}
+    by::B
+    contents::Dict{I, Int}
+end
+@inline contentnames(::Type{<:Table}) = (:by, :contents)
+@inline Table{I}(by::Metric) where {I<:AbstractOID} = Table(by, Dict{valtype(typeof(by), I), Int}())
+@inline vec2dict(vs::AbstractVector) = Dict{eltype(vs), Int}(v=>i for (i, v) in enumerate(vs))
+
+"""
+    getindex(table::Table, oid::AbstractOID) -> Int
+
+Inquiry the sequence of an oid.
+"""
+@inline Base.getindex(table::Table, oid::AbstractOID) = table[table.by(oid)]
+
+"""
+    haskey(table::Table, oid::AbstractOID) -> Bool
+    haskey(table::Table, id::ID{AbstractOID}) -> Tuple{Vararg{Bool}}
+
+Judge whether a single oid or a set of oids have been assigned with sequences in table.
+"""
+@inline Base.haskey(table::Table, oid::AbstractOID) = haskey(table, table.by(oid))
+@inline Base.haskey(table::Table, oid::OID) = haskey(table, oid.index)
+@inline @generated function Base.haskey(table::Table, id::ID{AbstractOID})
+    exprs = []
+    for i = 1:fieldcount(id)
+        push!(exprs, :(haskey(table, id[$i])))
+    end
+    return Expr(:tuple, exprs...)
+end
+
+"""
+    Table(oids::AbstractVector{<:AbstractOID}, by::Metric)
+
+Convert a set of concrete oids to the corresponding table of oid-sequence pairs.
+
+The input oids are measured by the input `by` function with the duplicates removed. The resulting unique values are sorted, which determines the sequence of the input `oids`. Note that two oids have the same sequence if their converted values are equal to each other.
+"""
+@inline Table(vs::AbstractVector{<:AbstractOID}, by::Metric) = Table(by, [by(v) for v in vs]|>unique!|>sort!|>vec2dict)
+
+"""
+    Table(config::Config, by::Metric) -> Table
+
+Get the oid-sequence table of the whole internal degrees of freedom of a lattice by use of their configurations.
+"""
+function Table(config::Config, by::Metric)
+    result = union(config|>keytype, config|>valtype|>eltype)[]
+    for (pid, internal) in config
+        for iid in internal
+            push!(result, (result|>eltype)(pid, iid))
+        end
+    end
+    return Table(result, by)
+end
+
+"""
+    union(tables::Table...) -> Table
+
+Unite several oid-sequence tables.
+"""
+function Base.union(tables::Table...)
+    @assert mapreduce(table->table.by, ==, tables) "union error: all input tables should have the same `by` attribute."
+    indices = (tables|>eltype|>keytype)[]
+    for table in tables
+        for index in keys(table)
+            push!(indices, index)
+        end
+    end
+    return Table(tables[1].by, indices|>unique!|>sort!|>vec2dict)
+end
+
+"""
+    reset!(table::Table, oids::AbstractVector{<:AbstractOID}) -> Table
+
+Reset a table by a new set of oids.
+"""
+function reset!(table::Table, oids::AbstractVector{<:AbstractOID})
+    empty!(table)
+    for (i, id) in enumerate([table.by(oid) for oid in oids]|>unique!|>sort!)
+        table[id] = i
+    end
+    return table
+end
+
+"""
+    reset!(table::Table, config::Config) -> Table
+
+Reset a table by a complete configuration of internal degrees of freedom on a lattice.
+"""
+function reset!(table::Table, config::Config)
+    indices = union(config|>keytype, config|>valtype|>eltype)[]
+    for (pid, internal) in config
+        for iid in internal
+            push!(indices, (indices|>eltype)(pid, iid))
+        end
+    end
+    reset!(table, indices)
+end
+
+"""
+    sequence(opt::Operator, table::AbstractDict) -> NTuple{rank(opt), Int}
+
+Get the sequence of the oids of an operator according to a table.
+"""
+@inline @generated function sequence(opt::Operator, table::AbstractDict{<:Any,Int})
+    return Expr(:tuple, [:(table[id(opt)[$i]]) for i = 1:rank(opt)]...)
+end
+
+"""
+    LaTeX{SP, SB}(body) where {SP, SB}
+
+LaTeX string representation.
+"""
+struct LaTeX{SP, SB, B, O}
+    body::B
+    options::O
+    function LaTeX{SP, SB}(body; options...) where {SP, SB}
+        @assert isa(SP, Tuple{Vararg{Symbol}}) && isa(SB, Tuple{Vararg{Symbol}}) "LaTeX error: SP and SB must be tuple of symbols."
+        new{SP, SB, typeof(body), typeof(options)}(body, options)
+    end
+end
+@inline superscript(::Type{<:LaTeX{SP}}) where {SP} = SP
+@inline subscript(::Type{<:LaTeX{SP, SB} where SP}) where {SB} = SB
+
+"""
+    latexname(T::Type{<:AbstractOID}) -> Symbol
+
+Get the name of a type of `AbstractOID` in the latex format lookups.
+"""
+@inline latexname(T::Type{<:AbstractOID}) = nameof(T)
+
+const latexformats = Dict{Symbol, LaTeX}()
+"""
+    latexformat(T::Type{<:AbstractOID}) -> LaTeX
+    latexformat(T::Type{<:AbstractOID}, l::LaTeX) -> LaTeX
+
+Get/Set the LaTeX format for a subtype of `Operator`.
+"""
+@inline latexformat(T::Type{<:AbstractOID}) = latexformats[latexname(T)]
+@inline latexformat(T::Type{<:AbstractOID}, l::LaTeX) = latexformats[latexname(T)] = l
+
+"""
+    script(::Val{:BD}, oid::AbstractOID, l::LaTeX) -> Any
+    script(::Val{:SP}, oid::AbstractOID, l::LaTeX) -> Tuple
+    script(::Val{:SB}, oid::AbstractOID, l::LaTeX) -> Tuple
+
+Get the body/superscript/subscript of the LaTeX string representation of an oid.
+"""
+@inline script(::Val{:BD}, oid::AbstractOID, l::LaTeX) = l.body
+@inline @generated script(::Val{:SP}, oid::AbstractOID, l::LaTeX) = Expr(:tuple, [:(script(Val($sup), oid; l.options...)) for sup in QuoteNode.(l|>superscript)]...)
+@inline @generated script(::Val{:SB}, oid::AbstractOID, l::LaTeX) = Expr(:tuple, [:(script(Val($sub), oid; l.options...)) for sub in QuoteNode.(l|>subscript)]...)
+
+"""
+    script(::Val{:rcoord}, oid::OID; kwargs...) -> String
+    script(::Val{:icoord}, oid::OID; kwargs...) -> String
+
+Get the `:rcoord/:icoord` script of an oid.
+"""
+@inline script(::Val{:rcoord}, oid::OID; kwargs...) = @sprintf "[%s]" join(oid.rcoord, ", ")
+@inline script(::Val{:icoord}, oid::OID; kwargs...) = @sprintf "[%s]" join(oid.icoord, ", ")
+
+"""
+    script(::Val{:integeralicoord}, oid::OID; vectors, kwargs...)
+
+Get the integeral script of the icoord of an oid.
+"""
+function script(::Val{:integeralicoord}, oid::OID; vectors, kwargs...)
+    rcoeff = decompose(oid.icoord, vectors...)
+    icoeff = Int.(round.(rcoeff))
+    @assert isapprox(efficientoperations, rcoeff, icoeff) "script error: dismathed icoord of oid and input vectors."
+    return @sprintf "[%s]" join(icoeff, ", ")
+end
+
+"""
+    script(::Val{attr}, oid::OID; kwargs...) where attr
+
+Get the `attr` script of an oid, which is contained in its index.
+"""
+@inline script(::Val{attr}, oid::OID; kwargs...) where attr = script(Val(attr), oid.index; kwargs...)
+
+"""
+    repr(oid::AbstractOID) -> String
+    repr(oid::OID, l::LaTeX) -> String
+
+LaTeX string representation of an oid.
+"""
+@inline Base.repr(oid::AbstractOID) = repr(oid, latexformat(typeof(oid)))
+@inline function Base.repr(oid::AbstractOID, l::LaTeX)
+    @sprintf "%s^{%s}_{%s}" script(Val(:BD), oid, l) join(script(Val(:SP), oid, l), ", ") join(script(Val(:SB), oid, l), ", ")
+end
+
+"""
+    repr(opt::Operator) -> String
+
+Get the string representation of an operator in the LaTeX format.
+"""
+function Base.repr(opt::Operator)
+    rank(opt)==0 && return replace(valuetolatextext(Number(opt)), " "=>"")
+    return @sprintf "%s%s" valuetostr(Number(opt)) join(NTuple{rank(opt), String}(repr(id(opt)[i]) for i = 1:rank(opt)), "")
+end
+function valuetostr(v)
+    v==+1 && return ""
+    v==-1 && return "-"
+    result = valuetolatextext(v)
+    if occursin(" ", result) || (isa(v, Complex) && real(v)≠0 && imag(v)≠0)
+        bra, ket = occursin("(", result) ? ("[", "]") : ("(", ")")
+        result = @sprintf "%s%s%s" bra replace(result, " "=>"") ket
+    end
+    return result
+end
+@inline valuetolatextext(value::Union{Real, Complex}) = decimaltostr(value)
+function valuetolatextext(value)
+    io = IOBuffer()
+    if showable(MIME"text/latex"(), value)
+        show(IOContext(io, :limit=>false), MIME"text/latex"(), value)
+    else
+        show(IOContext(io, :limit=>false), MIME"text/plain"(), value)
+    end
+    return replace(replace(String(take!(io)), "\\begin{equation*}" => ""), "\\end{equation*}" => "")
+end
+
+"""
+    repr(opts::Operators) -> String
+
+Get the string representation of a set of operators in the LaTeX format.
+"""
+function Base.repr(opts::Operators)
+    result = String[]
+    for (i, opt) in enumerate(values(opts))
+        rep = repr(opt)
+        i>1 && rep[1]≠'-' && push!(result, "+")
+        push!(result, rep)
+    end
+    return join(result, "")
+end
+
+"""
+    show(io::IO, ::MIME"text/latex", opt::Operator)
+
+Show an operator.
+"""
+Base.show(io::IO, ::MIME"text/latex", opt::Operator) = show(io, MIME"text/latex"(), latexstring(repr(opt)))
+
+"""
+    show(io::IO, ::MIME"text/latex", opts::Operators)
+
+Show LaTeX formed operators.
+"""
+Base.show(io::IO, ::MIME"text/latex", opts::Operators) = show(io, MIME"text/latex"(), latexstring(repr(opts)))
 
 """
     Boundary{Names}(values::AbstractVector{Float}, vectors::AbstractVector{<:AbstractVector{Float}}) where Names
-    Boundary()
 
 Boundary twist of operators.
 """
-struct Boundary{Names, V<:AbstractVector{Float}}
+struct Boundary{Names, V<:AbstractVector{Float}} <: Function
     values::Vector{Float}
     vectors::Vector{V}
     function Boundary{Names}(values::AbstractVector{Float}, vectors::AbstractVector{<:AbstractVector{Float}}) where Names
-        @assert length(Names) == length(values) == length(vectors) "Boundary error: dismatched names, values and vectors."
+        @assert length(Names)==length(values)==length(vectors) "Boundary error: dismatched names, values and vectors."
         new{Names, eltype(vectors)}(convert(Vector{Float}, values), vectors)
     end
 end
-const boundaryemptyvalues = Float[]
-const boundaryemptyvectors = SVector{0, Float}[]
-Boundary() = Boundary{()}(boundaryemptyvalues, boundaryemptyvectors)
 
 """
     ==(bound1::Boundary, bound2::Boundary) -> Bool
 
 Judge whether two boundaries conditions are equivalent to each other.
 """
-Base.:(==)(bound1::Boundary, bound2::Boundary) = ==(efficientoperations, bound1, bound2)
+@inline Base.:(==)(bound1::Boundary, bound2::Boundary) = ==(efficientoperations, bound1, bound2)
 
 """
     isequal(bound1::Boundary, bound2::Boundary) -> Bool
 
 Judge whether two boundaries conditions are equivalent to each other.
 """
-Base.isequal(bound1::Boundary, bound2::Boundary) = isequal(efficientoperations, bound1, bound2)
+@inline Base.isequal(bound1::Boundary, bound2::Boundary) = isequal(efficientoperations, bound1, bound2)
+
+"""
+    keys(bound::Boundary) -> Tuple{Vararg{Symbol}}
+    keys(::Type{<:Boundary{Names}}) where Names -> Names
+
+Get the names of the boundary parameters.
+"""
+@inline Base.keys(bound::Boundary) = keys(typeof(bound))
+@inline Base.keys(::Type{<:Boundary{Names}}) where Names = Names
 
 """
     (bound::Boundary)(operator::Operator) -> Operator
-    (bound::Boundary{()})(operator::Operator) -> Operator
 
 Get the boundary twisted operator.
 """
-(bound::Boundary)(operator::Operator) = twist(operator, bound.vectors, bound.values)
-(bound::Boundary{()})(operator::Operator) = operator
+@inline (bound::Boundary)(operator::Operator) = twist(operator, bound.vectors, bound.values)
+
+"""
+    twist(operator::Operator, vectors::AbstractVector{<:AbstractVector{Float}}, values::AbstractVector{Float}) -> Operator
+
+Twist an operator.
+"""
+@inline function twist(operator::Operator, vectors::AbstractVector{<:AbstractVector{Float}}, values::AbstractVector{Float})
+    replace(operator, operator.value*exp(1im*angle(operator.id, vectors, values)))
+end
 
 """
     angle(bound::Boundary, operator::Operator) -> Float
-    angle(bound::Boundary{()}, operator::Operator) -> Int
 
 Get the boundary twist phase of an operator.
 """
-Base.angle(bound::Boundary, operator::Operator) = angle(operator.id, bound.vectors, bound.values)
-Base.angle(bound::Boundary{()}, operator::Operator) = 0
+@inline Base.angle(bound::Boundary, operator::Operator) = angle(operator.id, bound.vectors, bound.values)
 
 """
-    update!(bound::Boundary{Names}, args...; kwargs...) where Names -> Boundary
+    angle(id::ID{AbstractOID}, vectors::AbstractVector{<:AbstractVector{Float}}, values::AbstractVector{Float}) -> Float
+
+Get the total twist phase of an id.
+"""
+@inline @generated function Base.angle(id::ID{AbstractOID}, vectors::AbstractVector{<:AbstractVector{Float}}, values::AbstractVector{Float})
+    Expr(:call, :+, [:(angle(id[$i], vectors, values)) for i = 1:rank(id)]...)
+end
+
+"""
+    update!(bound::Boundary, args...; kwargs...) -> Boundary
 
 Update the values of the boundary twisted phase.
 """
-@generated function update!(bound::Boundary{Names}, args...; kwargs...) where Names
-    return Expr(:block, [:(bound.values[$i] = get(kwargs, $name, bound.values[$i])) for (i, name) in enumerate(QuoteNode.(Names))]..., :(bound))
+@inline @generated function update!(bound::Boundary, args...; kwargs...)
+    exprs = []
+    for (i, name) in enumerate(QuoteNode.(keys(bound)))
+        push!(exprs, :(bound.values[$i] = get(kwargs, $name, bound.values[$i])))
+    end
+    return Expr(:block, exprs..., :(return bound))
 end
+
+"""
+    plain
+
+Plain boundary condition without any twist.
+"""
+const plain = Boundary{()}(Float[], SVector{0, Float}[])
+@inline Base.angle(::typeof(plain), operator::Operator) = 0
+@inline (::typeof(plain))(operator::Operator) = operator
 
 end #module

@@ -1,28 +1,29 @@
 using Test
 using QuantumLattices.Prerequisites.Traits
 
-import QuantumLattices.Prerequisites.Traits: parameternames, isparameterbound, contentnames, getcontent, dissolve
+import QuantumLattices.Prerequisites.Traits: parameternames, isparameterbound, contentnames, getcontent, contenttype, dissolve
 
 abstract type FT{T} end
-parameternames(::Type{<:FT}) = (:content,)
-isparameterbound(::Type{<:FT}, ::Val{:content}, D) = !isconcretetype(D)
-contentnames(::Type{<:FT}) = (:content,)
-dissolve(m::FT, ::Val{:content}, f::Function, args::Tuple, kwargs::NamedTuple) = f(getcontent(m, :content), args...; kwargs...)
+@inline parameternames(::Type{<:FT}) = (:content,)
+@inline isparameterbound(::Type{<:FT}, ::Val{:content}, D) = !isconcretetype(D)
+@inline contentnames(::Type{<:FT}) = (:content,)
+@inline dissolve(m::FT, ::Val{:content}, f::Function, args::Tuple, kwargs::NamedTuple) = f(getcontent(m, :content), args...; kwargs...)
 
 struct SameNameField <: FT{Vector{Int}}
     info::String
     content::Vector{Int}
 end
-parameternames(::Type{SameNameField}) = ()
-contentnames(::Type{SameNameField}) = (:info, :content)
+@inline parameternames(::Type{SameNameField}) = ()
+@inline contentnames(::Type{SameNameField}) = (:info, :content)
 
 struct DiffNameField <: FT{Vector{Int}}
     info::String
     table::Vector{Int}
 end
-parameternames(::Type{DiffNameField}) = ()
-contentnames(::Type{DiffNameField}) = (:info, :content)
-getcontent(m::DiffNameField, ::Val{:content}) = getfield(m, :table)
+@inline parameternames(::Type{DiffNameField}) = ()
+@inline contentnames(::Type{DiffNameField}) = (:info, :content)
+@inline getcontent(m::DiffNameField, ::Val{:content}) = getfield(m, :table)
+@inline contenttype(DF::Type{DiffNameField}, ::Val{:content}) = fieldtype(DF, :table)
 
 @testset "abstracttypehelper" begin
     @test DataType(Int) == Int
@@ -83,6 +84,9 @@ getcontent(m::DiffNameField, ::Val{:content}) = getfield(m, :table)
 
     @test contentnames(SameNameField) == (:info, :content)
     @test hasparameter(SameNameField, :content) == false
+    @test contenttype(SameNameField, :info) == contenttype(SameNameField, Val(:info)) == String
+    @test contenttype(SameNameField, :content) == contenttype(SameNameField, Val(:content)) == Vector{Int}
+    @test contenttypes(SameNameField) == Tuple{String, Vector{Int}}
 
     a = SameNameField("abcd", [1, 2, 3, 4])
     @test getcontent(a, :content) == getcontent(a, 2) == getcontent(a, Val(:content)) == [1, 2, 3, 4]
@@ -90,6 +94,9 @@ getcontent(m::DiffNameField, ::Val{:content}) = getfield(m, :table)
 
     @test contentnames(DiffNameField) == (:info, :content)
     @test hasparameter(DiffNameField, :content) == false
+    @test contenttype(DiffNameField, :info) == contenttype(DiffNameField, Val(:info)) == String
+    @test contenttype(DiffNameField, :content) == contenttype(DiffNameField, Val(:content)) == Vector{Int}
+    @test contenttypes(DiffNameField) == Tuple{String, Vector{Int}}
 
     b = DiffNameField("abcd", [1, 2, 3, 4])
     @test getcontent(b, :content) == getcontent(b, 2) == getcontent(b, Val(:content)) == [1, 2, 3, 4]

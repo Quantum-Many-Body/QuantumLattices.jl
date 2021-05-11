@@ -1,8 +1,13 @@
 module Interfaces
 
-export rank, dimension
+export id, rank, dimension
 export ⊕, ⊗, ⋅, add!, sub!, mul!, div!
 export expand, expand!, decompose, decompose!, permute
+
+"""
+ID.
+"""
+function id end
 
 "Rank."
 function rank end
