@@ -10,51 +10,61 @@ using QuantumLattices.Mathematics.Combinatorics: Permutations
 using QuantumLattices.Mathematics.AlgebraOverFields: ID
 
 @testset "SID" begin
-    @test SID(orbital=1, spin=0.5, tag='z')' == SID(orbital=1, spin=0.5, tag='z')
-    @test SID(orbital=1, spin=0.5, tag='x')' == SID(orbital=1, spin=0.5, tag='x')
-    @test SID(orbital=1, spin=0.5, tag='y')' == SID(orbital=1, spin=0.5, tag='y')
-    @test SID(orbital=1, spin=0.5, tag='+')' == SID(orbital=1, spin=0.5, tag='-')
-    @test SID(orbital=1, spin=0.5, tag='-')' == SID(orbital=1, spin=0.5, tag='+')
+    @test SID{1//2}('z', orbital=1)' == SID{1//2}('z', orbital=1)
+    @test SID{1//2}('x', orbital=1)' == SID{1//2}('x', orbital=1)
+    @test SID{1//2}('y', orbital=1)' == SID{1//2}('y', orbital=1)
+    @test SID{1//2}('+', orbital=1)' == SID{1//2}('-', orbital=1)
+    @test SID{1//2}('-', orbital=1)' == SID{1//2}('+', orbital=1)
+
+    sid = SID{3//2}('x')
+    @test string(sid) == "SID{3//2}(1, 'x')"
+    @test replace(sid, tag='z') == SID{3//2}('z')
+    @test totalspin(sid) == totalspin(typeof(sid)) == 3//2
 end
 
 @testset "Matrix" begin
-    @test isapprox(Matrix(SID(1, 0.5, 'z')), [[-0.5, 0.0] [0.0, 0.5]])
-    @test isapprox(Matrix(SID(1, 0.5, 'x')), [[0.0, 0.5] [0.5, 0.0]])
-    @test isapprox(Matrix(SID(1, 0.5, 'y')), [[0.0, -0.5im] [0.5im, 0.0]])
-    @test isapprox(Matrix(SID(1, 0.5, '+')), [[0.0, 1.0] [0.0, 0.0]])
-    @test isapprox(Matrix(SID(1, 0.5, '-')), [[0.0, 0.0] [1.0, 0.0]])
+    @test isapprox(Matrix(SID{1//2}(1, 'z')), [[-0.5, 0.0] [0.0, 0.5]])
+    @test isapprox(Matrix(SID{1//2}(1, 'x')), [[0.0, 0.5] [0.5, 0.0]])
+    @test isapprox(Matrix(SID{1//2}(1, 'y')), [[0.0, -0.5im] [0.5im, 0.0]])
+    @test isapprox(Matrix(SID{1//2}(1, '+')), [[0.0, 1.0] [0.0, 0.0]])
+    @test isapprox(Matrix(SID{1//2}(1, '-')), [[0.0, 0.0] [1.0, 0.0]])
 
-    @test isapprox(Matrix(SID(1, 1.0, 'z')), [[-1.0, 0.0, 0.0] [0.0, 0.0, 0.0] [0.0, 0.0, 1.0]])
-    @test isapprox(Matrix(SID(1, 1.0, 'x')), [[0.0, √2/2, 0.0] [√2/2, 0.0, √2/2] [0.0, √2/2, 0.0]])
-    @test isapprox(Matrix(SID(1, 1.0, 'y')), [[0.0, -√2im/2, 0.0] [√2im/2, 0.0, -√2im/2] [0.0, √2im/2, 0.0]])
-    @test isapprox(Matrix(SID(1, 1.0, '+')), [[0.0, √2, 0.0] [0.0, 0.0, √2] [0.0, 0.0, 0.0]])
-    @test isapprox(Matrix(SID(1, 1.0, '-')), [[0.0, 0.0, 0.0] [√2, 0.0, 0.0] [0.0, √2, 0.0]])
+    @test isapprox(Matrix(SID{1}(1, 'z')), [[-1.0, 0.0, 0.0] [0.0, 0.0, 0.0] [0.0, 0.0, 1.0]])
+    @test isapprox(Matrix(SID{1}(1, 'x')), [[0.0, √2/2, 0.0] [√2/2, 0.0, √2/2] [0.0, √2/2, 0.0]])
+    @test isapprox(Matrix(SID{1}(1, 'y')), [[0.0, -√2im/2, 0.0] [√2im/2, 0.0, -√2im/2] [0.0, √2im/2, 0.0]])
+    @test isapprox(Matrix(SID{1}(1, '+')), [[0.0, √2, 0.0] [0.0, 0.0, √2] [0.0, 0.0, 0.0]])
+    @test isapprox(Matrix(SID{1}(1, '-')), [[0.0, 0.0, 0.0] [√2, 0.0, 0.0] [0.0, √2, 0.0]])
 end
 
 @testset "Spin" begin
-    spin = Spin(atom=1, norbital=2, spin=1.0)
+    spin = Spin{1}(atom=1, norbital=2)
     @test Dims(spin) == (2, 5)
-    @test CartesianIndex(SID(1, 1.0, 'z'), spin) == CartesianIndex(1, 3)
-    @test SID(CartesianIndex(1, 1), spin) == SID(1, 1.0, 'x')
+    @test CartesianIndex(SID{1}(1, 'z'), spin) == CartesianIndex(1, 3)
+    @test SID(CartesianIndex(1, 1), spin) == SID{1}(1, 'x')
+    @test summary(spin) == "10-element Spin{1}"
+    @test totalspin(spin) == totalspin(typeof(spin)) == 1
     @test collect(spin) == [
-        SID(1, 1.0, 'x'), SID(2, 1.0, 'x'), SID(1, 1.0, 'y'), SID(2, 1.0, 'y'), SID(1, 1.0, 'z'), SID(2, 1.0, 'z'),
-        SID(1, 1.0, '+'), SID(2, 1.0, '+'), SID(1, 1.0, '-'), SID(2, 1.0, '-')
+        SID{1}(1, 'x'), SID{1}(2, 'x'), SID{1}(1, 'y'), SID{1}(2, 'y'), SID{1}(1, 'z'), SID{1}(2, 'z'),
+        SID{1}(1, '+'), SID{1}(2, '+'), SID{1}(1, '-'), SID{1}(2, '-')
     ]
 end
 
 @testset "SIndex" begin
-    @test union(PID{Char}, SID) == SIndex{Char}
+    index = SIndex{1//2}(1, 1, 1, 'z')
+    @test string(index) == "SIndex{1//2}(1, 1, 1, 'z')"
+    @test replace(index, tag='x') == SIndex{1//2}(1, 1, 1, 'x')
+    @test totalspin(index) == totalspin(typeof(index)) == 1//2
+    @test union(PID{Char}, SID{1//2}) == SIndex{1//2, Char}
 end
 
 @testset "oidtype" begin
-    @test oidtype(Spin, Point{2, PID{Int}}, Val(:info)) == OID{SIndex{Int}, SVector{2, Float}}
+    @test oidtype(Spin{1//2}, Point{2, PID{Int}}, Val(:info)) == OID{SIndex{1//2, Int}, SVector{2, Float}}
 end
 
 @testset "latex" begin
-    index = SIndex('S', 1, 2, 0.5, 'z')
+    index = SIndex{1//2}('S', 1, 2, 'z')
     @test script(Val(:site), index) == 1
     @test script(Val(:orbital), index) == 2
-    @test script(Val(:spin), index) == 0.5
     @test script(Val(:tag), index) == 'z'
 
     @test latexname(SIndex) == Symbol("SIndex")
@@ -63,12 +73,12 @@ end
 
 @testset "SOperator" begin
     opt = SOperator(1.0, ID(
-        OID(SIndex('a', 1, 1, 0.5, '+'), [0.0, 0.0], [0.0, 0.0]),
-        OID(SIndex('a', 1, 1, 0.5, '-'), [0.0, 0.0], [0.0, 0.0])
+        OID(SIndex{1//2}('a', 1, 1, '+'), [0.0, 0.0], [0.0, 0.0]),
+        OID(SIndex{1//2}('a', 1, 1, '-'), [0.0, 0.0], [0.0, 0.0])
         ))
     @test opt' == SOperator(1.0, ID(
-        OID(SIndex('a', 1, 1, 0.5, '+'), [0.0, 0.0], [0.0, 0.0]),
-        OID(SIndex('a', 1, 1, 0.5, '-'), [0.0, 0.0], [0.0, 0.0])
+        OID(SIndex{1//2}('a', 1, 1, '+'), [0.0, 0.0], [0.0, 0.0]),
+        OID(SIndex{1//2}('a', 1, 1, '-'), [0.0, 0.0], [0.0, 0.0])
         ))
     @test isHermitian(opt)
     @test repr(opt) == "S^{+}_{1, 1}S^{-}_{1, 1}"
@@ -76,16 +86,16 @@ end
 
 @testset "permute" begin
     soptrep(opt::SOperator) = opt.value * prod([Matrix(opt.id[i].index|>iid) for i = 1:rank(opt)])
-    for S in (0.5, 1.0, 1.5)
-        oids = [OID(SIndex('S', 1, 2, S, tag), [0.0, 0.0], [0.0, 0.0]) for tag in ('x', 'y', 'z', '+', '-')]
+    for S in (1//2, 1, 3//2)
+        oids = [OID(SIndex{S}('S', 1, 2, tag), [0.0, 0.0], [0.0, 0.0]) for tag in ('x', 'y', 'z', '+', '-')]
         for (id₁, id₂) in Permutations{2}(oids)
             left = soptrep(SOperator(1, ID(id₁, id₂)))
             right = sum([soptrep(opt) for opt in permute(SOperator, id₁, id₂)])
             @test isapprox(left, right)
         end
     end
-    id₁ = OID(SIndex('S', 1, 2, 0.5, 'z'), [0.0, 0.0], [0.0, 0.0])
-    id₂ = OID(SIndex('S', 2, 2, 0.5, 'z'), [0.0, 0.0], [0.0, 0.0])
+    id₁ = OID(SIndex{1//2}('S', 1, 2, 'z'), [0.0, 0.0], [0.0, 0.0])
+    id₂ = OID(SIndex{1//2}('S', 2, 2, 'z'), [0.0, 0.0], [0.0, 0.0])
     @test permute(SOperator, id₁, id₂) == (SOperator(1, ID(id₂, id₁)),)
 end
 
@@ -105,40 +115,41 @@ end
 
     sc = SpinCoupling(2.0, ('+', '-'), atoms=(1, 1))
     point = Point(PID(1, 1), [0.0, 0.0], [0.0, 0.0])
-    spin = Spin(atom=2, norbital=2, spin=1.0)
+    spin = Spin{1}(atom=2, norbital=2)
     ex = expand(sc, (point, point), (spin, spin), Val(:info))
     @test collect(ex) == []
 
     sc = SpinCoupling(2.0, ('+', '-'), atoms=(1, 2), orbitals=(1, 2))
     p₁, p₂ = Point(PID(1, 1), [0.0], [0.0]), Point(PID(1, 2), [0.5], [0.0])
-    s₁, s₂ = Spin(atom=1, norbital=2, spin=1.0), Spin(atom=2, norbital=2, spin=1.0)
+    s₁, s₂ = Spin{1}(atom=1, norbital=2), Spin{1}(atom=2, norbital=2)
     ex = expand(sc, (p₁, p₂), (s₁, s₂), Val(:info))
     @test Dims(ex) == (1,)
+    @test eltype(ex) == Tuple{Float, ID{OID{SIndex{1, Int}, SVector{1, Float}} , 2}}
     @test collect(ex) == [(2.0, ID(
-        OID(SIndex(1, 1, 1, 1.0, '+'), [0.0], [0.0]),
-        OID(SIndex(1, 2, 2, 1.0, '-'), [0.5], [0.0])
+        OID(SIndex{1}(1, 1, 1, '+'), [0.0], [0.0]),
+        OID(SIndex{1}(1, 2, 2, '-'), [0.5], [0.0])
         ))]
 
     sc = SpinCoupling(2.0, ('+', '-', '+', '-'), orbitals=subscripts"[α α β β](α < β)")
     point = Point(PID(1, 1), [0.0], [0.0])
-    spin = Spin(norbital=3, spin=1.0)
+    spin = Spin{1}(norbital=3)
     ex = expand(sc, (point, point, point, point), (spin, spin, spin, spin), Val(:info))
     @test Dims(ex) == (3,)
     @test collect(ex) == [
-        (2.0, ID(OID(SIndex(1, 1, 1, 1.0, '+'), [0.0], [0.0]),
-                 OID(SIndex(1, 1, 1, 1.0, '-'), [0.0], [0.0]),
-                 OID(SIndex(1, 1, 2, 1.0, '+'), [0.0], [0.0]),
-                 OID(SIndex(1, 1, 2, 1.0, '-'), [0.0], [0.0])
+        (2.0, ID(OID(SIndex{1}(1, 1, 1, '+'), [0.0], [0.0]),
+                 OID(SIndex{1}(1, 1, 1, '-'), [0.0], [0.0]),
+                 OID(SIndex{1}(1, 1, 2, '+'), [0.0], [0.0]),
+                 OID(SIndex{1}(1, 1, 2, '-'), [0.0], [0.0])
                  )),
-        (2.0, ID(OID(SIndex(1, 1, 1, 1.0, '+'), [0.0], [0.0]),
-                 OID(SIndex(1, 1, 1, 1.0, '-'), [0.0], [0.0]),
-                 OID(SIndex(1, 1, 3, 1.0, '+'), [0.0], [0.0]),
-                 OID(SIndex(1, 1, 3, 1.0, '-'), [0.0], [0.0])
+        (2.0, ID(OID(SIndex{1}(1, 1, 1, '+'), [0.0], [0.0]),
+                 OID(SIndex{1}(1, 1, 1, '-'), [0.0], [0.0]),
+                 OID(SIndex{1}(1, 1, 3, '+'), [0.0], [0.0]),
+                 OID(SIndex{1}(1, 1, 3, '-'), [0.0], [0.0])
                  )),
-        (2.0, ID(OID(SIndex(1, 1, 2, 1.0, '+'), [0.0], [0.0]),
-                 OID(SIndex(1, 1, 2, 1.0, '-'), [0.0], [0.0]),
-                 OID(SIndex(1, 1, 3, 1.0, '+'), [0.0], [0.0]),
-                 OID(SIndex(1, 1, 3, 1.0, '-'), [0.0], [0.0])
+        (2.0, ID(OID(SIndex{1}(1, 1, 2, '+'), [0.0], [0.0]),
+                 OID(SIndex{1}(1, 1, 2, '-'), [0.0], [0.0]),
+                 OID(SIndex{1}(1, 1, 3, '+'), [0.0], [0.0]),
+                 OID(SIndex{1}(1, 1, 3, '-'), [0.0], [0.0])
                  ))
     ]
 end
@@ -220,26 +231,26 @@ end
 
 @testset "SpinTerm" begin
     point = Point(PID('a', 1), (0.5, 0.5), (0.0, 0.0))
-    config = Config{Spin}(pid->Spin(atom=pid.site%2, norbital=2, spin=0.5), [point.pid])
+    config = Config{Spin{1//2}}(pid->Spin{1//2}(atom=pid.site%2, norbital=2), [point.pid])
     term = SpinTerm{1}(:h, 1.5, 0, couplings=Sᶻ())
     operators = Operators(
-        SOperator(1.5, ID(OID(SIndex('a', 1, 1, 0.5, 'z'), [0.5, 0.5], [0.0, 0.0]))),
-        SOperator(1.5, ID(OID(SIndex('a', 1, 2, 0.5, 'z'), [0.5, 0.5], [0.0, 0.0])))
+        SOperator(1.5, ID(OID(SIndex{1//2}('a', 1, 1, 'z'), [0.5, 0.5], [0.0, 0.0]))),
+        SOperator(1.5, ID(OID(SIndex{1//2}('a', 1, 2, 'z'), [0.5, 0.5], [0.0, 0.0])))
     )
     @test term|>abbr == :sp
     @test term|>isHermitian == true
     @test expand(term, point, config) == operators
 
     bond = Bond(1, Point(PID('a', 1), (0.0, 0.0), (0.0, 0.0)), Point(PID('b', 1), (0.5, 0.5), (0.0, 0.0)))
-    config = Config{Spin}(pid->Spin(atom=pid.site%2, norbital=2, spin=0.5), [bond.spoint.pid, bond.epoint.pid])
+    config = Config{Spin{1//2}}(pid->Spin{1//2}(atom=pid.site%2, norbital=2), [bond.spoint.pid, bond.epoint.pid])
     term = SpinTerm{2}(:J, 1.5, 1, couplings=Heisenberg())
     operators = Operators(
-        SOperator(1.50, ID(OID(SIndex('b', 1, 2, 0.5, 'z'), [0.5, 0.5], [0.0, 0.0]), OID(SIndex('a', 1, 2, 0.5, 'z'), [0.0, 0.0], [0.0, 0.0]))),
-        SOperator(0.75, ID(OID(SIndex('b', 1, 2, 0.5, '-'), [0.5, 0.5], [0.0, 0.0]), OID(SIndex('a', 1, 2, 0.5, '+'), [0.0, 0.0], [0.0, 0.0]))),
-        SOperator(0.75, ID(OID(SIndex('b', 1, 1, 0.5, '-'), [0.5, 0.5], [0.0, 0.0]), OID(SIndex('a', 1, 1, 0.5, '+'), [0.0, 0.0], [0.0, 0.0]))),
-        SOperator(0.75, ID(OID(SIndex('b', 1, 1, 0.5, '+'), [0.5, 0.5], [0.0, 0.0]), OID(SIndex('a', 1, 1, 0.5, '-'), [0.0, 0.0], [0.0, 0.0]))),
-        SOperator(1.50, ID(OID(SIndex('b', 1, 1, 0.5, 'z'), [0.5, 0.5], [0.0, 0.0]), OID(SIndex('a', 1, 1, 0.5, 'z'), [0.0, 0.0], [0.0, 0.0]))),
-        SOperator(0.75, ID(OID(SIndex('b', 1, 2, 0.5, '+'), [0.5, 0.5], [0.0, 0.0]), OID(SIndex('a', 1, 2, 0.5, '-'), [0.0, 0.0], [0.0, 0.0])))
+        SOperator(1.50, ID(OID(SIndex{1//2}('b', 1, 2, 'z'), [0.5, 0.5], [0.0, 0.0]), OID(SIndex{1//2}('a', 1, 2, 'z'), [0.0, 0.0], [0.0, 0.0]))),
+        SOperator(0.75, ID(OID(SIndex{1//2}('b', 1, 2, '-'), [0.5, 0.5], [0.0, 0.0]), OID(SIndex{1//2}('a', 1, 2, '+'), [0.0, 0.0], [0.0, 0.0]))),
+        SOperator(0.75, ID(OID(SIndex{1//2}('b', 1, 1, '-'), [0.5, 0.5], [0.0, 0.0]), OID(SIndex{1//2}('a', 1, 1, '+'), [0.0, 0.0], [0.0, 0.0]))),
+        SOperator(0.75, ID(OID(SIndex{1//2}('b', 1, 1, '+'), [0.5, 0.5], [0.0, 0.0]), OID(SIndex{1//2}('a', 1, 1, '-'), [0.0, 0.0], [0.0, 0.0]))),
+        SOperator(1.50, ID(OID(SIndex{1//2}('b', 1, 1, 'z'), [0.5, 0.5], [0.0, 0.0]), OID(SIndex{1//2}('a', 1, 1, 'z'), [0.0, 0.0], [0.0, 0.0]))),
+        SOperator(0.75, ID(OID(SIndex{1//2}('b', 1, 2, '+'), [0.5, 0.5], [0.0, 0.0]), OID(SIndex{1//2}('a', 1, 2, '-'), [0.0, 0.0], [0.0, 0.0])))
     )
     @test expand(term, bond, config) == operators
 end

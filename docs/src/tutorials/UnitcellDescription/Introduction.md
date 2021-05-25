@@ -16,26 +16,26 @@ In theory, as long as the above information is told, one could easily write down
 H=tc^†_{1↑}c_{2↑}+tc^†_{2↑}c_{1↑}+tc^†_{1↓}c_{2↓}+tc^†_{2↓}c_{1↓}+Uc^†_{1↑}c_{1↑}c^†_{1↓}c_{1↓}+Uc^†_{2↑}c_{2↑}c^†_{2↓}c_{2↓}
 ```
 
-where ``t`` is the hopping amplitude， ``U`` is the Hubbard interaction strength and the electronic annihilation/creation operator carries a site index and a spin index. Actually, the **unitcell description framework** follows exactly after the above train of thought. For example, the aforementioned system can be constructed by the following codes
+where ``t`` is the hopping amplitude， ``U`` is the Hubbard interaction strength and the electronic annihilation/creation operator $c^\dagger_{i\sigma}/c_{i\sigma}$ carries a site index $i$ ($i=1, 2$) and a spin index $\sigma$ ($\sigma=\uparrow, \downarrow$). Actually, the **unitcell description framework** follows exactly after the above train of thought. For example, the aforementioned system can be constructed by the following codes:
 
 ```@example
 using QuantumLattices
 using SymPy: symbols
 
 # define the unitcell
-lattice = Lattice("L2P", [Point(PID(1), (0.0,)), Point(PID(2), (1.0,))])
+lattice = Lattice("L2P", [Point(PID(1), [0.0]), Point(PID(2), [1.0])])
 
 # define the internal degrees of freedom
-config = Config{Fock}(pid->Fock(norbital=1, nspin=2, nnambu=2), lattice.pids)
+config = Config{Fock{:f}}(pid->Fock{:f}(norbital=1, nspin=2), lattice.pids)
 
 # define the terms
-t = Hopping{'F'}(:t, symbols("t", real=true), 1)
-U = Hubbard{'F'}(:U, symbols("U", real=true))
+t = Hopping(:t, symbols("t", real=true), 1)
+U = Hubbard(:U, symbols("U", real=true))
 
 # get the Hamiltonian
-operators = expand(Generator((t, U), Bonds(lattice), config, nothing, false))
+operators = expand(Generator((t, U), Bonds(lattice), config))
 ```
-The last line displays all the generated operators in the Hamiltonian in the latex form. Here, in the subscript of the electronic annihilation/creation operator, an extra orbital index is also displayed. In the following sections listed below, we will explain in brief how these codes work. Specifically, in [Spatial info of a unitcell](@ref), we will introduce how to construct the unitcell as . For more detailed explanations, the manual of [`Essentials`](@ref essentials) can also be referred.
+The last line displays all the generated operators in the Hamiltonian in the latex form. Here, in the subscript of the electronic annihilation/creation operator, an extra orbital index is also displayed. In the following sections listed below, we will explain in brief how these codes work. Firstly, in the section of [Spatial info of a unitcell](@ref), we will introduce the construction of the unitcell. Secondly, in the section of [Internal degrees of freedom](@ref), we will explain the description of the internal degrees of freedom of different kinds of quantum systems. Thirdly, in the section of [Couplings among different degrees of freedom](@ref), we will discuss the ways to specify the terms present in the Hamiltonian. Finally, in the section of [Generator of operators](@ref), we will show how to combine all to get the operator representation of the Hamiltonian of a quantum lattice system. For more detailed explanations, the manual of [`Essentials`](@ref essentials) can also be referred.
 
 ```@contents
 Pages = [

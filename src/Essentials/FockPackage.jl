@@ -60,6 +60,14 @@ struct FID{ST} <: IID
         new{ST}(orbital, spin, nambu)
     end
 end
+Base.show(io::IO, fid::FID) = @printf io "FID{%s}(%s)" repr(statistics(fid)) join(values(fid), ", ")
+@inline Base.adjoint(fid::FID) = FID{statistics(fid)}(fid.orbital, fid.spin, fid.nambu==0 ? 0 : 3-fid.nambu)
+@inline @generated function Base.replace(fid::FID; kwargs...)
+    exprs = [:(get(kwargs, $name, getfield(fid, $name))) for name in QuoteNode.(fieldnames(fid))]
+    return :(rawtype(typeof(fid)){statistics(fid)}($(exprs...)))
+end
+@inline statistics(fid::FID) = statistics(typeof(fid))
+@inline statistics(::Type{FID{ST}}) where ST = ST
 
 """
     FID{ST}(; orbital::Int=1, spin::Int=1, nambu::Int=ANNIHILATION) where ST
@@ -69,40 +77,7 @@ Create a Fock id.
 @inline FID{ST}(; orbital::Int=1, spin::Int=1, nambu::Int=ANNIHILATION) where ST = FID{ST}(orbital, spin, nambu)
 
 """
-    show(io::IO, fid::FID)
-
-Show a Fock id.
-"""
-Base.show(io::IO, fid::FID) = @printf io "FID{%s}(%s)" statistics(fid) join(values(fid), ", ")
-
-"""
-    statistics(fid::FID) -> Symbol
-    statistics(::Type{<:FID}) -> Symbol
-
-Get the statistics of a Fock id.
-"""
-@inline statistics(fid::FID) = statistics(typeof(fid))
-@inline statistics(::Type{FID{ST}}) where ST = ST
-
-"""
-    adjoint(fid::FID) -> FID
-
-Get the adjoint of a Fock id.
-"""
-@inline Base.adjoint(fid::FID) = FID{statistics(fid)}(fid.orbital, fid.spin, fid.nambu==0 ? 0 : 3-fid.nambu)
-
-"""
-    replace(fid::FID; kwargs...) -> FIndex
-
-Replace the values of some fields of a Fock id.
-"""
-@inline @generated function Base.replace(fid::FID; kwargs...)
-    exprs = [:(get(kwargs, $name, getfield(fid, $name))) for name in QuoteNode.(fieldnames(fid))]
-    return :(rawtype(typeof(fid)){statistics(fid)}($(exprs...)))
-end
-
-"""
-    Fock <: Internal{FID}
+    Fock{ST} <: Internal{FID{ST}}
 
 The Fock interanl degrees of freedom.
 """
@@ -120,6 +95,9 @@ end
 @inline Base.Dims(fock::Fock) = (fock.norbital, fock.nspin, fock.nnambu)
 @inline Base.CartesianIndex(fid::FID{ST}, fock::Fock{ST}) where ST = CartesianIndex(fid.orbital, fid.spin, fock.nnambu==1 ? 1 : fid.nambu)
 @inline FID(index::CartesianIndex{3}, fock::Fock) = FID{statistics(fock)}(index[1], index[2], fock.nnambu==1 ? 0 : index[3])
+Base.summary(io::IO, fock::Fock) = @printf io "%s-element Fock{%s}" length(fock) repr(statistics(fock))
+@inline statistics(fock::Fock) = statistics(typeof(fock))
+@inline statistics(::Type{Fock{ST}}) where ST = ST
 
 """
     Fock{ST}(; atom::Int=1, norbital::Int=1, nspin::Int=2, nnambu::Int=2) where ST
@@ -127,15 +105,6 @@ end
 Construct a Fock degrees of freedom.
 """
 @inline Fock{ST}(; atom::Int=1, norbital::Int=1, nspin::Int=2, nnambu::Int=2) where ST = Fock{ST}(atom, norbital, nspin, nnambu)
-
-"""
-    statistics(fock::Fock) -> Symbol
-    statistics(::Type{<:Fock}) -> Symbol
-
-Get the statistics of a Fock space.
-"""
-@inline statistics(fock::Fock) = statistics(typeof(fock))
-@inline statistics(::Type{Fock{ST}}) where ST = ST
 
 """
     FIndex{ST, S} <: Index{PID{S}, FID{ST}}
@@ -154,6 +123,14 @@ function FIndex{ST}(scope::S, site::Int, orbital::Int, spin::Int, nambu::Int) wh
     @assert nambu∈(0, 1, 2) "FIndex error: wrong input nambu($nambu)."
     FIndex{ST, S}(scope, site, orbital, spin, nambu)
 end
+Base.show(io::IO, index::FIndex) = @printf io "FIndex{%s}(%s)" repr(statistics(index)) join(repr.(values(index)), ", ")
+@inline Base.union(::Type{P}, ::Type{I}) where {P<:PID, I<:FID} = FIndex{statistics(I), fieldtype(P, :scope)}
+@inline @generated function Base.replace(index::FIndex; kwargs...)
+    exprs = [:(get(kwargs, $name, getfield(index, $name))) for name in QuoteNode.(fieldnames(index))]
+    return :(rawtype(typeof(index)){statistics(index)}($(exprs...)))
+end
+@inline statistics(index::FIndex) = statistics(typeof(index))
+@inline statistics(::Type{<:FIndex{ST}}) where ST = ST
 
 """
     FIndex(pid::PID, fid::FID) -> FIndex
@@ -161,39 +138,6 @@ end
 Construct a Fock index by a pid and an fid.
 """
 @inline FIndex(pid::PID, fid::FID) = FIndex{statistics(fid)}(values(pid)..., values(fid)...)
-
-"""
-    show(io::IO, index::FIndex)
-
-Show a Fock index.
-"""
-Base.show(io::IO, index::FIndex) = @printf io "FIndex{%s}(%s)" statistics(index) join(values(index), ", ")
-
-"""
-    replace(index::FIndex; kwargs...) -> FIndex
-
-Replace the values of some fields of a Fock index.
-"""
-@inline @generated function Base.replace(index::FIndex; kwargs...)
-    exprs = [:(get(kwargs, $name, getfield(index, $name))) for name in QuoteNode.(fieldnames(index))]
-    return :(rawtype(typeof(index)){statistics(index)}($(exprs...)))
-end
-
-"""
-    statistics(index::FIndex) -> Symbol
-    statistics(::Type{<:FIndex}) -> Symbol
-
-Get the statistics of a Fock index.
-"""
-@inline statistics(index::FIndex) = statistics(typeof(index))
-@inline statistics(::Type{<:FIndex{ST}}) where ST = ST
-
-"""
-    union(::Type{P}, ::Type{I}) where {P<:PID, I<:FID}
-
-Get the union type of `PID` and `FID`.
-"""
-@inline Base.union(::Type{P}, ::Type{I}) where {P<:PID, I<:FID} = FIndex{statistics(I), fieldtype(P, :scope)}
 
 """
     script(::Val{:site}, index::FIndex; kwargs...) -> Int
@@ -526,8 +470,9 @@ function expand(fc::FockCoupling, points::NTuple{R, Point}, focks::NTuple{R, Foc
     nambus = fockcouplingnambus(fc, NTuple{rank(fc), Int}(focks[i].nnambu for i = 1:rank(fc)), info)
     obexpands = collect(expand(fc.orbitals, NTuple{rank(fc), Int}(focks[i].norbital for i = 1:rank(fc))))
     spexpands = collect(expand(fc.spins, NTuple{rank(fc), Int}(focks[i].nspin for i = 1:rank(fc))))
-    return FCExpand{statistics(eltype(focks))}(fc.value, points, obexpands, spexpands, nambus)
+    return FCExpand{totalstatitics(focks)}(fc.value, points, obexpands, spexpands, nambus)
 end
+@generated totalstatitics(focks::NTuple{R, Fock}) where R = Tuple(statistics(fieldtype(focks, i)) for i = 1:R)
 @generated function fockcouplingnambus(fc::FockCoupling, ranges::Tuple{Vararg{Int}}, ::Val)
     @assert rank(fc)==fieldcount(ranges) "fockcouplingnambus error: dismatched rank."
     exprs = [:(isa(fc.nambus[$i], Int) ?
@@ -535,23 +480,27 @@ end
             (ranges[$i]==1 ? 0 : ($i)%2==1 ? CREATION : ANNIHILATION)) for i = 1:rank(fc)]
     return Expr(:tuple, exprs...)
 end
-struct FCExpand{ST, V, N, D, S} <: CartesianVectorSpace{Tuple{V, ID{OID{FIndex{ST, S}, SVector{D, Float}}, N}}}
+struct FCExpand{STS, V, N, D, S} <: CartesianVectorSpace{Tuple{V, ID{OID{FIndex, SVector{D, Float}}, N}}}
     value::V
     points::NTuple{N, Point{D, PID{S}}}
     obexpands::Vector{NTuple{N, Int}}
     spexpands::Vector{NTuple{N, Int}}
     nambus::NTuple{N, Int}
-    function FCExpand{ST}(value, points::NTuple{N, Point{D, PID{S}}}, obexpands::Vector{NTuple{N, Int}}, spexpands::Vector{NTuple{N, Int}}, nambus::NTuple{N, Int}) where {ST, N, D, S}
-        new{ST, typeof(value), N, D, S}(value, points, obexpands, spexpands, nambus)
+    function FCExpand{STS}(value, points::NTuple{N, Point{D, PID{S}}}, obexpands::Vector{NTuple{N, Int}}, spexpands::Vector{NTuple{N, Int}}, nambus::NTuple{N, Int}) where {STS, N, D, S}
+        new{STS, typeof(value), N, D, S}(value, points, obexpands, spexpands, nambus)
     end
 end
+@inline @generated function Base.eltype(::Type{FCExpand{STS, V, N, D, S}}) where {STS, V, N, D, S}
+    return Tuple{V, Tuple{[OID{FIndex{STS[i], S}, SVector{D, Float}} for i = 1:N]...}}
+end
 @inline Base.Dims(fce::FCExpand) = (length(fce.obexpands), length(fce.spexpands))
-@generated function Tuple(index::CartesianIndex{2}, fce::FCExpand{ST, V, N}) where {ST, V, N}
+@generated function Tuple(index::CartesianIndex{2}, fce::FCExpand{STS, V, N}) where {STS, V, N}
     exprs = []
     for i = 1:N
+        ST = QuoteNode(STS[i])
         push!(exprs, quote
             pid, rcoord, icoord = fce.points[$i].pid, fce.points[$i].rcoord, fce.points[$i].icoord
-            fid = FID{ST}(fce.obexpands[index[1]][$i], fce.spexpands[index[2]][$i], fce.nambus[$i])
+            fid = FID{$ST}(fce.obexpands[index[1]][$i], fce.spexpands[index[2]][$i], fce.nambus[$i])
             OID(FIndex(pid, fid), rcoord, icoord)
         end)
     end

@@ -9,7 +9,7 @@ using QuantumLattices
 
 # Terms
 
-## Subscript and Subscripts
+## Subscripts
 
 ## Coupling and Couplings
 

@@ -1051,7 +1051,10 @@ struct Generator{TS<:NamedContainer{Term}, BS<:Bonds, C<:Config, T<:Table, B<:Bo
     boundary::B
     operators::OS
 end
-@inline function Generator(terms::Tuple{Vararg{Term}}, bonds::Bonds, config::Config, half::Bool, table::Table, boundary::Boundary=plain)
+@inline function Generator(terms::Tuple{Vararg{Term}}, bonds::Bonds, config::Config;
+        half::Bool=false, table::Union{Table,Nothing}=nothing, boundary::Boundary=plain
+        )
+    isnothing(table) && (table = Table(config))
     Generator(namedterms(terms), bonds, config, half, table, boundary, GenOperators(terms, bonds, config, half, table=table))
 end
 @generated function namedterms(terms::Tuple{Vararg{Term}})

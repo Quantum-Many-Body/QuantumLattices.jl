@@ -11,13 +11,13 @@ using QuantumLattices.Mathematics.AlgebraOverFields: ID
 
 @testset "FID" begin
     fid = FID{:f}(orbital=1, spin=1)
-    @test string(fid) == "FID{f}(1, 1, 1)"
+    @test string(fid) == "FID{:f}(1, 1, 1)"
     @test statistics(fid) == statistics(typeof(fid)) == :f
     @test fid' == replace(fid, nambu=2)
     @test fid'' == replace(fid, nambu=1)
 
     fid = FID{:b}(1, 1, 0)
-    @test string(fid) == "FID{b}(1, 1, 0)"
+    @test string(fid) == "FID{:b}(1, 1, 0)"
     @test statistics(fid) == statistics(typeof(fid)) == :b
     @test fid' == fid
 end
@@ -29,13 +29,17 @@ end
     @test FID(CartesianIndex(1, 1, 1), fock) == FID{:b}(1, 1, 1)
     @test collect(fock) == [FID{:b}(1, 1, 1), FID{:b}(1, 2, 1), FID{:b}(1, 1, 2), FID{:b}(1, 2, 2)]
     @test statistics(fock) == statistics(typeof(fock)) == :b
+
+    @test summary(Fock{:b}(nspin=0, nnambu=1)) == "0-element Fock{:b}"
+    @test summary(Fock{:b}(nspin=1, nnambu=1)) == "1-element Fock{:b}"
+    @test summary(Fock{:f}(nspin=2, nnambu=1)) == "2-element Fock{:f}"
 end
 
 @testset "FIndex" begin
     @test union(PID{Int}, FID{:f}) == FIndex{:f, Int}
 
     index = FIndex(PID('f', 1), FID{:f}(1, 1, 1))
-    @test string(index) == "FIndex{f}(f, 1, 1, 1, 1)"
+    @test string(index) == "FIndex{:f}('f', 1, 1, 1, 1)"
     @test index' == replace(index, nambu=2)
     @test statistics(index) == statistics(typeof(index)) == :f
 end
@@ -164,6 +168,7 @@ end
     point = Point(PID(1, 1), SVector(0.0), SVector(0.0))
     fock = Fock{:b}(atom=1, norbital=2, nspin=2, nnambu=2)
     ex = expand(fc, (point, point, point, point), (fock, fock, fock, fock), Val(:info))
+    @test eltype(ex) == Tuple{Float, ID{OID{FIndex{:b, Int}, SVector{1, Float}}, 4}}
     @test Dims(ex) == (2, 1)
     @test collect(ex) == [
         (2.0, ID(OID(FIndex{:b}(1, 1, 1, 2, 2), SVector(0.0), SVector(0.0)),

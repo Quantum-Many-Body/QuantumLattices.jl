@@ -6,19 +6,15 @@ CurrentModule = QuantumLattices.Essentials.SpinPackage
 
 ## Spin degrees of freedom
 
-### SID and Spin
+### SID, Spin and SIndex
 
-### SIndex
-
-### Predefined spin operators
+### SOperator
 
 ## Spin terms
 
-### SCID and SpinCoupling
+### SpinCoupling
 
-### Predefined spin couplings
-
-### Predefined spin terms
+### STerm
 
 ## Manual
 

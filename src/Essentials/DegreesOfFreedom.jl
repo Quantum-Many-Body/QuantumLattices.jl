@@ -50,7 +50,7 @@ Configuration of the internal degrees of freedom at a lattice.
 
 Here, `map` maps a `PID` to an `Internal`.
 """
-struct Config{I<:Internal, M<:Function, P<:PID} <: CompositeDict{P, I}
+struct Config{I<:Internal, P<:PID, M<:Function} <: CompositeDict{P, I}
     map::M
     contents::Dict{P, I}
 end
@@ -338,8 +338,15 @@ Filter the selected fields.
 
 Construct the convertion rule from the information of subtypes of `AbstractOID`.
 """
-@inline OIDToTuple(::Type{I}) where {I<:Index} = OIDToTuple(I|>fieldnames)
+@inline @generated OIDToTuple(::Type{I}) where {I<:Index} = OIDToTuple(I|>fieldnames)
 @inline OIDToTuple(::Type{I}) where {I<:OID} = OIDToTuple(fieldtype(I, :index))
+
+"""
+    OIDToTuple(::Type{C}) where {C<:Config}
+
+Construct the convertion rule from the information of `Config`.
+"""
+@inline OIDToTuple(::Type{C}) where {C<:Config} = OIDToTuple(union(C|>keytype, C|>valtype|>eltype))
 
 """
     valtype(::Type{<:OIDToTuple}, ::Type{<:Index})
@@ -402,20 +409,20 @@ Judge whether a single oid or a set of oids have been assigned with sequences in
 end
 
 """
-    Table(oids::AbstractVector{<:AbstractOID}, by::Metric)
+    Table(oids::AbstractVector{<:AbstractOID}, by::Metric=OIDToTuple(eltype(oids)))
 
 Convert a set of concrete oids to the corresponding table of oid-sequence pairs.
 
 The input oids are measured by the input `by` function with the duplicates removed. The resulting unique values are sorted, which determines the sequence of the input `oids`. Note that two oids have the same sequence if their converted values are equal to each other.
 """
-@inline Table(vs::AbstractVector{<:AbstractOID}, by::Metric) = Table(by, [by(v) for v in vs]|>unique!|>sort!|>vec2dict)
+@inline Table(oids::AbstractVector{<:AbstractOID}, by::Metric=OIDToTuple(eltype(oids))) = Table(by, [by(oid) for oid in oids]|>unique!|>sort!|>vec2dict)
 
 """
-    Table(config::Config, by::Metric) -> Table
+    Table(config::Config, by::Metric=OIDToTuple(typeof(config))) -> Table
 
 Get the oid-sequence table of the whole internal degrees of freedom of a lattice by use of their configurations.
 """
-function Table(config::Config, by::Metric)
+function Table(config::Config, by::Metric=OIDToTuple(typeof(config)))
     result = union(config|>keytype, config|>valtype|>eltype)[]
     for (pid, internal) in config
         for iid in internal
@@ -588,7 +595,7 @@ function valuetolatextext(value)
     else
         show(IOContext(io, :limit=>false), MIME"text/plain"(), value)
     end
-    return replace(replace(String(take!(io)), "\\begin{equation*}" => ""), "\\end{equation*}" => "")
+    return replace(replace(replace(replace(String(take!(io)), "\\begin{equation*}" => ""), "\\end{equation*}" => ""), "\$" => ""), "\n" => "")
 end
 
 """

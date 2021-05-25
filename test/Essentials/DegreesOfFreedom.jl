@@ -134,6 +134,7 @@ end
 
     @test OIDToTuple(DIndex) == OIDToTuple(:scope, :site, :nambu)
     @test OIDToTuple(OID{DIndex}) == OIDToTuple(:scope, :site, :nambu)
+    @test OIDToTuple(Config{DFock, PID{Int}}) == OIDToTuple(:scope, :site, :nambu)
 
     n = IdentityMetric()
     index = DIndex(PID('S', 4), DID(1))
@@ -162,13 +163,14 @@ end
     @test Table(config, by) == Table([inds1; inds2], by)
     @test Table(config, by) == union(Table(inds1, by), Table(inds2, by))
 
-    table = Table(config, by)
-    @test reset!(empty(table), [inds1; inds2]) == table
-    @test reset!(empty(table), config) == table
-
     opt = DOperator(1.0im, ID(OID, (DIndex(1, 1, 2), DIndex(1, 1, 1)), (SVector(0.0, 0.0), SVector(0.0, 0.0)), (SVector(1.0, 0.0), SVector(0.0, 0.0))))
     @test sequence(opt, table) == (1, 1)
     @test haskey(table, opt.id) == (true, true)
+
+    table = Table(config)
+    @test table == Table([inds1; inds2])
+    @test reset!(empty(table), [inds1; inds2]) == table
+    @test reset!(empty(table), config) == table
 end
 
 @testset "LaTeX" begin

@@ -11,7 +11,6 @@ Quantum numbers can be considered as the conserved labels for the bases of a Hil
 The abstract type for the complete set of independent quantum numbers for a single basis.
 
 Main features include:
-* function `fieldnames`: get the names of the quantum numbers
 * function `periods`: get the periods of the quantum numbers
 * arithmetic operations: `+`, `-`, `*`, `^`, `⊕`, `⊗`
 * hashable: concrete instances can be used as keys for a dict or a set
@@ -20,13 +19,12 @@ Main features include:
 
 In particular, `AbelianNumber <: HomoNamedVector{Float}`, all features supported by `HomoNamedVector` are also available for `HomoNamedVector`. See also [HomoNamedVector](@ref).
 
-For convenience, **4** kinds of quantum numbers are predefined in this module, i.e.
+For convenience, **3** kinds of quantum numbers are predefined in this module, i.e.
 * [`SQN`](@ref): for spin z-component reserved systems
 * [`PQN`](@ref): for particle number reserved systems
 * [`SPQN`](@ref): for both particle number and spin-z component reserved systems
-* [`Z2QN`](@ref): for systems with a ``Z_2`` conservation quantum number
 
-Users who want to define their own ``Z_N``-like quantum numbers must handle the periodicities in the construction function, otherwise, wrong results will be get when arithmetic operations, such as `+` or `-`, are involved. It is highly recommended to use the macro [`@abeliannumber`](@ref) to define your own concrete `AbelianNumber`s.
+Users who want to define their own ``Z_N``-like quantum numbers must handle the periodicity in the construction function, otherwise, wrong results will be get when arithmetic operations, such as `+` or `-`, are involved. It is recommended to use the macro [`@abeliannumber`](@ref) to define your own concrete `AbelianNumber`s.
 
 ## AbelianNumbers
 
@@ -50,12 +48,10 @@ Main features include:
 * iterable: various iteration supports, including functions such as `iterate`, `keys`, `values` and `pairs`
 For a complete summation of its features, please refer to the [manual](@ref qnmanual).
 
-For convenience, **5** functions are predefined to generate the `AbelianNumbers` of common physical systems, i.e.
+For convenience, **3** functions are predefined to generate the `AbelianNumbers` of common physical systems, i.e.
 * [`SQNS`](@ref): a single spin
 * [`PQNS`](@ref): a single-particle state with at most `N` identical particles
-* [`SzPQNS`](@ref): a single-particle state with at most one particle whose spin-z component is `Sz`
 * [`SPQNS`](@ref): a single site with internal degrees of freedom that can be ascribed to a spin
-* [`Z2QNS`](@ref): any ``Z_2`` Hilbert space
 
 ## [Manual](@id qnmanual)
 

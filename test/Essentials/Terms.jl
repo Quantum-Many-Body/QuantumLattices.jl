@@ -280,7 +280,7 @@ end
     @test empty!(deepcopy(genops)) == empty(genops) == GenOperators(empty(μops), NamedContainer{(:μ,)}((empty(μops),)), NamedContainer{(:t, :μ)}((empty(μops), empty(μops))))
     @test reset!(deepcopy(genops), (t, μ), bonds, config, true, table=table) == genops
 
-    gen = Generator((t, μ), bonds, config, true, table)
+    gen = Generator((t, μ), bonds, config; half=true, table=table)
     @test gen == deepcopy(gen) && isequal(gen, deepcopy(gen))
     @test Parameters(gen) == Parameters{(:t, :μ)}(2.0, 1.0)
     @test expand!(Operators{idtype(optp), optp}(), gen) == expand(gen) == tops1+tops2*2.0+μops
@@ -290,7 +290,7 @@ end
     @test expand(gen, :μ, 1)+expand(gen, :μ, 2) == μops
     @test expand(gen, :t, 3) == tops1
     @test expand(gen, :t, 4) == tops2*2.0
-    @test empty!(deepcopy(gen)) == Generator((t, μ), empty(bonds), empty(config), true, empty(table), plain) == empty(gen)
+    @test empty!(deepcopy(gen)) == Generator((t, μ), empty(bonds), empty(config), half=true, table=empty(table), boundary=plain) == empty(gen)
     @test reset!(empty(gen), lattice) == gen
     @test update!(gen, μ=1.5)|>expand == tops1+tops2*2.0+μops*1.5
 end

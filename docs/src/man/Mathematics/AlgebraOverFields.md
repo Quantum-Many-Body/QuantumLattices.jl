@@ -23,7 +23,7 @@ Generally, the usual multiplication between two elements of an algebra is not co
 
 [`Element`](@ref) defines a single element of an algebra while [`Elements`](@ref) defines an expression composed of several elements from an algebra.
 
-The first and second attributes of an [`Element`](@ref) must be
+An [`Element`](@ref) must have two predefined contents:
 - `value::Number`: the coefficient of the element
 - `id::ID`: the id of the element
 

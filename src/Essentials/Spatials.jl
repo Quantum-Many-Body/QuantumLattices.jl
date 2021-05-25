@@ -548,7 +548,7 @@ end
     Point{length(rcoord)}(pid, rcoord, icoord)
 end
 @inline function Point{N}(pid::PID, rcoord::AbstractVector{<:Real}, icoord::AbstractVector{<:Real}=zero(SVector{N, Float})) where N
-    @assert length(rcoord) == length(icoord) == N "Point error: dismatched length of input rcoord and icoord."
+    @assert length(rcoord)==length(icoord)==N "Point error: dismatched length of input rcoord and icoord."
     Point(pid, convert(SVector{N, Float}, rcoord), convert(SVector{N, Float}, icoord))
 end
 

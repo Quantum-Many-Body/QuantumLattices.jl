@@ -7,6 +7,7 @@ using ..DegreesOfFreedom: IID, Internal, Index, OID, OIDToTuple, Operator, LaTeX
 using ..Terms: wildcard, Subscripts, SubID, subscriptsexpr, Coupling, Couplings, Term, TermCouplings, TermAmplitude, TermModulate
 using ...Essentials: kind
 using ...Prerequisites: Float, decimaltostr, delta
+using ...Prerequisites.Traits: rawtype
 using ...Mathematics.VectorSpaces: CartesianVectorSpace
 using ...Mathematics.AlgebraOverFields: SimpleID, ID
 
@@ -16,7 +17,7 @@ import ..Terms: nonconstrain, couplingcenters, otype, abbr
 import ...Interfaces: rank, expand, permute
 
 export sdefaultlatex, usualspinindextotuple
-export SID, Spin, SIndex, SOperator, SCID, SpinCoupling, SpinTerm
+export SID, Spin, SIndex, SOperator, SCID, SpinCoupling, SpinTerm, totalspin
 export Heisenberg, Ising, Gamma, DM, Sˣ, Sʸ, Sᶻ
 export @sc_str, @heisenberg_str, @ising_str, @gamma_str, @dm_str, @sˣ_str, @sʸ_str, @sᶻ_str
 
@@ -27,106 +28,122 @@ const sidrepmap = Dict('x'=>'ˣ', 'y'=>'ʸ', 'z'=>'ᶻ', '+'=>'⁺', '-'=>'⁻',
 const sidreprevmap = Dict(v=>k for (k, v) in sidrepmap)
 
 """
-    SID <: IID
+    SID{S} <: IID
 
 The spin id.
 """
-struct SID <: IID
+struct SID{S} <: IID
     orbital::Int
-    spin::Float
     tag::Char
-    function SID(orbital::Int, spin::Real, tag::Char)
+    function SID{S}(orbital::Int, tag::Char) where S
+        @assert isa(S, Rational{Int}) && S.den==2 || isa(S, Integer) "SID error: not supported spin($S)."
         @assert tag in ('x', 'y', 'z', '+', '-') "SID error: not supported tag($tag)."
-        new(orbital, spin, tag)
+        new{S}(orbital, tag)
     end
 end
+@inline Base.adjoint(sid::SID) = SID{totalspin(sid)}(sid.orbital, sidajointmap[sid.tag])
+Base.show(io::IO, sid::SID) = @printf io "SID{%s}(%s)" totalspin(sid) join(repr.(values(sid)), ", ")
+@inline @generated function Base.replace(sid::SID; kwargs...)
+    exprs = [:(get(kwargs, $name, getfield(sid, $name))) for name in QuoteNode.(fieldnames(sid))]
+    return :(rawtype(typeof(sid)){totalspin(sid)}($(exprs...)))
+end
+@inline totalspin(sid::SID) = totalspin(typeof(sid))
+@inline totalspin(::Type{<:SID{S}}) where S = S
 
 """
-    SID(; orbital::Int=1, spin::Real=0.5, tag::Char='z')
+    SID{S}(tag::Char; orbital::Int=1) where S
 
 Create a spin id.
 """
-@inline SID(; orbital::Int=1, spin::Real=0.5, tag::Char='z') = SID(orbital, spin, tag)
+@inline SID{S}(tag::Char; orbital::Int=1) where S = SID{S}(orbital, tag)
 
 """
-    adjoint(sid::SID) -> SID
-
-Get the adjoint of a spin id.
-"""
-@inline Base.adjoint(sid::SID) = SID(sid.orbital, sid.spin, sidajointmap[sid.tag])
-
-"""
-    Matrix(sid::SID, dtype::Type{<:Number}=Complex{Float}) -> Matrix{dtype}
+    Matrix(sid::SID{S}, dtype::Type{<:Number}=Complex{Float}) where S -> Matrix{dtype}
 
 Get the matrix representation of a sid.
 """
-function Base.Matrix(sid::SID, dtype::Type{<:Number}=Complex{Float})
-    N = Int(2*sid.spin+1)
+function Base.Matrix(sid::SID{S}, dtype::Type{<:Number}=Complex{Float}) where S
+    N = Int(2*S+1)
     result = zeros(dtype, (N, N))
     for i = 1:N, j = 1:N
         row, col = N+1-i, N+1-j
-        m, n = sid.spin+1-i, sid.spin+1-j
-        result[row, col] = (sid.tag == 'x') ? (delta(i+1, j)+delta(i, j+1))*sqrt(sid.spin*(sid.spin+1)-m*n)/2 :
-            (sid.tag == 'y') ? (delta(i+1, j)-delta(i, j+1))*sqrt(sid.spin*(sid.spin+1)-m*n)/2im :
+        m, n = S+1-i, S+1-j
+        result[row, col] = (sid.tag == 'x') ? (delta(i+1, j)+delta(i, j+1))*sqrt(S*(S+1)-m*n)/2 :
+            (sid.tag == 'y') ? (delta(i+1, j)-delta(i, j+1))*sqrt(S*(S+1)-m*n)/2im :
             (sid.tag == 'z') ? delta(i, j)*m :
-            (sid.tag == '+') ? delta(i+1, j)*sqrt(sid.spin*(sid.spin+1)-m*n) :
-            delta(i, j+1)*sqrt(sid.spin*(sid.spin+1)-m*n)
+            (sid.tag == '+') ? delta(i+1, j)*sqrt(S*(S+1)-m*n) :
+            delta(i, j+1)*sqrt(S*(S+1)-m*n)
     end
     return result
 end
 
 """
-    Spin <: Internal{SID}
+    Spin{S} <: Internal{SID{S}}
 
 The spin interanl degrees of freedom.
 """
-struct Spin <: Internal{SID}
+struct Spin{S} <: Internal{SID{S}}
     atom::Int
     norbital::Int
-    spin::Float
+    function Spin{S}(atom::Int, norbital::Int) where S
+        @assert isa(S, Rational{Int}) && S.den==2 || isa(S, Integer) "Spin error: not supported spin($S)."
+        new{S}(atom, norbital)
+    end
 end
 @inline Base.Dims(sp::Spin) = (sp.norbital, length(sidtagmap))
 @inline Base.CartesianIndex(sid::SID, ::Spin) = CartesianIndex(sid.orbital, sidseqmap[sid.tag])
-@inline SID(index::CartesianIndex{2}, sp::Spin) = SID(index[1], sp.spin, sidtagmap[index[2]])
+@inline SID(index::CartesianIndex{2}, sp::Spin) = SID{totalspin(sp)}(index[1], sidtagmap[index[2]])
+Base.summary(io::IO, spin::Spin) = @printf io "%s-element Spin{%s}" length(spin) totalspin(spin)
+@inline totalspin(spin::Spin) = totalspin(typeof(spin))
+@inline totalspin(::Type{<:Spin{S}}) where S = S
 
 """
-    Spin(; atom::Int=1, norbital::Int=1, spin::Real=0.5)
+    Spin{S}(; atom::Int=1, norbital::Int=1) where S
 
 Construct a spin degrees of freedom.
 """
-@inline Spin(; atom::Int=1, norbital::Int=1, spin::Real=0.5) = Spin(atom, norbital, spin)
+@inline Spin{S}(; atom::Int=1, norbital::Int=1) where S = Spin{S}(atom, norbital)
 
 """
-    SIndex{S} <: Index{PID{S}, SID}
+    SIndex{S, P} <: Index{PID{P}, SID{S}}
 
 The spin index.
 """
-struct SIndex{S} <: Index{PID{S}, SID}
-    scope::S
+struct SIndex{S, P} <: Index{PID{P}, SID{S}}
+    scope::P
     site::Int
     orbital::Int
-    spin::Float
     tag::Char
 end
+function SIndex{S}(scope::P, site::Int, orbital::Int, tag::Char) where {S, P}
+    @assert isa(S, Rational{Int}) && S.den==2 || isa(S, Integer) "SIndex error: not supported spin($S)."
+    return SIndex{S, P}(scope, site, orbital, tag)
+end
+Base.show(io::IO, index::SIndex) = @printf io "SIndex{%s}(%s)" totalspin(index) join(repr.(values(index)), ", ")
+@inline @generated function Base.replace(index::SIndex; kwargs...)
+    exprs = [:(get(kwargs, $name, getfield(index, $name))) for name in QuoteNode.(fieldnames(index))]
+    return :(rawtype(typeof(index)){totalspin(index)}($(exprs...)))
+end
+@inline Base.union(::Type{P}, ::Type{I}) where {P<:PID, I<:SID} = SIndex{totalspin(I), fieldtype(P, :scope)}
+@inline totalspin(index::SIndex) = totalspin(typeof(index))
+@inline totalspin(::Type{<:SIndex{S}}) where S = S
 
 """
-    union(::Type{P}, ::Type{SID}) where {P<:PID}
+    SIndex(pid::PID, sid::SID) -> SIndex
 
-Get the union type of `PID` and `SID`.
+Construct a spin index by a pid and an sid.
 """
-@inline Base.union(::Type{P}, ::Type{SID}) where {P<:PID} = SIndex{fieldtype(P, :scope)}
+@inline SIndex(pid::PID, sid::SID) = SIndex{totalspin(sid)}(values(pid)..., values(sid)...)
 
 """
     script(::Val{:site}, index::SIndex; kwargs...) -> Int
     script(::Val{:orbital}, index::SIndex; kwargs...) -> Int
-    script(::Val{:spin}, index::SIndex; kwargs...) -> Float
     script(::Val{:tag}, index::SIndex; kwargs...) -> Char
 
 Get the required script of a spin oid.
 """
 @inline script(::Val{:site}, index::SIndex; kwargs...) = index.site
 @inline script(::Val{:orbital}, index::SIndex; kwargs...) = index.orbital
-@inline script(::Val{:spin}, index::SIndex; kwargs...) = index.spin
 @inline script(::Val{:tag}, index::SIndex; kwargs...) = index.tag
 
 """
@@ -167,7 +184,7 @@ Permute two fermionic oid and get the result.
 function permute(::Type{<:SOperator}, id₁::OID{<:SIndex}, id₂::OID{<:SIndex})
     @assert id₁.index≠id₂.index || id₁.rcoord≠id₂.rcoord || id₁.icoord≠id₂.icoord "permute error: permuted ids should not be equal to each other."
     if usualspinindextotuple(id₁.index)==usualspinindextotuple(id₂.index) && id₁.rcoord==id₂.rcoord && id₁.icoord==id₂.icoord
-        @assert id₁.index.spin==id₂.index.spin "permute error: noncommutable ids should have the same spin field."
+        @assert totalspin(id₁.index)==totalspin(id₂.index) "permute error: noncommutable ids should have the same spin field."
         if id₁.index.tag == 'x'
             id₂.index.tag=='y' && return (SOperator(+1im, ID(permutesoid(id₁, 'z'))), SOperator(1, ID(id₂, id₁)))
             id₂.index.tag=='z' && return (SOperator(-1im, ID(permutesoid(id₁, 'y'))), SOperator(1, ID(id₂, id₁)))
@@ -306,24 +323,30 @@ function expand(sc::SpinCoupling, points::NTuple{R, Point}, spins::NTuple{R, Spi
     for (i, atom) in enumerate(sc.atoms)
         isa(atom, Int) && atom≠spins[i].atom && return ()
     end
-    sps = NTuple{rank(sc), Float}(spins[i].spin for i = 1:rank(sc))
     obexpands = collect(expand(sc.orbitals, NTuple{rank(sc), Int}(spins[i].norbital for i = 1:rank(sc))))
-    return SCExpand(sc.value, points, obexpands, sps, sc.tags)
+    return SCExpand{totalspins(spins)}(sc.value, points, obexpands, sc.tags)
 end
-struct SCExpand{V, N, D, S} <: CartesianVectorSpace{Tuple{V, ID{OID{SIndex{S}, SVector{D, Float}}, N}}}
+@generated totalspins(spins::NTuple{R, Spin}) where R = Tuple(totalspin(fieldtype(spins, i)) for i = 1:R)
+struct SCExpand{SPS, V, N, D, P} <: CartesianVectorSpace{Tuple{V, ID{OID{SIndex, SVector{D, Float}}, N}}}
     value::V
-    points::NTuple{N, Point{D, PID{S}}}
+    points::NTuple{N, Point{D, PID{P}}}
     obexpands::Vector{NTuple{N, Int}}
-    spins::NTuple{N, Float}
     tags::NTuple{N, Char}
+    function SCExpand{SPS}(value::V, points::NTuple{N, Point{D, PID{P}}}, obexpands::Vector{NTuple{N, Int}}, tags::NTuple{N, Char}) where {SPS, V, N, D, P}
+        return new{SPS, V, N, D, P}(value, points, obexpands, tags)
+    end
+end
+@inline @generated function Base.eltype(::Type{SCExpand{SPS, V, N, D, P}}) where {SPS, V, N, D, P}
+    return Tuple{V, Tuple{[OID{SIndex{SPS[i], P}, SVector{D, Float}} for i = 1:N]...}}
 end
 @inline Base.Dims(sce::SCExpand) = (length(sce.obexpands),)
-@generated function Tuple(index::CartesianIndex{1}, sce::SCExpand{V, N}) where {V, N}
+@generated function Tuple(index::CartesianIndex{1}, sce::SCExpand{SPS, V, N}) where {SPS, V, N}
     exprs = []
     for i = 1:N
+        spin = SPS[i]
         push!(exprs, quote
             pid, rcoord, icoord = sce.points[$i].pid, sce.points[$i].rcoord, sce.points[$i].icoord
-            sid = SID(sce.obexpands[index[1]][$i], sce.spins[$i], sce.tags[$i])
+            sid = SID{$spin}(sce.obexpands[index[1]][$i], sce.tags[$i])
             OID(SIndex(pid, sid), rcoord, icoord)
         end)
     end

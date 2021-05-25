@@ -20,25 +20,17 @@ Main features include:
 * Comparisons, such as `≡`, `≢`, `==`, `≠`, `>`, `<`, `≥`, `≤` are supported. Therefore a vector of named vectors can be sorted by the default `sort` function.
 * Hash is supported by `hash`. Therefore, a named vector can be used as the key of a dict or set.
 * Iteration over its fieldnames is supported by `keys`, over its values is supported by `values`, over its field-value pairs is supported by `pairs`.
-  A reverse iteration is also supported.
+* A reverse iteration is also supported.
 
 To subtype it, please note:
 1. A concrete type can be either mutable or immutable as you need, which is different from tuples.
-2. The fields of a concrete type can be of the same type or not. For the former, we denote the named vector as "homogeneous" while for the latter as "inhomogeneous".
-   For homogeneous ones, we define a sub abstract type, [`HomoNamedVector`](@ref) for further optimization of the default methods. See [HomoNamedVector](@ref) below.
-3. It is recommended to overload the `Base.fieldnames` function for concrete subtypes to ensure type stability and improve efficiency, which though is not a necessity.
-   A template for such an overloading is
-   ```julia
-   Base.fieldnames(Type{<:YourNamedVector}) = (:fieldname1, :fieldname2, ...)
-   ```
-4. For all concrete subtypes, if inner constructors are defined, the one which has the same interface with the default one must be implemented.
-   Otherwise, some functionalities will not work.
-5. Arithmetic operations, such as `+`, `-`, `*`, `/`, `%`, `÷`, etc. are **not** supported.
-   However, the function [`map`](@ref) is implemented, which can help users do the overloadings of these operations.
+2. The fields of a concrete type can be of the same type or not. For the former, we denote the named vector as "homogeneous" while for the latter as "inhomogeneous". For homogeneous ones, we define a sub abstract type, [`HomoNamedVector`](@ref) for further optimization of the default methods. See [HomoNamedVector](@ref) below.
+3. For all concrete subtypes, if inner constructors are defined, the one which has the same interface with the default one must be implemented. Otherwise, some functionalities will not work.
+4. Arithmetic operations, such as `+`, `-`, `*`, `/`, `%`, `÷`, etc. are **not** supported. However, the function [`map`](@ref) is implemented, which can help users do the overloadings of these operations.
 
 ## HomoNamedVector
 
-[`HomoNamedVector`](@ref) is the subtype of [`NamedVector`](@ref) that of all its fields share the same type. Compared to `NamedVector`, one more default method is implemented with [`HomoNamedVector`](@ref), i.e. `eltype`, which returns the type of its fields. This function ensures the type stability of all the methods that involves an iteration of the field values of a named vector. Therefore, homogeneous named vector are usually more efficient than inhomogeneous ones. Use homogeneous ones as much as possible unless the code efficiency does not matter.
+[`HomoNamedVector`](@ref) is the subtype of [`NamedVector`](@ref) that of all its fields share the same type. Compared to [`NamedVector`](@ref), one more default method is implemented with [`HomoNamedVector`](@ref), i.e. `eltype`, which returns the type of its fields. This function ensures the type stability of all the methods that involves an iteration of the field values of a named vector. Therefore, homogeneous named vector are usually more efficient than inhomogeneous ones. Use homogeneous ones as much as possible unless the code efficiency does not matter.
 
 To subtype [`HomoNamedVector`](@ref), all the suggestions mentioned in the previous subsection for [`NamedVector`](@ref) also applies. A recommended template for a subtype is
 ```julia
