@@ -1,6 +1,6 @@
 # QuantumLattices.jl
 
-[![Build Status](https://api.travis-ci.org/Quantum-Many-Body/QuantumLattices.jl.svg?branch=master)](https://travis-ci.org/Quantum-Many-Body/QuantumLattices.jl)
+[![Build Status](https://travis-ci.com/Quantum-Many-Body/QuantumLattices.jl.svg?branch=master)](https://travis-ci.com/Quantum-Many-Body/QuantumLattices.jl)
 [![codecov](https://codecov.io/gh/Quantum-Many-Body/QuantumLattices.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/Quantum-Many-Body/QuantumLattices.jl)
 [![][docs-latest-img]][docs-latest-url]
 [![][docs-stable-img]][docs-stable-url]
