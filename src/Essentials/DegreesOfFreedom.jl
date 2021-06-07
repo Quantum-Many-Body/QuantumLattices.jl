@@ -6,7 +6,7 @@ using LaTeXStrings: latexstring
 using ..Spatials: PID, Point
 using ...Interfaces: id, rank, dimension, decompose
 using ...Prerequisites: Float, decimaltostr
-using ...Prerequisites.Traits: rawtype, efficientoperations
+using ...Prerequisites.Traits: rawtype, efficientoperations, getcontent
 using ...Prerequisites.CompositeStructures: CompositeDict
 using ...Mathematics.VectorSpaces: CartesianVectorSpace
 using ...Mathematics.AlgebraOverFields: SimpleID, ID, Element, Elements
@@ -16,8 +16,8 @@ import ...Essentials: reset!, update!
 import ...Prerequisites.Traits: contentnames
 import ...Mathematics.AlgebraOverFields: sequence
 
-export IID, Internal, Config, AbstractOID, Index, OID, Operator, Operators
-export iidtype, pid, iid, isHermitian, oidtype
+export IID, Internal, Config, AbstractOID, Index, AbstractCompositeOID, OID, Operator, Operators
+export iidtype, pid, iid, isHermitian, indextype, oidtype
 export Metric, OIDToTuple, Table
 export LaTeX, latexname, latexformat, superscript, subscript, script
 export Boundary, twist, plain
@@ -96,7 +96,7 @@ function isHermitian(id::ID{AbstractOID, N}) where N
 end
 
 """
-    Index{P<:PID, I<:IID} <: SimpleID
+    Index{P<:PID, I<:IID} <: AbstractOID
 
 The index of a degree of freedom, which consist of the spatial part and the internal part.
 """
@@ -162,17 +162,35 @@ Combine a concrete `PID` type and a concrete `IID` type to a concrete `Index` ty
 @inline Base.union(::Type{P}, ::Type{I}) where {P<:PID, I<:IID} = Index{P, I}
 
 """
+    AbstractCompositeOID{I<:Index} <: AbstractOID
+
+The abstract type of composite operator id.
+"""
+abstract type AbstractCompositeOID{I<:Index} <: AbstractOID end
+@inline contentnames(::Type{<:AbstractCompositeOID}) = (:index,)
+
+"""
+    indextype(::AbstractCompositeOID)
+    indextype(::Type{<:AbstractCompositeOID})
+
+Get the index type of an composite operator id.
+"""
+@inline indextype(oid::AbstractCompositeOID) = indextype(typeof(oid))
+@inline indextype(::Type{<:AbstractCompositeOID{I}}) where {I<:Index} = I
+
+"""
     OID(index::Index, rcoord, icoord)
     OID(index::Index; rcoord, icoord)
 
 Operator id.
 """
-struct OID{I<:Index, V<:SVector} <: AbstractOID
+struct OID{I<:Index, V<:SVector} <: AbstractCompositeOID{I}
     index::I
     rcoord::V
     icoord::V
     OID(index::Index, rcoord::V, icoord::V) where {V<:SVector} = new{typeof(index), V}(index, oidcoord(rcoord), oidcoord(icoord))
 end
+@inline contentnames(::Type{<:OID}) = (:index, :rcoord, :icoord)
 @inline OID(index::Index, rcoord, icoord) = OID(index, SVector{length(rcoord)}(rcoord), SVector{length(icoord)}(icoord))
 @inline OID(index::Index; rcoord, icoord) = OID(index, rcoord, icoord)
 @inline Base.hash(oid::OID, h::UInt) = hash((oid.index, Tuple(oid.rcoord)), h)
@@ -334,12 +352,12 @@ Filter the selected fields.
 
 """
     OIDToTuple(::Type{I}) where {I<:Index}
-    OIDToTuple(::Type{I}) where {I<:OID}
+    OIDToTuple(::Type{I}) where {I<:AbstractCompositeOID}
 
 Construct the convertion rule from the information of subtypes of `AbstractOID`.
 """
 @inline @generated OIDToTuple(::Type{I}) where {I<:Index} = OIDToTuple(I|>fieldnames)
-@inline OIDToTuple(::Type{I}) where {I<:OID} = OIDToTuple(fieldtype(I, :index))
+@inline OIDToTuple(::Type{I}) where {I<:AbstractCompositeOID} = OIDToTuple(indextype(I))
 
 """
     OIDToTuple(::Type{C}) where {C<:Config}
@@ -350,7 +368,7 @@ Construct the convertion rule from the information of `Config`.
 
 """
     valtype(::Type{<:OIDToTuple}, ::Type{<:Index})
-    valtype(::Type{<:OIDToTuple}, ::Type{<:OID})
+    valtype(::Type{<:OIDToTuple}, ::Type{<:AbstractCompositeOID})
 
 Get the valtype of applying an `OIDToTuple` rule to a subtype of `AbstractOID`.
 """
@@ -358,11 +376,11 @@ Get the valtype of applying an `OIDToTuple` rule to a subtype of `AbstractOID`.
     types = [fieldtype(I, field) for field in keys(M)]
     return  Expr(:curly, :Tuple, types...)
 end
-@inline @generated Base.valtype(::Type{M}, ::Type{I}) where {M<:OIDToTuple, I<:OID} = valtype(M, fieldtype(I, :index))
+@inline @generated Base.valtype(::Type{M}, ::Type{I}) where {M<:OIDToTuple, I<:AbstractCompositeOID} = valtype(M, indextype(I))
 
 """
     (oidtotuple::OIDToTuple)(index::Index) -> Tuple
-    (oidtotuple::OIDToTuple)(oid::OID) -> Tuple
+    (oidtotuple::OIDToTuple)(oid::AbstractCompositeOID) -> Tuple
 
 Convert a concrete oid to a tuple.
 """
@@ -370,7 +388,7 @@ Convert a concrete oid to a tuple.
     exprs = [:(getfield(index, $name)) for name in QuoteNode.(keys(oidtotuple))]
     return Expr(:tuple, exprs...)
 end
-@inline (oidtotuple::OIDToTuple)(oid::OID) = oidtotuple(oid.index)
+@inline (oidtotuple::OIDToTuple)(oid::AbstractCompositeOID) = oidtotuple(getcontent(oid, :index))
 
 """
     Table{I, B<:Metric} <: CompositeDict{I, Int}
@@ -399,7 +417,7 @@ Inquiry the sequence of an oid.
 Judge whether a single oid or a set of oids have been assigned with sequences in table.
 """
 @inline Base.haskey(table::Table, oid::AbstractOID) = haskey(table, table.by(oid))
-@inline Base.haskey(table::Table, oid::OID) = haskey(table, oid.index)
+@inline Base.haskey(table::Table, oid::AbstractCompositeOID) = haskey(table, getcontent(oid, :index))
 @inline @generated function Base.haskey(table::Table, id::ID{AbstractOID})
     exprs = []
     for i = 1:fieldcount(id)
@@ -559,7 +577,7 @@ Get the `attr` script of an oid, which is contained in its index.
 
 """
     repr(oid::AbstractOID) -> String
-    repr(oid::OID, l::LaTeX) -> String
+    repr(oid::AbstractOID, l::LaTeX) -> String
 
 LaTeX string representation of an oid.
 """

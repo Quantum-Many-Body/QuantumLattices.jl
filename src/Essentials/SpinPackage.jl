@@ -3,7 +3,7 @@ module SpinPackage
 using StaticArrays: SVector
 using Printf: @printf, @sprintf
 using ..Spatials: PID, Point, Bond, AbstractBond
-using ..DegreesOfFreedom: IID, Internal, Index, OID, OIDToTuple, Operator, LaTeX, latexformat, Config, oidtype
+using ..DegreesOfFreedom: IID, Internal, Index, OID, AbstractCompositeOID, OIDToTuple, Operator, LaTeX, latexformat, Config, oidtype
 using ..Terms: wildcard, Subscripts, SubID, subscriptsexpr, Coupling, Couplings, Term, TermCouplings, TermAmplitude, TermModulate
 using ...Essentials: kind
 using ...Prerequisites: Float, decimaltostr, delta
@@ -165,15 +165,15 @@ Indicate that the choosed fields are `(:scope, :site, :orbital)` when converting
 const usualspinindextotuple = OIDToTuple(:scope, :site, :orbital)
 
 """
-    SOperator{V<:Number, I<:ID{OID{<:SIndex}}} <: Operator{V, I}
+    SOperator{V<:Number, I<:ID{AbstractCompositeOID{<:SIndex}}} <: Operator{V, I}
 
 Spin operator.
 """
-struct SOperator{V<:Number, I<:ID{OID{<:SIndex}}} <: Operator{V, I}
+struct SOperator{V<:Number, I<:ID{AbstractCompositeOID{<:SIndex}}} <: Operator{V, I}
     value::V
     id::I
     SOperator(value::Number) = new{typeof(value), Tuple{}}(value, ())
-    SOperator(value::Number, id::ID{OID{<:SIndex}}) = new{typeof(value), typeof(id)}(value, id)
+    SOperator(value::Number, id::ID{AbstractCompositeOID{<:SIndex}}) = new{typeof(value), typeof(id)}(value, id)
 end
 
 """

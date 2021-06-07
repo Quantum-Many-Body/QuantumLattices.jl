@@ -4,7 +4,7 @@ using StaticArrays: SVector
 using LinearAlgebra: dot
 using Printf: @printf, @sprintf
 using ..Spatials: PID, AbstractBond, Point, Bond, decompose
-using ..DegreesOfFreedom: IID, Internal, Index, LaTeX, OID, latexformat, OIDToTuple, Operator, Operators, Config, Table, oidtype
+using ..DegreesOfFreedom: IID, Internal, Index, LaTeX, OID, AbstractCompositeOID, latexformat, OIDToTuple, Operator, Operators, Config, Table, oidtype
 using ..Terms: wildcard, Subscripts, @subscripts_str, SubID, Coupling, Couplings, Term, TermCouplings, TermAmplitude, TermModulate
 using ...Essentials: kind
 using ...Prerequisites: Float, delta, decimaltostr
@@ -204,11 +204,11 @@ Indicate that the choosed fields are `(:scope, :nambu, :site, :orbital, :spin)` 
 const nambufockindextotuple = OIDToTuple(:scope, :nambu, :site, :orbital, :spin)
 
 """
-    AbstractFockOperator{V<:Number, I<:ID{OID{<:FIndex}}} <: Operator{V, I}
+    AbstractFockOperator{V<:Number, I<:ID{AbstractCompositeOID{<:FIndex}}} <: Operator{V, I}
 
 Abstract type for all Fock operators.
 """
-abstract type AbstractFockOperator{V<:Number, I<:ID{OID{<:FIndex}}} <: Operator{V, I}end
+abstract type AbstractFockOperator{V<:Number, I<:ID{AbstractCompositeOID{<:FIndex}}} <: Operator{V, I}end
 
 """
     isnormalordered(opt::AbstractFockOperator) -> Bool
@@ -225,16 +225,16 @@ function isnormalordered(opt::AbstractFockOperator)
 end
 
 """
-    FOperator{V<:Number, I<:ID{OID{<:FIndex{:f}}}} <: AbstractFockOperator{V, I}
+    FOperator{V<:Number, I<:ID{AbstractCompositeOID{<:FIndex{:f}}}} <: AbstractFockOperator{V, I}
 
 Fermionic Fock operator.
 """
-struct FOperator{V<:Number, I<:ID{OID{<:FIndex{:f}}}} <: AbstractFockOperator{V, I}
+struct FOperator{V<:Number, I<:ID{AbstractCompositeOID{<:FIndex{:f}}}} <: AbstractFockOperator{V, I}
     value::V
     id::I
     FOperator(value::Number) = new{typeof(value), Tuple{}}(value, ())
     FOperator(value::Number, id::Tuple{}) = new{typeof(value), Tuple{}}(value, ())
-    FOperator(value::Number, id::ID{OID{<:FIndex{:f}}}) = new{typeof(value), typeof(id)}(value, id)
+    FOperator(value::Number, id::ID{AbstractCompositeOID{<:FIndex{:f}}}) = new{typeof(value), typeof(id)}(value, id)
 end
 
 """
@@ -271,16 +271,16 @@ Get the multiplication of two fermionic Fock operators.
 end
 
 """
-    BOperator{V<:Number, I<:ID{OID{<:FIndex{:b}}}} <: AbstractFockOperator{V, I}
+    BOperator{V<:Number, I<:ID{AbstractCompositeOID{<:FIndex{:b}}}} <: AbstractFockOperator{V, I}
 
 Bosonic Fock operator.
 """
-struct BOperator{V<:Number, I<:ID{OID{<:FIndex{:b}}}} <: AbstractFockOperator{V, I}
+struct BOperator{V<:Number, I<:ID{AbstractCompositeOID{<:FIndex{:b}}}} <: AbstractFockOperator{V, I}
     value::V
     id::I
     BOperator(value::Number) = new{typeof(value), Tuple{}}(value, ())
     BOperator(value::Number, id::Tuple{}) = new{typeof(value), Tuple{}}(value, ())
-    BOperator(value::Number, id::ID{OID{<:FIndex{:b}}}) = new{typeof(value), typeof(id)}(value, id)
+    BOperator(value::Number, id::ID{AbstractCompositeOID{<:FIndex{:b}}}) = new{typeof(value), typeof(id)}(value, id)
 end
 
 """

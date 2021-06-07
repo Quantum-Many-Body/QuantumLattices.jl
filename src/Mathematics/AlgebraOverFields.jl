@@ -132,7 +132,7 @@ Get the product of the id system.
 
 An element of an algebra over a field.
 
-Basically, a concrete subtype should contain two attributes:
+Basically, a concrete subtype should contain two predefined contents:
 - `value::V`: the coefficient of the element
 - `id::I`: the id of the element
 """

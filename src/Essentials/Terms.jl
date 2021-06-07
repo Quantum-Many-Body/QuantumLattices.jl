@@ -458,7 +458,7 @@ end
         couplings::Union{Function, Coupling, Couplings, TermCouplings},
         amplitude::Union{Function, TermAmplitude, Nothing}=nothing,
         modulate::Union{Function, TermModulate, Bool}=false
-        ) where {ST, K, R}
+        ) where {K, R}
 
 A term of a quantum lattice system.
 """
@@ -480,7 +480,7 @@ function Term{K, R}(id::Symbol, value, bondkind;
         couplings::Union{Function, Coupling, Couplings, TermCouplings},
         amplitude::Union{Function, TermAmplitude, Nothing}=nothing,
         modulate::Union{Function, TermModulate, Bool}=false
-        ) where {ST, K, R}
+        ) where {K, R}
     isa(couplings, TermCouplings) || (couplings = TermCouplings(couplings))
     isa(amplitude, TermAmplitude) || (amplitude = TermAmplitude(amplitude))
     isa(modulate, TermModulate) || (modulate = TermModulate(id, modulate))
@@ -1038,7 +1038,9 @@ Update the coefficients of the terms in a generator.
 end
 
 """
-    Generator(terms::Tuple{Vararg{Term}}, bonds::Bonds, config::Config, half::Bool, table::Table, boundary::Boundary=plain)
+    Generator(terms::Tuple{Vararg{Term}}, bonds::Bonds, config::Config;
+        half::Bool=false, table::Union{Table,Nothing}=nothing, boundary::Boundary=plain
+        )
 
 A generator of operators based on terms, configuration of internal degrees of freedom, and boundary twist.
 """

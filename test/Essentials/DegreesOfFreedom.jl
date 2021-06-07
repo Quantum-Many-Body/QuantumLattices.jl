@@ -81,7 +81,11 @@ end
 end
 
 @testset "OID" begin
+    @test contentnames(AbstractCompositeOID) == (:index,)
+    @test contentnames(OID) == (:index, :rcoord, :icoord)
+
     oid = OID(DIndex(1, 1, 1), [0.0, -0.0], [0.0, 0.0])
+    @test indextype(oid) == indextype(typeof(oid)) == DIndex{Int}
     @test oid' == OID(DIndex(1, 1, 2), rcoord=SVector(0.0, 0.0), icoord=SVector(0.0, 0.0))
     @test hash(oid, UInt(1)) == hash(OID(DIndex(1, 1, 1), SVector(0.0, 0.0), SVector(0.0, 1.0)), UInt(1))
     @test propertynames(ID(oid)) == (:indexes, :rcoords, :icoords)
