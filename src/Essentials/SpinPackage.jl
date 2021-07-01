@@ -450,7 +450,7 @@ macro sc_str(str::String)
     coeff = eval(Meta.parse(str[firstindex(str):prevind(str, fpos)]))
     tags = Tuple(sidreprevmap[tag] for tag in replace(str[thisind(str, fpos):thisind(str, lpos)], "S"=>""))
     attrpairs = scpairs(strip(str[nextind(str, lpos):end]))
-    return SpinCoupling(coeff, tags; attrpairs...)
+    return Expr(:call, :SpinCoupling, Expr(:parameters, attrpairs...), coeff, tags)
 end
 function sccomponent(str::AbstractString)
     attrname = str[1:2]=="sl" ? :atoms : str[1:2]=="ob" ? :orbitals : error("sccomponent error: wrong input pattern.")
@@ -460,9 +460,9 @@ function sccomponent(str::AbstractString)
         attrvalue = Tuple(expr.args)
     else
         @assert expr.head∈(:call, :hcat, :vcat, :vect) "sccomponent error: wrong input pattern for orbitals."
-        attrvalue = eval(subscriptsexpr(expr))
+        attrvalue = subscriptsexpr(expr)
     end
-    return attrname => attrvalue
+    return Expr(:kw, attrname, attrvalue)
 end
 function scpairs(str::AbstractString)
     attrpairs = []
@@ -486,7 +486,7 @@ macro heisenberg_str(str::String)
     mode = isnothing(slice) ? "+-z" : str[slice]
     isnothing(slice) || (str = strip(str[nextind(str, slice.stop):end]))
     attrpairs = scpairs(str)
-    return Heisenberg(mode; attrpairs...)
+    return Expr(:call, :Heisenberg, Expr(:parameters, attrpairs...), mode)
 end
 
 """
@@ -500,7 +500,7 @@ macro ising_str(str::String)
     @assert str[1] ∈ ('x', 'y', 'z') "@ising_str error: wrong input pattern."
     length(str)>1 && @assert str[2]==' ' "@ising_str error: wrong input pattern."
     attrpairs = scpairs(str[3:end])
-    return Ising(str[1]; attrpairs...)
+    return Expr(:call, :Ising, Expr(:parameters, attrpairs...), str[1])
 end
 
 """
@@ -514,7 +514,7 @@ macro gamma_str(str::String)
     @assert str[1] in ('x', 'y', 'z') "@gamma_str error: wrong input pattern."
     length(str)>1 && @assert str[2]==' ' "@gamma_str error: wrong input pattern."
     attrpairs = scpairs(str[3:end])
-    return Gamma(str[1]; attrpairs...)
+    return Expr(:call, :Gamma, Expr(:parameters, attrpairs...), str[1])
 end
 
 """
@@ -528,7 +528,7 @@ macro dm_str(str::String)
     @assert str[1] in ('x', 'y', 'z') "@dm_str error: wrong input pattern."
     length(str)>1 && @assert str[2]==' ' "@dm_str error: wrong input pattern."
     attrpairs = scpairs(str[3:end])
-    return DM(str[1]; attrpairs...)
+    return Expr(:call, :DM, Expr(:parameters, attrpairs...), str[1])
 end
 
 """
@@ -538,9 +538,9 @@ end
 
 The single Sˣ/Sʸ/Sᶻ coupling.
 """
-macro sˣ_str(str::String) Couplings(SpinCoupling(1, ('x',); scpairs(str)...)) end
-macro sʸ_str(str::String) Couplings(SpinCoupling(1, ('y',); scpairs(str)...)) end
-macro sᶻ_str(str::String) Couplings(SpinCoupling(1, ('z',); scpairs(str)...)) end
+macro sˣ_str(str::String) Expr(:call, :Couplings, Expr(:call, :SpinCoupling, Expr(:parameters, scpairs(str)...), 1, ('x',))) end
+macro sʸ_str(str::String) Expr(:call, :Couplings, Expr(:call, :SpinCoupling, Expr(:parameters, scpairs(str)...), 1, ('y',))) end
+macro sᶻ_str(str::String) Expr(:call, :Couplings, Expr(:call, :SpinCoupling, Expr(:parameters, scpairs(str)...), 1, ('z',))) end
 
 """
     SpinTerm{R}(id::Symbol, value::Any, bondkind::Any;

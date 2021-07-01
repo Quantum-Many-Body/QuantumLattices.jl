@@ -669,7 +669,7 @@ function expand!(operators::Operators, term::Term, bond::AbstractBond, config::C
             for coupling in values(term.couplings(bond))
                 points = couplingpoints(coupling, bond, term|>kind|>Val)
                 internals = couplinginternals(coupling, bond, config, term|>kind|>Val)
-                for (coeff, id) in expand(coupling, points, internals, term|>kind|>Val) # needs improvement memory allocation 7 times for each fock coupling
+                for (coeff, id) in expand(coupling, points, internals, term|>kind|>Val)
                     !isnothing(table) && !all(haskey(table, id)) && continue
                     if hermitian == true
                         add!(operators, rawtype(optype)(convert(optype|>valtype, value*coeff/(half ? 2 : 1)), id))
@@ -680,7 +680,7 @@ function expand!(operators::Operators, term::Term, bond::AbstractBond, config::C
                     else
                         if !(isnothing(record) ? haskey(operators, id') : id'∈record)
                             isnothing(record) || push!(record, id)
-                            ovalue = valtype(optype)(value*coeff/termfactor(id, term|>kind|>Val)) # needs improvement memory allocation 2 times for each
+                            ovalue = valtype(optype)(value*coeff/termfactor(id, term|>kind|>Val))
                             opt = rawtype(optype)(ovalue, id)
                             add!(operators, opt)
                             half || add!(operators, opt')

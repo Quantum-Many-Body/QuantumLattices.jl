@@ -591,12 +591,13 @@ macro fc_str(str)
         attrpairs = []
         N = nothing
         for component in split(ps, '⊗')
-            attrname, attrvalue = fccomponent(component)
-            isnothing(N) && (N = length(attrvalue))
-            @assert N==length(attrvalue) "@fc_str error: dismatched ranks."
-            push!(attrpairs, attrname=>attrvalue)
+            attrpair, rank = fccomponent(component)
+            isnothing(N) && (N = rank)
+            @assert N==rank "@fc_str error: dismatched ranks."
+            push!(attrpairs, attrpair)
         end
-        return FockCoupling{N}(coeff; attrpairs...)
+        @assert length(attrpairs)>0 "@fc_str error: wrong input pattern."
+        return Expr(:call, :(FockCoupling{$N}), Expr(:parameters, attrpairs...), coeff)
     end
 end
 function fccomponent(str::AbstractString)
@@ -605,11 +606,13 @@ function fccomponent(str::AbstractString)
     if attrname∈(:atoms, :nambus)
         @assert expr.head∈(:hcat, :vect) "fccomponent error: wrong input pattern for atoms and nambus."
         attrvalue = Tuple(expr.args)
+        N = length(attrvalue)
     else
         @assert expr.head∈(:call, :hcat, :vcat, :vect) "fccomponent error: wrong input pattern for orbitals and spins."
-        attrvalue = eval(subscriptsexpr(expr))
+        attrvalue = subscriptsexpr(expr)
+        N = length(attrvalue.args[end].args[2])
     end
-    return attrname => attrvalue
+    return Expr(:kw, attrname, attrvalue), N
 end
 
 """
