@@ -282,8 +282,8 @@ end
 
 Run an assignment with the given id registered on an algorithm. Optionally, the run process can be timed by setting the `timing` argument to be `true`.
 """
-@inline run!(alg::Algorithm, id::Symbol, timing::Bool = true) = run!(alg, Val(id), timing)
-function run!(alg::Algorithm, ::Val{id}, timing::Bool = true) where id
+@inline run!(alg::Algorithm, id::Symbol, timing::Bool=true) = run!(alg, Val(id), timing)
+function run!(alg::Algorithm, ::Val{id}, timing::Bool=true) where id
     assign = get(alg, Val(id))
     if timing
         @timeit alg.timer string(id) algrunassignment!(alg, assign)

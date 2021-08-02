@@ -20,7 +20,7 @@ struct FApp <: App end
     @test isequal(FApp(), FApp())
     @test update!(FApp()) == FApp()
 
-    assign = Assignment(:FApp, FApp(), (t=1.0, U=8.0), dependences=(:FApp1, :FApp2))
+    assign = Assignment(:FApp, FApp(), (t=1.0, U=8.0), dependences=(:FApp₁, :FApp₂))
     @test deepcopy(assign) == assign
     @test isequal(deepcopy(assign), assign)
     @test assign|>valtype == assign|>typeof|>valtype == Any
@@ -37,15 +37,15 @@ end
     alg = Algorithm("Alg", FEngine(), parameters=(t=1.0, U=8.0))
     @test string(alg) == repr(alg) == "Alg_FEngine_1.0_8.0"
     @test repr(alg, (:U,)) == "Alg_FEngine_1.0"
-    register!(alg, :FApp1, FApp(), parameters=(U=5.0,))
-    register!(alg, :FApp2, FApp(), parameters=(U=6.0,), dependences=(:FApp1,))
-    @test get(alg, Val(:FApp1)) == get(alg, :FApp1) == Assignment(:FApp1, FApp(), (t=1.0, U=5.0), virgin=false)
-    @test get(alg, Val(:FApp2)) == get(alg, :FApp2) == Assignment(:FApp2, FApp(), (t=1.0, U=6.0), dependences=(:FApp1,), virgin=false)
-    @test prepare!(alg, get(alg, :FApp1)) === nothing
-    @test run!(alg, get(alg, :FApp1)) === nothing
-    @test dependences(alg, get(alg, :FApp1)) == ()
-    @test dependences(alg, get(alg, :FApp2)) == (:FApp1,)
-    @test dependences(alg, get(alg, :FApp2), (:FApp1,)) == ()
+    @test_logs (:info, r"App FApp₁\(FApp\)\: time consumed [0-9]*\.[0-9]*s.") register!(alg, :FApp₁, FApp(), parameters=(U=5.0,))
+    @test_logs (:info, r"App FApp₂\(FApp\)\: time consumed [0-9]*\.[0-9]*s.") register!(alg, :FApp₂, FApp(), parameters=(U=6.0,), dependences=(:FApp₁,))
+    @test get(alg, Val(:FApp₁)) == get(alg, :FApp₁) == Assignment(:FApp₁, FApp(), (t=1.0, U=5.0), virgin=false)
+    @test get(alg, Val(:FApp₂)) == get(alg, :FApp₂) == Assignment(:FApp₂, FApp(), (t=1.0, U=6.0), dependences=(:FApp₁,), virgin=false)
+    @test isnothing(prepare!(alg, get(alg, :FApp₁)))
+    @test isnothing(run!(alg, get(alg, :FApp₁)))
+    @test dependences(alg, get(alg, :FApp₁)) == ()
+    @test dependences(alg, get(alg, :FApp₂)) == (:FApp₁,)
+    @test dependences(alg, get(alg, :FApp₂), (:FApp₁,)) == ()
 end
 
 mutable struct VCA <: Engine
@@ -84,7 +84,7 @@ end
     engine = VCA(1.0, 8.0)
     gf = Assignment(:_VCAGF_, GF(4, 0), Parameters(engine), data=Matrix{Complex{Float}}(undef, 0, 0))
     vca = Algorithm("Test", engine, assignments=(gf,))
-    register!(vca, :DOS, DOS(-3.5), parameters=(U=7.0,), map=params::Parameters->Parameters{(:t, :U, :mu)}(params.t, params.U, -params.U/2))
+    @test_logs (:info, r"App DOS\(DOS\)\: time consumed [0-9]*\.[0-9]*s.") register!(vca, :DOS, DOS(-3.5), parameters=(U=7.0,), map=params::Parameters->Parameters{(:t, :U, :mu)}(params.t, params.U, -params.U/2))
     dos = get(vca, :DOS)
     @test dos.data == 32.0
     @test dos.app.mu == -3.5
