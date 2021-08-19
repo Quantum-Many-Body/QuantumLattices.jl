@@ -4,7 +4,7 @@ using Printf: @printf, @sprintf
 using StaticArrays: SVector
 using MacroTools: @capture
 using ..Spatials: AbstractBond, Point, Bonds, AbstractLattice, acrossbonds, isintracell
-using ..DegreesOfFreedom: Config, AbstractOID, Operators, Table, Boundary, plain
+using ..DegreesOfFreedom: Config, AbstractOID, oidtype, Operator, Operators, Table, Boundary, plain
 using ...Interfaces: add!
 using ...Prerequisites: atol, rtol, decimaltostr
 using ...Prerequisites.Traits: rawtype, efficientoperations
@@ -647,7 +647,7 @@ end
 
 Get the compatible operator type from the type of a term, a configuration of the internal degrees of freedom and a bond.
 """
-function otype end
+otype(T::Type{<:Term}, C::Type{<:Config}, B::Type{<:AbstractBond}) = Operator{T|>valtype, ID{oidtype(C|>valtype, B|>eltype, Val(:info)), T|>rank}}
 
 """
     expand!(operators::Operators, term::Term, bond::AbstractBond, config::Config, half::Bool=false; table::Union{Nothing, Table}=nothing) -> Operators

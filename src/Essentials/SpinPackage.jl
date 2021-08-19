@@ -3,7 +3,7 @@ module SpinPackage
 using StaticArrays: SVector
 using Printf: @printf, @sprintf
 using ..Spatials: PID, Point, Bond, AbstractBond
-using ..DegreesOfFreedom: IID, Internal, Index, OID, AbstractCompositeOID, OIDToTuple, Operator, LaTeX, latexformat, Config, oidtype
+using ..DegreesOfFreedom: IID, Internal, Index, OID, AbstractCompositeOID, OIDToTuple, Operator, LaTeX, latexformat, Config
 using ..Terms: wildcard, Subscripts, SubID, subscriptsexpr, Coupling, Couplings, Term, TermCouplings, TermAmplitude, TermModulate
 using ...Essentials: kind
 using ...Prerequisites: Float, decimaltostr, delta
@@ -13,11 +13,11 @@ using ...Mathematics.AlgebraOverFields: SimpleID, ID
 
 import ...Prerequisites.Traits: parameternames, isparameterbound, contentnames, getcontent
 import ..DegreesOfFreedom: script, latexname, isHermitian
-import ..Terms: nonconstrain, couplingcenters, otype, abbr
+import ..Terms: nonconstrain, couplingcenters, abbr
 import ...Interfaces: rank, expand, permute
 
 export sdefaultlatex, usualspinindextotuple
-export SID, Spin, SIndex, SOperator, SCID, SpinCoupling, SpinTerm, totalspin
+export SID, Spin, SCID, SpinCoupling, SpinTerm, totalspin
 export Heisenberg, Ising, Gamma, DM, Sˣ, Sʸ, Sᶻ
 export @sc_str, @heisenberg_str, @ising_str, @gamma_str, @dm_str, @sˣ_str, @sʸ_str, @sᶻ_str
 
@@ -106,46 +106,15 @@ Construct a spin degrees of freedom.
 @inline Spin{S}(; atom::Int=1, norbital::Int=1) where S = Spin{S}(atom, norbital)
 
 """
-    SIndex{S, P} <: Index{PID{P}, SID{S}}
-
-The spin index.
-"""
-struct SIndex{S, P} <: Index{PID{P}, SID{S}}
-    scope::P
-    site::Int
-    orbital::Int
-    tag::Char
-end
-function SIndex{S}(scope::P, site::Int, orbital::Int, tag::Char) where {S, P}
-    @assert isa(S, Rational{Int}) && S.den==2 || isa(S, Integer) "SIndex error: not supported spin($S)."
-    return SIndex{S, P}(scope, site, orbital, tag)
-end
-Base.show(io::IO, index::SIndex) = @printf io "SIndex{%s}(%s)" totalspin(index) join(repr.(values(index)), ", ")
-@inline @generated function Base.replace(index::SIndex; kwargs...)
-    exprs = [:(get(kwargs, $name, getfield(index, $name))) for name in QuoteNode.(fieldnames(index))]
-    return :(rawtype(typeof(index)){totalspin(index)}($(exprs...)))
-end
-@inline Base.union(::Type{P}, ::Type{I}) where {P<:PID, I<:SID} = SIndex{totalspin(I), fieldtype(P, :scope)}
-@inline totalspin(index::SIndex) = totalspin(typeof(index))
-@inline totalspin(::Type{<:SIndex{S}}) where S = S
-
-"""
-    SIndex(pid::PID, sid::SID) -> SIndex
-
-Construct a spin index by a pid and an sid.
-"""
-@inline SIndex(pid::PID, sid::SID) = SIndex{totalspin(sid)}(values(pid)..., values(sid)...)
-
-"""
-    script(::Val{:site}, index::SIndex; kwargs...) -> Int
-    script(::Val{:orbital}, index::SIndex; kwargs...) -> Int
-    script(::Val{:tag}, index::SIndex; kwargs...) -> Char
+    script(::Val{:site}, index::Index{<:PID, <:SID}; kwargs...) -> Int
+    script(::Val{:orbital}, index::Index{<:PID, <:SID}; kwargs...) -> Int
+    script(::Val{:tag}, index::Index{<:PID, <:SID}; kwargs...) -> Char
 
 Get the required script of a spin oid.
 """
-@inline script(::Val{:site}, index::SIndex; kwargs...) = index.site
-@inline script(::Val{:orbital}, index::SIndex; kwargs...) = index.orbital
-@inline script(::Val{:tag}, index::SIndex; kwargs...) = index.tag
+@inline script(::Val{:site}, index::Index{<:PID, <:SID}; kwargs...) = index.pid.site
+@inline script(::Val{:orbital}, index::Index{<:PID, <:SID}; kwargs...) = index.iid.orbital
+@inline script(::Val{:tag}, index::Index{<:PID, <:SID}; kwargs...) = index.iid.tag
 
 """
     sdefaultlatex
@@ -153,10 +122,10 @@ Get the required script of a spin oid.
 The default LaTeX format for a spin oid.
 """
 const soptdefaultlatex = LaTeX{(:tag,), (:site, :orbital)}('S')
-@inline latexname(::Type{<:SIndex}) = Symbol("SIndex")
-@inline latexname(::Type{<:OID{<:SIndex}}) = Symbol("OID{SIndex}")
-latexformat(SIndex, soptdefaultlatex)
-latexformat(OID{<:SIndex}, soptdefaultlatex)
+@inline latexname(::Type{<:Index{<:PID, <:SID}}) = Symbol("Index{PID, SID}")
+@inline latexname(::Type{<:OID{<:Index{<:PID, <:SID}}}) = Symbol("OID{Index{PID, SID}}")
+latexformat(Index{<:PID, <:SID}, soptdefaultlatex)
+latexformat(OID{<:Index{<:PID, <:SID}}, soptdefaultlatex)
 
 """
     usualspinindextotuple
@@ -166,62 +135,50 @@ Indicate that the choosed fields are `(:scope, :site, :orbital)` when converting
 const usualspinindextotuple = OIDToTuple(:scope, :site, :orbital)
 
 """
-    SOperator{V<:Number, I<:ID{AbstractCompositeOID{<:SIndex}}} <: Operator{V, I}
+    permute(id₁::OID{<:Index{<:PID, <:SID}}, id₂::OID{<:Index{<:PID, <:SID}}) -> Tuple{Vararg{Operator}}
 
-Spin operator.
+Permute two spin oid and get the result.
 """
-struct SOperator{V<:Number, I<:ID{AbstractCompositeOID{<:SIndex}}} <: Operator{V, I}
-    value::V
-    id::I
-    SOperator(value::Number) = new{typeof(value), Tuple{}}(value, ())
-    SOperator(value::Number, id::ID{AbstractCompositeOID{<:SIndex}}) = new{typeof(value), typeof(id)}(value, id)
-end
-
-"""
-    permute(id₁::OID{<:SIndex}, id₂::OID{<:SIndex}) -> Tuple{Vararg{SOperator}}
-
-Permute two fermionic oid and get the result.
-"""
-function permute(id₁::OID{<:SIndex}, id₂::OID{<:SIndex})
+function permute(id₁::OID{<:Index{<:PID, <:SID}}, id₂::OID{<:Index{<:PID, <:SID}})
     @assert id₁.index≠id₂.index || id₁.rcoord≠id₂.rcoord || id₁.icoord≠id₂.icoord "permute error: permuted ids should not be equal to each other."
     if usualspinindextotuple(id₁.index)==usualspinindextotuple(id₂.index) && id₁.rcoord==id₂.rcoord && id₁.icoord==id₂.icoord
-        @assert totalspin(id₁.index)==totalspin(id₂.index) "permute error: noncommutable ids should have the same spin field."
-        if id₁.index.tag == 'x'
-            id₂.index.tag=='y' && return (SOperator(+1im, ID(permutesoid(id₁, 'z'))), SOperator(1, ID(id₂, id₁)))
-            id₂.index.tag=='z' && return (SOperator(-1im, ID(permutesoid(id₁, 'y'))), SOperator(1, ID(id₂, id₁)))
-            id₂.index.tag=='+' && return (SOperator(-1, ID(permutesoid(id₁, 'z'))), SOperator(1, ID(id₂, id₁)))
-            id₂.index.tag=='-' && return (SOperator(+1, ID(permutesoid(id₁, 'z'))), SOperator(1, ID(id₂, id₁)))
-        elseif id₁.index.tag == 'y'
-            id₂.index.tag=='x' && return (SOperator(-1im, ID(permutesoid(id₁, 'z'))), SOperator(1, ID(id₂, id₁)))
-            id₂.index.tag=='z' && return (SOperator(+1im, ID(permutesoid(id₁, 'x'))), SOperator(1, ID(id₂, id₁)))
-            id₂.index.tag=='+' && return (SOperator(-1im, ID(permutesoid(id₁, 'z'))), SOperator(1, ID(id₂, id₁)))
-            id₂.index.tag=='-' && return (SOperator(-1im, ID(permutesoid(id₁, 'z'))), SOperator(1, ID(id₂, id₁)))
-        elseif id₁.index.tag == 'z'
-            id₂.index.tag=='x' && return (SOperator(+1im, ID(permutesoid(id₁, 'y'))), SOperator(1, ID(id₂, id₁)))
-            id₂.index.tag=='y' && return (SOperator(-1im, ID(permutesoid(id₁, 'x'))), SOperator(1, ID(id₂, id₁)))
-            id₂.index.tag=='+' && return (SOperator(+1, ID(id₂)), SOperator(1, ID(id₂, id₁)))
-            id₂.index.tag=='-' && return (SOperator(-1, ID(id₂)), SOperator(1, ID(id₂, id₁)))
-        elseif id₁.index.tag == '+'
-            id₂.index.tag=='x' && return (SOperator(+1, ID(permutesoid(id₁, 'z'))), SOperator(1, ID(id₂, id₁)))
-            id₂.index.tag=='y' && return (SOperator(+1im, ID(permutesoid(id₁, 'z'))), SOperator(1, ID(id₂, id₁)))
-            id₂.index.tag=='z' && return (SOperator(-1, ID(id₁)), SOperator(1, ID(id₂, id₁)))
-            id₂.index.tag=='-' && return (SOperator(+2, ID(permutesoid(id₁, 'z'))), SOperator(1, ID(id₂, id₁)))
-        elseif id₁.index.tag == '-'
-            id₂.index.tag=='x' && return (SOperator(-1, ID(permutesoid(id₁, 'z'))), SOperator(1, ID(id₂, id₁)))
-            id₂.index.tag=='y' && return (SOperator(1im, ID(permutesoid(id₁, 'z'))), SOperator(1, ID(id₂, id₁)))
-            id₂.index.tag=='z' && return (SOperator(+1, ID(id₁)), SOperator(1, ID(id₂, id₁)))
-            id₂.index.tag=='+' && return (SOperator(-2, ID(permutesoid(id₁, 'z'))), SOperator(1, ID(id₂, id₁)))
+        @assert totalspin(id₁.index.iid)==totalspin(id₂.index.iid) "permute error: noncommutable ids should have the same spin field."
+        if id₁.index.iid.tag == 'x'
+            id₂.index.iid.tag=='y' && return (Operator(+1im, ID(permutesoid(id₁, 'z'))), Operator(1, ID(id₂, id₁)))
+            id₂.index.iid.tag=='z' && return (Operator(-1im, ID(permutesoid(id₁, 'y'))), Operator(1, ID(id₂, id₁)))
+            id₂.index.iid.tag=='+' && return (Operator(-1, ID(permutesoid(id₁, 'z'))), Operator(1, ID(id₂, id₁)))
+            id₂.index.iid.tag=='-' && return (Operator(+1, ID(permutesoid(id₁, 'z'))), Operator(1, ID(id₂, id₁)))
+        elseif id₁.index.iid.tag == 'y'
+            id₂.index.iid.tag=='x' && return (Operator(-1im, ID(permutesoid(id₁, 'z'))), Operator(1, ID(id₂, id₁)))
+            id₂.index.iid.tag=='z' && return (Operator(+1im, ID(permutesoid(id₁, 'x'))), Operator(1, ID(id₂, id₁)))
+            id₂.index.iid.tag=='+' && return (Operator(-1im, ID(permutesoid(id₁, 'z'))), Operator(1, ID(id₂, id₁)))
+            id₂.index.iid.tag=='-' && return (Operator(-1im, ID(permutesoid(id₁, 'z'))), Operator(1, ID(id₂, id₁)))
+        elseif id₁.index.iid.tag == 'z'
+            id₂.index.iid.tag=='x' && return (Operator(+1im, ID(permutesoid(id₁, 'y'))), Operator(1, ID(id₂, id₁)))
+            id₂.index.iid.tag=='y' && return (Operator(-1im, ID(permutesoid(id₁, 'x'))), Operator(1, ID(id₂, id₁)))
+            id₂.index.iid.tag=='+' && return (Operator(+1, ID(id₂)), Operator(1, ID(id₂, id₁)))
+            id₂.index.iid.tag=='-' && return (Operator(-1, ID(id₂)), Operator(1, ID(id₂, id₁)))
+        elseif id₁.index.iid.tag == '+'
+            id₂.index.iid.tag=='x' && return (Operator(+1, ID(permutesoid(id₁, 'z'))), Operator(1, ID(id₂, id₁)))
+            id₂.index.iid.tag=='y' && return (Operator(+1im, ID(permutesoid(id₁, 'z'))), Operator(1, ID(id₂, id₁)))
+            id₂.index.iid.tag=='z' && return (Operator(-1, ID(id₁)), Operator(1, ID(id₂, id₁)))
+            id₂.index.iid.tag=='-' && return (Operator(+2, ID(permutesoid(id₁, 'z'))), Operator(1, ID(id₂, id₁)))
+        elseif id₁.index.iid.tag == '-'
+            id₂.index.iid.tag=='x' && return (Operator(-1, ID(permutesoid(id₁, 'z'))), Operator(1, ID(id₂, id₁)))
+            id₂.index.iid.tag=='y' && return (Operator(1im, ID(permutesoid(id₁, 'z'))), Operator(1, ID(id₂, id₁)))
+            id₂.index.iid.tag=='z' && return (Operator(+1, ID(id₁)), Operator(1, ID(id₂, id₁)))
+            id₂.index.iid.tag=='+' && return (Operator(-2, ID(permutesoid(id₁, 'z'))), Operator(1, ID(id₂, id₁)))
         end
     else
-        return (SOperator(1, ID(id₂, id₁)),)
+        return (Operator(1, ID(id₂, id₁)),)
     end
 end
-@inline permutesoid(id::OID{<:SIndex}, tag::Char) = replace(id, index=replace(id.index, tag=tag))
+@inline permutesoid(id::OID{<:Index{<:PID, <:SID}}, tag::Char) = replace(id, index=replace(id.index, iid=replace(id.index.iid, tag=tag)))
 
 """
     SCID{T<:Tuple{Vararg{Char}}, A<:Tuple} <: SimpleID
 
-The id of the atoms and tags part of a spin coupling.
+The id of the tags and atoms part of a spin coupling.
 """
 struct SCID{T<:Tuple{Vararg{Char}}, A<:Tuple} <: SimpleID
     tags::T
@@ -328,7 +285,7 @@ function expand(sc::SpinCoupling, points::NTuple{R, Point}, spins::NTuple{R, Spi
     return SCExpand{totalspins(spins)}(sc.value, points, obexpands, sc.tags)
 end
 @generated totalspins(spins::NTuple{R, Spin}) where R = Tuple(totalspin(fieldtype(spins, i)) for i = 1:R)
-struct SCExpand{SPS, V, N, D, P, DT<:Number} <: CartesianVectorSpace{Tuple{V, ID{OID{SIndex, SVector{D, DT}}, N}}}
+struct SCExpand{SPS, V, N, D, P, DT<:Number} <: CartesianVectorSpace{Tuple{V, ID{OID{<:Index, SVector{D, DT}}, N}}}
     value::V
     points::NTuple{N, Point{D, PID{P}, DT}}
     obexpands::Vector{NTuple{N, Int}}
@@ -338,7 +295,7 @@ struct SCExpand{SPS, V, N, D, P, DT<:Number} <: CartesianVectorSpace{Tuple{V, ID
     end
 end
 @inline @generated function Base.eltype(::Type{SCExpand{SPS, V, N, D, P, DT}}) where {SPS, V, N, D, P, DT<:Number}
-    return Tuple{V, Tuple{[OID{SIndex{SPS[i], P}, SVector{D, DT}} for i = 1:N]...}}
+    return Tuple{V, Tuple{[OID{Index{PID{P}, SID{SPS[i]}}, SVector{D, DT}} for i = 1:N]...}}
 end
 @inline Base.Dims(sce::SCExpand) = (length(sce.obexpands),)
 @generated function Tuple(index::CartesianIndex{1}, sce::SCExpand{SPS, V, N}) where {SPS, V, N}
@@ -348,7 +305,7 @@ end
         push!(exprs, quote
             pid, rcoord, icoord = sce.points[$i].pid, sce.points[$i].rcoord, sce.points[$i].icoord
             sid = SID{$spin}(sce.obexpands[index[1]][$i], sce.tags[$i])
-            OID(SIndex(pid, sid), rcoord, icoord)
+            OID(Index(pid, sid), rcoord, icoord)
         end)
     end
     return Expr(:tuple, :(sce.value), Expr(:tuple, exprs...))
@@ -571,12 +528,5 @@ end
     @assert rank(sc)%2==0 "couplingcenters error: the rank of the input spin coupling should be even."
     return ntuple(i->2-i%2, Val(rank(sc)))
 end
-
-"""
-    otype(T::Type{<:Term}, C::Type{<:Config{<:Spin}}, B::Type{<:AbstractBond})
-
-Get the operator type of a spin term.
-"""
-@inline otype(T::Type{<:Term}, C::Type{<:Config{<:Spin}}, B::Type{<:AbstractBond}) = SOperator{valtype(T), ID{oidtype(valtype(C), eltype(B), kind(T)|>Val), rank(T)}}
 
 end # module

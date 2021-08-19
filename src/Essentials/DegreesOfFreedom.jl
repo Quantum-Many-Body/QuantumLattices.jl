@@ -1,5 +1,6 @@
 module DegreesOfFreedom
 
+using Base: hasfastin
 using Printf: @printf, @sprintf
 using StaticArrays: SVector
 using LaTeXStrings: latexstring
@@ -17,8 +18,8 @@ import ...Essentials: reset!, update!
 import ...Prerequisites.Traits: contentnames
 import ...Mathematics.AlgebraOverFields: sequence
 
-export IID, Internal, Config, AbstractOID, Index, AbstractCompositeOID, OID, Operator, Operators
-export iidtype, pid, iid, isHermitian, indextype, oidtype
+export IID, Internal, Config, AbstractOID, Index, AbstractCompositeOID, OID, AbstractOperator, Operator, Operators
+export iidtype, isHermitian, indextype, oidtype
 export Metric, OIDToTuple, Table
 export LaTeX, latexname, latexformat, superscript, subscript, script
 export Boundary, twist, plain
@@ -101,7 +102,10 @@ end
 
 The index of a degree of freedom, which consist of the spatial part and the internal part.
 """
-abstract type Index{P<:PID, I<:IID} <: AbstractOID end
+struct Index{P<:PID, I<:IID} <: AbstractOID
+    pid::P
+    iid::I
+end
 
 """
     pidtype(index::Index)
@@ -122,45 +126,11 @@ Get the type of the internal part of an index.
 @inline iidtype(::Type{<:Index{<:PID, I}}) where {I<:IID} = I
 
 """
-    (INDEX::Type{<:Index})(pid::PID, iid::IID) -> INDEX
-
-Get the corresponding index from a pid and an iid.
-"""
-@inline (INDEX::Type{<:Index})(pid::PID, iid::IID) = INDEX(values(pid)..., values(iid)...)
-
-"""
-    pid(index::Index) -> PID
-
-Get the spatial part of an index.
-"""
-@inline @generated function pid(index::Index)
-    exprs = [:(getfield(index, $name)) for name in QuoteNode.(index|>pidtype|>fieldnames)]
-    return :(pidtype(index)($(exprs...)))
-end
-
-"""
-    iid(index::Index) -> IID
-
-Get the internal part of an index.
-"""
-@inline @generated function iid(index::Index)
-    exprs = [:(getfield(index, $name)) for name in QuoteNode.(index|>iidtype|>fieldnames)]
-    return :(iidtype(index)($(exprs...)))
-end
-
-"""
     adjoint(index::Index) -> typeof(index)
 
 Get the adjoint of an index.
 """
-@inline Base.adjoint(index::Index) = rawtype(typeof(index))(index|>pid, index|>iid|>adjoint)
-
-"""
-    union(::Type{P}, ::Type{I}) where {P<:PID, I<:IID}
-
-Combine a concrete `PID` type and a concrete `IID` type to a concrete `Index` type.
-"""
-@inline Base.union(::Type{P}, ::Type{I}) where {P<:PID, I<:IID} = Index{P, I}
+@inline Base.adjoint(index::Index) = rawtype(typeof(index))(index.pid, adjoint(index.iid))
 
 """
     AbstractCompositeOID{I<:Index} <: AbstractOID
@@ -223,14 +193,25 @@ Get the adjoint of an operator id.
 
 Get the compatible oid type from the combination of the internal part and the spatial part.
 """
-@inline oidtype(I::Type{<:Internal}, P::Type{<:Point}, ::Val) = OID{union(P|>pidtype, I|>eltype), SVector{P|>dimension, P|>dtype}}
+@inline oidtype(I::Type{<:Internal}, P::Type{<:Point}, ::Val) = OID{Index{P|>pidtype, I|>eltype}, SVector{P|>dimension, P|>dtype}}
 
 """
-    Operator{V<:Number, I<:ID{AbstractOID}} <: Element{V, I}
+    AbstractOperator{V<:Number, I<:ID{AbstractOID}} <: Element{V, I}
 
 Abstract type for an operator.
 """
-abstract type Operator{V<:Number, I<:ID{AbstractOID}} <: Element{V, I} end
+abstract type AbstractOperator{V<:Number, I<:ID{AbstractOID}} <: Element{V, I} end
+
+"""
+    Operator{V<:Number, I<:ID{AbstractOID}} <: AbstractOperator{V, I}
+
+Operator.
+"""
+struct Operator{V<:Number, I<:ID{AbstractOID}} <: AbstractOperator{V, I}
+    value::V
+    id::I
+end
+@inline Operator(value::Number) = Operator(value, ())
 
 """
     show(io::IO, opt::Operator)
@@ -323,7 +304,7 @@ As a function, every instance should accept only one positional argument, i.e. t
 abstract type Metric <: Function end
 @inline Base.:(==)(m₁::T, m₂::T) where {T<:Metric} = ==(efficientoperations, m₁, m₂)
 @inline Base.isequal(m₁::T, m₂::T) where {T<:Metric} = isequal(efficientoperations, m₁, m₂)
-@inline Base.valtype(::Type{<:Metric}, ::Type{I}) where {I<:AbstractOID}= I
+@inline Base.valtype(::Type{<:Metric}, ::Type{I}) where {I<:AbstractOID} = I
 @inline (::Metric)(oid::AbstractOID) = oid
 
 """
@@ -358,7 +339,7 @@ Filter the selected fields.
 
 Construct the convertion rule from the information of subtypes of `AbstractOID`.
 """
-@inline @generated OIDToTuple(::Type{I}) where {I<:Index} = OIDToTuple(I|>fieldnames)
+@inline @generated OIDToTuple(::Type{I}) where {I<:Index} = OIDToTuple(fieldnames(pidtype(I))..., (fieldnames(iidtype(I)))...)
 @inline OIDToTuple(::Type{I}) where {I<:AbstractCompositeOID} = OIDToTuple(indextype(I))
 
 """
@@ -366,7 +347,7 @@ Construct the convertion rule from the information of subtypes of `AbstractOID`.
 
 Construct the convertion rule from the information of `Config`.
 """
-@inline OIDToTuple(::Type{C}) where {C<:Config} = OIDToTuple(union(C|>keytype, C|>valtype|>eltype))
+@inline OIDToTuple(::Type{C}) where {C<:Config} = OIDToTuple(Index{C|>keytype, C|>valtype|>eltype})
 
 """
     valtype(::Type{<:OIDToTuple}, ::Type{<:Index})
@@ -375,7 +356,11 @@ Construct the convertion rule from the information of `Config`.
 Get the valtype of applying an `OIDToTuple` rule to a subtype of `AbstractOID`.
 """
 @inline @generated function Base.valtype(::Type{M}, ::Type{I}) where {M<:OIDToTuple, I<:Index}
-    types = [fieldtype(I, field) for field in keys(M)]
+    types = []
+    for field in keys(M)
+        hasfield(pidtype(I), field) && push!(types, fieldtype(pidtype(I), field))
+        hasfield(iidtype(I), field) && push!(types, fieldtype(iidtype(I), field))
+    end
     return  Expr(:curly, :Tuple, types...)
 end
 @inline @generated Base.valtype(::Type{M}, ::Type{I}) where {M<:OIDToTuple, I<:AbstractCompositeOID} = valtype(M, indextype(I))
@@ -387,7 +372,12 @@ end
 Convert a concrete oid to a tuple.
 """
 @inline @generated function (oidtotuple::OIDToTuple)(index::Index)
-    exprs = [:(getfield(index, $name)) for name in QuoteNode.(keys(oidtotuple))]
+    exprs = []
+    for name in keys(oidtotuple)
+        field = QuoteNode(name)
+        hasfield(pidtype(index), name) && push!(exprs, :(getfield(index.pid, $field)))
+        hasfield(iidtype(index), name) && push!(exprs, :(getfield(index.iid, $field)))
+    end
     return Expr(:tuple, exprs...)
 end
 @inline (oidtotuple::OIDToTuple)(oid::AbstractCompositeOID) = oidtotuple(getcontent(oid, :index))
@@ -443,7 +433,7 @@ The input oids are measured by the input `by` function with the duplicates remov
 Get the oid-sequence table of the whole internal degrees of freedom of a lattice by use of their configurations.
 """
 function Table(config::Config, by::Metric=OIDToTuple(typeof(config)))
-    result = union(config|>keytype, config|>valtype|>eltype)[]
+    result = Index{config|>keytype, config|>valtype|>eltype}[]
     for (pid, internal) in config
         for iid in internal
             push!(result, (result|>eltype)(pid, iid))
@@ -487,7 +477,7 @@ end
 Reset a table by a complete configuration of internal degrees of freedom on a lattice.
 """
 function reset!(table::Table, config::Config)
-    indices = union(config|>keytype, config|>valtype|>eltype)[]
+    indices = Index{config|>keytype, config|>valtype|>eltype}[]
     for (pid, internal) in config
         for iid in internal
             push!(indices, (indices|>eltype)(pid, iid))

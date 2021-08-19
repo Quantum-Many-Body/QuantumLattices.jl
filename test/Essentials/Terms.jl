@@ -3,7 +3,7 @@ using Printf: @sprintf
 using StaticArrays: SVector
 using QuantumLattices.Essentials.Terms
 using QuantumLattices.Essentials.Spatials: AbstractBond, Point, PID, Bond, Bonds, Lattice, pidtype, acrossbonds, zerothbonds
-using QuantumLattices.Essentials.DegreesOfFreedom: Config, IID, Index, Internal, OID, Table, OIDToTuple, Operator, Operators, plain, oidtype
+using QuantumLattices.Essentials.DegreesOfFreedom: Config, IID, Index, Internal, OID, Table, OIDToTuple, Operator, Operators, plain
 using QuantumLattices.Interfaces: rank, expand!
 using QuantumLattices.Essentials: kind, update!, reset!
 using QuantumLattices.Prerequisites: Float, decimaltostr
@@ -12,18 +12,10 @@ using QuantumLattices.Prerequisites.CompositeStructures: NamedContainer
 using QuantumLattices.Mathematics.AlgebraOverFields: ID, SimpleID, id, idtype
 import QuantumLattices.Interfaces: dimension, expand
 import QuantumLattices.Essentials.DegreesOfFreedom: isHermitian
-import QuantumLattices.Essentials.Terms: couplingcenters, abbr, otype
+import QuantumLattices.Essentials.Terms: couplingcenters, abbr
 
 struct TID <: IID nambu::Int end
 Base.adjoint(sl::TID) = TID(3-sl.nambu)
-
-struct TIndex{S} <: Index{PID{S}, TID}
-    scope::S
-    site::Int
-    nambu::Int
-end
-Base.fieldnames(::Type{<:TIndex}) = (:scope, :site, :nambu)
-Base.union(::Type{P}, ::Type{I}) where {P<:PID, I<:TID} = TIndex{fieldtype(P, :scope)}
 
 struct TFock <: Internal{TID} end
 Base.Dims(vs::TFock) = (2,)
@@ -47,22 +39,15 @@ function expand(tc::TCoupling, points::NTuple{N, Point}, internals::NTuple{N, In
     pids = NTuple{N, pidtype(points|>eltype)}(points[i].pid for i = 1:N)
     rcoords = NTuple{N, SVector{dimension(points|>eltype), Float}}(points[i].rcoord for i = 1:N)
     icoords = NTuple{N, SVector{dimension(points|>eltype), Float}}(points[i].icoord for i = 1:N)
-    indexes = NTuple{N, TIndex{fieldtype(pids|>eltype, :scope)}}(TIndex(pids[i].scope, pids[i].site, nambus[i]) for i = 1:N)
+    indexes = NTuple{N, Index{PID{fieldtype(pids|>eltype, :scope)}, TID}}(Index(pids[i], TID(nambus[i])) for i = 1:N)
     return ((tc.value, ID(OID, indexes, rcoords, icoords)),)
-end
-
-struct TOperator{V<:Number, I<:ID{OID}} <: Operator{V, I}
-    value::V
-    id::I
 end
 
 abbr(::Type{<:Term{:Mu}}) = :mu
 isHermitian(::Type{<:Term{:Mu}}) = true
-otype(T::Type{<:Term{:Mu}}, C::Type{<:Config}, B::Type{<:AbstractBond}) = TOperator{T|>valtype, ID{oidtype(C|>valtype, B|>eltype, Val(:Mu)), T|>rank}}
 
 abbr(::Type{<:Term{:Hp}}) = :hp
 isHermitian(::Type{<:Term{:Hp}}) = false
-otype(T::Type{<:Term{:Hp}}, C::Type{<:Config}, B::Type{<:AbstractBond}) = TOperator{T|>valtype, ID{oidtype(C|>valtype, B|>eltype, Val(:Hp)), T|>rank}}
 
 @testset "Subscripts" begin
     sub = Subscripts(4)
@@ -142,7 +127,7 @@ end
 
 @testset "couplings" begin
     @test @couplings(TCoupling(1.0, ID(TCID(1), TCID(1)))) == Couplings(TCoupling(1.0, ID(TCID(1), TCID(1))))
-    @test @couplings(TCoupling(1.0, ID(TCID(1), TCID(1)))+TCoupling(1.0, ID(TCID(2), TCID(2)))) == TCoupling(1.0, ID(TCID(1), TCID(1)))+TCoupling(1.0, ID(TCID(2), TCID(2)))
+    @test @couplings(TCoupling(1.0, ID(TCID(1)))+TCoupling(1.0, ID(TCID(2)))) == TCoupling(1.0, ID(TCID(1)))+TCoupling(1.0, ID(TCID(2)))
 
     point = Point(PID(1, 1), (0.0, 0.0), (0.0, 0.0))
     config = Config{TFock}(pid->TFock(), [PID(1, 1)])
@@ -224,8 +209,11 @@ end
     config = Config{TFock}(pid->TFock(), [PID(1, 1)])
     term = Term{:Mu, 2}(:mu, 1.5, 0, couplings=TCoupling(1.0, ID(TCID(2), TCID(1))), amplitude=bond->3.0, modulate=true)
     operators = Operators(
-                    TOperator(+2.25, ID(OID, (TIndex(1, 1, 2), TIndex(1, 1, 1)), (SVector(0.0, 0.0), SVector(0.0, 0.0)), (SVector(0.0, 0.0), SVector(0.0, 0.0))))
-                    )
+        Operator(+2.25, ID(
+            OID(Index(PID(1, 1), TID(2)), SVector(0.0, 0.0), SVector(0.0, 0.0)),
+            OID(Index(PID(1, 1), TID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0))
+            ))
+        )
     @test expand(term, point, config, true) == operators
     @test expand(term, point, config, false) == operators*2
 
@@ -233,8 +221,11 @@ end
     config = Config{TFock}(pid->TFock(), [PID('a', 1), PID('b', 2)])
     term = Term{:Hp, 2}(:t, 1.5, 1, couplings=TCoupling(1.0, ID(TCID(2), TCID(1))), amplitude=bond->3.0, modulate=true)
     operators = Operators(
-                    TOperator(4.5, ID(OID, (TIndex('a', 1, 2), TIndex('b', 2, 1)), (SVector(0.5, 0.5), SVector(1.5, 1.5)), (SVector(0.0, 0.0), SVector(1.0, 1.0))))
-                    )
+        Operator(4.5, ID(
+            OID(Index(PID('a', 1), TID(2)), SVector(0.5, 0.5), SVector(0.0, 0.0)),
+            OID(Index(PID('b', 2), TID(1)), SVector(1.5, 1.5), SVector(1.0, 1.0))
+            ))
+        )
     @test expand(term, bond, config, true) == operators
     @test expand(term, bond, config, false) == operators+operators'
 
@@ -243,8 +234,11 @@ end
     config = Config{TFock}(pid->TFock(), lattice.pids)
     term = Term{:Mu, 2}(:mu, 1.5, 0, couplings=TCoupling(1.0, ID(TCID(2), TCID(1))), amplitude=bond->3.0, modulate=true)
     operators = Operators(
-                    TOperator(+2.25, ID(OID, (TIndex(1, 1, 2), TIndex(1, 1, 1)), (SVector(0.0, 0.0), SVector(0.0, 0.0)), (SVector(0.0, 0.0), SVector(0.0, 0.0))))
-                    )
+        Operator(+2.25, ID(
+            OID(Index(PID(1, 1), TID(2)), SVector(0.0, 0.0), SVector(0.0, 0.0)),
+            OID(Index(PID(1, 1), TID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0))
+            ))
+        )
     @test expand(term, bonds, config, true) == operators
     @test expand(term, bonds, config, false) == operators*2
 end
@@ -270,14 +264,15 @@ end
     tops2 = expand(one(t), filter(acrossbonds, bonds, Val(:include)), config, true, table=table)
     μops = expand(one(μ), filter(zerothbonds, bonds, Val(:include)), config, true, table=table)
 
-    optp = TOperator{Float, ID{OID{TIndex{Int}, SVector{2, Float}}, 2}}
+    optp = Operator{Float, ID{OID{Index{PID{Int}, TID}, SVector{2, Float}}, 2}}
     genops = GenOperators(tops1, NamedContainer{(:μ,)}((μops,)), NamedContainer{(:t, :μ)}((tops2, Operators{optp|>idtype, optp}())))
     @test genops == deepcopy(genops) && isequal(genops, deepcopy(genops))
     @test genops == GenOperators((t, μ), bonds, config, true, table=table)
     @test genops|>eltype == genops|>typeof|>eltype == optp
     @test genops|>idtype == genops|>typeof|>idtype == optp|>idtype
     @test expand!(Operators{idtype(optp), optp}(), genops, plain, t=2.0, μ=1.5) == tops1+tops2*2.0+μops*1.5
-    @test empty!(deepcopy(genops)) == empty(genops) == GenOperators(empty(μops), NamedContainer{(:μ,)}((empty(μops),)), NamedContainer{(:t, :μ)}((empty(μops), empty(μops))))
+    @test empty(genops) == empty!(deepcopy(genops))
+    @test empty(genops) == GenOperators(empty(μops), NamedContainer{(:μ,)}((empty(μops),)), NamedContainer{(:t, :μ)}((empty(μops), empty(μops))))
     @test reset!(deepcopy(genops), (t, μ), bonds, config, true, table=table) == genops
 
     gen = Generator((t, μ), bonds, config; half=true, table=table)

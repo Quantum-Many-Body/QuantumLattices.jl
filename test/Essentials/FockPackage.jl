@@ -2,8 +2,8 @@ using Test
 using StaticArrays: SVector
 using QuantumLattices.Essentials.FockPackage
 using QuantumLattices.Essentials.Spatials: Bond, Point, PID, rcoord, azimuthd
-using QuantumLattices.Essentials.DegreesOfFreedom: Config, OID, Operators, oidtype, script, latexname, isHermitian
-using QuantumLattices.Essentials.Terms: Couplings, Subscripts, @subscripts_str, SubID, abbr, otype
+using QuantumLattices.Essentials.DegreesOfFreedom: Index, Config, OID, Operator, Operators, script, latexname, isHermitian
+using QuantumLattices.Essentials.Terms: Couplings, Subscripts, @subscripts_str, SubID, abbr
 using QuantumLattices.Interfaces: ⊗, ⋅, expand, permute, rank
 using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Prerequisites.Traits: parameternames, isparameterbound, contentnames, getcontent
@@ -35,81 +35,65 @@ end
     @test summary(Fock{:f}(nspin=2, nnambu=1)) == "2-element Fock{:f}"
 end
 
-@testset "FIndex" begin
-    @test union(PID{Int}, FID{:f}) == FIndex{:f, Int}
-
-    index = FIndex(PID('f', 1), FID{:f}(1, 1, 1))
-    @test string(index) == "FIndex{:f}('f', 1, 1, 1, 1)"
-    @test index' == replace(index, nambu=2)
-    @test statistics(index) == statistics(typeof(index)) == :f
-end
-
-@testset "oidtype" begin
-    @test oidtype(Fock{:f}, Point{2, PID{Int}, Float}, Val(:info)) == OID{FIndex{:f, Int}, SVector{2, Float}}
-    @test oidtype(Fock{:b}, Point{2, PID{Int}, Float}, Val(:info)) == OID{FIndex{:b, Int}, SVector{2, Float}}
-end
-
 @testset "latex" begin
-    @test script(Val(:site), FIndex{:f}('c', 1, 2, 1, 1)) == 1
-    @test script(Val(:orbital), FIndex{:f}('c', 1, 2, 1, 1)) == 2
-    @test script(Val(:spinint), FIndex{:f}('c', 1, 2, 3, 1)) == 3
-    @test script(Val(:spinsym), FIndex{:f}('c', 1, 2, 2, 1)) == "↑"
-    @test script(Val(:spinsym), FIndex{:f}('c', 1, 2, 1, 1)) == "↓"
-    @test script(Val(:nambu), FIndex{:f}('c', 1, 2, 3, 1)) == ""
-    @test script(Val(:nambu), FIndex{:f}('c', 1, 2, 3, 2)) == "\\dagger"
+    @test script(Val(:site), Index(PID('c', 1), FID{:f}(2, 1, 1))) == 1
+    @test script(Val(:orbital), Index(PID('c', 1), FID{:f}(2, 1, 1))) == 2
+    @test script(Val(:spinint), Index(PID('c', 1), FID{:f}(2, 3, 1))) == 3
+    @test script(Val(:spinsym), Index(PID('c', 1), FID{:f}(2, 2, 1))) == "↑"
+    @test script(Val(:spinsym), Index(PID('c', 1), FID{:f}(2, 1, 1))) == "↓"
+    @test script(Val(:nambu), Index(PID('c', 1), FID{:f}(2, 3, 1))) == ""
+    @test script(Val(:nambu), Index(PID('c', 1), FID{:f}(2, 3, 2))) == "\\dagger"
 
-    @test latexname(FIndex{:f}) == Symbol("FIndex{:f}")
-    @test latexname(OID{FIndex{:f}}) == Symbol("OID{FIndex{:f}}")
-    @test latexname(FIndex{:b}) == Symbol("FIndex{:b}")
-    @test latexname(OID{FIndex{:b}}) == Symbol("OID{FIndex{:b}}")
+    @test latexname(Index{<:PID, FID{:f}}) == Symbol("Index{PID, FID{:f}}")
+    @test latexname(OID{Index{<:PID, FID{:f}}}) == Symbol("OID{Index{PID, FID{:f}}}")
+    @test latexname(Index{<:PID, FID{:b}}) == Symbol("Index{PID, FID{:b}}")
+    @test latexname(OID{Index{<:PID, FID{:b}}}) == Symbol("OID{Index{PID, FID{:b}}}")
 end
 
 @testset "angle" begin
-    @test angle(OID(FIndex{:f}(1, 1, 1, 1, 1), [0.0, 0.0], [1.0, 2.0]), [[1.0, 0.0], [0.0, 1.0]], [0.1, 0.0]) ≈ 2pi*0.1
-    @test angle(OID(FIndex{:f}(1, 1, 1, 1, 2), [0.0, 0.0], [1.0, 2.0]), [[1.0, 0.0], [0.0, 1.0]], [0.0, 0.2]) ≈ -2pi*0.4
+    @test angle(OID(Index(PID(1, 1), FID{:f}(1, 1, 1)), [0.0, 0.0], [1.0, 2.0]), [[1.0, 0.0], [0.0, 1.0]], [0.1, 0.0]) ≈ 2pi*0.1
+    @test angle(OID(Index(PID(1, 1), FID{:f}(1, 1, 2)), [0.0, 0.0], [1.0, 2.0]), [[1.0, 0.0], [0.0, 1.0]], [0.0, 0.2]) ≈ -2pi*0.4
 end
 
 @testset "FockOperator" begin
-    id₁ = OID(FIndex{:f}(1, 2, 1, 1, 2), SVector(0.5, 0.0), SVector(0.0, 0.0))
-    id₂ = OID(FIndex{:f}(1, 2, 1, 1, 1), SVector(0.5, 0.0), SVector(0.0, 0.0))
-    id₃ = OID(FIndex{:f}(1, 1, 1, 2, 2), SVector(0.0, 0.0), SVector(0.0, 0.0))
-    id₄ = OID(FIndex{:f}(1, 1, 1, 2, 1), SVector(0.0, 0.0), SVector(0.0, 0.0))
+    id₁ = OID(Index(PID(1, 2), FID{:f}(1, 1, 2)), SVector(0.5, 0.0), SVector(0.0, 0.0))
+    id₂ = OID(Index(PID(1, 2), FID{:f}(1, 1, 1)), SVector(0.5, 0.0), SVector(0.0, 0.0))
+    id₃ = OID(Index(PID(1, 1), FID{:f}(1, 2, 2)), SVector(0.0, 0.0), SVector(0.0, 0.0))
+    id₄ = OID(Index(PID(1, 1), FID{:f}(1, 2, 1)), SVector(0.0, 0.0), SVector(0.0, 0.0))
 
-    opt = FOperator(1.0, ID(id₁, id₂))
+    opt = Operator(1.0, ID(id₁, id₂))
     @test opt|>isnormalordered
-    @test opt|>statistics == opt|>typeof|>statistics == :f
 
-    opt = FOperator(1.0, ID(id₁, id₂, id₃, id₄))
+    opt = Operator(1.0, ID(id₁, id₂, id₃, id₄))
     @test opt|>isnormalordered == false
     @test repr(opt) == "c^{\\dagger}_{2, 1, ↓}c^{}_{2, 1, ↓}c^{\\dagger}_{1, 1, ↑}c^{}_{1, 1, ↑}"
 
-    op₁ = FOperator(1.5, ID(id₁, id₂))
-    op₂ = FOperator(2.0, ID(id₂, id₁))
+    op₁ = Operator(1.5, ID(id₁, id₂))
+    op₂ = Operator(2.0, ID(id₂, id₁))
     @test op₁*op₂ == nothing
 
-    op₁ = FOperator(1.5, ID(id₁, id₂))
-    op₂ = FOperator(2.0, ID(id₁, id₂))
-    @test op₁*op₂ == FOperator(3.0, ID(id₁, id₂, id₁, id₂))
+    op₁ = Operator(1.5, ID(id₁, id₂))
+    op₂ = Operator(2.0, ID(id₁, id₂))
+    @test op₁*op₂ == Operator(3.0, ID(id₁, id₂, id₁, id₂))
 
-    @test permute(id₁, id₂) == (FOperator(1), FOperator(-1, ID(id₂, id₁)))
-    @test permute(id₂, id₁) == (FOperator(1), FOperator(-1, ID(id₁, id₂)))
-    @test permute(id₁, id₄) == (FOperator(-1, ID(id₄, id₁)),)
-    @test permute(id₄, id₁) == (FOperator(-1, ID(id₁, id₄)),)
+    @test permute(id₁, id₂) == (Operator(1), Operator(-1, ID(id₂, id₁)))
+    @test permute(id₂, id₁) == (Operator(1), Operator(-1, ID(id₁, id₂)))
+    @test permute(id₁, id₄) == (Operator(-1, ID(id₄, id₁)),)
+    @test permute(id₄, id₁) == (Operator(-1, ID(id₁, id₄)),)
 
 
-    id₁ = OID(FIndex{:b}(1, 2, 1, 1, 2), SVector(0.5, 0.0), SVector(0.0, 0.0))
-    id₂ = OID(FIndex{:b}(1, 2, 1, 1, 1), SVector(0.5, 0.0), SVector(0.0, 0.0))
-    id₃ = OID(FIndex{:b}(1, 1, 1, 2, 2), SVector(0.0, 0.0), SVector(0.0, 0.0))
-    id₄ = OID(FIndex{:b}(1, 1, 1, 2, 1), SVector(0.0, 0.0), SVector(0.0, 0.0))
+    id₁ = OID(Index(PID(1, 2), FID{:b}(1, 1, 2)), SVector(0.5, 0.0), SVector(0.0, 0.0))
+    id₂ = OID(Index(PID(1, 2), FID{:b}(1, 1, 1)), SVector(0.5, 0.0), SVector(0.0, 0.0))
+    id₃ = OID(Index(PID(1, 1), FID{:b}(1, 2, 2)), SVector(0.0, 0.0), SVector(0.0, 0.0))
+    id₄ = OID(Index(PID(1, 1), FID{:b}(1, 2, 1)), SVector(0.0, 0.0), SVector(0.0, 0.0))
 
-    opt = BOperator(1.0, ID(id₁, id₂))
-    @test opt|>statistics == opt|>typeof|>statistics == :b
+    opt = Operator(1.0, ID(id₁, id₂))
     @test repr(opt) == "b^{\\dagger}_{2, 1, ↓}b^{}_{2, 1, ↓}"
 
-    @test permute(id₁, id₂) == (BOperator(+1), BOperator(1, ID(id₂, id₁)))
-    @test permute(id₂, id₁) == (BOperator(-1), BOperator(1, ID(id₁, id₂)))
-    @test permute(id₁, id₄) == (BOperator(1, ID(id₄, id₁)),)
-    @test permute(id₄, id₁) == (BOperator(1, ID(id₁, id₄)),)
+    @test permute(id₁, id₂) == (Operator(+1), Operator(1, ID(id₂, id₁)))
+    @test permute(id₂, id₁) == (Operator(-1), Operator(1, ID(id₁, id₂)))
+    @test permute(id₁, id₄) == (Operator(1, ID(id₄, id₁)),)
+    @test permute(id₄, id₁) == (Operator(1, ID(id₁, id₄)),)
 end
 
 @testset "FockCoupling" begin
@@ -160,26 +144,26 @@ end
     ex = expand(fc, (p₁, p₂), (f₁, f₂), Val(:info))
     @test Dims(ex) == (1, 2)
     @test collect(ex) == [
-        (2.0, ID(OID(FIndex{:f}(1, 1, 1, 1, 2), SVector(0.0), SVector(0.0)), OID(FIndex{:f}(1, 2, 2, 1, 1), SVector(0.5), SVector(0.0)))),
-        (2.0, ID(OID(FIndex{:f}(1, 1, 1, 2, 2), SVector(0.0), SVector(0.0)), OID(FIndex{:f}(1, 2, 2, 2, 1), SVector(0.5), SVector(0.0))))
+        (2.0, ID(OID(Index(PID(1, 1), FID{:f}(1, 1, 2)), SVector(0.0), SVector(0.0)), OID(Index(PID(1, 2), FID{:f}(2, 1, 1)), SVector(0.5), SVector(0.0)))),
+        (2.0, ID(OID(Index(PID(1, 1), FID{:f}(1, 2, 2)), SVector(0.0), SVector(0.0)), OID(Index(PID(1, 2), FID{:f}(2, 2, 1)), SVector(0.5), SVector(0.0))))
     ]
 
     fc = FockCoupling{4}(2.0, spins=(2, 2, 1, 1), nambus=(2, 1, 2, 1))
     point = Point(PID(1, 1), SVector(0.0), SVector(0.0))
     fock = Fock{:b}(atom=1, norbital=2, nspin=2, nnambu=2)
     ex = expand(fc, (point, point, point, point), (fock, fock, fock, fock), Val(:info))
-    @test eltype(ex) == Tuple{Float, ID{OID{FIndex{:b, Int}, SVector{1, Float}}, 4}}
+    @test eltype(ex) == Tuple{Float, ID{OID{Index{PID{Int}, FID{:b}}, SVector{1, Float}}, 4}}
     @test Dims(ex) == (2, 1)
     @test collect(ex) == [
-        (2.0, ID(OID(FIndex{:b}(1, 1, 1, 2, 2), SVector(0.0), SVector(0.0)),
-                 OID(FIndex{:b}(1, 1, 1, 2, 1), SVector(0.0), SVector(0.0)),
-                 OID(FIndex{:b}(1, 1, 1, 1, 2), SVector(0.0), SVector(0.0)),
-                 OID(FIndex{:b}(1, 1, 1, 1, 1), SVector(0.0), SVector(0.0))
+        (2.0, ID(OID(Index(PID(1, 1), FID{:b}(1, 2, 2)), SVector(0.0), SVector(0.0)),
+                 OID(Index(PID(1, 1), FID{:b}(1, 2, 1)), SVector(0.0), SVector(0.0)),
+                 OID(Index(PID(1, 1), FID{:b}(1, 1, 2)), SVector(0.0), SVector(0.0)),
+                 OID(Index(PID(1, 1), FID{:b}(1, 1, 1)), SVector(0.0), SVector(0.0))
                  )),
-        (2.0, ID(OID(FIndex{:b}(1, 1, 2, 2, 2), SVector(0.0), SVector(0.0)),
-                 OID(FIndex{:b}(1, 1, 2, 2, 1), SVector(0.0), SVector(0.0)),
-                 OID(FIndex{:b}(1, 1, 2, 1, 2), SVector(0.0), SVector(0.0)),
-                 OID(FIndex{:b}(1, 1, 2, 1, 1), SVector(0.0), SVector(0.0))
+        (2.0, ID(OID(Index(PID(1, 1), FID{:b}(2, 2, 2)), SVector(0.0), SVector(0.0)),
+                 OID(Index(PID(1, 1), FID{:b}(2, 2, 1)), SVector(0.0), SVector(0.0)),
+                 OID(Index(PID(1, 1), FID{:b}(2, 1, 2)), SVector(0.0), SVector(0.0)),
+                 OID(Index(PID(1, 1), FID{:b}(2, 1, 1)), SVector(0.0), SVector(0.0))
                  ))
     ]
 
@@ -189,20 +173,20 @@ end
     ex = expand(fc, (point, point, point, point), (fock, fock, fock, fock), Val(:info))
     @test Dims(ex) == (3, 1)
     @test collect(ex) == [
-        (2.0, ID(OID(FIndex{:f}(1, 1, 1, 2, 2), SVector(0.5), SVector(0.0)),
-                 OID(FIndex{:f}(1, 1, 1, 1, 2), SVector(0.5), SVector(0.0)),
-                 OID(FIndex{:f}(1, 1, 2, 1, 1), SVector(0.5), SVector(0.0)),
-                 OID(FIndex{:f}(1, 1, 2, 2, 1), SVector(0.5), SVector(0.0))
+        (2.0, ID(OID(Index(PID(1, 1), FID{:f}(1, 2, 2)), SVector(0.5), SVector(0.0)),
+                 OID(Index(PID(1, 1), FID{:f}(1, 1, 2)), SVector(0.5), SVector(0.0)),
+                 OID(Index(PID(1, 1), FID{:f}(2, 1, 1)), SVector(0.5), SVector(0.0)),
+                 OID(Index(PID(1, 1), FID{:f}(2, 2, 1)), SVector(0.5), SVector(0.0))
                  )),
-        (2.0, ID(OID(FIndex{:f}(1, 1, 1, 2, 2), SVector(0.5), SVector(0.0)),
-                 OID(FIndex{:f}(1, 1, 1, 1, 2), SVector(0.5), SVector(0.0)),
-                 OID(FIndex{:f}(1, 1, 3, 1, 1), SVector(0.5), SVector(0.0)),
-                 OID(FIndex{:f}(1, 1, 3, 2, 1), SVector(0.5), SVector(0.0))
+        (2.0, ID(OID(Index(PID(1, 1), FID{:f}(1, 2, 2)), SVector(0.5), SVector(0.0)),
+                 OID(Index(PID(1, 1), FID{:f}(1, 1, 2)), SVector(0.5), SVector(0.0)),
+                 OID(Index(PID(1, 1), FID{:f}(3, 1, 1)), SVector(0.5), SVector(0.0)),
+                 OID(Index(PID(1, 1), FID{:f}(3, 2, 1)), SVector(0.5), SVector(0.0))
                  )),
-        (2.0, ID(OID(FIndex{:f}(1, 1, 2, 2, 2), SVector(0.5), SVector(0.0)),
-                 OID(FIndex{:f}(1, 1, 2, 1, 2), SVector(0.5), SVector(0.0)),
-                 OID(FIndex{:f}(1, 1, 3, 1, 1), SVector(0.5), SVector(0.0)),
-                 OID(FIndex{:f}(1, 1, 3, 2, 1), SVector(0.5), SVector(0.0))
+        (2.0, ID(OID(Index(PID(1, 1), FID{:f}(2, 2, 2)), SVector(0.5), SVector(0.0)),
+                 OID(Index(PID(1, 1), FID{:f}(2, 1, 2)), SVector(0.5), SVector(0.0)),
+                 OID(Index(PID(1, 1), FID{:f}(3, 1, 1)), SVector(0.5), SVector(0.0)),
+                 OID(Index(PID(1, 1), FID{:f}(3, 2, 1)), SVector(0.5), SVector(0.0))
                  ))
     ]
 
@@ -213,25 +197,25 @@ end
     ex = expand(fc₁*fc₂, (point, point, point, point), (fock, fock, fock, fock), Val(:info))
     @test Dims(ex) == (4, 1)
     @test collect(ex) == [
-        (-1.0, ID(OID(FIndex{:f}(1, 1, 1, 2, 2), SVector(0.0), SVector(0.0)),
-                  OID(FIndex{:f}(1, 1, 1, 2, 1), SVector(0.0), SVector(0.0)),
-                  OID(FIndex{:f}(1, 1, 1, 1, 2), SVector(0.0), SVector(0.0)),
-                  OID(FIndex{:f}(1, 1, 1, 1, 1), SVector(0.0), SVector(0.0))
+        (-1.0, ID(OID(Index(PID(1, 1), FID{:f}(1, 2, 2)), SVector(0.0), SVector(0.0)),
+                  OID(Index(PID(1, 1), FID{:f}(1, 2, 1)), SVector(0.0), SVector(0.0)),
+                  OID(Index(PID(1, 1), FID{:f}(1, 1, 2)), SVector(0.0), SVector(0.0)),
+                  OID(Index(PID(1, 1), FID{:f}(1, 1, 1)), SVector(0.0), SVector(0.0))
                   )),
-        (-1.0, ID(OID(FIndex{:f}(1, 1, 2, 2, 2), SVector(0.0), SVector(0.0)),
-                  OID(FIndex{:f}(1, 1, 2, 2, 1), SVector(0.0), SVector(0.0)),
-                  OID(FIndex{:f}(1, 1, 1, 1, 2), SVector(0.0), SVector(0.0)),
-                  OID(FIndex{:f}(1, 1, 1, 1, 1), SVector(0.0), SVector(0.0))
+        (-1.0, ID(OID(Index(PID(1, 1), FID{:f}(2, 2, 2)), SVector(0.0), SVector(0.0)),
+                  OID(Index(PID(1, 1), FID{:f}(2, 2, 1)), SVector(0.0), SVector(0.0)),
+                  OID(Index(PID(1, 1), FID{:f}(1, 1, 2)), SVector(0.0), SVector(0.0)),
+                  OID(Index(PID(1, 1), FID{:f}(1, 1, 1)), SVector(0.0), SVector(0.0))
                   )),
-        (-1.0, ID(OID(FIndex{:f}(1, 1, 1, 2, 2), SVector(0.0), SVector(0.0)),
-                  OID(FIndex{:f}(1, 1, 1, 2, 1), SVector(0.0), SVector(0.0)),
-                  OID(FIndex{:f}(1, 1, 2, 1, 2), SVector(0.0), SVector(0.0)),
-                  OID(FIndex{:f}(1, 1, 2, 1, 1), SVector(0.0), SVector(0.0))
+        (-1.0, ID(OID(Index(PID(1, 1), FID{:f}(1, 2, 2)), SVector(0.0), SVector(0.0)),
+                  OID(Index(PID(1, 1), FID{:f}(1, 2, 1)), SVector(0.0), SVector(0.0)),
+                  OID(Index(PID(1, 1), FID{:f}(2, 1, 2)), SVector(0.0), SVector(0.0)),
+                  OID(Index(PID(1, 1), FID{:f}(2, 1, 1)), SVector(0.0), SVector(0.0))
                   )),
-        (-1.0, ID(OID(FIndex{:f}(1, 1, 2, 2, 2), SVector(0.0), SVector(0.0)),
-                  OID(FIndex{:f}(1, 1, 2, 2, 1), SVector(0.0), SVector(0.0)),
-                  OID(FIndex{:f}(1, 1, 2, 1, 2), SVector(0.0), SVector(0.0)),
-                  OID(FIndex{:f}(1, 1, 2, 1, 1), SVector(0.0), SVector(0.0))
+        (-1.0, ID(OID(Index(PID(1, 1), FID{:f}(2, 2, 2)), SVector(0.0), SVector(0.0)),
+                  OID(Index(PID(1, 1), FID{:f}(2, 2, 1)), SVector(0.0), SVector(0.0)),
+                  OID(Index(PID(1, 1), FID{:f}(2, 1, 2)), SVector(0.0), SVector(0.0)),
+                  OID(Index(PID(1, 1), FID{:f}(2, 1, 1)), SVector(0.0), SVector(0.0))
                   ))
     ]
 end
@@ -345,18 +329,18 @@ end
 
     term = Onsite(:mu, 1.5, couplings=σˣ("sp")⊗σᶻ("ob"), modulate=true)
     operators = Operators(
-        FOperator(+1.5, ID(OID(FIndex{:f}('a', 1, 2, 1, 2), [0.5, 0.5], [0.0, 0.0]), OID(FIndex{:f}('a', 1, 2, 2, 1), [0.5, 0.5], [0.0, 0.0]))),
-        FOperator(-1.5, ID(OID(FIndex{:f}('a', 1, 1, 1, 2), [0.5, 0.5], [0.0, 0.0]), OID(FIndex{:f}('a', 1, 1, 2, 1), [0.5, 0.5], [0.0, 0.0])))
+        Operator(+1.5, ID(OID(Index(PID('a', 1), FID{:f}(2, 1, 2)), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID('a', 1), FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0]))),
+        Operator(-1.5, ID(OID(Index(PID('a', 1), FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID('a', 1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])))
     )
     @test expand(term, point, config, true) == operators
     @test expand(term, point, config, false) == operators+operators'
 
     term = Onsite(:mu, 1.5, couplings=σᶻ("sp")⊗σᶻ("ob"), modulate=true)
     operators = Operators(
-        FOperator(-0.75, ID(OID(FIndex{:f}('a', 1, 2, 1, 2), [0.5, 0.5], [0.0, 0.0]), OID(FIndex{:f}('a', 1, 2, 1, 1), [0.5, 0.5], [0.0, 0.0]))),
-        FOperator(-0.75, ID(OID(FIndex{:f}('a', 1, 1, 2, 2), [0.5, 0.5], [0.0, 0.0]), OID(FIndex{:f}('a', 1, 1, 2, 1), [0.5, 0.5], [0.0, 0.0]))),
-        FOperator(+0.75, ID(OID(FIndex{:f}('a', 1, 2, 2, 2), [0.5, 0.5], [0.0, 0.0]), OID(FIndex{:f}('a', 1, 2, 2, 1), [0.5, 0.5], [0.0, 0.0]))),
-        FOperator(+0.75, ID(OID(FIndex{:f}('a', 1, 1, 1, 2), [0.5, 0.5], [0.0, 0.0]), OID(FIndex{:f}('a', 1, 1, 1, 1), [0.5, 0.5], [0.0, 0.0])))
+        Operator(-0.75, ID(OID(Index(PID('a', 1), FID{:f}(2, 1, 2)), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID('a', 1), FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0]))),
+        Operator(-0.75, ID(OID(Index(PID('a', 1), FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID('a', 1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]))),
+        Operator(+0.75, ID(OID(Index(PID('a', 1), FID{:f}(2, 2, 2)), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID('a', 1), FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0]))),
+        Operator(+0.75, ID(OID(Index(PID('a', 1), FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID('a', 1), FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0])))
     )
     @test expand(term, point, config, true) == operators
     @test expand(term, point, config, false) == operators+operators'
@@ -367,10 +351,10 @@ end
     config = Config{Fock{:f}}(pid->Fock{:f}(atom=pid.site%2, norbital=2, nspin=2, nnambu=2), [bond.spoint.pid, bond.epoint.pid])
     term = Hopping(:t, 1.5, 1)
     operators = Operators(
-        FOperator(1.5, ID(OID(FIndex{:f}('b', 2, 2, 2, 2), [0.0, 0.0], [0.0, 0.0]), OID(FIndex{:f}('a', 1, 2, 2, 1), [0.5, 0.5], [0.0, 0.0]))),
-        FOperator(1.5, ID(OID(FIndex{:f}('b', 2, 2, 1, 2), [0.0, 0.0], [0.0, 0.0]), OID(FIndex{:f}('a', 1, 2, 1, 1), [0.5, 0.5], [0.0, 0.0]))),
-        FOperator(1.5, ID(OID(FIndex{:f}('b', 2, 1, 1, 2), [0.0, 0.0], [0.0, 0.0]), OID(FIndex{:f}('a', 1, 1, 1, 1), [0.5, 0.5], [0.0, 0.0]))),
-        FOperator(1.5, ID(OID(FIndex{:f}('b', 2, 1, 2, 2), [0.0, 0.0], [0.0, 0.0]), OID(FIndex{:f}('a', 1, 1, 2, 1), [0.5, 0.5], [0.0, 0.0])))
+        Operator(1.5, ID(OID(Index(PID('b', 2), FID{:f}(2, 2, 2)), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID('a', 1), FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0]))),
+        Operator(1.5, ID(OID(Index(PID('b', 2), FID{:f}(2, 1, 2)), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID('a', 1), FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0]))),
+        Operator(1.5, ID(OID(Index(PID('b', 2), FID{:f}(1, 1, 2)), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID('a', 1), FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]))),
+        Operator(1.5, ID(OID(Index(PID('b', 2), FID{:f}(1, 2, 2)), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID('a', 1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])))
     )
     @test term|>abbr == :hp
     @test term|>isHermitian == false
@@ -383,8 +367,8 @@ end
     config = Config{Fock{:f}}(pid->Fock{:f}(atom=pid.site%2, norbital=1, nspin=2, nnambu=2), [bond.spoint.pid, bond.epoint.pid])
     term = Pairing(:Δ, 1.5, 1, couplings=FockCoupling{2}(spins=(2, 2)), amplitude=bond->(bond|>rcoord|>azimuthd ≈ 45 ? 1 : -1))
     operators = Operators(
-        FOperator(-1.5, ID(OID(FIndex{:f}('b', 2, 1, 2, 1), [0.0, 0.0], [0.0, 0.0]), OID(FIndex{:f}('a', 1, 1, 2, 1), [0.5, 0.5], [0.0, 0.0]))),
-        FOperator(+1.5, ID(OID(FIndex{:f}('a', 1, 1, 2, 1), [0.5, 0.5], [0.0, 0.0]), OID(FIndex{:f}('b', 2, 1, 2, 1), [0.0, 0.0], [0.0, 0.0])))
+        Operator(-1.5, ID(OID(Index(PID('b', 2), FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID('a', 1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]))),
+        Operator(+1.5, ID(OID(Index(PID('a', 1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID('b', 2), FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0])))
     )
     @test term|>abbr == :pr
     @test term|>isHermitian == false
@@ -395,8 +379,8 @@ end
     config = Config{Fock{:f}}(pid->Fock{:f}(atom=pid.site%2, norbital=1, nspin=2, nnambu=2), [point.pid])
     term = Pairing(:Δ, 1.5, 0, couplings=FockCoupling{2}(spins=(2, 1))-FockCoupling{2}(spins=(1, 2)))
     operators = Operators(
-        FOperator(+1.5, ID(OID(FIndex{:f}('a', 1, 1, 2, 1), [0.5, 0.5], [0.0, 0.0]), OID(FIndex{:f}('a', 1, 1, 1, 1), [0.5, 0.5], [0.0, 0.0]))),
-        FOperator(-1.5, ID(OID(FIndex{:f}('a', 1, 1, 1, 1), [0.5, 0.5], [0.0, 0.0]), OID(FIndex{:f}('a', 1, 1, 2, 1), [0.5, 0.5], [0.0, 0.0])))
+        Operator(+1.5, ID(OID(Index(PID('a', 1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID('a', 1), FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]))),
+        Operator(-1.5, ID(OID(Index(PID('a', 1), FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID('a', 1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])))
     )
     @test term|>abbr == :pr
     @test expand(term, point, config, true) == operators
@@ -408,17 +392,17 @@ end
     config = Config{Fock{:f}}(pid->Fock{:f}(atom=pid.site%2, norbital=2, nspin=2, nnambu=2), [point.pid])
     term = Hubbard(:H, 2.5)
     operators = Operators(
-        FOperator(1.25, ID(
-            OID(FIndex{:f}('a', 1, 1, 2, 2), [0.5, 0.5], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 1, 2, 1), [0.5, 0.5], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 1, 1, 2), [0.5, 0.5], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 1, 1, 1), [0.5, 0.5], [0.0, 0.0])
+        Operator(1.25, ID(
+            OID(Index(PID('a', 1), FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0])
             )),
-        FOperator(1.25, ID(
-            OID(FIndex{:f}('a', 1, 2, 2, 2), [0.5, 0.5], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 2, 2, 1), [0.5, 0.5], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 2, 1, 2), [0.5, 0.5], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 2, 1, 1), [0.5, 0.5], [0.0, 0.0])
+        Operator(1.25, ID(
+            OID(Index(PID('a', 1), FID{:f}(2, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(2, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0])
             ))
     )
     @test term|>abbr == :hb
@@ -432,17 +416,17 @@ end
     config = Config{Fock{:f}}(pid->Fock{:f}(atom=pid.site%2, norbital=2, nspin=2, nnambu=2), [point.pid])
     term = InterOrbitalInterSpin(:H, 2.5)
     operators = Operators(
-        FOperator(1.25, ID(
-            OID(FIndex{:f}('a', 1, 1, 2, 2), [0.5, 0.5], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 1, 2, 1), [0.5, 0.5], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 2, 1, 2), [0.5, 0.5], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 2, 1, 1), [0.5, 0.5], [0.0, 0.0])
+        Operator(1.25, ID(
+            OID(Index(PID('a', 1), FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(2, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0])
             )),
-        FOperator(1.25, ID(
-            OID(FIndex{:f}('a', 1, 1, 1, 2), [0.5, 0.5], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 1, 1, 1), [0.5, 0.5], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 2, 2, 2), [0.5, 0.5], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 2, 2, 1), [0.5, 0.5], [0.0, 0.0])
+        Operator(1.25, ID(
+            OID(Index(PID('a', 1), FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(2, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0])
             ))
     )
     @test term|>abbr == :nons
@@ -456,17 +440,17 @@ end
     config = Config{Fock{:f}}(pid->Fock{:f}(atom=pid.site%2, norbital=2, nspin=2, nnambu=2), [point.pid])
     term = InterOrbitalIntraSpin(:H, 2.5)
     operators = Operators(
-        FOperator(1.25, ID(
-            OID(FIndex{:f}('a', 1, 1, 1, 2), [0.5, 0.5], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 1, 1, 1), [0.5, 0.5], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 2, 1, 2), [0.5, 0.5], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 2, 1, 1), [0.5, 0.5], [0.0, 0.0])
+        Operator(1.25, ID(
+            OID(Index(PID('a', 1), FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(2, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0])
             )),
-        FOperator(1.25, ID(
-            OID(FIndex{:f}('a', 1, 1, 2, 2), [0.5, 0.5], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 1, 2, 1), [0.5, 0.5], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 2, 2, 2), [0.5, 0.5], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 2, 2, 1), [0.5, 0.5], [0.0, 0.0])
+        Operator(1.25, ID(
+            OID(Index(PID('a', 1), FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(2, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0])
             ))
     )
     @test term|>abbr == :noes
@@ -480,11 +464,11 @@ end
     config = Config{Fock{:f}}(pid->Fock{:f}(atom=pid.site%2, norbital=2, nspin=2, nnambu=2), [point.pid])
     term = SpinFlip(:H, 2.5)
     operators = Operators(
-        FOperator(2.5, ID(
-            OID(FIndex{:f}('a', 1, 1, 2, 2), [0.5, 0.5], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 2, 1, 2), [0.5, 0.5], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 1, 1, 1), [0.5, 0.5], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 2, 2, 1), [0.5, 0.5], [0.0, 0.0])
+        Operator(2.5, ID(
+            OID(Index(PID('a', 1), FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(2, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0])
             ))
     )
     @test term|>abbr == :sf
@@ -498,11 +482,11 @@ end
     config = Config{Fock{:f}}(pid->Fock{:f}(atom=pid.site%2, norbital=2, nspin=2, nnambu=2), [point.pid])
     term = PairHopping(:H, 2.5)
     operators = Operators(
-        FOperator(2.5, ID(
-            OID(FIndex{:f}('a', 1, 1, 2, 2), [0.5, 0.5], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 1, 1, 2), [0.5, 0.5], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 2, 1, 1), [0.5, 0.5], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 2, 2, 1), [0.5, 0.5], [0.0, 0.0])
+        Operator(2.5, ID(
+            OID(Index(PID('a', 1), FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0])
             ))
     )
     @test term|>abbr == :ph
@@ -517,29 +501,29 @@ end
 
     term = Coulomb(:V, 2.5, 1, couplings=σᶻ("sp")*σᶻ("sp"))
     operators = Operators(
-        FOperator(-1.25, ID(
-            OID(FIndex{:f}('b', 2, 1, 1, 2), [0.0, 0.0], [0.0, 0.0]),
-            OID(FIndex{:f}('b', 2, 1, 1, 1), [0.0, 0.0], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 1, 2, 2), [0.5, 0.5], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 1, 2, 1), [0.5, 0.5], [0.0, 0.0])
+        Operator(-1.25, ID(
+            OID(Index(PID('b', 2), FID{:f}(1, 1, 2)), [0.0, 0.0], [0.0, 0.0]),
+            OID(Index(PID('b', 2), FID{:f}(1, 1, 1)), [0.0, 0.0], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])
             )),
-        FOperator(+1.25, ID(
-            OID(FIndex{:f}('b', 2, 1, 1, 2), [0.0, 0.0], [0.0, 0.0]),
-            OID(FIndex{:f}('b', 2, 1, 1, 1), [0.0, 0.0], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 1, 1, 2), [0.5, 0.5], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 1, 1, 1), [0.5, 0.5], [0.0, 0.0])
+        Operator(+1.25, ID(
+            OID(Index(PID('b', 2), FID{:f}(1, 1, 2)), [0.0, 0.0], [0.0, 0.0]),
+            OID(Index(PID('b', 2), FID{:f}(1, 1, 1)), [0.0, 0.0], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0])
             )),
-        FOperator(-1.25, ID(
-            OID(FIndex{:f}('b', 2, 1, 2, 2), [0.0, 0.0], [0.0, 0.0]),
-            OID(FIndex{:f}('b', 2, 1, 2, 1), [0.0, 0.0], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 1, 1, 2), [0.5, 0.5], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 1, 1, 1), [0.5, 0.5], [0.0, 0.0])
+        Operator(-1.25, ID(
+            OID(Index(PID('b', 2), FID{:f}(1, 2, 2)), [0.0, 0.0], [0.0, 0.0]),
+            OID(Index(PID('b', 2), FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0])
             )),
-        FOperator(+1.25, ID(
-            OID(FIndex{:f}('b', 2, 1, 2, 2), [0.0, 0.0], [0.0, 0.0]),
-            OID(FIndex{:f}('b', 2, 1, 2, 1), [0.0, 0.0], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 1, 2, 2), [0.5, 0.5], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 1, 2, 1), [0.5, 0.5], [0.0, 0.0])
+        Operator(+1.25, ID(
+            OID(Index(PID('b', 2), FID{:f}(1, 2, 2)), [0.0, 0.0], [0.0, 0.0]),
+            OID(Index(PID('b', 2), FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])
             ))
     )
     @test term|>abbr == :cl
@@ -549,29 +533,29 @@ end
 
     term = Coulomb(:V, 2.5, 1, couplings=σˣ("sp")*σᶻ("sp"))
     operators = Operators(
-        FOperator(-2.5, ID(
-            OID(FIndex{:f}('b', 2, 1, 2, 2), [0.0, 0.0], [0.0, 0.0]),
-            OID(FIndex{:f}('b', 2, 1, 1, 1), [0.0, 0.0], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 1, 1, 2), [0.5, 0.5], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 1, 1, 1), [0.5, 0.5], [0.0, 0.0])
+        Operator(-2.5, ID(
+            OID(Index(PID('b', 2), FID{:f}(1, 2, 2)), [0.0, 0.0], [0.0, 0.0]),
+            OID(Index(PID('b', 2), FID{:f}(1, 1, 1)), [0.0, 0.0], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0])
             )),
-        FOperator(+2.5, ID(
-            OID(FIndex{:f}('b', 2, 1, 1, 2), [0.0, 0.0], [0.0, 0.0]),
-            OID(FIndex{:f}('b', 2, 1, 2, 1), [0.0, 0.0], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 1, 2, 2), [0.5, 0.5], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 1, 2, 1), [0.5, 0.5], [0.0, 0.0])
+        Operator(+2.5, ID(
+            OID(Index(PID('b', 2), FID{:f}(1, 1, 2)), [0.0, 0.0], [0.0, 0.0]),
+            OID(Index(PID('b', 2), FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])
             )),
-        FOperator(+2.5, ID(
-            OID(FIndex{:f}('b', 2, 1, 2, 2), [0.0, 0.0], [0.0, 0.0]),
-            OID(FIndex{:f}('b', 2, 1, 1, 1), [0.0, 0.0], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 1, 2, 2), [0.5, 0.5], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 1, 2, 1), [0.5, 0.5], [0.0, 0.0])
+        Operator(+2.5, ID(
+            OID(Index(PID('b', 2), FID{:f}(1, 2, 2)), [0.0, 0.0], [0.0, 0.0]),
+            OID(Index(PID('b', 2), FID{:f}(1, 1, 1)), [0.0, 0.0], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])
             )),
-        FOperator(-2.5, ID(
-            OID(FIndex{:f}('b', 2, 1, 1, 2), [0.0, 0.0], [0.0, 0.0]),
-            OID(FIndex{:f}('b', 2, 1, 2, 1), [0.0, 0.0], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 1, 1, 2), [0.5, 0.5], [0.0, 0.0]),
-            OID(FIndex{:f}('a', 1, 1, 1, 1), [0.5, 0.5], [0.0, 0.0])
+        Operator(-2.5, ID(
+            OID(Index(PID('b', 2), FID{:f}(1, 1, 2)), [0.0, 0.0], [0.0, 0.0]),
+            OID(Index(PID('b', 2), FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
+            OID(Index(PID('a', 1), FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0])
             ))
     )
     @test term|>abbr == :cl
