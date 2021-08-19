@@ -8,7 +8,9 @@ CurrentModule = QuantumLattices.Essentials.DegreesOfFreedom
 
 ## Config
 
-## OID and Operator
+## OID
+
+## Operator
 
 ## Operators
 

@@ -4,17 +4,11 @@ CurrentModule = QuantumLattices.Essentials.FockPackage
 
 # Fock package
 
-## Fock degrees of freedom
+## FID and Fock
 
-### FID, Fock and FIndex
-
-### FockOperator, FOperator and BOperator
+## FockCoupling
 
 ## Fock terms
-
-### FockCoupling
-
-### Predefined Fock terms
 
 ## Manual
 

@@ -1,6 +1,6 @@
 ```@meta
 CurrentModule = QuantumLattices
-DocTestFilters = [r"[ +-]0\.0[ +-]"]
+DocTestFilters = [r"im +[-\+]0\.0[-\+]"]
 DocTestSetup = quote
     push!(LOAD_PATH, "../../../src/")
     using QuantumLattices
@@ -13,13 +13,13 @@ Now let's move to the second step. A main feature of a quantum lattice system is
 
 ## Internal, IID and Index
 
-Different kinds of quantum lattice systems can have different species of local Hilbert spaces. For example, the local Hilbert space of a complex fermionic/bosonic system is the [Fock space](https://en.wikipedia.org/wiki/Fock_space) whereas that of a spin-1/2 system is the two-dimensional ``\{\lvert\uparrow\rangle, \lvert\downarrow\rangle\}`` space. The abstract type [`Internal`](@ref) is an abstraction of local Hilbert spaces. More precisely, it is an abstraction of **local algebras acting on these local Hilbert spaces**. To specify a generator of such a local algebra, two sets of tags are needed: one identifies which the local algebra is and the other represents which the internal degree of freedom is. The former is already encoded by a [`PID`](@ref) object, and the latter will be stored in an object of a concrete subtype of the abstract type [`IID`](@ref). These two sets of tags are combined to be the [`Index`](@ref) type, which contains all the tags of a local generator. Since different [`IID`](@ref)s can have different tags, [`Index`](@ref) is also an abstract type. For every concrete [`IID`](@ref) subtype, there corresponds a concrete [`Index`](@ref) subtype.
+Different kinds of quantum lattice systems can have different species of local Hilbert spaces. For example, the local Hilbert space of a complex fermionic/bosonic system is the [Fock space](https://en.wikipedia.org/wiki/Fock_space) whereas that of a spin-1/2 system is the two-dimensional ``\{\lvert\uparrow\rangle, \lvert\downarrow\rangle\}`` space. The abstract type [`Internal`](@ref) is an abstraction of local Hilbert spaces. More precisely, it is an abstraction of **local algebras acting on these local Hilbert spaces**. To specify a generator of such a local algebra, two sets of tags are needed: one identifies which the local algebra is and the other represents which the internal degree of freedom is. The former is already encoded by a [`PID`](@ref) object, and the latter will be stored in an object of a concrete subtype of the abstract type [`IID`](@ref). These two sets of tags are combined to be the [`Index`](@ref) type, which contains the complete information of a local generator.
 
 In this package, we implement two groups of concrete subtypes to handle with the following two sets of systems, respectively:
 * Canonical fermionic, canonical bosonic and hard-core bosonic systems,
 * SU(2) spin systems.
 
-### Fock, FID and FIndex
+### Fock and FID
 
 This group of concrete subtypes are designed to deal with canonical fermionic, canonical bosonic and hard-core bosonic systems.
 
@@ -36,15 +36,7 @@ It is noted that we also associate an atom index with each [`Fock`](@ref) instan
 
 One more remark. The `:nambu` attribute of an [`FID`](@ref) instance can be 1 or 2, which means it represents an annihilation operator or a creation operator, respectively. This corresponds to a usual complex fermionic/bosonic system. The `:nambu` attribute can also be 0. In this case, it corresponds to a real fermionic/bosonic system where annihilation and creation operators are identical to each other, e.g. a Majorana fermionic system. Accordingly, The `:nnambu` attribute of a [`Fock`](@ref) instance can be either 2 or 1. Being 2, it allows usual complex annihilation/creation operators, while being 1 it only allows real fermionic/bosonic operators.
 
-The type [`FIndex`](@ref)`<:Index` gathers all the tags in [`PID`](@ref) and [`FID`](@ref), which apparently has the following attributes:
-* `scope::Any`: the scope of a point
-* `site::Int`: the site index of a point
-* `orbital::Int`: the orbital index
-* `spin::Int`: the spin index
-* `nambu::Int`: the nambu index, which must be 0, 1(annihilation) or 2(creation).
-It is the complete set of tags to specify a generator (the annihilation/creation operator) of local algebras of such systems.
-
-To distinguish whether the system is a fermionic one or a bosonic one, [`FID`](@ref), [`Fock`](@ref) and [`FIndex`](@ref) take a symbol `:f`(for fermionic) or `:b`(for bosonic) to be their first type parameters.
+To distinguish whether the system is a fermionic one or a bosonic one, [`FID`](@ref) and [`Fock`](@ref) take a symbol `:f`(for fermionic) or `:b`(for bosonic) to be their first type parameters.
 
 Now let's see some examples.
 
@@ -76,38 +68,6 @@ julia> FID{:b}(orbital=3, spin=4, nambu=0)'
 FID{:b}(3, 4, 0)
 ```
 Apparently, this operation is nothing but the "Hermitian conjugate".
-
-An [`FIndex`](@ref) instance can be initialized as usual by giving all its attributes:
-```jldoctest FFF
-julia> FIndex{:f}('a', 1, 3, 4, 0)
-FIndex{:f}('a', 1, 3, 4, 0)
-```
-Or it can be initialized by a [`PID`](@ref) instance and an [`FID`](@ref) instance:
-```jldoctest FFF
-julia> FIndex(PID('a', 1), FID{:b}(3, 4, 0))
-FIndex{:b}('a', 1, 3, 4, 0)
-```
-Note at this time, the statistics of the system is omitted because it can be deduced from the input [`FID`](@ref). Conversely, the corresponding [`PID`](@ref) instance and [`FID`](@ref) instance can be extracted from an [`FIndex`](@ref) instance by the [`pid`](@ref) and [`iid`](@ref) method, respectively:
-```jldoctest FFF
-julia> fidx = FIndex(PID('a', 1), FID{:b}(3, 4, 0));
-
-julia> fidx |> pid
-PID('a', 1)
-
-julia> fidx |> iid
-FID{:b}(3, 4, 0)
-```
-Similar to [`FID`](@ref), the adjoint of an [`FIndex`](@ref) instance is also defined:
-```jldoctest FFF
-julia> FIndex(PID('a', 1), FID{:f}(3, 4, 1))'
-FIndex{:f}('a', 1, 3, 4, 2)
-
-julia> FIndex(PID('a', 1), FID{:f}(3, 4, 2))'
-FIndex{:f}('a', 1, 3, 4, 1)
-
-julia> FIndex(PID('a', 1), FID{:b}(3, 4, 0))'
-FIndex{:b}('a', 1, 3, 4, 0)
-```
 
 A [`Fock`](@ref) instance can be initialized by giving all its attributes or by key word arguments to specify those beyond the default values:
 ```jldoctest FFF
@@ -155,7 +115,7 @@ julia> fck |> collect
  FID{:f}(2, 1, 2)
 ```
 
-### Spin, SID and SIndex
+### Spin and SID
 
 ```@setup SSS
 push!(LOAD_PATH, "../../../src/")
@@ -172,13 +132,8 @@ Apart from the spatial indices, a local spin operator can have an orbital index.
 Correspondingly, the type [`Spin`](@ref), which defines the whole internal structure of a local spin space, has the following attributes:
 * `atom::Int`: the atom index associated with a local spin space
 * `norbital::Int`: the number of allowed orbital indices
-Similarly, the type [`SIndex`](@ref), which encapsulates all indices needed to specify a local spin operator, is just a combination of the indices in [`PID`](@ref) and [`SID`](@ref). Its attributes are as follows:
-* `scope::Any`: the scope of a point
-* `site::Int`: the site index of a point
-* `orbital::Int`: the orbital index
-* `tag::Char`: the tag, which must be `'x'`, `'y'`, `'z'`, `'+'` or `'-'`.
 
-For [`SID`](@ref), [`Spin`](@ref) and [`SIndex`](@ref), it is also necessary to know what the total spin is, which is taken as their first type parameters and should be a half-integer or an integer.
+For [`SID`](@ref) and [`Spin`](@ref), it is also necessary to know what the total spin is, which is taken as their first type parameters and should be a half-integer or an integer.
 
 Now let's see examples.
 
@@ -224,8 +179,8 @@ julia> SID{1//2}(1, 'y') |> Matrix
 
 julia> SID{1//2}(1, 'z') |> Matrix
 2×2 Matrix{ComplexF64}:
- -0.5+0.0im  0.0+0.0im
-  0.0+0.0im  0.5+0.0im
+ -0.5+0.0im  -0.0+0.0im
+  0.0+0.0im   0.5+0.0im
 
 julia> SID{1//2}(1, '+') |> Matrix
 2×2 Matrix{ComplexF64}:
@@ -236,24 +191,6 @@ julia> SID{1//2}(1, '-') |> Matrix
 2×2 Matrix{ComplexF64}:
  0.0+0.0im  1.0+0.0im
  0.0+0.0im  0.0+0.0im
-```
-
-The usage of [`SIndex`](@ref) is completely parallel to that of [`FIndex`](@ref):
-```jldoctest SSS
-julia> sidx = SIndex{1//2}('a', 1, 3, '-')
-SIndex{1//2}('a', 1, 3, '-')
-
-julia> sidx == SIndex(PID('a', 1), SID{1//2}(3, '-'))
-true
-
-julia> sidx |> pid
-PID('a', 1)
-
-julia> sidx |> iid
-SID{1//2}(3, '-')
-
-julia> sidx'
-SIndex{1//2}('a', 1, 3, '+')
 ```
 
 A [`Spin`](@ref) instance can be initialized as follows:
@@ -315,12 +252,12 @@ julia> sp |> collect
 ```
 It is noted that a [`Spin`](@ref) instance generates [`SID`](@ref) instances corresponding to not only ``S^x``, ``S^y`` and ``S^z``,  but also ``S^+`` and ``S^-`` although the former three already forms a complete set of generators of local spin algebras. This overcomplete feature is for the convenience to the construction of spin Hamiltonians.
 
+### Index
+
 ## Config
+
+## OID
 
 ## Operator and Operators
 
-### OID
-
-### FOperator and BOperator
-
-### latex-formatted output
+## latex-formatted output

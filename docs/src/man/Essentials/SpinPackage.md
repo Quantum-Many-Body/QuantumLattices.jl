@@ -4,17 +4,11 @@ CurrentModule = QuantumLattices.Essentials.SpinPackage
 
 # Spin package
 
-## Spin degrees of freedom
+## SID and Spin
 
-### SID, Spin and SIndex
+## SpinCoupling
 
-### SOperator
-
-## Spin terms
-
-### SpinCoupling
-
-### STerm
+## STerm
 
 ## Manual
 
