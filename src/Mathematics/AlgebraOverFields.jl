@@ -5,7 +5,7 @@ using ...Prerequisites: atol, rtol
 using ...Prerequisites.NamedVectors: NamedVector
 using ...Prerequisites.Traits: efficientoperations, rawtype, fulltype, parametertype, parameterpairs, reparameter, promoteparameters, getcontent, contentorder
 
-import ...Interfaces: id, rank, add!, sub!, mul!, div!, ⊗, ⋅, permute
+import ...Interfaces: id, value, rank, add!, sub!, mul!, div!, ⊗, ⋅, permute
 import ...Prerequisites.Traits: contentnames, dissolve, isparameterbound, parameternames
 
 export SimpleID, ID
@@ -152,11 +152,11 @@ Replace the value of an element.
 @inline dissolve(m::Element, ::Val{:value}, ::typeof(newvalue), args::Tuple, kwargs::NamedTuple) = newvalue(m, args...; kwargs...)
 
 """
-    Number(m::Element) -> valtype(m)
+    value(m::Element) -> valtype(m)
 
 Get the value of an element.
 """
-@inline Base.Number(m::Element) = getcontent(m, :value)
+@inline value(m::Element) = getcontent(m, :value)
 
 """
     id(m::Element) -> idtype(m)
@@ -298,12 +298,12 @@ end
 2) Convert a scalar to a scalar element;
 3) Convert an element from one type to another.
 """
-@inline Base.convert(::Type{M}, m::Scalar) where M<:Scalar = (typeof(m) <: M) ? m : one(M)*Number(m)
+@inline Base.convert(::Type{M}, m::Scalar) where M<:Scalar = (typeof(m) <: M) ? m : one(M)*value(m)
 @inline Base.convert(::Type{M}, m::Number) where M<:Scalar = one(M)*m
 @inline function Base.convert(::Type{M}, m::Element) where M<:Element
     (typeof(m) <: M) && return m
     @assert convertable(M, m) "convert error: $(nameof(typeof(m))) cannot be converted to $(nameof(M))."
-    return replace(m, convert(valtype(M), Number(m)))
+    return replace(m, convert(valtype(M), value(m)))
 end
 function convertable(::Type{M}, m::Element) where M<:Element
     !(rawtype(typeof(m)) <: rawtype(M)) && return false
@@ -320,7 +320,7 @@ end
 Split an element into the coefficient and a sequence of rank-1 elements.
 """
 @generated function Base.split(m::Element)
-    exprs = [:(Number(m))]
+    exprs = [:(value(m))]
     for i = 1:rank(m)
         push!(exprs, :(m[$i]))
     end
@@ -427,8 +427,8 @@ add!(ms::Elements, m::Number) = add!(ms, one(valtype(ms))*m)
 function add!(ms::Elements, m::Element)
     m = convert(ms|>valtype, m)
     old = get(ms, id(m), nothing)
-    new = (old === nothing) ? m : replace(old, Number(old)+Number(m))
-    (abs(Number(new)) == 0.0) ? delete!(ms, id(m)) : (ms[id(m)] = new)
+    new = (old === nothing) ? m : replace(old, value(old)+value(m))
+    (abs(value(new)) == 0.0) ? delete!(ms, id(m)) : (ms[id(m)] = new)
     return ms
 end
 add!(ms::Elements, mms::Elements) = (for m in mms|>values add!(ms, m) end; ms)
@@ -448,8 +448,8 @@ sub!(ms::Elements, m::Number) = add!(ms, one(valtype(ms))*(-m))
 function sub!(ms::Elements, m::Element)
     m = convert(ms|>valtype, m)
     old = get(ms, id(m), nothing)
-    new = (old === nothing) ? -m : replace(old, Number(old)-Number(m))
-    (abs(Number(new)) == 0.0) ? delete!(ms, id(m)) : (ms[id(m)] = new)
+    new = (old === nothing) ? -m : replace(old, value(old)-value(m))
+    (abs(value(new)) == 0.0) ? delete!(ms, id(m)) : (ms[id(m)] = new)
     return ms
 end
 sub!(ms::Elements, mms::Elements) = (for m in mms|>values sub!(ms, m) end; ms)
@@ -460,11 +460,11 @@ sub!(ms::Elements, mms::Elements) = (for m in mms|>values sub!(ms, m) end; ms)
 
 Get the inplace multiplication of elements with a scalar.
 """
-mul!(ms::Elements, factor::Scalar) = mul!(ms, Number(factor))
+mul!(ms::Elements, factor::Scalar) = mul!(ms, value(factor))
 function mul!(ms::Elements, factor::Number)
     @assert isa(one(ms|>valtype|>valtype)*factor, ms|>valtype|>valtype) "mul! error: dismatched type, $(ms|>valtype) and $(factor|>typeof)."
     for m in values(ms)
-        ms[id(m)] = replace(m, Number(m)*factor)
+        ms[id(m)] = replace(m, value(m)*factor)
     end
     return ms
 end
@@ -475,11 +475,11 @@ end
 
 Get the inplace division of element with a scalar.
 """
-div!(ms::Elements, factor::Scalar) = div!(ms, Number(factor))
+div!(ms::Elements, factor::Scalar) = div!(ms, value(factor))
 function div!(ms::Elements, factor::Number)
     @assert isa(one(ms|>valtype|>valtype)/factor, ms|>valtype|>valtype) "div! error: dismatched type, $(ms|>valtype) and $(factor|>typeof)."
     for m in values(ms)
-        ms[id(m)] = replace(m, Number(m)/factor)
+        ms[id(m)] = replace(m, value(m)/factor)
     end
     return ms
 end
@@ -510,9 +510,9 @@ Base.:+(ms::Elements, ::Nothing) = ms
 Base.:+(::Nothing, ms::Elements) = ms
 Base.:+(factor::Number, m::Element) = m + one(m)*factor
 Base.:+(m::Element, factor::Number) = m + one(m)*factor
-Base.:+(factor::Number, m::Scalar) = replace(m, Number(m)+factor)
-Base.:+(m::Scalar, factor::Number) = replace(m, Number(m)+factor)
-Base.:+(m1::Scalar, m2::Scalar) = replace(m1, Number(m1)+Number(m2))
+Base.:+(factor::Number, m::Scalar) = replace(m, value(m)+factor)
+Base.:+(m::Scalar, factor::Number) = replace(m, value(m)+factor)
+Base.:+(m1::Scalar, m2::Scalar) = replace(m1, value(m1)+value(m2))
 Base.:+(factor::Number, ms::Elements) = ms + one(valtype(ms))*factor
 Base.:+(ms::Elements, factor::Number) = ms + one(valtype(ms))*factor
 function Base.:+(m1::Element, m2::Element)
@@ -552,13 +552,13 @@ Base.:*(m::Element, ::Nothing) = nothing
 Base.:*(::Nothing, m::Element) = nothing
 Base.:*(ms::Elements, ::Nothing) = nothing
 Base.:*(::Nothing, ms::Elements) = nothing
-Base.:*(factor::Scalar, m::Element) = m * Number(factor)
-Base.:*(m::Element, factor::Scalar) = m * Number(factor)
-Base.:*(m1::Scalar, m2::Scalar) = replace(m1, Number(m1)*Number(m2))
+Base.:*(factor::Scalar, m::Element) = m * value(factor)
+Base.:*(m::Element, factor::Scalar) = m * value(factor)
+Base.:*(m1::Scalar, m2::Scalar) = replace(m1, value(m1)*value(m2))
 Base.:*(factor::Number, m::Element) = m * factor
-Base.:*(m::Element, factor::Number) = replace(m, factor*Number(m))
-Base.:*(factor::Scalar, ms::Elements) = ms * Number(factor)
-Base.:*(ms::Elements, factor::Scalar) = ms * Number(factor)
+Base.:*(m::Element, factor::Number) = replace(m, factor*value(m))
+Base.:*(factor::Scalar, ms::Elements) = ms * value(factor)
+Base.:*(ms::Elements, factor::Scalar) = ms * value(factor)
 Base.:*(factor::Number, ms::Elements) = ms * factor
 function Base.:*(ms::Elements, factor::Number)
     (abs(factor) == 0) && return zero(Elements)
@@ -575,7 +575,7 @@ function Base.:*(m1::Element, m2::Element)
     @assert((m1|>typeof|>nameof == m2|>typeof|>nameof) && (m1|>typeof|>fieldcount == m2|>typeof|>fieldcount == 2),
             "\"*\" error: not implemented between $(m1|>typeof|>nameof) and $(m2|>typeof|>nameof)."
             )
-    rawtype(typeof(m1))(Number(m1)*Number(m2), id(m1)*id(m2))
+    rawtype(typeof(m1))(value(m1)*value(m2), id(m1)*id(m2))
 end
 
 """
@@ -604,9 +604,9 @@ Base.:-(ms::Elements, ::Nothing) = ms
 Base.:-(::Nothing, ms::Elements) = -ms
 Base.:-(factor::Number, m::Element) = one(m)*factor - m
 Base.:-(m::Element, factor::Number) = m + one(m)*(-factor)
-Base.:-(factor::Number, m::Scalar) = replace(m, factor-Number(m))
-Base.:-(m::Scalar, factor::Number) = replace(m, Number(m)-factor)
-Base.:-(m1::Scalar, m2::Scalar) = replace(m1, Number(m1)-Number(m2))
+Base.:-(factor::Number, m::Scalar) = replace(m, factor-value(m))
+Base.:-(m::Scalar, factor::Number) = replace(m, value(m)-factor)
+Base.:-(m1::Scalar, m2::Scalar) = replace(m1, value(m1)-value(m2))
 Base.:-(factor::Number, ms::Elements) = one(valtype(ms))*factor - ms
 Base.:-(ms::Elements, factor::Number) = ms + one(valtype(ms))*(-factor)
 function Base.:-(m1::Element, m2::Element)
@@ -639,9 +639,9 @@ end
 Overloaded `/` operator for element-scalar division of an algebra over a field.
 """
 Base.:/(m::Element, factor::Number) = m * (1/factor)
-Base.:/(m::Element, factor::Scalar) = m * (1/Number(factor))
+Base.:/(m::Element, factor::Scalar) = m * (1/value(factor))
 Base.:/(ms::Elements, factor::Number) = ms * (1/factor)
-Base.:/(ms::Elements, factor::Scalar) = ms * (1/Number(factor))
+Base.:/(ms::Elements, factor::Scalar) = ms * (1/value(factor))
 
 """
     //(m::Element, factor::Integer) -> Element
@@ -652,9 +652,9 @@ Base.:/(ms::Elements, factor::Scalar) = ms * (1/Number(factor))
 Overloaded `//` operator for element-scalar division of an algebra over a field.
 """
 Base.://(m::Element, factor::Integer) = m * (1//factor)
-Base.://(m::Element, factor::Scalar) = m * (1//Number(factor))
+Base.://(m::Element, factor::Scalar) = m * (1//value(factor))
 Base.://(ms::Elements, factor::Number) = ms * (1//factor)
-Base.://(ms::Elements, factor::Scalar) = ms * (1//Number(factor))
+Base.://(ms::Elements, factor::Scalar) = ms * (1//value(factor))
 
 """
     ^(m::Element, n::Integer) -> Element
@@ -755,7 +755,7 @@ function Base.permute!(result::Elements, m::Element, table)
         if isa(pos, Nothing)
             add!(result, current)
         else
-            left = current[1:pos-1] * Number(m)
+            left = current[1:pos-1] * value(m)
             right = current[pos+2:end]
             for middle in permute(id(current)[pos], id(current)[pos+1])
                 temp = left * middle * right

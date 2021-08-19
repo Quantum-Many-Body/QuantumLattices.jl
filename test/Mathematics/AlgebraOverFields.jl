@@ -1,7 +1,7 @@
 using Test
 using Printf: @printf
 using QuantumLattices.Mathematics.AlgebraOverFields
-using QuantumLattices.Interfaces: id, dimension, rank, add!, sub!, mul!, div!
+using QuantumLattices.Interfaces: id, value, rank, add!, sub!, mul!, div!
 using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Prerequisites.Traits: contentnames, parameternames, parametertype, isparameterbound
 using QuantumLattices.Mathematics.Combinatorics: Combinations
@@ -83,7 +83,7 @@ end
     @test promote_type(AOFOperator{Int, ID{AOFID}}, AOFOperator{Float, ID{AOFID}}) == AOFOperator{Float, <:ID{AOFID}}
 
     opt = AOFOperator(1.0, ID(AOFID(1, 1)))
-    @test Number(opt) == 1.0
+    @test value(opt) == 1.0
     @test id(opt) == ID(AOFID(1, 1))
     @test opt|>deepcopy == opt
     @test isequal(opt|>deepcopy, opt)

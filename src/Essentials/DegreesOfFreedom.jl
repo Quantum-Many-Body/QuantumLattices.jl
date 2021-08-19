@@ -5,7 +5,7 @@ using StaticArrays: SVector
 using LaTeXStrings: latexstring
 using ..Spatials: PID, Point
 using ...Essentials: dtype
-using ...Interfaces: id, rank, dimension, decompose
+using ...Interfaces: id, value, rank, dimension, decompose
 using ...Prerequisites: Float, decimaltostr
 using ...Prerequisites.Traits: rawtype, efficientoperations, getcontent
 using ...Prerequisites.CompositeStructures: CompositeDict
@@ -237,21 +237,21 @@ abstract type Operator{V<:Number, I<:ID{AbstractOID}} <: Element{V, I} end
 
 Show an operator.
 """
-Base.show(io::IO, opt::Operator) = @printf io "%s(%s, %s)" nameof(typeof(opt)) decimaltostr(Number(opt)) id(opt)
+Base.show(io::IO, opt::Operator) = @printf io "%s(%s, %s)" nameof(typeof(opt)) decimaltostr(value(opt)) id(opt)
 
 """
     adjoint(opt::Operator) -> Operator
 
 Get the adjoint of an operator.
 """
-@inline Base.adjoint(opt::Operator) = rawtype(typeof(opt))(Number(opt)', id(opt)')
+@inline Base.adjoint(opt::Operator) = rawtype(typeof(opt))(value(opt)', id(opt)')
 
 """
     isHermitian(opt::Operator) -> Bool
 
 Judge whether an operator is Hermitian.
 """
-@inline isHermitian(opt::Operator) = isa(Number(opt), Real) && isHermitian(id(opt))
+@inline isHermitian(opt::Operator) = isa(value(opt), Real) && isHermitian(id(opt))
 
 """
     rcoord(opt::Operator) -> SVector
@@ -594,8 +594,8 @@ end
 Get the string representation of an operator in the LaTeX format.
 """
 function Base.repr(opt::Operator)
-    rank(opt)==0 && return replace(valuetolatextext(Number(opt)), " "=>"")
-    return @sprintf "%s%s" valuetostr(Number(opt)) join(NTuple{rank(opt), String}(repr(id(opt)[i]) for i = 1:rank(opt)), "")
+    rank(opt)==0 && return replace(valuetolatextext(value(opt)), " "=>"")
+    return @sprintf "%s%s" valuetostr(value(opt)) join(NTuple{rank(opt), String}(repr(id(opt)[i]) for i = 1:rank(opt)), "")
 end
 function valuetostr(v)
     v==+1 && return ""
