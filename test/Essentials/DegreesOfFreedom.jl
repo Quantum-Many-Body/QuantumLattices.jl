@@ -94,7 +94,7 @@ end
     @test ID(oid', oid)' == ID(oid', oid)
     @test isHermitian(ID(oid', oid)) == true
     @test isHermitian(ID(oid, oid)) == false
-    @test oidtype(DFock, Point{2, PID{Char}}, Val(:default)) == OID{DIndex{Char}, SVector{2, Float}}
+    @test oidtype(DFock, Point{2, PID{Char}, Float}, Val(:default)) == OID{DIndex{Char}, SVector{2, Float}}
 end
 
 @testset "Operator" begin

@@ -13,7 +13,7 @@ using ...Mathematics.AlgebraOverFields: SimpleID
 using ...Mathematics.VectorSpaces: NamedVectorSpace
 using ...Mathematics.QuantumNumbers: Momentum, AbelianNumbers
 
-import ..Essentials: kind, reset!
+import ..Essentials: dtype, kind, reset!
 import ...Interfaces: decompose, rank, dimension, expand
 import ...Prerequisites.Traits: contentnames, getcontent
 
@@ -26,16 +26,16 @@ export allbonds, zerothbonds, insidebonds, acrossbonds, intrabonds, interbonds
 export BrillouinZone
 
 """
-    distance(p₁::AbstractVector{<:Real}, p₂::AbstractVector{<:Real}) -> Float
+    distance(p₁::AbstractVector{<:Number}, p₂::AbstractVector{<:Number}) -> Number
 
 Get the distance between two points.
 
 !!! note
     Compared to `norm(p₁-p₂)`, this function avoids the memory allocation for `p₁-p₂`, thus is more efficient.
 """
-function distance(p₁::AbstractVector{<:Real}, p₂::AbstractVector{<:Real})
+function distance(p₁::AbstractVector{<:Number}, p₂::AbstractVector{<:Number})
     @assert length(p₁)==length(p₂) "distance error: dismatched length of input vectors."
-    result = 0
+    result = zero(promote_type(eltype(p₁), eltype(p₂)))
     for i = 1:length(p₁)
         result = result + (p₁[i]-p₂[i])^2
     end
@@ -43,11 +43,11 @@ function distance(p₁::AbstractVector{<:Real}, p₂::AbstractVector{<:Real})
 end
 
 """
-    azimuthd(v::AbstractVector{<:Real}) -> Float
+    azimuthd(v::AbstractVector{<:Number}) -> Number
 
 Get the azimuth angle in degrees of a vector.
 """
-function azimuthd(v::AbstractVector{<:Real})
+function azimuthd(v::AbstractVector{<:Number})
     @assert length(v)∈(1, 2, 3) "azimuthd error: wrong dimensioned input vector."
     result = acosd(v[1]/(length(v)==3 ? sqrt(v[1]^2+v[2]^2) : norm(v)))
     (length(v)>1 && v[2]<0) && (result = 360 - result)
@@ -55,45 +55,45 @@ function azimuthd(v::AbstractVector{<:Real})
 end
 
 """
-    azimuth(v::AbstractVector{<:Real}) -> Float
+    azimuth(v::AbstractVector{<:Number}) -> Number
 
 Get the azimuth angle in radians of a vector.
 """
-function azimuth(v::AbstractVector{<:Real})
+function azimuth(v::AbstractVector{<:Number})
     @assert length(v)∈(1, 2, 3) "azimuth error: wrong dimensioned input vector."
     result = acos(v[1]/(length(v)==3 ? sqrt(v[1]^2+v[2]^2) : norm(v)))
-    (length(v)>1 && v[2]<0) && (result = 2pi - result)
+    (length(v)>1 && v[2]<0) && (result = 2*convert(typeof(result), pi) - result)
     return result
 end
 
 """
-    polard(v::AbstractVector{<:Real}) -> Float
+    polard(v::AbstractVector{<:Number}) -> Number
 
 Get the polar angle in degrees of a vector.
 """
-function polard(v::AbstractVector{<:Real})
+function polard(v::AbstractVector{<:Number})
     @assert length(v)==3 "polard error: wrong dimensioned input vector."
     return acosd(v[3]/norm(v))
 end
 
 """
-    polar(v::AbstractVector{<:Real}) -> Float
+    polar(v::AbstractVector{<:Number}) -> Number
 
 Get the polar angle in radians of a vector.
 """
-function polar(v::AbstractVector{<:Real})
+function polar(v::AbstractVector{<:Number})
     @assert length(v)==3 "polard error: wrong dimensioned input vector."
     return acos(v[3]/norm(v))
 end
 
 """
-    volume(v₁::AbstractVector{<:Real}, v₂::AbstractVector{<:Real}, v₃::AbstractVector{<:Real}) -> Real
+    volume(v₁::AbstractVector{<:Number}, v₂::AbstractVector{<:Number}, v₃::AbstractVector{<:Number}) -> Number
 
 Get the volume spanned by three vectors.
 """
-function volume(v₁::AbstractVector{<:Real}, v₂::AbstractVector{<:Real}, v₃::AbstractVector{<:Real})
+function volume(v₁::AbstractVector{<:Number}, v₂::AbstractVector{<:Number}, v₃::AbstractVector{<:Number})
     if length(v₁)∈(1, 2) || length(v₂)∈(1, 2) || length(v₃)∈(1, 2)
-        result = zero(v₁|>eltype)
+        result = zero(eltype(v₁))
     elseif length(v₁)==3 && length(v₂)==3 && length(v₃)==3
         result = v₁[1]*(v₂[2]*v₃[3]-v₂[3]*v₃[2]) + v₁[2]*(v₂[3]*v₃[1]-v₂[1]*v₃[3]) + v₁[3]*(v₂[1]*v₃[2]-v₂[2]*v₃[1])
     else
@@ -103,11 +103,11 @@ function volume(v₁::AbstractVector{<:Real}, v₂::AbstractVector{<:Real}, v₃
 end
 
 """
-    isparallel(v₁::AbstractVector{<:Real}, v₂::AbstractVector{<:Real}; atol::Real=atol, rtol::Real=rtol) -> Int
+    isparallel(v₁::AbstractVector{<:Number}, v₂::AbstractVector{<:Number}; atol::Real=atol, rtol::Real=rtol) -> Int
 
 Judge whether two vectors are parallel to each other with the given tolerance, `0` for not parallel, `1` for parallel and `-1` for antiparallel.
 """
-function isparallel(v₁::AbstractVector{<:Real}, v₂::AbstractVector{<:Real}; atol::Real=atol, rtol::Real=rtol)
+function isparallel(v₁::AbstractVector{<:Number}, v₂::AbstractVector{<:Number}; atol::Real=atol, rtol::Real=rtol)
     norm₁, norm₂ = norm(v₁), norm(v₂)
     if isapprox(norm₁, 0.0, atol=atol, rtol=rtol) || isapprox(norm₂, 0.0, atol=atol, rtol=rtol)
         result = 1
@@ -121,13 +121,13 @@ function isparallel(v₁::AbstractVector{<:Real}, v₂::AbstractVector{<:Real}; 
 end
 
 """
-    isonline(p::AbstractVector{<:Real}, p₁::AbstractVector{<:Real}, p₂::AbstractVector{<:Real};
+    isonline(p::AbstractVector{<:Number}, p₁::AbstractVector{<:Number}, p₂::AbstractVector{<:Number};
         ends::Tuple{Bool, Bool}=(true, true), atol::Real=atol, rtol::Real=rtol
         ) -> Bool
 
 Judge whether a point is on a line segment whose end points are `p₁` and `p₂` with the given tolerance. `ends` defines whether the line segment should contain its ends.
 """
-function isonline(p::AbstractVector{<:Real}, p₁::AbstractVector{<:Real}, p₂::AbstractVector{<:Real};
+function isonline(p::AbstractVector{<:Number}, p₁::AbstractVector{<:Number}, p₂::AbstractVector{<:Number};
         ends::Tuple{Bool, Bool}=(true, true), atol::Real=atol, rtol::Real=rtol
         )
     @assert length(p)==length(p₁)==length(p₂) "isonline error: shape dismatch of input point and line segment."
@@ -138,20 +138,20 @@ function isonline(p::AbstractVector{<:Real}, p₁::AbstractVector{<:Real}, p₂:
 end
 
 """
-    decompose(v₀::AbstractVector{<:Real}, v₁::AbstractVector{<:Real}) -> Tuple{Float}
-    decompose(v₀::AbstractVector{<:Real}, v₁::AbstractVector{<:Real}, v₂::AbstractVector{<:Real}) -> Tuple{Float, Float}
-    decompose(v₀::AbstractVector{<:Real}, v₁::AbstractVector{<:Real}, v₂::AbstractVector{<:Real}, v₃::AbstractVector{<:Real}) -> Tuple{Float, Float, Float}
+    decompose(v₀::AbstractVector{<:Number}, v₁::AbstractVector{<:Number}) -> Tuple{Number}
+    decompose(v₀::AbstractVector{<:Number}, v₁::AbstractVector{<:Number}, v₂::AbstractVector{<:Number}) -> Tuple{Number, Number}
+    decompose(v₀::AbstractVector{<:Number}, v₁::AbstractVector{<:Number}, v₂::AbstractVector{<:Number}, v₃::AbstractVector{<:Number}) -> Tuple{Number, Number, Number}
 
 Decompose a vector with respect to input basis vectors.
 """
-function decompose(v₀::AbstractVector{<:Real}, v₁::AbstractVector{<:Real})
+function decompose(v₀::AbstractVector{<:Number}, v₁::AbstractVector{<:Number})
     @assert length(v₀)==length(v₁) "decompose error: dismatched length of input vectors."
     n₀, n₁ = norm(v₀), norm(v₁)
     sign = dot(v₀, v₁) / n₀ / n₁
     @assert isapprox(abs(sign), 1.0, atol=atol, rtol=rtol) "decompose error: insufficient basis vectors."
     return (sign*n₀/n₁,)
 end
-function decompose(v₀::AbstractVector{<:Real}, v₁::AbstractVector{<:Real}, v₂::AbstractVector{<:Real})
+function decompose(v₀::AbstractVector{<:Number}, v₁::AbstractVector{<:Number}, v₂::AbstractVector{<:Number})
     @assert length(v₀)==length(v₁)==length(v₂) "decompose error: dismatched length of input vectors."
     @assert length(v₀)==2 || length(v₀)==3 "decompose error: unsupported dimension($(length(v₀))) of input vectors."
     if length(v₀) == 2
@@ -159,13 +159,13 @@ function decompose(v₀::AbstractVector{<:Real}, v₁::AbstractVector{<:Real}, v
         x₁ = (v₀[1]*v₂[2]-v₀[2]*v₂[1]) / det
         x₂ = (v₀[2]*v₁[1]-v₀[1]*v₁[2]) / det
     else
-        v₃ = SVector{3, Float}(v₁[2]*v₂[3]-v₁[3]*v₂[2], v₁[3]*v₂[1]-v₁[1]*v₂[3], v₁[1]*v₂[2]-v₁[2]*v₂[1])
+        v₃ = SVector{3, promote_type(eltype(v₀), eltype(v₁), eltype(v₂))}(v₁[2]*v₂[3]-v₁[3]*v₂[2], v₁[3]*v₂[1]-v₁[1]*v₂[3], v₁[1]*v₂[2]-v₁[2]*v₂[1])
         x₁, x₂, x₃ = decompose(v₀, v₁, v₂, v₃)
         @assert isapprox(x₃, 0.0, atol=atol, rtol=rtol) "decompose error: insufficient basis vectors."
     end
     return x₁, x₂
 end
-function decompose(v₀::AbstractVector{<:Real}, v₁::AbstractVector{<:Real}, v₂::AbstractVector{<:Real}, v₃::AbstractVector{<:Real})
+function decompose(v₀::AbstractVector{<:Number}, v₁::AbstractVector{<:Number}, v₂::AbstractVector{<:Number}, v₃::AbstractVector{<:Number})
     @assert length(v₀)==length(v₁)==length(v₂)==length(v₃) "decompose error: dismatched length of input vectors."
     @assert length(v₀)==3 "decompose error: unsupported dimension($(length(v₀))) of input vectors."
     V = volume(v₁, v₂, v₃)
@@ -176,7 +176,7 @@ function decompose(v₀::AbstractVector{<:Real}, v₁::AbstractVector{<:Real}, v
 end
 
 """
-    isintratriangle(p::AbstractVector{<:Real}, p₁::AbstractVector{<:Real}, p₂::AbstractVector{<:Real}, p₃::AbstractVector{<:Real};
+    isintratriangle(p::AbstractVector{<:Number}, p₁::AbstractVector{<:Number}, p₂::AbstractVector{<:Number}, p₃::AbstractVector{<:Number};
         vertexes::NTuple{3, Bool}=(true, true, true), edges::NTuple{3, Bool}=(true, true, true), atol::Real=atol, rtol::Real=rtol
         ) -> Bool
 
@@ -185,7 +185,7 @@ Judge whether a point belongs to the interior of a triangle whose vertexes are `
     1. The vertexes are in the order (p₁, p₂, p₃) and the edges are in the order (p1p2, p2p3, p3p1).
     2. The edges do not contain the vertexes.
 """
-function isintratriangle(p::AbstractVector{<:Real}, p₁::AbstractVector{<:Real}, p₂::AbstractVector{<:Real}, p₃::AbstractVector{<:Real};
+function isintratriangle(p::AbstractVector{<:Number}, p₁::AbstractVector{<:Number}, p₂::AbstractVector{<:Number}, p₃::AbstractVector{<:Number};
         vertexes::NTuple{3, Bool}=(true, true, true), edges::NTuple{3, Bool}=(true, true, true), atol::Real=atol, rtol::Real=rtol
         )
     @assert length(p)==length(p₁)==length(p₂)==length(p₃) "isintratriangle error: shape dismatch of input point and triangle."
@@ -208,11 +208,11 @@ function isintratriangle(p::AbstractVector{<:Real}, p₁::AbstractVector{<:Real}
 end
 
 """
-    issubordinate(rcoord::AbstractVector{<:Real}, vectors::AbstractVector{<:AbstractVector{<:Real}}; atol::Real=atol, rtol::Real=rtol) -> Bool
+    issubordinate(rcoord::AbstractVector{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}; atol::Real=atol, rtol::Real=rtol) -> Bool
 
 Judge whether a coordinate belongs to a lattice defined by `vectors` with the given tolerance.
 """
-function issubordinate(rcoord::AbstractVector{<:Real}, vectors::AbstractVector{<:AbstractVector{<:Real}}; atol::Real=atol, rtol::Real=rtol)
+function issubordinate(rcoord::AbstractVector{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}; atol::Real=atol, rtol::Real=rtol)
     @assert length(rcoord)∈(1, 2, 3) "issubordinate error: only 1, 2 and 3 dimensional coordinates are supported."
     @assert length(vectors)∈(1, 2, 3) "issubordinate error: the number of input basis vectors must be 1, 2 or 3."
     fapprox = xi->isapprox(round(xi), xi, atol=atol, rtol=rtol)
@@ -227,32 +227,33 @@ function issubordinate(rcoord::AbstractVector{<:Real}, vectors::AbstractVector{<
 end
 
 """
-    reciprocals(vectors::AbstractVector{AbstractVector{<:Real}}) -> Vector{Vector{Float}}
+    reciprocals(vectors::AbstractVector{AbstractVector{<:Number}}) -> Vector{Vector{<:Number}}
 
 Get the reciprocals dual to the input vectors.
 """
-function reciprocals(vectors::AbstractVector{<:AbstractVector{<:Real}})
+function reciprocals(vectors::AbstractVector{<:AbstractVector{<:Number}})
     @assert length(vectors)<4 "reciprocals error: the number of input vectors should not be greater than 3."
     @assert mapreduce(v->length(v)∈(1, 2, 3), &, vectors, init=true) "reciprocals error: all input vectors must be 1, 2 or 3 dimensional."
-    result = Vector{Float}[]
+    datatype = promote_type(Float, eltype(eltype(vectors)))
+    result = Vector{datatype}[]
     if length(vectors) == 1
-        push!(result, 2pi/mapreduce(vi->vi^2, +, vectors[1])*vectors[1])
+        push!(result, 2*convert(datatype, pi)/mapreduce(vi->vi^2, +, vectors[1])*vectors[1])
     elseif length(vectors) == 2
         v₁, v₂ = vectors[1], vectors[2]
         @assert length(v₁)==length(v₂) "reciprocals error: dismatched length of input vectors."
         if length(v₁) == 2
-            det = 2pi / (v₁[1]*v₂[2]-v₁[2]*v₂[1])
+            det = 2*convert(datatype, pi) / (v₁[1]*v₂[2]-v₁[2]*v₂[1])
             push!(result, [det*v₂[2], -det*v₂[1]])
             push!(result, [-det*v₁[2], det*v₁[1]])
         else
-            v₃ = SVector{3, Float}(v₁[2]*v₂[3]-v₁[3]*v₂[2], v₁[3]*v₂[1]-v₁[1]*v₂[3], v₁[1]*v₂[2]-v₁[2]*v₂[1])
-            V = 2pi / volume(v₁, v₂, v₃)
+            v₃ = SVector{3, datatype}(v₁[2]*v₂[3]-v₁[3]*v₂[2], v₁[3]*v₂[1]-v₁[1]*v₂[3], v₁[1]*v₂[2]-v₁[2]*v₂[1])
+            V = 2*convert(datatype, pi) / volume(v₁, v₂, v₃)
             push!(result, [v₂[2]*v₃[3]*V-v₂[3]*v₃[2]*V, v₂[3]*v₃[1]*V-v₂[1]*v₃[3]*V, v₂[1]*v₃[2]*V-v₂[2]*v₃[1]*V])
             push!(result, [v₃[2]*v₁[3]*V-v₃[3]*v₁[2]*V, v₃[3]*v₁[1]*V-v₃[1]*v₁[3]*V, v₃[1]*v₁[2]*V-v₃[2]*v₁[1]*V])
         end
     elseif length(vectors) == 3
         v₁, v₂, v₃ = vectors
-        V = 2pi / volume(v₁, v₂, v₃)
+        V = 2*convert(datatype, pi) / volume(v₁, v₂, v₃)
         push!(result, [v₂[2]*v₃[3]*V-v₂[3]*v₃[2]*V, v₂[3]*v₃[1]*V-v₂[1]*v₃[3]*V, v₂[1]*v₃[2]*V-v₂[2]*v₃[1]*V])
         push!(result, [v₃[2]*v₁[3]*V-v₃[3]*v₁[2]*V, v₃[3]*v₁[1]*V-v₃[1]*v₁[3]*V, v₃[1]*v₁[2]*V-v₃[2]*v₁[1]*V])
         push!(result, [v₁[2]*v₂[3]*V-v₁[3]*v₂[2]*V, v₁[3]*v₂[1]*V-v₁[1]*v₂[3]*V, v₁[1]*v₂[2]*V-v₁[2]*v₂[1]*V])
@@ -261,14 +262,14 @@ function reciprocals(vectors::AbstractVector{<:AbstractVector{<:Real}})
 end
 
 """
-    translate(cluster::AbstractMatrix{<:Real}, vector::AbstractVector{<:Real}) -> Matrix{vector|>eltype}
+    translate(cluster::AbstractMatrix{<:Number}, vector::AbstractVector{<:Number}) -> Matrix{vector|>eltype}
 
 Get the translated cluster of the original one by a vector.
 """
-@inline translate(cluster::AbstractMatrix{<:Real}, vector::AbstractVector{<:Real}) = cluster .+ reshape(vector, (vector|>length, 1))
+@inline translate(cluster::AbstractMatrix{<:Number}, vector::AbstractVector{<:Number}) = cluster .+ reshape(vector, (vector|>length, 1))
 
 """
-    rotate(cluster::AbstractMatrix{<:Real}, angle::Real; axis::Tuple{Union{AbstractVector{<:Real}, Nothing}, Tuple{<:Real, <:Real}}=(nothing, (0, 0))) -> Matrix{Float}
+    rotate(cluster::AbstractMatrix{<:Number}, angle::Number; axis::Tuple{Union{AbstractVector{<:Number}, Nothing}, Tuple{<:Number, <:Number}}=(nothing, (0, 0))) -> Matrix{<:Number}
 
 Get a rotated cluster of the original one by a certain angle around an axis.
 
@@ -278,16 +279,17 @@ The axis is determined by a point it gets through (`nothing` can be used to deno
     2. Only 2 and 3 dimensional vectors can be rotated.
     3. When the input vectors are 2 dimensional, both the polar and azimuth of the axis must be 0.
 """
-function rotate(cluster::AbstractMatrix{<:Real}, angle::Real; axis::Tuple{Union{AbstractVector{<:Real}, Nothing}, Tuple{<:Real, <:Real}}=(nothing, (0, 0)))
+function rotate(cluster::AbstractMatrix{<:Number}, angle::Number; axis::Tuple{Union{AbstractVector{<:Number}, Nothing}, Tuple{<:Number, <:Number}}=(nothing, (0, 0)))
     @assert size(cluster, 1)∈(2, 3) "rotate error: only 2 and 3 dimensional vectors can be rotated."
-    center, theta, phi = (isnothing(axis[1]) ? zeros(size(cluster, 1)) : axis[1]), axis[2][1], axis[2][2]
+    datatype = promote_type(eltype(cluster), typeof(angle), Float)
+    center, theta, phi = (isnothing(axis[1]) ? zeros(datatype, size(cluster, 1)) : axis[1]), axis[2][1], axis[2][2]
     @assert length(center)==size(cluster, 1) "rotate error: dismatched shape of the input cluster and the point on axis."
     if length(center) == 2
-        @assert isapprox(theta, 0, atol=atol)&&isapprox(phi, 0, atol=atol) "rotate error: both the polar and azimuth of the axis for 2d vectors must be 0."
+        @assert isapprox(theta, 0, atol=atol, rtol=rtol) && isapprox(phi, 0, atol=atol, rtol=rtol) "rotate error: both the polar and azimuth of the axis for 2d vectors must be 0."
     end
     cosθ, sinθ = cos(angle), sin(angle)
-    k, w = SVector{3, Float}(sin(theta)*cos(phi), sin(theta)*sin(phi), cos(theta)), zeros(3)
-    result = zeros(size(cluster))
+    k, w = SVector{3, datatype}(sin(theta)*cos(phi), sin(theta)*sin(phi), cos(theta)), zeros(datatype, 3)
+    result = zeros(datatype, size(cluster))
     for i = 1:size(cluster, 2)
         for j = 1:size(cluster, 1)
             w[j] = cluster[j, i] - center[j]
@@ -302,20 +304,21 @@ function rotate(cluster::AbstractMatrix{<:Real}, angle::Real; axis::Tuple{Union{
 end
 
 """
-    tile(cluster::AbstractMatrix{<:Real}, vectors::AbstractVector{<:AbstractVector{<:Real}}, translations::NTuple{M, NTuple{N, <:Real}}=()) where {N, M} -> Matrix{Float}
+    tile(cluster::AbstractMatrix{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}, translations::NTuple{M, NTuple{N, <:Number}}=()) where {N, M} -> Matrix{<:Number}
 
 Tile a supercluster by translations of the input cluster.
 
 Basically, the final supercluster is composed of several parts, each of which is a translation of the original cluster, with the translation vectors specified by `vectors` and each set of the translation indices contained in `translations`. When translation vectors are empty, a copy of the original cluster will be returned.
 """
-function tile(cluster::AbstractMatrix{<:Real}, vectors::AbstractVector{<:AbstractVector{<:Real}}, translations::NTuple{M, NTuple{N, <:Real}}=()) where {N, M}
-    (N == 0) && return copy(cluster)
+function tile(cluster::AbstractMatrix{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}, translations::NTuple{M, NTuple{N, <:Number}}=()) where {N, M}
+    N==0 && return copy(cluster)
     @assert length(vectors)==N "tile error: dismatched shape of input vectors and translations."
-    supercluster = zeros(size(cluster, 1), size(cluster, 2)*length(translations))
-    disp = zeros(size(cluster, 1))
+    datatype = promote_type(eltype(cluster), eltype(eltype(vectors)), Float)
+    supercluster = zeros(datatype, size(cluster, 1), size(cluster, 2)*length(translations))
+    disp = zeros(datatype, size(cluster, 1))
     for (i, translation) in enumerate(translations)
         for i = 1:length(disp)
-            disp[i] = 0.0
+            disp[i] = zero(datatype)
             for j = 1:length(vectors)
                 disp[i] += vectors[j][i] * translation[j]
             end
@@ -331,16 +334,17 @@ function tile(cluster::AbstractMatrix{<:Real}, vectors::AbstractVector{<:Abstrac
 end
 
 """
-    minimumlengths(cluster::AbstractMatrix{<:Real}, vectors::AbstractVector{<:AbstractVector{<:Real}}, nneighbor::Int=1; coordination::Int=8) -> Vector{Float}
+    minimumlengths(cluster::AbstractMatrix{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}, nneighbor::Int=1; coordination::Int=8) -> Vector{Float}
 
 Use kdtree to search the lowest several minimum bond lengths within a lattice translated by a cluster.
 
 When the translation vectors are not empty, the lattice will be considered periodic in the corresponding directions. Otherwise the lattice will be open in all directions. To search for the bonds accorss the periodic boundaries, the cluster will be pretranslated to become a supercluster, which has open boundaries but is large enough to contain all the nearest neighbors within the required order. The `coordination` parameter sets the average number of each order of nearest neighbors. If it is to small, larger bond lengths may not be searched, and the result will contain `Inf`. This is a sign that you may need a larger `coordination`. Another situation that `Inf` appears in the result occurs when the minimum lengths are searched in open lattices. Indeed, the cluster may be too small so that the required order just goes beyond it. In this case the warning message can be safely ignored.
 """
-function minimumlengths(cluster::AbstractMatrix{<:Real}, vectors::AbstractVector{<:AbstractVector{<:Real}}, nneighbor::Int=1; coordination::Int=8)
+function minimumlengths(cluster::AbstractMatrix{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}, nneighbor::Int=1; coordination::Int=8)
     @assert nneighbor>=0 "minimumlengths error: input nneighbor must be non negative."
     result = [Inf for i = 1:nneighbor]
     if size(cluster, 2) > 0
+        cluster, vectors = convert(Matrix{Float}, cluster), convert(Vector{Vector{Float}}, vectors)
         translations = reshape(product((-nneighbor:nneighbor for i = 1:length(vectors))...)|>collect, :)
         for translation in translations
             if length(translation)>0 && mapreduce(≠(0), |, translation)
@@ -351,7 +355,7 @@ function minimumlengths(cluster::AbstractMatrix{<:Real}, vectors::AbstractVector
         supercluster = tile(cluster, vectors, Tuple(translations))
         for len in flatten(knn(KDTree(supercluster), cluster, nneighbor>0 ? min(nneighbor*coordination, size(supercluster, 2)) : 1, true)[2])
             for (i, minlen) in enumerate(result)
-                if isapprox(len, minlen, atol=atol)
+                if isapprox(len, minlen, atol=atol, rtol=rtol)
                     break
                 elseif 0.0 < len < minlen
                     nneighbor>0 && (result[i+1:nneighbor] = result[i:nneighbor-1])
@@ -368,19 +372,20 @@ function minimumlengths(cluster::AbstractMatrix{<:Real}, vectors::AbstractVector
 end
 
 """
-    intralinks(cluster::AbstractMatrix{<:Real}, vectors::AbstractVector{<:AbstractVector{<:Real}}, neighbors::Dict{Int, Float},
+    intralinks(cluster::AbstractMatrix{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}, neighbors::Dict{Int, <:Number},
         maxtranslations::NTuple{N, Int}=ntuple(i->length(neighbors), length(vectors))
-        ) where N -> Vector{Tuple{Int, Int, Int, SubArray{<:Real, 1}}}
+        ) where N -> Vector{Tuple{Int, Int, Int, Vector{<:Number}}}
 
 Use kdtree to get the intracluster nearest neighbors.
 
 As is similar to [`minimumlengths`](@ref), when `vectors` is nonempty, the cluster assumes periodic boundaries. `neighbors` provides the map between the bond length and the order of nearest neighbors. Note only those with the lengths present in `neighbors` will be included in the result. `maxtranslations` determines the maximum number of translations along those directions specified by `vectors` when the tiled supercluster is construted (See [`minimumlengths`](@ref) for the explanation of the method for periodic lattices).
 """
-function intralinks(cluster::AbstractMatrix{<:Real}, vectors::AbstractVector{<:AbstractVector{<:Real}}, neighbors::Dict{Int, Float},
+function intralinks(cluster::AbstractMatrix{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}, neighbors::Dict{Int, <:Number},
         maxtranslations::NTuple{N, Int}=ntuple(i->length(neighbors), length(vectors))
         ) where N
     @assert length(vectors)==N "intralinks error: dismatched shape of input vectors and maxtranslations."
-    result = Tuple{Int, Int, Int, Vector{Float}}[]
+    datatype = promote_type(eltype(cluster), eltype(eltype(vectors)))
+    result = Tuple{Int, Int, Int, Vector{datatype}}[]
     length(neighbors)==0 && return result
     translations = reshape(product((-nnb:nnb for nnb in maxtranslations)...)|>collect, :)
     for translation in translations
@@ -393,16 +398,16 @@ function intralinks(cluster::AbstractMatrix{<:Real}, vectors::AbstractVector{<:A
     translations = Tuple(translations)
     supercluster = tile(cluster, vectors, translations)
     disps = tile(zero(cluster), vectors, translations)
-    for (i, indices) in enumerate(inrange(KDTree(supercluster), cluster, max(values(neighbors)...)+atol, true))
+    for (i, indices) in enumerate(inrange(KDTree(convert(Matrix{Float}, supercluster)), convert(Matrix{Float}, cluster), max(values(neighbors)...)+atol, true))
         for j in indices
             if i < j
-                dist = 0.0
+                dist = zero(datatype)
                 for k = 1:size(cluster, 1)
                     dist = dist + (supercluster[k, j]-cluster[k, i])^2
                 end
                 dist = sqrt(dist)
                 for (nb, len) in neighbors
-                    if isapprox(len, dist, atol=atol)
+                    if isapprox(len, dist, atol=atol, rtol=rtol)
                         push!(result, (nb, i, (j-1)%size(cluster, 2)+1, disps[:, j]))
                         break
                     end
@@ -414,23 +419,23 @@ function intralinks(cluster::AbstractMatrix{<:Real}, vectors::AbstractVector{<:A
 end
 
 """
-    interlinks(cluster1::AbstractMatrix{<:Real}, cluster2::AbstractMatrix{<:Real}, neighbors::Dict{Int, Float}) -> Vector{Tuple{Int, Int, Int}}
+    interlinks(cluster₁::AbstractMatrix{<:Number}, cluster₂::AbstractMatrix{<:Number}, neighbors::Dict{Int, <:Number}) -> Vector{Tuple{Int, Int, Int}}
 
 Use kdtree to get the intercluster nearest neighbors.
 """
-function interlinks(cluster1::AbstractMatrix{<:Real}, cluster2::AbstractMatrix{<:Real}, neighbors::Dict{Int, Float})
-    @assert size(cluster1, 1)==size(cluster2, 1) "interlinks error: dismatched space dimension of input clusters."
+function interlinks(cluster₁::AbstractMatrix{<:Number}, cluster₂::AbstractMatrix{<:Number}, neighbors::Dict{Int, <:Number})
+    @assert size(cluster₁, 1)==size(cluster₂, 1) "interlinks error: dismatched space dimension of input clusters."
     result = Tuple{Int, Int, Int}[]
     length(neighbors)==0 && return result
-    for (i, indices) in enumerate(inrange(KDTree(cluster2), cluster1, max(values(neighbors)...)+atol, true))
+    for (i, indices) in enumerate(inrange(KDTree(convert(Matrix{Float}, cluster₂)), convert(Matrix{Float}, cluster₁), max(values(neighbors)...)+atol, true))
         for j in indices
-            dist = 0.0
-            for k = 1:size(cluster1, 1)
-                dist = dist + (cluster2[k, j]-cluster1[k, i])^2
+            dist = zero(promote_type(eltype(cluster₁), eltype(cluster₂)))
+            for k = 1:size(cluster₁, 1)
+                dist = dist + (cluster₂[k, j]-cluster₁[k, i])^2
             end
             dist = sqrt(dist)
             for (nb, len) in neighbors
-                if isapprox(len, dist, atol=atol)
+                if isapprox(len, dist, atol=atol, rtol=rtol)
                     push!(result, (nb, i, j))
                     break
                 end
@@ -443,7 +448,7 @@ end
 """
     PID(scope, site::Int)
     PID(site::Int)
-    PID(; scope="tz", site::Int=1)
+    PID(; scope='T', site::Int=1)
 
 The id of a point.
 """
@@ -455,34 +460,34 @@ end
 @inline PID(; scope='T', site::Int=1) = PID(scope, site)
 
 """
-    AbstractBond{N, P<:PID, R}
+    AbstractBond{N, P<:PID, D<:Number, R}
 
 Abstract bond.
 """
-abstract type AbstractBond{N, P<:PID, R} end
+abstract type AbstractBond{N, P<:PID, D<:Number, R} end
 
 """
-    ==(b1::AbstractBond, b2::AbstractBond) -> Bool
+    ==(b₁::AbstractBond, b₂::AbstractBond) -> Bool
 
 Overloaded equivalent operator.
 """
-@inline Base.:(==)(b1::AbstractBond, b2::AbstractBond) = ==(efficientoperations, b1, b2)
+@inline Base.:(==)(b₁::AbstractBond, b₂::AbstractBond) = ==(efficientoperations, b₁, b₂)
 
 """
-    isequal(b1::AbstractBond, b2::AbstractBond) -> Bool
+    isequal(b₁::AbstractBond, b₂::AbstractBond) -> Bool
 
 Overloaded equivalent function.
 """
-@inline Base.isequal(b1::AbstractBond, b2::AbstractBond) = isequal(efficientoperations, b1, b2)
+@inline Base.isequal(b₁::AbstractBond, b₂::AbstractBond) = isequal(efficientoperations, b₁, b₂)
 
 """
     length(bond::AbstractBond) -> Int
-    length(::Type{<:AbstractBond{N, <:PID, R} where N}) where R -> Int
+    length(::Type{<:AbstractBond{N, <:PID, <:Number, R} where N}) where R -> Int
 
 Get the number of points of a bond.
 """
 @inline Base.length(bond::AbstractBond) = length(typeof(bond))
-@inline Base.length(::Type{<:AbstractBond{N, <:PID, R} where N}) where R = R
+@inline Base.length(::Type{<:AbstractBond{N, <:PID, <:Number, R} where N}) where R = R
 
 """
     eltype(bond::AbstractBond)
@@ -491,7 +496,7 @@ Get the number of points of a bond.
 Get the eltype of a bond.
 """
 @inline Base.eltype(bond::AbstractBond) = eltype(typeof(bond))
-@inline Base.eltype(::Type{<:AbstractBond{N, P}}) where {N, P<:PID} = Point{N, P}
+@inline Base.eltype(::Type{<:AbstractBond{N, P, D}}) where {N, P<:PID, D<:Number} = Point{N, P, D}
 
 """
     iterate(bond::AbstractBond, state=1)
@@ -519,37 +524,48 @@ Get the pid type of a concrete bond.
 @inline pidtype(::Type{<:AbstractBond{N, P} where N}) where {P<:PID} = P
 
 """
+    dtype(bond::AbstractBond)
+    dtype(::Type{<:AbstractBond{N, <:PID, D} where N}) where {D<:Number}
+
+Get the data type of a bond.
+"""
+@inline dtype(bond::AbstractBond) = dtype(typeof(bond))
+@inline dtype(::Type{<:AbstractBond{N, <:PID, D} where N}) where {D<:Number} = D
+
+"""
     rank(bond::AbstractBond) -> Int
-    rank(::Type{<:AbstractBond{N, <:PID, R} where N}) where R -> Int
+    rank(::Type{<:AbstractBond{N, <:PID, <:Number, R} where N}) where R -> Int
 
 Get the rank of a bond.
 """
 @inline rank(bond::AbstractBond) = rank(typeof(bond))
-@inline rank(::Type{<:AbstractBond{N, <:PID, R} where N}) where R = R
+@inline rank(::Type{<:AbstractBond{N, <:PID, <:Number, R} where N}) where R = R
 
 """
-    Point(pid::PID, rcoord::SVector{N, <:Real}, icoord::SVector{N, <:Real}) where N
-    Point(pid::PID, rcoord::NTuple{N, <:Real}, icoord::NTuple{N, <:Real}=ntuple(i->0.0, N)) where N
-    Point(pid::PID, rcoord::AbstractVector{<:Real}, icoord::AbstractVector{<:Real}=zero(SVector{length(rcoord), Float}))
-    Point{N}(pid::PID, rcoord::AbstractVector{<:Real}, icoord::AbstractVector{<:Real}=zero(SVector{N, Float})) where N
+    Point(pid::PID, rcoord::SVector{N, D}, icoord::SVector{N, D}) where {N, D<:Number}
+    Point(pid::PID, rcoord::NTuple{N, <:Number}, icoord::NTuple{N, <:Number}=ntuple(i->0, N)) where N
+    Point(pid::PID, rcoord::AbstractVector{<:Number}, icoord::AbstractVector{<:Number}=zero(SVector{length(rcoord), Int}))
+    Point{N}(pid::PID, rcoord::AbstractVector{<:Number}, icoord::AbstractVector{<:Number}=zero(SVector{N, Int})) where N
 
 Labeled point.
 """
-struct Point{N, P<:PID} <: AbstractBond{N, P, 1}
+struct Point{N, P<:PID, D<:Number} <: AbstractBond{N, P, D, 1}
     pid::P
-    rcoord::SVector{N, Float}
-    icoord::SVector{N, Float}
-    Point(pid::PID, rcoord::SVector{N, <:Real}, icoord::SVector{N, <:Real}) where {N} = new{N, pid|>typeof}(pid, rcoord, icoord)
+    rcoord::SVector{N, D}
+    icoord::SVector{N, D}
+    Point(pid::PID, rcoord::SVector{N, D}, icoord::SVector{N, D}) where {N, D<:Number} = new{N, typeof(pid), D}(pid, rcoord, icoord)
 end
-@inline function Point(pid::PID, rcoord::NTuple{N, <:Real}, icoord::NTuple{N, <:Real}=ntuple(i->0.0, N)) where N
-    Point(pid, convert(SVector{N, Float}, rcoord), convert(SVector{N, Float}, icoord))
+@inline function Point(pid::PID, rcoord::NTuple{N, <:Number}, icoord::NTuple{N, <:Number}=ntuple(i->0, N)) where N
+    datatype = promote_type(eltype(rcoord), eltype(icoord))
+    return Point(pid, convert(SVector{N, datatype}, rcoord), convert(SVector{N, datatype}, icoord))
 end
-@inline function Point(pid::PID, rcoord::AbstractVector{<:Real}, icoord::AbstractVector{<:Real}=zero(SVector{length(rcoord), Float}))
-    Point{length(rcoord)}(pid, rcoord, icoord)
+@inline function Point(pid::PID, rcoord::AbstractVector{<:Number}, icoord::AbstractVector{<:Number}=zero(SVector{length(rcoord), Int}))
+    return Point{length(rcoord)}(pid, rcoord, icoord)
 end
-@inline function Point{N}(pid::PID, rcoord::AbstractVector{<:Real}, icoord::AbstractVector{<:Real}=zero(SVector{N, Float})) where N
+@inline function Point{N}(pid::PID, rcoord::AbstractVector{<:Number}, icoord::AbstractVector{<:Number}=zero(SVector{N, Int})) where N
     @assert length(rcoord)==length(icoord)==N "Point error: dismatched length of input rcoord and icoord."
-    Point(pid, convert(SVector{N, Float}, rcoord), convert(SVector{N, Float}, icoord))
+    datatype = promote_type(eltype(rcoord), eltype(icoord))
+    return Point(pid, convert(SVector{N, datatype}, rcoord), convert(SVector{N, datatype}, icoord))
 end
 
 """
@@ -583,17 +599,17 @@ Get the bond kind of a point, which is defined to be 0.
 
 Judge whether a point is intra the unitcell.
 """
-@inline isintracell(p::Point) = isapprox(p.icoord|>norm, 0.0, atol=atol)
+@inline isintracell(p::Point) = isapprox(norm(p.icoord), 0.0, atol=atol, rtol=rtol)
 
 """
     Bond(neighbor::Int, spoint::Point, epoint::Point)
 
 A bond in a lattice.
 """
-struct Bond{N, P<:PID} <: AbstractBond{N, P, 2}
+struct Bond{N, P<:PID, D<:Number} <: AbstractBond{N, P, D, 2}
     neighbor::Int
-    spoint::Point{N, P}
-    epoint::Point{N, P}
+    spoint::Point{N, P, D}
+    epoint::Point{N, P, D}
 end
 
 """
@@ -647,23 +663,23 @@ Get the icoord of the bond.
 
 Judge whether a bond is intra the unit cell of a lattice.
 """
-@inline isintracell(bond::Bond) = isapprox(bond|>icoord|>norm, 0.0, atol=atol)
+@inline isintracell(bond::Bond) = isapprox(bond|>icoord|>norm, 0.0, atol=atol, rtol=rtol)
 
 """
-    AbstractLattice{P<:PID, N}
+    AbstractLattice{N, P<:PID, D<:Number}
 
 Abstract type for all lattices.
 
 It should have the following contents:
 - `name::String`: the name of the lattice
 - `pids::Vector{P}`: the pids of the lattice
-- `rcoords::Matrix{Float}`: the rcoords of the lattice
-- `icoords::Matrix{Float}`: the icoords of the lattice
-- `vectors::Vector{SVector{N, Float}}`: the translation vectors of the lattice
-- `reciprocals::Vector{SVector{N, Float}}`: the reciprocals of the lattice
+- `rcoords::Matrix{D}`: the rcoords of the lattice
+- `icoords::Matrix{D}`: the icoords of the lattice
+- `vectors::Vector{SVector{N, D}}`: the translation vectors of the lattice
+- `reciprocals::Vector{SVector{N, D}}`: the reciprocals of the lattice
 - `neighbors::Dict{Int, Float}`: the order-distance map of the nearest neighbors of the lattice
 """
-abstract type AbstractLattice{N, P<:PID} end
+abstract type AbstractLattice{N, P<:PID, D<:Number} end
 @inline contentnames(::Type{<:AbstractLattice}) = (:name, :pids, :rcoords, :icoords, :vectors, :reciprocals, :neighbors)
 
 """
@@ -733,7 +749,7 @@ Get the pid type of the lattice.
 Get the point type of the lattice.
 """
 @inline Base.valtype(lattice::AbstractLattice) = valtype(typeof(lattice))
-@inline Base.valtype(::Type{<:AbstractLattice{N, P}}) where {N, P<:PID} = Point{N, P}
+@inline Base.valtype(::Type{<:AbstractLattice{N, P, D}}) where {N, P<:PID, D<:Number} = Point{N, P, D}
 
 """
     dimension(lattice::AbstractLattice) -> Int
@@ -743,6 +759,15 @@ Get the space dimension of the lattice.
 """
 @inline dimension(lattice::AbstractLattice) = dimension(typeof(lattice))
 @inline dimension(::Type{<:AbstractLattice{N}}) where {N} = N
+
+"""
+    dtype(lattice::AbstractLattice)
+    dtype(::Type{<:AbstractLattice{N, <:PID, D} where N}) where {D<:Number}
+
+Get the data type of a lattice.
+"""
+@inline dtype(lattice::AbstractLattice) = dtype(typeof(lattice))
+@inline dtype(::Type{<:AbstractLattice{N, <:PID, D} where N}) where {D<:Number} = D
 
 """
     nneighbor(lattice::AbstractLattice) -> Int
@@ -782,17 +807,17 @@ Get a rcoord, an icoord or a point of a lattice according to the type of the inp
 @inline Base.getindex(lattice::AbstractLattice, i::LatticeIndex{'R', <:PID}) = lattice[LatticeIndex{'R'}(findfirst(isequal(i.index), getcontent(lattice, :pids)))]
 @inline Base.getindex(lattice::AbstractLattice, i::LatticeIndex{'I', <:PID}) = lattice[LatticeIndex{'I'}(findfirst(isequal(i.index), getcontent(lattice, :pids)))]
 @inline Base.getindex(lattice::AbstractLattice, i::LatticeIndex{'P', <:PID}) = lattice[LatticeIndex{'P'}(findfirst(isequal(i.index), getcontent(lattice, :pids)))]
-@generated function latticestaticcoords(coords::Matrix{Float}, i::Int, ::Val{N}) where N
+@generated function latticestaticcoords(coords::Matrix{D}, i::Int, ::Val{N}) where {D<:Number, N}
     exprs = [:(coords[$j, i]) for j = 1:N]
-    return :(SVector{N, Float}($(exprs...)))
+    return :(SVector{N, D}($(exprs...)))
 end
 
 abstract type LatticeBonds{R} end
 @inline Base.eltype(::Type{<:LatticeBonds{0}}) = AbstractBond
 @inline Base.eltype(::Type{<:LatticeBonds{1}}) = Point
 @inline Base.eltype(::Type{<:LatticeBonds{2}}) = Bond
-@inline Base.eltype(::Type{L}, ::B) where {L<:AbstractLattice, B<:LatticeBonds} = eltype(B){L|>dimension, L|>keytype}
-@inline Base.eltype(::Type{L}, ::Val{B}) where {L<:AbstractLattice, B} = eltype(typeof(B)){L|>dimension, L|>keytype}
+@inline Base.eltype(::Type{L}, ::B) where {L<:AbstractLattice, B<:LatticeBonds} = eltype(B){L|>dimension, L|>keytype, L|>dtype}
+@inline Base.eltype(::Type{L}, ::Val{B}) where {L<:AbstractLattice, B} = eltype(typeof(B)){L|>dimension, L|>keytype, L|>dtype}
 struct AllBonds <: LatticeBonds{0} end
 struct ZerothBonds <: LatticeBonds{1} end
 struct InsideBonds <: LatticeBonds{2} end
@@ -922,20 +947,20 @@ end
 
 """
     Lattice{N}(name::String,
-        pids::Vector{<:PID}, rcoords::AbstractMatrix{<:Real}, icoords::AbstractMatrix{<:Real},
-        vectors::AbstractVector{<:AbstractVector{<:Real}},
+        pids::Vector{<:PID}, rcoords::AbstractMatrix{<:Number}, icoords::AbstractMatrix{<:Number},
+        vectors::AbstractVector{<:AbstractVector{<:Number}},
         neighbors::Union{Dict{Int, <:Real}, Int}=1;
         coordination::Int=8
         ) where N
     Lattice(name::String,
         points::AbstractVector{<:Point};
-        vectors::AbstractVector{<:AbstractVector{<:Real}}=SVector{0, SVector{points|>eltype|>dimension, Float}}(),
+        vectors::AbstractVector{<:AbstractVector{<:Number}}=SVector{0, SVector{points|>eltype|>dimension, points|>eltype|>dtype}}(),
         neighbors::Union{Dict{Int, <:Real}, Int}=1,
         coordination::Int=8
         )
     Lattice(name::String,
         sublattices::AbstractVector{<:AbstractLattice};
-        vectors::AbstractVector{<:AbstractVector{<:Real}}=SVector{0, SVector{sublattices|>eltype|>dimension, Float}}(),
+        vectors::AbstractVector{<:AbstractVector{<:Real}}=SVector{0, SVector{sublattices|>eltype|>dimension, sublattices|>eltype|>dtype}}(),
         neighbors::Union{Dict{Int, <:Real}, Int}=1,
         coordination::Int=8
         )
@@ -944,46 +969,50 @@ Simplest lattice.
 
 A simplest lattice can be construted from its contents, i.e. pids, rcoords and icoords, or from a couple of points, or from a couple of sublattices.
 """
-struct Lattice{N, P<:PID} <: AbstractLattice{N, P}
+struct Lattice{N, P<:PID, D<:Number} <: AbstractLattice{N, P, D}
     name::String
     pids::Vector{P}
-    rcoords::Matrix{Float}
-    icoords::Matrix{Float}
-    vectors::Vector{SVector{N, Float}}
-    reciprocals::Vector{SVector{N, Float}}
+    rcoords::Matrix{D}
+    icoords::Matrix{D}
+    vectors::Vector{SVector{N, D}}
+    reciprocals::Vector{SVector{N, D}}
     neighbors::Dict{Int, Float}
     function Lattice{N}(name::String,
-            pids::Vector{<:PID}, rcoords::AbstractMatrix{<:Real}, icoords::AbstractMatrix{<:Real},
-            vectors::AbstractVector{<:AbstractVector{<:Real}},
+            pids::Vector{<:PID}, rcoords::AbstractMatrix{<:Number}, icoords::AbstractMatrix{<:Number},
+            vectors::AbstractVector{<:AbstractVector{<:Number}},
             neighbors::Union{Dict{Int, <:Real}, Int}=1;
             coordination::Int=8
             ) where N
         @assert N==size(rcoords, 1)==size(icoords, 1) && length(pids)==size(rcoords, 2)==size(icoords, 2) "Lattice error: shape dismatched."
         isa(neighbors, Int) && (neighbors = Dict(i=>minlen for (i, minlen) in enumerate(minimumlengths(rcoords, vectors, neighbors, coordination=coordination))))
-        vectors = convert(Vector{SVector{N, Float}}, vectors)
-        recipls = convert(Vector{SVector{N, Float}}, reciprocals(vectors))
-        new{N, pids|>eltype}(name, pids, rcoords, icoords, vectors, recipls, neighbors)
+        datatype = promote_type(Float, eltype(rcoords), eltype(icoords), eltype(eltype(vectors)))
+        rcoords = convert(Matrix{datatype}, rcoords)
+        icoords = convert(Matrix{datatype}, icoords)
+        vectors = convert(Vector{SVector{N, datatype}}, vectors)
+        recipls = convert(Vector{SVector{N, datatype}}, reciprocals(vectors))
+        new{N, eltype(pids), datatype}(name, pids, rcoords, icoords, vectors, recipls, neighbors)
     end
 end
 function Lattice(name::String,
         points::AbstractVector{<:Point};
-        vectors::AbstractVector{<:AbstractVector{<:Real}}=SVector{0, SVector{points|>eltype|>dimension, Float}}(),
+        vectors::AbstractVector{<:AbstractVector{<:Number}}=SVector{0, SVector{points|>eltype|>dimension, points|>eltype|>dtype}}(),
         neighbors::Union{Dict{Int, <:Real}, Int}=1,
         coordination::Int=8
         )
+    datatype = dtype(eltype(points))
     pids = Vector{points|>eltype|>pidtype}(undef, points|>length)
-    rcoords = zeros(Float, points|>eltype|>dimension, points|>length)
-    icoords = zeros(Float, points|>eltype|>dimension, points|>length)
+    rcoords = zeros(datatype, points|>eltype|>dimension, points|>length)
+    icoords = zeros(datatype, points|>eltype|>dimension, points|>length)
     for i = 1:length(points)
         pids[i] = points[i].pid
         rcoords[:, i] = points[i].rcoord
         icoords[:, i] = points[i].icoord
     end
-    Lattice{points|>eltype|>dimension}(name, pids, rcoords, icoords, vectors, neighbors, coordination=coordination)
+    return Lattice{points|>eltype|>dimension}(name, pids, rcoords, icoords, vectors, neighbors, coordination=coordination)
 end
 function Lattice(name::String,
         sublattices::AbstractVector{<:AbstractLattice};
-        vectors::AbstractVector{<:AbstractVector{<:Real}}=SVector{0, SVector{sublattices|>eltype|>dimension, Float}}(),
+        vectors::AbstractVector{<:AbstractVector{<:Real}}=SVector{0, SVector{sublattices|>eltype|>dimension, sublattices|>eltype|>dtype}}(),
         neighbors::Union{Dict{Int, <:Real}, Int}=1,
         coordination::Int=8
         )
@@ -991,10 +1020,11 @@ function Lattice(name::String,
         @assert mapreduce(sl->dimension(sl)==dimension(sublattices[1]), &, sublattices) "Lattice error: all sublattices should have the same dimension."
         @assert mapreduce(sl->keytype(sl)===keytype(sublattices[1]), &, sublattices) "Lattice error: all sublattices should have the same keytype."
     end
+    datatype = dtype(eltype(sublattices))
     len = mapreduce(length, +, sublattices)
     pids = Vector{sublattices|>eltype|>keytype}(undef, len)
-    rcoords = zeros(Float, sublattices|>eltype|>dimension, len)
-    icoords = zeros(Float, sublattices|>eltype|>dimension, len)
+    rcoords = zeros(datatype, sublattices|>eltype|>dimension, len)
+    icoords = zeros(datatype, sublattices|>eltype|>dimension, len)
     pos = 1
     for sublattice in sublattices
         pids[pos:pos+length(sublattice)-1] = sublattice.pids
@@ -1008,24 +1038,24 @@ end
 """
     SuperLattice(name::String,
         sublattices::AbstractVector{<:AbstractLattice};
-        vectors::AbstractVector{<:AbstractVector{<:Real}}=SVector{0, SVector{sublattices|>eltype|>dimension, Float}}(),
+        vectors::AbstractVector{<:AbstractVector{<:Real}}=SVector{0, SVector{sublattices|>eltype|>dimension, sublattices|>eltype|>dtype}}(),
         neighbors::Dict{Int, <:Real}=Dict{Int, Float}()
         )
 
 SuperLattice that is composed of serveral sublattices.
 """
-struct SuperLattice{L<:AbstractLattice, N, P<:PID} <: AbstractLattice{N, P}
+struct SuperLattice{L<:AbstractLattice, N, P<:PID, D<:Number} <: AbstractLattice{N, P, D}
     sublattices::Vector{L}
     name::String
     pids::Vector{P}
-    rcoords::Matrix{Float}
-    icoords::Matrix{Float}
-    vectors::Vector{SVector{N, Float}}
-    reciprocals::Vector{SVector{N, Float}}
+    rcoords::Matrix{D}
+    icoords::Matrix{D}
+    vectors::Vector{SVector{N, D}}
+    reciprocals::Vector{SVector{N, D}}
     neighbors::Dict{Int, Float}
     function SuperLattice(name::String,
             sublattices::AbstractVector{<:AbstractLattice};
-            vectors::AbstractVector{<:AbstractVector{<:Real}}=SVector{0, SVector{sublattices|>eltype|>dimension, Float}}(),
+            vectors::AbstractVector{<:AbstractVector{<:Real}}=SVector{0, SVector{sublattices|>eltype|>dimension, sublattices|>eltype|>dtype}}(),
             neighbors::Dict{Int, <:Real}=Dict{Int, Float}()
             )
         if length(sublattices) > 1
@@ -1033,10 +1063,11 @@ struct SuperLattice{L<:AbstractLattice, N, P<:PID} <: AbstractLattice{N, P}
             @assert mapreduce(sl->keytype(sl)===keytype(sublattices[1]), &, sublattices) "SuperLattice error: all sublattices should have the same keytype."
         end
         @assert all(length(sublattice.vectors) == 0 for sublattice in sublattices) "SuperLattice error: all sublattices should assume open boundaries."
+        datatype = sublattices|>eltype|>dtype
         len = mapreduce(length, +, sublattices)
         pids = Vector{sublattices|>eltype|>keytype}(undef, len)
-        rcoords = zeros(Float, sublattices|>eltype|>dimension, len)
-        icoords = zeros(Float, sublattices|>eltype|>dimension, len)
+        rcoords = zeros(datatype, sublattices|>eltype|>dimension, len)
+        icoords = zeros(datatype, sublattices|>eltype|>dimension, len)
         pos = 1
         for sublattice in sublattices
             pids[pos:pos+length(sublattice)-1] = sublattice.pids
@@ -1044,9 +1075,9 @@ struct SuperLattice{L<:AbstractLattice, N, P<:PID} <: AbstractLattice{N, P}
             icoords[:, pos:pos+length(sublattice)-1] = sublattice.icoords
             pos += length(sublattice)
         end
-        vectors = convert(Vector{SVector{sublattices|>eltype|>dimension, Float}}, vectors)
-        recipls = convert(Vector{SVector{sublattices|>eltype|>dimension, Float}}, reciprocals(vectors))
-        new{sublattices|>eltype, sublattices|>eltype|>dimension, sublattices|>eltype|>keytype}(sublattices, name, pids, rcoords, icoords, vectors, recipls, neighbors)
+        vectors = convert(Vector{SVector{sublattices|>eltype|>dimension, datatype}}, vectors)
+        recipls = convert(Vector{SVector{sublattices|>eltype|>dimension, datatype}}, reciprocals(vectors))
+        new{sublattices|>eltype, sublattices|>eltype|>dimension, sublattices|>eltype|>keytype, datatype}(sublattices, name, pids, rcoords, icoords, vectors, recipls, neighbors)
     end
 end
 @inline contentnames(::Type{<:SuperLattice}) = (:sublattices, :name, :pids, :rcoords, :icoords, :vectors, :reciprocals, :neighbors)
@@ -1128,27 +1159,28 @@ end
 
 Cylinder of 1d and quasi 2d lattices.
 """
-mutable struct Cylinder{P<:PID, N} <: AbstractLattice{N, P}
-    block::Matrix{Float}
-    translation::SVector{N, Float}
+mutable struct Cylinder{P<:PID, N, D<:Number} <: AbstractLattice{N, P, D}
+    block::Matrix{D}
+    translation::SVector{N, D}
     name::String
     pids::Vector{P}
-    rcoords::Matrix{Float}
-    icoords::Matrix{Float}
-    vectors::Vector{SVector{N, Float}}
-    reciprocals::Vector{SVector{N, Float}}
+    rcoords::Matrix{D}
+    icoords::Matrix{D}
+    vectors::Vector{SVector{N, D}}
+    reciprocals::Vector{SVector{N, D}}
     neighbors::Dict{Int, Float}
-    function Cylinder{P}(name::String, block::AbstractMatrix{<:Real}, translation::SVector{N, <:Real};
-            vector::Union{AbstractVector{<:Real}, Nothing}=nothing,
+    function Cylinder{P}(name::String, block::AbstractMatrix{<:Number}, translation::SVector{N, <:Number};
+            vector::AbstractVector{<:Number}=SVector{N, Float}(),
             neighbors::Union{Dict{Int, <:Real}, Int}=1
             ) where {P<:PID, N}
         pids = Vector{P}[]
-        rcoords = zeros(Float, N, 0)
-        icoords = zeros(Float, N, 0)
-        vectors = isnothing(vector) ? SVector{N, Float}[] : [convert(SVector{N, Float}, vector)]
-        recipls = convert(Vector{SVector{N, Float}}, reciprocals(vectors))
+        datatype = promote_type(Float, eltype(block), eltype(translation), eltype(vector))
+        rcoords = zeros(datatype, N, 0)
+        icoords = zeros(datatype, N, 0)
+        vectors = [convert(SVector{N, datatype}, vector)]
+        recipls = convert(Vector{SVector{N, datatype}}, reciprocals(vectors))
         isa(neighbors, Int) && (neighbors = Dict{Int, Float}(i=>Inf for i = 1:neighbors))
-        new{P, N}(block, translation, name, pids, rcoords, icoords, vectors, recipls, neighbors)
+        new{P, N, datatype}(block, translation, name, pids, rcoords, icoords, vectors, recipls, neighbors)
     end
 end
 @inline contentnames(::Type{<:Cylinder}) = (:block, :translation, :name, :pids, :rcoords, :icoords, :vectors, :reciprocals, :neighbors)
@@ -1169,8 +1201,8 @@ function Base.insert!(cylinder::Cylinder, ps::S...; cut=length(cylinder)÷2+1, s
     blcknum = length(cylinder)÷blcklen + length(ps)
     rsltlen = blcklen * blcknum
     pids = keytype(cylinder)[]
-    rcoords = zeros(Float, cylinder|>dimension, rsltlen)
-    icoords = zeros(Float, cylinder|>dimension, rsltlen)
+    rcoords = zeros(dtype(cylinder), cylinder|>dimension, rsltlen)
+    icoords = zeros(dtype(cylinder), cylinder|>dimension, rsltlen)
     for i = 1:cut-1
         push!(pids, isnothing(scopes) ? cylinder.pids[i] : replace(cylinder.pids[i], scope=scopes[i]))
     end
@@ -1197,7 +1229,7 @@ function Base.insert!(cylinder::Cylinder, ps::S...; cut=length(cylinder)÷2+1, s
         minlens = minimumlengths(rcoords, cylinder.vectors, cylinder|>nneighbor, coordination=coordination)
         cylinder.neighbors = Dict{Int, Float}(i=>len for (i, len) in enumerate(minlens))
     end
-    cylinder
+    return cylinder
 end
 
 """
@@ -1423,14 +1455,23 @@ end
 
 The Brillouin zone of a lattice.
 """
-struct BrillouinZone{P<:Momentum, N} <: NamedVectorSpace{:⊗, (:k,), Tuple{P}, Tuple{AbelianNumbers{P}}}
-    reciprocals::Vector{SVector{N, Float}}
+struct BrillouinZone{P<:Momentum, N, D<:Number} <: NamedVectorSpace{:⊗, (:k,), Tuple{P}, Tuple{AbelianNumbers{P}}}
+    reciprocals::Vector{SVector{N, D}}
     momenta::AbelianNumbers{P}
 end
 @inline contentnames(::Type{<:BrillouinZone}) = (:reciprocals, :contents)
 @inline getcontent(bz::BrillouinZone, ::Val{:contents}) = (bz.momenta,)
 @inline function BrillouinZone(reciprocals::AbstractVector{<:AbstractVector}, momenta::AbelianNumbers{<:Momentum})
-    return BrillouinZone(convert(Vector{SVector{length(reciprocals[1]), Float64}}, reciprocals), momenta)
+    return BrillouinZone(convert(Vector{SVector{length(reciprocals[1]), eltype(eltype(reciprocals))}}, reciprocals), momenta)
 end
+
+"""
+    dtype(bz::BrillouinZone)
+    dtype(::Type{<:BrillouinZone{<:Momentum, N, D} where N}) where {D<:Number}
+
+Get the data type of a Brillouin zone.
+"""
+@inline dtype(bz::BrillouinZone) = dtype(typeof(bz))
+@inline dtype(::Type{<:BrillouinZone{<:Momentum, N, D} where N}) where {D<:Number} = D
 
 end #module

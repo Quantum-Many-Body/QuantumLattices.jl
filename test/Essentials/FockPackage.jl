@@ -45,8 +45,8 @@ end
 end
 
 @testset "oidtype" begin
-    @test oidtype(Fock{:f}, Point{2, PID{Int}}, Val(:info)) == OID{FIndex{:f, Int}, SVector{2, Float}}
-    @test oidtype(Fock{:b}, Point{2, PID{Int}}, Val(:info)) == OID{FIndex{:b, Int}, SVector{2, Float}}
+    @test oidtype(Fock{:f}, Point{2, PID{Int}, Float}, Val(:info)) == OID{FIndex{:f, Int}, SVector{2, Float}}
+    @test oidtype(Fock{:b}, Point{2, PID{Int}, Float}, Val(:info)) == OID{FIndex{:b, Int}, SVector{2, Float}}
 end
 
 @testset "latex" begin

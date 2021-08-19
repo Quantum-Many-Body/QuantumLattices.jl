@@ -6,7 +6,7 @@ using MacroTools: @capture
 using ..Spatials: AbstractBond, Point, Bonds, AbstractLattice, acrossbonds, isintracell
 using ..DegreesOfFreedom: Config, AbstractOID, Operators, Table, Boundary, plain
 using ...Interfaces: add!
-using ...Prerequisites: Float, atol, rtol, decimaltostr
+using ...Prerequisites: atol, rtol, decimaltostr
 using ...Prerequisites.Traits: rawtype, efficientoperations
 using ...Prerequisites.CompositeStructures: CompositeTuple, NamedContainer
 using ...Mathematics.AlgebraOverFields: SimpleID, ID, Element, Elements

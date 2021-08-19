@@ -58,7 +58,7 @@ end
 end
 
 @testset "oidtype" begin
-    @test oidtype(Spin{1//2}, Point{2, PID{Int}}, Val(:info)) == OID{SIndex{1//2, Int}, SVector{2, Float}}
+    @test oidtype(Spin{1//2}, Point{2, PID{Int}, Float}, Val(:info)) == OID{SIndex{1//2, Int}, SVector{2, Float}}
 end
 
 @testset "latex" begin

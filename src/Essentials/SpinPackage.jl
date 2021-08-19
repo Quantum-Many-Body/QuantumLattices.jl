@@ -65,14 +65,15 @@ Get the matrix representation of a sid.
 function Base.Matrix(sid::SID{S}, dtype::Type{<:Number}=Complex{Float}) where S
     N = Int(2*S+1)
     result = zeros(dtype, (N, N))
+    spin = convert(dtype, S)
     for i = 1:N, j = 1:N
         row, col = N+1-i, N+1-j
-        m, n = S+1-i, S+1-j
-        result[row, col] = (sid.tag == 'x') ? (delta(i+1, j)+delta(i, j+1))*sqrt(S*(S+1)-m*n)/2 :
-            (sid.tag == 'y') ? (delta(i+1, j)-delta(i, j+1))*sqrt(S*(S+1)-m*n)/2im :
+        m, n = spin+1-i, spin+1-j
+        result[row, col] = (sid.tag == 'x') ? (delta(i+1, j)+delta(i, j+1))*sqrt(spin*(spin+1)-m*n)/2 :
+            (sid.tag == 'y') ? (delta(i+1, j)-delta(i, j+1))*sqrt(spin*(spin+1)-m*n)/2im :
             (sid.tag == 'z') ? delta(i, j)*m :
-            (sid.tag == '+') ? delta(i+1, j)*sqrt(S*(S+1)-m*n) :
-            delta(i, j+1)*sqrt(S*(S+1)-m*n)
+            (sid.tag == '+') ? delta(i+1, j)*sqrt(spin*(spin+1)-m*n) :
+            delta(i, j+1)*sqrt(spin*(spin+1)-m*n)
     end
     return result
 end
@@ -327,17 +328,17 @@ function expand(sc::SpinCoupling, points::NTuple{R, Point}, spins::NTuple{R, Spi
     return SCExpand{totalspins(spins)}(sc.value, points, obexpands, sc.tags)
 end
 @generated totalspins(spins::NTuple{R, Spin}) where R = Tuple(totalspin(fieldtype(spins, i)) for i = 1:R)
-struct SCExpand{SPS, V, N, D, P} <: CartesianVectorSpace{Tuple{V, ID{OID{SIndex, SVector{D, Float}}, N}}}
+struct SCExpand{SPS, V, N, D, P, DT<:Number} <: CartesianVectorSpace{Tuple{V, ID{OID{SIndex, SVector{D, DT}}, N}}}
     value::V
-    points::NTuple{N, Point{D, PID{P}}}
+    points::NTuple{N, Point{D, PID{P}, DT}}
     obexpands::Vector{NTuple{N, Int}}
     tags::NTuple{N, Char}
-    function SCExpand{SPS}(value::V, points::NTuple{N, Point{D, PID{P}}}, obexpands::Vector{NTuple{N, Int}}, tags::NTuple{N, Char}) where {SPS, V, N, D, P}
-        return new{SPS, V, N, D, P}(value, points, obexpands, tags)
+    function SCExpand{SPS}(value::V, points::NTuple{N, Point{D, PID{P}, DT}}, obexpands::Vector{NTuple{N, Int}}, tags::NTuple{N, Char}) where {SPS, V, N, D, P, DT<:Number}
+        return new{SPS, V, N, D, P, DT}(value, points, obexpands, tags)
     end
 end
-@inline @generated function Base.eltype(::Type{SCExpand{SPS, V, N, D, P}}) where {SPS, V, N, D, P}
-    return Tuple{V, Tuple{[OID{SIndex{SPS[i], P}, SVector{D, Float}} for i = 1:N]...}}
+@inline @generated function Base.eltype(::Type{SCExpand{SPS, V, N, D, P, DT}}) where {SPS, V, N, D, P, DT<:Number}
+    return Tuple{V, Tuple{[OID{SIndex{SPS[i], P}, SVector{D, DT}} for i = 1:N]...}}
 end
 @inline Base.Dims(sce::SCExpand) = (length(sce.obexpands),)
 @generated function Tuple(index::CartesianIndex{1}, sce::SCExpand{SPS, V, N}) where {SPS, V, N}

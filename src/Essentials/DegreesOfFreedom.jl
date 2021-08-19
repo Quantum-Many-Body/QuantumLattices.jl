@@ -4,6 +4,7 @@ using Printf: @printf, @sprintf
 using StaticArrays: SVector
 using LaTeXStrings: latexstring
 using ..Spatials: PID, Point
+using ...Essentials: dtype
 using ...Interfaces: id, rank, dimension, decompose
 using ...Prerequisites: Float, decimaltostr
 using ...Prerequisites.Traits: rawtype, efficientoperations, getcontent
@@ -195,6 +196,7 @@ end
 @inline OID(index::Index; rcoord, icoord) = OID(index, rcoord, icoord)
 @inline Base.hash(oid::OID, h::UInt) = hash((oid.index, Tuple(oid.rcoord)), h)
 @inline Base.propertynames(::ID{OID}) = (:indexes, :rcoords, :icoords)
+@inline oidcoord(vector::SVector) = vector
 @generated function oidcoord(vector::SVector{N, Float}) where N
     exprs = [:((vector[$i] === -0.0) ? 0.0 : vector[$i]) for i = 1:N]
     return :(SVector($(exprs...)))
@@ -221,7 +223,7 @@ Get the adjoint of an operator id.
 
 Get the compatible oid type from the combination of the internal part and the spatial part.
 """
-@inline oidtype(I::Type{<:Internal}, P::Type{<:Point}, ::Val) = OID{union(P|>pidtype, I|>eltype), SVector{P|>dimension, Float}}
+@inline oidtype(I::Type{<:Internal}, P::Type{<:Point}, ::Val) = OID{union(P|>pidtype, I|>eltype), SVector{P|>dimension, P|>dtype}}
 
 """
     Operator{V<:Number, I<:ID{AbstractOID}} <: Element{V, I}
@@ -553,8 +555,8 @@ Get the body/superscript/subscript of the LaTeX string representation of an oid.
 
 Get the `:rcoord/:icoord` script of an oid.
 """
-@inline script(::Val{:rcoord}, oid::OID; kwargs...) = @sprintf "[%s]" join(oid.rcoord, ", ")
-@inline script(::Val{:icoord}, oid::OID; kwargs...) = @sprintf "[%s]" join(oid.icoord, ", ")
+@inline script(::Val{:rcoord}, oid::OID; kwargs...) = @sprintf "[%s]" join(valuetolatextext.(oid.rcoord), ", ")
+@inline script(::Val{:icoord}, oid::OID; kwargs...) = @sprintf "[%s]" join(valuetolatextext.(oid.icoord), ", ")
 
 """
     script(::Val{:integeralicoord}, oid::OID; vectors, kwargs...)
@@ -646,16 +648,17 @@ Show LaTeX formed operators.
 Base.show(io::IO, ::MIME"text/latex", opts::Operators) = show(io, MIME"text/latex"(), latexstring(repr(opts)))
 
 """
-    Boundary{Names}(values::AbstractVector{Float}, vectors::AbstractVector{<:AbstractVector{Float}}) where Names
+    Boundary{Names}(values::AbstractVector{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}) where Names
 
 Boundary twist of operators.
 """
-struct Boundary{Names, V<:AbstractVector{Float}} <: Function
-    values::Vector{Float}
+struct Boundary{Names, D<:Number, V<:AbstractVector} <: Function
+    values::Vector{D}
     vectors::Vector{V}
-    function Boundary{Names}(values::AbstractVector{Float}, vectors::AbstractVector{<:AbstractVector{Float}}) where Names
+    function Boundary{Names}(values::AbstractVector{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}) where Names
         @assert length(Names)==length(values)==length(vectors) "Boundary error: dismatched names, values and vectors."
-        new{Names, eltype(vectors)}(convert(Vector{Float}, values), vectors)
+        datatype = promote_type(eltype(values), Float)
+        new{Names, datatype, eltype(vectors)}(convert(Vector{datatype}, values), vectors)
     end
 end
 
@@ -690,27 +693,27 @@ Get the boundary twisted operator.
 @inline (bound::Boundary)(operator::Operator) = twist(operator, bound.vectors, bound.values)
 
 """
-    twist(operator::Operator, vectors::AbstractVector{<:AbstractVector{Float}}, values::AbstractVector{Float}) -> Operator
+    twist(operator::Operator, vectors::AbstractVector{<:AbstractVector{<:Number}}, values::AbstractVector{<:Number}) -> Operator
 
 Twist an operator.
 """
-@inline function twist(operator::Operator, vectors::AbstractVector{<:AbstractVector{Float}}, values::AbstractVector{Float})
-    replace(operator, operator.value*exp(1im*angle(operator.id, vectors, values)))
+@inline function twist(operator::Operator, vectors::AbstractVector{<:AbstractVector{<:Number}}, values::AbstractVector{<:Number})
+    return replace(operator, operator.value*exp(1im*angle(operator.id, vectors, values)))
 end
 
 """
-    angle(bound::Boundary, operator::Operator) -> Float
+    angle(bound::Boundary, operator::Operator) -> Number
 
 Get the boundary twist phase of an operator.
 """
 @inline Base.angle(bound::Boundary, operator::Operator) = angle(operator.id, bound.vectors, bound.values)
 
 """
-    angle(id::ID{AbstractOID}, vectors::AbstractVector{<:AbstractVector{Float}}, values::AbstractVector{Float}) -> Float
+    angle(id::ID{AbstractOID}, vectors::AbstractVector{<:AbstractVector{<:Number}}, values::AbstractVector{<:Number}) -> Number
 
 Get the total twist phase of an id.
 """
-@inline @generated function Base.angle(id::ID{AbstractOID}, vectors::AbstractVector{<:AbstractVector{Float}}, values::AbstractVector{Float})
+@inline @generated function Base.angle(id::ID{AbstractOID}, vectors::AbstractVector{<:AbstractVector{<:Number}}, values::AbstractVector{<:Number})
     Expr(:call, :+, [:(angle(id[$i], vectors, values)) for i = 1:rank(id)]...)
 end
 

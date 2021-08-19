@@ -2,7 +2,7 @@ using Test
 using Random: seed!
 using StaticArrays: SVector
 using QuantumLattices.Essentials.Spatials
-using QuantumLattices.Essentials: kind, reset!
+using QuantumLattices.Essentials: dtype, kind, reset!
 using QuantumLattices.Interfaces: decompose, rank, dimension, expand
 using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Prerequisites.Traits: contentnames, getcontent
@@ -150,10 +150,11 @@ end
 
 @testset "Point" begin
     point = Point(PID(0, 1), (0.0, 0.0), (0.0, 0.0))
+    @test point|>dtype == point|>typeof|>dtype == Float
     @test point == Point(PID(0, 1), [0.0, 0.0], [0.0, 0.0])
     @test isequal(point, Point{2}(PID(0, 1), [0.0, 0.0], [0.0, 0.0]))
     @test point|>length == point|>typeof|>length == 1
-    @test point|>eltype == point|>typeof|>eltype == Point{2, PID{Int}}
+    @test point|>eltype == point|>typeof|>eltype == Point{2, PID{Int}, Float}
     @test point|>rank == point|>typeof|>rank == 1
     @test point|>pidtype == point|>typeof|>pidtype == PID{Int}
     @test point|>dimension == point|>typeof|>dimension == 2
@@ -173,7 +174,7 @@ end
     @test bond|>string == "Bond(1, Point(PID(1, 1), [0.0, 0.0], [0.0, 0.0]), Point(PID(1, 2), [0.0, 1.0], [0.0, 1.0]))"
     @test bond|>reverse == Bond(1, Point(PID(1, 2), (0.0, 1.0), (0.0, 1.0)), Point(PID(1, 1), (0.0, 0.0), (0.0, 0.0)))
     @test bond|>length == bond|>typeof|>length == 2
-    @test bond|>eltype == bond|>typeof|>eltype == Point{2, PID{Int}}
+    @test bond|>eltype == bond|>typeof|>eltype == Point{2, PID{Int}, Float}
     @test bond|>rank == bond|>typeof|>rank == 2
     @test bond|>pidtype == bond|>typeof|>pidtype == PID{Int}
     @test bond|>dimension == bond|>typeof|>dimension == 2
@@ -194,7 +195,8 @@ end
     @test lattice|>length == 1
     @test lattice|>dimension == lattice|>typeof|>dimension == 2
     @test lattice|>keytype == lattice|>typeof|>keytype == PID{Int}
-    @test lattice|>valtype == lattice|>typeof|>valtype == Point{2, PID{Int}}
+    @test lattice|>valtype == lattice|>typeof|>valtype == Point{2, PID{Int}, Float}
+    @test lattice|>dtype == lattice|>typeof|>dtype == Float
     @test lattice[LatticeIndex{'R'}(1)] == lattice[LatticeIndex{'R'}(PID(1, 1))] == SVector(0.5, 0.5)
     @test lattice[LatticeIndex{'I'}(1)] == lattice[LatticeIndex{'I'}(PID(1, 1))] == SVector(0.0, 0.0)
     @test lattice[LatticeIndex{'P'}(1)] == lattice[LatticeIndex{'P'}(PID(1, 1))] == Point(PID(1, 1), (0.5, 0.5), (0.0, 0.0))
@@ -229,7 +231,7 @@ end
                 neighbors=Dict(1=>√2/2, -1=>√2/20)
                 )
     @test lattice|>typeof|>contentnames == (:sublattices, :name, :pids, :rcoords, :icoords, :vectors, :reciprocals, :neighbors)
-    @test latticetype(lattice) == latticetype(typeof(lattice)) == Lattice{2, PID{Int}}
+    @test latticetype(lattice) == latticetype(typeof(lattice)) == Lattice{2, PID{Int}, Float}
     @test setdiff(bonds(lattice), bonds(lattice, zerothbonds, insidebonds, acrossbonds))|>length == 0
     @test setdiff(bonds(lattice, insidebonds), bonds(lattice, intrabonds, interbonds))|>length == 0
 end
@@ -253,9 +255,9 @@ end
     @test eltype(typeof(zerothbonds)) === Point
     @test eltype(typeof(insidebonds)) === eltype(typeof(acrossbonds)) === Bond
     @test eltype(typeof(intrabonds)) === eltype(typeof(interbonds)) === Bond
-    @test eltype(AbstractLattice{2, PID{Int}}, allbonds) == eltype(AbstractLattice{2, PID{Int}}, Val(allbonds)) == AbstractBond{2, PID{Int}}
-    @test eltype(Lattice{3, PID{Char}}, zerothbonds) == eltype(Lattice{3, PID{Char}}, Val(zerothbonds)) == Point{3, PID{Char}}
-    @test eltype(Lattice{1, PID{String}}, insidebonds) == eltype(Lattice{1, PID{String}}, Val(insidebonds)) == Bond{1, PID{String}}
+    @test eltype(AbstractLattice{2, PID{Int}, Float}, allbonds) == eltype(AbstractLattice{2, PID{Int}, Float}, Val(allbonds)) == AbstractBond{2, PID{Int}, Float}
+    @test eltype(Lattice{3, PID{Char}, Float}, zerothbonds) == eltype(Lattice{3, PID{Char}, Float}, Val(zerothbonds)) == Point{3, PID{Char}, Float}
+    @test eltype(Lattice{1, PID{String}, Float}, insidebonds) == eltype(Lattice{1, PID{String}, Float}, Val(insidebonds)) == Bond{1, PID{String}, Float}
 
     @test expand(Lattice, Val((allbonds,))) == Lattice|>latticebondsstructure|>leaves|>Tuple
     @test expand(Lattice, Val((zerothbonds,))) == (zerothbonds,)
@@ -273,12 +275,12 @@ end
 @testset "Bonds" begin
     lattice = Lattice("Tuanzi", [Point(PID(1, 1), (0.5, 0.5), (0.0, 0.0))], vectors=[[1.0, 0.0], [0.0, 1.0]], neighbors=1)
     bs = Bonds(lattice)
-    @test bs|>eltype == bs|>typeof|>eltype == AbstractBond{2, PID{Int}}
+    @test bs|>eltype == bs|>typeof|>eltype == AbstractBond{2, PID{Int}, Float}
     @test bs==Bonds(lattice, allbonds) && isequal(bs, Bonds(lattice, allbonds))
     @test (bs|>length == 3) && (bs|>size == (3,))
     @test summary(bs) == "3-element Bonds"
     @test bs|>bondtypes == bs|>typeof|>bondtypes == (zerothbonds, insidebonds, acrossbonds)
-    @test bs|>latticetype == bs|>typeof|>latticetype == Lattice{2, PID{Int}}
+    @test bs|>latticetype == bs|>typeof|>latticetype == Lattice{2, PID{Int}, Float}
     @test bs|>rank == bs|>typeof|>rank == 3
     @test bs|>collect == bonds(lattice)
     @test (bs[1] == bs.bonds[1][1]) && (bs[2] == bs.bonds[3][1]) && (bs[3] == bs.bonds[3][2])
@@ -286,7 +288,7 @@ end
     @test filter(zerothbonds, bs, :include|>Val) == filter((insidebonds, acrossbonds), bs, :exclude|>Val) == Bonds(lattice, zerothbonds)
     @test filter(insidebonds, bs, :include|>Val) == filter((zerothbonds, acrossbonds), bs, :exclude|>Val) == Bonds(lattice, insidebonds)
     @test filter(acrossbonds, bs, :include|>Val) == filter((zerothbonds, insidebonds), bs, :exclude|>Val) == Bonds(lattice, acrossbonds)
-    emptybs = Bonds{(zerothbonds, insidebonds, acrossbonds), Lattice{2, PID{Int}}}((Point{2, PID{Int}}[], Bond{2, PID{Int}}[], Bond{2, PID{Int}}[]))
+    emptybs = Bonds{(zerothbonds, insidebonds, acrossbonds), Lattice{2, PID{Int}}}((Point{2, PID{Int}, Float}[], Bond{2, PID{Int}, Float}[], Bond{2, PID{Int}, Float}[]))
     @test filter(bond->(dimension(bond) == 3), bs) == empty!(deepcopy(bs)) == empty(bs) == emptybs
     @test reset!(emptybs, lattice) == bs
 end
@@ -297,4 +299,5 @@ end
             AbelianNumbers('C', [Momentum2D{10}(j-1, i-1) for (i, j) in Iterators.flatten((Iterators.product(1:10, 1:10),))], collect(0:100), :indptr)
             )
     @test getcontent(bz, Val(:contents)) == (bz.momenta,)
+    @test dtype(bz) == dtype(typeof(bz)) == Float
 end

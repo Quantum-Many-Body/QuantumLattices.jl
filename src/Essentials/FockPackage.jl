@@ -177,14 +177,15 @@ latexformat(FIndex{:b}, bdefaultlatex)
 latexformat(OID{<:FIndex{:b}}, bdefaultlatex)
 
 """
-    angle(id::OID{<:FIndex}, vectors::AbstractVector{<:AbstractVector{Float}}, values::AbstractVector{Float}) -> Complex{Float}
+    angle(id::OID{<:FIndex}, vectors::AbstractVector{<:AbstractVector{<:Number}}, values::AbstractVector{<:Number}) -> Complex{<:Number}
 
 Get the twist phase corresponding to a Fock oid.
 """
-function Base.angle(id::OID{<:FIndex}, vectors::AbstractVector{<:AbstractVector{Float}}, values::AbstractVector{Float})
-    phase = length(vectors)==1 ? 2pi*dot(decompose(id.icoord, vectors[1]), values) :
-            length(vectors)==2 ? 2pi*dot(decompose(id.icoord, vectors[1], vectors[2]), values) :
-            length(vectors)==3 ? 2pi*dot(decompose(id.icoord, vectors[1], vectors[2], vectors[3]), values) :
+function Base.angle(id::OID{<:FIndex}, vectors::AbstractVector{<:AbstractVector{<:Number}}, values::AbstractVector{<:Number})
+    datatype = promote_type(eltype(values), Float)
+    phase = length(vectors)==1 ? 2*convert(datatype, pi)*dot(decompose(id.icoord, vectors[1]), values) :
+            length(vectors)==2 ? 2*convert(datatype, pi)*dot(decompose(id.icoord, vectors[1], vectors[2]), values) :
+            length(vectors)==3 ? 2*convert(datatype, pi)*dot(decompose(id.icoord, vectors[1], vectors[2], vectors[3]), values) :
             error("angle error: not supported number of input basis vectors.")
     return id.index.nambu==ANNIHILATION ? phase : id.index.nambu==CREATION ? -phase : error("angle error: not supported Fock index.")
 end
@@ -480,18 +481,18 @@ end
             (ranges[$i]==1 ? 0 : ($i)%2==1 ? CREATION : ANNIHILATION)) for i = 1:rank(fc)]
     return Expr(:tuple, exprs...)
 end
-struct FCExpand{STS, V, N, D, S} <: CartesianVectorSpace{Tuple{V, ID{OID{FIndex, SVector{D, Float}}, N}}}
+struct FCExpand{STS, V, N, D, S, DT<:Number} <: CartesianVectorSpace{Tuple{V, ID{OID{FIndex, SVector{D, DT}}, N}}}
     value::V
-    points::NTuple{N, Point{D, PID{S}}}
+    points::NTuple{N, Point{D, PID{S}, DT}}
     obexpands::Vector{NTuple{N, Int}}
     spexpands::Vector{NTuple{N, Int}}
     nambus::NTuple{N, Int}
-    function FCExpand{STS}(value, points::NTuple{N, Point{D, PID{S}}}, obexpands::Vector{NTuple{N, Int}}, spexpands::Vector{NTuple{N, Int}}, nambus::NTuple{N, Int}) where {STS, N, D, S}
-        new{STS, typeof(value), N, D, S}(value, points, obexpands, spexpands, nambus)
+    function FCExpand{STS}(value, points::NTuple{N, Point{D, PID{S}, DT}}, obexpands::Vector{NTuple{N, Int}}, spexpands::Vector{NTuple{N, Int}}, nambus::NTuple{N, Int}) where {STS, N, D, S, DT<:Number}
+        new{STS, typeof(value), N, D, S, DT}(value, points, obexpands, spexpands, nambus)
     end
 end
-@inline @generated function Base.eltype(::Type{FCExpand{STS, V, N, D, S}}) where {STS, V, N, D, S}
-    return Tuple{V, Tuple{[OID{FIndex{STS[i], S}, SVector{D, Float}} for i = 1:N]...}}
+@inline @generated function Base.eltype(::Type{FCExpand{STS, V, N, D, S, DT}}) where {STS, V, N, D, S, DT<:Number}
+    return Tuple{V, Tuple{[OID{FIndex{STS[i], S}, SVector{D, DT}} for i = 1:N]...}}
 end
 @inline Base.Dims(fce::FCExpand) = (length(fce.obexpands), length(fce.spexpands))
 @generated function Tuple(index::CartesianIndex{2}, fce::FCExpand{STS, V, N}) where {STS, V, N}
