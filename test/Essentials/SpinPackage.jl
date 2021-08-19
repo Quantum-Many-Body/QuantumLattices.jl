@@ -90,13 +90,13 @@ end
         oids = [OID(SIndex{S}('S', 1, 2, tag), [0.0, 0.0], [0.0, 0.0]) for tag in ('x', 'y', 'z', '+', '-')]
         for (id₁, id₂) in Permutations{2}(oids)
             left = soptrep(SOperator(1, ID(id₁, id₂)))
-            right = sum([soptrep(opt) for opt in permute(SOperator, id₁, id₂)])
+            right = sum([soptrep(opt) for opt in permute(id₁, id₂)])
             @test isapprox(left, right)
         end
     end
     id₁ = OID(SIndex{1//2}('S', 1, 2, 'z'), [0.0, 0.0], [0.0, 0.0])
     id₂ = OID(SIndex{1//2}('S', 2, 2, 'z'), [0.0, 0.0], [0.0, 0.0])
-    @test permute(SOperator, id₁, id₂) == (SOperator(1, ID(id₂, id₁)),)
+    @test permute(id₁, id₂) == (SOperator(1, ID(id₂, id₁)),)
 end
 
 @testset "SpinCoupling" begin

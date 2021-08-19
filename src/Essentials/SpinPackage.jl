@@ -178,11 +178,11 @@ struct SOperator{V<:Number, I<:ID{AbstractCompositeOID{<:SIndex}}} <: Operator{V
 end
 
 """
-    permute(::Type{<:SOperator}, id₁::OID{<:SIndex}, id₂::OID{<:SIndex}) -> Tuple{Vararg{SOperator}}
+    permute(id₁::OID{<:SIndex}, id₂::OID{<:SIndex}) -> Tuple{Vararg{SOperator}}
 
 Permute two fermionic oid and get the result.
 """
-function permute(::Type{<:SOperator}, id₁::OID{<:SIndex}, id₂::OID{<:SIndex})
+function permute(id₁::OID{<:SIndex}, id₂::OID{<:SIndex})
     @assert id₁.index≠id₂.index || id₁.rcoord≠id₂.rcoord || id₁.icoord≠id₂.icoord "permute error: permuted ids should not be equal to each other."
     if usualspinindextotuple(id₁.index)==usualspinindextotuple(id₂.index) && id₁.rcoord==id₂.rcoord && id₁.icoord==id₂.icoord
         @assert totalspin(id₁.index)==totalspin(id₂.index) "permute error: noncommutable ids should have the same spin field."

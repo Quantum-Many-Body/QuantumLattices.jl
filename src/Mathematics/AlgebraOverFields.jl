@@ -728,11 +728,11 @@ end
 end
 
 """
-    permute(::Type{T}, id1::SimpleID, id2::SimpleID) where {T<:Element} -> Tuple{Vararg{Element}}
+    permute(id₁::SimpleID, id₂::SimpleID) -> Tuple{Vararg{Element}}
 
-Permutation rule of two ids of type `T`.
+Permutation rule of two ids.
 """
-permute(::Type{T}, ::SimpleID, ::SimpleID) where {T<:Element} = error("permute error: not implemented for $(nameof(T)).")
+permute(::SimpleID, ::SimpleID) = error("permute error: not implemented for $(nameof(T)).")
 
 """
     permute!(result::Elements, m::Element, table) -> Elements
@@ -741,11 +741,11 @@ permute(::Type{T}, ::SimpleID, ::SimpleID) where {T<:Element} = error("permute e
 Permute the ids of an-element/a-set-of-elements to the descending order according to a table, and store the permuted elements in result.
 
 !!! note
-    To use this function, the user must implement a method of `permute`, which computes the result of the permutation of a rank-2 element and takes the following interface:
+    To use this function, the user must implement a method of `permute`, which computes the result of the permutation of two ids and takes the following interface:
     ```julia
-    permute(::Type{M}, id1::SimpleID, id2::SimpleID) -> Union{M, Elements}
+    permute(id₁::SimpleID, id₂::SimpleID) -> Union{Element, Elements}
     ```
-    Here, `M` is the type of the input element `m` in `permute!`, `id1` and `id2` are two arbitary simple ids contained in `id(m)`.
+    Here, `id₁` and `id₂` are two arbitary simple ids contained in `id(m)`.
 """
 function Base.permute!(result::Elements, m::Element, table)
     cache = valtype(result)[m]
@@ -757,7 +757,7 @@ function Base.permute!(result::Elements, m::Element, table)
         else
             left = current[1:pos-1] * Number(m)
             right = current[pos+2:end]
-            for middle in permute(typeof(current), id(current)[pos], id(current)[pos+1])
+            for middle in permute(id(current)[pos], id(current)[pos+1])
                 temp = left * middle * right
                 (temp === nothing) || push!(cache, temp)
             end

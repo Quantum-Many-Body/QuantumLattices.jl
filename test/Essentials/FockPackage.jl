@@ -91,10 +91,10 @@ end
     op₂ = FOperator(2.0, ID(id₁, id₂))
     @test op₁*op₂ == FOperator(3.0, ID(id₁, id₂, id₁, id₂))
 
-    @test permute(FOperator, id₁, id₂) == (FOperator(1), FOperator(-1, ID(id₂, id₁)))
-    @test permute(FOperator, id₂, id₁) == (FOperator(1), FOperator(-1, ID(id₁, id₂)))
-    @test permute(FOperator, id₁, id₄) == (FOperator(-1, ID(id₄, id₁)),)
-    @test permute(FOperator, id₄, id₁) == (FOperator(-1, ID(id₁, id₄)),)
+    @test permute(id₁, id₂) == (FOperator(1), FOperator(-1, ID(id₂, id₁)))
+    @test permute(id₂, id₁) == (FOperator(1), FOperator(-1, ID(id₁, id₂)))
+    @test permute(id₁, id₄) == (FOperator(-1, ID(id₄, id₁)),)
+    @test permute(id₄, id₁) == (FOperator(-1, ID(id₁, id₄)),)
 
 
     id₁ = OID(FIndex{:b}(1, 2, 1, 1, 2), SVector(0.5, 0.0), SVector(0.0, 0.0))
@@ -106,10 +106,10 @@ end
     @test opt|>statistics == opt|>typeof|>statistics == :b
     @test repr(opt) == "b^{\\dagger}_{2, 1, ↓}b^{}_{2, 1, ↓}"
 
-    @test permute(BOperator, id₁, id₂) == (BOperator(+1), BOperator(1, ID(id₂, id₁)))
-    @test permute(BOperator, id₂, id₁) == (BOperator(-1), BOperator(1, ID(id₁, id₂)))
-    @test permute(BOperator, id₁, id₄) == (BOperator(1, ID(id₄, id₁)),)
-    @test permute(BOperator, id₄, id₁) == (BOperator(1, ID(id₁, id₄)),)
+    @test permute(id₁, id₂) == (BOperator(+1), BOperator(1, ID(id₂, id₁)))
+    @test permute(id₂, id₁) == (BOperator(-1), BOperator(1, ID(id₁, id₂)))
+    @test permute(id₁, id₄) == (BOperator(1, ID(id₄, id₁)),)
+    @test permute(id₄, id₁) == (BOperator(1, ID(id₁, id₄)),)
 end
 
 @testset "FockCoupling" begin

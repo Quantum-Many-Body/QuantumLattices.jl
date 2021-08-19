@@ -248,11 +248,11 @@ Get the statistics of FOperator.
 @inline statistics(::Type{<:FOperator}) = :f
 
 """
-    permute(::Type{<:FOperator}, id₁::OID{<:FIndex{:f}}, id₂::OID{<:FIndex{:f}}) -> Tuple{Vararg{FOperator}}
+    permute(id₁::OID{<:FIndex{:f}}, id₂::OID{<:FIndex{:f}}) -> Tuple{Vararg{FOperator}}
 
 Permute two fermionic oid and get the result.
 """
-function permute(::Type{<:FOperator}, id₁::OID{<:FIndex{:f}}, id₂::OID{<:FIndex{:f}})
+function permute(id₁::OID{<:FIndex{:f}}, id₂::OID{<:FIndex{:f}})
     @assert id₁.index≠id₂.index || id₁.rcoord≠id₂.rcoord || id₁.icoord≠id₂.icoord "permute error: permuted ids should not be equal to each other."
     if id₁.index'==id₂.index && id₁.rcoord==id₂.rcoord && id₁.icoord==id₂.icoord
         return (FOperator(1), FOperator(-1, ID(id₂, id₁)))
@@ -294,11 +294,11 @@ Get the statistics of BOperator.
 @inline statistics(::Type{<:BOperator}) = :b
 
 """
-    permute(::Type{<:BOperator}, id₁::OID{<:FIndex{:b}}, id₂::OID{<:FIndex{:b}}) -> Tuple{Vararg{BOperator}}
+    permute(id₁::OID{<:FIndex{:b}}, id₂::OID{<:FIndex{:b}}) -> Tuple{Vararg{BOperator}}
 
 Permute two bosonic oid and get the result.
 """
-function permute(::Type{<:BOperator}, id₁::OID{<:FIndex{:b}}, id₂::OID{<:FIndex{:b}})
+function permute(id₁::OID{<:FIndex{:b}}, id₂::OID{<:FIndex{:b}})
     @assert id₁.index≠id₂.index || id₁.rcoord≠id₂.rcoord || id₁.icoord≠id₂.icoord "permute error: permuted ids should not be equal to each other."
     if id₁.index'==id₂.index && id₁.rcoord==id₂.rcoord && id₁.icoord==id₂.icoord
         if id₁.index.nambu == CREATION

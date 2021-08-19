@@ -53,7 +53,7 @@ end
 Base.show(io::IO, opt::AOFOperator) = @printf io "AOFOperator(value=%s, id=%s)" opt.value opt.id
 Base.repr(opt::AOFOperator) = "AOFOperator($(opt.value), $(opt.id))"
 
-function permute(::Type{<:AOFOperator}, id1::AOFID, id2::AOFID)
+function permute(id1::AOFID, id2::AOFID)
     @assert id1 ≠ id2 "permute error: permuted ids should not be equal to each other."
     if (id1.nambu == 3-id2.nambu) && (id1.orbital == id2.orbital)
         if id1.nambu == 2
