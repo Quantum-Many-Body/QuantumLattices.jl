@@ -19,45 +19,36 @@ Theoretically, the only information that is needed to determine a point in a lat
 * `rcoord::`[`StaticArrays.SVector`](https://github.com/JuliaArrays/StaticArrays.jl): the coordinates of the point in the real space
 * `icoord::`[`StaticArrays.SVector`](https://github.com/JuliaArrays/StaticArrays.jl): the coordinates of the unitcell the point belongs to in the real space
 
-Here [`PID`](@ref) contains two attributes:
-* `scope::Any`: the scope of a point
+Here [`PID`](@ref) contains only one attribute:
 * `site::Int`: the site index of a point
-
-The `:site` attribute is necessary and easy to understand for a point id. Yet sometimes it is more convenient if we can assign extra information to a point id, e.g., a priori knowledge of the groupings of lattice points. Therefore, we provide another attribute, `:scope`, to act as the supplement to the `:site` attribute, which can be anything you want.
 
 Let's see some examples.
 
-You can specify both the `:scope` attribute and the `:site` attribute during the initialization of a [`PID`](@ref):
-```jldoctest unitcell
-julia> PID("WhateverYouWant", 1)
-PID("WhateverYouWant", 1)
-```
-Or, you can omit the `:scope` attribute:
+The `:site` attribute should be specified during the initialization of a [`PID`](@ref):
 ```jldoctest unitcell
 julia> PID(1)
-PID('T', 1)
+PID(1)
 ```
-Then the `:scope` attribute get a default value `'T'`, which is short for the nick name of my wife.
 
 At the construction of a [`Point`](@ref), `:rcoord` and `:icoord` can accept tuples or usual vectors as inputs, such as
 ```jldoctest unitcell
 julia> Point(PID(1), (0.0,), (0.0,))
-Point(PID('T', 1), [0.0], [0.0])
+Point(PID(1), [0.0], [0.0])
 
 julia> Point(PID(1), [0.0], [0.0])
-Point(PID('T', 1), [0.0], [0.0])
+Point(PID(1), [0.0], [0.0])
 ```
 If the `:icoord` is omitted, it will be initialized by a zero [`StaticArrays.SVector`](https://github.com/JuliaArrays/StaticArrays.jl):
 ```jldoctest unitcell
 julia> Point(PID(1), [0.0])
-Point(PID('T', 1), [0.0], [0.0])
+Point(PID(1), [0.0], [0.0])
 ```
 
 ## Lattice
 
 [`Lattice`](@ref) is the simplest structure to encode all the spatial info within a unitcell. Apparently, it must contain all the points of a unitcell. Besides, a unitcell can assume either open or periodic boundary for every spatial dimension, thus a [`Lattice`](@ref) should also contain the translation vectors. Other stuff also appears to be useful, such as the name, the reciprocals dual to the translation vectors, and the bond length of each order of nearest neighbors. Therefore, in this package, [`Lattice`](@ref) gets seven attributes:
 * `name::String`: the name of the lattice
-* `pids::Vector{<:PID}`: the pids of the lattice
+* `pids::Vector{PID}`: the pids of the lattice
 * `rcoords::Matrix{Float64}`: the rcoords of the lattice
 * `icoords::Matrix{Float64}`: the icoords of the lattice
 * `vectors::Vector{<:StaticArrays.SVector}`: the translation vectors of the lattice
@@ -73,8 +64,8 @@ julia> Lattice("L2P", [Point(PID(1), [0.0]), Point(PID(2), [1.0])],
            )
 Lattice(L2P)
   with 2 points:
-    Point(PID('T', 1), [0.0], [0.0])
-    Point(PID('T', 2), [1.0], [0.0])
+    Point(PID(1), [0.0], [0.0])
+    Point(PID(2), [1.0], [0.0])
   with 1 translation vector:
     [2.0]
   with 2 orders of nearest neighbors:
@@ -90,8 +81,8 @@ julia> Lattice("L2P", [Point(PID(1), [0.0]), Point(PID(2), [1.0])],
            )
 Lattice(L2P)
   with 2 points:
-    Point(PID('T', 1), [0.0], [0.0])
-    Point(PID('T', 2), [1.0], [0.0])
+    Point(PID(1), [0.0], [0.0])
+    Point(PID(2), [1.0], [0.0])
   with 1 translation vector:
     [2.0]
   with 2 orders of nearest neighbors:
@@ -104,8 +95,8 @@ It is noted that the `:vectors` and `:neighbors` attributes can also be omitted 
 julia> Lattice("L2P", [Point(PID(1), [0.0]), Point(PID(2), [1.0])])
 Lattice(L2P)
   with 2 points:
-    Point(PID('T', 1), [0.0], [0.0])
-    Point(PID('T', 2), [1.0], [0.0])
+    Point(PID(1), [0.0], [0.0])
+    Point(PID(2), [1.0], [0.0])
   with 1 order of nearest neighbors:
     1 => 1.0
 ```
@@ -132,8 +123,8 @@ julia> lattice = Lattice("L2P", [Point(PID(1), [0.0]), Point(PID(2), [1.0])],
            )
 Lattice(L2P)
   with 2 points:
-    Point(PID('T', 1), [0.0], [0.0])
-    Point(PID('T', 2), [1.0], [0.0])
+    Point(PID(1), [0.0], [0.0])
+    Point(PID(2), [1.0], [0.0])
   with 1 translation vector:
     [2.0]
   with 2 orders of nearest neighbors:
@@ -142,12 +133,12 @@ Lattice(L2P)
 
 julia> Bonds(lattice)
 6-element Bonds:
- Point(PID('T', 1), [0.0], [0.0])
- Point(PID('T', 2), [1.0], [0.0])
- Bond(1, Point(PID('T', 1), [0.0], [0.0]), Point(PID('T', 2), [1.0], [0.0]))
- Bond(2, Point(PID('T', 1), [0.0], [0.0]), Point(PID('T', 1), [-2.0], [-2.0]))
- Bond(1, Point(PID('T', 1), [0.0], [0.0]), Point(PID('T', 2), [-1.0], [-2.0]))
- Bond(2, Point(PID('T', 2), [1.0], [0.0]), Point(PID('T', 2), [-1.0], [-2.0]))
+ Point(PID(1), [0.0], [0.0])
+ Point(PID(2), [1.0], [0.0])
+ Bond(1, Point(PID(1), [0.0], [0.0]), Point(PID(2), [1.0], [0.0]))
+ Bond(2, Point(PID(1), [0.0], [0.0]), Point(PID(1), [-2.0], [-2.0]))
+ Bond(1, Point(PID(1), [0.0], [0.0]), Point(PID(2), [-1.0], [-2.0]))
+ Bond(2, Point(PID(2), [1.0], [0.0]), Point(PID(2), [-1.0], [-2.0]))
 ```
 By default, `Bonds(lattice::Lattice)` generates all the generalized bonds with orders of nearest neighbors specified by the attribute `:neighbors` of the input lattice, including the individual points and the bonds across the periodic boundaries. Note that the bonds whose lengths are not present in the `:neighbors` attribute of the input lattice won't be included in the result, even when their lengths are shorter:
 ```jldoctest unitcell
@@ -157,8 +148,8 @@ julia> lattice = Lattice("L2P", [Point(PID(1), [0.0]), Point(PID(2), [1.0])],
            )
 Lattice(L2P)
   with 2 points:
-    Point(PID('T', 1), [0.0], [0.0])
-    Point(PID('T', 2), [1.0], [0.0])
+    Point(PID(1), [0.0], [0.0])
+    Point(PID(2), [1.0], [0.0])
   with 1 translation vector:
     [2.0]
   with 1 order of nearest neighbors:
@@ -166,24 +157,24 @@ Lattice(L2P)
 
 julia> Bonds(lattice)
 4-element Bonds:
- Point(PID('T', 1), [0.0], [0.0])
- Point(PID('T', 2), [1.0], [0.0])
- Bond(2, Point(PID('T', 1), [0.0], [0.0]), Point(PID('T', 1), [-2.0], [-2.0]))
- Bond(2, Point(PID('T', 2), [1.0], [0.0]), Point(PID('T', 2), [-1.0], [-2.0]))
+ Point(PID(1), [0.0], [0.0])
+ Point(PID(2), [1.0], [0.0])
+ Bond(2, Point(PID(1), [0.0], [0.0]), Point(PID(1), [-2.0], [-2.0]))
+ Bond(2, Point(PID(2), [1.0], [0.0]), Point(PID(2), [-1.0], [-2.0]))
 ```
 In other words, the `:neighbors` attribute can be viewed as a filter of the generated bonds (but this filter only affects the [`Bond`](@ref) typed but not the [`Point`](@ref) typed generalized bonds). When the input lattice has no translation vectors, the generated bonds will only contain the individual points and the intra-unitcell bonds, just as expected:
 ```jldoctest unitcell
 julia> lattice = Lattice("L2P", [Point(PID(1), [0.0]), Point(PID(2), [1.0])])
 Lattice(L2P)
   with 2 points:
-    Point(PID('T', 1), [0.0], [0.0])
-    Point(PID('T', 2), [1.0], [0.0])
+    Point(PID(1), [0.0], [0.0])
+    Point(PID(2), [1.0], [0.0])
   with 1 order of nearest neighbors:
     1 => 1.0
 
 julia> Bonds(lattice)
 3-element Bonds:
- Point(PID('T', 1), [0.0], [0.0])
- Point(PID('T', 2), [1.0], [0.0])
- Bond(1, Point(PID('T', 1), [0.0], [0.0]), Point(PID('T', 2), [1.0], [0.0]))
+ Point(PID(1), [0.0], [0.0])
+ Point(PID(2), [1.0], [0.0])
+ Bond(1, Point(PID(1), [0.0], [0.0]), Point(PID(2), [1.0], [0.0]))
 ```
