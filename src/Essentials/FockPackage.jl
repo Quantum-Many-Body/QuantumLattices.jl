@@ -3,7 +3,7 @@ module FockPackage
 using StaticArrays: SVector
 using LinearAlgebra: dot
 using Printf: @printf, @sprintf
-using ..Spatials: PID, AbstractBond, Point, Bond, decompose
+using ..Spatials: AbstractPID, AbstractBond, Point, Bond, decompose
 using ..DegreesOfFreedom: IID, Internal, Index, LaTeX, OID, AbstractCompositeOID, latexformat, OIDToTuple, Operator, Operators, Config, Table
 using ..Terms: wildcard, Subscripts, SubID, Coupling, Couplings, Term, TermCouplings, TermAmplitude, TermModulate
 using ...Essentials: kind
@@ -107,19 +107,19 @@ Construct a Fock degrees of freedom.
 @inline Fock{ST}(; atom::Int=1, norbital::Int=1, nspin::Int=2, nnambu::Int=2) where ST = Fock{ST}(atom, norbital, nspin, nnambu)
 
 """
-    script(::Val{:site}, index::Index{<:PID, <:FID}; kwargs...) -> Int
-    script(::Val{:orbital}, index::Index{<:PID, <:FID}; kwargs...) -> Int
-    script(::Val{:spinint}, index::Index{<:PID, <:FID}; kwargs...) -> Int
-    script(::Val{:spinsym}, index::Index{<:PID, <:FID}; kwargs...) -> String
-    script(::Val{:nambu}, index::Index{<:PID, <:FID}; kwargs...) -> String
+    script(::Val{:site}, index::Index{<:AbstractPID, <:FID}; kwargs...) -> Int
+    script(::Val{:orbital}, index::Index{<:AbstractPID, <:FID}; kwargs...) -> Int
+    script(::Val{:spinint}, index::Index{<:AbstractPID, <:FID}; kwargs...) -> Int
+    script(::Val{:spinsym}, index::Index{<:AbstractPID, <:FID}; kwargs...) -> String
+    script(::Val{:nambu}, index::Index{<:AbstractPID, <:FID}; kwargs...) -> String
 
 Get the required script of a Fock index.
 """
-@inline script(::Val{:site}, index::Index{<:PID, <:FID}; kwargs...) = index.pid.site
-@inline script(::Val{:orbital}, index::Index{<:PID, <:FID}; kwargs...) = index.iid.orbital
-@inline script(::Val{:spinint}, index::Index{<:PID, <:FID}; kwargs...) = index.iid.spin
-@inline script(::Val{:spinsym}, index::Index{<:PID, <:FID}; kwargs...) = index.iid.spin==1 ? "↓" : index.iid.spin==2 ? "↑" : error("script error: wrong spin.")
-@inline script(::Val{:nambu}, index::Index{<:PID, <:FID}; kwargs...) = index.iid.nambu==CREATION ? "\\dagger" : ""
+@inline script(::Val{:site}, index::Index{<:AbstractPID, <:FID}; kwargs...) = index.pid.site
+@inline script(::Val{:orbital}, index::Index{<:AbstractPID, <:FID}; kwargs...) = index.iid.orbital
+@inline script(::Val{:spinint}, index::Index{<:AbstractPID, <:FID}; kwargs...) = index.iid.spin
+@inline script(::Val{:spinsym}, index::Index{<:AbstractPID, <:FID}; kwargs...) = index.iid.spin==1 ? "↓" : index.iid.spin==2 ? "↑" : error("script error: wrong spin.")
+@inline script(::Val{:nambu}, index::Index{<:AbstractPID, <:FID}; kwargs...) = index.iid.nambu==CREATION ? "\\dagger" : ""
 
 """
     fdefaultlatex
@@ -127,10 +127,10 @@ Get the required script of a Fock index.
 The default LaTeX format for a fermionic oid.
 """
 const fdefaultlatex = LaTeX{(:nambu,), (:site, :orbital, :spinsym)}('c')
-@inline latexname(::Type{<:Index{<:PID, FID{:f}}}) = Symbol("Index{PID, FID{:f}}")
-@inline latexname(::Type{<:OID{<:Index{<:PID, FID{:f}}}}) = Symbol("OID{Index{PID, FID{:f}}}")
-latexformat(Index{<:PID, FID{:f}}, fdefaultlatex)
-latexformat(OID{<:Index{<:PID, FID{:f}}}, fdefaultlatex)
+@inline latexname(::Type{<:Index{<:AbstractPID, FID{:f}}}) = Symbol("Index{AbstractPID, FID{:f}}")
+@inline latexname(::Type{<:OID{<:Index{<:AbstractPID, FID{:f}}}}) = Symbol("OID{Index{AbstractPID, FID{:f}}}")
+latexformat(Index{<:AbstractPID, FID{:f}}, fdefaultlatex)
+latexformat(OID{<:Index{<:AbstractPID, FID{:f}}}, fdefaultlatex)
 
 """
     bdefaultlatex
@@ -138,17 +138,17 @@ latexformat(OID{<:Index{<:PID, FID{:f}}}, fdefaultlatex)
 The default LaTeX format for a bosonic oid.
 """
 const bdefaultlatex = LaTeX{(:nambu,), (:site, :orbital, :spinsym)}('b')
-@inline latexname(::Type{<:Index{<:PID, FID{:b}}}) = Symbol("Index{PID, FID{:b}}")
-@inline latexname(::Type{<:OID{<:Index{<:PID, FID{:b}}}}) = Symbol("OID{Index{PID, FID{:b}}}")
-latexformat(Index{<:PID, FID{:b}}, bdefaultlatex)
-latexformat(OID{<:Index{<:PID, FID{:b}}}, bdefaultlatex)
+@inline latexname(::Type{<:Index{<:AbstractPID, FID{:b}}}) = Symbol("Index{AbstractPID, FID{:b}}")
+@inline latexname(::Type{<:OID{<:Index{<:AbstractPID, FID{:b}}}}) = Symbol("OID{Index{AbstractPID, FID{:b}}}")
+latexformat(Index{<:AbstractPID, FID{:b}}, bdefaultlatex)
+latexformat(OID{<:Index{<:AbstractPID, FID{:b}}}, bdefaultlatex)
 
 """
-    angle(id::OID{<:Index{<:PID, <:FID}}, vectors::AbstractVector{<:AbstractVector{<:Number}}, values::AbstractVector{<:Number}) -> Complex{<:Number}
+    angle(id::OID{<:Index{<:AbstractPID, <:FID}}, vectors::AbstractVector{<:AbstractVector{<:Number}}, values::AbstractVector{<:Number}) -> Complex{<:Number}
 
 Get the twist phase corresponding to a Fock oid.
 """
-function Base.angle(id::OID{<:Index{<:PID, <:FID}}, vectors::AbstractVector{<:AbstractVector{<:Number}}, values::AbstractVector{<:Number})
+function Base.angle(id::OID{<:Index{<:AbstractPID, <:FID}}, vectors::AbstractVector{<:AbstractVector{<:Number}}, values::AbstractVector{<:Number})
     datatype = promote_type(eltype(values), Float)
     phase = length(vectors)==1 ? 2*convert(datatype, pi)*dot(decompose(id.icoord, vectors[1]), values) :
             length(vectors)==2 ? 2*convert(datatype, pi)*dot(decompose(id.icoord, vectors[1], vectors[2]), values) :
@@ -172,11 +172,11 @@ Indicate that the choosed fields are `(:scope, :nambu, :site, :orbital, :spin)` 
 const nambufockindextotuple = OIDToTuple(:scope, :nambu, :site, :orbital, :spin)
 
 """
-    isnormalordered(opt::Operator{<:Number, <:ID{AbstractCompositeOID{<:Index{<:PID, <:FID}}}}) -> Bool
+    isnormalordered(opt::Operator{<:Number, <:ID{AbstractCompositeOID{<:Index{<:AbstractPID, <:FID}}}}) -> Bool
 
 Judge whether an operator is normal ordered.
 """
-function isnormalordered(opt::Operator{<:Number, <:ID{AbstractCompositeOID{<:Index{<:PID, <:FID}}}})
+function isnormalordered(opt::Operator{<:Number, <:ID{AbstractCompositeOID{<:Index{<:AbstractPID, <:FID}}}})
     flag = true
     for i = 1:rank(opt)
         flag && (opt.id[i].index.iid.nambu == ANNIHILATION) && (flag = false)
@@ -186,11 +186,11 @@ function isnormalordered(opt::Operator{<:Number, <:ID{AbstractCompositeOID{<:Ind
 end
 
 """
-    permute(id₁::OID{<:Index{<:PID, FID{:f}}}, id₂::OID{<:Index{<:PID, FID{:f}}}) -> Tuple{Vararg{Operator}}
+    permute(id₁::OID{<:Index{<:AbstractPID, FID{:f}}}, id₂::OID{<:Index{<:AbstractPID, FID{:f}}}) -> Tuple{Vararg{Operator}}
 
 Permute two fermionic oid and get the result.
 """
-function permute(id₁::OID{<:Index{<:PID, FID{:f}}}, id₂::OID{<:Index{<:PID, FID{:f}}})
+function permute(id₁::OID{<:Index{<:AbstractPID, FID{:f}}}, id₂::OID{<:Index{<:AbstractPID, FID{:f}}})
     @assert id₁.index≠id₂.index || id₁.rcoord≠id₂.rcoord || id₁.icoord≠id₂.icoord "permute error: permuted ids should not be equal to each other."
     if id₁.index'==id₂.index && id₁.rcoord==id₂.rcoord && id₁.icoord==id₂.icoord
         return (Operator(1), Operator(-1, ID(id₂, id₁)))
@@ -200,21 +200,21 @@ function permute(id₁::OID{<:Index{<:PID, FID{:f}}}, id₂::OID{<:Index{<:PID, 
 end
 
 """
-    *(f1::Operator{<:Number, <:ID{AbstractCompositeOID{<:Index{<:PID, FID{:f}}}}}, f2::Operator{<:Number, <:ID{AbstractCompositeOID{<:Index{<:PID, FID{:f}}}}}) -> Union{Nothing, Operator}
+    *(f1::Operator{<:Number, <:ID{AbstractCompositeOID{<:Index{<:AbstractPID, FID{:f}}}}}, f2::Operator{<:Number, <:ID{AbstractCompositeOID{<:Index{<:AbstractPID, FID{:f}}}}}) -> Union{Nothing, Operator}
 
 Get the multiplication of two fermionic Fock operators.
 """
-@inline function Base.:*(f1::Operator{<:Number, <:ID{AbstractCompositeOID{<:Index{<:PID, FID{:f}}}}}, f2::Operator{<:Number, <:ID{AbstractCompositeOID{<:Index{<:PID, FID{:f}}}}})
+@inline function Base.:*(f1::Operator{<:Number, <:ID{AbstractCompositeOID{<:Index{<:AbstractPID, FID{:f}}}}}, f2::Operator{<:Number, <:ID{AbstractCompositeOID{<:Index{<:AbstractPID, FID{:f}}}}})
     rank(f1)>0 && rank(f2)>0 && f1.id[end]==f2.id[1] && return nothing
     return invoke(*, Tuple{Element, Element}, f1, f2)
 end
 
 """
-    permute(id₁::OID{<:Index{<:PID, FID{:b}}}, id₂::OID{<:Index{<:PID, FID{:b}}}) -> Tuple{Vararg{Operator}}
+    permute(id₁::OID{<:Index{<:AbstractPID, FID{:b}}}, id₂::OID{<:Index{<:AbstractPID, FID{:b}}}) -> Tuple{Vararg{Operator}}
 
 Permute two bosonic oid and get the result.
 """
-function permute(id₁::OID{<:Index{<:PID, FID{:b}}}, id₂::OID{<:Index{<:PID, FID{:b}}})
+function permute(id₁::OID{<:Index{<:AbstractPID, FID{:b}}}, id₂::OID{<:Index{<:AbstractPID, FID{:b}}})
     @assert id₁.index≠id₂.index || id₁.rcoord≠id₂.rcoord || id₁.icoord≠id₂.icoord "permute error: permuted ids should not be equal to each other."
     if id₁.index'==id₂.index && id₁.rcoord==id₂.rcoord && id₁.icoord==id₂.icoord
         if id₁.index.iid.nambu == CREATION
@@ -397,18 +397,18 @@ end
             (ranges[$i]==1 ? 0 : ($i)%2==1 ? CREATION : ANNIHILATION)) for i = 1:rank(fc)]
     return Expr(:tuple, exprs...)
 end
-struct FCExpand{STS, V, N, D, S, DT<:Number} <: CartesianVectorSpace{Tuple{V, ID{OID{<:Index, SVector{D, DT}}, N}}}
+struct FCExpand{STS, V, N, D, P<:AbstractPID, DT<:Number} <: CartesianVectorSpace{Tuple{V, ID{OID{<:Index, SVector{D, DT}}, N}}}
     value::V
-    points::NTuple{N, Point{D, PID{S}, DT}}
+    points::NTuple{N, Point{D, P, DT}}
     obexpands::Vector{NTuple{N, Int}}
     spexpands::Vector{NTuple{N, Int}}
     nambus::NTuple{N, Int}
-    function FCExpand{STS}(value, points::NTuple{N, Point{D, PID{S}, DT}}, obexpands::Vector{NTuple{N, Int}}, spexpands::Vector{NTuple{N, Int}}, nambus::NTuple{N, Int}) where {STS, N, D, S, DT<:Number}
-        new{STS, typeof(value), N, D, S, DT}(value, points, obexpands, spexpands, nambus)
+    function FCExpand{STS}(value, points::NTuple{N, Point{D, P, DT}}, obexpands::Vector{NTuple{N, Int}}, spexpands::Vector{NTuple{N, Int}}, nambus::NTuple{N, Int}) where {STS, N, D, P<:AbstractPID, DT<:Number}
+        new{STS, typeof(value), N, D, P, DT}(value, points, obexpands, spexpands, nambus)
     end
 end
-@inline @generated function Base.eltype(::Type{FCExpand{STS, V, N, D, S, DT}}) where {STS, V, N, D, S, DT<:Number}
-    return Tuple{V, Tuple{[OID{Index{PID{S}, FID{STS[i]}}, SVector{D, DT}} for i = 1:N]...}}
+@inline @generated function Base.eltype(::Type{FCExpand{STS, V, N, D, P, DT}}) where {STS, V, N, D, P<:AbstractPID, DT<:Number}
+    return Tuple{V, Tuple{[OID{Index{P, FID{STS[i]}}, SVector{D, DT}} for i = 1:N]...}}
 end
 @inline Base.Dims(fce::FCExpand) = (length(fce.obexpands), length(fce.spexpands))
 @generated function Tuple(index::CartesianIndex{2}, fce::FCExpand{STS, V, N}) where {STS, V, N}

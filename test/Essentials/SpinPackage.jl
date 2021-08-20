@@ -1,7 +1,7 @@
 using Test
 using StaticArrays: SVector
 using QuantumLattices.Essentials.SpinPackage
-using QuantumLattices.Essentials.Spatials: PID, Point, Bond
+using QuantumLattices.Essentials.Spatials: AbstractPID, PID, CPID, Point, Bond
 using QuantumLattices.Essentials.DegreesOfFreedom: OID, isHermitian, Config, Index, Operator, Operators, script, latexname
 using QuantumLattices.Essentials.Terms: Couplings, @subscripts_str, abbr
 using QuantumLattices.Interfaces: expand, permute, rank
@@ -50,23 +50,23 @@ end
 end
 
 @testset "latex" begin
-    index = Index(PID('S', 1), SID{1//2}(2, 'z'))
+    index = Index(PID(1), SID{1//2}(2, 'z'))
     @test script(Val(:site), index) == 1
     @test script(Val(:orbital), index) == 2
     @test script(Val(:tag), index) == 'z'
 
-    @test latexname(Index{<:PID, <:SID}) == Symbol("Index{PID, SID}")
-    @test latexname(OID{<:Index{<:PID, <:SID}}) == Symbol("OID{Index{PID, SID}}")
+    @test latexname(Index{<:AbstractPID, <:SID}) == Symbol("Index{AbstractPID, SID}")
+    @test latexname(OID{<:Index{<:AbstractPID, <:SID}}) == Symbol("OID{Index{AbstractPID, SID}}")
 end
 
 @testset "SOperator" begin
     opt = Operator(1.0, ID(
-        OID(Index(PID('a', 1), SID{1//2}(1, '+')), [0.0, 0.0], [0.0, 0.0]),
-        OID(Index(PID('a', 1), SID{1//2}(1, '-')), [0.0, 0.0], [0.0, 0.0])
+        OID(Index(PID(1), SID{1//2}(1, '+')), [0.0, 0.0], [0.0, 0.0]),
+        OID(Index(PID(1), SID{1//2}(1, '-')), [0.0, 0.0], [0.0, 0.0])
         ))
     @test opt' == Operator(1.0, ID(
-        OID(Index(PID('a', 1), SID{1//2}(1, '+')), [0.0, 0.0], [0.0, 0.0]),
-        OID(Index(PID('a', 1), SID{1//2}(1, '-')), [0.0, 0.0], [0.0, 0.0])
+        OID(Index(PID(1), SID{1//2}(1, '+')), [0.0, 0.0], [0.0, 0.0]),
+        OID(Index(PID(1), SID{1//2}(1, '-')), [0.0, 0.0], [0.0, 0.0])
         ))
     @test isHermitian(opt)
     @test repr(opt) == "S^{+}_{1, 1}S^{-}_{1, 1}"
@@ -75,15 +75,15 @@ end
 @testset "permute" begin
     soptrep(opt::Operator) = opt.value * prod([Matrix(opt.id[i].index.iid) for i = 1:rank(opt)])
     for S in (1//2, 1, 3//2)
-        oids = [OID(Index(PID('S', 1), SID{S}(2, tag)), [0.0, 0.0], [0.0, 0.0]) for tag in ('x', 'y', 'z', '+', '-')]
+        oids = [OID(Index(PID(1), SID{S}(2, tag)), [0.0, 0.0], [0.0, 0.0]) for tag in ('x', 'y', 'z', '+', '-')]
         for (id₁, id₂) in Permutations{2}(oids)
             left = soptrep(Operator(1, ID(id₁, id₂)))
             right = sum([soptrep(opt) for opt in permute(id₁, id₂)])
             @test isapprox(left, right)
         end
     end
-    id₁ = OID(Index(PID('S', 1), SID{1//2}(2, 'z')), [0.0, 0.0], [0.0, 0.0])
-    id₂ = OID(Index(PID('S', 2), SID{1//2}(2, 'z')), [0.0, 0.0], [0.0, 0.0])
+    id₁ = OID(Index(PID(1), SID{1//2}(2, 'z')), [0.0, 0.0], [0.0, 0.0])
+    id₂ = OID(Index(PID(2), SID{1//2}(2, 'z')), [0.0, 0.0], [0.0, 0.0])
     @test permute(id₁, id₂) == (Operator(1, ID(id₂, id₁)),)
 end
 
@@ -102,42 +102,43 @@ end
     @test repr(sc) == "3.0 S⁺S⁻S⁺S⁻ sl[1 2 1 2] ⊗ ob[x y; x y](x > y, x < y)"
 
     sc = SpinCoupling(2.0, ('+', '-'), atoms=(1, 1))
-    point = Point(PID(1, 1), [0.0, 0.0], [0.0, 0.0])
+    point = Point(PID(1), [0.0, 0.0], [0.0, 0.0])
     spin = Spin{1}(atom=2, norbital=2)
     ex = expand(sc, (point, point), (spin, spin), Val(:info))
     @test collect(ex) == []
 
     sc = SpinCoupling(2.0, ('+', '-'), atoms=(1, 2), orbitals=(1, 2))
-    p₁, p₂ = Point(PID(1, 1), [0.0], [0.0]), Point(PID(1, 2), [0.5], [0.0])
+    p₁, p₂ = Point(CPID(1, 1), [0.0], [0.0]), Point(CPID(1, 2), [0.5], [0.0])
     s₁, s₂ = Spin{1}(atom=1, norbital=2), Spin{1}(atom=2, norbital=2)
     ex = expand(sc, (p₁, p₂), (s₁, s₂), Val(:info))
     @test Dims(ex) == (1,)
-    @test eltype(ex) == Tuple{Float, ID{OID{Index{PID{Int}, SID{1}}, SVector{1, Float}} , 2}}
+    @test eltype(ex) == Tuple{Float, ID{OID{Index{CPID{Int}, SID{1}}, SVector{1, Float}}, 2}}
     @test collect(ex) == [(2.0, ID(
-        OID(Index(PID(1, 1), SID{1}(1, '+')), [0.0], [0.0]),
-        OID(Index(PID(1, 2), SID{1}(2, '-')), [0.5], [0.0])
+        OID(Index(CPID(1, 1), SID{1}(1, '+')), [0.0], [0.0]),
+        OID(Index(CPID(1, 2), SID{1}(2, '-')), [0.5], [0.0])
         ))]
 
     sc = SpinCoupling(2.0, ('+', '-', '+', '-'), orbitals=subscripts"[α α β β](α < β)")
-    point = Point(PID(1, 1), [0.0], [0.0])
+    point = Point(PID(1), [0.0], [0.0])
     spin = Spin{1}(norbital=3)
     ex = expand(sc, (point, point, point, point), (spin, spin, spin, spin), Val(:info))
+    @test eltype(ex) == Tuple{Float, ID{OID{Index{PID, SID{1}}, SVector{1, Float}}, 4}}
     @test Dims(ex) == (3,)
     @test collect(ex) == [
-        (2.0, ID(OID(Index(PID(1, 1), SID{1}(1, '+')), [0.0], [0.0]),
-                 OID(Index(PID(1, 1), SID{1}(1, '-')), [0.0], [0.0]),
-                 OID(Index(PID(1, 1), SID{1}(2, '+')), [0.0], [0.0]),
-                 OID(Index(PID(1, 1), SID{1}(2, '-')), [0.0], [0.0])
+        (2.0, ID(OID(Index(PID(1), SID{1}(1, '+')), [0.0], [0.0]),
+                 OID(Index(PID(1), SID{1}(1, '-')), [0.0], [0.0]),
+                 OID(Index(PID(1), SID{1}(2, '+')), [0.0], [0.0]),
+                 OID(Index(PID(1), SID{1}(2, '-')), [0.0], [0.0])
                  )),
-        (2.0, ID(OID(Index(PID(1, 1), SID{1}(1, '+')), [0.0], [0.0]),
-                 OID(Index(PID(1, 1), SID{1}(1, '-')), [0.0], [0.0]),
-                 OID(Index(PID(1, 1), SID{1}(3, '+')), [0.0], [0.0]),
-                 OID(Index(PID(1, 1), SID{1}(3, '-')), [0.0], [0.0])
+        (2.0, ID(OID(Index(PID(1), SID{1}(1, '+')), [0.0], [0.0]),
+                 OID(Index(PID(1), SID{1}(1, '-')), [0.0], [0.0]),
+                 OID(Index(PID(1), SID{1}(3, '+')), [0.0], [0.0]),
+                 OID(Index(PID(1), SID{1}(3, '-')), [0.0], [0.0])
                  )),
-        (2.0, ID(OID(Index(PID(1, 1), SID{1}(2, '+')), [0.0], [0.0]),
-                 OID(Index(PID(1, 1), SID{1}(2, '-')), [0.0], [0.0]),
-                 OID(Index(PID(1, 1), SID{1}(3, '+')), [0.0], [0.0]),
-                 OID(Index(PID(1, 1), SID{1}(3, '-')), [0.0], [0.0])
+        (2.0, ID(OID(Index(PID(1), SID{1}(2, '+')), [0.0], [0.0]),
+                 OID(Index(PID(1), SID{1}(2, '-')), [0.0], [0.0]),
+                 OID(Index(PID(1), SID{1}(3, '+')), [0.0], [0.0]),
+                 OID(Index(PID(1), SID{1}(3, '-')), [0.0], [0.0])
                  ))
     ]
 end
@@ -218,27 +219,27 @@ end
 end
 
 @testset "SpinTerm" begin
-    point = Point(PID('a', 1), (0.5, 0.5), (0.0, 0.0))
+    point = Point(PID(1), (0.5, 0.5), (0.0, 0.0))
     config = Config{Spin{1//2}}(pid->Spin{1//2}(atom=pid.site%2, norbital=2), [point.pid])
     term = SpinTerm{1}(:h, 1.5, 0, couplings=Sᶻ())
     operators = Operators(
-        Operator(1.5, ID(OID(Index(PID('a', 1), SID{1//2}(1, 'z')), [0.5, 0.5], [0.0, 0.0]))),
-        Operator(1.5, ID(OID(Index(PID('a', 1), SID{1//2}(2, 'z')), [0.5, 0.5], [0.0, 0.0])))
+        Operator(1.5, ID(OID(Index(PID(1), SID{1//2}(1, 'z')), [0.5, 0.5], [0.0, 0.0]))),
+        Operator(1.5, ID(OID(Index(PID(1), SID{1//2}(2, 'z')), [0.5, 0.5], [0.0, 0.0])))
     )
     @test term|>abbr == :sp
     @test term|>isHermitian == true
     @test expand(term, point, config) == operators
 
-    bond = Bond(1, Point(PID('a', 1), (0.0, 0.0), (0.0, 0.0)), Point(PID('b', 1), (0.5, 0.5), (0.0, 0.0)))
+    bond = Bond(1, Point(CPID('a', 1), (0.0, 0.0), (0.0, 0.0)), Point(CPID('b', 1), (0.5, 0.5), (0.0, 0.0)))
     config = Config{Spin{1//2}}(pid->Spin{1//2}(atom=pid.site%2, norbital=2), [bond.spoint.pid, bond.epoint.pid])
     term = SpinTerm{2}(:J, 1.5, 1, couplings=Heisenberg())
     operators = Operators(
-        Operator(1.50, ID(OID(Index(PID('b', 1), SID{1//2}(2, 'z')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID('a', 1), SID{1//2}(2, 'z')), [0.0, 0.0], [0.0, 0.0]))),
-        Operator(0.75, ID(OID(Index(PID('b', 1), SID{1//2}(2, '-')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID('a', 1), SID{1//2}(2, '+')), [0.0, 0.0], [0.0, 0.0]))),
-        Operator(0.75, ID(OID(Index(PID('b', 1), SID{1//2}(1, '-')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID('a', 1), SID{1//2}(1, '+')), [0.0, 0.0], [0.0, 0.0]))),
-        Operator(0.75, ID(OID(Index(PID('b', 1), SID{1//2}(1, '+')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID('a', 1), SID{1//2}(1, '-')), [0.0, 0.0], [0.0, 0.0]))),
-        Operator(1.50, ID(OID(Index(PID('b', 1), SID{1//2}(1, 'z')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID('a', 1), SID{1//2}(1, 'z')), [0.0, 0.0], [0.0, 0.0]))),
-        Operator(0.75, ID(OID(Index(PID('b', 1), SID{1//2}(2, '+')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID('a', 1), SID{1//2}(2, '-')), [0.0, 0.0], [0.0, 0.0])))
+        Operator(1.50, ID(OID(Index(CPID('b', 1), SID{1//2}(2, 'z')), [0.5, 0.5], [0.0, 0.0]), OID(Index(CPID('a', 1), SID{1//2}(2, 'z')), [0.0, 0.0], [0.0, 0.0]))),
+        Operator(0.75, ID(OID(Index(CPID('b', 1), SID{1//2}(2, '-')), [0.5, 0.5], [0.0, 0.0]), OID(Index(CPID('a', 1), SID{1//2}(2, '+')), [0.0, 0.0], [0.0, 0.0]))),
+        Operator(0.75, ID(OID(Index(CPID('b', 1), SID{1//2}(1, '-')), [0.5, 0.5], [0.0, 0.0]), OID(Index(CPID('a', 1), SID{1//2}(1, '+')), [0.0, 0.0], [0.0, 0.0]))),
+        Operator(0.75, ID(OID(Index(CPID('b', 1), SID{1//2}(1, '+')), [0.5, 0.5], [0.0, 0.0]), OID(Index(CPID('a', 1), SID{1//2}(1, '-')), [0.0, 0.0], [0.0, 0.0]))),
+        Operator(1.50, ID(OID(Index(CPID('b', 1), SID{1//2}(1, 'z')), [0.5, 0.5], [0.0, 0.0]), OID(Index(CPID('a', 1), SID{1//2}(1, 'z')), [0.0, 0.0], [0.0, 0.0]))),
+        Operator(0.75, ID(OID(Index(CPID('b', 1), SID{1//2}(2, '+')), [0.5, 0.5], [0.0, 0.0]), OID(Index(CPID('a', 1), SID{1//2}(2, '-')), [0.0, 0.0], [0.0, 0.0])))
     )
     @test expand(term, bond, config) == operators
 end

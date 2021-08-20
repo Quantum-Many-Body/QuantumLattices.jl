@@ -4,7 +4,7 @@ using Base: hasfastin
 using Printf: @printf, @sprintf
 using StaticArrays: SVector
 using LaTeXStrings: latexstring
-using ..Spatials: PID, Point
+using ..Spatials: AbstractPID, Point
 using ...Essentials: dtype
 using ...Interfaces: id, value, rank, dimension, decompose
 using ...Prerequisites: Float, decimaltostr
@@ -46,18 +46,18 @@ Show an internal.
 Base.show(io::IO, i::Internal) = @printf io "%s(%s)" i|>typeof|>nameof join(("$name=$(getfield(i, name))" for name in i|>typeof|>fieldnames), ", ")
 
 """
-    Config{I}(map::Function, pids::AbstractVector{<:PID}) where {I<:Internal}
+    Config{I}(map::Function, pids::AbstractVector{<:AbstractPID}) where {I<:Internal}
 
 Configuration of the internal degrees of freedom at a lattice.
 
-Here, `map` maps a `PID` to an `Internal`.
+Here, `map` maps a `AbstractPID` to an `Internal`.
 """
-struct Config{I<:Internal, P<:PID, M<:Function} <: CompositeDict{P, I}
+struct Config{I<:Internal, P<:AbstractPID, M<:Function} <: CompositeDict{P, I}
     map::M
     contents::Dict{P, I}
 end
 @inline contentnames(::Type{<:Config}) = (:map, :contents)
-function Config{I}(map::Function, pids::AbstractVector{<:PID}) where {I<:Internal}
+function Config{I}(map::Function, pids::AbstractVector{<:AbstractPID}) where {I<:Internal}
     contents = Dict{pids|>eltype, I}()
     for pid in pids
         contents[pid] = map(pid)
@@ -98,32 +98,32 @@ function isHermitian(id::ID{AbstractOID, N}) where N
 end
 
 """
-    Index{P<:PID, I<:IID} <: AbstractOID
+    Index{P<:AbstractPID, I<:IID} <: AbstractOID
 
 The index of a degree of freedom, which consist of the spatial part and the internal part.
 """
-struct Index{P<:PID, I<:IID} <: AbstractOID
+struct Index{P<:AbstractPID, I<:IID} <: AbstractOID
     pid::P
     iid::I
 end
 
 """
     pidtype(index::Index)
-    pidtype(::Type{<:Index{P}}) where {P<:PID}
+    pidtype(::Type{<:Index{P}}) where {P<:AbstractPID}
 
 Get the type of the spatial part of an index.
 """
 @inline pidtype(index::Index) = pidtype(typeof(index))
-@inline pidtype(::Type{<:Index{P}}) where {P<:PID} = P
+@inline pidtype(::Type{<:Index{P}}) where {P<:AbstractPID} = P
 
 """
     iidtype(index::Index)
-    iidtype(::Type{<:Index{<:PID, I}}) where {I<:IID}
+    iidtype(::Type{<:Index{<:AbstractPID, I}}) where {I<:IID}
 
 Get the type of the internal part of an index.
 """
 @inline iidtype(index::Index) = iidtype(typeof(index))
-@inline iidtype(::Type{<:Index{<:PID, I}}) where {I<:IID} = I
+@inline iidtype(::Type{<:Index{<:AbstractPID, I}}) where {I<:IID} = I
 
 """
     adjoint(index::Index) -> typeof(index)

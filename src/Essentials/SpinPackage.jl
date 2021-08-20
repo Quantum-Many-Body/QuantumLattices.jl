@@ -2,7 +2,7 @@ module SpinPackage
 
 using StaticArrays: SVector
 using Printf: @printf, @sprintf
-using ..Spatials: PID, Point, Bond, AbstractBond
+using ..Spatials: AbstractPID, Point, Bond, AbstractBond
 using ..DegreesOfFreedom: IID, Internal, Index, OID, AbstractCompositeOID, OIDToTuple, Operator, LaTeX, latexformat, Config
 using ..Terms: wildcard, Subscripts, SubID, subscriptsexpr, Coupling, Couplings, Term, TermCouplings, TermAmplitude, TermModulate
 using ...Essentials: kind
@@ -106,15 +106,15 @@ Construct a spin degrees of freedom.
 @inline Spin{S}(; atom::Int=1, norbital::Int=1) where S = Spin{S}(atom, norbital)
 
 """
-    script(::Val{:site}, index::Index{<:PID, <:SID}; kwargs...) -> Int
-    script(::Val{:orbital}, index::Index{<:PID, <:SID}; kwargs...) -> Int
-    script(::Val{:tag}, index::Index{<:PID, <:SID}; kwargs...) -> Char
+    script(::Val{:site}, index::Index{<:AbstractPID, <:SID}; kwargs...) -> Int
+    script(::Val{:orbital}, index::Index{<:AbstractPID, <:SID}; kwargs...) -> Int
+    script(::Val{:tag}, index::Index{<:AbstractPID, <:SID}; kwargs...) -> Char
 
 Get the required script of a spin oid.
 """
-@inline script(::Val{:site}, index::Index{<:PID, <:SID}; kwargs...) = index.pid.site
-@inline script(::Val{:orbital}, index::Index{<:PID, <:SID}; kwargs...) = index.iid.orbital
-@inline script(::Val{:tag}, index::Index{<:PID, <:SID}; kwargs...) = index.iid.tag
+@inline script(::Val{:site}, index::Index{<:AbstractPID, <:SID}; kwargs...) = index.pid.site
+@inline script(::Val{:orbital}, index::Index{<:AbstractPID, <:SID}; kwargs...) = index.iid.orbital
+@inline script(::Val{:tag}, index::Index{<:AbstractPID, <:SID}; kwargs...) = index.iid.tag
 
 """
     sdefaultlatex
@@ -122,10 +122,10 @@ Get the required script of a spin oid.
 The default LaTeX format for a spin oid.
 """
 const soptdefaultlatex = LaTeX{(:tag,), (:site, :orbital)}('S')
-@inline latexname(::Type{<:Index{<:PID, <:SID}}) = Symbol("Index{PID, SID}")
-@inline latexname(::Type{<:OID{<:Index{<:PID, <:SID}}}) = Symbol("OID{Index{PID, SID}}")
-latexformat(Index{<:PID, <:SID}, soptdefaultlatex)
-latexformat(OID{<:Index{<:PID, <:SID}}, soptdefaultlatex)
+@inline latexname(::Type{<:Index{<:AbstractPID, <:SID}}) = Symbol("Index{AbstractPID, SID}")
+@inline latexname(::Type{<:OID{<:Index{<:AbstractPID, <:SID}}}) = Symbol("OID{Index{AbstractPID, SID}}")
+latexformat(Index{<:AbstractPID, <:SID}, soptdefaultlatex)
+latexformat(OID{<:Index{<:AbstractPID, <:SID}}, soptdefaultlatex)
 
 """
     usualspinindextotuple
@@ -135,11 +135,11 @@ Indicate that the choosed fields are `(:scope, :site, :orbital)` when converting
 const usualspinindextotuple = OIDToTuple(:scope, :site, :orbital)
 
 """
-    permute(id₁::OID{<:Index{<:PID, <:SID}}, id₂::OID{<:Index{<:PID, <:SID}}) -> Tuple{Vararg{Operator}}
+    permute(id₁::OID{<:Index{<:AbstractPID, <:SID}}, id₂::OID{<:Index{<:AbstractPID, <:SID}}) -> Tuple{Vararg{Operator}}
 
 Permute two spin oid and get the result.
 """
-function permute(id₁::OID{<:Index{<:PID, <:SID}}, id₂::OID{<:Index{<:PID, <:SID}})
+function permute(id₁::OID{<:Index{<:AbstractPID, <:SID}}, id₂::OID{<:Index{<:AbstractPID, <:SID}})
     @assert id₁.index≠id₂.index || id₁.rcoord≠id₂.rcoord || id₁.icoord≠id₂.icoord "permute error: permuted ids should not be equal to each other."
     if usualspinindextotuple(id₁.index)==usualspinindextotuple(id₂.index) && id₁.rcoord==id₂.rcoord && id₁.icoord==id₂.icoord
         @assert totalspin(id₁.index.iid)==totalspin(id₂.index.iid) "permute error: noncommutable ids should have the same spin field."
@@ -173,7 +173,7 @@ function permute(id₁::OID{<:Index{<:PID, <:SID}}, id₂::OID{<:Index{<:PID, <:
         return (Operator(1, ID(id₂, id₁)),)
     end
 end
-@inline permutesoid(id::OID{<:Index{<:PID, <:SID}}, tag::Char) = replace(id, index=replace(id.index, iid=replace(id.index.iid, tag=tag)))
+@inline permutesoid(id::OID{<:Index{<:AbstractPID, <:SID}}, tag::Char) = replace(id, index=replace(id.index, iid=replace(id.index.iid, tag=tag)))
 
 """
     SCID{T<:Tuple{Vararg{Char}}, A<:Tuple} <: SimpleID
@@ -285,17 +285,17 @@ function expand(sc::SpinCoupling, points::NTuple{R, Point}, spins::NTuple{R, Spi
     return SCExpand{totalspins(spins)}(sc.value, points, obexpands, sc.tags)
 end
 @generated totalspins(spins::NTuple{R, Spin}) where R = Tuple(totalspin(fieldtype(spins, i)) for i = 1:R)
-struct SCExpand{SPS, V, N, D, P, DT<:Number} <: CartesianVectorSpace{Tuple{V, ID{OID{<:Index, SVector{D, DT}}, N}}}
+struct SCExpand{SPS, V, N, D, P<:AbstractPID, DT<:Number} <: CartesianVectorSpace{Tuple{V, ID{OID{<:Index, SVector{D, DT}}, N}}}
     value::V
-    points::NTuple{N, Point{D, PID{P}, DT}}
+    points::NTuple{N, Point{D, P, DT}}
     obexpands::Vector{NTuple{N, Int}}
     tags::NTuple{N, Char}
-    function SCExpand{SPS}(value::V, points::NTuple{N, Point{D, PID{P}, DT}}, obexpands::Vector{NTuple{N, Int}}, tags::NTuple{N, Char}) where {SPS, V, N, D, P, DT<:Number}
+    function SCExpand{SPS}(value::V, points::NTuple{N, Point{D, P, DT}}, obexpands::Vector{NTuple{N, Int}}, tags::NTuple{N, Char}) where {SPS, V, N, D, P<:AbstractPID, DT<:Number}
         return new{SPS, V, N, D, P, DT}(value, points, obexpands, tags)
     end
 end
-@inline @generated function Base.eltype(::Type{SCExpand{SPS, V, N, D, P, DT}}) where {SPS, V, N, D, P, DT<:Number}
-    return Tuple{V, Tuple{[OID{Index{PID{P}, SID{SPS[i]}}, SVector{D, DT}} for i = 1:N]...}}
+@inline @generated function Base.eltype(::Type{SCExpand{SPS, V, N, D, P, DT}}) where {SPS, V, N, D, P<:AbstractPID, DT<:Number}
+    return Tuple{V, Tuple{[OID{Index{P, SID{SPS[i]}}, SVector{D, DT}} for i = 1:N]...}}
 end
 @inline Base.Dims(sce::SCExpand) = (length(sce.obexpands),)
 @generated function Tuple(index::CartesianIndex{1}, sce::SCExpand{SPS, V, N}) where {SPS, V, N}

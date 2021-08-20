@@ -19,7 +19,7 @@ import ...Prerequisites.Traits: contentnames, getcontent
 
 export distance, azimuthd, azimuth, polard, polar, volume, isparallel, isonline, isintratriangle, issubordinate
 export reciprocals, translate, rotate, tile, minimumlengths, intralinks, interlinks
-export PID, AbstractBond, Point, Bond, pidtype, rcoord, icoord, isintracell
+export AbstractPID, PID, CPID, AbstractBond, Point, Bond, pidtype, rcoord, icoord, isintracell
 export AbstractLattice, Lattice, SuperLattice, Cylinder, LatticeIndex, LatticeBonds, Bonds
 export nneighbor, bonds!, bonds, latticetype, bondtypes, latticebondsstructure
 export allbonds, zerothbonds, insidebonds, acrossbonds, intrabonds, interbonds
@@ -446,25 +446,41 @@ function interlinks(cluster₁::AbstractMatrix{<:Number}, cluster₂::AbstractMa
 end
 
 """
-    PID(scope, site::Int)
-    PID(site::Int)
-    PID(; scope='T', site::Int=1)
+    abstract type AbstractPID <: SimpleID
 
-The id of a point.
+Abstract point id.
 """
-struct PID{S} <: SimpleID
+abstract type AbstractPID <: SimpleID end
+
+"""
+    PID <: AbstractPID
+
+Point id.
+"""
+struct PID <: AbstractPID
+    site::Int
+end
+
+"""
+    CPID(scope, site::Int)
+    CPID(site::Int)
+    CPID(; scope='T', site::Int=1)
+
+Composite point id.
+"""
+struct CPID{S} <: AbstractPID
     scope::S
     site::Int
 end
-@inline PID(site::Int) = PID('T', site)
-@inline PID(; scope='T', site::Int=1) = PID(scope, site)
+@inline CPID(site::Int) = CPID('T', site)
+@inline CPID(; scope='T', site::Int=1) = CPID(scope, site)
 
 """
-    AbstractBond{N, P<:PID, D<:Number, R}
+    AbstractBond{N, P<:AbstractPID, D<:Number, R}
 
 Abstract bond.
 """
-abstract type AbstractBond{N, P<:PID, D<:Number, R} end
+abstract type AbstractBond{N, P<:AbstractPID, D<:Number, R} end
 
 """
     ==(b₁::AbstractBond, b₂::AbstractBond) -> Bool
@@ -482,21 +498,21 @@ Overloaded equivalent function.
 
 """
     length(bond::AbstractBond) -> Int
-    length(::Type{<:AbstractBond{N, <:PID, <:Number, R} where N}) where R -> Int
+    length(::Type{<:AbstractBond{N, <:AbstractPID, <:Number, R} where N}) where R -> Int
 
 Get the number of points of a bond.
 """
 @inline Base.length(bond::AbstractBond) = length(typeof(bond))
-@inline Base.length(::Type{<:AbstractBond{N, <:PID, <:Number, R} where N}) where R = R
+@inline Base.length(::Type{<:AbstractBond{N, <:AbstractPID, <:Number, R} where N}) where R = R
 
 """
     eltype(bond::AbstractBond)
-    eltype(::Type{<:AbstractBond{N, P}}) where {N, P<:PID}
+    eltype(::Type{<:AbstractBond{N, P}}) where {N, P<:AbstractPID}
 
 Get the eltype of a bond.
 """
 @inline Base.eltype(bond::AbstractBond) = eltype(typeof(bond))
-@inline Base.eltype(::Type{<:AbstractBond{N, P, D}}) where {N, P<:PID, D<:Number} = Point{N, P, D}
+@inline Base.eltype(::Type{<:AbstractBond{N, P, D}}) where {N, P<:AbstractPID, D<:Number} = Point{N, P, D}
 
 """
     iterate(bond::AbstractBond, state=1)
@@ -516,53 +532,53 @@ Get the space dimension of a concrete bond.
 
 """
     pidtype(bond::AbstractBond)
-    pidtype(::Type{<:AbstractBond{N, P} where N}) where {P<:PID}
+    pidtype(::Type{<:AbstractBond{N, P} where N}) where {P<:AbstractPID}
 
 Get the pid type of a concrete bond.
 """
 @inline pidtype(bond::AbstractBond) = pidtype(typeof(bond))
-@inline pidtype(::Type{<:AbstractBond{N, P} where N}) where {P<:PID} = P
+@inline pidtype(::Type{<:AbstractBond{N, P} where N}) where {P<:AbstractPID} = P
 
 """
     dtype(bond::AbstractBond)
-    dtype(::Type{<:AbstractBond{N, <:PID, D} where N}) where {D<:Number}
+    dtype(::Type{<:AbstractBond{N, <:AbstractPID, D} where N}) where {D<:Number}
 
 Get the data type of a bond.
 """
 @inline dtype(bond::AbstractBond) = dtype(typeof(bond))
-@inline dtype(::Type{<:AbstractBond{N, <:PID, D} where N}) where {D<:Number} = D
+@inline dtype(::Type{<:AbstractBond{N, <:AbstractPID, D} where N}) where {D<:Number} = D
 
 """
     rank(bond::AbstractBond) -> Int
-    rank(::Type{<:AbstractBond{N, <:PID, <:Number, R} where N}) where R -> Int
+    rank(::Type{<:AbstractBond{N, <:AbstractPID, <:Number, R} where N}) where R -> Int
 
 Get the rank of a bond.
 """
 @inline rank(bond::AbstractBond) = rank(typeof(bond))
-@inline rank(::Type{<:AbstractBond{N, <:PID, <:Number, R} where N}) where R = R
+@inline rank(::Type{<:AbstractBond{N, <:AbstractPID, <:Number, R} where N}) where R = R
 
 """
-    Point(pid::PID, rcoord::SVector{N, D}, icoord::SVector{N, D}) where {N, D<:Number}
-    Point(pid::PID, rcoord::NTuple{N, <:Number}, icoord::NTuple{N, <:Number}=ntuple(i->0, N)) where N
-    Point(pid::PID, rcoord::AbstractVector{<:Number}, icoord::AbstractVector{<:Number}=zero(SVector{length(rcoord), Int}))
-    Point{N}(pid::PID, rcoord::AbstractVector{<:Number}, icoord::AbstractVector{<:Number}=zero(SVector{N, Int})) where N
+    Point(pid::AbstractPID, rcoord::SVector{N, D}, icoord::SVector{N, D}) where {N, D<:Number}
+    Point(pid::AbstractPID, rcoord::NTuple{N, <:Number}, icoord::NTuple{N, <:Number}=ntuple(i->0, N)) where N
+    Point(pid::AbstractPID, rcoord::AbstractVector{<:Number}, icoord::AbstractVector{<:Number}=zero(SVector{length(rcoord), Int}))
+    Point{N}(pid::AbstractPID, rcoord::AbstractVector{<:Number}, icoord::AbstractVector{<:Number}=zero(SVector{N, Int})) where N
 
 Labeled point.
 """
-struct Point{N, P<:PID, D<:Number} <: AbstractBond{N, P, D, 1}
+struct Point{N, P<:AbstractPID, D<:Number} <: AbstractBond{N, P, D, 1}
     pid::P
     rcoord::SVector{N, D}
     icoord::SVector{N, D}
-    Point(pid::PID, rcoord::SVector{N, D}, icoord::SVector{N, D}) where {N, D<:Number} = new{N, typeof(pid), D}(pid, rcoord, icoord)
+    Point(pid::AbstractPID, rcoord::SVector{N, D}, icoord::SVector{N, D}) where {N, D<:Number} = new{N, typeof(pid), D}(pid, rcoord, icoord)
 end
-@inline function Point(pid::PID, rcoord::NTuple{N, <:Number}, icoord::NTuple{N, <:Number}=ntuple(i->0, N)) where N
+@inline function Point(pid::AbstractPID, rcoord::NTuple{N, <:Number}, icoord::NTuple{N, <:Number}=ntuple(i->0, N)) where N
     datatype = promote_type(eltype(rcoord), eltype(icoord))
     return Point(pid, convert(SVector{N, datatype}, rcoord), convert(SVector{N, datatype}, icoord))
 end
-@inline function Point(pid::PID, rcoord::AbstractVector{<:Number}, icoord::AbstractVector{<:Number}=zero(SVector{length(rcoord), Int}))
+@inline function Point(pid::AbstractPID, rcoord::AbstractVector{<:Number}, icoord::AbstractVector{<:Number}=zero(SVector{length(rcoord), Int}))
     return Point{length(rcoord)}(pid, rcoord, icoord)
 end
-@inline function Point{N}(pid::PID, rcoord::AbstractVector{<:Number}, icoord::AbstractVector{<:Number}=zero(SVector{N, Int})) where N
+@inline function Point{N}(pid::AbstractPID, rcoord::AbstractVector{<:Number}, icoord::AbstractVector{<:Number}=zero(SVector{N, Int})) where N
     @assert length(rcoord)==length(icoord)==N "Point error: dismatched length of input rcoord and icoord."
     datatype = promote_type(eltype(rcoord), eltype(icoord))
     return Point(pid, convert(SVector{N, datatype}, rcoord), convert(SVector{N, datatype}, icoord))
@@ -606,7 +622,7 @@ Judge whether a point is intra the unitcell.
 
 A bond in a lattice.
 """
-struct Bond{N, P<:PID, D<:Number} <: AbstractBond{N, P, D, 2}
+struct Bond{N, P<:AbstractPID, D<:Number} <: AbstractBond{N, P, D, 2}
     neighbor::Int
     spoint::Point{N, P, D}
     epoint::Point{N, P, D}
@@ -666,7 +682,7 @@ Judge whether a bond is intra the unit cell of a lattice.
 @inline isintracell(bond::Bond) = isapprox(bond|>icoord|>norm, 0.0, atol=atol, rtol=rtol)
 
 """
-    AbstractLattice{N, P<:PID, D<:Number}
+    AbstractLattice{N, P<:AbstractPID, D<:Number}
 
 Abstract type for all lattices.
 
@@ -679,7 +695,7 @@ It should have the following contents:
 - `reciprocals::Vector{SVector{N, D}}`: the reciprocals of the lattice
 - `neighbors::Dict{Int, Float}`: the order-distance map of the nearest neighbors of the lattice
 """
-abstract type AbstractLattice{N, P<:PID, D<:Number} end
+abstract type AbstractLattice{N, P<:AbstractPID, D<:Number} end
 @inline contentnames(::Type{<:AbstractLattice}) = (:name, :pids, :rcoords, :icoords, :vectors, :reciprocals, :neighbors)
 
 """
@@ -735,21 +751,21 @@ Overloaded equivalent function.
 
 """
     keytype(lattice::AbstractLattice)
-    keytype(::Type{<:AbstractLattice{N, P} where N}) where {P<:PID}
+    keytype(::Type{<:AbstractLattice{N, P} where N}) where {P<:AbstractPID}
 
 Get the pid type of the lattice.
 """
 @inline Base.keytype(lattice::AbstractLattice) = keytype(typeof(lattice))
-@inline Base.keytype(::Type{<:AbstractLattice{N, P} where N}) where {P<:PID} = P
+@inline Base.keytype(::Type{<:AbstractLattice{N, P} where N}) where {P<:AbstractPID} = P
 
 """
     valtype(lattice::AbstractLattice)
-    valtype(::Type{<:AbstractLattice{N, P}}) where {N, P<:PID}
+    valtype(::Type{<:AbstractLattice{N, P}}) where {N, P<:AbstractPID}
 
 Get the point type of the lattice.
 """
 @inline Base.valtype(lattice::AbstractLattice) = valtype(typeof(lattice))
-@inline Base.valtype(::Type{<:AbstractLattice{N, P, D}}) where {N, P<:PID, D<:Number} = Point{N, P, D}
+@inline Base.valtype(::Type{<:AbstractLattice{N, P, D}}) where {N, P<:AbstractPID, D<:Number} = Point{N, P, D}
 
 """
     dimension(lattice::AbstractLattice) -> Int
@@ -762,12 +778,12 @@ Get the space dimension of the lattice.
 
 """
     dtype(lattice::AbstractLattice)
-    dtype(::Type{<:AbstractLattice{N, <:PID, D} where N}) where {D<:Number}
+    dtype(::Type{<:AbstractLattice{N, <:AbstractPID, D} where N}) where {D<:Number}
 
 Get the data type of a lattice.
 """
 @inline dtype(lattice::AbstractLattice) = dtype(typeof(lattice))
-@inline dtype(::Type{<:AbstractLattice{N, <:PID, D} where N}) where {D<:Number} = D
+@inline dtype(::Type{<:AbstractLattice{N, <:AbstractPID, D} where N}) where {D<:Number} = D
 
 """
     nneighbor(lattice::AbstractLattice) -> Int
@@ -777,7 +793,7 @@ Get the highest order of nearest neighbors.
 @inline nneighbor(lattice::AbstractLattice) = max(keys(getcontent(lattice, :neighbors))...)
 
 """
-    LatticeIndex{Kind}(index::Union{PID, Int}) where Kind
+    LatticeIndex{Kind}(index::Union{AbstractPID, Int}) where Kind
 
 Lattice index.
 
@@ -786,9 +802,9 @@ Lattice index.
 * 'I': for getting the icoord of a lattice
 * 'P': for getting the point of a lattice
 """
-struct LatticeIndex{Kind, I<:Union{PID, Int}}
+struct LatticeIndex{Kind, I<:Union{AbstractPID, Int}}
     index::I
-    function LatticeIndex{Kind}(index::Union{PID, Int}) where Kind
+    function LatticeIndex{Kind}(index::Union{AbstractPID, Int}) where Kind
         @assert Kind in ('R', 'I', 'P') "LatticeIndex error: wrong input Kind($Kind)."
         new{Kind, typeof(index)}(index)
     end
@@ -804,9 +820,9 @@ Get a rcoord, an icoord or a point of a lattice according to the type of the inp
 @inline Base.getindex(lattice::AbstractLattice, i::LatticeIndex{'R', Int}) = latticestaticcoords(getcontent(lattice, :rcoords), i.index, lattice|>dimension|>Val)
 @inline Base.getindex(lattice::AbstractLattice, i::LatticeIndex{'I', Int}) = latticestaticcoords(getcontent(lattice, :icoords), i.index, lattice|>dimension|>Val)
 @inline Base.getindex(lattice::AbstractLattice, i::LatticeIndex{'P', Int}) = Point(getcontent(lattice, :pids)[i.index], lattice[LatticeIndex{'R'}(i.index)], lattice[LatticeIndex{'I'}(i.index)])
-@inline Base.getindex(lattice::AbstractLattice, i::LatticeIndex{'R', <:PID}) = lattice[LatticeIndex{'R'}(findfirst(isequal(i.index), getcontent(lattice, :pids)))]
-@inline Base.getindex(lattice::AbstractLattice, i::LatticeIndex{'I', <:PID}) = lattice[LatticeIndex{'I'}(findfirst(isequal(i.index), getcontent(lattice, :pids)))]
-@inline Base.getindex(lattice::AbstractLattice, i::LatticeIndex{'P', <:PID}) = lattice[LatticeIndex{'P'}(findfirst(isequal(i.index), getcontent(lattice, :pids)))]
+@inline Base.getindex(lattice::AbstractLattice, i::LatticeIndex{'R', <:AbstractPID}) = lattice[LatticeIndex{'R'}(findfirst(isequal(i.index), getcontent(lattice, :pids)))]
+@inline Base.getindex(lattice::AbstractLattice, i::LatticeIndex{'I', <:AbstractPID}) = lattice[LatticeIndex{'I'}(findfirst(isequal(i.index), getcontent(lattice, :pids)))]
+@inline Base.getindex(lattice::AbstractLattice, i::LatticeIndex{'P', <:AbstractPID}) = lattice[LatticeIndex{'P'}(findfirst(isequal(i.index), getcontent(lattice, :pids)))]
 @generated function latticestaticcoords(coords::Matrix{D}, i::Int, ::Val{N}) where {D<:Number, N}
     exprs = [:(coords[$j, i]) for j = 1:N]
     return :(SVector{N, D}($(exprs...)))
@@ -947,7 +963,7 @@ end
 
 """
     Lattice{N}(name::String,
-        pids::Vector{<:PID}, rcoords::AbstractMatrix{<:Number}, icoords::AbstractMatrix{<:Number},
+        pids::Vector{<:AbstractPID}, rcoords::AbstractMatrix{<:Number}, icoords::AbstractMatrix{<:Number},
         vectors::AbstractVector{<:AbstractVector{<:Number}},
         neighbors::Union{Dict{Int, <:Real}, Int}=1;
         coordination::Int=8
@@ -969,7 +985,7 @@ Simplest lattice.
 
 A simplest lattice can be construted from its contents, i.e. pids, rcoords and icoords, or from a couple of points, or from a couple of sublattices.
 """
-struct Lattice{N, P<:PID, D<:Number} <: AbstractLattice{N, P, D}
+struct Lattice{N, P<:AbstractPID, D<:Number} <: AbstractLattice{N, P, D}
     name::String
     pids::Vector{P}
     rcoords::Matrix{D}
@@ -978,7 +994,7 @@ struct Lattice{N, P<:PID, D<:Number} <: AbstractLattice{N, P, D}
     reciprocals::Vector{SVector{N, D}}
     neighbors::Dict{Int, Float}
     function Lattice{N}(name::String,
-            pids::Vector{<:PID}, rcoords::AbstractMatrix{<:Number}, icoords::AbstractMatrix{<:Number},
+            pids::Vector{<:AbstractPID}, rcoords::AbstractMatrix{<:Number}, icoords::AbstractMatrix{<:Number},
             vectors::AbstractVector{<:AbstractVector{<:Number}},
             neighbors::Union{Dict{Int, <:Real}, Int}=1;
             coordination::Int=8
@@ -1044,7 +1060,7 @@ end
 
 SuperLattice that is composed of serveral sublattices.
 """
-struct SuperLattice{L<:AbstractLattice, N, P<:PID, D<:Number} <: AbstractLattice{N, P, D}
+struct SuperLattice{L<:AbstractLattice, N, P<:AbstractPID, D<:Number} <: AbstractLattice{N, P, D}
     sublattices::Vector{L}
     name::String
     pids::Vector{P}
@@ -1155,11 +1171,11 @@ end
     Cylinder{P}(name::String, block::AbstractMatrix{<:Real}, translation::SVector{N, <:Real};
         vector::Union{AbstractVector{<:Real}, Nothing}=nothing,
         neighbors::Union{Dict{Int, <:Real}, Int}=1
-        ) where {P<:PID, N}
+        ) where {P<:CPID, N}
 
 Cylinder of 1d and quasi 2d lattices.
 """
-mutable struct Cylinder{P<:PID, N, D<:Number} <: AbstractLattice{N, P, D}
+mutable struct Cylinder{P<:CPID, N, D<:Number} <: AbstractLattice{N, P, D}
     block::Matrix{D}
     translation::SVector{N, D}
     name::String
@@ -1172,7 +1188,7 @@ mutable struct Cylinder{P<:PID, N, D<:Number} <: AbstractLattice{N, P, D}
     function Cylinder{P}(name::String, block::AbstractMatrix{<:Number}, translation::SVector{N, <:Number};
             vector::AbstractVector{<:Number}=SVector{N, Float}(),
             neighbors::Union{Dict{Int, <:Real}, Int}=1
-            ) where {P<:PID, N}
+            ) where {P<:CPID, N}
         pids = Vector{P}[]
         datatype = promote_type(Float, eltype(block), eltype(translation), eltype(vector))
         rcoords = zeros(datatype, N, 0)
@@ -1208,7 +1224,7 @@ function Base.insert!(cylinder::Cylinder, ps::S...; cut=length(cylinder)÷2+1, s
     end
     for (i, p) in enumerate(ps)
         for j = 1:blcklen
-            push!(pids, PID(p, cut==length(cylinder)+1 ? j : (cylinder.pids[cut].site+j-2)%blcklen+1))
+            push!(pids, CPID(p, cut==length(cylinder)+1 ? j : (cylinder.pids[cut].site+j-2)%blcklen+1))
         end
     end
     for i = cut:length(cylinder)
@@ -1238,9 +1254,9 @@ end
 Construct a lattice from a cylinder with the assigned scopes.
 """
 function (cylinder::Cylinder)(scopes::Any...; coordination::Int=8)
-    @assert fieldtype(cylinder|>keytype, :scope)===scopes|>eltype "cylinder call error: wrong scope type."
+    @assert fieldtype(cylinder|>keytype, :scope)==scopes|>eltype "cylinder call error: wrong scope type."
     name = cylinder.name * string(length(scopes))
-    pids = keytype(cylinder)[PID(scope, i) for scope in scopes for i = 1:size(cylinder.block, 2)]
+    pids = keytype(cylinder)[CPID(scope, i) for scope in scopes for i = 1:size(cylinder.block, 2)]
     rcoords = tile(cylinder.block, [cylinder.translation], Tuple((i,) for i = -(length(scopes)-1)/2:(length(scopes)-1)/2))
     icoords = zero(rcoords)
     vectors = cylinder.vectors

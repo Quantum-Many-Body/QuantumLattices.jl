@@ -2,7 +2,7 @@ using Test
 using Printf: @sprintf
 using StaticArrays: SVector
 using QuantumLattices.Essentials.Terms
-using QuantumLattices.Essentials.Spatials: AbstractBond, Point, PID, Bond, Bonds, Lattice, pidtype, acrossbonds, zerothbonds
+using QuantumLattices.Essentials.Spatials: AbstractBond, Point, PID, CPID, Bond, Bonds, Lattice, pidtype, acrossbonds, zerothbonds
 using QuantumLattices.Essentials.DegreesOfFreedom: Config, IID, Index, Internal, OID, Table, OIDToTuple, Operator, Operators, plain
 using QuantumLattices.Interfaces: rank, expand!
 using QuantumLattices.Essentials: kind, update!, reset!
@@ -39,7 +39,7 @@ function expand(tc::TCoupling, points::NTuple{N, Point}, internals::NTuple{N, In
     pids = NTuple{N, pidtype(points|>eltype)}(points[i].pid for i = 1:N)
     rcoords = NTuple{N, SVector{dimension(points|>eltype), Float}}(points[i].rcoord for i = 1:N)
     icoords = NTuple{N, SVector{dimension(points|>eltype), Float}}(points[i].icoord for i = 1:N)
-    indexes = NTuple{N, Index{PID{fieldtype(pids|>eltype, :scope)}, TID}}(Index(pids[i], TID(nambus[i])) for i = 1:N)
+    indexes = NTuple{N, Index{pidtype(points|>eltype), TID}}(Index(pids[i], TID(nambus[i])) for i = 1:N)
     return ((tc.value, ID(OID, indexes, rcoords, icoords)),)
 end
 
@@ -129,8 +129,8 @@ end
     @test @couplings(TCoupling(1.0, ID(TCID(1), TCID(1)))) == Couplings(TCoupling(1.0, ID(TCID(1), TCID(1))))
     @test @couplings(TCoupling(1.0, ID(TCID(1)))+TCoupling(1.0, ID(TCID(2)))) == TCoupling(1.0, ID(TCID(1)))+TCoupling(1.0, ID(TCID(2)))
 
-    point = Point(PID(1, 1), (0.0, 0.0), (0.0, 0.0))
-    config = Config{TFock}(pid->TFock(), [PID(1, 1)])
+    point = Point(CPID(1, 1), (0.0, 0.0), (0.0, 0.0))
+    config = Config{TFock}(pid->TFock(), [CPID(1, 1)])
     tc = TCoupling(1.0, ID(TCID(1), TCID(1)))
     @test couplingcenters(tc, point, Val(:Mu)) == (1, 1)
     @test couplingpoints(tc, point, Val(:Mu)) == (point, point)
@@ -168,8 +168,8 @@ end
 end
 
 @testset "Term" begin
-    point = Point(PID(1, 1), (0.0, 0.0), (0.0, 0.0))
-    config = Config{TFock}(pid->TFock(), [PID(1, 1)])
+    point = Point(CPID(1, 1), (0.0, 0.0), (0.0, 0.0))
+    config = Config{TFock}(pid->TFock(), [CPID(1, 1)])
     term = Term{:Mu, 2}(:mu, 1.5, 0, couplings=TCoupling(1.0, ID(TCID(2), TCID(1))), amplitude=(bond->3), modulate=false)
     @test term|>kind == term|>typeof|>kind == :Mu
     @test term|>id == term|>typeof|>id == :mu
@@ -187,9 +187,9 @@ end
     @test 2*term == term*2 == replace(term, factor=term.factor*2)
     @test term/2 == term*(1/2) == replace(term, factor=term.factor/2)
 
-    p1 = Point(PID(1, 1), (0.0, 0.0), (0.0, 0.0))
-    p2 = Point(PID(1, 2), (0.0, 0.0), (0.0, 0.0))
-    config = Config{TFock}(pid->TFock(), [PID(1, 1), PID(1, 2)])
+    p1 = Point(PID(1), (0.0, 0.0), (0.0, 0.0))
+    p2 = Point(PID(2), (0.0, 0.0), (0.0, 0.0))
+    config = Config{TFock}(pid->TFock(), [PID(1), PID(2)])
     tcs1 = Couplings(TCoupling(1.0, ID(TCID(2), TCID(2))))
     tcs2 = Couplings(TCoupling(1.0, ID(TCID(1), TCID(1))))
     term = Term{:Mu, 2}(:mu, 1.5, 0, couplings=bond->(tcs1, tcs2)[bond.pid.site%2+1], amplitude=bond->3, modulate=true)
@@ -205,38 +205,38 @@ end
 end
 
 @testset "expand" begin
-    point = Point(PID(1, 1), (0.0, 0.0), (0.0, 0.0))
-    config = Config{TFock}(pid->TFock(), [PID(1, 1)])
+    point = Point(PID(1), (0.0, 0.0), (0.0, 0.0))
+    config = Config{TFock}(pid->TFock(), [PID(1)])
     term = Term{:Mu, 2}(:mu, 1.5, 0, couplings=TCoupling(1.0, ID(TCID(2), TCID(1))), amplitude=bond->3.0, modulate=true)
     operators = Operators(
         Operator(+2.25, ID(
-            OID(Index(PID(1, 1), TID(2)), SVector(0.0, 0.0), SVector(0.0, 0.0)),
-            OID(Index(PID(1, 1), TID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0))
+            OID(Index(PID(1), TID(2)), SVector(0.0, 0.0), SVector(0.0, 0.0)),
+            OID(Index(PID(1), TID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0))
             ))
         )
     @test expand(term, point, config, true) == operators
     @test expand(term, point, config, false) == operators*2
 
-    bond = Bond(1, Point(PID('b', 2), (1.5, 1.5), (1.0, 1.0)), Point(PID('a', 1), (0.5, 0.5), (0.0, 0.0)))
-    config = Config{TFock}(pid->TFock(), [PID('a', 1), PID('b', 2)])
+    bond = Bond(1, Point(PID(2), (1.5, 1.5), (1.0, 1.0)), Point(PID(1), (0.5, 0.5), (0.0, 0.0)))
+    config = Config{TFock}(pid->TFock(), [PID(1), PID(2)])
     term = Term{:Hp, 2}(:t, 1.5, 1, couplings=TCoupling(1.0, ID(TCID(2), TCID(1))), amplitude=bond->3.0, modulate=true)
     operators = Operators(
         Operator(4.5, ID(
-            OID(Index(PID('a', 1), TID(2)), SVector(0.5, 0.5), SVector(0.0, 0.0)),
-            OID(Index(PID('b', 2), TID(1)), SVector(1.5, 1.5), SVector(1.0, 1.0))
+            OID(Index(PID(1), TID(2)), SVector(0.5, 0.5), SVector(0.0, 0.0)),
+            OID(Index(PID(2), TID(1)), SVector(1.5, 1.5), SVector(1.0, 1.0))
             ))
         )
     @test expand(term, bond, config, true) == operators
     @test expand(term, bond, config, false) == operators+operators'
 
-    lattice = Lattice("Tuanzi", [Point(PID(1, 1), (0.0, 0.0), (0.0, 0.0))], vectors=[[1.0, 0.0]], neighbors=1)
+    lattice = Lattice("Tuanzi", [Point(CPID(1, 1), (0.0, 0.0), (0.0, 0.0))], vectors=[[1.0, 0.0]], neighbors=1)
     bonds = Bonds(lattice)
     config = Config{TFock}(pid->TFock(), lattice.pids)
     term = Term{:Mu, 2}(:mu, 1.5, 0, couplings=TCoupling(1.0, ID(TCID(2), TCID(1))), amplitude=bond->3.0, modulate=true)
     operators = Operators(
         Operator(+2.25, ID(
-            OID(Index(PID(1, 1), TID(2)), SVector(0.0, 0.0), SVector(0.0, 0.0)),
-            OID(Index(PID(1, 1), TID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0))
+            OID(Index(CPID(1, 1), TID(2)), SVector(0.0, 0.0), SVector(0.0, 0.0)),
+            OID(Index(CPID(1, 1), TID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0))
             ))
         )
     @test expand(term, bonds, config, true) == operators
@@ -254,7 +254,7 @@ end
 @testset "Generator" begin
     @test contentnames(AbstractGenerator) == (:terms, :bonds, :config, :half, :table, :boundary, :operators)
 
-    lattice = Lattice("Tuanzi", [Point(PID(1, 1), (0.0, 0.0), (0.0, 0.0)), Point(PID(1, 2), (0.5, 0.0), (0.0, 0.0))], vectors=[[1.0, 0.0]], neighbors=1)
+    lattice = Lattice("Tuanzi", [Point(PID(1), (0.0, 0.0), (0.0, 0.0)), Point(PID(2), (0.5, 0.0), (0.0, 0.0))], vectors=[[1.0, 0.0]], neighbors=1)
     bonds = Bonds(lattice)
     config = Config{TFock}(pid->TFock(), lattice.pids)
     table = Table(config, OIDToTuple(:scope, :site))
@@ -264,7 +264,7 @@ end
     tops2 = expand(one(t), filter(acrossbonds, bonds, Val(:include)), config, true, table=table)
     μops = expand(one(μ), filter(zerothbonds, bonds, Val(:include)), config, true, table=table)
 
-    optp = Operator{Float, ID{OID{Index{PID{Int}, TID}, SVector{2, Float}}, 2}}
+    optp = Operator{Float, ID{OID{Index{PID, TID}, SVector{2, Float}}, 2}}
     genops = GenOperators(tops1, NamedContainer{(:μ,)}((μops,)), NamedContainer{(:t, :μ)}((tops2, Operators{optp|>idtype, optp}())))
     @test genops == deepcopy(genops) && isequal(genops, deepcopy(genops))
     @test genops == GenOperators((t, μ), bonds, config, true, table=table)
