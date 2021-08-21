@@ -502,14 +502,16 @@ LaTeX string representation.
 """
 struct LaTeX{SP, SB, B, O}
     body::B
+    spdelimiter::String
+    sbdelimiter::String
     options::O
-    function LaTeX{SP, SB}(body; options...) where {SP, SB}
+    function LaTeX{SP, SB}(body, spdelimiter::String=", ", sbdelimiter::String=", "; options...) where {SP, SB}
         @assert isa(SP, Tuple{Vararg{Symbol}}) && isa(SB, Tuple{Vararg{Symbol}}) "LaTeX error: SP and SB must be tuple of symbols."
-        new{SP, SB, typeof(body), typeof(options)}(body, options)
+        new{SP, SB, typeof(body), typeof(options)}(body, spdelimiter, sbdelimiter, options)
     end
 end
-@inline superscript(::Type{<:LaTeX{SP}}) where {SP} = SP
-@inline subscript(::Type{<:LaTeX{SP, SB} where SP}) where {SB} = SB
+@inline superscript(::Type{<:LaTeX{SP}}) where SP = SP
+@inline subscript(::Type{<:LaTeX{SP, SB} where SP}) where SB = SB
 
 """
     latexname(T::Type{<:AbstractOID}) -> Symbol

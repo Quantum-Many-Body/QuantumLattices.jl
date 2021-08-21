@@ -5,7 +5,7 @@ using LinearAlgebra: dot
 using Printf: @printf, @sprintf
 using ..Spatials: AbstractPID, AbstractBond, Point, Bond, decompose
 using ..DegreesOfFreedom: IID, Internal, Index, LaTeX, OID, AbstractCompositeOID, latexformat, OIDToTuple, Operator, Operators, Config, Table
-using ..Terms: wildcard, Subscripts, SubID, Coupling, Couplings, Term, TermCouplings, TermAmplitude, TermModulate
+using ..Terms: wildcard, Subscripts, SubID, Coupling, Couplings, couplingpoints, couplinginternals, Term, TermCouplings, TermAmplitude, TermModulate
 using ...Essentials: kind
 using ...Prerequisites: Float, delta, decimaltostr
 using ...Prerequisites.Traits: rawtype
@@ -128,9 +128,9 @@ The default LaTeX format for a fermionic oid.
 """
 const fdefaultlatex = LaTeX{(:nambu,), (:site, :orbital, :spinsym)}('c')
 @inline latexname(::Type{<:Index{<:AbstractPID, FID{:f}}}) = Symbol("Index{AbstractPID, FID{:f}}")
-@inline latexname(::Type{<:OID{<:Index{<:AbstractPID, FID{:f}}}}) = Symbol("OID{Index{AbstractPID, FID{:f}}}")
+@inline latexname(::Type{<:AbstractCompositeOID{<:Index{<:AbstractPID, FID{:f}}}}) = Symbol("AbstractCompositeOID{Index{AbstractPID, FID{:f}}}")
 latexformat(Index{<:AbstractPID, FID{:f}}, fdefaultlatex)
-latexformat(OID{<:Index{<:AbstractPID, FID{:f}}}, fdefaultlatex)
+latexformat(AbstractCompositeOID{<:Index{<:AbstractPID, FID{:f}}}, fdefaultlatex)
 
 """
     bdefaultlatex
@@ -139,9 +139,9 @@ The default LaTeX format for a bosonic oid.
 """
 const bdefaultlatex = LaTeX{(:nambu,), (:site, :orbital, :spinsym)}('b')
 @inline latexname(::Type{<:Index{<:AbstractPID, FID{:b}}}) = Symbol("Index{AbstractPID, FID{:b}}")
-@inline latexname(::Type{<:OID{<:Index{<:AbstractPID, FID{:b}}}}) = Symbol("OID{Index{AbstractPID, FID{:b}}}")
+@inline latexname(::Type{<:AbstractCompositeOID{<:Index{<:AbstractPID, FID{:b}}}}) = Symbol("AbstractCompositeOID{Index{AbstractPID, FID{:b}}}")
 latexformat(Index{<:AbstractPID, FID{:b}}, bdefaultlatex)
-latexformat(OID{<:Index{<:AbstractPID, FID{:b}}}, bdefaultlatex)
+latexformat(AbstractCompositeOID{<:Index{<:AbstractPID, FID{:b}}}, bdefaultlatex)
 
 """
     angle(id::OID{<:Index{<:AbstractPID, <:FID}}, vectors::AbstractVector{<:AbstractVector{<:Number}}, values::AbstractVector{<:Number}) -> Complex{<:Number}
@@ -375,12 +375,14 @@ function ⋅(fc₁::FockCoupling, fc₂::FockCoupling)
 end
 
 """
-    expand(fc::FockCoupling, points::NTuple{R, Point}, focks::NTuple{R, Fock}, info::Val) where R -> Union{FCExpand, Tuple{}}
+    expand(fc::FockCoupling, bond::AbstractBond, config::Config, info::Val) -> Union{FCExpand, Tuple{}}
 
-Expand a Fock coupling with the given set of points and Fock degrees of freedom.
+Expand a Fock coupling with the given bond and the config of the Fock degrees of freedom.
 """
-function expand(fc::FockCoupling, points::NTuple{R, Point}, focks::NTuple{R, Fock}, info::Val) where R
-    @assert rank(fc)==R "expand error: dismatched rank."
+function expand(fc::FockCoupling, bond::AbstractBond, config::Config, info::Val)
+    points = couplingpoints(fc, bond, info)
+    focks = couplinginternals(fc, bond, config, info)
+    @assert rank(fc)==length(points)==length(focks) "expand error: dismatched rank."
     for (i, atom) in enumerate(fc.atoms)
        isa(atom, Int) && atom≠focks[i].atom && return ()
     end

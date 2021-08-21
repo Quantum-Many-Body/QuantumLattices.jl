@@ -2,7 +2,7 @@ using Test
 using StaticArrays: SVector
 using QuantumLattices.Essentials.SpinPackage
 using QuantumLattices.Essentials.Spatials: AbstractPID, PID, CPID, Point, Bond
-using QuantumLattices.Essentials.DegreesOfFreedom: OID, isHermitian, Config, Index, Operator, Operators, script, latexname
+using QuantumLattices.Essentials.DegreesOfFreedom: OID, AbstractCompositeOID, isHermitian, Config, Index, Operator, Operators, script, latexname
 using QuantumLattices.Essentials.Terms: Couplings, @subscripts_str, abbr
 using QuantumLattices.Interfaces: expand, permute, rank
 using QuantumLattices.Prerequisites: Float
@@ -56,7 +56,7 @@ end
     @test script(Val(:tag), index) == 'z'
 
     @test latexname(Index{<:AbstractPID, <:SID}) == Symbol("Index{AbstractPID, SID}")
-    @test latexname(OID{<:Index{<:AbstractPID, <:SID}}) == Symbol("OID{Index{AbstractPID, SID}}")
+    @test latexname(AbstractCompositeOID{<:Index{<:AbstractPID, <:SID}}) == Symbol("AbstractCompositeOID{Index{AbstractPID, SID}}")
 end
 
 @testset "SOperator" begin
@@ -103,14 +103,14 @@ end
 
     sc = SpinCoupling(2.0, ('+', '-'), atoms=(1, 1))
     point = Point(PID(1), [0.0, 0.0], [0.0, 0.0])
-    spin = Spin{1}(atom=2, norbital=2)
-    ex = expand(sc, (point, point), (spin, spin), Val(:info))
+    config = Config{Spin{1}}(pid->Spin{1}(atom=2, norbital=2), [point.pid])
+    ex = expand(sc, point, config, Val(:info))
     @test collect(ex) == []
 
     sc = SpinCoupling(2.0, ('+', '-'), atoms=(1, 2), orbitals=(1, 2))
-    p₁, p₂ = Point(CPID(1, 1), [0.0], [0.0]), Point(CPID(1, 2), [0.5], [0.0])
-    s₁, s₂ = Spin{1}(atom=1, norbital=2), Spin{1}(atom=2, norbital=2)
-    ex = expand(sc, (p₁, p₂), (s₁, s₂), Val(:info))
+    bond = Bond(1, Point(CPID(1, 2), [0.5], [0.0]), Point(CPID(1, 1), [0.0], [0.0]))
+    config = Config{Spin{1}}(pid->Spin{1}(atom=2-pid.site%2, norbital=2), [bond.epoint.pid, bond.spoint.pid])
+    ex = expand(sc, bond, config, Val(:SpinTerm))
     @test Dims(ex) == (1,)
     @test eltype(ex) == Tuple{Float, ID{OID{Index{CPID{Int}, SID{1}}, SVector{1, Float}}, 2}}
     @test collect(ex) == [(2.0, ID(
@@ -120,8 +120,8 @@ end
 
     sc = SpinCoupling(2.0, ('+', '-', '+', '-'), orbitals=subscripts"[α α β β](α < β)")
     point = Point(PID(1), [0.0], [0.0])
-    spin = Spin{1}(norbital=3)
-    ex = expand(sc, (point, point, point, point), (spin, spin, spin, spin), Val(:info))
+    config = Config{Spin{1}}(pid->Spin{1}(norbital=3), [point.pid])
+    ex = expand(sc, point, config, Val(:info))
     @test eltype(ex) == Tuple{Float, ID{OID{Index{PID, SID{1}}, SVector{1, Float}}, 4}}
     @test Dims(ex) == (3,)
     @test collect(ex) == [

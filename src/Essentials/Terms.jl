@@ -582,9 +582,7 @@ function Base.repr(term::Term, bond::AbstractBond, config::Config)
         value = term.value * term.amplitude(bond) * term.factor
         if abs(value) ≠ 0
             for coupling in values(term.couplings(bond))
-                points = couplingpoints(coupling, bond, term|>kind|>Val)
-                internals = couplinginternals(coupling, bond, config, term|>kind|>Val)
-                length(expand(coupling, points, internals, term|>kind|>Val))>0 &&  push!(cache, @sprintf "%s: %s" abbr(term) repr(value*coupling))
+                length(expand(coupling, bond, config, term|>kind|>Val))>0 &&  push!(cache, @sprintf "%s: %s" abbr(term) repr(value*coupling))
             end
         end
     end
@@ -667,9 +665,7 @@ function expand!(operators::Operators, term::Term, bond::AbstractBond, config::C
             optype = otype(term|>typeof, config|>typeof, bond|>typeof)
             record = (isnothing(hermitian) && length(operators)>0) ? Set{optype|>idtype}() : nothing
             for coupling in values(term.couplings(bond))
-                points = couplingpoints(coupling, bond, term|>kind|>Val)
-                internals = couplinginternals(coupling, bond, config, term|>kind|>Val)
-                for (coeff, id) in expand(coupling, points, internals, term|>kind|>Val)
+                for (coeff, id) in expand(coupling, bond, config, term|>kind|>Val)
                     !isnothing(table) && !all(haskey(table, id)) && continue
                     if hermitian == true
                         add!(operators, rawtype(optype)(convert(optype|>valtype, value*coeff/(half ? 2 : 1)), id))

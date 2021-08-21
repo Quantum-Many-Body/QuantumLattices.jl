@@ -2,7 +2,7 @@ using Test
 using StaticArrays: SVector
 using QuantumLattices.Essentials.FockPackage
 using QuantumLattices.Essentials.Spatials: Bond, Point, AbstractPID, PID, CPID, rcoord, azimuthd
-using QuantumLattices.Essentials.DegreesOfFreedom: Index, Config, OID, Operator, Operators, script, latexname, isHermitian
+using QuantumLattices.Essentials.DegreesOfFreedom: Index, Config, AbstractCompositeOID, OID, Operator, Operators, script, latexname, isHermitian
 using QuantumLattices.Essentials.Terms: Couplings, Subscripts, @subscripts_str, SubID, abbr
 using QuantumLattices.Interfaces: ⊗, ⋅, expand, permute, rank
 using QuantumLattices.Prerequisites: Float
@@ -45,9 +45,9 @@ end
     @test script(Val(:nambu), Index(PID(1), FID{:f}(2, 3, 2))) == "\\dagger"
 
     @test latexname(Index{<:AbstractPID, FID{:f}}) == Symbol("Index{AbstractPID, FID{:f}}")
-    @test latexname(OID{Index{<:AbstractPID, FID{:f}}}) == Symbol("OID{Index{AbstractPID, FID{:f}}}")
+    @test latexname(AbstractCompositeOID{Index{<:AbstractPID, FID{:f}}}) == Symbol("AbstractCompositeOID{Index{AbstractPID, FID{:f}}}")
     @test latexname(Index{<:AbstractPID, FID{:b}}) == Symbol("Index{AbstractPID, FID{:b}}")
-    @test latexname(OID{Index{<:AbstractPID, FID{:b}}}) == Symbol("OID{Index{AbstractPID, FID{:b}}}")
+    @test latexname(AbstractCompositeOID{Index{<:AbstractPID, FID{:b}}}) == Symbol("AbstractCompositeOID{Index{AbstractPID, FID{:b}}}")
 end
 
 @testset "angle" begin
@@ -135,13 +135,13 @@ end
 
     fc = FockCoupling{2}(2.0, atoms=(1, 1))
     point = Point(PID(1), SVector(0.0, 0.0), SVector(0.0, 0.0))
-    fock = Fock{:f}(atom=2, norbital=2, nspin=2, nnambu=2)
-    @test collect(expand(fc, (point, point), (fock, fock), Val(:info))) == []
+    config = Config{Fock{:f}}(pid->Fock{:f}(atom=2, norbital=2, nspin=2, nnambu=2), [point.pid])
+    @test collect(expand(fc, point, config, Val(:info))) == []
 
     fc = FockCoupling{2}(2.0, atoms=(1, 2), orbitals=(1, 2), nambus=(2, 1))
-    p₁, p₂ = Point(CPID(1, 1), SVector(0.0), SVector(0.0)), Point(CPID(1, 2), SVector(0.5), SVector(0.0))
-    f₁, f₂ = Fock{:f}(atom=1, norbital=2, nspin=2, nnambu=2), Fock{:f}(atom=2, norbital=2, nspin=2, nnambu=2)
-    ex = expand(fc, (p₁, p₂), (f₁, f₂), Val(:info))
+    bond = Bond(1, Point(CPID(1, 2), SVector(0.5), SVector(0.0)), Point(CPID(1, 1), SVector(0.0), SVector(0.0)))
+    config = Config{Fock{:f}}(pid->Fock{:f}(atom=(pid.site+1)%2+1, norbital=2, nspin=2, nnambu=2), [bond.epoint.pid, bond.spoint.pid])
+    ex = expand(fc, bond, config, Val(:Hopping))
     @test eltype(ex) == Tuple{Float, ID{OID{Index{CPID{Int}, FID{:f}}, SVector{1, Float}}, 2}}
     @test Dims(ex) == (1, 2)
     @test collect(ex) == [
@@ -151,8 +151,8 @@ end
 
     fc = FockCoupling{4}(2.0, spins=(2, 2, 1, 1), nambus=(2, 1, 2, 1))
     point = Point(PID(1), SVector(0.0), SVector(0.0))
-    fock = Fock{:b}(atom=1, norbital=2, nspin=2, nnambu=2)
-    ex = expand(fc, (point, point, point, point), (fock, fock, fock, fock), Val(:info))
+    config = Config{Fock{:b}}(pid->Fock{:b}(atom=1, norbital=2, nspin=2, nnambu=2), [point.pid])
+    ex = expand(fc, point, config, Val(:info))
     @test eltype(ex) == Tuple{Float, ID{OID{Index{PID, FID{:b}}, SVector{1, Float}}, 4}}
     @test Dims(ex) == (2, 1)
     @test collect(ex) == [
@@ -170,8 +170,8 @@ end
 
     fc = FockCoupling{4}(2.0, orbitals=subscripts"[α α β β](α < β)", spins=(2, 1, 1, 2), nambus=(2, 2, 1, 1))
     point = Point(PID(1), SVector(0.5), SVector(0.0))
-    fock = Fock{:f}(atom=1, norbital=3, nspin=2, nnambu=2)
-    ex = expand(fc, (point, point, point, point), (fock, fock, fock, fock), Val(:info))
+    config = Config{Fock{:f}}(pid->Fock{:f}(atom=1, norbital=3, nspin=2, nnambu=2), [point.pid])
+    ex = expand(fc, point, config, Val(:info))
     @test Dims(ex) == (3, 1)
     @test collect(ex) == [
         (2.0, ID(OID(Index(PID(1), FID{:f}(1, 2, 2)), SVector(0.5), SVector(0.0)),
@@ -194,8 +194,8 @@ end
     fc₁ = FockCoupling{2}(+1.0, spins=(2, 2), nambus=(2, 1))
     fc₂ = FockCoupling{2}(-1.0, spins=(1, 1), nambus=(2, 1))
     point = Point(CPID(1, 1), SVector(0.0), SVector(0.0))
-    fock = Fock{:f}(atom=1, norbital=2, nspin=2, nnambu=2)
-    ex = expand(fc₁*fc₂, (point, point, point, point), (fock, fock, fock, fock), Val(:info))
+    config = Config{Fock{:f}}(pid->Fock{:f}(atom=1, norbital=2, nspin=2, nnambu=2), [point.pid])
+    ex = expand(fc₁*fc₂, point, config, Val(:info))
     @test Dims(ex) == (4, 1)
     @test collect(ex) == [
         (-1.0, ID(OID(Index(CPID(1, 1), FID{:f}(1, 2, 2)), SVector(0.0), SVector(0.0)),

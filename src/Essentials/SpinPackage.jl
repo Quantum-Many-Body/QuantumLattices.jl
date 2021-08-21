@@ -4,7 +4,7 @@ using StaticArrays: SVector
 using Printf: @printf, @sprintf
 using ..Spatials: AbstractPID, Point, Bond, AbstractBond
 using ..DegreesOfFreedom: IID, Internal, Index, OID, AbstractCompositeOID, OIDToTuple, Operator, LaTeX, latexformat, Config
-using ..Terms: wildcard, Subscripts, SubID, subscriptsexpr, Coupling, Couplings, Term, TermCouplings, TermAmplitude, TermModulate
+using ..Terms: wildcard, Subscripts, SubID, subscriptsexpr, Coupling, Couplings, couplingpoints, couplinginternals, Term, TermCouplings, TermAmplitude, TermModulate
 using ...Essentials: kind
 using ...Prerequisites: Float, decimaltostr, delta
 using ...Prerequisites.Traits: rawtype
@@ -123,9 +123,9 @@ The default LaTeX format for a spin oid.
 """
 const soptdefaultlatex = LaTeX{(:tag,), (:site, :orbital)}('S')
 @inline latexname(::Type{<:Index{<:AbstractPID, <:SID}}) = Symbol("Index{AbstractPID, SID}")
-@inline latexname(::Type{<:OID{<:Index{<:AbstractPID, <:SID}}}) = Symbol("OID{Index{AbstractPID, SID}}")
+@inline latexname(::Type{<:AbstractCompositeOID{<:Index{<:AbstractPID, <:SID}}}) = Symbol("AbstractCompositeOID{Index{AbstractPID, SID}}")
 latexformat(Index{<:AbstractPID, <:SID}, soptdefaultlatex)
-latexformat(OID{<:Index{<:AbstractPID, <:SID}}, soptdefaultlatex)
+latexformat(AbstractCompositeOID{<:Index{<:AbstractPID, <:SID}}, soptdefaultlatex)
 
 """
     usualspinindextotuple
@@ -272,12 +272,14 @@ Get the multiplication between two spin couplings.
 end
 
 """
-    expand(sc::SpinCoupling, points::NTuple{R, Point}, spins::NTuple{R, Spin}, ::Val) where R  -> Union{SCExpand, Tuple{}}
+    expand(sc::SpinCoupling, bond::AbstractBond, config::Config, info::Val) -> Union{SCExpand, Tuple{}}
 
 Expand a spin coupling with the given set of points and spin degrees of freedom.
 """
-function expand(sc::SpinCoupling, points::NTuple{R, Point}, spins::NTuple{R, Spin}, ::Val) where R
-    @assert rank(sc)==R "expand error: dismatched rank."
+function expand(sc::SpinCoupling, bond::AbstractBond, config::Config, info::Val)
+    points = couplingpoints(sc, bond, info)
+    spins = couplinginternals(sc, bond, config, info)
+    @assert rank(sc)==length(points)==length(spins) "expand error: dismatched rank."
     for (i, atom) in enumerate(sc.atoms)
         isa(atom, Int) && atom≠spins[i].atom && return ()
     end

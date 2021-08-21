@@ -33,13 +33,14 @@ struct TCoupling{V<:Number, I<:ID{TCID}} <: Coupling{V, I}
 end
 @inline Base.repr(tc::TCoupling) = @sprintf "%s ph(%s)" decimaltostr(tc.value) join(tc.id.nambus, ", ")
 @inline couplingcenters(::TCoupling, ::Bond, ::Val) = (1, 2)
-function expand(tc::TCoupling, points::NTuple{N, Point}, internals::NTuple{N, Internal}, ::Val) where N
-    @assert rank(tc)==N
+function expand(tc::TCoupling, bond::AbstractBond, config::Config, info::Val)
+    points = couplingpoints(tc, bond, info)
+    @assert rank(tc)==length(points)
     nambus = tc.id.nambus
-    pids = NTuple{N, pidtype(points|>eltype)}(points[i].pid for i = 1:N)
-    rcoords = NTuple{N, SVector{dimension(points|>eltype), Float}}(points[i].rcoord for i = 1:N)
-    icoords = NTuple{N, SVector{dimension(points|>eltype), Float}}(points[i].icoord for i = 1:N)
-    indexes = NTuple{N, Index{pidtype(points|>eltype), TID}}(Index(pids[i], TID(nambus[i])) for i = 1:N)
+    pids = NTuple{rank(tc), pidtype(points|>eltype)}(points[i].pid for i = 1:rank(tc))
+    rcoords = NTuple{rank(tc), SVector{dimension(points|>eltype), Float}}(points[i].rcoord for i = 1:rank(tc))
+    icoords = NTuple{rank(tc), SVector{dimension(points|>eltype), Float}}(points[i].icoord for i = 1:rank(tc))
+    indexes = NTuple{rank(tc), Index{pidtype(points|>eltype), TID}}(Index(pids[i], TID(nambus[i])) for i = 1:rank(tc))
     return ((tc.value, ID(OID, indexes, rcoords, icoords)),)
 end
 
