@@ -269,20 +269,18 @@ end
 
 """
     FockCoupling{N}(value::Number=1;
-        atoms::Union{NTuple{N, Int}, Nothing}=nothing,
-        nambus::Union{NTuple{N, Int}, Nothing}=nothing,
-        orbitals::Union{NTuple{N, Int}, Subscripts, Nothing}=nothing,
-        spins::Union{NTuple{N, Int}, Subscripts, Nothing}=nothing
+        atoms::NTuple{N, Union{Int, Symbol}}=ntuple(i->wildcard, Val(N)),
+        nambus::NTuple{N, Union{Int, Symbol}}=ntuple(i->wildcard, Val(N)),
+        orbitals::Union{NTuple{N, Int}, Subscripts}=Subscripts(N),
+        spins::Union{NTuple{N, Int}, Subscripts}=Subscripts(N)
         ) where N
 """
 function FockCoupling{N}(value::Number=1;
-        atoms::Union{NTuple{N, Int}, Nothing}=nothing,
-        nambus::Union{NTuple{N, Int}, Nothing}=nothing,
-        orbitals::Union{Int, NTuple{N, Int}, Subscripts}=N,
-        spins::Union{Int, NTuple{N, Int}, Subscripts}=N
+        atoms::NTuple{N, Union{Int, Symbol}}=ntuple(i->wildcard, Val(N)),
+        nambus::NTuple{N, Union{Int, Symbol}}=ntuple(i->wildcard, Val(N)),
+        orbitals::Union{NTuple{N, Int}, Subscripts}=Subscripts(N),
+        spins::Union{NTuple{N, Int}, Subscripts}=Subscripts(N)
         ) where N
-    isnothing(atoms) && (atoms = ntuple(i->wildcard, Val(N)))
-    isnothing(nambus) && (nambus = ntuple(i->wildcard, Val(N)))
     isa(orbitals, Subscripts) || (orbitals = Subscripts(orbitals))
     isa(spins, Subscripts) || (spins = Subscripts(spins))
     return FockCoupling(value, atoms, nambus, orbitals, spins)

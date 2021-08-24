@@ -219,18 +219,17 @@ end
 """
     SpinCoupling(value::Number,
         tags::NTuple{N, Char};
-        atoms::Union{NTuple{N, Int}, Nothing}=nothing,
-        orbitals::Union{NTuple{N, Int}, Subscripts, Nothing}=nothing
+        atoms::NTuple{N, Union{Int, Symbol}}=ntuple(i->wildcard, Val(N)),
+        orbitals::Union{NTuple{N, Int}, Subscripts}=Subscripts(N)
         ) where N
 
 Spin coupling.
 """
 function SpinCoupling(value::Number,
         tags::NTuple{N, Char};
-        atoms::Union{NTuple{N, Int}, Nothing}=nothing,
-        orbitals::Union{Int, NTuple{N, Int}, Subscripts}=N
+        atoms::NTuple{N, Union{Int, Symbol}}=ntuple(i->wildcard, Val(N)),
+        orbitals::Union{NTuple{N, Int}, Subscripts}=Subscripts(N)
         ) where N
-    isnothing(atoms) && (atoms = ntuple(i->wildcard, Val(N)))
     isa(orbitals, Subscripts) || (orbitals = Subscripts(orbitals))
     return SpinCoupling(value, tags, atoms, orbitals)
 end
@@ -314,11 +313,11 @@ end
 end
 
 """
-    Heisenberg(mode::String="+-z"; atoms::Union{NTuple{2, Int}, Nothing}=nothing, orbitals::Union{Int, NTuple{2, Int}, Subscripts}=2) -> Couplings
+    Heisenberg(mode::String="+-z"; atoms::NTuple{2, Union{Symbol, Int}}=(wildcard, wildcard), orbitals::Union{NTuple{2, Int}, Subscripts}=Subscripts(2)) -> Couplings
 
 The Heisenberg couplings.
 """
-function Heisenberg(mode::String="+-z"; atoms::Union{NTuple{2, Int}, Nothing}=nothing, orbitals::Union{Int, NTuple{2, Int}, Subscripts}=2)
+function Heisenberg(mode::String="+-z"; atoms::NTuple{2, Union{Symbol, Int}}=(wildcard, wildcard), orbitals::Union{NTuple{2, Int}, Subscripts}=Subscripts(2))
     @assert mode=="+-z" || mode=="xyz" "Heisenberg error: not supported mode($mode)."
     if mode == "+-z"
         sc₁ = SpinCoupling(1//2, ('+', '-'), atoms=atoms, orbitals=orbitals)
@@ -333,21 +332,21 @@ function Heisenberg(mode::String="+-z"; atoms::Union{NTuple{2, Int}, Nothing}=no
 end
 
 """
-    Ising(tag::Char; atoms::Union{NTuple{2, Int}, Nothing}=nothing, orbitals::Union{Int, NTuple{2, Int}, Subscripts}=2) -> Couplings
+    Ising(tag::Char; atoms::NTuple{2, Union{Symbol, Int}}=(wildcard, wildcard), orbitals::Union{NTuple{2, Int}, Subscripts}=Subscripts(2)) -> Couplings
 
 The Ising couplings.
 """
-@inline function Ising(tag::Char; atoms::Union{NTuple{2, Int}, Nothing}=nothing, orbitals::Union{Int, NTuple{2, Int}, Subscripts}=2)
+@inline function Ising(tag::Char; atoms::NTuple{2, Union{Symbol, Int}}=(wildcard, wildcard), orbitals::Union{NTuple{2, Int}, Subscripts}=Subscripts(2))
     @assert tag in ('x', 'y', 'z') "Ising error: not supported input tag($tag)."
     return Couplings(SpinCoupling(1, (tag, tag), atoms=atoms, orbitals=orbitals))
 end
 
 """
-    Gamma(tag::Char; atoms::Union{NTuple{2, Int}, Nothing}=nothing, orbitals::Union{Int, NTuple{2, Int}, Subscripts}=2) -> Couplings
+    Gamma(tag::Char; atoms::NTuple{2, Union{Symbol, Int}}=(wildcard, wildcard), orbitals::Union{NTuple{2, Int}, Subscripts}=Subscripts(2)) -> Couplings
 
 The Gamma couplings.
 """
-function Gamma(tag::Char; atoms::Union{NTuple{2, Int}, Nothing}=nothing, orbitals::Union{Int, NTuple{2, Int}, Subscripts}=2)
+function Gamma(tag::Char; atoms::NTuple{2, Union{Symbol, Int}}=(wildcard, wildcard), orbitals::Union{NTuple{2, Int}, Subscripts}=Subscripts(2))
     @assert tag in ('x', 'y', 'z') "Gamma error: not supported input tag($tag)."
     t₁, t₂ = tag=='x' ? ('y', 'z') : tag=='y' ? ('z', 'x') : ('x', 'y')
     sc₁ = SpinCoupling(1, (t₁, t₂), atoms=atoms, orbitals=orbitals)
@@ -356,11 +355,11 @@ function Gamma(tag::Char; atoms::Union{NTuple{2, Int}, Nothing}=nothing, orbital
 end
 
 """
-    DM(tag::Char; atoms::Union{NTuple{2, Int}, Nothing}=nothing, orbitals::Union{Int, NTuple{2, Int}, Subscripts}=2) -> Couplings
+    DM(tag::Char; atoms::NTuple{2, Union{Symbol, Int}}=(wildcard, wildcard), orbitals::Union{NTuple{2, Int}, Subscripts}=Subscripts(2)) -> Couplings
 
 The DM couplings.
 """
-function DM(tag::Char; atoms::Union{NTuple{2, Int}, Nothing}=nothing, orbitals::Union{Int, NTuple{2, Int}, Subscripts}=2)
+function DM(tag::Char; atoms::NTuple{2, Union{Symbol, Int}}=(wildcard, wildcard), orbitals::Union{NTuple{2, Int}, Subscripts}=Subscripts(2))
     @assert tag in ('x', 'y', 'z') "DM error: not supported input tag($tag)."
     t₁, t₂ = tag=='x' ? ('y', 'z') : tag=='y' ? ('z', 'x') : ('x', 'y')
     sc₁ = SpinCoupling(+1, (t₁, t₂), atoms=atoms, orbitals=orbitals)
@@ -368,34 +367,33 @@ function DM(tag::Char; atoms::Union{NTuple{2, Int}, Nothing}=nothing, orbitals::
     return Couplings(sc₁, sc₂)
 end
 
-@inline atomwrapper(::Nothing) = nothing
-@inline atomwrapper(value::Int) = (value,)
-@inline orbitalwrapper(::Nothing) = 1
+@inline atomwrapper(value) = (value,)
 @inline orbitalwrapper(value::Int) = (value,)
+@inline orbitalwrapper(::Symbol) = Subscripts(1)
 """
-    Sˣ(; atom::Union{Int, Nothing}=nothing, orbital::Union{Int, Nothing}=nothing) -> Couplings
+    Sˣ(; atom::Union{Int, Symbol}=wildcard, orbital::Union{Int, Symbol}=wildcard) -> Couplings
 
 The single Sˣ coupling.
 """
-@inline function Sˣ(; atom::Union{Int, Nothing}=nothing, orbital::Union{Int, Nothing}=nothing)
+@inline function Sˣ(; atom::Union{Int, Symbol}=wildcard, orbital::Union{Int, Symbol}=wildcard)
     Couplings(SpinCoupling(1, ('x',), atoms=atomwrapper(atom), orbitals=orbitalwrapper(orbital)))
 end
 
 """
-    Sʸ(; atom::Union{Int, Nothing}=nothing, orbital::Union{Int, Nothing}=nothing) -> Couplings
+    Sʸ(; atom::Union{Int, Symbol}=wildcard, orbital::Union{Int, Symbol}=wildcard) -> Couplings
 
 The single Sʸ coupling.
 """
-@inline function Sʸ(; atom::Union{Int, Nothing}=nothing, orbital::Union{Int, Nothing}=nothing)
+@inline function Sʸ(; atom::Union{Int, Symbol}=wildcard, orbital::Union{Int, Symbol}=wildcard)
     Couplings(SpinCoupling(1, ('y',), atoms=atomwrapper(atom), orbitals=orbitalwrapper(orbital)))
 end
 
 """
-    Sᶻ(; atom::Union{Int, Nothing}=nothing, orbital::Union{Int, Nothing}=nothing) -> Couplings
+    Sᶻ(; atom::Union{Int, Symbol}=wildcard, orbital::Union{Int, Symbol}=wildcard) -> Couplings
 
 The single Sᶻ coupling.
 """
-@inline function Sᶻ(; atom::Union{Int, Nothing}=nothing, orbital::Union{Int, Nothing}=nothing)
+@inline function Sᶻ(; atom::Union{Int, Symbol}=wildcard, orbital::Union{Int, Symbol}=wildcard)
     Couplings(SpinCoupling(1, ('z',), atoms=atomwrapper(atom), orbitals=orbitalwrapper(orbital)))
 end
 
