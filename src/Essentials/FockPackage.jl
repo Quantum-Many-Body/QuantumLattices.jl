@@ -82,14 +82,13 @@ Create a Fock id.
 The Fock interanl degrees of freedom.
 """
 struct Fock{ST} <: Internal{FID{ST}}
-    atom::Int
     norbital::Int
     nspin::Int
     nnambu::Int
-    function Fock{ST}(atom::Int, norbital::Int, nspin::Int, nnambu::Int) where ST
+    function Fock{ST}(norbital::Int, nspin::Int, nnambu::Int) where ST
         @assert ST∈(:f, :b) "Fock error: wrong statistics."
         @assert nnambu∈(1, 2) "Fock error: wrong input nnambu($nnambu)."
-        new{ST}(atom, norbital, nspin, nnambu)
+        new{ST}(norbital, nspin, nnambu)
     end
 end
 @inline Base.Dims(fock::Fock) = (fock.norbital, fock.nspin, fock.nnambu)
@@ -100,11 +99,11 @@ Base.summary(io::IO, fock::Fock) = @printf io "%s-element Fock{%s}" length(fock)
 @inline statistics(::Type{Fock{ST}}) where ST = ST
 
 """
-    Fock{ST}(; atom::Int=1, norbital::Int=1, nspin::Int=2, nnambu::Int=2) where ST
+    Fock{ST}(; norbital::Int=1, nspin::Int=2, nnambu::Int=2) where ST
 
 Construct a Fock degrees of freedom.
 """
-@inline Fock{ST}(; atom::Int=1, norbital::Int=1, nspin::Int=2, nnambu::Int=2) where ST = Fock{ST}(atom, norbital, nspin, nnambu)
+@inline Fock{ST}(; norbital::Int=1, nspin::Int=2, nnambu::Int=2) where ST = Fock{ST}(norbital, nspin, nnambu)
 
 """
     script(::Val{:site}, index::Index{<:AbstractPID, <:FID}; kwargs...) -> Int
@@ -228,62 +227,57 @@ function permute(id₁::OID{<:Index{<:AbstractPID, FID{:b}}}, id₂::OID{<:Index
 end
 
 """
-    FCID{A<:Tuple, N<:Tuple} <: SimpleID
+    FCID{N<:Tuple} <: SimpleID
 
-The id of the atoms and nambus part of a Fock coupling.
+The id of the nambus part of a Fock coupling.
 """
-struct FCID{A<:Tuple, N<:Tuple} <: SimpleID
-    atoms::A
+struct FCID{N<:Tuple} <: SimpleID
     nambus::N
 end
 
 """
-    FockCoupling{V, A<:Tuple, N<:Tuple, O<:Subscripts, S<:Subscripts, I<:Tuple{FCID, SubID, SubID}} <: Coupling{V, I}
+    FockCoupling{V, N<:Tuple, O<:Subscripts, S<:Subscripts, I<:Tuple{FCID, SubID, SubID}} <: Coupling{V, I}
 
 Fock coupling.
 """
-struct FockCoupling{V, A<:Tuple, N<:Tuple, O<:Subscripts, S<:Subscripts, I<:Tuple{FCID, SubID, SubID}} <: Coupling{V, I}
+struct FockCoupling{V, N<:Tuple, O<:Subscripts, S<:Subscripts, I<:Tuple{FCID, SubID, SubID}} <: Coupling{V, I}
     value::V
-    atoms::A
     nambus::N
     orbitals::O
     spins::S
-    function FockCoupling(value::Number, atoms::Tuple, nambus::Tuple, orbitals::Subscripts, spins::Subscripts)
-        @assert length(atoms)==length(nambus)==length(orbitals)==length(spins) "FockCoupling error: dismatched atoms, nambus orbitals and spins."
-        fcid, obid, spid = FCID(atoms, nambus), SubID(orbitals), SubID(spins)
-        V, A, N, O, S, I = typeof(value), typeof(atoms), typeof(nambus), typeof(orbitals), typeof(spins),Tuple{typeof(fcid), typeof(obid), typeof(spid)}
-        new{V, A, N, O, S, I}(value, atoms, nambus, orbitals, spins)
+    function FockCoupling(value::Number, nambus::Tuple, orbitals::Subscripts, spins::Subscripts)
+        @assert length(nambus)==length(orbitals)==length(spins) "FockCoupling error: dismatched nambus, orbitals and spins."
+        fcid, obid, spid = FCID(nambus), SubID(orbitals), SubID(spins)
+        V, N, O, S, I = typeof(value), typeof(nambus), typeof(orbitals), typeof(spins),Tuple{typeof(fcid), typeof(obid), typeof(spid)}
+        new{V, N, O, S, I}(value, nambus, orbitals, spins)
     end
 end
-@inline parameternames(::Type{<:FockCoupling}) = (:value, :atoms, :nambus, :orbitals, :spins, :id)
-@inline isparameterbound(::Type{<:FockCoupling}, ::Val{:atoms}, ::Type{A}) where {A<:Tuple} = !isconcretetype(A)
+@inline parameternames(::Type{<:FockCoupling}) = (:value, :nambus, :orbitals, :spins, :id)
 @inline isparameterbound(::Type{<:FockCoupling}, ::Val{:nambus}, ::Type{N}) where {N<:Tuple} = !isconcretetype(N)
 @inline isparameterbound(::Type{<:FockCoupling}, ::Val{:orbitals}, ::Type{O}) where {O<:Subscripts} = !isconcretetype(O)
 @inline isparameterbound(::Type{<:FockCoupling}, ::Val{:spins}, ::Type{S}) where {S<:Subscripts} = !isconcretetype(S)
 @inline contentnames(::Type{<:FockCoupling}) = (:value, :id, :orbitals, :spins)
-@inline getcontent(fc::FockCoupling, ::Val{:id}) = ID(FCID(fc.atoms, fc.nambus), SubID(fc.orbitals), SubID(fc.spins))
+@inline getcontent(fc::FockCoupling, ::Val{:id}) = ID(FCID(fc.nambus), SubID(fc.orbitals), SubID(fc.spins))
 @inline function FockCoupling(value::Number, id::Tuple{FCID, SubID, SubID}, orbitals::Subscripts, spins::Subscripts)
-    FockCoupling(value, id[1].atoms, id[1].nambus, orbitals, spins)
+    FockCoupling(value, id[1].nambus, orbitals, spins)
 end
-@inline rank(::Type{<:FockCoupling{V, A} where V}) where A = fieldcount(A)
+@inline rank(::Type{<:FockCoupling{V, N} where V}) where N = fieldcount(N)
 
 """
     FockCoupling{N}(value::Number=1;
-        atoms::NTuple{N, Union{Int, Symbol}}=ntuple(i->wildcard, Val(N)),
         nambus::NTuple{N, Union{Int, Symbol}}=ntuple(i->wildcard, Val(N)),
         orbitals::Union{NTuple{N, Int}, Subscripts}=Subscripts(N),
         spins::Union{NTuple{N, Int}, Subscripts}=Subscripts(N)
         ) where N
 """
 function FockCoupling{N}(value::Number=1;
-        atoms::NTuple{N, Union{Int, Symbol}}=ntuple(i->wildcard, Val(N)),
         nambus::NTuple{N, Union{Int, Symbol}}=ntuple(i->wildcard, Val(N)),
         orbitals::Union{NTuple{N, Int}, Subscripts}=Subscripts(N),
         spins::Union{NTuple{N, Int}, Subscripts}=Subscripts(N)
         ) where N
     isa(orbitals, Subscripts) || (orbitals = Subscripts(orbitals))
     isa(spins, Subscripts) || (spins = Subscripts(spins))
-    return FockCoupling(value, atoms, nambus, orbitals, spins)
+    return FockCoupling(value, nambus, orbitals, spins)
 end
 
 """
@@ -293,7 +287,6 @@ Show a Fock coupling.
 """
 function Base.show(io::IO, fc::FockCoupling)
     @printf io "FockCoupling{%s}(value=%s" rank(fc) decimaltostr(fc.value)
-    any(fc.atoms .≠ wildcard) && @printf io ", atoms=[%s]" join(fc.atoms, " ")
     any(fc.nambus .≠ wildcard) && @printf io ", nambus=[%s]" join(fc.nambus, " ")
     any(fc.orbitals .≠ wildcard) && @printf io ", orbitals=%s" string(fc.orbitals)
     any(fc.spins .≠ wildcard) && @printf io ", spins=%s" string(fc.spins)
@@ -307,7 +300,6 @@ Get the repr representation of a Fock coupling.
 """
 function Base.repr(fc::FockCoupling)
     contents = String[]
-    any(fc.atoms .≠ wildcard) && push!(contents, @sprintf "sl[%s]" join(fc.atoms, " "))
     any(fc.nambus .≠ wildcard) && push!(contents, @sprintf "ph[%s]" join(fc.nambus, " "))
     any(fc.orbitals .≠ wildcard) && push!(contents, @sprintf "ob%s" fc.orbitals)
     any(fc.spins .≠ wildcard) && push!(contents, @sprintf "sp%s" fc.spins)
@@ -323,7 +315,7 @@ end
 Get the multiplication between two Fock couplings.
 """
 @inline function Base.:*(fc₁::FockCoupling, fc₂::FockCoupling)
-    return FockCoupling(fc₁.value*fc₂.value, (fc₁.atoms..., fc₂.atoms...), (fc₁.nambus..., fc₂.nambus...), fc₁.orbitals*fc₂.orbitals, fc₁.spins*fc₂.spins)
+    return FockCoupling(fc₁.value*fc₂.value, (fc₁.nambus..., fc₂.nambus...), fc₁.orbitals*fc₂.orbitals, fc₁.spins*fc₂.spins)
 end
 
 """
@@ -334,11 +326,10 @@ Get the direct product between two Fock couplings.
 function ⊗(fc₁::FockCoupling, fc₂::FockCoupling)
     @assert rank(fc₁)==rank(fc₂) "⊗ error: dismatched rank."
     wildcards = NTuple{rank(fc₁), Symbol}(wildcard for i = 1:rank(fc₁))
-    atoms = fockcouplingchoicerule(fc₁.atoms, fc₂.atoms, wildcards, :atoms)
     nambus = fockcouplingchoicerule(fc₁.nambus, fc₂.nambus, wildcards, :nambus)
     orbitals = fockcouplingchoicerule(fc₁.orbitals, fc₂.orbitals, wildcards, :orbitals)
     spins = fockcouplingchoicerule(fc₁.spins, fc₂.spins, wildcards, :spins)
-    return FockCoupling(fc₁.value*fc₂.value, atoms, nambus, orbitals, spins)
+    return FockCoupling(fc₁.value*fc₂.value, nambus, orbitals, spins)
 end
 function fockcouplingchoicerule(v₁, v₂, wildcards::Tuple{Vararg{Symbol}}, field::Symbol)
     t₁, t₂ = all(v₁ .== wildcards), all(v₂ .== wildcards)
@@ -359,7 +350,7 @@ function ⋅(fc₁::FockCoupling, fc₂::FockCoupling)
     attrpairs = []
     value = fc₁.value * fc₂.value
     wildcards = (wildcard, wildcard)
-    for attrname in (:atoms, :orbitals, :spins, :nambus)
+    for attrname in (:orbitals, :spins, :nambus)
         v₁ = (getproperty(fc₁, attrname)[1], getproperty(fc₁, attrname)[2])
         v₂ = (getproperty(fc₂, attrname)[1], getproperty(fc₂, attrname)[2])
         if isa(v₁, NTuple{2, Int}) && isa(v₂, NTuple{2, Int})
@@ -373,7 +364,7 @@ function ⋅(fc₁::FockCoupling, fc₂::FockCoupling)
 end
 
 """
-    expand(fc::FockCoupling, bond::AbstractBond, config::Config, info::Val) -> Union{FCExpand, Tuple{}}
+    expand(fc::FockCoupling, bond::AbstractBond, config::Config, info::Val) -> FCExpand
 
 Expand a Fock coupling with the given bond and the config of the Fock degrees of freedom.
 """
@@ -381,9 +372,6 @@ function expand(fc::FockCoupling, bond::AbstractBond, config::Config, info::Val)
     points = couplingpoints(fc, bond, info)
     focks = couplinginternals(fc, bond, config, info)
     @assert rank(fc)==length(points)==length(focks) "expand error: dismatched rank."
-    for (i, atom) in enumerate(fc.atoms)
-       isa(atom, Int) && atom≠focks[i].atom && return ()
-    end
     nambus = fockcouplingnambus(fc, NTuple{rank(fc), Int}(focks[i].nnambu for i = 1:rank(fc)), info)
     obexpands = collect(expand(fc.orbitals, NTuple{rank(fc), Int}(focks[i].norbital for i = 1:rank(fc))))
     spexpands = collect(expand(fc.spins, NTuple{rank(fc), Int}(focks[i].nspin for i = 1:rank(fc))))
@@ -424,11 +412,11 @@ end
     return Expr(:tuple, :(fce.value), Expr(:tuple, exprs...))
 end
 
-@inline σᵅname(mode) = mode=="sp" ? :spins : mode=="ob" ? :orbitals : mode=="sl" ? :atoms : mode=="ph" ? :nambus : error("σᵅname error: wrong input mode.")
+@inline σᵅname(mode) = mode=="sp" ? :spins : mode=="ob" ? :orbitals : mode=="ph" ? :nambus : error("σᵅname error: wrong input mode.")
 """
     σ⁰(mode::String) -> Couplings
 
-The Pauli matrix σ⁰, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
+The Pauli matrix σ⁰, which can act on the space of spins("sp"), orbitals("ob") or particle-holes("ph").
 """
 function σ⁰(mode::String)
     attrname = σᵅname(mode)
@@ -439,7 +427,7 @@ end
 """
     σˣ(mode::String) -> Couplings
 
-The Pauli matrix σˣ, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
+The Pauli matrix σˣ, which can act on the space of spins("sp"), orbitals("ob") or particle-holes("ph").
 """
 function σˣ(mode::String)
     attrname = σᵅname(mode)
@@ -450,7 +438,7 @@ end
 """
     σʸ(mode::String) -> Couplings
 
-The Pauli matrix σʸ, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
+The Pauli matrix σʸ, which can act on the space of spins("sp"), orbitals("ob") or particle-holes("ph").
 """
 function σʸ(mode::String)
     attrname = σᵅname(mode)
@@ -461,7 +449,7 @@ end
 """
     σᶻ(mode::String) -> Couplings
 
-The Pauli matrix σᶻ, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
+The Pauli matrix σᶻ, which can act on the space of spins("sp"), orbitals("ob") or particle-holes("ph").
 """
 function σᶻ(mode::String)
     attrname = σᵅname(mode)
@@ -472,7 +460,7 @@ end
 """
     σ⁺(mode::String) -> Couplings
 
-The Pauli matrix σ⁺, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
+The Pauli matrix σ⁺, which can act on the space of spins("sp"), orbitals("ob") or particle-holes("ph").
 """
 function σ⁺(mode::String)
     attrname = σᵅname(mode)
@@ -483,7 +471,7 @@ end
 """
     σ⁻(mode::String) -> Couplings
 
-The Pauli matrix σ⁻, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
+The Pauli matrix σ⁻, which can act on the space of spins("sp"), orbitals("ob") or particle-holes("ph").
 """
 function σ⁻(mode::String)
     attrname = σᵅname(mode)
@@ -520,8 +508,8 @@ end
 function fccomponent(str::AbstractString)
     attrname = σᵅname(str[1:2])
     expr = Meta.parse(str[3:end])
-    if attrname∈(:atoms, :nambus)
-        @assert expr.head∈(:hcat, :vect) "fccomponent error: wrong input pattern for atoms and nambus."
+    if attrname==:nambus
+        @assert expr.head∈(:hcat, :vect) "fccomponent error: wrong input pattern for nambus."
         attrvalue = Tuple(expr.args)
         N = length(attrvalue)
     else
@@ -535,60 +523,54 @@ end
 """
     σ⁰"sp" -> Couplings
     σ⁰"ob" -> Couplings
-    σ⁰"sl" -> Couplings
     σ⁰"ph" -> Couplings
 
-The Pauli matrix σ⁰, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
+The Pauli matrix σ⁰, which can act on the space of spins("sp"), orbitals("ob") or particle-holes("ph").
 """
 macro σ⁰_str(mode::String) σ⁰(mode) end
 
 """
     σˣ"sp" -> Couplings
     σˣ"ob" -> Couplings
-    σˣ"sl" -> Couplings
     σˣ"ph" -> Couplings
 
-The Pauli matrix σˣ, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
+The Pauli matrix σˣ, which can act on the space of spins("sp"), orbitals("ob") or particle-holes("ph").
 """
 macro σˣ_str(mode::String) σˣ(mode) end
 
 """
     σʸ"sp" -> Couplings
     σʸ"ob" -> Couplings
-    σʸ"sl" -> Couplings
     σʸ"ph" -> Couplings
 
-The Pauli matrix σʸ, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
+The Pauli matrix σʸ, which can act on the space of spins("sp"), orbitals("ob") or particle-holes("ph").
 """
 macro σʸ_str(mode::String) σʸ(mode) end
 
 """
     σᶻ"sp" -> Couplings
     σᶻ"ob" -> Couplings
-    σᶻ"sl" -> Couplings
     σᶻ"ph" -> Couplings
 
-The Pauli matrix σᶻ, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
+The Pauli matrix σᶻ, which can act on the space of spins("sp"), orbitals("ob") or particle-holes("ph").
 """
 macro σᶻ_str(mode::String) σᶻ(mode) end
 
 """
     σ⁺"sp" -> Couplings
     σ⁺"ob" -> Couplings
-    σ⁺"sl" -> Couplings
     σ⁺"ph" -> Couplings
 
-The Pauli matrix σ⁺, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
+The Pauli matrix σ⁺, which can act on the space of spins("sp"), orbitals("ob") or particle-holes("ph").
 """
 macro σ⁺_str(mode::String) σ⁺(mode) end
 
 """
     σ⁻"sp" -> Couplings
     σ⁻"ob" -> Couplings
-    σ⁻"sl" -> Couplings
     σ⁻"ph" -> Couplings
 
-The Pauli matrix σ⁻, which can act on the space of spins("sp"), orbitals("ob"), sublattices("sl") or particle-holes("ph").
+The Pauli matrix σ⁻, which can act on the space of spins("sp"), orbitals("ob") or particle-holes("ph").
 """
 macro σ⁻_str(mode::String) σ⁻(mode) end
 

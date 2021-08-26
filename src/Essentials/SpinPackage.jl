@@ -84,11 +84,10 @@ end
 The spin interanl degrees of freedom.
 """
 struct Spin{S} <: Internal{SID{S}}
-    atom::Int
     norbital::Int
-    function Spin{S}(atom::Int, norbital::Int) where S
+    function Spin{S}(norbital::Int) where S
         @assert isa(S, Rational{Int}) && S.den==2 || isa(S, Integer) "Spin error: not supported spin($S)."
-        new{S}(atom, norbital)
+        new{S}(norbital)
     end
 end
 @inline Base.Dims(sp::Spin) = (sp.norbital, length(sidtagmap))
@@ -99,11 +98,11 @@ Base.summary(io::IO, spin::Spin) = @printf io "%s-element Spin{%s}" length(spin)
 @inline totalspin(::Type{<:Spin{S}}) where S = S
 
 """
-    Spin{S}(; atom::Int=1, norbital::Int=1) where S
+    Spin{S}(; norbital::Int=1) where S
 
 Construct a spin degrees of freedom.
 """
-@inline Spin{S}(; atom::Int=1, norbital::Int=1) where S = Spin{S}(atom, norbital)
+@inline Spin{S}(; norbital::Int=1) where S = Spin{S}(norbital)
 
 """
     script(::Val{:site}, index::Index{<:AbstractPID, <:SID}; kwargs...) -> Int
@@ -176,50 +175,46 @@ end
 @inline permutesoid(id::OID{<:Index{<:AbstractPID, <:SID}}, tag::Char) = replace(id, index=replace(id.index, iid=replace(id.index.iid, tag=tag)))
 
 """
-    SCID{T<:Tuple{Vararg{Char}}, A<:Tuple} <: SimpleID
+    SCID{T<:Tuple{Vararg{Char}}} <: SimpleID
 
-The id of the tags and atoms part of a spin coupling.
+The id of the tags part of a spin coupling.
 """
-struct SCID{T<:Tuple{Vararg{Char}}, A<:Tuple} <: SimpleID
+struct SCID{T<:Tuple{Vararg{Char}}} <: SimpleID
     tags::T
-    atoms::A
-    function SCID(tags::NTuple{N, Char}, atoms::NTuple{N}) where N
+    function SCID(tags::NTuple{N, Char}) where N
         @assert mapreduce(∈(('x', 'y', 'z', '+', '-')), &, tags) "SCID error: not supported tags($tags)."
-        new{typeof(tags), typeof(atoms)}(tags, atoms)
+        new{typeof(tags)}(tags)
     end
 end
 
 """
-    SpinCoupling{V, T<:Tuple, A<:Tuple, O<:Subscripts, I<:Tuple{SCID, SubID}} <: Coupling{V, I}
+    SpinCoupling{V, T<:Tuple, O<:Subscripts, I<:Tuple{SCID, SubID}} <: Coupling{V, I}
 
 Spin coupling.
 """
-struct SpinCoupling{V, T<:Tuple, A<:Tuple, O<:Subscripts, I<:Tuple{SCID, SubID}} <: Coupling{V, I}
+struct SpinCoupling{V, T<:Tuple, O<:Subscripts, I<:Tuple{SCID, SubID}} <: Coupling{V, I}
     value::V
     tags::T
-    atoms::A
     orbitals::O
-    function SpinCoupling(value::Number, tags::Tuple{Vararg{Char}}, atoms::Tuple, orbitals::Subscripts)
-        @assert length(tags)==length(atoms)==length(orbitals) "SpinCoupling error: dismatched tags, atoms and orbitals."
-        scid, obid = SCID(tags, atoms), SubID(orbitals)
-        new{typeof(value), typeof(tags), typeof(atoms), typeof(orbitals), Tuple{typeof(scid), typeof(obid)}}(value, tags, atoms, orbitals)
+    function SpinCoupling(value::Number, tags::Tuple{Vararg{Char}}, orbitals::Subscripts)
+        @assert length(tags)==length(orbitals) "SpinCoupling error: dismatched tags and orbitals."
+        scid, obid = SCID(tags), SubID(orbitals)
+        new{typeof(value), typeof(tags), typeof(orbitals), Tuple{typeof(scid), typeof(obid)}}(value, tags, orbitals)
     end
 end
-@inline parameternames(::Type{<:SpinCoupling}) = (:value, :tags, :atoms, :orbitals, :id)
+@inline parameternames(::Type{<:SpinCoupling}) = (:value, :tags, :orbitals, :id)
 @inline isparameterbound(::Type{<:SpinCoupling}, ::Val{:tags}, ::Type{T}) where {T<:Tuple} = !isconcretetype(T)
-@inline isparameterbound(::Type{<:SpinCoupling}, ::Val{:atoms}, ::Type{A}) where {A<:Tuple} = !isconcretetype(A)
 @inline isparameterbound(::Type{<:SpinCoupling}, ::Val{:orbitals}, ::Type{O}) where {O<:Subscripts} = !isconcretetype(O)
 @inline contentnames(::Type{<:SpinCoupling}) = (:value, :id, :orbitals)
-@inline getcontent(sc::SpinCoupling, ::Val{:id}) = ID(SCID(sc.tags, sc.atoms), SubID(sc.orbitals))
+@inline getcontent(sc::SpinCoupling, ::Val{:id}) = ID(SCID(sc.tags), SubID(sc.orbitals))
 @inline function SpinCoupling(value::Number, id::Tuple{SCID, SubID}, orbitals::Subscripts)
-    SpinCoupling(value, id[1].tags, id[1].atoms, orbitals)
+    SpinCoupling(value, id[1].tags, orbitals)
 end
 @inline rank(::Type{<:SpinCoupling{V, T} where V}) where T = fieldcount(T)
 
 """
     SpinCoupling(value::Number,
         tags::NTuple{N, Char};
-        atoms::NTuple{N, Union{Int, Symbol}}=ntuple(i->wildcard, Val(N)),
         orbitals::Union{NTuple{N, Int}, Subscripts}=Subscripts(N)
         ) where N
 
@@ -227,11 +222,10 @@ Spin coupling.
 """
 function SpinCoupling(value::Number,
         tags::NTuple{N, Char};
-        atoms::NTuple{N, Union{Int, Symbol}}=ntuple(i->wildcard, Val(N)),
         orbitals::Union{NTuple{N, Int}, Subscripts}=Subscripts(N)
         ) where N
     isa(orbitals, Subscripts) || (orbitals = Subscripts(orbitals))
-    return SpinCoupling(value, tags, atoms, orbitals)
+    return SpinCoupling(value, tags, orbitals)
 end
 
 """
@@ -242,7 +236,6 @@ Show a spin coupling.
 function Base.show(io::IO, sc::SpinCoupling)
     @printf io "SpinCoupling(value=%s" decimaltostr(sc.value)
     @printf io ", tags=%s" join(NTuple{rank(sc), String}("S"*sidrepmap[tag] for tag in sc.tags), "")
-    any(sc.atoms .≠ wildcard) && @printf io ", atoms=[%s]" join(sc.atoms, " ")
     any(sc.orbitals .≠ wildcard) && @printf io ", orbitals=%s" string(sc.orbitals)
     @printf io ")"
 end
@@ -254,7 +247,6 @@ Get the repr representation of a spin coupling.
 """
 function Base.repr(sc::SpinCoupling)
     contents = String[]
-    any(sc.atoms .≠ wildcard) && push!(contents, @sprintf "sl[%s]" join(sc.atoms, " "))
     any(sc.orbitals .≠ wildcard) && push!(contents, @sprintf "ob%s" sc.orbitals)
     result = @sprintf "%s %s" decimaltostr(sc.value) join(NTuple{rank(sc), String}("S"*sidrepmap[tag] for tag in sc.tags), "")
     length(contents)>0 && (result = @sprintf "%s %s" result join(contents, " ⊗ "))
@@ -267,11 +259,11 @@ end
 Get the multiplication between two spin couplings.
 """
 @inline function Base.:*(sc₁::SpinCoupling, sc₂::SpinCoupling)
-    return SpinCoupling(sc₁.value*sc₂.value, (sc₁.tags..., sc₂.tags...), (sc₁.atoms..., sc₁.atoms...), sc₁.orbitals*sc₂.orbitals)
+    return SpinCoupling(sc₁.value*sc₂.value, (sc₁.tags..., sc₂.tags...), sc₁.orbitals*sc₂.orbitals)
 end
 
 """
-    expand(sc::SpinCoupling, bond::AbstractBond, config::Config, info::Val) -> Union{SCExpand, Tuple{}}
+    expand(sc::SpinCoupling, bond::AbstractBond, config::Config, info::Val) -> SCExpand
 
 Expand a spin coupling with the given set of points and spin degrees of freedom.
 """
@@ -279,9 +271,6 @@ function expand(sc::SpinCoupling, bond::AbstractBond, config::Config, info::Val)
     points = couplingpoints(sc, bond, info)
     spins = couplinginternals(sc, bond, config, info)
     @assert rank(sc)==length(points)==length(spins) "expand error: dismatched rank."
-    for (i, atom) in enumerate(sc.atoms)
-        isa(atom, Int) && atom≠spins[i].atom && return ()
-    end
     obexpands = collect(expand(sc.orbitals, NTuple{rank(sc), Int}(spins[i].norbital for i = 1:rank(sc))))
     return SCExpand{totalspins(spins)}(sc.value, points, obexpands, sc.tags)
 end
@@ -313,88 +302,87 @@ end
 end
 
 """
-    Heisenberg(mode::String="+-z"; atoms::NTuple{2, Union{Symbol, Int}}=(wildcard, wildcard), orbitals::Union{NTuple{2, Int}, Subscripts}=Subscripts(2)) -> Couplings
+    Heisenberg(mode::String="+-z"; orbitals::Union{NTuple{2, Int}, Subscripts}=Subscripts(2)) -> Couplings
 
 The Heisenberg couplings.
 """
-function Heisenberg(mode::String="+-z"; atoms::NTuple{2, Union{Symbol, Int}}=(wildcard, wildcard), orbitals::Union{NTuple{2, Int}, Subscripts}=Subscripts(2))
+function Heisenberg(mode::String="+-z"; orbitals::Union{NTuple{2, Int}, Subscripts}=Subscripts(2))
     @assert mode=="+-z" || mode=="xyz" "Heisenberg error: not supported mode($mode)."
     if mode == "+-z"
-        sc₁ = SpinCoupling(1//2, ('+', '-'), atoms=atoms, orbitals=orbitals)
-        sc₂ = SpinCoupling(1//2, ('-', '+'), atoms=atoms, orbitals=orbitals)
-        sc₃ = SpinCoupling(1//1, ('z', 'z'), atoms=atoms, orbitals=orbitals)
+        sc₁ = SpinCoupling(1//2, ('+', '-'), orbitals=orbitals)
+        sc₂ = SpinCoupling(1//2, ('-', '+'), orbitals=orbitals)
+        sc₃ = SpinCoupling(1//1, ('z', 'z'), orbitals=orbitals)
     else
-        sc₁ = SpinCoupling(1, ('x', 'x'), atoms=atoms, orbitals=orbitals)
-        sc₂ = SpinCoupling(1, ('y', 'y'), atoms=atoms, orbitals=orbitals)
-        sc₃ = SpinCoupling(1, ('z', 'z'), atoms=atoms, orbitals=orbitals)
+        sc₁ = SpinCoupling(1, ('x', 'x'), orbitals=orbitals)
+        sc₂ = SpinCoupling(1, ('y', 'y'), orbitals=orbitals)
+        sc₃ = SpinCoupling(1, ('z', 'z'), orbitals=orbitals)
     end
     return Couplings(sc₁, sc₂, sc₃)
 end
 
 """
-    Ising(tag::Char; atoms::NTuple{2, Union{Symbol, Int}}=(wildcard, wildcard), orbitals::Union{NTuple{2, Int}, Subscripts}=Subscripts(2)) -> Couplings
+    Ising(tag::Char; orbitals::Union{NTuple{2, Int}, Subscripts}=Subscripts(2)) -> Couplings
 
 The Ising couplings.
 """
-@inline function Ising(tag::Char; atoms::NTuple{2, Union{Symbol, Int}}=(wildcard, wildcard), orbitals::Union{NTuple{2, Int}, Subscripts}=Subscripts(2))
+@inline function Ising(tag::Char; orbitals::Union{NTuple{2, Int}, Subscripts}=Subscripts(2))
     @assert tag in ('x', 'y', 'z') "Ising error: not supported input tag($tag)."
-    return Couplings(SpinCoupling(1, (tag, tag), atoms=atoms, orbitals=orbitals))
+    return Couplings(SpinCoupling(1, (tag, tag), orbitals=orbitals))
 end
 
 """
-    Gamma(tag::Char; atoms::NTuple{2, Union{Symbol, Int}}=(wildcard, wildcard), orbitals::Union{NTuple{2, Int}, Subscripts}=Subscripts(2)) -> Couplings
+    Gamma(tag::Char; orbitals::Union{NTuple{2, Int}, Subscripts}=Subscripts(2)) -> Couplings
 
 The Gamma couplings.
 """
-function Gamma(tag::Char; atoms::NTuple{2, Union{Symbol, Int}}=(wildcard, wildcard), orbitals::Union{NTuple{2, Int}, Subscripts}=Subscripts(2))
+function Gamma(tag::Char; orbitals::Union{NTuple{2, Int}, Subscripts}=Subscripts(2))
     @assert tag in ('x', 'y', 'z') "Gamma error: not supported input tag($tag)."
     t₁, t₂ = tag=='x' ? ('y', 'z') : tag=='y' ? ('z', 'x') : ('x', 'y')
-    sc₁ = SpinCoupling(1, (t₁, t₂), atoms=atoms, orbitals=orbitals)
-    sc₂ = SpinCoupling(1, (t₂, t₁), atoms=atoms, orbitals=orbitals)
+    sc₁ = SpinCoupling(1, (t₁, t₂), orbitals=orbitals)
+    sc₂ = SpinCoupling(1, (t₂, t₁), orbitals=orbitals)
     return Couplings(sc₁, sc₂)
 end
 
 """
-    DM(tag::Char; atoms::NTuple{2, Union{Symbol, Int}}=(wildcard, wildcard), orbitals::Union{NTuple{2, Int}, Subscripts}=Subscripts(2)) -> Couplings
+    DM(tag::Char; orbitals::Union{NTuple{2, Int}, Subscripts}=Subscripts(2)) -> Couplings
 
 The DM couplings.
 """
-function DM(tag::Char; atoms::NTuple{2, Union{Symbol, Int}}=(wildcard, wildcard), orbitals::Union{NTuple{2, Int}, Subscripts}=Subscripts(2))
+function DM(tag::Char; orbitals::Union{NTuple{2, Int}, Subscripts}=Subscripts(2))
     @assert tag in ('x', 'y', 'z') "DM error: not supported input tag($tag)."
     t₁, t₂ = tag=='x' ? ('y', 'z') : tag=='y' ? ('z', 'x') : ('x', 'y')
-    sc₁ = SpinCoupling(+1, (t₁, t₂), atoms=atoms, orbitals=orbitals)
-    sc₂ = SpinCoupling(-1, (t₂, t₁), atoms=atoms, orbitals=orbitals)
+    sc₁ = SpinCoupling(+1, (t₁, t₂), orbitals=orbitals)
+    sc₂ = SpinCoupling(-1, (t₂, t₁), orbitals=orbitals)
     return Couplings(sc₁, sc₂)
 end
 
-@inline atomwrapper(value) = (value,)
 @inline orbitalwrapper(value::Int) = (value,)
 @inline orbitalwrapper(::Symbol) = Subscripts(1)
 """
-    Sˣ(; atom::Union{Int, Symbol}=wildcard, orbital::Union{Int, Symbol}=wildcard) -> Couplings
+    Sˣ(; orbital::Union{Int, Symbol}=wildcard) -> Couplings
 
 The single Sˣ coupling.
 """
-@inline function Sˣ(; atom::Union{Int, Symbol}=wildcard, orbital::Union{Int, Symbol}=wildcard)
-    Couplings(SpinCoupling(1, ('x',), atoms=atomwrapper(atom), orbitals=orbitalwrapper(orbital)))
+@inline function Sˣ(; orbital::Union{Int, Symbol}=wildcard)
+    Couplings(SpinCoupling(1, ('x',), orbitals=orbitalwrapper(orbital)))
 end
 
 """
-    Sʸ(; atom::Union{Int, Symbol}=wildcard, orbital::Union{Int, Symbol}=wildcard) -> Couplings
+    Sʸ(; orbital::Union{Int, Symbol}=wildcard) -> Couplings
 
 The single Sʸ coupling.
 """
-@inline function Sʸ(; atom::Union{Int, Symbol}=wildcard, orbital::Union{Int, Symbol}=wildcard)
-    Couplings(SpinCoupling(1, ('y',), atoms=atomwrapper(atom), orbitals=orbitalwrapper(orbital)))
+@inline function Sʸ(; orbital::Union{Int, Symbol}=wildcard)
+    Couplings(SpinCoupling(1, ('y',), orbitals=orbitalwrapper(orbital)))
 end
 
 """
-    Sᶻ(; atom::Union{Int, Symbol}=wildcard, orbital::Union{Int, Symbol}=wildcard) -> Couplings
+    Sᶻ(; orbital::Union{Int, Symbol}=wildcard) -> Couplings
 
 The single Sᶻ coupling.
 """
-@inline function Sᶻ(; atom::Union{Int, Symbol}=wildcard, orbital::Union{Int, Symbol}=wildcard)
-    Couplings(SpinCoupling(1, ('z',), atoms=atomwrapper(atom), orbitals=orbitalwrapper(orbital)))
+@inline function Sᶻ(; orbital::Union{Int, Symbol}=wildcard)
+    Couplings(SpinCoupling(1, ('z',), orbitals=orbitalwrapper(orbital)))
 end
 
 """
@@ -411,16 +399,11 @@ macro sc_str(str::String)
     return Expr(:call, :SpinCoupling, Expr(:parameters, attrpairs...), coeff, tags)
 end
 function sccomponent(str::AbstractString)
-    attrname = str[1:2]=="sl" ? :atoms : str[1:2]=="ob" ? :orbitals : error("sccomponent error: wrong input pattern.")
+    @assert str[1:2]=="ob" "sccomponent error: wrong input pattern."
     expr = Meta.parse(str[3:end])
-    if attrname == :atoms
-        @assert expr.head∈(:hcat, :vect) "sccomponent error: wrong input pattern for atoms."
-        attrvalue = Tuple(expr.args)
-    else
-        @assert expr.head∈(:call, :hcat, :vcat, :vect) "sccomponent error: wrong input pattern for orbitals."
-        attrvalue = subscriptsexpr(expr)
-    end
-    return Expr(:kw, attrname, attrvalue)
+    @assert expr.head∈(:call, :hcat, :vcat, :vect) "sccomponent error: wrong input pattern for orbitals."
+    attrvalue = subscriptsexpr(expr)
+    return Expr(:kw, :orbitals, attrvalue)
 end
 function scpairs(str::AbstractString)
     attrpairs = []
@@ -433,9 +416,9 @@ function scpairs(str::AbstractString)
 end
 
 """
-    heisenberg"sl[a₁ a₂] ⊗ ob[o₁ o₂]" -> Couplings
-    heisenberg"xyz sl[a₁ a₂] ⊗ ob[o₁ o₂]" -> Couplings
-    heisenberg"+-z sl[a₁ a₂] ⊗ ob[o₁ o₂]" -> Couplings
+    heisenberg"ob[o₁ o₂]" -> Couplings
+    heisenberg"xyz ob[o₁ o₂]" -> Couplings
+    heisenberg"+-z ob[o₁ o₂]" -> Couplings
 
 The Heisenberg couplings.
 """
@@ -448,9 +431,9 @@ macro heisenberg_str(str::String)
 end
 
 """
-    ising"x sl[a₁ a₂] ⊗ ob[o₁ o₂]" -> Couplings
-    ising"y sl[a₁ a₂] ⊗ ob[o₁ o₂])" -> Couplings
-    ising"z sl[a₁ a₂] ⊗ ob[o₁ o₂]" -> Couplings
+    ising"x ob[o₁ o₂]" -> Couplings
+    ising"y ob[o₁ o₂])" -> Couplings
+    ising"z ob[o₁ o₂]" -> Couplings
 
 The Ising couplings.
 """
@@ -462,9 +445,9 @@ macro ising_str(str::String)
 end
 
 """
-    gamma"x sl[a₁ a₂] ⊗ ob[o₁ o₂]" -> Couplings
-    gamma"y sl[a₁ a₂] ⊗ ob[o₁ o₂]" -> Couplings
-    gamma"z sl[a₁ a₂] ⊗ ob[o₁ o₂]" -> Couplings
+    gamma"x ob[o₁ o₂]" -> Couplings
+    gamma"y ob[o₁ o₂]" -> Couplings
+    gamma"z ob[o₁ o₂]" -> Couplings
 
 The Gamma couplings.
 """
@@ -476,9 +459,9 @@ macro gamma_str(str::String)
 end
 
 """
-    dm"x sl[a₁ a₂] ⊗ ob[o₁ o₂]" -> Couplings
-    dm"y sl[a₁ a₂] ⊗ ob[o₁ o₂]" -> Couplings
-    dm"z sl[a₁ a₂] ⊗ ob[o₁ o₂]" -> Couplings
+    dm"x ob[o₁ o₂]" -> Couplings
+    dm"y ob[o₁ o₂]" -> Couplings
+    dm"z ob[o₁ o₂]" -> Couplings
 
 The DM couplings.
 """
@@ -490,9 +473,9 @@ macro dm_str(str::String)
 end
 
 """
-    sˣ"sl[a]⊗ob[o]" -> Couplings
-    sʸ"sl[a]⊗ob[o]" -> Couplings
-    sᶻ"sl[a]⊗ob[o]" -> Couplings
+    sˣ"ob[o]" -> Couplings
+    sʸ"ob[o]" -> Couplings
+    sᶻ"ob[o]" -> Couplings
 
 The single Sˣ/Sʸ/Sᶻ coupling.
 """

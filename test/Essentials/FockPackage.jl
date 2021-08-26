@@ -97,9 +97,7 @@ end
 end
 
 @testset "FockCoupling" begin
-    @test parameternames(FockCoupling) == (:value, :atoms, :nambus, :orbitals, :spins, :id)
-    @test isparameterbound(FockCoupling, Val(:atoms), Tuple{Int, Int}) == false
-    @test isparameterbound(FockCoupling, Val(:atoms), Tuple{Any, Any}) == true
+    @test parameternames(FockCoupling) == (:value, :nambus, :orbitals, :spins, :id)
     @test isparameterbound(FockCoupling, Val(:nambus), Tuple{Int, Int}) == false
     @test isparameterbound(FockCoupling, Val(:nambus), Tuple{Any, Any}) == true
     @test isparameterbound(FockCoupling, Val(:orbitals), Subscripts) == true
@@ -107,40 +105,34 @@ end
     @test contentnames(FockCoupling) == (:value, :id, :orbitals, :spins)
 
     obs, sps = subscripts"[1 1]", subscripts"[σ₁ σ₂](σ₁ + σ₂ == 1)"
-    fc = FockCoupling(1.0im, (FCID((1, 1), (2, 1)), SubID(obs), SubID(sps)), obs, sps)
-    @test getcontent(fc, Val(:id)) == (FCID(fc.atoms, fc.nambus), SubID(fc.orbitals), SubID(fc.spins))
+    fc = FockCoupling(1.0im, (FCID((2, 1)), SubID(obs), SubID(sps)), obs, sps)
+    @test getcontent(fc, Val(:id)) == (FCID(fc.nambus), SubID(fc.orbitals), SubID(fc.spins))
     @test rank(fc) == rank(typeof(fc)) == 2
 
     @test string(FockCoupling{2}(1.0)) == "FockCoupling{2}(value=1.0)"
-    @test string(FockCoupling{2}(1.0, atoms=(1, 1))) == "FockCoupling{2}(value=1.0, atoms=[1 1])"
-    @test string(FockCoupling{2}(1.0, atoms=(1, 1), spins=(1, 2))) == "FockCoupling{2}(value=1.0, atoms=[1 1], spins=[1 2])"
+    @test string(FockCoupling{2}(1.0, spins=(1, 2))) == "FockCoupling{2}(value=1.0, spins=[1 2])"
     @test repr(FockCoupling{2}(2.0)) == "2.0 {2}"
 
-    fc₁ = FockCoupling{2}(1.5, atoms=(2, 1), spins=subscripts"[x 1]")
-    fc₂ = FockCoupling{2}(2.0, atoms=(1, 2), orbitals=subscripts"[x y](x < y)")
-    @test repr(fc₁) == "1.5 sl[2 1] ⊗ sp[x 1]"
-    @test repr(fc₂) == "2.0 sl[1 2] ⊗ ob[x y](x < y)"
+    fc₁ = FockCoupling{2}(1.5, spins=subscripts"[x 1]")
+    fc₂ = FockCoupling{2}(2.0, orbitals=subscripts"[x y](x < y)")
+    @test repr(fc₁) == "1.5 sp[x 1]"
+    @test repr(fc₂) == "2.0 ob[x y](x < y)"
     fc = fc₁ * fc₂
-    @test repr(fc) == "3.0 sl[2 1 1 2] ⊗ ob[* *; x y](:, x < y) ⊗ sp[x 1; * *]"
+    @test repr(fc) == "3.0 ob[* *; x y](:, x < y) ⊗ sp[x 1; * *]"
 
     fc₁ = FockCoupling{2}(1.5, spins=subscripts"[x 1]")
     fc₂ = FockCoupling{2}(2.0, orbitals=subscripts"[x y](x < y)")
     fc = fc₁ ⊗ fc₂
     @test repr(fc) == "3.0 ob[x y](x < y) ⊗ sp[x 1]"
 
-    fc₁ = FockCoupling{2}(1.5, atoms=(2, 1))
-    fc₂ = FockCoupling{2}(2.0, atoms=(1, 2))
+    fc₁ = FockCoupling{2}(1.5, spins=(2, 1))
+    fc₂ = FockCoupling{2}(2.0, spins=(1, 2))
     fc = fc₁ ⋅ fc₂
-    @test repr(fc) == "3.0 sl[2 2]"
+    @test repr(fc) == "3.0 sp[2 2]"
 
-    fc = FockCoupling{2}(2.0, atoms=(1, 1))
-    point = Point(PID(1), SVector(0.0, 0.0), SVector(0.0, 0.0))
-    config = Config{Fock{:f}}(pid->Fock{:f}(atom=2, norbital=2, nspin=2, nnambu=2), [point.pid])
-    @test collect(expand(fc, point, config, Val(:info))) == []
-
-    fc = FockCoupling{2}(2.0, atoms=(1, 2), orbitals=(1, 2), nambus=(2, 1))
+    fc = FockCoupling{2}(2.0, orbitals=(1, 2), nambus=(2, 1))
     bond = Bond(1, Point(CPID(1, 2), SVector(0.5), SVector(0.0)), Point(CPID(1, 1), SVector(0.0), SVector(0.0)))
-    config = Config{Fock{:f}}(pid->Fock{:f}(atom=(pid.site+1)%2+1, norbital=2, nspin=2, nnambu=2), [bond.epoint.pid, bond.spoint.pid])
+    config = Config{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [bond.epoint.pid, bond.spoint.pid])
     ex = expand(fc, bond, config, Val(:Hopping))
     @test eltype(ex) == Tuple{Float, ID{OID{Index{CPID{Int}, FID{:f}}, SVector{1, Float}}, 2}}
     @test Dims(ex) == (1, 2)
@@ -151,7 +143,7 @@ end
 
     fc = FockCoupling{4}(2.0, spins=(2, 2, 1, 1), nambus=(2, 1, 2, 1))
     point = Point(PID(1), SVector(0.0), SVector(0.0))
-    config = Config{Fock{:b}}(pid->Fock{:b}(atom=1, norbital=2, nspin=2, nnambu=2), [point.pid])
+    config = Config{Fock{:b}}(pid->Fock{:b}(norbital=2, nspin=2, nnambu=2), [point.pid])
     ex = expand(fc, point, config, Val(:info))
     @test eltype(ex) == Tuple{Float, ID{OID{Index{PID, FID{:b}}, SVector{1, Float}}, 4}}
     @test Dims(ex) == (2, 1)
@@ -170,7 +162,7 @@ end
 
     fc = FockCoupling{4}(2.0, orbitals=subscripts"[α α β β](α < β)", spins=(2, 1, 1, 2), nambus=(2, 2, 1, 1))
     point = Point(PID(1), SVector(0.5), SVector(0.0))
-    config = Config{Fock{:f}}(pid->Fock{:f}(atom=1, norbital=3, nspin=2, nnambu=2), [point.pid])
+    config = Config{Fock{:f}}(pid->Fock{:f}(norbital=3, nspin=2, nnambu=2), [point.pid])
     ex = expand(fc, point, config, Val(:info))
     @test Dims(ex) == (3, 1)
     @test collect(ex) == [
@@ -194,7 +186,7 @@ end
     fc₁ = FockCoupling{2}(+1.0, spins=(2, 2), nambus=(2, 1))
     fc₂ = FockCoupling{2}(-1.0, spins=(1, 1), nambus=(2, 1))
     point = Point(CPID(1, 1), SVector(0.0), SVector(0.0))
-    config = Config{Fock{:f}}(pid->Fock{:f}(atom=1, norbital=2, nspin=2, nnambu=2), [point.pid])
+    config = Config{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [point.pid])
     ex = expand(fc₁*fc₂, point, config, Val(:info))
     @test Dims(ex) == (4, 1)
     @test collect(ex) == [
@@ -224,66 +216,60 @@ end
 @testset "σ⁰" begin
     @test σ⁰("sp") == FockCoupling{2}(1, spins=(1, 1)) + FockCoupling{2}(1, spins=(2, 2))
     @test σ⁰("ob") == FockCoupling{2}(1, orbitals=(1, 1)) + FockCoupling{2}(1, orbitals=(2, 2))
-    @test σ⁰("sl") == FockCoupling{2}(1, atoms=(1, 1)) + FockCoupling{2}(1, atoms=(2, 2))
     @test σ⁰("ph") == FockCoupling{2}(1, nambus=(1, 2)) + FockCoupling{2}(1, nambus=(2, 1))
 end
 
 @testset "σˣ" begin
     @test σˣ("sp") == FockCoupling{2}(1, spins=(1, 2)) + FockCoupling{2}(1, spins=(2, 1))
     @test σˣ("ob") == FockCoupling{2}(1, orbitals=(1, 2)) + FockCoupling{2}(1, orbitals=(2, 1))
-    @test σˣ("sl") == FockCoupling{2}(1, atoms=(1, 2)) + FockCoupling{2}(1, atoms=(2, 1))
     @test σˣ("ph") == FockCoupling{2}(1, nambus=(1, 1)) + FockCoupling{2}(1, nambus=(2, 2))
 end
 
 @testset "σʸ" begin
     @test σʸ("sp") == FockCoupling{2}(1im, spins=(1, 2)) + FockCoupling{2}(-1im, spins=(2, 1))
     @test σʸ("ob") == FockCoupling{2}(1im, orbitals=(1, 2)) + FockCoupling{2}(-1im, orbitals=(2, 1))
-    @test σʸ("sl") == FockCoupling{2}(1im, atoms=(1, 2)) + FockCoupling{2}(-1im, atoms=(2, 1))
     @test σʸ("ph") == FockCoupling{2}(1im, nambus=(1, 1)) + FockCoupling{2}(-1im, nambus=(2, 2))
 end
 
 @testset "σᶻ" begin
     @test σᶻ("sp") == FockCoupling{2}(-1, spins=(1, 1)) + FockCoupling{2}(1, spins=(2, 2))
     @test σᶻ("ob") == FockCoupling{2}(-1, orbitals=(1, 1)) + FockCoupling{2}(1, orbitals=(2, 2))
-    @test σᶻ("sl") == FockCoupling{2}(-1, atoms=(1, 1)) + FockCoupling{2}(1, atoms=(2, 2))
     @test σᶻ("ph") == FockCoupling{2}(-1, nambus=(1, 2)) + FockCoupling{2}(1, nambus=(2, 1))
 end
 
 @testset "σ⁺" begin
     @test σ⁺("sp") == Couplings(FockCoupling{2}(1, spins=(2, 1)))
     @test σ⁺("ob") == Couplings(FockCoupling{2}(1, orbitals=(2, 1)))
-    @test σ⁺("sl") == Couplings(FockCoupling{2}(1, atoms=(2, 1)))
     @test σ⁺("ph") == Couplings(FockCoupling{2}(1, nambus=(2, 2)))
 end
 
 @testset "σ⁻" begin
     @test σ⁻("sp") == Couplings(FockCoupling{2}(1, spins=(1, 2)))
     @test σ⁻("ob") == Couplings(FockCoupling{2}(1, orbitals=(1, 2)))
-    @test σ⁻("sl") == Couplings(FockCoupling{2}(1, atoms=(1, 2)))
     @test σ⁻("ph") == Couplings(FockCoupling{2}(1, nambus=(1, 1)))
 end
 
 @testset "fockcoupling" begin
-    fc = fc"1.0 sl[1 1 1 1] ⊗ ph[2 1 2 1] ⊗ ob[α α β β](α < β) ⊗ sp[σ γ σ γ](σ ≠ γ)"
-    @test repr(fc) == "1.0 sl[1 1 1 1] ⊗ ph[2 1 2 1] ⊗ ob[α α β β](α < β) ⊗ sp[σ γ σ γ](σ ≠ γ)"
+    fc = fc"1.0 ph[2 1 2 1] ⊗ ob[α α β β](α < β) ⊗ sp[σ γ σ γ](σ ≠ γ)"
+    @test repr(fc) == "1.0 ph[2 1 2 1] ⊗ ob[α α β β](α < β) ⊗ sp[σ γ σ γ](σ ≠ γ)"
 
-    fc = fc"1.0 sl[1 1 1 1] ⊗ ph[2 1 2 1] ⊗ ob[α α β β] ⊗ sp[σ γ σ γ]"
-    @test repr(fc) == "1.0 sl[1 1 1 1] ⊗ ph[2 1 2 1] ⊗ ob[α α β β] ⊗ sp[σ γ σ γ]"
+    fc = fc"1.0 ph[2 1 2 1] ⊗ ob[α α β β] ⊗ sp[σ γ σ γ]"
+    @test repr(fc) == "1.0 ph[2 1 2 1] ⊗ ob[α α β β] ⊗ sp[σ γ σ γ]"
 
-    fc = fc"1.0 sl[1 1 1 1] ⊗ ph[2 1 2 1] ⊗ ob[α α β β](α < β) ⊗ sp[σ γ σ γ]"
-    @test repr(fc) == "1.0 sl[1 1 1 1] ⊗ ph[2 1 2 1] ⊗ ob[α α β β](α < β) ⊗ sp[σ γ σ γ]"
+    fc = fc"1.0 ph[2 1 2 1] ⊗ ob[α α β β](α < β) ⊗ sp[σ γ σ γ]"
+    @test repr(fc) == "1.0 ph[2 1 2 1] ⊗ ob[α α β β](α < β) ⊗ sp[σ γ σ γ]"
 
-    fc = fc"1.0 sl[1 1 1 1] ⊗ ph[2 1 2 1] ⊗ ob[α α β β](α < β)"
-    @test repr(fc) == "1.0 sl[1 1 1 1] ⊗ ph[2 1 2 1] ⊗ ob[α α β β](α < β)"
+    fc = fc"1.0 ph[2 1 2 1] ⊗ ob[α α β β](α < β)"
+    @test repr(fc) == "1.0 ph[2 1 2 1] ⊗ ob[α α β β](α < β)"
 
-    fc = fc"1.0 sl[1 1 1 1] ⊗ ob[α α β β](α < β) ⊗ sp[2 1 2 1]"
-    @test repr(fc) == "1.0 sl[1 1 1 1] ⊗ ob[α α β β](α < β) ⊗ sp[2 1 2 1]"
+    fc = fc"1.0 ob[α α β β](α < β) ⊗ sp[2 1 2 1]"
+    @test repr(fc) == "1.0 ob[α α β β](α < β) ⊗ sp[2 1 2 1]"
 
-    fc = fc"1.0 sl[1 1 1 1] ⊗ ph[2 1 2 1] ⊗ ob[1 1 1 1]"
-    @test repr(fc) == "1.0 sl[1 1 1 1] ⊗ ph[2 1 2 1] ⊗ ob[1 1 1 1]"
+    fc = fc"1.0 ph[2 1 2 1] ⊗ ob[1 1 1 1]"
+    @test repr(fc) == "1.0 ph[2 1 2 1] ⊗ ob[1 1 1 1]"
 
-    fc = fc"1.0 sl[1 1 1 1] ⊗ ph[2 1 2 1]"
-    @test repr(fc) == "1.0 sl[1 1 1 1] ⊗ ph[2 1 2 1]"
+    fc = fc"1.0 ph[2 1 2 1]"
+    @test repr(fc) == "1.0 ph[2 1 2 1]"
 
     fc = fc"1.0im {2}"
     @test repr(fc) == "1.0im {2}"
@@ -292,32 +278,26 @@ end
 @testset "fockcouplings" begin
     @test σ⁰"sp" == σ⁰("sp")
     @test σ⁰"ob" == σ⁰("ob")
-    @test σ⁰"sl" == σ⁰("sl")
     @test σ⁰"ph" == σ⁰("ph")
 
     @test σˣ"sp" == σˣ("sp")
     @test σˣ"ob" == σˣ("ob")
-    @test σˣ"sl" == σˣ("sl")
     @test σˣ"ph" == σˣ("ph")
 
     @test σʸ"sp" == σʸ("sp")
     @test σʸ"ob" == σʸ("ob")
-    @test σʸ"sl" == σʸ("sl")
     @test σʸ"ph" == σʸ("ph")
 
     @test σᶻ"sp" == σᶻ("sp")
     @test σᶻ"ob" == σᶻ("ob")
-    @test σᶻ"sl" == σᶻ("sl")
     @test σᶻ"ph" == σᶻ("ph")
 
     @test σ⁺"sp" == σ⁺("sp")
     @test σ⁺"ob" == σ⁺("ob")
-    @test σ⁺"sl" == σ⁺("sl")
     @test σ⁺"ph" == σ⁺("ph")
 
     @test σ⁻"sp" == σ⁻("sp")
     @test σ⁻"ob" == σ⁻("ob")
-    @test σ⁻"sl" == σ⁻("sl")
     @test σ⁻"ph" == σ⁻("ph")
 end
 
@@ -326,7 +306,7 @@ end
     @test isnothing(isHermitian(Onsite))
 
     point = Point(PID(1), (0.5, 0.5), (0.0, 0.0))
-    config = Config{Fock{:f}}(pid->Fock{:f}(atom=pid.site%2, norbital=2, nspin=2, nnambu=2), [point.pid])
+    config = Config{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [point.pid])
 
     term = Onsite(:mu, 1.5, couplings=σˣ("sp")⊗σᶻ("ob"), modulate=true)
     operators = Operators(
@@ -349,7 +329,7 @@ end
 
 @testset "Hopping" begin
     bond = Bond(1, Point(CPID('a', 1), (0.5, 0.5), (0.0, 0.0)), Point(CPID('b', 2), (0.0, 0.0), (0.0, 0.0)))
-    config = Config{Fock{:f}}(pid->Fock{:f}(atom=pid.site%2, norbital=2, nspin=2, nnambu=2), [bond.spoint.pid, bond.epoint.pid])
+    config = Config{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [bond.spoint.pid, bond.epoint.pid])
     term = Hopping(:t, 1.5, 1)
     operators = Operators(
         Operator(1.5, ID(OID(Index(CPID('b', 2), FID{:f}(2, 2, 2)), [0.0, 0.0], [0.0, 0.0]), OID(Index(CPID('a', 1), FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0]))),
@@ -365,7 +345,7 @@ end
 
 @testset "Pairing" begin
     bond = Bond(1, Point(PID(1), (0.5, 0.5), (0.0, 0.0)), Point(PID(2), (0.0, 0.0), (0.0, 0.0)))
-    config = Config{Fock{:f}}(pid->Fock{:f}(atom=pid.site%2, norbital=1, nspin=2, nnambu=2), [bond.spoint.pid, bond.epoint.pid])
+    config = Config{Fock{:f}}(pid->Fock{:f}(norbital=1, nspin=2, nnambu=2), [bond.spoint.pid, bond.epoint.pid])
     term = Pairing(:Δ, 1.5, 1, couplings=FockCoupling{2}(spins=(2, 2)), amplitude=bond->(bond|>rcoord|>azimuthd ≈ 45 ? 1 : -1))
     operators = Operators(
         Operator(-1.5, ID(OID(Index(PID(2), FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]))),
@@ -377,7 +357,7 @@ end
     @test expand(term, bond, config, false) == operators+operators'
 
     point = Point(CPID('a', 1), (0.5, 0.5), (0.0, 0.0))
-    config = Config{Fock{:f}}(pid->Fock{:f}(atom=pid.site%2, norbital=1, nspin=2, nnambu=2), [point.pid])
+    config = Config{Fock{:f}}(pid->Fock{:f}(norbital=1, nspin=2, nnambu=2), [point.pid])
     term = Pairing(:Δ, 1.5, 0, couplings=FockCoupling{2}(spins=(2, 1))-FockCoupling{2}(spins=(1, 2)))
     operators = Operators(
         Operator(+1.5, ID(OID(Index(CPID('a', 1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]), OID(Index(CPID('a', 1), FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]))),
@@ -390,7 +370,7 @@ end
 
 @testset "Hubbard" begin
     point = Point(PID(1), (0.5, 0.5), (0.0, 0.0))
-    config = Config{Fock{:f}}(pid->Fock{:f}(atom=pid.site%2, norbital=2, nspin=2, nnambu=2), [point.pid])
+    config = Config{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [point.pid])
     term = Hubbard(:H, 2.5)
     operators = Operators(
         Operator(1.25, ID(
@@ -414,7 +394,7 @@ end
 
 @testset "InterOrbitalInterSpin" begin
     point = Point(PID(1), (0.5, 0.5), (0.0, 0.0))
-    config = Config{Fock{:f}}(pid->Fock{:f}(atom=pid.site%2, norbital=2, nspin=2, nnambu=2), [point.pid])
+    config = Config{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [point.pid])
     term = InterOrbitalInterSpin(:H, 2.5)
     operators = Operators(
         Operator(1.25, ID(
@@ -438,7 +418,7 @@ end
 
 @testset "InterOrbitalIntraSpin" begin
     point = Point(PID(1), (0.5, 0.5), (0.0, 0.0))
-    config = Config{Fock{:f}}(pid->Fock{:f}(atom=pid.site%2, norbital=2, nspin=2, nnambu=2), [point.pid])
+    config = Config{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [point.pid])
     term = InterOrbitalIntraSpin(:H, 2.5)
     operators = Operators(
         Operator(1.25, ID(
@@ -462,7 +442,7 @@ end
 
 @testset "SpinFlip" begin
     point = Point(PID(1), (0.5, 0.5), (0.0, 0.0))
-    config = Config{Fock{:f}}(pid->Fock{:f}(atom=pid.site%2, norbital=2, nspin=2, nnambu=2), [point.pid])
+    config = Config{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [point.pid])
     term = SpinFlip(:H, 2.5)
     operators = Operators(
         Operator(2.5, ID(
@@ -480,7 +460,7 @@ end
 
 @testset "PairHopping" begin
     point = Point(PID(1), (0.5, 0.5), (0.0, 0.0))
-    config = Config{Fock{:f}}(pid->Fock{:f}(atom=pid.site%2, norbital=2, nspin=2, nnambu=2), [point.pid])
+    config = Config{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [point.pid])
     term = PairHopping(:H, 2.5)
     operators = Operators(
         Operator(2.5, ID(
@@ -498,7 +478,7 @@ end
 
 @testset "Coulomb" begin
     bond = Bond(1, Point(PID(1), (0.5, 0.5), (0.0, 0.0)), Point(PID(2), (0.0, 0.0), (0.0, 0.0)))
-    config = Config{Fock{:f}}(pid->Fock{:f}(atom=pid.site%2, norbital=1, nspin=2, nnambu=2), [bond.spoint.pid, bond.epoint.pid])
+    config = Config{Fock{:f}}(pid->Fock{:f}(norbital=1, nspin=2, nnambu=2), [bond.spoint.pid, bond.epoint.pid])
 
     term = Coulomb(:V, 2.5, 1, couplings=σᶻ("sp")*σᶻ("sp"))
     operators = Operators(
