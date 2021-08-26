@@ -28,11 +28,9 @@ Roughly speaking, these systems share similar internal structures of local Hilbe
 * `spin::Int`: the spin index
 * `nambu::Int`: the nambu index, which must be 0, 1(annihilation) or 2(creation).
 Correspondingly, the type [`Fock`](@ref)`<:Internal`, which specifies the whole internal structure of a local [Fock space](https://en.wikipedia.org/wiki/Fock_space), has the following attributes:
-* `atom::Int`: the atom index associated with a local Hilbert space
 * `norbital::Int`: the number of allowed orbital indices
 * `nspin::Int`: the number of allowed spin indices
 * `nnambu::Int`: the number of allowed nambu indices, which must be either 1 or 2.
-It is noted that we also associate an atom index with each [`Fock`](@ref) instance, which proves to be helpful in future usages.
 
 One more remark. The `:nambu` attribute of an [`FID`](@ref) instance can be 1 or 2, which means it represents an annihilation operator or a creation operator, respectively. This corresponds to a usual complex fermionic/bosonic system. The `:nambu` attribute can also be 0. In this case, it corresponds to a real fermionic/bosonic system where annihilation and creation operators are identical to each other, e.g. a Majorana fermionic system. Accordingly, The `:nnambu` attribute of a [`Fock`](@ref) instance can be either 2 or 1. Being 2, it allows usual complex annihilation/creation operators, while being 1 it only allows real fermionic/bosonic operators.
 
@@ -71,28 +69,28 @@ Apparently, this operation is nothing but the "Hermitian conjugate".
 
 A [`Fock`](@ref) instance can be initialized by giving all its attributes or by key word arguments to specify those beyond the default values:
 ```jldoctest FFF
-julia> Fock{:f}(1, 1, 2, 2)
+julia> Fock{:f}(1, 2, 2)
 4-element Fock{:f}:
  FID{:f}(1, 1, 1)
  FID{:f}(1, 2, 1)
  FID{:f}(1, 1, 2)
  FID{:f}(1, 2, 2)
 
-julia> Fock{:b}() # default values: atom=1, norbital=1, nspin=2, nnambu=2
+julia> Fock{:b}() # default values: norbital=1, nspin=2, nnambu=2
 4-element Fock{:b}:
  FID{:b}(1, 1, 1)
  FID{:b}(1, 2, 1)
  FID{:b}(1, 1, 2)
  FID{:b}(1, 2, 2)
 
-julia> Fock{:b}(atom=2, norbital=2, nspin=1, nnambu=1)
+julia> Fock{:b}(norbital=2, nspin=1, nnambu=1)
 2-element Fock{:b}:
  FID{:b}(1, 1, 0)
  FID{:b}(2, 1, 0)
 ```
 As can be seen, a [`Fock`](@ref) instance behaves like a vector (because the parent type [`Internal`](@ref) is a subtype of `AbstractVector`), and its iteration just generates all the allowed [`FID`](@ref) instances on its associated spatial point:
 ```jldoctest FFF
-julia> fck = Fock{:f}(atom=1, norbital=2, nspin=1, nnambu=2);
+julia> fck = Fock{:f}(norbital=2, nspin=1, nnambu=2);
 
 julia> fck |> typeof |> eltype
 FID{:f}
@@ -130,7 +128,6 @@ Apart from the spatial indices, a local spin operator can have an orbital index.
 * `orbital::Int`: the orbital index
 * `tag::Char`: the tag, which must be `'x'`, `'y'`, `'z'`, `'+'` or `'-'`.
 Correspondingly, the type [`Spin`](@ref), which defines the whole internal structure of a local spin space, has the following attributes:
-* `atom::Int`: the atom index associated with a local spin space
 * `norbital::Int`: the number of allowed orbital indices
 
 For [`SID`](@ref) and [`Spin`](@ref), it is also necessary to know what the total spin is, which is taken as their first type parameters and should be a half-integer or an integer.
@@ -195,7 +192,7 @@ julia> SID{1//2}(1, '-') |> Matrix
 
 A [`Spin`](@ref) instance can be initialized as follows:
 ```jldoctest SSS
-julia> Spin{1}(1, 2)
+julia> Spin{1}(2)
 10-element Spin{1}:
  SID{1}(1, 'x')
  SID{1}(2, 'x')
@@ -208,7 +205,7 @@ julia> Spin{1}(1, 2)
  SID{1}(1, '-')
  SID{1}(2, '-')
 
-julia> Spin{1//2}() # default values: atom=1, norbital=1
+julia> Spin{1//2}() # default values: norbital=1
 5-element Spin{1//2}:
  SID{1//2}(1, 'x')
  SID{1//2}(1, 'y')
@@ -216,7 +213,7 @@ julia> Spin{1//2}() # default values: atom=1, norbital=1
  SID{1//2}(1, '+')
  SID{1//2}(1, '-')
 
-julia> Spin{1}(atom=2, norbital=1)
+julia> Spin{1}(norbital=1)
 5-element Spin{1}:
  SID{1}(1, 'x')
  SID{1}(1, 'y')
@@ -226,7 +223,7 @@ julia> Spin{1}(atom=2, norbital=1)
 ```
 Similar to [`Fock`](@ref), a [`Spin`](@ref) instance behaves like a vector whose iteration generates all the allowed [`SID`](@ref) instances on its associated spatial point:
 ```jldoctest SSS
-julia> sp = Spin{1}(atom=1, norbital=1);
+julia> sp = Spin{1}(norbital=1);
 
 julia> sp |> typeof |> eltype
 SID{1}

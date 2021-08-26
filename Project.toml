@@ -1,7 +1,7 @@
 name = "QuantumLattices"
 uuid = "78ae1a1f-1d5d-5174-b61c-66e31b2346dc"
 authors = ["waltergu <waltergu1989@gmail.com>"]
-version = "0.3.0"
+version = "0.4.0"
 
 [deps]
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
