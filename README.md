@@ -1,8 +1,7 @@
 # QuantumLattices.jl
 
 [![CI][main-ci-img]][main-ci-url]
-
-[![codecov](https://codecov.io/gh/Quantum-Many-Body/QuantumLattices.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/Quantum-Many-Body/QuantumLattices.jl)
+[![codecov][codecov-img]][codecov-url]
 [![][docs-latest-img]][docs-latest-url]
 [![][docs-stable-img]][docs-stable-url]
 [![996.icu](https://img.shields.io/badge/link-996.icu-red.svg)](https://996.icu)
@@ -84,6 +83,8 @@ waltergu1989@gmail.com
 
 [main-ci-img]: https://github.com/Quantum-Many-Body/QuantumLattices.jl/actions/workflows/CI.yml/badge.svg
 [main-ci-url]: https://github.com/Quantum-Many-Body/QuantumLattices.jl/actions/workflows/CI.yml
+[codecov-img]: https://codecov.io/gh/Quantum-Many-Body/QuantumLattices.jl/branch/master/graph/badge.svg
+[codecov-url]: https://codecov.io/gh/Quantum-Many-Body/QuantumLattices.jl
 [docs-latest-img]: https://img.shields.io/badge/docs-latest-blue.svg
 [docs-latest-url]: https://quantum-many-body.github.io/QuantumLattices.jl/latest/
 [docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
