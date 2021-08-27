@@ -15,7 +15,7 @@ jobs:
         with:
           version: 1
       - name: Install dependencies
-        run: julia --project=docs/ -e 'using Pkg; Pkg.add("Conda"); using Conda; Conda.update(); ENV["PYTHON"]=""; Pkg.add("PyCall"); Pkg.build("PyCall"); Pkg.add("QuantumLattices"); Pkg.add("DocumenterTools"); Pkg.add("Documenter"); Pkg.add("SymPy"); Pkg.add(Pkg.PackageSpec(;name="BenchmarkTools", version="1.0.0")); ENV["DOCUMENTER_DEBUG"] = "true"; import QuantumLattices; joinpath(dirname(pathof(QuantumLattices))); include(joinpath("docs","make.jl"))'
+        run: julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate(); ENV["PYTHON"]=""; Pkg.build("PyCall")'
       - name: Build and deploy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # For authentication with GitHub Actions token
