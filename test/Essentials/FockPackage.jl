@@ -214,39 +214,39 @@ end
 end
 
 @testset "σ⁰" begin
-    @test σ⁰("sp") == FockCoupling{2}(1, spins=(1, 1)) + FockCoupling{2}(1, spins=(2, 2))
-    @test σ⁰("ob") == FockCoupling{2}(1, orbitals=(1, 1)) + FockCoupling{2}(1, orbitals=(2, 2))
-    @test σ⁰("ph") == FockCoupling{2}(1, nambus=(1, 2)) + FockCoupling{2}(1, nambus=(2, 1))
+    @test σ⁰"sp" == FockCoupling{2}(1, spins=(1, 1)) + FockCoupling{2}(1, spins=(2, 2))
+    @test σ⁰"ob" == FockCoupling{2}(1, orbitals=(1, 1)) + FockCoupling{2}(1, orbitals=(2, 2))
+    @test σ⁰"ph" == FockCoupling{2}(1, nambus=(1, 2)) + FockCoupling{2}(1, nambus=(2, 1))
 end
 
 @testset "σˣ" begin
-    @test σˣ("sp") == FockCoupling{2}(1, spins=(1, 2)) + FockCoupling{2}(1, spins=(2, 1))
-    @test σˣ("ob") == FockCoupling{2}(1, orbitals=(1, 2)) + FockCoupling{2}(1, orbitals=(2, 1))
-    @test σˣ("ph") == FockCoupling{2}(1, nambus=(1, 1)) + FockCoupling{2}(1, nambus=(2, 2))
+    @test σˣ"sp" == FockCoupling{2}(1, spins=(1, 2)) + FockCoupling{2}(1, spins=(2, 1))
+    @test σˣ"ob" == FockCoupling{2}(1, orbitals=(1, 2)) + FockCoupling{2}(1, orbitals=(2, 1))
+    @test σˣ"ph" == FockCoupling{2}(1, nambus=(1, 1)) + FockCoupling{2}(1, nambus=(2, 2))
 end
 
 @testset "σʸ" begin
-    @test σʸ("sp") == FockCoupling{2}(1im, spins=(1, 2)) + FockCoupling{2}(-1im, spins=(2, 1))
-    @test σʸ("ob") == FockCoupling{2}(1im, orbitals=(1, 2)) + FockCoupling{2}(-1im, orbitals=(2, 1))
-    @test σʸ("ph") == FockCoupling{2}(1im, nambus=(1, 1)) + FockCoupling{2}(-1im, nambus=(2, 2))
+    @test σʸ"sp" == FockCoupling{2}(1im, spins=(1, 2)) + FockCoupling{2}(-1im, spins=(2, 1))
+    @test σʸ"ob" == FockCoupling{2}(1im, orbitals=(1, 2)) + FockCoupling{2}(-1im, orbitals=(2, 1))
+    @test σʸ"ph" == FockCoupling{2}(1im, nambus=(1, 1)) + FockCoupling{2}(-1im, nambus=(2, 2))
 end
 
 @testset "σᶻ" begin
-    @test σᶻ("sp") == FockCoupling{2}(-1, spins=(1, 1)) + FockCoupling{2}(1, spins=(2, 2))
-    @test σᶻ("ob") == FockCoupling{2}(-1, orbitals=(1, 1)) + FockCoupling{2}(1, orbitals=(2, 2))
-    @test σᶻ("ph") == FockCoupling{2}(-1, nambus=(1, 2)) + FockCoupling{2}(1, nambus=(2, 1))
+    @test σᶻ"sp" == FockCoupling{2}(-1, spins=(1, 1)) + FockCoupling{2}(1, spins=(2, 2))
+    @test σᶻ"ob" == FockCoupling{2}(-1, orbitals=(1, 1)) + FockCoupling{2}(1, orbitals=(2, 2))
+    @test σᶻ"ph" == FockCoupling{2}(-1, nambus=(1, 2)) + FockCoupling{2}(1, nambus=(2, 1))
 end
 
 @testset "σ⁺" begin
-    @test σ⁺("sp") == Couplings(FockCoupling{2}(1, spins=(2, 1)))
-    @test σ⁺("ob") == Couplings(FockCoupling{2}(1, orbitals=(2, 1)))
-    @test σ⁺("ph") == Couplings(FockCoupling{2}(1, nambus=(2, 2)))
+    @test σ⁺"sp" == Couplings(FockCoupling{2}(1, spins=(2, 1)))
+    @test σ⁺"ob" == Couplings(FockCoupling{2}(1, orbitals=(2, 1)))
+    @test σ⁺"ph" == Couplings(FockCoupling{2}(1, nambus=(2, 2)))
 end
 
 @testset "σ⁻" begin
-    @test σ⁻("sp") == Couplings(FockCoupling{2}(1, spins=(1, 2)))
-    @test σ⁻("ob") == Couplings(FockCoupling{2}(1, orbitals=(1, 2)))
-    @test σ⁻("ph") == Couplings(FockCoupling{2}(1, nambus=(1, 1)))
+    @test σ⁻"sp" == Couplings(FockCoupling{2}(1, spins=(1, 2)))
+    @test σ⁻"ob" == Couplings(FockCoupling{2}(1, orbitals=(1, 2)))
+    @test σ⁻"ph" == Couplings(FockCoupling{2}(1, nambus=(1, 1)))
 end
 
 @testset "fockcoupling" begin
@@ -275,32 +275,6 @@ end
     @test repr(fc) == "1.0im {2}"
 end
 
-@testset "fockcouplings" begin
-    @test σ⁰"sp" == σ⁰("sp")
-    @test σ⁰"ob" == σ⁰("ob")
-    @test σ⁰"ph" == σ⁰("ph")
-
-    @test σˣ"sp" == σˣ("sp")
-    @test σˣ"ob" == σˣ("ob")
-    @test σˣ"ph" == σˣ("ph")
-
-    @test σʸ"sp" == σʸ("sp")
-    @test σʸ"ob" == σʸ("ob")
-    @test σʸ"ph" == σʸ("ph")
-
-    @test σᶻ"sp" == σᶻ("sp")
-    @test σᶻ"ob" == σᶻ("ob")
-    @test σᶻ"ph" == σᶻ("ph")
-
-    @test σ⁺"sp" == σ⁺("sp")
-    @test σ⁺"ob" == σ⁺("ob")
-    @test σ⁺"ph" == σ⁺("ph")
-
-    @test σ⁻"sp" == σ⁻("sp")
-    @test σ⁻"ob" == σ⁻("ob")
-    @test σ⁻"ph" == σ⁻("ph")
-end
-
 @testset "Onsite" begin
     @test abbr(Onsite) == :st
     @test isnothing(isHermitian(Onsite))
@@ -308,7 +282,7 @@ end
     point = Point(PID(1), (0.5, 0.5), (0.0, 0.0))
     config = Config{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [point.pid])
 
-    term = Onsite(:mu, 1.5, couplings=σˣ("sp")⊗σᶻ("ob"), modulate=true)
+    term = Onsite(:mu, 1.5, couplings=σˣ"sp"⊗σᶻ"ob", modulate=true)
     operators = Operators(
         Operator(+1.5, ID(OID(Index(PID(1), FID{:f}(2, 1, 2)), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(1), FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0]))),
         Operator(-1.5, ID(OID(Index(PID(1), FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])))
@@ -316,7 +290,7 @@ end
     @test expand(term, point, config, true) == operators
     @test expand(term, point, config, false) == operators+operators'
 
-    term = Onsite(:mu, 1.5, couplings=σᶻ("sp")⊗σᶻ("ob"), modulate=true)
+    term = Onsite(:mu, 1.5, couplings=σᶻ"sp"⊗σᶻ"ob", modulate=true)
     operators = Operators(
         Operator(-0.75, ID(OID(Index(PID(1), FID{:f}(2, 1, 2)), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(1), FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0]))),
         Operator(-0.75, ID(OID(Index(PID(1), FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]))),
@@ -480,7 +454,7 @@ end
     bond = Bond(1, Point(PID(1), (0.5, 0.5), (0.0, 0.0)), Point(PID(2), (0.0, 0.0), (0.0, 0.0)))
     config = Config{Fock{:f}}(pid->Fock{:f}(norbital=1, nspin=2, nnambu=2), [bond.spoint.pid, bond.epoint.pid])
 
-    term = Coulomb(:V, 2.5, 1, couplings=σᶻ("sp")*σᶻ("sp"))
+    term = Coulomb(:V, 2.5, 1, couplings=σᶻ"sp"*σᶻ"sp")
     operators = Operators(
         Operator(-1.25, ID(
             OID(Index(PID(2), FID{:f}(1, 1, 2)), [0.0, 0.0], [0.0, 0.0]),
@@ -512,7 +486,7 @@ end
     @test expand(term, bond, config, true) == operators
     @test expand(term, bond, config, false) == operators+operators'
 
-    term = Coulomb(:V, 2.5, 1, couplings=σˣ("sp")*σᶻ("sp"))
+    term = Coulomb(:V, 2.5, 1, couplings=σˣ"sp"*σᶻ"sp")
     operators = Operators(
         Operator(-2.5, ID(
             OID(Index(PID(2), FID{:f}(1, 2, 2)), [0.0, 0.0], [0.0, 0.0]),

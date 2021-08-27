@@ -1,6 +1,7 @@
 using Test
 using StaticArrays: SVector
 using QuantumLattices.Essentials.SpinPackage
+using QuantumLattices.Essentials.SpinPackage: heisenbergxyz, heisenbergpmz, gamma, dm
 using QuantumLattices.Essentials.Spatials: AbstractPID, PID, CPID, Point, Bond
 using QuantumLattices.Essentials.DegreesOfFreedom: OID, AbstractCompositeOID, isHermitian, Config, Index, Operator, Operators, script, latexname
 using QuantumLattices.Essentials.Terms: Couplings, @subscripts_str, abbr
@@ -137,37 +138,42 @@ end
     ]
 end
 
-@testset "Heisenberg" begin
-    @test Heisenberg(orbitals=(1, 2)) == Couplings(
+@testset "heisenberg" begin
+    @test heisenberg"+-z ob[1 2]" == heisenberg"ob[1 2]" == heisenbergpmz(orbitals=(1, 2)) == Couplings(
         SpinCoupling(1//1, ('z', 'z'), orbitals=(1, 2)),
         SpinCoupling(1//2, ('+', '-'), orbitals=(1, 2)),
         SpinCoupling(1//2, ('-', '+'), orbitals=(1, 2))
     )
-    @test Heisenberg("xyz") == Couplings(SpinCoupling(1, ('x', 'x')), SpinCoupling(1, ('y', 'y')), SpinCoupling(1, ('z', 'z')))
+    @test heisenberg"" == heisenbergpmz() == Couplings(SpinCoupling(1//1, ('z', 'z')), SpinCoupling(1//2, ('+', '-')), SpinCoupling(1//2, ('-', '+')))
+    @test heisenberg"xyz" == heisenbergxyz() == Couplings(SpinCoupling(1, ('x', 'x')), SpinCoupling(1, ('y', 'y')), SpinCoupling(1, ('z', 'z')))
 end
 
-@testset "Ising" begin
-    @test Ising('x', orbitals=(1, 1)) == Couplings(SpinCoupling(1, ('x', 'x'), orbitals=(1, 1)))
-    @test Ising('y') == Couplings(SpinCoupling(1, ('y', 'y')))
-    @test Ising('z') == Couplings(SpinCoupling(1, ('z', 'z')))
+@testset "ising" begin
+    @test ising"x" == Couplings(SpinCoupling(1, ('x', 'x')))
+    @test ising"y" == Couplings(SpinCoupling(1, ('y', 'y')))
+    @test ising"z" == Couplings(SpinCoupling(1, ('z', 'z')))
+
+    @test ising"x ob[α β](α < β)" == Couplings(SpinCoupling(1, ('x', 'x'), orbitals=subscripts"[α β](α < β)"))
+    @test ising"y ob[α β](α < β)" == Couplings(SpinCoupling(1, ('y', 'y'), orbitals=subscripts"[α β](α < β)"))
+    @test ising"z ob[α β](α < β)" == Couplings(SpinCoupling(1, ('z', 'z'), orbitals=subscripts"[α β](α < β)"))
 end
 
-@testset "Gamma" begin
-    @test Gamma('x', orbitals=(1, 1)) == SpinCoupling(1, ('y', 'z'), orbitals=(1, 1)) + SpinCoupling(1, ('z', 'y'), orbitals=(1, 1))
-    @test Gamma('y') == SpinCoupling(1, ('z', 'x')) + SpinCoupling(1, ('x', 'z'))
-    @test Gamma('z') == SpinCoupling(1, ('x', 'y')) + SpinCoupling(1, ('y', 'x'))
+@testset "gamma" begin
+    @test gamma"x ob[1 1]" == gamma('y', 'z', orbitals=(1, 1))== SpinCoupling(1, ('y', 'z'), orbitals=(1, 1)) + SpinCoupling(1, ('z', 'y'), orbitals=(1, 1))
+    @test gamma"y" == gamma('z', 'x') == SpinCoupling(1, ('z', 'x')) + SpinCoupling(1, ('x', 'z'))
+    @test gamma"z" == gamma('x', 'y') == SpinCoupling(1, ('x', 'y')) + SpinCoupling(1, ('y', 'x'))
 end
 
-@testset "DM" begin
-    @test DM('x', orbitals=(1, 1)) == SpinCoupling(1, ('y', 'z'), orbitals=(1, 1)) - SpinCoupling(1, ('z', 'y'), orbitals=(1, 1))
-    @test DM('y') == SpinCoupling(1, ('z', 'x')) - SpinCoupling(1, ('x', 'z'))
-    @test DM('z') == SpinCoupling(1, ('x', 'y')) - SpinCoupling(1, ('y', 'x'))
+@testset "dm" begin
+    @test dm"x ob[1 1]" == dm('y', 'z', orbitals=(1, 1)) == SpinCoupling(1, ('y', 'z'), orbitals=(1, 1)) - SpinCoupling(1, ('z', 'y'), orbitals=(1, 1))
+    @test dm"y" == dm('z', 'x') == SpinCoupling(1, ('z', 'x')) - SpinCoupling(1, ('x', 'z'))
+    @test dm"z" == dm('x', 'y') == SpinCoupling(1, ('x', 'y')) - SpinCoupling(1, ('y', 'x'))
 end
 
-@testset "Sᵅ" begin
-    @test Sˣ(orbital=1) == Couplings(SpinCoupling(1, ('x',), orbitals=(1,)))
-    @test Sʸ() == Couplings(SpinCoupling(1, ('y',)))
-    @test Sᶻ() == Couplings(SpinCoupling(1, ('z',)))
+@testset "sᵅ" begin
+    @test sˣ"ob[1]" == Couplings(SpinCoupling(1, ('x',), orbitals=(1,)))
+    @test sʸ"" == Couplings(SpinCoupling(1, ('y',)))
+    @test sᶻ"" == Couplings(SpinCoupling(1, ('z',)))
 end
 
 @testset "spincoupling" begin
@@ -184,33 +190,10 @@ end
     @test repr(sc) == "1.0 S⁺S⁻"
 end
 
-@testset "spincouplings" begin
-    @test heisenberg"xyz ob[α β](α < β)" == Heisenberg("xyz", orbitals=subscripts"[α β](α < β)")
-    @test heisenberg"ob[1 3]" == Heisenberg(orbitals=(1, 3))
-    @test heisenberg"" == heisenberg"+-z" == Heisenberg()
-    @test heisenberg"xyz" == Heisenberg("xyz")
-
-    @test ising"x" == Ising('x') && ising"x ob[1 3]" == Ising('x', orbitals=(1, 3))
-    @test ising"y" == Ising('y') && ising"y ob[1 3]" == Ising('y', orbitals=(1, 3))
-    @test ising"z" == Ising('z') && ising"z ob[1 3]" == Ising('z', orbitals=(1, 3))
-
-    @test gamma"x" == Gamma('x') && gamma"x ob[1 3]" == Gamma('x', orbitals=(1, 3))
-    @test gamma"y" == Gamma('y') && gamma"y ob[1 3]" == Gamma('y', orbitals=(1, 3))
-    @test gamma"z" == Gamma('z') && gamma"z ob[1 3]" == Gamma('z', orbitals=(1, 3))
-
-    @test dm"x" == DM('x') && dm"x ob[1 3]" == DM('x', orbitals=(1, 3))
-    @test dm"y" == DM('y') && dm"y ob[1 3]" == DM('y', orbitals=(1, 3))
-    @test dm"z" == DM('z') && dm"z ob[1 3]" == DM('z', orbitals=(1, 3))
-
-    @test sˣ"" == Sˣ() && sˣ"ob[2]" == Sˣ(orbital=2)
-    @test sʸ"" == Sʸ() && sʸ"ob[2]" == Sʸ(orbital=2)
-    @test sᶻ"" == Sᶻ() && sᶻ"ob[2]" == Sᶻ(orbital=2)
-end
-
 @testset "SpinTerm" begin
     point = Point(PID(1), (0.5, 0.5), (0.0, 0.0))
     config = Config{Spin{1//2}}(pid->Spin{1//2}(norbital=2), [point.pid])
-    term = SpinTerm{1}(:h, 1.5, 0, couplings=Sᶻ())
+    term = SpinTerm{1}(:h, 1.5, 0, couplings=sᶻ"")
     operators = Operators(
         Operator(1.5, ID(OID(Index(PID(1), SID{1//2}(1, 'z')), [0.5, 0.5], [0.0, 0.0]))),
         Operator(1.5, ID(OID(Index(PID(1), SID{1//2}(2, 'z')), [0.5, 0.5], [0.0, 0.0])))
@@ -221,7 +204,7 @@ end
 
     bond = Bond(1, Point(CPID('a', 1), (0.0, 0.0), (0.0, 0.0)), Point(CPID('b', 1), (0.5, 0.5), (0.0, 0.0)))
     config = Config{Spin{1//2}}(pid->Spin{1//2}(norbital=2), [bond.spoint.pid, bond.epoint.pid])
-    term = SpinTerm{2}(:J, 1.5, 1, couplings=Heisenberg())
+    term = SpinTerm{2}(:J, 1.5, 1, couplings=heisenberg"")
     operators = Operators(
         Operator(1.50, ID(OID(Index(CPID('b', 1), SID{1//2}(2, 'z')), [0.5, 0.5], [0.0, 0.0]), OID(Index(CPID('a', 1), SID{1//2}(2, 'z')), [0.0, 0.0], [0.0, 0.0]))),
         Operator(0.75, ID(OID(Index(CPID('b', 1), SID{1//2}(2, '-')), [0.5, 0.5], [0.0, 0.0]), OID(Index(CPID('a', 1), SID{1//2}(2, '+')), [0.0, 0.0], [0.0, 0.0]))),

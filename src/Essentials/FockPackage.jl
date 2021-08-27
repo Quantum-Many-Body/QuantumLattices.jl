@@ -20,8 +20,7 @@ import ...Prerequisites.Traits: parameternames, isparameterbound, contentnames, 
 export ANNIHILATION, CREATION, MAJORANA, fdefaultlatex, bdefaultlatex, usualfockindextotuple, nambufockindextotuple
 export FID, Fock, statistics, isnormalordered
 export FCID, FockCoupling, fockcouplingnambus
-export σ⁰, σˣ, σʸ, σᶻ, σ⁺, σ⁻
-export @fc_str, @σ⁰_str, @σˣ_str, @σʸ_str, @σᶻ_str, @σ⁺_str, @σ⁻_str
+export @σ⁰_str, @σˣ_str, @σʸ_str, @σᶻ_str, @σ⁺_str, @σ⁻_str, @fc_str
 export Onsite, Hopping, Pairing, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, SpinFlip, PairHopping, Coulomb
 
 """
@@ -375,9 +374,9 @@ function expand(fc::FockCoupling, bond::AbstractBond, config::Config, info::Val)
     nambus = fockcouplingnambus(fc, NTuple{rank(fc), Int}(focks[i].nnambu for i = 1:rank(fc)), info)
     obexpands = collect(expand(fc.orbitals, NTuple{rank(fc), Int}(focks[i].norbital for i = 1:rank(fc))))
     spexpands = collect(expand(fc.spins, NTuple{rank(fc), Int}(focks[i].nspin for i = 1:rank(fc))))
-    return FCExpand{totalstatitics(focks)}(fc.value, points, obexpands, spexpands, nambus)
+    return FCExpand{statistics(focks)}(fc.value, points, obexpands, spexpands, nambus)
 end
-@generated totalstatitics(focks::NTuple{R, Fock}) where R = Tuple(statistics(fieldtype(focks, i)) for i = 1:R)
+@generated statistics(focks::NTuple{R, Fock}) where R = Tuple(statistics(fieldtype(focks, i)) for i = 1:R)
 @generated function fockcouplingnambus(fc::FockCoupling, ranges::Tuple{Vararg{Int}}, ::Val)
     @assert rank(fc)==fieldcount(ranges) "fockcouplingnambus error: dismatched rank."
     exprs = [:(isa(fc.nambus[$i], Int) ?
@@ -412,71 +411,88 @@ end
     return Expr(:tuple, :(fce.value), Expr(:tuple, exprs...))
 end
 
-@inline σᵅname(mode) = mode=="sp" ? :spins : mode=="ob" ? :orbitals : mode=="ph" ? :nambus : error("σᵅname error: wrong input mode.")
 """
-    σ⁰(mode::String) -> Couplings
+    σ⁰"sp" -> Couplings
+    σ⁰"ob" -> Couplings
+    σ⁰"ph" -> Couplings
 
 The Pauli matrix σ⁰, which can act on the space of spins("sp"), orbitals("ob") or particle-holes("ph").
 """
-function σ⁰(mode::String)
-    attrname = σᵅname(mode)
-    (attrval₁, attrval₂) = mode=="ph" ? ((ANNIHILATION, CREATION), (CREATION, ANNIHILATION)) : ((1, 1), (2, 2))
-    FockCoupling{2}(1; attrname=>attrval₁) + FockCoupling{2}(1; attrname=>attrval₂)
+macro σ⁰_str(mode::String)
+    @assert mode∈("sp", "ob", "ph") "@σ⁰_str error: wrong input mode."
+    mode=="sp" && return FockCoupling{2}(1, spins=(1, 1)) + FockCoupling{2}(1, spins=(2, 2))
+    mode=="ob" && return FockCoupling{2}(1, orbitals=(1, 1)) + FockCoupling{2}(1, orbitals=(2, 2))
+    return FockCoupling{2}(1, nambus=(ANNIHILATION, CREATION)) + FockCoupling{2}(1, nambus=(CREATION, ANNIHILATION))
 end
 
 """
-    σˣ(mode::String) -> Couplings
+    σˣ"sp" -> Couplings
+    σˣ"ob" -> Couplings
+    σˣ"ph" -> Couplings
 
 The Pauli matrix σˣ, which can act on the space of spins("sp"), orbitals("ob") or particle-holes("ph").
 """
-function σˣ(mode::String)
-    attrname = σᵅname(mode)
-    (attrval₁, attrval₂) = mode=="ph" ? ((ANNIHILATION, ANNIHILATION), (CREATION, CREATION)) : ((1, 2), (2, 1))
-    FockCoupling{2}(1; attrname=>attrval₁) + FockCoupling{2}(1; attrname=>attrval₂)
+macro σˣ_str(mode::String)
+    @assert mode∈("sp", "ob", "ph") "@σˣ_str error: wrong input mode."
+    mode=="sp" && return FockCoupling{2}(1, spins=(1, 2)) + FockCoupling{2}(1, spins=(2, 1))
+    mode=="ob" && return FockCoupling{2}(1, orbitals=(1, 2)) + FockCoupling{2}(1, orbitals=(2, 1))
+    return FockCoupling{2}(1, nambus=(ANNIHILATION, ANNIHILATION)) + FockCoupling{2}(1, nambus=(CREATION, CREATION))
 end
 
 """
-    σʸ(mode::String) -> Couplings
+    σʸ"sp" -> Couplings
+    σʸ"ob" -> Couplings
+    σʸ"ph" -> Couplings
 
 The Pauli matrix σʸ, which can act on the space of spins("sp"), orbitals("ob") or particle-holes("ph").
 """
-function σʸ(mode::String)
-    attrname = σᵅname(mode)
-    (attrval₁, attrval₂) = mode=="ph" ? ((ANNIHILATION, ANNIHILATION), (CREATION, CREATION)) : ((1, 2), (2, 1))
-    FockCoupling{2}(1im; attrname=>attrval₁) + FockCoupling{2}(-1im; attrname=>attrval₂)
+macro σʸ_str(mode::String)
+    @assert mode∈("sp", "ob", "ph") "@σʸ_str error: wrong input mode."
+    mode=="sp" && return FockCoupling{2}(1im, spins=(1, 2)) + FockCoupling{2}(-1im, spins=(2, 1))
+    mode=="ob" && return FockCoupling{2}(1im, orbitals=(1, 2)) + FockCoupling{2}(-1im, orbitals=(2, 1))
+    return FockCoupling{2}(1im, nambus=(ANNIHILATION, ANNIHILATION)) + FockCoupling{2}(-1im, nambus=(CREATION, CREATION))
 end
 
 """
-    σᶻ(mode::String) -> Couplings
+    σᶻ"sp" -> Couplings
+    σᶻ"ob" -> Couplings
+    σᶻ"ph" -> Couplings
 
 The Pauli matrix σᶻ, which can act on the space of spins("sp"), orbitals("ob") or particle-holes("ph").
 """
-function σᶻ(mode::String)
-    attrname = σᵅname(mode)
-    (attrval₁, attrval₂) = mode=="ph" ? ((ANNIHILATION, CREATION), (CREATION, ANNIHILATION)) : ((1, 1), (2, 2))
-    FockCoupling{2}(-1; attrname=>attrval₁) + FockCoupling{2}(1; attrname=>attrval₂)
+macro σᶻ_str(mode::String)
+    @assert mode∈("sp", "ob", "ph") "@σᶻ_str error: wrong input mode."
+    mode=="sp" && return FockCoupling{2}(-1, spins=(1, 1)) + FockCoupling{2}(1, spins=(2, 2))
+    mode=="ob" && return FockCoupling{2}(-1, orbitals=(1, 1)) + FockCoupling{2}(1, orbitals=(2, 2))
+    return FockCoupling{2}(-1, nambus=(ANNIHILATION, CREATION)) + FockCoupling{2}(1, nambus=(CREATION, ANNIHILATION))
 end
 
 """
-    σ⁺(mode::String) -> Couplings
+    σ⁺"sp" -> Couplings
+    σ⁺"ob" -> Couplings
+    σ⁺"ph" -> Couplings
 
 The Pauli matrix σ⁺, which can act on the space of spins("sp"), orbitals("ob") or particle-holes("ph").
 """
-function σ⁺(mode::String)
-    attrname = σᵅname(mode)
-    attrval = mode=="ph" ? (CREATION, CREATION) : (2, 1)
-    Couplings(FockCoupling{2}(1; attrname=>attrval))
+macro σ⁺_str(mode::String)
+    @assert mode∈("sp", "ob", "ph") "@σ⁺_str error: wrong input mode."
+    mode=="sp" && return Couplings(FockCoupling{2}(1, spins=(2, 1)))
+    mode=="ob" && return Couplings(FockCoupling{2}(1, orbitals=(2, 1)))
+    return Couplings(FockCoupling{2}(1, nambus=(CREATION, CREATION)))
 end
 
 """
-    σ⁻(mode::String) -> Couplings
+    σ⁻"sp" -> Couplings
+    σ⁻"ob" -> Couplings
+    σ⁻"ph" -> Couplings
 
 The Pauli matrix σ⁻, which can act on the space of spins("sp"), orbitals("ob") or particle-holes("ph").
 """
-function σ⁻(mode::String)
-    attrname = σᵅname(mode)
-    attrval = mode=="ph" ? (ANNIHILATION, ANNIHILATION) : (1, 2)
-    Couplings(FockCoupling{2}(1; attrname=>attrval))
+macro σ⁻_str(mode::String)
+    @assert mode∈("sp", "ob", "ph") "@σ⁻_str error: wrong input mode."
+    mode=="sp" && return Couplings(FockCoupling{2}(1, spins=(1, 2)))
+    mode=="ob" && return Couplings(FockCoupling{2}(1, orbitals=(1, 2)))
+    return Couplings(FockCoupling{2}(1, nambus=(ANNIHILATION, ANNIHILATION)))
 end
 
 """
@@ -505,6 +521,7 @@ macro fc_str(str)
         return Expr(:call, :(FockCoupling{$N}), Expr(:parameters, attrpairs...), coeff)
     end
 end
+@inline σᵅname(mode) = mode=="sp" ? :spins : mode=="ob" ? :orbitals : mode=="ph" ? :nambus : error("σᵅname error: wrong input mode.")
 function fccomponent(str::AbstractString)
     attrname = σᵅname(str[1:2])
     expr = Meta.parse(str[3:end])
@@ -519,60 +536,6 @@ function fccomponent(str::AbstractString)
     end
     return Expr(:kw, attrname, attrvalue), N
 end
-
-"""
-    σ⁰"sp" -> Couplings
-    σ⁰"ob" -> Couplings
-    σ⁰"ph" -> Couplings
-
-The Pauli matrix σ⁰, which can act on the space of spins("sp"), orbitals("ob") or particle-holes("ph").
-"""
-macro σ⁰_str(mode::String) σ⁰(mode) end
-
-"""
-    σˣ"sp" -> Couplings
-    σˣ"ob" -> Couplings
-    σˣ"ph" -> Couplings
-
-The Pauli matrix σˣ, which can act on the space of spins("sp"), orbitals("ob") or particle-holes("ph").
-"""
-macro σˣ_str(mode::String) σˣ(mode) end
-
-"""
-    σʸ"sp" -> Couplings
-    σʸ"ob" -> Couplings
-    σʸ"ph" -> Couplings
-
-The Pauli matrix σʸ, which can act on the space of spins("sp"), orbitals("ob") or particle-holes("ph").
-"""
-macro σʸ_str(mode::String) σʸ(mode) end
-
-"""
-    σᶻ"sp" -> Couplings
-    σᶻ"ob" -> Couplings
-    σᶻ"ph" -> Couplings
-
-The Pauli matrix σᶻ, which can act on the space of spins("sp"), orbitals("ob") or particle-holes("ph").
-"""
-macro σᶻ_str(mode::String) σᶻ(mode) end
-
-"""
-    σ⁺"sp" -> Couplings
-    σ⁺"ob" -> Couplings
-    σ⁺"ph" -> Couplings
-
-The Pauli matrix σ⁺, which can act on the space of spins("sp"), orbitals("ob") or particle-holes("ph").
-"""
-macro σ⁺_str(mode::String) σ⁺(mode) end
-
-"""
-    σ⁻"sp" -> Couplings
-    σ⁻"ob" -> Couplings
-    σ⁻"ph" -> Couplings
-
-The Pauli matrix σ⁻, which can act on the space of spins("sp"), orbitals("ob") or particle-holes("ph").
-"""
-macro σ⁻_str(mode::String) σ⁻(mode) end
 
 """
     Onsite(id::Symbol, value::Any;

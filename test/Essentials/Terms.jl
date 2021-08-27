@@ -65,14 +65,14 @@ isHermitian(::Type{<:Term{:Hp}}) = false
     @test sub(()) == (1, 2, 2, 1)
     @test isvalid(sub, ()) == true
 
-    sub = Subscripts((:x₁, :x₂, :x₁, :x₂))
+    sub = subscripts"[x₁ x₂ x₁ x₂]"
     @test rank(sub) == 2
     @test dimension(sub) == 4
     @test string(sub) == "[x₁ x₂ x₁ x₂]"
     @test sub((1, 2)) == (1, 2, 1, 2)
     @test isvalid(sub, (1, 2)) == true
 
-    sub = Subscripts((:x₁, 4, 4, :x₂), "x₁ < x₂")
+    sub = subscripts"[x₁ 4 4 x₂](x₁ < x₂)"
     @test rank(sub) == rank(typeof(sub)) == 2
     @test dimension(sub) == dimension(typeof(sub)) == 4
     @test string(sub) == "[x₁ 4 4 x₂](x₁ < x₂)"
@@ -98,7 +98,7 @@ isHermitian(::Type{<:Term{:Hp}}) = false
     ]
 
     sub = segs[1]
-    @test sub == Subscripts((1, 2, 2, 1)) == subscripts"[1 2 2 1]"
+    @test sub == subscripts"[1 2 2 1]"
     @test string(sub) == "[1 2 2 1]"
     @test rank(sub) == rank(subs, 1)
     @test dimension(sub) == dimension(subs, 1)
@@ -106,7 +106,7 @@ isHermitian(::Type{<:Term{:Hp}}) = false
     @test isvalid(sub, ()) == true
 
     sub = segs[2]
-    @test sub == Subscripts((:x₁, :x₂, :x₁, :x₂)) == subscripts"[x₁ x₂ x₁ x₂]"
+    @test sub == subscripts"[x₁ x₂ x₁ x₂]"
     @test string(sub) == "[x₁ x₂ x₁ x₂]"
     @test rank(sub) == rank(subs, 2)
     @test dimension(sub) == dimension(subs, 2)
@@ -114,7 +114,7 @@ isHermitian(::Type{<:Term{:Hp}}) = false
     @test isvalid(sub, (1, 2)) == true
 
     sub = segs[3]
-    @test sub == Subscripts((:x₁, 4, 4, :x₂), "x₁ < x₂") == subscripts"[x₁ 4 4 x₂](x₁ < x₂)"
+    @test sub == subscripts"[x₁ 4 4 x₂](x₁ < x₂)"
     @test string(sub) == "[x₁ 4 4 x₂](x₁ < x₂)"
     @test rank(sub) == rank(subs, 3)
     @test dimension(sub) == dimension(subs, 3)

@@ -47,8 +47,7 @@ end
 
 """
     Subscripts(N::Int)
-    Subscripts(opattern::Tuple{Vararg{Union{Integer, Symbol}}})
-    Subscripts(opattern::Tuple{Vararg{Union{Integer, Symbol}}}, cpattern::AbstractString)
+    Subscripts(opattern::Tuple{Vararg{Integer}})
 
 Construct a subscript set of a certain internal degree of freedom.
 """
@@ -58,24 +57,11 @@ function Subscripts(::Val{N}) where N
     opattern = ntuple(i->wildcard, Val(N))
     return Subscripts{(N,), (1,)}(opattern, ("nonconstrain",), (mapping,), (nonconstrain,))
 end
-function Subscripts(opattern::Tuple{Vararg{Union{Integer, Symbol}}})
-    ipattern = Tuple(subscriptsipattern(opattern))
-    mapping = Meta.eval(Expr(:->, Expr(:tuple, ipattern...), Expr(:block, Expr(:tuple, opattern...))))
+function Subscripts(opattern::Tuple{Vararg{Integer}})
+    ipattern = ()
+    mapping = ()->opattern
     cpattern = "nonconstrain"
-    return Subscripts{(length(opattern),), (length(ipattern),)}(opattern, (cpattern,), (mapping,), (nonconstrain,))
-end
-function Subscripts(opattern::Tuple{Vararg{Union{Integer, Symbol}}}, cpattern::AbstractString)
-    ipattern = Tuple(subscriptsipattern(opattern))
-    mapping = Meta.eval(Expr(:->, Expr(:tuple, ipattern...), Expr(:block, Expr(:tuple, opattern...))))
-    constrain = Meta.eval(Expr(:->, Expr(:tuple, ipattern...), Expr(:block, Meta.parse(cpattern))))
-    return Subscripts{(length(opattern),), (length(ipattern),)}(opattern, (cpattern,), (mapping,), (constrain,))
-end
-function subscriptsipattern(opattern)
-    result = Symbol[]
-    for op in opattern
-        isa(op, Symbol) && op∉result && push!(result, op)
-    end
-    return result
+    return Subscripts{(length(opattern),), (0,)}(opattern, (cpattern,), (mapping,), (nonconstrain,))
 end
 
 """
@@ -121,6 +107,13 @@ function subscriptsexpr(expr::Expr)
     opattern, cpattern = Tuple(opattern), Tuple(cpattern)
     mappings, constrains = Expr(:tuple, mappings...), Expr(:tuple, constrains...)
     return Expr(:block, fdefs..., :(Subscripts{$DS, $RS}($opattern, $cpattern, $mappings, $constrains)))
+end
+function subscriptsipattern(opattern)
+    result = Symbol[]
+    for op in opattern
+        isa(op, Symbol) && op∉result && push!(result, op)
+    end
+    return result
 end
 
 """
@@ -666,6 +659,7 @@ function expand!(operators::Operators, term::Term, bond::AbstractBond, config::C
             record = (isnothing(hermitian) && length(operators)>0) ? Set{optype|>idtype}() : nothing
             for coupling in values(term.couplings(bond))
                 for (coeff, id) in expand(coupling, bond, config, term|>kind|>Val)
+                    isapprox(coeff, 0.0, atol=atol, rtol=rtol) && continue
                     !isnothing(table) && !all(haskey(table, id)) && continue
                     if hermitian == true
                         add!(operators, rawtype(optype)(convert(optype|>valtype, value*coeff/(half ? 2 : 1)), id))

@@ -18,8 +18,7 @@ import ...Interfaces: rank, expand, permute
 
 export sdefaultlatex, usualspinindextotuple
 export SID, Spin, SCID, SpinCoupling, SpinTerm, totalspin
-export Heisenberg, Ising, Gamma, DM, Sˣ, Sʸ, Sᶻ
-export @sc_str, @heisenberg_str, @ising_str, @gamma_str, @dm_str, @sˣ_str, @sʸ_str, @sᶻ_str
+export @heisenberg_str, @ising_str, @gamma_str, @dm_str, @sˣ_str, @sʸ_str, @sᶻ_str, @sc_str
 
 const sidtagmap = Dict(1=>'x', 2=>'y', 3=>'z', 4=>'+', 5=>'-')
 const sidseqmap = Dict(v=>k for (k, v) in sidtagmap)
@@ -272,9 +271,9 @@ function expand(sc::SpinCoupling, bond::AbstractBond, config::Config, info::Val)
     spins = couplinginternals(sc, bond, config, info)
     @assert rank(sc)==length(points)==length(spins) "expand error: dismatched rank."
     obexpands = collect(expand(sc.orbitals, NTuple{rank(sc), Int}(spins[i].norbital for i = 1:rank(sc))))
-    return SCExpand{totalspins(spins)}(sc.value, points, obexpands, sc.tags)
+    return SCExpand{totalspin(spins)}(sc.value, points, obexpands, sc.tags)
 end
-@generated totalspins(spins::NTuple{R, Spin}) where R = Tuple(totalspin(fieldtype(spins, i)) for i = 1:R)
+@generated totalspin(spins::NTuple{R, Spin}) where R = Tuple(totalspin(fieldtype(spins, i)) for i = 1:R)
 struct SCExpand{SPS, V, N, D, P<:AbstractPID, DT<:Number} <: CartesianVectorSpace{Tuple{V, ID{OID{<:Index, SVector{D, DT}}, N}}}
     value::V
     points::NTuple{N, Point{D, P, DT}}
@@ -302,90 +301,6 @@ end
 end
 
 """
-    Heisenberg(mode::String="+-z"; orbitals::Union{NTuple{2, Int}, Subscripts}=Subscripts(2)) -> Couplings
-
-The Heisenberg couplings.
-"""
-function Heisenberg(mode::String="+-z"; orbitals::Union{NTuple{2, Int}, Subscripts}=Subscripts(2))
-    @assert mode=="+-z" || mode=="xyz" "Heisenberg error: not supported mode($mode)."
-    if mode == "+-z"
-        sc₁ = SpinCoupling(1//2, ('+', '-'), orbitals=orbitals)
-        sc₂ = SpinCoupling(1//2, ('-', '+'), orbitals=orbitals)
-        sc₃ = SpinCoupling(1//1, ('z', 'z'), orbitals=orbitals)
-    else
-        sc₁ = SpinCoupling(1, ('x', 'x'), orbitals=orbitals)
-        sc₂ = SpinCoupling(1, ('y', 'y'), orbitals=orbitals)
-        sc₃ = SpinCoupling(1, ('z', 'z'), orbitals=orbitals)
-    end
-    return Couplings(sc₁, sc₂, sc₃)
-end
-
-"""
-    Ising(tag::Char; orbitals::Union{NTuple{2, Int}, Subscripts}=Subscripts(2)) -> Couplings
-
-The Ising couplings.
-"""
-@inline function Ising(tag::Char; orbitals::Union{NTuple{2, Int}, Subscripts}=Subscripts(2))
-    @assert tag in ('x', 'y', 'z') "Ising error: not supported input tag($tag)."
-    return Couplings(SpinCoupling(1, (tag, tag), orbitals=orbitals))
-end
-
-"""
-    Gamma(tag::Char; orbitals::Union{NTuple{2, Int}, Subscripts}=Subscripts(2)) -> Couplings
-
-The Gamma couplings.
-"""
-function Gamma(tag::Char; orbitals::Union{NTuple{2, Int}, Subscripts}=Subscripts(2))
-    @assert tag in ('x', 'y', 'z') "Gamma error: not supported input tag($tag)."
-    t₁, t₂ = tag=='x' ? ('y', 'z') : tag=='y' ? ('z', 'x') : ('x', 'y')
-    sc₁ = SpinCoupling(1, (t₁, t₂), orbitals=orbitals)
-    sc₂ = SpinCoupling(1, (t₂, t₁), orbitals=orbitals)
-    return Couplings(sc₁, sc₂)
-end
-
-"""
-    DM(tag::Char; orbitals::Union{NTuple{2, Int}, Subscripts}=Subscripts(2)) -> Couplings
-
-The DM couplings.
-"""
-function DM(tag::Char; orbitals::Union{NTuple{2, Int}, Subscripts}=Subscripts(2))
-    @assert tag in ('x', 'y', 'z') "DM error: not supported input tag($tag)."
-    t₁, t₂ = tag=='x' ? ('y', 'z') : tag=='y' ? ('z', 'x') : ('x', 'y')
-    sc₁ = SpinCoupling(+1, (t₁, t₂), orbitals=orbitals)
-    sc₂ = SpinCoupling(-1, (t₂, t₁), orbitals=orbitals)
-    return Couplings(sc₁, sc₂)
-end
-
-@inline orbitalwrapper(value::Int) = (value,)
-@inline orbitalwrapper(::Symbol) = Subscripts(1)
-"""
-    Sˣ(; orbital::Union{Int, Symbol}=wildcard) -> Couplings
-
-The single Sˣ coupling.
-"""
-@inline function Sˣ(; orbital::Union{Int, Symbol}=wildcard)
-    Couplings(SpinCoupling(1, ('x',), orbitals=orbitalwrapper(orbital)))
-end
-
-"""
-    Sʸ(; orbital::Union{Int, Symbol}=wildcard) -> Couplings
-
-The single Sʸ coupling.
-"""
-@inline function Sʸ(; orbital::Union{Int, Symbol}=wildcard)
-    Couplings(SpinCoupling(1, ('y',), orbitals=orbitalwrapper(orbital)))
-end
-
-"""
-    Sᶻ(; orbital::Union{Int, Symbol}=wildcard) -> Couplings
-
-The single Sᶻ coupling.
-"""
-@inline function Sᶻ(; orbital::Union{Int, Symbol}=wildcard)
-    Couplings(SpinCoupling(1, ('z',), orbitals=orbitalwrapper(orbital)))
-end
-
-"""
     sc"..." -> SpinCoupling
 
 Construct a SpinCoupling from a literal string.
@@ -395,24 +310,16 @@ macro sc_str(str::String)
     lpos = 1 + lastindex(str) - findfirst(r"[⁺⁻ˣʸᶻ⁰]S", str|>reverse).start
     coeff = eval(Meta.parse(str[firstindex(str):prevind(str, fpos)]))
     tags = Tuple(sidreprevmap[tag] for tag in replace(str[thisind(str, fpos):thisind(str, lpos)], "S"=>""))
-    attrpairs = scpairs(strip(str[nextind(str, lpos):end]))
-    return Expr(:call, :SpinCoupling, Expr(:parameters, attrpairs...), coeff, tags)
+    orbitals = scorbitals(strip(str[nextind(str, lpos):end]), length(tags))
+    return Expr(:call, :SpinCoupling, orbitals, coeff, tags)
 end
-function sccomponent(str::AbstractString)
-    @assert str[1:2]=="ob" "sccomponent error: wrong input pattern."
+function scorbitals(str::AbstractString, n::Int)
+    length(str)==0 && return Expr(:kw, :orbitals, Subscripts(n))
+    @assert str[1:2]=="ob" "scorbitals error: wrong input pattern."
     expr = Meta.parse(str[3:end])
-    @assert expr.head∈(:call, :hcat, :vcat, :vect) "sccomponent error: wrong input pattern for orbitals."
+    @assert expr.head∈(:call, :hcat, :vcat, :vect) "scorbitals error: wrong input pattern for orbitals."
     attrvalue = subscriptsexpr(expr)
     return Expr(:kw, :orbitals, attrvalue)
-end
-function scpairs(str::AbstractString)
-    attrpairs = []
-    if length(str) > 0
-        for component in split(replace(str, " ⊗ "=>"⊗"), '⊗')
-            push!(attrpairs, sccomponent(component))
-        end
-    end
-    return attrpairs
 end
 
 """
@@ -426,8 +333,27 @@ macro heisenberg_str(str::String)
     slice = findfirst(r"xyz|\+\-z", str)
     mode = isnothing(slice) ? "+-z" : str[slice]
     isnothing(slice) || (str = strip(str[nextind(str, slice.stop):end]))
-    attrpairs = scpairs(str)
-    return Expr(:call, :Heisenberg, Expr(:parameters, attrpairs...), mode)
+    @assert mode=="+-z" || mode=="xyz" "@heisenberg_str error: not supported mode($mode)."
+    orbitals = scorbitals(str, 2)
+    if mode == "+-z"
+        return Expr(:call, :heisenbergpmz, orbitals)
+    else
+        return Expr(:call, :heisenbergxyz, orbitals)
+    end
+end
+function heisenbergxyz(;orbitals=Subscripts(2))
+    return Couplings(
+        SpinCoupling(1, ('x', 'x'), orbitals=orbitals),
+        SpinCoupling(1, ('y', 'y'), orbitals=orbitals),
+        SpinCoupling(1, ('z', 'z'), orbitals=orbitals)
+    )
+end
+function heisenbergpmz(;orbitals=Subscripts(2))
+    return Couplings(
+        SpinCoupling(1//2, ('+', '-'), orbitals=orbitals),
+        SpinCoupling(1//2, ('-', '+'), orbitals=orbitals),
+        SpinCoupling(1//1, ('z', 'z'), orbitals=orbitals)
+    )
 end
 
 """
@@ -440,8 +366,8 @@ The Ising couplings.
 macro ising_str(str::String)
     @assert str[1] ∈ ('x', 'y', 'z') "@ising_str error: wrong input pattern."
     length(str)>1 && @assert str[2]==' ' "@ising_str error: wrong input pattern."
-    attrpairs = scpairs(str[3:end])
-    return Expr(:call, :Ising, Expr(:parameters, attrpairs...), str[1])
+    orbitals = scorbitals(str[3:end], 2)
+    return :(Couplings(SpinCoupling(1, ($str[1], $str[1]), $orbitals)))
 end
 
 """
@@ -454,8 +380,15 @@ The Gamma couplings.
 macro gamma_str(str::String)
     @assert str[1] in ('x', 'y', 'z') "@gamma_str error: wrong input pattern."
     length(str)>1 && @assert str[2]==' ' "@gamma_str error: wrong input pattern."
-    attrpairs = scpairs(str[3:end])
-    return Expr(:call, :Gamma, Expr(:parameters, attrpairs...), str[1])
+    t₁, t₂ = str[1]=='x' ? ('y', 'z') : str[1]=='y' ? ('z', 'x') : ('x', 'y')
+    orbitals = scorbitals(str[3:end], 2)
+    return Expr(:call, :gamma, orbitals, t₁, t₂)
+end
+function gamma(t₁::Char, t₂::Char; orbitals=Subscripts(2))
+    return Couplings(
+        SpinCoupling(1, (t₁, t₂), orbitals=orbitals),
+        SpinCoupling(1, (t₂, t₁), orbitals=orbitals)
+        )
 end
 
 """
@@ -468,8 +401,15 @@ The DM couplings.
 macro dm_str(str::String)
     @assert str[1] in ('x', 'y', 'z') "@dm_str error: wrong input pattern."
     length(str)>1 && @assert str[2]==' ' "@dm_str error: wrong input pattern."
-    attrpairs = scpairs(str[3:end])
-    return Expr(:call, :DM, Expr(:parameters, attrpairs...), str[1])
+    orbitals = scorbitals(str[3:end], 2)
+    t₁, t₂ = str[1]=='x' ? ('y', 'z') : str[1]=='y' ? ('z', 'x') : ('x', 'y')
+    return Expr(:call, :dm, orbitals, t₁, t₂)
+end
+function dm(t₁::Char, t₂::Char; orbitals=Subscripts(2))
+    return Couplings(
+        SpinCoupling(+1, (t₁, t₂), orbitals=orbitals),
+        SpinCoupling(-1, (t₂, t₁), orbitals=orbitals)
+        )
 end
 
 """
@@ -479,9 +419,9 @@ end
 
 The single Sˣ/Sʸ/Sᶻ coupling.
 """
-macro sˣ_str(str::String) Expr(:call, :Couplings, Expr(:call, :SpinCoupling, Expr(:parameters, scpairs(str)...), 1, ('x',))) end
-macro sʸ_str(str::String) Expr(:call, :Couplings, Expr(:call, :SpinCoupling, Expr(:parameters, scpairs(str)...), 1, ('y',))) end
-macro sᶻ_str(str::String) Expr(:call, :Couplings, Expr(:call, :SpinCoupling, Expr(:parameters, scpairs(str)...), 1, ('z',))) end
+macro sˣ_str(str::String) Expr(:call, :Couplings, Expr(:call, :SpinCoupling, scorbitals(str, 1), 1, ('x',))) end
+macro sʸ_str(str::String) Expr(:call, :Couplings, Expr(:call, :SpinCoupling, scorbitals(str, 1), 1, ('y',))) end
+macro sᶻ_str(str::String) Expr(:call, :Couplings, Expr(:call, :SpinCoupling, scorbitals(str, 1), 1, ('z',))) end
 
 """
     SpinTerm{R}(id::Symbol, value::Any, bondkind::Any;
