@@ -38,6 +38,7 @@ Three common kinds of systems in condensed matter physics are perfectly supporte
 * **canonical fermionic systems**
 * **canonical/hard-core bosonic systems**
 * **SU(2) spin systems**
+* **Phononic systems**
 
 Furthermore, other systems can be supported easily by extending the generic "protocols" provided in this package.
 
