@@ -82,8 +82,8 @@ waltergu1989@gmail.com
 ## Python counterpart
 [HamiltonianPy](https://github.com/waltergu/HamiltonianPy): in fact, the authors of this Julia package worked on the python package at first and only turned to Julia later.
 
-[main-ci-img]: https://github.com/QuantumManyBody/QuantumLattices.jl/actions/workflows/CI.yml/badge.svg
-[main-ci-url]: https://github.com/QuantumManyBody/QuantumLattices.jl/actions/workflows/CI.yml
+[main-ci-img]: https://github.com/Quantum-Many-Body/QuantumLattices.jl/actions/workflows/CI.yml/badge.svg
+[main-ci-url]: https://github.com/Quantum-Many-Body/QuantumLattices.jl/actions/workflows/CI.yml
 [docs-latest-img]: https://img.shields.io/badge/docs-latest-blue.svg
 [docs-latest-url]: https://quantum-many-body.github.io/QuantumLattices.jl/latest/
 [docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
