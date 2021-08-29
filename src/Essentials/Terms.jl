@@ -4,7 +4,7 @@ using Printf: @printf, @sprintf
 using StaticArrays: SVector
 using MacroTools: @capture
 using ..Spatials: AbstractBond, Point, Bonds, AbstractLattice, acrossbonds, isintracell
-using ..DegreesOfFreedom: Config, AbstractOID, oidtype, Operator, Operators, Table, Boundary, plain
+using ..DegreesOfFreedom: Hilbert, AbstractOID, oidtype, Operator, Operators, Table, Boundary, plain
 using ...Interfaces: add!
 using ...Prerequisites: atol, rtol, decimaltostr
 using ...Prerequisites.Traits: rawtype, efficientoperations
@@ -354,7 +354,7 @@ Get the centers of the coupling on a bond.
 """
     couplingpoints(coupling::Coupling, bond::AbstractBond, info::Val) -> NTuple{rank(coupling), eltype(bond)}
 
-Get the points that correspond to where each order of the coupling acts on.
+Get the points where each order of the coupling acts on.
 """
 @inline function couplingpoints(coupling::Coupling, bond::AbstractBond, info::Val)
     centers = couplingcenters(coupling, bond, info)
@@ -362,13 +362,13 @@ Get the points that correspond to where each order of the coupling acts on.
 end
 
 """
-    couplinginternals(coupling::Coupling, bond::AbstractBond, config::Config, info::Val) -> NTuple{rank(coupling), valtype(config)}
+    couplinginternals(coupling::Coupling, bond::AbstractBond, hilbert::Hilbert, info::Val) -> NTuple{rank(coupling), valtype(hilbert)}
 
-Get the interanl spaces that correspond to where each order of the coupling acts on.
+Get the interanl spaces where each order of the coupling acts on.
 """
-@inline function couplinginternals(coupling::Coupling, bond::AbstractBond, config::Config, info::Val)
+@inline function couplinginternals(coupling::Coupling, bond::AbstractBond, hilbert::Hilbert, info::Val)
     centers = couplingcenters(coupling, bond, info)
-    return NTuple{rank(coupling), valtype(config)}(config[bond[centers[i]].pid] for i = 1:rank(coupling))
+    return NTuple{rank(coupling), valtype(hilbert)}(hilbert[bond[centers[i]].pid] for i = 1:rank(coupling))
 end
 
 """
@@ -565,17 +565,17 @@ function Base.show(io::IO, term::Term)
 end
 
 """
-    repr(term::Term, bond::AbstractBond, config::Config) -> String
+    repr(term::Term, bond::AbstractBond, hilbert::Hilbert) -> String
 
-Get the repr representation of a term on a bond with a given config.
+Get the repr representation of a term on a bond with a given Hilbert space.
 """
-function Base.repr(term::Term, bond::AbstractBond, config::Config)
+function Base.repr(term::Term, bond::AbstractBond, hilbert::Hilbert)
     cache = String[]
     if term.bondkind == bond|>kind
         value = term.value * term.amplitude(bond) * term.factor
         if abs(value) ≠ 0
             for coupling in values(term.couplings(bond))
-                length(expand(coupling, bond, config, term|>kind|>Val))>0 &&  push!(cache, @sprintf "%s: %s" abbr(term) repr(value*coupling))
+                length(expand(coupling, bond, hilbert, term|>kind|>Val))>0 &&  push!(cache, @sprintf "%s: %s" abbr(term) repr(value*coupling))
             end
         end
     end
@@ -634,31 +634,31 @@ function update!(term::Term, args...; kwargs...)
 end
 
 """
-    otype(T::Type{<:Term}, C::Type{<:Config}, B::Type{<:AbstractBond})
+    otype(T::Type{<:Term}, H::Type{<:Hilbert}, B::Type{<:AbstractBond})
 
-Get the compatible operator type from the type of a term, a configuration of the internal degrees of freedom and a bond.
+Get the compatible operator type from the type of a term, a Hilbert space and a bond.
 """
-otype(T::Type{<:Term}, C::Type{<:Config}, B::Type{<:AbstractBond}) = Operator{T|>valtype, ID{oidtype(C|>valtype, B|>eltype, Val(:info)), T|>rank}}
+otype(T::Type{<:Term}, H::Type{<:Hilbert}, B::Type{<:AbstractBond}) = Operator{T|>valtype, ID{oidtype(H|>valtype, B|>eltype, Val(:info)), T|>rank}}
 
 """
-    expand!(operators::Operators, term::Term, bond::AbstractBond, config::Config, half::Bool=false; table::Union{Nothing, Table}=nothing) -> Operators
-    expand!(operators::Operators, term::Term, bonds::Bonds, config::Config, half::Bool=false; table::Union{Nothing, Table}=nothing) -> Operators
+    expand!(operators::Operators, term::Term, bond::AbstractBond, hilbert::Hilbert, half::Bool=false; table::Union{Nothing, Table}=nothing) -> Operators
+    expand!(operators::Operators, term::Term, bonds::Bonds, hilbert::Hilbert, half::Bool=false; table::Union{Nothing, Table}=nothing) -> Operators
 
-Expand the operators of a term on a bond/set-of-bonds with a given config.
+Expand the operators of a term on a bond/set-of-bonds with a given Hilbert space.
 
 The `half` parameter determines the behavior of generating operators, which falls into the following two categories
 * `true`: "Hermitian half" of the generated operators
 * `false`: "Hermitian whole" of the generated operators
 """
-function expand!(operators::Operators, term::Term, bond::AbstractBond, config::Config, half::Bool=false; table::Union{Nothing, Table}=nothing)
+function expand!(operators::Operators, term::Term, bond::AbstractBond, hilbert::Hilbert, half::Bool=false; table::Union{Nothing, Table}=nothing)
     if term.bondkind == bond|>kind
         value = term.value * term.amplitude(bond) * term.factor
         if abs(value) ≠ 0
             hermitian = isHermitian(term)
-            optype = otype(term|>typeof, config|>typeof, bond|>typeof)
+            optype = otype(term|>typeof, hilbert|>typeof, bond|>typeof)
             record = (isnothing(hermitian) && length(operators)>0) ? Set{optype|>idtype}() : nothing
             for coupling in values(term.couplings(bond))
-                for (coeff, id) in expand(coupling, bond, config, term|>kind|>Val)
+                for (coeff, id) in expand(coupling, bond, hilbert, term|>kind|>Val)
                     isapprox(coeff, 0.0, atol=atol, rtol=rtol) && continue
                     !isnothing(table) && !all(haskey(table, id)) && continue
                     if hermitian == true
@@ -682,10 +682,10 @@ function expand!(operators::Operators, term::Term, bond::AbstractBond, config::C
     end
     return operators
 end
-@generated function expand!(operators::Operators, term::Term, bonds::Bonds, config::Config, half::Bool=false; table::Union{Nothing, Table}=nothing)
+@generated function expand!(operators::Operators, term::Term, bonds::Bonds, hilbert::Hilbert, half::Bool=false; table::Union{Nothing, Table}=nothing)
     exprs = []
     for i = 1:rank(bonds)
-        push!(exprs, :(for bond in bonds.bonds[$i] expand!(operators, term, bond, config, half; table=table) end))
+        push!(exprs, :(for bond in bonds.bonds[$i] expand!(operators, term, bond, hilbert, half; table=table) end))
     end
     push!(exprs, :(return operators))
     return Expr(:block, exprs...)
@@ -693,18 +693,18 @@ end
 @inline termfactor(id::ID{AbstractOID}, ::Val) = isHermitian(id) ? 2 : 1
 
 """
-    expand(term::Term, bond::AbstractBond, config::Config, half::Bool=false; table::Union{Nothing, Table}=nothing) -> Operators
-    expand(term::Term, bonds::Bonds, config::Config, half::Bool=false; table::Union{Nothing, Table}=nothing) -> Operators
+    expand(term::Term, bond::AbstractBond, hilbert::Hilbert, half::Bool=false; table::Union{Nothing, Table}=nothing) -> Operators
+    expand(term::Term, bonds::Bonds, hilbert::Hilbert, half::Bool=false; table::Union{Nothing, Table}=nothing) -> Operators
 
-Expand the operators of a term on a bond/set-of-bonds with a given config.
+Expand the operators of a term on a bond/set-of-bonds with a given Hilbert space.
 """
-@inline function expand(term::Term, bond::AbstractBond, config::Config, half::Bool=false; table::Union{Nothing, Table}=nothing)
-    optype = otype(term|>typeof, config|>typeof, bond|>typeof)
-    expand!(Operators{idtype(optype), optype}(), term, bond, config, half; table=table)
+@inline function expand(term::Term, bond::AbstractBond, hilbert::Hilbert, half::Bool=false; table::Union{Nothing, Table}=nothing)
+    optype = otype(term|>typeof, hilbert|>typeof, bond|>typeof)
+    expand!(Operators{idtype(optype), optype}(), term, bond, hilbert, half; table=table)
 end
-@inline function expand(term::Term, bonds::Bonds, config::Config, half::Bool=false; table::Union{Nothing, Table}=nothing)
-    optype = otype(term|>typeof, config|>typeof, bonds|>eltype)
-    expand!(Operators{idtype(optype), optype}(), term, bonds, config, half, table=table)
+@inline function expand(term::Term, bonds::Bonds, hilbert::Hilbert, half::Bool=false; table::Union{Nothing, Table}=nothing)
+    optype = otype(term|>typeof, hilbert|>typeof, bonds|>eltype)
+    expand!(Operators{idtype(optype), optype}(), term, bonds, hilbert, half, table=table)
 end
 
 """
@@ -733,7 +733,7 @@ Judge whether the second set of parameters matches the first.
 end
 
 """
-    GenOperators(terms::Tuple{Vararg{Term}}, bonds::Bonds, config::Config, half::Bool; table::Union{Nothing, Table}=nothing)
+    GenOperators(terms::Tuple{Vararg{Term}}, bonds::Bonds, hilbert::Hilbert, half::Bool; table::Union{Nothing, Table}=nothing)
 
 A set of operators. This is the core of [`AbstractGenerator`](@ref).
 """
@@ -742,7 +742,7 @@ struct GenOperators{C<:Operators, A<:NamedContainer{Operators}, B<:NamedContaine
     alterops::A
     boundops::B
 end
-@generated function GenOperators(terms::Tuple{Vararg{Term}}, bonds::Bonds, config::Config, half::Bool; table::Union{Nothing, Table}=nothing)
+@generated function GenOperators(terms::Tuple{Vararg{Term}}, bonds::Bonds, hilbert::Hilbert, half::Bool; table::Union{Nothing, Table}=nothing)
     constterms, alterterms = [], []
     for term in fieldtypes(terms)
         ismodulatable(term) ? push!(alterterms, term) : push!(constterms, term)
@@ -752,10 +752,10 @@ end
     exprs, alterops, boundops = [], [], []
     push!(exprs, quote
         choosedterms = length($constterms)>0 ? $constterms : $alterterms
-        constoptp = otype(choosedterms[1], config|>typeof, bonds|>eltype)
+        constoptp = otype(choosedterms[1], hilbert|>typeof, bonds|>eltype)
         constidtp = constoptp |> idtype
         for i = 2:length(choosedterms)
-            tempoptp = otype(choosedterms[i], config|>typeof, bonds|>eltype)
+            tempoptp = otype(choosedterms[i], hilbert|>typeof, bonds|>eltype)
             constoptp = promote_type(constoptp, tempoptp)
             constidtp = promote_type(constidtp, tempoptp|>idtype)
         end
@@ -764,11 +764,11 @@ end
         boundbonds = filter(acrossbonds, bonds, Val(:include))
     end)
     for i = 1:fieldcount(terms)
-        push!(boundops, :(expand(one(terms[$i]), boundbonds, config, half, table=table)))
+        push!(boundops, :(expand(one(terms[$i]), boundbonds, hilbert, half, table=table)))
         if ismodulatable(fieldtype(terms, i))
-            push!(alterops, :(expand(one(terms[$i]), innerbonds, config, half, table=table)))
+            push!(alterops, :(expand(one(terms[$i]), innerbonds, hilbert, half, table=table)))
         else
-            push!(exprs, :(expand!(constops, terms[$i], innerbonds, config, half, table=table)))
+            push!(exprs, :(expand!(constops, terms[$i], innerbonds, hilbert, half, table=table)))
         end
     end
     alterops = Expr(:tuple, alterops...)
@@ -876,11 +876,11 @@ Expand the operators with the given boundary twist and term coefficients.
 end
 
 """
-    reset!(genops::GenOperators, terms::Tuple{Vararg{Term}}, bonds::Bonds, config::Config, half::Bool; table::Union{Nothing, Table}=nothing) -> GenOperators
+    reset!(genops::GenOperators, terms::Tuple{Vararg{Term}}, bonds::Bonds, hilbert::Hilbert, half::Bool; table::Union{Nothing, Table}=nothing) -> GenOperators
 
-Reset a set of operators by new terms, bonds, config, etc..
+Reset a set of operators by the new terms, bonds and Hilbert space.
 """
-@generated function reset!(genops::GenOperators, terms::Tuple{Vararg{Term}}, bonds::Bonds, config::Config, half::Bool; table::Union{Nothing, Table}=nothing)
+@generated function reset!(genops::GenOperators, terms::Tuple{Vararg{Term}}, bonds::Bonds, hilbert::Hilbert, half::Bool; table::Union{Nothing, Table}=nothing)
     exprs = []
     push!(exprs, quote
         empty!(genops)
@@ -889,11 +889,11 @@ Reset a set of operators by new terms, bonds, config, etc..
     end)
     for (i, term) in enumerate(fieldtypes(terms))
         name = QuoteNode(term|>id)
-        push!(exprs, :(expand!(getfield(genops.boundops, $name), one(terms[$i]), boundbonds, config, half, table=table)))
+        push!(exprs, :(expand!(getfield(genops.boundops, $name), one(terms[$i]), boundbonds, hilbert, half, table=table)))
         if ismodulatable(term)
-            push!(exprs, :(expand!(getfield(genops.alterops, $name), one(terms[$i]), innerbonds, config, half, table=table)))
+            push!(exprs, :(expand!(getfield(genops.alterops, $name), one(terms[$i]), innerbonds, hilbert, half, table=table)))
         else
-            push!(exprs, :(expand!(genops.constops, terms[$i], innerbonds, config, half, table=table)))
+            push!(exprs, :(expand!(genops.constops, terms[$i], innerbonds, hilbert, half, table=table)))
         end
     end
     push!(exprs, :(return genops))
@@ -901,21 +901,21 @@ Reset a set of operators by new terms, bonds, config, etc..
 end
 
 """
-    AbstractGenerator{TS<:NamedContainer{Term}, BS<:Bonds, C<:Config, T<:Table, B<:Boundary, OS<:GenOperators}
+    AbstractGenerator{TS<:NamedContainer{Term}, BS<:Bonds, H<:Hilbert, T<:Table, B<:Boundary, OS<:GenOperators}
 
 Abstract generator.
 
 By protocol, a concrete generator should have the following predefined contents:
 * `terms::TS`: the terms contained in a generator
 * `bonds::BS`: the bonds on which the terms are defined
-* `config::C`: the configuration of the interanl degrees of freedom
+* `hilbert::H`: the total Hilbert space
 * `half::Bool`: true for generating an Hermitian half of the operators and false for generating the whole
 * `table::Table`: the index-sequence table
 * `boundary::B`: boundary twist for the generated operators, `nothing` for no twist
 * `operators::OS`: the generated operators
 """
-abstract type AbstractGenerator{TS<:NamedContainer{Term}, BS<:Bonds, C<:Config, T<:Table, B<:Boundary, OS<:GenOperators} end
-@inline contentnames(::Type{<:AbstractGenerator}) = (:terms, :bonds, :config, :half, :table, :boundary, :operators)
+abstract type AbstractGenerator{TS<:NamedContainer{Term}, BS<:Bonds, H<:Hilbert, T<:Table, B<:Boundary, OS<:GenOperators} end
+@inline contentnames(::Type{<:AbstractGenerator}) = (:terms, :bonds, :hilbert, :half, :table, :boundary, :operators)
 
 """
     ==(gen₁::AbstractGenerator, gen₂::AbstractGenerator) -> Bool
@@ -938,7 +938,7 @@ Judge whether generators are equivalent to each other.
 Get the operator type of the generated opeators.
 """
 @inline otype(gen::AbstractGenerator) = otype(typeof(gen))
-@inline otype(::Type{<:AbstractGenerator{<:NamedContainer{Term}, <:Bonds, <:Config, <:Table, <:Boundary, OS}}) where {OS<:GenOperators} = eltype(OS)
+@inline otype(::Type{<:AbstractGenerator{<:NamedContainer{Term}, <:Bonds, <:Hilbert, <:Table, <:Boundary, OS}}) where {OS<:GenOperators} = eltype(OS)
 
 """
     Parameters(gen::AbstractGenerator) -> Parameters
@@ -972,15 +972,15 @@ Expand the operators of a generator:
 @inline expand(gen::AbstractGenerator) = expand!(Operators{idtype(otype(gen)), otype(gen)}(), gen)
 function expand(gen::AbstractGenerator, name::Symbol)
     bonds = getcontent(gen, :bonds)
-    config = getcontent(gen, :config)
+    hilbert = getcontent(gen, :hilbert)
     ops = getcontent(gen, :operators)
     term = getfield(getcontent(gen, :terms), name)
-    optp = otype(term|>typeof, config|>typeof, bonds|>eltype)
+    optp = otype(term|>typeof, hilbert|>typeof, bonds|>eltype)
     result = Operators{idtype(optp), optp}()
     if ismodulatable(term)
         for opt in getfield(ops.alterops, name)|>values add!(result, opt*term.value) end
     else
-        expand!(result, term, filter(acrossbonds, bonds, Val(:exclude)), config, getcontent(gen, :half), table=getcontent(gen, :table))
+        expand!(result, term, filter(acrossbonds, bonds, Val(:exclude)), hilbert, getcontent(gen, :half), table=getcontent(gen, :table))
     end
     for opt in getfield(ops.boundops, name)|>values
         add!(result, getcontent(gen, :boundary)(opt)*term.value)
@@ -994,7 +994,7 @@ end
         result = Operators{idtype(otype(gen)), otype(gen)}()
     end)
     for i = 1:fieldcount(TS)
-        push!(exprs, :(expand!(result, getcontent(gen, :terms)[$i], bond, getcontent(gen, :config), getcontent(gen, :half), table=getcontent(gen, :table))))
+        push!(exprs, :(expand!(result, getcontent(gen, :terms)[$i], bond, getcontent(gen, :hilbert), getcontent(gen, :half), table=getcontent(gen, :table))))
     end
     push!(exprs, quote
         isintracell(bond) && for opt in values(result)
@@ -1006,7 +1006,7 @@ end
 end
 function expand(gen::AbstractGenerator, name::Symbol, i::Int)
     bond = getcontent(gen, :bonds)[i]
-    result = expand(getfield(getcontent(gen, :terms), name), bond, getcontent(gen, :config), getcontent(gen, :half), table=getcontent(gen, :table))
+    result = expand(getfield(getcontent(gen, :terms), name), bond, getcontent(gen, :hilbert), getcontent(gen, :half), table=getcontent(gen, :table))
     isintracell(bond) && for opt in values(result)
         result[id(opt)] = getcontent(gen, :boundary)(opt)
     end
@@ -1028,26 +1028,26 @@ Update the coefficients of the terms in a generator.
 end
 
 """
-    Generator(terms::Tuple{Vararg{Term}}, bonds::Bonds, config::Config;
+    Generator(terms::Tuple{Vararg{Term}}, bonds::Bonds, hilbert::Hilbert;
         half::Bool=false, table::Union{Table,Nothing}=nothing, boundary::Boundary=plain
         )
 
 A generator of operators based on terms, configuration of internal degrees of freedom, and boundary twist.
 """
-struct Generator{TS<:NamedContainer{Term}, BS<:Bonds, C<:Config, T<:Table, B<:Boundary, OS<:GenOperators} <: AbstractGenerator{TS, BS, C, T, B, OS}
+struct Generator{TS<:NamedContainer{Term}, BS<:Bonds, H<:Hilbert, T<:Table, B<:Boundary, OS<:GenOperators} <: AbstractGenerator{TS, BS, H, T, B, OS}
     terms::TS
     bonds::BS
-    config::C
+    hilbert::H
     half::Bool
     table::T
     boundary::B
     operators::OS
 end
-@inline function Generator(terms::Tuple{Vararg{Term}}, bonds::Bonds, config::Config;
+@inline function Generator(terms::Tuple{Vararg{Term}}, bonds::Bonds, hilbert::Hilbert;
         half::Bool=false, table::Union{Table,Nothing}=nothing, boundary::Boundary=plain
         )
-    isnothing(table) && (table = Table(config))
-    Generator(namedterms(terms), bonds, config, half, table, boundary, GenOperators(terms, bonds, config, half, table=table))
+    isnothing(table) && (table = Table(hilbert))
+    Generator(namedterms(terms), bonds, hilbert, half, table, boundary, GenOperators(terms, bonds, hilbert, half, table=table))
 end
 @generated function namedterms(terms::Tuple{Vararg{Term}})
     names = NTuple{fieldcount(terms), Symbol}(id(fieldtype(terms, i)) for i = 1:fieldcount(terms))
@@ -1057,11 +1057,11 @@ end
 """
     empty!(gen::Generator) -> Generator
 
-Empty the :bonds, :config, :table and :operators of a generator.
+Empty the :bonds, :hilbert, :table and :operators of a generator.
 """
 function Base.empty!(gen::Generator)
     empty!(gen.bonds)
-    empty!(gen.config)
+    empty!(gen.hilbert)
     empty!(gen.table)
     empty!(gen.operators)
     return gen
@@ -1072,7 +1072,7 @@ end
 
 Get an empty copy of a generator.
 """
-@inline Base.empty(gen::Generator) = Generator(gen.terms, empty(gen.bonds), empty(gen.config), gen.half, empty(gen.table), gen.boundary, empty(gen.operators))
+@inline Base.empty(gen::Generator) = Generator(gen.terms, empty(gen.bonds), empty(gen.hilbert), gen.half, empty(gen.table), gen.boundary, empty(gen.operators))
 
 """
     reset!(gen::Generator, lattice::AbstractLattice) -> Generator
@@ -1081,9 +1081,9 @@ Reset a generator by a new lattice.
 """
 function reset!(gen::Generator, lattice::AbstractLattice)
     reset!(gen.bonds, lattice)
-    reset!(gen.config, lattice.pids)
-    reset!(gen.table, gen.config)
-    reset!(gen.operators, Tuple(gen.terms), gen.bonds, gen.config, gen.half, table=gen.table)
+    reset!(gen.hilbert, lattice.pids)
+    reset!(gen.table, gen.hilbert)
+    reset!(gen.operators, Tuple(gen.terms), gen.bonds, gen.hilbert, gen.half, table=gen.table)
     return gen
 end
 

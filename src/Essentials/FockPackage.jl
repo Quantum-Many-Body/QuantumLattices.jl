@@ -4,7 +4,7 @@ using StaticArrays: SVector
 using LinearAlgebra: dot
 using Printf: @printf, @sprintf
 using ..Spatials: AbstractPID, AbstractBond, Point, Bond, decompose
-using ..DegreesOfFreedom: IID, Internal, Index, LaTeX, OID, AbstractCompositeOID, latexformat, OIDToTuple, Operator, Operators, Config, Table
+using ..DegreesOfFreedom: IID, Internal, Index, LaTeX, OID, AbstractCompositeOID, latexformat, OIDToTuple, Operator, Operators, Hilbert, Table
 using ..Terms: wildcard, Subscripts, SubID, Coupling, Couplings, couplingpoints, couplinginternals, Term, TermCouplings, TermAmplitude, TermModulate
 using ...Essentials: kind
 using ...Prerequisites: Float, delta, decimaltostr
@@ -363,13 +363,13 @@ function ⋅(fc₁::FockCoupling, fc₂::FockCoupling)
 end
 
 """
-    expand(fc::FockCoupling, bond::AbstractBond, config::Config, info::Val) -> FCExpand
+    expand(fc::FockCoupling, bond::AbstractBond, hilbert::Hilbert, info::Val) -> FCExpand
 
-Expand a Fock coupling with the given bond and the config of the Fock degrees of freedom.
+Expand a Fock coupling with the given bond and the Hilbert space.
 """
-function expand(fc::FockCoupling, bond::AbstractBond, config::Config, info::Val)
+function expand(fc::FockCoupling, bond::AbstractBond, hilbert::Hilbert, info::Val)
     points = couplingpoints(fc, bond, info)
-    focks = couplinginternals(fc, bond, config, info)
+    focks = couplinginternals(fc, bond, hilbert, info)
     @assert rank(fc)==length(points)==length(focks) "expand error: dismatched rank."
     nambus = fockcouplingnambus(fc, NTuple{rank(fc), Int}(focks[i].nnambu for i = 1:rank(fc)), info)
     obexpands = collect(expand(fc.orbitals, NTuple{rank(fc), Int}(focks[i].norbital for i = 1:rank(fc))))
@@ -615,10 +615,10 @@ function fockcouplingnambus(fc::FockCoupling, ranges::NTuple{2, Int}, ::Val{:Pai
     n₂ = isa(fc.nambus[2], Int) ? (0<fc.nambus[2]<=2 ? fc.nambus[2] : error("fockcouplingnambus error: nambu out of range.")) : ANNIHILATION
     return (n₁, n₂)
 end
-function expand!(operators::Operators, term::Pairing, bond::AbstractBond, config::Config, half::Bool=false; table::Union{Nothing, Table}=nothing)
-    argtypes = Tuple{Operators, Term, AbstractBond, Config, Bool}
-    invoke(expand!, argtypes, operators, term, bond, config, half; table=table)
-    isa(bond, Bond) && invoke(expand!, argtypes, operators, term, reverse(bond), config, half; table=table)
+function expand!(operators::Operators, term::Pairing, bond::AbstractBond, hilbert::Hilbert, half::Bool=false; table::Union{Nothing, Table}=nothing)
+    argtypes = Tuple{Operators, Term, AbstractBond, Hilbert, Bool}
+    invoke(expand!, argtypes, operators, term, bond, hilbert, half; table=table)
+    isa(bond, Bond) && invoke(expand!, argtypes, operators, term, reverse(bond), hilbert, half; table=table)
     return operators
 end
 

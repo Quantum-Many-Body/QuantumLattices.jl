@@ -2,7 +2,7 @@ using Test
 using StaticArrays: SVector
 using QuantumLattices.Essentials.FockPackage
 using QuantumLattices.Essentials.Spatials: Bond, Point, AbstractPID, PID, CPID, rcoord, azimuthd
-using QuantumLattices.Essentials.DegreesOfFreedom: Index, Config, AbstractCompositeOID, OID, Operator, Operators, script, latexname, isHermitian
+using QuantumLattices.Essentials.DegreesOfFreedom: Index, Hilbert, AbstractCompositeOID, OID, Operator, Operators, script, latexname, isHermitian
 using QuantumLattices.Essentials.Terms: Couplings, Subscripts, @subscripts_str, SubID, abbr
 using QuantumLattices.Interfaces: ⊗, ⋅, expand, permute, rank
 using QuantumLattices.Prerequisites: Float
@@ -132,8 +132,8 @@ end
 
     fc = FockCoupling{2}(2.0, orbitals=(1, 2), nambus=(2, 1))
     bond = Bond(1, Point(CPID(1, 2), SVector(0.5), SVector(0.0)), Point(CPID(1, 1), SVector(0.0), SVector(0.0)))
-    config = Config{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [bond.epoint.pid, bond.spoint.pid])
-    ex = expand(fc, bond, config, Val(:Hopping))
+    hilbert = Hilbert{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [bond.epoint.pid, bond.spoint.pid])
+    ex = expand(fc, bond, hilbert, Val(:Hopping))
     @test eltype(ex) == Tuple{Float, ID{OID{Index{CPID{Int}, FID{:f}}, SVector{1, Float}}, 2}}
     @test Dims(ex) == (1, 2)
     @test collect(ex) == [
@@ -143,8 +143,8 @@ end
 
     fc = FockCoupling{4}(2.0, spins=(2, 2, 1, 1), nambus=(2, 1, 2, 1))
     point = Point(PID(1), SVector(0.0), SVector(0.0))
-    config = Config{Fock{:b}}(pid->Fock{:b}(norbital=2, nspin=2, nnambu=2), [point.pid])
-    ex = expand(fc, point, config, Val(:info))
+    hilbert = Hilbert{Fock{:b}}(pid->Fock{:b}(norbital=2, nspin=2, nnambu=2), [point.pid])
+    ex = expand(fc, point, hilbert, Val(:info))
     @test eltype(ex) == Tuple{Float, ID{OID{Index{PID, FID{:b}}, SVector{1, Float}}, 4}}
     @test Dims(ex) == (2, 1)
     @test collect(ex) == [
@@ -162,8 +162,8 @@ end
 
     fc = FockCoupling{4}(2.0, orbitals=subscripts"[α α β β](α < β)", spins=(2, 1, 1, 2), nambus=(2, 2, 1, 1))
     point = Point(PID(1), SVector(0.5), SVector(0.0))
-    config = Config{Fock{:f}}(pid->Fock{:f}(norbital=3, nspin=2, nnambu=2), [point.pid])
-    ex = expand(fc, point, config, Val(:info))
+    hilbert = Hilbert{Fock{:f}}(pid->Fock{:f}(norbital=3, nspin=2, nnambu=2), [point.pid])
+    ex = expand(fc, point, hilbert, Val(:info))
     @test Dims(ex) == (3, 1)
     @test collect(ex) == [
         (2.0, ID(OID(Index(PID(1), FID{:f}(1, 2, 2)), SVector(0.5), SVector(0.0)),
@@ -186,8 +186,8 @@ end
     fc₁ = FockCoupling{2}(+1.0, spins=(2, 2), nambus=(2, 1))
     fc₂ = FockCoupling{2}(-1.0, spins=(1, 1), nambus=(2, 1))
     point = Point(CPID(1, 1), SVector(0.0), SVector(0.0))
-    config = Config{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [point.pid])
-    ex = expand(fc₁*fc₂, point, config, Val(:info))
+    hilbert = Hilbert{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [point.pid])
+    ex = expand(fc₁*fc₂, point, hilbert, Val(:info))
     @test Dims(ex) == (4, 1)
     @test collect(ex) == [
         (-1.0, ID(OID(Index(CPID(1, 1), FID{:f}(1, 2, 2)), SVector(0.0), SVector(0.0)),
@@ -280,15 +280,15 @@ end
     @test isnothing(isHermitian(Onsite))
 
     point = Point(PID(1), (0.5, 0.5), (0.0, 0.0))
-    config = Config{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [point.pid])
+    hilbert = Hilbert{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [point.pid])
 
     term = Onsite(:mu, 1.5, couplings=σˣ"sp"⊗σᶻ"ob", modulate=true)
     operators = Operators(
         Operator(+1.5, ID(OID(Index(PID(1), FID{:f}(2, 1, 2)), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(1), FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0]))),
         Operator(-1.5, ID(OID(Index(PID(1), FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])))
     )
-    @test expand(term, point, config, true) == operators
-    @test expand(term, point, config, false) == operators+operators'
+    @test expand(term, point, hilbert, true) == operators
+    @test expand(term, point, hilbert, false) == operators+operators'
 
     term = Onsite(:mu, 1.5, couplings=σᶻ"sp"⊗σᶻ"ob", modulate=true)
     operators = Operators(
@@ -297,13 +297,13 @@ end
         Operator(+0.75, ID(OID(Index(PID(1), FID{:f}(2, 2, 2)), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(1), FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0]))),
         Operator(+0.75, ID(OID(Index(PID(1), FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(1), FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0])))
     )
-    @test expand(term, point, config, true) == operators
-    @test expand(term, point, config, false) == operators+operators'
+    @test expand(term, point, hilbert, true) == operators
+    @test expand(term, point, hilbert, false) == operators+operators'
 end
 
 @testset "Hopping" begin
     bond = Bond(1, Point(CPID('a', 1), (0.5, 0.5), (0.0, 0.0)), Point(CPID('b', 2), (0.0, 0.0), (0.0, 0.0)))
-    config = Config{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [bond.spoint.pid, bond.epoint.pid])
+    hilbert = Hilbert{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [bond.spoint.pid, bond.epoint.pid])
     term = Hopping(:t, 1.5, 1)
     operators = Operators(
         Operator(1.5, ID(OID(Index(CPID('b', 2), FID{:f}(2, 2, 2)), [0.0, 0.0], [0.0, 0.0]), OID(Index(CPID('a', 1), FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0]))),
@@ -313,13 +313,13 @@ end
     )
     @test term|>abbr == :hp
     @test term|>isHermitian == false
-    @test expand(term, bond, config, true) == operators
-    @test expand(term, bond, config, false) == operators+operators'
+    @test expand(term, bond, hilbert, true) == operators
+    @test expand(term, bond, hilbert, false) == operators+operators'
 end
 
 @testset "Pairing" begin
     bond = Bond(1, Point(PID(1), (0.5, 0.5), (0.0, 0.0)), Point(PID(2), (0.0, 0.0), (0.0, 0.0)))
-    config = Config{Fock{:f}}(pid->Fock{:f}(norbital=1, nspin=2, nnambu=2), [bond.spoint.pid, bond.epoint.pid])
+    hilbert = Hilbert{Fock{:f}}(pid->Fock{:f}(norbital=1, nspin=2, nnambu=2), [bond.spoint.pid, bond.epoint.pid])
     term = Pairing(:Δ, 1.5, 1, couplings=FockCoupling{2}(spins=(2, 2)), amplitude=bond->(bond|>rcoord|>azimuthd ≈ 45 ? 1 : -1))
     operators = Operators(
         Operator(-1.5, ID(OID(Index(PID(2), FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]))),
@@ -327,24 +327,24 @@ end
     )
     @test term|>abbr == :pr
     @test term|>isHermitian == false
-    @test expand(term, bond, config, true) == operators
-    @test expand(term, bond, config, false) == operators+operators'
+    @test expand(term, bond, hilbert, true) == operators
+    @test expand(term, bond, hilbert, false) == operators+operators'
 
     point = Point(CPID('a', 1), (0.5, 0.5), (0.0, 0.0))
-    config = Config{Fock{:f}}(pid->Fock{:f}(norbital=1, nspin=2, nnambu=2), [point.pid])
+    hilbert = Hilbert{Fock{:f}}(pid->Fock{:f}(norbital=1, nspin=2, nnambu=2), [point.pid])
     term = Pairing(:Δ, 1.5, 0, couplings=FockCoupling{2}(spins=(2, 1))-FockCoupling{2}(spins=(1, 2)))
     operators = Operators(
         Operator(+1.5, ID(OID(Index(CPID('a', 1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]), OID(Index(CPID('a', 1), FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]))),
         Operator(-1.5, ID(OID(Index(CPID('a', 1), FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]), OID(Index(CPID('a', 1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])))
     )
     @test term|>abbr == :pr
-    @test expand(term, point, config, true) == operators
-    @test expand(term, point, config, false) == operators+operators'
+    @test expand(term, point, hilbert, true) == operators
+    @test expand(term, point, hilbert, false) == operators+operators'
 end
 
 @testset "Hubbard" begin
     point = Point(PID(1), (0.5, 0.5), (0.0, 0.0))
-    config = Config{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [point.pid])
+    hilbert = Hilbert{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [point.pid])
     term = Hubbard(:H, 2.5)
     operators = Operators(
         Operator(1.25, ID(
@@ -362,13 +362,13 @@ end
     )
     @test term|>abbr == :hb
     @test term|>isHermitian == true
-    @test expand(term, point, config, true) == operators
-    @test expand(term, point, config, false) == operators*2
+    @test expand(term, point, hilbert, true) == operators
+    @test expand(term, point, hilbert, false) == operators*2
 end
 
 @testset "InterOrbitalInterSpin" begin
     point = Point(PID(1), (0.5, 0.5), (0.0, 0.0))
-    config = Config{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [point.pid])
+    hilbert = Hilbert{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [point.pid])
     term = InterOrbitalInterSpin(:H, 2.5)
     operators = Operators(
         Operator(1.25, ID(
@@ -386,13 +386,13 @@ end
     )
     @test term|>abbr == :nons
     @test term|>isHermitian == true
-    @test expand(term, point, config, true) == operators
-    @test expand(term, point, config, false) == operators*2
+    @test expand(term, point, hilbert, true) == operators
+    @test expand(term, point, hilbert, false) == operators*2
 end
 
 @testset "InterOrbitalIntraSpin" begin
     point = Point(PID(1), (0.5, 0.5), (0.0, 0.0))
-    config = Config{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [point.pid])
+    hilbert = Hilbert{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [point.pid])
     term = InterOrbitalIntraSpin(:H, 2.5)
     operators = Operators(
         Operator(1.25, ID(
@@ -410,13 +410,13 @@ end
     )
     @test term|>abbr == :noes
     @test term|>isHermitian == true
-    @test expand(term, point, config, true) == operators
-    @test expand(term, point, config, false) == operators*2
+    @test expand(term, point, hilbert, true) == operators
+    @test expand(term, point, hilbert, false) == operators*2
 end
 
 @testset "SpinFlip" begin
     point = Point(PID(1), (0.5, 0.5), (0.0, 0.0))
-    config = Config{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [point.pid])
+    hilbert = Hilbert{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [point.pid])
     term = SpinFlip(:H, 2.5)
     operators = Operators(
         Operator(2.5, ID(
@@ -428,13 +428,13 @@ end
     )
     @test term|>abbr == :sf
     @test term|>isHermitian == false
-    @test expand(term, point, config, true) == operators
-    @test expand(term, point, config, false) == operators+operators'
+    @test expand(term, point, hilbert, true) == operators
+    @test expand(term, point, hilbert, false) == operators+operators'
 end
 
 @testset "PairHopping" begin
     point = Point(PID(1), (0.5, 0.5), (0.0, 0.0))
-    config = Config{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [point.pid])
+    hilbert = Hilbert{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [point.pid])
     term = PairHopping(:H, 2.5)
     operators = Operators(
         Operator(2.5, ID(
@@ -446,13 +446,13 @@ end
     )
     @test term|>abbr == :ph
     @test term|>isHermitian == false
-    @test expand(term, point, config, true) == operators
-    @test expand(term, point, config, false) == operators+operators'
+    @test expand(term, point, hilbert, true) == operators
+    @test expand(term, point, hilbert, false) == operators+operators'
 end
 
 @testset "Coulomb" begin
     bond = Bond(1, Point(PID(1), (0.5, 0.5), (0.0, 0.0)), Point(PID(2), (0.0, 0.0), (0.0, 0.0)))
-    config = Config{Fock{:f}}(pid->Fock{:f}(norbital=1, nspin=2, nnambu=2), [bond.spoint.pid, bond.epoint.pid])
+    hilbert = Hilbert{Fock{:f}}(pid->Fock{:f}(norbital=1, nspin=2, nnambu=2), [bond.spoint.pid, bond.epoint.pid])
 
     term = Coulomb(:V, 2.5, 1, couplings=σᶻ"sp"*σᶻ"sp")
     operators = Operators(
@@ -483,8 +483,8 @@ end
     )
     @test term|>abbr == :cl
     @test isnothing(term|>isHermitian)
-    @test expand(term, bond, config, true) == operators
-    @test expand(term, bond, config, false) == operators+operators'
+    @test expand(term, bond, hilbert, true) == operators
+    @test expand(term, bond, hilbert, false) == operators+operators'
 
     term = Coulomb(:V, 2.5, 1, couplings=σˣ"sp"*σᶻ"sp")
     operators = Operators(
@@ -514,6 +514,6 @@ end
             ))
     )
     @test term|>abbr == :cl
-    @test expand(term, bond, config, true) == operators
-    @test expand(term, bond, config, false) == operators+operators'
+    @test expand(term, bond, hilbert, true) == operators
+    @test expand(term, bond, hilbert, false) == operators+operators'
 end

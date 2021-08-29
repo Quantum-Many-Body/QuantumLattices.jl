@@ -3,7 +3,7 @@ using Printf: @sprintf
 using StaticArrays: SVector
 using QuantumLattices.Essentials.Terms
 using QuantumLattices.Essentials.Spatials: AbstractBond, Point, PID, CPID, Bond, Bonds, Lattice, pidtype, acrossbonds, zerothbonds
-using QuantumLattices.Essentials.DegreesOfFreedom: Config, IID, Index, Internal, OID, Table, OIDToTuple, Operator, Operators, plain
+using QuantumLattices.Essentials.DegreesOfFreedom: Hilbert, IID, Index, Internal, OID, Table, OIDToTuple, Operator, Operators, plain
 using QuantumLattices.Interfaces: rank, expand!
 using QuantumLattices.Essentials: kind, update!, reset!
 using QuantumLattices.Prerequisites: Float, decimaltostr
@@ -33,7 +33,7 @@ struct TCoupling{V<:Number, I<:ID{TCID}} <: Coupling{V, I}
 end
 @inline Base.repr(tc::TCoupling) = @sprintf "%s ph(%s)" decimaltostr(tc.value) join(tc.id.nambus, ", ")
 @inline couplingcenters(::TCoupling, ::Bond, ::Val) = (1, 2)
-function expand(tc::TCoupling, bond::AbstractBond, config::Config, info::Val)
+function expand(tc::TCoupling, bond::AbstractBond, hilbert::Hilbert, info::Val)
     points = couplingpoints(tc, bond, info)
     @assert rank(tc)==length(points)
     nambus = tc.id.nambus
@@ -131,11 +131,11 @@ end
     @test @couplings(TCoupling(1.0, ID(TCID(1)))+TCoupling(1.0, ID(TCID(2)))) == TCoupling(1.0, ID(TCID(1)))+TCoupling(1.0, ID(TCID(2)))
 
     point = Point(CPID(1, 1), (0.0, 0.0), (0.0, 0.0))
-    config = Config{TFock}(pid->TFock(), [CPID(1, 1)])
+    hilbert = Hilbert{TFock}(pid->TFock(), [CPID(1, 1)])
     tc = TCoupling(1.0, ID(TCID(1), TCID(1)))
     @test couplingcenters(tc, point, Val(:Mu)) == (1, 1)
     @test couplingpoints(tc, point, Val(:Mu)) == (point, point)
-    @test couplinginternals(tc, point, config, Val(:Mu)) == (TFock(), TFock())
+    @test couplinginternals(tc, point, hilbert, Val(:Mu)) == (TFock(), TFock())
 end
 
 @testset "TermFunction" begin
@@ -170,7 +170,7 @@ end
 
 @testset "Term" begin
     point = Point(CPID(1, 1), (0.0, 0.0), (0.0, 0.0))
-    config = Config{TFock}(pid->TFock(), [CPID(1, 1)])
+    hilbert = Hilbert{TFock}(pid->TFock(), [CPID(1, 1)])
     term = Term{:Mu, 2}(:mu, 1.5, 0, couplings=TCoupling(1.0, ID(TCID(2), TCID(1))), amplitude=(bond->3), modulate=false)
     @test term|>kind == term|>typeof|>kind == :Mu
     @test term|>id == term|>typeof|>id == :mu
@@ -182,7 +182,7 @@ end
     @test term == deepcopy(term)
     @test isequal(term, deepcopy(term))
     @test string(term) == "Mu{2}(id=mu, value=1.5, bondkind=0, factor=1.0)"
-    @test repr(term, point, config) == "mu: 4.5 ph(2, 1)"
+    @test repr(term, point, hilbert) == "mu: 4.5 ph(2, 1)"
     @test +term == term
     @test -term == term*(-1) == replace(term, factor=-term.factor)
     @test 2*term == term*2 == replace(term, factor=term.factor*2)
@@ -190,13 +190,13 @@ end
 
     p1 = Point(PID(1), (0.0, 0.0), (0.0, 0.0))
     p2 = Point(PID(2), (0.0, 0.0), (0.0, 0.0))
-    config = Config{TFock}(pid->TFock(), [PID(1), PID(2)])
+    hilbert = Hilbert{TFock}(pid->TFock(), [PID(1), PID(2)])
     tcs1 = Couplings(TCoupling(1.0, ID(TCID(2), TCID(2))))
     tcs2 = Couplings(TCoupling(1.0, ID(TCID(1), TCID(1))))
     term = Term{:Mu, 2}(:mu, 1.5, 0, couplings=bond->(tcs1, tcs2)[bond.pid.site%2+1], amplitude=bond->3, modulate=true)
     @test term|>ismodulatable == term|>typeof|>ismodulatable == true
-    @test repr(term, p1, config) == "mu: 4.5 ph(1, 1)"
-    @test repr(term, p2, config) == "mu: 4.5 ph(2, 2)"
+    @test repr(term, p1, hilbert) == "mu: 4.5 ph(1, 1)"
+    @test repr(term, p2, hilbert) == "mu: 4.5 ph(2, 2)"
     @test one(term) == replace(term, value=1.0)
     @test zero(term) == replace(term, value=0.0)
     @test term.modulate(mu=4.0) == 4.0
@@ -207,7 +207,7 @@ end
 
 @testset "expand" begin
     point = Point(PID(1), (0.0, 0.0), (0.0, 0.0))
-    config = Config{TFock}(pid->TFock(), [PID(1)])
+    hilbert = Hilbert{TFock}(pid->TFock(), [PID(1)])
     term = Term{:Mu, 2}(:mu, 1.5, 0, couplings=TCoupling(1.0, ID(TCID(2), TCID(1))), amplitude=bond->3.0, modulate=true)
     operators = Operators(
         Operator(+2.25, ID(
@@ -215,11 +215,11 @@ end
             OID(Index(PID(1), TID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0))
             ))
         )
-    @test expand(term, point, config, true) == operators
-    @test expand(term, point, config, false) == operators*2
+    @test expand(term, point, hilbert, true) == operators
+    @test expand(term, point, hilbert, false) == operators*2
 
     bond = Bond(1, Point(PID(2), (1.5, 1.5), (1.0, 1.0)), Point(PID(1), (0.5, 0.5), (0.0, 0.0)))
-    config = Config{TFock}(pid->TFock(), [PID(1), PID(2)])
+    hilbert = Hilbert{TFock}(pid->TFock(), [PID(1), PID(2)])
     term = Term{:Hp, 2}(:t, 1.5, 1, couplings=TCoupling(1.0, ID(TCID(2), TCID(1))), amplitude=bond->3.0, modulate=true)
     operators = Operators(
         Operator(4.5, ID(
@@ -227,12 +227,12 @@ end
             OID(Index(PID(2), TID(1)), SVector(1.5, 1.5), SVector(1.0, 1.0))
             ))
         )
-    @test expand(term, bond, config, true) == operators
-    @test expand(term, bond, config, false) == operators+operators'
+    @test expand(term, bond, hilbert, true) == operators
+    @test expand(term, bond, hilbert, false) == operators+operators'
 
     lattice = Lattice("Tuanzi", [Point(CPID(1, 1), (0.0, 0.0), (0.0, 0.0))], vectors=[[1.0, 0.0]], neighbors=1)
     bonds = Bonds(lattice)
-    config = Config{TFock}(pid->TFock(), lattice.pids)
+    hilbert = Hilbert{TFock}(pid->TFock(), lattice.pids)
     term = Term{:Mu, 2}(:mu, 1.5, 0, couplings=TCoupling(1.0, ID(TCID(2), TCID(1))), amplitude=bond->3.0, modulate=true)
     operators = Operators(
         Operator(+2.25, ID(
@@ -240,8 +240,8 @@ end
             OID(Index(CPID(1, 1), TID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0))
             ))
         )
-    @test expand(term, bonds, config, true) == operators
-    @test expand(term, bonds, config, false) == operators*2
+    @test expand(term, bonds, hilbert, true) == operators
+    @test expand(term, bonds, hilbert, false) == operators*2
 end
 
 @testset "Parameters" begin
@@ -253,30 +253,30 @@ end
 end
 
 @testset "Generator" begin
-    @test contentnames(AbstractGenerator) == (:terms, :bonds, :config, :half, :table, :boundary, :operators)
+    @test contentnames(AbstractGenerator) == (:terms, :bonds, :hilbert, :half, :table, :boundary, :operators)
 
     lattice = Lattice("Tuanzi", [Point(PID(1), (0.0, 0.0), (0.0, 0.0)), Point(PID(2), (0.5, 0.0), (0.0, 0.0))], vectors=[[1.0, 0.0]], neighbors=1)
     bonds = Bonds(lattice)
-    config = Config{TFock}(pid->TFock(), lattice.pids)
-    table = Table(config, OIDToTuple(:scope, :site))
+    hilbert = Hilbert{TFock}(pid->TFock(), lattice.pids)
+    table = Table(hilbert, OIDToTuple(:scope, :site))
     t = Term{:Hp, 2}(:t, 2.0, 1, couplings=TCoupling(1.0, ID(TCID(2), TCID(1))))
     μ = Term{:Mu, 2}(:μ, 1.0, 0, couplings=TCoupling(1.0, ID(TCID(2), TCID(1))), modulate=true)
-    tops1 = expand(t, filter(acrossbonds, bonds, Val(:exclude)), config, true, table=table)
-    tops2 = expand(one(t), filter(acrossbonds, bonds, Val(:include)), config, true, table=table)
-    μops = expand(one(μ), filter(zerothbonds, bonds, Val(:include)), config, true, table=table)
+    tops1 = expand(t, filter(acrossbonds, bonds, Val(:exclude)), hilbert, true, table=table)
+    tops2 = expand(one(t), filter(acrossbonds, bonds, Val(:include)), hilbert, true, table=table)
+    μops = expand(one(μ), filter(zerothbonds, bonds, Val(:include)), hilbert, true, table=table)
 
     optp = Operator{Float, ID{OID{Index{PID, TID}, SVector{2, Float}}, 2}}
     genops = GenOperators(tops1, NamedContainer{(:μ,)}((μops,)), NamedContainer{(:t, :μ)}((tops2, Operators{optp|>idtype, optp}())))
     @test genops == deepcopy(genops) && isequal(genops, deepcopy(genops))
-    @test genops == GenOperators((t, μ), bonds, config, true, table=table)
+    @test genops == GenOperators((t, μ), bonds, hilbert, true, table=table)
     @test genops|>eltype == genops|>typeof|>eltype == optp
     @test genops|>idtype == genops|>typeof|>idtype == optp|>idtype
     @test expand!(Operators{idtype(optp), optp}(), genops, plain, t=2.0, μ=1.5) == tops1+tops2*2.0+μops*1.5
     @test empty(genops) == empty!(deepcopy(genops))
     @test empty(genops) == GenOperators(empty(μops), NamedContainer{(:μ,)}((empty(μops),)), NamedContainer{(:t, :μ)}((empty(μops), empty(μops))))
-    @test reset!(deepcopy(genops), (t, μ), bonds, config, true, table=table) == genops
+    @test reset!(deepcopy(genops), (t, μ), bonds, hilbert, true, table=table) == genops
 
-    gen = Generator((t, μ), bonds, config; half=true, table=table)
+    gen = Generator((t, μ), bonds, hilbert; half=true, table=table)
     @test gen == deepcopy(gen) && isequal(gen, deepcopy(gen))
     @test Parameters(gen) == Parameters{(:t, :μ)}(2.0, 1.0)
     @test expand!(Operators{idtype(optp), optp}(), gen) == expand(gen) == tops1+tops2*2.0+μops
@@ -286,7 +286,7 @@ end
     @test expand(gen, :μ, 1)+expand(gen, :μ, 2) == μops
     @test expand(gen, :t, 3) == tops1
     @test expand(gen, :t, 4) == tops2*2.0
-    @test empty!(deepcopy(gen)) == Generator((t, μ), empty(bonds), empty(config), half=true, table=empty(table), boundary=plain) == empty(gen)
+    @test empty!(deepcopy(gen)) == Generator((t, μ), empty(bonds), empty(hilbert), half=true, table=empty(table), boundary=plain) == empty(gen)
     @test reset!(empty(gen), lattice) == gen
     @test update!(gen, μ=1.5)|>expand == tops1+tops2*2.0+μops*1.5
 end

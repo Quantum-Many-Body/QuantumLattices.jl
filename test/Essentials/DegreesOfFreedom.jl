@@ -48,11 +48,11 @@ struct IdentityMetric <: Metric end
     @test it|>collect == [DID(1), DID(2)]
 end
 
-@testset "Config" begin
-    config = Config{DFock}(pid->DFock((pid.site-1)%2+1, 2), [CPID(1, 1), CPID(1, 2)])
-    @test convert(Dict, config) == Dict(CPID(1, 1)=>DFock(1, 2), CPID(1, 2)=>DFock(2, 2))
-    reset!(config, (CPID(2, 1), CPID(2, 2)))
-    @test convert(Dict, config) == Dict(CPID(2, 1)=>DFock(1, 2), CPID(2, 2)=>DFock(2, 2))
+@testset "Hilbert" begin
+    hilbert = Hilbert{DFock}(pid->DFock((pid.site-1)%2+1, 2), [CPID(1, 1), CPID(1, 2)])
+    @test convert(Dict, hilbert) == Dict(CPID(1, 1)=>DFock(1, 2), CPID(1, 2)=>DFock(2, 2))
+    reset!(hilbert, (CPID(2, 1), CPID(2, 2)))
+    @test convert(Dict, hilbert) == Dict(CPID(2, 1)=>DFock(1, 2), CPID(2, 2)=>DFock(2, 2))
 end
 
 @testset "Index" begin
@@ -142,7 +142,7 @@ end
 
     @test OIDToTuple(Index{PID, DID}) == OIDToTuple(:site, :nambu)
     @test OIDToTuple(OID{Index{CPID{Int}, DID}}) == OIDToTuple(:scope, :site, :nambu)
-    @test OIDToTuple(Config{DFock, CPID{Int}}) == OIDToTuple(:scope, :site, :nambu)
+    @test OIDToTuple(Hilbert{DFock, CPID{Int}}) == OIDToTuple(:scope, :site, :nambu)
 
     n = IdentityMetric()
     index = Index(CPID('S', 4), DID(1))
@@ -165,11 +165,11 @@ end
     @test empty(table) == Table{Index{PID, DID}}(by)
     @test table[Index(PID(1), DID(1))]==1 && table[Index(PID(1), DID(2))]==1
 
-    config = Config{DFock}(pid->DFock((pid.site-1)%2+1, 2), [PID(1), PID(2)])
+    hilbert = Hilbert{DFock}(pid->DFock((pid.site-1)%2+1, 2), [PID(1), PID(2)])
     inds1 = (Index(PID(1), iid) for iid in DFock(1, 2))|>collect
     inds2 = (Index(PID(2), iid) for iid in DFock(2, 2))|>collect
-    @test Table(config, by) == Table([inds1; inds2], by)
-    @test Table(config, by) == union(Table(inds1, by), Table(inds2, by))
+    @test Table(hilbert, by) == Table([inds1; inds2], by)
+    @test Table(hilbert, by) == union(Table(inds1, by), Table(inds2, by))
 
     opt = Operator(1.0im, ID(
         OID(Index(PID(1), DID(2)), SVector(0.0, 0.0), SVector(1.0, 0.0)),
@@ -178,10 +178,10 @@ end
     @test sequence(opt, table) == (1, 1)
     @test haskey(table, opt.id) == (true, true)
 
-    table = Table(config)
+    table = Table(hilbert)
     @test table == Table([inds1; inds2])
     @test reset!(empty(table), [inds1; inds2]) == table
-    @test reset!(empty(table), config) == table
+    @test reset!(empty(table), hilbert) == table
 end
 
 @testset "LaTeX" begin

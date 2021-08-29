@@ -18,7 +18,7 @@ import ...Essentials: reset!, update!
 import ...Prerequisites.Traits: contentnames
 import ...Mathematics.AlgebraOverFields: sequence
 
-export IID, Internal, Config, AbstractOID, Index, AbstractCompositeOID, OID, AbstractOperator, Operator, Operators
+export IID, Internal, Hilbert, AbstractOID, Index, AbstractCompositeOID, OID, AbstractOperator, Operator, Operators
 export iidtype, isHermitian, indextype, oidtype
 export Metric, OIDToTuple, Table
 export LaTeX, latexname, latexformat, superscript, subscript, script
@@ -46,36 +46,36 @@ Show an internal.
 Base.show(io::IO, i::Internal) = @printf io "%s(%s)" i|>typeof|>nameof join(("$name=$(getfield(i, name))" for name in i|>typeof|>fieldnames), ", ")
 
 """
-    Config{I}(map::Function, pids::AbstractVector{<:AbstractPID}) where {I<:Internal}
+    Hilbert{I}(map::Function, pids::AbstractVector{<:AbstractPID}) where {I<:Internal}
 
-Configuration of the internal degrees of freedom at a lattice.
+Hilbert space at a lattice.
 
 Here, `map` maps a `AbstractPID` to an `Internal`.
 """
-struct Config{I<:Internal, P<:AbstractPID, M<:Function} <: CompositeDict{P, I}
+struct Hilbert{I<:Internal, P<:AbstractPID, M<:Function} <: CompositeDict{P, I}
     map::M
     contents::Dict{P, I}
 end
-@inline contentnames(::Type{<:Config}) = (:map, :contents)
-function Config{I}(map::Function, pids::AbstractVector{<:AbstractPID}) where {I<:Internal}
+@inline contentnames(::Type{<:Hilbert}) = (:map, :contents)
+function Hilbert{I}(map::Function, pids::AbstractVector{<:AbstractPID}) where {I<:Internal}
     contents = Dict{pids|>eltype, I}()
     for pid in pids
         contents[pid] = map(pid)
     end
-    return Config(map, contents)
+    return Hilbert(map, contents)
 end
 
 """
-    reset!(config::Config, pids) -> Config
+    reset!(hilbert::Hilbert, pids) -> Hilbert
 
-Reset the config with new pids.
+Reset the Hilbert space with new pids.
 """
-function reset!(config::Config, pids)
-    empty!(config)
+function reset!(hilbert::Hilbert, pids)
+    empty!(hilbert)
     for pid in pids
-        config[pid] = config.map(pid)
+        hilbert[pid] = hilbert.map(pid)
     end
-    config
+    hilbert
 end
 
 """
@@ -343,11 +343,11 @@ Construct the convertion rule from the information of subtypes of `AbstractOID`.
 @inline OIDToTuple(::Type{I}) where {I<:AbstractCompositeOID} = OIDToTuple(indextype(I))
 
 """
-    OIDToTuple(::Type{C}) where {C<:Config}
+    OIDToTuple(::Type{H}) where {H<:Hilbert}
 
-Construct the convertion rule from the information of `Config`.
+Construct the convertion rule from the information of `Hilbert`.
 """
-@inline OIDToTuple(::Type{C}) where {C<:Config} = OIDToTuple(Index{C|>keytype, C|>valtype|>eltype})
+@inline OIDToTuple(::Type{H}) where {H<:Hilbert} = OIDToTuple(Index{H|>keytype, H|>valtype|>eltype})
 
 """
     valtype(::Type{<:OIDToTuple}, ::Type{<:Index})
@@ -428,13 +428,13 @@ The input oids are measured by the input `by` function with the duplicates remov
 @inline Table(oids::AbstractVector{<:AbstractOID}, by::Metric=OIDToTuple(eltype(oids))) = Table(by, [by(oid) for oid in oids]|>unique!|>sort!|>vec2dict)
 
 """
-    Table(config::Config, by::Metric=OIDToTuple(typeof(config))) -> Table
+    Table(hilbert::Hilbert, by::Metric=OIDToTuple(typeof(hilbert))) -> Table
 
-Get the oid-sequence table of the whole internal degrees of freedom of a lattice by use of their configurations.
+Get the oid-sequence table of a Hilbert space.
 """
-function Table(config::Config, by::Metric=OIDToTuple(typeof(config)))
-    result = Index{config|>keytype, config|>valtype|>eltype}[]
-    for (pid, internal) in config
+function Table(hilbert::Hilbert, by::Metric=OIDToTuple(typeof(hilbert)))
+    result = Index{hilbert|>keytype, hilbert|>valtype|>eltype}[]
+    for (pid, internal) in hilbert
         for iid in internal
             push!(result, (result|>eltype)(pid, iid))
         end
@@ -472,13 +472,13 @@ function reset!(table::Table, oids::AbstractVector{<:AbstractOID})
 end
 
 """
-    reset!(table::Table, config::Config) -> Table
+    reset!(table::Table, hilbert::Hilbert) -> Table
 
-Reset a table by a complete configuration of internal degrees of freedom on a lattice.
+Reset a table by a Hilbert space.
 """
-function reset!(table::Table, config::Config)
-    indices = Index{config|>keytype, config|>valtype|>eltype}[]
-    for (pid, internal) in config
+function reset!(table::Table, hilbert::Hilbert)
+    indices = Index{hilbert|>keytype, hilbert|>valtype|>eltype}[]
+    for (pid, internal) in hilbert
         for iid in internal
             push!(indices, (indices|>eltype)(pid, iid))
         end

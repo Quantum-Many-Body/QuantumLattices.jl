@@ -3,7 +3,7 @@ module SpinPackage
 using StaticArrays: SVector
 using Printf: @printf, @sprintf
 using ..Spatials: AbstractPID, Point, Bond, AbstractBond
-using ..DegreesOfFreedom: IID, Internal, Index, OID, AbstractCompositeOID, OIDToTuple, Operator, LaTeX, latexformat, Config
+using ..DegreesOfFreedom: IID, Internal, Index, OID, AbstractCompositeOID, OIDToTuple, Operator, LaTeX, latexformat, Hilbert
 using ..Terms: wildcard, Subscripts, SubID, subscriptsexpr, Coupling, Couplings, couplingpoints, couplinginternals, Term, TermCouplings, TermAmplitude, TermModulate
 using ...Essentials: kind
 using ...Prerequisites: Float, decimaltostr, delta
@@ -262,13 +262,13 @@ Get the multiplication between two spin couplings.
 end
 
 """
-    expand(sc::SpinCoupling, bond::AbstractBond, config::Config, info::Val) -> SCExpand
+    expand(sc::SpinCoupling, bond::AbstractBond, hilbert::Hilbert, info::Val) -> SCExpand
 
-Expand a spin coupling with the given set of points and spin degrees of freedom.
+Expand a spin coupling with the given set of points and Hilbert space.
 """
-function expand(sc::SpinCoupling, bond::AbstractBond, config::Config, info::Val)
+function expand(sc::SpinCoupling, bond::AbstractBond, hilbert::Hilbert, info::Val)
     points = couplingpoints(sc, bond, info)
-    spins = couplinginternals(sc, bond, config, info)
+    spins = couplinginternals(sc, bond, hilbert, info)
     @assert rank(sc)==length(points)==length(spins) "expand error: dismatched rank."
     obexpands = collect(expand(sc.orbitals, NTuple{rank(sc), Int}(spins[i].norbital for i = 1:rank(sc))))
     return SCExpand{totalspin(spins)}(sc.value, points, obexpands, sc.tags)

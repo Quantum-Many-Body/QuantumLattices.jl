@@ -3,7 +3,7 @@ using StaticArrays: SVector
 using QuantumLattices.Essentials.SpinPackage
 using QuantumLattices.Essentials.SpinPackage: heisenbergxyz, heisenbergpmz, gamma, dm
 using QuantumLattices.Essentials.Spatials: AbstractPID, PID, CPID, Point, Bond
-using QuantumLattices.Essentials.DegreesOfFreedom: OID, AbstractCompositeOID, isHermitian, Config, Index, Operator, Operators, script, latexname
+using QuantumLattices.Essentials.DegreesOfFreedom: OID, AbstractCompositeOID, isHermitian, Hilbert, Index, Operator, Operators, script, latexname
 using QuantumLattices.Essentials.Terms: Couplings, @subscripts_str, abbr
 using QuantumLattices.Interfaces: expand, permute, rank
 using QuantumLattices.Prerequisites: Float
@@ -104,8 +104,8 @@ end
 
     sc = SpinCoupling(2.0, ('+', '-'), orbitals=(1, 2))
     bond = Bond(1, Point(CPID(1, 2), [0.5], [0.0]), Point(CPID(1, 1), [0.0], [0.0]))
-    config = Config{Spin{1}}(pid->Spin{1}(norbital=2), [bond.epoint.pid, bond.spoint.pid])
-    ex = expand(sc, bond, config, Val(:SpinTerm))
+    hilbert = Hilbert{Spin{1}}(pid->Spin{1}(norbital=2), [bond.epoint.pid, bond.spoint.pid])
+    ex = expand(sc, bond, hilbert, Val(:SpinTerm))
     @test Dims(ex) == (1,)
     @test eltype(ex) == Tuple{Float, ID{OID{Index{CPID{Int}, SID{1}}, SVector{1, Float}}, 2}}
     @test collect(ex) == [(2.0, ID(
@@ -115,8 +115,8 @@ end
 
     sc = SpinCoupling(2.0, ('+', '-', '+', '-'), orbitals=subscripts"[α α β β](α < β)")
     point = Point(PID(1), [0.0], [0.0])
-    config = Config{Spin{1}}(pid->Spin{1}(norbital=3), [point.pid])
-    ex = expand(sc, point, config, Val(:info))
+    hilbert = Hilbert{Spin{1}}(pid->Spin{1}(norbital=3), [point.pid])
+    ex = expand(sc, point, hilbert, Val(:info))
     @test eltype(ex) == Tuple{Float, ID{OID{Index{PID, SID{1}}, SVector{1, Float}}, 4}}
     @test Dims(ex) == (3,)
     @test collect(ex) == [
@@ -192,7 +192,7 @@ end
 
 @testset "SpinTerm" begin
     point = Point(PID(1), (0.5, 0.5), (0.0, 0.0))
-    config = Config{Spin{1//2}}(pid->Spin{1//2}(norbital=2), [point.pid])
+    hilbert = Hilbert{Spin{1//2}}(pid->Spin{1//2}(norbital=2), [point.pid])
     term = SpinTerm{1}(:h, 1.5, 0, couplings=sᶻ"")
     operators = Operators(
         Operator(1.5, ID(OID(Index(PID(1), SID{1//2}(1, 'z')), [0.5, 0.5], [0.0, 0.0]))),
@@ -200,10 +200,10 @@ end
     )
     @test term|>abbr == :sp
     @test term|>isHermitian == true
-    @test expand(term, point, config) == operators
+    @test expand(term, point, hilbert) == operators
 
     bond = Bond(1, Point(CPID('a', 1), (0.0, 0.0), (0.0, 0.0)), Point(CPID('b', 1), (0.5, 0.5), (0.0, 0.0)))
-    config = Config{Spin{1//2}}(pid->Spin{1//2}(norbital=2), [bond.spoint.pid, bond.epoint.pid])
+    hilbert = Hilbert{Spin{1//2}}(pid->Spin{1//2}(norbital=2), [bond.spoint.pid, bond.epoint.pid])
     term = SpinTerm{2}(:J, 1.5, 1, couplings=heisenberg"")
     operators = Operators(
         Operator(1.50, ID(OID(Index(CPID('b', 1), SID{1//2}(2, 'z')), [0.5, 0.5], [0.0, 0.0]), OID(Index(CPID('a', 1), SID{1//2}(2, 'z')), [0.0, 0.0], [0.0, 0.0]))),
@@ -213,5 +213,5 @@ end
         Operator(1.50, ID(OID(Index(CPID('b', 1), SID{1//2}(1, 'z')), [0.5, 0.5], [0.0, 0.0]), OID(Index(CPID('a', 1), SID{1//2}(1, 'z')), [0.0, 0.0], [0.0, 0.0]))),
         Operator(0.75, ID(OID(Index(CPID('b', 1), SID{1//2}(2, '+')), [0.5, 0.5], [0.0, 0.0]), OID(Index(CPID('a', 1), SID{1//2}(2, '-')), [0.0, 0.0], [0.0, 0.0])))
     )
-    @test expand(term, bond, config) == operators
+    @test expand(term, bond, hilbert) == operators
 end
