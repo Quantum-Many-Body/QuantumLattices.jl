@@ -128,9 +128,9 @@ latexformat(AbstractCompositeOID{<:Index{<:AbstractPID, <:SID}}, soptdefaultlate
 """
     usualspinindextotuple
 
-Indicate that the choosed fields are `(:scope, :site, :orbital)` when converting a spin index to tuple.
+Indicate that the choosed fields are `(:site, :orbital)` when converting a spin index to tuple.
 """
-const usualspinindextotuple = OIDToTuple(:scope, :site, :orbital)
+const usualspinindextotuple = OIDToTuple(:site, :orbital)
 
 """
     permute(id₁::OID{<:Index{<:AbstractPID, <:SID}}, id₂::OID{<:Index{<:AbstractPID, <:SID}}) -> Tuple{Vararg{Operator}}

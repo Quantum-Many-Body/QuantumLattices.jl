@@ -577,7 +577,7 @@ LaTeX string representation of an oid.
 """
 @inline Base.repr(oid::AbstractOID) = repr(oid, latexformat(typeof(oid)))
 @inline function Base.repr(oid::AbstractOID, l::LaTeX)
-    @sprintf "%s^{%s}_{%s}" script(Val(:BD), oid, l) join(script(Val(:SP), oid, l), ", ") join(script(Val(:SB), oid, l), ", ")
+    @sprintf "%s^{%s}_{%s}" script(Val(:BD), oid, l) join(script(Val(:SP), oid, l), l.spdelimiter) join(script(Val(:SB), oid, l), l.sbdelimiter)
 end
 
 """

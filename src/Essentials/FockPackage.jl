@@ -158,16 +158,16 @@ end
 """
     usualfockindextotuple
 
-Indicate that the choosed fields are `(:scope, :site, :orbital, :spin)` when converting a Fock index to tuple.
+Indicate that the choosed fields are `(:site, :orbital, :spin)` when converting a Fock index to tuple.
 """
-const usualfockindextotuple = OIDToTuple(:scope, :site, :orbital, :spin)
+const usualfockindextotuple = OIDToTuple(:site, :orbital, :spin)
 
 """
     nambufockindextotuple
 
-Indicate that the choosed fields are `(:scope, :nambu, :site, :orbital, :spin)` when converting a Fock index to tuple.
+Indicate that the choosed fields are `(:nambu, :site, :orbital, :spin)` when converting a Fock index to tuple.
 """
-const nambufockindextotuple = OIDToTuple(:scope, :nambu, :site, :orbital, :spin)
+const nambufockindextotuple = OIDToTuple(:nambu, :site, :orbital, :spin)
 
 """
     isnormalordered(opt::Operator{<:Number, <:ID{AbstractCompositeOID{<:Index{<:AbstractPID, <:FID}}}}) -> Bool
