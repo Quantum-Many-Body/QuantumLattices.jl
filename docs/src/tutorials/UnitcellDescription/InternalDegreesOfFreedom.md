@@ -251,7 +251,7 @@ It is noted that a [`Spin`](@ref) instance generates [`SID`](@ref) instances cor
 
 ### Index
 
-## Config
+## Hilbert
 
 ## OID
 

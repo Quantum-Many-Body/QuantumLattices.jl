@@ -6,7 +6,7 @@ CurrentModule = QuantumLattices.Essentials.DegreesOfFreedom
 
 ## IID, Internal and Index
 
-## Config
+## Hilbert
 
 ## OID
 
