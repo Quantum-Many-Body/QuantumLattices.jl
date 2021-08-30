@@ -587,7 +587,22 @@ Get the string representation of an operator in the LaTeX format.
 """
 function Base.repr(opt::Operator)
     rank(opt)==0 && return replace(valuetolatextext(value(opt)), " "=>"")
-    return @sprintf "%s%s" valuetostr(value(opt)) join(NTuple{rank(opt), String}(repr(id(opt)[i]) for i = 1:rank(opt)), "")
+    poses = Int[]
+    push!(poses, 1)
+    for i = 2:rank(opt)
+        id(opt)[i]≠id(opt)[i-1] && push!(poses, i)
+    end
+    push!(poses, rank(opt)+1)
+    result = valuetostr(value(opt))
+    for i = 1:length(poses)-1
+        order = poses[i+1] - poses[i]
+        if order == 1
+            result = @sprintf "%s%s" result repr(id(opt)[poses[i]])
+        else
+            result = @sprintf "%s(%s)^%s" result repr(id(opt)[poses[i]]) order
+        end
+    end
+    return result
 end
 function valuetostr(v)
     v==+1 && return ""

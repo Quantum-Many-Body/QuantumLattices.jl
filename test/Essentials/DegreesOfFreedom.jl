@@ -203,6 +203,12 @@ end
 
     opt = Operator(1.0, ID(
         OID(Index(CPID('d', 2), DID(2)), SVector(1.0, 0.0), SVector(2.0, 0.0)),
+        OID(Index(CPID('d', 2), DID(2)), SVector(1.0, 0.0), SVector(2.0, 0.0))
+        ))
+    @test repr(opt) == "(d^{\\dagger}_{2})^2"
+
+    opt = Operator(1.0, ID(
+        OID(Index(CPID('d', 2), DID(2)), SVector(1.0, 0.0), SVector(2.0, 0.0)),
         OID(Index(CPID('d', 1), DID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0))
         ))
     @test repr(opt) == "d^{\\dagger}_{2}d^{}_{1}"
