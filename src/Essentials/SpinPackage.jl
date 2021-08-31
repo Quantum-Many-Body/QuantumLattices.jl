@@ -95,6 +95,9 @@ end
 Base.summary(io::IO, spin::Spin) = @printf io "%s-element Spin{%s}" length(spin) totalspin(spin)
 @inline totalspin(spin::Spin) = totalspin(typeof(spin))
 @inline totalspin(::Type{<:Spin{S}}) where S = S
+function Base.show(io::IO, spin::Spin)
+    @printf io "%s{%s}(%s)" spin|>typeof|>nameof totalspin(spin) join(("$name=$(getfield(spin, name))" for name in spin|>typeof|>fieldnames), ", ")
+end
 
 """
     Spin{S}(; norbital::Int=1) where S

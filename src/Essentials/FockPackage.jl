@@ -96,6 +96,9 @@ end
 Base.summary(io::IO, fock::Fock) = @printf io "%s-element Fock{%s}" length(fock) repr(statistics(fock))
 @inline statistics(fock::Fock) = statistics(typeof(fock))
 @inline statistics(::Type{Fock{ST}}) where ST = ST
+function Base.show(io::IO, fock::Fock)
+    @printf io "%s{%s}(%s)" fock|>typeof|>nameof repr(statistics(fock)) join(("$name=$(getfield(fock, name))" for name in fock|>typeof|>fieldnames), ", ")
+end
 
 """
     Fock{ST}(; norbital::Int=1, nspin::Int=2, nnambu::Int=2) where ST

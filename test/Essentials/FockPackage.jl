@@ -29,6 +29,7 @@ end
     @test FID(CartesianIndex(1, 1, 1), fock) == FID{:b}(1, 1, 1)
     @test collect(fock) == [FID{:b}(1, 1, 1), FID{:b}(1, 2, 1), FID{:b}(1, 1, 2), FID{:b}(1, 2, 2)]
     @test statistics(fock) == statistics(typeof(fock)) == :b
+    @test string(fock) == "Fock{:b}(norbital=1, nspin=2, nnambu=2)"
 
     @test summary(Fock{:b}(nspin=0, nnambu=1)) == "0-element Fock{:b}"
     @test summary(Fock{:b}(nspin=1, nnambu=1)) == "1-element Fock{:b}"

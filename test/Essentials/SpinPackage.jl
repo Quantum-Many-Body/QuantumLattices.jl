@@ -43,6 +43,7 @@ end
     @test CartesianIndex(SID{1}(1, 'z'), spin) == CartesianIndex(1, 3)
     @test SID(CartesianIndex(1, 1), spin) == SID{1}(1, 'x')
     @test summary(spin) == "10-element Spin{1}"
+    @test string(spin) == "Spin{1}(norbital=2)"
     @test totalspin(spin) == totalspin(typeof(spin)) == 1
     @test collect(spin) == [
         SID{1}(1, 'x'), SID{1}(2, 'x'), SID{1}(1, 'y'), SID{1}(2, 'y'), SID{1}(1, 'z'), SID{1}(2, 'z'),
