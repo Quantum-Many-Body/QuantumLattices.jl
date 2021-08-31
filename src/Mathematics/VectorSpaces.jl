@@ -45,6 +45,8 @@ abstract type EnumerativeVectorSpace{B} <: VectorSpace{B} end
 @inline contentnames(::Type{<:EnumerativeVectorSpace}) = (:table,)
 @inline dimension(vs::EnumerativeVectorSpace) = length(getcontent(vs, :table))
 @inline Base.getindex(vs::EnumerativeVectorSpace, i::Int) = getcontent(vs, :table)[i]
+@inline Base.ndims(vs::EnumerativeVectorSpace) = ndims(typeof(vs))
+@inline Base.ndims(::Type{<:EnumerativeVectorSpace}) = 1
 
 """
     CartesianVectorSpace{B} <: VectorSpace{B}

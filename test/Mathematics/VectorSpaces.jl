@@ -22,6 +22,7 @@ end
     @test isequal(vs, deepcopy(vs))
     @test vs|>size == (3,)
     @test vs|>dimension == 3
+    @test vs|>ndims == vs|>typeof|>ndims == 1
     @test vs|>collect == [id1, id2, id3]
     @test vs[1]==id1 && vs[2]==id2 && vs[3]==id3
     @test searchsortedfirst(vs, id0)==1 && searchsortedfirst(vs, id4)==4
