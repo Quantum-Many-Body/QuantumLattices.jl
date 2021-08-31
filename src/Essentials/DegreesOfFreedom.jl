@@ -146,6 +146,12 @@ struct Hilbert{I<:Internal, P<:AbstractPID, M<:Function} <: CompositeDict{P, I}
     contents::Dict{P, I}
 end
 @inline contentnames(::Type{<:Hilbert}) = (:map, :contents)
+@inline Hilbert(ps::Pair...) = Hilbert(ps)
+function Hilbert(kv)
+    contents = Dict(kv)
+    map = pid -> contents[pid]
+    return Hilbert(map, contents)
+end
 function Hilbert{I}(map::Function, pids::AbstractVector{<:AbstractPID}) where {I<:Internal}
     contents = Dict{pids|>eltype, I}()
     for pid in pids

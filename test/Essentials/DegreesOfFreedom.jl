@@ -84,6 +84,12 @@ end
     @test convert(Dict, hilbert) == Dict(CPID(1, 1)=>DFock(1), CPID(1, 2)=>DFock(2))
     reset!(hilbert, (CPID(2, 1), CPID(2, 2)))
     @test convert(Dict, hilbert) == Dict(CPID(2, 1)=>DFock(1), CPID(2, 2)=>DFock(2))
+
+    hilbert = Hilbert(pid=>DFock(2) for pid in [PID(1), PID(2)])
+    @test hilbert[PID(1)] == hilbert[PID(2)] == DFock(2)
+
+    hilbert = Hilbert(PID(1)=>DFock(2), PID(2)=>DFock(3))
+    @test hilbert[PID(1)]==DFock(2) && hilbert[PID(2)]==DFock(3)
 end
 
 @testset "Index" begin
@@ -196,7 +202,7 @@ end
     @test empty(table) == Table{Index{PID, DID}}(by)
     @test table[Index(PID(1), DID(1))]==1 && table[Index(PID(1), DID(2))]==1
 
-    hilbert = Hilbert{DFock}(pid->DFock(2), [PID(1), PID(2)])
+    hilbert = Hilbert(pid=>DFock(2) for pid in [PID(1), PID(2)])
     inds1 = (Index(PID(1), iid) for iid in DFock(2))|>collect
     inds2 = (Index(PID(2), iid) for iid in DFock(2))|>collect
     @test Table(hilbert, by) == Table([inds1; inds2], by)

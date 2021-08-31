@@ -131,7 +131,7 @@ end
     @test @couplings(TCoupling(1.0, ID(TCID(1)))+TCoupling(1.0, ID(TCID(2)))) == TCoupling(1.0, ID(TCID(1)))+TCoupling(1.0, ID(TCID(2)))
 
     point = Point(CPID(1, 1), (0.0, 0.0), (0.0, 0.0))
-    hilbert = Hilbert{TFock}(pid->TFock(), [CPID(1, 1)])
+    hilbert = Hilbert(point.pid=>TFock())
     tc = TCoupling(1.0, ID(TCID(1), TCID(1)))
     @test couplingcenters(tc, point, Val(:Mu)) == (1, 1)
     @test couplingpoints(tc, point, Val(:Mu)) == (point, point)
@@ -170,7 +170,7 @@ end
 
 @testset "Term" begin
     point = Point(CPID(1, 1), (0.0, 0.0), (0.0, 0.0))
-    hilbert = Hilbert{TFock}(pid->TFock(), [CPID(1, 1)])
+    hilbert = Hilbert(point.pid=>TFock())
     term = Term{:Mu, 2}(:mu, 1.5, 0, couplings=TCoupling(1.0, ID(TCID(2), TCID(1))), amplitude=(bond->3), modulate=false)
     @test term|>kind == term|>typeof|>kind == :Mu
     @test term|>id == term|>typeof|>id == :mu
@@ -190,7 +190,7 @@ end
 
     p1 = Point(PID(1), (0.0, 0.0), (0.0, 0.0))
     p2 = Point(PID(2), (0.0, 0.0), (0.0, 0.0))
-    hilbert = Hilbert{TFock}(pid->TFock(), [PID(1), PID(2)])
+    hilbert = Hilbert(pid=>TFock() for pid in [PID(1), PID(2)])
     tcs1 = Couplings(TCoupling(1.0, ID(TCID(2), TCID(2))))
     tcs2 = Couplings(TCoupling(1.0, ID(TCID(1), TCID(1))))
     term = Term{:Mu, 2}(:mu, 1.5, 0, couplings=bond->(tcs1, tcs2)[bond.pid.site%2+1], amplitude=bond->3, modulate=true)
@@ -207,7 +207,7 @@ end
 
 @testset "expand" begin
     point = Point(PID(1), (0.0, 0.0), (0.0, 0.0))
-    hilbert = Hilbert{TFock}(pid->TFock(), [PID(1)])
+    hilbert = Hilbert(point.pid=>TFock())
     term = Term{:Mu, 2}(:mu, 1.5, 0, couplings=TCoupling(1.0, ID(TCID(2), TCID(1))), amplitude=bond->3.0, modulate=true)
     operators = Operators(
         Operator(+2.25, ID(
@@ -219,7 +219,7 @@ end
     @test expand(term, point, hilbert, false) == operators*2
 
     bond = Bond(1, Point(PID(2), (1.5, 1.5), (1.0, 1.0)), Point(PID(1), (0.5, 0.5), (0.0, 0.0)))
-    hilbert = Hilbert{TFock}(pid->TFock(), [PID(1), PID(2)])
+    hilbert = Hilbert(pid=>TFock() for pid in [PID(1), PID(2)])
     term = Term{:Hp, 2}(:t, 1.5, 1, couplings=TCoupling(1.0, ID(TCID(2), TCID(1))), amplitude=bond->3.0, modulate=true)
     operators = Operators(
         Operator(4.5, ID(
@@ -232,7 +232,7 @@ end
 
     lattice = Lattice("Tuanzi", [Point(CPID(1, 1), (0.0, 0.0), (0.0, 0.0))], vectors=[[1.0, 0.0]], neighbors=1)
     bonds = Bonds(lattice)
-    hilbert = Hilbert{TFock}(pid->TFock(), lattice.pids)
+    hilbert = Hilbert(pid=>TFock() for pid in lattice.pids)
     term = Term{:Mu, 2}(:mu, 1.5, 0, couplings=TCoupling(1.0, ID(TCID(2), TCID(1))), amplitude=bond->3.0, modulate=true)
     operators = Operators(
         Operator(+2.25, ID(

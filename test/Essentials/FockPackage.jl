@@ -132,7 +132,7 @@ end
 
     fc = FockCoupling{2}(2.0, orbitals=(1, 2), nambus=(2, 1))
     bond = Bond(1, Point(CPID(1, 2), SVector(0.5), SVector(0.0)), Point(CPID(1, 1), SVector(0.0), SVector(0.0)))
-    hilbert = Hilbert{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [bond.epoint.pid, bond.spoint.pid])
+    hilbert = Hilbert(pid=>Fock{:f}(norbital=2, nspin=2, nnambu=2) for pid in [bond.epoint.pid, bond.spoint.pid])
     ex = expand(fc, bond, hilbert, Val(:Hopping))
     @test eltype(ex) == Tuple{Float, ID{OID{Index{CPID{Int}, FID{:f}}, SVector{1, Float}}, 2}}
     @test Dims(ex) == (1, 2)
@@ -143,7 +143,7 @@ end
 
     fc = FockCoupling{4}(2.0, spins=(2, 2, 1, 1), nambus=(2, 1, 2, 1))
     point = Point(PID(1), SVector(0.0), SVector(0.0))
-    hilbert = Hilbert{Fock{:b}}(pid->Fock{:b}(norbital=2, nspin=2, nnambu=2), [point.pid])
+    hilbert = Hilbert(point.pid=>Fock{:b}(norbital=2, nspin=2, nnambu=2))
     ex = expand(fc, point, hilbert, Val(:info))
     @test eltype(ex) == Tuple{Float, ID{OID{Index{PID, FID{:b}}, SVector{1, Float}}, 4}}
     @test Dims(ex) == (2, 1)
@@ -162,7 +162,7 @@ end
 
     fc = FockCoupling{4}(2.0, orbitals=subscripts"[α α β β](α < β)", spins=(2, 1, 1, 2), nambus=(2, 2, 1, 1))
     point = Point(PID(1), SVector(0.5), SVector(0.0))
-    hilbert = Hilbert{Fock{:f}}(pid->Fock{:f}(norbital=3, nspin=2, nnambu=2), [point.pid])
+    hilbert = Hilbert(point.pid=>Fock{:f}(norbital=3, nspin=2, nnambu=2))
     ex = expand(fc, point, hilbert, Val(:info))
     @test Dims(ex) == (3, 1)
     @test collect(ex) == [
@@ -186,7 +186,7 @@ end
     fc₁ = FockCoupling{2}(+1.0, spins=(2, 2), nambus=(2, 1))
     fc₂ = FockCoupling{2}(-1.0, spins=(1, 1), nambus=(2, 1))
     point = Point(CPID(1, 1), SVector(0.0), SVector(0.0))
-    hilbert = Hilbert{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [point.pid])
+    hilbert = Hilbert(point.pid=>Fock{:f}(norbital=2, nspin=2, nnambu=2))
     ex = expand(fc₁*fc₂, point, hilbert, Val(:info))
     @test Dims(ex) == (4, 1)
     @test collect(ex) == [
@@ -280,7 +280,7 @@ end
     @test isnothing(isHermitian(Onsite))
 
     point = Point(PID(1), (0.5, 0.5), (0.0, 0.0))
-    hilbert = Hilbert{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [point.pid])
+    hilbert = Hilbert(point.pid=>Fock{:f}(norbital=2, nspin=2, nnambu=2))
 
     term = Onsite(:mu, 1.5, couplings=σˣ"sp"⊗σᶻ"ob", modulate=true)
     operators = Operators(
@@ -303,7 +303,7 @@ end
 
 @testset "Hopping" begin
     bond = Bond(1, Point(CPID('a', 1), (0.5, 0.5), (0.0, 0.0)), Point(CPID('b', 2), (0.0, 0.0), (0.0, 0.0)))
-    hilbert = Hilbert{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [bond.spoint.pid, bond.epoint.pid])
+    hilbert = Hilbert(pid=>Fock{:f}(norbital=2, nspin=2, nnambu=2) for pid in [bond.spoint.pid, bond.epoint.pid])
     term = Hopping(:t, 1.5, 1)
     operators = Operators(
         Operator(1.5, ID(OID(Index(CPID('b', 2), FID{:f}(2, 2, 2)), [0.0, 0.0], [0.0, 0.0]), OID(Index(CPID('a', 1), FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0]))),
@@ -319,7 +319,7 @@ end
 
 @testset "Pairing" begin
     bond = Bond(1, Point(PID(1), (0.5, 0.5), (0.0, 0.0)), Point(PID(2), (0.0, 0.0), (0.0, 0.0)))
-    hilbert = Hilbert{Fock{:f}}(pid->Fock{:f}(norbital=1, nspin=2, nnambu=2), [bond.spoint.pid, bond.epoint.pid])
+    hilbert = Hilbert(pid=>Fock{:f}(norbital=1, nspin=2, nnambu=2) for pid in [bond.spoint.pid, bond.epoint.pid])
     term = Pairing(:Δ, 1.5, 1, couplings=FockCoupling{2}(spins=(2, 2)), amplitude=bond->(bond|>rcoord|>azimuthd ≈ 45 ? 1 : -1))
     operators = Operators(
         Operator(-1.5, ID(OID(Index(PID(2), FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]))),
@@ -331,7 +331,7 @@ end
     @test expand(term, bond, hilbert, false) == operators+operators'
 
     point = Point(CPID('a', 1), (0.5, 0.5), (0.0, 0.0))
-    hilbert = Hilbert{Fock{:f}}(pid->Fock{:f}(norbital=1, nspin=2, nnambu=2), [point.pid])
+    hilbert = Hilbert(point.pid=>Fock{:f}(norbital=1, nspin=2, nnambu=2))
     term = Pairing(:Δ, 1.5, 0, couplings=FockCoupling{2}(spins=(2, 1))-FockCoupling{2}(spins=(1, 2)))
     operators = Operators(
         Operator(+1.5, ID(OID(Index(CPID('a', 1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]), OID(Index(CPID('a', 1), FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]))),
@@ -344,7 +344,7 @@ end
 
 @testset "Hubbard" begin
     point = Point(PID(1), (0.5, 0.5), (0.0, 0.0))
-    hilbert = Hilbert{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [point.pid])
+    hilbert = Hilbert(point.pid=>Fock{:f}(norbital=2, nspin=2, nnambu=2))
     term = Hubbard(:H, 2.5)
     operators = Operators(
         Operator(1.25, ID(
@@ -368,7 +368,7 @@ end
 
 @testset "InterOrbitalInterSpin" begin
     point = Point(PID(1), (0.5, 0.5), (0.0, 0.0))
-    hilbert = Hilbert{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [point.pid])
+    hilbert = Hilbert(point.pid=>Fock{:f}(norbital=2, nspin=2, nnambu=2))
     term = InterOrbitalInterSpin(:H, 2.5)
     operators = Operators(
         Operator(1.25, ID(
@@ -392,7 +392,7 @@ end
 
 @testset "InterOrbitalIntraSpin" begin
     point = Point(PID(1), (0.5, 0.5), (0.0, 0.0))
-    hilbert = Hilbert{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [point.pid])
+    hilbert = Hilbert(point.pid=>Fock{:f}(norbital=2, nspin=2, nnambu=2))
     term = InterOrbitalIntraSpin(:H, 2.5)
     operators = Operators(
         Operator(1.25, ID(
@@ -416,7 +416,7 @@ end
 
 @testset "SpinFlip" begin
     point = Point(PID(1), (0.5, 0.5), (0.0, 0.0))
-    hilbert = Hilbert{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [point.pid])
+    hilbert = Hilbert(point.pid=>Fock{:f}(norbital=2, nspin=2, nnambu=2))
     term = SpinFlip(:H, 2.5)
     operators = Operators(
         Operator(2.5, ID(
@@ -434,7 +434,7 @@ end
 
 @testset "PairHopping" begin
     point = Point(PID(1), (0.5, 0.5), (0.0, 0.0))
-    hilbert = Hilbert{Fock{:f}}(pid->Fock{:f}(norbital=2, nspin=2, nnambu=2), [point.pid])
+    hilbert = Hilbert(point.pid=>Fock{:f}(norbital=2, nspin=2, nnambu=2))
     term = PairHopping(:H, 2.5)
     operators = Operators(
         Operator(2.5, ID(
@@ -452,7 +452,7 @@ end
 
 @testset "Coulomb" begin
     bond = Bond(1, Point(PID(1), (0.5, 0.5), (0.0, 0.0)), Point(PID(2), (0.0, 0.0), (0.0, 0.0)))
-    hilbert = Hilbert{Fock{:f}}(pid->Fock{:f}(norbital=1, nspin=2, nnambu=2), [bond.spoint.pid, bond.epoint.pid])
+    hilbert = Hilbert(pid=>Fock{:f}(norbital=1, nspin=2, nnambu=2) for pid in [bond.spoint.pid, bond.epoint.pid])
 
     term = Coulomb(:V, 2.5, 1, couplings=σᶻ"sp"*σᶻ"sp")
     operators = Operators(

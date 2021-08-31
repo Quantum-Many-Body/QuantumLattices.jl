@@ -104,7 +104,7 @@ end
 
     sc = SpinCoupling(2.0, ('+', '-'), orbitals=(1, 2))
     bond = Bond(1, Point(CPID(1, 2), [0.5], [0.0]), Point(CPID(1, 1), [0.0], [0.0]))
-    hilbert = Hilbert{Spin{1}}(pid->Spin{1}(norbital=2), [bond.epoint.pid, bond.spoint.pid])
+    hilbert = Hilbert(pid=>Spin{1}(norbital=2) for pid in [bond.epoint.pid, bond.spoint.pid])
     ex = expand(sc, bond, hilbert, Val(:SpinTerm))
     @test Dims(ex) == (1,)
     @test eltype(ex) == Tuple{Float, ID{OID{Index{CPID{Int}, SID{1}}, SVector{1, Float}}, 2}}
@@ -115,7 +115,7 @@ end
 
     sc = SpinCoupling(2.0, ('+', '-', '+', '-'), orbitals=subscripts"[α α β β](α < β)")
     point = Point(PID(1), [0.0], [0.0])
-    hilbert = Hilbert{Spin{1}}(pid->Spin{1}(norbital=3), [point.pid])
+    hilbert = Hilbert(point.pid=>Spin{1}(norbital=3))
     ex = expand(sc, point, hilbert, Val(:info))
     @test eltype(ex) == Tuple{Float, ID{OID{Index{PID, SID{1}}, SVector{1, Float}}, 4}}
     @test Dims(ex) == (3,)
@@ -192,7 +192,7 @@ end
 
 @testset "SpinTerm" begin
     point = Point(PID(1), (0.5, 0.5), (0.0, 0.0))
-    hilbert = Hilbert{Spin{1//2}}(pid->Spin{1//2}(norbital=2), [point.pid])
+    hilbert = Hilbert(point.pid=>Spin{1//2}(norbital=2))
     term = SpinTerm{1}(:h, 1.5, 0, couplings=sᶻ"")
     operators = Operators(
         Operator(1.5, ID(OID(Index(PID(1), SID{1//2}(1, 'z')), [0.5, 0.5], [0.0, 0.0]))),
@@ -203,7 +203,7 @@ end
     @test expand(term, point, hilbert) == operators
 
     bond = Bond(1, Point(CPID('a', 1), (0.0, 0.0), (0.0, 0.0)), Point(CPID('b', 1), (0.5, 0.5), (0.0, 0.0)))
-    hilbert = Hilbert{Spin{1//2}}(pid->Spin{1//2}(norbital=2), [bond.spoint.pid, bond.epoint.pid])
+    hilbert = Hilbert(pid=>Spin{1//2}(norbital=2) for pid in [bond.spoint.pid, bond.epoint.pid])
     term = SpinTerm{2}(:J, 1.5, 1, couplings=heisenberg"")
     operators = Operators(
         Operator(1.50, ID(OID(Index(CPID('b', 1), SID{1//2}(2, 'z')), [0.5, 0.5], [0.0, 0.0]), OID(Index(CPID('a', 1), SID{1//2}(2, 'z')), [0.0, 0.0], [0.0, 0.0]))),
