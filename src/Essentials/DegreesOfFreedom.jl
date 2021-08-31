@@ -17,9 +17,12 @@ import ..Spatials: pidtype, rcoord, icoord
 import ...Essentials: reset!, update!
 import ...Prerequisites.Traits: contentnames
 import ...Mathematics.AlgebraOverFields: sequence
+import ...Interfaces: rank, ⊗
 
-export IID, Internal, Hilbert, AbstractOID, Index, AbstractCompositeOID, OID, AbstractOperator, Operator, Operators
-export iidtype, isHermitian, indextype, oidtype
+export IID, SimpleIID, CompositeIID, Internal, InternalIndex, SimpleInternal, CompositeInternal
+export Hilbert, AbstractOID, Index, AbstractCompositeOID, OID
+export AbstractOperator, Operator, Operators
+export internaltype, iidtype, isHermitian, indextype, oidtype
 export Metric, OIDToTuple, Table
 export LaTeX, latexname, latexformat, superscript, subscript, script
 export Boundary, twist, plain
@@ -32,6 +35,33 @@ The id of an internal degree of freedom.
 abstract type IID <: SimpleID end
 
 """
+    SimpleIID <: IID
+
+The id of a simple internal degree of freedom.
+"""
+abstract type SimpleIID <: IID end
+
+"""
+    CompositeIID{T<:Tuple{Vararg{SimpleIID}}} <: IID
+
+The composition of several single internal ids.
+"""
+struct CompositeIID{T<:Tuple{Vararg{SimpleIID}}} <: IID
+    content::T
+end
+@inline CompositeIID(content::SimpleIID...) = CompositeIID(content)
+@inline Base.length(ciid::CompositeIID) = length(typeof(ciid))
+@inline Base.length(::Type{<:CompositeIID{T}}) where {T<:Tuple{Vararg{SimpleIID}}} = fieldcount(T)
+@inline rank(ciid::CompositeIID) = rank(typeof(ciid))
+@inline rank(::Type{<:CompositeIID{T}}) where {T<:Tuple{Vararg{SimpleIID}}} =  fieldcount(T)
+@inline Base.getindex(ciid::CompositeIID, i::Int) = ciid.content[i]
+Base.show(io::IO, ciid::CompositeIID) = @printf io "%s" join((string(ciid[i]) for i = 1:rank(ciid)), " ⊗ ")
+@inline ⊗(iid₁::SimpleIID, iid₂::SimpleIID) = CompositeIID(iid₁, iid₂)
+@inline ⊗(iid::SimpleIID, ciid::CompositeIID) = CompositeIID(iid, ciid.content...)
+@inline ⊗(ciid::CompositeIID, iid::SimpleIID) = CompositeIID(ciid.content..., iid)
+@inline ⊗(ciid₁::CompositeIID, ciid₂::CompositeIID) = CompositeIID(ciid₁.content..., ciid₂.content...)
+
+"""
     Internal{I<:IID} <: CartesianVectorSpace{I}
 
 The whole internal degrees of freedom at a single point.
@@ -39,11 +69,70 @@ The whole internal degrees of freedom at a single point.
 abstract type Internal{I<:IID} <: CartesianVectorSpace{I} end
 
 """
-    show(io::IO, i::Internal)
+    InternalIndex{I}
+
+Index of a simple internal space in the composite internal spaces.
+"""
+struct InternalIndex{I} end
+InternalIndex(I::Int) = InternalIndex{I}()
+
+"""
+    SimpleInternal{I<:SimpleIID} <: Internal{I}
+
+The simple internal degrees of freedom at a single point.
+"""
+abstract type SimpleInternal{I<:SimpleIID} <: Internal{I} end
+
+"""
+    show(io::IO, i::SimpleInternal)
 
 Show an internal.
 """
-Base.show(io::IO, i::Internal) = @printf io "%s(%s)" i|>typeof|>nameof join(("$name=$(getfield(i, name))" for name in i|>typeof|>fieldnames), ", ")
+Base.show(io::IO, i::SimpleInternal) = @printf io "%s(%s)" i|>typeof|>nameof join(("$name=$(getfield(i, name))" for name in i|>typeof|>fieldnames), ", ")
+
+"""
+    CompositeInternal{T<:Tuple{Vararg{SimpleInternal}}} <: Internal{CompositeIID}
+
+The composition of several single internal spaces.
+"""
+struct CompositeInternal{T<:Tuple{Vararg{SimpleInternal}}} <: Internal{CompositeIID}
+    content::T
+end
+@inline CompositeInternal(content::SimpleInternal...) = CompositeInternal(content)
+@inline Base.eltype(ci::CompositeInternal) = eltype(typeof(ci))
+@inline @generated function Base.eltype(::Type{<:CompositeInternal{T}}) where {T<:Tuple{Vararg{SimpleInternal}}}
+    return CompositeIID{Tuple{[eltype(fieldtype(T, i)) for i = 1:fieldcount(T)]...}}
+end
+@inline rank(ci::CompositeInternal) = rank(typeof(ci))
+@inline rank(::Type{<:CompositeInternal{T}}) where {T<:Tuple{Vararg{SimpleInternal}}} = fieldcount(T)
+@inline internaltype(ci::CompositeInternal, index::Int) = internaltype(typeof(ci), index)
+@inline internaltype(::Type{<:CompositeInternal{T}}, index::Int) where {T<:Tuple{Vararg{SimpleInternal}}} = fieldtype(T, index)
+@inline Base.getindex(ci::CompositeInternal, ::InternalIndex{I}) where I = ci.content[I]
+Base.show(io::IO, ci::CompositeInternal) = @printf io "%s" join((string(ci[InternalIndex(i)]) for i = 1:rank(ci)), " ⊗ ")
+@inline @generated Base.Dims(ci::CompositeInternal) = Expr(:tuple, [:(Dims(ci[InternalIndex($i)])...) for i = 1:rank(ci)]...)
+@inline @generated function Base.CartesianIndex(ciid::CompositeIID, ci::CompositeInternal)
+    exprs = []
+    for i = 1:rank(ci)
+        push!(exprs, :(Tuple(CartesianIndex(ciid[$i], ci[InternalIndex($i)]))...))
+    end
+    return Expr(:call, :CartesianIndex, exprs...)
+end
+@inline CompositeIID(index::CartesianIndex, ci::CompositeInternal) = compositeiid(index, ci, cindims(ci)|>Val)
+@inline cindims(ci::CompositeInternal) = NTuple{rank(ci), Int}(ndims(internaltype(ci, i)) for i = 1:rank(ci))
+@inline @generated function compositeiid(index::CartesianIndex, ci::CompositeInternal, ::Val{dims}) where dims
+    count = 1
+    exprs = []
+    for (i, dim) in enumerate(dims)
+        cartesianindex = Expr(:call, :CartesianIndex, [:(index[$j]) for j = count:(count+dim-1)]...)
+        push!(exprs, :(ci[InternalIndex($i)][$cartesianindex]))
+        count += dim
+    end
+    return Expr(:call, :CompositeIID, exprs...)
+end
+@inline ⊗(i₁::SimpleInternal, i₂::SimpleInternal) = CompositeInternal(i₁, i₂)
+@inline ⊗(i::SimpleInternal, ci::CompositeInternal) = CompositeInternal(i, ci.content...)
+@inline ⊗(ci::CompositeInternal, i::SimpleInternal) = CompositeInternal(ci.content..., i)
+@inline ⊗(ci₁::CompositeInternal, ci₂::CompositeInternal) = CompositeInternal(ci₁.content..., ci₂.content...)
 
 """
     Hilbert{I}(map::Function, pids::AbstractVector{<:AbstractPID}) where {I<:Internal}
@@ -98,11 +187,11 @@ function isHermitian(id::ID{AbstractOID, N}) where N
 end
 
 """
-    Index{P<:AbstractPID, I<:IID} <: AbstractOID
+    Index{P<:AbstractPID, I<:SimpleIID} <: AbstractOID
 
 The index of a degree of freedom, which consist of the spatial part and the internal part.
 """
-struct Index{P<:AbstractPID, I<:IID} <: AbstractOID
+struct Index{P<:AbstractPID, I<:SimpleIID} <: AbstractOID
     pid::P
     iid::I
 end
@@ -118,12 +207,12 @@ Get the type of the spatial part of an index.
 
 """
     iidtype(index::Index)
-    iidtype(::Type{<:Index{<:AbstractPID, I}}) where {I<:IID}
+    iidtype(::Type{<:Index{<:AbstractPID, I}}) where {I<:SimpleIID}
 
 Get the type of the internal part of an index.
 """
 @inline iidtype(index::Index) = iidtype(typeof(index))
-@inline iidtype(::Type{<:Index{<:AbstractPID, I}}) where {I<:IID} = I
+@inline iidtype(::Type{<:Index{<:AbstractPID, I}}) where {I<:SimpleIID} = I
 
 """
     adjoint(index::Index) -> typeof(index)
@@ -189,11 +278,11 @@ Get the adjoint of an operator id.
 @inline @generated Base.adjoint(oid::ID{OID, N}) where N = Expr(:call, :ID, [:(oid[$i]') for i = N:-1:1]...)
 
 """
-    oidtype(I::Type{<:Internal}, P::Type{<:Point}, ::Val)
+    oidtype(I::Type{<:SimpleInternal}, P::Type{<:Point}, ::Val)
 
 Get the compatible oid type from the combination of the internal part and the spatial part.
 """
-@inline oidtype(I::Type{<:Internal}, P::Type{<:Point}, ::Val) = OID{Index{P|>pidtype, I|>eltype}, SVector{P|>dimension, P|>dtype}}
+@inline oidtype(I::Type{<:SimpleInternal}, P::Type{<:Point}, ::Val) = OID{Index{P|>pidtype, I|>eltype}, SVector{P|>dimension, P|>dtype}}
 
 """
     AbstractOperator{V<:Number, I<:ID{AbstractOID}} <: Element{V, I}

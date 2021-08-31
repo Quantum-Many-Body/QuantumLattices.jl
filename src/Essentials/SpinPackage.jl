@@ -3,7 +3,7 @@ module SpinPackage
 using StaticArrays: SVector
 using Printf: @printf, @sprintf
 using ..Spatials: AbstractPID, Point, Bond, AbstractBond
-using ..DegreesOfFreedom: IID, Internal, Index, OID, AbstractCompositeOID, OIDToTuple, Operator, LaTeX, latexformat, Hilbert
+using ..DegreesOfFreedom: SimpleIID, SimpleInternal, Index, OID, AbstractCompositeOID, OIDToTuple, Operator, LaTeX, latexformat, Hilbert
 using ..Terms: wildcard, Subscripts, SubID, subscriptsexpr, Coupling, Couplings, couplingpoints, couplinginternals, Term, TermCouplings, TermAmplitude, TermModulate
 using ...Essentials: kind
 using ...Prerequisites: Float, decimaltostr, delta
@@ -27,11 +27,11 @@ const sidrepmap = Dict('x'=>'ˣ', 'y'=>'ʸ', 'z'=>'ᶻ', '+'=>'⁺', '-'=>'⁻',
 const sidreprevmap = Dict(v=>k for (k, v) in sidrepmap)
 
 """
-    SID{S} <: IID
+    SID{S} <: SimpleIID
 
 The spin id.
 """
-struct SID{S} <: IID
+struct SID{S} <: SimpleIID
     orbital::Int
     tag::Char
     function SID{S}(orbital::Int, tag::Char) where S
@@ -78,11 +78,11 @@ function Base.Matrix(sid::SID{S}, dtype::Type{<:Number}=Complex{Float}) where S
 end
 
 """
-    Spin{S} <: Internal{SID{S}}
+    Spin{S} <: SimpleInternal{SID{S}}
 
 The spin interanl degrees of freedom.
 """
-struct Spin{S} <: Internal{SID{S}}
+struct Spin{S} <: SimpleInternal{SID{S}}
     norbital::Int
     function Spin{S}(norbital::Int) where S
         @assert isa(S, Rational{Int}) && S.den==2 || isa(S, Integer) "Spin error: not supported spin($S)."

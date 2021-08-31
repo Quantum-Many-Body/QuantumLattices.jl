@@ -3,7 +3,7 @@ using Printf: @sprintf
 using StaticArrays: SVector
 using QuantumLattices.Essentials.Terms
 using QuantumLattices.Essentials.Spatials: AbstractBond, Point, PID, CPID, Bond, Bonds, Lattice, pidtype, acrossbonds, zerothbonds
-using QuantumLattices.Essentials.DegreesOfFreedom: Hilbert, IID, Index, Internal, OID, Table, OIDToTuple, Operator, Operators, plain
+using QuantumLattices.Essentials.DegreesOfFreedom: Hilbert, SimpleIID, Index, SimpleInternal, OID, Table, OIDToTuple, Operator, Operators, plain
 using QuantumLattices.Interfaces: rank, expand!
 using QuantumLattices.Essentials: kind, update!, reset!
 using QuantumLattices.Prerequisites: Float, decimaltostr
@@ -14,10 +14,10 @@ import QuantumLattices.Interfaces: dimension, expand
 import QuantumLattices.Essentials.DegreesOfFreedom: isHermitian
 import QuantumLattices.Essentials.Terms: couplingcenters, abbr
 
-struct TID <: IID nambu::Int end
+struct TID <: SimpleIID nambu::Int end
 Base.adjoint(sl::TID) = TID(3-sl.nambu)
 
-struct TFock <: Internal{TID} end
+struct TFock <: SimpleInternal{TID} end
 Base.Dims(vs::TFock) = (2,)
 TID(i::CartesianIndex, vs::TFock) = TID(i.I...)
 Base.CartesianIndex(tid::TID, vs::TFock) = CartesianIndex(tid.nambu)

@@ -4,7 +4,7 @@ using StaticArrays: SVector
 using LinearAlgebra: dot
 using Printf: @printf, @sprintf
 using ..Spatials: AbstractPID, AbstractBond, Point, Bond, decompose
-using ..DegreesOfFreedom: IID, Internal, Index, LaTeX, OID, AbstractCompositeOID, latexformat, OIDToTuple, Operator, Operators, Hilbert, Table
+using ..DegreesOfFreedom: SimpleIID, SimpleInternal, Index, LaTeX, OID, AbstractCompositeOID, latexformat, OIDToTuple, Operator, Operators, Hilbert, Table
 using ..Terms: wildcard, Subscripts, SubID, Coupling, Couplings, couplingpoints, couplinginternals, Term, TermCouplings, TermAmplitude, TermModulate
 using ...Essentials: kind
 using ...Prerequisites: Float, delta, decimaltostr
@@ -45,11 +45,11 @@ Indicate that the nambu index is MAJORANA.
 const MAJORANA = 0
 
 """
-    FID <: IID
+    FID <: SimpleIID
 
 The Fock id.
 """
-struct FID{ST} <: IID
+struct FID{ST} <: SimpleIID
     orbital::Int
     spin::Int
     nambu::Int
@@ -76,11 +76,11 @@ Create a Fock id.
 @inline FID{ST}(; orbital::Int=1, spin::Int=1, nambu::Int=ANNIHILATION) where ST = FID{ST}(orbital, spin, nambu)
 
 """
-    Fock{ST} <: Internal{FID{ST}}
+    Fock{ST} <: SimpleInternal{FID{ST}}
 
 The Fock interanl degrees of freedom.
 """
-struct Fock{ST} <: Internal{FID{ST}}
+struct Fock{ST} <: SimpleInternal{FID{ST}}
     norbital::Int
     nspin::Int
     nnambu::Int

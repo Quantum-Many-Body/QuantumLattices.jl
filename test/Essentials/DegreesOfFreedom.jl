@@ -4,19 +4,18 @@ using LinearAlgebra: dot
 using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Essentials.DegreesOfFreedom
 using QuantumLattices.Essentials.Spatials: AbstractPID, PID, CPID, Point, pidtype, rcoord, icoord
-using QuantumLattices.Interfaces: decompose
+using QuantumLattices.Interfaces: decompose, rank, ⊗
 using QuantumLattices.Essentials: update!, reset!
 using QuantumLattices.Prerequisites.Traits: contentnames
 using QuantumLattices.Mathematics.AlgebraOverFields: ID, sequence
 import QuantumLattices.Essentials.DegreesOfFreedom: latexname, script
 
-struct DID <: IID
+struct DID <: SimpleIID
     nambu::Int
 end
 @inline Base.adjoint(sl::DID) = DID(3-sl.nambu)
 
-struct DFock <: Internal{DID}
-    atom::Int
+struct DFock <: SimpleInternal{DID}
     nnambu::Int
 end
 @inline Base.Dims(f::DFock) = (f.nnambu,)
@@ -38,21 +37,53 @@ latexformat(OID{<:Index{<:AbstractPID, DID}}, LaTeX{(:nambu,), (:site,)}('d'))
 
 struct IdentityMetric <: Metric end
 
-@testset "Internal" begin
-    it = DFock(1, 2)
+@testset "CompositeIID" begin
+    did₁, did₂ = DID(1), DID(2)
+    ciid = CompositeIID(did₁, did₂)
+    @test length(ciid) == length(typeof(ciid)) == 2
+    @test rank(ciid) == rank(typeof(ciid)) == 2
+    @test ciid[1]==did₁ && ciid[2]==did₂
+    @test string(ciid) == "DID(1) ⊗ DID(2)"
+    @test did₁⊗did₂ == ciid
+    @test did₁⊗ciid == CompositeIID(did₁, did₁, did₂)
+    @test ciid⊗did₁ == CompositeIID(did₁, did₂, did₁)
+    @test ciid⊗ciid == CompositeIID(did₁, did₂, did₁, did₂)
+end
+
+@testset "SimpleInternal" begin
+    it = DFock(2)
     @test it|>eltype == DID
     @test it|>typeof|>eltype == DID
     @test it == deepcopy(it)
     @test isequal(it, deepcopy(it))
-    @test it|>string == "DFock(atom=1, nnambu=2)"
+    @test it|>string == "DFock(nnambu=2)"
     @test it|>collect == [DID(1), DID(2)]
 end
 
+@testset "CompositeInternal" begin
+    it₁, it₂ = DFock(2), DFock(3)
+    ci = CompositeInternal(it₁, it₂)
+    @test eltype(ci) == eltype(typeof(ci)) == CompositeIID{Tuple{DID, DID}}
+    @test rank(ci) == rank(typeof(ci)) == 2
+    @test internaltype(ci, 1) == internaltype(typeof(ci), 1) == DFock
+    @test internaltype(ci, 2) == internaltype(typeof(ci), 2) == DFock
+    @test ci[InternalIndex(1)]==it₁ && ci[InternalIndex(2)]==it₂
+    @test string(ci) == "DFock(nnambu=2) ⊗ DFock(nnambu=3)"
+    @test Dims(ci) == (2, 3)
+    for i = 1:2, j = 1:3
+        @test CartesianIndex(CompositeIID(CartesianIndex(i, j), ci), ci) == CartesianIndex(i, j)
+    end
+    @test it₁⊗it₂ == ci
+    @test it₁⊗ci == CompositeInternal(it₁, it₁, it₂)
+    @test ci⊗it₁ == CompositeInternal(it₁, it₂, it₁)
+    @test ci⊗ci == CompositeInternal(it₁, it₂, it₁, it₂)
+end
+
 @testset "Hilbert" begin
-    hilbert = Hilbert{DFock}(pid->DFock((pid.site-1)%2+1, 2), [CPID(1, 1), CPID(1, 2)])
-    @test convert(Dict, hilbert) == Dict(CPID(1, 1)=>DFock(1, 2), CPID(1, 2)=>DFock(2, 2))
+    hilbert = Hilbert{DFock}(pid->DFock((pid.site-1)%2+1), [CPID(1, 1), CPID(1, 2)])
+    @test convert(Dict, hilbert) == Dict(CPID(1, 1)=>DFock(1), CPID(1, 2)=>DFock(2))
     reset!(hilbert, (CPID(2, 1), CPID(2, 2)))
-    @test convert(Dict, hilbert) == Dict(CPID(2, 1)=>DFock(1, 2), CPID(2, 2)=>DFock(2, 2))
+    @test convert(Dict, hilbert) == Dict(CPID(2, 1)=>DFock(1), CPID(2, 2)=>DFock(2))
 end
 
 @testset "Index" begin
@@ -165,9 +196,9 @@ end
     @test empty(table) == Table{Index{PID, DID}}(by)
     @test table[Index(PID(1), DID(1))]==1 && table[Index(PID(1), DID(2))]==1
 
-    hilbert = Hilbert{DFock}(pid->DFock((pid.site-1)%2+1, 2), [PID(1), PID(2)])
-    inds1 = (Index(PID(1), iid) for iid in DFock(1, 2))|>collect
-    inds2 = (Index(PID(2), iid) for iid in DFock(2, 2))|>collect
+    hilbert = Hilbert{DFock}(pid->DFock(2), [PID(1), PID(2)])
+    inds1 = (Index(PID(1), iid) for iid in DFock(2))|>collect
+    inds2 = (Index(PID(2), iid) for iid in DFock(2))|>collect
     @test Table(hilbert, by) == Table([inds1; inds2], by)
     @test Table(hilbert, by) == union(Table(inds1, by), Table(inds2, by))
 
