@@ -446,7 +446,7 @@ function interlinks(cluster₁::AbstractMatrix{<:Number}, cluster₂::AbstractMa
 end
 
 """
-    abstract type AbstractPID <: SimpleID
+    AbstractPID <: SimpleID
 
 Abstract point id.
 """
@@ -462,9 +462,7 @@ struct PID <: AbstractPID
 end
 
 """
-    CPID(scope, site::Int)
-    CPID(site::Int)
-    CPID(; scope='T', site::Int=1)
+    CPID{S} <: AbstractPID
 
 Composite point id.
 """
@@ -472,6 +470,13 @@ struct CPID{S} <: AbstractPID
     scope::S
     site::Int
 end
+
+"""
+    CPID(site::Int)
+    CPID(; scope='T', site::Int=1)
+
+Construct a composite point id.
+"""
 @inline CPID(site::Int) = CPID('T', site)
 @inline CPID(; scope='T', site::Int=1) = CPID(scope, site)
 
@@ -481,19 +486,7 @@ end
 Abstract bond.
 """
 abstract type AbstractBond{N, P<:AbstractPID, D<:Number, R} end
-
-"""
-    ==(b₁::AbstractBond, b₂::AbstractBond) -> Bool
-
-Overloaded equivalent operator.
-"""
 @inline Base.:(==)(b₁::AbstractBond, b₂::AbstractBond) = ==(efficientoperations, b₁, b₂)
-
-"""
-    isequal(b₁::AbstractBond, b₂::AbstractBond) -> Bool
-
-Overloaded equivalent function.
-"""
 @inline Base.isequal(b₁::AbstractBond, b₂::AbstractBond) = isequal(efficientoperations, b₁, b₂)
 
 """
@@ -509,7 +502,7 @@ Get the number of points of a bond.
     eltype(bond::AbstractBond)
     eltype(::Type{<:AbstractBond{N, P}}) where {N, P<:AbstractPID}
 
-Get the eltype of a bond.
+Get the type of the points contained in a bond.
 """
 @inline Base.eltype(bond::AbstractBond) = eltype(typeof(bond))
 @inline Base.eltype(::Type{<:AbstractBond{N, P, D}}) where {N, P<:AbstractPID, D<:Number} = Point{N, P, D}
@@ -558,10 +551,7 @@ Get the rank of a bond.
 @inline rank(::Type{<:AbstractBond{N, <:AbstractPID, <:Number, R} where N}) where R = R
 
 """
-    Point(pid::AbstractPID, rcoord::SVector{N, D}, icoord::SVector{N, D}) where {N, D<:Number}
-    Point(pid::AbstractPID, rcoord::NTuple{N, <:Number}, icoord::NTuple{N, <:Number}=ntuple(i->0, N)) where N
-    Point(pid::AbstractPID, rcoord::AbstractVector{<:Number}, icoord::AbstractVector{<:Number}=zero(SVector{length(rcoord), Int}))
-    Point{N}(pid::AbstractPID, rcoord::AbstractVector{<:Number}, icoord::AbstractVector{<:Number}=zero(SVector{N, Int})) where N
+    Point{N, P<:AbstractPID, D<:Number} <: AbstractBond{N, P, D, 1}
 
 Labeled point.
 """
@@ -571,6 +561,16 @@ struct Point{N, P<:AbstractPID, D<:Number} <: AbstractBond{N, P, D, 1}
     icoord::SVector{N, D}
     Point(pid::AbstractPID, rcoord::SVector{N, D}, icoord::SVector{N, D}) where {N, D<:Number} = new{N, typeof(pid), D}(pid, rcoord, icoord)
 end
+Base.show(io::IO, p::Point) = @printf io "Point(%s, %s, %s)" p.pid p.rcoord p.icoord
+
+"""
+    Point(pid::AbstractPID, rcoord::SVector{N, D}, icoord::SVector{N, D}) where {N, D<:Number}
+    Point(pid::AbstractPID, rcoord::NTuple{N, <:Number}, icoord::NTuple{N, <:Number}=ntuple(i->0, N)) where N
+    Point(pid::AbstractPID, rcoord::AbstractVector{<:Number}, icoord::AbstractVector{<:Number}=zero(SVector{length(rcoord), Int}))
+    Point{N}(pid::AbstractPID, rcoord::AbstractVector{<:Number}, icoord::AbstractVector{<:Number}=zero(SVector{N, Int})) where N
+
+Construct a labeled poinnt.
+"""
 @inline function Point(pid::AbstractPID, rcoord::NTuple{N, <:Number}, icoord::NTuple{N, <:Number}=ntuple(i->0, N)) where N
     datatype = promote_type(eltype(rcoord), eltype(icoord))
     return Point(pid, convert(SVector{N, datatype}, rcoord), convert(SVector{N, datatype}, icoord))
@@ -583,13 +583,6 @@ end
     datatype = promote_type(eltype(rcoord), eltype(icoord))
     return Point(pid, convert(SVector{N, datatype}, rcoord), convert(SVector{N, datatype}, icoord))
 end
-
-"""
-    show(io::IO, p::Point)
-
-Show a labeled point.
-"""
-Base.show(io::IO, p::Point) = @printf io "Point(%s, %s, %s)" p.pid p.rcoord p.icoord
 
 """
     getindex(p::Point, i::Integer) -> Point
@@ -618,7 +611,7 @@ Judge whether a point is intra the unitcell.
 @inline isintracell(p::Point) = isapprox(norm(p.icoord), 0.0, atol=atol, rtol=rtol)
 
 """
-    Bond(neighbor::Int, spoint::Point, epoint::Point)
+    Bond{N, P<:AbstractPID, D<:Number} <: AbstractBond{N, P, D, 2}
 
 A bond in a lattice.
 """
@@ -627,12 +620,6 @@ struct Bond{N, P<:AbstractPID, D<:Number} <: AbstractBond{N, P, D, 2}
     spoint::Point{N, P, D}
     epoint::Point{N, P, D}
 end
-
-"""
-    show(io::IO, bond::Bond)
-
-Show a bond.
-"""
 Base.show(io::IO, bond::Bond) = @printf io "Bond(%s, %s, %s)" bond.neighbor bond.spoint bond.epoint
 
 """
@@ -697,12 +684,8 @@ It should have the following contents:
 """
 abstract type AbstractLattice{N, P<:AbstractPID, D<:Number} end
 @inline contentnames(::Type{<:AbstractLattice}) = (:name, :pids, :rcoords, :icoords, :vectors, :reciprocals, :neighbors)
-
-"""
-    show(io::IO, lattice::AbstractLattice)
-
-Show a lattice.
-"""
+@inline Base.:(==)(lattice1::AbstractLattice, lattice2::AbstractLattice) = ==(efficientoperations, lattice1, lattice2)
+@inline Base.isequal(lattice1::AbstractLattice, lattice2::AbstractLattice) = isequal(efficientoperations, lattice1, lattice2)
 function Base.show(io::IO, lattice::AbstractLattice)
     @printf io "%s(%s)\n" lattice|>typeof|>nameof getcontent(lattice, :name)
     len = length(lattice)
@@ -734,20 +717,6 @@ end
 Get the number of points contained in a lattice.
 """
 @inline Base.length(lattice::AbstractLattice) = length(getcontent(lattice, :pids))
-
-"""
-    ==(lattice1::AbstractLattice, lattice2::AbstractLattice) -> Bool
-
-Overloaded equivalent operator.
-"""
-@inline Base.:(==)(lattice1::AbstractLattice, lattice2::AbstractLattice) = ==(efficientoperations, lattice1, lattice2)
-
-"""
-    isequal(lattice1::AbstractLattice, lattice2::AbstractLattice) -> Bool
-
-Overloaded equivalent function.
-"""
-@inline Base.isequal(lattice1::AbstractLattice, lattice2::AbstractLattice) = isequal(efficientoperations, lattice1, lattice2)
 
 """
     keytype(lattice::AbstractLattice)
@@ -962,24 +931,7 @@ function bonds!(bonds::Vector, lattice::AbstractLattice, ::Val{acrossbonds})
 end
 
 """
-    Lattice{N}(name::String,
-        pids::Vector{<:AbstractPID}, rcoords::AbstractMatrix{<:Number}, icoords::AbstractMatrix{<:Number},
-        vectors::AbstractVector{<:AbstractVector{<:Number}},
-        neighbors::Union{Dict{Int, <:Real}, Int}=1;
-        coordination::Int=8
-        ) where N
-    Lattice(name::String,
-        points::AbstractVector{<:Point};
-        vectors::AbstractVector{<:AbstractVector{<:Number}}=SVector{0, SVector{points|>eltype|>dimension, points|>eltype|>dtype}}(),
-        neighbors::Union{Dict{Int, <:Real}, Int}=1,
-        coordination::Int=8
-        )
-    Lattice(name::String,
-        sublattices::AbstractVector{<:AbstractLattice};
-        vectors::AbstractVector{<:AbstractVector{<:Real}}=SVector{0, SVector{sublattices|>eltype|>dimension, sublattices|>eltype|>dtype}}(),
-        neighbors::Union{Dict{Int, <:Real}, Int}=1,
-        coordination::Int=8
-        )
+    Lattice{N, P<:AbstractPID, D<:Number} <: AbstractLattice{N, P, D}
 
 Simplest lattice.
 
@@ -1009,6 +961,29 @@ struct Lattice{N, P<:AbstractPID, D<:Number} <: AbstractLattice{N, P, D}
         new{N, eltype(pids), datatype}(name, pids, rcoords, icoords, vectors, recipls, neighbors)
     end
 end
+
+"""
+    Lattice{N}(name::String,
+        pids::Vector{<:AbstractPID}, rcoords::AbstractMatrix{<:Number}, icoords::AbstractMatrix{<:Number},
+        vectors::AbstractVector{<:AbstractVector{<:Number}},
+        neighbors::Union{Dict{Int, <:Real}, Int}=1;
+        coordination::Int=8
+        ) where N
+    Lattice(name::String,
+        points::AbstractVector{<:Point};
+        vectors::AbstractVector{<:AbstractVector{<:Number}}=SVector{0, SVector{points|>eltype|>dimension, points|>eltype|>dtype}}(),
+        neighbors::Union{Dict{Int, <:Real}, Int}=1,
+        coordination::Int=8
+        )
+    Lattice(name::String,
+        sublattices::AbstractVector{<:AbstractLattice};
+        vectors::AbstractVector{<:AbstractVector{<:Real}}=SVector{0, SVector{sublattices|>eltype|>dimension, sublattices|>eltype|>dtype}}(),
+        neighbors::Union{Dict{Int, <:Real}, Int}=1,
+        coordination::Int=8
+        )
+
+Construct a lattice.
+"""
 function Lattice(name::String,
         points::AbstractVector{<:Point};
         vectors::AbstractVector{<:AbstractVector{<:Number}}=SVector{0, SVector{points|>eltype|>dimension, points|>eltype|>dtype}}(),
@@ -1269,8 +1244,7 @@ function (cylinder::Cylinder)(scopes::Any...; coordination::Int=8)
 end
 
 """
-    Bonds{T, L}(bonds::Tuple{Vararg{Vector{<:AbstractBond}}}) where {T, L<:AbstractLattice}
-    Bonds(lattice::AbstractLattice, types::LatticeBonds...)
+    Bonds{T, L<:AbstractLattice, BS<:Tuple{Vararg{Vector{<:AbstractBond}}}, B<:AbstractBond} <: AbstractVector{B}
 
 A set of lattice bonds.
 
@@ -1283,6 +1257,35 @@ struct Bonds{T, L<:AbstractLattice, BS<:Tuple{Vararg{Vector{<:AbstractBond}}}, B
         new{T, L, typeof(bonds), mapreduce(eltype, typejoin, bonds)}(bonds)
     end
 end
+@inline Base.size(bs::Bonds) = (mapreduce(length, +, bs.bonds),)
+@inline Base.:(==)(bonds1::Bonds, bonds2::Bonds) = ==(efficientoperations, bonds1, bonds2)
+@inline Base.isequal(bonds1::Bonds, bonds2::Bonds) = isequal(efficientoperations, bonds1, bonds2)
+@inline Base.summary(io::IO, bs::Bonds) = @printf io "%s-element Bonds" length(bs)
+function Base.iterate(bs::Bonds, state=(1, 0))
+    s1, s2 = state[1], state[2]
+    while s1 <= length(bs.bonds)
+        s1, s2 = (s2+1 > length(bs.bonds[s1])) ? (s1+1, 1) : (s1, s2+1)
+        (s1>length(bs.bonds) || s2<=length(bs.bonds[s1])) && break
+    end
+    s1>length(bs.bonds) && return nothing
+    return bs.bonds[s1][s2], (s1, s2)
+end
+function Base.getindex(bs::Bonds, i::Int)
+    r, k = 1, i
+    while r<=rank(bs) && k>length(bs.bonds[r])
+        k = k - length(bs.bonds[r])
+        r = r + 1
+    end
+    r>rank(bs) && error("getindex error: attempt to access $(length(bs))-element Bonds at index [$k].")
+    return bs.bonds[r][k]
+end
+
+"""
+    Bonds{T, L}(bonds::Tuple{Vararg{Vector{<:AbstractBond}}}) where {T, L<:AbstractLattice}
+    Bonds(lattice::AbstractLattice, types::LatticeBonds...)
+
+Construct a set of lattice bonds.
+"""
 @inline Bonds(lattice::AbstractLattice) = Bonds(lattice, allbonds)
 @inline Bonds(lattice::AbstractLattice, types::LatticeBonds...) = Bonds(lattice, Val(types))
 @generated function Bonds(lattice::AbstractLattice, ::Val{VS}) where VS
@@ -1295,34 +1298,6 @@ end
     bonds = Expr(:tuple, bonds...)
     return :(Bonds{$types, typeof(lattice)}($bonds))
 end
-
-"""
-    ==(bonds1::Bonds, bonds2::Bonds) -> Bool
-
-Overloaded equivalent operator.
-"""
-@inline Base.:(==)(bonds1::Bonds, bonds2::Bonds) = ==(efficientoperations, bonds1, bonds2)
-
-"""
-    isequal(bonds1::Bonds, bonds2::Bonds) -> Bool
-
-Overloaded equivalent function.
-"""
-@inline Base.isequal(bonds1::Bonds, bonds2::Bonds) = isequal(efficientoperations, bonds1, bonds2)
-
-"""
-    size(bs::Bonds) -> Tuple{Int}
-
-Get the size of the set of lattice bonds.
-"""
-@inline Base.size(bs::Bonds) = (mapreduce(length, +, bs.bonds),)
-
-"""
-    summary(io::IO, bs::Bonds)
-
-Print the brief description of a set of lattice bonds to an io.
-"""
-@inline Base.summary(io::IO, bs::Bonds) = @printf io "%s-element Bonds" length(bs)
 
 """
     bondtypes(bs::Bonds) -> Tuple{Vararg{LatticeBonds}}
@@ -1348,36 +1323,6 @@ Get the rank of a set of lattice bonds.
 """
 @inline rank(bs::Bonds) = rank(typeof(bs))
 @inline rank(::Type{<:Bonds{T}}) where T = length(T)
-
-"""
-    iterate(bs::Bonds, state=(1, 0))
-
-Iterate over the lattice bonds in the set.
-"""
-function Base.iterate(bs::Bonds, state=(1, 0))
-    s1, s2 = state[1], state[2]
-    while s1 <= length(bs.bonds)
-        s1, s2 = (s2+1 > length(bs.bonds[s1])) ? (s1+1, 1) : (s1, s2+1)
-        (s1>length(bs.bonds) || s2<=length(bs.bonds[s1])) && break
-    end
-    s1>length(bs.bonds) && return nothing
-    return bs.bonds[s1][s2], (s1, s2)
-end
-
-"""
-    getindex(bs::Bonds, i::Int) -> eltype(bs)
-
-Get the ith bond in the set.
-"""
-function Base.getindex(bs::Bonds, i::Int)
-    r, k = 1, i
-    while r<=rank(bs) && k>length(bs.bonds[r])
-        k = k - length(bs.bonds[r])
-        r = r + 1
-    end
-    r>rank(bs) && error("getindex error: attempt to access $(length(bs))-element Bonds at index [$k].")
-    return bs.bonds[r][k]
-end
 
 """
     filter(lbs::LatticeBonds, bs::Bonds, choice::Union{Val{:include}, Val{:exclude}}=Val(:include)) -> Bonds

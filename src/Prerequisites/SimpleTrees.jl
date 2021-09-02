@@ -21,13 +21,6 @@ mutable struct SimpleTreeCore{N, D}
     children::Dict{N, Vector{N}}
     SimpleTreeCore{N, D}() where {N, D} = new{N, D}(nothing, Dict{N, D}(), Dict{N, N}(), Dict{N, Vector{N}}())
 end
-
-"""
-    ==(tc1::TC, tc2::TC) where TC<:SimpleTreeCore -> Bool
-    isequal(tc1::TC, tc2::TC) where TC<:SimpleTreeCore -> Bool
-
-Overloaded equivalent operator.
-"""
 @inline Base.:(==)(tc1::TC, tc2::TC) where {TC<:SimpleTreeCore} = ==(efficientoperations, tc1, tc2)
 @inline Base.isequal(tc1::TC, tc2::TC) where {TC<:SimpleTreeCore} = isequal(efficientoperations, tc1, tc2)
 
@@ -56,6 +49,8 @@ Abstract type for all concrete trees.
 """
 abstract type AbstractSimpleTree{N, D} end
 @inline contentnames(::Type{<:AbstractSimpleTree}) = (:TREECORE,)
+@inline Base.:(==)(t₁::T, t₂::T) where {T<:AbstractSimpleTree} = ==(efficientoperations, t₁, t₂)
+@inline Base.isequal(t₁::T, t₂::T) where {T<:AbstractSimpleTree} = isequal(efficientoperations, t₁, t₂)
 
 """
     SimpleTreeCore(tree::AbstractSimpleTree) -> SimpleTreeCore
@@ -193,20 +188,6 @@ Construct an empty tree of the same type with the input one.
 """
 @inline Base.empty(tree::AbstractSimpleTree) = rawtype(typeof(tree))(dissolve(tree, empty)...)
 @inline dissolve(tree::AbstractSimpleTree{N, D}, ::Val{:TREECORE}, ::typeof(empty), args::Tuple, kwargs::NamedTuple) where {N, D} = SimpleTreeCore{N, D}()
-
-"""
-    ==(t1::T, t2::T) where {T<:AbstractSimpleTree} -> Bool
-
-Overloaded equivalent operator.
-"""
-@inline Base.:(==)(t1::T, t2::T) where {T<:AbstractSimpleTree} = ==(efficientoperations, t1, t2)
-
-"""
-    isequal(t1::T, t2::T) where {T<:AbstractSimpleTree} -> Bool
-
-Overloaded equivalent operator.
-"""
-@inline Base.isequal(t1::T, t2::T) where {T<:AbstractSimpleTree} = isequal(efficientoperations, t1, t2)
 
 """
     keys(tree::AbstractSimpleTree{N}, ::SimpleTreeDepth, node::Union{N, Nothing}=root(tree)) where N
@@ -382,13 +363,19 @@ function move!(tree::AbstractSimpleTree{N}, node::N, parent::N) where N
 end
 
 """
-    SimpleTree{N, D}() where {N, D}
+    SimpleTree{N, D} <: AbstractSimpleTree{N, D}
 
 The minimum tree structure that implements all the default tree methods.
 """
 struct SimpleTree{N, D} <: AbstractSimpleTree{N, D}
     TREECORE::SimpleTreeCore{N, D}
 end
+
+"""
+    SimpleTree{N, D}() where {N, D}
+
+Construct an empty simple tree.
+"""
 SimpleTree{N, D}() where {N, D} = SimpleTree(SimpleTreeCore{N, D}())
 
 end #module

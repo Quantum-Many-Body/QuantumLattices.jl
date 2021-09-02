@@ -46,14 +46,7 @@ Update the status of an engine.
 @inline update!(engine::Engine; kwargs...) = engine
 
 """
-    Assignment(id::Symbol, app::App, parameters::Parameters;
-        map::Function=identity,
-        dependences::Tuple{Vararg{Symbol}}=(),
-        data::Any=nothing,
-        savedata::Bool=true,
-        virgin::Bool=true,
-        kwargs...
-        )
+    Assignment{A<:App, P<:Parameters, M<:Function, D<:Tuple{Vararg{Symbol}}, R<:Any, I}
 
 An assignment associated with an app.
 """
@@ -66,6 +59,21 @@ mutable struct Assignment{A<:App, P<:Parameters, M<:Function, D<:Tuple{Vararg{Sy
     savedata::Bool
     virgin::Bool
 end
+@inline Base.:(==)(assign₁::Assignment, assign₂::Assignment) = ==(efficientoperations, assign₁, assign₂)
+@inline Base.isequal(assign₁::Assignment, assign₂::Assignment) = isequal(efficientoperations, assign₁, assign₂)
+
+"""
+    Assignment(id::Symbol, app::App, parameters::Parameters;
+        map::Function=identity,
+        dependences::Tuple{Vararg{Symbol}}=(),
+        data::Any=nothing,
+        savedata::Bool=true,
+        virgin::Bool=true,
+        kwargs...
+        )
+
+Construct an assignment.
+"""
 @inline function Assignment(id::Symbol, app::App, parameters::Parameters;
         map::Function=identity,
         dependences::Tuple{Vararg{Symbol}}=(),
@@ -76,20 +84,6 @@ end
     A, P, M, D, R = typeof(app), typeof(parameters), typeof(map), typeof(dependences), isnothing(data) ? Any : typeof(data)
     return Assignment{A, P, M, D, R, id}(app, parameters, map, dependences, data, savedata, virgin)
 end
-
-"""
-    ==(assign1::Assignment, assign2::Assignment) -> Bool
-
-Judge whether two assignments are equivalent to each other.
-"""
-@inline Base.:(==)(assign1::Assignment, assign2::Assignment) = ==(efficientoperations, assign1, assign2)
-
-"""
-    isequal(assign1::Assignment, assign2::Assignment) -> Bool
-
-Judge whether two assignments are equivalent to each other.
-"""
-@inline Base.isequal(assign1::Assignment, assign2::Assignment) = isequal(efficientoperations, assign1, assign2)
 
 """
     valtype(assign::Assignment)
@@ -129,14 +123,7 @@ Update the parameters of an assignment and the status of its associated app.
 end
 
 """
-    Algorithm(name::String, engine::Engine;
-        din::String=".",
-        dout::String=".",
-        parameters::Union{Parameters, Nothing}=nothing,
-        map::Function=identity,
-        assignments::Tuple{Vararg{Assignment}}=(),
-        kwargs...
-        )
+    Algorithm{E<:Engine, P<:Parameters, M<:Function, S<:NamedContainer{Assignment}}
 
 An algorithm associated with an engine.
 """
@@ -151,6 +138,27 @@ mutable struct Algorithm{E<:Engine, P<:Parameters, M<:Function, S<:NamedContaine
     dassignments::Dict{Symbol, Assignment}
     timer::TimerOutput
 end
+@inline Base.:(==)(algorithm₁::Algorithm, algorithm₂::Algorithm) = ==(efficientoperations, algorithm₁, algorithm₂)
+@inline Base.isequal(algorithm₁::Algorithm, algorithm₂::Algorithm) = isequal(efficientoperations, algorithm₁, algorithm₂)
+function Base.show(io::IO, alg::Algorithm)
+    @printf io "%s_%s" alg.name alg.engine
+    for (name, value) in pairs(alg.parameters)
+        @printf io "_%s" decimaltostr(value, 10)
+    end
+end
+
+"""
+    Algorithm(name::String, engine::Engine;
+        din::String=".",
+        dout::String=".",
+        parameters::Union{Parameters, Nothing}=nothing,
+        map::Function=identity,
+        assignments::Tuple{Vararg{Assignment}}=(),
+        kwargs...
+        )
+
+Construct an algorithm.
+"""
 @inline function Algorithm(name::String, engine::Engine;
         din::String=".",
         dout::String=".",
@@ -204,18 +212,6 @@ function Base.repr(alg::Algorithm, mask::Tuple{Vararg{Symbol}}=(); ndecimal::Int
         name∉mask && push!(result, decimaltostr(value, ndecimal))
     end
     return join(result, "_")
-end
-
-"""
-    show(io::IO, alg::Algorithm)
-
-Show an algorithm.
-"""
-function Base.show(io::IO, alg::Algorithm)
-    @printf io "%s_%s" alg.name alg.engine
-    for (name, value) in pairs(alg.parameters)
-        @printf io "_%s" decimaltostr(value, 10)
-    end
 end
 
 """

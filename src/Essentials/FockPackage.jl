@@ -265,6 +265,13 @@ end
     FockCoupling(value, id[1].nambus, orbitals, spins)
 end
 @inline rank(::Type{<:FockCoupling{V, N} where V}) where N = fieldcount(N)
+function Base.show(io::IO, fc::FockCoupling)
+    @printf io "FockCoupling{%s}(value=%s" rank(fc) decimaltostr(fc.value)
+    any(fc.nambus .≠ wildcard) && @printf io ", nambus=[%s]" join(fc.nambus, " ")
+    any(fc.orbitals .≠ wildcard) && @printf io ", orbitals=%s" string(fc.orbitals)
+    any(fc.spins .≠ wildcard) && @printf io ", spins=%s" string(fc.spins)
+    @printf io ")"
+end
 
 """
     FockCoupling{N}(value::Number=1;
@@ -281,19 +288,6 @@ function FockCoupling{N}(value::Number=1;
     isa(orbitals, Subscripts) || (orbitals = Subscripts(orbitals))
     isa(spins, Subscripts) || (spins = Subscripts(spins))
     return FockCoupling(value, nambus, orbitals, spins)
-end
-
-"""
-    show(io::IO, fc::FockCoupling)
-
-Show a Fock coupling.
-"""
-function Base.show(io::IO, fc::FockCoupling)
-    @printf io "FockCoupling{%s}(value=%s" rank(fc) decimaltostr(fc.value)
-    any(fc.nambus .≠ wildcard) && @printf io ", nambus=[%s]" join(fc.nambus, " ")
-    any(fc.orbitals .≠ wildcard) && @printf io ", orbitals=%s" string(fc.orbitals)
-    any(fc.spins .≠ wildcard) && @printf io ", spins=%s" string(fc.spins)
-    @printf io ")"
 end
 
 """

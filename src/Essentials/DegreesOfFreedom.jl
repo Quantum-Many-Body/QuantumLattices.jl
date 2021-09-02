@@ -1,23 +1,25 @@
 module DegreesOfFreedom
 
+using MacroTools: @capture
 using Printf: @printf, @sprintf
 using StaticArrays: SVector
 using LaTeXStrings: latexstring
+using Base.Iterators: product
 using ..Spatials: AbstractPID, Point
 using ...Essentials: dtype
 using ...Interfaces: id, value, rank, dimension, decompose
 using ...Prerequisites: Float, decimaltostr
 using ...Prerequisites.Traits: rawtype, efficientoperations, getcontent
-using ...Prerequisites.CompositeStructures: CompositeDict
+using ...Prerequisites.CompositeStructures: CompositeTuple, CompositeDict, NamedContainer
 using ...Mathematics.VectorSpaces: CartesianVectorSpace
 using ...Mathematics.AlgebraOverFields: SimpleID, ID, Element, Elements
 
 import ..Spatials: pidtype, rcoord, icoord
 import ...Essentials: reset!, update!
-import ...Prerequisites.Traits: contentnames
+import ...Prerequisites.Traits: contentnames, getcontent
 import ...Mathematics.VectorSpaces: shape
 import ...Mathematics.AlgebraOverFields: sequence
-import ...Interfaces: rank, ⊗
+import ...Interfaces: rank, dimension, ⊗, expand
 
 export IID, SimpleIID, CompositeIID, Internal, InternalIndex, SimpleInternal, CompositeInternal
 export Hilbert, AbstractOID, Index, AbstractCompositeOID, OID
@@ -26,6 +28,7 @@ export internaltype, iidtype, isHermitian, indextype, oidtype
 export Metric, OIDToTuple, Table
 export LaTeX, latexname, latexformat, superscript, subscript, script
 export Boundary, twist, plain
+export Subscripts, @subscripts_str
 
 """
     IID <: SimpleID
@@ -49,13 +52,44 @@ The composition of several single internal ids.
 struct CompositeIID{T<:Tuple{Vararg{SimpleIID}}} <: IID
     content::T
 end
-@inline CompositeIID(content::SimpleIID...) = CompositeIID(content)
+Base.show(io::IO, ciid::CompositeIID) = @printf io "%s" join((string(ciid[i]) for i = 1:rank(ciid)), " ⊗ ")
 @inline Base.length(ciid::CompositeIID) = length(typeof(ciid))
 @inline Base.length(::Type{<:CompositeIID{T}}) where {T<:Tuple{Vararg{SimpleIID}}} = fieldcount(T)
-@inline rank(ciid::CompositeIID) = rank(typeof(ciid))
-@inline rank(::Type{<:CompositeIID{T}}) where {T<:Tuple{Vararg{SimpleIID}}} =  fieldcount(T)
 @inline Base.getindex(ciid::CompositeIID, i::Int) = ciid.content[i]
-Base.show(io::IO, ciid::CompositeIID) = @printf io "%s" join((string(ciid[i]) for i = 1:rank(ciid)), " ⊗ ")
+
+"""
+    CompositeIID(content::SimpleIID...)
+
+Construct a composite iid from a set of simple iids.
+"""
+@inline CompositeIID(content::SimpleIID...) = CompositeIID(content)
+
+"""
+    rank(ciid::CompositeIID) -> Int
+    rank(::Type{<:CompositeIID{T}}) where {T<:Tuple{Vararg{SimpleIID}}} -> Int
+
+Get the number of simple iids in a composite iid.
+"""
+@inline rank(ciid::CompositeIID) = rank(typeof(ciid))
+@inline rank(::Type{<:CompositeIID{T}}) where {T<:Tuple{Vararg{SimpleIID}}} = fieldcount(T)
+
+"""
+    iidtype(ciid::CompositeIID, i::Integer)
+    iidtype(::Type{<:CompositeIID{T}}, i::Integer) where {T<:Tuple{Vararg{SimpleIID}}}
+
+Get the type of the ith simple iid in a composite iid.
+"""
+iidtype(ciid::CompositeIID, i::Integer) = iidtype(typeof(ciid), i)
+iidtype(::Type{<:CompositeIID{T}}, i::Integer) where {T<:Tuple{Vararg{SimpleIID}}} = fieldtype(T, i)
+
+"""
+    ⊗(iid₁::SimpleIID, iid₂::SimpleIID) -> CompositeIID
+    ⊗(iid::SimpleIID, ciid::CompositeIID) -> CompositeIID
+    ⊗(ciid::CompositeIID, iid::SimpleIID) -> CompositeIID
+    ⊗(ciid₁::CompositeIID, ciid₂::CompositeIID) -> CompositeIID
+
+Direct product between simple iids and composite iids.
+"""
 @inline ⊗(iid₁::SimpleIID, iid₂::SimpleIID) = CompositeIID(iid₁, iid₂)
 @inline ⊗(iid::SimpleIID, ciid::CompositeIID) = CompositeIID(iid, ciid.content...)
 @inline ⊗(ciid::CompositeIID, iid::SimpleIID) = CompositeIID(ciid.content..., iid)
@@ -82,12 +116,6 @@ InternalIndex(I::Int) = InternalIndex{I}()
 The simple internal degrees of freedom at a single point.
 """
 abstract type SimpleInternal{I<:SimpleIID} <: Internal{I} end
-
-"""
-    show(io::IO, i::SimpleInternal)
-
-Show an internal.
-"""
 Base.show(io::IO, i::SimpleInternal) = @printf io "%s(%s)" i|>typeof|>nameof join(("$name=$(getfield(i, name))" for name in i|>typeof|>fieldnames), ", ")
 
 """
@@ -98,17 +126,44 @@ The composition of several single internal spaces.
 struct CompositeInternal{T<:Tuple{Vararg{SimpleInternal}}} <: Internal{CompositeIID}
     content::T
 end
-@inline CompositeInternal(content::SimpleInternal...) = CompositeInternal(content)
 @inline Base.eltype(ci::CompositeInternal) = eltype(typeof(ci))
 @inline @generated function Base.eltype(::Type{<:CompositeInternal{T}}) where {T<:Tuple{Vararg{SimpleInternal}}}
     return CompositeIID{Tuple{[eltype(fieldtype(T, i)) for i = 1:fieldcount(T)]...}}
 end
+Base.show(io::IO, ci::CompositeInternal) = @printf io "%s" join((string(ci[InternalIndex(i)]) for i = 1:rank(ci)), " ⊗ ")
+
+"""
+    CompositeInternal(content::SimpleInternal...)
+
+Construct a composite internal space from a set of simple internal spaces.
+"""
+@inline CompositeInternal(content::SimpleInternal...) = CompositeInternal(content)
+
+"""
+    rank(ci::CompositeInternal) -> Int
+    rank(::Type{<:CompositeInternal{T}}) where {T<:Tuple{Vararg{SimpleInternal}}} -> Int
+
+Get the number of simple internal spaces in a composite internal space.
+"""
 @inline rank(ci::CompositeInternal) = rank(typeof(ci))
 @inline rank(::Type{<:CompositeInternal{T}}) where {T<:Tuple{Vararg{SimpleInternal}}} = fieldcount(T)
+
+"""
+    internaltype(ci::CompositeInternal, index::Int)
+    internaltype(::Type{<:CompositeInternal{T}}, index::Int) where {T<:Tuple{Vararg{SimpleInternal}}}
+
+Get the type of the ith simple internal space in a composite internal space.
+"""
 @inline internaltype(ci::CompositeInternal, index::Int) = internaltype(typeof(ci), index)
 @inline internaltype(::Type{<:CompositeInternal{T}}, index::Int) where {T<:Tuple{Vararg{SimpleInternal}}} = fieldtype(T, index)
+
+"""
+    getindex(ci::CompositeInternal, ::InternalIndex{I}) where I
+
+Get the Ith simple internal space in a composite internal space.
+"""
 @inline Base.getindex(ci::CompositeInternal, ::InternalIndex{I}) where I = ci.content[I]
-Base.show(io::IO, ci::CompositeInternal) = @printf io "%s" join((string(ci[InternalIndex(i)]) for i = 1:rank(ci)), " ⊗ ")
+
 @inline @generated shape(ci::CompositeInternal) = Expr(:tuple, [:(shape(ci[InternalIndex($i)])...) for i = 1:rank(ci)]...)
 @inline @generated function Base.CartesianIndex(ciid::CompositeIID, ci::CompositeInternal)
     exprs = []
@@ -129,29 +184,50 @@ end
     end
     return Expr(:call, :CompositeIID, exprs...)
 end
+
+"""
+    ⊗(i₁::SimpleInternal, i₂::SimpleInternal) -> CompositeInternal
+    ⊗(i::SimpleInternal, ci::CompositeInternal) -> CompositeInternal
+    ⊗(ci::CompositeInternal, i::SimpleInternal) -> CompositeInternal
+    ⊗(ci₁::CompositeInternal, ci₂::CompositeInternal) -> CompositeInternal
+
+Direct product bewteen simple internal spaces and composite internal spaces.
+"""
 @inline ⊗(i₁::SimpleInternal, i₂::SimpleInternal) = CompositeInternal(i₁, i₂)
 @inline ⊗(i::SimpleInternal, ci::CompositeInternal) = CompositeInternal(i, ci.content...)
 @inline ⊗(ci::CompositeInternal, i::SimpleInternal) = CompositeInternal(ci.content..., i)
 @inline ⊗(ci₁::CompositeInternal, ci₂::CompositeInternal) = CompositeInternal(ci₁.content..., ci₂.content...)
 
 """
-    Hilbert{I}(map::Function, pids::AbstractVector{<:AbstractPID}) where {I<:Internal}
+    Hilbert{I<:Internal, P<:AbstractPID, M<:Function} <: CompositeDict{P, I}
 
 Hilbert space at a lattice.
-
-Here, `map` maps a `AbstractPID` to an `Internal`.
 """
 struct Hilbert{I<:Internal, P<:AbstractPID, M<:Function} <: CompositeDict{P, I}
     map::M
     contents::Dict{P, I}
 end
 @inline contentnames(::Type{<:Hilbert}) = (:map, :contents)
+
+"""
+    Hilbert(ps::Pair...)
+    Hilbert(kv)
+
+Construct a Hilbert space the same way as a Dict.
+"""
 @inline Hilbert(ps::Pair...) = Hilbert(ps)
 function Hilbert(kv)
     contents = Dict(kv)
     map = pid -> contents[pid]
     return Hilbert(map, contents)
 end
+"""
+    Hilbert{I}(map::Function, pids::AbstractVector{<:AbstractPID}) where {I<:Internal}
+
+Construct a Hilbert space from a function and a set of point ids.
+
+Here, `map` maps a `AbstractPID` to an `Internal`.
+"""
 function Hilbert{I}(map::Function, pids::AbstractVector{<:AbstractPID}) where {I<:Internal}
     contents = Dict{pids|>eltype, I}()
     for pid in pids
@@ -245,8 +321,7 @@ Get the index type of an composite operator id.
 @inline indextype(::Type{<:AbstractCompositeOID{I}}) where {I<:Index} = I
 
 """
-    OID(index::Index, rcoord, icoord)
-    OID(index::Index; rcoord, icoord)
+    OID{I<:Index, V<:SVector} <: AbstractCompositeOID{I}
 
 Operator id.
 """
@@ -257,10 +332,9 @@ struct OID{I<:Index, V<:SVector} <: AbstractCompositeOID{I}
     OID(index::Index, rcoord::V, icoord::V) where {V<:SVector} = new{typeof(index), V}(index, oidcoord(rcoord), oidcoord(icoord))
 end
 @inline contentnames(::Type{<:OID}) = (:index, :rcoord, :icoord)
-@inline OID(index::Index, rcoord, icoord) = OID(index, SVector{length(rcoord)}(rcoord), SVector{length(icoord)}(icoord))
-@inline OID(index::Index; rcoord, icoord) = OID(index, rcoord, icoord)
 @inline Base.hash(oid::OID, h::UInt) = hash((oid.index, Tuple(oid.rcoord)), h)
 @inline Base.propertynames(::ID{OID}) = (:indexes, :rcoords, :icoords)
+@inline Base.show(io::IO, oid::OID) = @printf io "OID(%s, %s, %s)" oid.index oid.rcoord oid.icoord
 @inline oidcoord(vector::SVector) = vector
 @generated function oidcoord(vector::SVector{N, Float}) where N
     exprs = [:((vector[$i] === -0.0) ? 0.0 : vector[$i]) for i = 1:N]
@@ -268,11 +342,13 @@ end
 end
 
 """
-    show(io::IO, oid::OID)
+    OID(index::Index, rcoord, icoord)
+    OID(index::Index; rcoord, icoord)
 
-Show an operator id.
+Construct an operator id.
 """
-@inline Base.show(io::IO, oid::OID) = @printf io "OID(%s, %s, %s)" oid.index oid.rcoord oid.icoord
+@inline OID(index::Index, rcoord, icoord) = OID(index, SVector{length(rcoord)}(rcoord), SVector{length(icoord)}(icoord))
+@inline OID(index::Index; rcoord, icoord) = OID(index, rcoord, icoord)
 
 """
     adjoint(oid::OID) -> typeof(oid)
@@ -307,12 +383,6 @@ struct Operator{V<:Number, I<:ID{AbstractOID}} <: AbstractOperator{V, I}
     id::I
 end
 @inline Operator(value::Number) = Operator(value, ())
-
-"""
-    show(io::IO, opt::Operator)
-
-Show an operator.
-"""
 Base.show(io::IO, opt::Operator) = @printf io "%s(%s, %s)" nameof(typeof(opt)) decimaltostr(value(opt)) id(opt)
 
 """
@@ -591,7 +661,7 @@ Get the sequence of the oids of an operator according to a table.
 end
 
 """
-    LaTeX{SP, SB}(body) where {SP, SB}
+    LaTeX{SP, SB}(body, spdelimiter::String=", ", sbdelimiter::String=", "; options...) where {SP, SB}
 
 LaTeX string representation.
 """
@@ -763,19 +833,7 @@ struct Boundary{Names, D<:Number, V<:AbstractVector} <: Function
         new{Names, datatype, eltype(vectors)}(convert(Vector{datatype}, values), vectors)
     end
 end
-
-"""
-    ==(bound1::Boundary, bound2::Boundary) -> Bool
-
-Judge whether two boundaries conditions are equivalent to each other.
-"""
 @inline Base.:(==)(bound1::Boundary, bound2::Boundary) = ==(efficientoperations, bound1, bound2)
-
-"""
-    isequal(bound1::Boundary, bound2::Boundary) -> Bool
-
-Judge whether two boundaries conditions are equivalent to each other.
-"""
 @inline Base.isequal(bound1::Boundary, bound2::Boundary) = isequal(efficientoperations, bound1, bound2)
 
 """

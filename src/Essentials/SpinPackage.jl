@@ -214,6 +214,12 @@ end
     SpinCoupling(value, id[1].tags, orbitals)
 end
 @inline rank(::Type{<:SpinCoupling{V, T} where V}) where T = fieldcount(T)
+function Base.show(io::IO, sc::SpinCoupling)
+    @printf io "SpinCoupling(value=%s" decimaltostr(sc.value)
+    @printf io ", tags=%s" join(NTuple{rank(sc), String}("S"*sidrepmap[tag] for tag in sc.tags), "")
+    any(sc.orbitals .≠ wildcard) && @printf io ", orbitals=%s" string(sc.orbitals)
+    @printf io ")"
+end
 
 """
     SpinCoupling(value::Number,
@@ -229,18 +235,6 @@ function SpinCoupling(value::Number,
         ) where N
     isa(orbitals, Subscripts) || (orbitals = Subscripts(orbitals))
     return SpinCoupling(value, tags, orbitals)
-end
-
-"""
-    show(io::IO, sc::SpinCoupling)
-
-Show a spin coupling.
-"""
-function Base.show(io::IO, sc::SpinCoupling)
-    @printf io "SpinCoupling(value=%s" decimaltostr(sc.value)
-    @printf io ", tags=%s" join(NTuple{rank(sc), String}("S"*sidrepmap[tag] for tag in sc.tags), "")
-    any(sc.orbitals .≠ wildcard) && @printf io ", orbitals=%s" string(sc.orbitals)
-    @printf io ")"
 end
 
 """

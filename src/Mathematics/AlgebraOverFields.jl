@@ -27,6 +27,7 @@ The (composite) id system of an algebra over a field.
 Type alias for `NTuple{N, I} where {N, I<:SimpleID}`.
 """
 const ID{I<:SimpleID, N} = NTuple{N, I}
+Base.show(io::IO, cid::Tuple{SimpleID, Vararg{SimpleID}}) = @printf io "ID(%s)" join(cid, ", ")
 
 """
     ID(ids::SimpleID...)
@@ -74,13 +75,6 @@ Base.getproperty(cid::ID{SimpleID}, name::Symbol) = idgetproperty(cid, Val(name)
 end
 
 """
-    show(io::IO, cid::Tuple{SimpleID, Vararg{SimpleID}})
-
-Show a composite id.
-"""
-Base.show(io::IO, cid::Tuple{SimpleID, Vararg{SimpleID}}) = @printf io "ID(%s)" join(cid, ", ")
-
-"""
     promote_type(::Type{Tuple{}}, I::Type{<:ID{SimpleID, N}}) where N
     promote_type(I::Type{<:ID{SimpleID, N}}, ::Type{Tuple{}}) where N
 
@@ -90,7 +84,7 @@ Define the promote rule for ID types.
 @inline Base.promote_type(I::Type{<:Tuple{SimpleID, Vararg{SimpleID}}}, ::Type{Tuple{}}) = ID{I|>eltype}
 
 """
-    isless(::Type{<:SimpleID}, cid1::ID{SimpleID}, cid2::ID{SimpleID}) -> Bool
+    isless(::Type{<:SimpleID}, cid₁::ID{SimpleID}, cid₂::ID{SimpleID}) -> Bool
 
 Compare two ids and judge whether the first is less than the second.
 
@@ -98,9 +92,9 @@ The comparison rule are as follows:
 1. ids with smaller ranks are always less than those with higher ranks;
 2. if two ids are of the same rank, the comparison goes just like that between tuples.
 """
-@inline function Base.isless(::Type{<:SimpleID}, cid1::ID{SimpleID}, cid2::ID{SimpleID})
-    r1, r2 = cid1|>rank, cid2|>rank
-    (r1 < r2) ? true : (r1 > r2) ? false : isless(cid1, cid2)
+@inline function Base.isless(::Type{<:SimpleID}, cid₁::ID{SimpleID}, cid₂::ID{SimpleID})
+    r₁, r₂ = cid₁|>rank, cid₂|>rank
+    (r₁ < r₂) ? true : (r₁ > r₂) ? false : isless(cid₁, cid₂)
 end
 
 """
@@ -115,17 +109,17 @@ Get the rank of a composite id.
 @inline rank(::Type{<:ID{SimpleID, N}}) where N = N
 
 """
-    *(sid1::SimpleID, sid2::SimpleID) -> ID{SimpleID}
+    *(sid₁::SimpleID, sid₂::SimpleID) -> ID{SimpleID}
     *(sid::SimpleID, cid::ID{SimpleID}) -> ID{SimpleID}
     *(cid::ID{SimpleID}, sid::SimpleID) -> ID{SimpleID}
-    *(cid1::ID{SimpleID}, cid2::ID{SimpleID}) -> ID{SimpleID}
+    *(cid₁::ID{SimpleID}, cid₂::ID{SimpleID}) -> ID{SimpleID}
 
 Get the product of the id system.
 """
-@inline Base.:*(sid1::SimpleID, sid2::SimpleID) = ID(sid1, sid2)
+@inline Base.:*(sid₁::SimpleID, sid₂::SimpleID) = ID(sid₁, sid₂)
 @inline Base.:*(sid::SimpleID, cid::ID{SimpleID}) = ID(sid, cid...)
 @inline Base.:*(cid::ID{SimpleID}, sid::SimpleID) = ID(cid..., sid)
-@inline Base.:*(cid1::ID{SimpleID}, cid2::ID{SimpleID}) = ID(cid1..., cid2...)
+@inline Base.:*(cid₁::ID{SimpleID}, cid₂::ID{SimpleID}) = ID(cid₁..., cid₂...)
 
 """
     Element{V, I<:ID{SimpleID}}
@@ -141,6 +135,8 @@ abstract type Element{V, I<:ID{SimpleID}} end
 @inline parameternames(::Type{<:Element}) = (:value, :id)
 @inline isparameterbound(::Type{<:Element}, ::Val{:value}, ::Type{V}) where V = false
 @inline isparameterbound(::Type{<:Element}, ::Val{:id}, ::Type{I}) where I<:ID{SimpleID} = !isconcretetype(I) 
+@inline Base.:(==)(m₁::Element, m₂::Element) = ==(efficientoperations, m₁, m₂)
+@inline Base.isequal(m₁::Element, m₂::Element) = isequal(efficientoperations, m₁, m₂)
 
 @inline newvalue(m::Element, v::Number) = v
 """
@@ -202,26 +198,12 @@ Get the rank of an element.
 @inline rank(::Type{M}) where {M<:Element} = M |> idtype |> rank
 
 """
-    ==(m1::Element, m2::Element) -> Bool
-
-Compare two elements and judge whether they are equal to each other.
-"""
-@inline Base.:(==)(m1::Element, m2::Element) = ==(efficientoperations, m1, m2)
-
-"""
-    isequal(m1::Element, m2::Element) -> Bool
-
-Compare two elements and judge whether they are equal to each other.
-"""
-@inline Base.isequal(m1::Element, m2::Element) = isequal(efficientoperations, m1, m2)
-
-"""
-    isapprox(m1::Element, m2::Element; atol::Real=atol, rtol::Real=rtol) -> Bool
+    isapprox(m₁::Element, m₂::Element; atol::Real=atol, rtol::Real=rtol) -> Bool
 
 Compare two elements and judge whether they are inexactly equivalent to each other.
 """
-@inline function Base.isapprox(m1::Element, m2::Element; atol::Real=atol, rtol::Real=rtol)
-    isapprox(efficientoperations, contentorder(typeof(m1), :value)|>Val, dissolve(m1), dissolve(m2); atol=atol, rtol=rtol)::Bool
+@inline function Base.isapprox(m₁::Element, m₂::Element; atol::Real=atol, rtol::Real=rtol)
+    isapprox(efficientoperations, contentorder(typeof(m₁), :value)|>Val, dissolve(m₁), dissolve(m₂); atol=atol, rtol=rtol)::Bool
 end
 
 """
@@ -232,16 +214,16 @@ Return a copy of a concrete `Element` with some of the field values replaced by 
 @inline Base.replace(m::Element; kwargs...) = replace(efficientoperations, m; kwargs...)
 
 """
-    promote_rule(::Type{M1}, ::Type{M2}) where {M1<:Element, M2<:Element}
+    promote_rule(::Type{M₁}, ::Type{M₂}) where {M₁<:Element, M₂<:Element}
 
 Define the promote rule for Element types.
 """
-@inline function Base.promote_rule(::Type{M1}, ::Type{M2}) where {M1<:Element, M2<:Element}
-    (M1 <: M2) && return M2
-    (M2 <: M1) && return M1
-    r1, r2 = M1|>rank, M2|>rank
-    M = (r2 == 0) ? rawtype(M1) : (r1 == 0) ? rawtype(M2) : typejoin(rawtype(M1), rawtype(M2))
-    return fulltype(M, promoteparameters(parameterpairs(M1), parameterpairs(M2)))
+@inline function Base.promote_rule(::Type{M₁}, ::Type{M₂}) where {M₁<:Element, M₂<:Element}
+    (M₁ <: M₂) && return M₂
+    (M₂ <: M₁) && return M₁
+    r₁, r₂ = M₁|>rank, M₂|>rank
+    M = (r₂ == 0) ? rawtype(M₁) : (r₁ == 0) ? rawtype(M₂) : typejoin(rawtype(M₁), rawtype(M₂))
+    return fulltype(M, promoteparameters(parameterpairs(M₁), parameterpairs(M₂)))
 end
 
 """
@@ -336,6 +318,12 @@ Type alias for `Dict{I<:ID{SimpleID}, M<:Element}`.
 Similar iterms are automatically merged thanks to the id system.
 """
 const Elements{I<:ID{SimpleID}, M<:Element} = Dict{I, M}
+function Base.show(io::IO, ms::Elements)
+    @printf io "Elements with %s entries:\n" length(ms)
+    for m in values(ms)
+        @printf io "  %s\n" m
+    end
+end
 
 """
     Elements(ms)
@@ -356,18 +344,6 @@ function Elements(ms::Element...)
     result = Elements{ms|>eltype|>idtype, ms|>eltype}()
     for m in ms add!(result, m) end
     return result
-end
-
-"""
-    show(io::IO, ms::Elements)
-
-Show a set of elements.
-"""
-function Base.show(io::IO, ms::Elements)
-    @printf io "Elements with %s entries:\n" length(ms)
-    for m in values(ms)
-        @printf io "  %s\n" m
-    end
 end
 
 """
@@ -490,7 +466,7 @@ end
     +(::Nothing, m::Element) -> typeof(m)
     +(m::Element, factor::Number) -> Elements
     +(factor::Number, m::Element) -> Elements
-    +(m1::Element, m2::Element) -> Elements
+    +(m₁::Element, m₂::Element) -> Elements
     +(ms::Elements) -> typeof(ms)
     +(ms::Elements, ::Nothing) -> typeof(ms)
     +(::Nothing, ms::Elements) -> typeof(ms)
@@ -498,7 +474,7 @@ end
     +(factor::Number, ms::Elements) -> Elements
     +(ms::Elements, m::Element) -> Elements
     +(m::Element, ms::Elements) -> Elements
-    +(ms1::Elements, ms2::Elements) -> Elements
+    +(ms₁::Elements, ms₂::Elements) -> Elements
 
 Overloaded `+` operator between elements of an algebra over a field.
 """
@@ -512,13 +488,13 @@ Base.:+(factor::Number, m::Element) = m + one(m)*factor
 Base.:+(m::Element, factor::Number) = m + one(m)*factor
 Base.:+(factor::Number, m::Scalar) = replace(m, value(m)+factor)
 Base.:+(m::Scalar, factor::Number) = replace(m, value(m)+factor)
-Base.:+(m1::Scalar, m2::Scalar) = replace(m1, value(m1)+value(m2))
+Base.:+(m₁::Scalar, m₂::Scalar) = replace(m₁, value(m₁)+value(m₂))
 Base.:+(factor::Number, ms::Elements) = ms + one(valtype(ms))*factor
 Base.:+(ms::Elements, factor::Number) = ms + one(valtype(ms))*factor
-function Base.:+(m1::Element, m2::Element)
-    I = promote_type(m1|>idtype, m2|>idtype)
-    M = promote_type(typeof(m1), typeof(m2))
-    return add!(Elements{I, M}(id(m1)=>m1), m2)
+function Base.:+(m₁::Element, m₂::Element)
+    I = promote_type(m₁|>idtype, m₂|>idtype)
+    M = promote_type(typeof(m₁), typeof(m₂))
+    return add!(Elements{I, M}(id(m₁)=>m₁), m₂)
 end
 Base.:+(m::Element, ms::Elements) = ms + m
 function Base.:+(ms::Elements, m::Element)
@@ -526,10 +502,10 @@ function Base.:+(ms::Elements, m::Element)
     M = promote_type(valtype(ms), typeof(m))
     return add!(Elements{I, M}(ms), m)
 end
-function Base.:+(ms1::Elements, ms2::Elements)
-    I = promote_type(ms1|>keytype, ms2|>keytype)
-    M = promote_type(valtype(ms1), valtype(ms2))
-    return add!(Elements{I, M}(ms1), ms2)
+function Base.:+(ms₁::Elements, ms₂::Elements)
+    I = promote_type(ms₁|>keytype, ms₂|>keytype)
+    M = promote_type(valtype(ms₁), valtype(ms₂))
+    return add!(Elements{I, M}(ms₁), ms₂)
 end
 
 """
@@ -537,14 +513,14 @@ end
     *(::Nothing, m::Element) -> Nothing
     *(factor::Number, m::Element) -> Element
     *(m::Element, factor::Number) -> Element
-    *(m1::Element, m2::Element) -> Element
+    *(m₁::Element, m₂::Element) -> Element
     *(ms::Elements, ::Nothing) -> Nothing
     *(::Nothing, ms::Elements) -> Nothing
     *(factor::Number, ms::Elements) -> Elements
     *(ms::Elements, factor::Number) -> Elements
     *(m::Element, ms::Elements) -> Elements
     *(ms::Elements, m::Element) -> Elements
-    *(ms1::Elements, ms2::Elements) -> Elements
+    *(ms₁::Elements, ms₂::Elements) -> Elements
 
 Overloaded `*` operator for element-scalar multiplications and element-element multiplications of an algebra over a field.
 """
@@ -554,7 +530,7 @@ Base.:*(ms::Elements, ::Nothing) = nothing
 Base.:*(::Nothing, ms::Elements) = nothing
 Base.:*(factor::Scalar, m::Element) = m * value(factor)
 Base.:*(m::Element, factor::Scalar) = m * value(factor)
-Base.:*(m1::Scalar, m2::Scalar) = replace(m1, value(m1)*value(m2))
+Base.:*(m₁::Scalar, m₂::Scalar) = replace(m₁, value(m₁)*value(m₂))
 Base.:*(factor::Number, m::Element) = m * factor
 Base.:*(m::Element, factor::Number) = replace(m, factor*value(m))
 Base.:*(factor::Scalar, ms::Elements) = ms * value(factor)
@@ -570,12 +546,12 @@ function Base.:*(ms::Elements, factor::Number)
 end
 Base.:*(m::Element, ms::Elements) = Elements((m * mm for mm in ms|>values)...)
 Base.:*(ms::Elements, m::Element) = Elements((mm * m for mm in ms|>values)...)
-Base.:*(ms1::Elements, ms2::Elements) = Elements((m1 * m2 for m1 in ms1|>values for m2 in ms2|>values)...)
-function Base.:*(m1::Element, m2::Element)
-    @assert((m1|>typeof|>nameof == m2|>typeof|>nameof) && (m1|>typeof|>fieldcount == m2|>typeof|>fieldcount == 2),
-            "\"*\" error: not implemented between $(m1|>typeof|>nameof) and $(m2|>typeof|>nameof)."
+Base.:*(ms₁::Elements, ms₂::Elements) = Elements((m₁ * m₂ for m₁ in ms₁|>values for m₂ in ms₂|>values)...)
+function Base.:*(m₁::Element, m₂::Element)
+    @assert((m₁|>typeof|>nameof == m₂|>typeof|>nameof) && (m₁|>typeof|>fieldcount == m₂|>typeof|>fieldcount == 2),
+            "\"*\" error: not implemented between $(m₁|>typeof|>nameof) and $(m₂|>typeof|>nameof)."
             )
-    rawtype(typeof(m1))(value(m1)*value(m2), id(m1)*id(m2))
+    rawtype(typeof(m₁))(value(m₁)*value(m₂), id(m₁)*id(m₂))
 end
 
 """
@@ -584,7 +560,7 @@ end
     -(::Nothing, m::Element) -> typeof(m)
     -(m::Element, factor::Number) -> Elements
     -(factor::Number, m::Element) -> Elements
-    -(m1::Element, m2::Element) -> Elements
+    -(m₁::Element, m₂::Element) -> Elements
     -(ms::Elements) -> typeof(ms)
     -(ms::Elements, ::Nothing) -> typeof(ms)
     -(::Nothing, ms::Elements) -> typeof(ms)
@@ -592,7 +568,7 @@ end
     -(factor::Number, ms::Elements) -> Elements
     -(m::Element, ms::Elements) -> Elements
     -(ms::Elements, m::Element) -> Elements
-    -(ms1::Elements, ms2::Elements) -> Elements
+    -(ms₁::Elements, ms₂::Elements) -> Elements
 
 Overloaded `-` operator between elements of an algebra over a field.
 """
@@ -606,13 +582,13 @@ Base.:-(factor::Number, m::Element) = one(m)*factor - m
 Base.:-(m::Element, factor::Number) = m + one(m)*(-factor)
 Base.:-(factor::Number, m::Scalar) = replace(m, factor-value(m))
 Base.:-(m::Scalar, factor::Number) = replace(m, value(m)-factor)
-Base.:-(m1::Scalar, m2::Scalar) = replace(m1, value(m1)-value(m2))
+Base.:-(m₁::Scalar, m₂::Scalar) = replace(m₁, value(m₁)-value(m₂))
 Base.:-(factor::Number, ms::Elements) = one(valtype(ms))*factor - ms
 Base.:-(ms::Elements, factor::Number) = ms + one(valtype(ms))*(-factor)
-function Base.:-(m1::Element, m2::Element)
-    I = promote_type(m1|>idtype, m2|>idtype)
-    M = promote_type(typeof(m1), typeof(m2))
-    return sub!(Elements{I, M}(id(m1)=>m1), m2)
+function Base.:-(m₁::Element, m₂::Element)
+    I = promote_type(m₁|>idtype, m₂|>idtype)
+    M = promote_type(typeof(m₁), typeof(m₂))
+    return sub!(Elements{I, M}(id(m₁)=>m₁), m₂)
 end
 function Base.:-(m::Element, ms::Elements)
     I = promote_type(m|>idtype, ms|>keytype)
@@ -624,10 +600,10 @@ function Base.:-(ms::Elements, m::Element)
     M = promote_type(valtype(ms), typeof(m))
     return sub!(Elements{M|>idtype, M}(ms), m)
 end
-function Base.:-(ms1::Elements, ms2::Elements)
-    I = promote_type(ms1|>keytype, ms2|>keytype)
-    M = promote_type(valtype(ms1), valtype(ms2))
-    return sub!(Elements{I, M}(ms1), ms2)
+function Base.:-(ms₁::Elements, ms₂::Elements)
+    I = promote_type(ms₁|>keytype, ms₂|>keytype)
+    M = promote_type(valtype(ms₁), valtype(ms₂))
+    return sub!(Elements{I, M}(ms₁), ms₂)
 end
 
 """
@@ -668,24 +644,24 @@ Base.:^(ms::Elements, n::Integer) = (@assert n>0 "^ error: non-positive integers
 """
     ⊗(m::Element, ms::Elements) -> Elements
     ⊗(ms::Elements, m::Element) -> Elements
-    ⊗(ms1::Elements, ms2::Elements) -> Elements
+    ⊗(ms₁::Elements, ms₂::Elements) -> Elements
 
 Overloaded `⊗` operator for element-element multiplications of an algebra over a field.
 """
 ⊗(m::Element, ms::Elements) = Elements((m ⊗ mm for mm in ms|>values)...)
 ⊗(ms::Elements, m::Element) = Elements((mm ⊗ m for mm in ms|>values)...)
-⊗(ms1::Elements, ms2::Elements) = Elements((m1 ⊗ m2 for m1 in ms1|>values for m2 in ms2|>values)...)
+⊗(ms₁::Elements, ms₂::Elements) = Elements((m₁ ⊗ m₂ for m₁ in ms₁|>values for m₂ in ms₂|>values)...)
 
 """
     ⋅(m::Element, ms::Elements) -> Elements
     ⋅(ms::Elements, m::Element) -> Elements
-    ⋅(ms1::Elements, ms2::Elements) -> Elements
+    ⋅(ms₁::Elements, ms₂::Elements) -> Elements
 
 Overloaded `⋅` operator for element-element multiplications of an algebra over a field.
 """
 ⋅(m::Element, ms::Elements) = Elements((m ⋅ mm for mm in ms|>values)...)
 ⋅(ms::Elements, m::Element) = Elements((mm ⋅ m for mm in ms|>values)...)
-⋅(ms1::Elements, ms2::Elements) = Elements((m1 ⋅ m2 for m1 in ms1|>values for m2 in ms2|>values)...)
+⋅(ms₁::Elements, ms₂::Elements) = Elements((m₁ ⋅ m₂ for m₁ in ms₁|>values for m₂ in ms₂|>values)...)
 
 """
     sequence(m::Element, table) -> NTuple{rank(m), Int}

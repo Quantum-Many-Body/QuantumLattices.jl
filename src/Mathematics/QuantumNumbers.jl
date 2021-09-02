@@ -184,6 +184,8 @@ end
 @inline dimension(qns::AbelianNumbers) = @inbounds(qns.indptr[end])
 @inline Base.size(qns::AbelianNumbers) = (length(qns.contents),)
 @inline Base.issorted(qns::AbelianNumbers) = qns.form=='C'
+Base.string(qns::AbelianNumbers) = @sprintf "QNS(%s, %s)" qns|>length qns|>dimension
+Base.show(io::IO, qns::AbelianNumbers) = @printf io "QNS(%s)" join((@sprintf("%s=>%s", qn, slice) for (qn, slice) in pairs(qns, :indptr)), ", ")
 
 """
     AbelianNumbers(form::Char, contents::Vector{<:AbelianNumber}, indptr::Vector{Int}, choice::Symbol)
@@ -239,20 +241,6 @@ function AbelianNumbers(od::OrderedDict{<:AbelianNumber, <:UnitRange{<:Integer}}
     end
     AbelianNumbers('U', contents, indptr, :indptr)
 end
-
-"""
-    show(io::IO, qns::AbelianNumbers)
-
-Show an `AbelianNumbers`.
-"""
-Base.show(io::IO, qns::AbelianNumbers) = @printf io "QNS(%s)" join((@sprintf("%s=>%s", qn, slice) for (qn, slice) in pairs(qns, :indptr)), ", ")
-
-"""
-    string(qns::AbelianNumbers) -> String
-
-Convert an `AbelianNumbers` to string.
-"""
-Base.string(qns::AbelianNumbers) = @sprintf "QNS(%s, %s)" qns|>length qns|>dimension
 
 """
     getindex(qns::AbelianNumbers, slice::UnitRange{Int}) -> AbelianNumbers

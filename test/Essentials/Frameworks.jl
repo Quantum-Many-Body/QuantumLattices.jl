@@ -35,6 +35,8 @@ end
     @test update!(FEngine()) == FEngine()
 
     alg = Algorithm("Alg", FEngine(), parameters=(t=1.0, U=8.0))
+    @test alg==alg
+    @test isequal(alg, alg)
     @test string(alg) == repr(alg) == "Alg_FEngine_1.0_8.0"
     @test repr(alg, (:U,)) == "Alg_FEngine_1.0"
     @test_logs (:info, r"App FApp₁\(FApp\)\: time consumed [0-9]*\.[0-9]*s.") register!(alg, :FApp₁, FApp(), parameters=(U=5.0,))

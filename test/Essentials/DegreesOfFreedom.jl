@@ -43,6 +43,8 @@ struct IdentityMetric <: Metric end
     ciid = CompositeIID(did₁, did₂)
     @test length(ciid) == length(typeof(ciid)) == 2
     @test rank(ciid) == rank(typeof(ciid)) == 2
+    @test iidtype(ciid, 1) == iidtype(typeof(ciid), 1) == DID
+    @test iidtype(ciid, 2) == iidtype(typeof(ciid), 2) == DID
     @test ciid[1]==did₁ && ciid[2]==did₂
     @test string(ciid) == "DID(1) ⊗ DID(2)"
     @test did₁⊗did₂ == ciid

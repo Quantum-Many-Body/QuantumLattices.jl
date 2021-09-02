@@ -44,6 +44,32 @@ struct Subscripts{DS, RS, OP<:Tuple, CP<:Tuple, M<:Tuple{Vararg{Function}}, C<:T
 end
 @inline contentnames(::Type{<:Subscripts}) = (:contents, :cpattern, :mapping, :constrain)
 @inline getcontent(subscripts::Subscripts, ::Val{:contents}) = subscripts.opattern
+@inline function Base.:(==)(subs₁::Subscripts{DS₁}, subs₂::Subscripts{DS₂}) where {DS₁, DS₂}
+    return DS₁==DS₂ && subs₁.opattern==subs₂.opattern && subs₁.cpattern==subs₂.cpattern
+end
+@inline function Base.:isequal(subs₁::Subscripts{DS₁}, subs₂::Subscripts{DS₂}) where {DS₁, DS₂}
+    return isequal(DS₁, DS₂) && isequal(subs₁.opattern, subs₂.opattern) && isequal(subs₁.cpattern, subs₂.cpattern)
+end
+function Base.show(io::IO, subscripts::Subscripts)
+    segments = split(subscripts)
+    @printf io "["
+    for (i, segment) in enumerate(segments)
+        @printf io "%s" join(segment.opattern, " ")
+        i<length(segments) && @printf io "; "
+    end
+    @printf io "]"
+    count = 1
+    cpattern = String[]
+    for segment in segments
+        if segment.cpattern[1] == "nonconstrain"
+            push!(cpattern, ":")
+        else
+            count += 1
+            push!(cpattern, String(segment.cpattern[1]))
+        end
+    end
+    count>1 && @printf io "(%s)" join(cpattern, ", ")
+end
 
 """
     Subscripts(N::Int)
@@ -126,24 +152,6 @@ macro subscripts_str(str)
 end
 
 """
-    ==(subs₁::Subscripts, subs₂::Subscripts) -> Bool
-
-Judge whether two subscript sets are equivalent to each other.
-"""
-@inline function Base.:(==)(subs₁::Subscripts{DS₁}, subs₂::Subscripts{DS₂}) where {DS₁, DS₂}
-    return DS₁==DS₂ && subs₁.opattern==subs₂.opattern && subs₁.cpattern==subs₂.cpattern
-end
-
-"""
-    isequal(subs₁::Subscripts, subs₂::Subscripts) -> Bool
-
-Judge whether two subscript sets are equivalent to each other.
-"""
-@inline function Base.:isequal(subs₁::Subscripts{DS₁}, subs₂::Subscripts{DS₂}) where {DS₁, DS₂}
-    return isequal(DS₁, DS₂) && isequal(subs₁.opattern, subs₂.opattern) && isequal(subs₁.cpattern, subs₂.cpattern)
-end
-
-"""
     dimension(subscripts::Subscripts) -> Int
     dimension(::Type{<:Subscripts}) -> Int
 
@@ -194,32 +202,6 @@ Split a subscript set into individual independent segments.
         count += DS[i]
     end
     return Expr(:tuple, exprs...)
-end
-
-"""
-    show(io::IO, subscripts::Subscripts)
-
-Show a subscript set.
-"""
-function Base.show(io::IO, subscripts::Subscripts)
-    segments = split(subscripts)
-    @printf io "["
-    for (i, segment) in enumerate(segments)
-        @printf io "%s" join(segment.opattern, " ")
-        i<length(segments) && @printf io "; "
-    end
-    @printf io "]"
-    count = 1
-    cpattern = String[]
-    for segment in segments
-        if segment.cpattern[1] == "nonconstrain"
-            push!(cpattern, ":")
-        else
-            count += 1
-            push!(cpattern, String(segment.cpattern[1]))
-        end
-    end
-    count>1 && @printf io "(%s)" join(cpattern, ", ")
 end
 
 """
@@ -446,12 +428,7 @@ end
 @inline ismodulatable(::Type{<:TermModulate{<:Function}}) = true
 
 """
-    Term{K, R, I}(value, bondkind, couplings::TermCouplings, amplitude::TermAmplitude, modulate::TermModulate, factor) where {K, R, I}
-    Term{K, R}(id::Symbol, value, bondkind;
-        couplings::Union{Function, Coupling, Couplings, TermCouplings},
-        amplitude::Union{Function, TermAmplitude, Nothing}=nothing,
-        modulate::Union{Function, TermModulate, Bool}=false
-        ) where {K, R}
+    Term{K, R, I, V, B, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}
 
 A term of a quantum lattice system.
 """
@@ -469,6 +446,22 @@ mutable struct Term{K, R, I, V, B, C<:TermCouplings, A<:TermAmplitude, M<:TermMo
         new{K, R, I, V, B, C, A, M}(value, bondkind, couplings, amplitude, modulate, factor)
     end
 end
+@inline Base.:(==)(term1::Term, term2::Term) = ==(efficientoperations, term1, term2)
+@inline Base.isequal(term1::Term, term2::Term) = isequal(efficientoperations, term1, term2)
+function Base.show(io::IO, term::Term)
+    @printf io "%s{%s}(id=%s, value=%s, bondkind=%s, factor=%s)" kind(term) rank(term) id(term) decimaltostr(term.value) term.bondkind decimaltostr(term.factor)
+end
+
+"""
+    Term{K, R, I}(value, bondkind, couplings::TermCouplings, amplitude::TermAmplitude, modulate::TermModulate, factor) where {K, R, I}
+    Term{K, R}(id::Symbol, value, bondkind;
+        couplings::Union{Function, Coupling, Couplings, TermCouplings},
+        amplitude::Union{Function, TermAmplitude, Nothing}=nothing,
+        modulate::Union{Function, TermModulate, Bool}=false
+        ) where {K, R}
+
+Construct a term.
+"""
 function Term{K, R}(id::Symbol, value, bondkind;
         couplings::Union{Function, Coupling, Couplings, TermCouplings},
         amplitude::Union{Function, TermAmplitude, Nothing}=nothing,
@@ -540,29 +533,6 @@ Judge whether a term could be modulated by its modulate function.
 """
 @inline isHermitian(term::Term) = isHermitian(typeof(term))
 @inline isHermitian(::Type{<:Term}) = error("isHermitian error: not implemented.")
-
-"""
-    ==(term1::Term, term2::Term) -> Bool
-
-Judge whether two terms are equivalent to each other.
-"""
-@inline Base.:(==)(term1::Term, term2::Term) = ==(efficientoperations, term1, term2)
-
-"""
-    isequal(term1::Term, term2::Term) -> Bool
-
-Judge whether two terms are equivalent to each other.
-"""
-@inline Base.isequal(term1::Term, term2::Term) = isequal(efficientoperations, term1, term2)
-
-"""
-    show(io::IO, term::Term)
-
-Show a term.
-"""
-function Base.show(io::IO, term::Term)
-    @printf io "%s{%s}(id=%s, value=%s, bondkind=%s, factor=%s)" kind(term) rank(term) id(term) decimaltostr(term.value) term.bondkind decimaltostr(term.factor)
-end
 
 """
     repr(term::Term, bond::AbstractBond, hilbert::Hilbert) -> String
@@ -733,7 +703,7 @@ Judge whether the second set of parameters matches the first.
 end
 
 """
-    GenOperators(terms::Tuple{Vararg{Term}}, bonds::Bonds, hilbert::Hilbert, half::Bool; table::Union{Nothing, Table}=nothing)
+    GenOperators{C<:Operators, A<:NamedContainer{Operators}, B<:NamedContainer{Operators}}
 
 A set of operators. This is the core of [`AbstractGenerator`](@ref).
 """
@@ -742,6 +712,14 @@ struct GenOperators{C<:Operators, A<:NamedContainer{Operators}, B<:NamedContaine
     alterops::A
     boundops::B
 end
+@inline Base.:(==)(genops₁::GenOperators, genops₂::GenOperators) = ==(efficientoperations, genops₁, genops₂)
+@inline Base.isequal(genops₁::GenOperators, genops₂::GenOperators) = isequal(efficientoperations, genops₁, genops₂)
+
+"""
+    GenOperators(terms::Tuple{Vararg{Term}}, bonds::Bonds, hilbert::Hilbert, half::Bool; table::Union{Nothing, Table}=nothing)
+
+Construct a set of operators.
+"""
 @generated function GenOperators(terms::Tuple{Vararg{Term}}, bonds::Bonds, hilbert::Hilbert, half::Bool; table::Union{Nothing, Table}=nothing)
     constterms, alterterms = [], []
     for term in fieldtypes(terms)
@@ -780,20 +758,6 @@ end
     end)
     return Expr(:block, exprs...)
 end
-
-"""
-    ==(genops1::GenOperators, genops2::GenOperators) -> Bool
-
-Judge whether two sets of operators are equivalent to each other.
-"""
-@inline Base.:(==)(genops1::GenOperators, genops2::GenOperators) = ==(efficientoperations, genops1, genops2)
-
-"""
-    isequal(genops1::GenOperators, genops2::GenOperators) -> Bool
-
-Judge whether two sets of operators are equivalent to each other.
-"""
-@inline Base.isequal(genops1::GenOperators, genops2::GenOperators) = isequal(efficientoperations, genops1, genops2)
 
 """
     eltype(ops::GenOperators)
@@ -916,19 +880,7 @@ By protocol, a concrete generator should have the following predefined contents:
 """
 abstract type AbstractGenerator{TS<:NamedContainer{Term}, BS<:Bonds, H<:Hilbert, T<:Table, B<:Boundary, OS<:GenOperators} end
 @inline contentnames(::Type{<:AbstractGenerator}) = (:terms, :bonds, :hilbert, :half, :table, :boundary, :operators)
-
-"""
-    ==(gen₁::AbstractGenerator, gen₂::AbstractGenerator) -> Bool
-
-Judge whether generators are equivalent to each other.
-"""
 @inline Base.:(==)(gen₁::AbstractGenerator, gen₂::AbstractGenerator) = ==(efficientoperations, gen₁, gen₂)
-
-"""
-    isequal(gen₁::AbstractGenerator, gen₂::AbstractGenerator) -> Bool
-
-Judge whether generators are equivalent to each other.
-"""
 @inline Base.isequal(gen₁::AbstractGenerator, gen₂::AbstractGenerator) = isequal(efficientoperations, gen₁, gen₂)
 
 """
@@ -1028,9 +980,7 @@ Update the coefficients of the terms in a generator.
 end
 
 """
-    Generator(terms::Tuple{Vararg{Term}}, bonds::Bonds, hilbert::Hilbert;
-        half::Bool=false, table::Union{Table,Nothing}=nothing, boundary::Boundary=plain
-        )
+    Generator{TS<:NamedContainer{Term}, BS<:Bonds, H<:Hilbert, T<:Table, B<:Boundary, OS<:GenOperators} <: AbstractGenerator{TS, BS, H, T, B, OS}
 
 A generator of operators based on terms, configuration of internal degrees of freedom, and boundary twist.
 """
@@ -1043,6 +993,14 @@ struct Generator{TS<:NamedContainer{Term}, BS<:Bonds, H<:Hilbert, T<:Table, B<:B
     boundary::B
     operators::OS
 end
+
+"""
+    Generator(terms::Tuple{Vararg{Term}}, bonds::Bonds, hilbert::Hilbert;
+        half::Bool=false, table::Union{Table,Nothing}=nothing, boundary::Boundary=plain
+        )
+
+Construct a generator of operators.
+"""
 @inline function Generator(terms::Tuple{Vararg{Term}}, bonds::Bonds, hilbert::Hilbert;
         half::Bool=false, table::Union{Table,Nothing}=nothing, boundary::Boundary=plain
         )
