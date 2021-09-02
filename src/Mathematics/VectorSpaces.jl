@@ -5,7 +5,7 @@ using ...Prerequisites.Traits: rawtype, efficientoperations, getcontent, hascont
 import ...Interfaces: dimension, rank
 import ...Prerequisites.Traits: contentnames
 
-export VectorSpace, EnumerativeVectorSpace, CartesianVectorSpace, NamedVectorSpace
+export VectorSpace, EnumerativeVectorSpace, CartesianVectorSpace, NamedVectorSpace, shape
 
 """
     VectorSpace{B} <: AbstractVector{B}
@@ -54,12 +54,13 @@ abstract type EnumerativeVectorSpace{B} <: VectorSpace{B} end
 Abstract Cartesian vector space.
 """
 abstract type CartesianVectorSpace{B} <: VectorSpace{B} end
-@inline dimension(vs::CartesianVectorSpace) = prod(Dims(vs))
+function shape end
+@inline dimension(vs::CartesianVectorSpace) = mapreduce(length, *, shape(vs))
 @inline Base.getindex(vs::CartesianVectorSpace, i::CartesianIndex) = rawtype(eltype(vs))(i, vs)
-@inline Base.getindex(vs::CartesianVectorSpace, i::Int) = getindex(vs, CartesianIndices(Dims(vs))[i])
+@inline Base.getindex(vs::CartesianVectorSpace, i::Int) = getindex(vs, CartesianIndices(shape(vs))[i])
 @inline Base.issorted(vs::CartesianVectorSpace) = true
 function Base.iterate(vs::CartesianVectorSpace)
-    idx = CartesianIndices(Dims(vs))
+    idx = CartesianIndices(shape(vs))
     index = iterate(idx)
     isnothing(index) && return nothing
     return rawtype(eltype(vs))(index[1], vs), (idx, index[2])
@@ -70,16 +71,16 @@ function Base.iterate(vs::CartesianVectorSpace, state)
     return rawtype(eltype(vs))(index[1], vs), (state[1], index[2])
 end
 @inline function Base.findfirst(basis::B, vs::CartesianVectorSpace{B}) where B
-    index, idx = CartesianIndex(basis, vs), CartesianIndices(Dims(vs))
+    index, idx = CartesianIndex(basis, vs), CartesianIndices(shape(vs))
     index∉idx && return nothing
-    return LinearIndices(Dims(vs))[index]
+    return LinearIndices(shape(vs))[index-first(idx)+oneunit(typeof(index))]
 end
 @inline function Base.searchsortedfirst(vs::CartesianVectorSpace{B}, basis::B) where B
-    index, idx = CartesianIndex(basis, vs), CartesianIndices(Dims(vs))
-    index∈idx && return LinearIndices(Dims(vs))[index]
+    index, idx = CartesianIndex(basis, vs), CartesianIndices(shape(vs))
+    index∈idx && return LinearIndices(shape(vs))[index-first(idx)+oneunit(typeof(index))]
     return searchsortedfirst(idx, index)
 end
-@inline Base.in(basis::B, vs::CartesianVectorSpace{B}) where B = CartesianIndex(basis, vs)∈CartesianIndices(Dims(vs))
+@inline Base.in(basis::B, vs::CartesianVectorSpace{B}) where B = CartesianIndex(basis, vs)∈CartesianIndices(shape(vs))
 
 """
     NamedVectorSpace{M, NS, BS<:Tuple, VS<:Tuple{Vararg{AbstractVector}}} <: CartesianVectorSpace{NamedTuple{NS, BS}}
@@ -104,8 +105,8 @@ abstract type NamedVectorSpace{M, NS, BS<:Tuple, VS<:Tuple{Vararg{AbstractVector
 @inline contentnames(::Type{<:NamedVectorSpace}) = (:contents,)
 @inline rank(::Type{<:NamedVectorSpace{:⊕}}) = 1
 @inline rank(::Type{<:NamedVectorSpace{:⊗, NS}}) where NS = length(NS)
-@inline Base.Dims(nvs::NamedVectorSpace{:⊕}) = (length(getcontent(nvs, :contents)[1]),)
-@inline @generated Base.Dims(nvs::NamedVectorSpace{:⊗}) = Expr(:tuple, [:(length(getcontent(nvs, :contents)[$i])) for i = 1:rank(nvs)]...)
+@inline shape(nvs::NamedVectorSpace{:⊕}) = (1:length(getcontent(nvs, :contents)[1]),)
+@inline @generated shape(nvs::NamedVectorSpace{:⊗}) = Expr(:tuple, [:(1:length(getcontent(nvs, :contents)[$i])) for i = 1:rank(nvs)]...)
 @inline function Base.CartesianIndex(basis::NamedTuple{NS}, nvs::NamedVectorSpace{:⊕, NS}) where NS
     index = findfirst(isequal(basis[1]), getcontent(nvs, :contents)[1])::Int
     for i = 2:length(NS)

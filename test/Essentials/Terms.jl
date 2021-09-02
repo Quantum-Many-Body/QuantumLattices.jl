@@ -11,6 +11,7 @@ using QuantumLattices.Prerequisites.Traits: getcontent, contentnames
 using QuantumLattices.Prerequisites.CompositeStructures: NamedContainer
 using QuantumLattices.Mathematics.AlgebraOverFields: ID, SimpleID, id, idtype
 import QuantumLattices.Interfaces: dimension, expand
+import QuantumLattices.Mathematics.VectorSpaces: shape
 import QuantumLattices.Essentials.DegreesOfFreedom: isHermitian
 import QuantumLattices.Essentials.Terms: couplingcenters, abbr
 
@@ -18,7 +19,7 @@ struct TID <: SimpleIID nambu::Int end
 Base.adjoint(sl::TID) = TID(3-sl.nambu)
 
 struct TFock <: SimpleInternal{TID} end
-Base.Dims(vs::TFock) = (2,)
+shape(vs::TFock) = (1:2,)
 TID(i::CartesianIndex, vs::TFock) = TID(i.I...)
 Base.CartesianIndex(tid::TID, vs::TFock) = CartesianIndex(tid.nambu)
 

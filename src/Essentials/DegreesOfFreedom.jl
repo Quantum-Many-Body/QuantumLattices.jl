@@ -1,6 +1,5 @@
 module DegreesOfFreedom
 
-using Base: hasfastin
 using Printf: @printf, @sprintf
 using StaticArrays: SVector
 using LaTeXStrings: latexstring
@@ -16,6 +15,7 @@ using ...Mathematics.AlgebraOverFields: SimpleID, ID, Element, Elements
 import ..Spatials: pidtype, rcoord, icoord
 import ...Essentials: reset!, update!
 import ...Prerequisites.Traits: contentnames
+import ...Mathematics.VectorSpaces: shape
 import ...Mathematics.AlgebraOverFields: sequence
 import ...Interfaces: rank, ⊗
 
@@ -109,7 +109,7 @@ end
 @inline internaltype(::Type{<:CompositeInternal{T}}, index::Int) where {T<:Tuple{Vararg{SimpleInternal}}} = fieldtype(T, index)
 @inline Base.getindex(ci::CompositeInternal, ::InternalIndex{I}) where I = ci.content[I]
 Base.show(io::IO, ci::CompositeInternal) = @printf io "%s" join((string(ci[InternalIndex(i)]) for i = 1:rank(ci)), " ⊗ ")
-@inline @generated Base.Dims(ci::CompositeInternal) = Expr(:tuple, [:(Dims(ci[InternalIndex($i)])...) for i = 1:rank(ci)]...)
+@inline @generated shape(ci::CompositeInternal) = Expr(:tuple, [:(shape(ci[InternalIndex($i)])...) for i = 1:rank(ci)]...)
 @inline @generated function Base.CartesianIndex(ciid::CompositeIID, ci::CompositeInternal)
     exprs = []
     for i = 1:rank(ci)
@@ -117,8 +117,8 @@ Base.show(io::IO, ci::CompositeInternal) = @printf io "%s" join((string(ci[Inter
     end
     return Expr(:call, :CartesianIndex, exprs...)
 end
-@inline CompositeIID(index::CartesianIndex, ci::CompositeInternal) = compositeiid(index, ci, cindims(ci)|>Val)
-@inline cindims(ci::CompositeInternal) = NTuple{rank(ci), Int}(ndims(internaltype(ci, i)) for i = 1:rank(ci))
+@inline CompositeIID(index::CartesianIndex, ci::CompositeInternal) = compositeiid(index, ci, segment(ci)|>Val)
+@inline segment(ci::CompositeInternal) = NTuple{rank(ci), Int}(fieldcount(typeof(shape(ci[InternalIndex(i)]))) for i = 1:rank(ci))
 @inline @generated function compositeiid(index::CartesianIndex, ci::CompositeInternal, ::Val{dims}) where dims
     count = 1
     exprs = []

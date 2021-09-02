@@ -2,6 +2,7 @@ using Test
 using QuantumLattices.Mathematics.VectorSpaces
 using QuantumLattices.Interfaces: dimension, rank
 
+import QuantumLattices.Mathematics.VectorSpaces: shape
 import QuantumLattices.Prerequisites.Traits: contentnames, getcontent
 
 struct SimpleVectorSpace{B, N} <: EnumerativeVectorSpace{B}
@@ -40,25 +41,25 @@ end
 end
 
 struct SimpleIndices{N} <: CartesianVectorSpace{CartesianIndex{N}}
-    dims::NTuple{N, Int}
-    SimpleIndices(dims::NTuple{N, Int}) where N = new{N}(dims)
+    shape::NTuple{N, UnitRange{Int}}
+    SimpleIndices(shape::NTuple{N, UnitRange{Int}}) where N = new{N}(shape)
 end
-SimpleIndices(dims::Int...) = SimpleIndices(dims)
-@inline Base.Dims(vs::SimpleIndices) = vs.dims
+SimpleIndices(shape::UnitRange{Int}...) = SimpleIndices(shape)
+@inline shape(vs::SimpleIndices) = vs.shape
 @inline Base.CartesianIndex(basis::CartesianIndex{N}, ::SimpleIndices{N}) where N = basis
 
 @testset "CartesianVectorSpace" begin
-    foi = SimpleIndices(2, 2, 2)
+    foi = SimpleIndices(2:3, 2:3, 2:3)
     @test dimension(foi) == 8
     @test issorted(foi) == true
-    @test foi|>collect == CartesianIndex.([(1, 1, 1), (2, 1, 1), (1, 2, 1), (2, 2, 1), (1, 1, 2), (2, 1, 2), (1, 2, 2), (2, 2, 2)])
-    for (i, index) in enumerate(CartesianIndices((2,2,2)))
+    @test foi|>collect == CartesianIndex.([(2, 2, 2), (3, 2, 2), (2, 3, 2), (3, 3, 2), (2, 2, 3), (3, 2, 3), (2, 3, 3), (3, 3, 3)])
+    for (i, index) in enumerate(CartesianIndices((2:3, 2:3, 2:3)))
         @test foi[i] == foi[index] == index
         @test findfirst(index, foi) == i
         @test searchsortedfirst(foi, index) == i
         @test index∈foi
     end
-    i1, i2 = CartesianIndex(0, 0, 0), CartesianIndex(3, 3, 3)
+    i1, i2 = CartesianIndex(1, 1, 1), CartesianIndex(4, 4, 4)
     @test isnothing(findfirst(i1, foi)) && isnothing(findfirst(i2, foi))
     @test searchsortedfirst(foi, i1) == 1 && searchsortedfirst(foi, i2) == 9
     @test i1∉foi && i2∉foi
@@ -95,7 +96,7 @@ end
     @test eltype(nvs, 1) == eltype(nvs|>typeof, 1) == Int
     @test eltype(nvs, 2) == eltype(nvs|>typeof, 2) == Float64
     @test nvs|>typeof|>rank == 1
-    @test Dims(nvs) == (2,)
+    @test shape(nvs) == (1:2,)
     elements = [(t = 1, U = 8.0), (t = 2, U = 9.0)]
     for i = 1:dimension(nvs)
         @test NamedTuple(CartesianIndex(elements[i], nvs), nvs) == elements[i]
@@ -104,7 +105,7 @@ end
 
     nvs = VSPNamedVectorSpace{(:t, :U)}([1.0, 2.0], [8.0, 9.0])
     @test nvs|>typeof|>rank == 2
-    @test Dims(nvs) == (2, 2)
+    @test shape(nvs) == (1:2, 1:2)
     elements = [(t = 1.0, U = 8.0), (t = 2.0, U = 8.0), (t = 1.0, U = 9.0), (t = 2.0, U = 9.0)]
     for i = 1:dimension(nvs)
         @test NamedTuple(CartesianIndex(elements[i], nvs), nvs) == elements[i]

@@ -9,6 +9,7 @@ using QuantumLattices.Interfaces: expand, permute, rank
 using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Mathematics.Combinatorics: Permutations
 using QuantumLattices.Mathematics.AlgebraOverFields: ID
+using QuantumLattices.Mathematics.VectorSpaces: shape
 
 @testset "SID" begin
     @test SID{1//2}('z', orbital=1)' == SID{1//2}('z', orbital=1)
@@ -39,7 +40,7 @@ end
 
 @testset "Spin" begin
     spin = Spin{1}(norbital=2)
-    @test Dims(spin) == (2, 5)
+    @test shape(spin) == (1:2, 1:5)
     @test CartesianIndex(SID{1}(1, 'z'), spin) == CartesianIndex(1, 3)
     @test SID(CartesianIndex(1, 1), spin) == SID{1}(1, 'x')
     @test summary(spin) == "10-element Spin{1}"
@@ -107,7 +108,7 @@ end
     bond = Bond(1, Point(CPID(1, 2), [0.5], [0.0]), Point(CPID(1, 1), [0.0], [0.0]))
     hilbert = Hilbert(pid=>Spin{1}(norbital=2) for pid in [bond.epoint.pid, bond.spoint.pid])
     ex = expand(sc, bond, hilbert, Val(:SpinTerm))
-    @test Dims(ex) == (1,)
+    @test shape(ex) == (1:1,)
     @test eltype(ex) == Tuple{Float, ID{OID{Index{CPID{Int}, SID{1}}, SVector{1, Float}}, 2}}
     @test collect(ex) == [(2.0, ID(
         OID(Index(CPID(1, 1), SID{1}(1, '+')), [0.0], [0.0]),
@@ -119,7 +120,7 @@ end
     hilbert = Hilbert(point.pid=>Spin{1}(norbital=3))
     ex = expand(sc, point, hilbert, Val(:info))
     @test eltype(ex) == Tuple{Float, ID{OID{Index{PID, SID{1}}, SVector{1, Float}}, 4}}
-    @test Dims(ex) == (3,)
+    @test shape(ex) == (1:3,)
     @test collect(ex) == [
         (2.0, ID(OID(Index(PID(1), SID{1}(1, '+')), [0.0], [0.0]),
                  OID(Index(PID(1), SID{1}(1, '-')), [0.0], [0.0]),

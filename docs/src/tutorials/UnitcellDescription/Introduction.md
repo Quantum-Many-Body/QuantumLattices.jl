@@ -26,14 +26,14 @@ using SymPy: symbols
 lattice = Lattice("L2P", [Point(PID(1), [0.0]), Point(PID(2), [1.0])])
 
 # define the internal degrees of freedom
-config = Config{Fock{:f}}(pid->Fock{:f}(norbital=1, nspin=2), lattice.pids)
+hilbert = Hilbert(pid=>Fock{:f}(norbital=1, nspin=2) for pid in lattice.pids)
 
 # define the terms
 t = Hopping(:t, symbols("t", real=true), 1)
 U = Hubbard(:U, symbols("U", real=true))
 
 # get the Hamiltonian
-operators = expand(Generator((t, U), Bonds(lattice), config))
+operators = expand(Generator((t, U), Bonds(lattice), hilbert))
 ```
 The last line displays all the generated operators in the Hamiltonian in the latex form. Here, in the subscript of the electronic annihilation/creation operator, an extra orbital index is also displayed. In the following sections listed below, we will explain in brief how these codes work. Firstly, in the section of [Spatial info of a unitcell](@ref), we will introduce the construction of the unitcell. Secondly, in the section of [Internal degrees of freedom](@ref), we will explain the description of the internal degrees of freedom of different kinds of quantum systems. Thirdly, in the section of [Couplings among different degrees of freedom](@ref), we will discuss the ways to specify the terms present in the Hamiltonian. Finally, in the section of [Generator of operators](@ref), we will show how to combine all to get the operator representation of the Hamiltonian of a quantum lattice system. For more detailed explanations, the manual of [`Essentials`](@ref essentials) can also be referred.
 

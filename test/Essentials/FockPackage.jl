@@ -8,6 +8,7 @@ using QuantumLattices.Interfaces: ⊗, ⋅, expand, permute, rank
 using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Prerequisites.Traits: parameternames, isparameterbound, contentnames, getcontent
 using QuantumLattices.Mathematics.AlgebraOverFields: ID
+using QuantumLattices.Mathematics.VectorSpaces: shape
 
 @testset "FID" begin
     fid = FID{:f}(orbital=1, spin=1)
@@ -24,7 +25,7 @@ end
 
 @testset "Fock" begin
     fock = Fock{:b}(norbital=1, nspin=2, nnambu=2)
-    @test Dims(fock) == (1, 2, 2)
+    @test shape(fock) == (1:1, 1:2, 1:2)
     @test CartesianIndex(FID{:b}(1, 1, 1), fock) == CartesianIndex(1, 1, 1)
     @test FID(CartesianIndex(1, 1, 1), fock) == FID{:b}(1, 1, 1)
     @test collect(fock) == [FID{:b}(1, 1, 1), FID{:b}(1, 2, 1), FID{:b}(1, 1, 2), FID{:b}(1, 2, 2)]
@@ -136,7 +137,7 @@ end
     hilbert = Hilbert(pid=>Fock{:f}(norbital=2, nspin=2, nnambu=2) for pid in [bond.epoint.pid, bond.spoint.pid])
     ex = expand(fc, bond, hilbert, Val(:Hopping))
     @test eltype(ex) == Tuple{Float, ID{OID{Index{CPID{Int}, FID{:f}}, SVector{1, Float}}, 2}}
-    @test Dims(ex) == (1, 2)
+    @test shape(ex) == (1:1, 1:2)
     @test collect(ex) == [
         (2.0, ID(OID(Index(CPID(1, 1), FID{:f}(1, 1, 2)), SVector(0.0), SVector(0.0)), OID(Index(CPID(1, 2), FID{:f}(2, 1, 1)), SVector(0.5), SVector(0.0)))),
         (2.0, ID(OID(Index(CPID(1, 1), FID{:f}(1, 2, 2)), SVector(0.0), SVector(0.0)), OID(Index(CPID(1, 2), FID{:f}(2, 2, 1)), SVector(0.5), SVector(0.0))))
@@ -147,7 +148,7 @@ end
     hilbert = Hilbert(point.pid=>Fock{:b}(norbital=2, nspin=2, nnambu=2))
     ex = expand(fc, point, hilbert, Val(:info))
     @test eltype(ex) == Tuple{Float, ID{OID{Index{PID, FID{:b}}, SVector{1, Float}}, 4}}
-    @test Dims(ex) == (2, 1)
+    @test shape(ex) == (1:2, 1:1)
     @test collect(ex) == [
         (2.0, ID(OID(Index(PID(1), FID{:b}(1, 2, 2)), SVector(0.0), SVector(0.0)),
                  OID(Index(PID(1), FID{:b}(1, 2, 1)), SVector(0.0), SVector(0.0)),
@@ -165,7 +166,7 @@ end
     point = Point(PID(1), SVector(0.5), SVector(0.0))
     hilbert = Hilbert(point.pid=>Fock{:f}(norbital=3, nspin=2, nnambu=2))
     ex = expand(fc, point, hilbert, Val(:info))
-    @test Dims(ex) == (3, 1)
+    @test shape(ex) == (1:3, 1:1)
     @test collect(ex) == [
         (2.0, ID(OID(Index(PID(1), FID{:f}(1, 2, 2)), SVector(0.5), SVector(0.0)),
                  OID(Index(PID(1), FID{:f}(1, 1, 2)), SVector(0.5), SVector(0.0)),
@@ -189,7 +190,7 @@ end
     point = Point(CPID(1, 1), SVector(0.0), SVector(0.0))
     hilbert = Hilbert(point.pid=>Fock{:f}(norbital=2, nspin=2, nnambu=2))
     ex = expand(fc₁*fc₂, point, hilbert, Val(:info))
-    @test Dims(ex) == (4, 1)
+    @test shape(ex) == (1:4, 1:1)
     @test collect(ex) == [
         (-1.0, ID(OID(Index(CPID(1, 1), FID{:f}(1, 2, 2)), SVector(0.0), SVector(0.0)),
                   OID(Index(CPID(1, 1), FID{:f}(1, 2, 1)), SVector(0.0), SVector(0.0)),

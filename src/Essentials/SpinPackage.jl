@@ -11,10 +11,11 @@ using ...Prerequisites.Traits: rawtype
 using ...Mathematics.VectorSpaces: CartesianVectorSpace
 using ...Mathematics.AlgebraOverFields: SimpleID, ID
 
-import ...Prerequisites.Traits: parameternames, isparameterbound, contentnames, getcontent
 import ..DegreesOfFreedom: script, latexname, isHermitian
 import ..Terms: nonconstrain, couplingcenters, abbr
 import ...Interfaces: rank, expand, permute
+import ...Mathematics.VectorSpaces: shape
+import ...Prerequisites.Traits: parameternames, isparameterbound, contentnames, getcontent
 
 export sdefaultlatex, usualspinindextotuple
 export SID, Spin, SCID, SpinCoupling, SpinTerm, totalspin
@@ -89,7 +90,7 @@ struct Spin{S} <: SimpleInternal{SID{S}}
         new{S}(norbital)
     end
 end
-@inline Base.Dims(sp::Spin) = (sp.norbital, length(sidtagmap))
+@inline shape(sp::Spin) = (1:sp.norbital, 1:length(sidtagmap))
 @inline Base.CartesianIndex(sid::SID, ::Spin) = CartesianIndex(sid.orbital, sidseqmap[sid.tag])
 @inline SID(index::CartesianIndex{2}, sp::Spin) = SID{totalspin(sp)}(index[1], sidtagmap[index[2]])
 Base.summary(io::IO, spin::Spin) = @printf io "%s-element Spin{%s}" length(spin) totalspin(spin)
@@ -289,7 +290,7 @@ end
 @inline @generated function Base.eltype(::Type{SCExpand{SPS, V, N, D, P, DT}}) where {SPS, V, N, D, P<:AbstractPID, DT<:Number}
     return Tuple{V, Tuple{[OID{Index{P, SID{SPS[i]}}, SVector{D, DT}} for i = 1:N]...}}
 end
-@inline Base.Dims(sce::SCExpand) = (length(sce.obexpands),)
+@inline shape(sce::SCExpand) = (1:length(sce.obexpands),)
 @generated function Tuple(index::CartesianIndex{1}, sce::SCExpand{SPS, V, N}) where {SPS, V, N}
     exprs = []
     for i = 1:N
