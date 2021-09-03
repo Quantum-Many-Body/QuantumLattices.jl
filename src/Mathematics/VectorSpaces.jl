@@ -62,12 +62,12 @@ function Base.iterate(vs::CartesianVectorSpace)
     idx = CartesianIndices(shape(vs))
     index = iterate(idx)
     isnothing(index) && return nothing
-    return rawtype(eltype(vs))(index[1], vs), (idx, index[2])
+    return vs[index[1]], (idx, index[2])
 end
 function Base.iterate(vs::CartesianVectorSpace, state)
     index = iterate(state[1], state[2])
     isnothing(index) && return nothing
-    return rawtype(eltype(vs))(index[1], vs), (state[1], index[2])
+    return vs[index[1]], (state[1], index[2])
 end
 @inline function Base.findfirst(basis::B, vs::CartesianVectorSpace{B}) where B
     index, idx = CartesianIndex(basis, vs), CartesianIndices(shape(vs))
