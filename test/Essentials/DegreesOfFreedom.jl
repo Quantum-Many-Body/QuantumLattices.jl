@@ -4,38 +4,41 @@ using LinearAlgebra: dot
 using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Essentials.DegreesOfFreedom
 using QuantumLattices.Essentials.Spatials: AbstractPID, PID, CPID, Point, pidtype, rcoord, icoord
-using QuantumLattices.Interfaces: decompose, rank, ⊗
+using QuantumLattices.Interfaces: decompose, rank, ⊗, expand
 using QuantumLattices.Essentials: update!, reset!
 using QuantumLattices.Prerequisites.Traits: contentnames
 using QuantumLattices.Mathematics.AlgebraOverFields: ID, sequence
 import QuantumLattices.Mathematics.VectorSpaces: shape, ndimshape
 import QuantumLattices.Essentials.DegreesOfFreedom: latexname, script
 
-struct DID <: SimpleIID
-    nambu::Int
+struct DID{N<:Union{Int, Symbol}} <: SimpleIID
+    nambu::N
 end
-@inline Base.adjoint(sl::DID) = DID(3-sl.nambu)
+@inline Base.adjoint(sl::DID{Int}) = DID(3-sl.nambu)
 
-struct DFock <: SimpleInternal{DID}
+struct DFock <: SimpleInternal{DID{Int}}
     nnambu::Int
 end
 @inline shape(f::DFock) = (1:f.nnambu,)
 @inline ndimshape(::Type{DFock}) = 1
 @inline DID(i::CartesianIndex, vs::DFock) = DID(i.I...)
-@inline CartesianIndex(did::DID, vs::DFock) = CartesianIndex(did.nambu)
+@inline CartesianIndex(did::DID{Int}, vs::DFock) = CartesianIndex(did.nambu)
 
-function Base.angle(id::OID{<:Index{<:AbstractPID, DID}}, vectors::AbstractVector{<:AbstractVector{Float}}, values::AbstractVector{Float})
+@inline shape(iidspace::IIDSpace{DID{Symbol}, DFock}) = (1:iidspace.internal.nnambu,)
+@inline shape(iidspace::IIDSpace{DID{Int}, DFock}) = (iidspace.iid.nambu:iidspace.iid.nambu,)
+
+function Base.angle(id::OID{<:Index{<:AbstractPID, DID{Int}}}, vectors::AbstractVector{<:AbstractVector{Float}}, values::AbstractVector{Float})
     phase=  (length(vectors) == 1) ? 2pi*dot(decompose(id.icoord, vectors[1]), values) :
             (length(vectors) == 2) ? 2pi*dot(decompose(id.icoord, vectors[1], vectors[2]), values) :
             (length(vectors) == 3) ? 2pi*dot(decompose(id.icoord, vectors[1], vectors[2], vectors[3]), values) :
             error("angle error: not supported number of input basis vectors.")
     (id.index.iid.nambu == 1) ? phase : -phase
 end
-@inline script(::Val{:site}, index::Index{<:AbstractPID, DID}; kwargs...) = index.pid.site
-@inline script(::Val{:nambu}, index::Index{<:AbstractPID, DID}; kwargs...) = index.iid.nambu==2 ? "\\dagger" : ""
+@inline script(::Val{:site}, index::Index{<:AbstractPID, <:DID}; kwargs...) = index.pid.site
+@inline script(::Val{:nambu}, index::Index{<:AbstractPID, <:DID}; kwargs...) = index.iid.nambu==2 ? "\\dagger" : ""
 
-latexname(::Type{<:OID{<:Index{<:AbstractPID, DID}}}) = Symbol("OID{Index{AbstractPID, DID}}")
-latexformat(OID{<:Index{<:AbstractPID, DID}}, LaTeX{(:nambu,), (:site,)}('d'))
+latexname(::Type{<:OID{<:Index{<:AbstractPID, <:DID}}}) = Symbol("OID{Index{AbstractPID, DID}}")
+latexformat(OID{<:Index{<:AbstractPID, <:DID}}, LaTeX{(:nambu,), (:site,)}('d'))
 
 struct IdentityMetric <: Metric end
 
@@ -44,8 +47,8 @@ struct IdentityMetric <: Metric end
     ciid = CompositeIID(did₁, did₂)
     @test length(ciid) == length(typeof(ciid)) == 2
     @test rank(ciid) == rank(typeof(ciid)) == 2
-    @test iidtype(ciid, 1) == iidtype(typeof(ciid), 1) == DID
-    @test iidtype(ciid, 2) == iidtype(typeof(ciid), 2) == DID
+    @test iidtype(ciid, 1) == iidtype(typeof(ciid), 1) == DID{Int}
+    @test iidtype(ciid, 2) == iidtype(typeof(ciid), 2) == DID{Int}
     @test ciid[1]==did₁ && ciid[2]==did₂
     @test string(ciid) == "DID(1) ⊗ DID(2)"
     @test did₁⊗did₂ == ciid
@@ -56,8 +59,8 @@ end
 
 @testset "SimpleInternal" begin
     it = DFock(2)
-    @test it|>eltype == DID
-    @test it|>typeof|>eltype == DID
+    @test it|>eltype == DID{Int}
+    @test it|>typeof|>eltype == DID{Int}
     @test it == deepcopy(it)
     @test isequal(it, deepcopy(it))
     @test it|>string == "DFock(nnambu=2)"
@@ -67,7 +70,7 @@ end
 @testset "CompositeInternal" begin
     it₁, it₂ = DFock(2), DFock(3)
     ci = CompositeInternal(it₁, it₂)
-    @test eltype(ci) == eltype(typeof(ci)) == CompositeIID{Tuple{DID, DID}}
+    @test eltype(ci) == eltype(typeof(ci)) == CompositeIID{Tuple{DID{Int}, DID{Int}}}
     @test rank(ci) == rank(typeof(ci)) == 2
     @test internaltype(ci, 1) == internaltype(typeof(ci), 1) == DFock
     @test internaltype(ci, 2) == internaltype(typeof(ci), 2) == DFock
@@ -82,6 +85,20 @@ end
     @test it₁⊗ci == CompositeInternal(it₁, it₁, it₂)
     @test ci⊗it₁ == CompositeInternal(it₁, it₂, it₁)
     @test ci⊗ci == CompositeInternal(it₁, it₂, it₁, it₂)
+end
+
+@testset "IIDSpace" begin
+    did₁, did₂, it = DID(2), DID(:σ), DFock(2)
+    iidspace = IIDSpace(did₁⊗did₂, it⊗it)
+    @test eltype(iidspace) == eltype(typeof(iidspace)) == CompositeIID{Tuple{DID{Int}, DID{Int}}}
+    @test shape(iidspace) == (2:2, 1:2)
+    @test ndimshape(iidspace) == ndimshape(typeof(iidspace)) == 2
+    for i = 1:length(iidspace)
+        iid = iidspace[i]
+        @test iidspace[CartesianIndex(iid, iidspace)] == iid
+    end
+    @test expand((did₁, did₂), (it, it)) == iidspace
+    @test collect(iidspace) == [DID(2)⊗DID(1), DID(2)⊗DID(2)]
 end
 
 @testset "Hilbert" begin
@@ -101,8 +118,8 @@ end
     index = Index(CPID('S', 4), DID(1))
     @test index|>pidtype == CPID{Char}
     @test index|>typeof|>pidtype == CPID{Char}
-    @test index|>iidtype == DID
-    @test index|>typeof|>iidtype == DID
+    @test index|>iidtype == DID{Int}
+    @test index|>typeof|>iidtype == DID{Int}
     @test index|>adjoint == Index(CPID('S', 4), DID(2))
     @test isHermitian(ID(index', index)) == true
     @test isHermitian(ID(index, index)) == false
@@ -113,7 +130,7 @@ end
     @test contentnames(OID) == (:index, :rcoord, :icoord)
 
     oid = OID(Index(PID(1), DID(1)), [0.0, -0.0], [0.0, 0.0])
-    @test indextype(oid) == indextype(typeof(oid)) == Index{PID, DID}
+    @test indextype(oid) == indextype(typeof(oid)) == Index{PID, DID{Int}}
     @test oid' == OID(Index(PID(1), DID(2)), rcoord=SVector(0.0, 0.0), icoord=SVector(0.0, 0.0))
     @test hash(oid, UInt(1)) == hash(OID(Index(PID(1), DID(1)), SVector(0.0, 0.0), SVector(0.0, 1.0)), UInt(1))
     @test propertynames(ID(oid)) == (:indexes, :rcoords, :icoords)
@@ -122,7 +139,7 @@ end
     @test ID(oid', oid)' == ID(oid', oid)
     @test isHermitian(ID(oid', oid)) == true
     @test isHermitian(ID(oid, oid)) == false
-    @test oidtype(DFock, Point{2, PID, Float}, Val(:default)) == OID{Index{PID, DID}, SVector{2, Float}}
+    @test oidtype(DFock, Point{2, PID, Float}, Val(:default)) == OID{Index{PID, DID{Int}}, SVector{2, Float}}
 end
 
 @testset "Operator" begin
@@ -182,8 +199,8 @@ end
     @test keys(m) == keys(typeof(m)) == (:scope, :site, :nambu)
     @test filter(≠(:nambu), m) == OIDToTuple(:scope, :site)
 
-    @test OIDToTuple(Index{PID, DID}) == OIDToTuple(:site, :nambu)
-    @test OIDToTuple(OID{Index{CPID{Int}, DID}}) == OIDToTuple(:scope, :site, :nambu)
+    @test OIDToTuple(Index{PID, DID{Int}}) == OIDToTuple(:site, :nambu)
+    @test OIDToTuple(OID{Index{CPID{Int}, DID{Int}}}) == OIDToTuple(:scope, :site, :nambu)
     @test OIDToTuple(Hilbert{DFock, CPID{Int}}) == OIDToTuple(:scope, :site, :nambu)
 
     n = IdentityMetric()
@@ -201,10 +218,10 @@ end
 @testset "Table" begin
     @test contentnames(Table) == (:by, :contents)
 
-    by = filter(≠(:nambu), OIDToTuple(Index{PID, DID}))
+    by = filter(≠(:nambu), OIDToTuple(Index{PID, DID{Int}}))
 
     table = Table([Index(PID(1), DID(1)), Index(PID(1), DID(2))], by)
-    @test empty(table) == Table{Index{PID, DID}}(by)
+    @test empty(table) == Table{Index{PID, DID{Int}}}(by)
     @test table[Index(PID(1), DID(1))]==1 && table[Index(PID(1), DID(2))]==1
 
     hilbert = Hilbert(pid=>DFock(2) for pid in [PID(1), PID(2)])
@@ -228,7 +245,7 @@ end
 
 @testset "LaTeX" begin
     @test latexname(OID) == :OID
-    @test latexformat(OID{<:Index{<:AbstractPID, DID}}) == LaTeX{(:nambu,), (:site,)}('d')
+    @test latexformat(OID{<:Index{<:AbstractPID, <:DID}}) == LaTeX{(:nambu,), (:site,)}('d')
 
     latex = LaTeX{(:nambu,), (:site,)}('c', vectors=(SVector(1.0, 0.0), SVector(0.0, 1.0)))
     @test superscript(latex|>typeof) == (:nambu,)
@@ -255,16 +272,16 @@ end
         ))
     @test repr(opt) == "d^{\\dagger}_{2}d^{}_{1}"
 
-    latexformat(OID{<:Index{<:AbstractPID, DID}}, LaTeX{(:nambu,), (:site,)}('c'))
+    latexformat(OID{<:Index{<:AbstractPID, <:DID}}, LaTeX{(:nambu,), (:site,)}('c'))
     @test repr(opt) == "c^{\\dagger}_{2}c^{}_{1}"
 
-    latexformat(OID{<:Index{<:AbstractPID, DID}},  LaTeX{(:nambu,), (:site,)}('d'))
+    latexformat(OID{<:Index{<:AbstractPID, <:DID}},  LaTeX{(:nambu,), (:site,)}('d'))
     @test repr(opt) == "d^{\\dagger}_{2}d^{}_{1}"
 
-    latexformat(OID{<:Index{<:AbstractPID, DID}}, LaTeX{(:nambu,), (:rcoord,)}('d'))
+    latexformat(OID{<:Index{<:AbstractPID, <:DID}}, LaTeX{(:nambu,), (:rcoord,)}('d'))
     @test repr(opt) == "d^{\\dagger}_{[1.0, 0.0]}d^{}_{[0.0, 0.0]}"
 
-    latexformat(OID{<:Index{<:AbstractPID, DID}}, LaTeX{(:nambu,), (:integeralicoord,)}('d', vectors=(SVector(1.0, 0.0), SVector(0.0, 1.0))))
+    latexformat(OID{<:Index{<:AbstractPID, <:DID}}, LaTeX{(:nambu,), (:integeralicoord,)}('d', vectors=(SVector(1.0, 0.0), SVector(0.0, 1.0))))
     @test repr(opt) == "d^{\\dagger}_{[2, 0]}d^{}_{[0, 0]}"
 
     opts = Operators(
@@ -277,10 +294,10 @@ end
                 OID(Index(PID(1), DID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0))
                 ))
             )
-    latexformat(OID{<:Index{<:AbstractPID, DID}}, LaTeX{(:nambu,), (:site,)}('c'))
+    latexformat(OID{<:Index{<:AbstractPID, <:DID}}, LaTeX{(:nambu,), (:site,)}('c'))
     @test repr(opts) == "-c^{\\dagger}_{1}c^{}_{1}+(1.0-1.0im)c^{\\dagger}_{2}c^{}_{1}"
 
-    latexformat(OID{<:Index{<:AbstractPID, DID}}, LaTeX{(:nambu,), (:site,)}('d'))
+    latexformat(OID{<:Index{<:AbstractPID, <:DID}}, LaTeX{(:nambu,), (:site,)}('d'))
     io = IOBuffer()
     show(io, MIME"text/latex"(), opt)
     @test String(take!(io)) == "\$d^{\\dagger}_{2}d^{}_{1}\$"

@@ -21,7 +21,7 @@ import ...Mathematics.VectorSpaces: shape, ndimshape
 import ...Mathematics.AlgebraOverFields: sequence
 import ...Interfaces: rank, dimension, ⊗, expand
 
-export IID, SimpleIID, CompositeIID, Internal, InternalIndex, SimpleInternal, CompositeInternal
+export IID, SimpleIID, CompositeIID, Internal, InternalIndex, SimpleInternal, CompositeInternal, IIDSpace
 export Hilbert, AbstractOID, Index, AbstractCompositeOID, OID
 export AbstractOperator, Operator, Operators
 export internaltype, iidtype, isHermitian, indextype, oidtype
@@ -198,6 +198,32 @@ Direct product bewteen simple internal spaces and composite internal spaces.
 @inline ⊗(i::SimpleInternal, ci::CompositeInternal) = CompositeInternal(i, ci.content...)
 @inline ⊗(ci::CompositeInternal, i::SimpleInternal) = CompositeInternal(ci.content..., i)
 @inline ⊗(ci₁::CompositeInternal, ci₂::CompositeInternal) = CompositeInternal(ci₁.content..., ci₂.content...)
+
+"""
+    IIDSpace{I<:IID, V<:Internal} <: CartesianVectorSpace{IID}
+
+The space expanded by a "labeled" iid.
+"""
+struct IIDSpace{I<:IID, V<:Internal} <: CartesianVectorSpace{IID}
+    iid::I
+    internal::V
+end
+Base.eltype(iidspace::IIDSpace) = eltype(typeof(iidspace))
+Base.eltype(::Type{<:IIDSpace{<:IID, V}}) where {V<:Internal} = eltype(V)
+@generated function shape(iidspace::IIDSpace{I, V}) where {I<:CompositeIID, V<:CompositeInternal}
+    @assert rank(I)==rank(V) "shape error: dismatched composite iid and composite internal space."
+    Expr(:tuple, [:(shape(IIDSpace(iidspace.iid[$i], iidspace.internal[InternalIndex($i)]))...) for i = 1:rank(I)]...)
+end
+ndimshape(::Type{<:IIDSpace{<:IID, V}}) where {V<:Internal} = ndimshape(V)
+Base.CartesianIndex(iid::IID, iidspace::IIDSpace) = CartesianIndex(iid, iidspace.internal)
+Base.getindex(iidspace::IIDSpace, index::CartesianIndex) = rawtype(eltype(iidspace))(index, iidspace.internal)
+
+"""
+    expand(iids::NTuple{N, IID}, internals::NTuple{N, Internal}) where N -> IIDSpace
+
+Get the space expanded by a set of "labeled" iids.
+"""
+@inline expand(iids::NTuple{N, IID}, internals::NTuple{N, Internal}) where N = IIDSpace(CompositeIID(iids), CompositeInternal(internals))
 
 """
     Hilbert{I<:Internal, P<:AbstractPID, M<:Function} <: CompositeDict{P, I}
