@@ -5,7 +5,7 @@ using ...Prerequisites.Traits: rawtype, efficientoperations, getcontent, hascont
 import ...Interfaces: dimension, rank
 import ...Prerequisites.Traits: contentnames
 
-export VectorSpace, EnumerativeVectorSpace, CartesianVectorSpace, NamedVectorSpace, shape
+export VectorSpace, EnumerativeVectorSpace, CartesianVectorSpace, NamedVectorSpace, shape, ndimshape
 
 """
     VectorSpace{B} <: AbstractVector{B}
@@ -45,8 +45,6 @@ abstract type EnumerativeVectorSpace{B} <: VectorSpace{B} end
 @inline contentnames(::Type{<:EnumerativeVectorSpace}) = (:table,)
 @inline dimension(vs::EnumerativeVectorSpace) = length(getcontent(vs, :table))
 @inline Base.getindex(vs::EnumerativeVectorSpace, i::Int) = getcontent(vs, :table)[i]
-@inline Base.ndims(vs::EnumerativeVectorSpace) = ndims(typeof(vs))
-@inline Base.ndims(::Type{<:EnumerativeVectorSpace}) = 1
 
 """
     CartesianVectorSpace{B} <: VectorSpace{B}
@@ -55,6 +53,7 @@ Abstract Cartesian vector space.
 """
 abstract type CartesianVectorSpace{B} <: VectorSpace{B} end
 function shape end
+@inline ndimshape(vs::CartesianVectorSpace) = ndimshape(typeof(vs))
 @inline dimension(vs::CartesianVectorSpace) = mapreduce(length, *, shape(vs))
 @inline Base.getindex(vs::CartesianVectorSpace, i::CartesianIndex) = rawtype(eltype(vs))(i, vs)
 @inline Base.getindex(vs::CartesianVectorSpace, i::Int) = getindex(vs, CartesianIndices(shape(vs))[i])
@@ -103,9 +102,11 @@ The subtypes must have the following predefined content:
 """
 abstract type NamedVectorSpace{M, NS, BS<:Tuple, VS<:Tuple{Vararg{AbstractVector}}} <: CartesianVectorSpace{NamedTuple{NS, BS}} end
 @inline contentnames(::Type{<:NamedVectorSpace}) = (:contents,)
+@inline rank(vs::NamedVectorSpace) = rank(typeof(vs))
 @inline rank(::Type{<:NamedVectorSpace{:⊕}}) = 1
 @inline rank(::Type{<:NamedVectorSpace{:⊗, NS}}) where NS = length(NS)
 @inline shape(nvs::NamedVectorSpace{:⊕}) = (1:length(getcontent(nvs, :contents)[1]),)
+@inline ndimshape(::Type{T}) where {T<:NamedVectorSpace} = rank(T)
 @inline @generated shape(nvs::NamedVectorSpace{:⊗}) = Expr(:tuple, [:(1:length(getcontent(nvs, :contents)[$i])) for i = 1:rank(nvs)]...)
 @inline function Base.CartesianIndex(basis::NamedTuple{NS}, nvs::NamedVectorSpace{:⊕, NS}) where NS
     index = findfirst(isequal(basis[1]), getcontent(nvs, :contents)[1])::Int

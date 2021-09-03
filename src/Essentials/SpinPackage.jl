@@ -14,7 +14,7 @@ using ...Mathematics.AlgebraOverFields: SimpleID, ID
 import ..DegreesOfFreedom: script, latexname, isHermitian
 import ..Terms: nonconstrain, couplingcenters, abbr
 import ...Interfaces: rank, expand, permute
-import ...Mathematics.VectorSpaces: shape
+import ...Mathematics.VectorSpaces: shape, ndimshape
 import ...Prerequisites.Traits: parameternames, isparameterbound, contentnames, getcontent
 
 export sdefaultlatex, usualspinindextotuple
@@ -91,6 +91,7 @@ struct Spin{S} <: SimpleInternal{SID{S}}
     end
 end
 @inline shape(sp::Spin) = (1:sp.norbital, 1:length(sidtagmap))
+@inline ndimshape(::Type{<:Spin}) = 2
 @inline Base.CartesianIndex(sid::SID, ::Spin) = CartesianIndex(sid.orbital, sidseqmap[sid.tag])
 @inline SID(index::CartesianIndex{2}, sp::Spin) = SID{totalspin(sp)}(index[1], sidtagmap[index[2]])
 Base.summary(io::IO, spin::Spin) = @printf io "%s-element Spin{%s}" length(spin) totalspin(spin)
@@ -285,6 +286,7 @@ end
     return Tuple{V, Tuple{[OID{Index{P, SID{SPS[i]}}, SVector{D, DT}} for i = 1:N]...}}
 end
 @inline shape(sce::SCExpand) = (1:length(sce.obexpands),)
+@inline ndimshape(::Type{<:SCExpand}) = 1
 @generated function Tuple(index::CartesianIndex{1}, sce::SCExpand{SPS, V, N}) where {SPS, V, N}
     exprs = []
     for i = 1:N

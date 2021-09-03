@@ -17,7 +17,7 @@ using ...Mathematics.AlgebraOverFields: SimpleID, ID, Element, Elements
 import ..Spatials: pidtype, rcoord, icoord
 import ...Essentials: reset!, update!
 import ...Prerequisites.Traits: contentnames, getcontent
-import ...Mathematics.VectorSpaces: shape
+import ...Mathematics.VectorSpaces: shape, ndimshape
 import ...Mathematics.AlgebraOverFields: sequence
 import ...Interfaces: rank, dimension, ⊗, expand
 
@@ -165,6 +165,7 @@ Get the Ith simple internal space in a composite internal space.
 @inline Base.getindex(ci::CompositeInternal, ::InternalIndex{I}) where I = ci.content[I]
 
 @inline @generated shape(ci::CompositeInternal) = Expr(:tuple, [:(shape(ci[InternalIndex($i)])...) for i = 1:rank(ci)]...)
+@inline ndimshape(::Type{<:CompositeInternal{T}}) where {T<:Tuple{Vararg{SimpleInternal}}} = sum(ndimshape(fieldtype(T, i)) for i = 1:fieldcount(T))
 @inline @generated function Base.CartesianIndex(ciid::CompositeIID, ci::CompositeInternal)
     exprs = []
     for i = 1:rank(ci)
@@ -173,7 +174,7 @@ Get the Ith simple internal space in a composite internal space.
     return Expr(:call, :CartesianIndex, exprs...)
 end
 @inline CompositeIID(index::CartesianIndex, ci::CompositeInternal) = compositeiid(index, ci, segment(ci)|>Val)
-@inline segment(ci::CompositeInternal) = NTuple{rank(ci), Int}(fieldcount(typeof(shape(ci[InternalIndex(i)]))) for i = 1:rank(ci))
+@inline @generated segment(ci::CompositeInternal) = Expr(:tuple, [:(ndimshape(internaltype(ci, $i))) for i = 1:rank(ci)]...)
 @inline @generated function compositeiid(index::CartesianIndex, ci::CompositeInternal, ::Val{dims}) where dims
     count = 1
     exprs = []

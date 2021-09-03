@@ -9,7 +9,7 @@ using QuantumLattices.Interfaces: expand, permute, rank
 using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Mathematics.Combinatorics: Permutations
 using QuantumLattices.Mathematics.AlgebraOverFields: ID
-using QuantumLattices.Mathematics.VectorSpaces: shape
+using QuantumLattices.Mathematics.VectorSpaces: shape, ndimshape
 
 @testset "SID" begin
     @test SID{1//2}('z', orbital=1)' == SID{1//2}('z', orbital=1)
@@ -41,6 +41,7 @@ end
 @testset "Spin" begin
     spin = Spin{1}(norbital=2)
     @test shape(spin) == (1:2, 1:5)
+    @test ndimshape(spin) == ndimshape(typeof(spin)) == 2
     @test CartesianIndex(SID{1}(1, 'z'), spin) == CartesianIndex(1, 3)
     @test SID(CartesianIndex(1, 1), spin) == SID{1}(1, 'x')
     @test summary(spin) == "10-element Spin{1}"
@@ -109,6 +110,7 @@ end
     hilbert = Hilbert(pid=>Spin{1}(norbital=2) for pid in [bond.epoint.pid, bond.spoint.pid])
     ex = expand(sc, bond, hilbert, Val(:SpinTerm))
     @test shape(ex) == (1:1,)
+    @test ndimshape(ex) == ndimshape(typeof(ex)) == 1
     @test eltype(ex) == Tuple{Float, ID{OID{Index{CPID{Int}, SID{1}}, SVector{1, Float}}, 2}}
     @test collect(ex) == [(2.0, ID(
         OID(Index(CPID(1, 1), SID{1}(1, '+')), [0.0], [0.0]),

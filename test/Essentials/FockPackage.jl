@@ -8,7 +8,7 @@ using QuantumLattices.Interfaces: ⊗, ⋅, expand, permute, rank
 using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Prerequisites.Traits: parameternames, isparameterbound, contentnames, getcontent
 using QuantumLattices.Mathematics.AlgebraOverFields: ID
-using QuantumLattices.Mathematics.VectorSpaces: shape
+using QuantumLattices.Mathematics.VectorSpaces: shape, ndimshape
 
 @testset "FID" begin
     fid = FID{:f}(orbital=1, spin=1)
@@ -26,6 +26,7 @@ end
 @testset "Fock" begin
     fock = Fock{:b}(norbital=1, nspin=2, nnambu=2)
     @test shape(fock) == (1:1, 1:2, 1:2)
+    @test ndimshape(fock) == ndimshape(typeof(fock)) == 3
     @test CartesianIndex(FID{:b}(1, 1, 1), fock) == CartesianIndex(1, 1, 1)
     @test FID(CartesianIndex(1, 1, 1), fock) == FID{:b}(1, 1, 1)
     @test collect(fock) == [FID{:b}(1, 1, 1), FID{:b}(1, 2, 1), FID{:b}(1, 1, 2), FID{:b}(1, 2, 2)]
@@ -138,6 +139,7 @@ end
     ex = expand(fc, bond, hilbert, Val(:Hopping))
     @test eltype(ex) == Tuple{Float, ID{OID{Index{CPID{Int}, FID{:f}}, SVector{1, Float}}, 2}}
     @test shape(ex) == (1:1, 1:2)
+    @test ndimshape(ex) == ndimshape(typeof(ex)) == 2
     @test collect(ex) == [
         (2.0, ID(OID(Index(CPID(1, 1), FID{:f}(1, 1, 2)), SVector(0.0), SVector(0.0)), OID(Index(CPID(1, 2), FID{:f}(2, 1, 1)), SVector(0.5), SVector(0.0)))),
         (2.0, ID(OID(Index(CPID(1, 1), FID{:f}(1, 2, 2)), SVector(0.0), SVector(0.0)), OID(Index(CPID(1, 2), FID{:f}(2, 2, 1)), SVector(0.5), SVector(0.0))))

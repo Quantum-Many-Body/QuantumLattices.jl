@@ -16,7 +16,7 @@ import ..DegreesOfFreedom: script, latexname, isHermitian
 import ..Terms: subscriptsexpr, nonconstrain, couplingcenters, abbr, termfactor
 import ...Interfaces: rank, ⊗, ⋅, expand, expand!, permute
 import ...Prerequisites.Traits: parameternames, isparameterbound, contentnames, getcontent
-import ...Mathematics.VectorSpaces: shape
+import ...Mathematics.VectorSpaces: shape, ndimshape
 
 export ANNIHILATION, CREATION, MAJORANA, fdefaultlatex, bdefaultlatex, usualfockindextotuple, nambufockindextotuple
 export FID, Fock, statistics, isnormalordered
@@ -92,6 +92,7 @@ struct Fock{ST} <: SimpleInternal{FID{ST}}
     end
 end
 @inline shape(fock::Fock) = (1:fock.norbital, 1:fock.nspin, 1:fock.nnambu)
+@inline ndimshape(::Type{<:Fock}) = 3
 @inline Base.CartesianIndex(fid::FID{ST}, fock::Fock{ST}) where ST = CartesianIndex(fid.orbital, fid.spin, fock.nnambu==1 ? 1 : fid.nambu)
 @inline FID(index::CartesianIndex{3}, fock::Fock) = FID{statistics(fock)}(index[1], index[2], fock.nnambu==1 ? 0 : index[3])
 Base.summary(io::IO, fock::Fock) = @printf io "%s-element Fock{%s}" length(fock) repr(statistics(fock))
@@ -396,6 +397,7 @@ end
     return Tuple{V, Tuple{[OID{Index{P, FID{STS[i]}}, SVector{D, DT}} for i = 1:N]...}}
 end
 @inline shape(fce::FCExpand) = (1:length(fce.obexpands), 1:length(fce.spexpands))
+@inline ndimshape(::Type{<:FCExpand}) = 2
 @generated function Tuple(index::CartesianIndex{2}, fce::FCExpand{STS, V, N}) where {STS, V, N}
     exprs = []
     for i = 1:N

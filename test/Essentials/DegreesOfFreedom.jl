@@ -8,7 +8,7 @@ using QuantumLattices.Interfaces: decompose, rank, ⊗
 using QuantumLattices.Essentials: update!, reset!
 using QuantumLattices.Prerequisites.Traits: contentnames
 using QuantumLattices.Mathematics.AlgebraOverFields: ID, sequence
-import QuantumLattices.Mathematics.VectorSpaces: shape
+import QuantumLattices.Mathematics.VectorSpaces: shape, ndimshape
 import QuantumLattices.Essentials.DegreesOfFreedom: latexname, script
 
 struct DID <: SimpleIID
@@ -20,6 +20,7 @@ struct DFock <: SimpleInternal{DID}
     nnambu::Int
 end
 @inline shape(f::DFock) = (1:f.nnambu,)
+@inline ndimshape(::Type{DFock}) = 1
 @inline DID(i::CartesianIndex, vs::DFock) = DID(i.I...)
 @inline CartesianIndex(did::DID, vs::DFock) = CartesianIndex(did.nambu)
 
@@ -73,6 +74,7 @@ end
     @test ci[InternalIndex(1)]==it₁ && ci[InternalIndex(2)]==it₂
     @test string(ci) == "DFock(nnambu=2) ⊗ DFock(nnambu=3)"
     @test shape(ci) == (1:2, 1:3)
+    @test ndimshape(ci) == 2
     for i = 1:2, j = 1:3
         @test CartesianIndex(CompositeIID(CartesianIndex(i, j), ci), ci) == CartesianIndex(i, j)
     end
