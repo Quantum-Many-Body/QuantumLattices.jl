@@ -1,24 +1,22 @@
 module SpinPackage
 
-using StaticArrays: SVector
 using Printf: @printf, @sprintf
-using ..Spatials: AbstractPID, Point, Bond, AbstractBond
-using ..DegreesOfFreedom: SimpleIID, SimpleInternal, Index, OID, AbstractCompositeOID, OIDToTuple, Operator, LaTeX, latexformat, Hilbert
-using ..Terms: wildcard, Subscripts, SubID, subscriptsexpr, Coupling, Couplings, couplingpoints, couplinginternals, Term, TermCouplings, TermAmplitude, TermModulate
-using ...Essentials: kind
+using ..Spatials: AbstractPID, Bond
+using ..DegreesOfFreedom: SimpleIID, SimpleInternal, IIDSpace, IIDConstrain, ConstrainID, wildcard, Subscript, subscriptexpr, diagonal
+using ..DegreesOfFreedom: Index, OID, AbstractCompositeOID, OIDToTuple, Operator, LaTeX, latexformat
+using ..Terms: Coupling, Couplings, Term, TermCouplings, TermAmplitude, TermModulate
+using ...Interfaces: rank
 using ...Prerequisites: Float, decimaltostr, delta
 using ...Prerequisites.Traits: rawtype
-using ...Mathematics.VectorSpaces: CartesianVectorSpace
-using ...Mathematics.AlgebraOverFields: SimpleID, ID
+using ...Mathematics.AlgebraOverFields: ID
 
 import ..DegreesOfFreedom: script, latexname, isHermitian
-import ..Terms: nonconstrain, couplingcenters, abbr
-import ...Interfaces: rank, expand, permute
+import ..Terms: couplingcenters, abbr
+import ...Interfaces: permute
 import ...Mathematics.VectorSpaces: shape, ndimshape
-import ...Prerequisites.Traits: parameternames, isparameterbound, contentnames, getcontent
 
 export sdefaultlatex, usualspinindextotuple
-export SID, Spin, SCID, SpinCoupling, SpinTerm, totalspin
+export SID, Spin, SpinCoupling, SpinTerm, totalspin
 export @heisenberg_str, @ising_str, @gamma_str, @dm_str, @sˣ_str, @sʸ_str, @sᶻ_str, @sc_str
 
 const sidtagmap = Dict(1=>'x', 2=>'y', 3=>'z', 4=>'+', 5=>'-')
@@ -28,17 +26,17 @@ const sidrepmap = Dict('x'=>'ˣ', 'y'=>'ʸ', 'z'=>'ᶻ', '+'=>'⁺', '-'=>'⁻',
 const sidreprevmap = Dict(v=>k for (k, v) in sidrepmap)
 
 """
-    SID{S} <: SimpleIID
+    SID{S, O<:Union{Int, Symbol}} <: SimpleIID
 
 The spin id.
 """
-struct SID{S} <: SimpleIID
-    orbital::Int
+struct SID{S, O<:Union{Int, Symbol}} <: SimpleIID
+    orbital::O
     tag::Char
-    function SID{S}(orbital::Int, tag::Char) where S
-        @assert isa(S, Rational{Int}) && S.den==2 || isa(S, Integer) "SID error: not supported spin($S)."
+    function SID{S}(orbital::Union{Int, Symbol}, tag::Char) where S
+        @assert isa(S, Rational{Int}) && S.den==2 || isa(S, Integer) || S==wildcard "SID error: not supported spin($S)."
         @assert tag in ('x', 'y', 'z', '+', '-') "SID error: not supported tag($tag)."
-        new{S}(orbital, tag)
+        new{S, typeof(orbital)}(orbital, tag)
     end
 end
 @inline Base.adjoint(sid::SID) = SID{totalspin(sid)}(sid.orbital, sidajointmap[sid.tag])
@@ -51,11 +49,11 @@ end
 @inline totalspin(::Type{<:SID{S}}) where S = S
 
 """
-    SID{S}(tag::Char; orbital::Int=1) where S
+    SID{S}(tag::Char; orbital::Union{Int, Symbol}=1) where S
 
 Create a spin id.
 """
-@inline SID{S}(tag::Char; orbital::Int=1) where S = SID{S}(orbital, tag)
+@inline SID{S}(tag::Char; orbital::Union{Int, Symbol}=1) where S = SID{S}(orbital, tag)
 
 """
     Matrix(sid::SID{S}, dtype::Type{<:Number}=Complex{Float}) where S -> Matrix{dtype}
@@ -79,11 +77,11 @@ function Base.Matrix(sid::SID{S}, dtype::Type{<:Number}=Complex{Float}) where S
 end
 
 """
-    Spin{S} <: SimpleInternal{SID{S}}
+    Spin{S} <: SimpleInternal{SID{S, Int}}
 
 The spin interanl degrees of freedom.
 """
-struct Spin{S} <: SimpleInternal{SID{S}}
+struct Spin{S} <: SimpleInternal{SID{S, Int}}
     norbital::Int
     function Spin{S}(norbital::Int) where S
         @assert isa(S, Rational{Int}) && S.den==2 || isa(S, Integer) "Spin error: not supported spin($S)."
@@ -99,6 +97,14 @@ Base.summary(io::IO, spin::Spin) = @printf io "%s-element Spin{%s}" length(spin)
 @inline totalspin(::Type{<:Spin{S}}) where S = S
 function Base.show(io::IO, spin::Spin)
     @printf io "%s{%s}(%s)" spin|>typeof|>nameof totalspin(spin) join(("$name=$(getfield(spin, name))" for name in spin|>typeof|>fieldnames), ", ")
+end
+@inline function shape(iidspace::IIDSpace{<:Union{SID{wildcard, Symbol}, SID{S, Symbol}}, Spin{S}}) where S
+    norbital, tag = iidspace.internal.norbital, sidseqmap[iidspace.iid.tag]
+    return (1:norbital, tag:tag)
+end
+@inline function shape(iidspace::IIDSpace{<:Union{SID{wildcard, Int}, SID{S, Int}}, Spin{S}}) where S
+    orbital, tag = iidspace.iid.orbital, sidseqmap[iidspace.iid.tag]
+    return (orbital:orbital, tag:tag)
 end
 
 """
@@ -124,7 +130,7 @@ Get the required script of a spin oid.
 
 The default LaTeX format for a spin oid.
 """
-const soptdefaultlatex = LaTeX{(:tag,), (:site, :orbital)}('S')
+const soptdefaultlatex = LaTeX{(:tag,), (:site,)}('S')
 @inline latexname(::Type{<:Index{<:AbstractPID, <:SID}}) = Symbol("Index{AbstractPID, SID}")
 @inline latexname(::Type{<:AbstractCompositeOID{<:Index{<:AbstractPID, <:SID}}}) = Symbol("AbstractCompositeOID{Index{AbstractPID, SID}}")
 latexformat(Index{<:AbstractPID, <:SID}, soptdefaultlatex)
@@ -179,125 +185,36 @@ end
 @inline permutesoid(id::OID{<:Index{<:AbstractPID, <:SID}}, tag::Char) = replace(id, index=replace(id.index, iid=replace(id.index.iid, tag=tag)))
 
 """
-    SCID{T<:Tuple{Vararg{Char}}} <: SimpleID
-
-The id of the tags part of a spin coupling.
-"""
-struct SCID{T<:Tuple{Vararg{Char}}} <: SimpleID
-    tags::T
-    function SCID(tags::NTuple{N, Char}) where N
-        @assert mapreduce(∈(('x', 'y', 'z', '+', '-')), &, tags) "SCID error: not supported tags($tags)."
-        new{typeof(tags)}(tags)
-    end
-end
-
-"""
-    SpinCoupling{V, T<:Tuple, O<:Subscripts, I<:Tuple{SCID, SubID}} <: Coupling{V, I}
+    SpinCoupling(value::Number, tags::NTuple{N, Char}, orbitals::Subscript{<:NTuple{N, Union{Int, Symbol}}}) where N
 
 Spin coupling.
+
+Type alias for "Coupling{V, I<:ID{SID}, C<:IIDConstrain, CI<:ConstrainID}".
 """
-struct SpinCoupling{V, T<:Tuple, O<:Subscripts, I<:Tuple{SCID, SubID}} <: Coupling{V, I}
-    value::V
-    tags::T
-    orbitals::O
-    function SpinCoupling(value::Number, tags::Tuple{Vararg{Char}}, orbitals::Subscripts)
-        @assert length(tags)==length(orbitals) "SpinCoupling error: dismatched tags and orbitals."
-        scid, obid = SCID(tags), SubID(orbitals)
-        new{typeof(value), typeof(tags), typeof(orbitals), Tuple{typeof(scid), typeof(obid)}}(value, tags, orbitals)
-    end
+const SpinCoupling{V, I<:ID{SID}, C<:IIDConstrain, CI<:ConstrainID} = Coupling{V, I, C, CI}
+@inline function SpinCoupling(value::Number, tags::NTuple{N, Char}, orbitals::Subscript{<:NTuple{N, Union{Int, Symbol}}}) where N
+    return Coupling(value, ID(SID{wildcard}, orbitals.pattern, tags), IIDConstrain((orbital=orbitals,)))
 end
-@inline parameternames(::Type{<:SpinCoupling}) = (:value, :tags, :orbitals, :id)
-@inline isparameterbound(::Type{<:SpinCoupling}, ::Val{:tags}, ::Type{T}) where {T<:Tuple} = !isconcretetype(T)
-@inline isparameterbound(::Type{<:SpinCoupling}, ::Val{:orbitals}, ::Type{O}) where {O<:Subscripts} = !isconcretetype(O)
-@inline contentnames(::Type{<:SpinCoupling}) = (:value, :id, :orbitals)
-@inline getcontent(sc::SpinCoupling, ::Val{:id}) = ID(SCID(sc.tags), SubID(sc.orbitals))
-@inline function SpinCoupling(value::Number, id::Tuple{SCID, SubID}, orbitals::Subscripts)
-    SpinCoupling(value, id[1].tags, orbitals)
-end
-@inline rank(::Type{<:SpinCoupling{V, T} where V}) where T = fieldcount(T)
 function Base.show(io::IO, sc::SpinCoupling)
     @printf io "SpinCoupling(value=%s" decimaltostr(sc.value)
-    @printf io ", tags=%s" join(NTuple{rank(sc), String}("S"*sidrepmap[tag] for tag in sc.tags), "")
-    any(sc.orbitals .≠ wildcard) && @printf io ", orbitals=%s" string(sc.orbitals)
+    @printf io ", tags=%s" join(NTuple{rank(sc), String}("S"*sidrepmap[tag] for tag in sc.cid.tags), "")
+    sc.cid.orbitals≠ntuple(i->wildcard, Val(rank(sc))) && @printf io ", orbitals=%s" repr(sc.constrain, 1:length(sc.constrain), :orbital)
     @printf io ")"
+end
+function Base.repr(sc::SpinCoupling)
+    result = [@sprintf "%s %s" decimaltostr(sc.value) join(NTuple{rank(sc), String}("S"*sidrepmap[tag] for tag in sc.cid.tags), "")]
+    sc.cid.orbitals≠ntuple(i->wildcard, Val(rank(sc))) && push!(result, @sprintf "ob%s" repr(sc.constrain, 1:length(sc.constrain), :orbital))
+    return join(result, " ")
 end
 
 """
-    SpinCoupling(value::Number,
-        tags::NTuple{N, Char};
-        orbitals::Union{NTuple{N, Int}, Subscripts}=Subscripts(N)
-        ) where N
+    SpinCoupling(value::Number, tags::NTuple{N, Char}; orbitals::Union{NTuple{N, Int}, Subscript}=Subscript(N)) where N
 
 Spin coupling.
 """
-function SpinCoupling(value::Number,
-        tags::NTuple{N, Char};
-        orbitals::Union{NTuple{N, Int}, Subscripts}=Subscripts(N)
-        ) where N
-    isa(orbitals, Subscripts) || (orbitals = Subscripts(orbitals))
+function SpinCoupling(value::Number, tags::NTuple{N, Char}; orbitals::Union{NTuple{N, Int}, Subscript}=Subscript(N)) where N
+    isa(orbitals, Subscript) || (orbitals = Subscript(orbitals))
     return SpinCoupling(value, tags, orbitals)
-end
-
-"""
-    repr(sc::SpinCoupling) -> String
-
-Get the repr representation of a spin coupling.
-"""
-function Base.repr(sc::SpinCoupling)
-    contents = String[]
-    any(sc.orbitals .≠ wildcard) && push!(contents, @sprintf "ob%s" sc.orbitals)
-    result = @sprintf "%s %s" decimaltostr(sc.value) join(NTuple{rank(sc), String}("S"*sidrepmap[tag] for tag in sc.tags), "")
-    length(contents)>0 && (result = @sprintf "%s %s" result join(contents, " ⊗ "))
-    return result
-end
-
-"""
-    *(sc₁::SpinCoupling, sc₂::SpinCoupling) -> SpinCoupling
-
-Get the multiplication between two spin couplings.
-"""
-@inline function Base.:*(sc₁::SpinCoupling, sc₂::SpinCoupling)
-    return SpinCoupling(sc₁.value*sc₂.value, (sc₁.tags..., sc₂.tags...), sc₁.orbitals*sc₂.orbitals)
-end
-
-"""
-    expand(sc::SpinCoupling, bond::AbstractBond, hilbert::Hilbert, info::Val) -> SCExpand
-
-Expand a spin coupling with the given set of points and Hilbert space.
-"""
-function expand(sc::SpinCoupling, bond::AbstractBond, hilbert::Hilbert, info::Val)
-    points = couplingpoints(sc, bond, info)
-    spins = couplinginternals(sc, bond, hilbert, info)
-    @assert rank(sc)==length(points)==length(spins) "expand error: dismatched rank."
-    obexpands = collect(expand(sc.orbitals, NTuple{rank(sc), Int}(spins[i].norbital for i = 1:rank(sc))))
-    return SCExpand{totalspin(spins)}(sc.value, points, obexpands, sc.tags)
-end
-@generated totalspin(spins::NTuple{R, Spin}) where R = Tuple(totalspin(fieldtype(spins, i)) for i = 1:R)
-struct SCExpand{SPS, V, N, D, P<:AbstractPID, DT<:Number} <: CartesianVectorSpace{Tuple{V, ID{OID{<:Index, SVector{D, DT}}, N}}}
-    value::V
-    points::NTuple{N, Point{D, P, DT}}
-    obexpands::Vector{NTuple{N, Int}}
-    tags::NTuple{N, Char}
-    function SCExpand{SPS}(value::V, points::NTuple{N, Point{D, P, DT}}, obexpands::Vector{NTuple{N, Int}}, tags::NTuple{N, Char}) where {SPS, V, N, D, P<:AbstractPID, DT<:Number}
-        return new{SPS, V, N, D, P, DT}(value, points, obexpands, tags)
-    end
-end
-@inline @generated function Base.eltype(::Type{SCExpand{SPS, V, N, D, P, DT}}) where {SPS, V, N, D, P<:AbstractPID, DT<:Number}
-    return Tuple{V, Tuple{[OID{Index{P, SID{SPS[i]}}, SVector{D, DT}} for i = 1:N]...}}
-end
-@inline shape(sce::SCExpand) = (1:length(sce.obexpands),)
-@inline ndimshape(::Type{<:SCExpand}) = 1
-@generated function Tuple(index::CartesianIndex{1}, sce::SCExpand{SPS, V, N}) where {SPS, V, N}
-    exprs = []
-    for i = 1:N
-        spin = SPS[i]
-        push!(exprs, quote
-            pid, rcoord, icoord = sce.points[$i].pid, sce.points[$i].rcoord, sce.points[$i].icoord
-            sid = SID{$spin}(sce.obexpands[index[1]][$i], sce.tags[$i])
-            OID(Index(pid, sid), rcoord, icoord)
-        end)
-    end
-    return Expr(:tuple, :(sce.value), Expr(:tuple, exprs...))
 end
 
 """
@@ -314,11 +231,11 @@ macro sc_str(str::String)
     return Expr(:call, :SpinCoupling, orbitals, coeff, tags)
 end
 function scorbitals(str::AbstractString, n::Int)
-    length(str)==0 && return Expr(:kw, :orbitals, Subscripts(n))
+    length(str)==0 && return Expr(:kw, :orbitals, Subscript(n))
     @assert str[1:2]=="ob" "scorbitals error: wrong input pattern."
     expr = Meta.parse(str[3:end])
-    @assert expr.head∈(:call, :hcat, :vcat, :vect) "scorbitals error: wrong input pattern for orbitals."
-    attrvalue = subscriptsexpr(expr)
+    @assert expr.head∈(:call, :hcat, :vect) "scorbitals error: wrong input pattern for orbitals."
+    attrvalue = subscriptexpr(expr)
     return Expr(:kw, :orbitals, attrvalue)
 end
 
@@ -341,14 +258,14 @@ macro heisenberg_str(str::String)
         return Expr(:call, :heisenbergxyz, orbitals)
     end
 end
-function heisenbergxyz(;orbitals=Subscripts(2))
+function heisenbergxyz(;orbitals=Subscript(2))
     return Couplings(
         SpinCoupling(1, ('x', 'x'), orbitals=orbitals),
         SpinCoupling(1, ('y', 'y'), orbitals=orbitals),
         SpinCoupling(1, ('z', 'z'), orbitals=orbitals)
     )
 end
-function heisenbergpmz(;orbitals=Subscripts(2))
+function heisenbergpmz(;orbitals=Subscript(2))
     return Couplings(
         SpinCoupling(1//2, ('+', '-'), orbitals=orbitals),
         SpinCoupling(1//2, ('-', '+'), orbitals=orbitals),
@@ -384,7 +301,7 @@ macro gamma_str(str::String)
     orbitals = scorbitals(str[3:end], 2)
     return Expr(:call, :gamma, orbitals, t₁, t₂)
 end
-function gamma(t₁::Char, t₂::Char; orbitals=Subscripts(2))
+function gamma(t₁::Char, t₂::Char; orbitals=Subscript(2))
     return Couplings(
         SpinCoupling(1, (t₁, t₂), orbitals=orbitals),
         SpinCoupling(1, (t₂, t₁), orbitals=orbitals)
@@ -405,7 +322,7 @@ macro dm_str(str::String)
     t₁, t₂ = str[1]=='x' ? ('y', 'z') : str[1]=='y' ? ('z', 'x') : ('x', 'y')
     return Expr(:call, :dm, orbitals, t₁, t₂)
 end
-function dm(t₁::Char, t₂::Char; orbitals=Subscripts(2))
+function dm(t₁::Char, t₂::Char; orbitals=Subscript(2))
     return Couplings(
         SpinCoupling(+1, (t₁, t₂), orbitals=orbitals),
         SpinCoupling(-1, (t₂, t₁), orbitals=orbitals)
@@ -432,7 +349,7 @@ macro sᶻ_str(str::String) Expr(:call, :Couplings, Expr(:call, :SpinCoupling, s
 
 Spin term.
 
-Type alias for `Term{:SpinTerm, R, id, V, <:Any, <:TermCouplings, <:TermAmplitude, <:TermModulate}`.
+Type alias for `Term{:SpinTerm, R, id, V, B<:Any, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`.
 """
 const SpinTerm{R, id, V, B<:Any, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:SpinTerm, R, id, V, B, C, A, M}
 @inline function SpinTerm{R}(id::Symbol, value::Any, bondkind::Any;

@@ -614,10 +614,10 @@ end
 
 Overloaded `/` operator for element-scalar division of an algebra over a field.
 """
-Base.:/(m::Element, factor::Number) = m * (1/factor)
-Base.:/(m::Element, factor::Scalar) = m * (1/value(factor))
-Base.:/(ms::Elements, factor::Number) = ms * (1/factor)
-Base.:/(ms::Elements, factor::Scalar) = ms * (1/value(factor))
+Base.:/(m::Element, factor::Number) = m * (one(valtype(m))/factor)
+Base.:/(m::Element, factor::Scalar) = m * (one(valtype(m))/value(factor))
+Base.:/(ms::Elements, factor::Number) = ms * (one(valtype(valtype(ms)))/factor)
+Base.:/(ms::Elements, factor::Scalar) = ms * (one(valtype(valtype(ms)))/value(factor))
 
 """
     //(m::Element, factor::Integer) -> Element

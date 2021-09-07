@@ -5,9 +5,9 @@ using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Essentials.DegreesOfFreedom
 using QuantumLattices.Essentials.Spatials: AbstractPID, PID, CPID, Point, pidtype, rcoord, icoord
 using QuantumLattices.Interfaces: decompose, rank, ⊗, expand
-using QuantumLattices.Essentials: update!, reset!
-using QuantumLattices.Prerequisites.Traits: contentnames
-using QuantumLattices.Mathematics.AlgebraOverFields: ID, sequence
+using QuantumLattices.Essentials: kind, update!, reset!
+using QuantumLattices.Prerequisites.Traits: contentnames, getcontent
+using QuantumLattices.Mathematics.AlgebraOverFields: ID, idtype, sequence
 import QuantumLattices.Mathematics.VectorSpaces: shape, ndimshape
 import QuantumLattices.Essentials.DegreesOfFreedom: latexname, script
 
@@ -50,6 +50,7 @@ struct IdentityMetric <: Metric end
     @test iidtype(ciid, 1) == iidtype(typeof(ciid), 1) == DID{Int}
     @test iidtype(ciid, 2) == iidtype(typeof(ciid), 2) == DID{Int}
     @test ciid[1]==did₁ && ciid[2]==did₂
+    @test ciid.nambus == (1, 2)
     @test string(ciid) == "DID(1) ⊗ DID(2)"
     @test did₁⊗did₂ == ciid
     @test did₁⊗ciid == CompositeIID(did₁, did₁, did₂)
@@ -65,6 +66,8 @@ end
     @test isequal(it, deepcopy(it))
     @test it|>string == "DFock(nnambu=2)"
     @test it|>collect == [DID(1), DID(2)]
+    @test match(DID(1), it) && match(DID, DFock)
+    @test filter(DID(1), it) == filter(DID, it) == it
 end
 
 @testset "CompositeInternal" begin
@@ -85,12 +88,14 @@ end
     @test it₁⊗ci == CompositeInternal(it₁, it₁, it₂)
     @test ci⊗it₁ == CompositeInternal(it₁, it₂, it₁)
     @test ci⊗ci == CompositeInternal(it₁, it₂, it₁, it₂)
+    @test filter(DID(1), ci) == filter(DID, ci) == ci
 end
 
 @testset "IIDSpace" begin
     did₁, did₂, it = DID(2), DID(:σ), DFock(2)
     iidspace = IIDSpace(did₁⊗did₂, it⊗it)
     @test eltype(iidspace) == eltype(typeof(iidspace)) == CompositeIID{Tuple{DID{Int}, DID{Int}}}
+    @test kind(iidspace) == kind(typeof(iidspace)) == :info
     @test shape(iidspace) == (2:2, 1:2)
     @test ndimshape(iidspace) == ndimshape(typeof(iidspace)) == 2
     for i = 1:length(iidspace)
@@ -99,6 +104,61 @@ end
     end
     @test expand((did₁, did₂), (it, it)) == iidspace
     @test collect(iidspace) == [DID(2)⊗DID(1), DID(2)⊗DID(2)]
+end
+
+@testset "Subscript" begin
+    sub = Subscript(4)
+    @test contentnames(typeof(sub)) == (:contents, :rep, :constrain)
+    @test getcontent(sub, :contents) == sub.pattern
+    @test sub==deepcopy(sub) && isequal(sub, deepcopy(sub))
+    @test string(sub) == "[* * * *]"
+    @test rank(sub) == rank(typeof(sub)) == 4
+    @test match(sub, (2, 2, 2, 2))
+
+    sub = Subscript((1, 2, 3, 4))
+    @test string(sub) == "[1 2 3 4]"
+    @test sub == subscript"[1 2 3 4]" == subscript"[1 2 3 4]; false"
+    @test rank(sub) == 4
+    @test match(sub, (1, 3, 3, 4))
+
+    sub = Subscript((1, 2, 2, 1), true)
+    @test string(sub) == "[1 2 2 1]"
+    @test sub == subscript"[1 2 2 1]; true"
+    @test rank(sub) == 4
+    @test match(sub, (1, 2, 2, 1)) && !match(sub, (1, 1, 2, 1))
+
+    sub = subscript"[x₁ x₂ x₁ x₂]"
+    @test string(sub) == "[x₁ x₂ x₁ x₂]"
+    @test rank(sub) == 4
+    @test match(sub, (1, 2, 1, 2)) && !match(sub, (1, 2, 2, 1))
+
+    sub = subscript"[x₁ 4 4 x₂](x₁ < x₂)"
+    @test string(sub) == "[x₁ 4 4 x₂](x₁ < x₂)"
+    @test rank(sub) == rank(typeof(sub)) == 4
+    @test match(sub, (1, 4, 4, 2)) && !match(sub, (2, 4, 4, 1))
+end
+
+@testset "IIDConstrain" begin
+    constrain = IIDConstrain((nambu=subscript"[x y](x > y)",), (nambu=subscript"[x x y y](x < y)",))
+    @test contentnames(typeof(constrain)) == (:contents,)
+    @test getcontent(constrain, :contents) == constrain.constrain
+    @test string(constrain) == "nambu[x y](x > y) × nambu[x x y y](x < y)"
+    @test repr(constrain, 1:2, :nambu) == "[x y](x > y)×[x x y y](x < y)"
+    @test repr(constrain, 1, :nambu) == "[x y](x > y)"
+    @test repr(constrain, 2, :nambu) == "[x x y y](x < y)"
+
+    @test rank(constrain) == rank(typeof(constrain)) == 6
+    @test rank(constrain, 1) == rank(typeof(constrain), 1) == 2
+    @test rank(constrain, 2) == rank(typeof(constrain), 2) == 4
+    @test match(constrain, (DID(2), DID(1), DID(2), DID(2), DID(3), DID(3)))
+    @test match(constrain, DID(2)⊗DID(1)⊗DID(2)⊗DID(2)⊗DID(3)⊗DID(3))
+    @test !match(constrain, DID(1)⊗DID(2)⊗DID(2)⊗DID(2)⊗DID(3)⊗DID(3))
+    @test !match(constrain, DID(2)⊗DID(1)⊗DID(3)⊗DID(3)⊗DID(2)⊗DID(2))
+    @test constrain == IIDConstrain((nambu=subscript"[x y](x > y)",))*IIDConstrain((nambu=subscript"[x x y y](x < y)",))
+
+    constrainid = ConstrainID(constrain)
+    @test constrainid == ConstrainID((1:2=>("[x y](x > y)",), 3:6=>("[x x y y](x < y)",)))
+    @test idtype(constrain) == idtype(typeof(constrain)) == ConstrainID{NTuple{2, Pair{UnitRange{Int}, Tuple{String}}}}
 end
 
 @testset "Hilbert" begin

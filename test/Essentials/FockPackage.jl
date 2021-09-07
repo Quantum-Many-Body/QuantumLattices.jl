@@ -2,8 +2,9 @@ using Test
 using StaticArrays: SVector
 using QuantumLattices.Essentials.FockPackage
 using QuantumLattices.Essentials.Spatials: Bond, Point, AbstractPID, PID, CPID, rcoord, azimuthd
+using QuantumLattices.Essentials.DegreesOfFreedom: IIDSpace, @subscript_str
 using QuantumLattices.Essentials.DegreesOfFreedom: Index, Hilbert, AbstractCompositeOID, OID, Operator, Operators, script, latexname, isHermitian
-using QuantumLattices.Essentials.Terms: Couplings, Subscripts, @subscripts_str, SubID, abbr
+using QuantumLattices.Essentials.Terms: Couplings, abbr, @couplings
 using QuantumLattices.Interfaces: ⊗, ⋅, expand, permute, rank
 using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Prerequisites.Traits: parameternames, isparameterbound, contentnames, getcontent
@@ -47,10 +48,10 @@ end
     @test script(Val(:nambu), Index(PID(1), FID{:f}(2, 3, 1))) == ""
     @test script(Val(:nambu), Index(PID(1), FID{:f}(2, 3, 2))) == "\\dagger"
 
-    @test latexname(Index{<:AbstractPID, FID{:f}}) == Symbol("Index{AbstractPID, FID{:f}}")
-    @test latexname(AbstractCompositeOID{Index{<:AbstractPID, FID{:f}}}) == Symbol("AbstractCompositeOID{Index{AbstractPID, FID{:f}}}")
-    @test latexname(Index{<:AbstractPID, FID{:b}}) == Symbol("Index{AbstractPID, FID{:b}}")
-    @test latexname(AbstractCompositeOID{Index{<:AbstractPID, FID{:b}}}) == Symbol("AbstractCompositeOID{Index{AbstractPID, FID{:b}}}")
+    @test latexname(Index{<:AbstractPID, <:FID{:f}}) == Symbol("Index{AbstractPID, FID{:f}}")
+    @test latexname(AbstractCompositeOID{Index{<:AbstractPID, <:FID{:f}}}) == Symbol("AbstractCompositeOID{Index{AbstractPID, FID{:f}}}")
+    @test latexname(Index{<:AbstractPID, <:FID{:b}}) == Symbol("Index{AbstractPID, FID{:b}}")
+    @test latexname(AbstractCompositeOID{Index{<:AbstractPID, <:FID{:b}}}) == Symbol("AbstractCompositeOID{Index{AbstractPID, FID{:b}}}")
 end
 
 @testset "angle" begin
@@ -100,31 +101,19 @@ end
 end
 
 @testset "FockCoupling" begin
-    @test parameternames(FockCoupling) == (:value, :nambus, :orbitals, :spins, :id)
-    @test isparameterbound(FockCoupling, Val(:nambus), Tuple{Int, Int}) == false
-    @test isparameterbound(FockCoupling, Val(:nambus), Tuple{Any, Any}) == true
-    @test isparameterbound(FockCoupling, Val(:orbitals), Subscripts) == true
-    @test isparameterbound(FockCoupling, Val(:spins), Subscripts) == true
-    @test contentnames(FockCoupling) == (:value, :id, :orbitals, :spins)
-
-    obs, sps = subscripts"[1 1]", subscripts"[σ₁ σ₂](σ₁ + σ₂ == 1)"
-    fc = FockCoupling(1.0im, (FCID((2, 1)), SubID(obs), SubID(sps)), obs, sps)
-    @test getcontent(fc, Val(:id)) == (FCID(fc.nambus), SubID(fc.orbitals), SubID(fc.spins))
-    @test rank(fc) == rank(typeof(fc)) == 2
-
     @test string(FockCoupling{2}(1.0)) == "FockCoupling{2}(value=1.0)"
     @test string(FockCoupling{2}(1.0, spins=(1, 2))) == "FockCoupling{2}(value=1.0, spins=[1 2])"
     @test repr(FockCoupling{2}(2.0)) == "2.0 {2}"
 
-    fc₁ = FockCoupling{2}(1.5, spins=subscripts"[x 1]")
-    fc₂ = FockCoupling{2}(2.0, orbitals=subscripts"[x y](x < y)")
+    fc₁ = FockCoupling{2}(1.5, spins=subscript"[x 1]")
+    fc₂ = FockCoupling{2}(2.0, orbitals=subscript"[x y](x < y)")
     @test repr(fc₁) == "1.5 sp[x 1]"
     @test repr(fc₂) == "2.0 ob[x y](x < y)"
     fc = fc₁ * fc₂
-    @test repr(fc) == "3.0 ob[* *; x y](:, x < y) ⊗ sp[x 1; * *]"
+    @test repr(fc) == "3.0 ob[* *]×[x y](x < y) ⊗ sp[x 1]×[* *]"
 
-    fc₁ = FockCoupling{2}(1.5, spins=subscripts"[x 1]")
-    fc₂ = FockCoupling{2}(2.0, orbitals=subscripts"[x y](x < y)")
+    fc₁ = FockCoupling{2}(1.5, spins=subscript"[x 1]")
+    fc₂ = FockCoupling{2}(2.0, orbitals=subscript"[x y](x < y)")
     fc = fc₁ ⊗ fc₂
     @test repr(fc) == "3.0 ob[x y](x < y) ⊗ sp[x 1]"
 
@@ -137,9 +126,6 @@ end
     bond = Bond(1, Point(CPID(1, 2), SVector(0.5), SVector(0.0)), Point(CPID(1, 1), SVector(0.0), SVector(0.0)))
     hilbert = Hilbert(pid=>Fock{:f}(norbital=2, nspin=2, nnambu=2) for pid in [bond.epoint.pid, bond.spoint.pid])
     ex = expand(fc, bond, hilbert, Val(:Hopping))
-    @test eltype(ex) == Tuple{Float, ID{OID{Index{CPID{Int}, FID{:f}}, SVector{1, Float}}, 2}}
-    @test shape(ex) == (1:1, 1:2)
-    @test ndimshape(ex) == ndimshape(typeof(ex)) == 2
     @test collect(ex) == [
         (2.0, ID(OID(Index(CPID(1, 1), FID{:f}(1, 1, 2)), SVector(0.0), SVector(0.0)), OID(Index(CPID(1, 2), FID{:f}(2, 1, 1)), SVector(0.5), SVector(0.0)))),
         (2.0, ID(OID(Index(CPID(1, 1), FID{:f}(1, 2, 2)), SVector(0.0), SVector(0.0)), OID(Index(CPID(1, 2), FID{:f}(2, 2, 1)), SVector(0.5), SVector(0.0))))
@@ -149,8 +135,6 @@ end
     point = Point(PID(1), SVector(0.0), SVector(0.0))
     hilbert = Hilbert(point.pid=>Fock{:b}(norbital=2, nspin=2, nnambu=2))
     ex = expand(fc, point, hilbert, Val(:info))
-    @test eltype(ex) == Tuple{Float, ID{OID{Index{PID, FID{:b}}, SVector{1, Float}}, 4}}
-    @test shape(ex) == (1:2, 1:1)
     @test collect(ex) == [
         (2.0, ID(OID(Index(PID(1), FID{:b}(1, 2, 2)), SVector(0.0), SVector(0.0)),
                  OID(Index(PID(1), FID{:b}(1, 2, 1)), SVector(0.0), SVector(0.0)),
@@ -164,11 +148,10 @@ end
                  ))
     ]
 
-    fc = FockCoupling{4}(2.0, orbitals=subscripts"[α α β β](α < β)", spins=(2, 1, 1, 2), nambus=(2, 2, 1, 1))
+    fc = FockCoupling{4}(2.0, orbitals=subscript"[α α β β](α < β)", spins=(2, 1, 1, 2), nambus=(2, 2, 1, 1))
     point = Point(PID(1), SVector(0.5), SVector(0.0))
     hilbert = Hilbert(point.pid=>Fock{:f}(norbital=3, nspin=2, nnambu=2))
     ex = expand(fc, point, hilbert, Val(:info))
-    @test shape(ex) == (1:3, 1:1)
     @test collect(ex) == [
         (2.0, ID(OID(Index(PID(1), FID{:f}(1, 2, 2)), SVector(0.5), SVector(0.0)),
                  OID(Index(PID(1), FID{:f}(1, 1, 2)), SVector(0.5), SVector(0.0)),
@@ -192,7 +175,6 @@ end
     point = Point(CPID(1, 1), SVector(0.0), SVector(0.0))
     hilbert = Hilbert(point.pid=>Fock{:f}(norbital=2, nspin=2, nnambu=2))
     ex = expand(fc₁*fc₂, point, hilbert, Val(:info))
-    @test shape(ex) == (1:4, 1:1)
     @test collect(ex) == [
         (-1.0, ID(OID(Index(CPID(1, 1), FID{:f}(1, 2, 2)), SVector(0.0), SVector(0.0)),
                   OID(Index(CPID(1, 1), FID{:f}(1, 2, 1)), SVector(0.0), SVector(0.0)),
@@ -254,23 +236,23 @@ end
 end
 
 @testset "fockcoupling" begin
-    fc = fc"1.0 ph[2 1 2 1] ⊗ ob[α α β β](α < β) ⊗ sp[σ γ σ γ](σ ≠ γ)"
-    @test repr(fc) == "1.0 ph[2 1 2 1] ⊗ ob[α α β β](α < β) ⊗ sp[σ γ σ γ](σ ≠ γ)"
+    fc = fc"1.0 ob[α α β β](α < β) ⊗ sp[σ γ σ γ](σ ≠ γ) ⊗ ph[2 1 2 1]"
+    @test repr(fc) == "1.0 ob[α α β β](α < β) ⊗ sp[σ γ σ γ](σ ≠ γ) ⊗ ph[2 1 2 1]"
 
-    fc = fc"1.0 ph[2 1 2 1] ⊗ ob[α α β β] ⊗ sp[σ γ σ γ]"
-    @test repr(fc) == "1.0 ph[2 1 2 1] ⊗ ob[α α β β] ⊗ sp[σ γ σ γ]"
+    fc = fc"1.0 ob[α α β β] ⊗ sp[σ γ σ γ] ⊗ ph[2 1 2 1]"
+    @test repr(fc) == "1.0 ob[α α β β] ⊗ sp[σ γ σ γ] ⊗ ph[2 1 2 1]"
 
-    fc = fc"1.0 ph[2 1 2 1] ⊗ ob[α α β β](α < β) ⊗ sp[σ γ σ γ]"
-    @test repr(fc) == "1.0 ph[2 1 2 1] ⊗ ob[α α β β](α < β) ⊗ sp[σ γ σ γ]"
+    fc = fc"1.0 ob[α α β β](α < β) ⊗ sp[σ γ σ γ] ⊗ ph[2 1 2 1]"
+    @test repr(fc) == "1.0 ob[α α β β](α < β) ⊗ sp[σ γ σ γ] ⊗ ph[2 1 2 1]"
 
-    fc = fc"1.0 ph[2 1 2 1] ⊗ ob[α α β β](α < β)"
-    @test repr(fc) == "1.0 ph[2 1 2 1] ⊗ ob[α α β β](α < β)"
+    fc = fc"1.0 ob[α α β β](α < β) ⊗ ph[2 1 2 1]"
+    @test repr(fc) == "1.0 ob[α α β β](α < β) ⊗ ph[2 1 2 1]"
 
     fc = fc"1.0 ob[α α β β](α < β) ⊗ sp[2 1 2 1]"
     @test repr(fc) == "1.0 ob[α α β β](α < β) ⊗ sp[2 1 2 1]"
 
-    fc = fc"1.0 ph[2 1 2 1] ⊗ ob[1 1 1 1]"
-    @test repr(fc) == "1.0 ph[2 1 2 1] ⊗ ob[1 1 1 1]"
+    fc = fc"1.0 ob[1 1 1 1] ⊗ ph[2 1 2 1]"
+    @test repr(fc) == "1.0 ob[1 1 1 1] ⊗ ph[2 1 2 1]"
 
     fc = fc"1.0 ph[2 1 2 1]"
     @test repr(fc) == "1.0 ph[2 1 2 1]"
@@ -324,7 +306,7 @@ end
 @testset "Pairing" begin
     bond = Bond(1, Point(PID(1), (0.5, 0.5), (0.0, 0.0)), Point(PID(2), (0.0, 0.0), (0.0, 0.0)))
     hilbert = Hilbert(pid=>Fock{:f}(norbital=1, nspin=2, nnambu=2) for pid in [bond.spoint.pid, bond.epoint.pid])
-    term = Pairing(:Δ, 1.5, 1, couplings=FockCoupling{2}(spins=(2, 2)), amplitude=bond->(bond|>rcoord|>azimuthd ≈ 45 ? 1 : -1))
+    term = Pairing(:Δ, 1.5, 1, couplings=@couplings(FockCoupling{2}(spins=(2, 2))), amplitude=bond->(bond|>rcoord|>azimuthd ≈ 45 ? 1 : -1))
     operators = Operators(
         Operator(-1.5, ID(OID(Index(PID(2), FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]))),
         Operator(+1.5, ID(OID(Index(PID(1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(2), FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0])))

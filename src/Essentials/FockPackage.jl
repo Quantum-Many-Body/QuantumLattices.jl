@@ -1,26 +1,24 @@
 module FockPackage
 
-using StaticArrays: SVector
 using LinearAlgebra: dot
 using Printf: @printf, @sprintf
-using ..Spatials: AbstractPID, AbstractBond, Point, Bond, decompose
-using ..DegreesOfFreedom: SimpleIID, SimpleInternal, Index, LaTeX, OID, AbstractCompositeOID, latexformat, OIDToTuple, Operator, Operators, Hilbert, Table
-using ..Terms: wildcard, Subscripts, SubID, Coupling, Couplings, couplingpoints, couplinginternals, Term, TermCouplings, TermAmplitude, TermModulate
+using ..Spatials: AbstractPID, AbstractBond, Bond, decompose
+using ..DegreesOfFreedom: SimpleIID, CompositeIID, SimpleInternal, CompositeInternal, InternalIndex, IIDSpace, IIDConstrain, ConstrainID, Subscript, subscriptexpr
+using ..DegreesOfFreedom: Index, LaTeX, OID, AbstractCompositeOID, latexformat, OIDToTuple, Operator, Operators, Hilbert, Table, wildcard, diagonal
+using ..Terms: Coupling, Couplings, @couplings, Term, TermCouplings, TermAmplitude, TermModulate
 using ...Essentials: kind
 using ...Prerequisites: Float, delta, decimaltostr
 using ...Prerequisites.Traits: rawtype
-using ...Mathematics.AlgebraOverFields: SimpleID, ID, Element
-using ...Mathematics.VectorSpaces: CartesianVectorSpace
+using ...Mathematics.AlgebraOverFields: ID, Element
 
 import ..DegreesOfFreedom: script, latexname, isHermitian
-import ..Terms: subscriptsexpr, nonconstrain, couplingcenters, abbr, termfactor
+import ..Terms: couplingcenters, abbr, termfactor
 import ...Interfaces: rank, ⊗, ⋅, expand, expand!, permute
-import ...Prerequisites.Traits: parameternames, isparameterbound, contentnames, getcontent
 import ...Mathematics.VectorSpaces: shape, ndimshape
 
 export ANNIHILATION, CREATION, MAJORANA, fdefaultlatex, bdefaultlatex, usualfockindextotuple, nambufockindextotuple
 export FID, Fock, statistics, isnormalordered
-export FCID, FockCoupling, fockcouplingnambus
+export FockCoupling, fockcouplingnambus
 export @σ⁰_str, @σˣ_str, @σʸ_str, @σᶻ_str, @σ⁺_str, @σ⁻_str, @fc_str
 export Onsite, Hopping, Pairing, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, SpinFlip, PairHopping, Coulomb
 
@@ -46,68 +44,83 @@ Indicate that the nambu index is MAJORANA.
 const MAJORANA = 0
 
 """
-    FID <: SimpleIID
+    FID{T, O<:Union{Int, Symbol}, S<:Union{Int, Symbol}, N<:Union{Int, Symbol}} <: SimpleIID
 
 The Fock id.
 """
-struct FID{ST} <: SimpleIID
-    orbital::Int
-    spin::Int
-    nambu::Int
-    function FID{ST}(orbital::Int, spin::Int, nambu::Int) where ST
-        @assert ST∈(:f, :b) "FID error: wrong statistics."
-        @assert nambu∈(0, 1, 2) "FID error: wrong input nambu($nambu)."
-        new{ST}(orbital, spin, nambu)
+struct FID{T, O<:Union{Int, Symbol}, S<:Union{Int, Symbol}, N<:Union{Int, Symbol}} <: SimpleIID
+    orbital::O
+    spin::S
+    nambu::N
+    function FID{T}(orbital::Union{Int, Symbol}, spin::Union{Int, Symbol}, nambu::Union{Int, Symbol}) where T
+        @assert T∈(:f, :b, wildcard) "FID error: wrong statistics."
+        isa(nambu, Int) && @assert nambu∈(0, 1, 2) "FID error: wrong input nambu($nambu)."
+        new{T, typeof(orbital), typeof(spin), typeof(nambu)}(orbital, spin, nambu)
     end
 end
 Base.show(io::IO, fid::FID) = @printf io "FID{%s}(%s)" repr(statistics(fid)) join(values(fid), ", ")
-@inline Base.adjoint(fid::FID) = FID{statistics(fid)}(fid.orbital, fid.spin, fid.nambu==0 ? 0 : 3-fid.nambu)
+@inline Base.adjoint(fid::FID{T, <:Union{Int, Symbol}, <:Union{Int, Symbol}, Int}) where T = FID{T}(fid.orbital, fid.spin, fid.nambu==0 ? 0 : 3-fid.nambu)
 @inline @generated function Base.replace(fid::FID; kwargs...)
     exprs = [:(get(kwargs, $name, getfield(fid, $name))) for name in QuoteNode.(fieldnames(fid))]
     return :(rawtype(typeof(fid)){statistics(fid)}($(exprs...)))
 end
 @inline statistics(fid::FID) = statistics(typeof(fid))
-@inline statistics(::Type{FID{ST}}) where ST = ST
+@inline statistics(::Type{<:FID{T}}) where T = T
 
 """
-    FID{ST}(; orbital::Int=1, spin::Int=1, nambu::Int=ANNIHILATION) where ST
+    FID{T}(; orbital::Union{Int, Symbol}=1, spin::Union{Int, Symbol}=1, nambu::Union{Int, Symbol}=ANNIHILATION) where T
 
 Create a Fock id.
 """
-@inline FID{ST}(; orbital::Int=1, spin::Int=1, nambu::Int=ANNIHILATION) where ST = FID{ST}(orbital, spin, nambu)
+@inline FID{T}(; orbital::Union{Int, Symbol}=1, spin::Union{Int, Symbol}=1, nambu::Union{Int, Symbol}=ANNIHILATION) where T = FID{T}(orbital, spin, nambu)
 
 """
-    Fock{ST} <: SimpleInternal{FID{ST}}
+    Fock{T} <: SimpleInternal{FID{T, Int, Int, Int}}
 
 The Fock interanl degrees of freedom.
 """
-struct Fock{ST} <: SimpleInternal{FID{ST}}
+struct Fock{T} <: SimpleInternal{FID{T, Int, Int, Int}}
     norbital::Int
     nspin::Int
     nnambu::Int
-    function Fock{ST}(norbital::Int, nspin::Int, nnambu::Int) where ST
-        @assert ST∈(:f, :b) "Fock error: wrong statistics."
+    function Fock{T}(norbital::Int, nspin::Int, nnambu::Int) where T
+        @assert T∈(:f, :b) "Fock error: wrong statistics."
         @assert nnambu∈(1, 2) "Fock error: wrong input nnambu($nnambu)."
-        new{ST}(norbital, nspin, nnambu)
+        new{T}(norbital, nspin, nnambu)
     end
 end
-@inline shape(fock::Fock) = (1:fock.norbital, 1:fock.nspin, 1:fock.nnambu)
+@inline shape(fock::Fock) = (1:fock.norbital, 1:fock.nspin, fock.nnambu==1 ? (0:0) : (1:2))
 @inline ndimshape(::Type{<:Fock}) = 3
-@inline Base.CartesianIndex(fid::FID{ST}, fock::Fock{ST}) where ST = CartesianIndex(fid.orbital, fid.spin, fock.nnambu==1 ? 1 : fid.nambu)
-@inline FID(index::CartesianIndex{3}, fock::Fock) = FID{statistics(fock)}(index[1], index[2], fock.nnambu==1 ? 0 : index[3])
+@inline Base.CartesianIndex(fid::FID{T}, fock::Fock{T}) where T = CartesianIndex(fid.orbital, fid.spin, fid.nambu)
+@inline FID(index::CartesianIndex{3}, fock::Fock) = FID{statistics(fock)}(index[1], index[2], index[3])
 Base.summary(io::IO, fock::Fock) = @printf io "%s-element Fock{%s}" length(fock) repr(statistics(fock))
 @inline statistics(fock::Fock) = statistics(typeof(fock))
-@inline statistics(::Type{Fock{ST}}) where ST = ST
+@inline statistics(::Type{Fock{T}}) where T = T
 function Base.show(io::IO, fock::Fock)
     @printf io "%s{%s}(%s)" fock|>typeof|>nameof repr(statistics(fock)) join(("$name=$(getfield(fock, name))" for name in fock|>typeof|>fieldnames), ", ")
 end
+@generated function shape(iidspace::IIDSpace{I, V}) where {I<:CompositeIID{<:Tuple{Vararg{FID}}}, V<:CompositeInternal{<:Tuple{Vararg{Fock}}}}
+    @assert rank(I)==rank(V) "shape error: dismatched composite iid and composite internal space."
+    Kind = Val(kind(iidspace))
+    Expr(:tuple, [:(shape(IIDSpace(iidspace.iid[$i], iidspace.internal[InternalIndex($i)], $Kind); order=$i)...) for i = 1:rank(I)]...)
+end
+@inline function shape(iidspace::IIDSpace{<:FID, <:Fock}; order)
+    obrange = fidshape(kind(iidspace)|>Val, :orbital|>Val, iidspace.iid.orbital, iidspace.internal.norbital)
+    sprange = fidshape(kind(iidspace)|>Val, :spin|>Val, iidspace.iid.spin, iidspace.internal.nspin)
+    phrange = fidshape(kind(iidspace)|>Val, :nambu|>Val, iidspace.iid.nambu, iidspace.internal.nnambu; order=order)
+    return (obrange, sprange, phrange)
+end
+@inline fidshape(::Val, ::Val, ::Symbol, n::Int) = 1:n
+@inline fidshape(::Val, ::Val{field}, v::Int, n::Int) where field = ((@assert 0<v<n+1 "shape error: $field out of range."); v:v)
+@inline fidshape(::Val, ::Val{:nambu}, ::Symbol, n::Int; order) = n==1 ? (MAJORANA:MAJORANA) : order%2==1 ? (CREATION:CREATION) : (ANNIHILATION:ANNIHILATION)
+@inline fidshape(::Val, ::Val{:nambu}, v::Int, n::Int; order) = ((@assert n==1 ? v==0 : 0<v<n+1 "shape error: nambu out of range."); v:v)
 
 """
-    Fock{ST}(; norbital::Int=1, nspin::Int=2, nnambu::Int=2) where ST
+    Fock{T}(; norbital::Int=1, nspin::Int=2, nnambu::Int=2) where T
 
 Construct a Fock degrees of freedom.
 """
-@inline Fock{ST}(; norbital::Int=1, nspin::Int=2, nnambu::Int=2) where ST = Fock{ST}(norbital, nspin, nnambu)
+@inline Fock{T}(; norbital::Int=1, nspin::Int=2, nnambu::Int=2) where T = Fock{T}(norbital, nspin, nnambu)
 
 """
     script(::Val{:site}, index::Index{<:AbstractPID, <:FID}; kwargs...) -> Int
@@ -130,10 +143,10 @@ Get the required script of a Fock index.
 The default LaTeX format for a fermionic oid.
 """
 const fdefaultlatex = LaTeX{(:nambu,), (:site, :orbital, :spinsym)}('c')
-@inline latexname(::Type{<:Index{<:AbstractPID, FID{:f}}}) = Symbol("Index{AbstractPID, FID{:f}}")
-@inline latexname(::Type{<:AbstractCompositeOID{<:Index{<:AbstractPID, FID{:f}}}}) = Symbol("AbstractCompositeOID{Index{AbstractPID, FID{:f}}}")
-latexformat(Index{<:AbstractPID, FID{:f}}, fdefaultlatex)
-latexformat(AbstractCompositeOID{<:Index{<:AbstractPID, FID{:f}}}, fdefaultlatex)
+@inline latexname(::Type{<:Index{<:AbstractPID, <:FID{:f}}}) = Symbol("Index{AbstractPID, FID{:f}}")
+@inline latexname(::Type{<:AbstractCompositeOID{<:Index{<:AbstractPID, <:FID{:f}}}}) = Symbol("AbstractCompositeOID{Index{AbstractPID, FID{:f}}}")
+latexformat(Index{<:AbstractPID, <:FID{:f}}, fdefaultlatex)
+latexformat(AbstractCompositeOID{<:Index{<:AbstractPID, <:FID{:f}}}, fdefaultlatex)
 
 """
     bdefaultlatex
@@ -141,10 +154,10 @@ latexformat(AbstractCompositeOID{<:Index{<:AbstractPID, FID{:f}}}, fdefaultlatex
 The default LaTeX format for a bosonic oid.
 """
 const bdefaultlatex = LaTeX{(:nambu,), (:site, :orbital, :spinsym)}('b')
-@inline latexname(::Type{<:Index{<:AbstractPID, FID{:b}}}) = Symbol("Index{AbstractPID, FID{:b}}")
-@inline latexname(::Type{<:AbstractCompositeOID{<:Index{<:AbstractPID, FID{:b}}}}) = Symbol("AbstractCompositeOID{Index{AbstractPID, FID{:b}}}")
-latexformat(Index{<:AbstractPID, FID{:b}}, bdefaultlatex)
-latexformat(AbstractCompositeOID{<:Index{<:AbstractPID, FID{:b}}}, bdefaultlatex)
+@inline latexname(::Type{<:Index{<:AbstractPID, <:FID{:b}}}) = Symbol("Index{AbstractPID, FID{:b}}")
+@inline latexname(::Type{<:AbstractCompositeOID{<:Index{<:AbstractPID, <:FID{:b}}}}) = Symbol("AbstractCompositeOID{Index{AbstractPID, FID{:b}}}")
+latexformat(Index{<:AbstractPID, <:FID{:b}}, bdefaultlatex)
+latexformat(AbstractCompositeOID{<:Index{<:AbstractPID, <:FID{:b}}}, bdefaultlatex)
 
 """
     angle(id::OID{<:Index{<:AbstractPID, <:FID}}, vectors::AbstractVector{<:AbstractVector{<:Number}}, values::AbstractVector{<:Number}) -> Complex{<:Number}
@@ -189,11 +202,11 @@ function isnormalordered(opt::Operator{<:Number, <:ID{AbstractCompositeOID{<:Ind
 end
 
 """
-    permute(id₁::OID{<:Index{<:AbstractPID, FID{:f}}}, id₂::OID{<:Index{<:AbstractPID, FID{:f}}}) -> Tuple{Vararg{Operator}}
+    permute(id₁::OID{<:Index{<:AbstractPID, <:FID{:f}}}, id₂::OID{<:Index{<:AbstractPID, <:FID{:f}}}) -> Tuple{Vararg{Operator}}
 
 Permute two fermionic oid and get the result.
 """
-function permute(id₁::OID{<:Index{<:AbstractPID, FID{:f}}}, id₂::OID{<:Index{<:AbstractPID, FID{:f}}})
+function permute(id₁::OID{<:Index{<:AbstractPID, <:FID{:f}}}, id₂::OID{<:Index{<:AbstractPID, <:FID{:f}}})
     @assert id₁.index≠id₂.index || id₁.rcoord≠id₂.rcoord || id₁.icoord≠id₂.icoord "permute error: permuted ids should not be equal to each other."
     if id₁.index'==id₂.index && id₁.rcoord==id₂.rcoord && id₁.icoord==id₂.icoord
         return (Operator(1), Operator(-1, ID(id₂, id₁)))
@@ -203,21 +216,21 @@ function permute(id₁::OID{<:Index{<:AbstractPID, FID{:f}}}, id₂::OID{<:Index
 end
 
 """
-    *(f1::Operator{<:Number, <:ID{AbstractCompositeOID{<:Index{<:AbstractPID, FID{:f}}}}}, f2::Operator{<:Number, <:ID{AbstractCompositeOID{<:Index{<:AbstractPID, FID{:f}}}}}) -> Union{Nothing, Operator}
+    *(f1::Operator{<:Number, <:ID{AbstractCompositeOID{<:Index{<:AbstractPID, <:FID{:f}}}}}, f2::Operator{<:Number, <:ID{AbstractCompositeOID{<:Index{<:AbstractPID, <:FID{:f}}}}}) -> Union{Nothing, Operator}
 
 Get the multiplication of two fermionic Fock operators.
 """
-@inline function Base.:*(f1::Operator{<:Number, <:ID{AbstractCompositeOID{<:Index{<:AbstractPID, FID{:f}}}}}, f2::Operator{<:Number, <:ID{AbstractCompositeOID{<:Index{<:AbstractPID, FID{:f}}}}})
+@inline function Base.:*(f1::Operator{<:Number, <:ID{AbstractCompositeOID{<:Index{<:AbstractPID, <:FID{:f}}}}}, f2::Operator{<:Number, <:ID{AbstractCompositeOID{<:Index{<:AbstractPID, <:FID{:f}}}}})
     rank(f1)>0 && rank(f2)>0 && f1.id[end]==f2.id[1] && return nothing
     return invoke(*, Tuple{Element, Element}, f1, f2)
 end
 
 """
-    permute(id₁::OID{<:Index{<:AbstractPID, FID{:b}}}, id₂::OID{<:Index{<:AbstractPID, FID{:b}}}) -> Tuple{Vararg{Operator}}
+    permute(id₁::OID{<:Index{<:AbstractPID, <:FID{:b}}}, id₂::OID{<:Index{<:AbstractPID, <:FID{:b}}}) -> Tuple{Vararg{Operator}}
 
 Permute two bosonic oid and get the result.
 """
-function permute(id₁::OID{<:Index{<:AbstractPID, FID{:b}}}, id₂::OID{<:Index{<:AbstractPID, FID{:b}}})
+function permute(id₁::OID{<:Index{<:AbstractPID, <:FID{:b}}}, id₂::OID{<:Index{<:AbstractPID, <:FID{:b}}})
     @assert id₁.index≠id₂.index || id₁.rcoord≠id₂.rcoord || id₁.icoord≠id₂.icoord "permute error: permuted ids should not be equal to each other."
     if id₁.index'==id₂.index && id₁.rcoord==id₂.rcoord && id₁.icoord==id₂.icoord
         if id₁.index.iid.nambu == CREATION
@@ -231,76 +244,38 @@ function permute(id₁::OID{<:Index{<:AbstractPID, FID{:b}}}, id₂::OID{<:Index
 end
 
 """
-    FCID{N<:Tuple} <: SimpleID
-
-The id of the nambus part of a Fock coupling.
-"""
-struct FCID{N<:Tuple} <: SimpleID
-    nambus::N
-end
-
-"""
-    FockCoupling{V, N<:Tuple, O<:Subscripts, S<:Subscripts, I<:Tuple{FCID, SubID, SubID}} <: Coupling{V, I}
+    FockCoupling(value::Number,
+        orbitals::Subscript{<:NTuple{N, Union{Int, Symbol}}},
+        spins::Subscript{<:NTuple{N, Union{Int, Symbol}}},
+        nambus::Union{NTuple{N, Int}, NTuple{N, Symbol}}
+        ) where N
 
 Fock coupling.
+
+Type alias for "Coupling{V, I<:ID{FID}, C<:IIDConstrain, CI<:ConstrainID}."
 """
-struct FockCoupling{V, N<:Tuple, O<:Subscripts, S<:Subscripts, I<:Tuple{FCID, SubID, SubID}} <: Coupling{V, I}
-    value::V
-    nambus::N
-    orbitals::O
-    spins::S
-    function FockCoupling(value::Number, nambus::Tuple, orbitals::Subscripts, spins::Subscripts)
-        @assert length(nambus)==length(orbitals)==length(spins) "FockCoupling error: dismatched nambus, orbitals and spins."
-        fcid, obid, spid = FCID(nambus), SubID(orbitals), SubID(spins)
-        V, N, O, S, I = typeof(value), typeof(nambus), typeof(orbitals), typeof(spins),Tuple{typeof(fcid), typeof(obid), typeof(spid)}
-        new{V, N, O, S, I}(value, nambus, orbitals, spins)
-    end
+const FockCoupling{V, I<:ID{FID}, C<:IIDConstrain, CI<:ConstrainID} = Coupling{V, I, C, CI}
+function FockCoupling(value::Number,
+        orbitals::Subscript{<:NTuple{N, Union{Int, Symbol}}},
+        spins::Subscript{<:NTuple{N, Union{Int, Symbol}}},
+        nambus::Union{NTuple{N, Int}, NTuple{N, Symbol}}
+        ) where N
+    return Coupling(value, ID(FID{wildcard}, orbitals.pattern, spins.pattern, nambus), IIDConstrain((orbital=orbitals, spin=spins)))
 end
-@inline parameternames(::Type{<:FockCoupling}) = (:value, :nambus, :orbitals, :spins, :id)
-@inline isparameterbound(::Type{<:FockCoupling}, ::Val{:nambus}, ::Type{N}) where {N<:Tuple} = !isconcretetype(N)
-@inline isparameterbound(::Type{<:FockCoupling}, ::Val{:orbitals}, ::Type{O}) where {O<:Subscripts} = !isconcretetype(O)
-@inline isparameterbound(::Type{<:FockCoupling}, ::Val{:spins}, ::Type{S}) where {S<:Subscripts} = !isconcretetype(S)
-@inline contentnames(::Type{<:FockCoupling}) = (:value, :id, :orbitals, :spins)
-@inline getcontent(fc::FockCoupling, ::Val{:id}) = ID(FCID(fc.nambus), SubID(fc.orbitals), SubID(fc.spins))
-@inline function FockCoupling(value::Number, id::Tuple{FCID, SubID, SubID}, orbitals::Subscripts, spins::Subscripts)
-    FockCoupling(value, id[1].nambus, orbitals, spins)
-end
-@inline rank(::Type{<:FockCoupling{V, N} where V}) where N = fieldcount(N)
 function Base.show(io::IO, fc::FockCoupling)
+    wildcards = ntuple(i->wildcard, Val(rank(fc)))
     @printf io "FockCoupling{%s}(value=%s" rank(fc) decimaltostr(fc.value)
-    any(fc.nambus .≠ wildcard) && @printf io ", nambus=[%s]" join(fc.nambus, " ")
-    any(fc.orbitals .≠ wildcard) && @printf io ", orbitals=%s" string(fc.orbitals)
-    any(fc.spins .≠ wildcard) && @printf io ", spins=%s" string(fc.spins)
+    fc.cid.orbitals≠wildcards && @printf io ", orbitals=%s" repr(fc.constrain, 1:length(fc.constrain), :orbital)
+    fc.cid.spins≠wildcards && @printf io ", spins=%s" repr(fc.constrain, 1:length(fc.constrain), :spin)
+    fc.cid.nambus≠wildcards && @printf io ", nambus=[%s]" join(fc.cid.nambus, " ")
     @printf io ")"
 end
-
-"""
-    FockCoupling{N}(value::Number=1;
-        nambus::NTuple{N, Union{Int, Symbol}}=ntuple(i->wildcard, Val(N)),
-        orbitals::Union{NTuple{N, Int}, Subscripts}=Subscripts(N),
-        spins::Union{NTuple{N, Int}, Subscripts}=Subscripts(N)
-        ) where N
-"""
-function FockCoupling{N}(value::Number=1;
-        nambus::NTuple{N, Union{Int, Symbol}}=ntuple(i->wildcard, Val(N)),
-        orbitals::Union{NTuple{N, Int}, Subscripts}=Subscripts(N),
-        spins::Union{NTuple{N, Int}, Subscripts}=Subscripts(N)
-        ) where N
-    isa(orbitals, Subscripts) || (orbitals = Subscripts(orbitals))
-    isa(spins, Subscripts) || (spins = Subscripts(spins))
-    return FockCoupling(value, nambus, orbitals, spins)
-end
-
-"""
-    repr(fc::FockCoupling) -> String
-
-Get the repr representation of a Fock coupling.
-"""
 function Base.repr(fc::FockCoupling)
     contents = String[]
-    any(fc.nambus .≠ wildcard) && push!(contents, @sprintf "ph[%s]" join(fc.nambus, " "))
-    any(fc.orbitals .≠ wildcard) && push!(contents, @sprintf "ob%s" fc.orbitals)
-    any(fc.spins .≠ wildcard) && push!(contents, @sprintf "sp%s" fc.spins)
+    wildcards = ntuple(i->wildcard, Val(rank(fc)))
+    fc.cid.orbitals≠wildcards && push!(contents, @sprintf "ob%s" repr(fc.constrain, 1:length(fc.constrain), :orbital))
+    fc.cid.spins≠wildcards && push!(contents, @sprintf "sp%s" repr(fc.constrain, 1:length(fc.constrain), :spin))
+    fc.cid.nambus≠wildcards && push!(contents, @sprintf "ph[%s]" join(fc.cid.nambus, " "))
     result = decimaltostr(fc.value)
     length(contents)==0 && (result = @sprintf "%s {%s}" result rank(fc))
     length(contents)>0 && (result = @sprintf "%s %s" result join(contents, " ⊗ "))
@@ -308,12 +283,20 @@ function Base.repr(fc::FockCoupling)
 end
 
 """
-    *(fc₁::FockCoupling, fc₂::FockCoupling) -> FockCoupling
-
-Get the multiplication between two Fock couplings.
+    FockCoupling{N}(value::Number=1;
+        orbitals::Union{NTuple{N, Int}, Subscript}=Subscript(N),
+        spins::Union{NTuple{N, Int}, Subscript}=Subscript(N),
+        nambus::Union{NTuple{N, Int}, NTuple{N, Symbol}}=ntuple(i->wildcard, Val(N))
+        ) where N
 """
-@inline function Base.:*(fc₁::FockCoupling, fc₂::FockCoupling)
-    return FockCoupling(fc₁.value*fc₂.value, (fc₁.nambus..., fc₂.nambus...), fc₁.orbitals*fc₂.orbitals, fc₁.spins*fc₂.spins)
+function FockCoupling{N}(value::Number=1;
+        orbitals::Union{NTuple{N, Int}, Subscript}=Subscript(N),
+        spins::Union{NTuple{N, Int}, Subscript}=Subscript(N),
+        nambus::Union{NTuple{N, Int}, NTuple{N, Symbol}}=ntuple(i->wildcard, Val(N))
+        ) where N
+    isa(orbitals, Subscript) || (orbitals = Subscript(orbitals))
+    isa(spins, Subscript) || (spins = Subscript(spins))
+    return FockCoupling(value, orbitals, spins, nambus)
 end
 
 """
@@ -323,14 +306,15 @@ Get the direct product between two Fock couplings.
 """
 function ⊗(fc₁::FockCoupling, fc₂::FockCoupling)
     @assert rank(fc₁)==rank(fc₂) "⊗ error: dismatched rank."
-    wildcards = NTuple{rank(fc₁), Symbol}(wildcard for i = 1:rank(fc₁))
-    nambus = fockcouplingchoicerule(fc₁.nambus, fc₂.nambus, wildcards, :nambus)
-    orbitals = fockcouplingchoicerule(fc₁.orbitals, fc₂.orbitals, wildcards, :orbitals)
-    spins = fockcouplingchoicerule(fc₁.spins, fc₂.spins, wildcards, :spins)
-    return FockCoupling(fc₁.value*fc₂.value, nambus, orbitals, spins)
+    @assert length(fc₁.constrain)==length(fc₂.constrain)==1 "⊗ error: not supported."
+    wildcards = ntuple(i->wildcard, Val(rank(fc₁)))
+    orbitals = fockcouplingchoicerule(first(fc₁.constrain).orbital, first(fc₂.constrain).orbital, wildcards, :orbitals)
+    spins = fockcouplingchoicerule(first(fc₁.constrain).spin, first(fc₂.constrain).spin, wildcards, :spins)
+    nambus = fockcouplingchoicerule(fc₁.cid.nambus, fc₂.cid.nambus, wildcards, :nambus)
+    return FockCoupling(fc₁.value*fc₂.value, orbitals, spins, nambus)
 end
 function fockcouplingchoicerule(v₁, v₂, wildcards::Tuple{Vararg{Symbol}}, field::Symbol)
-    t₁, t₂ = all(v₁ .== wildcards), all(v₂ .== wildcards)
+    t₁, t₂ = convert(Tuple, v₁)==wildcards, convert(Tuple, v₂)==wildcards
     @assert t₁||t₂ "fockcouplingchoicerule error: dismatched $field ($v₁ and $v₂)."
     return t₁ ? v₂ : v₁
 end
@@ -340,75 +324,24 @@ end
 
 Get the dot product of two rank-2 Fock couplings.
 
-A rank-2 FockCoupling can be considered as a matrix acting on the sublattice, orbital, spin and nambu spaces.
+A rank-2 FockCoupling can be considered as a matrix acting on the orbital, spin and nambu spaces.
 Therefore, the dot product here is defined as the multiplication between such matrices.
 """
 function ⋅(fc₁::FockCoupling, fc₂::FockCoupling)
     @assert rank(fc₁)==rank(fc₂)==2 "⋅ error: input fockcouplings must be rank-2."
-    attrpairs = []
     value = fc₁.value * fc₂.value
-    wildcards = (wildcard, wildcard)
+    attrpairs = Pair{Symbol, NTuple{2, Int}}[]
     for attrname in (:orbitals, :spins, :nambus)
-        v₁ = (getproperty(fc₁, attrname)[1], getproperty(fc₁, attrname)[2])
-        v₂ = (getproperty(fc₂, attrname)[1], getproperty(fc₂, attrname)[2])
+        v₁ = getproperty(fc₁.cid, attrname)
+        v₂ = getproperty(fc₂.cid, attrname)
         if isa(v₁, NTuple{2, Int}) && isa(v₂, NTuple{2, Int})
             value = value * delta(v₁[2], v₂[1])
             push!(attrpairs, attrname=>(v₁[1], v₂[2]))
         else
-            @assert v₁==wildcards && v₂==wildcards "⋅ error: dismatched $attrname ($v₁ and $v₂)."
+            @assert v₁==(wildcard, wildcard) && v₂==(wildcard, wildcard) "⋅ error: dismatched $attrname ($v₁ and $v₂)."
         end
     end
     return FockCoupling{2}(value; attrpairs...)
-end
-
-"""
-    expand(fc::FockCoupling, bond::AbstractBond, hilbert::Hilbert, info::Val) -> FCExpand
-
-Expand a Fock coupling with the given bond and the Hilbert space.
-"""
-function expand(fc::FockCoupling, bond::AbstractBond, hilbert::Hilbert, info::Val)
-    points = couplingpoints(fc, bond, info)
-    focks = couplinginternals(fc, bond, hilbert, info)
-    @assert rank(fc)==length(points)==length(focks) "expand error: dismatched rank."
-    nambus = fockcouplingnambus(fc, NTuple{rank(fc), Int}(focks[i].nnambu for i = 1:rank(fc)), info)
-    obexpands = collect(expand(fc.orbitals, NTuple{rank(fc), Int}(focks[i].norbital for i = 1:rank(fc))))
-    spexpands = collect(expand(fc.spins, NTuple{rank(fc), Int}(focks[i].nspin for i = 1:rank(fc))))
-    return FCExpand{statistics(focks)}(fc.value, points, obexpands, spexpands, nambus)
-end
-@generated statistics(focks::NTuple{R, Fock}) where R = Tuple(statistics(fieldtype(focks, i)) for i = 1:R)
-@generated function fockcouplingnambus(fc::FockCoupling, ranges::Tuple{Vararg{Int}}, ::Val)
-    @assert rank(fc)==fieldcount(ranges) "fockcouplingnambus error: dismatched rank."
-    exprs = [:(isa(fc.nambus[$i], Int) ?
-            (ranges[$i]==1 && fc.nambus[$i]==0 || ranges[$i]==2 && 0<fc.nambus[$i]<=2 ? fc.nambus[$i] : error("fockcouplingnambus error: nambu out of range.")) :
-            (ranges[$i]==1 ? 0 : ($i)%2==1 ? CREATION : ANNIHILATION)) for i = 1:rank(fc)]
-    return Expr(:tuple, exprs...)
-end
-struct FCExpand{STS, V, N, D, P<:AbstractPID, DT<:Number} <: CartesianVectorSpace{Tuple{V, ID{OID{<:Index, SVector{D, DT}}, N}}}
-    value::V
-    points::NTuple{N, Point{D, P, DT}}
-    obexpands::Vector{NTuple{N, Int}}
-    spexpands::Vector{NTuple{N, Int}}
-    nambus::NTuple{N, Int}
-    function FCExpand{STS}(value, points::NTuple{N, Point{D, P, DT}}, obexpands::Vector{NTuple{N, Int}}, spexpands::Vector{NTuple{N, Int}}, nambus::NTuple{N, Int}) where {STS, N, D, P<:AbstractPID, DT<:Number}
-        new{STS, typeof(value), N, D, P, DT}(value, points, obexpands, spexpands, nambus)
-    end
-end
-@inline @generated function Base.eltype(::Type{FCExpand{STS, V, N, D, P, DT}}) where {STS, V, N, D, P<:AbstractPID, DT<:Number}
-    return Tuple{V, Tuple{[OID{Index{P, FID{STS[i]}}, SVector{D, DT}} for i = 1:N]...}}
-end
-@inline shape(fce::FCExpand) = (1:length(fce.obexpands), 1:length(fce.spexpands))
-@inline ndimshape(::Type{<:FCExpand}) = 2
-@generated function Tuple(index::CartesianIndex{2}, fce::FCExpand{STS, V, N}) where {STS, V, N}
-    exprs = []
-    for i = 1:N
-        ST = QuoteNode(STS[i])
-        push!(exprs, quote
-            pid, rcoord, icoord = fce.points[$i].pid, fce.points[$i].rcoord, fce.points[$i].icoord
-            fid = FID{$ST}(fce.obexpands[index[1]][$i], fce.spexpands[index[2]][$i], fce.nambus[$i])
-            OID(Index(pid, fid), rcoord, icoord)
-        end)
-    end
-    return Expr(:tuple, :(fce.value), Expr(:tuple, exprs...))
 end
 
 """
@@ -500,7 +433,7 @@ end
 
 Construct a FockCoupling from a literal string.
 """
-macro fc_str(str)
+macro fc_str(str::String)
     pos=findfirst(x->x∈('{', 's', 'o', 'p'), str)
     @assert 0<pos<length(str) "@fc_str error: wrong input pattern."
     coeff = eval(Meta.parse(str[1:pos-1]))
@@ -527,58 +460,58 @@ function fccomponent(str::AbstractString)
     expr = Meta.parse(str[3:end])
     if attrname==:nambus
         @assert expr.head∈(:hcat, :vect) "fccomponent error: wrong input pattern for nambus."
+        N = length(expr.args)
         attrvalue = Tuple(expr.args)
-        N = length(attrvalue)
     else
-        @assert expr.head∈(:call, :hcat, :vcat, :vect) "fccomponent error: wrong input pattern for orbitals and spins."
-        attrvalue = subscriptsexpr(expr)
-        N = length(attrvalue.args[end].args[2])
+        @assert expr.head∈(:call, :hcat, :vect) "fccomponent error: wrong input pattern for orbitals and spins."
+        N = expr.head∈(:hcat, :vect) ? length(expr.args) : length(expr.args[1].args)
+        attrvalue = subscriptexpr(expr)
     end
     return Expr(:kw, attrname, attrvalue), N
 end
 
 """
-    Onsite(id::Symbol, value::Any;
-        couplings::Union{Function, Coupling, Couplings, Nothing}=nothing,
+    Onsite(id::Symbol, value;
+        couplings::Union{Function, Couplings, Nothing}=nothing,
         amplitude::Union{Function, Nothing}=nothing,
         modulate::Union{Function, Bool}=false,
         )
 
 Onsite term.
 
-Type alias for `Term{:Onsite, 2, id, V, Int, <:TermCouplings, <:TermAmplitude, <:TermModulate}`.
+Type alias for `Term{:Onsite, 2, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`.
 """
 const Onsite{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:Onsite, 2, id, V, Int, C, A, M}
-@inline function Onsite(id::Symbol, value::Any;
-        couplings::Union{Function, Coupling, Couplings, Nothing}=nothing,
+@inline function Onsite(id::Symbol, value;
+        couplings::Union{Function, Couplings, Nothing}=nothing,
         amplitude::Union{Function, Nothing}=nothing,
         modulate::Union{Function, Bool}=false
         )
-    couplings = TermCouplings(isnothing(couplings) ? FockCoupling{2}() : couplings)
+    couplings = TermCouplings(isnothing(couplings) ? @couplings(FockCoupling{2}()) : couplings)
     Term{:Onsite, 2}(id, value, 0, couplings=couplings, amplitude=amplitude, modulate=modulate)
 end
 @inline abbr(::Type{<:Onsite}) = :st
 @inline isHermitian(::Type{<:Onsite}) = nothing
 
 """
-    Hopping(id::Symbol, value::Any, bondkind::Int=1;
-        couplings::Union{Function, Coupling, Couplings, Nothing}=nothing,
+    Hopping(id::Symbol, value, bondkind::Int=1;
+        couplings::Union{Function, Couplings, Nothing}=nothing,
         amplitude::Union{Function, Nothing}=nothing,
         modulate::Union{Function, Bool}=false,
         )
 
 Hopping term.
 
-Type alias for `Term{:Hopping, 2, id, V, Int, <:TermCouplings, <:TermAmplitude, <:TermModulate}`.
+Type alias for `Term{:Hopping, 2, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`.
 """
 const Hopping{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:Hopping, 2, id, V, Int, C, A, M}
-@inline function Hopping(id::Symbol, value::Any, bondkind::Int=1;
-        couplings::Union{Function, Coupling, Couplings, Nothing}=nothing,
+@inline function Hopping(id::Symbol, value, bondkind::Int=1;
+        couplings::Union{Function, Couplings, Nothing}=nothing,
         amplitude::Union{Function, Nothing}=nothing,
         modulate::Union{Function, Bool}=false
         )
-    couplings = TermCouplings(isnothing(couplings) ? FockCoupling{2}() : couplings)
-    @assert bondkind ≠ 0 "Hopping error: input bondkind (neighbor) cannot be 0. Use `Onsite` instead."
+    couplings = TermCouplings(isnothing(couplings) ? @couplings(FockCoupling{2}()) : couplings)
+    @assert bondkind≠0 "Hopping error: input bondkind (neighbor) cannot be 0. Use `Onsite` instead."
     Term{:Hopping, 2}(id, value, bondkind, couplings=couplings, amplitude=amplitude, modulate=modulate)
 end
 @inline abbr(::Type{<:Hopping}) = :hp
@@ -586,35 +519,29 @@ end
 @inline couplingcenters(::FockCoupling, ::Bond, ::Val{:Hopping}) = (1, 2)
 
 """
-    Pairing(id::Symbol, value::Any, bondkind::Int=0;
-        couplings::Union{Function, Coupling, Couplings, Nothing}=nothing,
+    Pairing(id::Symbol, value, bondkind::Int=0;
+        couplings::Union{Function, Couplings, Nothing}=nothing,
         amplitude::Union{Function, Nothing}=nothing,
         modulate::Union{Function, Bool}=false,
         )
 
 Pairing term.
 
-Type alias for `Term{:Pairing, 2, id, V, Int, <:TermCouplings, <:TermAmplitude, <:TermModulate}`.
+Type alias for `Term{:Pairing, 2, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`.
 """
 const Pairing{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:Pairing, 2, id, V, Int, C, A, M}
-@inline function Pairing(id::Symbol, value::Any, bondkind::Int=0;
-        couplings::Union{Function, Coupling, Couplings, Nothing}=nothing,
+@inline function Pairing(id::Symbol, value, bondkind::Int=0;
+        couplings::Union{Function, Couplings, Nothing}=nothing,
         amplitude::Union{Function, Nothing}=nothing,
         modulate::Union{Function, Bool}=false
         )
-    couplings = TermCouplings(isnothing(couplings) ? FockCoupling{2}() : couplings)
+    couplings = TermCouplings(isnothing(couplings) ? @couplings(FockCoupling{2}()) : couplings)
     Term{:Pairing, 2}(id, value, bondkind, couplings=couplings, amplitude=amplitude, modulate=modulate)
 end
 @inline abbr(::Type{<:Pairing}) = :pr
 @inline isHermitian(::Type{<:Pairing}) = false
 @inline couplingcenters(::FockCoupling, ::Bond, ::Val{:Pairing}) = (1, 2)
-function fockcouplingnambus(fc::FockCoupling, ranges::NTuple{2, Int}, ::Val{:Pairing})
-    @assert rank(fc)==2 "fockcouplingnambus error: dismatched rank."
-    @assert ranges==(2, 2) "fockcouplingnambus error: ranges for Pairing terms must be (2, 2)."
-    n₁ = isa(fc.nambus[1], Int) ? (0<fc.nambus[1]<=2 ? fc.nambus[1] : error("fockcouplingnambus error: nambu out of range.")) : ANNIHILATION
-    n₂ = isa(fc.nambus[2], Int) ? (0<fc.nambus[2]<=2 ? fc.nambus[2] : error("fockcouplingnambus error: nambu out of range.")) : ANNIHILATION
-    return (n₁, n₂)
-end
+@inline fidshape(::Val{:Pairing}, ::Val{:nambu}, ::Symbol, n::Int; order) = ((@assert n==2 "range error: nnambu must be 2 for Pairing."); ANNIHILATION:ANNIHILATION)
 function expand!(operators::Operators, term::Pairing, bond::AbstractBond, hilbert::Hilbert, half::Bool=false; table::Union{Nothing, Table}=nothing)
     argtypes = Tuple{Operators, Term, AbstractBond, Hilbert, Bool}
     invoke(expand!, argtypes, operators, term, bond, hilbert, half; table=table)
@@ -623,96 +550,96 @@ function expand!(operators::Operators, term::Pairing, bond::AbstractBond, hilber
 end
 
 """
-    Hubbard(id::Symbol, value::Any; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
+    Hubbard(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
 
 Hubbard term.
 
-Type alias for `Term{:Hubbard, 4, id, V, Int, <:TermCouplings, <:TermAmplitude, <:TermModulate}`.
+Type alias for `Term{:Hubbard, 4, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`.
 """
 const Hubbard{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:Hubbard, 4, id, V, Int, C, A, M}
-@inline function Hubbard(id::Symbol, value::Any; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
+@inline function Hubbard(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
     @assert value==value' "Hubbard error: only real values are allowed."
-    Term{:Hubbard, 4}(id, value, 0, couplings=fc"1 ph[2 1 2 1] ⊗ sp[2 2 1 1]", amplitude=amplitude, modulate=modulate)
+    Term{:Hubbard, 4}(id, value, 0, couplings=@couplings(fc"1 sp[2 2 1 1] ⊗ ph[2 1 2 1]"), amplitude=amplitude, modulate=modulate)
 end
 @inline abbr(::Type{<:Hubbard}) = :hb
 @inline isHermitian(::Type{<:Hubbard}) = true
 
 """
-    InterOrbitalInterSpin(id::Symbol, value::Any; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
+    InterOrbitalInterSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
 
 Interorbital-interspin term.
 
-Type alias for `Term{:InterOrbitalInterSpin, 4, id, V, Int, <:TermCouplings, <:TermAmplitude, <:TermModulate}`.
+Type alias for `Term{:InterOrbitalInterSpin, 4, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`.
 """
 const InterOrbitalInterSpin{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:InterOrbitalInterSpin, 4, id, V, Int, C, A, M}
-@inline function InterOrbitalInterSpin(id::Symbol, value::Any; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
+@inline function InterOrbitalInterSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
     @assert value==value' "InterOrbitalInterSpin error: only real values are allowed."
-    Term{:InterOrbitalInterSpin, 4}(id, value, 0, couplings=fc"1 ph[2 1 2 1] ⊗ ob[α α β β](α < β) ⊗ sp[σ₁ σ₁ σ₂ σ₂](σ₁ ≠ σ₂)", amplitude=amplitude, modulate=modulate)
+    Term{:InterOrbitalInterSpin, 4}(id, value, 0, couplings=@couplings(fc"1 ob[α α β β](α < β) ⊗ sp[σ₁ σ₁ σ₂ σ₂](σ₁ ≠ σ₂) ⊗ ph[2 1 2 1]"), amplitude=amplitude, modulate=modulate)
 end
 @inline abbr(::Type{<:InterOrbitalInterSpin}) = :nons
 @inline isHermitian(::Type{<:InterOrbitalInterSpin}) = true
 
 """
-    InterOrbitalIntraSpin(id::Symbol, value::Any; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
+    InterOrbitalIntraSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
 
 Interorbital-intraspin term.
 
-Type alias for `Term{:InterOrbitalIntraSpin, 4, id, V, Int, <:TermCouplings, <:TermAmplitude, <:TermModulate}`.
+Type alias for `Term{:InterOrbitalIntraSpin, 4, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`.
 """
 const InterOrbitalIntraSpin{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:InterOrbitalIntraSpin, 4, id, V, Int, C, A, M}
-@inline function InterOrbitalIntraSpin(id::Symbol, value::Any; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
+@inline function InterOrbitalIntraSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
     @assert value==value' "InterOrbitalIntraSpin error: only real values are allowed."
-    Term{:InterOrbitalIntraSpin, 4}(id, value, 0, couplings=fc"1 ph[2 1 2 1] ⊗ ob[α α β β](α < β)", amplitude=amplitude, modulate=modulate)
+    Term{:InterOrbitalIntraSpin, 4}(id, value, 0, couplings=@couplings(fc"1 ob[α α β β](α < β) ⊗ ph[2 1 2 1]"), amplitude=amplitude, modulate=modulate)
 end
 @inline abbr(::Type{<:InterOrbitalIntraSpin}) = :noes
 @inline isHermitian(::Type{<:InterOrbitalIntraSpin}) = true
 
 """
-    SpinFlip(id::Symbol, value::Any; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
+    SpinFlip(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
 
 Spin-flip term.
 
-Type alias for `Term{:SpinFlip, 4, id, V, Int, <:TermCouplings, <:TermAmplitude, <:TermModulate}`.
+Type alias for `Term{:SpinFlip, 4, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`.
 """
 const SpinFlip{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:SpinFlip, 4, id, V, Int, C, A, M}
-@inline function SpinFlip(id::Symbol, value::Any; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
-    Term{:SpinFlip, 4}(id, value, 0, couplings=fc"1 ph[2 2 1 1] ⊗ ob[α β α β](α < β) ⊗ sp[2 1 1 2]", amplitude=amplitude, modulate=modulate)
+@inline function SpinFlip(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
+    Term{:SpinFlip, 4}(id, value, 0, couplings=@couplings(fc"1 ob[α β α β](α < β) ⊗ sp[2 1 1 2] ⊗ ph[2 2 1 1]"), amplitude=amplitude, modulate=modulate)
 end
 @inline abbr(::Type{<:SpinFlip}) = :sf
 @inline isHermitian(::Type{<:SpinFlip}) = false
 
 """
-    PairHopping(id::Symbol, value::Any; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
+    PairHopping(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
 
 Pair-hopping term.
 
-Type alias for `Term{:PairHopping, 4, id, V, Int, <:TermCouplings, <:TermAmplitude, <:TermModulate}`.
+Type alias for `Term{:PairHopping, 4, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`.
 """
 const PairHopping{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:PairHopping, 4, id, V, Int, C, A, M}
-@inline function PairHopping(id::Symbol, value::Any; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
-    Term{:PairHopping, 4}(id, value, 0, couplings=fc"1 ph[2 2 1 1] ⊗ ob[α α β β](α < β) ⊗ sp[2 1 1 2]", amplitude=amplitude, modulate=modulate)
+@inline function PairHopping(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
+    Term{:PairHopping, 4}(id, value, 0, couplings=@couplings(fc"1 ob[α α β β](α < β) ⊗ sp[2 1 1 2] ⊗ ph[2 2 1 1]"), amplitude=amplitude, modulate=modulate)
 end
 @inline abbr(::Type{<:PairHopping}) = :ph
 @inline isHermitian(::Type{<:PairHopping}) = false
 
 """
-    Coulomb(id::Symbol, value::Any, bondkind::Int=1;
-        couplings::Union{Function, Coupling, Couplings, Nothing}=nothing,
+    Coulomb(id::Symbol, value, bondkind::Int=1;
+        couplings::Union{Function, Couplings, Nothing}=nothing,
         amplitude::Union{Function, Nothing}=nothing,
         modulate::Union{Function, Bool}=false
         )
 
 Coulomb term.
 
-Type alias for `Term{:Coulomb, 4, id, V, Int, <:TermCouplings, <:TermAmplitude, <:TermModulate}`.
+Type alias for `Term{:Coulomb, 4, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`.
 """
 const Coulomb{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:Coulomb, 4, id, V, Int, C, A, M}
-@inline function Coulomb(id::Symbol, value::Any, bondkind::Int=1;
-        couplings::Union{Function, Coupling, Couplings, Nothing}=nothing,
+@inline function Coulomb(id::Symbol, value, bondkind::Int=1;
+        couplings::Union{Function, Couplings, Nothing}=nothing,
         amplitude::Union{Function, Nothing}=nothing,
         modulate::Union{Function, Bool}=false
         )
-    couplings = TermCouplings(isnothing(couplings) ? FockCoupling{2}()*FockCoupling{2}() : couplings)
+    couplings = TermCouplings(isnothing(couplings) ? @couplings(FockCoupling{2}()*FockCoupling{2}()) : couplings)
     @assert bondkind≠0 "Coulomb error: input bondkind cannot be 0. Use `Hubbard/InterOrbitalInterSpin/InterOrbitalIntraSpin/SpinFlip/PairHopping` instead."
     Term{:Coulomb, 4}(id, value, bondkind, couplings=couplings, amplitude=amplitude, modulate=modulate)
 end

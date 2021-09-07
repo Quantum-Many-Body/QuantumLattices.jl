@@ -4,31 +4,32 @@ using MacroTools: @capture
 using Printf: @printf, @sprintf
 using StaticArrays: SVector
 using LaTeXStrings: latexstring
-using Base.Iterators: product
 using ..Spatials: AbstractPID, Point
 using ...Essentials: dtype
-using ...Interfaces: id, value, rank, dimension, decompose
+using ...Interfaces: id, value, decompose, dimension
 using ...Prerequisites: Float, decimaltostr
-using ...Prerequisites.Traits: rawtype, efficientoperations, getcontent
+using ...Prerequisites.Traits: rawtype, efficientoperations
 using ...Prerequisites.CompositeStructures: CompositeTuple, CompositeDict, NamedContainer
 using ...Mathematics.VectorSpaces: CartesianVectorSpace
 using ...Mathematics.AlgebraOverFields: SimpleID, ID, Element, Elements
 
 import ..Spatials: pidtype, rcoord, icoord
-import ...Essentials: reset!, update!
+import ...Essentials: kind, reset!, update!
 import ...Prerequisites.Traits: contentnames, getcontent
 import ...Mathematics.VectorSpaces: shape, ndimshape
-import ...Mathematics.AlgebraOverFields: sequence
-import ...Interfaces: rank, dimension, ⊗, expand
+import ...Mathematics.AlgebraOverFields: idtype, sequence
+import ...Interfaces: rank, ⊗, expand
 
-export IID, SimpleIID, CompositeIID, Internal, InternalIndex, SimpleInternal, CompositeInternal, IIDSpace
-export Hilbert, AbstractOID, Index, AbstractCompositeOID, OID
+export IID, SimpleIID, CompositeIID
+export Internal, InternalIndex, SimpleInternal, CompositeInternal
+export IIDSpace, Subscript, @subscript_str, IIDConstrain, ConstrainID
+export Hilbert
+export AbstractOID, Index, AbstractCompositeOID, OID
 export AbstractOperator, Operator, Operators
-export internaltype, iidtype, isHermitian, indextype, oidtype
 export Metric, OIDToTuple, Table
+export internaltype, iidtype, isHermitian, indextype, oidtype
 export LaTeX, latexname, latexformat, superscript, subscript, script
 export Boundary, twist, plain
-export Subscripts, @subscripts_str
 
 """
     IID <: SimpleID
@@ -56,6 +57,9 @@ Base.show(io::IO, ciid::CompositeIID) = @printf io "%s" join((string(ciid[i]) fo
 @inline Base.length(ciid::CompositeIID) = length(typeof(ciid))
 @inline Base.length(::Type{<:CompositeIID{T}}) where {T<:Tuple{Vararg{SimpleIID}}} = fieldcount(T)
 @inline Base.getindex(ciid::CompositeIID, i::Int) = ciid.content[i]
+@inline Base.getproperty(ciid::CompositeIID, name::Symbol) = ciidgetproperty(ciid, Val(name))
+@inline ciidgetproperty(ciid::CompositeIID, ::Val{:content}) = getfield(ciid, :content)
+@inline ciidgetproperty(ciid::CompositeIID, ::Val{name}) where name = getproperty(getfield(ciid, :content), name)
 
 """
     CompositeIID(content::SimpleIID...)
@@ -117,6 +121,26 @@ The simple internal degrees of freedom at a single point.
 """
 abstract type SimpleInternal{I<:SimpleIID} <: Internal{I} end
 Base.show(io::IO, i::SimpleInternal) = @printf io "%s(%s)" i|>typeof|>nameof join(("$name=$(getfield(i, name))" for name in i|>typeof|>fieldnames), ", ")
+
+"""
+    match(iid::SimpleIID, i::SimpleInternal) -> Bool
+    match(::Type{I}, ::Type{SI}) where {I<:SimpleIID, SI<:SimpleInternal}
+
+Judge wheter a simple iid or a simple iid type matches a simple internal space or a simple internal space type.
+
+Here, "match" means that the eltype of the simple internal space has the same type name with the simple iid.
+"""
+@inline Base.match(iid::SimpleIID, i::SimpleInternal) = match(typeof(iid), typeof(i))
+@inline Base.match(::Type{I}, ::Type{SI}) where {I<:SimpleIID, SI<:SimpleInternal} = nameof(I)==nameof(eltype(SI))
+
+"""
+    filter(iid::SimpleIID, i::SimpleInternal) -> Union{Nothing, typeof(i)}
+    filter(::Type{I}, i::SimpleInternal) where {I<:SimpleIID} -> Union{Nothing, typeof(i)}
+
+Filter a simple internal space with respect to the input `iid` or type `I`.
+"""
+@inline Base.filter(iid::SimpleIID, i::SimpleInternal) = filter(typeof(iid), i)
+@inline Base.filter(::Type{I}, i::SimpleInternal) where {I<:SimpleIID} = match(I, typeof(i)) ? i : nothing
 
 """
     CompositeInternal{T<:Tuple{Vararg{SimpleInternal}}} <: Internal{CompositeIID}
@@ -200,19 +224,40 @@ Direct product bewteen simple internal spaces and composite internal spaces.
 @inline ⊗(ci₁::CompositeInternal, ci₂::CompositeInternal) = CompositeInternal(ci₁.content..., ci₂.content...)
 
 """
-    IIDSpace{I<:IID, V<:Internal} <: CartesianVectorSpace{IID}
+    filter(iid::SimpleIID, ci::CompositeInternal) -> Union{Nothing, SimpleInternal, CompositeInternal}
+    filter(::Type{I}, ci::CompositeInternal) where {I<:SimpleIID} -> Union{Nothing, SimpleInternal, CompositeInternal}
+
+Filter the composite internal space and select those that matches `I` or the type of `iid`.
+"""
+@inline Base.filter(iid::SimpleIID, ci::CompositeInternal) = filter(typeof(iid), ci)
+@inline @generated function Base.filter(::Type{I}, ci::CompositeInternal) where {I<:SimpleIID}
+    exprs = []
+    for i = 1:rank(ci)
+        match(I, internaltype(ci, i)) && push!(exprs, :(ci[InternalIndex($i)]))
+    end
+    length(exprs)==0 && return
+    length(exprs)==1 && return first(exprs)
+    return Expr(:call, :CompositeInternal, exprs...)
+end
+
+"""
+    IIDSpace{I<:IID, V<:Internal, Kind} <: CartesianVectorSpace{IID}
 
 The space expanded by a "labeled" iid.
 """
-struct IIDSpace{I<:IID, V<:Internal} <: CartesianVectorSpace{IID}
+struct IIDSpace{I<:IID, V<:Internal, Kind} <: CartesianVectorSpace{IID}
     iid::I
     internal::V
+    IIDSpace(iid::IID, internal::Internal, ::Val{Kind}=Val(:info)) where Kind = new{typeof(iid), typeof(internal), Kind}(iid, internal)
 end
 Base.eltype(iidspace::IIDSpace) = eltype(typeof(iidspace))
 Base.eltype(::Type{<:IIDSpace{<:IID, V}}) where {V<:Internal} = eltype(V)
+kind(iidspace::IIDSpace) = kind(typeof(iidspace))
+kind(::Type{<:IIDSpace{<:IID, <:Internal, Kind}}) where Kind = Kind
 @generated function shape(iidspace::IIDSpace{I, V}) where {I<:CompositeIID, V<:CompositeInternal}
     @assert rank(I)==rank(V) "shape error: dismatched composite iid and composite internal space."
-    Expr(:tuple, [:(shape(IIDSpace(iidspace.iid[$i], iidspace.internal[InternalIndex($i)]))...) for i = 1:rank(I)]...)
+    Kind = Val(kind(iidspace))
+    Expr(:tuple, [:(shape(IIDSpace(iidspace.iid[$i], iidspace.internal[InternalIndex($i)], $Kind))...) for i = 1:rank(I)]...)
 end
 ndimshape(::Type{<:IIDSpace{<:IID, V}}) where {V<:Internal} = ndimshape(V)
 Base.CartesianIndex(iid::IID, iidspace::IIDSpace) = CartesianIndex(iid, iidspace.internal)
@@ -224,6 +269,253 @@ Base.getindex(iidspace::IIDSpace, index::CartesianIndex) = rawtype(eltype(iidspa
 Get the space expanded by a set of "labeled" iids.
 """
 @inline expand(iids::NTuple{N, IID}, internals::NTuple{N, Internal}) where N = IIDSpace(CompositeIID(iids), CompositeInternal(internals))
+
+@inline diagonal(xs...) = length(xs)<2 ? true : all(map(==(xs[1]), xs))
+@inline noconstrain(_...) = true
+const wildcard = Symbol("*")
+"""
+    Subscript{P<:Tuple, C<:Function} <: CompositeTuple{P}
+
+A subscript set of a certain internal degree of freedom.
+"""
+struct Subscript{P<:Tuple, C<:Function} <: CompositeTuple{P}
+    pattern::P
+    rep::String
+    constrain::C
+end
+@inline contentnames(::Type{<:Subscript}) = (:contents, :rep, :constrain)
+@inline getcontent(subscript::Subscript, ::Val{:contents}) = subscript.pattern
+@inline Base.:(==)(subs₁::Subscript, subs₂::Subscript) = subs₁.pattern==subs₂.pattern && subs₁.rep==subs₂.rep
+@inline Base.:isequal(subs₁::Subscript, subs₂::Subscript) = isequal(subs₁.pattern, subs₂.pattern) && isequal(subs₁.rep, subs₂.rep)
+function Base.show(io::IO, subscript::Subscript)
+    if subscript.rep ∈ ("diagonal", "noconstrain", "constant")
+        @printf io "[%s]" join(subscript.pattern, " ")
+    else
+        @printf io "%s" subscript.rep
+    end
+end
+
+"""
+    Subscript(N::Int)
+    Subscript(pattern::Tuple, check_constant::Bool=false)
+
+Construct a subscript set of a certain internal degree of freedom.
+"""
+@inline Subscript(N::Int) = Subscript(Val(N))
+@inline Subscript(::Val{N}) where N = Subscript(ntuple(i->wildcard, Val(N)), "diagonal", diagonal)
+@inline Subscript(pattern::Tuple, check_constant::Bool=false) = Subscript(pattern, Val(check_constant))
+@inline function Subscript(pattern::Tuple, ::Val{false})
+    any(map(p->isa(p, Symbol), pattern)) && error("Subscript error: wrong constant pattern.")
+    return Subscript(pattern, "noconstrain", noconstrain)
+end
+@inline function Subscript(pattern::Tuple, ::Val{true})
+    any(map(p->isa(p, Symbol), pattern)) && error("Subscript error: wrong constant pattern.")
+    return Subscript(pattern, "constant", (xs...)->xs==pattern)
+end
+
+"""
+    rank(subscript::Subscript) -> Int
+    rank(::Type{<:Subscript}) -> Int
+
+Get the total number of the whole variables of a subscript set.
+"""
+@inline rank(subscript::Subscript) = rank(typeof(subscript))
+@inline rank(::Type{T}) where {T<:Subscript} = length(T)
+
+"""
+    match(subscript::Subscript, values::Tuple) -> Bool
+
+Judge whether a set of values matches the pattern specified by subscript.
+"""
+@inline function Base.match(subscript::Subscript, values::Tuple)
+    @assert length(subscript)==length(values) "match error: dismatched length of values."
+    return subscript.constrain(values...)
+end
+
+"""
+    subscript"..." -> Subscript
+
+Construct a subscript set from a literal string.
+"""
+macro subscript_str(str)
+    expr = Meta.parse(str)
+    expr.head==:toplevel || return subscriptexpr(expr)
+    @assert length(expr.args)==2 && isa(expr.args[2], Bool) "@subscript_str error: wrong pattern."
+    return subscriptexpr(expr.args[1], expr.args[2])
+end
+function subscriptexpr(expr::Expr, check_constant::Bool=false)
+    if @capture(expr, op_(cp_))
+        @assert op.head∈(:hcat, :vect) "subscriptexpr error: wrong pattern."
+        pattern, condition = Tuple(op.args), cp
+        rep = @sprintf "[%s](%s)" join(pattern, " ") condition
+    else
+        @assert expr.head∈(:hcat, :vect) "subscriptexpr error: wrong pattern."
+        pattern, condition = Tuple(expr.args), true
+        rep = @sprintf "[%s]" join(pattern, " ")
+    end
+    if !any(map(p->isa(p, Symbol), pattern))
+        check_constant && return :(Subscript($pattern, Val(true)))
+        return :(Subscript($pattern, Val(false)))
+    end
+    paramargs, groups = Symbol[], Dict{Symbol, Vector{Symbol}}()
+    for sub in pattern
+        isa(sub, Symbol) || begin
+            paramarg = gensym("paramarg")
+            push!(paramargs, paramarg)
+            condition = Expr(Symbol("&&"), condition, Expr(:call, :(==), paramarg, sub))
+            continue
+        end
+        if sub∉paramargs
+            push!(paramargs, sub)
+            groups[sub]=[sub]
+        else
+            paramarg = gensym("paramarg")
+            push!(paramargs, paramarg)
+            push!(groups[sub], :(==))
+            push!(groups[sub], paramarg)
+        end
+    end
+    for group in values(groups)
+        length(group)==1 && continue
+        condition = Expr(Symbol("&&"), condition, Expr(:comparison, group...))
+    end
+    constrainname = gensym("subconstrain")
+    constrain = :($constrainname($(paramargs...)) = $condition)
+    return Expr(:block, constrain, :(Subscript($pattern, $rep, $constrainname)))
+end
+
+"""
+    IIDConstrain{T<:Tuple{Vararg{NamedContainer{Subscript}}}} <: CompositeTuple{T}
+
+Constrain on a set of simple iids or on a composite iid.
+"""
+struct IIDConstrain{T<:Tuple{Vararg{NamedContainer{Subscript}}}} <: CompositeTuple{T}
+    constrain::T
+end
+@inline contentnames(::Type{<:IIDConstrain}) = (:contents,)
+@inline getcontent(iidc::IIDConstrain, ::Val{:contents}) = iidc.constrain
+function Base.show(io::IO, iidc::IIDConstrain)
+    for (i, segment) in enumerate(iidc.constrain)
+        i>1 && @printf io "%s" " × "
+        for (j, (field, subscript)) in enumerate(pairs(segment))
+            j>1 && @printf io "%s" " ⊗ "
+            @printf io "%s%s" field subscript
+        end
+    end
+end
+function Base.repr(iidc::IIDConstrain, slice, field::Symbol)
+    result = []
+    for (i, component) in enumerate(slice)
+        i>1 && push!(result, "×")
+        push!(result, @sprintf "%s" getfield(iidc.constrain[component], field))
+    end
+    return join(result)
+end
+
+"""
+    IIDConstrain(constrain::NamedContainer{Subscript}...)
+
+Construct the constrain.
+"""
+function IIDConstrain(constrain::NamedContainer{Subscript}...)
+    for restriction in constrain
+        length(restriction)>1 && @assert mapreduce(length, ==, values(restriction)) "IIDConstrain error: dismatched ranks."
+    end
+    return IIDConstrain(constrain)
+end
+
+"""
+    rank(iidc::IIDConstrain) -> Int
+    rank(::Type{<:IIDConstrain{T}}) where {T<:Tuple{Vararg{NamedContainer{Subscript}}}} -> Int
+
+Get the rank of the iid set (or the composite iid) on which the constrain act.
+"""
+@inline rank(iidc::IIDConstrain) = rank(typeof(iidc))
+@inline @generated function rank(::Type{<:IIDConstrain{T}}) where {T<:Tuple{Vararg{NamedContainer{Subscript}}}}
+    sum(rank(fieldtype(fieldtype(T, i), 1)) for i = 1:fieldcount(T))
+end
+
+"""
+    rank(iidc::IIDConstrain, i::Integer) -> Int
+    rank(::Type{<:IIDConstrain{T}}, i::Integer) where {T<:Tuple{Vararg{NamedContainer{Subscript}}}} -> Int
+
+Get the rank of the ith homogenous segment of the iid set (or the composite iid) on which the constrain act.
+"""
+@inline rank(iidc::IIDConstrain, i::Integer) = rank(typeof(iidc), i)
+@inline rank(::Type{<:IIDConstrain{T}}, i::Integer) where {T<:Tuple{Vararg{NamedContainer{Subscript}}}} = rank(fieldtype(fieldtype(T, i), 1))
+
+"""
+    match(iidc::IIDConstrain, iids::Tuple{Vararg{SimpleIID}}) -> Bool
+    match(iidc::IIDConstrain, ciid::CompositeIID) -> Bool
+
+Judge whether a composite iid matches the constrain.
+"""
+@inline Base.match(iidc::IIDConstrain, ciid::CompositeIID) = match(iidc, ciid.content)
+@generated function Base.match(iidc::IIDConstrain, iids::Tuple{Vararg{SimpleIID}})
+    length(iidc)==0 && return true
+    @assert rank(iidc)==fieldcount(iids) "match error: dismatched rank of iids and constrain."
+    exprs, count = [], 1
+    for i = 1:length(iidc)
+        start, stop = count, count+rank(iidc, i)-1
+        for field in fieldnames(fieldtype(fieldtype(iidc, :constrain), i))
+            field = QuoteNode(field)
+            paramvalue = Expr(:tuple, [:(getfield(iids[$j], $field)) for j = start:stop]...)
+            push!(exprs, :(match(getfield(iidc[$i], $field), $paramvalue)))
+        end
+        count = stop+1
+    end
+    return Expr(:call, :all, Expr(:tuple, exprs...))
+end
+
+"""
+    *(iidc₁::IIDConstrain, iidc₂::IIDConstrain) -> IIDConstrain
+
+Get the combination of two independent constrains on the composition of two iid sets (or two composite iids).
+"""
+@inline Base.:*(iidc₁::IIDConstrain, iidc₂::IIDConstrain) = IIDConstrain((iidc₁.constrain..., iidc₂.constrain...))
+
+"""
+    idtype(iidc::IIDConstrain)
+    idtype(::Type{<:IIDConstrain{T}}) where {T<:Tuple{Vararg{NamedContainer{Subscript}}}}
+
+Get the type of the id of an iid constrain.
+"""
+@inline idtype(iidc::IIDConstrain) = idtype(typeof(iidc))
+@generated function idtype(::Type{<:IIDConstrain{T}}) where {T<:Tuple{Vararg{NamedContainer{Subscript}}}}
+    exprs = []
+    for i = 1:fieldcount(T)
+        push!(exprs, Pair{UnitRange{Int}, NTuple{fieldcount(fieldtype(T, 1)), String}})
+    end
+    return Expr(:curly, :ConstrainID, Expr(:curly, :Tuple, exprs...))
+end
+
+"""
+    ConstrainID{T<:Tuple{Vararg{Pair{UnitRange{Int}, <:Tuple{Vararg{String}}}}}} <: SimpleID
+
+The id of an iid constrain.
+"""
+struct ConstrainID{T<:Tuple{Vararg{Pair{UnitRange{Int}, <:Tuple{Vararg{String}}}}}} <: SimpleID
+    reps::T
+end
+
+"""
+    ConstrainID(iidc::IIDConstrain)
+
+Construct the id of an iid constrain.
+"""
+@generated function ConstrainID(iidc::IIDConstrain)
+    exprs, count = [], 1
+    for i = 1:length(iidc)
+        reps = []
+        for field in fieldnames(fieldtype(fieldtype(iidc, :constrain), i))
+            field = QuoteNode(field)
+            push!(reps, :(getfield(getfield(iidc[$i], $field), :rep)))
+        end
+        push!(exprs, Expr(:call, :(=>), count:(count+rank(iidc, i)-1), Expr(:tuple, reps...)))
+        count += rank(iidc, i)
+    end
+    return Expr(:call, :ConstrainID, Expr(:tuple, exprs...))
+end
 
 """
     Hilbert{I<:Internal, P<:AbstractPID, M<:Function} <: CompositeDict{P, I}
@@ -449,14 +741,14 @@ Get the whole icoord of an operator.
 end
 
 """
-    Operators(opts::Operator...)
+    Operators(opts::AbstractOperator...)
 
 A set of operators.
 
-Type alias for `Elements{<:ID{AbstractOID}, <:Operator}`.
+Type alias for `Elements{<:ID{AbstractOID}, <:AbstractOperator}`.
 """
-const Operators{I<:ID{AbstractOID}, O<:Operator} = Elements{I, O}
-@inline Operators(opts::Operator...) = Elements(opts...)
+const Operators{I<:ID{AbstractOID}, O<:AbstractOperator} = Elements{I, O}
+@inline Operators(opts::AbstractOperator...) = Elements(opts...)
 
 """
     adjoint(opts::Operators) -> Operators
@@ -679,11 +971,11 @@ function reset!(table::Table, hilbert::Hilbert)
 end
 
 """
-    sequence(opt::Operator, table::AbstractDict) -> NTuple{rank(opt), Int}
+    sequence(opt::AbstractOperator, table::AbstractDict) -> NTuple{rank(opt), Int}
 
 Get the sequence of the oids of an operator according to a table.
 """
-@inline @generated function sequence(opt::Operator, table::AbstractDict{<:Any,Int})
+@inline @generated function sequence(opt::AbstractOperator, table::AbstractDict{<:Any,Int})
     return Expr(:tuple, [:(table[id(opt)[$i]]) for i = 1:rank(opt)]...)
 end
 
@@ -717,7 +1009,7 @@ const latexformats = Dict{Symbol, LaTeX}()
     latexformat(T::Type{<:AbstractOID}) -> LaTeX
     latexformat(T::Type{<:AbstractOID}, l::LaTeX) -> LaTeX
 
-Get/Set the LaTeX format for a subtype of `Operator`.
+Get/Set the LaTeX format for a subtype of `AbstractOID`.
 """
 @inline latexformat(T::Type{<:AbstractOID}) = latexformats[latexname(T)]
 @inline latexformat(T::Type{<:AbstractOID}, l::LaTeX) = latexformats[latexname(T)] = l
@@ -773,11 +1065,11 @@ LaTeX string representation of an oid.
 end
 
 """
-    repr(opt::Operator) -> String
+    repr(opt::AbstractOperator) -> String
 
 Get the string representation of an operator in the LaTeX format.
 """
-function Base.repr(opt::Operator)
+function Base.repr(opt::AbstractOperator)
     rank(opt)==0 && return replace(valuetolatextext(value(opt)), " "=>"")
     poses = Int[]
     push!(poses, 1)
@@ -833,11 +1125,11 @@ function Base.repr(opts::Operators)
 end
 
 """
-    show(io::IO, ::MIME"text/latex", opt::Operator)
+    show(io::IO, ::MIME"text/latex", opt::AbstractOperator)
 
 Show an operator.
 """
-Base.show(io::IO, ::MIME"text/latex", opt::Operator) = show(io, MIME"text/latex"(), latexstring(repr(opt)))
+Base.show(io::IO, ::MIME"text/latex", opt::AbstractOperator) = show(io, MIME"text/latex"(), latexstring(repr(opt)))
 
 """
     show(io::IO, ::MIME"text/latex", opts::Operators)
@@ -873,27 +1165,27 @@ Get the names of the boundary parameters.
 @inline Base.keys(::Type{<:Boundary{Names}}) where Names = Names
 
 """
-    (bound::Boundary)(operator::Operator) -> Operator
+    (bound::Boundary)(operator::AbstractOperator) -> AbstractOperator
 
 Get the boundary twisted operator.
 """
-@inline (bound::Boundary)(operator::Operator) = twist(operator, bound.vectors, bound.values)
+@inline (bound::Boundary)(operator::AbstractOperator) = twist(operator, bound.vectors, bound.values)
 
 """
-    twist(operator::Operator, vectors::AbstractVector{<:AbstractVector{<:Number}}, values::AbstractVector{<:Number}) -> Operator
+    twist(operator::AbstractOperator, vectors::AbstractVector{<:AbstractVector{<:Number}}, values::AbstractVector{<:Number}) -> AbstractOperator
 
 Twist an operator.
 """
-@inline function twist(operator::Operator, vectors::AbstractVector{<:AbstractVector{<:Number}}, values::AbstractVector{<:Number})
+@inline function twist(operator::AbstractOperator, vectors::AbstractVector{<:AbstractVector{<:Number}}, values::AbstractVector{<:Number})
     return replace(operator, operator.value*exp(1im*angle(operator.id, vectors, values)))
 end
 
 """
-    angle(bound::Boundary, operator::Operator) -> Number
+    angle(bound::Boundary, operator::AbstractOperator) -> Number
 
 Get the boundary twist phase of an operator.
 """
-@inline Base.angle(bound::Boundary, operator::Operator) = angle(operator.id, bound.vectors, bound.values)
+@inline Base.angle(bound::Boundary, operator::AbstractOperator) = angle(operator.id, bound.vectors, bound.values)
 
 """
     angle(id::ID{AbstractOID}, vectors::AbstractVector{<:AbstractVector{<:Number}}, values::AbstractVector{<:Number}) -> Number
@@ -923,7 +1215,7 @@ end
 Plain boundary condition without any twist.
 """
 const plain = Boundary{()}(Float[], SVector{0, Float}[])
-@inline Base.angle(::typeof(plain), operator::Operator) = 0
-@inline (::typeof(plain))(operator::Operator) = operator
+@inline Base.angle(::typeof(plain), operator::AbstractOperator) = 0
+@inline (::typeof(plain))(operator::AbstractOperator) = operator
 
 end #module

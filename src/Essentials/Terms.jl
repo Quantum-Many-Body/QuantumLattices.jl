@@ -2,376 +2,158 @@ module Terms
 
 using Printf: @printf, @sprintf
 using StaticArrays: SVector
-using MacroTools: @capture
-using ..Spatials: AbstractBond, Point, Bonds, AbstractLattice, acrossbonds, isintracell
-using ..DegreesOfFreedom: Hilbert, AbstractOID, oidtype, Operator, Operators, Table, Boundary, plain
-using ...Interfaces: add!
+using ..Spatials: AbstractBond, Point, AbstractPID, Bonds, AbstractLattice, acrossbonds, isintracell, pidtype
+using ..DegreesOfFreedom: SimpleIID, CompositeIID, IIDConstrain, ConstrainID, IIDSpace, CompositeInternal
+using ..DegreesOfFreedom: Hilbert, AbstractOID, OID, Index, oidtype, Operator, Operators, Table, Boundary, plain
+using ...Essentials: dtype
+using ...Interfaces: add!, dimension
 using ...Prerequisites: atol, rtol, decimaltostr
 using ...Prerequisites.Traits: rawtype, efficientoperations
-using ...Prerequisites.CompositeStructures: CompositeTuple, NamedContainer
+using ...Prerequisites.CompositeStructures: NamedContainer
 using ...Mathematics.AlgebraOverFields: SimpleID, ID, Element, Elements
 
 import ..DegreesOfFreedom: isHermitian
-import ...Interfaces: id, rank, expand, expand!, dimension
+import ...Interfaces: id, value, rank, expand, expand!
 import ...Essentials: kind, update!, reset!
-import ...Prerequisites.Traits: contentnames, getcontent
+import ...Prerequisites.Traits: parameternames, isparameterbound, contentnames, getcontent
 import ...Mathematics.AlgebraOverFields: idtype
 
-export Subscripts, @subscripts, @subscripts_str, SubID
-export Coupling, Couplings, @couplings, couplingcenters, couplingpoints, couplinginternals
+export AbstractCoupling, Coupling, Couplings, @couplings, couplingcenters, couplingpoints, couplinginternals
 export TermFunction, TermAmplitude, TermCouplings, TermModulate, Term, abbr, ismodulatable, otype
 export Parameters, GenOperators, AbstractGenerator, Generator
 
-const wildcard = Symbol("*")
-@inline nonconstrain(_...) = true
+"""
+    AbstractCoupling{V, I<:ID{SimpleID}} <: Element{V, I}
+
+The abstract coupling intra/inter interanl degrees of freedom at different lattice points.
+"""
+abstract type AbstractCoupling{V, I<:ID{SimpleID}} <: Element{V, I} end
+ID{SimpleIID}(coupling::AbstractCoupling) = id(coupling)
+IIDConstrain(coupling::AbstractCoupling) = IIDConstrain()
 
 """
-    Subscripts{DS, RS, OP<:Tuple, CP<:AbstractString, M<:Tuple{Vararg{Function}}, C<:Tuple{Vararg{Function}}} <: CompositeTuple{OP}
+    couplingcenters(coupling::AbstractCoupling, bond::AbstractBond, info::Val) -> NTuple{rank(coupling), Int}
 
-A subscript set of a certain internal degree of freedom.
+Get the acting centers of the coupling on a bond.
 """
-struct Subscripts{DS, RS, OP<:Tuple, CP<:Tuple, M<:Tuple{Vararg{Function}}, C<:Tuple{Vararg{Function}}} <: CompositeTuple{OP}
-    opattern::OP
-    cpattern::CP
-    mapping::M
-    constrain::C
-    function Subscripts{DS, RS}(opattern::Tuple, cpattern::Tuple, mapping::Tuple{Vararg{Function}}, constrain::Tuple{Vararg{Function}}) where {DS, RS}
-        @assert isa(DS, Tuple{Vararg{Int}}) && isa(RS, Tuple{Vararg{Int}}) "Subscripts error: wrong ranks and dimensions."
-        @assert length(DS)==length(RS)==length(cpattern)==length(mapping)==length(constrain) "Subscripts error: dismatched number of segments."
-        @assert sum(DS)==length(opattern) "Subscripts error: dismatched total dimension."
-        new{DS, RS, typeof(opattern), typeof(cpattern), typeof(mapping), typeof(constrain)}(opattern, cpattern, mapping, constrain)
-    end
-end
-@inline contentnames(::Type{<:Subscripts}) = (:contents, :cpattern, :mapping, :constrain)
-@inline getcontent(subscripts::Subscripts, ::Val{:contents}) = subscripts.opattern
-@inline function Base.:(==)(subs₁::Subscripts{DS₁}, subs₂::Subscripts{DS₂}) where {DS₁, DS₂}
-    return DS₁==DS₂ && subs₁.opattern==subs₂.opattern && subs₁.cpattern==subs₂.cpattern
-end
-@inline function Base.:isequal(subs₁::Subscripts{DS₁}, subs₂::Subscripts{DS₂}) where {DS₁, DS₂}
-    return isequal(DS₁, DS₂) && isequal(subs₁.opattern, subs₂.opattern) && isequal(subs₁.cpattern, subs₂.cpattern)
-end
-function Base.show(io::IO, subscripts::Subscripts)
-    segments = split(subscripts)
-    @printf io "["
-    for (i, segment) in enumerate(segments)
-        @printf io "%s" join(segment.opattern, " ")
-        i<length(segments) && @printf io "; "
-    end
-    @printf io "]"
-    count = 1
-    cpattern = String[]
-    for segment in segments
-        if segment.cpattern[1] == "nonconstrain"
-            push!(cpattern, ":")
-        else
-            count += 1
-            push!(cpattern, String(segment.cpattern[1]))
-        end
-    end
-    count>1 && @printf io "(%s)" join(cpattern, ", ")
-end
+@inline couplingcenters(coupling::AbstractCoupling, point::Point, ::Val) = ntuple(i->1, Val(rank(coupling)))
 
 """
-    Subscripts(N::Int)
-    Subscripts(opattern::Tuple{Vararg{Integer}})
-
-Construct a subscript set of a certain internal degree of freedom.
-"""
-@inline Subscripts(N::Int) = Subscripts(Val(N))
-function Subscripts(::Val{N}) where N
-    mapping = value::Int -> ntuple(i->value, Val(N))
-    opattern = ntuple(i->wildcard, Val(N))
-    return Subscripts{(N,), (1,)}(opattern, ("nonconstrain",), (mapping,), (nonconstrain,))
-end
-function Subscripts(opattern::Tuple{Vararg{Integer}})
-    ipattern = ()
-    mapping = ()->opattern
-    cpattern = "nonconstrain"
-    return Subscripts{(length(opattern),), (0,)}(opattern, (cpattern,), (mapping,), (nonconstrain,))
-end
-
-"""
-    @subscripts expr::Expr -> Subscripts
-
-Construct a subscript set from an opattern and optionally with a constrain.
-"""
-macro subscripts(expr::Expr)
-    return subscriptsexpr(expr)
-end
-function subscriptsexpr(expr::Expr)
-    if @capture(expr, [ops__;](cps__))
-        @assert length(ops)==length(cps) "@subscripts error: dismatched opattern and constrain."
-    elseif @capture(expr, op_(cp_))
-        ops, cps = [op], [cp]
-    elseif @capture(expr, [ops__;])
-        cps = [true for i = 1:length(ops)]
-    else
-        @capture(expr, op_)
-        ops, cps = [op], [true]
-    end
-    DS, RS, opattern, cpattern, mappings, constrains, fdefs = [], [], [], [], [], [], [], [], []
-    for (op, cp) in zip(ops, cps)
-        push!(DS, length(op.args))
-        append!(opattern, op.args)
-        ip = subscriptsipattern(op.args)
-        push!(RS, length(ip))
-        mapname = gensym("submap")
-        op = Expr(:tuple, op.args...)
-        push!(fdefs, :($mapname($(ip...)) = $op))
-        push!(mappings, mapname)
-        if isa(cp, Expr)
-            push!(cpattern, String(Symbol(cp)))
-            constrainname = gensym("subconstrain")
-            push!(fdefs, :($constrainname($(ip...)) = $cp))
-            push!(constrains, constrainname)
-        else
-            push!(cpattern, "nonconstrain")
-            push!(constrains, :nonconstrain)
-        end
-    end
-    DS, RS = Tuple(DS), Tuple(RS)
-    opattern, cpattern = Tuple(opattern), Tuple(cpattern)
-    mappings, constrains = Expr(:tuple, mappings...), Expr(:tuple, constrains...)
-    return Expr(:block, fdefs..., :(Subscripts{$DS, $RS}($opattern, $cpattern, $mappings, $constrains)))
-end
-function subscriptsipattern(opattern)
-    result = Symbol[]
-    for op in opattern
-        isa(op, Symbol) && op∉result && push!(result, op)
-    end
-    return result
-end
-
-"""
-    subscripts"..." -> Subscripts
-
-Construct a subscript set from a literal string.
-"""
-macro subscripts_str(str)
-    return subscriptsexpr(Meta.parse(str))
-end
-
-"""
-    dimension(subscripts::Subscripts) -> Int
-    dimension(::Type{<:Subscripts}) -> Int
-
-Get the total number of the whole variables of a subscript set.
-"""
-@inline dimension(subscripts::Subscripts) = dimension(typeof(subscripts))
-@inline dimension(::Type{<:Subscripts{DS}}) where DS = sum(DS)
-
-"""
-    dimension(subscripts::Subscripts, i::Int) -> Int
-    dimension(::Type{<:Subscripts}, i::Int) -> Int
-
-Get the total number of the whole variables of the ith segment of a subscript set.
-"""
-@inline dimension(subscripts::Subscripts, i::Int) = dimension(typeof(subscripts), i)
-@inline dimension(::Type{<:Subscripts{DS}}, i::Int) where DS = DS[i]
-
-"""
-    rank(subscripts::Subscripts) -> Int
-    rank(::Type{<:Subscripts}) -> Int
-
-Get the total number of the independent variables of a subscript set.
-"""
-@inline rank(subscripts::Subscripts) = rank(typeof(subscripts))
-@inline rank(::Type{<:Subscripts{DS, RS} where DS}) where RS = sum(RS)
-
-"""
-    rank(subscripts::Subscripts, i::Int) -> Int
-    rank(::Type{<:Subscripts}, i::Int) -> Int
-
-Get the number of the independent variables of the ith segment of a subscript set.
-"""
-@inline rank(subscripts::Subscripts, i::Int) = rank(typeof(subscripts), i)
-@inline rank(::Type{<:Subscripts{DS, RS} where DS}, i::Int) where RS = RS[i]
-
-"""
-    split(subscripts::Subscripts) -> Tuple{Vararg{Subscripts}}
-
-Split a subscript set into individual independent segments.
-"""
-@generated function Base.split(subscripts::Subscripts{DS, RS}) where {DS, RS}
-    exprs = []
-    count = 0
-    for i = 1:length(DS)
-        NDS, NRS = (DS[i],), (RS[i],)
-        opattern = Expr(:tuple, [:(subscripts[$j]) for j = (1+count):(DS[i]+count)]...)
-        push!(exprs, :(Subscripts{$NDS, $NRS}($opattern, (subscripts.cpattern[$i],), (subscripts.mapping[$i],), (subscripts.constrain[$i],))))
-        count += DS[i]
-    end
-    return Expr(:tuple, exprs...)
-end
-
-"""
-    (subscripts::Subscripts)(values::Tuple{Vararg{Int}}) -> NTuple{dimension(subscripts), Int}
-
-Construct a subscript set from an independent variable set.
-"""
-@generated function (subscripts::Subscripts)(values::Tuple{Vararg{Int}})
-    @assert rank(subscripts)==fieldcount(values) "subscripts error: dismatched rank and input arguments."
-    exprs = []
-    count = 1
-    for i = 1:fieldcount(fieldtype(subscripts, :mapping))
-        vs = [:(values[$j]) for j = count:(count+rank(subscripts, i)-1)]
-        push!(exprs, :(subscripts.mapping[$i]($(vs...))...))
-        count += rank(subscripts, i)
-    end
-    return Expr(:tuple, exprs...)
-end
-
-"""
-    isvalid(subscripts::Subscripts, values::Tuple{Vararg{Int}}) -> Bool
-
-Judge whether an independent variable set are valid to construct a subscript set.
-"""
-@generated function Base.isvalid(subscripts::Subscripts, values::Tuple{Vararg{Int}})
-    @assert rank(subscripts)==fieldcount(values) "subscripts error: dismatched rank and input arguments."
-    rank(subscripts)==0 && return true
-    count = rank(subscripts, 1)
-    vs = [:(values[$j]) for j = 1:count]
-    expr = :(subscripts.constrain[1]($(vs...)))
-    for i = 2:fieldcount(fieldtype(subscripts, :constrain))
-        vs = [:(values[$j]) for j = (count+1):(count+rank(subscripts, i))]
-        expr = Expr(:(&&), expr, :(subscripts.constrain[$i]($(vs...))))
-        count += rank(subscripts, i)
-    end
-    return expr
-end
-
-"""
-    *(subs₁::Subscripts, subs₂::Subscripts) -> Subscripts
-
-Get the multiplication between two subscript sets.
-"""
-@inline function Base.:*(subs₁::Subscripts{DS₁, RS₁}, subs₂::Subscripts{DS₂, RS₂}) where {DS₁, RS₁, DS₂, RS₂}
-    DS, RS = (DS₁..., DS₂...), (RS₁..., RS₂...)
-    opattern = (subs₁.opattern..., subs₂.opattern...)
-    cpattern = (subs₁.cpattern..., subs₂.cpattern...)
-    mapping = (subs₁.mapping..., subs₂.mapping...)
-    constrain = (subs₁.constrain..., subs₂.constrain...)
-    return Subscripts{DS, RS}(opattern, cpattern, mapping, constrain)
-end
-
-"""
-    expand(subscripts::Subscripts, dimensions::Tuple{Vararg{Int}}) -> SbExpand
-
-Expand a subscript set with the given variable ranges.
-"""
-function expand(subscripts::Subscripts, dimensions::Tuple{Vararg{Int}})
-    @assert dimension(subscripts)==length(dimensions) "expand error: dismatched input dimensions $dimensions."
-    dims, dcount, rcount = Vector{Int}(undef, rank(subscripts)), 0, 0
-    for (i, segment) in enumerate(split(subscripts))
-        opattern = segment.opattern
-        ipattern = subscriptsipattern(opattern)
-        for j = 1:length(opattern)
-            isa(opattern[j], Int) && @assert 0<opattern[j]<=dimensions[dcount+j] "expand error: opattern($opattern) out of range."
-        end
-        for j = 1:length(ipattern)
-            index, flag = 1, false
-            while !isnothing((index = findnext(isequal(ipattern[j]), opattern, index); index))
-                flag || (dims[rcount+j] = dimensions[dcount+index]; flag = true)
-                flag && @assert dimensions[dcount+index]==dims[rcount+j] "expand error: dismatched input dimensions."
-                index = index + 1
-            end
-        end
-        dcount = dcount + length(opattern)
-        rcount = rcount + length(ipattern)
-    end
-    return SbExpand(subscripts, NTuple{rank(subscripts), Int}(dims))
-end
-struct SbExpand{S<:Subscripts, D}
-    subscripts::S
-    candidates::CartesianIndices{D, NTuple{D, Base.OneTo{Int}}}
-    function SbExpand(subscripts::Subscripts, dims::NTuple{D, Int}) where D
-        @assert D==rank(subscripts) "SbExpand error: dismatched inputs."
-        new{typeof(subscripts), D}(subscripts, CartesianIndices(dims))
-    end
-end
-@inline Base.eltype(::Type{T}) where {T<:SbExpand} = NTuple{dimension(fieldtype(T, :subscripts)), Int}
-@inline Base.IteratorSize(::Type{<:SbExpand}) = Base.SizeUnknown()
-function Base.iterate(sbe::SbExpand, state::Int=1)
-    while state <= length(sbe.candidates)
-        values = Tuple(sbe.candidates[state])
-        isvalid(sbe.subscripts, values) && return (sbe.subscripts(values), state+1)
-        state = state + 1
-    end
-    return nothing
-end
-
-"""
-    SubID{O<:Tuple, C<:Tuple, S<:Tuple{Vararg{Int}}} <: SimpleID
-
-The id of a subscript set.
-"""
-struct SubID{O<:Tuple, C<:Tuple, S<:Tuple{Vararg{Int}}} <: SimpleID
-    opattern::O
-    cpattern::C
-    segment::S
-end
-@inline SubID(subscripts::Subscripts) = id(subscripts)
-
-"""
-    id(subs::Subscripts) -> SubID
-
-Get the id of a subscript set.
-"""
-@inline id(subscripts::Subscripts{DS}) where DS = SubID(subscripts.opattern, subscripts.cpattern, DS)
-
-"""
-    Coupling{V, I<:ID{SimpleID}} <: Element{V, I}
-
-The coupling intra/inter interanl degrees of freedom at different lattice points.
-"""
-abstract type Coupling{V, I<:ID{SimpleID}} <: Element{V, I} end
-
-"""
-    couplingcenters(coupling::Coupling, bond::AbstractBond, info::Val) -> NTuple{rank(coupling), Int}
-
-Get the centers of the coupling on a bond.
-"""
-@inline couplingcenters(coupling::Coupling, point::Point, ::Val) = ntuple(i->1, Val(rank(coupling)))
-
-"""
-    couplingpoints(coupling::Coupling, bond::AbstractBond, info::Val) -> NTuple{rank(coupling), eltype(bond)}
+    couplingpoints(coupling::AbstractCoupling, bond::AbstractBond, info::Val) -> NTuple{rank(coupling), eltype(bond)}
 
 Get the points where each order of the coupling acts on.
 """
-@inline function couplingpoints(coupling::Coupling, bond::AbstractBond, info::Val)
+@inline function couplingpoints(coupling::AbstractCoupling, bond::AbstractBond, info::Val)
     centers = couplingcenters(coupling, bond, info)
     return NTuple{rank(coupling), eltype(bond)}(bond[centers[i]] for i = 1:rank(coupling))
 end
 
 """
-    couplinginternals(coupling::Coupling, bond::AbstractBond, hilbert::Hilbert, info::Val) -> NTuple{rank(coupling), valtype(hilbert)}
+    couplinginternals(coupling::AbstractCoupling, bond::AbstractBond, hilbert::Hilbert, info::Val) -> NTuple{rank(coupling), SimpleInternal}
 
 Get the interanl spaces where each order of the coupling acts on.
 """
-@inline function couplinginternals(coupling::Coupling, bond::AbstractBond, hilbert::Hilbert, info::Val)
-    centers = couplingcenters(coupling, bond, info)
-    return NTuple{rank(coupling), valtype(hilbert)}(hilbert[bond[centers[i]].pid] for i = 1:rank(coupling))
+@inline @generated function couplinginternals(coupling::AbstractCoupling, bond::AbstractBond, hilbert::Hilbert, info::Val)
+    exprs = []
+    for i = 1:rank(coupling)
+        push!(exprs, :(filter(ID{SimpleIID}(coupling)[$i], hilbert[bond[centers[$i]].pid])))
+    end
+    return Expr(:block, :(centers = couplingcenters(coupling, bond, info)), Expr(:tuple, exprs...))
 end
 
 """
-    Couplings(cps::Coupling...)
+    expand(coupling::AbstractCoupling, bond::AbstractBond, hilbert::Hilbert, info::Val)
+
+Expand a coupling with the given bond and Hilbert space.
+"""
+function expand(coupling::AbstractCoupling, bond::AbstractBond, hilbert::Hilbert, info::Val)
+    points = couplingpoints(coupling, bond, info)
+    internals = couplinginternals(coupling, bond, hilbert, info)
+    @assert rank(coupling)==length(points)==length(internals) "expand error: dismatched rank."
+    return CExpand(value(coupling), points, IIDSpace(CompositeIID(ID{SimpleIID}(coupling)), CompositeInternal(internals), info), IIDConstrain(coupling))
+end
+struct CExpand{V, N, P<:AbstractPID, SV<:SVector, S<:IIDSpace, C<:IIDConstrain}
+    value::V
+    pids::NTuple{N, P}
+    rcoords::NTuple{N, SV}
+    icoords::NTuple{N, SV}
+    iidspace::S
+    constrain::C
+end
+function CExpand(value, points::NTuple{N, P}, iidspace::IIDSpace, constrain::IIDConstrain) where {N, P<:Point}
+    pids = NTuple{N, pidtype(P)}(points[i].pid for i = 1:N)
+    rcoords = NTuple{N, SVector{dimension(P), dtype(P)}}(points[i].rcoord for i = 1:N)
+    icoords = NTuple{N, SVector{dimension(P), dtype(P)}}(points[i].icoord for i = 1:N)
+    return CExpand(value, pids, rcoords, icoords, iidspace, constrain)
+end
+@inline Base.eltype(ex::CExpand) = eltype(typeof(ex))
+@inline @generated function Base.eltype(::Type{<:CExpand{V, N, P, SV, S}}) where {V, N, P<:AbstractPID, SV<:SVector, S<:IIDSpace}
+    IIDS = fieldtypes(fieldtype(eltype(S), :content))
+    return Tuple{V, Tuple{[OID{Index{P, IIDS[i]}, SV} for i = 1:N]...}}
+end
+@inline Base.IteratorSize(::Type{<:CExpand}) = Base.SizeUnknown()
+function Base.iterate(ex::CExpand, state=iterate(ex.iidspace))
+    result = nothing
+    while !isnothing(state)
+        ciid, state = state
+        if match(ex.constrain, ciid)
+            result = (ex.value, ID(OID, ID(Index, ex.pids, ciid.content), ex.rcoords, ex.icoords)), iterate(ex.iidspace, state)
+            break
+        else
+            state = iterate(ex.iidspace, state)
+        end
+    end
+    return result
+end
+
+"""
+    Coupling{V, I<:ID{SimpleIID}, C<:IIDConstrain, CI<:ConstrainID} <: AbstractCoupling{V, Tuple{CompositeIID{I}, CI}}
+
+The coupling intra/inter interanl degrees of freedom at different lattice points.
+"""
+struct Coupling{V, I<:ID{SimpleIID}, C<:IIDConstrain, CI<:ConstrainID} <: AbstractCoupling{V, Tuple{CompositeIID{I}, CI}}
+    value::V
+    cid::I
+    constrain::C
+    function Coupling(value::Number, cid::ID{SimpleIID}, constrain::IIDConstrain)
+        new{typeof(value), typeof(cid), typeof(constrain), idtype(constrain)}(value, cid, constrain)
+    end
+end
+@inline parameternames(::Type{<:Coupling}) = (:value, :cid, :constrain, :constrainid)
+@inline isparameterbound(::Type{<:Coupling}, ::Val{:cid}, ::Type{I}) where {I<:ID{SimpleIID}} = !isconcretetype(I)
+@inline isparameterbound(::Type{<:Coupling}, ::Val{:constrain}, ::Type{C}) where {C<:IIDConstrain} = !isconcretetype(C)
+@inline isparameterbound(::Type{<:Coupling}, ::Val{:constrainid}, ::Type{CI}) where {CI<:ConstrainID} = !isconcretetype(CI)
+@inline contentnames(::Type{<:Coupling}) = (:value, :id, :constrain)
+@inline getcontent(coupling::Coupling, ::Val{:id}) = ID(CompositeIID(coupling.cid), ConstrainID(coupling.constrain))
+@inline rank(::Type{<:Coupling{V, I} where V}) where {I<:ID{SimpleIID}} = fieldcount(I)
+@inline Coupling(value::Number, id::Tuple{CompositeIID, ConstrainID}, constrain::IIDConstrain) = Coupling(value, first(id).content, constrain)
+@inline ID{SimpleIID}(coupling::Coupling) = coupling.cid
+@inline IIDConstrain(coupling::Coupling) = coupling.constrain
+
+"""
+    *(cp₁::Coupling, cp₂::Coupling) -> Coupling
+
+Get the multiplication between two couplings.
+"""
+@inline Base.:*(cp₁::Coupling, cp₂::Coupling) = Coupling(cp₁.value*cp₂.value, cp₁.cid*cp₂.cid, cp₁.constrain*cp₂.constrain)
+
+"""
+    Couplings(cps::AbstractCoupling...)
 
 A pack of couplings intra/inter interanl degrees of freedom at different lattice points.
 
-Alias for `Elements{<:ID{SimpleID}, <:Coupling}`.
+Alias for `Elements{<:ID{SimpleID}, <:AbstractCoupling}`.
 """
-const Couplings{I<:ID{SimpleID}, C<:Coupling} = Elements{I, C}
-@inline Couplings(cps::Coupling...) = Elements(cps...)
+const Couplings{I<:ID{SimpleID}, C<:AbstractCoupling} = Elements{I, C}
+@inline Couplings(cps::AbstractCoupling...) = Elements(cps...)
+@inline Couplings(cps::Couplings) = cps
 
 """
     @couplings cps -> Couplings
 
 Convert an expression/literal to a set of couplings.
 """
-macro couplings(cps)
-    result = @eval(__module__, $cps)
-    return isa(result, Coupling) ? Couplings(result) : isa(result, Couplings) ? result : error("@couplings error: inputs contain strangers that are not coupling/couplings.")
-end
+macro couplings(cps) :(Couplings($(esc(cps)))) end
 
 """
     TermFunction <: Function
@@ -395,17 +177,13 @@ end
 @inline (termamplitude::TermAmplitude{<:Function})(args...; kwargs...) = termamplitude.amplitude(args...; kwargs...)
 
 """
-    TermCouplings(coupling::Coupling)
-    TermCouplings(couplings::Couplings)
-    TermCouplings(couplings::Function)
+    TermCouplings(couplings::Union{Couplings, Function})
 
 The function for the couplings of a term.
 """
 struct TermCouplings{C<:Union{Function, Couplings}} <: TermFunction
     couplings::C
-    TermCouplings(coupling::Coupling) = new{Couplings{coupling|>idtype, coupling|>typeof}}(Couplings(coupling))
-    TermCouplings(couplings::Couplings) = new{couplings|>typeof}(couplings)
-    TermCouplings(couplings::Function) = new{couplings|>typeof}(couplings)
+    TermCouplings(couplings::Union{Couplings, Function}) = new{couplings|>typeof}(couplings)
 end
 @inline (termcouplings::TermCouplings{<:Couplings})(args...; kwargs...) = termcouplings.couplings
 @inline (termcouplings::TermCouplings{<:Function})(args...; kwargs...) = termcouplings.couplings(args...; kwargs...)
@@ -441,6 +219,7 @@ mutable struct Term{K, R, I, V, B, C<:TermCouplings, A<:TermAmplitude, M<:TermMo
     factor::V
     function Term{K, R, I}(value, bondkind, couplings::TermCouplings, amplitude::TermAmplitude, modulate::TermModulate, factor) where {K, R, I}
         @assert isa(K, Symbol) "Term error: kind must be a Symbol."
+        @assert isa(R, Integer) "Term error: rank must be an integer."
         @assert isa(I, Symbol) "Term error: id must be a Symbol."
         V, B, C, A, M = typeof(value), typeof(bondkind), typeof(couplings), typeof(amplitude), typeof(modulate)
         new{K, R, I, V, B, C, A, M}(value, bondkind, couplings, amplitude, modulate, factor)
@@ -453,9 +232,8 @@ function Base.show(io::IO, term::Term)
 end
 
 """
-    Term{K, R, I}(value, bondkind, couplings::TermCouplings, amplitude::TermAmplitude, modulate::TermModulate, factor) where {K, R, I}
     Term{K, R}(id::Symbol, value, bondkind;
-        couplings::Union{Function, Coupling, Couplings, TermCouplings},
+        couplings::Union{Function, TermCouplings, Couplings},
         amplitude::Union{Function, TermAmplitude, Nothing}=nothing,
         modulate::Union{Function, TermModulate, Bool}=false
         ) where {K, R}
@@ -463,7 +241,7 @@ end
 Construct a term.
 """
 function Term{K, R}(id::Symbol, value, bondkind;
-        couplings::Union{Function, Coupling, Couplings, TermCouplings},
+        couplings::Union{Function, TermCouplings, Couplings},
         amplitude::Union{Function, TermAmplitude, Nothing}=nothing,
         modulate::Union{Function, TermModulate, Bool}=false
         ) where {K, R}
@@ -545,7 +323,7 @@ function Base.repr(term::Term, bond::AbstractBond, hilbert::Hilbert)
         value = term.value * term.amplitude(bond) * term.factor
         if abs(value) ≠ 0
             for coupling in values(term.couplings(bond))
-                length(expand(coupling, bond, hilbert, term|>kind|>Val))>0 &&  push!(cache, @sprintf "%s: %s" abbr(term) repr(value*coupling))
+                isnothing(iterate(expand(coupling, bond, hilbert, term|>kind|>Val))) || push!(cache, @sprintf "%s: %s" abbr(term) repr(value*coupling))
             end
         end
     end
@@ -575,7 +353,7 @@ Allowed arithmetic operations for a term.
 @inline Base.:-(term::Term) = term * (-1)
 @inline Base.:*(term::Term, factor) = factor * term
 @inline Base.:*(factor, term::Term) = replace(term, factor=factor*term.factor)
-@inline Base.:/(term::Term, factor) = term * (1/factor)
+@inline Base.:/(term::Term, factor) = term * (one(term.value)/factor)
 
 """
     one(term::Term) -> Term

@@ -3,8 +3,9 @@ using StaticArrays: SVector
 using QuantumLattices.Essentials.SpinPackage
 using QuantumLattices.Essentials.SpinPackage: heisenbergxyz, heisenbergpmz, gamma, dm
 using QuantumLattices.Essentials.Spatials: AbstractPID, PID, CPID, Point, Bond
-using QuantumLattices.Essentials.DegreesOfFreedom: OID, AbstractCompositeOID, isHermitian, Hilbert, Index, Operator, Operators, script, latexname
-using QuantumLattices.Essentials.Terms: Couplings, @subscripts_str, abbr
+using QuantumLattices.Essentials.DegreesOfFreedom: IIDSpace, @subscript_str, Index, OID, AbstractCompositeOID, Hilbert
+using QuantumLattices.Essentials.DegreesOfFreedom: isHermitian, Operator, Operators, script, latexname
+using QuantumLattices.Essentials.Terms: Couplings, abbr
 using QuantumLattices.Interfaces: expand, permute, rank
 using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Mathematics.Combinatorics: Permutations
@@ -51,6 +52,8 @@ end
         SID{1}(1, 'x'), SID{1}(2, 'x'), SID{1}(1, 'y'), SID{1}(2, 'y'), SID{1}(1, 'z'), SID{1}(2, 'z'),
         SID{1}(1, '+'), SID{1}(2, '+'), SID{1}(1, '-'), SID{1}(2, '-')
     ]
+    @test shape(IIDSpace(SID{1//2}(:a, 'x'), Spin{1//2}(2))) == (1:2, 1:1)
+    @test shape(IIDSpace(SID{1//2}(2, 'y'), Spin{1//2}(2))) == (2:2, 2:2)
 end
 
 @testset "latex" begin
@@ -65,15 +68,15 @@ end
 
 @testset "SOperator" begin
     opt = Operator(1.0, ID(
-        OID(Index(PID(1), SID{1//2}(1, '+')), [0.0, 0.0], [0.0, 0.0]),
-        OID(Index(PID(1), SID{1//2}(1, '-')), [0.0, 0.0], [0.0, 0.0])
+        OID(Index(PID(1), SID{1//2}('+')), [0.0, 0.0], [0.0, 0.0]),
+        OID(Index(PID(1), SID{1//2}('-')), [0.0, 0.0], [0.0, 0.0])
         ))
     @test opt' == Operator(1.0, ID(
-        OID(Index(PID(1), SID{1//2}(1, '+')), [0.0, 0.0], [0.0, 0.0]),
-        OID(Index(PID(1), SID{1//2}(1, '-')), [0.0, 0.0], [0.0, 0.0])
+        OID(Index(PID(1), SID{1//2}('+')), [0.0, 0.0], [0.0, 0.0]),
+        OID(Index(PID(1), SID{1//2}('-')), [0.0, 0.0], [0.0, 0.0])
         ))
     @test isHermitian(opt)
-    @test repr(opt) == "S^{+}_{1, 1}S^{-}_{1, 1}"
+    @test repr(opt) == "S^{+}_{1}S^{-}_{1}"
 end
 
 @testset "permute" begin
@@ -97,32 +100,27 @@ end
     @test string(SpinCoupling(1.0, ('-', '+'), orbitals=(1, 2))) == "SpinCoupling(value=1.0, tags=S⁻S⁺, orbitals=[1 2])"
     @test repr(SpinCoupling(2.0, ('x', 'y'))) == "2.0 SˣSʸ"
 
-    sc₁ = SpinCoupling(1.5, ('+', '-'), orbitals=subscripts"[x y](x > y)")
-    sc₂ = SpinCoupling(2.0, ('+', '-'), orbitals=subscripts"[x y](x < y)")
-    @test repr(sc₁) == "1.5 S⁺S⁻ ob[x y](x > y)"
-    @test repr(sc₂) == "2.0 S⁺S⁻ ob[x y](x < y)"
+    sc₁ = SpinCoupling(1.5, ('+', '-'), orbitals=subscript"[α β](α > β)")
+    sc₂ = SpinCoupling(2.0, ('+', '-'), orbitals=subscript"[α β](α < β)")
+    @test repr(sc₁) == "1.5 S⁺S⁻ ob[α β](α > β)"
+    @test repr(sc₂) == "2.0 S⁺S⁻ ob[α β](α < β)"
 
     sc = sc₁ * sc₂
-    @test repr(sc) == "3.0 S⁺S⁻S⁺S⁻ ob[x y; x y](x > y, x < y)"
+    @test repr(sc) == "3.0 S⁺S⁻S⁺S⁻ ob[α β](α > β)×[α β](α < β)"
 
     sc = SpinCoupling(2.0, ('+', '-'), orbitals=(1, 2))
     bond = Bond(1, Point(CPID(1, 2), [0.5], [0.0]), Point(CPID(1, 1), [0.0], [0.0]))
     hilbert = Hilbert(pid=>Spin{1}(norbital=2) for pid in [bond.epoint.pid, bond.spoint.pid])
     ex = expand(sc, bond, hilbert, Val(:SpinTerm))
-    @test shape(ex) == (1:1,)
-    @test ndimshape(ex) == ndimshape(typeof(ex)) == 1
-    @test eltype(ex) == Tuple{Float, ID{OID{Index{CPID{Int}, SID{1}}, SVector{1, Float}}, 2}}
     @test collect(ex) == [(2.0, ID(
         OID(Index(CPID(1, 1), SID{1}(1, '+')), [0.0], [0.0]),
         OID(Index(CPID(1, 2), SID{1}(2, '-')), [0.5], [0.0])
         ))]
 
-    sc = SpinCoupling(2.0, ('+', '-', '+', '-'), orbitals=subscripts"[α α β β](α < β)")
+    sc = SpinCoupling(2.0, ('+', '-', '+', '-'), orbitals=subscript"[α α β β](α < β)")
     point = Point(PID(1), [0.0], [0.0])
     hilbert = Hilbert(point.pid=>Spin{1}(norbital=3))
     ex = expand(sc, point, hilbert, Val(:info))
-    @test eltype(ex) == Tuple{Float, ID{OID{Index{PID, SID{1}}, SVector{1, Float}}, 4}}
-    @test shape(ex) == (1:3,)
     @test collect(ex) == [
         (2.0, ID(OID(Index(PID(1), SID{1}(1, '+')), [0.0], [0.0]),
                  OID(Index(PID(1), SID{1}(1, '-')), [0.0], [0.0]),
@@ -157,9 +155,9 @@ end
     @test ising"y" == Couplings(SpinCoupling(1, ('y', 'y')))
     @test ising"z" == Couplings(SpinCoupling(1, ('z', 'z')))
 
-    @test ising"x ob[α β](α < β)" == Couplings(SpinCoupling(1, ('x', 'x'), orbitals=subscripts"[α β](α < β)"))
-    @test ising"y ob[α β](α < β)" == Couplings(SpinCoupling(1, ('y', 'y'), orbitals=subscripts"[α β](α < β)"))
-    @test ising"z ob[α β](α < β)" == Couplings(SpinCoupling(1, ('z', 'z'), orbitals=subscripts"[α β](α < β)"))
+    @test ising"x ob[α β](α < β)" == Couplings(SpinCoupling(1, ('x', 'x'), orbitals=subscript"[α β](α < β)"))
+    @test ising"y ob[α β](α < β)" == Couplings(SpinCoupling(1, ('y', 'y'), orbitals=subscript"[α β](α < β)"))
+    @test ising"z ob[α β](α < β)" == Couplings(SpinCoupling(1, ('z', 'z'), orbitals=subscript"[α β](α < β)"))
 end
 
 @testset "gamma" begin
