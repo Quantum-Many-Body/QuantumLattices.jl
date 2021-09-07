@@ -104,6 +104,7 @@ end
 end
 @inline function shape(iidspace::IIDSpace{<:Union{SID{wildcard, Int}, SID{S, Int}}, Spin{S}}) where S
     orbital, tag = iidspace.iid.orbital, sidseqmap[iidspace.iid.tag]
+    @assert orbital<iidspace.internal.norbital+1 "shape error: orbital out of range."
     return (orbital:orbital, tag:tag)
 end
 
