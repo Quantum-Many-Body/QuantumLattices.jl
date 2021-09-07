@@ -63,7 +63,7 @@ end
     @test latexname(AbstractCompositeOID{<:Index{<:AbstractPID, <:SID}}) == Symbol("AbstractCompositeOID{Index{AbstractPID, SID}}")
 end
 
-@testset "SOperator" begin
+@testset "SpinOperator" begin
     opt = Operator(1.0, ID(
         OID(Index(PID(1), SID{1//2}('+')), [0.0, 0.0], [0.0, 0.0]),
         OID(Index(PID(1), SID{1//2}('-')), [0.0, 0.0], [0.0, 0.0])
@@ -197,8 +197,8 @@ end
         Operator(1.5, ID(OID(Index(PID(1), SID{1//2}(1, 'z')), [0.5, 0.5], [0.0, 0.0]))),
         Operator(1.5, ID(OID(Index(PID(1), SID{1//2}(2, 'z')), [0.5, 0.5], [0.0, 0.0])))
     )
-    @test term|>abbr == :sp
-    @test term|>isHermitian == true
+    @test term|>abbr == term|>typeof|>abbr == :sp
+    @test term|>isHermitian == term|>typeof|>isHermitian == true
     @test expand(term, point, hilbert) == operators
 
     bond = Bond(1, Point(CPID('a', 1), (0.0, 0.0), (0.0, 0.0)), Point(CPID('b', 1), (0.5, 0.5), (0.0, 0.0)))

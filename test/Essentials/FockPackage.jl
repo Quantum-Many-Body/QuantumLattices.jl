@@ -294,8 +294,8 @@ end
         Operator(1.5, ID(OID(Index(CPID('b', 2), FID{:f}(1, 1, 2)), [0.0, 0.0], [0.0, 0.0]), OID(Index(CPID('a', 1), FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]))),
         Operator(1.5, ID(OID(Index(CPID('b', 2), FID{:f}(1, 2, 2)), [0.0, 0.0], [0.0, 0.0]), OID(Index(CPID('a', 1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])))
     )
-    @test term|>abbr == :hp
-    @test term|>isHermitian == false
+    @test term|>abbr == term|>typeof|>abbr == :hp
+    @test term|>isHermitian == term|>typeof|>isHermitian == false
     @test expand(term, bond, hilbert, true) == operators
     @test expand(term, bond, hilbert, false) == operators+operators'
 end
@@ -308,8 +308,8 @@ end
         Operator(-1.5, ID(OID(Index(PID(2), FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]))),
         Operator(+1.5, ID(OID(Index(PID(1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(2), FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0])))
     )
-    @test term|>abbr == :pr
-    @test term|>isHermitian == false
+    @test term|>abbr == term|>typeof|>abbr == :pr
+    @test term|>isHermitian == term|>typeof|>isHermitian == false
     @test expand(term, bond, hilbert, true) == operators
     @test expand(term, bond, hilbert, false) == operators+operators'
 
@@ -320,7 +320,7 @@ end
         Operator(+1.5, ID(OID(Index(CPID('a', 1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]), OID(Index(CPID('a', 1), FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]))),
         Operator(-1.5, ID(OID(Index(CPID('a', 1), FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]), OID(Index(CPID('a', 1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])))
     )
-    @test term|>abbr == :pr
+    @test term|>abbr == term|>typeof|>abbr == :pr
     @test expand(term, point, hilbert, true) == operators
     @test expand(term, point, hilbert, false) == operators+operators'
 end
@@ -343,8 +343,8 @@ end
             OID(Index(PID(1), FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0])
             ))
     )
-    @test term|>abbr == :hb
-    @test term|>isHermitian == true
+    @test term|>abbr == term|>typeof|>abbr == :hb
+    @test term|>isHermitian == term|>typeof|>isHermitian == true
     @test expand(term, point, hilbert, true) == operators
     @test expand(term, point, hilbert, false) == operators*2
 end
@@ -367,8 +367,8 @@ end
             OID(Index(PID(1), FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0])
             ))
     )
-    @test term|>abbr == :nons
-    @test term|>isHermitian == true
+    @test term|>abbr == term|>typeof|>abbr == :nons
+    @test term|>isHermitian == term|>typeof|>isHermitian == true
     @test expand(term, point, hilbert, true) == operators
     @test expand(term, point, hilbert, false) == operators*2
 end
@@ -391,8 +391,8 @@ end
             OID(Index(PID(1), FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0])
             ))
     )
-    @test term|>abbr == :noes
-    @test term|>isHermitian == true
+    @test term|>abbr == term|>typeof|>abbr == :noes
+    @test term|>isHermitian == term|>typeof|>isHermitian == true
     @test expand(term, point, hilbert, true) == operators
     @test expand(term, point, hilbert, false) == operators*2
 end
@@ -409,8 +409,8 @@ end
             OID(Index(PID(1), FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0])
             ))
     )
-    @test term|>abbr == :sf
-    @test term|>isHermitian == false
+    @test term|>abbr == term|>typeof|>abbr == :sf
+    @test term|>isHermitian == term|>typeof|>isHermitian == false
     @test expand(term, point, hilbert, true) == operators
     @test expand(term, point, hilbert, false) == operators+operators'
 end
@@ -427,8 +427,8 @@ end
             OID(Index(PID(1), FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0])
             ))
     )
-    @test term|>abbr == :ph
-    @test term|>isHermitian == false
+    @test term|>abbr == term|>typeof|>abbr == :ph
+    @test term|>isHermitian == term|>typeof|>isHermitian == false
     @test expand(term, point, hilbert, true) == operators
     @test expand(term, point, hilbert, false) == operators+operators'
 end
@@ -464,8 +464,8 @@ end
             OID(Index(PID(1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])
             ))
     )
-    @test term|>abbr == :cl
-    @test isnothing(term|>isHermitian)
+    @test term|>abbr == term|>typeof|>abbr == :cl
+    @test isnothing(term|>isHermitian) && isnothing(term|>typeof|>isHermitian)
     @test expand(term, bond, hilbert, true) == operators
     @test expand(term, bond, hilbert, false) == operators+operators'
 
@@ -496,7 +496,7 @@ end
             OID(Index(PID(1), FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0])
             ))
     )
-    @test term|>abbr == :cl
+    @test term|>abbr == term|>typeof|>abbr == :cl
     @test expand(term, bond, hilbert, true) == operators
     @test expand(term, bond, hilbert, false) == operators+operators'
 end

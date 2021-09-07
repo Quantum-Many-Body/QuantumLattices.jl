@@ -147,7 +147,7 @@ const usualspinindextotuple = OIDToTuple(:site, :orbital)
 """
     permute(id₁::OID{<:Index{<:AbstractPID, <:SID}}, id₂::OID{<:Index{<:AbstractPID, <:SID}}) -> Tuple{Vararg{Operator}}
 
-Permute two spin oid and get the result.
+Permute two spin oids and get the result.
 """
 function permute(id₁::OID{<:Index{<:AbstractPID, <:SID}}, id₂::OID{<:Index{<:AbstractPID, <:SID}})
     @assert id₁.index≠id₂.index || id₁.rcoord≠id₂.rcoord || id₁.icoord≠id₂.icoord "permute error: permuted ids should not be equal to each other."
@@ -190,7 +190,7 @@ end
 
 Spin coupling.
 
-Type alias for "Coupling{V, I<:ID{SID}, C<:IIDConstrain, CI<:ConstrainID}".
+Type alias for `Coupling{V, I<:ID{SID}, C<:IIDConstrain, CI<:ConstrainID}`.
 """
 const SpinCoupling{V, I<:ID{SID}, C<:IIDConstrain, CI<:ConstrainID} = Coupling{V, I, C, CI}
 @inline function SpinCoupling(value::Number, tags::NTuple{N, Char}, orbitals::Subscript{<:NTuple{N, Union{Int, Symbol}}}) where N
@@ -211,7 +211,7 @@ end
 """
     SpinCoupling(value::Number, tags::NTuple{N, Char}; orbitals::Union{NTuple{N, Int}, Subscript}=Subscript(N)) where N
 
-Spin coupling.
+Construct a spin coupling.
 """
 function SpinCoupling(value::Number, tags::NTuple{N, Char}; orbitals::Union{NTuple{N, Int}, Subscript}=Subscript(N)) where N
     isa(orbitals, Subscript) || (orbitals = Subscript(orbitals))

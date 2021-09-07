@@ -205,7 +205,7 @@ end
 """
     permute(id₁::OID{<:Index{<:AbstractPID, <:FID{:f}}}, id₂::OID{<:Index{<:AbstractPID, <:FID{:f}}}) -> Tuple{Vararg{Operator}}
 
-Permute two fermionic oid and get the result.
+Permute two fermionic oids and get the result.
 """
 function permute(id₁::OID{<:Index{<:AbstractPID, <:FID{:f}}}, id₂::OID{<:Index{<:AbstractPID, <:FID{:f}}})
     @assert id₁.index≠id₂.index || id₁.rcoord≠id₂.rcoord || id₁.icoord≠id₂.icoord "permute error: permuted ids should not be equal to each other."
@@ -229,7 +229,7 @@ end
 """
     permute(id₁::OID{<:Index{<:AbstractPID, <:FID{:b}}}, id₂::OID{<:Index{<:AbstractPID, <:FID{:b}}}) -> Tuple{Vararg{Operator}}
 
-Permute two bosonic oid and get the result.
+Permute two bosonic oids and get the result.
 """
 function permute(id₁::OID{<:Index{<:AbstractPID, <:FID{:b}}}, id₂::OID{<:Index{<:AbstractPID, <:FID{:b}}})
     @assert id₁.index≠id₂.index || id₁.rcoord≠id₂.rcoord || id₁.icoord≠id₂.icoord "permute error: permuted ids should not be equal to each other."
@@ -253,7 +253,7 @@ end
 
 Fock coupling.
 
-Type alias for "Coupling{V, I<:ID{FID}, C<:IIDConstrain, CI<:ConstrainID}."
+Type alias for `Coupling{V, I<:ID{FID}, C<:IIDConstrain, CI<:ConstrainID}`.
 """
 const FockCoupling{V, I<:ID{FID}, C<:IIDConstrain, CI<:ConstrainID} = Coupling{V, I, C, CI}
 function FockCoupling(value::Number,
@@ -289,6 +289,8 @@ end
         spins::Union{NTuple{N, Int}, Subscript}=Subscript(N),
         nambus::Union{NTuple{N, Int}, NTuple{N, Symbol}}=ntuple(i->wildcard, Val(N))
         ) where N
+
+Construct a Fock coupling.
 """
 function FockCoupling{N}(value::Number=1;
         orbitals::Union{NTuple{N, Int}, Subscript}=Subscript(N),
