@@ -38,20 +38,20 @@ julia&gt; Fock{:b}(norbital=2, nspin=1, nnambu=1)
  FID{:b}(2, 1, 0)</code></pre><p>As can be seen, a <a href="../../../man/Essentials/FockPackage/#QuantumLattices.Essentials.FockPackage.Fock"><code>Fock</code></a> instance behaves like a vector (because the parent type <a href="../../../man/Essentials/DegreesOfFreedom/#QuantumLattices.Essentials.DegreesOfFreedom.Internal"><code>Internal</code></a> is a subtype of <code>AbstractVector</code>), and its iteration just generates all the allowed <a href="../../../man/Essentials/FockPackage/#QuantumLattices.Essentials.FockPackage.FID"><code>FID</code></a> instances on its associated spatial point:</p><pre><code class="language-julia-repl hljs">julia&gt; fck = Fock{:f}(norbital=2, nspin=1, nnambu=2);
 
 julia&gt; fck |&gt; typeof |&gt; eltype
-FID{:f}
+FID{:f, Int64, Int64, Int64}
 
 julia&gt; fck |&gt; length
 4
 
 julia&gt; [fck[1], fck[2], fck[3], fck[4]]
-4-element Vector{FID{:f}}:
+4-element Vector{FID{:f, Int64, Int64, Int64}}:
  FID{:f}(1, 1, 1)
  FID{:f}(2, 1, 1)
  FID{:f}(1, 1, 2)
  FID{:f}(2, 1, 2)
 
 julia&gt; fck |&gt; collect
-4-element Vector{FID{:f}}:
+4-element Vector{FID{:f, Int64, Int64, Int64}}:
  FID{:f}(1, 1, 1)
  FID{:f}(2, 1, 1)
  FID{:f}(1, 1, 2)
@@ -128,13 +128,13 @@ julia&gt; Spin{1}(norbital=1)
  SID{1}(1, &#39;-&#39;)</code></pre><p>Similar to <a href="../../../man/Essentials/FockPackage/#QuantumLattices.Essentials.FockPackage.Fock"><code>Fock</code></a>, a <a href="../../../man/Essentials/SpinPackage/#QuantumLattices.Essentials.SpinPackage.Spin"><code>Spin</code></a> instance behaves like a vector whose iteration generates all the allowed <a href="../../../man/Essentials/SpinPackage/#QuantumLattices.Essentials.SpinPackage.SID"><code>SID</code></a> instances on its associated spatial point:</p><pre><code class="language-julia-repl hljs">julia&gt; sp = Spin{1}(norbital=1);
 
 julia&gt; sp |&gt; typeof |&gt; eltype
-SID{1}
+SID{1, Int64}
 
 julia&gt; sp |&gt; length
 5
 
 julia&gt; [sp[1], sp[2], sp[3], sp[4], sp[5]]
-5-element Vector{SID{1}}:
+5-element Vector{SID{1, Int64}}:
  SID{1}(1, &#39;x&#39;)
  SID{1}(1, &#39;y&#39;)
  SID{1}(1, &#39;z&#39;)
@@ -142,9 +142,9 @@ julia&gt; [sp[1], sp[2], sp[3], sp[4], sp[5]]
  SID{1}(1, &#39;-&#39;)
 
 julia&gt; sp |&gt; collect
-5-element Vector{SID{1}}:
+5-element Vector{SID{1, Int64}}:
  SID{1}(1, &#39;x&#39;)
  SID{1}(1, &#39;y&#39;)
  SID{1}(1, &#39;z&#39;)
  SID{1}(1, &#39;+&#39;)
- SID{1}(1, &#39;-&#39;)</code></pre><p>It is noted that a <a href="../../../man/Essentials/SpinPackage/#QuantumLattices.Essentials.SpinPackage.Spin"><code>Spin</code></a> instance generates <a href="../../../man/Essentials/SpinPackage/#QuantumLattices.Essentials.SpinPackage.SID"><code>SID</code></a> instances corresponding to not only <span>$S^x$</span>, <span>$S^y$</span> and <span>$S^z$</span>,  but also <span>$S^+$</span> and <span>$S^-$</span> although the former three already forms a complete set of generators of local spin algebras. This overcomplete feature is for the convenience to the construction of spin Hamiltonians.</p><h3 id="Index"><a class="docs-heading-anchor" href="#Index">Index</a><a id="Index-1"></a><a class="docs-heading-anchor-permalink" href="#Index" title="Permalink"></a></h3><h2 id="Hilbert"><a class="docs-heading-anchor" href="#Hilbert">Hilbert</a><a id="Hilbert-1"></a><a class="docs-heading-anchor-permalink" href="#Hilbert" title="Permalink"></a></h2><h2 id="OID"><a class="docs-heading-anchor" href="#OID">OID</a><a id="OID-1"></a><a class="docs-heading-anchor-permalink" href="#OID" title="Permalink"></a></h2><h2 id="Operator-and-Operators"><a class="docs-heading-anchor" href="#Operator-and-Operators">Operator and Operators</a><a id="Operator-and-Operators-1"></a><a class="docs-heading-anchor-permalink" href="#Operator-and-Operators" title="Permalink"></a></h2><h2 id="latex-formatted-output"><a class="docs-heading-anchor" href="#latex-formatted-output">latex-formatted output</a><a id="latex-formatted-output-1"></a><a class="docs-heading-anchor-permalink" href="#latex-formatted-output" title="Permalink"></a></h2></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../SpatialInfoOfAUnitcell/">« Spatial info of a unitcell</a><a class="docs-footer-nextpage" href="../CouplingsAmongDifferentDegreesOfFreedom/">Couplings among different degrees of freedom »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.5 on <span class="colophon-date" title="Friday 3 September 2021 01:37">Friday 3 September 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+ SID{1}(1, &#39;-&#39;)</code></pre><p>It is noted that a <a href="../../../man/Essentials/SpinPackage/#QuantumLattices.Essentials.SpinPackage.Spin"><code>Spin</code></a> instance generates <a href="../../../man/Essentials/SpinPackage/#QuantumLattices.Essentials.SpinPackage.SID"><code>SID</code></a> instances corresponding to not only <span>$S^x$</span>, <span>$S^y$</span> and <span>$S^z$</span>,  but also <span>$S^+$</span> and <span>$S^-$</span> although the former three already forms a complete set of generators of local spin algebras. This overcomplete feature is for the convenience to the construction of spin Hamiltonians.</p><h3 id="Index"><a class="docs-heading-anchor" href="#Index">Index</a><a id="Index-1"></a><a class="docs-heading-anchor-permalink" href="#Index" title="Permalink"></a></h3><h2 id="Hilbert"><a class="docs-heading-anchor" href="#Hilbert">Hilbert</a><a id="Hilbert-1"></a><a class="docs-heading-anchor-permalink" href="#Hilbert" title="Permalink"></a></h2><h2 id="OID"><a class="docs-heading-anchor" href="#OID">OID</a><a id="OID-1"></a><a class="docs-heading-anchor-permalink" href="#OID" title="Permalink"></a></h2><h2 id="Operator-and-Operators"><a class="docs-heading-anchor" href="#Operator-and-Operators">Operator and Operators</a><a id="Operator-and-Operators-1"></a><a class="docs-heading-anchor-permalink" href="#Operator-and-Operators" title="Permalink"></a></h2><h2 id="latex-formatted-output"><a class="docs-heading-anchor" href="#latex-formatted-output">latex-formatted output</a><a id="latex-formatted-output-1"></a><a class="docs-heading-anchor-permalink" href="#latex-formatted-output" title="Permalink"></a></h2></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../SpatialInfoOfAUnitcell/">« Spatial info of a unitcell</a><a class="docs-footer-nextpage" href="../CouplingsAmongDifferentDegreesOfFreedom/">Couplings among different degrees of freedom »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.5 on <span class="colophon-date" title="Tuesday 7 September 2021 06:43">Tuesday 7 September 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
