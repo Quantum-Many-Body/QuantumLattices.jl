@@ -131,11 +131,11 @@ Get the required script of a spin oid.
 
 The default LaTeX format for a spin oid.
 """
-const soptdefaultlatex = LaTeX{(:tag,), (:site,)}('S')
+const sdefaultlatex = LaTeX{(:tag,), (:site,)}('S')
 @inline latexname(::Type{<:Index{<:AbstractPID, <:SID}}) = Symbol("Index{AbstractPID, SID}")
 @inline latexname(::Type{<:AbstractCompositeOID{<:Index{<:AbstractPID, <:SID}}}) = Symbol("AbstractCompositeOID{Index{AbstractPID, SID}}")
-latexformat(Index{<:AbstractPID, <:SID}, soptdefaultlatex)
-latexformat(AbstractCompositeOID{<:Index{<:AbstractPID, <:SID}}, soptdefaultlatex)
+latexformat(Index{<:AbstractPID, <:SID}, sdefaultlatex)
+latexformat(AbstractCompositeOID{<:Index{<:AbstractPID, <:SID}}, sdefaultlatex)
 
 """
     usualspinindextotuple
