@@ -2,16 +2,14 @@ using Test
 using Printf: @sprintf
 using StaticArrays: SVector
 using QuantumLattices.Essentials.Terms
-using QuantumLattices.Essentials.Spatials: AbstractBond, Point, PID, CPID, Bond, Bonds, Lattice, pidtype, acrossbonds, zerothbonds
-using QuantumLattices.Essentials.DegreesOfFreedom: SimpleIID, SimpleInternal, CompositeIID, IIDSpace, IIDConstrain, ConstrainID, Subscript, @subscript_str
-using QuantumLattices.Essentials.DegreesOfFreedom: Hilbert, Index, Table, OID, OIDToTuple, Operator, Operators, plain
-using QuantumLattices.Interfaces: rank, expand!
+using QuantumLattices.Essentials.Spatials: Point, PID, CPID, Bond, Bonds, Lattice, acrossbonds, zerothbonds
+using QuantumLattices.Essentials.DegreesOfFreedom: SimpleIID, SimpleInternal, CompositeIID, Hilbert, Index, Table, OID, OIDToTuple, Operator, Operators, plain
+using QuantumLattices.Interfaces: rank, expand!, expand, ⊗
 using QuantumLattices.Essentials: kind, update!, reset!
 using QuantumLattices.Prerequisites: Float, decimaltostr
 using QuantumLattices.Prerequisites.Traits: parameternames, contentnames, getcontent
 using QuantumLattices.Prerequisites.CompositeStructures: NamedContainer
-using QuantumLattices.Mathematics.AlgebraOverFields: ID, SimpleID, id, idtype
-import QuantumLattices.Interfaces: dimension, expand
+using QuantumLattices.Mathematics.AlgebraOverFields: ID, id, idtype
 import QuantumLattices.Mathematics.VectorSpaces: shape, ndimshape
 import QuantumLattices.Essentials.DegreesOfFreedom: isHermitian
 import QuantumLattices.Essentials.Terms: couplingcenters, abbr
@@ -30,6 +28,8 @@ TID(i::CartesianIndex, vs::TFock) = TID(i.I...)
 Base.CartesianIndex(tid::TID, vs::TFock) = CartesianIndex(tid.nambu)
 @inline shape(iidspace::IIDSpace{TID{Symbol}, TFock}) = (1:iidspace.internal.nnambu,)
 @inline shape(iidspace::IIDSpace{TID{Int}, TFock}) = (iidspace.iid.nambu:iidspace.iid.nambu,)
+@inline shape(iidspace::IIDSpace{TID{Symbol}, TFock}) = (1:iidspace.internal.nnambu,)
+@inline shape(iidspace::IIDSpace{TID{Int}, TFock}) = (iidspace.iid.nambu:iidspace.iid.nambu,)
 
 const TCoupling{V, I<:ID{TID}, C<:IIDConstrain, CI<:ConstrainID} = Coupling{V, I, C, CI}
 @inline Base.repr(tc::(Coupling{V, <:ID{TID}} where V)) = @sprintf "%s ph(%s)" decimaltostr(tc.value) join(tc.cid.nambus, ", ")
@@ -41,6 +41,76 @@ abbr(::Type{<:Term{:Mu}}) = :mu
 abbr(::Type{<:Term{:Hp}}) = :hp
 isHermitian(::Type{<:Term{:Mu}}) = true
 isHermitian(::Type{<:Term{:Hp}}) = false
+
+@testset "IIDSpace" begin
+    tid₁, tid₂, it = TID(2), TID(:σ), TFock(2)
+    iidspace = IIDSpace(tid₁⊗tid₂, it⊗it)
+    @test eltype(iidspace) == eltype(typeof(iidspace)) == CompositeIID{Tuple{TID{Int}, TID{Int}}}
+    @test kind(iidspace) == kind(typeof(iidspace)) == :info
+    @test shape(iidspace) == (2:2, 1:2)
+    @test ndimshape(iidspace) == ndimshape(typeof(iidspace)) == 2
+    for i = 1:length(iidspace)
+        iid = iidspace[i]
+        @test iidspace[CartesianIndex(iid, iidspace)] == iid
+    end
+    @test expand((tid₁, tid₂), (it, it)) == iidspace
+    @test collect(iidspace) == [TID(2)⊗TID(1), TID(2)⊗TID(2)]
+end
+
+@testset "Subscript" begin
+    sub = Subscript(4)
+    @test contentnames(typeof(sub)) == (:contents, :rep, :constrain)
+    @test getcontent(sub, :contents) == sub.pattern
+    @test sub==deepcopy(sub) && isequal(sub, deepcopy(sub))
+    @test string(sub) == "[* * * *]"
+    @test rank(sub) == rank(typeof(sub)) == 4
+    @test match(sub, (2, 2, 2, 2))
+
+    sub = Subscript((1, 2, 3, 4))
+    @test string(sub) == "[1 2 3 4]"
+    @test sub == subscript"[1 2 3 4]" == subscript"[1 2 3 4]; false"
+    @test rank(sub) == 4
+    @test match(sub, (1, 3, 3, 4))
+
+    sub = Subscript((1, 2, 2, 1), true)
+    @test string(sub) == "[1 2 2 1]"
+    @test sub == subscript"[1 2 2 1]; true"
+    @test rank(sub) == 4
+    @test match(sub, (1, 2, 2, 1)) && !match(sub, (1, 1, 2, 1))
+
+    sub = subscript"[x₁ x₂ x₁ x₂]"
+    @test string(sub) == "[x₁ x₂ x₁ x₂]"
+    @test rank(sub) == 4
+    @test match(sub, (1, 2, 1, 2)) && !match(sub, (1, 2, 2, 1))
+
+    sub = subscript"[x₁ 4 4 x₂](x₁ < x₂)"
+    @test string(sub) == "[x₁ 4 4 x₂](x₁ < x₂)"
+    @test rank(sub) == rank(typeof(sub)) == 4
+    @test match(sub, (1, 4, 4, 2)) && !match(sub, (2, 4, 4, 1))
+end
+
+@testset "IIDConstrain" begin
+    constrain = IIDConstrain((nambu=subscript"[x y](x > y)",), (nambu=subscript"[x x y y](x < y)",))
+    @test contentnames(typeof(constrain)) == (:contents,)
+    @test getcontent(constrain, :contents) == constrain.constrain
+    @test string(constrain) == "nambu[x y](x > y) × nambu[x x y y](x < y)"
+    @test repr(constrain, 1:2, :nambu) == "[x y](x > y)×[x x y y](x < y)"
+    @test repr(constrain, 1, :nambu) == "[x y](x > y)"
+    @test repr(constrain, 2, :nambu) == "[x x y y](x < y)"
+
+    @test rank(constrain) == rank(typeof(constrain)) == 6
+    @test rank(constrain, 1) == rank(typeof(constrain), 1) == 2
+    @test rank(constrain, 2) == rank(typeof(constrain), 2) == 4
+    @test match(constrain, (TID(2), TID(1), TID(2), TID(2), TID(3), TID(3)))
+    @test match(constrain, TID(2)⊗TID(1)⊗TID(2)⊗TID(2)⊗TID(3)⊗TID(3))
+    @test !match(constrain, TID(1)⊗TID(2)⊗TID(2)⊗TID(2)⊗TID(3)⊗TID(3))
+    @test !match(constrain, TID(2)⊗TID(1)⊗TID(3)⊗TID(3)⊗TID(2)⊗TID(2))
+    @test constrain == IIDConstrain((nambu=subscript"[x y](x > y)",))*IIDConstrain((nambu=subscript"[x x y y](x < y)",))
+
+    constrainid = ConstrainID(constrain)
+    @test constrainid == ConstrainID((1:2=>("[x y](x > y)",), 3:6=>("[x x y y](x < y)",)))
+    @test idtype(constrain) == idtype(typeof(constrain)) == ConstrainID{NTuple{2, Pair{UnitRange{Int}, Tuple{String}}}}
+end
 
 @testset "couplings" begin
     @test parameternames(Coupling) == (:value, :cid, :constrain, :constrainid)

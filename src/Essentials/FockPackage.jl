@@ -3,9 +3,10 @@ module FockPackage
 using LinearAlgebra: dot
 using Printf: @printf, @sprintf
 using ..Spatials: AbstractPID, AbstractBond, Bond, decompose
-using ..DegreesOfFreedom: SimpleIID, CompositeIID, SimpleInternal, CompositeInternal, InternalIndex, IIDSpace, IIDConstrain, ConstrainID, Subscript, subscriptexpr
-using ..DegreesOfFreedom: Index, LaTeX, OID, AbstractCompositeOID, latexformat, OIDToTuple, Operator, Operators, Hilbert, Table, wildcard, diagonal
-using ..Terms: Coupling, Couplings, @couplings, Term, TermCouplings, TermAmplitude, TermModulate
+using ..DegreesOfFreedom: SimpleIID, CompositeIID, SimpleInternal, CompositeInternal, InternalIndex
+using ..DegreesOfFreedom: Index, LaTeX, OID, AbstractCompositeOID, latexformat, OIDToTuple, Operator, Operators, Hilbert, Table
+using ..Terms: IIDSpace, IIDConstrain, ConstrainID, Subscript, subscriptexpr, Coupling, wildcard, diagonal
+using ..Terms: Couplings, @couplings, Term, TermCouplings, TermAmplitude, TermModulate
 using ...Essentials: kind
 using ...Prerequisites: Float, delta, decimaltostr
 using ...Prerequisites.Traits: rawtype

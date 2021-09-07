@@ -2,12 +2,9 @@ using Test
 using StaticArrays: SVector
 using QuantumLattices.Essentials.FockPackage
 using QuantumLattices.Essentials.Spatials: Bond, Point, AbstractPID, PID, CPID, rcoord, azimuthd
-using QuantumLattices.Essentials.DegreesOfFreedom: IIDSpace, @subscript_str
 using QuantumLattices.Essentials.DegreesOfFreedom: Index, Hilbert, AbstractCompositeOID, OID, Operator, Operators, script, latexname, isHermitian
-using QuantumLattices.Essentials.Terms: Couplings, abbr, @couplings
-using QuantumLattices.Interfaces: ⊗, ⋅, expand, permute, rank
-using QuantumLattices.Prerequisites: Float
-using QuantumLattices.Prerequisites.Traits: parameternames, isparameterbound, contentnames, getcontent
+using QuantumLattices.Essentials.Terms: @subscript_str, Couplings, abbr, @couplings
+using QuantumLattices.Interfaces: ⊗, ⋅, expand, permute
 using QuantumLattices.Mathematics.AlgebraOverFields: ID
 using QuantumLattices.Mathematics.VectorSpaces: shape, ndimshape
 

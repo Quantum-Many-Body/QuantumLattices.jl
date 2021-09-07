@@ -1,13 +1,10 @@
 using Test
-using StaticArrays: SVector
 using QuantumLattices.Essentials.SpinPackage
 using QuantumLattices.Essentials.SpinPackage: heisenbergxyz, heisenbergpmz, gamma, dm
 using QuantumLattices.Essentials.Spatials: AbstractPID, PID, CPID, Point, Bond
-using QuantumLattices.Essentials.DegreesOfFreedom: IIDSpace, @subscript_str, Index, OID, AbstractCompositeOID, Hilbert
-using QuantumLattices.Essentials.DegreesOfFreedom: isHermitian, Operator, Operators, script, latexname
-using QuantumLattices.Essentials.Terms: Couplings, abbr
+using QuantumLattices.Essentials.DegreesOfFreedom: Index, OID, AbstractCompositeOID, Hilbert, isHermitian, Operator, Operators, script, latexname
+using QuantumLattices.Essentials.Terms: IIDSpace, @subscript_str, Couplings, abbr
 using QuantumLattices.Interfaces: expand, permute, rank
-using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Mathematics.Combinatorics: Permutations
 using QuantumLattices.Mathematics.AlgebraOverFields: ID
 using QuantumLattices.Mathematics.VectorSpaces: shape, ndimshape

@@ -2,8 +2,8 @@ module SpinPackage
 
 using Printf: @printf, @sprintf
 using ..Spatials: AbstractPID, Bond
-using ..DegreesOfFreedom: SimpleIID, SimpleInternal, IIDSpace, IIDConstrain, ConstrainID, wildcard, Subscript, subscriptexpr, diagonal
-using ..DegreesOfFreedom: Index, OID, AbstractCompositeOID, OIDToTuple, Operator, LaTeX, latexformat
+using ..DegreesOfFreedom: SimpleIID, SimpleInternal, Index, OID, AbstractCompositeOID, OIDToTuple, Operator, LaTeX, latexformat
+using ..Terms: IIDSpace, IIDConstrain, ConstrainID, wildcard, Subscript, subscriptexpr, diagonal
 using ..Terms: Coupling, Couplings, Term, TermCouplings, TermAmplitude, TermModulate
 using ...Interfaces: rank
 using ...Prerequisites: Float, decimaltostr, delta
