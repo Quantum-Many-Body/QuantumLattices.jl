@@ -15,6 +15,7 @@ include("Terms.jl")
 include("Frameworks.jl")
 include("FockPackage.jl")
 include("SpinPackage.jl")
+include("PhononPackage.jl")
 
 @reexport using .Spatials
 @reexport using .DegreesOfFreedom
@@ -22,5 +23,6 @@ include("SpinPackage.jl")
 @reexport using .Frameworks
 @reexport using .FockPackage
 @reexport using .SpinPackage
+@reexport using .PhononPackage
 
 end # module
