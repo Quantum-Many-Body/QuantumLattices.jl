@@ -46,10 +46,11 @@ Another major aim of this package is to provide unified interfaces to access all
 
 ## Supported Systems
 
-Three common kinds of systems in condensed matter physics are perfectly supported:
+Four common kinds of systems in condensed matter physics are supported:
 * **canonical fermionic systems**
 * **canonical/hard-core bosonic systems**
 * **SU(2) spin systems**
+* **Phononic systems**
 
 Furthermore, other systems can be supported easily by extending the generic "protocols" provided in this package.
 

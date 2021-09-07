@@ -15,11 +15,14 @@ Now let's move to the second step. A main feature of a quantum lattice system is
 
 Different kinds of quantum lattice systems can have different species of local Hilbert spaces. For example, the local Hilbert space of a complex fermionic/bosonic system is the [Fock space](https://en.wikipedia.org/wiki/Fock_space) whereas that of a spin-1/2 system is the two-dimensional ``\{\lvert\uparrow\rangle, \lvert\downarrow\rangle\}`` space. The abstract type [`Internal`](@ref) is an abstraction of local Hilbert spaces. More precisely, it is an abstraction of **local algebras acting on these local Hilbert spaces**. To specify a generator of such a local algebra, two sets of tags are needed: one identifies which the local algebra is and the other represents which the internal degree of freedom is. The former is already encoded by a [`PID`](@ref) object, and the latter will be stored in an object of a concrete subtype of the abstract type [`IID`](@ref). These two sets of tags are combined to be the [`Index`](@ref) type, which contains the complete information of a local generator.
 
-In this package, we implement two groups of concrete subtypes to handle with the following two sets of systems, respectively:
-* Canonical fermionic, canonical bosonic and hard-core bosonic systems,
-* SU(2) spin systems.
+### Systems with different internal structures
 
-### Fock and FID
+In this package, we implement two groups of concrete subtypes to handle with the following three sets of systems, respectively:
+* Canonical fermionic, canonical bosonic and hard-core bosonic systems,
+* SU(2) spin systems,
+* Phononic systems.
+
+#### Fock and FID
 
 This group of concrete subtypes are designed to deal with canonical fermionic, canonical bosonic and hard-core bosonic systems.
 
@@ -113,7 +116,7 @@ julia> fck |> collect
  FID{:f}(2, 1, 2)
 ```
 
-### Spin and SID
+#### Spin and SID
 
 ```@setup SSS
 push!(LOAD_PATH, "../../../src/")
@@ -248,6 +251,8 @@ julia> sp |> collect
  SID{1}(1, '-')
 ```
 It is noted that a [`Spin`](@ref) instance generates [`SID`](@ref) instances corresponding to not only ``S^x``, ``S^y`` and ``S^z``,  but also ``S^+`` and ``S^-`` although the former three already forms a complete set of generators of local spin algebras. This overcomplete feature is for the convenience to the construction of spin Hamiltonians.
+
+#### Phonon and PNID
 
 ### Index
 
