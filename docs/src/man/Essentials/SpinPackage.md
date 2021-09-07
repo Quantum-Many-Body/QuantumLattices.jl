@@ -8,7 +8,7 @@ CurrentModule = QuantumLattices.Essentials.SpinPackage
 
 ## SpinCoupling
 
-## STerm
+## SpinTerm
 
 ## Manual
 

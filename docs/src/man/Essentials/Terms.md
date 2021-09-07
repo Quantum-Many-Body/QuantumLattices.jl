@@ -9,8 +9,6 @@ using QuantumLattices
 
 # Terms
 
-## Subscripts
-
 ## Coupling and Couplings
 
 ## Term

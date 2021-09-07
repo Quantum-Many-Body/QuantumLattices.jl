@@ -93,20 +93,20 @@ As can be seen, a [`Fock`](@ref) instance behaves like a vector (because the par
 julia> fck = Fock{:f}(norbital=2, nspin=1, nnambu=2);
 
 julia> fck |> typeof |> eltype
-FID{:f}
+FID{:f, Int64, Int64, Int64}
 
 julia> fck |> length
 4
 
 julia> [fck[1], fck[2], fck[3], fck[4]]
-4-element Vector{FID{:f}}:
+4-element Vector{FID{:f, Int64, Int64, Int64}}:
  FID{:f}(1, 1, 1)
  FID{:f}(2, 1, 1)
  FID{:f}(1, 1, 2)
  FID{:f}(2, 1, 2)
 
 julia> fck |> collect
-4-element Vector{FID{:f}}:
+4-element Vector{FID{:f, Int64, Int64, Int64}}:
  FID{:f}(1, 1, 1)
  FID{:f}(2, 1, 1)
  FID{:f}(1, 1, 2)
@@ -226,13 +226,13 @@ Similar to [`Fock`](@ref), a [`Spin`](@ref) instance behaves like a vector whose
 julia> sp = Spin{1}(norbital=1);
 
 julia> sp |> typeof |> eltype
-SID{1}
+SID{1, Int64}
 
 julia> sp |> length
 5
 
 julia> [sp[1], sp[2], sp[3], sp[4], sp[5]]
-5-element Vector{SID{1}}:
+5-element Vector{SID{1, Int64}}:
  SID{1}(1, 'x')
  SID{1}(1, 'y')
  SID{1}(1, 'z')
@@ -240,7 +240,7 @@ julia> [sp[1], sp[2], sp[3], sp[4], sp[5]]
  SID{1}(1, '-')
 
 julia> sp |> collect
-5-element Vector{SID{1}}:
+5-element Vector{SID{1, Int64}}:
  SID{1}(1, 'x')
  SID{1}(1, 'y')
  SID{1}(1, 'z')
