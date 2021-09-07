@@ -117,6 +117,8 @@ end
     @test repr(opts) == "Elements with 2 entries:\n  AOFOperator(2.0, ID(AOFID(1, 2)))\n  AOFOperator(1.0, ID(AOFID(1, 1)))"
     @test opts|>deepcopy == opts
     @test opts|>zero == opts|>typeof|>zero == nothing
+    @test isapprox(opts, deepcopy(opts)) && isapprox(opts, opts+10^-6; atol=10^-5) && isapprox(opts+10^-6, opts; atol=10^-5)
+    @test !isapprox(opts, opts+10^-6) && !isapprox(opts+10^-6, opts)
     @test add!(deepcopy(opts)) == opts
     @test add!(deepcopy(opts), zero(Elements)) == opts
     @test sub!(deepcopy(opts)) == opts

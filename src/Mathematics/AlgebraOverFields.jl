@@ -380,6 +380,25 @@ Judge whether a set of elements is identically empty.
 @inline Base.:(==)(::Nothing, ms::Elements) = length(ms) == 0
 
 """
+    isapprox(ms₁::Elements, ms₂::Elements; atol::Real=atol, rtol::Real=rtol) -> Bool
+
+Compare two set of elements and judge whether they are inexactly equivalent to each other.
+"""
+@inline function Base.isapprox(ms₁::Elements, ms₂::Elements; atol::Real=atol, rtol::Real=rtol)
+    for (k, m) in ms₁
+        isapprox(value(m), 0, atol=atol, rtol=rtol) && continue
+        haskey(ms₂, k) || return false
+        isapprox(m, ms₂[k]) || return false
+    end
+    for (k, m) in ms₂
+        isapprox(value(m), 0,  atol=atol, rtol=rtol) && continue
+        haskey(ms₁, k) || return false
+        isapprox(m, ms₁[k]) || return false
+    end
+    return true
+end
+
+"""
     isequal(ms::Elements, ::Nothing) -> Bool
     isequal(::Nothing, ms::Elements) -> Bool
 
