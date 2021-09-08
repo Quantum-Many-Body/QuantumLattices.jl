@@ -9,20 +9,18 @@ function kind end
 function update! end
 function reset! end
 
+include("QuantumAlgebras.jl")
 include("Spatials.jl")
 include("DegreesOfFreedom.jl")
 include("Terms.jl")
 include("Frameworks.jl")
-include("FockPackage.jl")
-include("SpinPackage.jl")
-include("PhononPackage.jl")
+include("QuantumSystems.jl")
 
+@reexport using .QuantumAlgebras
 @reexport using .Spatials
 @reexport using .DegreesOfFreedom
 @reexport using .Terms
 @reexport using .Frameworks
-@reexport using .FockPackage
-@reexport using .SpinPackage
-@reexport using .PhononPackage
+@reexport using .QuantumSystems
 
 end # module

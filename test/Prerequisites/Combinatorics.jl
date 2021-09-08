@@ -1,5 +1,5 @@
 using Test
-using QuantumLattices.Mathematics.Combinatorics
+using QuantumLattices.Prerequisites.Combinatorics
 
 @testset "Combinations" begin
     @test Combinations{0}("abc")|>collect == [()]

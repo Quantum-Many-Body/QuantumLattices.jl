@@ -7,7 +7,7 @@ using QuantumLattices.Interfaces: decompose, rank, dimension, expand
 using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Prerequisites.Traits: contentnames, getcontent
 using QuantumLattices.Prerequisites.SimpleTrees: leaves
-using QuantumLattices.Mathematics.QuantumNumbers: Momentum2D, AbelianNumbers
+using QuantumLattices.Prerequisites.QuantumNumbers: Momentum2D, AbelianNumbers
 
 @testset "distance" begin
     @test distance([0.0, 0.0], [1.0, 1.0]) ≈ sqrt(2.0)

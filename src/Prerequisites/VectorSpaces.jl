@@ -1,9 +1,9 @@
 module VectorSpaces
 
-using ...Prerequisites.Traits: rawtype, efficientoperations, getcontent, hascontent
+using ..Traits: rawtype, efficientoperations, getcontent, hascontent
 
+import ..Traits: contentnames
 import ...Interfaces: dimension, rank
-import ...Prerequisites.Traits: contentnames
 
 export VectorSpace, EnumerativeVectorSpace, CartesianVectorSpace, NamedVectorSpace, shape, ndimshape
 

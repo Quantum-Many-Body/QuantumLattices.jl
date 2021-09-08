@@ -1,13 +1,13 @@
 ```@meta
-CurrentModule = QuantumLattices.Mathematics.AlgebraOverFields
+CurrentModule = QuantumLattices.Essentials.QuantumAlgebras
 ```
 
-```@setup algebraoverfields
+```@setup quantumalgebras
 push!(LOAD_PATH, "../../../../src/")
-using QuantumLattices.Mathematics.AlgebraOverFields
+using QuantumLattices.Essentials.QuantumAlgebras
 ```
 
-# Algebra over fields
+# Quantum algebras
 
 An algebra over a field is a vector space over that field, in which a bilinear operator (often called the "multiplication") between vectors is defined.
 
@@ -32,6 +32,6 @@ Arithmetic operations (`+`, `-`, `*`, `/`) between a scalar, an [`Element`](@ref
 ## Manual
 
 ```@autodocs
-Modules = [AlgebraOverFields]
+Modules = [QuantumAlgebras]
 Order = [:module, :constant, :type, :macro, :function]
 ```

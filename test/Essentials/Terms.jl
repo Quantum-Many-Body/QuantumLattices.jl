@@ -2,17 +2,18 @@ using Test
 using Printf: @sprintf
 using StaticArrays: SVector
 using QuantumLattices.Essentials.Terms
+using QuantumLattices.Essentials.QuantumAlgebras: ID, id, idtype
 using QuantumLattices.Essentials.Spatials: Point, PID, CPID, Bond, Bonds, Lattice, acrossbonds, zerothbonds
 using QuantumLattices.Essentials.DegreesOfFreedom: SimpleIID, SimpleInternal, CompositeIID, Hilbert, Index, Table, OID, OIDToTuple, Operator, Operators, plain
-using QuantumLattices.Interfaces: rank, expand!, expand, ⊗
 using QuantumLattices.Essentials: kind, update!, reset!
+using QuantumLattices.Interfaces: rank, expand!, expand, ⊗
 using QuantumLattices.Prerequisites: Float, decimaltostr
 using QuantumLattices.Prerequisites.Traits: parameternames, contentnames, getcontent
 using QuantumLattices.Prerequisites.CompositeStructures: NamedContainer
-using QuantumLattices.Mathematics.AlgebraOverFields: ID, id, idtype
-import QuantumLattices.Mathematics.VectorSpaces: shape, ndimshape
+
 import QuantumLattices.Essentials.DegreesOfFreedom: isHermitian
 import QuantumLattices.Essentials.Terms: couplingcenters, abbr
+import QuantumLattices.Prerequisites.VectorSpaces: shape, ndimshape
 
 struct TID{N<:Union{Int, Symbol}} <: SimpleIID
     nambu::N

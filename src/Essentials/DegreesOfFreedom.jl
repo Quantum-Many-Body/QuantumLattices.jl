@@ -3,21 +3,21 @@ module DegreesOfFreedom
 using Printf: @printf, @sprintf
 using StaticArrays: SVector
 using LaTeXStrings: latexstring
+using ..QuantumAlgebras: SimpleID, ID, Element, Elements
 using ..Spatials: AbstractPID, Point
 using ...Essentials: dtype
 using ...Interfaces: id, value, decompose, dimension
 using ...Prerequisites: Float, decimaltostr
 using ...Prerequisites.Traits: rawtype, efficientoperations
 using ...Prerequisites.CompositeStructures: CompositeDict
-using ...Mathematics.VectorSpaces: CartesianVectorSpace
-using ...Mathematics.AlgebraOverFields: SimpleID, ID, Element, Elements
+using ...Prerequisites.VectorSpaces: CartesianVectorSpace
 
+import ..QuantumAlgebras: sequence
 import ..Spatials: pidtype, rcoord, icoord
 import ...Essentials: reset!, update!
-import ...Prerequisites.Traits: contentnames, getcontent
-import ...Mathematics.VectorSpaces: shape, ndimshape
-import ...Mathematics.AlgebraOverFields: sequence
 import ...Interfaces: rank, ⊗
+import ...Prerequisites.Traits: contentnames, getcontent
+import ...Prerequisites.VectorSpaces: shape, ndimshape
 
 export IID, SimpleIID, CompositeIID, Internal, InternalIndex, SimpleInternal, CompositeInternal
 export Hilbert, AbstractOID, Index, AbstractCompositeOID, OID, AbstractOperator, Operator, Operators, Metric, OIDToTuple, Table

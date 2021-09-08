@@ -8,13 +8,12 @@ Essentials of the package, whose constants, types and functions will be imported
 
 ```@contents
 Pages = [
+        "QuantumAlgebras.md",
         "Spatials.md",
         "DegreesOfFreedom.md",
         "Terms.md",
         "Frameworks.md",
-        "FockPackage.md",
-        "SpinPackage.md",
-        "PhononPackage.md",
+        "QuantumSystems.md",
         ]
 Depth = 2
 ```

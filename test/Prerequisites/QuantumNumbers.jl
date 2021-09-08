@@ -1,10 +1,11 @@
 using Test
-using QuantumLattices.Mathematics.QuantumNumbers
+using Base.Iterators: Iterators
 using DataStructures: OrderedDict
+using QuantumLattices.Prerequisites.QuantumNumbers
 using QuantumLattices.Interfaces: ⊕, ⊗, dimension, expand, permute, decompose
 using QuantumLattices.Prerequisites.Traits: contentnames, getcontent
-import Base.Iterators: Iterators
-import QuantumLattices.Mathematics.QuantumNumbers: periods
+
+import QuantumLattices.Prerequisites.QuantumNumbers: periods
 
 @abeliannumber "CN" (:N,) (Inf,)
 @abeliannumber "Z4" (:Z,) (4,)

@@ -1,14 +1,14 @@
 using Test
 using Printf: @printf
 using LinearAlgebra: tr
-using QuantumLattices.Essentials: register!
 using QuantumLattices.Essentials.Frameworks
+using QuantumLattices.Essentials: register!
 using QuantumLattices.Essentials.Terms: Parameters
 using QuantumLattices.Interfaces: id
 using QuantumLattices.Prerequisites: Float
 
-import QuantumLattices.Essentials: prepare!, run!, update!
 import QuantumLattices.Essentials.Frameworks: dependences
+import QuantumLattices.Essentials: prepare!, run!, update!
 
 struct FEngine <: Engine end
 Base.repr(::FEngine) = "FEngine"

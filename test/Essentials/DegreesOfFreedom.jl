@@ -1,15 +1,16 @@
 using Test
 using StaticArrays: SVector
 using LinearAlgebra: dot
-using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Essentials.DegreesOfFreedom
+using QuantumLattices.Essentials.QuantumAlgebras: ID, sequence
 using QuantumLattices.Essentials.Spatials: AbstractPID, PID, CPID, Point, pidtype, rcoord, icoord
-using QuantumLattices.Interfaces: decompose, rank, ⊗
 using QuantumLattices.Essentials: update!, reset!
+using QuantumLattices.Interfaces: decompose, rank, ⊗
+using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Prerequisites.Traits: contentnames
-using QuantumLattices.Mathematics.AlgebraOverFields: ID, sequence
-import QuantumLattices.Mathematics.VectorSpaces: shape, ndimshape
+
 import QuantumLattices.Essentials.DegreesOfFreedom: latexname, script
+import QuantumLattices.Prerequisites.VectorSpaces: shape, ndimshape
 
 struct DID{N<:Union{Int, Symbol}} <: SimpleIID
     nambu::N

@@ -1,28 +1,39 @@
-module FockPackage
+module QuantumSystems
 
-using LinearAlgebra: dot
+using LinearAlgebra: dot, norm
+using StaticArrays: SVector
 using Printf: @printf, @sprintf
-using ..Spatials: AbstractPID, AbstractBond, Bond, decompose
+using ..QuantumAlgebras: ID, Element
+using ..Spatials: AbstractPID, AbstractBond, Point, Bond, rcoord
 using ..DegreesOfFreedom: SimpleIID, CompositeIID, SimpleInternal, CompositeInternal, InternalIndex
-using ..DegreesOfFreedom: Index, LaTeX, OID, AbstractCompositeOID, latexformat, OIDToTuple, Operator, Operators, Hilbert, Table
-using ..Terms: IIDSpace, IIDConstrain, ConstrainID, Subscript, subscriptexpr, Coupling, wildcard, diagonal
-using ..Terms: Couplings, @couplings, Term, TermCouplings, TermAmplitude, TermModulate
+using ..DegreesOfFreedom: Index, AbstractCompositeOID, OID, LaTeX, latexformat, OIDToTuple, Operator, Operators, Hilbert, Table
+using ..Terms: IIDSpace, IIDConstrain, ConstrainID, Subscript, subscriptexpr, wildcard, diagonal
+using ..Terms: Coupling, Couplings, @couplings, couplinginternals, Term, TermCouplings, TermAmplitude, TermModulate
 using ...Essentials: kind
-using ...Prerequisites: Float, delta, decimaltostr
-using ...Prerequisites.Traits: rawtype
-using ...Mathematics.AlgebraOverFields: ID, Element
+using ...Interfaces: decompose
+using ...Prerequisites: Float, atol, rtol, delta, decimaltostr
+using ...Prerequisites.Traits: rawtype, getcontent
+using ...Prerequisites.VectorSpaces: CartesianVectorSpace
 
 import ..DegreesOfFreedom: script, latexname, isHermitian
 import ..Terms: couplingcenters, abbr, termfactor
 import ...Interfaces: rank, ⊗, ⋅, expand, expand!, permute
-import ...Mathematics.VectorSpaces: shape, ndimshape
+import ...Prerequisites.VectorSpaces: shape, ndimshape
 
 export ANNIHILATION, CREATION, MAJORANA, fdefaultlatex, bdefaultlatex, usualfockindextotuple, nambufockindextotuple
-export FID, Fock, statistics, isnormalordered
-export FockCoupling, fockcouplingnambus
-export @σ⁰_str, @σˣ_str, @σʸ_str, @σᶻ_str, @σ⁺_str, @σ⁻_str, @fc_str
+export FID, Fock, statistics, isnormalordered, FockCoupling
 export Onsite, Hopping, Pairing, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, SpinFlip, PairHopping, Coulomb
+export @σ⁰_str, @σˣ_str, @σʸ_str, @σᶻ_str, @σ⁺_str, @σ⁻_str, @fc_str
 
+export sdefaultlatex, usualspinindextotuple
+export SID, Spin, SpinCoupling, SpinTerm, totalspin
+export @heisenberg_str, @ising_str, @gamma_str, @dm_str, @sˣ_str, @sʸ_str, @sᶻ_str, @sc_str
+
+export pndefaultlatex, usualphononindextotuple
+export PNID, Phonon, PhononCoupling, PhononKinetic, PhononPotential
+export @kinetic_str, @potential_str
+
+# Canonical fermionic/bosonic systems and hardcore bosonic systems
 """
     ANNIHILATION
 
@@ -650,5 +661,568 @@ end
 @inline isHermitian(::Type{<:Coulomb}) = nothing
 @inline termfactor(id::ID{OID, 4}, ::Val{:Coulomb}) = id[2]'==id[1] && id[4]'==id[3] ? 2 : 1
 @inline couplingcenters(::FockCoupling, ::Bond, ::Val{:Coulomb}) = (1, 1, 2, 2)
+
+# SU(2) spin systems
+const sidtagmap = Dict(1=>'x', 2=>'y', 3=>'z', 4=>'+', 5=>'-')
+const sidseqmap = Dict(v=>k for (k, v) in sidtagmap)
+const sidajointmap = Dict('x'=>'x', 'y'=>'y', 'z'=>'z', '+'=>'-', '-'=>'+')
+const sidrepmap = Dict('x'=>'ˣ', 'y'=>'ʸ', 'z'=>'ᶻ', '+'=>'⁺', '-'=>'⁻', '0'=>'⁰')
+const sidreprevmap = Dict(v=>k for (k, v) in sidrepmap)
+
+"""
+    SID{S, O<:Union{Int, Symbol}} <: SimpleIID
+
+The spin id.
+"""
+struct SID{S, O<:Union{Int, Symbol}} <: SimpleIID
+    orbital::O
+    tag::Char
+    function SID{S}(orbital::Union{Int, Symbol}, tag::Char) where S
+        @assert isa(S, Rational{Int}) && S.den==2 || isa(S, Integer) || S==wildcard "SID error: not supported spin($S)."
+        @assert tag in ('x', 'y', 'z', '+', '-') "SID error: not supported tag($tag)."
+        new{S, typeof(orbital)}(orbital, tag)
+    end
+end
+@inline Base.adjoint(sid::SID) = SID{totalspin(sid)}(sid.orbital, sidajointmap[sid.tag])
+Base.show(io::IO, sid::SID) = @printf io "SID{%s}(%s)" totalspin(sid) join(repr.(values(sid)), ", ")
+@inline @generated function Base.replace(sid::SID; kwargs...)
+    exprs = [:(get(kwargs, $name, getfield(sid, $name))) for name in QuoteNode.(fieldnames(sid))]
+    return :(rawtype(typeof(sid)){totalspin(sid)}($(exprs...)))
+end
+@inline totalspin(sid::SID) = totalspin(typeof(sid))
+@inline totalspin(::Type{<:SID{S}}) where S = S
+
+"""
+    SID{S}(tag::Char; orbital::Union{Int, Symbol}=1) where S
+
+Create a spin id.
+"""
+@inline SID{S}(tag::Char; orbital::Union{Int, Symbol}=1) where S = SID{S}(orbital, tag)
+
+"""
+    Matrix(sid::SID{S}, dtype::Type{<:Number}=Complex{Float}) where S -> Matrix{dtype}
+
+Get the matrix representation of a sid.
+"""
+function Base.Matrix(sid::SID{S}, dtype::Type{<:Number}=Complex{Float}) where S
+    N = Int(2*S+1)
+    result = zeros(dtype, (N, N))
+    spin = convert(dtype, S)
+    for i = 1:N, j = 1:N
+        row, col = N+1-i, N+1-j
+        m, n = spin+1-i, spin+1-j
+        result[row, col] = (sid.tag == 'x') ? (delta(i+1, j)+delta(i, j+1))*sqrt(spin*(spin+1)-m*n)/2 :
+            (sid.tag == 'y') ? (delta(i+1, j)-delta(i, j+1))*sqrt(spin*(spin+1)-m*n)/2im :
+            (sid.tag == 'z') ? delta(i, j)*m :
+            (sid.tag == '+') ? delta(i+1, j)*sqrt(spin*(spin+1)-m*n) :
+            delta(i, j+1)*sqrt(spin*(spin+1)-m*n)
+    end
+    return result
+end
+
+"""
+    Spin{S} <: SimpleInternal{SID{S, Int}}
+
+The spin interanl degrees of freedom.
+"""
+struct Spin{S} <: SimpleInternal{SID{S, Int}}
+    norbital::Int
+    function Spin{S}(norbital::Int) where S
+        @assert isa(S, Rational{Int}) && S.den==2 || isa(S, Integer) "Spin error: not supported spin($S)."
+        new{S}(norbital)
+    end
+end
+@inline shape(sp::Spin) = (1:sp.norbital, 1:length(sidtagmap))
+@inline ndimshape(::Type{<:Spin}) = 2
+@inline Base.CartesianIndex(sid::SID, ::Spin) = CartesianIndex(sid.orbital, sidseqmap[sid.tag])
+@inline SID(index::CartesianIndex{2}, sp::Spin) = SID{totalspin(sp)}(index[1], sidtagmap[index[2]])
+Base.summary(io::IO, spin::Spin) = @printf io "%s-element Spin{%s}" length(spin) totalspin(spin)
+@inline totalspin(spin::Spin) = totalspin(typeof(spin))
+@inline totalspin(::Type{<:Spin{S}}) where S = S
+function Base.show(io::IO, spin::Spin)
+    @printf io "%s{%s}(%s)" spin|>typeof|>nameof totalspin(spin) join(("$name=$(getfield(spin, name))" for name in spin|>typeof|>fieldnames), ", ")
+end
+@inline function shape(iidspace::IIDSpace{<:Union{SID{wildcard, Symbol}, SID{S, Symbol}}, Spin{S}}) where S
+    norbital, tag = iidspace.internal.norbital, sidseqmap[iidspace.iid.tag]
+    return (1:norbital, tag:tag)
+end
+@inline function shape(iidspace::IIDSpace{<:Union{SID{wildcard, Int}, SID{S, Int}}, Spin{S}}) where S
+    orbital, tag = iidspace.iid.orbital, sidseqmap[iidspace.iid.tag]
+    @assert orbital<iidspace.internal.norbital+1 "shape error: orbital out of range."
+    return (orbital:orbital, tag:tag)
+end
+
+"""
+    Spin{S}(; norbital::Int=1) where S
+
+Construct a spin degrees of freedom.
+"""
+@inline Spin{S}(; norbital::Int=1) where S = Spin{S}(norbital)
+
+"""
+    script(::Val{:site}, index::Index{<:AbstractPID, <:SID}; kwargs...) -> Int
+    script(::Val{:orbital}, index::Index{<:AbstractPID, <:SID}; kwargs...) -> Int
+    script(::Val{:tag}, index::Index{<:AbstractPID, <:SID}; kwargs...) -> Char
+
+Get the required script of a spin oid.
+"""
+@inline script(::Val{:site}, index::Index{<:AbstractPID, <:SID}; kwargs...) = index.pid.site
+@inline script(::Val{:orbital}, index::Index{<:AbstractPID, <:SID}; kwargs...) = index.iid.orbital
+@inline script(::Val{:tag}, index::Index{<:AbstractPID, <:SID}; kwargs...) = index.iid.tag
+
+"""
+    sdefaultlatex
+
+The default LaTeX format for a spin oid.
+"""
+const sdefaultlatex = LaTeX{(:tag,), (:site,)}('S')
+@inline latexname(::Type{<:Index{<:AbstractPID, <:SID}}) = Symbol("Index{AbstractPID, SID}")
+@inline latexname(::Type{<:AbstractCompositeOID{<:Index{<:AbstractPID, <:SID}}}) = Symbol("AbstractCompositeOID{Index{AbstractPID, SID}}")
+latexformat(Index{<:AbstractPID, <:SID}, sdefaultlatex)
+latexformat(AbstractCompositeOID{<:Index{<:AbstractPID, <:SID}}, sdefaultlatex)
+
+"""
+    usualspinindextotuple
+
+Indicate that the choosed fields are `(:site, :orbital)` when converting a spin index to tuple.
+"""
+const usualspinindextotuple = OIDToTuple(:site, :orbital)
+
+"""
+    permute(id₁::OID{<:Index{<:AbstractPID, <:SID}}, id₂::OID{<:Index{<:AbstractPID, <:SID}}) -> Tuple{Vararg{Operator}}
+
+Permute two spin oids and get the result.
+"""
+function permute(id₁::OID{<:Index{<:AbstractPID, <:SID}}, id₂::OID{<:Index{<:AbstractPID, <:SID}})
+    @assert id₁.index≠id₂.index || id₁.rcoord≠id₂.rcoord || id₁.icoord≠id₂.icoord "permute error: permuted ids should not be equal to each other."
+    if usualspinindextotuple(id₁.index)==usualspinindextotuple(id₂.index) && id₁.rcoord==id₂.rcoord && id₁.icoord==id₂.icoord
+        @assert totalspin(id₁.index.iid)==totalspin(id₂.index.iid) "permute error: noncommutable ids should have the same spin field."
+        if id₁.index.iid.tag == 'x'
+            id₂.index.iid.tag=='y' && return (Operator(+1im, ID(permutesoid(id₁, 'z'))), Operator(1, ID(id₂, id₁)))
+            id₂.index.iid.tag=='z' && return (Operator(-1im, ID(permutesoid(id₁, 'y'))), Operator(1, ID(id₂, id₁)))
+            id₂.index.iid.tag=='+' && return (Operator(-1, ID(permutesoid(id₁, 'z'))), Operator(1, ID(id₂, id₁)))
+            id₂.index.iid.tag=='-' && return (Operator(+1, ID(permutesoid(id₁, 'z'))), Operator(1, ID(id₂, id₁)))
+        elseif id₁.index.iid.tag == 'y'
+            id₂.index.iid.tag=='x' && return (Operator(-1im, ID(permutesoid(id₁, 'z'))), Operator(1, ID(id₂, id₁)))
+            id₂.index.iid.tag=='z' && return (Operator(+1im, ID(permutesoid(id₁, 'x'))), Operator(1, ID(id₂, id₁)))
+            id₂.index.iid.tag=='+' && return (Operator(-1im, ID(permutesoid(id₁, 'z'))), Operator(1, ID(id₂, id₁)))
+            id₂.index.iid.tag=='-' && return (Operator(-1im, ID(permutesoid(id₁, 'z'))), Operator(1, ID(id₂, id₁)))
+        elseif id₁.index.iid.tag == 'z'
+            id₂.index.iid.tag=='x' && return (Operator(+1im, ID(permutesoid(id₁, 'y'))), Operator(1, ID(id₂, id₁)))
+            id₂.index.iid.tag=='y' && return (Operator(-1im, ID(permutesoid(id₁, 'x'))), Operator(1, ID(id₂, id₁)))
+            id₂.index.iid.tag=='+' && return (Operator(+1, ID(id₂)), Operator(1, ID(id₂, id₁)))
+            id₂.index.iid.tag=='-' && return (Operator(-1, ID(id₂)), Operator(1, ID(id₂, id₁)))
+        elseif id₁.index.iid.tag == '+'
+            id₂.index.iid.tag=='x' && return (Operator(+1, ID(permutesoid(id₁, 'z'))), Operator(1, ID(id₂, id₁)))
+            id₂.index.iid.tag=='y' && return (Operator(+1im, ID(permutesoid(id₁, 'z'))), Operator(1, ID(id₂, id₁)))
+            id₂.index.iid.tag=='z' && return (Operator(-1, ID(id₁)), Operator(1, ID(id₂, id₁)))
+            id₂.index.iid.tag=='-' && return (Operator(+2, ID(permutesoid(id₁, 'z'))), Operator(1, ID(id₂, id₁)))
+        elseif id₁.index.iid.tag == '-'
+            id₂.index.iid.tag=='x' && return (Operator(-1, ID(permutesoid(id₁, 'z'))), Operator(1, ID(id₂, id₁)))
+            id₂.index.iid.tag=='y' && return (Operator(1im, ID(permutesoid(id₁, 'z'))), Operator(1, ID(id₂, id₁)))
+            id₂.index.iid.tag=='z' && return (Operator(+1, ID(id₁)), Operator(1, ID(id₂, id₁)))
+            id₂.index.iid.tag=='+' && return (Operator(-2, ID(permutesoid(id₁, 'z'))), Operator(1, ID(id₂, id₁)))
+        end
+    else
+        return (Operator(1, ID(id₂, id₁)),)
+    end
+end
+@inline permutesoid(id::OID{<:Index{<:AbstractPID, <:SID}}, tag::Char) = replace(id, index=replace(id.index, iid=replace(id.index.iid, tag=tag)))
+
+"""
+    SpinCoupling(value::Number, tags::NTuple{N, Char}, orbitals::Subscript{<:NTuple{N, Union{Int, Symbol}}}) where N
+
+Spin coupling.
+
+Type alias for `Coupling{V, I<:ID{SID}, C<:IIDConstrain, CI<:ConstrainID}`.
+"""
+const SpinCoupling{V, I<:ID{SID}, C<:IIDConstrain, CI<:ConstrainID} = Coupling{V, I, C, CI}
+@inline function SpinCoupling(value::Number, tags::NTuple{N, Char}, orbitals::Subscript{<:NTuple{N, Union{Int, Symbol}}}) where N
+    return Coupling(value, ID(SID{wildcard}, orbitals.pattern, tags), IIDConstrain((orbital=orbitals,)))
+end
+function Base.show(io::IO, sc::SpinCoupling)
+    @printf io "SpinCoupling(value=%s" decimaltostr(sc.value)
+    @printf io ", tags=%s" join(NTuple{rank(sc), String}("S"*sidrepmap[tag] for tag in sc.cid.tags), "")
+    sc.cid.orbitals≠ntuple(i->wildcard, Val(rank(sc))) && @printf io ", orbitals=%s" repr(sc.constrain, 1:length(sc.constrain), :orbital)
+    @printf io ")"
+end
+function Base.repr(sc::SpinCoupling)
+    result = [@sprintf "%s %s" decimaltostr(sc.value) join(NTuple{rank(sc), String}("S"*sidrepmap[tag] for tag in sc.cid.tags), "")]
+    sc.cid.orbitals≠ntuple(i->wildcard, Val(rank(sc))) && push!(result, @sprintf "ob%s" repr(sc.constrain, 1:length(sc.constrain), :orbital))
+    return join(result, " ")
+end
+
+"""
+    SpinCoupling(value::Number, tags::NTuple{N, Char}; orbitals::Union{NTuple{N, Int}, Subscript}=Subscript(N)) where N
+
+Construct a spin coupling.
+"""
+function SpinCoupling(value::Number, tags::NTuple{N, Char}; orbitals::Union{NTuple{N, Int}, Subscript}=Subscript(N)) where N
+    isa(orbitals, Subscript) || (orbitals = Subscript(orbitals))
+    return SpinCoupling(value, tags, orbitals)
+end
+
+"""
+    sc"..." -> SpinCoupling
+
+Construct a SpinCoupling from a literal string.
+"""
+macro sc_str(str::String)
+    fpos = findfirst(r"S[⁺⁻ˣʸᶻ⁰]", str).start
+    lpos = 1 + lastindex(str) - findfirst(r"[⁺⁻ˣʸᶻ⁰]S", str|>reverse).start
+    coeff = eval(Meta.parse(str[firstindex(str):prevind(str, fpos)]))
+    tags = Tuple(sidreprevmap[tag] for tag in replace(str[thisind(str, fpos):thisind(str, lpos)], "S"=>""))
+    orbitals = scorbitals(strip(str[nextind(str, lpos):end]), length(tags))
+    return Expr(:call, :SpinCoupling, orbitals, coeff, tags)
+end
+function scorbitals(str::AbstractString, n::Int)
+    length(str)==0 && return Expr(:kw, :orbitals, Subscript(n))
+    @assert str[1:2]=="ob" "scorbitals error: wrong input pattern."
+    expr = Meta.parse(str[3:end])
+    @assert expr.head∈(:call, :hcat, :vect) "scorbitals error: wrong input pattern for orbitals."
+    attrvalue = subscriptexpr(expr)
+    return Expr(:kw, :orbitals, attrvalue)
+end
+
+"""
+    heisenberg"ob[o₁ o₂]" -> Couplings
+    heisenberg"xyz ob[o₁ o₂]" -> Couplings
+    heisenberg"+-z ob[o₁ o₂]" -> Couplings
+
+The Heisenberg couplings.
+"""
+macro heisenberg_str(str::String)
+    slice = findfirst(r"xyz|\+\-z", str)
+    mode = isnothing(slice) ? "+-z" : str[slice]
+    isnothing(slice) || (str = strip(str[nextind(str, slice.stop):end]))
+    @assert mode=="+-z" || mode=="xyz" "@heisenberg_str error: not supported mode($mode)."
+    orbitals = scorbitals(str, 2)
+    if mode == "+-z"
+        return Expr(:call, :heisenbergpmz, orbitals)
+    else
+        return Expr(:call, :heisenbergxyz, orbitals)
+    end
+end
+function heisenbergxyz(;orbitals=Subscript(2))
+    return Couplings(
+        SpinCoupling(1, ('x', 'x'), orbitals=orbitals),
+        SpinCoupling(1, ('y', 'y'), orbitals=orbitals),
+        SpinCoupling(1, ('z', 'z'), orbitals=orbitals)
+    )
+end
+function heisenbergpmz(;orbitals=Subscript(2))
+    return Couplings(
+        SpinCoupling(1//2, ('+', '-'), orbitals=orbitals),
+        SpinCoupling(1//2, ('-', '+'), orbitals=orbitals),
+        SpinCoupling(1//1, ('z', 'z'), orbitals=orbitals)
+    )
+end
+
+"""
+    ising"x ob[o₁ o₂]" -> Couplings
+    ising"y ob[o₁ o₂])" -> Couplings
+    ising"z ob[o₁ o₂]" -> Couplings
+
+The Ising couplings.
+"""
+macro ising_str(str::String)
+    @assert str[1] ∈ ('x', 'y', 'z') "@ising_str error: wrong input pattern."
+    length(str)>1 && @assert str[2]==' ' "@ising_str error: wrong input pattern."
+    orbitals = scorbitals(str[3:end], 2)
+    return :(Couplings(SpinCoupling(1, ($str[1], $str[1]), $orbitals)))
+end
+
+"""
+    gamma"x ob[o₁ o₂]" -> Couplings
+    gamma"y ob[o₁ o₂]" -> Couplings
+    gamma"z ob[o₁ o₂]" -> Couplings
+
+The Gamma couplings.
+"""
+macro gamma_str(str::String)
+    @assert str[1] in ('x', 'y', 'z') "@gamma_str error: wrong input pattern."
+    length(str)>1 && @assert str[2]==' ' "@gamma_str error: wrong input pattern."
+    t₁, t₂ = str[1]=='x' ? ('y', 'z') : str[1]=='y' ? ('z', 'x') : ('x', 'y')
+    orbitals = scorbitals(str[3:end], 2)
+    return Expr(:call, :gamma, orbitals, t₁, t₂)
+end
+function gamma(t₁::Char, t₂::Char; orbitals=Subscript(2))
+    return Couplings(
+        SpinCoupling(1, (t₁, t₂), orbitals=orbitals),
+        SpinCoupling(1, (t₂, t₁), orbitals=orbitals)
+        )
+end
+
+"""
+    dm"x ob[o₁ o₂]" -> Couplings
+    dm"y ob[o₁ o₂]" -> Couplings
+    dm"z ob[o₁ o₂]" -> Couplings
+
+The DM couplings.
+"""
+macro dm_str(str::String)
+    @assert str[1] in ('x', 'y', 'z') "@dm_str error: wrong input pattern."
+    length(str)>1 && @assert str[2]==' ' "@dm_str error: wrong input pattern."
+    orbitals = scorbitals(str[3:end], 2)
+    t₁, t₂ = str[1]=='x' ? ('y', 'z') : str[1]=='y' ? ('z', 'x') : ('x', 'y')
+    return Expr(:call, :dm, orbitals, t₁, t₂)
+end
+function dm(t₁::Char, t₂::Char; orbitals=Subscript(2))
+    return Couplings(
+        SpinCoupling(+1, (t₁, t₂), orbitals=orbitals),
+        SpinCoupling(-1, (t₂, t₁), orbitals=orbitals)
+        )
+end
+
+"""
+    sˣ"ob[o]" -> Couplings
+    sʸ"ob[o]" -> Couplings
+    sᶻ"ob[o]" -> Couplings
+
+The single Sˣ/Sʸ/Sᶻ coupling.
+"""
+macro sˣ_str(str::String) Expr(:call, :Couplings, Expr(:call, :SpinCoupling, scorbitals(str, 1), 1, ('x',))) end
+macro sʸ_str(str::String) Expr(:call, :Couplings, Expr(:call, :SpinCoupling, scorbitals(str, 1), 1, ('y',))) end
+macro sᶻ_str(str::String) Expr(:call, :Couplings, Expr(:call, :SpinCoupling, scorbitals(str, 1), 1, ('z',))) end
+
+"""
+    SpinTerm{R}(id::Symbol, value::Any, bondkind::Any;
+        couplings::Union{Function, Coupling, Couplings},
+        amplitude::Union{Function, Nothing}=nothing,
+        modulate::Union{Function, Bool}=false,
+        ) where R
+
+Spin term.
+
+Type alias for `Term{:SpinTerm, R, id, V, B<:Any, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`.
+"""
+const SpinTerm{R, id, V, B<:Any, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:SpinTerm, R, id, V, B, C, A, M}
+@inline function SpinTerm{R}(id::Symbol, value::Any, bondkind::Any;
+        couplings::Union{Function, Coupling, Couplings},
+        amplitude::Union{Function, Nothing}=nothing,
+        modulate::Union{Function, Bool}=false
+        ) where R
+    isa(couplings, TermCouplings) || (couplings = TermCouplings(couplings))
+    isa(amplitude, TermAmplitude) || (amplitude = TermAmplitude(amplitude))
+    isa(modulate, TermModulate) || (modulate = TermModulate(id, modulate))
+    Term{:SpinTerm, R, id}(value, bondkind, couplings, amplitude, modulate, 1)
+end
+@inline abbr(::Type{<:SpinTerm}) = :sp
+@inline isHermitian(::Type{<:SpinTerm}) = true
+@inline function couplingcenters(sc::SpinCoupling, ::Bond, ::Val{:SpinTerm})
+    @assert rank(sc)%2==0 "couplingcenters error: the rank of the input spin coupling should be even."
+    return ntuple(i->2-i%2, Val(rank(sc)))
+end
+
+# Phononic systems
+"""
+    PNID{D<:Union{Char, Symbol}} <: SimpleIID
+
+The phonon id.
+"""
+struct PNID{D<:Union{Char, Symbol}} <: SimpleIID
+    tag::Char
+    dir::D
+    function PNID(tag::Char, dir::Union{Char, Symbol}=wildcard)
+        @assert tag∈('p', 'u') "PNID error: wrong tag($tag)."
+        isa(dir, Char) && @assert dir∈('x', 'y', 'z') "PNID error: wrong direction($dir)."
+        new{typeof(dir)}(tag, dir)
+    end
+end
+@inline Base.adjoint(pnid::PNID) = pnid
+
+"""
+    Phonon <: SimpleInternal{PNID{Char}}
+
+The phonon internal degrees of freedom.
+"""
+struct Phonon <: SimpleInternal{PNID{Char}}
+    ndir::Int
+    function Phonon(ndir::Integer)
+        @assert ndir∈(1, 2, 3) "Phonon error: wrong number of directions."
+        new(ndir)
+    end
+end
+@inline shape(pn::Phonon) = (1:2, 1:pn.ndir)
+@inline ndimshape(::Type{Phonon}) = 2
+@inline Base.CartesianIndex(pnid::PNID{Char}, ::Phonon) = CartesianIndex(pnid.tag=='u' ? 1 : 2, Int(pnid.dir)-Int('x')+1)
+@inline PNID(index::CartesianIndex{2}, ::Phonon) = PNID(index[1]==1 ? 'u' : 'p', Char(Int('x')+index[2]-1))
+@inline shape(iidspace::IIDSpace{PNID{Symbol}, Phonon}) = (iidspace.iid.tag=='u' ? (1:1) : (2:2), 1:iidspace.internal.ndir)
+@inline function shape(iidspace::IIDSpace{PNID{Char}, Phonon})
+    dir = Int(iidspace.iid.dir)-Int('x')+1
+    @assert 0<dir<iidspace.internal.ndir+1 "shape error: dir out of range."
+    return (iidspace.iid.tag=='u' ? (1:1) : (2:2), dir:dir)
+end
+
+"""
+    script(::Val{:BD}, index::Index{<:AbstractPID, <:PNID}, l::LaTeX) -> Char
+    script(::Val{:BD}, oid::AbstractCompositeOID{<:Index{<:AbstractPID, <:PNID}}, l::LaTeX) -> Char
+    script(::Val{:site}, index::Index{<:AbstractPID, <:PNID}; kwargs...) -> Int
+    script(::Val{:dir}, index::Index{<:AbstractPID, <:PNID}; kwargs...) -> Char
+
+Get the required script of a phonon oid.
+"""
+@inline script(::Val{:BD}, index::Index{<:AbstractPID, <:PNID}, l::LaTeX) = l.body[index.iid.tag]
+@inline script(::Val{:BD}, oid::AbstractCompositeOID{<:Index{<:AbstractPID, <:PNID}}, l::LaTeX) = l.body[getcontent(oid, :index).iid.tag]
+@inline script(::Val{:site}, index::Index{<:AbstractPID, <:PNID}; kwargs...) = index.pid.site
+@inline script(::Val{:dir}, index::Index{<:AbstractPID, <:PNID}; kwargs...) = index.iid.dir
+
+"""
+    pndefaultlatex
+
+The default LaTeX format for a phonon oid.
+"""
+const pndefaultlatex = LaTeX{(), (:site, :dir)}(Dict('p'=>'p', 'u'=>'u'), "", "")
+@inline latexname(::Type{<:Index{<:AbstractPID, <:PNID}}) = Symbol("Index{AbstractPID, PNID}")
+@inline latexname(::Type{<:AbstractCompositeOID{<:Index{<:AbstractPID, <:PNID}}}) = Symbol("AbstractCompositeOID{Index{AbstractPID, PNID}}")
+latexformat(Index{<:AbstractPID, <:PNID}, pndefaultlatex)
+latexformat(AbstractCompositeOID{<:Index{<:AbstractPID, <:PNID}}, pndefaultlatex)
+
+"""
+    usualphononindextotuple
+
+Indicate that the choosed fields are `(:tag, :site, :dir)` when converting a phonon index to tuple.
+"""
+const usualphononindextotuple = OIDToTuple(:tag, :site, :dir)
+
+"""
+    permute(id₁::OID{<:Index{<:AbstractPID, PNID{Char}}}, id₂::OID{<:Index{<:AbstractPID, PNID{Char}}}) -> Tuple{Vararg{Operator}}
+
+Permute two phonon oids and get the result.
+"""
+function permute(id₁::OID{<:Index{<:AbstractPID, PNID{Char}}}, id₂::OID{<:Index{<:AbstractPID, PNID{Char}}})
+    if id₁.index.iid.dir==id₂.index.iid.dir && id₁.index.iid.tag≠id₂.index.iid.tag && id₁.rcoord==id₂.rcoord && id₁.icoord==id₂.icoord
+        if id₁.index.iid.tag=='u'
+            return (Operator(1im), Operator(1, ID(id₂, id₁)))
+        else
+            return (Operator(-1im), Operator(1, ID(id₂, id₁)))
+        end
+    else
+        return (Operator(1, ID(id₂, id₁)),)
+    end
+end
+
+"""
+    PhononCoupling(value::Number, tags::NTuple{N, Char}, dirs::Subscript{<:Union{NTuple{N, Char}, NTuple{N, Symbol}}}) where N
+
+Phonon coupling.
+
+Type alias for `Coupling{V<:Number, I<:ID{PNID}, C<:IIDConstrain, CI<:ConstrainID}`.
+"""
+const PhononCoupling{V<:Number, I<:ID{PNID}, C<:IIDConstrain, CI<:ConstrainID} = Coupling{V, I, C, CI}
+@inline function PhononCoupling(value::Number, tags::NTuple{N, Char}, dirs::Subscript{<:Union{NTuple{N, Char}, NTuple{N, Symbol}}}) where N
+    return Coupling(value, ID(PNID, tags, dirs.pattern), IIDConstrain((dir=dirs,)))
+end
+function Base.show(io::IO, pnc::PhononCoupling)
+    @printf io "PhononCoupling(value=%s" decimaltostr(pnc.value)
+    @printf io ", tags=[%s]" join(pnc.cid.tags, " ")
+    pnc.cid.dirs≠ntuple(i->wildcard, Val(rank(pnc))) && @printf io ", dirs=%s" repr(pnc.constrain, 1:length(pnc.constrain), :dir)
+    @printf io ")"
+end
+function Base.repr(pnc::PhononCoupling)
+    result = [@sprintf "%s [%s]" decimaltostr(pnc.value) join(pnc.cid.tags, " ")]
+    pnc.cid.dirs≠ntuple(i->wildcard, Val(rank(pnc))) && push!(result, @sprintf "dr%s" repr(pnc.constrain, 1:length(pnc.constrain), :dir))
+    return join(result, " ")
+end
+
+"""
+    PhononCoupling(value::Number, tags::NTuple{N, Char};
+        dirs::Union{NTuple{N, Char}, NTuple{N, Symbol}, Subscript}=Subscript(N)
+        ) where N
+
+Construct a phonon coupling.
+"""
+function PhononCoupling(value::Number, tags::NTuple{N, Char};
+        dirs::Union{NTuple{N, Char}, NTuple{N, Symbol}, Subscript}=Subscript(N)
+        ) where N
+    isa(dirs, Subscript) || (dirs = Subscript(dirs))
+    return PhononCoupling(value, tags, dirs)
+end
+
+"""
+    expand(pnc::PhononCoupling{<:Number, <:ID{PNID{Symbol}}}, bond::Bond, hilbert::Hilbert, info::Val{:PhononPotential}) -> PPExpand
+
+Expand the default phonon potential coupling on a given bond.
+"""
+function expand(pnc::PhononCoupling{<:Number, <:ID{PNID{Symbol}}}, bond::Bond, hilbert::Hilbert, info::Val{:PhononPotential})
+    R̂ = rcoord(bond)/norm(rcoord(bond))
+    @assert pnc.cid.tags==('u', 'u') "expand error: wrong tags of phonon coupling."
+    @assert isapprox(pnc.value, 1, atol=atol, rtol=rtol) "expand error: wrong coefficient of phonon coupling."
+    pn₁, pn₂ = couplinginternals(pnc, bond, hilbert, info)
+    @assert pn₁.ndir==pn₂.ndir==length(R̂) "expand error: dismatched number of directions."
+    return PPExpand(R̂, (bond.epoint, bond.spoint))
+end
+struct PPExpand{N, P<:AbstractPID, D<:Number} <: CartesianVectorSpace{Tuple{D, ID{OID{Index{P, PNID{Char}}, SVector{N, D}}, 2}}}
+    direction::SVector{N, D}
+    points::NTuple{2, Point{N, P, D}}
+end
+@inline shape(pnce::PPExpand) = (1:length(pnce.direction), 1:3)
+function Tuple(index::CartesianIndex{2}, pnce::PPExpand)
+    dir = Char(Int('x')+index[1]-1)
+    coeff = index[2]==2 ? -2 : 1
+    pos₁, pos₂ = index[2]==1 ? (1, 1) : index[2]==2 ? (1, 2) : (2, 2)
+    oid₁ = OID(Index(pnce.points[pos₁].pid, PNID('u', dir)), pnce.points[pos₁].rcoord, pnce.points[pos₁].icoord)
+    oid₂ = OID(Index(pnce.points[pos₂].pid, PNID('u', dir)), pnce.points[pos₂].rcoord, pnce.points[pos₂].icoord)
+    return (pnce.direction[index[1]])^2*coeff, ID(oid₁, oid₂)
+end
+
+"""
+    kinetic"" -> Couplings
+
+The kinetic energy part of phonon couplings.
+"""
+macro kinetic_str(::String) Couplings(PhononCoupling(1, ('p', 'p'))) end
+
+"""
+    potential"" -> Couplings
+
+The potential energy part of phonon couplings.
+"""
+macro potential_str(::String) Couplings(PhononCoupling(1, ('u', 'u'))) end
+
+"""
+    PhononKinetic(id::Symbol, value::Any;
+        amplitude::Union{Function, Nothing}=nothing,
+        modulate::Union{Function, Bool}=false
+        )
+
+Kinetic energy part of phonons.
+
+Type alias for `Term{:PhononKinetic, 2, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`.
+"""
+const PhononKinetic{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:PhononKinetic, 2, id, V, Int, C, A, M}
+@inline function PhononKinetic(id::Symbol, value::Any;
+        amplitude::Union{Function, Nothing}=nothing,
+        modulate::Union{Function, Bool}=false
+        )
+    isa(amplitude, TermAmplitude) || (amplitude = TermAmplitude(amplitude))
+    isa(modulate, TermModulate) || (modulate = TermModulate(id, modulate))
+    Term{:PhononKinetic, 2, id}(value, 0, TermCouplings(kinetic""), amplitude, modulate, 1)
+end
+@inline abbr(::Type{<:PhononKinetic}) = :pnk
+@inline isHermitian(::Type{<:PhononKinetic}) = true
+
+"""
+    PhononPotential(id::Symbol, value::Any, bondkind::Int;
+        amplitude::Union{Function, Nothing}=nothing,
+        modulate::Union{Function, Bool}=false
+        )
+
+Potential energy part of phonons.
+
+Type alias for `Term{:PhononPotential, 2, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`
+"""
+const PhononPotential{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:PhononPotential, 2, id, V, Int, C, A, M}
+@inline function PhononPotential(id::Symbol, value::Any, bondkind::Int;
+        amplitude::Union{Function, Nothing}=nothing,
+        modulate::Union{Function, Bool}=false
+        )
+    isa(amplitude, TermAmplitude) || (amplitude = TermAmplitude(amplitude))
+    isa(modulate, TermModulate) || (modulate = TermModulate(id, modulate))
+    Term{:PhononPotential, 2, id}(value, bondkind, TermCouplings(potential""), amplitude, modulate, 1)
+end
+@inline abbr(::Type{<:PhononPotential}) = :pnp
+@inline isHermitian(::Type{<:PhononPotential}) = true
+@inline couplingcenters(::PhononCoupling, ::Bond, ::Val{:PhononPotential}) = (1, 2)
 
 end # module

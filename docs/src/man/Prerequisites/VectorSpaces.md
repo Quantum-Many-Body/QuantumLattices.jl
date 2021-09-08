@@ -1,5 +1,5 @@
 ```@meta
-CurrentModule = QuantumLattices.Mathematics.VectorSpaces
+CurrentModule = QuantumLattices.Prerequisites.VectorSpaces
 ```
 
 # Vector spaces

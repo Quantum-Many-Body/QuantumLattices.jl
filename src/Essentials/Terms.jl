@@ -3,26 +3,26 @@ module Terms
 using MacroTools: @capture
 using Printf: @printf, @sprintf
 using StaticArrays: SVector
-using ..Spatials: AbstractBond, Point, AbstractPID, Bonds, AbstractLattice, acrossbonds, isintracell, pidtype
+using ..QuantumAlgebras: SimpleID, ID, Element, Elements
+using ..Spatials: AbstractPID, AbstractBond, Point, Bonds, AbstractLattice, acrossbonds, isintracell, pidtype
 using ..DegreesOfFreedom: IID, SimpleIID, CompositeIID, Internal, CompositeInternal, InternalIndex
-using ..DegreesOfFreedom: Hilbert, AbstractOID, OID, Index, oidtype, Operator, Operators, Table, Boundary, plain
+using ..DegreesOfFreedom: Hilbert, AbstractOID, Index, OID, oidtype, Operator, Operators, Table, Boundary, plain
 using ...Essentials: dtype
 using ...Interfaces: add!, dimension
 using ...Prerequisites: atol, rtol, decimaltostr
 using ...Prerequisites.Traits: rawtype, efficientoperations
 using ...Prerequisites.CompositeStructures: CompositeTuple, NamedContainer
-using ...Mathematics.VectorSpaces: CartesianVectorSpace
-using ...Mathematics.AlgebraOverFields: SimpleID, ID, Element, Elements
+using ...Prerequisites.VectorSpaces: CartesianVectorSpace
 
+import ..QuantumAlgebras: idtype
 import ..DegreesOfFreedom: isHermitian
 import ...Interfaces: id, value, rank, expand, expand!
 import ...Essentials: kind, update!, reset!
 import ...Prerequisites.Traits: parameternames, isparameterbound, contentnames, getcontent
-import ...Mathematics.VectorSpaces: shape, ndimshape
-import ...Mathematics.AlgebraOverFields: idtype
+import ...Prerequisites.VectorSpaces: shape, ndimshape
 
-export IIDSpace, Subscript, @subscript_str, IIDConstrain, ConstrainID
-export AbstractCoupling, Coupling, Couplings, @couplings, couplingcenters, couplingpoints, couplinginternals
+export IIDSpace, Subscript, IIDConstrain, ConstrainID, @subscript_str
+export AbstractCoupling, Coupling, Couplings, couplingcenters, couplingpoints, couplinginternals, @couplings
 export TermFunction, TermAmplitude, TermCouplings, TermModulate, Term, abbr, ismodulatable, otype
 export Parameters, GenOperators, AbstractGenerator, Generator
 

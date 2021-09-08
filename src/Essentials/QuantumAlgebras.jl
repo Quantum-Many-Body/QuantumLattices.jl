@@ -1,16 +1,15 @@
-module AlgebraOverFields
+module QuantumAlgebras
 
 using Printf: @printf, @sprintf
 using ...Prerequisites: atol, rtol
 using ...Prerequisites.NamedVectors: NamedVector
-using ...Prerequisites.Traits: efficientoperations, rawtype, fulltype, parametertype, parameterpairs, reparameter, promoteparameters, getcontent, contentorder
+using ...Prerequisites.Traits: efficientoperations, getcontent, contentorder
+using ...Prerequisites.Traits: rawtype, fulltype, parametertype, parameterpairs, reparameter, promoteparameters
 
 import ...Interfaces: id, value, rank, add!, sub!, mul!, div!, ⊗, ⋅, permute
 import ...Prerequisites.Traits: contentnames, dissolve, isparameterbound, parameternames
 
-export SimpleID, ID
-export Element, Scalar, Elements
-export idtype, sequence
+export SimpleID, ID, Element, Scalar, Elements, idtype, sequence
 
 """
     SimpleID <: NamedVector

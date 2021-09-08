@@ -85,9 +85,12 @@ function Base.searchsortedfirst(table, basis; compare=<)
     return hi
 end
 
+include("Combinatorics.jl")
 include("Traits.jl")
 include("CompositeStructures.jl")
 include("SimpleTrees.jl")
 include("NamedVectors.jl")
+include("VectorSpaces.jl")
+include("QuantumNumbers.jl")
 
 end # module

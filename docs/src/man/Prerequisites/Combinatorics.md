@@ -1,10 +1,10 @@
 ```@meta
-CurrentModule = QuantumLattices.Mathematics.Combinatorics
+CurrentModule = QuantumLattices.Prerequisites.Combinatorics
 ```
 
 ```@setup combinatorics
 push!(LOAD_PATH, "../../../../src/")
-using QuantumLattices.Mathematics.Combinatorics
+using QuantumLattices.Prerequisites.Combinatorics
 ```
 
 # Combinatorics

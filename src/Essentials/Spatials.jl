@@ -5,13 +5,13 @@ using StaticArrays: SVector, SMatrix
 using Printf: @printf
 using NearestNeighbors: KDTree, knn, inrange
 using Base.Iterators: flatten, product
+using ..QuantumAlgebras: SimpleID
 using ...Prerequisites: atol, rtol, Float
+using ...Prerequisites.Combinatorics: Combinations
 using ...Prerequisites.Traits: efficientoperations, getcontent
 using ...Prerequisites.SimpleTrees: SimpleTree, simpletreedepth, isleaf
-using ...Mathematics.Combinatorics: Combinations
-using ...Mathematics.AlgebraOverFields: SimpleID
-using ...Mathematics.VectorSpaces: NamedVectorSpace
-using ...Mathematics.QuantumNumbers: Momentum, AbelianNumbers
+using ...Prerequisites.VectorSpaces: NamedVectorSpace
+using ...Prerequisites.QuantumNumbers: Momentum, AbelianNumbers
 
 import ..Essentials: dtype, kind, reset!
 import ...Interfaces: decompose, rank, dimension, expand

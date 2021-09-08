@@ -1,8 +1,8 @@
 using Test
-using QuantumLattices.Mathematics.VectorSpaces
+using QuantumLattices.Prerequisites.VectorSpaces
 using QuantumLattices.Interfaces: dimension, rank
 
-import QuantumLattices.Mathematics.VectorSpaces: shape, ndimshape
+import QuantumLattices.Prerequisites.VectorSpaces: shape, ndimshape
 import QuantumLattices.Prerequisites.Traits: contentnames, getcontent
 
 struct SimpleVectorSpace{B, N} <: EnumerativeVectorSpace{B}
