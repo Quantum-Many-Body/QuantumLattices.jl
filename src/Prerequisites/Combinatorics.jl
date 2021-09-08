@@ -6,11 +6,11 @@ export Combinations, DulCombinations, Permutations, DulPermutations
 """
     AbstractCombinatorics{M, C}
 
-Abstract combinatoric algorithms.
+Abstract combinatorial algorithms.
 """
 abstract type AbstractCombinatorics{M, C} end
 @inline Base.eltype(::Type{<:AbstractCombinatorics{M, C}}) where {M, C} = NTuple{M, eltype(C)}
-@inline @generated gettuple(contents, inds, ::Val{M}) where {M} = Expr(:tuple, [:(contents[inds[$i]]) for i = 1:M]...)
+@inline @generated gettuple(contents, indices, ::Val{M}) where {M} = Expr(:tuple, [:(contents[indices[$i]]) for i = 1:M]...)
 
 """
     Combinations{M}(contents::C) where {M, C}

@@ -41,7 +41,7 @@ Base.eltype(::Type{<:IIDSpace{<:IID, V}}) where {V<:Internal} = eltype(V)
 kind(iidspace::IIDSpace) = kind(typeof(iidspace))
 kind(::Type{<:IIDSpace{<:IID, <:Internal, Kind}}) where Kind = Kind
 @generated function shape(iidspace::IIDSpace{I, V}) where {I<:CompositeIID, V<:CompositeInternal}
-    @assert rank(I)==rank(V) "shape error: dismatched composite iid and composite internal space."
+    @assert rank(I)==rank(V) "shape error: mismatched composite iid and composite internal space."
     Kind = Val(kind(iidspace))
     Expr(:tuple, [:(shape(IIDSpace(iidspace.iid[$i], iidspace.internal[InternalIndex($i)], $Kind))...) for i = 1:rank(I)]...)
 end
@@ -114,7 +114,7 @@ Get the total number of the whole variables of a subscript set.
 Judge whether a set of values matches the pattern specified by subscript.
 """
 @inline function Base.match(subscript::Subscript, values::Tuple)
-    @assert length(subscript)==length(values) "match error: dismatched length of values."
+    @assert length(subscript)==length(values) "match error: mismatched length of values."
     return subscript.constrain(values...)
 end
 
@@ -205,7 +205,7 @@ Construct the constrain.
 """
 function IIDConstrain(constrain::NamedContainer{Subscript}...)
     for restriction in constrain
-        length(restriction)>1 && @assert mapreduce(length, ==, values(restriction)) "IIDConstrain error: dismatched ranks."
+        length(restriction)>1 && @assert mapreduce(length, ==, values(restriction)) "IIDConstrain error: mismatched ranks."
     end
     return IIDConstrain(constrain)
 end
@@ -239,7 +239,7 @@ Judge whether a composite iid matches the constrain.
 @inline Base.match(iidc::IIDConstrain, ciid::CompositeIID) = match(iidc, ciid.content)
 @generated function Base.match(iidc::IIDConstrain, iids::Tuple{Vararg{SimpleIID}})
     length(iidc)==0 && return true
-    @assert rank(iidc)==fieldcount(iids) "match error: dismatched rank of iids and constrain."
+    @assert rank(iidc)==fieldcount(iids) "match error: mismatched rank of iids and constrain."
     exprs, count = [], 1
     for i = 1:length(iidc)
         start, stop = count, count+rank(iidc, i)-1
@@ -306,7 +306,7 @@ end
 """
     AbstractCoupling{V, I<:ID{SimpleID}} <: Element{V, I}
 
-The abstract coupling intra/inter interanl degrees of freedom at different lattice points.
+The abstract coupling intra/inter internal degrees of freedom at different lattice points.
 """
 abstract type AbstractCoupling{V, I<:ID{SimpleID}} <: Element{V, I} end
 ID{SimpleIID}(coupling::AbstractCoupling) = id(coupling)
@@ -332,7 +332,7 @@ end
 """
     couplinginternals(coupling::AbstractCoupling, bond::AbstractBond, hilbert::Hilbert, info::Val) -> NTuple{rank(coupling), SimpleInternal}
 
-Get the interanl spaces where each order of the coupling acts on.
+Get the internal spaces where each order of the coupling acts on.
 """
 @inline @generated function couplinginternals(coupling::AbstractCoupling, bond::AbstractBond, hilbert::Hilbert, info::Val)
     exprs = []
@@ -350,7 +350,7 @@ Expand a coupling with the given bond and Hilbert space.
 function expand(coupling::AbstractCoupling, bond::AbstractBond, hilbert::Hilbert, info::Val)
     points = couplingpoints(coupling, bond, info)
     internals = couplinginternals(coupling, bond, hilbert, info)
-    @assert rank(coupling)==length(points)==length(internals) "expand error: dismatched rank."
+    @assert rank(coupling)==length(points)==length(internals) "expand error: mismatched rank."
     return CExpand(value(coupling), points, IIDSpace(CompositeIID(ID{SimpleIID}(coupling)), CompositeInternal(internals), info), IIDConstrain(coupling))
 end
 struct CExpand{V, N, P<:AbstractPID, SV<:SVector, S<:IIDSpace, C<:IIDConstrain}
@@ -390,7 +390,7 @@ end
 """
     Coupling{V, I<:ID{SimpleIID}, C<:IIDConstrain, CI<:ConstrainID} <: AbstractCoupling{V, Tuple{CompositeIID{I}, CI}}
 
-The coupling intra/inter interanl degrees of freedom at different lattice points.
+The coupling intra/inter internal degrees of freedom at different lattice points.
 """
 struct Coupling{V, I<:ID{SimpleIID}, C<:IIDConstrain, CI<:ConstrainID} <: AbstractCoupling{V, Tuple{CompositeIID{I}, CI}}
     value::V
@@ -421,7 +421,7 @@ Get the multiplication between two couplings.
 """
     Couplings(cps::AbstractCoupling...)
 
-A pack of couplings intra/inter interanl degrees of freedom at different lattice points.
+A pack of couplings intra/inter internal degrees of freedom at different lattice points.
 
 Alias for `Elements{<:ID{SimpleID}, <:AbstractCoupling}`.
 """
@@ -946,7 +946,7 @@ abstract type AbstractGenerator{TS<:NamedContainer{Term}, BS<:Bonds, H<:Hilbert,
     otype(gen::AbstractGenerator)
     otype(::Type{<:AbstractGenerator})
 
-Get the operator type of the generated opeators.
+Get the operator type of the generated operators.
 """
 @inline otype(gen::AbstractGenerator) = otype(typeof(gen))
 @inline otype(::Type{<:AbstractGenerator{<:NamedContainer{Term}, <:Bonds, <:Hilbert, <:Table, <:Boundary, OS}}) where {OS<:GenOperators} = eltype(OS)

@@ -90,7 +90,7 @@ Create a Fock id.
 """
     Fock{T} <: SimpleInternal{FID{T, Int, Int, Int}}
 
-The Fock interanl degrees of freedom.
+The Fock internal degrees of freedom.
 """
 struct Fock{T} <: SimpleInternal{FID{T, Int, Int, Int}}
     norbital::Int
@@ -113,7 +113,7 @@ function Base.show(io::IO, fock::Fock)
     @printf io "%s{%s}(%s)" fock|>typeof|>nameof repr(statistics(fock)) join(("$name=$(getfield(fock, name))" for name in fock|>typeof|>fieldnames), ", ")
 end
 @generated function shape(iidspace::IIDSpace{I, V}) where {I<:CompositeIID{<:Tuple{Vararg{FID}}}, V<:CompositeInternal{<:Tuple{Vararg{Fock}}}}
-    @assert rank(I)==rank(V) "shape error: dismatched composite iid and composite internal space."
+    @assert rank(I)==rank(V) "shape error: mismatched composite iid and composite internal space."
     Kind = Val(kind(iidspace))
     Expr(:tuple, [:(shape(IIDSpace(iidspace.iid[$i], iidspace.internal[InternalIndex($i)], $Kind); order=$i)...) for i = 1:rank(I)]...)
 end
@@ -189,14 +189,14 @@ end
 """
     usualfockindextotuple
 
-Indicate that the choosed fields are `(:site, :orbital, :spin)` when converting a Fock index to tuple.
+Indicate that the chosen fields are `(:site, :orbital, :spin)` when converting a Fock index to tuple.
 """
 const usualfockindextotuple = OIDToTuple(:site, :orbital, :spin)
 
 """
     nambufockindextotuple
 
-Indicate that the choosed fields are `(:nambu, :site, :orbital, :spin)` when converting a Fock index to tuple.
+Indicate that the chosen fields are `(:nambu, :site, :orbital, :spin)` when converting a Fock index to tuple.
 """
 const nambufockindextotuple = OIDToTuple(:nambu, :site, :orbital, :spin)
 
@@ -325,7 +325,7 @@ end
 Get the direct product between two Fock couplings.
 """
 function ⊗(fc₁::FockCoupling, fc₂::FockCoupling)
-    @assert rank(fc₁)==rank(fc₂) "⊗ error: dismatched rank."
+    @assert rank(fc₁)==rank(fc₂) "⊗ error: mismatched rank."
     @assert length(fc₁.constrain)==length(fc₂.constrain)==1 "⊗ error: not supported."
     wildcards = ntuple(i->wildcard, Val(rank(fc₁)))
     orbitals = fockcouplingchoicerule(first(fc₁.constrain).orbital, first(fc₂.constrain).orbital, wildcards, :orbitals)
@@ -335,7 +335,7 @@ function ⊗(fc₁::FockCoupling, fc₂::FockCoupling)
 end
 function fockcouplingchoicerule(v₁, v₂, wildcards::Tuple{Vararg{Symbol}}, field::Symbol)
     t₁, t₂ = convert(Tuple, v₁)==wildcards, convert(Tuple, v₂)==wildcards
-    @assert t₁||t₂ "fockcouplingchoicerule error: dismatched $field ($v₁ and $v₂)."
+    @assert t₁||t₂ "fockcouplingchoicerule error: mismatched $field ($v₁ and $v₂)."
     return t₁ ? v₂ : v₁
 end
 
@@ -358,7 +358,7 @@ function ⋅(fc₁::FockCoupling, fc₂::FockCoupling)
             value = value * delta(v₁[2], v₂[1])
             push!(attrpairs, attrname=>(v₁[1], v₂[2]))
         else
-            @assert v₁==(wildcard, wildcard) && v₂==(wildcard, wildcard) "⋅ error: dismatched $attrname ($v₁ and $v₂)."
+            @assert v₁==(wildcard, wildcard) && v₂==(wildcard, wildcard) "⋅ error: mismatched $attrname ($v₁ and $v₂)."
         end
     end
     return FockCoupling{2}(value; attrpairs...)
@@ -467,7 +467,7 @@ macro fc_str(str::String)
         for component in split(ps, '⊗')
             attrpair, rank = fccomponent(component)
             isnothing(N) && (N = rank)
-            @assert N==rank "@fc_str error: dismatched ranks."
+            @assert N==rank "@fc_str error: mismatched ranks."
             push!(attrpairs, attrpair)
         end
         @assert length(attrpairs)>0 "@fc_str error: wrong input pattern."
@@ -733,7 +733,7 @@ end
 """
     Spin{S} <: SimpleInternal{SID{S, Int, Char}}
 
-The spin interanl degrees of freedom.
+The spin internal degrees of freedom.
 """
 struct Spin{S} <: SimpleInternal{SID{S, Int, Char}}
     norbital::Int
@@ -790,7 +790,7 @@ latexformat(AbstractCompositeOID{<:Index{<:AbstractPID, <:SID}}, sdefaultlatex)
 """
     usualspinindextotuple
 
-Indicate that the choosed fields are `(:site, :orbital)` when converting a spin index to tuple.
+Indicate that the chosen fields are `(:site, :orbital)` when converting a spin index to tuple.
 """
 const usualspinindextotuple = OIDToTuple(:site, :orbital)
 
@@ -1086,7 +1086,7 @@ latexformat(AbstractCompositeOID{<:Index{<:AbstractPID, <:PNID}}, pndefaultlatex
 """
     usualphononindextotuple
 
-Indicate that the choosed fields are `(:tag, :site, :dir)` when converting a phonon index to tuple.
+Indicate that the chosen fields are `(:tag, :site, :dir)` when converting a phonon index to tuple.
 """
 const usualphononindextotuple = OIDToTuple(:tag, :site, :dir)
 
@@ -1154,7 +1154,7 @@ function expand(pnc::PhononCoupling{<:Number, <:ID{PNID{Symbol}}}, bond::Bond, h
     @assert pnc.cid.tags==('u', 'u') "expand error: wrong tags of phonon coupling."
     @assert isapprox(pnc.value, 1, atol=atol, rtol=rtol) "expand error: wrong coefficient of phonon coupling."
     pn₁, pn₂ = couplinginternals(pnc, bond, hilbert, info)
-    @assert pn₁.ndir==pn₂.ndir==length(R̂) "expand error: dismatched number of directions."
+    @assert pn₁.ndir==pn₂.ndir==length(R̂) "expand error: mismatched number of directions."
     return PPExpand(R̂, (bond.epoint, bond.spoint))
 end
 struct PPExpand{N, P<:AbstractPID, D<:Number} <: CartesianVectorSpace{Tuple{D, ID{OID{Index{P, PNID{Char}}, SVector{N, D}}, 2}}}

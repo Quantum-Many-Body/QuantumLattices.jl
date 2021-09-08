@@ -133,7 +133,7 @@ const NamedContainer{T, Names} = NamedTuple{Names, <:Tuple{Vararg{T}}}
 Construct a named container.
 """
 @generated function NamedContainer{Names}(contents::Tuple) where Names
-    @assert length(Names) == fieldcount(contents) "NamedContainer error: dismatched length between names and contents."
+    @assert length(Names) == fieldcount(contents) "NamedContainer error: mismatched length between names and contents."
     fieldcount(contents) == 0 && return NamedTuple()
     return Expr(:tuple, [:($name = contents[$i]) for (i, name) in enumerate(Names)]...)
 end

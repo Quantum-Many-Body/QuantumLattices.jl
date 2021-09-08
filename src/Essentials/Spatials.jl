@@ -34,7 +34,7 @@ Get the distance between two points.
     Compared to `norm(p₁-p₂)`, this function avoids the memory allocation for `p₁-p₂`, thus is more efficient.
 """
 function distance(p₁::AbstractVector{<:Number}, p₂::AbstractVector{<:Number})
-    @assert length(p₁)==length(p₂) "distance error: dismatched length of input vectors."
+    @assert length(p₁)==length(p₂) "distance error: mismatched length of input vectors."
     result = zero(promote_type(eltype(p₁), eltype(p₂)))
     for i = 1:length(p₁)
         result = result + (p₁[i]-p₂[i])^2
@@ -115,7 +115,7 @@ function isparallel(v₁::AbstractVector{<:Number}, v₂::AbstractVector{<:Numbe
         temp = dot(v₁, v₂) / norm₁ / norm₂
         result = isapprox(temp, 1, atol=atol, rtol=rtol) ? 1 : isapprox(temp, -1, atol=atol, rtol=rtol) ? -1 : 0
     else
-        error("isparallel error: shape dismatch of the input vectors.")
+        error("isparallel error: shape mismatch of the input vectors.")
     end
     return result
 end
@@ -130,7 +130,7 @@ Judge whether a point is on a line segment whose end points are `p₁` and `p₂
 function isonline(p::AbstractVector{<:Number}, p₁::AbstractVector{<:Number}, p₂::AbstractVector{<:Number};
         ends::Tuple{Bool, Bool}=(true, true), atol::Real=atol, rtol::Real=rtol
         )
-    @assert length(p)==length(p₁)==length(p₂) "isonline error: shape dismatch of input point and line segment."
+    @assert length(p)==length(p₁)==length(p₂) "isonline error: shape mismatch of input point and line segment."
     d₁, d₂, d = distance(p, p₁), distance(p, p₂), distance(p₁, p₂)
     isapprox(d₁, 0.0, atol=atol, rtol=rtol) && return ends[1]
     isapprox(d₂, 0.0, atol=atol, rtol=rtol) && return ends[2]
@@ -145,14 +145,14 @@ end
 Decompose a vector with respect to input basis vectors.
 """
 function decompose(v₀::AbstractVector{<:Number}, v₁::AbstractVector{<:Number})
-    @assert length(v₀)==length(v₁) "decompose error: dismatched length of input vectors."
+    @assert length(v₀)==length(v₁) "decompose error: mismatched length of input vectors."
     n₀, n₁ = norm(v₀), norm(v₁)
     sign = dot(v₀, v₁) / n₀ / n₁
     @assert isapprox(abs(sign), 1.0, atol=atol, rtol=rtol) "decompose error: insufficient basis vectors."
     return (sign*n₀/n₁,)
 end
 function decompose(v₀::AbstractVector{<:Number}, v₁::AbstractVector{<:Number}, v₂::AbstractVector{<:Number})
-    @assert length(v₀)==length(v₁)==length(v₂) "decompose error: dismatched length of input vectors."
+    @assert length(v₀)==length(v₁)==length(v₂) "decompose error: mismatched length of input vectors."
     @assert length(v₀)==2 || length(v₀)==3 "decompose error: unsupported dimension($(length(v₀))) of input vectors."
     if length(v₀) == 2
         det = v₁[1]*v₂[2] - v₁[2]*v₂[1]
@@ -166,7 +166,7 @@ function decompose(v₀::AbstractVector{<:Number}, v₁::AbstractVector{<:Number
     return x₁, x₂
 end
 function decompose(v₀::AbstractVector{<:Number}, v₁::AbstractVector{<:Number}, v₂::AbstractVector{<:Number}, v₃::AbstractVector{<:Number})
-    @assert length(v₀)==length(v₁)==length(v₂)==length(v₃) "decompose error: dismatched length of input vectors."
+    @assert length(v₀)==length(v₁)==length(v₂)==length(v₃) "decompose error: mismatched length of input vectors."
     @assert length(v₀)==3 "decompose error: unsupported dimension($(length(v₀))) of input vectors."
     V = volume(v₁, v₂, v₃)
     r₁ = (v₂[2]*v₃[3]/V-v₂[3]*v₃[2]/V, v₂[3]*v₃[1]/V-v₂[1]*v₃[3]/V, v₂[1]*v₃[2]/V-v₂[2]*v₃[1]/V)
@@ -188,7 +188,7 @@ Judge whether a point belongs to the interior of a triangle whose vertexes are `
 function isintratriangle(p::AbstractVector{<:Number}, p₁::AbstractVector{<:Number}, p₂::AbstractVector{<:Number}, p₃::AbstractVector{<:Number};
         vertexes::NTuple{3, Bool}=(true, true, true), edges::NTuple{3, Bool}=(true, true, true), atol::Real=atol, rtol::Real=rtol
         )
-    @assert length(p)==length(p₁)==length(p₂)==length(p₃) "isintratriangle error: shape dismatch of input point and triangle."
+    @assert length(p)==length(p₁)==length(p₂)==length(p₃) "isintratriangle error: shape mismatch of input point and triangle."
     @assert length(p)==2 || length(p)==3 "isintratriangle error: unsupported dimension($(length(p))) of input points."
     x = if length(p) == 2
         decompose(SVector(p[1]-p₁[1], p[2]-p₁[2]), SVector(p₂[1]-p₁[1], p₂[2]-p₁[2]), SVector(p₃[1]-p₁[1], p₃[2]-p₁[2]))
@@ -240,7 +240,7 @@ function reciprocals(vectors::AbstractVector{<:AbstractVector{<:Number}})
         push!(result, 2*convert(datatype, pi)/mapreduce(vi->vi^2, +, vectors[1])*vectors[1])
     elseif length(vectors) == 2
         v₁, v₂ = vectors[1], vectors[2]
-        @assert length(v₁)==length(v₂) "reciprocals error: dismatched length of input vectors."
+        @assert length(v₁)==length(v₂) "reciprocals error: mismatched length of input vectors."
         if length(v₁) == 2
             det = 2*convert(datatype, pi) / (v₁[1]*v₂[2]-v₁[2]*v₂[1])
             push!(result, [det*v₂[2], -det*v₂[1]])
@@ -269,7 +269,9 @@ Get the translated cluster of the original one by a vector.
 @inline translate(cluster::AbstractMatrix{<:Number}, vector::AbstractVector{<:Number}) = cluster .+ reshape(vector, (vector|>length, 1))
 
 """
-    rotate(cluster::AbstractMatrix{<:Number}, angle::Number; axis::Tuple{Union{AbstractVector{<:Number}, Nothing}, Tuple{<:Number, <:Number}}=(nothing, (0, 0))) -> Matrix{<:Number}
+    rotate(cluster::AbstractMatrix{<:Number}, angle::Number;
+        axis::Tuple{Union{AbstractVector{<:Number}, Nothing}, Tuple{<:Number, <:Number}}=(nothing, (0, 0))
+        ) -> Matrix{<:Number}
 
 Get a rotated cluster of the original one by a certain angle around an axis.
 
@@ -279,11 +281,13 @@ The axis is determined by a point it gets through (`nothing` can be used to deno
     2. Only 2 and 3 dimensional vectors can be rotated.
     3. When the input vectors are 2 dimensional, both the polar and azimuth of the axis must be 0.
 """
-function rotate(cluster::AbstractMatrix{<:Number}, angle::Number; axis::Tuple{Union{AbstractVector{<:Number}, Nothing}, Tuple{<:Number, <:Number}}=(nothing, (0, 0)))
+function rotate(cluster::AbstractMatrix{<:Number}, angle::Number;
+        axis::Tuple{Union{AbstractVector{<:Number}, Nothing}, Tuple{<:Number, <:Number}}=(nothing, (0, 0))
+        )
     @assert size(cluster, 1)∈(2, 3) "rotate error: only 2 and 3 dimensional vectors can be rotated."
     datatype = promote_type(eltype(cluster), typeof(angle), Float)
     center, theta, phi = (isnothing(axis[1]) ? zeros(datatype, size(cluster, 1)) : axis[1]), axis[2][1], axis[2][2]
-    @assert length(center)==size(cluster, 1) "rotate error: dismatched shape of the input cluster and the point on axis."
+    @assert length(center)==size(cluster, 1) "rotate error: mismatched shape of the input cluster and the point on axis."
     if length(center) == 2
         @assert isapprox(theta, 0, atol=atol, rtol=rtol) && isapprox(phi, 0, atol=atol, rtol=rtol) "rotate error: both the polar and azimuth of the axis for 2d vectors must be 0."
     end
@@ -312,7 +316,7 @@ Basically, the final supercluster is composed of several parts, each of which is
 """
 function tile(cluster::AbstractMatrix{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}, translations::NTuple{M, NTuple{N, <:Number}}=()) where {N, M}
     N==0 && return copy(cluster)
-    @assert length(vectors)==N "tile error: dismatched shape of input vectors and translations."
+    @assert length(vectors)==N "tile error: mismatched shape of input vectors and translations."
     datatype = promote_type(eltype(cluster), eltype(eltype(vectors)), Float)
     supercluster = zeros(datatype, size(cluster, 1), size(cluster, 2)*length(translations))
     disp = zeros(datatype, size(cluster, 1))
@@ -338,7 +342,7 @@ end
 
 Use kdtree to search the lowest several minimum bond lengths within a lattice translated by a cluster.
 
-When the translation vectors are not empty, the lattice will be considered periodic in the corresponding directions. Otherwise the lattice will be open in all directions. To search for the bonds accorss the periodic boundaries, the cluster will be pretranslated to become a supercluster, which has open boundaries but is large enough to contain all the nearest neighbors within the required order. The `coordination` parameter sets the average number of each order of nearest neighbors. If it is to small, larger bond lengths may not be searched, and the result will contain `Inf`. This is a sign that you may need a larger `coordination`. Another situation that `Inf` appears in the result occurs when the minimum lengths are searched in open lattices. Indeed, the cluster may be too small so that the required order just goes beyond it. In this case the warning message can be safely ignored.
+When the translation vectors are not empty, the lattice will be considered periodic in the corresponding directions. Otherwise the lattice will be open in all directions. To search for the bonds across the periodic boundaries, the cluster will be pre-translated to become a supercluster, which has open boundaries but is large enough to contain all the nearest neighbors within the required order. The `coordination` parameter sets the average number of each order of nearest neighbors. If it is to small, larger bond lengths may not be searched, and the result will contain `Inf`. This is a sign that you may need a larger `coordination`. Another situation that `Inf` appears in the result occurs when the minimum lengths are searched in open lattices. Indeed, the cluster may be too small so that the required order just goes beyond it. In this case the warning message can be safely ignored.
 """
 function minimumlengths(cluster::AbstractMatrix{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}, nneighbor::Int=1; coordination::Int=8)
     @assert nneighbor>=0 "minimumlengths error: input nneighbor must be non negative."
@@ -378,12 +382,12 @@ end
 
 Use kdtree to get the intracluster nearest neighbors.
 
-As is similar to [`minimumlengths`](@ref), when `vectors` is nonempty, the cluster assumes periodic boundaries. `neighbors` provides the map between the bond length and the order of nearest neighbors. Note only those with the lengths present in `neighbors` will be included in the result. `maxtranslations` determines the maximum number of translations along those directions specified by `vectors` when the tiled supercluster is construted (See [`minimumlengths`](@ref) for the explanation of the method for periodic lattices).
+As is similar to [`minimumlengths`](@ref), when `vectors` is nonempty, the cluster assumes periodic boundaries. `neighbors` provides the map between the bond length and the order of nearest neighbors. Note only those with the lengths present in `neighbors` will be included in the result. `maxtranslations` determines the maximum number of translations along those directions specified by `vectors` when the tiled supercluster is constructed (See [`minimumlengths`](@ref) for the explanation of the method for periodic lattices).
 """
 function intralinks(cluster::AbstractMatrix{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}, neighbors::Dict{Int, <:Number},
         maxtranslations::NTuple{N, Int}=ntuple(i->length(neighbors), length(vectors))
         ) where N
-    @assert length(vectors)==N "intralinks error: dismatched shape of input vectors and maxtranslations."
+    @assert length(vectors)==N "intralinks error: mismatched shape of input vectors and maxtranslations."
     datatype = promote_type(eltype(cluster), eltype(eltype(vectors)))
     result = Tuple{Int, Int, Int, Vector{datatype}}[]
     length(neighbors)==0 && return result
@@ -424,7 +428,7 @@ end
 Use kdtree to get the intercluster nearest neighbors.
 """
 function interlinks(cluster₁::AbstractMatrix{<:Number}, cluster₂::AbstractMatrix{<:Number}, neighbors::Dict{Int, <:Number})
-    @assert size(cluster₁, 1)==size(cluster₂, 1) "interlinks error: dismatched space dimension of input clusters."
+    @assert size(cluster₁, 1)==size(cluster₂, 1) "interlinks error: mismatched space dimension of input clusters."
     result = Tuple{Int, Int, Int}[]
     length(neighbors)==0 && return result
     for (i, indices) in enumerate(inrange(KDTree(convert(Matrix{Float}, cluster₂)), convert(Matrix{Float}, cluster₁), max(values(neighbors)...)+atol, true))
@@ -569,7 +573,7 @@ Base.show(io::IO, p::Point) = @printf io "Point(%s, %s, %s)" p.pid p.rcoord p.ic
     Point(pid::AbstractPID, rcoord::AbstractVector{<:Number}, icoord::AbstractVector{<:Number}=zero(SVector{length(rcoord), Int}))
     Point{N}(pid::AbstractPID, rcoord::AbstractVector{<:Number}, icoord::AbstractVector{<:Number}=zero(SVector{N, Int})) where N
 
-Construct a labeled poinnt.
+Construct a labeled point.
 """
 @inline function Point(pid::AbstractPID, rcoord::NTuple{N, <:Number}, icoord::NTuple{N, <:Number}=ntuple(i->0, N)) where N
     datatype = promote_type(eltype(rcoord), eltype(icoord))
@@ -579,7 +583,7 @@ end
     return Point{length(rcoord)}(pid, rcoord, icoord)
 end
 @inline function Point{N}(pid::AbstractPID, rcoord::AbstractVector{<:Number}, icoord::AbstractVector{<:Number}=zero(SVector{N, Int})) where N
-    @assert length(rcoord)==length(icoord)==N "Point error: dismatched length of input rcoord and icoord."
+    @assert length(rcoord)==length(icoord)==N "Point error: mismatched length of input rcoord and icoord."
     datatype = promote_type(eltype(rcoord), eltype(icoord))
     return Point(pid, convert(SVector{N, datatype}, rcoord), convert(SVector{N, datatype}, icoord))
 end
@@ -935,7 +939,7 @@ end
 
 Simplest lattice.
 
-A simplest lattice can be construted from its contents, i.e. pids, rcoords and icoords, or from a couple of points, or from a couple of sublattices.
+A simplest lattice can be constructed from its contents, i.e. pids, rcoords and icoords, or from a couple of points, or from a couple of sublattices.
 """
 struct Lattice{N, P<:AbstractPID, D<:Number} <: AbstractLattice{N, P, D}
     name::String
@@ -951,7 +955,7 @@ struct Lattice{N, P<:AbstractPID, D<:Number} <: AbstractLattice{N, P, D}
             neighbors::Union{Dict{Int, <:Real}, Int}=1;
             coordination::Int=8
             ) where N
-        @assert N==size(rcoords, 1)==size(icoords, 1) && length(pids)==size(rcoords, 2)==size(icoords, 2) "Lattice error: shape dismatched."
+        @assert N==size(rcoords, 1)==size(icoords, 1) && length(pids)==size(rcoords, 2)==size(icoords, 2) "Lattice error: shape mismatched."
         isa(neighbors, Int) && (neighbors = Dict(i=>minlen for (i, minlen) in enumerate(minimumlengths(rcoords, vectors, neighbors, coordination=coordination))))
         datatype = promote_type(Float, eltype(rcoords), eltype(icoords), eltype(eltype(vectors)))
         rcoords = convert(Matrix{datatype}, rcoords)
@@ -1033,7 +1037,7 @@ end
         neighbors::Dict{Int, <:Real}=Dict{Int, Float}()
         )
 
-SuperLattice that is composed of serveral sublattices.
+SuperLattice that is composed of several sublattices.
 """
 struct SuperLattice{L<:AbstractLattice, N, P<:AbstractPID, D<:Number} <: AbstractLattice{N, P, D}
     sublattices::Vector{L}
@@ -1089,7 +1093,7 @@ struct InterBonds <: LatticeBonds{2} end
 
 Indicate that bonds intra the sublattices are inquired.
 !!! note
-    These bonds do not contain those accorss the periodic boundaries.
+    These bonds do not contain those across the periodic boundaries.
 """
 const intrabonds = IntraBonds()
 """
@@ -1097,7 +1101,7 @@ const intrabonds = IntraBonds()
 
 Indicate that bonds inter the sublattices are inquired.
 !!! note
-    These bonds do not contain those accorss the periodic boundaries.
+    These bonds do not contain those across the periodic boundaries.
 """
 const interbonds = InterBonds()
 
@@ -1184,10 +1188,10 @@ Insert a couple of blocks into a cylinder.
 The position of the cut of the cylinder is specified by the keyword argument `cut`, which is the center of the cylinder by default. All pids corresponding to a same newly inserted block share the same scope, which is specified by the parameter `ps`. Optionally, the scopes of the old pids in the cylinder can be replaced if the parameter `scopes` is assigned other than `nothing`. Note the length of `ps` is equal to the number of newly inserted blocks, while that of `scopes` should be equal to the old length of the cylinder.
 """
 function Base.insert!(cylinder::Cylinder, ps::S...; cut=length(cylinder)÷2+1, scopes::Union{<:AbstractVector{S}, Nothing}=nothing, coordination=8) where S
-    @assert S<:fieldtype(cylinder|>keytype, :scope) "insert! error: dismatched type of input scopes and old scopes."
+    @assert S<:fieldtype(cylinder|>keytype, :scope) "insert! error: mismatched type of input scopes and old scopes."
     @assert 1<=cut<=length(cylinder)+1 "insert! error: wrong cut($cut), which should be in [1, $(length(cylinder)+1)]."
     @assert length(cylinder)%size(cylinder.block, 2)==0 "insert! error: wrong cylinder length."
-    isnothing(scopes) || @assert length(scopes)==length(cylinder) "insert! error: dismatched length of input scopes and cylinder."
+    isnothing(scopes) || @assert length(scopes)==length(cylinder) "insert! error: mismatched length of input scopes and cylinder."
     blcklen = size(cylinder.block, 2)
     blcknum = length(cylinder)÷blcklen + length(ps)
     rsltlen = blcklen * blcknum
@@ -1253,7 +1257,7 @@ A set of lattice bonds.
 struct Bonds{T, L<:AbstractLattice, BS<:Tuple{Vararg{Vector{<:AbstractBond}}}, B<:AbstractBond} <: AbstractVector{B}
     bonds::BS
     function Bonds{T, L}(bonds::Tuple{Vararg{Vector{<:AbstractBond}}}) where {T, L<:AbstractLattice}
-        @assert isa(T, Tuple{Vararg{LatticeBonds}}) && length(T)==length(bonds) "Bonds error: dismatched input types and bonds."
+        @assert isa(T, Tuple{Vararg{LatticeBonds}}) && length(T)==length(bonds) "Bonds error: mismatched input types and bonds."
         new{T, L, typeof(bonds), mapreduce(eltype, typejoin, bonds)}(bonds)
     end
 end
@@ -1401,7 +1405,7 @@ Reset a set of lattice bonds by a new lattice.
 @generated function reset!(bs::Bonds, lattice::AbstractLattice)
     exprs = []
     push!(exprs, quote
-        @assert latticetype(bs) >: typeof(lattice) "reset! error: dismatched bonds and lattice."
+        @assert latticetype(bs) >: typeof(lattice) "reset! error: mismatched bonds and lattice."
         empty!(bs)
     end)
     for i = 1:rank(bs)

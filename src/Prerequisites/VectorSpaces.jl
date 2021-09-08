@@ -122,7 +122,7 @@ end
     return Expr(:tuple, [:($name=getcontent(nvs, :contents)[$i][index[1]]) for (i, name) in enumerate(NS)]...)
 end
 @inline @generated function Base.NamedTuple(index::CartesianIndex{N}, nvs::NamedVectorSpace{:⊗, NS}) where {N, NS}
-    @assert N == length(NS) "NamedTuple error: dismatched input index and rank of named vector space."
+    @assert N == length(NS) "NamedTuple error: mismatched input index and rank of named vector space."
     return Expr(:tuple, [:($name=getcontent(nvs, :contents)[$i][index[$i]]) for (i, name) in enumerate(NS)]...)
 end
 

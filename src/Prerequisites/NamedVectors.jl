@@ -80,7 +80,7 @@ Convert a named vector to tuple and vice versa.
 """
 @generated Base.convert(::Type{Tuple}, nv::NamedVector) = Expr(:tuple, (:(getfield(nv, $i)) for i = 1:fieldcount(nv))...)
 function Base.convert(::Type{NV}, nv::Tuple) where NV<:NamedVector
-    @assert fieldcount(NV) == length(nv) "convert error: dismatched length between $NV($(fieldcount(NV))) and input tuple($(length(nv)))."
+    @assert fieldcount(NV) == length(nv) "convert error: mismatched length between $NV($(fieldcount(NV))) and input tuple($(length(nv)))."
     return NV(nv...)
 end
 
@@ -145,7 +145,7 @@ Return a copy of a concrete `NamedVector` with some of the field values replaced
 """
     map(f, nvs::NV...) where NV<:NamedVector -> NV
 
-Apply function `f` elementwise on the input named vectors.
+Apply function `f` element-wisely on the input named vectors.
 """
 @generated function Base.map(f, nvs::NV...) where NV<:NamedVector
     exprs = Vector{Expr}(undef, fieldcount(NV))

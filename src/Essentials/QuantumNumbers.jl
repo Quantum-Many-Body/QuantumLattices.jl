@@ -13,15 +13,13 @@ import Random
 import ...Prerequisites.Traits: contentnames, getcontent
 import ...Interfaces: ⊕, ⊗, dimension, expand, permute, decompose
 
-export AbelianNumber, AbelianNumbers, @abeliannumber
-export periods, regularize, regularize!, ukron, toordereddict
-export SQN, PQN, SPQN, SQNS, PQNS, SPQNS
-export Momentum, Momentum1D, Momentum2D, Momentum3D
+export AbelianNumber, AbelianNumbers, periods, regularize, regularize!, @abeliannumber
+export SQN, PQN, SPQN, SQNS, PQNS, SPQNS, Momentum, Momentum1D, Momentum2D, Momentum3D
 
 """
     positives(inputs::NTuple{N, Any}) where N -> NTuple{N, Int}
 
-Retun a tuple of all positive signs.
+Return a tuple of all positive signs.
 """
 @inline positives(inputs::NTuple{N, Any}) where N = ntuple(i->1, Val(N))
 
@@ -175,7 +173,7 @@ struct AbelianNumbers{QN<:AbelianNumber} <: EnumerativeVectorSpace{QN}
     indptr::Vector{Int}
     function AbelianNumbers(form::Char, contents::Vector{<:AbelianNumber}, indptr::Vector{Int})
         @assert uppercase(form)∈('G', 'U', 'C') "AbelianNumbers error: 'form'($form) is not 'G', 'U' or 'C'."
-        @assert length(contents)+1==length(indptr) "AbelianNumbers error: dismatch shapes of contents and indptr ($(length(contents))+1!=$length(indptr))."
+        @assert length(contents)+1==length(indptr) "AbelianNumbers error: mismatch shapes of contents and indptr ($(length(contents))+1!=$length(indptr))."
         return new{contents|>eltype}(form|>uppercase, contents, indptr)
     end
 end
@@ -223,7 +221,7 @@ function AbelianNumbers(od::OrderedDict{<:AbelianNumber, <:Integer})
         @inbounds contents[i] = qn
         @inbounds indptr[i+1] = indptr[i] + count
     end
-    AbelianNumbers('U', contents, indptr, :indptr)
+    return AbelianNumbers('U', contents, indptr, :indptr)
 end
 
 """
@@ -239,7 +237,7 @@ function AbelianNumbers(od::OrderedDict{<:AbelianNumber, <:UnitRange{<:Integer}}
         @inbounds @assert indptr[i]+1==slice.start "AbelianNumbers error: slice not consistent."
         @inbounds indptr[i+1] = slice.stop
     end
-    AbelianNumbers('U', contents, indptr, :indptr)
+    return AbelianNumbers('U', contents, indptr, :indptr)
 end
 
 """
@@ -295,23 +293,23 @@ Iterate over the `AbelianNumber=>slice` or `AbelianNumber=>count` pairs.
 @inline Base.pairs(qns::AbelianNumbers, choice::Union{Val{:indptr}, Val{:counts}}) = Base.Generator(=>, keys(qns), values(qns, choice))
 
 """
-    toordereddict(qns::AbelianNumbers, choice::Symbol)
-    toordereddict(qns::AbelianNumbers, ::Val{:indptr}) -> OrderedDict{qns|>eltype, UnitRange{Int}}
-    toordereddict(qns::AbelianNumbers, ::Val{:counts}) -> OrderedDict{qns|>eltype, Int}
+    OrderedDict(qns::AbelianNumbers, choice::Symbol) -> OrderedDict
+    OrderedDict(qns::AbelianNumbers, ::Val{:indptr}) -> OrderedDict{qns|>eltype, UnitRange{Int}}
+    OrderedDict(qns::AbelianNumbers, ::Val{:counts}) -> OrderedDict{qns|>eltype, Int}
 
 Convert an `AbelianNumbers` to an ordered dict.
 """
-@inline toordereddict(qns::AbelianNumbers, choice::Symbol) = toordereddict(qns, choice|>Val)
-function toordereddict(qns::AbelianNumbers, ::Val{:indptr})
-    @assert qns.form≠'G' "toordereddict error: input `AbelianNumbers` cannot be `G` formed."
+@inline OrderedDict(qns::AbelianNumbers, choice::Symbol) = OrderedDict(qns, choice|>Val)
+function OrderedDict(qns::AbelianNumbers, ::Val{:indptr})
+    @assert qns.form≠'G' "OrderedDict error: input `AbelianNumbers` cannot be `G` formed."
     result = OrderedDict{qns|>eltype, UnitRange{Int}}()
     @inbounds for i = 1:length(qns)
         result[qns.contents[i]] = qns.indptr[i]+1:qns.indptr[i+1]
     end
     return result
 end
-function toordereddict(qns::AbelianNumbers, ::Val{:counts})
-    @assert qns.form≠'G' "toordereddict error: input `AbelianNumbers` cannot be `G` formed."
+function OrderedDict(qns::AbelianNumbers, ::Val{:counts})
+    @assert qns.form≠'G' "OrderedDict error: input `AbelianNumbers` cannot be `G` formed."
     result = OrderedDict{qns|>eltype, Int}()
     @inbounds for i = 1:length(qns)
         result[qns.contents[i]] = qns.indptr[i+1] - qns.indptr[i]
@@ -328,13 +326,13 @@ function Base.sort(qns::AbelianNumbers)
     ctpts = sortperm(qns.contents, alg=Base.Sort.QuickSort)
     masks = Vector{Bool}(undef, length(qns.contents))
     masks[1] = true
-    unduplicate = 1
+    nonduplicate = 1
     @inbounds for i = 2:length(ctpts)
         masks[i] = qns.contents[ctpts[i]]≠qns.contents[ctpts[i-1]]
-        masks[i] && (unduplicate += 1)
+        masks[i] && (nonduplicate += 1)
     end
-    contents = Vector{qns|>eltype}(undef, unduplicate)
-    indptr = zeros(Int, unduplicate+1)
+    contents = Vector{qns|>eltype}(undef, nonduplicate)
+    indptr = zeros(Int, nonduplicate+1)
     permutation = Vector{Int}(undef, dimension(qns))
     qncount, ptcount = 0, 0
     @inbounds for (mask, index) in zip(masks, ctpts)
@@ -538,7 +536,7 @@ function Base.union(qnses::AbelianNumbers{QN}...; signs=positives(qnses)) where 
         end
         count += length
     end
-    AbelianNumbers('G', contents, indptr, :indptr)
+    return AbelianNumbers('G', contents, indptr, :indptr)
 end
 
 """
@@ -546,7 +544,7 @@ end
 
 Get the direct product of some `AbelianNumbers`es.
 !!! note
-    Physically, the direct product of a couple of `AbelianNumbers`es are defined by the direct product of the bases of the Hilbert spaces they represent. Therefore, the dimension of the result equals the product of those of the inputs. Meanwhile, each quantum number in the contents of the result is obtained by a summation of the corresponding quanum numbers of the inputs with the correct signs. This is a direct consequence of the Abelian nature of our quantum numbers.
+    Physically, the direct product of a couple of `AbelianNumbers`es are defined by the direct product of the bases of the Hilbert spaces they represent. Therefore, the dimension of the result equals the product of those of the inputs. Meanwhile, each quantum number in the contents of the result is obtained by a summation of the corresponding quantum numbers of the inputs with the correct signs. This is a direct consequence of the Abelian nature of our quantum numbers.
 """
 function Base.kron(qnses::AbelianNumbers{QN}...; signs=positives(qnses)) where {QN<:AbelianNumber}
     N = fieldcount(typeof(qnses))
@@ -563,19 +561,21 @@ function Base.kron(qnses::AbelianNumbers{QN}...; signs=positives(qnses)) where {
         indptr[i+1] = indptr[i] + qnses[end].indptr[indices[1]+1] - qnses[end].indptr[indices[1]]
         contents[i] = sum(cache)
     end
-    AbelianNumbers('G', contents, indptr, :indptr)
+    return AbelianNumbers('G', contents, indptr, :indptr)
 end
 
 """
-    ukron(qnses::AbelianNumbers{QN}...; signs=positives(qnses)) where {QN<:AbelianNumber} -> AbelianNumbers{QN}, Dict{QN, Dict{NTuple{length(qnses), QN}, UnitRange{Int}}}
+    prod(qnses::AbelianNumbers{QN}...;
+        signs=positives(qnses)
+        ) where {QN<:AbelianNumber} -> AbelianNumbers{QN}, Dict{QN, Dict{NTuple{length(qnses), QN}, UnitRange{Int}}}
 
 Unitary Kronecker product of several `AbelianNumbers`es. The product result as well as the records of the product will be returned.
 !!! note
     1. All input `AbelianNumbers` must be 'U' formed or 'C' formed.
-    2. Since duplicate quantum number are not allowed in 'U' formed and 'C' formed `AbelianNumbers`es, in general, there exists a merge process of duplicate quantum numbers in the result. Therefore, records are needed to keep track of this process, which will be returned along with the product result. The records are stored in a `Dict{QN, Dict{NTuple{NTuple{length(qnses), QN}, UnitRange{Int}}}` typed dict, in which, for each unduplicate quantum number `qn` in the result, there exist a record `Dict((qn₁, qn₂, ...)=>start:stop, ...)` telling what quantum numbers `(qn₁, qn₂, ...)` a mereged duplicate `qn` comes from and what slice `start:stop` this merged duplicate corresponds in the result.
+    2. Since duplicate quantum number are not allowed in 'U' formed and 'C' formed `AbelianNumbers`es, in general, there exists a merge process of duplicate quantum numbers in the result. Therefore, records are needed to keep track of this process, which will be returned along with the product result. The records are stored in a `Dict{QN, Dict{NTuple{NTuple{length(qnses), QN}, UnitRange{Int}}}` typed dict, in which, for each nonduplicate quantum number `qn` in the result, there exist a record `Dict((qn₁, qn₂, ...)=>start:stop, ...)` telling what quantum numbers `(qn₁, qn₂, ...)` a merged duplicate `qn` comes from and what slice `start:stop` this merged duplicate corresponds in the result.
 """
-function ukron(qnses::AbelianNumbers{QN}...; signs=positives(qnses)) where {QN<:AbelianNumber}
-    @assert all((qns.form == 'U') || (qns.form == 'C') for qns in qnses) "ukron error: all input qnses should be 'U' formed or 'C' formed."
+function Base.prod(qnses::AbelianNumbers{QN}...; signs=positives(qnses)) where {QN<:AbelianNumber}
+    @assert all((qns.form == 'U') || (qns.form == 'C') for qns in qnses) "prod error: all input qnses should be 'U' formed or 'C' formed."
     N = fieldcount(typeof(qnses))
     lengths = NTuple{N, Int}(length(qns) for qns in qnses)
     cache = Vector{QN}(undef, N)
@@ -598,11 +598,15 @@ function ukron(qnses::AbelianNumbers{QN}...; signs=positives(qnses)) where {QN<:
     @inbounds for (i, qn) in enumerate(contents)
         indptr[i+1] = indptr[i] + container[qn]
     end
-    AbelianNumbers('C', contents, indptr, :indptr), records
+    return AbelianNumbers('C', contents, indptr, :indptr), records
 end
 
 """
-    decompose(target::QN, qnses::AbelianNumbers{QN}...; signs=positives(qnses), method=:montecarlo, nmax=20) where {QN<:AbelianNumber} -> Vector{NTuple{length(qnses), Int}}
+    decompose(target::QN, qnses::AbelianNumbers{QN}...;
+        signs=positives(qnses),
+        method=:montecarlo,
+        nmax=20
+        ) where {QN<:AbelianNumber} -> Vector{NTuple{length(qnses), Int}}
 
 Find a couple of decompositions of `target` with respect to `qnses`.
 !!! note
@@ -610,7 +614,7 @@ Find a couple of decompositions of `target` with respect to `qnses`.
     ```math
     \\sum_\\text{j} \\text{signs}[\\text{j}]\\times\\text{qnses}[\\text{j}][\\text{i}_{\\text{j}}]==\\text{target}
     ```
-    This equation is in fact a set of restricted [linear Diophantine equations](https://en.wikipedia.org/wiki/Diophantine_equation#Linear_Diophantine_equations). Indeed, our quantum numbers are always discrete Abelian ones and all instances of a concrete `AbelianNumber` forms a [module](https://en.wikipedia.org/wiki/Module_(mathematics)) over the [ring](https://en.wikipedia.org/wiki/Ring_(mathematics)) of integers. Therefore, each quantum number can be represented as a integral multiple of the unit element of the Abelian module, which results in the final reduction of the above equation to a set of linear Diophantine equations. Then finding a decomposition is equivalent to find a solution of the reduced linear Diophantine equations, with the restriction that the quantum numbers constructed from the solution should be in the corresponding `qnses`. Here we provide two methods to find such decompositions, one is by brute force, and the other is by Monte Carlo simultatioins.
+    This equation is in fact a set of restricted [linear Diophantine equations](https://en.wikipedia.org/wiki/Diophantine_equation#Linear_Diophantine_equations). Indeed, our quantum numbers are always discrete Abelian ones and all instances of a concrete `AbelianNumber` forms a [module](https://en.wikipedia.org/wiki/Module_(mathematics)) over the [ring](https://en.wikipedia.org/wiki/Ring_(mathematics)) of integers. Therefore, each quantum number can be represented as a integral multiple of the unit element of the Abelian module, which results in the final reduction of the above equation to a set of linear Diophantine equations. Then finding a decomposition is equivalent to find a solution of the reduced linear Diophantine equations, with the restriction that the quantum numbers constructed from the solution should be in the corresponding `qnses`. Here we provide two methods to find such decompositions, one is by brute force, and the other is by Monte Carlo simulations.
 """
 @inline function decompose(target::QN, qnses::AbelianNumbers{QN}...; signs=positives(qnses), method=:montecarlo, nmax=20) where {QN<:AbelianNumber}
     _decompose(Val(method), target, qnses...; signs=signs, nmax=nmax)
@@ -684,7 +688,7 @@ The concrete `AbelianNumber` of a quantum system with both particle number `N` a
 """
     SQNS(S::Real) -> AbelianNumbers{SQN}
 
-Construct the `AbelianNumbers` of the Hilbert space of a signle spin `S`.
+Construct the `AbelianNumbers` of the Hilbert space of a single spin `S`.
 """
 SQNS(S::Real) = AbelianNumbers('C', [SQN(sz) for sz = -S:S], collect(0:Int(2*S+1)), :indptr)
 

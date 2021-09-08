@@ -29,16 +29,16 @@ function ⊗ end
 "Dot product."
 function ⋅ end
 
-"Inplace addition."
+"In-place addition."
 function add! end
 
-"Inplace subtraction."
+"In-place subtraction."
 function sub! end
 
-"Inplace multiplication."
+"In-place multiplication."
 function mul! end
 
-"Inplace division."
+"In-place division."
 function div! end
 
 "Get the expansion."

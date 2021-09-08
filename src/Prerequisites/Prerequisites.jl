@@ -52,7 +52,7 @@ function decimaltostr(number::Complex, n::Int = 5)
 end
 
 """
-    ordinal(number::Interger)
+    ordinal(number::Integer)
 
 Convert a positive number to its corresponding ordinal.
 """
@@ -71,7 +71,7 @@ Kronecker delta function.
 """
     searchsortedfirst(table, basis; compare=<) -> Int
 
-Use the binary search method to find the postion of a basis in a sorted table so that the order is preserved if the basis in inserted in that postion.
+Use the binary search method to find the position of a basis in a sorted table so that the order is preserved if the basis in inserted in that position.
 """
 function Base.searchsortedfirst(table, basis; compare=<)
     lo, hi = 0, length(table)+1

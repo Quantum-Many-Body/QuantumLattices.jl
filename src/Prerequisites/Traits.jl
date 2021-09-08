@@ -214,7 +214,7 @@ Get the full type of type `T` with the type parameters replaced by those of `PS`
 Here, `ubs` determines whether the new type parameter should be considered as the upper bound accordingly.
 """
 @inline function fulltype(::Type{T}, ::Type{PS}, ubs::Tuple{Vararg{Bool}}=isparameterbounds(T, PS)) where {T, PS<:Tuple}
-    @assert parametercount(T) == fieldcount(PS) == length(ubs) "fulltype error: length-dismatched input parameters."
+    @assert parametercount(T) == fieldcount(PS) == length(ubs) "fulltype error: length-mismatched input parameters."
     return _fulltype(T, PS, Val(ubs))
 end
 @inline function fulltype(::Type{T}, ::Type{PS}, ubs::Tuple{Vararg{Bool}}=isparameterbounds(T, PS)) where {T, PS<:NamedTuple}
@@ -318,7 +318,7 @@ dissolve(m, Val(name), f, args, kwargs)
 ```
 Here, `name` is the name of a content of `m`.
 
-Basically, the rule of how `f` operates on each field of `m` can be overriden by redefining the above `dissolve` function.
+Basically, the rule of how `f` operates on each field of `m` can be overridden by redefining the above `dissolve` function.
 !!!note
    The default `dissolve` function ignores the operation of function `f` and just return the content value of `m`.
 """
@@ -337,7 +337,7 @@ end
 """
     dissolve(m, ::Val{name}, f::Function, args::Tuple, kwargs::NamedTuple) where name
 
-Disolve the content specified by `name` of `m` by the function `f` applied with the extra positional arguments (`args`) and keyword arguments (`kwargs`).
+Dissolve the content specified by `name` of `m` by the function `f` applied with the extra positional arguments (`args`) and keyword arguments (`kwargs`).
 """
 @inline dissolve(m, ::Val{name}, f::Function, args::Tuple, kwargs::NamedTuple) where name = getcontent(m, name|>Val)
 
@@ -352,7 +352,7 @@ const efficientoperations = EfficientOperations()
 """
     ==(::EfficientOperations, o1, o2) -> Bool
 
-Compare two objects and judge whether they are eqaul to each other.
+Compare two objects and judge whether they are equivalent to each other.
 """
 @inline @generated function Base.:(==)(::EfficientOperations, o1, o2)
     fcount = fieldcount(o1)
@@ -374,7 +374,7 @@ end
 """
     isequal(::EfficientOperations, o1, o2) -> Bool
 
-Compare two objects and judge whether they are eqaul to each other.
+Compare two objects and judge whether they are equivalent to each other.
 """
 @inline @generated function Base.isequal(::EfficientOperations, o1, o2)
     fcount = fieldcount(o1)

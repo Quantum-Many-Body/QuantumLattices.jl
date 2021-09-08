@@ -242,7 +242,7 @@ end
     oid = OID(Index(CPID('d', 1), DID(2)), SVector(0.0, 0.0), SVector(1.0, 0.0))
     @test script(Val(:rcoord), oid) == "[0.0, 0.0]"
     @test script(Val(:icoord), oid) == "[1.0, 0.0]"
-    @test script(Val(:integeralicoord), oid; vectors=get(latex.options, :vectors, nothing)) == "[1, 0]"
+    @test script(Val(:integralicoord), oid; vectors=get(latex.options, :vectors, nothing)) == "[1, 0]"
     @test script(Val(:BD), oid, latex) == 'c'
     @test script(Val(:SP), oid, latex) == ("\\dagger",)
     @test script(Val(:SB), oid, latex) == (1,)
@@ -269,7 +269,7 @@ end
     latexformat(OID{<:Index{<:AbstractPID, <:DID}}, LaTeX{(:nambu,), (:rcoord,)}('d'))
     @test repr(opt) == "d^{\\dagger}_{[1.0, 0.0]}d^{}_{[0.0, 0.0]}"
 
-    latexformat(OID{<:Index{<:AbstractPID, <:DID}}, LaTeX{(:nambu,), (:integeralicoord,)}('d', vectors=(SVector(1.0, 0.0), SVector(0.0, 1.0))))
+    latexformat(OID{<:Index{<:AbstractPID, <:DID}}, LaTeX{(:nambu,), (:integralicoord,)}('d', vectors=(SVector(1.0, 0.0), SVector(0.0, 1.0))))
     @test repr(opt) == "d^{\\dagger}_{[2, 0]}d^{}_{[0, 0]}"
 
     opts = Operators(

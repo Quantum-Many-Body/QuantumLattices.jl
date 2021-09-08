@@ -13,10 +13,10 @@ This module implements the combinations and permutations of an indexable object,
 
 ## AbstractCombinatorics
 
-[`AbstractCombinatorics{M, C}`](@ref) is the abstract type of all combinatoric algorithms. It has two type parameters:
+[`AbstractCombinatorics{M, C}`](@ref) is the abstract type of all combinatorial algorithms. It has two type parameters:
 * `M`: the number of elements to be taken
 * `C`: the type of the collection of candidate elements
-To avoid memory allocation, the iteration of a concrete combinatoric algorithm returns a tuple, whose length is `M` and eltype is `eltype(C)`.
+To avoid memory allocation, the iteration of a concrete combinatorial algorithm returns a tuple, whose length is `M` and eltype is `eltype(C)`.
 
 ### Combinations and DulCombinations
 

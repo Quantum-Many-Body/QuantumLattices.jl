@@ -263,7 +263,7 @@ Get the identity operator.
 @inline function Base.one(::Type{M}) where M<:Element
     rtype = rawtype(M)
     vtype = isconcretetype(valtype(M)) ? valtype(M) : Int
-    @assert fieldnames(rtype) == (:value, :id) "one error: not supproted type($(nameof(rtype)))."
+    @assert fieldnames(rtype) == (:value, :id) "one error: not supported type($(nameof(rtype)))."
     return rtype(one(vtype), ID())
 end
 @inline Base.one(m::Element) = rawtype(typeof(m))(dissolve(m, one)...)
@@ -283,10 +283,10 @@ end
 @inline Base.convert(::Type{M}, m::Number) where M<:Scalar = one(M)*m
 @inline function Base.convert(::Type{M}, m::Element) where M<:Element
     (typeof(m) <: M) && return m
-    @assert convertable(M, m) "convert error: $(nameof(typeof(m))) cannot be converted to $(nameof(M))."
+    @assert convertible(M, m) "convert error: $(nameof(typeof(m))) cannot be converted to $(nameof(M))."
     return replace(m, convert(valtype(M), value(m)))
 end
-function convertable(::Type{M}, m::Element) where M<:Element
+function convertible(::Type{M}, m::Element) where M<:Element
     !(rawtype(typeof(m)) <: rawtype(M)) && return false
     S = supertype(typeof(m), nameof(M))
     for (i, name) in enumerate(parameternames(M))
@@ -314,7 +314,7 @@ end
 An set of elements of an algebra over a field.
 
 Type alias for `Dict{I<:ID{SimpleID}, M<:Element}`.
-Similar iterms are automatically merged thanks to the id system.
+Similar items are automatically merged thanks to the id system.
 """
 const Elements{I<:ID{SimpleID}, M<:Element} = Dict{I, M}
 function Base.show(io::IO, ms::Elements)
@@ -413,7 +413,7 @@ Judge whether a set of elements is identically empty.
     add!(ms::Elements, m::Element) -> typeof(ms)
     add!(ms::Elements, mms::Elements) -> typeof(ms)
 
-Get the inplace addition of elements to a set.
+Get the in-place addition of elements to a set.
 """
 add!(ms::Elements) = ms
 add!(ms::Elements, ::Nothing) = ms
@@ -434,7 +434,7 @@ add!(ms::Elements, mms::Elements) = (for m in mms|>values add!(ms, m) end; ms)
     sub!(ms::Elements, m::Element) -> typeof(ms)
     sub!(ms::Elements, mms::Elements) -> typeof(ms)
 
-Get the inplace subtraction of elements from a set.
+Get the in-place subtraction of elements from a set.
 """
 sub!(ms::Elements) = ms
 sub!(ms::Elements, ::Nothing) = ms
@@ -452,11 +452,11 @@ sub!(ms::Elements, mms::Elements) = (for m in mms|>values sub!(ms, m) end; ms)
     mul!(ms::Elements, factor::Scalar) -> Elements
     mul!(ms::Elements, factor::Number) -> Elements
 
-Get the inplace multiplication of elements with a scalar.
+Get the in-place multiplication of elements with a scalar.
 """
 mul!(ms::Elements, factor::Scalar) = mul!(ms, value(factor))
 function mul!(ms::Elements, factor::Number)
-    @assert isa(one(ms|>valtype|>valtype)*factor, ms|>valtype|>valtype) "mul! error: dismatched type, $(ms|>valtype) and $(factor|>typeof)."
+    @assert isa(one(ms|>valtype|>valtype)*factor, ms|>valtype|>valtype) "mul! error: mismatched type, $(ms|>valtype) and $(factor|>typeof)."
     for m in values(ms)
         ms[id(m)] = replace(m, value(m)*factor)
     end
@@ -467,11 +467,11 @@ end
     div!(ms::Elements, factor::Scalar) -> Elements
     div!(ms::Elements, factor::Number) -> Elements
 
-Get the inplace division of element with a scalar.
+Get the in-place division of element with a scalar.
 """
 div!(ms::Elements, factor::Scalar) = div!(ms, value(factor))
 function div!(ms::Elements, factor::Number)
-    @assert isa(one(ms|>valtype|>valtype)/factor, ms|>valtype|>valtype) "div! error: dismatched type, $(ms|>valtype) and $(factor|>typeof)."
+    @assert isa(one(ms|>valtype|>valtype)/factor, ms|>valtype|>valtype) "div! error: mismatched type, $(ms|>valtype) and $(factor|>typeof)."
     for m in values(ms)
         ms[id(m)] = replace(m, value(m)/factor)
     end
@@ -739,7 +739,7 @@ Permute the ids of an-element/a-set-of-elements to the descending order accordin
     ```julia
     permute(id₁::SimpleID, id₂::SimpleID) -> Union{Element, Elements}
     ```
-    Here, `id₁` and `id₂` are two arbitary simple ids contained in `id(m)`.
+    Here, `id₁` and `id₂` are two arbitrary simple ids contained in `id(m)`.
 """
 function Base.permute!(result::Elements, m::Element, table)
     cache = valtype(result)[m]
@@ -765,10 +765,10 @@ function Base.permute!(result::Elements, ms::Elements, table)
     end
     return result
 end
-function elementcommuteposition(seqs)
+function elementcommuteposition(sequences)
     pos = 1
-    while pos < length(seqs)
-        (seqs[pos] < seqs[pos+1]) && return pos
+    while pos < length(sequences)
+        (sequences[pos] < sequences[pos+1]) && return pos
         pos += 1
     end
     return nothing

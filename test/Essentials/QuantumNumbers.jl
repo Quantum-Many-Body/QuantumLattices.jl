@@ -50,11 +50,11 @@ end
     @test pairs(qns, :counts)|>collect == [qn1=>3, qn2=>2]
 end
 
-@testset "toordereddict" begin
+@testset "OrderedDict" begin
     qn1, qn2 = CNZ4(1.0, 2.0), CNZ4(2.0, 3.0)
     qns = AbelianNumbers('U', [qn1, qn2], [2, 3], :counts)
-    @test toordereddict(qns, :indptr) == OrderedDict(qn1=>1:2, qn2=>3:5)
-    @test toordereddict(qns, :counts) == OrderedDict(qn1=>2, qn2=>3)
+    @test OrderedDict(qns, :indptr) == OrderedDict(qn1=>1:2, qn2=>3:5)
+    @test OrderedDict(qns, :counts) == OrderedDict(qn1=>2, qn2=>3)
 end
 
 @testset "arithmetic" begin
@@ -138,11 +138,11 @@ end
     @test filter(qn2, qns) == AbelianNumbers('G', [qn2, qn2], [2, 4], :counts)
 end
 
-@testset "ukron" begin
+@testset "prod" begin
     qn1, qn2 = CNZ4(1.0, 1.0), CNZ4(2.0, 3.0)
     qns1 = AbelianNumbers('U', [qn2, qn1], [4, 5], :counts)
     qns2 = AbelianNumbers('U', [qn1, qn2], [2, 3], :counts)
-    qns, records = ukron(qns1, qns2, signs=(+1, -1))
+    qns, records = prod(qns1, qns2, signs=(+1, -1))
     @test qns == AbelianNumbers('C', [qn1-qn2, zero(CNZ4), qn2-qn1], [15, 22, 8], :counts)
     @test records == Dict(  (qn1-qn2) =>  Dict((qn1, qn2)=>1:15),
                             zero(CNZ4) => Dict((qn2, qn2)=>1:12, (qn1, qn1)=>13:22),

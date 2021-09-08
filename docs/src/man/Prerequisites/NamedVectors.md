@@ -26,7 +26,7 @@ To subtype it, please note:
 1. A concrete type can be either mutable or immutable as you need, which is different from tuples.
 2. The fields of a concrete type can be of the same type or not. For the former, we denote the named vector as "homogeneous" while for the latter as "inhomogeneous". For homogeneous ones, we define a sub abstract type, [`HomoNamedVector`](@ref) for further optimization of the default methods. See [HomoNamedVector](@ref) below.
 3. For all concrete subtypes, if inner constructors are defined, the one which has the same interface with the default one must be implemented. Otherwise, some functionalities will not work.
-4. Arithmetic operations, such as `+`, `-`, `*`, `/`, `%`, `÷`, etc. are **not** supported. However, the function [`map`](@ref) is implemented, which can help users do the overloadings of these operations.
+4. Arithmetic operations, such as `+`, `-`, `*`, `/`, `%`, `÷`, etc. are **not** supported. However, the function [`map`](@ref) is implemented, which can help users do the overloading of these operations.
 
 ## HomoNamedVector
 

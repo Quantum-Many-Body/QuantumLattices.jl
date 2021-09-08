@@ -120,7 +120,7 @@ Base.show(io::IO, i::SimpleInternal) = @printf io "%s(%s)" i|>typeof|>nameof joi
     match(iid::SimpleIID, i::SimpleInternal) -> Bool
     match(::Type{I}, ::Type{SI}) where {I<:SimpleIID, SI<:SimpleInternal}
 
-Judge wheter a simple iid or a simple iid type matches a simple internal space or a simple internal space type.
+Judge whether a simple iid or a simple iid type matches a simple internal space or a simple internal space type.
 
 Here, "match" means that the eltype of the simple internal space has the same type name with the simple iid.
 """
@@ -210,7 +210,7 @@ end
     ⊗(ci::CompositeInternal, i::SimpleInternal) -> CompositeInternal
     ⊗(ci₁::CompositeInternal, ci₂::CompositeInternal) -> CompositeInternal
 
-Direct product bewteen simple internal spaces and composite internal spaces.
+Direct product between simple internal spaces and composite internal spaces.
 """
 @inline ⊗(i₁::SimpleInternal, i₂::SimpleInternal) = CompositeInternal(i₁, i₂)
 @inline ⊗(i::SimpleInternal, ci::CompositeInternal) = CompositeInternal(i, ci.content...)
@@ -538,7 +538,7 @@ Filter the selected fields.
     OIDToTuple(::Type{I}) where {I<:Index}
     OIDToTuple(::Type{I}) where {I<:AbstractCompositeOID}
 
-Construct the convertion rule from the information of subtypes of `AbstractOID`.
+Construct the conversion rule from the information of subtypes of `AbstractOID`.
 """
 @inline @generated OIDToTuple(::Type{I}) where {I<:Index} = OIDToTuple(fieldnames(pidtype(I))..., (fieldnames(iidtype(I)))...)
 @inline OIDToTuple(::Type{I}) where {I<:AbstractCompositeOID} = OIDToTuple(indextype(I))
@@ -546,7 +546,7 @@ Construct the convertion rule from the information of subtypes of `AbstractOID`.
 """
     OIDToTuple(::Type{H}) where {H<:Hilbert}
 
-Construct the convertion rule from the information of `Hilbert`.
+Construct the conversion rule from the information of `Hilbert`.
 """
 @inline OIDToTuple(::Type{H}) where {H<:Hilbert} = OIDToTuple(Index{H|>keytype, H|>valtype|>eltype})
 
@@ -752,14 +752,14 @@ Get the `:rcoord/:icoord` script of an oid.
 @inline script(::Val{:icoord}, oid::OID; kwargs...) = @sprintf "[%s]" join(valuetolatextext.(oid.icoord), ", ")
 
 """
-    script(::Val{:integeralicoord}, oid::OID; vectors, kwargs...)
+    script(::Val{:integralicoord}, oid::OID; vectors, kwargs...)
 
-Get the integeral script of the icoord of an oid.
+Get the integral script of the icoord of an oid.
 """
-function script(::Val{:integeralicoord}, oid::OID; vectors, kwargs...)
+function script(::Val{:integralicoord}, oid::OID; vectors, kwargs...)
     rcoeff = decompose(oid.icoord, vectors...)
     icoeff = Int.(round.(rcoeff))
-    @assert isapprox(efficientoperations, rcoeff, icoeff) "script error: dismathed icoord of oid and input vectors."
+    @assert isapprox(efficientoperations, rcoeff, icoeff) "script error: mismatched icoord of oid and input vectors."
     return @sprintf "[%s]" join(icoeff, ", ")
 end
 
@@ -864,7 +864,7 @@ struct Boundary{Names, D<:Number, V<:AbstractVector} <: Function
     values::Vector{D}
     vectors::Vector{V}
     function Boundary{Names}(values::AbstractVector{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}) where Names
-        @assert length(Names)==length(values)==length(vectors) "Boundary error: dismatched names, values and vectors."
+        @assert length(Names)==length(values)==length(vectors) "Boundary error: mismatched names, values and vectors."
         datatype = promote_type(eltype(values), Float)
         new{Names, datatype, eltype(vectors)}(convert(Vector{datatype}, values), vectors)
     end
