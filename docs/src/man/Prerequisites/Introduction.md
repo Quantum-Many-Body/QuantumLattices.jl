@@ -35,7 +35,6 @@ Pages = [
         "SimpleTrees.md",
         "NamedVectors.md",
         "VectorSpaces.md",
-        "QuantumNumbers.md",
         ]
 Depth = 2
 ```

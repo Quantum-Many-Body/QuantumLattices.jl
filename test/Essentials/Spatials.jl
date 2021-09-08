@@ -3,11 +3,11 @@ using Random: seed!
 using StaticArrays: SVector
 using QuantumLattices.Essentials.Spatials
 using QuantumLattices.Essentials: dtype, kind, reset!
+using QuantumLattices.Essentials.QuantumNumbers: Momentum2D, AbelianNumbers
 using QuantumLattices.Interfaces: decompose, rank, dimension, expand
 using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Prerequisites.Traits: contentnames, getcontent
 using QuantumLattices.Prerequisites.SimpleTrees: leaves
-using QuantumLattices.Prerequisites.QuantumNumbers: Momentum2D, AbelianNumbers
 
 @testset "distance" begin
     @test distance([0.0, 0.0], [1.0, 1.0]) ≈ sqrt(2.0)

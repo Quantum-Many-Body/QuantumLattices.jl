@@ -35,11 +35,11 @@ makedocs(
                         "man/Prerequisites/SimpleTrees.md",
                         "man/Prerequisites/NamedVectors.md",
                         "man/Prerequisites/VectorSpaces.md",
-                        "man/Prerequisites/QuantumNumbers.md",
                         ],
                     "Essentials" => [
                         "man/Essentials/Introduction.md",
                         "man/Essentials/QuantumAlgebras.md",
+                        "man/Essentials/QuantumNumbers.md",
                         "man/Essentials/Spatials.md",
                         "man/Essentials/DegreesOfFreedom.md",
                         "man/Essentials/Terms.md",

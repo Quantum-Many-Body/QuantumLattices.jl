@@ -19,6 +19,9 @@ export dtype, kind, update!, reset!
 # Essentials.QuantumAlgebras
 export ID, idtype, sequence
 
+# Essentials.QuantumNumbers
+export AbelianNumber, AbelianNumbers, @abeliannumber, periods
+
 # Essentials.Spatials
 export distance, azimuthd, azimuth, polard, polar, volume, isparallel, isonline, isintratriangle, issubordinate, reciprocals, translate, rotate
 export PID, CPID, Point, Bond, Lattice, SuperLattice, Cylinder, Bonds, BrillouinZone

@@ -4,13 +4,13 @@ using Base.Iterators: Reverse, flatten, product, reverse
 using Printf: @printf, @sprintf
 using DataStructures: OrderedDict
 using LinearAlgebra: norm
-using ..Prerequisites: Float
-using ..Combinatorics: Combinations
-using ..NamedVectors: HomoNamedVector
-using ..VectorSpaces: EnumerativeVectorSpace
+using ...Prerequisites: Float
+using ...Prerequisites.Combinatorics: Combinations
+using ...Prerequisites.NamedVectors: HomoNamedVector
+using ...Prerequisites.VectorSpaces: EnumerativeVectorSpace
 
 import Random
-import ..Traits: contentnames, getcontent
+import ...Prerequisites.Traits: contentnames, getcontent
 import ...Interfaces: ⊕, ⊗, dimension, expand, permute, decompose
 
 export AbelianNumber, AbelianNumbers, @abeliannumber

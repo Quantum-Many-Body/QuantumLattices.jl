@@ -229,13 +229,13 @@ Similar to [`Fock`](@ref), a [`Spin`](@ref) instance behaves like a vector whose
 julia> sp = Spin{1}(norbital=1);
 
 julia> sp |> typeof |> eltype
-SID{1, Int64}
+SID{1, Int64, Char}
 
 julia> sp |> length
 5
 
 julia> [sp[1], sp[2], sp[3], sp[4], sp[5]]
-5-element Vector{SID{1, Int64}}:
+5-element Vector{SID{1, Int64, Char}}:
  SID{1}(1, 'x')
  SID{1}(1, 'y')
  SID{1}(1, 'z')
@@ -243,7 +243,7 @@ julia> [sp[1], sp[2], sp[3], sp[4], sp[5]]
  SID{1}(1, '-')
 
 julia> sp |> collect
-5-element Vector{SID{1, Int64}}:
+5-element Vector{SID{1, Int64, Char}}:
  SID{1}(1, 'x')
  SID{1}(1, 'y')
  SID{1}(1, 'z')

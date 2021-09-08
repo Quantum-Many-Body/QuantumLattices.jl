@@ -1,5 +1,5 @@
 ```@meta
-CurrentModule = QuantumLattices.Prerequisites.QuantumNumbers
+CurrentModule = QuantumLattices.Essentials.QuantumNumbers
 ```
 
 # Quantum numbers

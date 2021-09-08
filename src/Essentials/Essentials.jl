@@ -10,6 +10,7 @@ function update! end
 function reset! end
 
 include("QuantumAlgebras.jl")
+include("QuantumNumbers.jl")
 include("Spatials.jl")
 include("DegreesOfFreedom.jl")
 include("Terms.jl")
@@ -17,6 +18,7 @@ include("Frameworks.jl")
 include("QuantumSystems.jl")
 
 @reexport using .QuantumAlgebras
+@reexport using .QuantumNumbers
 @reexport using .Spatials
 @reexport using .DegreesOfFreedom
 @reexport using .Terms

@@ -6,5 +6,4 @@
     @time @safetestset "SimpleTrees" begin include("SimpleTrees.jl") end
     @time @safetestset "NamedVectors" begin include("NamedVectors.jl") end
     @time @safetestset "VectorSpaces" begin include("VectorSpaces.jl") end
-    @time @safetestset "QuantumNumbers" begin include("QuantumNumbers.jl") end
 end

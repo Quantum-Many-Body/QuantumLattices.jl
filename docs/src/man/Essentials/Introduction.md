@@ -9,6 +9,7 @@ Essentials of the package, whose constants, types and functions will be imported
 ```@contents
 Pages = [
         "QuantumAlgebras.md",
+        "QuantumNumbers.md",
         "Spatials.md",
         "DegreesOfFreedom.md",
         "Terms.md",

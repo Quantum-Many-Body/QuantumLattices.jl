@@ -92,7 +92,6 @@ include("CompositeStructures.jl")
 include("SimpleTrees.jl")
 include("NamedVectors.jl")
 include("VectorSpaces.jl")
-include("QuantumNumbers.jl")
 
 @reexport using .Combinatorics
 @reexport using .Traits
@@ -100,6 +99,5 @@ include("QuantumNumbers.jl")
 @reexport using .SimpleTrees
 @reexport using .NamedVectors
 @reexport using .VectorSpaces
-@reexport using .QuantumNumbers
 
 end # module
