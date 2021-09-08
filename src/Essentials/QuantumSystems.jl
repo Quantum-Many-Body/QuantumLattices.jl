@@ -138,16 +138,16 @@ Construct a Fock degrees of freedom.
 """
     script(::Val{:site}, index::Index{<:AbstractPID, <:FID}; kwargs...) -> Int
     script(::Val{:orbital}, index::Index{<:AbstractPID, <:FID}; kwargs...) -> Int
-    script(::Val{:spinint}, index::Index{<:AbstractPID, <:FID}; kwargs...) -> Int
-    script(::Val{:spinsym}, index::Index{<:AbstractPID, <:FID}; kwargs...) -> String
+    script(::Val{:spint}, index::Index{<:AbstractPID, <:FID}; kwargs...) -> Int
+    script(::Val{:spsym}, index::Index{<:AbstractPID, <:FID}; kwargs...) -> String
     script(::Val{:nambu}, index::Index{<:AbstractPID, <:FID}; kwargs...) -> String
 
 Get the required script of a Fock index.
 """
 @inline script(::Val{:site}, index::Index{<:AbstractPID, <:FID}; kwargs...) = index.pid.site
 @inline script(::Val{:orbital}, index::Index{<:AbstractPID, <:FID}; kwargs...) = index.iid.orbital
-@inline script(::Val{:spinint}, index::Index{<:AbstractPID, <:FID}; kwargs...) = index.iid.spin
-@inline script(::Val{:spinsym}, index::Index{<:AbstractPID, <:FID}; kwargs...) = index.iid.spin==1 ? "↓" : index.iid.spin==2 ? "↑" : error("script error: wrong spin.")
+@inline script(::Val{:spint}, index::Index{<:AbstractPID, <:FID}; kwargs...) = index.iid.spin
+@inline script(::Val{:spsym}, index::Index{<:AbstractPID, <:FID}; kwargs...) = index.iid.spin==1 ? "↓" : index.iid.spin==2 ? "↑" : error("script error: wrong spin.")
 @inline script(::Val{:nambu}, index::Index{<:AbstractPID, <:FID}; kwargs...) = index.iid.nambu==CREATION ? "\\dagger" : ""
 
 """
@@ -155,7 +155,7 @@ Get the required script of a Fock index.
 
 The default LaTeX format for a fermionic oid.
 """
-const fdefaultlatex = LaTeX{(:nambu,), (:site, :orbital, :spinsym)}('c')
+const fdefaultlatex = LaTeX{(:nambu,), (:site, :orbital, :spsym)}('c')
 @inline latexname(::Type{<:Index{<:AbstractPID, <:FID{:f}}}) = Symbol("Index{AbstractPID, FID{:f}}")
 @inline latexname(::Type{<:AbstractCompositeOID{<:Index{<:AbstractPID, <:FID{:f}}}}) = Symbol("AbstractCompositeOID{Index{AbstractPID, FID{:f}}}")
 latexformat(Index{<:AbstractPID, <:FID{:f}}, fdefaultlatex)
@@ -166,7 +166,7 @@ latexformat(AbstractCompositeOID{<:Index{<:AbstractPID, <:FID{:f}}}, fdefaultlat
 
 The default LaTeX format for a bosonic oid.
 """
-const bdefaultlatex = LaTeX{(:nambu,), (:site, :orbital, :spinsym)}('b')
+const bdefaultlatex = LaTeX{(:nambu,), (:site, :orbital, :spsym)}('b')
 @inline latexname(::Type{<:Index{<:AbstractPID, <:FID{:b}}}) = Symbol("Index{AbstractPID, FID{:b}}")
 @inline latexname(::Type{<:AbstractCompositeOID{<:Index{<:AbstractPID, <:FID{:b}}}}) = Symbol("AbstractCompositeOID{Index{AbstractPID, FID{:b}}}")
 latexformat(Index{<:AbstractPID, <:FID{:b}}, bdefaultlatex)
@@ -229,11 +229,16 @@ function permute(id₁::OID{<:Index{<:AbstractPID, <:FID{:f}}}, id₂::OID{<:Ind
 end
 
 """
-    *(f1::Operator{<:Number, <:ID{AbstractCompositeOID{<:Index{<:AbstractPID, <:FID{:f}}}}}, f2::Operator{<:Number, <:ID{AbstractCompositeOID{<:Index{<:AbstractPID, <:FID{:f}}}}}) -> Union{Nothing, Operator}
+    *(  f1::Operator{<:Number, <:ID{AbstractCompositeOID{<:Index{<:AbstractPID, <:FID{:f}}}}},
+        f2::Operator{<:Number, <:ID{AbstractCompositeOID{<:Index{<:AbstractPID, <:FID{:f}}}}}
+        ) -> Union{Nothing, Operator}
 
 Get the multiplication of two fermionic Fock operators.
 """
-@inline function Base.:*(f1::Operator{<:Number, <:ID{AbstractCompositeOID{<:Index{<:AbstractPID, <:FID{:f}}}}}, f2::Operator{<:Number, <:ID{AbstractCompositeOID{<:Index{<:AbstractPID, <:FID{:f}}}}})
+@inline function Base.:*(
+        f1::Operator{<:Number, <:ID{AbstractCompositeOID{<:Index{<:AbstractPID, <:FID{:f}}}}},
+        f2::Operator{<:Number, <:ID{AbstractCompositeOID{<:Index{<:AbstractPID, <:FID{:f}}}}}
+        )
     rank(f1)>0 && rank(f2)>0 && f1.id[end]==f2.id[1] && return nothing
     return invoke(*, Tuple{Element, Element}, f1, f2)
 end
@@ -589,7 +594,11 @@ Type alias for `Term{:InterOrbitalInterSpin, 4, id, V, Int, C<:TermCouplings, A<
 const InterOrbitalInterSpin{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:InterOrbitalInterSpin, 4, id, V, Int, C, A, M}
 @inline function InterOrbitalInterSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
     @assert value==value' "InterOrbitalInterSpin error: only real values are allowed."
-    Term{:InterOrbitalInterSpin, 4}(id, value, 0, couplings=@couplings(fc"1 ob[α α β β](α < β) ⊗ sp[σ₁ σ₁ σ₂ σ₂](σ₁ ≠ σ₂) ⊗ ph[2 1 2 1]"), amplitude=amplitude, modulate=modulate)
+    Term{:InterOrbitalInterSpin, 4}(id, value, 0;
+        couplings=@couplings(fc"1 ob[α α β β](α < β) ⊗ sp[σ₁ σ₁ σ₂ σ₂](σ₁ ≠ σ₂) ⊗ ph[2 1 2 1]"),
+        amplitude=amplitude,
+        modulate=modulate
+        )
 end
 @inline abbr(::Type{<:InterOrbitalInterSpin}) = :nons
 @inline isHermitian(::Type{<:InterOrbitalInterSpin}) = true
@@ -675,13 +684,13 @@ const sidreprevmap = Dict(v=>k for (k, v) in sidrepmap)
 
 The spin id.
 """
-struct SID{S, O<:Union{Int, Symbol}} <: SimpleIID
+struct SID{S, O<:Union{Int, Symbol}, T<:Union{Char, Symbol}} <: SimpleIID
     orbital::O
-    tag::Char
-    function SID{S}(orbital::Union{Int, Symbol}, tag::Char) where S
+    tag::T
+    function SID{S}(orbital::Union{Int, Symbol}, tag::Union{Char, Symbol}) where S
         @assert isa(S, Rational{Int}) && S.den==2 || isa(S, Integer) || S==wildcard "SID error: not supported spin($S)."
-        @assert tag in ('x', 'y', 'z', '+', '-') "SID error: not supported tag($tag)."
-        new{S, typeof(orbital)}(orbital, tag)
+        isa(tag, Char) && @assert tag in ('x', 'y', 'z', '+', '-') "SID error: not supported tag($tag)."
+        new{S, typeof(orbital), typeof(tag)}(orbital, tag)
     end
 end
 @inline Base.adjoint(sid::SID) = SID{totalspin(sid)}(sid.orbital, sidajointmap[sid.tag])
@@ -694,18 +703,18 @@ end
 @inline totalspin(::Type{<:SID{S}}) where S = S
 
 """
-    SID{S}(tag::Char; orbital::Union{Int, Symbol}=1) where S
+    SID{S}(tag::Union{Char, Symbol}; orbital::Union{Int, Symbol}=1) where S
 
 Create a spin id.
 """
-@inline SID{S}(tag::Char; orbital::Union{Int, Symbol}=1) where S = SID{S}(orbital, tag)
+@inline SID{S}(tag::Union{Char, Symbol}; orbital::Union{Int, Symbol}=1) where S = SID{S}(orbital, tag)
 
 """
-    Matrix(sid::SID{S}, dtype::Type{<:Number}=Complex{Float}) where S -> Matrix{dtype}
+    Matrix(sid::SID{S, <:Union{Int, Symbol}, Char}, dtype::Type{<:Number}=Complex{Float}) where S -> Matrix{dtype}
 
 Get the matrix representation of a sid.
 """
-function Base.Matrix(sid::SID{S}, dtype::Type{<:Number}=Complex{Float}) where S
+function Base.Matrix(sid::SID{S, <:Union{Int, Symbol}, Char}, dtype::Type{<:Number}=Complex{Float}) where S
     N = Int(2*S+1)
     result = zeros(dtype, (N, N))
     spin = convert(dtype, S)
@@ -722,11 +731,11 @@ function Base.Matrix(sid::SID{S}, dtype::Type{<:Number}=Complex{Float}) where S
 end
 
 """
-    Spin{S} <: SimpleInternal{SID{S, Int}}
+    Spin{S} <: SimpleInternal{SID{S, Int, Char}}
 
 The spin interanl degrees of freedom.
 """
-struct Spin{S} <: SimpleInternal{SID{S, Int}}
+struct Spin{S} <: SimpleInternal{SID{S, Int, Char}}
     norbital::Int
     function Spin{S}(norbital::Int) where S
         @assert isa(S, Rational{Int}) && S.den==2 || isa(S, Integer) "Spin error: not supported spin($S)."
@@ -743,15 +752,11 @@ Base.summary(io::IO, spin::Spin) = @printf io "%s-element Spin{%s}" length(spin)
 function Base.show(io::IO, spin::Spin)
     @printf io "%s{%s}(%s)" spin|>typeof|>nameof totalspin(spin) join(("$name=$(getfield(spin, name))" for name in spin|>typeof|>fieldnames), ", ")
 end
-@inline function shape(iidspace::IIDSpace{<:Union{SID{wildcard, Symbol}, SID{S, Symbol}}, Spin{S}}) where S
-    norbital, tag = iidspace.internal.norbital, sidseqmap[iidspace.iid.tag]
-    return (1:norbital, tag:tag)
-end
-@inline function shape(iidspace::IIDSpace{<:Union{SID{wildcard, Int}, SID{S, Int}}, Spin{S}}) where S
-    orbital, tag = iidspace.iid.orbital, sidseqmap[iidspace.iid.tag]
-    @assert orbital<iidspace.internal.norbital+1 "shape error: orbital out of range."
-    return (orbital:orbital, tag:tag)
-end
+@inline sidrange(::Symbol) = 1:5
+@inline sidrange(::Symbol, n::Int) = 1:n
+@inline sidrange(tag::Char) = (pos=sidseqmap[tag]; pos:pos)
+@inline sidrange(v::Int, n::Int) = ((@assert 0<v<n+1 "shape error: orbital out of range."); v:v)
+@inline shape(iidspace::IIDSpace{<:SID, <:Spin}) = (sidrange(iidspace.iid.orbital, iidspace.internal.norbital), sidrange(iidspace.iid.tag))
 
 """
     Spin{S}(; norbital::Int=1) where S
@@ -790,14 +795,13 @@ Indicate that the choosed fields are `(:site, :orbital)` when converting a spin 
 const usualspinindextotuple = OIDToTuple(:site, :orbital)
 
 """
-    permute(id₁::OID{<:Index{<:AbstractPID, <:SID}}, id₂::OID{<:Index{<:AbstractPID, <:SID}}) -> Tuple{Vararg{Operator}}
+    permute(id₁::OID{<:Index{<:AbstractPID, SID{S, Int, Char}}}, id₂::OID{<:Index{<:AbstractPID, SID{S, Int, Char}}}) where S -> Tuple{Vararg{Operator}}
 
 Permute two spin oids and get the result.
 """
-function permute(id₁::OID{<:Index{<:AbstractPID, <:SID}}, id₂::OID{<:Index{<:AbstractPID, <:SID}})
+function permute(id₁::OID{<:Index{<:AbstractPID, SID{S, Int, Char}}}, id₂::OID{<:Index{<:AbstractPID, SID{S, Int, Char}}}) where S
     @assert id₁.index≠id₂.index || id₁.rcoord≠id₂.rcoord || id₁.icoord≠id₂.icoord "permute error: permuted ids should not be equal to each other."
     if usualspinindextotuple(id₁.index)==usualspinindextotuple(id₂.index) && id₁.rcoord==id₂.rcoord && id₁.icoord==id₂.icoord
-        @assert totalspin(id₁.index.iid)==totalspin(id₂.index.iid) "permute error: noncommutable ids should have the same spin field."
         if id₁.index.iid.tag == 'x'
             id₂.index.iid.tag=='y' && return (Operator(+1im, ID(permutesoid(id₁, 'z'))), Operator(1, ID(id₂, id₁)))
             id₂.index.iid.tag=='z' && return (Operator(-1im, ID(permutesoid(id₁, 'y'))), Operator(1, ID(id₂, id₁)))

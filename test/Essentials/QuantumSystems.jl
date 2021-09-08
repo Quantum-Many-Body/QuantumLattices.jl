@@ -4,7 +4,7 @@ using QuantumLattices.Essentials.QuantumSystems
 using QuantumLattices.Essentials.QuantumAlgebras: ID
 using QuantumLattices.Essentials.Spatials: AbstractPID, PID, CPID, Point, Bond, rcoord, azimuthd
 using QuantumLattices.Essentials.DegreesOfFreedom: Index, AbstractCompositeOID, OID, Hilbert, Operator, Operators, script, latexname, isHermitian
-using QuantumLattices.Essentials.Terms: IIDSpace, Couplings, abbr, @subscript_str, @couplings
+using QuantumLattices.Essentials.Terms: IIDSpace, Couplings, abbr, @subscript_str, @couplings, wildcard
 using QuantumLattices.Interfaces: ⊗, ⋅, expand, permute, rank
 using QuantumLattices.Prerequisites.Combinatorics: Permutations
 using QuantumLattices.Prerequisites.VectorSpaces: shape, ndimshape
@@ -40,9 +40,9 @@ end
 @testset "latex" begin
     @test script(Val(:site), Index(PID(1), FID{:f}(2, 1, 1))) == 1
     @test script(Val(:orbital), Index(PID(1), FID{:f}(2, 1, 1))) == 2
-    @test script(Val(:spinint), Index(PID(1), FID{:f}(2, 3, 1))) == 3
-    @test script(Val(:spinsym), Index(PID(1), FID{:f}(2, 2, 1))) == "↑"
-    @test script(Val(:spinsym), Index(PID(1), FID{:f}(2, 1, 1))) == "↓"
+    @test script(Val(:spint), Index(PID(1), FID{:f}(2, 3, 1))) == 3
+    @test script(Val(:spsym), Index(PID(1), FID{:f}(2, 2, 1))) == "↑"
+    @test script(Val(:spsym), Index(PID(1), FID{:f}(2, 1, 1))) == "↓"
     @test script(Val(:nambu), Index(PID(1), FID{:f}(2, 3, 1))) == ""
     @test script(Val(:nambu), Index(PID(1), FID{:f}(2, 3, 2))) == "\\dagger"
 
@@ -544,6 +544,8 @@ end
     ]
     @test shape(IIDSpace(SID{1//2}(:a, 'x'), Spin{1//2}(2))) == (1:2, 1:1)
     @test shape(IIDSpace(SID{1//2}(2, 'y'), Spin{1//2}(2))) == (2:2, 2:2)
+    @test shape(IIDSpace(SID{1//2}(:a, wildcard), Spin{1//2}(2))) == (1:2, 1:5)
+    @test shape(IIDSpace(SID{1//2}(2, wildcard), Spin{1//2}(2))) == (2:2, 1:5)
 end
 
 @testset "latex" begin
