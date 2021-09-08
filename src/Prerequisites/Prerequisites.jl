@@ -1,5 +1,6 @@
 module Prerequisites
 
+using Reexport: @reexport
 using Formatting: FormatSpec, fmt
 
 export atol, rtol, Float
@@ -92,5 +93,13 @@ include("SimpleTrees.jl")
 include("NamedVectors.jl")
 include("VectorSpaces.jl")
 include("QuantumNumbers.jl")
+
+@reexport using .Combinatorics
+@reexport using .Traits
+@reexport using .CompositeStructures
+@reexport using .SimpleTrees
+@reexport using .NamedVectors
+@reexport using .VectorSpaces
+@reexport using .QuantumNumbers
 
 end # module

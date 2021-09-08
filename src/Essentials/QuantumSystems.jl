@@ -26,7 +26,8 @@ export Onsite, Hopping, Pairing, Hubbard, InterOrbitalInterSpin, InterOrbitalInt
 export @σ⁰_str, @σˣ_str, @σʸ_str, @σᶻ_str, @σ⁺_str, @σ⁻_str, @fc_str
 
 export sdefaultlatex, usualspinindextotuple
-export SID, Spin, SpinCoupling, SpinTerm, totalspin
+export SID, Spin, SpinCoupling, SpinTerm
+export totalspin, heisenbergxyz, heisenbergpmz, gamma, dm
 export @heisenberg_str, @ising_str, @gamma_str, @dm_str, @sˣ_str, @sʸ_str, @sᶻ_str, @sc_str
 
 export pndefaultlatex, usualphononindextotuple

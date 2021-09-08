@@ -21,7 +21,7 @@ import ...Essentials: kind, update!, reset!
 import ...Prerequisites.Traits: parameternames, isparameterbound, contentnames, getcontent
 import ...Prerequisites.VectorSpaces: shape, ndimshape
 
-export IIDSpace, Subscript, IIDConstrain, ConstrainID, @subscript_str
+export IIDSpace, Subscript, IIDConstrain, ConstrainID, @subscript_str, subscriptexpr, wildcard, diagonal, noconstrain
 export AbstractCoupling, Coupling, Couplings, couplingcenters, couplingpoints, couplinginternals, @couplings
 export TermFunction, TermAmplitude, TermCouplings, TermModulate, Term, abbr, ismodulatable, otype
 export Parameters, GenOperators, AbstractGenerator, Generator
