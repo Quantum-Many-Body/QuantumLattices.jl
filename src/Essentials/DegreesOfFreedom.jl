@@ -125,7 +125,7 @@ Judge whether a simple iid or a simple iid type matches a simple internal space 
 Here, "match" means that the eltype of the simple internal space has the same type name with the simple iid.
 """
 @inline Base.match(iid::SimpleIID, i::SimpleInternal) = match(typeof(iid), typeof(i))
-@inline Base.match(::Type{I}, ::Type{SI}) where {I<:SimpleIID, SI<:SimpleInternal} = nameof(I)==nameof(eltype(SI))
+@inline @generated Base.match(::Type{I}, ::Type{SI}) where {I<:SimpleIID, SI<:SimpleInternal} = nameof(I)==nameof(eltype(SI))
 
 """
     filter(iid::SimpleIID, i::SimpleInternal) -> Union{Nothing, typeof(i)}
@@ -224,10 +224,19 @@ Direct product between simple internal spaces and composite internal spaces.
 Filter the composite internal space and select those that matches `I` or the type of `iid`.
 """
 @inline Base.filter(iid::SimpleIID, ci::CompositeInternal) = filter(typeof(iid), ci)
-@inline @generated function Base.filter(::Type{I}, ci::CompositeInternal) where {I<:SimpleIID}
+@inline Base.filter(::Type{I}, ci::CompositeInternal) where {I<:SimpleIID} = filterhelper(I, ci, filtermatches(I, ci)|>Val)
+@inline @generated function filtermatches(::Type{I}, ci::CompositeInternal) where {I<:SimpleIID}
     exprs = []
     for i = 1:rank(ci)
-        match(I, internaltype(ci, i)) && push!(exprs, :(ci[InternalIndex($i)]))
+        T = internaltype(ci, i)
+        push!(exprs, :(match(I, $T)))
+    end
+    Expr(:tuple, exprs...)
+end
+@inline @generated function filterhelper(::Type{I}, ci::CompositeInternal, ::Val{BS}) where {I<:SimpleIID, BS}
+    exprs = []
+    for (i, B) in enumerate(BS)
+        B && push!(exprs, :(ci[InternalIndex($i)]))
     end
     length(exprs)==0 && return
     length(exprs)==1 && return first(exprs)

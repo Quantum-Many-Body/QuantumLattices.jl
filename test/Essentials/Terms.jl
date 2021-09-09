@@ -8,7 +8,7 @@ using QuantumLattices.Essentials.DegreesOfFreedom: SimpleIID, SimpleInternal, Co
 using QuantumLattices.Essentials: kind, update!, reset!
 using QuantumLattices.Interfaces: rank, expand!, expand, ⊗
 using QuantumLattices.Prerequisites: Float, decimaltostr
-using QuantumLattices.Prerequisites.Traits: parameternames, contentnames, getcontent
+using QuantumLattices.Prerequisites.Traits: parameternames, isparameterbound, contentnames, getcontent
 using QuantumLattices.Prerequisites.CompositeStructures: NamedContainer
 
 import QuantumLattices.Essentials.DegreesOfFreedom: isHermitian
@@ -116,6 +116,12 @@ end
 @testset "couplings" begin
     @test parameternames(Coupling) == (:value, :cid, :constrain, :constrainid)
     @test contentnames(Coupling) == (:value, :id, :constrain)
+    @test isparameterbound(Coupling, :cid, Tuple{TID{Int}}) == false
+    @test isparameterbound(Coupling, :cid, ID{TID{Int}}) == true
+    @test isparameterbound(Coupling, :constrain, IIDConstrain{Tuple{NamedTuple{(:nambu,), Tuple{Subscript{Tuple{Int}, typeof(noconstrain)}}}}}) == false
+    @test isparameterbound(Coupling, :constrain, IIDConstrain) == true
+    @test isparameterbound(Coupling, :constrainid, ConstrainID{Tuple{}}) == false
+    @test isparameterbound(Coupling, :constrainid, ConstrainID) == true
 
     tc = TCoupling(2.0, (2,))
     @test id(tc) == ID(CompositeIID(tc.cid), ConstrainID(tc.constrain))

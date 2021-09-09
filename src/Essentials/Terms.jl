@@ -396,7 +396,7 @@ struct Coupling{V, I<:ID{SimpleIID}, C<:IIDConstrain, CI<:ConstrainID} <: Abstra
     value::V
     cid::I
     constrain::C
-    function Coupling(value::Number, cid::ID{SimpleIID}, constrain::IIDConstrain)
+    function Coupling(value::Number, cid::ID{SimpleIID}, constrain::IIDConstrain=IIDConstrain())
         new{typeof(value), typeof(cid), typeof(constrain), idtype(constrain)}(value, cid, constrain)
     end
 end
@@ -667,7 +667,7 @@ end
 
 Get the compatible operator type from the type of a term, a Hilbert space and a bond.
 """
-otype(T::Type{<:Term}, H::Type{<:Hilbert}, B::Type{<:AbstractBond}) = Operator{T|>valtype, ID{oidtype(H|>valtype, B|>eltype, Val(:info)), T|>rank}}
+@inline otype(T::Type{<:Term}, H::Type{<:Hilbert}, B::Type{<:AbstractBond}) = Operator{T|>valtype, ID{oidtype(H|>valtype, B|>eltype, Val(:info)), T|>rank}}
 
 """
     expand!(operators::Operators, term::Term, bond::AbstractBond, hilbert::Hilbert, half::Bool=false; table::Union{Nothing, Table}=nothing) -> Operators

@@ -112,6 +112,9 @@ Base.summary(io::IO, fock::Fock) = @printf io "%s-element Fock{%s}" length(fock)
 function Base.show(io::IO, fock::Fock)
     @printf io "%s{%s}(%s)" fock|>typeof|>nameof repr(statistics(fock)) join(("$name=$(getfield(fock, name))" for name in fock|>typeof|>fieldnames), ", ")
 end
+@inline Base.match(::Type{<:FID{wildcard}}, ::Type{<:Fock{T}}) where T = true
+@inline Base.match(::Type{<:FID{T}}, ::Type{<:Fock{T}}) where T = true
+@inline Base.match(::Type{<:FID{T₁}}, ::Type{<:Fock{T₂}}) where {T₁, T₂} = false
 @generated function shape(iidspace::IIDSpace{I, V}) where {I<:CompositeIID{<:Tuple{Vararg{FID}}}, V<:CompositeInternal{<:Tuple{Vararg{Fock}}}}
     @assert rank(I)==rank(V) "shape error: mismatched composite iid and composite internal space."
     Kind = Val(kind(iidspace))
@@ -752,6 +755,9 @@ Base.summary(io::IO, spin::Spin) = @printf io "%s-element Spin{%s}" length(spin)
 function Base.show(io::IO, spin::Spin)
     @printf io "%s{%s}(%s)" spin|>typeof|>nameof totalspin(spin) join(("$name=$(getfield(spin, name))" for name in spin|>typeof|>fieldnames), ", ")
 end
+@inline Base.match(::Type{<:SID{wildcard}}, ::Type{<:Spin{S}}) where S = true
+@inline Base.match(::Type{<:SID{S}}, ::Type{<:Spin{S}}) where S = true
+@inline Base.match(::Type{<:SID{S₁}}, ::Type{<:Spin{S₂}}) where {S₁, S₂} = false
 @inline sidrange(::Symbol) = 1:5
 @inline sidrange(::Symbol, n::Int) = 1:n
 @inline sidrange(tag::Char) = (pos=sidseqmap[tag]; pos:pos)

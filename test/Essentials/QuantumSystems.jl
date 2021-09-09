@@ -35,6 +35,10 @@ end
     @test summary(Fock{:b}(nspin=0, nnambu=1)) == "0-element Fock{:b}"
     @test summary(Fock{:b}(nspin=1, nnambu=1)) == "1-element Fock{:b}"
     @test summary(Fock{:f}(nspin=2, nnambu=1)) == "2-element Fock{:f}"
+
+    @test match(FID{wildcard}, Fock{:f}) == match(FID{wildcard}, Fock{:b}) == true
+    @test match(FID{:f}, Fock{:f}) == match(FID{:b}, Fock{:b}) == true
+    @test match(FID{:b}, Fock{:f}) == match(FID{:f}, Fock{:b}) == false
 end
 
 @testset "latex" begin
@@ -546,6 +550,10 @@ end
     @test shape(IIDSpace(SID{1//2}(2, 'y'), Spin{1//2}(2))) == (2:2, 2:2)
     @test shape(IIDSpace(SID{1//2}(:a, wildcard), Spin{1//2}(2))) == (1:2, 1:5)
     @test shape(IIDSpace(SID{1//2}(2, wildcard), Spin{1//2}(2))) == (2:2, 1:5)
+
+    @test match(SID{wildcard}, Spin{1//2}) == true
+    @test match(SID{1//2}, Spin{1//2}) == true
+    @test match(SID{1//2}, Spin{1}) == match(SID{1}, Spin{1//2}) == false
 end
 
 @testset "latex" begin
