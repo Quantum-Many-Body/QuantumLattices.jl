@@ -31,7 +31,7 @@ export totalspin, heisenbergxyz, heisenbergpmz, gamma, dm
 export @heisenberg_str, @ising_str, @gamma_str, @dm_str, @sˣ_str, @sʸ_str, @sᶻ_str, @sc_str
 
 export pndefaultlatex, usualphononindextotuple
-export PNID, Phonon, PhononCoupling, PhononKinetic, PhononPotential
+export NID, Phonon, PhononCoupling, PhononKinetic, PhononPotential
 export @kinetic_str, @potential_str
 
 # Canonical fermionic/bosonic systems and hardcore bosonic systems
@@ -1003,7 +1003,7 @@ Type alias for `Term{:SpinTerm, R, id, V, B<:Any, C<:TermCouplings, A<:TermAmpli
 """
 const SpinTerm{R, id, V, B<:Any, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:SpinTerm, R, id, V, B, C, A, M}
 @inline function SpinTerm{R}(id::Symbol, value::Any, bondkind::Any;
-        couplings::Union{Function, Coupling, Couplings},
+        couplings::Union{Function, Couplings},
         amplitude::Union{Function, Nothing}=nothing,
         modulate::Union{Function, Bool}=false
         ) where R
@@ -1021,27 +1021,27 @@ end
 
 # Phononic systems
 """
-    PNID{D<:Union{Char, Symbol}} <: SimpleIID
+    NID{D<:Union{Char, Symbol}} <: SimpleIID
 
 The phonon id.
 """
-struct PNID{D<:Union{Char, Symbol}} <: SimpleIID
+struct NID{D<:Union{Char, Symbol}} <: SimpleIID
     tag::Char
     dir::D
-    function PNID(tag::Char, dir::Union{Char, Symbol}=wildcard)
-        @assert tag∈('p', 'u') "PNID error: wrong tag($tag)."
-        isa(dir, Char) && @assert dir∈('x', 'y', 'z') "PNID error: wrong direction($dir)."
+    function NID(tag::Char, dir::Union{Char, Symbol}=wildcard)
+        @assert tag∈('p', 'u') "NID error: wrong tag($tag)."
+        isa(dir, Char) && @assert dir∈('x', 'y', 'z') "NID error: wrong direction($dir)."
         new{typeof(dir)}(tag, dir)
     end
 end
-@inline Base.adjoint(pnid::PNID) = pnid
+@inline Base.adjoint(pnid::NID) = pnid
 
 """
-    Phonon <: SimpleInternal{PNID{Char}}
+    Phonon <: SimpleInternal{NID{Char}}
 
 The phonon internal degrees of freedom.
 """
-struct Phonon <: SimpleInternal{PNID{Char}}
+struct Phonon <: SimpleInternal{NID{Char}}
     ndir::Int
     function Phonon(ndir::Integer)
         @assert ndir∈(1, 2, 3) "Phonon error: wrong number of directions."
@@ -1050,27 +1050,27 @@ struct Phonon <: SimpleInternal{PNID{Char}}
 end
 @inline shape(pn::Phonon) = (1:2, 1:pn.ndir)
 @inline ndimshape(::Type{Phonon}) = 2
-@inline Base.CartesianIndex(pnid::PNID{Char}, ::Phonon) = CartesianIndex(pnid.tag=='u' ? 1 : 2, Int(pnid.dir)-Int('x')+1)
-@inline PNID(index::CartesianIndex{2}, ::Phonon) = PNID(index[1]==1 ? 'u' : 'p', Char(Int('x')+index[2]-1))
-@inline shape(iidspace::IIDSpace{PNID{Symbol}, Phonon}) = (iidspace.iid.tag=='u' ? (1:1) : (2:2), 1:iidspace.internal.ndir)
-@inline function shape(iidspace::IIDSpace{PNID{Char}, Phonon})
+@inline Base.CartesianIndex(pnid::NID{Char}, ::Phonon) = CartesianIndex(pnid.tag=='u' ? 1 : 2, Int(pnid.dir)-Int('x')+1)
+@inline NID(index::CartesianIndex{2}, ::Phonon) = NID(index[1]==1 ? 'u' : 'p', Char(Int('x')+index[2]-1))
+@inline shape(iidspace::IIDSpace{NID{Symbol}, Phonon}) = (iidspace.iid.tag=='u' ? (1:1) : (2:2), 1:iidspace.internal.ndir)
+@inline function shape(iidspace::IIDSpace{NID{Char}, Phonon})
     dir = Int(iidspace.iid.dir)-Int('x')+1
     @assert 0<dir<iidspace.internal.ndir+1 "shape error: dir out of range."
     return (iidspace.iid.tag=='u' ? (1:1) : (2:2), dir:dir)
 end
 
 """
-    script(::Val{:BD}, index::Index{<:AbstractPID, <:PNID}, l::LaTeX) -> Char
-    script(::Val{:BD}, oid::AbstractCompositeOID{<:Index{<:AbstractPID, <:PNID}}, l::LaTeX) -> Char
-    script(::Val{:site}, index::Index{<:AbstractPID, <:PNID}; kwargs...) -> Int
-    script(::Val{:dir}, index::Index{<:AbstractPID, <:PNID}; kwargs...) -> Char
+    script(::Val{:BD}, index::Index{<:AbstractPID, <:NID}, l::LaTeX) -> Char
+    script(::Val{:BD}, oid::AbstractCompositeOID{<:Index{<:AbstractPID, <:NID}}, l::LaTeX) -> Char
+    script(::Val{:site}, index::Index{<:AbstractPID, <:NID}; kwargs...) -> Int
+    script(::Val{:dir}, index::Index{<:AbstractPID, <:NID}; kwargs...) -> Char
 
 Get the required script of a phonon oid.
 """
-@inline script(::Val{:BD}, index::Index{<:AbstractPID, <:PNID}, l::LaTeX) = l.body[index.iid.tag]
-@inline script(::Val{:BD}, oid::AbstractCompositeOID{<:Index{<:AbstractPID, <:PNID}}, l::LaTeX) = l.body[getcontent(oid, :index).iid.tag]
-@inline script(::Val{:site}, index::Index{<:AbstractPID, <:PNID}; kwargs...) = index.pid.site
-@inline script(::Val{:dir}, index::Index{<:AbstractPID, <:PNID}; kwargs...) = index.iid.dir
+@inline script(::Val{:BD}, index::Index{<:AbstractPID, <:NID}, l::LaTeX) = l.body[index.iid.tag]
+@inline script(::Val{:BD}, oid::AbstractCompositeOID{<:Index{<:AbstractPID, <:NID}}, l::LaTeX) = l.body[getcontent(oid, :index).iid.tag]
+@inline script(::Val{:site}, index::Index{<:AbstractPID, <:NID}; kwargs...) = index.pid.site
+@inline script(::Val{:dir}, index::Index{<:AbstractPID, <:NID}; kwargs...) = index.iid.dir
 
 """
     pndefaultlatex
@@ -1078,10 +1078,10 @@ Get the required script of a phonon oid.
 The default LaTeX format for a phonon oid.
 """
 const pndefaultlatex = LaTeX{(), (:site, :dir)}(Dict('p'=>'p', 'u'=>'u'), "", "")
-@inline latexname(::Type{<:Index{<:AbstractPID, <:PNID}}) = Symbol("Index{AbstractPID, PNID}")
-@inline latexname(::Type{<:AbstractCompositeOID{<:Index{<:AbstractPID, <:PNID}}}) = Symbol("AbstractCompositeOID{Index{AbstractPID, PNID}}")
-latexformat(Index{<:AbstractPID, <:PNID}, pndefaultlatex)
-latexformat(AbstractCompositeOID{<:Index{<:AbstractPID, <:PNID}}, pndefaultlatex)
+@inline latexname(::Type{<:Index{<:AbstractPID, <:NID}}) = Symbol("Index{AbstractPID, NID}")
+@inline latexname(::Type{<:AbstractCompositeOID{<:Index{<:AbstractPID, <:NID}}}) = Symbol("AbstractCompositeOID{Index{AbstractPID, NID}}")
+latexformat(Index{<:AbstractPID, <:NID}, pndefaultlatex)
+latexformat(AbstractCompositeOID{<:Index{<:AbstractPID, <:NID}}, pndefaultlatex)
 
 """
     usualphononindextotuple
@@ -1091,11 +1091,11 @@ Indicate that the chosen fields are `(:tag, :site, :dir)` when converting a phon
 const usualphononindextotuple = OIDToTuple(:tag, :site, :dir)
 
 """
-    permute(id₁::OID{<:Index{<:AbstractPID, PNID{Char}}}, id₂::OID{<:Index{<:AbstractPID, PNID{Char}}}) -> Tuple{Vararg{Operator}}
+    permute(id₁::OID{<:Index{<:AbstractPID, NID{Char}}}, id₂::OID{<:Index{<:AbstractPID, NID{Char}}}) -> Tuple{Vararg{Operator}}
 
 Permute two phonon oids and get the result.
 """
-function permute(id₁::OID{<:Index{<:AbstractPID, PNID{Char}}}, id₂::OID{<:Index{<:AbstractPID, PNID{Char}}})
+function permute(id₁::OID{<:Index{<:AbstractPID, NID{Char}}}, id₂::OID{<:Index{<:AbstractPID, NID{Char}}})
     if id₁.index.iid.dir==id₂.index.iid.dir && id₁.index.iid.tag≠id₂.index.iid.tag && id₁.rcoord==id₂.rcoord && id₁.icoord==id₂.icoord
         if id₁.index.iid.tag=='u'
             return (Operator(1im), Operator(1, ID(id₂, id₁)))
@@ -1112,11 +1112,11 @@ end
 
 Phonon coupling.
 
-Type alias for `Coupling{V<:Number, I<:ID{PNID}, C<:IIDConstrain, CI<:ConstrainID}`.
+Type alias for `Coupling{V<:Number, I<:ID{NID}, C<:IIDConstrain, CI<:ConstrainID}`.
 """
-const PhononCoupling{V<:Number, I<:ID{PNID}, C<:IIDConstrain, CI<:ConstrainID} = Coupling{V, I, C, CI}
+const PhononCoupling{V<:Number, I<:ID{NID}, C<:IIDConstrain, CI<:ConstrainID} = Coupling{V, I, C, CI}
 @inline function PhononCoupling(value::Number, tags::NTuple{N, Char}, dirs::Subscript{<:Union{NTuple{N, Char}, NTuple{N, Symbol}}}) where N
-    return Coupling(value, ID(PNID, tags, dirs.pattern), IIDConstrain((dir=dirs,)))
+    return Coupling(value, ID(NID, tags, dirs.pattern), IIDConstrain((dir=dirs,)))
 end
 function Base.show(io::IO, pnc::PhononCoupling)
     @printf io "PhononCoupling(value=%s" decimaltostr(pnc.value)
@@ -1145,11 +1145,11 @@ function PhononCoupling(value::Number, tags::NTuple{N, Char};
 end
 
 """
-    expand(pnc::PhononCoupling{<:Number, <:ID{PNID{Symbol}}}, bond::Bond, hilbert::Hilbert, info::Val{:PhononPotential}) -> PPExpand
+    expand(pnc::PhononCoupling{<:Number, <:ID{NID{Symbol}}}, bond::Bond, hilbert::Hilbert, info::Val{:PhononPotential}) -> PPExpand
 
 Expand the default phonon potential coupling on a given bond.
 """
-function expand(pnc::PhononCoupling{<:Number, <:ID{PNID{Symbol}}}, bond::Bond, hilbert::Hilbert, info::Val{:PhononPotential})
+function expand(pnc::PhononCoupling{<:Number, <:ID{NID{Symbol}}}, bond::Bond, hilbert::Hilbert, info::Val{:PhononPotential})
     R̂ = rcoord(bond)/norm(rcoord(bond))
     @assert pnc.cid.tags==('u', 'u') "expand error: wrong tags of phonon coupling."
     @assert isapprox(pnc.value, 1, atol=atol, rtol=rtol) "expand error: wrong coefficient of phonon coupling."
@@ -1157,7 +1157,7 @@ function expand(pnc::PhononCoupling{<:Number, <:ID{PNID{Symbol}}}, bond::Bond, h
     @assert pn₁.ndir==pn₂.ndir==length(R̂) "expand error: mismatched number of directions."
     return PPExpand(R̂, (bond.epoint, bond.spoint))
 end
-struct PPExpand{N, P<:AbstractPID, D<:Number} <: CartesianVectorSpace{Tuple{D, ID{OID{Index{P, PNID{Char}}, SVector{N, D}}, 2}}}
+struct PPExpand{N, P<:AbstractPID, D<:Number} <: CartesianVectorSpace{Tuple{D, ID{OID{Index{P, NID{Char}}, SVector{N, D}}, 2}}}
     direction::SVector{N, D}
     points::NTuple{2, Point{N, P, D}}
 end
@@ -1166,8 +1166,8 @@ function Tuple(index::CartesianIndex{2}, pnce::PPExpand)
     dir = Char(Int('x')+index[1]-1)
     coeff = index[2]==2 ? -2 : 1
     pos₁, pos₂ = index[2]==1 ? (1, 1) : index[2]==2 ? (1, 2) : (2, 2)
-    oid₁ = OID(Index(pnce.points[pos₁].pid, PNID('u', dir)), pnce.points[pos₁].rcoord, pnce.points[pos₁].icoord)
-    oid₂ = OID(Index(pnce.points[pos₂].pid, PNID('u', dir)), pnce.points[pos₂].rcoord, pnce.points[pos₂].icoord)
+    oid₁ = OID(Index(pnce.points[pos₁].pid, NID('u', dir)), pnce.points[pos₁].rcoord, pnce.points[pos₁].icoord)
+    oid₂ = OID(Index(pnce.points[pos₂].pid, NID('u', dir)), pnce.points[pos₂].rcoord, pnce.points[pos₂].icoord)
     return (pnce.direction[index[1]])^2*coeff, ID(oid₁, oid₂)
 end
 

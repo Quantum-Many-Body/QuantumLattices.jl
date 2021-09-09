@@ -53,7 +53,7 @@ export @heisenberg_str, @ising_str, @gamma_str, @dm_str, @sˣ_str, @sʸ_str, @s�
 
 ## Phononic systems
 export pndefaultlatex, usualphononindextotuple
-export PNID, Phonon, PhononCoupling, PhononKinetic, PhononPotential
+export NID, Phonon, PhononCoupling, PhononKinetic, PhononPotential
 export @kinetic_str, @potential_str
 
 end
