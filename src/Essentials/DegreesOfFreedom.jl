@@ -397,12 +397,12 @@ Construct an operator id.
 
 """
     adjoint(oid::OID) -> typeof(oid)
-    adjoint(oid::ID{OID, N}) where N -> typeof(oid)
+    adjoint(oid::ID{AbstractOID}) -> ID{AbstractOID}
 
 Get the adjoint of an operator id.
 """
 @inline Base.adjoint(oid::OID) = OID(oid.index', oid.rcoord, oid.icoord)
-@inline @generated Base.adjoint(oid::ID{OID, N}) where N = Expr(:call, :ID, [:(oid[$i]') for i = N:-1:1]...)
+@inline @generated Base.adjoint(oid::ID{AbstractOID}) = Expr(:call, :ID, [:(oid[$i]') for i = fieldcount(oid):-1:1]...)
 
 """
     oidtype(I::Type{<:SimpleInternal}, P::Type{<:Point}, ::Val)
