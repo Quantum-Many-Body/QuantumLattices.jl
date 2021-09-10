@@ -10,7 +10,7 @@ using ..DegreesOfFreedom: Hilbert, AbstractOID, Index, OID, oidtype, Operator, O
 using ...Essentials: dtype
 using ...Interfaces: add!, dimension
 using ...Prerequisites: atol, rtol, decimaltostr
-using ...Prerequisites.Traits: rawtype, efficientoperations
+using ...Prerequisites.Traits: rawtype, efficientoperations, commontype
 using ...Prerequisites.CompositeStructures: CompositeTuple, NamedContainer
 using ...Prerequisites.VectorSpaces: CartesianVectorSpace
 
@@ -462,10 +462,15 @@ end
 
 The function for the couplings of a term.
 """
-struct TermCouplings{C<:Union{Function, Couplings}} <: TermFunction
-    couplings::C
-    TermCouplings(couplings::Union{Couplings, Function}) = new{couplings|>typeof}(couplings)
+struct TermCouplings{C₁<:Union{Function, Couplings}, C₂<:Union{Couplings, Nothing}} <: TermFunction
+    couplings::C₁
+    TermCouplings(couplings::Couplings) = new{typeof(couplings), Nothing}(couplings)
+    TermCouplings{C}(couplings::Function) where {C<:Couplings} = new{typeof(couplings), C}(couplings)
+    TermCouplings(couplings::Function) = new{typeof(couplings), commontype(couplings, Tuple{Vararg{Any}}, Couplings)}(couplings)
 end
+Base.valtype(termcouplings::TermCouplings) = valtype(typeof(termcouplings))
+Base.valtype(::Type{<:TermCouplings{C}}) where {C<:Couplings} = C
+Base.valtype(::Type{<:TermCouplings{<:Function, C}}) where {C<:Couplings} = C
 @inline (termcouplings::TermCouplings{<:Couplings})(args...; kwargs...) = termcouplings.couplings
 @inline (termcouplings::TermCouplings{<:Function})(args...; kwargs...) = termcouplings.couplings(args...; kwargs...)
 

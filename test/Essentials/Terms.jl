@@ -171,13 +171,15 @@ end
     termcouplings = TermCouplings(tcs)
     @test termcouplings == deepcopy(TermCouplings(tcs))
     @test isequal(termcouplings, deepcopy(TermCouplings(tcs)))
+    @test valtype(termcouplings) == valtype(typeof(termcouplings)) == typeof(tcs)
     @test termcouplings() == tcs
 
-    tcs1 = TCoupling(1.0, (1, 1)) + TCoupling(1.0, (2, 2))
-    tcs2 = TCoupling(1.0, (2, 1)) + TCoupling(1.0, (1, 2))
-    termcouplings = TermCouplings(i->(tcs1, tcs2)[(i-1)%2+1])
-    @test termcouplings(1) == tcs1
-    @test termcouplings(2) == tcs2
+    fx = i -> i%2==1 ? (TCoupling(1.0, (1, 1))+TCoupling(1.0, (2, 2))) : (TCoupling(1.0, (2, 1))+TCoupling(1.0, (1, 2)))
+    termcouplings = TermCouplings(fx)
+    @test termcouplings == TermCouplings{typejoin(typeof(fx(1)), typeof(fx(2)))}(fx)
+    @test valtype(termcouplings) == valtype(typeof(termcouplings)) == typejoin(typeof(fx(1)), typeof(fx(2)))
+    @test termcouplings(1) == fx(1)
+    @test termcouplings(2) == fx(2)
 
     @test ismodulatable(TermModulate{Val{true}}) == ismodulatable(TermModulate{<:Function}) == true
     @test ismodulatable(TermModulate{Val{false}}) == false
@@ -213,9 +215,11 @@ end
     p1 = Point(PID(1), (0.0, 0.0), (0.0, 0.0))
     p2 = Point(PID(2), (0.0, 0.0), (0.0, 0.0))
     hilbert = Hilbert(pid=>TFock(2) for pid in [PID(1), PID(2)])
-    tcs1 = Couplings(TCoupling(1.0, (2, 2)))
-    tcs2 = Couplings(TCoupling(1.0, (1, 1)))
-    term = Term{:Mu, 2}(:mu, 1.5, 0, couplings=bond->(tcs1, tcs2)[bond.pid.site%2+1], amplitude=bond->3, modulate=true)
+    term = Term{:Mu, 2}(:mu, 1.5, 0,
+        couplings=bond->bond.pid.site%2==0 ? Couplings(TCoupling(1.0, (2, 2))) : Couplings(TCoupling(1.0, (1, 1))),
+        amplitude=bond->3,
+        modulate=true
+    )
     @test term|>ismodulatable == term|>typeof|>ismodulatable == true
     @test repr(term, p1, hilbert) == "mu: 4.5 ph(1, 1)"
     @test repr(term, p2, hilbert) == "mu: 4.5 ph(2, 2)"
