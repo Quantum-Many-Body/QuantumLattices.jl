@@ -66,6 +66,7 @@ end
     @test it|>collect == [DID(1), DID(2)]
     @test match(DID(1), it) && match(DID, DFock)
     @test filter(DID(1), it) == filter(DID, it) == it
+    @test filter(DID(1), DFock) == filter(DID, DFock) == DFock
 end
 
 @testset "CompositeInternal" begin
@@ -87,6 +88,7 @@ end
     @test ci⊗it₁ == CompositeInternal(it₁, it₂, it₁)
     @test ci⊗ci == CompositeInternal(it₁, it₂, it₁, it₂)
     @test filter(DID(1), ci) == filter(DID, ci) == ci
+    @test filter(DID(1), typeof(ci)) == filter(DID, typeof(ci)) == typeof(ci)
 end
 
 @testset "Hilbert" begin

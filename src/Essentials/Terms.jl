@@ -10,7 +10,7 @@ using ..DegreesOfFreedom: Hilbert, AbstractOID, Index, OID, oidtype, Operator, O
 using ...Essentials: dtype
 using ...Interfaces: add!, dimension
 using ...Prerequisites: atol, rtol, decimaltostr
-using ...Prerequisites.Traits: rawtype, efficientoperations, commontype
+using ...Prerequisites.Traits: rawtype, efficientoperations, commontype, parametertype
 using ...Prerequisites.CompositeStructures: CompositeTuple, NamedContainer
 using ...Prerequisites.VectorSpaces: CartesianVectorSpace
 
@@ -668,11 +668,21 @@ function update!(term::Term, args...; kwargs...)
 end
 
 """
-    otype(T::Type{<:Term}, H::Type{<:Hilbert}, B::Type{<:AbstractBond})
+    otype(::Type{T}, ::Type{H}, ::Type{B}) where {T<:Term, H<:Hilbert, B<:AbstractBond}
 
 Get the compatible operator type from the type of a term, a Hilbert space and a bond.
 """
-@inline otype(T::Type{<:Term}, H::Type{<:Hilbert}, B::Type{<:AbstractBond}) = Operator{T|>valtype, ID{oidtype(H|>valtype, B|>eltype, Val(:info)), T|>rank}}
+@inline @generated function otype(::Type{T}, ::Type{H}, ::Type{B}) where {T<:Term, H<:Hilbert, B<:AbstractBond}
+    C = valtype(valtype(fieldtype(T, :couplings)))
+    @assert C<:Coupling "otype error: not supported."
+    @assert rank(C)==rank(T) "otype error: mismatched rank."
+    exprs = []
+    for i = 1:rank(C)
+        I = fieldtype(parametertype(C, :cid), i)
+        push!(exprs, :(oidtype(filter($I, valtype(H)), eltype(B), Val(kind(T)))))
+    end
+    return Expr(:curly, Operator, valtype(T), Expr(:curly, Tuple, exprs...))
+end
 
 """
     expand!(operators::Operators, term::Term, bond::AbstractBond, hilbert::Hilbert, half::Bool=false; table::Union{Nothing, Table}=nothing) -> Operators

@@ -137,6 +137,15 @@ Filter a simple internal space with respect to the input `iid` or type `I`.
 @inline Base.filter(::Type{I}, i::SimpleInternal) where {I<:SimpleIID} = match(I, typeof(i)) ? i : nothing
 
 """
+    filter(iid::SimpleIID, ::Type{T}) where {T<:SimpleInternal}
+    filter(::Type{I}, ::Type{T}) where {I<:SimpleIID, T<:SimpleInternal}
+
+Filter the type of a simple internal space with respect to the input `iid` or type `I`.
+"""
+@inline Base.filter(iid::SimpleIID, ::Type{T}) where {T<:SimpleInternal} = filter(typeof(iid), T)
+@inline Base.filter(::Type{I}, ::Type{T}) where {I<:SimpleIID, T<:SimpleInternal} = match(I, T) ? T : nothing
+
+"""
     CompositeInternal{T<:Tuple{Vararg{SimpleInternal}}} <: Internal{CompositeIID}
 
 The composition of several single internal spaces.
@@ -224,16 +233,16 @@ Direct product between simple internal spaces and composite internal spaces.
 Filter the composite internal space and select those that matches `I` or the type of `iid`.
 """
 @inline Base.filter(iid::SimpleIID, ci::CompositeInternal) = filter(typeof(iid), ci)
-@inline Base.filter(::Type{I}, ci::CompositeInternal) where {I<:SimpleIID} = filterhelper(I, ci, filtermatches(I, ci)|>Val)
-@inline @generated function filtermatches(::Type{I}, ci::CompositeInternal) where {I<:SimpleIID}
+@inline Base.filter(::Type{I}, ci::CompositeInternal) where {I<:SimpleIID} = filterhelper₁(I, ci, filtermatches(I, typeof(ci))|>Val)
+@inline @generated function filtermatches(::Type{I}, ::Type{C}) where {I<:SimpleIID, C<:CompositeInternal}
     exprs = []
-    for i = 1:rank(ci)
-        T = internaltype(ci, i)
+    for i = 1:rank(C)
+        T = internaltype(C, i)
         push!(exprs, :(match(I, $T)))
     end
     Expr(:tuple, exprs...)
 end
-@inline @generated function filterhelper(::Type{I}, ci::CompositeInternal, ::Val{BS}) where {I<:SimpleIID, BS}
+@inline @generated function filterhelper₁(::Type{I}, ci::CompositeInternal, ::Val{BS}) where {I<:SimpleIID, BS}
     exprs = []
     for (i, B) in enumerate(BS)
         B && push!(exprs, :(ci[InternalIndex($i)]))
@@ -241,6 +250,24 @@ end
     length(exprs)==0 && return
     length(exprs)==1 && return first(exprs)
     return Expr(:call, :CompositeInternal, exprs...)
+end
+
+"""
+    filter(iid::SimpleIID, ::Type{C}) where {C<:CompositeInternal}
+    filter(::Type{I}, ::Type{C}) where {I<:SimpleIID, C<:CompositeInternal}
+
+Filter the type of a composite internal space and select those that matches `I` or the type of `iid`.
+"""
+@inline Base.filter(iid::SimpleIID, ::Type{C}) where {C<:CompositeInternal} = filter(typeof(iid), C)
+@inline Base.filter(::Type{I}, ::Type{C}) where {I<:SimpleIID, C<:CompositeInternal} = filterhelper₂(I, C, filtermatches(I, C)|>Val)
+@inline @generated function filterhelper₂(::Type{I}, ::Type{C}, ::Val{BS}) where {I<:SimpleIID, C<:CompositeInternal, BS}
+    exprs = []
+    for (i, B) in enumerate(BS)
+        B && push!(exprs, :(internaltype(C, $i)))
+    end
+    length(exprs)==0 && return
+    length(exprs)==1 && return first(exprs)
+    return Expr(:curly, :CompositeInternal, Expr(:curly, :Tuple, exprs...))
 end
 
 """
