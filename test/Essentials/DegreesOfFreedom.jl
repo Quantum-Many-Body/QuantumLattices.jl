@@ -90,7 +90,9 @@ end
 end
 
 @testset "Hilbert" begin
-    hilbert = Hilbert{DFock}(pid->DFock((pid.site-1)%2+1), [CPID(1, 1), CPID(1, 2)])
+    map = pid->DFock((pid.site-1)%2+1)
+    hilbert = Hilbert(map, [CPID(1, 1), CPID(1, 2)])
+    @test hilbert == Hilbert{DFock}(map, [CPID(1, 1), CPID(1, 2)])
     @test convert(Dict, hilbert) == Dict(CPID(1, 1)=>DFock(1), CPID(1, 2)=>DFock(2))
     reset!(hilbert, (CPID(2, 1), CPID(2, 2)))
     @test convert(Dict, hilbert) == Dict(CPID(2, 1)=>DFock(1), CPID(2, 2)=>DFock(2))

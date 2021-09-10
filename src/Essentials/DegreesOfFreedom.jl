@@ -8,7 +8,7 @@ using ..Spatials: AbstractPID, Point
 using ...Essentials: dtype
 using ...Interfaces: id, value, decompose, dimension
 using ...Prerequisites: Float, decimaltostr
-using ...Prerequisites.Traits: rawtype, efficientoperations
+using ...Prerequisites.Traits: rawtype, efficientoperations, commontype
 using ...Prerequisites.CompositeStructures: CompositeDict
 using ...Prerequisites.VectorSpaces: CartesianVectorSpace
 
@@ -266,6 +266,19 @@ function Hilbert(kv)
     map = pid -> contents[pid]
     return Hilbert(map, contents)
 end
+
+"""
+    Hilbert(map::Function, pids::AbstractVector{<:AbstractPID})
+
+Construct a Hilbert space from a function and a set of point ids.
+
+Here, `map` maps a `AbstractPID` to an `Internal`.
+"""
+@inline function Hilbert(map::Function, pids::AbstractVector{<:AbstractPID})
+    I = commontype(map, Tuple{Vararg{Any}}, Internal)
+    return Hilbert{I}(map, pids)
+end
+
 """
     Hilbert{I}(map::Function, pids::AbstractVector{<:AbstractPID}) where {I<:Internal}
 
