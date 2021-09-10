@@ -25,6 +25,15 @@ end
 @inline getcontent(m::DiffNameField, ::Val{:content}) = getfield(m, :table)
 @inline contenttype(DF::Type{DiffNameField}, ::Val{:content}) = fieldtype(DF, :table)
 
+@testset "commontype" begin
+    @test commontype(Int) == Int
+    @test commontype(Union{Int, Float64}) == Real
+    @test commontype(Union{Int, Float64, Complex{Float64}}) == Number
+
+    fx = x::Int->(x==1 ? 1 : x==2 ? 2.0 : 3.0im)
+    @test commontype(fx, Tuple{Int}) == Number
+end
+
 @testset "abstracttypehelper" begin
     @test DataType(Int) == Int
     T = Vector{<:Integer}
