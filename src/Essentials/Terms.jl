@@ -964,7 +964,7 @@ abstract type AbstractGenerator{TS<:NamedContainer{Term}, BS<:Bonds, H<:Hilbert,
 Get the operator type of the generated operators.
 """
 @inline otype(gen::AbstractGenerator) = otype(typeof(gen))
-@inline otype(::Type{<:AbstractGenerator{<:NamedContainer{Term}, <:Bonds, <:Hilbert, <:Table, <:Boundary, OS}}) where {OS<:GenOperators} = eltype(OS)
+@inline otype(::Type{<:AbstractGenerator{<:NamedContainer{Term}, <:Bonds, <:Hilbert, <:Union{Table, Nothing}, <:Boundary, OS}}) where {OS<:GenOperators} = eltype(OS)
 
 """
     Parameters(gen::AbstractGenerator) -> Parameters
