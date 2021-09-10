@@ -4,19 +4,19 @@ using LinearAlgebra: dot, norm
 using StaticArrays: SVector
 using Printf: @printf, @sprintf
 using ..QuantumAlgebras: ID, Element
-using ..Spatials: AbstractPID, AbstractBond, Point, Bond, rcoord
+using ..Spatials: AbstractPID, AbstractBond, Point, Bond, rcoord, pidtype
 using ..DegreesOfFreedom: SimpleIID, CompositeIID, SimpleInternal, CompositeInternal, InternalIndex
 using ..DegreesOfFreedom: Index, AbstractCompositeOID, OID, LaTeX, latexformat, OIDToTuple, Operator, Operators, Hilbert, Table
 using ..Terms: IIDSpace, IIDConstrain, ConstrainID, Subscript, subscriptexpr, wildcard, diagonal
 using ..Terms: Coupling, Couplings, @couplings, couplinginternals, Term, TermCouplings, TermAmplitude, TermModulate
-using ...Essentials: kind
-using ...Interfaces: decompose
+using ...Essentials: kind, dtype
+using ...Interfaces: decompose, dimension
 using ...Prerequisites: Float, atol, rtol, delta, decimaltostr
 using ...Prerequisites.Traits: rawtype, getcontent
 using ...Prerequisites.VectorSpaces: CartesianVectorSpace
 
 import ..DegreesOfFreedom: script, latexname, isHermitian
-import ..Terms: couplingcenters, abbr, termfactor
+import ..Terms: couplingcenters, abbr, termfactor, otype
 import ...Interfaces: rank, ⊗, ⋅, expand, expand!, permute
 import ...Prerequisites.VectorSpaces: shape, ndimshape
 
@@ -33,6 +33,8 @@ export @heisenberg_str, @ising_str, @gamma_str, @dm_str, @sˣ_str, @sʸ_str, @s�
 export pndefaultlatex, usualphononindextotuple
 export NID, Phonon, PhononCoupling, PhononKinetic, PhononPotential
 export @kinetic_str, @potential_str
+
+export DMPhonon, @dmphonon_str
 
 # Canonical fermionic/bosonic systems and hardcore bosonic systems
 """
@@ -1235,5 +1237,66 @@ end
 @inline abbr(::Type{<:PhononPotential}) = :pnp
 @inline isHermitian(::Type{<:PhononPotential}) = true
 @inline couplingcenters(::PhononCoupling, ::Bond, ::Val{:PhononPotential}) = (1, 2)
+
+# Magnon-phonon coupled systems
+"""
+    dmphonon"" -> Coupling
+
+The DM magnon-phonon couplings.
+"""
+macro dmphonon_str(::String) Couplings(Coupling(1, ID(NID('u', wildcard), SID{wildcard}(1, wildcard)))) end
+
+"""
+    expand(dmp::Coupling{<:Number, <:Tuple{NID{Symbol}, SID{wildcard, Int, Symbol}}}, bond::Bond, hilbert::Hilbert, info::Val{:DMPhonon}) -> DMPExpand
+
+Expand the default DM magnon-phonon coupling on a given bond.
+"""
+function expand(dmp::Coupling{<:Number, <:Tuple{NID{Symbol}, SID{wildcard, Int, Symbol}}}, bond::Bond, hilbert::Hilbert, info::Val{:DMPhonon})
+    R̂, a = rcoord(bond)/norm(rcoord(bond)), norm(rcoord(bond))
+    phonon, spin = couplinginternals(dmp, bond, hilbert, info)
+    @assert phonon.ndir==length(R̂)==2 "expand error: mismatched number of directions."
+    @assert isapprox(dmp.value, 1, atol=atol, rtol=rtol) "expand error: wrong coefficient of DM magnon-phonon coupling."
+    @assert dmp.cid[1].tag=='u' && dmp.cid[2].orbital==1 && spin.norbital==1 "expand error: not supported expansion of DM magnon-phonon coupling."
+    return DMPExpand{totalspin(spin)}(totalspin(spin)/a, R̂, (bond.epoint, bond.spoint))
+end
+struct DMPExpand{S, V<:Number, P<:AbstractPID} <: CartesianVectorSpace{Tuple{V, Tuple{OID{Index{P, NID{Char}}, SVector{2, V}}, OID{Index{P, SID{S, Int, Char}}, SVector{2, V}}}}}
+    value::V
+    direction::SVector{2, V}
+    points::NTuple{2, Point{2, P, V}}
+    DMPExpand{S}(value::Number, direction::SVector, points::NTuple{2, Point}) where S = new{S, typeof(value), pidtype(eltype(points))}(value, direction, points)
+end
+@inline shape(dmp::DMPExpand) = (1:2, 1:2, 1:2, 1:2)
+function Tuple(index::CartesianIndex{4}, dmp::DMPExpand{S}) where S
+    coeff = (-dmp.direction[index[1]]*dmp.direction[index[2]]+(index[1]==index[2] ? 1 : 0))*(index[3]==1 ? 1 : -1)
+    oid₁ = OID(Index(dmp.points[index[3]].pid, NID('u', index[1]==1 ? 'x' : 'y')), dmp.points[index[3]].rcoord, dmp.points[index[3]].icoord)
+    oid₂ = OID(Index(dmp.points[index[4]].pid, SID{S}(1, index[2]==1 ? 'x' : 'y')), dmp.points[index[4]].rcoord, dmp.points[index[4]].icoord)
+    return dmp.value*coeff, ID(oid₁, oid₂)
+end
+
+"""
+    DMPhonon(id::Symbol, value::Any, bondkind::Int;
+        amplitude::Union{Function, Nothing}=nothing,
+        modulate::Union{Function, Bool}=false
+        )
+
+The DM Magnon-Phonon coupling term.
+
+Type alias for `Term{:DMPhonon, 2, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`
+"""
+const DMPhonon{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:DMPhonon, 2, id, V, Int, C, A, M}
+@inline function DMPhonon(id::Symbol, value::Any, bondkind::Int;
+        amplitude::Union{Function, Nothing}=nothing,
+        modulate::Union{Function, Bool}=false
+        )
+    isa(amplitude, TermAmplitude) || (amplitude = TermAmplitude(amplitude))
+    isa(modulate, TermModulate) || (modulate = TermModulate(id, modulate))
+    Term{:DMPhonon, 2, id}(value, bondkind, TermCouplings(dmphonon""), amplitude, modulate, 1)
+end
+@inline abbr(::Type{<:DMPhonon}) = :dmp
+@inline isHermitian(::Type{<:DMPhonon}) = false
+@inline couplingcenters(::Coupling, ::Bond, ::Val{:DMPhonon}) = (1, 2)
+@inline function otype(T::Type{<:Term{:DMPhonon}}, H::Type{<:Hilbert}, B::Type{<:AbstractBond})
+    Operator{valtype(T), <:ID{OID{<:Index{pidtype(eltype(B)), <:SimpleIID}, SVector{dimension(eltype(B)), dtype(eltype(B))}}, rank(T)}}
+end
 
 end # module

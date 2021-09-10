@@ -55,4 +55,7 @@ export @heisenberg_str, @ising_str, @gamma_str, @dm_str, @sˣ_str, @sʸ_str, @s�
 export pndefaultlatex, usualphononindextotuple
 export NID, Phonon, PhononCoupling, PhononKinetic, PhononPotential
 
+## Magnon-Phonon coupled systems
+export DMPhonon
+
 end
