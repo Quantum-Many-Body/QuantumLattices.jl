@@ -33,7 +33,7 @@ export CompositeIID, CompositeInternal, Hilbert, Index, OID, Operator, Operators
 export iidtype, isHermitian, latexformat, twist, plain
 
 # Essentials.Terms
-export IIDSpace, Subscript, IIDConstrain, Coupling, Couplings, Term, Parameters, Generator
+export IIDSpace, Subscript, IIDConstrain, ConstrainID, Coupling, Couplings, Term, Parameters, Generator
 export abbr, ismodulatable, otype, @subscript_str, @couplings
 
 # Essentials.Frameworks
@@ -54,6 +54,5 @@ export @heisenberg_str, @ising_str, @gamma_str, @dm_str, @sˣ_str, @sʸ_str, @s�
 ## Phononic systems
 export pndefaultlatex, usualphononindextotuple
 export NID, Phonon, PhononCoupling, PhononKinetic, PhononPotential
-export @kinetic_str, @potential_str
 
 end

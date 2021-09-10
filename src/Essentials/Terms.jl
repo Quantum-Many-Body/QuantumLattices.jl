@@ -924,7 +924,7 @@ Reset a set of operators by the new terms, bonds and Hilbert space.
 end
 
 """
-    AbstractGenerator{TS<:NamedContainer{Term}, BS<:Bonds, H<:Hilbert, T<:Table, B<:Boundary, OS<:GenOperators}
+    AbstractGenerator{TS<:NamedContainer{Term}, BS<:Bonds, H<:Hilbert, T<:Union{Table, Nothing}, B<:Boundary, OS<:GenOperators}
 
 Abstract generator.
 
@@ -933,11 +933,11 @@ By protocol, a concrete generator should have the following predefined contents:
 * `bonds::BS`: the bonds on which the terms are defined
 * `hilbert::H`: the total Hilbert space
 * `half::Bool`: true for generating an Hermitian half of the operators and false for generating the whole
-* `table::Table`: the index-sequence table
+* `table::T`: the index-sequence table if it is not nothing
 * `boundary::B`: boundary twist for the generated operators, `nothing` for no twist
 * `operators::OS`: the generated operators
 """
-abstract type AbstractGenerator{TS<:NamedContainer{Term}, BS<:Bonds, H<:Hilbert, T<:Table, B<:Boundary, OS<:GenOperators} end
+abstract type AbstractGenerator{TS<:NamedContainer{Term}, BS<:Bonds, H<:Hilbert, T<:Union{Table, Nothing}, B<:Boundary, OS<:GenOperators} end
 @inline contentnames(::Type{<:AbstractGenerator}) = (:terms, :bonds, :hilbert, :half, :table, :boundary, :operators)
 @inline Base.:(==)(gen₁::AbstractGenerator, gen₂::AbstractGenerator) = ==(efficientoperations, gen₁, gen₂)
 @inline Base.isequal(gen₁::AbstractGenerator, gen₂::AbstractGenerator) = isequal(efficientoperations, gen₁, gen₂)
@@ -1039,11 +1039,11 @@ Update the coefficients of the terms in a generator.
 end
 
 """
-    Generator{TS<:NamedContainer{Term}, BS<:Bonds, H<:Hilbert, T<:Table, B<:Boundary, OS<:GenOperators} <: AbstractGenerator{TS, BS, H, T, B, OS}
+    Generator{TS<:NamedContainer{Term}, BS<:Bonds, H<:Hilbert, T<:Union{Table, Nothing}, B<:Boundary, OS<:GenOperators} <: AbstractGenerator{TS, BS, H, T, B, OS}
 
 A generator of operators based on terms, configuration of internal degrees of freedom, and boundary twist.
 """
-struct Generator{TS<:NamedContainer{Term}, BS<:Bonds, H<:Hilbert, T<:Table, B<:Boundary, OS<:GenOperators} <: AbstractGenerator{TS, BS, H, T, B, OS}
+struct Generator{TS<:NamedContainer{Term}, BS<:Bonds, H<:Hilbert, T<:Union{Table, Nothing}, B<:Boundary, OS<:GenOperators} <: AbstractGenerator{TS, BS, H, T, B, OS}
     terms::TS
     bonds::BS
     hilbert::H
@@ -1063,7 +1063,6 @@ Construct a generator of operators.
 @inline function Generator(terms::Tuple{Vararg{Term}}, bonds::Bonds, hilbert::Hilbert;
         half::Bool=false, table::Union{Table,Nothing}=nothing, boundary::Boundary=plain
         )
-    isnothing(table) && (table = Table(hilbert))
     Generator(namedterms(terms), bonds, hilbert, half, table, boundary, GenOperators(terms, bonds, hilbert, half, table=table))
 end
 @generated function namedterms(terms::Tuple{Vararg{Term}})
@@ -1079,7 +1078,7 @@ Empty the :bonds, :hilbert, :table and :operators of a generator.
 function Base.empty!(gen::Generator)
     empty!(gen.bonds)
     empty!(gen.hilbert)
-    empty!(gen.table)
+    isnothing(gen.table) || empty!(gen.table)
     empty!(gen.operators)
     return gen
 end
@@ -1089,7 +1088,16 @@ end
 
 Get an empty copy of a generator.
 """
-@inline Base.empty(gen::Generator) = Generator(gen.terms, empty(gen.bonds), empty(gen.hilbert), gen.half, empty(gen.table), gen.boundary, empty(gen.operators))
+@inline function Base.empty(gen::Generator)
+    Generator(gen.terms,
+        empty(gen.bonds),
+        empty(gen.hilbert),
+        gen.half,
+        isnothing(gen.table) ? nothing : empty(gen.table),
+        gen.boundary,
+        empty(gen.operators)
+        )
+end
 
 """
     reset!(gen::Generator, lattice::AbstractLattice) -> Generator
@@ -1099,7 +1107,7 @@ Reset a generator by a new lattice.
 function reset!(gen::Generator, lattice::AbstractLattice)
     reset!(gen.bonds, lattice)
     reset!(gen.hilbert, lattice.pids)
-    reset!(gen.table, gen.hilbert)
+    isnothing(gen.table) || reset!(gen.table, gen.hilbert)
     reset!(gen.operators, Tuple(gen.terms), gen.bonds, gen.hilbert, gen.half, table=gen.table)
     return gen
 end

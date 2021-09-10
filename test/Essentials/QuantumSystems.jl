@@ -770,7 +770,7 @@ end
         OID(Index(PID(1), NID('p', 'x')), [0.0, 0.0], [0.0, 0.0])
         ))
     @test isHermitian(opt)
-    @test repr(opt) == "(p^{}_{1x})^2"
+    @test repr(opt) == "(p^{x}_{1})^2"
 end
 
 @testset "permute" begin

@@ -1083,7 +1083,7 @@ Get the required script of a phonon oid.
 
 The default LaTeX format for a phonon oid.
 """
-const pndefaultlatex = LaTeX{(), (:site, :dir)}(Dict('p'=>'p', 'u'=>'u'), "", "")
+const pndefaultlatex = LaTeX{(:dir,), (:site,)}(Dict('p'=>'p', 'u'=>'u'), "", "")
 @inline latexname(::Type{<:Index{<:AbstractPID, <:NID}}) = Symbol("Index{AbstractPID, NID}")
 @inline latexname(::Type{<:AbstractCompositeOID{<:Index{<:AbstractPID, <:NID}}}) = Symbol("AbstractCompositeOID{Index{AbstractPID, NID}}")
 latexformat(Index{<:AbstractPID, <:NID}, pndefaultlatex)
