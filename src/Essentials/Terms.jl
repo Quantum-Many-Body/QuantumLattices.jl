@@ -492,23 +492,22 @@ end
 @inline ismodulatable(::Type{<:TermModulate{<:Function}}) = true
 
 """
-    Term{K, R, I, V, B, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}
+    Term{K, I, V, B, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}
 
 A term of a quantum lattice system.
 """
-mutable struct Term{K, R, I, V, B, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}
+mutable struct Term{K, I, V, B, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}
     value::V
     bondkind::B
     couplings::C
     amplitude::A
     modulate::M
     factor::V
-    function Term{K, R, I}(value, bondkind, couplings::TermCouplings, amplitude::TermAmplitude, modulate::TermModulate, factor) where {K, R, I}
+    function Term{K, I}(value, bondkind, couplings::TermCouplings, amplitude::TermAmplitude, modulate::TermModulate, factor) where {K, I}
         @assert isa(K, Symbol) "Term error: kind must be a Symbol."
-        @assert isa(R, Integer) "Term error: rank must be an integer."
         @assert isa(I, Symbol) "Term error: id must be a Symbol."
         V, B, C, A, M = typeof(value), typeof(bondkind), typeof(couplings), typeof(amplitude), typeof(modulate)
-        new{K, R, I, V, B, C, A, M}(value, bondkind, couplings, amplitude, modulate, factor)
+        new{K, I, V, B, C, A, M}(value, bondkind, couplings, amplitude, modulate, factor)
     end
 end
 @inline Base.:(==)(term1::Term, term2::Term) = ==(efficientoperations, term1, term2)
@@ -518,23 +517,20 @@ function Base.show(io::IO, term::Term)
 end
 
 """
-    Term{K, R}(id::Symbol, value, bondkind;
-        couplings::Union{Function, TermCouplings, Couplings},
-        amplitude::Union{Function, TermAmplitude, Nothing}=nothing,
-        modulate::Union{Function, TermModulate, Bool}=false
-        ) where {K, R}
+    Term{K}(id::Symbol, value, bondkind;
+        couplings::Union{Function, Couplings},
+        amplitude::Union{Function, Nothing}=nothing,
+        modulate::Union{Function, Bool}=false
+        ) where K
 
 Construct a term.
 """
-function Term{K, R}(id::Symbol, value, bondkind;
-        couplings::Union{Function, TermCouplings, Couplings},
-        amplitude::Union{Function, TermAmplitude, Nothing}=nothing,
-        modulate::Union{Function, TermModulate, Bool}=false
-        ) where {K, R}
-    isa(couplings, TermCouplings) || (couplings = TermCouplings(couplings))
-    isa(amplitude, TermAmplitude) || (amplitude = TermAmplitude(amplitude))
-    isa(modulate, TermModulate) || (modulate = TermModulate(id, modulate))
-    Term{K, R, id}(value, bondkind, couplings, amplitude, modulate, 1)
+@inline function Term{K}(id::Symbol, value, bondkind;
+        couplings::Union{Function, Couplings},
+        amplitude::Union{Function, Nothing}=nothing,
+        modulate::Union{Function, Bool}=false
+        ) where K
+    Term{K, id}(value, bondkind, TermCouplings(couplings), TermAmplitude(amplitude), TermModulate(id, modulate), 1)
 end
 
 """
@@ -547,22 +543,13 @@ Get the kind of a term.
 @inline kind(::Type{<:Term{K}}) where K = K
 
 """
-    rank(term::Term) -> Int
-    rank(::Type{<:Term) -> Int
-
-Get the rank of a term.
-"""
-@inline rank(term::Term) = rank(typeof(term))
-@inline rank(::Type{<:Term{K, R} where K}) where R = R
-
-"""
     id(term::Term) -> Symbol
     id(::Type{<:Term) -> Symbol
 
 Get the id of a term.
 """
 @inline id(term::Term) = id(typeof(term))
-@inline id(::Type{<:Term{K, R, I} where {K, R}}) where I = I
+@inline id(::Type{<:Term{K, I} where K}) where I = I
 
 """
     valtype(term::Term)
@@ -571,7 +558,16 @@ Get the id of a term.
 Get the value type of a term.
 """
 @inline Base.valtype(term::Term) = valtype(typeof(term))
-@inline Base.valtype(::Type{<:Term{K, R, I, V} where {K, R, I}}) where V = V
+@inline Base.valtype(::Type{<:Term{K, I, V} where {K, I}}) where V = V
+
+"""
+    rank(term::Term) -> Int
+    rank(::Type{<:Term) -> Int
+
+Get the rank of a term.
+"""
+@inline rank(term::Term) = rank(typeof(term))
+@inline rank(::Type{<:Term{K, I, V, B, C} where {K, I, V, B}}) where {C<:TermCouplings} = rank(valtype(valtype(C)))
 
 """
     abbr(term::Term) -> Symbol
@@ -589,7 +585,7 @@ Get the abbreviation of the kind of a term.
 Judge whether a term could be modulated by its modulate function.
 """
 @inline ismodulatable(term::Term) = ismodulatable(typeof(term))
-@inline ismodulatable(::Type{<:Term{K, R, I, V, B, <:TermCouplings, <:TermAmplitude, M} where {K, R, I, V, B}}) where M = ismodulatable(M)
+@inline ismodulatable(::Type{<:Term{K, I, V, B, <:TermCouplings, <:TermAmplitude, M} where {K, I, V, B}}) where M = ismodulatable(M)
 
 """
     isHermitian(term::Term) -> Bool
@@ -623,7 +619,7 @@ Replace some attributes of a term with key word arguments.
 """
 @inline @generated function Base.replace(term::Term; kwargs...)
     exprs = [:(get(kwargs, $name, getfield(term, $name))) for name in QuoteNode.(term|>fieldnames)]
-    return :(Term{kind(term), rank(term), id(term)}($(exprs...)))
+    return :(Term{kind(term), id(term)}($(exprs...)))
 end
 
 """
@@ -675,7 +671,6 @@ Get the compatible operator type from the type of a term, a Hilbert space and a 
 @inline @generated function otype(::Type{T}, ::Type{H}, ::Type{B}) where {T<:Term, H<:Hilbert, B<:AbstractBond}
     C = valtype(valtype(fieldtype(T, :couplings)))
     @assert C<:Coupling "otype error: not supported."
-    @assert rank(C)==rank(T) "otype error: mismatched rank."
     exprs = []
     for i = 1:rank(C)
         I = fieldtype(parametertype(C, :cid), i)

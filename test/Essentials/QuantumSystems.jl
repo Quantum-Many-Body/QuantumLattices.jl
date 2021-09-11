@@ -695,7 +695,7 @@ end
 @testset "SpinTerm" begin
     point = Point(PID(1), (0.5, 0.5), (0.0, 0.0))
     hilbert = Hilbert(point.pid=>Spin{1//2}(norbital=2))
-    term = SpinTerm{1}(:h, 1.5, 0, couplings=sᶻ"")
+    term = SpinTerm(:h, 1.5, 0, sᶻ"")
     operators = Operators(
         Operator(1.5, ID(OID(Index(PID(1), SID{1//2}(1, 'z')), [0.5, 0.5], [0.0, 0.0]))),
         Operator(1.5, ID(OID(Index(PID(1), SID{1//2}(2, 'z')), [0.5, 0.5], [0.0, 0.0])))
@@ -706,7 +706,7 @@ end
 
     bond = Bond(1, Point(CPID('a', 1), (0.0, 0.0), (0.0, 0.0)), Point(CPID('b', 1), (0.5, 0.5), (0.0, 0.0)))
     hilbert = Hilbert(pid=>Spin{1//2}(norbital=2) for pid in [bond.spoint.pid, bond.epoint.pid])
-    term = SpinTerm{2}(:J, 1.5, 1, couplings=heisenberg"")
+    term = SpinTerm(:J, 1.5, 1, heisenberg"")
     operators = Operators(
         Operator(1.50, ID(OID(Index(CPID('b', 1), SID{1//2}(2, 'z')), [0.5, 0.5], [0.0, 0.0]), OID(Index(CPID('a', 1), SID{1//2}(2, 'z')), [0.0, 0.0], [0.0, 0.0]))),
         Operator(0.75, ID(OID(Index(CPID('b', 1), SID{1//2}(2, '-')), [0.5, 0.5], [0.0, 0.0]), OID(Index(CPID('a', 1), SID{1//2}(2, '+')), [0.0, 0.0], [0.0, 0.0]))),

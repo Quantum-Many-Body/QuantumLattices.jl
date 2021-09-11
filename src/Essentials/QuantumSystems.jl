@@ -497,47 +497,45 @@ end
 
 """
     Onsite(id::Symbol, value;
-        couplings::Union{Function, Couplings, Nothing}=nothing,
+        couplings::Union{Function, Couplings}=@couplings(FockCoupling{2}()),
         amplitude::Union{Function, Nothing}=nothing,
         modulate::Union{Function, Bool}=false,
         )
 
 Onsite term.
 
-Type alias for `Term{:Onsite, 2, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`.
+Type alias for `Term{:Onsite, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`.
 """
-const Onsite{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:Onsite, 2, id, V, Int, C, A, M}
+const Onsite{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:Onsite, id, V, Int, C, A, M}
 @inline function Onsite(id::Symbol, value;
-        couplings::Union{Function, Couplings, Nothing}=nothing,
+        couplings::Union{Function, Couplings}=@couplings(FockCoupling{2}()),
         amplitude::Union{Function, Nothing}=nothing,
         modulate::Union{Function, Bool}=false
         )
-    couplings = TermCouplings(isnothing(couplings) ? @couplings(FockCoupling{2}()) : couplings)
-    Term{:Onsite, 2}(id, value, 0, couplings=couplings, amplitude=amplitude, modulate=modulate)
+    Term{:Onsite}(id, value, 0, couplings=couplings, amplitude=amplitude, modulate=modulate)
 end
 @inline abbr(::Type{<:Onsite}) = :st
 @inline isHermitian(::Type{<:Onsite}) = nothing
 
 """
     Hopping(id::Symbol, value, bondkind::Int=1;
-        couplings::Union{Function, Couplings, Nothing}=nothing,
+        couplings::Union{Function, Couplings}=@couplings(FockCoupling{2}()),
         amplitude::Union{Function, Nothing}=nothing,
         modulate::Union{Function, Bool}=false,
         )
 
 Hopping term.
 
-Type alias for `Term{:Hopping, 2, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`.
+Type alias for `Term{:Hopping, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`.
 """
-const Hopping{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:Hopping, 2, id, V, Int, C, A, M}
+const Hopping{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:Hopping, id, V, Int, C, A, M}
 @inline function Hopping(id::Symbol, value, bondkind::Int=1;
-        couplings::Union{Function, Couplings, Nothing}=nothing,
+        couplings::Union{Function, Couplings}=@couplings(FockCoupling{2}()),
         amplitude::Union{Function, Nothing}=nothing,
         modulate::Union{Function, Bool}=false
         )
-    couplings = TermCouplings(isnothing(couplings) ? @couplings(FockCoupling{2}()) : couplings)
     @assert bondkind≠0 "Hopping error: input bondkind (neighbor) cannot be 0. Use `Onsite` instead."
-    Term{:Hopping, 2}(id, value, bondkind, couplings=couplings, amplitude=amplitude, modulate=modulate)
+    Term{:Hopping}(id, value, bondkind, couplings=couplings, amplitude=amplitude, modulate=modulate)
 end
 @inline abbr(::Type{<:Hopping}) = :hp
 @inline isHermitian(::Type{<:Hopping}) = false
@@ -545,23 +543,22 @@ end
 
 """
     Pairing(id::Symbol, value, bondkind::Int=0;
-        couplings::Union{Function, Couplings, Nothing}=nothing,
+        couplings::Union{Function, Couplings}=@couplings(FockCoupling{2}()),
         amplitude::Union{Function, Nothing}=nothing,
         modulate::Union{Function, Bool}=false,
         )
 
 Pairing term.
 
-Type alias for `Term{:Pairing, 2, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`.
+Type alias for `Term{:Pairing, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`.
 """
-const Pairing{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:Pairing, 2, id, V, Int, C, A, M}
+const Pairing{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:Pairing, id, V, Int, C, A, M}
 @inline function Pairing(id::Symbol, value, bondkind::Int=0;
-        couplings::Union{Function, Couplings, Nothing}=nothing,
+        couplings::Union{Function, Couplings}=@couplings(FockCoupling{2}()),
         amplitude::Union{Function, Nothing}=nothing,
         modulate::Union{Function, Bool}=false
         )
-    couplings = TermCouplings(isnothing(couplings) ? @couplings(FockCoupling{2}()) : couplings)
-    Term{:Pairing, 2}(id, value, bondkind, couplings=couplings, amplitude=amplitude, modulate=modulate)
+    Term{:Pairing}(id, value, bondkind, couplings=couplings, amplitude=amplitude, modulate=modulate)
 end
 @inline abbr(::Type{<:Pairing}) = :pr
 @inline isHermitian(::Type{<:Pairing}) = false
@@ -579,12 +576,12 @@ end
 
 Hubbard term.
 
-Type alias for `Term{:Hubbard, 4, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`.
+Type alias for `Term{:Hubbard, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`.
 """
-const Hubbard{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:Hubbard, 4, id, V, Int, C, A, M}
+const Hubbard{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:Hubbard, id, V, Int, C, A, M}
 @inline function Hubbard(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
     @assert value==value' "Hubbard error: only real values are allowed."
-    Term{:Hubbard, 4}(id, value, 0, couplings=@couplings(fc"1 sp[2 2 1 1] ⊗ ph[2 1 2 1]"), amplitude=amplitude, modulate=modulate)
+    Term{:Hubbard}(id, value, 0, couplings=@couplings(fc"1 sp[2 2 1 1] ⊗ ph[2 1 2 1]"), amplitude=amplitude, modulate=modulate)
 end
 @inline abbr(::Type{<:Hubbard}) = :hb
 @inline isHermitian(::Type{<:Hubbard}) = true
@@ -594,12 +591,12 @@ end
 
 Interorbital-interspin term.
 
-Type alias for `Term{:InterOrbitalInterSpin, 4, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`.
+Type alias for `Term{:InterOrbitalInterSpin, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`.
 """
-const InterOrbitalInterSpin{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:InterOrbitalInterSpin, 4, id, V, Int, C, A, M}
+const InterOrbitalInterSpin{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:InterOrbitalInterSpin, id, V, Int, C, A, M}
 @inline function InterOrbitalInterSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
     @assert value==value' "InterOrbitalInterSpin error: only real values are allowed."
-    Term{:InterOrbitalInterSpin, 4}(id, value, 0;
+    Term{:InterOrbitalInterSpin}(id, value, 0;
         couplings=@couplings(fc"1 ob[α α β β](α < β) ⊗ sp[σ₁ σ₁ σ₂ σ₂](σ₁ ≠ σ₂) ⊗ ph[2 1 2 1]"),
         amplitude=amplitude,
         modulate=modulate
@@ -613,12 +610,12 @@ end
 
 Interorbital-intraspin term.
 
-Type alias for `Term{:InterOrbitalIntraSpin, 4, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`.
+Type alias for `Term{:InterOrbitalIntraSpin, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`.
 """
-const InterOrbitalIntraSpin{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:InterOrbitalIntraSpin, 4, id, V, Int, C, A, M}
+const InterOrbitalIntraSpin{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:InterOrbitalIntraSpin, id, V, Int, C, A, M}
 @inline function InterOrbitalIntraSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
     @assert value==value' "InterOrbitalIntraSpin error: only real values are allowed."
-    Term{:InterOrbitalIntraSpin, 4}(id, value, 0, couplings=@couplings(fc"1 ob[α α β β](α < β) ⊗ ph[2 1 2 1]"), amplitude=amplitude, modulate=modulate)
+    Term{:InterOrbitalIntraSpin}(id, value, 0, couplings=@couplings(fc"1 ob[α α β β](α < β) ⊗ ph[2 1 2 1]"), amplitude=amplitude, modulate=modulate)
 end
 @inline abbr(::Type{<:InterOrbitalIntraSpin}) = :noes
 @inline isHermitian(::Type{<:InterOrbitalIntraSpin}) = true
@@ -628,11 +625,11 @@ end
 
 Spin-flip term.
 
-Type alias for `Term{:SpinFlip, 4, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`.
+Type alias for `Term{:SpinFlip, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`.
 """
-const SpinFlip{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:SpinFlip, 4, id, V, Int, C, A, M}
+const SpinFlip{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:SpinFlip, id, V, Int, C, A, M}
 @inline function SpinFlip(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
-    Term{:SpinFlip, 4}(id, value, 0, couplings=@couplings(fc"1 ob[α β α β](α < β) ⊗ sp[2 1 1 2] ⊗ ph[2 2 1 1]"), amplitude=amplitude, modulate=modulate)
+    Term{:SpinFlip}(id, value, 0, couplings=@couplings(fc"1 ob[α β α β](α < β) ⊗ sp[2 1 1 2] ⊗ ph[2 2 1 1]"), amplitude=amplitude, modulate=modulate)
 end
 @inline abbr(::Type{<:SpinFlip}) = :sf
 @inline isHermitian(::Type{<:SpinFlip}) = false
@@ -642,35 +639,34 @@ end
 
 Pair-hopping term.
 
-Type alias for `Term{:PairHopping, 4, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`.
+Type alias for `Term{:PairHopping, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`.
 """
-const PairHopping{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:PairHopping, 4, id, V, Int, C, A, M}
+const PairHopping{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:PairHopping, id, V, Int, C, A, M}
 @inline function PairHopping(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
-    Term{:PairHopping, 4}(id, value, 0, couplings=@couplings(fc"1 ob[α α β β](α < β) ⊗ sp[2 1 1 2] ⊗ ph[2 2 1 1]"), amplitude=amplitude, modulate=modulate)
+    Term{:PairHopping}(id, value, 0, couplings=@couplings(fc"1 ob[α α β β](α < β) ⊗ sp[2 1 1 2] ⊗ ph[2 2 1 1]"), amplitude=amplitude, modulate=modulate)
 end
 @inline abbr(::Type{<:PairHopping}) = :ph
 @inline isHermitian(::Type{<:PairHopping}) = false
 
 """
     Coulomb(id::Symbol, value, bondkind::Int=1;
-        couplings::Union{Function, Couplings, Nothing}=nothing,
+        couplings::Union{Function, Couplings}=@couplings(FockCoupling{2}()*FockCoupling{2}()),
         amplitude::Union{Function, Nothing}=nothing,
         modulate::Union{Function, Bool}=false
         )
 
 Coulomb term.
 
-Type alias for `Term{:Coulomb, 4, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`.
+Type alias for `Term{:Coulomb, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`.
 """
-const Coulomb{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:Coulomb, 4, id, V, Int, C, A, M}
+const Coulomb{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:Coulomb, id, V, Int, C, A, M}
 @inline function Coulomb(id::Symbol, value, bondkind::Int=1;
-        couplings::Union{Function, Couplings, Nothing}=nothing,
+        couplings::Union{Function, Couplings}=@couplings(FockCoupling{2}()*FockCoupling{2}()),
         amplitude::Union{Function, Nothing}=nothing,
         modulate::Union{Function, Bool}=false
         )
-    couplings = TermCouplings(isnothing(couplings) ? @couplings(FockCoupling{2}()*FockCoupling{2}()) : couplings)
     @assert bondkind≠0 "Coulomb error: input bondkind cannot be 0. Use `Hubbard/InterOrbitalInterSpin/InterOrbitalIntraSpin/SpinFlip/PairHopping` instead."
-    Term{:Coulomb, 4}(id, value, bondkind, couplings=couplings, amplitude=amplitude, modulate=modulate)
+    Term{:Coulomb}(id, value, bondkind, couplings=couplings, amplitude=amplitude, modulate=modulate)
 end
 @inline abbr(::Type{<:Coulomb}) = :cl
 @inline isHermitian(::Type{<:Coulomb}) = nothing
@@ -999,26 +995,21 @@ macro sʸ_str(str::String) Expr(:call, :Couplings, Expr(:call, :SpinCoupling, sc
 macro sᶻ_str(str::String) Expr(:call, :Couplings, Expr(:call, :SpinCoupling, scorbitals(str, 1), 1, ('z',))) end
 
 """
-    SpinTerm{R}(id::Symbol, value::Any, bondkind::Any;
-        couplings::Union{Function, Coupling, Couplings},
+    SpinTerm(id::Symbol, value::Any, bondkind::Any, couplings::Union{Function, Coupling, Couplings},
         amplitude::Union{Function, Nothing}=nothing,
         modulate::Union{Function, Bool}=false,
-        ) where R
+        )
 
 Spin term.
 
-Type alias for `Term{:SpinTerm, R, id, V, B<:Any, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`.
+Type alias for `Term{:SpinTerm, id, V, B<:Any, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`.
 """
-const SpinTerm{R, id, V, B<:Any, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:SpinTerm, R, id, V, B, C, A, M}
-@inline function SpinTerm{R}(id::Symbol, value::Any, bondkind::Any;
-        couplings::Union{Function, Couplings},
+const SpinTerm{id, V, B<:Any, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:SpinTerm, id, V, B, C, A, M}
+@inline function SpinTerm(id::Symbol, value::Any, bondkind::Any, couplings::Union{Function, Couplings},
         amplitude::Union{Function, Nothing}=nothing,
         modulate::Union{Function, Bool}=false
-        ) where R
-    isa(couplings, TermCouplings) || (couplings = TermCouplings(couplings))
-    isa(amplitude, TermAmplitude) || (amplitude = TermAmplitude(amplitude))
-    isa(modulate, TermModulate) || (modulate = TermModulate(id, modulate))
-    Term{:SpinTerm, R, id}(value, bondkind, couplings, amplitude, modulate, 1)
+        )
+    Term{:SpinTerm}(id, value, bondkind, couplings=couplings, amplitude=amplitude, modulate=modulate)
 end
 @inline abbr(::Type{<:SpinTerm}) = :sp
 @inline isHermitian(::Type{<:SpinTerm}) = true
@@ -1201,16 +1192,14 @@ macro potential_str(::String) Couplings(PhononCoupling(1, ('u', 'u'))) end
 
 Kinetic energy part of phonons.
 
-Type alias for `Term{:PhononKinetic, 2, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`.
+Type alias for `Term{:PhononKinetic, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`.
 """
-const PhononKinetic{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:PhononKinetic, 2, id, V, Int, C, A, M}
+const PhononKinetic{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:PhononKinetic, id, V, Int, C, A, M}
 @inline function PhononKinetic(id::Symbol, value::Any;
         amplitude::Union{Function, Nothing}=nothing,
         modulate::Union{Function, Bool}=false
         )
-    isa(amplitude, TermAmplitude) || (amplitude = TermAmplitude(amplitude))
-    isa(modulate, TermModulate) || (modulate = TermModulate(id, modulate))
-    Term{:PhononKinetic, 2, id}(value, 0, TermCouplings(kinetic""), amplitude, modulate, 1)
+    Term{:PhononKinetic}(id, value, 0, couplings=kinetic"", amplitude=amplitude, modulate=modulate)
 end
 @inline abbr(::Type{<:PhononKinetic}) = :pnk
 @inline isHermitian(::Type{<:PhononKinetic}) = true
@@ -1223,16 +1212,14 @@ end
 
 Potential energy part of phonons.
 
-Type alias for `Term{:PhononPotential, 2, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`
+Type alias for `Term{:PhononPotential, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`
 """
-const PhononPotential{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:PhononPotential, 2, id, V, Int, C, A, M}
+const PhononPotential{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:PhononPotential, id, V, Int, C, A, M}
 @inline function PhononPotential(id::Symbol, value::Any, bondkind::Int;
         amplitude::Union{Function, Nothing}=nothing,
         modulate::Union{Function, Bool}=false
         )
-    isa(amplitude, TermAmplitude) || (amplitude = TermAmplitude(amplitude))
-    isa(modulate, TermModulate) || (modulate = TermModulate(id, modulate))
-    Term{:PhononPotential, 2, id}(value, bondkind, TermCouplings(potential""), amplitude, modulate, 1)
+    Term{:PhononPotential}(id, value, bondkind, couplings=potential"", amplitude=amplitude, modulate=modulate)
 end
 @inline abbr(::Type{<:PhononPotential}) = :pnp
 @inline isHermitian(::Type{<:PhononPotential}) = true
@@ -1281,16 +1268,14 @@ end
 
 The DM Magnon-Phonon coupling term.
 
-Type alias for `Term{:DMPhonon, 2, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`
+Type alias for `Term{:DMPhonon, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`
 """
-const DMPhonon{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:DMPhonon, 2, id, V, Int, C, A, M}
+const DMPhonon{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:DMPhonon, id, V, Int, C, A, M}
 @inline function DMPhonon(id::Symbol, value::Any, bondkind::Int;
         amplitude::Union{Function, Nothing}=nothing,
         modulate::Union{Function, Bool}=false
         )
-    isa(amplitude, TermAmplitude) || (amplitude = TermAmplitude(amplitude))
-    isa(modulate, TermModulate) || (modulate = TermModulate(id, modulate))
-    Term{:DMPhonon, 2, id}(value, bondkind, TermCouplings(dmphonon""), amplitude, modulate, 1)
+    Term{:DMPhonon}(id, value, bondkind, couplings=dmphonon"", amplitude=amplitude, modulate=modulate)
 end
 @inline abbr(::Type{<:DMPhonon}) = :dmp
 @inline isHermitian(::Type{<:DMPhonon}) = false
