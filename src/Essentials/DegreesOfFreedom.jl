@@ -554,8 +554,10 @@ As a function, every instance should accept only one positional argument, i.e. t
 abstract type Metric <: Function end
 @inline Base.:(==)(m₁::T, m₂::T) where {T<:Metric} = ==(efficientoperations, m₁, m₂)
 @inline Base.isequal(m₁::T, m₂::T) where {T<:Metric} = isequal(efficientoperations, m₁, m₂)
-@inline Base.valtype(::Type{<:Metric}, ::Type{I}) where {I<:AbstractOID} = I
-@inline (::Metric)(oid::AbstractOID) = oid
+@inline (M::Type{<:Metric})(::Type{I}) where {I<:AbstractCompositeOID} = M(indextype(I))
+@inline (metric::Metric)(oid::AbstractCompositeOID) = metric(getcontent(oid, :index))
+@inline Base.valtype(::Type{M}, ::Type{I}) where {M<:Metric, I<:AbstractCompositeOID} = valtype(M, indextype(I))
+@inline (M::Type{<:Metric})(::Type{H}) where {H<:Hilbert} = M(Index{H|>keytype, H|>valtype|>eltype})
 
 """
     OIDToTuple{Fields} <: Metric
@@ -585,39 +587,30 @@ Filter the selected fields.
 
 """
     OIDToTuple(::Type{I}) where {I<:Index}
-    OIDToTuple(::Type{I}) where {I<:AbstractCompositeOID}
 
 Construct the conversion rule from the information of subtypes of `AbstractOID`.
 """
 @inline @generated OIDToTuple(::Type{I}) where {I<:Index} = OIDToTuple(fieldnames(pidtype(I))..., (fieldnames(iidtype(I)))...)
-@inline OIDToTuple(::Type{I}) where {I<:AbstractCompositeOID} = OIDToTuple(indextype(I))
-
-"""
-    OIDToTuple(::Type{H}) where {H<:Hilbert}
-
-Construct the conversion rule from the information of `Hilbert`.
-"""
-@inline OIDToTuple(::Type{H}) where {H<:Hilbert} = OIDToTuple(Index{H|>keytype, H|>valtype|>eltype})
 
 """
     valtype(::Type{<:OIDToTuple}, ::Type{<:Index})
-    valtype(::Type{<:OIDToTuple}, ::Type{<:AbstractCompositeOID})
 
 Get the valtype of applying an `OIDToTuple` rule to a subtype of `AbstractOID`.
 """
 @inline @generated function Base.valtype(::Type{M}, ::Type{I}) where {M<:OIDToTuple, I<:Index}
     types = []
     for field in keys(M)
-        hasfield(pidtype(I), field) && push!(types, fieldtype(pidtype(I), field))
-        hasfield(iidtype(I), field) && push!(types, fieldtype(iidtype(I), field))
+        if hasfield(pidtype(I), field)
+            push!(types, fieldtype(pidtype(I), field))
+        elseif hasfield(iidtype(I), field)
+            push!(types, fieldtype(iidtype(I), field))
+        end
     end
     return  Expr(:curly, :Tuple, types...)
 end
-@inline @generated Base.valtype(::Type{M}, ::Type{I}) where {M<:OIDToTuple, I<:AbstractCompositeOID} = valtype(M, indextype(I))
 
 """
     (oidtotuple::OIDToTuple)(index::Index) -> Tuple
-    (oidtotuple::OIDToTuple)(oid::AbstractCompositeOID) -> Tuple
 
 Convert a concrete oid to a tuple.
 """
@@ -625,12 +618,14 @@ Convert a concrete oid to a tuple.
     exprs = []
     for name in keys(oidtotuple)
         field = QuoteNode(name)
-        hasfield(pidtype(index), name) && push!(exprs, :(getfield(index.pid, $field)))
-        hasfield(iidtype(index), name) && push!(exprs, :(getfield(index.iid, $field)))
+        if hasfield(pidtype(index), name)
+            push!(exprs, :(getfield(index.pid, $field)))
+        elseif hasfield(iidtype(index), name)
+            push!(exprs, :(getfield(index.iid, $field)))
+        end
     end
     return Expr(:tuple, exprs...)
 end
-@inline (oidtotuple::OIDToTuple)(oid::AbstractCompositeOID) = oidtotuple(getcontent(oid, :index))
 
 """
     Table{I, B<:Metric} <: CompositeDict{I, Int}
@@ -659,7 +654,6 @@ Inquiry the sequence of an oid.
 Judge whether a single oid or a set of oids have been assigned with sequences in table.
 """
 @inline Base.haskey(table::Table, oid::AbstractOID) = haskey(table, table.by(oid))
-@inline Base.haskey(table::Table, oid::AbstractCompositeOID) = haskey(table, getcontent(oid, :index))
 @inline @generated function Base.haskey(table::Table, id::ID{AbstractOID})
     exprs = []
     for i = 1:fieldcount(id)

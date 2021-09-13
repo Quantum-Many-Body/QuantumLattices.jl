@@ -38,8 +38,6 @@ end
 latexname(::Type{<:OID{<:Index{<:AbstractPID, <:DID}}}) = Symbol("OID{Index{AbstractPID, DID}}")
 latexformat(OID{<:Index{<:AbstractPID, <:DID}}, LaTeX{(:nambu,), (:site,)}('d'))
 
-struct IdentityMetric <: Metric end
-
 @testset "CompositeIID" begin
     did₁, did₂ = DID(1), DID(2)
     ciid = CompositeIID(did₁, did₂)
@@ -185,23 +183,18 @@ end
 @testset "Metric" begin
     valtype(Metric, AbstractOID) = AbstractOID
 
+    index = Index(CPID('S', 4), DID(1))
+    oid = OID(index, SVector(0.5, 0.0), SVector(1.0, 0.0))
+
     m = OIDToTuple((:scope, :site, :nambu))
     @test m == OIDToTuple(:scope, :site, :nambu)
     @test isequal(m, OIDToTuple(:scope, :site, :nambu))
     @test keys(m) == keys(typeof(m)) == (:scope, :site, :nambu)
     @test filter(≠(:nambu), m) == OIDToTuple(:scope, :site)
-
     @test OIDToTuple(Index{PID, DID{Int}}) == OIDToTuple(:site, :nambu)
     @test OIDToTuple(OID{Index{CPID{Int}, DID{Int}}}) == OIDToTuple(:scope, :site, :nambu)
     @test OIDToTuple(Hilbert{DFock, CPID{Int}}) == OIDToTuple(:scope, :site, :nambu)
-
-    n = IdentityMetric()
-    index = Index(CPID('S', 4), DID(1))
-    oid = OID(index, SVector(0.5, 0.0), SVector(1.0, 0.0))
-
-    @test n(index) == index && n(oid) == oid
     @test m(index) == ('S', 4, 1) == m(oid)
-
     @test filter(≠(:scope), m)(index) == (4, 1)
     @test filter(≠(:nambu), m)(index) == ('S', 4)
     @test filter(∉((:site, :nambu)), m)(index) == ('S',)
