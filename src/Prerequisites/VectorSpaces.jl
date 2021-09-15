@@ -82,25 +82,24 @@ end
 @inline Base.in(basis::B, vs::CartesianVectorSpace{B}) where B = CartesianIndex(basis, vs)∈CartesianIndices(shape(vs))
 
 """
-    NamedVectorSpace{M, NS, BS<:Tuple, VS<:Tuple{Vararg{AbstractVector}}} <: CartesianVectorSpace{NamedTuple{NS, BS}}
+    NamedVectorSpace{M, NS, BS<:Tuple} <: CartesianVectorSpace{NamedTuple{NS, BS}}
 
 Abstract named vector space.
 
 This is a wrapper of Cartesian indexable vector spaces, each of whose indexable dimensions is associated with a name.
 
-It has four type parameters:
+It has three type parameters:
 * `M`: mode of the named vector space. It specifies how the indexable dimensions are combined to form the bases of the named vector space, and must take one of the following values:
   - `:⊕`: elements from each indexable dimensions are zipped together to form the bases,
   - `:⊗`: elements from each indexable dimensions are direct producted together to form the bases.
 For the `:⊕` mode, all the indexable dimensions should have the same number of elements, and the number of formed bases is equal to this number; for the `:⊗` mode, there are no restriction on the numbers of the indexable dimensions, and the number of the final bases is equal to their product.
 * `NS::Tuple{Vararg{Symbol}}`: the names of the indexable dimensions
 * `BS<:Tuple`: the eltypes of the indexable dimensions
-* `VS<:Tuple{Vararg{AbstractVector}}`: the contents of the indexable dimensions
 
 The subtypes must have the following predefined content:
-* `:contents::VS`: storage of the contents of the indexable dimensions
+* `:contents::Tuple`: storage of the contents of the indexable dimensions
 """
-abstract type NamedVectorSpace{M, NS, BS<:Tuple, VS<:Tuple{Vararg{AbstractVector}}} <: CartesianVectorSpace{NamedTuple{NS, BS}} end
+abstract type NamedVectorSpace{M, NS, BS<:Tuple} <: CartesianVectorSpace{NamedTuple{NS, BS}} end
 @inline contentnames(::Type{<:NamedVectorSpace}) = (:contents,)
 @inline rank(vs::NamedVectorSpace) = rank(typeof(vs))
 @inline rank(::Type{<:NamedVectorSpace{:⊕}}) = 1

@@ -23,7 +23,7 @@ export AbstractPID, PID, CPID, AbstractBond, Point, Bond, pidtype, rcoord, icoor
 export AbstractLattice, Lattice, SuperLattice, Cylinder, LatticeIndex, LatticeBonds, Bonds
 export nneighbor, bonds!, bonds, latticetype, bondtypes, latticebondsstructure
 export allbonds, zerothbonds, insidebonds, acrossbonds, intrabonds, interbonds
-export BrillouinZone
+export ReciprocalSpace, BrillouinZone
 
 """
     distance(p₁::AbstractVector{<:Number}, p₂::AbstractVector{<:Number}) -> Number
@@ -1416,11 +1416,18 @@ Reset a set of lattice bonds by a new lattice.
 end
 
 """
+    ReciprocalSpace{B} <: NamedVectorSpace{:⊗, (:k,), Tuple{B}}
+
+Abstract type of reciprocal spaces.
+"""
+abstract type ReciprocalSpace{B} <: NamedVectorSpace{:⊗, (:k,), Tuple{B}} end
+
+"""
     BrillouinZone(reciprocals::AbstractVector{<:AbstractVector}, momenta::AbelianNumbers{<:Momentum})
 
 The Brillouin zone of a lattice.
 """
-struct BrillouinZone{P<:Momentum, N, D<:Number} <: NamedVectorSpace{:⊗, (:k,), Tuple{P}, Tuple{AbelianNumbers{P}}}
+struct BrillouinZone{P<:Momentum, N, D<:Number} <: ReciprocalSpace{P}
     reciprocals::Vector{SVector{N, D}}
     momenta::AbelianNumbers{P}
 end

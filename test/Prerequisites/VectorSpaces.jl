@@ -66,7 +66,7 @@ SimpleIndices(shape::UnitRange{Int}...) = SimpleIndices(shape)
     @test i1∉foi && i2∉foi
 end
 
-struct VSZNamedVectorSpace{NS, BS<:Tuple, VS<:Tuple{Vararg{Vector}}} <: NamedVectorSpace{:⊕, NS, BS, VS}
+struct VSZNamedVectorSpace{NS, BS<:Tuple, VS<:Tuple{Vararg{Vector}}} <: NamedVectorSpace{:⊕, NS, BS}
     tables::VS
 end
 @inline getcontent(m::VSZNamedVectorSpace, ::Val{:contents}) = getfield(m, :tables)
@@ -79,7 +79,7 @@ end
     end
 end
 
-struct VSPNamedVectorSpace{NS, BS<:Tuple, VS<:Tuple{Vararg{Vector}}} <: NamedVectorSpace{:⊗, NS, BS, VS}
+struct VSPNamedVectorSpace{NS, BS<:Tuple, VS<:Tuple{Vararg{Vector}}} <: NamedVectorSpace{:⊗, NS, BS}
     tables::VS
 end
 @inline getcontent(m::VSPNamedVectorSpace, ::Val{:contents}) = getfield(m, :tables)

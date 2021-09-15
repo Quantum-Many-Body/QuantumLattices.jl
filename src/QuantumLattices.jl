@@ -30,7 +30,7 @@ export pidtype, rcoord, icoord, isintracell, bonds!, bonds
 
 # Essentials.DegreesOfFreedom
 export CompositeIID, CompositeInternal, Hilbert, Index, OID, Operator, Operators, OIDToTuple, Table, LaTeX, Boundary
-export iidtype, isHermitian, latexformat, twist, plain
+export statistics, iidtype, isHermitian, latexformat, twist, plain
 
 # Essentials.Terms
 export IIDSpace, Subscript, IIDConstrain, ConstrainID, Coupling, Couplings, Term, Parameters, Generator
@@ -44,7 +44,7 @@ export prepare!, register!, run!, dependences, rundependences!
 ## Canonical fermionic/bosonic systems
 export ANNIHILATION, CREATION, MAJORANA, fdefaultlatex, bdefaultlatex, usualfockindextotuple, nambufockindextotuple
 export FID, Fock, FockCoupling, Onsite, Hopping, Pairing, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, SpinFlip, PairHopping, Coulomb
-export statistics, isnormalordered, @σ⁰_str, @σˣ_str, @σʸ_str, @σᶻ_str, @σ⁺_str, @σ⁻_str, @fc_str
+export isnormalordered, @σ⁰_str, @σˣ_str, @σʸ_str, @σᶻ_str, @σ⁺_str, @σ⁻_str, @fc_str
 
 ## SU(2) spin systems
 export sdefaultlatex, usualspinindextotuple
