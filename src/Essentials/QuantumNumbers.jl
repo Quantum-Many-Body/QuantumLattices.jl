@@ -14,7 +14,7 @@ import ...Prerequisites.Traits: contentnames, getcontent
 import ...Interfaces: ⊕, ⊗, dimension, expand, permute, decompose
 
 export AbelianNumber, AbelianNumbers, periods, regularize, regularize!, @abeliannumber
-export SQN, PQN, SPQN, SQNS, PQNS, SPQNS, Momentum, Momentum1D, Momentum2D, Momentum3D
+export SQN, PQN, SPQN, SQNS, PQNS, SPQNS, Momentum, Momentum₁, Momentum₂, Momentum₃
 
 """
     positives(inputs::NTuple{N, Any}) where N -> NTuple{N, Int}
@@ -200,6 +200,15 @@ end
 end
 @inline function AbelianNumbers(form::Char, contents::Vector{<:AbelianNumber}, indptr::Vector{Int}, ::Val{:indptr})
     return AbelianNumbers(form|>uppercase, contents, indptr)
+end
+
+"""
+    AbelianNumbers(form::Char, contents::Vector{<:AbelianNumber})
+
+Construct an `AbelianNumbers` with a set of quantum numbers whose counts are all one.
+"""
+@inline function AbelianNumbers(form::Char, contents::Vector{<:AbelianNumber})
+    return AbelianNumbers(form, contents, collect(0:length(contents)), Val(:indptr))
 end
 
 """
@@ -722,34 +731,34 @@ Abstract type for momentum.
 abstract type Momentum <: AbelianNumber end
 
 """
-    Momentum1D{N}(k::Real) where N
+    Momentum₁{N}(k::Real) where N
 
 One dimensional momentum.
 """
-struct Momentum1D{N} <: Momentum
+struct Momentum₁{N} <: Momentum
     k::Float
-    function Momentum1D{N}(k::Real) where N
-        @assert isa(N, Integer) && N>0 "Momentum1D error: wrong period ($N)."
+    function Momentum₁{N}(k::Real) where N
+        @assert isa(N, Integer) && N>0 "Momentum₁ error: wrong period ($N)."
         remainder = k % N
         remainder < 0 && (remainder = remainder + N)
         new{N}(remainder)
     end
 end
-periods(::Type{<:Momentum1D{N}}) where N = (N,)
+periods(::Type{<:Momentum₁{N}}) where N = (N,)
 
 """
-    Momentum2D{N}(k₁::Real, k₂::Real) where N
-    Momentum2D{N₁, N₂}(k₁::Real, k₂::Real) where {N₁, N₂}
+    Momentum₂{N}(k₁::Real, k₂::Real) where N
+    Momentum₂{N₁, N₂}(k₁::Real, k₂::Real) where {N₁, N₂}
 
 Two dimensional momentum.
 """
-struct Momentum2D{N₁, N₂} <: Momentum
+struct Momentum₂{N₁, N₂} <: Momentum
     k₁::Float
     k₂::Float
-    Momentum2D{N}(k₁::Real, k₂::Real) where N =  Momentum2D{N, N}(k₁, k₂)
-    function Momentum2D{N₁, N₂}(k₁::Real, k₂::Real) where {N₁, N₂}
-        @assert isa(N₁, Integer) && N₁>0 "Momentum2D error: wrong 1st period ($N₁)."
-        @assert isa(N₂, Integer) && N₂>0 "Momentum2D error: wrong 2nd period ($N₂)."
+    Momentum₂{N}(k₁::Real, k₂::Real) where N =  Momentum₂{N, N}(k₁, k₂)
+    function Momentum₂{N₁, N₂}(k₁::Real, k₂::Real) where {N₁, N₂}
+        @assert isa(N₁, Integer) && N₁>0 "Momentum₂ error: wrong 1st period ($N₁)."
+        @assert isa(N₂, Integer) && N₂>0 "Momentum₂ error: wrong 2nd period ($N₂)."
         r₁ = k₁ % N₁
         r₂ = k₂ % N₂
         r₁ < 0 && (r₁ = r₁ + N₁)
@@ -757,23 +766,23 @@ struct Momentum2D{N₁, N₂} <: Momentum
         new{N₁, N₂}(r₁, r₂)
     end
 end
-periods(::Type{<:Momentum2D{N₁, N₂}}) where {N₁, N₂} = (N₁, N₂)
+periods(::Type{<:Momentum₂{N₁, N₂}}) where {N₁, N₂} = (N₁, N₂)
 
 """
-    Momentum3D{N}(k₁::Real, k₂::Real, k₃::Real) where N
-    Momentum3D{N₁, N₂, N₃}(k₁::Real, k₂::Real, k₃::Real) where {N₁, N₂, N₃}
+    Momentum₃{N}(k₁::Real, k₂::Real, k₃::Real) where N
+    Momentum₃{N₁, N₂, N₃}(k₁::Real, k₂::Real, k₃::Real) where {N₁, N₂, N₃}
 
 Three dimensional momentum.
 """
-struct Momentum3D{N₁, N₂, N₃} <: Momentum
+struct Momentum₃{N₁, N₂, N₃} <: Momentum
     k₁::Float
     k₂::Float
     k₃::Float
-    Momentum3D{N}(k₁::Real, k₂::Real, k₃::Real) where N =  Momentum3D{N, N, N}(k₁, k₂, k₃)
-    function Momentum3D{N₁, N₂, N₃}(k₁::Real, k₂::Real, k₃::Real) where {N₁, N₂, N₃}
-        @assert isa(N₁, Integer) && N₁>0 "Momentum3D error: wrong 1st period ($N₁)."
-        @assert isa(N₂, Integer) && N₂>0 "Momentum3D error: wrong 2nd period ($N₂)."
-        @assert isa(N₃, Integer) && N₃>0 "Momentum3D error: wrong 3rd period ($N₃)."
+    Momentum₃{N}(k₁::Real, k₂::Real, k₃::Real) where N =  Momentum₃{N, N, N}(k₁, k₂, k₃)
+    function Momentum₃{N₁, N₂, N₃}(k₁::Real, k₂::Real, k₃::Real) where {N₁, N₂, N₃}
+        @assert isa(N₁, Integer) && N₁>0 "Momentum₃ error: wrong 1st period ($N₁)."
+        @assert isa(N₂, Integer) && N₂>0 "Momentum₃ error: wrong 2nd period ($N₂)."
+        @assert isa(N₃, Integer) && N₃>0 "Momentum₃ error: wrong 3rd period ($N₃)."
         r₁ = k₁ % N₁
         r₂ = k₂ % N₂
         r₃ = k₃ % N₃
@@ -783,6 +792,6 @@ struct Momentum3D{N₁, N₂, N₃} <: Momentum
         new{N₁, N₂, N₃}(r₁, r₂, r₃)
     end
 end
-periods(::Type{<:Momentum3D{N₁, N₂, N₃}}) where {N₁, N₂, N₃} = (N₁, N₂, N₃)
+periods(::Type{<:Momentum₃{N₁, N₂, N₃}}) where {N₁, N₂, N₃} = (N₁, N₂, N₃)
 
 end #module

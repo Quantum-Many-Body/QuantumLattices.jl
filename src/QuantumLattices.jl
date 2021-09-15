@@ -20,7 +20,7 @@ export dtype, kind, update!, reset!
 export ID, idtype, sequence
 
 # Essentials.QuantumNumbers
-export AbelianNumber, AbelianNumbers, @abeliannumber, periods
+export AbelianNumber, AbelianNumbers, @abeliannumber, periods, Momentum, Momentum₁, Momentum₂, Momentum₃
 
 # Essentials.Spatials
 export distance, azimuthd, azimuth, polard, polar, volume, isparallel, isonline, isintratriangle, issubordinate, reciprocals, translate, rotate

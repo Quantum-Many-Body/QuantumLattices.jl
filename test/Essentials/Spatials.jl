@@ -3,7 +3,7 @@ using Random: seed!
 using StaticArrays: SVector
 using QuantumLattices.Essentials.Spatials
 using QuantumLattices.Essentials: dtype, kind, reset!
-using QuantumLattices.Essentials.QuantumNumbers: Momentum2D, AbelianNumbers
+using QuantumLattices.Essentials.QuantumNumbers: Momentum₁, Momentum₂, Momentum₃, AbelianNumbers
 using QuantumLattices.Interfaces: decompose, rank, dimension, expand
 using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Prerequisites.Traits: contentnames, getcontent
@@ -295,9 +295,20 @@ end
 
 @testset "BrillouinZone" begin
     @test contentnames(BrillouinZone) == (:reciprocals, :contents)
-    bz = BrillouinZone(reciprocals([[1.0, 0.0], [0.0, 1.0]]),
-            AbelianNumbers('C', [Momentum2D{10}(j-1, i-1) for (i, j) in Iterators.flatten((Iterators.product(1:10, 1:10),))], collect(0:100), :indptr)
-            )
+
+    recipls = reciprocals([[1.0, 0.0, 0.0]])
+    @test BrillouinZone{Momentum₁{10}}(recipls) == BrillouinZone(recipls, 10)
+
+    recipls = reciprocals([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
+    @test BrillouinZone{Momentum₂{10, 10}}(recipls) == BrillouinZone(recipls, 10)
+
+    recipls = reciprocals([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
+    @test BrillouinZone{Momentum₃{10, 10, 10}}(recipls) == BrillouinZone(recipls, 10)
+
+    recipls = reciprocals([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
+    momenta = AbelianNumbers('C', [Momentum₂{9, 10}(j-1, i-1) for (i, j) in Iterators.flatten((Iterators.product(1:10, 1:9),))], collect(0:90), :indptr)
+    bz = BrillouinZone(recipls, momenta)
     @test getcontent(bz, Val(:contents)) == (bz.momenta,)
     @test dtype(bz) == dtype(typeof(bz)) == Float
+    @test bz == BrillouinZone{Momentum₂{9, 10}}(recipls)
 end

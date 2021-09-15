@@ -6,7 +6,7 @@ using Printf: @printf
 using NearestNeighbors: KDTree, knn, inrange
 using Base.Iterators: flatten, product
 using ..QuantumAlgebras: SimpleID
-using ..QuantumNumbers: Momentum, AbelianNumbers
+using ..QuantumNumbers: AbelianNumbers, Momentum, Momentum₁, Momentum₂, Momentum₃, periods
 using ...Prerequisites: atol, rtol, Float
 using ...Prerequisites.Combinatorics: Combinations
 using ...Prerequisites.Traits: efficientoperations, getcontent
@@ -1423,27 +1423,49 @@ Abstract type of reciprocal spaces.
 abstract type ReciprocalSpace{B} <: NamedVectorSpace{:⊗, (:k,), Tuple{B}} end
 
 """
-    BrillouinZone(reciprocals::AbstractVector{<:AbstractVector}, momenta::AbelianNumbers{<:Momentum})
+    BrillouinZone{P<:Momentum, S<:SVector} <: ReciprocalSpace{P}
 
 The Brillouin zone of a lattice.
 """
-struct BrillouinZone{P<:Momentum, N, D<:Number} <: ReciprocalSpace{P}
-    reciprocals::Vector{SVector{N, D}}
+struct BrillouinZone{P<:Momentum, S<:SVector} <: ReciprocalSpace{P}
+    reciprocals::Vector{S}
     momenta::AbelianNumbers{P}
 end
 @inline contentnames(::Type{<:BrillouinZone}) = (:reciprocals, :contents)
 @inline getcontent(bz::BrillouinZone, ::Val{:contents}) = (bz.momenta,)
-@inline function BrillouinZone(reciprocals::AbstractVector{<:AbstractVector}, momenta::AbelianNumbers{<:Momentum})
+@inline function BrillouinZone(reciprocals::AbstractVector, momenta::AbelianNumbers{<:Momentum})
     return BrillouinZone(convert(Vector{SVector{length(reciprocals[1]), eltype(eltype(reciprocals))}}, reciprocals), momenta)
 end
 
 """
+    BrillouinZone{P}(reciprocals::AbstractVector) where {P<:Momentum}
+    BrillouinZone(reciprocals::AbstractVector, nk::Int)
+
+Construct a Brillouin zone.
+"""
+@inline function BrillouinZone{P}(reciprocals::AbstractVector) where {P<:Momentum}
+    reciprocals = convert(Vector{SVector{length(reciprocals[1]), eltype(eltype(reciprocals))}}, reciprocals)
+    contents = Vector{P}(undef, prod(periods(P)))
+    for (i, index) in enumerate(CartesianIndices(reverse(periods(P))))
+        contents[i] = P(reverse((index-oneunit(index)).I)...)
+    end
+    momenta = AbelianNumbers('C', contents)
+    return BrillouinZone(reciprocals, momenta)
+end
+@inline function BrillouinZone(reciprocals::AbstractVector, nk::Int)
+    length(reciprocals)==1 && return BrillouinZone{Momentum₁{nk}}(reciprocals)
+    length(reciprocals)==2 && return BrillouinZone{Momentum₂{nk, nk}}(reciprocals)
+    length(reciprocals)==3 && return BrillouinZone{Momentum₃{nk, nk, nk}}(reciprocals)
+    error("BrillouinZone error: only 1d, 2d and 3d are supported.")
+end
+
+"""
     dtype(bz::BrillouinZone)
-    dtype(::Type{<:BrillouinZone{<:Momentum, N, D} where N}) where {D<:Number}
+    dtype(::Type{<:BrillouinZone{<:Momentum, S}}) where {S<:SVector}
 
 Get the data type of a Brillouin zone.
 """
 @inline dtype(bz::BrillouinZone) = dtype(typeof(bz))
-@inline dtype(::Type{<:BrillouinZone{<:Momentum, N, D} where N}) where {D<:Number} = D
+@inline dtype(::Type{<:BrillouinZone{<:Momentum, S}}) where {S<:SVector} = eltype(S)
 
 end #module
