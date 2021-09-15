@@ -3,7 +3,7 @@ using StaticArrays: SVector
 using QuantumLattices.Essentials.QuantumSystems
 using QuantumLattices.Essentials.QuantumAlgebras: ID
 using QuantumLattices.Essentials.Spatials: AbstractPID, PID, CPID, Point, Bond, rcoord, azimuthd
-using QuantumLattices.Essentials.DegreesOfFreedom: Index, AbstractCompositeOID, OID, Hilbert, Operator, Operators, script, latexname, isHermitian
+using QuantumLattices.Essentials.DegreesOfFreedom: Index, AbstractCompositeOID, OID, Hilbert, Operator, Operators, statistics, script, latexname, isHermitian
 using QuantumLattices.Essentials.Terms: IIDSpace, Coupling, Couplings, abbr, @subscript_str, @couplings, wildcard
 using QuantumLattices.Interfaces: ⊗, ⋅, expand, permute, rank
 using QuantumLattices.Prerequisites.Combinatorics: Permutations
@@ -517,6 +517,7 @@ end
     @test string(sid) == "SID{3//2}(1, 'x')"
     @test replace(sid, tag='z') == SID{3//2}('z')
     @test totalspin(sid) == totalspin(typeof(sid)) == 3//2
+    @test statistics(sid) == statistics(typeof(sid)) == :b
 end
 
 @testset "Matrix" begin
@@ -721,6 +722,9 @@ end
 @testset "NID" begin
     @test NID('u')' == NID('u')
     @test NID('p')' == NID('p')
+
+    nid = NID('p')
+    @test statistics(nid) == statistics(nid) == :b
 end
 
 @testset "Phonon" begin

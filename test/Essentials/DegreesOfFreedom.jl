@@ -9,13 +9,14 @@ using QuantumLattices.Interfaces: decompose, rank, ⊗
 using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Prerequisites.Traits: contentnames
 
-import QuantumLattices.Essentials.DegreesOfFreedom: latexname, script
+import QuantumLattices.Essentials.DegreesOfFreedom: statistics, latexname, script
 import QuantumLattices.Prerequisites.VectorSpaces: shape, ndimshape
 
 struct DID{N<:Union{Int, Symbol}} <: SimpleIID
     nambu::N
 end
 @inline Base.adjoint(sl::DID{Int}) = DID(3-sl.nambu)
+@inline statistics(::Type{<:DID}) = :f
 
 struct DFock <: SimpleInternal{DID{Int}}
     nnambu::Int
@@ -38,7 +39,10 @@ end
 latexname(::Type{<:OID{<:Index{<:AbstractPID, <:DID}}}) = Symbol("OID{Index{AbstractPID, DID}}")
 latexformat(OID{<:Index{<:AbstractPID, <:DID}}, LaTeX{(:nambu,), (:site,)}('d'))
 
-@testset "CompositeIID" begin
+@testset "IID" begin
+    did = DID(1)
+    @test statistics(did) == statistics(typeof(did)) == :f
+
     did₁, did₂ = DID(1), DID(2)
     ciid = CompositeIID(did₁, did₂)
     @test length(ciid) == length(typeof(ciid)) == 2
@@ -62,6 +66,7 @@ end
     @test isequal(it, deepcopy(it))
     @test it|>string == "DFock(nnambu=2)"
     @test it|>collect == [DID(1), DID(2)]
+    @test statistics(it) == statistics(typeof(it)) == :f
     @test match(DID(1), it) && match(DID, DFock)
     @test filter(DID(1), it) == filter(DID, it) == it
     @test filter(DID(1), DFock) == filter(DID, DFock) == DFock
@@ -111,6 +116,7 @@ end
     @test index|>iidtype == DID{Int}
     @test index|>typeof|>iidtype == DID{Int}
     @test index|>adjoint == Index(CPID('S', 4), DID(2))
+    @test statistics(index) == statistics(typeof(index)) == :f
     @test isHermitian(ID(index', index)) == true
     @test isHermitian(ID(index, index)) == false
 end
@@ -121,6 +127,7 @@ end
 
     oid = OID(Index(PID(1), DID(1)), [0.0, -0.0], [0.0, 0.0])
     @test indextype(oid) == indextype(typeof(oid)) == Index{PID, DID{Int}}
+    @test statistics(oid) == statistics(typeof(oid)) == :f
     @test oid' == OID(Index(PID(1), DID(2)), rcoord=SVector(0.0, 0.0), icoord=SVector(0.0, 0.0))
     @test hash(oid, UInt(1)) == hash(OID(Index(PID(1), DID(1)), SVector(0.0, 0.0), SVector(0.0, 1.0)), UInt(1))
     @test propertynames(ID(oid)) == (:indexes, :rcoords, :icoords)

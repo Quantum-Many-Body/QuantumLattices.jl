@@ -21,7 +21,7 @@ import ...Prerequisites.VectorSpaces: shape, ndimshape
 
 export IID, SimpleIID, CompositeIID, Internal, InternalIndex, SimpleInternal, CompositeInternal
 export Hilbert, AbstractOID, Index, AbstractCompositeOID, OID, AbstractOperator, Operator, Operators, Metric, OIDToTuple, Table
-export internaltype, iidtype, isHermitian, indextype, oidtype
+export internaltype, iidtype, isHermitian, indextype, statistics, oidtype
 export LaTeX, latexname, latexformat, superscript, subscript, script
 export Boundary, twist, plain
 
@@ -38,6 +38,7 @@ abstract type IID <: SimpleID end
 The id of a simple internal degree of freedom.
 """
 abstract type SimpleIID <: IID end
+@inline statistics(iid::SimpleIID) = statistics(typeof(iid))
 
 """
     CompositeIID{T<:Tuple{Vararg{SimpleIID}}} <: IID
@@ -115,6 +116,15 @@ The simple internal degrees of freedom at a single point.
 """
 abstract type SimpleInternal{I<:SimpleIID} <: Internal{I} end
 Base.show(io::IO, i::SimpleInternal) = @printf io "%s(%s)" i|>typeof|>nameof join(("$name=$(getfield(i, name))" for name in i|>typeof|>fieldnames), ", ")
+
+"""
+    statistics(i::SimpleInternal) -> Symbol
+    statistics(::Type{<:SimpleInternal{I}}) where {I<:SimpleIID} -> Symbol
+
+Get the statistics of a simple internal space.
+"""
+@inline statistics(i::SimpleInternal) = statistics(typeof(i))
+@inline statistics(::Type{<:SimpleInternal{I}}) where {I<:SimpleIID} = statistics(I)
 
 """
     match(iid::SimpleIID, i::SimpleInternal) -> Bool
@@ -382,6 +392,15 @@ Get the type of the internal part of an index.
 @inline iidtype(::Type{<:Index{<:AbstractPID, I}}) where {I<:SimpleIID} = I
 
 """
+    statistics(index::Index) -> Symbol
+    statistics(::Type{<:Index{<:AbstractPID, I}}) where {I<:SimpleIID} -> Symbol
+
+Get the statistics of an index.
+"""
+@inline statistics(index::Index) = statistics(typeof(index))
+@inline statistics(::Type{<:Index{<:AbstractPID, I}}) where {I<:SimpleIID} = statistics(I)
+
+"""
     adjoint(index::Index) -> typeof(index)
 
 Get the adjoint of an index.
@@ -400,10 +419,19 @@ abstract type AbstractCompositeOID{I<:Index} <: AbstractOID end
     indextype(::AbstractCompositeOID)
     indextype(::Type{<:AbstractCompositeOID})
 
-Get the index type of an composite operator id.
+Get the index type of a composite operator id.
 """
 @inline indextype(oid::AbstractCompositeOID) = indextype(typeof(oid))
 @inline indextype(::Type{<:AbstractCompositeOID{I}}) where {I<:Index} = I
+
+"""
+    statistics(oid::AbstractCompositeOID) -> Symbol
+    statistics(::Type{<:AbstractCompositeOID{I}}) where {I<:Index} -> Symbol
+
+Get the statistics of a composite operator id.
+"""
+@inline statistics(oid::AbstractCompositeOID) = statistics(typeof(oid))
+@inline statistics(::Type{<:AbstractCompositeOID{I}}) where {I<:Index} = statistics(I)
 
 """
     OID{I<:Index, V<:SVector} <: AbstractCompositeOID{I}

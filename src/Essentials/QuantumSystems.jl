@@ -15,13 +15,13 @@ using ...Prerequisites: Float, atol, rtol, delta, decimaltostr
 using ...Prerequisites.Traits: rawtype, getcontent
 using ...Prerequisites.VectorSpaces: CartesianVectorSpace
 
-import ..DegreesOfFreedom: script, latexname, isHermitian
+import ..DegreesOfFreedom: statistics, script, latexname, isHermitian
 import ..Terms: couplingcenters, abbr, termfactor, otype
 import ...Interfaces: rank, ⊗, ⋅, expand, expand!, permute
 import ...Prerequisites.VectorSpaces: shape, ndimshape
 
 export ANNIHILATION, CREATION, MAJORANA, fdefaultlatex, bdefaultlatex, usualfockindextotuple, nambufockindextotuple
-export FID, Fock, statistics, isnormalordered, FockCoupling
+export FID, Fock, isnormalordered, FockCoupling
 export Onsite, Hopping, Pairing, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, SpinFlip, PairHopping, Coulomb
 export @σ⁰_str, @σˣ_str, @σʸ_str, @σᶻ_str, @σ⁺_str, @σ⁻_str, @fc_str
 
@@ -79,7 +79,6 @@ Base.show(io::IO, fid::FID) = @printf io "FID{%s}(%s)" repr(statistics(fid)) joi
     exprs = [:(get(kwargs, $name, getfield(fid, $name))) for name in QuoteNode.(fieldnames(fid))]
     return :(rawtype(typeof(fid)){statistics(fid)}($(exprs...)))
 end
-@inline statistics(fid::FID) = statistics(typeof(fid))
 @inline statistics(::Type{<:FID{T}}) where T = T
 
 """
@@ -109,8 +108,6 @@ end
 @inline Base.CartesianIndex(fid::FID{T}, fock::Fock{T}) where T = CartesianIndex(fid.orbital, fid.spin, fid.nambu)
 @inline FID(index::CartesianIndex{3}, fock::Fock) = FID{statistics(fock)}(index[1], index[2], index[3])
 Base.summary(io::IO, fock::Fock) = @printf io "%s-element Fock{%s}" length(fock) repr(statistics(fock))
-@inline statistics(fock::Fock) = statistics(typeof(fock))
-@inline statistics(::Type{Fock{T}}) where T = T
 function Base.show(io::IO, fock::Fock)
     @printf io "%s{%s}(%s)" fock|>typeof|>nameof repr(statistics(fock)) join(("$name=$(getfield(fock, name))" for name in fock|>typeof|>fieldnames), ", ")
 end
@@ -702,6 +699,7 @@ Base.show(io::IO, sid::SID) = @printf io "SID{%s}(%s)" totalspin(sid) join(repr.
 end
 @inline totalspin(sid::SID) = totalspin(typeof(sid))
 @inline totalspin(::Type{<:SID{S}}) where S = S
+@inline statistics(::Type{<:SID}) = :b
 
 """
     SID{S}(tag::Union{Char, Symbol}; orbital::Union{Int, Symbol}=1) where S
@@ -1034,6 +1032,7 @@ struct NID{D<:Union{Char, Symbol}} <: SimpleIID
     end
 end
 @inline Base.adjoint(pnid::NID) = pnid
+@inline statistics(::Type{<:NID}) = :b
 
 """
     Phonon <: SimpleInternal{NID{Char}}
