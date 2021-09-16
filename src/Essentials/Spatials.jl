@@ -24,6 +24,7 @@ export AbstractLattice, Lattice, SuperLattice, Cylinder, LatticeIndex, LatticeBo
 export nneighbor, bonds!, bonds, latticetype, bondtypes, latticebondsstructure
 export allbonds, zerothbonds, insidebonds, acrossbonds, intrabonds, interbonds
 export Segment, ReciprocalSpace, BrillouinZone, ReciprocalZone, ReciprocalPath
+export rectanglemap, hexagonmap, @rectangle_str, @hexagon_str
 
 """
     distance(p₁::AbstractVector{<:Number}, p₂::AbstractVector{<:Number}) -> Number
@@ -1629,6 +1630,68 @@ function ReciprocalPath(reciprocals::AbstractVector{<:SVector}, segments::Tuple{
         end
     end
     return ReciprocalPath(momenta)
+end
+
+"""
+    ReciprocalPath(reciprocals::AbstractVector, segments::Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}...;
+        len::Union{Int, NTuple{M, Int}}=100,
+        ends::Union{NTuple{2, Bool}, NTuple{M, NTuple{2, Bool}}}=(true, false)
+        ) where {N, M}
+    ReciprocalPath(reciprocals::AbstractVector, segments::Tuple{Vararg{Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}}};
+        len::Union{Int, NTuple{M, Int}}=100,
+        ends::Union{NTuple{2, Bool}, NTuple{M, NTuple{2, Bool}}}=(true, false)
+        ) where {N, M}
+
+Construct a path in the reciprocal space.
+"""
+@inline function ReciprocalPath(reciprocals::AbstractVector, segments::Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}...;
+        len::Union{Int, NTuple{M, Int}}=100,
+        ends::Union{NTuple{2, Bool}, NTuple{M, NTuple{2, Bool}}}=(true, false)
+        ) where {N, M}
+    return ReciprocalPath(reciprocals, segments, len=len, ends=ends)
+end
+function ReciprocalPath(reciprocals::AbstractVector, segments::Tuple{Vararg{Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}}};
+        len::Union{Int, NTuple{M, Int}}=100,
+        ends::Union{NTuple{2, Bool}, NTuple{M, NTuple{2, Bool}}}=(true, false)
+        ) where {N, M}
+    @assert length(reciprocals)==N "ReciprocalPath error: mismatched number of reciprocals ($(length(reciprocals)) v.s. $N)."
+    (isa(len, Int) && isa(ends, NTuple{2, Bool})) || @assert fieldcount(typeof(segments))==M "ReciprocalPath error: mismatched number of segments."
+    isa(len, Int) && (len = ntuple(i->len, Val(fieldcount(typeof(segments)))))
+    isa(ends, NTuple{2, Bool}) && (ends = ntuple(i->ends, Val(fieldcount(typeof(segments)))))
+    segments = ntuple(i->Segment(segments[i].first, segments[i].second, len[i]; ends=ends[i]), Val(fieldcount(typeof(segments))))
+    return ReciprocalPath(reciprocals, segments)
+end
+
+const rectanglemap = Dict(
+    "Γ"=>(0//1, 0//1), "X"=>(1//2, 0//1), "Y"=>(0//1, 1//2), "M"=>(1//2, 1//2),
+    "X₁"=>(1//2, 0//1), "X₂"=>(-1//2, 0//1), "Y₁"=>(0//1, 1//2), "Y₂"=>(0//1, -1//2),
+    "M₁"=>(1//2, 1//2), "M₂"=>(-1//2, 1//2), "M₃"=>(-1//2, -1//2), "M₄"=>(1//2, -1//2)
+)
+"""
+    rectangle"P₁-P₂-P₃-..."
+
+Construct a tuple of start-stop point pairs for the rectangular reciprocal space.
+"""
+macro rectangle_str(str::String)
+    points = split(str, "-")
+    @assert length(points)>1 "@rectangle_str error: too few points."
+    return ntuple(i->rectanglemap[points[i]]=>rectanglemap[points[i+1]], length(points)-1)
+end
+
+const hexagonmap = Dict(
+    "Γ"=>(0//1, 0//1), "K"=>(1//3, 1//3), "M"=>(1//2, 0//1),
+    "K₁"=>(1//3, 1//3), "K₂"=>(2//3, -1//3), "K₃"=>(1//3, -2//3), "K₄"=>(-1//3, -1//3), "K₅"=>(-2//3, 1//3), "K₆"=>(-1//3, 2//3),
+    "M₁"=>(1//2, 0//1), "M₂"=>(1//2, -1//2), "M₃"=>(0//1, -1//2), "M₄"=>(-1//2, 0//1), "M₅"=>(-1//2, 1//2), "M₆"=>(0//1, 1//2)
+)
+"""
+    hexagon"P₁-P₂-P₃-..."
+
+Construct a tuple of start-stop point pairs for the hexagonal reciprocal space.
+"""
+macro hexagon_str(str::String)
+    points = split(str, "-")
+    @assert length(points)>1 "@hexagon_str error: too few points."
+    return ntuple(i->hexagonmap[points[i]]=>hexagonmap[points[i+1]], length(points)-1)
 end
 
 end #module
