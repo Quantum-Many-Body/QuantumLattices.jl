@@ -293,6 +293,42 @@ end
     @test reset!(emptybs, lattice) == bs
 end
 
+@testset "Segment" begin
+    segment = Segment(SVector(0.0, 0.0), SVector(1.0, 1.0), 10)
+    @test segment == Segment((0.0, 0.0), (1.0, 1.0), 10)
+    @test isequal(segment,  Segment((0.0, 0.0), (1.0, 1.0), 10))
+    @test size(segment) == (10,)
+    @test string(segment) == "[p₁, p₂) with p₁=[0.0, 0.0] and p₂=[1.0, 1.0]"
+
+    segment = Segment(1, 5, 5, ends=(true, true))
+    @test string(segment) == "[1.0, 5.0]"
+    @test segment[1]==1 && segment[end]==5
+    for (i, seg) in enumerate(segment)
+        @test seg ≈ segment[i]
+    end
+
+    segment = Segment(1, 5, 4, ends=(true, false))
+    @test string(segment) == "[1.0, 5.0)"
+    @test segment[1]==1 && segment[end]==4
+    for (i, seg) in enumerate(segment)
+        @test seg ≈ segment[i]
+    end
+
+    segment = Segment(1, 5, 4, ends=(false, true))
+    @test string(segment) == "(1.0, 5.0]"
+    @test segment[1]==2 && segment[end]==5
+    for (i, seg) in enumerate(segment)
+        @test seg ≈ segment[i]
+    end
+
+    segment = Segment(1, 5, 3, ends=(false, false))
+    @test string(segment) == "(1.0, 5.0)"
+    @test segment[1]==2 && segment[end]==4
+    for (i, seg) in enumerate(segment)
+        @test seg ≈ segment[i]
+    end
+end
+
 @testset "BrillouinZone" begin
     @test contentnames(BrillouinZone) == (:reciprocals, :contents)
 
@@ -311,4 +347,35 @@ end
     @test getcontent(bz, Val(:contents)) == (bz.momenta,)
     @test dtype(bz) == dtype(typeof(bz)) == Float
     @test bz == BrillouinZone{Momentum₂{9, 10}}(recipls)
+end
+
+@testset "ReciprocalZone" begin
+    @test contentnames(ReciprocalZone) == (:contents, :volume)
+
+    rz = ReciprocalZone([[1.0]], len=10)
+    @test getcontent(rz, :contents) == (rz.momenta,)
+    @test rz == ReciprocalZone([[1.0]], Segment(-1//2, 1//2, 10))
+    @test rz == ReciprocalZone([[1.0]], (Segment(-1//2, 1//2, 10),))
+    @test rz == ReciprocalZone([SVector(1.0)], (Segment(-1//2, 1//2, 10),))
+
+    b₁, b₂, b₃ = [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]
+    @test ReciprocalZone([b₁], Segment(-1, +1, 10)).volume == 2
+    @test ReciprocalZone([b₁, b₂], Segment(-1, +1, 10), Segment(-1, +1, 10)).volume == 4
+    @test ReciprocalZone([b₁, b₂, b₃], Segment(-1, +1, 10), Segment(-1, +1, 10), Segment(-1, +1, 10)).volume == 8
+
+    rz = ReciprocalZone(BrillouinZone{Momentum₂{8, 8}}([b₁, b₂]))
+    @test rz == ReciprocalZone([b₁, b₂], Segment(0, 1, 8), Segment(0, 1, 8))
+end
+
+@testset "ReciprocalPath" begin
+    @test contentnames(ReciprocalPath) == (:contents,)
+
+    b₁, b₂ = [1.0, 0.0], [0.0, 1.0]
+    s₁ = Segment((0.0, 0.0), (0.5, 0.0), 100)
+    s₂ = Segment((0.5, 0.0), (0.5, 0.5), 100)
+    s₃ = Segment((0.5, 0.5), (0.0, 0.0), 100)
+    rp = ReciprocalPath([b₁, b₂], s₁, s₂, s₃)
+    @test getcontent(rp, :contents) == (rp.momenta,)
+    @test rp == ReciprocalPath([b₁, b₂], (s₁, s₂, s₃))
+    @test rp == ReciprocalPath([SVector(1.0, 0.0), SVector(0.0, 1.0)], (s₁, s₂, s₃))
 end

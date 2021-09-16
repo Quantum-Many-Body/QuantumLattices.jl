@@ -24,7 +24,7 @@ export AbelianNumber, AbelianNumbers, @abeliannumber, periods, Momentum, Momentu
 
 # Essentials.Spatials
 export distance, azimuthd, azimuth, polard, polar, volume, isparallel, isonline, isintratriangle, issubordinate, reciprocals, translate, rotate
-export PID, CPID, Point, Bond, Lattice, SuperLattice, Cylinder, Bonds, BrillouinZone
+export PID, CPID, Point, Bond, Lattice, SuperLattice, Cylinder, Bonds, Segment, BrillouinZone, ReciprocalZone, ReciprocalPath
 export allbonds, zerothbonds, insidebonds, acrossbonds, intrabonds, interbonds
 export pidtype, rcoord, icoord, isintracell, bonds!, bonds
 

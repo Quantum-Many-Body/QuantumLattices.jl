@@ -1,7 +1,7 @@
 module Spatials
 
-using LinearAlgebra: norm, dot, cross, inv
-using StaticArrays: SVector, SMatrix
+using LinearAlgebra: norm, dot, cross
+using StaticArrays: SVector
 using Printf: @printf
 using NearestNeighbors: KDTree, knn, inrange
 using Base.Iterators: flatten, product
@@ -23,7 +23,7 @@ export AbstractPID, PID, CPID, AbstractBond, Point, Bond, pidtype, rcoord, icoor
 export AbstractLattice, Lattice, SuperLattice, Cylinder, LatticeIndex, LatticeBonds, Bonds
 export nneighbor, bonds!, bonds, latticetype, bondtypes, latticebondsstructure
 export allbonds, zerothbonds, insidebonds, acrossbonds, intrabonds, interbonds
-export ReciprocalSpace, BrillouinZone
+export Segment, ReciprocalSpace, BrillouinZone, ReciprocalZone, ReciprocalPath
 
 """
     distance(p₁::AbstractVector{<:Number}, p₂::AbstractVector{<:Number}) -> Number
@@ -1416,6 +1416,72 @@ Reset a set of lattice bonds by a new lattice.
 end
 
 """
+    Segment{S} <: AbstractVector{S}
+
+A segment.
+"""
+struct Segment{S} <: AbstractVector{S}
+    start::S
+    stop::S
+    len::Int
+    ends::Tuple{Bool, Bool}
+end
+@inline Base.:(==)(s₁::Segment, s₂::Segment) = ==(efficientoperations, s₁, s₂)
+@inline Base.isequal(s₁::Segment, s₂::Segment) = isequal(efficientoperations, s₁, s₂)
+@inline Base.size(segment::Segment) = (segment.len,)
+function Base.getindex(segment::Segment, i::Integer)
+    len = segment.len+count(isequal(false), segment.ends)-1
+    step = (segment.stop-segment.start)/len
+    start = segment.ends[1] ? segment.start : segment.start+step
+    return start+(i-1)*step
+end
+function iterate(segment::Segment)
+    segment.len==0 && return
+    len = segment.len+count(isequal(false), segment.ends)-1
+    step = (segment.stop-segment.start)/len
+    start = segment.ends[1] ? segment.start : segment.start+step
+    return start, (1, start, step)
+end
+function iterate(segment::Segment, state)
+    i, middle, step = state
+    i==segment.len && return
+    middle = middle+step
+    return middle, (i+1, middle, step)
+end
+function Base.show(io::IO, segment::Segment{<:Number})
+    left, right = (segment.ends[1] ? "[" : "("), (segment.ends[2] ? "]" : ")")
+    @printf io "%s%s, %s%s" left segment.start segment.stop right
+end
+function Base.show(io::IO, segment::Segment)
+    left, right = (segment.ends[1] ? "[" : "("), (segment.ends[2] ? "]" : ")")
+    @printf io "%sp₁, p₂%s with p₁=%s and p₂=%s" left right segment.start segment.stop
+end
+
+"""
+    Segment(start::Number, stop::Number, len::Integer; ends::Tuple{Bool, Bool}=(true, false))
+    Segment(start::AbstractVector, stop::AbstractVector, len::Integer; ends::Tuple{Bool, Bool}=(true, false))
+    Segment(start::NTuple{N, Number}, stop::NTuple{N, Number}, len::Integer; ends::Tuple{Bool, Bool}=(true, false)) where N
+
+Construct a segment.
+"""
+function Segment(start::Number, stop::Number, len::Integer; ends::Tuple{Bool, Bool}=(true, false))
+    @assert len>=0 "Segment error: len must be non-negative."
+    dtype = promote_type(typeof(start), typeof(stop), Float64)
+    return Segment(convert(dtype, start), convert(dtype, stop), len, ends)
+end
+function Segment(start::AbstractVector, stop::AbstractVector, len::Integer; ends::Tuple{Bool, Bool}=(true, false))
+    @assert len>=0 "Segment error: len must be non-negative."
+    @assert length(start)==length(stop) "Segment error: start and stop should have equal length."
+    dtype = SVector{length(start), promote_type(eltype(start), eltype(stop), Float64)}
+    return Segment(convert(dtype, start), convert(dtype, stop), len, ends)
+end
+function Segment(start::NTuple{N, Number}, stop::NTuple{N, Number}, len::Integer; ends::Tuple{Bool, Bool}=(true, false)) where N
+    @assert len>=0 "Segment error: len must be non-negative."
+    dtype = SVector{N, promote_type(eltype(start), eltype(stop), Float64)}
+    return Segment(convert(dtype, start), convert(dtype, stop), len, ends)
+end
+
+"""
     ReciprocalSpace{B} <: NamedVectorSpace{:⊗, (:k,), Tuple{B}}
 
 Abstract type of reciprocal spaces.
@@ -1467,5 +1533,102 @@ Get the data type of a Brillouin zone.
 """
 @inline dtype(bz::BrillouinZone) = dtype(typeof(bz))
 @inline dtype(::Type{<:BrillouinZone{<:Momentum, S}}) where {S<:SVector} = eltype(S)
+
+"""
+    ReciprocalZone{S<:SVector, V<:Number} <: ReciprocalSpace{S}
+
+A zone in the reciprocal space.
+"""
+struct ReciprocalZone{S<:SVector, V<:Number} <: ReciprocalSpace{S}
+    momenta::Vector{S}
+    volume::V
+end
+@inline contentnames(::Type{<:ReciprocalZone}) = (:contents, :volume)
+@inline getcontent(rz::ReciprocalZone, ::Val{:contents}) = (rz.momenta,)
+
+"""
+    ReciprocalZone(reciprocals::AbstractVector; len::Int=100)
+    ReciprocalZone(reciprocals::AbstractVector, bounds::Segment...)
+    ReciprocalZone(reciprocals::AbstractVector, bounds::Tuple{Vararg{Segment}})
+
+Construct a rectangular zone in the reciprocal space.
+"""
+@inline function ReciprocalZone(reciprocals::AbstractVector; len::Int=100)
+    return ReciprocalZone(reciprocals, ntuple(i->Segment(-1//2, 1//2, len, ends=(true, false)), length(reciprocals)))
+end
+@inline ReciprocalZone(reciprocals::AbstractVector, bounds::Segment...) = ReciprocalZone(reciprocals, bounds)
+@inline function ReciprocalZone(reciprocals::AbstractVector, bounds::Tuple{Vararg{Segment}})
+    return ReciprocalZone(convert(Vector{SVector{length(first(reciprocals)), eltype(eltype(reciprocals))}}, reciprocals), bounds)
+end
+function ReciprocalZone(reciprocals::AbstractVector{<:SVector}, bounds::Tuple{Vararg{Segment}})
+    @assert length(reciprocals)==length(bounds) "ReciprocalZone error: mismatched number of reciprocals and its boundaries."
+    momenta = zeros(SVector{length(eltype(reciprocals)), promote_type(eltype(eltype(reciprocals)), eltype(eltype(bounds)))}, prod(map(length, bounds)))
+    for (i, index) in enumerate(product(reverse(bounds)...))
+        index = reverse(index)
+        for j = 1:length(index)
+            momenta[i] += reciprocals[j]*index[j]
+        end
+    end
+    ratio = one(eltype(eltype(momenta)))
+    for i = 1:length(bounds)
+        ratio = ratio*(bounds[i].stop-bounds[i].start)
+    end
+    return ReciprocalZone(momenta, ratio*reciprocalzonevolume(reciprocals))
+end
+function reciprocalzonevolume(reciprocals::AbstractVector{<:SVector})
+    @assert length(reciprocals)∈(1, 2, 3) "reciprocalzonevolume error: unsupported number of reciprocals."
+    length(reciprocals)==1 && return norm(first(reciprocals))
+    length(reciprocals)==2 && begin
+        @assert length(eltype(reciprocals))∈(2, 3) "reciprocalzonevolume error: unsupported dimension of reciprocals."
+        return norm(cross(reciprocals[1], reciprocals[2]))
+    end
+    return volume(reciprocals[1], reciprocals[2], reciprocals[3])
+end
+
+"""
+    ReciprocalZone(bz::BrillouinZone)
+
+Construct a reciprocal zone from a Brillouin zone.
+"""
+@inline @generated function ReciprocalZone(bz::BrillouinZone{P}) where {P<:Momentum}
+    exprs = [:(Segment(0, 1, $len, ends=(true, false))) for len in periods(P)]
+    return :(ReciprocalZone(bz.reciprocals, $(exprs...)))
+end
+
+"""
+    ReciprocalPath{S<:SVector} <: ReciprocalSpace{S}
+
+A path in the reciprocal space.
+"""
+struct ReciprocalPath{S<:SVector} <: ReciprocalSpace{S}
+    momenta::Vector{S}
+end
+@inline contentnames(::Type{<:ReciprocalPath}) = (:contents,)
+@inline getcontent(rp::ReciprocalPath, ::Val{:contents}) = (rp.momenta,)
+
+"""
+    ReciprocalPath(reciprocals::AbstractVector, segments::Segment{<:SVector}...)
+    ReciprocalPath(reciprocals::AbstractVector, segments::Tuple{Vararg{Segment{<:SVector}}})
+
+Construct a path in the reciprocal space.
+"""
+@inline ReciprocalPath(reciprocals::AbstractVector, segments::Segment{<:SVector}...) = ReciprocalPath(reciprocals, segments)
+@inline function ReciprocalPath(reciprocals::AbstractVector, segments::Tuple{Vararg{Segment{<:SVector}}})
+    return ReciprocalPath(convert(Vector{SVector{length(first(reciprocals)), eltype(eltype(reciprocals))}}, reciprocals), segments)
+end
+function ReciprocalPath(reciprocals::AbstractVector{<:SVector}, segments::Tuple{Vararg{Segment{<:SVector}}})
+    @assert length(reciprocals)==length(eltype(eltype(segments))) "ReciprocalPath error: mismatched number of reciprocals."
+    momenta = zeros(promote_type(eltype(reciprocals), eltype(eltype(segments))), sum(map(length, segments)))
+    count = 1
+    for segment in segments
+        for index in segment
+            for i = 1:length(index)
+                momenta[count] += reciprocals[i]*index[i]
+            end
+            count += 1
+        end
+    end
+    return ReciprocalPath(momenta)
+end
 
 end #module
