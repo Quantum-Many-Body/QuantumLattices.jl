@@ -7,7 +7,7 @@ using ..QuantumAlgebras: ID, Element
 using ..Spatials: AbstractPID, AbstractBond, Point, Bond, rcoord, pidtype
 using ..DegreesOfFreedom: SimpleIID, CompositeIID, SimpleInternal, CompositeInternal, InternalIndex
 using ..DegreesOfFreedom: Index, AbstractCompositeOID, OID, LaTeX, latexformat, OIDToTuple, Operator, Operators, Hilbert, Table
-using ..Terms: IIDSpace, IIDConstrain, ConstrainID, Subscript, subscriptexpr, wildcard, diagonal
+using ..Terms: Subscripts, SubscriptsID, Subscript, IIDSpace, subscriptexpr, wildcard, diagonal
 using ..Terms: Coupling, Couplings, @couplings, couplinginternals, Term, TermCouplings, TermAmplitude, TermModulate
 using ...Essentials: kind, dtype
 using ...Interfaces: decompose, dimension
@@ -272,29 +272,29 @@ end
 
 Fock coupling.
 
-Type alias for `Coupling{V, I<:ID{FID}, C<:IIDConstrain, CI<:ConstrainID}`.
+Type alias for `Coupling{V, I<:ID{FID}, C<:Subscripts, CI<:SubscriptsID}`.
 """
-const FockCoupling{V, I<:ID{FID}, C<:IIDConstrain, CI<:ConstrainID} = Coupling{V, I, C, CI}
+const FockCoupling{V, I<:ID{FID}, C<:Subscripts, CI<:SubscriptsID} = Coupling{V, I, C, CI}
 function FockCoupling(value::Number,
         orbitals::Subscript{<:NTuple{N, Union{Int, Symbol}}},
         spins::Subscript{<:NTuple{N, Union{Int, Symbol}}},
         nambus::Union{NTuple{N, Int}, NTuple{N, Symbol}}
         ) where N
-    return Coupling(value, ID(FID{wildcard}, orbitals.pattern, spins.pattern, nambus), IIDConstrain((orbital=orbitals, spin=spins)))
+    return Coupling(value, ID(FID{wildcard}, orbitals.pattern, spins.pattern, nambus), Subscripts((orbital=orbitals, spin=spins)))
 end
 function Base.show(io::IO, fc::FockCoupling)
     wildcards = ntuple(i->wildcard, Val(rank(fc)))
     @printf io "FockCoupling{%s}(value=%s" rank(fc) decimaltostr(fc.value)
-    fc.cid.orbitals≠wildcards && @printf io ", orbitals=%s" repr(fc.constrain, 1:length(fc.constrain), :orbital)
-    fc.cid.spins≠wildcards && @printf io ", spins=%s" repr(fc.constrain, 1:length(fc.constrain), :spin)
+    fc.cid.orbitals≠wildcards && @printf io ", orbitals=%s" repr(fc.subscripts, 1:length(fc.subscripts), :orbital)
+    fc.cid.spins≠wildcards && @printf io ", spins=%s" repr(fc.subscripts, 1:length(fc.subscripts), :spin)
     fc.cid.nambus≠wildcards && @printf io ", nambus=[%s]" join(fc.cid.nambus, " ")
     @printf io ")"
 end
 function Base.repr(fc::FockCoupling)
     contents = String[]
     wildcards = ntuple(i->wildcard, Val(rank(fc)))
-    fc.cid.orbitals≠wildcards && push!(contents, @sprintf "ob%s" repr(fc.constrain, 1:length(fc.constrain), :orbital))
-    fc.cid.spins≠wildcards && push!(contents, @sprintf "sp%s" repr(fc.constrain, 1:length(fc.constrain), :spin))
+    fc.cid.orbitals≠wildcards && push!(contents, @sprintf "ob%s" repr(fc.subscripts, 1:length(fc.subscripts), :orbital))
+    fc.cid.spins≠wildcards && push!(contents, @sprintf "sp%s" repr(fc.subscripts, 1:length(fc.subscripts), :spin))
     fc.cid.nambus≠wildcards && push!(contents, @sprintf "ph[%s]" join(fc.cid.nambus, " "))
     result = decimaltostr(fc.value)
     length(contents)==0 && (result = @sprintf "%s {%s}" result rank(fc))
@@ -328,10 +328,10 @@ Get the direct product between two Fock couplings.
 """
 function ⊗(fc₁::FockCoupling, fc₂::FockCoupling)
     @assert rank(fc₁)==rank(fc₂) "⊗ error: mismatched rank."
-    @assert length(fc₁.constrain)==length(fc₂.constrain)==1 "⊗ error: not supported."
+    @assert length(fc₁.subscripts)==length(fc₂.subscripts)==1 "⊗ error: not supported."
     wildcards = ntuple(i->wildcard, Val(rank(fc₁)))
-    orbitals = fockcouplingchoicerule(first(fc₁.constrain).orbital, first(fc₂.constrain).orbital, wildcards, :orbitals)
-    spins = fockcouplingchoicerule(first(fc₁.constrain).spin, first(fc₂.constrain).spin, wildcards, :spins)
+    orbitals = fockcouplingchoicerule(first(fc₁.subscripts).orbital, first(fc₂.subscripts).orbital, wildcards, :orbitals)
+    spins = fockcouplingchoicerule(first(fc₁.subscripts).spin, first(fc₂.subscripts).spin, wildcards, :spins)
     nambus = fockcouplingchoicerule(fc₁.cid.nambus, fc₂.cid.nambus, wildcards, :nambus)
     return FockCoupling(fc₁.value*fc₂.value, orbitals, spins, nambus)
 end
@@ -841,21 +841,21 @@ end
 
 Spin coupling.
 
-Type alias for `Coupling{V, I<:ID{SID}, C<:IIDConstrain, CI<:ConstrainID}`.
+Type alias for `Coupling{V, I<:ID{SID}, C<:Subscripts, CI<:SubscriptsID}`.
 """
-const SpinCoupling{V, I<:ID{SID}, C<:IIDConstrain, CI<:ConstrainID} = Coupling{V, I, C, CI}
+const SpinCoupling{V, I<:ID{SID}, C<:Subscripts, CI<:SubscriptsID} = Coupling{V, I, C, CI}
 @inline function SpinCoupling(value::Number, tags::NTuple{N, Char}, orbitals::Subscript{<:NTuple{N, Union{Int, Symbol}}}) where N
-    return Coupling(value, ID(SID{wildcard}, orbitals.pattern, tags), IIDConstrain((orbital=orbitals,)))
+    return Coupling(value, ID(SID{wildcard}, orbitals.pattern, tags), Subscripts((orbital=orbitals,)))
 end
 function Base.show(io::IO, sc::SpinCoupling)
     @printf io "SpinCoupling(value=%s" decimaltostr(sc.value)
     @printf io ", tags=%s" join(NTuple{rank(sc), String}("S"*sidrepmap[tag] for tag in sc.cid.tags), "")
-    sc.cid.orbitals≠ntuple(i->wildcard, Val(rank(sc))) && @printf io ", orbitals=%s" repr(sc.constrain, 1:length(sc.constrain), :orbital)
+    sc.cid.orbitals≠ntuple(i->wildcard, Val(rank(sc))) && @printf io ", orbitals=%s" repr(sc.subscripts, 1:length(sc.subscripts), :orbital)
     @printf io ")"
 end
 function Base.repr(sc::SpinCoupling)
     result = [@sprintf "%s %s" decimaltostr(sc.value) join(NTuple{rank(sc), String}("S"*sidrepmap[tag] for tag in sc.cid.tags), "")]
-    sc.cid.orbitals≠ntuple(i->wildcard, Val(rank(sc))) && push!(result, @sprintf "ob%s" repr(sc.constrain, 1:length(sc.constrain), :orbital))
+    sc.cid.orbitals≠ntuple(i->wildcard, Val(rank(sc))) && push!(result, @sprintf "ob%s" repr(sc.subscripts, 1:length(sc.subscripts), :orbital))
     return join(result, " ")
 end
 
@@ -1110,21 +1110,21 @@ end
 
 Phonon coupling.
 
-Type alias for `Coupling{V<:Number, I<:ID{NID}, C<:IIDConstrain, CI<:ConstrainID}`.
+Type alias for `Coupling{V<:Number, I<:ID{NID}, C<:Subscripts, CI<:SubscriptsID}`.
 """
-const PhononCoupling{V<:Number, I<:ID{NID}, C<:IIDConstrain, CI<:ConstrainID} = Coupling{V, I, C, CI}
+const PhononCoupling{V<:Number, I<:ID{NID}, C<:Subscripts, CI<:SubscriptsID} = Coupling{V, I, C, CI}
 @inline function PhononCoupling(value::Number, tags::NTuple{N, Char}, dirs::Subscript{<:Union{NTuple{N, Char}, NTuple{N, Symbol}}}) where N
-    return Coupling(value, ID(NID, tags, dirs.pattern), IIDConstrain((dir=dirs,)))
+    return Coupling(value, ID(NID, tags, dirs.pattern), Subscripts((dir=dirs,)))
 end
 function Base.show(io::IO, pnc::PhononCoupling)
     @printf io "PhononCoupling(value=%s" decimaltostr(pnc.value)
     @printf io ", tags=[%s]" join(pnc.cid.tags, " ")
-    pnc.cid.dirs≠ntuple(i->wildcard, Val(rank(pnc))) && @printf io ", dirs=%s" repr(pnc.constrain, 1:length(pnc.constrain), :dir)
+    pnc.cid.dirs≠ntuple(i->wildcard, Val(rank(pnc))) && @printf io ", dirs=%s" repr(pnc.subscripts, 1:length(pnc.subscripts), :dir)
     @printf io ")"
 end
 function Base.repr(pnc::PhononCoupling)
     result = [@sprintf "%s [%s]" decimaltostr(pnc.value) join(pnc.cid.tags, " ")]
-    pnc.cid.dirs≠ntuple(i->wildcard, Val(rank(pnc))) && push!(result, @sprintf "dr%s" repr(pnc.constrain, 1:length(pnc.constrain), :dir))
+    pnc.cid.dirs≠ntuple(i->wildcard, Val(rank(pnc))) && push!(result, @sprintf "dr%s" repr(pnc.subscripts, 1:length(pnc.subscripts), :dir))
     return join(result, " ")
 end
 

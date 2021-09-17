@@ -21,40 +21,10 @@ import ...Essentials: kind, update!, reset!
 import ...Prerequisites.Traits: parameternames, isparameterbound, contentnames, getcontent
 import ...Prerequisites.VectorSpaces: shape, ndimshape
 
-export IIDSpace, Subscript, IIDConstrain, ConstrainID, @subscript_str, subscriptexpr, wildcard, diagonal, noconstrain
+export Subscript, Subscripts, SubscriptsID, IIDSpace, @subscript_str, subscriptexpr, wildcard, diagonal, noconstrain
 export AbstractCoupling, Coupling, Couplings, couplingcenters, couplingpoints, couplinginternals, @couplings
 export TermFunction, TermAmplitude, TermCouplings, TermModulate, Term, abbr, ismodulatable, otype
 export Parameters, GenOperators, AbstractGenerator, Generator
-
-"""
-    IIDSpace{I<:IID, V<:Internal, Kind} <: CartesianVectorSpace{IID}
-
-The space expanded by a "labeled" iid.
-"""
-struct IIDSpace{I<:IID, V<:Internal, Kind} <: CartesianVectorSpace{IID}
-    iid::I
-    internal::V
-    IIDSpace(iid::IID, internal::Internal, ::Val{Kind}=Val(:info)) where Kind = new{typeof(iid), typeof(internal), Kind}(iid, internal)
-end
-Base.eltype(iidspace::IIDSpace) = eltype(typeof(iidspace))
-Base.eltype(::Type{<:IIDSpace{<:IID, V}}) where {V<:Internal} = eltype(V)
-kind(iidspace::IIDSpace) = kind(typeof(iidspace))
-kind(::Type{<:IIDSpace{<:IID, <:Internal, Kind}}) where Kind = Kind
-@generated function shape(iidspace::IIDSpace{I, V}) where {I<:CompositeIID, V<:CompositeInternal}
-    @assert rank(I)==rank(V) "shape error: mismatched composite iid and composite internal space."
-    Kind = Val(kind(iidspace))
-    Expr(:tuple, [:(shape(IIDSpace(iidspace.iid[$i], iidspace.internal[InternalIndex($i)], $Kind))...) for i = 1:rank(I)]...)
-end
-ndimshape(::Type{<:IIDSpace{<:IID, V}}) where {V<:Internal} = ndimshape(V)
-Base.CartesianIndex(iid::IID, iidspace::IIDSpace) = CartesianIndex(iid, iidspace.internal)
-Base.getindex(iidspace::IIDSpace, index::CartesianIndex) = rawtype(eltype(iidspace))(index, iidspace.internal)
-
-"""
-    expand(iids::NTuple{N, IID}, internals::NTuple{N, Internal}) where N -> IIDSpace
-
-Get the space expanded by a set of "labeled" iids.
-"""
-@inline expand(iids::NTuple{N, IID}, internals::NTuple{N, Internal}) where N = IIDSpace(CompositeIID(iids), CompositeInternal(internals))
 
 @inline diagonal(xs...) = length(xs)<2 ? true : all(map(==(xs[1]), xs))
 @inline noconstrain(_...) = true
@@ -62,14 +32,14 @@ const wildcard = Symbol("*")
 """
     Subscript{P<:Tuple, C<:Function} <: CompositeTuple{P}
 
-A subscript set of a certain internal degree of freedom.
+The subscript representative of a certain internal degree of freedom.
 """
 struct Subscript{P<:Tuple, C<:Function} <: CompositeTuple{P}
     pattern::P
     rep::String
-    constrain::C
+    constraint::C
 end
-@inline contentnames(::Type{<:Subscript}) = (:contents, :rep, :constrain)
+@inline contentnames(::Type{<:Subscript}) = (:contents, :rep, :constraint)
 @inline getcontent(subscript::Subscript, ::Val{:contents}) = subscript.pattern
 @inline Base.:(==)(subs₁::Subscript, subs₂::Subscript) = subs₁.pattern==subs₂.pattern && subs₁.rep==subs₂.rep
 @inline Base.:isequal(subs₁::Subscript, subs₂::Subscript) = isequal(subs₁.pattern, subs₂.pattern) && isequal(subs₁.rep, subs₂.rep)
@@ -85,7 +55,7 @@ end
     Subscript(N::Int)
     Subscript(pattern::Tuple, check_constant::Bool=false)
 
-Construct a subscript set of a certain internal degree of freedom.
+Construct the subscript representative of a certain internal degree of freedom.
 """
 @inline Subscript(N::Int) = Subscript(Val(N))
 @inline Subscript(::Val{N}) where N = Subscript(ntuple(i->wildcard, Val(N)), "diagonal", diagonal)
@@ -103,7 +73,7 @@ end
     rank(subscript::Subscript) -> Int
     rank(::Type{<:Subscript}) -> Int
 
-Get the total number of the whole variables of a subscript set.
+Get the number of the whole variables of the subscript.
 """
 @inline rank(subscript::Subscript) = rank(typeof(subscript))
 @inline rank(::Type{T}) where {T<:Subscript} = length(T)
@@ -111,17 +81,17 @@ Get the total number of the whole variables of a subscript set.
 """
     match(subscript::Subscript, values::Tuple) -> Bool
 
-Judge whether a set of values matches the pattern specified by subscript.
+Judge whether a set of values matches the pattern specified by the subscript.
 """
 @inline function Base.match(subscript::Subscript, values::Tuple)
     @assert length(subscript)==length(values) "match error: mismatched length of values."
-    return subscript.constrain(values...)
+    return subscript.constraint(values...)
 end
 
 """
     subscript"..." -> Subscript
 
-Construct a subscript set from a literal string.
+Construct the subscript from a literal string.
 """
 macro subscript_str(str)
     expr = Meta.parse(str)
@@ -165,23 +135,21 @@ function subscriptexpr(expr::Expr, check_constant::Bool=false)
         length(group)==1 && continue
         condition = Expr(Symbol("&&"), condition, Expr(:comparison, group...))
     end
-    constrainname = gensym("subconstrain")
-    constrain = :($constrainname($(paramargs...)) = $condition)
-    return Expr(:block, constrain, :(Subscript($pattern, $rep, $constrainname)))
+    name = gensym("subconstraint")
+    constraint = :($name($(paramargs...)) = $condition)
+    return Expr(:block, constraint, :(Subscript($pattern, $rep, $name)))
 end
 
 """
-    IIDConstrain{T<:Tuple{Vararg{NamedContainer{Subscript}}}} <: CompositeTuple{T}
+    Subscripts{T<:Tuple{Vararg{NamedContainer{Subscript}}}} <: CompositeTuple{T}
 
-Constrain on a set of simple iids or on a composite iid.
+The complete set of subscripts of the internal degrees of freedom.
 """
-struct IIDConstrain{T<:Tuple{Vararg{NamedContainer{Subscript}}}} <: CompositeTuple{T}
-    constrain::T
+struct Subscripts{T<:Tuple{Vararg{NamedContainer{Subscript}}}} <: CompositeTuple{T}
+    contents::T
 end
-@inline contentnames(::Type{<:IIDConstrain}) = (:contents,)
-@inline getcontent(iidc::IIDConstrain, ::Val{:contents}) = iidc.constrain
-function Base.show(io::IO, iidc::IIDConstrain)
-    for (i, segment) in enumerate(iidc.constrain)
+function Base.show(io::IO, subscripts::Subscripts)
+    for (i, segment) in enumerate(subscripts.contents)
         i>1 && @printf io "%s" " × "
         for (j, (field, subscript)) in enumerate(pairs(segment))
             j>1 && @printf io "%s" " ⊗ "
@@ -189,64 +157,64 @@ function Base.show(io::IO, iidc::IIDConstrain)
         end
     end
 end
-function Base.repr(iidc::IIDConstrain, slice, field::Symbol)
+function Base.repr(subscripts::Subscripts, slice, field::Symbol)
     result = []
-    for (i, component) in enumerate(slice)
+    for (i, segment) in enumerate(slice)
         i>1 && push!(result, "×")
-        push!(result, @sprintf "%s" getfield(iidc.constrain[component], field))
+        push!(result, @sprintf "%s" getfield(subscripts.contents[segment], field))
     end
     return join(result)
 end
 
 """
-    IIDConstrain(constrain::NamedContainer{Subscript}...)
+    Subscripts(contents::NamedContainer{Subscript}...)
 
-Construct the constrain.
+Construct the complete set of subscripts.
 """
-function IIDConstrain(constrain::NamedContainer{Subscript}...)
-    for restriction in constrain
-        length(restriction)>1 && @assert mapreduce(length, ==, values(restriction)) "IIDConstrain error: mismatched ranks."
+function Subscripts(contents::NamedContainer{Subscript}...)
+    for segment in contents
+        length(segment)>1 && @assert mapreduce(length, ==, values(segment)) "Subscripts error: mismatched ranks."
     end
-    return IIDConstrain(constrain)
+    return Subscripts(contents)
 end
 
 """
-    rank(iidc::IIDConstrain) -> Int
-    rank(::Type{<:IIDConstrain{T}}) where {T<:Tuple{Vararg{NamedContainer{Subscript}}}} -> Int
+    rank(subscripts::Subscripts) -> Int
+    rank(::Type{<:Subscripts{T}}) where {T<:Tuple{Vararg{NamedContainer{Subscript}}}} -> Int
 
-Get the rank of the iid set (or the composite iid) on which the constrain act.
+Get the rank of the subscripts.
 """
-@inline rank(iidc::IIDConstrain) = rank(typeof(iidc))
-@inline @generated function rank(::Type{<:IIDConstrain{T}}) where {T<:Tuple{Vararg{NamedContainer{Subscript}}}}
+@inline rank(subscripts::Subscripts) = rank(typeof(subscripts))
+@inline @generated function rank(::Type{<:Subscripts{T}}) where {T<:Tuple{Vararg{NamedContainer{Subscript}}}}
     sum(rank(fieldtype(fieldtype(T, i), 1)) for i = 1:fieldcount(T))
 end
 
 """
-    rank(iidc::IIDConstrain, i::Integer) -> Int
-    rank(::Type{<:IIDConstrain{T}}, i::Integer) where {T<:Tuple{Vararg{NamedContainer{Subscript}}}} -> Int
+    rank(subscripts::Subscripts, i::Integer) -> Int
+    rank(::Type{<:Subscripts{T}}, i::Integer) where {T<:Tuple{Vararg{NamedContainer{Subscript}}}} -> Int
 
-Get the rank of the ith homogenous segment of the iid set (or the composite iid) on which the constrain act.
+Get the rank of the ith homogenous segment of the subscripts.
 """
-@inline rank(iidc::IIDConstrain, i::Integer) = rank(typeof(iidc), i)
-@inline rank(::Type{<:IIDConstrain{T}}, i::Integer) where {T<:Tuple{Vararg{NamedContainer{Subscript}}}} = rank(fieldtype(fieldtype(T, i), 1))
+@inline rank(subscripts::Subscripts, i::Integer) = rank(typeof(subscripts), i)
+@inline rank(::Type{<:Subscripts{T}}, i::Integer) where {T<:Tuple{Vararg{NamedContainer{Subscript}}}} = rank(fieldtype(fieldtype(T, i), 1))
 
 """
-    match(iidc::IIDConstrain, iids::Tuple{Vararg{SimpleIID}}) -> Bool
-    match(iidc::IIDConstrain, ciid::CompositeIID) -> Bool
+    match(subscripts::Subscripts, iids::Tuple{Vararg{SimpleIID}}) -> Bool
+    match(subscripts::Subscripts, ciid::CompositeIID) -> Bool
 
-Judge whether a composite iid matches the constrain.
+Judge whether a composite iid matches the patterns specified by the subscripts.
 """
-@inline Base.match(iidc::IIDConstrain, ciid::CompositeIID) = match(iidc, ciid.content)
-@generated function Base.match(iidc::IIDConstrain, iids::Tuple{Vararg{SimpleIID}})
-    length(iidc)==0 && return true
-    @assert rank(iidc)==fieldcount(iids) "match error: mismatched rank of iids and constrain."
+@inline Base.match(subscripts::Subscripts, ciid::CompositeIID) = match(subscripts, ciid.contents)
+@generated function Base.match(subscripts::Subscripts, iids::Tuple{Vararg{SimpleIID}})
+    length(subscripts)==0 && return true
+    @assert rank(subscripts)==fieldcount(iids) "match error: mismatched rank of iids and subscripts."
     exprs, count = [], 1
-    for i = 1:length(iidc)
-        start, stop = count, count+rank(iidc, i)-1
-        for field in fieldnames(fieldtype(fieldtype(iidc, :constrain), i))
+    for i = 1:length(subscripts)
+        start, stop = count, count+rank(subscripts, i)-1
+        for field in fieldnames(fieldtype(fieldtype(subscripts, :contents), i))
             field = QuoteNode(field)
             paramvalue = Expr(:tuple, [:(getfield(iids[$j], $field)) for j = start:stop]...)
-            push!(exprs, :(match(getfield(iidc[$i], $field), $paramvalue)))
+            push!(exprs, :(match(getfield(subscripts[$i], $field), $paramvalue)))
         end
         count = stop+1
     end
@@ -254,54 +222,84 @@ Judge whether a composite iid matches the constrain.
 end
 
 """
-    *(iidc₁::IIDConstrain, iidc₂::IIDConstrain) -> IIDConstrain
+    *(subscripts₁::Subscripts, subscripts₂::Subscripts) -> Subscripts
 
-Get the combination of two independent constrains on the composition of two iid sets (or two composite iids).
+Get the combination of two sets of subscripts.
 """
-@inline Base.:*(iidc₁::IIDConstrain, iidc₂::IIDConstrain) = IIDConstrain((iidc₁.constrain..., iidc₂.constrain...))
+@inline Base.:*(subscripts₁::Subscripts, subscripts₂::Subscripts) = Subscripts((subscripts₁.contents..., subscripts₂.contents...))
 
 """
-    idtype(iidc::IIDConstrain)
-    idtype(::Type{<:IIDConstrain{T}}) where {T<:Tuple{Vararg{NamedContainer{Subscript}}}}
+    idtype(subscripts::Subscripts)
+    idtype(::Type{<:Subscripts{T}}) where {T<:Tuple{Vararg{NamedContainer{Subscript}}}}
 
-Get the type of the id of an iid constrain.
+Get the type of the id of the subscripts.
 """
-@inline idtype(iidc::IIDConstrain) = idtype(typeof(iidc))
-@generated function idtype(::Type{<:IIDConstrain{T}}) where {T<:Tuple{Vararg{NamedContainer{Subscript}}}}
+@inline idtype(subscripts::Subscripts) = idtype(typeof(subscripts))
+@generated function idtype(::Type{<:Subscripts{T}}) where {T<:Tuple{Vararg{NamedContainer{Subscript}}}}
     exprs = []
     for i = 1:fieldcount(T)
         push!(exprs, Pair{UnitRange{Int}, NTuple{fieldcount(fieldtype(T, 1)), String}})
     end
-    return Expr(:curly, :ConstrainID, Expr(:curly, :Tuple, exprs...))
+    return Expr(:curly, :SubscriptsID, Expr(:curly, :Tuple, exprs...))
 end
 
 """
-    ConstrainID{T<:Tuple{Vararg{Pair{UnitRange{Int}, <:Tuple{Vararg{String}}}}}} <: SimpleID
+    SubscriptsID{T<:Tuple{Vararg{Pair{UnitRange{Int}, <:Tuple{Vararg{String}}}}}} <: SimpleID
 
-The id of an iid constrain.
+The id of the subscripts.
 """
-struct ConstrainID{T<:Tuple{Vararg{Pair{UnitRange{Int}, <:Tuple{Vararg{String}}}}}} <: SimpleID
-    reps::T
+struct SubscriptsID{T<:Tuple{Vararg{Pair{UnitRange{Int}, <:Tuple{Vararg{String}}}}}} <: SimpleID
+    rep::T
 end
 
 """
-    ConstrainID(iidc::IIDConstrain)
+    SubscriptsID(subscripts::Subscripts)
 
-Construct the id of an iid constrain.
+Construct the id of the subscripts.
 """
-@generated function ConstrainID(iidc::IIDConstrain)
+@generated function SubscriptsID(subscripts::Subscripts)
     exprs, count = [], 1
-    for i = 1:length(iidc)
-        reps = []
-        for field in fieldnames(fieldtype(fieldtype(iidc, :constrain), i))
+    for i = 1:length(subscripts)
+        rep = []
+        for field in fieldnames(fieldtype(fieldtype(subscripts, :contents), i))
             field = QuoteNode(field)
-            push!(reps, :(getfield(getfield(iidc[$i], $field), :rep)))
+            push!(rep, :(getfield(getfield(subscripts[$i], $field), :rep)))
         end
-        push!(exprs, Expr(:call, :(=>), count:(count+rank(iidc, i)-1), Expr(:tuple, reps...)))
-        count += rank(iidc, i)
+        push!(exprs, Expr(:call, :(=>), count:(count+rank(subscripts, i)-1), Expr(:tuple, rep...)))
+        count += rank(subscripts, i)
     end
-    return Expr(:call, :ConstrainID, Expr(:tuple, exprs...))
+    return Expr(:call, :SubscriptsID, Expr(:tuple, exprs...))
 end
+
+"""
+    IIDSpace{I<:IID, V<:Internal, Kind} <: CartesianVectorSpace{IID}
+
+The space expanded by a "labeled" iid.
+"""
+struct IIDSpace{I<:IID, V<:Internal, Kind} <: CartesianVectorSpace{IID}
+    iid::I
+    internal::V
+    IIDSpace(iid::IID, internal::Internal, ::Val{Kind}=Val(:info)) where Kind = new{typeof(iid), typeof(internal), Kind}(iid, internal)
+end
+Base.eltype(iidspace::IIDSpace) = eltype(typeof(iidspace))
+Base.eltype(::Type{<:IIDSpace{<:IID, V}}) where {V<:Internal} = eltype(V)
+kind(iidspace::IIDSpace) = kind(typeof(iidspace))
+kind(::Type{<:IIDSpace{<:IID, <:Internal, Kind}}) where Kind = Kind
+@generated function shape(iidspace::IIDSpace{I, V}) where {I<:CompositeIID, V<:CompositeInternal}
+    @assert rank(I)==rank(V) "shape error: mismatched composite iid and composite internal space."
+    Kind = Val(kind(iidspace))
+    Expr(:tuple, [:(shape(IIDSpace(iidspace.iid[$i], iidspace.internal[InternalIndex($i)], $Kind))...) for i = 1:rank(I)]...)
+end
+ndimshape(::Type{<:IIDSpace{<:IID, V}}) where {V<:Internal} = ndimshape(V)
+Base.CartesianIndex(iid::IID, iidspace::IIDSpace) = CartesianIndex(iid, iidspace.internal)
+Base.getindex(iidspace::IIDSpace, index::CartesianIndex) = rawtype(eltype(iidspace))(index, iidspace.internal)
+
+"""
+    expand(iids::NTuple{N, IID}, internals::NTuple{N, Internal}) where N -> IIDSpace
+
+Get the space expanded by a set of "labeled" iids.
+"""
+@inline expand(iids::NTuple{N, IID}, internals::NTuple{N, Internal}) where N = IIDSpace(CompositeIID(iids), CompositeInternal(internals))
 
 """
     AbstractCoupling{V, I<:ID{SimpleID}} <: Element{V, I}
@@ -310,7 +308,7 @@ The abstract coupling intra/inter internal degrees of freedom at different latti
 """
 abstract type AbstractCoupling{V, I<:ID{SimpleID}} <: Element{V, I} end
 ID{SimpleIID}(coupling::AbstractCoupling) = id(coupling)
-IIDConstrain(coupling::AbstractCoupling) = IIDConstrain()
+Subscripts(coupling::AbstractCoupling) = Subscripts()
 
 """
     couplingcenters(coupling::AbstractCoupling, bond::AbstractBond, info::Val) -> NTuple{rank(coupling), Int}
@@ -351,25 +349,25 @@ function expand(coupling::AbstractCoupling, bond::AbstractBond, hilbert::Hilbert
     points = couplingpoints(coupling, bond, info)
     internals = couplinginternals(coupling, bond, hilbert, info)
     @assert rank(coupling)==length(points)==length(internals) "expand error: mismatched rank."
-    return CExpand(value(coupling), points, IIDSpace(CompositeIID(ID{SimpleIID}(coupling)), CompositeInternal(internals), info), IIDConstrain(coupling))
+    return CExpand(value(coupling), points, IIDSpace(CompositeIID(ID{SimpleIID}(coupling)), CompositeInternal(internals), info), Subscripts(coupling))
 end
-struct CExpand{V, N, P<:AbstractPID, SV<:SVector, S<:IIDSpace, C<:IIDConstrain}
+struct CExpand{V, N, P<:AbstractPID, SV<:SVector, S<:IIDSpace, C<:Subscripts}
     value::V
     pids::NTuple{N, P}
     rcoords::NTuple{N, SV}
     icoords::NTuple{N, SV}
     iidspace::S
-    constrain::C
+    subscripts::C
 end
-function CExpand(value, points::NTuple{N, P}, iidspace::IIDSpace, constrain::IIDConstrain) where {N, P<:Point}
+function CExpand(value, points::NTuple{N, P}, iidspace::IIDSpace, subscripts::Subscripts) where {N, P<:Point}
     pids = NTuple{N, pidtype(P)}(points[i].pid for i = 1:N)
     rcoords = NTuple{N, SVector{dimension(P), dtype(P)}}(points[i].rcoord for i = 1:N)
     icoords = NTuple{N, SVector{dimension(P), dtype(P)}}(points[i].icoord for i = 1:N)
-    return CExpand(value, pids, rcoords, icoords, iidspace, constrain)
+    return CExpand(value, pids, rcoords, icoords, iidspace, subscripts)
 end
 @inline Base.eltype(ex::CExpand) = eltype(typeof(ex))
 @inline @generated function Base.eltype(::Type{<:CExpand{V, N, P, SV, S}}) where {V, N, P<:AbstractPID, SV<:SVector, S<:IIDSpace}
-    IIDS = fieldtypes(fieldtype(eltype(S), :content))
+    IIDS = fieldtypes(fieldtype(eltype(S), :contents))
     return Tuple{V, Tuple{[OID{Index{P, IIDS[i]}, SV} for i = 1:N]...}}
 end
 @inline Base.IteratorSize(::Type{<:CExpand}) = Base.SizeUnknown()
@@ -377,8 +375,8 @@ function Base.iterate(ex::CExpand, state=iterate(ex.iidspace))
     result = nothing
     while !isnothing(state)
         ciid, state = state
-        if match(ex.constrain, ciid)
-            result = (ex.value, ID(OID, ID(Index, ex.pids, ciid.content), ex.rcoords, ex.icoords)), iterate(ex.iidspace, state)
+        if match(ex.subscripts, ciid)
+            result = (ex.value, ID(OID, ID(Index, ex.pids, ciid.contents), ex.rcoords, ex.icoords)), iterate(ex.iidspace, state)
             break
         else
             state = iterate(ex.iidspace, state)
@@ -388,35 +386,35 @@ function Base.iterate(ex::CExpand, state=iterate(ex.iidspace))
 end
 
 """
-    Coupling{V, I<:ID{SimpleIID}, C<:IIDConstrain, CI<:ConstrainID} <: AbstractCoupling{V, Tuple{CompositeIID{I}, CI}}
+    Coupling{V, I<:ID{SimpleIID}, C<:Subscripts, CI<:SubscriptsID} <: AbstractCoupling{V, Tuple{CompositeIID{I}, CI}}
 
 The coupling intra/inter internal degrees of freedom at different lattice points.
 """
-struct Coupling{V, I<:ID{SimpleIID}, C<:IIDConstrain, CI<:ConstrainID} <: AbstractCoupling{V, Tuple{CompositeIID{I}, CI}}
+struct Coupling{V, I<:ID{SimpleIID}, C<:Subscripts, CI<:SubscriptsID} <: AbstractCoupling{V, Tuple{CompositeIID{I}, CI}}
     value::V
     cid::I
-    constrain::C
-    function Coupling(value::Number, cid::ID{SimpleIID}, constrain::IIDConstrain=IIDConstrain())
-        new{typeof(value), typeof(cid), typeof(constrain), idtype(constrain)}(value, cid, constrain)
+    subscripts::C
+    function Coupling(value::Number, cid::ID{SimpleIID}, subscripts::Subscripts=Subscripts())
+        new{typeof(value), typeof(cid), typeof(subscripts), idtype(subscripts)}(value, cid, subscripts)
     end
 end
-@inline parameternames(::Type{<:Coupling}) = (:value, :cid, :constrain, :constrainid)
+@inline parameternames(::Type{<:Coupling}) = (:value, :cid, :subscripts, :subscriptsid)
 @inline isparameterbound(::Type{<:Coupling}, ::Val{:cid}, ::Type{I}) where {I<:ID{SimpleIID}} = !isconcretetype(I)
-@inline isparameterbound(::Type{<:Coupling}, ::Val{:constrain}, ::Type{C}) where {C<:IIDConstrain} = !isconcretetype(C)
-@inline isparameterbound(::Type{<:Coupling}, ::Val{:constrainid}, ::Type{CI}) where {CI<:ConstrainID} = !isconcretetype(CI)
-@inline contentnames(::Type{<:Coupling}) = (:value, :id, :constrain)
-@inline getcontent(coupling::Coupling, ::Val{:id}) = ID(CompositeIID(coupling.cid), ConstrainID(coupling.constrain))
+@inline isparameterbound(::Type{<:Coupling}, ::Val{:subscripts}, ::Type{C}) where {C<:Subscripts} = !isconcretetype(C)
+@inline isparameterbound(::Type{<:Coupling}, ::Val{:subscriptsid}, ::Type{CI}) where {CI<:SubscriptsID} = !isconcretetype(CI)
+@inline contentnames(::Type{<:Coupling}) = (:value, :id, :subscripts)
+@inline getcontent(coupling::Coupling, ::Val{:id}) = ID(CompositeIID(coupling.cid), SubscriptsID(coupling.subscripts))
 @inline rank(::Type{<:Coupling{V, I} where V}) where {I<:ID{SimpleIID}} = fieldcount(I)
-@inline Coupling(value::Number, id::Tuple{CompositeIID, ConstrainID}, constrain::IIDConstrain) = Coupling(value, first(id).content, constrain)
+@inline Coupling(value::Number, id::Tuple{CompositeIID, SubscriptsID}, subscripts::Subscripts) = Coupling(value, first(id).contents, subscripts)
 @inline ID{SimpleIID}(coupling::Coupling) = coupling.cid
-@inline IIDConstrain(coupling::Coupling) = coupling.constrain
+@inline Subscripts(coupling::Coupling) = coupling.subscripts
 
 """
     *(cp₁::Coupling, cp₂::Coupling) -> Coupling
 
 Get the multiplication between two couplings.
 """
-@inline Base.:*(cp₁::Coupling, cp₂::Coupling) = Coupling(cp₁.value*cp₂.value, cp₁.cid*cp₂.cid, cp₁.constrain*cp₂.constrain)
+@inline Base.:*(cp₁::Coupling, cp₂::Coupling) = Coupling(cp₁.value*cp₂.value, cp₁.cid*cp₂.cid, cp₁.subscripts*cp₂.subscripts)
 
 """
     Couplings(cps::AbstractCoupling...)

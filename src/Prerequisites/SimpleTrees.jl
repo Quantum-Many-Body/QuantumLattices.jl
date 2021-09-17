@@ -6,7 +6,7 @@ import ..Traits: contentnames, dissolve
 
 export simpletreedepth, simpletreewidth
 export SimpleTreeCore, AbstractSimpleTree, SimpleTree
-export root, parent, children, ancestor, descendants, siblings, leaves, subtree
+export root, children, ancestor, descendants, siblings, leaves, subtree
 export isleaf, level, addnode!, deletenode!, move!
 
 """
@@ -112,7 +112,7 @@ Get the number of a tree's nodes.
 
 Get the parent of a tree's node. When `node` is the tree's root, return `superparent`.
 """
-@inline parent(tree::AbstractSimpleTree{N}, node::N, superparent::Union{N, Nothing}=nothing) where {N} = (node == root(tree) ? superparent : SimpleTreeCore(tree).parent[node])
+@inline Base.parent(tree::AbstractSimpleTree{N}, node::N, superparent::Union{N, Nothing}=nothing) where {N} = (node == root(tree) ? superparent : SimpleTreeCore(tree).parent[node])
 
 """
     children(tree::AbstractSimpleTree) -> Vector{keytype(tree)}

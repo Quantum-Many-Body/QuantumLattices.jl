@@ -46,22 +46,22 @@ abstract type SimpleIID <: IID end
 The composition of several single internal ids.
 """
 struct CompositeIID{T<:Tuple{Vararg{SimpleIID}}} <: IID
-    content::T
+    contents::T
 end
 Base.show(io::IO, ciid::CompositeIID) = @printf io "%s" join((string(ciid[i]) for i = 1:rank(ciid)), " ⊗ ")
 @inline Base.length(ciid::CompositeIID) = length(typeof(ciid))
 @inline Base.length(::Type{<:CompositeIID{T}}) where {T<:Tuple{Vararg{SimpleIID}}} = fieldcount(T)
-@inline Base.getindex(ciid::CompositeIID, i::Int) = ciid.content[i]
+@inline Base.getindex(ciid::CompositeIID, i::Int) = ciid.contents[i]
 @inline Base.getproperty(ciid::CompositeIID, name::Symbol) = ciidgetproperty(ciid, Val(name))
-@inline ciidgetproperty(ciid::CompositeIID, ::Val{:content}) = getfield(ciid, :content)
-@inline ciidgetproperty(ciid::CompositeIID, ::Val{name}) where name = getproperty(getfield(ciid, :content), name)
+@inline ciidgetproperty(ciid::CompositeIID, ::Val{:contents}) = getfield(ciid, :contents)
+@inline ciidgetproperty(ciid::CompositeIID, ::Val{name}) where name = getproperty(getfield(ciid, :contents), name)
 
 """
-    CompositeIID(content::SimpleIID...)
+    CompositeIID(contents::SimpleIID...)
 
 Construct a composite iid from a set of simple iids.
 """
-@inline CompositeIID(content::SimpleIID...) = CompositeIID(content)
+@inline CompositeIID(contents::SimpleIID...) = CompositeIID(contents)
 
 """
     rank(ciid::CompositeIID) -> Int
@@ -90,9 +90,9 @@ iidtype(::Type{<:CompositeIID{T}}, i::Integer) where {T<:Tuple{Vararg{SimpleIID}
 Direct product between simple iids and composite iids.
 """
 @inline ⊗(iid₁::SimpleIID, iid₂::SimpleIID) = CompositeIID(iid₁, iid₂)
-@inline ⊗(iid::SimpleIID, ciid::CompositeIID) = CompositeIID(iid, ciid.content...)
-@inline ⊗(ciid::CompositeIID, iid::SimpleIID) = CompositeIID(ciid.content..., iid)
-@inline ⊗(ciid₁::CompositeIID, ciid₂::CompositeIID) = CompositeIID(ciid₁.content..., ciid₂.content...)
+@inline ⊗(iid::SimpleIID, ciid::CompositeIID) = CompositeIID(iid, ciid.contents...)
+@inline ⊗(ciid::CompositeIID, iid::SimpleIID) = CompositeIID(ciid.contents..., iid)
+@inline ⊗(ciid₁::CompositeIID, ciid₂::CompositeIID) = CompositeIID(ciid₁.contents..., ciid₂.contents...)
 
 """
     Internal{I<:IID} <: CartesianVectorSpace{I}
@@ -161,7 +161,7 @@ Filter the type of a simple internal space with respect to the input `iid` or ty
 The composition of several single internal spaces.
 """
 struct CompositeInternal{T<:Tuple{Vararg{SimpleInternal}}} <: Internal{CompositeIID}
-    content::T
+    contents::T
 end
 @inline Base.eltype(ci::CompositeInternal) = eltype(typeof(ci))
 @inline @generated function Base.eltype(::Type{<:CompositeInternal{T}}) where {T<:Tuple{Vararg{SimpleInternal}}}
@@ -170,11 +170,11 @@ end
 Base.show(io::IO, ci::CompositeInternal) = @printf io "%s" join((string(ci[InternalIndex(i)]) for i = 1:rank(ci)), " ⊗ ")
 
 """
-    CompositeInternal(content::SimpleInternal...)
+    CompositeInternal(contents::SimpleInternal...)
 
 Construct a composite internal space from a set of simple internal spaces.
 """
-@inline CompositeInternal(content::SimpleInternal...) = CompositeInternal(content)
+@inline CompositeInternal(contents::SimpleInternal...) = CompositeInternal(contents)
 
 """
     rank(ci::CompositeInternal) -> Int
@@ -199,7 +199,7 @@ Get the type of the ith simple internal space in a composite internal space.
 
 Get the Ith simple internal space in a composite internal space.
 """
-@inline Base.getindex(ci::CompositeInternal, ::InternalIndex{I}) where I = ci.content[I]
+@inline Base.getindex(ci::CompositeInternal, ::InternalIndex{I}) where I = ci.contents[I]
 
 @inline @generated shape(ci::CompositeInternal) = Expr(:tuple, [:(shape(ci[InternalIndex($i)])...) for i = 1:rank(ci)]...)
 @inline ndimshape(::Type{<:CompositeInternal{T}}) where {T<:Tuple{Vararg{SimpleInternal}}} = sum(ndimshape(fieldtype(T, i)) for i = 1:fieldcount(T))
@@ -232,9 +232,9 @@ end
 Direct product between simple internal spaces and composite internal spaces.
 """
 @inline ⊗(i₁::SimpleInternal, i₂::SimpleInternal) = CompositeInternal(i₁, i₂)
-@inline ⊗(i::SimpleInternal, ci::CompositeInternal) = CompositeInternal(i, ci.content...)
-@inline ⊗(ci::CompositeInternal, i::SimpleInternal) = CompositeInternal(ci.content..., i)
-@inline ⊗(ci₁::CompositeInternal, ci₂::CompositeInternal) = CompositeInternal(ci₁.content..., ci₂.content...)
+@inline ⊗(i::SimpleInternal, ci::CompositeInternal) = CompositeInternal(i, ci.contents...)
+@inline ⊗(ci::CompositeInternal, i::SimpleInternal) = CompositeInternal(ci.contents..., i)
+@inline ⊗(ci₁::CompositeInternal, ci₂::CompositeInternal) = CompositeInternal(ci₁.contents..., ci₂.contents...)
 
 """
     filter(iid::SimpleIID, ci::CompositeInternal) -> Union{Nothing, SimpleInternal, CompositeInternal}

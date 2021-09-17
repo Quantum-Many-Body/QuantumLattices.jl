@@ -32,35 +32,20 @@ Base.CartesianIndex(tid::TID, vs::TFock) = CartesianIndex(tid.nambu)
 @inline shape(iidspace::IIDSpace{TID{Symbol}, TFock}) = (1:iidspace.internal.nnambu,)
 @inline shape(iidspace::IIDSpace{TID{Int}, TFock}) = (iidspace.iid.nambu:iidspace.iid.nambu,)
 
-const TCoupling{V, I<:ID{TID}, C<:IIDConstrain, CI<:ConstrainID} = Coupling{V, I, C, CI}
+const TCoupling{V, I<:ID{TID}, C<:Subscripts, CI<:SubscriptsID} = Coupling{V, I, C, CI}
 @inline Base.repr(tc::(Coupling{V, <:ID{TID}} where V)) = @sprintf "%s ph(%s)" decimaltostr(tc.value) join(tc.cid.nambus, ", ")
 @inline couplingcenters(::(Coupling{V, <:ID{TID}} where V), ::Bond, ::Val) = (1, 2)
-@inline TCoupling(value, nambus::Tuple{Vararg{Int}}) = Coupling(value, ID(TID, nambus), IIDConstrain((nambu=Subscript(nambus),)))
-@inline TCoupling(value, nambus::Subscript) = Coupling(value, ID(TID, convert(Tuple, nambus)), IIDConstrain((nambu=nambus,)))
+@inline TCoupling(value, nambus::Tuple{Vararg{Int}}) = Coupling(value, ID(TID, nambus), Subscripts((nambu=Subscript(nambus),)))
+@inline TCoupling(value, nambus::Subscript) = Coupling(value, ID(TID, convert(Tuple, nambus)), Subscripts((nambu=nambus,)))
 
 abbr(::Type{<:Term{:Mu}}) = :mu
 abbr(::Type{<:Term{:Hp}}) = :hp
 isHermitian(::Type{<:Term{:Mu}}) = true
 isHermitian(::Type{<:Term{:Hp}}) = false
 
-@testset "IIDSpace" begin
-    tid₁, tid₂, it = TID(2), TID(:σ), TFock(2)
-    iidspace = IIDSpace(tid₁⊗tid₂, it⊗it)
-    @test eltype(iidspace) == eltype(typeof(iidspace)) == CompositeIID{Tuple{TID{Int}, TID{Int}}}
-    @test kind(iidspace) == kind(typeof(iidspace)) == :info
-    @test shape(iidspace) == (2:2, 1:2)
-    @test ndimshape(iidspace) == ndimshape(typeof(iidspace)) == 2
-    for i = 1:length(iidspace)
-        iid = iidspace[i]
-        @test iidspace[CartesianIndex(iid, iidspace)] == iid
-    end
-    @test expand((tid₁, tid₂), (it, it)) == iidspace
-    @test collect(iidspace) == [TID(2)⊗TID(1), TID(2)⊗TID(2)]
-end
-
 @testset "Subscript" begin
     sub = Subscript(4)
-    @test contentnames(typeof(sub)) == (:contents, :rep, :constrain)
+    @test contentnames(typeof(sub)) == (:contents, :rep, :constraint)
     @test getcontent(sub, :contents) == sub.pattern
     @test sub==deepcopy(sub) && isequal(sub, deepcopy(sub))
     @test string(sub) == "[* * * *]"
@@ -90,45 +75,58 @@ end
     @test match(sub, (1, 4, 4, 2)) && !match(sub, (2, 4, 4, 1))
 end
 
-@testset "IIDConstrain" begin
-    constrain = IIDConstrain((nambu=subscript"[x y](x > y)",), (nambu=subscript"[x x y y](x < y)",))
-    @test contentnames(typeof(constrain)) == (:contents,)
-    @test getcontent(constrain, :contents) == constrain.constrain
-    @test string(constrain) == "nambu[x y](x > y) × nambu[x x y y](x < y)"
-    @test repr(constrain, 1:2, :nambu) == "[x y](x > y)×[x x y y](x < y)"
-    @test repr(constrain, 1, :nambu) == "[x y](x > y)"
-    @test repr(constrain, 2, :nambu) == "[x x y y](x < y)"
+@testset "Subscripts" begin
+    subscripts = Subscripts((nambu=subscript"[x y](x > y)",), (nambu=subscript"[x x y y](x < y)",))
+    @test string(subscripts) == "nambu[x y](x > y) × nambu[x x y y](x < y)"
+    @test repr(subscripts, 1:2, :nambu) == "[x y](x > y)×[x x y y](x < y)"
+    @test repr(subscripts, 1, :nambu) == "[x y](x > y)"
+    @test repr(subscripts, 2, :nambu) == "[x x y y](x < y)"
 
-    @test rank(constrain) == rank(typeof(constrain)) == 6
-    @test rank(constrain, 1) == rank(typeof(constrain), 1) == 2
-    @test rank(constrain, 2) == rank(typeof(constrain), 2) == 4
-    @test match(constrain, (TID(2), TID(1), TID(2), TID(2), TID(3), TID(3)))
-    @test match(constrain, TID(2)⊗TID(1)⊗TID(2)⊗TID(2)⊗TID(3)⊗TID(3))
-    @test !match(constrain, TID(1)⊗TID(2)⊗TID(2)⊗TID(2)⊗TID(3)⊗TID(3))
-    @test !match(constrain, TID(2)⊗TID(1)⊗TID(3)⊗TID(3)⊗TID(2)⊗TID(2))
-    @test constrain == IIDConstrain((nambu=subscript"[x y](x > y)",))*IIDConstrain((nambu=subscript"[x x y y](x < y)",))
+    @test rank(subscripts) == rank(typeof(subscripts)) == 6
+    @test rank(subscripts, 1) == rank(typeof(subscripts), 1) == 2
+    @test rank(subscripts, 2) == rank(typeof(subscripts), 2) == 4
+    @test match(subscripts, (TID(2), TID(1), TID(2), TID(2), TID(3), TID(3)))
+    @test match(subscripts, TID(2)⊗TID(1)⊗TID(2)⊗TID(2)⊗TID(3)⊗TID(3))
+    @test !match(subscripts, TID(1)⊗TID(2)⊗TID(2)⊗TID(2)⊗TID(3)⊗TID(3))
+    @test !match(subscripts, TID(2)⊗TID(1)⊗TID(3)⊗TID(3)⊗TID(2)⊗TID(2))
+    @test subscripts == Subscripts((nambu=subscript"[x y](x > y)",))*Subscripts((nambu=subscript"[x x y y](x < y)",))
 
-    constrainid = ConstrainID(constrain)
-    @test constrainid == ConstrainID((1:2=>("[x y](x > y)",), 3:6=>("[x x y y](x < y)",)))
-    @test idtype(constrain) == idtype(typeof(constrain)) == ConstrainID{NTuple{2, Pair{UnitRange{Int}, Tuple{String}}}}
+    subscriptsid = SubscriptsID(subscripts)
+    @test subscriptsid == SubscriptsID((1:2=>("[x y](x > y)",), 3:6=>("[x x y y](x < y)",)))
+    @test idtype(subscripts) == idtype(typeof(subscripts)) == SubscriptsID{NTuple{2, Pair{UnitRange{Int}, Tuple{String}}}}
+end
+
+@testset "IIDSpace" begin
+    tid₁, tid₂, it = TID(2), TID(:σ), TFock(2)
+    iidspace = IIDSpace(tid₁⊗tid₂, it⊗it)
+    @test eltype(iidspace) == eltype(typeof(iidspace)) == CompositeIID{Tuple{TID{Int}, TID{Int}}}
+    @test kind(iidspace) == kind(typeof(iidspace)) == :info
+    @test shape(iidspace) == (2:2, 1:2)
+    @test ndimshape(iidspace) == ndimshape(typeof(iidspace)) == 2
+    for i = 1:length(iidspace)
+        iid = iidspace[i]
+        @test iidspace[CartesianIndex(iid, iidspace)] == iid
+    end
+    @test expand((tid₁, tid₂), (it, it)) == iidspace
+    @test collect(iidspace) == [TID(2)⊗TID(1), TID(2)⊗TID(2)]
 end
 
 @testset "couplings" begin
-    @test parameternames(Coupling) == (:value, :cid, :constrain, :constrainid)
-    @test contentnames(Coupling) == (:value, :id, :constrain)
+    @test parameternames(Coupling) == (:value, :cid, :subscripts, :subscriptsid)
+    @test contentnames(Coupling) == (:value, :id, :subscripts)
     @test isparameterbound(Coupling, :cid, Tuple{TID{Int}}) == false
     @test isparameterbound(Coupling, :cid, ID{TID{Int}}) == true
-    @test isparameterbound(Coupling, :constrain, IIDConstrain{Tuple{NamedTuple{(:nambu,), Tuple{Subscript{Tuple{Int}, typeof(noconstrain)}}}}}) == false
-    @test isparameterbound(Coupling, :constrain, IIDConstrain) == true
-    @test isparameterbound(Coupling, :constrainid, ConstrainID{Tuple{}}) == false
-    @test isparameterbound(Coupling, :constrainid, ConstrainID) == true
+    @test isparameterbound(Coupling, :subscripts, Subscripts{Tuple{NamedTuple{(:nambu,), Tuple{Subscript{Tuple{Int}, typeof(noconstrain)}}}}}) == false
+    @test isparameterbound(Coupling, :subscripts, Subscripts) == true
+    @test isparameterbound(Coupling, :subscriptsid, SubscriptsID{Tuple{}}) == false
+    @test isparameterbound(Coupling, :subscriptsid, SubscriptsID) == true
 
     tc = TCoupling(2.0, (2,))
-    @test id(tc) == ID(CompositeIID(tc.cid), ConstrainID(tc.constrain))
+    @test id(tc) == ID(CompositeIID(tc.cid), SubscriptsID(tc.subscripts))
     @test rank(tc) == rank(typeof(tc)) == 1
-    @test tc == Coupling(2.0, id(tc), tc.constrain)
+    @test tc == Coupling(2.0, id(tc), tc.subscripts)
     @test ID{SimpleIID}(tc) == tc.cid
-    @test IIDConstrain(tc) == tc.constrain
+    @test Subscripts(tc) == tc.subscripts
 
     point = Point(CPID(1, 1), (0.0, 0.0), (0.0, 0.0))
     hilbert = Hilbert(point.pid=>TFock(2))
@@ -138,7 +136,7 @@ end
 
     tc₁ = TCoupling(1.5, (1, 2))
     tc₂ = TCoupling(2.0, subscript"[a b](a < b)")
-    @test tc₁*tc₂ == Coupling(3.0, ID(TID(1), TID(2), TID(:a), TID(:b)), IIDConstrain((nambu=Subscript((1, 2)),), (nambu=subscript"[a b](a < b)",)))
+    @test tc₁*tc₂ == Coupling(3.0, ID(TID(1), TID(2), TID(:a), TID(:b)), Subscripts((nambu=Subscript((1, 2)),), (nambu=subscript"[a b](a < b)",)))
 
     ex = expand(tc₁, point, hilbert, Val(:info))
     @test eltype(ex) == eltype(typeof(ex)) == Tuple{Float64, NTuple{2, OID{Index{CPID{Int}, TID{Int}}, SVector{2, Float64}}}}
