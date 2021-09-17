@@ -277,7 +277,8 @@ end
 end
 
 @testset "Generator" begin
-    @test contentnames(AbstractGenerator) == (:terms, :bonds, :hilbert, :half, :table, :boundary, :operators)
+    @test contentnames(AbstractGenerator) == (:table, :boundary, :operators)
+    @test contentnames(AbstractCompleteGenerator) == (:terms, :bonds, :hilbert, :half, :table, :boundary, :operators)
 
     lattice = Lattice("Tuanzi", [Point(PID(1), (0.0, 0.0), (0.0, 0.0)), Point(PID(2), (0.5, 0.0), (0.0, 0.0))], vectors=[[1.0, 0.0]], neighbors=1)
     bonds = Bonds(lattice)

@@ -24,7 +24,7 @@ import ...Prerequisites.VectorSpaces: shape, ndimshape
 export Subscript, Subscripts, SubscriptsID, IIDSpace, @subscript_str, subscriptexpr, wildcard, diagonal, noconstrain
 export AbstractCoupling, Coupling, Couplings, couplingcenters, couplingpoints, couplinginternals, @couplings
 export TermFunction, TermAmplitude, TermCouplings, TermModulate, Term, abbr, ismodulatable, otype
-export Parameters, GenOperators, AbstractGenerator, Generator
+export Parameters, GenOperators, AbstractGenerator, AbstractCompleteGenerator, Generator
 
 @inline diagonal(xs...) = length(xs)<2 ? true : all(map(==(xs[1]), xs))
 @inline noconstrain(_...) = true
@@ -932,21 +932,17 @@ Reset a set of operators by the new terms, bonds and Hilbert space.
 end
 
 """
-    AbstractGenerator{TS<:NamedContainer{Term}, BS<:Bonds, H<:Hilbert, T<:Union{Table, Nothing}, B<:Boundary, OS<:GenOperators}
+    AbstractGenerator{T<:Union{Table, Nothing}, B<:Boundary, OS<:GenOperators}
 
 Abstract generator.
 
 By protocol, a concrete generator should have the following predefined contents:
-* `terms::TS`: the terms contained in a generator
-* `bonds::BS`: the bonds on which the terms are defined
-* `hilbert::H`: the total Hilbert space
-* `half::Bool`: true for generating an Hermitian half of the operators and false for generating the whole
 * `table::T`: the index-sequence table if it is not nothing
-* `boundary::B`: boundary twist for the generated operators, `nothing` for no twist
+* `boundary::B`: boundary twist for the generated operators
 * `operators::OS`: the generated operators
 """
-abstract type AbstractGenerator{TS<:NamedContainer{Term}, BS<:Bonds, H<:Hilbert, T<:Union{Table, Nothing}, B<:Boundary, OS<:GenOperators} end
-@inline contentnames(::Type{<:AbstractGenerator}) = (:terms, :bonds, :hilbert, :half, :table, :boundary, :operators)
+abstract type AbstractGenerator{T<:Union{Table, Nothing}, B<:Boundary, OS<:GenOperators} end
+@inline contentnames(::Type{<:AbstractGenerator}) = (:table, :boundary, :operators)
 @inline Base.:(==)(gen₁::AbstractGenerator, gen₂::AbstractGenerator) = ==(efficientoperations, gen₁, gen₂)
 @inline Base.isequal(gen₁::AbstractGenerator, gen₂::AbstractGenerator) = isequal(efficientoperations, gen₁, gen₂)
 
@@ -957,17 +953,7 @@ abstract type AbstractGenerator{TS<:NamedContainer{Term}, BS<:Bonds, H<:Hilbert,
 Get the operator type of the generated operators.
 """
 @inline otype(gen::AbstractGenerator) = otype(typeof(gen))
-@inline otype(::Type{<:AbstractGenerator{<:NamedContainer{Term}, <:Bonds, <:Hilbert, <:Union{Table, Nothing}, <:Boundary, OS}}) where {OS<:GenOperators} = eltype(OS)
-
-"""
-    Parameters(gen::AbstractGenerator) -> Parameters
-
-Get the parameters of the terms of a generator.
-"""
-@generated function Parameters(gen::AbstractGenerator{TS}) where {TS<:NamedContainer{Term}}
-    names, values = fieldnames(TS), [:(getcontent(gen, :terms)[$i].value) for i = 1:fieldcount(TS)]
-    return :(Parameters{$names}($(values...)))
-end
+@inline otype(::Type{<:AbstractGenerator{<:Union{Table, Nothing}, <:Boundary, OS}}) where {OS<:GenOperators} = eltype(OS)
 
 """
     expand!(operators::Operators, gen::AbstractGenerator) -> Operators
@@ -978,18 +964,61 @@ Expand the operators of a generator.
 
 """
     expand(gen::AbstractGenerator) -> Operators
-    expand(gen::AbstractGenerator, name::Symbol) -> Operators
-    expand(gen::AbstractGenerator, i::Int) -> Operators
-    expand(gen::AbstractGenerator, name::Symbol, i::Int) -> Operators
 
-Expand the operators of a generator:
-1) the total operators;
-2) the operators of a specific term;
-3) the operators on a specific bond;
-4) the operators of a specific term on a specific bond.
+Expand the operators of a generator.
 """
 @inline expand(gen::AbstractGenerator) = expand!(Operators{idtype(otype(gen)), otype(gen)}(), gen)
-function expand(gen::AbstractGenerator, name::Symbol)
+
+"""
+    AbstractCompleteGenerator{
+        TS<:NamedContainer{Term},
+        BS<:Bonds,
+        H<:Hilbert,
+        T<:Union{Table, Nothing},
+        B<:Boundary,
+        OS<:GenOperators
+        } <: AbstractGenerator{T, B, OS}
+
+Abstract complete generator.
+
+By protocol, a concrete complete generator should have the following predefined contents in addition to those contained in its supertype:
+* `terms::TS`: the terms contained in a complete generator
+* `bonds::BS`: the bonds on which the terms are defined
+* `hilbert::H`: the total Hilbert space
+* `half::Bool`: true for generating an Hermitian half of the operators and false for generating the whole
+"""
+abstract type AbstractCompleteGenerator{
+    TS<:NamedContainer{Term},
+    BS<:Bonds,
+    H<:Hilbert,
+    T<:Union{Table, Nothing},
+    B<:Boundary,
+    OS<:GenOperators
+    } <: AbstractGenerator{T, B, OS}
+end
+@inline contentnames(::Type{<:AbstractCompleteGenerator}) = (:terms, :bonds, :hilbert, :half, :table, :boundary, :operators)
+
+"""
+    Parameters(gen::AbstractCompleteGenerator) -> Parameters
+
+Get the parameters of the terms of a generator.
+"""
+@generated function Parameters(gen::AbstractCompleteGenerator{TS}) where {TS<:NamedContainer{Term}}
+    names, values = fieldnames(TS), [:(getcontent(gen, :terms)[$i].value) for i = 1:fieldcount(TS)]
+    return :(Parameters{$names}($(values...)))
+end
+
+"""
+    expand(gen::AbstractCompleteGenerator, name::Symbol) -> Operators
+    expand(gen::AbstractCompleteGenerator, i::Int) -> Operators
+    expand(gen::AbstractCompleteGenerator, name::Symbol, i::Int) -> Operators
+
+Expand the operators of a generator:
+1) the operators of a specific term;
+2) the operators on a specific bond;
+3) the operators of a specific term on a specific bond.
+"""
+function expand(gen::AbstractCompleteGenerator, name::Symbol)
     bonds = getcontent(gen, :bonds)
     hilbert = getcontent(gen, :hilbert)
     ops = getcontent(gen, :operators)
@@ -1006,7 +1035,7 @@ function expand(gen::AbstractGenerator, name::Symbol)
     end
     return result
 end
-@generated function expand(gen::AbstractGenerator{TS}, i::Int) where {TS<:NamedContainer{Term}}
+@generated function expand(gen::AbstractCompleteGenerator{TS}, i::Int) where {TS<:NamedContainer{Term}}
     exprs = []
     push!(exprs, quote
         bond = getcontent(gen, :bonds)[i]
@@ -1023,7 +1052,7 @@ end
     end)
     return Expr(:block, exprs...)
 end
-function expand(gen::AbstractGenerator, name::Symbol, i::Int)
+function expand(gen::AbstractCompleteGenerator, name::Symbol, i::Int)
     bond = getcontent(gen, :bonds)[i]
     result = expand(getfield(getcontent(gen, :terms), name), bond, getcontent(gen, :hilbert), getcontent(gen, :half), table=getcontent(gen, :table))
     isintracell(bond) && for opt in values(result)
@@ -1033,11 +1062,11 @@ function expand(gen::AbstractGenerator, name::Symbol, i::Int)
 end
 
 """
-    update!(gen::AbstractGenerator; kwargs...) -> typeof(gen)
+    update!(gen::AbstractCompleteGenerator; kwargs...) -> typeof(gen)
 
 Update the coefficients of the terms in a generator.
 """
-@generated function update!(gen::AbstractGenerator{TS}; kwargs...) where {TS<:NamedContainer{Term}}
+@generated function update!(gen::AbstractCompleteGenerator{TS}; kwargs...) where {TS<:NamedContainer{Term}}
     exprs = [:(update!(getcontent(gen, :boundary); kwargs...))]
     for i = 1:fieldcount(TS)
         ismodulatable(fieldtype(TS, i)) && push!(exprs, :(update!(getcontent(gen, :terms)[$i]; kwargs...)))
@@ -1047,11 +1076,11 @@ Update the coefficients of the terms in a generator.
 end
 
 """
-    Generator{TS<:NamedContainer{Term}, BS<:Bonds, H<:Hilbert, T<:Union{Table, Nothing}, B<:Boundary, OS<:GenOperators} <: AbstractGenerator{TS, BS, H, T, B, OS}
+    Generator{TS<:NamedContainer{Term}, BS<:Bonds, H<:Hilbert, T<:Union{Table, Nothing}, B<:Boundary, OS<:GenOperators} <: AbstractCompleteGenerator{TS, BS, H, T, B, OS}
 
 A generator of operators based on terms, configuration of internal degrees of freedom, and boundary twist.
 """
-struct Generator{TS<:NamedContainer{Term}, BS<:Bonds, H<:Hilbert, T<:Union{Table, Nothing}, B<:Boundary, OS<:GenOperators} <: AbstractGenerator{TS, BS, H, T, B, OS}
+struct Generator{TS<:NamedContainer{Term}, BS<:Bonds, H<:Hilbert, T<:Union{Table, Nothing}, B<:Boundary, OS<:GenOperators} <: AbstractCompleteGenerator{TS, BS, H, T, B, OS}
     terms::TS
     bonds::BS
     hilbert::H
