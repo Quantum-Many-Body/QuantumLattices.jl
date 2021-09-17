@@ -24,7 +24,7 @@ import ...Prerequisites.VectorSpaces: shape, ndimshape
 export Subscript, Subscripts, SubscriptsID, IIDSpace, @subscript_str, subscriptexpr, wildcard, diagonal, noconstrain
 export AbstractCoupling, Coupling, Couplings, couplingcenters, couplingpoints, couplinginternals, @couplings
 export TermFunction, TermAmplitude, TermCouplings, TermModulate, Term, abbr, ismodulatable, otype
-export Parameters, GenOperators, AbstractGenerator, AbstractCompleteGenerator, Generator
+export Parameters, GenOperators, AbstractGenerator, AbstractCompleteGenerator, Generator, AbstractSimplifiedGenerator, SimplifiedGenerator
 
 @inline diagonal(xs...) = length(xs)<2 ? true : all(map(==(xs[1]), xs))
 @inline noconstrain(_...) = true
@@ -888,6 +888,30 @@ Get an empty copy of a set of operators.
 end
 
 """
+    merge!(genops::GenOperators, another::GenOperators) -> GenOperators
+
+Merge the operators from `another` to `genops`.
+"""
+@generated function Base.merge!(genops::GenOperators, another::GenOperators)
+    exprs = [:(merge!(genops.constops, another.constops))]
+    for name in QuoteNode.(fieldnames(fieldtype(genops, :alterops)))
+        push!(exprs, :(merge!(getfield(genops.alterops, $name), getfield(another.alterops, $name))))
+    end
+    for name in QuoteNode.(fieldnames(fieldtype(genops, :boundops)))
+        push!(exprs, :(merge!(getfield(genops.boundops, $name), getfield(another.boundops, $name))))
+    end
+    push!(exprs, :(return genops))
+    return Expr(:block, exprs...)
+end
+
+"""
+    merge(genops::GenOperators, another::GenOperators) -> GenOperators
+
+Merge the operators from `another` and `genops`.
+"""
+@inline Base.merge(genops::GenOperators, another::GenOperators) = merge!(empty(genops), another)
+
+"""
     expand!(operators::Operators, ops::GenOperators, boundary::Boundary; kwargs...) -> Operators
 
 Expand the operators with the given boundary twist and term coefficients.
@@ -1076,11 +1100,25 @@ Update the coefficients of the terms in a generator.
 end
 
 """
-    Generator{TS<:NamedContainer{Term}, BS<:Bonds, H<:Hilbert, T<:Union{Table, Nothing}, B<:Boundary, OS<:GenOperators} <: AbstractCompleteGenerator{TS, BS, H, T, B, OS}
+    Generator{
+        TS<:NamedContainer{Term},
+        BS<:Bonds,
+        H<:Hilbert,
+        T<:Union{Table, Nothing},
+        B<:Boundary,
+        OS<:GenOperators
+        } <: AbstractCompleteGenerator{TS, BS, H, T, B, OS}
 
 A generator of operators based on terms, configuration of internal degrees of freedom, and boundary twist.
 """
-struct Generator{TS<:NamedContainer{Term}, BS<:Bonds, H<:Hilbert, T<:Union{Table, Nothing}, B<:Boundary, OS<:GenOperators} <: AbstractCompleteGenerator{TS, BS, H, T, B, OS}
+struct Generator{
+        TS<:NamedContainer{Term},
+        BS<:Bonds,
+        H<:Hilbert,
+        T<:Union{Table, Nothing},
+        B<:Boundary,
+        OS<:GenOperators
+        } <: AbstractCompleteGenerator{TS, BS, H, T, B, OS}
     terms::TS
     bonds::BS
     hilbert::H
@@ -1146,6 +1184,87 @@ function reset!(gen::Generator, lattice::AbstractLattice)
     reset!(gen.hilbert, lattice.pids)
     isnothing(gen.table) || reset!(gen.table, gen.hilbert)
     reset!(gen.operators, Tuple(gen.terms), gen.bonds, gen.hilbert, gen.half, table=gen.table)
+    return gen
+end
+
+"""
+    AbstractSimplifiedGenerator{P<:Parameters, T<:Union{Table, Nothing}, B<:Boundary, OS<:GenOperators} <: AbstractGenerator{T, B, OS}
+
+Abstract simplified generator.
+
+By protocol, a concrete simplified generator should have the following predefined contents in addition to those contained in its supertype:
+* `parameters::P`: the parameters of the generator
+"""
+abstract type AbstractSimplifiedGenerator{P<:Parameters, T<:Union{Table, Nothing}, B<:Boundary, OS<:GenOperators} <: AbstractGenerator{T, B, OS} end
+@inline contentnames(::Type{<:AbstractSimplifiedGenerator}) = (:parameters, :table, :boundary, :operators)
+
+"""
+    Parameters(gen::AbstractSimplifiedGenerator) -> Parameters
+
+Get the parameters of the terms of a generator.
+"""
+@inline Parameters(gen::AbstractSimplifiedGenerator) = getcontent(gen, :parameters)
+
+"""
+    SimplifiedGenerator{P<:Parameters, T<:Union{Table, Nothing}, B<:Boundary, OS<:GenOperators} <: AbstractSimplifiedGenerator{P, T, B, OS}
+
+The simplified generator of operators.
+"""
+mutable struct SimplifiedGenerator{P<:Parameters, T<:Union{Table, Nothing}, B<:Boundary, OS<:GenOperators} <: AbstractSimplifiedGenerator{P, T, B, OS}
+    parameters::P
+    table::T
+    boundary::B
+    operators::OS
+end
+
+"""
+    SimplifiedGenerator(parameters::Parameters, operators::GenOperators; table::Union{Table,Nothing}=nothing, boundary::Boundary=plain)
+
+Construct an simplified generator of operators.
+"""
+@inline function SimplifiedGenerator(parameters::Parameters, operators::GenOperators; table::Union{Table,Nothing}=nothing, boundary::Boundary=plain)
+    return SimplifiedGenerator(parameters, table, boundary, operators)
+end
+
+"""
+    empty!(gen::SimplifiedGenerator) -> SimplifiedGenerator
+
+Empty the operators of an simplified generator.
+"""
+@inline function Base.empty!(gen::SimplifiedGenerator)
+    empty!(gen.operators)
+    isnothing(gen.table) || empty!(gen.table)
+    return gen
+end
+
+"""
+    empty(gen::SimplifiedGenerator) -> SimplifiedGenerator
+
+Get an empty copy of an simplified generator.
+"""
+@inline function Base.empty(gen::SimplifiedGenerator)
+    return SimplifiedGenerator(gen.parameters, isnothing(gen.table) ? nothing : empty(gen.table), gen.boundary, empty(gen.operators))
+end
+
+"""
+    update!(gen::SimplifiedGenerator; kwargs...) -> typeof(gen)
+
+Update the parameters of a generator.
+"""
+@generated function update!(gen::SimplifiedGenerator; kwargs...)
+    names = fieldnames(fieldtype(gen, :parameters))
+    values = [:(get(kwargs, $name, getfield(gen.parameters, $name))) for name in QuoteNode.(names)]
+    return Expr(:block, :(update!(gen.boundary; kwargs...)), :(gen.parameters = Parameters{$names}($(values...))), :(return gen))
+end
+
+"""
+    reset!(gen::SimplifiedGenerator, operators::GenOperators; table::Union{Table, Nothing}=nothing) -> SimplifiedGenerator
+
+Reset a generator by a new lattice.
+"""
+function reset!(gen::SimplifiedGenerator, operators::GenOperators; table::Union{Table, Nothing}=nothing)
+    isnothing(gen.table) || isnothing(table) || merge!(empty!(gen.table), table)
+    merge!(empty!(gen.operators), operators)
     return gen
 end
 

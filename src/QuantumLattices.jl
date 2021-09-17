@@ -33,7 +33,7 @@ export CompositeIID, CompositeInternal, Hilbert, Index, OID, Operator, Operators
 export statistics, iidtype, isHermitian, latexformat, twist, plain
 
 # Essentials.Terms
-export Subscript, Subscripts, SubscriptsID, IIDSpace, Coupling, Couplings, Term, Parameters, Generator
+export Subscript, Subscripts, SubscriptsID, IIDSpace, Coupling, Couplings, Term, Parameters, Generator, SimplifiedGenerator
 export abbr, ismodulatable, otype, @subscript_str, @couplings
 
 # Essentials.Frameworks

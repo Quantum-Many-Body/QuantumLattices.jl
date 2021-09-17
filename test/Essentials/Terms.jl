@@ -279,6 +279,7 @@ end
 @testset "Generator" begin
     @test contentnames(AbstractGenerator) == (:table, :boundary, :operators)
     @test contentnames(AbstractCompleteGenerator) == (:terms, :bonds, :hilbert, :half, :table, :boundary, :operators)
+    @test contentnames(AbstractSimplifiedGenerator) == (:parameters, :table, :boundary, :operators)
 
     lattice = Lattice("Tuanzi", [Point(PID(1), (0.0, 0.0), (0.0, 0.0)), Point(PID(2), (0.5, 0.0), (0.0, 0.0))], vectors=[[1.0, 0.0]], neighbors=1)
     bonds = Bonds(lattice)
@@ -286,32 +287,41 @@ end
     table = Table(hilbert, OIDToTuple(:scope, :site))
     t = Term{:Hp}(:t, 2.0, 1, couplings=@couplings(TCoupling(1.0, (2, 1))))
     μ = Term{:Mu}(:μ, 1.0, 0, couplings=@couplings(TCoupling(1.0, (2, 1))), modulate=true)
-    tops1 = expand(t, filter(acrossbonds, bonds, Val(:exclude)), hilbert, true, table=table)
-    tops2 = expand(one(t), filter(acrossbonds, bonds, Val(:include)), hilbert, true, table=table)
+    tops₁ = expand(t, filter(acrossbonds, bonds, Val(:exclude)), hilbert, true, table=table)
+    tops₂ = expand(one(t), filter(acrossbonds, bonds, Val(:include)), hilbert, true, table=table)
     μops = expand(one(μ), filter(zerothbonds, bonds, Val(:include)), hilbert, true, table=table)
 
     optp = Operator{Float, ID{OID{Index{PID, TID{Int}}, SVector{2, Float}}, 2}}
-    genops = GenOperators(tops1, NamedContainer{(:μ,)}((μops,)), NamedContainer{(:t, :μ)}((tops2, Operators{optp|>idtype, optp}())))
+    genops = GenOperators(tops₁, NamedContainer{(:μ,)}((μops,)), NamedContainer{(:t, :μ)}((tops₂, Operators{optp|>idtype, optp}())))
     @test genops == deepcopy(genops) && isequal(genops, deepcopy(genops))
     @test genops == GenOperators((t, μ), bonds, hilbert, true, table=table)
     @test genops|>eltype == genops|>typeof|>eltype == optp
     @test genops|>idtype == genops|>typeof|>idtype == optp|>idtype
-    @test expand!(Operators{idtype(optp), optp}(), genops, plain, t=2.0, μ=1.5) == tops1+tops2*2.0+μops*1.5
+    @test expand!(Operators{idtype(optp), optp}(), genops, plain, t=2.0, μ=1.5) == tops₁+tops₂*2.0+μops*1.5
     @test empty(genops) == empty!(deepcopy(genops))
     @test empty(genops) == GenOperators(empty(μops), NamedContainer{(:μ,)}((empty(μops),)), NamedContainer{(:t, :μ)}((empty(μops), empty(μops))))
+    @test merge!(empty(genops), genops) == merge(genops, genops) == genops
     @test reset!(deepcopy(genops), (t, μ), bonds, hilbert, true, table=table) == genops
 
     gen = Generator((t, μ), bonds, hilbert; half=true, table=table)
     @test gen == deepcopy(gen) && isequal(gen, deepcopy(gen))
     @test Parameters(gen) == Parameters{(:t, :μ)}(2.0, 1.0)
-    @test expand!(Operators{idtype(optp), optp}(), gen) == expand(gen) == tops1+tops2*2.0+μops
-    @test expand(gen, :t) == tops1+tops2*2.0
+    @test expand!(Operators{idtype(optp), optp}(), gen) == expand(gen) == tops₁+tops₂*2.0+μops
+    @test expand(gen, :t) == tops₁+tops₂*2.0
     @test expand(gen, :μ) == μops
     @test expand(gen, 1)+expand(gen, 2)+expand(gen, 3)+expand(gen, 4) == expand(gen)
     @test expand(gen, :μ, 1)+expand(gen, :μ, 2) == μops
-    @test expand(gen, :t, 3) == tops1
-    @test expand(gen, :t, 4) == tops2*2.0
+    @test expand(gen, :t, 3) == tops₁
+    @test expand(gen, :t, 4) == tops₂*2.0
     @test empty!(deepcopy(gen)) == Generator((t, μ), empty(bonds), empty(hilbert), half=true, table=empty(table), boundary=plain) == empty(gen)
     @test reset!(empty(gen), lattice) == gen
-    @test update!(gen, μ=1.5)|>expand == tops1+tops2*2.0+μops*1.5
+    @test update!(gen, μ=1.5)|>expand == tops₁+tops₂*2.0+μops*1.5
+
+    params = Parameters{(:t, :μ)}(2.0, 1.0)
+    gen = SimplifiedGenerator(params, genops, table=table, boundary=plain)
+    @test Parameters(gen) == params
+    @test expand!(Operators{idtype(optp), optp}(), gen) == expand(gen) == tops₁+tops₂*2.0+μops
+    @test empty!(deepcopy(gen)) == SimplifiedGenerator(params, empty(genops), table=empty(table), boundary=plain) == empty(gen)
+    @test reset!(empty(gen), genops, table=table) == gen
+    @test update!(gen, μ=1.5)|>expand == tops₁+tops₂*2.0+μops*1.5
 end
