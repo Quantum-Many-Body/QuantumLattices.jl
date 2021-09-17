@@ -1281,12 +1281,18 @@ function reset!(gen::SimplifiedGenerator, operators::GenOperators; table::Union{
 end
 
 """
-    (transformation::Transformation)(gen::Generator; table::Union{Table, Nothing}=gen.table, boundary::Boundary=gen.boundary) -> SimplifiedGenerator
+    (transformation::Transformation)(gen::AbstractGenerator;
+        table::Union{Table, Nothing}=getcontent(gen, :table),
+        boundary::Boundary=getcontent(gen, :boundary)
+        )
 
 Get the result of a transformation on the generated operators.
 """
-function (transformation::Transformation)(gen::Generator; table::Union{Table, Nothing}=gen.table, boundary::Boundary=gen.boundary)
-    return SimplifiedGenerator(Parameters(gen), transformation(gen.operators), table=table, boundary=boundary)
+function (transformation::Transformation)(gen::AbstractGenerator;
+        table::Union{Table, Nothing}=getcontent(gen, :table),
+        boundary::Boundary=getcontent(gen, :boundary)
+        )
+    return SimplifiedGenerator(Parameters(gen), transformation(getcontent(gen, :operators)), table=table, boundary=boundary)
 end
 
 end  # module
