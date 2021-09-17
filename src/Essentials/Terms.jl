@@ -3,7 +3,7 @@ module Terms
 using MacroTools: @capture
 using Printf: @printf, @sprintf
 using StaticArrays: SVector
-using ..QuantumAlgebras: SimpleID, ID, Element, Elements
+using ..QuantumAlgebras: SimpleID, ID, Element, Elements, Transformation
 using ..Spatials: AbstractPID, AbstractBond, Point, Bonds, AbstractLattice, acrossbonds, isintracell, pidtype
 using ..DegreesOfFreedom: IID, SimpleIID, CompositeIID, Internal, CompositeInternal, InternalIndex
 using ..DegreesOfFreedom: Hilbert, AbstractOID, Index, OID, oidtype, Operator, Operators, Table, Boundary, plain
@@ -956,6 +956,18 @@ Reset a set of operators by the new terms, bonds and Hilbert space.
 end
 
 """
+    (transformation::Transformation)(genops::GenOperators) -> GenOperators
+
+Get the transformed set of operators.
+"""
+function (transformation::Transformation)(genops::GenOperators)
+    constops = transformation(genops.constops)
+    alterops = NamedContainer{keys(genops.alterops)}(map(transformation, values(genops.alterops)))
+    boundops = NamedContainer{keys(genops.boundops)}(map(transformation, values(genops.boundops)))
+    return GenOperators(constops, alterops, boundops)
+end
+
+"""
     AbstractGenerator{T<:Union{Table, Nothing}, B<:Boundary, OS<:GenOperators}
 
 Abstract generator.
@@ -1266,6 +1278,15 @@ function reset!(gen::SimplifiedGenerator, operators::GenOperators; table::Union{
     isnothing(gen.table) || isnothing(table) || merge!(empty!(gen.table), table)
     merge!(empty!(gen.operators), operators)
     return gen
+end
+
+"""
+    (transformation::Transformation)(gen::Generator; table::Union{Table, Nothing}=gen.table, boundary::Boundary=gen.boundary) -> SimplifiedGenerator
+
+Get the result of a transformation on the generated operators.
+"""
+function (transformation::Transformation)(gen::Generator; table::Union{Table, Nothing}=gen.table, boundary::Boundary=gen.boundary)
+    return SimplifiedGenerator(Parameters(gen), transformation(gen.operators), table=table, boundary=boundary)
 end
 
 end  # module

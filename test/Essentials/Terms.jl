@@ -2,7 +2,7 @@ using Test
 using Printf: @sprintf
 using StaticArrays: SVector
 using QuantumLattices.Essentials.Terms
-using QuantumLattices.Essentials.QuantumAlgebras: ID, id, idtype
+using QuantumLattices.Essentials.QuantumAlgebras: ID, id, idtype, Identity
 using QuantumLattices.Essentials.Spatials: Point, PID, CPID, Bond, Bonds, Lattice, acrossbonds, zerothbonds
 using QuantumLattices.Essentials.DegreesOfFreedom: SimpleIID, SimpleInternal, CompositeIID, Hilbert, Index, Table, OID, OIDToTuple, Operator, Operators, plain
 using QuantumLattices.Essentials: kind, update!, reset!
@@ -290,6 +290,7 @@ end
     tops₁ = expand(t, filter(acrossbonds, bonds, Val(:exclude)), hilbert, true, table=table)
     tops₂ = expand(one(t), filter(acrossbonds, bonds, Val(:include)), hilbert, true, table=table)
     μops = expand(one(μ), filter(zerothbonds, bonds, Val(:include)), hilbert, true, table=table)
+    i = Identity()
 
     optp = Operator{Float, ID{OID{Index{PID, TID{Int}}, SVector{2, Float}}, 2}}
     genops = GenOperators(tops₁, NamedContainer{(:μ,)}((μops,)), NamedContainer{(:t, :μ)}((tops₂, Operators{optp|>idtype, optp}())))
@@ -302,26 +303,28 @@ end
     @test empty(genops) == GenOperators(empty(μops), NamedContainer{(:μ,)}((empty(μops),)), NamedContainer{(:t, :μ)}((empty(μops), empty(μops))))
     @test merge!(empty(genops), genops) == merge(genops, genops) == genops
     @test reset!(deepcopy(genops), (t, μ), bonds, hilbert, true, table=table) == genops
+    @test i(genops) == genops
 
-    gen = Generator((t, μ), bonds, hilbert; half=true, table=table)
-    @test gen == deepcopy(gen) && isequal(gen, deepcopy(gen))
-    @test Parameters(gen) == Parameters{(:t, :μ)}(2.0, 1.0)
-    @test expand!(Operators{idtype(optp), optp}(), gen) == expand(gen) == tops₁+tops₂*2.0+μops
-    @test expand(gen, :t) == tops₁+tops₂*2.0
-    @test expand(gen, :μ) == μops
-    @test expand(gen, 1)+expand(gen, 2)+expand(gen, 3)+expand(gen, 4) == expand(gen)
-    @test expand(gen, :μ, 1)+expand(gen, :μ, 2) == μops
-    @test expand(gen, :t, 3) == tops₁
-    @test expand(gen, :t, 4) == tops₂*2.0
-    @test empty!(deepcopy(gen)) == Generator((t, μ), empty(bonds), empty(hilbert), half=true, table=empty(table), boundary=plain) == empty(gen)
-    @test reset!(empty(gen), lattice) == gen
-    @test update!(gen, μ=1.5)|>expand == tops₁+tops₂*2.0+μops*1.5
+    cgen = Generator((t, μ), bonds, hilbert; half=true, table=table, boundary=plain)
+    @test cgen == deepcopy(cgen) && isequal(cgen, deepcopy(cgen))
+    @test Parameters(cgen) == Parameters{(:t, :μ)}(2.0, 1.0)
+    @test expand!(Operators{idtype(optp), optp}(), cgen) == expand(cgen) == tops₁+tops₂*2.0+μops
+    @test expand(cgen, :t) == tops₁+tops₂*2.0
+    @test expand(cgen, :μ) == μops
+    @test expand(cgen, 1)+expand(cgen, 2)+expand(cgen, 3)+expand(cgen, 4) == expand(cgen)
+    @test expand(cgen, :μ, 1)+expand(cgen, :μ, 2) == μops
+    @test expand(cgen, :t, 3) == tops₁
+    @test expand(cgen, :t, 4) == tops₂*2.0
+    @test empty!(deepcopy(cgen)) == Generator((t, μ), empty(bonds), empty(hilbert), half=true, table=empty(table), boundary=plain) == empty(cgen)
+    @test reset!(empty(cgen), lattice) == cgen
+    @test update!(cgen, μ=1.5)|>expand == tops₁+tops₂*2.0+μops*1.5
 
     params = Parameters{(:t, :μ)}(2.0, 1.0)
-    gen = SimplifiedGenerator(params, genops, table=table, boundary=plain)
-    @test Parameters(gen) == params
-    @test expand!(Operators{idtype(optp), optp}(), gen) == expand(gen) == tops₁+tops₂*2.0+μops
-    @test empty!(deepcopy(gen)) == SimplifiedGenerator(params, empty(genops), table=empty(table), boundary=plain) == empty(gen)
-    @test reset!(empty(gen), genops, table=table) == gen
-    @test update!(gen, μ=1.5)|>expand == tops₁+tops₂*2.0+μops*1.5
+    sgen = SimplifiedGenerator(params, genops, table=table, boundary=plain)
+    @test Parameters(sgen) == params
+    @test expand!(Operators{idtype(optp), optp}(), sgen) == expand(sgen) == tops₁+tops₂*2.0+μops
+    @test empty!(deepcopy(sgen)) == SimplifiedGenerator(params, empty(genops), table=empty(table), boundary=plain) == empty(sgen)
+    @test reset!(empty(sgen), genops, table=table) == sgen
+    @test update!(sgen, μ=1.5)|>expand == tops₁+tops₂*2.0+μops*1.5
+    @test i(cgen) == sgen
 end

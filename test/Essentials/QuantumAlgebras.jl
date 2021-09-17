@@ -49,21 +49,21 @@ struct AOperator{V<:Number, I<:ID{SimpleID}} <: Element{V, I}
     value::V
     id::I
 end
-⊗(m1::AOperator, m2::AOperator) = m1 * m2
-⋅(m1::AOperator, m2::AOperator) = m1 * m2
+⊗(m₁::AOperator, m₂::AOperator) = m₁ * m₂
+⋅(m₁::AOperator, m₂::AOperator) = m₁ * m₂
 Base.show(io::IO, opt::AOperator) = @printf io "AOperator(value=%s, id=%s)" opt.value opt.id
 Base.repr(opt::AOperator) = "AOperator($(opt.value), $(opt.id))"
 
-function permute(id1::AID, id2::AID)
-    @assert id1 ≠ id2 "permute error: permuted ids should not be equal to each other."
-    if (id1.nambu == 3-id2.nambu) && (id1.orbital == id2.orbital)
-        if id1.nambu == 2
-            return (AOperator(1, ID()), AOperator(1, ID(id2, id1)))
+function permute(id₁::AID, id₂::AID)
+    @assert id₁ ≠ id₂ "permute error: permuted ids should not be equal to each other."
+    if (id₁.nambu == 3-id₂.nambu) && (id₁.orbital == id₂.orbital)
+        if id₁.nambu == 2
+            return (AOperator(1, ID()), AOperator(1, ID(id₂, id₁)))
         else
-            return (AOperator(-1, ID()), AOperator(1, ID(id2, id1)))
+            return (AOperator(-1, ID()), AOperator(1, ID(id₂, id₁)))
         end
     else
-        return (AOperator(1, ID(id2, id1)),)
+        return (AOperator(1, ID(id₂, id₁)),)
     end
 end
 
@@ -111,9 +111,9 @@ end
     @test AOperator(1, ID())-2 == 1-AOperator(2, ID()) == AOperator(1, ID())-AOperator(2, ID()) == AOperator(-1, ID())
     @test AOperator(2, ID())*AOperator(3, ID()) == AOperator(6, ID())
 
-    opt1 = AOperator(1.0, ID(AID(1, 1)))
-    opt2 = AOperator(2.0, ID(AID(1, 2)))
-    opts = Elements(opt1.id=>opt1, opt2.id=>opt2)
+    opt₁ = AOperator(1.0, ID(AID(1, 1)))
+    opt₂ = AOperator(2.0, ID(AID(1, 2)))
+    opts = Elements(opt₁.id=>opt₁, opt₂.id=>opt₂)
     @test string(opts) == "Elements with 2 entries:\n  AOperator(value=2.0, id=ID(AID(1, 2)))\n  AOperator(value=1.0, id=ID(AID(1, 1)))\n"
     @test repr(opts) == "Elements with 2 entries:\n  AOperator(2.0, ID(AID(1, 2)))\n  AOperator(1.0, ID(AID(1, 1)))"
     @test opts|>deepcopy == opts
@@ -127,22 +127,22 @@ end
     @test mul!(deepcopy(opts), 2.0) == mul!(deepcopy(opts), AOperator(2, ID())) == opts*2 == opts*AOperator(2, ID())
     @test div!(deepcopy(opts), 2.0) == div!(deepcopy(opts), AOperator(2, ID())) == opts/2 == opts/AOperator(2, ID())
     @test +opts == opts+zero(Elements) == zero(Elements)+opts == opts == opts-zero(Elements)
-    @test opt1+opt2 == opts
-    @test opt1+opts == opts+opt1 == Elements(opt1*2, opt2)
-    @test opts+opts == Elements(opt1*2, opt2*2)
-    @test -opts == Elements(-opt1, -opt2) == zero(Elements)-opts
+    @test opt₁+opt₂ == opts
+    @test opt₁+opts == opts+opt₁ == Elements(opt₁*2, opt₂)
+    @test opts+opts == Elements(opt₁*2, opt₂*2)
+    @test -opts == Elements(-opt₁, -opt₂) == zero(Elements)-opts
     @test 1.0-opts == AOperator(1.0, ID())-opts == -opts+1.0
     @test opts-1.0 == opts-AOperator(1.0, ID())
     @test opt-1.0 == opt-AOperator(1.0, ID()) == opt+AOperator(-1.0, ID())
     @test 1.0-opt == AOperator(1.0, ID())-opt == 1.0+(-opt)
-    @test zero(Elements) == opt1-opt1 == opts-opts
+    @test zero(Elements) == opt₁-opt₁ == opts-opts
     @test opts-opts == zero(Elements)
     @test isequal(zero(Elements), opts-opts)
     @test isequal(opts-opts, zero(Elements))
-    @test opts-opt1 == Elements(opt2)
-    @test opt1-opts == Elements(-opt2)
-    @test 2*opts == opts*2 == Elements(opt1*2, opt2*2) == AOperator(2, ID())*opts
-    @test opts/2 == Elements(opt1/2, opt2/2)
+    @test opts-opt₁ == Elements(opt₂)
+    @test opt₁-opts == Elements(-opt₂)
+    @test 2*opts == opts*2 == Elements(opt₁*2, opt₂*2) == AOperator(2, ID())*opts
+    @test opts/2 == Elements(opt₁/2, opt₂/2)
     @test opts^2 == opts*opts
     @test opts*zero(Elements) == zero(Elements)*opts == nothing
 
@@ -150,43 +150,52 @@ end
     @test add!(deepcopy(temp), 1) == add!(deepcopy(temp), AOperator(1, ID())) == opts+1 == 1+opts == opts+AOperator(1, ID()) == AOperator(1, ID())+opts
     @test sub!(deepcopy(temp), 1) == sub!(deepcopy(temp), AOperator(1, ID())) == opts-1 == opts-AOperator(1, ID())
 
-    opt3 = AOperator(3, ID(AID(1, 3)))
-    @test opt1*opt2 == opt1⊗opt2 == opt1⋅opt2 == AOperator(2.0, ID(AID(1, 1), AID(1, 2)))
-    @test opts*opt3 == opts⊗opt3 == opts⋅opt3 == Elements(AOperator(3.0, ID(AID(1, 1), AID(1, 3))), AOperator(6.0, ID(AID(1, 2), AID(1, 3))))
-    @test opt3*opts == opt3⊗opts == opt3⋅opts == Elements(AOperator(3.0, ID(AID(1, 3), AID(1, 1))), AOperator(6.0, ID(AID(1, 3), AID(1, 2))))
-    @test opts*Elements(opt3) == opts⊗Elements(opt3) == opts⋅Elements(opt3) == Elements(AOperator(3.0, ID(AID(1, 1), AID(1, 3))), AOperator(6.0, ID(AID(1, 2), AID(1, 3))))
+    opt₃ = AOperator(3, ID(AID(1, 3)))
+    @test opt₁*opt₂ == opt₁⊗opt₂ == opt₁⋅opt₂ == AOperator(2.0, ID(AID(1, 1), AID(1, 2)))
+    @test opts*opt₃ == opts⊗opt₃ == opts⋅opt₃ == Elements(AOperator(3.0, ID(AID(1, 1), AID(1, 3))), AOperator(6.0, ID(AID(1, 2), AID(1, 3))))
+    @test opt₃*opts == opt₃⊗opts == opt₃⋅opts == Elements(AOperator(3.0, ID(AID(1, 3), AID(1, 1))), AOperator(6.0, ID(AID(1, 3), AID(1, 2))))
+    @test opts*Elements(opt₃) == opts⊗Elements(opt₃) == opts⋅Elements(opt₃) == Elements(AOperator(3.0, ID(AID(1, 1), AID(1, 3))), AOperator(6.0, ID(AID(1, 2), AID(1, 3))))
 
     table = Dict(AID(1, 1)=>1, AID(1, 2)=>2)
     opt = AOperator(2.0, ID(AID(1, 1), AID(1, 2)))
     @test sequence(opt, table) == (1, 2)
     @test split(opt) == (2.0, AOperator(1.0, ID(AID(1, 1))), AOperator(1.0, ID(AID(1, 2))))
 
-    opt1 = AOperator(1, ID(AID(1, 1)))
-    opt2 = AOperator(2, ID(AID(1, 2)))
-    opts = Elements(opt1.id=>opt1, opt2.id=>opt2)
+    opt₁ = AOperator(1, ID(AID(1, 1)))
+    opt₂ = AOperator(2, ID(AID(1, 2)))
+    opts = Elements(opt₁.id=>opt₁, opt₂.id=>opt₂)
     opt = AOperator(3, ID())
-    @test opt1//3 == opt1//opt == AOperator(1//3, ID(AID(1, 1)))
-    @test opt2//3 == opt2//opt == AOperator(2//3, ID(AID(1, 2)))
-    @test opts//3 == opts//opt == Elements(opt1.id=>AOperator(1//3, ID(AID(1, 1))), opt2.id=>AOperator(2//3, ID(AID(1, 2))))
+    @test opt₁//3 == opt₁//opt == AOperator(1//3, ID(AID(1, 1)))
+    @test opt₂//3 == opt₂//opt == AOperator(2//3, ID(AID(1, 2)))
+    @test opts//3 == opts//opt == Elements(opt₁.id=>AOperator(1//3, ID(AID(1, 1))), opt₂.id=>AOperator(2//3, ID(AID(1, 2))))
 end
 
 @testset "replace" begin
-    id1, id2 = AID(1, 1), AID(1, 2)
-    opt = AOperator(1.5, ID(id1, id2))
-    id3, id4 = AID(2, 1), AID(2, 2)
-    opt1 = AOperator(2.0, ID(id3))+AOperator(3.0, ID(id4))
-    opt2 = AOperator(2.0, ID(id3))-AOperator(3.0, ID(id4))
-    @test replace(opt, id1=>opt1, id2=>opt2) == 1.5*opt1*opt2
-    @test replace(Elements(opt), id2=>opt2, id1=>opt1) == 1.5*opt1*opt2
+    id₁, id₂ = AID(1, 1), AID(1, 2)
+    opt = AOperator(1.5, ID(id₁, id₂))
+    id₃, id₄ = AID(2, 1), AID(2, 2)
+    opt₁ = AOperator(2.0, ID(id₃))+AOperator(3.0, ID(id₄))
+    opt₂ = AOperator(2.0, ID(id₃))-AOperator(3.0, ID(id₄))
+    @test replace(opt, id₁=>opt₁, id₂=>opt₂) == 1.5*opt₁*opt₂
+    @test replace(Elements(opt), id₂=>opt₂, id₁=>opt₁) == 1.5*opt₁*opt₂
 end
 
 @testset "permute" begin
-    id1, id2 = AID(1, 1), AID(1, 2)
-    opt1 = AOperator(1.5, ID(id1, id2))
-    opt2 = AOperator(1.5, ID(id2, id1))
-    opt0 = AOperator(1.5, ID())
-    @test permute(opt1, Dict(id1=>1, id2=>2)) == opt2-opt0
-    @test permute(opt1+opt2, Dict(id1=>1, id2=>2)) == 2*opt2-opt0
-    @test permute(opt2, Dict(id1=>2, id2=>1)) == opt1+opt0
-    @test permute(opt1+opt2, Dict(id1=>2, id2=>1)) == 2*opt1+opt0
+    id₁, id₂ = AID(1, 1), AID(1, 2)
+    opt₁ = AOperator(1.5, ID(id₁, id₂))
+    opt₂ = AOperator(1.5, ID(id₂, id₁))
+    opt₀ = AOperator(1.5, ID())
+    @test permute(opt₁, Dict(id₁=>1, id₂=>2)) == opt₂-opt₀
+    @test permute(opt₁+opt₂, Dict(id₁=>1, id₂=>2)) == 2*opt₂-opt₀
+    @test permute(opt₂, Dict(id₁=>2, id₂=>1)) == opt₁+opt₀
+    @test permute(opt₁+opt₂, Dict(id₁=>2, id₂=>1)) == 2*opt₁+opt₀
+end
+
+@testset "Transformation" begin
+    m = AOperator(1.0, ID(AID(1, 1)))
+    s = Elements(m)
+    i = Identity()
+    @test valtype(i, m) == valtype(typeof(i), typeof(m)) == typeof(m)
+    @test valtype(i, s) == valtype(typeof(i), typeof(s)) == typeof(s)
+    @test i(m)==m && i(s)==s
 end

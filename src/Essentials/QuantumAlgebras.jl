@@ -10,6 +10,7 @@ import ...Interfaces: id, value, rank, add!, sub!, mul!, div!, ⊗, ⋅, permute
 import ...Prerequisites.Traits: contentnames, dissolve, isparameterbound, parameternames
 
 export SimpleID, ID, Element, Scalar, Elements, idtype, sequence
+export Transformation, Identity
 
 """
     SimpleID <: NamedVector
@@ -788,5 +789,37 @@ end
     M = reparameter(valtype(ms), :id, ID{ms|>keytype|>eltype})
     permute!(Elements{idtype(M), M}(), ms, table)
 end
+
+"""
+    Transformation <: Function
+
+Abstract transformation that could transform the element/elements.
+"""
+abstract type Transformation <: Function end
+@inline Base.valtype(transformation::Transformation, m::Element) = valtype(typeof(transformation), typeof(m))
+@inline Base.valtype(transformation::Transformation, ms::Elements) = valtype(typeof(transformation), typeof(ms))
+@inline Base.valtype(T::Type{<:Transformation}, MS::Type{<:Elements}) = Elements{idtype(valtype(T, valtype(MS))), valtype(T, valtype(MS))}
+
+"""
+    (transformation::Transformation)(ms::Elements) -> Elements
+
+Get the transformed elements.
+"""
+function (transformation::Transformation)(ms::Elements)
+    result = valtype(transformation, ms)()
+    for m in values(ms)
+        add!(result, transformation(m))
+    end
+    return result
+end
+
+"""
+    Identity <: Transformation
+
+The identity transformation.
+"""
+struct Identity <: Transformation end
+@inline Base.valtype(::Type{Identity}, M::Type{<:Element}) = M
+@inline (i::Identity)(m::Element) = m
 
 end #module
