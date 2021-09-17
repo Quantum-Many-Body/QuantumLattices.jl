@@ -13,8 +13,8 @@ export VectorSpace, EnumerativeVectorSpace, CartesianVectorSpace, NamedVectorSpa
 Abstract vector space.
 """
 abstract type VectorSpace{B} <: AbstractVector{B} end
-@inline Base.:(==)(vs1::VectorSpace, vs2::VectorSpace) = ==(efficientoperations, vs1, vs2)
-@inline Base.isequal(vs1::VectorSpace, vs2::VectorSpace) = isequal(efficientoperations, vs1, vs2)
+@inline Base.:(==)(vs₁::VectorSpace, vs₂::VectorSpace) = ==(efficientoperations, vs₁, vs₂)
+@inline Base.isequal(vs₁::VectorSpace, vs₂::VectorSpace) = isequal(efficientoperations, vs₁, vs₂)
 @inline Base.size(vs::VectorSpace) = (dimension(vs),)
 @inline Base.iterate(vs::VectorSpace, state::Integer=1) = state>length(vs) ? nothing : (vs[state], state+1)
 @inline Base.issorted(vs::VectorSpace) = false
@@ -101,6 +101,8 @@ The subtypes must have the following predefined content:
 """
 abstract type NamedVectorSpace{M, NS, BS<:Tuple} <: CartesianVectorSpace{NamedTuple{NS, BS}} end
 @inline contentnames(::Type{<:NamedVectorSpace}) = (:contents,)
+@inline Base.:(==)(vs₁::NamedVectorSpace, vs₂::NamedVectorSpace) = ==(efficientoperations, vs₁, vs₂) && keys(vs₁)==keys(vs₂)
+@inline Base.isequal(vs₁::NamedVectorSpace, vs₂::NamedVectorSpace) = isequal(efficientoperations, vs₁, vs₂) && isequal(keys(vs₁), keys(vs₂))
 @inline rank(vs::NamedVectorSpace) = rank(typeof(vs))
 @inline rank(::Type{<:NamedVectorSpace{:⊕}}) = 1
 @inline rank(::Type{<:NamedVectorSpace{:⊗, NS}}) where NS = length(NS)

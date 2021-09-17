@@ -91,6 +91,9 @@ end
 
 @testset "NamedVectorSpace" begin
     nvs = VSZNamedVectorSpace{(:t, :U)}([1, 2], [8.0, 9.0])
+    @test nvs==deepcopy(nvs) && isequal(nvs, deepcopy(nvs))
+    @test nvs≠VSZNamedVectorSpace{(:t, :V)}([1, 2], [8.0, 9.0])
+    @test !isequal(nvs, VSZNamedVectorSpace{(:t, :V)}([1, 2], [8.0, 9.0]))
     @test nvs|>keys == nvs|>typeof|>keys == (:t, :U)
     @test nvs|>values == ([1, 2], [8.0, 9.0])
     @test nvs|>pairs|>collect == [:t=>[1, 2], :U=>[8.0, 9.0]]

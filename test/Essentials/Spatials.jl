@@ -40,8 +40,11 @@ end
 end
 
 @testset "volume" begin
-    @test volume([1, 0], [0, 1], [1, 1]) == 0
-    @test volume([1, 0, 0], [0, 1, 0], [0, 0, 1]) == 1
+    @test volume([[1]]) == volume([1]) == volume([1, 0]) == volume([1, 0, 0]) == 1
+    @test volume([1], [2]) == 0
+    @test volume([[1, 0], [0, 1]]) == volume([1, 0], [0, 1]) == volume([1, 0, 0], [0, 1, 0]) == 1
+    @test volume([1], [2], [3]) == volume([1, 0], [0, 1], [1, 1]) == 0
+    @test volume([[1, 0, 0], [0, 1, 0], [0, 0, 1]]) == volume([1, 0, 0], [0, 1, 0], [0, 0, 1]) == 1
 end
 
 @testset "isparallel" begin
@@ -332,21 +335,21 @@ end
 @testset "BrillouinZone" begin
     @test contentnames(BrillouinZone) == (:reciprocals, :contents)
 
-    recipls = reciprocals([[1.0, 0.0, 0.0]])
-    @test BrillouinZone{Momentum₁{10}}(recipls) == BrillouinZone(recipls, 10)
-
-    recipls = reciprocals([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
-    @test BrillouinZone{Momentum₂{10, 10}}(recipls) == BrillouinZone(recipls, 10)
-
-    recipls = reciprocals([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
-    @test BrillouinZone{Momentum₃{10, 10, 10}}(recipls) == BrillouinZone(recipls, 10)
-
     recipls = reciprocals([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
     momenta = AbelianNumbers('C', [Momentum₂{9, 10}(j-1, i-1) for (i, j) in Iterators.flatten((Iterators.product(1:10, 1:9),))], collect(0:90), :indptr)
     bz = BrillouinZone(recipls, momenta)
     @test getcontent(bz, Val(:contents)) == (bz.momenta,)
     @test dtype(bz) == dtype(typeof(bz)) == Float
-    @test bz == BrillouinZone{Momentum₂{9, 10}}(recipls)
+    @test bz == BrillouinZone(Momentum₂{9, 10}, recipls)
+
+    recipls = reciprocals([[1.0, 0.0, 0.0]])
+    @test BrillouinZone{:q}(Momentum₁{10}, recipls) == BrillouinZone{:q}(recipls, 10)
+
+    recipls = reciprocals([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
+    @test BrillouinZone(Momentum₂{10, 10}, recipls) == BrillouinZone(recipls, 10)
+
+    recipls = reciprocals([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
+    @test BrillouinZone(Momentum₃{10, 10, 10}, recipls) == BrillouinZone(recipls, 10)
 end
 
 @testset "ReciprocalZone" begin
@@ -354,17 +357,22 @@ end
 
     rz = ReciprocalZone([[1.0]], len=10)
     @test getcontent(rz, :contents) == (rz.momenta,)
+    @test rz == ReciprocalZone(rz.momenta, rz.volume)
     @test rz == ReciprocalZone([[1.0]], Segment(-1//2, 1//2, 10))
     @test rz == ReciprocalZone([[1.0]], (Segment(-1//2, 1//2, 10),))
-    @test rz == ReciprocalZone([SVector(1.0)], (Segment(-1//2, 1//2, 10),))
+
+    rz = ReciprocalZone{:q}([[1.0]], len=10)
+    @test rz == ReciprocalZone{:q}(rz.momenta, rz.volume)
+    @test rz == ReciprocalZone{:q}([[1.0]], Segment(-1//2, 1//2, 10))
+    @test rz == ReciprocalZone{:q}([[1.0]], (Segment(-1//2, 1//2, 10),))
 
     b₁, b₂, b₃ = [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]
     @test ReciprocalZone([b₁], Segment(-1, +1, 10)).volume == 2
     @test ReciprocalZone([b₁, b₂], Segment(-1, +1, 10), Segment(-1, +1, 10)).volume == 4
     @test ReciprocalZone([b₁, b₂, b₃], Segment(-1, +1, 10), Segment(-1, +1, 10), Segment(-1, +1, 10)).volume == 8
 
-    rz = ReciprocalZone(BrillouinZone{Momentum₂{8, 8}}([b₁, b₂]))
-    @test rz == ReciprocalZone([b₁, b₂], Segment(0, 1, 8), Segment(0, 1, 8))
+    rz = ReciprocalZone(BrillouinZone{:q}(Momentum₂{8, 8}, [b₁, b₂]))
+    @test rz == ReciprocalZone{:q}([b₁, b₂], Segment(0, 1, 8), Segment(0, 1, 8))
 end
 
 @testset "ReciprocalPath" begin
@@ -374,14 +382,22 @@ end
     s₁ = Segment((0.0, 0.0), (0.5, 0.0), 100)
     s₂ = Segment((0.5, 0.0), (0.5, 0.5), 100)
     s₃ = Segment((0.5, 0.5), (0.0, 0.0), 100)
+
     rp = ReciprocalPath([b₁, b₂], s₁, s₂, s₃)
     @test getcontent(rp, :contents) == (rp.momenta,)
+    @test rp == ReciprocalPath(rp.momenta)
     @test rp == ReciprocalPath([b₁, b₂], (s₁, s₂, s₃))
-    @test rp == ReciprocalPath([SVector(1.0, 0.0), SVector(0.0, 1.0)], (s₁, s₂, s₃))
+
+    rp = ReciprocalPath{:q}([b₁, b₂], s₁, s₂, s₃)
+    @test rp == ReciprocalPath{:q}(rp.momenta)
+    @test rp == ReciprocalPath{:q}([b₁, b₂], (s₁, s₂, s₃))
+
+    rp = ReciprocalPath([b₁+b₂], line"X₂-X₁", len=10)
+    @test rp == ReciprocalPath([b₁+b₂], (-1//2,)=>(1//2,), len=10)
 
     rp = ReciprocalPath([b₁, b₂], rectangle"Γ-X-M-Γ", len=10)
     @test rp == ReciprocalPath([b₁, b₂], (0//1, 0//1)=>(1//2, 0//1), (1//2, 0//1)=>(1//2, 1//2), (1//2, 1//2)=>(0//1, 0//1), len=10)
 
-    rp = ReciprocalPath([b₁, b₂], hexagon"Γ-K-M-Γ", len=10)
-    @test rp == ReciprocalPath([b₁, b₂], (0//1, 0//1)=>(1//3, 1//3), (1//3, 1//3)=>(1//2, 0//1), (1//2, 0//1)=>(0//1, 0//1), len=10)
+    rp = ReciprocalPath{:q}([b₁, b₂], hexagon"Γ-K-M-Γ", len=10)
+    @test rp == ReciprocalPath{:q}([b₁, b₂], (0//1, 0//1)=>(1//3, 1//3), (1//3, 1//3)=>(1//2, 0//1), (1//2, 0//1)=>(0//1, 0//1), len=10)
 end
