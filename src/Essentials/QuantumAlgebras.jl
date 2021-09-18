@@ -9,41 +9,41 @@ using ...Prerequisites.Traits: rawtype, fulltype, parametertype, parameterpairs,
 import ...Interfaces: id, value, rank, add!, sub!, mul!, div!, ⊗, ⋅, permute
 import ...Prerequisites.Traits: contentnames, dissolve, isparameterbound, parameternames
 
-export SimpleID, ID, Element, Scalar, Elements, idtype, sequence
+export SingularID, ID, Element, Scalar, Elements, idtype, sequence
 export Transformation, Identity, Numericalization
 
 """
-    SimpleID <: NamedVector
+    SingularID <: NamedVector
 
-A simple id is the building block of the id system of an algebra over a field.
+A singular id is the building block of the id system of an algebra over a field.
 """
-abstract type SimpleID <: NamedVector end
+abstract type SingularID <: NamedVector end
 
 """
-    ID{I<:SimpleID, N}
+    ID{I<:SingularID, N}
 
 The (composite) id system of an algebra over a field.
 
-Type alias for `NTuple{N, I} where {N, I<:SimpleID}`.
+Type alias for `NTuple{N, I} where {N, I<:SingularID}`.
 """
-const ID{I<:SimpleID, N} = NTuple{N, I}
-Base.show(io::IO, cid::Tuple{SimpleID, Vararg{SimpleID}}) = @printf io "ID(%s)" join(cid, ", ")
+const ID{I<:SingularID, N} = NTuple{N, I}
+Base.show(io::IO, cid::Tuple{SingularID, Vararg{SingularID}}) = @printf io "ID(%s)" join(cid, ", ")
 
 """
-    ID(ids::SimpleID...)
-    ID(ids::NTuple{N, SimpleID}) where N
+    ID(ids::SingularID...)
+    ID(ids::NTuple{N, SingularID}) where N
 
-Get the composite id from simple ids.
+Get the composite id from singular ids.
 """
-ID(ids::SimpleID...) = ids
-ID(ids::NTuple{N, SimpleID}) where {N} = ids
+ID(ids::SingularID...) = ids
+ID(ids::NTuple{N, SingularID}) where {N} = ids
 
 """
-    ID(::Type{SID}, attrs::Vararg{NTuple{N}, M}) where {SID<:SimpleID, N, M}
+    ID(::Type{SID}, attrs::Vararg{NTuple{N}, M}) where {SID<:SingularID, N, M}
 
-Get the composite id from the components of simple ids.
+Get the composite id from the components of singular ids.
 """
-@generated function ID(::Type{SID}, attrs::Vararg{NTuple{N, Any}, M}) where {SID<:SimpleID, N, M}
+@generated function ID(::Type{SID}, attrs::Vararg{NTuple{N, Any}, M}) where {SID<:SingularID, N, M}
     exprs = []
     for i = 1:N
         args = [:(attrs[$j][$i]) for j = 1:M]
@@ -53,38 +53,38 @@ Get the composite id from the components of simple ids.
 end
 
 """
-    propertynames(::Type{I}) where I<:ID{SimpleID} -> Tuple{Vararg{Symbol}}
+    propertynames(::Type{I}) where I<:ID{SingularID} -> Tuple{Vararg{Symbol}}
 
 Get the property names of a composite id.
 """
-@generated function Base.propertynames(I::ID{SimpleID})
+@generated function Base.propertynames(I::ID{SingularID})
     exprs = [QuoteNode(Symbol(name, 's')) for name in I|>eltype|>fieldnames]
     return Expr(:tuple, exprs...)
 end
 
 """
-    getproperty(cid::ID{SimpleID}, name::Symbol)
+    getproperty(cid::ID{SingularID}, name::Symbol)
 
 Get the property of a composite id.
 """
-Base.getproperty(cid::ID{SimpleID}, name::Symbol) = idgetproperty(cid, Val(name), Val(cid|>propertynames))
-@generated function idgetproperty(cid::ID{SimpleID}, ::Val{name}, ::Val{names}) where {name, names}
+Base.getproperty(cid::ID{SingularID}, name::Symbol) = idgetproperty(cid, Val(name), Val(cid|>propertynames))
+@generated function idgetproperty(cid::ID{SingularID}, ::Val{name}, ::Val{names}) where {name, names}
     index = findfirst(isequal(name), names)::Int
     exprs = [:(getfield(cid[$i], $index)) for i = 1:fieldcount(cid)]
     return Expr(:tuple, exprs...)
 end
 
 """
-    promote_type(::Type{Tuple{}}, I::Type{<:ID{SimpleID, N}}) where N
-    promote_type(I::Type{<:ID{SimpleID, N}}, ::Type{Tuple{}}) where N
+    promote_type(::Type{Tuple{}}, I::Type{<:ID{SingularID, N}}) where N
+    promote_type(I::Type{<:ID{SingularID, N}}, ::Type{Tuple{}}) where N
 
 Define the promote rule for ID types.
 """
-@inline Base.promote_type(::Type{Tuple{}}, I::Type{<:Tuple{SimpleID, Vararg{SimpleID}}}) = ID{I|>eltype}
-@inline Base.promote_type(I::Type{<:Tuple{SimpleID, Vararg{SimpleID}}}, ::Type{Tuple{}}) = ID{I|>eltype}
+@inline Base.promote_type(::Type{Tuple{}}, I::Type{<:Tuple{SingularID, Vararg{SingularID}}}) = ID{I|>eltype}
+@inline Base.promote_type(I::Type{<:Tuple{SingularID, Vararg{SingularID}}}, ::Type{Tuple{}}) = ID{I|>eltype}
 
 """
-    isless(::Type{<:SimpleID}, cid₁::ID{SimpleID}, cid₂::ID{SimpleID}) -> Bool
+    isless(::Type{<:SingularID}, cid₁::ID{SingularID}, cid₂::ID{SingularID}) -> Bool
 
 Compare two ids and judge whether the first is less than the second.
 
@@ -92,37 +92,37 @@ The comparison rule are as follows:
 1. ids with smaller ranks are always less than those with higher ranks;
 2. if two ids are of the same rank, the comparison goes just like that between tuples.
 """
-@inline function Base.isless(::Type{<:SimpleID}, cid₁::ID{SimpleID}, cid₂::ID{SimpleID})
+@inline function Base.isless(::Type{<:SingularID}, cid₁::ID{SingularID}, cid₂::ID{SingularID})
     r₁, r₂ = cid₁|>rank, cid₂|>rank
     (r₁ < r₂) ? true : (r₁ > r₂) ? false : isless(cid₁, cid₂)
 end
 
 """
-    rank(id::ID{SimpleID}) -> Int
-    rank(::Type{<:ID{SimpleID}}) -> Any
-    rank(::Type{<:ID{SimpleID, N}}) where N -> Int
+    rank(id::ID{SingularID}) -> Int
+    rank(::Type{<:ID{SingularID}}) -> Any
+    rank(::Type{<:ID{SingularID, N}}) where N -> Int
 
 Get the rank of a composite id.
 """
-@inline rank(id::ID{SimpleID}) = id |> typeof |> rank
-@inline rank(::Type{<:ID{SimpleID}}) = Any
-@inline rank(::Type{<:ID{SimpleID, N}}) where N = N
+@inline rank(id::ID{SingularID}) = id |> typeof |> rank
+@inline rank(::Type{<:ID{SingularID}}) = Any
+@inline rank(::Type{<:ID{SingularID, N}}) where N = N
 
 """
-    *(sid₁::SimpleID, sid₂::SimpleID) -> ID{SimpleID}
-    *(sid::SimpleID, cid::ID{SimpleID}) -> ID{SimpleID}
-    *(cid::ID{SimpleID}, sid::SimpleID) -> ID{SimpleID}
-    *(cid₁::ID{SimpleID}, cid₂::ID{SimpleID}) -> ID{SimpleID}
+    *(sid₁::SingularID, sid₂::SingularID) -> ID{SingularID}
+    *(sid::SingularID, cid::ID{SingularID}) -> ID{SingularID}
+    *(cid::ID{SingularID}, sid::SingularID) -> ID{SingularID}
+    *(cid₁::ID{SingularID}, cid₂::ID{SingularID}) -> ID{SingularID}
 
 Get the product of the id system.
 """
-@inline Base.:*(sid₁::SimpleID, sid₂::SimpleID) = ID(sid₁, sid₂)
-@inline Base.:*(sid::SimpleID, cid::ID{SimpleID}) = ID(sid, cid...)
-@inline Base.:*(cid::ID{SimpleID}, sid::SimpleID) = ID(cid..., sid)
-@inline Base.:*(cid₁::ID{SimpleID}, cid₂::ID{SimpleID}) = ID(cid₁..., cid₂...)
+@inline Base.:*(sid₁::SingularID, sid₂::SingularID) = ID(sid₁, sid₂)
+@inline Base.:*(sid::SingularID, cid::ID{SingularID}) = ID(sid, cid...)
+@inline Base.:*(cid::ID{SingularID}, sid::SingularID) = ID(cid..., sid)
+@inline Base.:*(cid₁::ID{SingularID}, cid₂::ID{SingularID}) = ID(cid₁..., cid₂...)
 
 """
-    Element{V, I<:ID{SimpleID}}
+    Element{V, I<:ID{SingularID}}
 
 An element of an algebra over a field.
 
@@ -130,11 +130,11 @@ Basically, a concrete subtype should contain two predefined contents:
 - `value::V`: the coefficient of the element
 - `id::I`: the id of the element
 """
-abstract type Element{V, I<:ID{SimpleID}} end
+abstract type Element{V, I<:ID{SingularID}} end
 @inline contentnames(::Type{<:Element}) = (:value, :id)
 @inline parameternames(::Type{<:Element}) = (:value, :id)
 @inline isparameterbound(::Type{<:Element}, ::Val{:value}, ::Type{V}) where V = false
-@inline isparameterbound(::Type{<:Element}, ::Val{:id}, ::Type{I}) where I<:ID{SimpleID} = !isconcretetype(I) 
+@inline isparameterbound(::Type{<:Element}, ::Val{:id}, ::Type{I}) where I<:ID{SingularID} = !isconcretetype(I) 
 @inline Base.:(==)(m₁::Element, m₂::Element) = ==(efficientoperations, m₁, m₂)
 @inline Base.isequal(m₁::Element, m₂::Element) = isequal(efficientoperations, m₁, m₂)
 
@@ -310,14 +310,14 @@ Split an element into the coefficient and a sequence of rank-1 elements.
 end
 
 """
-    Elements{I<:ID{SimpleID}, M<:Element} <: AbstractDict{I, M}
+    Elements{I<:ID{SingularID}, M<:Element} <: AbstractDict{I, M}
 
 An set of elements of an algebra over a field.
 
-Type alias for `Dict{I<:ID{SimpleID}, M<:Element}`.
+Type alias for `Dict{I<:ID{SingularID}, M<:Element}`.
 Similar items are automatically merged thanks to the id system.
 """
-const Elements{I<:ID{SimpleID}, M<:Element} = Dict{I, M}
+const Elements{I<:ID{SingularID}, M<:Element} = Dict{I, M}
 function Base.show(io::IO, ms::Elements)
     @printf io "Elements with %s entries:\n" length(ms)
     for m in values(ms)
@@ -327,13 +327,13 @@ end
 
 """
     Elements(ms)
-    Elements(ms::Pair{I, M}...) where {I<:ID{SimpleID}, M<:Element}
+    Elements(ms::Pair{I, M}...) where {I<:ID{SingularID}, M<:Element}
     Elements(ms::Element...)
 
 Get the set of elements with similar items merged.
 """
 Elements(ms) = Base.dict_with_eltype((K, V)->Dict{K, V}, ms, eltype(ms))
-function Elements(ms::Pair{I, M}...) where {I<:ID{SimpleID}, M<:Element}
+function Elements(ms::Pair{I, M}...) where {I<:ID{SingularID}, M<:Element}
     result = Elements{I, M}()
     for (id, m) in ms
         result[id] = m
@@ -690,12 +690,12 @@ Get the sequence of the ids of an element according to a table.
 @generated sequence(m::Element, table) = Expr(:tuple, [:(get(table, id(m)[$i], nothing)) for i = 1:rank(m)]...)
 
 """
-    replace(m::Element, pairs::Pair{<:SimpleID, <:Union{Element, Elements}}...) -> Element/Elements
-    replace(ms::Elements, pairs::Pair{<:SimpleID, <:Union{Element, Elements}}...) -> Elements
+    replace(m::Element, pairs::Pair{<:SingularID, <:Union{Element, Elements}}...) -> Element/Elements
+    replace(ms::Elements, pairs::Pair{<:SingularID, <:Union{Element, Elements}}...) -> Elements
 
 Replace the rank-1 components of an element with new element/elements.
 """
-function Base.replace(m::Element, pairs::Pair{<:SimpleID, <:Union{Element, Elements}}...)
+function Base.replace(m::Element, pairs::Pair{<:SingularID, <:Union{Element, Elements}}...)
     replacedids = NTuple{length(pairs), idtype(m)|>eltype}(pair.first for pair in pairs)
     ms = split(m)
     result = ms[1]
@@ -705,14 +705,14 @@ function Base.replace(m::Element, pairs::Pair{<:SimpleID, <:Union{Element, Eleme
     end
     return result
 end
-function Base.replace(ms::Elements, pairs::Pair{<:SimpleID, <:Union{Element, Elements}}...)
+function Base.replace(ms::Elements, pairs::Pair{<:SingularID, <:Union{Element, Elements}}...)
     result = elementstype(pairs...)()
     for m in values(ms)
         add!(result, replace(m, pairs...))
     end
     return result
 end
-@generated function elementstype(ms::Vararg{Pair{<:SimpleID, <:Union{Element, Elements}}, N}) where N
+@generated function elementstype(ms::Vararg{Pair{<:SingularID, <:Union{Element, Elements}}, N}) where N
     M = Union{}
     for i = 1:N
         E = fieldtype(ms[i], 2)
@@ -723,11 +723,11 @@ end
 end
 
 """
-    permute(id₁::SimpleID, id₂::SimpleID) -> Tuple{Vararg{Element}}
+    permute(id₁::SingularID, id₂::SingularID) -> Tuple{Vararg{Element}}
 
 Permutation rule of two ids.
 """
-permute(::SimpleID, ::SimpleID) = error("permute error: not implemented for $(nameof(T)).")
+permute(::SingularID, ::SingularID) = error("permute error: not implemented for $(nameof(T)).")
 
 """
     permute!(result::Elements, m::Element, table) -> Elements
@@ -738,9 +738,9 @@ Permute the ids of an-element/a-set-of-elements to the descending order accordin
 !!! note
     To use this function, the user must implement a method of `permute`, which computes the result of the permutation of two ids and takes the following interface:
     ```julia
-    permute(id₁::SimpleID, id₂::SimpleID) -> Union{Element, Elements}
+    permute(id₁::SingularID, id₂::SingularID) -> Union{Element, Elements}
     ```
-    Here, `id₁` and `id₂` are two arbitrary simple ids contained in `id(m)`.
+    Here, `id₁` and `id₂` are two arbitrary singular ids contained in `id(m)`.
 """
 function Base.permute!(result::Elements, m::Element, table)
     cache = valtype(result)[m]

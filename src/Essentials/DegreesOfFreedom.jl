@@ -3,7 +3,7 @@ module DegreesOfFreedom
 using Printf: @printf, @sprintf
 using StaticArrays: SVector
 using LaTeXStrings: latexstring
-using ..QuantumAlgebras: SimpleID, ID, Element, Elements
+using ..QuantumAlgebras: SingularID, ID, Element, Elements
 using ..Spatials: AbstractPID, Point
 using ...Essentials: dtype
 using ...Interfaces: id, value, decompose, dimension
@@ -26,11 +26,11 @@ export LaTeX, latexname, latexformat, superscript, subscript, script
 export Boundary, twist, plain
 
 """
-    IID <: SimpleID
+    IID <: SingularID
 
 The id of an internal degree of freedom.
 """
-abstract type IID <: SimpleID end
+abstract type IID <: SingularID end
 
 """
     SimpleIID <: IID
@@ -345,11 +345,11 @@ function reset!(hilbert::Hilbert, pids)
 end
 
 """
-    AbstractOID <: SimpleID
+    AbstractOID <: SingularID
 
 Abstract type of operator id.
 """
-abstract type AbstractOID <: SimpleID end
+abstract type AbstractOID <: SingularID end
 
 """
     isHermitian(id::ID{AbstractOID, N}) where N -> Bool

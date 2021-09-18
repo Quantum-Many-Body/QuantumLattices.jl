@@ -3,7 +3,7 @@ module Terms
 using MacroTools: @capture
 using Printf: @printf, @sprintf
 using StaticArrays: SVector
-using ..QuantumAlgebras: SimpleID, ID, Element, Elements, Transformation
+using ..QuantumAlgebras: SingularID, ID, Element, Elements, Transformation
 using ..Spatials: AbstractPID, AbstractBond, Point, Bonds, AbstractLattice, acrossbonds, isintracell, pidtype
 using ..DegreesOfFreedom: IID, SimpleIID, CompositeIID, Internal, CompositeInternal, InternalIndex
 using ..DegreesOfFreedom: Hilbert, AbstractOID, Index, OID, oidtype, Operator, Operators, Table, Boundary, plain
@@ -244,11 +244,11 @@ Get the type of the id of the subscripts.
 end
 
 """
-    SubscriptsID{T<:Tuple{Vararg{Pair{UnitRange{Int}, <:Tuple{Vararg{String}}}}}} <: SimpleID
+    SubscriptsID{T<:Tuple{Vararg{Pair{UnitRange{Int}, <:Tuple{Vararg{String}}}}}} <: SingularID
 
 The id of the subscripts.
 """
-struct SubscriptsID{T<:Tuple{Vararg{Pair{UnitRange{Int}, <:Tuple{Vararg{String}}}}}} <: SimpleID
+struct SubscriptsID{T<:Tuple{Vararg{Pair{UnitRange{Int}, <:Tuple{Vararg{String}}}}}} <: SingularID
     rep::T
 end
 
@@ -302,11 +302,11 @@ Get the space expanded by a set of "labeled" iids.
 @inline expand(iids::NTuple{N, IID}, internals::NTuple{N, Internal}) where N = IIDSpace(CompositeIID(iids), CompositeInternal(internals))
 
 """
-    AbstractCoupling{V, I<:ID{SimpleID}} <: Element{V, I}
+    AbstractCoupling{V, I<:ID{SingularID}} <: Element{V, I}
 
 The abstract coupling intra/inter internal degrees of freedom at different lattice points.
 """
-abstract type AbstractCoupling{V, I<:ID{SimpleID}} <: Element{V, I} end
+abstract type AbstractCoupling{V, I<:ID{SingularID}} <: Element{V, I} end
 ID{SimpleIID}(coupling::AbstractCoupling) = id(coupling)
 Subscripts(coupling::AbstractCoupling) = Subscripts()
 
@@ -421,9 +421,9 @@ Get the multiplication between two couplings.
 
 A pack of couplings intra/inter internal degrees of freedom at different lattice points.
 
-Alias for `Elements{<:ID{SimpleID}, <:AbstractCoupling}`.
+Alias for `Elements{<:ID{SingularID}, <:AbstractCoupling}`.
 """
-const Couplings{I<:ID{SimpleID}, C<:AbstractCoupling} = Elements{I, C}
+const Couplings{I<:ID{SingularID}, C<:AbstractCoupling} = Elements{I, C}
 @inline Couplings(cps::AbstractCoupling...) = Elements(cps...)
 @inline Couplings(cps::Couplings) = cps
 

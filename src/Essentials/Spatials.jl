@@ -5,7 +5,7 @@ using StaticArrays: SVector
 using Printf: @printf
 using NearestNeighbors: KDTree, knn, inrange
 using Base.Iterators: flatten, product
-using ..QuantumAlgebras: SimpleID
+using ..QuantumAlgebras: SingularID
 using ..QuantumNumbers: AbelianNumbers, Momentum, Momentum₁, Momentum₂, Momentum₃, periods
 using ...Prerequisites: atol, rtol, Float
 using ...Prerequisites.Combinatorics: Combinations
@@ -464,11 +464,11 @@ function interlinks(cluster₁::AbstractMatrix{<:Number}, cluster₂::AbstractMa
 end
 
 """
-    AbstractPID <: SimpleID
+    AbstractPID <: SingularID
 
 Abstract point id.
 """
-abstract type AbstractPID <: SimpleID end
+abstract type AbstractPID <: SingularID end
 
 """
     PID <: AbstractPID

@@ -8,13 +8,13 @@ using QuantumLattices.Prerequisites.Traits: contentnames, parameternames, parame
 
 import QuantumLattices.Interfaces: ⊗, ⋅, permute
 
-struct AID{O<:Real, S<:Real} <: SimpleID
+struct AID{O<:Real, S<:Real} <: SingularID
     orbital::O
     nambu::S
 end
 
 @testset "ID" begin
-    @test ID{SimpleID, 1}|>rank == 1
+    @test ID{SingularID, 1}|>rank == 1
     @test ID|>rank == Any
     @test promote_type(ID{AID{Int, Int}, 1}, ID{AID{Int, Int}}) == ID{AID{Int, Int}}
     @test promote_type(ID{AID{Int, Int}}, ID{AID{Int, Int}, 1}) == ID{AID{Int, Int}}
@@ -35,8 +35,8 @@ end
     @test cid * cid == ID(AID(2, 1), AID(1, Inf), AID(2, 1), AID(1, Inf))
 
     @test deepcopy(ID(AID(1, 1))) == ID(AID(1, 1))
-    @test isless(SimpleID, ID(AID(1, 2)), ID(AID(1, Inf)))
-    @test isless(SimpleID, ID(AID(2, 1)), ID(AID(1, 2), AID(1, Inf)))
+    @test isless(SingularID, ID(AID(1, 2)), ID(AID(1, Inf)))
+    @test isless(SingularID, ID(AID(2, 1)), ID(AID(1, 2), AID(1, Inf)))
 
     cid = AID(2, 1) * AID(3, 4.0)
     @test cid == ID(AID, (2, 3), (1, 4.0))
@@ -45,7 +45,7 @@ end
     @test cid.nambus == (1, 4.0)
 end
 
-struct AOperator{V<:Number, I<:ID{SimpleID}} <: Element{V, I}
+struct AOperator{V<:Number, I<:ID{SingularID}} <: Element{V, I}
     value::V
     id::I
 end
@@ -75,7 +75,7 @@ end
     @test isparameterbound(Element, :id, ID{AID{Int, Int}, 2}) == false
     @test valtype(Element) == parametertype(Element, :value) == parametertype(Element, 1) == Any
     @test valtype(Element{Int}) == parametertype(Element{Int}, :value) == parametertype(Element{Int}, 1) == Int
-    @test idtype(Element{<:Number}) == parametertype(Element{<:Number}, :id) == parametertype(Element{<:Number}, 2) == ID{SimpleID}
+    @test idtype(Element{<:Number}) == parametertype(Element{<:Number}, :id) == parametertype(Element{<:Number}, 2) == ID{SingularID}
     @test idtype(Element{<:Number, ID{AID}}) == parametertype(Element{<:Number, ID{AID}}, :id) == parametertype(Element{<:Number, ID{AID}},2) == ID{AID}
     @test promote_type(AOperator{Int}, AOperator) == AOperator
     @test promote_type(AOperator, AOperator{Int}) == AOperator
