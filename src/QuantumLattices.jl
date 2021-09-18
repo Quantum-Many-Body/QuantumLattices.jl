@@ -17,7 +17,7 @@ export expand, expand!, decompose, decompose!, permute
 export dtype, kind, update!, reset!
 
 # Essentials.QuantumAlgebras
-export ID, Transformation, idtype, sequence
+export ID, Transformation, Numericalization, idtype, sequence
 
 # Essentials.QuantumNumbers
 export AbelianNumber, AbelianNumbers, @abeliannumber, periods, Momentum, Momentum₁, Momentum₂, Momentum₃

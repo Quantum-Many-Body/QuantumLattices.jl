@@ -192,10 +192,17 @@ end
 end
 
 @testset "Transformation" begin
-    m = AOperator(1.0, ID(AID(1, 1)))
+    m = AOperator(1, ID(AID(1, 1)))
     s = Elements(m)
+
     i = Identity()
     @test valtype(i, m) == valtype(typeof(i), typeof(m)) == typeof(m)
     @test valtype(i, s) == valtype(typeof(i), typeof(s)) == typeof(s)
     @test i(m)==m && i(s)==s
+
+    n = Numericalization{Float64}()
+    @test valtype(n) == valtype(typeof(n)) == Float64
+    @test valtype(n, m) == valtype(typeof(n), typeof(m)) == AOperator{Float64, ID{AID{Int, Int}, 1}}
+    @test valtype(n, s) == valtype(typeof(n), typeof(s)) == Elements{ID{AID{Int, Int}, 1}, AOperator{Float64, ID{AID{Int, Int}, 1}}}
+    @test n(m)==replace(m, value=1.0) && n(s)==Elements(replace(m, value=1.0))
 end

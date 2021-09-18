@@ -10,7 +10,7 @@ import ...Interfaces: id, value, rank, add!, sub!, mul!, div!, ⊗, ⋅, permute
 import ...Prerequisites.Traits: contentnames, dissolve, isparameterbound, parameternames
 
 export SimpleID, ID, Element, Scalar, Elements, idtype, sequence
-export Transformation, Identity
+export Transformation, Identity, Numericalization
 
 """
     SimpleID <: NamedVector
@@ -821,5 +821,16 @@ The identity transformation.
 struct Identity <: Transformation end
 @inline Base.valtype(::Type{Identity}, M::Type{<:Element}) = M
 @inline (i::Identity)(m::Element) = m
+
+"""
+    Numericalization{T<:Number} <: Transformation
+
+The numericalization transformation, which converts the value of a concrete element to a number of type `T`.
+"""
+struct Numericalization{T<:Number} <: Transformation end
+@inline Base.valtype(num::Numericalization) = valtype(typeof(num))
+@inline Base.valtype(::Type{<:Numericalization{T}}) where {T<:Number} = T
+@inline Base.valtype(T::Type{<:Numericalization}, M::Type{<:Element}) = reparameter(M, :value, valtype(T))
+@inline (n::Numericalization)(m::Element) = convert(valtype(n, m), m)
 
 end #module
