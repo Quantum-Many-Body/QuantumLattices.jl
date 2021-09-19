@@ -2,7 +2,7 @@ using Test
 using Printf: @sprintf
 using StaticArrays: SVector
 using QuantumLattices.Essentials.Terms
-using QuantumLattices.Essentials.QuantumAlgebras: ID, id, idtype, Identity
+using QuantumLattices.Essentials.QuantumOperators: ID, id, idtype, Identity
 using QuantumLattices.Essentials.Spatials: Point, PID, CPID, Bond, Bonds, Lattice, acrossbonds, zerothbonds
 using QuantumLattices.Essentials.DegreesOfFreedom: SimpleIID, SimpleInternal, CompositeIID, Hilbert, Index, Table, OID, OIDToTuple, Operator, Operators, plain
 using QuantumLattices.Essentials: kind, update!, reset!

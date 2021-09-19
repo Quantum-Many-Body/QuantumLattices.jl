@@ -3,7 +3,7 @@ module QuantumSystems
 using LinearAlgebra: dot, norm
 using StaticArrays: SVector
 using Printf: @printf, @sprintf
-using ..QuantumAlgebras: ID, Element
+using ..QuantumOperators: ID, OperatorProd
 using ..Spatials: AbstractPID, AbstractBond, Point, Bond, rcoord, pidtype
 using ..DegreesOfFreedom: SimpleIID, CompositeIID, SimpleInternal, CompositeInternal, InternalIndex
 using ..DegreesOfFreedom: Index, AbstractCompositeOID, OID, LaTeX, latexformat, OIDToTuple, Operator, Operators, Hilbert, Table
@@ -242,7 +242,7 @@ Get the multiplication of two fermionic Fock operators.
         f2::Operator{<:Number, <:ID{AbstractCompositeOID{<:Index{<:AbstractPID, <:FID{:f}}}}}
         )
     rank(f1)>0 && rank(f2)>0 && f1.id[end]==f2.id[1] && return nothing
-    return invoke(*, Tuple{Element, Element}, f1, f2)
+    return invoke(*, Tuple{OperatorProd, OperatorProd}, f1, f2)
 end
 
 """

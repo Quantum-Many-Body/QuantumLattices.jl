@@ -38,7 +38,7 @@ makedocs(
                         ],
                     "Essentials" => [
                         "man/Essentials/Introduction.md",
-                        "man/Essentials/QuantumAlgebras.md",
+                        "man/Essentials/QuantumOperators.md",
                         "man/Essentials/QuantumNumbers.md",
                         "man/Essentials/Spatials.md",
                         "man/Essentials/DegreesOfFreedom.md",

@@ -2,7 +2,7 @@ using Test
 using StaticArrays: SVector
 using LinearAlgebra: dot
 using QuantumLattices.Essentials.DegreesOfFreedom
-using QuantumLattices.Essentials.QuantumAlgebras: ID, sequence
+using QuantumLattices.Essentials.QuantumOperators: ID, sequence
 using QuantumLattices.Essentials.Spatials: AbstractPID, PID, CPID, Point, pidtype, rcoord, icoord
 using QuantumLattices.Essentials: update!, reset!
 using QuantumLattices.Interfaces: decompose, rank, ⊗

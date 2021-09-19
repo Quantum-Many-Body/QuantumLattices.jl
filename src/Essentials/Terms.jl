@@ -3,7 +3,7 @@ module Terms
 using MacroTools: @capture
 using Printf: @printf, @sprintf
 using StaticArrays: SVector
-using ..QuantumAlgebras: SingularID, ID, Element, Elements, Transformation
+using ..QuantumOperators: SingularID, ID, OperatorProd, OperatorSum, Transformation
 using ..Spatials: AbstractPID, AbstractBond, Point, Bonds, AbstractLattice, acrossbonds, isintracell, pidtype
 using ..DegreesOfFreedom: IID, SimpleIID, CompositeIID, Internal, CompositeInternal, InternalIndex
 using ..DegreesOfFreedom: Hilbert, AbstractOID, Index, OID, oidtype, Operator, Operators, Table, Boundary, plain
@@ -14,7 +14,7 @@ using ...Prerequisites.Traits: rawtype, efficientoperations, commontype, paramet
 using ...Prerequisites.CompositeStructures: CompositeTuple, NamedContainer
 using ...Prerequisites.VectorSpaces: CartesianVectorSpace
 
-import ..QuantumAlgebras: idtype
+import ..QuantumOperators: idtype
 import ..DegreesOfFreedom: isHermitian
 import ...Interfaces: id, value, rank, expand, expand!
 import ...Essentials: kind, update!, reset!
@@ -302,11 +302,11 @@ Get the space expanded by a set of "labeled" iids.
 @inline expand(iids::NTuple{N, IID}, internals::NTuple{N, Internal}) where N = IIDSpace(CompositeIID(iids), CompositeInternal(internals))
 
 """
-    AbstractCoupling{V, I<:ID{SingularID}} <: Element{V, I}
+    AbstractCoupling{V, I<:ID{SingularID}} <: OperatorProd{V, I}
 
 The abstract coupling intra/inter internal degrees of freedom at different lattice points.
 """
-abstract type AbstractCoupling{V, I<:ID{SingularID}} <: Element{V, I} end
+abstract type AbstractCoupling{V, I<:ID{SingularID}} <: OperatorProd{V, I} end
 ID{SimpleIID}(coupling::AbstractCoupling) = id(coupling)
 Subscripts(coupling::AbstractCoupling) = Subscripts()
 
@@ -421,10 +421,10 @@ Get the multiplication between two couplings.
 
 A pack of couplings intra/inter internal degrees of freedom at different lattice points.
 
-Alias for `Elements{<:ID{SingularID}, <:AbstractCoupling}`.
+Alias for `OperatorSum{<:ID{SingularID}, <:AbstractCoupling}`.
 """
-const Couplings{I<:ID{SingularID}, C<:AbstractCoupling} = Elements{I, C}
-@inline Couplings(cps::AbstractCoupling...) = Elements(cps...)
+const Couplings{I<:ID{SingularID}, C<:AbstractCoupling} = OperatorSum{I, C}
+@inline Couplings(cps::AbstractCoupling...) = OperatorSum(cps...)
 @inline Couplings(cps::Couplings) = cps
 
 """

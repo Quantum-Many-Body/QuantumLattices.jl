@@ -3,7 +3,7 @@ module DegreesOfFreedom
 using Printf: @printf, @sprintf
 using StaticArrays: SVector
 using LaTeXStrings: latexstring
-using ..QuantumAlgebras: SingularID, ID, Element, Elements
+using ..QuantumOperators: SingularID, ID, OperatorProd, OperatorSum
 using ..Spatials: AbstractPID, Point
 using ...Essentials: dtype
 using ...Interfaces: id, value, decompose, dimension
@@ -12,7 +12,7 @@ using ...Prerequisites.Traits: rawtype, efficientoperations, commontype
 using ...Prerequisites.CompositeStructures: CompositeDict
 using ...Prerequisites.VectorSpaces: CartesianVectorSpace
 
-import ..QuantumAlgebras: sequence
+import ..QuantumOperators: sequence
 import ..Spatials: pidtype, rcoord, icoord
 import ...Essentials: reset!, update!
 import ...Interfaces: rank, ⊗
@@ -480,11 +480,11 @@ Get the compatible oid type from the combination of the internal part and the sp
 @inline oidtype(I::Type{<:SimpleInternal}, P::Type{<:Point}, ::Val) = OID{Index{P|>pidtype, I|>eltype}, SVector{P|>dimension, P|>dtype}}
 
 """
-    AbstractOperator{V<:Number, I<:ID{AbstractOID}} <: Element{V, I}
+    AbstractOperator{V<:Number, I<:ID{AbstractOID}} <: OperatorProd{V, I}
 
 Abstract type for an operator.
 """
-abstract type AbstractOperator{V<:Number, I<:ID{AbstractOID}} <: Element{V, I} end
+abstract type AbstractOperator{V<:Number, I<:ID{AbstractOID}} <: OperatorProd{V, I} end
 
 """
     Operator{V<:Number, I<:ID{AbstractOID}} <: AbstractOperator{V, I}
@@ -539,10 +539,10 @@ end
 
 A set of operators.
 
-Type alias for `Elements{<:ID{AbstractOID}, <:AbstractOperator}`.
+Type alias for `OperatorSum{<:ID{AbstractOID}, <:AbstractOperator}`.
 """
-const Operators{I<:ID{AbstractOID}, O<:AbstractOperator} = Elements{I, O}
-@inline Operators(opts::AbstractOperator...) = Elements(opts...)
+const Operators{I<:ID{AbstractOID}, O<:AbstractOperator} = OperatorSum{I, O}
+@inline Operators(opts::AbstractOperator...) = OperatorSum(opts...)
 
 """
     adjoint(opts::Operators) -> Operators

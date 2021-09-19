@@ -1,7 +1,7 @@
 using Test
 using StaticArrays: SVector
 using QuantumLattices.Essentials.QuantumSystems
-using QuantumLattices.Essentials.QuantumAlgebras: ID
+using QuantumLattices.Essentials.QuantumOperators: ID
 using QuantumLattices.Essentials.Spatials: AbstractPID, PID, CPID, Point, Bond, rcoord, azimuthd
 using QuantumLattices.Essentials.DegreesOfFreedom: Index, AbstractCompositeOID, OID, Hilbert, Operator, Operators, statistics, script, latexname, isHermitian
 using QuantumLattices.Essentials.Terms: IIDSpace, Coupling, Couplings, abbr, @subscript_str, @couplings, wildcard
