@@ -68,11 +68,14 @@ function permute(id₁::AID, id₂::AID)
 end
 
 @testset "QuantumOperator" begin
+    @test parameternames(QuantumOperator) == (:id, :value)
+    @test isparameterbound(QuantumOperator, :value, Any) == true
+    @test isparameterbound(QuantumOperator, :id, ID) == true
+    @test isparameterbound(QuantumOperator, :id, ID{AID{Int, Int}, 2}) == false
+
     @test contentnames(OperatorProd) == (:value, :id)
     @test parameternames(OperatorProd) == (:value, :id)
     @test isparameterbound(OperatorProd, :value, Any) == false
-    @test isparameterbound(OperatorProd, :id, ID) == true
-    @test isparameterbound(OperatorProd, :id, ID{AID{Int, Int}, 2}) == false
     @test valtype(OperatorProd) == parametertype(OperatorProd, :value) == parametertype(OperatorProd, 1) == Any
     @test valtype(OperatorProd{Int}) == parametertype(OperatorProd{Int}, :value) == parametertype(OperatorProd{Int}, 1) == Int
     @test idtype(OperatorProd{<:Number}) == parametertype(OperatorProd{<:Number}, :id) == parametertype(OperatorProd{<:Number}, 2) == ID{SingularID}
@@ -82,6 +85,7 @@ end
     @test promote_type(AOperator{Int}, AOperator{Float}) == AOperator{Float}
     @test promote_type(AOperator{Int, ID{AID{Int, Int}, 2}}, AOperator{Float, ID{AID{Int, Int}, 2}}) == AOperator{Float, ID{AID{Int, Int}, 2}}
     @test promote_type(AOperator{Int, ID{AID}}, AOperator{Float, ID{AID}}) == AOperator{Float, <:ID{AID}}
+    @test promote_type(AOperator{Complex{Int}, ID{AID}}, Float, Val(:*)) == promote_type(Float, AOperator{Complex{Int}, ID{AID}}, Val(:*)) == AOperator{Complex{Float}, ID{AID}}
 
     opt = AOperator(1.0, ID(AID(1, 1)))
     @test value(opt) == 1.0
@@ -103,6 +107,8 @@ end
     @test opt/2 == opt/AOperator(2, ID()) == AOperator(0.5, ID(AID(1, 1)))
     @test opt^2 == opt*opt
 
+    @test convert(AOperator{Float, Tuple{}}, AOperator(2, ID())) == AOperator(2.0, ID())
+    @test convert(AOperator{Float, Tuple{}}, 3) == AOperator(3.0, ID())
     @test AOperator(1, ID())+1 == 1+AOperator(1, ID()) == AOperator(1, ID())+AOperator(1, ID()) == AOperator(2, ID())
     @test opt+1 == 1+opt == opt+AOperator(1, ID()) == AOperator(1, ID())+opt
     @test AOperator(1, ID())-2 == 1-AOperator(2, ID()) == AOperator(1, ID())-AOperator(2, ID()) == AOperator(-1, ID())
@@ -111,6 +117,9 @@ end
     opt₁ = AOperator(1.0, ID(AID(1, 1)))
     opt₂ = AOperator(2.0, ID(AID(1, 2)))
     opts = OperatorSum(opt₁, opt₂)
+    optp₁ = promote_type(typeof(opts), OperatorSum{NTuple{2, AID{Float, Float}}, AOperator{Complex{Int}, NTuple{2, AID{Float, Float}}}})
+    optp₂ = OperatorSum{Tuple{AID, Vararg{AID{Float, Float}}}, AOperator{Complex{Float}, <:Tuple{AID, Vararg{AID{Float, Float}}}}}
+    @test optp₁ == optp₂
     @test string(opts) == "OperatorSum with 2 AOperator:\n  AOperator(value=2.0, id=ID(AID(1, 2)))\n  AOperator(value=1.0, id=ID(AID(1, 1)))\n"
     @test repr(opts) == "OperatorSum with 2 AOperator:\n  AOperator(2.0, ID(AID(1, 2)))\n  AOperator(1.0, ID(AID(1, 1)))"
     @test opts|>deepcopy == opts
@@ -131,6 +140,7 @@ end
     @test 1.0-opt == AOperator(1.0, ID())-opt == 1.0+(-opt)
     @test opts-opt₁ == OperatorSum(opt₂)
     @test opt₁-opts == OperatorSum(-opt₂)
+    @test opts-opts == zero(opts) == zero(typeof(opts))
     @test 2*opts == opts*2 == OperatorSum(opt₁*2, opt₂*2) == AOperator(2, ID())*opts
     @test opts/2 == OperatorSum(opt₁/2, opt₂/2)
     @test opts^2 == opts*opts

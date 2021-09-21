@@ -339,6 +339,8 @@ function Base.show(io::IO, ms::OperatorSum)
         @printf io "  %s\n" m
     end
 end
+@inline Base.zero(ms::OperatorSum) = zero(typeof(ms))
+@inline Base.zero(::Type{MS}) where {MS<:OperatorSum} = MS()
 
 """
     OperatorSum(ms::OperatorProd...)

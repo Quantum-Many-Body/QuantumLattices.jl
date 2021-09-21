@@ -391,8 +391,10 @@ end
     @test termmodulate(t=1) == 1
     @test isnothing(termmodulate(mu=1))
     @test isnothing(termmodulate())
+    @test ismodulatable(termmodulate) == true
 
     termmodulate = TermModulate(:t, t->t*2.0)
+    @test ismodulatable(termmodulate) == true
     @test termmodulate(2) == 4
 end
 
@@ -542,6 +544,7 @@ end
         OID(Index(PID(2), DID(1)), SVector(1.5, 1.5), SVector(1.0, 1.0))
         ))
     bound = Boundary{(:θ₁, :θ₂)}([0.1, 0.2], [[1.0, 0.0], [0.0, 1.0]])
+    @test keys(bound) == keys(typeof(bound)) == (:θ₁, :θ₂)
     @test bound==deepcopy(bound) && isequal(bound, deepcopy(bound))
     @test angle(bound, opt) ≈ angle(opt.id, bound.vectors, bound.values) ≈ 0.6pi
     @test bound(opt) ≈ twist(opt, bound.vectors, bound.values) ≈ replace(opt, 4.5*exp(2im*pi*0.3))
