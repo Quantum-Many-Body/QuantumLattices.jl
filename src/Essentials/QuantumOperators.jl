@@ -328,6 +328,11 @@ struct OperatorSum{I<:ID{SingularID}, M<:OperatorProd} <: QuantumOperator{I, M}
     contents::Dict{I, M}
     OperatorSum(contents::Dict{<:ID{SingularID}, <:OperatorProd}) = new{keytype(contents), valtype(contents)}(contents)
 end
+@inline function Base.promote_rule(::Type{MS₁}, ::Type{MS₂}) where {MS₁<:OperatorSum, MS₂<:OperatorSum}
+    I = promote_type(idtype(MS₁), idtype(MS₂))
+    M = promote_type(valtype(MS₁), valtype(MS₂))
+    return OperatorSum{I, M}
+end
 function Base.show(io::IO, ms::OperatorSum)
     @printf io "OperatorSum with %s %s:\n" length(ms) nameof(valtype(ms))
     for m in values(ms)
@@ -755,6 +760,8 @@ end
 Abstract transformation that could transform the quantum operators.
 """
 abstract type Transformation <: Function end
+@inline Base.:(==)(transformation₁::Transformation, transformation₂::Transformation) = ==(efficientoperations, transformation₁, transformation₂)
+@inline Base.isequal(transformation₁::Transformation, transformation₂::Transformation) = isequal(efficientoperations, transformation₁, transformation₂)
 @inline Base.valtype(transformation::Transformation, m::OperatorProd) = valtype(typeof(transformation), typeof(m))
 @inline Base.valtype(transformation::Transformation, ms::OperatorSum) = valtype(typeof(transformation), typeof(ms))
 @inline Base.valtype(T::Type{<:Transformation}, MS::Type{<:OperatorSum}) = OperatorSum{idtype(valtype(T, valtype(MS))), valtype(T, valtype(MS))}

@@ -6,13 +6,19 @@ CurrentModule = QuantumLattices.Essentials.DegreesOfFreedom
 
 ## IID, Internal and Index
 
+## OID, Operator and Operators
+
+## IIDSpace
+
 ## Hilbert
 
-## OID
+## Subscript and Subscripts
 
-## Operator and Operators
+## Coupling and Couplings
 
 ## Metric and Table
+
+## Term
 
 ## LaTeX
 

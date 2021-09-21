@@ -185,6 +185,7 @@ end
     s = OperatorSum(m)
 
     i = Identity()
+    @test i==deepcopy(i) && isequal(i, deepcopy(i))
     @test valtype(i, m) == valtype(typeof(i), typeof(m)) == typeof(m)
     @test valtype(i, s) == valtype(typeof(i), typeof(s)) == typeof(s)
     @test i(m)==m && i(s)==s

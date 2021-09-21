@@ -1,15 +1,17 @@
 using Test
+using Printf: @sprintf
 using StaticArrays: SVector
 using LinearAlgebra: dot
 using QuantumLattices.Essentials.DegreesOfFreedom
-using QuantumLattices.Essentials.QuantumOperators: ID, sequence
-using QuantumLattices.Essentials.Spatials: AbstractPID, PID, CPID, Point, pidtype, rcoord, icoord
-using QuantumLattices.Essentials: update!, reset!
-using QuantumLattices.Interfaces: decompose, rank, ⊗
-using QuantumLattices.Prerequisites: Float
-using QuantumLattices.Prerequisites.Traits: contentnames
+using QuantumLattices.Essentials.QuantumOperators: ID, sequence, id, idtype
+using QuantumLattices.Essentials.Spatials: AbstractPID, PID, CPID, Point, Bond, Bonds, Lattice, pidtype, rcoord, icoord
+using QuantumLattices.Essentials: kind, update!, reset!
+using QuantumLattices.Interfaces: decompose, rank, expand, ⊗
+using QuantumLattices.Prerequisites: Float, decimaltostr
+using QuantumLattices.Prerequisites.Traits: parameternames, isparameterbound, contentnames, getcontent
+using QuantumLattices.Prerequisites.CompositeStructures: NamedContainer
 
-import QuantumLattices.Essentials.DegreesOfFreedom: statistics, latexname, script
+import QuantumLattices.Essentials.DegreesOfFreedom: isHermitian, statistics, latexname, script, couplingcenters, abbr
 import QuantumLattices.Prerequisites.VectorSpaces: shape, ndimshape
 
 struct DID{N<:Union{Int, Symbol}} <: SimpleIID
@@ -25,6 +27,10 @@ end
 @inline ndimshape(::Type{DFock}) = 1
 @inline DID(i::CartesianIndex, vs::DFock) = DID(i.I...)
 @inline CartesianIndex(did::DID{Int}, vs::DFock) = CartesianIndex(did.nambu)
+@inline shape(iidspace::IIDSpace{DID{Symbol}, DFock}) = (1:iidspace.internal.nnambu,)
+@inline shape(iidspace::IIDSpace{DID{Int}, DFock}) = (iidspace.iid.nambu:iidspace.iid.nambu,)
+@inline shape(iidspace::IIDSpace{DID{Symbol}, DFock}) = (1:iidspace.internal.nnambu,)
+@inline shape(iidspace::IIDSpace{DID{Int}, DFock}) = (iidspace.iid.nambu:iidspace.iid.nambu,)
 
 function Base.angle(id::OID{<:Index{<:AbstractPID, DID{Int}}}, vectors::AbstractVector{<:AbstractVector{Float}}, values::AbstractVector{Float})
     phase=  (length(vectors) == 1) ? 2pi*dot(decompose(id.icoord, vectors[1]), values) :
@@ -38,6 +44,17 @@ end
 
 latexname(::Type{<:OID{<:Index{<:AbstractPID, <:DID}}}) = Symbol("OID{Index{AbstractPID, DID}}")
 latexformat(OID{<:Index{<:AbstractPID, <:DID}}, LaTeX{(:nambu,), (:site,)}('d'))
+
+const DCoupling{V, I<:ID{DID}, C<:Subscripts, CI<:SubscriptsID} = Coupling{V, I, C, CI}
+@inline Base.repr(tc::(Coupling{V, <:ID{DID}} where V)) = @sprintf "%s ph(%s)" decimaltostr(tc.value) join(tc.cid.nambus, ", ")
+@inline couplingcenters(::(Coupling{V, <:ID{DID}} where V), ::Bond, ::Val) = (1, 2)
+@inline DCoupling(value, nambus::Tuple{Vararg{Int}}) = Coupling(value, ID(DID, nambus), Subscripts((nambu=Subscript(nambus),)))
+@inline DCoupling(value, nambus::Subscript) = Coupling(value, ID(DID, convert(Tuple, nambus)), Subscripts((nambu=nambus,)))
+
+@inline abbr(::Type{<:Term{:Mu}}) = :mu
+@inline abbr(::Type{<:Term{:Hp}}) = :hp
+@inline isHermitian(::Type{<:Term{:Mu}}) = true
+@inline isHermitian(::Type{<:Term{:Hp}}) = false
 
 @testset "IID" begin
     did = DID(1)
@@ -77,9 +94,6 @@ end
     ci = CompositeInternal(it₁, it₂)
     @test eltype(ci) == eltype(typeof(ci)) == CompositeIID{Tuple{DID{Int}, DID{Int}}}
     @test rank(ci) == rank(typeof(ci)) == 2
-    @test internaltype(ci, 1) == internaltype(typeof(ci), 1) == DFock
-    @test internaltype(ci, 2) == internaltype(typeof(ci), 2) == DFock
-    @test ci[InternalIndex(1)]==it₁ && ci[InternalIndex(2)]==it₂
     @test string(ci) == "DFock(nnambu=2) ⊗ DFock(nnambu=3)"
     @test shape(ci) == (1:2, 1:3)
     @test ndimshape(ci) == 2
@@ -92,21 +106,6 @@ end
     @test ci⊗ci == CompositeInternal(it₁, it₂, it₁, it₂)
     @test filter(DID(1), ci) == filter(DID, ci) == ci
     @test filter(DID(1), typeof(ci)) == filter(DID, typeof(ci)) == typeof(ci)
-end
-
-@testset "Hilbert" begin
-    map = pid->DFock((pid.site-1)%2+1)
-    hilbert = Hilbert(map, [CPID(1, 1), CPID(1, 2)])
-    @test hilbert == Hilbert{DFock}(map, [CPID(1, 1), CPID(1, 2)])
-    @test convert(Dict, hilbert) == Dict(CPID(1, 1)=>DFock(1), CPID(1, 2)=>DFock(2))
-    reset!(hilbert, (CPID(2, 1), CPID(2, 2)))
-    @test convert(Dict, hilbert) == Dict(CPID(2, 1)=>DFock(1), CPID(2, 2)=>DFock(2))
-
-    hilbert = Hilbert(pid=>DFock(2) for pid in [PID(1), PID(2)])
-    @test hilbert[PID(1)] == hilbert[PID(2)] == DFock(2)
-
-    hilbert = Hilbert(PID(1)=>DFock(2), PID(2)=>DFock(3))
-    @test hilbert[PID(1)]==DFock(2) && hilbert[PID(2)]==DFock(3)
 end
 
 @testset "Index" begin
@@ -122,7 +121,7 @@ end
 end
 
 @testset "OID" begin
-    @test contentnames(AbstractCompositeOID) == (:index,)
+    @test contentnames(CompositeOID) == (:index,)
     @test contentnames(OID) == (:index, :rcoord, :icoord)
 
     oid = OID(Index(PID(1), DID(1)), [0.0, -0.0], [0.0, 0.0])
@@ -187,6 +186,36 @@ end
     @test isHermitian(opts'+opts) == true
 end
 
+@testset "Hilbert" begin
+    map = pid->DFock((pid.site-1)%2+1)
+    hilbert = Hilbert(map, [CPID(1, 1), CPID(1, 2)])
+    @test hilbert == Hilbert{DFock}(map, [CPID(1, 1), CPID(1, 2)])
+    @test convert(Dict, hilbert) == Dict(CPID(1, 1)=>DFock(1), CPID(1, 2)=>DFock(2))
+    reset!(hilbert, (CPID(2, 1), CPID(2, 2)))
+    @test convert(Dict, hilbert) == Dict(CPID(2, 1)=>DFock(1), CPID(2, 2)=>DFock(2))
+
+    hilbert = Hilbert(pid=>DFock(2) for pid in [PID(1), PID(2)])
+    @test hilbert[PID(1)] == hilbert[PID(2)] == DFock(2)
+
+    hilbert = Hilbert(PID(1)=>DFock(2), PID(2)=>DFock(3))
+    @test hilbert[PID(1)]==DFock(2) && hilbert[PID(2)]==DFock(3)
+end
+
+@testset "IIDSpace" begin
+    DID₁, DID₂, it = DID(2), DID(:σ), DFock(2)
+    iidspace = IIDSpace(DID₁⊗DID₂, it⊗it)
+    @test eltype(iidspace) == eltype(typeof(iidspace)) == CompositeIID{Tuple{DID{Int}, DID{Int}}}
+    @test kind(iidspace) == kind(typeof(iidspace)) == :info
+    @test shape(iidspace) == (2:2, 1:2)
+    @test ndimshape(iidspace) == ndimshape(typeof(iidspace)) == 2
+    for i = 1:length(iidspace)
+        iid = iidspace[i]
+        @test iidspace[CartesianIndex(iid, iidspace)] == iid
+    end
+    @test expand((DID₁, DID₂), (it, it)) == iidspace
+    @test collect(iidspace) == [DID(2)⊗DID(1), DID(2)⊗DID(2)]
+end
+
 @testset "Metric" begin
     valtype(Metric, AbstractOID) = AbstractOID
 
@@ -233,6 +262,216 @@ end
     @test table == Table([inds1; inds2])
     @test reset!(empty(table), [inds1; inds2]) == table
     @test reset!(empty(table), hilbert) == table
+end
+
+@testset "Subscript" begin
+    sub = Subscript(4)
+    @test contentnames(typeof(sub)) == (:contents, :rep, :constraint)
+    @test getcontent(sub, :contents) == sub.pattern
+    @test sub==deepcopy(sub) && isequal(sub, deepcopy(sub))
+    @test string(sub) == "[* * * *]"
+    @test rank(sub) == rank(typeof(sub)) == 4
+    @test match(sub, (2, 2, 2, 2))
+
+    sub = Subscript((1, 2, 3, 4))
+    @test string(sub) == "[1 2 3 4]"
+    @test sub == subscript"[1 2 3 4]" == subscript"[1 2 3 4]; false"
+    @test rank(sub) == 4
+    @test match(sub, (1, 3, 3, 4))
+
+    sub = Subscript((1, 2, 2, 1), true)
+    @test string(sub) == "[1 2 2 1]"
+    @test sub == subscript"[1 2 2 1]; true"
+    @test rank(sub) == 4
+    @test match(sub, (1, 2, 2, 1)) && !match(sub, (1, 1, 2, 1))
+
+    sub = subscript"[x₁ x₂ x₁ x₂]"
+    @test string(sub) == "[x₁ x₂ x₁ x₂]"
+    @test rank(sub) == 4
+    @test match(sub, (1, 2, 1, 2)) && !match(sub, (1, 2, 2, 1))
+
+    sub = subscript"[x₁ 4 4 x₂](x₁ < x₂)"
+    @test string(sub) == "[x₁ 4 4 x₂](x₁ < x₂)"
+    @test rank(sub) == rank(typeof(sub)) == 4
+    @test match(sub, (1, 4, 4, 2)) && !match(sub, (2, 4, 4, 1))
+end
+
+@testset "Subscripts" begin
+    subscripts = Subscripts((nambu=subscript"[x y](x > y)",), (nambu=subscript"[x x y y](x < y)",))
+    @test string(subscripts) == "nambu[x y](x > y) × nambu[x x y y](x < y)"
+    @test repr(subscripts, 1:2, :nambu) == "[x y](x > y)×[x x y y](x < y)"
+    @test repr(subscripts, 1, :nambu) == "[x y](x > y)"
+    @test repr(subscripts, 2, :nambu) == "[x x y y](x < y)"
+
+    @test rank(subscripts) == rank(typeof(subscripts)) == 6
+    @test rank(subscripts, 1) == rank(typeof(subscripts), 1) == 2
+    @test rank(subscripts, 2) == rank(typeof(subscripts), 2) == 4
+    @test match(subscripts, (DID(2), DID(1), DID(2), DID(2), DID(3), DID(3)))
+    @test match(subscripts, DID(2)⊗DID(1)⊗DID(2)⊗DID(2)⊗DID(3)⊗DID(3))
+    @test !match(subscripts, DID(1)⊗DID(2)⊗DID(2)⊗DID(2)⊗DID(3)⊗DID(3))
+    @test !match(subscripts, DID(2)⊗DID(1)⊗DID(3)⊗DID(3)⊗DID(2)⊗DID(2))
+    @test subscripts == Subscripts((nambu=subscript"[x y](x > y)",))*Subscripts((nambu=subscript"[x x y y](x < y)",))
+
+    subscriptsid = SubscriptsID(subscripts)
+    @test subscriptsid == SubscriptsID((1:2=>("[x y](x > y)",), 3:6=>("[x x y y](x < y)",)))
+    @test idtype(subscripts) == idtype(typeof(subscripts)) == SubscriptsID{NTuple{2, Pair{UnitRange{Int}, Tuple{String}}}}
+end
+
+@testset "couplings" begin
+    @test parameternames(Coupling) == (:value, :cid, :subscripts, :subscriptsid)
+    @test contentnames(Coupling) == (:value, :id, :subscripts)
+    @test isparameterbound(Coupling, :cid, Tuple{DID{Int}}) == false
+    @test isparameterbound(Coupling, :cid, ID{DID{Int}}) == true
+    @test isparameterbound(Coupling, :subscripts, Subscripts{Tuple{NamedTuple{(:nambu,), Tuple{Subscript{Tuple{Int}, typeof(noconstrain)}}}}}) == false
+    @test isparameterbound(Coupling, :subscripts, Subscripts) == true
+    @test isparameterbound(Coupling, :subscriptsid, SubscriptsID{Tuple{}}) == false
+    @test isparameterbound(Coupling, :subscriptsid, SubscriptsID) == true
+
+    tc = DCoupling(2.0, (2,))
+    @test id(tc) == ID(CompositeIID(tc.cid), SubscriptsID(tc.subscripts))
+    @test rank(tc) == rank(typeof(tc)) == 1
+    @test tc == Coupling(2.0, id(tc), tc.subscripts)
+    @test ID{SimpleIID}(tc) == tc.cid
+    @test Subscripts(tc) == tc.subscripts
+
+    point = Point(CPID(1, 1), (0.0, 0.0), (0.0, 0.0))
+    hilbert = Hilbert(point.pid=>DFock(2))
+    @test couplingcenters(tc, point, Val(:Mu)) == (1,)
+    @test couplingpoints(tc, point, Val(:Mu)) == (point,)
+    @test couplinginternals(tc, point, hilbert, Val(:Mu)) == (DFock(2),)
+
+    tc₁ = DCoupling(1.5, (1, 2))
+    tc₂ = DCoupling(2.0, subscript"[a b](a < b)")
+    @test tc₁*tc₂ == Coupling(3.0, ID(DID(1), DID(2), DID(:a), DID(:b)), Subscripts((nambu=Subscript((1, 2)),), (nambu=subscript"[a b](a < b)",)))
+
+    ex = expand(tc₁, point, hilbert, Val(:info))
+    @test eltype(ex) == eltype(typeof(ex)) == Tuple{Float64, NTuple{2, OID{Index{CPID{Int}, DID{Int}}, SVector{2, Float64}}}}
+    @test collect(ex) == [
+        (1.5, ID(OID(Index(CPID(1, 1), DID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0)),
+                 OID(Index(CPID(1, 1), DID(2)), SVector(0.0, 0.0), SVector(0.0, 0.0))
+                 ))
+        ]
+
+    ex = expand(tc₂, point, hilbert, Val(:info))
+    @test eltype(ex) == eltype(typeof(ex)) == Tuple{Float64, NTuple{2, OID{Index{CPID{Int}, DID{Int}}, SVector{2, Float64}}}}
+    @test collect(ex) == [
+        (2.0, ID(OID(Index(CPID(1, 1), DID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0)),
+                    OID(Index(CPID(1, 1), DID(2)), SVector(0.0, 0.0), SVector(0.0, 0.0))
+                    ))
+        ]
+
+    @test @couplings(DCoupling(1.0, (1, 1))) == Couplings(DCoupling(1.0, (1, 1)))
+    @test @couplings(DCoupling(1.0, (1,))+DCoupling(1.0, (2,))) == DCoupling(1.0, (1,))+DCoupling(1.0, (2,))
+end
+
+@testset "TermFunction" begin
+    ta = TermAmplitude()
+    @test ta() == 1
+
+    ta = TermAmplitude(x->x+3.0)
+    @test ta(1.0) == 4.0
+
+    tcs = DCoupling(1.0, (1, 1)) + DCoupling(2.0, (2, 2))
+    termcouplings = TermCouplings(tcs)
+    @test termcouplings == deepcopy(TermCouplings(tcs))
+    @test isequal(termcouplings, deepcopy(TermCouplings(tcs)))
+    @test valtype(termcouplings) == valtype(typeof(termcouplings)) == typeof(tcs)
+    @test termcouplings() == tcs
+
+    fx = i -> i%2==1 ? (DCoupling(1.0, (1, 1))+DCoupling(1.0, (2, 2))) : (DCoupling(1.0, (2, 1))+DCoupling(1.0, (1, 2)))
+    termcouplings = TermCouplings(fx)
+    @test termcouplings == TermCouplings{typejoin(typeof(fx(1)), typeof(fx(2)))}(fx)
+    @test valtype(termcouplings) == valtype(typeof(termcouplings)) == typejoin(typeof(fx(1)), typeof(fx(2)))
+    @test termcouplings(1) == fx(1)
+    @test termcouplings(2) == fx(2)
+
+    @test ismodulatable(TermModulate{Val{true}}) == ismodulatable(TermModulate{<:Function}) == true
+    @test ismodulatable(TermModulate{Val{false}}) == false
+    termmodulate = TermModulate(:t)
+    @test termmodulate(t=1) == 1
+    @test isnothing(termmodulate(mu=1))
+    @test isnothing(termmodulate())
+
+    termmodulate = TermModulate(:t, t->t*2.0)
+    @test termmodulate(2) == 4
+end
+
+@testset "Term" begin
+    point = Point(CPID(1, 1), (0.0, 0.0), (0.0, 0.0))
+    hilbert = Hilbert(point.pid=>DFock(2))
+    term = Term{:Mu}(:mu, 1.5, 0, couplings=@couplings(DCoupling(1.0, (2, 1))), amplitude=(bond->3), modulate=false)
+    @test term|>kind == term|>typeof|>kind == :Mu
+    @test term|>id == term|>typeof|>id == :mu
+    @test term|>valtype == term|>typeof|>valtype == Float
+    @test term|>rank == term|>typeof|>rank == 2
+    @test term|>abbr == term|>typeof|>abbr == :mu
+    @test term|>ismodulatable == term|>typeof|>ismodulatable == false
+    @test term|>isHermitian == term|>typeof|>isHermitian == true
+    @test term == deepcopy(term)
+    @test isequal(term, deepcopy(term))
+    @test string(term) == "Mu{2}(id=mu, value=1.5, bondkind=0, factor=1.0)"
+    @test repr(term, point, hilbert) == "mu: 4.5 ph(2, 1)"
+    @test +term == term
+    @test -term == term*(-1) == replace(term, factor=-term.factor)
+    @test 2*term == term*2 == replace(term, factor=term.factor*2)
+    @test term/2 == term*(1/2) == replace(term, factor=term.factor/2)
+
+    p1 = Point(PID(1), (0.0, 0.0), (0.0, 0.0))
+    p2 = Point(PID(2), (0.0, 0.0), (0.0, 0.0))
+    hilbert = Hilbert(pid=>DFock(2) for pid in [PID(1), PID(2)])
+    term = Term{:Mu}(:mu, 1.5, 0,
+        couplings=bond->bond.pid.site%2==0 ? Couplings(DCoupling(1.0, (2, 2))) : Couplings(DCoupling(1.0, (1, 1))),
+        amplitude=bond->3,
+        modulate=true
+    )
+    @test term|>ismodulatable == term|>typeof|>ismodulatable == true
+    @test repr(term, p1, hilbert) == "mu: 4.5 ph(1, 1)"
+    @test repr(term, p2, hilbert) == "mu: 4.5 ph(2, 2)"
+    @test one(term) == replace(term, value=1.0)
+    @test zero(term) == replace(term, value=0.0)
+    @test term.modulate(mu=4.0) == 4.0
+    @test isnothing(term.modulate(t=1.0))
+    @test update!(term, mu=4.25) == replace(term, value=4.25)
+    @test term.value == 4.25
+end
+
+@testset "expand" begin
+    point = Point(PID(1), (0.0, 0.0), (0.0, 0.0))
+    hilbert = Hilbert(point.pid=>DFock(2))
+    term = Term{:Mu}(:mu, 1.5, 0, couplings=@couplings(DCoupling(1.0, (2, 1))), amplitude=bond->3.0, modulate=true)
+    operators = Operators(
+        Operator(+2.25, ID(
+            OID(Index(PID(1), DID(2)), SVector(0.0, 0.0), SVector(0.0, 0.0)),
+            OID(Index(PID(1), DID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0))
+            ))
+        )
+    @test expand(term, point, hilbert, half=true) == operators
+    @test expand(term, point, hilbert, half=false) == operators*2
+
+    bond = Bond(1, Point(PID(2), (1.5, 1.5), (1.0, 1.0)), Point(PID(1), (0.5, 0.5), (0.0, 0.0)))
+    hilbert = Hilbert(pid=>DFock(2) for pid in [PID(1), PID(2)])
+    term = Term{:Hp}(:t, 1.5, 1, couplings=@couplings(DCoupling(1.0, (2, 1))), amplitude=bond->3.0, modulate=true)
+    operators = Operators(
+        Operator(4.5, ID(
+            OID(Index(PID(1), DID(2)), SVector(0.5, 0.5), SVector(0.0, 0.0)),
+            OID(Index(PID(2), DID(1)), SVector(1.5, 1.5), SVector(1.0, 1.0))
+            ))
+        )
+    @test expand(term, bond, hilbert, half=true) == operators
+    @test expand(term, bond, hilbert, half=false) == operators+operators'
+
+    lattice = Lattice("Tuanzi", [Point(CPID(1, 1), (0.0, 0.0), (0.0, 0.0))], vectors=[[1.0, 0.0]], neighbors=1)
+    bonds = Bonds(lattice)
+    hilbert = Hilbert(pid=>DFock(2) for pid in lattice.pids)
+    term = Term{:Mu}(:mu, 1.5, 0, couplings=@couplings(DCoupling(1.0, (2, 1))), amplitude=bond->3.0, modulate=true)
+    operators = Operators(
+        Operator(+2.25, ID(
+            OID(Index(CPID(1, 1), DID(2)), SVector(0.0, 0.0), SVector(0.0, 0.0)),
+            OID(Index(CPID(1, 1), DID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0))
+            ))
+        )
+    @test expand(term, bonds, hilbert, half=true) == operators
+    @test expand(term, bonds, hilbert, half=false) == operators*2
 end
 
 @testset "LaTeX" begin

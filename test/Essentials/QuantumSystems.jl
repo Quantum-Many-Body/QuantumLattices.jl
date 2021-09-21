@@ -3,8 +3,8 @@ using StaticArrays: SVector
 using QuantumLattices.Essentials.QuantumSystems
 using QuantumLattices.Essentials.QuantumOperators: ID
 using QuantumLattices.Essentials.Spatials: AbstractPID, PID, CPID, Point, Bond, rcoord, azimuthd
-using QuantumLattices.Essentials.DegreesOfFreedom: Index, AbstractCompositeOID, OID, Hilbert, Operator, Operators, statistics, script, latexname, isHermitian
-using QuantumLattices.Essentials.Terms: IIDSpace, Coupling, Couplings, abbr, @subscript_str, @couplings, wildcard
+using QuantumLattices.Essentials.DegreesOfFreedom: Index, CompositeOID, OID, Hilbert, Operator, Operators, statistics, script, latexname, isHermitian
+using QuantumLattices.Essentials.DegreesOfFreedom: IIDSpace, Coupling, Couplings, abbr, @subscript_str, @couplings, wildcard
 using QuantumLattices.Interfaces: ⊗, ⋅, expand, permute, rank
 using QuantumLattices.Prerequisites.Combinatorics: Permutations
 using QuantumLattices.Prerequisites.VectorSpaces: shape, ndimshape
@@ -51,9 +51,9 @@ end
     @test script(Val(:nambu), Index(PID(1), FID{:f}(2, 3, 2))) == "\\dagger"
 
     @test latexname(Index{<:AbstractPID, <:FID{:f}}) == Symbol("Index{AbstractPID, FID{:f}}")
-    @test latexname(AbstractCompositeOID{Index{<:AbstractPID, <:FID{:f}}}) == Symbol("AbstractCompositeOID{Index{AbstractPID, FID{:f}}}")
+    @test latexname(CompositeOID{Index{<:AbstractPID, <:FID{:f}}}) == Symbol("CompositeOID{Index{AbstractPID, FID{:f}}}")
     @test latexname(Index{<:AbstractPID, <:FID{:b}}) == Symbol("Index{AbstractPID, FID{:b}}")
-    @test latexname(AbstractCompositeOID{Index{<:AbstractPID, <:FID{:b}}}) == Symbol("AbstractCompositeOID{Index{AbstractPID, FID{:b}}}")
+    @test latexname(CompositeOID{Index{<:AbstractPID, <:FID{:b}}}) == Symbol("CompositeOID{Index{AbstractPID, FID{:b}}}")
 end
 
 @testset "angle" begin
@@ -275,8 +275,8 @@ end
         Operator(+1.5, ID(OID(Index(PID(1), FID{:f}(2, 1, 2)), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(1), FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0]))),
         Operator(-1.5, ID(OID(Index(PID(1), FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])))
     )
-    @test expand(term, point, hilbert, true) == operators
-    @test expand(term, point, hilbert, false) == operators+operators'
+    @test expand(term, point, hilbert, half=true) == operators
+    @test expand(term, point, hilbert, half=false) == operators+operators'
 
     term = Onsite(:mu, 1.5, couplings=σᶻ"sp"⊗σᶻ"ob", modulate=true)
     operators = Operators(
@@ -285,8 +285,8 @@ end
         Operator(+0.75, ID(OID(Index(PID(1), FID{:f}(2, 2, 2)), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(1), FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0]))),
         Operator(+0.75, ID(OID(Index(PID(1), FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(1), FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0])))
     )
-    @test expand(term, point, hilbert, true) == operators
-    @test expand(term, point, hilbert, false) == operators+operators'
+    @test expand(term, point, hilbert, half=true) == operators
+    @test expand(term, point, hilbert, half=false) == operators+operators'
 end
 
 @testset "Hopping" begin
@@ -301,8 +301,8 @@ end
     )
     @test term|>abbr == term|>typeof|>abbr == :hp
     @test term|>isHermitian == term|>typeof|>isHermitian == false
-    @test expand(term, bond, hilbert, true) == operators
-    @test expand(term, bond, hilbert, false) == operators+operators'
+    @test expand(term, bond, hilbert, half=true) == operators
+    @test expand(term, bond, hilbert, half=false) == operators+operators'
 end
 
 @testset "Pairing" begin
@@ -315,8 +315,8 @@ end
     )
     @test term|>abbr == term|>typeof|>abbr == :pr
     @test term|>isHermitian == term|>typeof|>isHermitian == false
-    @test expand(term, bond, hilbert, true) == operators
-    @test expand(term, bond, hilbert, false) == operators+operators'
+    @test expand(term, bond, hilbert, half=true) == operators
+    @test expand(term, bond, hilbert, half=false) == operators+operators'
 
     point = Point(CPID('a', 1), (0.5, 0.5), (0.0, 0.0))
     hilbert = Hilbert(point.pid=>Fock{:f}(norbital=1, nspin=2, nnambu=2))
@@ -326,8 +326,8 @@ end
         Operator(-1.5, ID(OID(Index(CPID('a', 1), FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]), OID(Index(CPID('a', 1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])))
     )
     @test term|>abbr == term|>typeof|>abbr == :pr
-    @test expand(term, point, hilbert, true) == operators
-    @test expand(term, point, hilbert, false) == operators+operators'
+    @test expand(term, point, hilbert, half=true) == operators
+    @test expand(term, point, hilbert, half=false) == operators+operators'
 end
 
 @testset "Hubbard" begin
@@ -350,8 +350,8 @@ end
     )
     @test term|>abbr == term|>typeof|>abbr == :hb
     @test term|>isHermitian == term|>typeof|>isHermitian == true
-    @test expand(term, point, hilbert, true) == operators
-    @test expand(term, point, hilbert, false) == operators*2
+    @test expand(term, point, hilbert, half=true) == operators
+    @test expand(term, point, hilbert, half=false) == operators*2
 end
 
 @testset "InterOrbitalInterSpin" begin
@@ -374,8 +374,8 @@ end
     )
     @test term|>abbr == term|>typeof|>abbr == :nons
     @test term|>isHermitian == term|>typeof|>isHermitian == true
-    @test expand(term, point, hilbert, true) == operators
-    @test expand(term, point, hilbert, false) == operators*2
+    @test expand(term, point, hilbert, half=true) == operators
+    @test expand(term, point, hilbert, half=false) == operators*2
 end
 
 @testset "InterOrbitalIntraSpin" begin
@@ -398,8 +398,8 @@ end
     )
     @test term|>abbr == term|>typeof|>abbr == :noes
     @test term|>isHermitian == term|>typeof|>isHermitian == true
-    @test expand(term, point, hilbert, true) == operators
-    @test expand(term, point, hilbert, false) == operators*2
+    @test expand(term, point, hilbert, half=true) == operators
+    @test expand(term, point, hilbert, half=false) == operators*2
 end
 
 @testset "SpinFlip" begin
@@ -416,8 +416,8 @@ end
     )
     @test term|>abbr == term|>typeof|>abbr == :sf
     @test term|>isHermitian == term|>typeof|>isHermitian == false
-    @test expand(term, point, hilbert, true) == operators
-    @test expand(term, point, hilbert, false) == operators+operators'
+    @test expand(term, point, hilbert, half=true) == operators
+    @test expand(term, point, hilbert, half=false) == operators+operators'
 end
 
 @testset "PairHopping" begin
@@ -434,8 +434,8 @@ end
     )
     @test term|>abbr == term|>typeof|>abbr == :ph
     @test term|>isHermitian == term|>typeof|>isHermitian == false
-    @test expand(term, point, hilbert, true) == operators
-    @test expand(term, point, hilbert, false) == operators+operators'
+    @test expand(term, point, hilbert, half=true) == operators
+    @test expand(term, point, hilbert, half=false) == operators+operators'
 end
 
 @testset "Coulomb" begin
@@ -471,8 +471,8 @@ end
     )
     @test term|>abbr == term|>typeof|>abbr == :cl
     @test isnothing(term|>isHermitian) && isnothing(term|>typeof|>isHermitian)
-    @test expand(term, bond, hilbert, true) == operators
-    @test expand(term, bond, hilbert, false) == operators+operators'
+    @test expand(term, bond, hilbert, half=true) == operators
+    @test expand(term, bond, hilbert, half=false) == operators+operators'
 
     term = Coulomb(:V, 2.5, 1, couplings=σˣ"sp"*σᶻ"sp")
     operators = Operators(
@@ -502,8 +502,8 @@ end
             ))
     )
     @test term|>abbr == term|>typeof|>abbr == :cl
-    @test expand(term, bond, hilbert, true) == operators
-    @test expand(term, bond, hilbert, false) == operators+operators'
+    @test expand(term, bond, hilbert, half=true) == operators
+    @test expand(term, bond, hilbert, half=false) == operators+operators'
 end
 
 @testset "SID" begin
@@ -564,7 +564,7 @@ end
     @test script(Val(:tag), index) == 'z'
 
     @test latexname(Index{<:AbstractPID, <:SID}) == Symbol("Index{AbstractPID, SID}")
-    @test latexname(AbstractCompositeOID{<:Index{<:AbstractPID, <:SID}}) == Symbol("AbstractCompositeOID{Index{AbstractPID, SID}}")
+    @test latexname(CompositeOID{<:Index{<:AbstractPID, <:SID}}) == Symbol("CompositeOID{Index{AbstractPID, SID}}")
 end
 
 @testset "SpinOperator" begin
@@ -761,7 +761,7 @@ end
     @test script(Val(:dir), index) == 'y'
 
     latexname(Index{<:AbstractPID, <:NID}) == Symbol("Index{AbstractPID, NID}")
-    latexname(AbstractCompositeOID{<:Index{<:AbstractPID, <:NID}}) == Symbol("AbstractCompositeOID{Index{AbstractPID, NID}}")
+    latexname(CompositeOID{<:Index{<:AbstractPID, <:NID}}) == Symbol("CompositeOID{Index{AbstractPID, NID}}")
 end
 
 @testset "PhononOperator" begin

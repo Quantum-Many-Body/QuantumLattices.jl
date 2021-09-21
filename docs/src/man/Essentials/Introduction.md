@@ -12,7 +12,6 @@ Pages = [
         "QuantumNumbers.md",
         "Spatials.md",
         "DegreesOfFreedom.md",
-        "Terms.md",
         "Frameworks.md",
         "QuantumSystems.md",
         ]

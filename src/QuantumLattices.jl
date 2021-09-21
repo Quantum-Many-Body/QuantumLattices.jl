@@ -29,15 +29,12 @@ export pidtype, rcoord, icoord, isintracell, bonds!, bonds, @line_str, @rectangl
 export allbonds, zerothbonds, insidebonds, acrossbonds, intrabonds, interbonds
 
 # Essentials.DegreesOfFreedom
-export CompositeIID, CompositeInternal, Hilbert, Index, OID, Operator, Operators, OIDToTuple, Table, LaTeX, Boundary
-export statistics, iidtype, isHermitian, latexformat, twist, plain
-
-# Essentials.Terms
-export Subscript, Subscripts, SubscriptsID, IIDSpace, Coupling, Couplings, Term, Parameters, Generator, SimplifiedGenerator
-export abbr, ismodulatable, otype, @subscript_str, @couplings
+export CompositeIID, CompositeInternal, Index, OID, Operator, Operators, IIDSpace, Hilbert
+export Subscript, Subscripts, SubscriptsID, Coupling, Couplings, OIDToTuple, Table, Term, LaTeX, Boundary
+export statistics, iidtype, isHermitian, ismodulatable, abbr, otype, latexformat, twist, plain, @subscript_str, @couplings
 
 # Essentials.Frameworks
-export App, Engine, Assignment, Algorithm
+export Parameters, Generator, SimplifiedGenerator, Action, Engine, Assignment, Algorithm
 export prepare!, register!, run!, dependences, rundependences!
 
 # Essentials.QuantumSystems

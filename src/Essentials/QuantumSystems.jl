@@ -5,18 +5,17 @@ using StaticArrays: SVector
 using Printf: @printf, @sprintf
 using ..QuantumOperators: ID, OperatorProd
 using ..Spatials: AbstractPID, AbstractBond, Point, Bond, rcoord, pidtype
-using ..DegreesOfFreedom: SimpleIID, CompositeIID, SimpleInternal, CompositeInternal, InternalIndex
-using ..DegreesOfFreedom: Index, AbstractCompositeOID, OID, LaTeX, latexformat, OIDToTuple, Operator, Operators, Hilbert, Table
-using ..Terms: Subscripts, SubscriptsID, Subscript, IIDSpace, subscriptexpr, wildcard, diagonal
-using ..Terms: Coupling, Couplings, @couplings, couplinginternals, Term, TermCouplings, TermAmplitude, TermModulate
+using ..DegreesOfFreedom: SimpleIID, CompositeIID, SimpleInternal, CompositeInternal
+using ..DegreesOfFreedom: Index, CompositeOID, OID, LaTeX, latexformat, OIDToTuple, Operator, Operators, Hilbert, Table
+using ..DegreesOfFreedom: Subscripts, SubscriptsID, Subscript, IIDSpace, subscriptexpr, wildcard, diagonal
+using ..DegreesOfFreedom: Coupling, Couplings, @couplings, couplinginternals, Term, TermCouplings, TermAmplitude, TermModulate
 using ...Essentials: kind, dtype
 using ...Interfaces: decompose, dimension
 using ...Prerequisites: Float, atol, rtol, delta, decimaltostr
 using ...Prerequisites.Traits: rawtype, getcontent
 using ...Prerequisites.VectorSpaces: CartesianVectorSpace
 
-import ..DegreesOfFreedom: statistics, script, latexname, isHermitian
-import ..Terms: couplingcenters, abbr, termfactor, otype
+import ..DegreesOfFreedom: statistics, script, latexname, isHermitian, couplingcenters, abbr, termfactor, otype
 import ...Interfaces: rank, ⊗, ⋅, expand, expand!, permute
 import ...Prerequisites.VectorSpaces: shape, ndimshape
 
@@ -117,7 +116,7 @@ end
 @generated function shape(iidspace::IIDSpace{I, V}) where {I<:CompositeIID{<:Tuple{Vararg{FID}}}, V<:CompositeInternal{<:Tuple{Vararg{Fock}}}}
     @assert rank(I)==rank(V) "shape error: mismatched composite iid and composite internal space."
     Kind = Val(kind(iidspace))
-    Expr(:tuple, [:(shape(IIDSpace(iidspace.iid[$i], iidspace.internal[InternalIndex($i)], $Kind); order=$i)...) for i = 1:rank(I)]...)
+    Expr(:tuple, [:(shape(IIDSpace(iidspace.iid[$i], iidspace.internal.contents[$i], $Kind); order=$i)...) for i = 1:rank(I)]...)
 end
 @inline function shape(iidspace::IIDSpace{<:FID, <:Fock}; order)
     obrange = fidshape(kind(iidspace)|>Val, :orbital|>Val, iidspace.iid.orbital, iidspace.internal.norbital)
@@ -159,9 +158,9 @@ The default LaTeX format for a fermionic oid.
 """
 const fdefaultlatex = LaTeX{(:nambu,), (:site, :orbital, :spsym)}('c')
 @inline latexname(::Type{<:Index{<:AbstractPID, <:FID{:f}}}) = Symbol("Index{AbstractPID, FID{:f}}")
-@inline latexname(::Type{<:AbstractCompositeOID{<:Index{<:AbstractPID, <:FID{:f}}}}) = Symbol("AbstractCompositeOID{Index{AbstractPID, FID{:f}}}")
+@inline latexname(::Type{<:CompositeOID{<:Index{<:AbstractPID, <:FID{:f}}}}) = Symbol("CompositeOID{Index{AbstractPID, FID{:f}}}")
 latexformat(Index{<:AbstractPID, <:FID{:f}}, fdefaultlatex)
-latexformat(AbstractCompositeOID{<:Index{<:AbstractPID, <:FID{:f}}}, fdefaultlatex)
+latexformat(CompositeOID{<:Index{<:AbstractPID, <:FID{:f}}}, fdefaultlatex)
 
 """
     bdefaultlatex
@@ -170,9 +169,9 @@ The default LaTeX format for a bosonic oid.
 """
 const bdefaultlatex = LaTeX{(:nambu,), (:site, :orbital, :spsym)}('b')
 @inline latexname(::Type{<:Index{<:AbstractPID, <:FID{:b}}}) = Symbol("Index{AbstractPID, FID{:b}}")
-@inline latexname(::Type{<:AbstractCompositeOID{<:Index{<:AbstractPID, <:FID{:b}}}}) = Symbol("AbstractCompositeOID{Index{AbstractPID, FID{:b}}}")
+@inline latexname(::Type{<:CompositeOID{<:Index{<:AbstractPID, <:FID{:b}}}}) = Symbol("CompositeOID{Index{AbstractPID, FID{:b}}}")
 latexformat(Index{<:AbstractPID, <:FID{:b}}, bdefaultlatex)
-latexformat(AbstractCompositeOID{<:Index{<:AbstractPID, <:FID{:b}}}, bdefaultlatex)
+latexformat(CompositeOID{<:Index{<:AbstractPID, <:FID{:b}}}, bdefaultlatex)
 
 """
     angle(id::OID{<:Index{<:AbstractPID, <:FID}}, vectors::AbstractVector{<:AbstractVector{<:Number}}, values::AbstractVector{<:Number}) -> Complex{<:Number}
@@ -203,11 +202,11 @@ Indicate that the chosen fields are `(:nambu, :site, :orbital, :spin)` when conv
 const nambufockindextotuple = OIDToTuple(:nambu, :site, :orbital, :spin)
 
 """
-    isnormalordered(opt::Operator{<:Number, <:ID{AbstractCompositeOID{<:Index{<:AbstractPID, <:FID}}}}) -> Bool
+    isnormalordered(opt::Operator{<:Number, <:ID{CompositeOID{<:Index{<:AbstractPID, <:FID}}}}) -> Bool
 
 Judge whether an operator is normal ordered.
 """
-function isnormalordered(opt::Operator{<:Number, <:ID{AbstractCompositeOID{<:Index{<:AbstractPID, <:FID}}}})
+function isnormalordered(opt::Operator{<:Number, <:ID{CompositeOID{<:Index{<:AbstractPID, <:FID}}}})
     flag = true
     for i = 1:rank(opt)
         flag && (opt.id[i].index.iid.nambu == ANNIHILATION) && (flag = false)
@@ -231,15 +230,15 @@ function permute(id₁::OID{<:Index{<:AbstractPID, <:FID{:f}}}, id₂::OID{<:Ind
 end
 
 """
-    *(  f1::Operator{<:Number, <:ID{AbstractCompositeOID{<:Index{<:AbstractPID, <:FID{:f}}}}},
-        f2::Operator{<:Number, <:ID{AbstractCompositeOID{<:Index{<:AbstractPID, <:FID{:f}}}}}
+    *(  f1::Operator{<:Number, <:ID{CompositeOID{<:Index{<:AbstractPID, <:FID{:f}}}}},
+        f2::Operator{<:Number, <:ID{CompositeOID{<:Index{<:AbstractPID, <:FID{:f}}}}}
         ) -> Union{Nothing, Operator}
 
 Get the multiplication of two fermionic Fock operators.
 """
 @inline function Base.:*(
-        f1::Operator{<:Number, <:ID{AbstractCompositeOID{<:Index{<:AbstractPID, <:FID{:f}}}}},
-        f2::Operator{<:Number, <:ID{AbstractCompositeOID{<:Index{<:AbstractPID, <:FID{:f}}}}}
+        f1::Operator{<:Number, <:ID{CompositeOID{<:Index{<:AbstractPID, <:FID{:f}}}}},
+        f2::Operator{<:Number, <:ID{CompositeOID{<:Index{<:AbstractPID, <:FID{:f}}}}}
         )
     rank(f1)>0 && rank(f2)>0 && f1.id[end]==f2.id[1] && return nothing
     return invoke(*, Tuple{OperatorProd, OperatorProd}, f1, f2)
@@ -561,10 +560,10 @@ end
 @inline isHermitian(::Type{<:Pairing}) = false
 @inline couplingcenters(::FockCoupling, ::Bond, ::Val{:Pairing}) = (1, 2)
 @inline fidshape(::Val{:Pairing}, ::Val{:nambu}, ::Symbol, n::Int; order) = ((@assert n==2 "range error: nnambu must be 2 for Pairing."); ANNIHILATION:ANNIHILATION)
-function expand!(operators::Operators, term::Pairing, bond::AbstractBond, hilbert::Hilbert, half::Bool=false; table::Union{Nothing, Table}=nothing)
-    argtypes = Tuple{Operators, Term, AbstractBond, Hilbert, Bool}
-    invoke(expand!, argtypes, operators, term, bond, hilbert, half; table=table)
-    isa(bond, Bond) && invoke(expand!, argtypes, operators, term, reverse(bond), hilbert, half; table=table)
+function expand!(operators::Operators, term::Pairing, bond::AbstractBond, hilbert::Hilbert; half::Bool=false, table::Union{Nothing, Table}=nothing)
+    argtypes = Tuple{Operators, Term, AbstractBond, Hilbert}
+    invoke(expand!, argtypes, operators, term, bond, hilbert; half=half, table=table)
+    isa(bond, Bond) && invoke(expand!, argtypes, operators, term, reverse(bond), hilbert; half=half, table=table)
     return operators
 end
 
@@ -785,9 +784,9 @@ The default LaTeX format for a spin oid.
 """
 const sdefaultlatex = LaTeX{(:tag,), (:site,)}('S')
 @inline latexname(::Type{<:Index{<:AbstractPID, <:SID}}) = Symbol("Index{AbstractPID, SID}")
-@inline latexname(::Type{<:AbstractCompositeOID{<:Index{<:AbstractPID, <:SID}}}) = Symbol("AbstractCompositeOID{Index{AbstractPID, SID}}")
+@inline latexname(::Type{<:CompositeOID{<:Index{<:AbstractPID, <:SID}}}) = Symbol("CompositeOID{Index{AbstractPID, SID}}")
 latexformat(Index{<:AbstractPID, <:SID}, sdefaultlatex)
-latexformat(AbstractCompositeOID{<:Index{<:AbstractPID, <:SID}}, sdefaultlatex)
+latexformat(CompositeOID{<:Index{<:AbstractPID, <:SID}}, sdefaultlatex)
 
 """
     usualspinindextotuple
@@ -1059,14 +1058,14 @@ end
 
 """
     script(::Val{:BD}, index::Index{<:AbstractPID, <:NID}, l::LaTeX) -> Char
-    script(::Val{:BD}, oid::AbstractCompositeOID{<:Index{<:AbstractPID, <:NID}}, l::LaTeX) -> Char
+    script(::Val{:BD}, oid::CompositeOID{<:Index{<:AbstractPID, <:NID}}, l::LaTeX) -> Char
     script(::Val{:site}, index::Index{<:AbstractPID, <:NID}; kwargs...) -> Int
     script(::Val{:dir}, index::Index{<:AbstractPID, <:NID}; kwargs...) -> Char
 
 Get the required script of a phonon oid.
 """
 @inline script(::Val{:BD}, index::Index{<:AbstractPID, <:NID}, l::LaTeX) = l.body[index.iid.tag]
-@inline script(::Val{:BD}, oid::AbstractCompositeOID{<:Index{<:AbstractPID, <:NID}}, l::LaTeX) = l.body[getcontent(oid, :index).iid.tag]
+@inline script(::Val{:BD}, oid::CompositeOID{<:Index{<:AbstractPID, <:NID}}, l::LaTeX) = l.body[getcontent(oid, :index).iid.tag]
 @inline script(::Val{:site}, index::Index{<:AbstractPID, <:NID}; kwargs...) = index.pid.site
 @inline script(::Val{:dir}, index::Index{<:AbstractPID, <:NID}; kwargs...) = index.iid.dir
 
@@ -1077,9 +1076,9 @@ The default LaTeX format for a phonon oid.
 """
 const pndefaultlatex = LaTeX{(:dir,), (:site,)}(Dict('p'=>'p', 'u'=>'u'), "", "")
 @inline latexname(::Type{<:Index{<:AbstractPID, <:NID}}) = Symbol("Index{AbstractPID, NID}")
-@inline latexname(::Type{<:AbstractCompositeOID{<:Index{<:AbstractPID, <:NID}}}) = Symbol("AbstractCompositeOID{Index{AbstractPID, NID}}")
+@inline latexname(::Type{<:CompositeOID{<:Index{<:AbstractPID, <:NID}}}) = Symbol("CompositeOID{Index{AbstractPID, NID}}")
 latexformat(Index{<:AbstractPID, <:NID}, pndefaultlatex)
-latexformat(AbstractCompositeOID{<:Index{<:AbstractPID, <:NID}}, pndefaultlatex)
+latexformat(CompositeOID{<:Index{<:AbstractPID, <:NID}}, pndefaultlatex)
 
 """
     usualphononindextotuple

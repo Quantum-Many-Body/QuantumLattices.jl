@@ -42,7 +42,6 @@ makedocs(
                         "man/Essentials/QuantumNumbers.md",
                         "man/Essentials/Spatials.md",
                         "man/Essentials/DegreesOfFreedom.md",
-                        "man/Essentials/Terms.md",
                         "man/Essentials/Frameworks.md",
                         "man/Essentials/QuantumSystems.md",
                         ],

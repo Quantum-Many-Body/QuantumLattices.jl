@@ -9,7 +9,17 @@ using QuantumLattices
 
 # Frameworks
 
-## App and Engine
+## Parameters
+
+## Entry
+
+## Engine
+
+### Generator
+
+### SimplifiedGenerator
+
+## Action
 
 ## Assignment
 
