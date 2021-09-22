@@ -559,7 +559,6 @@ end
         data::Any=nothing,
         savedata::Bool=true,
         virgin::Bool=true,
-        kwargs...
         )
 
 Construct an assignment.
@@ -570,7 +569,7 @@ Construct an assignment.
         data::Any=nothing,
         savedata::Bool=true,
         virgin::Bool=true,
-        kwargs...)
+        )
     A, P, M, D, R = typeof(action), typeof(parameters), typeof(map), typeof(dependences), isnothing(data) ? Any : typeof(data)
     return Assignment{A, P, M, D, R, id}(action, parameters, map, dependences, data, savedata, virgin)
 end
@@ -750,15 +749,15 @@ Add an assignment on a algorithm by providing the contents of the assignment, an
 end
 
 """
-    add!(alg::Algorithm, id::Symbol, action::Action; kwargs...) -> Algorithm
+    add!(alg::Algorithm, id::Symbol, action::Action; parameters::Parameters=Parameters{()}(), kwargs...) -> Algorithm
 
 Add an assignment on a algorithm by providing the contents of the assignment.
 
 The difference between `add!` and `register!` is that the `add!` function does not run the newly added assignment but the `register!` function does.
 """
-function add!(alg::Algorithm, id::Symbol, action::Action; kwargs...)
+function add!(alg::Algorithm, id::Symbol, action::Action; parameters::Parameters=Parameters{()}(), kwargs...)
     @assert id∉keys(alg.sassignments) "add! error: id($id) conflict."
-    alg.dassignments[id] = Assignment(id, action, merge(alg.parameters, get(kwargs, :parameters, Parameters{()}())); kwargs...)
+    alg.dassignments[id] = Assignment(id, action, merge(alg.parameters, parameters); kwargs...)
     return alg
 end
 

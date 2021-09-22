@@ -43,44 +43,6 @@ const FCoupling{V, I<:ID{FID}, C<:Subscripts, CI<:SubscriptsID} = Coupling{V, I,
 @inline isHermitian(::Type{<:Term{:Mu}}) = true
 @inline isHermitian(::Type{<:Term{:Hp}}) = false
 
-struct FEngine <: Engine end
-@inline Base.repr(::FEngine) = "FEngine"
-@inline Base.show(io::IO, ::FEngine) = @printf io "FEngine"
-struct FAction <: Action end
-
-mutable struct VCA <: Engine
-    t::Float
-    U::Float
-end
-function update!(vca::VCA; kwargs...)
-    vca.t = get(kwargs, :t, vca.t)
-    vca.U = get(kwargs, :U, vca.U)
-    return vca
-end
-@inline Parameters(vca::VCA) = Parameters{(:t, :U)}(vca.t, vca.U)
-@inline gf(alg::Algorithm{VCA}) = get(alg, Val(:_VCAGF_)).data
-
-mutable struct GF <: Action
-    dim::Int
-    count::Int
-end
-
-mutable struct DOS <: Action
-    mu::Float
-end
-@inline update!(eb::DOS; kwargs...) = (eb.mu = get(kwargs, :mu, eb.mu); eb)
-
-@inline dependences(alg::Algorithm{VCA}, assign::Assignment{GF}, ::Tuple{}=()) = assign.dependences
-@inline dependences(alg::Algorithm{VCA}, assign::Assignment, ::Tuple{}=()) = (:_VCAGF_, assign.dependences...)
-@inline function prepare!(alg::Algorithm{VCA}, assign::Assignment{GF})
-    assign.virgin && (assign.data = Matrix{valtype(assign)|>eltype}(undef, assign.action.dim, assign.action.dim))
-end
-@inline run!(alg::Algorithm{VCA}, assign::Assignment{GF}) = (assign.action.count += 1; assign.data[:, :] .= alg.engine.t+alg.engine.U)
-@inline function run!(alg::Algorithm{VCA}, assign::Assignment{DOS})
-    rundependences!(alg, assign)
-    assign.data = tr(gf(alg))
-end
-
 @testset "Parameters" begin
     ps1 = Parameters{(:t1, :t2, :U)}(1.0im, 1.0, 2.0)
     ps2 = Parameters{(:t1, :U)}(1.0im, 2.0)
@@ -91,6 +53,8 @@ end
 
 @testset "Generator" begin
     @test contentnames(AbstractGenerator) == (:operators, :table, :boundary)
+    @test contentnames(Generator) == (:operators, :terms, :bonds, :hilbert, :half, :table, :boundary)
+    @test contentnames(SimplifiedGenerator) == (:parameters, :operators, :table, :boundary)
 
     lattice = Lattice("Tuanzi", [Point(PID(1), (0.0, 0.0), (0.0, 0.0)), Point(PID(2), (0.5, 0.0), (0.0, 0.0))], vectors=[[1.0, 0.0]], neighbors=1)
     bonds = Bonds(lattice)
@@ -139,7 +103,12 @@ end
     @test i(cgen) == sgen
 end
 
-@testset "Assignment" begin
+struct FEngine <: Engine end
+@inline Base.repr(::FEngine) = "FEngine"
+@inline Base.show(io::IO, ::FEngine) = @printf io "FEngine"
+struct FAction <: Action end
+
+@testset "Assignment/Algorithm" begin
     @test FAction() == FAction()
     @test isequal(FAction(), FAction())
     @test update!(FAction()) == FAction()
@@ -151,9 +120,7 @@ end
     @test assign|>id == assign|>typeof|>id == :FAction
     update!(assign, t=2.0)
     @test assign.parameters == (t=2.0, U=8.0)
-end
 
-@testset "Algorithm" begin
     @test FEngine() == FEngine()
     @test isequal(FEngine(), FEngine())
     @test update!(FEngine()) == FEngine()
@@ -174,11 +141,45 @@ end
     @test dependences(alg, get(alg, :FAction₂), (:FAction₁,)) == ()
 end
 
+mutable struct VCA <: Engine
+    t::Float
+    U::Float
+end
+function update!(vca::VCA; kwargs...)
+    vca.t = get(kwargs, :t, vca.t)
+    vca.U = get(kwargs, :U, vca.U)
+    return vca
+end
+@inline Parameters(vca::VCA) = Parameters{(:t, :U)}(vca.t, vca.U)
+@inline gf(alg::Algorithm{VCA}) = get(alg, Val(:_VCAGF_)).data
+
+mutable struct GF <: Action
+    dim::Int
+    count::Int
+end
+
+mutable struct DOS <: Action
+    mu::Float
+end
+@inline update!(eb::DOS; kwargs...) = (eb.mu = get(kwargs, :mu, eb.mu); eb)
+@inline dosmap(params::Parameters) = Parameters{(:t, :U, :mu)}(params.t, params.U, -params.U/2)
+
+@inline dependences(alg::Algorithm{VCA}, assign::Assignment{GF}, ::Tuple{}=()) = assign.dependences
+@inline dependences(alg::Algorithm{VCA}, assign::Assignment, ::Tuple{}=()) = (:_VCAGF_, assign.dependences...)
+@inline function prepare!(alg::Algorithm{VCA}, assign::Assignment{GF})
+    assign.virgin && (assign.data = Matrix{valtype(assign)|>eltype}(undef, assign.action.dim, assign.action.dim))
+end
+@inline run!(alg::Algorithm{VCA}, assign::Assignment{GF}) = (assign.action.count += 1; assign.data[:, :] .= alg.engine.t+alg.engine.U)
+@inline function run!(alg::Algorithm{VCA}, assign::Assignment{DOS})
+    rundependences!(alg, assign)
+    assign.data = tr(gf(alg))
+end
+
 @testset "Framework" begin
     engine = VCA(1.0, 8.0)
     gf = Assignment(:_VCAGF_, GF(4, 0), Parameters(engine), data=Matrix{Complex{Float}}(undef, 0, 0))
     vca = Algorithm("Test", engine, assignments=(gf,))
-    @test_logs (:info, r"Action DOS\(DOS\)\: time consumed [0-9]*\.[0-9]*s.") register!(vca, :DOS, DOS(-3.5), parameters=(U=7.0,), map=params::Parameters->Parameters{(:t, :U, :mu)}(params.t, params.U, -params.U/2))
+    @test_logs (:info, r"Action DOS\(DOS\)\: time consumed [0-9]*\.[0-9]*s.") register!(vca, :DOS, DOS(-3.5), parameters=(U=7.0,), map=dosmap)
     dos = get(vca, :DOS)
     @test dos.data == 32.0
     @test dos.action.mu == -3.5
