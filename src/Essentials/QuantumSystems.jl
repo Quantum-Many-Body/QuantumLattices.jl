@@ -19,15 +19,15 @@ import ..DegreesOfFreedom: statistics, script, latexname, ishermitian, couplingc
 import ...Interfaces: rank, ⊗, ⋅, expand, expand!, permute
 import ...Prerequisites.VectorSpaces: shape, ndimshape
 
-export ANNIHILATION, CREATION, MAJORANA, fdefaultlatex, bdefaultlatex
+export majorana, annihilation, creation, flatex, blatex
 export FID, Fock, FockCoupling, Onsite, Hopping, Pairing, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, SpinFlip, PairHopping, Coulomb
 export isnormalordered, @σ⁰_str, @σˣ_str, @σʸ_str, @σᶻ_str, @σ⁺_str, @σ⁻_str, @fc_str
 
-export sdefaultlatex
+export slatex
 export SID, Spin, SpinCoupling, SpinTerm
 export totalspin, @heisenberg_str, @ising_str, @gamma_str, @dm_str, @sˣ_str, @sʸ_str, @sᶻ_str, @sc_str
 
-export ndefaultlatex
+export nlatex
 export NID, Phonon, PhononCoupling, PhononKinetic, PhononPotential
 export @kinetic_str, @potential_str
 
@@ -35,25 +35,25 @@ export DMPhonon, @dmphonon_str
 
 # Canonical fermionic/bosonic systems and hardcore bosonic systems
 """
-    ANNIHILATION
+    majorana
 
-Indicate that the nambu index is ANNIHILATION.
+Indicate that the nambu index is majorana.
 """
-const ANNIHILATION = 1
-
-"""
-    CREATION
-
-Indicate that the nambu index is CREATION.
-"""
-const CREATION = 2
+const majorana = 0
 
 """
-    MAJORANA
+    annihilation
 
-Indicate that the nambu index is MAJORANA.
+Indicate that the nambu index is annihilation.
 """
-const MAJORANA = 0
+const annihilation = 1
+
+"""
+    creation
+
+Indicate that the nambu index is creation.
+"""
+const creation = 2
 
 """
     FID{T, O<:Union{Int, Symbol}, S<:Union{Int, Symbol}, N<:Union{Int, Symbol}} <: SimpleIID
@@ -79,11 +79,11 @@ end
 @inline statistics(::Type{<:FID{T}}) where T = T
 
 """
-    FID{T}(; orbital::Union{Int, Symbol}=1, spin::Union{Int, Symbol}=1, nambu::Union{Int, Symbol}=ANNIHILATION) where T
+    FID{T}(; orbital::Union{Int, Symbol}=1, spin::Union{Int, Symbol}=1, nambu::Union{Int, Symbol}=annihilation) where T
 
 Create a Fock id.
 """
-@inline FID{T}(; orbital::Union{Int, Symbol}=1, spin::Union{Int, Symbol}=1, nambu::Union{Int, Symbol}=ANNIHILATION) where T = FID{T}(orbital, spin, nambu)
+@inline FID{T}(; orbital::Union{Int, Symbol}=1, spin::Union{Int, Symbol}=1, nambu::Union{Int, Symbol}=annihilation) where T = FID{T}(orbital, spin, nambu)
 
 """
     Fock{T} <: SimpleInternal{FID{T, Int, Int, Int}}
@@ -124,7 +124,7 @@ end
 end
 @inline fidshape(::Val, ::Val, ::Symbol, n::Int) = 1:n
 @inline fidshape(::Val, ::Val{field}, v::Int, n::Int) where field = ((@assert 0<v<n+1 "shape error: $field out of range."); v:v)
-@inline fidshape(::Val, ::Val{:nambu}, ::Symbol, n::Int; order) = n==1 ? (MAJORANA:MAJORANA) : order%2==1 ? (CREATION:CREATION) : (ANNIHILATION:ANNIHILATION)
+@inline fidshape(::Val, ::Val{:nambu}, ::Symbol, n::Int; order) = n==1 ? (majorana:majorana) : order%2==1 ? (creation:creation) : (annihilation:annihilation)
 @inline fidshape(::Val, ::Val{:nambu}, v::Int, n::Int; order) = ((@assert n==1 ? v==0 : 0<v<n+1 "shape error: nambu out of range."); v:v)
 
 """
@@ -147,29 +147,29 @@ Get the required script of a Fock index.
 @inline script(::Val{:orbital}, index::Index{<:AbstractPID, <:FID}; kwargs...) = index.iid.orbital
 @inline script(::Val{:spint}, index::Index{<:AbstractPID, <:FID}; kwargs...) = index.iid.spin
 @inline script(::Val{:spsym}, index::Index{<:AbstractPID, <:FID}; kwargs...) = index.iid.spin==1 ? "↓" : index.iid.spin==2 ? "↑" : error("script error: wrong spin.")
-@inline script(::Val{:nambu}, index::Index{<:AbstractPID, <:FID}; kwargs...) = index.iid.nambu==CREATION ? "\\dagger" : ""
+@inline script(::Val{:nambu}, index::Index{<:AbstractPID, <:FID}; kwargs...) = index.iid.nambu==creation ? "\\dagger" : ""
 
 """
-    fdefaultlatex
+    flatex
 
 The default LaTeX format for a fermionic oid.
 """
-const fdefaultlatex = LaTeX{(:nambu,), (:site, :orbital, :spsym)}('c')
+const flatex = LaTeX{(:nambu,), (:site, :orbital, :spsym)}('c')
 @inline latexname(::Type{<:Index{<:AbstractPID, <:FID{:f}}}) = Symbol("Index{AbstractPID, FID{:f}}")
 @inline latexname(::Type{<:CompositeOID{<:Index{<:AbstractPID, <:FID{:f}}}}) = Symbol("CompositeOID{Index{AbstractPID, FID{:f}}}")
-latexformat(Index{<:AbstractPID, <:FID{:f}}, fdefaultlatex)
-latexformat(CompositeOID{<:Index{<:AbstractPID, <:FID{:f}}}, fdefaultlatex)
+latexformat(Index{<:AbstractPID, <:FID{:f}}, flatex)
+latexformat(CompositeOID{<:Index{<:AbstractPID, <:FID{:f}}}, flatex)
 
 """
-    bdefaultlatex
+    blatex
 
 The default LaTeX format for a bosonic oid.
 """
-const bdefaultlatex = LaTeX{(:nambu,), (:site, :orbital, :spsym)}('b')
+const blatex = LaTeX{(:nambu,), (:site, :orbital, :spsym)}('b')
 @inline latexname(::Type{<:Index{<:AbstractPID, <:FID{:b}}}) = Symbol("Index{AbstractPID, FID{:b}}")
 @inline latexname(::Type{<:CompositeOID{<:Index{<:AbstractPID, <:FID{:b}}}}) = Symbol("CompositeOID{Index{AbstractPID, FID{:b}}}")
-latexformat(Index{<:AbstractPID, <:FID{:b}}, bdefaultlatex)
-latexformat(CompositeOID{<:Index{<:AbstractPID, <:FID{:b}}}, bdefaultlatex)
+latexformat(Index{<:AbstractPID, <:FID{:b}}, blatex)
+latexformat(CompositeOID{<:Index{<:AbstractPID, <:FID{:b}}}, blatex)
 
 """
     angle(id::OID{<:Index{<:AbstractPID, <:FID}}, vectors::AbstractVector{<:AbstractVector{<:Number}}, values::AbstractVector{<:Number}) -> Complex{<:Number}
@@ -182,7 +182,7 @@ function Base.angle(id::OID{<:Index{<:AbstractPID, <:FID}}, vectors::AbstractVec
             length(vectors)==2 ? 2*convert(datatype, pi)*dot(decompose(id.icoord, vectors[1], vectors[2]), values) :
             length(vectors)==3 ? 2*convert(datatype, pi)*dot(decompose(id.icoord, vectors[1], vectors[2], vectors[3]), values) :
             error("angle error: not supported number of input basis vectors.")
-    return id.index.iid.nambu==ANNIHILATION ? phase : id.index.iid.nambu==CREATION ? -phase : error("angle error: not supported Fock index.")
+    return id.index.iid.nambu==annihilation ? phase : id.index.iid.nambu==creation ? -phase : error("angle error: not supported Fock index.")
 end
 
 """
@@ -193,8 +193,8 @@ Judge whether an operator is normal ordered.
 function isnormalordered(opt::Operator{<:Number, <:ID{CompositeOID{<:Index{<:AbstractPID, <:FID}}}})
     flag = true
     for i = 1:rank(opt)
-        flag && (opt.id[i].index.iid.nambu == ANNIHILATION) && (flag = false)
-        flag || (opt.id[i].index.iid.nambu == CREATION) && return false
+        flag && (opt.id[i].index.iid.nambu == annihilation) && (flag = false)
+        flag || (opt.id[i].index.iid.nambu == creation) && return false
     end
     return true
 end
@@ -236,7 +236,7 @@ Permute two bosonic oids and get the result.
 function permute(id₁::OID{<:Index{<:AbstractPID, <:FID{:b}}}, id₂::OID{<:Index{<:AbstractPID, <:FID{:b}}})
     @assert id₁.index≠id₂.index || id₁.rcoord≠id₂.rcoord || id₁.icoord≠id₂.icoord "permute error: permuted ids should not be equal to each other."
     if id₁.index'==id₂.index && id₁.rcoord==id₂.rcoord && id₁.icoord==id₂.icoord
-        if id₁.index.iid.nambu == CREATION
+        if id₁.index.iid.nambu == creation
             return (Operator(1), Operator(1, ID(id₂, id₁)))
         else
             return (Operator(-1), Operator(1, ID(id₂, id₁)))
@@ -360,7 +360,7 @@ macro σ⁰_str(mode::String)
     @assert mode∈("sp", "ob", "ph") "@σ⁰_str error: wrong input mode."
     mode=="sp" && return FockCoupling{2}(1, spins=(1, 1)) + FockCoupling{2}(1, spins=(2, 2))
     mode=="ob" && return FockCoupling{2}(1, orbitals=(1, 1)) + FockCoupling{2}(1, orbitals=(2, 2))
-    return FockCoupling{2}(1, nambus=(ANNIHILATION, CREATION)) + FockCoupling{2}(1, nambus=(CREATION, ANNIHILATION))
+    return FockCoupling{2}(1, nambus=(annihilation, creation)) + FockCoupling{2}(1, nambus=(creation, annihilation))
 end
 
 """
@@ -374,7 +374,7 @@ macro σˣ_str(mode::String)
     @assert mode∈("sp", "ob", "ph") "@σˣ_str error: wrong input mode."
     mode=="sp" && return FockCoupling{2}(1, spins=(1, 2)) + FockCoupling{2}(1, spins=(2, 1))
     mode=="ob" && return FockCoupling{2}(1, orbitals=(1, 2)) + FockCoupling{2}(1, orbitals=(2, 1))
-    return FockCoupling{2}(1, nambus=(ANNIHILATION, ANNIHILATION)) + FockCoupling{2}(1, nambus=(CREATION, CREATION))
+    return FockCoupling{2}(1, nambus=(annihilation, annihilation)) + FockCoupling{2}(1, nambus=(creation, creation))
 end
 
 """
@@ -388,7 +388,7 @@ macro σʸ_str(mode::String)
     @assert mode∈("sp", "ob", "ph") "@σʸ_str error: wrong input mode."
     mode=="sp" && return FockCoupling{2}(1im, spins=(1, 2)) + FockCoupling{2}(-1im, spins=(2, 1))
     mode=="ob" && return FockCoupling{2}(1im, orbitals=(1, 2)) + FockCoupling{2}(-1im, orbitals=(2, 1))
-    return FockCoupling{2}(1im, nambus=(ANNIHILATION, ANNIHILATION)) + FockCoupling{2}(-1im, nambus=(CREATION, CREATION))
+    return FockCoupling{2}(1im, nambus=(annihilation, annihilation)) + FockCoupling{2}(-1im, nambus=(creation, creation))
 end
 
 """
@@ -402,7 +402,7 @@ macro σᶻ_str(mode::String)
     @assert mode∈("sp", "ob", "ph") "@σᶻ_str error: wrong input mode."
     mode=="sp" && return FockCoupling{2}(-1, spins=(1, 1)) + FockCoupling{2}(1, spins=(2, 2))
     mode=="ob" && return FockCoupling{2}(-1, orbitals=(1, 1)) + FockCoupling{2}(1, orbitals=(2, 2))
-    return FockCoupling{2}(-1, nambus=(ANNIHILATION, CREATION)) + FockCoupling{2}(1, nambus=(CREATION, ANNIHILATION))
+    return FockCoupling{2}(-1, nambus=(annihilation, creation)) + FockCoupling{2}(1, nambus=(creation, annihilation))
 end
 
 """
@@ -416,7 +416,7 @@ macro σ⁺_str(mode::String)
     @assert mode∈("sp", "ob", "ph") "@σ⁺_str error: wrong input mode."
     mode=="sp" && return Couplings(FockCoupling{2}(1, spins=(2, 1)))
     mode=="ob" && return Couplings(FockCoupling{2}(1, orbitals=(2, 1)))
-    return Couplings(FockCoupling{2}(1, nambus=(CREATION, CREATION)))
+    return Couplings(FockCoupling{2}(1, nambus=(creation, creation)))
 end
 
 """
@@ -430,7 +430,7 @@ macro σ⁻_str(mode::String)
     @assert mode∈("sp", "ob", "ph") "@σ⁻_str error: wrong input mode."
     mode=="sp" && return Couplings(FockCoupling{2}(1, spins=(1, 2)))
     mode=="ob" && return Couplings(FockCoupling{2}(1, orbitals=(1, 2)))
-    return Couplings(FockCoupling{2}(1, nambus=(ANNIHILATION, ANNIHILATION)))
+    return Couplings(FockCoupling{2}(1, nambus=(annihilation, annihilation)))
 end
 
 """
@@ -543,7 +543,7 @@ end
 @inline abbr(::Type{<:Pairing}) = :pr
 @inline ishermitian(::Type{<:Pairing}) = false
 @inline couplingcenters(::FockCoupling, ::Bond, ::Val{:Pairing}) = (1, 2)
-@inline fidshape(::Val{:Pairing}, ::Val{:nambu}, ::Symbol, n::Int; order) = ((@assert n==2 "range error: nnambu must be 2 for Pairing."); ANNIHILATION:ANNIHILATION)
+@inline fidshape(::Val{:Pairing}, ::Val{:nambu}, ::Symbol, n::Int; order) = ((@assert n==2 "range error: nnambu must be 2 for Pairing."); annihilation:annihilation)
 function expand!(operators::Operators, term::Pairing, bond::AbstractBond, hilbert::Hilbert; half::Bool=false, table::Union{Nothing, Table}=nothing)
     argtypes = Tuple{Operators, Term, AbstractBond, Hilbert}
     invoke(expand!, argtypes, operators, term, bond, hilbert; half=half, table=table)
@@ -762,15 +762,15 @@ Get the required script of a spin oid.
 @inline script(::Val{:tag}, index::Index{<:AbstractPID, <:SID}; kwargs...) = index.iid.tag
 
 """
-    sdefaultlatex
+    slatex
 
 The default LaTeX format for a spin oid.
 """
-const sdefaultlatex = LaTeX{(:tag,), (:site,)}('S')
+const slatex = LaTeX{(:tag,), (:site,)}('S')
 @inline latexname(::Type{<:Index{<:AbstractPID, <:SID}}) = Symbol("Index{AbstractPID, SID}")
 @inline latexname(::Type{<:CompositeOID{<:Index{<:AbstractPID, <:SID}}}) = Symbol("CompositeOID{Index{AbstractPID, SID}}")
-latexformat(Index{<:AbstractPID, <:SID}, sdefaultlatex)
-latexformat(CompositeOID{<:Index{<:AbstractPID, <:SID}}, sdefaultlatex)
+latexformat(Index{<:AbstractPID, <:SID}, slatex)
+latexformat(CompositeOID{<:Index{<:AbstractPID, <:SID}}, slatex)
 
 """
     permute(id₁::OID{<:Index{<:AbstractPID, SID{S, Int, Char}}}, id₂::OID{<:Index{<:AbstractPID, SID{S, Int, Char}}}) where S -> Tuple{Vararg{Operator}}
@@ -1047,15 +1047,15 @@ Get the required script of a phonon oid.
 @inline script(::Val{:dir}, index::Index{<:AbstractPID, <:NID}; kwargs...) = index.iid.dir
 
 """
-    ndefaultlatex
+    nlatex
 
 The default LaTeX format for a phonon oid.
 """
-const ndefaultlatex = LaTeX{(:dir,), (:site,)}(Dict('p'=>'p', 'u'=>'u'), "", "")
+const nlatex = LaTeX{(:dir,), (:site,)}(Dict('p'=>'p', 'u'=>'u'), "", "")
 @inline latexname(::Type{<:Index{<:AbstractPID, <:NID}}) = Symbol("Index{AbstractPID, NID}")
 @inline latexname(::Type{<:CompositeOID{<:Index{<:AbstractPID, <:NID}}}) = Symbol("CompositeOID{Index{AbstractPID, NID}}")
-latexformat(Index{<:AbstractPID, <:NID}, ndefaultlatex)
-latexformat(CompositeOID{<:Index{<:AbstractPID, <:NID}}, ndefaultlatex)
+latexformat(Index{<:AbstractPID, <:NID}, nlatex)
+latexformat(CompositeOID{<:Index{<:AbstractPID, <:NID}}, nlatex)
 
 """
     permute(id₁::OID{<:Index{<:AbstractPID, NID{Char}}}, id₂::OID{<:Index{<:AbstractPID, NID{Char}}}) -> Tuple{Vararg{Operator}}

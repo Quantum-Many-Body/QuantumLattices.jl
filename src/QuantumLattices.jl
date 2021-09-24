@@ -39,17 +39,17 @@ export prepare!, register!, run!, dependences, rundependences!
 
 # Essentials.QuantumSystems
 ## Canonical fermionic/bosonic systems
-export ANNIHILATION, CREATION, MAJORANA, fdefaultlatex, bdefaultlatex
+export majorana, annihilation, creation, flatex, blatex
 export FID, Fock, FockCoupling, Onsite, Hopping, Pairing, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, SpinFlip, PairHopping, Coulomb
 export isnormalordered, @σ⁰_str, @σˣ_str, @σʸ_str, @σᶻ_str, @σ⁺_str, @σ⁻_str, @fc_str
 
 ## SU(2) spin systems
-export sdefaultlatex
+export slatex
 export SID, Spin, SpinCoupling, SpinTerm, totalspin
 export @heisenberg_str, @ising_str, @gamma_str, @dm_str, @sˣ_str, @sʸ_str, @sᶻ_str, @sc_str
 
 ## Phononic systems
-export ndefaultlatex
+export nlatex
 export NID, Phonon, PhononCoupling, PhononKinetic, PhononPotential
 
 ## Magnon-Phonon coupled systems

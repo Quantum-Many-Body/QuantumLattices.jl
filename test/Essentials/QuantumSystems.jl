@@ -750,14 +750,14 @@ end
 
 @testset "latex" begin
     index = Index(PID(1), NID('u', 'x'))
-    @test script(Val(:BD), index, ndefaultlatex) == 'u'
-    @test script(Val(:BD), OID(index, [0.0, 0.0], [0.0, 0.0]), ndefaultlatex) == 'u'
+    @test script(Val(:BD), index, nlatex) == 'u'
+    @test script(Val(:BD), OID(index, [0.0, 0.0], [0.0, 0.0]), nlatex) == 'u'
     @test script(Val(:site), index) == 1
     @test script(Val(:dir), index) == 'x'
 
     index = Index(PID(2), NID('p', 'y'))
-    @test script(Val(:BD), index, ndefaultlatex) == 'p'
-    @test script(Val(:BD), OID(index, [0.0, 0.0], [0.0, 0.0]), ndefaultlatex) == 'p'
+    @test script(Val(:BD), index, nlatex) == 'p'
+    @test script(Val(:BD), OID(index, [0.0, 0.0], [0.0, 0.0]), nlatex) == 'p'
     @test script(Val(:site), index) == 2
     @test script(Val(:dir), index) == 'y'
 
