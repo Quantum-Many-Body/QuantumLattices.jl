@@ -19,17 +19,15 @@ import ..DegreesOfFreedom: statistics, script, latexname, ishermitian, couplingc
 import ...Interfaces: rank, ⊗, ⋅, expand, expand!, permute
 import ...Prerequisites.VectorSpaces: shape, ndimshape
 
-export ANNIHILATION, CREATION, MAJORANA, fdefaultlatex, bdefaultlatex, usualfockindextotuple, nambufockindextotuple
-export FID, Fock, isnormalordered, FockCoupling
-export Onsite, Hopping, Pairing, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, SpinFlip, PairHopping, Coulomb
-export @σ⁰_str, @σˣ_str, @σʸ_str, @σᶻ_str, @σ⁺_str, @σ⁻_str, @fc_str
+export ANNIHILATION, CREATION, MAJORANA, fdefaultlatex, bdefaultlatex
+export FID, Fock, FockCoupling, Onsite, Hopping, Pairing, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, SpinFlip, PairHopping, Coulomb
+export isnormalordered, @σ⁰_str, @σˣ_str, @σʸ_str, @σᶻ_str, @σ⁺_str, @σ⁻_str, @fc_str
 
-export sdefaultlatex, usualspinindextotuple
+export sdefaultlatex
 export SID, Spin, SpinCoupling, SpinTerm
-export totalspin, heisenbergxyz, heisenbergpmz, gamma, dm
-export @heisenberg_str, @ising_str, @gamma_str, @dm_str, @sˣ_str, @sʸ_str, @sᶻ_str, @sc_str
+export totalspin, @heisenberg_str, @ising_str, @gamma_str, @dm_str, @sˣ_str, @sʸ_str, @sᶻ_str, @sc_str
 
-export pndefaultlatex, usualphononindextotuple
+export ndefaultlatex
 export NID, Phonon, PhononCoupling, PhononKinetic, PhononPotential
 export @kinetic_str, @potential_str
 
@@ -186,20 +184,6 @@ function Base.angle(id::OID{<:Index{<:AbstractPID, <:FID}}, vectors::AbstractVec
             error("angle error: not supported number of input basis vectors.")
     return id.index.iid.nambu==ANNIHILATION ? phase : id.index.iid.nambu==CREATION ? -phase : error("angle error: not supported Fock index.")
 end
-
-"""
-    usualfockindextotuple
-
-Indicate that the chosen fields are `(:site, :orbital, :spin)` when converting a Fock index to tuple.
-"""
-const usualfockindextotuple = OIDToTuple(:site, :orbital, :spin)
-
-"""
-    nambufockindextotuple
-
-Indicate that the chosen fields are `(:nambu, :site, :orbital, :spin)` when converting a Fock index to tuple.
-"""
-const nambufockindextotuple = OIDToTuple(:nambu, :site, :orbital, :spin)
 
 """
     isnormalordered(opt::Operator{<:Number, <:ID{CompositeOID{<:Index{<:AbstractPID, <:FID}}}}) -> Bool
@@ -789,20 +773,13 @@ latexformat(Index{<:AbstractPID, <:SID}, sdefaultlatex)
 latexformat(CompositeOID{<:Index{<:AbstractPID, <:SID}}, sdefaultlatex)
 
 """
-    usualspinindextotuple
-
-Indicate that the chosen fields are `(:site, :orbital)` when converting a spin index to tuple.
-"""
-const usualspinindextotuple = OIDToTuple(:site, :orbital)
-
-"""
     permute(id₁::OID{<:Index{<:AbstractPID, SID{S, Int, Char}}}, id₂::OID{<:Index{<:AbstractPID, SID{S, Int, Char}}}) where S -> Tuple{Vararg{Operator}}
 
 Permute two spin oids and get the result.
 """
 function permute(id₁::OID{<:Index{<:AbstractPID, SID{S, Int, Char}}}, id₂::OID{<:Index{<:AbstractPID, SID{S, Int, Char}}}) where S
     @assert id₁.index≠id₂.index || id₁.rcoord≠id₂.rcoord || id₁.icoord≠id₂.icoord "permute error: permuted ids should not be equal to each other."
-    if usualspinindextotuple(id₁.index)==usualspinindextotuple(id₂.index) && id₁.rcoord==id₂.rcoord && id₁.icoord==id₂.icoord
+    if id₁.index.pid==id₂.index.pid && id₁.index.iid.orbital==id₂.index.iid.orbital && id₁.rcoord==id₂.rcoord && id₁.icoord==id₂.icoord
         if id₁.index.iid.tag == 'x'
             id₂.index.iid.tag=='y' && return (Operator(+1im, ID(permutesoid(id₁, 'z'))), Operator(1, ID(id₂, id₁)))
             id₂.index.iid.tag=='z' && return (Operator(-1im, ID(permutesoid(id₁, 'y'))), Operator(1, ID(id₂, id₁)))
@@ -1070,22 +1047,15 @@ Get the required script of a phonon oid.
 @inline script(::Val{:dir}, index::Index{<:AbstractPID, <:NID}; kwargs...) = index.iid.dir
 
 """
-    pndefaultlatex
+    ndefaultlatex
 
 The default LaTeX format for a phonon oid.
 """
-const pndefaultlatex = LaTeX{(:dir,), (:site,)}(Dict('p'=>'p', 'u'=>'u'), "", "")
+const ndefaultlatex = LaTeX{(:dir,), (:site,)}(Dict('p'=>'p', 'u'=>'u'), "", "")
 @inline latexname(::Type{<:Index{<:AbstractPID, <:NID}}) = Symbol("Index{AbstractPID, NID}")
 @inline latexname(::Type{<:CompositeOID{<:Index{<:AbstractPID, <:NID}}}) = Symbol("CompositeOID{Index{AbstractPID, NID}}")
-latexformat(Index{<:AbstractPID, <:NID}, pndefaultlatex)
-latexformat(CompositeOID{<:Index{<:AbstractPID, <:NID}}, pndefaultlatex)
-
-"""
-    usualphononindextotuple
-
-Indicate that the chosen fields are `(:tag, :site, :dir)` when converting a phonon index to tuple.
-"""
-const usualphononindextotuple = OIDToTuple(:tag, :site, :dir)
+latexformat(Index{<:AbstractPID, <:NID}, ndefaultlatex)
+latexformat(CompositeOID{<:Index{<:AbstractPID, <:NID}}, ndefaultlatex)
 
 """
     permute(id₁::OID{<:Index{<:AbstractPID, NID{Char}}}, id₂::OID{<:Index{<:AbstractPID, NID{Char}}}) -> Tuple{Vararg{Operator}}

@@ -1,6 +1,7 @@
 using Test
 using StaticArrays: SVector
 using QuantumLattices.Essentials.QuantumSystems
+using QuantumLattices.Essentials.QuantumSystems: heisenbergxyz, heisenbergpmz, gamma, dm
 using QuantumLattices.Essentials.QuantumOperators: ID
 using QuantumLattices.Essentials.Spatials: AbstractPID, PID, CPID, Point, Bond, rcoord, azimuthd
 using QuantumLattices.Essentials.DegreesOfFreedom: Index, CompositeOID, OID, Hilbert, Operator, Operators, statistics, script, latexname, ishermitian
@@ -749,14 +750,14 @@ end
 
 @testset "latex" begin
     index = Index(PID(1), NID('u', 'x'))
-    @test script(Val(:BD), index, pndefaultlatex) == 'u'
-    @test script(Val(:BD), OID(index, [0.0, 0.0], [0.0, 0.0]), pndefaultlatex) == 'u'
+    @test script(Val(:BD), index, ndefaultlatex) == 'u'
+    @test script(Val(:BD), OID(index, [0.0, 0.0], [0.0, 0.0]), ndefaultlatex) == 'u'
     @test script(Val(:site), index) == 1
     @test script(Val(:dir), index) == 'x'
 
     index = Index(PID(2), NID('p', 'y'))
-    @test script(Val(:BD), index, pndefaultlatex) == 'p'
-    @test script(Val(:BD), OID(index, [0.0, 0.0], [0.0, 0.0]), pndefaultlatex) == 'p'
+    @test script(Val(:BD), index, ndefaultlatex) == 'p'
+    @test script(Val(:BD), OID(index, [0.0, 0.0], [0.0, 0.0]), ndefaultlatex) == 'p'
     @test script(Val(:site), index) == 2
     @test script(Val(:dir), index) == 'y'
 
