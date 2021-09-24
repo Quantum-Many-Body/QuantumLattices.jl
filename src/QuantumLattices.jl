@@ -17,7 +17,7 @@ export expand, expand!, decompose, decompose!, permute
 export dtype, kind, update!, reset!
 
 # Essentials.QuantumOperators
-export ID, QuantumOperator, OperatorProd, OperatorSum, Transformation, Numericalization, idtype, sequence
+export ID, QuantumOperator, OperatorProd, OperatorSum, Transformation, Numericalization, MatrixRepresentation, idtype, sequence, matrix
 
 # Essentials.QuantumNumbers
 export AbelianNumber, AbelianNumbers, @abeliannumber, periods, Momentum, Momentum₁, Momentum₂, Momentum₃
@@ -31,7 +31,7 @@ export allbonds, zerothbonds, insidebonds, acrossbonds, intrabonds, interbonds
 # Essentials.DegreesOfFreedom
 export CompositeIID, CompositeInternal, Index, OID, Operator, Operators, IIDSpace, Hilbert
 export Subscript, Subscripts, SubscriptsID, Coupling, Couplings, OIDToTuple, Table, Term, LaTeX, Boundary
-export statistics, iidtype, isHermitian, ismodulatable, abbr, otype, latexformat, twist, plain, @subscript_str, @couplings
+export statistics, iidtype, ishermitian, ismodulatable, abbr, otype, latexformat, twist, plain, @subscript_str, @couplings
 
 # Essentials.Frameworks
 export Parameters, Generator, SimplifiedGenerator, Action, Engine, Assignment, Algorithm

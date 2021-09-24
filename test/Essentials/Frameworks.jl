@@ -15,7 +15,7 @@ using QuantumLattices.Prerequisites.CompositeStructures: NamedContainer
 
 import QuantumLattices.Essentials.Frameworks: Parameters, dependences
 import QuantumLattices.Essentials: prepare!, run!, update!
-import QuantumLattices.Essentials.DegreesOfFreedom: isHermitian, couplingcenters
+import QuantumLattices.Essentials.DegreesOfFreedom: ishermitian, couplingcenters
 import QuantumLattices.Prerequisites.VectorSpaces: shape, ndimshape
 
 struct FID{N<:Union{Int, Symbol}} <: SimpleIID
@@ -40,8 +40,8 @@ const FCoupling{V, I<:ID{FID}, C<:Subscripts, CI<:SubscriptsID} = Coupling{V, I,
 @inline FCoupling(value, nambus::Tuple{Vararg{Int}}) = Coupling(value, ID(FID, nambus), Subscripts((nambu=Subscript(nambus),)))
 @inline FCoupling(value, nambus::Subscript) = Coupling(value, ID(FID, convert(Tuple, nambus)), Subscripts((nambu=nambus,)))
 
-@inline isHermitian(::Type{<:Term{:Mu}}) = true
-@inline isHermitian(::Type{<:Term{:Hp}}) = false
+@inline ishermitian(::Type{<:Term{:Mu}}) = true
+@inline ishermitian(::Type{<:Term{:Hp}}) = false
 
 @testset "Parameters" begin
     ps1 = Parameters{(:t1, :t2, :U)}(1.0im, 1.0, 2.0)

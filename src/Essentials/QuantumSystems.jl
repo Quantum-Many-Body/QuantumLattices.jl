@@ -15,7 +15,7 @@ using ...Prerequisites: Float, atol, rtol, delta, decimaltostr
 using ...Prerequisites.Traits: rawtype, getcontent
 using ...Prerequisites.VectorSpaces: CartesianVectorSpace
 
-import ..DegreesOfFreedom: statistics, script, latexname, isHermitian, couplingcenters, abbr, termfactor, otype
+import ..DegreesOfFreedom: statistics, script, latexname, ishermitian, couplingcenters, abbr, termfactor, otype
 import ...Interfaces: rank, ⊗, ⋅, expand, expand!, permute
 import ...Prerequisites.VectorSpaces: shape, ndimshape
 
@@ -511,7 +511,7 @@ const Onsite{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{
     Term{:Onsite}(id, value, 0, couplings=couplings, amplitude=amplitude, modulate=modulate)
 end
 @inline abbr(::Type{<:Onsite}) = :st
-@inline isHermitian(::Type{<:Onsite}) = nothing
+@inline ishermitian(::Type{<:Onsite}) = nothing
 
 """
     Hopping(id::Symbol, value, bondkind::Int=1;
@@ -534,7 +534,7 @@ const Hopping{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term
     Term{:Hopping}(id, value, bondkind, couplings=couplings, amplitude=amplitude, modulate=modulate)
 end
 @inline abbr(::Type{<:Hopping}) = :hp
-@inline isHermitian(::Type{<:Hopping}) = false
+@inline ishermitian(::Type{<:Hopping}) = false
 @inline couplingcenters(::FockCoupling, ::Bond, ::Val{:Hopping}) = (1, 2)
 
 """
@@ -557,7 +557,7 @@ const Pairing{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term
     Term{:Pairing}(id, value, bondkind, couplings=couplings, amplitude=amplitude, modulate=modulate)
 end
 @inline abbr(::Type{<:Pairing}) = :pr
-@inline isHermitian(::Type{<:Pairing}) = false
+@inline ishermitian(::Type{<:Pairing}) = false
 @inline couplingcenters(::FockCoupling, ::Bond, ::Val{:Pairing}) = (1, 2)
 @inline fidshape(::Val{:Pairing}, ::Val{:nambu}, ::Symbol, n::Int; order) = ((@assert n==2 "range error: nnambu must be 2 for Pairing."); ANNIHILATION:ANNIHILATION)
 function expand!(operators::Operators, term::Pairing, bond::AbstractBond, hilbert::Hilbert; half::Bool=false, table::Union{Nothing, Table}=nothing)
@@ -580,7 +580,7 @@ const Hubbard{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term
     Term{:Hubbard}(id, value, 0, couplings=@couplings(fc"1 sp[2 2 1 1] ⊗ ph[2 1 2 1]"), amplitude=amplitude, modulate=modulate)
 end
 @inline abbr(::Type{<:Hubbard}) = :hb
-@inline isHermitian(::Type{<:Hubbard}) = true
+@inline ishermitian(::Type{<:Hubbard}) = true
 
 """
     InterOrbitalInterSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
@@ -599,7 +599,7 @@ const InterOrbitalInterSpin{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermMo
         )
 end
 @inline abbr(::Type{<:InterOrbitalInterSpin}) = :nons
-@inline isHermitian(::Type{<:InterOrbitalInterSpin}) = true
+@inline ishermitian(::Type{<:InterOrbitalInterSpin}) = true
 
 """
     InterOrbitalIntraSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
@@ -614,7 +614,7 @@ const InterOrbitalIntraSpin{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermMo
     Term{:InterOrbitalIntraSpin}(id, value, 0, couplings=@couplings(fc"1 ob[α α β β](α < β) ⊗ ph[2 1 2 1]"), amplitude=amplitude, modulate=modulate)
 end
 @inline abbr(::Type{<:InterOrbitalIntraSpin}) = :noes
-@inline isHermitian(::Type{<:InterOrbitalIntraSpin}) = true
+@inline ishermitian(::Type{<:InterOrbitalIntraSpin}) = true
 
 """
     SpinFlip(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
@@ -628,7 +628,7 @@ const SpinFlip{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Ter
     Term{:SpinFlip}(id, value, 0, couplings=@couplings(fc"1 ob[α β α β](α < β) ⊗ sp[2 1 1 2] ⊗ ph[2 2 1 1]"), amplitude=amplitude, modulate=modulate)
 end
 @inline abbr(::Type{<:SpinFlip}) = :sf
-@inline isHermitian(::Type{<:SpinFlip}) = false
+@inline ishermitian(::Type{<:SpinFlip}) = false
 
 """
     PairHopping(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
@@ -642,7 +642,7 @@ const PairHopping{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = 
     Term{:PairHopping}(id, value, 0, couplings=@couplings(fc"1 ob[α α β β](α < β) ⊗ sp[2 1 1 2] ⊗ ph[2 2 1 1]"), amplitude=amplitude, modulate=modulate)
 end
 @inline abbr(::Type{<:PairHopping}) = :ph
-@inline isHermitian(::Type{<:PairHopping}) = false
+@inline ishermitian(::Type{<:PairHopping}) = false
 
 """
     Coulomb(id::Symbol, value, bondkind::Int=1;
@@ -665,7 +665,7 @@ const Coulomb{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term
     Term{:Coulomb}(id, value, bondkind, couplings=couplings, amplitude=amplitude, modulate=modulate)
 end
 @inline abbr(::Type{<:Coulomb}) = :cl
-@inline isHermitian(::Type{<:Coulomb}) = nothing
+@inline ishermitian(::Type{<:Coulomb}) = nothing
 @inline termfactor(id::ID{OID, 4}, ::Val{:Coulomb}) = id[2]'==id[1] && id[4]'==id[3] ? 2 : 1
 @inline couplingcenters(::FockCoupling, ::Bond, ::Val{:Coulomb}) = (1, 1, 2, 2)
 
@@ -1009,7 +1009,7 @@ const SpinTerm{id, V, B<:Any, C<:TermCouplings, A<:TermAmplitude, M<:TermModulat
     Term{:SpinTerm}(id, value, bondkind, couplings=couplings, amplitude=amplitude, modulate=modulate)
 end
 @inline abbr(::Type{<:SpinTerm}) = :sp
-@inline isHermitian(::Type{<:SpinTerm}) = true
+@inline ishermitian(::Type{<:SpinTerm}) = true
 @inline function couplingcenters(sc::SpinCoupling, ::Bond, ::Val{:SpinTerm})
     @assert rank(sc)%2==0 "couplingcenters error: the rank of the input spin coupling should be even."
     return ntuple(i->2-i%2, Val(rank(sc)))
@@ -1200,7 +1200,7 @@ const PhononKinetic{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} 
     Term{:PhononKinetic}(id, value, 0, couplings=kinetic"", amplitude=amplitude, modulate=modulate)
 end
 @inline abbr(::Type{<:PhononKinetic}) = :pnk
-@inline isHermitian(::Type{<:PhononKinetic}) = true
+@inline ishermitian(::Type{<:PhononKinetic}) = true
 
 """
     PhononPotential(id::Symbol, value::Any, bondkind::Int;
@@ -1220,7 +1220,7 @@ const PhononPotential{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate
     Term{:PhononPotential}(id, value, bondkind, couplings=potential"", amplitude=amplitude, modulate=modulate)
 end
 @inline abbr(::Type{<:PhononPotential}) = :pnp
-@inline isHermitian(::Type{<:PhononPotential}) = true
+@inline ishermitian(::Type{<:PhononPotential}) = true
 @inline couplingcenters(::PhononCoupling, ::Bond, ::Val{:PhononPotential}) = (1, 2)
 
 # Magnon-phonon coupled systems
@@ -1276,7 +1276,7 @@ const DMPhonon{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Ter
     Term{:DMPhonon}(id, value, bondkind, couplings=dmphonon"", amplitude=amplitude, modulate=modulate)
 end
 @inline abbr(::Type{<:DMPhonon}) = :dmp
-@inline isHermitian(::Type{<:DMPhonon}) = false
+@inline ishermitian(::Type{<:DMPhonon}) = false
 @inline couplingcenters(::Coupling, ::Bond, ::Val{:DMPhonon}) = (1, 2)
 @inline function otype(T::Type{<:Term{:DMPhonon}}, H::Type{<:Hilbert}, B::Type{<:AbstractBond})
     Operator{valtype(T), <:ID{OID{<:Index{pidtype(eltype(B)), <:SimpleIID}, SVector{dimension(eltype(B)), dtype(eltype(B))}}, rank(T)}}

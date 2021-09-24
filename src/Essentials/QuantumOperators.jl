@@ -11,7 +11,7 @@ import ...Interfaces: id, value, rank, add!, sub!, mul!, div!, ⊗, ⋅, permute
 import ...Prerequisites.Traits: contentnames, dissolve, isparameterbound, parameternames
 
 export SingularID, ID, QuantumOperator, OperatorProd, OperatorSum, Scalar, idtype, sequence
-export Transformation, Identity, Numericalization
+export Transformation, Identity, Numericalization, MatrixRepresentation, matrix
 
 """
     SingularID <: NamedVector
@@ -800,5 +800,19 @@ struct Numericalization{T<:Number} <: Transformation end
 @inline Base.valtype(::Type{<:Numericalization{T}}) where {T<:Number} = T
 @inline Base.valtype(T::Type{<:Numericalization}, M::Type{<:OperatorProd}) = reparameter(M, :value, valtype(T))
 @inline (n::Numericalization)(m::OperatorProd) = convert(valtype(n, m), m)
+
+"""
+    MatrixRepresentation <: Transformation
+
+The matrix representation.
+"""
+abstract type MatrixRepresentation <: Transformation end
+
+"""
+    matrix
+
+Generic matrix representation.
+"""
+function matrix end
 
 end #module

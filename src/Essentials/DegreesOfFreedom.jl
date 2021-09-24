@@ -13,6 +13,7 @@ using ...Prerequisites.Traits: rawtype, efficientoperations, commontype, paramet
 using ...Prerequisites.CompositeStructures: CompositeDict, CompositeTuple, NamedContainer
 using ...Prerequisites.VectorSpaces: CartesianVectorSpace
 
+import LinearAlgebra: ishermitian
 import ..QuantumOperators: sequence, idtype
 import ..Spatials: pidtype, rcoord, icoord
 import ...Essentials: kind, reset!, update!
@@ -22,7 +23,7 @@ import ...Prerequisites.VectorSpaces: shape, ndimshape
 
 export IID, SimpleIID, CompositeIID, Internal, SimpleInternal, CompositeInternal
 export AbstractOID, Index, CompositeOID, OID, Operator, Operators, IIDSpace, Hilbert
-export statistics, iidtype, isHermitian, indextype, oidtype
+export statistics, iidtype, ishermitian, indextype, oidtype
 export Subscript, Subscripts, SubscriptsID, @subscript_str, subscriptexpr, wildcard, diagonal, noconstrain
 export AbstractCoupling, Coupling, Couplings, couplingcenters, couplingpoints, couplinginternals, @couplings
 export Metric, OIDToTuple, Table
@@ -271,11 +272,11 @@ Abstract type of operator id.
 abstract type AbstractOID <: SingularID end
 
 """
-    isHermitian(id::ID{AbstractOID, N}) where N -> Bool
+    ishermitian(id::ID{AbstractOID, N}) where N -> Bool
 
 Judge whether an operator id is Hermitian.
 """
-function isHermitian(id::ID{AbstractOID, N}) where N
+function ishermitian(id::ID{AbstractOID, N}) where N
     for i = 1:((N+1)÷2)
         id[i]'==id[N+1-i] || return false
     end
@@ -418,11 +419,11 @@ Get the adjoint of an operator.
 @inline Base.adjoint(opt::Operator) = rawtype(typeof(opt))(value(opt)', id(opt)')
 
 """
-    isHermitian(opt::Operator) -> Bool
+    ishermitian(opt::Operator) -> Bool
 
 Judge whether an operator is Hermitian.
 """
-@inline isHermitian(opt::Operator) = isa(value(opt), Real) && isHermitian(id(opt))
+@inline ishermitian(opt::Operator) = isa(value(opt), Real) && ishermitian(id(opt))
 
 """
     rcoord(opt::Operator) -> SVector
@@ -478,11 +479,11 @@ Print a brief description of a set of operators to an io.
 Base.summary(io::IO, opts::Operators) = @printf io "Operators{%s}" valtype(opts)
 
 """
-    isHermitian(opts::Operators) -> Bool
+    ishermitian(opts::Operators) -> Bool
 
 Judge whether a set of operators as a whole is Hermitian.
 """
-@inline isHermitian(opts::Operators) = opts == opts'
+@inline ishermitian(opts::Operators) = opts == opts'
 
 """
     IIDSpace{I<:IID, V<:Internal, Kind} <: CartesianVectorSpace{IID}
@@ -1303,11 +1304,11 @@ Judge whether a term could be modulated by its modulate function.
 @inline ismodulatable(::Type{<:Term{K, I, V, B, <:TermCouplings, <:TermAmplitude, M} where {K, I, V, B}}) where M = ismodulatable(M)
 
 """
-    isHermitian(term::Term) -> Bool
-    isHermitian(::Type{<:Term}) -> Bool
+    ishermitian(term::Term) -> Bool
+    ishermitian(::Type{<:Term}) -> Bool
 """
-@inline isHermitian(term::Term) = isHermitian(typeof(term))
-@inline isHermitian(::Type{<:Term}) = error("isHermitian error: not implemented.")
+@inline ishermitian(term::Term) = ishermitian(typeof(term))
+@inline ishermitian(::Type{<:Term}) = error("ishermitian error: not implemented.")
 
 """
     repr(term::Term, bond::AbstractBond, hilbert::Hilbert) -> String
@@ -1408,7 +1409,7 @@ function expand!(operators::Operators, term::Term, bond::AbstractBond, hilbert::
     if term.bondkind == bond|>kind
         value = term.value * term.amplitude(bond) * term.factor
         if abs(value) ≠ 0
-            hermitian = isHermitian(term)
+            hermitian = ishermitian(term)
             optype = otype(term|>typeof, hilbert|>typeof, bond|>typeof)
             record = (isnothing(hermitian) && length(operators)>0) ? Set{optype|>idtype}() : nothing
             for coupling in values(term.couplings(bond))
@@ -1444,7 +1445,7 @@ end
     push!(exprs, :(return operators))
     return Expr(:block, exprs...)
 end
-@inline termfactor(id::ID{AbstractOID}, ::Val) = isHermitian(id) ? 2 : 1
+@inline termfactor(id::ID{AbstractOID}, ::Val) = ishermitian(id) ? 2 : 1
 
 """
     expand(term::Term, bond::AbstractBond, hilbert::Hilbert; half::Bool=false, table::Union{Nothing, Table}=nothing) -> Operators

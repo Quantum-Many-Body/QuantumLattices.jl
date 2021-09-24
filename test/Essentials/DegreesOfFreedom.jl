@@ -11,7 +11,7 @@ using QuantumLattices.Prerequisites: Float, decimaltostr
 using QuantumLattices.Prerequisites.Traits: parameternames, isparameterbound, contentnames, getcontent
 using QuantumLattices.Prerequisites.CompositeStructures: NamedContainer
 
-import QuantumLattices.Essentials.DegreesOfFreedom: isHermitian, statistics, latexname, script, couplingcenters, abbr
+import QuantumLattices.Essentials.DegreesOfFreedom: ishermitian, statistics, latexname, script, couplingcenters, abbr
 import QuantumLattices.Prerequisites.VectorSpaces: shape, ndimshape
 
 struct DID{N<:Union{Int, Symbol}} <: SimpleIID
@@ -53,8 +53,8 @@ const DCoupling{V, I<:ID{DID}, C<:Subscripts, CI<:SubscriptsID} = Coupling{V, I,
 
 @inline abbr(::Type{<:Term{:Mu}}) = :mu
 @inline abbr(::Type{<:Term{:Hp}}) = :hp
-@inline isHermitian(::Type{<:Term{:Mu}}) = true
-@inline isHermitian(::Type{<:Term{:Hp}}) = false
+@inline ishermitian(::Type{<:Term{:Mu}}) = true
+@inline ishermitian(::Type{<:Term{:Hp}}) = false
 
 @testset "IID" begin
     did = DID(1)
@@ -116,8 +116,8 @@ end
     @test index|>typeof|>iidtype == DID{Int}
     @test index|>adjoint == Index(CPID('S', 4), DID(2))
     @test statistics(index) == statistics(typeof(index)) == :f
-    @test isHermitian(ID(index', index)) == true
-    @test isHermitian(ID(index, index)) == false
+    @test ishermitian(ID(index', index)) == true
+    @test ishermitian(ID(index, index)) == false
 end
 
 @testset "OID" begin
@@ -133,8 +133,8 @@ end
     @test fieldnames(OID) == (:index, :rcoord, :icoord)
     @test string(oid) == "OID(Index(PID(1), DID(1)), [0.0, 0.0], [0.0, 0.0])"
     @test ID(oid', oid)' == ID(oid', oid)
-    @test isHermitian(ID(oid', oid)) == true
-    @test isHermitian(ID(oid, oid)) == false
+    @test ishermitian(ID(oid', oid)) == true
+    @test ishermitian(ID(oid, oid)) == false
     @test oidtype(DFock, Point{2, PID, Float}, Val(:default)) == OID{Index{PID, DID{Int}}, SVector{2, Float}}
 end
 
@@ -147,7 +147,7 @@ end
         OID(Index(PID(1), DID(2)), SVector(0.0, 0.0), SVector(0.0, 0.0)),
         OID(Index(PID(2), DID(1)), SVector(1.0, 0.0), SVector(2.0, 0.0))
         ))
-    @test isHermitian(opt) == false
+    @test ishermitian(opt) == false
     @test string(opt) == "Operator(1.0im, ID(OID(Index(PID(2), DID(2)), [1.0, 0.0], [2.0, 0.0]), OID(Index(PID(1), DID(1)), [0.0, 0.0], [0.0, 0.0])))"
 
     opt = Operator(1.0, ID(
@@ -155,7 +155,7 @@ end
         OID(Index(PID(1), DID(1)), SVector(0.5, 0.5), SVector(1.0, 1.0))
         ))
     @test opt' == opt
-    @test isHermitian(opt) == true
+    @test ishermitian(opt) == true
 
     opt = Operator(1.0, ID(
         OID(Index(PID(1), DID(2)), SVector(0.5, 0.5), SVector(1.0, 1.0)),
@@ -182,8 +182,8 @@ end
     @test summary(opts) == "Operators{$(opts|>valtype)}"
     @test opts' == Operators(opt1', opt2')
     @test opts'+opts == Operators(opt1, opt1', opt2*2)
-    @test isHermitian(opts) == false
-    @test isHermitian(opts'+opts) == true
+    @test ishermitian(opts) == false
+    @test ishermitian(opts'+opts) == true
 end
 
 @testset "Hilbert" begin
@@ -408,7 +408,7 @@ end
     @test term|>rank == term|>typeof|>rank == 2
     @test term|>abbr == term|>typeof|>abbr == :mu
     @test term|>ismodulatable == term|>typeof|>ismodulatable == false
-    @test term|>isHermitian == term|>typeof|>isHermitian == true
+    @test term|>ishermitian == term|>typeof|>ishermitian == true
     @test term == deepcopy(term)
     @test isequal(term, deepcopy(term))
     @test string(term) == "Mu{2}(id=mu, value=1.5, bondkind=0, factor=1.0)"

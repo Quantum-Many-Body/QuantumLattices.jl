@@ -1,5 +1,7 @@
 module Interfaces
 
+import LinearAlgebra: rank, mul!, ⋅
+
 export id, value, rank, dimension
 export ⊕, ⊗, ⋅, add!, sub!, mul!, div!
 export expand, expand!, decompose, decompose!, permute
