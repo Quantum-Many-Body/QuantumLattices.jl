@@ -540,6 +540,7 @@ mutable struct Assignment{A<:Action, P<:Parameters, M<:Function, D<:Tuple{Vararg
     dependences::D
     data::R
     ismatched::Bool
+    savedata::Bool
 end
 @inline Base.:(==)(assign₁::Assignment, assign₂::Assignment) = ==(efficientoperations, assign₁, assign₂)
 @inline Base.isequal(assign₁::Assignment, assign₂::Assignment) = isequal(efficientoperations, assign₁, assign₂)
@@ -682,7 +683,8 @@ function add!(alg::Algorithm, id::Symbol, action::Action; parameters::Parameters
     map = get(kwargs, :map, identity)
     dependences = get(kwargs, :dependences, ())
     data = prepare!(action, alg.engine)
-    alg.assignments[id] = Assignment(id, action, parameters, map, dependences, data, false)
+    savedata = get(kwargs, :savedata, false)
+    alg.assignments[id] = Assignment(id, action, parameters, map, dependences, data, false, savedata)
     return alg
 end
 
