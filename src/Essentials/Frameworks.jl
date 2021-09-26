@@ -149,9 +149,8 @@ Construct an entry of operators based on the input terms, bonds and Hilbert spac
     exprs, alterops, boundops = [], [], []
     push!(exprs, quote
         choosedterms = length($constterms)>0 ? $constterms : $alterterms
-        constoptp = otype(choosedterms[1], hilbert|>typeof, bonds|>eltype)
-        constidtp = constoptp |> idtype
-        for i = 2:length(choosedterms)
+        constoptp, constidtp = Union{}, Union{}
+        for i = 1:length(choosedterms)
             tempoptp = otype(choosedterms[i], hilbert|>typeof, bonds|>eltype)
             constoptp = promote_type(constoptp, tempoptp)
             constidtp = promote_type(constidtp, tempoptp|>idtype)
