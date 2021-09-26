@@ -14,7 +14,7 @@ import ...Essentials: update!, reset!
 import ...Prerequisites.Traits: contentnames, getcontent
 
 export Parameters, Entry, Engine, AbstractGenerator, Generator, SimplifiedGenerator, Action, Assignment, Algorithm
-export prepare!, register!, run!, rundependences!, runassignment!, rundependence!
+export prepare!, register!, run!, rundependences!, runassignment!, rundependence!, saveassignment
 
 """
     Parameters{Names}(values::Number...) where Names
@@ -540,7 +540,7 @@ mutable struct Assignment{A<:Action, P<:Parameters, M<:Function, D<:Tuple{Vararg
     dependences::D
     data::R
     ismatched::Bool
-    savedata::Bool
+    save::Bool
 end
 @inline Base.:(==)(assign₁::Assignment, assign₂::Assignment) = ==(efficientoperations, assign₁, assign₂)
 @inline Base.isequal(assign₁::Assignment, assign₂::Assignment) = isequal(efficientoperations, assign₁, assign₂)
@@ -683,8 +683,8 @@ function add!(alg::Algorithm, id::Symbol, action::Action; parameters::Parameters
     map = get(kwargs, :map, identity)
     dependences = get(kwargs, :dependences, ())
     data = prepare!(action, alg.engine)
-    savedata = get(kwargs, :savedata, false)
-    alg.assignments[id] = Assignment(id, action, parameters, map, dependences, data, false, savedata)
+    save = get(kwargs, :save, false)
+    alg.assignments[id] = Assignment(id, action, parameters, map, dependences, data, false, save)
     return alg
 end
 
@@ -699,6 +699,7 @@ function run!(alg::Algorithm, id::Symbol, info::Bool=true)
     assign = alg.assignments[id]
     @timeit alg.timer string(id) runassignment!(alg, assign)
     info && @info "Action $id($(nameof(assign.action|>typeof))): time consumed $(TimerOutputs.time(alg.timer[string(id)]) / 10^9)s."
+    assign.save && saveassignment(alg, assign)
     return alg
 end
 function runassignment!(alg::Algorithm, assign::Assignment)
@@ -707,6 +708,11 @@ function runassignment!(alg::Algorithm, assign::Assignment)
         ismatched || update!(alg; assign.parameters...)
         run!(alg, assign)
         assign.ismatched = true
+    end
+end
+function saveassignment(alg::Algorithm, assign::Assignment)
+    open(@sprintf("%s/%s.dat", alg.dout, nameof(alg, assign)), "w") do io
+        write(io, assign.data)
     end
 end
 
