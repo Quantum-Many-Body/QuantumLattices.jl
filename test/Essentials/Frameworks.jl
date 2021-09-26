@@ -145,11 +145,11 @@ end
     @test isequal(gf, deepcopy(gf))
     @test update!(gf) == gf
 
-    vca = Algorithm("Test", vca)
+    vca = Algorithm("test", vca)
     @test vca == deepcopy(vca)
     @test isequal(vca, deepcopy(vca))
-    @test repr(vca, ≠(:U)) == "Test_VCA_1.0"
-    @test string(vca) == repr(vca) == "Test_VCA_1.0_8.0"
+    @test repr(vca, ≠(:U)) == "test(VCA)_1.0"
+    @test string(vca) == repr(vca) == "test(VCA)_1.0_8.0"
 
     add!(vca, :GF, GF(0))
     rex = r"Action DOS\(DOS\)\: time consumed [0-9]*\.[0-9]*(e[+-][0-9]*)*s."
@@ -161,6 +161,7 @@ end
     @test valtype(dos) == valtype(typeof(dos)) == Float
     @test dos.data == 32.0
     @test dos.action.mu == -3.5
+    @test nameof(vca, dos) == "test(VCA)_1.0_7.0_DOS"
 
     update!(dos, U=6.0)
     run!(vca, :DOS, false)

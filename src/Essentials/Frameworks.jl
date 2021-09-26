@@ -1,6 +1,6 @@
 module Frameworks
 
-using Printf: @printf
+using Printf: @printf, @sprintf
 using TimerOutputs: TimerOutputs, TimerOutput, @timeit
 using ..QuantumOperators: Transformation, idtype
 using ..Spatials: Bonds, AbstractLattice, acrossbonds, isintracell
@@ -597,7 +597,7 @@ end
     )
 end
 function Base.show(io::IO, alg::Algorithm)
-    @printf io "%s_%s" alg.name alg.engine
+    @printf io "%s(%s)" alg.name alg.engine
     for (name, value) in pairs(alg.parameters)
         @printf io "_%s" decimaltostr(value, 10)
     end
@@ -636,7 +636,7 @@ Optionally, some parameters of the algorithm can be filtered by specifying the `
 Besides, the maximum number of decimals of the parameters can also be specified.
 """
 function Base.repr(alg::Algorithm, f::Function=param->true; ndecimal::Int=10)
-    result = [string(alg.name), repr(alg.engine)]
+    result = [@sprintf "%s(%s)" alg.name alg.engine]
     for (name, value) in pairs(alg.parameters)
         f(name) && push!(result, decimaltostr(value, ndecimal))
     end
@@ -652,6 +652,13 @@ function Base.summary(alg::Algorithm)
     @info "Summary of $(alg.name)($(nameof(typeof(alg.engine)))):"
     @info string(alg.timer)
 end
+
+"""
+    nameof(alg::Algorithm, assign::Assignment) -> String
+
+Get the name of the combination of an algorithm and an assignment.
+"""
+@inline Base.nameof(alg::Algorithm, assign::Assignment) = @sprintf "%s_%s" repr(alg) assign.id
 
 """
     register!(alg::Algorithm, id::Symbol, action::Action; info::Bool=true, parameters::Parameters=Parameters{()}(), kwargs...) -> Algorithm
