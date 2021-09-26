@@ -9,11 +9,11 @@ using QuantumLattices.Essentials.DegreesOfFreedom: SimpleIID, SimpleInternal, II
 using QuantumLattices.Essentials.DegreesOfFreedom: Term, Hilbert, Index, Table, OID, OIDToTuple, Operator, Operators, plain, @couplings
 using QuantumLattices.Essentials.QuantumOperators: ID, id, idtype, Identity
 using QuantumLattices.Prerequisites: Float
-using QuantumLattices.Interfaces:  expand!, expand
+using QuantumLattices.Interfaces:  expand!, expand, add!
 using QuantumLattices.Prerequisites.Traits: contentnames
 using QuantumLattices.Prerequisites.CompositeStructures: NamedContainer
 
-import QuantumLattices.Essentials.Frameworks: Parameters, dependences
+import QuantumLattices.Essentials.Frameworks: Parameters
 import QuantumLattices.Essentials: prepare!, run!, update!
 import QuantumLattices.Essentials.DegreesOfFreedom: ishermitian, couplingcenters
 import QuantumLattices.Prerequisites.VectorSpaces: shape, ndimshape
@@ -103,47 +103,10 @@ end
     @test i(cgen) == sgen
 end
 
-struct FEngine <: Engine end
-@inline Base.repr(::FEngine) = "FEngine"
-@inline Base.show(io::IO, ::FEngine) = @printf io "FEngine"
-struct FAction <: Action end
-
-@testset "Assignment/Algorithm" begin
-    @test FAction() == FAction()
-    @test isequal(FAction(), FAction())
-    @test update!(FAction()) == FAction()
-
-    assign = Assignment(:FAction, FAction(), (t=1.0, U=8.0), dependences=(:FAction₁, :FAction₂))
-    @test deepcopy(assign) == assign
-    @test isequal(deepcopy(assign), assign)
-    @test assign|>valtype == assign|>typeof|>valtype == Any
-    @test assign|>id == assign|>typeof|>id == :FAction
-    update!(assign, t=2.0)
-    @test assign.parameters == (t=2.0, U=8.0)
-
-    @test FEngine() == FEngine()
-    @test isequal(FEngine(), FEngine())
-    @test update!(FEngine()) == FEngine()
-
-    alg = Algorithm("Alg", FEngine(), parameters=(t=1.0, U=8.0))
-    @test alg==alg
-    @test isequal(alg, alg)
-    @test string(alg) == repr(alg) == "Alg_FEngine_1.0_8.0"
-    @test repr(alg, (:U,)) == "Alg_FEngine_1.0"
-    @test_logs (:info, r"Action FAction₁\(FAction\)\: time consumed [0-9]*\.[0-9]*s.") register!(alg, :FAction₁, FAction(), parameters=(U=5.0,))
-    @test_logs (:info, r"Action FAction₂\(FAction\)\: time consumed [0-9]*\.[0-9]*s.") register!(alg, :FAction₂, FAction(), parameters=(U=6.0,), dependences=(:FAction₁,))
-    @test get(alg, Val(:FAction₁)) == get(alg, :FAction₁) == Assignment(:FAction₁, FAction(), (t=1.0, U=5.0), virgin=false)
-    @test get(alg, Val(:FAction₂)) == get(alg, :FAction₂) == Assignment(:FAction₂, FAction(), (t=1.0, U=6.0), dependences=(:FAction₁,), virgin=false)
-    @test isnothing(prepare!(alg, get(alg, :FAction₁)))
-    @test isnothing(run!(alg, get(alg, :FAction₁)))
-    @test dependences(alg, get(alg, :FAction₁)) == ()
-    @test dependences(alg, get(alg, :FAction₂)) == (:FAction₁,)
-    @test dependences(alg, get(alg, :FAction₂), (:FAction₁,)) == ()
-end
-
 mutable struct VCA <: Engine
     t::Float
     U::Float
+    dim::Int
 end
 function update!(vca::VCA; kwargs...)
     vca.t = get(kwargs, :t, vca.t)
@@ -151,40 +114,57 @@ function update!(vca::VCA; kwargs...)
     return vca
 end
 @inline Parameters(vca::VCA) = Parameters{(:t, :U)}(vca.t, vca.U)
-@inline gf(alg::Algorithm{VCA}) = get(alg, Val(:_VCAGF_)).data
 
 mutable struct GF <: Action
-    dim::Int
     count::Int
 end
+@inline prepare!(gf::GF, vca::VCA) = Matrix{Float}(undef, vca.dim, vca.dim)
+@inline run!(alg::Algorithm{VCA}, assign::Assignment{GF}) = (assign.action.count += 1; assign.data[:, :] .= alg.engine.t+alg.engine.U)
 
 mutable struct DOS <: Action
     mu::Float
 end
 @inline update!(eb::DOS; kwargs...) = (eb.mu = get(kwargs, :mu, eb.mu); eb)
-@inline dosmap(params::Parameters) = Parameters{(:t, :U, :mu)}(params.t, params.U, -params.U/2)
-
-@inline dependences(alg::Algorithm{VCA}, assign::Assignment{GF}, ::Tuple{}=()) = assign.dependences
-@inline dependences(alg::Algorithm{VCA}, assign::Assignment, ::Tuple{}=()) = (:_VCAGF_, assign.dependences...)
-@inline function prepare!(alg::Algorithm{VCA}, assign::Assignment{GF})
-    assign.virgin && (assign.data = Matrix{valtype(assign)|>eltype}(undef, assign.action.dim, assign.action.dim))
-end
-@inline run!(alg::Algorithm{VCA}, assign::Assignment{GF}) = (assign.action.count += 1; assign.data[:, :] .= alg.engine.t+alg.engine.U)
+@inline prepare!(dos::DOS, vca::VCA) = 0.0
 @inline function run!(alg::Algorithm{VCA}, assign::Assignment{DOS})
     rundependences!(alg, assign)
-    assign.data = tr(gf(alg))
+    gf = alg.assignments[first(assign.dependences)]
+    assign.data = tr(gf.data)
 end
+@inline dosmap(params::Parameters) = Parameters{(:t, :U, :mu)}(params.t, params.U, -params.U/2)
 
 @testset "Framework" begin
-    engine = VCA(1.0, 8.0)
-    gf = Assignment(:_VCAGF_, GF(4, 0), Parameters(engine), data=Matrix{Complex{Float}}(undef, 0, 0))
-    vca = Algorithm("Test", engine, assignments=(gf,))
-    @test_logs (:info, r"Action DOS\(DOS\)\: time consumed [0-9]*\.[0-9]*s.") register!(vca, :DOS, DOS(-3.5), parameters=(U=7.0,), map=dosmap)
-    dos = get(vca, :DOS)
+    vca = VCA(1.0, 8.0, 4)
+    @test vca == deepcopy(vca)
+    @test isequal(vca, deepcopy(vca))
+    @test repr(vca) == "VCA"
+    @test string(vca) == "VCA"
+
+    gf = GF(0)
+    @test gf == deepcopy(gf)
+    @test isequal(gf, deepcopy(gf))
+    @test update!(gf) == gf
+
+    vca = Algorithm("Test", vca)
+    @test vca == deepcopy(vca)
+    @test isequal(vca, deepcopy(vca))
+    @test repr(vca, ≠(:U)) == "Test_VCA_1.0"
+    @test string(vca) == repr(vca) == "Test_VCA_1.0_8.0"
+
+    add!(vca, :GF, GF(0))
+    rex = r"Action DOS\(DOS\)\: time consumed [0-9]*\.[0-9]*(e[+-][0-9]*)*s."
+    @test_logs (:info, rex) register!(vca, :DOS, DOS(-3.5), parameters=(U=7.0,), map=dosmap, dependences=(:GF,))
+
+    dos = vca.assignments[:DOS]
+    @test dos == deepcopy(dos)
+    @test isequal(dos, deepcopy(dos))
+    @test valtype(dos) == valtype(typeof(dos)) == Float
     @test dos.data == 32.0
     @test dos.action.mu == -3.5
+
     update!(dos, U=6.0)
     run!(vca, :DOS, false)
+    @test dos.parameters == (t=1.0, U=6.0)
     @test dos.data == 28.0
     @test dos.action.mu == -3.0
 end

@@ -35,7 +35,7 @@ export statistics, iidtype, ishermitian, ismodulatable, abbr, otype, latexformat
 
 # Essentials.Frameworks
 export Parameters, Generator, SimplifiedGenerator, Action, Engine, Assignment, Algorithm
-export prepare!, register!, run!, dependences, rundependences!
+export prepare!, register!, run!, rundependences!
 
 # Essentials.QuantumSystems
 ## Canonical fermionic/bosonic systems
