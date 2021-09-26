@@ -66,34 +66,11 @@ SimpleIndices(shape::UnitRange{Int}...) = SimpleIndices(shape)
     @test i1∉foi && i2∉foi
 end
 
-struct VSZNamedVectorSpace{NS, BS<:Tuple, VS<:Tuple{Vararg{Vector}}} <: NamedVectorSpace{:⊕, NS, BS}
-    tables::VS
-end
-@inline getcontent(m::VSZNamedVectorSpace, ::Val{:contents}) = getfield(m, :tables)
-@generated function VSZNamedVectorSpace{NS}(contents::Vector...) where NS
-    @assert (length(NS) == length(contents)) && isa(NS, Tuple{Vararg{Symbol}})
-    BS = Expr(:curly, :Tuple, [contents[i]|>eltype for i = 1:length(NS)]...)
-    return quote
-        @assert mapreduce(length, ==, contents)
-        VSZNamedVectorSpace{NS, $BS, typeof(contents)}(contents)
-    end
-end
-
-struct VSPNamedVectorSpace{NS, BS<:Tuple, VS<:Tuple{Vararg{Vector}}} <: NamedVectorSpace{:⊗, NS, BS}
-    tables::VS
-end
-@inline getcontent(m::VSPNamedVectorSpace, ::Val{:contents}) = getfield(m, :tables)
-@generated function VSPNamedVectorSpace{NS}(contents::Vector...) where NS
-    @assert (length(NS) == length(contents)) && isa(NS, Tuple{Vararg{Symbol}})
-    BS = Expr(:curly, :Tuple, [contents[i]|>eltype for i = 1:length(NS)]...)
-    return :(VSPNamedVectorSpace{NS, $BS, typeof(contents)}(contents))
-end
-
 @testset "NamedVectorSpace" begin
-    nvs = VSZNamedVectorSpace{(:t, :U)}([1, 2], [8.0, 9.0])
+    nvs = ZipNamedVectorSpace{(:t, :U)}([1, 2], [8.0, 9.0])
     @test nvs==deepcopy(nvs) && isequal(nvs, deepcopy(nvs))
-    @test nvs≠VSZNamedVectorSpace{(:t, :V)}([1, 2], [8.0, 9.0])
-    @test !isequal(nvs, VSZNamedVectorSpace{(:t, :V)}([1, 2], [8.0, 9.0]))
+    @test nvs≠ZipNamedVectorSpace{(:t, :V)}([1, 2], [8.0, 9.0])
+    @test !isequal(nvs, ZipNamedVectorSpace{(:t, :V)}([1, 2], [8.0, 9.0]))
     @test nvs|>keys == nvs|>typeof|>keys == (:t, :U)
     @test nvs|>values == ([1, 2], [8.0, 9.0])
     @test nvs|>pairs|>collect == [:t=>[1, 2], :U=>[8.0, 9.0]]
@@ -108,7 +85,7 @@ end
     end
     @test nvs|>collect == elements
 
-    nvs = VSPNamedVectorSpace{(:t, :U)}([1.0, 2.0], [8.0, 9.0])
+    nvs = ProductNamedVectorSpace{(:t, :U)}([1.0, 2.0], [8.0, 9.0])
     @test nvs|>rank == nvs|>typeof|>rank == 2
     @test shape(nvs) == (1:2, 1:2)
     @test ndimshape(nvs) == ndimshape(typeof(nvs)) == 2

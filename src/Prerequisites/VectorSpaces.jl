@@ -5,7 +5,7 @@ using ..Traits: rawtype, efficientoperations, getcontent, hascontent
 import ..Traits: contentnames
 import ...Interfaces: dimension, rank
 
-export VectorSpace, EnumerativeVectorSpace, CartesianVectorSpace, NamedVectorSpace, shape, ndimshape
+export VectorSpace, EnumerativeVectorSpace, CartesianVectorSpace, NamedVectorSpace, ZipNamedVectorSpace, ProductNamedVectorSpace, shape, ndimshape
 
 """
     VectorSpace{B} <: AbstractVector{B}
@@ -158,5 +158,48 @@ Get the eltype of the ith indexable dimensions of a named vector space.
 """
 @inline Base.eltype(nvs::NamedVectorSpace, i::Int) = eltype(nvs|>typeof, i)
 @inline Base.eltype(::Type{<:NamedVectorSpace{M, NS, BS} where {M, NS}}, i::Int) where BS = fieldtype(BS, i)
+
+"""
+    ZipNamedVectorSpace{NS, BS<:Tuple, CS<:Tuple} <: NamedVectorSpace{:⊕, NS, BS}
+
+Zipped named vector space.
+"""
+struct ZipNamedVectorSpace{NS, BS<:Tuple, CS<:Tuple} <: NamedVectorSpace{:⊕, NS, BS}
+    contents::CS
+end
+
+"""
+    ZipNamedVectorSpace{NS}(contents...) where NS
+
+Construct a zipped named vector space.
+"""
+@generated function ZipNamedVectorSpace{NS}(contents...) where NS
+    @assert length(NS)==length(contents) && isa(NS, Tuple{Vararg{Symbol}}) "ZipNamedVectorSpace error: mismatched names and contents."
+    BS = Expr(:curly, :Tuple, [eltype(contents[i]) for i = 1:length(NS)]...)
+    return quote
+        @assert mapreduce(length, ==, contents) "ZipNamedVectorSpace error: mismatched length of contents."
+        ZipNamedVectorSpace{NS, $BS, typeof(contents)}(contents)
+    end
+end
+
+"""
+    ProductNamedVectorSpace{NS, BS<:Tuple, CS<:Tuple} <: NamedVectorSpace{:⊕, NS, BS}
+
+Product named vector space.
+"""
+struct ProductNamedVectorSpace{NS, BS<:Tuple, CS<:Tuple} <: NamedVectorSpace{:⊗, NS, BS}
+    contents::CS
+end
+
+"""
+    ProductNamedVectorSpace{NS}(contents...) where NS
+
+Construct a product named vector space.
+"""
+@generated function ProductNamedVectorSpace{NS}(contents...) where NS
+    @assert length(NS)==length(contents) && isa(NS, Tuple{Vararg{Symbol}}) "ProductNamedVectorSpace error: mismatched names and contents."
+    BS = Expr(:curly, :Tuple, [eltype(contents[i]) for i = 1:length(NS)]...)
+    return :(ProductNamedVectorSpace{NS, $BS, typeof(contents)}(contents))
+end
 
 end # module
