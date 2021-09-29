@@ -1201,7 +1201,7 @@ struct TermModulate{M<:Union{Function, Val{true}, Val{false}}, id} <: TermFuncti
     TermModulate(id::Symbol, modulate::Function) = new{typeof(modulate), id}(modulate)
     TermModulate(id::Symbol, modulate::Bool=true) = new{Val{modulate}, id}(modulate|>Val)
 end
-@inline (termmodulate::TermModulate{Val{true}, id})(; kwargs...) where id = get(kwargs, id, nothing)
+@inline (termmodulate::TermModulate{Val{true}, id})(args...; kwargs...) where id = get(kwargs, id, nothing)
 @inline (termmodulate::TermModulate{<:Function})(args...; kwargs...) = termmodulate.modulate(args...; kwargs...)
 @inline ismodulatable(termmodulate::TermModulate) = ismodulatable(typeof(termmodulate))
 @inline ismodulatable(::Type{<:TermModulate{Val{B}}}) where B = B

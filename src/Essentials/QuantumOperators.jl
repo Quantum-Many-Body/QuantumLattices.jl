@@ -11,7 +11,7 @@ import ...Interfaces: id, value, rank, add!, sub!, mul!, div!, ⊗, ⋅, permute
 import ...Prerequisites.Traits: contentnames, dissolve, isparameterbound, parameternames
 
 export SingularID, ID, QuantumOperator, OperatorProd, OperatorSum, Scalar, idtype, sequence
-export Transformation, Identity, Numericalization, MatrixRepresentation, matrix
+export Transformation, Identity, Numericalization, MatrixRepresentation, matrix, matrix!
 
 """
     SingularID <: NamedVector
@@ -814,5 +814,12 @@ abstract type MatrixRepresentation <: Transformation end
 Generic matrix representation.
 """
 function matrix end
+
+"""
+    matrix!
+
+Generic matrix representation.
+"""
+function matrix! end
 
 end #module
