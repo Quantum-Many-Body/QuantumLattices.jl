@@ -1660,7 +1660,7 @@ Construct a path in the reciprocal space.
 @inline function ReciprocalPath{K}(reciprocals::AbstractVector, segments::Tuple{Vararg{Segment{<:SVector}}}) where K
     @assert length(reciprocals)==length(eltype(eltype(segments))) "ReciprocalPath error: mismatched number of reciprocals."
     reciprocals = vectorconvert(reciprocals)
-    momenta = zeros(SVector{length(eltype(reciprocals)), promote_type(eltype(eltype(reciprocals)), eltype(eltype(eltype(segments))))}, prod(map(length, segments)))
+    momenta = zeros(SVector{length(eltype(reciprocals)), promote_type(eltype(eltype(reciprocals)), eltype(eltype(eltype(segments))))}, sum(map(length, segments)))
     count = 1
     for segment in segments
         for index in segment
