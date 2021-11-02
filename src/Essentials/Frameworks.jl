@@ -14,7 +14,7 @@ import ...Essentials: update!, reset!
 import ...Prerequisites.Traits: contentnames, getcontent
 
 export Parameters, Entry, Engine, AbstractGenerator, Generator, SimplifiedGenerator, Action, Assignment, Algorithm
-export prepare!, register!, run!, rundependences!, runassignment!, rundependence!, saveassignment
+export prepare!, register!, run!, save, rundependences!
 
 """
     Parameters{Names}(values::Number...) where Names
@@ -528,11 +528,11 @@ abstract type Action end
 @inline update!(action::Action; kwargs...) = action
 
 """
-    Assignment{A<:Action, P<:Parameters, M<:Function, D<:Tuple{Vararg{Symbol}}, R}
+    Assignment{A<:Action, P<:Parameters, M<:Function, D<:Tuple{Vararg{Symbol}}, R} <: Function
 
 An assignment associated with an action.
 """
-mutable struct Assignment{A<:Action, P<:Parameters, M<:Function, D<:Tuple{Vararg{Symbol}}, R}
+mutable struct Assignment{A<:Action, P<:Parameters, M<:Function, D<:Tuple{Vararg{Symbol}}, R} <: Function
     id::Symbol
     action::A
     parameters::P
@@ -570,11 +570,11 @@ Update the parameters of an assignment and the status of its associated action.
 end
 
 """
-    Algorithm{E<:Engine, P<:Parameters, M<:Function}
+    Algorithm{E<:Engine, P<:Parameters, M<:Function} <: Function
 
 An algorithm associated with an engine.
 """
-mutable struct Algorithm{E<:Engine, P<:Parameters, M<:Function}
+mutable struct Algorithm{E<:Engine, P<:Parameters, M<:Function} <: Function
     name::String
     engine::E
     din::String
@@ -662,6 +662,33 @@ Get the name of the combination of an algorithm and an assignment.
 @inline Base.nameof(alg::Algorithm, assign::Assignment) = @sprintf "%s_%s" repr(alg) assign.id
 
 """
+    (alg::Algorithm)(assign::Assignment) -> Algorithm
+    (assign::Assignment)(alg::Algorithm) -> Algorithm
+
+Run an assignment based on an algorithm.
+
+The difference between these two methods is that the first uses the parameters of `assign` as the current parameters while the second uses those of `alg`.
+"""
+function (alg::Algorithm)(assign::Assignment)
+    ismatched = match(assign.parameters, alg.parameters)
+    if !(assign.ismatched && ismatched)
+        ismatched || update!(alg; assign.parameters...)
+        run!(alg, assign)
+        assign.ismatched = true
+    end
+    return alg
+end
+function (assign::Assignment)(alg::Algorithm)
+    ismatched = match(alg.parameters, assign.parameters)
+    if !(assign.ismatched && ismatched)
+        ismatched || update!(assign; alg.parameters...)
+        run!(alg, assign)
+        assign.ismatched = true
+    end
+    return alg
+end
+
+"""
     register!(alg::Algorithm, id::Symbol, action::Action; info::Bool=true, parameters::Parameters=Parameters{()}(), kwargs...) -> Algorithm
 
 Add an assignment on a algorithm by providing the contents of the assignment, and run this assignment.
@@ -697,23 +724,22 @@ Optionally, the time of the run process can be informed by setting the `info` ar
 """
 function run!(alg::Algorithm, id::Symbol, info::Bool=true)
     assign = alg.assignments[id]
-    @timeit alg.timer string(id) runassignment!(alg, assign)
+    @timeit alg.timer string(id) alg(assign)
     info && @info "Action $id($(nameof(assign.action|>typeof))): time consumed $(TimerOutputs.time(alg.timer[string(id)]) / 10^9)s."
-    assign.save && saveassignment(alg, assign)
+    assign.save && save(alg, assign)
     return alg
 end
-function runassignment!(alg::Algorithm, assign::Assignment)
-    ismatched = match(assign.parameters, alg.parameters)
-    if !(assign.ismatched && ismatched)
-        ismatched || update!(alg; assign.parameters...)
-        run!(alg, assign)
-        assign.ismatched = true
-    end
-end
-function saveassignment(alg::Algorithm, assign::Assignment)
+
+"""
+    save(alg::Algorithm, assign::Assignment) -> Algorithm
+
+Save the data of an assignment registered on an algorithm.
+"""
+function save(alg::Algorithm, assign::Assignment)
     open(@sprintf("%s/%s.dat", alg.dout, nameof(alg, assign)), "w") do io
         write(io, assign.data)
     end
+    return alg
 end
 
 """
@@ -726,17 +752,9 @@ Optionally, some dependences can be filtered by specifying the `f` function.
 function rundependences!(alg::Algorithm, assign::Assignment, f::Function=assign->true)
     for id in assign.dependences
         dependence = alg.assignments[id]
-        f(dependence) && rundependence!(alg, dependence)
+        f(dependence) && dependence(alg)
     end
     return alg
-end
-function rundependence!(alg::Algorithm, assign::Assignment)
-    ismatched = match(alg.parameters, assign.parameters)
-    if !(assign.ismatched && ismatched)
-        ismatched || update!(assign; alg.parameters...)
-        run!(alg, assign)
-        assign.ismatched = true
-    end
 end
 
 end  # module

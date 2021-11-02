@@ -149,7 +149,7 @@ end
     @test vca == deepcopy(vca)
     @test isequal(vca, deepcopy(vca))
     @test repr(vca, ≠(:U)) == "test(VCA)_1.0"
-    @test string(vca) == repr(vca) == "test(VCA)_1.0_8.0"
+    @test repr(vca) == "test(VCA)_1.0_8.0"
 
     add!(vca, :GF, GF(0))
     rex = r"Action DOS\(DOS\)\: time consumed [0-9]*\.[0-9]*(e[+-][0-9]*)*s."
