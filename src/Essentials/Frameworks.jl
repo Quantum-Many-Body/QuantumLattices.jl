@@ -1,6 +1,7 @@
 module Frameworks
 
 using Printf: @printf, @sprintf
+using Serialization: serialize
 using TimerOutputs: TimerOutputs, TimerOutput, @timeit
 using ..QuantumOperators: Transformation, idtype
 using ..Spatials: Bonds, AbstractLattice, acrossbonds, isintracell
@@ -736,9 +737,7 @@ end
 Save the data of an assignment registered on an algorithm.
 """
 function save(alg::Algorithm, assign::Assignment)
-    open(@sprintf("%s/%s.dat", alg.dout, nameof(alg, assign)), "w") do io
-        write(io, assign.data)
-    end
+    serialize(@sprintf("%s/%s.dat", alg.dout, nameof(alg, assign)), data)
     return alg
 end
 

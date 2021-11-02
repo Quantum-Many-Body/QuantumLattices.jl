@@ -1,7 +1,7 @@
 name = "QuantumLattices"
 uuid = "78ae1a1f-1d5d-5174-b61c-66e31b2346dc"
 authors = ["waltergu <waltergu1989@gmail.com>"]
-version = "0.6.0"
+version = "0.7.0"
 
 [deps]
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
@@ -12,7 +12,9 @@ MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
 NearestNeighbors = "b8a86587-4115-5ab1-83bc-aa920d37bbce"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+Serialization = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
 
@@ -22,6 +24,7 @@ Formatting = "0.4.1"
 LaTeXStrings = "1.2.0"
 MacroTools = "0.5.5"
 NearestNeighbors = "0.4.6"
+RecipesBase = "1.1.2"
 Reexport = "0.2.0, 1"
 StaticArrays = "0.12.4, 1"
 TimerOutputs = "0.5.6"
