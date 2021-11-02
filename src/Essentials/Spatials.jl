@@ -5,6 +5,7 @@ using StaticArrays: SVector
 using Printf: @printf
 using NearestNeighbors: KDTree, knn, inrange
 using Base.Iterators: flatten, product
+using RecipesBase: RecipesBase, @recipe, @series
 using ..QuantumOperators: SingularID
 using ..QuantumNumbers: AbelianNumbers, Momentum, Momentum₁, Momentum₂, Momentum₃, periods
 using ...Prerequisites: atol, rtol, Float
@@ -946,6 +947,48 @@ function bonds!(bonds::Vector, lattice::AbstractLattice, ::Val{acrossbonds})
         end
     end
     return bonds
+end
+
+"""
+    @recipe plot(lattice::AbstractLattice, bondtype::LatticeBonds=allbonds, filter::Function=bond->true)
+
+Define the recipe for the visualization of a lattice.
+"""
+@recipe function plot(lattice::AbstractLattice, bondtype::LatticeBonds=allbonds, filter::Function=bond->true)
+    title := getcontent(lattice, :name)
+    legend := false
+    aspect_ratio := :equal
+    for leafbond in expand(typeof(lattice), Val((bondtype,)))
+        if leafbond == zerothbonds
+            @series begin
+                seriestype := :scatter
+                rcoords = NTuple{dimension(lattice), dtype(lattice)}[]
+                for i = 1:length(lattice)
+                    point = lattice[LatticeIndex{'P'}(i)]
+                    filter(point) && push!(rcoords, Tuple(point.rcoord))
+                end
+                rcoords
+            end
+        else
+            @series begin
+                data = Vector{Float64}[]
+                for i = 1:dimension(lattice)
+                    push!(data, Float64[])
+                end
+                for bond in bonds(lattice, leafbond)
+                    if filter(bond)
+                        for i = 1:dimension(lattice)
+                            for point in bond
+                                push!(data[i], point.rcoord[i])
+                            end
+                            push!(data[i], NaN)
+                        end
+                    end
+                end
+                Tuple(data)
+            end
+        end
+    end
 end
 
 """

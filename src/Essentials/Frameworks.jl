@@ -3,6 +3,7 @@ module Frameworks
 using Printf: @printf, @sprintf
 using Serialization: serialize
 using TimerOutputs: TimerOutputs, TimerOutput, @timeit
+using RecipesBase: RecipesBase, @recipe, @series
 using ..QuantumOperators: Transformation, idtype
 using ..Spatials: Bonds, AbstractLattice, acrossbonds, isintracell
 using ..DegreesOfFreedom: Hilbert, Operators, Table, Boundary, plain, Term, ismodulatable, otype
@@ -754,6 +755,18 @@ function rundependences!(alg::Algorithm, assign::Assignment, f::Function=assign-
         f(dependence) && dependence(alg)
     end
     return alg
+end
+
+"""
+    @recipe plot(alg::Algorithm, assign::Assignment)
+
+Define the recipe for the visualization of an assignment of an algorithm.
+"""
+@recipe function plot(alg::Algorithm, assign::Assignment)
+    title --> nameof(alg, assign)
+    legend --> false
+    seriestype --> isa(assign.data, Tuple{Any, Any, Any}) ? :heatmap : :path
+    assign.data
 end
 
 end  # module
