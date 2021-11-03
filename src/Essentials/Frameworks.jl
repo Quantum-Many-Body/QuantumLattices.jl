@@ -664,8 +664,8 @@ Get the name of the combination of an algorithm and an assignment.
 @inline Base.nameof(alg::Algorithm, assign::Assignment) = @sprintf "%s_%s" repr(alg) assign.id
 
 """
-    (alg::Algorithm)(assign::Assignment) -> Algorithm
-    (assign::Assignment)(alg::Algorithm) -> Algorithm
+    (alg::Algorithm)(assign::Assignment) -> Tuple{Algorithm, Assignment}
+    (assign::Assignment)(alg::Algorithm) -> Tuple{Algorithm, Assignment}
 
 Run an assignment based on an algorithm.
 
@@ -678,7 +678,7 @@ function (alg::Algorithm)(assign::Assignment)
         run!(alg, assign)
         assign.ismatched = true
     end
-    return alg
+    return (alg, assign)
 end
 function (assign::Assignment)(alg::Algorithm)
     ismatched = match(alg.parameters, assign.parameters)
@@ -687,11 +687,11 @@ function (assign::Assignment)(alg::Algorithm)
         run!(alg, assign)
         assign.ismatched = true
     end
-    return alg
+    return (alg, assign)
 end
 
 """
-    register!(alg::Algorithm, id::Symbol, action::Action; info::Bool=true, parameters::Parameters=Parameters{()}(), kwargs...) -> Algorithm
+    register!(alg::Algorithm, id::Symbol, action::Action; info::Bool=true, parameters::Parameters=Parameters{()}(), kwargs...) -> Tuple{Algorithm, Assignment}
 
 Add an assignment on a algorithm by providing the contents of the assignment, and run this assignment.
 """
@@ -701,7 +701,7 @@ Add an assignment on a algorithm by providing the contents of the assignment, an
 end
 
 """
-    add!(alg::Algorithm, id::Symbol, action::Action; parameters::Parameters=Parameters{()}(), kwargs...) -> Algorithm
+    add!(alg::Algorithm, id::Symbol, action::Action; parameters::Parameters=Parameters{()}(), kwargs...) -> Tuple{Algorithm, Assignment}
 
 Add an assignment on a algorithm by providing the contents of the assignment.
 
@@ -713,12 +713,13 @@ function add!(alg::Algorithm, id::Symbol, action::Action; parameters::Parameters
     dependences = get(kwargs, :dependences, ())
     data = prepare!(action, alg.engine)
     save = get(kwargs, :save, false)
-    alg.assignments[id] = Assignment(id, action, parameters, map, dependences, data, false, save)
-    return alg
+    assign = Assignment(id, action, parameters, map, dependences, data, false, save)
+    alg.assignments[id] = assign
+    return (alg, assign)
 end
 
 """
-    run!(alg::Algorithm, id::Symbol, info::Bool=true) -> Algorithm
+    run!(alg::Algorithm, id::Symbol, info::Bool=true) -> Tuple{Algorithm, Assignment}
 
 Run an assignment with the given id registered on an algorithm.
 
@@ -729,21 +730,21 @@ function run!(alg::Algorithm, id::Symbol, info::Bool=true)
     @timeit alg.timer string(id) alg(assign)
     info && @info "Action $id($(nameof(assign.action|>typeof))): time consumed $(TimerOutputs.time(alg.timer[string(id)]) / 10^9)s."
     assign.save && save(alg, assign)
-    return alg
+    return (alg, assign)
 end
 
 """
-    save(alg::Algorithm, assign::Assignment) -> Algorithm
+    save(alg::Algorithm, assign::Assignment) -> Tuple{Algorithm, Assignment}
 
 Save the data of an assignment registered on an algorithm.
 """
 function save(alg::Algorithm, assign::Assignment)
     serialize(@sprintf("%s/%s.dat", alg.dout, nameof(alg, assign)), data)
-    return alg
+    return (alg, assign)
 end
 
 """
-    rundependences!(alg::Algorithm, assign::Assignment, f::Function=assign->true) -> Algorithm
+    rundependences!(alg::Algorithm, assign::Assignment, f::Function=assign->true) -> Tuple{Algorithm, Assignment}
 
 Run the dependences of an assignment.
 
@@ -754,19 +755,19 @@ function rundependences!(alg::Algorithm, assign::Assignment, f::Function=assign-
         dependence = alg.assignments[id]
         f(dependence) && dependence(alg)
     end
-    return alg
+    return (alg, assign)
 end
 
 """
-    @recipe plot(alg::Algorithm, assign::Assignment)
+    @recipe plot(pack::Tuple{Algorithm, Assignment})
 
 Define the recipe for the visualization of an assignment of an algorithm.
 """
-@recipe function plot(alg::Algorithm, assign::Assignment)
-    title --> nameof(alg, assign)
+@recipe function plot(pack::Tuple{Algorithm, Assignment})
+    title --> nameof(pack[1], pack[2])
     legend --> false
-    seriestype --> isa(assign.data, Tuple{Any, Any, Any}) ? :heatmap : :path
-    assign.data
+    seriestype --> (isa(pack[2].data, Tuple{Any, Any, Any}) ? :heatmap : :path)
+    pack[2].data
 end
 
 end  # module
