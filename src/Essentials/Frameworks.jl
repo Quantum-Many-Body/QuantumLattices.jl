@@ -765,6 +765,7 @@ Define the recipe for the visualization of an assignment of an algorithm.
 """
 @recipe function plot(pack::Tuple{Algorithm, Assignment})
     title --> nameof(pack[1], pack[2])
+    titlefontsize --> 10
     legend --> false
     seriestype --> (isa(pack[2].data, Tuple{Any, Any, Any}) ? :heatmap : :path)
     pack[2].data

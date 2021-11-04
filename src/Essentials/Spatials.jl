@@ -996,6 +996,7 @@ Define the recipe for the visualization of a lattice.
 """
 @recipe function plot(lattice::AbstractLattice, bondtype::LatticeBonds=allbonds, filter::Function=bond->true)
     title := getcontent(lattice, :name)
+    titlefontsize --> 10
     legend := false
     aspect_ratio := :equal
     for leafbond in expand(typeof(lattice), Val((bondtype,)))
