@@ -2,7 +2,7 @@ module Spatials
 
 using LinearAlgebra: norm, dot, cross
 using StaticArrays: SVector
-using Printf: @printf
+using Printf: @printf, @sprintf
 using NearestNeighbors: KDTree, knn, inrange
 using Base.Iterators: flatten, product
 using RecipesBase: RecipesBase, @recipe, @series
@@ -12,14 +12,15 @@ using ...Prerequisites: atol, rtol, Float
 using ...Prerequisites.Combinatorics: Combinations
 using ...Prerequisites.Traits: efficientoperations, getcontent
 using ...Prerequisites.SimpleTrees: SimpleTree, simpletreedepth, isleaf
-using ...Prerequisites.VectorSpaces: NamedVectorSpace
+using ...Prerequisites.VectorSpaces: CartesianVectorSpace, NamedVectorSpace
 
 import ..Essentials: dtype, kind, reset!
 import ...Interfaces: decompose, rank, dimension, expand
 import ...Prerequisites.Traits: contentnames, getcontent
+import ...Prerequisites.VectorSpaces: shape, ndimshape
 
 export distance, azimuthd, azimuth, polard, polar, volume, isparallel, isonline, isintratriangle, issubordinate
-export reciprocals, translate, rotate, tile, minimumlengths, intralinks, interlinks
+export reciprocals, translate, rotate, tile, minimumlengths, intralinks, interlinks, Translations, @translations_str
 export AbstractPID, PID, CPID, AbstractBond, Point, Bond, pidtype, rcoord, icoord, isintracell
 export AbstractLattice, Lattice, SuperLattice, Cylinder, LatticeIndex, LatticeBonds, Bonds
 export nneighbor, bonds!, bonds, latticetype, bondtypes, latticebondsstructure
@@ -323,15 +324,15 @@ function rotate(cluster::AbstractMatrix{<:Number}, angle::Number;
 end
 
 """
-    tile(cluster::AbstractMatrix{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}, translations::NTuple{M, NTuple{N, <:Number}}=()) where {N, M} -> Matrix{<:Number}
+    tile(cluster::AbstractMatrix{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}, translations) -> Matrix{<:Number}
 
 Tile a supercluster by translations of the input cluster.
 
 Basically, the final supercluster is composed of several parts, each of which is a translation of the original cluster, with the translation vectors specified by `vectors` and each set of the translation indices contained in `translations`. When translation vectors are empty, a copy of the original cluster will be returned.
 """
-function tile(cluster::AbstractMatrix{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}, translations::NTuple{M, NTuple{N, <:Number}}=()) where {N, M}
-    N==0 && return copy(cluster)
-    @assert length(vectors)==N "tile error: mismatched shape of input vectors and translations."
+function tile(cluster::AbstractMatrix{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}, translations)
+    length(vectors)==0 && return copy(cluster)
+    length(translations)>0 && @assert length(vectors)==length(first(translations)) "tile error: mismatched shape of input vectors and translations."
     datatype = promote_type(eltype(cluster), eltype(eltype(vectors)), Float)
     supercluster = zeros(datatype, size(cluster, 1), size(cluster, 2)*length(translations))
     disp = zeros(datatype, size(cluster, 1))
@@ -371,7 +372,7 @@ function minimumlengths(cluster::AbstractMatrix{<:Number}, vectors::AbstractVect
                 filter!(≠(remove), translations)
             end
         end
-        supercluster = tile(cluster, vectors, Tuple(translations))
+        supercluster = tile(cluster, vectors, translations)
         for len in flatten(knn(KDTree(supercluster), cluster, nneighbor>0 ? min(nneighbor*coordination, size(supercluster, 2)) : 1, true)[2])
             for (i, minlen) in enumerate(result)
                 if isapprox(len, minlen, atol=atol, rtol=rtol)
@@ -414,7 +415,6 @@ function intralinks(cluster::AbstractMatrix{<:Number}, vectors::AbstractVector{<
         end
     end
     sort!(translations, by=norm)
-    translations = Tuple(translations)
     supercluster = tile(cluster, vectors, translations)
     disps = tile(zero(cluster), vectors, translations)
     for (i, indices) in enumerate(inrange(KDTree(convert(Matrix{Float}, supercluster)), convert(Matrix{Float}, cluster), max(values(neighbors)...)+atol, true))
@@ -462,6 +462,46 @@ function interlinks(cluster₁::AbstractMatrix{<:Number}, cluster₂::AbstractMa
         end
     end
     return result
+end
+
+"""
+    Translations{N} <: CartesianVectorSpace{NTuple{N, Int}}
+
+A set of translations. The boundary conditions along each translation direction are also included.
+"""
+struct Translations{N} <: CartesianVectorSpace{NTuple{N, Int}}
+    ranges::NTuple{N, Int}
+    boundaries::NTuple{N, Char}
+    function Translations(ranges::NTuple{N, Int}, boundaries::NTuple{N, Char}) where N
+        @assert all(map(>(0), ranges)) "Translations error: ranges must be positive."
+        @assert all(map(in(('P', 'O', 'p', 'o')), boundaries)) "Translations error: boundary conditions must be either 'P'/'p' for 'periodic' or 'O'/'o' for 'open'."
+        new{N}(ranges, map(uppercase, boundaries))
+    end
+end
+@inline shape(translations::Translations) = map(i->0:i-1, translations.ranges)
+@inline ndimshape(::Type{<:Translations{N}}) where N = N
+@inline Base.CartesianIndex(translation::NTuple{N, Int}, ::Translations{N}) where N = CartesianIndex(translation)
+@inline Tuple(index::CartesianIndex{N}, ::Translations{N}) where N = Tuple(index)
+function Base.show(io::IO, translations::Translations)
+    for i = 1:ndimshape(translations)
+        i>1 && @printf io "%s" '-'
+        @printf io "%s%s" translations.ranges[i] translations.boundaries[i]
+    end
+end
+
+"""
+    translations"n₁P/O-n₁P/O-..." -> Translations
+
+Construct a set of translations from a string literal.
+"""
+macro translations_str(str::String)
+    patterns = split(str, "-")
+    ranges, boundaries = Int[], Char[]
+    for pattern in patterns
+        push!(ranges, Meta.parse(pattern[1:end-1]))
+        push!(boundaries, pattern[end])
+    end
+    return Translations(Tuple(ranges), Tuple(boundaries))
 end
 
 """
@@ -768,7 +808,7 @@ Get the space dimension of the lattice.
     dtype(lattice::AbstractLattice)
     dtype(::Type{<:AbstractLattice{N, <:AbstractPID, D} where N}) where {D<:Number}
 
-Get the data type of a lattice.
+Get the data type of the coordinates of a lattice.
 """
 @inline dtype(lattice::AbstractLattice) = dtype(typeof(lattice))
 @inline dtype(::Type{<:AbstractLattice{N, <:AbstractPID, D} where N}) where {D<:Number} = D
@@ -932,8 +972,8 @@ function bonds!(bonds::Vector, lattice::AbstractLattice, ::Val{acrossbonds})
     end
     if length(translations) > 0
         dim = lattice |> dimension |> Val
-        superrcoords = tile(getcontent(lattice, :rcoords), getcontent(lattice, :vectors), Tuple(translations))
-        supericoords = tile(getcontent(lattice, :icoords), getcontent(lattice, :vectors), Tuple(translations))
+        superrcoords = tile(getcontent(lattice, :rcoords), getcontent(lattice, :vectors), translations)
+        supericoords = tile(getcontent(lattice, :icoords), getcontent(lattice, :vectors), translations)
         for (neighbor, sindex, eindex) in interlinks(getcontent(lattice, :rcoords), superrcoords, getcontent(lattice, :neighbors))
             spoint = Point(getcontent(lattice, :pids)[sindex],
                         latticestaticcoords(getcontent(lattice, :rcoords), sindex, dim),
@@ -1086,6 +1126,38 @@ function Lattice(name::String,
     end
     Lattice{sublattices|>eltype|>dimension}(name, pids, rcoords, icoords, vectors, neighbors, coordination=coordination)
 end
+
+"""
+    Lattice(lattice::Lattice, translations::Translations; pidmap::Function=pidmap, icoordmap::Function=icoordmap, coordination::Int=8)
+
+Construct a lattice from the translations of another.
+"""
+function Lattice(lattice::Lattice, translations::Translations; pidmap::Function=pidmap, icoordmap::Function=icoordmap, coordination::Int=8)
+    name = @sprintf "%s(%s)" lattice.name translations
+    rcoords = tile(lattice.rcoords, lattice.vectors, translations)
+    vectors = SVector{dimension(lattice), dtype(lattice)}[]
+    for (i, vector) in enumerate(lattice.vectors)
+        translations.boundaries[i]=='P' && push!(vectors, vector*translations.ranges[i])
+    end
+    len = length(lattice)*length(translations)
+    pids = Vector{keytype(lattice)}(undef, len)
+    icoords = zeros(dtype(lattice), dimension(lattice), len)
+    count = 1
+    for translation in translations
+        for index = 1:length(lattice)
+            pids[count] = pidmap(lattice, index, translations, translation)
+            icoords[:, count] .= icoordmap(lattice, index, translations, translation)
+            count += 1
+        end
+    end
+    return Lattice{dimension(lattice)}(name, pids, rcoords, icoords, vectors, lattice.neighbors, coordination=coordination)
+end
+function pidmap(lattice::Lattice, index::Int, translations::Translations{N}, translation::NTuple{N, Int}) where N
+    pid = lattice.pids[index]
+    sequence = findfirst(translation, translations)
+    return replace(pid, site=pid.site+(sequence-1)*length(lattice))
+end
+icoordmap(lattice::Lattice, index::Int, ::Translations{N}, ::NTuple{N, Int}) where N = lattice[LatticeIndex{'I'}(index)]
 
 """
     SuperLattice(name::String,
@@ -1293,7 +1365,7 @@ function (cylinder::Cylinder)(scopes::Any...; coordination::Int=8)
     @assert fieldtype(cylinder|>keytype, :scope)==scopes|>eltype "cylinder call error: wrong scope type."
     name = cylinder.name * string(length(scopes))
     pids = keytype(cylinder)[CPID(scope, i) for scope in scopes for i = 1:size(cylinder.block, 2)]
-    rcoords = tile(cylinder.block, [cylinder.translation], Tuple((i,) for i = -(length(scopes)-1)/2:(length(scopes)-1)/2))
+    rcoords = tile(cylinder.block, [cylinder.translation], [(i,) for i = -(length(scopes)-1)/2:(length(scopes)-1)/2])
     icoords = zero(rcoords)
     vectors = cylinder.vectors
     neighbors = cylinder.neighbors

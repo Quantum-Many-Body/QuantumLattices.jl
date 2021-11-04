@@ -7,6 +7,7 @@ using QuantumLattices.Essentials.QuantumNumbers: Momentum₁, Momentum₂, Momen
 using QuantumLattices.Interfaces: decompose, rank, dimension, expand
 using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Prerequisites.Traits: contentnames, getcontent
+using QuantumLattices.Prerequisites.VectorSpaces: shape, ndimshape
 using QuantumLattices.Prerequisites.SimpleTrees: leaves
 
 @testset "distance" begin
@@ -146,6 +147,16 @@ end
     @test interlinks(ps1, ps2, neighbors) == links
 end
 
+@testset "Translations" begin
+    translations = translations"2P-3O"
+    @test translations == Translations((2, 3), ('P', 'O'))
+    @test shape(translations) == (0:1, 0:2)
+    @test ndimshape(typeof(translations)) == 2
+    @test CartesianIndex((0, 0), translations) == CartesianIndex(0, 0)
+    @test Tuple(CartesianIndex(0, 0), translations) == (0, 0)
+    @test string(translations) == "2P-3O"
+end
+
 @testset "CPID" begin
     @test CPID(1) == CPID('T', 1) == CPID(scope='T', site=1)
     @test CPID(scope="tz", site=1)|>string == "CPID(\"tz\", 1)"
@@ -223,6 +234,16 @@ end
                 neighbors=2,
                 )
     @test setdiff(bonds(lattice), bonds(lattice, zerothbonds, insidebonds, acrossbonds))|>length == 0
+
+    unit = Lattice("Square", [Point(PID(1), (0.0, 0.0), (0.0, 0.0))], vectors=[[1.0, 0.0], [0.0, 1.0]], neighbors=1)
+    lattice = Lattice(unit, translations"2P-3O")
+    @test lattice == Lattice("Square(2P-3O)", [
+        Point(PID(1), [0.0, 0.0], [0.0, 0.0]), Point(PID(2), [1.0, 0.0], [0.0, 0.0]), Point(PID(3), [0.0, 1.0], [0.0, 0.0]),
+        Point(PID(4), [1.0, 1.0], [0.0, 0.0]), Point(PID(5), [0.0, 2.0], [0.0, 0.0]), Point(PID(6), [1.0, 2.0], [0.0, 0.0])
+        ],
+        vectors=[[2.0, 0.0]],
+        neighbors=1
+    )
 end
 
 @testset "SuperLattice" begin
