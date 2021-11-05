@@ -288,8 +288,8 @@ end
 2) Convert a scalar to a scalar quantum operator;
 3) Convert a quantum operator from one type to another.
 """
-@inline Base.convert(::Type{M}, m::Scalar) where {M<:Scalar} = typeof(m)<:M ? m : one(M)*value(m)
-@inline Base.convert(::Type{M}, m::Number) where {M<:Scalar} = one(M)*m
+@inline Base.convert(::Type{M}, m::Scalar) where {M<:Scalar} = typeof(m)<:M ? m : one(M)*convert(valtype(M), value(m))
+@inline Base.convert(::Type{M}, m::Number) where {M<:Scalar} = one(M)*convert(valtype(M), m)
 @inline function Base.convert(::Type{M}, m::OperatorProd) where {M<:OperatorProd}
     (typeof(m) <: M) && return m
     @assert convertible(M, m) "convert error: $(typeof(m)) cannot be converted to $M."
