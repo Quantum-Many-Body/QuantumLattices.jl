@@ -410,6 +410,7 @@ struct Operator{V<:Number, I<:ID{AbstractOID}} <: OperatorProd{V, I}
 end
 @inline Operator(value::Number) = Operator(value, ())
 Base.show(io::IO, opt::Operator) = @printf io "%s(%s, %s)" nameof(typeof(opt)) decimaltostr(value(opt)) id(opt)
+Base.show(io::IO, ::MIME"text/plain", opt::Operator) = show(io, opt)
 
 """
     adjoint(opt::Operator) -> Operator

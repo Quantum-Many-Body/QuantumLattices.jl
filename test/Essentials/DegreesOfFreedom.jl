@@ -1,5 +1,5 @@
 using Test
-using Printf: @sprintf
+using Printf: @printf, @sprintf
 using StaticArrays: SVector
 using LinearAlgebra: dot
 using QuantumLattices.Essentials.DegreesOfFreedom
@@ -17,6 +17,7 @@ import QuantumLattices.Prerequisites.VectorSpaces: shape, ndimshape
 struct DID{N<:Union{Int, Symbol}} <: SimpleIID
     nambu::N
 end
+@inline Base.show(io::IO, did::DID) = @printf io "DID(%s)" did.nambu
 @inline Base.adjoint(sl::DID{Int}) = DID(3-sl.nambu)
 @inline statistics(::Type{<:DID}) = :f
 
@@ -149,6 +150,9 @@ end
         ))
     @test ishermitian(opt) == false
     @test string(opt) == "Operator(1.0im, ID(OID(Index(PID(2), DID(2)), [1.0, 0.0], [2.0, 0.0]), OID(Index(PID(1), DID(1)), [0.0, 0.0], [0.0, 0.0])))"
+    io = IOBuffer()
+    show(io, MIME"text/plain"(), opt)
+    @test String(take!(io)) == "Operator(1.0im, ID(OID(Index(PID(2), DID(2)), [1.0, 0.0], [2.0, 0.0]), OID(Index(PID(1), DID(1)), [0.0, 0.0], [0.0, 0.0])))"
 
     opt = Operator(1.0, ID(
         OID(Index(PID(1), DID(2)), SVector(0.5, 0.5), SVector(1.0, 1.0)),
