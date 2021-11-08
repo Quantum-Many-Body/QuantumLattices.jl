@@ -4,9 +4,9 @@ using Printf: @printf, @sprintf
 using Serialization: serialize
 using TimerOutputs: TimerOutputs, TimerOutput, @timeit
 using RecipesBase: RecipesBase, @recipe, @series
-using ..QuantumOperators: Transformation, idtype
+using ..QuantumOperators: Operators, Transformation, idtype, optype
 using ..Spatials: Bonds, AbstractLattice, acrossbonds, isintracell
-using ..DegreesOfFreedom: Hilbert, Operators, Table, Boundary, plain, Term, ismodulatable, otype
+using ..DegreesOfFreedom: Hilbert, Table, Boundary, plain, Term, ismodulatable
 using ...Prerequisites: atol, rtol, decimaltostr
 using ...Prerequisites.Traits: efficientoperations
 using ...Prerequisites.CompositeStructures: NamedContainer
@@ -151,13 +151,12 @@ Construct an entry of operators based on the input terms, bonds and Hilbert spac
     exprs, alterops, boundops = [], [], []
     push!(exprs, quote
         choosedterms = length($constterms)>0 ? $constterms : $alterterms
-        constoptp, constidtp = Union{}, Union{}
+        constoptp = Union{}
         for i = 1:length(choosedterms)
-            tempoptp = otype(choosedterms[i], hilbert|>typeof, bonds|>eltype)
+            tempoptp = optype(choosedterms[i], hilbert|>typeof, bonds|>eltype)
             constoptp = promote_type(constoptp, tempoptp)
-            constidtp = promote_type(constidtp, tempoptp|>idtype)
         end
-        constops = Operators{constidtp, constoptp}()
+        constops = Operators{constoptp}()
         innerbonds = filter(acrossbonds, bonds, Val(:exclude))
         boundbonds = filter(acrossbonds, bonds, Val(:include))
     end)
@@ -196,11 +195,15 @@ Expand an entry of operators with the given boundary twist and term coefficients
     exprs = [:(add!(operators, entry.constops))]
     for name in QuoteNode.(fieldnames(fieldtype(entry, :alterops)))
         push!(exprs, :(value = get(kwargs, $name, nothing)))
-        push!(exprs, :(for opt in values(getfield(entry.alterops, $name)) add!(operators, opt*value) end))
+        push!(exprs, :(for opt in getfield(entry.alterops, $name)
+            add!(operators, opt*value)
+        end))
     end
     for name in QuoteNode.(fieldnames(fieldtype(entry, :boundops)))
         push!(exprs, :(value = get(kwargs, $name, nothing)))
-        push!(exprs, :(for opt in values(getfield(entry.boundops, $name)) add!(operators, boundary(opt)*value) end))
+        push!(exprs, :(for opt in getfield(entry.boundops, $name)
+            add!(operators, boundary(opt)*value)
+        end))
     end
     push!(exprs, :(return operators))
     return Expr(:block, exprs...)
@@ -280,7 +283,7 @@ end
 
 Expand the generator.
 """
-@inline expand(gen::AbstractGenerator) = expand!(eltype(gen)(), gen)
+@inline expand(gen::AbstractGenerator) = expand!(zero(eltype(gen)), gen)
 
 """
     Generator{E<:Entry, TS<:NamedContainer{Term}, BS<:Bonds, H<:Hilbert, T<:Union{Table, Nothing}, B<:Boundary} <: AbstractGenerator{E, T, B}
@@ -337,14 +340,15 @@ Expand the operators of a generator:
 """
 function expand(gen::Generator, name::Symbol)
     term = getfield(gen.terms, name)
-    optp = otype(term|>typeof, gen.hilbert|>typeof, gen.bonds|>eltype)
-    result = Operators{idtype(optp), optp}()
+    result = Operators{optype(term|>typeof, gen.hilbert|>typeof, gen.bonds|>eltype)}()
     if ismodulatable(term)
-        for opt in getfield(gen.operators.alterops, name)|>values add!(result, opt*term.value) end
+        for opt in getfield(gen.operators.alterops, name)
+            add!(result, opt*term.value)
+        end
     else
         expand!(result, term, filter(acrossbonds, gen.bonds, Val(:exclude)), gen.hilbert, half=gen.half, table=gen.table)
     end
-    for opt in getfield(gen.operators.boundops, name)|>values
+    for opt in getfield(gen.operators.boundops, name)
         add!(result, gen.boundary(opt)*term.value)
     end
     return result
@@ -353,14 +357,14 @@ end
     exprs = []
     push!(exprs, quote
         bond = gen.bonds[i]
-        result = eltype(gen)()
+        result = zero(eltype(gen))
     end)
     for i = 1:fieldcount(TS)
         push!(exprs, :(expand!(result, gen.terms[$i], bond, gen.hilbert, half=gen.half, table=gen.table)))
     end
     push!(exprs, quote
-        isintracell(bond) || for opt in values(result)
-            result[id(opt)] = gen.boundary(opt)
+        isintracell(bond) || for opt in result
+            result.contents[id(opt)] = gen.boundary(opt)
         end
         return result
     end)
@@ -369,8 +373,8 @@ end
 function expand(gen::Generator, name::Symbol, i::Int)
     bond = gen.bonds[i]
     result = expand(getfield(gen.terms, name), bond, gen.hilbert, half=gen.half, table=gen.table)
-    isintracell(bond) || for opt in values(result)
-        result[id(opt)] = gen.boundary(opt)
+    isintracell(bond) || for opt in result
+        result.contents[id(opt)] = gen.boundary(opt)
     end
     return result
 end

@@ -6,8 +6,8 @@ using QuantumLattices.Essentials.Frameworks
 using QuantumLattices.Essentials: update!, reset!, register!
 using QuantumLattices.Essentials.Spatials: Point, PID, Bond, Bonds, Lattice, acrossbonds, zerothbonds
 using QuantumLattices.Essentials.DegreesOfFreedom: SimpleIID, SimpleInternal, IIDSpace, Coupling, Subscript, Subscripts, SubscriptsID
-using QuantumLattices.Essentials.DegreesOfFreedom: Term, Hilbert, Index, Table, OID, OIDToTuple, Operator, Operators, plain, @couplings
-using QuantumLattices.Essentials.QuantumOperators: ID, id, idtype, Identity
+using QuantumLattices.Essentials.DegreesOfFreedom: Term, Hilbert, Index, Table, OID, OIDToTuple, plain, @couplings
+using QuantumLattices.Essentials.QuantumOperators: ID, Operator, Operators, id, idtype, Identity
 using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Interfaces:  expand!, expand, add!
 using QuantumLattices.Prerequisites.Traits: contentnames
@@ -68,11 +68,11 @@ end
     i = Identity()
 
     optp = Operator{Float, ID{OID{Index{PID, FID{Int}}, SVector{2, Float}}, 2}}
-    entry = Entry(tops₁, NamedContainer{(:μ,)}((μops,)), NamedContainer{(:t, :μ)}((tops₂, Operators{optp|>idtype, optp}())))
+    entry = Entry(tops₁, NamedContainer{(:μ,)}((μops,)), NamedContainer{(:t, :μ)}((tops₂, Operators{optp}())))
     @test entry == deepcopy(entry) && isequal(entry, deepcopy(entry))
     @test entry == Entry((t, μ), bonds, hilbert, half=true, table=table)
-    @test entry|>eltype == entry|>typeof|>eltype == Operators{idtype(optp), optp}
-    @test expand!(Operators{idtype(optp), optp}(), entry, plain, t=2.0, μ=1.5) == tops₁+tops₂*2.0+μops*1.5
+    @test entry|>eltype == entry|>typeof|>eltype == Operators{optp, idtype(optp)}
+    @test expand!(Operators{optp}(), entry, plain, t=2.0, μ=1.5) == tops₁+tops₂*2.0+μops*1.5
     @test empty(entry) == empty!(deepcopy(entry))
     @test empty(entry) == Entry(empty(μops), NamedContainer{(:μ,)}((empty(μops),)), NamedContainer{(:t, :μ)}((empty(μops), empty(μops))))
     @test merge!(empty(entry), entry) == merge(entry, entry) == entry
@@ -82,7 +82,7 @@ end
     cgen = Generator((t, μ), bonds, hilbert; half=true, table=table, boundary=plain)
     @test cgen == deepcopy(cgen) && isequal(cgen, deepcopy(cgen))
     @test Parameters(cgen) == Parameters{(:t, :μ)}(2.0, 1.0)
-    @test expand!(Operators{idtype(optp), optp}(), cgen) == expand(cgen) == tops₁+tops₂*2.0+μops
+    @test expand!(Operators{optp}(), cgen) == expand(cgen) == tops₁+tops₂*2.0+μops
     @test expand(cgen, :t) == tops₁+tops₂*2.0
     @test expand(cgen, :μ) == μops
     @test expand(cgen, 1)+expand(cgen, 2)+expand(cgen, 3)+expand(cgen, 4) == expand(cgen)
@@ -96,7 +96,7 @@ end
     params = Parameters{(:t, :μ)}(2.0, 1.0)
     sgen = SimplifiedGenerator(params, entry, table=table, boundary=plain)
     @test Parameters(sgen) == params
-    @test expand!(Operators{idtype(optp), optp}(), sgen) == expand(sgen) == tops₁+tops₂*2.0+μops
+    @test expand!(Operators{optp}(), sgen) == expand(sgen) == tops₁+tops₂*2.0+μops
     @test empty!(deepcopy(sgen)) == SimplifiedGenerator(params, empty(entry), table=empty(table), boundary=plain) == empty(sgen)
     @test reset!(empty(sgen), entry, table=table) == sgen
     @test update!(sgen, μ=1.5)|>expand == tops₁+tops₂*2.0+μops*1.5

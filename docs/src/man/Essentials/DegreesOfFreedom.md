@@ -4,9 +4,7 @@ CurrentModule = QuantumLattices.Essentials.DegreesOfFreedom
 
 # Degrees of freedom
 
-## IID, Internal and Index
-
-## OID, Operator and Operators
+## Internal, IID, Index and OID
 
 ## IIDSpace
 
@@ -19,8 +17,6 @@ CurrentModule = QuantumLattices.Essentials.DegreesOfFreedom
 ## Metric and Table
 
 ## Term
-
-## LaTeX
 
 ## Boundary
 

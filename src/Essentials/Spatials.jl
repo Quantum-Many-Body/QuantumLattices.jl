@@ -6,7 +6,7 @@ using Printf: @printf, @sprintf
 using NearestNeighbors: KDTree, knn, inrange
 using Base.Iterators: flatten, product
 using RecipesBase: RecipesBase, @recipe, @series
-using ..QuantumOperators: SingularID
+using ..QuantumOperators: OperatorUnit
 using ..QuantumNumbers: AbelianNumbers, Momentum, Momentum₁, Momentum₂, Momentum₃, periods
 using ...Prerequisites: atol, rtol, Float
 using ...Prerequisites.Combinatorics: Combinations
@@ -505,11 +505,11 @@ macro translations_str(str::String)
 end
 
 """
-    AbstractPID <: SingularID
+    AbstractPID <: OperatorUnit
 
 Abstract point id.
 """
-abstract type AbstractPID <: SingularID end
+abstract type AbstractPID <: OperatorUnit end
 
 """
     PID <: AbstractPID

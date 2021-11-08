@@ -15,9 +15,9 @@ With the help of the structure constants of the algebra, the result of the bilin
 
 In general, there are three basic operations on quantum operators, i.e. the scalar multiplication between a scalar and a quantum operator, the usual addition and the usual multiplication between quantum operators. Other complicated operations can be composed from these basic ones. These basic operations are implemented in this module.
 
-## SingularID and ID
+## OperatorUnit
 
-[`SingularID`](@ref) is the building block of the id system of quantum operators, which specifies the basis of the vector space of the corresponding algebra. On the other hand, [`ID`](@ref) is the direct product (`⊗`) of several [`SingularID`](@ref)s, which could specify the product of the basis quantum operators. This defines an over complete id system for the quantum operators because it does not reflects the structure constants of the corresponding algebra, which would reduce the number of independent basis quantum operators. Extra mechanisms should be provided to kill this redundancy, which goes beyond the current module. Users should define them themselves.
+[`OperatorUnit`](@ref) is the building block of quantum operators, which specifies the basis of the vector space of the corresponding algebra.
 
 ## OperatorProd and OperatorSum
 

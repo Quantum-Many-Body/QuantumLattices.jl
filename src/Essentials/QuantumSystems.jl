@@ -3,10 +3,10 @@ module QuantumSystems
 using LinearAlgebra: dot, norm
 using StaticArrays: SVector
 using Printf: @printf, @sprintf
-using ..QuantumOperators: ID, OperatorProd
+using ..QuantumOperators: ID, OperatorProd, Operator, Operators, LaTeX, latexformat
 using ..Spatials: AbstractPID, AbstractBond, Point, Bond, rcoord, pidtype
 using ..DegreesOfFreedom: SimpleIID, CompositeIID, SimpleInternal, CompositeInternal
-using ..DegreesOfFreedom: Index, CompositeOID, OID, LaTeX, latexformat, OIDToTuple, Operator, Operators, Hilbert, Table
+using ..DegreesOfFreedom: Index, CompositeOID, OID, OIDToTuple, Hilbert, Table
 using ..DegreesOfFreedom: Subscripts, SubscriptsID, Subscript, IIDSpace, subscriptexpr, wildcard, diagonal
 using ..DegreesOfFreedom: Coupling, Couplings, @couplings, couplinginternals, Term, TermCouplings, TermAmplitude, TermModulate
 using ...Essentials: kind, dtype
@@ -15,7 +15,8 @@ using ...Prerequisites: Float, atol, rtol, delta, decimaltostr
 using ...Prerequisites.Traits: rawtype, getcontent
 using ...Prerequisites.VectorSpaces: CartesianVectorSpace
 
-import ..DegreesOfFreedom: statistics, script, latexname, ishermitian, couplingcenters, abbr, termfactor, otype
+import ..QuantumOperators: script, latexname, ishermitian, optype
+import ..DegreesOfFreedom: statistics, couplingcenters, abbr, termfactor
 import ...Interfaces: rank, ⊗, ⋅, expand, expand!, permute
 import ...Prerequisites.VectorSpaces: shape, ndimshape
 
@@ -70,7 +71,7 @@ struct FID{T, O<:Union{Int, Symbol}, S<:Union{Int, Symbol}, N<:Union{Int, Symbol
         new{T, typeof(orbital), typeof(spin), typeof(nambu)}(orbital, spin, nambu)
     end
 end
-Base.show(io::IO, fid::FID) = @printf io "FID{%s}(%s)" repr(statistics(fid)) join(values(fid), ", ")
+Base.show(io::IO, fid::FID) = @printf io "FID{%s}(%s)" repr(statistics(fid)) join(ntuple(i->getfield(fid, i), Val(fieldcount(typeof(fid)))), ", ")
 @inline Base.adjoint(fid::FID{T, <:Union{Int, Symbol}, <:Union{Int, Symbol}, Int}) where T = FID{T}(fid.orbital, fid.spin, fid.nambu==0 ? 0 : 3-fid.nambu)
 @inline @generated function Base.replace(fid::FID; kwargs...)
     exprs = [:(get(kwargs, $name, getfield(fid, $name))) for name in QuoteNode.(fieldnames(fid))]
@@ -675,7 +676,7 @@ struct SID{S, O<:Union{Int, Symbol}, T<:Union{Char, Symbol}} <: SimpleIID
     end
 end
 @inline Base.adjoint(sid::SID) = SID{totalspin(sid)}(sid.orbital, sidajointmap[sid.tag])
-Base.show(io::IO, sid::SID) = @printf io "SID{%s}(%s)" totalspin(sid) join(repr.(values(sid)), ", ")
+Base.show(io::IO, sid::SID) = @printf io "SID{%s}(%s)" totalspin(sid) join(map(repr, ntuple(i->getfield(sid, i), Val(fieldcount(typeof(sid))))), ", ")
 @inline @generated function Base.replace(sid::SID; kwargs...)
     exprs = [:(get(kwargs, $name, getfield(sid, $name))) for name in QuoteNode.(fieldnames(sid))]
     return :(rawtype(typeof(sid)){totalspin(sid)}($(exprs...)))
@@ -1248,7 +1249,7 @@ end
 @inline abbr(::Type{<:DMPhonon}) = :dmp
 @inline ishermitian(::Type{<:DMPhonon}) = false
 @inline couplingcenters(::Coupling, ::Bond, ::Val{:DMPhonon}) = (1, 2)
-@inline function otype(T::Type{<:Term{:DMPhonon}}, H::Type{<:Hilbert}, B::Type{<:AbstractBond})
+@inline function optype(T::Type{<:Term{:DMPhonon}}, H::Type{<:Hilbert}, B::Type{<:AbstractBond})
     Operator{valtype(T), <:ID{OID{<:Index{pidtype(eltype(B)), <:SimpleIID}, SVector{dimension(eltype(B)), dtype(eltype(B))}}, rank(T)}}
 end
 

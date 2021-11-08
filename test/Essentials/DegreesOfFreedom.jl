@@ -3,7 +3,7 @@ using Printf: @printf, @sprintf
 using StaticArrays: SVector
 using LinearAlgebra: dot
 using QuantumLattices.Essentials.DegreesOfFreedom
-using QuantumLattices.Essentials.QuantumOperators: ID, sequence, id, idtype
+using QuantumLattices.Essentials.QuantumOperators: ID, Operator, Operators, sequence, id, idtype, LaTeX, latexformat
 using QuantumLattices.Essentials.Spatials: AbstractPID, PID, CPID, Point, Bond, Bonds, Lattice, pidtype, rcoord, icoord
 using QuantumLattices.Essentials: kind, update!, reset!
 using QuantumLattices.Interfaces: decompose, rank, expand, ⊗
@@ -11,7 +11,8 @@ using QuantumLattices.Prerequisites: Float, decimaltostr
 using QuantumLattices.Prerequisites.Traits: parameternames, isparameterbound, contentnames, getcontent
 using QuantumLattices.Prerequisites.CompositeStructures: NamedContainer
 
-import QuantumLattices.Essentials.DegreesOfFreedom: ishermitian, statistics, latexname, script, couplingcenters, abbr
+import QuantumLattices.Essentials.QuantumOperators: latexname, script
+import QuantumLattices.Essentials.DegreesOfFreedom: ishermitian, statistics, couplingcenters, abbr
 import QuantumLattices.Prerequisites.VectorSpaces: shape, ndimshape
 
 struct DID{N<:Union{Int, Symbol}} <: SimpleIID
@@ -43,7 +44,7 @@ end
 @inline script(::Val{:site}, index::Index{<:AbstractPID, <:DID}; kwargs...) = index.pid.site
 @inline script(::Val{:nambu}, index::Index{<:AbstractPID, <:DID}; kwargs...) = index.iid.nambu==2 ? "\\dagger" : ""
 
-latexname(::Type{<:OID{<:Index{<:AbstractPID, <:DID}}}) = Symbol("OID{Index{AbstractPID, DID}}")
+@inline latexname(::Type{<:OID{<:Index{<:AbstractPID, <:DID}}}) = Symbol("OID{Index{AbstractPID, DID}}")
 latexformat(OID{<:Index{<:AbstractPID, <:DID}}, LaTeX{(:nambu,), (:site,)}('d'))
 
 const DCoupling{V, I<:ID{DID}, C<:Subscripts, CI<:SubscriptsID} = Coupling{V, I, C, CI}
@@ -140,54 +141,16 @@ end
 end
 
 @testset "Operator" begin
-    opt = Operator(1.0im, ID(
-        OID(Index(PID(2), DID(2)), SVector(1.0, 0.0), SVector(2.0, 0.0)),
-        OID(Index(PID(1), DID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0))
-        ))
-    @test opt' == Operator(-1.0im, ID(
-        OID(Index(PID(1), DID(2)), SVector(0.0, 0.0), SVector(0.0, 0.0)),
-        OID(Index(PID(2), DID(1)), SVector(1.0, 0.0), SVector(2.0, 0.0))
-        ))
-    @test ishermitian(opt) == false
-    @test string(opt) == "Operator(1.0im, ID(OID(Index(PID(2), DID(2)), [1.0, 0.0], [2.0, 0.0]), OID(Index(PID(1), DID(1)), [0.0, 0.0], [0.0, 0.0])))"
-    io = IOBuffer()
-    show(io, MIME"text/plain"(), opt)
-    @test String(take!(io)) == "Operator(1.0im, ID(OID(Index(PID(2), DID(2)), [1.0, 0.0], [2.0, 0.0]), OID(Index(PID(1), DID(1)), [0.0, 0.0], [0.0, 0.0])))"
-
-    opt = Operator(1.0, ID(
-        OID(Index(PID(1), DID(2)), SVector(0.5, 0.5), SVector(1.0, 1.0)),
-        OID(Index(PID(1), DID(1)), SVector(0.5, 0.5), SVector(1.0, 1.0))
-        ))
-    @test opt' == opt
-    @test ishermitian(opt) == true
-
-    opt = Operator(1.0, ID(
+    opt = Operator(1.0,
         OID(Index(PID(1), DID(2)), SVector(0.5, 0.5), SVector(1.0, 1.0)),
         OID(Index(PID(1), DID(1)), SVector(0.0, 0.5), SVector(0.0, 1.0))
-        ))
+        )
     @test rcoord(opt) == SVector(0.5, 0.0)
     @test icoord(opt) == SVector(1.0, 0.0)
 
-    opt = Operator(1.0, ID(OID(Index(PID(1), DID(2)), SVector(0.5, 0.0), SVector(1.0, 0.0))))
+    opt = Operator(1.0, OID(Index(PID(1), DID(2)), SVector(0.5, 0.0), SVector(1.0, 0.0)))
     @test rcoord(opt) == SVector(0.5, 0.0)
     @test icoord(opt) == SVector(1.0, 0.0)
-end
-
-@testset "Operators" begin
-    opt1 = Operator(1.0im, ID(
-        OID(Index(PID(2), DID(2)), SVector(1.0, 0.0), SVector(0.0, 0.0)),
-        OID(Index(PID(1), DID(1)), SVector(0.0, 0.0), SVector(2.0, 0.0))
-        ))
-    opt2 = Operator(1.0, ID(
-        OID(Index(PID(1), DID(2)), SVector(0.0, 0.0), SVector(0.0, 0.0)),
-        OID(Index(PID(1), DID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0))
-        ))
-    opts = Operators(opt1, opt2)
-    @test summary(opts) == "Operators{$(opts|>valtype)}"
-    @test opts' == Operators(opt1', opt2')
-    @test opts'+opts == Operators(opt1, opt1', opt2*2)
-    @test ishermitian(opts) == false
-    @test ishermitian(opts'+opts) == true
 end
 
 @testset "Hilbert" begin
@@ -255,10 +218,10 @@ end
     @test Table(hilbert, by) == Table([inds1; inds2], by)
     @test Table(hilbert, by) == union(Table(inds1, by), Table(inds2, by))
 
-    opt = Operator(1.0im, ID(
+    opt = Operator(1.0im,
         OID(Index(PID(1), DID(2)), SVector(0.0, 0.0), SVector(1.0, 0.0)),
         OID(Index(PID(1), DID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0))
-        ))
+        )
     @test sequence(opt, table) == (1, 1)
     @test haskey(table, opt.id) == (true, true)
 
@@ -446,10 +409,10 @@ end
     hilbert = Hilbert(point.pid=>DFock(2))
     term = Term{:Mu}(:mu, 1.5, 0, couplings=@couplings(DCoupling(1.0, (2, 1))), amplitude=bond->3.0, modulate=true)
     operators = Operators(
-        Operator(+2.25, ID(
+        Operator(+2.25,
             OID(Index(PID(1), DID(2)), SVector(0.0, 0.0), SVector(0.0, 0.0)),
             OID(Index(PID(1), DID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0))
-            ))
+            )
         )
     @test expand(term, point, hilbert, half=true) == operators
     @test expand(term, point, hilbert, half=false) == operators*2
@@ -458,10 +421,10 @@ end
     hilbert = Hilbert(pid=>DFock(2) for pid in [PID(1), PID(2)])
     term = Term{:Hp}(:t, 1.5, 1, couplings=@couplings(DCoupling(1.0, (2, 1))), amplitude=bond->3.0, modulate=true)
     operators = Operators(
-        Operator(4.5, ID(
+        Operator(4.5,
             OID(Index(PID(1), DID(2)), SVector(0.5, 0.5), SVector(0.0, 0.0)),
             OID(Index(PID(2), DID(1)), SVector(1.5, 1.5), SVector(1.0, 1.0))
-            ))
+            )
         )
     @test expand(term, bond, hilbert, half=true) == operators
     @test expand(term, bond, hilbert, half=false) == operators+operators'
@@ -471,82 +434,30 @@ end
     hilbert = Hilbert(pid=>DFock(2) for pid in lattice.pids)
     term = Term{:Mu}(:mu, 1.5, 0, couplings=@couplings(DCoupling(1.0, (2, 1))), amplitude=bond->3.0, modulate=true)
     operators = Operators(
-        Operator(+2.25, ID(
+        Operator(+2.25,
             OID(Index(CPID(1, 1), DID(2)), SVector(0.0, 0.0), SVector(0.0, 0.0)),
             OID(Index(CPID(1, 1), DID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0))
-            ))
+            )
         )
     @test expand(term, bonds, hilbert, half=true) == operators
     @test expand(term, bonds, hilbert, half=false) == operators*2
 end
 
-@testset "LaTeX" begin
-    @test latexname(OID) == :OID
-    @test latexformat(OID{<:Index{<:AbstractPID, <:DID}}) == LaTeX{(:nambu,), (:site,)}('d')
-
-    latex = LaTeX{(:nambu,), (:site,)}('c', vectors=(SVector(1.0, 0.0), SVector(0.0, 1.0)))
-    @test superscript(latex|>typeof) == (:nambu,)
-    @test subscript(latex|>typeof) == (:site,)
-
+@testset "script" begin
     oid = OID(Index(CPID('d', 1), DID(2)), SVector(0.0, 0.0), SVector(1.0, 0.0))
+    latex = LaTeX{(:nambu,), (:site,)}('c', vectors=(SVector(1.0, 0.0), SVector(0.0, 1.0)))
     @test script(Val(:rcoord), oid) == "[0.0, 0.0]"
     @test script(Val(:icoord), oid) == "[1.0, 0.0]"
     @test script(Val(:integralicoord), oid; vectors=get(latex.options, :vectors, nothing)) == "[1, 0]"
-    @test script(Val(:BD), oid, latex) == 'c'
-    @test script(Val(:SP), oid, latex) == ("\\dagger",)
-    @test script(Val(:SB), oid, latex) == (1,)
-    @test repr(oid, latex) == "c^{\\dagger}_{1}"
-
-    opt = Operator(1.0, ID(
-        OID(Index(CPID('d', 2), DID(2)), SVector(1.0, 0.0), SVector(2.0, 0.0)),
-        OID(Index(CPID('d', 2), DID(2)), SVector(1.0, 0.0), SVector(2.0, 0.0))
-        ))
-    @test repr(opt) == "(d^{\\dagger}_{2})^2"
-
-    opt = Operator(1.0, ID(
-        OID(Index(CPID('d', 2), DID(2)), SVector(1.0, 0.0), SVector(2.0, 0.0)),
-        OID(Index(CPID('d', 1), DID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0))
-        ))
-    @test repr(opt) == "d^{\\dagger}_{2}d^{}_{1}"
-
-    latexformat(OID{<:Index{<:AbstractPID, <:DID}}, LaTeX{(:nambu,), (:site,)}('c'))
-    @test repr(opt) == "c^{\\dagger}_{2}c^{}_{1}"
-
-    latexformat(OID{<:Index{<:AbstractPID, <:DID}},  LaTeX{(:nambu,), (:site,)}('d'))
-    @test repr(opt) == "d^{\\dagger}_{2}d^{}_{1}"
-
-    latexformat(OID{<:Index{<:AbstractPID, <:DID}}, LaTeX{(:nambu,), (:rcoord,)}('d'))
-    @test repr(opt) == "d^{\\dagger}_{[1.0, 0.0]}d^{}_{[0.0, 0.0]}"
-
-    latexformat(OID{<:Index{<:AbstractPID, <:DID}}, LaTeX{(:nambu,), (:integralicoord,)}('d', vectors=(SVector(1.0, 0.0), SVector(0.0, 1.0))))
-    @test repr(opt) == "d^{\\dagger}_{[2, 0]}d^{}_{[0, 0]}"
-
-    opts = Operators(
-            Operator(1.0-1.0im, ID(
-                OID(Index(PID(2), DID(2)), SVector(0.0, 0.0), SVector(0.0, 0.0)),
-                OID(Index(PID(1), DID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0))
-                )),
-            Operator(-1.0, ID(
-                OID(Index(PID(1), DID(2)), SVector(0.0, 0.0), SVector(0.0, 0.0)),
-                OID(Index(PID(1), DID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0))
-                ))
-            )
-    latexformat(OID{<:Index{<:AbstractPID, <:DID}}, LaTeX{(:nambu,), (:site,)}('c'))
-    @test repr(opts) == "-c^{\\dagger}_{1}c^{}_{1}+(1.0-1.0im)c^{\\dagger}_{2}c^{}_{1}"
-
-    latexformat(OID{<:Index{<:AbstractPID, <:DID}}, LaTeX{(:nambu,), (:site,)}('d'))
-    io = IOBuffer()
-    show(io, MIME"text/latex"(), opt)
-    @test String(take!(io)) == "\$d^{\\dagger}_{2}d^{}_{1}\$"
-    show(io, MIME"text/latex"(), opts)
-    @test String(take!(io)) == "\$-d^{\\dagger}_{1}d^{}_{1}+(1.0-1.0im)d^{\\dagger}_{2}d^{}_{1}\$"
+    @test script(Val(:site), oid) == 1
+    @test script(Val(:nambu), oid) == "\\dagger"
 end
 
 @testset "Boundary" begin
-    opt = Operator(4.5, ID(
+    opt = Operator(4.5,
         OID(Index(PID(1), DID(2)), SVector(0.5, 0.5), SVector(0.0, 0.0)),
         OID(Index(PID(2), DID(1)), SVector(1.5, 1.5), SVector(1.0, 1.0))
-        ))
+        )
     bound = Boundary{(:θ₁, :θ₂)}([0.1, 0.2], [[1.0, 0.0], [0.0, 1.0]])
     @test keys(bound) == keys(typeof(bound)) == (:θ₁, :θ₂)
     @test bound==deepcopy(bound) && isequal(bound, deepcopy(bound))

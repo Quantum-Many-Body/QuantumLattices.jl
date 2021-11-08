@@ -1,5 +1,6 @@
 using Test
-using Printf: @printf
+using LaTeXStrings: latexstring
+using Printf: @printf, @sprintf
 using QuantumLattices.Essentials.QuantumOperators
 using QuantumLattices.Interfaces: id, value, rank, add!, sub!, mul!, div!
 using QuantumLattices.Prerequisites: Float
@@ -7,14 +8,34 @@ using QuantumLattices.Prerequisites.Combinatorics: Combinations
 using QuantumLattices.Prerequisites.Traits: contentnames, parameternames, parametertype, isparameterbound
 
 import QuantumLattices.Interfaces: ⊗, ⋅, permute
+import QuantumLattices.Essentials.QuantumOperators: script
 
-struct AID{O<:Real, S<:Real} <: SingularID
+struct AID{O<:Real, S<:Real} <: OperatorUnit
     orbital::O
     nambu::S
 end
+@inline Base.adjoint(id::AID) = AID(id.orbital, 3-id.nambu)
+@inline ⊗(m₁::Operator{<:Number, <:ID{AID}}, m₂::Operator{<:Number, <:ID{AID}}) = m₁ * m₂
+@inline ⋅(m₁::Operator{<:Number, <:ID{AID}}, m₂::Operator{<:Number, <:ID{AID}}) = m₁ * m₂
+@inline script(::Val{:orbital}, id::AID; kwargs...) = id.orbital
+@inline script(::Val{:nambu}, id::AID; kwargs...) = id.nambu==2 ? "\\dagger" : ""
+latexformat(AID, LaTeX{(:nambu,), (:orbital,)}('c'))
+
+function permute(u₁::AID, u₂::AID)
+    @assert u₁ ≠ u₂ "permute error: permuted operator units should not be equal to each other."
+    if (u₁.nambu == 3-u₂.nambu) && (u₁.orbital == u₂.orbital)
+        if u₁.nambu == 2
+            return (Operator(1), Operator(1, ID(u₂, u₁)))
+        else
+            return (Operator(-1), Operator(1, ID(u₂, u₁)))
+        end
+    else
+        return (Operator(1, ID(u₂, u₁)),)
+    end
+end
 
 @testset "ID" begin
-    @test ID{SingularID, 1}|>rank == 1
+    @test AID|>rank == 1
     @test ID|>rank == Any
     @test promote_type(ID{AID{Int, Int}, 1}, ID{AID{Int, Int}}) == ID{AID{Int, Int}}
     @test promote_type(ID{AID{Int, Int}}, ID{AID{Int, Int}, 1}) == ID{AID{Int, Int}}
@@ -22,177 +43,169 @@ end
     @test promote_type(Tuple{}, ID{AID{Int, Int}}) == ID{AID{Int, Int}}
     @test promote_type(Tuple{}, ID{AID{Int, Int}, 2}) == ID{AID{Int, Int}}
 
-    cid = AID(2, 1) * AID(1, Inf)
-    @test cid == ID(AID(2, 1), AID(1, Inf))
-    @test cid|>string == "ID(AID(2, 1), AID(1, Inf))"
-    @test cid|>eltype == AID{Int, <:Real}
-    @test cid|>rank == 2
-    @test cid|>typeof|>rank == 2
-
     sid = AID(1, 1)
-    @test sid * cid == ID(AID(1, 1), AID(2, 1), AID(1, Inf))
-    @test cid * sid == ID(AID(2, 1), AID(1, Inf), AID(1, 1))
-    @test cid * cid == ID(AID(2, 1), AID(1, Inf), AID(2, 1), AID(1, Inf))
+    @test rank(sid) == rank(typeof(sid)) == 1
+    @test string(sid) == "AID(1, 1)"
+    @test sid'==AID(1, 2)
 
-    @test deepcopy(ID(AID(1, 1))) == ID(AID(1, 1))
-    @test isless(SingularID, ID(AID(1, 2)), ID(AID(1, Inf)))
-    @test isless(SingularID, ID(AID(2, 1)), ID(AID(1, 2), AID(1, Inf)))
-
-    cid = AID(2, 1) * AID(3, 4.0)
-    @test cid == ID(AID, (2, 3), (1, 4.0))
+    cid = ID(AID(2, 1), AID(Inf, 1))
+    @test cid == ID((AID(2, 1), AID(Inf, 1)))
+    @test ID(sid, cid) == ID(AID(1, 1), AID(2, 1), AID(Inf, 1))
+    @test ID(cid, sid) == ID(AID(2, 1), AID(Inf, 1), AID(1, 1))
+    @test ID(cid, cid) == ID(AID(2, 1), AID(Inf, 1), AID(2, 1), AID(Inf, 1))
+    @test cid == ID(AID, (2, Inf), (1, 1))
     @test cid|>propertynames == (:orbitals, :nambus)
-    @test cid.orbitals == (2, 3)
-    @test cid.nambus == (1, 4.0)
-end
-
-struct AOperator{V<:Number, I<:ID{SingularID}} <: OperatorProd{V, I}
-    value::V
-    id::I
-end
-⊗(m₁::AOperator, m₂::AOperator) = m₁ * m₂
-⋅(m₁::AOperator, m₂::AOperator) = m₁ * m₂
-Base.show(io::IO, opt::AOperator) = @printf io "AOperator(value=%s, id=%s)" opt.value opt.id
-Base.repr(opt::AOperator) = "AOperator($(opt.value), $(opt.id))"
-
-function permute(id₁::AID, id₂::AID)
-    @assert id₁ ≠ id₂ "permute error: permuted ids should not be equal to each other."
-    if (id₁.nambu == 3-id₂.nambu) && (id₁.orbital == id₂.orbital)
-        if id₁.nambu == 2
-            return (AOperator(1, ID()), AOperator(1, ID(id₂, id₁)))
-        else
-            return (AOperator(-1, ID()), AOperator(1, ID(id₂, id₁)))
-        end
-    else
-        return (AOperator(1, ID(id₂, id₁)),)
-    end
+    @test cid.orbitals == (2, Inf)
+    @test cid.nambus == (1, 1)
+    @test cid|>string == "ID(AID(2, 1), AID(Inf, 1))"
+    @test cid|>eltype == AID{<:Real, Int}
+    @test cid|>rank == cid|>typeof|>rank == 2
+    @test cid'==ID(AID(Inf, 2), AID(2, 2))
+    @test ishermitian(cid)==false
+    @test ishermitian(ID(cid, cid'))
 end
 
 @testset "QuantumOperator" begin
-    @test parameternames(QuantumOperator) == (:id, :value)
-    @test isparameterbound(QuantumOperator, :value, Any) == true
-    @test isparameterbound(QuantumOperator, :id, ID) == true
-    @test isparameterbound(QuantumOperator, :id, ID{AID{Int, Int}, 2}) == false
-
     @test contentnames(OperatorProd) == (:value, :id)
     @test parameternames(OperatorProd) == (:value, :id)
     @test isparameterbound(OperatorProd, :value, Any) == false
+    @test isparameterbound(OperatorProd, :id, ID{AID{Int, Int}, 2}) == false
+
     @test valtype(OperatorProd) == parametertype(OperatorProd, :value) == parametertype(OperatorProd, 1) == Any
     @test valtype(OperatorProd{Int}) == parametertype(OperatorProd{Int}, :value) == parametertype(OperatorProd{Int}, 1) == Int
-    @test idtype(OperatorProd{<:Number}) == parametertype(OperatorProd{<:Number}, :id) == parametertype(OperatorProd{<:Number}, 2) == ID{SingularID}
-    @test idtype(OperatorProd{<:Number, ID{AID}}) == parametertype(OperatorProd{<:Number, ID{AID}}, :id) == parametertype(OperatorProd{<:Number, ID{AID}},2) == ID{AID}
-    @test promote_type(AOperator{Int}, AOperator) == AOperator
-    @test promote_type(AOperator, AOperator{Int}) == AOperator
-    @test promote_type(AOperator{Int}, AOperator{Float}) == AOperator{Float}
-    @test promote_type(AOperator{Int, ID{AID{Int, Int}, 2}}, AOperator{Float, ID{AID{Int, Int}, 2}}) == AOperator{Float, ID{AID{Int, Int}, 2}}
-    @test promote_type(AOperator{Int, ID{AID}}, AOperator{Float, ID{AID}}) == AOperator{Float, <:ID{AID}}
-    @test promote_type(AOperator{Complex{Int}, ID{AID}}, Float, Val(:*)) == promote_type(Float, AOperator{Complex{Int}, ID{AID}}, Val(:*)) == AOperator{Complex{Float}, ID{AID}}
+    @test idtype(OperatorProd{<:Number}) == parametertype(OperatorProd{<:Number}, :id) == parametertype(OperatorProd{<:Number}, 2) == ID{OperatorUnit}
+    @test idtype(OperatorProd{<:Number, ID{AID}}) == parametertype(OperatorProd{<:Number, ID{AID}}, :id) == parametertype(OperatorProd{<:Number, ID{AID}}, 2) == ID{AID}
 
-    opt = AOperator(1.0, ID(AID(1, 1)))
-    @test value(opt) == 1.0
-    @test id(opt) == ID(AID(1, 1))
-    @test opt|>deepcopy == opt
-    @test isequal(opt|>deepcopy, opt)
-    @test isapprox(opt, replace(opt, value=opt.value+10^-6); atol=10^-5)
+    @test promote_type(Operator{Int}, Operator) == Operator
+    @test promote_type(Operator, Operator{Int}) == Operator
+    @test promote_type(Operator{Int}, Operator{Float}) == Operator{Float}
+    @test promote_type(Operator{Int, ID{AID{Int, Int}, 2}}, Operator{Float, ID{AID{Int, Int}, 2}}) == Operator{Float, ID{AID{Int, Int}, 2}}
+    @test promote_type(Operator{Int, ID{AID}}, Operator{Float, ID{AID}}) == Operator{Float, <:ID{AID}}
+
+    opt = Operator(2.0, AID(1, 1))
+    @test deepcopy(opt)==opt && isequal(deepcopy(opt), opt)
+    @test eltype(opt) == eltype(typeof(opt)) == AID{Int, Int}
+    @test collect(opt) == [AID(1, 1)]
+    @test opt|>rank == opt|>typeof|>rank == 1
     @test opt|>valtype == opt|>typeof|>valtype == parametertype(opt|>typeof, :value) == Float
     @test opt|>idtype == opt|>typeof|>idtype == parametertype(opt|>typeof, :id) == ID{AID{Int, Int}, 1}
-    @test opt|>rank == opt|>typeof|>rank == 1
-    @test opt[1] == AOperator(1, ID(AID(1, 1)))
-    @test length(opt) == 1
-    @test firstindex(opt) == 1
-    @test lastindex(opt) ==1
-    @test opt|>typeof|>one == opt|>one == AOperator(1.0, ID())
-    @test +opt == opt
-    @test -opt == AOperator(-1.0, ID(AID(1, 1)))
-    @test opt*2 == 2*opt == opt*AOperator(2, ID()) == AOperator(2, ID())*opt == AOperator(2.0, ID(AID(1, 1)))
-    @test opt/2 == opt/AOperator(2, ID()) == AOperator(0.5, ID(AID(1, 1)))
-    @test opt^2 == opt*opt
+    @test value(opt) == 2.0
+    @test id(opt) == ID(AID(1, 1))
+    @test replace(opt, 3) == replace(opt, value=3) == Operator(3, AID(1, 1))
+    @test isapprox(opt, replace(opt, value=opt.value+10^-6); atol=10^-5)
+    @test length(opt) == 1 && firstindex(opt) == 1 && lastindex(opt) ==1
+    @test opt[1]==AID(1, 1) && opt[1:1]==Operator(1.0, AID(1, 1))
+    @test split(opt) == (2.0, AID(1, 1))
+    @test opt|>typeof|>one == opt|>one == Operator(1.0)
+    @test convert(Operator{Float, Tuple{AID{Int, Int}}}, Operator(2, AID(1, 1))) == Operator(2.0, AID(1, 1))
+    @test Operator(2.0) == Operator(2.0)
+    @test string(opt) == "Operator(2.0, AID(1, 1))"
+    @test opt' == Operator(2.0, AID(1, 2))
+    @test ishermitian(opt) == false
+    @test ishermitian(Operator(2.0, AID(1, 1), AID(1, 2)))
+    @test sequence(opt, Dict(AID(1, 1)=>1, AID(1, 2)=>2)) == (1,)
+    @test convert(typeof(opt), AID(1, 1)) == Operator(1.0, AID(1, 1))
+    @test convert(Operator{Float, <:ID{AID}}, AID(1, 1)) == Operator(1.0, AID(1, 1))
+    @test convert(Operator{Float, Tuple{}}, 2) == Operator(2.0)
+    @test convert(Operator{Float, <:ID{AID}}, 2) == Operator(2.0)
 
-    @test convert(AOperator{Float, Tuple{}}, AOperator(2, ID())) == AOperator(2.0, ID())
-    @test convert(AOperator{Float, Tuple{}}, 3) == AOperator(3.0, ID())
-    @test AOperator(1, ID())+1 == 1+AOperator(1, ID()) == AOperator(1, ID())+AOperator(1, ID()) == AOperator(2, ID())
-    @test opt+1 == 1+opt == opt+AOperator(1, ID()) == AOperator(1, ID())+opt
-    @test AOperator(1, ID())-2 == 1-AOperator(2, ID()) == AOperator(1, ID())-AOperator(2, ID()) == AOperator(-1, ID())
-    @test AOperator(2, ID())*AOperator(3, ID()) == AOperator(6, ID())
-
-    opt₁ = AOperator(1.0, ID(AID(1, 1)))
-    opt₂ = AOperator(2.0, ID(AID(1, 2)))
-    opts = OperatorSum(opt₁, opt₂)
-    optp₁ = promote_type(typeof(opts), OperatorSum{NTuple{2, AID{Float, Float}}, AOperator{Complex{Int}, NTuple{2, AID{Float, Float}}}})
-    optp₂ = OperatorSum{Tuple{AID, Vararg{AID{Float, Float}}}, AOperator{Complex{Float}, <:Tuple{AID, Vararg{AID{Float, Float}}}}}
+    opt₁ = Operator(1.0, AID(1, 1))
+    opt₂ = Operator(2.0, AID(1, 2))
+    opts = Operators(opt₁, opt₂)
+    @test opts == Operators{eltype(opts)}(opt₁, opt₂)
+    @test opts == OperatorSum(opt₁, opt₂) == OperatorSum((opt₁, opt₂)) == OperatorSum{eltype(opts)}(opt₁, opt₂) == OperatorSum{eltype(opts)}((opt₁, opt₂))
+    @test eltype(opts) == eltype(typeof(opts)) == Operator{Float, ID{AID{Int, Int}, 1}}
+    @test collect(opts) == collect(values(opts.contents))
+    @test length(opts) == 2
+    @test summary(opts) == "Operators"
+    @test string(opts) == @sprintf "Operators with 2 Operator\n  %s\n" join(opts, "\n  ")
+    @test haskey(opts, id(opt₁)) && haskey(opts, id(opt₂)) && !haskey(opts, ID(AID(3, 1)))
+    @test opts[id(opt₁)]==opt₁ && opts[id(opt₂)]==opt₂
+    @test empty(opts) == empty!(deepcopy(opts)) == zero(opts)
+    @test merge(empty(opts), opts) == merge!(empty(opts), opts) == opts
+    optp₁ = promote_type(typeof(opts), OperatorSum{Operator{Complex{Int}, NTuple{2, AID{Float, Float}}}, NTuple{2, AID{Float, Float}}})
+    optp₂ = OperatorSum{Operator{Complex{Float}, <:Tuple{AID, Vararg{AID{Float, Float}}}}, Tuple{AID, Vararg{AID{Float, Float}}}}
     @test optp₁ == optp₂
-    @test string(opts) == "OperatorSum with 2 AOperator:\n  AOperator(value=2.0, id=ID(AID(1, 2)))\n  AOperator(value=1.0, id=ID(AID(1, 1)))\n"
-    @test repr(opts) == "OperatorSum with 2 AOperator:\n  AOperator(2.0, ID(AID(1, 2)))\n  AOperator(1.0, ID(AID(1, 1)))"
-    @test opts|>deepcopy == opts
     @test isapprox(opts, deepcopy(opts)) && isapprox(opts, opts+10^-6; atol=10^-5) && isapprox(opts+10^-6, opts; atol=10^-5)
     @test !isapprox(opts, opts+10^-6) && !isapprox(opts+10^-6, opts)
-    @test add!(deepcopy(opts)) == opts
-    @test sub!(deepcopy(opts)) == opts
-    @test mul!(deepcopy(opts), 2.0) == mul!(deepcopy(opts), AOperator(2, ID())) == opts*2 == opts*AOperator(2, ID())
-    @test div!(deepcopy(opts), 2.0) == div!(deepcopy(opts), AOperator(2, ID())) == opts/2 == opts/AOperator(2, ID())
+    @test opts' == Operators(opt₁', opt₂')
+    @test !ishermitian(opts) && ishermitian(Operators(opt₁, opt₂, opt₁', opt₂'))
+    @test zero(opts) == zero(typeof(opts)) == OperatorSum{eltype(opts)}()
+    @test add!(deepcopy(opts))==opts && add!(zero(opts), opts)==opts
+    @test sub!(deepcopy(opts))==opts && sub!(deepcopy(opts), opts)==zero(opts)
+    @test mul!(deepcopy(opts), 2.0) == opts*2
+    @test div!(deepcopy(opts), 2.0) == opts/2
+
+    @test optype(AID(1, 1)) == optype(AID{Int, Int}) == Operator{Int, Tuple{AID{Int, Int}}}
+    @test optype(AID) == Operator{Int, <:Tuple{AID}}
+    @test optype(opt) == optype(typeof(opt)) == Operator{Float, Tuple{AID{Int, Int}}}
+    @test optype(opts) == optype(typeof(opts)) == eltype(opts)
+
+    @test +opt == opt
+    @test -opt == Operator(-2.0, AID(1, 1))
+    @test opt*2 == 2*opt == Operator(4.0, AID(1, 1))
+    @test opt/2 == Operator(1.0, AID(1, 1))
+    @test opt^2 == opt*opt == Operator(4.0, AID(1, 1), AID(1, 1))
+    @test opt+1 == 1+opt == Operators(Operator(1), opt)
+    @test 1-opt == Operators(Operator(1), -opt)
+    @test opt-1 == Operators(opt, Operator(-1))
+    @test 2*AID(1, 1) == AID(1, 1)*2 == Operator(2, AID(1, 1))
+    @test AID(1, 1)*AID(1, 2) == Operator(1, AID(1, 1), AID(1, 2))
+    @test Operator(2, AID(1, 1))//3 == Operator(2//3, AID(1, 1))
+
     @test +opts == opts
+    @test -opts == Operators(-opt₁, -opt₂)
+    @test opts*2 == 2*opts == Operators(2opt₁, 2opt₂)
+    @test opts/2 == Operators(opt₁/2, opt₂/2)
+    @test opts^2 == opts*opts == opts⊗opts == opts⋅opts == Operators(opt₁*opt₁, opt₁*opt₂, opt₂*opt₁, opt₂*opt₂)
+    @test opts+1 == 1+opts == Operators(Operator(1), opt₁, opt₂)
+    @test 1-opts == Operators(Operator(1), -opt₁, -opt₂)
+    @test opts-1 == Operators(opt₁, opt₂, Operator(-1))
     @test opt₁+opt₂ == opts
-    @test opt₁+opts == opts+opt₁ == OperatorSum(opt₁*2, opt₂)
-    @test opts+opts == OperatorSum(opt₁*2, opt₂*2)
-    @test -opts == OperatorSum(-opt₁, -opt₂)
-    @test 1.0-opts == AOperator(1.0, ID())-opts == -opts+1.0
-    @test opts-1.0 == opts-AOperator(1.0, ID())
-    @test opt-1.0 == opt-AOperator(1.0, ID()) == opt+AOperator(-1.0, ID())
-    @test 1.0-opt == AOperator(1.0, ID())-opt == 1.0+(-opt)
-    @test opts-opt₁ == OperatorSum(opt₂)
-    @test opt₁-opts == OperatorSum(-opt₂)
+    @test opt₁+opts == opts+opt₁ == Operators(opt₁*2, opt₂)
+    @test opts+opts == Operators(opt₁*2, opt₂*2)
+    @test opts-opt₁ == Operators(opt₂)
+    @test opt₁-opts == Operators(-opt₂)
     @test opts-opts == zero(opts) == zero(typeof(opts))
-    @test 2*opts == opts*2 == OperatorSum(opt₁*2, opt₂*2) == AOperator(2, ID())*opts
-    @test opts/2 == OperatorSum(opt₁/2, opt₂/2)
-    @test opts^2 == opts*opts
-
-    temp = OperatorSum{ID{AID{Int, Int}}, AOperator{Float}}(opts)
-    @test add!(deepcopy(temp), 1) == add!(deepcopy(temp), AOperator(1, ID())) == opts+1 == 1+opts == opts+AOperator(1, ID()) == AOperator(1, ID())+opts
-    @test sub!(deepcopy(temp), 1) == sub!(deepcopy(temp), AOperator(1, ID())) == opts-1 == opts-AOperator(1, ID())
-
-    opt₃ = AOperator(3, ID(AID(1, 3)))
-    @test opt₁*opt₂ == opt₁⊗opt₂ == opt₁⋅opt₂ == AOperator(2.0, ID(AID(1, 1), AID(1, 2)))
-    @test opts*opt₃ == opts⊗opt₃ == opts⋅opt₃ == OperatorSum(AOperator(3.0, ID(AID(1, 1), AID(1, 3))), AOperator(6.0, ID(AID(1, 2), AID(1, 3))))
-    @test opt₃*opts == opt₃⊗opts == opt₃⋅opts == OperatorSum(AOperator(3.0, ID(AID(1, 3), AID(1, 1))), AOperator(6.0, ID(AID(1, 3), AID(1, 2))))
-    @test opts*OperatorSum(opt₃) == opts⊗OperatorSum(opt₃) == opts⋅OperatorSum(opt₃) == OperatorSum(AOperator(3.0, ID(AID(1, 1), AID(1, 3))), AOperator(6.0, ID(AID(1, 2), AID(1, 3))))
-
-    table = Dict(AID(1, 1)=>1, AID(1, 2)=>2)
-    opt = AOperator(2.0, ID(AID(1, 1), AID(1, 2)))
-    @test sequence(opt, table) == (1, 2)
-    @test split(opt) == (2.0, AOperator(1.0, ID(AID(1, 1))), AOperator(1.0, ID(AID(1, 2))))
-
-    opt₁ = AOperator(1, ID(AID(1, 1)))
-    opt₂ = AOperator(2, ID(AID(1, 2)))
-    opts = OperatorSum(opt₁, opt₂)
-    opt = AOperator(3, ID())
-    @test opt₁//3 == opt₁//opt == AOperator(1//3, ID(AID(1, 1)))
-    @test opt₂//3 == opt₂//opt == AOperator(2//3, ID(AID(1, 2)))
-    @test opts//3 == opts//opt == OperatorSum(AOperator(1//3, ID(AID(1, 1))), AOperator(2//3, ID(AID(1, 2))))
+    @test opts*opt == Operators(opt₁*opt, opt₂*opt) == opts⊗opt == opts⋅opt
+    @test opt*opts == Operators(opt*opt₁, opt*opt₂) == opt⊗opts == opt⋅opts
 end
 
-@testset "replace" begin
-    id₁, id₂ = AID(1, 1), AID(1, 2)
-    opt = AOperator(1.5, ID(id₁, id₂))
-    id₃, id₄ = AID(2, 1), AID(2, 2)
-    opt₁ = AOperator(2.0, ID(id₃))+AOperator(3.0, ID(id₄))
-    opt₂ = AOperator(2.0, ID(id₃))-AOperator(3.0, ID(id₄))
-    @test replace(opt, id₁=>opt₁, id₂=>opt₂) == 1.5*opt₁*opt₂
-    @test replace(OperatorSum(opt), id₂=>opt₂, id₁=>opt₁) == 1.5*opt₁*opt₂
-end
+@testset "LaTeX" begin
+    @test latexname(AID) == :AID
+    @test latexformat(AID) == LaTeX{(:nambu,), (:orbital,)}('c')
 
-@testset "permute" begin
-    id₁, id₂ = AID(1, 1), AID(1, 2)
-    opt₁ = AOperator(1.5, ID(id₁, id₂))
-    opt₂ = AOperator(1.5, ID(id₂, id₁))
-    opt₀ = AOperator(1.5, ID())
-    @test permute(opt₁, Dict(id₁=>1, id₂=>2)) == opt₂-opt₀
-    @test permute(opt₁+opt₂, Dict(id₁=>1, id₂=>2)) == 2*opt₂-opt₀
-    @test permute(opt₂, Dict(id₁=>2, id₂=>1)) == opt₁+opt₀
-    @test permute(opt₁+opt₂, Dict(id₁=>2, id₂=>1)) == 2*opt₁+opt₀
+    latex = LaTeX{(:nambu,), (:orbital,)}('d')
+    @test superscript(latex|>typeof) == (:nambu,)
+    @test subscript(latex|>typeof) == (:orbital,)
+    latexformat(AID, latex)
+
+    aid = AID(1, 2)
+    @test script(Val(:BD), aid, latex) == 'd'
+    @test script(Val(:SP), aid, latex) == ("\\dagger",)
+    @test script(Val(:SB), aid, latex) == (1,)
+    @test latexstring(aid) == "d^{\\dagger}_{1}"
+
+    opt = Operator(1.0, AID(2, 2), AID(1, 1))
+    @test latexstring(opt) == "d^{\\dagger}_{2}d^{}_{1}"
+    io = IOBuffer()
+    show(io, MIME"text/latex"(), opt)
+    @test String(take!(io)) == "\$d^{\\dagger}_{2}d^{}_{1}\$"
+    @test latexstring(Operator(1.0, aid, aid)) == "(d^{\\dagger}_{1})^2"
+
+    latexformat(AID, LaTeX{(:nambu,), (:orbital,)}('c'))
+    opts = Operators(
+            Operator(1.0-1.0im, AID(2, 2), AID(1, 1)),
+            Operator(-1.0, AID(1, 2), AID(1, 1))
+            )
+    candidate₁ = "(1.0-1.0im)c^{\\dagger}_{2}c^{}_{1}-c^{\\dagger}_{1}c^{}_{1}"
+    candidate₂ = "-c^{\\dagger}_{1}c^{}_{1}+(1.0-1.0im)c^{\\dagger}_{2}c^{}_{1}"
+    @test latexstring(opts) ∈ (candidate₁, candidate₂)
 end
 
 @testset "Transformation" begin
-    m = AOperator(1, ID(AID(1, 1)))
-    s = OperatorSum(m)
+    m = Operator(1, ID(AID(1, 1)))
+    s = Operators(m)
 
     i = Identity()
     @test i==deepcopy(i) && isequal(i, deepcopy(i))
@@ -202,7 +215,35 @@ end
 
     n = Numericalization{Float64}()
     @test valtype(n) == valtype(typeof(n)) == Float64
-    @test valtype(n, m) == valtype(typeof(n), typeof(m)) == AOperator{Float64, ID{AID{Int, Int}, 1}}
-    @test valtype(n, s) == valtype(typeof(n), typeof(s)) == OperatorSum{ID{AID{Int, Int}, 1}, AOperator{Float64, ID{AID{Int, Int}, 1}}}
-    @test n(m)==replace(m, value=1.0) && n(s)==OperatorSum(replace(m, value=1.0))
+    @test valtype(n, m) == valtype(typeof(n), typeof(m)) == Operator{Float, Tuple{AID{Int, Int}}}
+    @test valtype(n, s) == valtype(typeof(n), typeof(s)) == OperatorSum{Operator{Float, Tuple{AID{Int, Int}}}, Tuple{AID{Int, Int}}}
+    @test n(m) == replace(m, value=1.0)
+    @test n(s) == Operators(replace(m, value=1.0))
+end
+
+@testset "Permutation" begin
+    id₁, id₂ = AID(1, 1), AID(1, 2)
+    opt₀ = Operator(1.5)
+    opt₁ = Operator(1.5, id₁, id₂)
+    opt₂ = Operator(1.5, id₂, id₁)
+
+    p = Permutation(Dict(id₁=>1, id₂=>2))
+    @test p(opt₁) == opt₂-opt₀
+    @test p(opt₁+opt₂) == 2*opt₂-opt₀
+
+    p = Permutation(Dict(id₁=>2, id₂=>1))
+    @test p(opt₂) == opt₁+opt₀
+    @test p(opt₁+opt₂) == 2*opt₁+opt₀
+end
+
+@testset "Substitution" begin
+    id₁, id₂ = AID(1, 1), AID(1, 2)
+    opt = Operator(1.5, id₁, id₂)
+
+    id₃, id₄ = AID(2, 1), AID(2, 2)
+    ops₁ = Operator(2.0, id₃) + Operator(3.0, id₄) + 1
+    ops₂ = Operator(2.0, id₃) - Operator(3.0, id₄)
+
+    substitution = Substitution(Dict(id₁=>ops₁, id₂=>ops₂))
+    @test substitution(opt) == 1.5*ops₁*ops₂
 end

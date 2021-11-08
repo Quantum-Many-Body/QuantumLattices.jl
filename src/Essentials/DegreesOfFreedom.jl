@@ -3,8 +3,7 @@ module DegreesOfFreedom
 using MacroTools: @capture
 using Printf: @printf, @sprintf
 using StaticArrays: SVector
-using LaTeXStrings: latexstring
-using ..QuantumOperators: SingularID, ID, OperatorProd, OperatorSum
+using ..QuantumOperators: OperatorUnit, ID, OperatorProd, OperatorSum, Operator, Operators, valuetolatextext
 using ..Spatials: AbstractPID, AbstractBond, Point, Bonds, pidtype
 using ...Essentials: dtype
 using ...Interfaces: id, value, decompose, dimension, add!
@@ -14,7 +13,7 @@ using ...Prerequisites.CompositeStructures: CompositeDict, CompositeTuple, Named
 using ...Prerequisites.VectorSpaces: CartesianVectorSpace
 
 import LinearAlgebra: ishermitian
-import ..QuantumOperators: sequence, idtype
+import ..QuantumOperators: idtype, script, optype
 import ..Spatials: pidtype, rcoord, icoord
 import ...Essentials: kind, reset!, update!
 import ...Interfaces: id, value, rank, expand, expand!, ⊗
@@ -22,21 +21,20 @@ import ...Prerequisites.Traits: parameternames, isparameterbound, contentnames, 
 import ...Prerequisites.VectorSpaces: shape, ndimshape
 
 export IID, SimpleIID, CompositeIID, Internal, SimpleInternal, CompositeInternal
-export AbstractOID, Index, CompositeOID, OID, Operator, Operators, IIDSpace, Hilbert
+export AbstractOID, Index, CompositeOID, OID, IIDSpace, Hilbert
 export statistics, iidtype, ishermitian, indextype, oidtype
 export Subscript, Subscripts, SubscriptsID, @subscript_str, subscriptexpr, wildcard, diagonal, noconstrain
 export AbstractCoupling, Coupling, Couplings, couplingcenters, couplingpoints, couplinginternals, @couplings
 export Metric, OIDToTuple, Table
-export TermFunction, TermAmplitude, TermCouplings, TermModulate, Term, ismodulatable, abbr, otype
-export LaTeX, latexname, latexformat, superscript, subscript, script
+export TermFunction, TermAmplitude, TermCouplings, TermModulate, Term, ismodulatable, abbr
 export Boundary, twist, plain
 
 """
-    IID <: SingularID
+    IID <: OperatorUnit
 
 The id of an internal degree of freedom.
 """
-abstract type IID <: SingularID end
+abstract type IID <: OperatorUnit end
 
 """
     SimpleIID <: IID
@@ -166,23 +164,6 @@ end
     return CompositeIID{Tuple{[eltype(fieldtype(T, i)) for i = 1:fieldcount(T)]...}}
 end
 Base.show(io::IO, ci::CompositeInternal) = @printf io "%s" join((string(ci.contents[i]) for i = 1:rank(ci)), " ⊗ ")
-
-"""
-    CompositeInternal(contents::SimpleInternal...)
-
-Construct a composite internal space from a set of simple internal spaces.
-"""
-@inline CompositeInternal(contents::SimpleInternal...) = CompositeInternal(contents)
-
-"""
-    rank(ci::CompositeInternal) -> Int
-    rank(::Type{<:CompositeInternal{T}}) where {T<:Tuple{Vararg{SimpleInternal}}} -> Int
-
-Get the number of simple internal spaces in a composite internal space.
-"""
-@inline rank(ci::CompositeInternal) = rank(typeof(ci))
-@inline rank(::Type{<:CompositeInternal{T}}) where {T<:Tuple{Vararg{SimpleInternal}}} = fieldcount(T)
-
 @inline @generated shape(ci::CompositeInternal) = Expr(:tuple, [:(shape(ci.contents[$i])...) for i = 1:rank(ci)]...)
 @inline ndimshape(::Type{<:CompositeInternal{T}}) where {T<:Tuple{Vararg{SimpleInternal}}} = sum(ndimshape(fieldtype(T, i)) for i = 1:fieldcount(T))
 @inline @generated function Base.CartesianIndex(ciid::CompositeIID, ci::CompositeInternal)
@@ -206,6 +187,22 @@ end
     end
     return Expr(:call, :CompositeIID, exprs...)
 end
+
+"""
+    CompositeInternal(contents::SimpleInternal...)
+
+Construct a composite internal space from a set of simple internal spaces.
+"""
+@inline CompositeInternal(contents::SimpleInternal...) = CompositeInternal(contents)
+
+"""
+    rank(ci::CompositeInternal) -> Int
+    rank(::Type{<:CompositeInternal{T}}) where {T<:Tuple{Vararg{SimpleInternal}}} -> Int
+
+Get the number of simple internal spaces in a composite internal space.
+"""
+@inline rank(ci::CompositeInternal) = rank(typeof(ci))
+@inline rank(::Type{<:CompositeInternal{T}}) where {T<:Tuple{Vararg{SimpleInternal}}} = fieldcount(T)
 
 """
     ⊗(i₁::SimpleInternal, i₂::SimpleInternal) -> CompositeInternal
@@ -265,23 +262,11 @@ Filter the type of a composite internal space and select those that matches `I` 
 end
 
 """
-    AbstractOID <: SingularID
+    AbstractOID <: OperatorUnit
 
 Abstract type of operator id.
 """
-abstract type AbstractOID <: SingularID end
-
-"""
-    ishermitian(id::ID{AbstractOID, N}) where N -> Bool
-
-Judge whether an operator id is Hermitian.
-"""
-function ishermitian(id::ID{AbstractOID, N}) where N
-    for i = 1:((N+1)÷2)
-        id[i]'==id[N+1-i] || return false
-    end
-    return true
-end
+abstract type AbstractOID <: OperatorUnit end
 
 """
     Index{P<:AbstractPID, I<:SimpleIID} <: AbstractOID
@@ -385,12 +370,10 @@ Construct an operator id.
 
 """
     adjoint(oid::OID) -> typeof(oid)
-    adjoint(oid::ID{AbstractOID}) -> ID{AbstractOID}
 
 Get the adjoint of an operator id.
 """
 @inline Base.adjoint(oid::OID) = OID(oid.index', oid.rcoord, oid.icoord)
-@inline @generated Base.adjoint(oid::ID{AbstractOID}) = Expr(:call, :ID, [:(oid[$i]') for i = fieldcount(oid):-1:1]...)
 
 """
     oidtype(I::Type{<:SimpleInternal}, P::Type{<:Point}, ::Val)
@@ -400,34 +383,7 @@ Get the compatible oid type from the combination of the internal part and the sp
 @inline oidtype(I::Type{<:SimpleInternal}, P::Type{<:Point}, ::Val) = OID{Index{P|>pidtype, I|>eltype}, SVector{P|>dimension, P|>dtype}}
 
 """
-    Operator{V<:Number, I<:ID{AbstractOID}} <: OperatorProd{V, I}
-
-Operator.
-"""
-struct Operator{V<:Number, I<:ID{AbstractOID}} <: OperatorProd{V, I}
-    value::V
-    id::I
-end
-@inline Operator(value::Number) = Operator(value, ())
-Base.show(io::IO, opt::Operator) = @printf io "%s(%s, %s)" nameof(typeof(opt)) decimaltostr(value(opt)) id(opt)
-Base.show(io::IO, ::MIME"text/plain", opt::Operator) = show(io, opt)
-
-"""
-    adjoint(opt::Operator) -> Operator
-
-Get the adjoint of an operator.
-"""
-@inline Base.adjoint(opt::Operator) = rawtype(typeof(opt))(value(opt)', id(opt)')
-
-"""
-    ishermitian(opt::Operator) -> Bool
-
-Judge whether an operator is Hermitian.
-"""
-@inline ishermitian(opt::Operator) = isa(value(opt), Real) && ishermitian(id(opt))
-
-"""
-    rcoord(opt::Operator) -> SVector
+    rcoord(opt::Operator{<:Number, <:ID{OID}}) -> SVector
 
 Get the whole rcoord of an operator.
 """
@@ -438,7 +394,7 @@ Get the whole rcoord of an operator.
 end
 
 """
-    icoord(opt::Operator) -> SVector
+    icoord(opt::Operator{<:Number, <:ID{OID}}) -> SVector
 
 Get the whole icoord of an operator.
 """
@@ -447,44 +403,6 @@ Get the whole icoord of an operator.
     rank(opt)==2 && return id(opt)[1].icoord-id(opt)[2].icoord
     error("icoord error: not supported rank($(rank(opt))) of $(nameof(opt)).")
 end
-
-"""
-    Operators(opts::Operator...)
-
-A set of operators.
-
-Type alias for `OperatorSum{<:ID{AbstractOID}, <:Operator}`.
-"""
-const Operators{I<:ID{AbstractOID}, O<:Operator} = OperatorSum{I, O}
-@inline Operators(opts::Operator...) = OperatorSum(opts...)
-
-"""
-    adjoint(opts::Operators) -> Operators
-
-Get the adjoint of a set of operators.
-"""
-function Base.adjoint(opts::Operators)
-    result = Operators{opts|>keytype, opts|>valtype}()
-    for opt in values(opts)
-        nopt = opt |> adjoint
-        result[id(nopt)] = nopt
-    end
-    return result
-end
-
-"""
-    summary(io::IO, opts::Operators)
-
-Print a brief description of a set of operators to an io.
-"""
-Base.summary(io::IO, opts::Operators) = @printf io "Operators{%s}" valtype(opts)
-
-"""
-    ishermitian(opts::Operators) -> Bool
-
-Judge whether a set of operators as a whole is Hermitian.
-"""
-@inline ishermitian(opts::Operators) = opts == opts'
 
 """
     IIDSpace{I<:IID, V<:Internal, Kind} <: CartesianVectorSpace{IID}
@@ -798,11 +716,11 @@ Get the type of the id of the subscripts.
 end
 
 """
-    SubscriptsID{T<:Tuple{Vararg{Pair{UnitRange{Int}, <:Tuple{Vararg{String}}}}}} <: SingularID
+    SubscriptsID{T<:Tuple{Vararg{Pair{UnitRange{Int}, <:Tuple{Vararg{String}}}}}} <: OperatorUnit
 
 The id of the subscripts.
 """
-struct SubscriptsID{T<:Tuple{Vararg{Pair{UnitRange{Int}, <:Tuple{Vararg{String}}}}}} <: SingularID
+struct SubscriptsID{T<:Tuple{Vararg{Pair{UnitRange{Int}, <:Tuple{Vararg{String}}}}}} <: OperatorUnit
     rep::T
 end
 
@@ -826,11 +744,11 @@ Construct the id of the subscripts.
 end
 
 """
-    AbstractCoupling{V, I<:ID{SingularID}} <: OperatorProd{V, I}
+    AbstractCoupling{V, I<:ID{OperatorUnit}} <: OperatorProd{V, I}
 
 The abstract coupling intra/inter internal degrees of freedom at different lattice points.
 """
-abstract type AbstractCoupling{V, I<:ID{SingularID}} <: OperatorProd{V, I} end
+abstract type AbstractCoupling{V, I<:ID{OperatorUnit}} <: OperatorProd{V, I} end
 ID{SimpleIID}(coupling::AbstractCoupling) = id(coupling)
 Subscripts(coupling::AbstractCoupling) = Subscripts()
 
@@ -938,17 +856,17 @@ end
 
 Get the multiplication between two couplings.
 """
-@inline Base.:*(cp₁::Coupling, cp₂::Coupling) = Coupling(cp₁.value*cp₂.value, cp₁.cid*cp₂.cid, cp₁.subscripts*cp₂.subscripts)
+@inline Base.:*(cp₁::Coupling, cp₂::Coupling) = Coupling(cp₁.value*cp₂.value, ID(cp₁.cid, cp₂.cid), cp₁.subscripts*cp₂.subscripts)
 
 """
     Couplings(cps::AbstractCoupling...)
 
 A pack of couplings intra/inter internal degrees of freedom at different lattice points.
 
-Alias for `OperatorSum{<:ID{SingularID}, <:AbstractCoupling}`.
+Alias for `OperatorSum{<:AbstractCoupling, <:ID{OperatorUnit}}`.
 """
-const Couplings{I<:ID{SingularID}, C<:AbstractCoupling} = OperatorSum{I, C}
-@inline Couplings(cps::AbstractCoupling...) = OperatorSum(cps...)
+const Couplings{C<:AbstractCoupling, I<:ID{OperatorUnit}} = OperatorSum{C, I}
+@inline Couplings(cps::AbstractCoupling...) = OperatorSum(cps)
 @inline Couplings(cps::Couplings) = cps
 
 """
@@ -1145,15 +1063,6 @@ function reset!(table::Table, hilbert::Hilbert)
 end
 
 """
-    sequence(opt::Operator, table::AbstractDict) -> NTuple{rank(opt), Int}
-
-Get the sequence of the oids of an operator according to a table.
-"""
-@inline @generated function sequence(opt::Operator, table::AbstractDict{<:Any,Int})
-    return Expr(:tuple, [:(table[id(opt)[$i]]) for i = 1:rank(opt)]...)
-end
-
-"""
     TermFunction <: Function
 
 Abstract type for concrete term functions.
@@ -1284,7 +1193,7 @@ Get the value type of a term.
 Get the rank of a term.
 """
 @inline rank(term::Term) = rank(typeof(term))
-@inline rank(::Type{<:Term{K, I, V, B, C} where {K, I, V, B}}) where {C<:TermCouplings} = rank(valtype(valtype(C)))
+@inline rank(::Type{<:Term{K, I, V, B, C} where {K, I, V, B}}) where {C<:TermCouplings} = rank(eltype(valtype(C)))
 
 """
     abbr(term::Term) -> Symbol
@@ -1321,7 +1230,7 @@ function Base.repr(term::Term, bond::AbstractBond, hilbert::Hilbert)
     if term.bondkind == bond|>kind
         value = term.value * term.amplitude(bond) * term.factor
         if abs(value) ≠ 0
-            for coupling in values(term.couplings(bond))
+            for coupling in term.couplings(bond)
                 isnothing(iterate(expand(coupling, bond, hilbert, term|>kind|>Val))) || push!(cache, @sprintf "%s: %s" abbr(term) repr(value*coupling))
             end
         end
@@ -1381,13 +1290,13 @@ function update!(term::Term, args...; kwargs...)
 end
 
 """
-    otype(::Type{T}, ::Type{H}, ::Type{B}) where {T<:Term, H<:Hilbert, B<:AbstractBond}
+    optype(::Type{T}, ::Type{H}, ::Type{B}) where {T<:Term, H<:Hilbert, B<:AbstractBond}
 
-Get the compatible operator type from the type of a term, a Hilbert space and a bond.
+Get the compatible `OperatorProd` type from the type of a term, a Hilbert space and a bond.
 """
-@inline @generated function otype(::Type{T}, ::Type{H}, ::Type{B}) where {T<:Term, H<:Hilbert, B<:AbstractBond}
-    C = valtype(valtype(fieldtype(T, :couplings)))
-    @assert C<:Coupling "otype error: not supported."
+@inline @generated function optype(::Type{T}, ::Type{H}, ::Type{B}) where {T<:Term, H<:Hilbert, B<:AbstractBond}
+    C = eltype(valtype(fieldtype(T, :couplings)))
+    @assert C<:Coupling "optype error: not supported."
     exprs = []
     for i = 1:rank(C)
         I = fieldtype(parametertype(C, :cid), i)
@@ -1411,23 +1320,23 @@ function expand!(operators::Operators, term::Term, bond::AbstractBond, hilbert::
         value = term.value * term.amplitude(bond) * term.factor
         if abs(value) ≠ 0
             hermitian = ishermitian(term)
-            optype = otype(term|>typeof, hilbert|>typeof, bond|>typeof)
-            record = (isnothing(hermitian) && length(operators)>0) ? Set{optype|>idtype}() : nothing
-            for coupling in values(term.couplings(bond))
+            M = optype(term|>typeof, hilbert|>typeof, bond|>typeof)
+            record = (isnothing(hermitian) && length(operators)>0) ? Set{M|>idtype}() : nothing
+            for coupling in term.couplings(bond)
                 for (coeff, id) in expand(coupling, bond, hilbert, term|>kind|>Val)
                     isapprox(coeff, 0.0, atol=atol, rtol=rtol) && continue
                     !isnothing(table) && !all(haskey(table, id)) && continue
                     if hermitian == true
-                        add!(operators, rawtype(optype)(convert(optype|>valtype, value*coeff/(half ? 2 : 1)), id))
+                        add!(operators, rawtype(M)(convert(M|>valtype, value*coeff/(half ? 2 : 1)), id))
                     elseif hermitian == false
-                        opt = rawtype(optype)(convert(optype|>valtype, value*coeff), id)
+                        opt = rawtype(M)(convert(M|>valtype, value*coeff), id)
                         add!(operators, opt)
                         half || add!(operators, opt')
                     else
                         if !(isnothing(record) ? haskey(operators, id') : id'∈record)
                             isnothing(record) || push!(record, id)
-                            ovalue = valtype(optype)(value*coeff/termfactor(id, term|>kind|>Val))
-                            opt = rawtype(optype)(ovalue, id)
+                            ovalue = valtype(M)(value*coeff/termfactor(id, term|>kind|>Val))
+                            opt = rawtype(M)(ovalue, id)
                             add!(operators, opt)
                             half || add!(operators, opt')
                         end
@@ -1455,59 +1364,13 @@ end
 Expand the operators of a term on a bond/set-of-bonds with a given Hilbert space.
 """
 @inline function expand(term::Term, bond::AbstractBond, hilbert::Hilbert; half::Bool=false, table::Union{Nothing, Table}=nothing)
-    optype = otype(term|>typeof, hilbert|>typeof, bond|>typeof)
-    expand!(Operators{idtype(optype), optype}(), term, bond, hilbert; half=half, table=table)
+    M = optype(term|>typeof, hilbert|>typeof, bond|>typeof)
+    expand!(Operators{M}(), term, bond, hilbert; half=half, table=table)
 end
 @inline function expand(term::Term, bonds::Bonds, hilbert::Hilbert; half::Bool=false, table::Union{Nothing, Table}=nothing)
-    optype = otype(term|>typeof, hilbert|>typeof, bonds|>eltype)
-    expand!(Operators{idtype(optype), optype}(), term, bonds, hilbert; half=half, table=table)
+    M = optype(term|>typeof, hilbert|>typeof, bonds|>eltype)
+    expand!(Operators{M}(), term, bonds, hilbert; half=half, table=table)
 end
-
-"""
-    LaTeX{SP, SB}(body, spdelimiter::String=", ", sbdelimiter::String=", "; options...) where {SP, SB}
-
-LaTeX string representation.
-"""
-struct LaTeX{SP, SB, B, O}
-    body::B
-    spdelimiter::String
-    sbdelimiter::String
-    options::O
-    function LaTeX{SP, SB}(body, spdelimiter::String=", ", sbdelimiter::String=", "; options...) where {SP, SB}
-        @assert isa(SP, Tuple{Vararg{Symbol}}) && isa(SB, Tuple{Vararg{Symbol}}) "LaTeX error: SP and SB must be tuple of symbols."
-        new{SP, SB, typeof(body), typeof(options)}(body, spdelimiter, sbdelimiter, options)
-    end
-end
-@inline superscript(::Type{<:LaTeX{SP}}) where SP = SP
-@inline subscript(::Type{<:LaTeX{SP, SB} where SP}) where SB = SB
-
-"""
-    latexname(T::Type{<:AbstractOID}) -> Symbol
-
-Get the name of a type of `AbstractOID` in the latex format lookups.
-"""
-@inline latexname(T::Type{<:AbstractOID}) = nameof(T)
-
-const latexformats = Dict{Symbol, LaTeX}()
-"""
-    latexformat(T::Type{<:AbstractOID}) -> LaTeX
-    latexformat(T::Type{<:AbstractOID}, l::LaTeX) -> LaTeX
-
-Get/Set the LaTeX format for a subtype of `AbstractOID`.
-"""
-@inline latexformat(T::Type{<:AbstractOID}) = latexformats[latexname(T)]
-@inline latexformat(T::Type{<:AbstractOID}, l::LaTeX) = latexformats[latexname(T)] = l
-
-"""
-    script(::Val{:BD}, oid::AbstractOID, l::LaTeX) -> Any
-    script(::Val{:SP}, oid::AbstractOID, l::LaTeX) -> Tuple
-    script(::Val{:SB}, oid::AbstractOID, l::LaTeX) -> Tuple
-
-Get the body/superscript/subscript of the LaTeX string representation of an oid.
-"""
-@inline script(::Val{:BD}, oid::AbstractOID, l::LaTeX) = l.body
-@inline @generated script(::Val{:SP}, oid::AbstractOID, l::LaTeX) = Expr(:tuple, [:(script(Val($sup), oid; l.options...)) for sup in QuoteNode.(l|>superscript)]...)
-@inline @generated script(::Val{:SB}, oid::AbstractOID, l::LaTeX) = Expr(:tuple, [:(script(Val($sub), oid; l.options...)) for sub in QuoteNode.(l|>subscript)]...)
 
 """
     script(::Val{:rcoord}, oid::OID; kwargs...) -> String
@@ -1536,91 +1399,6 @@ end
 Get the `attr` script of an oid, which is contained in its index.
 """
 @inline script(::Val{attr}, oid::OID; kwargs...) where attr = script(Val(attr), oid.index; kwargs...)
-
-"""
-    repr(oid::AbstractOID) -> String
-    repr(oid::AbstractOID, l::LaTeX) -> String
-
-LaTeX string representation of an oid.
-"""
-@inline Base.repr(oid::AbstractOID) = repr(oid, latexformat(typeof(oid)))
-@inline function Base.repr(oid::AbstractOID, l::LaTeX)
-    @sprintf "%s^{%s}_{%s}" script(Val(:BD), oid, l) join(script(Val(:SP), oid, l), l.spdelimiter) join(script(Val(:SB), oid, l), l.sbdelimiter)
-end
-
-"""
-    repr(opt::Operator) -> String
-
-Get the string representation of an operator in the LaTeX format.
-"""
-function Base.repr(opt::Operator)
-    rank(opt)==0 && return replace(valuetolatextext(value(opt)), " "=>"")
-    poses = Int[]
-    push!(poses, 1)
-    for i = 2:rank(opt)
-        id(opt)[i]≠id(opt)[i-1] && push!(poses, i)
-    end
-    push!(poses, rank(opt)+1)
-    result = valuetostr(value(opt))
-    for i = 1:length(poses)-1
-        order = poses[i+1] - poses[i]
-        if order == 1
-            result = @sprintf "%s%s" result repr(id(opt)[poses[i]])
-        else
-            result = @sprintf "%s(%s)^%s" result repr(id(opt)[poses[i]]) order
-        end
-    end
-    return result
-end
-function valuetostr(v)
-    v==+1 && return ""
-    v==-1 && return "-"
-    result = valuetolatextext(v)
-    if occursin(" ", result) || (isa(v, Complex) && real(v)≠0 && imag(v)≠0)
-        bra, ket = occursin("(", result) ? ("[", "]") : ("(", ")")
-        result = @sprintf "%s%s%s" bra replace(result, " "=>"") ket
-    end
-    return result
-end
-@inline valuetolatextext(value::Union{Real, Complex}) = decimaltostr(value)
-function valuetolatextext(value)
-    io = IOBuffer()
-    if showable(MIME"text/latex"(), value)
-        show(IOContext(io, :limit=>false), MIME"text/latex"(), value)
-    else
-        show(IOContext(io, :limit=>false), MIME"text/plain"(), value)
-    end
-    return replace(replace(replace(replace(String(take!(io)), "\\begin{equation*}" => ""), "\\end{equation*}" => ""), "\$" => ""), "\n" => "")
-end
-
-"""
-    repr(opts::Operators) -> String
-
-Get the string representation of a set of operators in the LaTeX format.
-"""
-function Base.repr(opts::Operators)
-    result = String[]
-    for (i, opt) in enumerate(values(opts))
-        rep = repr(opt)
-        i>1 && rep[1]≠'-' && push!(result, "+")
-        push!(result, rep)
-    end
-    return join(result, "")
-end
-
-"""
-    show(io::IO, ::MIME"text/latex", opt::Operator)
-
-Show an operator.
-"""
-Base.show(io::IO, ::MIME"text/latex", opt::Operator) = show(io, MIME"text/latex"(), latexstring(repr(opt)))
-
-"""
-    show(io::IO, ::MIME"text/latex", opts::Operators)
-
-Show LaTeX formed operators.
-"""
-Base.show(io::IO, ::MIME"text/latex", opts::Operators) = show(io, MIME"text/latex"(), latexstring(repr(opts)))
 
 """
     Boundary{Names}(values::AbstractVector{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}) where Names
