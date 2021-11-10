@@ -244,6 +244,9 @@ end
     ops₁ = Operator(2.0, id₃) + Operator(3.0, id₄) + 1
     ops₂ = Operator(2.0, id₃) - Operator(3.0, id₄)
 
-    substitution = Substitution(Dict(id₁=>ops₁, id₂=>ops₂))
+    M = promote_type(eltype(ops₁), eltype(ops₂))
+    table = Dict{eltype(opt), Operators{M, idtype(M)}}(id₁=>ops₁, id₂=>ops₂)
+    substitution = UnitSubstitution(table)
     @test substitution(opt) == 1.5*ops₁*ops₂
+    @test substitution(Operators(opt)) == 1.5*ops₁*ops₂
 end

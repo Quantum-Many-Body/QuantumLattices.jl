@@ -12,7 +12,7 @@ import ...Prerequisites.Traits: contentnames, dissolve, isparameterbound, parame
 
 export QuantumOperator, OperatorUnit, ID, OperatorProd, OperatorSum, Scalar, Operator, Operators, ishermitian, idtype, optype, sequence
 export LaTeX, latexname, latexformat, superscript, subscript, script
-export Transformation, Identity, Numericalization, MatrixRepresentation, Permutation, Substitution, matrix, matrix!
+export Transformation, Identity, Numericalization, MatrixRepresentation, Permutation, AbstractSubstitution, AbstractUnitSubstitution, UnitSubstitution, matrix, matrix!
 
 """
     QuantumOperator
@@ -324,7 +324,9 @@ struct Operator{V<:Number, I<:ID{OperatorUnit}} <: OperatorProd{V, I}
     id::I
 end
 @inline Operator(value::Number, id::OperatorUnit...) = Operator(value, id)
-Base.show(io::IO, m::Operator) = @printf io "%s(%s, %s)" nameof(typeof(m)) decimaltostr(value(m)) join(id(m), ", ")
+function Base.show(io::IO, m::Operator)
+    @printf io "%s(%s%s%s)" nameof(typeof(m)) decimaltostr(value(m)) (rank(m)>0 ? ", " : "") join(id(m), ", ")
+end
 
 """
     adjoint(m::Operator) -> Operator
@@ -382,6 +384,10 @@ end
 @inline function Base.promote_rule(::Type{MS₁}, ::Type{MS₂}) where {MS₁<:OperatorSum, MS₂<:OperatorSum}
     M = promote_type(eltype(MS₁), eltype(MS₂))
     return OperatorSum{M, idtype(M)}
+end
+@inline function Base.convert(::Type{MS}, ms::OperatorSum) where {MS<:OperatorSum}
+    @assert eltype(MS)>:eltype(ms) "convert error: cannot convert an object of $(typeof(ms)) to an object of $(MS)."
+    return add!(zero(MS), ms)
 end
 
 """
@@ -913,25 +919,45 @@ function operatorprodcommuteposition(sequences)
 end
 
 """
-    Substitution{T<:AbstractDict{<:QuantumOperator, <:QuantumOperator}} <: Transformation
+    AbstractSubstitution <: Transformation
 
 The substitution transformation.
 """
-struct Substitution{T<:AbstractDict{<:QuantumOperator, <:QuantumOperator}} <: Transformation
+abstract type AbstractSubstitution <: Transformation end
+
+"""
+    AbstractUnitSubstitution{U<:OperatorUnit, S<:OperatorSum} <: AbstractSubstitution
+
+The "unit substitution" transformation, which substitutes evergy `OperatorUnit` in the old quantum operators to a new expression represented by an `OperatorSum`.
+"""
+abstract type AbstractUnitSubstitution{U<:OperatorUnit, S<:OperatorSum} <: AbstractSubstitution end
+@inline function Base.valtype(::Type{<:AbstractUnitSubstitution{U, S}}, M::Type{<:OperatorProd}) where {U<:OperatorUnit, S<:OperatorSum}
+    @assert U<:eltype(eltype(M)) "valtype error: mismatched unit transformation."
+    V = fulltype(eltype(S), NamedTuple{(:value, :id), Tuple{promote_type(valtype(eltype(S)), valtype(M)), ID{eltype(eltype(S))}}})
+    return OperatorSum{V, idtype(V)}
+end
+@inline Base.valtype(P::Type{<:AbstractUnitSubstitution}, M::Type{<:OperatorSum}) = valtype(P, eltype(M))
+
+"""
+    (unitsubstitution::AbstractUnitSubstitution)(m::OperatorProd) -> OperatorSum
+
+Substitute every `OperatorUnit` in an `OperatorProd` with a new `OperatorSum`.
+"""
+function (unitsubstitution::AbstractUnitSubstitution)(m::OperatorProd)
+    return prod(ntuple(i->unitsubstitution(m[i]), Val(rank(m))), init=value(m))
+end
+
+"""
+    UnitSubstitution{U<:OperatorUnit, S<:OperatorSum, T<:AbstractDict{U, S}} <: AbstractUnitSubstitution{U, S}
+
+A concrete "unit substitution" transformation, which stores every substitution of the old `OperatorUnit`s in its table as a dictionary.
+"""
+struct UnitSubstitution{U<:OperatorUnit, S<:OperatorSum, T<:AbstractDict{U, S}} <: AbstractUnitSubstitution{U, S}
     table::T
+    function UnitSubstitution(table::AbstractDict{<:OperatorUnit, <:OperatorSum})
+        new{keytype(table), valtype(table), typeof(table)}(table)
+    end
 end
-@inline function Base.valtype(::Type{<:Substitution{<:AbstractDict{U, P}}}, M::Type{<:OperatorProd{V, <:ID{U}} where V}) where {U<:OperatorUnit, P<:OperatorSum}
-    return fulltype(P, NamedTuple{(:value, :id), Tuple{promote_type(valtype(P), valtype(M)), ID{eltype(P)}}})
-end
-@inline Base.valtype(P::Type{<:Substitution}, M::Type{<:OperatorSum}) = valtype(P, eltype(M))
-
-"""
-    (substitution::Substitution{<:AbstractDict{<:OperatorUnit, <:OperatorSum}})(m::OperatorProd) -> OperatorSum
-
-Substitute the operator units in a `OperatorProd` with new quantum operators.
-"""
-function (substitution::Substitution{<:AbstractDict{<:OperatorUnit, <:OperatorSum}})(m::OperatorProd)
-    return prod(ntuple(i->get(substitution.table, m[i], m[i]), Val(rank(m))), init=value(m))
-end
+(unitsubstitution::UnitSubstitution)(m::OperatorUnit) = unitsubstitution.table[m]
 
 end #module
