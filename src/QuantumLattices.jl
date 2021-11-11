@@ -18,7 +18,7 @@ export dtype, kind, update!, reset!
 
 # Essentials.QuantumOperators
 export QuantumOperator, OperatorUnit, ID, OperatorProd, OperatorSum, Scalar, Operator, Operators, ishermitian, idtype, optype, sequence, latexformat
-export Transformation, Identity, Numericalization, MatrixRepresentation, Permutation,  AbstractSubstitution, AbstractUnitSubstitution, UnitSubstitution, matrix, matrix!
+export Transformation, Identity, Numericalization, MatrixRepresentation, Permutation, UnitSubstitution, RankFilter, matrix, matrix!
 
 # Essentials.QuantumNumbers
 export AbelianNumber, AbelianNumbers, @abeliannumber, periods, Momentum, Momentum₁, Momentum₂, Momentum₃

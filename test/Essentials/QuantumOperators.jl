@@ -250,3 +250,11 @@ end
     @test substitution(opt) == 1.5*ops₁*ops₂
     @test substitution(Operators(opt)) == 1.5*ops₁*ops₂
 end
+
+@testset "RankFilter" begin
+    op₀, op₁, op₂ = Operator(1), Operator(2, AID(1, 1)), Operator(3, AID(1, 1), AID(2, 1))
+    ops = Operators(op₀, op₁, op₂)
+    @test RankFilter(0)(ops) == Operators(op₀)
+    @test RankFilter(1)(ops) == Operators(op₁)
+    @test RankFilter(2)(ops) == Operators(op₂)
+end

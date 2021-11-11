@@ -10,9 +10,9 @@ import LinearAlgebra: ishermitian
 import ...Interfaces: id, value, rank, add!, sub!, mul!, div!, ⊗, ⋅, permute
 import ...Prerequisites.Traits: contentnames, dissolve, isparameterbound, parameternames
 
-export QuantumOperator, OperatorUnit, ID, OperatorProd, OperatorSum, Scalar, Operator, Operators, ishermitian, idtype, optype, sequence
-export LaTeX, latexname, latexformat, superscript, subscript, script
-export Transformation, Identity, Numericalization, MatrixRepresentation, Permutation, AbstractSubstitution, AbstractUnitSubstitution, UnitSubstitution, matrix, matrix!
+export QuantumOperator, OperatorUnit, ID, OperatorProd, OperatorSum, Scalar, Operator, Operators, LaTeX
+export Transformation, Identity, Numericalization, MatrixRepresentation, Permutation, AbstractSubstitution, AbstractUnitSubstitution, UnitSubstitution, RankFilter
+export ishermitian, idtype, optype, sequence, latexname, latexformat, superscript, subscript, script, matrix, matrix!
 
 """
     QuantumOperator
@@ -448,6 +448,7 @@ Get the in-place addition of quantum operators.
 """
 @inline add!(ms::OperatorSum) = ms
 @inline function add!(ms::OperatorSum, m::Union{Number, OperatorUnit, OperatorProd})
+    isa(m, Number) && abs(m)==0 && return ms
     m = convert(eltype(ms), m)
     old = get(ms.contents, id(m), nothing)
     new = isnothing(old) ? m : replace(old, value(old)+value(m))
@@ -470,6 +471,7 @@ Get the in-place subtraction of quantum operators.
 """
 @inline sub!(ms::OperatorSum) = ms
 @inline function sub!(ms::OperatorSum, m::Union{Number, OperatorUnit, OperatorProd})
+    isa(m, Number) && abs(m)==0 && return ms
     m = convert(eltype(ms), m)
     old = get(ms.contents, id(m), nothing)
     new = isnothing(old) ? -m : replace(old, value(old)-value(m))
@@ -489,6 +491,7 @@ end
 Get the in-place multiplication of an `OperatorSum` with a number.
 """
 function mul!(ms::OperatorSum, factor::Number)
+    abs(factor)==0 && return empty!(ms)
     @assert isa(one(ms|>eltype|>valtype)*factor, ms|>eltype|>valtype) "mul! error: mismatched type, $(ms|>eltype) and $(factor|>typeof)."
     for m in ms
         new = replace(m, value(m)*factor)
@@ -959,5 +962,25 @@ struct UnitSubstitution{U<:OperatorUnit, S<:OperatorSum, T<:AbstractDict{U, S}} 
     end
 end
 (unitsubstitution::UnitSubstitution)(m::OperatorUnit) = unitsubstitution.table[m]
+
+"""
+    RankFilter{R} <: Transformation
+
+Rank filter, which filters out the `OperatorProd` with a given rank `R`.
+"""
+struct RankFilter{R} <: Transformation
+    function RankFilter(rank::Int)
+        @assert rank>=0 "RankFilter error: the wanted rank must be non-negative."
+        new{rank}()
+    end
+end
+@inline Base.valtype(::Type{RankFilter{R}}, M::Type{<:OperatorProd}) where R = reparameter(M, :id, ID{eltype(M), R})
+@inline function Base.valtype(R::Type{<:RankFilter}, M::Type{<:OperatorSum})
+    V = valtype(R, eltype(M))
+    return OperatorSum{V, idtype(V)}
+end
+@inline rank(rf::RankFilter) = rank(typeof(rf))
+@inline rank(::Type{RankFilter{R}}) where R = R
+@inline @generated (rf::RankFilter)(m::OperatorProd) = rank(m)==rank(rf) ? :(m) : 0
 
 end #module
