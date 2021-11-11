@@ -111,6 +111,10 @@ end
 end
 
 @testset "Index" begin
+    @test parameternames(Index) == (:pid, :iid)
+    @test isparameterbound(Index, Val(:pid), PID) == false
+    @test isparameterbound(Index, Val(:iid), DID) == true
+
     index = Index(CPID('S', 4), DID(1))
     @test index|>pidtype == CPID{Char}
     @test index|>typeof|>pidtype == CPID{Char}
@@ -124,7 +128,16 @@ end
 
 @testset "OID" begin
     @test contentnames(CompositeOID) == (:index,)
+    @test parameternames(CompositeOID) == (:index,)
+    @test isparameterbound(CompositeOID, Val(:index), Index) == true
+    @test isparameterbound(CompositeOID, Val(:index), Index{PID, DID{Int}}) == false
+
     @test contentnames(OID) == (:index, :rcoord, :icoord)
+    @test parameternames(OID) == (:index, :coord)
+    @test isparameterbound(OID, Val(:index), Index) == true
+    @test isparameterbound(OID, Val(:index), Index{PID, DID{Int}}) == false
+    @test isparameterbound(OID, Val(:coord), SVector) == true
+    @test isparameterbound(OID, Val(:coord), SVector{2, Float}) == false
 
     oid = OID(Index(PID(1), DID(1)), [0.0, -0.0], [0.0, 0.0])
     @test indextype(oid) == indextype(typeof(oid)) == Index{PID, DID{Int}}

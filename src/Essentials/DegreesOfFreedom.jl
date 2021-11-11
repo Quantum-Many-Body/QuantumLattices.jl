@@ -277,24 +277,27 @@ struct Index{P<:AbstractPID, I<:SimpleIID} <: AbstractOID
     pid::P
     iid::I
 end
+@inline parameternames(::Type{<:Index}) = (:pid, :iid)
+@inline isparameterbound(::Type{<:Index}, ::Val{:pid}, ::Type{P}) where {P<:AbstractPID} = !isconcretetype(P)
+@inline isparameterbound(::Type{<:Index}, ::Val{:iid}, ::Type{I}) where {I<:SimpleIID} = !isconcretetype(I)
 
 """
     pidtype(index::Index)
-    pidtype(::Type{<:Index{P}}) where {P<:AbstractPID}
+    pidtype(::Type{I}) where {I<:Index}
 
 Get the type of the spatial part of an index.
 """
 @inline pidtype(index::Index) = pidtype(typeof(index))
-@inline pidtype(::Type{<:Index{P}}) where {P<:AbstractPID} = P
+@inline @generated pidtype(::Type{I}) where {I<:Index} = parametertype(I, 1)
 
 """
     iidtype(index::Index)
-    iidtype(::Type{<:Index{<:AbstractPID, I}}) where {I<:SimpleIID}
+    iidtype(::Type{I}) where {I<:Index}
 
 Get the type of the internal part of an index.
 """
 @inline iidtype(index::Index) = iidtype(typeof(index))
-@inline iidtype(::Type{<:Index{<:AbstractPID, I}}) where {I<:SimpleIID} = I
+@inline @generated iidtype(::Type{I}) where {I<:Index} = parametertype(I, 2)
 
 """
     statistics(index::Index) -> Symbol
@@ -319,6 +322,8 @@ The abstract type of composite operator id.
 """
 abstract type CompositeOID{I<:Index} <: AbstractOID end
 @inline contentnames(::Type{<:CompositeOID}) = (:index,)
+@inline parameternames(::Type{<:CompositeOID}) = (:index,)
+@inline isparameterbound(::Type{<:CompositeOID}, ::Val{:index}, ::Type{I}) where {I<:Index} = !isconcretetype(I)
 
 """
     indextype(::CompositeOID)
@@ -327,7 +332,7 @@ abstract type CompositeOID{I<:Index} <: AbstractOID end
 Get the index type of a composite operator id.
 """
 @inline indextype(oid::CompositeOID) = indextype(typeof(oid))
-@inline indextype(::Type{<:CompositeOID{I}}) where {I<:Index} = I
+@inline @generated indextype(::Type{I}) where {I<:CompositeOID} = parametertype(supertype(I, :CompositeOID), :index)
 
 """
     statistics(oid::CompositeOID) -> Symbol
@@ -350,6 +355,8 @@ struct OID{I<:Index, V<:SVector} <: CompositeOID{I}
     OID(index::Index, rcoord::V, icoord::V) where {V<:SVector} = new{typeof(index), V}(index, oidcoord(rcoord), oidcoord(icoord))
 end
 @inline contentnames(::Type{<:OID}) = (:index, :rcoord, :icoord)
+@inline parameternames(::Type{<:OID}) = (:index, :coord)
+@inline isparameterbound(::Type{<:OID}, ::Val{:coord}, ::Type{V}) where {V<:SVector} = !isconcretetype(V)
 @inline Base.hash(oid::OID, h::UInt) = hash((oid.index, Tuple(oid.rcoord)), h)
 @inline Base.propertynames(::ID{OID}) = (:indexes, :rcoords, :icoords)
 @inline Base.show(io::IO, oid::OID) = @printf io "OID(%s, %s, %s)" oid.index oid.rcoord oid.icoord
