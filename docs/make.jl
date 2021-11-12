@@ -42,8 +42,8 @@ makedocs(
                         "man/Essentials/QuantumNumbers.md",
                         "man/Essentials/Spatials.md",
                         "man/Essentials/DegreesOfFreedom.md",
-                        "man/Essentials/Frameworks.md",
                         "man/Essentials/QuantumSystems.md",
+                        "man/Essentials/Frameworks.md",
                         ],
                     ],
                 "Developer Documentation"   =>  [

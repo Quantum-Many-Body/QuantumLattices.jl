@@ -13,14 +13,14 @@ include("QuantumOperators.jl")
 include("QuantumNumbers.jl")
 include("Spatials.jl")
 include("DegreesOfFreedom.jl")
-include("Frameworks.jl")
 include("QuantumSystems.jl")
+include("Frameworks.jl")
 
 @reexport using .QuantumOperators
 @reexport using .QuantumNumbers
 @reexport using .Spatials
 @reexport using .DegreesOfFreedom
-@reexport using .Frameworks
 @reexport using .QuantumSystems
+@reexport using .Frameworks
 
 end # module

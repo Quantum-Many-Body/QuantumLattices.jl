@@ -1,6 +1,7 @@
 module Frameworks
 
 using Printf: @printf, @sprintf
+using LaTeXStrings: latexstring
 using Serialization: serialize
 using TimerOutputs: TimerOutputs, TimerOutput, @timeit
 using RecipesBase: RecipesBase, @recipe, @series
@@ -57,13 +58,13 @@ end
 @inline Base.isequal(entry₁::Entry, entry₂::Entry) = isequal(efficientoperations, entry₁, entry₂)
 
 """
-    eltype(entry::Entry)
-    eltype(::Type{<:Entry})
+    valtype(entry::Entry)
+    valtype(::Type{<:Entry})
 
-Get the eltype of an entry of quantum operators.
+Get the valtype of an entry of quantum operators.
 """
-@inline Base.eltype(entry::Entry) = eltype(typeof(entry))
-@inline @generated function Base.eltype(::Type{<:Entry{C, A, B}}) where {C, A<:NamedTuple, B<:NamedTuple}
+@inline Base.valtype(entry::Entry) = valtype(typeof(entry))
+@inline @generated function Base.valtype(::Type{<:Entry{C, A, B}}) where {C, A<:NamedTuple, B<:NamedTuple}
     optp = C
     (fieldcount(A) > 0) && (optp = reduce(promote_type, fieldtypes(A), init=optp))
     (fieldcount(B) > 0) && (optp = reduce(promote_type, fieldtypes(B), init=optp))
@@ -266,8 +267,23 @@ By protocol, a concrete generator should have the following predefined contents:
 """
 abstract type AbstractGenerator{E<:Entry, T<:Union{Table, Nothing}, B<:Boundary} <: Engine end
 @inline contentnames(::Type{<:AbstractGenerator}) = (:operators, :table, :boundary)
+@inline Base.valtype(gen::AbstractGenerator) = valtype(typeof(gen))
+@inline Base.valtype(::Type{<:AbstractGenerator{E}}) where {E<:Entry} = valtype(E)
 @inline Base.eltype(gen::AbstractGenerator) = eltype(typeof(gen))
-@inline Base.eltype(::Type{<:AbstractGenerator{E}}) where {E<:Entry} = eltype(E)
+@inline Base.eltype(::Type{<:AbstractGenerator{E}}) where {E<:Entry} = eltype(valtype(E))
+@inline Base.IteratorSize(::Type{<:AbstractGenerator}) = Base.SizeUnknown()
+@inline function Base.iterate(gen::AbstractGenerator)
+    ops = expand(gen)
+    index = iterate(ops)
+    isnothing(index) && return nothing
+    return index[1], (ops, index[2])
+end
+@inline function Base.iterate(gen::AbstractGenerator, state)
+    index = iterate(state[1], state[2])
+    isnothing(index) && return nothing
+    return index[1], (state[1], index[2])
+end
+Base.show(io::IO, ::MIME"text/latex", gen::AbstractGenerator) = show(io, MIME"text/latex"(), latexstring(latexstring(expand(gen))))
 
 """
     expand!(operators::Operators, gen::AbstractGenerator{E}) where {E<:Entry{<:Operators, <:NamedContainer{Operators}, <:NamedContainer{Operators}}}-> Operators
@@ -283,7 +299,7 @@ end
 
 Expand the generator.
 """
-@inline expand(gen::AbstractGenerator) = expand!(zero(eltype(gen)), gen)
+@inline expand(gen::AbstractGenerator) = expand!(zero(valtype(gen)), gen)
 
 """
     Generator{E<:Entry, TS<:NamedContainer{Term}, BS<:Bonds, H<:Hilbert, T<:Union{Table, Nothing}, B<:Boundary} <: AbstractGenerator{E, T, B}
@@ -357,7 +373,7 @@ end
     exprs = []
     push!(exprs, quote
         bond = gen.bonds[i]
-        result = zero(eltype(gen))
+        result = zero(valtype(gen))
     end)
     for i = 1:fieldcount(TS)
         push!(exprs, :(expand!(result, gen.terms[$i], bond, gen.hilbert, half=gen.half, table=gen.table)))

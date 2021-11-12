@@ -12,8 +12,8 @@ Pages = [
         "QuantumNumbers.md",
         "Spatials.md",
         "DegreesOfFreedom.md",
-        "Frameworks.md",
         "QuantumSystems.md",
+        "Frameworks.md",
         ]
 Depth = 2
 ```

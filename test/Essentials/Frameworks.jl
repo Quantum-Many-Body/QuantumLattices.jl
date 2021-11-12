@@ -71,7 +71,7 @@ end
     entry = Entry(tops₁, NamedContainer{(:μ,)}((μops,)), NamedContainer{(:t, :μ)}((tops₂, Operators{optp}())))
     @test entry == deepcopy(entry) && isequal(entry, deepcopy(entry))
     @test entry == Entry((t, μ), bonds, hilbert, half=true, table=table)
-    @test entry|>eltype == entry|>typeof|>eltype == Operators{optp, idtype(optp)}
+    @test entry|>valtype == entry|>typeof|>valtype == Operators{optp, idtype(optp)}
     @test expand!(Operators{optp}(), entry, plain, t=2.0, μ=1.5) == tops₁+tops₂*2.0+μops*1.5
     @test empty(entry) == empty!(deepcopy(entry))
     @test empty(entry) == Entry(empty(μops), NamedContainer{(:μ,)}((empty(μops),)), NamedContainer{(:t, :μ)}((empty(μops), empty(μops))))
@@ -81,6 +81,9 @@ end
 
     cgen = Generator((t, μ), bonds, hilbert; half=true, table=table, boundary=plain)
     @test cgen == deepcopy(cgen) && isequal(cgen, deepcopy(cgen))
+    @test cgen|>eltype == cgen|>typeof|>eltype == optp
+    @test cgen|>valtype == cgen|>typeof|>valtype == Operators{optp, idtype(optp)}
+    @test collect(cgen) == collect(expand(cgen))
     @test Parameters(cgen) == Parameters{(:t, :μ)}(2.0, 1.0)
     @test expand!(Operators{optp}(), cgen) == expand(cgen) == tops₁+tops₂*2.0+μops
     @test expand(cgen, :t) == tops₁+tops₂*2.0
