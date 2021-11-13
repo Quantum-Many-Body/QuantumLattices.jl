@@ -22,11 +22,11 @@ Let's see a simple situation, i.e. the elemental addition of two vectors of numb
 ```julia
 # wrong design pattern
 
-function elementaladdition(v1::Vector{Int64}, v2::Vector{Int64})
+function elementaladdition(v₁::Vector{Int64}, v₂::Vector{Int64})
     result = Int[]
     ...
 end
-function elementaladdition(v1::Vector{Int64}, v2::Vector{Float64})
+function elementaladdition(v₁::Vector{Int64}, v₂::Vector{Float64})
     result = Float64[]
     ...
 end
@@ -44,12 +44,12 @@ promotion(::Type{Int64}, ::Type{Float64}) = Float64
 ...
 ...
 
-function elementaladdition(v1::Vector{T1}, v2::Vector{T2}) where {T1<:Number, T2<:Number}
-    result = promotion(T1, T2)[]
+function elementaladdition(v₁::Vector{T₁}, v₂::Vector{T₂}) where {T₁<:Number, T₂<:Number}
+    result = promotion(T₁, T₂)[]
     ...
 end
-function elementalsubtraction(v1::Vector{T1}, v2::Vector{T2}) where {T1<:Number, T2<:Number}
-    result = promotion(T1, T2)[]
+function elementalsubtraction(v₁::Vector{T₁}, v₂::Vector{T₂}) where {T₁<:Number, T₂<:Number}
+    result = promotion(T₁, T₂)[]
     ...
 end
 ...
@@ -334,94 +334,71 @@ As an emergent feature of Julia, basically speaking, a Holy trait is a Julia typ
 ### Alternative of multi-inheritance
 
 Maybe the most common application of Holy traits is to serve as the alternative of multi-inheritance. Let's see a simple scenario. You have defined an abstract type. It is natural to demand that for every concrete subtype of it, a pair of instances could be compared and judge whether they are equivalent to each other by the value. Unfortunately, for a new user-defined type, the default `==` function in Julia actually judges whether they are the same object, but not equal to each other by the value. Therefore, you need to define your own `==` function for this abstract type. However, you may need define a lot of abstract types when you are developing a Julia package. It is annoying if such simple functions must be written for each of them. In other languages like Python, this could be solved with the help of multi-inheritance. But Julia does not support multi-inheritance. The common way is to use Holy traits. For example, the above issue could be solved like this:
-```jldoctest traits
-julia> struct Equivalence end
-       const equivalence = Equivalence()
-       function Base.:(==)(::Equivalence, o1, o2)
-           n1, n2 = fieldcount(typeof(o1)), fieldcount(typeof(o2))
-           n1≠n2 && return false
-           for i = 1:n1
-               getfield(o1, i)≠getfield(o2, i) && return false
-           end
-           return true
-       end;
+```@example traits
+struct Equivalence end
+const equivalence = Equivalence()
+function Base.:(==)(::Equivalence, o₁, o₂)
+    n₁, n₂ = fieldcount(typeof(o₁)), fieldcount(typeof(o₂))
+    n₁≠n₂ && return false
+    for i = 1:n₁
+        getfield(o₁, i)≠getfield(o₂, i) && return false
+    end
+    return true
+end
 
-julia> abstract type TypeWithEquivalence end
-       Base.:(==)(o1::TypeWithEquivalence, o2::TypeWithEquivalence) = ==(equivalence, o1, o2);
+abstract type TypeWithEquivalence end
+Base.:(==)(o₁::TypeWithEquivalence, o₂::TypeWithEquivalence) = ==(equivalence, o₁, o₂);
 
-julia> struct ConcreteTypeWithEquivalence{F1, F2} <: TypeWithEquivalence
-           f1::F1
-           f2::F2
-       end;
+struct ConcreteTypeWithEquivalence{F₁, F₂} <: TypeWithEquivalence
+    f₁::F₁
+    f₂::F₂
+end;
 
-julia> a1 = ConcreteTypeWithEquivalence(("a", "b", "c"), [1, 2, 3])
-       a2 = ConcreteTypeWithEquivalence(("a", "b", "c"), [1.0, 2.0, 3.0])
-       a1 == a2
-true
+a₁ = ConcreteTypeWithEquivalence(("a", "b", "c"), [1, 2, 3])
+a₂ = ConcreteTypeWithEquivalence(("a", "b", "c"), [1.0, 2.0, 3.0])
+a₁ == a₂
 ```
 Here, the type `Equivalence` is the Holy trait that helps the abstract type `TypeWithEquivalence` to implement the `==` function, which applies equally to any other types.
 
 ### Type stability and the generated function trick
 
 However, the story does not end up here. If you are concerned about the code efficiency, you may find that the above implementation is not type stable:
-```jldoctest traits
-julia> using BenchmarkTools
-       @benchmark $a1 == $a2
-BenchmarkTools.Trial:
-  memory estimate:  256 bytes
-  allocs estimate:  6
-  --------------
-  minimum time:     90.938 ns (0.00% GC)
-  median time:      97.188 ns (0.00% GC)
-  mean time:        112.537 ns (11.85% GC)
-  maximum time:     3.194 μs (94.84% GC)
-  --------------
-  samples:          10000
-  evals/sample:     960
+```@example traits
+using BenchmarkTools
+@benchmark $a₁ == $a₂
 ```
-The memory allocation occurs when the `==` function tries to compare the values of `getfield(o1, i)` and `getfield(o2, i)` because in principle the types of these values depend on the runtime value of the variable `i`. To ensure type stability, the generated function trick can be utilized:
-```jldoctest traits
-julia> struct EfficientEquivalence end
-       const efficientequivalence = EfficientEquivalence()
-       @generated function Base.:(==)(::EfficientEquivalence, o1, o2)
-           n1, n2 = fieldcount(o1), fieldcount(o2)
-           n1≠n2 && return false
-           expr = :(getfield(o1, 1) == getfield(o2, 1))
-           for i = 2:n1
-               expr = Expr(:&&, expr, :(getfield(o1, $i) == getfield(o2, $i)))
-           end
-           return expr
-       end;
+The memory allocation occurs when the `==` function tries to compare the values of `getfield(o₁, i)` and `getfield(o₂, i)` because in principle the types of these values depend on the runtime value of the variable `i`. To ensure type stability, the generated function trick can be utilized:
+```@example traits
+struct EfficientEquivalence end
+const efficientequivalence = EfficientEquivalence()
+@generated function Base.:(==)(::EfficientEquivalence, o₁, o₂)
+    n₁, n₂ = fieldcount(o₁), fieldcount(o₂)
+    n₁≠n₂ && return false
+    expr = :(getfield(o₁, 1) == getfield(o₂, 1))
+    for i = 2:n₁
+        expr = Expr(:&&, expr, :(getfield(o₁, $i) == getfield(o₂, $i)))
+    end
+    return expr
+end
 
-julia> abstract type TypeWithEfficientEquivalence end
-       function Base.:(==)(o1::TypeWithEfficientEquivalence, o2::TypeWithEfficientEquivalence)
-           return ==(efficientequivalence, o1, o2)
-       end;
+abstract type TypeWithEfficientEquivalence end
+function Base.:(==)(o₁::TypeWithEfficientEquivalence, o₂::TypeWithEfficientEquivalence)
+    return ==(efficientequivalence, o₁, o₂)
+end
 
-julia> struct ConcreteTypeWithEfficientEquivalence{F1, F2} <: TypeWithEfficientEquivalence
-           f1::F1
-           f2::F2
-       end;
+struct ConcreteTypeWithEfficientEquivalence{F₁, F₂} <: TypeWithEfficientEquivalence
+    f₁::F₁
+    f₂::F₂
+end
 
-julia> a1 = ConcreteTypeWithEfficientEquivalence(("a", "b", "c"), [1, 2, 3])
-       a2 = ConcreteTypeWithEfficientEquivalence(("a", "b", "c"), [1.0, 2.0, 3.0])
-       a1 == a2
-true
-
-julia> @benchmark $a1 == $a2
-BenchmarkTools.Trial:
-  memory estimate:  0 bytes
-  allocs estimate:  0
-  --------------
-  minimum time:     13.413 ns (0.00% GC)
-  median time:      13.714 ns (0.00% GC)
-  mean time:        13.938 ns (0.00% GC)
-  maximum time:     306.206 ns (0.00% GC)
-  --------------
-  samples:          10000
-  evals/sample:     999
+a₁ = ConcreteTypeWithEfficientEquivalence(("a", "b", "c"), [1, 2, 3])
+a₂ = ConcreteTypeWithEfficientEquivalence(("a", "b", "c"), [1.0, 2.0, 3.0])
+a₁ == a₂
 ```
-At runtime of the generated `==` function, it compares the values of `getfield(o1, 1)` and `getfield(o2, 1)`, `getfield(o1, 2)` and `getfield(o2, 2)`, etc., whose types are known at compile time. Therefore, type stability could be ensured.
+```@example traits
+@benchmark $a₁ == $a₂
+```
+At runtime of the generated `==` function, it compares the values of `getfield(o₁, 1)` and `getfield(o₂, 1)`, `getfield(o₁, 2)` and `getfield(o₂, 2)`, etc., whose types are known at compile time. Therefore, type stability could be ensured.
 
 ### EfficientOperations
 
