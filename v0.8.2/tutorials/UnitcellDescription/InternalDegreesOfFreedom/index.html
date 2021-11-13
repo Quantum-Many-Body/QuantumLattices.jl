@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Internal degrees of freedom · QuantumLattices.jl</title><script async src="https://www.googletagmanager.com/gtag/js?id=UA-89508993-1"></script><script>  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'UA-89508993-1', {'page_path': location.pathname + location.search + location.hash});
+</script><script data-outdated-warner src="../../../assets/warner.js"></script><link rel="canonical" href="https://quantum-many-body.github.io/QuantumLattices.jl/latest/tutorials/UnitcellDescription/InternalDegreesOfFreedom/"/><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.039/juliamono-regular.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../../assets/documenter.js"></script><script src="../../../siteinfo.js"></script><script src="../../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../../assets/themeswap.js"></script><link href="../../../assets/favicon.ico" rel="icon" type="image/x-icon"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../../"><img src="../../../assets/logo.png" alt="QuantumLattices.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../../">QuantumLattices.jl</a></span></div><form class="docs-search" action="../../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../../">Home</a></li><li><span class="tocitem">Tutorials</span><ul><li><input class="collapse-toggle" id="menuitem-2-1" type="checkbox" checked/><label class="tocitem" for="menuitem-2-1"><span class="docs-label">Unitcell Description</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../Introduction/">Introduction</a></li><li><a class="tocitem" href="../SpatialInfoOfAUnitcell/">Spatial info of a unitcell</a></li><li class="is-active"><a class="tocitem" href>Internal degrees of freedom</a><ul class="internal"><li><a class="tocitem" href="#Internal,-IID-and-Index"><span>Internal, IID and Index</span></a></li><li><a class="tocitem" href="#Hilbert"><span>Hilbert</span></a></li><li><a class="tocitem" href="#OID"><span>OID</span></a></li><li><a class="tocitem" href="#Operator-and-Operators"><span>Operator and Operators</span></a></li><li><a class="tocitem" href="#latex-formatted-output"><span>latex-formatted output</span></a></li></ul></li><li><a class="tocitem" href="../CouplingsAmongDifferentDegreesOfFreedom/">Couplings among different degrees of freedom</a></li><li><a class="tocitem" href="../GeneratorOfOperators/">Generator of operators</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-2-2" type="checkbox"/><label class="tocitem" for="menuitem-2-2"><span class="docs-label">Engine App Interface</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../EngineAppInterface/Introduction/">Introduction</a></li></ul></li></ul></li><li><span class="tocitem">Manual</span><ul><li><a class="tocitem" href="../../../man/Interfaces/">Interfaces</a></li><li><input class="collapse-toggle" id="menuitem-3-2" type="checkbox"/><label class="tocitem" for="menuitem-3-2"><span class="docs-label">Prerequisites</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../../man/Prerequisites/Introduction/">Introduction</a></li><li><a class="tocitem" href="../../../man/Prerequisites/Combinatorics/">Combinatorics</a></li><li><a class="tocitem" href="../../../man/Prerequisites/Traits/">Traits</a></li><li><a class="tocitem" href="../../../man/Prerequisites/CompositeStructures/">Composite structures</a></li><li><a class="tocitem" href="../../../man/Prerequisites/SimpleTrees/">Simple trees</a></li><li><a class="tocitem" href="../../../man/Prerequisites/NamedVectors/">Named vectors</a></li><li><a class="tocitem" href="../../../man/Prerequisites/VectorSpaces/">Vector spaces</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-3-3" type="checkbox"/><label class="tocitem" for="menuitem-3-3"><span class="docs-label">Essentials</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../../man/Essentials/Introduction/">Introduction</a></li><li><a class="tocitem" href="../../../man/Essentials/QuantumOperators/">Quantum operators</a></li><li><a class="tocitem" href="../../../man/Essentials/QuantumNumbers/">Quantum numbers</a></li><li><a class="tocitem" href="../../../man/Essentials/Spatials/">Spatials</a></li><li><a class="tocitem" href="../../../man/Essentials/DegreesOfFreedom/">Degrees of freedom</a></li><li><a class="tocitem" href="../../../man/Essentials/QuantumSystems/">Quantum Systems</a></li><li><a class="tocitem" href="../../../man/Essentials/Frameworks/">Frameworks</a></li></ul></li></ul></li><li><span class="tocitem">Developer Documentation</span><ul><li><a class="tocitem" href="../../../developer/CodeStyle/">Code style guide</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li><a class="is-disabled">Unitcell Description</a></li><li class="is-active"><a href>Internal degrees of freedom</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Internal degrees of freedom</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/Quantum-Many-Body/QuantumLattices.jl/blob/master/docs/src/tutorials/UnitcellDescription/InternalDegreesOfFreedom.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Internal-degrees-of-freedom"><a class="docs-heading-anchor" href="#Internal-degrees-of-freedom">Internal degrees of freedom</a><a id="Internal-degrees-of-freedom-1"></a><a class="docs-heading-anchor-permalink" href="#Internal-degrees-of-freedom" title="Permalink"></a></h1><p>Now let&#39;s move to the second step. A main feature of a quantum lattice system is that one can decompose the whole Hilbert space into local ones. Correspondingly, the Hamiltonian of the system can always be expressed by products/sums of <strong>local generators of the algebras acting on these local Hilbert spaces</strong>. Thus, a parallel to the spatial info of the unitcell of the lattice system is the internal degrees of freedom that &quot;lives&quot; in each spatial point.</p><h2 id="Internal,-IID-and-Index"><a class="docs-heading-anchor" href="#Internal,-IID-and-Index">Internal, IID and Index</a><a id="Internal,-IID-and-Index-1"></a><a class="docs-heading-anchor-permalink" href="#Internal,-IID-and-Index" title="Permalink"></a></h2><p>Different kinds of quantum lattice systems can have different species of local Hilbert spaces. For example, the local Hilbert space of a complex fermionic/bosonic system is the <a href="https://en.wikipedia.org/wiki/Fock_space">Fock space</a> whereas that of a spin-1/2 system is the two-dimensional <span>$\{\lvert\uparrow\rangle, \lvert\downarrow\rangle\}$</span> space. The abstract type <a href="../../../man/Essentials/DegreesOfFreedom/#QuantumLattices.Essentials.DegreesOfFreedom.Internal"><code>Internal</code></a> is an abstraction of local Hilbert spaces. More precisely, it is an abstraction of <strong>local algebras acting on these local Hilbert spaces</strong>. To specify a generator of such a local algebra, two sets of tags are needed: one identifies which the local algebra is and the other represents which the internal degree of freedom is. The former is already encoded by a <a href="../../../man/Essentials/Spatials/#QuantumLattices.Essentials.Spatials.PID"><code>PID</code></a> object, and the latter will be stored in an object of a concrete subtype of the abstract type <a href="../../../man/Essentials/DegreesOfFreedom/#QuantumLattices.Essentials.DegreesOfFreedom.IID"><code>IID</code></a>. These two sets of tags are combined to be the <a href="../../../man/Essentials/DegreesOfFreedom/#QuantumLattices.Essentials.DegreesOfFreedom.Index"><code>Index</code></a> type, which contains the complete information of a local generator.</p><h3 id="Systems-with-different-internal-structures"><a class="docs-heading-anchor" href="#Systems-with-different-internal-structures">Systems with different internal structures</a><a id="Systems-with-different-internal-structures-1"></a><a class="docs-heading-anchor-permalink" href="#Systems-with-different-internal-structures" title="Permalink"></a></h3><p>In this package, we implement two groups of concrete subtypes to handle with the following three sets of systems, respectively:</p><ul><li>Canonical fermionic, canonical bosonic and hard-core bosonic systems,</li><li>SU(2) spin systems,</li><li>Phononic systems.</li></ul><h4 id="Fock-and-FID"><a class="docs-heading-anchor" href="#Fock-and-FID">Fock and FID</a><a id="Fock-and-FID-1"></a><a class="docs-heading-anchor-permalink" href="#Fock-and-FID" title="Permalink"></a></h4><p>This group of concrete subtypes are designed to deal with canonical fermionic, canonical bosonic and hard-core bosonic systems.</p><p>Roughly speaking, these systems share similar internal structures of local Hilbert spaces termed as the <a href="https://en.wikipedia.org/wiki/Fock_space">Fock space</a> where the generators of local algebras are the annihilation and creation operators. Besides the spatial index, such an operator usually adopts an orbital index and a spin index. It also needs a nambu index to distinguish whether it is an annihilation one or a creation one. Thus, the type <a href="../../../man/Essentials/QuantumSystems/#QuantumLattices.Essentials.QuantumSystems.FID"><code>FID</code></a><code>&lt;:IID</code>, which specifies a certain internal degree of freedom of a local <a href="https://en.wikipedia.org/wiki/Fock_space">Fock space</a>, has the following attributes:</p><ul><li><code>orbital::Int</code>: the orbital index</li><li><code>spin::Int</code>: the spin index</li><li><code>nambu::Int</code>: the nambu index, which must be 0, 1(annihilation) or 2(creation).</li></ul><p>Correspondingly, the type <a href="../../../man/Essentials/QuantumSystems/#QuantumLattices.Essentials.QuantumSystems.Fock"><code>Fock</code></a><code>&lt;:Internal</code>, which specifies the whole internal structure of a local <a href="https://en.wikipedia.org/wiki/Fock_space">Fock space</a>, has the following attributes:</p><ul><li><code>norbital::Int</code>: the number of allowed orbital indices</li><li><code>nspin::Int</code>: the number of allowed spin indices</li><li><code>nnambu::Int</code>: the number of allowed nambu indices, which must be either 1 or 2.</li></ul><p>One more remark. The <code>:nambu</code> attribute of an <a href="../../../man/Essentials/QuantumSystems/#QuantumLattices.Essentials.QuantumSystems.FID"><code>FID</code></a> instance can be 1 or 2, which means it represents an annihilation operator or a creation operator, respectively. This corresponds to a usual complex fermionic/bosonic system. The <code>:nambu</code> attribute can also be 0. In this case, it corresponds to a real fermionic/bosonic system where annihilation and creation operators are identical to each other, e.g. a Majorana fermionic system. Accordingly, The <code>:nnambu</code> attribute of a <a href="../../../man/Essentials/QuantumSystems/#QuantumLattices.Essentials.QuantumSystems.Fock"><code>Fock</code></a> instance can be either 2 or 1. Being 2, it allows usual complex annihilation/creation operators, while being 1 it only allows real fermionic/bosonic operators.</p><p>To distinguish whether the system is a fermionic one or a bosonic one, <a href="../../../man/Essentials/QuantumSystems/#QuantumLattices.Essentials.QuantumSystems.FID"><code>FID</code></a> and <a href="../../../man/Essentials/QuantumSystems/#QuantumLattices.Essentials.QuantumSystems.Fock"><code>Fock</code></a> take a symbol <code>:f</code>(for fermionic) or <code>:b</code>(for bosonic) to be their first type parameters.</p><p>Now let&#39;s see some examples.</p><p>An <a href="../../../man/Essentials/QuantumSystems/#QuantumLattices.Essentials.QuantumSystems.FID"><code>FID</code></a> instance can be initialized by giving all its three attributes:</p><pre><code class="language-julia-repl hljs">julia&gt; FID{:f}(2, 2, 1)
+FID{:f}(2, 2, 1)
+
+julia&gt; FID{:b}(2, 2, 1)
+FID{:b}(2, 2, 1)</code></pre><p>Or you can only specify part of the three by key word arguments and the others will get default values:</p><pre><code class="language-julia-repl hljs">julia&gt; FID{:f}() # default values: orbital=1, spin=1, nambu=1
+FID{:f}(1, 1, 1)
+
+julia&gt; FID{:b}(spin=2, nambu=0)
+FID{:b}(1, 2, 0)</code></pre><p>The adjoint of an <a href="../../../man/Essentials/QuantumSystems/#QuantumLattices.Essentials.QuantumSystems.FID"><code>FID</code></a> instance is also defined:</p><pre><code class="language-julia-repl hljs">julia&gt; FID{:f}(orbital=3, spin=4, nambu=1)&#39;
+FID{:f}(3, 4, 2)
+
+julia&gt; FID{:b}(orbital=3, spin=4, nambu=2)&#39;
+FID{:b}(3, 4, 1)
+
+julia&gt; FID{:b}(orbital=3, spin=4, nambu=0)&#39;
+FID{:b}(3, 4, 0)</code></pre><p>Apparently, this operation is nothing but the &quot;Hermitian conjugate&quot;.</p><p>A <a href="../../../man/Essentials/QuantumSystems/#QuantumLattices.Essentials.QuantumSystems.Fock"><code>Fock</code></a> instance can be initialized by giving all its attributes or by key word arguments to specify those beyond the default values:</p><pre><code class="language-julia-repl hljs">julia&gt; Fock{:f}(1, 2, 2)
+4-element Fock{:f}:
+ FID{:f}(1, 1, 1)
+ FID{:f}(1, 2, 1)
+ FID{:f}(1, 1, 2)
+ FID{:f}(1, 2, 2)
+
+julia&gt; Fock{:b}() # default values: norbital=1, nspin=2, nnambu=2
+4-element Fock{:b}:
+ FID{:b}(1, 1, 1)
+ FID{:b}(1, 2, 1)
+ FID{:b}(1, 1, 2)
+ FID{:b}(1, 2, 2)
+
+julia&gt; Fock{:b}(norbital=2, nspin=1, nnambu=1)
+2-element Fock{:b}:
+ FID{:b}(1, 1, 0)
+ FID{:b}(2, 1, 0)</code></pre><p>As can be seen, a <a href="../../../man/Essentials/QuantumSystems/#QuantumLattices.Essentials.QuantumSystems.Fock"><code>Fock</code></a> instance behaves like a vector (because the parent type <a href="../../../man/Essentials/DegreesOfFreedom/#QuantumLattices.Essentials.DegreesOfFreedom.Internal"><code>Internal</code></a> is a subtype of <code>AbstractVector</code>), and its iteration just generates all the allowed <a href="../../../man/Essentials/QuantumSystems/#QuantumLattices.Essentials.QuantumSystems.FID"><code>FID</code></a> instances on its associated spatial point:</p><pre><code class="language-julia-repl hljs">julia&gt; fck = Fock{:f}(norbital=2, nspin=1, nnambu=2);
+
+julia&gt; fck |&gt; typeof |&gt; eltype
+FID{:f, Int64, Int64, Int64}
+
+julia&gt; fck |&gt; length
+4
+
+julia&gt; [fck[1], fck[2], fck[3], fck[4]]
+4-element Vector{FID{:f, Int64, Int64, Int64}}:
+ FID{:f}(1, 1, 1)
+ FID{:f}(2, 1, 1)
+ FID{:f}(1, 1, 2)
+ FID{:f}(2, 1, 2)
+
+julia&gt; fck |&gt; collect
+4-element Vector{FID{:f, Int64, Int64, Int64}}:
+ FID{:f}(1, 1, 1)
+ FID{:f}(2, 1, 1)
+ FID{:f}(1, 1, 2)
+ FID{:f}(2, 1, 2)</code></pre><h4 id="Spin-and-SID"><a class="docs-heading-anchor" href="#Spin-and-SID">Spin and SID</a><a id="Spin-and-SID-1"></a><a class="docs-heading-anchor-permalink" href="#Spin-and-SID" title="Permalink"></a></h4><p>This group of concrete subtypes are designed to deal with SU(2) spin systems.</p><p>Although spin systems are essentially bosonic, the commonly-used local Hilbert space is distinct from that of a canonical bosonic system: it is the space spanned by the eigenstates of a local <span>$S^z$</span> operator rather than a &quot;<a href="https://en.wikipedia.org/wiki/Fock_space">Fock space</a>&quot;. At the same time, a spin Hamiltonian is usually expressed by local spin operators, such as <span>$S^x$</span>, <span>$S^y$</span>, <span>$S^z$</span>, <span>$S^+$</span> and <span>$S^-$</span>, instead of creation and annihilation operators. Therefore, it is convenient to define another set of concrete subtypes for spin systems.</p><p>Apart from the spatial indices, a local spin operator can have an orbital index. Besides, it also needs an index to indicate which spin operator it is. Thus, the type <a href="../../../man/Essentials/QuantumSystems/#QuantumLattices.Essentials.QuantumSystems.SID"><code>SID</code></a>, which specifies the internal degree of freedom of a local spin operator, has the following attributes:</p><ul><li><code>orbital::Int</code>: the orbital index</li><li><code>tag::Char</code>: the tag, which must be <code>&#39;x&#39;</code>, <code>&#39;y&#39;</code>, <code>&#39;z&#39;</code>, <code>&#39;+&#39;</code> or <code>&#39;-&#39;</code>.</li></ul><p>Correspondingly, the type <a href="../../../man/Essentials/QuantumSystems/#QuantumLattices.Essentials.QuantumSystems.Spin"><code>Spin</code></a>, which defines the whole internal structure of a local spin space, has the following attributes:</p><ul><li><code>norbital::Int</code>: the number of allowed orbital indices</li></ul><p>For <a href="../../../man/Essentials/QuantumSystems/#QuantumLattices.Essentials.QuantumSystems.SID"><code>SID</code></a> and <a href="../../../man/Essentials/QuantumSystems/#QuantumLattices.Essentials.QuantumSystems.Spin"><code>Spin</code></a>, it is also necessary to know what the total spin is, which is taken as their first type parameters and should be a half-integer or an integer.</p><p>Now let&#39;s see examples.</p><p>An <a href="../../../man/Essentials/QuantumSystems/#QuantumLattices.Essentials.QuantumSystems.SID"><code>SID</code></a> instance can be initialized as follows</p><pre><code class="language-julia-repl hljs">julia&gt; SID{3//2}(1, &#39;x&#39;)
+SID{3//2}(1, &#39;x&#39;)
+
+julia&gt; SID{1//2}(&#39;z&#39;) # default values: orbital=1
+SID{1//2}(1, &#39;z&#39;)
+
+julia&gt; SID{1}(&#39;+&#39;, orbital=2)
+SID{1}(2, &#39;+&#39;)</code></pre><p>The &quot;Hermitian conjugate&quot; of an <a href="../../../man/Essentials/QuantumSystems/#QuantumLattices.Essentials.QuantumSystems.SID"><code>SID</code></a> instance can be obtained by the adjoint operation:</p><pre><code class="language-julia-repl hljs">julia&gt; SID{3//2}(1, &#39;x&#39;)&#39;
+SID{3//2}(1, &#39;x&#39;)
+
+julia&gt; SID{3//2}(1, &#39;y&#39;)&#39;
+SID{3//2}(1, &#39;y&#39;)
+
+julia&gt; SID{3//2}(1,&#39;z&#39;)&#39;
+SID{3//2}(1, &#39;z&#39;)
+
+julia&gt; SID{3//2}(1, &#39;+&#39;)&#39;
+SID{3//2}(1, &#39;-&#39;)
+
+julia&gt; SID{3//2}(1, &#39;-&#39;)&#39;
+SID{3//2}(1, &#39;+&#39;)</code></pre><p>Regardless of the local orbital space, the local spin space is determined by the total spin. The standard matrix representation of an <a href="../../../man/Essentials/QuantumSystems/#QuantumLattices.Essentials.QuantumSystems.SID"><code>SID</code></a> instance on this local spin space can be obtained by the <code>Matrix</code> function:</p><pre><code class="language-julia-repl hljs">julia&gt; SID{1//2}(1, &#39;x&#39;) |&gt; Matrix
+2×2 Matrix{ComplexF64}:
+ 0.0+0.0im  0.5+0.0im
+ 0.5+0.0im  0.0+0.0im
+
+julia&gt; SID{1//2}(1, &#39;y&#39;) |&gt; Matrix
+2×2 Matrix{ComplexF64}:
+ 0.0-0.0im  -0.0+0.5im
+ 0.0-0.5im   0.0-0.0im
+
+julia&gt; SID{1//2}(1, &#39;z&#39;) |&gt; Matrix
+2×2 Matrix{ComplexF64}:
+ -0.5+0.0im  -0.0+0.0im
+  0.0+0.0im   0.5+0.0im
+
+julia&gt; SID{1//2}(1, &#39;+&#39;) |&gt; Matrix
+2×2 Matrix{ComplexF64}:
+ 0.0+0.0im  0.0+0.0im
+ 1.0+0.0im  0.0+0.0im
+
+julia&gt; SID{1//2}(1, &#39;-&#39;) |&gt; Matrix
+2×2 Matrix{ComplexF64}:
+ 0.0+0.0im  1.0+0.0im
+ 0.0+0.0im  0.0+0.0im</code></pre><p>A <a href="../../../man/Essentials/QuantumSystems/#QuantumLattices.Essentials.QuantumSystems.Spin"><code>Spin</code></a> instance can be initialized as follows:</p><pre><code class="language-julia-repl hljs">julia&gt; Spin{1}(2)
+10-element Spin{1}:
+ SID{1}(1, &#39;x&#39;)
+ SID{1}(2, &#39;x&#39;)
+ SID{1}(1, &#39;y&#39;)
+ SID{1}(2, &#39;y&#39;)
+ SID{1}(1, &#39;z&#39;)
+ SID{1}(2, &#39;z&#39;)
+ SID{1}(1, &#39;+&#39;)
+ SID{1}(2, &#39;+&#39;)
+ SID{1}(1, &#39;-&#39;)
+ SID{1}(2, &#39;-&#39;)
+
+julia&gt; Spin{1//2}() # default values: norbital=1
+5-element Spin{1//2}:
+ SID{1//2}(1, &#39;x&#39;)
+ SID{1//2}(1, &#39;y&#39;)
+ SID{1//2}(1, &#39;z&#39;)
+ SID{1//2}(1, &#39;+&#39;)
+ SID{1//2}(1, &#39;-&#39;)
+
+julia&gt; Spin{1}(norbital=1)
+5-element Spin{1}:
+ SID{1}(1, &#39;x&#39;)
+ SID{1}(1, &#39;y&#39;)
+ SID{1}(1, &#39;z&#39;)
+ SID{1}(1, &#39;+&#39;)
+ SID{1}(1, &#39;-&#39;)</code></pre><p>Similar to <a href="../../../man/Essentials/QuantumSystems/#QuantumLattices.Essentials.QuantumSystems.Fock"><code>Fock</code></a>, a <a href="../../../man/Essentials/QuantumSystems/#QuantumLattices.Essentials.QuantumSystems.Spin"><code>Spin</code></a> instance behaves like a vector whose iteration generates all the allowed <a href="../../../man/Essentials/QuantumSystems/#QuantumLattices.Essentials.QuantumSystems.SID"><code>SID</code></a> instances on its associated spatial point:</p><pre><code class="language-julia-repl hljs">julia&gt; sp = Spin{1}(norbital=1);
+
+julia&gt; sp |&gt; typeof |&gt; eltype
+SID{1, Int64, Char}
+
+julia&gt; sp |&gt; length
+5
+
+julia&gt; [sp[1], sp[2], sp[3], sp[4], sp[5]]
+5-element Vector{SID{1, Int64, Char}}:
+ SID{1}(1, &#39;x&#39;)
+ SID{1}(1, &#39;y&#39;)
+ SID{1}(1, &#39;z&#39;)
+ SID{1}(1, &#39;+&#39;)
+ SID{1}(1, &#39;-&#39;)
+
+julia&gt; sp |&gt; collect
+5-element Vector{SID{1, Int64, Char}}:
+ SID{1}(1, &#39;x&#39;)
+ SID{1}(1, &#39;y&#39;)
+ SID{1}(1, &#39;z&#39;)
+ SID{1}(1, &#39;+&#39;)
+ SID{1}(1, &#39;-&#39;)</code></pre><p>It is noted that a <a href="../../../man/Essentials/QuantumSystems/#QuantumLattices.Essentials.QuantumSystems.Spin"><code>Spin</code></a> instance generates <a href="../../../man/Essentials/QuantumSystems/#QuantumLattices.Essentials.QuantumSystems.SID"><code>SID</code></a> instances corresponding to not only <span>$S^x$</span>, <span>$S^y$</span> and <span>$S^z$</span>,  but also <span>$S^+$</span> and <span>$S^-$</span> although the former three already forms a complete set of generators of local spin algebras. This overcomplete feature is for the convenience to the construction of spin Hamiltonians.</p><h4 id="Phonon-and-PNID"><a class="docs-heading-anchor" href="#Phonon-and-PNID">Phonon and PNID</a><a id="Phonon-and-PNID-1"></a><a class="docs-heading-anchor-permalink" href="#Phonon-and-PNID" title="Permalink"></a></h4><h3 id="Index"><a class="docs-heading-anchor" href="#Index">Index</a><a id="Index-1"></a><a class="docs-heading-anchor-permalink" href="#Index" title="Permalink"></a></h3><h2 id="Hilbert"><a class="docs-heading-anchor" href="#Hilbert">Hilbert</a><a id="Hilbert-1"></a><a class="docs-heading-anchor-permalink" href="#Hilbert" title="Permalink"></a></h2><h2 id="OID"><a class="docs-heading-anchor" href="#OID">OID</a><a id="OID-1"></a><a class="docs-heading-anchor-permalink" href="#OID" title="Permalink"></a></h2><h2 id="Operator-and-Operators"><a class="docs-heading-anchor" href="#Operator-and-Operators">Operator and Operators</a><a id="Operator-and-Operators-1"></a><a class="docs-heading-anchor-permalink" href="#Operator-and-Operators" title="Permalink"></a></h2><h2 id="latex-formatted-output"><a class="docs-heading-anchor" href="#latex-formatted-output">latex-formatted output</a><a id="latex-formatted-output-1"></a><a class="docs-heading-anchor-permalink" href="#latex-formatted-output" title="Permalink"></a></h2></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../SpatialInfoOfAUnitcell/">« Spatial info of a unitcell</a><a class="docs-footer-nextpage" href="../CouplingsAmongDifferentDegreesOfFreedom/">Couplings among different degrees of freedom »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.10 on <span class="colophon-date" title="Saturday 13 November 2021 01:20">Saturday 13 November 2021</span>. Using Julia version 1.6.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
