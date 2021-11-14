@@ -810,14 +810,14 @@ abstract type Transformation <: Function end
 @inline Base.valtype(transformation::Transformation, m::QuantumOperator) = valtype(typeof(transformation), typeof(m))
 
 """
-    (transformation::Transformation)(ms::OperatorSum) -> OperatorSum
+    (transformation::Transformation)(ms::OperatorSum; kwargs...) -> OperatorSum
 
 Get the transformed quantum operators.
 """
-function (transformation::Transformation)(ms::OperatorSum)
+function (transformation::Transformation)(ms::OperatorSum; kwargs...)
     result = zero(valtype(transformation, ms))
     for m in ms
-        add!(result, transformation(m))
+        add!(result, transformation(m; kwargs...))
     end
     return result
 end
@@ -829,7 +829,7 @@ The identity transformation.
 """
 struct Identity <: Transformation end
 @inline Base.valtype(::Type{Identity}, M::Type{<:QuantumOperator}) = M
-@inline (i::Identity)(m::Union{OperatorUnit, OperatorProd}) = m
+@inline (i::Identity)(m::Union{OperatorUnit, OperatorProd}; kwargs...) = m
 
 """
     Numericalization{T<:Number} <: Transformation
@@ -844,7 +844,7 @@ struct Numericalization{T<:Number} <: Transformation end
     V = valtype(T, eltype(M))
     return OperatorSum{V, idtype(V)}
 end
-@inline (n::Numericalization)(m::OperatorProd) = convert(valtype(n, m), m)
+@inline (n::Numericalization)(m::OperatorProd; kwargs...) = convert(valtype(n, m), m)
 
 """
     MatrixRepresentation <: Transformation
@@ -882,7 +882,7 @@ end
 @inline Base.valtype(P::Type{<:Permutation}, M::Type{<:OperatorSum}) = valtype(P, eltype(M))
 
 """
-    (permutation::Permutation)(m::OperatorProd) -> OperatorSum
+    (permutation::Permutation)(m::OperatorProd; kwargs...) -> OperatorSum
 
 Permute the operator units of an `OperatorProd` to the descending order according to the table contained in `permutation`.
 
@@ -893,7 +893,7 @@ Permute the operator units of an `OperatorProd` to the descending order accordin
     ```
     Here, `u₁` and `u₂` are two arbitrary operator units contained in `id(m)`.
 """
-@inline function (permutation::Permutation)(m::OperatorProd)
+@inline function (permutation::Permutation)(m::OperatorProd; kwargs...)
     result = zero(valtype(permutation, m))
     cache = eltype(result)[m]
     while length(cache) > 0
@@ -942,12 +942,12 @@ end
 @inline Base.valtype(P::Type{<:AbstractUnitSubstitution}, M::Type{<:OperatorSum}) = valtype(P, eltype(M))
 
 """
-    (unitsubstitution::AbstractUnitSubstitution)(m::OperatorProd) -> OperatorSum
+    (unitsubstitution::AbstractUnitSubstitution)(m::OperatorProd; kwargs...) -> OperatorSum
 
 Substitute every `OperatorUnit` in an `OperatorProd` with a new `OperatorSum`.
 """
-function (unitsubstitution::AbstractUnitSubstitution)(m::OperatorProd)
-    return prod(ntuple(i->unitsubstitution(m[i]), Val(rank(m))), init=value(m))
+function (unitsubstitution::AbstractUnitSubstitution)(m::OperatorProd; kwargs...)
+    return prod(ntuple(i->unitsubstitution(m[i]; kwargs...), Val(rank(m))), init=value(m))
 end
 
 """
@@ -961,7 +961,7 @@ struct UnitSubstitution{U<:OperatorUnit, S<:OperatorSum, T<:AbstractDict{U, S}} 
         new{keytype(table), valtype(table), typeof(table)}(table)
     end
 end
-(unitsubstitution::UnitSubstitution)(m::OperatorUnit) = unitsubstitution.table[m]
+(unitsubstitution::UnitSubstitution)(m::OperatorUnit; kwargs...) = unitsubstitution.table[m]
 
 """
     RankFilter{R} <: Transformation
@@ -981,6 +981,6 @@ end
 end
 @inline rank(rf::RankFilter) = rank(typeof(rf))
 @inline rank(::Type{RankFilter{R}}) where R = R
-@inline @generated (rf::RankFilter)(m::OperatorProd) = rank(m)==rank(rf) ? :(m) : 0
+@inline @generated (rf::RankFilter)(m::OperatorProd; kwargs...) = rank(m)==rank(rf) ? :(m) : 0
 
 end #module

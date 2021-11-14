@@ -120,14 +120,15 @@ Get a new entry of quantum operators by merging two entries.
 @inline Base.merge(entry::Entry, another::Entry) = merge!(empty(entry), another)
 
 """
-    (transformation::Transformation)(entry::Entry) -> Entry
+    (transformation::Transformation)(entry::Entry; kwargs...) -> Entry
 
 Get the transformed entry of quantum operators.
 """
-function (transformation::Transformation)(entry::Entry)
-    constops = transformation(entry.constops)
-    alterops = NamedContainer{keys(entry.alterops)}(map(transformation, values(entry.alterops)))
-    boundops = NamedContainer{keys(entry.boundops)}(map(transformation, values(entry.boundops)))
+function (transformation::Transformation)(entry::Entry; kwargs...)
+    wrapper(m) = transformation(m; kwargs...)
+    constops = wrapper(entry.constops)
+    alterops = NamedContainer{keys(entry.alterops)}(map(wrapper, values(entry.alterops)))
+    boundops = NamedContainer{keys(entry.boundops)}(map(wrapper, values(entry.boundops)))
     return Entry(constops, alterops, boundops)
 end
 
@@ -526,16 +527,18 @@ end
 """
     (transformation::Transformation)(gen::AbstractGenerator;
         table::Union{Table, Nothing}=getcontent(gen, :table),
-        boundary::Boundary=getcontent(gen, :boundary)
+        boundary::Boundary=getcontent(gen, :boundary),
+        kwargs...
         ) -> SimplifiedGenerator
 
 Get the result of a transformation on the generator for the entry of quantum operators.
 """
 function (transformation::Transformation)(gen::AbstractGenerator;
         table::Union{Table, Nothing}=getcontent(gen, :table),
-        boundary::Boundary=getcontent(gen, :boundary)
+        boundary::Boundary=getcontent(gen, :boundary),
+        kwargs...
         )
-    return SimplifiedGenerator(Parameters(gen), transformation(getcontent(gen, :operators)), table=table, boundary=boundary)
+    return SimplifiedGenerator(Parameters(gen), transformation(getcontent(gen, :operators); kwargs...), table=table, boundary=boundary)
 end
 
 """
