@@ -376,13 +376,13 @@ end
 @testset "ReciprocalZone" begin
     @test contentnames(ReciprocalZone) == (:contents, :volume)
 
-    rz = ReciprocalZone([[1.0]], len=10)
+    rz = ReciprocalZone([[1.0]], length=10)
     @test getcontent(rz, :contents) == (rz.momenta,)
     @test rz == ReciprocalZone(rz.momenta, rz.volume)
     @test rz == ReciprocalZone([[1.0]], Segment(-1//2, 1//2, 10))
     @test rz == ReciprocalZone([[1.0]], (Segment(-1//2, 1//2, 10),))
 
-    rz = ReciprocalZone{:q}([[1.0]], len=10)
+    rz = ReciprocalZone{:q}([[1.0]], length=10)
     @test rz == ReciprocalZone{:q}(rz.momenta, rz.volume)
     @test rz == ReciprocalZone{:q}([[1.0]], Segment(-1//2, 1//2, 10))
     @test rz == ReciprocalZone{:q}([[1.0]], (Segment(-1//2, 1//2, 10),))
@@ -413,12 +413,12 @@ end
     @test rp == ReciprocalPath{:q}(rp.momenta)
     @test rp == ReciprocalPath{:q}([b₁, b₂], (s₁, s₂, s₃))
 
-    rp = ReciprocalPath([b₁+b₂], line"X₂-X₁", len=10)
-    @test rp == ReciprocalPath([b₁+b₂], (-1//2,)=>(1//2,), len=10)
+    rp = ReciprocalPath([b₁+b₂], line"X₂-X₁", length=10)
+    @test rp == ReciprocalPath([b₁+b₂], (-1//2,)=>(1//2,), length=10)
 
-    rp = ReciprocalPath([b₁, b₂], rectangle"Γ-X-M-Γ", len=10)
-    @test rp == ReciprocalPath([b₁, b₂], (0//1, 0//1)=>(1//2, 0//1), (1//2, 0//1)=>(1//2, 1//2), (1//2, 1//2)=>(0//1, 0//1), len=10)
+    rp = ReciprocalPath([b₁, b₂], rectangle"Γ-X-M-Γ", length=10)
+    @test rp == ReciprocalPath([b₁, b₂], (0//1, 0//1)=>(1//2, 0//1), (1//2, 0//1)=>(1//2, 1//2), (1//2, 1//2)=>(0//1, 0//1), length=10)
 
-    rp = ReciprocalPath{:q}([b₁, b₂], hexagon"Γ-K-M-Γ", len=10)
-    @test rp == ReciprocalPath{:q}([b₁, b₂], (0//1, 0//1)=>(2//3, 1//3), (2//3, 1//3)=>(1//2, 1//2), (1//2, 1//2)=>(0//1, 0//1), len=10)
+    rp = ReciprocalPath{:q}([b₁, b₂], hexagon"Γ-K-M-Γ", length=10)
+    @test rp == ReciprocalPath{:q}([b₁, b₂], (0//1, 0//1)=>(2//3, 1//3), (2//3, 1//3)=>(1//2, 1//2), (1//2, 1//2)=>(0//1, 0//1), length=10)
 end

@@ -1553,28 +1553,28 @@ A segment.
 struct Segment{S} <: AbstractVector{S}
     start::S
     stop::S
-    len::Int
+    length::Int
     ends::Tuple{Bool, Bool}
 end
 @inline Base.:(==)(s₁::Segment, s₂::Segment) = ==(efficientoperations, s₁, s₂)
 @inline Base.isequal(s₁::Segment, s₂::Segment) = isequal(efficientoperations, s₁, s₂)
-@inline Base.size(segment::Segment) = (segment.len,)
+@inline Base.size(segment::Segment) = (segment.length,)
 function Base.getindex(segment::Segment, i::Integer)
-    len = segment.len+count(isequal(false), segment.ends)-1
-    step = (segment.stop-segment.start)/len
+    length = segment.length+count(isequal(false), segment.ends)-1
+    step = (segment.stop-segment.start)/length
     start = segment.ends[1] ? segment.start : segment.start+step
     return start+(i-1)*step
 end
 function iterate(segment::Segment)
-    segment.len==0 && return
-    len = segment.len+count(isequal(false), segment.ends)-1
-    step = (segment.stop-segment.start)/len
+    segment.length==0 && return
+    length = segment.length+count(isequal(false), segment.ends)-1
+    step = (segment.stop-segment.start)/length
     start = segment.ends[1] ? segment.start : segment.start+step
     return start, (1, start, step)
 end
 function iterate(segment::Segment, state)
     i, middle, step = state
-    i==segment.len && return
+    i==segment.length && return
     middle = middle+step
     return middle, (i+1, middle, step)
 end
@@ -1588,27 +1588,27 @@ function Base.show(io::IO, segment::Segment)
 end
 
 """
-    Segment(start::Number, stop::Number, len::Integer; ends::Tuple{Bool, Bool}=(true, false))
-    Segment(start::AbstractVector, stop::AbstractVector, len::Integer; ends::Tuple{Bool, Bool}=(true, false))
-    Segment(start::NTuple{N, Number}, stop::NTuple{N, Number}, len::Integer; ends::Tuple{Bool, Bool}=(true, false)) where N
+    Segment(start::Number, stop::Number, length::Integer; ends::Tuple{Bool, Bool}=(true, false))
+    Segment(start::AbstractVector, stop::AbstractVector, length::Integer; ends::Tuple{Bool, Bool}=(true, false))
+    Segment(start::NTuple{N, Number}, stop::NTuple{N, Number}, length::Integer; ends::Tuple{Bool, Bool}=(true, false)) where N
 
 Construct a segment.
 """
-function Segment(start::Number, stop::Number, len::Integer; ends::Tuple{Bool, Bool}=(true, false))
-    @assert len>=0 "Segment error: len must be non-negative."
+function Segment(start::Number, stop::Number, length::Integer; ends::Tuple{Bool, Bool}=(true, false))
+    @assert length>=0 "Segment error: length must be non-negative."
     dtype = promote_type(typeof(start), typeof(stop), Float64)
-    return Segment(convert(dtype, start), convert(dtype, stop), len, ends)
+    return Segment(convert(dtype, start), convert(dtype, stop), length, ends)
 end
-function Segment(start::AbstractVector, stop::AbstractVector, len::Integer; ends::Tuple{Bool, Bool}=(true, false))
-    @assert len>=0 "Segment error: len must be non-negative."
-    @assert length(start)==length(stop) "Segment error: start and stop should have equal length."
-    dtype = SVector{length(start), promote_type(eltype(start), eltype(stop), Float64)}
-    return Segment(convert(dtype, start), convert(dtype, stop), len, ends)
+function Segment(start::AbstractVector, stop::AbstractVector, length::Integer; ends::Tuple{Bool, Bool}=(true, false))
+    @assert length>=0 "Segment error: length must be non-negative."
+    @assert Base.length(start)==Base.length(stop) "Segment error: start and stop should have equal length."
+    dtype = SVector{Base.length(start), promote_type(eltype(start), eltype(stop), Float64)}
+    return Segment(convert(dtype, start), convert(dtype, stop), length, ends)
 end
-function Segment(start::NTuple{N, Number}, stop::NTuple{N, Number}, len::Integer; ends::Tuple{Bool, Bool}=(true, false)) where N
-    @assert len>=0 "Segment error: len must be non-negative."
+function Segment(start::NTuple{N, Number}, stop::NTuple{N, Number}, length::Integer; ends::Tuple{Bool, Bool}=(true, false)) where N
+    @assert length>=0 "Segment error: length must be non-negative."
     dtype = SVector{N, promote_type(eltype(start), eltype(stop), Float64)}
-    return Segment(convert(dtype, start), convert(dtype, stop), len, ends)
+    return Segment(convert(dtype, start), convert(dtype, stop), length, ends)
 end
 
 """
@@ -1695,23 +1695,23 @@ end
 
 """
     ReciprocalZone(momenta::AbstractVector, volume::Number)
-    ReciprocalZone(reciprocals::AbstractVector; len::Int=100)
+    ReciprocalZone(reciprocals::AbstractVector; length::Int=100)
     ReciprocalZone(reciprocals::AbstractVector, bounds::Segment...)
     ReciprocalZone(reciprocals::AbstractVector, bounds::Tuple{Vararg{Segment}})
 
     ReciprocalZone{K}(momenta::AbstractVector, volume::Number) where K
-    ReciprocalZone{K}(reciprocals::AbstractVector; len::Int=100) where K
+    ReciprocalZone{K}(reciprocals::AbstractVector; length::Int=100) where K
     ReciprocalZone{K}(reciprocals::AbstractVector, bounds::Segment...) where K
     ReciprocalZone{K}(reciprocals::AbstractVector, bounds::Tuple{Vararg{Segment}}) where K
 
 Construct a rectangular zone in the reciprocal space.
 """
 @inline ReciprocalZone(momenta::AbstractVector, volume::Number) = ReciprocalZone{:k}(momenta, volume)
-@inline ReciprocalZone(reciprocals::AbstractVector; len::Int=100) = ReciprocalZone{:k}(vectorconvert(reciprocals); len=len)
+@inline ReciprocalZone(reciprocals::AbstractVector; length::Int=100) = ReciprocalZone{:k}(vectorconvert(reciprocals); length=length)
 @inline ReciprocalZone(reciprocals::AbstractVector, bounds::Segment...) = ReciprocalZone{:k}(vectorconvert(reciprocals), bounds)
 @inline ReciprocalZone(reciprocals::AbstractVector, bounds::Tuple{Vararg{Segment}}) = ReciprocalZone{:k}(vectorconvert(reciprocals), bounds)
-@inline function ReciprocalZone{K}(reciprocals::AbstractVector; len::Int=100) where K
-    return ReciprocalZone{K}(vectorconvert(reciprocals), ntuple(i->Segment(-1//2, 1//2, len, ends=(true, false)), length(reciprocals)))
+@inline function ReciprocalZone{K}(reciprocals::AbstractVector; length::Int=100) where K
+    return ReciprocalZone{K}(vectorconvert(reciprocals), ntuple(i->Segment(-1//2, 1//2, length, ends=(true, false)), Base.length(reciprocals)))
 end
 @inline ReciprocalZone{K}(reciprocals::AbstractVector, bounds::Segment...) where K = ReciprocalZone{K}(vectorconvert(reciprocals), bounds)
 function ReciprocalZone{K}(reciprocals::AbstractVector, bounds::Tuple{Vararg{Segment}}) where K
@@ -1738,7 +1738,7 @@ Construct a reciprocal zone from a Brillouin zone.
 """
 @inline @generated function ReciprocalZone(bz::BrillouinZone{K, P}) where {K, P<:Momentum}
     K = QuoteNode(first(K))
-    exprs = [:(Segment(0, 1, $len, ends=(true, false))) for len in periods(P)]
+    exprs = [:(Segment(0, 1, $length, ends=(true, false))) for length in periods(P)]
     return :(ReciprocalZone{$K}(bz.reciprocals, $(exprs...)))
 end
 
@@ -1791,52 +1791,52 @@ end
 
 """
     ReciprocalPath(reciprocals::AbstractVector, segments::Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}...;
-        len::Union{Int, NTuple{M, Int}}=100,
+        length::Union{Int, NTuple{M, Int}}=100,
         ends::Union{NTuple{2, Bool}, NTuple{M, NTuple{2, Bool}}}=(true, false)
         ) where {N, M}
     ReciprocalPath(reciprocals::AbstractVector, segments::Tuple{Vararg{Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}}};
-        len::Union{Int, NTuple{M, Int}}=100,
+        length::Union{Int, NTuple{M, Int}}=100,
         ends::Union{NTuple{2, Bool}, NTuple{M, NTuple{2, Bool}}}=(true, false)
         ) where {N, M}
 
     ReciprocalPath{K}(reciprocals::AbstractVector, segments::Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}...;
-        len::Union{Int, NTuple{M, Int}}=100,
+        length::Union{Int, NTuple{M, Int}}=100,
         ends::Union{NTuple{2, Bool}, NTuple{M, NTuple{2, Bool}}}=(true, false)
         ) where {K, N, M}
     ReciprocalPath{K}(reciprocals::AbstractVector, segments::Tuple{Vararg{Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}}};
-        len::Union{Int, NTuple{M, Int}}=100,
+        length::Union{Int, NTuple{M, Int}}=100,
         ends::Union{NTuple{2, Bool}, NTuple{M, NTuple{2, Bool}}}=(true, false)
         ) where {K, N, M}
 
 Construct a path in the reciprocal space.
 """
 @inline function ReciprocalPath(reciprocals::AbstractVector, segments::Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}...;
-        len::Union{Int, NTuple{M, Int}}=100,
+        length::Union{Int, NTuple{M, Int}}=100,
         ends::Union{NTuple{2, Bool}, NTuple{M, NTuple{2, Bool}}}=(true, false)
         ) where {N, M}
-    return ReciprocalPath{:k}(reciprocals, segments, len=len, ends=ends)
+    return ReciprocalPath{:k}(reciprocals, segments, length=length, ends=ends)
 end
 function ReciprocalPath(reciprocals::AbstractVector, segments::Tuple{Vararg{Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}}};
-        len::Union{Int, NTuple{M, Int}}=100,
+        length::Union{Int, NTuple{M, Int}}=100,
         ends::Union{NTuple{2, Bool}, NTuple{M, NTuple{2, Bool}}}=(true, false)
         ) where {N, M}
-    return ReciprocalPath{:k}(reciprocals, segments, len=len, ends=ends)
+    return ReciprocalPath{:k}(reciprocals, segments, length=length, ends=ends)
 end
 @inline function ReciprocalPath{K}(reciprocals::AbstractVector, segments::Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}...;
-        len::Union{Int, NTuple{M, Int}}=100,
+        length::Union{Int, NTuple{M, Int}}=100,
         ends::Union{NTuple{2, Bool}, NTuple{M, NTuple{2, Bool}}}=(true, false)
         ) where {K, N, M}
-    return ReciprocalPath{K}(reciprocals, segments, len=len, ends=ends)
+    return ReciprocalPath{K}(reciprocals, segments, length=length, ends=ends)
 end
 function ReciprocalPath{K}(reciprocals::AbstractVector, segments::Tuple{Vararg{Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}}};
-        len::Union{Int, NTuple{M, Int}}=100,
+        length::Union{Int, NTuple{M, Int}}=100,
         ends::Union{NTuple{2, Bool}, NTuple{M, NTuple{2, Bool}}}=(true, false)
         ) where {K, N, M}
-    @assert length(reciprocals)==N "ReciprocalPath error: mismatched number of reciprocals ($(length(reciprocals)) v.s. $N)."
-    (isa(len, Int) && isa(ends, NTuple{2, Bool})) || @assert fieldcount(typeof(segments))==M "ReciprocalPath error: mismatched number of segments."
-    isa(len, Int) && (len = ntuple(i->len, Val(fieldcount(typeof(segments)))))
+    @assert Base.length(reciprocals)==N "ReciprocalPath error: mismatched number of reciprocals ($(Base.length(reciprocals)) v.s. $N)."
+    (isa(length, Int) && isa(ends, NTuple{2, Bool})) || @assert fieldcount(typeof(segments))==M "ReciprocalPath error: mismatched number of segments."
+    isa(length, Int) && (length = ntuple(i->length, Val(fieldcount(typeof(segments)))))
     isa(ends, NTuple{2, Bool}) && (ends = ntuple(i->ends, Val(fieldcount(typeof(segments)))))
-    segments = ntuple(i->Segment(segments[i].first, segments[i].second, len[i]; ends=ends[i]), Val(fieldcount(typeof(segments))))
+    segments = ntuple(i->Segment(segments[i].first, segments[i].second, length[i]; ends=ends[i]), Val(fieldcount(typeof(segments))))
     return ReciprocalPath{K}(reciprocals, segments)
 end
 
