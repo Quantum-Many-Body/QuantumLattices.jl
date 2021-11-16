@@ -25,6 +25,7 @@ using QuantumLattices.Prerequisites.VectorSpaces: shape, ndimshape
 end
 
 @testset "Fock" begin
+    @test eltype(Fock) == (FID{S, Int, Int, Int} where S)
     fock = Fock{:b}(norbital=1, nspin=2, nnambu=2)
     @test shape(fock) == (1:1, 1:2, 1:2)
     @test ndimshape(fock) == ndimshape(typeof(fock)) == 3
@@ -537,6 +538,7 @@ end
 end
 
 @testset "Spin" begin
+    @test eltype(Spin) == (SID{S, Int, Char} where S)
     spin = Spin{1}(norbital=2)
     @test shape(spin) == (1:2, 1:5)
     @test ndimshape(spin) == ndimshape(typeof(spin)) == 2

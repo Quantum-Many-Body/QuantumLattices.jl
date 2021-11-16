@@ -8,7 +8,7 @@ using ..Spatials: AbstractPID, AbstractBond, Point, Bonds, pidtype
 using ...Essentials: dtype
 using ...Interfaces: id, value, decompose, dimension, add!
 using ...Prerequisites: Float, atol, rtol, decimaltostr
-using ...Prerequisites.Traits: rawtype, efficientoperations, commontype, parametertype
+using ...Prerequisites.Traits: rawtype, fulltype, efficientoperations, commontype, parametertype
 using ...Prerequisites.CompositeStructures: CompositeDict, CompositeTuple, NamedContainer
 using ...Prerequisites.VectorSpaces: CartesianVectorSpace
 
@@ -387,7 +387,9 @@ Get the adjoint of an operator id.
 
 Get the compatible oid type from the combination of the internal part and the spatial part.
 """
-@inline oidtype(I::Type{<:SimpleInternal}, P::Type{<:Point}, ::Val) = OID{Index{P|>pidtype, I|>eltype}, SVector{P|>dimension, P|>dtype}}
+@inline function oidtype(I::Type{<:SimpleInternal}, P::Type{<:Point}, ::Val)
+    fulltype(OID, NamedTuple{(:index, :coord), Tuple{fulltype(Index, NamedTuple{(:pid, :iid), Tuple{pidtype(P), eltype(I)}}), SVector{dimension(P), dtype(P)}}})
+end
 
 """
     rcoord(opt::Operator{<:Number, <:ID{OID}}) -> SVector
@@ -1301,15 +1303,11 @@ end
 
 Get the compatible `OperatorProd` type from the type of a term, a Hilbert space and a bond.
 """
-@inline @generated function optype(::Type{T}, ::Type{H}, ::Type{B}) where {T<:Term, H<:Hilbert, B<:AbstractBond}
+@inline function optype(::Type{T}, ::Type{H}, ::Type{B}) where {T<:Term, H<:Hilbert, B<:AbstractBond}
     C = eltype(valtype(fieldtype(T, :couplings)))
     @assert C<:Coupling "optype error: not supported."
-    exprs = []
-    for i = 1:rank(C)
-        I = fieldtype(parametertype(C, :cid), i)
-        push!(exprs, :(oidtype(filter($I, valtype(H)), eltype(B), Val(kind(T)))))
-    end
-    return Expr(:curly, Operator, valtype(T), Expr(:curly, Tuple, exprs...))
+    oidtypes = ntuple(i->oidtype(filter(fieldtype(parametertype(C, :cid), i) , valtype(H)), eltype(B), Val(kind(T))), Val(rank(C)))
+    return fulltype(Operator, NamedTuple{(:value, :id), Tuple{valtype(T), Tuple{oidtypes...}}})
 end
 
 """

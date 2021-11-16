@@ -101,6 +101,7 @@ struct Fock{T} <: SimpleInternal{FID{T, Int, Int, Int}}
         new{T}(norbital, nspin, nnambu)
     end
 end
+@inline Base.eltype(::Type{Fock}) = (FID{T, Int, Int, Int} where T)
 @inline shape(fock::Fock) = (1:fock.norbital, 1:fock.nspin, fock.nnambu==1 ? (0:0) : (1:2))
 @inline ndimshape(::Type{<:Fock}) = 3
 @inline Base.CartesianIndex(fid::FID{T}, fock::Fock{T}) where T = CartesianIndex(fid.orbital, fid.spin, fid.nambu)
@@ -725,6 +726,7 @@ struct Spin{S} <: SimpleInternal{SID{S, Int, Char}}
         new{S}(norbital)
     end
 end
+@inline Base.eltype(::Type{Spin}) = (SID{S, Int, Char} where S)
 @inline shape(sp::Spin) = (1:sp.norbital, 1:length(sidtagmap))
 @inline ndimshape(::Type{<:Spin}) = 2
 @inline Base.CartesianIndex(sid::SID, ::Spin) = CartesianIndex(sid.orbital, sidseqmap[sid.tag])
