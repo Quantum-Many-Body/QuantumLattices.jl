@@ -23,7 +23,7 @@ using QuantumLattices
 using SymPy: symbols
 
 # define the unitcell
-lattice = Lattice("L2P", [Point(PID(1), [0.0]), Point(PID(2), [1.0])])
+lattice = Lattice(:L2P, [Point(PID(1), [0.0]), Point(PID(2), [1.0])])
 
 # define the internal degrees of freedom
 hilbert = Hilbert(pid=>Fock{:f}(norbital=1, nspin=2) for pid in lattice.pids)

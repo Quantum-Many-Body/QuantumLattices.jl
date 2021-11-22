@@ -47,7 +47,7 @@ Point(PID(1), [0.0], [0.0])
 ## Lattice
 
 [`Lattice`](@ref) is the simplest structure to encode all the spatial info within a unitcell. Apparently, it must contain all the points of a unitcell. Besides, a unitcell can assume either open or periodic boundary for every spatial dimension, thus a [`Lattice`](@ref) should also contain the translation vectors. Other stuff also appears to be useful, such as the name, the reciprocals dual to the translation vectors, and the bond length of each order of nearest neighbors. Therefore, in this package, [`Lattice`](@ref) gets seven attributes:
-* `name::String`: the name of the lattice
+* `name::Symbol`: the name of the lattice
 * `pids::Vector{PID}`: the pids of the lattice
 * `rcoords::Matrix{Float64}`: the rcoords of the lattice
 * `icoords::Matrix{Float64}`: the icoords of the lattice
@@ -58,7 +58,7 @@ Here, the `:pids`, `:rcoords` and `:icoords` attributes decompose the points in 
 
 Points can be used directly to construct a lattice, whereas `:vectors` and `:neighbors` can be assigned by keyword arguments:
 ```jldoctest unitcell
-julia> Lattice("L2P", [Point(PID(1), [0.0]), Point(PID(2), [1.0])],
+julia> Lattice(:L2P, [Point(PID(1), [0.0]), Point(PID(2), [1.0])],
            vectors=[[2.0]],
            neighbors=Dict(1=>1.0, 2=>2.0)
            )
@@ -75,7 +75,7 @@ Lattice(L2P)
 
 The `:neighbors` keyword argument can also be a natural number, which sets the highest order of nearest neighbors, and the order-distance map of nearest neighbors can be computed automatically by the construction function:
 ```jldoctest unitcell
-julia> Lattice("L2P", [Point(PID(1), [0.0]), Point(PID(2), [1.0])],
+julia> Lattice(:L2P, [Point(PID(1), [0.0]), Point(PID(2), [1.0])],
            vectors=[[2.0]],
            neighbors=2
            )
@@ -92,7 +92,7 @@ Lattice(L2P)
 
 It is noted that the `:vectors` and `:neighbors` attributes can also be omitted at the initialization, then `:vectors` will be set to be empty and `:neighbors` to be 1 upon the call of the construction function:
 ```jldoctest unitcell
-julia> Lattice("L2P", [Point(PID(1), [0.0]), Point(PID(2), [1.0])])
+julia> Lattice(:L2P, [Point(PID(1), [0.0]), Point(PID(2), [1.0])])
 Lattice(L2P)
   with 2 points:
     Point(PID(1), [0.0], [0.0])
@@ -117,7 +117,7 @@ There are other types of generalized bonds. In fact, a single point can also be 
 
 Now let's see a simple example:
 ```jldoctest unitcell
-julia> lattice = Lattice("L2P", [Point(PID(1), [0.0]), Point(PID(2), [1.0])],
+julia> lattice = Lattice(:L2P, [Point(PID(1), [0.0]), Point(PID(2), [1.0])],
            vectors=[[2.0]],
            neighbors=2
            )
@@ -142,7 +142,7 @@ julia> Bonds(lattice)
 ```
 By default, `Bonds(lattice::Lattice)` generates all the generalized bonds with orders of nearest neighbors specified by the attribute `:neighbors` of the input lattice, including the individual points and the bonds across the periodic boundaries. Note that the bonds whose lengths are not present in the `:neighbors` attribute of the input lattice won't be included in the result, even when their lengths are shorter:
 ```jldoctest unitcell
-julia> lattice = Lattice("L2P", [Point(PID(1), [0.0]), Point(PID(2), [1.0])],
+julia> lattice = Lattice(:L2P, [Point(PID(1), [0.0]), Point(PID(2), [1.0])],
            vectors=[[2.0]],
            neighbors=Dict(2=>2.0)
            )
@@ -164,7 +164,7 @@ julia> Bonds(lattice)
 ```
 In other words, the `:neighbors` attribute can be viewed as a filter of the generated bonds (but this filter only affects the [`Bond`](@ref) typed but not the [`Point`](@ref) typed generalized bonds). When the input lattice has no translation vectors, the generated bonds will only contain the individual points and the intra-unitcell bonds, just as expected:
 ```jldoctest unitcell
-julia> lattice = Lattice("L2P", [Point(PID(1), [0.0]), Point(PID(2), [1.0])])
+julia> lattice = Lattice(:L2P, [Point(PID(1), [0.0]), Point(PID(2), [1.0])])
 Lattice(L2P)
   with 2 points:
     Point(PID(1), [0.0], [0.0])

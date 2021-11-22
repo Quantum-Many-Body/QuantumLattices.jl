@@ -9,7 +9,6 @@ makedocs(
                     assets=     ["assets/favicon.ico"],
                     analytics=  "UA-89508993-1",
                     ),
-    clean=      false,
     sitename=   "QuantumLattices.jl",
     pages=      [
                 "Home"      =>  "index.md",
