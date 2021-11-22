@@ -17,7 +17,7 @@ import ...Essentials: update!, reset!
 import ...Prerequisites.Traits: contentnames, getcontent
 
 export Parameters, Entry, Engine, AbstractGenerator, Generator, SimplifiedGenerator, Action, Assignment, Algorithm
-export prepare!, execute!, run!, save, rundependences!
+export prepare!, run!, save, rundependences!
 
 """
     Parameters{Names}(values::Number...) where Names
@@ -687,6 +687,22 @@ Get the name of the combination of an algorithm and an assignment.
 @inline Base.nameof(alg::Algorithm, assign::Assignment) = @sprintf "%s_%s" repr(alg) assign.id
 
 """
+    add!(alg::Algorithm, id::Symbol, action::Action; parameters::Parameters=Parameters{()}(), kwargs...) -> Tuple{Algorithm, Assignment}
+
+Add an assignment on a algorithm by providing the contents of the assignment without the execution of it.
+"""
+function add!(alg::Algorithm, id::Symbol, action::Action; parameters::Parameters=Parameters{()}(), kwargs...)
+    parameters = merge(alg.parameters, parameters)
+    map = get(kwargs, :map, identity)
+    dependences = get(kwargs, :dependences, ())
+    data = prepare!(action, alg.engine)
+    save = get(kwargs, :save, false)
+    assign = Assignment(id, action, parameters, map, dependences, data, false, save)
+    alg.assignments[id] = assign
+    return (alg, assign)
+end
+
+"""
     (alg::Algorithm)(assign::Assignment) -> Tuple{Algorithm, Assignment}
     (assign::Assignment)(alg::Algorithm) -> Tuple{Algorithm, Assignment}
 
@@ -714,41 +730,23 @@ function (assign::Assignment)(alg::Algorithm)
 end
 
 """
-    execute!(alg::Algorithm, id::Symbol, action::Action; info::Bool=true, parameters::Parameters=Parameters{()}(), kwargs...) -> Tuple{Algorithm, Assignment}
+    (alg::Algorithm)(id::Symbol, action::Action; info::Bool=true, parameters::Parameters=Parameters{()}(), kwargs...) -> Tuple{Algorithm, Assignment}
 
 Add an assignment on a algorithm by providing the contents of the assignment, and run this assignment.
 """
-@inline function execute!(alg::Algorithm, id::Symbol, action::Action; info::Bool=true, parameters::Parameters=Parameters{()}(), kwargs...)
+@inline function (alg::Algorithm)(id::Symbol, action::Action; info::Bool=true, parameters::Parameters=Parameters{()}(), kwargs...)
     add!(alg, id, action; parameters=parameters, kwargs...)
-    run!(alg, id, info)
+    alg(id, info=info)
 end
 
 """
-    add!(alg::Algorithm, id::Symbol, action::Action; parameters::Parameters=Parameters{()}(), kwargs...) -> Tuple{Algorithm, Assignment}
+    (alg::Algorithm)(id::Symbol; info::Bool=true) -> Tuple{Algorithm, Assignment}
 
-Add an assignment on a algorithm by providing the contents of the assignment.
-
-The difference between `add!` and `execute!` is that the `add!` function does not run the newly added assignment but the `execute!` function does.
-"""
-function add!(alg::Algorithm, id::Symbol, action::Action; parameters::Parameters=Parameters{()}(), kwargs...)
-    parameters = merge(alg.parameters, parameters)
-    map = get(kwargs, :map, identity)
-    dependences = get(kwargs, :dependences, ())
-    data = prepare!(action, alg.engine)
-    save = get(kwargs, :save, false)
-    assign = Assignment(id, action, parameters, map, dependences, data, false, save)
-    alg.assignments[id] = assign
-    return (alg, assign)
-end
-
-"""
-    run!(alg::Algorithm, id::Symbol, info::Bool=true) -> Tuple{Algorithm, Assignment}
-
-Run an assignment with the given id registered on an algorithm.
+Run an assignment with the given id added to an algorithm.
 
 Optionally, the time of the run process can be informed by setting the `info` argument to be `true`.
 """
-function run!(alg::Algorithm, id::Symbol, info::Bool=true)
+function (alg::Algorithm)(id::Symbol; info::Bool=true)
     assign = alg.assignments[id]
     @timeit alg.timer string(id) alg(assign)
     info && @info "Action $id($(nameof(assign.action|>typeof))): time consumed $(TimerOutputs.time(alg.timer[string(id)]) / 10^9)s."

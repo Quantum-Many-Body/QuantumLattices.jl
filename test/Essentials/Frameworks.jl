@@ -3,7 +3,7 @@ using Printf: @printf
 using LinearAlgebra: tr
 using StaticArrays: SVector
 using QuantumLattices.Essentials.Frameworks
-using QuantumLattices.Essentials: update!, reset!, execute!
+using QuantumLattices.Essentials: update!, reset!
 using QuantumLattices.Essentials.Spatials: Point, PID, Bond, Bonds, Lattice, acrossbonds, zerothbonds
 using QuantumLattices.Essentials.DegreesOfFreedom: SimpleIID, SimpleInternal, IIDSpace, Coupling, Subscript, Subscripts, SubscriptsID
 using QuantumLattices.Essentials.DegreesOfFreedom: Term, Hilbert, Index, Table, OID, OIDToTuple, plain, @couplings
@@ -156,7 +156,7 @@ end
 
     add!(vca, :GF, GF(0))
     rex = r"Action DOS\(DOS\)\: time consumed [0-9]*\.[0-9]*(e[+-][0-9]*)*s."
-    @test_logs (:info, rex) execute!(vca, :DOS, DOS(-3.5), parameters=(U=7.0,), map=dosmap, dependences=(:GF,))
+    @test_logs (:info, rex) vca(:DOS, DOS(-3.5), parameters=(U=7.0,), map=dosmap, dependences=(:GF,))
 
     dos = vca.assignments[:DOS]
     @test dos == deepcopy(dos)
@@ -167,7 +167,7 @@ end
     @test nameof(vca, dos) == "test(VCA)_1.0_7.0_DOS"
 
     update!(dos, U=6.0)
-    run!(vca, :DOS, false)
+    vca(:DOS, info=false)
     @test dos.parameters == (t=1.0, U=6.0)
     @test dos.data == 28.0
     @test dos.action.mu == -3.0
