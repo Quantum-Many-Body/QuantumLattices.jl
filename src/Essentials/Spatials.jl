@@ -26,7 +26,7 @@ export AbstractLattice, Lattice, SuperLattice, Cylinder, LatticeIndex, LatticeBo
 export nneighbor, bonds!, bonds, latticetype, bondtypes, latticebondsstructure
 export allbonds, zerothbonds, insidebonds, acrossbonds, intrabonds, interbonds
 export Segment, ReciprocalSpace, BrillouinZone, ReciprocalZone, ReciprocalPath
-export linemap, rectanglemap, hexagonmap, @line_str, @rectangle_str, @hexagon_str
+export linemap, rectanglemap, hexagon120°map, hexagon60°map, @line_str, @rectangle_str, @hexagon_str
 
 """
     distance(p₁::AbstractVector{<:Number}, p₂::AbstractVector{<:Number}) -> Number
@@ -1865,25 +1865,36 @@ const rectanglemap = Dict(
 Construct a tuple of start-stop point pairs for the rectangular reciprocal space.
 """
 macro rectangle_str(str::String)
-    points = split(str, "-")
+    points = split(replace(str, " "=>""), "-")
     @assert length(points)>1 "@rectangle_str error: too few points."
     return ntuple(i->rectanglemap[points[i]]=>rectanglemap[points[i+1]], length(points)-1)
 end
 
-const hexagonmap = Dict(
+const hexagon120°map = Dict(
     "Γ"=>(0//1, 0//1), "K"=>(2//3, 1//3), "M"=>(1//2, 1//2),
     "K₁"=>(2//3, 1//3), "K₂"=>(1//3, 2//3), "K₃"=>(1//3, -1//3), "K₄"=>(-2//3, -1//3), "K₅"=>(-1//3, -2//3), "K₆"=>(-1//3, 1//3),
-    "M₁"=>(1//2, 1//2), "M₂"=>(1//2, 0//2), "M₃"=>(0//1, -1//2), "M₄"=>(-1//2, -1//2), "M₅"=>(-1//2, 0//2), "M₆"=>(0//1, 1//2)
+    "M₁"=>(1//2, 1//2), "M₂"=>(1//2, 0//1), "M₃"=>(0//1, -1//2), "M₄"=>(-1//2, -1//2), "M₅"=>(-1//2, 0//1), "M₆"=>(0//1, 1//2)
+)
+const hexagon60°map = Dict(
+    "Γ"=>(0//1, 0//1), "K"=>(1//3, 1//3), "M"=>(0//1, 1//2),
+    "K₁"=>(1//3, 1//3), "K₂"=>(2//3, -1//3), "K₃"=>(1//3, -2//3), "K₄"=>(-1//3, -1//3), "K₅"=>(-2//3, 1//3), "K₆"=>(-1//3, 2//3),
+    "M₁"=>(0//1, 1//2), "M₂"=>(1//2, 0//1), "M₃"=>(1//2, -1//2), "M₄"=>(0//1, -1//2), "M₅"=>(-1//2, 0//1), "M₆"=>(-1//2, 1//2)
 )
 """
     hexagon"P₁-P₂-P₃-..."
+    hexagon"P₁-P₂-P₃-..., 120°"
+    hexagon"P₁-P₂-P₃-..., 60°"
 
 Construct a tuple of start-stop point pairs for the hexagonal reciprocal space.
 """
 macro hexagon_str(str::String)
-    points = split(str, "-")
+    str = split(replace(str, " "=>""), ",")
+    @assert length(str)∈(1, 2) "@hexagon_str error: wrong pattern."
+    length(str)==2 && @assert str[2]∈("120°", "60°") "@hexagon_str error: wrong pattern."
+    points = split(str[1], "-")
     @assert length(points)>1 "@hexagon_str error: too few points."
-    return ntuple(i->hexagonmap[points[i]]=>hexagonmap[points[i+1]], length(points)-1)
+    map = (length(str)==1 || str[2]=="120°") ? hexagon120°map : hexagon60°map
+    return ntuple(i->map[points[i]]=>map[points[i+1]], length(points)-1)
 end
 
 end #module
