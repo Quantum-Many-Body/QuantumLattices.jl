@@ -82,8 +82,8 @@ Get the number of simple iids in a composite iid.
 
 Get the type of the ith simple iid in a composite iid.
 """
-iidtype(ciid::CompositeIID, i::Integer) = iidtype(typeof(ciid), i)
-iidtype(::Type{<:CompositeIID{T}}, i::Integer) where {T<:Tuple{Vararg{SimpleIID}}} = fieldtype(T, i)
+@inline iidtype(ciid::CompositeIID, i::Integer) = iidtype(typeof(ciid), i)
+@inline iidtype(::Type{<:CompositeIID{T}}, i::Integer) where {T<:Tuple{Vararg{SimpleIID}}} = fieldtype(T, i)
 
 """
     ⊗(iid₁::SimpleIID, iid₂::SimpleIID) -> CompositeIID
@@ -131,7 +131,7 @@ Judge whether a simple iid or a simple iid type matches a simple internal space 
 Here, "match" means that the eltype of the simple internal space has the same type name with the simple iid.
 """
 @inline Base.match(iid::SimpleIID, i::SimpleInternal) = match(typeof(iid), typeof(i))
-@inline @generated Base.match(::Type{I}, ::Type{SI}) where {I<:SimpleIID, SI<:SimpleInternal} = nameof(I)==nameof(eltype(SI))
+@inline Base.match(::Type{I}, ::Type{SI}) where {I<:SimpleIID, SI<:SimpleInternal} = nameof(I)==nameof(eltype(SI))
 
 """
     filter(iid::SimpleIID, i::SimpleInternal) -> Union{Nothing, typeof(i)}
@@ -160,9 +160,7 @@ struct CompositeInternal{T<:Tuple{Vararg{SimpleInternal}}} <: Internal{Composite
     contents::T
 end
 @inline Base.eltype(ci::CompositeInternal) = eltype(typeof(ci))
-@inline @generated function Base.eltype(::Type{<:CompositeInternal{T}}) where {T<:Tuple{Vararg{SimpleInternal}}}
-    return CompositeIID{Tuple{[eltype(fieldtype(T, i)) for i = 1:fieldcount(T)]...}}
-end
+@inline @generated Base.eltype(::Type{<:CompositeInternal{T}}) where {T<:Tuple{Vararg{SimpleInternal}}} = CompositeIID{Tuple{map(eltype, fieldtypes(T))...}}
 Base.show(io::IO, ci::CompositeInternal) = @printf io "%s" join((string(ci.contents[i]) for i = 1:rank(ci)), " ⊗ ")
 @inline @generated shape(ci::CompositeInternal) = Expr(:tuple, [:(shape(ci.contents[$i])...) for i = 1:rank(ci)]...)
 @inline ndimshape(::Type{<:CompositeInternal{T}}) where {T<:Tuple{Vararg{SimpleInternal}}} = sum(ndimshape(fieldtype(T, i)) for i = 1:fieldcount(T))
@@ -288,7 +286,7 @@ end
 Get the type of the spatial part of an index.
 """
 @inline pidtype(index::Index) = pidtype(typeof(index))
-@inline @generated pidtype(::Type{I}) where {I<:Index} = parametertype(I, 1)
+@inline pidtype(::Type{I}) where {I<:Index} = parametertype(I, 1)
 
 """
     iidtype(index::Index)
@@ -297,7 +295,7 @@ Get the type of the spatial part of an index.
 Get the type of the internal part of an index.
 """
 @inline iidtype(index::Index) = iidtype(typeof(index))
-@inline @generated iidtype(::Type{I}) where {I<:Index} = parametertype(I, 2)
+@inline iidtype(::Type{I}) where {I<:Index} = parametertype(I, 2)
 
 """
     statistics(index::Index) -> Symbol

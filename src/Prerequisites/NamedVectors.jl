@@ -11,66 +11,21 @@ export NamedVector, HomoNamedVector
 Abstract type for all named vectors.
 """
 abstract type NamedVector end
-
-"""
-    getindex(nv::NamedVector, index::Int)
-
-Get the value by the `[]` syntax.
-"""
+@inline Base.:(==)(nv₁::NamedVector, nv₂::NamedVector) = keys(nv₁)==keys(nv₂) && values(nv₁)==values(nv₂)
+@inline Base.isequal(nv₁::NamedVector, nv₂::NamedVector) = isequal(keys(nv₁), keys(nv₂)) && isequal(values(nv₁), values(nv₂))
 @inline Base.getindex(nv::NamedVector, index::Int) = getfield(nv, index)
-
-"""
-    setindex!(nv::NamedVector, value, index::Int)
-
-Set the value by the `[]` syntax if mutable.
-"""
 @inline Base.setindex!(nv::NamedVector, value, index::Int) = setfield!(nv, index, value)
-
-"""
-    ==(nv1::NamedVector, nv2::NamedVector) -> Bool
-
-Overloaded equivalent operator. Two named vector are equal to each other if and only if their keys as well as their values are equal to each other.
-!!! note
-    It is not necessary for two named vectors to be of the same concrete type to be equal to each other.
-"""
-@inline Base.:(==)(nv1::NamedVector, nv2::NamedVector) = (keys(nv1) == keys(nv2)) && (values(nv1) == values(nv2))
-
-"""
-    isequal(nv1::NamedVector, nv2::NamedVector) -> Bool
-
-Overloaded equivalent operator. Two named vector are equal to each other if and only if their keys as well as their values are equal to each other.
-!!! note
-    It is not necessary for two named vectors to be of the same concrete type to be equal to each other.
-"""
-@inline Base.isequal(nv1::NamedVector, nv2::NamedVector) = isequal(keys(nv1), keys(nv2)) && isequal(values(nv1), values(nv2))
-
-"""
-    <(nv1::NamedVector, nv2::NamedVector) -> Bool
-
-Compare two named vectors and judge whether the first is less than the second.
-"""
-@inline Base.:<(nv1::NamedVector, nv2::NamedVector) = <(efficientoperations, nv1, nv2)
-
-"""
-    isless(nv1::NamedVector, nv2::NamedVector) -> Bool
-
-Compare two named vectors and judge whether the first is less than the second.
-"""
-@inline Base.isless(nv1::NamedVector, nv2::NamedVector) = isless(efficientoperations, nv1, nv2)
-
-"""
-    show(io::IO, nv::NamedVector)
-
-Show a concrete `NamedVector`.
-"""
-Base.show(io::IO, nv::NamedVector) = @printf io "%s(%s)" nameof(typeof(nv)) join(repr.(values(nv)), ", ")
-
-"""
-    hash(nv::NamedVector, h::UInt)
-
-Hash a concrete `NamedVector`.
-"""
+@inline Base.:<(nv₁::NamedVector, nv₂::NamedVector) = <(efficientoperations, nv₁, nv₂)
+@inline Base.isless(nv₁::NamedVector, nv₂::NamedVector) = isless(efficientoperations, nv₁, nv₂)
 @inline Base.hash(nv::NamedVector, h::UInt) = hash(values(nv), h)
+@inline Base.length(::Type{NV}) where {NV<:NamedVector} = fieldcount(NV)
+@inline Base.length(nv::NamedVector) = length(typeof(nv))
+@inline Base.iterate(nv::NamedVector, state=1) = (state > length(nv)) ? nothing : (getfield(nv, state), state+1)
+@inline Base.iterate(rv::Iterators.Reverse{<:NamedVector}, state=length(rv.itr)) = (state < 1) ? nothing : (getfield(rv.itr, state), state-1)
+@inline Base.keys(nv::NamedVector) = fieldnames(typeof(nv))
+@inline Base.values(nv::NamedVector) = convert(Tuple, nv)
+@inline Base.pairs(nv::NamedVector) = Base.Generator(=>, keys(nv), values(nv))
+Base.show(io::IO, nv::NamedVector) = @printf io "%s(%s)" nameof(typeof(nv)) join(repr.(values(nv)), ", ")
 
 """
     convert(::Type{Tuple}, nv::NamedVector) -> Tuple
@@ -85,15 +40,6 @@ function Base.convert(::Type{NV}, nv::Tuple) where NV<:NamedVector
 end
 
 """
-    length(::Type{NV}) where NV<:NamedVector -> Int
-    length(nv::NamedVector) -> Int
-
-Get the length of a concrete `NamedVector`.
-"""
-@inline Base.length(::Type{NV}) where {NV<:NamedVector} = fieldcount(NV)
-@inline Base.length(nv::NamedVector) = length(typeof(nv))
-
-"""
     zero(::Type{NV}) where NV<:NamedVector -> NV
     zero(nv::NamedVector) -> typeof(nv)
 
@@ -104,36 +50,6 @@ Get a concrete `NamedVector` with all values being zero.
     return :(NV($(zeros...)))
 end
 @inline Base.zero(nv::NamedVector) = zero(typeof(nv))
-
-"""
-    iterate(nv::NamedVector, state=1)
-    iterate(rv::Iterators.Reverse{<:NamedVector}, state=length(rv.itr))
-
-Iterate or reversely iterate over the values of a concrete `NamedVector`.
-"""
-@inline Base.iterate(nv::NamedVector, state=1) = (state > length(nv)) ? nothing : (getfield(nv, state), state+1)
-@inline Base.iterate(rv::Iterators.Reverse{<:NamedVector}, state=length(rv.itr)) = (state < 1) ? nothing : (getfield(rv.itr, state), state-1)
-
-"""
-    keys(nv::NamedVector) -> NTuple{length(nv), Symbol}
-
-Iterate over the names.
-"""
-@inline @generated Base.keys(nv::NamedVector) = fieldnames(nv)
-
-"""
-    values(nv::NamedVector) -> NTuple{length(nv)}
-
-Iterate over the values.
-"""
-@inline Base.values(nv::NamedVector) = convert(Tuple, nv)
-
-"""
-    pairs(nv::NamedVector) -> Base.Generator
-
-Iterate over the name-value pairs.
-"""
-@inline Base.pairs(nv::NamedVector) = Base.Generator(=>, keys(nv), values(nv))
 
 """
     replace(nv::NamedVector; kwargs...) -> typeof(nv)
@@ -162,13 +78,6 @@ end
 Abstract type for all homogeneous named vectors.
 """
 abstract type HomoNamedVector{T} <: NamedVector end
-
-"""
-    eltype(::Type{<:HomoNamedVector{T}}) where T
-    eltype(nv::HomoNamedVector)
-
-Get the type parameter of a concrete `HomoNamedVector`.
-"""
 @inline Base.eltype(::Type{<:HomoNamedVector{T}}) where T = T
 @inline Base.eltype(nv::HomoNamedVector) = eltype(typeof(nv))
 

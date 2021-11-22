@@ -126,16 +126,6 @@ abstract type CompositeDict{K, V} <: AbstractDict{K, V} end
 NamedContainer is just a wrapper of Julia NamedTuple, but not a composite type.
 """
 const NamedContainer{T, Names} = NamedTuple{Names, <:Tuple{Vararg{T}}}
-
-"""
-    NamedContainer{Names}(contents) where Names -> NamedTuple{Names, typeof(contents)}
-
-Construct a named container.
-"""
-@generated function NamedContainer{Names}(contents::Tuple) where Names
-    @assert length(Names) == fieldcount(contents) "NamedContainer error: mismatched length between names and contents."
-    fieldcount(contents) == 0 && return NamedTuple()
-    return Expr(:tuple, [:($name = contents[$i]) for (i, name) in enumerate(Names)]...)
-end
+@inline NamedContainer{Names}(contents::Tuple) where Names = NamedTuple{Names}(contents)
 
 end #module

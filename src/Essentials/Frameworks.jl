@@ -17,7 +17,7 @@ import ...Essentials: update!, reset!
 import ...Prerequisites.Traits: contentnames, getcontent
 
 export Parameters, Entry, Engine, AbstractGenerator, Generator, SimplifiedGenerator, Action, Assignment, Algorithm
-export prepare!, register!, run!, save, rundependences!
+export prepare!, execute!, run!, save, rundependences!
 
 """
     Parameters{Names}(values::Number...) where Names
@@ -714,11 +714,11 @@ function (assign::Assignment)(alg::Algorithm)
 end
 
 """
-    register!(alg::Algorithm, id::Symbol, action::Action; info::Bool=true, parameters::Parameters=Parameters{()}(), kwargs...) -> Tuple{Algorithm, Assignment}
+    execute!(alg::Algorithm, id::Symbol, action::Action; info::Bool=true, parameters::Parameters=Parameters{()}(), kwargs...) -> Tuple{Algorithm, Assignment}
 
 Add an assignment on a algorithm by providing the contents of the assignment, and run this assignment.
 """
-@inline function register!(alg::Algorithm, id::Symbol, action::Action; info::Bool=true, parameters::Parameters=Parameters{()}(), kwargs...)
+@inline function execute!(alg::Algorithm, id::Symbol, action::Action; info::Bool=true, parameters::Parameters=Parameters{()}(), kwargs...)
     add!(alg, id, action; parameters=parameters, kwargs...)
     run!(alg, id, info)
 end
@@ -728,7 +728,7 @@ end
 
 Add an assignment on a algorithm by providing the contents of the assignment.
 
-The difference between `add!` and `register!` is that the `add!` function does not run the newly added assignment but the `register!` function does.
+The difference between `add!` and `execute!` is that the `add!` function does not run the newly added assignment but the `execute!` function does.
 """
 function add!(alg::Algorithm, id::Symbol, action::Action; parameters::Parameters=Parameters{()}(), kwargs...)
     parameters = merge(alg.parameters, parameters)
