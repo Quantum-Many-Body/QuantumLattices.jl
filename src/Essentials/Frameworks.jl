@@ -588,8 +588,10 @@ Update the parameters of an assignment and the status of its associated action.
     names = fieldnames(fieldtype(assign, :parameters))
     exprs = [:(get(kwargs, $name, getfield(assign.parameters, $name))) for name in QuoteNode.(names)]
     return quote
-        assign.parameters = Parameters{$names}($(exprs...))
-        update!(assign.action; assign.map(assign.parameters)...)
+        if length(kwargs)>0
+            assign.parameters = Parameters{$names}($(exprs...))
+            update!(assign.action; assign.map(assign.parameters)...)
+        end
         return assign
     end
 end
@@ -647,8 +649,10 @@ Update the parameters of an algorithm and its associated engine.
     names = fieldnames(fieldtype(alg, :parameters))
     exprs = [:(get(kwargs, $name, getfield(alg.parameters, $name))) for name in QuoteNode.(names)]
     return quote
-        alg.parameters = Parameters{$names}($(exprs...))
-        update!(alg.engine; alg.map(alg.parameters)...)
+        if length(kwargs)>0
+            alg.parameters = Parameters{$names}($(exprs...))
+            update!(alg.engine; alg.map(alg.parameters)...)
+        end
         return alg
     end
 end
@@ -740,14 +744,15 @@ Add an assignment on a algorithm by providing the contents of the assignment, an
 end
 
 """
-    (alg::Algorithm)(id::Symbol; info::Bool=true) -> Tuple{Algorithm, Assignment}
+    (alg::Algorithm)(id::Symbol; info::Bool=true, parameters::Parameters=Parameters{()}()) -> Tuple{Algorithm, Assignment}
 
-Run an assignment with the given id added to an algorithm.
+Run an assignment specified by its id.
 
 Optionally, the time of the run process can be informed by setting the `info` argument to be `true`.
 """
-function (alg::Algorithm)(id::Symbol; info::Bool=true)
+function (alg::Algorithm)(id::Symbol; info::Bool=true, parameters::Parameters=Parameters{()}())
     assign = alg.assignments[id]
+    update!(assign; parameters...)
     @timeit alg.timer string(id) alg(assign)
     info && @info "Action $id($(nameof(assign.action|>typeof))): time consumed $(TimerOutputs.time(alg.timer[string(id)]) / 10^9)s."
     assign.save && save(alg, assign)
