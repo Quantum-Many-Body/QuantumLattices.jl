@@ -56,7 +56,7 @@ end
     @test contentnames(Generator) == (:operators, :terms, :bonds, :hilbert, :half, :table, :boundary)
     @test contentnames(SimplifiedGenerator) == (:parameters, :operators, :table, :boundary)
 
-    lattice = Lattice("Tuanzi", [Point(PID(1), (0.0, 0.0), (0.0, 0.0)), Point(PID(2), (0.5, 0.0), (0.0, 0.0))], vectors=[[1.0, 0.0]], neighbors=1)
+    lattice = Lattice(:Tuanzi, [Point(PID(1), (0.0, 0.0), (0.0, 0.0)), Point(PID(2), (0.5, 0.0), (0.0, 0.0))], vectors=[[1.0, 0.0]], neighbors=1)
     bonds = Bonds(lattice)
     hilbert = Hilbert{FFock}(pid->FFock(2), lattice.pids)
     table = Table(hilbert, OIDToTuple(:scope, :site))
@@ -148,7 +148,7 @@ end
     @test isequal(gf, deepcopy(gf))
     @test update!(gf) == gf
 
-    vca = Algorithm("test", vca)
+    vca = Algorithm(:test, vca)
     @test vca == deepcopy(vca)
     @test isequal(vca, deepcopy(vca))
     @test repr(vca, ≠(:U)) == "test(VCA)_1.0"

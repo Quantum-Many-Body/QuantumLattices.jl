@@ -600,7 +600,7 @@ end
 An algorithm associated with an engine.
 """
 mutable struct Algorithm{E<:Engine, P<:Parameters, M<:Function} <: Function
-    name::String
+    name::Symbol
     engine::E
     din::String
     dout::String
@@ -630,11 +630,11 @@ function Base.show(io::IO, alg::Algorithm)
 end
 
 """
-    Algorithm(name::String, engine::Engine; din::String=".", dout::String=".", parameters::Parameters=Parameters(engine), map::Function=identity)
+    Algorithm(name::Symbol, engine::Engine; din::String=".", dout::String=".", parameters::Parameters=Parameters(engine), map::Function=identity)
 
 Construct an algorithm.
 """
-@inline function Algorithm(name::String, engine::Engine; din::String=".", dout::String=".", parameters::Parameters=Parameters(engine), map::Function=identity)
+@inline function Algorithm(name::Symbol, engine::Engine; din::String=".", dout::String=".", parameters::Parameters=Parameters(engine), map::Function=identity)
     return Algorithm(name, engine, din, dout, parameters, map, Dict{Symbol, Assignment}(), TimerOutput())
 end
 

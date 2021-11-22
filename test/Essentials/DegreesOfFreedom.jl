@@ -442,7 +442,7 @@ end
     @test expand(term, bond, hilbert, half=true) == operators
     @test expand(term, bond, hilbert, half=false) == operators+operators'
 
-    lattice = Lattice("Tuanzi", [Point(CPID(1, 1), (0.0, 0.0), (0.0, 0.0))], vectors=[[1.0, 0.0]], neighbors=1)
+    lattice = Lattice(:Tuanzi, [Point(CPID(1, 1), (0.0, 0.0), (0.0, 0.0))], vectors=[[1.0, 0.0]], neighbors=1)
     bonds = Bonds(lattice)
     hilbert = Hilbert(pid=>DFock(2) for pid in lattice.pids)
     term = Term{:Mu}(:mu, 1.5, 0, couplings=@couplings(DCoupling(1.0, (2, 1))), amplitude=bond->3.0, modulate=true)

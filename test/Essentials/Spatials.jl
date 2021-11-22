@@ -201,7 +201,7 @@ end
 end
 
 @testset "Lattice" begin
-    lattice = Lattice("Tuanzi", [Point(PID(1), (0.5, 0.5), (0.0, 0.0))], vectors=[[1.0, 0.0], [0.0, 1.0]], neighbors=1)
+    lattice = Lattice(:Tuanzi, [Point(PID(1), (0.5, 0.5), (0.0, 0.0))], vectors=[[1.0, 0.0], [0.0, 1.0]], neighbors=1)
     @test lattice|>typeof|>contentnames == (:name, :pids, :rcoords, :icoords, :vectors, :reciprocals, :neighbors)
     @test lattice|>deepcopy == lattice
     @test isequal(lattice|>deepcopy, lattice)
@@ -226,18 +226,18 @@ end
     @test bonds(lattice, acrossbonds) == acrossbs
     @test setdiff(bonds(lattice), [zerothbs; insidebs; acrossbs])|>length == 0
 
-    lattice = Lattice("SuperTuanzi",
-                [Lattice("Tuanzi1", [Point(CPID(1, 1), (0.0, 0.0))], neighbors=0),
-                Lattice("Tuanzi2", [Point(CPID(2, 1), (0.5, 0.5))], neighbors=0),
+    lattice = Lattice(:SuperTuanzi,
+                [Lattice(:Tuanzi1, [Point(CPID(1, 1), (0.0, 0.0))], neighbors=0),
+                Lattice(:Tuanzi2, [Point(CPID(2, 1), (0.5, 0.5))], neighbors=0),
                 ],
                 vectors=[[1.0, 0.0], [0.0, 1.0]],
                 neighbors=2,
                 )
     @test setdiff(bonds(lattice), bonds(lattice, zerothbonds, insidebonds, acrossbonds))|>length == 0
 
-    unit = Lattice("Square", [Point(PID(1), (0.0, 0.0), (0.0, 0.0))], vectors=[[1.0, 0.0], [0.0, 1.0]], neighbors=1)
+    unit = Lattice(:Square, [Point(PID(1), (0.0, 0.0), (0.0, 0.0))], vectors=[[1.0, 0.0], [0.0, 1.0]], neighbors=1)
     lattice = Lattice(unit, translations"2P-3O")
-    @test lattice == Lattice("Square(2P-3O)", [
+    @test lattice == Lattice(Symbol("Square(2P-3O)"), [
         Point(PID(1), [0.0, 0.0], [0.0, 0.0]), Point(PID(2), [1.0, 0.0], [0.0, 0.0]), Point(PID(3), [0.0, 1.0], [0.0, 0.0]),
         Point(PID(4), [1.0, 1.0], [0.0, 0.0]), Point(PID(5), [0.0, 2.0], [0.0, 0.0]), Point(PID(6), [1.0, 2.0], [0.0, 0.0])
         ],
@@ -247,9 +247,9 @@ end
 end
 
 @testset "SuperLattice" begin
-    lattice = SuperLattice("SuperTuanzi",
-                [Lattice("TuanziSys", [Point(CPID(1, 1), (0.0, 0.0)), Point(CPID(1, 2), (0.5, 0.5))], neighbors=Dict(1=>√2/2)),
-                Lattice("TuanziEnv", [Point(CPID(2, 1), (-0.05, -0.05)), Point(CPID(2, 2), (0.55, 0.55))], neighbors=Dict{Int, Float}()),
+    lattice = SuperLattice(:SuperTuanzi,
+                [Lattice(:TuanziSys, [Point(CPID(1, 1), (0.0, 0.0)), Point(CPID(1, 2), (0.5, 0.5))], neighbors=Dict(1=>√2/2)),
+                Lattice(:TuanziEnv, [Point(CPID(2, 1), (-0.05, -0.05)), Point(CPID(2, 2), (0.55, 0.55))], neighbors=Dict{Int, Float}()),
                 ],
                 vectors=[[1.0, 0.0], [0.0, 1.0]],
                 neighbors=Dict(1=>√2/2, -1=>√2/20)
@@ -261,7 +261,7 @@ end
 end
 
 @testset "Cylinder" begin
-    cylinder = Cylinder{CPID{String}}("Tuanzi", [0.0 0.0; 0.0 1.0], SVector(1.0, 0.0), vector=[0.0, 2.0], neighbors=1)
+    cylinder = Cylinder{CPID{String}}(:Tuanzi, [0.0 0.0; 0.0 1.0], SVector(1.0, 0.0), vector=[0.0, 2.0], neighbors=1)
     @test cylinder|>typeof|>contentnames == (:block, :translation, :name, :pids, :rcoords, :icoords, :vectors, :reciprocals, :neighbors)
     insert!(cylinder, "A", "B")
     insert!(cylinder, "C3", cut=2, scopes=["C1", "C1", "C2", "C2"])
@@ -297,7 +297,7 @@ end
 end
 
 @testset "Bonds" begin
-    lattice = Lattice("Tuanzi", [Point(PID(1), (0.5, 0.5), (0.0, 0.0))], vectors=[[1.0, 0.0], [0.0, 1.0]], neighbors=1)
+    lattice = Lattice(:Tuanzi, [Point(PID(1), (0.5, 0.5), (0.0, 0.0))], vectors=[[1.0, 0.0], [0.0, 1.0]], neighbors=1)
     bs = Bonds(lattice)
     @test bs|>eltype == bs|>typeof|>eltype == AbstractBond{2, PID, Float}
     @test bs==Bonds(lattice, allbonds) && isequal(bs, Bonds(lattice, allbonds))

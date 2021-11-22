@@ -733,7 +733,7 @@ Judge whether a bond is intra the unit cell of a lattice.
 Abstract type for all lattices.
 
 It should have the following contents:
-- `name::String`: the name of the lattice
+- `name::Symbol`: the name of the lattice
 - `pids::Vector{P}`: the pids of the lattice
 - `rcoords::Matrix{D}`: the rcoords of the lattice
 - `icoords::Matrix{D}`: the icoords of the lattice
@@ -995,7 +995,7 @@ end
 Define the recipe for the visualization of a lattice.
 """
 @recipe function plot(lattice::AbstractLattice, bondtype::LatticeBonds=allbonds, filter::Function=bond->true)
-    title := getcontent(lattice, :name)
+    title := String(getcontent(lattice, :name))
     titlefontsize --> 10
     legend := false
     aspect_ratio := :equal
@@ -1040,14 +1040,14 @@ Simplest lattice.
 A simplest lattice can be constructed from its contents, i.e. pids, rcoords and icoords, or from a couple of points, or from a couple of sublattices.
 """
 struct Lattice{N, P<:AbstractPID, D<:Number} <: AbstractLattice{N, P, D}
-    name::String
+    name::Symbol
     pids::Vector{P}
     rcoords::Matrix{D}
     icoords::Matrix{D}
     vectors::Vector{SVector{N, D}}
     reciprocals::Vector{SVector{N, D}}
     neighbors::Dict{Int, Float}
-    function Lattice{N}(name::String,
+    function Lattice{N}(name::Symbol,
             pids::Vector{<:AbstractPID}, rcoords::AbstractMatrix{<:Number}, icoords::AbstractMatrix{<:Number},
             vectors::AbstractVector{<:AbstractVector{<:Number}},
             neighbors::Union{Dict{Int, <:Real}, Int}=1;
@@ -1065,19 +1065,19 @@ struct Lattice{N, P<:AbstractPID, D<:Number} <: AbstractLattice{N, P, D}
 end
 
 """
-    Lattice{N}(name::String,
+    Lattice{N}(name::Symbol,
         pids::Vector{<:AbstractPID}, rcoords::AbstractMatrix{<:Number}, icoords::AbstractMatrix{<:Number},
         vectors::AbstractVector{<:AbstractVector{<:Number}},
         neighbors::Union{Dict{Int, <:Real}, Int}=1;
         coordination::Int=8
         ) where N
-    Lattice(name::String,
+    Lattice(name::Symbol,
         points::AbstractVector{<:Point};
         vectors::AbstractVector{<:AbstractVector{<:Number}}=SVector{0, SVector{points|>eltype|>dimension, points|>eltype|>dtype}}(),
         neighbors::Union{Dict{Int, <:Real}, Int}=1,
         coordination::Int=8
         )
-    Lattice(name::String,
+    Lattice(name::Symbol,
         sublattices::AbstractVector{<:AbstractLattice};
         vectors::AbstractVector{<:AbstractVector{<:Real}}=SVector{0, SVector{sublattices|>eltype|>dimension, sublattices|>eltype|>dtype}}(),
         neighbors::Union{Dict{Int, <:Real}, Int}=1,
@@ -1086,7 +1086,7 @@ end
 
 Construct a lattice.
 """
-function Lattice(name::String,
+function Lattice(name::Symbol,
         points::AbstractVector{<:Point};
         vectors::AbstractVector{<:AbstractVector{<:Number}}=SVector{0, SVector{points|>eltype|>dimension, points|>eltype|>dtype}}(),
         neighbors::Union{Dict{Int, <:Real}, Int}=1,
@@ -1103,7 +1103,7 @@ function Lattice(name::String,
     end
     return Lattice{points|>eltype|>dimension}(name, pids, rcoords, icoords, vectors, neighbors, coordination=coordination)
 end
-function Lattice(name::String,
+function Lattice(name::Symbol,
         sublattices::AbstractVector{<:AbstractLattice};
         vectors::AbstractVector{<:AbstractVector{<:Real}}=SVector{0, SVector{sublattices|>eltype|>dimension, sublattices|>eltype|>dtype}}(),
         neighbors::Union{Dict{Int, <:Real}, Int}=1,
@@ -1134,7 +1134,7 @@ end
 Construct a lattice from the translations of another.
 """
 function Lattice(lattice::Lattice, translations::Translations; pidmap::Function=pidmap, icoordmap::Function=icoordmap, coordination::Int=8)
-    name = @sprintf "%s(%s)" lattice.name translations
+    name = Symbol(@sprintf "%s(%s)" lattice.name translations)
     rcoords = tile(lattice.rcoords, lattice.vectors, translations)
     vectors = SVector{dimension(lattice), dtype(lattice)}[]
     for (i, vector) in enumerate(lattice.vectors)
@@ -1161,7 +1161,7 @@ end
 icoordmap(lattice::Lattice, index::Int, ::Translations{N}, ::NTuple{N, Int}) where N = lattice[LatticeIndex{'I'}(index)]
 
 """
-    SuperLattice(name::String,
+    SuperLattice(name::Symbol,
         sublattices::AbstractVector{<:AbstractLattice};
         vectors::AbstractVector{<:AbstractVector{<:Real}}=SVector{0, SVector{sublattices|>eltype|>dimension, sublattices|>eltype|>dtype}}(),
         neighbors::Dict{Int, <:Real}=Dict{Int, Float}()
@@ -1171,14 +1171,14 @@ SuperLattice that is composed of several sublattices.
 """
 struct SuperLattice{L<:AbstractLattice, N, P<:AbstractPID, D<:Number} <: AbstractLattice{N, P, D}
     sublattices::Vector{L}
-    name::String
+    name::Symbol
     pids::Vector{P}
     rcoords::Matrix{D}
     icoords::Matrix{D}
     vectors::Vector{SVector{N, D}}
     reciprocals::Vector{SVector{N, D}}
     neighbors::Dict{Int, Float}
-    function SuperLattice(name::String,
+    function SuperLattice(name::Symbol,
             sublattices::AbstractVector{<:AbstractLattice};
             vectors::AbstractVector{<:AbstractVector{<:Real}}=SVector{0, SVector{sublattices|>eltype|>dimension, sublattices|>eltype|>dtype}}(),
             neighbors::Dict{Int, <:Real}=Dict{Int, Float}()
@@ -1277,7 +1277,7 @@ function bonds!(bonds::Vector, lattice::SuperLattice, ::Val{interbonds})
 end
 
 """
-    Cylinder{P}(name::String, block::AbstractMatrix{<:Real}, translation::SVector{N, <:Real};
+    Cylinder{P}(name::Symbol, block::AbstractMatrix{<:Real}, translation::SVector{N, <:Real};
         vector::Union{AbstractVector{<:Real}, Nothing}=nothing,
         neighbors::Union{Dict{Int, <:Real}, Int}=1
         ) where {P<:CPID, N}
@@ -1287,14 +1287,14 @@ Cylinder of 1d and quasi 2d lattices.
 mutable struct Cylinder{P<:CPID, N, D<:Number} <: AbstractLattice{N, P, D}
     block::Matrix{D}
     translation::SVector{N, D}
-    name::String
+    name::Symbol
     pids::Vector{P}
     rcoords::Matrix{D}
     icoords::Matrix{D}
     vectors::Vector{SVector{N, D}}
     reciprocals::Vector{SVector{N, D}}
     neighbors::Dict{Int, Float}
-    function Cylinder{P}(name::String, block::AbstractMatrix{<:Number}, translation::SVector{N, <:Number};
+    function Cylinder{P}(name::Symbol, block::AbstractMatrix{<:Number}, translation::SVector{N, <:Number};
             vector::AbstractVector{<:Number}=SVector{N, Float}(),
             neighbors::Union{Dict{Int, <:Real}, Int}=1
             ) where {P<:CPID, N}
@@ -1364,7 +1364,7 @@ Construct a lattice from a cylinder with the assigned scopes.
 """
 function (cylinder::Cylinder)(scopes::Any...; coordination::Int=8)
     @assert fieldtype(cylinder|>keytype, :scope)==scopes|>eltype "cylinder call error: wrong scope type."
-    name = cylinder.name * string(length(scopes))
+    name = Symbol(@sprintf "%s%s" cylinder.name length(scopes))
     pids = keytype(cylinder)[CPID(scope, i) for scope in scopes for i = 1:size(cylinder.block, 2)]
     rcoords = tile(cylinder.block, [cylinder.translation], [(i,) for i = -(length(scopes)-1)/2:(length(scopes)-1)/2])
     icoords = zero(rcoords)
