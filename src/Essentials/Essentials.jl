@@ -6,6 +6,7 @@ export dtype, kind, update!, reset!
 
 function dtype end
 function kind end
+function update end
 function update! end
 function reset! end
 

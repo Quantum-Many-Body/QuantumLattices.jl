@@ -108,7 +108,7 @@ abstract type NamedVectorSpace{M, NS, BS<:Tuple} <: CartesianVectorSpace{NamedTu
 @inline rank(::Type{<:NamedVectorSpace{:⊗, NS}}) where NS = length(NS)
 @inline shape(nvs::NamedVectorSpace{:⊕}) = (1:length(getcontent(nvs, :contents)[1]),)
 @inline ndimshape(::Type{T}) where {T<:NamedVectorSpace} = rank(T)
-@inline @generated shape(nvs::NamedVectorSpace{:⊗}) = Expr(:tuple, [:(1:length(getcontent(nvs, :contents)[$i])) for i = 1:rank(nvs)]...)
+@inline shape(nvs::NamedVectorSpace{:⊗}) = map(content->1:length(content), getcontent(nvs, :contents))
 @inline function Base.CartesianIndex(basis::NamedTuple{NS}, nvs::NamedVectorSpace{:⊕, NS}) where NS
     index = findfirst(isequal(basis[1]), getcontent(nvs, :contents)[1])::Int
     for i = 2:length(NS)
@@ -116,15 +116,15 @@ abstract type NamedVectorSpace{M, NS, BS<:Tuple} <: CartesianVectorSpace{NamedTu
     end
     return CartesianIndex(index)
 end
-@inline @generated function Base.CartesianIndex(basis::NamedTuple{NS, BS}, nvs::NamedVectorSpace{:⊗, NS, BS}) where {NS, BS<:Tuple}
-    return Expr(:call, :CartesianIndex, [:(findfirst(isequal(basis[$i]), getcontent(nvs, :contents)[$i])::Int) for i = 1:length(NS)]...)
+@inline function Base.CartesianIndex(basis::NamedTuple{NS, BS}, nvs::NamedVectorSpace{:⊗, NS, BS}) where {NS, BS<:Tuple}
+    return CartesianIndex(map((b, content)->findfirst(isequal(b), content), values(basis), getcontent(nvs, :contents)))
 end
-@inline @generated function Base.NamedTuple(index::CartesianIndex{1}, nvs::NamedVectorSpace{:⊕, NS}) where NS
-    return Expr(:tuple, [:($name=getcontent(nvs, :contents)[$i][index[1]]) for (i, name) in enumerate(NS)]...)
+@inline function Base.NamedTuple(index::CartesianIndex{1}, nvs::NamedVectorSpace{:⊕, NS}) where NS
+    return NamedTuple{NS}(map(content->content[index[1]], getcontent(nvs, :contents)))
 end
-@inline @generated function Base.NamedTuple(index::CartesianIndex{N}, nvs::NamedVectorSpace{:⊗, NS}) where {N, NS}
+@inline function Base.NamedTuple(index::CartesianIndex{N}, nvs::NamedVectorSpace{:⊗, NS}) where {N, NS}
     @assert N == length(NS) "NamedTuple error: mismatched input index and rank of named vector space."
-    return Expr(:tuple, [:($name=getcontent(nvs, :contents)[$i][index[$i]]) for (i, name) in enumerate(NS)]...)
+    return NamedTuple{NS}(map((i, content)->content[index[i]], ntuple(i->i, Val(N)), getcontent(nvs, :contents)))
 end
 
 """
@@ -173,13 +173,10 @@ end
 
 Construct a zipped named vector space.
 """
-@generated function ZipNamedVectorSpace{NS}(contents...) where NS
+function ZipNamedVectorSpace{NS}(contents...) where NS
     @assert length(NS)==length(contents) && isa(NS, Tuple{Vararg{Symbol}}) "ZipNamedVectorSpace error: mismatched names and contents."
-    BS = Expr(:curly, :Tuple, [eltype(contents[i]) for i = 1:length(NS)]...)
-    return quote
-        @assert mapreduce(length, ==, contents) "ZipNamedVectorSpace error: mismatched length of contents."
-        ZipNamedVectorSpace{NS, $BS, typeof(contents)}(contents)
-    end
+    @assert mapreduce(length, ==, contents) "ZipNamedVectorSpace error: mismatched length of contents."
+    return ZipNamedVectorSpace{NS, Tuple{map(eltype, contents)...}, typeof(contents)}(contents)
 end
 
 """
@@ -196,10 +193,9 @@ end
 
 Construct a product named vector space.
 """
-@generated function ProductNamedVectorSpace{NS}(contents...) where NS
+function ProductNamedVectorSpace{NS}(contents...) where NS
     @assert length(NS)==length(contents) && isa(NS, Tuple{Vararg{Symbol}}) "ProductNamedVectorSpace error: mismatched names and contents."
-    BS = Expr(:curly, :Tuple, [eltype(contents[i]) for i = 1:length(NS)]...)
-    return :(ProductNamedVectorSpace{NS, $BS, typeof(contents)}(contents))
+    return ProductNamedVectorSpace{NS, Tuple{map(eltype, contents)...}, typeof(contents)}(contents)
 end
 
 end # module

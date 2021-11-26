@@ -4,7 +4,7 @@ using Reexport: @reexport
 using Formatting: FormatSpec, fmt
 
 export atol, rtol, Float
-export decimaltostr, ordinal, delta
+export decimaltostr, ordinal, delta, concatenate
 
 "Absolute tolerance for float numbers."
 const atol = 5 * 10^-14
@@ -67,6 +67,13 @@ end
 Kronecker delta function.
 """
 @inline delta(i, j) = (i == j) ? 1 : 0
+
+"""
+    concatenate(ts::Tuple...) -> Tuple
+
+Concatenate tuples.
+"""
+@inline @generated concatenate(ts::Tuple...) = Expr(:tuple, map(i->:(ts[$i]...), 1:length(ts))...)
 
 """
     searchsortedfirst(table, basis; compare=<) -> Int

@@ -32,6 +32,10 @@ end
     @test delta(1, 1) == 1
 end
 
+@testset "concatenate" begin
+    @test concatenate((1, 2), (:a, :b)) == (1, 2, :a, :b)
+end
+
 @testset "searchsortedfirst" begin
     idx = CartesianIndices((2, 2, 2))
     for (i, index) in enumerate(idx)

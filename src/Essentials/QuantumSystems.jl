@@ -11,7 +11,7 @@ using ..DegreesOfFreedom: Subscripts, SubscriptsID, Subscript, IIDSpace, subscri
 using ..DegreesOfFreedom: Coupling, Couplings, @couplings, couplinginternals, Term, TermCouplings, TermAmplitude, TermModulate
 using ...Essentials: kind, dtype
 using ...Interfaces: decompose, dimension
-using ...Prerequisites: Float, atol, rtol, delta, decimaltostr
+using ...Prerequisites: Float, atol, rtol, delta, decimaltostr, concatenate
 using ...Prerequisites.Traits: rawtype, getcontent
 using ...Prerequisites.VectorSpaces: CartesianVectorSpace
 
@@ -113,10 +113,15 @@ end
 @inline Base.match(::Type{<:FID{wildcard}}, ::Type{<:Fock{T}}) where T = true
 @inline Base.match(::Type{<:FID{T}}, ::Type{<:Fock{T}}) where T = true
 @inline Base.match(::Type{<:FID{T₁}}, ::Type{<:Fock{T₂}}) where {T₁, T₂} = false
-@generated function shape(iidspace::IIDSpace{I, V}) where {I<:CompositeIID{<:Tuple{Vararg{FID}}}, V<:CompositeInternal{<:Tuple{Vararg{Fock}}}}
-    @assert rank(I)==rank(V) "shape error: mismatched composite iid and composite internal space."
+function shape(iidspace::IIDSpace{I, V}) where {I<:CompositeIID{<:Tuple{Vararg{FID}}}, V<:CompositeInternal{<:Tuple{Vararg{Fock}}}}
     Kind = Val(kind(iidspace))
-    Expr(:tuple, [:(shape(IIDSpace(iidspace.iid[$i], iidspace.internal.contents[$i], $Kind); order=$i)...) for i = 1:rank(I)]...)
+    @assert rank(I)==rank(V) "shape error: mismatched composite iid and composite internal space."
+    return concatenate(map(
+        (iid, internal, order)->shape(IIDSpace(iid, internal, Kind); order=order),
+        iidspace.iid.contents,
+        iidspace.internal.contents,
+        ntuple(i->i, Val(rank(I)))
+        )...)
 end
 @inline function shape(iidspace::IIDSpace{<:FID, <:Fock}; order)
     obrange = fidshape(kind(iidspace)|>Val, :orbital|>Val, iidspace.iid.orbital, iidspace.internal.norbital)

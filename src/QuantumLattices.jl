@@ -14,7 +14,7 @@ export ⊕, ⊗, ⋅, add!, sub!, mul!, div!
 export expand, expand!, decompose, decompose!, permute
 
 # Essentials
-export dtype, kind, update!, reset!
+export dtype, kind, update, update!, reset!
 
 # Essentials.QuantumOperators
 export QuantumOperator, OperatorUnit, ID, OperatorProd, OperatorSum, Scalar, Operator, Operators, ishermitian, idtype, optype, sequence, latexformat

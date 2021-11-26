@@ -73,10 +73,7 @@ Overloaded `-` operator for `AbelianNumber` and `AbelianNumbers`.
 Overloaded `*` operator for the multiplication between an integer and an `AbelianNumber`.
 """
 @inline Base.:*(factor::Integer, qn::AbelianNumber) = qn * factor
-@inline @generated function Base.:*(qn::AbelianNumber, factor::Integer)
-    exprs = Expr[:(getfield(qn, $i)*factor) for i = 1:(qn|>fieldnames|>length)]
-    return :(typeof(qn)($(exprs...)))
-end
+@inline Base.:*(qn::AbelianNumber, factor::Integer) = typeof(qn)(map(num->num*factor, convert(Tuple, qn))...)
 
 """
     ^(qn::AbelianNumber, factor::Integer) -> typeof(qn)

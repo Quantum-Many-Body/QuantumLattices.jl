@@ -258,13 +258,7 @@ Overloaded `[]`.
 
 Split an `OperatorProd` into the coefficient and a sequence of `OperatorUnit`s.
 """
-@inline @generated function Base.split(m::OperatorProd)
-    exprs = [:(value(m))]
-    for i = 1:rank(m)
-        push!(exprs, :(m[$i]))
-    end
-    return Expr(:tuple, exprs...)
-end
+@inline Base.split(m::OperatorProd) = (value(m), id(m)...)
 
 """
     one(::Type{M}) where M<:OperatorProd
@@ -287,7 +281,7 @@ end
 
 Get the sequence of the id of a quantum operator according to a table.
 """
-@generated sequence(m::OperatorProd, table) = Expr(:tuple, [:(table[id(m)[$i]]) for i = 1:rank(m)]...)
+@inline sequence(m::OperatorProd, table) = map(u->table[u], id(m))
 
 """
     convert(::Type{M}, m::Number) where {M<:OperatorProd}

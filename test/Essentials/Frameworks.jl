@@ -3,7 +3,7 @@ using Printf: @printf
 using LinearAlgebra: tr
 using StaticArrays: SVector
 using QuantumLattices.Essentials.Frameworks
-using QuantumLattices.Essentials: update!, reset!
+using QuantumLattices.Essentials: update, reset!
 using QuantumLattices.Essentials.Spatials: Point, PID, Bond, Bonds, Lattice, acrossbonds, zerothbonds
 using QuantumLattices.Essentials.DegreesOfFreedom: SimpleIID, SimpleInternal, IIDSpace, Coupling, Subscript, Subscripts, SubscriptsID
 using QuantumLattices.Essentials.DegreesOfFreedom: Term, Hilbert, Index, Table, OID, OIDToTuple, plain, @couplings
@@ -49,6 +49,7 @@ const FCoupling{V, I<:ID{FID}, C<:Subscripts, CI<:SubscriptsID} = Coupling{V, I,
     ps3 = Parameters{(:t1, :U)}(1.0im, 2.1)
     @test match(ps1, ps2) == true
     @test match(ps1, ps3) == false
+    @test update(ps1; ps3...) == Parameters{(:t1, :t2, :U)}(1.0im, 1.0, 2.1)
 end
 
 @testset "Generator" begin

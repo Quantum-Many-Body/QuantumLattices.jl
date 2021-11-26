@@ -7,7 +7,7 @@ using ..QuantumOperators: OperatorUnit, ID, OperatorProd, OperatorSum, Operator,
 using ..Spatials: AbstractPID, AbstractBond, Point, Bonds, pidtype
 using ...Essentials: dtype
 using ...Interfaces: id, value, decompose, dimension, add!
-using ...Prerequisites: Float, atol, rtol, decimaltostr
+using ...Prerequisites: Float, atol, rtol, decimaltostr, concatenate
 using ...Prerequisites.Traits: rawtype, fulltype, efficientoperations, commontype, parametertype
 using ...Prerequisites.CompositeStructures: CompositeDict, CompositeTuple, NamedContainer
 using ...Prerequisites.VectorSpaces: CartesianVectorSpace
@@ -162,19 +162,12 @@ end
 @inline Base.eltype(ci::CompositeInternal) = eltype(typeof(ci))
 @inline @generated Base.eltype(::Type{<:CompositeInternal{T}}) where {T<:Tuple{Vararg{SimpleInternal}}} = CompositeIID{Tuple{map(eltype, fieldtypes(T))...}}
 Base.show(io::IO, ci::CompositeInternal) = @printf io "%s" join((string(ci.contents[i]) for i = 1:rank(ci)), " ⊗ ")
-@inline @generated shape(ci::CompositeInternal) = Expr(:tuple, [:(shape(ci.contents[$i])...) for i = 1:rank(ci)]...)
+@inline shape(ci::CompositeInternal) = concatenate(map(shape, ci.contents)...)
 @inline ndimshape(::Type{<:CompositeInternal{T}}) where {T<:Tuple{Vararg{SimpleInternal}}} = sum(ndimshape(fieldtype(T, i)) for i = 1:fieldcount(T))
-@inline @generated function Base.CartesianIndex(ciid::CompositeIID, ci::CompositeInternal)
-    exprs = []
-    for i = 1:rank(ci)
-        push!(exprs, :(Tuple(CartesianIndex(ciid[$i], ci.contents[$i]))...))
-    end
-    return Expr(:call, :CartesianIndex, exprs...)
+@inline function Base.CartesianIndex(ciid::CompositeIID, ci::CompositeInternal)
+    return CartesianIndex(concatenate(map((iid, internal)->Tuple(CartesianIndex(iid, internal)), ciid.contents, ci.contents)...))
 end
-@inline CompositeIID(index::CartesianIndex, ci::CompositeInternal) = compositeiid(index, ci, segment(ci)|>Val)
-@inline @generated function segment(ci::CompositeInternal{T}) where {T<:Tuple{Vararg{SimpleInternal}}}
-    Expr(:tuple, [:(ndimshape(fieldtype(T, $i))) for i = 1:fieldcount(T)]...)
-end
+@inline CompositeIID(index::CartesianIndex, ci::CompositeInternal) = compositeiid(index, ci, map(ndimshape, ci.contents)|>Val)
 @inline @generated function compositeiid(index::CartesianIndex, ci::CompositeInternal, ::Val{dims}) where dims
     count = 1
     exprs = []
@@ -229,7 +222,7 @@ Filter the composite internal space and select those that matches `I` or the typ
         T = fieldtype(C, i)
         push!(exprs, :(match(I, $T)))
     end
-    Expr(:tuple, exprs...)
+    return Expr(:tuple, exprs...)
 end
 @inline @generated function filterhelper₁(::Type{I}, ci::CompositeInternal, ::Val{BS}) where {I<:SimpleIID, BS}
     exprs = []
@@ -359,10 +352,7 @@ end
 @inline Base.propertynames(::ID{OID}) = (:indexes, :rcoords, :icoords)
 @inline Base.show(io::IO, oid::OID) = @printf io "OID(%s, %s, %s)" oid.index oid.rcoord oid.icoord
 @inline oidcoord(vector::SVector) = vector
-@generated function oidcoord(vector::SVector{N, Float}) where N
-    exprs = [:((vector[$i] === -0.0) ? 0.0 : vector[$i]) for i = 1:N]
-    return :(SVector($(exprs...)))
-end
+@inline oidcoord(vector::SVector{N, Float}) where N = SVector(ntuple(i->vector[i]===-0.0 ? 0.0 : vector[i], Val(N)))
 
 """
     OID(index::Index, rcoord, icoord)
@@ -421,18 +411,18 @@ struct IIDSpace{I<:IID, V<:Internal, Kind} <: CartesianVectorSpace{IID}
     internal::V
     IIDSpace(iid::IID, internal::Internal, ::Val{Kind}=Val(:info)) where Kind = new{typeof(iid), typeof(internal), Kind}(iid, internal)
 end
-Base.eltype(iidspace::IIDSpace) = eltype(typeof(iidspace))
-Base.eltype(::Type{<:IIDSpace{<:IID, V}}) where {V<:Internal} = eltype(V)
-kind(iidspace::IIDSpace) = kind(typeof(iidspace))
-kind(::Type{<:IIDSpace{<:IID, <:Internal, Kind}}) where Kind = Kind
-@generated function shape(iidspace::IIDSpace{I, V}) where {I<:CompositeIID, V<:CompositeInternal}
-    @assert rank(I)==rank(V) "shape error: mismatched composite iid and composite internal space."
+@inline Base.eltype(iidspace::IIDSpace) = eltype(typeof(iidspace))
+@inline Base.eltype(::Type{<:IIDSpace{<:IID, V}}) where {V<:Internal} = eltype(V)
+@inline kind(iidspace::IIDSpace) = kind(typeof(iidspace))
+@inline kind(::Type{<:IIDSpace{<:IID, <:Internal, Kind}}) where Kind = Kind
+@inline function shape(iidspace::IIDSpace{I, V}) where {I<:CompositeIID, V<:CompositeInternal}
     Kind = Val(kind(iidspace))
-    Expr(:tuple, [:(shape(IIDSpace(iidspace.iid[$i], iidspace.internal.contents[$i], $Kind))...) for i = 1:rank(I)]...)
+    @assert rank(I)==rank(V) "shape error: mismatched composite iid and composite internal space."
+    return concatenate(map((iid, internal)->shape(IIDSpace(iid, internal, Kind)), iidspace.iid.contents, iidspace.internal.contents)...)
 end
-ndimshape(::Type{<:IIDSpace{<:IID, V}}) where {V<:Internal} = ndimshape(V)
-Base.CartesianIndex(iid::IID, iidspace::IIDSpace) = CartesianIndex(iid, iidspace.internal)
-Base.getindex(iidspace::IIDSpace, index::CartesianIndex) = rawtype(eltype(iidspace))(index, iidspace.internal)
+@inline ndimshape(::Type{<:IIDSpace{<:IID, V}}) where {V<:Internal} = ndimshape(V)
+@inline Base.CartesianIndex(iid::IID, iidspace::IIDSpace) = CartesianIndex(iid, iidspace.internal)
+@inline Base.getindex(iidspace::IIDSpace, index::CartesianIndex) = rawtype(eltype(iidspace))(index, iidspace.internal)
 
 """
     expand(iids::NTuple{N, IID}, internals::NTuple{N, Internal}) where N -> IIDSpace
@@ -714,12 +704,8 @@ Get the combination of two sets of subscripts.
 Get the type of the id of the subscripts.
 """
 @inline idtype(subscripts::Subscripts) = idtype(typeof(subscripts))
-@generated function idtype(::Type{<:Subscripts{T}}) where {T<:Tuple{Vararg{NamedContainer{Subscript}}}}
-    exprs = []
-    for i = 1:fieldcount(T)
-        push!(exprs, Pair{UnitRange{Int}, NTuple{fieldcount(fieldtype(T, 1)), String}})
-    end
-    return Expr(:curly, :SubscriptsID, Expr(:curly, :Tuple, exprs...))
+@inline @generated function idtype(::Type{<:Subscripts{T}}) where {T<:Tuple{Vararg{NamedContainer{Subscript}}}}
+    return SubscriptsID{Tuple{ntuple(i->Pair{UnitRange{Int}, NTuple{fieldcount(fieldtype(T, i)), String}}, Val(fieldcount(T)))...}}
 end
 
 """
@@ -736,18 +722,10 @@ end
 
 Construct the id of the subscripts.
 """
-@generated function SubscriptsID(subscripts::Subscripts)
-    exprs, count = [], 1
-    for i = 1:length(subscripts)
-        rep = []
-        for field in fieldnames(fieldtype(fieldtype(subscripts, :contents), i))
-            field = QuoteNode(field)
-            push!(rep, :(getfield(getfield(subscripts[$i], $field), :rep)))
-        end
-        push!(exprs, Expr(:call, :(=>), count:(count+rank(subscripts, i)-1), Expr(:tuple, rep...)))
-        count += rank(subscripts, i)
-    end
-    return Expr(:call, :SubscriptsID, Expr(:tuple, exprs...))
+function SubscriptsID(subscripts::Subscripts)
+    reps = map(content->map(subscript->subscript.rep, values(content)), subscripts.contents)
+    counts = (0, cumsum(map(content->rank(first(content)), subscripts.contents))...)
+    return SubscriptsID(map((i, rep)->(counts[i]+1:counts[i+1])=>rep, ntuple(i->i, Val(fieldcount(typeof(reps)))), reps))
 end
 
 """
@@ -756,8 +734,8 @@ end
 The abstract coupling intra/inter internal degrees of freedom at different lattice points.
 """
 abstract type AbstractCoupling{V, I<:ID{OperatorUnit}} <: OperatorProd{V, I} end
-ID{SimpleIID}(coupling::AbstractCoupling) = id(coupling)
-Subscripts(coupling::AbstractCoupling) = Subscripts()
+@inline ID{SimpleIID}(coupling::AbstractCoupling) = id(coupling)
+@inline Subscripts(coupling::AbstractCoupling) = Subscripts()
 
 """
     couplingcenters(coupling::AbstractCoupling, bond::AbstractBond, info::Val) -> NTuple{rank(coupling), Int}
@@ -781,12 +759,10 @@ end
 
 Get the internal spaces where each order of the coupling acts on.
 """
-@inline @generated function couplinginternals(coupling::AbstractCoupling, bond::AbstractBond, hilbert::Hilbert, info::Val)
-    exprs = []
-    for i = 1:rank(coupling)
-        push!(exprs, :(filter(ID{SimpleIID}(coupling)[$i], hilbert[bond[centers[$i]].pid])))
-    end
-    return Expr(:block, :(centers = couplingcenters(coupling, bond, info)), Expr(:tuple, exprs...))
+@inline function couplinginternals(coupling::AbstractCoupling, bond::AbstractBond, hilbert::Hilbert, info::Val)
+    centers = couplingcenters(coupling, bond, info)
+    internals = ntuple(i->hilbert[bond[centers[i]].pid], Val(rank(coupling)))
+    return map((iid, internal)->filter(iid, internal), ID{SimpleIID}(coupling), internals)
 end
 
 """
@@ -816,8 +792,7 @@ function CExpand(value, points::NTuple{N, P}, iidspace::IIDSpace, subscripts::Su
 end
 @inline Base.eltype(ex::CExpand) = eltype(typeof(ex))
 @inline @generated function Base.eltype(::Type{<:CExpand{V, N, P, SV, S}}) where {V, N, P<:AbstractPID, SV<:SVector, S<:IIDSpace}
-    IIDS = fieldtypes(fieldtype(eltype(S), :contents))
-    return Tuple{V, Tuple{[OID{Index{P, IIDS[i]}, SV} for i = 1:N]...}}
+    return Tuple{V, Tuple{map(I->OID{Index{P, I}, SV}, fieldtypes(fieldtype(eltype(S), :contents)))...}}
 end
 @inline Base.IteratorSize(::Type{<:CExpand}) = Base.SizeUnknown()
 function Base.iterate(ex::CExpand, state=iterate(ex.iidspace))
@@ -929,7 +904,7 @@ Filter the selected fields.
 
 Construct the conversion rule from the information of subtypes of `AbstractOID`.
 """
-@inline @generated OIDToTuple(::Type{I}) where {I<:Index} = OIDToTuple(fieldnames(pidtype(I))..., (fieldnames(iidtype(I)))...)
+@inline OIDToTuple(::Type{I}) where {I<:Index} = OIDToTuple(fieldnames(pidtype(I))..., (fieldnames(iidtype(I)))...)
 
 """
     valtype(::Type{<:OIDToTuple}, ::Type{<:Index})
@@ -993,13 +968,7 @@ Inquiry the sequence of an oid.
 Judge whether a single oid or a set of oids have been assigned with sequences in table.
 """
 @inline Base.haskey(table::Table, oid::AbstractOID) = haskey(table, table.by(oid))
-@inline @generated function Base.haskey(table::Table, id::ID{AbstractOID})
-    exprs = []
-    for i = 1:fieldcount(id)
-        push!(exprs, :(haskey(table, id[$i])))
-    end
-    return Expr(:tuple, exprs...)
-end
+@inline Base.haskey(table::Table, id::ID{AbstractOID}) = map(oid->haskey(table, oid), id)
 
 """
     Table(oids::AbstractVector{<:AbstractOID}, by::Metric=OIDToTuple(eltype(oids)))
@@ -1101,9 +1070,9 @@ struct TermCouplings{C₁<:Union{Function, Couplings}, C₂<:Union{Couplings, No
     TermCouplings{C}(couplings::Function) where {C<:Couplings} = new{typeof(couplings), C}(couplings)
     TermCouplings(couplings::Function) = new{typeof(couplings), commontype(couplings, Tuple{Vararg{Any}}, Couplings)}(couplings)
 end
-Base.valtype(termcouplings::TermCouplings) = valtype(typeof(termcouplings))
-Base.valtype(::Type{<:TermCouplings{C}}) where {C<:Couplings} = C
-Base.valtype(::Type{<:TermCouplings{<:Function, C}}) where {C<:Couplings} = C
+@inline Base.valtype(termcouplings::TermCouplings) = valtype(typeof(termcouplings))
+@inline Base.valtype(::Type{<:TermCouplings{C}}) where {C<:Couplings} = C
+@inline Base.valtype(::Type{<:TermCouplings{<:Function, C}}) where {C<:Couplings} = C
 @inline (termcouplings::TermCouplings{<:Couplings})(args...; kwargs...) = termcouplings.couplings
 @inline (termcouplings::TermCouplings{<:Function})(args...; kwargs...) = termcouplings.couplings(args...; kwargs...)
 
@@ -1145,7 +1114,7 @@ mutable struct Term{K, I, V, B, C<:TermCouplings, A<:TermAmplitude, M<:TermModul
 end
 @inline Base.:(==)(term1::Term, term2::Term) = ==(efficientoperations, term1, term2)
 @inline Base.isequal(term1::Term, term2::Term) = isequal(efficientoperations, term1, term2)
-function Base.show(io::IO, term::Term)
+@inline function Base.show(io::IO, term::Term)
     @printf io "%s{%s}(id=%s, value=%s, bondkind=%s, factor=%s)" kind(term) rank(term) id(term) decimaltostr(term.value) term.bondkind decimaltostr(term.factor)
 end
 
@@ -1310,7 +1279,7 @@ end
 
 """
     expand!(operators::Operators, term::Term, bond::AbstractBond, hilbert::Hilbert; half::Bool=false, table::Union{Nothing, Table}=nothing) -> Operators
-    expand!(operators::Operators, term::Term, bonds::Bonds, hilbert::Hilbert; half::Bool=false, table::Union{Nothing, Table}=nothing) -> Operators
+    expand!(operators::Operators, term::Term, bonds, hilbert::Hilbert; half::Bool=false, table::Union{Nothing, Table}=nothing) -> Operators
 
 Expand the operators of a term on a bond/set-of-bonds with a given Hilbert space.
 
@@ -1350,13 +1319,15 @@ function expand!(operators::Operators, term::Term, bond::AbstractBond, hilbert::
     end
     return operators
 end
-@generated function expand!(operators::Operators, term::Term, bonds::Bonds, hilbert::Hilbert; half::Bool=false, table::Union{Nothing, Table}=nothing)
-    exprs = []
-    for i = 1:rank(bonds)
-        push!(exprs, :(for bond in bonds.bonds[$i] expand!(operators, term, bond, hilbert; half=half, table=table) end))
+@inline function expand!(operators::Operators, term::Term, bonds, hilbert::Hilbert; half::Bool=false, table::Union{Nothing, Table}=nothing)
+    for bond in bonds
+        expand!(operators, term, bond, hilbert; half=half, table=table)
     end
-    push!(exprs, :(return operators))
-    return Expr(:block, exprs...)
+    return operators
+end
+@inline function expand!(operators::Operators, term::Term, bonds::Bonds, hilbert::Hilbert; half::Bool=false, table::Union{Nothing, Table}=nothing)
+    map(bs->expand!(operators, term, bs, hilbert; half=half, table=table), bonds.bonds)
+    return operators
 end
 @inline termfactor(id::ID{AbstractOID}, ::Val) = ishermitian(id) ? 2 : 1
 
@@ -1457,8 +1428,8 @@ Get the boundary twist phase of an operator.
 
 Get the total twist phase of an id.
 """
-@inline @generated function Base.angle(id::ID{AbstractOID}, vectors::AbstractVector{<:AbstractVector{<:Number}}, values::AbstractVector{<:Number})
-    Expr(:call, :+, [:(angle(id[$i], vectors, values)) for i = 1:rank(id)]...)
+@inline function Base.angle(id::ID{AbstractOID}, vectors::AbstractVector{<:AbstractVector{<:Number}}, values::AbstractVector{<:Number})
+    return mapreduce(u->angle(u, vectors, values), +, id)
 end
 
 """

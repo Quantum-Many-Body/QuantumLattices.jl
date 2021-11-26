@@ -851,10 +851,7 @@ Get a rcoord, an icoord or a point of a lattice according to the type of the inp
 @inline Base.getindex(lattice::AbstractLattice, i::LatticeIndex{'R', <:AbstractPID}) = lattice[LatticeIndex{'R'}(findfirst(isequal(i.index), getcontent(lattice, :pids)))]
 @inline Base.getindex(lattice::AbstractLattice, i::LatticeIndex{'I', <:AbstractPID}) = lattice[LatticeIndex{'I'}(findfirst(isequal(i.index), getcontent(lattice, :pids)))]
 @inline Base.getindex(lattice::AbstractLattice, i::LatticeIndex{'P', <:AbstractPID}) = lattice[LatticeIndex{'P'}(findfirst(isequal(i.index), getcontent(lattice, :pids)))]
-@generated function latticestaticcoords(coords::Matrix{D}, i::Int, ::Val{N}) where {D<:Number, N}
-    exprs = [:(coords[$j, i]) for j = 1:N]
-    return :(SVector{N, D}($(exprs...)))
-end
+@inline latticestaticcoords(coords::Matrix{D}, i::Int, ::Val{N}) where {D<:Number, N} = SVector{N, D}(ntuple(j->coords[j, i], Val(N)))
 
 abstract type LatticeBonds{R} end
 @inline Base.eltype(::Type{<:LatticeBonds{0}}) = AbstractBond
@@ -1501,48 +1498,32 @@ end
 
 Get a filtered set of bonds by a select function.
 """
-@generated function Base.filter(select::Function, bs::Bonds)
-    bonds = Expr(:tuple, [:(filter(select, bs.bonds[$i])) for i = 1:rank(bs)]...)
-    return :(Bonds{bondtypes(bs), latticetype(bs)}($bonds))
-end
+@inline Base.filter(select::Function, bs::Bonds) = Bonds{bondtypes(bs), latticetype(bs)}(map(bonds->filter(select, bonds), bs.bonds))
 
 """
     empty!(bs::Bonds) -> Bonds
 
 Empty a set of lattice bonds.
 """
-@generated function Base.empty!(bs::Bonds)
-    exprs = [:(empty!(bs.bonds[$i])) for i = 1:rank(bs)]
-    push!(exprs, :(return bs))
-    return Expr(:block, exprs...)
-end
+@inline Base.empty!(bs::Bonds) = (map(empty!, bs.bonds); bs)
 
 """
     empty(bs::Bonds) -> Bonds
 
 Get an empty copy of a set of lattice bonds.
 """
-@generated function Base.empty(bs::Bonds)
-    bonds = Expr(:tuple, [:(empty(bs.bonds[$i])) for i = 1:rank(bs)]...)
-    return :(Bonds{bondtypes(bs), latticetype(bs)}($bonds))
-end
+@inline Base.empty(bs::Bonds) = Bonds{bondtypes(bs), latticetype(bs)}(map(empty, bs.bonds))
 
 """
     reset!(bs::Bonds, lattice::AbstractLattice) -> Bonds
 
 Reset a set of lattice bonds by a new lattice.
 """
-@generated function reset!(bs::Bonds, lattice::AbstractLattice)
-    exprs = []
-    push!(exprs, quote
-        @assert latticetype(bs) >: typeof(lattice) "reset! error: mismatched bonds and lattice."
-        empty!(bs)
-    end)
-    for i = 1:rank(bs)
-        push!(exprs, :(bonds!(bs.bonds[$i], lattice, bondtypes(bs)[$i])))
-    end
-    push!(exprs, :(return bs))
-    return Expr(:block, exprs...)
+function reset!(bs::Bonds, lattice::AbstractLattice)
+    @assert latticetype(bs) >: typeof(lattice) "reset! error: mismatched bonds and lattice."
+    empty!(bs)
+    map((bonds, bondtype)->bonds!(bonds, lattice, bondtype), bs.bonds, bondtypes(bs))
+    return bs
 end
 
 """
@@ -1618,9 +1599,11 @@ Abstract type of reciprocal spaces.
 """
 abstract type ReciprocalSpace{K, B} <: NamedVectorSpace{:⊗, K, Tuple{B}} end
 
-vectorconvert(reciprocals::Vector{<:SVector}) = reciprocals
-vectorconvert(reciprocals::AbstractVector) = convert(Vector{SVector{length(first(reciprocals)), eltype(eltype(reciprocals))}}, reciprocals)
-vectorconvert(reciprocals::AbstractVector{<:SVector}) = convert(Vector{SVector{length(eltype(reciprocals)), eltype(eltype(reciprocals))}}, reciprocals)
+@inline symbolconvert(K::Symbol) = (K,)
+@inline symbolconvert(K::Tuple{Symbol}) = K
+@inline vectorconvert(reciprocals::Vector{<:SVector}) = reciprocals
+@inline vectorconvert(reciprocals::AbstractVector) = convert(Vector{SVector{length(first(reciprocals)), eltype(eltype(reciprocals))}}, reciprocals)
+@inline vectorconvert(reciprocals::AbstractVector{<:SVector}) = convert(Vector{SVector{length(eltype(reciprocals)), eltype(eltype(reciprocals))}}, reciprocals)
 """
     BrillouinZone{K, P<:Momentum, S<:SVector} <: ReciprocalSpace{K, P}
 
@@ -1630,9 +1613,9 @@ struct BrillouinZone{K, P<:Momentum, S<:SVector} <: ReciprocalSpace{K, P}
     reciprocals::Vector{S}
     momenta::AbelianNumbers{P}
     function BrillouinZone{K}(reciprocals::AbstractVector, momenta::AbelianNumbers{<:Momentum}) where K
-        @assert isa(K, Symbol) "BrillouinZone error: K must be a Symbol."
+        @assert isa(K, Symbol) || isa(K, Tuple{Symbol}) "BrillouinZone error: K must be a Symbol."
         reciprocals = vectorconvert(reciprocals)
-        new{(K,), eltype(momenta), eltype(reciprocals)}(reciprocals, momenta)
+        new{symbolconvert(K), eltype(momenta), eltype(reciprocals)}(reciprocals, momenta)
     end
 end
 @inline contentnames(::Type{<:BrillouinZone}) = (:reciprocals, :contents)
@@ -1685,9 +1668,9 @@ struct ReciprocalZone{K, S<:SVector, V<:Number} <: ReciprocalSpace{K, S}
     momenta::Vector{S}
     volume::V
     function ReciprocalZone{K}(momenta::AbstractVector, volume::Number) where K
-        @assert isa(K, Symbol) "ReciprocalZone error: K must be a Symbol."
+        @assert isa(K, Symbol) || isa(K, Tuple{Symbol}) "ReciprocalZone error: K must be a Symbol."
         momenta = vectorconvert(momenta)
-        new{(K,), eltype(momenta), typeof(volume)}(momenta, volume)
+        new{symbolconvert(K), eltype(momenta), typeof(volume)}(momenta, volume)
     end
 end
 @inline contentnames(::Type{<:ReciprocalZone}) = (:contents, :volume)
@@ -1736,10 +1719,8 @@ end
 
 Construct a reciprocal zone from a Brillouin zone.
 """
-@inline @generated function ReciprocalZone(bz::BrillouinZone{K, P}) where {K, P<:Momentum}
-    K = QuoteNode(first(K))
-    exprs = [:(Segment(0, 1, $length, ends=(true, false))) for length in periods(P)]
-    return :(ReciprocalZone{$K}(bz.reciprocals, $(exprs...)))
+@inline function ReciprocalZone(bz::BrillouinZone{K, P}) where {K, P<:Momentum}
+    return ReciprocalZone{K}(bz.reciprocals, map(length->Segment(0, 1, length, ends=(true, false)), periods(P)))
 end
 
 """
@@ -1750,9 +1731,9 @@ A path in the reciprocal space.
 struct ReciprocalPath{K, S<:SVector} <: ReciprocalSpace{K, S}
     momenta::Vector{S}
     function ReciprocalPath{K}(momenta::AbstractVector) where K
-        @assert isa(K, Symbol) "ReciprocalPath error: K must be a Symbol."
+        @assert isa(K, Symbol) || isa(K, Tuple{Symbol}) "ReciprocalPath error: K must be a Symbol."
         momenta = vectorconvert(momenta)
-        new{(K,), eltype(momenta)}(momenta)
+        new{symbolconvert(K), eltype(momenta)}(momenta)
     end
 end
 @inline contentnames(::Type{<:ReciprocalPath}) = (:contents,)

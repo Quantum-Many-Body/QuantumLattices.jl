@@ -13,7 +13,7 @@ using ...Prerequisites.Traits: efficientoperations
 using ...Prerequisites.CompositeStructures: NamedContainer
 
 import ...Interfaces: id, add!, expand, expand!
-import ...Essentials: update!, reset!
+import ...Essentials: update, update!, reset!
 import ...Prerequisites.Traits: contentnames, getcontent
 
 export Parameters, Entry, Engine, AbstractGenerator, Generator, SimplifiedGenerator, Action, Assignment, Algorithm
@@ -24,24 +24,24 @@ export prepare!, run!, save, rundependences!
 
 A NamedTuple that contain the key-value pairs.
 """
-const Parameters{Names} = NamedContainer{Number, Names}
-@inline Parameters{Names}(values::Number...) where {Names} = NamedContainer{Names}(values)
+const Parameters{Names} = NamedTuple{Names, <:Tuple{Vararg{Number}}}
+@inline Parameters{Names}(values::Number...) where {Names} = NamedTuple{Names}(values)
+@inline @generated function update(params::Parameters; kwargs...)
+    names = fieldnames(params)
+    values = [:(get(kwargs, $name, getfield(params, $name))) for name in QuoteNode.(names)]
+    return :(Parameters{$names}($(values...)))
+end
 
 """
-    match(params₁::Parameters, params₂::Parameters, atol=atol, rtol=rtol) -> Bool
+    match(params₁::Parameters, params₂::Parameters; atol=atol, rtol=rtol) -> Bool
 
 Judge whether the second set of parameters matches the first.
 """
-@generated function Base.match(params₁::Parameters, params₂::Parameters, atol=atol, rtol=rtol)
-    names = intersect(fieldnames(params₁), fieldnames(params₂))
-    length(names)==0 && return true
-    name = QuoteNode(names[1])
-    expr = :(isapprox(getfield(params₁, $name), getfield(params₂, $name), atol=atol, rtol=rtol))
-    for i = 2:length(names)
-        name = QuoteNode(names[i])
-        expr = Expr(:&&, expr, :(isapprox(getfield(params₁, $name), getfield(params₂, $name), atol=atol, rtol=rtol)))
+function Base.match(params₁::Parameters, params₂::Parameters; atol=atol, rtol=rtol)
+    for name in keys(params₂)
+        haskey(params₁, name) && !isapprox(getfield(params₁, name), getfield(params₂, name); atol=atol, rtol=rtol) && return false
     end
-    return expr
+    return true
 end
 
 """
@@ -90,8 +90,8 @@ Get an empty entry of quantum operators.
 """
 function Base.empty(entry::Entry)
     constops = empty(entry.constops)
-    alterops = NamedContainer{keys(entry.alterops)}(map(empty, values(entry.alterops)))
-    boundops = NamedContainer{keys(entry.boundops)}(map(empty, values(entry.boundops)))
+    alterops = NamedTuple{keys(entry.alterops)}(map(empty, values(entry.alterops)))
+    boundops = NamedTuple{keys(entry.boundops)}(map(empty, values(entry.boundops)))
     return Entry(constops, alterops, boundops)
 end
 
@@ -100,16 +100,15 @@ end
 
 Merge the entry of quantum operators by another one.
 """
-@generated function Base.merge!(entry::Entry, another::Entry)
-    exprs = [:(merge!(entry.constops, another.constops))]
-    for name in QuoteNode.(fieldnames(fieldtype(entry, :alterops)))
-        push!(exprs, :(merge!(getfield(entry.alterops, $name), getfield(another.alterops, $name))))
+function Base.merge!(entry::Entry, another::Entry)
+    merge!(entry.constops, another.constops)
+    for name in fieldnames(typeof(entry.alterops))
+        merge!(getfield(entry.alterops, name), getfield(another.alterops, name))
     end
-    for name in QuoteNode.(fieldnames(fieldtype(entry, :boundops)))
-        push!(exprs, :(merge!(getfield(entry.boundops, $name), getfield(another.boundops, $name))))
+    for name in fieldnames(typeof(entry.boundops))
+        merge!(getfield(entry.boundops, name), getfield(another.boundops, name))
     end
-    push!(exprs, :(return entry))
-    return Expr(:block, exprs...)
+    return entry
 end
 
 """
@@ -127,73 +126,41 @@ Get the transformed entry of quantum operators.
 function (transformation::Transformation)(entry::Entry; kwargs...)
     wrapper(m) = transformation(m; kwargs...)
     constops = wrapper(entry.constops)
-    alterops = NamedContainer{keys(entry.alterops)}(map(wrapper, values(entry.alterops)))
-    boundops = NamedContainer{keys(entry.boundops)}(map(wrapper, values(entry.boundops)))
+    alterops = NamedTuple{keys(entry.alterops)}(map(wrapper, values(entry.alterops)))
+    boundops = NamedTuple{keys(entry.boundops)}(map(wrapper, values(entry.boundops)))
     return Entry(constops, alterops, boundops)
 end
 
 """
-    Entry(terms::Tuple{Vararg{Term}}, bonds::Bonds, hilbert::Hilbert;
-        half::Bool=false,
-        table::Union{Nothing, Table}=nothing
-        )
+    Entry(terms::Tuple{Vararg{Term}}, bonds::Bonds, hilbert::Hilbert; half::Bool=false, table::Union{Nothing, Table}=nothing)
 
 Construct an entry of operators based on the input terms, bonds and Hilbert space.
 """
-@generated function Entry(terms::Tuple{Vararg{Term}}, bonds::Bonds, hilbert::Hilbert;
-        half::Bool=false,
-        table::Union{Nothing, Table}=nothing
-        )
+function Entry(terms::Tuple{Vararg{Term}}, bonds::Bonds, hilbert::Hilbert; half::Bool=false, table::Union{Nothing, Table}=nothing)
+    constterms, alterterms, choosedterms = termclassifier(terms)
+    innerbonds = filter(acrossbonds, bonds, Val(:exclude))
+    boundbonds = filter(acrossbonds, bonds, Val(:include))
+    constops = Operators{mapreduce(term->optype(typeof(term), typeof(hilbert), eltype(bonds)), promote_type, choosedterms)}()
+    map(term->expand!(constops, term, innerbonds, hilbert, half=half, table=table), constterms)
+    alterops = NamedTuple{map(id, alterterms)}(map(term->expand(one(term), innerbonds, hilbert, half=half, table=table), alterterms))
+    boundops = NamedTuple{map(id, terms)}(map(term->expand(one(term), boundbonds, hilbert, half=half, table=table), terms))
+    return Entry(constops, alterops, boundops)
+end
+@generated function termclassifier(terms::Tuple{Vararg{Term}})
     constterms, alterterms = [], []
-    for term in fieldtypes(terms)
-        ismodulatable(term) ? push!(alterterms, term) : push!(constterms, term)
+    for (i, term) in enumerate(fieldtypes(terms))
+        ismodulatable(term) ? push!(alterterms, :(terms[$i])) : push!(constterms, :(terms[$i]))
     end
-    names = NTuple{fieldcount(terms), Symbol}(id(term) for term in fieldtypes(terms))
-    alternames = NTuple{length(alterterms), Symbol}(id(term) for term in alterterms)
-    exprs, alterops, boundops = [], [], []
-    push!(exprs, quote
-        choosedterms = length($constterms)>0 ? $constterms : $alterterms
-        constoptp = Union{}
-        for i = 1:length(choosedterms)
-            tempoptp = optype(choosedterms[i], hilbert|>typeof, bonds|>eltype)
-            constoptp = promote_type(constoptp, tempoptp)
-        end
-        constops = Operators{constoptp}()
-        innerbonds = filter(acrossbonds, bonds, Val(:exclude))
-        boundbonds = filter(acrossbonds, bonds, Val(:include))
-    end)
-    for i = 1:fieldcount(terms)
-        push!(boundops, :(expand(one(terms[$i]), boundbonds, hilbert, half=half, table=table)))
-        if ismodulatable(fieldtype(terms, i))
-            push!(alterops, :(expand(one(terms[$i]), innerbonds, hilbert, half=half, table=table)))
-        else
-            push!(exprs, :(expand!(constops, terms[$i], innerbonds, hilbert, half=half, table=table)))
-        end
-    end
-    alterops = Expr(:tuple, alterops...)
-    boundops = Expr(:tuple, boundops...)
-    push!(exprs, quote
-        alterops = NamedContainer{$alternames}($alterops)
-        boundops = NamedContainer{$names}($boundops)
-        return Entry(constops, alterops, boundops)
-    end)
-    return Expr(:block, exprs...)
+    constterms, alterterms = Expr(:tuple, constterms...), Expr(:tuple, alterterms...)
+    return Expr(:tuple, constterms, alterterms, (length(constterms.args)>0 ? constterms : alterterms))
 end
 
 """
-    expand!(operators::Operators,
-        entry::Entry{<:Operators, <:NamedContainer{Operators}, <:NamedContainer{Operators}},
-        boundary::Boundary;
-        kwargs...
-        ) -> Operators
+    expand!(operators::Operators, entry::Entry, boundary::Boundary; kwargs...) -> Operators
 
 Expand an entry of operators with the given boundary twist and term coefficients.
 """
-@generated function expand!(operators::Operators,
-        entry::Entry{<:Operators, <:NamedContainer{Operators}, <:NamedContainer{Operators}},
-        boundary::Boundary;
-        kwargs...
-        )
+@generated function expand!(operators::Operators, entry::Entry, boundary::Boundary; kwargs...)
     exprs = [:(add!(operators, entry.constops))]
     for name in QuoteNode.(fieldnames(fieldtype(entry, :alterops)))
         push!(exprs, :(value = get(kwargs, $name, nothing)))
@@ -212,36 +179,19 @@ Expand an entry of operators with the given boundary twist and term coefficients
 end
 
 """
-    reset!(entry::Entry{<:Operators, <:NamedContainer{Operators}, <:NamedContainer{Operators}},
-        terms::Tuple{Vararg{Term}}, bonds::Bonds, hilbert::Hilbert;
-        half::Bool=false,
-        table::Union{Nothing, Table}=nothing
-        ) -> Entry
+    reset!(entry::Entry{<:Operators}, terms::Tuple{Vararg{Term}}, bonds::Bonds, hilbert::Hilbert; half::Bool=false, table::Union{Nothing, Table}=nothing) -> Entry
 
 Reset an entry of operators by the new terms, bonds and Hilbert space.
 """
-@generated function reset!(entry::Entry{<:Operators, <:NamedContainer{Operators}, <:NamedContainer{Operators}},
-        terms::Tuple{Vararg{Term}}, bonds::Bonds, hilbert::Hilbert;
-        half::Bool=false,
-        table::Union{Nothing, Table}=nothing
-        )
-    exprs = []
-    push!(exprs, quote
-        empty!(entry)
-        innerbonds = filter(acrossbonds, bonds, Val(:exclude))
-        boundbonds = filter(acrossbonds, bonds, Val(:include))
-    end)
-    for (i, term) in enumerate(fieldtypes(terms))
-        name = QuoteNode(term|>id)
-        push!(exprs, :(expand!(getfield(entry.boundops, $name), one(terms[$i]), boundbonds, hilbert, half=half, table=table)))
-        if ismodulatable(term)
-            push!(exprs, :(expand!(getfield(entry.alterops, $name), one(terms[$i]), innerbonds, hilbert, half=half, table=table)))
-        else
-            push!(exprs, :(expand!(entry.constops, terms[$i], innerbonds, hilbert, half=half, table=table)))
-        end
-    end
-    push!(exprs, :(return entry))
-    return Expr(:block, exprs...)
+function reset!(entry::Entry{<:Operators}, terms::Tuple{Vararg{Term}}, bonds::Bonds, hilbert::Hilbert; half::Bool=false, table::Union{Nothing, Table}=nothing)
+    empty!(entry)
+    constterms, alterterms, _ = termclassifier(terms)
+    innerbonds = filter(acrossbonds, bonds, Val(:exclude))
+    boundbonds = filter(acrossbonds, bonds, Val(:include))
+    map(term->expand!(entry.constops, term, innerbonds, hilbert, half=half, table=table), constterms)
+    map(term->expand!(getfield(entry.alterops, id(term)), one(term), innerbonds, hilbert, half=half, table=table), alterterms)
+    map(term->expand!(getfield(entry.boundops, id(term)), one(term), boundbonds, hilbert, half=half, table=table), terms)
+    return entry
 end
 
 """
@@ -287,27 +237,25 @@ end
 Base.show(io::IO, ::MIME"text/latex", gen::AbstractGenerator) = show(io, MIME"text/latex"(), latexstring(latexstring(expand(gen))))
 
 """
-    expand!(operators::Operators, gen::AbstractGenerator{E}) where {E<:Entry{<:Operators, <:NamedContainer{Operators}, <:NamedContainer{Operators}}}-> Operators
+    expand!(result, gen::AbstractGenerator) -> typeof(result)
 
 Expand the generator.
 """
-@inline function expand!(operators::Operators, gen::AbstractGenerator{E}) where {E<:Entry{<:Operators, <:NamedContainer{Operators}, <:NamedContainer{Operators}}}
-    expand!(operators, getcontent(gen, :operators), getcontent(gen, :boundary); Parameters(gen)...)
-end
+@inline expand!(result, gen::AbstractGenerator) = expand!(result, getcontent(gen, :operators), getcontent(gen, :boundary); Parameters(gen)...)
 
 """
-    expand(gen::AbstractGenerator{E}) where {E<:Entry{<:Operators, <:NamedContainer{Operators}, <:NamedContainer{Operators}}} -> Operators
+    expand(gen::AbstractGenerator) -> valtype(gen)
 
 Expand the generator.
 """
 @inline expand(gen::AbstractGenerator) = expand!(zero(valtype(gen)), gen)
 
 """
-    Generator{E<:Entry, TS<:NamedContainer{Term}, BS<:Bonds, H<:Hilbert, T<:Union{Table, Nothing}, B<:Boundary} <: AbstractGenerator{E, T, B}
+    Generator{E<:Entry, TS<:Tuple{Vararg{Term}}, BS<:Bonds, H<:Hilbert, T<:Union{Table, Nothing}, B<:Boundary} <: AbstractGenerator{E, T, B}
 
 A generator of operators based on terms, bonds, Hilbert space, and boundary twist.
 """
-struct Generator{E<:Entry, TS<:NamedContainer{Term}, BS<:Bonds, H<:Hilbert, T<:Union{Table, Nothing}, B<:Boundary} <: AbstractGenerator{E, T, B}
+struct Generator{E<:Entry, TS<:Tuple{Vararg{Term}}, BS<:Bonds, H<:Hilbert, T<:Union{Table, Nothing}, B<:Boundary} <: AbstractGenerator{E, T, B}
     operators::E
     terms::TS
     bonds::BS
@@ -328,11 +276,7 @@ Construct a generator of operators.
 @inline function Generator(terms::Tuple{Vararg{Term}}, bonds::Bonds, hilbert::Hilbert;
         half::Bool=false, table::Union{Table,Nothing}=nothing, boundary::Boundary=plain
         )
-    return Generator(Entry(terms, bonds, hilbert; half=half, table=table), namedterms(terms), bonds, hilbert, half, table, boundary)
-end
-@generated function namedterms(terms::Tuple{Vararg{Term}})
-    names = NTuple{fieldcount(terms), Symbol}(id(fieldtype(terms, i)) for i = 1:fieldcount(terms))
-    return :(NamedContainer{$names}(terms))
+    return Generator(Entry(terms, bonds, hilbert; half=half, table=table), terms, bonds, hilbert, half, table, boundary)
 end
 
 """
@@ -340,10 +284,7 @@ end
 
 Get the parameters of the terms of a generator.
 """
-@generated function Parameters(gen::Generator{<:Entry, TS}) where {TS<:NamedContainer{Term}}
-    names, values = fieldnames(TS), [:(gen.terms[$i].value) for i = 1:fieldcount(TS)]
-    return :(Parameters{$names}($(values...)))
-end
+@inline Parameters(gen::Generator) = NamedTuple{map(id, gen.terms)}(map(term->term.value, gen.terms))
 
 """
     expand(gen::Generator, name::Symbol) -> Operators
@@ -356,44 +297,40 @@ Expand the operators of a generator:
 3) the operators of a specific term on a specific bond.
 """
 function expand(gen::Generator, name::Symbol)
-    term = getfield(gen.terms, name)
-    result = Operators{optype(term|>typeof, gen.hilbert|>typeof, gen.bonds|>eltype)}()
-    if ismodulatable(term)
+    term = get(gen.terms, Val(name))
+    result = Operators{optype(typeof(term), typeof(gen.hilbert), eltype(gen.bonds))}()
+    if !ismodulatable(term)
+        expand!(result, term, filter(acrossbonds, gen.bonds, Val(:exclude)), gen.hilbert, half=gen.half, table=gen.table)
+    else
         for opt in getfield(gen.operators.alterops, name)
             add!(result, opt*term.value)
         end
-    else
-        expand!(result, term, filter(acrossbonds, gen.bonds, Val(:exclude)), gen.hilbert, half=gen.half, table=gen.table)
     end
     for opt in getfield(gen.operators.boundops, name)
         add!(result, gen.boundary(opt)*term.value)
     end
     return result
 end
-@generated function expand(gen::Generator{<:Entry, TS}, i::Int) where {TS<:NamedContainer{Term}}
-    exprs = []
-    push!(exprs, quote
-        bond = gen.bonds[i]
-        result = zero(valtype(gen))
-    end)
-    for i = 1:fieldcount(TS)
-        push!(exprs, :(expand!(result, gen.terms[$i], bond, gen.hilbert, half=gen.half, table=gen.table)))
+function expand(gen::Generator, i::Int)
+    bond = gen.bonds[i]
+    result = zero(valtype(gen))
+    map(term->expand!(result, term, bond, gen.hilbert, half=gen.half, table=gen.table), gen.terms)
+    isintracell(bond) || for opt in result
+        result[id(opt)] = gen.boundary(opt)
     end
-    push!(exprs, quote
-        isintracell(bond) || for opt in result
-            result.contents[id(opt)] = gen.boundary(opt)
-        end
-        return result
-    end)
-    return Expr(:block, exprs...)
+    return result
 end
 function expand(gen::Generator, name::Symbol, i::Int)
     bond = gen.bonds[i]
-    result = expand(getfield(gen.terms, name), bond, gen.hilbert, half=gen.half, table=gen.table)
+    result = expand(get(gen.terms, Val(name)), bond, gen.hilbert, half=gen.half, table=gen.table)
     isintracell(bond) || for opt in result
         result.contents[id(opt)] = gen.boundary(opt)
     end
     return result
+end
+@inline @generated function Base.get(terms::Tuple{Vararg{Term}}, ::Val{Name}) where Name
+    i = findfirst(isequal(Name), map(id, fieldtypes(terms)))::Int
+    return :(terms[$i])
 end
 
 """
@@ -401,13 +338,10 @@ end
 
 Update the coefficients of the terms in a generator.
 """
-@generated function update!(gen::Generator{<:Entry, TS}; kwargs...) where {TS<:NamedContainer{Term}}
-    exprs = [:(update!(gen.boundary; kwargs...))]
-    for i = 1:fieldcount(TS)
-        ismodulatable(fieldtype(TS, i)) && push!(exprs, :(update!(gen.terms[$i]; kwargs...)))
-    end
-    push!(exprs, :(return gen))
-    return Expr(:block, exprs...)
+function update!(gen::Generator; kwargs...)
+    update!(gen.boundary; kwargs...)
+    map(term->(ismodulatable(term) ? update!(term; kwargs...) : term), gen.terms)
+    return gen
 end
 
 """
@@ -449,7 +383,7 @@ function reset!(gen::Generator, lattice::AbstractLattice)
     reset!(gen.bonds, lattice)
     reset!(gen.hilbert, lattice.pids)
     isnothing(gen.table) || reset!(gen.table, gen.hilbert)
-    reset!(gen.operators, Tuple(gen.terms), gen.bonds, gen.hilbert, half=gen.half, table=gen.table)
+    reset!(gen.operators, gen.terms, gen.bonds, gen.hilbert, half=gen.half, table=gen.table)
     return gen
 end
 
@@ -507,10 +441,10 @@ end
 
 Update the parameters of a generator.
 """
-@generated function update!(gen::SimplifiedGenerator; kwargs...)
-    names = fieldnames(fieldtype(gen, :parameters))
-    values = [:(get(kwargs, $name, getfield(gen.parameters, $name))) for name in QuoteNode.(names)]
-    return Expr(:block, :(update!(gen.boundary; kwargs...)), :(gen.parameters = Parameters{$names}($(values...))), :(return gen))
+function update!(gen::SimplifiedGenerator; kwargs...)
+    gen.parameters = update(gen.parameters; kwargs...)
+    update!(gen.boundary; kwargs...)
+    return gen
 end
 
 """
@@ -584,16 +518,12 @@ The type of the data(result) of an assignment.
 
 Update the parameters of an assignment and the status of its associated action.
 """
-@generated function update!(assign::Assignment; kwargs...)
-    names = fieldnames(fieldtype(assign, :parameters))
-    exprs = [:(get(kwargs, $name, getfield(assign.parameters, $name))) for name in QuoteNode.(names)]
-    return quote
-        if length(kwargs)>0
-            assign.parameters = Parameters{$names}($(exprs...))
-            update!(assign.action; assign.map(assign.parameters)...)
-        end
-        return assign
+function update!(assign::Assignment; kwargs...)
+    if length(kwargs)>0
+        assign.parameters = update(assign.parameters; kwargs...)
+        update!(assign.action; assign.map(assign.parameters)...)
     end
+    return assign
 end
 
 """
@@ -645,16 +575,12 @@ end
 
 Update the parameters of an algorithm and its associated engine.
 """
-@generated function update!(alg::Algorithm; kwargs...)
-    names = fieldnames(fieldtype(alg, :parameters))
-    exprs = [:(get(kwargs, $name, getfield(alg.parameters, $name))) for name in QuoteNode.(names)]
-    return quote
-        if length(kwargs)>0
-            alg.parameters = Parameters{$names}($(exprs...))
-            update!(alg.engine; alg.map(alg.parameters)...)
-        end
-        return alg
+function update!(alg::Algorithm; kwargs...)
+    if length(kwargs)>0
+        alg.parameters = update(alg.parameters; kwargs...)
+        update!(alg.engine; alg.map(alg.parameters)...)
     end
+    return alg
 end
 
 """

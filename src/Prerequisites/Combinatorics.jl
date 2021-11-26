@@ -10,7 +10,6 @@ Abstract combinatorial algorithms.
 """
 abstract type AbstractCombinatorics{M, C} end
 @inline Base.eltype(::Type{<:AbstractCombinatorics{M, C}}) where {M, C} = NTuple{M, eltype(C)}
-@inline @generated gettuple(contents, indices, ::Val{M}) where {M} = Expr(:tuple, [:(contents[indices[$i]]) for i = 1:M]...)
 
 """
     Combinations{M}(contents::C) where {M, C}
@@ -22,9 +21,9 @@ struct Combinations{M, C} <: AbstractCombinatorics{M, C}
     N::Int
     Combinations{M}(contents::C) where {M, C} = new{M, C}(contents, length(contents))
 end
-@inline Base.length(c::Combinations{M}) where {M} = binomial(c.N, M)
-Base.iterate(c::Combinations{M}) where {M} = (M > c.N) ? nothing : (M == 0) ? ((), [c.N+2]) : (gettuple(c.contents, 1:M, Val(M)), nextmstate!(collect(1:M), c.N, M))
-Base.iterate(c::Combinations{M}, state) where M = (state[1] > c.N-M+1) ? nothing : (gettuple(c.contents, state, Val(M)), nextmstate!(state, c.N, M))
+@inline Base.length(c::Combinations{M}) where M = binomial(c.N, M)
+Base.iterate(c::Combinations{M}) where M = (M > c.N) ? nothing : (M == 0) ? ((), [c.N+2]) : (ntuple(i->c.contents[i], Val(M)), nextmstate!(collect(1:M), c.N, M))
+Base.iterate(c::Combinations{M}, state) where M = (state[1] > c.N-M+1) ? nothing : (ntuple(i->c.contents[state[i]], Val(M)), nextmstate!(state, c.N, M))
 function nextmstate!(state::Vector{Int}, N::Int, M::Int)
     for i = M:-1:1
         state[i] += 1
@@ -47,11 +46,11 @@ struct DulCombinations{M, C} <: AbstractCombinatorics{M, C}
     N::Int
     DulCombinations{M}(contents::C) where {M, C} = new{M, C}(contents, length(contents))
 end
-@inline Base.length(c::DulCombinations{M}) where {M} = binomial(c.N+M-1, c.N-1)
+@inline Base.length(c::DulCombinations{M}) where M = binomial(c.N+M-1, c.N-1)
 function Base.iterate(c::DulCombinations{M}) where M
-    (M == 0) ? ((), [c.N+1]) : (gettuple(c.contents, ntuple(i->1, M), Val(M)), nextdmstate!(collect(ntuple(i->1, M)), c.N, M))
+    (M == 0) ? ((), [c.N+1]) : (ntuple(i->c.contents[1], Val(M)), nextdmstate!(collect(ntuple(i->1, M)), c.N, M))
 end
-Base.iterate(c::DulCombinations{M}, state) where {M} = (state[1] > c.N) ? nothing : (gettuple(c.contents, state, Val(M)), nextdmstate!(state, c.N, M))
+Base.iterate(c::DulCombinations{M}, state) where M = (state[1] > c.N) ? nothing : (ntuple(i->c.contents[state[i]], Val(M)), nextdmstate!(state, c.N, M))
 function nextdmstate!(state::Vector{Int}, N::Int, M::Int)
     for i = M:-1:1
         state[i] += 1
@@ -74,12 +73,12 @@ struct Permutations{M, C} <: AbstractCombinatorics{M, C}
     N::Int
     Permutations{M}(contents::C) where {M, C} = new{M, C}(contents, length(contents))
 end
-@inline Base.length(p::Permutations{M}) where {M} = (0 <= M <= p.N) ? prod((p.N-M+1):p.N) : 0
+@inline Base.length(p::Permutations{M}) where M = (0 <= M <= p.N) ? prod((p.N-M+1):p.N) : 0
 function Base.iterate(p::Permutations{M}) where M
-    ((p.N == 0) && (M > 0) || (0 < p.N < M)) ? nothing : (state = collect(1:p.N); (gettuple(p.contents, state, Val(M)), nextpstate!(state, p.N, M)))
+    ((p.N == 0) && (M > 0) || (0 < p.N < M)) ? nothing : (state = collect(1:p.N); (ntuple(i->p.contents[state[i]], Val(M)), nextpstate!(state, p.N, M)))
 end
 function Base.iterate(p::Permutations{M}, state) where M
-    ((p.N == 0) && (M > 0) || (0 < p.N < max(state[1], M))) ? nothing : (gettuple(p.contents, state, Val(M)), nextpstate!(state, p.N, M))
+    ((p.N == 0) && (M > 0) || (0 < p.N < max(state[1], M))) ? nothing : (ntuple(i->p.contents[state[i]], Val(M)), nextpstate!(state, p.N, M))
 end
 function nextpstate!(state::Vector{Int}, N::Int, M::Int)
     (M <= 0) && return [N+1]
@@ -117,12 +116,12 @@ function Base.iterate(p::DulPermutations{M}) where M
     indices = CartesianIndices(ntuple(i->p.N, M|>Val))
     index = iterate(indices)
     isnothing(index) && return nothing
-    return gettuple(p.contents, reverse(index[1].I), M|>Val), (indices, index[2])
+    return ntuple(i->p.contents[reverse(index[1].I)[i]], M|>Val), (indices, index[2])
 end
 function Base.iterate(p::DulPermutations{M}, state) where M
     index = iterate(state[1], state[2])
     isnothing(index) && return nothing
-    return gettuple(p.contents, reverse(index[1].I), M|>Val), (state[1], index[2])
+    return ntuple(i->p.contents[reverse(index[1].I)[i]], M|>Val), (state[1], index[2])
 end
 
 end # module
