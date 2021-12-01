@@ -203,6 +203,10 @@ end
     @test latexstring(opts) ∈ (candidate₁, candidate₂)
 end
 
+struct UnitCoeffAddition <: Transformation end
+Base.valtype(::Type{UnitCoeffAddition}, M::Type{<:Union{Operator, Operators}}) = M
+@inline (unitcoeffaddition::UnitCoeffAddition)(m::Operator) = replace(m, value=one(valtype(m))+value(m))
+
 @testset "Transformation" begin
     m = Operator(1, ID(AID(1, 1)))
     s = Operators(m)
@@ -219,6 +223,10 @@ end
     @test valtype(n, s) == valtype(typeof(n), typeof(s)) == OperatorSum{Operator{Float, Tuple{AID{Int, Int}}}, Tuple{AID{Int, Int}}}
     @test n(m) == replace(m, value=1.0)
     @test n(s) == Operators(replace(m, value=1.0))
+
+    unitcoeffaddition = UnitCoeffAddition()
+    @test map!(unitcoeffaddition, s) == s == Operators(Operator(2, ID(AID(1, 1))))
+    @test map!(unitcoeffaddition, zero(s), s) == Operators(Operator(3, ID(AID(1, 1))))
 end
 
 @testset "Permutation" begin

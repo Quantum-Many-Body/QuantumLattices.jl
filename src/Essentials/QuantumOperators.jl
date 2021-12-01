@@ -794,6 +794,30 @@ Show a quantum operator.
 Base.show(io::IO, ::MIME"text/latex", m::QuantumOperator) = show(io, MIME"text/latex"(), latexstring(latexstring(m)))
 
 """
+    map!(transformation::Function, ms::OperatorSum; kwargs...) -> typeof(ms)
+
+In place map of an `OperatorSum` by a function.
+"""
+function Base.map!(transformation::Function, ms::OperatorSum; kwargs...)
+    for m in ms
+        ms[id(m)] = transformation(m; kwargs...)
+    end
+    return ms
+end
+
+"""
+    map!(transformation::Function, destination, ms::OperatorSum; kwargs...) -> typeof(destination)
+
+In place map of an `OperatorSum` by a function.
+"""
+function Base.map!(transformation::Function, destination, ms::OperatorSum; kwargs...)
+    for m in ms
+        add!(destination, transformation(m; kwargs...))
+    end
+    return destination
+end
+
+"""
     Transformation <: Function
 
 Abstract transformation that could transform the quantum operators.

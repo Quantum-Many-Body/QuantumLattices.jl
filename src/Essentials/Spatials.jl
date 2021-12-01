@@ -163,6 +163,7 @@ Decompose a vector with respect to input basis vectors.
 function decompose(v₀::AbstractVector{<:Number}, v₁::AbstractVector{<:Number})
     @assert length(v₀)==length(v₁) "decompose error: mismatched length of input vectors."
     n₀, n₁ = norm(v₀), norm(v₁)
+    abs(n₀)≈0 && return zero(n₀)
     sign = dot(v₀, v₁) / n₀ / n₁
     @assert isapprox(abs(sign), 1.0, atol=atol, rtol=rtol) "decompose error: insufficient basis vectors."
     return (sign*n₀/n₁,)

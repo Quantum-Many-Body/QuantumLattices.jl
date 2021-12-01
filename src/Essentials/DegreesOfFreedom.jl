@@ -3,19 +3,19 @@ module DegreesOfFreedom
 using MacroTools: @capture
 using Printf: @printf, @sprintf
 using StaticArrays: SVector
-using ..QuantumOperators: OperatorUnit, ID, OperatorProd, OperatorSum, Operator, Operators, valuetolatextext
+using ..QuantumOperators: OperatorUnit, ID, OperatorProd, OperatorSum, Operator, Operators, valuetolatextext, Transformation
 using ..Spatials: AbstractPID, AbstractBond, Point, Bonds, pidtype
 using ...Essentials: dtype
 using ...Interfaces: id, value, decompose, dimension, add!
 using ...Prerequisites: Float, atol, rtol, decimaltostr, concatenate
-using ...Prerequisites.Traits: rawtype, fulltype, efficientoperations, commontype, parametertype
+using ...Prerequisites.Traits: rawtype, fulltype, efficientoperations, commontype, parametertype, reparameter
 using ...Prerequisites.CompositeStructures: CompositeDict, CompositeTuple, NamedContainer
 using ...Prerequisites.VectorSpaces: CartesianVectorSpace
 
 import LinearAlgebra: ishermitian
 import ..QuantumOperators: idtype, script, optype
 import ..Spatials: pidtype, rcoord, icoord
-import ...Essentials: kind, reset!, update!
+import ...Essentials: kind, reset!, update, update!
 import ...Interfaces: id, value, rank, expand, expand!, ⊗
 import ...Prerequisites.Traits: parameternames, isparameterbound, contentnames, getcontent
 import ...Prerequisites.VectorSpaces: shape, ndimshape
@@ -27,7 +27,7 @@ export Subscript, Subscripts, SubscriptsID, @subscript_str, subscriptexpr, wildc
 export AbstractCoupling, Coupling, Couplings, couplingcenters, couplingpoints, couplinginternals, @couplings
 export Metric, OIDToTuple, Table
 export TermFunction, TermAmplitude, TermCouplings, TermModulate, Term, ismodulatable, abbr
-export Boundary, twist, plain
+export Parameters, TwistedBoundaryCondition, plain
 
 """
     IID <: OperatorUnit
@@ -1375,83 +1375,106 @@ Get the `attr` script of an oid, which is contained in its index.
 @inline script(::Val{attr}, oid::OID; kwargs...) where attr = script(Val(attr), oid.index; kwargs...)
 
 """
-    Boundary{Names}(values::AbstractVector{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}) where Names
+    Parameters{Names}(values::Number...) where Names
+
+A NamedTuple that contain the key-value pairs.
+"""
+const Parameters{Names} = NamedTuple{Names, <:Tuple{Vararg{Number}}}
+@inline Parameters{Names}(values::Number...) where {Names} = NamedTuple{Names}(values)
+@inline @generated function update(params::Parameters; parameters...)
+    names = fieldnames(params)
+    values = [:(get(parameters, $name, getfield(params, $name))) for name in QuoteNode.(names)]
+    return :(Parameters{$names}($(values...)))
+end
+
+"""
+    match(params₁::Parameters, params₂::Parameters; atol=atol, rtol=rtol) -> Bool
+
+Judge whether the second set of parameters matches the first.
+"""
+function Base.match(params₁::Parameters, params₂::Parameters; atol=atol, rtol=rtol)
+    for name in keys(params₂)
+        haskey(params₁, name) && !isapprox(getfield(params₁, name), getfield(params₂, name); atol=atol, rtol=rtol) && return false
+    end
+    return true
+end
+
+"""
+    TwistedBoundaryCondition{Names}(values::AbstractVector{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}) where Names
 
 Boundary twist of operators.
 """
-struct Boundary{Names, D<:Number, V<:AbstractVector} <: Function
+struct TwistedBoundaryCondition{Names, D<:Number, V<:AbstractVector} <: Transformation
     values::Vector{D}
     vectors::Vector{V}
-    function Boundary{Names}(values::AbstractVector{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}) where Names
-        @assert length(Names)==length(values)==length(vectors) "Boundary error: mismatched names, values and vectors."
+    function TwistedBoundaryCondition{Names}(values::AbstractVector{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}) where Names
+        @assert length(Names)==length(values)==length(vectors) "TwistedBoundaryCondition error: mismatched names, values and vectors."
         datatype = promote_type(eltype(values), Float)
         new{Names, datatype, eltype(vectors)}(convert(Vector{datatype}, values), vectors)
     end
 end
-@inline Base.:(==)(bound1::Boundary, bound2::Boundary) = ==(efficientoperations, bound1, bound2)
-@inline Base.isequal(bound1::Boundary, bound2::Boundary) = isequal(efficientoperations, bound1, bound2)
+@inline Base.valtype(::Type{<:TwistedBoundaryCondition}, M::Type{<:Operator}) = reparameter(M, :value, promote_type(Complex{Int}, valtype(M)))
+@inline Base.valtype(B::Type{<:TwistedBoundaryCondition}, MS::Type{<:Operators}) = (M = valtype(B, eltype(MS)); Operators{M, idtype(M)})
 
 """
-    keys(bound::Boundary) -> Tuple{Vararg{Symbol}}
-    keys(::Type{<:Boundary{Names}}) where Names -> Names
+    keys(bound::TwistedBoundaryCondition) -> Tuple{Vararg{Symbol}}
+    keys(::Type{<:TwistedBoundaryCondition{Names}}) where Names -> Names
 
 Get the names of the boundary parameters.
 """
-@inline Base.keys(bound::Boundary) = keys(typeof(bound))
-@inline Base.keys(::Type{<:Boundary{Names}}) where Names = Names
+@inline Base.keys(bound::TwistedBoundaryCondition) = keys(typeof(bound))
+@inline Base.keys(::Type{<:TwistedBoundaryCondition{Names}}) where Names = Names
 
 """
-    (bound::Boundary)(operator::Operator) -> Operator
+    (bound::TwistedBoundaryCondition)(operator::Operator; origin::Union{AbstractVector, Nothing}=nothing) -> Operator
 
 Get the boundary twisted operator.
 """
-@inline (bound::Boundary)(operator::Operator) = twist(operator, bound.vectors, bound.values)
-
-"""
-    twist(operator::Operator, vectors::AbstractVector{<:AbstractVector{<:Number}}, values::AbstractVector{<:Number}) -> Operator
-
-Twist an operator.
-"""
-@inline function twist(operator::Operator, vectors::AbstractVector{<:AbstractVector{<:Number}}, values::AbstractVector{<:Number})
-    return replace(operator, operator.value*exp(1im*angle(operator.id, vectors, values)))
+@inline function (bound::TwistedBoundaryCondition)(operator::Operator; origin::Union{AbstractVector, Nothing}=nothing)
+    values = isnothing(origin) ? bound.values : bound.values-origin
+    return replace(operator, operator.value*exp(1im*mapreduce(u->angle(u, bound.vectors, values), +, id(operator))))
 end
 
 """
-    angle(bound::Boundary, operator::Operator) -> Number
-
-Get the boundary twist phase of an operator.
-"""
-@inline Base.angle(bound::Boundary, operator::Operator) = angle(operator.id, bound.vectors, bound.values)
-
-"""
-    angle(id::ID{AbstractOID}, vectors::AbstractVector{<:AbstractVector{<:Number}}, values::AbstractVector{<:Number}) -> Number
-
-Get the total twist phase of an id.
-"""
-@inline function Base.angle(id::ID{AbstractOID}, vectors::AbstractVector{<:AbstractVector{<:Number}}, values::AbstractVector{<:Number})
-    return mapreduce(u->angle(u, vectors, values), +, id)
-end
-
-"""
-    update!(bound::Boundary, args...; kwargs...) -> Boundary
+    update!(bound::TwistedBoundaryCondition; parameters...) -> TwistedBoundaryCondition
 
 Update the values of the boundary twisted phase.
 """
-@inline @generated function update!(bound::Boundary, args...; kwargs...)
+@inline @generated function update!(bound::TwistedBoundaryCondition; parameters...)
     exprs = []
     for (i, name) in enumerate(QuoteNode.(keys(bound)))
-        push!(exprs, :(bound.values[$i] = get(kwargs, $name, bound.values[$i])))
+        push!(exprs, :(bound.values[$i] = get(parameters, $name, bound.values[$i])))
     end
     return Expr(:block, exprs..., :(return bound))
 end
+
+"""
+    merge!(bound::TwistedBoundaryCondition, another::TwistedBoundaryCondition) -> typeof(bound)
+
+Merge the values and vectors of the twisted boundary condition from another one.
+"""
+@inline function Base.merge!(bound::TwistedBoundaryCondition, another::TwistedBoundaryCondition)
+    @assert keys(bound)==keys(another) "merge! error: mismatched names of boundary parameters."
+    bound.values .= another.values
+    bound.vectors .= another.vectors
+    return bound
+end
+
+"""
+    Parameters(bound::TwistedBoundaryCondition)
+
+Get the parameters of the twisted boundary condition.
+"""
+@inline Parameters(bound::TwistedBoundaryCondition) = NamedTuple{keys(bound)}(ntuple(i->bound.values[i], Val(fieldcount(typeof(keys(bound))))))
 
 """
     plain
 
 Plain boundary condition without any twist.
 """
-const plain = Boundary{()}(Float[], SVector{0, Float}[])
-@inline Base.angle(::typeof(plain), operator::Operator) = 0
-@inline (::typeof(plain))(operator::Operator) = operator
+const plain = TwistedBoundaryCondition{()}(Float[], SVector{0, Float}[])
+@inline Base.valtype(::Type{typeof(plain)}, M::Type{<:Operator}) = M
+@inline Base.valtype(::Type{typeof(plain)}, M::Type{<:Operators}) = M
+@inline (::typeof(plain))(operator::Operator; kwargs...) = operator
 
 end #module
