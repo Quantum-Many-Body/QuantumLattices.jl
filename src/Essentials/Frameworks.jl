@@ -1,31 +1,134 @@
 module Frameworks
 
 using Printf: @printf, @sprintf
+using StaticArrays: SVector
 using LaTeXStrings: latexstring
 using Serialization: serialize
 using TimerOutputs: TimerOutputs, TimerOutput, @timeit
 using RecipesBase: RecipesBase, @recipe, @series
-using ..QuantumOperators: Operators, Transformation, optype
+using ..QuantumOperators: Operator, Operators, Transformation, optype, idtype
 using ..Spatials: Bonds, AbstractLattice, acrossbonds, isintracell
-using ..DegreesOfFreedom: Hilbert, Table, Term, TwistedBoundaryCondition, plain, ismodulatable
-using ...Essentials: update
-using ...Prerequisites: atol, rtol, decimaltostr
-using ...Prerequisites.Traits: efficientoperations
+using ..DegreesOfFreedom: Hilbert, Table, Term, ismodulatable
+using ...Prerequisites: Float, atol, rtol, decimaltostr
+using ...Prerequisites.Traits: efficientoperations, reparameter
 
-import ..DegreesOfFreedom: Parameters
 import ...Interfaces: id, add!, expand, expand!
-import ...Essentials: update!, reset!
+import ...Essentials: update, update!, reset!
 import ...Prerequisites.Traits: contentnames, getcontent
 
+export Parameters, Boundary, plain
 export Entry, Engine, AbstractGenerator, Generator, SimplifiedGenerator, Action, Assignment, Algorithm
 export prepare!, run!, save, rundependences!
 
 """
-    Entry{C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:TwistedBoundaryCondition}
+    Parameters{Names}(values::Number...) where Names
+
+A NamedTuple that contain the key-value pairs.
+"""
+const Parameters{Names} = NamedTuple{Names, <:Tuple{Vararg{Number}}}
+@inline Parameters{Names}(values::Number...) where {Names} = NamedTuple{Names}(values)
+@inline @generated function update(params::Parameters; parameters...)
+    names = fieldnames(params)
+    values = [:(get(parameters, $name, getfield(params, $name))) for name in QuoteNode.(names)]
+    return :(Parameters{$names}($(values...)))
+end
+
+"""
+    match(params₁::Parameters, params₂::Parameters; atol=atol, rtol=rtol) -> Bool
+
+Judge whether the second set of parameters matches the first.
+"""
+function Base.match(params₁::Parameters, params₂::Parameters; atol=atol, rtol=rtol)
+    for name in keys(params₂)
+        haskey(params₁, name) && !isapprox(getfield(params₁, name), getfield(params₂, name); atol=atol, rtol=rtol) && return false
+    end
+    return true
+end
+
+"""
+    Boundary{Names}(values::AbstractVector{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}) where Names
+
+Boundary twist of operators.
+"""
+struct Boundary{Names, D<:Number, V<:AbstractVector} <: Transformation
+    values::Vector{D}
+    vectors::Vector{V}
+    function Boundary{Names}(values::AbstractVector{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}) where Names
+        @assert length(Names)==length(values)==length(vectors) "Boundary error: mismatched names, values and vectors."
+        datatype = promote_type(eltype(values), Float)
+        new{Names, datatype, eltype(vectors)}(convert(Vector{datatype}, values), vectors)
+    end
+end
+@inline Base.valtype(::Type{<:Boundary}, M::Type{<:Operator}) = reparameter(M, :value, promote_type(Complex{Int}, valtype(M)))
+@inline Base.valtype(B::Type{<:Boundary}, MS::Type{<:Operators}) = (M = valtype(B, eltype(MS)); Operators{M, idtype(M)})
+
+"""
+    keys(bound::Boundary) -> Tuple{Vararg{Symbol}}
+    keys(::Type{<:Boundary{Names}}) where Names -> Names
+
+Get the names of the boundary parameters.
+"""
+@inline Base.keys(bound::Boundary) = keys(typeof(bound))
+@inline Base.keys(::Type{<:Boundary{Names}}) where Names = Names
+
+"""
+    (bound::Boundary)(operator::Operator; origin::Union{AbstractVector, Nothing}=nothing) -> Operator
+
+Get the boundary twisted operator.
+"""
+@inline function (bound::Boundary)(operator::Operator; origin::Union{AbstractVector, Nothing}=nothing)
+    values = isnothing(origin) ? bound.values : bound.values-origin
+    return replace(operator, operator.value*exp(1im*mapreduce(u->angle(u, bound.vectors, values), +, id(operator))))
+end
+
+"""
+    update!(bound::Boundary; parameters...) -> Boundary
+
+Update the values of the boundary twisted phase.
+"""
+@inline @generated function update!(bound::Boundary; parameters...)
+    exprs = []
+    for (i, name) in enumerate(QuoteNode.(keys(bound)))
+        push!(exprs, :(bound.values[$i] = get(parameters, $name, bound.values[$i])))
+    end
+    return Expr(:block, exprs..., :(return bound))
+end
+
+"""
+    merge!(bound::Boundary, another::Boundary) -> typeof(bound)
+
+Merge the values and vectors of the twisted boundary condition from another one.
+"""
+@inline function Base.merge!(bound::Boundary, another::Boundary)
+    @assert keys(bound)==keys(another) "merge! error: mismatched names of boundary parameters."
+    bound.values .= another.values
+    bound.vectors .= another.vectors
+    return bound
+end
+
+"""
+    Parameters(bound::Boundary)
+
+Get the parameters of the twisted boundary condition.
+"""
+@inline Parameters(bound::Boundary) = NamedTuple{keys(bound)}(ntuple(i->bound.values[i], Val(fieldcount(typeof(keys(bound))))))
+
+"""
+    plain
+
+Plain boundary condition without any twist.
+"""
+const plain = Boundary{()}(Float[], SVector{0, Float}[])
+@inline Base.valtype(::Type{typeof(plain)}, M::Type{<:Operator}) = M
+@inline Base.valtype(::Type{typeof(plain)}, M::Type{<:Operators}) = M
+@inline (::typeof(plain))(operator::Operator; kwargs...) = operator
+
+"""
+    Entry{C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:Boundary}
 
 An entry of quantum operators (or representations of quantum operators) related to (part of) a quantum lattice system.
 """
-mutable struct Entry{C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:TwistedBoundaryCondition}
+mutable struct Entry{C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:Boundary}
     constops::C
     alterops::A
     boundops::B
@@ -39,7 +142,7 @@ end
     Entry(terms::Tuple{Vararg{Term}}, bonds::Bonds, hilbert::Hilbert;
         half::Bool=false,
         table::Union{Nothing, Table}=nothing,
-        boundary::TwistedBoundaryCondition=plain
+        boundary::Boundary=plain
         )
 
 Construct an entry of quantum operators based on the input terms, bonds, Hilbert space and (twisted) boundary condition.
@@ -47,7 +150,7 @@ Construct an entry of quantum operators based on the input terms, bonds, Hilbert
 function Entry(terms::Tuple{Vararg{Term}}, bonds::Bonds, hilbert::Hilbert;
         half::Bool=false,
         table::Union{Nothing, Table}=nothing,
-        boundary::TwistedBoundaryCondition=plain
+        boundary::Boundary=plain
         )
     constterms, alterterms, choosedterms = termclassifier(terms)
     innerbonds = filter(acrossbonds, bonds, Val(:exclude))
@@ -205,7 +308,7 @@ end
     reset!(entry::Entry{<:Operators}, terms::Tuple{Vararg{Term}}, bonds::Bonds, hilbert::Hilbert;
         half::Bool=false,
         table::Union{Nothing, Table}=nothing,
-        boundary::TwistedBoundaryCondition=entry.boundary
+        boundary::Boundary=entry.boundary
         ) -> Entry
 
 Reset an entry of quantum operators by the new terms, bonds, Hilbert space and (twisted) boundary condition.
@@ -213,7 +316,7 @@ Reset an entry of quantum operators by the new terms, bonds, Hilbert space and (
 function reset!(entry::Entry{<:Operators}, terms::Tuple{Vararg{Term}}, bonds::Bonds, hilbert::Hilbert;
         half::Bool=false,
         table::Union{Nothing, Table}=nothing,
-        boundary::TwistedBoundaryCondition=entry.boundary
+        boundary::Boundary=entry.boundary
         )
     empty!(entry)
     constterms, alterterms, _ = termclassifier(terms)
@@ -324,7 +427,7 @@ end
     Generator(terms::Tuple{Vararg{Term}}, bonds::Bonds, hilbert::Hilbert;
         half::Bool=false,
         table::Union{Table,Nothing}=nothing,
-        boundary::TwistedBoundaryCondition=plain
+        boundary::Boundary=plain
         )
 
 Construct a generator of operators.
@@ -332,7 +435,7 @@ Construct a generator of operators.
 @inline function Generator(terms::Tuple{Vararg{Term}}, bonds::Bonds, hilbert::Hilbert;
         half::Bool=false,
         table::Union{Table,Nothing}=nothing,
-        boundary::TwistedBoundaryCondition=plain
+        boundary::Boundary=plain
         )
     return Generator(Entry(terms, bonds, hilbert; half=half, table=table, boundary=boundary), terms, bonds, hilbert, half, table)
 end
@@ -426,11 +529,11 @@ Get an empty copy of a generator.
 end
 
 """
-    reset!(gen::Generator, lattice::AbstractLattice, boundary::TwistedBoundaryCondition=gen.operators.boundary) -> Generator
+    reset!(gen::Generator, lattice::AbstractLattice, boundary::Boundary=gen.operators.boundary) -> Generator
 
 Reset a generator by a new lattice and a new twisted boundary condition.
 """
-function reset!(gen::Generator, lattice::AbstractLattice, boundary::TwistedBoundaryCondition=gen.operators.boundary)
+function reset!(gen::Generator, lattice::AbstractLattice, boundary::Boundary=gen.operators.boundary)
     reset!(gen.bonds, lattice)
     reset!(gen.hilbert, lattice.pids)
     isnothing(gen.table) || reset!(gen.table, gen.hilbert)
@@ -443,7 +546,7 @@ end
 
 The simplified generator for an entry of (representations of) quantum operators.
 
-Usually, an instance of this type comes out as the result of a transformation on an instance of `Generator`.
+Usually, an instance of this type comes out as the result of a transformation on an instance of `Generator`/`SimplifiedGenerator`.
 """
 mutable struct SimplifiedGenerator{E<:Entry, T<:Union{Table, Nothing}} <: AbstractGenerator{E, T}
     operators::E
@@ -455,19 +558,19 @@ end
 """
     SimplifiedGenerator(operators::Entry; table::Union{Table,Nothing}=nothing, sourceid::UInt=objectid(nothing))
 
-Construct an simplified generator of operators.
+Construct an simplified generator of (representations of) quantum operators.
 """
 @inline function SimplifiedGenerator(operators::Entry; table::Union{Table,Nothing}=nothing, sourceid::UInt=objectid(nothing))
     return SimplifiedGenerator(operators, table, sourceid)
 end
 
 """
-    (transformation::Transformation)(gen::Generator; table::Union{Table, Nothing}=nothing, kwargs...) -> SimplifiedGenerator
+    (transformation::Transformation)(gen::AbstractGenerator; table::Union{Table, Nothing}=nothing, kwargs...) -> SimplifiedGenerator
 
-Get the result of a transformation on an instance of `Generator`.
+Get the result of a transformation on an instance of `AbstractGenerator`.
 """
-@inline function (transformation::Transformation)(gen::Generator; table::Union{Table, Nothing}=nothing, kwargs...)
-    return SimplifiedGenerator(transformation(gen.operators; kwargs...); table=table, sourceid=objectid((transformation, gen)))
+@inline function (transformation::Transformation)(gen::AbstractGenerator; table::Union{Table, Nothing}=nothing, kwargs...)
+    return SimplifiedGenerator(transformation(getcontent(gen, :operators); kwargs...); table=table, sourceid=objectid((transformation, gen)))
 end
 
 """

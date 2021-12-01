@@ -1,15 +1,13 @@
 using Test
 using Printf: @printf, @sprintf
 using StaticArrays: SVector
-using LinearAlgebra: dot
 using QuantumLattices.Essentials.DegreesOfFreedom
 using QuantumLattices.Essentials.QuantumOperators: ID, Operator, Operators, sequence, id, idtype, LaTeX, latexformat
 using QuantumLattices.Essentials.Spatials: AbstractPID, PID, CPID, Point, Bond, Bonds, Lattice, pidtype, rcoord, icoord
-using QuantumLattices.Essentials: kind, update, update!, reset!
-using QuantumLattices.Interfaces: decompose, rank, expand, ⊗
+using QuantumLattices.Essentials: kind, update!, reset!
+using QuantumLattices.Interfaces: rank, expand, ⊗
 using QuantumLattices.Prerequisites: Float, decimaltostr
-using QuantumLattices.Prerequisites.Traits: parameternames, isparameterbound, contentnames, getcontent, reparameter
-using QuantumLattices.Prerequisites.CompositeStructures: NamedContainer
+using QuantumLattices.Prerequisites.Traits: parameternames, isparameterbound, contentnames, getcontent
 
 import QuantumLattices.Essentials.QuantumOperators: latexname, script
 import QuantumLattices.Essentials.DegreesOfFreedom: ishermitian, statistics, couplingcenters, abbr
@@ -34,13 +32,6 @@ end
 @inline shape(iidspace::IIDSpace{DID{Symbol}, DFock}) = (1:iidspace.internal.nnambu,)
 @inline shape(iidspace::IIDSpace{DID{Int}, DFock}) = (iidspace.iid.nambu:iidspace.iid.nambu,)
 
-function Base.angle(id::OID{<:Index{<:AbstractPID, DID{Int}}}, vectors::AbstractVector{<:AbstractVector{Float}}, values::AbstractVector{Float})
-    phase=  (length(vectors) == 1) ? 2pi*dot(decompose(id.icoord, vectors[1]), values) :
-            (length(vectors) == 2) ? 2pi*dot(decompose(id.icoord, vectors[1], vectors[2]), values) :
-            (length(vectors) == 3) ? 2pi*dot(decompose(id.icoord, vectors[1], vectors[2], vectors[3]), values) :
-            error("angle error: not supported number of input basis vectors.")
-    (id.index.iid.nambu == 1) ? phase : -phase
-end
 @inline script(::Val{:site}, index::Index{<:AbstractPID, <:DID}; kwargs...) = index.pid.site
 @inline script(::Val{:nambu}, index::Index{<:AbstractPID, <:DID}; kwargs...) = index.iid.nambu==2 ? "\\dagger" : ""
 
@@ -464,45 +455,4 @@ end
     @test script(Val(:integralicoord), oid; vectors=get(latex.options, :vectors, nothing)) == "[1, 0]"
     @test script(Val(:site), oid) == 1
     @test script(Val(:nambu), oid) == "\\dagger"
-end
-
-@testset "Parameters" begin
-    ps1 = Parameters{(:t1, :t2, :U)}(1.0im, 1.0, 2.0)
-    ps2 = Parameters{(:t1, :U)}(1.0im, 2.0)
-    ps3 = Parameters{(:t1, :U)}(1.0im, 2.1)
-    @test match(ps1, ps2) == true
-    @test match(ps1, ps3) == false
-    @test update(ps1; ps3...) == Parameters{(:t1, :t2, :U)}(1.0im, 1.0, 2.1)
-end
-
-@testset "TwistedBoundaryCondition" begin
-    op = Operator(4.5,
-        OID(Index(PID(1), DID(2)), SVector(0.5, 0.5), SVector(0.0, 0.0)),
-        OID(Index(PID(2), DID(1)), SVector(1.5, 1.5), SVector(1.0, 1.0))
-        )
-    bound = TwistedBoundaryCondition{(:θ₁, :θ₂)}([0.1, 0.2], [[1.0, 0.0], [0.0, 1.0]])
-    M = reparameter(typeof(op), :value, Complex{Float64})
-    @test valtype(typeof(bound), typeof(op)) == M
-    @test keys(bound) == keys(typeof(bound)) == (:θ₁, :θ₂)
-    @test Parameters(bound) == (θ₁=0.1, θ₂=0.2)
-
-    another = TwistedBoundaryCondition{(:θ₁, :θ₂)}([0.0, 0.0], [[2.0, 0.0], [0.0, 2.0]])
-    @test merge!(deepcopy(bound), another) == another
-
-    @test bound(op) ≈ replace(op, 4.5*exp(2im*pi*0.3))
-    @test bound(op, origin=[0.05, 0.15]) ≈ replace(op, 4.5*exp(2im*pi*0.1))
-    update!(bound, θ₁=0.3)
-    @test bound(op) ≈ replace(op, 4.5*exp(2im*pi*0.5))
-    @test bound(op, origin=[0.1, 0.1]) ≈ replace(op, 4.5*exp(2im*pi*0.3))
-
-    ops = Operators{M}(op)
-    @test valtype(typeof(bound), typeof(ops)) == typeof(ops)
-    @test bound(ops) ≈ Operators(replace(op, 4.5*exp(2im*pi*0.5)))
-    @test map!(bound, ops) ≈ ops ≈ Operators(replace(op, 4.5*exp(2im*pi*0.5)))
-
-    @test valtype(typeof(plain), typeof(op)) == typeof(op)
-    @test valtype(typeof(plain), typeof(ops)) == typeof(ops)
-    @test plain(op) == op
-    @test plain(ops) == ops
-    @test update!(plain) == plain
 end

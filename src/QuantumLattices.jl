@@ -31,12 +31,12 @@ export allbonds, zerothbonds, insidebonds, acrossbonds, intrabonds, interbonds
 
 # Essentials.DegreesOfFreedom
 export CompositeIID, CompositeInternal, Index, OID, IIDSpace, Hilbert
-export Subscript, Subscripts, SubscriptsID, Coupling, Couplings, OIDToTuple, Table, Term, LaTeX, Boundary
-export statistics, iidtype, ismodulatable, abbr, otype, twist, plain, @subscript_str, @couplings
+export Subscript, Subscripts, SubscriptsID, Coupling, Couplings, OIDToTuple, Table, Term, LaTeX
+export statistics, iidtype, ismodulatable, abbr, @subscript_str, @couplings
 
 # Essentials.Frameworks
-export Parameters, Generator, SimplifiedGenerator, Action, Engine, Assignment, Algorithm
-export prepare!, run!, rundependences!
+export Parameters, Boundary, Generator, SimplifiedGenerator, Action, Engine, Assignment, Algorithm
+export prepare!, run!, rundependences!, plain
 
 # Essentials.QuantumSystems
 ## Canonical fermionic/bosonic systems
