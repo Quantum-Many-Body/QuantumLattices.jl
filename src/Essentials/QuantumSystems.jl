@@ -21,7 +21,7 @@ import ...Interfaces: rank, ⊗, ⋅, expand, expand!, permute
 import ...Prerequisites.VectorSpaces: shape, ndimshape
 
 export majorana, annihilation, creation, flatex, blatex
-export FID, Fock, FockCoupling, Onsite, Hopping, Pairing, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, SpinFlip, PairHopping, Coulomb
+export FID, Fock, FockCoupling, Onsite, Hopping, Pairing, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, SpinFlip, PairHopping, Coulomb, FockTerm
 export isnormalordered, @σ⁰_str, @σˣ_str, @σʸ_str, @σᶻ_str, @σ⁺_str, @σ⁻_str, @fc_str
 
 export slatex
@@ -29,7 +29,7 @@ export SID, Spin, SpinCoupling, SpinTerm
 export totalspin, @heisenberg_str, @ising_str, @gamma_str, @dm_str, @sˣ_str, @sʸ_str, @sᶻ_str, @sc_str
 
 export nlatex
-export NID, Phonon, PhononCoupling, PhononKinetic, PhononPotential
+export NID, Phonon, PhononCoupling, PhononKinetic, PhononPotential, PhononTerm
 export @kinetic_str, @potential_str
 
 export DMPhonon, @dmphonon_str
@@ -660,6 +660,13 @@ end
 @inline termfactor(id::ID{OID, 4}, ::Val{:Coulomb}) = id[2]'==id[1] && id[4]'==id[3] ? 2 : 1
 @inline couplingcenters(::FockCoupling, ::Bond, ::Val{:Coulomb}) = (1, 1, 2, 2)
 
+"""
+    FockTerm
+
+Type alias for `Union{Onsite, Hopping, Pairing, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, SpinFlip, PairHopping, Coulomb}`.
+"""
+const FockTerm = Union{Onsite, Hopping, Pairing, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, SpinFlip, PairHopping, Coulomb}
+
 # SU(2) spin systems
 const sidtagmap = Dict(1=>'x', 2=>'y', 3=>'z', 4=>'+', 5=>'-')
 const sidseqmap = Dict(v=>k for (k, v) in sidtagmap)
@@ -1200,6 +1207,13 @@ end
 @inline abbr(::Type{<:PhononPotential}) = :pnp
 @inline ishermitian(::Type{<:PhononPotential}) = true
 @inline couplingcenters(::PhononCoupling, ::Bond, ::Val{:PhononPotential}) = (1, 2)
+
+"""
+    PhononTerm
+
+Type alias for `Union{PhononKinetic, PhononPotential}`.
+"""
+const PhononTerm = Union{PhononKinetic, PhononPotential}
 
 # Magnon-phonon coupled systems
 """
