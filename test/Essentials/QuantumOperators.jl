@@ -2,6 +2,7 @@ using Test
 using LaTeXStrings: latexstring
 using Printf: @printf, @sprintf
 using QuantumLattices.Essentials.QuantumOperators
+using QuantumLattices.Essentials: dtype
 using QuantumLattices.Interfaces: id, value, rank, add!, sub!, mul!, div!
 using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Prerequisites.Combinatorics: Combinations
@@ -81,6 +82,7 @@ end
     @test promote_type(Operator{Int}, Operator{Float}) == Operator{Float}
     @test promote_type(Operator{Int, ID{AID{Int, Int}, 2}}, Operator{Float, ID{AID{Int, Int}, 2}}) == Operator{Float, ID{AID{Int, Int}, 2}}
     @test promote_type(Operator{Int, ID{AID}}, Operator{Float, ID{AID}}) == Operator{Float, <:ID{AID}}
+    @test promote_type(Operator{Int}, Float) == Operator{Float}
 
     opt = Operator(2.0, AID(1, 1))
     @test deepcopy(opt)==opt && isequal(deepcopy(opt), opt)
@@ -89,6 +91,7 @@ end
     @test opt|>rank == opt|>typeof|>rank == 1
     @test opt|>valtype == opt|>typeof|>valtype == parametertype(opt|>typeof, :value) == Float
     @test opt|>idtype == opt|>typeof|>idtype == parametertype(opt|>typeof, :id) == ID{AID{Int, Int}, 1}
+    @test opt|>dtype == opt|>typeof|>dtype == Float
     @test value(opt) == 2.0
     @test id(opt) == ID(AID(1, 1))
     @test replace(opt, 3) == replace(opt, value=3) == Operator(3, AID(1, 1))

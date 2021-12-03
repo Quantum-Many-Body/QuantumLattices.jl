@@ -17,7 +17,7 @@ export expand, expand!, decompose, decompose!, permute
 export dtype, kind, update, update!, reset!
 
 # Essentials.QuantumOperators
-export QuantumOperator, OperatorUnit, ID, OperatorProd, OperatorSum, Scalar, Operator, Operators, ishermitian, idtype, optype, sequence, latexformat
+export QuantumOperator, OperatorUnit, ID, OperatorProd, OperatorSum, Operator, Operators, ishermitian, idtype, optype, sequence, latexformat
 export Transformation, Identity, Numericalization, MatrixRepresentation, Permutation, UnitSubstitution, RankFilter, matrix, matrix!
 
 # Essentials.QuantumNumbers

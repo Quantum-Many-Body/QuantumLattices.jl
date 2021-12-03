@@ -7,10 +7,11 @@ using ...Prerequisites.Traits: rawtype, fulltype, parametertype, parameterpairs,
 
 import LaTeXStrings: latexstring
 import LinearAlgebra: ishermitian
+import ..Essentials: dtype
 import ...Interfaces: id, value, rank, add!, sub!, mul!, div!, ⊗, ⋅, permute
 import ...Prerequisites.Traits: contentnames, dissolve, isparameterbound, parameternames
 
-export QuantumOperator, OperatorUnit, ID, OperatorProd, OperatorSum, Scalar, Operator, Operators, LaTeX
+export QuantumOperator, OperatorUnit, ID, OperatorProd, OperatorSum, Operator, Operators, LaTeX
 export Transformation, Identity, Numericalization, MatrixRepresentation, Permutation, AbstractSubstitution, AbstractUnitSubstitution, UnitSubstitution, RankFilter
 export ishermitian, idtype, optype, sequence, latexname, latexformat, superscript, subscript, script, matrix, matrix!
 
@@ -166,15 +167,7 @@ abstract type OperatorProd{V, I<:ID{OperatorUnit}} <: QuantumOperator end
     M = r₂==0 ? rawtype(M₁) : r₁==0 ? rawtype(M₂) : typejoin(rawtype(M₁), rawtype(M₂))
     return fulltype(M, promoteparameters(parameterpairs(M₁), parameterpairs(M₂)))
 end
-
-"""
-    Scalar{V}
-
-Scalar quantum operator.
-
-Type alias for `OperatorProd{V, Tuple{}}`.
-"""
-const Scalar{V} = OperatorProd{V, Tuple{}}
+@inline Base.promote_rule(::Type{M}, ::Type{N}) where {M<:OperatorProd, N<:Number} = reparameter(M, :value, promote_type(valtype(M), N))
 
 """
     rank(::Type{M}) where {M<:OperatorProd} -> Int
@@ -202,6 +195,15 @@ The type of the id of an `OperatorProd`.
 @inline @generated idtype(::Type{T}) where {T<:OperatorProd} = parametertype(supertype(T, :OperatorProd), :id)
 
 """
+    dtype(m::OperatorProd)
+    dtype(::Type{T}) where {T<:OperatorProd}
+
+The data type of the coefficient of an `OperatorProd`.
+"""
+@inline dtype(m::OperatorProd) = dtype(typeof(m))
+@inline dtype(::Type{T}) where {T<:OperatorProd} = valtype(T)
+
+"""
     value(m::OperatorProd) -> valtype(m)
 
 Get the value of an `OperatorProd`.
@@ -215,13 +217,13 @@ Get the id of an `OperatorProd`.
 """
 @inline id(m::OperatorProd) = getcontent(m, :id)
 
-@inline newvalue(m::OperatorProd, v::Number) = v
+@inline newvalue(m::OperatorProd, v) = v
 """
-    replace(m::OperatorProd, v::Number) -> OperatorProd
+    replace(m::OperatorProd, v) -> OperatorProd
 
 Replace the value of an `OperatorProd`.
 """
-@inline Base.replace(m::OperatorProd, v::Number) = rawtype(typeof(m))(dissolve(m, newvalue, (v,))...)
+@inline Base.replace(m::OperatorProd, v) = rawtype(typeof(m))(dissolve(m, newvalue, (v,))...)
 @inline dissolve(m::OperatorProd, ::Val{:value}, ::typeof(newvalue), args::Tuple, kwargs::NamedTuple) = newvalue(m, args...; kwargs...)
 
 """
@@ -292,7 +294,7 @@ Get the sequence of the id of a quantum operator according to a table.
 """
 @inline function Base.convert(::Type{M}, m::Number) where {M<:OperatorProd}
     @assert isa(one(M), M) "convert error: not convertible."
-    return one(M)*convert(valtype(M), m)
+    return one(M)*convert(dtype(M), m)
 end
 @inline function Base.convert(::Type{M}, m::OperatorProd) where {M<:OperatorProd}
     (typeof(m) <: M) && return m
@@ -442,11 +444,11 @@ Get the in-place addition of quantum operators.
 """
 @inline add!(ms::OperatorSum) = ms
 @inline function add!(ms::OperatorSum, m::Union{Number, OperatorUnit, OperatorProd})
-    isa(m, Number) && abs(m)==0 && return ms
+    isa(m, Number) && m==0 && return ms
     m = convert(eltype(ms), m)
     old = get(ms.contents, id(m), nothing)
     new = isnothing(old) ? m : replace(old, value(old)+value(m))
-    abs(value(new))==0 ? delete!(ms.contents, id(m)) : (ms[id(m)] = new)
+    value(new)==0 ? delete!(ms.contents, id(m)) : (ms[id(m)] = new)
     return ms
 end
 @inline function add!(ms::OperatorSum, mms::OperatorSum)
@@ -469,7 +471,7 @@ Get the in-place subtraction of quantum operators.
     m = convert(eltype(ms), m)
     old = get(ms.contents, id(m), nothing)
     new = isnothing(old) ? -m : replace(old, value(old)-value(m))
-    abs(value(new))==0 ? delete!(ms.contents, id(m)) : (ms[id(m)] = new)
+    value(new)==0 ? delete!(ms.contents, id(m)) : (ms[id(m)] = new)
     return ms
 end
 @inline function sub!(ms::OperatorSum, mms::OperatorSum)
@@ -486,10 +488,9 @@ Get the in-place multiplication of an `OperatorSum` with a number.
 """
 function mul!(ms::OperatorSum, factor::Number)
     abs(factor)==0 && return empty!(ms)
-    @assert isa(one(ms|>eltype|>valtype)*factor, ms|>eltype|>valtype) "mul! error: mismatched type, $(ms|>eltype) and $(factor|>typeof)."
     for m in ms
         new = replace(m, value(m)*factor)
-        abs(value(new))==0 ? delete!(ms.contents, id(m)) : (ms[id(m)] = new)
+        value(new)==0 ? delete!(ms.contents, id(m)) : (ms[id(m)] = new)
     end
     return ms
 end
@@ -499,7 +500,7 @@ end
 
 Get the in-place division of an `OperatorSum` with a number.
 """
-@inline div!(ms::OperatorSum, factor::Number) = mul!(ms, one(ms|>eltype|>valtype)/factor)
+@inline div!(ms::OperatorSum, factor::Number) = mul!(ms, one(dtype(eltype(ms)))/factor)
 
 """
     optype(m::QuantumOperator)
@@ -578,7 +579,7 @@ end
 @inline Base.:*(factor::Number, ms::OperatorSum) = ms * factor
 function Base.:*(ms::OperatorSum, factor::Number)
     abs(factor)==0 && return zero(ms)
-    result = OperatorSum{reparameter(eltype(ms), :value, promote_type(valtype(eltype(ms)), typeof(factor)))}()
+    result = OperatorSum{promote_type(eltype(ms), typeof(factor))}()
     for m in ms
         add!(result, m*factor)
     end
@@ -593,21 +594,21 @@ end
 
 Overloaded `/` between a quantum operator and a number.
 """
-Base.:/(m::QuantumOperator, factor::Number) = m * (one(valtype(optype(m)))/factor)
+@inline Base.:/(m::QuantumOperator, factor::Number) = m * (one(dtype(optype(m)))/factor)
 
 """
     //(m::QuantumOperator, factor::Integer) -> QuantumOperator
 
 Overloaded `//` between a quantum operator and an integer.
 """
-Base.://(m::QuantumOperator, factor::Integer) = m * (1//factor)
+@inline Base.://(m::QuantumOperator, factor::Integer) = m * (1//factor)
 
 """
     ^(m::QuantumOperator, n::Integer) -> QuantumOperator
 
 Overloaded `^` between a quantum operator and an integer.
 """
-Base.:^(m::QuantumOperator, n::Integer) = (@assert n>0 "^ error: non-positive integers are not allowed."; prod(ntuple(i->m, Val(n)), init=1))
+@inline Base.:^(m::QuantumOperator, n::Integer) = (@assert n>0 "^ error: non-positive integers are not allowed."; prod(ntuple(i->m, Val(n)), init=1))
 
 """
     ⊗(m::Union{OperatorUnit, OperatorProd}, ms::OperatorSum) -> OperatorSum
@@ -616,9 +617,9 @@ Base.:^(m::QuantumOperator, n::Integer) = (@assert n>0 "^ error: non-positive in
 
 Overloaded `⊗` between quantum operators.
 """
-⊗(m::Union{OperatorUnit, OperatorProd}, ms::OperatorSum) = OperatorSum(collect(m ⊗ mm for mm in ms))
-⊗(ms::OperatorSum, m::Union{OperatorUnit, OperatorProd}) = OperatorSum(collect(mm ⊗ m for mm in ms))
-⊗(ms₁::OperatorSum, ms₂::OperatorSum) = OperatorSum(collect(m₁ ⊗ m₂ for m₁ in ms₁ for m₂ in ms₂))
+@inline ⊗(m::Union{OperatorUnit, OperatorProd}, ms::OperatorSum) = OperatorSum(collect(m ⊗ mm for mm in ms))
+@inline ⊗(ms::OperatorSum, m::Union{OperatorUnit, OperatorProd}) = OperatorSum(collect(mm ⊗ m for mm in ms))
+@inline ⊗(ms₁::OperatorSum, ms₂::OperatorSum) = OperatorSum(collect(m₁ ⊗ m₂ for m₁ in ms₁ for m₂ in ms₂))
 
 """
     ⋅(m::Union{OperatorUnit, OperatorProd}, ms::OperatorSum) -> OperatorSum
@@ -627,9 +628,9 @@ Overloaded `⊗` between quantum operators.
 
 Overloaded `⋅` between quantum operators.
 """
-⋅(m::Union{OperatorUnit, OperatorProd}, ms::OperatorSum) = OperatorSum(collect(m ⋅ mm for mm in ms))
-⋅(ms::OperatorSum, m::Union{OperatorUnit, OperatorProd}) = OperatorSum(collect(mm ⋅ m for mm in ms))
-⋅(ms₁::OperatorSum, ms₂::OperatorSum) = OperatorSum(collect(m₁ ⋅ m₂ for m₁ in ms₁ for m₂ in ms₂))
+@inline ⋅(m::Union{OperatorUnit, OperatorProd}, ms::OperatorSum) = OperatorSum(collect(m ⋅ mm for mm in ms))
+@inline ⋅(ms::OperatorSum, m::Union{OperatorUnit, OperatorProd}) = OperatorSum(collect(mm ⋅ m for mm in ms))
+@inline ⋅(ms₁::OperatorSum, ms₂::OperatorSum) = OperatorSum(collect(m₁ ⋅ m₂ for m₁ in ms₁ for m₂ in ms₂))
 
 """
     Operators{O<:Operator, I<:ID{OperatorUnit}}
@@ -639,7 +640,7 @@ A set of operators.
 Type alias for `OperatorSum{O<:Operator, I<:ID{OperatorUnit}}`.
 """
 const Operators{O<:Operator, I<:ID{OperatorUnit}} = OperatorSum{O, I}
-Base.summary(io::IO, opts::Operators) = @printf io "Operators"
+@inline Base.summary(io::IO, opts::Operators) = @printf io "Operators"
 
 """
     Operators(opts::Operator...)
