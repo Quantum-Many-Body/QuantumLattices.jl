@@ -91,9 +91,9 @@ end
 end
 
 @testset "Generator" begin
-    @test contentnames(AbstractGenerator) == (:operators, :table)
+    @test contentnames(CompositeGenerator) == (:operators, :table)
     @test contentnames(Generator) == (:operators, :terms, :bonds, :hilbert, :half, :table)
-    @test contentnames(SimplifiedGenerator) == (:operators, :table, :sourceid)
+    @test contentnames(Image) == (:operators, :transformation, :table, :sourceid)
 
     lattice = Lattice(:Tuanzi, [Point(PID(1), [0.0]), Point(PID(2), [0.5])], vectors=[[1.0]], neighbors=1)
     bonds = Bonds(lattice)
@@ -152,14 +152,13 @@ end
     @test update!(cgen, μ=1.5)|>expand ≈ tops₁+tops₂*2.0+μops*1.5
 
     sgen = i(cgen; table=table)
-    @test sgen == SimplifiedGenerator(cgen.operators, table=table, sourceid=objectid((i, cgen)))
+    @test sgen == Image(cgen.operators, i, table, objectid(cgen))
     @test Parameters(sgen) == (t=2.0, μ=1.5, θ=0.1)
     @test expand!(Operators{optp}(), sgen) == expand(sgen) ≈ tops₁+tops₂*2.0+μops*1.5
-    @test empty!(deepcopy(sgen)) == SimplifiedGenerator(empty(cgen.operators), table=empty(table), sourceid=objectid((i, cgen))) == empty(sgen)
+    @test empty!(deepcopy(sgen)) == Image(empty(cgen.operators), i, empty(table), objectid(cgen)) == empty(sgen)
     @test update!(sgen, μ=3.5)|>expand ≈ tops₁+tops₂*2.0+μops*3.5
-    @test update!(sgen, i, cgen)|>expand ≈ tops₁+tops₂*2.0+μops*1.5
-    @test reset!(empty(sgen), cgen.operators; table=table) == sgen
-    @test reset!(empty(sgen), i, cgen; table=table) == sgen
+    @test update!(sgen, cgen)|>expand ≈ tops₁+tops₂*2.0+μops*1.5
+    @test reset!(empty(sgen), cgen; table=table) == sgen
 end
 
 mutable struct VCA <: Engine

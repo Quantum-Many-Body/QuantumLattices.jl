@@ -6,7 +6,7 @@ using LaTeXStrings: latexstring
 using Serialization: serialize
 using TimerOutputs: TimerOutputs, TimerOutput, @timeit
 using RecipesBase: RecipesBase, @recipe, @series
-using ..QuantumOperators: Operator, Operators, Transformation, optype, idtype
+using ..QuantumOperators: Operator, Operators, Transformation, optype, idtype, identity
 using ..Spatials: Bonds, AbstractLattice, acrossbonds, isintracell
 using ..DegreesOfFreedom: Hilbert, Table, Term, ismodulatable
 using ...Prerequisites: Float, atol, rtol, decimaltostr
@@ -17,7 +17,7 @@ import ...Essentials: update, update!, reset!
 import ...Prerequisites.Traits: contentnames, getcontent
 
 export Parameters, Boundary, plain
-export Entry, Engine, AbstractGenerator, Generator, SimplifiedGenerator, Action, Assignment, Algorithm
+export Engine, AbstractGenerator, Entry, CompositeGenerator, Generator, Image, Action, Assignment, Algorithm
 export prepare!, run!, save, rundependences!
 
 """
@@ -124,19 +124,64 @@ const plain = Boundary{()}(Float[], SVector{0, Float}[])
 @inline (::typeof(plain))(operator::Operator; kwargs...) = operator
 
 """
-    Entry{C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:Boundary}
+    Engine
+
+Abstract type for all engines.
+
+An engine is the core to generate/update/manipulate (representations of) the quantum operators of a quantum lattice system.
+"""
+abstract type Engine end
+@inline Base.:(==)(engine₁::Engine, engine₂::Engine) = ==(efficientoperations, engine₁, engine₂)
+@inline Base.isequal(engine₁::Engine, engine₂::Engine) = isequal(efficientoperations, engine₁, engine₂)
+@inline Base.repr(engine::Engine) = String(nameof(typeof(engine)))
+@inline Base.show(io::IO, engine::Engine) = @printf io "%s" nameof(typeof(engine))
+@inline Base.valtype(engine::Engine) = valtype(typeof(engine))
+@inline update!(engine::Engine; kwargs...) = error("update! error: not implemented for $(nameof(typeof(engine))).")
+@inline Parameters(engine::Engine) = error("Parameters error: not implemented for $(nameof(typeof(engine))).")
+
+"""
+    AbstractGenerator <: Engine
+
+Abstract type of the generator of (representations of) the quantum operators of a quantum lattice system.
+"""
+abstract type AbstractGenerator <: Engine end
+@inline Base.eltype(gen::AbstractGenerator) = eltype(typeof(gen))
+@inline Base.IteratorSize(::Type{<:AbstractGenerator}) = Base.SizeUnknown()
+@inline function Base.iterate(gen::AbstractGenerator)
+    ops = expand(gen)
+    index = iterate(ops)
+    isnothing(index) && return nothing
+    return index[1], (ops, index[2])
+end
+@inline function Base.iterate(gen::AbstractGenerator, state)
+    index = iterate(state[1], state[2])
+    isnothing(index) && return nothing
+    return index[1], (state[1], index[2])
+end
+@inline Base.show(io::IO, ::MIME"text/latex", gen::AbstractGenerator) = show(io, MIME"text/latex"(), latexstring(latexstring(expand(gen))))
+
+"""
+    expand(gen::AbstractGenerator) -> valtype(gen)
+    expand!(result, gen::AbstractGenerator) -> typeof(result)
+
+Expand the generator, that is, get the (representations of the) quantum operators of a quantum lattice system (or some part of it).
+"""
+@inline expand(gen::AbstractGenerator) = expand!(zero(valtype(gen)), gen)
+@inline expand!(result, gen::AbstractGenerator) = error("expand! error: not implemented for $(nameof(typeof(gen))).")
+
+"""
+    Entry{C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:Boundary} <: AbstractGenerator
 
 An entry of quantum operators (or representations of quantum operators) related to (part of) a quantum lattice system.
 """
-mutable struct Entry{C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:Boundary}
+mutable struct Entry{C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:Boundary} <: AbstractGenerator
     constops::C
     alterops::A
     boundops::B
     parameters::P
     boundary::D
 end
-@inline Base.:(==)(entry₁::Entry, entry₂::Entry) = ==(efficientoperations, entry₁, entry₂)
-@inline Base.isequal(entry₁::Entry, entry₂::Entry) = isequal(efficientoperations, entry₁, entry₂)
+@inline Entry(entry::Entry) = entry
 
 """
     Entry(terms::Tuple{Vararg{Term}}, bonds::Bonds, hilbert::Hilbert;
@@ -191,12 +236,10 @@ function (transformation::Transformation)(entry::Entry; kwargs...)
 end
 
 """
-    valtype(entry::Entry)
     valtype(::Type{<:Entry})
 
 Get the valtype of an entry of (representations of) quantum operators.
 """
-@inline Base.valtype(entry::Entry) = valtype(typeof(entry))
 @inline @generated function Base.valtype(::Type{<:Entry{C, A, B}}) where {C, A<:NamedTuple, B<:NamedTuple}
     optp = C
     (fieldcount(A) > 0) && (optp = reduce(promote_type, fieldtypes(A), init=optp))
@@ -205,12 +248,10 @@ Get the valtype of an entry of (representations of) quantum operators.
 end
 
 """
-    expand(entry::Entry) -> valtype(entry)
     expand!(result, entry::Entry) -> typeof(result)
 
 Expand the contents of an entry.
 """
-@inline expand(entry::Entry) = expand!(zero(valtype(entry)), entry)
 @generated function expand!(result, entry::Entry)
     exprs = [:(add!(result, entry.constops))]
     for name in QuoteNode.(fieldnames(fieldtype(entry, :alterops)))
@@ -222,55 +263,6 @@ Expand the contents of an entry.
     push!(exprs, :(return result))
     return Expr(:block, exprs...)
 end
-
-"""
-    empty!(entry::Entry) -> Entry
-
-Empty an entry of (representations of) quantum operators.
-"""
-@inline function Base.empty!(entry::Entry)
-    empty!(entry.constops)
-    map(empty!, values(entry.alterops))
-    map(empty!, values(entry.boundops))
-    return entry
-end
-
-"""
-    empty(entry::Entry) -> Entry
-
-Get an empty entry of (representations of) quantum operators.
-"""
-@inline function Base.empty(entry::Entry)
-    constops = empty(entry.constops)
-    alterops = NamedTuple{keys(entry.alterops)}(map(empty, values(entry.alterops)))
-    boundops = NamedTuple{keys(entry.boundops)}(map(empty, values(entry.boundops)))
-    return Entry(constops, alterops, boundops, entry.parameters, deepcopy(entry.boundary))
-end
-
-"""
-    merge!(entry::Entry, another::Entry) -> Entry
-
-Merge an entry of (representations of) quantum operators by another one.
-"""
-function Base.merge!(entry::Entry, another::Entry)
-    merge!(entry.constops, another.constops)
-    for name in fieldnames(typeof(entry.alterops))
-        merge!(getfield(entry.alterops, name), getfield(another.alterops, name))
-    end
-    for name in fieldnames(typeof(entry.boundops))
-        merge!(getfield(entry.boundops, name), getfield(another.boundops, name))
-    end
-    entry.parameters = another.parameters
-    merge!(entry.boundary, another.boundary)
-    return entry
-end
-
-"""
-    merge(entry::Entry, another::Entry) -> Entry
-
-Get a new entry of (representations of) quantum operators by merging two.
-"""
-@inline Base.merge(entry::Entry, another::Entry) = merge!(empty(entry), another)
 
 """
     update!(entry::Entry{<:Operators}; parameters...) -> Entry
@@ -301,6 +293,53 @@ function update!(entry::Entry, transformation::Transformation, source::Entry{<:O
         update!(entry.boundary; Parameters(source.boundary)...)
         map((dest, ops)->map!(op->transformation(op; kwargs...), empty!(dest), ops), values(entry.boundops), values(source.boundops))
     end
+    return entry
+end
+
+"""
+    Parameters(entry::Entry)
+
+Get the complete set of parameters of an entry of (representations of) quantum operators.
+"""
+@inline Parameters(entry::Entry) = merge(entry.parameters, Parameters(entry.boundary))
+
+"""
+    empty(entry::Entry) -> Entry
+    empty!(entry::Entry) -> Entry
+
+Get an empty copy entry or empty an entry of (representations of) quantum operators.
+"""
+@inline function Base.empty(entry::Entry)
+    constops = empty(entry.constops)
+    alterops = NamedTuple{keys(entry.alterops)}(map(empty, values(entry.alterops)))
+    boundops = NamedTuple{keys(entry.boundops)}(map(empty, values(entry.boundops)))
+    return Entry(constops, alterops, boundops, entry.parameters, deepcopy(entry.boundary))
+end
+@inline function Base.empty!(entry::Entry)
+    empty!(entry.constops)
+    map(empty!, values(entry.alterops))
+    map(empty!, values(entry.boundops))
+    return entry
+end
+
+"""
+    merge(entry::Entry, another::Entry) -> Entry
+    merge!(entry::Entry, another::Entry) -> Entry
+
+1) Get a new entry of (representations of) quantum operators by merging two.
+2) Merge an entry of (representations of) quantum operators by another one.
+"""
+@inline Base.merge(entry::Entry, another::Entry) = merge!(empty(entry), another)
+function Base.merge!(entry::Entry, another::Entry)
+    merge!(entry.constops, another.constops)
+    for name in fieldnames(typeof(entry.alterops))
+        merge!(getfield(entry.alterops, name), getfield(another.alterops, name))
+    end
+    for name in fieldnames(typeof(entry.boundops))
+        merge!(getfield(entry.boundops, name), getfield(another.boundops, name))
+    end
+    entry.parameters = another.parameters
+    merge!(entry.boundary, another.boundary)
     return entry
 end
 
@@ -345,75 +384,28 @@ function reset!(entry::Entry, transformation::Transformation, source::Entry{<:Op
 end
 
 """
-    Parameters(entry::Entry)
+    CompositeGenerator{E<:Entry, T<:Union{Table, Nothing}}
 
-Get the complete set of parameters of an entry of (representations of) quantum operators.
-"""
-@inline Parameters(entry::Entry) = merge(entry.parameters, Parameters(entry.boundary))
+Abstract type for composite generator of (representations of) quantum operators.
 
-"""
-    Engine
-
-Abstract type for all engines.
-"""
-abstract type Engine end
-@inline Base.:(==)(engine₁::Engine, engine₂::Engine) = ==(efficientoperations, engine₁, engine₂)
-@inline Base.isequal(engine₁::Engine, engine₂::Engine) = isequal(efficientoperations, engine₁, engine₂)
-@inline update!(engine::Engine; parameters...) = engine
-@inline Base.repr(engine::Engine) = String(nameof(typeof(engine)))
-@inline Base.show(io::IO, engine::Engine) = @printf io "%s" nameof(typeof(engine))
-
-"""
-    AbstractGenerator{E<:Entry, T<:Union{Table, Nothing}} <: Engine
-
-Abstract generator for quantum operators.
-
-By protocol, a concrete generator should have the following predefined contents:
-* `operators::E`: the entry for the generated quantum operators
+By protocol, it must have the following predefined contents:
+* `operators::E`: the entry for the generated (representations of) quantum operators
 * `table::T`: the index-sequence table if it is not nothing
 """
-abstract type AbstractGenerator{E<:Entry, T<:Union{Table, Nothing}} <: Engine end
-@inline contentnames(::Type{<:AbstractGenerator}) = (:operators, :table)
-@inline Base.valtype(gen::AbstractGenerator) = valtype(typeof(gen))
-@inline Base.valtype(::Type{<:AbstractGenerator{E}}) where {E<:Entry} = valtype(E)
-@inline Base.eltype(gen::AbstractGenerator) = eltype(typeof(gen))
-@inline Base.eltype(::Type{<:AbstractGenerator{E}}) where {E<:Entry} = eltype(valtype(E))
-@inline Base.IteratorSize(::Type{<:AbstractGenerator}) = Base.SizeUnknown()
-@inline function Base.iterate(gen::AbstractGenerator)
-    ops = expand(gen)
-    index = iterate(ops)
-    isnothing(index) && return nothing
-    return index[1], (ops, index[2])
-end
-@inline function Base.iterate(gen::AbstractGenerator, state)
-    index = iterate(state[1], state[2])
-    isnothing(index) && return nothing
-    return index[1], (state[1], index[2])
-end
-@inline Base.show(io::IO, ::MIME"text/latex", gen::AbstractGenerator) = show(io, MIME"text/latex"(), latexstring(latexstring(expand(gen))))
+abstract type CompositeGenerator{E<:Entry, T<:Union{Table, Nothing}} <: AbstractGenerator end
+@inline contentnames(::Type{<:CompositeGenerator}) = (:operators, :table)
+@inline Base.valtype(::Type{<:CompositeGenerator{E}}) where {E<:Entry} = valtype(E)
+@inline Base.eltype(::Type{<:CompositeGenerator{E}}) where {E<:Entry} = eltype(valtype(E))
+@inline expand!(result, gen::CompositeGenerator) = expand!(result, getcontent(gen, :operators))
+@inline Parameters(gen::CompositeGenerator) = Parameters(getcontent(gen, :operators))
+@inline Entry(gen::CompositeGenerator) = getcontent(gen, :operators)
 
 """
-    expand(gen::AbstractGenerator) -> valtype(gen)
-    expand!(result, gen::AbstractGenerator) -> typeof(result)
-
-Expand the generator.
-"""
-@inline expand(gen::AbstractGenerator) = expand!(zero(valtype(gen)), gen)
-@inline expand!(result, gen::AbstractGenerator) = expand!(result, getcontent(gen, :operators))
-
-"""
-    Parameters(gen::AbstractGenerator)
-
-Get the parameters of the generator.
-"""
-@inline Parameters(gen::AbstractGenerator) = Parameters(getcontent(gen, :operators))
-
-"""
-    Generator{E<:Entry{<:Operators}, TS<:Tuple{Vararg{Term}}, BS<:Bonds, H<:Hilbert, T<:Union{Table, Nothing}} <: AbstractGenerator{E, T}
+    Generator{E<:Entry{<:Operators}, TS<:Tuple{Vararg{Term}}, BS<:Bonds, H<:Hilbert, T<:Union{Table, Nothing}} <: CompositeGenerator{E, T}
 
 A generator of operators based on terms, bonds and Hilbert space.
 """
-struct Generator{E<:Entry{<:Operators}, TS<:Tuple{Vararg{Term}}, BS<:Bonds, H<:Hilbert, T<:Union{Table, Nothing}} <: AbstractGenerator{E, T}
+struct Generator{E<:Entry{<:Operators}, TS<:Tuple{Vararg{Term}}, BS<:Bonds, H<:Hilbert, T<:Union{Table, Nothing}} <: CompositeGenerator{E, T}
     operators::E
     terms::TS
     bonds::BS
@@ -438,6 +430,55 @@ Construct a generator of operators.
         boundary::Boundary=plain
         )
     return Generator(Entry(terms, bonds, hilbert; half=half, table=table, boundary=boundary), terms, bonds, hilbert, half, table)
+end
+
+"""
+    update!(gen::Generator; parameters...) -> typeof(gen)
+
+Update the coefficients of the terms in a generator.
+"""
+@inline function update!(gen::Generator; parameters...)
+    update!(gen.operators; parameters...)
+    map(term->(ismodulatable(term) ? update!(term; parameters...) : term), gen.terms)
+    return gen
+end
+
+"""
+    empty(gen::Generator) -> Generator
+    empty!(gen::Generator) -> Generator
+
+1) Get an empty copy of a generator.
+2) Empty the `:bonds`, `:hilbert`, `:table` and `:operators` attributes of a generator.
+"""
+@inline function Base.empty(gen::Generator)
+    Generator(
+        empty(gen.operators),
+        gen.terms,
+        empty(gen.bonds),
+        empty(gen.hilbert),
+        gen.half,
+        isnothing(gen.table) ? nothing : empty(gen.table),
+        )
+end
+function Base.empty!(gen::Generator)
+    empty!(gen.bonds)
+    empty!(gen.hilbert)
+    isnothing(gen.table) || empty!(gen.table)
+    empty!(gen.operators)
+    return gen
+end
+
+"""
+    reset!(gen::Generator, lattice::AbstractLattice, boundary::Boundary=gen.operators.boundary) -> Generator
+
+Reset a generator by a new lattice and a new twisted boundary condition.
+"""
+function reset!(gen::Generator, lattice::AbstractLattice, boundary::Boundary=gen.operators.boundary)
+    reset!(gen.bonds, lattice)
+    reset!(gen.hilbert, lattice.pids)
+    isnothing(gen.table) || reset!(gen.table, gen.hilbert)
+    reset!(gen.operators, gen.terms, gen.bonds, gen.hilbert, half=gen.half, table=gen.table, boundary=boundary)
+    return gen
 end
 
 """
@@ -489,151 +530,81 @@ end
 end
 
 """
-    update!(gen::Generator; parameters...) -> typeof(gen)
+    Image{E<:Entry, H<:Transformation, T<:Union{Table, Nothing}} <: CompositeGenerator{E, T}
 
-Update the coefficients of the terms in a generator.
+The image of a transformation on an generator of (representation of) quantum operators.
 """
-@inline function update!(gen::Generator; parameters...)
-    update!(gen.operators; parameters...)
-    map(term->(ismodulatable(term) ? update!(term; parameters...) : term), gen.terms)
-    return gen
-end
-
-"""
-    empty!(gen::Generator) -> Generator
-
-Empty the `:bonds`, `:hilbert`, `:table` and `:operators` attributes of a generator.
-"""
-function Base.empty!(gen::Generator)
-    empty!(gen.bonds)
-    empty!(gen.hilbert)
-    isnothing(gen.table) || empty!(gen.table)
-    empty!(gen.operators)
-    return gen
-end
-
-"""
-    empty(gen::Generator) -> Generator
-
-Get an empty copy of a generator.
-"""
-@inline function Base.empty(gen::Generator)
-    Generator(
-        empty(gen.operators),
-        gen.terms,
-        empty(gen.bonds),
-        empty(gen.hilbert),
-        gen.half,
-        isnothing(gen.table) ? nothing : empty(gen.table),
-        )
-end
-
-"""
-    reset!(gen::Generator, lattice::AbstractLattice, boundary::Boundary=gen.operators.boundary) -> Generator
-
-Reset a generator by a new lattice and a new twisted boundary condition.
-"""
-function reset!(gen::Generator, lattice::AbstractLattice, boundary::Boundary=gen.operators.boundary)
-    reset!(gen.bonds, lattice)
-    reset!(gen.hilbert, lattice.pids)
-    isnothing(gen.table) || reset!(gen.table, gen.hilbert)
-    reset!(gen.operators, gen.terms, gen.bonds, gen.hilbert, half=gen.half, table=gen.table, boundary=boundary)
-    return gen
-end
-
-"""
-    SimplifiedGenerator{E<:Entry, T<:Union{Table, Nothing}} <: AbstractGenerator{E, T}
-
-The simplified generator for an entry of (representations of) quantum operators.
-
-Usually, an instance of this type comes out as the result of a transformation on an instance of `Generator`/`SimplifiedGenerator`.
-"""
-mutable struct SimplifiedGenerator{E<:Entry, T<:Union{Table, Nothing}} <: AbstractGenerator{E, T}
+mutable struct Image{E<:Entry, H<:Transformation, T<:Union{Table, Nothing}} <: CompositeGenerator{E, T}
     operators::E
+    transformation::H
     table::T
     sourceid::UInt
 end
-@inline contentnames(::Type{<:SimplifiedGenerator}) = (:operators, :table, :sourceid)
+@inline contentnames(::Type{<:Image}) = (:operators, :transformation, :table, :sourceid)
 
 """
-    SimplifiedGenerator(operators::Entry; table::Union{Table,Nothing}=nothing, sourceid::UInt=objectid(nothing))
+    (transformation::Transformation)(gen::AbstractGenerator; table::Union{Table, Nothing}=nothing, kwargs...) -> Image
 
-Construct an simplified generator of (representations of) quantum operators.
-"""
-@inline function SimplifiedGenerator(operators::Entry; table::Union{Table,Nothing}=nothing, sourceid::UInt=objectid(nothing))
-    return SimplifiedGenerator(operators, table, sourceid)
-end
-
-"""
-    (transformation::Transformation)(gen::AbstractGenerator; table::Union{Table, Nothing}=nothing, kwargs...) -> SimplifiedGenerator
-
-Get the result of a transformation on an instance of `AbstractGenerator`.
+Get the image of a transformation on an instance of `AbstractGenerator`.
 """
 @inline function (transformation::Transformation)(gen::AbstractGenerator; table::Union{Table, Nothing}=nothing, kwargs...)
-    return SimplifiedGenerator(transformation(getcontent(gen, :operators); kwargs...); table=table, sourceid=objectid((transformation, gen)))
+    return Image(transformation(Entry(gen); kwargs...), transformation, table, objectid(gen))
 end
 
 """
-    empty!(gen::SimplifiedGenerator) -> SimplifiedGenerator
+    empty(gen::Image) -> Image
+    empty!(gen::Image) -> Image
 
-Empty the `:operators` and `table` attributes of a simplified generator.
+1) Get an empty copy of the image of a transformation on a generator.
+2) Empty the `:operators` and `table` attributes of the image of a transformation on a generator.
 """
-@inline function Base.empty!(gen::SimplifiedGenerator)
+@inline Base.empty(gen::Image) = Image(empty(gen.operators), gen.transformation, isnothing(gen.table) ? nothing : empty(gen.table), gen.sourceid)
+@inline function Base.empty!(gen::Image)
     empty!(gen.operators)
     isnothing(gen.table) || empty!(gen.table)
     return gen
 end
 
 """
-    empty(gen::SimplifiedGenerator) -> SimplifiedGenerator
+    update!(gen::Image; parameters...) -> typeof(gen)
 
-Get an empty copy of a simplified generator.
+Update the parameters of the image of a transformation on a generator.
 """
-@inline function Base.empty(gen::SimplifiedGenerator)
-    return SimplifiedGenerator(empty(gen.operators), isnothing(gen.table) ? nothing : empty(gen.table), gen.sourceid)
-end
-
-"""
-    update!(gen::SimplifiedGenerator; parameters...) -> typeof(gen)
-
-Update the parameters of a simplified generator by new parameters.
-"""
-@inline function update!(gen::SimplifiedGenerator; parameters...)
+@inline function update!(gen::Image; parameters...)
     update!(gen.operators; parameters...)
     return gen
 end
 
 """
-    update!(gen::SimplifiedGenerator, transformation::Transformation, source::Generator; kwargs...) -> SimplifiedGenerator
+    update!(gen::Image, source::AbstractGenerator; kwargs...) -> Image
 
-Update the parameters of a simplified generator by its source generator and the corresponding transformation.
+Update the image of an transformation by its updated source generator.
 """
-@inline function update!(gen::SimplifiedGenerator, transformation::Transformation, source::Generator; kwargs...)
-    @assert gen.sourceid==objectid((transformation, source)) "update! error: mismatched simplified generator, transformation and source generator."
-    update!(gen.operators, transformation, source.operators; kwargs...)
+@inline function update!(gen::Image, source::AbstractGenerator; kwargs...)
+    @assert gen.sourceid==objectid(source) "update! error: mismatched simplified generator, transformation and source generator."
+    update!(gen.operators, gen.transformation, Entry(source); kwargs...)
     return gen
 end
 
 """
-    reset!(gen::SimplifiedGenerator, operators::Entry; table::Union{Table, Nothing}=gen.table) -> SimplifiedGenerator
+    reset!(gen::Image, source::AbstractGenerator;
+        transformation::Transformation=gen.transformation,
+        table::Union{Table, Nothing}=nothing,
+        kwargs...
+        ) -> Image
 
-Reset a simplified generator.
+Reset the image of a transformation on a generator.
 """
-@inline function reset!(gen::SimplifiedGenerator, operators::Entry; table::Union{Table, Nothing}=gen.table)
-    isnothing(gen.table) || isnothing(table) || gen.table===table || merge!(empty!(gen.table), table)
-    merge!(empty!(gen.operators), operators)
-    return gen
-end
-
-"""
-    reset!(gen::SimplifiedGenerator, transformation::Transformation, source::Generator; table::Union{Table, Nothing}=source.table, kwargs...) -> SimplifiedGenerator
-
-Reset a simplified generator by its source generator and the corresponding transformation.
-"""
-@inline function reset!(gen::SimplifiedGenerator, transformation::Transformation, source::Generator; table::Union{Table, Nothing}=source.table, kwargs...)
-    @assert gen.sourceid==objectid((transformation, source)) "reset! error: mismatched simplified generator, transformation and source generator."
-    isnothing(gen.table) || isnothing(table) || gen.table===table || merge!(empty!(gen.table), table)
-    reset!(gen.operators, transformation, source.operators; kwargs...)
+@inline function reset!(gen::Image, source::AbstractGenerator;
+        transformation::Transformation=gen.transformation,
+        table::Union{Table, Nothing}=nothing,
+        kwargs...
+        )
+    @assert gen.sourceid==objectid(source) "reset! error: mismatched image and source generator."
+    reset!(gen.operators, transformation, Entry(source); kwargs...)
+    gen.transformation = transformation
+    isnothing(table) && (table = isa(source, CompositeGenerator) ? getcontent(source, :table) : gen.table)
+    isnothing(table) || gen.table===table || merge!(empty!(gen.table), table)
     return gen
 end
 
