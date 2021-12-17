@@ -170,31 +170,20 @@ Expand the generator, that is, get the (representations of the) quantum operator
 @inline expand!(result, gen::AbstractGenerator) = error("expand! error: not implemented for $(nameof(typeof(gen))).")
 
 """
-    Formulation{F<:Function, P<:Parameters, A<:NamedTuple, K<:NamedTuple, V} <: AbstractGenerator
+    Formulation{F<:Function, P<:Parameters} <: AbstractGenerator
 
 Generator of (representations of the) quantum operators of a quantum lattice system by analytical expressions.
 """
-mutable struct Formulation{F<:Function, P<:Parameters, A<:NamedTuple, K<:NamedTuple, V} <: AbstractGenerator
+mutable struct Formulation{F<:Function, P<:Parameters} <: AbstractGenerator
     formula::F
     parameters::P
-    args::A
-    kwargs::K
-    function Formulation(formula::Function, parameters::Parameters, args::NamedTuple; kwargs...)
-        kwargs = NamedTuple(kwargs)
-        V = commontype(formula, (fieldtypes(typeof(parameters))..., fieldtypes(typeof(args))...))
-        new{typeof(formula), typeof(parameters), typeof(args), typeof(kwargs), V}(formula, parameters, args, kwargs)
-    end
 end
-@inline Base.eltype(F::Type{<:Formulation}) = valtype(F)
-@inline Base.valtype(::Type{<:Formulation{<:Function, <:Parameters, <:NamedTuple, <:NamedTuple, V}}) where V = V
-@inline expand(formulation::Formulation) = formulation.formula(values(formulation.parameters)..., formulation.args...; formulation.kwargs...)
-@inline function update!(formulation::Formulation; kwargs...)
-    formulation.parameters = update(formulation.parameters; kwargs...)
-    formulation.args = update(formulation.args; kwargs...)
-    formulation.kwargs = update(formulation.kwargs; kwargs...)
+@inline function update!(formulation::Formulation; parameters...)
+    formulation.parameters = update(formulation.parameters; parameters...)
     return formulation
 end
 @inline Parameters(formulation::Formulation) = formulation.parameters
+@inline (formulation::Formulation)(; kwargs...) = formulation.formula(values(formulation.parameters)...; kwargs...)
 
 """
     Entry{C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:Boundary} <: AbstractGenerator

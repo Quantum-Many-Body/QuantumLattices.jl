@@ -91,17 +91,16 @@ end
 end
 
 @testset "Formulation" begin
-    A(t, μ, Δ, k) = [
+    A(t, μ, Δ; k) = [
           2t*cos(k[1])+2t*cos(k[2])+μ   2im*Δ*sin(k[1])+2Δ*sin(k[2]);
         -2im*Δ*sin(k[1])+2Δ*sin(k[2])   -2t*cos(k[1])-2t*cos(k[2])-μ
     ]
-    f = Formulation(A, (t=1.0, μ=0.0, Δ=0.1), (k=[0.0, 0.0],))
-    @test valtype(f) == valtype(typeof(f)) == eltype(f) == eltype(typeof(f)) == Matrix{ComplexF64}
+    f = Formulation(A, (t=1.0, μ=0.0, Δ=0.1))
     @test Parameters(f) == (t=1.0, μ=0.0, Δ=0.1)
-    @test expand(f) ≈ [4 0; 0 -4]
+    @test f(k=[0.0, 0.0]) ≈ [4 0; 0 -4]
 
-    update!(f; μ=0.3, k=[pi/2, pi/2])
-    @test expand(f) ≈ [0.3 0.2+0.2im; 0.2-0.2im -0.3]
+    update!(f; μ=0.3)
+    @test f(k=[pi/2, pi/2]) ≈ [0.3 0.2+0.2im; 0.2-0.2im -0.3]
 end
 
 @testset "Generator" begin
