@@ -35,7 +35,7 @@ export Subscript, Subscripts, SubscriptsID, Coupling, Couplings, OIDToTuple, Tab
 export statistics, iidtype, ismodulatable, abbr, @subscript_str, @couplings
 
 # Essentials.Frameworks
-export Parameters, Boundary, Engine, Entry, Generator, Image, Action, Assignment, Algorithm
+export Parameters, Boundary, Engine, Formulation, Entry, Generator, Image, Action, Assignment, Algorithm
 export prepare!, run!, rundependences!, plain
 
 # Essentials.QuantumSystems

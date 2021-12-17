@@ -10,14 +10,14 @@ using ..QuantumOperators: Operator, Operators, Transformation, optype, idtype, i
 using ..Spatials: Bonds, AbstractLattice, acrossbonds, isintracell
 using ..DegreesOfFreedom: Hilbert, Table, Term, ismodulatable
 using ...Prerequisites: Float, atol, rtol, decimaltostr
-using ...Prerequisites.Traits: efficientoperations, reparameter
+using ...Prerequisites.Traits: efficientoperations, reparameter, commontype
 
 import ...Interfaces: id, add!, expand, expand!
 import ...Essentials: update, update!, reset!
 import ...Prerequisites.Traits: contentnames, getcontent
 
 export Parameters, Boundary, plain
-export Engine, AbstractGenerator, Entry, CompositeGenerator, Generator, Image, Action, Assignment, Algorithm
+export Engine, AbstractGenerator, Formulation, Entry, CompositeGenerator, Generator, Image, Action, Assignment, Algorithm
 export prepare!, run!, save, rundependences!
 
 """
@@ -27,10 +27,10 @@ A NamedTuple that contain the key-value pairs.
 """
 const Parameters{Names} = NamedTuple{Names, <:Tuple{Vararg{Number}}}
 @inline Parameters{Names}(values::Number...) where {Names} = NamedTuple{Names}(values)
-@inline @generated function update(params::Parameters; parameters...)
+@inline @generated function update(params::NamedTuple; parameters...)
     names = fieldnames(params)
-    values = [:(get(parameters, $name, getfield(params, $name))) for name in QuoteNode.(names)]
-    return :(Parameters{$names}($(values...)))
+    values = Expr(:tuple, [:(get(parameters, $name, getfield(params, $name))) for name in QuoteNode.(names)]...)
+    return :(NamedTuple{$names}($values))
 end
 
 """
@@ -146,6 +146,7 @@ Abstract type of the generator of (representations of) the quantum operators of 
 """
 abstract type AbstractGenerator <: Engine end
 @inline Base.eltype(gen::AbstractGenerator) = eltype(typeof(gen))
+@inline Base.eltype(E::Type{<:AbstractGenerator}) = eltype(valtype(E))
 @inline Base.IteratorSize(::Type{<:AbstractGenerator}) = Base.SizeUnknown()
 @inline function Base.iterate(gen::AbstractGenerator)
     ops = expand(gen)
@@ -168,6 +169,32 @@ Expand the generator, that is, get the (representations of the) quantum operator
 """
 @inline expand(gen::AbstractGenerator) = expand!(zero(valtype(gen)), gen)
 @inline expand!(result, gen::AbstractGenerator) = error("expand! error: not implemented for $(nameof(typeof(gen))).")
+
+"""
+    Formulation{F<:Function, P<:Parameters, A<:NamedTuple, K<:NamedTuple, V} <: AbstractGenerator
+
+Generator of (representations of the) quantum operators of a quantum lattice system by analytical expressions.
+"""
+mutable struct Formulation{F<:Function, P<:Parameters, A<:NamedTuple, K<:NamedTuple, V} <: AbstractGenerator
+    formula::F
+    parameters::P
+    args::A
+    kwargs::K
+    function Formulation(formula::Function, parameters::Parameters, args::NamedTuple; kwargs...)
+        kwargs = NamedTuple(kwargs)
+        V = commontype(formula, (fieldtypes(typeof(parameters))..., fieldtypes(typeof(args))...))
+        new{typeof(formula), typeof(parameters), typeof(args), typeof(kwargs), V}(formula, parameters, args, kwargs)
+    end
+end
+@inline Base.valtype(::Type{<:Formulation{<:Function, <:Parameters, <:NamedTuple, <:NamedTuple, V}}) where V = V
+@inline expand(formulation::Formulation) = formulation.formula(values(formulation.parameters)..., formulation.args...; formulation.kwargs...)
+@inline function update!(formulation::Formulation; kwargs...)
+    formulation.parameters = update(formulation.parameters; kwargs...)
+    formulation.args = update(formulation.args; kwargs...)
+    formulation.kwargs = update(formulation.kwargs; kwargs...)
+    return formulation
+end
+@inline Parameters(formulation::Formulation) = formulation.parameters
 
 """
     Entry{C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:Boundary} <: AbstractGenerator
@@ -395,7 +422,6 @@ By protocol, it must have the following predefined contents:
 abstract type CompositeGenerator{E<:Entry, T<:Union{Table, Nothing}} <: AbstractGenerator end
 @inline contentnames(::Type{<:CompositeGenerator}) = (:operators, :table)
 @inline Base.valtype(::Type{<:CompositeGenerator{E}}) where {E<:Entry} = valtype(E)
-@inline Base.eltype(::Type{<:CompositeGenerator{E}}) where {E<:Entry} = eltype(valtype(E))
 @inline expand!(result, gen::CompositeGenerator) = expand!(result, getcontent(gen, :operators))
 @inline Parameters(gen::CompositeGenerator) = Parameters(getcontent(gen, :operators))
 @inline Entry(gen::CompositeGenerator) = getcontent(gen, :operators)
