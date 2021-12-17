@@ -96,8 +96,7 @@ end
         -2im*Δ*sin(k[1])+2Δ*sin(k[2])   -2t*cos(k[1])-2t*cos(k[2])-μ
     ]
     f = Formulation(A, (t=1.0, μ=0.0, Δ=0.1), (k=[0.0, 0.0],))
-    @test valtype(f) == valtype(typeof(f)) == Matrix{ComplexF64}
-    @test eltype(f) == eltype(typeof(f)) == ComplexF64
+    @test valtype(f) == valtype(typeof(f)) == eltype(f) == eltype(typeof(f)) == Matrix{ComplexF64}
     @test Parameters(f) == (t=1.0, μ=0.0, Δ=0.1)
     @test expand(f) ≈ [4 0; 0 -4]
 
@@ -129,6 +128,7 @@ end
     @test isequal(entry, i(entry))
     @test Parameters(entry) == (t=2.0, μ=1.0, θ=0.1)
     @test entry|>valtype == entry|>typeof|>valtype == Operators{optp, idtype(optp)}
+    @test entry|>eltype == entry|>typeof|>eltype == optp
     @test expand(entry) == expand!(Operators{optp}(), entry) ≈ tops₁+tops₂*2.0+μops
 
     another = Entry(empty(tops₁), (μ=empty(μops),), (t=empty(tops₂), μ=Operators{optp}()), (t=2.0, μ=1.0), boundary)

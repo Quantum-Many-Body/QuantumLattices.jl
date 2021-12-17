@@ -146,7 +146,6 @@ Abstract type of the generator of (representations of) the quantum operators of 
 """
 abstract type AbstractGenerator <: Engine end
 @inline Base.eltype(gen::AbstractGenerator) = eltype(typeof(gen))
-@inline Base.eltype(E::Type{<:AbstractGenerator}) = eltype(valtype(E))
 @inline Base.IteratorSize(::Type{<:AbstractGenerator}) = Base.SizeUnknown()
 @inline function Base.iterate(gen::AbstractGenerator)
     ops = expand(gen)
@@ -186,6 +185,7 @@ mutable struct Formulation{F<:Function, P<:Parameters, A<:NamedTuple, K<:NamedTu
         new{typeof(formula), typeof(parameters), typeof(args), typeof(kwargs), V}(formula, parameters, args, kwargs)
     end
 end
+@inline Base.eltype(F::Type{<:Formulation}) = valtype(F)
 @inline Base.valtype(::Type{<:Formulation{<:Function, <:Parameters, <:NamedTuple, <:NamedTuple, V}}) where V = V
 @inline expand(formulation::Formulation) = formulation.formula(values(formulation.parameters)..., formulation.args...; formulation.kwargs...)
 @inline function update!(formulation::Formulation; kwargs...)
@@ -209,6 +209,7 @@ mutable struct Entry{C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:Boundary
     boundary::D
 end
 @inline Entry(entry::Entry) = entry
+@inline Base.eltype(E::Type{<:Entry}) = eltype(valtype(E))
 
 """
     Entry(terms::Tuple{Vararg{Term}}, bonds::Bonds, hilbert::Hilbert;
@@ -422,6 +423,7 @@ By protocol, it must have the following predefined contents:
 abstract type CompositeGenerator{E<:Entry, T<:Union{Table, Nothing}} <: AbstractGenerator end
 @inline contentnames(::Type{<:CompositeGenerator}) = (:operators, :table)
 @inline Base.valtype(::Type{<:CompositeGenerator{E}}) where {E<:Entry} = valtype(E)
+@inline Base.eltype(::Type{<:CompositeGenerator{E}}) where {E<:Entry} = eltype(E)
 @inline expand!(result, gen::CompositeGenerator) = expand!(result, getcontent(gen, :operators))
 @inline Parameters(gen::CompositeGenerator) = Parameters(getcontent(gen, :operators))
 @inline Entry(gen::CompositeGenerator) = getcontent(gen, :operators)
