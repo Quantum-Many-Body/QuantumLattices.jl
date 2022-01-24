@@ -27,11 +27,11 @@ Return a tuple of all positive signs.
 abstract type AbelianNumber <: HomoNamedVector{Float} end
 
 """
-    periods
+    periods(qn::AbelianNumber)
 
-The generic function that used to define the period of each component of a concrete `AbelianNumber`.
+The periods of the components of a concrete `AbelianNumber`.
 """
-function periods end
+@inline periods(qn::AbelianNumber) = periods(typeof(qn))
 
 """
     dimension(::Type{<:AbelianNumber}) -> Int
@@ -89,7 +89,7 @@ This operation translates into the direct product of `factor` copies of `qn`.
 
 Get the direct product of some `AbelianNumber`s.
 """
-⊗(qns::AbelianNumber...) = kron(qns...)
+@inline ⊗(qns::AbelianNumber...) = kron(qns...)
 
 """
     kron(qns::Vararg{AbelianNumber}; signs=positives(qns))-> eltype(qns)
@@ -98,7 +98,7 @@ Get the direct product of some `AbelianNumber`s.
 !!! note
     Physically, the direct product of a couple of `AbelianNumber`s are defined through the direct product of the bases of the Hilbert spaces they represent. Apparently, the result is still an `AbelianNumber` whose dimension is 1. At the same time, each component of the result is obtained by a summation of the corresponding components of the inputs with the correct signs. This is a direct consequence of the Abelian nature of our quantum numbers.
 """
-Base.kron(qns::Vararg{AbelianNumber}; signs=positives(qns)) = sum(sign==1 ? qn : -qn for (sign, qn) in zip(signs, qns))
+@inline Base.kron(qns::Vararg{AbelianNumber}; signs=positives(qns)) = sum(sign==1 ? qn : -qn for (sign, qn) in zip(signs, qns))
 
 """
     regularize!(::Type{QN}, array::AbstractVector{<:Real}) where {QN<:AbelianNumber} -> typeof(array)
@@ -132,7 +132,7 @@ end
 
 Regularize the elements of an array and return a copy that can represent quantum numbers.
 """
-regularize(::Type{QN}, array::Union{AbstractVector{<:Real}, AbstractMatrix{<:Real}}) where {QN<:AbelianNumber} = regularize!(QN, deepcopy(array))
+@inline regularize(::Type{QN}, array::Union{AbstractVector{<:Real}, AbstractMatrix{<:Real}}) where {QN<:AbelianNumber} = regularize!(QN, deepcopy(array))
 
 """
     @abeliannumber typename fields periods
@@ -179,8 +179,8 @@ end
 @inline dimension(qns::AbelianNumbers) = @inbounds(qns.indptr[end])
 @inline Base.size(qns::AbelianNumbers) = (length(qns.contents),)
 @inline Base.issorted(qns::AbelianNumbers) = qns.form=='C'
-Base.string(qns::AbelianNumbers) = @sprintf "QNS(%s, %s)" qns|>length qns|>dimension
-Base.show(io::IO, qns::AbelianNumbers) = @printf io "QNS(%s)" join((@sprintf("%s=>%s", qn, slice) for (qn, slice) in pairs(qns, :indptr)), ", ")
+@inline Base.string(qns::AbelianNumbers) = @sprintf "QNS(%s, %s)" qns|>length qns|>dimension
+@inline Base.show(io::IO, qns::AbelianNumbers) = @printf io "QNS(%s)" join((@sprintf("%s=>%s", qn, slice) for (qn, slice) in pairs(qns, :indptr)), ", ")
 
 """
     AbelianNumbers(form::Char, contents::Vector{<:AbelianNumber}, indptr::Vector{Int}, choice::Symbol)
@@ -514,7 +514,7 @@ Get the direct sum of some `AbelianNumber`s or `AbelianNumbers`es.
 
 Get the direct product of some `AbelianNumbers`es.
 """
-⊗(qnses::AbelianNumbers...) = kron(qnses...)
+@inline ⊗(qnses::AbelianNumbers...) = kron(qnses...)
 
 """
     union(qns::AbelianNumber...; signs=positives(qns)) -> AbelianNumbers
@@ -696,14 +696,14 @@ The concrete `AbelianNumber` of a quantum system with both particle number `N` a
 
 Construct the `AbelianNumbers` of the Hilbert space of a single spin `S`.
 """
-SQNS(S::Real) = AbelianNumbers('C', [SQN(sz) for sz = -S:S], collect(0:Int(2*S+1)), :indptr)
+@inline SQNS(S::Real) = AbelianNumbers('C', [SQN(sz) for sz = -S:S], collect(0:Int(2*S+1)), :indptr)
 
 """
     PQNS(N::Real) -> AbelianNumbers{PQN}
 
 Construct the `AbelianNumbers` of the Hilbert space of a single-particle state with at most `N` identical particles.
 """
-PQNS(N::Real) = AbelianNumbers('C', [PQN(np) for np = 0:N], collect(0:Int(N)+1), :indptr)
+@inline PQNS(N::Real) = AbelianNumbers('C', [PQN(np) for np = 0:N], collect(0:Int(N)+1), :indptr)
 
 """
     SPQNS(S::Real) -> AbelianNumbers{SPQN}
@@ -728,6 +728,21 @@ Abstract type for momentum.
 abstract type Momentum <: AbelianNumber end
 
 """
+    expand(momentum::Momentum, reciprocals::AbstractVector{<:AbstractVector}) -> eltype(reciprocals)
+
+Expand the momentum from integral values to real values with the given reciprocals.
+"""
+@inline function expand(momentum::Momentum, reciprocals::AbstractVector{<:AbstractVector})
+    p = periods(momentum)
+    @assert length(p)==length(reciprocals) "expand error: mismatched momentum and reciprocals."
+    result = zero(first(reciprocals))
+    for i = 1:length(p)
+        result += reciprocals[i]*(Int(momentum[i])//p[i])
+    end
+    return result
+end
+
+"""
     Momentum₁{N}(k::Real) where N
 
 One dimensional momentum.
@@ -741,7 +756,8 @@ struct Momentum₁{N} <: Momentum
         new{N}(remainder)
     end
 end
-periods(::Type{<:Momentum₁{N}}) where N = (N,)
+@inline periods(::Type{<:Momentum₁{N}}) where N = (N,)
+@inline Int(m::Momentum₁) = Int(m.k) + 1
 
 """
     Momentum₂{N}(k₁::Real, k₂::Real) where N
@@ -763,7 +779,8 @@ struct Momentum₂{N₁, N₂} <: Momentum
         new{N₁, N₂}(r₁, r₂)
     end
 end
-periods(::Type{<:Momentum₂{N₁, N₂}}) where {N₁, N₂} = (N₁, N₂)
+@inline periods(::Type{<:Momentum₂{N₁, N₂}}) where {N₁, N₂} = (N₁, N₂)
+@inline Int(m::Momentum₂{N₁, N₂}) where {N₁, N₂} = Int(m.k₂) + Int(m.k₁)*N₂ + 1
 
 """
     Momentum₃{N}(k₁::Real, k₂::Real, k₃::Real) where N
@@ -789,6 +806,7 @@ struct Momentum₃{N₁, N₂, N₃} <: Momentum
         new{N₁, N₂, N₃}(r₁, r₂, r₃)
     end
 end
-periods(::Type{<:Momentum₃{N₁, N₂, N₃}}) where {N₁, N₂, N₃} = (N₁, N₂, N₃)
+@inline periods(::Type{<:Momentum₃{N₁, N₂, N₃}}) where {N₁, N₂, N₃} = (N₁, N₂, N₃)
+@inline Int(m::Momentum₃{N₁, N₂, N₃}) where {N₁, N₂, N₃} = (Int(m.k₁)*N₂ + Int(m.k₂))*N₃ + Int(m.k₃) + 1
 
 end #module

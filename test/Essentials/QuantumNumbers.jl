@@ -24,6 +24,7 @@ end
     qns₁ = AbelianNumbers('U', [qn₁, qn₂], [0, 2, 5], :indptr)
     qns₂ = AbelianNumbers('U', [qn₁, qn₂], [2, 3], :counts)
     @test isequal(qns₁, qns₂)
+    @test periods(qn₁) == periods(qn₂) == (Inf, 4)
     qns₃ = AbelianNumbers(OrderedDict(qn₁=>2, qn₂=>3))
     qns₄ = AbelianNumbers(OrderedDict(qn₁=>1:2, qn₂=>3:5))
     @test qns₁ == qns₂ == qns₃ == qns₄
@@ -196,4 +197,12 @@ end
     @test Momentum₃{10}(1, 1, 1) == Momentum₃{10}(11, 11, 11) == Momentum₃{10}(-9, -9, -9)
     @test Momentum₂{10, 20}(1, 1) == Momentum₂{10, 20}(11, 21) == Momentum₂{10, 20}(-9, -19)
     @test Momentum₃{10, 20, 30}(1, 1, 1) == Momentum₃{10, 20, 30}(11, 21, 31) == Momentum₃{10, 20, 30}(-9, -19, -29)
+
+    @test Int(Momentum₁{10}(2)) == 3
+    @test Int(Momentum₂{10, 20}(2, 3)) == 44
+    @test Int(Momentum₃{10, 20, 30}(2, 3, 4)) == 1295
+
+    @test expand(Momentum₁{10}(1), [[1.0, 0.0, 0.0]]) == [0.1, 0.0, 0.0]
+    @test expand(Momentum₂{10, 100}(1, 1), [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]) == [0.1, 0.01, 0.0]
+    @test expand(Momentum₃{10, 100, 1000}(1, 1, 1), [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]) == [0.1, 0.01, 0.001]
 end
