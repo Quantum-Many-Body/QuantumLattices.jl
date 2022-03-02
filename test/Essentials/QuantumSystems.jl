@@ -818,13 +818,23 @@ end
     bond = Bond(1, Point(PID(2), [0.5, 0.0], [0.0, 0.0]), Point(PID(1), [0.0, 0.0], [0.0, 0.0]))
     hilbert = Hilbert(pid=>Phonon(2) for pid in [bond.epoint.pid, bond.spoint.pid])
     ex = expand(pnc, bond, hilbert, Val(:PhononPotential))
-    @test shape(ex) == (1:2, 1:3)
+    @test shape(ex) == (1:2, 1:2, 1:4)
     @test collect(ex) ==[
         (+1.0, (OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]))),
+        (-0.0, (OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]))),
+        (-0.0, (OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]))),
         (+0.0, (OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]))),
-        (-2.0, (OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'x')), [0.5, 0.0], [0.0, 0.0]))), 
-        (+0.0, (OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'y')), [0.5, 0.0], [0.0, 0.0]))),
+        (-1.0, (OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'x')), [0.5, 0.0], [0.0, 0.0]))),
+        (+0.0, (OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'x')), [0.5, 0.0], [0.0, 0.0]))),
+        (+0.0, (OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'y')), [0.5, 0.0], [0.0, 0.0]))),
+        (-0.0, (OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'y')), [0.5, 0.0], [0.0, 0.0]))),
+        (-1.0, (OID(Index(PID(2), NID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]))),
+        (+0.0, (OID(Index(PID(2), NID('u', 'y')), [0.5, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]))),
+        (+0.0, (OID(Index(PID(2), NID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]))),
+        (-0.0, (OID(Index(PID(2), NID('u', 'y')), [0.5, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]))),
         (+1.0, (OID(Index(PID(2), NID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'x')), [0.5, 0.0], [0.0, 0.0]))),
+        (-0.0, (OID(Index(PID(2), NID('u', 'y')), [0.5, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'x')), [0.5, 0.0], [0.0, 0.0]))),
+        (-0.0, (OID(Index(PID(2), NID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'y')), [0.5, 0.0], [0.0, 0.0]))),
         (+0.0, (OID(Index(PID(2), NID('u', 'y')), [0.5, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'y')), [0.5, 0.0], [0.0, 0.0])))
         ]
 
@@ -855,29 +865,41 @@ end
     hilbert = Hilbert(pid=>Phonon(2) for pid in [bond.epoint.pid, bond.spoint.pid])
     operators = Operators(
         Operator(+2.0, OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(-4.0, OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'x')), [0.5, 0.0], [0.0, 0.0])),
-        Operator(+2.0, OID(Index(PID(2), NID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'x')), [0.5, 0.0], [0.0, 0.0])),
+        Operator(-2.0, OID(Index(PID(2), NID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(-2.0, OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'x')), [0.5, 0.0], [0.0, 0.0])),
+        Operator(+2.0, OID(Index(PID(2), NID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'x')), [0.5, 0.0], [0.0, 0.0]))
     )
     @test expand(term, bond, hilbert) == operators
 
     bond = Bond(1, Point(PID(2), [0.0, 0.5], [0.0, 0.0]), Point(PID(1), [0.0, 0.0], [0.0, 0.0]))
     hilbert = Hilbert(pid=>Phonon(2) for pid in [bond.epoint.pid, bond.spoint.pid])
     operators = Operators(
+        Operator(+2.0, OID(Index(PID(2), NID('u', 'y')), [0.0, 0.5], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'y')), [0.0, 0.5], [0.0, 0.0])),
         Operator(+2.0, OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(-4.0, OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'y')), [0.0, 0.5], [0.0, 0.0])),
-        Operator(+2.0, OID(Index(PID(2), NID('u', 'y')), [0.0, 0.5], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'y')), [0.0, 0.5], [0.0, 0.0]))
+        Operator(-2.0, OID(Index(PID(2), NID('u', 'y')), [0.0, 0.5], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(-2.0, OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'y')), [0.0, 0.5], [0.0, 0.0]))
     )
     @test expand(term, bond, hilbert) == operators
 
     bond = Bond(1, Point(PID(2), [0.5, 0.5], [0.0, 0.0]), Point(PID(1), [0.0, 0.0], [0.0, 0.0]))
     hilbert = Hilbert(pid=>Phonon(2) for pid in [bond.epoint.pid, bond.spoint.pid])
     operators = Operators(
-        Operator(+1.0, OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(-1.0, OID(Index(PID(2), NID('u', 'x')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(-1.0, OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'y')), [0.5, 0.5], [0.0, 0.0])),
+        Operator(-1.0, OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'x')), [0.5, 0.5], [0.0, 0.0])),
+        Operator(-1.0, OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'x')), [0.5, 0.5], [0.0, 0.0])),
+        Operator(-1.0, OID(Index(PID(2), NID('u', 'x')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(-1.0, OID(Index(PID(2), NID('u', 'y')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(+1.0, OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(-1.0, OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'y')), [0.5, 0.5], [0.0, 0.0])),
         Operator(+1.0, OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(-2.0, OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'x')), [0.5, 0.5], [0.0, 0.0])),
-        Operator(-2.0, OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'y')), [0.5, 0.5], [0.0, 0.0])),
+        Operator(+1.0, OID(Index(PID(2), NID('u', 'y')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'y')), [0.5, 0.5], [0.0, 0.0])),
+        Operator(+1.0, OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(+1.0, OID(Index(PID(2), NID('u', 'y')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'x')), [0.5, 0.5], [0.0, 0.0])),
         Operator(+1.0, OID(Index(PID(2), NID('u', 'x')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'x')), [0.5, 0.5], [0.0, 0.0])),
-        Operator(+1.0, OID(Index(PID(2), NID('u', 'y')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'y')), [0.5, 0.5], [0.0, 0.0]))
+        Operator(-1.0, OID(Index(PID(2), NID('u', 'y')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(+1.0, OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(+1.0, OID(Index(PID(2), NID('u', 'x')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'y')), [0.5, 0.5], [0.0, 0.0]))
     )
     @test expand(term, bond, hilbert) ≈ operators
 end

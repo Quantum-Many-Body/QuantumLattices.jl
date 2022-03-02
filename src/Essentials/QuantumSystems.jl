@@ -1143,14 +1143,15 @@ struct PPExpand{N, P<:AbstractPID, D<:Number} <: CartesianVectorSpace{Tuple{D, I
     direction::SVector{N, D}
     points::NTuple{2, Point{N, P, D}}
 end
-@inline shape(pnce::PPExpand) = (1:length(pnce.direction), 1:3)
-function Tuple(index::CartesianIndex{2}, pnce::PPExpand)
-    dir = Char(Int('x')+index[1]-1)
-    coeff = index[2]==2 ? -2 : 1
-    pos₁, pos₂ = index[2]==1 ? (1, 1) : index[2]==2 ? (1, 2) : (2, 2)
-    oid₁ = OID(Index(pnce.points[pos₁].pid, NID('u', dir)), pnce.points[pos₁].rcoord, pnce.points[pos₁].icoord)
-    oid₂ = OID(Index(pnce.points[pos₂].pid, NID('u', dir)), pnce.points[pos₂].rcoord, pnce.points[pos₂].icoord)
-    return (pnce.direction[index[1]])^2*coeff, ID(oid₁, oid₂)
+@inline shape(pnce::PPExpand) = (1:length(pnce.direction), 1:length(pnce.direction), 1:4)
+function Tuple(index::CartesianIndex{3}, pnce::PPExpand)
+    dir₁ = Char(Int('x')+index[1]-1)
+    dir₂ = Char(Int('x')+index[2]-1)
+    coeff = index[3]∈(1, 4) ? 1 : -1
+    pos₁, pos₂ = index[3]==1 ? (1, 1) : index[3]==2 ? (1, 2) : index[3]==3 ? (2, 1) : (2, 2)
+    oid₁ = OID(Index(pnce.points[pos₁].pid, NID('u', dir₁)), pnce.points[pos₁].rcoord, pnce.points[pos₁].icoord)
+    oid₂ = OID(Index(pnce.points[pos₂].pid, NID('u', dir₂)), pnce.points[pos₂].rcoord, pnce.points[pos₂].icoord)
+    return pnce.direction[index[1]]*pnce.direction[index[2]]*coeff, ID(oid₁, oid₂)
 end
 
 """
@@ -1231,7 +1232,7 @@ Expand the default DM magnon-phonon coupling on a given bond.
 function expand(dmp::Coupling{<:Number, <:Tuple{NID{Symbol}, SID{wildcard, Int, Symbol}}}, bond::Bond, hilbert::Hilbert, info::Val{:DMPhonon})
     R̂, a = rcoord(bond)/norm(rcoord(bond)), norm(rcoord(bond))
     phonon, spin = couplinginternals(dmp, bond, hilbert, info)
-    @assert phonon.ndir==length(R̂)==2 "expand error: mismatched number of directions."
+    @assert phonon.ndir==length(R̂) "expand error: mismatched number of directions."
     @assert isapprox(dmp.value, 1, atol=atol, rtol=rtol) "expand error: wrong coefficient of DM magnon-phonon coupling."
     @assert dmp.cid[1].tag=='u' && dmp.cid[2].orbital==1 && spin.norbital==1 "expand error: not supported expansion of DM magnon-phonon coupling."
     return DMPExpand{totalspin(spin)}(totalspin(spin)/a, R̂, (bond.epoint, bond.spoint))
