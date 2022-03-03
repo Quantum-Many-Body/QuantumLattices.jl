@@ -795,6 +795,15 @@ Show a quantum operator.
 Base.show(io::IO, ::MIME"text/latex", m::QuantumOperator) = show(io, MIME"text/latex"(), latexstring(latexstring(m)))
 
 """
+    add!(destination, transformation::Function, op::QuantumOperator; kwargs...) -> typeof(destination)
+
+Add the result of the transformation on a quantum operator to the destination.
+"""
+@inline function add!(destination, transformation::Function, op::QuantumOperator; kwargs...)
+    add!(destination, transformation(op; kwargs...))
+end
+
+"""
     map!(transformation::Function, ms::OperatorSum; kwargs...) -> typeof(ms)
 
 In place map of an `OperatorSum` by a function.
@@ -813,7 +822,7 @@ In place map of an `OperatorSum` by a function.
 """
 function Base.map!(transformation::Function, destination, ms::OperatorSum; kwargs...)
     for m in ms
-        add!(destination, transformation(m; kwargs...))
+        add!(destination, transformation, m; kwargs...)
     end
     return destination
 end
@@ -827,6 +836,7 @@ abstract type Transformation <: Function end
 @inline Base.:(==)(transformation₁::Transformation, transformation₂::Transformation) = ==(efficientoperations, transformation₁, transformation₂)
 @inline Base.isequal(transformation₁::Transformation, transformation₂::Transformation) = isequal(efficientoperations, transformation₁, transformation₂)
 @inline Base.valtype(transformation::Transformation, m::QuantumOperator) = valtype(typeof(transformation), typeof(m))
+@inline Base.zero(transformation::Transformation, m::QuantumOperator) = zero(valtype(transformation, m))
 
 """
     (transformation::Transformation)(ms::OperatorSum; kwargs...) -> OperatorSum
@@ -834,9 +844,9 @@ abstract type Transformation <: Function end
 Get the transformed quantum operators.
 """
 function (transformation::Transformation)(ms::OperatorSum; kwargs...)
-    result = zero(valtype(transformation, ms))
+    result = zero(transformation, ms)
     for m in ms
-        add!(result, transformation(m; kwargs...))
+        add!(result, transformation, m; kwargs...)
     end
     return result
 end
@@ -913,7 +923,7 @@ Permute the operator units of an `OperatorProd` to the descending order accordin
     Here, `u₁` and `u₂` are two arbitrary operator units contained in `id(m)`.
 """
 @inline function (permutation::Permutation)(m::OperatorProd; kwargs...)
-    result = zero(valtype(permutation, m))
+    result = zero(permutation, m)
     cache = eltype(result)[m]
     while length(cache) > 0
         current = pop!(cache)

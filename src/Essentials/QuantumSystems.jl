@@ -1237,11 +1237,11 @@ function expand(dmp::Coupling{<:Number, <:Tuple{NID{Symbol}, SID{wildcard, Int, 
     @assert dmp.cid[1].tag=='u' && dmp.cid[2].orbital==1 && spin.norbital==1 "expand error: not supported expansion of DM magnon-phonon coupling."
     return DMPExpand{totalspin(spin)}(totalspin(spin)/a, R̂, (bond.epoint, bond.spoint))
 end
-struct DMPExpand{S, V<:Number, P<:AbstractPID} <: CartesianVectorSpace{Tuple{V, Tuple{OID{Index{P, NID{Char}}, SVector{2, V}}, OID{Index{P, SID{S, Int, Char}}, SVector{2, V}}}}}
+struct DMPExpand{S, V<:Number, D, P<:AbstractPID} <: CartesianVectorSpace{Tuple{V, Tuple{OID{Index{P, NID{Char}}, SVector{D, V}}, OID{Index{P, SID{S, Int, Char}}, SVector{D, V}}}}}
     value::V
-    direction::SVector{2, V}
-    points::NTuple{2, Point{2, P, V}}
-    DMPExpand{S}(value::Number, direction::SVector, points::NTuple{2, Point}) where S = new{S, typeof(value), pidtype(eltype(points))}(value, direction, points)
+    direction::SVector{D, V}
+    points::NTuple{2, Point{D, P, V}}
+    DMPExpand{S}(value::Number, direction::SVector{D}, points::NTuple{2, Point}) where {S, D} = new{S, typeof(value), D, pidtype(eltype(points))}(value, direction, points)
 end
 @inline shape(dmp::DMPExpand) = (1:2, 1:2, 1:2, 1:2)
 function Tuple(index::CartesianIndex{4}, dmp::DMPExpand{S}) where S
@@ -1269,10 +1269,13 @@ const DMPhonon{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Ter
     Term{:DMPhonon}(id, value, bondkind, couplings=dmphonon"", amplitude=amplitude, modulate=modulate)
 end
 @inline abbr(::Type{<:DMPhonon}) = :dmp
-@inline ishermitian(::Type{<:DMPhonon}) = false
+@inline ishermitian(::Type{<:DMPhonon}) = true
 @inline couplingcenters(::Coupling, ::Bond, ::Val{:DMPhonon}) = (1, 2)
 @inline function optype(T::Type{<:Term{:DMPhonon}}, H::Type{<:Hilbert}, B::Type{<:AbstractBond})
-    Operator{valtype(T), <:ID{OID{<:Index{pidtype(eltype(B)), <:SimpleIID}, SVector{dimension(eltype(B)), dtype(eltype(B))}}, rank(T)}}
+    V = SVector{dimension(eltype(B)), dtype(eltype(B))}
+    I₁ = OID{Index{pidtype(eltype(B)), NID{Char}}, V}
+    I₂ = OID{Index{pidtype(eltype(B)), SID{totalspin(filter(SID, valtype(H))), Int, Char}}, V}
+    Operator{valtype(T), Tuple{I₁, I₂}}
 end
 
 end # module

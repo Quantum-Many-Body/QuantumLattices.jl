@@ -909,41 +909,25 @@ end
 
     term = DMPhonon(:dmp, 2.0, 1)
     @test abbr(term) == abbr(typeof(term)) == :dmp
-    @test ishermitian(term) == ishermitian(typeof(term)) == false
+    @test ishermitian(term) == ishermitian(typeof(term)) == true
 
     bond = Bond(1, Point(PID(2), [0.5, 0.5], [0.0, 0.0]), Point(PID(1), [0.0, 0.0], [0.0, 0.0]))
     hilbert = Hilbert(pid=>Phonon(2)⊗Spin{1//2}(1) for pid in [bond.epoint.pid, bond.spoint.pid])
     operators = Operators(
-        Operator(√2/2, OID(Index(PID(1), SID{1//2}(1, 'y')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'x')), [0.5, 0.5], [0.0, 0.0])),
         Operator(√2/2, OID(Index(PID(2), NID('u', 'x')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(2), SID{1//2}(1, 'y')), [0.5, 0.5], [0.0, 0.0])),
         Operator(√2/2, OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(2), SID{1//2}(1, 'x')), [0.5, 0.5], [0.0, 0.0])),
         Operator(√2/2, OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(1), SID{1//2}(1, 'x')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(-√2/2, OID(Index(PID(1), SID{1//2}(1, 'x')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'x')), [0.5, 0.5], [0.0, 0.0])),
-        Operator(-√2/2, OID(Index(PID(1), SID{1//2}(1, 'y')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(-√2/2, OID(Index(PID(1), SID{1//2}(1, 'x')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
         Operator(√2/2, OID(Index(PID(2), NID('u', 'x')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(1), SID{1//2}(1, 'y')), [0.0, 0.0], [0.0, 0.0])),
         Operator(√2/2, OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(1), SID{1//2}(1, 'y')), [0.0, 0.0], [0.0, 0.0])),
         Operator(-√2/2, OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(1), SID{1//2}(1, 'x')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(√2/2, OID(Index(PID(2), SID{1//2}(1, 'y')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(-√2/2, OID(Index(PID(2), SID{1//2}(1, 'x')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'x')), [0.5, 0.5], [0.0, 0.0])),
         Operator(√2/2, OID(Index(PID(2), NID('u', 'y')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(2), SID{1//2}(1, 'x')), [0.5, 0.5], [0.0, 0.0])),
-        Operator(√2/2, OID(Index(PID(1), SID{1//2}(1, 'y')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
         Operator(-√2/2, OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(2), SID{1//2}(1, 'y')), [0.5, 0.5], [0.0, 0.0])),
-        Operator(-√2/2, OID(Index(PID(2), SID{1//2}(1, 'y')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
         Operator(-√2/2, OID(Index(PID(2), NID('u', 'y')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(1), SID{1//2}(1, 'y')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(√2/2, OID(Index(PID(2), SID{1//2}(1, 'y')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'x')), [0.5, 0.5], [0.0, 0.0])),
         Operator(√2/2, OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(2), SID{1//2}(1, 'y')), [0.5, 0.5], [0.0, 0.0])),
         Operator(√2/2, OID(Index(PID(2), NID('u', 'y')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(1), SID{1//2}(1, 'x')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(-√2/2, OID(Index(PID(2), SID{1//2}(1, 'x')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(-√2/2, OID(Index(PID(1), SID{1//2}(1, 'y')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'y')), [0.5, 0.5], [0.0, 0.0])),
-        Operator(√2/2, OID(Index(PID(2), SID{1//2}(1, 'x')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'y')), [0.5, 0.5], [0.0, 0.0])),
-        Operator(√2/2, OID(Index(PID(2), SID{1//2}(1, 'x')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
         Operator(-√2/2, OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(1), SID{1//2}(1, 'y')), [0.0, 0.0], [0.0, 0.0])),
         Operator(-√2/2, OID(Index(PID(2), NID('u', 'x')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(2), SID{1//2}(1, 'x')), [0.5, 0.5], [0.0, 0.0])),
-        Operator(-√2/2, OID(Index(PID(2), SID{1//2}(1, 'y')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'y')), [0.5, 0.5], [0.0, 0.0])),
-        Operator(√2/2, OID(Index(PID(1), SID{1//2}(1, 'x')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'y')), [0.5, 0.5], [0.0, 0.0])),
         Operator(-√2/2, OID(Index(PID(2), NID('u', 'y')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(2), SID{1//2}(1, 'y')), [0.5, 0.5], [0.0, 0.0])),
-        Operator(√2/2, OID(Index(PID(1), SID{1//2}(1, 'x')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
         Operator(-√2/2, OID(Index(PID(2), NID('u', 'x')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(1), SID{1//2}(1, 'x')), [0.0, 0.0], [0.0, 0.0])),
         Operator(-√2/2, OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(2), SID{1//2}(1, 'x')), [0.5, 0.5], [0.0, 0.0]))
     )
