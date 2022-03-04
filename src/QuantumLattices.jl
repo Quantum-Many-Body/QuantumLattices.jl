@@ -53,7 +53,4 @@ export @heisenberg_str, @ising_str, @gamma_str, @dm_str, @sˣ_str, @sʸ_str, @s�
 export nlatex
 export NID, Phonon, PhononCoupling, PhononKinetic, PhononPotential, PhononTerm
 
-## Magnon-Phonon coupled systems
-export DMPhonon
-
 end

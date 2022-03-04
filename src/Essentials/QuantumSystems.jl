@@ -32,8 +32,6 @@ export nlatex
 export NID, Phonon, PhononCoupling, PhononKinetic, PhononPotential, PhononTerm
 export @kinetic_str, @potential_str
 
-export DMPhonon, @dmphonon_str
-
 # Canonical fermionic/bosonic systems and hardcore bosonic systems
 """
     majorana
@@ -1215,67 +1213,5 @@ end
 Type alias for `Union{PhononKinetic, PhononPotential}`.
 """
 const PhononTerm = Union{PhononKinetic, PhononPotential}
-
-# Magnon-phonon coupled systems
-"""
-    dmphonon"" -> Coupling
-
-The DM magnon-phonon couplings.
-"""
-macro dmphonon_str(::String) Couplings(Coupling(1, ID(NID('u', wildcard), SID{wildcard}(1, wildcard)))) end
-
-"""
-    expand(dmp::Coupling{<:Number, <:Tuple{NID{Symbol}, SID{wildcard, Int, Symbol}}}, bond::Bond, hilbert::Hilbert, info::Val{:DMPhonon}) -> DMPExpand
-
-Expand the default DM magnon-phonon coupling on a given bond.
-"""
-function expand(dmp::Coupling{<:Number, <:Tuple{NID{Symbol}, SID{wildcard, Int, Symbol}}}, bond::Bond, hilbert::Hilbert, info::Val{:DMPhonon})
-    R̂, a = rcoord(bond)/norm(rcoord(bond)), norm(rcoord(bond))
-    phonon, spin = couplinginternals(dmp, bond, hilbert, info)
-    @assert phonon.ndir==length(R̂) "expand error: mismatched number of directions."
-    @assert isapprox(dmp.value, 1, atol=atol, rtol=rtol) "expand error: wrong coefficient of DM magnon-phonon coupling."
-    @assert dmp.cid[1].tag=='u' && dmp.cid[2].orbital==1 && spin.norbital==1 "expand error: not supported expansion of DM magnon-phonon coupling."
-    return DMPExpand{totalspin(spin)}(totalspin(spin)/a, R̂, (bond.epoint, bond.spoint))
-end
-struct DMPExpand{S, V<:Number, D, P<:AbstractPID} <: CartesianVectorSpace{Tuple{V, Tuple{OID{Index{P, NID{Char}}, SVector{D, V}}, OID{Index{P, SID{S, Int, Char}}, SVector{D, V}}}}}
-    value::V
-    direction::SVector{D, V}
-    points::NTuple{2, Point{D, P, V}}
-    DMPExpand{S}(value::Number, direction::SVector{D}, points::NTuple{2, Point}) where {S, D} = new{S, typeof(value), D, pidtype(eltype(points))}(value, direction, points)
-end
-@inline shape(dmp::DMPExpand) = (1:2, 1:2, 1:2, 1:2)
-function Tuple(index::CartesianIndex{4}, dmp::DMPExpand{S}) where S
-    coeff = (-dmp.direction[index[1]]*dmp.direction[index[2]]+(index[1]==index[2] ? 1 : 0))*(index[3]==1 ? 1 : -1)
-    oid₁ = OID(Index(dmp.points[index[3]].pid, NID('u', index[1]==1 ? 'x' : 'y')), dmp.points[index[3]].rcoord, dmp.points[index[3]].icoord)
-    oid₂ = OID(Index(dmp.points[index[4]].pid, SID{S}(1, index[2]==1 ? 'x' : 'y')), dmp.points[index[4]].rcoord, dmp.points[index[4]].icoord)
-    return dmp.value*coeff, ID(oid₁, oid₂)
-end
-
-"""
-    DMPhonon(id::Symbol, value::Any, bondkind::Int;
-        amplitude::Union{Function, Nothing}=nothing,
-        modulate::Union{Function, Bool}=false
-        )
-
-The DM Magnon-Phonon coupling term.
-
-Type alias for `Term{:DMPhonon, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`
-"""
-const DMPhonon{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:DMPhonon, id, V, Int, C, A, M}
-@inline function DMPhonon(id::Symbol, value::Any, bondkind::Int;
-        amplitude::Union{Function, Nothing}=nothing,
-        modulate::Union{Function, Bool}=false
-        )
-    Term{:DMPhonon}(id, value, bondkind, couplings=dmphonon"", amplitude=amplitude, modulate=modulate)
-end
-@inline abbr(::Type{<:DMPhonon}) = :dmp
-@inline ishermitian(::Type{<:DMPhonon}) = true
-@inline couplingcenters(::Coupling, ::Bond, ::Val{:DMPhonon}) = (1, 2)
-@inline function optype(T::Type{<:Term{:DMPhonon}}, H::Type{<:Hilbert}, B::Type{<:AbstractBond})
-    V = SVector{dimension(eltype(B)), dtype(eltype(B))}
-    I₁ = OID{Index{pidtype(eltype(B)), NID{Char}}, V}
-    I₂ = OID{Index{pidtype(eltype(B)), SID{totalspin(filter(SID, valtype(H))), Int, Char}}, V}
-    Operator{valtype(T), Tuple{I₁, I₂}}
-end
 
 end # module
