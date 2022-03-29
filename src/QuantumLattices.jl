@@ -17,25 +17,27 @@ export expand, expand!, decompose, decompose!, permute
 export dtype, kind, update, update!, reset!
 
 # Essentials.QuantumOperators
-export QuantumOperator, OperatorUnit, ID, OperatorProd, OperatorSum, Operator, Operators, ishermitian, idtype, optype, sequence, latexformat
-export Transformation, Identity, Numericalization, MatrixRepresentation, Permutation, UnitSubstitution, RankFilter, matrix, matrix!
+export QuantumOperator, OperatorUnit, ID, OperatorPack, OperatorProd, OperatorSum, Operator, Operators, LaTeX
+export Transformation, Identity, Numericalization, MatrixRepresentation, Permutation, AbstractSubstitution, AbstractUnitSubstitution, UnitSubstitution, RankFilter
+export ishermitian, idtype, optype, sequence, latexname, latexformat, matrix, matrix!
 
 # Essentials.QuantumNumbers
 export AbelianNumber, AbelianNumbers, @abeliannumber, periods, Momentum, Momentum₁, Momentum₂, Momentum₃
 
 # Essentials.Spatials
-export distance, azimuthd, azimuth, polard, polar, volume, isparallel, isonline, isintratriangle, issubordinate, reciprocals, translate, rotate
-export Translations, PID, CPID, Point, Bond, Lattice, SuperLattice, Cylinder, Bonds, Segment, BrillouinZone, ReciprocalZone, ReciprocalPath
+export distance, azimuthd, azimuth, polard, polar, volume, isparallel, isonline, isintratriangle, issubordinate, reciprocals, translate, rotate, tile
+export Translations, AbstractPID, PID, CPID, AbstractBond, Point, Bond, Lattice, SuperLattice, Cylinder, Bonds
+export Segment, ReciprocalSpace, BrillouinZone, ReciprocalZone, ReciprocalPath
 export pidtype, rcoord, icoord, isintracell, bonds!, bonds, @line_str, @rectangle_str, @hexagon_str, @translations_str
 export allbonds, zerothbonds, insidebonds, acrossbonds, intrabonds, interbonds
 
 # Essentials.DegreesOfFreedom
-export CompositeIID, CompositeInternal, Index, OID, IIDSpace, Hilbert
-export Subscript, Subscripts, SubscriptsID, Coupling, Couplings, OIDToTuple, Table, Term, LaTeX
-export statistics, iidtype, ismodulatable, abbr, @subscript_str, @couplings
+export IID, SimpleIID, CompositeIID, Internal, SimpleInternal, CompositeInternal, AbstractOID, Index, CompositeOID, OID, Hilbert
+export IIDSpace, Subscript, Subscripts, AbstractCoupling, Coupling, Couplings, Metric, OIDToTuple, Table, Term
+export statistics, iidtype, indextype, ismodulatable, abbr, @subscript_str, @couplings
 
 # Essentials.Frameworks
-export Parameters, Boundary, Engine, Formulation, Entry, Generator, Image, Action, Assignment, Algorithm
+export Parameters, Boundary, Engine, AbstractGenerator, Formulation, Entry, CompositeGenerator, Generator, Image, Action, Assignment, Algorithm
 export prepare!, run!, rundependences!, plain
 
 # Essentials.QuantumSystems

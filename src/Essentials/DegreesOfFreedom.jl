@@ -3,7 +3,7 @@ module DegreesOfFreedom
 using MacroTools: @capture
 using Printf: @printf, @sprintf
 using StaticArrays: SVector
-using ..QuantumOperators: OperatorUnit, ID, OperatorPack, OperatorSum, Operator, Operators, valuetolatextext
+using ..QuantumOperators: OperatorUnit, ID, OperatorPack, OperatorSum, Operator, Operators, valuetolatextext, idtype
 using ..Spatials: AbstractPID, AbstractBond, Point, Bonds, pidtype
 using ...Essentials: dtype
 using ...Interfaces: decompose, dimension, add!
@@ -13,7 +13,7 @@ using ...Prerequisites.CompositeStructures: CompositeDict, CompositeTuple, Named
 using ...Prerequisites.VectorSpaces: CartesianVectorSpace
 
 import LinearAlgebra: ishermitian
-import ..QuantumOperators: idtype, script, optype
+import ..QuantumOperators: script, optype
 import ..Spatials: pidtype, rcoord, icoord
 import ...Essentials: kind, reset!, update!
 import ...Interfaces: id, value, rank, expand, expand!, ⊗
@@ -22,7 +22,7 @@ import ...Prerequisites.VectorSpaces: shape, ndimshape
 
 export IID, SimpleIID, CompositeIID, Internal, SimpleInternal, CompositeInternal
 export AbstractOID, Index, CompositeOID, OID, statistics, iidtype, ishermitian, indextype, oidtype, Hilbert
-export IIDSpace, Subscript, Subscripts, SubscriptsID, @subscript_str, subscriptexpr, wildcard, diagonal, noconstrain
+export IIDSpace, Subscript, Subscripts, @subscript_str, subscriptexpr, wildcard, diagonal, noconstrain
 export AbstractCoupling, Coupling, Couplings, couplingcenters, couplingpoints, couplinginternals, @couplings
 export Metric, OIDToTuple, Table
 export TermFunction, TermAmplitude, TermCouplings, TermModulate, Term, ismodulatable, abbr
@@ -640,13 +640,20 @@ function subscriptexpr(expr::Expr, check_constant::Bool=false)
 end
 
 """
-    Subscripts{T<:Tuple{Vararg{NamedContainer{Subscript}}}} <: CompositeTuple{T}
+    Subscripts{T<:Tuple{Vararg{NamedContainer{Subscript}}}, R<:Tuple{Vararg{Pair{UnitRange{Int}, <:Tuple{Vararg{String}}}}}} <: OperatorUnit
 
 The complete set of subscripts of the internal degrees of freedom.
 """
-struct Subscripts{T<:Tuple{Vararg{NamedContainer{Subscript}}}} <: CompositeTuple{T}
+struct Subscripts{T<:Tuple{Vararg{NamedContainer{Subscript}}}, R<:Tuple{Vararg{Pair{UnitRange{Int}, <:Tuple{Vararg{String}}}}}} <: OperatorUnit
     contents::T
+    rep::R
 end
+@inline Base.:(==)(subs₁::Subscripts, subs₂::Subscripts) = subs₁.contents==subs₂.contents
+@inline Base.hash(subscripts::Subscripts, h::UInt) = hash(subscripts.rep, h)
+@inline Base.length(subscripts::Subscripts) = length(typeof(subscripts))
+@inline Base.length(::Type{<:Subscripts{T}}) where {T<:Tuple{Vararg{NamedContainer{Subscript}}}} = fieldcount(T)
+@inline Base.getindex(subscripts::Subscripts, i::Integer) = subscripts.contents[i]
+@inline Base.iterate(subscripts::Subscripts, state=1) = state>length(subscripts) ? nothing : (subscripts[state], state+1)
 function Base.show(io::IO, subscripts::Subscripts)
     for (i, segment) in enumerate(subscripts.contents)
         i>1 && @printf io "%s" " × "
@@ -674,7 +681,9 @@ function Subscripts(contents::NamedContainer{Subscript}...)
     for segment in contents
         length(segment)>1 && @assert mapreduce(length, ==, values(segment)) "Subscripts error: mismatched ranks."
     end
-    return Subscripts(contents)
+    reps = map(content->map(subscript->subscript.rep, values(content)), contents)
+    counts = (0, cumsum(map(content->rank(first(content)), contents))...)
+    return Subscripts(contents, map((i, rep)->(counts[i]+1:counts[i+1])=>rep, ntuple(i->i, Val(fieldcount(typeof(reps)))), reps))
 end
 
 """
@@ -725,38 +734,7 @@ end
 
 Get the combination of two sets of subscripts.
 """
-@inline Base.:*(subscripts₁::Subscripts, subscripts₂::Subscripts) = Subscripts((subscripts₁.contents..., subscripts₂.contents...))
-
-"""
-    idtype(subscripts::Subscripts)
-    idtype(::Type{<:Subscripts{T}}) where {T<:Tuple{Vararg{NamedContainer{Subscript}}}}
-
-Get the type of the id of the subscripts.
-"""
-@inline idtype(subscripts::Subscripts) = idtype(typeof(subscripts))
-@inline @generated function idtype(::Type{<:Subscripts{T}}) where {T<:Tuple{Vararg{NamedContainer{Subscript}}}}
-    return SubscriptsID{Tuple{ntuple(i->Pair{UnitRange{Int}, NTuple{fieldcount(fieldtype(T, i)), String}}, Val(fieldcount(T)))...}}
-end
-
-"""
-    SubscriptsID{T<:Tuple{Vararg{Pair{UnitRange{Int}, <:Tuple{Vararg{String}}}}}} <: OperatorUnit
-
-The id of the subscripts.
-"""
-struct SubscriptsID{T<:Tuple{Vararg{Pair{UnitRange{Int}, <:Tuple{Vararg{String}}}}}} <: OperatorUnit
-    rep::T
-end
-
-"""
-    SubscriptsID(subscripts::Subscripts)
-
-Construct the id of the subscripts.
-"""
-function SubscriptsID(subscripts::Subscripts)
-    reps = map(content->map(subscript->subscript.rep, values(content)), subscripts.contents)
-    counts = (0, cumsum(map(content->rank(first(content)), subscripts.contents))...)
-    return SubscriptsID(map((i, rep)->(counts[i]+1:counts[i+1])=>rep, ntuple(i->i, Val(fieldcount(typeof(reps)))), reps))
-end
+@inline Base.:*(subscripts₁::Subscripts, subscripts₂::Subscripts) = Subscripts((subscripts₁.contents..., subscripts₂.contents...)...)
 
 """
     AbstractCoupling{V, I<:ID{OperatorUnit}} <: OperatorPack{V, I}
@@ -840,26 +818,24 @@ function Base.iterate(ex::CExpand, state=iterate(ex.iidspace))
 end
 
 """
-    Coupling{V, I<:ID{SimpleIID}, C<:Subscripts, CI<:SubscriptsID} <: AbstractCoupling{V, Tuple{CompositeIID{I}, CI}}
+    Coupling{V, I<:ID{SimpleIID}, C<:Subscripts} <: AbstractCoupling{V, Tuple{CompositeIID{I}, C}}
 
 The coupling intra/inter internal degrees of freedom at different lattice points.
 """
-struct Coupling{V, I<:ID{SimpleIID}, C<:Subscripts, CI<:SubscriptsID} <: AbstractCoupling{V, Tuple{CompositeIID{I}, CI}}
+struct Coupling{V, I<:ID{SimpleIID}, C<:Subscripts} <: AbstractCoupling{V, Tuple{CompositeIID{I}, C}}
     value::V
     cid::I
     subscripts::C
     function Coupling(value::Number, cid::ID{SimpleIID}, subscripts::Subscripts=Subscripts())
-        new{typeof(value), typeof(cid), typeof(subscripts), idtype(subscripts)}(value, cid, subscripts)
+        new{typeof(value), typeof(cid), typeof(subscripts)}(value, cid, subscripts)
     end
 end
-@inline parameternames(::Type{<:Coupling}) = (:value, :cid, :subscripts, :subscriptsid)
+@inline parameternames(::Type{<:Coupling}) = (:value, :cid, :subscripts)
 @inline isparameterbound(::Type{<:Coupling}, ::Val{:cid}, ::Type{I}) where {I<:ID{SimpleIID}} = !isconcretetype(I)
 @inline isparameterbound(::Type{<:Coupling}, ::Val{:subscripts}, ::Type{C}) where {C<:Subscripts} = !isconcretetype(C)
-@inline isparameterbound(::Type{<:Coupling}, ::Val{:subscriptsid}, ::Type{CI}) where {CI<:SubscriptsID} = !isconcretetype(CI)
-@inline contentnames(::Type{<:Coupling}) = (:value, :id, :subscripts)
-@inline getcontent(coupling::Coupling, ::Val{:id}) = ID(CompositeIID(coupling.cid), SubscriptsID(coupling.subscripts))
+@inline getcontent(coupling::Coupling, ::Val{:id}) = ID(CompositeIID(coupling.cid), coupling.subscripts)
 @inline rank(::Type{<:Coupling{V, I} where V}) where {I<:ID{SimpleIID}} = fieldcount(I)
-@inline Coupling(value::Number, id::Tuple{CompositeIID, SubscriptsID}, subscripts::Subscripts) = Coupling(value, first(id).contents, subscripts)
+@inline Coupling(value::Number, id::Tuple{CompositeIID, Subscripts}) = Coupling(value, id[1].contents, id[2])
 @inline ID{SimpleIID}(coupling::Coupling) = coupling.cid
 @inline Subscripts(coupling::Coupling) = coupling.subscripts
 
@@ -1326,7 +1302,7 @@ function expand!(operators::Operators, term::Term, bond::AbstractBond, hilbert::
         if abs(value) ≠ 0
             hermitian = ishermitian(term)
             M = optype(term|>typeof, hilbert|>typeof, bond|>typeof)
-            record = (isnothing(hermitian) && length(operators)>0) ? Set{M|>idtype}() : nothing
+            record = (isnothing(hermitian) && length(operators)>0) ? Set{idtype(M)}() : nothing
             for coupling in term.couplings(bond)
                 for (coeff, id) in expand(coupling, bond, hilbert, term|>kind|>Val)
                     isapprox(coeff, 0.0, atol=atol, rtol=rtol) && continue

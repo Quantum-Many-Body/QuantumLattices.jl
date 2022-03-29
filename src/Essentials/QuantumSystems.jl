@@ -7,7 +7,7 @@ using ..QuantumOperators: ID, OperatorProd, Operator, Operators, LaTeX, latexfor
 using ..Spatials: AbstractPID, AbstractBond, Point, Bond, rcoord, pidtype
 using ..DegreesOfFreedom: SimpleIID, CompositeIID, SimpleInternal, CompositeInternal
 using ..DegreesOfFreedom: Index, CompositeOID, OID, OIDToTuple, Hilbert, Table
-using ..DegreesOfFreedom: Subscripts, SubscriptsID, Subscript, IIDSpace, subscriptexpr, wildcard, diagonal
+using ..DegreesOfFreedom: Subscripts, Subscript, IIDSpace, subscriptexpr, wildcard, diagonal
 using ..DegreesOfFreedom: Coupling, Couplings, @couplings, couplinginternals, Term, TermCouplings, TermAmplitude, TermModulate
 using ...Essentials: kind, dtype
 using ...Interfaces: decompose, dimension
@@ -260,9 +260,9 @@ end
 
 Fock coupling.
 
-Type alias for `Coupling{V, I<:ID{FID}, C<:Subscripts, CI<:SubscriptsID}`.
+Type alias for `Coupling{V, I<:ID{FID}, C<:Subscripts}`.
 """
-const FockCoupling{V, I<:ID{FID}, C<:Subscripts, CI<:SubscriptsID} = Coupling{V, I, C, CI}
+const FockCoupling{V, I<:ID{FID}, C<:Subscripts} = Coupling{V, I, C}
 function FockCoupling(value::Number,
         orbitals::Subscript{<:NTuple{N, Union{Int, Symbol}}},
         spins::Subscript{<:NTuple{N, Union{Int, Symbol}}},
@@ -827,9 +827,9 @@ end
 
 Spin coupling.
 
-Type alias for `Coupling{V, I<:ID{SID}, C<:Subscripts, CI<:SubscriptsID}`.
+Type alias for `Coupling{V, I<:ID{SID}, C<:Subscripts}`.
 """
-const SpinCoupling{V, I<:ID{SID}, C<:Subscripts, CI<:SubscriptsID} = Coupling{V, I, C, CI}
+const SpinCoupling{V, I<:ID{SID}, C<:Subscripts} = Coupling{V, I, C}
 @inline function SpinCoupling(value::Number, tags::NTuple{N, Char}, orbitals::Subscript{<:NTuple{N, Union{Int, Symbol}}}) where N
     return Coupling(value, ID(SID{wildcard}, orbitals.pattern, tags), Subscripts((orbital=orbitals,)))
 end
@@ -1089,9 +1089,9 @@ end
 
 Phonon coupling.
 
-Type alias for `Coupling{V<:Number, I<:ID{NID}, C<:Subscripts, CI<:SubscriptsID}`.
+Type alias for `Coupling{V<:Number, I<:ID{NID}, C<:Subscripts}`.
 """
-const PhononCoupling{V<:Number, I<:ID{NID}, C<:Subscripts, CI<:SubscriptsID} = Coupling{V, I, C, CI}
+const PhononCoupling{V<:Number, I<:ID{NID}, C<:Subscripts} = Coupling{V, I, C}
 @inline function PhononCoupling(value::Number, tags::NTuple{N, Char}, dirs::Subscript{<:Union{NTuple{N, Char}, NTuple{N, Symbol}}}) where N
     return Coupling(value, ID(NID, tags, dirs.pattern), Subscripts((dir=dirs,)))
 end

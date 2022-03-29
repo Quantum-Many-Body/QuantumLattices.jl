@@ -2,7 +2,7 @@ using Test
 using Printf: @printf, @sprintf
 using StaticArrays: SVector
 using QuantumLattices.Essentials.DegreesOfFreedom
-using QuantumLattices.Essentials.QuantumOperators: ID, Operator, Operators, sequence, id, idtype, LaTeX, latexformat
+using QuantumLattices.Essentials.QuantumOperators: ID, Operator, Operators, sequence, id, LaTeX, latexformat
 using QuantumLattices.Essentials.Spatials: AbstractPID, PID, CPID, Point, Bond, Bonds, Lattice, pidtype, rcoord, icoord
 using QuantumLattices.Essentials: kind, update!, reset!
 using QuantumLattices.Interfaces: rank, expand, ⊗
@@ -38,7 +38,7 @@ end
 @inline latexname(::Type{<:OID{<:Index{<:AbstractPID, <:DID}}}) = Symbol("OID{Index{AbstractPID, DID}}")
 latexformat(OID{<:Index{<:AbstractPID, <:DID}}, LaTeX{(:nambu,), (:site,)}('d'))
 
-const DCoupling{V, I<:ID{DID}, C<:Subscripts, CI<:SubscriptsID} = Coupling{V, I, C, CI}
+const DCoupling{V, I<:ID{DID}, C<:Subscripts} = Coupling{V, I, C}
 @inline Base.repr(tc::(Coupling{V, <:ID{DID}} where V)) = @sprintf "%s ph(%s)" decimaltostr(tc.value) join(tc.cid.nambus, ", ")
 @inline couplingcenters(::(Coupling{V, <:ID{DID}} where V), ::Bond, ::Val) = (1, 2)
 @inline DCoupling(value, nambus::Tuple{Vararg{Int}}) = Coupling(value, ID(DID, nambus), Subscripts((nambu=Subscript(nambus),)))
@@ -269,6 +269,8 @@ end
 
 @testset "Subscripts" begin
     subscripts = Subscripts((nambu=subscript"[x y](x > y)",), (nambu=subscript"[x x y y](x < y)",))
+    @test subscripts.rep == (1:2=>("[x y](x > y)",), 3:6=>("[x x y y](x < y)",))
+    @test hash(subscripts) == hash(subscripts.rep)
     @test string(subscripts) == "nambu[x y](x > y) × nambu[x x y y](x < y)"
     @test repr(subscripts, 1:2, :nambu) == "[x y](x > y)×[x x y y](x < y)"
     @test repr(subscripts, 1, :nambu) == "[x y](x > y)"
@@ -282,26 +284,20 @@ end
     @test !match(subscripts, DID(1)⊗DID(2)⊗DID(2)⊗DID(2)⊗DID(3)⊗DID(3))
     @test !match(subscripts, DID(2)⊗DID(1)⊗DID(3)⊗DID(3)⊗DID(2)⊗DID(2))
     @test subscripts == Subscripts((nambu=subscript"[x y](x > y)",))*Subscripts((nambu=subscript"[x x y y](x < y)",))
-
-    subscriptsid = SubscriptsID(subscripts)
-    @test subscriptsid == SubscriptsID((1:2=>("[x y](x > y)",), 3:6=>("[x x y y](x < y)",)))
-    @test idtype(subscripts) == idtype(typeof(subscripts)) == SubscriptsID{NTuple{2, Pair{UnitRange{Int}, Tuple{String}}}}
 end
 
 @testset "couplings" begin
-    @test parameternames(Coupling) == (:value, :cid, :subscripts, :subscriptsid)
-    @test contentnames(Coupling) == (:value, :id, :subscripts)
+    @test parameternames(Coupling) == (:value, :cid, :subscripts)
     @test isparameterbound(Coupling, :cid, Tuple{DID{Int}}) == false
     @test isparameterbound(Coupling, :cid, ID{DID{Int}}) == true
-    @test isparameterbound(Coupling, :subscripts, Subscripts{Tuple{NamedTuple{(:nambu,), Tuple{Subscript{Tuple{Int}, typeof(noconstrain)}}}}}) == false
+    @test isparameterbound(Coupling, :subscripts, Subscripts{Tuple{NamedTuple{(:nambu,), Tuple{Subscript{Tuple{Int}, typeof(noconstrain)}}}}}) == true
     @test isparameterbound(Coupling, :subscripts, Subscripts) == true
-    @test isparameterbound(Coupling, :subscriptsid, SubscriptsID{Tuple{}}) == false
-    @test isparameterbound(Coupling, :subscriptsid, SubscriptsID) == true
+    @test isparameterbound(Coupling, :subscripts, Subscripts{Tuple{}, Tuple{}}) == false
 
     tc = DCoupling(2.0, (2,))
-    @test id(tc) == ID(CompositeIID(tc.cid), SubscriptsID(tc.subscripts))
+    @test id(tc) == ID(CompositeIID(tc.cid), tc.subscripts)
     @test rank(tc) == rank(typeof(tc)) == 1
-    @test tc == Coupling(2.0, id(tc), tc.subscripts)
+    @test tc == Coupling(2.0, id(tc))
     @test ID{SimpleIID}(tc) == tc.cid
     @test Subscripts(tc) == tc.subscripts
 

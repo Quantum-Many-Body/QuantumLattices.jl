@@ -5,7 +5,7 @@ using StaticArrays: SVector
 using QuantumLattices.Essentials.Frameworks
 using QuantumLattices.Essentials: update, reset!
 using QuantumLattices.Essentials.Spatials: Point, AbstractPID, PID, Bond, Bonds, Lattice, acrossbonds, zerothbonds, decompose
-using QuantumLattices.Essentials.DegreesOfFreedom: SimpleIID, SimpleInternal, IIDSpace, Coupling, Subscript, Subscripts, SubscriptsID
+using QuantumLattices.Essentials.DegreesOfFreedom: SimpleIID, SimpleInternal, IIDSpace, Coupling, Subscript, Subscripts
 using QuantumLattices.Essentials.DegreesOfFreedom: Term, Hilbert, Index, Table, OID, OIDToTuple, @couplings
 using QuantumLattices.Essentials.QuantumOperators: ID, Operator, Operators, id, idtype, Identity
 using QuantumLattices.Prerequisites: Float
@@ -41,7 +41,7 @@ end
 @inline shape(iidspace::IIDSpace{FID{Symbol}, FFock}) = (1:iidspace.internal.nnambu,)
 @inline shape(iidspace::IIDSpace{FID{Int}, FFock}) = (iidspace.iid.nambu:iidspace.iid.nambu,)
 
-const FCoupling{V, I<:ID{FID}, C<:Subscripts, CI<:SubscriptsID} = Coupling{V, I, C, CI}
+const FCoupling{V, I<:ID{FID}, C<:Subscripts} = Coupling{V, I, C}
 @inline couplingcenters(::(Coupling{V, <:ID{FID}} where V), ::Bond, ::Val) = (1, 2)
 @inline FCoupling(value, nambus::Tuple{Vararg{Int}}) = Coupling(value, ID(FID, nambus), Subscripts((nambu=Subscript(nambus),)))
 @inline FCoupling(value, nambus::Subscript) = Coupling(value, ID(FID, convert(Tuple, nambus)), Subscripts((nambu=nambus,)))
