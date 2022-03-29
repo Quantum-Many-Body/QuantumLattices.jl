@@ -1107,6 +1107,7 @@ mutable struct Term{K, I, V, B, C<:TermCouplings, A<:TermAmplitude, M<:TermModul
     function Term{K, I}(value, bondkind, couplings::TermCouplings, amplitude::TermAmplitude, modulate::TermModulate, factor) where {K, I}
         @assert isa(K, Symbol) "Term error: kind must be a Symbol."
         @assert isa(I, Symbol) "Term error: id must be a Symbol."
+        @assert value==value' "Term error: only real values are allowed. Complex values should be specified by the amplitude function."
         V, B, C, A, M = typeof(value), typeof(bondkind), typeof(couplings), typeof(amplitude), typeof(modulate)
         new{K, I, V, B, C, A, M}(value, bondkind, couplings, amplitude, modulate, factor)
     end

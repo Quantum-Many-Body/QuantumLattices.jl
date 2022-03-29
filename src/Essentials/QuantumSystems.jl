@@ -565,7 +565,6 @@ Type alias for `Term{:Hubbard, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M
 """
 const Hubbard{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:Hubbard, id, V, Int, C, A, M}
 @inline function Hubbard(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
-    @assert value==value' "Hubbard error: only real values are allowed."
     Term{:Hubbard}(id, value, 0, couplings=@couplings(fc"1 sp[2 2 1 1] ⊗ ph[2 1 2 1]"), amplitude=amplitude, modulate=modulate)
 end
 @inline abbr(::Type{<:Hubbard}) = :hb
@@ -580,7 +579,6 @@ Type alias for `Term{:InterOrbitalInterSpin, id, V, Int, C<:TermCouplings, A<:Te
 """
 const InterOrbitalInterSpin{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:InterOrbitalInterSpin, id, V, Int, C, A, M}
 @inline function InterOrbitalInterSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
-    @assert value==value' "InterOrbitalInterSpin error: only real values are allowed."
     Term{:InterOrbitalInterSpin}(id, value, 0;
         couplings=@couplings(fc"1 ob[α α β β](α < β) ⊗ sp[σ₁ σ₁ σ₂ σ₂](σ₁ ≠ σ₂) ⊗ ph[2 1 2 1]"),
         amplitude=amplitude,
@@ -599,7 +597,6 @@ Type alias for `Term{:InterOrbitalIntraSpin, id, V, Int, C<:TermCouplings, A<:Te
 """
 const InterOrbitalIntraSpin{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:InterOrbitalIntraSpin, id, V, Int, C, A, M}
 @inline function InterOrbitalIntraSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
-    @assert value==value' "InterOrbitalIntraSpin error: only real values are allowed."
     Term{:InterOrbitalIntraSpin}(id, value, 0, couplings=@couplings(fc"1 ob[α α β β](α < β) ⊗ ph[2 1 2 1]"), amplitude=amplitude, modulate=modulate)
 end
 @inline abbr(::Type{<:InterOrbitalIntraSpin}) = :noes

@@ -16,13 +16,13 @@ Find the common return type of a function.
 function commontype(f::Function, types, ::Type{T}=Any) where T
     result = Union{}
     for rtype in Base.return_types(f, types)
-        result = typejoin(result, commontype(rtype))
+        result = promote_type(result, commontype(rtype))
     end
     @assert result<:T "commontype error: wrong common type."
     return result
 end
 @inline commontype(t) = t
-@inline commontype(t::Union) = typejoin(commontype(t.a), commontype(t.b))
+@inline commontype(t::Union) = promote_type(commontype(t.a), commontype(t.b))
 
 """
     DataType(T::DataType) -> DataType

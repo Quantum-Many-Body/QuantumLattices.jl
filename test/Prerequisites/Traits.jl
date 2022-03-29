@@ -27,11 +27,11 @@ end
 
 @testset "commontype" begin
     @test commontype(Int) == Int
-    @test commontype(Union{Int, Float64}) == Real
-    @test commontype(Union{Int, Float64, Complex{Float64}}) == Number
+    @test commontype(Union{Int, Float64}) == Float64
+    @test commontype(Union{Int, Float64, Complex{Int}}) == Complex{Float64}
 
     fx = x::Int->(x==1 ? 1 : x==2 ? 2.0 : 3.0im)
-    @test commontype(fx, Tuple{Int}) == Number
+    @test commontype(fx, Tuple{Int}) == Complex{Float64}
 end
 
 @testset "abstracttypehelper" begin
