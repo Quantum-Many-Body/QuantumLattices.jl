@@ -36,7 +36,6 @@ function permute(u₁::AID, u₂::AID)
 end
 
 @testset "ID" begin
-    @test AID|>rank == 1
     @test ID|>rank == Any
     @test promote_type(ID{AID{Int, Int}, 1}, ID{AID{Int, Int}}) == ID{AID{Int, Int}}
     @test promote_type(ID{AID{Int, Int}}, ID{AID{Int, Int}, 1}) == ID{AID{Int, Int}}
@@ -45,7 +44,6 @@ end
     @test promote_type(Tuple{}, ID{AID{Int, Int}, 2}) == ID{AID{Int, Int}}
 
     sid = AID(1, 1)
-    @test rank(sid) == rank(typeof(sid)) == 1
     @test string(sid) == "AID(1, 1)"
     @test sid'==AID(1, 2)
 

@@ -24,7 +24,6 @@ The abstract type of any quantum operator.
 abstract type QuantumOperator end
 @inline Base.:(==)(m₁::QuantumOperator, m₂::QuantumOperator) = ==(efficientoperations, m₁, m₂)
 @inline Base.isequal(m₁::QuantumOperator, m₂::QuantumOperator) = isequal(efficientoperations, m₁, m₂)
-@inline rank(qo::QuantumOperator) = rank(typeof(qo))
 
 """
     replace(m::QuantumOperator; kwargs...) -> typeof(m)
@@ -43,13 +42,6 @@ It plays the role of the symbols as in usual computer algebras while it can host
 """
 abstract type OperatorUnit <: QuantumOperator end
 @inline Base.show(io::IO, u::OperatorUnit) = @printf io "%s(%s)" nameof(typeof(u)) join(map(repr, ntuple(i->getfield(u, i), Val(fieldcount(typeof(u))))), ", ")
-
-"""
-    rank(::Type{<:OperatorUnit}) -> Int
-
-Get the rank of an operator unit, which is defined to be 1.
-"""
-@inline rank(::Type{<:OperatorUnit}) = 1
 
 # ID of a composite quantum operator
 """
@@ -170,10 +162,12 @@ end
 @inline Base.promote_rule(::Type{M}, ::Type{N}) where {M<:OperatorPack, N<:Number} = reparameter(M, :value, promote_type(valtype(M), N))
 
 """
+    rank(m::OperatorPack) -> Int
     rank(::Type{M}) where {M<:OperatorPack} -> Int
 
 Get the rank of an `OperatorPack`.
 """
+@inline rank(m::OperatorPack) = rank(typeof(m))
 @inline rank(::Type{M}) where {M<:OperatorPack} = rank(idtype(M))
 
 """
