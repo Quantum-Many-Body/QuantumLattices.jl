@@ -3,10 +3,10 @@ module DegreesOfFreedom
 using MacroTools: @capture
 using Printf: @printf, @sprintf
 using StaticArrays: SVector
-using ..QuantumOperators: OperatorUnit, ID, OperatorProd, OperatorSum, Operator, Operators, valuetolatextext
+using ..QuantumOperators: OperatorUnit, ID, OperatorPack, OperatorSum, Operator, Operators, valuetolatextext
 using ..Spatials: AbstractPID, AbstractBond, Point, Bonds, pidtype
 using ...Essentials: dtype
-using ...Interfaces: id, value, decompose, dimension, add!
+using ...Interfaces: decompose, dimension, add!
 using ...Prerequisites: Float, atol, rtol, decimaltostr, concatenate
 using ...Prerequisites.Traits: rawtype, fulltype, efficientoperations, commontype, parametertype
 using ...Prerequisites.CompositeStructures: CompositeDict, CompositeTuple, NamedContainer
@@ -21,13 +21,13 @@ import ...Prerequisites.Traits: parameternames, isparameterbound, contentnames, 
 import ...Prerequisites.VectorSpaces: shape, ndimshape
 
 export IID, SimpleIID, CompositeIID, Internal, SimpleInternal, CompositeInternal
-export AbstractOID, Index, CompositeOID, OID, IIDSpace, Hilbert
-export statistics, iidtype, ishermitian, indextype, oidtype
-export Subscript, Subscripts, SubscriptsID, @subscript_str, subscriptexpr, wildcard, diagonal, noconstrain
+export AbstractOID, Index, CompositeOID, OID, statistics, iidtype, ishermitian, indextype, oidtype, Hilbert
+export IIDSpace, Subscript, Subscripts, SubscriptsID, @subscript_str, subscriptexpr, wildcard, diagonal, noconstrain
 export AbstractCoupling, Coupling, Couplings, couplingcenters, couplingpoints, couplinginternals, @couplings
 export Metric, OIDToTuple, Table
 export TermFunction, TermAmplitude, TermCouplings, TermModulate, Term, ismodulatable, abbr
 
+# IID and Internal
 """
     IID <: OperatorUnit
 
@@ -251,6 +251,7 @@ Filter the type of a composite internal space and select those that matches `I` 
     return Expr(:curly, :CompositeInternal, Expr(:curly, :Tuple, exprs...))
 end
 
+# OID
 """
     AbstractOID <: OperatorUnit
 
@@ -401,35 +402,34 @@ Get the whole icoord of an operator.
 end
 
 """
-    IIDSpace{I<:IID, V<:Internal, Kind} <: CartesianVectorSpace{IID}
+    script(::Val{:rcoord}, oid::OID; kwargs...) -> String
+    script(::Val{:icoord}, oid::OID; kwargs...) -> String
 
-The space expanded by a "labeled" iid.
+Get the `:rcoord/:icoord` script of an oid.
 """
-struct IIDSpace{I<:IID, V<:Internal, Kind} <: CartesianVectorSpace{IID}
-    iid::I
-    internal::V
-    IIDSpace(iid::IID, internal::Internal, ::Val{Kind}=Val(:info)) where Kind = new{typeof(iid), typeof(internal), Kind}(iid, internal)
+@inline script(::Val{:rcoord}, oid::OID; kwargs...) = @sprintf "[%s]" join(valuetolatextext.(oid.rcoord), ", ")
+@inline script(::Val{:icoord}, oid::OID; kwargs...) = @sprintf "[%s]" join(valuetolatextext.(oid.icoord), ", ")
+
+"""
+    script(::Val{:integralicoord}, oid::OID; vectors, kwargs...)
+
+Get the integral script of the icoord of an oid.
+"""
+function script(::Val{:integralicoord}, oid::OID; vectors, kwargs...)
+    rcoeff = decompose(oid.icoord, vectors...)
+    icoeff = Int.(round.(rcoeff))
+    @assert isapprox(efficientoperations, rcoeff, icoeff) "script error: mismatched icoord of oid and input vectors."
+    return @sprintf "[%s]" join(icoeff, ", ")
 end
-@inline Base.eltype(iidspace::IIDSpace) = eltype(typeof(iidspace))
-@inline Base.eltype(::Type{<:IIDSpace{<:IID, V}}) where {V<:Internal} = eltype(V)
-@inline kind(iidspace::IIDSpace) = kind(typeof(iidspace))
-@inline kind(::Type{<:IIDSpace{<:IID, <:Internal, Kind}}) where Kind = Kind
-@inline function shape(iidspace::IIDSpace{I, V}) where {I<:CompositeIID, V<:CompositeInternal}
-    Kind = Val(kind(iidspace))
-    @assert rank(I)==rank(V) "shape error: mismatched composite iid and composite internal space."
-    return concatenate(map((iid, internal)->shape(IIDSpace(iid, internal, Kind)), iidspace.iid.contents, iidspace.internal.contents)...)
-end
-@inline ndimshape(::Type{<:IIDSpace{<:IID, V}}) where {V<:Internal} = ndimshape(V)
-@inline Base.CartesianIndex(iid::IID, iidspace::IIDSpace) = CartesianIndex(iid, iidspace.internal)
-@inline Base.getindex(iidspace::IIDSpace, index::CartesianIndex) = rawtype(eltype(iidspace))(index, iidspace.internal)
 
 """
-    expand(iids::NTuple{N, IID}, internals::NTuple{N, Internal}) where N -> IIDSpace
+    script(::Val{attr}, oid::OID; kwargs...) where attr
 
-Get the space expanded by a set of "labeled" iids.
+Get the `attr` script of an oid, which is contained in its index.
 """
-@inline expand(iids::NTuple{N, IID}, internals::NTuple{N, Internal}) where N = IIDSpace(CompositeIID(iids), CompositeInternal(internals))
+@inline script(::Val{attr}, oid::OID; kwargs...) where attr = script(Val(attr), oid.index; kwargs...)
 
+# Hilbert
 """
     Hilbert{I<:Internal, P<:AbstractPID, M<:Function} <: CompositeDict{P, I}
 
@@ -493,6 +493,37 @@ function reset!(hilbert::Hilbert, pids)
     end
     hilbert
 end
+
+# Coupling and Couplings
+"""
+    IIDSpace{I<:IID, V<:Internal, Kind} <: CartesianVectorSpace{IID}
+
+The space expanded by a "labeled" iid.
+"""
+struct IIDSpace{I<:IID, V<:Internal, Kind} <: CartesianVectorSpace{IID}
+    iid::I
+    internal::V
+    IIDSpace(iid::IID, internal::Internal, ::Val{Kind}=Val(:info)) where Kind = new{typeof(iid), typeof(internal), Kind}(iid, internal)
+end
+@inline Base.eltype(iidspace::IIDSpace) = eltype(typeof(iidspace))
+@inline Base.eltype(::Type{<:IIDSpace{<:IID, V}}) where {V<:Internal} = eltype(V)
+@inline kind(iidspace::IIDSpace) = kind(typeof(iidspace))
+@inline kind(::Type{<:IIDSpace{<:IID, <:Internal, Kind}}) where Kind = Kind
+@inline function shape(iidspace::IIDSpace{I, V}) where {I<:CompositeIID, V<:CompositeInternal}
+    Kind = Val(kind(iidspace))
+    @assert rank(I)==rank(V) "shape error: mismatched composite iid and composite internal space."
+    return concatenate(map((iid, internal)->shape(IIDSpace(iid, internal, Kind)), iidspace.iid.contents, iidspace.internal.contents)...)
+end
+@inline ndimshape(::Type{<:IIDSpace{<:IID, V}}) where {V<:Internal} = ndimshape(V)
+@inline Base.CartesianIndex(iid::IID, iidspace::IIDSpace) = CartesianIndex(iid, iidspace.internal)
+@inline Base.getindex(iidspace::IIDSpace, index::CartesianIndex) = rawtype(eltype(iidspace))(index, iidspace.internal)
+
+"""
+    expand(iids::NTuple{N, IID}, internals::NTuple{N, Internal}) where N -> IIDSpace
+
+Get the space expanded by a set of "labeled" iids.
+"""
+@inline expand(iids::NTuple{N, IID}, internals::NTuple{N, Internal}) where N = IIDSpace(CompositeIID(iids), CompositeInternal(internals))
 
 @inline diagonal(xs...) = length(xs)<2 ? true : all(map(==(xs[1]), xs))
 @inline noconstrain(_...) = true
@@ -728,11 +759,11 @@ function SubscriptsID(subscripts::Subscripts)
 end
 
 """
-    AbstractCoupling{V, I<:ID{OperatorUnit}} <: OperatorProd{V, I}
+    AbstractCoupling{V, I<:ID{OperatorUnit}} <: OperatorPack{V, I}
 
 The abstract coupling intra/inter internal degrees of freedom at different lattice points.
 """
-abstract type AbstractCoupling{V, I<:ID{OperatorUnit}} <: OperatorProd{V, I} end
+abstract type AbstractCoupling{V, I<:ID{OperatorUnit}} <: OperatorPack{V, I} end
 @inline ID{SimpleIID}(coupling::AbstractCoupling) = id(coupling)
 @inline Subscripts(coupling::AbstractCoupling) = Subscripts()
 
@@ -857,6 +888,7 @@ Convert an expression/literal to a set of couplings.
 """
 macro couplings(cps) :(Couplings($(esc(cps)))) end
 
+# Metric
 """
     Metric <: Function
 
@@ -1037,6 +1069,7 @@ function reset!(table::Table, hilbert::Hilbert)
     reset!(table, indices)
 end
 
+# Term
 """
     TermFunction <: Function
 
@@ -1268,7 +1301,7 @@ end
 """
     optype(::Type{T}, ::Type{H}, ::Type{B}) where {T<:Term, H<:Hilbert, B<:AbstractBond}
 
-Get the compatible `OperatorProd` type from the type of a term, a Hilbert space and a bond.
+Get the compatible `Operator` type from the type of a term, a Hilbert space and a bond.
 """
 @inline function optype(::Type{T}, ::Type{H}, ::Type{B}) where {T<:Term, H<:Hilbert, B<:AbstractBond}
     C = eltype(valtype(fieldtype(T, :couplings)))
@@ -1345,33 +1378,5 @@ end
     M = optype(term|>typeof, hilbert|>typeof, bonds|>eltype)
     expand!(Operators{M}(), term, bonds, hilbert; half=half, table=table)
 end
-
-"""
-    script(::Val{:rcoord}, oid::OID; kwargs...) -> String
-    script(::Val{:icoord}, oid::OID; kwargs...) -> String
-
-Get the `:rcoord/:icoord` script of an oid.
-"""
-@inline script(::Val{:rcoord}, oid::OID; kwargs...) = @sprintf "[%s]" join(valuetolatextext.(oid.rcoord), ", ")
-@inline script(::Val{:icoord}, oid::OID; kwargs...) = @sprintf "[%s]" join(valuetolatextext.(oid.icoord), ", ")
-
-"""
-    script(::Val{:integralicoord}, oid::OID; vectors, kwargs...)
-
-Get the integral script of the icoord of an oid.
-"""
-function script(::Val{:integralicoord}, oid::OID; vectors, kwargs...)
-    rcoeff = decompose(oid.icoord, vectors...)
-    icoeff = Int.(round.(rcoeff))
-    @assert isapprox(efficientoperations, rcoeff, icoeff) "script error: mismatched icoord of oid and input vectors."
-    return @sprintf "[%s]" join(icoeff, ", ")
-end
-
-"""
-    script(::Val{attr}, oid::OID; kwargs...) where attr
-
-Get the `attr` script of an oid, which is contained in its index.
-"""
-@inline script(::Val{attr}, oid::OID; kwargs...) where attr = script(Val(attr), oid.index; kwargs...)
 
 end #module
