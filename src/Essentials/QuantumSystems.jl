@@ -111,7 +111,7 @@ end
 @inline Base.match(::Type{<:FID{wildcard}}, ::Type{<:Fock{T}}) where T = true
 @inline Base.match(::Type{<:FID{T}}, ::Type{<:Fock{T}}) where T = true
 @inline Base.match(::Type{<:FID{T₁}}, ::Type{<:Fock{T₂}}) where {T₁, T₂} = false
-function shape(iidspace::IIDSpace{I, V}) where {I<:CompositeIID{<:Tuple{Vararg{FID}}}, V<:CompositeInternal{<:Tuple{Vararg{Fock}}}}
+function shape(iidspace::IIDSpace{I, V}) where {I<:CompositeIID{<:Tuple{Vararg{FID}}}, V<:CompositeInternal{:⊗, <:Tuple{Vararg{Fock}}}}
     Kind = Val(kind(iidspace))
     @assert rank(I)==rank(V) "shape error: mismatched composite iid and composite internal space."
     return concatenate(map(

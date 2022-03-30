@@ -84,7 +84,7 @@ end
 
 @testset "CompositeInternal" begin
     it₁, it₂ = DFock(2), DFock(3)
-    ci = CompositeInternal(it₁, it₂)
+    ci = CompositeInternal{:⊗}(it₁, it₂)
     @test eltype(ci) == eltype(typeof(ci)) == CompositeIID{Tuple{DID{Int}, DID{Int}}}
     @test rank(ci) == rank(typeof(ci)) == 2
     @test string(ci) == "DFock(nnambu=2) ⊗ DFock(nnambu=3)"
@@ -94,9 +94,9 @@ end
         @test CartesianIndex(CompositeIID(CartesianIndex(i, j), ci), ci) == CartesianIndex(i, j)
     end
     @test it₁⊗it₂ == ci
-    @test it₁⊗ci == CompositeInternal(it₁, it₁, it₂)
-    @test ci⊗it₁ == CompositeInternal(it₁, it₂, it₁)
-    @test ci⊗ci == CompositeInternal(it₁, it₂, it₁, it₂)
+    @test it₁⊗ci == CompositeInternal{:⊗}(it₁, it₁, it₂)
+    @test ci⊗it₁ == CompositeInternal{:⊗}(it₁, it₂, it₁)
+    @test ci⊗ci == CompositeInternal{:⊗}(it₁, it₂, it₁, it₂)
     @test filter(DID(1), ci) == filter(DID, ci) == ci
     @test filter(DID(1), typeof(ci)) == filter(DID, typeof(ci)) == typeof(ci)
 end

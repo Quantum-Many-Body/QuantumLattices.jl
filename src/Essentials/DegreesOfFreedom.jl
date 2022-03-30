@@ -151,23 +151,32 @@ Filter the type of a simple internal space with respect to the input `iid` or ty
 @inline Base.filter(::Type{I}, ::Type{T}) where {I<:SimpleIID, T<:SimpleInternal} = match(I, T) ? T : nothing
 
 """
-    CompositeInternal{T<:Tuple{Vararg{SimpleInternal}}} <: Internal{CompositeIID}
+    CompositeInternal{K, T<:Tuple{Vararg{SimpleInternal}}} <: Internal{IID}
 
 The composition of several single internal spaces.
 """
-struct CompositeInternal{T<:Tuple{Vararg{SimpleInternal}}} <: Internal{CompositeIID}
+struct CompositeInternal{K, T<:Tuple{Vararg{SimpleInternal}}} <: Internal{IID}
     contents::T
+    function CompositeInternal{K}(contents::Tuple{Vararg{SimpleInternal}}) where K
+        @assert K∈(:⊕, :⊗) "CompositeInternal error: kind must be either :⊕ for direct sum or :⊗ for direct product."
+        new{K, typeof(contents)}(contents)
+    end
 end
+@inline kind(ci::CompositeInternal) = kind(typeof(ci))
+@inline kind(::Type{<:CompositeInternal{K}}) where K = K
 @inline Base.eltype(ci::CompositeInternal) = eltype(typeof(ci))
-@inline @generated Base.eltype(::Type{<:CompositeInternal{T}}) where {T<:Tuple{Vararg{SimpleInternal}}} = CompositeIID{Tuple{map(eltype, fieldtypes(T))...}}
-Base.show(io::IO, ci::CompositeInternal) = @printf io "%s" join((string(ci.contents[i]) for i = 1:rank(ci)), " ⊗ ")
-@inline shape(ci::CompositeInternal) = concatenate(map(shape, ci.contents)...)
-@inline ndimshape(::Type{<:CompositeInternal{T}}) where {T<:Tuple{Vararg{SimpleInternal}}} = sum(ndimshape(fieldtype(T, i)) for i = 1:fieldcount(T))
-@inline function Base.CartesianIndex(ciid::CompositeIID, ci::CompositeInternal)
+@inline @generated Base.eltype(::Type{<:CompositeInternal{:⊕, T}}) where {T<:Tuple{Vararg{SimpleInternal}}} = mapreduce(eltype, typejoin, fieldtypes(T), init=Union{})
+@inline @generated Base.eltype(::Type{<:CompositeInternal{:⊗, T}}) where {T<:Tuple{Vararg{SimpleInternal}}} = CompositeIID{Tuple{map(eltype, fieldtypes(T))...}}
+Base.show(io::IO, ci::CompositeInternal) = @printf io "%s" join((string(ci.contents[i]) for i = 1:rank(ci)), @sprintf(" %s ", kind(ci)))
+
+@inline shape(ci::CompositeInternal{:⊗}) = concatenate(map(shape, ci.contents)...)
+@inline ndimshape(::Type{<:CompositeInternal{:⊗, T}}) where {T<:Tuple{Vararg{SimpleInternal}}} = sum(ndimshape(fieldtype(T, i)) for i = 1:fieldcount(T))
+
+@inline function Base.CartesianIndex(ciid::CompositeIID, ci::CompositeInternal{:⊗})
     return CartesianIndex(concatenate(map((iid, internal)->Tuple(CartesianIndex(iid, internal)), ciid.contents, ci.contents)...))
 end
-@inline CompositeIID(index::CartesianIndex, ci::CompositeInternal) = compositeiid(index, ci, map(ndimshape, ci.contents)|>Val)
-@inline @generated function compositeiid(index::CartesianIndex, ci::CompositeInternal, ::Val{dims}) where dims
+@inline CompositeIID(index::CartesianIndex, ci::CompositeInternal{:⊗}) = compositeiid(index, ci, map(ndimshape, ci.contents)|>Val)
+@inline @generated function compositeiid(index::CartesianIndex, ci::CompositeInternal{:⊗}, ::Val{dims}) where dims
     count = 1
     exprs = []
     for (i, dim) in enumerate(dims)
@@ -179,33 +188,33 @@ end
 end
 
 """
-    CompositeInternal(contents::SimpleInternal...)
+    CompositeInternal{K}(contents::SimpleInternal...) where K
 
 Construct a composite internal space from a set of simple internal spaces.
 """
-@inline CompositeInternal(contents::SimpleInternal...) = CompositeInternal(contents)
+@inline CompositeInternal{K}(contents::SimpleInternal...) where K = CompositeInternal{K}(contents)
 
 """
     rank(ci::CompositeInternal) -> Int
-    rank(::Type{<:CompositeInternal{T}}) where {T<:Tuple{Vararg{SimpleInternal}}} -> Int
+    rank(::Type{<:CompositeInternal{K, T}}) where {K, T<:Tuple{Vararg{SimpleInternal}}} -> Int
 
 Get the number of simple internal spaces in a composite internal space.
 """
 @inline rank(ci::CompositeInternal) = rank(typeof(ci))
-@inline rank(::Type{<:CompositeInternal{T}}) where {T<:Tuple{Vararg{SimpleInternal}}} = fieldcount(T)
+@inline rank(::Type{<:CompositeInternal{K, T}}) where {K, T<:Tuple{Vararg{SimpleInternal}}} = fieldcount(T)
 
 """
-    ⊗(i₁::SimpleInternal, i₂::SimpleInternal) -> CompositeInternal
-    ⊗(i::SimpleInternal, ci::CompositeInternal) -> CompositeInternal
-    ⊗(ci::CompositeInternal, i::SimpleInternal) -> CompositeInternal
-    ⊗(ci₁::CompositeInternal, ci₂::CompositeInternal) -> CompositeInternal
+    ⊗(i₁::SimpleInternal, i₂::SimpleInternal) -> CompositeInternal{:⊗}
+    ⊗(i::SimpleInternal, ci::CompositeInternal{:⊗}) -> CompositeInternal{:⊗}
+    ⊗(ci::CompositeInternal{:⊗}, i::SimpleInternal) -> CompositeInternal{:⊗}
+    ⊗(ci₁::CompositeInternal{:⊗}, ci₂::CompositeInternal{:⊗}) -> CompositeInternal{:⊗}
 
 Direct product between simple internal spaces and composite internal spaces.
 """
-@inline ⊗(i₁::SimpleInternal, i₂::SimpleInternal) = CompositeInternal(i₁, i₂)
-@inline ⊗(i::SimpleInternal, ci::CompositeInternal) = CompositeInternal(i, ci.contents...)
-@inline ⊗(ci::CompositeInternal, i::SimpleInternal) = CompositeInternal(ci.contents..., i)
-@inline ⊗(ci₁::CompositeInternal, ci₂::CompositeInternal) = CompositeInternal(ci₁.contents..., ci₂.contents...)
+@inline ⊗(i₁::SimpleInternal, i₂::SimpleInternal) = CompositeInternal{:⊗}(i₁, i₂)
+@inline ⊗(i::SimpleInternal, ci::CompositeInternal{:⊗}) = CompositeInternal{:⊗}(i, ci.contents...)
+@inline ⊗(ci::CompositeInternal{:⊗}, i::SimpleInternal) = CompositeInternal{:⊗}(ci.contents..., i)
+@inline ⊗(ci₁::CompositeInternal{:⊗}, ci₂::CompositeInternal{:⊗}) = CompositeInternal{:⊗}(ci₁.contents..., ci₂.contents...)
 
 """
     filter(iid::SimpleIID, ci::CompositeInternal) -> Union{Nothing, SimpleInternal, CompositeInternal}
@@ -215,7 +224,7 @@ Filter the composite internal space and select those that matches `I` or the typ
 """
 @inline Base.filter(iid::SimpleIID, ci::CompositeInternal) = filter(typeof(iid), ci)
 @inline Base.filter(::Type{I}, ci::CompositeInternal) where {I<:SimpleIID} = filterhelper₁(I, ci, filtermatches(I, typeof(ci))|>Val)
-@inline @generated function filtermatches(::Type{I}, ::Type{CompositeInternal{C}}) where {I<:SimpleIID, C<:Tuple{Vararg{SimpleInternal}}}
+@inline @generated function filtermatches(::Type{I}, ::Type{CompositeInternal{K, C}}) where {I<:SimpleIID, K, C<:Tuple{Vararg{SimpleInternal}}}
     exprs = []
     for i = 1:fieldcount(C)
         T = fieldtype(C, i)
@@ -230,7 +239,7 @@ end
     end
     length(exprs)==0 && return
     length(exprs)==1 && return first(exprs)
-    return Expr(:call, :CompositeInternal, exprs...)
+    return Expr(:call, Expr(:curly, :CompositeInternal, QuoteNode(kind(ci))), exprs...)
 end
 
 """
@@ -241,14 +250,14 @@ Filter the type of a composite internal space and select those that matches `I` 
 """
 @inline Base.filter(iid::SimpleIID, ::Type{C}) where {C<:CompositeInternal} = filter(typeof(iid), C)
 @inline Base.filter(::Type{I}, ::Type{C}) where {I<:SimpleIID, C<:CompositeInternal} = filterhelper₂(I, C, filtermatches(I, C)|>Val)
-@inline @generated function filterhelper₂(::Type{I}, ::Type{CompositeInternal{C}}, ::Val{BS}) where {I<:SimpleIID, C<:Tuple{Vararg{SimpleInternal}}, BS}
+@inline @generated function filterhelper₂(::Type{I}, ::Type{CompositeInternal{K, C}}, ::Val{BS}) where {I<:SimpleIID, K, C<:Tuple{Vararg{SimpleInternal}}, BS}
     exprs = []
     for (i, B) in enumerate(BS)
         B && push!(exprs, :(fieldtype(C, $i)))
     end
     length(exprs)==0 && return
     length(exprs)==1 && return first(exprs)
-    return Expr(:curly, :CompositeInternal, Expr(:curly, :Tuple, exprs...))
+    return Expr(:curly, :CompositeInternal, QuoteNode(K), Expr(:curly, :Tuple, exprs...))
 end
 
 # OID
@@ -523,7 +532,7 @@ end
 
 Get the space expanded by a set of "labeled" iids.
 """
-@inline expand(iids::NTuple{N, IID}, internals::NTuple{N, Internal}) where N = IIDSpace(CompositeIID(iids), CompositeInternal(internals))
+@inline expand(iids::NTuple{N, IID}, internals::NTuple{N, Internal}) where N = IIDSpace(CompositeIID(iids), CompositeInternal{:⊗}(internals))
 
 @inline diagonal(xs...) = length(xs)<2 ? true : all(map(==(xs[1]), xs))
 @inline noconstrain(_...) = true
@@ -782,7 +791,7 @@ function expand(coupling::AbstractCoupling, bond::AbstractBond, hilbert::Hilbert
     points = couplingpoints(coupling, bond, info)
     internals = couplinginternals(coupling, bond, hilbert, info)
     @assert rank(coupling)==length(points)==length(internals) "expand error: mismatched rank."
-    return CExpand(value(coupling), points, IIDSpace(CompositeIID(ID{SimpleIID}(coupling)), CompositeInternal(internals), info), Subscripts(coupling))
+    return CExpand(value(coupling), points, IIDSpace(CompositeIID(ID{SimpleIID}(coupling)), CompositeInternal{:⊗}(internals), info), Subscripts(coupling))
 end
 struct CExpand{V, N, P<:AbstractPID, SV<:SVector, S<:IIDSpace, C<:Subscripts}
     value::V
