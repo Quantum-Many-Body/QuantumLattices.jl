@@ -2,20 +2,19 @@ using Test
 using QuantumLattices.Prerequisites.VectorSpaces
 using QuantumLattices.Interfaces: dimension, rank
 
-import QuantumLattices.Prerequisites.VectorSpaces: shape, ndimshape
+import QuantumLattices.Prerequisites.VectorSpaces: VectorSpaceStyle, shape
 import QuantumLattices.Prerequisites.Traits: contentnames, getcontent
 
-struct SimpleVectorSpace{B, N} <: EnumerativeVectorSpace{B}
+struct SimpleVectorSpace{B, N} <: VectorSpace{B}
     sorted::Bool
     table::NTuple{N, B}
     SimpleVectorSpace(sorted::Bool, table::NTuple{N, B}) where {B, N} = new{B, N}(sorted, table)
 end
+@inline VectorSpaceStyle(::Type{<:SimpleVectorSpace}) = VectorSpaceEnumerative()
 @inline contentnames(::Type{<:SimpleVectorSpace}) = (:sorted, :table)
 @inline Base.issorted(vs::SimpleVectorSpace) = vs.sorted
 
-@testset "EnumerativeVectorSpace" begin
-    @test contentnames(EnumerativeVectorSpace) == (:table,)
-
+@testset "VectorSpaceEnumerative" begin
     id0, id4 = (1, 0), (1, 4)
     id1, id2, id3 = (1, 1), (1, 2), (1, 3)
     vs = SimpleVectorSpace(true, (id1, id2, id3))
@@ -39,19 +38,18 @@ end
     @test findfirst(id1, vs)==1 && findfirst(id2, vs)==2 && findfirst(id3, vs)==3
 end
 
-struct SimpleIndices{N} <: CartesianVectorSpace{CartesianIndex{N}}
+struct SimpleIndices{N} <: VectorSpace{CartesianIndex{N}}
     shape::NTuple{N, UnitRange{Int}}
     SimpleIndices(shape::NTuple{N, UnitRange{Int}}) where N = new{N}(shape)
 end
-SimpleIndices(shape::UnitRange{Int}...) = SimpleIndices(shape)
+@inline SimpleIndices(shape::UnitRange{Int}...) = SimpleIndices(shape)
+@inline VectorSpaceStyle(::Type{<:SimpleIndices}) = VectorSpaceCartesian()
 @inline shape(vs::SimpleIndices) = vs.shape
-@inline ndimshape(::Type{<:SimpleIndices{N}}) where N = N
 @inline Base.CartesianIndex(basis::CartesianIndex{N}, ::SimpleIndices{N}) where N = basis
 
-@testset "CartesianVectorSpace" begin
+@testset "VectorSpaceCartesian" begin
     foi = SimpleIndices(2:3, 2:3, 2:3)
     @test dimension(foi) == 8
-    @test ndimshape(foi) == ndimshape(typeof(foi)) == 3
     @test issorted(foi) == true
     @test foi|>collect == CartesianIndex.([(2, 2, 2), (3, 2, 2), (2, 3, 2), (3, 3, 2), (2, 2, 3), (3, 2, 3), (2, 3, 3), (3, 3, 3)])
     for (i, index) in enumerate(CartesianIndices((2:3, 2:3, 2:3)))
@@ -66,32 +64,30 @@ SimpleIndices(shape::UnitRange{Int}...) = SimpleIndices(shape)
     @test i1∉foi && i2∉foi
 end
 
-@testset "NamedVectorSpace" begin
-    nvs = ZipNamedVectorSpace{(:t, :U)}([1, 2], [8.0, 9.0])
-    @test nvs==deepcopy(nvs) && isequal(nvs, deepcopy(nvs))
-    @test nvs≠ZipNamedVectorSpace{(:t, :V)}([1, 2], [8.0, 9.0])
-    @test !isequal(nvs, ZipNamedVectorSpace{(:t, :V)}([1, 2], [8.0, 9.0]))
-    @test nvs|>keys == nvs|>typeof|>keys == (:t, :U)
-    @test nvs|>values == ([1, 2], [8.0, 9.0])
-    @test nvs|>pairs|>collect == [:t=>[1, 2], :U=>[8.0, 9.0]]
-    @test eltype(nvs, 1) == eltype(nvs|>typeof, 1) == Int
-    @test eltype(nvs, 2) == eltype(nvs|>typeof, 2) == Float64
-    @test nvs|>rank == nvs|>typeof|>rank == 1
-    @test shape(nvs) == (1:2,)
-    @test ndimshape(nvs) == ndimshape(typeof(nvs)) == 1
-    elements = [(t = 1, U = 8.0), (t = 2, U = 9.0)]
-    for i = 1:dimension(nvs)
-        @test NamedTuple(CartesianIndex(elements[i], nvs), nvs) == elements[i]
-    end
-    @test nvs|>collect == elements
+# @testset "NamedVectorSpace" begin
+#     nvs = ZipNamedVectorSpace{(:t, :U)}([1, 2], [8.0, 9.0])
+#     @test nvs==deepcopy(nvs) && isequal(nvs, deepcopy(nvs))
+#     @test nvs≠ZipNamedVectorSpace{(:t, :V)}([1, 2], [8.0, 9.0])
+#     @test !isequal(nvs, ZipNamedVectorSpace{(:t, :V)}([1, 2], [8.0, 9.0]))
+#     @test nvs|>keys == nvs|>typeof|>keys == (:t, :U)
+#     @test nvs|>values == ([1, 2], [8.0, 9.0])
+#     @test nvs|>pairs|>collect == [:t=>[1, 2], :U=>[8.0, 9.0]]
+#     @test eltype(nvs, 1) == eltype(nvs|>typeof, 1) == Int
+#     @test eltype(nvs, 2) == eltype(nvs|>typeof, 2) == Float64
+#     @test nvs|>rank == nvs|>typeof|>rank == 1
+#     @test shape(nvs) == (1:2,)
+#     elements = [(t = 1, U = 8.0), (t = 2, U = 9.0)]
+#     for i = 1:dimension(nvs)
+#         @test NamedTuple(CartesianIndex(elements[i], nvs), nvs) == elements[i]
+#     end
+#     @test nvs|>collect == elements
 
-    nvs = ProductNamedVectorSpace{(:t, :U)}([1.0, 2.0], [8.0, 9.0])
-    @test nvs|>rank == nvs|>typeof|>rank == 2
-    @test shape(nvs) == (1:2, 1:2)
-    @test ndimshape(nvs) == ndimshape(typeof(nvs)) == 2
-    elements = [(t = 1.0, U = 8.0), (t = 2.0, U = 8.0), (t = 1.0, U = 9.0), (t = 2.0, U = 9.0)]
-    for i = 1:dimension(nvs)
-        @test NamedTuple(CartesianIndex(elements[i], nvs), nvs) == elements[i]
-    end
-    @test nvs|>collect == elements
-end
+#     nvs = ProductNamedVectorSpace{(:t, :U)}([1.0, 2.0], [8.0, 9.0])
+#     @test nvs|>rank == nvs|>typeof|>rank == 2
+#     @test shape(nvs) == (1:2, 1:2)
+#     elements = [(t = 1.0, U = 8.0), (t = 2.0, U = 8.0), (t = 1.0, U = 9.0), (t = 2.0, U = 9.0)]
+#     for i = 1:dimension(nvs)
+#         @test NamedTuple(CartesianIndex(elements[i], nvs), nvs) == elements[i]
+#     end
+#     @test nvs|>collect == elements
+# end
