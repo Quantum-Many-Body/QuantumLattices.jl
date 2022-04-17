@@ -4,17 +4,17 @@ using Base.Iterators: Reverse, flatten, product, reverse
 using Printf: @printf, @sprintf
 using DataStructures: OrderedDict
 using LinearAlgebra: norm
+using Random: seed!, shuffle!, MersenneTwister
 using ...Prerequisites: Float
 using ...Prerequisites.Combinatorics: Combinations
 using ...Prerequisites.NamedVectors: HomoNamedVector
-using ...Prerequisites.VectorSpaces: EnumerativeVectorSpace
+using ...Prerequisites.VectorSpaces: VectorSpace, VectorSpaceStyle, VectorSpaceEnumerative
 
-import Random
 import ...Prerequisites.Traits: contentnames, getcontent
 import ...Interfaces: ⊕, ⊗, dimension, expand, permute, decompose
 
 export AbelianNumber, AbelianNumbers, periods, regularize, regularize!, @abeliannumber
-export SQN, PQN, SPQN, SQNS, PQNS, SPQNS, Momentum, Momentum₁, Momentum₂, Momentum₃
+export SpinZ, ParticleNumber, SpinfulParticle, spinzs, particlenumbers, spinfulparticles, Momentum, Momentum₁, Momentum₂, Momentum₃
 
 """
     positives(inputs::NTuple{N, Any}) where N -> NTuple{N, Int}
@@ -160,11 +160,11 @@ macro abeliannumber(typename, fields, periods)
 end
 
 """
-    AbelianNumbers{QN<:AbelianNumber} <: EnumerativeVectorSpace{QN}
+    AbelianNumbers{QN<:AbelianNumber} <: VectorSpace{QN}
 
 The whole quantum numbers of the total bases of a Hilbert space.
 """
-struct AbelianNumbers{QN<:AbelianNumber} <: EnumerativeVectorSpace{QN}
+struct AbelianNumbers{QN<:AbelianNumber} <: VectorSpace{QN}
     form::Char
     contents::Vector{QN}
     indptr::Vector{Int}
@@ -174,6 +174,7 @@ struct AbelianNumbers{QN<:AbelianNumber} <: EnumerativeVectorSpace{QN}
         return new{contents|>eltype}(form|>uppercase, contents, indptr)
     end
 end
+@inline VectorSpaceStyle(::Type{<:AbelianNumbers}) = VectorSpaceEnumerative()
 @inline contentnames(::Type{<:AbelianNumbers}) = (:form, :table, :indptr)
 @inline getcontent(qns::AbelianNumbers, ::Val{:table}) = qns.contents
 @inline dimension(qns::AbelianNumbers) = @inbounds(qns.indptr[end])
@@ -631,7 +632,7 @@ function _decompose(::Val{:bruteforce}, target::QN, qnses::AbelianNumbers{QN}...
     cache = Vector{Int}(undef, N)
     dimensions = NTuple{N, Int}(dimension(qns) for qns in reverse(qnses))
     indices = findall(target, kron(qnses...; signs=signs), :expansion)
-    nmax<length(indices) && (Random.shuffle!(Random.MersenneTwister(), indices); indices = @views indices[1:nmax])
+    nmax<length(indices) && (shuffle!(MersenneTwister(), indices); indices = @views indices[1:nmax])
     for index in indices
         @inbounds for (i, dimension) in enumerate(dimensions)
             cache[end+1-i] = (index-1)%dimension + 1
@@ -642,7 +643,7 @@ function _decompose(::Val{:bruteforce}, target::QN, qnses::AbelianNumbers{QN}...
     return collect(NTuple{N, Int}, result)
 end
 function _decompose(::Val{:montecarlo}, target::QN, qnses::AbelianNumbers{QN}...; signs, nmax) where {QN<:AbelianNumber}
-    Random.seed!()
+    seed!()
     N = fieldcount(typeof(qnses))
     result = Set{NTuple{N, Int}}()
     expansions = Vector{QN}[expand(qns, :contents) for qns in qnses]
@@ -671,50 +672,50 @@ function _decompose(::Val{:montecarlo}, target::QN, qnses::AbelianNumbers{QN}...
 end
 
 """
-    SQN(Sz::Real)
+    SpinZ(Sz::Real)
 
 The concrete `AbelianNumber` of a quantum system with spin z-component `Sz` conserved.
 """
-@abeliannumber "SQN" (:Sz,) (Inf,)
+@abeliannumber "SpinZ" (:Sz,) (Inf,)
 
 """
-    PQN(N::Real)
+    ParticleNumber(N::Real)
 
 The concrete `AbelianNumber` of a quantum system with particle number `N` conserved.
 """
-@abeliannumber "PQN" (:N,) (Inf,)
+@abeliannumber "ParticleNumber" (:N,) (Inf,)
 
 """
-    SPQN(N::Real, Sz::Real)
+    SpinfulParticle(N::Real, Sz::Real)
 
 The concrete `AbelianNumber` of a quantum system with both particle number `N` and spin z-component `Sz` conserved.
 """
-@abeliannumber "SPQN" (:N, :Sz) (Inf, Inf)
+@abeliannumber "SpinfulParticle" (:N, :Sz) (Inf, Inf)
 
 """
-    SQNS(S::Real) -> AbelianNumbers{SQN}
+    spinzs(S::Real) -> AbelianNumbers{SpinZ}
 
 Construct the `AbelianNumbers` of the Hilbert space of a single spin `S`.
 """
-@inline SQNS(S::Real) = AbelianNumbers('C', [SQN(sz) for sz = -S:S], collect(0:Int(2*S+1)), :indptr)
+@inline spinzs(S::Real) = AbelianNumbers('C', [SpinZ(sz) for sz = -S:S], collect(0:Int(2*S+1)), :indptr)
 
 """
-    PQNS(N::Real) -> AbelianNumbers{PQN}
+    particlenumbers(N::Real) -> AbelianNumbers{ParticleNumber}
 
 Construct the `AbelianNumbers` of the Hilbert space of a single-particle state with at most `N` identical particles.
 """
-@inline PQNS(N::Real) = AbelianNumbers('C', [PQN(np) for np = 0:N], collect(0:Int(N)+1), :indptr)
+@inline particlenumbers(N::Real) = AbelianNumbers('C', [ParticleNumber(np) for np = 0:N], collect(0:Int(N)+1), :indptr)
 
 """
-    SPQNS(S::Real) -> AbelianNumbers{SPQN}
+    spinfulparticles(S::Real) -> AbelianNumbers{SpinfulParticle}
 
 Construct the `AbelianNumbers` of the Hilbert space of a single site with internal degrees of freedom that can be ascribed to a spin `S`.
 """
-function SPQNS(S::Real)
-    contents = [SPQN(0.0, 0.0)]
+function spinfulparticles(S::Real)
+    contents = [SpinfulParticle(0.0, 0.0)]
     for n = 1:Int(2*S+1)
         for szs in Combinations{n}(-S:S)
-            push!(contents, SPQN(n, sum(szs)))
+            push!(contents, SpinfulParticle(n, sum(szs)))
         end
     end
     return sort(AbelianNumbers('G', contents, collect(0:length(contents)), :indptr))[1]

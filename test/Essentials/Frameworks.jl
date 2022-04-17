@@ -15,7 +15,7 @@ using QuantumLattices.Prerequisites.Traits: contentnames, reparameter
 import QuantumLattices.Essentials.Frameworks: Parameters
 import QuantumLattices.Essentials: prepare!, run!, update!
 import QuantumLattices.Essentials.DegreesOfFreedom: ishermitian, couplingcenters
-import QuantumLattices.Prerequisites.VectorSpaces: shape, ndimshape
+import QuantumLattices.Prerequisites.VectorSpaces: shape
 
 struct FID{N<:Union{Int, Symbol}} <: SimpleIID
     nambu::N
@@ -33,7 +33,6 @@ struct FFock <: SimpleInternal{FID{Int}}
     nnambu::Int
 end
 @inline shape(f::FFock) = (1:f.nnambu,)
-@inline ndimshape(::Type{FFock}) = 1
 @inline FID(i::CartesianIndex, vs::FFock) = FID(i.I...)
 @inline CartesianIndex(did::FID{Int}, vs::FFock) = CartesianIndex(did.nambu)
 @inline shape(iidspace::IIDSpace{FID{Symbol}, FFock}) = (1:iidspace.internal.nnambu,)

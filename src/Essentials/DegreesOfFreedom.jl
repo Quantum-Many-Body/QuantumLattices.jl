@@ -10,15 +10,14 @@ using ...Interfaces: decompose, dimension, add!
 using ...Prerequisites: Float, atol, rtol, decimaltostr, concatenate
 using ...Prerequisites.Traits: rawtype, fulltype, efficientoperations, commontype, parametertype
 using ...Prerequisites.CompositeStructures: CompositeDict, CompositeTuple, NamedContainer
-using ...Prerequisites.VectorSpaces: CartesianVectorSpace
+using ...Prerequisites.VectorSpaces: VectorSpace, VectorSpaceStyle, VectorSpaceCartesian, VectorSpaceDirectSummed, VectorSpaceDirectProducted
 
 import LinearAlgebra: ishermitian
 import ..QuantumOperators: script, optype
 import ..Spatials: pidtype, rcoord, icoord
 import ...Essentials: kind, reset!, update!
-import ...Interfaces: id, value, rank, expand, expand!, ⊗
+import ...Interfaces: id, value, rank, expand, expand!, ⊗, ⊕
 import ...Prerequisites.Traits: parameternames, isparameterbound, contentnames, getcontent
-import ...Prerequisites.VectorSpaces: shape, ndimshape
 
 export IID, SimpleIID, CompositeIID, Internal, SimpleInternal, CompositeInternal
 export AbstractOID, Index, CompositeOID, OID, statistics, iidtype, ishermitian, indextype, oidtype, Hilbert
@@ -98,11 +97,11 @@ Direct product between simple iids and composite iids.
 @inline ⊗(ciid₁::CompositeIID, ciid₂::CompositeIID) = CompositeIID(ciid₁.contents..., ciid₂.contents...)
 
 """
-    Internal{I<:IID} <: CartesianVectorSpace{I}
+    Internal{I<:IID} <: VectorSpace{I}
 
 The whole internal degrees of freedom at a single point.
 """
-abstract type Internal{I<:IID} <: CartesianVectorSpace{I} end
+abstract type Internal{I<:IID} <: VectorSpace{I} end
 
 """
     SimpleInternal{I<:SimpleIID} <: Internal{I}
@@ -110,7 +109,8 @@ abstract type Internal{I<:IID} <: CartesianVectorSpace{I} end
 The simple internal degrees of freedom at a single point.
 """
 abstract type SimpleInternal{I<:SimpleIID} <: Internal{I} end
-Base.show(io::IO, i::SimpleInternal) = @printf io "%s(%s)" i|>typeof|>nameof join(("$name=$(getfield(i, name))" for name in i|>typeof|>fieldnames), ", ")
+@inline VectorSpaceStyle(::Type{<:SimpleInternal}) = VectorSpaceCartesian()
+@inline Base.show(io::IO, i::SimpleInternal) = @printf io "%s(%s)" i|>typeof|>nameof join(("$name=$(getfield(i, name))" for name in i|>typeof|>fieldnames), ", ")
 
 """
     statistics(i::SimpleInternal) -> Symbol
@@ -164,28 +164,13 @@ struct CompositeInternal{K, T<:Tuple{Vararg{SimpleInternal}}} <: Internal{IID}
 end
 @inline kind(ci::CompositeInternal) = kind(typeof(ci))
 @inline kind(::Type{<:CompositeInternal{K}}) where K = K
-@inline Base.eltype(ci::CompositeInternal) = eltype(typeof(ci))
+@inline Base.show(io::IO, ci::CompositeInternal) = @printf io "%s" join((string(ci.contents[i]) for i = 1:rank(ci)), @sprintf(" %s ", kind(ci)))
+@inline VectorSpaceStyle(::Type{<:CompositeInternal{:⊕}}) = VectorSpaceDirectSummed()
+@inline VectorSpaceStyle(::Type{<:CompositeInternal{:⊗}}) = VectorSpaceDirectProducted()
 @inline @generated Base.eltype(::Type{<:CompositeInternal{:⊕, T}}) where {T<:Tuple{Vararg{SimpleInternal}}} = mapreduce(eltype, typejoin, fieldtypes(T), init=Union{})
 @inline @generated Base.eltype(::Type{<:CompositeInternal{:⊗, T}}) where {T<:Tuple{Vararg{SimpleInternal}}} = CompositeIID{Tuple{map(eltype, fieldtypes(T))...}}
-Base.show(io::IO, ci::CompositeInternal) = @printf io "%s" join((string(ci.contents[i]) for i = 1:rank(ci)), @sprintf(" %s ", kind(ci)))
-
-@inline shape(ci::CompositeInternal{:⊗}) = concatenate(map(shape, ci.contents)...)
-@inline ndimshape(::Type{<:CompositeInternal{:⊗, T}}) where {T<:Tuple{Vararg{SimpleInternal}}} = sum(ndimshape(fieldtype(T, i)) for i = 1:fieldcount(T))
-
-@inline function Base.CartesianIndex(ciid::CompositeIID, ci::CompositeInternal{:⊗})
-    return CartesianIndex(concatenate(map((iid, internal)->Tuple(CartesianIndex(iid, internal)), ciid.contents, ci.contents)...))
-end
-@inline CompositeIID(index::CartesianIndex, ci::CompositeInternal{:⊗}) = compositeiid(index, ci, map(ndimshape, ci.contents)|>Val)
-@inline @generated function compositeiid(index::CartesianIndex, ci::CompositeInternal{:⊗}, ::Val{dims}) where dims
-    count = 1
-    exprs = []
-    for (i, dim) in enumerate(dims)
-        cartesianindex = Expr(:call, :CartesianIndex, [:(index[$j]) for j = count:(count+dim-1)]...)
-        push!(exprs, :(ci.contents[$i][$cartesianindex]))
-        count += dim
-    end
-    return Expr(:call, :CompositeIID, exprs...)
-end
+@inline SimpleIID(iid::SimpleIID, ::CompositeInternal) = iid
+@inline CompositeIID(iid::Tuple, ::CompositeInternal) = CompositeIID(iid)
 
 """
     CompositeInternal{K}(contents::SimpleInternal...) where K
@@ -215,6 +200,19 @@ Direct product between simple internal spaces and composite internal spaces.
 @inline ⊗(i::SimpleInternal, ci::CompositeInternal{:⊗}) = CompositeInternal{:⊗}(i, ci.contents...)
 @inline ⊗(ci::CompositeInternal{:⊗}, i::SimpleInternal) = CompositeInternal{:⊗}(ci.contents..., i)
 @inline ⊗(ci₁::CompositeInternal{:⊗}, ci₂::CompositeInternal{:⊗}) = CompositeInternal{:⊗}(ci₁.contents..., ci₂.contents...)
+
+"""
+    ⊕(i₁::SimpleInternal, i₂::SimpleInternal) -> CompositeInternal{:⊕}
+    ⊕(i::SimpleInternal, ci::CompositeInternal{:⊕}) -> CompositeInternal{:⊕}
+    ⊕(ci::CompositeInternal{:⊕}, i::SimpleInternal) -> CompositeInternal{:⊕}
+    ⊕(ci₁::CompositeInternal{:⊕}, ci₂::CompositeInternal{:⊕}) -> CompositeInternal{:⊕}
+
+Direct product between simple internal spaces and composite internal spaces.
+"""
+@inline ⊕(i₁::SimpleInternal, i₂::SimpleInternal) = CompositeInternal{:⊕}(i₁, i₂)
+@inline ⊕(i::SimpleInternal, ci::CompositeInternal{:⊕}) = CompositeInternal{:⊕}(i, ci.contents...)
+@inline ⊕(ci::CompositeInternal{:⊕}, i::SimpleInternal) = CompositeInternal{:⊕}(ci.contents..., i)
+@inline ⊕(ci₁::CompositeInternal{:⊕}, ci₂::CompositeInternal{:⊕}) = CompositeInternal{:⊕}(ci₁.contents..., ci₂.contents...)
 
 """
     filter(iid::SimpleIID, ci::CompositeInternal) -> Union{Nothing, SimpleInternal, CompositeInternal}
@@ -505,34 +503,41 @@ end
 
 # Coupling and Couplings
 """
-    IIDSpace{I<:IID, V<:Internal, Kind} <: CartesianVectorSpace{IID}
+    IIDSpace{I<:IID, V<:Internal, Kind} <: VectorSpace{IID}
 
 The space expanded by a "labeled" iid.
 """
-struct IIDSpace{I<:IID, V<:Internal, Kind} <: CartesianVectorSpace{IID}
+struct IIDSpace{I<:IID, V<:Internal, Kind} <: VectorSpace{IID}
     iid::I
     internal::V
     IIDSpace(iid::IID, internal::Internal, ::Val{Kind}=Val(:info)) where Kind = new{typeof(iid), typeof(internal), Kind}(iid, internal)
 end
-@inline Base.eltype(iidspace::IIDSpace) = eltype(typeof(iidspace))
-@inline Base.eltype(::Type{<:IIDSpace{<:IID, V}}) where {V<:Internal} = eltype(V)
 @inline kind(iidspace::IIDSpace) = kind(typeof(iidspace))
 @inline kind(::Type{<:IIDSpace{<:IID, <:Internal, Kind}}) where Kind = Kind
-@inline function shape(iidspace::IIDSpace{I, V}) where {I<:CompositeIID, V<:CompositeInternal}
-    Kind = Val(kind(iidspace))
-    @assert rank(I)==rank(V) "shape error: mismatched composite iid and composite internal space."
-    return concatenate(map((iid, internal)->shape(IIDSpace(iid, internal, Kind)), iidspace.iid.contents, iidspace.internal.contents)...)
+@inline Base.eltype(::Type{<:IIDSpace{<:IID, V}}) where {V<:Internal} = eltype(V)
+
+@inline VectorSpaceStyle(::Type{<:IIDSpace{<:SimpleIID, <:SimpleInternal}}) = VectorSpaceCartesian()
+@inline Base.CartesianIndex(iid::SimpleIID, iidspace::IIDSpace{<:SimpleIID, <:SimpleInternal}) = CartesianIndex(iid, iidspace.internal)
+@inline function Base.getindex(::VectorSpaceCartesian, iidspace::IIDSpace{<:SimpleIID, <:SimpleInternal}, index::CartesianIndex)
+    return rawtype(eltype(iidspace))(index, iidspace.internal)
 end
-@inline ndimshape(::Type{<:IIDSpace{<:IID, V}}) where {V<:Internal} = ndimshape(V)
-@inline Base.CartesianIndex(iid::IID, iidspace::IIDSpace) = CartesianIndex(iid, iidspace.internal)
-@inline Base.getindex(iidspace::IIDSpace, index::CartesianIndex) = rawtype(eltype(iidspace))(index, iidspace.internal)
+
+@inline VectorSpaceStyle(::Type{<:IIDSpace{<:CompositeIID, <:CompositeInternal}}) = VectorSpaceDirectProducted()
+@inline function getcontent(iidspace::IIDSpace{<:CompositeIID, <:CompositeInternal}, ::Val{:contents})
+    return map((iid, internal)->IIDSpace(iid, internal, Val(kind(iidspace))), CompositeIID(iidspace).contents, CompositeInternal(iidspace).contents)
+end
+@inline CompositeIID(iids::Tuple{Vararg{SimpleIID}}, ::IIDSpace{<:CompositeIID, <:CompositeInternal}) = CompositeIID(iids)
+@inline CompositeIID(iidspace::IIDSpace{<:CompositeIID, <:CompositeInternal}) = iidspace.iid
+@inline CompositeInternal(iidspace::IIDSpace{<:CompositeIID, <:CompositeInternal}) = iidspace.internal
 
 """
-    expand(iids::NTuple{N, IID}, internals::NTuple{N, Internal}) where N -> IIDSpace
+    expand(iid::SimpleIID, internal::SimpleInternal) -> IIDSpace
+    expand(iids::NTuple{N, SimpleIID}, internals::NTuple{N, SimpleInternal}) where N -> IIDSpace
 
 Get the space expanded by a set of "labeled" iids.
 """
-@inline expand(iids::NTuple{N, IID}, internals::NTuple{N, Internal}) where N = IIDSpace(CompositeIID(iids), CompositeInternal{:⊗}(internals))
+@inline expand(iid::SimpleIID, internal::SimpleInternal) = expand((iid,), (internal,))
+@inline expand(iids::NTuple{N, SimpleIID}, internals::NTuple{N, SimpleInternal}) where N = IIDSpace(CompositeIID(iids), CompositeInternal{:⊗}(internals))
 
 @inline diagonal(xs...) = length(xs)<2 ? true : all(map(==(xs[1]), xs))
 @inline noconstrain(_...) = true
@@ -809,7 +814,7 @@ function CExpand(value, points::NTuple{N, P}, iidspace::IIDSpace, subscripts::Su
 end
 @inline Base.eltype(ex::CExpand) = eltype(typeof(ex))
 @inline @generated function Base.eltype(::Type{<:CExpand{V, N, P, SV, S}}) where {V, N, P<:AbstractPID, SV<:SVector, S<:IIDSpace}
-    return Tuple{V, Tuple{map(I->OID{Index{P, I}, SV}, fieldtypes(fieldtype(eltype(S), :contents)))...}}
+    return Operator{V, Tuple{map(I->OID{Index{P, I}, SV}, fieldtypes(fieldtype(eltype(S), :contents)))...}}
 end
 @inline Base.IteratorSize(::Type{<:CExpand}) = Base.SizeUnknown()
 function Base.iterate(ex::CExpand, state=iterate(ex.iidspace))
@@ -817,7 +822,7 @@ function Base.iterate(ex::CExpand, state=iterate(ex.iidspace))
     while !isnothing(state)
         ciid, state = state
         if match(ex.subscripts, ciid)
-            result = (ex.value, ID(OID, ID(Index, ex.pids, ciid.contents), ex.rcoords, ex.icoords)), iterate(ex.iidspace, state)
+            result = Operator(ex.value, ID(OID, ID(Index, ex.pids, ciid.contents), ex.rcoords, ex.icoords)), iterate(ex.iidspace, state)
             break
         else
             state = iterate(ex.iidspace, state)
@@ -1310,23 +1315,21 @@ function expand!(operators::Operators, term::Term, bond::AbstractBond, hilbert::
         value = term.value * term.amplitude(bond) * term.factor
         if abs(value) ≠ 0
             hermitian = ishermitian(term)
-            M = optype(term|>typeof, hilbert|>typeof, bond|>typeof)
             record = (isnothing(hermitian) && length(operators)>0) ? Set{idtype(M)}() : nothing
             for coupling in term.couplings(bond)
-                for (coeff, id) in expand(coupling, bond, hilbert, term|>kind|>Val)
-                    isapprox(coeff, 0.0, atol=atol, rtol=rtol) && continue
-                    !isnothing(table) && !all(haskey(table, id)) && continue
+                for opt in expand(coupling, bond, hilbert, term|>kind|>Val)
+                    isapprox(opt.value, 0.0, atol=atol, rtol=rtol) && continue
+                    !isnothing(table) && !all(haskey(table, opt.id)) && continue
                     if hermitian == true
-                        add!(operators, rawtype(M)(convert(M|>valtype, value*coeff/(half ? 2 : 1)), id))
+                        add!(operators, opt*valtype(eltype(operators))(value/(half ? 2 : 1)))
                     elseif hermitian == false
-                        opt = rawtype(M)(convert(M|>valtype, value*coeff), id)
+                        opt = opt * valtype(eltype(operators))(value)
                         add!(operators, opt)
                         half || add!(operators, opt')
                     else
-                        if !(isnothing(record) ? haskey(operators, id') : id'∈record)
-                            isnothing(record) || push!(record, id)
-                            ovalue = valtype(M)(value*coeff/termfactor(id, term|>kind|>Val))
-                            opt = rawtype(M)(ovalue, id)
+                        if !(isnothing(record) ? haskey(operators, opt.id') : opt.id'∈record)
+                            isnothing(record) || push!(record, opt.id)
+                            opt = opt * valtype(eltype(operators))(value/termfactor(opt.id, term|>kind|>Val))
                             add!(operators, opt)
                             half || add!(operators, opt')
                         end

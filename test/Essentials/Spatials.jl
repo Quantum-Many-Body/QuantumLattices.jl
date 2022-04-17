@@ -7,7 +7,7 @@ using QuantumLattices.Essentials.QuantumNumbers: Momentum₁, Momentum₂, Momen
 using QuantumLattices.Interfaces: decompose, rank, dimension, expand
 using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Prerequisites.Traits: contentnames, getcontent
-using QuantumLattices.Prerequisites.VectorSpaces: shape, ndimshape
+using QuantumLattices.Prerequisites.VectorSpaces: shape
 using QuantumLattices.Prerequisites.SimpleTrees: leaves
 
 @testset "distance" begin
@@ -151,7 +151,6 @@ end
     translations = translations"2P-3O"
     @test translations == Translations((2, 3), ('P', 'O'))
     @test shape(translations) == (0:1, 0:2)
-    @test ndimshape(typeof(translations)) == 2
     @test CartesianIndex((0, 0), translations) == CartesianIndex(0, 0)
     @test Tuple(CartesianIndex(0, 0), translations) == (0, 0)
     @test string(translations) == "2P-3O"
@@ -354,12 +353,12 @@ end
 end
 
 @testset "BrillouinZone" begin
-    @test contentnames(BrillouinZone) == (:reciprocals, :contents)
+    @test contentnames(BrillouinZone) == (:reciprocals, :content)
 
     recipls = reciprocals([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
     momenta = AbelianNumbers('C', [Momentum₂{9, 10}(j-1, i-1) for (i, j) in Iterators.flatten((Iterators.product(1:10, 1:9),))], collect(0:90), :indptr)
     bz = BrillouinZone(recipls, momenta)
-    @test getcontent(bz, Val(:contents)) == (bz.momenta,)
+    @test getcontent(bz, Val(:content)) == (bz.momenta,)
     @test dtype(bz) == dtype(typeof(bz)) == Float
     @test bz == BrillouinZone(Momentum₂{9, 10}, recipls)
 
@@ -374,10 +373,10 @@ end
 end
 
 @testset "ReciprocalZone" begin
-    @test contentnames(ReciprocalZone) == (:contents, :volume)
+    @test contentnames(ReciprocalZone) == (:content, :volume)
 
     rz = ReciprocalZone([[1.0]], length=10)
-    @test getcontent(rz, :contents) == (rz.momenta,)
+    @test getcontent(rz, :content) == (rz.momenta,)
     @test rz == ReciprocalZone(rz.momenta, rz.volume)
     @test rz == ReciprocalZone([[1.0]], Segment(-1//2, 1//2, 10))
     @test rz == ReciprocalZone([[1.0]], (Segment(-1//2, 1//2, 10),))
@@ -397,7 +396,7 @@ end
 end
 
 @testset "ReciprocalPath" begin
-    @test contentnames(ReciprocalPath) == (:contents,)
+    @test contentnames(ReciprocalPath) == (:content,)
 
     b₁, b₂ = [1.0, 0.0], [0.0, 1.0]
     s₁ = Segment((0.0, 0.0), (0.5, 0.0), 100)
@@ -405,7 +404,7 @@ end
     s₃ = Segment((0.5, 0.5), (0.0, 0.0), 100)
 
     rp = ReciprocalPath([b₁, b₂], s₁, s₂, s₃)
-    @test getcontent(rp, :contents) == (rp.momenta,)
+    @test getcontent(rp, :content) == (rp.momenta,)
     @test rp == ReciprocalPath(rp.momenta)
     @test rp == ReciprocalPath([b₁, b₂], (s₁, s₂, s₃))
 

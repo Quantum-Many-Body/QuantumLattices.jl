@@ -1,6 +1,6 @@
 using Test
 using QuantumLattices.Prerequisites.VectorSpaces
-using QuantumLattices.Interfaces: dimension, rank
+using QuantumLattices.Interfaces: dimension, rank, ⊕, ⊗
 
 import QuantumLattices.Prerequisites.VectorSpaces: VectorSpaceStyle, shape
 import QuantumLattices.Prerequisites.Traits: contentnames, getcontent
@@ -64,30 +64,60 @@ end
     @test i1∉foi && i2∉foi
 end
 
-# @testset "NamedVectorSpace" begin
-#     nvs = ZipNamedVectorSpace{(:t, :U)}([1, 2], [8.0, 9.0])
-#     @test nvs==deepcopy(nvs) && isequal(nvs, deepcopy(nvs))
-#     @test nvs≠ZipNamedVectorSpace{(:t, :V)}([1, 2], [8.0, 9.0])
-#     @test !isequal(nvs, ZipNamedVectorSpace{(:t, :V)}([1, 2], [8.0, 9.0]))
-#     @test nvs|>keys == nvs|>typeof|>keys == (:t, :U)
-#     @test nvs|>values == ([1, 2], [8.0, 9.0])
-#     @test nvs|>pairs|>collect == [:t=>[1, 2], :U=>[8.0, 9.0]]
-#     @test eltype(nvs, 1) == eltype(nvs|>typeof, 1) == Int
-#     @test eltype(nvs, 2) == eltype(nvs|>typeof, 2) == Float64
-#     @test nvs|>rank == nvs|>typeof|>rank == 1
-#     @test shape(nvs) == (1:2,)
-#     elements = [(t = 1, U = 8.0), (t = 2, U = 9.0)]
-#     for i = 1:dimension(nvs)
-#         @test NamedTuple(CartesianIndex(elements[i], nvs), nvs) == elements[i]
-#     end
-#     @test nvs|>collect == elements
+struct DirectSummedVectorSpace{T<:Tuple, B} <: VectorSpace{B}
+    contents::T
+    DirectSummedVectorSpace(contents::Tuple) = new{typeof(contents), mapreduce(eltype, typejoin, contents)}(contents)
+end
+@inline VectorSpaceStyle(::Type{<:DirectSummedVectorSpace}) = VectorSpaceDirectSummed()
+@inline DirectSummedVectorSpace(contents...) = DirectSummedVectorSpace(contents)
 
-#     nvs = ProductNamedVectorSpace{(:t, :U)}([1.0, 2.0], [8.0, 9.0])
-#     @test nvs|>rank == nvs|>typeof|>rank == 2
-#     @test shape(nvs) == (1:2, 1:2)
-#     elements = [(t = 1.0, U = 8.0), (t = 2.0, U = 8.0), (t = 1.0, U = 9.0), (t = 2.0, U = 9.0)]
-#     for i = 1:dimension(nvs)
-#         @test NamedTuple(CartesianIndex(elements[i], nvs), nvs) == elements[i]
-#     end
-#     @test nvs|>collect == elements
-# end
+@testset "VectorSpaceDirectSummed" begin
+    a = SimpleIndices(1:3)
+    b = SimpleIndices(3:4, 7:7)
+    c = DirectSummedVectorSpace(a, b)
+    @test dimension(c) == 5
+    @test c[1]==CartesianIndex(1) && c[2]==CartesianIndex(2) && c[3]==CartesianIndex(3) && c[4]==CartesianIndex(3, 7) && c[5]==CartesianIndex(4, 7)
+end
+
+@testset "NamedVectorSpace" begin
+    t = ParameterSpace{:t}(1:2)
+    @test contentnames(typeof(t)) == (:content,)
+    @test dimension(t) == 2
+    @test t≠ParameterSpace{:μ}(1:2) && t==ParameterSpace{:t}(1:2)
+    @test !isequal(t, ParameterSpace{:μ}(1:2)) && isequal(t, ParameterSpace{:t}(1:2))
+    @test keys(t) == keys(typeof(t)) == (:t,)
+    @test t[1]==1 && t[2]==2
+    @test t[1]∈t && t[2]∈t
+    ps = pairs(t)
+    @test size(ps) == (2,)
+    @test eltype(ps) == eltype(typeof(ps)) == NamedTuple{(:t,), Tuple{Int}}
+    @test ps[1]==(t=1,) && ps[2]==(t=2,)
+
+    U = ParameterSpace{:U}([8.0, 9.0])
+    zps = ZippedNamedVectorSpace(t, U)
+    @test VectorSpaceStyle(zps) == VectorSpaceZipped()
+    @test eltype(zps) == eltype(typeof(zps)) == Tuple{Int, Float64}
+    @test keys(zps) == keys(typeof(zps)) == (:t, :U)
+    @test dimension(zps) == 2
+    @test zps[1]==(1, 8.0) && zps[2]==(2, 9.0)
+    ps = pairs(zps)
+    @test size(ps) == (2,)
+    @test eltype(ps) == eltype(typeof(ps)) == NamedTuple{(:t, :U), Tuple{Int, Float64}}
+    @test ps[1]==(t=1, U=8.0) && ps[2]==(t=2, U=9.0)
+    pps = DirectProductedNamedVectorSpace(t, U)
+    @test VectorSpaceStyle(pps) == VectorSpaceDirectProducted()
+    @test eltype(pps) == eltype(typeof(pps)) == Tuple{Int, Float64}
+    @test keys(pps) == keys(typeof(pps)) == (:t, :U)
+    @test dimension(pps) == 4
+    @test pps[1]==(1, 8.0) && pps[2]==(2, 8.0) && pps[3]==(1, 9.0) && pps[4]==(2, 9.0)
+
+    μ = ParameterSpace{:μ}([11, 12])
+    @test t⊕U == zps
+    @test μ⊕zps == ZippedNamedVectorSpace(μ, t, U)
+    @test zps⊕μ == ZippedNamedVectorSpace(t, U, μ)
+    @test zps⊕ZippedNamedVectorSpace(μ) == ZippedNamedVectorSpace(t, U, μ)
+    @test t⊗U == pps
+    @test μ⊗pps == DirectProductedNamedVectorSpace(μ, t, U)
+    @test pps⊗μ == DirectProductedNamedVectorSpace(t, U, μ)
+    @test pps⊗DirectProductedNamedVectorSpace(μ) == DirectProductedNamedVectorSpace(t, U, μ)
+end

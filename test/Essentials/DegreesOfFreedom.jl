@@ -5,13 +5,13 @@ using QuantumLattices.Essentials.DegreesOfFreedom
 using QuantumLattices.Essentials.QuantumOperators: ID, Operator, Operators, sequence, id, LaTeX, latexformat
 using QuantumLattices.Essentials.Spatials: AbstractPID, PID, CPID, Point, Bond, Bonds, Lattice, pidtype, rcoord, icoord
 using QuantumLattices.Essentials: kind, update!, reset!
-using QuantumLattices.Interfaces: rank, expand, ⊗
+using QuantumLattices.Interfaces: rank, expand, ⊗, ⊕
 using QuantumLattices.Prerequisites: Float, decimaltostr
 using QuantumLattices.Prerequisites.Traits: parameternames, isparameterbound, contentnames, getcontent
 
 import QuantumLattices.Essentials.QuantumOperators: latexname, script
 import QuantumLattices.Essentials.DegreesOfFreedom: ishermitian, statistics, couplingcenters, abbr
-import QuantumLattices.Prerequisites.VectorSpaces: shape, ndimshape
+import QuantumLattices.Prerequisites.VectorSpaces: shape
 
 struct DID{N<:Union{Int, Symbol}} <: SimpleIID
     nambu::N
@@ -19,12 +19,12 @@ end
 @inline Base.show(io::IO, did::DID) = @printf io "DID(%s)" did.nambu
 @inline Base.adjoint(sl::DID{Int}) = DID(3-sl.nambu)
 @inline statistics(::Type{<:DID}) = :f
+@inline DID(did::DID, ::CompositeInternal) = did
 
 struct DFock <: SimpleInternal{DID{Int}}
     nnambu::Int
 end
 @inline shape(f::DFock) = (1:f.nnambu,)
-@inline ndimshape(::Type{DFock}) = 1
 @inline DID(i::CartesianIndex, vs::DFock) = DID(i.I...)
 @inline CartesianIndex(did::DID{Int}, vs::DFock) = CartesianIndex(did.nambu)
 @inline shape(iidspace::IIDSpace{DID{Symbol}, DFock}) = (1:iidspace.internal.nnambu,)
@@ -84,14 +84,34 @@ end
 
 @testset "CompositeInternal" begin
     it₁, it₂ = DFock(2), DFock(3)
+
+    ci = CompositeInternal{:⊕}(it₁, it₂)
+    @test eltype(ci) == eltype(typeof(ci)) == DID{Int}
+    @test rank(ci) == rank(typeof(ci)) == 2
+    @test string(ci) == "DFock(nnambu=2) ⊕ DFock(nnambu=3)"
+    for i = 1:2
+        @test ci[i] == it₁[i]
+    end
+    for i = 1:3
+        @test ci[2+i] == it₂[i]
+    end
+    @test it₁⊕it₂ == ci
+    @test it₁⊕ci == CompositeInternal{:⊕}(it₁, it₁, it₂)
+    @test ci⊕it₁ == CompositeInternal{:⊕}(it₁, it₂, it₁)
+    @test ci⊕ci == CompositeInternal{:⊕}(it₁, it₂, it₁, it₂)
+    @test filter(DID(1), ci) == filter(DID, ci) == ci
+    @test filter(DID(1), typeof(ci)) == filter(DID, typeof(ci)) == typeof(ci)
+
     ci = CompositeInternal{:⊗}(it₁, it₂)
     @test eltype(ci) == eltype(typeof(ci)) == CompositeIID{Tuple{DID{Int}, DID{Int}}}
     @test rank(ci) == rank(typeof(ci)) == 2
     @test string(ci) == "DFock(nnambu=2) ⊗ DFock(nnambu=3)"
-    @test shape(ci) == (1:2, 1:3)
-    @test ndimshape(ci) == 2
-    for i = 1:2, j = 1:3
-        @test CartesianIndex(CompositeIID(CartesianIndex(i, j), ci), ci) == CartesianIndex(i, j)
+    count = 1
+    for i = 1:3
+        for j = 1:2
+            @test ci[count] == CompositeIID(it₁[j], it₂[i])
+            count += 1
+        end
     end
     @test it₁⊗it₂ == ci
     @test it₁⊗ci == CompositeInternal{:⊗}(it₁, it₁, it₂)
@@ -177,12 +197,8 @@ end
     iidspace = IIDSpace(DID₁⊗DID₂, it⊗it)
     @test eltype(iidspace) == eltype(typeof(iidspace)) == CompositeIID{Tuple{DID{Int}, DID{Int}}}
     @test kind(iidspace) == kind(typeof(iidspace)) == :info
-    @test shape(iidspace) == (2:2, 1:2)
-    @test ndimshape(iidspace) == ndimshape(typeof(iidspace)) == 2
-    for i = 1:length(iidspace)
-        iid = iidspace[i]
-        @test iidspace[CartesianIndex(iid, iidspace)] == iid
-    end
+    @test length(iidspace) == 2
+    @test iidspace[1]==DID(2)⊗DID(1) && iidspace[2]==DID(2)⊗DID(2)
     @test expand((DID₁, DID₂), (it, it)) == iidspace
     @test collect(iidspace) == [DID(2)⊗DID(1), DID(2)⊗DID(2)]
 end
@@ -312,19 +328,21 @@ end
     @test tc₁*tc₂ == Coupling(3.0, ID(DID(1), DID(2), DID(:a), DID(:b)), Subscripts((nambu=Subscript((1, 2)),), (nambu=subscript"[a b](a < b)",)))
 
     ex = expand(tc₁, point, hilbert, Val(:info))
-    @test eltype(ex) == eltype(typeof(ex)) == Tuple{Float64, NTuple{2, OID{Index{CPID{Int}, DID{Int}}, SVector{2, Float64}}}}
+    @test eltype(ex) == eltype(typeof(ex)) == Operator{Float64, NTuple{2, OID{Index{CPID{Int}, DID{Int}}, SVector{2, Float64}}}}
     @test collect(ex) == [
-        (1.5, ID(OID(Index(CPID(1, 1), DID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0)),
-                 OID(Index(CPID(1, 1), DID(2)), SVector(0.0, 0.0), SVector(0.0, 0.0))
-                 ))
+        Operator(1.5, ID(
+            OID(Index(CPID(1, 1), DID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0)),
+            OID(Index(CPID(1, 1), DID(2)), SVector(0.0, 0.0), SVector(0.0, 0.0))
+            ))
         ]
 
     ex = expand(tc₂, point, hilbert, Val(:info))
-    @test eltype(ex) == eltype(typeof(ex)) == Tuple{Float64, NTuple{2, OID{Index{CPID{Int}, DID{Int}}, SVector{2, Float64}}}}
+    @test eltype(ex) == eltype(typeof(ex)) == Operator{Float64, NTuple{2, OID{Index{CPID{Int}, DID{Int}}, SVector{2, Float64}}}}
     @test collect(ex) == [
-        (2.0, ID(OID(Index(CPID(1, 1), DID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0)),
-                    OID(Index(CPID(1, 1), DID(2)), SVector(0.0, 0.0), SVector(0.0, 0.0))
-                    ))
+        Operator(2.0, ID(
+            OID(Index(CPID(1, 1), DID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0)),
+            OID(Index(CPID(1, 1), DID(2)), SVector(0.0, 0.0), SVector(0.0, 0.0))
+            ))
         ]
 
     @test @couplings(DCoupling(1.0, (1, 1))) == Couplings(DCoupling(1.0, (1, 1)))

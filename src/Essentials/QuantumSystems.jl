@@ -13,12 +13,12 @@ using ...Essentials: kind, dtype
 using ...Interfaces: decompose, dimension
 using ...Prerequisites: Float, atol, rtol, delta, decimaltostr, concatenate
 using ...Prerequisites.Traits: rawtype, getcontent
-using ...Prerequisites.VectorSpaces: CartesianVectorSpace
+using ...Prerequisites.VectorSpaces: VectorSpace, VectorSpaceStyle, VectorSpaceCartesian
 
 import ..QuantumOperators: script, latexname, ishermitian, optype
 import ..DegreesOfFreedom: statistics, couplingcenters, abbr, termfactor
 import ...Interfaces: rank, ⊗, ⋅, expand, expand!, permute
-import ...Prerequisites.VectorSpaces: shape, ndimshape
+import ...Prerequisites.VectorSpaces: shape
 
 export majorana, annihilation, creation, flatex, blatex
 export FID, Fock, FockCoupling, Onsite, Hopping, Pairing, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, SpinFlip, PairHopping, Coulomb, FockTerm
@@ -76,6 +76,7 @@ Base.show(io::IO, fid::FID) = @printf io "FID{%s}(%s)" repr(statistics(fid)) joi
     return :(rawtype(typeof(fid)){statistics(fid)}($(exprs...)))
 end
 @inline statistics(::Type{<:FID{T}}) where T = T
+@inline FID(iid::FID, ::CompositeInternal) = iid
 
 """
     FID{T}(; orbital::Union{Int, Symbol}=1, spin::Union{Int, Symbol}=1, nambu::Union{Int, Symbol}=annihilation) where T
@@ -101,7 +102,6 @@ struct Fock{T} <: SimpleInternal{FID{T, Int, Int, Int}}
 end
 @inline Base.eltype(::Type{Fock}) = (FID{T, Int, Int, Int} where T)
 @inline shape(fock::Fock) = (1:fock.norbital, 1:fock.nspin, fock.nnambu==1 ? (0:0) : (1:2))
-@inline ndimshape(::Type{<:Fock}) = 3
 @inline Base.CartesianIndex(fid::FID{T}, fock::Fock{T}) where T = CartesianIndex(fid.orbital, fid.spin, fid.nambu)
 @inline FID(index::CartesianIndex{3}, fock::Fock) = FID{statistics(fock)}(index[1], index[2], index[3])
 Base.summary(io::IO, fock::Fock) = @printf io "%s-element Fock{%s}" length(fock) repr(statistics(fock))
@@ -111,26 +111,28 @@ end
 @inline Base.match(::Type{<:FID{wildcard}}, ::Type{<:Fock{T}}) where T = true
 @inline Base.match(::Type{<:FID{T}}, ::Type{<:Fock{T}}) where T = true
 @inline Base.match(::Type{<:FID{T₁}}, ::Type{<:Fock{T₂}}) where {T₁, T₂} = false
-function shape(iidspace::IIDSpace{I, V}) where {I<:CompositeIID{<:Tuple{Vararg{FID}}}, V<:CompositeInternal{:⊗, <:Tuple{Vararg{Fock}}}}
-    Kind = Val(kind(iidspace))
-    @assert rank(I)==rank(V) "shape error: mismatched composite iid and composite internal space."
-    return concatenate(map(
-        (iid, internal, order)->shape(IIDSpace(iid, internal, Kind); order=order),
+
+@inline function CompositeIID(iidspace::IIDSpace{I, V}) where {I<:CompositeIID{<:Tuple{Vararg{FID}}}, V<:CompositeInternal{:⊗, <:Tuple{Vararg{Fock}}}}
+    @assert rank(I)==rank(V) "CompositeIID error: mismatched composite iid and composite internal space."
+    return CompositeIID(map(
+        (order, fid, fock)->FID{statistics(fid)}(fid.orbital, fid.spin, fidnambu(Val(kind(iidspace)), fid.nambu, fock.nnambu, order)),
+        ntuple(i->i, Val(rank(I))),
         iidspace.iid.contents,
-        iidspace.internal.contents,
-        ntuple(i->i, Val(rank(I)))
-        )...)
+        iidspace.internal.contents
+        ))
 end
-@inline function shape(iidspace::IIDSpace{<:FID, <:Fock}; order)
-    obrange = fidshape(kind(iidspace)|>Val, :orbital|>Val, iidspace.iid.orbital, iidspace.internal.norbital)
-    sprange = fidshape(kind(iidspace)|>Val, :spin|>Val, iidspace.iid.spin, iidspace.internal.nspin)
-    phrange = fidshape(kind(iidspace)|>Val, :nambu|>Val, iidspace.iid.nambu, iidspace.internal.nnambu; order=order)
+@inline fidnambu(::Val, ::Symbol, nnambu::Int, order::Int) = nnambu==1 ? majorana : order%2==1 ? creation : annihilation
+@inline fidnambu(::Val, nambu::Int, nnambu::Int, ::Int) = ((@assert nnambu==1 ? nambu==0 : 0<nambu<nambu+1 "fidnambu error: nambu out of range."); nambu)
+
+@inline function shape(iidspace::IIDSpace{<:FID, <:Fock})
+    @assert isa(iidspace.iid.nambu, Int) "shape error: nambu not determined."
+    obrange = fidshape(iidspace.iid.orbital, iidspace.internal.norbital)
+    sprange = fidshape(iidspace.iid.spin, iidspace.internal.nspin)
+    phrange = iidspace.iid.nambu:iidspace.iid.nambu
     return (obrange, sprange, phrange)
 end
-@inline fidshape(::Val, ::Val, ::Symbol, n::Int) = 1:n
-@inline fidshape(::Val, ::Val{field}, v::Int, n::Int) where field = ((@assert 0<v<n+1 "shape error: $field out of range."); v:v)
-@inline fidshape(::Val, ::Val{:nambu}, ::Symbol, n::Int; order) = n==1 ? (majorana:majorana) : order%2==1 ? (creation:creation) : (annihilation:annihilation)
-@inline fidshape(::Val, ::Val{:nambu}, v::Int, n::Int; order) = ((@assert n==1 ? v==0 : 0<v<n+1 "shape error: nambu out of range."); v:v)
+@inline fidshape(::Symbol, n::Int) = 1:n
+@inline fidshape(v::Int, n::Int) where field = ((@assert 0<v<n+1 "shape error: $field out of range."); v:v)
 
 """
     Fock{T}(; norbital::Int=1, nspin::Int=2, nnambu::Int=2) where T
@@ -548,7 +550,7 @@ end
 @inline abbr(::Type{<:Pairing}) = :pr
 @inline ishermitian(::Type{<:Pairing}) = false
 @inline couplingcenters(::FockCoupling, ::Bond, ::Val{:Pairing}) = (1, 2)
-@inline fidshape(::Val{:Pairing}, ::Val{:nambu}, ::Symbol, n::Int; order) = ((@assert n==2 "range error: nnambu must be 2 for Pairing."); annihilation:annihilation)
+@inline fidnambu(::Val{:Pairing}, ::Symbol, nnambu::Int, order::Int) = ((@assert nnambu==2 "fidnambu error: nnambu must be 2 for Pairing."); annihilation)
 function expand!(operators::Operators, term::Pairing, bond::AbstractBond, hilbert::Hilbert; half::Bool=false, table::Union{Nothing, Table}=nothing)
     argtypes = Tuple{Operators, Term, AbstractBond, Hilbert}
     invoke(expand!, argtypes, operators, term, bond, hilbert; half=half, table=table)
@@ -692,6 +694,7 @@ end
 @inline totalspin(sid::SID) = totalspin(typeof(sid))
 @inline totalspin(::Type{<:SID{S}}) where S = S
 @inline statistics(::Type{<:SID}) = :b
+@inline SID(iid::SID, ::CompositeInternal) = iid
 
 """
     SID{S}(tag::Union{Char, Symbol}; orbital::Union{Int, Symbol}=1) where S
@@ -735,7 +738,6 @@ struct Spin{S} <: SimpleInternal{SID{S, Int, Char}}
 end
 @inline Base.eltype(::Type{Spin}) = (SID{S, Int, Char} where S)
 @inline shape(sp::Spin) = (1:sp.norbital, 1:length(sidtagmap))
-@inline ndimshape(::Type{<:Spin}) = 2
 @inline Base.CartesianIndex(sid::SID, ::Spin) = CartesianIndex(sid.orbital, sidseqmap[sid.tag])
 @inline SID(index::CartesianIndex{2}, sp::Spin) = SID{totalspin(sp)}(index[1], sidtagmap[index[2]])
 Base.summary(io::IO, spin::Spin) = @printf io "%s-element Spin{%s}" length(spin) totalspin(spin)
@@ -1019,6 +1021,7 @@ struct NID{D<:Union{Char, Symbol}} <: SimpleIID
 end
 @inline Base.adjoint(pnid::NID) = pnid
 @inline statistics(::Type{<:NID}) = :b
+@inline NID(iid::NID, ::CompositeInternal) = iid
 
 """
     Phonon <: SimpleInternal{NID{Char}}
@@ -1033,7 +1036,6 @@ struct Phonon <: SimpleInternal{NID{Char}}
     end
 end
 @inline shape(pn::Phonon) = (1:2, 1:pn.ndir)
-@inline ndimshape(::Type{Phonon}) = 2
 @inline Base.CartesianIndex(pnid::NID{Char}, ::Phonon) = CartesianIndex(pnid.tag=='u' ? 1 : 2, Int(pnid.dir)-Int('x')+1)
 @inline NID(index::CartesianIndex{2}, ::Phonon) = NID(index[1]==1 ? 'u' : 'p', Char(Int('x')+index[2]-1))
 @inline shape(iidspace::IIDSpace{NID{Symbol}, Phonon}) = (iidspace.iid.tag=='u' ? (1:1) : (2:2), 1:iidspace.internal.ndir)
@@ -1134,19 +1136,20 @@ function expand(pnc::PhononCoupling{<:Number, <:ID{NID{Symbol}}}, bond::Bond, hi
     @assert pn₁.ndir==pn₂.ndir==length(R̂) "expand error: mismatched number of directions."
     return PPExpand(R̂, (bond.epoint, bond.spoint))
 end
-struct PPExpand{N, P<:AbstractPID, D<:Number} <: CartesianVectorSpace{Tuple{D, ID{OID{Index{P, NID{Char}}, SVector{N, D}}, 2}}}
+struct PPExpand{N, P<:AbstractPID, D<:Number} <: VectorSpace{Operator{D, ID{OID{Index{P, NID{Char}}, SVector{N, D}}, 2}}}
     direction::SVector{N, D}
     points::NTuple{2, Point{N, P, D}}
 end
+@inline VectorSpaceStyle(::Type{<:PPExpand}) = VectorSpaceCartesian()
 @inline shape(pnce::PPExpand) = (1:length(pnce.direction), 1:length(pnce.direction), 1:4)
-function Tuple(index::CartesianIndex{3}, pnce::PPExpand)
+function Operator(index::CartesianIndex{3}, pnce::PPExpand)
     dir₁ = Char(Int('x')+index[1]-1)
     dir₂ = Char(Int('x')+index[2]-1)
     coeff = index[3]∈(1, 4) ? 1 : -1
     pos₁, pos₂ = index[3]==1 ? (1, 1) : index[3]==2 ? (1, 2) : index[3]==3 ? (2, 1) : (2, 2)
     oid₁ = OID(Index(pnce.points[pos₁].pid, NID('u', dir₁)), pnce.points[pos₁].rcoord, pnce.points[pos₁].icoord)
     oid₂ = OID(Index(pnce.points[pos₂].pid, NID('u', dir₂)), pnce.points[pos₂].rcoord, pnce.points[pos₂].icoord)
-    return pnce.direction[index[1]]*pnce.direction[index[2]]*coeff, ID(oid₁, oid₂)
+    return Operator(pnce.direction[index[1]]*pnce.direction[index[2]]*coeff, ID(oid₁, oid₂))
 end
 
 """

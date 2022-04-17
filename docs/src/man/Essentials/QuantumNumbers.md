@@ -20,9 +20,9 @@ Main features include:
 In particular, `AbelianNumber <: HomoNamedVector{Float}`, all features supported by `HomoNamedVector` are also available for `HomoNamedVector`. See also [HomoNamedVector](@ref).
 
 For convenience, **3** kinds of quantum numbers are predefined in this module, i.e.
-* [`SQN`](@ref): for spin z-component reserved systems
-* [`PQN`](@ref): for particle number reserved systems
-* [`SPQN`](@ref): for both particle number and spin-z component reserved systems
+* [`SpinZ`](@ref): for spin z-component reserved systems
+* [`ParticleNumber`](@ref): for particle number reserved systems
+* [`SpinfulParticle`](@ref): for both particle number and spin-z component reserved systems
 
 Users who want to define their own ``Z_N``-like quantum numbers must handle the periodicity in the construction function, otherwise, wrong results will be get when arithmetic operations, such as `+` or `-`, are involved. It is recommended to use the macro [`@abeliannumber`](@ref) to define your own concrete `AbelianNumber`s.
 
@@ -49,9 +49,9 @@ Main features include:
 For a complete summation of its features, please refer to the [manual](@ref qnmanual).
 
 For convenience, **3** functions are predefined to generate the `AbelianNumbers` of common physical systems, i.e.
-* [`SQNS`](@ref): a single spin
-* [`PQNS`](@ref): a single-particle state with at most `N` identical particles
-* [`SPQNS`](@ref): a single site with internal degrees of freedom that can be ascribed to a spin
+* [`spinzs`](@ref): a single spin
+* [`particlenumbers`](@ref): a single-particle state with at most `N` identical particles
+* [`spinfulparticles`](@ref): a single site with internal degrees of freedom that can be ascribed to a spin
 
 ## [Manual](@id qnmanual)
 

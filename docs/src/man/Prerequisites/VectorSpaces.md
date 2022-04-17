@@ -32,30 +32,6 @@ Other features include
 * iteration: `iterate`
 * inquiry: `size`, `findfirst` and `in`
 
-## EnumerativeVectorSpace
-
-[`EnumerativeVectorSpace`](@ref) is the simplest vector space, whose bases are stored in the predefined content `:table`.
-
-## CartesianVectorSpace
-
-[`CartesianVectorSpace`](@ref) defines the abstract class of multiindexable vector spaces, whose bases can be accessed by a Cartesian index.
-
-## NamedVectorSpace
-
-[`NamedVectorSpace{M, NS, BS, VS}`](@ref) defines a multiindexable vector space, each of whose indexable dimensions is associated with a name.
-
-It has four type parameters:
-* `M`: mode of the named vector space. It specifies how the indexable dimensions are combined to form the bases of the named vector space, and must take one of the following values:
-  - `:⊕`: elements from each indexable dimensions are zipped together to form the bases,
-  - `:⊗`: elements from each indexable dimensions are direct producted together to form the bases.
-For the `:⊕` mode, all the indexable dimensions should have the same number of elements, and the number of formed bases is equal to this number; for the `:⊗` mode, there are no restriction on the numbers of the indexable dimensions, and the number of the final bases is equal to their product.
-* `NS::Tuple{Vararg{Symbol}}`: the names of the indexable dimensions
-* `BS<:Tuple`: the eltypes of the indexable dimensions
-* `VS<:Tuple{Vararg{AbstractVector}}`: the contents of the indexable dimensions
-
-The concrete types must have the following predefined content:
-* `:contents::VS`: storage of the contents of the indexable dimensions
-
 ## Manual
 
 ```@autodocs

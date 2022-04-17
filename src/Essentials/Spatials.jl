@@ -12,12 +12,12 @@ using ...Prerequisites: atol, rtol, Float
 using ...Prerequisites.Combinatorics: Combinations
 using ...Prerequisites.Traits: efficientoperations, getcontent
 using ...Prerequisites.SimpleTrees: SimpleTree, simpletreedepth, isleaf
-using ...Prerequisites.VectorSpaces: CartesianVectorSpace, NamedVectorSpace
+using ...Prerequisites.VectorSpaces: VectorSpace, SimpleNamedVectorSpace, VectorSpaceStyle, VectorSpaceCartesian
 
 import ..Essentials: dtype, kind, reset!
 import ...Interfaces: decompose, rank, dimension, expand
 import ...Prerequisites.Traits: contentnames, getcontent
-import ...Prerequisites.VectorSpaces: shape, ndimshape
+import ...Prerequisites.VectorSpaces: shape
 
 export distance, azimuthd, azimuth, polard, polar, volume, isparallel, isonline, isintratriangle, issubordinate
 export reciprocals, translate, rotate, tile, minimumlengths, intralinks, interlinks, Translations, @translations_str
@@ -466,11 +466,11 @@ function interlinks(cluster₁::AbstractMatrix{<:Number}, cluster₂::AbstractMa
 end
 
 """
-    Translations{N} <: CartesianVectorSpace{NTuple{N, Int}}
+    Translations{N} <: VectorSpace{NTuple{N, Int}}
 
 A set of translations. The boundary conditions along each translation direction are also included.
 """
-struct Translations{N} <: CartesianVectorSpace{NTuple{N, Int}}
+struct Translations{N} <: VectorSpace{NTuple{N, Int}}
     ranges::NTuple{N, Int}
     boundaries::NTuple{N, Char}
     function Translations(ranges::NTuple{N, Int}, boundaries::NTuple{N, Char}) where N
@@ -479,12 +479,12 @@ struct Translations{N} <: CartesianVectorSpace{NTuple{N, Int}}
         new{N}(ranges, map(uppercase, boundaries))
     end
 end
+@inline VectorSpaceStyle(::Type{<:Translations}) = VectorSpaceCartesian()
 @inline shape(translations::Translations) = map(i->0:i-1, translations.ranges)
-@inline ndimshape(::Type{<:Translations{N}}) where N = N
 @inline Base.CartesianIndex(translation::NTuple{N, Int}, ::Translations{N}) where N = CartesianIndex(translation)
 @inline Tuple(index::CartesianIndex{N}, ::Translations{N}) where N = Tuple(index)
-function Base.show(io::IO, translations::Translations)
-    for i = 1:ndimshape(translations)
+function Base.show(io::IO, translations::Translations{N}) where N
+    for i = 1:N
         i>1 && @printf io "%s" '-'
         @printf io "%s%s" translations.ranges[i] translations.boundaries[i]
     end
@@ -1594,14 +1594,12 @@ function Segment(start::NTuple{N, Number}, stop::NTuple{N, Number}, length::Inte
 end
 
 """
-    ReciprocalSpace{K, B} <: NamedVectorSpace{:⊗, K, Tuple{B}}
+    ReciprocalSpace{K, P} <: SimpleNamedVectorSpace{K, P}
 
 Abstract type of reciprocal spaces.
 """
-abstract type ReciprocalSpace{K, B} <: NamedVectorSpace{:⊗, K, Tuple{B}} end
+abstract type ReciprocalSpace{K, P} <: SimpleNamedVectorSpace{K, P} end
 
-@inline symbolconvert(K::Symbol) = (K,)
-@inline symbolconvert(K::Tuple{Symbol}) = K
 @inline vectorconvert(reciprocals::Vector{<:SVector}) = reciprocals
 @inline vectorconvert(reciprocals::AbstractVector) = convert(Vector{SVector{length(first(reciprocals)), eltype(eltype(reciprocals))}}, reciprocals)
 @inline vectorconvert(reciprocals::AbstractVector{<:SVector}) = convert(Vector{SVector{length(eltype(reciprocals)), eltype(eltype(reciprocals))}}, reciprocals)
@@ -1616,11 +1614,11 @@ struct BrillouinZone{K, P<:Momentum, S<:SVector} <: ReciprocalSpace{K, P}
     function BrillouinZone{K}(reciprocals::AbstractVector, momenta::AbelianNumbers{<:Momentum}) where K
         @assert isa(K, Symbol) || isa(K, Tuple{Symbol}) "BrillouinZone error: K must be a Symbol."
         reciprocals = vectorconvert(reciprocals)
-        new{symbolconvert(K), eltype(momenta), eltype(reciprocals)}(reciprocals, momenta)
+        new{K, eltype(momenta), eltype(reciprocals)}(reciprocals, momenta)
     end
 end
-@inline contentnames(::Type{<:BrillouinZone}) = (:reciprocals, :contents)
-@inline getcontent(bz::BrillouinZone, ::Val{:contents}) = (bz.momenta,)
+@inline contentnames(::Type{<:BrillouinZone}) = (:reciprocals, :content)
+@inline getcontent(bz::BrillouinZone, ::Val{:content}) = (bz.momenta,)
 
 """
     BrillouinZone(reciprocals::AbstractVector, nk::Int)
@@ -1671,11 +1669,11 @@ struct ReciprocalZone{K, S<:SVector, V<:Number} <: ReciprocalSpace{K, S}
     function ReciprocalZone{K}(momenta::AbstractVector, volume::Number) where K
         @assert isa(K, Symbol) || isa(K, Tuple{Symbol}) "ReciprocalZone error: K must be a Symbol."
         momenta = vectorconvert(momenta)
-        new{symbolconvert(K), eltype(momenta), typeof(volume)}(momenta, volume)
+        new{K, eltype(momenta), typeof(volume)}(momenta, volume)
     end
 end
-@inline contentnames(::Type{<:ReciprocalZone}) = (:contents, :volume)
-@inline getcontent(rz::ReciprocalZone, ::Val{:contents}) = (rz.momenta,)
+@inline contentnames(::Type{<:ReciprocalZone}) = (:content, :volume)
+@inline getcontent(rz::ReciprocalZone, ::Val{:content}) = (rz.momenta,)
 
 """
     ReciprocalZone(momenta::AbstractVector, volume::Number)
@@ -1734,11 +1732,11 @@ struct ReciprocalPath{K, S<:SVector} <: ReciprocalSpace{K, S}
     function ReciprocalPath{K}(momenta::AbstractVector) where K
         @assert isa(K, Symbol) || isa(K, Tuple{Symbol}) "ReciprocalPath error: K must be a Symbol."
         momenta = vectorconvert(momenta)
-        new{symbolconvert(K), eltype(momenta)}(momenta)
+        new{K, eltype(momenta)}(momenta)
     end
 end
-@inline contentnames(::Type{<:ReciprocalPath}) = (:contents,)
-@inline getcontent(rp::ReciprocalPath, ::Val{:contents}) = (rp.momenta,)
+@inline contentnames(::Type{<:ReciprocalPath}) = (:content,)
+@inline getcontent(rp::ReciprocalPath, ::Val{:content}) = (rp.momenta,)
 
 """
     ReciprocalPath(momenta::AbstractVector)

@@ -178,15 +178,15 @@ end
 end
 
 @testset "ConcreteAbelianNumbers" begin
-    @test SQN|>fieldnames == (:Sz,)
-    @test SQN|>periods == (Inf,)
-    @test PQN|>fieldnames == (:N,)
-    @test PQN|>periods == (Inf,)
-    @test SPQN|>fieldnames == (:N, :Sz)
-    @test SPQN|>periods == (Inf, Inf)
-    @test SQNS(0.5) == AbelianNumbers('C', [SQN(-0.5), SQN(0.5)], [0, 1, 2], :indptr)
-    @test PQNS(1.0) == AbelianNumbers('C', [PQN(0.0), PQN(1.0)], [0, 1, 2], :indptr)
-    @test SPQNS(0.5) == AbelianNumbers('C', [SPQN(0.0, 0.0), SPQN(1.0, -0.5), SPQN(1.0, 0.5), SPQN(2.0, 0.0)], [0, 1, 2, 3, 4], :indptr)
+    @test SpinZ|>fieldnames == (:Sz,)
+    @test SpinZ|>periods == (Inf,)
+    @test ParticleNumber|>fieldnames == (:N,)
+    @test ParticleNumber|>periods == (Inf,)
+    @test SpinfulParticle|>fieldnames == (:N, :Sz)
+    @test SpinfulParticle|>periods == (Inf, Inf)
+    @test spinzs(0.5) == AbelianNumbers('C', [SpinZ(-0.5), SpinZ(0.5)], [0, 1, 2], :indptr)
+    @test particlenumbers(1.0) == AbelianNumbers('C', [ParticleNumber(0.0), ParticleNumber(1.0)], [0, 1, 2], :indptr)
+    @test spinfulparticles(0.5) == AbelianNumbers('C', [SpinfulParticle(0.0, 0.0), SpinfulParticle(1.0, -0.5), SpinfulParticle(1.0, 0.5), SpinfulParticle(2.0, 0.0)], [0, 1, 2, 3, 4], :indptr)
 
     @test Momentum₁{10} |> periods == (10,)
     @test Momentum₂{10, 15} |> periods == (10, 15)
