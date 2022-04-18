@@ -1315,7 +1315,7 @@ function expand!(operators::Operators, term::Term, bond::AbstractBond, hilbert::
         value = term.value * term.amplitude(bond) * term.factor
         if abs(value) ≠ 0
             hermitian = ishermitian(term)
-            record = (isnothing(hermitian) && length(operators)>0) ? Set{idtype(M)}() : nothing
+            record = (isnothing(hermitian) && length(operators)>0) ? Set{idtype(eltype(operators))}() : nothing
             for coupling in term.couplings(bond)
                 for opt in expand(coupling, bond, hilbert, term|>kind|>Val)
                     isapprox(opt.value, 0.0, atol=atol, rtol=rtol) && continue
