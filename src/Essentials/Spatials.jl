@@ -1618,7 +1618,7 @@ struct BrillouinZone{K, P<:Momentum, S<:SVector} <: ReciprocalSpace{K, P}
     end
 end
 @inline contentnames(::Type{<:BrillouinZone}) = (:reciprocals, :content)
-@inline getcontent(bz::BrillouinZone, ::Val{:content}) = (bz.momenta,)
+@inline getcontent(bz::BrillouinZone, ::Val{:content}) = bz.momenta
 
 """
     BrillouinZone(reciprocals::AbstractVector, nk::Int)
@@ -1673,7 +1673,7 @@ struct ReciprocalZone{K, S<:SVector, V<:Number} <: ReciprocalSpace{K, S}
     end
 end
 @inline contentnames(::Type{<:ReciprocalZone}) = (:content, :volume)
-@inline getcontent(rz::ReciprocalZone, ::Val{:content}) = (rz.momenta,)
+@inline getcontent(rz::ReciprocalZone, ::Val{:content}) = rz.momenta
 
 """
     ReciprocalZone(momenta::AbstractVector, volume::Number)
@@ -1736,7 +1736,7 @@ struct ReciprocalPath{K, S<:SVector} <: ReciprocalSpace{K, S}
     end
 end
 @inline contentnames(::Type{<:ReciprocalPath}) = (:content,)
-@inline getcontent(rp::ReciprocalPath, ::Val{:content}) = (rp.momenta,)
+@inline getcontent(rp::ReciprocalPath, ::Val{:content}) = rp.momenta
 
 """
     ReciprocalPath(momenta::AbstractVector)

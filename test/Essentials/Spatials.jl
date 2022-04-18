@@ -358,7 +358,7 @@ end
     recipls = reciprocals([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
     momenta = AbelianNumbers('C', [Momentum₂{9, 10}(j-1, i-1) for (i, j) in Iterators.flatten((Iterators.product(1:10, 1:9),))], collect(0:90), :indptr)
     bz = BrillouinZone(recipls, momenta)
-    @test getcontent(bz, Val(:content)) == (bz.momenta,)
+    @test getcontent(bz, Val(:content)) == bz.momenta
     @test dtype(bz) == dtype(typeof(bz)) == Float
     @test bz == BrillouinZone(Momentum₂{9, 10}, recipls)
 
@@ -376,7 +376,7 @@ end
     @test contentnames(ReciprocalZone) == (:content, :volume)
 
     rz = ReciprocalZone([[1.0]], length=10)
-    @test getcontent(rz, :content) == (rz.momenta,)
+    @test getcontent(rz, :content) == rz.momenta
     @test rz == ReciprocalZone(rz.momenta, rz.volume)
     @test rz == ReciprocalZone([[1.0]], Segment(-1//2, 1//2, 10))
     @test rz == ReciprocalZone([[1.0]], (Segment(-1//2, 1//2, 10),))
@@ -404,7 +404,7 @@ end
     s₃ = Segment((0.5, 0.5), (0.0, 0.0), 100)
 
     rp = ReciprocalPath([b₁, b₂], s₁, s₂, s₃)
-    @test getcontent(rp, :content) == (rp.momenta,)
+    @test getcontent(rp, :content) == rp.momenta
     @test rp == ReciprocalPath(rp.momenta)
     @test rp == ReciprocalPath([b₁, b₂], (s₁, s₂, s₃))
 
