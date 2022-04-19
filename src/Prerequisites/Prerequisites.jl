@@ -24,10 +24,10 @@ const Float = Float64
 
 Convert a number to a string with at most `n` decimal places.
 """
-decimaltostr(number, ::Int = 5) = repr(number)
-decimaltostr(number::Integer, ::Int = 5) = string(number)
-decimaltostr(number::Rational, ::Int = 5) = string(number)
-function decimaltostr(number::AbstractFloat, n::Int = 5)
+@inline decimaltostr(number, ::Int=5) = repr(number)
+@inline decimaltostr(number::Integer, ::Int=5) = string(number)
+@inline decimaltostr(number::Rational, ::Int=5) = string(number)
+function decimaltostr(number::AbstractFloat, n::Int=5)
     if number == 0.0
         result = "0.0"
     elseif 10^-5 < abs(number) < 10^6
@@ -41,7 +41,7 @@ function decimaltostr(number::AbstractFloat, n::Int = 5)
     end
     result
 end
-function decimaltostr(number::Complex, n::Int = 5)
+function decimaltostr(number::Complex, n::Int=5)
     sreal = (real(number) == 0) ? "0" : decimaltostr(real(number), n)
     simag = (imag(number) == 0) ? "0" : decimaltostr(imag(number), n)
     result = ""
