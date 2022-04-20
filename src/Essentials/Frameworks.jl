@@ -653,6 +653,7 @@ mutable struct Assignment{A<:Action, P<:Parameters, M<:Function, D<:Tuple{Vararg
 end
 @inline Base.:(==)(assign₁::Assignment, assign₂::Assignment) = ==(efficientoperations, assign₁, assign₂)
 @inline Base.isequal(assign₁::Assignment, assign₂::Assignment) = isequal(efficientoperations, assign₁, assign₂)
+@inline Parameters(assignment::Assignment) = assignment.parameters
 
 """
     valtype(assign::Assignment)
@@ -710,6 +711,7 @@ function Base.show(io::IO, alg::Algorithm)
         @printf io "_%s" decimaltostr(value, 10)
     end
 end
+@inline Parameters(algorithm::Algorithm) = algorithm.parameters
 
 """
     Algorithm(name::Symbol, engine::Engine; din::String=".", dout::String=".", parameters::Parameters=Parameters(engine), map::Function=identity)

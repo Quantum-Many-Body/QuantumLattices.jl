@@ -219,6 +219,7 @@ end
     vca = Algorithm(:test, vca)
     @test vca == deepcopy(vca)
     @test isequal(vca, deepcopy(vca))
+    @test Parameters(vca) == vca.parameters
     @test repr(vca, ≠(:U)) == "test(VCA)_1.0"
     @test repr(vca) == "test(VCA)_1.0_8.0"
 
@@ -229,6 +230,7 @@ end
     dos = vca.assignments[:DOS]
     @test dos == deepcopy(dos)
     @test isequal(dos, deepcopy(dos))
+    @test Parameters(dos) == dos.parameters
     @test valtype(dos) == valtype(typeof(dos)) == Float
     @test dos.data == 32.0
     @test dos.action.mu == -3.5
