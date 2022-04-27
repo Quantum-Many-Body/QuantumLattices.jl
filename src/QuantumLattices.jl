@@ -56,5 +56,4 @@ export NID, Phonon, PhononCoupling, PhononKinetic, PhononPotential, PhononTerm
 export Parameters, Boundary, Engine, AbstractGenerator, Formulation, Entry, CompositeGenerator, Generator, Image, Action, Assignment, Algorithm
 export prepare!, run!, rundependences!, plain
 
-include("precompile_includer.jl")
 end
