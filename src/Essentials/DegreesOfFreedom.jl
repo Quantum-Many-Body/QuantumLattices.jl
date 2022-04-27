@@ -438,12 +438,12 @@ Get the `attr` script of an oid, which is contained in its index.
 
 # Hilbert
 """
-    Hilbert{I<:Internal, P<:AbstractPID, M<:Function} <: CompositeDict{P, I}
+    Hilbert{I<:Internal, P<:AbstractPID} <: CompositeDict{P, I}
 
 Hilbert space at a lattice.
 """
-struct Hilbert{I<:Internal, P<:AbstractPID, M<:Function} <: CompositeDict{P, I}
-    map::M
+struct Hilbert{I<:Internal, P<:AbstractPID} <: CompositeDict{P, I}
+    map::Function
     contents::Dict{P, I}
 end
 @inline contentnames(::Type{<:Hilbert}) = (:map, :contents)
@@ -496,7 +496,7 @@ Reset the Hilbert space with new pids.
 function reset!(hilbert::Hilbert, pids)
     empty!(hilbert)
     for pid in pids
-        hilbert[pid] = hilbert.map(pid)
+        hilbert[pid] = hilbert.map(pid)::valtype(hilbert)
     end
     hilbert
 end
