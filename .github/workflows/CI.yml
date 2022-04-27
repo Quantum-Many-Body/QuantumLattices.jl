@@ -10,11 +10,10 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          - '1'
+          - '1.6'
+          - '1.7'
         os:
           - ubuntu-latest
-          - macOS-latest
-          - windows-latest
         arch:
           - x64
     steps:
