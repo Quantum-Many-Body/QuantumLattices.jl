@@ -543,14 +543,14 @@ Get the space expanded by a set of "labeled" iids.
 @inline noconstrain(_...) = true
 const wildcard = Symbol("*")
 """
-    Subscript{P<:Tuple, C<:Function} <: CompositeTuple{P}
+    Subscript{P<:Tuple} <: CompositeTuple{P}
 
 The subscript representative of a certain internal degree of freedom.
 """
-struct Subscript{P<:Tuple, C<:Function} <: CompositeTuple{P}
+struct Subscript{P<:Tuple} <: CompositeTuple{P}
     pattern::P
     rep::String
-    constraint::C
+    constraint::Function
 end
 @inline contentnames(::Type{<:Subscript}) = (:contents, :rep, :constraint)
 @inline getcontent(subscript::Subscript, ::Val{:contents}) = subscript.pattern
@@ -598,7 +598,7 @@ Judge whether a set of values matches the pattern specified by the subscript.
 """
 @inline function Base.match(subscript::Subscript, values::Tuple)
     @assert length(subscript)==length(values) "match error: mismatched length of values."
-    return subscript.constraint(values...)
+    return subscript.constraint(values...)::Bool
 end
 
 """

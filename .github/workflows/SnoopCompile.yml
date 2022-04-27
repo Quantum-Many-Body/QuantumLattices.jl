@@ -71,11 +71,12 @@ jobs:
         uses: peter-evans/create-pull-request@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: Update precompile_*.jl file
-          title: "[AUTO] Update precompiles"
-          labels: SnoopCompile
-          branch: "SnoopCompile_AutoPR_${{ github.ref }}"
-
+          commit-message: Update precompile_*.jl file [skip ci]
+          title: "[AUTO] Update precompiles [skip ci]"
+          labels: |
+            SnoopCompile
+            no changelog
+          branch: "Test_SnoopCompile_AutoPR_${{ github.ref }}"
 
   Skip:
     if: "contains(github.event.head_commit.message, '[skip ci]')"

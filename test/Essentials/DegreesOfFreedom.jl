@@ -306,7 +306,7 @@ end
     @test parameternames(Coupling) == (:value, :cid, :subscripts)
     @test isparameterbound(Coupling, :cid, Tuple{DID{Int}}) == false
     @test isparameterbound(Coupling, :cid, ID{DID{Int}}) == true
-    @test isparameterbound(Coupling, :subscripts, Subscripts{Tuple{NamedTuple{(:nambu,), Tuple{Subscript{Tuple{Int}, typeof(noconstrain)}}}}}) == true
+    @test isparameterbound(Coupling, :subscripts, Subscripts{Tuple{NamedTuple{(:nambu,), Tuple{Subscript{Tuple{Int}}}}}}) == true
     @test isparameterbound(Coupling, :subscripts, Subscripts) == true
     @test isparameterbound(Coupling, :subscripts, Subscripts{Tuple{}, Tuple{}}) == false
 
