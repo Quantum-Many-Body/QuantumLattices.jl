@@ -33,7 +33,7 @@ abstract type CompositeTuple{T<:Tuple} end
 @inline Base.values(ct::CompositeTuple) = values(getcontent(ct, :contents))
 @inline Base.pairs(ct::CompositeTuple) = pairs(getcontent(ct, :contents))
 @inline Base.reverse(ct::CompositeTuple) = rawtype(typeof(ct))(dissolve(ct, reverse)...)
-@inline Base.convert(::Type{Tuple}, ct::CompositeTuple) = getcontent(ct, :contents)
+@inline Base.Tuple(ct::CompositeTuple) = getcontent(ct, :contents)
 
 """
     CompositeNTuple{N, T}
@@ -80,7 +80,6 @@ abstract type CompositeVector{T} <: AbstractVector{T} end
 @inline Base.keys(cv::CompositeVector) = keys(getcontent(cv, :contents))
 @inline Base.values(cv::CompositeVector) = values(getcontent(cv, :contents))
 @inline Base.pairs(cv::CompositeVector) = pairs(getcontent(cv, :contents))
-@inline Base.convert(::Type{Vector}, cv::CompositeVector) = getcontent(cv, :contents)
 
 """
     CompositeDict{K, V}
@@ -118,7 +117,6 @@ abstract type CompositeDict{K, V} <: AbstractDict{K, V} end
 @inline Base.keys(cd::CompositeDict) = keys(getcontent(cd, :contents))
 @inline Base.values(cd::CompositeDict) = values(getcontent(cd, :contents))
 @inline Base.pairs(cd::CompositeDict) = pairs(getcontent(cd, :contents))
-@inline Base.convert(::Type{Dict}, cd::CompositeDict) = getcontent(cd, :contents)
 
 """
     NamedContainer{T, Names} = NamedTuple{Names, <:Tuple{Vararg{T}}}

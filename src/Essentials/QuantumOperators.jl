@@ -58,7 +58,6 @@ const ID{U<:OperatorUnit, N} = NTuple{N, U}
 
 """
     ID(id::OperatorUnit...)
-    ID(id::Tuple{Vararg{OperatorUnit}})
     ID(u::OperatorUnit, id::ID{OperatorUnit})
     ID(id::ID{OperatorUnit}, u::OperatorUnit)
     ID(id₁::ID{OperatorUnit}, id₂::ID{OperatorUnit})
@@ -66,7 +65,6 @@ const ID{U<:OperatorUnit, N} = NTuple{N, U}
 Get the id from operator units/ids.
 """
 @inline ID(id::OperatorUnit...) = id
-@inline ID(id::Tuple{Vararg{OperatorUnit}}) = id
 @inline ID(u::OperatorUnit, id::ID{OperatorUnit}) = ID(u, id...)
 @inline ID(id::ID{OperatorUnit}, u::OperatorUnit) = ID(id..., u)
 @inline ID(id₁::ID{OperatorUnit}, id₂::ID{OperatorUnit}) = ID(id₁..., id₂...)

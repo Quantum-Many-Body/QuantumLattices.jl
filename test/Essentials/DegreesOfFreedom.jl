@@ -42,7 +42,7 @@ const DCoupling{V, I<:ID{DID}, C<:Subscripts} = Coupling{V, I, C}
 @inline Base.repr(tc::(Coupling{V, <:ID{DID}} where V)) = @sprintf "%s ph(%s)" decimaltostr(tc.value) join(tc.cid.nambus, ", ")
 @inline couplingcenters(::(Coupling{V, <:ID{DID}} where V), ::Bond, ::Val) = (1, 2)
 @inline DCoupling(value, nambus::Tuple{Vararg{Int}}) = Coupling(value, ID(DID, nambus), Subscripts((nambu=Subscript(nambus),)))
-@inline DCoupling(value, nambus::Subscript) = Coupling(value, ID(DID, convert(Tuple, nambus)), Subscripts((nambu=nambus,)))
+@inline DCoupling(value, nambus::Subscript) = Coupling(value, ID(DID, Tuple(nambus)), Subscripts((nambu=nambus,)))
 
 @inline abbr(::Type{<:Term{:Mu}}) = :mu
 @inline abbr(::Type{<:Term{:Hp}}) = :hp
@@ -181,9 +181,7 @@ end
     map = pid->DFock((pid.site-1)%2+1)
     hilbert = Hilbert(map, [CPID(1, 1), CPID(1, 2)])
     @test hilbert == Hilbert{DFock}(map, [CPID(1, 1), CPID(1, 2)])
-    @test convert(Dict, hilbert) == Dict(CPID(1, 1)=>DFock(1), CPID(1, 2)=>DFock(2))
     reset!(hilbert, (CPID(2, 1), CPID(2, 2)))
-    @test convert(Dict, hilbert) == Dict(CPID(2, 1)=>DFock(1), CPID(2, 2)=>DFock(2))
 
     hilbert = Hilbert(pid=>DFock(2) for pid in [PID(1), PID(2)])
     @test hilbert[PID(1)] == hilbert[PID(2)] == DFock(2)

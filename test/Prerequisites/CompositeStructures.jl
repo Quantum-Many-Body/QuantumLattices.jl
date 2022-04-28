@@ -30,7 +30,7 @@ contentnames(::Type{<:CT}) = (:info, :contents)
     @test values(t) == values((1, 2, 3, 4))
     @test pairs(t)|>collect == pairs((1, 2, 3, 4))|>collect
     @test reverse(t) == CT("Info", (4, 3, 2, 1))
-    @test convert(Tuple, t) == (1, 2, 3, 4)
+    @test Tuple(t) == (1, 2, 3, 4)
 end
 
 struct CV{S, T} <: CompositeVector{T}
@@ -78,7 +78,6 @@ contentnames(::Type{<:CV}) = (:info, :contents)
     @test keys(v) == keys([1, 3, 2, 2, 4])
     @test values(v) == values([1, 3, 2, 2, 4])
     @test pairs(v) == pairs([1, 3, 2, 2, 4])
-    @test convert(Vector, v) == [1, 3, 2, 2, 4]
     @test reverse(v) == CV("Info", [4, 2, 2, 3, 1])
     @test (sort(v) == CV("Info", [1, 2, 2, 3, 4])) && (v == CV("Info", [1, 3, 2, 2, 4]))
     @test (sort!(v) == CV("Info", [1, 2, 2, 3, 4])) && (v == CV("Info", [1, 2, 2, 3, 4]))
@@ -130,7 +129,6 @@ getcontent(m::CD, ::Val{:contents}) = getfield(m, :newcontents)
     @test collect(keys(d)) == collect(keys(Dict("a"=>1, "b"=>2, "c"=>3, "d"=>4)))
     @test collect(values(d)) == collect(values(Dict("a"=>1, "b"=>2, "c"=>3, "d"=>4)))
     @test collect(pairs(d)) == collect(pairs(Dict("a"=>1, "b"=>2, "c"=>3, "d"=>4)))
-    @test convert(Dict, d) == Dict("a"=>1, "b"=>2, "c"=>3, "d"=>4)
     @test (filter(p->p.second<=3, d) == CD("Info", Dict("a"=>1, "b"=>2, "c"=>3))) && (d == CD("Info", Dict("a"=>1, "b"=>2, "c"=>3, "d"=>4)))
     @test (filter!(p->p.second<=3, d) == CD("Info", Dict("a"=>1, "b"=>2, "c"=>3))) && (d == CD("Info", Dict("a"=>1, "b"=>2, "c"=>3)))
 end

@@ -326,7 +326,7 @@ function ⊗(fc₁::FockCoupling, fc₂::FockCoupling)
     return FockCoupling(fc₁.value*fc₂.value, orbitals, spins, nambus)
 end
 function fockcouplingchoicerule(v₁, v₂, wildcards::Tuple{Vararg{Symbol}}, field::Symbol)
-    t₁, t₂ = convert(Tuple, v₁)==wildcards, convert(Tuple, v₂)==wildcards
+    t₁, t₂ = Tuple(v₁)==wildcards, Tuple(v₂)==wildcards
     @assert t₁||t₂ "fockcouplingchoicerule error: mismatched $field ($v₁ and $v₂)."
     return t₁ ? v₂ : v₁
 end
