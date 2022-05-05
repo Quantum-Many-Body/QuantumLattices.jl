@@ -4,6 +4,7 @@
 
 deps/deps.jl
 docs/build/
+test/*.png
 
 .ipynb_checkpoints/
 .vscode/

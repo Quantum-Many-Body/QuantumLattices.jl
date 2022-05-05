@@ -1,6 +1,7 @@
 using Test
 using Random: seed!
 using StaticArrays: SVector
+using Plots: plot, savefig
 using QuantumLattices.Essentials.Spatials
 using QuantumLattices.Essentials: dtype, kind, reset!
 using QuantumLattices.Essentials.QuantumNumbers: Momentum₁, Momentum₂, Momentum₃, AbelianNumbers
@@ -314,6 +315,13 @@ end
     emptybs = Bonds{(zerothbonds, insidebonds, acrossbonds), Lattice{2, PID}}((Point{2, PID, Float}[], Bond{2, PID, Float}[], Bond{2, PID, Float}[]))
     @test filter(bond->(dimension(bond) == 3), bs) == empty!(deepcopy(bs)) == empty(bs) == emptybs
     @test reset!(emptybs, lattice) == bs
+end
+
+@testset "plot" begin
+    lattice = Lattice(:Tuanzi, [Point(PID(1), (0.0, 0.0))], vectors=[[1.0, 0.0], [0.0, 1.0]], neighbors=2)
+    plt = plot(lattice)
+    display(plt)
+    savefig(plt, "Tuanzi.png")
 end
 
 @testset "Segment" begin
