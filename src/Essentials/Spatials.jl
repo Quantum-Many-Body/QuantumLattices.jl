@@ -1612,7 +1612,7 @@ struct BrillouinZone{K, P<:Momentum, S<:SVector} <: ReciprocalSpace{K, P}
     reciprocals::Vector{S}
     momenta::AbelianNumbers{P}
     function BrillouinZone{K}(reciprocals::AbstractVector, momenta::AbelianNumbers{<:Momentum}) where K
-        @assert isa(K, Symbol) || isa(K, Tuple{Symbol}) "BrillouinZone error: K must be a Symbol."
+        @assert isa(K, Symbol) "BrillouinZone error: K must be a Symbol."
         reciprocals = vectorconvert(reciprocals)
         new{K, eltype(momenta), eltype(reciprocals)}(reciprocals, momenta)
     end
@@ -1665,53 +1665,50 @@ A zone in the reciprocal space.
 """
 struct ReciprocalZone{K, S<:SVector, V<:Number} <: ReciprocalSpace{K, S}
     momenta::Vector{S}
+    reciprocals::Vector{S}
+    bounds::Vector{Segment{V}}
     volume::V
-    function ReciprocalZone{K}(momenta::AbstractVector, volume::Number) where K
-        @assert isa(K, Symbol) || isa(K, Tuple{Symbol}) "ReciprocalZone error: K must be a Symbol."
-        momenta = vectorconvert(momenta)
-        new{K, eltype(momenta), typeof(volume)}(momenta, volume)
+    function ReciprocalZone{K}(reciprocals::AbstractVector, bounds::Vector{<:Segment}) where K
+        @assert isa(K, Symbol) "ReciprocalZone error: K must be a Symbol."
+        @assert length(reciprocals)==length(bounds) "ReciprocalZone error: mismatched number of reciprocals and its boundaries."
+        reciprocals = vectorconvert(reciprocals)
+        momenta = zeros(SVector{length(eltype(reciprocals)), promote_type(eltype(eltype(reciprocals)), eltype(eltype(bounds)))}, prod(map(length, bounds)))
+        for (i, index) in enumerate(product(reverse(bounds)...))
+            index = reverse(index)
+            for j = 1:length(index)
+                momenta[i] += reciprocals[j]*index[j]
+            end
+        end
+        ratio = one(eltype(eltype(momenta)))
+        for i = 1:length(bounds)
+            ratio = ratio*(bounds[i].stop-bounds[i].start)
+        end
+        v = ratio*volume(reciprocals)
+        return new{K, eltype(momenta), typeof(v)}(momenta, reciprocals, bounds, v)
     end
 end
-@inline contentnames(::Type{<:ReciprocalZone}) = (:content, :volume)
+@inline contentnames(::Type{<:ReciprocalZone}) = (:content, :reciprocals, :bounds, :volume)
 @inline getcontent(rz::ReciprocalZone, ::Val{:content}) = rz.momenta
 
 """
-    ReciprocalZone(momenta::AbstractVector, volume::Number)
     ReciprocalZone(reciprocals::AbstractVector; length::Int=100)
     ReciprocalZone(reciprocals::AbstractVector, bounds::Segment...)
-    ReciprocalZone(reciprocals::AbstractVector, bounds::Tuple{Vararg{Segment}})
+    ReciprocalZone(reciprocals::AbstractVector, bounds::Union{Tuple{Vararg{Segment}}, Vector{<:Segment}})
 
-    ReciprocalZone{K}(momenta::AbstractVector, volume::Number) where K
     ReciprocalZone{K}(reciprocals::AbstractVector; length::Int=100) where K
     ReciprocalZone{K}(reciprocals::AbstractVector, bounds::Segment...) where K
-    ReciprocalZone{K}(reciprocals::AbstractVector, bounds::Tuple{Vararg{Segment}}) where K
+    ReciprocalZone{K}(reciprocals::AbstractVector, bounds::Union{Tuple{Vararg{Segment}}, Vector{<:Segment}}) where K
 
 Construct a rectangular zone in the reciprocal space.
 """
-@inline ReciprocalZone(momenta::AbstractVector, volume::Number) = ReciprocalZone{:k}(momenta, volume)
 @inline ReciprocalZone(reciprocals::AbstractVector; length::Int=100) = ReciprocalZone{:k}(vectorconvert(reciprocals); length=length)
 @inline ReciprocalZone(reciprocals::AbstractVector, bounds::Segment...) = ReciprocalZone{:k}(vectorconvert(reciprocals), bounds)
-@inline ReciprocalZone(reciprocals::AbstractVector, bounds::Tuple{Vararg{Segment}}) = ReciprocalZone{:k}(vectorconvert(reciprocals), bounds)
+@inline ReciprocalZone(reciprocals::AbstractVector, bounds::Union{Tuple{Vararg{Segment}}, Vector{<:Segment}}) = ReciprocalZone{:k}(vectorconvert(reciprocals), bounds)
 @inline function ReciprocalZone{K}(reciprocals::AbstractVector; length::Int=100) where K
     return ReciprocalZone{K}(vectorconvert(reciprocals), ntuple(i->Segment(-1//2, 1//2, length, ends=(true, false)), Base.length(reciprocals)))
 end
 @inline ReciprocalZone{K}(reciprocals::AbstractVector, bounds::Segment...) where K = ReciprocalZone{K}(vectorconvert(reciprocals), bounds)
-function ReciprocalZone{K}(reciprocals::AbstractVector, bounds::Tuple{Vararg{Segment}}) where K
-    @assert length(reciprocals)==length(bounds) "ReciprocalZone error: mismatched number of reciprocals and its boundaries."
-    reciprocals = vectorconvert(reciprocals)
-    momenta = zeros(SVector{length(eltype(reciprocals)), promote_type(eltype(eltype(reciprocals)), eltype(eltype(bounds)))}, prod(map(length, bounds)))
-    for (i, index) in enumerate(product(reverse(bounds)...))
-        index = reverse(index)
-        for j = 1:length(index)
-            momenta[i] += reciprocals[j]*index[j]
-        end
-    end
-    ratio = one(eltype(eltype(momenta)))
-    for i = 1:length(bounds)
-        ratio = ratio*(bounds[i].stop-bounds[i].start)
-    end
-    return ReciprocalZone{K}(momenta, ratio*volume(reciprocals))
-end
+@inline ReciprocalZone{K}(reciprocals::AbstractVector, bounds::Tuple{Vararg{Segment}}) where K = ReciprocalZone{K}(vectorconvert(reciprocals), collect(bounds))
 
 """
     ReciprocalZone(bz::BrillouinZone)
@@ -1730,7 +1727,7 @@ A path in the reciprocal space.
 struct ReciprocalPath{K, S<:SVector} <: ReciprocalSpace{K, S}
     momenta::Vector{S}
     function ReciprocalPath{K}(momenta::AbstractVector) where K
-        @assert isa(K, Symbol) || isa(K, Tuple{Symbol}) "ReciprocalPath error: K must be a Symbol."
+        @assert isa(K, Symbol) "ReciprocalPath error: K must be a Symbol."
         momenta = vectorconvert(momenta)
         new{K, eltype(momenta)}(momenta)
     end

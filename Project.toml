@@ -5,6 +5,7 @@ version = "0.8.14"
 
 [deps]
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
+DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 Formatting = "59287772-0a20-5a39-b81b-1366585eb4c0"
 LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"

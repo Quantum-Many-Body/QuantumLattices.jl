@@ -4,6 +4,7 @@ using Printf: @printf, @sprintf
 using StaticArrays: SVector
 using LaTeXStrings: latexstring
 using Serialization: serialize
+using DelimitedFiles: writedlm
 using TimerOutputs: TimerOutputs, TimerOutput, @timeit
 using RecipesBase: RecipesBase, @recipe, @series
 using ..QuantumOperators: Operator, Operators, Transformation, optype, idtype, identity
@@ -838,13 +839,29 @@ function (alg::Algorithm)(id::Symbol; info::Bool=true, parameters::Parameters=Pa
 end
 
 """
-    save(alg::Algorithm, assign::Assignment) -> Tuple{Algorithm, Assignment}
+    save(alg::Algorithm, assign::Assignment; delimited=false) -> Tuple{Algorithm, Assignment}
 
 Save the data of an assignment registered on an algorithm.
 """
-function save(alg::Algorithm, assign::Assignment)
-    serialize(@sprintf("%s/%s.dat", alg.dout, nameof(alg, assign)), data)
+@inline function save(alg::Algorithm, assign::Assignment; delimited=false)
+    filename = @sprintf("%s/%s.dat", alg.dout, nameof(alg, assign))
+    delimited ? save(filename, assign.data) : serialize(filename, data)
     return (alg, assign)
+end
+function save(filename::AbstractString, data::Tuple{AbstractVector, Union{AbstractVector, AbstractMatrix}})
+    open(filename, "w") do f
+        writedlm(f, [data[1] data[2]])
+    end
+end
+function save(filename::AbstractString, data::Tuple{AbstractVector, AbstractVector, Union{AbstractMatrix, AbstractArray{<:Any, 3}}})
+    open(filename, "w") do f
+        len = length(data[1])*length(data[2])
+        x = reshape(ones(length(data[2]))*data[1]', len)
+        y = reshape(data[2]*ones(length(data[1]))', len)
+        dim = ndims(data[3])==2 ? 1 : size(data[3])[3]
+        z = reshape(data[3], len, dim)
+        writedlm(f, [x y z])
+    end
 end
 
 """

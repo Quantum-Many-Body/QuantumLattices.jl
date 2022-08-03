@@ -54,6 +54,6 @@ export NID, Phonon, PhononCoupling, PhononKinetic, PhononPotential, PhononTerm
 
 # Essentials.Frameworks
 export Parameters, Boundary, Engine, AbstractGenerator, Formulation, Entry, CompositeGenerator, Generator, Image, Action, Assignment, Algorithm
-export prepare!, run!, rundependences!, plain
+export prepare!, run!, rundependences!, save, plain
 
 end

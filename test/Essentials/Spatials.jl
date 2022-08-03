@@ -381,18 +381,18 @@ end
 end
 
 @testset "ReciprocalZone" begin
-    @test contentnames(ReciprocalZone) == (:content, :volume)
+    @test contentnames(ReciprocalZone) == (:content, :reciprocals, :bounds, :volume)
 
     rz = ReciprocalZone([[1.0]], length=10)
     @test getcontent(rz, :content) == rz.momenta
-    @test rz == ReciprocalZone(rz.momenta, rz.volume)
     @test rz == ReciprocalZone([[1.0]], Segment(-1//2, 1//2, 10))
     @test rz == ReciprocalZone([[1.0]], (Segment(-1//2, 1//2, 10),))
+    @test rz == ReciprocalZone([[1.0]], [Segment(-1//2, 1//2, 10)])
 
     rz = ReciprocalZone{:q}([[1.0]], length=10)
-    @test rz == ReciprocalZone{:q}(rz.momenta, rz.volume)
     @test rz == ReciprocalZone{:q}([[1.0]], Segment(-1//2, 1//2, 10))
     @test rz == ReciprocalZone{:q}([[1.0]], (Segment(-1//2, 1//2, 10),))
+    @test rz == ReciprocalZone{:q}([[1.0]], [Segment(-1//2, 1//2, 10)])
 
     b₁, b₂, b₃ = [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]
     @test ReciprocalZone([b₁], Segment(-1, +1, 10)).volume == 2
