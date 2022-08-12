@@ -685,6 +685,7 @@ struct SID{S, O<:Union{Int, Symbol}, T<:Union{Char, Symbol}} <: SimpleIID
         new{S, typeof(orbital), typeof(tag)}(orbital, tag)
     end
 end
+@inline SID{S}(tag::Char) where S = SID{S}(1, tag)
 @inline Base.adjoint(sid::SID) = SID{totalspin(sid)}(sid.orbital, sidajointmap[sid.tag])
 Base.show(io::IO, sid::SID) = @printf io "SID{%s}(%s)" totalspin(sid) join(map(repr, ntuple(i->getfield(sid, i), Val(fieldcount(typeof(sid))))), ", ")
 @inline @generated function Base.replace(sid::SID; kwargs...)
