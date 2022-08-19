@@ -736,11 +736,11 @@ LaTeX string representation of an operator unit.
 end
 
 """
-    latexstring(opt::Operator) -> String
+    latexstring(opt::OperatorPack) -> String
 
 Get the string representation of an operator in the LaTeX format.
 """
-function latexstring(opt::Operator)
+function latexstring(opt::OperatorPack)
     rank(opt)==0 && return replace(valuetolatextext(value(opt)), " "=>"")
     poses = Int[]
     push!(poses, 1)
@@ -781,11 +781,11 @@ function valuetolatextext(value)
 end
 
 """
-    latexstring(opts::Operators) -> String
+    latexstring(opts::OperatorSum) -> String
 
 Get the string representation of a set of operators in the LaTeX format.
 """
-function latexstring(opts::Operators)
+function latexstring(opts::OperatorSum)
     result = String[]
     for (i, opt) in enumerate(values(opts))
         rep = latexstring(opt)
