@@ -12,7 +12,7 @@ using ..DegreesOfFreedom: Coupling, Couplings, @couplings, couplinginternals, Te
 using ...Essentials: kind, dtype
 using ...Interfaces: decompose, dimension
 using ...Prerequisites: Float, atol, rtol, delta, decimaltostr, concatenate
-using ...Prerequisites.Traits: rawtype, getcontent
+using ...Prerequisites.Traits: efficientoperations, rawtype, getcontent
 using ...Prerequisites.VectorSpaces: VectorSpace, VectorSpaceStyle, VectorSpaceCartesian
 
 import ..QuantumOperators: script, latexname, ishermitian, optype
@@ -69,6 +69,8 @@ struct FID{T, O<:Union{Int, Symbol}, S<:Union{Int, Symbol}, N<:Union{Int, Symbol
         new{T, typeof(orbital), typeof(spin), typeof(nambu)}(orbital, spin, nambu)
     end
 end
+@inline Base.:(==)(fid₁::FID, fid₂::FID) = statistics(fid₁)==statistics(fid₂) && ==(efficientoperations, fid₁, fid₂)
+@inline Base.isequal(fid₁::FID, fid₂::FID) = isequal(statistics(fid₁), statistics(fid₂)) && isequal(efficientoperations, fid₁, fid₂)
 Base.show(io::IO, fid::FID) = @printf io "FID{%s}(%s)" repr(statistics(fid)) join(ntuple(i->getfield(fid, i), Val(fieldcount(typeof(fid)))), ", ")
 @inline Base.adjoint(fid::FID{T, <:Union{Int, Symbol}, <:Union{Int, Symbol}, Int}) where T = FID{T}(fid.orbital, fid.spin, fid.nambu==0 ? 0 : 3-fid.nambu)
 @inline @generated function Base.replace(fid::FID; kwargs...)
@@ -686,6 +688,8 @@ struct SID{S, O<:Union{Int, Symbol}, T<:Union{Char, Symbol}} <: SimpleIID
     end
 end
 @inline SID{S}(tag::Char) where S = SID{S}(1, tag)
+@inline Base.:(==)(sid₁::SID, sid₂::SID) = totalspin(sid₁)==totalspin(sid₂) && ==(efficientoperations, sid₁, sid₂)
+@inline Base.isequal(sid₁::SID, sid₂::SID) = isequal(totalspin(sid₁), totalspin(sid₂)) && isequal(efficientoperations, sid₁, sid₂)
 @inline Base.adjoint(sid::SID) = SID{totalspin(sid)}(sid.orbital, sidajointmap[sid.tag])
 Base.show(io::IO, sid::SID) = @printf io "SID{%s}(%s)" totalspin(sid) join(map(repr, ntuple(i->getfield(sid, i), Val(fieldcount(typeof(sid))))), ", ")
 @inline @generated function Base.replace(sid::SID; kwargs...)

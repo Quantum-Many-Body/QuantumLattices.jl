@@ -22,6 +22,10 @@ using QuantumLattices.Prerequisites.VectorSpaces: shape
     @test string(fid) == "FID{:b}(1, 1, 0)"
     @test statistics(fid) == statistics(typeof(fid)) == :b
     @test fid' == fid
+
+    @test FID{:f}(1, 1, 1)≠FID{:b}(1, 1, 1)
+    @test isequal(FID{:f}(1, 1, 1), FID{:f}(1, 1, 1))
+    @test !isequal(FID{:f}(1, 1, 1), FID{:b}(1, 1, 1))
 end
 
 @testset "Fock" begin
@@ -529,6 +533,10 @@ end
     @test replace(sid, tag='z') == SID{3//2}('z')
     @test totalspin(sid) == totalspin(typeof(sid)) == 3//2
     @test statistics(sid) == statistics(typeof(sid)) == :b
+
+    @test SID{1//2}('z')≠SID{3//2}('z')
+    @test isequal(SID{1//2}('z'), SID{1//2}('z'))
+    @test !isequal(SID{1//2}('z'), SID{3//2}('z'))
 end
 
 @testset "Matrix" begin
