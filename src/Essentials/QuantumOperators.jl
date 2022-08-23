@@ -381,8 +381,6 @@ end
 @inline Base.setindex!(ms::OperatorSum, m::OperatorPack, id::ID{OperatorUnit}) = (ms.contents[id] = m; m)
 @inline Base.empty(ms::OperatorSum) = OperatorSum(empty(ms.contents))
 @inline Base.empty!(ms::OperatorSum) = (empty!(ms.contents); ms)
-@inline Base.merge(ms::OperatorSum, another::OperatorSum) = OperatorSum(merge(ms.contents, another.contents))
-@inline Base.merge!(ms::OperatorSum, another::OperatorSum) = (merge!(ms.contents, another.contents); ms)
 @inline function Base.promote_rule(::Type{MS₁}, ::Type{MS₂}) where {MS₁<:OperatorSum, MS₂<:OperatorSum}
     M = promote_type(eltype(MS₁), eltype(MS₂))
     return OperatorSum{M, idtype(M)}
