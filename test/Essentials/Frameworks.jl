@@ -66,6 +66,10 @@ end
     M = reparameter(typeof(op), :value, Complex{Float64})
     @test valtype(typeof(bound), typeof(op)) == M
     @test keys(bound) == keys(typeof(bound)) == (:θ₁, :θ₂)
+    @test bound == deepcopy(bound)
+    @test bound≠Boundary{(:ϕ₁, :ϕ₂)}(bound.values, bound.vectors)
+    @test isequal(bound, deepcopy(bound))
+    @test !isequal(bound, Boundary{(:ϕ₁, :ϕ₂)}(bound.values, bound.vectors))
     @test Parameters(bound) == (θ₁=0.1, θ₂=0.2)
 
     another = Boundary{(:θ₁, :θ₂)}([0.0, 0.0], [[2.0, 0.0], [0.0, 2.0]])
@@ -125,13 +129,24 @@ end
     @test entry == Entry((t, μ), bonds, hilbert; half=true, table=table, boundary=boundary)
     @test isequal(entry, i(entry))
     @test Parameters(entry) == (t=2.0, μ=1.0, θ=0.1)
+    @test entry+entry == entry*2 == 2*entry == Entry(tops₁*2, (μ=μops,), (t=tops₂, μ=Operators{optp}()), (t=4.0, μ=2.0), boundary)
     @test entry|>valtype == entry|>typeof|>valtype == Operators{optp, idtype(optp)}
     @test entry|>eltype == entry|>typeof|>eltype == optp
     @test expand(entry) == expand!(Operators{optp}(), entry) ≈ tops₁+tops₂*2.0+μops
 
+    entry₁ = Entry(tops₁, NamedTuple(), (t=tops₂,), (t=2.0,), boundary)
+    entry₂ = Entry(zero(tops₁), (μ=μops,), (μ=Operators{optp}(),), (μ=1.0,), boundary)
+    @test entry₁+entry₂ == Entry(tops₁, (μ=μops,), (t=tops₂, μ=Operators{optp}()), (t=2.0, μ=1.0), boundary)
+
+    μops₁ = expand(one(μ), bonds[1], hilbert, half=true, table=table)
+    μops₂ = expand(one(μ), bonds[2], hilbert, half=true, table=table)
+    entry₁ = Entry(zero(tops₁), (μ=μops₁,), (μ=Operators{optp}(),), (μ=1.0,), boundary)
+    entry₂ = Entry(zero(tops₁), (μ=μops₂,), (μ=Operators{optp}(),), (μ=1.0,), boundary)
+    @test entry₁*2+entry₂*2 == Entry(zero(tops₁), (μ=μops,), (μ=Operators{optp}(),), (μ=2.0,), boundary)
+    @test entry₁*2+entry₂*3 == Entry(zero(tops₁), (μ=μops₁*2+μops₂*3,), (μ=Operators{optp}(),), (μ=1.0,), boundary)
+
     another = Entry(empty(tops₁), (μ=empty(μops),), (t=empty(tops₂), μ=Operators{optp}()), (t=2.0, μ=1.0), boundary)
     @test empty(entry) == empty!(deepcopy(entry)) == another
-    @test merge!(deepcopy(another), entry) == merge(another, entry) == entry
 
     nb = update!(deepcopy(boundary); θ=0.5)
     another = Entry(tops₁, (μ=μops,), (t=nb(tops₂, origin=[0.1]), μ=Operators{optp}()), (t=2.0, μ=1.5), nb)

@@ -15,7 +15,7 @@ using ...Prerequisites.Traits: efficientoperations, reparameter, commontype
 
 import ...Interfaces: id, add!, expand, expand!
 import ...Essentials: update, update!, reset!
-import ...Prerequisites.Traits: contentnames, getcontent
+import ...Prerequisites.Traits: efficientoperations, contentnames, getcontent
 
 export Parameters, Boundary, plain
 export Engine, AbstractGenerator, Formulation, Entry, CompositeGenerator, Generator, Image, Action, Assignment, Algorithm
@@ -60,6 +60,8 @@ struct Boundary{Names, D<:Number, V<:AbstractVector} <: Transformation
         new{Names, datatype, eltype(vectors)}(convert(Vector{datatype}, values), vectors)
     end
 end
+@inline Base.:(==)(bound₁::Boundary, bound₂::Boundary) = keys(bound₁)==keys(bound₂) && ==(efficientoperations, bound₁, bound₂)
+@inline Base.isequal(bound₁::Boundary, bound₂::Boundary) = isequal(keys(bound₁), keys(bound₂)) && isequal(efficientoperations, bound₁, bound₂)
 @inline Base.valtype(::Type{<:Boundary}, M::Type{<:Operator}) = reparameter(M, :value, promote_type(Complex{Int}, valtype(M)))
 @inline Base.valtype(B::Type{<:Boundary}, MS::Type{<:Operators}) = (M = valtype(B, eltype(MS)); Operators{M, idtype(M)})
 
@@ -241,6 +243,56 @@ end
 end
 
 """
+    *(entry::Entry, factor) -> Entry
+    *(factor, entry::Entry) -> Entry
+
+Multiply an entry of quantum operators with a factor.
+"""
+@inline Base.:*(entry::Entry, factor) = factor * entry
+@inline function Base.:*(factor, entry::Entry)
+    parameters = NamedTuple{keys(entry.parameters)}(map(value->factor*value, values(entry.parameters)))
+    return Entry(factor*entry.constops, entry.alterops, entry.boundops, parameters, entry.boundary)
+end
+
+"""
+    +(entry₁::Entry, entry₂::Entry) -> Entry
+
+Addition of two entries of quantum operators.
+"""
+function Base.:+(entry₁::Entry, entry₂::Entry)
+    @assert entry₁.boundary==entry₂.boundary "+ error: in order to be added, two entries must share the same boundary condition (including the twist angles at the boundary)."
+    constops = entry₁.constops + entry₂.constops
+    alls, allshares = totalkeys(entry₁.parameters, entry₂.parameters), sharedkeys(entry₁.parameters, entry₂.parameters)
+    allmatches = NamedTuple{keymaps(allshares)}(map(key->opsmatch(entry₁.alterops, entry₂.alterops, key) && opsmatch(entry₁.boundops, entry₂.boundops, key), allshares))
+    parameters = NamedTuple{keymaps(alls)}(map(key->combinevalue(entry₁.parameters, entry₂.parameters, allmatches, key), alls))
+    alteralls, altershares = totalkeys(entry₁.alterops, entry₂.alterops), sharedkeys(entry₁.alterops, entry₂.alterops)
+    boundalls, boundshares = totalkeys(entry₁.boundops, entry₂.boundops), sharedkeys(entry₁.boundops, entry₂.boundops)
+    altermatches = NamedTuple{keymaps(altershares)}(map(((::Val{key}) where key)->getfield(allmatches, key), altershares))
+    boundmatches = NamedTuple{keymaps(boundshares)}(map(((::Val{key}) where key)->getfield(allmatches, key), boundshares))
+    alterops = NamedTuple{keymaps(alteralls)}(map(key->combineops(entry₁.alterops, entry₁.parameters, entry₂.alterops, entry₂.parameters, altermatches, key), alteralls))
+    boundops = NamedTuple{keymaps(boundalls)}(map(key->combineops(entry₁.boundops, entry₁.parameters, entry₂.boundops, entry₂.parameters, boundmatches, key), boundalls))
+    return Entry(constops, alterops, boundops, parameters, deepcopy(entry₁.boundary))
+end
+@inline keymaps(keys) = map(((::Val{key}) where key)->key, keys)
+@generated totalkeys(content₁::NamedTuple, content₂::NamedTuple) = map(Val, Tuple(unique((fieldnames(content₁)..., fieldnames(content₂)...))))
+@generated sharedkeys(content₁::NamedTuple, content₂::NamedTuple) = map(Val, Tuple(intersect(fieldnames(content₁), fieldnames(content₂))))
+@inline opsmatch(ops₁::NamedTuple, ops₂::NamedTuple, ::Val{key}) where key = opsmatch(get(ops₁, key, nothing), get(ops₂, key, nothing))
+@inline opsmatch(ops₁, ops₂) = ops₁==ops₂ || zero(ops₁)==ops₁ || zero(ops₂)==ops₂
+@inline opsmatch(ops, ::Nothing) = true
+@inline opsmatch(::Nothing, ops) = true
+@inline opsmatch(::Nothing, ::Nothing) = true
+@inline combinevalue(params₁::Parameters, params₂::Parameters, matches::NamedTuple, ::Val{key}) where key = combinevalue(get(params₁, key, nothing), get(params₂, key, nothing), get(matches, key, nothing))
+@inline combinevalue(value₁, value₂, flag::Bool) = flag ? value₁+value₂ : value₁==value₂ ? value₁ : promote(one(value₁), one(value₂))[1]
+@inline combinevalue(value, ::Nothing, ::Nothing) = value
+@inline combinevalue(::Nothing, value, ::Nothing) = value
+@inline function combineops(ops₁::NamedTuple, params₁::Parameters, ops₂::NamedTuple, params₂::Parameters, matches::NamedTuple, ::Val{key}) where key
+    combineops(get(ops₁, key, nothing), get(params₁, key, nothing), get(ops₂, key, nothing), get(params₂, key, nothing), get(matches, key, nothing))
+end
+@inline combineops(ops₁, value₁, ops₂, value₂, flag::Bool) = flag ? deepcopy(ops₁) : value₁==value₂ ? ops₁+ops₂ : ops₁*value₁+ops₂*value₂
+@inline combineops(ops, value, ::Nothing, ::Nothing, ::Nothing) = deepcopy(ops)
+@inline combineops(::Nothing, ::Nothing, ops, value, ::Nothing) = deepcopy(ops)
+
+"""
     (transformation::Transformation)(entry::Entry; kwargs...) -> Entry
 
 Get the transformed entry of (representations of) quantum operators.
@@ -337,27 +389,6 @@ end
     empty!(entry.constops)
     map(empty!, values(entry.alterops))
     map(empty!, values(entry.boundops))
-    return entry
-end
-
-"""
-    merge(entry::Entry, another::Entry) -> Entry
-    merge!(entry::Entry, another::Entry) -> Entry
-
-1) Get a new entry of (representations of) quantum operators by merging two.
-2) Merge an entry of (representations of) quantum operators by another one.
-"""
-@inline Base.merge(entry::Entry, another::Entry) = merge!(empty(entry), another)
-function Base.merge!(entry::Entry, another::Entry)
-    merge!(entry.constops, another.constops)
-    for name in fieldnames(typeof(entry.alterops))
-        merge!(getfield(entry.alterops, name), getfield(another.alterops, name))
-    end
-    for name in fieldnames(typeof(entry.boundops))
-        merge!(getfield(entry.boundops, name), getfield(another.boundops, name))
-    end
-    entry.parameters = another.parameters
-    merge!(entry.boundary, another.boundary)
     return entry
 end
 
