@@ -876,7 +876,7 @@ Save the data of an assignment registered on an algorithm.
 """
 @inline function save(alg::Algorithm, assign::Assignment; delimited=false)
     filename = @sprintf("%s/%s.dat", alg.dout, nameof(alg, assign))
-    delimited ? save(filename, assign.data) : serialize(filename, data)
+    delimited ? save(filename, assign.data) : serialize(filename, assign.data)
     return (alg, assign)
 end
 function save(filename::AbstractString, data::Tuple{AbstractVector, Union{AbstractVector, AbstractMatrix}})
