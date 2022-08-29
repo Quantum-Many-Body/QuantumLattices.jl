@@ -2,18 +2,17 @@ module QuantumOperators
 
 using Printf: @printf, @sprintf
 using ...Prerequisites: atol, rtol, decimaltostr
-using ...Prerequisites.Traits: efficientoperations, getcontent, contentorder
-using ...Prerequisites.Traits: rawtype, fulltype, parametertype, parameterpairs, reparameter, promoteparameters
+using ...Prerequisites.Traits: efficientoperations, contentorder, fulltype, getcontent, parameterpairs, parametertype, promoteparameters, rawtype, reparameter
 
 import LaTeXStrings: latexstring
 import LinearAlgebra: ishermitian
 import ..Essentials: dtype
-import ...Interfaces: id, value, rank, add!, sub!, mul!, div!, ⊗, ⋅, permute
+import ...Interfaces: ⊗, ⋅, add!, div!, id, mul!, permute, rank, sub!, value
 import ...Prerequisites.Traits: contentnames, dissolve, isparameterbound, parameternames
 
-export QuantumOperator, OperatorUnit, ID, OperatorPack, OperatorProd, OperatorSum, Operator, Operators, LaTeX
-export Transformation, Identity, Numericalization, MatrixRepresentation, Permutation, AbstractSubstitution, AbstractUnitSubstitution, UnitSubstitution, RankFilter
-export ishermitian, idtype, optype, sequence, latexname, latexformat, superscript, subscript, script, matrix, matrix!
+export ID, Operator, OperatorPack, OperatorProd, Operators, OperatorSum, OperatorUnit, LaTeX, QuantumOperator
+export AbstractSubstitution, AbstractUnitSubstitution, Identity, MatrixRepresentation, Numericalization, Permutation, RankFilter, Transformation, UnitSubstitution
+export idtype, ishermitian, latexname, latexformat, matrix, matrix!, optype, script, sequence, subscript, superscript
 
 # Generic quantum operator
 """

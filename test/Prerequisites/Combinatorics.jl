@@ -1,4 +1,3 @@
-using Test
 using QuantumLattices.Prerequisites.Combinatorics
 
 @testset "Combinations" begin

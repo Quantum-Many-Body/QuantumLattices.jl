@@ -3,28 +3,29 @@ module DegreesOfFreedom
 using MacroTools: @capture
 using Printf: @printf, @sprintf
 using StaticArrays: SVector
-using ..QuantumOperators: OperatorUnit, ID, OperatorPack, OperatorSum, Operator, Operators, valuetolatextext, idtype
-using ..Spatials: AbstractPID, AbstractBond, Point, Bonds, pidtype
+using ..QuantumOperators: ID, Operator, OperatorPack, Operators, OperatorSum, OperatorUnit, Transformation, idtype, valuetolatextext
+using ..Spatials: Bond, Point
 using ...Essentials: dtype
-using ...Interfaces: decompose, dimension, add!
-using ...Prerequisites: Float, atol, rtol, decimaltostr, concatenate
-using ...Prerequisites.Traits: rawtype, fulltype, efficientoperations, commontype, parametertype
+using ...Interfaces: add!, decompose, dimension
+using ...Prerequisites: atol, rtol, Float, decimaltostr
+using ...Prerequisites.Traits: efficientoperations, commontype, fulltype, parametertype, rawtype, reparameter
 using ...Prerequisites.CompositeStructures: CompositeDict, CompositeTuple, NamedContainer
-using ...Prerequisites.VectorSpaces: VectorSpace, VectorSpaceStyle, VectorSpaceCartesian, VectorSpaceDirectSummed, VectorSpaceDirectProducted
+using ...Prerequisites.VectorSpaces: VectorSpace, VectorSpaceCartesian, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceStyle
 
 import LinearAlgebra: ishermitian
-import ..QuantumOperators: script, optype
-import ..Spatials: pidtype, rcoord, icoord
+import ..QuantumOperators: optype, script
+import ..Spatials: icoordinate, rcoordinate
 import ...Essentials: kind, reset!, update!
-import ...Interfaces: id, value, rank, expand, expand!, ⊗, ⊕
-import ...Prerequisites.Traits: parameternames, isparameterbound, contentnames, getcontent
+import ...Interfaces: ⊕, ⊗, expand, expand!, id, rank, value
+import ...Prerequisites.Traits: contentnames, getcontent, isparameterbound, parameternames
 
-export IID, SimpleIID, CompositeIID, Internal, SimpleInternal, CompositeInternal
-export AbstractOID, Index, CompositeOID, OID, statistics, iidtype, ishermitian, indextype, oidtype, Hilbert
-export IIDSpace, Subscript, Subscripts, @subscript_str, subscriptexpr, wildcard, diagonal, noconstrain
-export AbstractCoupling, Coupling, Couplings, couplingcenters, couplingpoints, couplinginternals, @couplings
-export Metric, OIDToTuple, Table
-export TermFunction, TermAmplitude, TermCouplings, TermModulate, Term, ismodulatable, abbr
+export CompositeIID, CompositeInternal, IID, Internal, SimpleIID, SimpleInternal
+export AbstractCompositeIndex, CompositeIndex, Hilbert, Index, iidtype, indextype, ishermitian, statistics
+export wildcard, IIDSpace, Subscript, Subscripts, diagonal, noconstrain, subscriptexpr, @subscript_str
+export AbstractCoupling, Coupling, Couplings, couplingcenters, couplinginternals, couplingpoints, @couplings
+export Metric, OperatorUnitToTuple, Table
+export Term, TermAmplitude, TermCouplings, TermFunction, TermModulate, ismodulatable
+export Boundary, plain
 
 # IID and Internal
 """
@@ -258,35 +259,18 @@ Filter the type of a composite internal space and select those that matches `I` 
     return Expr(:curly, :CompositeInternal, QuoteNode(K), Expr(:curly, :Tuple, exprs...))
 end
 
-# OID
+# Index and CompositeIndex
 """
-    AbstractOID <: OperatorUnit
-
-Abstract type of operator id.
-"""
-abstract type AbstractOID <: OperatorUnit end
-
-"""
-    Index{P<:AbstractPID, I<:SimpleIID} <: AbstractOID
+    Index{I<:SimpleIID} <: OperatorUnit
 
 The index of a degree of freedom, which consist of the spatial part and the internal part.
 """
-struct Index{P<:AbstractPID, I<:SimpleIID} <: AbstractOID
-    pid::P
+struct Index{I<:SimpleIID} <: OperatorUnit
+    site::Int
     iid::I
 end
-@inline parameternames(::Type{<:Index}) = (:pid, :iid)
-@inline isparameterbound(::Type{<:Index}, ::Val{:pid}, ::Type{P}) where {P<:AbstractPID} = !isconcretetype(P)
+@inline parameternames(::Type{<:Index}) = (:iid,)
 @inline isparameterbound(::Type{<:Index}, ::Val{:iid}, ::Type{I}) where {I<:SimpleIID} = !isconcretetype(I)
-
-"""
-    pidtype(index::Index)
-    pidtype(::Type{I}) where {I<:Index}
-
-Get the type of the spatial part of an index.
-"""
-@inline pidtype(index::Index) = pidtype(typeof(index))
-@inline pidtype(::Type{I}) where {I<:Index} = parametertype(I, 1)
 
 """
     iidtype(index::Index)
@@ -295,156 +279,156 @@ Get the type of the spatial part of an index.
 Get the type of the internal part of an index.
 """
 @inline iidtype(index::Index) = iidtype(typeof(index))
-@inline iidtype(::Type{I}) where {I<:Index} = parametertype(I, 2)
+@inline iidtype(::Type{I}) where {I<:Index} = parametertype(I, 1)
 
 """
     statistics(index::Index) -> Symbol
-    statistics(::Type{<:Index{<:AbstractPID, I}}) where {I<:SimpleIID} -> Symbol
+    statistics(::Type{<:Index{I}}) where {I<:SimpleIID} -> Symbol
 
 Get the statistics of an index.
 """
 @inline statistics(index::Index) = statistics(typeof(index))
-@inline statistics(::Type{<:Index{<:AbstractPID, I}}) where {I<:SimpleIID} = statistics(I)
+@inline statistics(::Type{<:Index{I}}) where {I<:SimpleIID} = statistics(I)
 
 """
     adjoint(index::Index) -> typeof(index)
 
 Get the adjoint of an index.
 """
-@inline Base.adjoint(index::Index) = rawtype(typeof(index))(index.pid, adjoint(index.iid))
+@inline Base.adjoint(index::Index) = rawtype(typeof(index))(index.site, adjoint(index.iid))
 
 """
-    CompositeOID{I<:Index} <: AbstractOID
+    AbstractCompositeIndex{I<:Index} <: OperatorUnit
 
-The abstract type of composite operator id.
+The abstract type of a composite index.
 """
-abstract type CompositeOID{I<:Index} <: AbstractOID end
-@inline contentnames(::Type{<:CompositeOID}) = (:index,)
-@inline parameternames(::Type{<:CompositeOID}) = (:index,)
-@inline isparameterbound(::Type{<:CompositeOID}, ::Val{:index}, ::Type{I}) where {I<:Index} = !isconcretetype(I)
-
-"""
-    indextype(::CompositeOID)
-    indextype(::Type{<:CompositeOID})
-
-Get the index type of a composite operator id.
-"""
-@inline indextype(oid::CompositeOID) = indextype(typeof(oid))
-@inline @generated indextype(::Type{I}) where {I<:CompositeOID} = parametertype(supertype(I, :CompositeOID), :index)
+abstract type AbstractCompositeIndex{I<:Index} <: OperatorUnit end
+@inline contentnames(::Type{<:AbstractCompositeIndex}) = (:index,)
+@inline parameternames(::Type{<:AbstractCompositeIndex}) = (:index,)
+@inline isparameterbound(::Type{<:AbstractCompositeIndex}, ::Val{:index}, ::Type{I}) where {I<:Index} = !isconcretetype(I)
 
 """
-    statistics(oid::CompositeOID) -> Symbol
-    statistics(::Type{<:CompositeOID{I}}) where {I<:Index} -> Symbol
+    indextype(::AbstractCompositeIndex)
+    indextype(::Type{<:AbstractCompositeIndex})
+
+Get the index type of a composite index.
+"""
+@inline indextype(index::AbstractCompositeIndex) = indextype(typeof(index))
+@inline @generated indextype(::Type{I}) where {I<:AbstractCompositeIndex} = parametertype(supertype(I, :AbstractCompositeIndex), :index)
+
+"""
+    statistics(index::AbstractCompositeIndex) -> Symbol
+    statistics(::Type{<:AbstractCompositeIndex{I}}) where {I<:Index} -> Symbol
 
 Get the statistics of a composite operator id.
 """
-@inline statistics(oid::CompositeOID) = statistics(typeof(oid))
-@inline statistics(::Type{<:CompositeOID{I}}) where {I<:Index} = statistics(I)
+@inline statistics(index::AbstractCompositeIndex) = statistics(typeof(index))
+@inline statistics(::Type{<:AbstractCompositeIndex{I}}) where {I<:Index} = statistics(I)
 
 """
-    OID{I<:Index, V<:SVector} <: CompositeOID{I}
+    CompositeIndex{I<:Index, V<:SVector} <: AbstractCompositeIndex{I}
 
-Operator id.
+Composite index of a quantum operator.
 """
-struct OID{I<:Index, V<:SVector} <: CompositeOID{I}
+struct CompositeIndex{I<:Index, V<:SVector} <: AbstractCompositeIndex{I}
     index::I
-    rcoord::V
-    icoord::V
-    OID(index::Index, rcoord::V, icoord::V) where {V<:SVector} = new{typeof(index), V}(index, oidcoord(rcoord), oidcoord(icoord))
+    rcoordinate::V
+    icoordinate::V
+    CompositeIndex(index::Index, rcoordinate::V, icoordinate::V) where {V<:SVector} = new{typeof(index), V}(index, compositeindexcoordinate(rcoordinate), compositeindexcoordinate(icoordinate))
 end
-@inline contentnames(::Type{<:OID}) = (:index, :rcoord, :icoord)
-@inline parameternames(::Type{<:OID}) = (:index, :coord)
-@inline isparameterbound(::Type{<:OID}, ::Val{:coord}, ::Type{V}) where {V<:SVector} = !isconcretetype(V)
-@inline Base.hash(oid::OID, h::UInt) = hash((oid.index, Tuple(oid.rcoord)), h)
-@inline Base.propertynames(::ID{OID}) = (:indexes, :rcoords, :icoords)
-@inline Base.show(io::IO, oid::OID) = @printf io "OID(%s, %s, %s)" oid.index oid.rcoord oid.icoord
-@inline oidcoord(vector::SVector) = vector
-@inline oidcoord(vector::SVector{N, Float}) where N = SVector(ntuple(i->vector[i]===-0.0 ? 0.0 : vector[i], Val(N)))
+@inline contentnames(::Type{<:CompositeIndex}) = (:index, :rcoordinate, :icoordinate)
+@inline parameternames(::Type{<:CompositeIndex}) = (:index, :coordination)
+@inline isparameterbound(::Type{<:CompositeIndex}, ::Val{:coordination}, ::Type{V}) where {V<:SVector} = !isconcretetype(V)
+@inline Base.hash(index::CompositeIndex, h::UInt) = hash((index.index, Tuple(index.rcoordinate)), h)
+@inline Base.propertynames(::ID{CompositeIndex}) = (:indexes, :rcoordinates, :icoordinates)
+@inline Base.show(io::IO, index::CompositeIndex) = @printf io "CompositeIndex(%s, %s, %s)" index.index index.rcoordinate index.icoordinate
+@inline compositeindexcoordinate(vector::SVector) = vector
+@inline compositeindexcoordinate(vector::SVector{N, Float}) where N = SVector(ntuple(i->vector[i]===-0.0 ? 0.0 : vector[i], Val(N)))
 
 """
-    OID(index::Index, rcoord, icoord)
-    OID(index::Index; rcoord, icoord)
+    CompositeIndex(index::Index, rcoordinate, icoordinate)
+    CompositeIndex(index::Index; rcoordinate, icoordinate)
 
 Construct an operator id.
 """
-@inline OID(index::Index, rcoord, icoord) = OID(index, SVector{length(rcoord)}(rcoord), SVector{length(icoord)}(icoord))
-@inline OID(index::Index; rcoord, icoord) = OID(index, rcoord, icoord)
+@inline CompositeIndex(index::Index, rcoordinate, icoordinate) = CompositeIndex(index, SVector{length(rcoordinate)}(rcoordinate), SVector{length(icoordinate)}(icoordinate))
+@inline CompositeIndex(index::Index; rcoordinate, icoordinate) = CompositeIndex(index, rcoordinate, icoordinate)
 
 """
-    adjoint(oid::OID) -> typeof(oid)
+    adjoint(index::CompositeIndex) -> typeof(index)
 
 Get the adjoint of an operator id.
 """
-@inline Base.adjoint(oid::OID) = OID(oid.index', oid.rcoord, oid.icoord)
+@inline Base.adjoint(index::CompositeIndex) = CompositeIndex(index.index', index.rcoordinate, index.icoordinate)
 
 """
-    oidtype(I::Type{<:SimpleInternal}, P::Type{<:Point}, ::Val)
+    indextype(I::Type{<:SimpleInternal}, P::Type{<:Point}, ::Val)
 
-Get the compatible oid type from the combination of the internal part and the spatial part.
+Get the compatible composite index type based on the information of its internal part.
 """
-@inline function oidtype(I::Type{<:SimpleInternal}, P::Type{<:Point}, ::Val)
-    fulltype(OID, NamedTuple{(:index, :coord), Tuple{fulltype(Index, NamedTuple{(:pid, :iid), Tuple{pidtype(P), eltype(I)}}), SVector{dimension(P), dtype(P)}}})
+@inline function indextype(I::Type{<:SimpleInternal}, P::Type{<:Point}, ::Val)
+    return fulltype(CompositeIndex, NamedTuple{(:index, :coordination), Tuple{fulltype(Index, NamedTuple{(:iid,), Tuple{eltype(I)}}), SVector{dimension(P), dtype(P)}}})
 end
 
 """
-    rcoord(opt::Operator{<:Number, <:ID{OID}}) -> SVector
+    rcoordinate(opt::Operator{<:Number, <:ID{CompositeIndex}}) -> SVector
 
-Get the whole rcoord of an operator.
+Get the whole rcoordinate of an operator.
 """
-@inline function rcoord(opt::Operator{<:Number, <:ID{OID}})
-    rank(opt)==1 && return id(opt)[1].rcoord
-    rank(opt)==2 && return id(opt)[1].rcoord-id(opt)[2].rcoord
-    error("rcoord error: not supported rank($(rank(opt))) of $(nameof(opt)).")
+@inline function rcoordinate(opt::Operator{<:Number, <:ID{CompositeIndex}})
+    rank(opt)==1 && return id(opt)[1].rcoordinate
+    rank(opt)==2 && return id(opt)[1].rcoordinate-id(opt)[2].rcoordinate
+    error("rcoordinate error: not supported rank($(rank(opt))) of $(nameof(opt)).")
 end
 
 """
-    icoord(opt::Operator{<:Number, <:ID{OID}}) -> SVector
+    icoordinate(opt::Operator{<:Number, <:ID{CompositeIndex}}) -> SVector
 
-Get the whole icoord of an operator.
+Get the whole icoordinate of an operator.
 """
-@inline function icoord(opt::Operator{<:Number, <:ID{OID}})
-    rank(opt)==1 && return id(opt)[1].icoord
-    rank(opt)==2 && return id(opt)[1].icoord-id(opt)[2].icoord
-    error("icoord error: not supported rank($(rank(opt))) of $(nameof(opt)).")
+@inline function icoordinate(opt::Operator{<:Number, <:ID{CompositeIndex}})
+    rank(opt)==1 && return id(opt)[1].icoordinate
+    rank(opt)==2 && return id(opt)[1].icoordinate-id(opt)[2].icoordinate
+    error("icoordinate error: not supported rank($(rank(opt))) of $(nameof(opt)).")
 end
 
 """
-    script(::Val{:rcoord}, oid::OID; kwargs...) -> String
-    script(::Val{:icoord}, oid::OID; kwargs...) -> String
+    script(::Val{:rcoordinate}, index::CompositeIndex; kwargs...) -> String
+    script(::Val{:icoordinate}, index::CompositeIndex; kwargs...) -> String
 
-Get the `:rcoord/:icoord` script of an oid.
+Get the `:rcoordinate/:icoordinate` script of a composite index.
 """
-@inline script(::Val{:rcoord}, oid::OID; kwargs...) = @sprintf "[%s]" join(valuetolatextext.(oid.rcoord), ", ")
-@inline script(::Val{:icoord}, oid::OID; kwargs...) = @sprintf "[%s]" join(valuetolatextext.(oid.icoord), ", ")
+@inline script(::Val{:rcoordinate}, index::CompositeIndex; kwargs...) = @sprintf "[%s]" join(valuetolatextext.(index.rcoordinate), ", ")
+@inline script(::Val{:icoordinate}, index::CompositeIndex; kwargs...) = @sprintf "[%s]" join(valuetolatextext.(index.icoordinate), ", ")
 
 """
-    script(::Val{:integralicoord}, oid::OID; vectors, kwargs...)
+    script(::Val{:integercoordinate}, index::CompositeIndex; vectors, kwargs...)
 
-Get the integral script of the icoord of an oid.
+Get the integral script of the icoordinate of an composite index.
 """
-function script(::Val{:integralicoord}, oid::OID; vectors, kwargs...)
-    rcoeff = decompose(oid.icoord, vectors...)
+function script(::Val{:integercoordinate}, index::CompositeIndex; vectors, kwargs...)
+    rcoeff = decompose(index.icoordinate, vectors...)
     icoeff = Int.(round.(rcoeff))
-    @assert isapprox(efficientoperations, rcoeff, icoeff) "script error: mismatched icoord of oid and input vectors."
+    @assert isapprox(efficientoperations, rcoeff, icoeff) "script error: mismatched icoordinate of the input composite index and vectors."
     return @sprintf "[%s]" join(icoeff, ", ")
 end
 
 """
-    script(::Val{attr}, oid::OID; kwargs...) where attr
+    script(::Val{attr}, index::CompositeIndex; kwargs...) where attr
 
-Get the `attr` script of an oid, which is contained in its index.
+Get the `attr` script of an index, which is contained in its index.
 """
-@inline script(::Val{attr}, oid::OID; kwargs...) where attr = script(Val(attr), oid.index; kwargs...)
+@inline script(::Val{attr}, index::CompositeIndex; kwargs...) where attr = script(Val(attr), index.index; kwargs...)
 
 # Hilbert
 """
-    Hilbert{I<:Internal, P<:AbstractPID} <: CompositeDict{P, I}
+    Hilbert{I<:Internal} <: CompositeDict{Int, I}
 
 Hilbert space at a lattice.
 """
-struct Hilbert{I<:Internal, P<:AbstractPID} <: CompositeDict{P, I}
+struct Hilbert{I<:Internal} <: CompositeDict{Int, I}
     map::Function
-    contents::Dict{P, I}
+    contents::Dict{Int, I}
 end
 @inline contentnames(::Type{<:Hilbert}) = (:map, :contents)
 
@@ -457,48 +441,41 @@ Construct a Hilbert space the same way as a Dict.
 @inline Hilbert(ps::Pair...) = Hilbert(ps)
 function Hilbert(kv)
     contents = Dict(kv)
-    map = pid -> contents[pid]
+    map = site->contents[site]
     return Hilbert(map, contents)
 end
 
 """
-    Hilbert(map::Function, pids::AbstractVector{<:AbstractPID})
+    Hilbert(map::Function, sites::AbstractVector{Int})
+    Hilbert{I}(map::Function, sites::AbstractVector{Int}) where {I<:Internal}
 
-Construct a Hilbert space from a function and a set of point ids.
+Construct a Hilbert space from a function and a set of sites.
 
-Here, `map` maps a `AbstractPID` to an `Internal`.
+Here, `map` maps an integer to an `Internal`.
 """
-@inline function Hilbert(map::Function, pids::AbstractVector{<:AbstractPID})
+@inline function Hilbert(map::Function, sites::AbstractVector{Int})
     I = commontype(map, Tuple{Vararg{Any}}, Internal)
-    return Hilbert{I}(map, pids)
+    return Hilbert{I}(map, sites)
 end
-
-"""
-    Hilbert{I}(map::Function, pids::AbstractVector{<:AbstractPID}) where {I<:Internal}
-
-Construct a Hilbert space from a function and a set of point ids.
-
-Here, `map` maps a `AbstractPID` to an `Internal`.
-"""
-function Hilbert{I}(map::Function, pids::AbstractVector{<:AbstractPID}) where {I<:Internal}
-    contents = Dict{pids|>eltype, I}()
-    for pid in pids
-        contents[pid] = map(pid)
+function Hilbert{I}(map::Function, sites::AbstractVector{Int}) where {I<:Internal}
+    contents = Dict{sites|>eltype, I}()
+    for site in sites
+        contents[site] = map(site)
     end
     return Hilbert(map, contents)
 end
 
 """
-    reset!(hilbert::Hilbert, pids) -> Hilbert
+    reset!(hilbert::Hilbert, sites::AbstractVector{Int}) -> Hilbert
 
-Reset the Hilbert space with new pids.
+Reset the Hilbert space with new sites.
 """
-function reset!(hilbert::Hilbert, pids)
+function reset!(hilbert::Hilbert, sites::AbstractVector{Int})
     empty!(hilbert)
-    for pid in pids
-        hilbert[pid] = hilbert.map(pid)::valtype(hilbert)
+    for site in sites
+        hilbert[site] = hilbert.map(site)::valtype(hilbert)
     end
-    hilbert
+    return hilbert
 end
 
 # Coupling and Couplings
@@ -760,61 +737,69 @@ abstract type AbstractCoupling{V, I<:ID{OperatorUnit}} <: OperatorPack{V, I} end
 @inline Subscripts(coupling::AbstractCoupling) = Subscripts()
 
 """
-    couplingcenters(coupling::AbstractCoupling, bond::AbstractBond, info::Val) -> NTuple{rank(coupling), Int}
+    couplingcenters(coupling::AbstractCoupling, bond::Bond, info::Val) -> NTuple{rank(coupling), Int}
 
 Get the acting centers of the coupling on a bond.
 """
-@inline couplingcenters(coupling::AbstractCoupling, point::Point, ::Val) = ntuple(i->1, Val(rank(coupling)))
+function couplingcenters(coupling::AbstractCoupling, bond::Bond, info::Val)
+    length(bond)==1 && return ntuple(i->1, Val(rank(coupling)))
+    length(bond)==2 && begin
+        rank(coupling)==2 && return (1, 2)
+        rank(coupling)==4 && return (1, 1, 2, 2)
+        error("couplingcenters error: not supported for a rank-$(rank(coupling)) coupling.")
+    end
+    error("couplingcenters error: not supported for a generic bond containing $(length(bond)) points.")
+end
 
 """
-    couplingpoints(coupling::AbstractCoupling, bond::AbstractBond, info::Val) -> NTuple{rank(coupling), eltype(bond)}
+    couplingpoints(coupling::AbstractCoupling, bond::Bond, info::Val) -> NTuple{rank(coupling), eltype(bond)}
 
 Get the points where each order of the coupling acts on.
 """
-@inline function couplingpoints(coupling::AbstractCoupling, bond::AbstractBond, info::Val)
+@inline function couplingpoints(coupling::AbstractCoupling, bond::Bond, info::Val)
     centers = couplingcenters(coupling, bond, info)
     return NTuple{rank(coupling), eltype(bond)}(bond[centers[i]] for i = 1:rank(coupling))
 end
 
 """
-    couplinginternals(coupling::AbstractCoupling, bond::AbstractBond, hilbert::Hilbert, info::Val) -> NTuple{rank(coupling), SimpleInternal}
+    couplinginternals(coupling::AbstractCoupling, bond::Bond, hilbert::Hilbert, info::Val) -> NTuple{rank(coupling), SimpleInternal}
 
 Get the internal spaces where each order of the coupling acts on.
 """
-@inline function couplinginternals(coupling::AbstractCoupling, bond::AbstractBond, hilbert::Hilbert, info::Val)
+@inline function couplinginternals(coupling::AbstractCoupling, bond::Bond, hilbert::Hilbert, info::Val)
     centers = couplingcenters(coupling, bond, info)
-    internals = ntuple(i->hilbert[bond[centers[i]].pid], Val(rank(coupling)))
+    internals = ntuple(i->hilbert[bond[centers[i]].site], Val(rank(coupling)))
     return map((iid, internal)->filter(iid, internal), ID{SimpleIID}(coupling), internals)
 end
 
 """
-    expand(coupling::AbstractCoupling, bond::AbstractBond, hilbert::Hilbert, info::Val)
+    expand(coupling::AbstractCoupling, bond::Bond, hilbert::Hilbert, info::Val)
 
 Expand a coupling with the given bond and Hilbert space.
 """
-function expand(coupling::AbstractCoupling, bond::AbstractBond, hilbert::Hilbert, info::Val)
+function expand(coupling::AbstractCoupling, bond::Bond, hilbert::Hilbert, info::Val)
     points = couplingpoints(coupling, bond, info)
     internals = couplinginternals(coupling, bond, hilbert, info)
     @assert rank(coupling)==length(points)==length(internals) "expand error: mismatched rank."
     return CExpand(value(coupling), points, IIDSpace(CompositeIID(ID{SimpleIID}(coupling)), CompositeInternal{:⊗}(internals), info), Subscripts(coupling))
 end
-struct CExpand{V, N, P<:AbstractPID, SV<:SVector, S<:IIDSpace, C<:Subscripts}
+struct CExpand{V, N, SV<:SVector, S<:IIDSpace, C<:Subscripts}
     value::V
-    pids::NTuple{N, P}
-    rcoords::NTuple{N, SV}
-    icoords::NTuple{N, SV}
+    sites::NTuple{N, Int}
+    rcoordinates::NTuple{N, SV}
+    icoordinates::NTuple{N, SV}
     iidspace::S
     subscripts::C
 end
 function CExpand(value, points::NTuple{N, P}, iidspace::IIDSpace, subscripts::Subscripts) where {N, P<:Point}
-    pids = NTuple{N, pidtype(P)}(points[i].pid for i = 1:N)
-    rcoords = NTuple{N, SVector{dimension(P), dtype(P)}}(points[i].rcoord for i = 1:N)
-    icoords = NTuple{N, SVector{dimension(P), dtype(P)}}(points[i].icoord for i = 1:N)
-    return CExpand(value, pids, rcoords, icoords, iidspace, subscripts)
+    sites = NTuple{N, Int}(points[i].site for i = 1:N)
+    rcoordinates = NTuple{N, SVector{dimension(P), dtype(P)}}(points[i].rcoordinate for i = 1:N)
+    icoordinates = NTuple{N, SVector{dimension(P), dtype(P)}}(points[i].icoordinate for i = 1:N)
+    return CExpand(value, sites, rcoordinates, icoordinates, iidspace, subscripts)
 end
 @inline Base.eltype(ex::CExpand) = eltype(typeof(ex))
-@inline @generated function Base.eltype(::Type{<:CExpand{V, N, P, SV, S}}) where {V, N, P<:AbstractPID, SV<:SVector, S<:IIDSpace}
-    return Operator{V, Tuple{map(I->OID{Index{P, I}, SV}, fieldtypes(fieldtype(eltype(S), :contents)))...}}
+@inline @generated function Base.eltype(::Type{<:CExpand{V, N, SV, S}}) where {V, N, SV<:SVector, S<:IIDSpace}
+    return Operator{V, Tuple{map(I->CompositeIndex{Index{I}, SV}, fieldtypes(fieldtype(eltype(S), :contents)))...}}
 end
 @inline Base.IteratorSize(::Type{<:CExpand}) = Base.SizeUnknown()
 function Base.iterate(ex::CExpand, state=iterate(ex.iidspace))
@@ -822,7 +807,7 @@ function Base.iterate(ex::CExpand, state=iterate(ex.iidspace))
     while !isnothing(state)
         ciid, state = state
         if match(ex.subscripts, ciid)
-            result = Operator(ex.value, ID(OID, ID(Index, ex.pids, ciid.contents), ex.rcoords, ex.icoords)), iterate(ex.iidspace, state)
+            result = Operator(ex.value, ID(CompositeIndex, ID(Index, ex.sites, ciid.contents), ex.rcoordinates, ex.icoordinates)), iterate(ex.iidspace, state)
             break
         else
             state = iterate(ex.iidspace, state)
@@ -838,19 +823,19 @@ The coupling intra/inter internal degrees of freedom at different lattice points
 """
 struct Coupling{V, I<:ID{SimpleIID}, C<:Subscripts} <: AbstractCoupling{V, Tuple{CompositeIID{I}, C}}
     value::V
-    cid::I
+    iids::I
     subscripts::C
-    function Coupling(value::Number, cid::ID{SimpleIID}, subscripts::Subscripts=Subscripts())
-        new{typeof(value), typeof(cid), typeof(subscripts)}(value, cid, subscripts)
+    function Coupling(value::Number, iids::ID{SimpleIID}, subscripts::Subscripts=Subscripts())
+        new{typeof(value), typeof(iids), typeof(subscripts)}(value, iids, subscripts)
     end
 end
-@inline parameternames(::Type{<:Coupling}) = (:value, :cid, :subscripts)
-@inline isparameterbound(::Type{<:Coupling}, ::Val{:cid}, ::Type{I}) where {I<:ID{SimpleIID}} = !isconcretetype(I)
+@inline parameternames(::Type{<:Coupling}) = (:value, :iids, :subscripts)
+@inline isparameterbound(::Type{<:Coupling}, ::Val{:iids}, ::Type{I}) where {I<:ID{SimpleIID}} = !isconcretetype(I)
 @inline isparameterbound(::Type{<:Coupling}, ::Val{:subscripts}, ::Type{C}) where {C<:Subscripts} = !isconcretetype(C)
-@inline getcontent(coupling::Coupling, ::Val{:id}) = ID(CompositeIID(coupling.cid), coupling.subscripts)
+@inline getcontent(coupling::Coupling, ::Val{:id}) = ID(CompositeIID(coupling.iids), coupling.subscripts)
 @inline rank(::Type{<:Coupling{V, I} where V}) where {I<:ID{SimpleIID}} = fieldcount(I)
 @inline Coupling(value::Number, id::Tuple{CompositeIID, Subscripts}) = Coupling(value, id[1].contents, id[2])
-@inline ID{SimpleIID}(coupling::Coupling) = coupling.cid
+@inline ID{SimpleIID}(coupling::Coupling) = coupling.iids
 @inline Subscripts(coupling::Coupling) = coupling.subscripts
 
 """
@@ -858,7 +843,7 @@ end
 
 Get the multiplication between two couplings.
 """
-@inline Base.:*(cp₁::Coupling, cp₂::Coupling) = Coupling(cp₁.value*cp₂.value, ID(cp₁.cid, cp₂.cid), cp₁.subscripts*cp₂.subscripts)
+@inline Base.:*(cp₁::Coupling, cp₂::Coupling) = Coupling(cp₁.value*cp₂.value, ID(cp₁.iids, cp₂.iids), cp₁.subscripts*cp₂.subscripts)
 
 """
     Couplings(cps::AbstractCoupling...)
@@ -878,65 +863,58 @@ Convert an expression/literal to a set of couplings.
 """
 macro couplings(cps) :(Couplings($(esc(cps)))) end
 
-# Metric
+# Metric and Table
 """
     Metric <: Function
 
-The rules for measuring a concrete oid so that oids can be compared.
+The rules for measuring an operator unit so that different operator units can be compared.
 
-As a function, every instance should accept only one positional argument, i.e. the concrete oid to be measured.
+As a function, every instance should accept only one positional argument, i.e. the operator unit to be measured.
 """
 abstract type Metric <: Function end
 @inline Base.:(==)(m₁::T, m₂::T) where {T<:Metric} = ==(efficientoperations, m₁, m₂)
 @inline Base.isequal(m₁::T, m₂::T) where {T<:Metric} = isequal(efficientoperations, m₁, m₂)
-@inline (M::Type{<:Metric})(::Type{I}) where {I<:CompositeOID} = M(indextype(I))
-@inline (metric::Metric)(oid::CompositeOID) = metric(getcontent(oid, :index))
-@inline Base.valtype(::Type{M}, ::Type{I}) where {M<:Metric, I<:CompositeOID} = valtype(M, indextype(I))
-@inline (M::Type{<:Metric})(::Type{H}) where {H<:Hilbert} = M(Index{H|>keytype, H|>valtype|>eltype})
+@inline (M::Type{<:Metric})(::Type{I}) where {I<:AbstractCompositeIndex} = M(indextype(I))
+@inline (metric::Metric)(index::AbstractCompositeIndex) = metric(getcontent(index, :index))
+@inline Base.valtype(::Type{M}, ::Type{I}) where {M<:Metric, I<:AbstractCompositeIndex} = valtype(M, indextype(I))
+@inline (M::Type{<:Metric})(::Type{H}) where {H<:Hilbert} = M(Index{H|>valtype|>eltype})
 
 """
-    OIDToTuple{Fields} <: Metric
+    OperatorUnitToTuple{Fields} <: Metric
 
-A rule that converts an oid to a tuple by iterating over a set of selected fields in a specific order.
+A rule that converts an operator unit to a tuple by iterating over a set of selected fields in a specific order.
 """
-struct OIDToTuple{Fields} <: Metric
-    OIDToTuple(fields::Tuple{Vararg{Symbol}}) = new{fields}()
+struct OperatorUnitToTuple{Fields} <: Metric
+    OperatorUnitToTuple(fields::Tuple{Vararg{Symbol}}) = new{fields}()
 end
-@inline OIDToTuple(fields::Symbol...) = OIDToTuple(fields)
+@inline OperatorUnitToTuple(fields::Symbol...) = OperatorUnitToTuple(fields)
 
 """
-    keys(::OIDToTuple{Fields}) where Fields -> Fields
-    keys(::Type{<:OIDToTuple{Fields}}) where Fields -> Fields
+    keys(::OperatorUnitToTuple{Fields}) where Fields -> Fields
+    keys(::Type{<:OperatorUnitToTuple{Fields}}) where Fields -> Fields
 
 Get the names of the selected fields.
 """
-@inline Base.keys(::OIDToTuple{Fields}) where Fields = Fields
-@inline Base.keys(::Type{<:OIDToTuple{Fields}}) where Fields = Fields
+@inline Base.keys(::OperatorUnitToTuple{Fields}) where Fields = Fields
+@inline Base.keys(::Type{<:OperatorUnitToTuple{Fields}}) where Fields = Fields
 
 """
-    filter(f::Function, oidtotuple::OIDToTuple) -> OIDToTuple
+    OperatorUnitToTuple(::Type{I}) where {I<:Index}
 
-Filter the selected fields.
+Construct the metric rule from the information of the `Index` type.
 """
-@inline Base.filter(f::Function, oidtotuple::OIDToTuple) = OIDToTuple(Tuple(field for field in keys(oidtotuple) if f(field)))
-
-"""
-    OIDToTuple(::Type{I}) where {I<:Index}
-
-Construct the conversion rule from the information of subtypes of `AbstractOID`.
-"""
-@inline OIDToTuple(::Type{I}) where {I<:Index} = OIDToTuple(fieldnames(pidtype(I))..., (fieldnames(iidtype(I)))...)
+@inline OperatorUnitToTuple(::Type{I}) where {I<:Index} = OperatorUnitToTuple(:site, (fieldnames(iidtype(I)))...)
 
 """
-    valtype(::Type{<:OIDToTuple}, ::Type{<:Index})
+    valtype(::Type{<:OperatorUnitToTuple}, ::Type{<:Index})
 
-Get the valtype of applying an `OIDToTuple` rule to a subtype of `AbstractOID`.
+Get the valtype of applying an `OperatorUnitToTuple` rule to an `Index`.
 """
-@inline @generated function Base.valtype(::Type{M}, ::Type{I}) where {M<:OIDToTuple, I<:Index}
+@inline @generated function Base.valtype(::Type{M}, ::Type{I}) where {M<:OperatorUnitToTuple, I<:Index}
     types = []
     for field in keys(M)
-        if hasfield(pidtype(I), field)
-            push!(types, fieldtype(pidtype(I), field))
+        if field==:site
+            push!(types, Int)
         elseif hasfield(iidtype(I), field)
             push!(types, fieldtype(iidtype(I), field))
         end
@@ -945,16 +923,16 @@ Get the valtype of applying an `OIDToTuple` rule to a subtype of `AbstractOID`.
 end
 
 """
-    (oidtotuple::OIDToTuple)(index::Index) -> Tuple
+    (operatorunittotuple::OperatorUnitToTuple)(index::Index) -> Tuple
 
-Convert a concrete oid to a tuple.
+Convert an index to a tuple.
 """
-@inline @generated function (oidtotuple::OIDToTuple)(index::Index)
+@inline @generated function (operatorunittotuple::OperatorUnitToTuple)(index::Index)
     exprs = []
-    for name in keys(oidtotuple)
+    for name in keys(operatorunittotuple)
         field = QuoteNode(name)
-        if hasfield(pidtype(index), name)
-            push!(exprs, :(getfield(index.pid, $field)))
+        if name==:site
+            push!(exprs, :(index.site))
         elseif hasfield(iidtype(index), name)
             push!(exprs, :(getfield(index.iid, $field)))
         end
@@ -965,51 +943,51 @@ end
 """
     Table{I, B<:Metric} <: CompositeDict{I, Int}
 
-The table of oid-sequence pairs.
+The table of operator unit vs. sequence pairs.
 """
 struct Table{I, B<:Metric} <: CompositeDict{I, Int}
     by::B
     contents::Dict{I, Int}
 end
 @inline contentnames(::Type{<:Table}) = (:by, :contents)
-@inline Table{I}(by::Metric) where {I<:AbstractOID} = Table(by, Dict{valtype(typeof(by), I), Int}())
+@inline Table{I}(by::Metric) where {I<:OperatorUnit} = Table(by, Dict{valtype(typeof(by), I), Int}())
 @inline vec2dict(vs::AbstractVector) = Dict{eltype(vs), Int}(v=>i for (i, v) in enumerate(vs))
 
 """
-    getindex(table::Table, oid::AbstractOID) -> Int
+    getindex(table::Table, operatorunit::OperatorUnit) -> Int
 
-Inquiry the sequence of an oid.
+Inquiry the sequence of an operator unit.
 """
-@inline Base.getindex(table::Table, oid::AbstractOID) = table[table.by(oid)]
-
-"""
-    haskey(table::Table, oid::AbstractOID) -> Bool
-    haskey(table::Table, id::ID{AbstractOID}) -> Tuple{Vararg{Bool}}
-
-Judge whether a single oid or a set of oids have been assigned with sequences in table.
-"""
-@inline Base.haskey(table::Table, oid::AbstractOID) = haskey(table, table.by(oid))
-@inline Base.haskey(table::Table, id::ID{AbstractOID}) = map(oid->haskey(table, oid), id)
+@inline Base.getindex(table::Table, operatorunit::OperatorUnit) = table[table.by(operatorunit)]
 
 """
-    Table(oids::AbstractVector{<:AbstractOID}, by::Metric=OIDToTuple(eltype(oids)))
+    haskey(table::Table, operatorunit::OperatorUnit) -> Bool
+    haskey(table::Table, operatorunits::ID{OperatorUnit}) -> Tuple{Vararg{Bool}}
 
-Convert a set of concrete oids to the corresponding table of oid-sequence pairs.
-
-The input oids are measured by the input `by` function with the duplicates removed. The resulting unique values are sorted, which determines the sequence of the input `oids`. Note that two oids have the same sequence if their converted values are equal to each other.
+Judge whether a single operator unit or a set of operator units have been assigned with sequences in table.
 """
-@inline Table(oids::AbstractVector{<:AbstractOID}, by::Metric=OIDToTuple(eltype(oids))) = Table(by, [by(oid) for oid in oids]|>unique!|>sort!|>vec2dict)
+@inline Base.haskey(table::Table, operatorunit::OperatorUnit) = haskey(table, table.by(operatorunit))
+@inline Base.haskey(table::Table, operatorunits::ID{OperatorUnit}) = map(operatorunit->haskey(table, operatorunit), operatorunits)
 
 """
-    Table(hilbert::Hilbert, by::Metric=OIDToTuple(typeof(hilbert))) -> Table
+    Table(operatorunits::AbstractVector{<:OperatorUnit}, by::Metric=OperatorUnitToTuple(eltype(operatorunits)))
 
-Get the oid-sequence table of a Hilbert space.
+Convert a set of operator units to the corresponding table of operator unit vs. sequence pairs.
+
+The input operator units are measured by the input `by` function with the duplicates removed. The resulting unique values are sorted, which determines the sequence of the input `operatorunits`. Note that two operator units have the same sequence if their converted values are equal to each other.
 """
-function Table(hilbert::Hilbert, by::Metric=OIDToTuple(typeof(hilbert)))
-    result = Index{hilbert|>keytype, hilbert|>valtype|>eltype}[]
-    for (pid, internal) in hilbert
+@inline Table(operatorunits::AbstractVector{<:OperatorUnit}, by::Metric=OperatorUnitToTuple(eltype(operatorunits))) = Table(by, [by(operatorunit) for operatorunit in operatorunits]|>unique!|>sort!|>vec2dict)
+
+"""
+    Table(hilbert::Hilbert, by::Metric=OperatorUnitToTuple(typeof(hilbert))) -> Table
+
+Get the index-sequence table of a Hilbert space.
+"""
+function Table(hilbert::Hilbert, by::Metric=OperatorUnitToTuple(typeof(hilbert)))
+    result = Index{hilbert|>valtype|>eltype}[]
+    for (site, internal) in hilbert
         for iid in internal
-            push!(result, (result|>eltype)(pid, iid))
+            push!(result, (result|>eltype)(site, iid))
         end
     end
     return Table(result, by)
@@ -1018,7 +996,7 @@ end
 """
     union(tables::Table...) -> Table
 
-Unite several oid-sequence tables.
+Unite several operator unit vs. sequence tables.
 """
 function Base.union(tables::Table...)
     @assert mapreduce(table->table.by, ==, tables) "union error: all input tables should have the same `by` attribute."
@@ -1032,13 +1010,13 @@ function Base.union(tables::Table...)
 end
 
 """
-    reset!(table::Table, oids::AbstractVector{<:AbstractOID}) -> Table
+    reset!(table::Table, operatorunits::AbstractVector{<:OperatorUnit}) -> Table
 
-Reset a table by a new set of oids.
+Reset a table by a new set of operatorunits.
 """
-function reset!(table::Table, oids::AbstractVector{<:AbstractOID})
+function reset!(table::Table, operatorunits::AbstractVector{<:OperatorUnit})
     empty!(table)
-    for (i, id) in enumerate([table.by(oid) for oid in oids]|>unique!|>sort!)
+    for (i, id) in enumerate([table.by(operatorunit) for operatorunit in operatorunits]|>unique!|>sort!)
         table[id] = i
     end
     return table
@@ -1050,13 +1028,13 @@ end
 Reset a table by a Hilbert space.
 """
 function reset!(table::Table, hilbert::Hilbert)
-    indices = Index{hilbert|>keytype, hilbert|>valtype|>eltype}[]
-    for (pid, internal) in hilbert
+    indices = Index{hilbert|>valtype|>eltype}[]
+    for (site, internal) in hilbert
         for iid in internal
-            push!(indices, (indices|>eltype)(pid, iid))
+            push!(indices, (indices|>eltype)(site, iid))
         end
     end
-    reset!(table, indices)
+    return reset!(table, indices)
 end
 
 # Term
@@ -1066,8 +1044,8 @@ end
 Abstract type for concrete term functions.
 """
 abstract type TermFunction <: Function end
-@inline Base.:(==)(tf1::TermFunction, tf2::TermFunction) = ==(efficientoperations, tf1, tf2)
-@inline Base.isequal(tf1::TermFunction, tf2::TermFunction) = isequal(efficientoperations, tf1, tf2)
+@inline Base.:(==)(tf₁::TermFunction, tf₂::TermFunction) = ==(efficientoperations, tf₁, tf₂)
+@inline Base.isequal(tf₁::TermFunction, tf₂::TermFunction) = isequal(efficientoperations, tf₁, tf₂)
 
 """
     TermAmplitude(amplitude::Union{Function, Nothing}=nothing)
@@ -1125,37 +1103,27 @@ mutable struct Term{K, I, V, B, C<:TermCouplings, A<:TermAmplitude, M<:TermModul
     bondkind::B
     couplings::C
     amplitude::A
+    ishermitian::Bool
     modulate::M
     factor::V
-    function Term{K, I}(value, bondkind, couplings::TermCouplings, amplitude::TermAmplitude, modulate::TermModulate, factor) where {K, I}
+    function Term{K, I}(value, bondkind, couplings::TermCouplings, amplitude::TermAmplitude, ishermitian::Bool, modulate::TermModulate, factor) where {K, I}
         @assert isa(K, Symbol) "Term error: kind must be a Symbol."
         @assert isa(I, Symbol) "Term error: id must be a Symbol."
         @assert value==value' "Term error: only real values are allowed. Complex values should be specified by the amplitude function."
         V, B, C, A, M = typeof(value), typeof(bondkind), typeof(couplings), typeof(amplitude), typeof(modulate)
-        new{K, I, V, B, C, A, M}(value, bondkind, couplings, amplitude, modulate, factor)
+        new{K, I, V, B, C, A, M}(value, bondkind, couplings, amplitude, ishermitian, modulate, factor)
     end
 end
-@inline Base.:(==)(term1::Term, term2::Term) = ==(efficientoperations, term1, term2)
-@inline Base.isequal(term1::Term, term2::Term) = isequal(efficientoperations, term1, term2)
-@inline function Base.show(io::IO, term::Term)
-    @printf io "%s{%s}(id=%s, value=%s, bondkind=%s, factor=%s)" kind(term) rank(term) id(term) decimaltostr(term.value) term.bondkind decimaltostr(term.factor)
-end
+@inline Base.:(==)(term₁::Term, term₂::Term) = ==(efficientoperations, term₁, term₂)
+@inline Base.isequal(term₁::Term, term₂::Term) = isequal(efficientoperations, term₁, term₂)
 
 """
-    Term{K}(id::Symbol, value, bondkind;
-        couplings::Union{Function, Couplings},
-        amplitude::Union{Function, Nothing}=nothing,
-        modulate::Union{Function, Bool}=false
-        ) where K
+    Term{K}(id::Symbol, value, bondkind; couplings::Union{Function, Couplings}, ishermitian::Bool, amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false) where K
 
 Construct a term.
 """
-@inline function Term{K}(id::Symbol, value, bondkind;
-        couplings::Union{Function, Couplings},
-        amplitude::Union{Function, Nothing}=nothing,
-        modulate::Union{Function, Bool}=false
-        ) where K
-    Term{K, id}(value, bondkind, TermCouplings(couplings), TermAmplitude(amplitude), TermModulate(id, modulate), 1)
+@inline function Term{K}(id::Symbol, value, bondkind; couplings::Union{Function, Couplings}, ishermitian::Bool, amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false) where K
+    return Term{K, id}(value, bondkind, TermCouplings(couplings), TermAmplitude(amplitude), ishermitian, TermModulate(id, modulate), 1)
 end
 
 """
@@ -1195,15 +1163,6 @@ Get the rank of a term.
 @inline rank(::Type{<:Term{K, I, V, B, C} where {K, I, V, B}}) where {C<:TermCouplings} = rank(eltype(valtype(C)))
 
 """
-    abbr(term::Term) -> Symbol
-    abbr(::Type{<:Term}) -> Symbol
-
-Get the abbreviation of the kind of a term.
-"""
-@inline abbr(term::Term) = abbr(typeof(term))
-@inline abbr(::Type{<:Term}) = :tm
-
-"""
     ismodulatable(term::Term) -> Bool
     ismodulatable(::Type{<:Term}) -> Bool
 
@@ -1213,24 +1172,19 @@ Judge whether a term could be modulated by its modulate function.
 @inline ismodulatable(::Type{<:Term{K, I, V, B, <:TermCouplings, <:TermAmplitude, M} where {K, I, V, B}}) where M = ismodulatable(M)
 
 """
-    ishermitian(term::Term) -> Bool
-    ishermitian(::Type{<:Term}) -> Bool
-"""
-@inline ishermitian(term::Term) = ishermitian(typeof(term))
-@inline ishermitian(::Type{<:Term}) = error("ishermitian error: not implemented.")
-
-"""
-    repr(term::Term, bond::AbstractBond, hilbert::Hilbert) -> String
+    repr(term::Term, bond::Bond, hilbert::Hilbert) -> String
 
 Get the repr representation of a term on a bond with a given Hilbert space.
 """
-function Base.repr(term::Term, bond::AbstractBond, hilbert::Hilbert)
+function Base.repr(term::Term, bond::Bond, hilbert::Hilbert)
     cache = String[]
-    if term.bondkind == bond|>kind
+    if term.bondkind == bond.kind
         value = term.value * term.amplitude(bond) * term.factor
-        if abs(value) ≠ 0
+        if !isapprox(value, 0.0, atol=atol, rtol=rtol)
             for coupling in term.couplings(bond)
-                isnothing(iterate(expand(coupling, bond, hilbert, term|>kind|>Val))) || push!(cache, @sprintf "%s: %s" abbr(term) repr(value*coupling))
+                if !isnothing(iterate(expand(coupling, bond, hilbert, term|>kind|>Val)))
+                    push!(cache, @sprintf "%s: %s%s" kind(term) repr(value*coupling) (term.ishermitian ? "" : " + h.c."))
+                end
             end
         end
     end
@@ -1246,21 +1200,6 @@ Replace some attributes of a term with key word arguments.
     exprs = [:(get(kwargs, $name, getfield(term, $name))) for name in QuoteNode.(term|>fieldnames)]
     return :(Term{kind(term), id(term)}($(exprs...)))
 end
-
-"""
-    +(term::Term) -> Term
-    -(term::Term) -> Term
-    *(term::Term, factor) -> Term
-    *(factor, term::Term) -> Term
-    /(term::Term, factor) -> Term
-
-Allowed arithmetic operations for a term.
-"""
-@inline Base.:+(term::Term) = term
-@inline Base.:-(term::Term) = term * (-1)
-@inline Base.:*(term::Term, factor) = factor * term
-@inline Base.:*(factor, term::Term) = replace(term, factor=factor*term.factor)
-@inline Base.:/(term::Term, factor) = term * (one(term.value)/factor)
 
 """
     one(term::Term) -> Term
@@ -1289,20 +1228,20 @@ function update!(term::Term, args...; kwargs...)
 end
 
 """
-    optype(::Type{T}, ::Type{H}, ::Type{B}) where {T<:Term, H<:Hilbert, B<:AbstractBond}
+    optype(::Type{T}, ::Type{H}, ::Type{B}) where {T<:Term, H<:Hilbert, B<:Bond}
 
 Get the compatible `Operator` type from the type of a term, a Hilbert space and a bond.
 """
-@inline function optype(::Type{T}, ::Type{H}, ::Type{B}) where {T<:Term, H<:Hilbert, B<:AbstractBond}
+@inline function optype(::Type{T}, ::Type{H}, ::Type{B}) where {T<:Term, H<:Hilbert, B<:Bond}
     C = eltype(valtype(fieldtype(T, :couplings)))
     @assert C<:Coupling "optype error: not supported."
-    oidtypes = ntuple(i->oidtype(filter(fieldtype(parametertype(C, :cid), i) , valtype(H)), eltype(B), Val(kind(T))), Val(rank(C)))
-    return fulltype(Operator, NamedTuple{(:value, :id), Tuple{valtype(T), Tuple{oidtypes...}}})
+    indextypes = ntuple(i->indextype(filter(fieldtype(parametertype(C, :iids), i) , valtype(H)), eltype(B), Val(kind(T))), Val(rank(C)))
+    return fulltype(Operator, NamedTuple{(:value, :id), Tuple{valtype(T), Tuple{indextypes...}}})
 end
 
 """
-    expand!(operators::Operators, term::Term, bond::AbstractBond, hilbert::Hilbert; half::Bool=false, table::Union{Nothing, Table}=nothing) -> Operators
-    expand!(operators::Operators, term::Term, bonds, hilbert::Hilbert; half::Bool=false, table::Union{Nothing, Table}=nothing) -> Operators
+    expand!(operators::Operators, term::Term, bond::Bond, hilbert::Hilbert; half::Bool=false) -> Operators
+    expand!(operators::Operators, term::Term, bonds, hilbert::Hilbert; half::Bool=false) -> Operators
 
 Expand the operators of a term on a bond/set-of-bonds with a given Hilbert space.
 
@@ -1310,29 +1249,19 @@ The `half` parameter determines the behavior of generating operators, which fall
 * `true`: "Hermitian half" of the generated operators
 * `false`: "Hermitian whole" of the generated operators
 """
-function expand!(operators::Operators, term::Term, bond::AbstractBond, hilbert::Hilbert; half::Bool=false, table::Union{Nothing, Table}=nothing)
-    if term.bondkind == bond|>kind
+function expand!(operators::Operators, term::Term, bond::Bond, hilbert::Hilbert; half::Bool=false)
+    if term.bondkind == bond.kind
         value = term.value * term.amplitude(bond) * term.factor
-        if abs(value) ≠ 0
-            hermitian = ishermitian(term)
-            record = (isnothing(hermitian) && length(operators)>0) ? Set{idtype(eltype(operators))}() : nothing
+        if !isapprox(value, 0.0, atol=atol, rtol=rtol)
             for coupling in term.couplings(bond)
                 for opt in expand(coupling, bond, hilbert, term|>kind|>Val)
                     isapprox(opt.value, 0.0, atol=atol, rtol=rtol) && continue
-                    !isnothing(table) && !all(haskey(table, opt.id)) && continue
-                    if hermitian == true
-                        add!(operators, opt*valtype(eltype(operators))(value/(half ? 2 : 1)))
-                    elseif hermitian == false
-                        opt = opt * valtype(eltype(operators))(value)
-                        add!(operators, opt)
-                        half || add!(operators, opt')
+                    if half
+                        add!(operators, opt*valtype(eltype(operators))(value/(term.ishermitian ? 2 : 1)))
                     else
-                        if !(isnothing(record) ? haskey(operators, opt.id') : opt.id'∈record)
-                            isnothing(record) || push!(record, opt.id)
-                            opt = opt * valtype(eltype(operators))(value/termfactor(opt.id, term|>kind|>Val))
-                            add!(operators, opt)
-                            half || add!(operators, opt')
-                        end
+                        opt = opt*valtype(eltype(operators))(value)
+                        add!(operators, opt)
+                        term.ishermitian || add!(operators, opt')
                     end
                 end
             end
@@ -1340,31 +1269,111 @@ function expand!(operators::Operators, term::Term, bond::AbstractBond, hilbert::
     end
     return operators
 end
-@inline function expand!(operators::Operators, term::Term, bonds, hilbert::Hilbert; half::Bool=false, table::Union{Nothing, Table}=nothing)
+@inline function expand!(operators::Operators, term::Term, bonds, hilbert::Hilbert; half::Bool=false)
     for bond in bonds
-        expand!(operators, term, bond, hilbert; half=half, table=table)
+        expand!(operators, term, bond, hilbert; half=half)
     end
     return operators
 end
-@inline function expand!(operators::Operators, term::Term, bonds::Bonds, hilbert::Hilbert; half::Bool=false, table::Union{Nothing, Table}=nothing)
-    map(bs->expand!(operators, term, bs, hilbert; half=half, table=table), bonds.bonds)
-    return operators
-end
-@inline termfactor(id::ID{AbstractOID}, ::Val) = ishermitian(id) ? 2 : 1
 
 """
-    expand(term::Term, bond::AbstractBond, hilbert::Hilbert; half::Bool=false, table::Union{Nothing, Table}=nothing) -> Operators
-    expand(term::Term, bonds::Bonds, hilbert::Hilbert; half::Bool=false, table::Union{Nothing, Table}=nothing) -> Operators
+    expand(term::Term, bond::Bond, hilbert::Hilbert; half::Bool=false) -> Operators
+    expand(term::Term, bonds, hilbert::Hilbert; half::Bool=false) -> Operators
 
 Expand the operators of a term on a bond/set-of-bonds with a given Hilbert space.
 """
-@inline function expand(term::Term, bond::AbstractBond, hilbert::Hilbert; half::Bool=false, table::Union{Nothing, Table}=nothing)
+@inline function expand(term::Term, bond::Bond, hilbert::Hilbert; half::Bool=false)
     M = optype(term|>typeof, hilbert|>typeof, bond|>typeof)
-    expand!(Operators{M}(), term, bond, hilbert; half=half, table=table)
+    expand!(Operators{M}(), term, bond, hilbert; half=half)
 end
-@inline function expand(term::Term, bonds::Bonds, hilbert::Hilbert; half::Bool=false, table::Union{Nothing, Table}=nothing)
+@inline function expand(term::Term, bonds, hilbert::Hilbert; half::Bool=false)
     M = optype(term|>typeof, hilbert|>typeof, bonds|>eltype)
-    expand!(Operators{M}(), term, bonds, hilbert; half=half, table=table)
+    expand!(Operators{M}(), term, bonds, hilbert; half=half)
 end
+
+# Boundary
+"""
+    Boundary{Names}(values::AbstractVector{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}) where Names
+
+Boundary twist of operators.
+"""
+struct Boundary{Names, D<:Number, V<:AbstractVector} <: Transformation
+    values::Vector{D}
+    vectors::Vector{V}
+    function Boundary{Names}(values::AbstractVector{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}) where Names
+        @assert length(Names)==length(values)==length(vectors) "Boundary error: mismatched names, values and vectors."
+        datatype = promote_type(eltype(values), Float)
+        new{Names, datatype, eltype(vectors)}(convert(Vector{datatype}, values), vectors)
+    end
+end
+@inline Base.:(==)(bound₁::Boundary, bound₂::Boundary) = keys(bound₁)==keys(bound₂) && ==(efficientoperations, bound₁, bound₂)
+@inline Base.isequal(bound₁::Boundary, bound₂::Boundary) = isequal(keys(bound₁), keys(bound₂)) && isequal(efficientoperations, bound₁, bound₂)
+@inline Base.valtype(::Type{<:Boundary}, M::Type{<:Operator}) = reparameter(M, :value, promote_type(Complex{Int}, valtype(M)))
+@inline Base.valtype(B::Type{<:Boundary}, MS::Type{<:Operators}) = (M = valtype(B, eltype(MS)); Operators{M, idtype(M)})
+
+"""
+    keys(bound::Boundary) -> Tuple{Vararg{Symbol}}
+    keys(::Type{<:Boundary{Names}}) where Names -> Names
+
+Get the names of the boundary parameters.
+"""
+@inline Base.keys(bound::Boundary) = keys(typeof(bound))
+@inline Base.keys(::Type{<:Boundary{Names}}) where Names = Names
+
+"""
+    (bound::Boundary)(operator::Operator; origin::Union{AbstractVector, Nothing}=nothing) -> Operator
+
+Get the boundary twisted operator.
+"""
+@inline function (bound::Boundary)(operator::Operator; origin::Union{AbstractVector, Nothing}=nothing)
+    values = isnothing(origin) ? bound.values : bound.values-origin
+    return replace(operator, operator.value*exp(1im*mapreduce(u->angle(u, bound.vectors, values), +, id(operator))))
+end
+
+"""
+    update!(bound::Boundary; parameters...) -> Boundary
+
+Update the values of the boundary twisted phase.
+"""
+@inline @generated function update!(bound::Boundary; parameters...)
+    exprs = []
+    for (i, name) in enumerate(QuoteNode.(keys(bound)))
+        push!(exprs, :(bound.values[$i] = get(parameters, $name, bound.values[$i])))
+    end
+    return Expr(:block, exprs..., :(return bound))
+end
+
+"""
+    merge!(bound::Boundary, another::Boundary) -> typeof(bound)
+
+Merge the values and vectors of the twisted boundary condition from another one.
+"""
+@inline function Base.merge!(bound::Boundary, another::Boundary)
+    @assert keys(bound)==keys(another) "merge! error: mismatched names of boundary parameters."
+    bound.values .= another.values
+    bound.vectors .= another.vectors
+    return bound
+end
+
+"""
+    replace(bound::Boundary; values=bound.values, vectors=bound.vectors) -> Boundary
+
+Replace the values or vectors of a twisted boundary condition and get the new one.
+
+!!! note
+    The plain boundary condition keeps plain even when replaced with new values or new vectors.
+"""
+@inline Base.replace(bound::Boundary; values=bound.values, vectors=bound.vectors) = Boundary{keys(bound)}(values, vectors)
+
+"""
+    plain
+
+Plain boundary condition without any twist.
+"""
+const plain = Boundary{()}(Float[], SVector{0, Float}[])
+@inline Base.valtype(::Type{typeof(plain)}, M::Type{<:Operator}) = M
+@inline Base.valtype(::Type{typeof(plain)}, M::Type{<:Operators}) = M
+@inline (::typeof(plain))(operator::Operator; kwargs...) = operator
+@inline Base.replace(::(typeof(plain)); kwargs...) = plain
 
 end #module

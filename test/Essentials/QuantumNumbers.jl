@@ -1,8 +1,7 @@
-using Test
 using Base.Iterators: Iterators
 using DataStructures: OrderedDict
 using QuantumLattices.Essentials.QuantumNumbers
-using QuantumLattices.Interfaces: ⊕, ⊗, dimension, expand, permute, decompose
+using QuantumLattices.Interfaces: ⊕, ⊗, decompose, dimension, expand, permute
 using QuantumLattices.Prerequisites.Traits: contentnames, getcontent
 
 import QuantumLattices.Essentials.QuantumNumbers: periods

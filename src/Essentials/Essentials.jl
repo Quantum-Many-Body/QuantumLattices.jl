@@ -2,7 +2,7 @@ module Essentials
 
 using Reexport: @reexport
 
-export dtype, kind, update!, reset!
+export dtype, kind, reset!, update, update!
 
 function dtype end
 function kind end

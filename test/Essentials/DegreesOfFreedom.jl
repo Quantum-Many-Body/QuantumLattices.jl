@@ -1,16 +1,16 @@
-using Test
+using LinearAlgebra: dot
 using Printf: @printf, @sprintf
-using StaticArrays: SVector
+using QuantumLattices.Essentials: kind, reset!, update!
 using QuantumLattices.Essentials.DegreesOfFreedom
-using QuantumLattices.Essentials.QuantumOperators: ID, Operator, Operators, sequence, id, LaTeX, latexformat
-using QuantumLattices.Essentials.Spatials: AbstractPID, PID, CPID, Point, Bond, Bonds, Lattice, pidtype, rcoord, icoord
-using QuantumLattices.Essentials: kind, update!, reset!
-using QuantumLattices.Interfaces: rank, expand, ⊗, ⊕
+using QuantumLattices.Essentials.QuantumOperators: ID, LaTeX, Operator, Operators, id, latexformat, sequence
+using QuantumLattices.Essentials.Spatials: Bond, Lattice, Point, bonds, decompose, icoordinate, rcoordinate
+using QuantumLattices.Interfaces: ⊕, ⊗, expand, rank
 using QuantumLattices.Prerequisites: Float, decimaltostr
-using QuantumLattices.Prerequisites.Traits: parameternames, isparameterbound, contentnames, getcontent
+using QuantumLattices.Prerequisites.Traits: contentnames, getcontent, isparameterbound, parameternames, reparameter
+using StaticArrays: SVector
 
+import QuantumLattices.Essentials.DegreesOfFreedom: statistics
 import QuantumLattices.Essentials.QuantumOperators: latexname, script
-import QuantumLattices.Essentials.DegreesOfFreedom: ishermitian, statistics, couplingcenters, abbr
 import QuantumLattices.Prerequisites.VectorSpaces: shape
 
 struct DID{N<:Union{Int, Symbol}} <: SimpleIID
@@ -20,6 +20,13 @@ end
 @inline Base.adjoint(sl::DID{Int}) = DID(3-sl.nambu)
 @inline statistics(::Type{<:DID}) = :f
 @inline DID(did::DID, ::CompositeInternal) = did
+function Base.angle(id::CompositeIndex{<:Index{DID{Int}}}, vectors::AbstractVector{<:AbstractVector{Float}}, values::AbstractVector{Float})
+    phase=  (length(vectors) == 1) ? 2pi*dot(decompose(id.icoordinate, vectors[1]), values) :
+            (length(vectors) == 2) ? 2pi*dot(decompose(id.icoordinate, vectors[1], vectors[2]), values) :
+            (length(vectors) == 3) ? 2pi*dot(decompose(id.icoordinate, vectors[1], vectors[2], vectors[3]), values) :
+            error("angle error: not supported number of input basis vectors.")
+    (id.index.iid.nambu == 1) ? phase : -phase
+end
 
 struct DFock <: SimpleInternal{DID{Int}}
     nnambu::Int
@@ -32,22 +39,16 @@ end
 @inline shape(iidspace::IIDSpace{DID{Symbol}, DFock}) = (1:iidspace.internal.nnambu,)
 @inline shape(iidspace::IIDSpace{DID{Int}, DFock}) = (iidspace.iid.nambu:iidspace.iid.nambu,)
 
-@inline script(::Val{:site}, index::Index{<:AbstractPID, <:DID}; kwargs...) = index.pid.site
-@inline script(::Val{:nambu}, index::Index{<:AbstractPID, <:DID}; kwargs...) = index.iid.nambu==2 ? "\\dagger" : ""
+@inline script(::Val{:site}, index::Index{<:DID}; kwargs...) = index.site
+@inline script(::Val{:nambu}, index::Index{<:DID}; kwargs...) = index.iid.nambu==2 ? "\\dagger" : ""
 
-@inline latexname(::Type{<:OID{<:Index{<:AbstractPID, <:DID}}}) = Symbol("OID{Index{AbstractPID, DID}}")
-latexformat(OID{<:Index{<:AbstractPID, <:DID}}, LaTeX{(:nambu,), (:site,)}('d'))
+@inline latexname(::Type{<:CompositeIndex{<:Index{<:DID}}}) = Symbol("CompositeIndex{Index{DID}}")
+latexformat(CompositeIndex{<:Index{<:DID}}, LaTeX{(:nambu,), (:site,)}('d'))
 
 const DCoupling{V, I<:ID{DID}, C<:Subscripts} = Coupling{V, I, C}
-@inline Base.repr(tc::(Coupling{V, <:ID{DID}} where V)) = @sprintf "%s ph(%s)" decimaltostr(tc.value) join(tc.cid.nambus, ", ")
-@inline couplingcenters(::(Coupling{V, <:ID{DID}} where V), ::Bond, ::Val) = (1, 2)
+@inline Base.repr(tc::(Coupling{V, <:ID{DID}} where V)) = @sprintf "%s*ph[%s]" decimaltostr(tc.value) join(tc.iids.nambus, " ")
 @inline DCoupling(value, nambus::Tuple{Vararg{Int}}) = Coupling(value, ID(DID, nambus), Subscripts((nambu=Subscript(nambus),)))
 @inline DCoupling(value, nambus::Subscript) = Coupling(value, ID(DID, Tuple(nambus)), Subscripts((nambu=nambus,)))
-
-@inline abbr(::Type{<:Term{:Mu}}) = :mu
-@inline abbr(::Type{<:Term{:Hp}}) = :hp
-@inline ishermitian(::Type{<:Term{:Mu}}) = true
-@inline ishermitian(::Type{<:Term{:Hp}}) = false
 
 @testset "IID" begin
     did = DID(1)
@@ -122,72 +123,70 @@ end
 end
 
 @testset "Index" begin
-    @test parameternames(Index) == (:pid, :iid)
-    @test isparameterbound(Index, Val(:pid), PID) == false
+    @test parameternames(Index) == (:iid,)
     @test isparameterbound(Index, Val(:iid), DID) == true
 
-    index = Index(CPID('S', 4), DID(1))
-    @test index|>pidtype == CPID{Char}
-    @test index|>typeof|>pidtype == CPID{Char}
+    index = Index(4, DID(1))
     @test index|>iidtype == DID{Int}
     @test index|>typeof|>iidtype == DID{Int}
-    @test index|>adjoint == Index(CPID('S', 4), DID(2))
+    @test index|>adjoint == Index(4, DID(2))
     @test statistics(index) == statistics(typeof(index)) == :f
     @test ishermitian(ID(index', index)) == true
     @test ishermitian(ID(index, index)) == false
 end
 
-@testset "OID" begin
-    @test contentnames(CompositeOID) == (:index,)
-    @test parameternames(CompositeOID) == (:index,)
-    @test isparameterbound(CompositeOID, Val(:index), Index) == true
-    @test isparameterbound(CompositeOID, Val(:index), Index{PID, DID{Int}}) == false
+@testset "CompositeIndex" begin
+    @test contentnames(AbstractCompositeIndex) == (:index,)
+    @test parameternames(AbstractCompositeIndex) == (:index,)
+    @test isparameterbound(AbstractCompositeIndex, Val(:index), Index) == true
+    @test isparameterbound(AbstractCompositeIndex, Val(:index), Index{DID{Int}}) == false
 
-    @test contentnames(OID) == (:index, :rcoord, :icoord)
-    @test parameternames(OID) == (:index, :coord)
-    @test isparameterbound(OID, Val(:index), Index) == true
-    @test isparameterbound(OID, Val(:index), Index{PID, DID{Int}}) == false
-    @test isparameterbound(OID, Val(:coord), SVector) == true
-    @test isparameterbound(OID, Val(:coord), SVector{2, Float}) == false
+    @test contentnames(CompositeIndex) == (:index, :rcoordinate, :icoordinate)
+    @test parameternames(CompositeIndex) == (:index, :coordination)
+    @test isparameterbound(CompositeIndex, Val(:index), Index) == true
+    @test isparameterbound(CompositeIndex, Val(:index), Index{DID{Int}}) == false
+    @test isparameterbound(CompositeIndex, Val(:coordination), SVector) == true
+    @test isparameterbound(CompositeIndex, Val(:coordination), SVector{2, Float}) == false
 
-    oid = OID(Index(PID(1), DID(1)), [0.0, -0.0], [0.0, 0.0])
-    @test indextype(oid) == indextype(typeof(oid)) == Index{PID, DID{Int}}
-    @test statistics(oid) == statistics(typeof(oid)) == :f
-    @test oid' == OID(Index(PID(1), DID(2)), rcoord=SVector(0.0, 0.0), icoord=SVector(0.0, 0.0))
-    @test hash(oid, UInt(1)) == hash(OID(Index(PID(1), DID(1)), SVector(0.0, 0.0), SVector(0.0, 1.0)), UInt(1))
-    @test propertynames(ID(oid)) == (:indexes, :rcoords, :icoords)
-    @test fieldnames(OID) == (:index, :rcoord, :icoord)
-    @test string(oid) == "OID(Index(PID(1), DID(1)), [0.0, 0.0], [0.0, 0.0])"
-    @test ID(oid', oid)' == ID(oid', oid)
-    @test ishermitian(ID(oid', oid)) == true
-    @test ishermitian(ID(oid, oid)) == false
-    @test oidtype(DFock, Point{2, PID, Float}, Val(:default)) == OID{Index{PID, DID{Int}}, SVector{2, Float}}
+    index = CompositeIndex(Index(1, DID(1)), [0.0, -0.0], [0.0, 0.0])
+    @test indextype(index) == indextype(typeof(index)) == Index{DID{Int}}
+    @test statistics(index) == statistics(typeof(index)) == :f
+    @test index' == CompositeIndex(Index(1, DID(2)), rcoordinate=SVector(0.0, 0.0), icoordinate=SVector(0.0, 0.0))
+    @test hash(index, UInt(1)) == hash(CompositeIndex(Index(1, DID(1)), SVector(0.0, 0.0), SVector(0.0, 1.0)), UInt(1))
+    @test propertynames(ID(index)) == (:indexes, :rcoordinates, :icoordinates)
+    @test fieldnames(CompositeIndex) == (:index, :rcoordinate, :icoordinate)
+    @test string(index) == "CompositeIndex(Index(1, DID(1)), [0.0, 0.0], [0.0, 0.0])"
+    @test ID(index', index)' == ID(index', index)
+    @test ishermitian(ID(index', index)) == true
+    @test ishermitian(ID(index, index)) == false
+    @test indextype(DFock, Point{2, Float}, Val(:default)) == CompositeIndex{Index{DID{Int}}, SVector{2, Float}}
 end
 
 @testset "Operator" begin
     opt = Operator(1.0,
-        OID(Index(PID(1), DID(2)), SVector(0.5, 0.5), SVector(1.0, 1.0)),
-        OID(Index(PID(1), DID(1)), SVector(0.0, 0.5), SVector(0.0, 1.0))
+        CompositeIndex(Index(1, DID(2)), SVector(0.5, 0.5), SVector(1.0, 1.0)),
+        CompositeIndex(Index(1, DID(1)), SVector(0.0, 0.5), SVector(0.0, 1.0))
         )
-    @test rcoord(opt) == SVector(0.5, 0.0)
-    @test icoord(opt) == SVector(1.0, 0.0)
+    @test rcoordinate(opt) == SVector(0.5, 0.0)
+    @test icoordinate(opt) == SVector(1.0, 0.0)
 
-    opt = Operator(1.0, OID(Index(PID(1), DID(2)), SVector(0.5, 0.0), SVector(1.0, 0.0)))
-    @test rcoord(opt) == SVector(0.5, 0.0)
-    @test icoord(opt) == SVector(1.0, 0.0)
+    opt = Operator(1.0, CompositeIndex(Index(1, DID(2)), SVector(0.5, 0.0), SVector(1.0, 0.0)))
+    @test rcoordinate(opt) == SVector(0.5, 0.0)
+    @test icoordinate(opt) == SVector(1.0, 0.0)
 end
 
 @testset "Hilbert" begin
-    map = pid->DFock((pid.site-1)%2+1)
-    hilbert = Hilbert(map, [CPID(1, 1), CPID(1, 2)])
-    @test hilbert == Hilbert{DFock}(map, [CPID(1, 1), CPID(1, 2)])
-    reset!(hilbert, (CPID(2, 1), CPID(2, 2)))
+    map = site->DFock((site-1)%2+1)
+    hilbert = Hilbert(map, [1, 2])
+    @test hilbert == Hilbert{DFock}(map, [1, 2])
+    reset!(hilbert, [3, 4])
+    @test hilbert == Hilbert{DFock}(map, [3, 4])
 
-    hilbert = Hilbert(pid=>DFock(2) for pid in [PID(1), PID(2)])
-    @test hilbert[PID(1)] == hilbert[PID(2)] == DFock(2)
+    hilbert = Hilbert(site=>DFock(2) for site in [1, 2])
+    @test hilbert[1] == hilbert[2] == DFock(2)
 
-    hilbert = Hilbert(PID(1)=>DFock(2), PID(2)=>DFock(3))
-    @test hilbert[PID(1)]==DFock(2) && hilbert[PID(2)]==DFock(3)
+    hilbert = Hilbert(1=>DFock(2), 2=>DFock(3))
+    @test hilbert[1]==DFock(2) && hilbert[2]==DFock(3)
 end
 
 @testset "IIDSpace" begin
@@ -204,48 +203,42 @@ end
 @testset "Metric" begin
     valtype(Metric, AbstractOID) = AbstractOID
 
-    index = Index(CPID('S', 4), DID(1))
-    oid = OID(index, SVector(0.5, 0.0), SVector(1.0, 0.0))
+    index = CompositeIndex(Index(4, DID(1)), SVector(0.5, 0.0), SVector(1.0, 0.0))
 
-    m = OIDToTuple((:scope, :site, :nambu))
-    @test m == OIDToTuple(:scope, :site, :nambu)
-    @test isequal(m, OIDToTuple(:scope, :site, :nambu))
-    @test keys(m) == keys(typeof(m)) == (:scope, :site, :nambu)
-    @test filter(≠(:nambu), m) == OIDToTuple(:scope, :site)
-    @test OIDToTuple(Index{PID, DID{Int}}) == OIDToTuple(:site, :nambu)
-    @test OIDToTuple(OID{Index{CPID{Int}, DID{Int}}}) == OIDToTuple(:scope, :site, :nambu)
-    @test OIDToTuple(Hilbert{DFock, CPID{Int}}) == OIDToTuple(:scope, :site, :nambu)
-    @test m(index) == ('S', 4, 1) == m(oid)
-    @test filter(≠(:scope), m)(index) == (4, 1)
-    @test filter(≠(:nambu), m)(index) == ('S', 4)
-    @test filter(∉((:site, :nambu)), m)(index) == ('S',)
+    m = OperatorUnitToTuple((:site, :nambu))
+    @test m == OperatorUnitToTuple(:site, :nambu)
+    @test isequal(m, OperatorUnitToTuple(:site, :nambu))
+    @test keys(m) == keys(typeof(m)) == (:site, :nambu)
+    @test OperatorUnitToTuple(Index{DID{Int}}) == OperatorUnitToTuple(:site, :nambu)
+    @test OperatorUnitToTuple(Hilbert{DFock}) == OperatorUnitToTuple(:site, :nambu)
+    @test m(index.index) == (4, 1) == m(index)
 end
 
 @testset "Table" begin
     @test contentnames(Table) == (:by, :contents)
 
-    by = filter(≠(:nambu), OIDToTuple(Index{PID, DID{Int}}))
+    by = OperatorUnitToTuple(:site)
 
-    table = Table([Index(PID(1), DID(1)), Index(PID(1), DID(2))], by)
-    @test empty(table) == Table{Index{PID, DID{Int}}}(by)
-    @test table[Index(PID(1), DID(1))]==1 && table[Index(PID(1), DID(2))]==1
+    table = Table([Index(1, DID(1)), Index(1, DID(2))], by)
+    @test empty(table) == Table{Index{DID{Int}}}(by)
+    @test table[Index(1, DID(1))]==1 && table[Index(1, DID(2))]==1
 
-    hilbert = Hilbert(pid=>DFock(2) for pid in [PID(1), PID(2)])
-    inds1 = (Index(PID(1), iid) for iid in DFock(2))|>collect
-    inds2 = (Index(PID(2), iid) for iid in DFock(2))|>collect
-    @test Table(hilbert, by) == Table([inds1; inds2], by)
-    @test Table(hilbert, by) == union(Table(inds1, by), Table(inds2, by))
+    hilbert = Hilbert(site=>DFock(2) for site in [1, 2])
+    inds₁ = (Index(1, iid) for iid in DFock(2))|>collect
+    inds₂ = (Index(2, iid) for iid in DFock(2))|>collect
+    @test Table(hilbert, by) == Table([inds₁; inds₂], by)
+    @test Table(hilbert, by) == union(Table(inds₁, by), Table(inds₂, by))
 
     opt = Operator(1.0im,
-        OID(Index(PID(1), DID(2)), SVector(0.0, 0.0), SVector(1.0, 0.0)),
-        OID(Index(PID(1), DID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0))
+        CompositeIndex(Index(1, DID(2)), SVector(0.0, 0.0), SVector(1.0, 0.0)),
+        CompositeIndex(Index(1, DID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0))
         )
     @test sequence(opt, table) == (1, 1)
     @test haskey(table, opt.id) == (true, true)
 
     table = Table(hilbert)
-    @test table == Table([inds1; inds2])
-    @test reset!(empty(table), [inds1; inds2]) == table
+    @test table == Table([inds₁; inds₂])
+    @test reset!(empty(table), [inds₁; inds₂]) == table
     @test reset!(empty(table), hilbert) == table
 end
 
@@ -301,45 +294,46 @@ end
 end
 
 @testset "couplings" begin
-    @test parameternames(Coupling) == (:value, :cid, :subscripts)
-    @test isparameterbound(Coupling, :cid, Tuple{DID{Int}}) == false
-    @test isparameterbound(Coupling, :cid, ID{DID{Int}}) == true
+    @test parameternames(Coupling) == (:value, :iids, :subscripts)
+    @test isparameterbound(Coupling, :iids, Tuple{DID{Int}}) == false
+    @test isparameterbound(Coupling, :iids, ID{DID{Int}}) == true
     @test isparameterbound(Coupling, :subscripts, Subscripts{Tuple{NamedTuple{(:nambu,), Tuple{Subscript{Tuple{Int}}}}}}) == true
     @test isparameterbound(Coupling, :subscripts, Subscripts) == true
     @test isparameterbound(Coupling, :subscripts, Subscripts{Tuple{}, Tuple{}}) == false
 
     tc = DCoupling(2.0, (2,))
-    @test id(tc) == ID(CompositeIID(tc.cid), tc.subscripts)
+    @test id(tc) == ID(CompositeIID(tc.iids), tc.subscripts)
     @test rank(tc) == rank(typeof(tc)) == 1
     @test tc == Coupling(2.0, id(tc))
-    @test ID{SimpleIID}(tc) == tc.cid
+    @test ID{SimpleIID}(tc) == tc.iids
     @test Subscripts(tc) == tc.subscripts
 
-    point = Point(CPID(1, 1), (0.0, 0.0), (0.0, 0.0))
-    hilbert = Hilbert(point.pid=>DFock(2))
-    @test couplingcenters(tc, point, Val(:Mu)) == (1,)
-    @test couplingpoints(tc, point, Val(:Mu)) == (point,)
-    @test couplinginternals(tc, point, hilbert, Val(:Mu)) == (DFock(2),)
+    point = Point(1, (0.0, 0.0), (0.0, 0.0))
+    bond = Bond(point)
+    hilbert = Hilbert(point.site=>DFock(2))
+    @test couplingcenters(tc, bond, Val(:Mu)) == (1,)
+    @test couplingpoints(tc, bond, Val(:Mu)) == (point,)
+    @test couplinginternals(tc, bond, hilbert, Val(:Mu)) == (DFock(2),)
 
     tc₁ = DCoupling(1.5, (1, 2))
     tc₂ = DCoupling(2.0, subscript"[a b](a < b)")
     @test tc₁*tc₂ == Coupling(3.0, ID(DID(1), DID(2), DID(:a), DID(:b)), Subscripts((nambu=Subscript((1, 2)),), (nambu=subscript"[a b](a < b)",)))
 
-    ex = expand(tc₁, point, hilbert, Val(:info))
-    @test eltype(ex) == eltype(typeof(ex)) == Operator{Float64, NTuple{2, OID{Index{CPID{Int}, DID{Int}}, SVector{2, Float64}}}}
+    ex = expand(tc₁, bond, hilbert, Val(:info))
+    @test eltype(ex) == eltype(typeof(ex)) == Operator{Float64, NTuple{2, CompositeIndex{Index{DID{Int}}, SVector{2, Float64}}}}
     @test collect(ex) == [
         Operator(1.5, ID(
-            OID(Index(CPID(1, 1), DID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0)),
-            OID(Index(CPID(1, 1), DID(2)), SVector(0.0, 0.0), SVector(0.0, 0.0))
+            CompositeIndex(Index(1, DID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0)),
+            CompositeIndex(Index(1, DID(2)), SVector(0.0, 0.0), SVector(0.0, 0.0))
             ))
         ]
 
-    ex = expand(tc₂, point, hilbert, Val(:info))
-    @test eltype(ex) == eltype(typeof(ex)) == Operator{Float64, NTuple{2, OID{Index{CPID{Int}, DID{Int}}, SVector{2, Float64}}}}
+    ex = expand(tc₂, bond, hilbert, Val(:info))
+    @test eltype(ex) == eltype(typeof(ex)) == Operator{Float64, NTuple{2, CompositeIndex{Index{DID{Int}}, SVector{2, Float64}}}}
     @test collect(ex) == [
         Operator(2.0, ID(
-            OID(Index(CPID(1, 1), DID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0)),
-            OID(Index(CPID(1, 1), DID(2)), SVector(0.0, 0.0), SVector(0.0, 0.0))
+            CompositeIndex(Index(1, DID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0)),
+            CompositeIndex(Index(1, DID(2)), SVector(0.0, 0.0), SVector(0.0, 0.0))
             ))
         ]
 
@@ -382,89 +376,124 @@ end
 end
 
 @testset "Term" begin
-    point = Point(CPID(1, 1), (0.0, 0.0), (0.0, 0.0))
-    hilbert = Hilbert(point.pid=>DFock(2))
-    term = Term{:Mu}(:mu, 1.5, 0, couplings=@couplings(DCoupling(1.0, (2, 1))), amplitude=(bond->3), modulate=false)
+    point = Point(1, (0.0, 0.0), (0.0, 0.0))
+    hilbert = Hilbert(point.site=>DFock(2))
+    term = Term{:Mu}(:μ, 1.5, 0, couplings=@couplings(DCoupling(1.0, (2, 1))), amplitude=bond->3, ishermitian=true)
     @test term|>kind == term|>typeof|>kind == :Mu
-    @test term|>id == term|>typeof|>id == :mu
+    @test term|>id == term|>typeof|>id == :μ
     @test term|>valtype == term|>typeof|>valtype == Float
     @test term|>rank == term|>typeof|>rank == 2
-    @test term|>abbr == term|>typeof|>abbr == :mu
     @test term|>ismodulatable == term|>typeof|>ismodulatable == false
-    @test term|>ishermitian == term|>typeof|>ishermitian == true
     @test term == deepcopy(term)
     @test isequal(term, deepcopy(term))
-    @test string(term) == "Mu{2}(id=mu, value=1.5, bondkind=0, factor=1.0)"
-    @test repr(term, point, hilbert) == "mu: 4.5 ph(2, 1)"
-    @test +term == term
-    @test -term == term*(-1) == replace(term, factor=-term.factor)
-    @test 2*term == term*2 == replace(term, factor=term.factor*2)
-    @test term/2 == term*(1/2) == replace(term, factor=term.factor/2)
+    @test repr(term, Bond(point), hilbert) == "Mu: 4.5*ph[2 1]"
 
-    p1 = Point(PID(1), (0.0, 0.0), (0.0, 0.0))
-    p2 = Point(PID(2), (0.0, 0.0), (0.0, 0.0))
-    hilbert = Hilbert(pid=>DFock(2) for pid in [PID(1), PID(2)])
-    term = Term{:Mu}(:mu, 1.5, 0,
-        couplings=bond->bond.pid.site%2==0 ? Couplings(DCoupling(1.0, (2, 2))) : Couplings(DCoupling(1.0, (1, 1))),
+    p₁ = Point(1, (0.0, 0.0), (0.0, 0.0))
+    p₂ = Point(2, (1.0, 0.0), (0.0, 0.0))
+    hilbert = Hilbert(site=>DFock(2) for site in [1, 2])
+    term = Term{:Mu}(:μ, 1.5, 0,
+        couplings=bond->bond[1].site%2==0 ? Couplings(DCoupling(1.0, (2, 2))) : Couplings(DCoupling(1.0, (1, 1))),
+        ishermitian=true,
         amplitude=bond->3,
         modulate=true
     )
     @test term|>ismodulatable == term|>typeof|>ismodulatable == true
-    @test repr(term, p1, hilbert) == "mu: 4.5 ph(1, 1)"
-    @test repr(term, p2, hilbert) == "mu: 4.5 ph(2, 2)"
+    @test repr(term, Bond(p₁), hilbert) == "Mu: 4.5*ph[1 1]"
+    @test repr(term, Bond(p₂), hilbert) == "Mu: 4.5*ph[2 2]"
     @test one(term) == replace(term, value=1.0)
     @test zero(term) == replace(term, value=0.0)
-    @test term.modulate(mu=4.0) == 4.0
+    @test term.modulate(μ=4.0) == 4.0
     @test isnothing(term.modulate(t=1.0))
-    @test update!(term, mu=4.25) == replace(term, value=4.25)
+    @test update!(term, μ=4.25) == replace(term, value=4.25)
     @test term.value == 4.25
+
+    term = Term{:Hp}(:t, 1.5, 1, couplings=@couplings(DCoupling(1.0, (2, 1))), amplitude=bond->3.0, ishermitian=false)
+    @test repr(term, Bond(1, p₁, p₂), hilbert) == "Hp: 4.5*ph[2 1] + h.c."
 end
 
 @testset "expand" begin
-    point = Point(PID(1), (0.0, 0.0), (0.0, 0.0))
-    hilbert = Hilbert(point.pid=>DFock(2))
-    term = Term{:Mu}(:mu, 1.5, 0, couplings=@couplings(DCoupling(1.0, (2, 1))), amplitude=bond->3.0, modulate=true)
+    point = Point(1, (0.0, 0.0), (0.0, 0.0))
+    bond = Bond(point)
+    hilbert = Hilbert(point.site=>DFock(2))
+    term = Term{:Mu}(:μ, 1.5, 0, couplings=@couplings(DCoupling(1.0, (2, 1))), amplitude=bond->3.0, ishermitian=true)
     operators = Operators(
         Operator(+2.25,
-            OID(Index(PID(1), DID(2)), SVector(0.0, 0.0), SVector(0.0, 0.0)),
-            OID(Index(PID(1), DID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0))
+            CompositeIndex(Index(1, DID(2)), SVector(0.0, 0.0), SVector(0.0, 0.0)),
+            CompositeIndex(Index(1, DID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0))
             )
         )
-    @test expand(term, point, hilbert, half=true) == operators
-    @test expand(term, point, hilbert, half=false) == operators*2
+    @test expand(term, bond, hilbert, half=true) == operators
+    @test expand(term, bond, hilbert, half=false) == operators*2
 
-    bond = Bond(1, Point(PID(2), (1.5, 1.5), (1.0, 1.0)), Point(PID(1), (0.5, 0.5), (0.0, 0.0)))
-    hilbert = Hilbert(pid=>DFock(2) for pid in [PID(1), PID(2)])
-    term = Term{:Hp}(:t, 1.5, 1, couplings=@couplings(DCoupling(1.0, (2, 1))), amplitude=bond->3.0, modulate=true)
+    bond = Bond(1, Point(2, (1.5, 1.5), (1.0, 1.0)), Point(1, (0.5, 0.5), (0.0, 0.0)))
+    hilbert = Hilbert(site=>DFock(2) for site in [1, 2])
+    term = Term{:Hp}(:t, 1.5, 1, couplings=@couplings(DCoupling(1.0, (2, 1))), amplitude=bond->3.0, ishermitian=false)
     operators = Operators(
         Operator(4.5,
-            OID(Index(PID(1), DID(2)), SVector(0.5, 0.5), SVector(0.0, 0.0)),
-            OID(Index(PID(2), DID(1)), SVector(1.5, 1.5), SVector(1.0, 1.0))
+            CompositeIndex(Index(2, DID(2)), SVector(1.5, 1.5), SVector(1.0, 1.0)),
+            CompositeIndex(Index(1, DID(1)), SVector(0.5, 0.5), SVector(0.0, 0.0))
             )
         )
     @test expand(term, bond, hilbert, half=true) == operators
     @test expand(term, bond, hilbert, half=false) == operators+operators'
 
-    lattice = Lattice(:Tuanzi, [Point(CPID(1, 1), (0.0, 0.0), (0.0, 0.0))], vectors=[[1.0, 0.0]], neighbors=1)
-    bonds = Bonds(lattice)
-    hilbert = Hilbert(pid=>DFock(2) for pid in lattice.pids)
-    term = Term{:Mu}(:mu, 1.5, 0, couplings=@couplings(DCoupling(1.0, (2, 1))), amplitude=bond->3.0, modulate=true)
+    lattice = Lattice((0.0, 0.0); vectors=[[1.0, 0.0]])
+    bs = bonds(lattice, 1)
+    hilbert = Hilbert(site=>DFock(2) for site=1:length(lattice))
+    term = Term{:Mu}(:μ, 1.5, 0, couplings=@couplings(DCoupling(1.0, (2, 1))), amplitude=bond->3.0, ishermitian=true)
     operators = Operators(
         Operator(+2.25,
-            OID(Index(CPID(1, 1), DID(2)), SVector(0.0, 0.0), SVector(0.0, 0.0)),
-            OID(Index(CPID(1, 1), DID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0))
+            CompositeIndex(Index(1, DID(2)), SVector(0.0, 0.0), SVector(0.0, 0.0)),
+            CompositeIndex(Index(1, DID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0))
             )
         )
-    @test expand(term, bonds, hilbert, half=true) == operators
-    @test expand(term, bonds, hilbert, half=false) == operators*2
+    @test expand(term, bs, hilbert, half=true) == operators
+    @test expand(term, bs, hilbert, half=false) == operators*2
 end
 
 @testset "script" begin
-    oid = OID(Index(CPID('d', 1), DID(2)), SVector(0.0, 0.0), SVector(1.0, 0.0))
+    index = CompositeIndex(Index(1, DID(2)), SVector(0.0, 0.0), SVector(1.0, 0.0))
     latex = LaTeX{(:nambu,), (:site,)}('c', vectors=(SVector(1.0, 0.0), SVector(0.0, 1.0)))
-    @test script(Val(:rcoord), oid) == "[0.0, 0.0]"
-    @test script(Val(:icoord), oid) == "[1.0, 0.0]"
-    @test script(Val(:integralicoord), oid; vectors=get(latex.options, :vectors, nothing)) == "[1, 0]"
-    @test script(Val(:site), oid) == 1
-    @test script(Val(:nambu), oid) == "\\dagger"
+    @test script(Val(:rcoordinate), index) == "[0.0, 0.0]"
+    @test script(Val(:icoordinate), index) == "[1.0, 0.0]"
+    @test script(Val(:integercoordinate), index; vectors=get(latex.options, :vectors, nothing)) == "[1, 0]"
+    @test script(Val(:site), index) == 1
+    @test script(Val(:nambu), index) == "\\dagger"
+end
+
+@testset "Boundary" begin
+    op = Operator(4.5,
+        CompositeIndex(Index(1, DID(2)), SVector(0.5, 0.5), SVector(0.0, 0.0)),
+        CompositeIndex(Index(2, DID(1)), SVector(1.5, 1.5), SVector(1.0, 1.0))
+        )
+    bound = Boundary{(:θ₁, :θ₂)}([0.1, 0.2], [[1.0, 0.0], [0.0, 1.0]])
+    M = reparameter(typeof(op), :value, Complex{Float64})
+    @test valtype(typeof(bound), typeof(op)) == M
+    @test keys(bound) == keys(typeof(bound)) == (:θ₁, :θ₂)
+    @test bound == deepcopy(bound)
+    @test bound≠Boundary{(:ϕ₁, :ϕ₂)}(bound.values, bound.vectors)
+    @test isequal(bound, deepcopy(bound))
+    @test !isequal(bound, Boundary{(:ϕ₁, :ϕ₂)}(bound.values, bound.vectors))
+
+    another = Boundary{(:θ₁, :θ₂)}([0.0, 0.0], [[2.0, 0.0], [0.0, 2.0]])
+    @test merge!(deepcopy(bound), another) == another
+    @test replace(bound; values=another.values, vectors=another.vectors) == another
+
+    @test bound(op) ≈ replace(op, 4.5*exp(2im*pi*0.3))
+    @test bound(op, origin=[0.05, 0.15]) ≈ replace(op, 4.5*exp(2im*pi*0.1))
+    update!(bound, θ₁=0.3)
+    @test bound(op) ≈ replace(op, 4.5*exp(2im*pi*0.5))
+    @test bound(op, origin=[0.1, 0.1]) ≈ replace(op, 4.5*exp(2im*pi*0.3))
+
+    ops = Operators{M}(op)
+    @test valtype(typeof(bound), typeof(ops)) == typeof(ops)
+    @test bound(ops) ≈ Operators(replace(op, 4.5*exp(2im*pi*0.5)))
+    @test map!(bound, ops) ≈ ops ≈ Operators(replace(op, 4.5*exp(2im*pi*0.5)))
+
+    @test valtype(typeof(plain), typeof(op)) == typeof(op)
+    @test valtype(typeof(plain), typeof(ops)) == typeof(ops)
+    @test plain(op) == op
+    @test plain(ops) == ops
+    @test update!(plain) == plain
+    @test replace(plain; values=another.values, vectors=another.vectors) == plain
 end

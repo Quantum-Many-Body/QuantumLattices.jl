@@ -1,11 +1,10 @@
 module CompositeStructures
 
-using ..Traits: getcontent, dissolve, rawtype, efficientoperations
+using ..Traits: efficientoperations, dissolve, getcontent, rawtype
 
 import ..Traits: contentnames, dissolve
 
-export CompositeTuple, CompositeNTuple, CompositeVector, CompositeDict
-export NamedContainer
+export CompositeDict, CompositeNTuple, CompositeTuple, CompositeVector, NamedContainer
 
 """
     CompositeTuple{T<:Tuple}

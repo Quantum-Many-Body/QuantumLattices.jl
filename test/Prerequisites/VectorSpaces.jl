@@ -1,9 +1,8 @@
-using Test
+using QuantumLattices.Interfaces: ⊕, ⊗, dimension, rank
 using QuantumLattices.Prerequisites.VectorSpaces
-using QuantumLattices.Interfaces: dimension, rank, ⊕, ⊗
 
-import QuantumLattices.Prerequisites.VectorSpaces: VectorSpaceStyle, shape
 import QuantumLattices.Prerequisites.Traits: contentnames, getcontent
+import QuantumLattices.Prerequisites.VectorSpaces: VectorSpaceStyle, shape
 
 struct SimpleVectorSpace{B, N} <: VectorSpace{B}
     sorted::Bool

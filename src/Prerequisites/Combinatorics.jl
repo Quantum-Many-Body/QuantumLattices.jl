@@ -1,7 +1,6 @@
 module Combinatorics
 
-export AbstractCombinatorics
-export Combinations, DulCombinations, Permutations, DulPermutations
+export AbstractCombinatorics, Combinations, DulCombinations, DulPermutations, Permutations
 
 """
     AbstractCombinatorics{M, C}

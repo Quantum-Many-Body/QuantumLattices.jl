@@ -3,7 +3,7 @@ module NamedVectors
 using Printf: @printf
 using ..Traits: efficientoperations
 
-export NamedVector, HomoNamedVector
+export HomoNamedVector, NamedVector
 
 """
     NamedVector

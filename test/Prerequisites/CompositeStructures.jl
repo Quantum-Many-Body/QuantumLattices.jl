@@ -1,4 +1,3 @@
-using Test
 using QuantumLattices.Prerequisites.CompositeStructures
 
 import QuantumLattices.Prerequisites.Traits: contentnames, getcontent

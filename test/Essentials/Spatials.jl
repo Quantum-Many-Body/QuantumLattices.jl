@@ -1,15 +1,13 @@
-using Test
-using Random: seed!
-using StaticArrays: SVector
 using Plots: plot, savefig
 using QuantumLattices.Essentials.Spatials
-using QuantumLattices.Essentials: dtype, kind, reset!
-using QuantumLattices.Essentials.QuantumNumbers: Momentum₁, Momentum₂, Momentum₃, AbelianNumbers
-using QuantumLattices.Interfaces: decompose, rank, dimension, expand
+using QuantumLattices.Essentials: dtype
+using QuantumLattices.Essentials.QuantumNumbers: AbelianNumbers, Momentum₁, Momentum₂, Momentum₃
+using QuantumLattices.Interfaces: decompose, dimension
 using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Prerequisites.Traits: contentnames, getcontent
 using QuantumLattices.Prerequisites.VectorSpaces: shape
-using QuantumLattices.Prerequisites.SimpleTrees: leaves
+using Random: seed!
+using StaticArrays: SVector
 
 @testset "distance" begin
     @test distance([0.0, 0.0], [1.0, 1.0]) ≈ sqrt(2.0)
@@ -133,17 +131,18 @@ end
     @test minimumlengths(reshape([0.0, 0.0], 2, 1), [[1.0, 0.0], [0.0, 1.0]], 7) ≈ [1.0, √2, 2.0, √5, 2*√2, 3.0, √10]
 end
 
-@testset "intralinks" begin
-    ps, a1, a2 = [0.0 0.5; 0.0 0.5], [1.0, 0.0], [0.0, 1.0]
-    neighbors = Dict(1=>1.0)
-    links = [(1, 1, 1, SVector(0.0, -1.0)), (1, 1, 1, SVector(-1.0, 0.0)), (1, 2, 2, SVector(0.0, -1.0)), (1, 2, 2, SVector(-1.0, 0.0))]
-    @test intralinks(ps, [a1, a2], neighbors) == links
+@testset "Neighbors" begin
+    neighbors = Neighbors(1=>1.0, 2=>√2)
+    @test neighbors == Neighbors([1.0, √2])
+    @test max(neighbors) == √2
+    @test nneighbor(neighbors) == 2
+    @test nneighbor(Neighbors(Symbol(1)=>1.0, Symbol(2)=>√2)) == 2
 end
 
 @testset "interlinks" begin
     ps1 = [0.0 1.0; 0.0 0.0]
     ps2 = [0.0 1.0; 1.0 1.0]
-    neighbors = Dict(1=>1.0)
+    neighbors = Neighbors(1=>1.0)
     links = [(1, 1, 1), (1, 2, 2)]
     @test interlinks(ps1, ps2, neighbors) == links
 end
@@ -157,169 +156,60 @@ end
     @test string(translations) == "2P-3O"
 end
 
-@testset "CPID" begin
-    @test CPID(1) == CPID('T', 1) == CPID(scope='T', site=1)
-    @test CPID(scope="tz", site=1)|>string == "CPID(\"tz\", 1)"
-end
-
 @testset "Point" begin
-    point = Point(CPID(1, 1), (0.0, 0.0), (0.0, 0.0))
-    @test point|>dtype == point|>typeof|>dtype == Float
-    @test point == Point(CPID(1, 1), [0.0, 0.0], [0.0, 0.0])
-    @test isequal(point, Point{2}(CPID(1, 1), [0.0, 0.0], [0.0, 0.0]))
-    @test point|>length == point|>typeof|>length == 1
-    @test point|>eltype == point|>typeof|>eltype == Point{2, CPID{Int}, Float}
-    @test point|>rank == point|>typeof|>rank == 1
-    @test point|>pidtype == point|>typeof|>pidtype == CPID{Int}
+    point = Point(1, (0.0, 0.0), (0.0, 0.0))
+    @test point == Point(1, [0.0, 0.0], [0.0, 0.0])
+    @test isequal(point, Point(1, SVector(0.0, 0.0), SVector(0.0, 0.0)))
+    @test point|>string == "Point(1, [0.0, 0.0], [0.0, 0.0])"
     @test point|>dimension == point|>typeof|>dimension == 2
-    @test point|>kind == point|>typeof|>kind == 0
-    @test point|>string == "Point(CPID(1, 1), [0.0, 0.0], [0.0, 0.0])"
-    @test point[1] == point
-    @test point|>collect == [point]
-
-    @test isintracell(Point(PID(1), (0.0, 0.0), (0.0, 0.0))) == true
-    @test isintracell(Point(PID(1), (0.0, 0.0), (1.0, 0.0))) == false
+    @test point|>dtype == point|>typeof|>dtype == Float
+    @test isintracell(Point(1, (0.0, 0.0), (0.0, 0.0))) == true
+    @test isintracell(Point(1, (0.0, 0.0), (1.0, 0.0))) == false
 end
 
 @testset "Bond" begin
-    bond = Bond(1, Point(PID(1), (0.0, 0.0), (0.0, 0.0)), Point(PID(2), (0.0, 1.0), (0.0, 1.0)))
+    bond = Bond(1, Point(2, (0.0, 1.0), (0.0, 1.0)), Point(1, (0.0, 0.0), (0.0, 0.0)))
     @test bond|>deepcopy == bond
     @test isequal(bond|>deepcopy, bond)
-    @test bond|>string == "Bond(1, Point(PID(1), [0.0, 0.0], [0.0, 0.0]), Point(PID(2), [0.0, 1.0], [0.0, 1.0]))"
-    @test bond|>reverse == Bond(1, Point(PID(2), (0.0, 1.0), (0.0, 1.0)), Point(PID(1), (0.0, 0.0), (0.0, 0.0)))
-    @test bond|>length == bond|>typeof|>length == 2
-    @test bond|>eltype == bond|>typeof|>eltype == Point{2, PID, Float}
-    @test bond|>rank == bond|>typeof|>rank == 2
-    @test bond|>pidtype == bond|>typeof|>pidtype == PID
+    @test bond|>string == "Bond(1, Point(2, [0.0, 1.0], [0.0, 1.0]), Point(1, [0.0, 0.0], [0.0, 0.0]))"
     @test bond|>dimension == bond|>typeof|>dimension == 2
-    @test bond|>kind == 1
-    @test bond|>rcoord == [0.0, 1.0]
-    @test bond|>icoord == [0.0, 1.0]
+    @test bond|>dtype == bond|>typeof|>dtype == Float
+    @test bond|>length == 2
+    @test bond|>eltype == bond|>typeof|>eltype == Point{2, Float}
+    @test bond|>reverse == Bond(1, Point(1, (0.0, 0.0), (0.0, 0.0)), Point(2, (0.0, 1.0), (0.0, 1.0)))
+    @test bond|>collect == [Point(2, (0.0, 1.0), (0.0, 1.0)), Point(1, (0.0, 0.0), (0.0, 0.0))]
+    @test bond|>rcoordinate == [0.0, 1.0]
+    @test bond|>icoordinate == [0.0, 1.0]
     @test bond|>isintracell == false
-    @test bond[1] == bond.epoint && bond[2] == bond.spoint
-    @test bond|>collect == [Point(PID(2), (0.0, 1.0), (0.0, 1.0)), Point(PID(1), (0.0, 0.0), (0.0, 0.0))]
 end
 
 @testset "Lattice" begin
-    lattice = Lattice(:Tuanzi, [Point(PID(1), (0.5, 0.5), (0.0, 0.0))], vectors=[[1.0, 0.0], [0.0, 1.0]], neighbors=1)
-    @test lattice|>typeof|>contentnames == (:name, :pids, :rcoords, :icoords, :vectors, :reciprocals, :neighbors)
+    lattice = Lattice([0.5, 0.5]; name=:Tuanzi, vectors=[[1.0, 0.0], [0.0, 1.0]])
+    @test lattice|>typeof|>contentnames == (:name, :coordinates, :vectors, :reciprocals)
     @test lattice|>deepcopy == lattice
     @test isequal(lattice|>deepcopy, lattice)
-    @test lattice|>string == "Lattice(Tuanzi)\n  with 1 point:\n    Point(PID(1), [0.5, 0.5], [0.0, 0.0])\n  with 2 translation vectors:\n    [1.0, 0.0]\n    [0.0, 1.0]\n  with 1 order of nearest neighbors:\n    1 => 1.0\n"
+    @test lattice|>string == "Lattice(Tuanzi)\n  with 1 point:\n    [0.5, 0.5]\n  with 2 translation vectors:\n    [1.0, 0.0]\n    [0.0, 1.0]\n"
     @test lattice|>length == 1
     @test lattice|>dimension == lattice|>typeof|>dimension == 2
-    @test lattice|>keytype == lattice|>typeof|>keytype == PID
-    @test lattice|>valtype == lattice|>typeof|>valtype == Point{2, PID, Float}
     @test lattice|>dtype == lattice|>typeof|>dtype == Float
-    @test lattice[LatticeIndex{'R'}(1)] == lattice[LatticeIndex{'R'}(PID(1))] == SVector(0.5, 0.5)
-    @test lattice[LatticeIndex{'I'}(1)] == lattice[LatticeIndex{'I'}(PID(1))] == SVector(0.0, 0.0)
-    @test lattice[LatticeIndex{'P'}(1)] == lattice[LatticeIndex{'P'}(PID(1))] == Point(PID(1), (0.5, 0.5), (0.0, 0.0))
-    @test lattice|>nneighbor == 1
+    @test lattice[1] == SVector(0.5, 0.5)
+    @test Neighbors(lattice, 1) == Neighbors([1.0])
+    @test Neighbors(lattice, 2) == Neighbors([1.0, √2])
 
-    zerothbs = [Point(PID(1), (0.5, 0.5), (0.0, 0.0))]
-    insidebs = []
-    acrossbs = [Bond(1, Point(PID(1), [0.5, 0.5], [0.0, 0.0]), Point(PID(1), [0.5, -0.5], [0.0, -1.0])),
-                Bond(1, Point(PID(1), [0.5, 0.5], [0.0, 0.0]), Point(PID(1), [-0.5, 0.5], [-1.0, 0.0]))
+    @test bonds(lattice, 1) == bonds(lattice, Neighbors([1.0])) == [
+        Bond(Point(1, (0.5, 0.5), (0.0, 0.0))),
+        Bond(1, Point(1, (0.5, -0.5), (0.0, -1.0)), Point(1, (0.5, 0.5), (0.0, 0.0))),
+        Bond(1, Point(1, (-0.5, 0.5), (-1.0, 0.0)), Point(1, (0.5, 0.5), (0.0, 0.0)))
     ]
-    @test bonds(lattice, zerothbonds) == zerothbs
-    @test bonds(lattice, insidebonds) == insidebs
-    @test bonds(lattice, acrossbonds) == acrossbs
-    @test setdiff(bonds(lattice), [zerothbs; insidebs; acrossbs])|>length == 0
 
-    lattice = Lattice(:SuperTuanzi,
-                [Lattice(:Tuanzi1, [Point(CPID(1, 1), (0.0, 0.0))], neighbors=0),
-                Lattice(:Tuanzi2, [Point(CPID(2, 1), (0.5, 0.5))], neighbors=0),
-                ],
-                vectors=[[1.0, 0.0], [0.0, 1.0]],
-                neighbors=2,
-                )
-    @test setdiff(bonds(lattice), bonds(lattice, zerothbonds, insidebonds, acrossbonds))|>length == 0
-
-    unit = Lattice(:Square, [Point(PID(1), (0.0, 0.0), (0.0, 0.0))], vectors=[[1.0, 0.0], [0.0, 1.0]], neighbors=1)
+    unit = Lattice((0.0, 0.0); name=:Square, vectors=[[1.0, 0.0], [0.0, 1.0]])
     lattice = Lattice(unit, translations"2P-3O")
-    @test lattice == Lattice(Symbol("Square(2P-3O)"), [
-        Point(PID(1), [0.0, 0.0], [0.0, 0.0]), Point(PID(2), [1.0, 0.0], [0.0, 0.0]), Point(PID(3), [0.0, 1.0], [0.0, 0.0]),
-        Point(PID(4), [1.0, 1.0], [0.0, 0.0]), Point(PID(5), [0.0, 2.0], [0.0, 0.0]), Point(PID(6), [1.0, 2.0], [0.0, 0.0])
-        ],
-        vectors=[[2.0, 0.0]],
-        neighbors=1
-    )
-end
-
-@testset "SuperLattice" begin
-    lattice = SuperLattice(:SuperTuanzi,
-                [Lattice(:TuanziSys, [Point(CPID(1, 1), (0.0, 0.0)), Point(CPID(1, 2), (0.5, 0.5))], neighbors=Dict(1=>√2/2)),
-                Lattice(:TuanziEnv, [Point(CPID(2, 1), (-0.05, -0.05)), Point(CPID(2, 2), (0.55, 0.55))], neighbors=Dict{Int, Float}()),
-                ],
-                vectors=[[1.0, 0.0], [0.0, 1.0]],
-                neighbors=Dict(1=>√2/2, -1=>√2/20)
-                )
-    @test lattice|>typeof|>contentnames == (:sublattices, :name, :pids, :rcoords, :icoords, :vectors, :reciprocals, :neighbors)
-    @test latticetype(lattice) == latticetype(typeof(lattice)) == Lattice{2, CPID{Int}, Float}
-    @test setdiff(bonds(lattice), bonds(lattice, zerothbonds, insidebonds, acrossbonds))|>length == 0
-    @test setdiff(bonds(lattice, insidebonds), bonds(lattice, intrabonds, interbonds))|>length == 0
-end
-
-@testset "Cylinder" begin
-    cylinder = Cylinder{CPID{String}}(:Tuanzi, [0.0 0.0; 0.0 1.0], SVector(1.0, 0.0), vector=[0.0, 2.0], neighbors=1)
-    @test cylinder|>typeof|>contentnames == (:block, :translation, :name, :pids, :rcoords, :icoords, :vectors, :reciprocals, :neighbors)
-    insert!(cylinder, "A", "B")
-    insert!(cylinder, "C3", cut=2, scopes=["C1", "C1", "C2", "C2"])
-    @test cylinder.pids == [CPID("C1", 1), CPID("C3", 2), CPID("C3", 1), CPID("C1", 2), CPID("C2", 1), CPID("C2", 2)]
-    @test cylinder.rcoords == [-1.0 -1.0 0.0 0.0 1.0 1.0; 0.0 1.0 0.0 1.0 0.0 1.0]
-    @test cylinder.icoords == [0.0 0.0 0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0 0.0 0.0]
-    lattice = cylinder("C1", "C2", "C3")
-    @test lattice.pids == [CPID("C1", 1), CPID("C1", 2), CPID("C2", 1), CPID("C2", 2), CPID("C3", 1), CPID("C3", 2)]
-    @test lattice.rcoords == [-1.0 -1.0 0.0 0.0 1.0 1.0; 0.0 1.0 0.0 1.0 0.0 1.0]
-    @test lattice.icoords == [0.0 0.0 0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0 0.0 0.0]
-end
-
-@testset "LatticeBonds" begin
-    @test eltype(typeof(allbonds)) === AbstractBond
-    @test eltype(typeof(zerothbonds)) === Point
-    @test eltype(typeof(insidebonds)) === eltype(typeof(acrossbonds)) === Bond
-    @test eltype(typeof(intrabonds)) === eltype(typeof(interbonds)) === Bond
-    @test eltype(AbstractLattice{2, PID, Float}, allbonds) == eltype(AbstractLattice{2, PID, Float}, Val(allbonds)) == AbstractBond{2, PID, Float}
-    @test eltype(Lattice{3, CPID{Char}, Float}, zerothbonds) == eltype(Lattice{3, CPID{Char}, Float}, Val(zerothbonds)) == Point{3, CPID{Char}, Float}
-    @test eltype(Lattice{1, CPID{String}, Float}, insidebonds) == eltype(Lattice{1, CPID{String}, Float}, Val(insidebonds)) == Bond{1, CPID{String}, Float}
-
-    @test expand(Lattice, Val((allbonds,))) == Lattice|>latticebondsstructure|>leaves|>Tuple
-    @test expand(Lattice, Val((zerothbonds,))) == (zerothbonds,)
-    @test expand(Lattice, Val((insidebonds,))) == (insidebonds,)
-    @test expand(Lattice, Val((acrossbonds,))) == (acrossbonds,)
-
-    @test expand(SuperLattice, Val((allbonds,))) == SuperLattice|>latticebondsstructure|>leaves|>Tuple
-    @test expand(SuperLattice, Val((zerothbonds,))) == (zerothbonds,)
-    @test expand(SuperLattice, Val((insidebonds,))) == (intrabonds, interbonds)
-    @test expand(SuperLattice, Val((acrossbonds,))) == (acrossbonds,)
-    @test expand(SuperLattice, Val((intrabonds,))) == (intrabonds,)
-    @test expand(SuperLattice, Val((interbonds,))) == (interbonds,)
-end
-
-@testset "Bonds" begin
-    lattice = Lattice(:Tuanzi, [Point(PID(1), (0.5, 0.5), (0.0, 0.0))], vectors=[[1.0, 0.0], [0.0, 1.0]], neighbors=1)
-    bs = Bonds(lattice)
-    @test bs|>eltype == bs|>typeof|>eltype == AbstractBond{2, PID, Float}
-    @test bs==Bonds(lattice, allbonds) && isequal(bs, Bonds(lattice, allbonds))
-    @test (bs|>length == 3) && (bs|>size == (3,))
-    @test summary(bs) == "3-element Bonds"
-    @test bs|>bondtypes == bs|>typeof|>bondtypes == (zerothbonds, insidebonds, acrossbonds)
-    @test bs|>latticetype == bs|>typeof|>latticetype == Lattice{2, PID, Float}
-    @test bs|>rank == bs|>typeof|>rank == 3
-    @test bs|>collect == bonds(lattice)
-    @test (bs[1] == bs.bonds[1][1]) && (bs[2] == bs.bonds[3][1]) && (bs[3] == bs.bonds[3][2])
-    @test filter(allbonds, bs, :include|>Val) == filter((zerothbonds, insidebonds, acrossbonds), bs, :include|>Val) == bs
-    @test filter(zerothbonds, bs, :include|>Val) == filter((insidebonds, acrossbonds), bs, :exclude|>Val) == Bonds(lattice, zerothbonds)
-    @test filter(insidebonds, bs, :include|>Val) == filter((zerothbonds, acrossbonds), bs, :exclude|>Val) == Bonds(lattice, insidebonds)
-    @test filter(acrossbonds, bs, :include|>Val) == filter((zerothbonds, insidebonds), bs, :exclude|>Val) == Bonds(lattice, acrossbonds)
-    emptybs = Bonds{(zerothbonds, insidebonds, acrossbonds), Lattice{2, PID}}((Point{2, PID, Float}[], Bond{2, PID, Float}[], Bond{2, PID, Float}[]))
-    @test filter(bond->(dimension(bond) == 3), bs) == empty!(deepcopy(bs)) == empty(bs) == emptybs
-    @test reset!(emptybs, lattice) == bs
+    @test lattice == Lattice([0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0], [0.0, 2.0], [1.0, 2.0]; name=Symbol("Square(2P-3O)"), vectors=[[2.0, 0.0]])
 end
 
 @testset "plot" begin
-    lattice = Lattice(:Tuanzi, [Point(PID(1), (0.0, 0.0))], vectors=[[1.0, 0.0], [0.0, 1.0]], neighbors=2)
-    plt = plot(lattice)
+    lattice = Lattice((0.0, 0.0); name=:Tuanzi, vectors=[[1.0, 0.0], [0.0, 1.0]])
+    plt = plot(lattice, 2)
     display(plt)
     savefig(plt, "Tuanzi.png")
 end

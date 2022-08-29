@@ -1,15 +1,13 @@
-using Test
-using StaticArrays: SVector
 using LaTeXStrings: latexstring
+using QuantumLattices.Essentials.DegreesOfFreedom: wildcard, AbstractCompositeIndex, CompositeIndex, Coupling, Couplings, Hilbert, Index, IIDSpace, statistics, @couplings, @subscript_str
+using QuantumLattices.Essentials.QuantumOperators: ID, Operator, Operators, latexname, script
 using QuantumLattices.Essentials.QuantumSystems
-using QuantumLattices.Essentials.QuantumSystems: heisenbergxyz, heisenbergpmz, gamma, dm
-using QuantumLattices.Essentials.QuantumOperators: ID, Operator, Operators, script, latexname, ishermitian
-using QuantumLattices.Essentials.Spatials: AbstractPID, PID, CPID, Point, Bond, rcoord, azimuthd
-using QuantumLattices.Essentials.DegreesOfFreedom: Index, CompositeOID, OID, Hilbert, statistics
-using QuantumLattices.Essentials.DegreesOfFreedom: IIDSpace, Coupling, Couplings, abbr, @subscript_str, @couplings, wildcard
+using QuantumLattices.Essentials.QuantumSystems: dm, gamma, heisenbergpmz, heisenbergxyz
+using QuantumLattices.Essentials.Spatials: Bond, Point, azimuthd, rcoordinate
 using QuantumLattices.Interfaces: ⊗, ⋅, expand, permute, rank
 using QuantumLattices.Prerequisites.Combinatorics: Permutations
 using QuantumLattices.Prerequisites.VectorSpaces: shape
+using StaticArrays: SVector
 
 @testset "FID" begin
     fid = FID{:f}(orbital=1, spin=1)
@@ -48,30 +46,32 @@ end
 end
 
 @testset "latex" begin
-    @test script(Val(:site), Index(PID(1), FID{:f}(2, 1, 1))) == 1
-    @test script(Val(:orbital), Index(PID(1), FID{:f}(2, 1, 1))) == 2
-    @test script(Val(:spint), Index(PID(1), FID{:f}(2, 3, 1))) == 3
-    @test script(Val(:spsym), Index(PID(1), FID{:f}(2, 2, 1))) == "↑"
-    @test script(Val(:spsym), Index(PID(1), FID{:f}(2, 1, 1))) == "↓"
-    @test script(Val(:nambu), Index(PID(1), FID{:f}(2, 3, 1))) == ""
-    @test script(Val(:nambu), Index(PID(1), FID{:f}(2, 3, 2))) == "\\dagger"
+    @test script(Val(:site), Index(1, FID{:f}(2, 1, 1))) == 1
+    @test script(Val(:orbital), FID{:f}(2, 1, 1)) == script(Val(:orbital), Index(1, FID{:f}(2, 1, 1))) == 2
+    @test script(Val(:spint), FID{:f}(2, 3, 1)) == script(Val(:spint), Index(1, FID{:f}(2, 3, 1))) == 3
+    @test script(Val(:spsym), FID{:f}(2, 2, 1)) == script(Val(:spsym), Index(1, FID{:f}(2, 2, 1))) == "↑"
+    @test script(Val(:spsym), FID{:f}(2, 1, 1)) == script(Val(:spsym), Index(1, FID{:f}(2, 1, 1))) == "↓"
+    @test script(Val(:nambu), FID{:f}(2, 3, 1)) == script(Val(:nambu), Index(1, FID{:f}(2, 3, 1))) == ""
+    @test script(Val(:nambu), FID{:f}(2, 3, 2)) == script(Val(:nambu), Index(1, FID{:f}(2, 3, 2))) == "\\dagger"
 
-    @test latexname(Index{<:AbstractPID, <:FID{:f}}) == Symbol("Index{AbstractPID, FID{:f}}")
-    @test latexname(CompositeOID{Index{<:AbstractPID, <:FID{:f}}}) == Symbol("CompositeOID{Index{AbstractPID, FID{:f}}}")
-    @test latexname(Index{<:AbstractPID, <:FID{:b}}) == Symbol("Index{AbstractPID, FID{:b}}")
-    @test latexname(CompositeOID{Index{<:AbstractPID, <:FID{:b}}}) == Symbol("CompositeOID{Index{AbstractPID, FID{:b}}}")
+    @test latexname(Index{<:FID{:f}}) == Symbol("Index{FID{:f}}")
+    @test latexname(AbstractCompositeIndex{Index{<:FID{:f}}}) == Symbol("AbstractCompositeIndex{Index{FID{:f}}}")
+    @test latexname(FID{:f}) == Symbol("FID{:f}")
+    @test latexname(Index{<:FID{:b}}) == Symbol("Index{FID{:b}}")
+    @test latexname(AbstractCompositeIndex{Index{<:FID{:b}}}) == Symbol("AbstractCompositeIndex{Index{FID{:b}}}")
+    @test latexname(FID{:b}) == Symbol("FID{:b}")
 end
 
 @testset "angle" begin
-    @test angle(OID(Index(PID(1), FID{:f}(1, 1, 1)), [0.0, 0.0], [1.0, 2.0]), [[1.0, 0.0], [0.0, 1.0]], [0.1, 0.0]) ≈ 2pi*0.1
-    @test angle(OID(Index(CPID(1, 1), FID{:f}(1, 1, 2)), [0.0, 0.0], [1.0, 2.0]), [[1.0, 0.0], [0.0, 1.0]], [0.0, 0.2]) ≈ -2pi*0.4
+    @test angle(CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.0, 0.0], [1.0, 2.0]), [[1.0, 0.0], [0.0, 1.0]], [0.1, 0.0]) ≈ 2pi*0.1
+    @test angle(CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.0, 0.0], [1.0, 2.0]), [[1.0, 0.0], [0.0, 1.0]], [0.0, 0.2]) ≈ -2pi*0.4
 end
 
 @testset "FockOperator" begin
-    id₁ = OID(Index(PID(2), FID{:f}(1, 1, 2)), SVector(0.5, 0.0), SVector(0.0, 0.0))
-    id₂ = OID(Index(PID(2), FID{:f}(1, 1, 1)), SVector(0.5, 0.0), SVector(0.0, 0.0))
-    id₃ = OID(Index(PID(1), FID{:f}(1, 2, 2)), SVector(0.0, 0.0), SVector(0.0, 0.0))
-    id₄ = OID(Index(PID(1), FID{:f}(1, 2, 1)), SVector(0.0, 0.0), SVector(0.0, 0.0))
+    id₁ = CompositeIndex(Index(2, FID{:f}(1, 1, 2)), SVector(0.5, 0.0), SVector(0.0, 0.0))
+    id₂ = CompositeIndex(Index(2, FID{:f}(1, 1, 1)), SVector(0.5, 0.0), SVector(0.0, 0.0))
+    id₃ = CompositeIndex(Index(1, FID{:f}(1, 2, 2)), SVector(0.0, 0.0), SVector(0.0, 0.0))
+    id₄ = CompositeIndex(Index(1, FID{:f}(1, 2, 1)), SVector(0.0, 0.0), SVector(0.0, 0.0))
 
     opt = Operator(1.0, id₁, id₂)
     @test opt|>isnormalordered
@@ -94,10 +94,10 @@ end
     @test permute(id₄, id₁) == (Operator(-1, id₁, id₄),)
 
 
-    id₁ = OID(Index(PID(2), FID{:b}(1, 1, 2)), SVector(0.5, 0.0), SVector(0.0, 0.0))
-    id₂ = OID(Index(PID(2), FID{:b}(1, 1, 1)), SVector(0.5, 0.0), SVector(0.0, 0.0))
-    id₃ = OID(Index(PID(1), FID{:b}(1, 2, 2)), SVector(0.0, 0.0), SVector(0.0, 0.0))
-    id₄ = OID(Index(PID(1), FID{:b}(1, 2, 1)), SVector(0.0, 0.0), SVector(0.0, 0.0))
+    id₁ = CompositeIndex(Index(2, FID{:b}(1, 1, 2)), SVector(0.5, 0.0), SVector(0.0, 0.0))
+    id₂ = CompositeIndex(Index(2, FID{:b}(1, 1, 1)), SVector(0.5, 0.0), SVector(0.0, 0.0))
+    id₃ = CompositeIndex(Index(1, FID{:b}(1, 2, 2)), SVector(0.0, 0.0), SVector(0.0, 0.0))
+    id₄ = CompositeIndex(Index(1, FID{:b}(1, 2, 1)), SVector(0.0, 0.0), SVector(0.0, 0.0))
 
     opt = Operator(1.0, id₁, id₂)
     @test latexstring(opt) == "b^{\\dagger}_{2, 1, ↓}b^{}_{2, 1, ↓}"
@@ -131,87 +131,87 @@ end
     @test repr(fc) == "3.0 sp[2 2]"
 
     fc = FockCoupling{2}(2.0, orbitals=(1, 2), nambus=(2, 1))
-    bond = Bond(1, Point(CPID(1, 2), SVector(0.5), SVector(0.0)), Point(CPID(1, 1), SVector(0.0), SVector(0.0)))
-    hilbert = Hilbert(pid=>Fock{:f}(norbital=2, nspin=2, nnambu=2) for pid in [bond.epoint.pid, bond.spoint.pid])
+    bond = Bond(1, Point(1, SVector(0.0), SVector(0.0)), Point(2, SVector(0.5), SVector(0.0)))
+    hilbert = Hilbert(site=>Fock{:f}(norbital=2, nspin=2, nnambu=2) for site=1:2)
     ex = expand(fc, bond, hilbert, Val(:Hopping))
     @test collect(ex) == [
-        Operator(2.0, OID(Index(CPID(1, 1), FID{:f}(1, 1, 2)), SVector(0.0), SVector(0.0)), OID(Index(CPID(1, 2), FID{:f}(2, 1, 1)), SVector(0.5), SVector(0.0))),
-        Operator(2.0, OID(Index(CPID(1, 1), FID{:f}(1, 2, 2)), SVector(0.0), SVector(0.0)), OID(Index(CPID(1, 2), FID{:f}(2, 2, 1)), SVector(0.5), SVector(0.0)))
+        Operator(2.0, CompositeIndex(Index(1, FID{:f}(1, 1, 2)), SVector(0.0), SVector(0.0)), CompositeIndex(Index(2, FID{:f}(2, 1, 1)), SVector(0.5), SVector(0.0))),
+        Operator(2.0, CompositeIndex(Index(1, FID{:f}(1, 2, 2)), SVector(0.0), SVector(0.0)), CompositeIndex(Index(2, FID{:f}(2, 2, 1)), SVector(0.5), SVector(0.0)))
     ]
 
     fc = FockCoupling{4}(2.0, spins=(2, 2, 1, 1), nambus=(2, 1, 2, 1))
-    point = Point(PID(1), SVector(0.0), SVector(0.0))
-    hilbert = Hilbert(point.pid=>Fock{:b}(norbital=2, nspin=2, nnambu=2))
-    ex = expand(fc, point, hilbert, Val(:info))
+    point = Point(1, SVector(0.0), SVector(0.0))
+    hilbert = Hilbert(point.site=>Fock{:b}(norbital=2, nspin=2, nnambu=2))
+    ex = expand(fc, Bond(point), hilbert, Val(:info))
     @test collect(ex) == [
         Operator(2.0, 
-                OID(Index(PID(1), FID{:b}(1, 2, 2)), SVector(0.0), SVector(0.0)),
-                OID(Index(PID(1), FID{:b}(1, 2, 1)), SVector(0.0), SVector(0.0)),
-                OID(Index(PID(1), FID{:b}(1, 1, 2)), SVector(0.0), SVector(0.0)),
-                OID(Index(PID(1), FID{:b}(1, 1, 1)), SVector(0.0), SVector(0.0))
+                CompositeIndex(Index(1, FID{:b}(1, 2, 2)), SVector(0.0), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:b}(1, 2, 1)), SVector(0.0), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:b}(1, 1, 2)), SVector(0.0), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:b}(1, 1, 1)), SVector(0.0), SVector(0.0))
                 ),
         Operator(2.0,
-                OID(Index(PID(1), FID{:b}(2, 2, 2)), SVector(0.0), SVector(0.0)),
-                OID(Index(PID(1), FID{:b}(2, 2, 1)), SVector(0.0), SVector(0.0)),
-                OID(Index(PID(1), FID{:b}(2, 1, 2)), SVector(0.0), SVector(0.0)),
-                OID(Index(PID(1), FID{:b}(2, 1, 1)), SVector(0.0), SVector(0.0))
+                CompositeIndex(Index(1, FID{:b}(2, 2, 2)), SVector(0.0), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:b}(2, 2, 1)), SVector(0.0), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:b}(2, 1, 2)), SVector(0.0), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:b}(2, 1, 1)), SVector(0.0), SVector(0.0))
                 )
     ]
 
     fc = FockCoupling{4}(2.0, orbitals=subscript"[α α β β](α < β)", spins=(2, 1, 1, 2), nambus=(2, 2, 1, 1))
-    point = Point(PID(1), SVector(0.5), SVector(0.0))
-    hilbert = Hilbert(point.pid=>Fock{:f}(norbital=3, nspin=2, nnambu=2))
-    ex = expand(fc, point, hilbert, Val(:info))
+    point = Point(1, SVector(0.5), SVector(0.0))
+    hilbert = Hilbert(point.site=>Fock{:f}(norbital=3, nspin=2, nnambu=2))
+    ex = expand(fc, Bond(point), hilbert, Val(:info))
     @test collect(ex) == [
         Operator(2.0,
-                OID(Index(PID(1), FID{:f}(1, 2, 2)), SVector(0.5), SVector(0.0)),
-                OID(Index(PID(1), FID{:f}(1, 1, 2)), SVector(0.5), SVector(0.0)),
-                OID(Index(PID(1), FID{:f}(2, 1, 1)), SVector(0.5), SVector(0.0)),
-                OID(Index(PID(1), FID{:f}(2, 2, 1)), SVector(0.5), SVector(0.0))
+                CompositeIndex(Index(1, FID{:f}(1, 2, 2)), SVector(0.5), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(1, 1, 2)), SVector(0.5), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(2, 1, 1)), SVector(0.5), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(2, 2, 1)), SVector(0.5), SVector(0.0))
                 ),
         Operator(2.0,
-                OID(Index(PID(1), FID{:f}(1, 2, 2)), SVector(0.5), SVector(0.0)),
-                OID(Index(PID(1), FID{:f}(1, 1, 2)), SVector(0.5), SVector(0.0)),
-                OID(Index(PID(1), FID{:f}(3, 1, 1)), SVector(0.5), SVector(0.0)),
-                OID(Index(PID(1), FID{:f}(3, 2, 1)), SVector(0.5), SVector(0.0))
+                CompositeIndex(Index(1, FID{:f}(1, 2, 2)), SVector(0.5), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(1, 1, 2)), SVector(0.5), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(3, 1, 1)), SVector(0.5), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(3, 2, 1)), SVector(0.5), SVector(0.0))
                 ),
         Operator(2.0,
-                OID(Index(PID(1), FID{:f}(2, 2, 2)), SVector(0.5), SVector(0.0)),
-                OID(Index(PID(1), FID{:f}(2, 1, 2)), SVector(0.5), SVector(0.0)),
-                OID(Index(PID(1), FID{:f}(3, 1, 1)), SVector(0.5), SVector(0.0)),
-                OID(Index(PID(1), FID{:f}(3, 2, 1)), SVector(0.5), SVector(0.0))
+                CompositeIndex(Index(1, FID{:f}(2, 2, 2)), SVector(0.5), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(2, 1, 2)), SVector(0.5), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(3, 1, 1)), SVector(0.5), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(3, 2, 1)), SVector(0.5), SVector(0.0))
                 )
     ]
 
     fc₁ = FockCoupling{2}(+1.0, spins=(2, 2), nambus=(2, 1))
     fc₂ = FockCoupling{2}(-1.0, spins=(1, 1), nambus=(2, 1))
-    point = Point(CPID(1, 1), SVector(0.0), SVector(0.0))
-    hilbert = Hilbert(point.pid=>Fock{:f}(norbital=2, nspin=2, nnambu=2))
-    ex = expand(fc₁*fc₂, point, hilbert, Val(:info))
+    point = Point(1, SVector(0.0), SVector(0.0))
+    hilbert = Hilbert(point.site=>Fock{:f}(norbital=2, nspin=2, nnambu=2))
+    ex = expand(fc₁*fc₂, Bond(point), hilbert, Val(:info))
     @test collect(ex) == [
         Operator(-1.0,
-                OID(Index(CPID(1, 1), FID{:f}(1, 2, 2)), SVector(0.0), SVector(0.0)),
-                OID(Index(CPID(1, 1), FID{:f}(1, 2, 1)), SVector(0.0), SVector(0.0)),
-                OID(Index(CPID(1, 1), FID{:f}(1, 1, 2)), SVector(0.0), SVector(0.0)),
-                OID(Index(CPID(1, 1), FID{:f}(1, 1, 1)), SVector(0.0), SVector(0.0))
+                CompositeIndex(Index(1, FID{:f}(1, 2, 2)), SVector(0.0), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(1, 2, 1)), SVector(0.0), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(1, 1, 2)), SVector(0.0), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(1, 1, 1)), SVector(0.0), SVector(0.0))
                 ),
         Operator(-1.0,
-                OID(Index(CPID(1, 1), FID{:f}(2, 2, 2)), SVector(0.0), SVector(0.0)),
-                OID(Index(CPID(1, 1), FID{:f}(2, 2, 1)), SVector(0.0), SVector(0.0)),
-                OID(Index(CPID(1, 1), FID{:f}(1, 1, 2)), SVector(0.0), SVector(0.0)),
-                OID(Index(CPID(1, 1), FID{:f}(1, 1, 1)), SVector(0.0), SVector(0.0))
+                CompositeIndex(Index(1, FID{:f}(2, 2, 2)), SVector(0.0), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(2, 2, 1)), SVector(0.0), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(1, 1, 2)), SVector(0.0), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(1, 1, 1)), SVector(0.0), SVector(0.0))
                 ),
         Operator(-1.0,
-                OID(Index(CPID(1, 1), FID{:f}(1, 2, 2)), SVector(0.0), SVector(0.0)),
-                OID(Index(CPID(1, 1), FID{:f}(1, 2, 1)), SVector(0.0), SVector(0.0)),
-                OID(Index(CPID(1, 1), FID{:f}(2, 1, 2)), SVector(0.0), SVector(0.0)),
-                OID(Index(CPID(1, 1), FID{:f}(2, 1, 1)), SVector(0.0), SVector(0.0))
+                CompositeIndex(Index(1, FID{:f}(1, 2, 2)), SVector(0.0), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(1, 2, 1)), SVector(0.0), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(2, 1, 2)), SVector(0.0), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(2, 1, 1)), SVector(0.0), SVector(0.0))
                 ),
         Operator(-1.0,
-                OID(Index(CPID(1, 1), FID{:f}(2, 2, 2)), SVector(0.0), SVector(0.0)),
-                OID(Index(CPID(1, 1), FID{:f}(2, 2, 1)), SVector(0.0), SVector(0.0)),
-                OID(Index(CPID(1, 1), FID{:f}(2, 1, 2)), SVector(0.0), SVector(0.0)),
-                OID(Index(CPID(1, 1), FID{:f}(2, 1, 1)), SVector(0.0), SVector(0.0))
+                CompositeIndex(Index(1, FID{:f}(2, 2, 2)), SVector(0.0), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(2, 2, 1)), SVector(0.0), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(2, 1, 2)), SVector(0.0), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(2, 1, 1)), SVector(0.0), SVector(0.0))
                 )
     ]
 end
@@ -279,246 +279,233 @@ end
 end
 
 @testset "Onsite" begin
-    @test abbr(Onsite) == :st
-    @test isnothing(ishermitian(Onsite))
-
-    point = Point(PID(1), (0.5, 0.5), (0.0, 0.0))
-    hilbert = Hilbert(point.pid=>Fock{:f}(norbital=2, nspin=2, nnambu=2))
+    point = Point(1, (0.5, 0.5), (0.0, 0.0))
+    bond = Bond(point)
+    hilbert = Hilbert(point.site=>Fock{:f}(norbital=2, nspin=2, nnambu=2))
 
     term = Onsite(:mu, 1.5, couplings=σˣ"sp"⊗σᶻ"ob", modulate=true)
     operators = Operators(
-        Operator(+1.5, OID(Index(PID(1), FID{:f}(2, 2, 2)), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(1), FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0])),
-        Operator(-1.5, OID(Index(PID(1), FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]))
+        Operator(+0.75, CompositeIndex(Index(1, FID{:f}(2, 2, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0])),
+        Operator(-0.75, CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])),
+        Operator(+0.75, CompositeIndex(Index(1, FID{:f}(2, 1, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0])),
+        Operator(-0.75, CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]))
     )
-    # @test expand(term, point, hilbert, half=true) == operators
-    @test expand(term, point, hilbert, half=false) == operators+operators'
+    @test expand(term, bond, hilbert, half=true) == operators
+    @test expand(term, bond, hilbert, half=false) == operators*2
 
     term = Onsite(:mu, 1.5, couplings=σᶻ"sp"⊗σᶻ"ob", modulate=true)
     operators = Operators(
-        Operator(-0.75, OID(Index(PID(1), FID{:f}(2, 1, 2)), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(1), FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0])),
-        Operator(-0.75, OID(Index(PID(1), FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])),
-        Operator(+0.75, OID(Index(PID(1), FID{:f}(2, 2, 2)), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(1), FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0])),
-        Operator(+0.75, OID(Index(PID(1), FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(1), FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]))
+        Operator(-0.75, CompositeIndex(Index(1, FID{:f}(2, 1, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0])),
+        Operator(-0.75, CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])),
+        Operator(+0.75, CompositeIndex(Index(1, FID{:f}(2, 2, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0])),
+        Operator(+0.75, CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]))
     )
-    @test expand(term, point, hilbert, half=true) == operators
-    @test expand(term, point, hilbert, half=false) == operators+operators'
+    @test expand(term, bond, hilbert, half=true) == operators
+    @test expand(term, bond, hilbert, half=false) == operators*2
 end
 
 @testset "Hopping" begin
-    bond = Bond(1, Point(CPID('a', 1), (0.5, 0.5), (0.0, 0.0)), Point(CPID('b', 2), (0.0, 0.0), (0.0, 0.0)))
-    hilbert = Hilbert(pid=>Fock{:f}(norbital=2, nspin=2, nnambu=2) for pid in [bond.spoint.pid, bond.epoint.pid])
+    bond = Bond(1, Point(2, (0.0, 0.0), (0.0, 0.0)), Point(1, (0.5, 0.5), (0.0, 0.0)))
+    hilbert = Hilbert(site=>Fock{:f}(norbital=2, nspin=2, nnambu=2) for site=1:2)
     term = Hopping(:t, 1.5, 1)
     operators = Operators(
-        Operator(1.5, OID(Index(CPID('b', 2), FID{:f}(2, 2, 2)), [0.0, 0.0], [0.0, 0.0]), OID(Index(CPID('a', 1), FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0])),
-        Operator(1.5, OID(Index(CPID('b', 2), FID{:f}(2, 1, 2)), [0.0, 0.0], [0.0, 0.0]), OID(Index(CPID('a', 1), FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0])),
-        Operator(1.5, OID(Index(CPID('b', 2), FID{:f}(1, 1, 2)), [0.0, 0.0], [0.0, 0.0]), OID(Index(CPID('a', 1), FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0])),
-        Operator(1.5, OID(Index(CPID('b', 2), FID{:f}(1, 2, 2)), [0.0, 0.0], [0.0, 0.0]), OID(Index(CPID('a', 1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]))
+        Operator(1.5, CompositeIndex(Index(2, FID{:f}(2, 2, 2)), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0])),
+        Operator(1.5, CompositeIndex(Index(2, FID{:f}(2, 1, 2)), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0])),
+        Operator(1.5, CompositeIndex(Index(2, FID{:f}(1, 1, 2)), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0])),
+        Operator(1.5, CompositeIndex(Index(2, FID{:f}(1, 2, 2)), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]))
     )
-    @test term|>abbr == term|>typeof|>abbr == :hp
-    @test term|>ishermitian == term|>typeof|>ishermitian == false
     @test expand(term, bond, hilbert, half=true) == operators
     @test expand(term, bond, hilbert, half=false) == operators+operators'
 end
 
 @testset "Pairing" begin
-    bond = Bond(1, Point(PID(1), (0.5, 0.5), (0.0, 0.0)), Point(PID(2), (0.0, 0.0), (0.0, 0.0)))
-    hilbert = Hilbert(pid=>Fock{:f}(norbital=1, nspin=2, nnambu=2) for pid in [bond.spoint.pid, bond.epoint.pid])
-    term = Pairing(:Δ, 1.5, 1, couplings=@couplings(FockCoupling{2}(spins=(2, 2))), amplitude=bond->(bond|>rcoord|>azimuthd ≈ 45 ? 1 : -1))
+    bond = Bond(1, Point(2, (0.0, 0.0), (0.0, 0.0)), Point(1, (0.5, 0.5), (0.0, 0.0)))
+    hilbert = Hilbert(site=>Fock{:f}(norbital=1, nspin=2, nnambu=2) for site=1:2)
+    term = Pairing(:Δ, 1.5, 1, couplings=@couplings(FockCoupling{2}(spins=(2, 2))), amplitude=bond->(bond|>rcoordinate|>azimuthd ≈ 45 ? 1 : -1))
     operators = Operators(
-        Operator(-1.5, OID(Index(PID(2), FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])),
-        Operator(+1.5, OID(Index(PID(1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(2), FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0]))
+        Operator(-1.5, CompositeIndex(Index(2, FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])),
+        Operator(+1.5, CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(2, FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0]))
     )
-    @test term|>abbr == term|>typeof|>abbr == :pr
-    @test term|>ishermitian == term|>typeof|>ishermitian == false
     @test expand(term, bond, hilbert, half=true) == operators
     @test expand(term, bond, hilbert, half=false) == operators+operators'
 
-    point = Point(CPID('a', 1), (0.5, 0.5), (0.0, 0.0))
-    hilbert = Hilbert(point.pid=>Fock{:f}(norbital=1, nspin=2, nnambu=2))
+    point = Point(1, (0.5, 0.5), (0.0, 0.0))
+    hilbert = Hilbert(point.site=>Fock{:f}(norbital=1, nspin=2, nnambu=2))
     term = Pairing(:Δ, 1.5, 0, couplings=FockCoupling{2}(spins=(2, 1))-FockCoupling{2}(spins=(1, 2)))
     operators = Operators(
-        Operator(+1.5, OID(Index(CPID('a', 1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]), OID(Index(CPID('a', 1), FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0])),
-        Operator(-1.5, OID(Index(CPID('a', 1), FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]), OID(Index(CPID('a', 1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]))
+        Operator(+1.5, CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0])),
+        Operator(-1.5, CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]))
     )
-    @test term|>abbr == term|>typeof|>abbr == :pr
-    @test expand(term, point, hilbert, half=true) == operators
-    @test expand(term, point, hilbert, half=false) == operators+operators'
+    @test expand(term, Bond(point), hilbert, half=true) == operators
+    @test expand(term, Bond(point), hilbert, half=false) == operators+operators'
 end
 
 @testset "Hubbard" begin
-    point = Point(PID(1), (0.5, 0.5), (0.0, 0.0))
-    hilbert = Hilbert(point.pid=>Fock{:f}(norbital=2, nspin=2, nnambu=2))
+    point = Point(1, (0.5, 0.5), (0.0, 0.0))
+    bond = Bond(point)
+    hilbert = Hilbert(point.site=>Fock{:f}(norbital=2, nspin=2, nnambu=2))
     term = Hubbard(:H, 2.5)
     operators = Operators(
         Operator(1.25,
-            OID(Index(PID(1), FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0])
+            CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0])
             ),
         Operator(1.25,
-            OID(Index(PID(1), FID{:f}(2, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(2, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0])
+            CompositeIndex(Index(1, FID{:f}(2, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(2, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0])
             )
     )
-    @test term|>abbr == term|>typeof|>abbr == :hb
-    @test term|>ishermitian == term|>typeof|>ishermitian == true
-    @test expand(term, point, hilbert, half=true) == operators
-    @test expand(term, point, hilbert, half=false) == operators*2
+    @test expand(term, bond, hilbert, half=true) == operators
+    @test expand(term, bond, hilbert, half=false) == operators*2
 end
 
 @testset "InterOrbitalInterSpin" begin
-    point = Point(PID(1), (0.5, 0.5), (0.0, 0.0))
-    hilbert = Hilbert(point.pid=>Fock{:f}(norbital=2, nspin=2, nnambu=2))
+    point = Point(1, (0.5, 0.5), (0.0, 0.0))
+    bond = Bond(point)
+    hilbert = Hilbert(point.site=>Fock{:f}(norbital=2, nspin=2, nnambu=2))
     term = InterOrbitalInterSpin(:H, 2.5)
     operators = Operators(
         Operator(1.25,
-            OID(Index(PID(1), FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(2, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0])
+            CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(2, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0])
             ),
         Operator(1.25,
-            OID(Index(PID(1), FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(2, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0])
+            CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(2, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0])
             )
     )
-    @test term|>abbr == term|>typeof|>abbr == :nons
-    @test term|>ishermitian == term|>typeof|>ishermitian == true
-    @test expand(term, point, hilbert, half=true) == operators
-    @test expand(term, point, hilbert, half=false) == operators*2
+    @test expand(term, bond, hilbert, half=true) == operators
+    @test expand(term, bond, hilbert, half=false) == operators*2
 end
 
 @testset "InterOrbitalIntraSpin" begin
-    point = Point(PID(1), (0.5, 0.5), (0.0, 0.0))
-    hilbert = Hilbert(point.pid=>Fock{:f}(norbital=2, nspin=2, nnambu=2))
+    point = Point(1, (0.5, 0.5), (0.0, 0.0))
+    bond = Bond(point)
+    hilbert = Hilbert(point.site=>Fock{:f}(norbital=2, nspin=2, nnambu=2))
     term = InterOrbitalIntraSpin(:H, 2.5)
     operators = Operators(
         Operator(1.25,
-            OID(Index(PID(1), FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(2, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0])
+            CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(2, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0])
             ),
         Operator(1.25,
-            OID(Index(PID(1), FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(2, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0])
+            CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(2, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0])
             )
     )
-    @test term|>abbr == term|>typeof|>abbr == :noes
-    @test term|>ishermitian == term|>typeof|>ishermitian == true
-    @test expand(term, point, hilbert, half=true) == operators
-    @test expand(term, point, hilbert, half=false) == operators*2
+    @test expand(term, bond, hilbert, half=true) == operators
+    @test expand(term, bond, hilbert, half=false) == operators*2
 end
 
 @testset "SpinFlip" begin
-    point = Point(PID(1), (0.5, 0.5), (0.0, 0.0))
-    hilbert = Hilbert(point.pid=>Fock{:f}(norbital=2, nspin=2, nnambu=2))
+    point = Point(1, (0.5, 0.5), (0.0, 0.0))
+    bond = Bond(point)
+    hilbert = Hilbert(point.site=>Fock{:f}(norbital=2, nspin=2, nnambu=2))
     term = SpinFlip(:H, 2.5)
     operators = Operators(
         Operator(2.5,
-            OID(Index(PID(1), FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(2, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0])
+            CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(2, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0])
             )
     )
-    @test term|>abbr == term|>typeof|>abbr == :sf
-    @test term|>ishermitian == term|>typeof|>ishermitian == false
-    @test expand(term, point, hilbert, half=true) == operators
-    @test expand(term, point, hilbert, half=false) == operators+operators'
+    @test expand(term, bond, hilbert, half=true) == operators
+    @test expand(term, bond, hilbert, half=false) == operators+operators'
 end
 
 @testset "PairHopping" begin
-    point = Point(PID(1), (0.5, 0.5), (0.0, 0.0))
-    hilbert = Hilbert(point.pid=>Fock{:f}(norbital=2, nspin=2, nnambu=2))
+    point = Point(1, (0.5, 0.5), (0.0, 0.0))
+    bond = Bond(point)
+    hilbert = Hilbert(point.site=>Fock{:f}(norbital=2, nspin=2, nnambu=2))
     term = PairHopping(:H, 2.5)
     operators = Operators(
         Operator(2.5,
-            OID(Index(PID(1), FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0])
+            CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0])
             )
     )
-    @test term|>abbr == term|>typeof|>abbr == :ph
-    @test term|>ishermitian == term|>typeof|>ishermitian == false
-    @test expand(term, point, hilbert, half=true) == operators
-    @test expand(term, point, hilbert, half=false) == operators+operators'
+    @test expand(term, bond, hilbert, half=true) == operators
+    @test expand(term, bond, hilbert, half=false) == operators+operators'
 end
 
 @testset "Coulomb" begin
-    bond = Bond(1, Point(PID(1), (0.5, 0.5), (0.0, 0.0)), Point(PID(2), (0.0, 0.0), (0.0, 0.0)))
-    hilbert = Hilbert(pid=>Fock{:f}(norbital=1, nspin=2, nnambu=2) for pid in [bond.spoint.pid, bond.epoint.pid])
+    bond = Bond(1, Point(2, (0.0, 0.0), (0.0, 0.0)), Point(1, (0.5, 0.5), (0.0, 0.0)))
+    hilbert = Hilbert(site=>Fock{:f}(norbital=1, nspin=2, nnambu=2) for site=1:2)
 
     term = Coulomb(:V, 2.5, 1, couplings=σᶻ"sp"*σᶻ"sp")
     operators = Operators(
         Operator(-1.25,
-            OID(Index(PID(2), FID{:f}(1, 1, 2)), [0.0, 0.0], [0.0, 0.0]),
-            OID(Index(PID(2), FID{:f}(1, 1, 1)), [0.0, 0.0], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])
+            CompositeIndex(Index(2, FID{:f}(1, 1, 2)), [0.0, 0.0], [0.0, 0.0]),
+            CompositeIndex(Index(2, FID{:f}(1, 1, 1)), [0.0, 0.0], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])
             ),
         Operator(+1.25,
-            OID(Index(PID(2), FID{:f}(1, 1, 2)), [0.0, 0.0], [0.0, 0.0]),
-            OID(Index(PID(2), FID{:f}(1, 1, 1)), [0.0, 0.0], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0])
+            CompositeIndex(Index(2, FID{:f}(1, 1, 2)), [0.0, 0.0], [0.0, 0.0]),
+            CompositeIndex(Index(2, FID{:f}(1, 1, 1)), [0.0, 0.0], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0])
             ),
         Operator(-1.25,
-            OID(Index(PID(2), FID{:f}(1, 2, 2)), [0.0, 0.0], [0.0, 0.0]),
-            OID(Index(PID(2), FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0])
+            CompositeIndex(Index(2, FID{:f}(1, 2, 2)), [0.0, 0.0], [0.0, 0.0]),
+            CompositeIndex(Index(2, FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0])
             ),
         Operator(+1.25,
-            OID(Index(PID(2), FID{:f}(1, 2, 2)), [0.0, 0.0], [0.0, 0.0]),
-            OID(Index(PID(2), FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])
+            CompositeIndex(Index(2, FID{:f}(1, 2, 2)), [0.0, 0.0], [0.0, 0.0]),
+            CompositeIndex(Index(2, FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])
             )
     )
-    @test term|>abbr == term|>typeof|>abbr == :cl
-    @test isnothing(term|>ishermitian) && isnothing(term|>typeof|>ishermitian)
     @test expand(term, bond, hilbert, half=true) == operators
-    @test expand(term, bond, hilbert, half=false) == operators+operators'
+    @test expand(term, bond, hilbert, half=false) == operators*2
 
     term = Coulomb(:V, 2.5, 1, couplings=σˣ"sp"*σᶻ"sp")
     operators = Operators(
-        Operator(-2.5,
-            OID(Index(PID(2), FID{:f}(1, 2, 2)), [0.0, 0.0], [0.0, 0.0]),
-            OID(Index(PID(2), FID{:f}(1, 1, 1)), [0.0, 0.0], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0])
+        Operator(-1.25,
+            CompositeIndex(Index(2, FID{:f}(1, 2, 2)), [0.0, 0.0], [0.0, 0.0]),
+            CompositeIndex(Index(2, FID{:f}(1, 1, 1)), [0.0, 0.0], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0])
             ),
-        Operator(+2.5,
-            OID(Index(PID(2), FID{:f}(1, 1, 2)), [0.0, 0.0], [0.0, 0.0]),
-            OID(Index(PID(2), FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])
+        Operator(+1.25,
+            CompositeIndex(Index(2, FID{:f}(1, 1, 2)), [0.0, 0.0], [0.0, 0.0]),
+            CompositeIndex(Index(2, FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])
             ),
-        Operator(+2.5,
-            OID(Index(PID(2), FID{:f}(1, 2, 2)), [0.0, 0.0], [0.0, 0.0]),
-            OID(Index(PID(2), FID{:f}(1, 1, 1)), [0.0, 0.0], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])
+        Operator(+1.25,
+            CompositeIndex(Index(2, FID{:f}(1, 2, 2)), [0.0, 0.0], [0.0, 0.0]),
+            CompositeIndex(Index(2, FID{:f}(1, 1, 1)), [0.0, 0.0], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])
             ),
-        Operator(-2.5,
-            OID(Index(PID(2), FID{:f}(1, 1, 2)), [0.0, 0.0], [0.0, 0.0]),
-            OID(Index(PID(2), FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
-            OID(Index(PID(1), FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0])
+        Operator(-1.25,
+            CompositeIndex(Index(2, FID{:f}(1, 1, 2)), [0.0, 0.0], [0.0, 0.0]),
+            CompositeIndex(Index(2, FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0])
             )
     )
-    @test term|>abbr == term|>typeof|>abbr == :cl
     @test expand(term, bond, hilbert, half=true) == operators
-    @test expand(term, bond, hilbert, half=false) == operators+operators'
+    @test expand(term, bond, hilbert, half=false) == operators*2
 end
 
 @testset "SID" begin
@@ -577,40 +564,40 @@ end
 end
 
 @testset "latex" begin
-    index = Index(PID(1), SID{1//2}(2, 'z'))
+    index = Index(1, SID{1//2}(2, 'z'))
     @test script(Val(:site), index) == 1
-    @test script(Val(:orbital), index) == 2
-    @test script(Val(:tag), index) == 'z'
+    @test script(Val(:orbital), index.iid) == script(Val(:orbital), index) == 2
+    @test script(Val(:tag), index.iid) == script(Val(:tag), index) == 'z'
 
-    @test latexname(Index{<:AbstractPID, <:SID}) == Symbol("Index{AbstractPID, SID}")
-    @test latexname(CompositeOID{<:Index{<:AbstractPID, <:SID}}) == Symbol("CompositeOID{Index{AbstractPID, SID}}")
+    @test latexname(Index{<:SID}) == Symbol("Index{SID}")
+    @test latexname(AbstractCompositeIndex{<:Index{<:SID}}) == Symbol("AbstractCompositeIndex{Index{SID}}")
+    @test latexname(SID) == Symbol("SID")
 end
 
 @testset "SpinOperator" begin
     opt = Operator(1.0,
-        OID(Index(PID(1), SID{1//2}('+')), [0.0, 0.0], [0.0, 0.0]),
-        OID(Index(PID(1), SID{1//2}('-')), [0.0, 0.0], [0.0, 0.0])
+        CompositeIndex(Index(1, SID{1//2}('+')), [0.0, 0.0], [0.0, 0.0]),
+        CompositeIndex(Index(1, SID{1//2}('-')), [0.0, 0.0], [0.0, 0.0])
         )
     @test opt' == Operator(1.0,
-        OID(Index(PID(1), SID{1//2}('+')), [0.0, 0.0], [0.0, 0.0]),
-        OID(Index(PID(1), SID{1//2}('-')), [0.0, 0.0], [0.0, 0.0])
+        CompositeIndex(Index(1, SID{1//2}('+')), [0.0, 0.0], [0.0, 0.0]),
+        CompositeIndex(Index(1, SID{1//2}('-')), [0.0, 0.0], [0.0, 0.0])
         )
-    @test ishermitian(opt)
     @test latexstring(opt) == "S^{+}_{1}S^{-}_{1}"
 end
 
 @testset "permute" begin
     soptrep(opt::Operator) = opt.value * prod([Matrix(opt.id[i].index.iid) for i = 1:rank(opt)])
     for S in (1//2, 1, 3//2)
-        oids = [OID(Index(PID(1), SID{S}(2, tag)), [0.0, 0.0], [0.0, 0.0]) for tag in ('x', 'y', 'z', '+', '-')]
-        for (id₁, id₂) in Permutations{2}(oids)
+        CompositeIndexs = [CompositeIndex(Index(1, SID{S}(2, tag)), [0.0, 0.0], [0.0, 0.0]) for tag in ('x', 'y', 'z', '+', '-')]
+        for (id₁, id₂) in Permutations{2}(CompositeIndexs)
             left = soptrep(Operator(1, id₁, id₂))
             right = sum([soptrep(opt) for opt in permute(id₁, id₂)])
             @test isapprox(left, right)
         end
     end
-    id₁ = OID(Index(PID(1), SID{1//2}(2, 'z')), [0.0, 0.0], [0.0, 0.0])
-    id₂ = OID(Index(PID(2), SID{1//2}(2, 'z')), [0.0, 0.0], [0.0, 0.0])
+    id₁ = CompositeIndex(Index(1, SID{1//2}(2, 'z')), [0.0, 0.0], [0.0, 0.0])
+    id₂ = CompositeIndex(Index(2, SID{1//2}(2, 'z')), [0.0, 0.0], [0.0, 0.0])
     @test permute(id₁, id₂) == (Operator(1, id₂, id₁),)
 end
 
@@ -629,37 +616,37 @@ end
     @test repr(sc) == "3.0 S⁺S⁻S⁺S⁻ ob[α β](α > β)×[α β](α < β)"
 
     sc = SpinCoupling(2.0, ('+', '-'), orbitals=(1, 2))
-    bond = Bond(1, Point(CPID(1, 2), [0.5], [0.0]), Point(CPID(1, 1), [0.0], [0.0]))
-    hilbert = Hilbert(pid=>Spin{1}(norbital=2) for pid in [bond.epoint.pid, bond.spoint.pid])
+    bond = Bond(1, Point(1, [0.0], [0.0]), Point(2, [0.5], [0.0]))
+    hilbert = Hilbert(site=>Spin{1}(norbital=2) for site=1:2)
     ex = expand(sc, bond, hilbert, Val(:SpinTerm))
     @test collect(ex) == [
         Operator(2.0,
-            OID(Index(CPID(1, 1), SID{1}(1, '+')), [0.0], [0.0]),
-            OID(Index(CPID(1, 2), SID{1}(2, '-')), [0.5], [0.0])
+            CompositeIndex(Index(1, SID{1}(1, '+')), [0.0], [0.0]),
+            CompositeIndex(Index(2, SID{1}(2, '-')), [0.5], [0.0])
         )]
 
     sc = SpinCoupling(2.0, ('+', '-', '+', '-'), orbitals=subscript"[α α β β](α < β)")
-    point = Point(PID(1), [0.0], [0.0])
-    hilbert = Hilbert(point.pid=>Spin{1}(norbital=3))
-    ex = expand(sc, point, hilbert, Val(:info))
+    point = Point(1, [0.0], [0.0])
+    hilbert = Hilbert(point.site=>Spin{1}(norbital=3))
+    ex = expand(sc, Bond(point), hilbert, Val(:info))
     @test collect(ex) == [
         Operator(2.0,
-                OID(Index(PID(1), SID{1}(1, '+')), [0.0], [0.0]),
-                OID(Index(PID(1), SID{1}(1, '-')), [0.0], [0.0]),
-                OID(Index(PID(1), SID{1}(2, '+')), [0.0], [0.0]),
-                OID(Index(PID(1), SID{1}(2, '-')), [0.0], [0.0])
+                CompositeIndex(Index(1, SID{1}(1, '+')), [0.0], [0.0]),
+                CompositeIndex(Index(1, SID{1}(1, '-')), [0.0], [0.0]),
+                CompositeIndex(Index(1, SID{1}(2, '+')), [0.0], [0.0]),
+                CompositeIndex(Index(1, SID{1}(2, '-')), [0.0], [0.0])
                 ),
         Operator(2.0,
-                OID(Index(PID(1), SID{1}(1, '+')), [0.0], [0.0]),
-                OID(Index(PID(1), SID{1}(1, '-')), [0.0], [0.0]),
-                OID(Index(PID(1), SID{1}(3, '+')), [0.0], [0.0]),
-                OID(Index(PID(1), SID{1}(3, '-')), [0.0], [0.0])
+                CompositeIndex(Index(1, SID{1}(1, '+')), [0.0], [0.0]),
+                CompositeIndex(Index(1, SID{1}(1, '-')), [0.0], [0.0]),
+                CompositeIndex(Index(1, SID{1}(3, '+')), [0.0], [0.0]),
+                CompositeIndex(Index(1, SID{1}(3, '-')), [0.0], [0.0])
                 ),
         Operator(2.0,
-                OID(Index(PID(1), SID{1}(2, '+')), [0.0], [0.0]),
-                OID(Index(PID(1), SID{1}(2, '-')), [0.0], [0.0]),
-                OID(Index(PID(1), SID{1}(3, '+')), [0.0], [0.0]),
-                OID(Index(PID(1), SID{1}(3, '-')), [0.0], [0.0])
+                CompositeIndex(Index(1, SID{1}(2, '+')), [0.0], [0.0]),
+                CompositeIndex(Index(1, SID{1}(2, '-')), [0.0], [0.0]),
+                CompositeIndex(Index(1, SID{1}(3, '+')), [0.0], [0.0]),
+                CompositeIndex(Index(1, SID{1}(3, '-')), [0.0], [0.0])
                 )
     ]
 end
@@ -717,27 +704,25 @@ end
 end
 
 @testset "SpinTerm" begin
-    point = Point(PID(1), (0.5, 0.5), (0.0, 0.0))
-    hilbert = Hilbert(point.pid=>Spin{1//2}(norbital=2))
+    point = Point(1, (0.5, 0.5), (0.0, 0.0))
+    hilbert = Hilbert(point.site=>Spin{1//2}(norbital=2))
     term = SpinTerm(:h, 1.5, 0, sᶻ"")
     operators = Operators(
-        Operator(1.5, OID(Index(PID(1), SID{1//2}(1, 'z')), [0.5, 0.5], [0.0, 0.0])),
-        Operator(1.5, OID(Index(PID(1), SID{1//2}(2, 'z')), [0.5, 0.5], [0.0, 0.0]))
+        Operator(1.5, CompositeIndex(Index(1, SID{1//2}(1, 'z')), [0.5, 0.5], [0.0, 0.0])),
+        Operator(1.5, CompositeIndex(Index(1, SID{1//2}(2, 'z')), [0.5, 0.5], [0.0, 0.0]))
     )
-    @test term|>abbr == term|>typeof|>abbr == :sp
-    @test term|>ishermitian == term|>typeof|>ishermitian == true
-    @test expand(term, point, hilbert) == operators
+    @test expand(term, Bond(point), hilbert) == operators
 
-    bond = Bond(1, Point(CPID('a', 1), (0.0, 0.0), (0.0, 0.0)), Point(CPID('b', 1), (0.5, 0.5), (0.0, 0.0)))
-    hilbert = Hilbert(pid=>Spin{1//2}(norbital=2) for pid in [bond.spoint.pid, bond.epoint.pid])
+    bond = Bond(1, Point(2, (0.5, 0.5), (0.0, 0.0)), Point(1, (0.0, 0.0), (0.0, 0.0)))
+    hilbert = Hilbert(site=>Spin{1//2}(norbital=2) for site=1:2)
     term = SpinTerm(:J, 1.5, 1, heisenberg"")
     operators = Operators(
-        Operator(1.50, OID(Index(CPID('b', 1), SID{1//2}(2, 'z')), [0.5, 0.5], [0.0, 0.0]), OID(Index(CPID('a', 1), SID{1//2}(2, 'z')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(0.75, OID(Index(CPID('b', 1), SID{1//2}(2, '-')), [0.5, 0.5], [0.0, 0.0]), OID(Index(CPID('a', 1), SID{1//2}(2, '+')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(0.75, OID(Index(CPID('b', 1), SID{1//2}(1, '-')), [0.5, 0.5], [0.0, 0.0]), OID(Index(CPID('a', 1), SID{1//2}(1, '+')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(0.75, OID(Index(CPID('b', 1), SID{1//2}(1, '+')), [0.5, 0.5], [0.0, 0.0]), OID(Index(CPID('a', 1), SID{1//2}(1, '-')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(1.50, OID(Index(CPID('b', 1), SID{1//2}(1, 'z')), [0.5, 0.5], [0.0, 0.0]), OID(Index(CPID('a', 1), SID{1//2}(1, 'z')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(0.75, OID(Index(CPID('b', 1), SID{1//2}(2, '+')), [0.5, 0.5], [0.0, 0.0]), OID(Index(CPID('a', 1), SID{1//2}(2, '-')), [0.0, 0.0], [0.0, 0.0]))
+        Operator(1.50, CompositeIndex(Index(2, SID{1//2}(2, 'z')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, SID{1//2}(2, 'z')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(0.75, CompositeIndex(Index(2, SID{1//2}(2, '-')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, SID{1//2}(2, '+')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(0.75, CompositeIndex(Index(2, SID{1//2}(1, '-')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, SID{1//2}(1, '+')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(0.75, CompositeIndex(Index(2, SID{1//2}(1, '+')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, SID{1//2}(1, '-')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(1.50, CompositeIndex(Index(2, SID{1//2}(1, 'z')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, SID{1//2}(1, 'z')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(0.75, CompositeIndex(Index(2, SID{1//2}(2, '+')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, SID{1//2}(2, '-')), [0.0, 0.0], [0.0, 0.0]))
     )
     @test expand(term, bond, hilbert) == operators
 end
@@ -770,47 +755,51 @@ end
 end
 
 @testset "latex" begin
-    index = Index(PID(1), NID('u', 'x'))
-    @test script(Val(:BD), index, nlatex) == 'u'
-    @test script(Val(:BD), OID(index, [0.0, 0.0], [0.0, 0.0]), nlatex) == 'u'
+    index = Index(1, NID('u', 'x'))
+    @test script(Val(:BD), index.iid, latexofphonons) == 'u'
+    @test script(Val(:BD), index, latexofphonons) == 'u'
+    @test script(Val(:BD), CompositeIndex(index, [0.0, 0.0], [0.0, 0.0]), latexofphonons) == 'u'
     @test script(Val(:site), index) == 1
+    @test script(Val(:dir), index.iid) == 'x'
     @test script(Val(:dir), index) == 'x'
 
-    index = Index(PID(2), NID('p', 'y'))
-    @test script(Val(:BD), index, nlatex) == 'p'
-    @test script(Val(:BD), OID(index, [0.0, 0.0], [0.0, 0.0]), nlatex) == 'p'
+    index = Index(2, NID('p', 'y'))
+    @test script(Val(:BD), index.iid, latexofphonons) == 'p'
+    @test script(Val(:BD), index, latexofphonons) == 'p'
+    @test script(Val(:BD), CompositeIndex(index, [0.0, 0.0], [0.0, 0.0]), latexofphonons) == 'p'
     @test script(Val(:site), index) == 2
+    @test script(Val(:dir), index.iid) == 'y'
     @test script(Val(:dir), index) == 'y'
 
-    latexname(Index{<:AbstractPID, <:NID}) == Symbol("Index{AbstractPID, NID}")
-    latexname(CompositeOID{<:Index{<:AbstractPID, <:NID}}) == Symbol("CompositeOID{Index{AbstractPID, NID}}")
+    @test latexname(Index{<:NID}) == Symbol("Index{NID}")
+    @test latexname(AbstractCompositeIndex{<:Index{<:NID}}) == Symbol("AbstractCompositeIndex{Index{NID}}")
+    @test latexname(NID) == Symbol("NID")
 end
 
 @testset "PhononOperator" begin
     opt = Operator(1.0,
-        OID(Index(PID(1), NID('p', 'x')), [0.0, 0.0], [0.0, 0.0]),
-        OID(Index(PID(1), NID('p', 'x')), [0.0, 0.0], [0.0, 0.0])
+        CompositeIndex(Index(1, NID('p', 'x')), [0.0, 0.0], [0.0, 0.0]),
+        CompositeIndex(Index(1, NID('p', 'x')), [0.0, 0.0], [0.0, 0.0])
         )
     @test opt' == Operator(1.0,
-        OID(Index(PID(1), NID('p', 'x')), [0.0, 0.0], [0.0, 0.0]),
-        OID(Index(PID(1), NID('p', 'x')), [0.0, 0.0], [0.0, 0.0])
+        CompositeIndex(Index(1, NID('p', 'x')), [0.0, 0.0], [0.0, 0.0]),
+        CompositeIndex(Index(1, NID('p', 'x')), [0.0, 0.0], [0.0, 0.0])
         )
-    @test ishermitian(opt)
     @test latexstring(opt) == "(p^{x}_{1})^2"
 end
 
 @testset "permute" begin
-    id₁ = OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])
-    id₂ = OID(Index(PID(1), NID('p', 'x')), [0.0, 0.0], [0.0, 0.0])
+    id₁ = CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])
+    id₂ = CompositeIndex(Index(1, NID('p', 'x')), [0.0, 0.0], [0.0, 0.0])
     @test permute(id₁, id₂) == (Operator(+1im), Operator(1, id₂, id₁))
     @test permute(id₂, id₁) == (Operator(-1im), Operator(1, id₁, id₂))
 
-    id₁ = OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])
-    id₂ = OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])
+    id₁ = CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])
+    id₂ = CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])
     @test permute(id₁, id₂) == (Operator(1, id₂, id₁),)
 
-    id₁ = OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])
-    id₂ = OID(Index(PID(1), NID('p', 'y')), [0.0, 0.0], [0.0, 0.0])
+    id₁ = CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])
+    id₂ = CompositeIndex(Index(1, NID('p', 'y')), [0.0, 0.0], [0.0, 0.0])
     @test permute(id₁, id₂) == (Operator(1, id₂, id₁),)
 end
 
@@ -824,36 +813,36 @@ end
     @test repr(pnc) == "1.0 [p p] dr[x x]"
 
     pnc = PhononCoupling(2.0, ('p', 'p'))
-    point = Point(PID(1), [0.5, 0.0], [0.0, 0.0])
-    hilbert = Hilbert(point.pid=>Phonon(2))
-    ex = expand(pnc, point, hilbert, Val(:PhononKinetic))
+    point = Point(1, [0.5, 0.0], [0.0, 0.0])
+    hilbert = Hilbert(point.site=>Phonon(2))
+    ex = expand(pnc, Bond(point), hilbert, Val(:PhononKinetic))
     @test collect(ex) == [
-        Operator(2.0, OID(Index(PID(1), NID('p', 'x')), [0.5, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('p', 'x')), [0.5, 0.0], [0.0, 0.0])),
-        Operator(2.0, OID(Index(PID(1), NID('p', 'y')), [0.5, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('p', 'y')), [0.5, 0.0], [0.0, 0.0]))
+        Operator(2.0, CompositeIndex(Index(1, NID('p', 'x')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('p', 'x')), [0.5, 0.0], [0.0, 0.0])),
+        Operator(2.0, CompositeIndex(Index(1, NID('p', 'y')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('p', 'y')), [0.5, 0.0], [0.0, 0.0]))
     ]
 
     pnc = PhononCoupling(1.0, ('u', 'u'))
-    bond = Bond(1, Point(PID(2), [0.5, 0.0], [0.0, 0.0]), Point(PID(1), [0.0, 0.0], [0.0, 0.0]))
-    hilbert = Hilbert(pid=>Phonon(2) for pid in [bond.epoint.pid, bond.spoint.pid])
+    bond = Bond(1, Point(1, [0.0, 0.0], [0.0, 0.0]), Point(2, [0.5, 0.0], [0.0, 0.0]))
+    hilbert = Hilbert(site=>Phonon(2) for site=1:2)
     ex = expand(pnc, bond, hilbert, Val(:PhononPotential))
     @test shape(ex) == (1:2, 1:2, 1:4)
     @test collect(ex) ==[
-        Operator(+1.0, OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(-0.0, OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(-0.0, OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(+0.0, OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(-1.0, OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'x')), [0.5, 0.0], [0.0, 0.0])),
-        Operator(+0.0, OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'x')), [0.5, 0.0], [0.0, 0.0])),
-        Operator(+0.0, OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'y')), [0.5, 0.0], [0.0, 0.0])),
-        Operator(-0.0, OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'y')), [0.5, 0.0], [0.0, 0.0])),
-        Operator(-1.0, OID(Index(PID(2), NID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(+0.0, OID(Index(PID(2), NID('u', 'y')), [0.5, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(+0.0, OID(Index(PID(2), NID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(-0.0, OID(Index(PID(2), NID('u', 'y')), [0.5, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(+1.0, OID(Index(PID(2), NID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'x')), [0.5, 0.0], [0.0, 0.0])),
-        Operator(-0.0, OID(Index(PID(2), NID('u', 'y')), [0.5, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'x')), [0.5, 0.0], [0.0, 0.0])),
-        Operator(-0.0, OID(Index(PID(2), NID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'y')), [0.5, 0.0], [0.0, 0.0])),
-        Operator(+0.0, OID(Index(PID(2), NID('u', 'y')), [0.5, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'y')), [0.5, 0.0], [0.0, 0.0]))
+        Operator(+1.0, CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(-0.0, CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(-0.0, CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(+0.0, CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(-1.0, CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.0], [0.0, 0.0])),
+        Operator(+0.0, CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.0], [0.0, 0.0])),
+        Operator(+0.0, CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'y')), [0.5, 0.0], [0.0, 0.0])),
+        Operator(-0.0, CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'y')), [0.5, 0.0], [0.0, 0.0])),
+        Operator(-1.0, CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(+0.0, CompositeIndex(Index(2, NID('u', 'y')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(+0.0, CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(-0.0, CompositeIndex(Index(2, NID('u', 'y')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(+1.0, CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.0], [0.0, 0.0])),
+        Operator(-0.0, CompositeIndex(Index(2, NID('u', 'y')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.0], [0.0, 0.0])),
+        Operator(-0.0, CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'y')), [0.5, 0.0], [0.0, 0.0])),
+        Operator(+0.0, CompositeIndex(Index(2, NID('u', 'y')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'y')), [0.5, 0.0], [0.0, 0.0]))
         ]
 
     @test kinetic"" == Couplings(PhononCoupling(1, ('p', 'p')))
@@ -862,62 +851,57 @@ end
 
 @testset "PhononKinetic" begin
     term = PhononKinetic(:T, 2.0)
-    @test abbr(term) == abbr(typeof(term)) == :pnk
-    @test ishermitian(term) == ishermitian(typeof(term)) == true
-
-    point = Point(PID(1), [0.5, 0.0], [0.0, 0.0])
-    hilbert = Hilbert(point.pid=>Phonon(2))
+    point = Point(1, [0.5, 0.0], [0.0, 0.0])
+    hilbert = Hilbert(point.site=>Phonon(2))
     operators = Operators(
-        Operator(2.0, OID(Index(PID(1), NID('p', 'x')), [0.5, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('p', 'x')), [0.5, 0.0], [0.0, 0.0])),
-        Operator(2.0, OID(Index(PID(1), NID('p', 'y')), [0.5, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('p', 'y')), [0.5, 0.0], [0.0, 0.0]))
+        Operator(2.0, CompositeIndex(Index(1, NID('p', 'x')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('p', 'x')), [0.5, 0.0], [0.0, 0.0])),
+        Operator(2.0, CompositeIndex(Index(1, NID('p', 'y')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('p', 'y')), [0.5, 0.0], [0.0, 0.0]))
     )
-    @test expand(term, point, hilbert) == operators
+    @test expand(term, Bond(point), hilbert) == operators
 end
 
 @testset "PhononPotential" begin
     term = PhononPotential(:V, 2.0, 1)
-    @test abbr(term) == abbr(typeof(term)) == :pnp
-    @test ishermitian(term) == ishermitian(typeof(term)) == true
 
-    bond = Bond(1, Point(PID(2), [0.5, 0.0], [0.0, 0.0]), Point(PID(1), [0.0, 0.0], [0.0, 0.0]))
-    hilbert = Hilbert(pid=>Phonon(2) for pid in [bond.epoint.pid, bond.spoint.pid])
+    bond = Bond(1, Point(1, [0.0, 0.0], [0.0, 0.0]), Point(2, [0.5, 0.0], [0.0, 0.0]))
+    hilbert = Hilbert(site=>Phonon(2) for site=1:2)
     operators = Operators(
-        Operator(+2.0, OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(-2.0, OID(Index(PID(2), NID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(-2.0, OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'x')), [0.5, 0.0], [0.0, 0.0])),
-        Operator(+2.0, OID(Index(PID(2), NID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'x')), [0.5, 0.0], [0.0, 0.0]))
+        Operator(+2.0, CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(-2.0, CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(-2.0, CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.0], [0.0, 0.0])),
+        Operator(+2.0, CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.0], [0.0, 0.0]))
     )
     @test expand(term, bond, hilbert) == operators
 
-    bond = Bond(1, Point(PID(2), [0.0, 0.5], [0.0, 0.0]), Point(PID(1), [0.0, 0.0], [0.0, 0.0]))
-    hilbert = Hilbert(pid=>Phonon(2) for pid in [bond.epoint.pid, bond.spoint.pid])
+    bond = Bond(1, Point(1, [0.0, 0.0], [0.0, 0.0]), Point(2, [0.0, 0.5], [0.0, 0.0]))
+    hilbert = Hilbert(site=>Phonon(2) for site=1:2)
     operators = Operators(
-        Operator(+2.0, OID(Index(PID(2), NID('u', 'y')), [0.0, 0.5], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'y')), [0.0, 0.5], [0.0, 0.0])),
-        Operator(+2.0, OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(-2.0, OID(Index(PID(2), NID('u', 'y')), [0.0, 0.5], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(-2.0, OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'y')), [0.0, 0.5], [0.0, 0.0]))
+        Operator(+2.0, CompositeIndex(Index(2, NID('u', 'y')), [0.0, 0.5], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'y')), [0.0, 0.5], [0.0, 0.0])),
+        Operator(+2.0, CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(-2.0, CompositeIndex(Index(2, NID('u', 'y')), [0.0, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(-2.0, CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'y')), [0.0, 0.5], [0.0, 0.0]))
     )
     @test expand(term, bond, hilbert) == operators
 
-    bond = Bond(1, Point(PID(2), [0.5, 0.5], [0.0, 0.0]), Point(PID(1), [0.0, 0.0], [0.0, 0.0]))
-    hilbert = Hilbert(pid=>Phonon(2) for pid in [bond.epoint.pid, bond.spoint.pid])
+    bond = Bond(1, Point(1, [0.0, 0.0], [0.0, 0.0]), Point(2, [0.5, 0.5], [0.0, 0.0]))
+    hilbert = Hilbert(site=>Phonon(2) for site=1:2)
     operators = Operators(
-        Operator(-1.0, OID(Index(PID(2), NID('u', 'x')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(-1.0, OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'y')), [0.5, 0.5], [0.0, 0.0])),
-        Operator(-1.0, OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'x')), [0.5, 0.5], [0.0, 0.0])),
-        Operator(-1.0, OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'x')), [0.5, 0.5], [0.0, 0.0])),
-        Operator(-1.0, OID(Index(PID(2), NID('u', 'x')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(-1.0, OID(Index(PID(2), NID('u', 'y')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(+1.0, OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(-1.0, OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'y')), [0.5, 0.5], [0.0, 0.0])),
-        Operator(+1.0, OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(+1.0, OID(Index(PID(2), NID('u', 'y')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'y')), [0.5, 0.5], [0.0, 0.0])),
-        Operator(+1.0, OID(Index(PID(1), NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(+1.0, OID(Index(PID(2), NID('u', 'y')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'x')), [0.5, 0.5], [0.0, 0.0])),
-        Operator(+1.0, OID(Index(PID(2), NID('u', 'x')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'x')), [0.5, 0.5], [0.0, 0.0])),
-        Operator(-1.0, OID(Index(PID(2), NID('u', 'y')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(+1.0, OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), OID(Index(PID(1), NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(+1.0, OID(Index(PID(2), NID('u', 'x')), [0.5, 0.5], [0.0, 0.0]), OID(Index(PID(2), NID('u', 'y')), [0.5, 0.5], [0.0, 0.0]))
+        Operator(-1.0, CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(-1.0, CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'y')), [0.5, 0.5], [0.0, 0.0])),
+        Operator(-1.0, CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.5], [0.0, 0.0])),
+        Operator(-1.0, CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.5], [0.0, 0.0])),
+        Operator(-1.0, CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(-1.0, CompositeIndex(Index(2, NID('u', 'y')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(+1.0, CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(-1.0, CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'y')), [0.5, 0.5], [0.0, 0.0])),
+        Operator(+1.0, CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(+1.0, CompositeIndex(Index(2, NID('u', 'y')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'y')), [0.5, 0.5], [0.0, 0.0])),
+        Operator(+1.0, CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(+1.0, CompositeIndex(Index(2, NID('u', 'y')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.5], [0.0, 0.0])),
+        Operator(+1.0, CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.5], [0.0, 0.0])),
+        Operator(-1.0, CompositeIndex(Index(2, NID('u', 'y')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(+1.0, CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(+1.0, CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'y')), [0.5, 0.5], [0.0, 0.0]))
     )
     @test expand(term, bond, hilbert) ≈ operators
 end

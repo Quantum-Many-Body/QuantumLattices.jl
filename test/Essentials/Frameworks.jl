@@ -1,30 +1,26 @@
-using Test
-using Printf: @printf
-using LinearAlgebra: tr, dot
-using StaticArrays: SVector
+using LinearAlgebra: dot, tr
+using QuantumLattices.Essentials: reset!, update
+using QuantumLattices.Essentials.DegreesOfFreedom: Boundary, CompositeIndex, Coupling, Hilbert, IIDSpace, Index, OperatorUnitToTuple, SimpleIID, SimpleInternal, Subscript, Subscripts, Table, Term, @couplings
 using QuantumLattices.Essentials.Frameworks
-using QuantumLattices.Essentials: update, reset!
-using QuantumLattices.Essentials.Spatials: Point, AbstractPID, PID, Bond, Bonds, Lattice, acrossbonds, zerothbonds, decompose
-using QuantumLattices.Essentials.DegreesOfFreedom: SimpleIID, SimpleInternal, IIDSpace, Coupling, Subscript, Subscripts
-using QuantumLattices.Essentials.DegreesOfFreedom: Term, Hilbert, Index, Table, OID, OIDToTuple, @couplings
-using QuantumLattices.Essentials.QuantumOperators: ID, Operator, Operators, id, idtype, Identity
+using QuantumLattices.Essentials.QuantumOperators: ID, Identity, Operator, Operators, id, idtype
+using QuantumLattices.Essentials.Spatials: Lattice, Point, bonds, decompose, isintracell
+using QuantumLattices.Interfaces: add!, expand, expand!
 using QuantumLattices.Prerequisites: Float
-using QuantumLattices.Interfaces:  expand!, expand, add!
 using QuantumLattices.Prerequisites.Traits: contentnames, reparameter
+using StaticArrays: SVector
 
 import QuantumLattices.Essentials.Frameworks: Parameters
 import QuantumLattices.Essentials: prepare!, run!, update!
-import QuantumLattices.Essentials.DegreesOfFreedom: ishermitian, couplingcenters
 import QuantumLattices.Prerequisites.VectorSpaces: shape
 
 struct FID{N<:Union{Int, Symbol}} <: SimpleIID
     nambu::N
 end
 @inline Base.adjoint(sl::FID{Int}) = FID(3-sl.nambu)
-function Base.angle(id::OID{<:Index{<:AbstractPID, FID{Int}}}, vectors::AbstractVector{<:AbstractVector{Float}}, values::AbstractVector{Float})
-    phase=  (length(vectors) == 1) ? 2pi*dot(decompose(id.icoord, vectors[1]), values) :
-            (length(vectors) == 2) ? 2pi*dot(decompose(id.icoord, vectors[1], vectors[2]), values) :
-            (length(vectors) == 3) ? 2pi*dot(decompose(id.icoord, vectors[1], vectors[2], vectors[3]), values) :
+function Base.angle(id::CompositeIndex{<:Index{FID{Int}}}, vectors::AbstractVector{<:AbstractVector{Float}}, values::AbstractVector{Float})
+    phase=  (length(vectors) == 1) ? 2pi*dot(decompose(id.icoordinate, vectors[1]), values) :
+            (length(vectors) == 2) ? 2pi*dot(decompose(id.icoordinate, vectors[1], vectors[2]), values) :
+            (length(vectors) == 3) ? 2pi*dot(decompose(id.icoordinate, vectors[1], vectors[2], vectors[3]), values) :
             error("angle error: not supported number of input basis vectors.")
     (id.index.iid.nambu == 1) ? phase : -phase
 end
@@ -41,12 +37,8 @@ end
 @inline shape(iidspace::IIDSpace{FID{Int}, FFock}) = (iidspace.iid.nambu:iidspace.iid.nambu,)
 
 const FCoupling{V, I<:ID{FID}, C<:Subscripts} = Coupling{V, I, C}
-@inline couplingcenters(::(Coupling{V, <:ID{FID}} where V), ::Bond, ::Val) = (1, 2)
 @inline FCoupling(value, nambus::Tuple{Vararg{Int}}) = Coupling(value, ID(FID, nambus), Subscripts((nambu=Subscript(nambus),)))
 @inline FCoupling(value, nambus::Subscript) = Coupling(value, ID(FID, convert(Tuple, nambus)), Subscripts((nambu=nambus,)))
-
-@inline ishermitian(::Type{<:Term{:Mu}}) = true
-@inline ishermitian(::Type{<:Term{:Hp}}) = false
 
 @testset "Parameters" begin
     ps1 = Parameters{(:t1, :t2, :U)}(1.0im, 1.0, 2.0)
@@ -55,50 +47,17 @@ const FCoupling{V, I<:ID{FID}, C<:Subscripts} = Coupling{V, I, C}
     @test match(ps1, ps2) == true
     @test match(ps1, ps3) == false
     @test update(ps1; ps3...) == Parameters{(:t1, :t2, :U)}(1.0im, 1.0, 2.1)
-end
 
-@testset "Boundary" begin
-    op = Operator(4.5,
-        OID(Index(PID(1), FID(2)), SVector(0.5, 0.5), SVector(0.0, 0.0)),
-        OID(Index(PID(2), FID(1)), SVector(1.5, 1.5), SVector(1.0, 1.0))
-        )
     bound = Boundary{(:θ₁, :θ₂)}([0.1, 0.2], [[1.0, 0.0], [0.0, 1.0]])
-    M = reparameter(typeof(op), :value, Complex{Float64})
-    @test valtype(typeof(bound), typeof(op)) == M
-    @test keys(bound) == keys(typeof(bound)) == (:θ₁, :θ₂)
-    @test bound == deepcopy(bound)
-    @test bound≠Boundary{(:ϕ₁, :ϕ₂)}(bound.values, bound.vectors)
-    @test isequal(bound, deepcopy(bound))
-    @test !isequal(bound, Boundary{(:ϕ₁, :ϕ₂)}(bound.values, bound.vectors))
     @test Parameters(bound) == (θ₁=0.1, θ₂=0.2)
-
-    another = Boundary{(:θ₁, :θ₂)}([0.0, 0.0], [[2.0, 0.0], [0.0, 2.0]])
-    @test merge!(deepcopy(bound), another) == another
-
-    @test bound(op) ≈ replace(op, 4.5*exp(2im*pi*0.3))
-    @test bound(op, origin=[0.05, 0.15]) ≈ replace(op, 4.5*exp(2im*pi*0.1))
-    update!(bound, θ₁=0.3)
-    @test bound(op) ≈ replace(op, 4.5*exp(2im*pi*0.5))
-    @test bound(op, origin=[0.1, 0.1]) ≈ replace(op, 4.5*exp(2im*pi*0.3))
-
-    ops = Operators{M}(op)
-    @test valtype(typeof(bound), typeof(ops)) == typeof(ops)
-    @test bound(ops) ≈ Operators(replace(op, 4.5*exp(2im*pi*0.5)))
-    @test map!(bound, ops) ≈ ops ≈ Operators(replace(op, 4.5*exp(2im*pi*0.5)))
-
-    @test valtype(typeof(plain), typeof(op)) == typeof(op)
-    @test valtype(typeof(plain), typeof(ops)) == typeof(ops)
-    @test plain(op) == op
-    @test plain(ops) == ops
-    @test update!(plain) == plain
 end
 
-@testset "Formulation" begin
+@testset "AnalyticalExpression" begin
     A(t, μ, Δ; k) = [
           2t*cos(k[1])+2t*cos(k[2])+μ   2im*Δ*sin(k[1])+2Δ*sin(k[2]);
         -2im*Δ*sin(k[1])+2Δ*sin(k[2])   -2t*cos(k[1])-2t*cos(k[2])-μ
     ]
-    f = Formulation(A, (t=1.0, μ=0.0, Δ=0.1))
+    f = AnalyticalExpression(A, (t=1.0, μ=0.0, Δ=0.1))
     @test Parameters(f) == (t=1.0, μ=0.0, Δ=0.1)
     @test f(k=[0.0, 0.0]) ≈ [4 0; 0 -4]
 
@@ -106,27 +65,28 @@ end
     @test f(k=[pi/2, pi/2]) ≈ [0.3 0.2+0.2im; 0.2-0.2im -0.3]
 end
 
-@testset "Generator" begin
+@testset "RepresentationGenerator" begin
     @test contentnames(CompositeGenerator) == (:operators, :table)
-    @test contentnames(Generator) == (:operators, :terms, :bonds, :hilbert, :half, :table)
+    @test contentnames(OperatorGenerator) == (:operators, :terms, :bonds, :hilbert, :half, :table)
     @test contentnames(Image) == (:operators, :transformation, :table, :sourceid)
 
-    lattice = Lattice(:Tuanzi, [Point(PID(1), [0.0]), Point(PID(2), [0.5])], vectors=[[1.0]], neighbors=1)
-    bonds = Bonds(lattice)
-    hilbert = Hilbert{FFock}(pid->FFock(2), lattice.pids)
-    table = Table(hilbert, OIDToTuple(:scope, :site))
+    lattice = Lattice([0.0], [0.5]; vectors=[[1.0]])
+    bs = bonds(lattice, 1)
+    hilbert = Hilbert(site->FFock(2), 1:length(lattice))
+    table = Table(hilbert, OperatorUnitToTuple(:site))
     boundary = Boundary{(:θ,)}([0.1], lattice.vectors)
 
-    t = Term{:Hp}(:t, 2.0, 1, couplings=@couplings(FCoupling(1.0, (2, 1))))
-    μ = Term{:Mu}(:μ, 1.0, 0, couplings=@couplings(FCoupling(1.0, (2, 1))), modulate=true)
-    tops₁ = expand(t, filter(acrossbonds, bonds, Val(:exclude)), hilbert, half=true, table=table)
-    tops₂ = boundary(expand(one(t), filter(acrossbonds, bonds, Val(:include)), hilbert, half=true, table=table))
-    μops = expand(one(μ), filter(zerothbonds, bonds, Val(:include)), hilbert, half=true, table=table)
+    t = Term{:Hp}(:t, 2.0, 1, couplings=@couplings(FCoupling(1.0, (2, 1))), ishermitian=false)
+    μ = Term{:Mu}(:μ, 1.0, 0, couplings=@couplings(FCoupling(1.0, (2, 1))), ishermitian=true, modulate=true)
+
+    tops₁ = expand(t, filter(bond->isintracell(bond), bs), hilbert; half=true)
+    tops₂ = boundary(expand(one(t), filter(bond->!isintracell(bond), bs), hilbert; half=true))
+    μops = expand(one(μ), filter(bond->length(bond)==1, bs), hilbert; half=true)
     i = Identity()
 
-    optp = Operator{Complex{Float}, ID{OID{Index{PID, FID{Int}}, SVector{1, Float}}, 2}}
+    optp = Operator{Complex{Float}, ID{CompositeIndex{Index{FID{Int}}, SVector{1, Float}}, 2}}
     entry = Entry(tops₁, (μ=μops,), (t=tops₂, μ=Operators{optp}()), (t=2.0, μ=1.0), boundary)
-    @test entry == Entry((t, μ), bonds, hilbert; half=true, table=table, boundary=boundary)
+    @test entry == Entry((t, μ), bs, hilbert; half=true, boundary=boundary)
     @test isequal(entry, i(entry))
     @test Parameters(entry) == (t=2.0, μ=1.0, θ=0.1)
     @test entry+entry == entry*2 == 2*entry == Entry(tops₁*2, (μ=μops,), (t=tops₂, μ=Operators{optp}()), (t=4.0, μ=2.0), boundary)
@@ -138,8 +98,8 @@ end
     entry₂ = Entry(zero(tops₁), (μ=μops,), (μ=Operators{optp}(),), (μ=1.0,), boundary)
     @test entry₁+entry₂ == Entry(tops₁, (μ=μops,), (t=tops₂, μ=Operators{optp}()), (t=2.0, μ=1.0), boundary)
 
-    μops₁ = expand(one(μ), bonds[1], hilbert, half=true, table=table)
-    μops₂ = expand(one(μ), bonds[2], hilbert, half=true, table=table)
+    μops₁ = expand(one(μ), bs[1], hilbert; half=true)
+    μops₂ = expand(one(μ), bs[2], hilbert; half=true)
     entry₁ = Entry(zero(tops₁), (μ=μops₁,), (μ=Operators{optp}(),), (μ=1.0,), boundary)
     entry₂ = Entry(zero(tops₁), (μ=μops₂,), (μ=Operators{optp}(),), (μ=1.0,), boundary)
     @test entry₁*2+entry₂*2 == Entry(zero(tops₁), (μ=μops,), (μ=Operators{optp}(),), (μ=2.0,), boundary)
@@ -159,10 +119,10 @@ end
     @test dest == another
     @test expand(dest) ≈ tops₁+another.boundary(tops₂, origin=[0.1])*2.0+μops*1.5
 
-    @test reset!(deepcopy(another), (t, μ), bonds, hilbert, half=true, table=table, boundary=boundary) == entry
+    @test reset!(deepcopy(another), (t, μ), bs, hilbert; half=true, boundary=boundary) == entry
     @test reset!(deepcopy(another), i, entry) == entry
 
-    cgen = Generator((t, μ), bonds, hilbert; half=true, table=table, boundary=boundary)
+    cgen = OperatorGenerator((t, μ), bs, hilbert; half=true, boundary=boundary, table=table)
     @test cgen == deepcopy(cgen) && isequal(cgen, deepcopy(cgen))
     @test cgen|>eltype == cgen|>typeof|>eltype == optp
     @test cgen|>valtype == cgen|>typeof|>valtype == Operators{optp, idtype(optp)}
@@ -175,7 +135,7 @@ end
     @test expand(cgen, :μ, 1)+expand(cgen, :μ, 2) ≈ μops
     @test expand(cgen, :t, 3) ≈ tops₁
     @test expand(cgen, :t, 4) ≈ tops₂*2.0
-    @test empty!(deepcopy(cgen)) == Generator((t, μ), empty(bonds), empty(hilbert), half=true, table=empty(table), boundary=boundary) == empty(cgen)
+    @test empty!(deepcopy(cgen)) == OperatorGenerator((t, μ), empty(bs), empty(hilbert); half=true, boundary=boundary, table=empty(table)) == empty(cgen)
     @test reset!(empty(cgen), lattice) == cgen
     @test update!(cgen, μ=1.5)|>expand ≈ tops₁+tops₂*2.0+μops*1.5
 
@@ -186,10 +146,10 @@ end
     @test empty!(deepcopy(sgen)) == Image(empty(cgen.operators), i, empty(table), objectid(cgen)) == empty(sgen)
     @test update!(sgen, μ=3.5)|>expand ≈ tops₁+tops₂*2.0+μops*3.5
     @test update!(sgen, cgen)|>expand ≈ tops₁+tops₂*2.0+μops*1.5
-    @test reset!(empty(sgen), cgen; table=table) == sgen
+    @test reset!(empty(sgen), i, cgen; table=table) == sgen
 end
 
-mutable struct VCA <: Engine
+mutable struct VCA <: Frontend
     t::Float
     U::Float
     dim::Int
@@ -205,7 +165,7 @@ mutable struct GF <: Action
     count::Int
 end
 @inline prepare!(gf::GF, vca::VCA) = Matrix{Float}(undef, vca.dim, vca.dim)
-@inline run!(alg::Algorithm{VCA}, assign::Assignment{GF}) = (assign.action.count += 1; assign.data[:, :] .= alg.engine.t+alg.engine.U)
+@inline run!(alg::Algorithm{VCA}, assign::Assignment{GF}) = (assign.action.count += 1; assign.data[:, :] .= alg.frontend.t+alg.frontend.U)
 
 mutable struct DOS <: Action
     mu::Float

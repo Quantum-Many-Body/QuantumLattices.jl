@@ -1,7 +1,6 @@
-using Test
 using QuantumLattices.Prerequisites.Traits
 
-import QuantumLattices.Prerequisites.Traits: parameternames, isparameterbound, contentnames, getcontent, contenttype, dissolve
+import QuantumLattices.Prerequisites.Traits: contentnames, contenttype, dissolve, getcontent, isparameterbound, parameternames
 
 abstract type FT{T} end
 @inline parameternames(::Type{<:FT}) = (:content,)

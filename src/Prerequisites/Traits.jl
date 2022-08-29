@@ -2,11 +2,10 @@ module Traits
 
 using ..Prerequisites: atol, rtol
 
-export commontype
-export parametercount, parametername, parameterorder, parametertype, parameterpair, isparameterbound, hasparameter
-export parameternames, parametertypes, parameterpairs, isparameterbounds, reparameter, promoteparameters, rawtype, fulltype
-export contentcount, contentname, contentorder, contenttype, hascontent, getcontent, contentnames, contenttypes, dissolve
 export efficientoperations
+export commontype, dissolve, fulltype, rawtype
+export hasparameter, isparameterbound, isparameterbounds, parametercount, parametername, parameternames, parameterorder, parameterpair, parameterpairs, parametertype, parametertypes, promoteparameters, reparameter 
+export contentcount, contentname, contentnames, contentorder, contenttype, contenttypes, getcontent, hascontent
 
 """
     commontype(f::Function, types, ::Type{T}=Any) where T

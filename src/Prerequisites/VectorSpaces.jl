@@ -1,12 +1,12 @@
 module VectorSpaces
 
-using ..Traits: rawtype, efficientoperations, getcontent
+using ..Traits: efficientoperations, getcontent, rawtype 
 
 import ..Traits: contentnames
-import ...Interfaces: dimension, rank, ⊕, ⊗
+import ...Interfaces: ⊕, ⊗, dimension, rank
 
-export VectorSpace, NamedVectorSpace, SimpleNamedVectorSpace, ParameterSpace, ZippedNamedVectorSpace, DirectProductedNamedVectorSpace
-export VectorSpaceStyle, VectorSpaceEnumerative, VectorSpaceCartesian, VectorSpaceDirectSummed, VectorSpaceDirectProducted, VectorSpaceZipped
+export DirectProductedNamedVectorSpace, NamedVectorSpace, ParameterSpace, SimpleNamedVectorSpace, VectorSpace, ZippedNamedVectorSpace
+export VectorSpaceCartesian, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceEnumerative, VectorSpaceStyle, VectorSpaceZipped
 export shape
 
 """

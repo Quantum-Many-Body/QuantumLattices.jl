@@ -1,13 +1,11 @@
 module SimpleTrees
 
-using ..Traits: getcontent, parametertype, efficientoperations, rawtype
+using ..Traits: efficientoperations, getcontent, parametertype, rawtype
 
 import ..Traits: contentnames, dissolve
 
-export simpletreedepth, simpletreewidth
-export SimpleTreeCore, AbstractSimpleTree, SimpleTree
-export root, children, ancestor, descendants, siblings, leaves, subtree
-export isleaf, level, addnode!, deletenode!, move!
+export simpletreedepth, simpletreewidth, AbstractSimpleTree, SimpleTree, SimpleTreeCore
+export addnode!, ancestor, children, deletenode!, descendants, isleaf, leaves, level, move!, root, siblings, subtree
 
 """
     SimpleTreeCore()

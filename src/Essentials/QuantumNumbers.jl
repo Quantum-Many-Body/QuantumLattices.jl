@@ -1,20 +1,20 @@
 module QuantumNumbers
 
 using Base.Iterators: Reverse, flatten, product, reverse
-using Printf: @printf, @sprintf
 using DataStructures: OrderedDict
 using LinearAlgebra: norm
-using Random: seed!, shuffle!, MersenneTwister
+using Printf: @printf, @sprintf
+using Random: MersenneTwister, seed!, shuffle!
 using ...Prerequisites: Float
 using ...Prerequisites.Combinatorics: Combinations
 using ...Prerequisites.NamedVectors: HomoNamedVector
-using ...Prerequisites.VectorSpaces: VectorSpace, VectorSpaceStyle, VectorSpaceEnumerative
+using ...Prerequisites.VectorSpaces: VectorSpace, VectorSpaceEnumerative, VectorSpaceStyle
 
 import ...Prerequisites.Traits: contentnames, getcontent
-import ...Interfaces: ⊕, ⊗, dimension, expand, permute, decompose
+import ...Interfaces: ⊕, ⊗, decompose, dimension, expand, permute
 
-export AbelianNumber, AbelianNumbers, periods, regularize, regularize!, @abeliannumber
-export SpinZ, ParticleNumber, SpinfulParticle, spinzs, particlenumbers, spinfulparticles, Momentum, Momentum₁, Momentum₂, Momentum₃
+export AbelianNumber, AbelianNumbers, regularize, regularize!, periods, @abeliannumber
+export Momentum, Momentum₁, Momentum₂, Momentum₃, ParticleNumber, SpinfulParticle, SpinZ, particlenumbers, spinfulparticles, spinzs
 
 """
     positives(inputs::NTuple{N, Any}) where N -> NTuple{N, Int}
@@ -190,15 +190,9 @@ end
 
 Construct an `AbelianNumbers` from a vector of concrete quantum numbers and an vector containing their counts or indptr.
 """
-@inline function AbelianNumbers(form::Char, contents::Vector{<:AbelianNumber}, indptr::Vector{Int}, choice::Symbol)
-    return AbelianNumbers(form, contents, indptr, choice|>Val)
-end
-@inline function AbelianNumbers(form::Char, contents::Vector{<:AbelianNumber}, counts::Vector{Int}, ::Val{:counts})
-    return AbelianNumbers(form|>uppercase, contents, [0, cumsum(counts)...])
-end
-@inline function AbelianNumbers(form::Char, contents::Vector{<:AbelianNumber}, indptr::Vector{Int}, ::Val{:indptr})
-    return AbelianNumbers(form|>uppercase, contents, indptr)
-end
+@inline AbelianNumbers(form::Char, contents::Vector{<:AbelianNumber}, indptr::Vector{Int}, choice::Symbol) = AbelianNumbers(form, contents, indptr, choice|>Val)
+@inline AbelianNumbers(form::Char, contents::Vector{<:AbelianNumber}, counts::Vector{Int}, ::Val{:counts}) = AbelianNumbers(form|>uppercase, contents, [0, cumsum(counts)...])
+@inline AbelianNumbers(form::Char, contents::Vector{<:AbelianNumber}, indptr::Vector{Int}, ::Val{:indptr}) = AbelianNumbers(form|>uppercase, contents, indptr)
 
 """
     AbelianNumbers(form::Char, contents::Vector{<:AbelianNumber})
@@ -456,9 +450,7 @@ Overloaded `+` operator for `AbelianNumber`/`AbelianNumbers`.
 """
 @inline Base.:+(qns::AbelianNumbers) = qns
 @inline Base.:+(qn::QN, qns::AbelianNumbers{QN}) where {QN<:AbelianNumber} = qns + qn
-@inline function Base.:+(qns::AbelianNumbers{QN}, qn::QN) where {QN<:AbelianNumber}
-    return AbelianNumbers(qns.form=='G' ? 'G' : 'U', [iqn+qn for iqn in qns], qns.indptr, :indptr)
-end
+@inline Base.:+(qns::AbelianNumbers{QN}, qn::QN) where {QN<:AbelianNumber} = AbelianNumbers(qns.form=='G' ? 'G' : 'U', [iqn+qn for iqn in qns], qns.indptr, :indptr)
 
 """
     -(qns::AbelianNumbers) -> AbelianNumbers
@@ -471,15 +463,9 @@ Overloaded `-` operator for `AbelianNumber`/`AbelianNumbers`.
     2. `-` cannot be used between two `AbelianNumbers` because the result is ambiguous. Instead, use `⊕` with signs for direct sum and `⊗` with signs for direct product.
     3. To ensure type stability, an `AbelianNumber` can be subtracted by an `AbelianNumbers` or vice versa if and only if the former's type is the same with the latter's eltype.
 """
-@inline function Base.:-(qns::AbelianNumbers)
-    return AbelianNumbers(qns.form=='G' ? 'G' : 'U', -qns.contents, qns.indptr, :indptr)
-end
-@inline function Base.:-(qn::QN, qns::AbelianNumbers{QN}) where {QN<:AbelianNumber}
-    return AbelianNumbers(qns.form=='G' ? 'G' : 'U', [qn-iqn for iqn in qns], qns.indptr, :indptr)
-end
-@inline function Base.:-(qns::AbelianNumbers{QN}, qn::QN) where {QN<:AbelianNumber}
-    return AbelianNumbers(qns.form=='G' ? 'G' : 'U', [iqn-qn for iqn in qns], qns.indptr, :indptr)
-end
+@inline Base.:-(qns::AbelianNumbers) = AbelianNumbers(qns.form=='G' ? 'G' : 'U', -qns.contents, qns.indptr, :indptr)
+@inline Base.:-(qn::QN, qns::AbelianNumbers{QN}) where {QN<:AbelianNumber} = AbelianNumbers(qns.form=='G' ? 'G' : 'U', [qn-iqn for iqn in qns], qns.indptr, :indptr)
+@inline Base.:-(qns::AbelianNumbers{QN}, qn::QN) where {QN<:AbelianNumber} = AbelianNumbers(qns.form=='G' ? 'G' : 'U', [iqn-qn for iqn in qns], qns.indptr, :indptr)
 
 """
     *(factor::Integer, qns::AbelianNumbers) -> AbelianNumbers
@@ -488,9 +474,7 @@ end
 Overloaded `*` operator for the multiplication between an integer and an `AbelianNumbers`.
 """
 @inline Base.:*(factor::Integer, qns::AbelianNumbers) = qns * factor
-@inline function Base.:*(qns::AbelianNumbers, factor::Integer)
-    return AbelianNumbers(qns.form=='G' ? 'G' : 'U', [qn*factor for qn in qns.contents], qns.indptr, :indptr)
-end
+@inline Base.:*(qns::AbelianNumbers, factor::Integer) = AbelianNumbers(qns.form=='G' ? 'G' : 'U', [qn*factor for qn in qns.contents], qns.indptr, :indptr)
 
 """
     ^(qns::AbelianNumbers, factor::Integer) -> AbelianNumbers
@@ -572,9 +556,7 @@ function Base.kron(qnses::AbelianNumbers{QN}...; signs=positives(qnses)) where {
 end
 
 """
-    prod(qnses::AbelianNumbers{QN}...;
-        signs=positives(qnses)
-        ) where {QN<:AbelianNumber} -> AbelianNumbers{QN}, Dict{QN, Dict{NTuple{length(qnses), QN}, UnitRange{Int}}}
+    prod(qnses::AbelianNumbers{QN}...; signs=positives(qnses)) where {QN<:AbelianNumber} -> AbelianNumbers{QN}, Dict{QN, Dict{NTuple{length(qnses), QN}, UnitRange{Int}}}
 
 Unitary Kronecker product of several `AbelianNumbers`es. The product result as well as the records of the product will be returned.
 !!! note
@@ -609,11 +591,7 @@ function Base.prod(qnses::AbelianNumbers{QN}...; signs=positives(qnses)) where {
 end
 
 """
-    decompose(target::QN, qnses::AbelianNumbers{QN}...;
-        signs=positives(qnses),
-        method=:montecarlo,
-        nmax=20
-        ) where {QN<:AbelianNumber} -> Vector{NTuple{length(qnses), Int}}
+    decompose(target::QN, qnses::AbelianNumbers{QN}...; signs=positives(qnses), method=:montecarlo, nmax=20) where {QN<:AbelianNumber} -> Vector{NTuple{length(qnses), Int}}
 
 Find a couple of decompositions of `target` with respect to `qnses`.
 !!! note
@@ -623,9 +601,7 @@ Find a couple of decompositions of `target` with respect to `qnses`.
     ```
     This equation is in fact a set of restricted [linear Diophantine equations](https://en.wikipedia.org/wiki/Diophantine_equation#Linear_Diophantine_equations). Indeed, our quantum numbers are always discrete Abelian ones and all instances of a concrete `AbelianNumber` forms a [module](https://en.wikipedia.org/wiki/Module_(mathematics)) over the [ring](https://en.wikipedia.org/wiki/Ring_(mathematics)) of integers. Therefore, each quantum number can be represented as a integral multiple of the unit element of the Abelian module, which results in the final reduction of the above equation to a set of linear Diophantine equations. Then finding a decomposition is equivalent to find a solution of the reduced linear Diophantine equations, with the restriction that the quantum numbers constructed from the solution should be in the corresponding `qnses`. Here we provide two methods to find such decompositions, one is by brute force, and the other is by Monte Carlo simulations.
 """
-@inline function decompose(target::QN, qnses::AbelianNumbers{QN}...; signs=positives(qnses), method=:montecarlo, nmax=20) where {QN<:AbelianNumber}
-    _decompose(Val(method), target, qnses...; signs=signs, nmax=nmax)
-end
+@inline decompose(target::QN, qnses::AbelianNumbers{QN}...; signs=positives(qnses), method=:montecarlo, nmax=20) where {QN<:AbelianNumber} = _decompose(Val(method), target, qnses...; signs=signs, nmax=nmax)
 function _decompose(::Val{:bruteforce}, target::QN, qnses::AbelianNumbers{QN}...; signs, nmax) where {QN<:AbelianNumber}
     N = fieldcount(typeof(qnses))
     result = Set{NTuple{N, Int}}()

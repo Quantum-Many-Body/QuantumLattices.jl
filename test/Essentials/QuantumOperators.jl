@@ -1,15 +1,14 @@
-using Test
 using LaTeXStrings: latexstring
 using Printf: @printf, @sprintf
-using QuantumLattices.Essentials.QuantumOperators
 using QuantumLattices.Essentials: dtype
-using QuantumLattices.Interfaces: id, value, rank, add!, sub!, mul!, div!
+using QuantumLattices.Essentials.QuantumOperators
+using QuantumLattices.Interfaces: add!, div!, mul!, id, rank, sub!, value
 using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Prerequisites.Combinatorics: Combinations
-using QuantumLattices.Prerequisites.Traits: contentnames, parameternames, parametertype, isparameterbound
+using QuantumLattices.Prerequisites.Traits: contentnames, isparameterbound, parameternames, parametertype
 
-import QuantumLattices.Interfaces: ⊗, ⋅, permute
 import QuantumLattices.Essentials.QuantumOperators: script
+import QuantumLattices.Interfaces: ⊗, ⋅, permute
 
 struct AID{O<:Real, S<:Real} <: OperatorUnit
     orbital::O

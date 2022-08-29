@@ -1,4 +1,3 @@
-using Test
 using QuantumLattices.Prerequisites.SimpleTrees
 using QuantumLattices.Prerequisites.Traits: contentnames
 

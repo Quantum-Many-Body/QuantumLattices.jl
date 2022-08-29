@@ -1,6 +1,5 @@
-using Test
-using QuantumLattices.Prerequisites.NamedVectors
 using QuantumLattices.Prerequisites: Float
+using QuantumLattices.Prerequisites.NamedVectors
 
 mutable struct NonHomo <: NamedVector
     scope::String

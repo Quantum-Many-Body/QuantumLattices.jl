@@ -1,10 +1,10 @@
 module Prerequisites
 
-using Reexport: @reexport
 using Formatting: FormatSpec, fmt
+using Reexport: @reexport
 
 export atol, rtol, Float
-export decimaltostr, ordinal, delta, concatenate
+export concatenate, decimaltostr, delta, ordinal
 
 "Absolute tolerance for float numbers."
 const atol = 5 * 10^-14

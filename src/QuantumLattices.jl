@@ -9,51 +9,48 @@ using .Prerequisites
 using .Essentials
 
 # Interfaces
-export id, value, rank, dimension
-export ⊕, ⊗, ⋅, add!, sub!, mul!, div!
-export expand, expand!, decompose, decompose!, permute
+export dimension, id, rank, value
+export ⊕, ⊗, ⋅, add!, div!, mul!, sub!
+export decompose, decompose!, expand, expand!, permute
 
 # Essentials
-export dtype, kind, update, update!, reset!
+export dtype, kind, reset!, update, update!
 
 # Essentials.QuantumOperators
-export QuantumOperator, OperatorUnit, ID, OperatorPack, OperatorProd, OperatorSum, Operator, Operators, LaTeX
-export Transformation, Identity, Numericalization, MatrixRepresentation, Permutation, AbstractSubstitution, AbstractUnitSubstitution, UnitSubstitution, RankFilter
-export ishermitian, idtype, optype, sequence, latexname, latexformat, matrix, matrix!
+export ID, Operator, OperatorPack, OperatorProd, Operators, OperatorSum, OperatorUnit, LaTeX, QuantumOperator
+export AbstractSubstitution, AbstractUnitSubstitution, Identity, MatrixRepresentation, Numericalization, Permutation, RankFilter, Transformation, UnitSubstitution
+export idtype, ishermitian, latexname, latexformat, matrix, matrix!, optype, script, sequence, subscript, superscript
 
 # Essentials.QuantumNumbers
-export AbelianNumber, AbelianNumbers, @abeliannumber, SpinZ, ParticleNumber, SpinfulParticle, Momentum, Momentum₁, Momentum₂, Momentum₃
-export periods, spinzs, particlenumbers, spinfulparticles
+export AbelianNumber, AbelianNumbers, Momentum, Momentum₁, Momentum₂, Momentum₃, ParticleNumber, SpinfulParticle, SpinZ
+export particlenumbers, periods, spinfulparticles, spinzs, @abeliannumber
 
 # Essentials.Spatials
-export distance, azimuthd, azimuth, polard, polar, volume, isparallel, isonline, isintratriangle, issubordinate, reciprocals, translate, rotate, tile
-export Translations, AbstractPID, PID, CPID, AbstractBond, Point, Bond, Lattice, SuperLattice, Cylinder, Bonds
-export Segment, ReciprocalSpace, BrillouinZone, ReciprocalZone, ReciprocalPath
-export pidtype, rcoord, icoord, isintracell, bonds!, bonds, @line_str, @rectangle_str, @hexagon_str, @translations_str
-export allbonds, zerothbonds, insidebonds, acrossbonds, intrabonds, interbonds
+export azimuth, azimuthd, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, polar, polard, reciprocals, rotate, translate, tile, volume
+export AbstractLattice, Bond, BrillouinZone, Lattice, Neighbors, Point, ReciprocalSpace, ReciprocalZone, ReciprocalPath, Segment, Translations, bonds!, bonds, icoordinate, isintracell, nneighbor, rcoordinate, @translations_str
+export hexagon120°map, hexagon60°map, linemap, rectanglemap, @hexagon_str, @line_str, @rectangle_str
 
 # Essentials.DegreesOfFreedom
-export IID, SimpleIID, CompositeIID, Internal, SimpleInternal, CompositeInternal, AbstractOID, Index, CompositeOID, OID, Hilbert
-export IIDSpace, Subscript, Subscripts, AbstractCoupling, Coupling, Couplings, Metric, OIDToTuple, Table, Term
-export statistics, iidtype, indextype, ismodulatable, abbr, @subscript_str, @couplings
+export Boundary, CompositeIID, CompositeIndex, CompositeInternal, Coupling, Couplings, Hilbert, IID, IIDSpace, Index, Internal, Metric, OperatorUnitToTuple, SimpleIID, SimpleInternal, Subscript, Subscripts, Table, Term
+export plain, iidtype, indextype, ismodulatable, statistics, @couplings, @subscript_str
 
 # Essentials.QuantumSystems
 ## Canonical fermionic/bosonic systems
-export majorana, annihilation, creation, flatex, blatex
-export FID, Fock, FockCoupling, Onsite, Hopping, Pairing, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, SpinFlip, PairHopping, Coulomb, FockTerm
+export annihilation, creation, latexofbosons, latexoffermions, majorana
+export Coulomb, FID, Fock, FockCoupling, FockTerm, Hopping, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, Onsite, PairHopping, Pairing, SpinFlip
 export isnormalordered, @σ⁰_str, @σˣ_str, @σʸ_str, @σᶻ_str, @σ⁺_str, @σ⁻_str, @fc_str
 
 ## SU(2) spin systems
-export slatex
-export SID, Spin, SpinCoupling, SpinTerm, totalspin
-export @heisenberg_str, @ising_str, @gamma_str, @dm_str, @sˣ_str, @sʸ_str, @sᶻ_str, @sc_str
+export latexofspins
+export SID, Spin, SpinCoupling, SpinTerm
+export totalspin, @dm_str, @gamma_str, @heisenberg_str, @ising_str, @sc_str, @sˣ_str, @sʸ_str, @sᶻ_str
 
 ## Phononic systems
-export nlatex
+export latexofphonons
 export NID, Phonon, PhononCoupling, PhononKinetic, PhononPotential, PhononTerm
+export @kinetic_str, @potential_str
 
 # Essentials.Frameworks
-export Parameters, Boundary, Engine, AbstractGenerator, Formulation, Entry, CompositeGenerator, Generator, Image, Action, Assignment, Algorithm
-export prepare!, run!, rundependences!, save, plain
+export Action, Algorithm, AnalyticalExpression, Assignment, CompositeGenerator, Entry, Frontend, Image, OperatorGenerator, Parameters, RepresentationGenerator, prepare!, run!, rundependences!, save
 
 end
