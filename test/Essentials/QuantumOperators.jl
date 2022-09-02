@@ -150,6 +150,7 @@ end
     @test opt-1 == Operators(opt, Operator(-1))
     @test 2*AID(1, 1) == AID(1, 1)*2 == Operator(2, AID(1, 1))
     @test AID(1, 1)*AID(1, 2) == Operator(1, AID(1, 1), AID(1, 2))
+    @test AID(1, 1)*Operator(2, AID(1, 2)) == Operator(2, AID(1, 1), AID(1, 2)) == Operator(2, AID(1, 1))*AID(1, 2)
     @test Operator(2, AID(1, 1))//3 == Operator(2//3, AID(1, 1))
 
     @test +opts == opts

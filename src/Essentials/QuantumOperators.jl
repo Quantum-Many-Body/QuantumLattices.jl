@@ -41,6 +41,7 @@ It plays the role of the symbols as in usual computer algebras while it can host
 """
 abstract type OperatorUnit <: QuantumOperator end
 @inline Base.show(io::IO, u::OperatorUnit) = @printf io "%s(%s)" nameof(typeof(u)) join(map(repr, ntuple(i->getfield(u, i), Val(fieldcount(typeof(u))))), ", ")
+@inline @generated Base.hash(u::OperatorUnit, h::UInt) = Expr(:call, :hash, Expr(:tuple, [:(getfield(u, $i)) for i=1:fieldcount(u)]...), :h)
 
 # ID of a composite quantum operator
 """
@@ -560,6 +561,8 @@ end
     *(m₁::OperatorUnit, m₂::OperatorUnit) -> Operator
     *(factor::Number, m::OperatorPack) -> OperatorPack
     *(m::OperatorPack, factor::Number) -> OperatorPack
+    *(m₁::OperatorPack, m₂::OperatorUnit) -> OperatorPack
+    *(m₁::OperatorUnit, m₁::OperatorPack) -> OperatorPack
     *(m₁::OperatorPack, m₂::OperatorPack) -> OperatorPack
     *(factor::Number, ms::OperatorSum) -> OperatorSum
     *(ms::OperatorSum, factor::Number) -> OperatorSum
@@ -574,6 +577,8 @@ Overloaded `*` between quantum operators or a quantum operator and a number.
 @inline Base.:*(m₁::OperatorUnit, m₂::OperatorUnit) = Operator(1, ID(m₁, m₂))
 @inline Base.:*(factor::Number, m::OperatorPack) = replace(m, factor*value(m))
 @inline Base.:*(m::OperatorPack, factor::Number) = replace(m, value(m)*factor)
+@inline Base.:*(m₁::OperatorPack, m₂::OperatorUnit) = m₁*Operator(1, ID(m₂))
+@inline Base.:*(m₁::OperatorUnit, m₂::OperatorPack) = Operator(1, ID(m₁))*m₂
 @inline function Base.:*(m₁::OperatorPack, m₂::OperatorPack)
     M₁, M₂ = typeof(m₁), typeof(m₂)
     @assert nameof(M₁)==nameof(M₂) && contentnames(M₁)==(:value, :id)==contentnames(M₂) "\"*\" error: not implemented between $(nameof(M₁)) and $(nameof(M₂))."

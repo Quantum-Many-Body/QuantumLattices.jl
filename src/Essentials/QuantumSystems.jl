@@ -13,7 +13,7 @@ using ...Prerequisites: atol, rtol, Float, decimaltostr, delta
 using ...Prerequisites.Traits: efficientoperations, getcontent, rawtype
 using ...Prerequisites.VectorSpaces: VectorSpace, VectorSpaceCartesian, VectorSpaceStyle
 
-import ..QuantumOperators: latexname, optype, script
+import ..QuantumOperators: latexname, matrix, optype, script
 import ..DegreesOfFreedom: couplingcenters, statistics
 import ...Interfaces: ⊗, ⋅, expand, expand!, permute, rank
 import ...Prerequisites.VectorSpaces: shape
@@ -27,7 +27,7 @@ export SID, Spin, SpinCoupling, SpinTerm
 export totalspin, @dm_str, @gamma_str, @heisenberg_str, @ising_str, @sc_str, @sˣ_str, @sʸ_str, @sᶻ_str
 
 export latexofphonons
-export NID, Phonon, PhononCoupling, PhononKinetic, PhononPotential, PhononTerm
+export PID, Phonon, PhononCoupling, PhononKinetic, PhononPotential, PhononTerm
 export @kinetic_str, @potential_str
 
 # Canonical fermionic/bosonic systems and hardcore bosonic systems
@@ -69,7 +69,8 @@ struct FID{T, O<:Union{Int, Symbol}, S<:Union{Int, Symbol}, N<:Union{Int, Symbol
 end
 @inline Base.:(==)(fid₁::FID, fid₂::FID) = statistics(fid₁)==statistics(fid₂) && ==(efficientoperations, fid₁, fid₂)
 @inline Base.isequal(fid₁::FID, fid₂::FID) = isequal(statistics(fid₁), statistics(fid₂)) && isequal(efficientoperations, fid₁, fid₂)
-Base.show(io::IO, fid::FID) = @printf io "FID{%s}(%s)" repr(statistics(fid)) join(ntuple(i->getfield(fid, i), Val(fieldcount(typeof(fid)))), ", ")
+@inline Base.hash(fid::FID, h::UInt) = hash((statistics(fid), fid.orbital, fid.spin, fid.nambu), h)
+@inline Base.show(io::IO, fid::FID) = @printf io "FID{%s}(%s)" repr(statistics(fid)) join(ntuple(i->getfield(fid, i), Val(fieldcount(typeof(fid)))), ", ")
 @inline Base.adjoint(fid::FID{T, <:Union{Int, Symbol}, <:Union{Int, Symbol}, Int}) where T = FID{T}(fid.orbital, fid.spin, fid.nambu==0 ? 0 : 3-fid.nambu)
 @inline @generated function Base.replace(fid::FID; kwargs...)
     exprs = [:(get(kwargs, $name, getfield(fid, $name))) for name in QuoteNode.(fieldnames(fid))]
@@ -234,7 +235,7 @@ end
 """
     *(  f1::Operator{<:Number, <:ID{AbstractCompositeIndex{<:Index{<:FID{:f}}}}},
         f2::Operator{<:Number, <:ID{AbstractCompositeIndex{<:Index{<:FID{:f}}}}}
-        ) -> Union{Nothing, Operator}
+    ) -> Union{Nothing, Operator}
 
 Get the multiplication of two fermionic Fock operators.
 """
@@ -265,22 +266,14 @@ function permute(id₁::CompositeIndex{<:Index{<:FID{:b}}}, id₂::CompositeInde
 end
 
 """
-    FockCoupling(value::Number,
-        orbitals::Subscript{<:NTuple{N, Union{Int, Symbol}}},
-        spins::Subscript{<:NTuple{N, Union{Int, Symbol}}},
-        nambus::Union{NTuple{N, Int}, NTuple{N, Symbol}}
-        ) where N
+    FockCoupling(value::Number, orbitals::Subscript{<:NTuple{N, Union{Int, Symbol}}}, spins::Subscript{<:NTuple{N, Union{Int, Symbol}}}, nambus::Union{NTuple{N, Int}, NTuple{N, Symbol}}) where N
 
 Fock coupling.
 
 Type alias for `Coupling{V, I<:ID{FID}, C<:Subscripts}`.
 """
 const FockCoupling{V, I<:ID{FID}, C<:Subscripts} = Coupling{V, I, C}
-function FockCoupling(value::Number,
-        orbitals::Subscript{<:NTuple{N, Union{Int, Symbol}}},
-        spins::Subscript{<:NTuple{N, Union{Int, Symbol}}},
-        nambus::Union{NTuple{N, Int}, NTuple{N, Symbol}}
-        ) where N
+@inline function FockCoupling(value::Number, orbitals::Subscript{<:NTuple{N, Union{Int, Symbol}}}, spins::Subscript{<:NTuple{N, Union{Int, Symbol}}}, nambus::Union{NTuple{N, Int}, NTuple{N, Symbol}}) where N
     return Coupling(value, ID(FID{wildcard}, orbitals.pattern, spins.pattern, nambus), Subscripts((orbital=orbitals, spin=spins)))
 end
 function Base.show(io::IO, fc::FockCoupling)
@@ -304,19 +297,21 @@ function Base.repr(fc::FockCoupling)
 end
 
 """
-    FockCoupling{N}(value::Number=1;
+    FockCoupling{N}(
+        value::Number=1;
         orbitals::Union{NTuple{N, Int}, Subscript}=Subscript(N),
         spins::Union{NTuple{N, Int}, Subscript}=Subscript(N),
         nambus::Union{NTuple{N, Int}, NTuple{N, Symbol}}=ntuple(i->wildcard, Val(N))
-        ) where N
+    ) where N
 
 Construct a Fock coupling.
 """
-function FockCoupling{N}(value::Number=1;
-        orbitals::Union{NTuple{N, Int}, Subscript}=Subscript(N),
-        spins::Union{NTuple{N, Int}, Subscript}=Subscript(N),
-        nambus::Union{NTuple{N, Int}, NTuple{N, Symbol}}=ntuple(i->wildcard, Val(N))
-        ) where N
+function FockCoupling{N}(
+    value::Number=1;
+    orbitals::Union{NTuple{N, Int}, Subscript}=Subscript(N),
+    spins::Union{NTuple{N, Int}, Subscript}=Subscript(N),
+    nambus::Union{NTuple{N, Int}, NTuple{N, Symbol}}=ntuple(i->wildcard, Val(N))
+) where N
     isa(orbitals, Subscript) || (orbitals = Subscript(orbitals))
     isa(spins, Subscript) || (spins = Subscript(spins))
     return FockCoupling(value, orbitals, spins, nambus)
@@ -598,24 +593,26 @@ const PairHopping{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = 
 end
 
 """
-    Coulomb(id::Symbol, value, bondkind=1;
+    Coulomb(
+        id::Symbol, value, bondkind=1;
         couplings::Union{Function, Couplings}=@couplings(FockCoupling{2}()*FockCoupling{2}()),
         amplitude::Union{Function, Nothing}=nothing,
         ishermitian::Bool=true,
         modulate::Union{Function, Bool}=false
-        )
+    )
 
 Coulomb term.
 
 Type alias for `Term{:Coulomb, id, V, Int, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate}`.
 """
 const Coulomb{id, V, C<:TermCouplings, A<:TermAmplitude, M<:TermModulate} = Term{:Coulomb, id, V, Int, C, A, M}
-@inline function Coulomb(id::Symbol, value, bondkind=1;
-        couplings::Union{Function, Couplings}=@couplings(FockCoupling{2}()*FockCoupling{2}()),
-        amplitude::Union{Function, Nothing}=nothing,
-        ishermitian::Bool=true,
-        modulate::Union{Function, Bool}=false
-        )
+@inline function Coulomb(
+    id::Symbol, value, bondkind=1;
+    couplings::Union{Function, Couplings}=@couplings(FockCoupling{2}()*FockCoupling{2}()),
+    amplitude::Union{Function, Nothing}=nothing,
+    ishermitian::Bool=true,
+    modulate::Union{Function, Bool}=false
+)
     @assert bondkind≠0 "Coulomb error: input bondkind cannot be 0. Use `Hubbard/InterOrbitalInterSpin/InterOrbitalIntraSpin/SpinFlip/PairHopping` instead."
     return Term{:Coulomb}(id, value, bondkind; couplings=couplings, amplitude=amplitude, ishermitian=ishermitian, modulate=modulate)
 end
@@ -652,7 +649,8 @@ end
 @inline Base.:(==)(sid₁::SID, sid₂::SID) = totalspin(sid₁)==totalspin(sid₂) && ==(efficientoperations, sid₁, sid₂)
 @inline Base.isequal(sid₁::SID, sid₂::SID) = isequal(totalspin(sid₁), totalspin(sid₂)) && isequal(efficientoperations, sid₁, sid₂)
 @inline Base.adjoint(sid::SID) = SID{totalspin(sid)}(sid.orbital, sidajointmap[sid.tag])
-Base.show(io::IO, sid::SID) = @printf io "SID{%s}(%s)" totalspin(sid) join(map(repr, ntuple(i->getfield(sid, i), Val(fieldcount(typeof(sid))))), ", ")
+@inline Base.hash(sid::SID, h::UInt) = hash((totalspin(sid), sid.orbital, sid.tag), h)
+@inline Base.show(io::IO, sid::SID) = @printf io "SID{%s}(%s)" totalspin(sid) join(map(repr, ntuple(i->getfield(sid, i), Val(fieldcount(typeof(sid))))), ", ")
 @inline @generated function Base.replace(sid::SID; kwargs...)
     exprs = [:(get(kwargs, $name, getfield(sid, $name))) for name in QuoteNode.(fieldnames(sid))]
     return :(rawtype(typeof(sid)){totalspin(sid)}($(exprs...)))
@@ -670,11 +668,11 @@ Create a spin id.
 @inline SID{S}(tag::Union{Char, Symbol}; orbital::Union{Int, Symbol}=1) where S = SID{S}(orbital, tag)
 
 """
-    Matrix(sid::SID{S, <:Union{Int, Symbol}, Char}, dtype::Type{<:Number}=Complex{Float}) where S -> Matrix{dtype}
+    matrix(sid::SID{S, <:Union{Int, Symbol}, Char}, dtype::Type{<:Number}=Complex{Float}) where S -> Matrix{dtype}
 
 Get the matrix representation of a sid.
 """
-function Base.Matrix(sid::SID{S, <:Union{Int, Symbol}, Char}, dtype::Type{<:Number}=Complex{Float}) where S
+function matrix(sid::SID{S, <:Union{Int, Symbol}, Char}, dtype::Type{<:Number}=Complex{Float}) where S
     N = Int(2*S+1)
     result = zeros(dtype, (N, N))
     spin = convert(dtype, S)
@@ -974,87 +972,87 @@ end
 
 # Phononic systems
 """
-    NID{D<:Union{Char, Symbol}} <: SimpleIID
+    PID{D<:Union{Char, Symbol}} <: SimpleIID
 
 The phonon id.
 """
-struct NID{D<:Union{Char, Symbol}} <: SimpleIID
+struct PID{D<:Union{Char, Symbol}} <: SimpleIID
     tag::Char
-    dir::D
-    function NID(tag::Char, dir::Union{Char, Symbol}=wildcard)
-        @assert tag∈('p', 'u') "NID error: wrong tag($tag)."
-        isa(dir, Char) && @assert dir∈('x', 'y', 'z') "NID error: wrong direction($dir)."
-        new{typeof(dir)}(tag, dir)
+    direction::D
+    function PID(tag::Char, direction::Union{Char, Symbol}=wildcard)
+        @assert tag∈('p', 'u') "PID error: wrong tag($tag)."
+        isa(direction, Char) && @assert direction∈('x', 'y', 'z') "PID error: wrong direction($direction)."
+        new{typeof(direction)}(tag, direction)
     end
 end
-@inline Base.adjoint(pnid::NID) = pnid
-@inline statistics(::Type{<:NID}) = :b
-@inline NID(iid::NID, ::CompositeInternal) = iid
+@inline Base.adjoint(pid::PID) = pid
+@inline statistics(::Type{<:PID}) = :b
+@inline PID(iid::PID, ::CompositeInternal) = iid
 
 """
-    Phonon <: SimpleInternal{NID{Char}}
+    Phonon <: SimpleInternal{PID{Char}}
 
 The phonon internal degrees of freedom.
 """
-struct Phonon <: SimpleInternal{NID{Char}}
-    ndir::Int
-    function Phonon(ndir::Integer)
-        @assert ndir∈(1, 2, 3) "Phonon error: wrong number of directions."
-        new(ndir)
+struct Phonon <: SimpleInternal{PID{Char}}
+    ndirection::Int
+    function Phonon(ndirection::Integer)
+        @assert ndirection∈(1, 2, 3) "Phonon error: wrong number of directions."
+        new(ndirection)
     end
 end
-@inline shape(pn::Phonon) = (1:2, 1:pn.ndir)
-@inline Base.CartesianIndex(pnid::NID{Char}, ::Phonon) = CartesianIndex(pnid.tag=='u' ? 1 : 2, Int(pnid.dir)-Int('x')+1)
-@inline NID(index::CartesianIndex{2}, ::Phonon) = NID(index[1]==1 ? 'u' : 'p', Char(Int('x')+index[2]-1))
-@inline shape(iidspace::IIDSpace{NID{Symbol}, Phonon}) = (iidspace.iid.tag=='u' ? (1:1) : (2:2), 1:iidspace.internal.ndir)
-@inline function shape(iidspace::IIDSpace{NID{Char}, Phonon})
-    dir = Int(iidspace.iid.dir)-Int('x')+1
-    @assert 0<dir<iidspace.internal.ndir+1 "shape error: dir out of range."
-    return (iidspace.iid.tag=='u' ? (1:1) : (2:2), dir:dir)
+@inline shape(pn::Phonon) = (1:2, 1:pn.ndirection)
+@inline Base.CartesianIndex(pid::PID{Char}, ::Phonon) = CartesianIndex(pid.tag=='u' ? 1 : 2, Int(pid.direction)-Int('x')+1)
+@inline PID(index::CartesianIndex{2}, ::Phonon) = PID(index[1]==1 ? 'u' : 'p', Char(Int('x')+index[2]-1))
+@inline shape(iidspace::IIDSpace{PID{Symbol}, Phonon}) = (iidspace.iid.tag=='u' ? (1:1) : (2:2), 1:iidspace.internal.ndirection)
+@inline function shape(iidspace::IIDSpace{PID{Char}, Phonon})
+    direction = Int(iidspace.iid.direction)-Int('x')+1
+    @assert 0<direction<iidspace.internal.ndirection+1 "shape error: direction out of range."
+    return (iidspace.iid.tag=='u' ? (1:1) : (2:2), direction:direction)
 end
 
 """
-    script(::Val{:BD}, nid::NID, l::LaTeX) -> Char
-    script(::Val{:dir}, nid::NID; kwargs...) -> Int
+    script(::Val{:BD}, pid::PID, l::LaTeX) -> Char
+    script(::Val{:direction}, pid::PID; kwargs...) -> Int
 
-Get the required script of an nid.
+Get the required script of an pid.
 """
-@inline script(::Val{:BD}, nid::NID, l::LaTeX) = l.body[nid.tag]
-@inline script(::Val{:dir}, nid::NID; kwargs...) = nid.dir
+@inline script(::Val{:BD}, pid::PID, l::LaTeX) = l.body[pid.tag]
+@inline script(::Val{:direction}, pid::PID; kwargs...) = pid.direction
 
 """
-    script(::Val{:BD}, index::Index{<:NID}, l::LaTeX) -> Char
-    script(::Val{:BD}, index::AbstractCompositeIndex{<:Index{<:NID}}, l::LaTeX) -> Char
-    script(::Val{:site}, index::Index{<:NID}; kwargs...) -> Int
-    script(::Val{:dir}, index::Index{<:NID}; kwargs...) -> Char
+    script(::Val{:BD}, index::Index{<:PID}, l::LaTeX) -> Char
+    script(::Val{:BD}, index::AbstractCompositeIndex{<:Index{<:PID}}, l::LaTeX) -> Char
+    script(::Val{:site}, index::Index{<:PID}; kwargs...) -> Int
+    script(::Val{:direction}, index::Index{<:PID}; kwargs...) -> Char
 
 Get the required script of a phonon index.
 """
-@inline script(::Val{:BD}, index::Index{<:NID}, l::LaTeX) = l.body[index.iid.tag]
-@inline script(::Val{:BD}, index::AbstractCompositeIndex{<:Index{<:NID}}, l::LaTeX) = l.body[getcontent(index, :index).iid.tag]
-@inline script(::Val{:site}, index::Index{<:NID}; kwargs...) = index.site
-@inline script(::Val{:dir}, index::Index{<:NID}; kwargs...) = index.iid.dir
+@inline script(::Val{:BD}, index::Index{<:PID}, l::LaTeX) = l.body[index.iid.tag]
+@inline script(::Val{:BD}, index::AbstractCompositeIndex{<:Index{<:PID}}, l::LaTeX) = l.body[getcontent(index, :index).iid.tag]
+@inline script(::Val{:site}, index::Index{<:PID}; kwargs...) = index.site
+@inline script(::Val{:direction}, index::Index{<:PID}; kwargs...) = index.iid.direction
 
 """
     latexofphonons
 
 The default LaTeX format of a phonon index.
 """
-const latexofphonons = LaTeX{(:dir,), (:site,)}(Dict('p'=>'p', 'u'=>'u'), "", "")
-@inline latexname(::Type{<:Index{<:NID}}) = Symbol("Index{NID}")
-@inline latexname(::Type{<:AbstractCompositeIndex{<:Index{<:NID}}}) = Symbol("AbstractCompositeIndex{Index{NID}}")
-latexformat(Index{<:NID}, latexofphonons)
-latexformat(AbstractCompositeIndex{<:Index{<:NID}}, latexofphonons)
-@inline latexname(::Type{<:NID}) = Symbol("NID")
-latexformat(NID, LaTeX{(:dir,), ()}(Dict('p'=>'p', 'u'=>'u'), "", ""))
+const latexofphonons = LaTeX{(:direction,), (:site,)}(Dict('p'=>'p', 'u'=>'u'), "", "")
+@inline latexname(::Type{<:Index{<:PID}}) = Symbol("Index{PID}")
+@inline latexname(::Type{<:AbstractCompositeIndex{<:Index{<:PID}}}) = Symbol("AbstractCompositeIndex{Index{PID}}")
+latexformat(Index{<:PID}, latexofphonons)
+latexformat(AbstractCompositeIndex{<:Index{<:PID}}, latexofphonons)
+@inline latexname(::Type{<:PID}) = Symbol("PID")
+latexformat(PID, LaTeX{(:direction,), ()}(Dict('p'=>'p', 'u'=>'u'), "", ""))
 
 """
-    permute(id₁::CompositeIndex{<:Index{NID{Char}}}, id₂::CompositeIndex{<:Index{NID{Char}}}) -> Tuple{Vararg{Operator}}
+    permute(id₁::CompositeIndex{<:Index{PID{Char}}}, id₂::CompositeIndex{<:Index{PID{Char}}}) -> Tuple{Vararg{Operator}}
 
 Permute two phonon indexes and get the result.
 """
-function permute(id₁::CompositeIndex{<:Index{NID{Char}}}, id₂::CompositeIndex{<:Index{NID{Char}}})
-    if id₁.index.iid.dir==id₂.index.iid.dir && id₁.index.iid.tag≠id₂.index.iid.tag && id₁.rcoordinate==id₂.rcoordinate && id₁.icoordinate==id₂.icoordinate
+function permute(id₁::CompositeIndex{<:Index{PID{Char}}}, id₂::CompositeIndex{<:Index{PID{Char}}})
+    if id₁.index.iid.direction==id₂.index.iid.direction && id₁.index.iid.tag≠id₂.index.iid.tag && id₁.rcoordinate==id₂.rcoordinate && id₁.icoordinate==id₂.icoordinate
         if id₁.index.iid.tag=='u'
             return (Operator(1im), Operator(1, ID(id₂, id₁)))
         else
@@ -1066,68 +1064,64 @@ function permute(id₁::CompositeIndex{<:Index{NID{Char}}}, id₂::CompositeInde
 end
 
 """
-    PhononCoupling(value::Number, tags::NTuple{N, Char}, dirs::Subscript{<:Union{NTuple{N, Char}, NTuple{N, Symbol}}}) where N
+    PhononCoupling(value::Number, tags::NTuple{N, Char}, directions::Subscript{<:Union{NTuple{N, Char}, NTuple{N, Symbol}}}) where N
 
 Phonon coupling.
 
-Type alias for `Coupling{V<:Number, I<:ID{NID}, C<:Subscripts}`.
+Type alias for `Coupling{V<:Number, I<:ID{PID}, C<:Subscripts}`.
 """
-const PhononCoupling{V<:Number, I<:ID{NID}, C<:Subscripts} = Coupling{V, I, C}
-@inline function PhononCoupling(value::Number, tags::NTuple{N, Char}, dirs::Subscript{<:Union{NTuple{N, Char}, NTuple{N, Symbol}}}) where N
-    return Coupling(value, ID(NID, tags, dirs.pattern), Subscripts((dir=dirs,)))
+const PhononCoupling{V<:Number, I<:ID{PID}, C<:Subscripts} = Coupling{V, I, C}
+@inline function PhononCoupling(value::Number, tags::NTuple{N, Char}, directions::Subscript{<:Union{NTuple{N, Char}, NTuple{N, Symbol}}}) where N
+    return Coupling(value, ID(PID, tags, directions.pattern), Subscripts((direction=directions,)))
 end
 function Base.show(io::IO, pnc::PhononCoupling)
     @printf io "PhononCoupling(value=%s" decimaltostr(pnc.value)
     @printf io ", tags=[%s]" join(pnc.iids.tags, " ")
-    pnc.iids.dirs≠ntuple(i->wildcard, Val(rank(pnc))) && @printf io ", dirs=%s" repr(pnc.subscripts, 1:length(pnc.subscripts), :dir)
+    pnc.iids.directions≠ntuple(i->wildcard, Val(rank(pnc))) && @printf io ", directions=%s" repr(pnc.subscripts, 1:length(pnc.subscripts), :direction)
     @printf io ")"
 end
 function Base.repr(pnc::PhononCoupling)
     result = [@sprintf "%s [%s]" decimaltostr(pnc.value) join(pnc.iids.tags, " ")]
-    pnc.iids.dirs≠ntuple(i->wildcard, Val(rank(pnc))) && push!(result, @sprintf "dr%s" repr(pnc.subscripts, 1:length(pnc.subscripts), :dir))
+    pnc.iids.directions≠ntuple(i->wildcard, Val(rank(pnc))) && push!(result, @sprintf "dr%s" repr(pnc.subscripts, 1:length(pnc.subscripts), :direction))
     return join(result, " ")
 end
 
 """
-    PhononCoupling(value::Number, tags::NTuple{N, Char};
-        dirs::Union{NTuple{N, Char}, NTuple{N, Symbol}, Subscript}=Subscript(N)
-        ) where N
+    PhononCoupling(value::Number, tags::NTuple{N, Char}; directions::Union{NTuple{N, Char}, NTuple{N, Symbol}, Subscript}=Subscript(N)) where N
 
 Construct a phonon coupling.
 """
-function PhononCoupling(value::Number, tags::NTuple{N, Char};
-        dirs::Union{NTuple{N, Char}, NTuple{N, Symbol}, Subscript}=Subscript(N)
-        ) where N
-    isa(dirs, Subscript) || (dirs = Subscript(dirs))
-    return PhononCoupling(value, tags, dirs)
+function PhononCoupling(value::Number, tags::NTuple{N, Char}; directions::Union{NTuple{N, Char}, NTuple{N, Symbol}, Subscript}=Subscript(N)) where N
+    isa(directions, Subscript) || (directions = Subscript(directions))
+    return PhononCoupling(value, tags, directions)
 end
 
 """
-    expand(pnc::PhononCoupling{<:Number, <:ID{NID{Symbol}}}, bond::Bond, hilbert::Hilbert, info::Val{:PhononPotential}) -> PPExpand
+    expand(pnc::PhononCoupling{<:Number, <:ID{PID{Symbol}}}, bond::Bond, hilbert::Hilbert, info::Val{:PhononPotential}) -> PPExpand
 
 Expand the default phonon potential coupling on a given bond.
 """
-function expand(pnc::PhononCoupling{<:Number, <:ID{NID{Symbol}}}, bond::Bond, hilbert::Hilbert, info::Val{:PhononPotential})
+function expand(pnc::PhononCoupling{<:Number, <:ID{PID{Symbol}}}, bond::Bond, hilbert::Hilbert, info::Val{:PhononPotential})
     R̂ = rcoordinate(bond)/norm(rcoordinate(bond))
     @assert pnc.iids.tags==('u', 'u') "expand error: wrong tags of phonon coupling."
     @assert isapprox(pnc.value, 1, atol=atol, rtol=rtol) "expand error: wrong coefficient of phonon coupling."
     pn₁, pn₂ = couplinginternals(pnc, bond, hilbert, info)
-    @assert pn₁.ndir==pn₂.ndir==length(R̂) "expand error: mismatched number of directions."
+    @assert pn₁.ndirection==pn₂.ndirection==length(R̂) "expand error: mismatched number of directions."
     return PPExpand(R̂, (bond[1], bond[2]))
 end
-struct PPExpand{N, D<:Number} <: VectorSpace{Operator{D, ID{CompositeIndex{Index{NID{Char}}, SVector{N, D}}, 2}}}
+struct PPExpand{N, D<:Number} <: VectorSpace{Operator{D, ID{CompositeIndex{Index{PID{Char}}, SVector{N, D}}, 2}}}
     direction::SVector{N, D}
     points::NTuple{2, Point{N, D}}
 end
 @inline VectorSpaceStyle(::Type{<:PPExpand}) = VectorSpaceCartesian()
 @inline shape(pnce::PPExpand) = (1:length(pnce.direction), 1:length(pnce.direction), 1:4)
 function Operator(index::CartesianIndex{3}, pnce::PPExpand)
-    dir₁ = Char(Int('x')+index[1]-1)
-    dir₂ = Char(Int('x')+index[2]-1)
+    direction₁ = Char(Int('x')+index[1]-1)
+    direction₂ = Char(Int('x')+index[2]-1)
     coeff = index[3]∈(1, 4) ? 1 : -1
     pos₁, pos₂ = index[3]==1 ? (1, 1) : index[3]==2 ? (1, 2) : index[3]==3 ? (2, 1) : (2, 2)
-    index₁ = CompositeIndex(Index(pnce.points[pos₁].site, NID('u', dir₁)), pnce.points[pos₁].rcoordinate, pnce.points[pos₁].icoordinate)
-    index₂ = CompositeIndex(Index(pnce.points[pos₂].site, NID('u', dir₂)), pnce.points[pos₂].rcoordinate, pnce.points[pos₂].icoordinate)
+    index₁ = CompositeIndex(Index(pnce.points[pos₁].site, PID('u', direction₁)), pnce.points[pos₁].rcoordinate, pnce.points[pos₁].icoordinate)
+    index₂ = CompositeIndex(Index(pnce.points[pos₂].site, PID('u', direction₂)), pnce.points[pos₂].rcoordinate, pnce.points[pos₂].icoordinate)
     return Operator(pnce.direction[index[1]]*pnce.direction[index[2]]*coeff, ID(index₁, index₂))
 end
 

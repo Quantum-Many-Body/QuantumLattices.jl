@@ -128,15 +128,15 @@ end
 end
 
 @testset "minimumlengths" begin
-    @test minimumlengths(reshape([0.0, 0.0], 2, 1), [[1.0, 0.0], [0.0, 1.0]], 7) ≈ [1.0, √2, 2.0, √5, 2*√2, 3.0, √10]
+    @test minimumlengths(reshape([0.0, 0.0], 2, 1), [[1.0, 0.0], [0.0, 1.0]], 7) ≈ [0.0, 1.0, √2, 2.0, √5, 2*√2, 3.0, √10]
 end
 
 @testset "Neighbors" begin
-    neighbors = Neighbors(1=>1.0, 2=>√2)
-    @test neighbors == Neighbors([1.0, √2])
+    neighbors = Neighbors(0=>0.0, 1=>1.0, 2=>√2)
+    @test neighbors == Neighbors([0.0, 1.0, √2])
     @test max(neighbors) == √2
     @test nneighbor(neighbors) == 2
-    @test nneighbor(Neighbors(Symbol(1)=>1.0, Symbol(2)=>√2)) == 2
+    @test nneighbor(Neighbors(Symbol(0)=>0.0, Symbol(1)=>1.0, Symbol(2)=>√2)) == 3
 end
 
 @testset "interlinks" begin
@@ -193,10 +193,10 @@ end
     @test lattice|>dimension == lattice|>typeof|>dimension == 2
     @test lattice|>dtype == lattice|>typeof|>dtype == Float
     @test lattice[1] == SVector(0.5, 0.5)
-    @test Neighbors(lattice, 1) == Neighbors([1.0])
-    @test Neighbors(lattice, 2) == Neighbors([1.0, √2])
+    @test Neighbors(lattice, 1) == Neighbors([0.0, 1.0])
+    @test Neighbors(lattice, 2) == Neighbors([0.0, 1.0, √2])
 
-    @test bonds(lattice, 1) == bonds(lattice, Neighbors([1.0])) == [
+    @test bonds(lattice, 1) == bonds(lattice, Neighbors([0.0, 1.0])) == [
         Bond(Point(1, (0.5, 0.5), (0.0, 0.0))),
         Bond(1, Point(1, (0.5, -0.5), (0.0, -1.0)), Point(1, (0.5, 0.5), (0.0, 0.0))),
         Bond(1, Point(1, (-0.5, 0.5), (-1.0, 0.0)), Point(1, (0.5, 0.5), (0.0, 0.0)))

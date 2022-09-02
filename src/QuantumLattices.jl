@@ -47,7 +47,7 @@ export totalspin, @dm_str, @gamma_str, @heisenberg_str, @ising_str, @sc_str, @sË
 
 ## Phononic systems
 export latexofphonons
-export NID, Phonon, PhononCoupling, PhononKinetic, PhononPotential, PhononTerm
+export PID, Phonon, PhononCoupling, PhononKinetic, PhononPotential, PhononTerm
 export @kinetic_str, @potential_str
 
 # Essentials.Frameworks

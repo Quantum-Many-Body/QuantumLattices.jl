@@ -1,6 +1,6 @@
 using LaTeXStrings: latexstring
 using QuantumLattices.Essentials.DegreesOfFreedom: wildcard, AbstractCompositeIndex, CompositeIndex, Coupling, Couplings, Hilbert, Index, IIDSpace, statistics, @couplings, @subscript_str
-using QuantumLattices.Essentials.QuantumOperators: ID, Operator, Operators, latexname, script
+using QuantumLattices.Essentials.QuantumOperators: ID, Operator, Operators, latexname, matrix, script
 using QuantumLattices.Essentials.QuantumSystems
 using QuantumLattices.Essentials.QuantumSystems: dm, gamma, heisenbergpmz, heisenbergxyz
 using QuantumLattices.Essentials.Spatials: Bond, Point, azimuthd, rcoordinate
@@ -526,18 +526,18 @@ end
     @test !isequal(SID{1//2}('z'), SID{3//2}('z'))
 end
 
-@testset "Matrix" begin
-    @test isapprox(Matrix(SID{1//2}(1, 'z')), [[-0.5, 0.0] [0.0, 0.5]])
-    @test isapprox(Matrix(SID{1//2}(1, 'x')), [[0.0, 0.5] [0.5, 0.0]])
-    @test isapprox(Matrix(SID{1//2}(1, 'y')), [[0.0, -0.5im] [0.5im, 0.0]])
-    @test isapprox(Matrix(SID{1//2}(1, '+')), [[0.0, 1.0] [0.0, 0.0]])
-    @test isapprox(Matrix(SID{1//2}(1, '-')), [[0.0, 0.0] [1.0, 0.0]])
+@testset "matrix" begin
+    @test isapprox(matrix(SID{1//2}(1, 'z')), [[-0.5, 0.0] [0.0, 0.5]])
+    @test isapprox(matrix(SID{1//2}(1, 'x')), [[0.0, 0.5] [0.5, 0.0]])
+    @test isapprox(matrix(SID{1//2}(1, 'y')), [[0.0, -0.5im] [0.5im, 0.0]])
+    @test isapprox(matrix(SID{1//2}(1, '+')), [[0.0, 1.0] [0.0, 0.0]])
+    @test isapprox(matrix(SID{1//2}(1, '-')), [[0.0, 0.0] [1.0, 0.0]])
 
-    @test isapprox(Matrix(SID{1}(1, 'z')), [[-1.0, 0.0, 0.0] [0.0, 0.0, 0.0] [0.0, 0.0, 1.0]])
-    @test isapprox(Matrix(SID{1}(1, 'x')), [[0.0, √2/2, 0.0] [√2/2, 0.0, √2/2] [0.0, √2/2, 0.0]])
-    @test isapprox(Matrix(SID{1}(1, 'y')), [[0.0, -√2im/2, 0.0] [√2im/2, 0.0, -√2im/2] [0.0, √2im/2, 0.0]])
-    @test isapprox(Matrix(SID{1}(1, '+')), [[0.0, √2, 0.0] [0.0, 0.0, √2] [0.0, 0.0, 0.0]])
-    @test isapprox(Matrix(SID{1}(1, '-')), [[0.0, 0.0, 0.0] [√2, 0.0, 0.0] [0.0, √2, 0.0]])
+    @test isapprox(matrix(SID{1}(1, 'z')), [[-1.0, 0.0, 0.0] [0.0, 0.0, 0.0] [0.0, 0.0, 1.0]])
+    @test isapprox(matrix(SID{1}(1, 'x')), [[0.0, √2/2, 0.0] [√2/2, 0.0, √2/2] [0.0, √2/2, 0.0]])
+    @test isapprox(matrix(SID{1}(1, 'y')), [[0.0, -√2im/2, 0.0] [√2im/2, 0.0, -√2im/2] [0.0, √2im/2, 0.0]])
+    @test isapprox(matrix(SID{1}(1, '+')), [[0.0, √2, 0.0] [0.0, 0.0, √2] [0.0, 0.0, 0.0]])
+    @test isapprox(matrix(SID{1}(1, '-')), [[0.0, 0.0, 0.0] [√2, 0.0, 0.0] [0.0, √2, 0.0]])
 end
 
 @testset "Spin" begin
@@ -587,10 +587,10 @@ end
 end
 
 @testset "permute" begin
-    soptrep(opt::Operator) = opt.value * prod([Matrix(opt.id[i].index.iid) for i = 1:rank(opt)])
+    soptrep(opt::Operator) = opt.value * prod([matrix(opt.id[i].index.iid) for i = 1:rank(opt)])
     for S in (1//2, 1, 3//2)
-        CompositeIndexs = [CompositeIndex(Index(1, SID{S}(2, tag)), [0.0, 0.0], [0.0, 0.0]) for tag in ('x', 'y', 'z', '+', '-')]
-        for (id₁, id₂) in Permutations{2}(CompositeIndexs)
+        indexes = [CompositeIndex(Index(1, SID{S}(2, tag)), [0.0, 0.0], [0.0, 0.0]) for tag in ('x', 'y', 'z', '+', '-')]
+        for (id₁, id₂) in Permutations{2}(indexes)
             left = soptrep(Operator(1, id₁, id₂))
             right = sum([soptrep(opt) for opt in permute(id₁, id₂)])
             @test isapprox(left, right)
@@ -727,79 +727,79 @@ end
     @test expand(term, bond, hilbert) == operators
 end
 
-@testset "NID" begin
-    @test NID('u')' == NID('u')
-    @test NID('p')' == NID('p')
+@testset "PID" begin
+    @test PID('u')' == PID('u')
+    @test PID('p')' == PID('p')
 
-    nid = NID('p')
-    @test statistics(nid) == statistics(nid) == :b
+    pid = PID('p')
+    @test statistics(pid) == statistics(pid) == :b
 end
 
 @testset "Phonon" begin
     pn = Phonon(3)
     @test shape(pn) == (1:2, 1:3)
     for i = 1:length(pn)
-        @test NID(CartesianIndex(pn[i], pn), pn) == pn[i]
+        @test PID(CartesianIndex(pn[i], pn), pn) == pn[i]
     end
-    @test collect(pn) == [NID('u', 'x'), NID('p', 'x'), NID('u', 'y'), NID('p', 'y'), NID('u', 'z'), NID('p', 'z')]
+    @test collect(pn) == [PID('u', 'x'), PID('p', 'x'), PID('u', 'y'), PID('p', 'y'), PID('u', 'z'), PID('p', 'z')]
 
-    @test shape(IIDSpace(NID('u'), Phonon(3))) == (1:1, 1:3)
-    @test shape(IIDSpace(NID('u', 'x'), Phonon(3))) == (1:1, 1:1)
-    @test shape(IIDSpace(NID('u', 'y'), Phonon(3))) == (1:1, 2:2)
-    @test shape(IIDSpace(NID('u', 'z'), Phonon(3))) == (1:1, 3:3)
+    @test shape(IIDSpace(PID('u'), Phonon(3))) == (1:1, 1:3)
+    @test shape(IIDSpace(PID('u', 'x'), Phonon(3))) == (1:1, 1:1)
+    @test shape(IIDSpace(PID('u', 'y'), Phonon(3))) == (1:1, 2:2)
+    @test shape(IIDSpace(PID('u', 'z'), Phonon(3))) == (1:1, 3:3)
 
-    @test shape(IIDSpace(NID('p'), Phonon(2))) == (2:2, 1:2)
-    @test shape(IIDSpace(NID('p', 'x'), Phonon(3))) == (2:2, 1:1)
-    @test shape(IIDSpace(NID('p', 'y'), Phonon(3))) == (2:2, 2:2)
-    @test shape(IIDSpace(NID('p', 'z'), Phonon(3))) == (2:2, 3:3)
+    @test shape(IIDSpace(PID('p'), Phonon(2))) == (2:2, 1:2)
+    @test shape(IIDSpace(PID('p', 'x'), Phonon(3))) == (2:2, 1:1)
+    @test shape(IIDSpace(PID('p', 'y'), Phonon(3))) == (2:2, 2:2)
+    @test shape(IIDSpace(PID('p', 'z'), Phonon(3))) == (2:2, 3:3)
 end
 
 @testset "latex" begin
-    index = Index(1, NID('u', 'x'))
+    index = Index(1, PID('u', 'x'))
     @test script(Val(:BD), index.iid, latexofphonons) == 'u'
     @test script(Val(:BD), index, latexofphonons) == 'u'
     @test script(Val(:BD), CompositeIndex(index, [0.0, 0.0], [0.0, 0.0]), latexofphonons) == 'u'
     @test script(Val(:site), index) == 1
-    @test script(Val(:dir), index.iid) == 'x'
-    @test script(Val(:dir), index) == 'x'
+    @test script(Val(:direction), index.iid) == 'x'
+    @test script(Val(:direction), index) == 'x'
 
-    index = Index(2, NID('p', 'y'))
+    index = Index(2, PID('p', 'y'))
     @test script(Val(:BD), index.iid, latexofphonons) == 'p'
     @test script(Val(:BD), index, latexofphonons) == 'p'
     @test script(Val(:BD), CompositeIndex(index, [0.0, 0.0], [0.0, 0.0]), latexofphonons) == 'p'
     @test script(Val(:site), index) == 2
-    @test script(Val(:dir), index.iid) == 'y'
-    @test script(Val(:dir), index) == 'y'
+    @test script(Val(:direction), index.iid) == 'y'
+    @test script(Val(:direction), index) == 'y'
 
-    @test latexname(Index{<:NID}) == Symbol("Index{NID}")
-    @test latexname(AbstractCompositeIndex{<:Index{<:NID}}) == Symbol("AbstractCompositeIndex{Index{NID}}")
-    @test latexname(NID) == Symbol("NID")
+    @test latexname(Index{<:PID}) == Symbol("Index{PID}")
+    @test latexname(AbstractCompositeIndex{<:Index{<:PID}}) == Symbol("AbstractCompositeIndex{Index{PID}}")
+    @test latexname(PID) == Symbol("PID")
 end
 
 @testset "PhononOperator" begin
     opt = Operator(1.0,
-        CompositeIndex(Index(1, NID('p', 'x')), [0.0, 0.0], [0.0, 0.0]),
-        CompositeIndex(Index(1, NID('p', 'x')), [0.0, 0.0], [0.0, 0.0])
+        CompositeIndex(Index(1, PID('p', 'x')), [0.0, 0.0], [0.0, 0.0]),
+        CompositeIndex(Index(1, PID('p', 'x')), [0.0, 0.0], [0.0, 0.0])
         )
     @test opt' == Operator(1.0,
-        CompositeIndex(Index(1, NID('p', 'x')), [0.0, 0.0], [0.0, 0.0]),
-        CompositeIndex(Index(1, NID('p', 'x')), [0.0, 0.0], [0.0, 0.0])
+        CompositeIndex(Index(1, PID('p', 'x')), [0.0, 0.0], [0.0, 0.0]),
+        CompositeIndex(Index(1, PID('p', 'x')), [0.0, 0.0], [0.0, 0.0])
         )
     @test latexstring(opt) == "(p^{x}_{1})^2"
 end
 
 @testset "permute" begin
-    id₁ = CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])
-    id₂ = CompositeIndex(Index(1, NID('p', 'x')), [0.0, 0.0], [0.0, 0.0])
+    id₁ = CompositeIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0])
+    id₂ = CompositeIndex(Index(1, PID('p', 'x')), [0.0, 0.0], [0.0, 0.0])
     @test permute(id₁, id₂) == (Operator(+1im), Operator(1, id₂, id₁))
     @test permute(id₂, id₁) == (Operator(-1im), Operator(1, id₁, id₂))
 
-    id₁ = CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])
-    id₂ = CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])
+    id₁ = CompositeIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0])
+    id₂ = CompositeIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0])
     @test permute(id₁, id₂) == (Operator(1, id₂, id₁),)
 
-    id₁ = CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])
-    id₂ = CompositeIndex(Index(1, NID('p', 'y')), [0.0, 0.0], [0.0, 0.0])
+    id₁ = CompositeIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0])
+    id₂ = CompositeIndex(Index(1, PID('p', 'y')), [0.0, 0.0], [0.0, 0.0])
     @test permute(id₁, id₂) == (Operator(1, id₂, id₁),)
 end
 
@@ -808,8 +808,8 @@ end
     @test string(pnc) == "PhononCoupling(value=1.0, tags=[p p])"
     @test repr(pnc) == "1.0 [p p]"
 
-    pnc = PhononCoupling(1.0, ('p', 'p'), dirs=('x', 'x'))
-    @test string(pnc) == "PhononCoupling(value=1.0, tags=[p p], dirs=[x x])"
+    pnc = PhononCoupling(1.0, ('p', 'p'), directions=('x', 'x'))
+    @test string(pnc) == "PhononCoupling(value=1.0, tags=[p p], directions=[x x])"
     @test repr(pnc) == "1.0 [p p] dr[x x]"
 
     pnc = PhononCoupling(2.0, ('p', 'p'))
@@ -817,8 +817,8 @@ end
     hilbert = Hilbert(point.site=>Phonon(2))
     ex = expand(pnc, Bond(point), hilbert, Val(:PhononKinetic))
     @test collect(ex) == [
-        Operator(2.0, CompositeIndex(Index(1, NID('p', 'x')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('p', 'x')), [0.5, 0.0], [0.0, 0.0])),
-        Operator(2.0, CompositeIndex(Index(1, NID('p', 'y')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('p', 'y')), [0.5, 0.0], [0.0, 0.0]))
+        Operator(2.0, CompositeIndex(Index(1, PID('p', 'x')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, PID('p', 'x')), [0.5, 0.0], [0.0, 0.0])),
+        Operator(2.0, CompositeIndex(Index(1, PID('p', 'y')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, PID('p', 'y')), [0.5, 0.0], [0.0, 0.0]))
     ]
 
     pnc = PhononCoupling(1.0, ('u', 'u'))
@@ -827,22 +827,22 @@ end
     ex = expand(pnc, bond, hilbert, Val(:PhononPotential))
     @test shape(ex) == (1:2, 1:2, 1:4)
     @test collect(ex) ==[
-        Operator(+1.0, CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(-0.0, CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(-0.0, CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(+0.0, CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(-1.0, CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.0], [0.0, 0.0])),
-        Operator(+0.0, CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.0], [0.0, 0.0])),
-        Operator(+0.0, CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'y')), [0.5, 0.0], [0.0, 0.0])),
-        Operator(-0.0, CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'y')), [0.5, 0.0], [0.0, 0.0])),
-        Operator(-1.0, CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(+0.0, CompositeIndex(Index(2, NID('u', 'y')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(+0.0, CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(-0.0, CompositeIndex(Index(2, NID('u', 'y')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(+1.0, CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.0], [0.0, 0.0])),
-        Operator(-0.0, CompositeIndex(Index(2, NID('u', 'y')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.0], [0.0, 0.0])),
-        Operator(-0.0, CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'y')), [0.5, 0.0], [0.0, 0.0])),
-        Operator(+0.0, CompositeIndex(Index(2, NID('u', 'y')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'y')), [0.5, 0.0], [0.0, 0.0]))
+        Operator(+1.0, CompositeIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(-0.0, CompositeIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(-0.0, CompositeIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(+0.0, CompositeIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(-1.0, CompositeIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, PID('u', 'x')), [0.5, 0.0], [0.0, 0.0])),
+        Operator(+0.0, CompositeIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, PID('u', 'x')), [0.5, 0.0], [0.0, 0.0])),
+        Operator(+0.0, CompositeIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, PID('u', 'y')), [0.5, 0.0], [0.0, 0.0])),
+        Operator(-0.0, CompositeIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, PID('u', 'y')), [0.5, 0.0], [0.0, 0.0])),
+        Operator(-1.0, CompositeIndex(Index(2, PID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(+0.0, CompositeIndex(Index(2, PID('u', 'y')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(+0.0, CompositeIndex(Index(2, PID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(-0.0, CompositeIndex(Index(2, PID('u', 'y')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(+1.0, CompositeIndex(Index(2, PID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, PID('u', 'x')), [0.5, 0.0], [0.0, 0.0])),
+        Operator(-0.0, CompositeIndex(Index(2, PID('u', 'y')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, PID('u', 'x')), [0.5, 0.0], [0.0, 0.0])),
+        Operator(-0.0, CompositeIndex(Index(2, PID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, PID('u', 'y')), [0.5, 0.0], [0.0, 0.0])),
+        Operator(+0.0, CompositeIndex(Index(2, PID('u', 'y')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, PID('u', 'y')), [0.5, 0.0], [0.0, 0.0]))
         ]
 
     @test kinetic"" == Couplings(PhononCoupling(1, ('p', 'p')))
@@ -854,8 +854,8 @@ end
     point = Point(1, [0.5, 0.0], [0.0, 0.0])
     hilbert = Hilbert(point.site=>Phonon(2))
     operators = Operators(
-        Operator(2.0, CompositeIndex(Index(1, NID('p', 'x')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('p', 'x')), [0.5, 0.0], [0.0, 0.0])),
-        Operator(2.0, CompositeIndex(Index(1, NID('p', 'y')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('p', 'y')), [0.5, 0.0], [0.0, 0.0]))
+        Operator(2.0, CompositeIndex(Index(1, PID('p', 'x')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, PID('p', 'x')), [0.5, 0.0], [0.0, 0.0])),
+        Operator(2.0, CompositeIndex(Index(1, PID('p', 'y')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, PID('p', 'y')), [0.5, 0.0], [0.0, 0.0]))
     )
     @test expand(term, Bond(point), hilbert) == operators
 end
@@ -866,42 +866,42 @@ end
     bond = Bond(1, Point(1, [0.0, 0.0], [0.0, 0.0]), Point(2, [0.5, 0.0], [0.0, 0.0]))
     hilbert = Hilbert(site=>Phonon(2) for site=1:2)
     operators = Operators(
-        Operator(+2.0, CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(-2.0, CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(-2.0, CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.0], [0.0, 0.0])),
-        Operator(+2.0, CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.0], [0.0, 0.0]))
+        Operator(+2.0, CompositeIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(-2.0, CompositeIndex(Index(2, PID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(-2.0, CompositeIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, PID('u', 'x')), [0.5, 0.0], [0.0, 0.0])),
+        Operator(+2.0, CompositeIndex(Index(2, PID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, PID('u', 'x')), [0.5, 0.0], [0.0, 0.0]))
     )
     @test expand(term, bond, hilbert) == operators
 
     bond = Bond(1, Point(1, [0.0, 0.0], [0.0, 0.0]), Point(2, [0.0, 0.5], [0.0, 0.0]))
     hilbert = Hilbert(site=>Phonon(2) for site=1:2)
     operators = Operators(
-        Operator(+2.0, CompositeIndex(Index(2, NID('u', 'y')), [0.0, 0.5], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'y')), [0.0, 0.5], [0.0, 0.0])),
-        Operator(+2.0, CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(-2.0, CompositeIndex(Index(2, NID('u', 'y')), [0.0, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(-2.0, CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'y')), [0.0, 0.5], [0.0, 0.0]))
+        Operator(+2.0, CompositeIndex(Index(2, PID('u', 'y')), [0.0, 0.5], [0.0, 0.0]), CompositeIndex(Index(2, PID('u', 'y')), [0.0, 0.5], [0.0, 0.0])),
+        Operator(+2.0, CompositeIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(-2.0, CompositeIndex(Index(2, PID('u', 'y')), [0.0, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(-2.0, CompositeIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, PID('u', 'y')), [0.0, 0.5], [0.0, 0.0]))
     )
     @test expand(term, bond, hilbert) == operators
 
     bond = Bond(1, Point(1, [0.0, 0.0], [0.0, 0.0]), Point(2, [0.5, 0.5], [0.0, 0.0]))
     hilbert = Hilbert(site=>Phonon(2) for site=1:2)
     operators = Operators(
-        Operator(-1.0, CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(-1.0, CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'y')), [0.5, 0.5], [0.0, 0.0])),
-        Operator(-1.0, CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.5], [0.0, 0.0])),
-        Operator(-1.0, CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.5], [0.0, 0.0])),
-        Operator(-1.0, CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(-1.0, CompositeIndex(Index(2, NID('u', 'y')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(+1.0, CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(-1.0, CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'y')), [0.5, 0.5], [0.0, 0.0])),
-        Operator(+1.0, CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(+1.0, CompositeIndex(Index(2, NID('u', 'y')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'y')), [0.5, 0.5], [0.0, 0.0])),
-        Operator(+1.0, CompositeIndex(Index(1, NID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(+1.0, CompositeIndex(Index(2, NID('u', 'y')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.5], [0.0, 0.0])),
-        Operator(+1.0, CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.5], [0.0, 0.0])),
-        Operator(-1.0, CompositeIndex(Index(2, NID('u', 'y')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(+1.0, CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, NID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
-        Operator(+1.0, CompositeIndex(Index(2, NID('u', 'x')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(2, NID('u', 'y')), [0.5, 0.5], [0.0, 0.0]))
+        Operator(-1.0, CompositeIndex(Index(2, PID('u', 'x')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(-1.0, CompositeIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, PID('u', 'y')), [0.5, 0.5], [0.0, 0.0])),
+        Operator(-1.0, CompositeIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, PID('u', 'x')), [0.5, 0.5], [0.0, 0.0])),
+        Operator(-1.0, CompositeIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, PID('u', 'x')), [0.5, 0.5], [0.0, 0.0])),
+        Operator(-1.0, CompositeIndex(Index(2, PID('u', 'x')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(-1.0, CompositeIndex(Index(2, PID('u', 'y')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(+1.0, CompositeIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(-1.0, CompositeIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, PID('u', 'y')), [0.5, 0.5], [0.0, 0.0])),
+        Operator(+1.0, CompositeIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(+1.0, CompositeIndex(Index(2, PID('u', 'y')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(2, PID('u', 'y')), [0.5, 0.5], [0.0, 0.0])),
+        Operator(+1.0, CompositeIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(+1.0, CompositeIndex(Index(2, PID('u', 'y')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(2, PID('u', 'x')), [0.5, 0.5], [0.0, 0.0])),
+        Operator(+1.0, CompositeIndex(Index(2, PID('u', 'x')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(2, PID('u', 'x')), [0.5, 0.5], [0.0, 0.0])),
+        Operator(-1.0, CompositeIndex(Index(2, PID('u', 'y')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(+1.0, CompositeIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(+1.0, CompositeIndex(Index(2, PID('u', 'x')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(2, PID('u', 'y')), [0.5, 0.5], [0.0, 0.0]))
     )
     @test expand(term, bond, hilbert) ≈ operators
 end

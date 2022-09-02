@@ -152,18 +152,20 @@ function decompose(v₀::AbstractVector{<:Number}, v₁::AbstractVector{<:Number
 end
 
 """
-    isintratriangle(p::AbstractVector{<:Number}, p₁::AbstractVector{<:Number}, p₂::AbstractVector{<:Number}, p₃::AbstractVector{<:Number};
+    isintratriangle(
+        p::AbstractVector{<:Number}, p₁::AbstractVector{<:Number}, p₂::AbstractVector{<:Number}, p₃::AbstractVector{<:Number};
         vertexes::NTuple{3, Bool}=(true, true, true), edges::NTuple{3, Bool}=(true, true, true), atol::Real=atol, rtol::Real=rtol
-        ) -> Bool
+    ) -> Bool
 
 Judge whether a point belongs to the interior of a triangle whose vertexes are `p₁`, 'p₂' and `p₃` with the give tolerance. `vertexes` and `edges` define whether the interior should contain the vertexes or edges, respectively.
 !!! note
     1. The vertexes are in the order (p₁, p₂, p₃) and the edges are in the order (p1p2, p2p3, p3p1).
     2. The edges do not contain the vertexes.
 """
-function isintratriangle(p::AbstractVector{<:Number}, p₁::AbstractVector{<:Number}, p₂::AbstractVector{<:Number}, p₃::AbstractVector{<:Number};
-        vertexes::NTuple{3, Bool}=(true, true, true), edges::NTuple{3, Bool}=(true, true, true), atol::Real=atol, rtol::Real=rtol
-        )
+function isintratriangle(
+    p::AbstractVector{<:Number}, p₁::AbstractVector{<:Number}, p₂::AbstractVector{<:Number}, p₃::AbstractVector{<:Number};
+    vertexes::NTuple{3, Bool}=(true, true, true), edges::NTuple{3, Bool}=(true, true, true), atol::Real=atol, rtol::Real=rtol
+)
     @assert length(p)==length(p₁)==length(p₂)==length(p₃) "isintratriangle error: shape mismatch of input point and triangle."
     @assert length(p)==2 || length(p)==3 "isintratriangle error: unsupported dimension($(length(p))) of input points."
     x = if length(p) == 2
@@ -184,15 +186,17 @@ function isintratriangle(p::AbstractVector{<:Number}, p₁::AbstractVector{<:Num
 end
 
 """
-    isonline(p::AbstractVector{<:Number}, p₁::AbstractVector{<:Number}, p₂::AbstractVector{<:Number};
+    isonline(
+        p::AbstractVector{<:Number}, p₁::AbstractVector{<:Number}, p₂::AbstractVector{<:Number};
         ends::Tuple{Bool, Bool}=(true, true), atol::Real=atol, rtol::Real=rtol
-        ) -> Bool
+    ) -> Bool
 
 Judge whether a point is on a line segment whose end points are `p₁` and `p₂` with the given tolerance. `ends` defines whether the line segment should contain its ends.
 """
-function isonline(p::AbstractVector{<:Number}, p₁::AbstractVector{<:Number}, p₂::AbstractVector{<:Number};
-        ends::Tuple{Bool, Bool}=(true, true), atol::Real=atol, rtol::Real=rtol
-        )
+function isonline(
+    p::AbstractVector{<:Number}, p₁::AbstractVector{<:Number}, p₂::AbstractVector{<:Number};
+    ends::Tuple{Bool, Bool}=(true, true), atol::Real=atol, rtol::Real=rtol
+)
     @assert length(p)==length(p₁)==length(p₂) "isonline error: shape mismatch of input point and line segment."
     d₁, d₂, d = distance(p, p₁), distance(p, p₂), distance(p₁, p₂)
     isapprox(d₁, 0.0, atol=atol, rtol=rtol) && return ends[1]
@@ -273,9 +277,7 @@ function reciprocals(vectors::AbstractVector{<:AbstractVector{<:Number}})
 end
 
 """
-    rotate(cluster::AbstractMatrix{<:Number}, angle::Number;
-        axis::Tuple{Union{AbstractVector{<:Number}, Nothing}, Tuple{<:Number, <:Number}}=(nothing, (0, 0))
-        ) -> Matrix{<:Number}
+    rotate(cluster::AbstractMatrix{<:Number}, angle::Number; axis::Tuple{Union{AbstractVector{<:Number}, Nothing}, Tuple{<:Number, <:Number}}=(nothing, (0, 0))) -> Matrix{<:Number}
 
 Get a rotated cluster of the original one by a certain angle around an axis.
 
@@ -285,9 +287,7 @@ The axis is determined by a point it gets through (`nothing` can be used to deno
     2. Only 2 and 3 dimensional vectors can be rotated.
     3. When the input vectors are 2 dimensional, both the polar and azimuth of the axis must be 0.
 """
-function rotate(cluster::AbstractMatrix{<:Number}, angle::Number;
-        axis::Tuple{Union{AbstractVector{<:Number}, Nothing}, Tuple{<:Number, <:Number}}=(nothing, (0, 0))
-        )
+function rotate(cluster::AbstractMatrix{<:Number}, angle::Number; axis::Tuple{Union{AbstractVector{<:Number}, Nothing}, Tuple{<:Number, <:Number}}=(nothing, (0, 0)))
     @assert size(cluster, 1)∈(2, 3) "rotate error: only 2 and 3 dimensional vectors can be rotated."
     datatype = promote_type(eltype(cluster), typeof(angle), Float)
     center, theta, phi = (isnothing(axis[1]) ? zeros(datatype, size(cluster, 1)) : axis[1]), axis[2][1], axis[2][2]
@@ -383,7 +383,7 @@ function minimumlengths(cluster::AbstractMatrix{<:Number}, vectors::AbstractVect
             @warn "minimumlengths warning: larger(>$coordination) coordination or smaller(<$nneighbor) nneighbor may be needed."
         end
     end
-    return result
+    return insert!(result, 1, 0)
 end
 
 """
@@ -395,7 +395,7 @@ struct Neighbors{K, V<:Number} <: CompositeDict{K, V}
     contents::Dict{K, V}
 end
 @inline Neighbors(pairs...) = Neighbors(Dict(pairs...))
-@inline Neighbors(lengths::Vector{<:Number}) = Neighbors(i=>length for (i, length) in enumerate(lengths))
+@inline Neighbors(lengths::Vector{<:Number}) = Neighbors((i-1)=>length for (i, length) in enumerate(lengths))
 @inline Base.max(neighbors::Neighbors) = max(values(neighbors)...)
 @inline nneighbor(neighbors::Neighbors{<:Integer}) = max(keys(neighbors)...)
 @inline nneighbor(neighbors::Neighbors) = length(neighbors)
@@ -537,12 +537,12 @@ end
 
 """
     Bond(point::Point)
-    Bond(kind::Integer, point::Point, points::Point...)
+    Bond(kind, point₁::Point, point₂::Point, points::Point...)
 
 Construct a bond.
 """
-@inline Bond(point::Point) = Bond(0, point)
-@inline Bond(kind::Integer, point::Point, points::Point...) = Bond(kind, [point, points...])
+@inline Bond(point::Point) = Bond(0, [point])
+@inline Bond(kind, point₁::Point, point₂::Point, points::Point...) = Bond(kind, [point₁, point₂, points...])
 
 """
     dimension(bond::Bond) -> Int
@@ -721,8 +721,9 @@ Get the required bonds of a lattice and append them to the input bonds.
 @inline bonds!(bonds::Vector, lattice::AbstractLattice, nneighbor::Int; coordination::Int=8) = bonds!(bonds, lattice, Neighbors(lattice, nneighbor; coordination=coordination))
 function bonds!(bonds::Vector, lattice::AbstractLattice, neighbors::Neighbors)
     origin = zero(SVector{dimension(lattice), dtype(lattice)})
-    for (i, coordinate) in enumerate(lattice)
-        push!(bonds, Bond(0, Point(i, coordinate, origin)))
+    reverse = Dict(length=>order for (order, length) in neighbors)
+    haskey(reverse, zero(valtype(neighbors))) && for (i, coordinate) in enumerate(lattice)
+        push!(bonds, Bond(reverse[zero(valtype(neighbors))], [Point(i, coordinate, origin)]))
     end
     for (k, index₁, index₂) in interlinks(getcontent(lattice, :coordinates), getcontent(lattice, :coordinates), neighbors)
         if index₂ < index₁
@@ -765,7 +766,7 @@ Define the recipe for the visualization of a lattice.
         seriestype := :scatter
         coordinates = NTuple{dimension(lattice), dtype(lattice)}[]
         for i = 1:length(lattice)
-            bond = Bond(0, Point(i, lattice[i], zero(lattice[i])))
+            bond = Bond(Point(i, lattice[i], zero(lattice[i])))
             filter(bond) && push!(coordinates, Tuple(lattice[i]))
         end
         coordinates
@@ -1083,48 +1084,56 @@ Construct a path in the reciprocal space.
 end
 
 """
-    ReciprocalPath(reciprocals::AbstractVector, segments::Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}...;
+    ReciprocalPath(
+        reciprocals::AbstractVector, segments::Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}...;
         length::Union{Int, NTuple{M, Int}}=100,
         ends::Union{NTuple{2, Bool}, NTuple{M, NTuple{2, Bool}}}=(true, false)
-        ) where {N, M}
-    ReciprocalPath(reciprocals::AbstractVector, segments::Tuple{Vararg{Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}}};
+    ) where {N, M}
+    ReciprocalPath(
+        reciprocals::AbstractVector, segments::Tuple{Vararg{Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}}};
         length::Union{Int, NTuple{M, Int}}=100,
         ends::Union{NTuple{2, Bool}, NTuple{M, NTuple{2, Bool}}}=(true, false)
-        ) where {N, M}
+    ) where {N, M}
 
-    ReciprocalPath{K}(reciprocals::AbstractVector, segments::Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}...;
+    ReciprocalPath{K}(
+        reciprocals::AbstractVector, segments::Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}...;
         length::Union{Int, NTuple{M, Int}}=100,
         ends::Union{NTuple{2, Bool}, NTuple{M, NTuple{2, Bool}}}=(true, false)
-        ) where {K, N, M}
-    ReciprocalPath{K}(reciprocals::AbstractVector, segments::Tuple{Vararg{Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}}};
+    ) where {K, N, M}
+    ReciprocalPath{K}(
+        reciprocals::AbstractVector, segments::Tuple{Vararg{Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}}};
         length::Union{Int, NTuple{M, Int}}=100,
         ends::Union{NTuple{2, Bool}, NTuple{M, NTuple{2, Bool}}}=(true, false)
-        ) where {K, N, M}
+    ) where {K, N, M}
 
 Construct a path in the reciprocal space.
 """
-@inline function ReciprocalPath(reciprocals::AbstractVector, segments::Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}...;
-        length::Union{Int, NTuple{M, Int}}=100,
-        ends::Union{NTuple{2, Bool}, NTuple{M, NTuple{2, Bool}}}=(true, false)
-        ) where {N, M}
+@inline function ReciprocalPath(
+    reciprocals::AbstractVector, segments::Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}...;
+    length::Union{Int, NTuple{M, Int}}=100,
+    ends::Union{NTuple{2, Bool}, NTuple{M, NTuple{2, Bool}}}=(true, false)
+) where {N, M}
     return ReciprocalPath{:k}(reciprocals, segments, length=length, ends=ends)
 end
-function ReciprocalPath(reciprocals::AbstractVector, segments::Tuple{Vararg{Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}}};
-        length::Union{Int, NTuple{M, Int}}=100,
-        ends::Union{NTuple{2, Bool}, NTuple{M, NTuple{2, Bool}}}=(true, false)
-        ) where {N, M}
+function ReciprocalPath(
+    reciprocals::AbstractVector, segments::Tuple{Vararg{Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}}};
+    length::Union{Int, NTuple{M, Int}}=100,
+    ends::Union{NTuple{2, Bool}, NTuple{M, NTuple{2, Bool}}}=(true, false)
+) where {N, M}
     return ReciprocalPath{:k}(reciprocals, segments, length=length, ends=ends)
 end
-@inline function ReciprocalPath{K}(reciprocals::AbstractVector, segments::Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}...;
-        length::Union{Int, NTuple{M, Int}}=100,
-        ends::Union{NTuple{2, Bool}, NTuple{M, NTuple{2, Bool}}}=(true, false)
-        ) where {K, N, M}
+@inline function ReciprocalPath{K}(
+    reciprocals::AbstractVector, segments::Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}...;
+    length::Union{Int, NTuple{M, Int}}=100,
+    ends::Union{NTuple{2, Bool}, NTuple{M, NTuple{2, Bool}}}=(true, false)
+) where {K, N, M}
     return ReciprocalPath{K}(reciprocals, segments, length=length, ends=ends)
 end
-function ReciprocalPath{K}(reciprocals::AbstractVector, segments::Tuple{Vararg{Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}}};
-        length::Union{Int, NTuple{M, Int}}=100,
-        ends::Union{NTuple{2, Bool}, NTuple{M, NTuple{2, Bool}}}=(true, false)
-        ) where {K, N, M}
+function ReciprocalPath{K}(
+    reciprocals::AbstractVector, segments::Tuple{Vararg{Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}}};
+    length::Union{Int, NTuple{M, Int}}=100,
+    ends::Union{NTuple{2, Bool}, NTuple{M, NTuple{2, Bool}}}=(true, false)
+) where {K, N, M}
     @assert Base.length(reciprocals)==N "ReciprocalPath error: mismatched number of reciprocals ($(Base.length(reciprocals)) v.s. $N)."
     (isa(length, Int) && isa(ends, NTuple{2, Bool})) || @assert fieldcount(typeof(segments))==M "ReciprocalPath error: mismatched number of segments."
     isa(length, Int) && (length = ntuple(i->length, Val(fieldcount(typeof(segments)))))
