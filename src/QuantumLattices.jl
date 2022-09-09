@@ -31,24 +31,19 @@ export AbstractLattice, Bond, BrillouinZone, Lattice, Neighbors, Point, Reciproc
 export hexagon120°map, hexagon60°map, linemap, rectanglemap, @hexagon_str, @line_str, @rectangle_str
 
 # Essentials.DegreesOfFreedom
-export Boundary, CompositeIID, CompositeIndex, CompositeInternal, Coupling, Couplings, Hilbert, IID, IIDSpace, Index, Internal, Metric, OperatorUnitToTuple, SimpleIID, SimpleInternal, Subscript, Subscripts, Table, Term
-export plain, iidtype, indextype, ismodulatable, statistics, @couplings, @subscript_str
+export Boundary, CompositeIID, CompositeIndex, CompositeInternal,  Component, Constraint, Coupling, Hilbert, IID, IIDSpace, Index, Internal, MatrixCoupling, Metric, OperatorUnitToTuple, SimpleIID, SimpleInternal, Table, Term
+export plain, constrainttype, iidtype, indextype, isconcreteiid, ismodulatable, statistics, @iids
 
 # Essentials.QuantumSystems
-## Canonical fermionic/bosonic systems
-export annihilation, creation, latexofbosons, latexoffermions, majorana
-export Coulomb, FID, Fock, FockCoupling, FockTerm, Hopping, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, Onsite, PairHopping, Pairing, SpinFlip
-export isnormalordered, @σ⁰_str, @σˣ_str, @σʸ_str, @σᶻ_str, @σ⁺_str, @σ⁻_str, @fc_str
+## Canonical complex fermionic/bosonic systems
+export σ⁰, σˣ, σʸ, σᶻ, σ⁺, σ⁻, annihilation, creation, latexofbosons, latexoffermions, latexofparticles
+export Coulomb, FID, Fock, FockTerm, Hopping, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, Onsite, PairHopping, Pairing, SpinFlip, isnormalordered
 
 ## SU(2) spin systems
-export latexofspins
-export SID, Spin, SpinCoupling, SpinTerm
-export totalspin, @dm_str, @gamma_str, @heisenberg_str, @ising_str, @sc_str, @sˣ_str, @sʸ_str, @sᶻ_str
+export latexofspins, SID, Spin, SpinTerm, totalspin, @dm_str, @gamma_str, @heisenberg_str, @ising_str
 
 ## Phononic systems
-export latexofphonons
-export PID, Phonon, PhononCoupling, PhononKinetic, PhononPotential, PhononTerm
-export @kinetic_str, @potential_str
+export latexofphonons, PID, Phonon, Kinetic, Hooke, PhononTerm
 
 # Essentials.Frameworks
 export Action, Algorithm, AnalyticalExpression, Assignment, CompositeGenerator, Entry, Frontend, Image, OperatorGenerator, Parameters, RepresentationGenerator, prepare!, run!, rundependences!, save

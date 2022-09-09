@@ -4,7 +4,7 @@ using QuantumLattices
 
 makedocs(
     format=     Documenter.HTML(
-                    prettyurls= !("local" in ARGS),
+                    prettyurls= get(ENV, "CI", "false") == "true",
                     canonical=  "https://quantum-many-body.github.io/QuantumLattices.jl/latest/",
                     assets=     ["assets/favicon.ico"],
                     analytics=  "UA-89508993-1",
@@ -25,8 +25,9 @@ makedocs(
                             "tutorials/AdvancedUsage/LaTeXFormatOutputs.md",
                             "tutorials/AdvancedUsage/BoundaryConditions.md",
                             "tutorials/AdvancedUsage/Transformations.md",
-                            "tutorials/AdvancedUsage/ProjectManagement.md",
-                        ]
+                            "tutorials/AdvancedUsage/OrderIndexes.md",
+                            "tutorials/AdvancedUsage/ManageProjects.md",
+                        ],
                     ],
                     "Manual"    =>  [
                         "man/Interfaces.md",

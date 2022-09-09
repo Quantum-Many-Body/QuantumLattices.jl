@@ -1,6 +1,6 @@
 using LinearAlgebra: dot, tr
 using QuantumLattices.Essentials: reset!, update
-using QuantumLattices.Essentials.DegreesOfFreedom: Boundary, CompositeIndex, Coupling, Hilbert, IIDSpace, Index, OperatorUnitToTuple, SimpleIID, SimpleInternal, Subscript, Subscripts, Table, Term, @couplings
+using QuantumLattices.Essentials.DegreesOfFreedom: Boundary, CompositeIndex, Coupling, Hilbert, IIDSpace, Index, OperatorUnitToTuple, SimpleIID, SimpleInternal, Table, Term
 using QuantumLattices.Essentials.Frameworks
 using QuantumLattices.Essentials.QuantumOperators: ID, Identity, Operator, Operators, id, idtype
 using QuantumLattices.Essentials.Spatials: Lattice, Point, bonds, decompose, isintracell
@@ -9,6 +9,7 @@ using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Prerequisites.Traits: contentnames, reparameter
 using StaticArrays: SVector
 
+import QuantumLattices.Essentials.DegreesOfFreedom: Constraint, iidtype, isconcreteiid
 import QuantumLattices.Essentials.Frameworks: Parameters
 import QuantumLattices.Essentials: prepare!, run!, update!
 import QuantumLattices.Prerequisites.VectorSpaces: shape
@@ -24,6 +25,9 @@ function Base.angle(id::CompositeIndex{<:Index{FID{Int}}}, vectors::AbstractVect
             error("angle error: not supported number of input basis vectors.")
     (id.index.iid.nambu == 1) ? phase : -phase
 end
+@inline isconcreteiid(::Type{FID{Int}}) = true
+@inline iidtype(::Type{FID}, ::Type{T}) where {T<:Union{Int, Symbol}} = FID{T}
+@inline Constraint(iids::NTuple{N, FID{Int}}) where N = Constraint{N}()
 
 struct FFock <: SimpleInternal{FID{Int}}
     nnambu::Int
@@ -36,9 +40,8 @@ end
 @inline shape(iidspace::IIDSpace{FID{Symbol}, FFock}) = (1:iidspace.internal.nnambu,)
 @inline shape(iidspace::IIDSpace{FID{Int}, FFock}) = (iidspace.iid.nambu:iidspace.iid.nambu,)
 
-const FCoupling{V, I<:ID{FID}, C<:Subscripts} = Coupling{V, I, C}
-@inline FCoupling(value, nambus::Tuple{Vararg{Int}}) = Coupling(value, ID(FID, nambus), Subscripts((nambu=Subscript(nambus),)))
-@inline FCoupling(value, nambus::Subscript) = Coupling(value, ID(FID, convert(Tuple, nambus)), Subscripts((nambu=nambus,)))
+const FCoupling{V, I<:ID{FID}, C<:Constraint} = Coupling{V, I, C}
+@inline FCoupling(value, nambus::NTuple{N, Int}) where N = Coupling(value, ID(FID, nambus))
 
 @testset "Parameters" begin
     ps1 = Parameters{(:t1, :t2, :U)}(1.0im, 1.0, 2.0)
@@ -76,8 +79,8 @@ end
     table = Table(hilbert, OperatorUnitToTuple(:site))
     boundary = Boundary{(:θ,)}([0.1], lattice.vectors)
 
-    t = Term{:Hp}(:t, 2.0, 1, couplings=@couplings(FCoupling(1.0, (2, 1))), ishermitian=false)
-    μ = Term{:Mu}(:μ, 1.0, 0, couplings=@couplings(FCoupling(1.0, (2, 1))), ishermitian=true, modulate=true)
+    t = Term{:Hp}(:t, 2.0, 1, FCoupling(1.0, (2, 1)), false)
+    μ = Term{:Mu}(:μ, 1.0, 0, FCoupling(1.0, (2, 1)), true; modulate=true)
 
     tops₁ = expand(t, filter(bond->isintracell(bond), bs), hilbert; half=true)
     tops₂ = boundary(expand(one(t), filter(bond->!isintracell(bond), bs), hilbert; half=true))

@@ -1,5 +1,6 @@
 module QuantumOperators
 
+using Latexify: unicode2latex
 using Printf: @printf, @sprintf
 using ...Prerequisites: atol, rtol, decimaltostr
 using ...Prerequisites.Traits: efficientoperations, contentorder, fulltype, getcontent, parameterpairs, parametertype, promoteparameters, rawtype, reparameter
@@ -52,7 +53,6 @@ The id of a composite quantum operator, which is an ordered set of operator unit
 Type alias for `NTuple{N, U} where {U<:OperatorUnit}`.
 """
 const ID{U<:OperatorUnit, N} = NTuple{N, U}
-@inline Base.show(io::IO, id::Tuple{OperatorUnit, Vararg{OperatorUnit}}) = @printf io "ID(%s)" join(id, ", ")
 @inline Base.promote_rule(::Type{Tuple{}}, I::Type{<:Tuple{OperatorUnit, Vararg{OperatorUnit}}}) = ID{I|>eltype}
 @inline Base.promote_rule(I::Type{<:Tuple{OperatorUnit, Vararg{OperatorUnit}}}, ::Type{Tuple{}}) = ID{I|>eltype}
 
@@ -137,7 +137,7 @@ end
 
 # Operator pack
 """
-    OperatorPack{V, I<:ID{OperatorUnit}} <: QuantumOperator
+    OperatorPack{V, I<:Tuple} <: QuantumOperator
 
 The entity that represent the pack of a number and several quantum units.
 
@@ -145,11 +145,11 @@ Basically, a concrete subtype should contain two predefined contents:
 - `value::V`: the coefficient of the pack
 - `id::I`: the total id of the pack
 """
-abstract type OperatorPack{V, I<:ID{OperatorUnit}} <: QuantumOperator end
+abstract type OperatorPack{V, I<:Tuple} <: QuantumOperator end
 @inline contentnames(::Type{<:OperatorPack}) = (:value, :id)
 @inline parameternames(::Type{<:OperatorPack}) = (:value, :id)
 @inline isparameterbound(::Type{<:OperatorPack}, ::Val{:value}, ::Type{V}) where V = false
-@inline isparameterbound(::Type{<:OperatorPack}, ::Val{:id}, ::Type{I}) where {I<:ID{OperatorUnit}} = !isconcretetype(I)
+@inline isparameterbound(::Type{<:OperatorPack}, ::Val{:id}, ::Type{I}) where {I<:Tuple} = !isconcretetype(I)
 @inline function Base.promote_rule(::Type{M₁}, ::Type{M₂}) where {M₁<:OperatorPack, M₂<:OperatorPack}
     M₁<:M₂ && return M₂
     M₂<:M₁ && return M₁
@@ -355,15 +355,15 @@ end
 
 # Operator sum
 """
-    OperatorSum{M<:OperatorPack, I<:ID{OperatorUnit}} <: QuantumOperator
+    OperatorSum{M<:OperatorPack, I<:Tuple} <: QuantumOperator
 
 The sum of `OperatorPack`s.
 
 Similar items are automatically merged with the aid of the id system.
 """
-struct OperatorSum{M<:OperatorPack, I<:ID{OperatorUnit}} <: QuantumOperator
+struct OperatorSum{M<:OperatorPack, I<:Tuple} <: QuantumOperator
     contents::Dict{I, M}
-    OperatorSum(contents::Dict{<:ID{OperatorUnit}, <:OperatorPack}) = new{valtype(contents), keytype(contents)}(contents)
+    OperatorSum(contents::Dict{<:Tuple, <:OperatorPack}) = new{valtype(contents), keytype(contents)}(contents)
 end
 @inline Base.eltype(ms::OperatorSum) = eltype(typeof(ms))
 @inline Base.eltype(::Type{<:OperatorSum{M}}) where {M<:OperatorPack} = M
@@ -376,9 +376,9 @@ function Base.show(io::IO, ms::OperatorSum)
         @printf io "  %s\n" m
     end
 end
-@inline Base.haskey(ms::OperatorSum, id::ID{OperatorUnit}) = haskey(ms.contents, id)
-@inline Base.getindex(ms::OperatorSum, id::ID{OperatorUnit}) = ms.contents[id]
-@inline Base.setindex!(ms::OperatorSum, m::OperatorPack, id::ID{OperatorUnit}) = (ms.contents[id] = m; m)
+@inline Base.haskey(ms::OperatorSum, id::Tuple) = haskey(ms.contents, id)
+@inline Base.getindex(ms::OperatorSum, id::Tuple) = ms.contents[id]
+@inline Base.setindex!(ms::OperatorSum, m::OperatorPack, id::Tuple) = (ms.contents[id] = m; m)
 @inline Base.empty(ms::OperatorSum) = OperatorSum(empty(ms.contents))
 @inline Base.empty!(ms::OperatorSum) = (empty!(ms.contents); ms)
 @inline function Base.promote_rule(::Type{MS₁}, ::Type{MS₂}) where {MS₁<:OperatorSum, MS₂<:OperatorSum}
@@ -572,13 +572,13 @@ end
 
 Overloaded `*` between quantum operators or a quantum operator and a number.
 """
-@inline Base.:*(factor::Number, m::OperatorUnit) = Operator(factor, ID(m))
-@inline Base.:*(m::OperatorUnit, factor::Number) = Operator(factor, ID(m))
-@inline Base.:*(m₁::OperatorUnit, m₂::OperatorUnit) = Operator(1, ID(m₁, m₂))
+@inline Base.:*(factor::Number, m::OperatorUnit) = Operator(factor, m)
+@inline Base.:*(m::OperatorUnit, factor::Number) = Operator(factor, m)
+@inline Base.:*(m₁::OperatorUnit, m₂::OperatorUnit) = Operator(1, m₁, m₂)
 @inline Base.:*(factor::Number, m::OperatorPack) = replace(m, factor*value(m))
 @inline Base.:*(m::OperatorPack, factor::Number) = replace(m, value(m)*factor)
-@inline Base.:*(m₁::OperatorPack, m₂::OperatorUnit) = m₁*Operator(1, ID(m₂))
-@inline Base.:*(m₁::OperatorUnit, m₂::OperatorPack) = Operator(1, ID(m₁))*m₂
+@inline Base.:*(m₁::OperatorPack, m₂::OperatorUnit) = m₁*Operator(1, m₂)
+@inline Base.:*(m₁::OperatorUnit, m₂::OperatorPack) = Operator(1, m₁)*m₂
 @inline function Base.:*(m₁::OperatorPack, m₂::OperatorPack)
     M₁, M₂ = typeof(m₁), typeof(m₂)
     @assert nameof(M₁)==nameof(M₂) && contentnames(M₁)==(:value, :id)==contentnames(M₂) "\"*\" error: not implemented between $(nameof(M₁)) and $(nameof(M₂))."
@@ -802,7 +802,7 @@ end
 
 Show a quantum operator.
 """
-Base.show(io::IO, ::MIME"text/latex", m::QuantumOperator) = show(io, MIME"text/latex"(), latexstring(latexstring(m)))
+Base.show(io::IO, ::MIME"text/latex", m::QuantumOperator) = show(io, MIME"text/latex"(), latexstring(unicode2latex(latexstring(m))))
 
 # Transformations
 """

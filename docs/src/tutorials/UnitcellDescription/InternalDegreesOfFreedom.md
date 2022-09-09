@@ -13,7 +13,7 @@ Now let's move to the second step, the internal degrees of freedom.
 
 ## Hierarchy of the internal degrees of freedom
 
-In general, a lattice Hamiltonian can be expressed by the generators of the [algebra](https://en.wikipedia.org/wiki/Algebra_over_a_field) that acts on the Hilbert space of the system. For example for the complex fermionic (bosonic) system, the Hilbert space is the [Fock space](https://en.wikipedia.org/wiki/Fock_space), and the lattice Hamiltonian can be expressed by the generators of the fermionic (bosonic) algebra, i.e., the the creation and annihilation operators $\{c^\dagger_\alpha, c_\alpha\}$ $\left(\{b^\dagger_\alpha, b_\alpha\}\right)$. For another example for the local spin system, the Hilbert space is the ``\otimes_\alpha\{\lvert\uparrow\rangle, \lvert\downarrow\rangle\}_\alpha`` space, and the lattice Hamiltonian can be expressed by the generators of the SU(2) spin algebra, i.e., the spin operators $\{S^x_\alpha, S^y_\alpha, S^z_\alpha\}$ or $\{S^+_\alpha, S^-_\alpha, S^z_\alpha\}$. In both examples, the subscript $\alpha$ denotes a complete set of indexes of the internal degrees of freedom of the quantum system. Therefore, the determination of the algebra acting on the system's Hilbert space and its corresponding generators lies at the center of the construction of lattice Hamiltonians.
+In general, a lattice Hamiltonian can be expressed by the generators of the [algebra](https://en.wikipedia.org/wiki/Algebra_over_a_field) that acts on the Hilbert space of the system. For example for the complex fermionic (bosonic) system, the Hilbert space is the [Fock space](https://en.wikipedia.org/wiki/Fock_space), and the lattice Hamiltonian can be expressed by the generators of the fermionic (bosonic) algebra, i.e., the the creation and annihilation operators $\{c^\dagger_\alpha, c_\alpha\}$ $\left(\{b^\dagger_\alpha, b_\alpha\}\right)$. For another example for the local spin-1/2 system, the Hilbert space is the ``\otimes_\alpha\{\lvert\uparrow\rangle, \lvert\downarrow\rangle\}_\alpha`` space, and the lattice Hamiltonian can be expressed by the generators of the SU(2) spin algebra, i.e., the spin operators $\{S^x_\alpha, S^y_\alpha, S^z_\alpha\}$ or $\{S^+_\alpha, S^-_\alpha, S^z_\alpha\}$. In both examples, the subscript $\alpha$ denotes a complete set of indexes of the internal degrees of freedom of the quantum system. Therefore, the determination of the algebra acting on the system's Hilbert space and its corresponding generators lies at the center of the construction of lattice Hamiltonians.
 
 The global Hilbert space of a lattice system can be decomposed into the direct product of the local internal spaces "living" on individual points, leading to a similar decomposition of the global algebra into local ones. To incorporate with the unitcell construction of the lattice, an extra intermediate representation of the translation-equivalent internal degrees of freedom within the origin unitcell is also needed. Thus, from the microscopic to the macroscopic, we arrive at a three level hierarchy, namely the local-unitcell-global hierarchy, of the internal degrees of freedom.
 
@@ -39,7 +39,7 @@ In this section, we will explain in detail for three common categories of quantu
 
 #### Local level: Fock and FID
 
-Roughly speaking, these systems share similar internal structures of local Hilbert spaces termed as the [Fock space](https://en.wikipedia.org/wiki/Fock_space) where the generators of local algebras are the annihilation and creation operators. Besides the nambu index to distinguish whether it is an annihilation one or a creation one, such a generator usually adopts an orbital index and a spin index. Thus, the type [`FID`](@ref)`<:`[`IID`](@ref), which specifies a certain internal degree of freedom of a local [Fock space](https://en.wikipedia.org/wiki/Fock_space), has the following attributes:
+Roughly speaking, these systems share similar internal structures of local Hilbert spaces termed as the [Fock space](https://en.wikipedia.org/wiki/Fock_space) where the generators of local algebras are the annihilation and creation operators. Besides the nambu index to distinguish whether it is an annihilation one or a creation one, such a generator usually adopts an orbital index and a spin index. Thus, the type [`FID`](@ref)`<:`[`IID`](@ref), which specifies a certain local generator of a local Fock algebra, has the following attributes:
 * `orbital::Int`: the orbital index
 * `spin::Int`: the spin index
 * `nambu::Int`: the nambu index, which must be 0, 1(annihilation) or 2(creation).
@@ -364,11 +364,11 @@ julia> sp |> collect
  SID{1}(1, '+')
  SID{1}(1, '-')
 ```
-It is noted that a [`Spin`](@ref) instance generates [`SID`](@ref) instances not only limited to those corresponding to $S^x$, $S^y$, $S^z$, but also those to $S^+$ and $S^-$ although the former three already forms a complete set of the generators of the local spin algebra. This overcomplete feature is for the convenience to the construction of spin Hamiltonians.
+It is noted that a [`Spin`](@ref) instance generates [`SID`](@ref) instances not only limited to those corresponding to $S^x$, $S^y$, $S^z$, but also those to $S^+$ and $S^-$ although the former three already forms a complete set of the generators of the local SU(2) spin algebra. This overcomplete feature is for the convenience to the construction of spin Hamiltonians.
 
 #### Unitcell and global levels: Hilbert{<:Spin}, Index{<:SID} and CompositeIndex{<:Index{<:SID}}
 
-At the unitcell and global level to construct the SU(2) spin algebra and spin generators, it is completely the same to that of the Fock algebra and Fock generators as long as we replace [`Fock`](@ref) and [`FID`](@ref) with [`Spin`](@ref) and [`SID`](@ref), respectively:
+At the unitcell and global levels to construct the SU(2) spin algebra and spin generators, it is completely the same to that of the Fock algebra and Fock generators as long as we replace [`Fock`](@ref) and [`FID`](@ref) with [`Spin`](@ref) and [`SID`](@ref), respectively:
 ```jldoctest SSS
 julia> Hilbert(1=>Spin{1//2}(), 2=>Spin{1}())
 Hilbert{Spin} with 2 entries:
@@ -386,10 +386,10 @@ CompositeIndex(Index(1, SID{1//2}(1, '-')), [0.5, 0.5], [1.0, 1.0])
 
 #### Local level: Phonon and PID
 
-Phononic systems are also bosonic systems. However, the canonical creation and annihilation operators of phonons depends on the eigenvalues and eigenvectors of the dynamical matrix, making them difficult to be defined locally at each point. Instead, we resort to the momentum $\mathbf{p}$ and displacement $\mathbf{u}$ operators of lattice vibrations as the generators, which can be easily defined locally. The type [`PID`](@ref) could specify such a local generator, which has the following attributes:
+Phononic systems are also bosonic systems. However, the canonical creation and annihilation operators of phonons depends on the eigenvalues and eigenvectors of the dynamical matrix, making them difficult to be defined locally at each point. Instead, we resort to the momentum $\mathbf{p}$ and displacement $\mathbf{u}$ operators of lattice vibrations as the generators, which can be easily defined locally. The type [`PID`](@ref)`<:`[`IID`](@ref) could specify such a local generator, which has the following attributes:
 * `:tag::Char`: the tag, which must be either `'p'` or `'u'`, to specify whether it is the momentum or the displacement operator, respectively
 * `:direction::Char`: the direction, which must be one of `'x'`, `'y'` and `'z'`, to indicate which spatial directional component of the generator is
-Correspondingly, the type [`Phonon`](@ref), which defines the local ${\mathbf{u}, \mathbf{p}}$ algebra of the lattice vibrations, has the following attributes:
+Correspondingly, the type [`Phonon`](@ref)`<:`[`Internal`](@ref), which defines the local $\{\mathbf{u}, \mathbf{p}\}$ algebra of the lattice vibrations, has the following attributes:
 * `ndirection::Int`: the spatial dimension of the lattice vibrations, which must be 1, 2, or 3
 
 Now let's see examples:
@@ -441,7 +441,7 @@ CompositeIndex(Index(1, PID('u', 'x')), [0.5, 0.5], [1.0, 1.0])
 
 ## Operator and Operators
 
-Now we arrive at the core types of this package, the [`Operator`](@ref) and [`Operators`](@ref). They are defined to deal with the mathematical operations, i.e., the `+`/`-`/`*` operation between two elements of the algebra, and the scalar multiplication between a element of the algebra and a number. Specifically, [`Operator`](@ref) represents the **product** of several generators specified at any of the three levels along with a coefficient, and [`Operators`](@ref) represents the **sums** of several instances of [`Operator`](@ref).
+Now we arrive at the core types of this package, the [`Operator`](@ref) and [`Operators`](@ref). They are defined to deal with the mathematical operations, i.e., the `+`/`-`/`*` operations between two elements of the algebra, and the scalar multiplication between a element of the algebra and a number. Specifically, an [`Operator`](@ref) represents a **product** of several generators specified at any of the three levels along with a coefficient, and an [`Operators`](@ref) represents the **sum** of several instances of [`Operator`](@ref).
 
 [`Operator`](@ref) can be initialized by two ways:
 ```jldoctest OO
@@ -463,6 +463,9 @@ Operator(2, FID{:f}(1, 1, 2), CompositeIndex(Index(2, FID{:f}(1, 1, 1)), [0.0, 0
 ```jldoctest OO
 julia> op = Operator(2, FID{:f}(1, 1, 2), FID{:f}(1, 1, 1));
 
+julia> length(op)
+2
+
 julia> [op[1], op[2]]
 2-element Vector{FID{:f, Int64, Int64, Int64}}:
  FID{:f}(1, 1, 2)
@@ -472,6 +475,17 @@ julia> collect(op)
 2-element Vector{FID{:f, Int64, Int64, Int64}}:
  FID{:f}(1, 1, 2)
  FID{:f}(1, 1, 1)
+```
+
+To get the coefficient of an [`Operator`](@ref) or all its individual generators as a whole, use the [`value`](@ref) and [`id`](@ref) function exported by this package, respectively:
+```jldoctest OO
+julia> op = Operator(2, FID{:f}(1, 1, 2), FID{:f}(1, 1, 1));
+
+julia> value(op)
+2
+
+julia> id(op)
+(FID{:f}(1, 1, 2), FID{:f}(1, 1, 1))
 ```
 
 The product between two [`Operator`](@ref)s, or the scalar multiplication between a number and an [`Operator`](@ref) is also an [`Operator`](@ref):

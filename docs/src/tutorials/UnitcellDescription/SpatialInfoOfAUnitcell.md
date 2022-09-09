@@ -8,16 +8,16 @@ end
 
 # Spatial information of a unitcell
 
-The first step toward the complete description of a quantum lattice system is the understanding of the spatial information within a unitcell.
+The first step toward the complete description of a quantum lattice system is the understanding of the spatial information of a unitcell.
 
 ## Construction of a lattice
 
 In general, a lattice has translation symmetry. This symmetry introduces an equivalence relation for the points in a lattice when they can be translated into each other by multiple times of the translation vectors. This observation sets the mathematical foundation of the unitcell construction. Therefore, it is enough for a lattice to restrict all points within the origin unitcell together with the translation vectors.
 
-[`Lattice`](@ref) is the simplest structure to encode all the spatial information within the origin unitcell. Apparently, it must contain all the coordinations of the points in the origin unitcell and the translation vectors of the lattice. Other stuff appears to be useful as well, such as the name of the lattice and the reciprocals dual to the translation vectors. Therefore, in this package, [`Lattice`](@ref) has four attributes:
+[`Lattice`](@ref) is the simplest structure to encode all the spatial information within the origin unitcell. Apparently, it must contain all the coordinates of the points in the origin unitcell and the translation vectors of the lattice. Other stuff appears to be useful as well, such as the name of the lattice and the reciprocals dual to the translation vectors. Therefore, in this package, [`Lattice`](@ref) has four attributes:
 * `name::Symbol`: the name of the lattice
-* `coordinates::Matrix{<:Number}`: the coordinates of the points within the unitcell
-* `vectors::Vector{<:StaticArrays.SVector}`: the translation vectors of the unitcell
+* `coordinates::Matrix{<:Number}`: the coordinates of the points within the origin unitcell
+* `vectors::Vector{<:StaticArrays.SVector}`: the translation vectors of the lattice
 * `reciprocals::Vector{<:StaticArrays.SVector}`: the reciprocals dual to the translation vectors
 
 [`Lattice`](@ref) can be constructed by offering the coordinates, with optional keyword arguments to specify its name and translation vectors:
@@ -103,7 +103,7 @@ julia> Bond(2, Point(1, [0.0, 0.0], [0.0, 0.0]), Point(1, [1.0, 1.0], [1.0, 1.0]
 Bond(2, Point(1, [0.0, 0.0], [0.0, 0.0]), Point(1, [1.0, 1.0], [1.0, 1.0]))
 
 julia> Bond(:plaquette, Point(1, [0.0, 0.0]), Point(2, [1.0, 0.0]), Point(3, [1.0, 1.0]), Point(4, [0.0, 1.0])) # generic bond with 4 points
-Bond(plaquette, Point(1, [0.0, 0.0], [0.0, 0.0]), Point(2, [1.0, 0.0], [0.0, 0.0]), Point(3, [1.0, 1.0], [0.0, 0.0]), Point(4, [0.0, 1.0], [0.0, 0.0]))
+Bond(:plaquette, Point(1, [0.0, 0.0], [0.0, 0.0]), Point(2, [1.0, 0.0], [0.0, 0.0]), Point(3, [1.0, 1.0], [0.0, 0.0]), Point(4, [0.0, 1.0], [0.0, 0.0]))
 ```
 It is noted that the `:kind` attribute of a bond with only one point is set to be 0.
 
@@ -156,7 +156,7 @@ julia> icoordinate(another)
 
 ### Generation of 1-point and 2-point bonds of a lattice
 
-In this package, we only implement the method [`bonds`](@ref) to get the 1-point and 2-point bonds of a lattice based on the `KDTree` type provided by the [`NearestNeighbors.jl`](https://github.com/KristofferC/NearestNeighbors.jl) package:
+In this package, we provide the function [`bonds`](@ref) to get the 1-point and 2-point bonds of a lattice based on the `KDTree` type provided by the [`NearestNeighbors.jl`](https://github.com/KristofferC/NearestNeighbors.jl) package:
 
 ```jldoctest unitcell
 julia> lattice = Lattice([0.0, 0.0]; vectors=[[1.0, 0.0], [0.0, 1.0]]);
@@ -169,7 +169,7 @@ julia> bonds(lattice, 2)
  Bond(2, Point(1, [1.0, -1.0], [1.0, -1.0]), Point(1, [0.0, 0.0], [0.0, 0.0]))
  Bond(1, Point(1, [-1.0, 0.0], [-1.0, 0.0]), Point(1, [0.0, 0.0], [0.0, 0.0]))
 ```
-In method `bond(lattice::Lattice, nneighbor::Int)`, all the bonds up to the `nneighbor`th nearest neighbors are returned, including the 1-point bonds. However, this method is not so efficient, as `KDTree` only searches the bonds with the lengths less than a value, and it does not know the bond lengths for each order of nearest neighbors. Such information must be computed as first. On the other hand, [`bonds`](@ref) can accept a new type, the [`Neighbors`](@ref) as its second positional parameter to improve the efficiency, which could tell the program the information of the bond lengths in priori:
+In method `bond(lattice::Lattice, nneighbor::Int)`, all the bonds up to the `nneighbor`th nearest neighbors are returned, including the 1-point bonds. However, this method is not so efficient, as `KDTree` only searches the bonds with the lengths less than a value, and it does not know the bond lengths for each order of nearest neighbors. Such information must be computed as first. On the other hand, [`bonds`](@ref) can accept a new type, the [`Neighbors`](@ref), as its second positional parameter to improve the efficiency, which could tell the program the information of the bond lengths in priori:
 ```jldoctest unitcell
 julia> lattice = Lattice([0.0, 0.0]; vectors=[[1.0, 0.0], [0.0, 1.0]]);
 

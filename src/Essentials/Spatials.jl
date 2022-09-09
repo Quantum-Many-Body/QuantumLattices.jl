@@ -533,7 +533,7 @@ struct Bond{K, P<:Point}
 end
 @inline Base.:(==)(bond₁::Bond, bond₂::Bond) = ==(efficientoperations, bond₁, bond₂)
 @inline Base.isequal(bond₁::Bond, bond₂::Bond) = isequal(efficientoperations, bond₁, bond₂)
-@inline Base.show(io::IO, bond::Bond) = @printf io "Bond(%s, %s)" bond.kind join(map(string, bond.points), ", ")
+@inline Base.show(io::IO, bond::Bond) = @printf io "Bond(%s, %s)" repr(bond.kind) join(map(string, bond.points), ", ")
 
 """
     Bond(point::Point)

@@ -7,4 +7,4 @@ DocTestSetup = quote
 end
 ```
 
-# Generator of operators
+# Order indexes

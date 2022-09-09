@@ -1,5 +1,10 @@
 using QuantumLattices.Prerequisites
 
+@testset "allequal" begin
+    @test allequal((2, 2, 2, 2))
+    @test !allequal((2, 2, 1, 2))
+end
+
 @testset "decimaltostr" begin
     @test decimaltostr(:a) == ":a"
     @test decimaltostr(1) == "1"

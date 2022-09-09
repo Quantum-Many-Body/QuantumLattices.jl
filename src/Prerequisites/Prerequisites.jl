@@ -4,7 +4,7 @@ using Formatting: FormatSpec, fmt
 using Reexport: @reexport
 
 export atol, rtol, Float
-export concatenate, decimaltostr, delta, ordinal
+export allequal, concatenate, decimaltostr, delta, ordinal
 
 "Absolute tolerance for float numbers."
 const atol = 5 * 10^-14
@@ -14,6 +14,13 @@ const rtol = √atol
 
 "Default float type."
 const Float = Float64
+
+"""
+    allequal(xs) -> Bool
+
+Judge whether all elements are equal.
+"""
+@inline allequal(xs) = all(isequal(first(xs)), xs)
 
 """
     decimaltostr(number, ::Int=5)

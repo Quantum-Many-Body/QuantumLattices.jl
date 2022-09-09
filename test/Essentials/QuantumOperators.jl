@@ -25,12 +25,12 @@ function permute(u₁::AID, u₂::AID)
     @assert u₁ ≠ u₂ "permute error: permuted operator units should not be equal to each other."
     if (u₁.nambu == 3-u₂.nambu) && (u₁.orbital == u₂.orbital)
         if u₁.nambu == 2
-            return (Operator(1), Operator(1, ID(u₂, u₁)))
+            return (Operator(1), Operator(1, u₂, u₁))
         else
-            return (Operator(-1), Operator(1, ID(u₂, u₁)))
+            return (Operator(-1), Operator(1, u₂, u₁))
         end
     else
-        return (Operator(1, ID(u₂, u₁)),)
+        return (Operator(1, u₂, u₁),)
     end
 end
 
@@ -55,7 +55,6 @@ end
     @test cid|>propertynames == (:orbitals, :nambus)
     @test cid.orbitals == (2, Inf)
     @test cid.nambus == (1, 1)
-    @test cid|>string == "ID(AID(2, 1), AID(Inf, 1))"
     @test cid|>eltype == AID{<:Real, Int}
     @test cid|>rank == cid|>typeof|>rank == 2
     @test cid'==ID(AID(Inf, 2), AID(2, 2))
@@ -208,7 +207,7 @@ Base.valtype(::Type{UnitCoeffAddition}, M::Type{<:Union{Operator, Operators}}) =
 @inline (unitcoeffaddition::UnitCoeffAddition)(m::Operator) = replace(m, value=one(valtype(m))+value(m))
 
 @testset "Transformation" begin
-    m = Operator(1, ID(AID(1, 1)))
+    m = Operator(1, AID(1, 1))
     s = Operators(m)
 
     i = Identity()
@@ -225,8 +224,8 @@ Base.valtype(::Type{UnitCoeffAddition}, M::Type{<:Union{Operator, Operators}}) =
     @test n(s) == Operators(replace(m, value=1.0))
 
     unitcoeffaddition = UnitCoeffAddition()
-    @test map!(unitcoeffaddition, s) == s == Operators(Operator(2, ID(AID(1, 1))))
-    @test map!(unitcoeffaddition, zero(s), s) == Operators(Operator(3, ID(AID(1, 1))))
+    @test map!(unitcoeffaddition, s) == s == Operators(Operator(2, AID(1, 1)))
+    @test map!(unitcoeffaddition, zero(s), s) == Operators(Operator(3, AID(1, 1)))
 end
 
 @testset "Permutation" begin

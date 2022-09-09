@@ -7,4 +7,4 @@ DocTestSetup = quote
 end
 ```
 
-# Project management
+# Manage projects
