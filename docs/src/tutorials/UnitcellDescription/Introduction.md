@@ -25,8 +25,8 @@ using SymPy: Sym, symbols
 # define the unitcell
 lattice = Lattice([zero(Sym)], [one(Sym)])
 
-# define the internal degrees of freedom
-hilbert = Hilbert(site=>Fock{:f}(norbital=1, nspin=2) for site=1:length(lattice))
+# define the internal degrees of freedom, single-orbital spin-1/2 fermionic algebra
+hilbert = Hilbert(site=>Fock{:f}(1, 2) for site=1:length(lattice))
 
 # define the terms
 t = Hopping(:t, symbols("t", real=true), 1)

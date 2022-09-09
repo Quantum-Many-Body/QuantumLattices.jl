@@ -816,6 +816,7 @@ end
 ## Coupling
 ### MatrixCoupling
 const default_u = ['u']
+const default_1du = ['x']
 const default_2du = ['x', 'y']
 const default_3du = ['x', 'y', 'z']
 """
@@ -824,9 +825,9 @@ const default_3du = ['x', 'y', 'z']
 Construct a set of `Coupling`s corresponding to the dynamical matrix of phonons.
 """
 function MatrixCoupling{PID}(matrix::AbstractMatrix)
-    @assert size(matrix)[1]∈(2, 3) && size(matrix)[2]∈(2, 3) "MatrixCoupling error: mismatched dimension of input matrix."
-    left = size(matrix)[1]==2 ? default_2du : default_3du
-    right = size(matrix)[2]==2 ? default_2du : default_3du
+    @assert size(matrix)[1]∈(1, 2, 3) && size(matrix)[2]∈(1, 2, 3) "MatrixCoupling error: mismatched dimension of input matrix."
+    left = size(matrix)[1]==1 ? default_1du : size(matrix)[1]==2 ? default_2du : default_3du
+    right = size(matrix)[2]==1 ? default_1du : size(matrix)[2]==2 ? default_2du : default_3du
     return MatrixCoupling{PID}(Component(default_u, default_u, default_matrix), Component(left, right, matrix))
 end
 
