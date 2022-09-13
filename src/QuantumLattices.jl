@@ -43,7 +43,7 @@ export Coulomb, FID, Fock, FockTerm, Hopping, Hubbard, InterOrbitalInterSpin, In
 export latexofspins, SID, Spin, SpinTerm, totalspin, @dm_str, @gamma_str, @heisenberg_str, @ising_str
 
 ## Phononic systems
-export latexofphonons, PID, Phonon, Kinetic, Hooke, PhononTerm
+export latexofphonons, Elastic, PID, Phonon, Kinetic, Hooke, PhononTerm
 
 # Essentials.Frameworks
 export Action, Algorithm, AnalyticalExpression, Assignment, CompositeGenerator, Entry, Frontend, Image, OperatorGenerator, Parameters, RepresentationGenerator, prepare!, run!, rundependences!, save

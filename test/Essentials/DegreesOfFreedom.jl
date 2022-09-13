@@ -232,6 +232,10 @@ end
     @test !match(product, (DID(1), DID(2), DID(3), DID(1), DID(2)))
     @test !match(product, (DID(2), DID(2), DID(3), DID(2), DID(1)))
     @test !match(product, (DID(2), DID(1), DID(3), DID(2), DID(1)))
+
+    constraint = Constraint{2}(Diagonal(:nambu))
+    @test match(constraint, (DID(2), DID(2)))
+    @test !match(constraint, (DID(2), DID(1)))
 end
 
 @testset "Coupling" begin
@@ -256,9 +260,7 @@ end
     point = Point(1, (0.0, 0.0), (0.0, 0.0))
     bond = Bond(point)
     hilbert = Hilbert(point.site=>DFock(2))
-    @test couplingcenters(tc, bond, Val(:Mu)) == (1,)
-    @test couplingpoints(tc, bond, Val(:Mu)) == (point,)
-    @test couplinginternals(tc, bond, hilbert, Val(:Mu)) == (DFock(2),)
+    @test sitestructure(Val(:Mu), Val(rank(tc)), length(bond)) == (1,)
 
     tc₁ = DCoupling(1.5, (1, 2))
     tc₂ = Coupling(2.0, @iids(DID(a), DID(b); constraint=a<b))
@@ -271,7 +273,7 @@ end
     @test string(tc)=="3.0 * (DID(1)*DID(2)) * (DID(a)*DID(b)[a < b])"
     @test latexstring(tc) == "3.0 d^{}_{} d^{\\dagger}_{} \\cdot \\sum_{a < b} d^{a}_{} d^{b}_{}"
 
-    ex = expand(tc₁, bond, hilbert, Val(:info))
+    ex = expand(Val(:term), tc₁, bond, hilbert)
     @test eltype(ex) == eltype(typeof(ex)) == Operator{Float64, NTuple{2, CompositeIndex{Index{DID{Int}}, SVector{2, Float64}}}}
     @test collect(ex) == [
         Operator(1.5, ID(
@@ -280,7 +282,7 @@ end
             ))
         ]
 
-    ex = expand(tc₂, bond, hilbert, Val(:info))
+    ex = expand(Val(:term), tc₂, bond, hilbert)
     @test eltype(ex) == eltype(typeof(ex)) == Operator{Float64, NTuple{2, CompositeIndex{Index{DID{Int}}, SVector{2, Float64}}}}
     @test collect(ex) == [
         Operator(2.0, ID(

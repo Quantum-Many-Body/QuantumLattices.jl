@@ -23,7 +23,7 @@ import ...Prerequisites.VectorSpaces: shape
 
 export CompositeIID, CompositeInternal, IID, Internal, SimpleIID, SimpleInternal
 export AbstractCompositeIndex, CompositeIndex, Hilbert, Index, iidtype, indextype, ishermitian, statistics
-export noconstrain, wildcard, Component, Constraint, Coupling, IIDSpace, MatrixCoupling, MatrixCouplingProd, Pattern, constrainttype, couplingcenters, couplinginternals, couplingpoints, isconcreteiid, @iids
+export noconstrain, wildcard, Component, Constraint, Coupling, Diagonal, IIDSpace, MatrixCoupling, MatrixCouplingProd, Pattern, constrainttype, sitestructure, isconcreteiid, @iids
 export Term, TermAmplitude, TermCoupling, TermFunction, TermModulate, ismodulatable
 export Metric, OperatorUnitToTuple, Table
 export Boundary, plain
@@ -560,6 +560,23 @@ No constrain pattern.
 const noconstrain = Pattern(Dict{Symbol, Vector{Tuple{Int, Symbol}}}())
 
 """
+    Diagonal{Fields} <: Function
+
+Construct a pattern for a set of homogenous `SimpleIID`s that all the specified fields should be diagonal, respectively.
+"""
+struct Diagonal{Fields} <: Function
+    Diagonal(fields::Tuple{Vararg{Symbol}}) = new{fields}()
+end
+@inline Diagonal(fields::Symbol...) = Diagonal(fields)
+@generated function (diagonal::Diagonal{fields})(iids::Tuple{I, Vararg{I, N}}) where {fields, I<:SimpleIID, N}
+    exprs = []
+    for field in QuoteNode.(fields)
+        push!(exprs, Expr(:call, allequal, Expr(:tuple, [:(getfield(iids[$i], $field)) for i=1:(N+1)]...)))
+    end
+    return Expr(:call, all, Expr(:tuple, exprs...))
+end
+
+"""
     Constraint{RS, N, C<:NTuple{N, Function}}
 
 The constraint of the indexes of internal degrees of freedom in a coupling.
@@ -579,13 +596,13 @@ end
 
 """
     Constraint{R}() where R
-    Constraint{R}(condition::Pattern) where R
+    Constraint{R}(condition::Union{Pattern, Diagonal}) where R
     Constraint{R}(representation::String, condition::Function) where R
 
 Construct a constraint with only one condition.
 """
 @inline Constraint{R}() where R = Constraint{R}(noconstrain)
-@inline Constraint{R}(condition::Pattern) where R = Constraint{R}("pattern", condition)
+@inline Constraint{R}(condition::Union{Pattern, Diagonal}) where R = Constraint{R}("pattern", condition)
 @inline Constraint{R}(representation::String, condition::Function) where R = Constraint{(R,)}((representation,), (condition,))
 
 """
@@ -717,8 +734,8 @@ end
 @inline rank(M::Type{<:Coupling}) = fieldcount(parametertype(M, :iids))
 @inline Coupling(id::Tuple{ID{SimpleIID}, Constraint}) = Coupling(1, id)
 @inline Coupling(value, id::Tuple{ID{SimpleIID}, Constraint}) = Coupling(value, id...)
-@inline CompositeIID(coupling::Coupling, ::Val=Val(:info)) = CompositeIID(coupling.iids)
-@inline Constraint(coupling::Coupling, ::Val=Val(:info)) = coupling.constraint
+@inline CompositeIID(coupling::Coupling, ::Val=Val(:term)) = CompositeIID(coupling.iids)
+@inline Constraint(coupling::Coupling, ::Val=Val(:term)) = coupling.constraint
 @inline Base.iterate(coupling::Coupling) = (coupling, nothing)
 @inline Base.iterate(coupling::Coupling, ::Nothing) = nothing
 @inline Base.eltype(coupling::Coupling) = eltype(typeof(coupling))
@@ -726,12 +743,12 @@ end
 @inline Base.length(coupling::Coupling) = length(typeof(coupling))
 @inline Base.length(::Type{<:Coupling}) = 1
 @inline function Base.show(io::IO, coupling::Coupling)
-    @printf io "%s" decimaltostr(coupling.value)
+    value = coupling.value≈1 ? "" : coupling.value≈-1 ? "- " : string(decimaltostr(coupling.value), " * ")
     len, count = length(coupling.constraint.representations), 1
     for i = 1:len
         r = rank(coupling.constraint, i)
         start, stop = count, count+r-1
-        @printf io " * %s%s" (len==1 ? "" : "(") join(coupling.iids[start:stop], len==1 ? " * " : "*")
+        @printf io "%s%s%s" (i==1 ? value : " * ") (len==1 ? "" : "(") join(coupling.iids[start:stop], len==1 ? " * " : "*")
         coupling.constraint.representations[i]=="pattern" || @printf io "[%s]" coupling.constraint.representations[i]
         len>1 && @printf io "%s" ")"
         count = stop+1
@@ -777,86 +794,6 @@ function latexstring(coupling::Coupling)
         count = stop+1
     end
     return @sprintf "%s%s" valuetostr(coupling.value) join(result, " \\cdot ")
-end
-
-"""
-    couplingcenters(coupling::Coupling, bond::Bond, info::Val) -> NTuple{rank(coupling), Int}
-
-Get the acting centers of the coupling on a bond.
-"""
-function couplingcenters(coupling::Coupling, bond::Bond, info::Val)
-    length(bond)==1 && return ntuple(i->1, Val(rank(coupling)))
-    length(bond)==2 && begin
-        rank(coupling)==2 && return (1, 2)
-        rank(coupling)==4 && return (1, 1, 2, 2)
-        error("couplingcenters error: not supported for a rank-$(rank(coupling)) coupling.")
-    end
-    error("couplingcenters error: not supported for a generic bond containing $(length(bond)) points.")
-end
-
-"""
-    couplingpoints(coupling::Coupling, bond::Bond, info::Val) -> NTuple{rank(coupling), eltype(bond)}
-
-Get the points where each order of the coupling acts on.
-"""
-@inline function couplingpoints(coupling::Coupling, bond::Bond, info::Val)
-    centers = couplingcenters(coupling, bond, info)
-    return NTuple{rank(coupling), eltype(bond)}(bond[centers[i]] for i = 1:rank(coupling))
-end
-
-"""
-    couplinginternals(coupling::Coupling, bond::Bond, hilbert::Hilbert, info::Val) -> NTuple{rank(coupling), SimpleInternal}
-
-Get the internal spaces where each order of the coupling acts on.
-"""
-@inline function couplinginternals(coupling::Coupling, bond::Bond, hilbert::Hilbert, info::Val)
-    centers = couplingcenters(coupling, bond, info)
-    internals = ntuple(i->hilbert[bond[centers[i]].site], Val(rank(coupling)))
-    return map((iid, internal)->filter(iid, internal), CompositeIID(coupling, info).contents, internals)
-end
-
-"""
-    expand(coupling::Coupling, bond::Bond, hilbert::Hilbert, info::Val)
-
-Expand a coupling with the given bond and Hilbert space.
-"""
-function expand(coupling::Coupling, bond::Bond, hilbert::Hilbert, info::Val)
-    points = couplingpoints(coupling, bond, info)
-    internals = couplinginternals(coupling, bond, hilbert, info)
-    @assert rank(coupling)==length(points)==length(internals) "expand error: mismatched rank."
-    return CExpand(value(coupling), points, IIDSpace(CompositeIID(coupling, info), CompositeInternal{:⊗}(internals)), Constraint(coupling, info))
-end
-struct CExpand{V, N, SV<:SVector, S<:IIDSpace, C<:Constraint}
-    value::V
-    sites::NTuple{N, Int}
-    rcoordinates::NTuple{N, SV}
-    icoordinates::NTuple{N, SV}
-    iidspace::S
-    constraint::C
-end
-function CExpand(value, points::NTuple{N, P}, iidspace::IIDSpace, constraint::Constraint) where {N, P<:Point}
-    sites = NTuple{N, Int}(points[i].site for i = 1:N)
-    rcoordinates = NTuple{N, SVector{dimension(P), dtype(P)}}(points[i].rcoordinate for i = 1:N)
-    icoordinates = NTuple{N, SVector{dimension(P), dtype(P)}}(points[i].icoordinate for i = 1:N)
-    return CExpand(value, sites, rcoordinates, icoordinates, iidspace, constraint)
-end
-@inline Base.eltype(ex::CExpand) = eltype(typeof(ex))
-@inline @generated function Base.eltype(::Type{<:CExpand{V, N, SV, S}}) where {V, N, SV<:SVector, S<:IIDSpace}
-    return Operator{V, Tuple{map(I->CompositeIndex{Index{I}, SV}, fieldtypes(fieldtype(eltype(S), :contents)))...}}
-end
-@inline Base.IteratorSize(::Type{<:CExpand}) = Base.SizeUnknown()
-function Base.iterate(ex::CExpand, state=iterate(ex.iidspace))
-    result = nothing
-    while !isnothing(state)
-        ciid, state = state
-        if match(ex.constraint, ciid)
-            result = Operator(ex.value, ID(CompositeIndex, ID(Index, ex.sites, ciid.contents), ex.rcoordinates, ex.icoordinates)), iterate(ex.iidspace, state)
-            break
-        else
-            state = iterate(ex.iidspace, state)
-        end
-    end
-    return result
 end
 
 ## MatrixCoupling
@@ -1087,7 +1024,7 @@ function Base.repr(term::Term, bond::Bond, hilbert::Hilbert)
         value = term.value * term.amplitude(bond) * term.factor
         if !isapprox(value, 0.0, atol=atol, rtol=rtol)
             for coupling in term.coupling(bond)
-                if !isnothing(iterate(expand(coupling, bond, hilbert, term|>kind|>Val)))
+                if !isnothing(iterate(expand(term|>kind|>Val, coupling, bond, hilbert)))
                     representation = repr(value*coupling)
                     term.ishermitian || (representation = string(replace(representation, " * "=>"*"), " + h.c."))
                     push!(cache, @sprintf "%s: %s" kind(term) representation)
@@ -1161,7 +1098,7 @@ function expand!(operators::Operators, term::Term, bond::Bond, hilbert::Hilbert;
         value = term.value * term.amplitude(bond) * term.factor
         if !isapprox(value, 0.0, atol=atol, rtol=rtol)
             for coupling in term.coupling(bond)
-                for opt in expand(coupling, bond, hilbert, term|>kind|>Val)
+                for opt in expand(term|>kind|>Val, coupling, bond, hilbert)
                     isapprox(opt.value, 0.0, atol=atol, rtol=rtol) && continue
                     if half
                         add!(operators, opt*valtype(eltype(operators))(value/(term.ishermitian ? 2 : 1)))
@@ -1196,6 +1133,66 @@ end
 @inline function expand(term::Term, bonds, hilbert::Hilbert; half::Bool=false)
     M = optype(term|>typeof, hilbert|>typeof, bonds|>eltype)
     expand!(Operators{M}(), term, bonds, hilbert; half=half)
+end
+
+"""
+    sitestructure(::Val{termkind}, ::Val{couplingrank}, bondlength::Integer) where {termkind, couplingrank} -> NTuple{couplingrank, Int}
+
+Get the site structure, i.e. the acting centers of the coupling on a bond, of a certain kind of term.
+"""
+function sitestructure(::Val, ::Val{couplingrank}, bondlength::Integer) where couplingrank
+    bondlength==1 && return ntuple(i->1, Val(couplingrank))
+    bondlength==2 && begin
+        couplingrank==2 && return (1, 2)
+        couplingrank==4 && return (1, 1, 2, 2)
+        error("sitestructure error: not supported for a rank-$couplingrank coupling.")
+    end
+    error("sitestructure error: not supported for a generic bond containing $bondlength points.")
+end
+
+"""
+    expand(::Val{termkind}, coupling::Coupling, bond::Bond, hilbert::Hilbert) where termkind
+
+Expand a coupling with the given bond and Hilbert space of a certain kind of term.
+"""
+function expand(::Val{termkind}, coupling::Coupling, bond::Bond, hilbert::Hilbert) where termkind
+    centers = sitestructure(Val(termkind), Val(rank(coupling)), length(bond))
+    points = NTuple{rank(coupling), eltype(bond)}(bond[centers[i]] for i = 1:rank(coupling))
+    internals = map((iid, internal)->filter(iid, internal), CompositeIID(coupling, Val(termkind)).contents, ntuple(i->hilbert[bond[centers[i]].site], Val(rank(coupling))))
+    @assert rank(coupling)==length(points)==length(internals) "expand error: mismatched rank."
+    return CExpand(value(coupling), points, IIDSpace(CompositeIID(coupling, Val(termkind)), CompositeInternal{:⊗}(internals)), Constraint(coupling, Val(termkind)))
+end
+struct CExpand{V, N, SV<:SVector, S<:IIDSpace, C<:Constraint}
+    value::V
+    sites::NTuple{N, Int}
+    rcoordinates::NTuple{N, SV}
+    icoordinates::NTuple{N, SV}
+    iidspace::S
+    constraint::C
+end
+function CExpand(value, points::NTuple{N, P}, iidspace::IIDSpace, constraint::Constraint) where {N, P<:Point}
+    sites = NTuple{N, Int}(points[i].site for i = 1:N)
+    rcoordinates = NTuple{N, SVector{dimension(P), dtype(P)}}(points[i].rcoordinate for i = 1:N)
+    icoordinates = NTuple{N, SVector{dimension(P), dtype(P)}}(points[i].icoordinate for i = 1:N)
+    return CExpand(value, sites, rcoordinates, icoordinates, iidspace, constraint)
+end
+@inline Base.eltype(ex::CExpand) = eltype(typeof(ex))
+@inline @generated function Base.eltype(::Type{<:CExpand{V, N, SV, S}}) where {V, N, SV<:SVector, S<:IIDSpace}
+    return Operator{V, Tuple{map(I->CompositeIndex{Index{I}, SV}, fieldtypes(fieldtype(eltype(S), :contents)))...}}
+end
+@inline Base.IteratorSize(::Type{<:CExpand}) = Base.SizeUnknown()
+function Base.iterate(ex::CExpand, state=iterate(ex.iidspace))
+    result = nothing
+    while !isnothing(state)
+        ciid, state = state
+        if match(ex.constraint, ciid)
+            result = Operator(ex.value, ID(CompositeIndex, ID(Index, ex.sites, ciid.contents), ex.rcoordinates, ex.icoordinates)), iterate(ex.iidspace, state)
+            break
+        else
+            state = iterate(ex.iidspace, state)
+        end
+    end
+    return result
 end
 
 # Metric and Table
