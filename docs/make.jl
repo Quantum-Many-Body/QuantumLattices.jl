@@ -20,13 +20,14 @@ makedocs(
                             "tutorials/UnitcellDescription/CouplingsAmongDifferentDegreesOfFreedom.md",
                             "tutorials/UnitcellDescription/GeneratorOfOperators.md",
                         ],
-                        "Advanced Usage" => [
-                            "tutorials/AdvancedUsage/Introduction.md",
-                            "tutorials/AdvancedUsage/LaTeXFormatOutputs.md",
-                            "tutorials/AdvancedUsage/BoundaryConditions.md",
-                            "tutorials/AdvancedUsage/Transformations.md",
-                            "tutorials/AdvancedUsage/OrderIndexes.md",
-                            "tutorials/AdvancedUsage/ManageProjects.md",
+                        "Advanced Topics" => [
+                            "tutorials/AdvancedTopics/Introduction.md",
+                            "tutorials/AdvancedTopics/LaTeXFormatOutputs.md",
+                            "tutorials/AdvancedTopics/HybridSystems.md",
+                            "tutorials/AdvancedTopics/BoundaryConditions.md",
+                            "tutorials/AdvancedTopics/Transformations.md",
+                            "tutorials/AdvancedTopics/OrderIndexes.md",
+                            "tutorials/AdvancedTopics/ManageProjects.md",
                         ],
                     ],
                     "Manual"    =>  [

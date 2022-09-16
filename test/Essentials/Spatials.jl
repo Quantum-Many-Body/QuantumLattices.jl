@@ -178,8 +178,8 @@ end
     @test bond|>eltype == bond|>typeof|>eltype == Point{2, Float}
     @test bond|>reverse == Bond(1, Point(1, (0.0, 0.0), (0.0, 0.0)), Point(2, (0.0, 1.0), (0.0, 1.0)))
     @test bond|>collect == [Point(2, (0.0, 1.0), (0.0, 1.0)), Point(1, (0.0, 0.0), (0.0, 0.0))]
-    @test bond|>rcoordinate == [0.0, 1.0]
-    @test bond|>icoordinate == [0.0, 1.0]
+    @test bond|>rcoordinate == [0.0, -1.0]
+    @test bond|>icoordinate == [0.0, -1.0]
     @test bond|>isintracell == false
 end
 

@@ -12,7 +12,7 @@
 
 *Julia package for the construction of quantum lattice systems.*
 
-Welcome to **[QuantumLattices](https://github.com/Quantum-Many-Body/QuantumLattices.jl)**. Here we provide a general framework to construct the **second-quantized operator-formed Hamiltonian of any quantum lattice system**, with the inputs as simple as its description by the natural language. This operator-formed Hamiltonian supports **complete symbolic computations** when combined with **[SymPy](https://github.com/JuliaPy/SymPy.jl)**, and can serve as a convenient **frontend of quantum many-body algorithms**, such as **[TBA (tight-bind approximation)](https://github.com/Quantum-Many-Body/TightBindingApproximation.jl)**, **[LSWT (linear spin wave theory)](https://github.com/Quantum-Many-Body/SpinWaveTheory.jl)**, **SCMF (self-consistent mean field theory)**, **[ED (exact diagonalization)](https://github.com/Quantum-Many-Body/ExactDiagonalization.jl)**, **[CPT/VCA (cluster perturbation theory / variational cluster approach)](https://github.com/Quantum-Many-Body/QuantumClusterTheories.jl)**, **DMRG (density matrix renormalization group)**, etc. Generic interfaces are defined to provide a unified access to these algorithms with automatic project management.
+Welcome to **[QuantumLattices](https://github.com/Quantum-Many-Body/QuantumLattices.jl)**. Here we provide a general framework to construct the **operator-formed Hamiltonian of any quantum lattice system**, with the inputs as simple as its description by the natural language. This operator-formed Hamiltonian supports **complete symbolic computations** when combined with **[SymPy](https://github.com/JuliaPy/SymPy.jl)**, and can serve as a convenient **frontend of quantum many-body algorithms**, such as **[TBA (tight-bind approximation)](https://github.com/Quantum-Many-Body/TightBindingApproximation.jl)**, **[LSWT (linear spin wave theory)](https://github.com/Quantum-Many-Body/SpinWaveTheory.jl)**, **SCMF (self-consistent mean field theory)**, **[ED (exact diagonalization)](https://github.com/Quantum-Many-Body/ExactDiagonalization.jl)**, **[CPT/VCA (cluster perturbation theory / variational cluster approach)](https://github.com/Quantum-Many-Body/QuantumClusterTheories.jl)**, **DMRG (density matrix renormalization group)**, etc. Generic interfaces are defined to provide a unified access to these algorithms with automatic project management.
 
 ## Installation
 
@@ -33,13 +33,13 @@ Based on this, the package has the following features:
 
 * **Complete Symbolic Computation**: with only this package, symbolic computation between operators is realized while the coefficient of any operator remains numeric; by integrating it with [SymPy](https://github.com/JuliaPy/SymPy.jl), complete symbolic computation can be achieved and no modifications need be made on the methods in this package.
 
-* **Generic Frontend of Many-Body Algorithms**: quantum many-body algorithms can be initialized in quite similar ways with only minor modifications needed. Moreover, automatic project management is realized, including that of result recording, data caching, parameter updating, information logging, dependency managing, etc.
+* **Generic Frontend of Many-Body Algorithms**: with the operator-formed Hamiltonian as the foothold, quantum many-body algorithms can be initialized in quite similar ways with only minor modifications needed. Moreover, automatic project management is realized, including that of result recording, data caching, parameter updating, information logging, dependency managing, etc.
 
 ## Supported Systems
 
 Four common categories of quantum lattice systems in condensed matter physics are supported:
-* **canonical fermionic systems**
-* **canonical/hard-core bosonic systems**
+* **canonical complex fermionic systems**
+* **canonical complex and hard-core bosonic systems**
 * **SU(2) spin systems**
 * **Phononic systems**
 
@@ -48,16 +48,16 @@ Furthermore, other systems can be supported easily by extending the generic prot
 ## Supported Algorithms
 
 Concrete algorithms could be considered as the "backend" of quantum lattice systems. They are developed in separate packages (still in progress):
-* **[TBA](https://github.com/Quantum-Many-Body/TightBindingApproximation.jl)**: tight-binding approximation for fermionic/bosonic systems;
-* **SCMF**: self-consistent mean field theory for fermionic systems;
-* **[ED](https://github.com/Quantum-Many-Body/ExactDiagonalization.jl)**: exact diagonalization for fermionic/hard-core-bosonic/spin systems;
-* **[CPT/VCA](https://github.com/Quantum-Many-Body/QuantumClusterTheories.jl)**: cluster perturbation theory and variational cluster approach for fermionic systems;
-* **DMRG**: density matrix renormalization group for fermionic/hard-core-bosonic/spin systems;
+* **[TBA](https://github.com/Quantum-Many-Body/TightBindingApproximation.jl)**: tight-binding approximation for complex fermionic/bosonic systems;
+* **SCMF**: self-consistent mean field theory for complex fermionic systems;
+* **[ED](https://github.com/Quantum-Many-Body/ExactDiagonalization.jl)**: exact diagonalization for complex-fermionic/hard-core-bosonic/spin systems;
+* **[CPT/VCA](https://github.com/Quantum-Many-Body/QuantumClusterTheories.jl)**: cluster perturbation theory and variational cluster approach for complex fermionic and local spin systems;
+* **DMRG**: density matrix renormalization group for complex-fermionic/hard-core-bosonic/spin systems;
 * **[LSWT](https://github.com/Quantum-Many-Body/SpinWaveTheory.jl)**: linear spin wave theory for magnetically ordered local spin systems.
 
 ## Getting Started
 * [Tutorials: unitcell description](@ref UnitcellDescriptionIntroduction)
-* [Tutorials: advanced usage](@ref AdvancedUsageIntroduction)
+* [Tutorials: advanced topics](@ref AdvancedTopicsIntroduction)
 
 ## Note
 

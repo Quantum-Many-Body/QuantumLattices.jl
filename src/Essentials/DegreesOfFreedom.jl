@@ -23,7 +23,7 @@ import ...Prerequisites.VectorSpaces: shape
 
 export CompositeIID, CompositeInternal, IID, Internal, SimpleIID, SimpleInternal
 export AbstractCompositeIndex, CompositeIndex, Hilbert, Index, iidtype, indextype, ishermitian, statistics
-export noconstrain, wildcard, Component, Constraint, Coupling, Diagonal, IIDSpace, MatrixCoupling, MatrixCouplingProd, Pattern, constrainttype, sitestructure, isconcreteiid, @iids
+export noconstrain, wildcard, Component, Constraint, Coupling, Diagonal, IIDSpace, MatrixCoupling, MatrixCouplingProd, MatrixCouplingSum, Pattern, constrainttype, sitestructure, isconcreteiid, @iids
 export Term, TermAmplitude, TermCoupling, TermFunction, TermModulate, ismodulatable
 export Metric, OperatorUnitToTuple, Table
 export Boundary, plain
@@ -382,7 +382,7 @@ Get the whole rcoordinate of an operator.
 """
 @inline function rcoordinate(opt::Operator{<:Number, <:ID{CompositeIndex}})
     rank(opt)==1 && return id(opt)[1].rcoordinate
-    rank(opt)==2 && return id(opt)[1].rcoordinate-id(opt)[2].rcoordinate
+    rank(opt)==2 && return id(opt)[2].rcoordinate-id(opt)[1].rcoordinate
     error("rcoordinate error: not supported rank($(rank(opt))) of $(nameof(opt)).")
 end
 
@@ -393,7 +393,7 @@ Get the whole icoordinate of an operator.
 """
 @inline function icoordinate(opt::Operator{<:Number, <:ID{CompositeIndex}})
     rank(opt)==1 && return id(opt)[1].icoordinate
-    rank(opt)==2 && return id(opt)[1].icoordinate-id(opt)[2].icoordinate
+    rank(opt)==2 && return id(opt)[2].icoordinate-id(opt)[1].icoordinate
     error("icoordinate error: not supported rank($(rank(opt))) of $(nameof(opt)).")
 end
 
@@ -425,6 +425,15 @@ Get the `attr` script of an index, which is contained in its index.
 """
 @inline script(::Val{attr}, index::CompositeIndex; kwargs...) where attr = script(Val(attr), index.index; kwargs...)
 
+"""
+    script(::Val{:site}, index::Index; kwargs...) -> String
+    script(attr::Val, index::Index; kwargs...) -> String
+
+Get the required script of a spin index.
+"""
+@inline script(::Val{:site}, index::Index; kwargs...) = string(index.site)
+@inline script(attr::Val, index::Index; kwargs...) = script(attr, index.iid; kwargs...)
+
 # Hilbert
 """
     Hilbert{I<:Internal} <: CompositeDict{Int, I}
@@ -432,10 +441,9 @@ Get the `attr` script of an index, which is contained in its index.
 Hilbert space at a lattice.
 """
 struct Hilbert{I<:Internal} <: CompositeDict{Int, I}
-    map::Function
     contents::Dict{Int, I}
+    Hilbert(contents::Dict{Int, <:Internal}) = new{valtype(contents)}(contents)
 end
-@inline contentnames(::Type{<:Hilbert}) = (:map, :contents)
 
 """
     Hilbert(ps::Pair...)
@@ -444,44 +452,7 @@ end
 Construct a Hilbert space the same way as a Dict.
 """
 @inline Hilbert(ps::Pair...) = Hilbert(ps)
-function Hilbert(kv)
-    contents = Dict(kv)
-    map = site->contents[site]
-    return Hilbert(map, contents)
-end
-
-"""
-    Hilbert(map::Function, sites::AbstractVector{Int})
-    Hilbert{I}(map::Function, sites::AbstractVector{Int}) where {I<:Internal}
-
-Construct a Hilbert space from a function and a set of sites.
-
-Here, `map` maps an integer to an `Internal`.
-"""
-@inline function Hilbert(map::Function, sites::AbstractVector{Int})
-    I = commontype(map, Tuple{Vararg{Any}}, Internal)
-    return Hilbert{I}(map, sites)
-end
-function Hilbert{I}(map::Function, sites::AbstractVector{Int}) where {I<:Internal}
-    contents = Dict{sites|>eltype, I}()
-    for site in sites
-        contents[site] = map(site)
-    end
-    return Hilbert(map, contents)
-end
-
-"""
-    reset!(hilbert::Hilbert, sites::AbstractVector{Int}) -> Hilbert
-
-Reset the Hilbert space with new sites.
-"""
-function reset!(hilbert::Hilbert, sites::AbstractVector{Int})
-    empty!(hilbert)
-    for site in sites
-        hilbert[site] = hilbert.map(site)::valtype(hilbert)
-    end
-    return hilbert
-end
+@inline Hilbert(kv) = Hilbert(Dict(kv))
 
 # Coupling
 ## IIDSpace
@@ -705,13 +676,13 @@ macro iids(exprs...)
     iids = Expr(:tuple, iids...)
     blocks = Expr(:block, vcat([block.args for block in blocks]...)...)
     name = gensym("constraint")
-    representations = constraint==true ? "pattern" : string(constraint)
+    representation = constraint==true ? "pattern" : string(constraint)
     return quote
         function ($name)(iids::NTuple{$N, SimpleIID})
             $blocks
             return $constraint
         end
-        ($(esc(iids)), Constraint{$N}($representations, $name))
+        ($(esc(iids)), Constraint{$N}($representation, $name))
     end
 end
 
@@ -743,14 +714,21 @@ end
 @inline Base.length(coupling::Coupling) = length(typeof(coupling))
 @inline Base.length(::Type{<:Coupling}) = 1
 @inline function Base.show(io::IO, coupling::Coupling)
-    value = coupling.value≈1 ? "" : coupling.value≈-1 ? "- " : string(decimaltostr(coupling.value), " * ")
+    @printf io "%s" (coupling.value≈1 ? "" : coupling.value≈-1 ? "- " : string(decimaltostr(coupling.value), " "))
     len, count = length(coupling.constraint.representations), 1
     for i = 1:len
         r = rank(coupling.constraint, i)
         start, stop = count, count+r-1
-        @printf io "%s%s%s" (i==1 ? value : " * ") (len==1 ? "" : "(") join(coupling.iids[start:stop], len==1 ? " * " : "*")
-        coupling.constraint.representations[i]=="pattern" || @printf io "[%s]" coupling.constraint.representations[i]
-        len>1 && @printf io "%s" ")"
+        iids = coupling.iids[start:stop]
+        if i==1
+            @printf io "%s" (isconcreteiid(iids) ? "" : "∑")
+            (len>1 || !isconcreteiid(iids)) && @printf io "%s" "["
+        else
+            @printf io " ⋅ %s[" (isconcreteiid(iids) ? "" : "∑")
+        end
+        @printf io "%s" join(iids, " ")
+        (len>1 || !isconcreteiid(iids)) && @printf io "%s" "]"
+        coupling.constraint.representations[i]=="pattern" || @printf io "(%s)" coupling.constraint.representations[i]
         count = stop+1
     end
 end
@@ -786,7 +764,9 @@ function latexstring(coupling::Coupling)
         start, stop = count, count+r-1
         iids = coupling.iids[start:stop]
         pattern = coupling.constraint.representations[i]
-        temp = isconcreteiid(iids) ? "" : @sprintf "\\sum%s" (pattern=="pattern" ? "" : replace(replace("_{$(coupling.constraint.representations[i])}", "&&"=>"\\;\\text{and}\\;"), "||"=>"\\;\\text{or}\\;"))
+        summation = pattern=="pattern" ? "" : replace(replace("$(coupling.constraint.representations[i])", "&&"=>"\\,\\text{and}\\,"), "||"=>"\\,\\text{or}\\,")
+        summation=="" || (summation = join(push!(symbols(iids, pattern), summation), ",\\,"))
+        temp = isconcreteiid(iids) ? "" : @sprintf "\\sum_{%s}" summation
         for iid in iids
             temp = @sprintf "%s %s" temp latexstring(iid)
         end
@@ -794,6 +774,19 @@ function latexstring(coupling::Coupling)
         count = stop+1
     end
     return @sprintf "%s%s" valuetostr(coupling.value) join(result, " \\cdot ")
+end
+function symbols(iids::Tuple{Vararg{SimpleIID}}, constraint::String)
+    result = String[]
+    for iid in iids
+        for i = 1:fieldcount(typeof(iid))
+            attr = getfield(iid, i)
+            if isa(attr, Symbol)
+                value = string(attr)
+                occursin(value, constraint) || push!(result, value)
+            end
+        end
+    end
+    return sort!(unique!(result))
 end
 
 ## MatrixCoupling
@@ -880,6 +873,31 @@ The product between `MatrixCoupling`s and `MatrixCouplingProd`s.
 @inline Base.:*(mcp::MatrixCouplingProd, mc::MatrixCoupling) = MatrixCouplingProd(mcp.contents..., mc)
 @inline Base.:*(mcp₁::MatrixCouplingProd, mcp₂::MatrixCouplingProd) = MatrixCouplingProd(mcp₁.contents..., mcp₂.contents...)
 
+"""
+    MatrixCouplingSum{C<:MatrixCoupling, N} <: VectorSpace{Coupling}
+
+The sum of a set of `Coupling`s whose coefficients are specified by matrices.
+"""
+struct MatrixCouplingSum{C<:MatrixCoupling, N} <: VectorSpace{Coupling}
+    contents::NTuple{N, C}
+end
+@inline MatrixCouplingSum(contents::MatrixCoupling...) = MatrixCouplingSum(contents)
+@inline Base.eltype(::Type{<:MatrixCouplingSum{C}}) where {C<:MatrixCoupling} = eltype(C)
+@inline VectorSpaceStyle(::Type{<:MatrixCouplingSum}) = VectorSpaceDirectSummed()
+
+"""
+    +(mc₁::MatrixCoupling, mc₂::MatrixCoupling) -> MatrixCouplingSum
+    +(mc::MatrixCoupling, mcs::MatrixCouplingSum) -> MatrixCouplingSum
+    +(mcs::MatrixCouplingSum, mc::MatrixCoupling) -> MatrixCouplingSum
+    +(mcs₁::MatrixCouplingSum, mcs₂::MatrixCouplingSum) -> MatrixCouplingSum
+
+The product between `MatrixCoupling`s and `MatrixCouplingProd`s.
+"""
+@inline Base.:+(mc₁::MatrixCoupling, mc₂::MatrixCoupling) = MatrixCouplingSum(mc₁, mc₂)
+@inline Base.:+(mc::MatrixCoupling, mcs::MatrixCouplingSum) = MatrixCouplingSum(mc, mcs.contents...)
+@inline Base.:+(mcs::MatrixCouplingSum, mc::MatrixCoupling) = MatrixCouplingSum(mcs.contents..., mc)
+@inline Base.:+(mcs₁::MatrixCouplingSum, mcs₂::MatrixCouplingSum) = MatrixCouplingSum(mcs₁.contents..., mcs₂.contents...)
+
 # Term
 """
     TermFunction <: Function
@@ -960,11 +978,11 @@ end
 @inline Base.isequal(term₁::Term, term₂::Term) = isequal(efficientoperations, term₁, term₂)
 
 """
-    Term{K}(id::Symbol, value, bondkind, coupling, ishermitian::Bool; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false) where K
+    Term{K}(id::Symbol, value, bondkind, coupling, ishermitian::Bool; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true) where K
 
 Construct a term.
 """
-@inline function Term{K}(id::Symbol, value, bondkind, coupling, ishermitian::Bool; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false) where K
+@inline function Term{K}(id::Symbol, value, bondkind, coupling, ishermitian::Bool; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true) where K
     return Term{K, id}(value, bondkind, TermCoupling(coupling), TermAmplitude(amplitude), ishermitian, TermModulate(id, modulate), 1)
 end
 
@@ -1361,7 +1379,7 @@ Reset a table by a Hilbert space.
 """
 function reset!(table::Table, hilbert::Hilbert)
     indices = Index{hilbert|>valtype|>eltype}[]
-    for (site, internal) in hilbert
+    for (site, internal) in pairs(hilbert)
         for iid in internal
             push!(indices, (indices|>eltype)(site, iid))
         end

@@ -8,7 +8,7 @@ A quantum lattice system can be completely described based on its unitcell. Basi
 
 1) the spatial information, such as the coordinates of the points contained in the unitcell;
 2) the internal degrees of freedom, such as the local algebra acting on the local Hilbert space at each point;
-3) the couplings among different degrees of freedom, such as the interaction terms in the Hamiltonian.
+3) the couplings among different degrees of freedom, such as the terms present in the Hamiltonian.
 
 In theory, as long as the above information is told, one could easily write down the operator representation of the Hamiltonian of the system. For example, in the phrase *"the single orbital electronic Hubbard model with only nearest neighbor hopping on a one dimensional lattice with only two sites"*, *"one dimensional lattice with only two sites"* is the spatial information, *"single orbital electronic"* defines the local Hilbert space and thus the local algebra, and *"Hubbard model with only nearest neighbor hopping"* describes the terms present in the Hamiltonian. From this phrase, we also know that the Hamiltonian of the system is
 
@@ -25,7 +25,7 @@ using SymPy: Sym, symbols
 # define the unitcell
 lattice = Lattice([zero(Sym)], [one(Sym)])
 
-# define the internal degrees of freedom, single-orbital spin-1/2 fermionic algebra
+# define the internal degrees of freedom, i.e., the single-orbital spin-1/2 fermionic algebra
 hilbert = Hilbert(site=>Fock{:f}(1, 2) for site=1:length(lattice))
 
 # define the terms

@@ -607,7 +607,7 @@ Get the rcoordinate of the bond.
 @inline function rcoordinate(bond::Bond)
     @assert length(bond)∈(1, 2) "rcoordinate error: not supported for a generic bond which contains $(length(bond)) points."
     length(bond)==1 && return bond[1].rcoordinate
-    return bond[1].rcoordinate-bond[2].rcoordinate
+    return bond[2].rcoordinate-bond[1].rcoordinate
 end
 
 """
@@ -618,7 +618,7 @@ Get the icoordinate of the bond.
 @inline function icoordinate(bond::Bond)
     @assert length(bond)∈(1, 2) "icoordinate error: not supported for a generic bond which contains $(length(bond)) points."
     length(bond)==1 && return bond[1].icoordinate
-    return bond[1].icoordinate-bond[2].icoordinate
+    return bond[2].icoordinate-bond[1].icoordinate
 end
 
 """

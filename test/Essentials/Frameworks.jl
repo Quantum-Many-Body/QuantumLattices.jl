@@ -75,12 +75,12 @@ end
 
     lattice = Lattice([0.0], [0.5]; vectors=[[1.0]])
     bs = bonds(lattice, 1)
-    hilbert = Hilbert(site->FFock(2), 1:length(lattice))
+    hilbert = Hilbert(site=>FFock(2) for site=1:length(lattice))
     table = Table(hilbert, OperatorUnitToTuple(:site))
     boundary = Boundary{(:θ,)}([0.1], lattice.vectors)
 
-    t = Term{:Hp}(:t, 2.0, 1, FCoupling(1.0, (2, 1)), false)
-    μ = Term{:Mu}(:μ, 1.0, 0, FCoupling(1.0, (2, 1)), true; modulate=true)
+    t = Term{:Hp}(:t, 2.0, 1, FCoupling(1.0, (2, 1)), false; modulate=false)
+    μ = Term{:Mu}(:μ, 1.0, 0, FCoupling(1.0, (2, 1)), true)
 
     tops₁ = expand(t, filter(bond->isintracell(bond), bs), hilbert; half=true)
     tops₂ = boundary(expand(one(t), filter(bond->!isintracell(bond), bs), hilbert; half=true))
@@ -139,7 +139,7 @@ end
     @test expand(cgen, :t, 3) ≈ tops₁
     @test expand(cgen, :t, 4) ≈ tops₂*2.0
     @test empty!(deepcopy(cgen)) == OperatorGenerator((t, μ), empty(bs), empty(hilbert); half=true, boundary=boundary, table=empty(table)) == empty(cgen)
-    @test reset!(empty(cgen), lattice) == cgen
+    @test reset!(empty(cgen), lattice, hilbert) == cgen
     @test update!(cgen, μ=1.5)|>expand ≈ tops₁+tops₂*2.0+μops*1.5
 
     sgen = i(cgen; table=table)

@@ -14,7 +14,7 @@ using ...Prerequisites.Traits: efficientoperations, getcontent, rawtype
 using ...Prerequisites.VectorSpaces: VectorSpace, VectorSpaceCartesian, VectorSpaceStyle
 
 import ..QuantumOperators: latexname, matrix, optype, script
-import ..DegreesOfFreedom: Constraint, Coupling, MatrixCoupling, constrainttype, couplingcenters, iidtype, isconcreteiid, statistics
+import ..DegreesOfFreedom: Constraint, Coupling, MatrixCoupling, constrainttype, sitestructure, iidtype, isconcreteiid, statistics
 import ...Interfaces: ⊗, ⋅, expand, expand!, permute, rank
 import ...Prerequisites.VectorSpaces: shape
 
@@ -45,7 +45,8 @@ Indicate that the nambu index is creation.
 const creation = 2
 
 @inline default(::typeof(:)) = ":"
-@inline default(value) = value
+@inline default(value::Char) = repr(value)
+@inline default(value) = string(value)
 """
     FID{T, O<:Union{Int, Symbol, typeof(:)}, S<:Union{Int, Symbol, typeof(:)}, N<:Union{Int, Symbol, typeof(:)}} <: SimpleIID
 
@@ -106,26 +107,17 @@ end
 
 ## LaTeX format output
 """
-    script(::Val{:orbital}, fid::FID; kwargs...) -> Int
-    script(::Val{:spint}, fid::FID; kwargs...) -> Int
+    script(::Val{:orbital}, fid::FID; kwargs...) -> String
+    script(::Val{:spint}, fid::FID; kwargs...) -> String
     script(::Val{:spsym}, fid::FID; kwargs...) -> String
     script(::Val{:nambu}, fid::FID; kwargs...) -> String
 
 Get the required script of an fid.
 """
-@inline script(::Val{:orbital}, fid::FID; kwargs...) = default(fid.orbital)
-@inline script(::Val{:spint}, fid::FID; kwargs...) = default(fid.spin)
-@inline script(::Val{:spsym}, fid::FID; kwargs...) = fid.spin==1 ? "↓" : fid.spin==2 ? "↑" : string(default(fid.spin))
-@inline script(::Val{:nambu}, fid::FID; kwargs...) = fid.nambu==creation ? "\\dagger" : fid.nambu==annihilation ? "" : string(default(fid.nambu))
-
-"""
-    script(::Val{:site}, index::Index{<:FID}; kwargs...) -> Int
-    script(attr::Val, index::Index{<:FID}; kwargs...) -> Union{Int, String}
-
-Get the required script of a Fock index.
-"""
-@inline script(::Val{:site}, index::Index{<:FID}; kwargs...) = index.site
-@inline script(attr::Val, index::Index{<:FID}; kwargs...) = script(attr, index.iid; kwargs...)
+@inline script(::Val{:orbital}, fid::FID; kwargs...) = fid.orbital==(:) ? ":" : string(fid.orbital)
+@inline script(::Val{:spint}, fid::FID; kwargs...) = fid.spin==(:) ? ":" : string(fid.spin)
+@inline script(::Val{:spsym}, fid::FID; kwargs...) = fid.spin==1 ? "↓" : fid.spin==2 ? "↑" : fid.spin==(:) ? ":" : string(fid.spin)
+@inline script(::Val{:nambu}, fid::FID; kwargs...) = fid.nambu==creation ? "\\dagger" : fid.nambu==annihilation ? "" : fid.nambu==(:) ? ":" : string(fid.nambu)
 
 """
     latexoffermions
@@ -255,7 +247,7 @@ end
     return (obrange, sprange, phrange)
 end
 @inline fidshape(::Union{Symbol, typeof(:)}, n::Int) = 1:n
-@inline fidshape(v::Int, n::Int) where field = ((@assert 0<v<n+1 "shape error: $field out of range."); v:v)
+@inline fidshape(v::Int, n::Int) = ((@assert 0<v<n+1 "shape error: out of range."); v:v)
 
 ### Coupling
 """
@@ -309,8 +301,10 @@ end
     const σᶻ = SparseMatrixCSC([-1 0; 0 1])
     const σ⁺ = SparseMatrixCSC([0 0; 1 0])
     const σ⁻ = SparseMatrixCSC([0 1; 0 0])
+    const σ¹¹ = SparseMatrixCSC([1 0; 0 0])
+    const σ²² = SparseMatrixCSC([0 0; 0 1])
 
-The Pauli matrix σ⁰, σˣ, σʸ, σᶻ, σ⁺, σ⁻.
+The Pauli matrix σ⁰, σˣ, σʸ, σᶻ, σ⁺, σ⁻, σ¹¹, σ²².
 """
 const σ⁰ = SparseMatrixCSC([1 0; 0 1])
 const σˣ = SparseMatrixCSC([0 1; 1 0])
@@ -318,42 +312,44 @@ const σʸ = SparseMatrixCSC([0 1im; -1im 0])
 const σᶻ = SparseMatrixCSC([-1 0; 0 1])
 const σ⁺ = SparseMatrixCSC([0 0; 1 0])
 const σ⁻ = SparseMatrixCSC([0 1; 0 0])
+const σ¹¹ = SparseMatrixCSC([1 0; 0 0])
+const σ²² = SparseMatrixCSC([0 0; 0 1])
 
 ## Term
 """
-    Onsite(id::Symbol, value;  coupling=Coupling{FID}(:, :, (2, 1)), amplitude::Union{Function, Nothing}=nothing, ishermitian::Bool=true, modulate::Union{Function, Bool}=false)
+    Onsite(id::Symbol, value;  coupling=Coupling{FID}(:, :, (2, 1)), amplitude::Union{Function, Nothing}=nothing, ishermitian::Bool=true, modulate::Union{Function, Bool}=true)
 
 Onsite term.
 
 Type alias for `Term{:Onsite, id, V, Int, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
 """
 const Onsite{id, V, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Onsite, id, V, Int, C, A, M}
-@inline function Onsite(id::Symbol, value; coupling=Coupling{FID}(:, :, (2, 1)), amplitude::Union{Function, Nothing}=nothing, ishermitian::Bool=true, modulate::Union{Function, Bool}=false)
+@inline function Onsite(id::Symbol, value; coupling=Coupling{FID}(:, :, (2, 1)), amplitude::Union{Function, Nothing}=nothing, ishermitian::Bool=true, modulate::Union{Function, Bool}=true)
     return Term{:Onsite}(id, value, 0, coupling, ishermitian; amplitude=amplitude, modulate=modulate)
 end
 
 """
-    Hopping(id::Symbol, value, bondkind; coupling=Coupling{FID}(:, :, (2, 1)), amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
+    Hopping(id::Symbol, value, bondkind; coupling=Coupling{FID}(:, :, (2, 1)), amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
 
 Hopping term.
 
 Type alias for `Term{:Hopping, id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
 """
 const Hopping{id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Hopping, id, V, B, C, A, M}
-@inline function Hopping(id::Symbol, value, bondkind; coupling=Coupling{FID}(:, :, (2, 1)), amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
+@inline function Hopping(id::Symbol, value, bondkind; coupling=Coupling{FID}(:, :, (2, 1)), amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
     @assert bondkind≠0 "Hopping error: input bondkind (neighbor) cannot be 0. Use `Onsite` instead."
     return Term{:Hopping}(id, value, bondkind, coupling, false; amplitude=amplitude, modulate=modulate)
 end
 
 """
-    Pairing(id::Symbol, value, bondkind; coupling=Coupling{FID}(:, :, (1, 1)), amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
+    Pairing(id::Symbol, value, bondkind; coupling=Coupling{FID}(:, :, (1, 1)), amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
 
 Pairing term.
 
 Type alias for `Term{:Pairing, id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
 """
 const Pairing{id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Pairing, id, V, B, C, A, M}
-@inline function Pairing(id::Symbol, value, bondkind; coupling=Coupling{FID}(:, :, (1, 1)), amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
+@inline function Pairing(id::Symbol, value, bondkind; coupling=Coupling{FID}(:, :, (1, 1)), amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
     return Term{:Pairing}(id, value, bondkind, coupling, false; amplitude=amplitude, modulate=modulate)
 end
 @inline nambu(::Val{:Pairing}, ::typeof(:), ::Int) = annihilation
@@ -365,74 +361,74 @@ function expand!(operators::Operators, term::Pairing, bond::Bond, hilbert::Hilbe
 end
 
 """
-    Hubbard(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
+    Hubbard(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
 
 Hubbard term.
 
 Type alias for `Term{:Hubbard, id, V, Int, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
 """
 const Hubbard{id, V, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Hubbard, id, V, Int, C, A, M}
-@inline function Hubbard(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
+@inline function Hubbard(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
     return Term{:Hubbard}(id, value, 0, Coupling{FID}(:, (2, 2, 1, 1), (2, 1, 2, 1)), true; amplitude=amplitude, modulate=modulate)
 end
 
 """
-    InterOrbitalInterSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
+    InterOrbitalInterSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
 
 Interorbital-interspin term.
 
 Type alias for `Term{:InterOrbitalInterSpin, id, V, Int, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
 """
 const InterOrbitalInterSpin{id, V, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:InterOrbitalInterSpin, id, V, Int, C, A, M}
-@inline function InterOrbitalInterSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
+@inline function InterOrbitalInterSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
     return Term{:InterOrbitalInterSpin}(id, value, 0, Coupling(@iids(FID(α, σ₁, 2), FID(α, σ₁, 1), FID(β, σ₂, 2), FID(β, σ₂, 1); constraint=α<β && σ₁≠σ₂)), true; amplitude=amplitude, modulate=modulate)
 end
 
 """
-    InterOrbitalIntraSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
+    InterOrbitalIntraSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
 
 Interorbital-intraspin term.
 
 Type alias for `Term{:InterOrbitalIntraSpin, id, V, Int, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
 """
 const InterOrbitalIntraSpin{id, V, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:InterOrbitalIntraSpin, id, V, Int, C, A, M}
-@inline function InterOrbitalIntraSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
+@inline function InterOrbitalIntraSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
     return Term{:InterOrbitalIntraSpin}(id, value, 0, Coupling(@iids(FID(α, σ, 2), FID(α, σ, 1), FID(β, σ, 2), FID(β, σ, 1); constraint=α<β)), true; amplitude=amplitude, modulate=modulate)
 end
 
 """
-    SpinFlip(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
+    SpinFlip(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
 
 Spin-flip term.
 
 Type alias for `Term{:SpinFlip, id, V, Int, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
 """
 const SpinFlip{id, V, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:SpinFlip, id, V, Int, C, A, M}
-@inline function SpinFlip(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
+@inline function SpinFlip(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
     return Term{:SpinFlip}(id, value, 0, Coupling(@iids(FID(α, 2, 2), FID(β, 1, 2), FID(α, 1, 1), FID(β, 2, 1); constraint=α<β)), false; amplitude=amplitude, modulate=modulate)
 end
 
 """
-    PairHopping(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
+    PairHopping(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
 
 Pair-hopping term.
 
 Type alias for `Term{:PairHopping, id, V, Int, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
 """
 const PairHopping{id, V, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:PairHopping, id, V, Int, C, A, M}
-@inline function PairHopping(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
+@inline function PairHopping(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
     return Term{:PairHopping}(id, value, 0, Coupling(@iids(FID(α, 2, 2), FID(α, 1, 2), FID(β, 1, 1), FID(β, 2, 1); constraint=α<β)), false; amplitude=amplitude, modulate=modulate)
 end
 
 """
-    Coulomb(id::Symbol, value, bondkind; coupling=Coupling{FID}(:, :, (2, 1))*Coupling{FID}(:, :, (2, 1)), amplitude::Union{Function, Nothing}=nothing, ishermitian::Bool=true, modulate::Union{Function, Bool}=false)
+    Coulomb(id::Symbol, value, bondkind; coupling=Coupling{FID}(:, :, (2, 1))*Coupling{FID}(:, :, (2, 1)), amplitude::Union{Function, Nothing}=nothing, ishermitian::Bool=true, modulate::Union{Function, Bool}=true)
 
 Coulomb term.
 
 Type alias for `Term{:Coulomb, id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
 """
 const Coulomb{id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Coulomb, id, V, B, C, A, M}
-@inline function Coulomb(id::Symbol, value, bondkind; coupling=Coupling{FID}(:, :, (2, 1))*Coupling{FID}(:, :, (2, 1)), amplitude::Union{Function, Nothing}=nothing, ishermitian::Bool=true, modulate::Union{Function, Bool}=false)
+@inline function Coulomb(id::Symbol, value, bondkind; coupling=Coupling{FID}(:, :, (2, 1))*Coupling{FID}(:, :, (2, 1)), amplitude::Union{Function, Nothing}=nothing, ishermitian::Bool=true, modulate::Union{Function, Bool}=true)
     return Term{:Coulomb}(id, value, bondkind, coupling, ishermitian; amplitude=amplitude, modulate=modulate)
 end
 
@@ -469,8 +465,8 @@ end
 @inline Base.isequal(sid₁::SID, sid₂::SID) = isequal(totalspin(sid₁), totalspin(sid₂)) && isequal(efficientoperations, sid₁, sid₂)
 @inline Base.adjoint(sid::SID) = SID{totalspin(sid)}(sidajointmap[sid.tag])
 @inline Base.hash(sid::SID, h::UInt) = hash((totalspin(sid), sid.tag), h)
-@inline Base.show(io::IO, sid::SID) = @printf io "SID{%s}(%s)" totalspin(sid) repr(sid.tag)
-@inline Base.show(io::IO, sid::SID{wildcard}) = @printf io "SID(%s)" repr(sid.tag)
+@inline Base.show(io::IO, sid::SID) = @printf io "SID{%s}(%s)" totalspin(sid) default(sid.tag)
+@inline Base.show(io::IO, sid::SID{wildcard}) = @printf io "SID(%s)" default(sid.tag)
 @inline @generated function Base.replace(sid::SID; kwargs...)
     exprs = [:(get(kwargs, $name, getfield(sid, $name))) for name in QuoteNode.(fieldnames(sid))]
     return :(rawtype(typeof(sid)){totalspin(sid)}($(exprs...)))
@@ -533,20 +529,11 @@ end
 
 ## LaTeX format output
 """
-    script(::Val{:tag}, sid::SID; kwargs...) -> Char
+    script(::Val{:tag}, sid::SID; kwargs...) -> String
 
 Get the required script of an sid.
 """
-@inline script(::Val{:tag}, sid::SID; kwargs...) = sid.tag
-
-"""
-    script(::Val{:site}, index::Index{<:SID}; kwargs...) -> Int
-    script(attr::Val, index::Index{<:SID}; kwargs...) -> Union{Int, Char}
-
-Get the required script of a spin index.
-"""
-@inline script(::Val{:site}, index::Index{<:SID}; kwargs...) = index.site
-@inline script(attr::Val, index::Index{<:SID}; kwargs...) = script(attr, index.iid; kwargs...)
+@inline script(::Val{:tag}, sid::SID; kwargs...) = sid.tag==(:) ? ":" : string(sid.tag)
 
 """
     latexofspins
@@ -682,20 +669,20 @@ end
 
 ## Term
 """
-    SpinTerm(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
+    SpinTerm(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
 
 Spin term.
 
 Type alias for `Term{:SpinTerm, id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
 """
 const SpinTerm{id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:SpinTerm, id, V, B, C, A, M}
-@inline function SpinTerm(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
+@inline function SpinTerm(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
     return Term{:SpinTerm}(id, value, bondkind, coupling, true; amplitude=amplitude, modulate=modulate)
 end
-@inline function couplingcenters(sc::Coupling, bond::Bond, ::Val{:SpinTerm})
-    length(bond)==1 && return ntuple(i->1, Val(rank(sc)))
-    length(bond)==2 && return ntuple(i->2-i%2, Val(rank(sc)))
-    error("couplingcenters error: not supported for a generic bond containing $(length(bond)) points.")
+@inline function sitestructure(::Val{:SpinTerm}, ::Val{couplingrank}, bondlength::Integer) where couplingrank
+    bondlength==1 && return ntuple(i->1, Val(couplingrank))
+    bondlength==2 && return ntuple(i->2-i%2, Val(couplingrank))
+    error("sitestructure error: not supported for a generic bond containing $bondlength points.")
 end
 
 # Phononic systems
@@ -716,6 +703,7 @@ struct PID{D<:Union{Char, Symbol, typeof(:)}} <: SimpleIID
 end
 @inline Base.adjoint(pid::PID) = pid
 @inline statistics(::Type{<:PID}) = :b
+@inline Base.show(io::IO, pid::PID) = @printf io "PID(%s, %s)" repr(pid.tag) default(pid.direction)
 @inline PID(iid::PID, ::CompositeInternal) = iid
 
 ### required by Constraint
@@ -741,39 +729,35 @@ end
 
 ## LaTeX format output
 """
-    script(::Val{:BD}, pid::PID, l::LaTeX) -> Char
-    script(::Val{:direction}, pid::PID; kwargs...) -> Int
+    script(::Val{:direction}, pid::PID; kwargs...) -> String
 
 Get the required script of an pid.
 """
-@inline script(::Val{:BD}, pid::PID, l::LaTeX) = l.body[pid.tag]
-@inline script(::Val{:direction}, pid::PID; kwargs...) = pid.direction
+@inline script(::Val{:direction}, pid::PID; kwargs...) = pid.direction==(:) ? ":" : string(pid.direction)
 
 """
-    script(::Val{:BD}, index::Index{<:PID}, l::LaTeX) -> Char
-    script(::Val{:BD}, index::AbstractCompositeIndex{<:Index{<:PID}}, l::LaTeX) -> Char
-    script(::Val{:site}, index::Index{<:PID}; kwargs...) -> Int
-    script(::Val{:direction}, index::Index{<:PID}; kwargs...) -> Char
+    script(::Val{:BD}, pid::PID, l::LaTeX) -> String
+    script(::Val{:BD}, index::Index{<:PID}, l::LaTeX) -> String
+    script(::Val{:BD}, index::AbstractCompositeIndex{<:Index{<:PID}}, l::LaTeX) -> String
 
 Get the required script of a phonon index.
 """
+@inline script(::Val{:BD}, pid::PID, l::LaTeX) = l.body[pid.tag]
 @inline script(::Val{:BD}, index::Index{<:PID}, l::LaTeX) = l.body[index.iid.tag]
 @inline script(::Val{:BD}, index::AbstractCompositeIndex{<:Index{<:PID}}, l::LaTeX) = l.body[getcontent(index, :index).iid.tag]
-@inline script(::Val{:site}, index::Index{<:PID}; kwargs...) = index.site
-@inline script(::Val{:direction}, index::Index{<:PID}; kwargs...) = index.iid.direction
 
 """
     latexofphonons
 
 The default LaTeX format of a phonon index.
 """
-const latexofphonons = LaTeX{(:direction,), (:site,)}(Dict('p'=>'p', 'u'=>'u'), "", "")
+const latexofphonons = LaTeX{(:direction,), (:site,)}(Dict('p'=>"p", 'u'=>"u"), "", "")
 @inline latexname(::Type{<:Index{<:PID}}) = Symbol("Index{PID}")
 @inline latexname(::Type{<:AbstractCompositeIndex{<:Index{<:PID}}}) = Symbol("AbstractCompositeIndex{Index{PID}}")
 latexformat(Index{<:PID}, latexofphonons)
 latexformat(AbstractCompositeIndex{<:Index{<:PID}}, latexofphonons)
 @inline latexname(::Type{<:PID}) = Symbol("PID")
-latexformat(PID, LaTeX{(:direction,), ()}(Dict('p'=>'p', 'u'=>'u'), "", ""))
+latexformat(PID, LaTeX{(:direction,), ()}(Dict('p'=>"p", 'u'=>"u"), "", ""))
 
 ## Permutation
 """
@@ -868,38 +852,38 @@ end
 
 ## Term
 """
-    Kinetic(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
+    Kinetic(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
 
 Kinetic energy of phonons.
 
 Type alias for `Term{:Kinetic, id, V, Int, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
 """
 const Kinetic{id, V, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Kinetic, id, V, Int, C, A, M}
-@inline function Kinetic(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
+@inline function Kinetic(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
     return Term{:Kinetic}(id, value, 0, Coupling{PID}(('p', 'p'), :), true; amplitude=amplitude, modulate=modulate)
 end
 
 """
-    Hooke(id::Symbol, value, bondkind; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
+    Hooke(id::Symbol, value, bondkind; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
 
 Potential energy of phonons by the Hooke's law.
 
 Type alias for `Term{:Hooke, id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`
 """
 const Hooke{id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Hooke, id, V, B, C, A, M}
-@inline function Hooke(id::Symbol, value, bondkind; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
+@inline function Hooke(id::Symbol, value, bondkind; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
     return Term{:Hooke}(id, value, bondkind, Coupling{PID}(('u', 'u'), :), true; amplitude=amplitude, modulate=modulate)
 end
 
 """
-    Elastic(id::Symbol, value, bondkind; coupling, amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
+    Elastic(id::Symbol, value, bondkind; coupling, amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
 
 Generic elastic energy of phonons.
 
 Type alias for `Term{:Elastic, id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`
 """
 const Elastic{id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Elastic, id, V, B, C, A, M}
-@inline function Elastic(id::Symbol, value, bondkind; coupling, amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=false)
+@inline function Elastic(id::Symbol, value, bondkind; coupling, amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
     value, factor = promote(value, 1//2)
     return Term{:Elastic, id}(value, bondkind, TermCoupling(coupling), TermAmplitude(amplitude), true, TermModulate(id, modulate), factor)
 end

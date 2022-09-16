@@ -92,7 +92,7 @@ Point(1, [0.0, 0.5], [0.0, 0.0])
 
 ### Bond
 
-A bond in the narrow sense consist of two points. However, in quantum lattice systems, it is common to refer to generic bonds with only one or more than two points. In addition, it is also convenient to associate a bond with a kind information, such as the order of the nearest neighbors for the bond. Thus, the [`Bond`](@ref) is defined as follows:
+A bond in the narrow sense consist of two points. However, in quantum lattice systems, it is common to refer to generic bonds with only one or more than two points. In addition, it is also convenient to associate a bond with a kind information, such as the order of the nearest neighbors of the bond. Thus, the [`Bond`](@ref) is defined as follows:
 * `kind`: the kind information of a generic bond
 * `points::Vector{<:Point}`: the points a generic bond contains
 ```jldoctest unitcell
@@ -129,35 +129,39 @@ julia> collect(bond)
  Point(4, [0.0, 1.0], [0.0, 0.0])
 ```
 
-The coordinate of a bond as a whole is also defined for those that only contains one or two points. The coordinate of a 1-point bond is defined to be the corresponding coordinate of this point, and the coordinate of a 2-point bond is defined to be the corresponding coordinate of the first point minus that of the second:
+The coordinate of a bond as a whole is also defined for those that only contains one or two points. The coordinate of a 1-point bond is defined to be the corresponding coordinate of this point, and the coordinate of a 2-point bond is defined to be the corresponding coordinate of the second point minus that of the first:
 ```jldoctest unitcell
-julia> bond = Bond(Point(1, [2.0], [1.0]));
+julia> bond1p = Bond(Point(1, [2.0], [1.0]));
 
-julia> rcoordinate(bond)
+julia> rcoordinate(bond1p)
 1-element StaticArrays.SVector{1, Float64} with indices SOneTo(1):
  2.0
 
-julia> icoordinate(bond)
+julia> icoordinate(bond1p)
 1-element StaticArrays.SVector{1, Float64} with indices SOneTo(1):
  1.0
 
-julia> another = Bond(1, Point(1, [1.0, 1.0], [1.0, 1.0]), Point(2, [0.5, 0.5], [0.0, 0.0]));
+julia> bond2p = Bond(1, Point(1, [1.0, 1.0], [1.0, 1.0]), Point(2, [0.5, 0.5], [0.0, 0.0]));
 
-julia> rcoordinate(another)
+julia> rcoordinate(bond2p)
 2-element StaticArrays.SVector{2, Float64} with indices SOneTo(2):
- 0.5
- 0.5
+ -0.5
+ -0.5
 
-julia> icoordinate(another)
+julia> icoordinate(bond2p)
 2-element StaticArrays.SVector{2, Float64} with indices SOneTo(2):
- 1.0
- 1.0
+ -1.0
+ -1.0
 ```
 
 ### Generation of 1-point and 2-point bonds of a lattice
 
-In this package, we provide the function [`bonds`](@ref) to get the 1-point and 2-point bonds of a lattice based on the `KDTree` type provided by the [`NearestNeighbors.jl`](https://github.com/KristofferC/NearestNeighbors.jl) package:
-
+In this package, we provide the function [`bonds`](@ref) to get the 1-point and 2-point bonds of a lattice:
+```julia
+bonds(lattice::Lattice, nneighbor::Int) -> Vector{<:Bond}
+bonds(lattice::Lattice, neighbors::Neighbors) -> Vector{<:Bond}
+```
+which is based on the `KDTree` type provided by the [`NearestNeighbors.jl`](https://github.com/KristofferC/NearestNeighbors.jl) package. In the first method, all the bonds up to the `nneighbor`th nearest neighbors are returned, including the 1-point bonds:
 ```jldoctest unitcell
 julia> lattice = Lattice([0.0, 0.0]; vectors=[[1.0, 0.0], [0.0, 1.0]]);
 
@@ -169,7 +173,7 @@ julia> bonds(lattice, 2)
  Bond(2, Point(1, [1.0, -1.0], [1.0, -1.0]), Point(1, [0.0, 0.0], [0.0, 0.0]))
  Bond(1, Point(1, [-1.0, 0.0], [-1.0, 0.0]), Point(1, [0.0, 0.0], [0.0, 0.0]))
 ```
-In method `bond(lattice::Lattice, nneighbor::Int)`, all the bonds up to the `nneighbor`th nearest neighbors are returned, including the 1-point bonds. However, this method is not so efficient, as `KDTree` only searches the bonds with the lengths less than a value, and it does not know the bond lengths for each order of nearest neighbors. Such information must be computed as first. On the other hand, [`bonds`](@ref) can accept a new type, the [`Neighbors`](@ref), as its second positional parameter to improve the efficiency, which could tell the program the information of the bond lengths in priori:
+However, this method is not so efficient, as `KDTree` only searches the bonds with the lengths less than a value, and it does not know the bond lengths for each order of nearest neighbors. Such information must be computed as first. Therefore, in the second method, [`bonds`](@ref) can accept a new type, the [`Neighbors`](@ref), as its second positional parameter to improve the efficiency, which could tell the program the information of the bond lengths in priori:
 ```jldoctest unitcell
 julia> lattice = Lattice([0.0, 0.0]; vectors=[[1.0, 0.0], [0.0, 1.0]]);
 

@@ -43,8 +43,6 @@ end
 @inline shape(iidspace::IIDSpace{DID{Symbol}, DFock}) = (1:iidspace.internal.nnambu,)
 @inline shape(iidspace::IIDSpace{DID{Int}, DFock}) = (iidspace.iid.nambu:iidspace.iid.nambu,)
 
-@inline script(::Val{:site}, index::Index{<:DID}; kwargs...) = index.site
-@inline script(::Val{:nambu}, index::Index{<:DID}; kwargs...) = index.iid.nambu==2 ? "\\dagger" : ""
 @inline script(::Val{:nambu}, did::DID; kwargs...) = did.nambu==2 ? "\\dagger" : did.nambu==1 ? "" : did.nambu
 
 @inline latexname(::Type{<:CompositeIndex{<:Index{<:DID}}}) = Symbol("CompositeIndex{Index{DID}}")
@@ -173,8 +171,8 @@ end
         CompositeIndex(Index(1, DID(2)), SVector(0.5, 0.5), SVector(1.0, 1.0)),
         CompositeIndex(Index(1, DID(1)), SVector(0.0, 0.5), SVector(0.0, 1.0))
         )
-    @test rcoordinate(opt) == SVector(0.5, 0.0)
-    @test icoordinate(opt) == SVector(1.0, 0.0)
+    @test rcoordinate(opt) == SVector(-0.5, 0.0)
+    @test icoordinate(opt) == SVector(-1.0, 0.0)
 
     opt = Operator(1.0, CompositeIndex(Index(1, DID(2)), SVector(0.5, 0.0), SVector(1.0, 0.0)))
     @test rcoordinate(opt) == SVector(0.5, 0.0)
@@ -182,12 +180,6 @@ end
 end
 
 @testset "Hilbert" begin
-    map = site->DFock((site-1)%2+1)
-    hilbert = Hilbert(map, [1, 2])
-    @test hilbert == Hilbert{DFock}(map, [1, 2])
-    reset!(hilbert, [3, 4])
-    @test hilbert == Hilbert{DFock}(map, [3, 4])
-
     hilbert = Hilbert(site=>DFock(2) for site in [1, 2])
     @test hilbert[1] == hilbert[2] == DFock(2)
 
@@ -270,7 +262,7 @@ end
         (DID(1), DID(2), DID(:a), DID(:b)),
         Constraint{(2, 2)}((tc₁.constraint.representations[1], tc₂.constraint.representations[1]), (tc₁.constraint.conditions[1], tc₂.constraint.conditions[1]))
     )
-    @test string(tc)=="3.0 * (DID(1)*DID(2)) * (DID(a)*DID(b)[a < b])"
+    @test string(tc)=="3.0 [DID(1) DID(2)] ⋅ ∑[DID(a) DID(b)](a < b)"
     @test latexstring(tc) == "3.0 d^{}_{} d^{\\dagger}_{} \\cdot \\sum_{a < b} d^{a}_{} d^{b}_{}"
 
     ex = expand(Val(:term), tc₁, bond, hilbert)
@@ -317,6 +309,20 @@ end
     @test mcs*mc == MatrixCouplingProd(mc, another, mc)
     @test mc*mcs == MatrixCouplingProd(mc, mc, another)
     @test mcs*mcs == MatrixCouplingProd(mc, another, mc, another)
+
+    mc₁ = MatrixCoupling{DID}(Component([1, 2], [2, 1], [-1 0; 0 1]))
+    mc₂ = MatrixCoupling{DID}(Component([1, 2], [2, 1], [0 1; 1 0]))
+    mcs = mc₁ + mc₂
+    @test mcs == MatrixCouplingSum(mc₁, mc₂)
+    @test eltype(mcs) == Coupling{Int, Tuple{DID{Int}, DID{Int}}, Constraint{(2,), 1, Tuple{Pattern}}}
+    @test collect(mcs) == [
+        Coupling(-1, DID(1), DID(2)), Coupling(+1, DID(2), DID(1)),
+        Coupling(+1, DID(2), DID(2)), Coupling(+1, DID(1), DID(1))
+    ]
+
+    @test mcs+mc₁ == MatrixCouplingSum(mc₁, mc₂, mc₁)
+    @test mc₁+mcs == MatrixCouplingSum(mc₁, mc₁, mc₂)
+    @test mcs+mcs == MatrixCouplingSum(mc₁, mc₂, mc₁, mc₂)
 end
 
 @testset "TermFunction" begin
@@ -360,7 +366,7 @@ end
 @testset "Term" begin
     point = Point(1, (0.0, 0.0), (0.0, 0.0))
     hilbert = Hilbert(point.site=>DFock(2))
-    term = Term{:Mu}(:μ, 1.5, 0, DCoupling(1.0, (2, 1)), true; amplitude=bond->3)
+    term = Term{:Mu}(:μ, 1.5, 0, DCoupling(1.0, (2, 1)), true; amplitude=bond->3, modulate=false)
     @test term|>kind == term|>typeof|>kind == :Mu
     @test term|>id == term|>typeof|>id == :μ
     @test term|>valtype == term|>typeof|>valtype == Float
@@ -368,15 +374,15 @@ end
     @test term|>ismodulatable == term|>typeof|>ismodulatable == false
     @test term == deepcopy(term)
     @test isequal(term, deepcopy(term))
-    @test repr(term, Bond(point), hilbert) == "Mu: 4.5 * DID(2) * DID(1)"
+    @test repr(term, Bond(point), hilbert) == "Mu: 4.5 DID(2) DID(1)"
 
     p₁ = Point(1, (0.0, 0.0), (0.0, 0.0))
     p₂ = Point(2, (1.0, 0.0), (0.0, 0.0))
     hilbert = Hilbert(site=>DFock(2) for site in [1, 2])
-    term = Term{:Mu}(:μ, 1.5, 0, bond->bond[1].site%2==0 ? DCoupling(1.0, (2, 2)) : DCoupling(1.0, (1, 1)), true; amplitude=bond->3, modulate=true)
+    term = Term{:Mu}(:μ, 1.5, 0, bond->bond[1].site%2==0 ? DCoupling(1.0, (2, 2)) : DCoupling(1.0, (1, 1)), true; amplitude=bond->3)
     @test term|>ismodulatable == term|>typeof|>ismodulatable == true
-    @test repr(term, Bond(p₁), hilbert) == "Mu: 4.5 * DID(1) * DID(1)"
-    @test repr(term, Bond(p₂), hilbert) == "Mu: 4.5 * DID(2) * DID(2)"
+    @test repr(term, Bond(p₁), hilbert) == "Mu: 4.5 DID(1) DID(1)"
+    @test repr(term, Bond(p₂), hilbert) == "Mu: 4.5 DID(2) DID(2)"
     @test one(term) == replace(term, value=1.0)
     @test zero(term) == replace(term, value=0.0)
     @test term.modulate(μ=4.0) == 4.0
@@ -385,7 +391,7 @@ end
     @test term.value == 4.25
 
     term = Term{:Hp}(:t, 1.5, 1, DCoupling(1.0, (2, 1)), false; amplitude=bond->3.0)
-    @test repr(term, Bond(1, p₁, p₂), hilbert) == "Hp: 4.5*DID(2)*DID(1) + h.c."
+    @test repr(term, Bond(1, p₁, p₂), hilbert) == "Hp: 4.5 DID(2) DID(1) + h.c."
 end
 
 @testset "expand" begin
@@ -434,7 +440,7 @@ end
     @test script(Val(:rcoordinate), index) == "[0.0, 0.0]"
     @test script(Val(:icoordinate), index) == "[1.0, 0.0]"
     @test script(Val(:integercoordinate), index; vectors=get(latex.options, :vectors, nothing)) == "[1, 0]"
-    @test script(Val(:site), index) == 1
+    @test script(Val(:site), index) == "1"
     @test script(Val(:nambu), index) == "\\dagger"
 end
 

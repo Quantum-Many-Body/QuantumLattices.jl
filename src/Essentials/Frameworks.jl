@@ -336,7 +336,7 @@ Get the complete set of parameters of an entry of (representations of) quantum o
 @inline Parameters(entry::Entry) = merge(entry.parameters, Parameters(entry.boundary))
 
 """
-    CompositeGenerator{E<:Entry, T<:Union{Table, Nothing}}
+    CompositeGenerator{E<:Entry, T<:Union{Table, Nothing}} <: RepresentationGenerator
 
 Abstract type for a composite representation generator of a quantum lattice system.
 
@@ -405,14 +405,14 @@ function Base.empty!(gen::OperatorGenerator)
 end
 
 """
-    reset!(gen::OperatorGenerator, lattice::AbstractLattice; neighbors=max(map(term->term.bondkind, gen.terms)...)) -> OperatorGenerator
+    reset!(gen::OperatorGenerator, lattice::AbstractLattice, hilbert::Hilbert; neighbors=max(map(term->term.bondkind, gen.terms)...)) -> OperatorGenerator
 
-Reset an operator generator by a new lattice.
+Reset an operator generator by a new lattice and the corresponding new hilbert space.
 """
-function reset!(gen::OperatorGenerator, lattice::AbstractLattice; neighbors=max(map(term->term.bondkind, gen.terms)...))
-    !isa(neighbors, Neighbors) && (neighbors = Neighbors(lattice, neighbors))
+function reset!(gen::OperatorGenerator, lattice::AbstractLattice, hilbert::Hilbert; neighbors=max(map(term->term.bondkind, gen.terms)...))
+    isa(neighbors, Neighbors) || (neighbors = Neighbors(lattice, neighbors))
     bonds!(empty!(gen.bonds), lattice, neighbors)
-    reset!(gen.hilbert, 1:length(lattice))
+    merge!(empty!(gen.hilbert), hilbert)
     isnothing(gen.table) || reset!(gen.table, gen.hilbert)
     reset!(gen.operators, gen.terms, gen.bonds, gen.hilbert; half=gen.half, boundary=replace(gen.operators.boundary; vectors=lattice.vectors))
     return gen

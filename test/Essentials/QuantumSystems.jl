@@ -57,9 +57,9 @@ end
 end
 
 @testset "Fock latex" begin
-    @test script(Val(:site), Index(1, FID{:f}(2, 1, 1))) == 1
-    @test script(Val(:orbital), FID{:f}(2, 1, 1)) == script(Val(:orbital), Index(1, FID{:f}(2, 1, 1))) == 2
-    @test script(Val(:spint), FID{:f}(2, 3, 1)) == script(Val(:spint), Index(1, FID{:f}(2, 3, 1))) == 3
+    @test script(Val(:site), Index(1, FID{:f}(2, 1, 1))) == "1"
+    @test script(Val(:orbital), FID{:f}(2, 1, 1)) == script(Val(:orbital), Index(1, FID{:f}(2, 1, 1))) == "2"
+    @test script(Val(:spint), FID{:f}(2, 3, 1)) == script(Val(:spint), Index(1, FID{:f}(2, 3, 1))) == "3"
     @test script(Val(:spsym), FID{:f}(2, 2, 1)) == script(Val(:spsym), Index(1, FID{:f}(2, 2, 1))) == "↑"
     @test script(Val(:spsym), FID{:f}(2, 1, 1)) == script(Val(:spsym), Index(1, FID{:f}(2, 1, 1))) == "↓"
     @test script(Val(:nambu), FID{:f}(2, 3, 1)) == script(Val(:nambu), Index(1, FID{:f}(2, 3, 1))) == ""
@@ -248,7 +248,7 @@ end
     bond = Bond(point)
     hilbert = Hilbert(point.site=>Fock{:f}(2, 2))
 
-    term = Onsite(:mu, 1.5; coupling=MatrixCoupling{FID}(σᶻ, σˣ, :), modulate=true)
+    term = Onsite(:mu, 1.5; coupling=MatrixCoupling{FID}(σᶻ, σˣ, :))
     operators = Operators(
         Operator(+0.75, CompositeIndex(Index(1, FID{:f}(2, 2, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0])),
         Operator(-0.75, CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])),
@@ -258,7 +258,7 @@ end
     @test expand(term, bond, hilbert, half=true) == operators
     @test expand(term, bond, hilbert, half=false) == operators*2
 
-    term = Onsite(:mu, 1.5; coupling=MatrixCoupling{FID}(σᶻ, σᶻ, :), modulate=true)
+    term = Onsite(:mu, 1.5; coupling=MatrixCoupling{FID}(σᶻ, σᶻ, :))
     operators = Operators(
         Operator(-0.75, CompositeIndex(Index(1, FID{:f}(2, 1, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0])),
         Operator(-0.75, CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])),
@@ -288,8 +288,8 @@ end
     hilbert = Hilbert(site=>Fock{:f}(1, 2) for site=1:2)
     term = Pairing(:Δ, 1.5, 1; coupling=Coupling{FID}(:, (2, 2), :), amplitude=bond->(bond|>rcoordinate|>azimuthd ≈ 45 ? 1 : -1))
     operators = Operators(
-        Operator(-1.5, CompositeIndex(Index(2, FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])),
-        Operator(+1.5, CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(2, FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0]))
+        Operator(+1.5, CompositeIndex(Index(2, FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])),
+        Operator(-1.5, CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(2, FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0]))
     )
     @test expand(term, bond, hilbert, half=true) == operators
     @test expand(term, bond, hilbert, half=false) == operators+operators'
@@ -534,8 +534,8 @@ end
 
 @testset "latex" begin
     index = Index(1, SID{1//2}('z'))
-    @test script(Val(:site), index) == 1
-    @test script(Val(:tag), index.iid) == script(Val(:tag), index) == 'z'
+    @test script(Val(:site), index) == "1"
+    @test script(Val(:tag), index.iid) == script(Val(:tag), index) == "z"
 
     @test latexname(Index{<:SID}) == Symbol("Index{SID}")
     @test latexname(AbstractCompositeIndex{<:Index{<:SID}}) == Symbol("AbstractCompositeIndex{Index{SID}}")
@@ -633,6 +633,8 @@ end
     @test PID('u', 'x')' == PID('u', 'x')
     @test PID('p', 'y')' == PID('p', 'y')
     @test statistics(PID('p', 'x')) == statistics(PID) == :b
+    @test string(PID('p', :)) == "PID('p', :)"
+    @test string(PID('u', 'x')) == "PID('u', 'x')"
 
     @test isconcreteiid(PID{Char})
     @test !isconcreteiid(PID{Symbol})
@@ -653,20 +655,20 @@ end
 
 @testset "latex" begin
     index = Index(1, PID('u', 'x'))
-    @test script(Val(:BD), index.iid, latexofphonons) == 'u'
-    @test script(Val(:BD), index, latexofphonons) == 'u'
-    @test script(Val(:BD), CompositeIndex(index, [0.0, 0.0], [0.0, 0.0]), latexofphonons) == 'u'
-    @test script(Val(:site), index) == 1
-    @test script(Val(:direction), index.iid) == 'x'
-    @test script(Val(:direction), index) == 'x'
+    @test script(Val(:BD), index.iid, latexofphonons) == "u"
+    @test script(Val(:BD), index, latexofphonons) == "u"
+    @test script(Val(:BD), CompositeIndex(index, [0.0, 0.0], [0.0, 0.0]), latexofphonons) == "u"
+    @test script(Val(:site), index) == "1"
+    @test script(Val(:direction), index.iid) == "x"
+    @test script(Val(:direction), index) == "x"
 
     index = Index(2, PID('p', 'y'))
-    @test script(Val(:BD), index.iid, latexofphonons) == 'p'
-    @test script(Val(:BD), index, latexofphonons) == 'p'
-    @test script(Val(:BD), CompositeIndex(index, [0.0, 0.0], [0.0, 0.0]), latexofphonons) == 'p'
-    @test script(Val(:site), index) == 2
-    @test script(Val(:direction), index.iid) == 'y'
-    @test script(Val(:direction), index) == 'y'
+    @test script(Val(:BD), index.iid, latexofphonons) == "p"
+    @test script(Val(:BD), index, latexofphonons) == "p"
+    @test script(Val(:BD), CompositeIndex(index, [0.0, 0.0], [0.0, 0.0]), latexofphonons) == "p"
+    @test script(Val(:site), index) == "2"
+    @test script(Val(:direction), index.iid) == "y"
+    @test script(Val(:direction), index) == "y"
 
     @test latexname(Index{<:PID}) == Symbol("Index{PID}")
     @test latexname(AbstractCompositeIndex{<:Index{<:PID}}) == Symbol("AbstractCompositeIndex{Index{PID}}")
