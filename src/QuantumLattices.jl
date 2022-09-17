@@ -14,12 +14,12 @@ export ⊕, ⊗, ⋅, add!, div!, mul!, sub!
 export decompose, decompose!, expand, expand!, permute
 
 # Essentials
-export dtype, kind, reset!, update, update!
+export kind, reset!, update, update!
 
 # Essentials.QuantumOperators
 export ID, Operator, OperatorPack, OperatorProd, Operators, OperatorSum, OperatorUnit, LaTeX, QuantumOperator
 export AbstractSubstitution, AbstractUnitSubstitution, Identity, MatrixRepresentation, Numericalization, Permutation, RankFilter, Transformation, UnitSubstitution
-export idtype, ishermitian, latexname, latexformat, matrix, matrix!, optype, script, sequence, subscript, superscript
+export ishermitian, latexname, latexformat, matrix, matrix!, script, sequence
 
 # Essentials.QuantumNumbers
 export AbelianNumber, AbelianNumbers, Momentum, Momentum₁, Momentum₂, Momentum₃, ParticleNumber, SpinfulParticle, SpinZ
@@ -27,12 +27,12 @@ export particlenumbers, periods, spinfulparticles, spinzs, @abeliannumber
 
 # Essentials.Spatials
 export azimuth, azimuthd, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, polar, polard, reciprocals, rotate, translate, tile, volume
-export AbstractLattice, Bond, BrillouinZone, Lattice, Neighbors, Point, ReciprocalSpace, ReciprocalZone, ReciprocalPath, Segment, Translations, bonds!, bonds, icoordinate, isintracell, nneighbor, rcoordinate, @translations_str
-export hexagon120°map, hexagon60°map, linemap, rectanglemap, @hexagon_str, @line_str, @rectangle_str
+export AbstractLattice, Bond, BrillouinZone, Lattice, Neighbors, Point, ReciprocalSpace, ReciprocalZone, ReciprocalPath, Segment, Translations, bonds!, bonds, icoordinate, isintracell, rcoordinate, @translations_str
+export @hexagon_str, @line_str, @rectangle_str
 
 # Essentials.DegreesOfFreedom
-export Boundary, CompositeIID, CompositeIndex, CompositeInternal,  Component, Constraint, Coupling, Hilbert, IID, IIDSpace, Index, Internal, MatrixCoupling, Metric, OperatorUnitToTuple, SimpleIID, SimpleInternal, Table, Term
-export plain, constrainttype, iidtype, indextype, isconcreteiid, ismodulatable, statistics, @iids
+export Boundary, CompositeIID, CompositeIndex, CompositeInternal, Component, Constraint, Coupling, Hilbert, IID, IIDSpace, Index, Internal, MatrixCoupling, Metric, OperatorUnitToTuple, SimpleIID, SimpleInternal, Table, Term
+export plain, statistics, @indexes
 
 # Essentials.QuantumSystems
 ## Canonical complex fermionic/bosonic systems

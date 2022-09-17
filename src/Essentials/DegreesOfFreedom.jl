@@ -23,8 +23,8 @@ import ...Prerequisites.VectorSpaces: shape
 
 export CompositeIID, CompositeInternal, IID, Internal, SimpleIID, SimpleInternal
 export AbstractCompositeIndex, CompositeIndex, Hilbert, Index, iidtype, indextype, ishermitian, statistics
-export noconstrain, wildcard, Component, Constraint, Coupling, Diagonal, IIDSpace, MatrixCoupling, MatrixCouplingProd, MatrixCouplingSum, Pattern, constrainttype, sitestructure, isconcreteiid, @iids
-export Term, TermAmplitude, TermCoupling, TermFunction, TermModulate, ismodulatable
+export wildcard, Component, Constraint, Coupling, Diagonal, IIDSpace, MatrixCoupling, MatrixCouplingProd, MatrixCouplingSum, Pattern, diagonalizablefields, isdefinite, @indexes
+export Term, TermAmplitude, TermCoupling, TermFunction, TermModulate, ismodulatable, sitestructure
 export Metric, OperatorUnitToTuple, Table
 export Boundary, plain
 
@@ -43,10 +43,8 @@ The id of a simple internal degree of freedom.
 """
 abstract type SimpleIID <: IID end
 @inline statistics(iid::SimpleIID) = statistics(typeof(iid))
-@inline isconcreteiid(iid::SimpleIID) = isconcreteiid(typeof(iid))
-@inline isconcreteiid(::Type{<:SimpleIID}) = false
-@inline isconcreteiid(iids::Tuple{Vararg{SimpleIID}}) = isconcreteiid(typeof(iids))
-@inline @generated isconcreteiid(::Type{T}) where {T<:Tuple{Vararg{SimpleIID}}} = Expr(:call, :all, Expr(:tuple, [:(isconcreteiid(fieldtype(T, $i))) for i=1:fieldcount(T)]...))
+@inline isdefinite(iid::SimpleIID) = isdefinite(typeof(iid))
+@inline isdefinite(::Type{<:SimpleIID}) = false
 
 """
     CompositeIID{T<:Tuple{Vararg{SimpleIID}}} <: IID
@@ -266,16 +264,22 @@ end
 
 # Index and CompositeIndex
 """
-    Index{I<:SimpleIID} <: OperatorUnit
+    Index{S<:Union{Int, Colon}, I<:SimpleIID} <: OperatorUnit
 
 The index of a degree of freedom, which consist of the spatial part and the internal part.
 """
-struct Index{I<:SimpleIID} <: OperatorUnit
-    site::Int
+struct Index{S<:Union{Int, Colon}, I<:SimpleIID} <: OperatorUnit
+    site::S
     iid::I
 end
-@inline parameternames(::Type{<:Index}) = (:iid,)
+@inline parameternames(::Type{<:Index}) = (:site, :iid)
+@inline isparameterbound(::Type{<:Index}, ::Val{:site}, ::Type{S}) where {S<:Union{Int, Colon}} = !isconcretetype(S)
 @inline isparameterbound(::Type{<:Index}, ::Val{:iid}, ::Type{I}) where {I<:SimpleIID} = !isconcretetype(I)
+@inline isdefinite(index::Index) = isdefinite(typeof(index))
+@inline isdefinite(::Type{<:Index{<:Union{Int, Colon}, I}}) where {I<:SimpleIID} = isdefinite(I)
+@inline isdefinite(indexes::Tuple{Vararg{Index}}) = isdefinite(typeof(indexes))
+@inline @generated isdefinite(::Type{T}) where {T<:Tuple{Vararg{Index}}} = Expr(:call, :all, Expr(:tuple, [:(isdefinite(fieldtype(T, $i))) for i=1:fieldcount(T)]...))
+@inline Base.show(io::IO, index::Index{Colon}) = @printf io "Index(:, %s)" index.iid
 
 """
     iidtype(index::Index)
@@ -284,7 +288,7 @@ end
 Get the type of the internal part of an index.
 """
 @inline iidtype(index::Index) = iidtype(typeof(index))
-@inline iidtype(::Type{I}) where {I<:Index} = parametertype(I, 1)
+@inline iidtype(::Type{I}) where {I<:Index} = parametertype(I, :iid)
 
 """
     statistics(index::Index) -> Symbol
@@ -293,7 +297,7 @@ Get the type of the internal part of an index.
 Get the statistics of an index.
 """
 @inline statistics(index::Index) = statistics(typeof(index))
-@inline statistics(::Type{<:Index{I}}) where {I<:SimpleIID} = statistics(I)
+@inline statistics(::Type{<:Index{<:Union{Int, Colon}, I}}) where {I<:SimpleIID} = statistics(I)
 
 """
     adjoint(index::Index) -> typeof(index)
@@ -372,7 +376,7 @@ Get the adjoint of an operator id.
 Get the compatible composite index type based on the information of its internal part.
 """
 @inline function indextype(I::Type{<:SimpleInternal}, P::Type{<:Point}, ::Val)
-    return fulltype(CompositeIndex, NamedTuple{(:index, :coordination), Tuple{fulltype(Index, NamedTuple{(:iid,), Tuple{eltype(I)}}), SVector{dimension(P), dtype(P)}}})
+    return fulltype(CompositeIndex, NamedTuple{(:index, :coordination), Tuple{fulltype(Index, NamedTuple{(:site, :iid), Tuple{Int, eltype(I)}}), SVector{dimension(P), dtype(P)}}})
 end
 
 """
@@ -432,6 +436,7 @@ Get the `attr` script of an index, which is contained in its index.
 Get the required script of a spin index.
 """
 @inline script(::Val{:site}, index::Index; kwargs...) = string(index.site)
+@inline script(::Val{:site}, index::Index{Colon}; kwargs...) = ":"
 @inline script(attr::Val, index::Index; kwargs...) = script(attr, index.iid; kwargs...)
 
 # Hilbert
@@ -495,16 +500,15 @@ const wildcard = Symbol("*")
 """
     Pattern <: Function
 
-Construct a pattern for a set of `SimpleIID`s.
+Construct a pattern for a set of `Index`es.
 """
 struct Pattern <: Function
     pattern::Dict{Symbol, Vector{Tuple{Int, Symbol}}}
 end
-@inline Pattern(iid::SimpleIID, iids::SimpleIID...) = Pattern((iid, iids...))
-function Pattern(iids::Tuple{SimpleIID, Vararg{SimpleIID}})
-    isconcreteiid(iids) && return noconstrain
+function Pattern(indexes::Tuple{Index, Vararg{Index}})
     pattern = Dict{Symbol, Vector{Tuple{Int, Symbol}}}()
-    for (i, iid) in enumerate(iids)
+    for (i, index) in enumerate(indexes)
+        iid = index.iid
         for attr in fieldnames(typeof(iid))
             value = getfield(iid, attr)
             if isa(value, Symbol) && value≠wildcard
@@ -515,34 +519,37 @@ function Pattern(iids::Tuple{SimpleIID, Vararg{SimpleIID}})
     end
     return Pattern(pattern)
 end
-function (pattern::Pattern)(iids::Tuple{SimpleIID, Vararg{SimpleIID}})
+function (pattern::Pattern)(indexes::Tuple{Index, Vararg{Index}})
     length(pattern.pattern)==0 && return true
     for component in values(pattern.pattern)
-        length(component)>1 && (allequal(map(pair::Tuple{Int, Symbol}->getfield(iids[pair[1]], pair[2]), component)) || return false)
+        length(component)>1 && (allequal(map(pair::Tuple{Int, Symbol}->getfield(indexes[pair[1]].iid, pair[2]), component)) || return false)
     end
     return true
 end
 
 """
-    const noconstrain = Pattern(Dict{Symbol, Vector{Tuple{Int, Symbol}}}())
-
-No constrain pattern.
-"""
-const noconstrain = Pattern(Dict{Symbol, Vector{Tuple{Int, Symbol}}}())
-
-"""
     Diagonal{Fields} <: Function
 
-Construct a pattern for a set of homogenous `SimpleIID`s that all the specified fields should be diagonal, respectively.
+Construct a pattern for a set of homogenous `Index`es that all the specified fields of their contained iids should be diagonal, respectively.
 """
 struct Diagonal{Fields} <: Function
     Diagonal(fields::Tuple{Vararg{Symbol}}) = new{fields}()
 end
 @inline Diagonal(fields::Symbol...) = Diagonal(fields)
-@generated function (diagonal::Diagonal{fields})(iids::Tuple{I, Vararg{I, N}}) where {fields, I<:SimpleIID, N}
+@inline Diagonal(::Type{I}) where {I<:Index} = _diagonal(I, I|>diagonalizablefields|>Val)
+@generated function _diagonal(::Type{I}, ::Val{choices}) where {I<:Index, choices}
+    fields = Symbol[]
+    T = iidtype(I)
+    for choice in choices
+        fieldtype(T, choice)==Colon && push!(fields, choice)
+    end
+    return Diagonal(fields...)
+end
+@inline @generated diagonalizablefields(::Type{I}) where {I<:Index} = fieldnames(iidtype(I))
+@generated function (diagonal::Diagonal{fields})(indexes::Tuple{I, Vararg{I, N}}) where {fields, I<:Index, N}
     exprs = []
     for field in QuoteNode.(fields)
-        push!(exprs, Expr(:call, allequal, Expr(:tuple, [:(getfield(iids[$i], $field)) for i=1:(N+1)]...)))
+        push!(exprs, Expr(:call, allequal, Expr(:tuple, [:(getfield(indexes[$i].iid, $field)) for i=1:(N+1)]...)))
     end
     return Expr(:call, all, Expr(:tuple, exprs...))
 end
@@ -572,18 +579,30 @@ end
 
 Construct a constraint with only one condition.
 """
-@inline Constraint{R}() where R = Constraint{R}(noconstrain)
+@inline Constraint{R}() where R = Constraint{R}(Diagonal())
 @inline Constraint{R}(condition::Union{Pattern, Diagonal}) where R = Constraint{R}("pattern", condition)
 @inline Constraint{R}(representation::String, condition::Function) where R = Constraint{(R,)}((representation,), (condition,))
 
 """
-    Constraint(iids::SimpleIID...)
-    Constraint(iids::NTuple{N, SimpleIID}) where N
+    Constraint(indexes::Index...)
+    Constraint(indexes::NTuple{N, Index}) where N
 
-Construct a constraint based on the pattern of the input iids.
+Construct a constraint based on the pattern of the input indexes.
 """
-@inline Constraint(iid::SimpleIID, iids::SimpleIID...) = Constraint((iid, iids...))
-@inline Constraint(iids::Tuple{SimpleIID, Vararg{SimpleIID}}) = Constraint{fieldcount(typeof(iids))}("pattern", Pattern(iids))
+@inline Constraint(index::Index, indexes::Index...) = Constraint((index, indexes...))
+@inline Constraint(indexes::Tuple{Index, Vararg{Index}}) = Constraint{fieldcount(typeof(indexes))}("pattern", constraint(indexes, indexes|>typeof|>isdiagonalable|>Val))
+@inline constraint(indexes::Tuple{Index, Vararg{Index}}, ::Val{true}) = Diagonal(eltype(indexes))
+@inline constraint(indexes::Tuple{Index, Vararg{Index}}, ::Val{false}) = Pattern(indexes)
+@generated function isdiagonalable(::Type{T}) where {T<:Tuple{Index, Vararg{Index}}}
+    types = fieldtypes(T)
+    allequal(types) || return false
+    for type in map(iidtype, types)
+        for i = 1:fieldcount(type)
+            fieldtype(type, i)==Symbol && return false
+        end
+    end
+    return true
+end
 
 """
     rank(constraint::Constraint) -> Int
@@ -604,18 +623,16 @@ Get the rank of the ith homogenous segment of the coupling indexes that a constr
 @inline rank(::Type{<:Constraint{RS}}, i::Integer) where RS = RS[i]
 
 """
-    match(constraint::Constraint, ciid::CompositeIID) -> Bool
-    match(constraint::Constraint, iids::Tuple{Vararg{SimpleIID}}) -> Bool
+    match(constraint::Constraint, indexes::Tuple{Vararg{Index}}) -> Bool
 
 Judge whether a composite iid fulfills a constraint.
 """
-@inline Base.match(constraint::Constraint, ciid::CompositeIID) = match(constraint, ciid.contents)
-@generated function Base.match(constraint::Constraint{RS}, iids::Tuple{Vararg{SimpleIID}}) where RS
-    @assert rank(constraint)==fieldcount(iids) "match error: mismatched rank of iids and constraint."
+@generated function Base.match(constraint::Constraint{RS}, indexes::Tuple{Index, Vararg{Index}}) where RS
+    @assert rank(constraint)==fieldcount(indexes) "match error: mismatched rank of indexes and constraint."
     exprs, count = [], 1
     for (i, r) in enumerate(RS)
         start, stop = count, count+r-1
-        segment = Expr(:tuple, [:(iids[$pos]) for pos=start:stop]...)
+        segment = Expr(:tuple, [:(indexes[$pos]) for pos=start:stop]...)
         push!(exprs, :(constraint.conditions[$i]($segment)::Bool))
         count = stop+1
     end
@@ -632,16 +649,16 @@ Get the combination of two sets of constraints.
 end
 
 """
-    @iids iid₁ iid₂ ...
-    @iids(iid₁, iid₂, ...; constraint=...)
+    @indexes index₁ index₂ ...
+    @indexes(index₁, index₂, ...; constraint=...)
 
-Construct an set of iids and its constraint according to the input iid patterns and an optional constraint.
+Construct an set of indexes and its constraint according to the input index pattern and an optional constraint.
 """
-macro iids(exprs...)
+macro indexes(exprs...)
     if exprs[1].head==:parameters
         @assert(
             length(exprs[1].args)==1 && exprs[1].args[1].head==:kw && exprs[1].args[1].args[1]==:constraint,
-            "@iids error: constraint must be specified by the keyword argument `constraint`."
+            "@indexes error: constraint must be specified by the keyword argument `constraint`."
         )
         constraint = exprs[1].args[1].args[2]
         patterns = exprs[2:end]
@@ -649,63 +666,63 @@ macro iids(exprs...)
         constraint = true
         patterns = exprs
     end
-    iids = []
+    indexes = []
     blocks = []
     for (i, pattern) in enumerate(patterns)
-        @assert pattern.head==:call "@iids error: wrong pattern."
+        @assert pattern.head==:call && pattern.args[end].head==:call "@indexes error: wrong pattern."
         attrs = []
-        for (j, attr) in enumerate(pattern.args[2:end])
+        for (j, attr) in enumerate(pattern.args[end].args[2:end])
             isa(attr, Expr) && (attr = Symbol(attr))
             if isa(attr, Symbol) && attr≠wildcard
-                @assert Base.isidentifier(attr) "@iids error: wrong pattern."
+                @assert Base.isidentifier(attr) "@indexes error: wrong pattern."
                 push!(blocks, quote
                     local $attr
                     if @isdefined($attr)
-                        ($attr)!=getfield(iids[$i], $j) && return false
+                        ($attr)!=getfield(indexes[$i].iid, $j) && return false
                     else
-                        $attr = getfield(iids[$i], $j)
+                        $attr = getfield(indexes[$i].iid, $j)
                     end
                 end)
                 attr = QuoteNode(attr)
             end
             push!(attrs, attr)
         end
-        push!(iids, Expr(:call, pattern.args[1], attrs...))
+        push!(indexes, Expr(:call, pattern.args[1], pattern.args[2], Expr(:call, pattern.args[end].args[1], attrs...)))
     end
-    N = length(iids)
-    iids = Expr(:tuple, iids...)
+    N = length(indexes)
+    indexes = Expr(:tuple, indexes...)
     blocks = Expr(:block, vcat([block.args for block in blocks]...)...)
     name = gensym("constraint")
     representation = constraint==true ? "pattern" : string(constraint)
     return quote
-        function ($name)(iids::NTuple{$N, SimpleIID})
+        function ($name)(indexes::NTuple{$N, Index})
             $blocks
             return $constraint
         end
-        ($(esc(iids)), Constraint{$N}($representation, $name))
+        ($(esc(indexes)), Constraint{$N}($representation, $name))
     end
 end
 
 ## Coupling
 """
-    Coupling{V, I<:ID{SimpleIID}, C<:Constraint} <: OperatorPack{V, Tuple{I, C}}
+    Coupling{V, I<:ID{Index}, C<:Constraint} <: OperatorPack{V, Tuple{I, C}}
 
 The coupling intra/inter internal degrees of freedom at different lattice points.
 """
-struct Coupling{V, I<:ID{SimpleIID}, C<:Constraint} <: OperatorPack{V, Tuple{I, C}}
+struct Coupling{V, I<:ID{Index}, C<:Constraint} <: OperatorPack{V, Tuple{I, C}}
     value::V
-    iids::I
+    indexes::I
     constraint::C
 end
-@inline parameternames(::Type{<:Coupling}) = (:value, :iids, :constraint)
-@inline isparameterbound(::Type{<:Coupling}, ::Val{:iids}, ::Type{I}) where {I<:ID{SimpleIID}} = !isconcretetype(I)
+@inline parameternames(::Type{<:Coupling}) = (:value, :indexes, :constraint)
+@inline isparameterbound(::Type{<:Coupling}, ::Val{:indexes}, ::Type{I}) where {I<:ID{Index}} = !isconcretetype(I)
 @inline isparameterbound(::Type{<:Coupling}, ::Val{:constraint}, ::Type{C}) where {C<:Constraint} = !isconcretetype(C)
-@inline idtype(M::Type{<:Coupling}) = Tuple{parametertype(M, :iids), parametertype(M, :constraint)}
-@inline getcontent(coupling::Coupling, ::Val{:id}) = (coupling.iids, coupling.constraint)
-@inline rank(M::Type{<:Coupling}) = fieldcount(parametertype(M, :iids))
-@inline Coupling(id::Tuple{ID{SimpleIID}, Constraint}) = Coupling(1, id)
-@inline Coupling(value, id::Tuple{ID{SimpleIID}, Constraint}) = Coupling(value, id...)
-@inline CompositeIID(coupling::Coupling, ::Val=Val(:term)) = CompositeIID(coupling.iids)
+@inline idtype(M::Type{<:Coupling}) = Tuple{parametertype(M, :indexes), parametertype(M, :constraint)}
+@inline getcontent(coupling::Coupling, ::Val{:id}) = (coupling.indexes, coupling.constraint)
+@inline rank(M::Type{<:Coupling}) = fieldcount(parametertype(M, :indexes))
+@inline Coupling(id::Tuple{ID{Index}, Constraint}) = Coupling(1, id)
+@inline Coupling(value, id::Tuple{ID{Index}, Constraint}) = Coupling(value, id...)
+@inline CompositeIID(coupling::Coupling, ::Val=Val(:term)) = CompositeIID(coupling.indexes.iids)
 @inline Constraint(coupling::Coupling, ::Val=Val(:term)) = coupling.constraint
 @inline Base.iterate(coupling::Coupling) = (coupling, nothing)
 @inline Base.iterate(coupling::Coupling, ::Nothing) = nothing
@@ -719,37 +736,50 @@ end
     for i = 1:len
         r = rank(coupling.constraint, i)
         start, stop = count, count+r-1
-        iids = coupling.iids[start:stop]
+        indexes = coupling.indexes[start:stop]
         if i==1
-            @printf io "%s" (isconcreteiid(iids) ? "" : "∑")
-            (len>1 || !isconcreteiid(iids)) && @printf io "%s" "["
+            @printf io "%s" (isdefinite(indexes) ? "" : "∑")
+            (len>1 || !isdefinite(indexes)) && @printf io "%s" "["
         else
-            @printf io " ⋅ %s[" (isconcreteiid(iids) ? "" : "∑")
+            @printf io " ⋅ %s[" (isdefinite(indexes) ? "" : "∑")
         end
-        @printf io "%s" join(iids, " ")
-        (len>1 || !isconcreteiid(iids)) && @printf io "%s" "]"
+        @printf io "%s" join(indexes, " ")
+        (len>1 || !isdefinite(indexes)) && @printf io "%s" "]"
         coupling.constraint.representations[i]=="pattern" || @printf io "(%s)" coupling.constraint.representations[i]
         count = stop+1
     end
 end
 
 """
-    Coupling(iids::SimpleIID...)
-    Coupling(value, iids::SimpleIID...)
-    Coupling(value, iids::Tuple{Vararg{SimpleIID}})
+    Coupling(indexes::Index...)
+    Coupling(value, indexes::Index...)
+    Coupling(value, indexes::Tuple{Vararg{Index}})
 
-Construct a `Coupling` with the input `iids` as the pattern.
+Construct a `Coupling` with the input `indexes` as the pattern.
 """
-@inline Coupling(iid::SimpleIID, iids::SimpleIID...) = Coupling(1, (iid, iids...))
-@inline Coupling(value, iid::SimpleIID, iids::SimpleIID...) = Coupling(value, (iid, iids...))
-@inline Coupling(value, iids::Tuple{SimpleIID, Vararg{SimpleIID}}) = Coupling(value, iids, Constraint(iids))
+@inline Coupling(index::Index, indexes::Index...) = Coupling(1, (index, indexes...))
+@inline Coupling(value, index::Index, indexes::Index...) = Coupling(value, (index, indexes...))
+@inline Coupling(value, indexes::Tuple{Index, Vararg{Index}}) = Coupling(value, indexes, Constraint(indexes))
+
+"""
+    Coupling(sites::Union{NTuple{N, Int}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleIID}
+    Coupling(value, sites::Union{NTuple{N, Int}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleIID}
+
+Construct a `Coupling` with the input sites and the fields of a kind of simple iid.
+"""
+@inline Coupling(sites::Union{NTuple{N, Int}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleIID} = Coupling(1, sites, I, fields...)
+@inline function Coupling(value, sites::Union{NTuple{N, Int}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleIID}
+    return Coupling(value, ID(Index, default(sites, Val(N)), ID(I, map(field->default(field, Val(N)), fields)...)))
+end
+@inline default(fields, ::Val) = fields
+@inline default(::Colon, N::Val) = ntuple(i->:, N)
 
 """
     *(cp₁::Coupling, cp₂::Coupling) -> Coupling
 
 Get the multiplication between two coupling.
 """
-@inline Base.:*(cp₁::Coupling, cp₂::Coupling) = Coupling(cp₁.value*cp₂.value, (cp₁.iids..., cp₂.iids...), cp₁.constraint*cp₂.constraint)
+@inline Base.:*(cp₁::Coupling, cp₂::Coupling) = Coupling(cp₁.value*cp₂.value, (cp₁.indexes..., cp₂.indexes...), cp₁.constraint*cp₂.constraint)
 
 """
     latexstring(coupling::Coupling) -> String
@@ -762,22 +792,23 @@ function latexstring(coupling::Coupling)
     for i = 1:len
         r = rank(coupling.constraint, i)
         start, stop = count, count+r-1
-        iids = coupling.iids[start:stop]
+        indexes = coupling.indexes[start:stop]
         pattern = coupling.constraint.representations[i]
         summation = pattern=="pattern" ? "" : replace(replace("$(coupling.constraint.representations[i])", "&&"=>"\\,\\text{and}\\,"), "||"=>"\\,\\text{or}\\,")
-        summation=="" || (summation = join(push!(symbols(iids, pattern), summation), ",\\,"))
-        temp = isconcreteiid(iids) ? "" : @sprintf "\\sum_{%s}" summation
-        for iid in iids
-            temp = @sprintf "%s %s" temp latexstring(iid)
+        summation=="" || (summation = join(push!(symbols(indexes, pattern), summation), ",\\,"))
+        temp = isdefinite(indexes) ? "" : @sprintf "\\sum_{%s}" summation
+        for index in indexes
+            temp = @sprintf "%s %s" temp latexstring(index)
         end
         push!(result, temp)
         count = stop+1
     end
     return @sprintf "%s%s" valuetostr(coupling.value) join(result, " \\cdot ")
 end
-function symbols(iids::Tuple{Vararg{SimpleIID}}, constraint::String)
+function symbols(indexes::Tuple{Vararg{Index}}, constraint::String)
     result = String[]
-    for iid in iids
+    for index in indexes
+        iid = index.iid
         for i = 1:fieldcount(typeof(iid))
             attr = getfield(iid, i)
             if isa(attr, Symbol)
@@ -816,25 +847,28 @@ end
 
 A set of `Coupling`s whose coefficients are specified by matrices acting on separated internal spaces.
 """
-struct MatrixCoupling{I<:SimpleIID, C<:Tuple{Vararg{Component}}} <: VectorSpace{Coupling}
+struct MatrixCoupling{I<:SimpleIID, S<:Union{Int, Colon}, C<:Tuple{Vararg{Component}}} <: VectorSpace{Coupling}
+    sites::Tuple{S, S}
     contents::C
-    MatrixCoupling{I}(contents::Tuple{Vararg{Component}}) where {I<:SimpleIID} = new{I, typeof(contents)}(contents)
+    function MatrixCoupling{I}(sites::Union{NTuple{2, Int}, NTuple{2, Colon}}, contents::Tuple{Vararg{Component}}) where {I<:SimpleIID}
+        @assert fieldcount(I)==length(contents) "MatrixCoupling error: mismatched iidtype ($nameof(I)) and components (len=$length(contents))."
+        new{I, eltype(sites), typeof(contents)}(sites, contents)
+    end
 end
-@inline MatrixCoupling{I}(contents::Component...) where I = MatrixCoupling{I}(contents)
-@inline constrainttype(::Type{<:MatrixCoupling}) = Constraint{(2,), 1, Tuple{Pattern}}
+@inline MatrixCoupling(sites::Union{NTuple{2, Int}, Colon}, ::Type{I}, contents::Component...) where {I<:SimpleIID} = MatrixCoupling{I}(default(sites, Val(2)), contents)
 @inline @generated function Base.eltype(::Type{MC}) where {MC<:MatrixCoupling}
     types = fieldtypes(fieldtype(MC, :contents))
     V = Expr(:call, :promote_type, [:(parametertype($C, 2)) for C in types]...)
-    R = Expr(:call, :iidtype, parametertype(MC, 1), [:(parametertype($C, 1)) for C in types]...)
-    C = Expr(:call, :constrainttype, MC)
+    R = Expr(:curly, :Index, parametertype(MC, 2), Expr(:call, :iidtype, parametertype(MC, 1), [:(parametertype($C, 1)) for C in types]...))
+    C = Expr(:curly, :Constraint, (2,), 1, Expr(:curly, Tuple, :(typeof(Diagonal($R)))))
     return :(Coupling{$V, Tuple{$R, $R}, $C})
 end
 @inline VectorSpaceStyle(::Type{<:MatrixCoupling}) = VectorSpaceDirectProducted()
 function Coupling(contents::Tuple, mc::MatrixCoupling{I}) where {I<:SimpleIID}
     value = mapreduce(content->content[3], *, contents, init=1)
-    iid₁ = I(map(content->content[1], contents)...)
-    iid₂ = I(map(content->content[2], contents)...)
-    return Coupling(value, iid₁, iid₂)
+    index₁ = Index(mc.sites[1], I(map(content->content[1], contents)...))
+    index₂ = Index(mc.sites[2], I(map(content->content[2], contents)...))
+    return Coupling(value, index₁, index₂)
 end
 
 """
@@ -851,7 +885,7 @@ end
 @inline @generated function _eltype(::Type{TS}) where {TS<:Tuple}
     types = fieldtypes(TS)
     V = promote_type(map(valtype, types)...)
-    IS = Tuple{concatenate(map(C->fieldtypes(parametertype(C, :iids)), types)...)...}
+    IS = Tuple{concatenate(map(C->fieldtypes(parametertype(C, :indexes)), types)...)...}
     FS = Tuple{concatenate(map(C->fieldtypes(fieldtype(parametertype(C, :constraint), :conditions)), types)...)...}
     N = length(types)
     RS = ntuple(i->2, Val(N))
@@ -1045,7 +1079,7 @@ function Base.repr(term::Term, bond::Bond, hilbert::Hilbert)
                 if !isnothing(iterate(expand(term|>kind|>Val, coupling, bond, hilbert)))
                     representation = repr(value*coupling)
                     term.ishermitian || (representation = string(replace(representation, " * "=>"*"), " + h.c."))
-                    push!(cache, @sprintf "%s: %s" kind(term) representation)
+                    push!(cache, @sprintf "%s" representation)
                 end
             end
         end
@@ -1097,7 +1131,7 @@ Get the compatible `Operator` type from the type of a term, a Hilbert space and 
 @inline function optype(::Type{T}, ::Type{H}, ::Type{B}) where {T<:Term, H<:Hilbert, B<:Bond}
     C = valtype(fieldtype(T, :coupling))
     @assert C<:Coupling "optype error: not supported."
-    indextypes = ntuple(i->indextype(filter(fieldtype(parametertype(C, :iids), i) , valtype(H)), eltype(B), Val(kind(T))), Val(rank(C)))
+    indextypes = ntuple(i->indextype(filter(iidtype(fieldtype(parametertype(C, :indexes), i)) , valtype(H)), eltype(B), Val(kind(T))), Val(rank(C)))
     return fulltype(Operator, NamedTuple{(:value, :id), Tuple{valtype(T), Tuple{indextypes...}}})
 end
 
@@ -1154,16 +1188,16 @@ end
 end
 
 """
-    sitestructure(::Val{termkind}, ::Val{couplingrank}, bondlength::Integer) where {termkind, couplingrank} -> NTuple{couplingrank, Int}
+    sitestructure(::Val{termkind}, ::Val{termrank}, bondlength::Integer) where {termkind, termrank} -> NTuple{termrank, Int}
 
 Get the site structure, i.e. the acting centers of the coupling on a bond, of a certain kind of term.
 """
-function sitestructure(::Val, ::Val{couplingrank}, bondlength::Integer) where couplingrank
-    bondlength==1 && return ntuple(i->1, Val(couplingrank))
+function sitestructure(::Val, ::Val{termrank}, bondlength::Integer) where termrank
+    bondlength==1 && return ntuple(i->1, Val(termrank))
     bondlength==2 && begin
-        couplingrank==2 && return (1, 2)
-        couplingrank==4 && return (1, 1, 2, 2)
-        error("sitestructure error: not supported for a rank-$couplingrank coupling.")
+        termrank==2 && return (1, 2)
+        termrank==4 && return (1, 1, 2, 2)
+        error("sitestructure error: not supported for rank-$termrank.")
     end
     error("sitestructure error: not supported for a generic bond containing $bondlength points.")
 end
@@ -1174,7 +1208,7 @@ end
 Expand a coupling with the given bond and Hilbert space of a certain kind of term.
 """
 function expand(::Val{termkind}, coupling::Coupling, bond::Bond, hilbert::Hilbert) where termkind
-    centers = sitestructure(Val(termkind), Val(rank(coupling)), length(bond))
+    centers = isa(coupling.indexes.sites, Tuple{Vararg{Int}}) ? coupling.indexes.sites : sitestructure(Val(termkind), Val(rank(coupling)), length(bond))
     points = NTuple{rank(coupling), eltype(bond)}(bond[centers[i]] for i = 1:rank(coupling))
     internals = map((iid, internal)->filter(iid, internal), CompositeIID(coupling, Val(termkind)).contents, ntuple(i->hilbert[bond[centers[i]].site], Val(rank(coupling))))
     @assert rank(coupling)==length(points)==length(internals) "expand error: mismatched rank."
@@ -1196,15 +1230,16 @@ function CExpand(value, points::NTuple{N, P}, iidspace::IIDSpace, constraint::Co
 end
 @inline Base.eltype(ex::CExpand) = eltype(typeof(ex))
 @inline @generated function Base.eltype(::Type{<:CExpand{V, N, SV, S}}) where {V, N, SV<:SVector, S<:IIDSpace}
-    return Operator{V, Tuple{map(I->CompositeIndex{Index{I}, SV}, fieldtypes(fieldtype(eltype(S), :contents)))...}}
+    return Operator{V, Tuple{map(I->CompositeIndex{Index{Int, I}, SV}, fieldtypes(fieldtype(eltype(S), :contents)))...}}
 end
 @inline Base.IteratorSize(::Type{<:CExpand}) = Base.SizeUnknown()
 function Base.iterate(ex::CExpand, state=iterate(ex.iidspace))
     result = nothing
     while !isnothing(state)
         ciid, state = state
-        if match(ex.constraint, ciid)
-            result = Operator(ex.value, ID(CompositeIndex, ID(Index, ex.sites, ciid.contents), ex.rcoordinates, ex.icoordinates)), iterate(ex.iidspace, state)
+        indexes = ID(Index, ex.sites, ciid.contents)
+        if match(ex.constraint, indexes)
+            result = Operator(ex.value, ID(CompositeIndex, indexes, ex.rcoordinates, ex.icoordinates)), iterate(ex.iidspace, state)
             break
         else
             state = iterate(ex.iidspace, state)
@@ -1227,7 +1262,7 @@ abstract type Metric <: Function end
 @inline (M::Type{<:Metric})(::Type{I}) where {I<:AbstractCompositeIndex} = M(indextype(I))
 @inline (metric::Metric)(index::AbstractCompositeIndex) = metric(getcontent(index, :index))
 @inline Base.valtype(::Type{M}, ::Type{I}) where {M<:Metric, I<:AbstractCompositeIndex} = valtype(M, indextype(I))
-@inline (M::Type{<:Metric})(::Type{H}) where {H<:Hilbert} = M(Index{H|>valtype|>eltype})
+@inline (M::Type{<:Metric})(::Type{H}) where {H<:Hilbert} = M(Index{Int, H|>valtype|>eltype})
 
 """
     OperatorUnitToTuple{Fields} <: Metric
@@ -1334,7 +1369,7 @@ The input operator units are measured by the input `by` function with the duplic
 Get the index-sequence table of a Hilbert space.
 """
 function Table(hilbert::Hilbert, by::Metric=OperatorUnitToTuple(typeof(hilbert)))
-    result = Index{hilbert|>valtype|>eltype}[]
+    result = Index{Int, hilbert|>valtype|>eltype}[]
     for (site, internal) in hilbert
         for iid in internal
             push!(result, (result|>eltype)(site, iid))
@@ -1378,7 +1413,7 @@ end
 Reset a table by a Hilbert space.
 """
 function reset!(table::Table, hilbert::Hilbert)
-    indices = Index{hilbert|>valtype|>eltype}[]
+    indices = Index{Int, hilbert|>valtype|>eltype}[]
     for (site, internal) in pairs(hilbert)
         for iid in internal
             push!(indices, (indices|>eltype)(site, iid))

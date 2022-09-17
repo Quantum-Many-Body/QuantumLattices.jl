@@ -9,7 +9,7 @@ using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Prerequisites.Traits: contentnames, reparameter
 using StaticArrays: SVector
 
-import QuantumLattices.Essentials.DegreesOfFreedom: Constraint, iidtype, isconcreteiid
+import QuantumLattices.Essentials.DegreesOfFreedom: Constraint, iidtype, isdefinite
 import QuantumLattices.Essentials.Frameworks: Parameters
 import QuantumLattices.Essentials: prepare!, run!, update!
 import QuantumLattices.Prerequisites.VectorSpaces: shape
@@ -18,14 +18,14 @@ struct FID{N<:Union{Int, Symbol}} <: SimpleIID
     nambu::N
 end
 @inline Base.adjoint(sl::FID{Int}) = FID(3-sl.nambu)
-function Base.angle(id::CompositeIndex{<:Index{FID{Int}}}, vectors::AbstractVector{<:AbstractVector{Float}}, values::AbstractVector{Float})
+function Base.angle(id::CompositeIndex{Index{Int, FID{Int}}}, vectors::AbstractVector{<:AbstractVector{Float}}, values::AbstractVector{Float})
     phase=  (length(vectors) == 1) ? 2pi*dot(decompose(id.icoordinate, vectors[1]), values) :
             (length(vectors) == 2) ? 2pi*dot(decompose(id.icoordinate, vectors[1], vectors[2]), values) :
             (length(vectors) == 3) ? 2pi*dot(decompose(id.icoordinate, vectors[1], vectors[2], vectors[3]), values) :
             error("angle error: not supported number of input basis vectors.")
     (id.index.iid.nambu == 1) ? phase : -phase
 end
-@inline isconcreteiid(::Type{FID{Int}}) = true
+@inline isdefinite(::Type{FID{Int}}) = true
 @inline iidtype(::Type{FID}, ::Type{T}) where {T<:Union{Int, Symbol}} = FID{T}
 @inline Constraint(iids::NTuple{N, FID{Int}}) where N = Constraint{N}()
 
@@ -34,14 +34,11 @@ struct FFock <: SimpleInternal{FID{Int}}
 end
 @inline shape(f::FFock) = (1:f.nnambu,)
 @inline FID(i::CartesianIndex, vs::FFock) = FID(i.I...)
-@inline CartesianIndex(did::FID{Int}, vs::FFock) = CartesianIndex(did.nambu)
+@inline CartesianIndex(fid::FID{Int}, vs::FFock) = CartesianIndex(fid.nambu)
 @inline shape(iidspace::IIDSpace{FID{Symbol}, FFock}) = (1:iidspace.internal.nnambu,)
 @inline shape(iidspace::IIDSpace{FID{Int}, FFock}) = (iidspace.iid.nambu:iidspace.iid.nambu,)
 @inline shape(iidspace::IIDSpace{FID{Symbol}, FFock}) = (1:iidspace.internal.nnambu,)
 @inline shape(iidspace::IIDSpace{FID{Int}, FFock}) = (iidspace.iid.nambu:iidspace.iid.nambu,)
-
-const FCoupling{V, I<:ID{FID}, C<:Constraint} = Coupling{V, I, C}
-@inline FCoupling(value, nambus::NTuple{N, Int}) where N = Coupling(value, ID(FID, nambus))
 
 @testset "Parameters" begin
     ps1 = Parameters{(:t1, :t2, :U)}(1.0im, 1.0, 2.0)
@@ -79,15 +76,15 @@ end
     table = Table(hilbert, OperatorUnitToTuple(:site))
     boundary = Boundary{(:θ,)}([0.1], lattice.vectors)
 
-    t = Term{:Hp}(:t, 2.0, 1, FCoupling(1.0, (2, 1)), false; modulate=false)
-    μ = Term{:Mu}(:μ, 1.0, 0, FCoupling(1.0, (2, 1)), true)
+    t = Term{:Hp}(:t, 2.0, 1, Coupling(1.0, (1, 2), FID, (2, 1)), false; modulate=false)
+    μ = Term{:Mu}(:μ, 1.0, 0, Coupling(1.0, (1, 1), FID, (2, 1)), true)
 
     tops₁ = expand(t, filter(bond->isintracell(bond), bs), hilbert; half=true)
     tops₂ = boundary(expand(one(t), filter(bond->!isintracell(bond), bs), hilbert; half=true))
     μops = expand(one(μ), filter(bond->length(bond)==1, bs), hilbert; half=true)
     i = Identity()
 
-    optp = Operator{Complex{Float}, ID{CompositeIndex{Index{FID{Int}}, SVector{1, Float}}, 2}}
+    optp = Operator{Complex{Float}, ID{CompositeIndex{Index{Int, FID{Int}}, SVector{1, Float}}, 2}}
     entry = Entry(tops₁, (μ=μops,), (t=tops₂, μ=Operators{optp}()), (t=2.0, μ=1.0), boundary)
     @test entry == Entry((t, μ), bs, hilbert; half=true, boundary=boundary)
     @test isequal(entry, i(entry))

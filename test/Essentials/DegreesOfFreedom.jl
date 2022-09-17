@@ -10,27 +10,26 @@ using QuantumLattices.Prerequisites: Float
 using QuantumLattices.Prerequisites.Traits: contentnames, getcontent, isparameterbound, parameternames, reparameter
 using StaticArrays: SVector
 
-import QuantumLattices.Essentials.DegreesOfFreedom: Constraint, iidtype, isconcreteiid, statistics
+import QuantumLattices.Essentials.DegreesOfFreedom: Constraint, Coupling, iidtype, isdefinite, statistics
 import QuantumLattices.Essentials.QuantumOperators: latexname, script
 import QuantumLattices.Prerequisites.VectorSpaces: shape
 
-struct DID{N<:Union{Int, Symbol}} <: SimpleIID
+struct DID{N<:Union{Int, Symbol, Colon}} <: SimpleIID
     nambu::N
 end
 @inline Base.show(io::IO, did::DID) = @printf io "DID(%s)" did.nambu
 @inline Base.adjoint(sl::DID{Int}) = DID(3-sl.nambu)
 @inline statistics(::Type{<:DID}) = :f
 @inline DID(did::DID, ::CompositeInternal) = did
-function Base.angle(id::CompositeIndex{<:Index{DID{Int}}}, vectors::AbstractVector{<:AbstractVector{Float}}, values::AbstractVector{Float})
+function Base.angle(id::CompositeIndex{Index{Int, DID{Int}}}, vectors::AbstractVector{<:AbstractVector{Float}}, values::AbstractVector{Float})
     phase=  (length(vectors) == 1) ? 2pi*dot(decompose(id.icoordinate, vectors[1]), values) :
             (length(vectors) == 2) ? 2pi*dot(decompose(id.icoordinate, vectors[1], vectors[2]), values) :
             (length(vectors) == 3) ? 2pi*dot(decompose(id.icoordinate, vectors[1], vectors[2], vectors[3]), values) :
             error("angle error: not supported number of input basis vectors.")
     (id.index.iid.nambu == 1) ? phase : -phase
 end
-@inline isconcreteiid(::Type{DID{Int}}) = true
-@inline iidtype(::Type{DID}, ::Type{T}) where {T<:Union{Int, Symbol}} = DID{T}
-@inline Constraint(iids::NTuple{N, DID{Int}}) where N = Constraint{N}()
+@inline isdefinite(::Type{DID{Int}}) = true
+@inline iidtype(::Type{DID}, ::Type{T}) where {T<:Union{Int, Symbol, Colon}} = DID{T}
 
 struct DFock <: SimpleInternal{DID{Int}}
     nnambu::Int
@@ -45,18 +44,17 @@ end
 
 @inline script(::Val{:nambu}, did::DID; kwargs...) = did.nambu==2 ? "\\dagger" : did.nambu==1 ? "" : did.nambu
 
-@inline latexname(::Type{<:CompositeIndex{<:Index{<:DID}}}) = Symbol("CompositeIndex{Index{DID}}")
-latexformat(CompositeIndex{<:Index{<:DID}}, LaTeX{(:nambu,), (:site,)}('d'))
+@inline latexname(::Type{<:CompositeIndex{<:Index{<:Union{Int, Colon}, <:DID}}}) = Symbol("CompositeIndex{Index{Union{Int, Colon}, DID}}")
+@inline latexname(::Type{<:Index{<:Union{Int, Colon}, <:DID}}) = Symbol("Index{Union{Int, Colon}, DID}")
+latexformat(CompositeIndex{<:Index{<:Union{Int, Colon}, <:DID}}, LaTeX{(:nambu,), (:site,)}('d'))
+latexformat(Index{<:Union{Int, Colon}, <:DID}, LaTeX{(:nambu,), (:site,)}('d'))
 latexformat(DID, LaTeX{(:nambu,), ()}('d'))
-
-const DCoupling{V, I<:ID{DID}, C<:Constraint} = Coupling{V, I, C}
-@inline DCoupling(value, nambus::NTuple{N, Int}) where N = Coupling(value, ID(DID, nambus))
 
 @testset "IID" begin
     did = DID(1)
     @test statistics(did) == statistics(typeof(did)) == :f
-    @test isconcreteiid(did) == isconcreteiid(typeof(did)) == true
-    @test isconcreteiid(DID(:a)) == false
+    @test isdefinite(did) == isdefinite(typeof(did)) == true
+    @test isdefinite(DID(:a)) == isdefinite(DID{Symbol}) == false
 
     did₁, did₂ = DID(1), DID(2)
     ciid = CompositeIID(did₁, did₂)
@@ -127,7 +125,8 @@ end
 end
 
 @testset "Index" begin
-    @test parameternames(Index) == (:iid,)
+    @test parameternames(Index) == (:site, :iid)
+    @test isparameterbound(Index, Val(:site), Int) == false
     @test isparameterbound(Index, Val(:iid), DID) == true
 
     index = Index(4, DID(1))
@@ -137,23 +136,28 @@ end
     @test statistics(index) == statistics(typeof(index)) == :f
     @test ishermitian(ID(index', index)) == true
     @test ishermitian(ID(index, index)) == false
+    @test isdefinite(index) == isdefinite(typeof(index)) == true
+    @test isdefinite((index, index)) == isdefinite(typeof((index, index))) == true
+
+    index = Index(:, DID(2))
+    @test string(index) == "Index(:, DID(2))"
 end
 
 @testset "CompositeIndex" begin
     @test contentnames(AbstractCompositeIndex) == (:index,)
     @test parameternames(AbstractCompositeIndex) == (:index,)
     @test isparameterbound(AbstractCompositeIndex, Val(:index), Index) == true
-    @test isparameterbound(AbstractCompositeIndex, Val(:index), Index{DID{Int}}) == false
+    @test isparameterbound(AbstractCompositeIndex, Val(:index), Index{Int, DID{Int}}) == false
 
     @test contentnames(CompositeIndex) == (:index, :rcoordinate, :icoordinate)
     @test parameternames(CompositeIndex) == (:index, :coordination)
     @test isparameterbound(CompositeIndex, Val(:index), Index) == true
-    @test isparameterbound(CompositeIndex, Val(:index), Index{DID{Int}}) == false
+    @test isparameterbound(CompositeIndex, Val(:index), Index{Int, DID{Int}}) == false
     @test isparameterbound(CompositeIndex, Val(:coordination), SVector) == true
     @test isparameterbound(CompositeIndex, Val(:coordination), SVector{2, Float}) == false
 
     index = CompositeIndex(Index(1, DID(1)), [0.0, -0.0], [0.0, 0.0])
-    @test indextype(index) == indextype(typeof(index)) == Index{DID{Int}}
+    @test indextype(index) == indextype(typeof(index)) == Index{Int, DID{Int}}
     @test statistics(index) == statistics(typeof(index)) == :f
     @test index' == CompositeIndex(Index(1, DID(2)), rcoordinate=SVector(0.0, 0.0), icoordinate=SVector(0.0, 0.0))
     @test hash(index, UInt(1)) == hash(CompositeIndex(Index(1, DID(1)), SVector(0.0, 0.0), SVector(0.0, 1.0)), UInt(1))
@@ -163,7 +167,7 @@ end
     @test ID(index', index)' == ID(index', index)
     @test ishermitian(ID(index', index)) == true
     @test ishermitian(ID(index, index)) == false
-    @test indextype(DFock, Point{2, Float}, Val(:default)) == CompositeIndex{Index{DID{Int}}, SVector{2, Float}}
+    @test indextype(DFock, Point{2, Float}, Val(:default)) == CompositeIndex{Index{Int, DID{Int}}, SVector{2, Float}}
 end
 
 @testset "Operator" begin
@@ -198,52 +202,52 @@ end
 end
 
 @testset "Constraint" begin
-    constraint = Constraint(DID(:a), DID(:a))
+    constraint = Constraint(Index(1, DID(:a)), Index(1, DID(:a)))
     @test deepcopy(constraint) == constraint
     @test isequal(deepcopy(constraint), constraint)
     @test hash(constraint) == hash(((2,), constraint.representations))
     @test rank(constraint) == rank(typeof(constraint)) == 2
     @test rank(constraint, 1) == rank(typeof(constraint), 1) == 2
-    @test match(constraint, (DID(2), DID(2)))
-    @test !match(constraint, (DID(2), DID(1)))
+    @test match(constraint, (Index(1, DID(2)), Index(1, DID(2))))
+    @test !match(constraint, (Index(1, DID(2)), Index(1, DID(1))))
 
-    constraint = (@iids DID(a) DID(a) DID(b))[2]
-    @test match(constraint, (DID(1), DID(1), DID(2)))
-    @test !match(constraint, (DID(1), DID(2), DID(2)))
+    constraint = (@indexes Index(1, DID(a)) Index(1, DID(a)) Index(1, DID(b)))[2]
+    @test match(constraint, (Index(1, DID(1)), Index(1, DID(1)), Index(1, DID(2))))
+    @test !match(constraint, (Index(1, DID(1)), Index(1, DID(2)), Index(1, DID(2))))
 
-    another = @iids(DID(2), DID(1))[2]
-    @test match(another, (DID(2), DID(1)))
-    @test match(another, (DID(2), DID(2)))
+    another = @indexes(Index(1, DID(2)), Index(1, DID(1)))[2]
+    @test match(another, (Index(1, DID(2)), Index(1, DID(1))))
+    @test match(another, (Index(1, DID(2)), Index(1, DID(2))))
 
-    another = @iids(DID(a), DID(b); constraint=a<b)[2]
-    @test match(another, (DID(1), DID(2)))
-    @test !match(another, (DID(2), DID(1)))
+    another = @indexes(Index(1, DID(a)), Index(1, DID(b)); constraint=a<b)[2]
+    @test match(another, (Index(1, DID(1)), Index(1, DID(2))))
+    @test !match(another, (Index(1, DID(2)), Index(1, DID(1))))
 
     product = constraint*another
-    @test match(product, (DID(2), DID(2), DID(3), DID(1), DID(2)))
-    @test !match(product, (DID(1), DID(2), DID(3), DID(1), DID(2)))
-    @test !match(product, (DID(2), DID(2), DID(3), DID(2), DID(1)))
-    @test !match(product, (DID(2), DID(1), DID(3), DID(2), DID(1)))
+    @test match(product, (Index(1, DID(2)), Index(1, DID(2)), Index(1, DID(3)), Index(1, DID(1)), Index(1, DID(2))))
+    @test !match(product, (Index(1, DID(1)), Index(1, DID(2)), Index(1, DID(3)), Index(1, DID(1)), Index(1, DID(2))))
+    @test !match(product, (Index(1, DID(2)), Index(1, DID(2)), Index(1, DID(3)), Index(1, DID(2)), Index(1, DID(1))))
+    @test !match(product, (Index(1, DID(2)), Index(1, DID(1)), Index(1, DID(3)), Index(1, DID(2)), Index(1, DID(1))))
 
     constraint = Constraint{2}(Diagonal(:nambu))
-    @test match(constraint, (DID(2), DID(2)))
-    @test !match(constraint, (DID(2), DID(1)))
+    @test match(constraint, (Index(1, DID(2)), Index(1, DID(2))))
+    @test !match(constraint, (Index(1, DID(2)), Index(1, DID(1))))
 end
 
 @testset "Coupling" begin
-    @test parameternames(Coupling) == (:value, :iids, :constraint)
-    @test isparameterbound(Coupling, :iids, Tuple{DID{Int}}) == false
-    @test isparameterbound(Coupling, :iids, ID{DID{Int}}) == true
+    @test parameternames(Coupling) == (:value, :indexes, :constraint)
+    @test isparameterbound(Coupling, :indexes, Tuple{Index{Int, DID{Int}}}) == false
+    @test isparameterbound(Coupling, :indexes, ID{Index{Int, DID{Int}}}) == true
     @test isparameterbound(Coupling, :constraint, Constraint) == true
     @test isparameterbound(Coupling, :constraint, Constraint{(2, 2)}) == true
-    @test isparameterbound(Coupling, :constraint, Constraint{(2,), 1, Tuple{Pattern}}) == false
+    @test isparameterbound(Coupling, :constraint, Constraint{(2,), 1, Tuple{Diagonal{()}}}) == false
 
-    tc = DCoupling(2.0, (2,))
-    @test id(tc) == (tc.iids, tc.constraint)
+    tc = Coupling(:, DID, (2,))
+    @test id(tc) == (tc.indexes, tc.constraint)
     @test idtype(typeof(tc)) == typeof(id(tc))
     @test rank(tc) == rank(typeof(tc)) == 1
-    @test Coupling(2.0, id(tc)) == tc
-    @test CompositeIID(tc) == CompositeIID(tc.iids)
+    @test Coupling(id(tc)) == tc
+    @test CompositeIID(tc) == CompositeIID(tc.indexes.iids)
     @test Constraint(tc) == tc.constraint
     @test length(tc) == length(typeof(tc)) == 1
     @test eltype(tc) == eltype(typeof(tc)) == typeof(tc)
@@ -252,21 +256,20 @@ end
     point = Point(1, (0.0, 0.0), (0.0, 0.0))
     bond = Bond(point)
     hilbert = Hilbert(point.site=>DFock(2))
-    @test sitestructure(Val(:Mu), Val(rank(tc)), length(bond)) == (1,)
 
-    tc₁ = DCoupling(1.5, (1, 2))
-    tc₂ = Coupling(2.0, @iids(DID(a), DID(b); constraint=a<b))
+    tc₁ = Coupling(1.5, :, DID, (1, 2))
+    tc₂ = Coupling(2.0, @indexes(Index(:, DID(a)), Index(:, DID(b)); constraint=a<b))
     tc =  tc₁*tc₂
     @test tc₁*tc₂ == Coupling(
         3.0,
-        (DID(1), DID(2), DID(:a), DID(:b)),
+        (Index(:, DID(1)), Index(:, DID(2)), Index(:, DID(:a)), Index(:, DID(:b))),
         Constraint{(2, 2)}((tc₁.constraint.representations[1], tc₂.constraint.representations[1]), (tc₁.constraint.conditions[1], tc₂.constraint.conditions[1]))
     )
-    @test string(tc)=="3.0 [DID(1) DID(2)] ⋅ ∑[DID(a) DID(b)](a < b)"
-    @test latexstring(tc) == "3.0 d^{}_{} d^{\\dagger}_{} \\cdot \\sum_{a < b} d^{a}_{} d^{b}_{}"
+    @test string(tc) == "3.0 [Index(:, DID(1)) Index(:, DID(2))] ⋅ ∑[Index(:, DID(a)) Index(:, DID(b))](a < b)"
+    @test latexstring(tc) == "3.0 d^{}_{:} d^{\\dagger}_{:} \\cdot \\sum_{a < b} d^{a}_{:} d^{b}_{:}"
 
     ex = expand(Val(:term), tc₁, bond, hilbert)
-    @test eltype(ex) == eltype(typeof(ex)) == Operator{Float64, NTuple{2, CompositeIndex{Index{DID{Int}}, SVector{2, Float64}}}}
+    @test eltype(ex) == eltype(typeof(ex)) == Operator{Float64, NTuple{2, CompositeIndex{Index{Int, DID{Int}}, SVector{2, Float64}}}}
     @test collect(ex) == [
         Operator(1.5, ID(
             CompositeIndex(Index(1, DID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0)),
@@ -275,7 +278,7 @@ end
         ]
 
     ex = expand(Val(:term), tc₂, bond, hilbert)
-    @test eltype(ex) == eltype(typeof(ex)) == Operator{Float64, NTuple{2, CompositeIndex{Index{DID{Int}}, SVector{2, Float64}}}}
+    @test eltype(ex) == eltype(typeof(ex)) == Operator{Float64, NTuple{2, CompositeIndex{Index{Int, DID{Int}}, SVector{2, Float64}}}}
     @test collect(ex) == [
         Operator(2.0, ID(
             CompositeIndex(Index(1, DID(1)), SVector(0.0, 0.0), SVector(0.0, 0.0)),
@@ -290,34 +293,34 @@ end
     @test component[1] == (1, 2, -1)
     @test component[2] == (2, 1, +1)
 
-    mc = MatrixCoupling{DID}(component)
-    @test constrainttype(typeof(mc)) == Constraint{(2,), 1, Tuple{Pattern}}
-    @test eltype(typeof(mc)) == Coupling{Int, Tuple{DID{Int}, DID{Int}}, Constraint{(2,), 1, Tuple{Pattern}}}
-    @test mc[1] == Coupling(-1, DID(1), DID(2))
-    @test mc[2] == Coupling(+1, DID(2), DID(1))
+    mc = MatrixCoupling(:, DID, component)
+    @test eltype(typeof(mc)) == Coupling{Int, Tuple{Index{Colon, DID{Int}}, Index{Colon, DID{Int}}}, Constraint{(2,), 1, Tuple{Diagonal{()}}}}
+    @test mc[1] == Coupling(-1, Index(:, DID(1)), Index(:, DID(2)))
+    @test mc[2] == Coupling(+1, Index(:, DID(2)), Index(:, DID(1)))
 
-    another = MatrixCoupling{DID}(Component([:α], [:α], hcat(2.0)))
-    @test constrainttype(typeof(another)) == Constraint{(2,), 1, Tuple{Pattern}}
-    @test another[1] == Coupling(2.0, DID(:α), DID(:α))
+    another = MatrixCoupling((1, 2), DID, Component([:], [:], hcat(2.0)))
+    @test another[1] == Coupling(2.0, Index(1, DID(:)), Index(2, DID(:)))
 
     mcs = mc*another
     @test mcs == MatrixCouplingProd(mc, another)
-    @test eltype(mcs) == Coupling{Float64, Tuple{DID{Int}, DID{Int}, DID{Symbol}, DID{Symbol}}, Constraint{(2, 2), 2, Tuple{Pattern, Pattern}}}
-    @test mcs[1] == Coupling(-2.0, (DID(1), DID(2), DID(:α), DID(:α)), Constraint{(2, 2)}(("pattern", "pattern"), (noconstrain, Pattern(DID(:α), DID(:α)))))
-    @test mcs[2] == Coupling(+2.0, (DID(2), DID(1), DID(:α), DID(:α)), Constraint{(2, 2)}(("pattern", "pattern"), (noconstrain, Pattern(DID(:α), DID(:α)))))
+    @test eltype(mcs) == Coupling{Float64, Tuple{Index{Colon, DID{Int}}, Index{Colon, DID{Int}}, Index{Int, DID{Colon}}, Index{Int, DID{Colon}}}, Constraint{(2, 2), 2, Tuple{Diagonal{()}, Diagonal{(:nambu,)}}}}
+    @test mcs[1] == Coupling(-2.0, (Index(:, DID(1)), Index(:, DID(2)), Index(1, DID(:)), Index(2, DID(:))), Constraint{(2, 2)}(("pattern", "pattern"), (Diagonal(), Diagonal(:nambu))))
+    @test mcs[2] == Coupling(+2.0, (Index(:, DID(2)), Index(:, DID(1)), Index(1, DID(:)), Index(2, DID(:))), Constraint{(2, 2)}(("pattern", "pattern"), (Diagonal(), Diagonal(:nambu))))
 
     @test mcs*mc == MatrixCouplingProd(mc, another, mc)
     @test mc*mcs == MatrixCouplingProd(mc, mc, another)
     @test mcs*mcs == MatrixCouplingProd(mc, another, mc, another)
 
-    mc₁ = MatrixCoupling{DID}(Component([1, 2], [2, 1], [-1 0; 0 1]))
-    mc₂ = MatrixCoupling{DID}(Component([1, 2], [2, 1], [0 1; 1 0]))
+    mc₁ = MatrixCoupling((1, 2), DID, Component([1, 2], [2, 1], [-1 0; 0 1]))
+    mc₂ = MatrixCoupling((2, 1), DID, Component([1, 2], [2, 1], [0 1; 1 0]))
     mcs = mc₁ + mc₂
     @test mcs == MatrixCouplingSum(mc₁, mc₂)
-    @test eltype(mcs) == Coupling{Int, Tuple{DID{Int}, DID{Int}}, Constraint{(2,), 1, Tuple{Pattern}}}
+    @test eltype(mcs) == Coupling{Int, Tuple{Index{Int, DID{Int}}, Index{Int, DID{Int}}}, Constraint{(2,), 1, Tuple{Diagonal{()}}}}
     @test collect(mcs) == [
-        Coupling(-1, DID(1), DID(2)), Coupling(+1, DID(2), DID(1)),
-        Coupling(+1, DID(2), DID(2)), Coupling(+1, DID(1), DID(1))
+        Coupling(-1, Index(1, DID(1)), Index(2, DID(2))),
+        Coupling(+1, Index(1, DID(2)), Index(2, DID(1))),
+        Coupling(+1, Index(2, DID(2)), Index(1, DID(2))),
+        Coupling(+1, Index(2, DID(1)), Index(1, DID(1)))
     ]
 
     @test mcs+mc₁ == MatrixCouplingSum(mc₁, mc₂, mc₁)
@@ -333,7 +336,7 @@ end
     ta = TermAmplitude(bond::Bond->bond.kind+3)
     @test ta(bond) == 4
 
-    tcs = DCoupling(1.0, (1, 1)) + DCoupling(2.0, (2, 2))
+    tcs = Coupling(1.0, (1, 2), DID, (1, 1)) + Coupling(2.0, (1, 2), DID, (2, 2))
     termcouplings = TermCoupling(tcs)
     @test termcouplings == deepcopy(TermCoupling(tcs))
     @test isequal(termcouplings, deepcopy(TermCoupling(tcs)))
@@ -343,7 +346,7 @@ end
     bond₁ = Bond(1, Point(1, [0.0], [0.0]), Point(2, [0.5], [0.0]))
     bond₂ = Bond(2, Point(1, [0.0], [0.0]), Point(2, [0.5], [0.0]))
 
-    fx = bond::Bond -> bond.kind==1 ? DCoupling(1.0, (1, 1)) : DCoupling(1.0, (2, 2))
+    fx = bond::Bond -> bond.kind==1 ? Coupling(1.0, (1, 2), DID, (1, 1)) : Coupling(1.0, (1, 2), DID, (2, 2))
     termcouplings = TermCoupling(fx)
     @test termcouplings == TermCoupling{typejoin(typeof(fx(bond₁)), typeof(fx(bond₂)))}(fx)
     @test valtype(termcouplings) == valtype(typeof(termcouplings)) == typejoin(typeof(fx(bond₁)), typeof(fx(bond₂)))
@@ -366,7 +369,7 @@ end
 @testset "Term" begin
     point = Point(1, (0.0, 0.0), (0.0, 0.0))
     hilbert = Hilbert(point.site=>DFock(2))
-    term = Term{:Mu}(:μ, 1.5, 0, DCoupling(1.0, (2, 1)), true; amplitude=bond->3, modulate=false)
+    term = Term{:Mu}(:μ, 1.5, 0, Coupling(1.0, (1, 1), DID, (2, 1)), true; amplitude=bond->3, modulate=false)
     @test term|>kind == term|>typeof|>kind == :Mu
     @test term|>id == term|>typeof|>id == :μ
     @test term|>valtype == term|>typeof|>valtype == Float
@@ -374,15 +377,15 @@ end
     @test term|>ismodulatable == term|>typeof|>ismodulatable == false
     @test term == deepcopy(term)
     @test isequal(term, deepcopy(term))
-    @test repr(term, Bond(point), hilbert) == "Mu: 4.5 DID(2) DID(1)"
+    @test repr(term, Bond(point), hilbert) == "4.5 Index(1, DID(2)) Index(1, DID(1))"
 
     p₁ = Point(1, (0.0, 0.0), (0.0, 0.0))
     p₂ = Point(2, (1.0, 0.0), (0.0, 0.0))
     hilbert = Hilbert(site=>DFock(2) for site in [1, 2])
-    term = Term{:Mu}(:μ, 1.5, 0, bond->bond[1].site%2==0 ? DCoupling(1.0, (2, 2)) : DCoupling(1.0, (1, 1)), true; amplitude=bond->3)
+    term = Term{:Mu}(:μ, 1.5, 0, bond->bond[1].site%2==0 ? Coupling(1.0, (1, 1), DID, (2, 2)) : Coupling(1.0, (1, 1), DID, (1, 1)), true; amplitude=bond->3)
     @test term|>ismodulatable == term|>typeof|>ismodulatable == true
-    @test repr(term, Bond(p₁), hilbert) == "Mu: 4.5 DID(1) DID(1)"
-    @test repr(term, Bond(p₂), hilbert) == "Mu: 4.5 DID(2) DID(2)"
+    @test repr(term, Bond(p₁), hilbert) == "4.5 Index(1, DID(1)) Index(1, DID(1))"
+    @test repr(term, Bond(p₂), hilbert) == "4.5 Index(1, DID(2)) Index(1, DID(2))"
     @test one(term) == replace(term, value=1.0)
     @test zero(term) == replace(term, value=0.0)
     @test term.modulate(μ=4.0) == 4.0
@@ -390,15 +393,15 @@ end
     @test update!(term, μ=4.25) == replace(term, value=4.25)
     @test term.value == 4.25
 
-    term = Term{:Hp}(:t, 1.5, 1, DCoupling(1.0, (2, 1)), false; amplitude=bond->3.0)
-    @test repr(term, Bond(1, p₁, p₂), hilbert) == "Hp: 4.5 DID(2) DID(1) + h.c."
+    term = Term{:Hp}(:t, 1.5, 1, Coupling(1.0, (1, 2), DID, (2, 1)), false; amplitude=bond->3.0)
+    @test repr(term, Bond(1, p₁, p₂), hilbert) == "4.5 Index(1, DID(2)) Index(2, DID(1)) + h.c."
 end
 
 @testset "expand" begin
     point = Point(1, (0.0, 0.0), (0.0, 0.0))
     bond = Bond(point)
     hilbert = Hilbert(point.site=>DFock(2))
-    term = Term{:Mu}(:μ, 1.5, 0, DCoupling(1.0, (2, 1)), true; amplitude=bond->3.0)
+    term = Term{:Mu}(:μ, 1.5, 0, Coupling(1.0, (1, 1), DID, (2, 1)), true; amplitude=bond->3.0)
     operators = Operators(
         Operator(+2.25,
             CompositeIndex(Index(1, DID(2)), SVector(0.0, 0.0), SVector(0.0, 0.0)),
@@ -410,7 +413,7 @@ end
 
     bond = Bond(1, Point(2, (1.5, 1.5), (1.0, 1.0)), Point(1, (0.5, 0.5), (0.0, 0.0)))
     hilbert = Hilbert(site=>DFock(2) for site in [1, 2])
-    term = Term{:Hp}(:t, 1.5, 1, DCoupling(1.0, (2, 1)), false; amplitude=bond->3.0)
+    term = Term{:Hp}(:t, 1.5, 1, Coupling(1.0, (1, 2), DID, (2, 1)), false; amplitude=bond->3.0)
     operators = Operators(
         Operator(4.5,
             CompositeIndex(Index(2, DID(2)), SVector(1.5, 1.5), SVector(1.0, 1.0)),
@@ -423,7 +426,7 @@ end
     lattice = Lattice((0.0, 0.0); vectors=[[1.0, 0.0]])
     bs = bonds(lattice, 1)
     hilbert = Hilbert(site=>DFock(2) for site=1:length(lattice))
-    term = Term{:Mu}(:μ, 1.5, 0, DCoupling(1.0, (2, 1)), true; amplitude=bond->3.0)
+    term = Term{:Mu}(:μ, 1.5, 0, Coupling(1.0, (1, 1), DID, (2, 1)), true; amplitude=bond->3.0)
     operators = Operators(
         Operator(+2.25,
             CompositeIndex(Index(1, DID(2)), SVector(0.0, 0.0), SVector(0.0, 0.0)),
@@ -451,7 +454,7 @@ end
     @test m == OperatorUnitToTuple(:site, :nambu)
     @test isequal(m, OperatorUnitToTuple(:site, :nambu))
     @test keys(m) == keys(typeof(m)) == (:site, :nambu)
-    @test OperatorUnitToTuple(Index{DID{Int}}) == OperatorUnitToTuple(:site, :nambu)
+    @test OperatorUnitToTuple(Index{Int, DID{Int}}) == OperatorUnitToTuple(:site, :nambu)
     @test OperatorUnitToTuple(Hilbert{DFock}) == OperatorUnitToTuple(:site, :nambu)
 
     index = CompositeIndex(Index(4, DID(1)), SVector(0.5, 0.0), SVector(1.0, 0.0))
@@ -464,7 +467,7 @@ end
     by = OperatorUnitToTuple(:site)
 
     table = Table([Index(1, DID(1)), Index(1, DID(2))], by)
-    @test empty(table) == Table{Index{DID{Int}}}(by)
+    @test empty(table) == Table{Index{Int, DID{Int}}}(by)
     @test table[Index(1, DID(1))]==1 && table[Index(1, DID(2))]==1
 
     hilbert = Hilbert(site=>DFock(2) for site in [1, 2])

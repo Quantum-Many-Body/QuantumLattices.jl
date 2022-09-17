@@ -4,7 +4,8 @@ using LinearAlgebra: dot, norm
 using Printf: @printf, @sprintf
 using SparseArrays: SparseMatrixCSC
 using StaticArrays: SVector
-using ..DegreesOfFreedom: wildcard, AbstractCompositeIndex, Component, CompositeIID, CompositeIndex, CompositeInternal, Diagonal, Hilbert, IIDSpace, Index, SimpleIID, SimpleInternal, Term, TermAmplitude, TermCoupling, TermModulate, @iids
+using ..DegreesOfFreedom: wildcard, AbstractCompositeIndex, Component, CompositeIID, CompositeIndex, CompositeInternal, Coupling, Hilbert, IIDSpace, Index, SimpleIID, SimpleInternal, @indexes
+using ..DegreesOfFreedom: Term, TermAmplitude, TermCoupling, TermModulate
 using ..QuantumOperators: ID, LaTeX, Operator, OperatorProd, Operators, latexformat
 using ..Spatials: Bond, Point, rcoordinate
 using ...Essentials: dtype, kind
@@ -14,7 +15,7 @@ using ...Prerequisites.Traits: efficientoperations, getcontent, rawtype
 using ...Prerequisites.VectorSpaces: VectorSpace, VectorSpaceCartesian, VectorSpaceStyle
 
 import ..QuantumOperators: latexname, matrix, optype, script
-import ..DegreesOfFreedom: Constraint, Coupling, MatrixCoupling, constrainttype, sitestructure, iidtype, isconcreteiid, statistics
+import ..DegreesOfFreedom: MatrixCoupling, diagonalizablefields, iidtype, isdefinite, sitestructure, statistics
 import ...Interfaces: ⊗, ⋅, expand, expand!, permute, rank
 import ...Prerequisites.VectorSpaces: shape
 
@@ -44,31 +45,31 @@ Indicate that the nambu index is creation.
 """
 const creation = 2
 
-@inline default(::typeof(:)) = ":"
+@inline default(::Colon) = ":"
 @inline default(value::Char) = repr(value)
 @inline default(value) = string(value)
 """
-    FID{T, O<:Union{Int, Symbol, typeof(:)}, S<:Union{Int, Symbol, typeof(:)}, N<:Union{Int, Symbol, typeof(:)}} <: SimpleIID
+    FID{T, O<:Union{Int, Symbol, Colon}, S<:Union{Int, Symbol, Colon}, N<:Union{Int, Symbol, Colon}} <: SimpleIID
 
 The Fock id.
 """
-struct FID{T, O<:Union{Int, Symbol, typeof(:)}, S<:Union{Int, Symbol, typeof(:)}, N<:Union{Int, Symbol, typeof(:)}} <: SimpleIID
+struct FID{T, O<:Union{Int, Symbol, Colon}, S<:Union{Int, Symbol, Colon}, N<:Union{Int, Symbol, Colon}} <: SimpleIID
     orbital::O
     spin::S
     nambu::N
-    function FID{T}(orbital::Union{Int, Symbol, typeof(:)}, spin::Union{Int, Symbol, typeof(:)}, nambu::Union{Int, Symbol, typeof(:)}) where T
+    function FID{T}(orbital::Union{Int, Symbol, Colon}, spin::Union{Int, Symbol, Colon}, nambu::Union{Int, Symbol, Colon}) where T
         @assert T∈(:f, :b, wildcard) "FID error: wrong statistics."
         isa(nambu, Int) && @assert nambu∈(1, 2) "FID error: wrong input nambu($nambu)."
         new{T, typeof(orbital), typeof(spin), typeof(nambu)}(orbital, spin, nambu)
     end
 end
-@inline FID(orbital::Union{Int, Symbol, typeof(:)}, spin::Union{Int, Symbol, typeof(:)}, nambu::Union{Int, Symbol, typeof(:)}) = FID{wildcard}(orbital, spin, nambu)
+@inline FID(orbital::Union{Int, Symbol, Colon}, spin::Union{Int, Symbol, Colon}, nambu::Union{Int, Symbol, Colon}) = FID{wildcard}(orbital, spin, nambu)
 @inline Base.:(==)(fid₁::FID, fid₂::FID) = statistics(fid₁)==statistics(fid₂) && ==(efficientoperations, fid₁, fid₂)
 @inline Base.isequal(fid₁::FID, fid₂::FID) = isequal(statistics(fid₁), statistics(fid₂)) && isequal(efficientoperations, fid₁, fid₂)
 @inline Base.hash(fid::FID, h::UInt) = hash((statistics(fid), fid.orbital, fid.spin, fid.nambu), h)
 @inline Base.show(io::IO, fid::FID) = @printf io "FID{%s}(%s)" repr(statistics(fid)) join((fid.orbital|>default, fid.spin|>default, fid.nambu|>default), ", ")
 @inline Base.show(io::IO, fid::FID{wildcard}) = @printf io "FID(%s)" join((fid.orbital|>default, fid.spin|>default, fid.nambu|>default), ", ")
-@inline Base.adjoint(fid::FID{T, <:Union{Int, Symbol, typeof(:)}, <:Union{Int, Symbol, typeof(:)}, Int}) where T = FID{T}(fid.orbital, fid.spin, 3-fid.nambu)
+@inline Base.adjoint(fid::FID{T, <:Union{Int, Symbol, Colon}, <:Union{Int, Symbol, Colon}, Int}) where T = FID{T}(fid.orbital, fid.spin, 3-fid.nambu)
 @inline @generated function Base.replace(fid::FID; kwargs...)
     exprs = [:(get(kwargs, $name, getfield(fid, $name))) for name in QuoteNode.(fieldnames(fid))]
     return :(rawtype(typeof(fid)){statistics(fid)}($(exprs...)))
@@ -76,10 +77,10 @@ end
 @inline statistics(::Type{<:FID{T}}) where T = T
 @inline FID(iid::FID, ::CompositeInternal) = iid
 
-### required by Constraint
-@inline isconcreteiid(::Type{<:FID{T, Int, Int, Int} where T}) = true
-@inline iidtype(::Type{FID}, ::Type{O}, ::Type{S}, ::Type{N}) where {O<:Union{Int, Symbol, typeof(:)}, S<:Union{Int, Symbol, typeof(:)}, N<:Union{Int, Symbol, typeof(:)}} = FID{wildcard, O, S, N}
-@inline iidtype(::Type{FID{T}}, ::Type{O}, ::Type{S}, ::Type{N}) where {T, O<:Union{Int, Symbol, typeof(:)}, S<:Union{Int, Symbol, typeof(:)}, N<:Union{Int, Symbol, typeof(:)}} = FID{T, O, S, N}
+### requested by Constraint
+@inline isdefinite(::Type{<:FID{T, Int, Int, Int} where T}) = true
+@inline iidtype(::Type{FID}, ::Type{O}, ::Type{S}, ::Type{N}) where {O<:Union{Int, Symbol, Colon}, S<:Union{Int, Symbol, Colon}, N<:Union{Int, Symbol, Colon}} = FID{wildcard, O, S, N}
+@inline iidtype(::Type{FID{T}}, ::Type{O}, ::Type{S}, ::Type{N}) where {T, O<:Union{Int, Symbol, Colon}, S<:Union{Int, Symbol, Colon}, N<:Union{Int, Symbol, Colon}} = FID{T, O, S, N}
 
 ## Fock
 """
@@ -112,7 +113,7 @@ end
     script(::Val{:spsym}, fid::FID; kwargs...) -> String
     script(::Val{:nambu}, fid::FID; kwargs...) -> String
 
-Get the required script of an fid.
+Get the requested script of an fid.
 """
 @inline script(::Val{:orbital}, fid::FID; kwargs...) = fid.orbital==(:) ? ":" : string(fid.orbital)
 @inline script(::Val{:spint}, fid::FID; kwargs...) = fid.spin==(:) ? ":" : string(fid.spin)
@@ -125,10 +126,10 @@ Get the required script of an fid.
 The default LaTeX format of a fermionic index.
 """
 const latexoffermions = LaTeX{(:nambu,), (:site, :orbital, :spsym)}('c')
-@inline latexname(::Type{<:Index{<:FID{:f}}}) = Symbol("Index{FID{:f}}")
-@inline latexname(::Type{<:AbstractCompositeIndex{<:Index{<:FID{:f}}}}) = Symbol("AbstractCompositeIndex{Index{FID{:f}}}")
-latexformat(Index{<:FID{:f}}, latexoffermions)
-latexformat(AbstractCompositeIndex{<:Index{<:FID{:f}}}, latexoffermions)
+@inline latexname(::Type{<:Index{<:Union{Int, Colon}, <:FID{:f}}}) = Symbol("Index{Union{Int, Colon}, FID{:f}}")
+@inline latexname(::Type{<:AbstractCompositeIndex{<:Index{<:Union{Int, Colon}, <:FID{:f}}}}) = Symbol("AbstractCompositeIndex{Index{Union{Int, Colon}, FID{:f}}}")
+latexformat(Index{<:Union{Int, Colon}, <:FID{:f}}, latexoffermions)
+latexformat(AbstractCompositeIndex{<:Index{<:Union{Int, Colon}, <:FID{:f}}}, latexoffermions)
 @inline latexname(::Type{<:FID{:f}}) = Symbol("FID{:f}")
 latexformat(FID{:f}, LaTeX{(:nambu,), (:orbital, :spsym)}('c'))
 
@@ -138,10 +139,10 @@ latexformat(FID{:f}, LaTeX{(:nambu,), (:orbital, :spsym)}('c'))
 The default LaTeX format of a bosonic index.
 """
 const latexofbosons = LaTeX{(:nambu,), (:site, :orbital, :spsym)}('b')
-@inline latexname(::Type{<:Index{<:FID{:b}}}) = Symbol("Index{FID{:b}}")
-@inline latexname(::Type{<:AbstractCompositeIndex{<:Index{<:FID{:b}}}}) = Symbol("AbstractCompositeIndex{Index{FID{:b}}}")
-latexformat(Index{<:FID{:b}}, latexofbosons)
-latexformat(AbstractCompositeIndex{<:Index{<:FID{:b}}}, latexofbosons)
+@inline latexname(::Type{<:Index{<:Union{Int, Colon}, <:FID{:b}}}) = Symbol("Index{Union{Int, Colon}, FID{:b}}")
+@inline latexname(::Type{<:AbstractCompositeIndex{<:Index{<:Union{Int, Colon}, <:FID{:b}}}}) = Symbol("AbstractCompositeIndex{Index{Union{Int, Colon}, FID{:b}}}")
+latexformat(Index{<:Union{Int, Colon}, <:FID{:b}}, latexofbosons)
+latexformat(AbstractCompositeIndex{<:Index{<:Union{Int, Colon}, <:FID{:b}}}, latexofbosons)
 @inline latexname(::Type{<:FID{:b}}) = Symbol("FID{:b}")
 latexformat(FID{:b}, LaTeX{(:nambu,), (:orbital, :spsym)}('b'))
 
@@ -151,20 +152,20 @@ latexformat(FID{:b}, LaTeX{(:nambu,), (:orbital, :spsym)}('b'))
 The default LaTeX format of a wildcard Fock index.
 """
 const latexofparticles = LaTeX{(:nambu,), (:site, :orbital, :spsym)}('f')
-@inline latexname(::Type{<:Index{<:FID{wildcard}}}) = Symbol("Index{FID}")
-@inline latexname(::Type{<:AbstractCompositeIndex{<:Index{<:FID{wildcard}}}}) = Symbol("AbstractCompositeIndex{Index{FID}}")
-latexformat(Index{<:FID{wildcard}}, latexofparticles)
-latexformat(AbstractCompositeIndex{<:Index{<:FID{wildcard}}}, latexofparticles)
+@inline latexname(::Type{<:Index{<:Union{Int, Colon}, <:FID{wildcard}}}) = Symbol("Index{Union{Int, Colon}, FID}")
+@inline latexname(::Type{<:AbstractCompositeIndex{<:Index{<:Union{Int, Colon}, <:FID{wildcard}}}}) = Symbol("AbstractCompositeIndex{Index{Union{Int, Colon}, FID}}")
+latexformat(Index{<:Union{Int, Colon}, <:FID{wildcard}}, latexofparticles)
+latexformat(AbstractCompositeIndex{<:Index{<:Union{Int, Colon}, <:FID{wildcard}}}, latexofparticles)
 @inline latexname(::Type{<:FID{wildcard}}) = Symbol("FID")
 latexformat(FID{wildcard}, LaTeX{(:nambu,), (:orbital, :spsym)}('f'))
 
 ## Boundary
 """
-    angle(id::CompositeIndex{<:Index{<:FID}}, vectors::AbstractVector{<:AbstractVector{<:Number}}, values::AbstractVector{<:Number}) -> Complex{<:Number}
+    angle(id::CompositeIndex{<:Index{Int, <:FID}}, vectors::AbstractVector{<:AbstractVector{<:Number}}, values::AbstractVector{<:Number}) -> Complex{<:Number}
 
 Get the twist phase corresponding to a Fock index.
 """
-function Base.angle(id::CompositeIndex{<:Index{<:FID}}, vectors::AbstractVector{<:AbstractVector{<:Number}}, values::AbstractVector{<:Number})
+function Base.angle(id::CompositeIndex{<:Index{Int, <:FID}}, vectors::AbstractVector{<:AbstractVector{<:Number}}, values::AbstractVector{<:Number})
     datatype = promote_type(eltype(values), Float)
     phase = length(vectors)==1 ? 2*convert(datatype, pi)*dot(decompose(id.icoordinate, vectors[1]), values) :
             length(vectors)==2 ? 2*convert(datatype, pi)*dot(decompose(id.icoordinate, vectors[1], vectors[2]), values) :
@@ -175,11 +176,11 @@ end
 
 ## New methods
 """
-    isnormalordered(opt::Operator{<:Number, <:ID{AbstractCompositeIndex{<:Index{<:FID}}}}) -> Bool
+    isnormalordered(opt::Operator{<:Number, <:ID{AbstractCompositeIndex{<:Index{Int, <:FID}}}}) -> Bool
 
 Judge whether an operator is normal ordered.
 """
-function isnormalordered(opt::Operator{<:Number, <:ID{AbstractCompositeIndex{<:Index{<:FID}}}})
+function isnormalordered(opt::Operator{<:Number, <:ID{AbstractCompositeIndex{<:Index{Int, <:FID}}}})
     flag = true
     for i = 1:rank(opt)
         flag && (opt.id[i].index.iid.nambu == annihilation) && (flag = false)
@@ -190,15 +191,15 @@ end
 
 """
     *(
-        f1::Operator{<:Number, <:ID{AbstractCompositeIndex{<:Index{<:FID{:f}}}}},
-        f2::Operator{<:Number, <:ID{AbstractCompositeIndex{<:Index{<:FID{:f}}}}}
+        f1::Operator{<:Number, <:ID{AbstractCompositeIndex{<:Index{Int, <:FID{:f}}}}},
+        f2::Operator{<:Number, <:ID{AbstractCompositeIndex{<:Index{Int, <:FID{:f}}}}}
     ) -> Union{Nothing, Operator}
 
 Get the multiplication of two fermionic Fock operators.
 """
 @inline function Base.:*(
-        f1::Operator{<:Number, <:ID{AbstractCompositeIndex{<:Index{<:FID{:f}}}}},
-        f2::Operator{<:Number, <:ID{AbstractCompositeIndex{<:Index{<:FID{:f}}}}}
+        f1::Operator{<:Number, <:ID{AbstractCompositeIndex{<:Index{Int, <:FID{:f}}}}},
+        f2::Operator{<:Number, <:ID{AbstractCompositeIndex{<:Index{Int, <:FID{:f}}}}}
         )
     rank(f1)>0 && rank(f2)>0 && f1.id[end]==f2.id[1] && return nothing
     return invoke(*, Tuple{OperatorProd, OperatorProd}, f1, f2)
@@ -206,11 +207,11 @@ end
 
 ## Permutation
 """
-    permute(id₁::CompositeIndex{<:Index{<:FID{:f}}}, id₂::CompositeIndex{<:Index{<:FID{:f}}}) -> Tuple{Vararg{Operator}}
+    permute(id₁::CompositeIndex{<:Index{Int, <:FID{:f}}}, id₂::CompositeIndex{<:Index{Int, <:FID{:f}}}) -> Tuple{Vararg{Operator}}
 
 Permute two fermionic indexes and get the result.
 """
-function permute(id₁::CompositeIndex{<:Index{<:FID{:f}}}, id₂::CompositeIndex{<:Index{<:FID{:f}}})
+function permute(id₁::CompositeIndex{<:Index{Int, <:FID{:f}}}, id₂::CompositeIndex{<:Index{Int, <:FID{:f}}})
     @assert id₁.index≠id₂.index || id₁.rcoordinate≠id₂.rcoordinate || id₁.icoordinate≠id₂.icoordinate "permute error: permuted ids should not be equal to each other."
     if id₁.index'==id₂.index && id₁.rcoordinate==id₂.rcoordinate && id₁.icoordinate==id₂.icoordinate
         return (Operator(1), Operator(-1, id₂, id₁))
@@ -220,11 +221,11 @@ function permute(id₁::CompositeIndex{<:Index{<:FID{:f}}}, id₂::CompositeInde
 end
 
 """
-    permute(id₁::CompositeIndex{<:Index{<:FID{:b}}}, id₂::CompositeIndex{<:Index{<:FID{:b}}}) -> Tuple{Vararg{Operator}}
+    permute(id₁::CompositeIndex{<:Index{Int, <:FID{:b}}}, id₂::CompositeIndex{<:Index{Int, <:FID{:b}}}) -> Tuple{Vararg{Operator}}
 
 Permute two bosonic indexes and get the result.
 """
-function permute(id₁::CompositeIndex{<:Index{<:FID{:b}}}, id₂::CompositeIndex{<:Index{<:FID{:b}}})
+function permute(id₁::CompositeIndex{<:Index{Int, <:FID{:b}}}, id₂::CompositeIndex{<:Index{Int, <:FID{:b}}})
     @assert id₁.index≠id₂.index || id₁.rcoordinate≠id₂.rcoordinate || id₁.icoordinate≠id₂.icoordinate "permute error: permuted ids should not be equal to each other."
     if id₁.index'==id₂.index && id₁.rcoordinate==id₂.rcoordinate && id₁.icoordinate==id₂.icoordinate
         if id₁.index.iid.nambu == creation
@@ -246,52 +247,33 @@ end
     phrange = iidspace.iid.nambu:iidspace.iid.nambu
     return (obrange, sprange, phrange)
 end
-@inline fidshape(::Union{Symbol, typeof(:)}, n::Int) = 1:n
+@inline fidshape(::Union{Symbol, Colon}, n::Int) = 1:n
 @inline fidshape(v::Int, n::Int) = ((@assert 0<v<n+1 "shape error: out of range."); v:v)
 
-### Coupling
-"""
-    Coupling{F}(orbital::Union{NTuple{N, Int}, typeof(:)}, spin::Union{NTuple{N, Int}, typeof(:)}, nambu::Union{NTuple{N, Int}, typeof(:)}) where {F<:FID, N}
-    Coupling{F}(value, orbital::Union{NTuple{N, Int}, typeof(:)}, spin::Union{NTuple{N, Int}, typeof(:)}, nambu::Union{NTuple{N, Int}, typeof(:)}) where {F<:FID, N}
-
-Construct a `Coupling` among different `FID`s with the given `orbital`, `spin` and `nambu`.
-"""
-@inline Coupling{F}(orbital::Union{NTuple{N, Int}, typeof(:)}, spin::Union{NTuple{N, Int}, typeof(:)}, nambu::Union{NTuple{N, Int}, typeof(:)}) where {F<:FID, N} = Coupling{F}(1, orbital, spin, nambu)
-@inline function Coupling{F}(value, orbital::Union{NTuple{N, Int}, typeof(:)}, spin::Union{NTuple{N, Int}, typeof(:)}, nambu::Union{NTuple{N, Int}, typeof(:)}) where {F<:FID, N}
-    return Coupling(value, ID(F, default(orbital, N|>Val), default(spin, N|>Val), default(nambu, N|>Val)))
-end
-@inline default(fields, ::Val) = fields
-@inline default(::typeof(:), N::Val) = ntuple(i->:, N)
-
 ### requested by expand of Coupling
-@inline function CompositeIID(coupling::Coupling{V, I}, info::Val=Val(:term)) where {V, I<:ID{FID}}
-    return CompositeIID(map((fid::FID, order::Int)->FID{statistics(fid)}(fid.orbital, fid.spin, nambu(info, fid.nambu, order)), coupling.iids, ntuple(i->i, Val(rank(I)))))
+@inline function CompositeIID(coupling::Coupling{V, I}, info::Val=Val(:term)) where {V, I<:ID{<:Index{<:Union{Int, Colon}, <:FID}}}
+    return CompositeIID(map((fid::FID, order::Int)->FID{statistics(fid)}(fid.orbital, fid.spin, nambu(info, fid.nambu, order)), coupling.indexes.iids, ntuple(i->i, Val(rank(I)))))
 end
-@inline nambu(::Val, ::typeof(:), order::Int) = order%2==1 ? creation : annihilation
+@inline nambu(::Val, ::Colon, order::Int) = order%2==1 ? creation : annihilation
 @inline nambu(::Val, nambu::Int, ::Int) = nambu
 
-### Constraint
-@inline Constraint(::NTuple{N, FID{S, typeof(:), Int} where S}) where N = Constraint{N}(Diagonal(:orbital))
-@inline Constraint(::NTuple{N, FID{S, Int, typeof(:)} where S}) where N = Constraint{N}(Diagonal(:spin))
-@inline Constraint(::NTuple{N, FID{S, typeof(:), typeof(:)} where S}) where N = Constraint{N}(Diagonal(:orbital, :spin))
+### diagonalizablefields
+@inline diagonalizablefields(::Type{<:Index{<:Union{Int, Colon}, <:FID}}) = (:orbital, :spin)
 
 ### MatrixCoupling
 const default_element = [:]
 const default_matrix = SparseMatrixCSC(hcat(1))
 """
-    MatrixCoupling{F}(orbital::Union{AbstractMatrix, typeof(:)}, spin::Union{AbstractMatrix, typeof(:)}, nambu::Union{AbstractMatrix, typeof(:)}) where {F<:FID}
+    MatrixCoupling(sites::Union{NTuple{2, Int}, Colon}, ::Type{F}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) where {F<:FID}
 
-Construct a set of `Coupling`s between two `FID`s with the coefficients specified by matrices acting on separated internal spaces.
+Construct a set of `Coupling`s between two `Index{<:Union{Int, Colon}, <:FID}`s with the coefficients specified by matrices acting on separated internal spaces.
 """
-@inline function MatrixCoupling{F}(orbital::Union{AbstractMatrix, typeof(:)}, spin::Union{AbstractMatrix, typeof(:)}, nambu::Union{AbstractMatrix, typeof(:)}) where {F<:FID}
-    return MatrixCoupling{F}(Component(F, Val(:orbital), orbital), Component(F, Val(:spin), spin), Component(F, Val(:nambu), nambu))
+@inline function MatrixCoupling(sites::Union{NTuple{2, Int}, Colon}, ::Type{F}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) where {F<:FID}
+    return MatrixCoupling(sites, F, Component(F, Val(:orbital), orbital), Component(F, Val(:spin), spin), Component(F, Val(:nambu), nambu))
 end
 @inline Component(::Type{<:FID}, ::Val, matrix::AbstractMatrix) = Component(1:size(matrix)[1], 1:size(matrix)[2], matrix)
-@inline Component(::Type{<:FID}, ::Val, ::typeof(:)) = Component(default_element, default_element, default_matrix)
+@inline Component(::Type{<:FID}, ::Val, ::Colon) = Component(default_element, default_element, default_matrix)
 @inline Component(::Type{<:FID}, ::Val{:nambu}, matrix::AbstractMatrix) = (@assert size(matrix)==(2, 2) "Component error: for nambu subspace, the input matrix must be 2×2."; Component(1:1:2, 2:-1:1, matrix))
-@inline constrainttype(::Type{<:MatrixCoupling{<:FID, <:Tuple{Component{typeof(:)}, Component{Int}, Component}}}) = Constraint{(2,), 1, Tuple{Diagonal{(:orbital,)}}}
-@inline constrainttype(::Type{<:MatrixCoupling{<:FID, <:Tuple{Component{Int}, Component{typeof(:)}, Component}}}) = Constraint{(2,), 1, Tuple{Diagonal{(:spin,)}}}
-@inline constrainttype(::Type{<:MatrixCoupling{<:FID, <:Tuple{Component{typeof(:)}, Component{typeof(:)}, Component}}}) = Constraint{(2,), 1, Tuple{Diagonal{(:orbital, :spin)}}}
 
 ### Pauli matrices
 """
@@ -317,42 +299,42 @@ const σ²² = SparseMatrixCSC([0 0; 0 1])
 
 ## Term
 """
-    Onsite(id::Symbol, value;  coupling=Coupling{FID}(:, :, (2, 1)), amplitude::Union{Function, Nothing}=nothing, ishermitian::Bool=true, modulate::Union{Function, Bool}=true)
+    Onsite(id::Symbol, value; coupling=Coupling(:, FID, :, :, (2, 1)), amplitude::Union{Function, Nothing}=nothing, ishermitian::Bool=true, modulate::Union{Function, Bool}=true)
 
 Onsite term.
 
 Type alias for `Term{:Onsite, id, V, Int, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
 """
 const Onsite{id, V, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Onsite, id, V, Int, C, A, M}
-@inline function Onsite(id::Symbol, value; coupling=Coupling{FID}(:, :, (2, 1)), amplitude::Union{Function, Nothing}=nothing, ishermitian::Bool=true, modulate::Union{Function, Bool}=true)
+@inline function Onsite(id::Symbol, value; coupling=Coupling(:, FID, :, :, (2, 1)), amplitude::Union{Function, Nothing}=nothing, ishermitian::Bool=true, modulate::Union{Function, Bool}=true)
     return Term{:Onsite}(id, value, 0, coupling, ishermitian; amplitude=amplitude, modulate=modulate)
 end
 
 """
-    Hopping(id::Symbol, value, bondkind; coupling=Coupling{FID}(:, :, (2, 1)), amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    Hopping(id::Symbol, value, bondkind; coupling=Coupling(:, FID, :, :, (2, 1)), amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
 
 Hopping term.
 
 Type alias for `Term{:Hopping, id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
 """
 const Hopping{id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Hopping, id, V, B, C, A, M}
-@inline function Hopping(id::Symbol, value, bondkind; coupling=Coupling{FID}(:, :, (2, 1)), amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+@inline function Hopping(id::Symbol, value, bondkind; coupling=Coupling(:, FID, :, :, (2, 1)), amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
     @assert bondkind≠0 "Hopping error: input bondkind (neighbor) cannot be 0. Use `Onsite` instead."
     return Term{:Hopping}(id, value, bondkind, coupling, false; amplitude=amplitude, modulate=modulate)
 end
 
 """
-    Pairing(id::Symbol, value, bondkind; coupling=Coupling{FID}(:, :, (1, 1)), amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    Pairing(id::Symbol, value, bondkind; coupling, amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
 
 Pairing term.
 
 Type alias for `Term{:Pairing, id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
 """
 const Pairing{id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Pairing, id, V, B, C, A, M}
-@inline function Pairing(id::Symbol, value, bondkind; coupling=Coupling{FID}(:, :, (1, 1)), amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+@inline function Pairing(id::Symbol, value, bondkind; coupling, amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
     return Term{:Pairing}(id, value, bondkind, coupling, false; amplitude=amplitude, modulate=modulate)
 end
-@inline nambu(::Val{:Pairing}, ::typeof(:), ::Int) = annihilation
+@inline nambu(::Val{:Pairing}, ::Colon, ::Int) = annihilation
 function expand!(operators::Operators, term::Pairing, bond::Bond, hilbert::Hilbert; half::Bool=false)
     argtypes = Tuple{Operators, Term, Bond, Hilbert}
     invoke(expand!, argtypes, operators, term, bond, hilbert; half=half)
@@ -369,7 +351,7 @@ Type alias for `Term{:Hubbard, id, V, Int, C<:TermCoupling, A<:TermAmplitude, M<
 """
 const Hubbard{id, V, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Hubbard, id, V, Int, C, A, M}
 @inline function Hubbard(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
-    return Term{:Hubbard}(id, value, 0, Coupling{FID}(:, (2, 2, 1, 1), (2, 1, 2, 1)), true; amplitude=amplitude, modulate=modulate)
+    return Term{:Hubbard}(id, value, 0, Coupling(:, FID, :, (2, 2, 1, 1), (2, 1, 2, 1)), true; amplitude=amplitude, modulate=modulate)
 end
 
 """
@@ -381,7 +363,10 @@ Type alias for `Term{:InterOrbitalInterSpin, id, V, Int, C<:TermCoupling, A<:Ter
 """
 const InterOrbitalInterSpin{id, V, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:InterOrbitalInterSpin, id, V, Int, C, A, M}
 @inline function InterOrbitalInterSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
-    return Term{:InterOrbitalInterSpin}(id, value, 0, Coupling(@iids(FID(α, σ₁, 2), FID(α, σ₁, 1), FID(β, σ₂, 2), FID(β, σ₂, 1); constraint=α<β && σ₁≠σ₂)), true; amplitude=amplitude, modulate=modulate)
+    return Term{:InterOrbitalInterSpin}(
+        id, value, 0, Coupling(@indexes(Index(:, FID(α, σ₁, 2)), Index(:, FID(α, σ₁, 1)), Index(:, FID(β, σ₂, 2)), Index(:, FID(β, σ₂, 1)); constraint=α<β && σ₁≠σ₂)), true;
+        amplitude=amplitude, modulate=modulate
+    )
 end
 
 """
@@ -393,7 +378,10 @@ Type alias for `Term{:InterOrbitalIntraSpin, id, V, Int, C<:TermCoupling, A<:Ter
 """
 const InterOrbitalIntraSpin{id, V, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:InterOrbitalIntraSpin, id, V, Int, C, A, M}
 @inline function InterOrbitalIntraSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
-    return Term{:InterOrbitalIntraSpin}(id, value, 0, Coupling(@iids(FID(α, σ, 2), FID(α, σ, 1), FID(β, σ, 2), FID(β, σ, 1); constraint=α<β)), true; amplitude=amplitude, modulate=modulate)
+    return Term{:InterOrbitalIntraSpin}(
+        id, value, 0, Coupling(@indexes(Index(:, FID(α, σ, 2)), Index(:, FID(α, σ, 1)), Index(:, FID(β, σ, 2)), Index(:, FID(β, σ, 1)); constraint=α<β)), true;
+        amplitude=amplitude, modulate=modulate
+    )
 end
 
 """
@@ -405,7 +393,10 @@ Type alias for `Term{:SpinFlip, id, V, Int, C<:TermCoupling, A<:TermAmplitude, M
 """
 const SpinFlip{id, V, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:SpinFlip, id, V, Int, C, A, M}
 @inline function SpinFlip(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
-    return Term{:SpinFlip}(id, value, 0, Coupling(@iids(FID(α, 2, 2), FID(β, 1, 2), FID(α, 1, 1), FID(β, 2, 1); constraint=α<β)), false; amplitude=amplitude, modulate=modulate)
+    return Term{:SpinFlip}(
+        id, value, 0, Coupling(@indexes(Index(:, FID(α, 2, 2)), Index(:, FID(β, 1, 2)), Index(:, FID(α, 1, 1)), Index(:, FID(β, 2, 1)); constraint=α<β)), false;
+        amplitude=amplitude, modulate=modulate
+    )
 end
 
 """
@@ -417,18 +408,27 @@ Type alias for `Term{:PairHopping, id, V, Int, C<:TermCoupling, A<:TermAmplitude
 """
 const PairHopping{id, V, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:PairHopping, id, V, Int, C, A, M}
 @inline function PairHopping(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
-    return Term{:PairHopping}(id, value, 0, Coupling(@iids(FID(α, 2, 2), FID(α, 1, 2), FID(β, 1, 1), FID(β, 2, 1); constraint=α<β)), false; amplitude=amplitude, modulate=modulate)
+    return Term{:PairHopping}(
+        id, value, 0, Coupling(@indexes(Index(:, FID(α, 2, 2)), Index(:, FID(α, 1, 2)), Index(:, FID(β, 1, 1)), Index(:, FID(β, 2, 1)); constraint=α<β)), false;
+        amplitude=amplitude, modulate=modulate
+    )
 end
 
 """
-    Coulomb(id::Symbol, value, bondkind; coupling=Coupling{FID}(:, :, (2, 1))*Coupling{FID}(:, :, (2, 1)), amplitude::Union{Function, Nothing}=nothing, ishermitian::Bool=true, modulate::Union{Function, Bool}=true)
+    Coulomb(id::Symbol, value, bondkind; ishermitian::Bool=true, coupling=Coupling(:, FID, :, :, (2, 1))*Coupling(:, FID, :, :, (2, 1)), amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
 
 Coulomb term.
 
 Type alias for `Term{:Coulomb, id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
 """
 const Coulomb{id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Coulomb, id, V, B, C, A, M}
-@inline function Coulomb(id::Symbol, value, bondkind; coupling=Coupling{FID}(:, :, (2, 1))*Coupling{FID}(:, :, (2, 1)), amplitude::Union{Function, Nothing}=nothing, ishermitian::Bool=true, modulate::Union{Function, Bool}=true)
+@inline function Coulomb(
+    id::Symbol, value, bondkind;
+    ishermitian::Bool=true,
+    coupling=Coupling(:, FID, :, :, (2, 1))*Coupling(:, FID, :, :, (2, 1)),
+    amplitude::Union{Function, Nothing}=nothing,
+    modulate::Union{Function, Bool}=true
+)
     return Term{:Coulomb}(id, value, bondkind, coupling, ishermitian; amplitude=amplitude, modulate=modulate)
 end
 
@@ -448,19 +448,19 @@ const sidreprevmap = Dict(v=>k for (k, v) in sidrepmap)
 
 ## SID
 """
-    SID{S, T<:Union{Char, Symbol, typeof(:)}} <: SimpleIID
+    SID{S, T<:Union{Char, Symbol, Colon}} <: SimpleIID
 
 The spin id.
 """
-struct SID{S, T<:Union{Char, Symbol, typeof(:)}} <: SimpleIID
+struct SID{S, T<:Union{Char, Symbol, Colon}} <: SimpleIID
     tag::T
-    function SID{S}(tag::Union{Char, Symbol, typeof(:)}) where S
+    function SID{S}(tag::Union{Char, Symbol, Colon}) where S
         @assert isa(S, Rational{Int}) && S.den==2 || isa(S, Integer) || S==wildcard "SID error: not supported spin($S)."
         isa(tag, Char) && @assert tag in ('x', 'y', 'z', '+', '-') "SID error: not supported tag($tag)."
         new{S, typeof(tag)}(tag)
     end
 end
-@inline SID(tag::Union{Char, Symbol, typeof(:)}) = SID{wildcard}(tag)
+@inline SID(tag::Union{Char, Symbol, Colon}) = SID{wildcard}(tag)
 @inline Base.:(==)(sid₁::SID, sid₂::SID) = totalspin(sid₁)==totalspin(sid₂) && ==(efficientoperations, sid₁, sid₂)
 @inline Base.isequal(sid₁::SID, sid₂::SID) = isequal(totalspin(sid₁), totalspin(sid₂)) && isequal(efficientoperations, sid₁, sid₂)
 @inline Base.adjoint(sid::SID) = SID{totalspin(sid)}(sidajointmap[sid.tag])
@@ -476,10 +476,10 @@ end
 @inline statistics(::Type{<:SID}) = :b
 @inline SID(iid::SID, ::CompositeInternal) = iid
 
-### required by Constraint
-@inline isconcreteiid(::Type{<:SID{T, Char} where T}) = true
-@inline iidtype(::Type{SID}, ::Type{T}) where {T<:Union{Char, Symbol, typeof(:)}} = SID{wildcard, T}
-@inline iidtype(::Type{SID{S}}, ::Type{T}) where {S, T<:Union{Char, Symbol, typeof(:)}} = SID{S, T}
+### requested by Constraint
+@inline isdefinite(::Type{<:SID{T, Char} where T}) = true
+@inline iidtype(::Type{SID}, ::Type{T}) where {T<:Union{Char, Symbol, Colon}} = SID{wildcard, T}
+@inline iidtype(::Type{SID{S}}, ::Type{T}) where {S, T<:Union{Char, Symbol, Colon}} = SID{S, T}
 
 ### matrix
 """
@@ -531,7 +531,7 @@ end
 """
     script(::Val{:tag}, sid::SID; kwargs...) -> String
 
-Get the required script of an sid.
+Get the requested script of an sid.
 """
 @inline script(::Val{:tag}, sid::SID; kwargs...) = sid.tag==(:) ? ":" : string(sid.tag)
 
@@ -541,20 +541,20 @@ Get the required script of an sid.
 The default LaTeX format of a spin index.
 """
 const latexofspins = LaTeX{(:tag,), (:site,)}('S')
-@inline latexname(::Type{<:Index{<:SID}}) = Symbol("Index{SID}")
-@inline latexname(::Type{<:AbstractCompositeIndex{<:Index{<:SID}}}) = Symbol("AbstractCompositeIndex{Index{SID}}")
-latexformat(Index{<:SID}, latexofspins)
-latexformat(AbstractCompositeIndex{<:Index{<:SID}}, latexofspins)
+@inline latexname(::Type{<:Index{<:Union{Int, Colon}, <:SID}}) = Symbol("Index{Union{Int, Colon}, SID}")
+@inline latexname(::Type{<:AbstractCompositeIndex{<:Index{<:Union{Int, Colon}, <:SID}}}) = Symbol("AbstractCompositeIndex{Index{Union{Int, Colon}, SID}}")
+latexformat(Index{<:Union{Int, Colon}, <:SID}, latexofspins)
+latexformat(AbstractCompositeIndex{<:Index{<:Union{Int, Colon}, <:SID}}, latexofspins)
 @inline latexname(::Type{<:SID}) = Symbol("SID")
 latexformat(SID, LaTeX{(:tag,), ()}('S'))
 
 ## Permutation
 """
-    permute(id₁::CompositeIndex{<:Index{SID{S, Char}}}, id₂::CompositeIndex{<:Index{SID{S, Char}}}) where S -> Tuple{Vararg{Operator}}
+    permute(id₁::CompositeIndex{<:Index{Int, SID{S, Char}}}, id₂::CompositeIndex{<:Index{Int, SID{S, Char}}}) where S -> Tuple{Vararg{Operator}}
 
 Permute two spin indexes and get the result.
 """
-function permute(id₁::CompositeIndex{<:Index{SID{S, Char}}}, id₂::CompositeIndex{<:Index{SID{S, Char}}}) where S
+function permute(id₁::CompositeIndex{<:Index{Int, SID{S, Char}}}, id₂::CompositeIndex{<:Index{Int, SID{S, Char}}}) where S
     @assert id₁.index≠id₂.index || id₁.rcoordinate≠id₂.rcoordinate || id₁.icoordinate≠id₂.icoordinate "permute error: permuted ids should not be equal to each other."
     if id₁.index.site==id₂.index.site && id₁.rcoordinate==id₂.rcoordinate && id₁.icoordinate==id₂.icoordinate
         if id₁.index.iid.tag == 'x'
@@ -587,32 +587,22 @@ function permute(id₁::CompositeIndex{<:Index{SID{S, Char}}}, id₂::CompositeI
         return (Operator(1, id₂, id₁),)
     end
 end
-@inline permutespinindex(id::CompositeIndex{<:Index{<:SID}}, tag::Char) = replace(id, index=replace(id.index, iid=replace(id.index.iid, tag=tag)))
+@inline permutespinindex(id::CompositeIndex{<:Index{Int, <:SID}}, tag::Char) = replace(id, index=replace(id.index, iid=replace(id.index.iid, tag=tag)))
 
 ## Coupling
-### required by IIDSpace
+### requested by IIDSpace
 @inline shape(iidspace::IIDSpace{<:SID, <:Spin}) = (sidrange(iidspace.iid.tag),)
-@inline sidrange(::Union{Symbol, typeof(:)}) = 1:5
+@inline sidrange(::Union{Symbol, Colon}) = 1:5
 @inline sidrange(tag::Char) = (pos=sidseqmap[tag]; pos:pos)
-
-### Coupling
-"""
-    Coupling{S}(tag::NTuple{N, Char}) where {S<:SID, N}
-    Coupling{S}(value, tag::NTuple{N, Char}) where {S<:SID, N}
-
-Construct a `Coupling` among different `SID`s with the given `tag`.
-"""
-@inline Coupling{S}(tag::NTuple{N, Char}) where {S<:SID, N} = Coupling{S}(1, tag)
-@inline Coupling{S}(value, tag::NTuple{N, Char}) where {S<:SID, N} = Coupling(value, ID(S, tag))
 
 ### MatrixCoupling
 const default_tag = ['x', 'y', 'z']
 """
-    MatrixCoupling{S}(tag::AbstractMatrix) where {S<:SID}
+    MatrixCoupling(sites::Union{NTuple{2, Int}, Colon}, ::Type{S}, matrix::AbstractMatrix) where {S<:SID}
 
-Construct a set of `Coupling`s between two `SID`s with the coefficients specified by a matrix.
+Construct a set of `Coupling`s between two `Index{<:Union{Int, Colon}, <:SID}`s with the coefficients specified by a matrix.
 """
-@inline MatrixCoupling{S}(matrix::AbstractMatrix) where {S<:SID} = MatrixCoupling{S}(Component(default_tag, default_tag, matrix))
+@inline MatrixCoupling(sites::Union{NTuple{2, Int}, Colon}, ::Type{S}, matrix::AbstractMatrix) where {S<:SID} = MatrixCoupling(sites, S, Component(default_tag, default_tag, matrix))
 
 ### Spin coupling matrix
 """
@@ -679,23 +669,23 @@ const SpinTerm{id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = T
 @inline function SpinTerm(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
     return Term{:SpinTerm}(id, value, bondkind, coupling, true; amplitude=amplitude, modulate=modulate)
 end
-@inline function sitestructure(::Val{:SpinTerm}, ::Val{couplingrank}, bondlength::Integer) where couplingrank
-    bondlength==1 && return ntuple(i->1, Val(couplingrank))
-    bondlength==2 && return ntuple(i->2-i%2, Val(couplingrank))
+@inline function sitestructure(::Val{:SpinTerm}, ::Val{termrank}, bondlength::Integer) where termrank
+    bondlength==1 && return ntuple(i->1, Val(termrank))
+    bondlength==2 && return ntuple(i->2-i%2, Val(termrank))
     error("sitestructure error: not supported for a generic bond containing $bondlength points.")
 end
 
 # Phononic systems
 ## PID
 """
-    PID{D<:Union{Char, Symbol, typeof(:)}} <: SimpleIID
+    PID{D<:Union{Char, Symbol, Colon}} <: SimpleIID
 
 The phonon id.
 """
-struct PID{D<:Union{Char, Symbol, typeof(:)}} <: SimpleIID
+struct PID{D<:Union{Char, Symbol, Colon}} <: SimpleIID
     tag::Char
     direction::D
-    function PID(tag::Char, direction::Union{Char, Symbol, typeof(:)})
+    function PID(tag::Char, direction::Union{Char, Symbol, Colon})
         @assert tag∈('p', 'u') "PID error: wrong tag($tag)."
         isa(direction, Char) && @assert direction∈('x', 'y', 'z') "PID error: wrong direction($direction)."
         new{typeof(direction)}(tag, direction)
@@ -706,9 +696,9 @@ end
 @inline Base.show(io::IO, pid::PID) = @printf io "PID(%s, %s)" repr(pid.tag) default(pid.direction)
 @inline PID(iid::PID, ::CompositeInternal) = iid
 
-### required by Constraint
-@inline isconcreteiid(::Type{PID{Char}}) = true
-@inline iidtype(::Type{PID}, ::Type{Char}, ::Type{D}) where {D<:Union{Char, Symbol, typeof(:)}} = PID{D}
+### requested by Constraint
+@inline isdefinite(::Type{PID{Char}}) = true
+@inline iidtype(::Type{PID}, ::Type{Char}, ::Type{D}) where {D<:Union{Char, Symbol, Colon}} = PID{D}
 
 ## Phonon
 """
@@ -731,20 +721,20 @@ end
 """
     script(::Val{:direction}, pid::PID; kwargs...) -> String
 
-Get the required script of an pid.
+Get the requested script of an pid.
 """
 @inline script(::Val{:direction}, pid::PID; kwargs...) = pid.direction==(:) ? ":" : string(pid.direction)
 
 """
     script(::Val{:BD}, pid::PID, l::LaTeX) -> String
-    script(::Val{:BD}, index::Index{<:PID}, l::LaTeX) -> String
-    script(::Val{:BD}, index::AbstractCompositeIndex{<:Index{<:PID}}, l::LaTeX) -> String
+    script(::Val{:BD}, index::Index{<:Union{Int, Colon}, <:PID}, l::LaTeX) -> String
+    script(::Val{:BD}, index::AbstractCompositeIndex{<:Index{<:Union{Int, Colon}, <:PID}}, l::LaTeX) -> String
 
-Get the required script of a phonon index.
+Get the requested script of a phonon index.
 """
 @inline script(::Val{:BD}, pid::PID, l::LaTeX) = l.body[pid.tag]
-@inline script(::Val{:BD}, index::Index{<:PID}, l::LaTeX) = l.body[index.iid.tag]
-@inline script(::Val{:BD}, index::AbstractCompositeIndex{<:Index{<:PID}}, l::LaTeX) = l.body[getcontent(index, :index).iid.tag]
+@inline script(::Val{:BD}, index::Index{<:Union{Int, Colon}, <:PID}, l::LaTeX) = l.body[index.iid.tag]
+@inline script(::Val{:BD}, index::AbstractCompositeIndex{<:Index{<:Union{Int, Colon}, <:PID}}, l::LaTeX) = l.body[getcontent(index, :index).iid.tag]
 
 """
     latexofphonons
@@ -752,20 +742,20 @@ Get the required script of a phonon index.
 The default LaTeX format of a phonon index.
 """
 const latexofphonons = LaTeX{(:direction,), (:site,)}(Dict('p'=>"p", 'u'=>"u"), "", "")
-@inline latexname(::Type{<:Index{<:PID}}) = Symbol("Index{PID}")
-@inline latexname(::Type{<:AbstractCompositeIndex{<:Index{<:PID}}}) = Symbol("AbstractCompositeIndex{Index{PID}}")
-latexformat(Index{<:PID}, latexofphonons)
-latexformat(AbstractCompositeIndex{<:Index{<:PID}}, latexofphonons)
+@inline latexname(::Type{<:Index{<:Union{Int, Colon}, <:PID}}) = Symbol("Index{Union{Int, Colon}, PID}")
+@inline latexname(::Type{<:AbstractCompositeIndex{<:Index{<:Union{Int, Colon}, <:PID}}}) = Symbol("AbstractCompositeIndex{Index{Union{Int, Colon}, PID}}")
+latexformat(Index{<:Union{Int, Colon}, <:PID}, latexofphonons)
+latexformat(AbstractCompositeIndex{<:Index{<:Union{Int, Colon}, <:PID}}, latexofphonons)
 @inline latexname(::Type{<:PID}) = Symbol("PID")
 latexformat(PID, LaTeX{(:direction,), ()}(Dict('p'=>"p", 'u'=>"u"), "", ""))
 
 ## Permutation
 """
-    permute(id₁::CompositeIndex{<:Index{PID{Char}}}, id₂::CompositeIndex{<:Index{PID{Char}}}) -> Tuple{Vararg{Operator}}
+    permute(id₁::CompositeIndex{<:Index{Int, PID{Char}}}, id₂::CompositeIndex{<:Index{Int, PID{Char}}}) -> Tuple{Vararg{Operator}}
 
 Permute two phonon indexes and get the result.
 """
-function permute(id₁::CompositeIndex{<:Index{PID{Char}}}, id₂::CompositeIndex{<:Index{PID{Char}}})
+function permute(id₁::CompositeIndex{<:Index{Int, PID{Char}}}, id₂::CompositeIndex{<:Index{Int, PID{Char}}})
     if id₁.index.iid.direction==id₂.index.iid.direction && id₁.index.iid.tag≠id₂.index.iid.tag && id₁.rcoordinate==id₂.rcoordinate && id₁.icoordinate==id₂.icoordinate
         if id₁.index.iid.tag=='u'
             return (Operator(1im), Operator(1, id₂, id₁))
@@ -778,29 +768,16 @@ function permute(id₁::CompositeIndex{<:Index{PID{Char}}}, id₂::CompositeInde
 end
 
 ## Coupling
-### required by IIDSpace
+### requested by IIDSpace
 @inline function shape(iidspace::IIDSpace{<:PID, Phonon})
     return (iidspace.iid.tag=='u' ? (1:1) : (2:2), pidrange(iidspace.iid.direction, iidspace.internal.ndirection))
 end
-@inline pidrange(::Union{Symbol, typeof(:)}, ndirection::Int) = 1:ndirection
+@inline pidrange(::Union{Symbol, Colon}, ndirection::Int) = 1:ndirection
 @inline function pidrange(direction::Char, ndirection::Int)
     direction = Int(direction) - Int('x') + 1
     @assert 0<direction<ndirection+1 "pidrange error: direction out of range."
     return direction:direction
 end
-
-### Coupling
-"""
-    Coupling{PID}(tag::NTuple{N, Char}, direction::Union{NTuple{N, Char}, typeof(:)}) where N
-    Coupling{PID}(value, tag::NTuple{N, Char}, direction::Union{NTuple{N, Char}, typeof(:)}) where N
-
-Construct a `Coupling` among different `PID`s with the given `tag` and `direction`.
-"""
-@inline Coupling{PID}(tag::NTuple{N, Char}, direction::Union{NTuple{N, Char}, typeof(:)}) where N = Coupling{PID}(1, tag, direction)
-@inline Coupling{PID}(value, tag::NTuple{N, Char}, direction::Union{NTuple{N, Char}, typeof(:)}) where N = Coupling(value, ID(PID, tag, default(direction, N|>Val)))
-
-### Constraint
-@inline Constraint(::NTuple{N, PID{typeof(:)}}) where N = Constraint{N}(Diagonal(:direction))
 
 ### MatrixCoupling
 const default_u = ['u']
@@ -808,33 +785,34 @@ const default_1du = ['x']
 const default_2du = ['x', 'y']
 const default_3du = ['x', 'y', 'z']
 """
-    MatrixCoupling{PID}(matrix::AbstractMatrix)
+    MatrixCoupling(sites::Union{NTuple{2, Int}, Colon}, ::Type{PID}, matrix::AbstractMatrix)
 
 Construct a set of `Coupling`s corresponding to the dynamical matrix of phonons.
 """
-function MatrixCoupling{PID}(matrix::AbstractMatrix)
+function MatrixCoupling(sites::Union{NTuple{2, Int}, Colon}, ::Type{PID}, matrix::AbstractMatrix)
     @assert size(matrix)[1]∈(1, 2, 3) && size(matrix)[2]∈(1, 2, 3) "MatrixCoupling error: mismatched dimension of input matrix."
     left = size(matrix)[1]==1 ? default_1du : size(matrix)[1]==2 ? default_2du : default_3du
     right = size(matrix)[2]==1 ? default_1du : size(matrix)[2]==2 ? default_2du : default_3du
-    return MatrixCoupling{PID}(Component(default_u, default_u, default_matrix), Component(left, right, matrix))
+    return MatrixCoupling(sites, PID, Component(default_u, default_u, default_matrix), Component(left, right, matrix))
 end
 
 ### expand
 """
-    expand(::Val{:Hooke}, pnc::Coupling{<:Number, NTuple{2, PID{typeof(:)}}}, bond::Bond, hilbert::Hilbert) -> PPExpand
+    expand(::Val{:Hooke}, pnc::Coupling{<:Number, <:NTuple{2, Index{<:Union{Int, Colon}, PID{Colon}}}}, bond::Bond, hilbert::Hilbert) -> PPExpand
 
 Expand the default phonon potential coupling on a given bond.
 """
-function expand(::Val{:Hooke}, pnc::Coupling{<:Number, NTuple{2, PID{typeof(:)}}}, bond::Bond, hilbert::Hilbert)
+function expand(::Val{:Hooke}, pnc::Coupling{<:Number, <:NTuple{2, Index{<:Union{Int, Colon}, PID{Colon}}}}, bond::Bond, hilbert::Hilbert)
     R̂ = rcoordinate(bond)/norm(rcoordinate(bond))
-    @assert pnc.iids.tags==('u', 'u') "expand error: wrong tags of phonon coupling."
-    @assert isapprox(pnc.value, 1, atol=atol, rtol=rtol) "expand error: wrong coefficient of phonon coupling."
-    pn₁ = filter(pnc.iids[1], hilbert[bond[1].site])
-    pn₂ = filter(pnc.iids[2], hilbert[bond[2].site])
+    @assert pnc.indexes.iids.tags==('u', 'u') "expand error: wrong tags of Hooke coupling."
+    @assert isapprox(pnc.value, 1, atol=atol, rtol=rtol) "expand error: wrong coefficient of Hooke coupling."
+    @assert pnc.indexes.sites∈((1, 2), (:, :)) "expand error: wrong sites of Hooke coupling."
+    pn₁ = filter(pnc.indexes[1].iid, hilbert[bond[1].site])
+    pn₂ = filter(pnc.indexes[2].iid, hilbert[bond[2].site])
     @assert pn₁.ndirection==pn₂.ndirection==length(R̂) "expand error: mismatched number of directions."
     return PPExpand(R̂, (bond[1], bond[2]))
 end
-struct PPExpand{N, D<:Number} <: VectorSpace{Operator{D, ID{CompositeIndex{Index{PID{Char}}, SVector{N, D}}, 2}}}
+struct PPExpand{N, D<:Number} <: VectorSpace{Operator{D, ID{CompositeIndex{Index{Int, PID{Char}}, SVector{N, D}}, 2}}}
     direction::SVector{N, D}
     points::NTuple{2, Point{N, D}}
 end
@@ -860,7 +838,7 @@ Type alias for `Term{:Kinetic, id, V, Int, C<:TermCoupling, A<:TermAmplitude, M<
 """
 const Kinetic{id, V, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Kinetic, id, V, Int, C, A, M}
 @inline function Kinetic(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
-    return Term{:Kinetic}(id, value, 0, Coupling{PID}(('p', 'p'), :), true; amplitude=amplitude, modulate=modulate)
+    return Term{:Kinetic}(id, value, 0, Coupling(:, PID, ('p', 'p'), :), true; amplitude=amplitude, modulate=modulate)
 end
 
 """
@@ -872,18 +850,18 @@ Type alias for `Term{:Hooke, id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:Ter
 """
 const Hooke{id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Hooke, id, V, B, C, A, M}
 @inline function Hooke(id::Symbol, value, bondkind; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
-    return Term{:Hooke}(id, value, bondkind, Coupling{PID}(('u', 'u'), :), true; amplitude=amplitude, modulate=modulate)
+    return Term{:Hooke}(id, value, bondkind, Coupling(:, PID, ('u', 'u'), :), true; amplitude=amplitude, modulate=modulate)
 end
 
 """
-    Elastic(id::Symbol, value, bondkind; coupling, amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    Elastic(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
 
 Generic elastic energy of phonons.
 
 Type alias for `Term{:Elastic, id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`
 """
 const Elastic{id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Elastic, id, V, B, C, A, M}
-@inline function Elastic(id::Symbol, value, bondkind; coupling, amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+@inline function Elastic(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
     value, factor = promote(value, 1//2)
     return Term{:Elastic, id}(value, bondkind, TermCoupling(coupling), TermAmplitude(amplitude), true, TermModulate(id, modulate), factor)
 end

@@ -1,5 +1,5 @@
 using LaTeXStrings: latexstring
-using QuantumLattices.Essentials.DegreesOfFreedom: wildcard, AbstractCompositeIndex, CompositeIID, CompositeIndex, Constraint, Coupling, Diagonal, Hilbert, Index, IIDSpace, MatrixCoupling, iidtype, isconcreteiid, statistics, @iids
+using QuantumLattices.Essentials.DegreesOfFreedom: wildcard, AbstractCompositeIndex, CompositeIID, CompositeIndex, Constraint, Coupling, Diagonal, Hilbert, Index, IIDSpace, MatrixCoupling, iidtype, isdefinite, statistics, @indexes
 using QuantumLattices.Essentials.QuantumOperators: Operator, Operators, latexname, matrix, script
 using QuantumLattices.Essentials.QuantumSystems
 using QuantumLattices.Essentials.Spatials: Bond, Point, azimuthd, rcoordinate
@@ -32,8 +32,8 @@ using StaticArrays: SVector
     @test isequal(FID{:f}(1, 1, 1), FID{:f}(1, 1, 1))
     @test !isequal(FID{:f}(1, 1, 1), FID{:b}(1, 1, 1))
 
-    @test isconcreteiid(FID{wildcard, Int, Int, Int})
-    @test !isconcreteiid(FID{:f, Symbol, typeof(:), Int})
+    @test isdefinite(FID{wildcard, Int, Int, Int})
+    @test !isdefinite(FID{:f, Symbol, typeof(:), Int})
     @test iidtype(FID, Int, typeof(:), Int) == FID{wildcard, Int, typeof(:), Int}
     @test iidtype(FID{:f}, typeof(:), Symbol, Symbol) == FID{:f, typeof(:),  Symbol, Symbol}
 end
@@ -65,16 +65,16 @@ end
     @test script(Val(:nambu), FID{:f}(2, 3, 1)) == script(Val(:nambu), Index(1, FID{:f}(2, 3, 1))) == ""
     @test script(Val(:nambu), FID{:f}(2, 3, 2)) == script(Val(:nambu), Index(1, FID{:f}(2, 3, 2))) == "\\dagger"
 
-    @test latexname(Index{<:FID{:f}}) == Symbol("Index{FID{:f}}")
-    @test latexname(AbstractCompositeIndex{Index{<:FID{:f}}}) == Symbol("AbstractCompositeIndex{Index{FID{:f}}}")
+    @test latexname(Index{<:Union{Int, Colon}, <:FID{:f}}) == Symbol("Index{Union{Int, Colon}, FID{:f}}")
+    @test latexname(AbstractCompositeIndex{Index{<:Union{Int, Colon}, <:FID{:f}}}) == Symbol("AbstractCompositeIndex{Index{Union{Int, Colon}, FID{:f}}}")
     @test latexname(FID{:f}) == Symbol("FID{:f}")
 
-    @test latexname(Index{<:FID{:b}}) == Symbol("Index{FID{:b}}")
-    @test latexname(AbstractCompositeIndex{Index{<:FID{:b}}}) == Symbol("AbstractCompositeIndex{Index{FID{:b}}}")
+    @test latexname(Index{<:Union{Int, Colon}, <:FID{:b}}) == Symbol("Index{Union{Int, Colon}, FID{:b}}")
+    @test latexname(AbstractCompositeIndex{Index{<:Union{Int, Colon}, <:FID{:b}}}) == Symbol("AbstractCompositeIndex{Index{Union{Int, Colon}, FID{:b}}}")
     @test latexname(FID{:b}) == Symbol("FID{:b}")
 
-    @test latexname(Index{<:FID{wildcard}}) == Symbol("Index{FID}")
-    @test latexname(AbstractCompositeIndex{Index{<:FID{wildcard}}}) == Symbol("AbstractCompositeIndex{Index{FID}}")
+    @test latexname(Index{<:Union{Int, Colon}, <:FID{wildcard}}) == Symbol("Index{Union{Int, Colon}, FID}")
+    @test latexname(AbstractCompositeIndex{Index{<:Union{Int, Colon}, <:FID{wildcard}}}) == Symbol("AbstractCompositeIndex{Index{Union{Int, Colon}, FID}}")
     @test latexname(FID{wildcard}) == Symbol("FID")
 end
 
@@ -130,34 +130,29 @@ end
 end
 
 @testset "Fock Coupling" begin
-    @test Coupling{FID}((1, 2), (2, 1), :) == Coupling{FID}(1, (1, 2), (2, 1), :) == Coupling(FID(1, 2, :), FID(2, 1, :))
-    @test Coupling{FID{:f}}(:, :, (2, 1)) == Coupling(FID{:f}(:, :, 2), FID{:f}(:, :, 1))
+    @test CompositeIID(Coupling(2.0, (1, 2), FID, (1, 2), :, (1, 2))) == CompositeIID(FID(1, :, 1), FID(2, :, 2))
+    @test CompositeIID(Coupling(2.0, (1, 1, 1, 1), FID, (1, 2, 3, 4), :, :)) == CompositeIID(FID(1, :, 2), FID(2, :, 1), FID(3, :, 2), FID(4, :, 1))
 
-    @test CompositeIID(Coupling{FID}(2.0, (1, 2), :, (1, 2))) == CompositeIID(FID(1, :, 1), FID(2, :, 2))
-    @test CompositeIID(Coupling{FID}(2.0, (1, 2, 3, 4), :, :)) == CompositeIID(FID(1, :, 2), FID(2, :, 1), FID(3, :, 2), FID(4, :, 1))
-
-    @test Constraint(FID(:, 2, 1)) == Constraint{1}(Diagonal(:orbital))
-    @test Constraint(FID{:f}(2, :, :)) == Constraint{1}(Diagonal(:spin))
-    @test Constraint(FID{:b}(:, :, :)) == Constraint{1}(Diagonal(:orbital, :spin))
-
-    @test collect(MatrixCoupling{FID}(:, :, :)) == [Coupling(FID(:, :, :), FID(:, :, :))]
-    @test collect(MatrixCoupling{FID{:f}}(:, σʸ, σᶻ)) == [
-        Coupling(+1im, FID{:f}(:, 2, 1), FID{:f}(:, 1, 2)),
-        Coupling(-1im, FID{:f}(:, 1, 1), FID{:f}(:, 2, 2)),
-        Coupling(-1im, FID{:f}(:, 2, 2), FID{:f}(:, 1, 1)),
-        Coupling(+1im, FID{:f}(:, 1, 2), FID{:f}(:, 2, 1))
+    @test collect(MatrixCoupling(:, FID, :, :, :)) == [
+        Coupling(Index(:, FID(:, :, :)), Index(:, FID(:, :, :)))
     ]
-    @test collect(MatrixCoupling{FID{:b}}(σˣ, :, σ⁰)) == [
-        Coupling(FID{:b}(2, :, 1), FID{:b}(1, :, 2)),
-        Coupling(FID{:b}(1, :, 1), FID{:b}(2, :, 2)),
-        Coupling(FID{:b}(2, :, 2), FID{:b}(1, :, 1)),
-        Coupling(FID{:b}(1, :, 2), FID{:b}(2, :, 1))
+    @test collect(MatrixCoupling((1, 2), FID{:f}, :, σʸ, σᶻ)) == [
+        Coupling(+1im, Index(1, FID{:f}(:, 2, 1)), Index(2, FID{:f}(:, 1, 2))),
+        Coupling(-1im, Index(1, FID{:f}(:, 1, 1)), Index(2, FID{:f}(:, 2, 2))),
+        Coupling(-1im, Index(1, FID{:f}(:, 2, 2)), Index(2, FID{:f}(:, 1, 1))),
+        Coupling(+1im, Index(1, FID{:f}(:, 1, 2)), Index(2, FID{:f}(:, 2, 1)))
     ]
-    @test collect(MatrixCoupling{FID{wildcard}}(σ⁺, σ⁻, :)) == [
-        Coupling(FID(2, 1, :), FID(1, 2, :))
+    @test collect(MatrixCoupling((1, 2), FID{:b}, σˣ, :, σ⁰)) == [
+        Coupling(Index(1, FID{:b}(2, :, 1)), Index(2, FID{:b}(1, :, 2))),
+        Coupling(Index(1, FID{:b}(1, :, 1)), Index(2, FID{:b}(2, :, 2))),
+        Coupling(Index(1, FID{:b}(2, :, 2)), Index(2, FID{:b}(1, :, 1))),
+        Coupling(Index(1, FID{:b}(1, :, 2)), Index(2, FID{:b}(2, :, 1)))
+    ]
+    @test collect(MatrixCoupling(:, FID{wildcard}, σ⁺, σ⁻, :)) == [
+        Coupling(Index(:, FID(2, 1, :)), Index(:, FID(1, 2, :)))
     ]
 
-    fc = Coupling{FID}(2.0, (1, 2), :, (2, 1))
+    fc = Coupling(2.0, (1, 2), FID, (1, 2), :, (2, 1))
     bond = Bond(1, Point(1, SVector(0.0), SVector(0.0)), Point(2, SVector(0.5), SVector(0.0)))
     hilbert = Hilbert(site=>Fock{:f}(2, 2) for site=1:2)
     ex = expand(Val(:Hopping), fc, bond, hilbert)
@@ -166,7 +161,7 @@ end
         Operator(2.0, CompositeIndex(Index(1, FID{:f}(1, 2, 2)), SVector(0.0), SVector(0.0)), CompositeIndex(Index(2, FID{:f}(2, 2, 1)), SVector(0.5), SVector(0.0)))
     ]
 
-    fc = Coupling{FID}(2.0, :, (2, 2, 1, 1), (2, 1, 2, 1))
+    fc = Coupling(2.0, (1, 1, 1, 1), FID, :, (2, 2, 1, 1), (2, 1, 2, 1))
     point = Point(1, SVector(0.0), SVector(0.0))
     hilbert = Hilbert(point.site=>Fock{:b}(2, 2))
     ex = expand(Val(:term), fc, Bond(point), hilbert)
@@ -185,7 +180,7 @@ end
                 )
     ]
 
-    fc = Coupling(2.0, @iids(FID(α, 2, 2), FID(α, 1, 2), FID(β, 1, 1), FID(β, 2, 1); constraint=α<β))
+    fc = Coupling(2.0, @indexes(Index(1, FID(α, 2, 2)), Index(1, FID(α, 1, 2)), Index(1, FID(β, 1, 1)), Index(1, FID(β, 2, 1)); constraint=α<β))
     point = Point(1, SVector(0.5), SVector(0.0))
     hilbert = Hilbert(point.site=>Fock{:f}(3, 2))
     ex = expand(Val(:term), fc, Bond(point), hilbert)
@@ -210,8 +205,8 @@ end
                 )
     ]
 
-    fc₁ = Coupling{FID}(+1.0, :, (2, 2), (2, 1))
-    fc₂ = Coupling{FID}(-1.0, :, (1, 1), (2, 1))
+    fc₁ = Coupling(+1.0, (1, 1), FID, :, (2, 2), (2, 1))
+    fc₂ = Coupling(-1.0, (1, 1), FID, :, (1, 1), (2, 1))
     point = Point(1, SVector(0.0), SVector(0.0))
     hilbert = Hilbert(point.site=>Fock{:f}(2, 2))
     ex = expand(Val(:term), fc₁*fc₂, Bond(point), hilbert)
@@ -248,7 +243,7 @@ end
     bond = Bond(point)
     hilbert = Hilbert(point.site=>Fock{:f}(2, 2))
 
-    term = Onsite(:mu, 1.5; coupling=MatrixCoupling{FID}(σᶻ, σˣ, :))
+    term = Onsite(:mu, 1.5; coupling=MatrixCoupling(:, FID, σᶻ, σˣ, :))
     operators = Operators(
         Operator(+0.75, CompositeIndex(Index(1, FID{:f}(2, 2, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0])),
         Operator(-0.75, CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])),
@@ -258,7 +253,7 @@ end
     @test expand(term, bond, hilbert, half=true) == operators
     @test expand(term, bond, hilbert, half=false) == operators*2
 
-    term = Onsite(:mu, 1.5; coupling=MatrixCoupling{FID}(σᶻ, σᶻ, :))
+    term = Onsite(:mu, 1.5; coupling=MatrixCoupling(:, FID, σᶻ, σᶻ, :))
     operators = Operators(
         Operator(-0.75, CompositeIndex(Index(1, FID{:f}(2, 1, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0])),
         Operator(-0.75, CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])),
@@ -286,7 +281,7 @@ end
 @testset "Pairing" begin
     bond = Bond(1, Point(2, (0.0, 0.0), (0.0, 0.0)), Point(1, (0.5, 0.5), (0.0, 0.0)))
     hilbert = Hilbert(site=>Fock{:f}(1, 2) for site=1:2)
-    term = Pairing(:Δ, 1.5, 1; coupling=Coupling{FID}(:, (2, 2), :), amplitude=bond->(bond|>rcoordinate|>azimuthd ≈ 45 ? 1 : -1))
+    term = Pairing(:Δ, 1.5, 1; coupling=Coupling((1, 2), FID, :, (2, 2), :), amplitude=bond->(bond|>rcoordinate|>azimuthd ≈ 45 ? 1 : -1))
     operators = Operators(
         Operator(+1.5, CompositeIndex(Index(2, FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])),
         Operator(-1.5, CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(2, FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0]))
@@ -296,7 +291,7 @@ end
 
     point = Point(1, (0.5, 0.5), (0.0, 0.0))
     hilbert = Hilbert(point.site=>Fock{:f}(1, 2))
-    term = Pairing(:Δ, 1.5, 0; coupling=MatrixCoupling{FID}(:, [0 -1; 1 0], :))
+    term = Pairing(:Δ, 1.5, 0; coupling=MatrixCoupling(:, FID, :, [0 -1; 1 0], :))
     operators = Operators(
         Operator(+1.5, CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0])),
         Operator(-1.5, CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]))
@@ -412,7 +407,7 @@ end
     bond = Bond(1, Point(2, (0.0, 0.0), (0.0, 0.0)), Point(1, (0.5, 0.5), (0.0, 0.0)))
     hilbert = Hilbert(site=>Fock{:f}(1, 2) for site=1:2)
 
-    term = Coulomb(:V, 2.5, 1, coupling=MatrixCoupling{FID}(:, σᶻ, :)*MatrixCoupling{FID}(:, σᶻ, :))
+    term = Coulomb(:V, 2.5, 1, coupling=MatrixCoupling(:, FID, :, σᶻ, :)*MatrixCoupling(:, FID, :, σᶻ, :))
     operators = Operators(
         Operator(-1.25,
             CompositeIndex(Index(2, FID{:f}(1, 1, 2)), [0.0, 0.0], [0.0, 0.0]),
@@ -442,7 +437,7 @@ end
     @test expand(term, bond, hilbert, half=true) == operators
     @test expand(term, bond, hilbert, half=false) == operators*2
 
-    term = Coulomb(:V, 2.5, 1, coupling=MatrixCoupling{FID}(:, σˣ, :)*MatrixCoupling{FID}(:, σᶻ, :))
+    term = Coulomb(:V, 2.5, 1, coupling=MatrixCoupling(:, FID, :, σˣ, :)*MatrixCoupling(:, FID, :, σᶻ, :))
     operators = Operators(
         Operator(-1.25,
             CompositeIndex(Index(2, FID{:f}(1, 2, 2)), [0.0, 0.0], [0.0, 0.0]),
@@ -495,9 +490,9 @@ end
     @test isequal(SID{1//2}('z'), SID{1//2}('z'))
     @test !isequal(SID{1//2}('z'), SID{3//2}('z'))
 
-    @test isconcreteiid(SID{wildcard, Char})
-    @test !isconcreteiid(SID{1//2, Symbol})
-    @test !isconcreteiid(SID{1, typeof(:)})
+    @test isdefinite(SID{wildcard, Char})
+    @test !isdefinite(SID{1//2, Symbol})
+    @test !isdefinite(SID{1, typeof(:)})
     @test iidtype(SID, Char) == SID{wildcard, Char}
     @test iidtype(SID{1//2}, Symbol) == SID{1//2, Symbol}
 end
@@ -537,8 +532,8 @@ end
     @test script(Val(:site), index) == "1"
     @test script(Val(:tag), index.iid) == script(Val(:tag), index) == "z"
 
-    @test latexname(Index{<:SID}) == Symbol("Index{SID}")
-    @test latexname(AbstractCompositeIndex{<:Index{<:SID}}) == Symbol("AbstractCompositeIndex{Index{SID}}")
+    @test latexname(Index{<:Union{Int, Colon}, <:SID}) == Symbol("Index{Union{Int, Colon}, SID}")
+    @test latexname(AbstractCompositeIndex{<:Index{<:Union{Int, Colon}, <:SID}}) == Symbol("AbstractCompositeIndex{Index{Union{Int, Colon}, SID}}")
     @test latexname(SID) == Symbol("SID")
 end
 
@@ -577,10 +572,9 @@ end
 end
 
 @testset "Spin Coupling" begin
-    @test Coupling{SID}(2.0, ('+', '-')) == 2.0*Coupling{SID}(('+', '-'))
-    @test collect(MatrixCoupling{SID}([1 0 0; 0 1 0; 0 0 1])) == [Coupling{SID}(('x', 'x')), Coupling{SID}(('y', 'y')), Coupling{SID}(('z', 'z'))]
+    @test collect(MatrixCoupling(:, SID, [1 0 0; 0 1 0; 0 0 1])) == [Coupling(:, SID, ('x', 'x')), Coupling(:, SID, ('y', 'y')), Coupling(:, SID, ('z', 'z'))]
 
-    sc = Coupling{SID}(2.0, ('+', '-'))
+    sc = Coupling(2.0, (1, 2), SID, ('+', '-'))
     bond = Bond(1, Point(1, [0.0], [0.0]), Point(2, [0.5], [0.0]))
     hilbert = Hilbert(site=>Spin{1}() for site=1:2)
     ex = expand(Val(:SpinTerm), sc, bond, hilbert)
@@ -612,7 +606,7 @@ end
 @testset "SpinTerm" begin
     point = Point(1, (0.5, 0.5), (0.0, 0.0))
     hilbert = Hilbert(point.site=>Spin{1//2}())
-    term = SpinTerm(:h, 1.5, 0, Coupling(SID('z')))
+    term = SpinTerm(:h, 1.5, 0, Coupling(Index(1, SID('z'))))
     operators = Operators(
         Operator(1.5, CompositeIndex(Index(1, SID{1//2}('z')), [0.5, 0.5], [0.0, 0.0])),
     )
@@ -620,7 +614,7 @@ end
 
     bond = Bond(1, Point(2, (0.5, 0.5), (0.0, 0.0)), Point(1, (0.0, 0.0), (0.0, 0.0)))
     hilbert = Hilbert(site=>Spin{1//2}() for site=1:2)
-    term = SpinTerm(:J, 1.5, 1, MatrixCoupling{SID}(heisenberg""))
+    term = SpinTerm(:J, 1.5, 1, MatrixCoupling(:, SID, heisenberg""))
     operators = Operators(
         Operator(1.5, CompositeIndex(Index(2, SID{1//2}('x')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, SID{1//2}('x')), [0.0, 0.0], [0.0, 0.0])),
         Operator(1.5, CompositeIndex(Index(2, SID{1//2}('y')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, SID{1//2}('y')), [0.0, 0.0], [0.0, 0.0])),
@@ -636,9 +630,9 @@ end
     @test string(PID('p', :)) == "PID('p', :)"
     @test string(PID('u', 'x')) == "PID('u', 'x')"
 
-    @test isconcreteiid(PID{Char})
-    @test !isconcreteiid(PID{Symbol})
-    @test !isconcreteiid(PID{typeof(:)})
+    @test isdefinite(PID{Char})
+    @test !isdefinite(PID{Symbol})
+    @test !isdefinite(PID{typeof(:)})
     @test iidtype(PID, Char, Char) == PID{Char}
     @test iidtype(PID, Char, Symbol) == PID{Symbol}
     @test iidtype(PID, Char, typeof(:)) == PID{typeof(:)}
@@ -670,8 +664,8 @@ end
     @test script(Val(:direction), index.iid) == "y"
     @test script(Val(:direction), index) == "y"
 
-    @test latexname(Index{<:PID}) == Symbol("Index{PID}")
-    @test latexname(AbstractCompositeIndex{<:Index{<:PID}}) == Symbol("AbstractCompositeIndex{Index{PID}}")
+    @test latexname(Index{<:Union{Int, Colon}, <:PID}) == Symbol("Index{Union{Int, Colon}, PID}")
+    @test latexname(AbstractCompositeIndex{<:Index{<:Union{Int, Colon}, <:PID}}) == Symbol("AbstractCompositeIndex{Index{Union{Int, Colon}, PID}}")
     @test latexname(PID) == Symbol("PID")
 end
 
@@ -715,14 +709,15 @@ end
 end
 
 @testset "Phonon Coupling" begin
-    @test Coupling{PID}(('p', 'p'), :) == Coupling{PID}(1, ('p', 'p'), :) == Coupling(1, PID('p', :), PID('p', :))
-    @test Constraint((PID('u', :), PID('u', :))) == Constraint{2}(Diagonal(:direction))
-
-    @test collect(MatrixCoupling{PID}([1 0 1; 0 1 0; 1 0 1])) == [
-        Coupling(PID('u', 'x'), PID('u', 'x')), Coupling(PID('u', 'z'), PID('u', 'x')), Coupling(PID('u', 'y'), PID('u', 'y')), Coupling(PID('u', 'x'), PID('u', 'z')), Coupling(PID('u', 'z'), PID('u', 'z'))
+    @test collect(MatrixCoupling(:, PID, [1 0 1; 0 1 0; 1 0 1])) == [
+        Coupling(Index(:, PID('u', 'x')), Index(:, PID('u', 'x'))),
+        Coupling(Index(:, PID('u', 'z')), Index(:, PID('u', 'x'))),
+        Coupling(Index(:, PID('u', 'y')), Index(:, PID('u', 'y'))),
+        Coupling(Index(:, PID('u', 'x')), Index(:, PID('u', 'z'))),
+        Coupling(Index(:, PID('u', 'z')), Index(:, PID('u', 'z')))
     ]
 
-    pnc = Coupling(2.0, @iids(PID('p', μ), PID('p', μ)))
+    pnc = Coupling(2.0, @indexes(Index(1, PID('p', μ)), Index(1, PID('p', μ))))
     point = Point(1, [0.5, 0.0], [0.0, 0.0])
     hilbert = Hilbert(point.site=>Phonon(2))
     ex = expand(Val(:Kinetic), pnc, Bond(point), hilbert)
@@ -731,7 +726,7 @@ end
         Operator(2.0, CompositeIndex(Index(1, PID('p', 'y')), [0.5, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, PID('p', 'y')), [0.5, 0.0], [0.0, 0.0]))
     ]
 
-    pnc = Coupling(PID('u', :), PID('u', :))
+    pnc = Coupling(Index(1, PID('u', :)), Index(2, PID('u', :)))
     bond = Bond(1, Point(1, [0.0, 0.0], [0.0, 0.0]), Point(2, [0.5, 0.0], [0.0, 0.0]))
     hilbert = Hilbert(site=>Phonon(2) for site=1:2)
     ex = expand(Val(:Hooke), pnc, bond, hilbert)
@@ -814,7 +809,7 @@ end
 end
 
 @testset "Elastic" begin
-    term = Elastic(:V, 2.0, 1; coupling=MatrixCoupling{PID}([0 1; 1 0]))
+    term = Elastic(:V, 2.0, 1, MatrixCoupling(:, PID, [0 1; 1 0]))
 
     bond = Bond(1, Point(1, [0.0, 0.0], [0.0, 0.0]), Point(2, [0.5, 0.0], [0.0, 0.0]))
     hilbert = Hilbert(site=>Phonon(2) for site=1:2)
