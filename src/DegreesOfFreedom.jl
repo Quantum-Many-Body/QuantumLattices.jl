@@ -3,26 +3,19 @@ module DegreesOfFreedom
 using Printf: @printf, @sprintf
 using SparseArrays: SparseMatrixCSC, nnz
 using StaticArrays: SVector
+using ..QuantumLattices: add!, decompose, dtype
 using ..QuantumOperators: ID, Operator, OperatorPack, Operators, OperatorSum, OperatorUnit, Transformation, valuetolatextext, valuetostr
 using ..Spatials: Bond, Point
-using ...Essentials: dtype
-using ...Interfaces: add!, decompose
-using ...Prerequisites: atol, rtol, Float, allequal, concatenate, decimaltostr
-using ...Prerequisites.Traits: efficientoperations, commontype, fulltype, parametertype, rawtype, reparameter
-using ...Prerequisites.CompositeStructures: CompositeDict, CompositeTuple, NamedContainer
-using ...Prerequisites.VectorSpaces: VectorSpace, VectorSpaceCartesian, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceStyle
+using ..Toolkit: atol, efficientoperations, rtol, CompositeDict, CompositeTuple, Float, NamedContainer, VectorSpace, VectorSpaceCartesian, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceStyle, allequal, commontype, concatenate, decimaltostr, fulltype, parametertype, rawtype, reparameter
 
 import LaTeXStrings: latexstring
-import LinearAlgebra: ishermitian
+import ..QuantumLattices: ⊕, ⊗, dimension, expand, expand!, kind, id, ishermitian, rank, reset!, update!, value
 import ..QuantumOperators: idtype, optype, script
 import ..Spatials: icoordinate, rcoordinate
-import ...Essentials: kind, reset!, update!
-import ...Interfaces: ⊕, ⊗, dimension, expand, expand!, id, rank, value
-import ...Prerequisites.Traits: contentnames, getcontent, isparameterbound, parameternames
-import ...Prerequisites.VectorSpaces: shape
+import ..Toolkit: contentnames, getcontent, isparameterbound, parameternames, shape
 
 export CompositeIID, CompositeInternal, IID, Internal, SimpleIID, SimpleInternal
-export AbstractCompositeIndex, CompositeIndex, Hilbert, Index, iidtype, indextype, ishermitian, statistics
+export AbstractCompositeIndex, CompositeIndex, Hilbert, Index, iidtype, indextype, statistics
 export wildcard, Component, Constraint, Coupling, Diagonal, IIDSpace, MatrixCoupling, MatrixCouplingProd, MatrixCouplingSum, Pattern, diagonalizablefields, isdefinite, @indexes
 export Term, TermAmplitude, TermCoupling, TermFunction, TermModulate, ismodulatable, sitestructure
 export Metric, OperatorUnitToTuple, Table

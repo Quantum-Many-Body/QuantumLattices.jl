@@ -1,11 +1,8 @@
 using Plots: plot, savefig
-using QuantumLattices.Essentials.Spatials
-using QuantumLattices.Essentials: dtype
-using QuantumLattices.Essentials.QuantumNumbers: AbelianNumbers, Momentum₁, Momentum₂, Momentum₃
-using QuantumLattices.Interfaces: decompose, dimension
-using QuantumLattices.Prerequisites: Float
-using QuantumLattices.Prerequisites.Traits: contentnames, getcontent
-using QuantumLattices.Prerequisites.VectorSpaces: shape
+using QuantumLattices.Spatials
+using QuantumLattices: decompose, dimension, dtype
+using QuantumLattices.QuantumNumbers: AbelianNumbers, Momentum₁, Momentum₂, Momentum₃
+using QuantumLattices.Toolkit: Float, contentnames, getcontent, shape
 using Random: seed!
 using StaticArrays: SVector
 

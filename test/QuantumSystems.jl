@@ -1,11 +1,10 @@
 using LaTeXStrings: latexstring
-using QuantumLattices.Essentials.DegreesOfFreedom: wildcard, AbstractCompositeIndex, CompositeIID, CompositeIndex, Constraint, Coupling, Diagonal, Hilbert, Index, IIDSpace, MatrixCoupling, iidtype, isdefinite, statistics, @indexes
-using QuantumLattices.Essentials.QuantumOperators: Operator, Operators, latexname, matrix, script
-using QuantumLattices.Essentials.QuantumSystems
-using QuantumLattices.Essentials.Spatials: Bond, Point, azimuthd, rcoordinate
-using QuantumLattices.Interfaces: ⊗, ⋅, expand, permute, rank
-using QuantumLattices.Prerequisites.Combinatorics: Permutations
-using QuantumLattices.Prerequisites.VectorSpaces: shape
+using QuantumLattices: ⊗, ⋅, expand, permute, rank
+using QuantumLattices.DegreesOfFreedom: wildcard, AbstractCompositeIndex, CompositeIID, CompositeIndex, Constraint, Coupling, Diagonal, Hilbert, Index, IIDSpace, MatrixCoupling, iidtype, isdefinite, statistics, @indexes
+using QuantumLattices.QuantumOperators: Operator, Operators, latexname, matrix, script
+using QuantumLattices.QuantumSystems
+using QuantumLattices.Spatials: Bond, Point, azimuthd, rcoordinate
+using QuantumLattices.Toolkit: Permutations, shape
 using SparseArrays: SparseMatrixCSC
 using StaticArrays: SVector
 

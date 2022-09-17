@@ -4,20 +4,16 @@ using LinearAlgebra: dot, norm
 using Printf: @printf, @sprintf
 using SparseArrays: SparseMatrixCSC
 using StaticArrays: SVector
-using ..DegreesOfFreedom: wildcard, AbstractCompositeIndex, Component, CompositeIID, CompositeIndex, CompositeInternal, Coupling, Hilbert, IIDSpace, Index, SimpleIID, SimpleInternal, @indexes
-using ..DegreesOfFreedom: Term, TermAmplitude, TermCoupling, TermModulate
+using ..DegreesOfFreedom: wildcard, AbstractCompositeIndex, Component, CompositeIID, CompositeIndex, CompositeInternal, Coupling, Hilbert, IIDSpace, Index, SimpleIID, SimpleInternal, Term, TermAmplitude, TermCoupling, TermModulate, @indexes
+using ..QuantumLattices: decompose, dimension, dtype, kind
 using ..QuantumOperators: ID, LaTeX, Operator, OperatorProd, Operators, latexformat
 using ..Spatials: Bond, Point, rcoordinate
-using ...Essentials: dtype, kind
-using ...Interfaces: decompose, dimension
-using ...Prerequisites: atol, rtol, Float, decimaltostr, delta
-using ...Prerequisites.Traits: efficientoperations, getcontent, rawtype
-using ...Prerequisites.VectorSpaces: VectorSpace, VectorSpaceCartesian, VectorSpaceStyle
+using ..Toolkit: atol, efficientoperations, rtol, Float, VectorSpace, VectorSpaceCartesian, VectorSpaceStyle, decimaltostr, delta, getcontent, rawtype
 
-import ..QuantumOperators: latexname, matrix, optype, script
 import ..DegreesOfFreedom: MatrixCoupling, diagonalizablefields, iidtype, isdefinite, sitestructure, statistics
-import ...Interfaces: ⊗, ⋅, expand, expand!, permute, rank
-import ...Prerequisites.VectorSpaces: shape
+import ..QuantumLattices: ⊗, ⋅, expand, expand!, permute, rank
+import ..QuantumOperators: latexname, matrix, optype, script
+import ..Toolkit: shape
 
 # Canonical complex fermionic/bosonic systems
 export σ⁰, σˣ, σʸ, σᶻ, σ⁺, σ⁻, annihilation, creation, latexofbosons, latexoffermions, latexofparticles

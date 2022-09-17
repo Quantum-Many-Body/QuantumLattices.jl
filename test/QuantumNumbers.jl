@@ -1,10 +1,10 @@
 using Base.Iterators: Iterators
 using DataStructures: OrderedDict
-using QuantumLattices.Essentials.QuantumNumbers
-using QuantumLattices.Interfaces: ⊕, ⊗, decompose, dimension, expand, permute
-using QuantumLattices.Prerequisites.Traits: contentnames, getcontent
+using QuantumLattices: ⊕, ⊗, decompose, dimension, expand, permute
+using QuantumLattices.QuantumNumbers
+using QuantumLattices.Toolkit: contentnames, getcontent
 
-import QuantumLattices.Essentials.QuantumNumbers: periods
+import QuantumLattices.QuantumNumbers: periods
 
 @abeliannumber "CN" (:N,) (Inf,)
 @abeliannumber "Z4" (:Z,) (4,)

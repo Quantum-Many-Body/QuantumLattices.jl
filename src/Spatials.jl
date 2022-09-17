@@ -6,17 +6,11 @@ using NearestNeighbors: KDTree, inrange, knn
 using Printf: @printf, @sprintf
 using RecipesBase: RecipesBase, @recipe, @series
 using StaticArrays: SVector
-
 using ..QuantumNumbers: AbelianNumbers, Momentum, Momentum₁, Momentum₂, Momentum₃, periods
-using ...Prerequisites: atol, rtol, Float
-using ...Prerequisites: CompositeDict
-using ...Prerequisites.Traits: efficientoperations
-using ...Prerequisites.VectorSpaces: VectorSpace, SimpleNamedVectorSpace, VectorSpaceStyle, VectorSpaceCartesian
+using ..Toolkit: atol, rtol, efficientoperations, CompositeDict, Float, VectorSpace, SimpleNamedVectorSpace, VectorSpaceStyle, VectorSpaceCartesian
 
-import ..Essentials: dtype, kind, reset!
-import ...Interfaces: decompose, dimension
-import ...Prerequisites.Traits: contentnames, getcontent
-import ...Prerequisites.VectorSpaces: shape
+import ..QuantumLattices: decompose, dimension, dtype, kind, reset!
+import ..Toolkit: contentnames, getcontent, shape
 
 export azimuth, azimuthd, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, polar, polard, reciprocals, rotate, translate, tile, volume
 export AbstractLattice, Bond, BrillouinZone, Lattice, Neighbors, Point, ReciprocalSpace, ReciprocalZone, ReciprocalPath, Segment, Translations, bonds!, bonds, icoordinate, isintracell, nneighbor, rcoordinate, @translations_str

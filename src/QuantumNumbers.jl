@@ -5,13 +5,10 @@ using DataStructures: OrderedDict
 using LinearAlgebra: norm
 using Printf: @printf, @sprintf
 using Random: MersenneTwister, seed!, shuffle!
-using ...Prerequisites: Float
-using ...Prerequisites.Combinatorics: Combinations
-using ...Prerequisites.NamedVectors: HomoNamedVector
-using ...Prerequisites.VectorSpaces: VectorSpace, VectorSpaceEnumerative, VectorSpaceStyle
+using ..Toolkit: Float, Combinations, HomoNamedVector, VectorSpace, VectorSpaceEnumerative, VectorSpaceStyle
 
-import ...Prerequisites.Traits: contentnames, getcontent
-import ...Interfaces: ⊕, ⊗, decompose, dimension, expand, permute
+import ..QuantumLattices: ⊕, ⊗, decompose, dimension, expand, permute
+import ..Toolkit: contentnames, getcontent
 
 export AbelianNumber, AbelianNumbers, regularize, regularize!, periods, @abeliannumber
 export Momentum, Momentum₁, Momentum₂, Momentum₃, ParticleNumber, SpinfulParticle, SpinZ, particlenumbers, spinfulparticles, spinzs

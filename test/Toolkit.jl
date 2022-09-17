@@ -1,0 +1,612 @@
+using QuantumLattices.Toolkit
+
+import QuantumLattices: ⊕, ⊗, dimension, rank
+import QuantumLattices.Toolkit: VectorSpaceStyle, contentnames, contenttype, dissolve, getcontent, isparameterbound, parameternames, shape
+
+@testset "allequal" begin
+    @test allequal((2, 2, 2, 2))
+    @test !allequal((2, 2, 1, 2))
+end
+
+@testset "decimaltostr" begin
+    @test decimaltostr(:a) == ":a"
+    @test decimaltostr(1) == "1"
+    @test decimaltostr(10^6) == "1000000"
+    @test decimaltostr(1//7) == "1//7"
+    @test decimaltostr(1.0) == "1.0"
+    @test decimaltostr(10.0^6) == "1.0e+06"
+    @test decimaltostr(10^-5) == "1.0e-05"
+    @test decimaltostr(1/7) == "0.14286"
+    @test decimaltostr(1/7, 8) == "0.14285714"
+    @test decimaltostr(0im) == "0.0"
+    @test decimaltostr(1//7+0im) == "1//7"
+    @test decimaltostr(1.0im) == "1.0im"
+    @test decimaltostr(-1.0im) == "-1.0im"
+    @test decimaltostr(0.1+0.12im) == "0.1+0.12im"
+    @test decimaltostr(0.1-0.12im) == "0.1-0.12im"
+end
+
+@testset "ordinal" begin
+    @test ordinal(1) == "1st"
+    @test ordinal(2) == "2nd"
+    @test ordinal(3) == "3rd"
+    @test ordinal(4) == "4th"
+    @test ordinal(5) == "5th"
+end
+
+@testset "delta" begin
+    @test delta(1, 2) == 0
+    @test delta(1, 1) == 1
+end
+
+@testset "concatenate" begin
+    @test concatenate((1, 2), (:a, :b)) == (1, 2, :a, :b)
+end
+
+@testset "searchsortedfirst" begin
+    idx = CartesianIndices((2, 2, 2))
+    for (i, index) in enumerate(idx)
+        @test searchsortedfirst(idx, index) == i
+    end
+    @test searchsortedfirst(idx, CartesianIndex(0, 0, 0)) == 1
+    @test searchsortedfirst(idx, CartesianIndex(3, 3, 3)) == 9
+end
+
+@testset "Combinations" begin
+    @test Combinations{0}("abc")|>collect == [()]
+    @test Combinations{1}("abc")|>collect == [('a',), ('b',), ('c',)]
+    @test Combinations{2}("abc")|>collect == [('a', 'b'), ('a', 'c'), ('b', 'c')]
+    @test Combinations{3}("abc")|>collect == [('a', 'b', 'c')]
+end
+
+@testset "DuplicateCombinations" begin
+    @test DuplicateCombinations{0}("abc")|>collect == [()]
+    @test DuplicateCombinations{1}("abc")|>collect == [('a',), ('b',), ('c',)]
+    @test DuplicateCombinations{2}("abc")|>collect == [('a', 'a'), ('a', 'b'), ('a', 'c'), ('b', 'b'), ('b', 'c'), ('c', 'c')]
+    @test DuplicateCombinations{3}("abc")|>collect == [('a', 'a', 'a'), ('a', 'a', 'b'), ('a', 'a', 'c'), ('a', 'b', 'b'), ('a', 'b', 'c'), ('a', 'c', 'c'), ('b', 'b', 'b'), ('b', 'b', 'c'), ('b', 'c', 'c'), ('c', 'c', 'c')]
+end
+
+@testset "Permutations" begin
+    @test Permutations{0}("abc")|>collect == [()]
+    @test Permutations{1}("abc")|>collect == [('a',), ('b',), ('c',)]
+    @test Permutations{2}("abc")|>collect == [('a', 'b'), ('a', 'c'), ('b', 'a'), ('b', 'c'), ('c', 'a'), ('c', 'b')]
+    @test Permutations{3}("abc")|>collect == [('a', 'b', 'c'), ('a', 'c', 'b'), ('b', 'a', 'c'), ('b', 'c', 'a'), ('c', 'a', 'b'), ('c', 'b', 'a')]
+end
+
+@testset "DuplicatePermutations" begin
+    @test DuplicatePermutations{0}("abc")|>collect == [()]
+    @test DuplicatePermutations{1}("abc")|>collect == [('a',), ('b',), ('c',)]
+    @test DuplicatePermutations{2}("abc")|>collect == [('a', 'a'), ('a', 'b'), ('a', 'c'), ('b', 'a'), ('b', 'b'), ('b', 'c'), ('c', 'a'), ('c', 'b'), ('c', 'c')]
+    @test DuplicatePermutations{3}("abc")|>collect == [(i, j, k) for i∈"abc" for j∈"abc" for k∈"abc"]
+end
+
+abstract type FT{T} end
+@inline parameternames(::Type{<:FT}) = (:content,)
+@inline isparameterbound(::Type{<:FT}, ::Val{:content}, D) = !isconcretetype(D)
+@inline contentnames(::Type{<:FT}) = (:content,)
+@inline dissolve(m::FT, ::Val{:content}, f::Function, args::Tuple, kwargs::NamedTuple) = f(getcontent(m, :content), args...; kwargs...)
+
+struct SameNameField <: FT{Vector{Int}}
+    info::String
+    content::Vector{Int}
+end
+@inline parameternames(::Type{SameNameField}) = ()
+@inline contentnames(::Type{SameNameField}) = (:info, :content)
+
+struct DiffNameField <: FT{Vector{Int}}
+    info::String
+    table::Vector{Int}
+end
+@inline parameternames(::Type{DiffNameField}) = ()
+@inline contentnames(::Type{DiffNameField}) = (:info, :content)
+@inline getcontent(m::DiffNameField, ::Val{:content}) = getfield(m, :table)
+@inline contenttype(DF::Type{DiffNameField}, ::Val{:content}) = fieldtype(DF, :table)
+
+@testset "commontype" begin
+    @test commontype(Int) == Int
+    @test commontype(Union{Int, Float64}) == Float64
+    @test commontype(Union{Int, Float64, Complex{Int}}) == Complex{Float64}
+
+    fx = x::Int->(x==1 ? 1 : x==2 ? 2.0 : 3.0im)
+    @test commontype(fx, Tuple{Int}) == Complex{Float64}
+end
+
+@testset "abstracttypehelper" begin
+    @test DataType(Int) == Int
+    T = Vector{<:Integer}
+    @test DataType(T) == T.body
+
+    @test supertype(Vector, :Array) == Vector
+    @test supertype(Vector, :AbstractArray) == AbstractVector
+
+    @test parametercount(Vector) == 2
+    @test parametertype(Vector{<:Real}, 1) == Real
+    @test parametertype(Vector{<:Real}, 2) == 1
+    @test parametertypes(Vector{<:Real}) == Tuple{Real, 1}
+    @test isparameterbound(Vector, 1, Real) == false
+    @test isparameterbound(Vector, 2, 1) == false
+    @test isparameterbounds(Vector{<:Real}, Tuple{Real, 1}) == (false, false)
+    @test reparameter(Vector, 1, Real, true) == Vector{<:Real}
+    @test reparameter(Vector, 1, Real, false) ==  Vector{Real}
+    @test reparameter(Vector{Int}, 2, 3, false) == Array{Int, 3}
+
+    @test contentnames(Vector) == ()
+    @test rawtype(Int) == Int
+    @test rawtype(Vector{Int}) == Array
+    @test rawtype(Vector) == Array
+    @test rawtype(Vector{<:Real}) == Array
+    @test fulltype(Array, Tuple{Int, 1}, (false, false)) == Array{Int, 1}
+    @test fulltype(Array, Tuple{Real, 2}, (true, false)) == Array{<:Real, 2}
+
+    @test promoteparameters(NamedTuple{(:a, :b), Tuple{Int, Float64}}, NamedTuple{(:b, :c), Tuple{Complex{Float64}, Int}}) == NamedTuple{(:a, :b, :c), Tuple{Int, Complex{Float64}, Int}}
+
+    @test parametercount(FT) == 1
+    @test parametername(FT, 1) == :content
+    @test parameterorder(FT, :content) == 1
+    @test parametertype(FT{Vector}, 1) == parametertype(FT{<:Vector}, :content) == Vector
+    @test parametertype(FT{Vector{Int}}, 1) == parametertype(FT{Vector{Int}}, :content) == Vector{Int}
+    @test parameterpair(FT{Vector}, :content) == parameterpair(FT{Vector}, 1) == Pair{:content, Vector}
+    @test isparameterbound(FT, :nocotent, Vector) == false
+    @test isparameterbound(FT, :content, Vector) == true
+    @test isparameterbound(FT, :content, Vector{Int}) == false
+    @test hasparameter(FT, :content) == true
+
+    @test parameternames(FT) == (:content,)
+    @test parametertypes(FT{Vector}) == Tuple{Vector}
+    @test parameterpairs(FT{Vector}) == NamedTuple{(:content,), Tuple{Vector}}
+    @test isparameterbounds(FT, NamedTuple{(:content,), Tuple{Vector}}) == (true,)
+    @test isparameterbounds(FT, NamedTuple{(:content,), Tuple{Vector{Int}}}) == (false,)
+    @test reparameter(FT{Vector{Int}}, :content, Vector) == FT{<:Vector}
+    @test reparameter(FT{Vector{Int}}, :content, Vector{Float64}) == FT{Vector{Float64}}
+
+    @test fulltype(FT, NamedTuple{(:content,), Tuple{Vector}}) == FT{<:Vector}
+    @test fulltype(FT, NamedTuple{(:content,), Tuple{Vector{Int}}}) == FT{Vector{Int}}
+
+    @test contentnames(FT) == (:content,)
+    @test contentname(FT, 1) == :content
+    @test contentorder(FT, :content) == 1
+    @test contentcount(FT) == 1
+    @test hascontent(FT, :content) == true
+
+    @test contentnames(SameNameField) == (:info, :content)
+    @test hasparameter(SameNameField, :content) == false
+    @test contenttype(SameNameField, :info) == contenttype(SameNameField, Val(:info)) == String
+    @test contenttype(SameNameField, :content) == contenttype(SameNameField, Val(:content)) == Vector{Int}
+    @test contenttypes(SameNameField) == Tuple{String, Vector{Int}}
+
+    a = SameNameField("abcd", [1, 2, 3, 4])
+    @test getcontent(a, :content) == getcontent(a, 2) == getcontent(a, Val(:content)) == [1, 2, 3, 4]
+    @test dissolve(a, getindex, (1,)) == ("abcd", 1)
+
+    @test contentnames(DiffNameField) == (:info, :content)
+    @test hasparameter(DiffNameField, :content) == false
+    @test contenttype(DiffNameField, :info) == contenttype(DiffNameField, Val(:info)) == String
+    @test contenttype(DiffNameField, :content) == contenttype(DiffNameField, Val(:content)) == Vector{Int}
+    @test contenttypes(DiffNameField) == Tuple{String, Vector{Int}}
+
+    b = DiffNameField("abcd", [1, 2, 3, 4])
+    @test getcontent(b, :content) == getcontent(b, 2) == getcontent(b, Val(:content)) == [1, 2, 3, 4]
+    @test dissolve(b, getindex, (2,)) == ("abcd", 2)
+end
+
+struct EFO{F1, F2, F3}
+    f1::F1
+    f2::F2
+    f3::F3
+end
+Base.:(==)(fc1::EFO, fc2::EFO) = ==(efficientoperations, fc1, fc2)
+Base.isequal(fc1::EFO, fc2::EFO) = isequal(efficientoperations, fc1, fc2)
+Base.:<(fc1::EFO, fc2::EFO) = <(efficientoperations, fc1, fc2)
+Base.isless(fc1::EFO, fc2::EFO) = isless(efficientoperations, fc1, fc2)
+Base.isapprox(fc1::EFO, fc2::EFO; atol::Real=10^-5, rtol::Real=10^-5) = isapprox(efficientoperations, (:f1, :f2), fc1, fc2; atol=atol, rtol=rtol)
+Base.replace(fc::EFO; kwargs...) = replace(efficientoperations, fc; kwargs...)
+
+@testset "efficientoperations" begin
+    @test ==(efficientoperations, (), ())
+    @test isequal(efficientoperations, (), ())
+    @test ==(efficientoperations, (1, 2), (1, 2, 3)) == false
+    @test isequal(efficientoperations, (1, 2), (1, 2, 3)) == false
+    @test isapprox(efficientoperations, (1.0, 2.0), (1, 2)) == true
+    @test isapprox(efficientoperations, (), (), ()) == true
+    @test isapprox(efficientoperations, (), (), (1,)) == false
+
+    fc1, fc2 = EFO(1.0, 2, 3), EFO(1, 2, 3)
+    @test fc1 == fc2
+    @test isequal(fc1, fc2)
+    fc1, fc2 = EFO(1.0, 2, 3), EFO(1, 2, 4.0)
+    @test fc1 < fc2
+    @test isless(fc1, fc2)
+
+    fc1, fc2 = EFO(1.0+10^-6, 2, 3), EFO(1, 2, 3)
+    @test fc1 ≈ fc2
+    fc1, fc2 = EFO(1.0, 2-10^-6, 3), EFO(1, 2, 3)
+    @test fc1 ≈ fc2
+    fc1, fc2 = EFO(1.0, 2, 3-10^-6), EFO(1, 2, 3)
+    @test fc1 ≉  fc2
+
+    @test replace(EFO(1, 2, 3), f1='c') == EFO('c', 2, 3)
+end
+
+struct CT{S, N, T} <: CompositeNTuple{N, T}
+    info::S
+    contents::NTuple{N, T}
+end
+contentnames(::Type{<:CT}) = (:info, :contents)
+
+@testset "CompositeTuple" begin
+    @test contentnames(CompositeTuple) == (:contents,)
+
+    t = CT("Info", (1, 2, 3, 4))
+    @test contentnames(typeof(t)) == (:info, :contents)
+    @test length(t) == 4
+    @test length(typeof(t)) == 4
+    @test eltype(t) == Int
+    @test eltype(typeof(t)) == Int
+    @test t == deepcopy(t)
+    @test isequal(t, deepcopy(t))
+    @test hash(t) == hash(("Info", (1, 2, 3, 4)))
+    @test t[1] == 1
+    @test t[end] == 4
+    @test t[1:3] == CT("Info", (1, 2, 3))
+    @test collect(t) == [1, 2, 3, 4]
+    @test collect(t|>Iterators.reverse) == [4, 3, 2, 1]
+    @test keys(t) == keys((1, 2, 3, 4))
+    @test values(t) == values((1, 2, 3, 4))
+    @test pairs(t)|>collect == pairs((1, 2, 3, 4))|>collect
+    @test reverse(t) == CT("Info", (4, 3, 2, 1))
+    @test Tuple(t) == (1, 2, 3, 4)
+end
+
+struct CV{S, T} <: CompositeVector{T}
+    info::S
+    contents::Vector{T}
+end
+contentnames(::Type{<:CV}) = (:info, :contents)
+
+@testset "CompositeVector" begin
+    @test contentnames(CompositeVector) == (:contents,)
+
+    v = CV("Info", [1, 3, 2, 4])
+    @test contentnames(typeof(v)) == (:info, :contents)
+    @test size(v) == (4,)
+    @test size(v, 1) == 4
+    @test length(v) == 4
+    @test v == deepcopy(v)
+    @test isequal(v, deepcopy(v))
+    @test v[end] == 4
+    @test v[2] == 3
+    @test v[CartesianIndex(2)] == 3
+    @test v[[1, 3, 4]] == CV("Info", [1, 2, 4])
+    @test v[1:3] == CV("Info", [1, 3, 2])
+    @test (v[1] = 10; v[2:3] = 11:12; v == CV("Info", [10, 11, 12, 4]))
+    @test push!(v, 1) == CV("Info", [10, 11, 12, 4, 1])
+    @test push!(v, 2, 3) == CV("Info", [10, 11, 12, 4, 1, 2, 3])
+    @test pushfirst!(v, 20, 21) == CV("Info", [20, 21, 10, 11, 12, 4, 1, 2, 3])
+    @test insert!(v, 2, 30) == CV("Info", [20, 30, 21, 10, 11, 12, 4, 1, 2, 3])
+    @test append!(v, [0, -1]) == CV("Info", [20, 30, 21, 10, 11, 12, 4, 1, 2, 3, 0, -1])
+    @test prepend!(v, [8, 9]) == CV("Info", [8, 9, 20, 30, 21, 10, 11, 12, 4, 1, 2, 3, 0, -1])
+    @test (splice!(v, 2) == 9) && (v == CV("Info", [8, 20, 30, 21, 10, 11, 12, 4, 1, 2, 3, 0, -1]))
+    @test (splice!(v, 1, 9) == 8) && (v == CV("Info", [9, 20, 30, 21, 10, 11, 12, 4, 1, 2, 3, 0, -1]))
+    @test (splice!(v, 1:3) == CV("Info", [9, 20, 30])) && (v == CV("Info", [21, 10, 11, 12, 4, 1, 2, 3, 0, -1]))
+    @test (splice!(v, 1:3, [8, 7, 6]) == CV("Info", [21, 10, 11])) && (v == CV("Info", [8, 7, 6, 12, 4, 1, 2, 3, 0, -1]))
+    @test deleteat!(v, 4) == CV("Info", [8, 7, 6, 4, 1, 2, 3, 0, -1])
+    @test deleteat!(v, [1, 2]) == CV("Info", [6, 4, 1, 2, 3, 0, -1])
+    @test deleteat!(v, 5:6) == CV("Info", [6, 4, 1, 2, -1])
+    @test (pop!(v) == -1) && (v == CV("Info", [6, 4, 1, 2]))
+    @test (popfirst!(v) == 6) && (v == CV("Info", [4, 1, 2]))
+    @test (empty!(v) == CV("Info", Int[])) && (v == CV("Info", Int[]))
+
+    v = CV("Info", [1, 3, 2, 2, 4])
+    @test empty(v) == CV("Info", Int[])
+    @test collect(v) == [1, 3, 2, 2, 4]
+    @test keys(v) == keys([1, 3, 2, 2, 4])
+    @test values(v) == values([1, 3, 2, 2, 4])
+    @test pairs(v) == pairs([1, 3, 2, 2, 4])
+    @test reverse(v) == CV("Info", [4, 2, 2, 3, 1])
+    @test (sort(v) == CV("Info", [1, 2, 2, 3, 4])) && (v == CV("Info", [1, 3, 2, 2, 4]))
+    @test (sort!(v) == CV("Info", [1, 2, 2, 3, 4])) && (v == CV("Info", [1, 2, 2, 3, 4]))
+    @test (filter(<=(3), v) == CV("Info", [1, 2, 2, 3])) && (v == CV("Info", [1, 2, 2, 3, 4]))
+    @test (filter!(<=(3), v) == CV("Info", [1, 2, 2, 3])) && (v == CV("Info", [1, 2, 2, 3]))
+    @test findfirst(isequal(2), v) == 2
+    @test findlast(isequal(2), v) == 3
+    @test findall(isequal(2), v) == [2, 3]
+end
+
+struct CD{S, P, I} <: CompositeDict{P, I}
+    info::S
+    newcontents::Dict{P, I}
+end
+contentnames(::Type{<:CD}) = (:info, :contents)
+getcontent(m::CD, ::Val{:contents}) = getfield(m, :newcontents)
+
+@testset "CompositeDict" begin
+    @test contentnames(CompositeDict) == (:contents,)
+
+    d = CD("Info", Dict("a"=>1, "b"=>2))
+    @test contentnames(typeof(d)) == (:info, :contents)
+    @test d == deepcopy(d)
+    @test isequal(d, deepcopy(d))
+    @test isempty(d) == false
+    @test length(d) == 2
+    @test (haskey(d, "a") == true) && (haskey(d, "d") == false)
+    @test (Pair("a", 1) ∈ d) && (Pair("d", 4) ∉ d)
+    @test get(d, "a", 2) == 1
+    @test get(d, "d", 4) == 4
+    @test get(()->4, d, "d") == 4
+    @test (get!(d, "d", 4) == 4) && (d == CD("Info", Dict("a"=>1, "b"=>2, "d"=>4)))
+    @test (get!(()->5, d, "d") == 4) && (d == CD("Info", Dict("a"=>1, "b"=>2, "d"=>4)))
+    @test getkey(d, "e", "e") == "e"
+    @test d["d"] == 4
+    @test (push!(d, Pair("e", 4)) == CD("Info", Dict("a"=>1, "b"=>2, "d"=>4, "e"=>4))) && (d == CD("Info", Dict("a"=>1, "b"=>2, "d"=>4, "e"=>4)))
+    @test (d["d"] = 4; d["e"] = 5; d == CD("Info", Dict("a"=>1, "b"=>2, "d"=>4, "e"=>5)))
+    @test (pop!(d) == Pair("e", 5)) && (d == CD("Info", Dict("a"=>1, "b"=>2, "d"=>4)))
+    @test (pop!(d, "a") == 1) && (d == CD("Info", Dict("b"=>2, "d"=>4)))
+    @test (pop!(d, "a", 1) == 1) && (d == CD("Info", Dict("b"=>2, "d"=>4)))
+    @test (delete!(d, "b") == CD("Info", Dict("d"=>4))) && (d == CD("Info", Dict("d"=>4)))
+    @test (empty!(d) == CD("Info", Dict{String, Int}())) && (d == CD("Info", Dict{String, Int}()))
+
+    d = CD("Info", Dict("a"=>1, "b"=>2, "c"=>3, "d"=>4))
+    @test merge(CD("Info", Dict("a"=>1, "b"=>2)), CD("Info", Dict("c"=>3, "d"=>4))) == d
+    @test merge(+, CD("Info", Dict("a"=>1, "b"=>2, "c"=>1)), CD("Info", Dict("c"=>2, "d"=>4))) == d
+    @test empty(d) == CD("Info", Dict{String, Int}())
+    @test collect(d) == collect(Dict("a"=>1, "b"=>2, "c"=>3, "d"=>4))
+    @test collect(keys(d)) == collect(keys(Dict("a"=>1, "b"=>2, "c"=>3, "d"=>4)))
+    @test collect(values(d)) == collect(values(Dict("a"=>1, "b"=>2, "c"=>3, "d"=>4)))
+    @test collect(pairs(d)) == collect(pairs(Dict("a"=>1, "b"=>2, "c"=>3, "d"=>4)))
+    @test (filter(p->p.second<=3, d) == CD("Info", Dict("a"=>1, "b"=>2, "c"=>3))) && (d == CD("Info", Dict("a"=>1, "b"=>2, "c"=>3, "d"=>4)))
+    @test (filter!(p->p.second<=3, d) == CD("Info", Dict("a"=>1, "b"=>2, "c"=>3))) && (d == CD("Info", Dict("a"=>1, "b"=>2, "c"=>3)))
+end
+
+@testset "NamedContainer" begin
+    @test NamedContainer{(:a, :b)}((1, 'h')) == (a=1, b='h')
+    @test NamedContainer{()}(()) == NamedTuple()
+end
+
+mutable struct NonHomo <: NamedVector
+    scope::String
+    site::Int
+end
+
+@testset "NonHomo" begin
+    @test length(NonHomo) == 2
+
+    pid = NonHomo("A", 0)
+    @test pid == convert(NonHomo, ("A", 0))
+    @test string(pid) == "NonHomo(\"A\", 0)"
+    @test length(pid) == 2
+    @test collect(Iterators.reverse(pid)) == [0, "A"]
+    @test pid[1] == pid.scope == "A"
+    @test pid[2] == pid.site == 0
+    @test replace(pid, scope="B") == NonHomo("B", 0)
+    @test replace(pid, site=1) == NonHomo("A", 1)
+    @test replace(pid, scope="B", site=1) == NonHomo("B", 1)
+    @test (pid[1] = "B"; pid[1] == "B")
+    @test (pid.site = 2; pid.site == 2)
+
+    @test NonHomo("A", 2.0) < NonHomo("B", 0.0)
+    @test NonHomo("A", 2.0) < NonHomo("A", 3.0)
+    @test isless(NonHomo("A", 2.0), NonHomo("B", 0.0))
+    @test isless(NonHomo("A", 2.0), NonHomo("A", 3.0))
+
+    dict = Dict(NonHomo("A", 0)=>1, NonHomo("A", 1)=>2)
+    @test dict[NonHomo("A", 0)] == 1
+    @test dict[NonHomo("A", 1)] == 2
+end
+
+mutable struct Homo{T<:Real} <: HomoNamedVector{T}
+    scope::T
+    site::T
+end
+
+@testset "Homo" begin
+    @test length(Homo) == 2
+    @test eltype(Homo{Int}) == Int
+    @test zero(Homo{Int}) == Homo(0, 0)
+    @test eltype(Homo{Float64}) == Float64
+    @test zero(Homo{Float64}) == Homo(0.0, 0.0)
+
+    pid = Homo(1, 0)
+    @test pid == convert(Homo{Int}, (1, 0))
+    @test string(pid) == "Homo(1, 0)"
+    @test length(pid) == 2
+    @test eltype(pid) == Int
+    @test zero(pid) == Homo(0, 0)
+    @test pid[1] == pid.scope == 1
+    @test pid[2] == pid.site == 0
+    @test replace(pid, scope=2) == Homo(2, 0)
+    @test replace(pid, site=1) == Homo(1, 1)
+    @test replace(pid, scope=2, site=1) == Homo(2, 1)
+    @test (pid[1] = 2; pid[1] == 2)
+    @test (pid.site = 3; pid.site == 3)
+
+    @test Homo(1.0, 2.0) < Homo(2.0, 0.0)
+    @test Homo(1.0, 2.0) < Homo(1.0, 3.0)
+
+    dict = Dict(Homo(0, 0)=>1, Homo(0, 1)=>2)
+    @test dict[Homo(0, 0)] == 1
+    @test dict[Homo(0, 1)] == 2
+end
+
+struct SimpleVectorSpace{B, N} <: VectorSpace{B}
+    sorted::Bool
+    table::NTuple{N, B}
+    SimpleVectorSpace(sorted::Bool, table::NTuple{N, B}) where {B, N} = new{B, N}(sorted, table)
+end
+@inline VectorSpaceStyle(::Type{<:SimpleVectorSpace}) = VectorSpaceEnumerative()
+@inline contentnames(::Type{<:SimpleVectorSpace}) = (:sorted, :table)
+@inline Base.issorted(vs::SimpleVectorSpace) = vs.sorted
+
+@testset "VectorSpaceEnumerative" begin
+    id0, id4 = (1, 0), (1, 4)
+    id1, id2, id3 = (1, 1), (1, 2), (1, 3)
+    vs = SimpleVectorSpace(true, (id1, id2, id3))
+    @test vs == deepcopy(vs)
+    @test isequal(vs, deepcopy(vs))
+    @test vs|>size == (3,)
+    @test vs|>dimension == 3
+    @test vs|>collect == [id1, id2, id3]
+    @test vs[1]==id1 && vs[2]==id2 && vs[3]==id3
+    @test searchsortedfirst(vs, id0)==1 && searchsortedfirst(vs, id4)==4
+    @test searchsortedfirst(vs, id1)==1 && searchsortedfirst(vs, id2)==2 && searchsortedfirst(vs, id3)==3
+    @test isnothing(findfirst(id0, vs)) && isnothing(findfirst(id4, vs))
+    @test findfirst(id1, vs)==1 && findfirst(id2, vs)==2 && findfirst(id3, vs)==3
+    @test (id0∉vs) && (id4 ∉ vs)
+    @test (id1∈vs) && (id2∈vs) && (id3 ∈ vs)
+
+    vs = SimpleVectorSpace(false, (id1, id2, id3))
+    @test searchsortedfirst(vs, id0)==4 && searchsortedfirst(vs, id4)==4
+    @test searchsortedfirst(vs, id1)==1 && searchsortedfirst(vs, id2)==2 && searchsortedfirst(vs, id3)==3
+    @test isnothing(findfirst(id0, vs)) && isnothing(findfirst(id4, vs))
+    @test findfirst(id1, vs)==1 && findfirst(id2, vs)==2 && findfirst(id3, vs)==3
+end
+
+struct SimpleIndices{N} <: VectorSpace{CartesianIndex{N}}
+    shape::NTuple{N, UnitRange{Int}}
+    SimpleIndices(shape::NTuple{N, UnitRange{Int}}) where N = new{N}(shape)
+end
+@inline SimpleIndices(shape::UnitRange{Int}...) = SimpleIndices(shape)
+@inline VectorSpaceStyle(::Type{<:SimpleIndices}) = VectorSpaceCartesian()
+@inline shape(vs::SimpleIndices) = vs.shape
+@inline Base.CartesianIndex(basis::CartesianIndex{N}, ::SimpleIndices{N}) where N = basis
+
+@testset "VectorSpaceCartesian" begin
+    foi = SimpleIndices(2:3, 2:3, 2:3)
+    @test dimension(foi) == 8
+    @test issorted(foi) == true
+    @test foi|>collect == CartesianIndex.([(2, 2, 2), (3, 2, 2), (2, 3, 2), (3, 3, 2), (2, 2, 3), (3, 2, 3), (2, 3, 3), (3, 3, 3)])
+    for (i, index) in enumerate(CartesianIndices((2:3, 2:3, 2:3)))
+        @test foi[i] == foi[index] == index
+        @test findfirst(index, foi) == i
+        @test searchsortedfirst(foi, index) == i
+        @test index∈foi
+    end
+    i1, i2 = CartesianIndex(1, 1, 1), CartesianIndex(4, 4, 4)
+    @test isnothing(findfirst(i1, foi)) && isnothing(findfirst(i2, foi))
+    @test searchsortedfirst(foi, i1) == 1 && searchsortedfirst(foi, i2) == 9
+    @test i1∉foi && i2∉foi
+end
+
+struct DirectSummedVectorSpace{T<:Tuple, B} <: VectorSpace{B}
+    contents::T
+    DirectSummedVectorSpace(contents::Tuple) = new{typeof(contents), mapreduce(eltype, typejoin, contents)}(contents)
+end
+@inline VectorSpaceStyle(::Type{<:DirectSummedVectorSpace}) = VectorSpaceDirectSummed()
+@inline DirectSummedVectorSpace(contents...) = DirectSummedVectorSpace(contents)
+
+@testset "VectorSpaceDirectSummed" begin
+    a = SimpleIndices(1:3)
+    b = SimpleIndices(3:4, 7:7)
+    c = DirectSummedVectorSpace(a, b)
+    @test dimension(c) == 5
+    @test c[1]==CartesianIndex(1) && c[2]==CartesianIndex(2) && c[3]==CartesianIndex(3) && c[4]==CartesianIndex(3, 7) && c[5]==CartesianIndex(4, 7)
+end
+
+@testset "NamedVectorSpace" begin
+    t = ParameterSpace{:t}(1:2)
+    @test contentnames(typeof(t)) == (:content,)
+    @test dimension(t) == 2
+    @test t≠ParameterSpace{:μ}(1:2) && t==ParameterSpace{:t}(1:2)
+    @test !isequal(t, ParameterSpace{:μ}(1:2)) && isequal(t, ParameterSpace{:t}(1:2))
+    @test keys(t) == keys(typeof(t)) == (:t,)
+    @test t[1]==1 && t[2]==2
+    @test t[1]∈t && t[2]∈t
+    ps = pairs(t)
+    @test size(ps) == (2,)
+    @test eltype(ps) == eltype(typeof(ps)) == NamedTuple{(:t,), Tuple{Int}}
+    @test ps[1]==(t=1,) && ps[2]==(t=2,)
+
+    U = ParameterSpace{:U}([8.0, 9.0])
+    zps = ZippedNamedVectorSpace(t, U)
+    @test VectorSpaceStyle(zps) == VectorSpaceZipped()
+    @test eltype(zps) == eltype(typeof(zps)) == Tuple{Int, Float64}
+    @test keys(zps) == keys(typeof(zps)) == (:t, :U)
+    @test dimension(zps) == 2
+    @test zps[1]==(1, 8.0) && zps[2]==(2, 9.0)
+    ps = pairs(zps)
+    @test size(ps) == (2,)
+    @test eltype(ps) == eltype(typeof(ps)) == NamedTuple{(:t, :U), Tuple{Int, Float64}}
+    @test ps[1]==(t=1, U=8.0) && ps[2]==(t=2, U=9.0)
+    pps = DirectProductedNamedVectorSpace(t, U)
+    @test VectorSpaceStyle(pps) == VectorSpaceDirectProducted()
+    @test eltype(pps) == eltype(typeof(pps)) == Tuple{Int, Float64}
+    @test keys(pps) == keys(typeof(pps)) == (:t, :U)
+    @test dimension(pps) == 4
+    @test pps[1]==(1, 8.0) && pps[2]==(2, 8.0) && pps[3]==(1, 9.0) && pps[4]==(2, 9.0)
+
+    μ = ParameterSpace{:μ}([11, 12])
+    @test t⊕U == zps
+    @test μ⊕zps == ZippedNamedVectorSpace(μ, t, U)
+    @test zps⊕μ == ZippedNamedVectorSpace(t, U, μ)
+    @test zps⊕ZippedNamedVectorSpace(μ) == ZippedNamedVectorSpace(t, U, μ)
+    @test t⊗U == pps
+    @test μ⊗pps == DirectProductedNamedVectorSpace(μ, t, U)
+    @test pps⊗μ == DirectProductedNamedVectorSpace(t, U, μ)
+    @test pps⊗DirectProductedNamedVectorSpace(μ) == DirectProductedNamedVectorSpace(t, U, μ)
+end
+
+struct Tree{N, D} <: AbstractSimpleTree{N, D}
+    TREECORE::SimpleTreeCore{N, D}
+end
+Tree{N, D}() where {N, D} = Tree(SimpleTreeCore{N, D}())
+
+@testset "AbstractSimpleTree" begin
+    tree = Tree{String, Int}()
+
+    @test contentnames(typeof(tree)) == (:TREECORE,)
+    @test eltype(tree) == Pair{String, Int}
+    @test keytype(tree) == String
+    @test valtype(tree) == Int
+    @test root(tree) === nothing
+
+    push!(tree, "L0", 0)
+    push!(tree, "L0", "L1-1", 2)
+    push!(tree, "L0", "L1-2", 3)
+    push!(tree, "L1-1", "L2-1", 4)
+    push!(tree, "L1-1", "L2-2", 5)
+    push!(tree, "L1-2", "L2-3", 6)
+    push!(tree, "L1-2", "L2-4", 7)
+    tree["L0"] = 1
+
+    @test root(tree) == "L0"
+    @test length(tree) == 7
+    @test collect(keys(tree, simpletreedepth)) == ["L0", "L1-1", "L2-1", "L2-2", "L1-2", "L2-3", "L2-4"]
+    @test collect(keys(tree, simpletreewidth)) == ["L0", "L1-1", "L1-2", "L2-1", "L2-2", "L2-3", "L2-4"]
+    @test collect(values(tree, simpletreedepth)) == [1, 2, 4, 5, 3, 6, 7]
+    @test collect(values(tree, simpletreewidth)) == [1, 2, 3, 4, 5, 6, 7]
+    @test collect(pairs(tree, simpletreedepth)) == [("L0", 1), ("L1-1", 2), ("L2-1", 4), ("L2-2", 5), ("L1-2", 3), ("L2-3", 6), ("L2-4", 7)]
+    @test collect(pairs(tree, simpletreewidth)) == [("L0", 1), ("L1-1", 2), ("L1-2", 3), ("L2-1", 4), ("L2-2", 5), ("L2-3", 6), ("L2-4", 7)]
+    @test [isleaf(tree, node) for node in keys(tree, simpletreewidth)] == [false, false, false, true, true, true, true]
+    @test [level(tree, node) for node in keys(tree, simpletreewidth)] == [1, 2, 2, 3, 3, 3, 3]
+    @test [ancestor(tree, "L2-1", i) for i = 0:2] == ["L2-1", "L1-1", "L0"]
+    @test [ancestor(tree, "L2-3", i) for i = 0:2] == ["L2-3", "L1-2", "L0"]
+    @test descendants(tree, "L0", 0) == ["L0"]
+    @test descendants(tree, "L0", 1) == ["L1-1", "L1-2"]
+    @test descendants(tree, "L0", 2) == ["L2-1", "L2-2", "L2-3", "L2-4"]
+    @test siblings(tree, "L0") == []
+    @test siblings(tree, "L1-1") == ["L1-2"]
+    @test siblings(tree, "L2-1") == ["L2-2"]
+    @test leaves(tree) == ["L2-1", "L2-2", "L2-3", "L2-4"]
+
+    backup = deepcopy(tree)
+
+    sub = subtree(tree, "L0")
+    empty!(tree)
+    append!(tree, sub)
+    @test tree == backup
+    @test isequal(tree, backup)
+
+    sub = subtree(tree, "L1-1")
+    delete!(tree, "L1-1")
+    append!(tree, "L0", sub)
+    move!(tree, "L1-2", "L0")
+    @test tree == backup
+    @test isequal(tree, backup)
+end
+
+@testset "SimpleTree" begin
+    tree = SimpleTree{String, Int}()
+    @test eltype(tree)  == eltype(typeof(tree)) == Pair{String, Int}
+    @test keytype(tree) == keytype(typeof(tree)) == String
+    @test valtype(tree) == valtype(typeof(tree)) == Int
+    @test root(tree) === nothing
+end

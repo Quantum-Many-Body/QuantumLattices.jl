@@ -9,12 +9,10 @@ using TimerOutputs: TimerOutput, TimerOutputs, @timeit
 using ..DegreesOfFreedom: plain, Boundary, Hilbert, Table, Term, ismodulatable
 using ..QuantumOperators: Operators, Transformation, identity, optype
 using ..Spatials: AbstractLattice, Bond, Neighbors, bonds!, isintracell
-using ...Prerequisites: atol, rtol, decimaltostr
-using ...Prerequisites.Traits: efficientoperations
+using ..Toolkit: atol, efficientoperations, rtol, decimaltostr
 
-import ...Interfaces: add!, expand, expand!, id
-import ...Essentials: reset!, update, update!
-import ...Prerequisites.Traits: contentnames, getcontent
+import ..QuantumLattices: add!, expand, expand!, id, reset!, update, update!
+import ..Toolkit: contentnames, getcontent
 
 export Action, Algorithm, AnalyticalExpression, Assignment, CompositeGenerator, Entry, Frontend, Image, OperatorGenerator, Parameters, RepresentationGenerator, prepare!, run!, rundependences!, save
 

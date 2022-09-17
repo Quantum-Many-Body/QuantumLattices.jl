@@ -1,51 +1,48 @@
 module QuantumLattices
 
-include("Interfaces.jl")
-include("Prerequisites/Prerequisites.jl")
-include("Essentials/Essentials.jl")
+import LinearAlgebra: ishermitian, rank, mul!, ⋅
 
-using .Interfaces
-using .Prerequisites
-using .Essentials
-
-# Interfaces
-export dimension, id, rank, value
+# interfaces
+include("interfaces.jl")
+export dimension, id, ishermitian, rank, value
 export ⊕, ⊗, ⋅, add!, div!, mul!, sub!
 export decompose, decompose!, expand, expand!, permute
+export dtype, kind, reset!, update, update!
 
-# Essentials
-export kind, reset!, update, update!
+# Toolkit
+include("Toolkit.jl")
 
-# Essentials.QuantumOperators
+# QuantumOperators
+include("QuantumOperators.jl")
 export ID, Operator, OperatorPack, OperatorProd, Operators, OperatorSum, OperatorUnit, LaTeX, QuantumOperator
 export AbstractSubstitution, AbstractUnitSubstitution, Identity, MatrixRepresentation, Numericalization, Permutation, RankFilter, Transformation, UnitSubstitution
 export ishermitian, latexname, latexformat, matrix, matrix!, script, sequence
 
-# Essentials.QuantumNumbers
+# QuantumNumbers
+include("QuantumNumbers.jl")
 export AbelianNumber, AbelianNumbers, Momentum, Momentum₁, Momentum₂, Momentum₃, ParticleNumber, SpinfulParticle, SpinZ
 export particlenumbers, periods, spinfulparticles, spinzs, @abeliannumber
 
-# Essentials.Spatials
+# Spatials
+include("Spatials.jl")
 export azimuth, azimuthd, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, polar, polard, reciprocals, rotate, translate, tile, volume
 export AbstractLattice, Bond, BrillouinZone, Lattice, Neighbors, Point, ReciprocalSpace, ReciprocalZone, ReciprocalPath, Segment, Translations, bonds!, bonds, icoordinate, isintracell, rcoordinate, @translations_str
 export @hexagon_str, @line_str, @rectangle_str
 
-# Essentials.DegreesOfFreedom
+# DegreesOfFreedom
+include("DegreesOfFreedom.jl")
 export Boundary, CompositeIID, CompositeIndex, CompositeInternal, Component, Constraint, Coupling, Hilbert, IID, IIDSpace, Index, Internal, MatrixCoupling, Metric, OperatorUnitToTuple, SimpleIID, SimpleInternal, Table, Term
 export plain, statistics, @indexes
 
-# Essentials.QuantumSystems
-## Canonical complex fermionic/bosonic systems
+# QuantumSystems
+include("QuantumSystems.jl")
 export σ⁰, σˣ, σʸ, σᶻ, σ⁺, σ⁻, annihilation, creation, latexofbosons, latexoffermions, latexofparticles
 export Coulomb, FID, Fock, FockTerm, Hopping, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, Onsite, PairHopping, Pairing, SpinFlip, isnormalordered
-
-## SU(2) spin systems
 export latexofspins, SID, Spin, SpinTerm, totalspin, @dm_str, @gamma_str, @heisenberg_str, @ising_str
-
-## Phononic systems
 export latexofphonons, Elastic, PID, Phonon, Kinetic, Hooke, PhononTerm
 
-# Essentials.Frameworks
+# Frameworks
+include("Frameworks.jl")
 export Action, Algorithm, AnalyticalExpression, Assignment, CompositeGenerator, Entry, Frontend, Image, OperatorGenerator, Parameters, RepresentationGenerator, prepare!, run!, rundependences!, save
 
 end

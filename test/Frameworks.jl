@@ -1,18 +1,16 @@
 using LinearAlgebra: dot, tr
-using QuantumLattices.Essentials: reset!, update
-using QuantumLattices.Essentials.DegreesOfFreedom: Boundary, CompositeIndex, Coupling, Hilbert, IIDSpace, Index, OperatorUnitToTuple, SimpleIID, SimpleInternal, Table, Term
-using QuantumLattices.Essentials.Frameworks
-using QuantumLattices.Essentials.QuantumOperators: ID, Identity, Operator, Operators, id, idtype
-using QuantumLattices.Essentials.Spatials: Lattice, Point, bonds, decompose, isintracell
-using QuantumLattices.Interfaces: add!, expand, expand!
-using QuantumLattices.Prerequisites: Float
-using QuantumLattices.Prerequisites.Traits: contentnames, reparameter
+using QuantumLattices: add!, expand, expand!, reset!, update
+using QuantumLattices.DegreesOfFreedom: Boundary, CompositeIndex, Coupling, Hilbert, IIDSpace, Index, OperatorUnitToTuple, SimpleIID, SimpleInternal, Table, Term
+using QuantumLattices.Frameworks
+using QuantumLattices.QuantumOperators: ID, Identity, Operator, Operators, id, idtype
+using QuantumLattices.Spatials: Lattice, Point, bonds, decompose, isintracell
+using QuantumLattices.Toolkit: Float, contentnames, reparameter
 using StaticArrays: SVector
 
-import QuantumLattices.Essentials.DegreesOfFreedom: Constraint, iidtype, isdefinite
-import QuantumLattices.Essentials.Frameworks: Parameters
-import QuantumLattices.Essentials: prepare!, run!, update!
-import QuantumLattices.Prerequisites.VectorSpaces: shape
+import QuantumLattices: update!
+import QuantumLattices.DegreesOfFreedom: iidtype, isdefinite
+import QuantumLattices.Frameworks: Parameters, prepare!, run!
+import QuantumLattices.Toolkit: shape
 
 struct FID{N<:Union{Int, Symbol}} <: SimpleIID
     nambu::N
@@ -27,7 +25,6 @@ function Base.angle(id::CompositeIndex{Index{Int, FID{Int}}}, vectors::AbstractV
 end
 @inline isdefinite(::Type{FID{Int}}) = true
 @inline iidtype(::Type{FID}, ::Type{T}) where {T<:Union{Int, Symbol}} = FID{T}
-@inline Constraint(iids::NTuple{N, FID{Int}}) where N = Constraint{N}()
 
 struct FFock <: SimpleInternal{FID{Int}}
     nnambu::Int

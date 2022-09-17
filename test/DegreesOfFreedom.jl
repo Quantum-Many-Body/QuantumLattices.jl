@@ -1,18 +1,16 @@
 using LaTeXStrings: latexstring
 using LinearAlgebra: dot
 using Printf: @printf, @sprintf
-using QuantumLattices.Essentials: kind, reset!, update!
-using QuantumLattices.Essentials.DegreesOfFreedom
-using QuantumLattices.Essentials.QuantumOperators: ID, LaTeX, Operator, Operators, id, idtype, latexformat, sequence
-using QuantumLattices.Essentials.Spatials: Bond, Lattice, Point, bonds, decompose, icoordinate, rcoordinate
-using QuantumLattices.Interfaces: ⊕, ⊗, dimension, expand, rank
-using QuantumLattices.Prerequisites: Float
-using QuantumLattices.Prerequisites.Traits: contentnames, getcontent, isparameterbound, parameternames, reparameter
+using QuantumLattices: ⊕, ⊗, dimension, expand, ishermitian, kind, rank, reset!, update!
+using QuantumLattices.DegreesOfFreedom
+using QuantumLattices.QuantumOperators: ID, LaTeX, Operator, Operators, id, idtype, latexformat, sequence
+using QuantumLattices.Spatials: Bond, Lattice, Point, bonds, decompose, icoordinate, rcoordinate
+using QuantumLattices.Toolkit: Float, contentnames, getcontent, isparameterbound, parameternames, reparameter
 using StaticArrays: SVector
 
-import QuantumLattices.Essentials.DegreesOfFreedom: Constraint, Coupling, iidtype, isdefinite, statistics
-import QuantumLattices.Essentials.QuantumOperators: latexname, script
-import QuantumLattices.Prerequisites.VectorSpaces: shape
+import QuantumLattices.DegreesOfFreedom: Constraint, Coupling, iidtype, isdefinite, statistics
+import QuantumLattices.QuantumOperators: latexname, script
+import QuantumLattices.Toolkit: shape
 
 struct DID{N<:Union{Int, Symbol, Colon}} <: SimpleIID
     nambu::N

@@ -2,14 +2,11 @@ module QuantumOperators
 
 using Latexify: unicode2latex
 using Printf: @printf, @sprintf
-using ...Prerequisites: atol, rtol, decimaltostr
-using ...Prerequisites.Traits: efficientoperations, contentorder, fulltype, getcontent, parameterpairs, parametertype, promoteparameters, rawtype, reparameter
+using ..Toolkit: atol, efficientoperations, rtol, contentorder, decimaltostr, fulltype, getcontent, parameterpairs, parametertype, promoteparameters, rawtype, reparameter
 
 import LaTeXStrings: latexstring
-import LinearAlgebra: ishermitian
-import ..Essentials: dtype
-import ...Interfaces: ⊗, ⋅, add!, div!, id, mul!, permute, rank, sub!, value
-import ...Prerequisites.Traits: contentnames, dissolve, isparameterbound, parameternames
+import ..QuantumLattices: ⊗, ⋅, add!, div!, dtype, id, ishermitian, mul!, permute, rank, sub!, value
+import ..Toolkit: contentnames, dissolve, isparameterbound, parameternames
 
 export ID, Operator, OperatorPack, OperatorProd, Operators, OperatorSum, OperatorUnit, LaTeX, QuantumOperator
 export AbstractSubstitution, AbstractUnitSubstitution, Identity, MatrixRepresentation, Numericalization, Permutation, RankFilter, Transformation, UnitSubstitution
