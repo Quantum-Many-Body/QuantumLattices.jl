@@ -69,13 +69,13 @@ Before the further discussion of [`Term`](@ref), we at first turn to the couplin
 
 Let's see a typical example, which represents the coupling pattern $c^†c$ of an usual hopping term:
 ```jldoctest HM
-julia> Coupling(1, FID(:, :, 2), FID(:, :, 1))
-∑[FID(:, :, 2) FID(:, :, 1)]
+julia> Coupling(1, Index(:, FID(:, :, 2)), Index(:, FID(:, :, 1)))
+∑[Index(:, FID(:, :, 2)) Index(:, FID(:, :, 1))]
 ```
 Here the coefficient of the [`Coupling`](@ref) is $1$, which can be omitted in the construction function:
 ```jldoctest HM
-julia> Coupling(FID(:, :, 2), FID(:, :, 1))
-∑[FID(:, :, 2) FID(:, :, 1)]
+julia> Coupling(Index(:, FID(:, :, 2)), Index(:, FID(:, :, 1)))
+∑[Index(:, FID(:, :, 2)) Index(:, FID(:, :, 1))]
 ```
 It is noted that the [`FID`](@ref) instances used here are a bit different from those introduced in the previous section of [Internal degrees of freedom](@ref):
 1) They don't have the type parameter `:f` or `:b` to specify the statistics of the generator, which means they apply to both fermionic and bosonic quantum lattice system.
@@ -85,77 +85,77 @@ The implicit summation in the construction of a [`Coupling`](@ref) is made expli
 
 Of course, it also supports usual [`FID`](@ref)s to initialize more specific coupling patterns:
 ```jldoctest HM
-julia> Coupling(-1, FID{:f}(1, 1, 2), FID{:f}(1, 1, 1))
-- FID{:f}(1, 1, 2) FID{:f}(1, 1, 1)
+julia> Coupling(-1, Index(1, FID{:f}(1, 1, 2)), Index(2, FID{:f}(1, 1, 1)))
+- Index(1, FID{:f}(1, 1, 2)) Index(2, FID{:f}(1, 1, 1))
 ```
 which corresponds to $-c^†_{1, ↓}c_{1, ↓}$. In this coupling pattern, all indexes are definite, therefore, there is no summation symbol "∑" in the string representation.
 
 The local generators can be of different types, which corresponds to a hybrid quantum lattice system that couples different categories of internal degrees of freedom:
 ```jldoctest HM
-julia> Coupling(FID{:f}(1, 1, 2), FID{:f}(1, 1, 1), SID{1//2}('z'))
-FID{:f}(1, 1, 2) FID{:f}(1, 1, 1) SID{1//2}('z')
+julia> Coupling(Index(1, FID{:f}(1, 1, 2)), Index(1, FID{:f}(1, 1, 1)), Index(1, SID{1//2}('z')))
+Index(1, FID{:f}(1, 1, 2)) Index(1, FID{:f}(1, 1, 1)) Index(1, SID{1//2}('z'))
 ```
 Here, local spins are coupled to itinerant fermions. For more discussions on hybrid systems, please refer to the section of [Hybrid systems](@ref).
 
 When all local generators are of the same type, a [`Coupling`](@ref) can be initialized in a different simpler way:
 ```jldoctest HM
-julia> Coupling{FID}(:, :, (2, 2, 1, 1))
-∑[FID(:, :, 2) FID(:, :, 2) FID(:, :, 1) FID(:, :, 1)]
+julia> Coupling(:, FID, :, :, (2, 2, 1, 1))
+∑[Index(:, FID(:, :, 2)) Index(:, FID(:, :, 2)) Index(:, FID(:, :, 1)) Index(:, FID(:, :, 1))]
 
-julia> Coupling{FID}(2, :, :, (2, 2, 1, 1))
-2 ∑[FID(:, :, 2) FID(:, :, 2) FID(:, :, 1) FID(:, :, 1)]
+julia> Coupling(2, :, FID, :, :, (2, 2, 1, 1))
+2 ∑[Index(:, FID(:, :, 2)) Index(:, FID(:, :, 2)) Index(:, FID(:, :, 1)) Index(:, FID(:, :, 1))]
 
-julia> Coupling{SID}(('z', 'z'))
-SID('z') SID('z')
+julia> Coupling(:, SID, ('z', 'z'))
+Index(:, SID('z')) Index(:, SID('z'))
 
-julia> Coupling{SID}(-1, ('z', 'z'))
-- SID('z') SID('z')
+julia> Coupling(-1, :, SID, ('z', 'z'))
+- Index(:, SID('z')) Index(:, SID('z'))
 
-julia> Coupling{PID}(('p', 'p'), :)
-∑[PID('p', :) PID('p', :)]
+julia> Coupling(:, PID, ('p', 'p'), :)
+∑[Index(:, PID('p', :)) Index(:, PID('p', :))]
 
-julia> Coupling{PID}(1//2, ('p', 'p'), :)
-1//2 ∑[PID('p', :) PID('p', :)]
+julia> Coupling(1//2, :, PID, ('p', 'p'), :)
+1//2 ∑[Index(:, PID('p', :)) Index(:, PID('p', :))]
 ```
 Here, in the 3rd and 4th examples, the total spin of an [`SID`](@ref) is omitted, meaning it could represent any allowable value of total spins, as is similar to [`FID`](@ref) when the statistics is omitted.
 
-The coefficient and the local generators of a [`Coupling`](@ref) are stored in the `:value` and `:iids` attributes, respectively:
+The coefficient and the local generators of a [`Coupling`](@ref) are stored in the `:value` and `:indexes` attributes, respectively:
 ```jldoctest
-julia> coupling = Coupling(1//2, SID('+'), SID('-'));
+julia> coupling = Coupling(1//2, Index(:, SID('+')), Index(:, SID('-')));
 
 julia> coupling.value
 1//2
 
-julia> coupling.iids
-(SID('+'), SID('-'))
+julia> coupling.indexes
+(Index(:, SID('+')), Index(:, SID('-')))
 ```
 
 A [`Coupling`](@ref) can be multiplied with a number:
 ```jldoctest
-julia> coupling = Coupling(1//2, SID('+'), SID('-'));
+julia> coupling = Coupling(1//2, Index(:, SID('+')), Index(:, SID('-')));
 
 julia> coupling * 3
-3//2 SID('+') SID('-')
+3//2 Index(:, SID('+')) Index(:, SID('-'))
 
 julia> 3 * coupling
-3//2 SID('+') SID('-')
+3//2 Index(:, SID('+')) Index(:, SID('-'))
 ```
 
 Two [`Coupling`](@ref)s can be multiplied together:
 ```jldoctest
-julia> cp₁ = Coupling{FID}(2, (1, 1), :, (2, 1));
+julia> cp₁ = Coupling(2, :, FID, (1, 1), :, (2, 1));
 
-julia> cp₂ = Coupling{FID}(2, (2, 2), :, (2, 1));
+julia> cp₂ = Coupling(2, :, FID, (2, 2), :, (2, 1));
 
 julia> cp₁ * cp₂
-4 ∑[FID(1, :, 2) FID(1, :, 1)] ⋅ ∑[FID(2, :, 2) FID(2, :, 1)]
+4 ∑[Index(:, FID(1, :, 2)) Index(:, FID(1, :, 1))] ⋅ ∑[Index(:, FID(2, :, 2)) Index(:, FID(2, :, 1))]
 ```
 
-It is noted that due to the implicit summation in the coupling pattern, the above product is not equal to `Coupling{FID}(4, (1, 1, 2, 2), :, (2, 1, 2, 1))`:
+It is noted that due to the implicit summation in the coupling pattern, the above product is not equal to `Coupling(4, :, FID, (1, 1, 2, 2), :, (2, 1, 2, 1))`:
 ```jldoctest
-julia> cp₁, cp₂ = Coupling{FID}(2, (1, 1), :, (2, 1)), Coupling{FID}(2, (2, 2), :, (2, 1));
+julia> cp₁, cp₂ = Coupling(2, :, FID, (1, 1), :, (2, 1)), Coupling(2, :, FID, (2, 2), :, (2, 1));
 
-julia> cp = Coupling{FID}(4, (1, 1, 2, 2), :, (2, 1, 2, 1));
+julia> cp = Coupling(4, :, FID, (1, 1, 2, 2), :, (2, 1, 2, 1));
 
 julia> cp == cp₁ * cp₂
 false
@@ -175,22 +175,22 @@ false
 
 ## Specialized terms
 
-For each certain kind of terms, some of the input parameters of the basic construction function are in fact fixed or have default values, e.g., the hopping term is always non-Hermitian while the Hubbard term is always Hermitian. Therefore, for each common kind of terms in condensed matter physics, it is more convenient to define the specialized construction function. All such predefinitions can be referenced in the section of [Advanced terms](@ref). Here, we only introduce [`Hopping`](@ref) and [`Hubbard`](@ref) specialized for the hopping terms and Hubbard terms, respectively, for illustration:
+For each certain kind of terms, some of the input parameters of the basic construction function are in fact fixed or have default values, e.g., the hopping term is always non-Hermitian while the Hubbard term is always Hermitian. Therefore, for each common kind of terms in condensed matter physics, it is more convenient to define the specialized construction function. All such predefinitions can be referenced in the section of [Advanced terms]. Here, we only introduce [`Hopping`](@ref) and [`Hubbard`](@ref) specialized for the hopping terms and Hubbard terms, respectively, for illustration:
 ```julia
-Hopping(id::Symbol, value, bondkind; coupling=Coupling{FID}(:, :, (2, 1)))
+Hopping(id::Symbol, value, bondkind; coupling=Coupling(:, FID, :, :, (2, 1)))
 Hubbard(id::Symbol, value)
 ```
 
 It can be seen that the terms constructed by the generic [`Term`](@ref) function or the specialized [`Hopping`](@ref) or [`Hubbard`](@ref) functions are the same, but the specialized functions are much more convenient:
 ```jldoctest
-julia> t₁ =  Term{:Hopping}(:t, 2.0, 1, Coupling{FID}(:, :, (2, 1)), false);
+julia> t₁ =  Term{:Hopping}(:t, 2.0, 1, Coupling(:, FID, :, :, (2, 1)), false);
 
 julia> t₂ = Hopping(:t, 2.0, 1);
 
 julia> t₁ == t₂
 true
 
-julia> U₁ = Term{:Hubbard}(:U, 1.5, 0, Coupling{FID}(:, (2, 2, 1, 1), (2, 1, 2, 1)), true);
+julia> U₁ = Term{:Hubbard}(:U, 1.5, 0, Coupling(:, FID, :, (2, 2, 1, 1), (2, 1, 2, 1)), true);
 
 julia> U₂ = Hubbard(:U, 1.5);
 

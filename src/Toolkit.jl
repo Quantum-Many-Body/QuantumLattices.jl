@@ -1,7 +1,6 @@
 module Toolkit
 
 using Formatting: FormatSpec, fmt
-using Reexport: @reexport
 using Printf: @printf
 
 import QuantumLattices: ⊕, ⊗, dimension, rank

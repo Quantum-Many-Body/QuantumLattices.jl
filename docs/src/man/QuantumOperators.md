@@ -1,10 +1,5 @@
 ```@meta
-CurrentModule = QuantumLattices.Essentials.QuantumOperators
-```
-
-```@setup quantumalgebras
-push!(LOAD_PATH, "../../../../src/")
-using QuantumLattices.Essentials.QuantumOperators
+CurrentModule = QuantumLattices.QuantumOperators
 ```
 
 # Quantum operators
