@@ -3,7 +3,6 @@ module QuantumLattices
 import LinearAlgebra: ishermitian, rank, mul!, ⋅
 
 # interfaces
-# include("interfaces.jl")
 export dimension, id, ishermitian, rank, value
 export ⊕, ⊗, ⋅, add!, div!, mul!, sub!
 export decompose, decompose!, expand, expand!, permute
