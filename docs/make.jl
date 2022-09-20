@@ -4,49 +4,38 @@ using QuantumLattices
 
 makedocs(
     format=     Documenter.HTML(
-                    prettyurls= !("local" in ARGS),
+                    prettyurls= get(ENV, "CI", "false") == "true",
                     canonical=  "https://quantum-many-body.github.io/QuantumLattices.jl/latest/",
                     assets=     ["assets/favicon.ico"],
                     analytics=  "UA-89508993-1",
-                    ),
+                ),
     sitename=   "QuantumLattices.jl",
     pages=      [
-                "Home"      =>  "index.md",
-                "Tutorials" =>  [
-                    "Unitcell Description" => [
-                        "tutorials/UnitcellDescription/Introduction.md",
-                        "tutorials/UnitcellDescription/SpatialInfoOfAUnitcell.md",
-                        "tutorials/UnitcellDescription/InternalDegreesOfFreedom.md",
-                        "tutorials/UnitcellDescription/CouplingsAmongDifferentDegreesOfFreedom.md",
-                        "tutorials/UnitcellDescription/GeneratorOfOperators.md",
+                    "Home"      =>  "index.md",
+                    "Unitcell Description Framework" => [
+                        "unitcell description framework/Introduction.md",
+                        "unitcell description framework/SpatialInfoOfAUnitcell.md",
+                        "unitcell description framework/InternalDegreesOfFreedom.md",
+                        "unitcell description framework/CouplingsAmongDifferentDegreesOfFreedom.md",
+                        "unitcell description framework/GeneratorOfOperators.md",
                     ],
-                    "Engine App Interface" => [
-                        "tutorials/EngineAppInterface/Introduction.md",
-                    ]
-                ],
-                "Manual"    =>  [
-                    "man/Interfaces.md",
-                    "Prerequisites" => [
-                        "man/Prerequisites/Introduction.md",
-                        "man/Prerequisites/Combinatorics.md",
-                        "man/Prerequisites/Traits.md",
-                        "man/Prerequisites/CompositeStructures.md",
-                        "man/Prerequisites/SimpleTrees.md",
-                        "man/Prerequisites/NamedVectors.md",
-                        "man/Prerequisites/VectorSpaces.md",
-                        ],
-                    "Essentials" => [
-                        "man/Essentials/Introduction.md",
-                        "man/Essentials/QuantumOperators.md",
-                        "man/Essentials/QuantumNumbers.md",
-                        "man/Essentials/Spatials.md",
-                        "man/Essentials/DegreesOfFreedom.md",
-                        "man/Essentials/QuantumSystems.md",
-                        "man/Essentials/Frameworks.md",
-                        ],
+                    "Advanced Topics" => [
+                        "advanced topics/Introduction.md",
+                        "advanced topics/LaTeXFormattedOutputs.md",
+                        "advanced topics/IndexOrders.md",
+                        "advanced topics/BoundaryConditions.md",
+                        "advanced topics/HybridSystems.md",
+                        "advanced topics/Transformations.md",
+                        "advanced topics/ManageProjects.md",
                     ],
-                "Developer Documentation"   =>  [
-                    "developer/CodeStyle.md",
+                    "Manual"    =>  [
+                        "man/Toolkit.md",
+                        "man/QuantumOperators.md",
+                        "man/QuantumNumbers.md",
+                        "man/Spatials.md",
+                        "man/DegreesOfFreedom.md",
+                        "man/QuantumSystems.md",
+                        "man/Frameworks.md",
                     ]
                 ]
 )

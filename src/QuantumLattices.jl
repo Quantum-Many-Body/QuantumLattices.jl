@@ -1,59 +1,72 @@
 module QuantumLattices
 
-include("Interfaces.jl")
-include("Prerequisites/Prerequisites.jl")
-include("Essentials/Essentials.jl")
+import LinearAlgebra: ishermitian, rank, mul!, ⋅
 
-using .Interfaces
-using .Prerequisites
-using .Essentials
+# interfaces
+export dimension, id, ishermitian, rank, value
+export ⊕, ⊗, ⋅, add!, div!, mul!, sub!
+export decompose, decompose!, expand, expand!, permute
+export dtype, kind, reset!, update, update!
+function id end
+function value end
+function dimension end
+function ⊕ end
+function ⊗ end
+function add! end
+function sub! end
+function div! end
+function expand end
+function expand! end
+function decompose end
+function decompose! end
+function permute end
+function dtype end
+function kind end
+function update end
+function update! end
+function reset! end
 
-# Interfaces
-export id, value, rank, dimension
-export ⊕, ⊗, ⋅, add!, sub!, mul!, div!
-export expand, expand!, decompose, decompose!, permute
+# Toolkit
+include("Toolkit.jl")
+using .Toolkit
 
-# Essentials
-export dtype, kind, update, update!, reset!
+# QuantumOperators
+include("QuantumOperators.jl")
+using .QuantumOperators
+export ID, Operator, OperatorPack, OperatorProd, Operators, OperatorSum, OperatorUnit, LaTeX, QuantumOperator
+export AbstractSubstitution, AbstractUnitSubstitution, Identity, MatrixRepresentation, Numericalization, Permutation, RankFilter, Transformation, UnitSubstitution
+export ishermitian, latexname, latexformat, matrix, matrix!, script, sequence
 
-# Essentials.QuantumOperators
-export QuantumOperator, OperatorUnit, ID, OperatorPack, OperatorProd, OperatorSum, Operator, Operators, LaTeX
-export Transformation, Identity, Numericalization, MatrixRepresentation, Permutation, AbstractSubstitution, AbstractUnitSubstitution, UnitSubstitution, RankFilter
-export ishermitian, idtype, optype, sequence, latexname, latexformat, matrix, matrix!
+# QuantumNumbers
+include("QuantumNumbers.jl")
+using .QuantumNumbers
+export AbelianNumber, AbelianNumbers, Momentum, Momentum₁, Momentum₂, Momentum₃, ParticleNumber, SpinfulParticle, SpinZ
+export particlenumbers, periods, spinfulparticles, spinzs, @abeliannumber
 
-# Essentials.QuantumNumbers
-export AbelianNumber, AbelianNumbers, @abeliannumber, SpinZ, ParticleNumber, SpinfulParticle, Momentum, Momentum₁, Momentum₂, Momentum₃
-export periods, spinzs, particlenumbers, spinfulparticles
+# Spatials
+include("Spatials.jl")
+using .Spatials
+export azimuth, azimuthd, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, polar, polard, reciprocals, rotate, translate, tile, volume
+export AbstractLattice, Bond, BrillouinZone, Lattice, Neighbors, Point, ReciprocalSpace, ReciprocalZone, ReciprocalPath, Segment, Translations, bonds!, bonds, icoordinate, isintracell, rcoordinate, @translations_str
+export @hexagon_str, @line_str, @rectangle_str
 
-# Essentials.Spatials
-export distance, azimuthd, azimuth, polard, polar, volume, isparallel, isonline, isintratriangle, issubordinate, reciprocals, translate, rotate, tile
-export Translations, AbstractPID, PID, CPID, AbstractBond, Point, Bond, Lattice, SuperLattice, Cylinder, Bonds
-export Segment, ReciprocalSpace, BrillouinZone, ReciprocalZone, ReciprocalPath
-export pidtype, rcoord, icoord, isintracell, bonds!, bonds, @line_str, @rectangle_str, @hexagon_str, @translations_str
-export allbonds, zerothbonds, insidebonds, acrossbonds, intrabonds, interbonds
+# DegreesOfFreedom
+include("DegreesOfFreedom.jl")
+using .DegreesOfFreedom
+export Boundary, CompositeIID, CompositeIndex, CompositeInternal, Component, Constraint, Coupling, Hilbert, IID, IIDSpace, Index, Internal, MatrixCoupling, Metric, OperatorUnitToTuple, SimpleIID, SimpleInternal, Table, Term
+export plain, statistics, @indexes
 
-# Essentials.DegreesOfFreedom
-export IID, SimpleIID, CompositeIID, Internal, SimpleInternal, CompositeInternal, AbstractOID, Index, CompositeOID, OID, Hilbert
-export IIDSpace, Subscript, Subscripts, AbstractCoupling, Coupling, Couplings, Metric, OIDToTuple, Table, Term
-export statistics, iidtype, indextype, ismodulatable, abbr, @subscript_str, @couplings
+# QuantumSystems
+include("QuantumSystems.jl")
+using .QuantumSystems
+export annihilation, creation, latexofbosons, latexoffermions, latexofparticles, @σ_str, @L_str
+export Coulomb, FID, Fock, FockTerm, Hopping, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, Onsite, PairHopping, Pairing, SpinFlip, isnormalordered
+export latexofspins, SID, Spin, SpinTerm, totalspin, @Γ_str, @DM_str, @Heisenberg_str, @Ising_str
+export latexofphonons, Elastic, PID, Phonon, Kinetic, Hooke, PhononTerm
 
-# Essentials.QuantumSystems
-## Canonical fermionic/bosonic systems
-export majorana, annihilation, creation, flatex, blatex
-export FID, Fock, FockCoupling, Onsite, Hopping, Pairing, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, SpinFlip, PairHopping, Coulomb, FockTerm
-export isnormalordered, @σ⁰_str, @σˣ_str, @σʸ_str, @σᶻ_str, @σ⁺_str, @σ⁻_str, @fc_str
-
-## SU(2) spin systems
-export slatex
-export SID, Spin, SpinCoupling, SpinTerm, totalspin
-export @heisenberg_str, @ising_str, @gamma_str, @dm_str, @sˣ_str, @sʸ_str, @sᶻ_str, @sc_str
-
-## Phononic systems
-export nlatex
-export NID, Phonon, PhononCoupling, PhononKinetic, PhononPotential, PhononTerm
-
-# Essentials.Frameworks
-export Parameters, Boundary, Engine, AbstractGenerator, Formulation, Entry, CompositeGenerator, Generator, Image, Action, Assignment, Algorithm
-export prepare!, run!, rundependences!, save, plain
+# Frameworks
+include("Frameworks.jl")
+using .Frameworks
+export Action, Algorithm, AnalyticalExpression, Assignment, CompositeGenerator, Entry, Frontend, Image, OperatorGenerator, Parameters, RepresentationGenerator, prepare!, run!, rundependences!, save
 
 end
