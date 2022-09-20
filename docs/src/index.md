@@ -48,12 +48,12 @@ Furthermore, other systems can be supported easily by extending the generic prot
 ## Supported Algorithms
 
 Concrete algorithms could be considered as the "backend" of quantum lattice systems. They are developed in separate packages (still in progress):
-* **[TBA](https://github.com/Quantum-Many-Body/TightBindingApproximation.jl)**: tight-binding approximation for complex fermionic/bosonic systems;
+* **[TBA](https://github.com/Quantum-Many-Body/TightBindingApproximation.jl)**: tight-binding approximation for complex-fermionic/complex-bosonic/phononic systems;
 * **SCMF**: self-consistent mean field theory for complex fermionic systems;
-* **[ED](https://github.com/Quantum-Many-Body/ExactDiagonalization.jl)**: exact diagonalization for complex-fermionic/hard-core-bosonic/spin systems;
+* **[ED](https://github.com/Quantum-Many-Body/ExactDiagonalization.jl)**: exact diagonalization for complex-fermionic/hard-core-bosonic/local-spin systems;
 * **[CPT/VCA](https://github.com/Quantum-Many-Body/QuantumClusterTheories.jl)**: cluster perturbation theory and variational cluster approach for complex fermionic and local spin systems;
-* **DMRG**: density matrix renormalization group for complex-fermionic/hard-core-bosonic/spin systems;
-* **[LSWT](https://github.com/Quantum-Many-Body/SpinWaveTheory.jl)**: linear spin wave theory for magnetically ordered local spin systems.
+* **DMRG**: density matrix renormalization group for complex-fermionic/hard-core-bosonic/local-spin systems;
+* **[LSWT](https://github.com/Quantum-Many-Body/SpinWaveTheory.jl)**: linear spin wave theory for magnetically ordered local-spin systems.
 
 ## Getting Started
 * [Tutorials: unitcell description](@ref UnitcellDescriptionIntroduction)

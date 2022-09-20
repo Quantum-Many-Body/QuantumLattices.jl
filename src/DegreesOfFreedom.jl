@@ -398,7 +398,7 @@ end
     script(::Val{:rcoordinate}, index::CompositeIndex; kwargs...) -> String
     script(::Val{:icoordinate}, index::CompositeIndex; kwargs...) -> String
 
-Get the `:rcoordinate/:icoordinate` script of a composite index.
+Get the `rcoordinate/icoordinate` script of a composite index.
 """
 @inline script(::Val{:rcoordinate}, index::CompositeIndex; kwargs...) = @sprintf "[%s]" join(valuetolatextext.(index.rcoordinate), ", ")
 @inline script(::Val{:icoordinate}, index::CompositeIndex; kwargs...) = @sprintf "[%s]" join(valuetolatextext.(index.icoordinate), ", ")
@@ -742,6 +742,7 @@ end
         count = stop+1
     end
 end
+@inline Base.summary(io::IO, couplings::Vector{<:Coupling}) = @printf io "%s-element Vector{Coupling}" length(couplings)
 
 """
     Coupling(indexes::Index...)
@@ -834,6 +835,10 @@ end
     col = searchsortedlast(component.matrix.colptr, i)
     return (component.left[row], component.right[col], component.matrix.nzval[i])
 end
+@inline Base.promote_rule(::Type{Component{T, T₁, V}}, ::Type{Component{T, T₂, V}}) where {T, T₁, T₂, V<:AbstractVector{T}} = Component{T, promote_type(T₁, T₂), V}
+@inline function Base.convert(::Type{Component{T, T₁, V}}, component::Component{T, T₂, V}) where {T, T₁, T₂, V<:AbstractVector{T}}
+    return Component(component.left, component.right, convert(SparseMatrixCSC{T₁, Int}, component.matrix))
+end
 
 """
     MatrixCoupling{I<:SimpleIID, C<:Tuple{Vararg{Component}}} <: VectorSpace{Coupling}
@@ -863,66 +868,93 @@ function Coupling(contents::Tuple, mc::MatrixCoupling{I}) where {I<:SimpleIID}
     index₂ = Index(mc.sites[2], I(map(content->content[2], contents)...))
     return Coupling(value, index₁, index₂)
 end
+@inline function Base.promote_rule(::Type{MatrixCoupling{I, S, C₁}}, ::Type{MatrixCoupling{I, S, C₂}}) where {I<:SimpleIID, S<:Union{Int, Colon}, C₁<:Tuple{Vararg{Component}}, C₂<:Tuple{Vararg{Component}}}
+    return MatrixCoupling{I, S, _promote_type(C₁, C₂)}
+end
+@inline Base.convert(::Type{MatrixCoupling{I, S, C}}, mc::MatrixCoupling{I, S}) where {I<:SimpleIID, S<:Union{Int, Colon}, C<:Tuple{Vararg{Component}}} = MatrixCoupling{I}(mc.sites, convert(C, mc.contents))
+@inline @generated function _promote_type(::Type{T₁}, ::Type{T₂}) where {N, T₁<:NTuple{N, Any}, T₂<:NTuple{N, Any}}
+    return Expr(:curly, Tuple, [:(promote_type(fieldtype(T₁, $i), fieldtype(T₂, $i))) for i=1:N]...)
+end
 
 """
-    MatrixCouplingProd{C<:Tuple{Vararg{MatrixCoupling}}} <: VectorSpace{Coupling}
+    MatrixCouplingProd{V<:Number, C<:Tuple{Vararg{MatrixCoupling}}} <: VectorSpace{Coupling}
 
 The product of a set of `Coupling`s whose coefficients are specified by matrices.
 """
-struct MatrixCouplingProd{C<:Tuple{Vararg{MatrixCoupling}}} <: VectorSpace{Coupling}
+struct MatrixCouplingProd{V<:Number, C<:Tuple{Vararg{MatrixCoupling}}} <: VectorSpace{Coupling}
+    value::V
     contents::C
 end
-@inline MatrixCouplingProd(contents::MatrixCoupling...) = MatrixCouplingProd(contents)
-@inline Base.eltype(::Type{MCP}) where {MCP<:MatrixCouplingProd} = _eltype(_eltypes(MCP))
+@inline MatrixCouplingProd(contents::MatrixCoupling...) = MatrixCouplingProd(1, contents)
+@inline MatrixCouplingProd(value::Number, contents::MatrixCoupling...) = MatrixCouplingProd(value, contents)
+@inline Base.eltype(::Type{MCP}) where {MCP<:MatrixCouplingProd} = _eltype(fieldtype(MCP, :value), _eltypes(MCP))
 @inline @generated _eltypes(::Type{MCP}) where {MCP<:MatrixCouplingProd} = Expr(:curly, :Tuple, [:(eltype($C)) for C in fieldtypes(fieldtype(MCP, :contents))]...)
-@inline @generated function _eltype(::Type{TS}) where {TS<:Tuple}
+@inline @generated function _eltype(::Type{V}, ::Type{TS}) where {V<:Number, TS<:Tuple}
     types = fieldtypes(TS)
-    V = promote_type(map(valtype, types)...)
+    MV = promote_type(V, map(valtype, types)...)
     IS = Tuple{concatenate(map(C->fieldtypes(parametertype(C, :indexes)), types)...)...}
     FS = Tuple{concatenate(map(C->fieldtypes(fieldtype(parametertype(C, :constraint), :conditions)), types)...)...}
     N = length(types)
     RS = ntuple(i->2, Val(N))
-    return Coupling{V, IS, Constraint{RS, N, FS}}
+    return Coupling{MV, IS, Constraint{RS, N, FS}}
 end
 @inline VectorSpaceStyle(::Type{<:MatrixCouplingProd}) = VectorSpaceDirectProducted()
-@inline Coupling(contents::Tuple{Vararg{Coupling}}, ::MatrixCouplingProd) = prod(contents)
+@inline Coupling(contents::Tuple{Vararg{Coupling}}, mcp::MatrixCouplingProd) = prod(contents; init=mcp.value)
+@inline function Base.promote_rule(::Type{MatrixCouplingProd{V₁, C₁}}, ::Type{MatrixCouplingProd{V₂, C₂}}) where {V₁<:Number, C₁<:Tuple{Vararg{MatrixCoupling}}, V₂<:Number, C₂<:Tuple{Vararg{MatrixCoupling}}}
+    return MatrixCouplingProd{promote_type(V₁, V₂), _promote_type(C₁, C₂)}
+end
+@inline Base.convert(::Type{MatrixCouplingProd{V, C}}, mcp::MatrixCouplingProd) where {V<:Number, C<:Tuple{Vararg{MatrixCoupling}}} = MatrixCouplingProd(convert(V, mcp.value), convert(C, mcp.contents))
+
+"""
+    MatrixCouplingSum{C<:MatrixCouplingProd, N} <: VectorSpace{Coupling}
+
+The sum of a set of `Coupling`s whose coefficients are specified by matrices.
+"""
+struct MatrixCouplingSum{C<:MatrixCouplingProd, N} <: VectorSpace{Coupling}
+    contents::NTuple{N, C}
+end
+@inline MatrixCouplingSum(contents::Union{MatrixCoupling, MatrixCouplingProd}...) = MatrixCouplingSum(promote(map(m->1*m, contents)...))
+@inline Base.eltype(::Type{<:MatrixCouplingSum{C}}) where {C<:MatrixCouplingProd} = eltype(eltype(C))
+@inline VectorSpaceStyle(::Type{<:MatrixCouplingSum}) = VectorSpaceDirectSummed()
 
 """
     *(mc₁::MatrixCoupling, mc₂::MatrixCoupling) -> MatrixCouplingProd
     *(mc::MatrixCoupling, mcp::MatrixCouplingProd) -> MatrixCouplingProd
     *(mcp::MatrixCouplingProd, mc::MatrixCoupling) -> MatrixCouplingProd
     *(mcp₁::MatrixCouplingProd, mcp₂::MatrixCouplingProd) -> MatrixCouplingProd
+    *(mc::MatrixCoupling, factor::Number) -> MatrixCouplingProd
+    *(mc::MatrixCoupling, factor::Number) -> MatrixCouplingProd
+    *(factor::Number, mcp::MatrixCouplingProd) -> MatrixCouplingProd
+    *(mcp::MatrixCouplingProd, factor::Number) -> MatrixCouplingProd
+    *(mcs::MatrixCouplingSum, element::Union{Number, MatrixCoupling, MatrixCouplingProd}) -> MatrixCouplingSum
+    *(element::Union{Number, MatrixCoupling, MatrixCouplingProd}, mcs::MatrixCouplingSum) -> MatrixCouplingSum
+    *(mcs₁::MatrixCouplingSum, mcs₂::MatrixCouplingSum) -> MatrixCouplingSum
 
 The product between `MatrixCoupling`s and `MatrixCouplingProd`s.
 """
 @inline Base.:*(mc₁::MatrixCoupling, mc₂::MatrixCoupling) = MatrixCouplingProd(mc₁, mc₂)
-@inline Base.:*(mc::MatrixCoupling, mcp::MatrixCouplingProd) = MatrixCouplingProd(mc, mcp.contents...)
-@inline Base.:*(mcp::MatrixCouplingProd, mc::MatrixCoupling) = MatrixCouplingProd(mcp.contents..., mc)
-@inline Base.:*(mcp₁::MatrixCouplingProd, mcp₂::MatrixCouplingProd) = MatrixCouplingProd(mcp₁.contents..., mcp₂.contents...)
+@inline Base.:*(mc::MatrixCoupling, mcp::MatrixCouplingProd) = MatrixCouplingProd(mcp.value, mc, mcp.contents...)
+@inline Base.:*(mcp::MatrixCouplingProd, mc::MatrixCoupling) = MatrixCouplingProd(mcp.value, mcp.contents..., mc)
+@inline Base.:*(mcp₁::MatrixCouplingProd, mcp₂::MatrixCouplingProd) = MatrixCouplingProd(mcp₁.value*mcp₂.value, mcp₁.contents..., mcp₂.contents...)
+@inline Base.:*(factor::Number, mc::MatrixCoupling) = MatrixCouplingProd(factor, mc)
+@inline Base.:*(mc::MatrixCoupling, factor::Number) = MatrixCouplingProd(factor, mc)
+@inline Base.:*(factor::Number, mcp::MatrixCouplingProd) = MatrixCouplingProd(factor*mcp.value, mcp.contents)
+@inline Base.:*(mcp::MatrixCouplingProd, factor::Number) = MatrixCouplingProd(factor*mcp.value, mcp.contents)
+@inline Base.:*(mcs::MatrixCouplingSum, element::Union{Number, MatrixCoupling, MatrixCouplingProd}) = MatrixCouplingSum(map(m->m*element, mcs.contents))
+@inline Base.:*(element::Union{Number, MatrixCoupling, MatrixCouplingProd}, mcs::MatrixCouplingSum) = MatrixCouplingSum(map(m->element*m, mcs.contents))
+@inline Base.:*(mcs₁::MatrixCouplingSum, mcs₂::MatrixCouplingSum) = MatrixCouplingSum(concatenate(map(m₁->map(m₂->m₁*m₂, mcs₂.contents), mcs₁.contents)))
 
 """
-    MatrixCouplingSum{C<:MatrixCoupling, N} <: VectorSpace{Coupling}
-
-The sum of a set of `Coupling`s whose coefficients are specified by matrices.
-"""
-struct MatrixCouplingSum{C<:MatrixCoupling, N} <: VectorSpace{Coupling}
-    contents::NTuple{N, C}
-end
-@inline MatrixCouplingSum(contents::MatrixCoupling...) = MatrixCouplingSum(contents)
-@inline Base.eltype(::Type{<:MatrixCouplingSum{C}}) where {C<:MatrixCoupling} = eltype(C)
-@inline VectorSpaceStyle(::Type{<:MatrixCouplingSum}) = VectorSpaceDirectSummed()
-
-"""
-    +(mc₁::MatrixCoupling, mc₂::MatrixCoupling) -> MatrixCouplingSum
-    +(mc::MatrixCoupling, mcs::MatrixCouplingSum) -> MatrixCouplingSum
-    +(mcs::MatrixCouplingSum, mc::MatrixCoupling) -> MatrixCouplingSum
+    +(mc₁::Union{MatrixCoupling, MatrixCouplingProd}, mc₂::Union{MatrixCoupling, MatrixCouplingProd}) -> MatrixCouplingSum
+    +(mc::Union{MatrixCoupling, MatrixCouplingProd}, mcs::MatrixCouplingSum) -> MatrixCouplingSum
+    +(mcs::MatrixCouplingSum, mc::Union{MatrixCoupling, MatrixCouplingProd}) -> MatrixCouplingSum
     +(mcs₁::MatrixCouplingSum, mcs₂::MatrixCouplingSum) -> MatrixCouplingSum
 
 The product between `MatrixCoupling`s and `MatrixCouplingProd`s.
 """
-@inline Base.:+(mc₁::MatrixCoupling, mc₂::MatrixCoupling) = MatrixCouplingSum(mc₁, mc₂)
-@inline Base.:+(mc::MatrixCoupling, mcs::MatrixCouplingSum) = MatrixCouplingSum(mc, mcs.contents...)
-@inline Base.:+(mcs::MatrixCouplingSum, mc::MatrixCoupling) = MatrixCouplingSum(mcs.contents..., mc)
+@inline Base.:+(mc₁::Union{MatrixCoupling, MatrixCouplingProd}, mc₂::Union{MatrixCoupling, MatrixCouplingProd}) = MatrixCouplingSum(mc₁, mc₂)
+@inline Base.:+(mc::Union{MatrixCoupling, MatrixCouplingProd}, mcs::MatrixCouplingSum) = MatrixCouplingSum(mc, mcs.contents...)
+@inline Base.:+(mcs::MatrixCouplingSum, mc::Union{MatrixCoupling, MatrixCouplingProd}) = MatrixCouplingSum(mcs.contents..., mc)
 @inline Base.:+(mcs₁::MatrixCouplingSum, mcs₂::MatrixCouplingSum) = MatrixCouplingSum(mcs₁.contents..., mcs₂.contents...)
 
 # Term

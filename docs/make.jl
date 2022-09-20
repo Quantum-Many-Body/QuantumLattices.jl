@@ -21,11 +21,11 @@ makedocs(
                     ],
                     "Advanced Topics" => [
                         "advanced topics/Introduction.md",
-                        "advanced topics/LaTeXFormatOutputs.md",
-                        "advanced topics/HybridSystems.md",
+                        "advanced topics/LaTeXFormattedOutputs.md",
+                        "advanced topics/IndexOrders.md",
                         "advanced topics/BoundaryConditions.md",
+                        "advanced topics/HybridSystems.md",
                         "advanced topics/Transformations.md",
-                        "advanced topics/OrderIndexes.md",
                         "advanced topics/ManageProjects.md",
                     ],
                     "Manual"    =>  [

@@ -16,11 +16,11 @@ import ..QuantumOperators: latexname, matrix, optype, script
 import ..Toolkit: shape
 
 # Canonical complex fermionic/bosonic systems
-export σ⁰, σˣ, σʸ, σᶻ, σ⁺, σ⁻, annihilation, creation, latexofbosons, latexoffermions, latexofparticles
+export annihilation, creation, latexofbosons, latexoffermions, latexofparticles, @σ_str, @L_str
 export Coulomb, FID, Fock, FockTerm, Hopping, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, Onsite, PairHopping, Pairing, SpinFlip, isnormalordered
 
 # SU(2) spin systems
-export latexofspins, SID, Spin, SpinTerm, totalspin, @dm_str, @gamma_str, @heisenberg_str, @ising_str
+export latexofspins, SID, Spin, SpinTerm, totalspin, @Γ_str, @DM_str, @Heisenberg_str, @Ising_str
 
 # Phononic systems
 export latexofphonons, Elastic, PID, Phonon, Kinetic, Hooke, PhononTerm
@@ -74,7 +74,7 @@ end
 @inline FID(iid::FID, ::CompositeInternal) = iid
 
 ### requested by Constraint
-@inline isdefinite(::Type{<:FID{T, Int, Int, Int} where T}) = true
+@inline isdefinite(::Type{<:FID{T, Int, Int} where T}) = true
 @inline iidtype(::Type{FID}, ::Type{O}, ::Type{S}, ::Type{N}) where {O<:Union{Int, Symbol, Colon}, S<:Union{Int, Symbol, Colon}, N<:Union{Int, Symbol, Colon}} = FID{wildcard, O, S, N}
 @inline iidtype(::Type{FID{T}}, ::Type{O}, ::Type{S}, ::Type{N}) where {T, O<:Union{Int, Symbol, Colon}, S<:Union{Int, Symbol, Colon}, N<:Union{Int, Symbol, Colon}} = FID{T, O, S, N}
 
@@ -273,61 +273,79 @@ end
 
 ### Pauli matrices
 """
-    const σ⁰ = SparseMatrixCSC([1 0; 0 1])
-    const σˣ = SparseMatrixCSC([0 1; 1 0])
-    const σʸ = SparseMatrixCSC([0 1im; -1im 0])
-    const σᶻ = SparseMatrixCSC([-1 0; 0 1])
-    const σ⁺ = SparseMatrixCSC([0 0; 1 0])
-    const σ⁻ = SparseMatrixCSC([0 1; 0 0])
-    const σ¹¹ = SparseMatrixCSC([1 0; 0 0])
-    const σ²² = SparseMatrixCSC([0 0; 0 1])
+    σ"0" => SparseMatrixCSC([1 0; 0 1])
+    σ"x" => SparseMatrixCSC([0 1; 1 0])
+    σ"y" => SparseMatrixCSC([0 1im; -1im 0])
+    σ"z" => SparseMatrixCSC([-1 0; 0 1])
+    σ"+" => SparseMatrixCSC([0 0; 1 0])
+    σ"-" => SparseMatrixCSC([0 1; 0 0])
+    σ"11" => SparseMatrixCSC([1 0; 0 0])
+    σ"22" => SparseMatrixCSC([0 0; 0 1])
 
 The Pauli matrix σ⁰, σˣ, σʸ, σᶻ, σ⁺, σ⁻, σ¹¹, σ²².
 """
-const σ⁰ = SparseMatrixCSC([1 0; 0 1])
-const σˣ = SparseMatrixCSC([0 1; 1 0])
-const σʸ = SparseMatrixCSC([0 1im; -1im 0])
-const σᶻ = SparseMatrixCSC([-1 0; 0 1])
-const σ⁺ = SparseMatrixCSC([0 0; 1 0])
-const σ⁻ = SparseMatrixCSC([0 1; 0 0])
-const σ¹¹ = SparseMatrixCSC([1 0; 0 0])
-const σ²² = SparseMatrixCSC([0 0; 0 1])
+macro σ_str(str::String)
+    str=="0" && return SparseMatrixCSC([1 0; 0 1])
+    str=="x" && return SparseMatrixCSC([0 1; 1 0])
+    str=="y" && return SparseMatrixCSC([0 1im; -1im 0])
+    str=="z" && return SparseMatrixCSC([-1 0; 0 1])
+    str=="+" && return SparseMatrixCSC([0 0; 1 0])
+    str=="-" && return SparseMatrixCSC([0 1; 0 0])
+    str=="11" && return SparseMatrixCSC([1 0; 0 0])
+    str=="22" && return SparseMatrixCSC([0 0; 0 1])
+    error("@σ_str error: wrong input string.")
+end
+
+### Rotation matrices
+"""
+    L"x" => SparseMatrixCSC([0 0 0; 0 0 1im; 0 -1im 0])
+    L"y" => SparseMatrixCSC([0 0 -1im; 0 0 0; 1im 0 0])
+    L"z" => SparseMatrixCSC([0 1im 0; -1im 0 0; 0 0 0])
+
+The three-dimensional rotation generators.
+"""
+macro L_str(str::String)
+    str=="x" && return SparseMatrixCSC([0 0 0; 0 0 1im; 0 -1im 0])
+    str=="y" && return SparseMatrixCSC([0 0 -1im; 0 0 0; 1im 0 0])
+    str=="z" && return SparseMatrixCSC([0 1im 0; -1im 0 0; 0 0 0])
+    error("@L_str error: wrong input string.")
+end
 
 ## Term
 """
-    Onsite(id::Symbol, value; coupling=Coupling(:, FID, :, :, (2, 1)), amplitude::Union{Function, Nothing}=nothing, ishermitian::Bool=true, modulate::Union{Function, Bool}=true)
+    Onsite(id::Symbol, value, coupling=Coupling(Index(:, FID(:, :, :)), Index(:, FID(:, :, :))); ishermitian::Bool=true, amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
 
 Onsite term.
 
 Type alias for `Term{:Onsite, id, V, Int, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
 """
 const Onsite{id, V, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Onsite, id, V, Int, C, A, M}
-@inline function Onsite(id::Symbol, value; coupling=Coupling(:, FID, :, :, (2, 1)), amplitude::Union{Function, Nothing}=nothing, ishermitian::Bool=true, modulate::Union{Function, Bool}=true)
+@inline function Onsite(id::Symbol, value, coupling=Coupling(Index(:, FID(:, :, :)), Index(:, FID(:, :, :))); ishermitian::Bool=true, amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
     return Term{:Onsite}(id, value, 0, coupling, ishermitian; amplitude=amplitude, modulate=modulate)
 end
 
 """
-    Hopping(id::Symbol, value, bondkind; coupling=Coupling(:, FID, :, :, (2, 1)), amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    Hopping(id::Symbol, value, bondkind, coupling=Coupling(Index(:, FID(:, :, :)), Index(:, FID(:, :, :))); amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
 
 Hopping term.
 
 Type alias for `Term{:Hopping, id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
 """
 const Hopping{id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Hopping, id, V, B, C, A, M}
-@inline function Hopping(id::Symbol, value, bondkind; coupling=Coupling(:, FID, :, :, (2, 1)), amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+@inline function Hopping(id::Symbol, value, bondkind, coupling=Coupling(Index(:, FID(:, :, :)), Index(:, FID(:, :, :))); amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
     @assert bondkind≠0 "Hopping error: input bondkind (neighbor) cannot be 0. Use `Onsite` instead."
     return Term{:Hopping}(id, value, bondkind, coupling, false; amplitude=amplitude, modulate=modulate)
 end
 
 """
-    Pairing(id::Symbol, value, bondkind; coupling, amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    Pairing(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
 
 Pairing term.
 
 Type alias for `Term{:Pairing, id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
 """
 const Pairing{id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Pairing, id, V, B, C, A, M}
-@inline function Pairing(id::Symbol, value, bondkind; coupling, amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+@inline function Pairing(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
     return Term{:Pairing}(id, value, bondkind, coupling, false; amplitude=amplitude, modulate=modulate)
 end
 @inline nambu(::Val{:Pairing}, ::Colon, ::Int) = annihilation
@@ -411,7 +429,12 @@ const PairHopping{id, V, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = T
 end
 
 """
-    Coulomb(id::Symbol, value, bondkind; ishermitian::Bool=true, coupling=Coupling(:, FID, :, :, (2, 1))*Coupling(:, FID, :, :, (2, 1)), amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    Coulomb(
+        id::Symbol, value, bondkind, coupling=Coupling(Index(:, FID(:, :, :)), Index(:, FID(:, :, :)))^2;
+        ishermitian::Bool=true,
+        amplitude::Union{Function, Nothing}=nothing,
+        modulate::Union{Function, Bool}=true
+    )
 
 Coulomb term.
 
@@ -419,9 +442,8 @@ Type alias for `Term{:Coulomb, id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:T
 """
 const Coulomb{id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Coulomb, id, V, B, C, A, M}
 @inline function Coulomb(
-    id::Symbol, value, bondkind;
+    id::Symbol, value, bondkind, coupling=Coupling(Index(:, FID(:, :, :)), Index(:, FID(:, :, :)))^2;
     ishermitian::Bool=true,
-    coupling=Coupling(:, FID, :, :, (2, 1))*Coupling(:, FID, :, :, (2, 1)),
     amplitude::Union{Function, Nothing}=nothing,
     modulate::Union{Function, Bool}=true
 )
@@ -602,55 +624,55 @@ Construct a set of `Coupling`s between two `Index{<:Union{Int, Colon}, <:SID}`s 
 
 ### Spin coupling matrix
 """
-    heisenberg"" -> SparseMatrixCSC
+    Heisenberg"" => SparseMatrixCSC([1 0 0; 0 1 0; 0 0 1])
 
 The Heisenberg coupling matrix.
 """
-macro heisenberg_str(str::String)
+macro Heisenberg_str(str::String)
     str=="" && return SparseMatrixCSC([1 0 0; 0 1 0; 0 0 1])
-    error("@heisenberg_str error: wrong input string.")
+    error("@Heisenberg_str error: wrong input string.")
 end
 
 """
-    ising"x" -> SparseMatrixCSC
-    ising"y" -> SparseMatrixCSC
-    ising"z" -> SparseMatrixCSC
+    Ising"x" => SparseMatrixCSC([1 0 0; 0 0 0; 0 0 0])
+    Ising"y" => SparseMatrixCSC([0 0 0; 0 1 0; 0 0 0])
+    Ising"z" => SparseMatrixCSC([0 0 0; 0 0 0; 0 0 1])
 
 The Ising coupling matrix.
 """
-macro ising_str(str::String)
+macro Ising_str(str::String)
     str=="x" && return SparseMatrixCSC([1 0 0; 0 0 0; 0 0 0])
     str=="y" && return SparseMatrixCSC([0 0 0; 0 1 0; 0 0 0])
     str=="z" && return SparseMatrixCSC([0 0 0; 0 0 0; 0 0 1])
-    error("@ising_str error: wrong input string.")
+    error("@Ising_str error: wrong input string.")
 end
 
 """
-    gamma"x" -> SparseMatrixCSC
-    gamma"y" -> SparseMatrixCSC
-    gamma"z" -> SparseMatrixCSC
+    Γ"x" => SparseMatrixCSC([0 0 0; 0 0 1; 0 1 0])
+    Γ"y" => SparseMatrixCSC([0 0 1; 0 0 0; 1 0 0])
+    Γ"z" => SparseMatrixCSC([0 1 0; 0 1 0; 0 0 0])
 
-The Gamma coupling matrix.
+The Γ coupling matrix.
 """
-macro gamma_str(str::String)
+macro Γ_str(str::String)
     str=="x" && return SparseMatrixCSC([0 0 0; 0 0 1; 0 1 0])
     str=="y" && return SparseMatrixCSC([0 0 1; 0 0 0; 1 0 0])
     str=="z" && return SparseMatrixCSC([0 1 0; 0 1 0; 0 0 0])
-    error("@gamma_str error: wrong input string.")
+    error("@Γ_str error: wrong input string.")
 end
 
 """
-    dm"x" -> SparseMatrixCSC
-    dm"y" -> SparseMatrixCSC
-    dm"z" -> SparseMatrixCSC
+    DM"x" => SparseMatrixCSC([0 0 0; 0 0 1; 0 -1 0])
+    DM"y" => SparseMatrixCSC([0 0 -1; 0 0 0; 1 0 0])
+    DM"z" => SparseMatrixCSC([0 1 0; 0 -1 0; 0 0 0])
 
 The DM coupling matrix.
 """
-macro dm_str(str::String)
+macro DM_str(str::String)
     str=="x" && return SparseMatrixCSC([0 0 0; 0 0 1; 0 -1 0])
     str=="y" && return SparseMatrixCSC([0 0 -1; 0 0 0; 1 0 0])
     str=="z" && return SparseMatrixCSC([0 1 0; 0 -1 0; 0 0 0])
-    error("@dm_str error: wrong input string.")
+    error("@DM_str error: wrong input string.")
 end
 
 ## Term

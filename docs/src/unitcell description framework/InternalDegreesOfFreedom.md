@@ -105,7 +105,7 @@ julia> fck |> collect
 ```
 This is isomorphic to the mathematical fact that a local algebra is a vector space of the local generators.
 
-#### Unitcell level: Hilbert{<:Fock} and Index{<:FID}
+#### Unitcell level: Hilbert and Index
 
 To specify the Fock algebra at the unitcell level, [`Hilbert`](@ref) associate each point within the origin unitcell with an instance of [`Fock`](@ref):
 ```jldoctest FFF
@@ -158,7 +158,7 @@ julia> [hilbert[1], hilbert[2]]
  Fock{:f}(norbital=2, nspin=1)
 ```
 
-To specify a translation-equivalent generator of the Fock algebra within the unitcell, [`Index`](@ref) just combines a `:site::Int` attribute and an `:iid::FID` attribute:
+To specify a translation-equivalent generator of the Fock algebra within the unitcell, [`Index`](@ref) just combines a `site::Int` attribute and an `iid::FID` attribute:
 ```jldoctest FFF
 julia> index = Index(1, FID{:f}(1, 1, 2))
 Index(1, FID{:f}(1, 1, 2))
@@ -176,9 +176,9 @@ julia> Index(1, FID{:f}(1, 1, 2))'
 Index(1, FID{:f}(1, 1, 1))
 ```
 
-#### Global level: CompositeIndex{<:Index{<:FID}}
+#### Global level: CompositeIndex
 
-Since the local algebra of a quantum lattice system can be defined point by point, the global algebra can be completely compressed into the origin unitcell. However, the generator outside the origin unitcell cannot be avoided because we have to use them to compose the Hamiltonian on the bonds that goes across the unitcell boundaries. This situation is similar to the case of [`Lattice`](@ref) and [`Point`](@ref). Therefore, we take a similar solution for the generators to that is adopted for the [`Point`](@ref), i.e., we include the $\mathbf{R}$ coordinate (by the `:rcoordinate` attribute) and the $\mathbf{R}_i$ coordinate (by the `:icoordinate` attribute) of the underlying point together with the `:index::Index` attribute in the [`CompositeIndex`](@ref) type to represent a generator that could be inside or outside the origin unitcell:
+Since the local algebra of a quantum lattice system can be defined point by point, the global algebra can be completely compressed into the origin unitcell. However, the generator outside the origin unitcell cannot be avoided because we have to use them to compose the Hamiltonian on the bonds that goes across the unitcell boundaries. This situation is similar to the case of [`Lattice`](@ref) and [`Point`](@ref). Therefore, we take a similar solution for the generators to that is adopted for the [`Point`](@ref), i.e., we include the $\mathbf{R}$ coordinate (by the `rcoordinate` attribute) and the $\mathbf{R}_i$ coordinate (by the `icoordinate` attribute) of the underlying point together with the `index::Index` attribute in the [`CompositeIndex`](@ref) type to represent a generator that could be inside or outside the origin unitcell:
 ```jldoctest FFF
 julia> index = CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.5, 0.0], [0.0, 0.0])
 CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.5, 0.0], [0.0, 0.0])
@@ -321,7 +321,7 @@ julia> sp |> collect
 ```
 It is noted that a [`Spin`](@ref) instance generates [`SID`](@ref) instances not only limited to those corresponding to $S^x$, $S^y$, $S^z$, but also those to $S^+$ and $S^-$ although the former three already forms a complete set of the generators of the local SU(2) spin algebra. This overcomplete feature is for the convenience to the construction of spin Hamiltonians.
 
-#### Unitcell and global levels: Hilbert{<:Spin}, Index{<:SID} and CompositeIndex{<:Index{<:SID}}
+#### Unitcell and global levels: Hilbert, Index and CompositeIndex
 
 At the unitcell and global levels to construct the SU(2) spin algebra and spin generators, it is completely the same to that of the Fock algebra and Fock generators as long as we replace [`Fock`](@ref) and [`FID`](@ref) with [`Spin`](@ref) and [`SID`](@ref), respectively:
 ```jldoctest SSS
@@ -342,8 +342,8 @@ CompositeIndex(Index(1, SID{1//2}('-')), [0.5, 0.5], [1.0, 1.0])
 #### Local level: Phonon and PID
 
 Phononic systems are also bosonic systems. However, the canonical creation and annihilation operators of phonons depends on the eigenvalues and eigenvectors of the dynamical matrix, making them difficult to be defined locally at each point. Instead, we resort to the momentum ($\mathbf{p}$) and displacement ($\mathbf{u}$) operators of lattice vibrations as the generators, which can be easily defined locally. The type [`PID`](@ref)`<:`[`IID`](@ref) could specify such a local generator, which has the following attributes:
-* `:tag::Char`: the tag, which must be either `'p'` or `'u'`, to specify whether it is the momentum or the displacement operator, respectively
-* `:direction::Char`: the direction, which must be one of `'x'`, `'y'` and `'z'`, to indicate which spatial directional component of the generator it is
+* `tag::Char`: the tag, which must be either `'p'` or `'u'`, to specify whether it is the momentum or the displacement operator, respectively
+* `direction::Char`: the direction, which must be one of `'x'`, `'y'` and `'z'`, to indicate which spatial directional component of the generator it is
 Correspondingly, the type [`Phonon`](@ref)`<:`[`Internal`](@ref), which defines the local $\{\mathbf{u}, \mathbf{p}\}$ algebra of the lattice vibrations, has the following attributes:
 * `ndirection::Int`: the spatial dimension of the lattice vibrations, which must be 1, 2, or 3
 
@@ -377,7 +377,7 @@ julia> Phonon(3) # three-dimensional lattice vibration has the x, y and z compon
  PID('p', 'z')
 ```
 
-#### Unitcell and global levels: Hilbert{<:Phonon}, Index{<:PID} and CompositeIndex{<:Index{<:PID}}
+#### Unitcell and global levels: Hilbert, Index and CompositeIndex
 
 At the unitcell and global levels, lattice-vibration algebras and generators are the same to previous situations by [`Phonon`](@ref) and [`PID`](@ref) replaced with in the corresponding types:
 ```jldoctest PPP
@@ -410,8 +410,12 @@ It is noted that the number of the generators can be any natural number.
 
 Although generators at different levels can be producted to make an [`Operator`](@ref), it is not recommended to do so because the logic will be muddled:
 ```jldoctest OO
-julia> Operator(2, FID{:f}(1, 1, 2), CompositeIndex(Index(2, FID{:f}(1, 1, 1)), [0.0, 0.0], [0.0, 0.0])) # never do this !!!
-Operator(2, FID{:f}(1, 1, 2), CompositeIndex(Index(2, FID{:f}(1, 1, 1)), [0.0, 0.0], [0.0, 0.0]))
+julia> Operator(
+           2,
+           FID{:f}(1, 1, 2),
+           CompositeIndex(Index(2, FID{:f}(1, 1, 1)), [0.0], [0.0])
+       ) # never do this !!!
+Operator(2, FID{:f}(1, 1, 2), CompositeIndex(Index(2, FID{:f}(1, 1, 1)), [0.0], [0.0]))
 ```
 
 [`Operator`](@ref) can be iterated and indexed by integers, which will give the corresponding generators in the product:
@@ -476,9 +480,8 @@ Operators with 2 Operator
   Operator(3, FID{:f}(1, 1, 2))
   Operator(2, FID{:f}(1, 1, 1))
 
-julia> Operator(2, FID{:f}(1, 1, 1)) + Operator(3, FID{:f}(1, 1, 2)) - Operator(3, FID{:b}(1, 1, 2))
-Operators with 3 Operator
-  Operator(3, FID{:f}(1, 1, 2))
+julia> Operator(2, FID{:f}(1, 1, 1)) - Operator(3, FID{:b}(1, 1, 2))
+Operators with 2 Operator
   Operator(2, FID{:f}(1, 1, 1))
   Operator(-3, FID{:b}(1, 1, 2))
 ```
@@ -533,7 +536,11 @@ It is noted that in the result, the distributive law automatically applies.
 
 As is usual, the Hermitian conjugate of an [`Operators`](@ref) can be obtained by the adjoint operator:
 ```jldoctest
-julia> ops = Operator(6, FID{:f}(1, 1, 2), FID{:f}(2, 1, 1)) + Operator(4, FID{:f}(1, 1, 1), FID{:f}(2, 1, 1));
+julia> op₁ = Operator(6, FID{:f}(1, 1, 2), FID{:f}(2, 1, 1));
+
+julia> op₂ = Operator(4, FID{:f}(1, 1, 1), FID{:f}(2, 1, 1));
+
+julia> ops = op₁ + op₂;
 
 julia> ops'
 Operators with 2 Operator

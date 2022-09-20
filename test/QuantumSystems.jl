@@ -135,19 +135,19 @@ end
     @test collect(MatrixCoupling(:, FID, :, :, :)) == [
         Coupling(Index(:, FID(:, :, :)), Index(:, FID(:, :, :)))
     ]
-    @test collect(MatrixCoupling((1, 2), FID{:f}, :, σʸ, σᶻ)) == [
+    @test collect(MatrixCoupling((1, 2), FID{:f}, :, σ"y", σ"z")) == [
         Coupling(+1im, Index(1, FID{:f}(:, 2, 1)), Index(2, FID{:f}(:, 1, 2))),
         Coupling(-1im, Index(1, FID{:f}(:, 1, 1)), Index(2, FID{:f}(:, 2, 2))),
         Coupling(-1im, Index(1, FID{:f}(:, 2, 2)), Index(2, FID{:f}(:, 1, 1))),
         Coupling(+1im, Index(1, FID{:f}(:, 1, 2)), Index(2, FID{:f}(:, 2, 1)))
     ]
-    @test collect(MatrixCoupling((1, 2), FID{:b}, σˣ, :, σ⁰)) == [
+    @test collect(MatrixCoupling((1, 2), FID{:b}, σ"x", :, σ"0")) == [
         Coupling(Index(1, FID{:b}(2, :, 1)), Index(2, FID{:b}(1, :, 2))),
         Coupling(Index(1, FID{:b}(1, :, 1)), Index(2, FID{:b}(2, :, 2))),
         Coupling(Index(1, FID{:b}(2, :, 2)), Index(2, FID{:b}(1, :, 1))),
         Coupling(Index(1, FID{:b}(1, :, 2)), Index(2, FID{:b}(2, :, 1)))
     ]
-    @test collect(MatrixCoupling(:, FID{wildcard}, σ⁺, σ⁻, :)) == [
+    @test collect(MatrixCoupling(:, FID{wildcard}, σ"+", σ"-", :)) == [
         Coupling(Index(:, FID(2, 1, :)), Index(:, FID(1, 2, :)))
     ]
 
@@ -237,12 +237,29 @@ end
     ]
 end
 
+@testset "σ" begin
+    σ"0" == SparseMatrixCSC([1 0; 0 1])
+    σ"x" == SparseMatrixCSC([0 1; 1 0])
+    σ"y" == SparseMatrixCSC([0 1im; -1im 0])
+    σ"z" == SparseMatrixCSC([-1 0; 0 1])
+    σ"+" == SparseMatrixCSC([0 0; 1 0])
+    σ"-" == SparseMatrixCSC([0 1; 0 0])
+    σ"11" == SparseMatrixCSC([1 0; 0 0])
+    σ"22" == SparseMatrixCSC([0 0; 0 1])
+end
+
+@testset "L" begin
+    L"x" == SparseMatrixCSC([0 0 0; 0 0 1im; 0 -1im 0])
+    L"y" == SparseMatrixCSC([0 0 -1im; 0 0 0; 1im 0 0])
+    L"z" == SparseMatrixCSC([0 1im 0; -1im 0 0; 0 0 0])
+end
+
 @testset "Onsite" begin
     point = Point(1, (0.5, 0.5), (0.0, 0.0))
     bond = Bond(point)
     hilbert = Hilbert(point.site=>Fock{:f}(2, 2))
 
-    term = Onsite(:mu, 1.5; coupling=MatrixCoupling(:, FID, σᶻ, σˣ, :))
+    term = Onsite(:mu, 1.5, MatrixCoupling(:, FID, σ"z", σ"x", :))
     operators = Operators(
         Operator(+0.75, CompositeIndex(Index(1, FID{:f}(2, 2, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0])),
         Operator(-0.75, CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])),
@@ -252,7 +269,7 @@ end
     @test expand(term, bond, hilbert, half=true) == operators
     @test expand(term, bond, hilbert, half=false) == operators*2
 
-    term = Onsite(:mu, 1.5; coupling=MatrixCoupling(:, FID, σᶻ, σᶻ, :))
+    term = Onsite(:mu, 1.5, MatrixCoupling(:, FID, σ"z", σ"z", :))
     operators = Operators(
         Operator(-0.75, CompositeIndex(Index(1, FID{:f}(2, 1, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0])),
         Operator(-0.75, CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])),
@@ -280,7 +297,7 @@ end
 @testset "Pairing" begin
     bond = Bond(1, Point(2, (0.0, 0.0), (0.0, 0.0)), Point(1, (0.5, 0.5), (0.0, 0.0)))
     hilbert = Hilbert(site=>Fock{:f}(1, 2) for site=1:2)
-    term = Pairing(:Δ, 1.5, 1; coupling=Coupling((1, 2), FID, :, (2, 2), :), amplitude=bond->(bond|>rcoordinate|>azimuthd ≈ 45 ? 1 : -1))
+    term = Pairing(:Δ, 1.5, 1, Coupling((1, 2), FID, :, (2, 2), :); amplitude=bond->(bond|>rcoordinate|>azimuthd ≈ 45 ? 1 : -1))
     operators = Operators(
         Operator(+1.5, CompositeIndex(Index(2, FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])),
         Operator(-1.5, CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(2, FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0]))
@@ -290,7 +307,7 @@ end
 
     point = Point(1, (0.5, 0.5), (0.0, 0.0))
     hilbert = Hilbert(point.site=>Fock{:f}(1, 2))
-    term = Pairing(:Δ, 1.5, 0; coupling=MatrixCoupling(:, FID, :, [0 -1; 1 0], :))
+    term = Pairing(:Δ, 1.5, 0, MatrixCoupling(:, FID, :, [0 -1; 1 0], :))
     operators = Operators(
         Operator(+1.5, CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0])),
         Operator(-1.5, CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]))
@@ -406,7 +423,7 @@ end
     bond = Bond(1, Point(2, (0.0, 0.0), (0.0, 0.0)), Point(1, (0.5, 0.5), (0.0, 0.0)))
     hilbert = Hilbert(site=>Fock{:f}(1, 2) for site=1:2)
 
-    term = Coulomb(:V, 2.5, 1, coupling=MatrixCoupling(:, FID, :, σᶻ, :)*MatrixCoupling(:, FID, :, σᶻ, :))
+    term = Coulomb(:V, 2.5, 1, MatrixCoupling(:, FID, :, σ"z", :)*MatrixCoupling(:, FID, :, σ"z", :))
     operators = Operators(
         Operator(-1.25,
             CompositeIndex(Index(2, FID{:f}(1, 1, 2)), [0.0, 0.0], [0.0, 0.0]),
@@ -436,7 +453,7 @@ end
     @test expand(term, bond, hilbert, half=true) == operators
     @test expand(term, bond, hilbert, half=false) == operators*2
 
-    term = Coulomb(:V, 2.5, 1, coupling=MatrixCoupling(:, FID, :, σˣ, :)*MatrixCoupling(:, FID, :, σᶻ, :))
+    term = Coulomb(:V, 2.5, 1, MatrixCoupling(:, FID, :, σ"x", :)*MatrixCoupling(:, FID, :, σ"z", :))
     operators = Operators(
         Operator(-1.25,
             CompositeIndex(Index(2, FID{:f}(1, 2, 2)), [0.0, 0.0], [0.0, 0.0]),
@@ -580,26 +597,26 @@ end
     @test collect(ex) == [Operator(2.0, CompositeIndex(Index(1, SID{1}('+')), [0.0], [0.0]), CompositeIndex(Index(2, SID{1}('-')), [0.5], [0.0]))]
 end
 
-@testset "heisenberg" begin
-    @test heisenberg"" == SparseMatrixCSC([1 0 0; 0 1 0; 0 0 1])
+@testset "Heisenberg" begin
+    @test Heisenberg"" == SparseMatrixCSC([1 0 0; 0 1 0; 0 0 1])
 end
 
-@testset "ising" begin
-    @test ising"x" == SparseMatrixCSC([1 0 0; 0 0 0; 0 0 0])
-    @test ising"y" == SparseMatrixCSC([0 0 0; 0 1 0; 0 0 0])
-    @test ising"z" == SparseMatrixCSC([0 0 0; 0 0 0; 0 0 1])
+@testset "Ising" begin
+    @test Ising"x" == SparseMatrixCSC([1 0 0; 0 0 0; 0 0 0])
+    @test Ising"y" == SparseMatrixCSC([0 0 0; 0 1 0; 0 0 0])
+    @test Ising"z" == SparseMatrixCSC([0 0 0; 0 0 0; 0 0 1])
 end
 
-@testset "gamma" begin
-    @test gamma"x" == SparseMatrixCSC([0 0 0; 0 0 1; 0 1 0])
-    @test gamma"y" == SparseMatrixCSC([0 0 1; 0 0 0; 1 0 0])
-    @test gamma"z" == SparseMatrixCSC([0 1 0; 0 1 0; 0 0 0])
+@testset "Γ" begin
+    @test Γ"x" == SparseMatrixCSC([0 0 0; 0 0 1; 0 1 0])
+    @test Γ"y" == SparseMatrixCSC([0 0 1; 0 0 0; 1 0 0])
+    @test Γ"z" == SparseMatrixCSC([0 1 0; 0 1 0; 0 0 0])
 end
 
-@testset "dm" begin
-    @test dm"x" == SparseMatrixCSC([0 0 0; 0 0 1; 0 -1 0])
-    @test dm"y" == SparseMatrixCSC([0 0 -1; 0 0 0; 1 0 0])
-    @test dm"z" == SparseMatrixCSC([0 1 0; 0 -1 0; 0 0 0])
+@testset "DM" begin
+    @test DM"x" == SparseMatrixCSC([0 0 0; 0 0 1; 0 -1 0])
+    @test DM"y" == SparseMatrixCSC([0 0 -1; 0 0 0; 1 0 0])
+    @test DM"z" == SparseMatrixCSC([0 1 0; 0 -1 0; 0 0 0])
 end
 
 @testset "SpinTerm" begin
@@ -613,7 +630,7 @@ end
 
     bond = Bond(1, Point(2, (0.5, 0.5), (0.0, 0.0)), Point(1, (0.0, 0.0), (0.0, 0.0)))
     hilbert = Hilbert(site=>Spin{1//2}() for site=1:2)
-    term = SpinTerm(:J, 1.5, 1, MatrixCoupling(:, SID, heisenberg""))
+    term = SpinTerm(:J, 1.5, 1, MatrixCoupling(:, SID, Heisenberg""))
     operators = Operators(
         Operator(1.5, CompositeIndex(Index(2, SID{1//2}('x')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, SID{1//2}('x')), [0.0, 0.0], [0.0, 0.0])),
         Operator(1.5, CompositeIndex(Index(2, SID{1//2}('y')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, SID{1//2}('y')), [0.0, 0.0], [0.0, 0.0])),

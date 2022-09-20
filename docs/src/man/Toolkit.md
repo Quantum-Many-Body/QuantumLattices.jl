@@ -327,7 +327,7 @@ Hi{var"#s8"} where var"#s8"<:Real
 julia> fulltype(Hi{Int}, NamedTuple{(:content,),Tuple{Real}})
 Hi{var"#s9"} where var"#s9"<:Real
 ```
-Here, the last positional argument can be omitted whose default value would be determined by the [`isparameterbounds`](@ref) function which successively calls the [`isparameterbound`](@ref) function on each of the named parameter. Note that similar to the situation of the [`reparameter`](@ref) function in this subsection, the [`isparameterbound`](@ref) function called here is also the version that takes the parameter name as the input rather than that of the position order.
+Here, the last positional argument can be omitted whose default value would be determined by the [`isparameterbounds`](@ref) function which successively calls the [`isparameterbound`](@ref) function on each of the named parameter. Note that similar to the situation of the [`reparameter`](@ref) function in this subsubsection, the [`isparameterbound`](@ref) function called here is also the version that takes the parameter name as the input rather than that of the position order.
 
 #### Type helpers with predefined contents
 
@@ -764,7 +764,7 @@ To implement all the prerequisites listed above costs a bit efforts. We provide 
 * `contents::Dict{N, D}`: the tree's (node, data) pairs
 * `parent::Dict{N, N}`: records of the parent of each of the tree's nodes
 * `children::Dict{N, Vector{N}}`: records of the children of each of the tree's nodes
-As above, the first lazy way is to include this struct with the special name `:TREECORE` in your concrete subtype one of its attribute.
+As above, the first lazy way is to include this struct with the special name `TREECORE` in your concrete subtype as one of its attribute.
 
 #### SimpleTree
 

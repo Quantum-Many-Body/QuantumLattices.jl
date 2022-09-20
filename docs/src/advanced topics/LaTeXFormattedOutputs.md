@@ -7,4 +7,4 @@ DocTestSetup = quote
 end
 ```
 
-# Order indexes
+# LaTeX formatted outputs

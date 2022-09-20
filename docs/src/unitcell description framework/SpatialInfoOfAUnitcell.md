@@ -12,7 +12,7 @@ The first step toward the complete description of a quantum lattice system is th
 
 ## Construction of a lattice
 
-In general, a lattice has translation symmetry. This symmetry introduces an equivalence relation for the points in a lattice when they can be translated into each other by multiple times of the translation vectors. This observation sets the mathematical foundation of the unitcell construction. Therefore, it is enough for a lattice to restrict all points within the origin unitcell together with the translation vectors.
+In general, a lattice has translation symmetry. This symmetry introduces an equivalence relation for the points in a lattice when they can be translated into each other by multiple times of the translation vectors. This observation sets the mathematical foundation of the unitcell construction. As a result, it is enough for a lattice to restrict all points within the origin unitcell together with the translation vectors.
 
 [`Lattice`](@ref) is the simplest structure to encode all the spatial information within the origin unitcell. Apparently, it must contain all the coordinates of the points in the origin unitcell and the translation vectors of the lattice. Other stuff appears to be useful as well, such as the name of the lattice and the reciprocals dual to the translation vectors. Therefore, in this package, [`Lattice`](@ref) has four attributes:
 * `name::Symbol`: the name of the lattice
@@ -36,7 +36,11 @@ Lattice(Square)
     [1.0, 0.0]
     [0.0, 1.0]
 
-julia> Lattice((0.0, 0.0, 0.0); name=:Cube, vectors=[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
+julia> Lattice(
+           (0.0, 0.0, 0.0);
+           name=:Cube,
+           vectors=[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
+       )
 Lattice(Cube)
   with 1 point:
     [0.0, 0.0, 0.0]
@@ -45,7 +49,7 @@ Lattice(Cube)
     [0.0, 1.0, 0.0]
     [0.0, 0.0, 1.0]
 ```
-The coordinates could be specified by vectors or tuples. It is noted that the `:reciprocals` attribute need not be assigned because it can be deduced from the input `:vectors`.
+The coordinates could be specified by vectors or tuples. It is noted that the `reciprocals` attribute need not be assigned because it can be deduced from the input `vectors`.
 
 Iteration over a lattice will get the coordinates of the points in it:
 ```jldoctest unitcell
@@ -71,12 +75,12 @@ Before the introduction of how to obtain the bonds of a lattice, let's discuss m
 
 ### Point
 
-With the translation symmetry, all points of a lattice are equivalent to those within the origin unitcell. However, it becomes complicated when the bonds are requested. The bonds inter different unitcells cannot be compressed into a single unitcell. Therefore, even in the unitcell construction framework, it turns out to be unavoidable to specify a point outside the origin unitcell, which requires extra information beyond a single coordinate if we want to remember which point it is equivalent to within the origin unitcell at the same time. In fact, it is customary in literature to express the coordinate $\mathbf{R}$ of a point in a lattice as $\mathbf{R}=\mathbf{R}_i+\mathbf{r}$, where $\mathbf{R}_i$ is the integral coordinate of the unitcell the point belongs to and $\mathbf{r}$ is the relative displacement of the point in the unitcell. Apparently, any two of these three coordinates are complete to get the full information. In this package, we choose $\mathbf{R}$ and $\mathbf{R}_i$ as the complete set for a individual lattice point. Besides, we also associate a `:site` index with a point for the fast lookup for its equivalence within the origin unitcell although it is redundant in theory. Thus, the [`Point`](@ref) defined in this package has three attributes as follows:
+With the translation symmetry, all points of a lattice are equivalent to those within the origin unitcell. However, it becomes complicated when the bonds are requested. The bonds inter different unitcells cannot be compressed into a single unitcell. Therefore, even in the unitcell construction framework, it turns out to be unavoidable to specify a point outside the origin unitcell, which requires extra information beyond a single coordinate if we want to remember which point it is equivalent to within the origin unitcell at the same time. In fact, it is customary in literature to express the coordinate $\mathbf{R}$ of a point in a lattice as $\mathbf{R}=\mathbf{R}_i+\mathbf{r}$, where $\mathbf{R}_i$ is the integral coordinate of the unitcell the point belongs to and $\mathbf{r}$ is the relative displacement of the point in the unitcell. Apparently, any two of these three coordinates are complete to get the full information. In this package, we choose $\mathbf{R}$ and $\mathbf{R}_i$ as the complete set for a individual lattice point. Besides, we also associate a `site` index with a point for the fast lookup for its equivalence within the origin unitcell although it is redundant in theory. Thus, the [`Point`](@ref) defined in this package has three attributes as follows:
 * `site::Int`: the site index of a point that specifies the equivalent point within the origin unitcell
 * `rcoordinate::`[`StaticArrays.SVector`](https://github.com/JuliaArrays/StaticArrays.jl): the **r**eal **coordinate** of the point ($\mathbf{R}$)
 * `icoordinate::`[`StaticArrays.SVector`](https://github.com/JuliaArrays/StaticArrays.jl): the **i**ntegral **coordinate** of the unitcell the point belongs to ($\mathbf{R}_i$)
 
-At the construction of a [`Point`](@ref), `:rcoordinate` and `:icoordinate` can accept tuples or usual vectors as inputs, such as
+At the construction of a [`Point`](@ref), `rcoordinate` and `icoordinate` can accept tuples or usual vectors as inputs, such as
 ```jldoctest unitcell
 julia> Point(1, [0.0], [0.0])
 Point(1, [0.0], [0.0])
@@ -84,7 +88,7 @@ Point(1, [0.0], [0.0])
 julia> Point(1, (1.5, 0.0), (1.0, 0.0))
 Point(1, [1.5, 0.0], [1.0, 0.0])
 ```
-`:icoordinate` can be omitted, then it will be initialized by a zero [`StaticArrays.SVector`](https://github.com/JuliaArrays/StaticArrays.jl):
+`icoordinate` can be omitted, then it will be initialized by a zero [`StaticArrays.SVector`](https://github.com/JuliaArrays/StaticArrays.jl):
 ```jldoctest unitcell
 julia> Point(1, [0.0, 0.5])
 Point(1, [0.0, 0.5], [0.0, 0.0])
@@ -105,31 +109,27 @@ Bond(2, Point(1, [0.0, 0.0], [0.0, 0.0]), Point(1, [1.0, 1.0], [1.0, 1.0]))
 julia> Bond(:plaquette, Point(1, [0.0, 0.0]), Point(2, [1.0, 0.0]), Point(3, [1.0, 1.0]), Point(4, [0.0, 1.0])) # generic bond with 4 points
 Bond(:plaquette, Point(1, [0.0, 0.0], [0.0, 0.0]), Point(2, [1.0, 0.0], [0.0, 0.0]), Point(3, [1.0, 1.0], [0.0, 0.0]), Point(4, [0.0, 1.0], [0.0, 0.0]))
 ```
-It is noted that the `:kind` attribute of a bond with only one point is set to be 0.
+It is noted that the `kind` attribute of a bond with only one point is set to be 0.
 
 Iteration over a bond will get the points it contains:
 ```jldoctest unitcell
-julia> bond = Bond(:plaquette, Point(1, [0.0, 0.0]), Point(2, [1.0, 0.0]), Point(3, [1.0, 1.0]), Point(4, [0.0, 1.0]));
+julia> bond = Bond(2, Point(1, [0.0, 0.0], [0.0, 0.0]), Point(2, [1.0, 0.0], [0.0, 0.0]));
 
 julia> length(bond)
-4
+2
 
-julia> [bond[1], bond[2], bond[3], bond[4]]
-4-element Vector{Point{2, Float64}}:
+julia> [bond[1], bond[2]]
+2-element Vector{Point{2, Float64}}:
  Point(1, [0.0, 0.0], [0.0, 0.0])
  Point(2, [1.0, 0.0], [0.0, 0.0])
- Point(3, [1.0, 1.0], [0.0, 0.0])
- Point(4, [0.0, 1.0], [0.0, 0.0])
 
 julia> collect(bond)
-4-element Vector{Point{2, Float64}}:
+2-element Vector{Point{2, Float64}}:
  Point(1, [0.0, 0.0], [0.0, 0.0])
  Point(2, [1.0, 0.0], [0.0, 0.0])
- Point(3, [1.0, 1.0], [0.0, 0.0])
- Point(4, [0.0, 1.0], [0.0, 0.0])
 ```
 
-The coordinate of a bond as a whole is also defined for those that only contains one or two points. The coordinate of a 1-point bond is defined to be the corresponding coordinate of this point, and the coordinate of a 2-point bond is defined to be the corresponding coordinate of the second point minus that of the first:
+The coordinate of a bond as a whole is also defined for those that only contain one or two points. The coordinate of a 1-point bond is defined to be the corresponding coordinate of this point, and the coordinate of a 2-point bond is defined to be the corresponding coordinate of the second point minus that of the first:
 ```jldoctest unitcell
 julia> bond1p = Bond(Point(1, [2.0], [1.0]));
 

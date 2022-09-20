@@ -973,7 +973,7 @@ end
 """
     VectorSpaceEnumerative <: VectorSpaceStyle
 
-Enumerative vector space style, which indicates that the vector space has a predefined content named `:table` that contains all its bases.
+Enumerative vector space style, which indicates that the vector space has a predefined content named `table` that contains all its bases.
 """
 struct VectorSpaceEnumerative <: VectorSpaceStyle end
 @inline dimension(::VectorSpaceEnumerative, vs::VectorSpace) = length(getcontent(vs, :table))
@@ -1064,7 +1064,7 @@ end
 Abstract simple named vector space.
 
 The subtypes must have the following predefined content:
-* `:content::T`: the content of the named vector space.
+* `content::T`: the content of the named vector space.
 """
 abstract type SimpleNamedVectorSpace{N, B} <: NamedVectorSpace{B} end
 @inline contentnames(::Type{<:SimpleNamedVectorSpace}) = (:content,)

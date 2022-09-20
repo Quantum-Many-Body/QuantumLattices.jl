@@ -250,6 +250,7 @@ end
     @test length(tc) == length(typeof(tc)) == 1
     @test eltype(tc) == eltype(typeof(tc)) == typeof(tc)
     @test collect(tc) == [tc]
+    @test summary([tc]) == "1-element Vector{Coupling}"
 
     point = Point(1, (0.0, 0.0), (0.0, 0.0))
     bond = Bond(point)
@@ -309,16 +310,16 @@ end
     @test mc*mcs == MatrixCouplingProd(mc, mc, another)
     @test mcs*mcs == MatrixCouplingProd(mc, another, mc, another)
 
-    mc₁ = MatrixCoupling((1, 2), DID, Component([1, 2], [2, 1], [-1 0; 0 1]))
-    mc₂ = MatrixCoupling((2, 1), DID, Component([1, 2], [2, 1], [0 1; 1 0]))
+    mc₁ = MatrixCoupling((1, 2), DID, Component([1, 2], [2, 1], [0 1; 1 0]))
+    mc₂ = MatrixCoupling((2, 1), DID, Component([1, 2], [2, 1], [0 1im; -1im 0]))
     mcs = mc₁ + mc₂
     @test mcs == MatrixCouplingSum(mc₁, mc₂)
-    @test eltype(mcs) == Coupling{Int, Tuple{Index{Int, DID{Int}}, Index{Int, DID{Int}}}, Constraint{(2,), 1, Tuple{Diagonal{()}}}}
+    @test eltype(mcs) == Coupling{Complex{Int}, Tuple{Index{Int, DID{Int}}, Index{Int, DID{Int}}}, Constraint{(2,), 1, Tuple{Diagonal{()}}}}
     @test collect(mcs) == [
-        Coupling(-1, Index(1, DID(1)), Index(2, DID(2))),
-        Coupling(+1, Index(1, DID(2)), Index(2, DID(1))),
-        Coupling(+1, Index(2, DID(2)), Index(1, DID(2))),
-        Coupling(+1, Index(2, DID(1)), Index(1, DID(1)))
+        Coupling(Index(1, DID(2)), Index(2, DID(2))),
+        Coupling(Index(1, DID(1)), Index(2, DID(1))),
+        Coupling(-1im, Index(2, DID(2)), Index(1, DID(2))),
+        Coupling(1im, Index(2, DID(1)), Index(1, DID(1)))
     ]
 
     @test mcs+mc₁ == MatrixCouplingSum(mc₁, mc₂, mc₁)
