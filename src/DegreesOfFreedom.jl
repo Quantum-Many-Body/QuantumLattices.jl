@@ -990,10 +990,10 @@ struct TermCoupling{E<:Coupling, C} <: TermFunction
     TermCoupling(coupling::Function) = new{eltype(commontype(coupling, Tuple{Bond}, Any)), typeof(coupling)}(coupling)
     TermCoupling{E}(coupling::Function) where {E<:Coupling} = new{E, typeof(coupling)}(coupling)
 end
-@inline Base.valtype(termcouplings::TermCoupling) = valtype(typeof(termcouplings))
+@inline Base.valtype(termcoupling::TermCoupling) = valtype(typeof(termcoupling))
 @inline Base.valtype(::Type{<:TermCoupling{E}}) where {E<:Coupling} = E
-@inline (termcouplings::TermCoupling)(::Bond) = termcouplings.coupling
-@inline (termcouplings::TermCoupling{<:Coupling, <:Function})(bond::Bond) = termcouplings.coupling(bond)
+@inline (termcoupling::TermCoupling)(::Bond) = termcoupling.coupling
+@inline (termcoupling::TermCoupling{<:Coupling, <:Function})(bond::Bond) = termcoupling.coupling(bond)
 
 """
     TermModulate(id::Symbol, modulate::Function)
