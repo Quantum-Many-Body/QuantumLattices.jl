@@ -3,11 +3,6 @@ using QuantumLattices.Toolkit
 import QuantumLattices: ⊕, ⊗, dimension, rank
 import QuantumLattices.Toolkit: VectorSpaceStyle, contentnames, contenttype, dissolve, getcontent, isparameterbound, parameternames, shape
 
-@testset "allequal" begin
-    @test allequal((2, 2, 2, 2))
-    @test !allequal((2, 2, 1, 2))
-end
-
 @testset "decimaltostr" begin
     @test decimaltostr(:a) == ":a"
     @test decimaltostr(1) == "1"

@@ -27,7 +27,6 @@ The constants, types, macros, functions defined in this module will **not** be e
 atol
 rtol
 Float
-allequal
 concatenate
 decimaltostr
 delta

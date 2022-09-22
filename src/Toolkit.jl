@@ -7,7 +7,7 @@ import QuantumLattices: ⊕, ⊗, dimension, rank
 
 # Utilities
 export atol, rtol, Float
-export allequal, concatenate, decimaltostr, delta, ordinal
+export concatenate, decimaltostr, delta, ordinal
 
 # Combinatorics
 export Combinatorics, Combinations, DuplicateCombinations, DuplicatePermutations, Permutations
@@ -42,13 +42,6 @@ const rtol = √atol
 
 "Default float type."
 const Float = Float64
-
-"""
-    allequal(xs) -> Bool
-
-Judge whether all elements are equal.
-"""
-@inline allequal(xs) = all(isequal(first(xs)), xs)
 
 """
     decimaltostr(number, ::Int=5)
