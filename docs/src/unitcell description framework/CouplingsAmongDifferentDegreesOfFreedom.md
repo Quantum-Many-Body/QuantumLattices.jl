@@ -69,14 +69,14 @@ julia> Coupling(Index(1, PID('p', :)), Index(1, PID('p', :)))
 
 Of course, it also supports usual [`Index`](@ref)es to initialize more specific coupling patterns, e.g., the coupling pattern of the orbital-1 spin-down hopping term of fermions $t\sum_{⟨ij⟩}c^†_{i, 1, ↓}c_{j, 1, ↓} + h.c.$ is
 ```jldoctest HM
-julia> Coupling(Index(1, FID{:f}(1, 1, 2)), Index(2, FID{:f}(1, 1, 1)))
-Index(1, FID{:f}(1, 1, 2)) Index(2, FID{:f}(1, 1, 1))
+julia> Coupling(Index(1, FID{:f}(1, 1//2, 2)), Index(2, FID{:f}(1, 1//2, 1)))
+Index(1, FID{:f}(1, 1//2, 2)) Index(2, FID{:f}(1, 1//2, 1))
 ```
 
 The [`Index`](@ref)es can be of different types, which corresponds to a hybrid quantum lattice system that couples different categories of internal degrees of freedom:
 ```jldoctest HM
-julia> Coupling(Index(1, FID{:f}(1, 1, 2)), Index(1, FID{:f}(1, 1, 1)), Index(1, SID('z')))
-Index(1, FID{:f}(1, 1, 2)) Index(1, FID{:f}(1, 1, 1)) Index(1, SID('z'))
+julia> Coupling(Index(1, FID{:f}(1, 1//2, 2)), Index(1, FID{:f}(1, 1//2, 1)), Index(1, SID('z')))
+Index(1, FID{:f}(1, 1//2, 2)) Index(1, FID{:f}(1, 1//2, 1)) Index(1, SID('z'))
 ```
 Here, local spins are coupled to itinerant fermions. For more discussions on hybrid systems, please refer to the page of [Hybrid systems](@ref).
 
@@ -88,7 +88,7 @@ Coupling(
     sites::Union{Colon, NTuple{N, Int}},
     ::Type{<:FID},
     orbitals::Union{NTuple{N, Int}, Colon},
-    spins::Union{NTuple{N, Int}, Colon},
+    spins::Union{NTuple{N, Union{Rational{Int}, Int}}, Colon},
     nambus::Union{NTuple{N, Int}, Colon}
 ) where N
 
@@ -146,22 +146,22 @@ julia> 3 * coupling
 
 Two [`Coupling`](@ref)s can be multiplied together:
 ```jldoctest
-julia> cp₁ = Coupling((1, 1), FID, (:, :), (2, 2), (2, 1));
+julia> cp₁ = Coupling((1, 1), FID, (:, :), (1//2, 1//2), (2, 1));
 
-julia> cp₂ = Coupling((1, 1), FID, (:, :), (1, 1), (2, 1));
+julia> cp₂ = Coupling((1, 1), FID, (:, :), (-1//2, -1//2), (2, 1));
 
 julia> cp₁ * cp₂
-∑[Index(1, FID(:, 2, 2)) Index(1, FID(:, 2, 1))] ⋅ ∑[Index(1, FID(:, 1, 2)) Index(1, FID(:, 1, 1))]
+∑[Index(1, FID(:, 1//2, 2)) Index(1, FID(:, 1//2, 1))] ⋅ ∑[Index(1, FID(:, -1//2, 2)) Index(1, FID(:, -1//2, 1))]
 ```
 
 It is noted that due to the implicit summation of the orbital index in the coupling pattern, the above product is not equal to the coupling pattern of the Hubbard term $U\sum_i c^†_{i↑} c_{i↑} c^†_{i↓}c_{i↓}$:
 ```jldoctest
-julia> cp₁ = Coupling((1, 1), FID, :, (2, 2), (2, 1));
+julia> cp₁ = Coupling((1, 1), FID, :, (1//2, 1//2), (2, 1));
 
-julia> cp₂ = Coupling((1, 1), FID, :, (1, 1), (2, 1));
+julia> cp₂ = Coupling((1, 1), FID, :, (-1//2, -1//2), (2, 1));
 
-julia> cp = Coupling((1, 1, 1, 1), FID, :, (2, 2, 1, 1), (2, 1, 2, 1)) # Hubbard coupling pattern
-∑[Index(1, FID(:, 2, 2)) Index(1, FID(:, 2, 1)) Index(1, FID(:, 1, 2)) Index(1, FID(:, 1, 1))]
+julia> cp = Coupling((1, 1, 1, 1), FID, :, (1//2, 1//2, -1//2, -1//2), (2, 1, 2, 1)) # Hubbard coupling pattern
+∑[Index(1, FID(:, 1//2, 2)) Index(1, FID(:, 1//2, 1)) Index(1, FID(:, -1//2, 2)) Index(1, FID(:, -1//2, 1))]
 
 julia> cp == cp₁ * cp₂
 false
@@ -246,10 +246,10 @@ julia> length(mc)
 2
 
 julia> mc[1]
-∑[Index(:, FID(:, 2, :)) Index(:, FID(:, 2, :))]
+∑[Index(:, FID(:, 1//2, :)) Index(:, FID(:, 1//2, :))]
 
 julia> mc[2]
-- ∑[Index(:, FID(:, 1, :)) Index(:, FID(:, 1, :))]
+- ∑[Index(:, FID(:, -1//2, :)) Index(:, FID(:, -1//2, :))]
 ```
 Here, [`@σ_str`](@ref) is a string literal that returns the generalized Pauli matrices:
 ```julia
@@ -316,12 +316,12 @@ julia> coupling = 1//2*mc₁*mc₂ + 1//2*mc₂*mc₁ + mc₃*mc₃;
 
 julia> collect(coupling)
 6-element Vector{Coupling}:
- 1//2 ∑[Index(:, FID(:, 2, :)) Index(:, FID(:, 1, :))] ⋅ ∑[Index(:, FID(:, 1, :)) Index(:, FID(:, 2, :))]
- 1//2 ∑[Index(:, FID(:, 1, :)) Index(:, FID(:, 2, :))] ⋅ ∑[Index(:, FID(:, 2, :)) Index(:, FID(:, 1, :))]
- ∑[Index(:, FID(:, 2, :)) Index(:, FID(:, 2, :))] ⋅ ∑[Index(:, FID(:, 2, :)) Index(:, FID(:, 2, :))]
- - ∑[Index(:, FID(:, 1, :)) Index(:, FID(:, 1, :))] ⋅ ∑[Index(:, FID(:, 2, :)) Index(:, FID(:, 2, :))]
- - ∑[Index(:, FID(:, 2, :)) Index(:, FID(:, 2, :))] ⋅ ∑[Index(:, FID(:, 1, :)) Index(:, FID(:, 1, :))]
- ∑[Index(:, FID(:, 1, :)) Index(:, FID(:, 1, :))] ⋅ ∑[Index(:, FID(:, 1, :)) Index(:, FID(:, 1, :))]
+ 1//2 ∑[Index(:, FID(:, 1//2, :)) Index(:, FID(:, -1//2, :))] ⋅ ∑[Index(:, FID(:, -1//2, :)) Index(:, FID(:, 1//2, :))]
+ 1//2 ∑[Index(:, FID(:, -1//2, :)) Index(:, FID(:, 1//2, :))] ⋅ ∑[Index(:, FID(:, 1//2, :)) Index(:, FID(:, -1//2, :))]
+ ∑[Index(:, FID(:, 1//2, :)) Index(:, FID(:, 1//2, :))] ⋅ ∑[Index(:, FID(:, 1//2, :)) Index(:, FID(:, 1//2, :))]
+ - ∑[Index(:, FID(:, -1//2, :)) Index(:, FID(:, -1//2, :))] ⋅ ∑[Index(:, FID(:, 1//2, :)) Index(:, FID(:, 1//2, :))]
+ - ∑[Index(:, FID(:, 1//2, :)) Index(:, FID(:, 1//2, :))] ⋅ ∑[Index(:, FID(:, -1//2, :)) Index(:, FID(:, -1//2, :))]
+ ∑[Index(:, FID(:, -1//2, :)) Index(:, FID(:, -1//2, :))] ⋅ ∑[Index(:, FID(:, -1//2, :)) Index(:, FID(:, -1//2, :))]
 ```
 
 For another example, for the onsite spin-orbital coupling of the $(d_{yz}, d_{xz}, d_{xy})^T$ $t_2g$ orbitals $\lambda\sum_i c^\dagger_i \vec{L}_i\cdot\vec{σ}_i c_i$ where $\vec{L}_i=(L^x_i, L^y_i, L^z_i)^T$ acts on the local orbital space and $\vec{σ}_i=(σ^x_i, σ^y_i, σ^z_i)^T$ acts on the local spin space, the coupling pattern can be constructed as follows:
@@ -336,18 +336,18 @@ julia> coupling = mc₁ + mc₂ + mc₃;
 
 julia> collect(coupling)
 12-element Vector{Coupling}:
- -1im Index(:, FID(3, 1, :)) Index(:, FID(2, 2, :))
- 1im Index(:, FID(2, 1, :)) Index(:, FID(3, 2, :))
- -1im Index(:, FID(3, 2, :)) Index(:, FID(2, 1, :))
- 1im Index(:, FID(2, 2, :)) Index(:, FID(3, 1, :))
- - Index(:, FID(3, 1, :)) Index(:, FID(1, 2, :))
- Index(:, FID(1, 1, :)) Index(:, FID(3, 2, :))
- Index(:, FID(3, 2, :)) Index(:, FID(1, 1, :))
- - Index(:, FID(1, 2, :)) Index(:, FID(3, 1, :))
- -1im Index(:, FID(2, 2, :)) Index(:, FID(1, 2, :))
- 1im Index(:, FID(1, 2, :)) Index(:, FID(2, 2, :))
- 1im Index(:, FID(2, 1, :)) Index(:, FID(1, 1, :))
- -1im Index(:, FID(1, 1, :)) Index(:, FID(2, 1, :))
+ -1im Index(:, FID(3, -1//2, :)) Index(:, FID(2, 1//2, :))
+ 1im Index(:, FID(2, -1//2, :)) Index(:, FID(3, 1//2, :))
+ -1im Index(:, FID(3, 1//2, :)) Index(:, FID(2, -1//2, :))
+ 1im Index(:, FID(2, 1//2, :)) Index(:, FID(3, -1//2, :))
+ - Index(:, FID(3, -1//2, :)) Index(:, FID(1, 1//2, :))
+ Index(:, FID(1, -1//2, :)) Index(:, FID(3, 1//2, :))
+ Index(:, FID(3, 1//2, :)) Index(:, FID(1, -1//2, :))
+ - Index(:, FID(1, 1//2, :)) Index(:, FID(3, -1//2, :))
+ -1im Index(:, FID(2, 1//2, :)) Index(:, FID(1, 1//2, :))
+ 1im Index(:, FID(1, 1//2, :)) Index(:, FID(2, 1//2, :))
+ 1im Index(:, FID(2, -1//2, :)) Index(:, FID(1, -1//2, :))
+ -1im Index(:, FID(1, -1//2, :)) Index(:, FID(2, -1//2, :))
 ```
 
 ### Bond-dependent coupling patterns
@@ -426,7 +426,7 @@ Pairing(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothin
 
 # termkind = :Hubbard
 # bondkind = 0
-# coupling = Coupling(:, FID, :, (2, 2, 1, 1), (2, 1, 2, 1))
+# coupling = Coupling(:, FID, :, (1//2, 1//2, -1//2, -1//2), (2, 1, 2, 1))
 # ishermitian = true
 Hubbard(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing)
 
@@ -457,10 +457,10 @@ InterOrbitalIntraSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=not
 # termkind = :SpinFlip
 # bondkind = 0
 # coupling = Coupling(@indexes(
-#     Index(:, FID(α, 2, 2)),
-#     Index(:, FID(β, 1, 2)),
-#     Index(:, FID(α, 1, 1)),
-#     Index(:, FID(β, 2, 1));
+#     Index(:, FID(α, 1//2, 2)),
+#     Index(:, FID(β, -1//2, 2)),
+#     Index(:, FID(α, -1//2, 1)),
+#     Index(:, FID(β, 1//2, 1));
 #     constraint=α<β
 # ))
 # ishermitian = false
@@ -469,10 +469,10 @@ SpinFlip(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing)
 # termkind = :PairHopping
 # bondkind = 0
 # coupling = Coupling(@indexes(
-#     Index(:, FID(α, 2, 2)),
-#     Index(:, FID(α, 1, 2)),
-#     Index(:, FID(β, 1, 1)),
-#     Index(:, FID(β, 2, 1));
+#     Index(:, FID(α, 1//2, 2)),
+#     Index(:, FID(α, -1//2, 2)),
+#     Index(:, FID(β, -1//2, 1)),
+#     Index(:, FID(β, 1//2, 1));
 #     constraint=α<β
 # ))
 # ishermitian = false
@@ -556,10 +556,10 @@ julia> hilbert = Hilbert(1=>Fock{:f}(1, 2), 2=>Fock{:f}(1, 2));
 
 julia> expand(t, bond, hilbert)
 Operators with 4 Operator
-  Operator(2.0, CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, 1, 1)), [0.5], [0.0]))
-  Operator(2.0, CompositeIndex(Index(2, FID{:f}(1, 2, 2)), [0.5], [0.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.0], [0.0]))
-  Operator(2.0, CompositeIndex(Index(2, FID{:f}(1, 1, 2)), [0.5], [0.0]), CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.0], [0.0]))
-  Operator(2.0, CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, 2, 1)), [0.5], [0.0]))
+  Operator(2.0, CompositeIndex(Index(1, FID{:f}(1, 1//2, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, 1//2, 1)), [0.5], [0.0]))
+  Operator(2.0, CompositeIndex(Index(1, FID{:f}(1, -1//2, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, -1//2, 1)), [0.5], [0.0]))
+  Operator(2.0, CompositeIndex(Index(2, FID{:f}(1, 1//2, 2)), [0.5], [0.0]), CompositeIndex(Index(1, FID{:f}(1, 1//2, 1)), [0.0], [0.0]))
+  Operator(2.0, CompositeIndex(Index(2, FID{:f}(1, -1//2, 2)), [0.5], [0.0]), CompositeIndex(Index(1, FID{:f}(1, -1//2, 1)), [0.0], [0.0]))
 ```
 
 When a bond and a term do not match each other, the [`expand`](@ref) function will return an empty [`Operators`](@ref):
@@ -587,12 +587,12 @@ julia> hilbert = Hilbert(1=>Fock{:f}(1, 2), 2=>Fock{:f}(1, 2));
 
 julia> expand(t, bonds, hilbert)
 Operators with 8 Operator
-  Operator(1.0, CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, 1, 1)), [0.5], [0.0]))
-  Operator(1.0, CompositeIndex(Index(2, FID{:f}(1, 2, 2)), [0.5], [0.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.0], [0.0]))
-  Operator(1.0, CompositeIndex(Index(2, FID{:f}(1, 1, 2)), [0.5], [0.0]), CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.0], [0.0]))
-  Operator(1.0, CompositeIndex(Index(2, FID{:f}(1, 1, 2)), [-0.5], [-1.0]), CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.0], [0.0]))
-  Operator(1.0, CompositeIndex(Index(2, FID{:f}(1, 2, 2)), [-0.5], [-1.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.0], [0.0]))
-  Operator(1.0, CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, 2, 1)), [-0.5], [-1.0]))
-  Operator(1.0, CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, 2, 1)), [0.5], [0.0]))
-  Operator(1.0, CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, 1, 1)), [-0.5], [-1.0]))
+  Operator(1.0, CompositeIndex(Index(2, FID{:f}(1, 1//2, 2)), [-0.5], [-1.0]), CompositeIndex(Index(1, FID{:f}(1, 1//2, 1)), [0.0], [0.0]))
+  Operator(1.0, CompositeIndex(Index(1, FID{:f}(1, 1//2, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, 1//2, 1)), [0.5], [0.0]))
+  Operator(1.0, CompositeIndex(Index(1, FID{:f}(1, 1//2, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, 1//2, 1)), [-0.5], [-1.0]))
+  Operator(1.0, CompositeIndex(Index(1, FID{:f}(1, -1//2, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, -1//2, 1)), [0.5], [0.0]))
+  Operator(1.0, CompositeIndex(Index(2, FID{:f}(1, 1//2, 2)), [0.5], [0.0]), CompositeIndex(Index(1, FID{:f}(1, 1//2, 1)), [0.0], [0.0]))
+  Operator(1.0, CompositeIndex(Index(2, FID{:f}(1, -1//2, 2)), [-0.5], [-1.0]), CompositeIndex(Index(1, FID{:f}(1, -1//2, 1)), [0.0], [0.0]))
+  Operator(1.0, CompositeIndex(Index(1, FID{:f}(1, -1//2, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, -1//2, 1)), [-0.5], [-1.0]))
+  Operator(1.0, CompositeIndex(Index(2, FID{:f}(1, -1//2, 2)), [0.5], [0.0]), CompositeIndex(Index(1, FID{:f}(1, -1//2, 1)), [0.0], [0.0]))
 ```

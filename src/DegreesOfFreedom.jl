@@ -665,7 +665,7 @@ macro indexes(exprs...)
         @assert pattern.head==:call && pattern.args[end].head==:call "@indexes error: wrong pattern."
         attrs = []
         for (j, attr) in enumerate(pattern.args[end].args[2:end])
-            isa(attr, Expr) && (attr = Symbol(attr))
+            isa(attr, Expr) && !(attr.head==:call && length(attr.args)==3 && attr.args[1]==:// && isa(attr.args[2], Int) && isa(attr.args[3], Int)) && (attr = Symbol(attr))
             if isa(attr, Symbol) && attr≠wildcard
                 @assert Base.isidentifier(attr) "@indexes error: wrong pattern."
                 push!(blocks, quote

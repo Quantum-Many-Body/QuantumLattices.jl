@@ -9,17 +9,17 @@ using SparseArrays: SparseMatrixCSC
 using StaticArrays: SVector
 
 @testset "FID" begin
-    fid = FID{:f}(1, 1, 1)
-    @test string(fid) == "FID{:f}(1, 1, 1)"
+    fid = FID{:f}(1, 1//2, 1)
+    @test string(fid) == "FID{:f}(1, 1//2, 1)"
     @test statistics(fid) == statistics(typeof(fid)) == :f
-    @test hash(fid) == hash((:f, 1, 1, 1))
+    @test hash(fid) == hash((:f, 1, 1//2, 1))
     @test fid' == replace(fid, nambu=2)
     @test isequal(fid'', replace(fid, nambu=1))
 
-    fid = FID{:b}(1, 1, 1)
-    @test string(fid) == "FID{:b}(1, 1, 1)"
+    fid = FID{:b}(1, -1//2, 1)
+    @test string(fid) == "FID{:b}(1, -1//2, 1)"
     @test statistics(fid) == statistics(typeof(fid)) == :b
-    @test hash(fid) == hash((:b, 1, 1, 1))
+    @test hash(fid) == hash((:b, 1, -1//2, 1))
 
     fid = FID(1, :α, :)
     @test fid == FID{wildcard}(1, :α, :)
@@ -27,23 +27,23 @@ using StaticArrays: SVector
     @test statistics(fid) == wildcard
     @test hash(fid) == hash((wildcard, 1, :α, :))
 
-    @test FID{:f}(1, 1, 1)≠FID{:b}(1, 1, 1)
-    @test isequal(FID{:f}(1, 1, 1), FID{:f}(1, 1, 1))
-    @test !isequal(FID{:f}(1, 1, 1), FID{:b}(1, 1, 1))
+    @test FID{:f}(1, 1//2, 1)≠FID{:b}(1, 1//2, 1)
+    @test isequal(FID{:f}(1, 1//2, 1), FID{:f}(1, 1//2, 1))
+    @test !isequal(FID{:f}(1, 1//2, 1), FID{:b}(1, 1//2, 1))
 
-    @test isdefinite(FID{wildcard, Int, Int, Int})
+    @test isdefinite(FID{wildcard, Int, Rational{Int}, Int})
     @test !isdefinite(FID{:f, Symbol, typeof(:), Int})
     @test iidtype(FID, Int, typeof(:), Int) == FID{wildcard, Int, typeof(:), Int}
     @test iidtype(FID{:f}, typeof(:), Symbol, Symbol) == FID{:f, typeof(:),  Symbol, Symbol}
 end
 
 @testset "Fock" begin
-    @test eltype(Fock) == (FID{S, Int, Int, Int} where S)
+    @test eltype(Fock) == (FID{S, Int, Rational{Int}, Int} where S)
     fock = Fock{:b}(1, 2)
     @test shape(fock) == (1:1, 1:2, 1:2)
-    @test CartesianIndex(FID{:b}(1, 1, 1), fock) == CartesianIndex(1, 1, 1)
-    @test FID(CartesianIndex(1, 1, 1), fock) == FID{:b}(1, 1, 1)
-    @test collect(fock) == [FID{:b}(1, 1, 1), FID{:b}(1, 2, 1), FID{:b}(1, 1, 2), FID{:b}(1, 2, 2)]
+    @test CartesianIndex(FID{:b}(1, -1//2, 1), fock) == CartesianIndex(1, 1, 1)
+    @test FID(CartesianIndex(1, 1, 1), fock) == FID{:b}(1, -1//2, 1)
+    @test collect(fock) == [FID{:b}(1, -1//2, 1), FID{:b}(1, 1//2, 1), FID{:b}(1, -1//2, 2), FID{:b}(1, 1//2, 2)]
     @test statistics(fock) == statistics(typeof(fock)) == :b
     @test string(fock) == "Fock{:b}(norbital=1, nspin=2)"
 
@@ -56,13 +56,13 @@ end
 end
 
 @testset "Fock latex" begin
-    @test script(Val(:site), Index(1, FID{:f}(2, 1, 1))) == "1"
-    @test script(Val(:orbital), FID{:f}(2, 1, 1)) == script(Val(:orbital), Index(1, FID{:f}(2, 1, 1))) == "2"
-    @test script(Val(:spint), FID{:f}(2, 3, 1)) == script(Val(:spint), Index(1, FID{:f}(2, 3, 1))) == "3"
-    @test script(Val(:spsym), FID{:f}(2, 2, 1)) == script(Val(:spsym), Index(1, FID{:f}(2, 2, 1))) == "↑"
-    @test script(Val(:spsym), FID{:f}(2, 1, 1)) == script(Val(:spsym), Index(1, FID{:f}(2, 1, 1))) == "↓"
-    @test script(Val(:nambu), FID{:f}(2, 3, 1)) == script(Val(:nambu), Index(1, FID{:f}(2, 3, 1))) == ""
-    @test script(Val(:nambu), FID{:f}(2, 3, 2)) == script(Val(:nambu), Index(1, FID{:f}(2, 3, 2))) == "\\dagger"
+    @test script(Val(:site), Index(1, FID{:f}(2, 1//2, 1))) == "1"
+    @test script(Val(:orbital), FID{:f}(2, 1//2, 1)) == script(Val(:orbital), Index(1, FID{:f}(2, 1//2, 1))) == "2"
+    @test script(Val(:spin), FID{:f}(2, 3//2, 1)) == script(Val(:spin), Index(1, FID{:f}(2, 3//2, 1))) == "3//2"
+    @test script(Val(:spinsym), FID{:f}(2, 1//2, 1)) == script(Val(:spinsym), Index(1, FID{:f}(2, 1//2, 1))) == "↑"
+    @test script(Val(:spinsym), FID{:f}(2, -1//2, 1)) == script(Val(:spinsym), Index(1, FID{:f}(2, -1//2, 1))) == "↓"
+    @test script(Val(:nambu), FID{:f}(2, 3//2, 1)) == script(Val(:nambu), Index(1, FID{:f}(2, 3//2, 1))) == ""
+    @test script(Val(:nambu), FID{:f}(2, 3//2, 2)) == script(Val(:nambu), Index(1, FID{:f}(2, 3//2, 2))) == "\\dagger"
 
     @test latexname(Index{<:Union{Int, Colon}, <:FID{:f}}) == Symbol("Index{Union{Int, Colon}, FID{:f}}")
     @test latexname(AbstractCompositeIndex{Index{<:Union{Int, Colon}, <:FID{:f}}}) == Symbol("AbstractCompositeIndex{Index{Union{Int, Colon}, FID{:f}}}")
@@ -78,15 +78,15 @@ end
 end
 
 @testset "angle" begin
-    @test angle(CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.0, 0.0], [1.0, 2.0]), [[1.0, 0.0], [0.0, 1.0]], [0.1, 0.0]) ≈ 2pi*0.1
-    @test angle(CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.0, 0.0], [1.0, 2.0]), [[1.0, 0.0], [0.0, 1.0]], [0.0, 0.2]) ≈ -2pi*0.4
+    @test angle(CompositeIndex(Index(1, FID{:f}(1, 1//2, 1)), [0.0, 0.0], [1.0, 2.0]), [[1.0, 0.0], [0.0, 1.0]], [0.1, 0.0]) ≈ 2pi*0.1
+    @test angle(CompositeIndex(Index(1, FID{:f}(1, 1//2, 2)), [0.0, 0.0], [1.0, 2.0]), [[1.0, 0.0], [0.0, 1.0]], [0.0, 0.2]) ≈ -2pi*0.4
 end
 
 @testset "Fock Operator" begin
-    id₁ = CompositeIndex(Index(2, FID{:f}(1, 1, 2)), SVector(0.5, 0.0), SVector(0.0, 0.0))
-    id₂ = CompositeIndex(Index(2, FID{:f}(1, 1, 1)), SVector(0.5, 0.0), SVector(0.0, 0.0))
-    id₃ = CompositeIndex(Index(1, FID{:f}(1, 2, 2)), SVector(0.0, 0.0), SVector(0.0, 0.0))
-    id₄ = CompositeIndex(Index(1, FID{:f}(1, 2, 1)), SVector(0.0, 0.0), SVector(0.0, 0.0))
+    id₁ = CompositeIndex(Index(2, FID{:f}(1, -1//2, 2)), SVector(0.5, 0.0), SVector(0.0, 0.0))
+    id₂ = CompositeIndex(Index(2, FID{:f}(1, -1//2, 1)), SVector(0.5, 0.0), SVector(0.0, 0.0))
+    id₃ = CompositeIndex(Index(1, FID{:f}(1, 1//2, 2)), SVector(0.0, 0.0), SVector(0.0, 0.0))
+    id₄ = CompositeIndex(Index(1, FID{:f}(1, 1//2, 1)), SVector(0.0, 0.0), SVector(0.0, 0.0))
 
     opt = Operator(1.0, id₁, id₂)
     @test opt|>isnormalordered
@@ -109,10 +109,10 @@ end
     @test permute(id₄, id₁) == (Operator(-1, id₁, id₄),)
 
 
-    id₁ = CompositeIndex(Index(2, FID{:b}(1, 1, 2)), SVector(0.5, 0.0), SVector(0.0, 0.0))
-    id₂ = CompositeIndex(Index(2, FID{:b}(1, 1, 1)), SVector(0.5, 0.0), SVector(0.0, 0.0))
-    id₃ = CompositeIndex(Index(1, FID{:b}(1, 2, 2)), SVector(0.0, 0.0), SVector(0.0, 0.0))
-    id₄ = CompositeIndex(Index(1, FID{:b}(1, 2, 1)), SVector(0.0, 0.0), SVector(0.0, 0.0))
+    id₁ = CompositeIndex(Index(2, FID{:b}(1, -1//2, 2)), SVector(0.5, 0.0), SVector(0.0, 0.0))
+    id₂ = CompositeIndex(Index(2, FID{:b}(1, -1//2, 1)), SVector(0.5, 0.0), SVector(0.0, 0.0))
+    id₃ = CompositeIndex(Index(1, FID{:b}(1, 1//2, 2)), SVector(0.0, 0.0), SVector(0.0, 0.0))
+    id₄ = CompositeIndex(Index(1, FID{:b}(1, 1//2, 1)), SVector(0.0, 0.0), SVector(0.0, 0.0))
 
     opt = Operator(1.0, id₁, id₂)
     @test latexstring(opt) == "b^{\\dagger}_{2, 1, ↓}b^{}_{2, 1, ↓}"
@@ -125,7 +125,7 @@ end
 
 @testset "Fock IIDSpace" begin
     @test shape(IIDSpace(FID(:α, :σ, 2), Fock{:f}(3, 2))) == (1:3, 1:2, 2:2)
-    @test shape(IIDSpace(FID(2, 1, 1), Fock{:b}(3, 2))) == (2:2, 1:1, 1:1)
+    @test shape(IIDSpace(FID(2, -1//2, 1), Fock{:b}(3, 2))) == (2:2, 1:1, 1:1)
 end
 
 @testset "Fock Coupling" begin
@@ -136,10 +136,10 @@ end
         Coupling(Index(:, FID(:, :, :)), Index(:, FID(:, :, :)))
     ]
     @test collect(MatrixCoupling((1, 2), FID{:f}, :, σ"y", σ"z")) == [
-        Coupling(+1im, Index(1, FID{:f}(:, 1, 1)), Index(2, FID{:f}(:, 2, 2))),
-        Coupling(-1im, Index(1, FID{:f}(:, 2, 1)), Index(2, FID{:f}(:, 1, 2))),
-        Coupling(-1im, Index(1, FID{:f}(:, 1, 2)), Index(2, FID{:f}(:, 2, 1))),
-        Coupling(+1im, Index(1, FID{:f}(:, 2, 2)), Index(2, FID{:f}(:, 1, 1)))
+        Coupling(+1im, Index(1, FID{:f}(:, -1//2, 1)), Index(2, FID{:f}(:, 1//2, 2))),
+        Coupling(-1im, Index(1, FID{:f}(:, 1//2, 1)), Index(2, FID{:f}(:, -1//2, 2))),
+        Coupling(-1im, Index(1, FID{:f}(:, -1//2, 2)), Index(2, FID{:f}(:, 1//2, 1))),
+        Coupling(+1im, Index(1, FID{:f}(:, 1//2, 2)), Index(2, FID{:f}(:, -1//2, 1)))
     ]
     @test collect(MatrixCoupling((1, 2), FID{:b}, σ"x", :, σ"0")) == [
         Coupling(Index(1, FID{:b}(2, :, 1)), Index(2, FID{:b}(1, :, 2))),
@@ -148,7 +148,7 @@ end
         Coupling(Index(1, FID{:b}(1, :, 2)), Index(2, FID{:b}(2, :, 1)))
     ]
     @test collect(MatrixCoupling(:, FID{wildcard}, σ"+", σ"-", :)) == [
-        Coupling(Index(:, FID(1, 1, :)), Index(:, FID(2, 2, :)))
+        Coupling(Index(:, FID(1, -1//2, :)), Index(:, FID(2, 1//2, :)))
     ]
 
     fc = Coupling(2.0, (1, 2), FID, (1, 2), :, (2, 1))
@@ -156,83 +156,83 @@ end
     hilbert = Hilbert(site=>Fock{:f}(2, 2) for site=1:2)
     ex = expand(Val(:Hopping), fc, bond, hilbert)
     @test collect(ex) == [
-        Operator(2.0, CompositeIndex(Index(1, FID{:f}(1, 1, 2)), SVector(0.0), SVector(0.0)), CompositeIndex(Index(2, FID{:f}(2, 1, 1)), SVector(0.5), SVector(0.0))),
-        Operator(2.0, CompositeIndex(Index(1, FID{:f}(1, 2, 2)), SVector(0.0), SVector(0.0)), CompositeIndex(Index(2, FID{:f}(2, 2, 1)), SVector(0.5), SVector(0.0)))
+        Operator(2.0, CompositeIndex(Index(1, FID{:f}(1, -1//2, 2)), SVector(0.0), SVector(0.0)), CompositeIndex(Index(2, FID{:f}(2, -1//2, 1)), SVector(0.5), SVector(0.0))),
+        Operator(2.0, CompositeIndex(Index(1, FID{:f}(1, +1//2, 2)), SVector(0.0), SVector(0.0)), CompositeIndex(Index(2, FID{:f}(2, +1//2, 1)), SVector(0.5), SVector(0.0)))
     ]
 
-    fc = Coupling(2.0, (1, 1, 1, 1), FID, :, (2, 2, 1, 1), (2, 1, 2, 1))
+    fc = Coupling(2.0, (1, 1, 1, 1), FID, :, (1//2, 1//2, -1//2, -1//2), (2, 1, 2, 1))
     point = Point(1, SVector(0.0), SVector(0.0))
     hilbert = Hilbert(point.site=>Fock{:b}(2, 2))
     ex = expand(Val(:term), fc, Bond(point), hilbert)
     @test collect(ex) == [
         Operator(2.0,
-                CompositeIndex(Index(1, FID{:b}(1, 2, 2)), SVector(0.0), SVector(0.0)),
-                CompositeIndex(Index(1, FID{:b}(1, 2, 1)), SVector(0.0), SVector(0.0)),
-                CompositeIndex(Index(1, FID{:b}(1, 1, 2)), SVector(0.0), SVector(0.0)),
-                CompositeIndex(Index(1, FID{:b}(1, 1, 1)), SVector(0.0), SVector(0.0))
+                CompositeIndex(Index(1, FID{:b}(1, +1//2, 2)), SVector(0.0), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:b}(1, +1//2, 1)), SVector(0.0), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:b}(1, -1//2, 2)), SVector(0.0), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:b}(1, -1//2, 1)), SVector(0.0), SVector(0.0))
                 ),
         Operator(2.0,
-                CompositeIndex(Index(1, FID{:b}(2, 2, 2)), SVector(0.0), SVector(0.0)),
-                CompositeIndex(Index(1, FID{:b}(2, 2, 1)), SVector(0.0), SVector(0.0)),
-                CompositeIndex(Index(1, FID{:b}(2, 1, 2)), SVector(0.0), SVector(0.0)),
-                CompositeIndex(Index(1, FID{:b}(2, 1, 1)), SVector(0.0), SVector(0.0))
+                CompositeIndex(Index(1, FID{:b}(2, +1//2, 2)), SVector(0.0), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:b}(2, +1//2, 1)), SVector(0.0), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:b}(2, -1//2, 2)), SVector(0.0), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:b}(2, -1//2, 1)), SVector(0.0), SVector(0.0))
                 )
     ]
 
-    fc = Coupling(2.0, @indexes(Index(1, FID(α, 2, 2)), Index(1, FID(α, 1, 2)), Index(1, FID(β, 1, 1)), Index(1, FID(β, 2, 1)); constraint=α<β))
+    fc = Coupling(2.0, @indexes(Index(1, FID(α, 1//2, 2)), Index(1, FID(α, -1//2, 2)), Index(1, FID(β, -1//2, 1)), Index(1, FID(β, 1//2, 1)); constraint=α<β))
     point = Point(1, SVector(0.5), SVector(0.0))
     hilbert = Hilbert(point.site=>Fock{:f}(3, 2))
     ex = expand(Val(:term), fc, Bond(point), hilbert)
     @test collect(ex) == [
         Operator(2.0,
-                CompositeIndex(Index(1, FID{:f}(1, 2, 2)), SVector(0.5), SVector(0.0)),
-                CompositeIndex(Index(1, FID{:f}(1, 1, 2)), SVector(0.5), SVector(0.0)),
-                CompositeIndex(Index(1, FID{:f}(2, 1, 1)), SVector(0.5), SVector(0.0)),
-                CompositeIndex(Index(1, FID{:f}(2, 2, 1)), SVector(0.5), SVector(0.0))
+                CompositeIndex(Index(1, FID{:f}(1, +1//2, 2)), SVector(0.5), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(1, -1//2, 2)), SVector(0.5), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(2, -1//2, 1)), SVector(0.5), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(2, +1//2, 1)), SVector(0.5), SVector(0.0))
                 ),
         Operator(2.0,
-                CompositeIndex(Index(1, FID{:f}(1, 2, 2)), SVector(0.5), SVector(0.0)),
-                CompositeIndex(Index(1, FID{:f}(1, 1, 2)), SVector(0.5), SVector(0.0)),
-                CompositeIndex(Index(1, FID{:f}(3, 1, 1)), SVector(0.5), SVector(0.0)),
-                CompositeIndex(Index(1, FID{:f}(3, 2, 1)), SVector(0.5), SVector(0.0))
+                CompositeIndex(Index(1, FID{:f}(1, +1//2, 2)), SVector(0.5), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(1, -1//2, 2)), SVector(0.5), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(3, -1//2, 1)), SVector(0.5), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(3, +1//2, 1)), SVector(0.5), SVector(0.0))
                 ),
         Operator(2.0,
-                CompositeIndex(Index(1, FID{:f}(2, 2, 2)), SVector(0.5), SVector(0.0)),
-                CompositeIndex(Index(1, FID{:f}(2, 1, 2)), SVector(0.5), SVector(0.0)),
-                CompositeIndex(Index(1, FID{:f}(3, 1, 1)), SVector(0.5), SVector(0.0)),
-                CompositeIndex(Index(1, FID{:f}(3, 2, 1)), SVector(0.5), SVector(0.0))
+                CompositeIndex(Index(1, FID{:f}(2, +1//2, 2)), SVector(0.5), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(2, -1//2, 2)), SVector(0.5), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(3, -1//2, 1)), SVector(0.5), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(3, +1//2, 1)), SVector(0.5), SVector(0.0))
                 )
     ]
 
-    fc₁ = Coupling(+1.0, (1, 1), FID, :, (2, 2), (2, 1))
-    fc₂ = Coupling(-1.0, (1, 1), FID, :, (1, 1), (2, 1))
+    fc₁ = Coupling(+1.0, (1, 1), FID, :, (+1//2, +1//2), (2, 1))
+    fc₂ = Coupling(-1.0, (1, 1), FID, :, (-1//2, -1//2), (2, 1))
     point = Point(1, SVector(0.0), SVector(0.0))
     hilbert = Hilbert(point.site=>Fock{:f}(2, 2))
     ex = expand(Val(:term), fc₁*fc₂, Bond(point), hilbert)
     @test collect(ex) == [
         Operator(-1.0,
-                CompositeIndex(Index(1, FID{:f}(1, 2, 2)), SVector(0.0), SVector(0.0)),
-                CompositeIndex(Index(1, FID{:f}(1, 2, 1)), SVector(0.0), SVector(0.0)),
-                CompositeIndex(Index(1, FID{:f}(1, 1, 2)), SVector(0.0), SVector(0.0)),
-                CompositeIndex(Index(1, FID{:f}(1, 1, 1)), SVector(0.0), SVector(0.0))
+                CompositeIndex(Index(1, FID{:f}(1, +1//2, 2)), SVector(0.0), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(1, +1//2, 1)), SVector(0.0), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(1, -1//2, 2)), SVector(0.0), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(1, -1//2, 1)), SVector(0.0), SVector(0.0))
                 ),
         Operator(-1.0,
-                CompositeIndex(Index(1, FID{:f}(2, 2, 2)), SVector(0.0), SVector(0.0)),
-                CompositeIndex(Index(1, FID{:f}(2, 2, 1)), SVector(0.0), SVector(0.0)),
-                CompositeIndex(Index(1, FID{:f}(1, 1, 2)), SVector(0.0), SVector(0.0)),
-                CompositeIndex(Index(1, FID{:f}(1, 1, 1)), SVector(0.0), SVector(0.0))
+                CompositeIndex(Index(1, FID{:f}(2, +1//2, 2)), SVector(0.0), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(2, +1//2, 1)), SVector(0.0), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(1, -1//2, 2)), SVector(0.0), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(1, -1//2, 1)), SVector(0.0), SVector(0.0))
                 ),
         Operator(-1.0,
-                CompositeIndex(Index(1, FID{:f}(1, 2, 2)), SVector(0.0), SVector(0.0)),
-                CompositeIndex(Index(1, FID{:f}(1, 2, 1)), SVector(0.0), SVector(0.0)),
-                CompositeIndex(Index(1, FID{:f}(2, 1, 2)), SVector(0.0), SVector(0.0)),
-                CompositeIndex(Index(1, FID{:f}(2, 1, 1)), SVector(0.0), SVector(0.0))
+                CompositeIndex(Index(1, FID{:f}(1, +1//2, 2)), SVector(0.0), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(1, +1//2, 1)), SVector(0.0), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(2, -1//2, 2)), SVector(0.0), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(2, -1//2, 1)), SVector(0.0), SVector(0.0))
                 ),
         Operator(-1.0,
-                CompositeIndex(Index(1, FID{:f}(2, 2, 2)), SVector(0.0), SVector(0.0)),
-                CompositeIndex(Index(1, FID{:f}(2, 2, 1)), SVector(0.0), SVector(0.0)),
-                CompositeIndex(Index(1, FID{:f}(2, 1, 2)), SVector(0.0), SVector(0.0)),
-                CompositeIndex(Index(1, FID{:f}(2, 1, 1)), SVector(0.0), SVector(0.0))
+                CompositeIndex(Index(1, FID{:f}(2, +1//2, 2)), SVector(0.0), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(2, +1//2, 1)), SVector(0.0), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(2, -1//2, 2)), SVector(0.0), SVector(0.0)),
+                CompositeIndex(Index(1, FID{:f}(2, -1//2, 1)), SVector(0.0), SVector(0.0))
                 )
     ]
 end
@@ -261,20 +261,20 @@ end
 
     term = Onsite(:mu, 1.5, MatrixCoupling(:, FID, σ"z", σ"x", :))
     operators = Operators(
-        Operator(-0.75, CompositeIndex(Index(1, FID{:f}(2, 2, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0])),
-        Operator(+0.75, CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])),
-        Operator(-0.75, CompositeIndex(Index(1, FID{:f}(2, 1, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0])),
-        Operator(+0.75, CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]))
+        Operator(-0.75, CompositeIndex(Index(1, FID{:f}(2, +1//2, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(2, -1//2, 1)), [0.5, 0.5], [0.0, 0.0])),
+        Operator(+0.75, CompositeIndex(Index(1, FID{:f}(1, -1//2, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, +1//2, 1)), [0.5, 0.5], [0.0, 0.0])),
+        Operator(-0.75, CompositeIndex(Index(1, FID{:f}(2, -1//2, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(2, +1//2, 1)), [0.5, 0.5], [0.0, 0.0])),
+        Operator(+0.75, CompositeIndex(Index(1, FID{:f}(1, +1//2, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, -1//2, 1)), [0.5, 0.5], [0.0, 0.0]))
     )
     @test expand(term, bond, hilbert, half=true) == operators
     @test expand(term, bond, hilbert, half=false) == operators*2
 
     term = Onsite(:mu, 1.5, MatrixCoupling(:, FID, σ"z", σ"z", :))
     operators = Operators(
-        Operator(+0.75, CompositeIndex(Index(1, FID{:f}(2, 1, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0])),
-        Operator(+0.75, CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])),
-        Operator(-0.75, CompositeIndex(Index(1, FID{:f}(2, 2, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0])),
-        Operator(-0.75, CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]))
+        Operator(+0.75, CompositeIndex(Index(1, FID{:f}(2, -1//2, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(2, -1//2, 1)), [0.5, 0.5], [0.0, 0.0])),
+        Operator(+0.75, CompositeIndex(Index(1, FID{:f}(1, +1//2, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, +1//2, 1)), [0.5, 0.5], [0.0, 0.0])),
+        Operator(-0.75, CompositeIndex(Index(1, FID{:f}(2, +1//2, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(2, +1//2, 1)), [0.5, 0.5], [0.0, 0.0])),
+        Operator(-0.75, CompositeIndex(Index(1, FID{:f}(1, -1//2, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, -1//2, 1)), [0.5, 0.5], [0.0, 0.0]))
     )
     @test expand(term, bond, hilbert, half=true) == operators
     @test expand(term, bond, hilbert, half=false) == operators*2
@@ -285,10 +285,10 @@ end
     hilbert = Hilbert(site=>Fock{:f}(2, 2) for site=1:2)
     term = Hopping(:t, 1.5, 1)
     operators = Operators(
-        Operator(1.5, CompositeIndex(Index(2, FID{:f}(2, 2, 2)), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0])),
-        Operator(1.5, CompositeIndex(Index(2, FID{:f}(2, 1, 2)), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0])),
-        Operator(1.5, CompositeIndex(Index(2, FID{:f}(1, 1, 2)), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0])),
-        Operator(1.5, CompositeIndex(Index(2, FID{:f}(1, 2, 2)), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]))
+        Operator(1.5, CompositeIndex(Index(2, FID{:f}(2, +1//2, 2)), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(2, +1//2, 1)), [0.5, 0.5], [0.0, 0.0])),
+        Operator(1.5, CompositeIndex(Index(2, FID{:f}(2, -1//2, 2)), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(2, -1//2, 1)), [0.5, 0.5], [0.0, 0.0])),
+        Operator(1.5, CompositeIndex(Index(2, FID{:f}(1, -1//2, 2)), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, -1//2, 1)), [0.5, 0.5], [0.0, 0.0])),
+        Operator(1.5, CompositeIndex(Index(2, FID{:f}(1, +1//2, 2)), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, +1//2, 1)), [0.5, 0.5], [0.0, 0.0]))
     )
     @test expand(term, bond, hilbert, half=true) == operators
     @test expand(term, bond, hilbert, half=false) == operators+operators'
@@ -296,11 +296,11 @@ end
 
 @testset "Pairing" begin
     bond = Bond(1, Point(2, (0.0, 0.0), (0.0, 0.0)), Point(1, (0.5, 0.5), (0.0, 0.0)))
-    hilbert = Hilbert(site=>Fock{:f}(1, 2) for site=1:2)
-    term = Pairing(:Δ, 1.5, 1, Coupling((1, 2), FID, :, (2, 2), :); amplitude=bond->(bond|>rcoordinate|>azimuthd ≈ 45 ? 1 : -1))
+    hilbert = Hilbert(site=>Fock{:f}(1, 1) for site=1:2)
+    term = Pairing(:Δ, 1.5, 1, Coupling((1, 2), FID, :, (0, 0), :); amplitude=bond->(bond|>rcoordinate|>azimuthd ≈ 45 ? 1 : -1))
     operators = Operators(
-        Operator(+1.5, CompositeIndex(Index(2, FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])),
-        Operator(-1.5, CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(2, FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0]))
+        Operator(+1.5, CompositeIndex(Index(2, FID{:f}(1, 0, 1)), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 0, 1)), [0.5, 0.5], [0.0, 0.0])),
+        Operator(-1.5, CompositeIndex(Index(1, FID{:f}(1, 0, 1)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(2, FID{:f}(1, 0, 1)), [0.0, 0.0], [0.0, 0.0]))
     )
     @test expand(term, bond, hilbert, half=true) == operators
     @test expand(term, bond, hilbert, half=false) == operators+operators'
@@ -309,8 +309,8 @@ end
     hilbert = Hilbert(point.site=>Fock{:f}(1, 2))
     term = Pairing(:Δ, 1.5, 0, MatrixCoupling(:, FID, :, [0 -1; 1 0], :))
     operators = Operators(
-        Operator(-1.5, CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0])),
-        Operator(+1.5, CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]))
+        Operator(-1.5, CompositeIndex(Index(1, FID{:f}(1, +1//2, 1)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, -1//2, 1)), [0.5, 0.5], [0.0, 0.0])),
+        Operator(+1.5, CompositeIndex(Index(1, FID{:f}(1, -1//2, 1)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, +1//2, 1)), [0.5, 0.5], [0.0, 0.0]))
     )
     @test expand(term, Bond(point), hilbert, half=true) == operators
     @test expand(term, Bond(point), hilbert, half=false) == operators+operators'
@@ -323,16 +323,16 @@ end
     term = Hubbard(:H, 2.5)
     operators = Operators(
         Operator(1.25,
-            CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0])
+            CompositeIndex(Index(1, FID{:f}(1, +1//2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, +1//2, 1)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, -1//2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, -1//2, 1)), [0.5, 0.5], [0.0, 0.0])
             ),
         Operator(1.25,
-            CompositeIndex(Index(1, FID{:f}(2, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(2, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0])
+            CompositeIndex(Index(1, FID{:f}(2, +1//2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(2, +1//2, 1)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(2, -1//2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(2, -1//2, 1)), [0.5, 0.5], [0.0, 0.0])
             )
     )
     @test expand(term, bond, hilbert, half=true) == operators
@@ -346,16 +346,16 @@ end
     term = InterOrbitalInterSpin(:H, 2.5)
     operators = Operators(
         Operator(1.25,
-            CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(2, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0])
+            CompositeIndex(Index(1, FID{:f}(1, +1//2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, +1//2, 1)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(2, -1//2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(2, -1//2, 1)), [0.5, 0.5], [0.0, 0.0])
             ),
         Operator(1.25,
-            CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(2, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0])
+            CompositeIndex(Index(1, FID{:f}(1, -1//2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, -1//2, 1)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(2, +1//2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(2, +1//2, 1)), [0.5, 0.5], [0.0, 0.0])
             )
     )
     @test expand(term, bond, hilbert, half=true) == operators
@@ -369,16 +369,16 @@ end
     term = InterOrbitalIntraSpin(:H, 2.5)
     operators = Operators(
         Operator(1.25,
-            CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(2, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0])
+            CompositeIndex(Index(1, FID{:f}(1, -1//2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, -1//2, 1)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(2, -1//2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(2, -1//2, 1)), [0.5, 0.5], [0.0, 0.0])
             ),
         Operator(1.25,
-            CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(2, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0])
+            CompositeIndex(Index(1, FID{:f}(1, 1//2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, 1//2, 1)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(2, 1//2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(2, 1//2, 1)), [0.5, 0.5], [0.0, 0.0])
             )
     )
     @test expand(term, bond, hilbert, half=true) == operators
@@ -392,10 +392,10 @@ end
     term = SpinFlip(:H, 2.5)
     operators = Operators(
         Operator(2.5,
-            CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(2, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0])
+            CompositeIndex(Index(1, FID{:f}(1, +1//2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(2, -1//2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, -1//2, 1)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(2, +1//2, 1)), [0.5, 0.5], [0.0, 0.0])
             )
     )
     @test expand(term, bond, hilbert, half=true) == operators
@@ -409,10 +409,10 @@ end
     term = PairHopping(:H, 2.5)
     operators = Operators(
         Operator(2.5,
-            CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0])
+            CompositeIndex(Index(1, FID{:f}(1, +1//2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, -1//2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(2, -1//2, 1)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(2, +1//2, 1)), [0.5, 0.5], [0.0, 0.0])
             )
     )
     @test expand(term, bond, hilbert, half=true) == operators
@@ -426,28 +426,28 @@ end
     term = Coulomb(:V, 2.5, 1, MatrixCoupling(:, FID, :, σ"z", :)^2)
     operators = Operators(
         Operator(-1.25,
-            CompositeIndex(Index(2, FID{:f}(1, 1, 2)), [0.0, 0.0], [0.0, 0.0]),
-            CompositeIndex(Index(2, FID{:f}(1, 1, 1)), [0.0, 0.0], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])
+            CompositeIndex(Index(2, FID{:f}(1, -1//2, 2)), [0.0, 0.0], [0.0, 0.0]),
+            CompositeIndex(Index(2, FID{:f}(1, -1//2, 1)), [0.0, 0.0], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, +1//2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, +1//2, 1)), [0.5, 0.5], [0.0, 0.0])
             ),
         Operator(+1.25,
-            CompositeIndex(Index(2, FID{:f}(1, 1, 2)), [0.0, 0.0], [0.0, 0.0]),
-            CompositeIndex(Index(2, FID{:f}(1, 1, 1)), [0.0, 0.0], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0])
+            CompositeIndex(Index(2, FID{:f}(1, -1//2, 2)), [0.0, 0.0], [0.0, 0.0]),
+            CompositeIndex(Index(2, FID{:f}(1, -1//2, 1)), [0.0, 0.0], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, -1//2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, -1//2, 1)), [0.5, 0.5], [0.0, 0.0])
             ),
         Operator(-1.25,
-            CompositeIndex(Index(2, FID{:f}(1, 2, 2)), [0.0, 0.0], [0.0, 0.0]),
-            CompositeIndex(Index(2, FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0])
+            CompositeIndex(Index(2, FID{:f}(1, +1//2, 2)), [0.0, 0.0], [0.0, 0.0]),
+            CompositeIndex(Index(2, FID{:f}(1, +1//2, 1)), [0.0, 0.0], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, -1//2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, -1//2, 1)), [0.5, 0.5], [0.0, 0.0])
             ),
         Operator(+1.25,
-            CompositeIndex(Index(2, FID{:f}(1, 2, 2)), [0.0, 0.0], [0.0, 0.0]),
-            CompositeIndex(Index(2, FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])
+            CompositeIndex(Index(2, FID{:f}(1, +1//2, 2)), [0.0, 0.0], [0.0, 0.0]),
+            CompositeIndex(Index(2, FID{:f}(1, +1//2, 1)), [0.0, 0.0], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, +1//2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, +1//2, 1)), [0.5, 0.5], [0.0, 0.0])
             )
     )
     @test expand(term, bond, hilbert, half=true) == operators
@@ -456,28 +456,28 @@ end
     term = Coulomb(:V, 2.5, 1, MatrixCoupling(:, FID, :, σ"x", :)*MatrixCoupling(:, FID, :, σ"z", :))
     operators = Operators(
         Operator(-1.25,
-            CompositeIndex(Index(2, FID{:f}(1, 2, 2)), [0.0, 0.0], [0.0, 0.0]),
-            CompositeIndex(Index(2, FID{:f}(1, 1, 1)), [0.0, 0.0], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0])
+            CompositeIndex(Index(2, FID{:f}(1, +1//2, 2)), [0.0, 0.0], [0.0, 0.0]),
+            CompositeIndex(Index(2, FID{:f}(1, -1//2, 1)), [0.0, 0.0], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, -1//2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, -1//2, 1)), [0.5, 0.5], [0.0, 0.0])
             ),
         Operator(+1.25,
-            CompositeIndex(Index(2, FID{:f}(1, 1, 2)), [0.0, 0.0], [0.0, 0.0]),
-            CompositeIndex(Index(2, FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])
+            CompositeIndex(Index(2, FID{:f}(1, -1//2, 2)), [0.0, 0.0], [0.0, 0.0]),
+            CompositeIndex(Index(2, FID{:f}(1, +1//2, 1)), [0.0, 0.0], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, +1//2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, +1//2, 1)), [0.5, 0.5], [0.0, 0.0])
             ),
         Operator(+1.25,
-            CompositeIndex(Index(2, FID{:f}(1, 2, 2)), [0.0, 0.0], [0.0, 0.0]),
-            CompositeIndex(Index(2, FID{:f}(1, 1, 1)), [0.0, 0.0], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])
+            CompositeIndex(Index(2, FID{:f}(1, +1//2, 2)), [0.0, 0.0], [0.0, 0.0]),
+            CompositeIndex(Index(2, FID{:f}(1, -1//2, 1)), [0.0, 0.0], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, +1//2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, +1//2, 1)), [0.5, 0.5], [0.0, 0.0])
             ),
         Operator(-1.25,
-            CompositeIndex(Index(2, FID{:f}(1, 1, 2)), [0.0, 0.0], [0.0, 0.0]),
-            CompositeIndex(Index(2, FID{:f}(1, 2, 1)), [0.0, 0.0], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]),
-            CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0])
+            CompositeIndex(Index(2, FID{:f}(1, -1//2, 2)), [0.0, 0.0], [0.0, 0.0]),
+            CompositeIndex(Index(2, FID{:f}(1, +1//2, 1)), [0.0, 0.0], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, -1//2, 2)), [0.5, 0.5], [0.0, 0.0]),
+            CompositeIndex(Index(1, FID{:f}(1, -1//2, 1)), [0.5, 0.5], [0.0, 0.0])
             )
     )
     @test expand(term, bond, hilbert, half=true) == operators

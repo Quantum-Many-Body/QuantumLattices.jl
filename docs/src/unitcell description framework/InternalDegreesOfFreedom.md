@@ -41,7 +41,7 @@ In this section, we will explain in detail for the common categories of quantum 
 
 Roughly speaking, these systems share similar internal structures of local Hilbert spaces termed as the [Fock space](https://en.wikipedia.org/wiki/Fock_space) where the generators of local algebras are the annihilation and creation operators. Besides the nambu index to distinguish whether it is an annihilation one or a creation one, such a generator usually adopts an orbital index and a spin index. Thus, the type [`FID`](@ref)`<:`[`IID`](@ref), which specifies a certain local generator of a local Fock algebra, has the following attributes:
 * `orbital::Int`: the orbital index
-* `spin::Int`: the spin index
+* `spin::Rational{Int}`: the spin index, which must be a half integer
 * `nambu::Int`: the nambu index, which must be 1(annihilation) or 2(creation).
 Correspondingly, the type [`Fock`](@ref)`<:`[`Internal`](@ref), which specifies the local algebra acting on the local [Fock space](https://en.wikipedia.org/wiki/Fock_space), has the following attributes:
 * `norbital::Int`: the number of allowed orbital indices
@@ -53,20 +53,20 @@ Now let's see some examples.
 
 An [`FID`](@ref) instance can be initialized by giving all its three attributes:
 ```jldoctest FFF
-julia> FID{:f}(2, 2, 1)
-FID{:f}(2, 2, 1)
+julia> FID{:f}(2, 1//2, 1)
+FID{:f}(2, 1//2, 1)
 
-julia> FID{:b}(2, 2, 1)
-FID{:b}(2, 2, 1)
+julia> FID{:b}(2, 0, 1)
+FID{:b}(2, 0, 1)
 ```
 
 The adjoint of an [`FID`](@ref) instance is also defined:
 ```jldoctest FFF
-julia> FID{:f}(3, 4, 1)'
-FID{:f}(3, 4, 2)
+julia> FID{:f}(3, 3//2, 1)'
+FID{:f}(3, 3//2, 2)
 
-julia> FID{:b}(3, 4, 2)'
-FID{:b}(3, 4, 1)
+julia> FID{:b}(3, 3//2, 2)'
+FID{:b}(3, 3//2, 1)
 ```
 Apparently, this operation is nothing but the "Hermitian conjugate".
 
@@ -74,34 +74,39 @@ A [`Fock`](@ref) instance can be initialized by giving all its attributes:
 ```jldoctest FFF
 julia> Fock{:f}(1, 2)
 4-element Fock{:f}:
- FID{:f}(1, 1, 1)
- FID{:f}(1, 2, 1)
- FID{:f}(1, 1, 2)
- FID{:f}(1, 2, 2)
+ FID{:f}(1, -1//2, 1)
+ FID{:f}(1, 1//2, 1)
+ FID{:f}(1, -1//2, 2)
+ FID{:f}(1, 1//2, 2)
+
+julia> Fock{:b}(1, 1)
+2-element Fock{:b}:
+ FID{:b}(1, 0, 1)
+ FID{:b}(1, 0, 2)
 ```
 As can be seen, a [`Fock`](@ref) instance behaves like a vector (because the parent type [`Internal`](@ref) is a subtype of `AbstractVector`), and its iteration just generates all the allowed [`FID`](@ref) instances on its associated spatial point:
 ```jldoctest FFF
 julia> fck = Fock{:f}(2, 1);
 
 julia> fck |> typeof |> eltype
-FID{:f, Int64, Int64, Int64}
+FID{:f, Int64, Rational{Int64}, Int64}
 
 julia> fck |> length
 4
 
 julia> [fck[1], fck[2], fck[3], fck[4]]
-4-element Vector{FID{:f, Int64, Int64, Int64}}:
- FID{:f}(1, 1, 1)
- FID{:f}(2, 1, 1)
- FID{:f}(1, 1, 2)
- FID{:f}(2, 1, 2)
+4-element Vector{FID{:f, Int64, Rational{Int64}, Int64}}:
+ FID{:f}(1, 0, 1)
+ FID{:f}(2, 0, 1)
+ FID{:f}(1, 0, 2)
+ FID{:f}(2, 0, 2)
 
 julia> fck |> collect
-4-element Vector{FID{:f, Int64, Int64, Int64}}:
- FID{:f}(1, 1, 1)
- FID{:f}(2, 1, 1)
- FID{:f}(1, 1, 2)
- FID{:f}(2, 1, 2)
+4-element Vector{FID{:f, Int64, Rational{Int64}, Int64}}:
+ FID{:f}(1, 0, 1)
+ FID{:f}(2, 0, 1)
+ FID{:f}(1, 0, 2)
+ FID{:f}(2, 0, 2)
 ```
 This is isomorphic to the mathematical fact that a local algebra is a vector space of the local generators.
 
@@ -160,31 +165,31 @@ julia> [hilbert[1], hilbert[2]]
 
 To specify a translation-equivalent generator of the Fock algebra within the unitcell, [`Index`](@ref) just combines a `site::Int` attribute and an `iid::FID` attribute:
 ```jldoctest FFF
-julia> index = Index(1, FID{:f}(1, 1, 2))
-Index(1, FID{:f}(1, 1, 2))
+julia> index = Index(1, FID{:f}(1, -1//2, 2))
+Index(1, FID{:f}(1, -1//2, 2))
 
 julia> index.site
 1
 
 julia> index.iid
-FID{:f}(1, 1, 2)
+FID{:f}(1, -1//2, 2)
 ```
 
 The Hermitian conjugate of an [`Index`](@ref) is also defined:
 ```jldoctest FFF
-julia> Index(1, FID{:f}(1, 1, 2))'
-Index(1, FID{:f}(1, 1, 1))
+julia> Index(1, FID{:f}(1, -1//2, 2))'
+Index(1, FID{:f}(1, -1//2, 1))
 ```
 
 #### Global level: CompositeIndex
 
 Since the local algebra of a quantum lattice system can be defined point by point, the global algebra can be completely compressed into the origin unitcell. However, the generator outside the origin unitcell cannot be avoided because we have to use them to compose the Hamiltonian on the bonds that goes across the unitcell boundaries. This situation is similar to the case of [`Lattice`](@ref) and [`Point`](@ref). Therefore, we take a similar solution for the generators to that is adopted for the [`Point`](@ref), i.e., we include the $\mathbf{R}$ coordinate (by the `rcoordinate` attribute) and the $\mathbf{R}_i$ coordinate (by the `icoordinate` attribute) of the underlying point together with the `index::Index` attribute in the [`CompositeIndex`](@ref) type to represent a generator that could be inside or outside the origin unitcell:
 ```jldoctest FFF
-julia> index = CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.5, 0.0], [0.0, 0.0])
-CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.5, 0.0], [0.0, 0.0])
+julia> index = CompositeIndex(Index(1, FID{:f}(1, 0, 2)), [0.5, 0.0], [0.0, 0.0])
+CompositeIndex(Index(1, FID{:f}(1, 0, 2)), [0.5, 0.0], [0.0, 0.0])
 
 julia> index.index
-Index(1, FID{:f}(1, 1, 2))
+Index(1, FID{:f}(1, 0, 2))
 
 julia> index.rcoordinate
 2-element StaticArraysCore.SVector{2, Float64} with indices SOneTo(2):
@@ -197,7 +202,7 @@ julia> index.icoordinate
  0.0
 
 julia> index' # the Hermitian conjugate of a CompositeIndex is also defined
-CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.0], [0.0, 0.0])
+CompositeIndex(Index(1, FID{:f}(1, 0, 1)), [0.5, 0.0], [0.0, 0.0])
 ```
 
 ### SU(2) spin systems
@@ -400,11 +405,11 @@ Now we arrive at the core types of this package, the [`Operator`](@ref) and [`Op
 
 [`Operator`](@ref) can be initialized by two ways:
 ```jldoctest OO
-julia> Operator(2, FID{:f}(1, 1, 2), FID{:f}(1, 1, 1), SID{1//2}('z'))
-Operator(2, FID{:f}(1, 1, 2), FID{:f}(1, 1, 1), SID{1//2}('z'))
+julia> Operator(2, FID{:f}(1, -1//2, 2), FID{:f}(1, -1//2, 1), SID{1//2}('z'))
+Operator(2, FID{:f}(1, -1//2, 2), FID{:f}(1, -1//2, 1), SID{1//2}('z'))
 
-julia> 2 * Index(1, FID{:f}(1, 1, 2)) * Index(2, SID{1//2}('z'))
-Operator(2, Index(1, FID{:f}(1, 1, 2)), Index(2, SID{1//2}('z')))
+julia> 2 * Index(1, FID{:f}(1, -1//2, 2)) * Index(2, SID{1//2}('z'))
+Operator(2, Index(1, FID{:f}(1, -1//2, 2)), Index(2, SID{1//2}('z')))
 ```
 It is noted that the number of the generators can be any natural number.
 
@@ -412,59 +417,59 @@ Although generators at different levels can be producted to make an [`Operator`]
 ```jldoctest OO
 julia> Operator(
            2,
-           FID{:f}(1, 1, 2),
-           CompositeIndex(Index(2, FID{:f}(1, 1, 1)), [0.0], [0.0])
+           FID{:f}(1, 0, 2),
+           CompositeIndex(Index(2, FID{:f}(1, 0, 1)), [0.0], [0.0])
        ) # never do this !!!
-Operator(2, FID{:f}(1, 1, 2), CompositeIndex(Index(2, FID{:f}(1, 1, 1)), [0.0], [0.0]))
+Operator(2, FID{:f}(1, 0, 2), CompositeIndex(Index(2, FID{:f}(1, 0, 1)), [0.0], [0.0]))
 ```
 
 [`Operator`](@ref) can be iterated and indexed by integers, which will give the corresponding generators in the product:
 ```jldoctest OO
-julia> op = Operator(2, FID{:f}(1, 1, 2), FID{:f}(1, 1, 1));
+julia> op = Operator(2, FID{:f}(1, 1//2, 2), FID{:f}(1, 1//2, 1));
 
 julia> length(op)
 2
 
 julia> [op[1], op[2]]
-2-element Vector{FID{:f, Int64, Int64, Int64}}:
- FID{:f}(1, 1, 2)
- FID{:f}(1, 1, 1)
+2-element Vector{FID{:f, Int64, Rational{Int64}, Int64}}:
+ FID{:f}(1, 1//2, 2)
+ FID{:f}(1, 1//2, 1)
 
 julia> collect(op)
-2-element Vector{FID{:f, Int64, Int64, Int64}}:
- FID{:f}(1, 1, 2)
- FID{:f}(1, 1, 1)
+2-element Vector{FID{:f, Int64, Rational{Int64}, Int64}}:
+ FID{:f}(1, 1//2, 2)
+ FID{:f}(1, 1//2, 1)
 ```
 
 To get the coefficient of an [`Operator`](@ref) or all its individual generators as a whole, use the [`value`](@ref) and [`id`](@ref) function exported by this package, respectively:
 ```jldoctest OO
-julia> op = Operator(2, FID{:f}(1, 1, 2), FID{:f}(1, 1, 1));
+julia> op = Operator(2, FID{:f}(1, 0, 2), FID{:f}(1, 0, 1));
 
 julia> value(op)
 2
 
 julia> id(op)
-(FID{:f}(1, 1, 2), FID{:f}(1, 1, 1))
+(FID{:f}(1, 0, 2), FID{:f}(1, 0, 1))
 ```
 
 The product between two [`Operator`](@ref)s, or the scalar multiplication between a number and an [`Operator`](@ref) is also an [`Operator`](@ref):
 ```jldoctest OO
-julia> Operator(2, FID{:f}(1, 1, 2)) * Operator(3, FID{:f}(1, 1, 1))
-Operator(6, FID{:f}(1, 1, 2), FID{:f}(1, 1, 1))
+julia> Operator(2, FID{:f}(1, 1//2, 2)) * Operator(3, FID{:f}(1, 1//2, 1))
+Operator(6, FID{:f}(1, 1//2, 2), FID{:f}(1, 1//2, 1))
 
-julia> 3 * Operator(2, FID{:f}(1, 1, 2))
-Operator(6, FID{:f}(1, 1, 2))
+julia> 3 * Operator(2, FID{:f}(1, 1//2, 2))
+Operator(6, FID{:f}(1, 1//2, 2))
 
-julia> Operator(2, FID{:f}(1, 1, 2)) * 3
-Operator(6, FID{:f}(1, 1, 2))
+julia> Operator(2, FID{:f}(1, 1//2, 2)) * 3
+Operator(6, FID{:f}(1, 1//2, 2))
 ```
 
 The Hermitian conjugate of an [`Operator`](@ref) can be obtained by the adjoint operator:
 ```jldoctest OO
-julia> op = Operator(6, FID{:f}(2, 1, 2), FID{:f}(1, 1, 1));
+julia> op = Operator(6, FID{:f}(2, 1//2, 2), FID{:f}(1, 1//2, 1));
 
 julia> op'
-Operator(6, FID{:f}(1, 1, 2), FID{:f}(2, 1, 1))
+Operator(6, FID{:f}(1, 1//2, 2), FID{:f}(2, 1//2, 1))
 ```
 
 There also exists a special [`Operator`](@ref), which only has the coefficient:
@@ -475,90 +480,90 @@ Operator(2)
 
 [`Operators`](@ref) can be initialized by two ways:
 ```jldoctest OO
-julia> Operators(Operator(2, FID{:f}(1, 1, 1)), Operator(3, FID{:f}(1, 1, 2)))
+julia> Operators(Operator(2, FID{:f}(1, 1//2, 1)), Operator(3, FID{:f}(1, 1//2, 2)))
 Operators with 2 Operator
-  Operator(2, FID{:f}(1, 1, 1))
-  Operator(3, FID{:f}(1, 1, 2))
+  Operator(3, FID{:f}(1, 1//2, 2))
+  Operator(2, FID{:f}(1, 1//2, 1))
 
-julia> Operator(2, FID{:f}(1, 1, 1)) - Operator(3, FID{:b}(1, 1, 2))
+julia> Operator(2, FID{:f}(1, 1//2, 1)) - Operator(3, FID{:b}(1, 1//2, 2))
 Operators with 2 Operator
-  Operator(2, FID{:f}(1, 1, 1))
-  Operator(-3, FID{:b}(1, 1, 2))
+  Operator(-3, FID{:b}(1, 1//2, 2))
+  Operator(2, FID{:f}(1, 1//2, 1))
 ```
 
 Similar items are automatically merged during the construction of [`Operators`](@ref):
 ```jldoctest OO
-julia> Operators(Operator(2, FID{:f}(1, 1, 1)), Operator(3, FID{:f}(1, 1, 1)))
+julia> Operators(Operator(2, FID{:f}(1, 1//2, 1)), Operator(3, FID{:f}(1, 1//2, 1)))
 Operators with 1 Operator
-  Operator(5, FID{:f}(1, 1, 1))
+  Operator(5, FID{:f}(1, 1//2, 1))
 
-julia> Operator(2, FID{:f}(1, 1, 1)) + Operator(3, FID{:f}(1, 1, 1))
+julia> Operator(2, FID{:f}(1, 1//2, 1)) + Operator(3, FID{:f}(1, 1//2, 1))
 Operators with 1 Operator
-  Operator(5, FID{:f}(1, 1, 1))
+  Operator(5, FID{:f}(1, 1//2, 1))
 ```
 
 The multiplication between two [`Operators`](@ref)es, or between an [`Operators`](@ref) and an [`Operator`](@ref), or between a number and an [`Operators`](@ref) are defined:
 ```jldoctest OO
-julia> ops = Operator(2, FID{:f}(1, 1, 1)) + Operator(3, FID{:f}(1, 1, 2));
+julia> ops = Operator(2, FID{:f}(1, 1//2, 1)) + Operator(3, FID{:f}(1, 1//2, 2));
 
-julia> op = Operator(2, FID{:f}(2, 1, 1));
+julia> op = Operator(2, FID{:f}(2, 1//2, 1));
 
 julia> ops * op
 Operators with 2 Operator
-  Operator(6, FID{:f}(1, 1, 2), FID{:f}(2, 1, 1))
-  Operator(4, FID{:f}(1, 1, 1), FID{:f}(2, 1, 1))
+  Operator(6, FID{:f}(1, 1//2, 2), FID{:f}(2, 1//2, 1))
+  Operator(4, FID{:f}(1, 1//2, 1), FID{:f}(2, 1//2, 1))
 
 julia> op * ops
 Operators with 2 Operator
-  Operator(4, FID{:f}(2, 1, 1), FID{:f}(1, 1, 1))
-  Operator(6, FID{:f}(2, 1, 1), FID{:f}(1, 1, 2))
+  Operator(4, FID{:f}(2, 1//2, 1), FID{:f}(1, 1//2, 1))
+  Operator(6, FID{:f}(2, 1//2, 1), FID{:f}(1, 1//2, 2))
 
-julia> another = Operator(2, FID{:f}(1, 1, 1)) + Operator(3, FID{:f}(1, 1, 2));
+julia> another = Operator(2, FID{:f}(1, 1//2, 1)) + Operator(3, FID{:f}(1, 1//2, 2));
 
 julia> ops * another 
 Operators with 4 Operator
-  Operator(4, FID{:f}(1, 1, 1), FID{:f}(1, 1, 1))
-  Operator(6, FID{:f}(1, 1, 2), FID{:f}(1, 1, 1))
-  Operator(6, FID{:f}(1, 1, 1), FID{:f}(1, 1, 2))
-  Operator(9, FID{:f}(1, 1, 2), FID{:f}(1, 1, 2))
+  Operator(6, FID{:f}(1, 1//2, 1), FID{:f}(1, 1//2, 2))
+  Operator(6, FID{:f}(1, 1//2, 2), FID{:f}(1, 1//2, 1))
+  Operator(9, FID{:f}(1, 1//2, 2), FID{:f}(1, 1//2, 2))
+  Operator(4, FID{:f}(1, 1//2, 1), FID{:f}(1, 1//2, 1))
 
 julia> 2 * ops
 Operators with 2 Operator
-  Operator(4, FID{:f}(1, 1, 1))
-  Operator(6, FID{:f}(1, 1, 2))
+  Operator(6, FID{:f}(1, 1//2, 2))
+  Operator(4, FID{:f}(1, 1//2, 1))
 
 julia> ops * 2
 Operators with 2 Operator
-  Operator(4, FID{:f}(1, 1, 1))
-  Operator(6, FID{:f}(1, 1, 2))
+  Operator(6, FID{:f}(1, 1//2, 2))
+  Operator(4, FID{:f}(1, 1//2, 1))
 ```
 It is noted that in the result, the distributive law automatically applies.
 
 As is usual, the Hermitian conjugate of an [`Operators`](@ref) can be obtained by the adjoint operator:
 ```jldoctest
-julia> op₁ = Operator(6, FID{:f}(1, 1, 2), FID{:f}(2, 1, 1));
+julia> op₁ = Operator(6, FID{:f}(1, 1//2, 2), FID{:f}(2, 1//2, 1));
 
-julia> op₂ = Operator(4, FID{:f}(1, 1, 1), FID{:f}(2, 1, 1));
+julia> op₂ = Operator(4, FID{:f}(1, 1//2, 1), FID{:f}(2, 1//2, 1));
 
 julia> ops = op₁ + op₂;
 
 julia> ops'
 Operators with 2 Operator
-  Operator(4, FID{:f}(2, 1, 2), FID{:f}(1, 1, 2))
-  Operator(6, FID{:f}(2, 1, 2), FID{:f}(1, 1, 1))
+  Operator(4, FID{:f}(2, 1//2, 2), FID{:f}(1, 1//2, 2))
+  Operator(6, FID{:f}(2, 1//2, 2), FID{:f}(1, 1//2, 1))
 ```
 
 [`Operators`](@ref) can be iterated, but cannot be indexed:
 ```jldoctest OO
-julia> ops = Operator(2, FID{:f}(1, 1, 1)) + Operator(3, FID{:f}(1, 1, 2));
+julia> ops = Operator(2, FID{:f}(1, 1//2, 1)) + Operator(3, FID{:f}(1, 1//2, 2));
 
 julia> collect(ops)
-2-element Vector{Operator{Int64, Tuple{FID{:f, Int64, Int64, Int64}}}}:
- Operator(2, FID{:f}(1, 1, 1))
- Operator(3, FID{:f}(1, 1, 2))
+2-element Vector{Operator{Int64, Tuple{FID{:f, Int64, Rational{Int64}, Int64}}}}:
+ Operator(3, FID{:f}(1, 1//2, 2))
+ Operator(2, FID{:f}(1, 1//2, 1))
 
 julia> ops[1]
-ERROR: MethodError: no method matching getindex(::Operators{Operator{Int64, Tuple{FID{:f, Int64, Int64, Int64}}}, Tuple{FID{:f, Int64, Int64, Int64}}}, ::Int64)
+ERROR: MethodError: no method matching getindex(::Operators{Operator{Int64, Tuple{FID{:f, Int64, Rational{Int64}, Int64}}}, Tuple{FID{:f, Int64, Rational{Int64}, Int64}}}, ::Int64)
 [...]
 ```
 The different behaviors between [`Operator`](@ref) and [`Operators`](@ref) when they are indexed result from their underlying implementations: [`Operator`](@ref) is something like a tuple while [`Operators`](@ref) is something like a dictionary. Do not ask why not to implement them based on [expression trees](https://en.wikipedia.org/wiki/Binary_expression_tree). If you have to ask, then the answer will be the authors of the package don't know how. So if you are not satisfied with this implementation, feel free to post a pull request.
