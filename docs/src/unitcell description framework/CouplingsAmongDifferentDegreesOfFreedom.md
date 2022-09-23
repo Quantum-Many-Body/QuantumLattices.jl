@@ -177,7 +177,7 @@ All predefined default rules can be found in the section of [Specialized terms](
 
 ### Coupling patterns with constraints
 
-The default rules cannot handle complicated summation conditions on the internal degrees of freedom in the coupling pattern. For example, for the interorbital-interspin Hubbard term in a [multi-orbital Hubbard model](https://www.annualreviews.org/doi/abs/10.1146/annurev-conmatphys-020911-125045), which can be written as $U\sum_i\sum_{α<β\,\text{and}\,σ₁≠σ₂} c^†_{iασ₁} c_{iασ₁} c^†_{iβσ₂} c_{iβσ₂}$, it is impossible to specify its coupling pattern by a single [`Coupling`](@ref) in the usual way as introduced in previous subsections. Although the coupling pattern of a [`Term`](@ref) can also be an iterator of [`Coupling`](@ref)s, it would be quite complicated to write down all the expressions by the manual expansion of the summation over $α$, $β$, $σ₁$ and $σ₂$. In fact, we have provided a simple way to specify a coupling pattern like this with the help of the macro [`@indexes`](@ref):
+The default rules cannot handle complicated summation conditions on the local internal degrees of freedom in the coupling pattern. For example, for the interorbital-interspin Hubbard term in a [multi-orbital Hubbard model](https://www.annualreviews.org/doi/abs/10.1146/annurev-conmatphys-020911-125045), which can be written as $U\sum_i\sum_{α<β\,\text{and}\,σ₁≠σ₂} c^†_{iασ₁} c_{iασ₁} c^†_{iβσ₂} c_{iβσ₂}$, it is impossible to specify its coupling pattern by a single [`Coupling`](@ref) in the usual way as introduced in previous subsections. Although the coupling pattern of a [`Term`](@ref) can also be an iterator of [`Coupling`](@ref)s, it would be quite complicated to write down all the expressions by the manual expansion of the summation over $α$, $β$, $σ₁$ and $σ₂$. In fact, we have provided a simple way to specify a coupling pattern like this with the help of the macro [`@indexes`](@ref):
 ```julia
 @indexes(index₁, index₂, ...[; constraint=...])
 ```
@@ -246,19 +246,19 @@ julia> length(mc)
 2
 
 julia> mc[1]
-- ∑[Index(:, FID(:, 1, :)) Index(:, FID(:, 1, :))]
+∑[Index(:, FID(:, 2, :)) Index(:, FID(:, 2, :))]
 
 julia> mc[2]
-∑[Index(:, FID(:, 2, :)) Index(:, FID(:, 2, :))]
+- ∑[Index(:, FID(:, 1, :)) Index(:, FID(:, 1, :))]
 ```
 Here, [`@σ_str`](@ref) is a string literal that returns the generalized Pauli matrices:
 ```julia
 σ"0" => SparseMatrixCSC([1 0; 0 1])
 σ"x" => SparseMatrixCSC([0 1; 1 0])
-σ"y" => SparseMatrixCSC([0 1im; -1im 0])
-σ"z" => SparseMatrixCSC([-1 0; 0 1])
-σ"+" => SparseMatrixCSC([0 0; 1 0])
-σ"-" => SparseMatrixCSC([0 1; 0 0])
+σ"y" => SparseMatrixCSC([0 -1im; 1im 0])
+σ"z" => SparseMatrixCSC([1 0; 0 -1])
+σ"+" => SparseMatrixCSC([0 1; 0 0])
+σ"-" => SparseMatrixCSC([0 0; 1 0])
 σ"11" => SparseMatrixCSC([1 0; 0 0])
 σ"22" => SparseMatrixCSC([0 0; 0 1])
 ```
@@ -318,10 +318,10 @@ julia> collect(coupling)
 6-element Vector{Coupling}:
  1//2 ∑[Index(:, FID(:, 2, :)) Index(:, FID(:, 1, :))] ⋅ ∑[Index(:, FID(:, 1, :)) Index(:, FID(:, 2, :))]
  1//2 ∑[Index(:, FID(:, 1, :)) Index(:, FID(:, 2, :))] ⋅ ∑[Index(:, FID(:, 2, :)) Index(:, FID(:, 1, :))]
- ∑[Index(:, FID(:, 1, :)) Index(:, FID(:, 1, :))] ⋅ ∑[Index(:, FID(:, 1, :)) Index(:, FID(:, 1, :))]
- - ∑[Index(:, FID(:, 2, :)) Index(:, FID(:, 2, :))] ⋅ ∑[Index(:, FID(:, 1, :)) Index(:, FID(:, 1, :))]
- - ∑[Index(:, FID(:, 1, :)) Index(:, FID(:, 1, :))] ⋅ ∑[Index(:, FID(:, 2, :)) Index(:, FID(:, 2, :))]
  ∑[Index(:, FID(:, 2, :)) Index(:, FID(:, 2, :))] ⋅ ∑[Index(:, FID(:, 2, :)) Index(:, FID(:, 2, :))]
+ - ∑[Index(:, FID(:, 1, :)) Index(:, FID(:, 1, :))] ⋅ ∑[Index(:, FID(:, 2, :)) Index(:, FID(:, 2, :))]
+ - ∑[Index(:, FID(:, 2, :)) Index(:, FID(:, 2, :))] ⋅ ∑[Index(:, FID(:, 1, :)) Index(:, FID(:, 1, :))]
+ ∑[Index(:, FID(:, 1, :)) Index(:, FID(:, 1, :))] ⋅ ∑[Index(:, FID(:, 1, :)) Index(:, FID(:, 1, :))]
 ```
 
 For another example, for the onsite spin-orbital coupling of the $(d_{yz}, d_{xz}, d_{xy})^T$ $t_2g$ orbitals $\lambda\sum_i c^\dagger_i \vec{L}_i\cdot\vec{σ}_i c_i$ where $\vec{L}_i=(L^x_i, L^y_i, L^z_i)^T$ acts on the local orbital space and $\vec{σ}_i=(σ^x_i, σ^y_i, σ^z_i)^T$ acts on the local spin space, the coupling pattern can be constructed as follows:
@@ -336,18 +336,18 @@ julia> coupling = mc₁ + mc₂ + mc₃;
 
 julia> collect(coupling)
 12-element Vector{Coupling}:
- -1im Index(:, FID(3, 2, :)) Index(:, FID(2, 1, :))
- 1im Index(:, FID(2, 2, :)) Index(:, FID(3, 1, :))
  -1im Index(:, FID(3, 1, :)) Index(:, FID(2, 2, :))
  1im Index(:, FID(2, 1, :)) Index(:, FID(3, 2, :))
- Index(:, FID(3, 2, :)) Index(:, FID(1, 1, :))
- - Index(:, FID(1, 2, :)) Index(:, FID(3, 1, :))
+ -1im Index(:, FID(3, 2, :)) Index(:, FID(2, 1, :))
+ 1im Index(:, FID(2, 2, :)) Index(:, FID(3, 1, :))
  - Index(:, FID(3, 1, :)) Index(:, FID(1, 2, :))
  Index(:, FID(1, 1, :)) Index(:, FID(3, 2, :))
- 1im Index(:, FID(2, 1, :)) Index(:, FID(1, 1, :))
- -1im Index(:, FID(1, 1, :)) Index(:, FID(2, 1, :))
+ Index(:, FID(3, 2, :)) Index(:, FID(1, 1, :))
+ - Index(:, FID(1, 2, :)) Index(:, FID(3, 1, :))
  -1im Index(:, FID(2, 2, :)) Index(:, FID(1, 2, :))
  1im Index(:, FID(1, 2, :)) Index(:, FID(2, 2, :))
+ 1im Index(:, FID(2, 1, :)) Index(:, FID(1, 1, :))
+ -1im Index(:, FID(1, 1, :)) Index(:, FID(2, 1, :))
 ```
 
 ### Bond-dependent coupling patterns
@@ -556,10 +556,10 @@ julia> hilbert = Hilbert(1=>Fock{:f}(1, 2), 2=>Fock{:f}(1, 2));
 
 julia> expand(t, bond, hilbert)
 Operators with 4 Operator
+  Operator(2.0, CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, 1, 1)), [0.5], [0.0]))
   Operator(2.0, CompositeIndex(Index(2, FID{:f}(1, 2, 2)), [0.5], [0.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.0], [0.0]))
   Operator(2.0, CompositeIndex(Index(2, FID{:f}(1, 1, 2)), [0.5], [0.0]), CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.0], [0.0]))
   Operator(2.0, CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, 2, 1)), [0.5], [0.0]))
-  Operator(2.0, CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, 1, 1)), [0.5], [0.0]))
 ```
 
 When a bond and a term do not match each other, the [`expand`](@ref) function will return an empty [`Operators`](@ref):
@@ -587,12 +587,12 @@ julia> hilbert = Hilbert(1=>Fock{:f}(1, 2), 2=>Fock{:f}(1, 2));
 
 julia> expand(t, bonds, hilbert)
 Operators with 8 Operator
-  Operator(1.0, CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, 1, 1)), [-0.5], [-1.0]))
+  Operator(1.0, CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, 1, 1)), [0.5], [0.0]))
   Operator(1.0, CompositeIndex(Index(2, FID{:f}(1, 2, 2)), [0.5], [0.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.0], [0.0]))
   Operator(1.0, CompositeIndex(Index(2, FID{:f}(1, 1, 2)), [0.5], [0.0]), CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.0], [0.0]))
+  Operator(1.0, CompositeIndex(Index(2, FID{:f}(1, 1, 2)), [-0.5], [-1.0]), CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.0], [0.0]))
+  Operator(1.0, CompositeIndex(Index(2, FID{:f}(1, 2, 2)), [-0.5], [-1.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.0], [0.0]))
   Operator(1.0, CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, 2, 1)), [-0.5], [-1.0]))
   Operator(1.0, CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, 2, 1)), [0.5], [0.0]))
-  Operator(1.0, CompositeIndex(Index(2, FID{:f}(1, 2, 2)), [-0.5], [-1.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.0], [0.0]))
-  Operator(1.0, CompositeIndex(Index(2, FID{:f}(1, 1, 2)), [-0.5], [-1.0]), CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.0], [0.0]))
-  Operator(1.0, CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, 1, 1)), [0.5], [0.0]))
+  Operator(1.0, CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, 1, 1)), [-0.5], [-1.0]))
 ```

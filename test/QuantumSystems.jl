@@ -136,10 +136,10 @@ end
         Coupling(Index(:, FID(:, :, :)), Index(:, FID(:, :, :)))
     ]
     @test collect(MatrixCoupling((1, 2), FID{:f}, :, σ"y", σ"z")) == [
-        Coupling(+1im, Index(1, FID{:f}(:, 2, 1)), Index(2, FID{:f}(:, 1, 2))),
-        Coupling(-1im, Index(1, FID{:f}(:, 1, 1)), Index(2, FID{:f}(:, 2, 2))),
-        Coupling(-1im, Index(1, FID{:f}(:, 2, 2)), Index(2, FID{:f}(:, 1, 1))),
-        Coupling(+1im, Index(1, FID{:f}(:, 1, 2)), Index(2, FID{:f}(:, 2, 1)))
+        Coupling(+1im, Index(1, FID{:f}(:, 1, 1)), Index(2, FID{:f}(:, 2, 2))),
+        Coupling(-1im, Index(1, FID{:f}(:, 2, 1)), Index(2, FID{:f}(:, 1, 2))),
+        Coupling(-1im, Index(1, FID{:f}(:, 1, 2)), Index(2, FID{:f}(:, 2, 1))),
+        Coupling(+1im, Index(1, FID{:f}(:, 2, 2)), Index(2, FID{:f}(:, 1, 1)))
     ]
     @test collect(MatrixCoupling((1, 2), FID{:b}, σ"x", :, σ"0")) == [
         Coupling(Index(1, FID{:b}(2, :, 1)), Index(2, FID{:b}(1, :, 2))),
@@ -148,7 +148,7 @@ end
         Coupling(Index(1, FID{:b}(1, :, 2)), Index(2, FID{:b}(2, :, 1)))
     ]
     @test collect(MatrixCoupling(:, FID{wildcard}, σ"+", σ"-", :)) == [
-        Coupling(Index(:, FID(2, 1, :)), Index(:, FID(1, 2, :)))
+        Coupling(Index(:, FID(1, 1, :)), Index(:, FID(2, 2, :)))
     ]
 
     fc = Coupling(2.0, (1, 2), FID, (1, 2), :, (2, 1))
@@ -240,10 +240,10 @@ end
 @testset "σ" begin
     σ"0" == SparseMatrixCSC([1 0; 0 1])
     σ"x" == SparseMatrixCSC([0 1; 1 0])
-    σ"y" == SparseMatrixCSC([0 1im; -1im 0])
-    σ"z" == SparseMatrixCSC([-1 0; 0 1])
-    σ"+" == SparseMatrixCSC([0 0; 1 0])
-    σ"-" == SparseMatrixCSC([0 1; 0 0])
+    σ"y" == SparseMatrixCSC([0 -1im; 1im 0])
+    σ"z" == SparseMatrixCSC([1 0; 0 -1])
+    σ"+" == SparseMatrixCSC([0 1; 0 0])
+    σ"-" == SparseMatrixCSC([0 0; 1 0])
     σ"11" == SparseMatrixCSC([1 0; 0 0])
     σ"22" == SparseMatrixCSC([0 0; 0 1])
 end
@@ -261,20 +261,20 @@ end
 
     term = Onsite(:mu, 1.5, MatrixCoupling(:, FID, σ"z", σ"x", :))
     operators = Operators(
-        Operator(+0.75, CompositeIndex(Index(1, FID{:f}(2, 2, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0])),
-        Operator(-0.75, CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])),
-        Operator(+0.75, CompositeIndex(Index(1, FID{:f}(2, 1, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0])),
-        Operator(-0.75, CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]))
+        Operator(-0.75, CompositeIndex(Index(1, FID{:f}(2, 2, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0])),
+        Operator(+0.75, CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])),
+        Operator(-0.75, CompositeIndex(Index(1, FID{:f}(2, 1, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0])),
+        Operator(+0.75, CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]))
     )
     @test expand(term, bond, hilbert, half=true) == operators
     @test expand(term, bond, hilbert, half=false) == operators*2
 
     term = Onsite(:mu, 1.5, MatrixCoupling(:, FID, σ"z", σ"z", :))
     operators = Operators(
-        Operator(-0.75, CompositeIndex(Index(1, FID{:f}(2, 1, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0])),
-        Operator(-0.75, CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])),
-        Operator(+0.75, CompositeIndex(Index(1, FID{:f}(2, 2, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0])),
-        Operator(+0.75, CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]))
+        Operator(+0.75, CompositeIndex(Index(1, FID{:f}(2, 1, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(2, 1, 1)), [0.5, 0.5], [0.0, 0.0])),
+        Operator(+0.75, CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0])),
+        Operator(-0.75, CompositeIndex(Index(1, FID{:f}(2, 2, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(2, 2, 1)), [0.5, 0.5], [0.0, 0.0])),
+        Operator(-0.75, CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]))
     )
     @test expand(term, bond, hilbert, half=true) == operators
     @test expand(term, bond, hilbert, half=false) == operators*2
@@ -309,8 +309,8 @@ end
     hilbert = Hilbert(point.site=>Fock{:f}(1, 2))
     term = Pairing(:Δ, 1.5, 0, MatrixCoupling(:, FID, :, [0 -1; 1 0], :))
     operators = Operators(
-        Operator(+1.5, CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0])),
-        Operator(-1.5, CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]))
+        Operator(-1.5, CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0])),
+        Operator(+1.5, CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.5, 0.5], [0.0, 0.0]))
     )
     @test expand(term, Bond(point), hilbert, half=true) == operators
     @test expand(term, Bond(point), hilbert, half=false) == operators+operators'

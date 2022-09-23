@@ -17,8 +17,8 @@ In general, a lattice has translation symmetry. This symmetry introduces an equi
 [`Lattice`](@ref) is the simplest structure to encode all the spatial information within the origin unitcell. Apparently, it must contain all the coordinates of the points in the origin unitcell and the translation vectors of the lattice. Other stuff appears to be useful as well, such as the name of the lattice and the reciprocals dual to the translation vectors. Therefore, in this package, [`Lattice`](@ref) has four attributes:
 * `name::Symbol`: the name of the lattice
 * `coordinates::Matrix{<:Number}`: the coordinates of the points within the origin unitcell
-* `vectors::Vector{<:StaticArrays.SVector}`: the translation vectors of the lattice
-* `reciprocals::Vector{<:StaticArrays.SVector}`: the reciprocals dual to the translation vectors
+* `vectors::Vector{<:StaticArraysCore.SVector}`: the translation vectors of the lattice
+* `reciprocals::Vector{<:StaticArraysCore.SVector}`: the reciprocals dual to the translation vectors
 
 [`Lattice`](@ref) can be constructed by offering the coordinates, with optional keyword arguments to specify its name and translation vectors:
 ```jldoctest unitcell
@@ -59,12 +59,12 @@ julia> length(lattice)
 2
 
 julia> [lattice[1], lattice[2]]
-2-element Vector{StaticArrays.SVector{2, Float64}}:
+2-element Vector{StaticArraysCore.SVector{2, Float64}}:
  [0.0, 0.0]
  [0.5, 0.5]
 
 julia> collect(lattice)
-2-element Vector{StaticArrays.SVector{2, Float64}}:
+2-element Vector{StaticArraysCore.SVector{2, Float64}}:
  [0.0, 0.0]
  [0.5, 0.5]
 ```
@@ -77,8 +77,8 @@ Before the introduction of how to obtain the bonds of a lattice, let's discuss m
 
 With the translation symmetry, all points of a lattice are equivalent to those within the origin unitcell. However, it becomes complicated when the bonds are requested. The bonds inter different unitcells cannot be compressed into a single unitcell. Therefore, even in the unitcell construction framework, it turns out to be unavoidable to specify a point outside the origin unitcell, which requires extra information beyond a single coordinate if we want to remember which point it is equivalent to within the origin unitcell at the same time. In fact, it is customary in literature to express the coordinate $\mathbf{R}$ of a point in a lattice as $\mathbf{R}=\mathbf{R}_i+\mathbf{r}$, where $\mathbf{R}_i$ is the integral coordinate of the unitcell the point belongs to and $\mathbf{r}$ is the relative displacement of the point in the unitcell. Apparently, any two of these three coordinates are complete to get the full information. In this package, we choose $\mathbf{R}$ and $\mathbf{R}_i$ as the complete set for a individual lattice point. Besides, we also associate a `site` index with a point for the fast lookup for its equivalence within the origin unitcell although it is redundant in theory. Thus, the [`Point`](@ref) defined in this package has three attributes as follows:
 * `site::Int`: the site index of a point that specifies the equivalent point within the origin unitcell
-* `rcoordinate::`[`StaticArrays.SVector`](https://github.com/JuliaArrays/StaticArrays.jl): the **r**eal **coordinate** of the point ($\mathbf{R}$)
-* `icoordinate::`[`StaticArrays.SVector`](https://github.com/JuliaArrays/StaticArrays.jl): the **i**ntegral **coordinate** of the unitcell the point belongs to ($\mathbf{R}_i$)
+* `rcoordinate::`[`StaticArraysCore.SVector`](https://github.com/JuliaArrays/StaticArrays.jl): the **r**eal **coordinate** of the point ($\mathbf{R}$)
+* `icoordinate::`[`StaticArraysCore.SVector`](https://github.com/JuliaArrays/StaticArrays.jl): the **i**ntegral **coordinate** of the unitcell the point belongs to ($\mathbf{R}_i$)
 
 At the construction of a [`Point`](@ref), `rcoordinate` and `icoordinate` can accept tuples or usual vectors as inputs, such as
 ```jldoctest unitcell
@@ -88,7 +88,7 @@ Point(1, [0.0], [0.0])
 julia> Point(1, (1.5, 0.0), (1.0, 0.0))
 Point(1, [1.5, 0.0], [1.0, 0.0])
 ```
-`icoordinate` can be omitted, then it will be initialized by a zero [`StaticArrays.SVector`](https://github.com/JuliaArrays/StaticArrays.jl):
+`icoordinate` can be omitted, then it will be initialized by a zero [`StaticArraysCore.SVector`](https://github.com/JuliaArrays/StaticArrays.jl):
 ```jldoctest unitcell
 julia> Point(1, [0.0, 0.5])
 Point(1, [0.0, 0.5], [0.0, 0.0])
@@ -134,22 +134,22 @@ The coordinate of a bond as a whole is also defined for those that only contain 
 julia> bond1p = Bond(Point(1, [2.0], [1.0]));
 
 julia> rcoordinate(bond1p)
-1-element StaticArrays.SVector{1, Float64} with indices SOneTo(1):
+1-element StaticArraysCore.SVector{1, Float64} with indices SOneTo(1):
  2.0
 
 julia> icoordinate(bond1p)
-1-element StaticArrays.SVector{1, Float64} with indices SOneTo(1):
+1-element StaticArraysCore.SVector{1, Float64} with indices SOneTo(1):
  1.0
 
 julia> bond2p = Bond(1, Point(1, [1.0, 1.0], [1.0, 1.0]), Point(2, [0.5, 0.5], [0.0, 0.0]));
 
 julia> rcoordinate(bond2p)
-2-element StaticArrays.SVector{2, Float64} with indices SOneTo(2):
+2-element StaticArraysCore.SVector{2, Float64} with indices SOneTo(2):
  -0.5
  -0.5
 
 julia> icoordinate(bond2p)
-2-element StaticArrays.SVector{2, Float64} with indices SOneTo(2):
+2-element StaticArraysCore.SVector{2, Float64} with indices SOneTo(2):
  -1.0
  -1.0
 ```

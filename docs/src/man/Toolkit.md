@@ -150,7 +150,7 @@ Int64
 However, the above defined function `contenttype` could not apply to a [`UnionAll`](https://docs.julialang.org/en/v1/manual/types/#UnionAll-Types) type, such as `Hi{<:Real}`:
 ```jldoctest traits
 julia> contenttype(Hi{<:Real})
-ERROR: MethodError: no method matching contenttype(::Type{Hi{var"#s1"} where var"#s1"<:Real})
+ERROR: MethodError: no method matching contenttype(::Type{Hi{<:Real}})
 [...]
 ```
 
@@ -194,20 +194,20 @@ julia> reparameter(Vector{Int64}, 1, Real)
 Vector{Real} (alias for Array{Real, 1})
 
 julia> reparameter(Vector{<:Real}, 2, 3)
-Array{var"#s1",3} where var"#s1"<:Real
+Array{<:Real, 3}
 
 julia> reparameter(Hi{Int64}, 1, Real, false)
 Hi{Real}
 
 julia> reparameter(Hi{Int64}, 1, Real, true)
-Hi{var"#s2"} where var"#s2"<:Real
+Hi{<:Real}
 ```
 We want to remark that by providing the fourth positional argument with the `true` value, a `UnionAll` type could be generated. When the fourth positional argument is omitted, it is actually determined by another trait function, i.e., [`isparameterbound`](@ref). This function judges whether an input type should be considered as the upper bound of the new parameter of a type. By default, it is always defined to be `false`. This function can be overloaded to change the behavior for a certain type:
 ```jldoctest traits
 julia> isparameterbound(::Type{<:Hi}, ::Val{1}, D) = !isconcretetype(D);
 
 julia> reparameter(Hi, 1, Real)
-Hi{var"#s3"} where var"#s3"<:Real
+Hi{<:Real}
 ```
 The second positional argument of [`isparameterbound`](@ref) must be of type `Val` because in principle you should be able to assign different behaviors for different parameters of a type separately. If it is of type `Integer`, a single overloading would change the behaviors for all.
 
@@ -224,7 +224,7 @@ The obtained type parameters are stored as those of a `Tuple`.
 At the same time, you can change all the parameters of a type by [`fulltype`](@ref):
 ```jldoctest traits
 julia> fulltype(Hi{Int64}, Tuple{Real})
-Hi{var"#s4"} where var"s#4"<:Real
+Hi{<:Real}
 
 julia> fulltype(Hi{Int64}, Tuple{Real}, (false,))
 Hi{Real}
@@ -233,7 +233,7 @@ julia> fulltype(Vector{Int64}, Tuple{Real, 2})
 Matrix{Real} (alias for Array{Real, 2})
 
 julia> fulltype(Vector{Int64}, Tuple{Real, 2}, (true, false))
-Matrix{var"#s5"} where var"#s5"<:Real (alias for Array{var"#s5", 2} where var"#s5"<:Real)
+Matrix{<:Real} (alias for Array{<:Real, 2})
 ```
 Like [`reparameter`](@ref), the last positional argument of [`fulltype`](@ref) could determine whether the corresponding types specified by the type parameters of the input `Tuple` should be considered as the upper bounds of the new parameters of a type. When this argument is omitted, it is determined by another trait function [`isparameterbounds`](@ref), which successively calls the [`isparameterbound`](@ref) function to determine the behaviors for all the parameters of a type as the literal indicates.
 
@@ -272,7 +272,7 @@ julia> reparameter(Hi{Int}, :content, Real)
 Hi{Real}
 
 julia> reparameter(Hi{Int}, :content, Real, true)
-Hi{var"#s6"} where var"#s6"<:Real
+Hi{<:Real}
 ```
 
 To change the [`reparameter`](@ref) behavior when its last positional argument is omitted, you should overload the [`isparameterbound`](@ref) function accordingly, e.g.:
@@ -280,7 +280,7 @@ To change the [`reparameter`](@ref) behavior when its last positional argument i
 julia> isparameterbound(::Type{<:Hi}, ::Val{:content}, D) = !isconcretetype(D);
 
 julia> reparameter(Hi{Int}, :content, Real)
-Hi{var"#s7"} where var"#s7"<:Real
+Hi{<:Real}
 ```
 !!! note
     Accessing or altering a parameter of a type by its name is independent from that by its position order. Thus, even the following method
@@ -321,10 +321,10 @@ julia> fulltype(Hi{Int}, NamedTuple{(:content,), Tuple{Real}}, (false,))
 Hi{Real}
 
 julia> fulltype(Hi{Int}, NamedTuple{(:content,), Tuple{Real}}, (true,))
-Hi{var"#s8"} where var"#s8"<:Real
+Hi{<:Real}
 
 julia> fulltype(Hi{Int}, NamedTuple{(:content,),Tuple{Real}})
-Hi{var"#s9"} where var"#s9"<:Real
+Hi{<:Real}
 ```
 Here, the last positional argument can be omitted whose default value would be determined by the [`isparameterbounds`](@ref) function which successively calls the [`isparameterbound`](@ref) function on each of the named parameter. Note that similar to the situation of the [`reparameter`](@ref) function in this subsubsection, the [`isparameterbound`](@ref) function called here is also the version that takes the parameter name as the input rather than that of the position order.
 

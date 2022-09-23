@@ -187,12 +187,12 @@ julia> index.index
 Index(1, FID{:f}(1, 1, 2))
 
 julia> index.rcoordinate
-2-element StaticArrays.SVector{2, Float64} with indices SOneTo(2):
+2-element StaticArraysCore.SVector{2, Float64} with indices SOneTo(2):
  0.5
  0.0
 
 julia> index.icoordinate
-2-element StaticArrays.SVector{2, Float64} with indices SOneTo(2):
+2-element StaticArraysCore.SVector{2, Float64} with indices SOneTo(2):
  0.0
  0.0
 
@@ -477,8 +477,8 @@ Operator(2)
 ```jldoctest OO
 julia> Operators(Operator(2, FID{:f}(1, 1, 1)), Operator(3, FID{:f}(1, 1, 2)))
 Operators with 2 Operator
-  Operator(3, FID{:f}(1, 1, 2))
   Operator(2, FID{:f}(1, 1, 1))
+  Operator(3, FID{:f}(1, 1, 2))
 
 julia> Operator(2, FID{:f}(1, 1, 1)) - Operator(3, FID{:b}(1, 1, 2))
 Operators with 2 Operator
@@ -510,27 +510,27 @@ Operators with 2 Operator
 
 julia> op * ops
 Operators with 2 Operator
-  Operator(6, FID{:f}(2, 1, 1), FID{:f}(1, 1, 2))
   Operator(4, FID{:f}(2, 1, 1), FID{:f}(1, 1, 1))
+  Operator(6, FID{:f}(2, 1, 1), FID{:f}(1, 1, 2))
 
 julia> another = Operator(2, FID{:f}(1, 1, 1)) + Operator(3, FID{:f}(1, 1, 2));
 
 julia> ops * another 
 Operators with 4 Operator
-  Operator(6, FID{:f}(1, 1, 1), FID{:f}(1, 1, 2))
   Operator(4, FID{:f}(1, 1, 1), FID{:f}(1, 1, 1))
-  Operator(9, FID{:f}(1, 1, 2), FID{:f}(1, 1, 2))
   Operator(6, FID{:f}(1, 1, 2), FID{:f}(1, 1, 1))
+  Operator(6, FID{:f}(1, 1, 1), FID{:f}(1, 1, 2))
+  Operator(9, FID{:f}(1, 1, 2), FID{:f}(1, 1, 2))
 
 julia> 2 * ops
 Operators with 2 Operator
-  Operator(6, FID{:f}(1, 1, 2))
   Operator(4, FID{:f}(1, 1, 1))
+  Operator(6, FID{:f}(1, 1, 2))
 
 julia> ops * 2
 Operators with 2 Operator
-  Operator(6, FID{:f}(1, 1, 2))
   Operator(4, FID{:f}(1, 1, 1))
+  Operator(6, FID{:f}(1, 1, 2))
 ```
 It is noted that in the result, the distributive law automatically applies.
 
@@ -544,8 +544,8 @@ julia> ops = op₁ + op₂;
 
 julia> ops'
 Operators with 2 Operator
-  Operator(6, FID{:f}(2, 1, 2), FID{:f}(1, 1, 1))
   Operator(4, FID{:f}(2, 1, 2), FID{:f}(1, 1, 2))
+  Operator(6, FID{:f}(2, 1, 2), FID{:f}(1, 1, 1))
 ```
 
 [`Operators`](@ref) can be iterated, but cannot be indexed:
@@ -554,8 +554,8 @@ julia> ops = Operator(2, FID{:f}(1, 1, 1)) + Operator(3, FID{:f}(1, 1, 2));
 
 julia> collect(ops)
 2-element Vector{Operator{Int64, Tuple{FID{:f, Int64, Int64, Int64}}}}:
- Operator(3, FID{:f}(1, 1, 2))
  Operator(2, FID{:f}(1, 1, 1))
+ Operator(3, FID{:f}(1, 1, 2))
 
 julia> ops[1]
 ERROR: MethodError: no method matching getindex(::Operators{Operator{Int64, Tuple{FID{:f, Int64, Int64, Int64}}}, Tuple{FID{:f, Int64, Int64, Int64}}}, ::Int64)

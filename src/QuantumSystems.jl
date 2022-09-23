@@ -267,18 +267,19 @@ Construct a set of `Coupling`s between two `Index{<:Union{Int, Colon}, <:FID}`s 
 @inline function MatrixCoupling(sites::Union{NTuple{2, Int}, Colon}, ::Type{F}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) where {F<:FID}
     return MatrixCoupling(sites, F, Component(F, Val(:orbital), orbital), Component(F, Val(:spin), spin), Component(F, Val(:nambu), nambu))
 end
-@inline Component(::Type{<:FID}, ::Val, matrix::AbstractMatrix) = Component(1:size(matrix)[1], 1:size(matrix)[2], matrix)
 @inline Component(::Type{<:FID}, ::Val, ::Colon) = Component(default_element, default_element, default_matrix)
+@inline Component(::Type{<:FID}, ::Val{:orbital}, matrix::AbstractMatrix) = Component(1:size(matrix)[1], 1:size(matrix)[2], matrix)
+@inline Component(::Type{<:FID}, ::Val{:spin}, matrix::AbstractMatrix) = Component(size(matrix)[1]:-1:1, size(matrix)[2]:-1:1, matrix)
 @inline Component(::Type{<:FID}, ::Val{:nambu}, matrix::AbstractMatrix) = (@assert size(matrix)==(2, 2) "Component error: for nambu subspace, the input matrix must be 2×2."; Component(1:1:2, 2:-1:1, matrix))
 
 ### Pauli matrices
 """
     σ"0" => SparseMatrixCSC([1 0; 0 1])
     σ"x" => SparseMatrixCSC([0 1; 1 0])
-    σ"y" => SparseMatrixCSC([0 1im; -1im 0])
-    σ"z" => SparseMatrixCSC([-1 0; 0 1])
-    σ"+" => SparseMatrixCSC([0 0; 1 0])
-    σ"-" => SparseMatrixCSC([0 1; 0 0])
+    σ"y" => SparseMatrixCSC([0 -1im; 1im 0])
+    σ"z" => SparseMatrixCSC([1 0; 0 -1])
+    σ"+" => SparseMatrixCSC([0 1; 0 0])
+    σ"-" => SparseMatrixCSC([0 0; 1 0])
     σ"11" => SparseMatrixCSC([1 0; 0 0])
     σ"22" => SparseMatrixCSC([0 0; 0 1])
 
@@ -287,10 +288,10 @@ The Pauli matrix σ⁰, σˣ, σʸ, σᶻ, σ⁺, σ⁻, σ¹¹, σ²².
 macro σ_str(str::String)
     str=="0" && return SparseMatrixCSC([1 0; 0 1])
     str=="x" && return SparseMatrixCSC([0 1; 1 0])
-    str=="y" && return SparseMatrixCSC([0 1im; -1im 0])
-    str=="z" && return SparseMatrixCSC([-1 0; 0 1])
-    str=="+" && return SparseMatrixCSC([0 0; 1 0])
-    str=="-" && return SparseMatrixCSC([0 1; 0 0])
+    str=="y" && return SparseMatrixCSC([0 -1im; 1im 0])
+    str=="z" && return SparseMatrixCSC([1 0; 0 -1])
+    str=="+" && return SparseMatrixCSC([0 1; 0 0])
+    str=="-" && return SparseMatrixCSC([0 0; 1 0])
     str=="11" && return SparseMatrixCSC([1 0; 0 0])
     str=="22" && return SparseMatrixCSC([0 0; 0 1])
     error("@σ_str error: wrong input string.")
