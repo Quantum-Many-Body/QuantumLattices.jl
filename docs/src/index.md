@@ -16,7 +16,7 @@ Welcome to **[QuantumLattices](https://github.com/Quantum-Many-Body/QuantumLatti
 
 ## Installation
 
-In Julia **v1.6+**, please type `]` in the REPL to use the package mode, then type this command:
+In Julia **v1.8+**, please type `]` in the REPL to use the package mode, then type this command:
 
 ```julia
 pkg> add QuantumLattices
