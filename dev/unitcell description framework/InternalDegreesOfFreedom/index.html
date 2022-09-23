@@ -87,12 +87,12 @@ julia&gt; index.index
 Index(1, FID{:f}(1, 1, 2))
 
 julia&gt; index.rcoordinate
-2-element StaticArrays.SVector{2, Float64} with indices SOneTo(2):
+2-element StaticArraysCore.SVector{2, Float64} with indices SOneTo(2):
  0.5
  0.0
 
 julia&gt; index.icoordinate
-2-element StaticArrays.SVector{2, Float64} with indices SOneTo(2):
+2-element StaticArraysCore.SVector{2, Float64} with indices SOneTo(2):
  0.0
  0.0
 
@@ -261,8 +261,8 @@ julia&gt; op&#39;
 Operator(6, FID{:f}(1, 1, 2), FID{:f}(2, 1, 1))</code></pre><p>There also exists a special <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operator"><code>Operator</code></a>, which only has the coefficient:</p><pre><code class="language-julia-repl hljs">julia&gt; Operator(2)
 Operator(2)</code></pre><p><a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operators"><code>Operators</code></a> can be initialized by two ways:</p><pre><code class="language-julia-repl hljs">julia&gt; Operators(Operator(2, FID{:f}(1, 1, 1)), Operator(3, FID{:f}(1, 1, 2)))
 Operators with 2 Operator
-  Operator(3, FID{:f}(1, 1, 2))
   Operator(2, FID{:f}(1, 1, 1))
+  Operator(3, FID{:f}(1, 1, 2))
 
 julia&gt; Operator(2, FID{:f}(1, 1, 1)) - Operator(3, FID{:b}(1, 1, 2))
 Operators with 2 Operator
@@ -284,27 +284,27 @@ Operators with 2 Operator
 
 julia&gt; op * ops
 Operators with 2 Operator
-  Operator(6, FID{:f}(2, 1, 1), FID{:f}(1, 1, 2))
   Operator(4, FID{:f}(2, 1, 1), FID{:f}(1, 1, 1))
+  Operator(6, FID{:f}(2, 1, 1), FID{:f}(1, 1, 2))
 
 julia&gt; another = Operator(2, FID{:f}(1, 1, 1)) + Operator(3, FID{:f}(1, 1, 2));
 
 julia&gt; ops * another 
 Operators with 4 Operator
-  Operator(6, FID{:f}(1, 1, 1), FID{:f}(1, 1, 2))
   Operator(4, FID{:f}(1, 1, 1), FID{:f}(1, 1, 1))
-  Operator(9, FID{:f}(1, 1, 2), FID{:f}(1, 1, 2))
   Operator(6, FID{:f}(1, 1, 2), FID{:f}(1, 1, 1))
+  Operator(6, FID{:f}(1, 1, 1), FID{:f}(1, 1, 2))
+  Operator(9, FID{:f}(1, 1, 2), FID{:f}(1, 1, 2))
 
 julia&gt; 2 * ops
 Operators with 2 Operator
-  Operator(6, FID{:f}(1, 1, 2))
   Operator(4, FID{:f}(1, 1, 1))
+  Operator(6, FID{:f}(1, 1, 2))
 
 julia&gt; ops * 2
 Operators with 2 Operator
-  Operator(6, FID{:f}(1, 1, 2))
-  Operator(4, FID{:f}(1, 1, 1))</code></pre><p>It is noted that in the result, the distributive law automatically applies.</p><p>As is usual, the Hermitian conjugate of an <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operators"><code>Operators</code></a> can be obtained by the adjoint operator:</p><pre><code class="language-julia-repl hljs">julia&gt; op₁ = Operator(6, FID{:f}(1, 1, 2), FID{:f}(2, 1, 1));
+  Operator(4, FID{:f}(1, 1, 1))
+  Operator(6, FID{:f}(1, 1, 2))</code></pre><p>It is noted that in the result, the distributive law automatically applies.</p><p>As is usual, the Hermitian conjugate of an <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operators"><code>Operators</code></a> can be obtained by the adjoint operator:</p><pre><code class="language-julia-repl hljs">julia&gt; op₁ = Operator(6, FID{:f}(1, 1, 2), FID{:f}(2, 1, 1));
 
 julia&gt; op₂ = Operator(4, FID{:f}(1, 1, 1), FID{:f}(2, 1, 1));
 
@@ -312,14 +312,14 @@ julia&gt; ops = op₁ + op₂;
 
 julia&gt; ops&#39;
 Operators with 2 Operator
-  Operator(6, FID{:f}(2, 1, 2), FID{:f}(1, 1, 1))
-  Operator(4, FID{:f}(2, 1, 2), FID{:f}(1, 1, 2))</code></pre><p><a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operators"><code>Operators</code></a> can be iterated, but cannot be indexed:</p><pre><code class="language-julia-repl hljs">julia&gt; ops = Operator(2, FID{:f}(1, 1, 1)) + Operator(3, FID{:f}(1, 1, 2));
+  Operator(4, FID{:f}(2, 1, 2), FID{:f}(1, 1, 2))
+  Operator(6, FID{:f}(2, 1, 2), FID{:f}(1, 1, 1))</code></pre><p><a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operators"><code>Operators</code></a> can be iterated, but cannot be indexed:</p><pre><code class="language-julia-repl hljs">julia&gt; ops = Operator(2, FID{:f}(1, 1, 1)) + Operator(3, FID{:f}(1, 1, 2));
 
 julia&gt; collect(ops)
 2-element Vector{Operator{Int64, Tuple{FID{:f, Int64, Int64, Int64}}}}:
- Operator(3, FID{:f}(1, 1, 2))
  Operator(2, FID{:f}(1, 1, 1))
+ Operator(3, FID{:f}(1, 1, 2))
 
 julia&gt; ops[1]
 ERROR: MethodError: no method matching getindex(::Operators{Operator{Int64, Tuple{FID{:f, Int64, Int64, Int64}}}, Tuple{FID{:f, Int64, Int64, Int64}}}, ::Int64)
-[...]</code></pre><p>The different behaviors between <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operator"><code>Operator</code></a> and <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operators"><code>Operators</code></a> when they are indexed result from their underlying implementations: <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operator"><code>Operator</code></a> is something like a tuple while <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operators"><code>Operators</code></a> is something like a dictionary. Do not ask why not to implement them based on <a href="https://en.wikipedia.org/wiki/Binary_expression_tree">expression trees</a>. If you have to ask, then the answer will be the authors of the package don&#39;t know how. So if you are not satisfied with this implementation, feel free to post a pull request.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../SpatialInfoOfAUnitcell/">« Spatial information of a unitcell</a><a class="docs-footer-nextpage" href="../CouplingsAmongDifferentDegreesOfFreedom/">Couplings among different degrees of freedom »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.23 on <span class="colophon-date" title="Thursday 22 September 2022 12:05">Thursday 22 September 2022</span>. Using Julia version 1.8.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+[...]</code></pre><p>The different behaviors between <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operator"><code>Operator</code></a> and <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operators"><code>Operators</code></a> when they are indexed result from their underlying implementations: <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operator"><code>Operator</code></a> is something like a tuple while <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operators"><code>Operators</code></a> is something like a dictionary. Do not ask why not to implement them based on <a href="https://en.wikipedia.org/wiki/Binary_expression_tree">expression trees</a>. If you have to ask, then the answer will be the authors of the package don&#39;t know how. So if you are not satisfied with this implementation, feel free to post a pull request.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../SpatialInfoOfAUnitcell/">« Spatial information of a unitcell</a><a class="docs-footer-nextpage" href="../CouplingsAmongDifferentDegreesOfFreedom/">Couplings among different degrees of freedom »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.23 on <span class="colophon-date" title="Friday 23 September 2022 01:34">Friday 23 September 2022</span>. Using Julia version 1.8.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
