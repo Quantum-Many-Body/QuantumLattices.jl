@@ -9,15 +9,15 @@
 ) where termkind</code></pre><p>where <code>termkind</code> must be a <code>Symbol</code>, <code>value</code> is the overall coefficient which should be a real number, <code>coupling</code> specifies the coupling pattern of the term which can accept an instance of <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Coupling"><code>Coupling</code></a>, or an iterator of <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Coupling"><code>Coupling</code></a>s, or a function that returns a <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Coupling"><code>Coupling</code></a> or an iterator of <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Coupling"><code>Coupling</code></a>s, and the keyword argument <code>amplitude</code> specifies the bond dependency of the amplitude if it is not <code>nothing</code>. Here, the new type <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Coupling"><code>Coupling</code></a> is the building block of the coupling pattern, which will be discussed in detail in the following section. It is also noted that an extra id is also assigned with each term which can be used for fast lookup for later convenience.</p><h2 id="Coupling-patterns"><a class="docs-heading-anchor" href="#Coupling-patterns">Coupling patterns</a><a id="Coupling-patterns-1"></a><a class="docs-heading-anchor-permalink" href="#Coupling-patterns" title="Permalink"></a></h2><p>Before the further discussion of <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Term"><code>Term</code></a>, we at first turn to the coupling patterns, which lie at the center of the constructions of <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Term"><code>Term</code></a>s.</p><h3 id="Coupling:-building-block-of-coupling-patterns"><a class="docs-heading-anchor" href="#Coupling:-building-block-of-coupling-patterns">Coupling: building block of coupling patterns</a><a id="Coupling:-building-block-of-coupling-patterns-1"></a><a class="docs-heading-anchor-permalink" href="#Coupling:-building-block-of-coupling-patterns" title="Permalink"></a></h3><p><a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Coupling"><code>Coupling</code></a> uses a set of <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Index"><code>Index</code></a>es together with a coefficient to represent the coupling pattern, as the following construction function implies:</p><pre><code class="language-julia hljs">Coupling([value, ]indexes::Index...)</code></pre><p>Here, when <code>value</code> is omitted, it will be set to <code>1</code>.</p><p>Let&#39;s see a typical example, which represents the coupling pattern of the usual hopping term <span>$t\sum_{⟨ij⟩}c^†_ic_j + h.c.$</span>:</p><pre><code class="language-julia-repl hljs">julia&gt; Coupling(Index(1, FID(:, :, 2)), Index(2, FID(:, :, 1)))
 ∑[Index(1, FID(:, :, 2)) Index(2, FID(:, :, 1))]</code></pre><p>There are several differences of the <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Index"><code>Index</code></a>es here compared to those introduced in the previous page of <a href="../InternalDegreesOfFreedom/#Internal-degrees-of-freedom">Internal degrees of freedom</a>:</p><ul><li><strong>The <code>site</code> attributes are not the site indexes of the points in a lattice, instead, they are the ordinals of the points contained in a bond</strong>. In fact, in the expression of <span>$c^†_ic_j$</span>, <span>$i$</span> is always the first site of a bond while <span>$j$</span> is always the second, thus, the <code>site</code> attributes here are 1 and 2 for the first <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Index"><code>Index</code></a> and the second <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Index"><code>Index</code></a>, respectively.</li><li>The <code>iid</code> attributes are initialized by special <a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.FID"><code>FID</code></a> instances, which do not have the type parameter <code>:f</code> or <code>:b</code> to specify the statistics, and whose <code>orbital</code> and <code>spin</code> attributes are initialized by the <code>:</code> operator rather than integers. <strong>Without the statistics of <code>:f</code> or <code>:b</code>, <a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.FID"><code>FID</code></a> could suit for both fermionic and bosonic quantum lattice systems</strong>, as the coupling pattern of an usual hopping term is the same for both kinds of systems. <strong>When the <code>:</code> operator is used in the initialization for either the <code>orbital</code> or the <code>spin</code> attribute, the default rule applies in the coupling pattern, that orbitals or spins are summed diagonally</strong>, i.e., <span>$c^†_ic_j≡\sum_{ασ}c^†_{iασ}c_{jασ}$</span>. This rule is in fact a tradition in the literature of condensed matter physics. This implicit summation in the construction of a <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Coupling"><code>Coupling</code></a> is made explicit in its string representation by the <code>∑</code> symbol, as can be seen in the above example.</li></ul><p>Similarly, <strong>the total spin of <a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.SID"><code>SID</code></a> can be omitted during the construction of the coupling patterns of spin terms, meaning that it suits any allowable value of total spins</strong>, e.g., the coupling pattern of the spin-flip term of any total spin <span>$J\sum_{⟨ij⟩}S^+_iS^-_j + h.c.$</span> is as follows:</p><pre><code class="language-julia-repl hljs">julia&gt; Coupling(1//2, Index(1, SID(&#39;+&#39;)), Index(2, SID(&#39;-&#39;)))
 1//2 Index(1, SID(&#39;+&#39;)) Index(2, SID(&#39;-&#39;))</code></pre><p>Note that in this coupling pattern, there is no summation symbol <code>∑</code> in the string representation because all indexes are definite. Therefore, <strong>the summation symbol <code>∑</code> in the string representation of a coupling pattern only reflects the summation over local internal degrees of freedom, but not the summation over bonds</strong>.</p><p><strong>The diagonal summation rule also applies to the <code>direction</code> attribute of <a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.PID"><code>PID</code></a> if initialized by the <code>:</code> operator</strong>, e.g., the the coupling pattern of the phonon kinetic term <span>$\frac{1}{2M}\sum_i p^2_i$</span> can be constructed as:</p><pre><code class="language-julia-repl hljs">julia&gt; Coupling(Index(1, PID(&#39;p&#39;, :)), Index(1, PID(&#39;p&#39;, :)))
-∑[Index(1, PID(&#39;p&#39;, :)) Index(1, PID(&#39;p&#39;, :))]</code></pre><p>Of course, it also supports usual <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Index"><code>Index</code></a>es to initialize more specific coupling patterns, e.g., the coupling pattern of the orbital-1 spin-down hopping term of fermions <span>$t\sum_{⟨ij⟩}c^†_{i, 1, ↓}c_{j, 1, ↓} + h.c.$</span> is</p><pre><code class="language-julia-repl hljs">julia&gt; Coupling(Index(1, FID{:f}(1, 1, 2)), Index(2, FID{:f}(1, 1, 1)))
-Index(1, FID{:f}(1, 1, 2)) Index(2, FID{:f}(1, 1, 1))</code></pre><p>The <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Index"><code>Index</code></a>es can be of different types, which corresponds to a hybrid quantum lattice system that couples different categories of internal degrees of freedom:</p><pre><code class="language-julia-repl hljs">julia&gt; Coupling(Index(1, FID{:f}(1, 1, 2)), Index(1, FID{:f}(1, 1, 1)), Index(1, SID(&#39;z&#39;)))
-Index(1, FID{:f}(1, 1, 2)) Index(1, FID{:f}(1, 1, 1)) Index(1, SID(&#39;z&#39;))</code></pre><p>Here, local spins are coupled to itinerant fermions. For more discussions on hybrid systems, please refer to the page of <a href="../../advanced topics/HybridSystems/#Hybrid-systems">Hybrid systems</a>.</p><p>When all <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Index"><code>Index</code></a>es are of the same type, a <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Coupling"><code>Coupling</code></a> can be initialized in different simpler ways:</p><pre><code class="language-julia hljs"># Coupling pattern for Fock systems
+∑[Index(1, PID(&#39;p&#39;, :)) Index(1, PID(&#39;p&#39;, :))]</code></pre><p>Of course, it also supports usual <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Index"><code>Index</code></a>es to initialize more specific coupling patterns, e.g., the coupling pattern of the orbital-1 spin-down hopping term of fermions <span>$t\sum_{⟨ij⟩}c^†_{i, 1, ↓}c_{j, 1, ↓} + h.c.$</span> is</p><pre><code class="language-julia-repl hljs">julia&gt; Coupling(Index(1, FID{:f}(1, 1//2, 2)), Index(2, FID{:f}(1, 1//2, 1)))
+Index(1, FID{:f}(1, 1//2, 2)) Index(2, FID{:f}(1, 1//2, 1))</code></pre><p>The <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Index"><code>Index</code></a>es can be of different types, which corresponds to a hybrid quantum lattice system that couples different categories of internal degrees of freedom:</p><pre><code class="language-julia-repl hljs">julia&gt; Coupling(Index(1, FID{:f}(1, 1//2, 2)), Index(1, FID{:f}(1, 1//2, 1)), Index(1, SID(&#39;z&#39;)))
+Index(1, FID{:f}(1, 1//2, 2)) Index(1, FID{:f}(1, 1//2, 1)) Index(1, SID(&#39;z&#39;))</code></pre><p>Here, local spins are coupled to itinerant fermions. For more discussions on hybrid systems, please refer to the page of <a href="../../advanced topics/HybridSystems/#Hybrid-systems">Hybrid systems</a>.</p><p>When all <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Index"><code>Index</code></a>es are of the same type, a <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Coupling"><code>Coupling</code></a> can be initialized in different simpler ways:</p><pre><code class="language-julia hljs"># Coupling pattern for Fock systems
 Coupling(
     [value, ]
     sites::Union{Colon, NTuple{N, Int}},
     ::Type{&lt;:FID},
     orbitals::Union{NTuple{N, Int}, Colon},
-    spins::Union{NTuple{N, Int}, Colon},
+    spins::Union{NTuple{N, Union{Rational{Int}, Int}}, Colon},
     nambus::Union{NTuple{N, Int}, Colon}
 ) where N
 
@@ -54,17 +54,17 @@ julia&gt; coupling * 3
 3//2 Index(1, SID(&#39;+&#39;)) Index(2, SID(&#39;-&#39;))
 
 julia&gt; 3 * coupling
-3//2 Index(1, SID(&#39;+&#39;)) Index(2, SID(&#39;-&#39;))</code></pre><p>Two <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Coupling"><code>Coupling</code></a>s can be multiplied together:</p><pre><code class="language-julia-repl hljs">julia&gt; cp₁ = Coupling((1, 1), FID, (:, :), (2, 2), (2, 1));
+3//2 Index(1, SID(&#39;+&#39;)) Index(2, SID(&#39;-&#39;))</code></pre><p>Two <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Coupling"><code>Coupling</code></a>s can be multiplied together:</p><pre><code class="language-julia-repl hljs">julia&gt; cp₁ = Coupling((1, 1), FID, (:, :), (1//2, 1//2), (2, 1));
 
-julia&gt; cp₂ = Coupling((1, 1), FID, (:, :), (1, 1), (2, 1));
+julia&gt; cp₂ = Coupling((1, 1), FID, (:, :), (-1//2, -1//2), (2, 1));
 
 julia&gt; cp₁ * cp₂
-∑[Index(1, FID(:, 2, 2)) Index(1, FID(:, 2, 1))] ⋅ ∑[Index(1, FID(:, 1, 2)) Index(1, FID(:, 1, 1))]</code></pre><p>It is noted that due to the implicit summation of the orbital index in the coupling pattern, the above product is not equal to the coupling pattern of the Hubbard term <span>$U\sum_i c^†_{i↑} c_{i↑} c^†_{i↓}c_{i↓}$</span>:</p><pre><code class="language-julia-repl hljs">julia&gt; cp₁ = Coupling((1, 1), FID, :, (2, 2), (2, 1));
+∑[Index(1, FID(:, 1//2, 2)) Index(1, FID(:, 1//2, 1))] ⋅ ∑[Index(1, FID(:, -1//2, 2)) Index(1, FID(:, -1//2, 1))]</code></pre><p>It is noted that due to the implicit summation of the orbital index in the coupling pattern, the above product is not equal to the coupling pattern of the Hubbard term <span>$U\sum_i c^†_{i↑} c_{i↑} c^†_{i↓}c_{i↓}$</span>:</p><pre><code class="language-julia-repl hljs">julia&gt; cp₁ = Coupling((1, 1), FID, :, (1//2, 1//2), (2, 1));
 
-julia&gt; cp₂ = Coupling((1, 1), FID, :, (1, 1), (2, 1));
+julia&gt; cp₂ = Coupling((1, 1), FID, :, (-1//2, -1//2), (2, 1));
 
-julia&gt; cp = Coupling((1, 1, 1, 1), FID, :, (2, 2, 1, 1), (2, 1, 2, 1)) # Hubbard coupling pattern
-∑[Index(1, FID(:, 2, 2)) Index(1, FID(:, 2, 1)) Index(1, FID(:, 1, 2)) Index(1, FID(:, 1, 1))]
+julia&gt; cp = Coupling((1, 1, 1, 1), FID, :, (1//2, 1//2, -1//2, -1//2), (2, 1, 2, 1)) # Hubbard coupling pattern
+∑[Index(1, FID(:, 1//2, 2)) Index(1, FID(:, 1//2, 1)) Index(1, FID(:, -1//2, 2)) Index(1, FID(:, -1//2, 1))]
 
 julia&gt; cp == cp₁ * cp₂
 false</code></pre><h3 id="Default-rules-in-coupling-patterns"><a class="docs-heading-anchor" href="#Default-rules-in-coupling-patterns">Default rules in coupling patterns</a><a id="Default-rules-in-coupling-patterns-1"></a><a class="docs-heading-anchor-permalink" href="#Default-rules-in-coupling-patterns" title="Permalink"></a></h3><p>As has been shown in the previous subsection, some attributes of the <code>iid</code> attribute of <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Index"><code>Index</code></a> can be initialized by the <code>:</code> operator during the construction of a coupling pattern. For the <code>orbital</code> and <code>spin</code> attributes of <a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.FID"><code>FID</code></a>, and for the <code>direction</code> attribute of <a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.PID"><code>PID</code></a>, the default rule is that such indexes will be summed diagonally in the coupling pattern. In fact, the <code>site</code> attribute of <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Index"><code>Index</code></a> and the <code>nambu</code> attribute of <a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.FID"><code>FID</code></a> also support the <code>:</code> initialization, but with different default rules.</p><p>Let&#39;s return to the example of the coupling pattern of the usual hopping term, i.e., <span>$c^\dagger_ic_j$</span>. Apparently, the <code>site</code> attributes are always <code>(1, 2)</code> and the <code>nambu</code> attributes are always <code>(2, 1)</code> as long as the coupling pattern belongs to an usual hopping term. In fact, for most common terms in condensed matter, such attributes in the coupling pattern usually depends only on their kinds other than the concrete instances. Therefore, we could define them outside the construction functions of <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Coupling"><code>Coupling</code></a> or <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Term"><code>Term</code></a> by separate functions, and just leave them to the default rules.</p><p>All predefined default rules can be found in the section of <a href="#Specialized-terms">Specialized terms</a>. <strong>If you need a term that is beyond such default rules, or you just think that such rules are too complicated to remember, it is recommended to explicitly writing them out in the coupling pattern.</strong></p><h3 id="Coupling-patterns-with-constraints"><a class="docs-heading-anchor" href="#Coupling-patterns-with-constraints">Coupling patterns with constraints</a><a id="Coupling-patterns-with-constraints-1"></a><a class="docs-heading-anchor-permalink" href="#Coupling-patterns-with-constraints" title="Permalink"></a></h3><p>The default rules cannot handle complicated summation conditions on the local internal degrees of freedom in the coupling pattern. For example, for the interorbital-interspin Hubbard term in a <a href="https://www.annualreviews.org/doi/abs/10.1146/annurev-conmatphys-020911-125045">multi-orbital Hubbard model</a>, which can be written as <span>$U\sum_i\sum_{α&lt;β\,\text{and}\,σ₁≠σ₂} c^†_{iασ₁} c_{iασ₁} c^†_{iβσ₂} c_{iβσ₂}$</span>, it is impossible to specify its coupling pattern by a single <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Coupling"><code>Coupling</code></a> in the usual way as introduced in previous subsections. Although the coupling pattern of a <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Term"><code>Term</code></a> can also be an iterator of <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Coupling"><code>Coupling</code></a>s, it would be quite complicated to write down all the expressions by the manual expansion of the summation over <span>$α$</span>, <span>$β$</span>, <span>$σ₁$</span> and <span>$σ₂$</span>. In fact, we have provided a simple way to specify a coupling pattern like this with the help of the macro <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.@indexes-Tuple"><code>@indexes</code></a>:</p><pre><code class="language-julia hljs">@indexes(index₁, index₂, ...[; constraint=...])</code></pre><p>For example, the coupling pattern of the above interorbital-interspin Hubbard term can be constructed as follows:</p><pre><code class="language-julia-repl hljs">julia&gt; Coupling(@indexes(
@@ -106,10 +106,10 @@ julia&gt; length(mc)
 2
 
 julia&gt; mc[1]
-∑[Index(:, FID(:, 2, :)) Index(:, FID(:, 2, :))]
+∑[Index(:, FID(:, 1//2, :)) Index(:, FID(:, 1//2, :))]
 
 julia&gt; mc[2]
-- ∑[Index(:, FID(:, 1, :)) Index(:, FID(:, 1, :))]</code></pre><p>Here, <a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.@σ_str-Tuple{String}"><code>@σ_str</code></a> is a string literal that returns the generalized Pauli matrices:</p><pre><code class="language-julia hljs">σ&quot;0&quot; =&gt; SparseMatrixCSC([1 0; 0 1])
+- ∑[Index(:, FID(:, -1//2, :)) Index(:, FID(:, -1//2, :))]</code></pre><p>Here, <a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.@σ_str-Tuple{String}"><code>@σ_str</code></a> is a string literal that returns the generalized Pauli matrices:</p><pre><code class="language-julia hljs">σ&quot;0&quot; =&gt; SparseMatrixCSC([1 0; 0 1])
 σ&quot;x&quot; =&gt; SparseMatrixCSC([0 1; 1 0])
 σ&quot;y&quot; =&gt; SparseMatrixCSC([0 -1im; 1im 0])
 σ&quot;z&quot; =&gt; SparseMatrixCSC([1 0; 0 -1])
@@ -154,12 +154,12 @@ julia&gt; coupling = 1//2*mc₁*mc₂ + 1//2*mc₂*mc₁ + mc₃*mc₃;
 
 julia&gt; collect(coupling)
 6-element Vector{Coupling}:
- 1//2 ∑[Index(:, FID(:, 2, :)) Index(:, FID(:, 1, :))] ⋅ ∑[Index(:, FID(:, 1, :)) Index(:, FID(:, 2, :))]
- 1//2 ∑[Index(:, FID(:, 1, :)) Index(:, FID(:, 2, :))] ⋅ ∑[Index(:, FID(:, 2, :)) Index(:, FID(:, 1, :))]
- ∑[Index(:, FID(:, 2, :)) Index(:, FID(:, 2, :))] ⋅ ∑[Index(:, FID(:, 2, :)) Index(:, FID(:, 2, :))]
- - ∑[Index(:, FID(:, 1, :)) Index(:, FID(:, 1, :))] ⋅ ∑[Index(:, FID(:, 2, :)) Index(:, FID(:, 2, :))]
- - ∑[Index(:, FID(:, 2, :)) Index(:, FID(:, 2, :))] ⋅ ∑[Index(:, FID(:, 1, :)) Index(:, FID(:, 1, :))]
- ∑[Index(:, FID(:, 1, :)) Index(:, FID(:, 1, :))] ⋅ ∑[Index(:, FID(:, 1, :)) Index(:, FID(:, 1, :))]</code></pre><p>For another example, for the onsite spin-orbital coupling of the <span>$(d_{yz}, d_{xz}, d_{xy})^T$</span> <span>$t_2g$</span> orbitals <span>$\lambda\sum_i c^\dagger_i \vec{L}_i\cdot\vec{σ}_i c_i$</span> where <span>$\vec{L}_i=(L^x_i, L^y_i, L^z_i)^T$</span> acts on the local orbital space and <span>$\vec{σ}_i=(σ^x_i, σ^y_i, σ^z_i)^T$</span> acts on the local spin space, the coupling pattern can be constructed as follows:</p><pre><code class="language-julia-repl hljs">julia&gt; mc₁ = MatrixCoupling(:, FID, L&quot;x&quot;, σ&quot;x&quot;, :);
+ 1//2 ∑[Index(:, FID(:, 1//2, :)) Index(:, FID(:, -1//2, :))] ⋅ ∑[Index(:, FID(:, -1//2, :)) Index(:, FID(:, 1//2, :))]
+ 1//2 ∑[Index(:, FID(:, -1//2, :)) Index(:, FID(:, 1//2, :))] ⋅ ∑[Index(:, FID(:, 1//2, :)) Index(:, FID(:, -1//2, :))]
+ ∑[Index(:, FID(:, 1//2, :)) Index(:, FID(:, 1//2, :))] ⋅ ∑[Index(:, FID(:, 1//2, :)) Index(:, FID(:, 1//2, :))]
+ - ∑[Index(:, FID(:, -1//2, :)) Index(:, FID(:, -1//2, :))] ⋅ ∑[Index(:, FID(:, 1//2, :)) Index(:, FID(:, 1//2, :))]
+ - ∑[Index(:, FID(:, 1//2, :)) Index(:, FID(:, 1//2, :))] ⋅ ∑[Index(:, FID(:, -1//2, :)) Index(:, FID(:, -1//2, :))]
+ ∑[Index(:, FID(:, -1//2, :)) Index(:, FID(:, -1//2, :))] ⋅ ∑[Index(:, FID(:, -1//2, :)) Index(:, FID(:, -1//2, :))]</code></pre><p>For another example, for the onsite spin-orbital coupling of the <span>$(d_{yz}, d_{xz}, d_{xy})^T$</span> <span>$t_2g$</span> orbitals <span>$\lambda\sum_i c^\dagger_i \vec{L}_i\cdot\vec{σ}_i c_i$</span> where <span>$\vec{L}_i=(L^x_i, L^y_i, L^z_i)^T$</span> acts on the local orbital space and <span>$\vec{σ}_i=(σ^x_i, σ^y_i, σ^z_i)^T$</span> acts on the local spin space, the coupling pattern can be constructed as follows:</p><pre><code class="language-julia-repl hljs">julia&gt; mc₁ = MatrixCoupling(:, FID, L&quot;x&quot;, σ&quot;x&quot;, :);
 
 julia&gt; mc₂ = MatrixCoupling(:, FID, L&quot;y&quot;, σ&quot;y&quot;, :);
 
@@ -169,18 +169,18 @@ julia&gt; coupling = mc₁ + mc₂ + mc₃;
 
 julia&gt; collect(coupling)
 12-element Vector{Coupling}:
- -1im Index(:, FID(3, 1, :)) Index(:, FID(2, 2, :))
- 1im Index(:, FID(2, 1, :)) Index(:, FID(3, 2, :))
- -1im Index(:, FID(3, 2, :)) Index(:, FID(2, 1, :))
- 1im Index(:, FID(2, 2, :)) Index(:, FID(3, 1, :))
- - Index(:, FID(3, 1, :)) Index(:, FID(1, 2, :))
- Index(:, FID(1, 1, :)) Index(:, FID(3, 2, :))
- Index(:, FID(3, 2, :)) Index(:, FID(1, 1, :))
- - Index(:, FID(1, 2, :)) Index(:, FID(3, 1, :))
- -1im Index(:, FID(2, 2, :)) Index(:, FID(1, 2, :))
- 1im Index(:, FID(1, 2, :)) Index(:, FID(2, 2, :))
- 1im Index(:, FID(2, 1, :)) Index(:, FID(1, 1, :))
- -1im Index(:, FID(1, 1, :)) Index(:, FID(2, 1, :))</code></pre><h3 id="Bond-dependent-coupling-patterns"><a class="docs-heading-anchor" href="#Bond-dependent-coupling-patterns">Bond-dependent coupling patterns</a><a id="Bond-dependent-coupling-patterns-1"></a><a class="docs-heading-anchor-permalink" href="#Bond-dependent-coupling-patterns" title="Permalink"></a></h3><p>Sometimes, the coupling pattern of a term could be dependent on the bonds. For example, for the <a href="https://arxiv.org/abs/cond-mat/0506438">Kitaev term on the honeycomb lattice</a> <span>$K\sum_{⟨ij⟩_γ} S_i^γS_j^γ$</span> where the nearest-neighbor spin exchange interaction depends on the direction of the nearest-neighbor bonds, as illustrated by the following picture, <img src="../../pictures/KitaevHoneycombModel.png" alt="Kitaev honeycomb model"/> the coupling pattern can be represented by the following function:</p><pre><code class="language-julia hljs">function kitaev(bond::Bond)
+ -1im Index(:, FID(3, -1//2, :)) Index(:, FID(2, 1//2, :))
+ 1im Index(:, FID(2, -1//2, :)) Index(:, FID(3, 1//2, :))
+ -1im Index(:, FID(3, 1//2, :)) Index(:, FID(2, -1//2, :))
+ 1im Index(:, FID(2, 1//2, :)) Index(:, FID(3, -1//2, :))
+ - Index(:, FID(3, -1//2, :)) Index(:, FID(1, 1//2, :))
+ Index(:, FID(1, -1//2, :)) Index(:, FID(3, 1//2, :))
+ Index(:, FID(3, 1//2, :)) Index(:, FID(1, -1//2, :))
+ - Index(:, FID(1, 1//2, :)) Index(:, FID(3, -1//2, :))
+ -1im Index(:, FID(2, 1//2, :)) Index(:, FID(1, 1//2, :))
+ 1im Index(:, FID(1, 1//2, :)) Index(:, FID(2, 1//2, :))
+ 1im Index(:, FID(2, -1//2, :)) Index(:, FID(1, -1//2, :))
+ -1im Index(:, FID(1, -1//2, :)) Index(:, FID(2, -1//2, :))</code></pre><h3 id="Bond-dependent-coupling-patterns"><a class="docs-heading-anchor" href="#Bond-dependent-coupling-patterns">Bond-dependent coupling patterns</a><a id="Bond-dependent-coupling-patterns-1"></a><a class="docs-heading-anchor-permalink" href="#Bond-dependent-coupling-patterns" title="Permalink"></a></h3><p>Sometimes, the coupling pattern of a term could be dependent on the bonds. For example, for the <a href="https://arxiv.org/abs/cond-mat/0506438">Kitaev term on the honeycomb lattice</a> <span>$K\sum_{⟨ij⟩_γ} S_i^γS_j^γ$</span> where the nearest-neighbor spin exchange interaction depends on the direction of the nearest-neighbor bonds, as illustrated by the following picture, <img src="../../pictures/KitaevHoneycombModel.png" alt="Kitaev honeycomb model"/> the coupling pattern can be represented by the following function:</p><pre><code class="language-julia hljs">function kitaev(bond::Bond)
     ϕ = azimuth(rcoordinate(bond)) # get the azimuth angle of a bond in radians
     @assert any(≈(ϕ), (π/6, 7π/6, 5π/6, 11π/6, π/2, 3π/2)) &quot;kitaev error: wrong input bond.&quot;
     any(≈(ϕ), (π/6, 7π/6)) &amp;&amp; return Coupling(:, SID, (&#39;x&#39;), (&#39;x&#39;))
@@ -216,7 +216,7 @@ Pairing(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothin
 
 # termkind = :Hubbard
 # bondkind = 0
-# coupling = Coupling(:, FID, :, (2, 2, 1, 1), (2, 1, 2, 1))
+# coupling = Coupling(:, FID, :, (1//2, 1//2, -1//2, -1//2), (2, 1, 2, 1))
 # ishermitian = true
 Hubbard(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing)
 
@@ -247,10 +247,10 @@ InterOrbitalIntraSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=not
 # termkind = :SpinFlip
 # bondkind = 0
 # coupling = Coupling(@indexes(
-#     Index(:, FID(α, 2, 2)),
-#     Index(:, FID(β, 1, 2)),
-#     Index(:, FID(α, 1, 1)),
-#     Index(:, FID(β, 2, 1));
+#     Index(:, FID(α, 1//2, 2)),
+#     Index(:, FID(β, -1//2, 2)),
+#     Index(:, FID(α, -1//2, 1)),
+#     Index(:, FID(β, 1//2, 1));
 #     constraint=α&lt;β
 # ))
 # ishermitian = false
@@ -259,10 +259,10 @@ SpinFlip(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing)
 # termkind = :PairHopping
 # bondkind = 0
 # coupling = Coupling(@indexes(
-#     Index(:, FID(α, 2, 2)),
-#     Index(:, FID(α, 1, 2)),
-#     Index(:, FID(β, 1, 1)),
-#     Index(:, FID(β, 2, 1));
+#     Index(:, FID(α, 1//2, 2)),
+#     Index(:, FID(α, -1//2, 2)),
+#     Index(:, FID(β, -1//2, 1)),
+#     Index(:, FID(β, 1//2, 1));
 #     constraint=α&lt;β
 # ))
 # ishermitian = false
@@ -302,10 +302,10 @@ julia&gt; hilbert = Hilbert(1=&gt;Fock{:f}(1, 2), 2=&gt;Fock{:f}(1, 2));
 
 julia&gt; expand(t, bond, hilbert)
 Operators with 4 Operator
-  Operator(2.0, CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, 1, 1)), [0.5], [0.0]))
-  Operator(2.0, CompositeIndex(Index(2, FID{:f}(1, 2, 2)), [0.5], [0.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.0], [0.0]))
-  Operator(2.0, CompositeIndex(Index(2, FID{:f}(1, 1, 2)), [0.5], [0.0]), CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.0], [0.0]))
-  Operator(2.0, CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, 2, 1)), [0.5], [0.0]))</code></pre><p>When a bond and a term do not match each other, the <a href="../../man/DegreesOfFreedom/#QuantumLattices.expand-Tuple{SimpleIID, SimpleInternal}"><code>expand</code></a> function will return an empty <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operators"><code>Operators</code></a>:</p><pre><code class="language-julia-repl hljs">julia&gt; t = Hopping(:t, 1.0, 1);
+  Operator(2.0, CompositeIndex(Index(1, FID{:f}(1, 1//2, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, 1//2, 1)), [0.5], [0.0]))
+  Operator(2.0, CompositeIndex(Index(1, FID{:f}(1, -1//2, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, -1//2, 1)), [0.5], [0.0]))
+  Operator(2.0, CompositeIndex(Index(2, FID{:f}(1, 1//2, 2)), [0.5], [0.0]), CompositeIndex(Index(1, FID{:f}(1, 1//2, 1)), [0.0], [0.0]))
+  Operator(2.0, CompositeIndex(Index(2, FID{:f}(1, -1//2, 2)), [0.5], [0.0]), CompositeIndex(Index(1, FID{:f}(1, -1//2, 1)), [0.0], [0.0]))</code></pre><p>When a bond and a term do not match each other, the <a href="../../man/DegreesOfFreedom/#QuantumLattices.expand-Tuple{SimpleIID, SimpleInternal}"><code>expand</code></a> function will return an empty <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operators"><code>Operators</code></a>:</p><pre><code class="language-julia-repl hljs">julia&gt; t = Hopping(:t, 1.0, 1);
 
 julia&gt; bond = Bond(2, Point(1, [0.0], [0.0]), Point(1, [1.0], [1.0]));
 
@@ -323,11 +323,11 @@ julia&gt; hilbert = Hilbert(1=&gt;Fock{:f}(1, 2), 2=&gt;Fock{:f}(1, 2));
 
 julia&gt; expand(t, bonds, hilbert)
 Operators with 8 Operator
-  Operator(1.0, CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, 1, 1)), [0.5], [0.0]))
-  Operator(1.0, CompositeIndex(Index(2, FID{:f}(1, 2, 2)), [0.5], [0.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.0], [0.0]))
-  Operator(1.0, CompositeIndex(Index(2, FID{:f}(1, 1, 2)), [0.5], [0.0]), CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.0], [0.0]))
-  Operator(1.0, CompositeIndex(Index(2, FID{:f}(1, 1, 2)), [-0.5], [-1.0]), CompositeIndex(Index(1, FID{:f}(1, 1, 1)), [0.0], [0.0]))
-  Operator(1.0, CompositeIndex(Index(2, FID{:f}(1, 2, 2)), [-0.5], [-1.0]), CompositeIndex(Index(1, FID{:f}(1, 2, 1)), [0.0], [0.0]))
-  Operator(1.0, CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, 2, 1)), [-0.5], [-1.0]))
-  Operator(1.0, CompositeIndex(Index(1, FID{:f}(1, 2, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, 2, 1)), [0.5], [0.0]))
-  Operator(1.0, CompositeIndex(Index(1, FID{:f}(1, 1, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, 1, 1)), [-0.5], [-1.0]))</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../InternalDegreesOfFreedom/">« Internal degrees of freedom</a><a class="docs-footer-nextpage" href="../GeneratorOfOperators/">Generator of operators »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.23 on <span class="colophon-date" title="Friday 23 September 2022 04:20">Friday 23 September 2022</span>. Using Julia version 1.8.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+  Operator(1.0, CompositeIndex(Index(2, FID{:f}(1, 1//2, 2)), [-0.5], [-1.0]), CompositeIndex(Index(1, FID{:f}(1, 1//2, 1)), [0.0], [0.0]))
+  Operator(1.0, CompositeIndex(Index(1, FID{:f}(1, 1//2, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, 1//2, 1)), [0.5], [0.0]))
+  Operator(1.0, CompositeIndex(Index(1, FID{:f}(1, 1//2, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, 1//2, 1)), [-0.5], [-1.0]))
+  Operator(1.0, CompositeIndex(Index(1, FID{:f}(1, -1//2, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, -1//2, 1)), [0.5], [0.0]))
+  Operator(1.0, CompositeIndex(Index(2, FID{:f}(1, 1//2, 2)), [0.5], [0.0]), CompositeIndex(Index(1, FID{:f}(1, 1//2, 1)), [0.0], [0.0]))
+  Operator(1.0, CompositeIndex(Index(2, FID{:f}(1, -1//2, 2)), [-0.5], [-1.0]), CompositeIndex(Index(1, FID{:f}(1, -1//2, 1)), [0.0], [0.0]))
+  Operator(1.0, CompositeIndex(Index(1, FID{:f}(1, -1//2, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, -1//2, 1)), [-0.5], [-1.0]))
+  Operator(1.0, CompositeIndex(Index(2, FID{:f}(1, -1//2, 2)), [0.5], [0.0]), CompositeIndex(Index(1, FID{:f}(1, -1//2, 1)), [0.0], [0.0]))</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../InternalDegreesOfFreedom/">« Internal degrees of freedom</a><a class="docs-footer-nextpage" href="../GeneratorOfOperators/">Generator of operators »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.23 on <span class="colophon-date" title="Friday 23 September 2022 10:27">Friday 23 September 2022</span>. Using Julia version 1.8.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
