@@ -40,7 +40,7 @@ end
 @inline shape(iidspace::IIDSpace{DID{Symbol}, DFock}) = (1:iidspace.internal.nnambu,)
 @inline shape(iidspace::IIDSpace{DID{Int}, DFock}) = (iidspace.iid.nambu:iidspace.iid.nambu,)
 
-@inline script(::Val{:nambu}, did::DID; kwargs...) = did.nambu==2 ? "\\dagger" : did.nambu==1 ? "" : did.nambu
+@inline script(::Val{:nambu}, did::DID; kwargs...) = did.nambu==2 ? "\\dagger" : did.nambu==1 ? "" : string(did.nambu)
 
 @inline latexname(::Type{<:CompositeIndex{<:Index{<:Union{Int, Colon}, <:DID}}}) = Symbol("CompositeIndex{Index{Union{Int, Colon}, DID}}")
 @inline latexname(::Type{<:Index{<:Union{Int, Colon}, <:DID}}) = Symbol("Index{Union{Int, Colon}, DID}")

@@ -731,7 +731,7 @@ LaTeX string representation of an operator unit.
 """
 @inline function latexstring(u::OperatorUnit)
     l = latexformat(typeof(u))
-    return @sprintf "%s^{%s}_{%s}" script(Val(:BD), u, l) join(script(Val(:SP), u, l), l.spdelimiter) join(script(Val(:SB), u, l), l.sbdelimiter)
+    return @sprintf "%s^{%s}_{%s}" script(Val(:BD), u, l) join([str for str in script(Val(:SP), u, l) if length(str)>0], l.spdelimiter) join([str for str in script(Val(:SB), u, l) if length(str)>0], l.sbdelimiter)
 end
 
 """
