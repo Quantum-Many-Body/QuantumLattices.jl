@@ -296,19 +296,23 @@ end
     @test eltype(typeof(mc)) == Coupling{Int, Tuple{Index{Colon, DID{Int}}, Index{Colon, DID{Int}}}, Constraint{(2,), 1, Tuple{Diagonal{()}}}}
     @test mc[1] == Coupling(-1, Index(:, DID(1)), Index(:, DID(2)))
     @test mc[2] == Coupling(+1, Index(:, DID(2)), Index(:, DID(1)))
+    @test mc^2 == mc*mc
 
     another = MatrixCoupling((1, 2), DID, Component([:], [:], hcat(2.0)))
     @test another[1] == Coupling(2.0, Index(1, DID(:)), Index(2, DID(:)))
 
-    mcs = mc*another
-    @test mcs == MatrixCouplingProd(mc, another)
-    @test eltype(mcs) == Coupling{Float64, Tuple{Index{Colon, DID{Int}}, Index{Colon, DID{Int}}, Index{Int, DID{Colon}}, Index{Int, DID{Colon}}}, Constraint{(2, 2), 2, Tuple{Diagonal{()}, Diagonal{(:nambu,)}}}}
-    @test mcs[1] == Coupling(-2.0, (Index(:, DID(1)), Index(:, DID(2)), Index(1, DID(:)), Index(2, DID(:))), Constraint{(2, 2)}(("pattern", "pattern"), (Diagonal(), Diagonal(:nambu))))
-    @test mcs[2] == Coupling(+2.0, (Index(:, DID(2)), Index(:, DID(1)), Index(1, DID(:)), Index(2, DID(:))), Constraint{(2, 2)}(("pattern", "pattern"), (Diagonal(), Diagonal(:nambu))))
+    mcp = mc*another
+    @test mcp == MatrixCouplingProd(mc, another)
+    @test eltype(mcp) == Coupling{Float64, Tuple{Index{Colon, DID{Int}}, Index{Colon, DID{Int}}, Index{Int, DID{Colon}}, Index{Int, DID{Colon}}}, Constraint{(2, 2), 2, Tuple{Diagonal{()}, Diagonal{(:nambu,)}}}}
+    @test mcp[1] == Coupling(-2.0, (Index(:, DID(1)), Index(:, DID(2)), Index(1, DID(:)), Index(2, DID(:))), Constraint{(2, 2)}(("pattern", "pattern"), (Diagonal(), Diagonal(:nambu))))
+    @test mcp[2] == Coupling(+2.0, (Index(:, DID(2)), Index(:, DID(1)), Index(1, DID(:)), Index(2, DID(:))), Constraint{(2, 2)}(("pattern", "pattern"), (Diagonal(), Diagonal(:nambu))))
 
-    @test mcs*mc == MatrixCouplingProd(mc, another, mc)
-    @test mc*mcs == MatrixCouplingProd(mc, mc, another)
-    @test mcs*mcs == MatrixCouplingProd(mc, another, mc, another)
+    @test mc*2 == 2*mc == MatrixCouplingProd(2, mc)
+    @test mcp*2 == 2*mcp == MatrixCouplingProd(2, mc, another)
+    @test mcp*mc == MatrixCouplingProd(mc, another, mc)
+    @test mc*mcp == MatrixCouplingProd(mc, mc, another)
+    @test mcp*mcp == MatrixCouplingProd(mc, another, mc, another)
+    @test mcp^2 == mcp*mcp
 
     mc₁ = MatrixCoupling((1, 2), DID, Component([1, 2], [2, 1], [0 1; 1 0]))
     mc₂ = MatrixCoupling((2, 1), DID, Component([1, 2], [2, 1], [0 1im; -1im 0]))
@@ -321,6 +325,12 @@ end
         Coupling(-1im, Index(2, DID(2)), Index(1, DID(2))),
         Coupling(1im, Index(2, DID(1)), Index(1, DID(1)))
     ]
+    @test mcs*2 == 2*mcs == MatrixCouplingSum(2*mc₁, 2*mc₂)
+    @test mcs*mc₁ == MatrixCouplingSum(mc₁*mc₁, mc₂*mc₁)
+    @test mc₂*mcs == MatrixCouplingSum(mc₂*mc₁, mc₂*mc₂)
+    @test mcp*mcs == MatrixCouplingSum(mc*another*mc₁, mc*another*mc₂)
+    @test mcs*mcp == MatrixCouplingSum(mc₁*mc*another, mc₂*mc*another)
+    @test mcs^2 == mcs*mcs
 
     @test mcs+mc₁ == MatrixCouplingSum(mc₁, mc₂, mc₁)
     @test mc₁+mcs == MatrixCouplingSum(mc₁, mc₁, mc₂)

@@ -423,7 +423,7 @@ end
     bond = Bond(1, Point(2, (0.0, 0.0), (0.0, 0.0)), Point(1, (0.5, 0.5), (0.0, 0.0)))
     hilbert = Hilbert(site=>Fock{:f}(1, 2) for site=1:2)
 
-    term = Coulomb(:V, 2.5, 1, MatrixCoupling(:, FID, :, σ"z", :)*MatrixCoupling(:, FID, :, σ"z", :))
+    term = Coulomb(:V, 2.5, 1, MatrixCoupling(:, FID, :, σ"z", :)^2)
     operators = Operators(
         Operator(-1.25,
             CompositeIndex(Index(2, FID{:f}(1, 1, 2)), [0.0, 0.0], [0.0, 0.0]),
