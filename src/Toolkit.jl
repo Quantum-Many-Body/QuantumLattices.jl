@@ -1143,9 +1143,9 @@ The core of a simple tree.
 """
 mutable struct SimpleTreeCore{N, D}
     root::Union{N, Nothing}
-    contents::Dict{N, D}
-    parent::Dict{N, N}
-    children::Dict{N, Vector{N}}
+    const contents::Dict{N, D}
+    const parent::Dict{N, N}
+    const children::Dict{N, Vector{N}}
     SimpleTreeCore{N, D}() where {N, D} = new{N, D}(nothing, Dict{N, D}(), Dict{N, N}(), Dict{N, Vector{N}}())
 end
 @inline Base.:(==)(tc1::TC, tc2::TC) where {TC<:SimpleTreeCore} = ==(efficientoperations, tc1, tc2)

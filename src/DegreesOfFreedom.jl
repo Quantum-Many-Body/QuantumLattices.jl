@@ -1028,12 +1028,12 @@ A term of a quantum lattice system.
 """
 mutable struct Term{K, I, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}
     value::V
-    bondkind::B
-    coupling::C
-    amplitude::A
-    ishermitian::Bool
-    modulate::M
-    factor::V
+    const bondkind::B
+    const coupling::C
+    const amplitude::A
+    const ishermitian::Bool
+    const modulate::M
+    const factor::V
     function Term{K, I}(value, bondkind, coupling::TermCoupling, amplitude::TermAmplitude, ishermitian::Bool, modulate::TermModulate, factor) where {K, I}
         @assert isa(K, Symbol) "Term error: kind must be a Symbol."
         @assert isa(I, Symbol) "Term error: id must be a Symbol."

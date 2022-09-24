@@ -98,7 +98,7 @@ Expand the generator to get the representation of the quantum lattice system (or
 Representation of a quantum lattice system by an analytical expression.
 """
 mutable struct AnalyticalExpression{F<:Function, P<:Parameters} <: RepresentationGenerator
-    expression::F
+    const expression::F
     parameters::P
 end
 @inline function update!(expression::AnalyticalExpression; parameters...)
@@ -114,11 +114,11 @@ end
 The basic representation generator of a quantum lattice system that records the quantum operators or a representation of the quantum operators related to (part of) the system.
 """
 mutable struct Entry{C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:Boundary} <: RepresentationGenerator
-    constops::C
-    alterops::A
-    boundops::B
+    const constops::C
+    const alterops::A
+    const boundops::B
     parameters::P
-    boundary::D
+    const boundary::D
 end
 @inline Entry(entry::Entry) = entry
 @inline Base.eltype(E::Type{<:Entry}) = eltype(valtype(E))
@@ -470,10 +470,10 @@ end
 The image of a transformation applied to a representation of a quantum lattice system.
 """
 mutable struct Image{E<:Entry, H<:Transformation, T<:Union{Table, Nothing}} <: CompositeGenerator{E, T}
-    operators::E
+    const operators::E
     transformation::H
-    table::T
-    sourceid::UInt
+    const table::T
+    const sourceid::UInt
 end
 @inline contentnames(::Type{<:Image}) = (:operators, :transformation, :table, :sourceid)
 
@@ -551,11 +551,11 @@ abstract type Action end
 An assignment associated with an action.
 """
 mutable struct Assignment{A<:Action, P<:Parameters, M<:Function, N, D} <: Function
-    id::Symbol
-    action::A
+    const id::Symbol
+    const action::A
     parameters::P
-    map::M
-    dependences::NTuple{N, Symbol}
+    const map::M
+    const dependences::NTuple{N, Symbol}
     data::D
     ismatched::Bool
 end
@@ -591,14 +591,14 @@ end
 An algorithm associated with an frontend.
 """
 mutable struct Algorithm{F<:Frontend, P<:Parameters, M<:Function} <: Function
-    name::Symbol
-    frontend::F
-    din::String
-    dout::String
+    const name::Symbol
+    const frontend::F
+    const din::String
+    const dout::String
     parameters::P
-    map::M
-    assignments::Dict{Symbol, Assignment}
-    timer::TimerOutput
+    const map::M
+    const assignments::Dict{Symbol, Assignment}
+    const timer::TimerOutput
 end
 @inline run!(alg::Algorithm, assign::Assignment) = nothing
 @inline function Base.:(==)(algorithm₁::Algorithm, algorithm₂::Algorithm)
