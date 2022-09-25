@@ -16,7 +16,7 @@ In theory, as long as the above information is told, one could easily write down
 H=tc^†_{1↑}c_{2↑}+tc^†_{2↑}c_{1↑}+tc^†_{1↓}c_{2↓}+tc^†_{2↓}c_{1↓}+Uc^†_{1↑}c_{1↑}c^†_{1↓}c_{1↓}+Uc^†_{2↑}c_{2↑}c^†_{2↓}c_{2↓}
 ```
 
-where ``t`` is the hopping amplitude， ``U`` is the Hubbard interaction strength and the electronic annihilation/creation operator $c^\dagger_{i\sigma}/c_{i\sigma}$ carries a site index $i$ ($i=1, 2$) and a spin index $\sigma$ ($\sigma=\uparrow, \downarrow$). Actually, the **unitcell description framework** follows exactly after the above train of thought. For example, the aforementioned system can be constructed by the following codes:
+where ``t`` is the hopping amplitude， ``U`` is the Hubbard interaction strength and the electronic creation/annihilation operator $c^\dagger_{i\sigma}/c_{i\sigma}$ carries a site index $i$ ($i=1, 2$) and a spin index $\sigma$ ($\sigma=\uparrow, \downarrow$). Actually, the **unitcell description framework** follows exactly after the above train of thought. For example, the aforementioned system can be constructed by the following codes:
 
 ```@example
 using QuantumLattices
