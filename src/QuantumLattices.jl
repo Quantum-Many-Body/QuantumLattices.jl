@@ -34,7 +34,7 @@ using .Toolkit
 include("QuantumOperators.jl")
 using .QuantumOperators
 export ID, Operator, OperatorPack, OperatorProd, Operators, OperatorSum, OperatorUnit, LaTeX, QuantumOperator
-export Identity, LinearTransformation, LinearTransformationWrapper, MatrixRepresentation, Numericalization, Permutation, RankFilter, TabledUnitSubstitution, Transformation, UnitSubstitution
+export Identity, LinearFunction, LinearTransformation, MatrixRepresentation, Numericalization, Permutation, RankFilter, TabledUnitSubstitution, Transformation, UnitSubstitution
 export ishermitian, latexname, latexformat, matrix, script, sequence
 
 # QuantumNumbers
@@ -67,6 +67,6 @@ export latexofphonons, Elastic, PID, Phonon, Kinetic, Hooke, PhononTerm
 # Frameworks
 include("Frameworks.jl")
 using .Frameworks
-export Action, Algorithm, AnalyticalExpression, Assignment, CompositeGenerator, Entry, Frontend, Image, OperatorGenerator, Parameters, RepresentationGenerator, prepare!, run!, rundependences!, save
+export Action, Algorithm, AnalyticalExpression, Assignment, CompositeGenerator, Entry, Frontend, Image, OperatorGenerator, Parameters, RepresentationGenerator, initialize, prepare!, run!, save
 
 end

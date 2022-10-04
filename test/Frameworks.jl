@@ -9,7 +9,7 @@ using StaticArrays: SVector
 
 import QuantumLattices: update!
 import QuantumLattices.DegreesOfFreedom: iidtype, isdefinite
-import QuantumLattices.Frameworks: Parameters, prepare!, run!
+import QuantumLattices.Frameworks: Parameters, initialize, run!
 import QuantumLattices.Toolkit: shape
 
 struct FID{N<:Union{Int, Symbol}} <: SimpleIID
@@ -161,16 +161,16 @@ end
 mutable struct GF <: Action
     count::Int
 end
-@inline prepare!(gf::GF, vca::VCA) = Matrix{Float}(undef, vca.dim, vca.dim)
+@inline initialize(gf::GF, vca::VCA) = Matrix{Float}(undef, vca.dim, vca.dim)
 @inline run!(alg::Algorithm{VCA}, assign::Assignment{GF}) = (assign.action.count += 1; assign.data[:, :] .= alg.frontend.t+alg.frontend.U)
 
 mutable struct DOS <: Action
     mu::Float
 end
 @inline update!(eb::DOS; kwargs...) = (eb.mu = get(kwargs, :mu, eb.mu); eb)
-@inline prepare!(dos::DOS, vca::VCA) = 0.0
+@inline initialize(dos::DOS, vca::VCA) = 0.0
 @inline function run!(alg::Algorithm{VCA}, assign::Assignment{DOS})
-    rundependences!(alg, assign)
+    prepare!(alg, assign)
     gf = alg.assignments[first(assign.dependences)]
     assign.data = tr(gf.data)
 end

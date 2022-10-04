@@ -9,7 +9,7 @@ import ..QuantumLattices: ⊗, ⋅, add!, div!, dtype, id, ishermitian, mul!, pe
 import ..Toolkit: contentnames, dissolve, isparameterbound, parameternames
 
 export ID, Operator, OperatorPack, OperatorProd, Operators, OperatorSum, OperatorUnit, LaTeX, QuantumOperator
-export Identity, LinearTransformation, LinearTransformationWrapper, MatrixRepresentation, Numericalization, Permutation, RankFilter, TabledUnitSubstitution, Transformation, UnitSubstitution
+export Identity, LinearFunction, LinearTransformation, MatrixRepresentation, Numericalization, Permutation, RankFilter, TabledUnitSubstitution, Transformation, UnitSubstitution
 export idtype, ishermitian, latexname, latexformat, matrix, optype, script, sequence, subscript, superscript
 
 # Generic quantum operator
@@ -867,14 +867,14 @@ function Base.map!(transformation::LinearTransformation, destination, ms::Operat
 end
 
 """
-    LinearTransformationWrapper{F<:Function} <: LinearTransformation
+    LinearFunction{F<:Function} <: LinearTransformation
 
 Wrapper a function to be a linear transformation.
 """
-struct LinearTransformationWrapper{F<:Function} <: LinearTransformation
+struct LinearFunction{F<:Function} <: LinearTransformation
     f::F
 end
-@inline (f::LinearTransformationWrapper)(op::QuantumOperator; kwargs...) = f.f(op; kwargs...)
+@inline (f::LinearFunction)(op::QuantumOperator; kwargs...) = f.f(op; kwargs...)
 
 """
     Identity <: LinearTransformation

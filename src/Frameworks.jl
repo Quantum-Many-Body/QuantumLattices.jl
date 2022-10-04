@@ -7,14 +7,14 @@ using RecipesBase: RecipesBase, @recipe
 using Serialization: serialize
 using TimerOutputs: TimerOutput, TimerOutputs, @timeit
 using ..DegreesOfFreedom: plain, Boundary, Hilbert, Table, Term, ismodulatable
-using ..QuantumOperators: Operators, LinearTransformation, LinearTransformationWrapper, Transformation, identity, optype
+using ..QuantumOperators: Operators, LinearFunction, LinearTransformation, Transformation, identity, optype
 using ..Spatials: AbstractLattice, Bond, Neighbors, bonds!, isintracell
 using ..Toolkit: atol, efficientoperations, rtol, decimaltostr
 
 import ..QuantumLattices: add!, expand, expand!, id, reset!, update, update!
 import ..Toolkit: contentnames, getcontent
 
-export Action, Algorithm, AnalyticalExpression, Assignment, CompositeGenerator, Entry, Frontend, Image, OperatorGenerator, Parameters, RepresentationGenerator, prepare!, run!, rundependences!, save
+export Action, Algorithm, AnalyticalExpression, Assignment, CompositeGenerator, Entry, Frontend, Image, OperatorGenerator, Parameters, RepresentationGenerator, initialize, prepare!, run!, save
 
 """
     Parameters{Names}(values::Number...) where Names
@@ -253,7 +253,7 @@ function update!(entry::Entry{<:Operators}; parameters...)
     if !match(Parameters(entry.boundary), NamedTuple{keys(parameters)}(values(parameters)))
         old = copy(entry.boundary.values)
         update!(entry.boundary; parameters...)
-        map(ops->map!(LinearTransformationWrapper(op->entry.boundary(op, origin=old)), ops), values(entry.boundops))
+        map(ops->map!(LinearFunction(op->entry.boundary(op, origin=old)), ops), values(entry.boundops))
     end
     return entry
 end
@@ -270,7 +270,7 @@ function update!(entry::Entry, transformation::LinearTransformation, source::Ent
     entry.parameters = update(entry.parameters; source.parameters...)
     if !match(Parameters(entry.boundary), Parameters(source.boundary))
         update!(entry.boundary; Parameters(source.boundary)...)
-        map((dest, ops)->map!(LinearTransformationWrapper(op->transformation(op; kwargs...)), empty!(dest), ops), values(entry.boundops), values(source.boundops))
+        map((dest, ops)->map!(LinearFunction(op->transformation(op; kwargs...)), empty!(dest), ops), values(entry.boundops), values(source.boundops))
     end
     return entry
 end
@@ -318,7 +318,7 @@ end
 Reset an entry by its source entry of quantum operators and the corresponding linear transformation.
 """
 function reset!(entry::Entry, transformation::LinearTransformation, source::Entry{<:Operators}; kwargs...)
-    wrapper = LinearTransformationWrapper(op->transformation(op; kwargs...))
+    wrapper = LinearFunction(op->transformation(op; kwargs...))
     map!(wrapper, empty!(entry.constops), source.constops)
     map((dest, ops)->map!(wrapper, empty!(dest), ops), values(entry.alterops), values(source.alterops))
     map((dest, ops)->map!(wrapper, empty!(dest), ops), values(entry.boundops), values(source.boundops))
@@ -543,7 +543,7 @@ Abstract type for all actions.
 abstract type Action end
 @inline Base.:(==)(action₁::Action, action₂::Action) = ==(efficientoperations, action₁, action₂)
 @inline Base.isequal(action₁::Action, action₂::Action) = isequal(efficientoperations, action₁, action₂)
-@inline prepare!(action::Action, frontend::Frontend) = nothing
+@inline initialize(action::Action, frontend::Frontend) = error("initialize error: not implemented.")
 @inline update!(action::Action; parameters...) = action
 
 """
@@ -677,16 +677,12 @@ Get the name of the combination of an algorithm and an assignment.
 @inline Base.nameof(alg::Algorithm, assign::Assignment) = @sprintf "%s_%s" repr(alg) assign.id
 
 """
-    add!(alg::Algorithm, id::Symbol, action::Action; parameters::Parameters=Parameters{()}(), kwargs...) -> Tuple{Algorithm, Assignment}
+    add!(alg::Algorithm, id::Symbol, action::Action; parameters::Parameters=Parameters{()}(), map::Function=identity, dependences::Tuple=(), kwargs...) -> Tuple{Algorithm, Assignment}
 
 Add an assignment on an algorithm by providing the contents of the assignment without the execution of it.
 """
-function add!(alg::Algorithm, id::Symbol, action::Action; parameters::Parameters=Parameters{()}(), kwargs...)
-    parameters = merge(alg.parameters, parameters)
-    map = get(kwargs, :map, identity)
-    dependences = get(kwargs, :dependences, ())
-    data = prepare!(action, alg.frontend)
-    assign = Assignment(id, action, parameters, map, dependences, data, false)
+function add!(alg::Algorithm, id::Symbol, action::Action; parameters::Parameters=Parameters{()}(), map::Function=identity, dependences::Tuple=(), kwargs...)
+    assign = Assignment(id, action, merge(alg.parameters, parameters), map, dependences, initialize(action, alg.frontend), false)
     alg.assignments[id] = assign
     return (alg, assign)
 end
@@ -719,12 +715,12 @@ function (assign::Assignment)(alg::Algorithm)
 end
 
 """
-    (alg::Algorithm)(id::Symbol, action::Action; info::Bool=true, parameters::Parameters=Parameters{()}(), kwargs...) -> Tuple{Algorithm, Assignment}
+    (alg::Algorithm)(id::Symbol, action::Action; info::Bool=true, kwargs...) -> Tuple{Algorithm, Assignment}
 
 Add an assignment on a algorithm by providing the contents of the assignment, and run this assignment.
 """
-@inline function (alg::Algorithm)(id::Symbol, action::Action; info::Bool=true, parameters::Parameters=Parameters{()}(), kwargs...)
-    add!(alg, id, action; parameters=parameters, kwargs...)
+@inline function (alg::Algorithm)(id::Symbol, action::Action; info::Bool=true, kwargs...)
+    add!(alg, id, action; kwargs...)
     alg(id, info=info)
 end
 
@@ -770,13 +766,13 @@ function save(filename::AbstractString, data::Tuple{AbstractVector, AbstractVect
 end
 
 """
-    rundependences!(alg::Algorithm, assign::Assignment, f::Function=assign->true) -> Tuple{Algorithm, Assignment}
+    prepare!(alg::Algorithm, assign::Assignment, f::Function=assign->true) -> Tuple{Algorithm, Assignment}
 
 Run the dependences of an assignment.
 
 Optionally, some dependences can be filtered by specifying the `f` function.
 """
-function rundependences!(alg::Algorithm, assign::Assignment, f::Function=assign->true)
+function prepare!(alg::Algorithm, assign::Assignment, f::Function=assign->true)
     for id in assign.dependences
         dependence = alg.assignments[id]
         f(dependence) && dependence(alg)
