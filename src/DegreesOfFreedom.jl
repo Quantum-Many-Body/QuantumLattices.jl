@@ -4,7 +4,7 @@ using Printf: @printf, @sprintf
 using SparseArrays: SparseMatrixCSC, nnz
 using StaticArrays: SVector
 using ..QuantumLattices: add!, decompose, dtype
-using ..QuantumOperators: ID, Operator, OperatorPack, Operators, OperatorSum, OperatorUnit, Transformation, valuetolatextext, valuetostr
+using ..QuantumOperators: ID, LinearTransformation, Operator, OperatorPack, Operators, OperatorSum, OperatorUnit, valuetolatextext, valuetostr
 using ..Spatials: Bond, Point
 using ..Toolkit: atol, efficientoperations, rtol, CompositeDict, CompositeTuple, Float, NamedContainer, VectorSpace, VectorSpaceCartesian, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceStyle, commontype, concatenate, decimaltostr, fulltype, parametertype, rawtype, reparameter
 
@@ -1462,7 +1462,7 @@ end
 
 Boundary twist of operators.
 """
-struct Boundary{Names, D<:Number, V<:AbstractVector} <: Transformation
+struct Boundary{Names, D<:Number, V<:AbstractVector} <: LinearTransformation
     values::Vector{D}
     vectors::Vector{V}
     function Boundary{Names}(values::AbstractVector{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}) where Names

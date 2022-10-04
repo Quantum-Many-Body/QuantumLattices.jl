@@ -9,8 +9,8 @@ import ..QuantumLattices: ⊗, ⋅, add!, div!, dtype, id, ishermitian, mul!, pe
 import ..Toolkit: contentnames, dissolve, isparameterbound, parameternames
 
 export ID, Operator, OperatorPack, OperatorProd, Operators, OperatorSum, OperatorUnit, LaTeX, QuantumOperator
-export AbstractSubstitution, AbstractUnitSubstitution, Identity, MatrixRepresentation, Numericalization, Permutation, RankFilter, Transformation, UnitSubstitution
-export idtype, ishermitian, latexname, latexformat, matrix, matrix!, optype, script, sequence, subscript, superscript
+export Identity, LinearTransformation, LinearTransformationWrapper, MatrixRepresentation, Numericalization, Permutation, RankFilter, TabledUnitSubstitution, Transformation, UnitSubstitution
+export idtype, ishermitian, latexname, latexformat, matrix, optype, script, sequence, subscript, superscript
 
 # Generic quantum operator
 """
@@ -803,55 +803,29 @@ Base.show(io::IO, ::MIME"text/latex", m::QuantumOperator) = show(io, MIME"text/l
 
 # Transformations
 """
-    add!(destination, transformation::Function, op::QuantumOperator; kwargs...) -> typeof(destination)
-
-Add the result of the transformation on a quantum operator to the destination.
-"""
-@inline function add!(destination, transformation::Function, op::QuantumOperator; kwargs...)
-    add!(destination, transformation(op; kwargs...))
-end
-
-"""
-    map!(transformation::Function, ms::OperatorSum; kwargs...) -> typeof(ms)
-
-In place map of an `OperatorSum` by a function.
-"""
-function Base.map!(transformation::Function, ms::OperatorSum; kwargs...)
-    for m in ms
-        ms[id(m)] = transformation(m; kwargs...)
-    end
-    return ms
-end
-
-"""
-    map!(transformation::Function, destination, ms::OperatorSum; kwargs...) -> typeof(destination)
-
-In place map of an `OperatorSum` by a function.
-"""
-function Base.map!(transformation::Function, destination, ms::OperatorSum; kwargs...)
-    for m in ms
-        add!(destination, transformation, m; kwargs...)
-    end
-    return destination
-end
-
-"""
     Transformation <: Function
 
-Abstract transformation that could transform the quantum operators.
+Abstract transformation on quantum operators.
 """
 abstract type Transformation <: Function end
 @inline Base.:(==)(transformation₁::Transformation, transformation₂::Transformation) = ==(efficientoperations, transformation₁, transformation₂)
 @inline Base.isequal(transformation₁::Transformation, transformation₂::Transformation) = isequal(efficientoperations, transformation₁, transformation₂)
-@inline Base.valtype(transformation::Transformation, m::QuantumOperator) = valtype(typeof(transformation), typeof(m))
-@inline Base.zero(transformation::Transformation, m::QuantumOperator) = zero(valtype(transformation, m))
 
 """
-    (transformation::Transformation)(ms::OperatorSum; kwargs...) -> OperatorSum
+    LinearTransformation <: Transformation
 
-Get the transformed quantum operators.
+Abstract linear transformation on quantum operators.
 """
-function (transformation::Transformation)(ms::OperatorSum; kwargs...)
+abstract type LinearTransformation <: Transformation end
+@inline Base.valtype(transformation::LinearTransformation, m::QuantumOperator) = valtype(typeof(transformation), typeof(m))
+@inline Base.zero(transformation::LinearTransformation, m::QuantumOperator) = zero(valtype(transformation, m))
+
+"""
+    (transformation::LinearTransformation)(ms::OperatorSum; kwargs...) -> OperatorSum
+
+Get the linear transformed quantum operators.
+"""
+function (transformation::LinearTransformation)(ms::OperatorSum; kwargs...)
     result = zero(transformation, ms)
     for m in ms
         add!(result, transformation, m; kwargs...)
@@ -860,23 +834,64 @@ function (transformation::Transformation)(ms::OperatorSum; kwargs...)
 end
 
 """
-    Identity <: Transformation
+    add!(destination, transformation::LinearTransformation, op::QuantumOperator; kwargs...) -> typeof(destination)
+
+Add the result of the linear transformation on a quantum operator to the destination.
+"""
+@inline function add!(destination, transformation::LinearTransformation, op::QuantumOperator; kwargs...)
+    add!(destination, transformation(op; kwargs...))
+end
+
+"""
+    map!(transformation::LinearTransformation, ms::OperatorSum; kwargs...) -> typeof(ms)
+
+In place map of an `OperatorSum` by a linear transformation.
+"""
+function Base.map!(transformation::LinearTransformation, ms::OperatorSum; kwargs...)
+    for m in ms
+        ms[id(m)] = transformation(m; kwargs...)
+    end
+    return ms
+end
+
+"""
+    map!(transformation::LinearTransformation, destination, ms::OperatorSum; kwargs...) -> typeof(destination)
+
+In place map of an `OperatorSum` by a linear transformation.
+"""
+function Base.map!(transformation::LinearTransformation, destination, ms::OperatorSum; kwargs...)
+    for m in ms
+        add!(destination, transformation, m; kwargs...)
+    end
+    return destination
+end
+
+"""
+    LinearTransformationWrapper{F<:Function} <: LinearTransformation
+
+Wrapper a function to be a linear transformation.
+"""
+struct LinearTransformationWrapper{F<:Function} <: LinearTransformation
+    f::F
+end
+@inline (f::LinearTransformationWrapper)(op::QuantumOperator; kwargs...) = f.f(op; kwargs...)
+
+"""
+    Identity <: LinearTransformation
 
 The identity transformation.
 """
-struct Identity <: Transformation end
+struct Identity <: LinearTransformation end
 @inline Base.valtype(::Type{Identity}, M::Type{<:QuantumOperator}) = M
 @inline (i::Identity)(m::Union{OperatorUnit, OperatorPack}; kwargs...) = m
 
 """
-    Numericalization{T<:Number} <: Transformation
+    Numericalization{T<:Number} <: LinearTransformation
 
 The numericalization transformation, which converts the value of a quantum operator to a number of type `T`.
 """
-struct Numericalization{T<:Number} <: Transformation end
-@inline Base.valtype(num::Numericalization) = valtype(typeof(num))
-@inline Base.valtype(::Type{<:Numericalization{T}}) where {T<:Number} = T
-@inline Base.valtype(T::Type{<:Numericalization}, M::Type{<:OperatorPack}) = reparameter(M, :value, valtype(T))
+struct Numericalization{T<:Number} <: LinearTransformation end
+@inline Base.valtype(::Type{<:Numericalization{T}}, M::Type{<:OperatorPack}) where {T<:Number} = reparameter(M, :value, T)
 @inline function Base.valtype(T::Type{<:Numericalization}, M::Type{<:OperatorSum})
     V = valtype(T, eltype(M))
     return OperatorSum{V, idtype(V)}
@@ -884,11 +899,11 @@ end
 @inline (n::Numericalization)(m::OperatorPack; kwargs...) = convert(valtype(n, m), m)
 
 """
-    MatrixRepresentation <: Transformation
+    MatrixRepresentation <: LinearTransformation
 
 The matrix representation.
 """
-abstract type MatrixRepresentation <: Transformation end
+abstract type MatrixRepresentation <: LinearTransformation end
 
 """
     matrix
@@ -898,18 +913,11 @@ Generic matrix representation.
 function matrix end
 
 """
-    matrix!
-
-Generic matrix representation.
-"""
-function matrix! end
-
-"""
-    Permutation{T} <: Transformation
+    Permutation{T} <: LinearTransformation
 
 The permutation transformation.
 """
-struct Permutation{T} <: Transformation
+struct Permutation{T} <: LinearTransformation
     table::T
 end
 @inline function Base.valtype(::Type{<:Permutation}, M::Type{<:OperatorProd})
@@ -959,53 +967,46 @@ function operatorprodcommuteposition(sequences)
 end
 
 """
-    AbstractSubstitution <: Transformation
+    UnitSubstitution{U<:OperatorUnit, S<:OperatorSum} <: LinearTransformation
 
-The substitution transformation.
+The "unit substitution" transformation, which substitutes each `OperatorUnit` in the old quantum operators to a new expression represented by an `OperatorSum`.
 """
-abstract type AbstractSubstitution <: Transformation end
-
-"""
-    AbstractUnitSubstitution{U<:OperatorUnit, S<:OperatorSum} <: AbstractSubstitution
-
-The "unit substitution" transformation, which substitutes evergy `OperatorUnit` in the old quantum operators to a new expression represented by an `OperatorSum`.
-"""
-abstract type AbstractUnitSubstitution{U<:OperatorUnit, S<:OperatorSum} <: AbstractSubstitution end
-@inline function Base.valtype(::Type{<:AbstractUnitSubstitution{U, S}}, M::Type{<:OperatorProd}) where {U<:OperatorUnit, S<:OperatorSum}
+abstract type UnitSubstitution{U<:OperatorUnit, S<:OperatorSum} <: LinearTransformation end
+@inline function Base.valtype(::Type{<:UnitSubstitution{U, S}}, M::Type{<:OperatorProd}) where {U<:OperatorUnit, S<:OperatorSum}
     @assert U<:eltype(eltype(M)) "valtype error: mismatched unit transformation."
     V = fulltype(eltype(S), NamedTuple{(:value, :id), Tuple{promote_type(valtype(eltype(S)), valtype(M)), ID{eltype(eltype(S))}}})
     return OperatorSum{V, idtype(V)}
 end
-@inline Base.valtype(P::Type{<:AbstractUnitSubstitution}, M::Type{<:OperatorSum}) = valtype(P, eltype(M))
+@inline Base.valtype(P::Type{<:UnitSubstitution}, M::Type{<:OperatorSum}) = valtype(P, eltype(M))
 
 """
-    (unitsubstitution::AbstractUnitSubstitution)(m::OperatorProd; kwargs...) -> OperatorSum
+    (unitsubstitution::UnitSubstitution)(m::OperatorProd; kwargs...) -> OperatorSum
 
 Substitute every `OperatorUnit` in an `OperatorProd` with a new `OperatorSum`.
 """
-function (unitsubstitution::AbstractUnitSubstitution)(m::OperatorProd; kwargs...)
+function (unitsubstitution::UnitSubstitution)(m::OperatorProd; kwargs...)
     return prod(ntuple(i->unitsubstitution(m[i]; kwargs...), Val(rank(m))), init=value(m))
 end
 
 """
-    UnitSubstitution{U<:OperatorUnit, S<:OperatorSum, T<:AbstractDict{U, S}} <: AbstractUnitSubstitution{U, S}
+    TabledUnitSubstitution{U<:OperatorUnit, S<:OperatorSum, T<:AbstractDict{U, S}} <: UnitSubstitution{U, S}
 
 A concrete "unit substitution" transformation, which stores every substitution of the old `OperatorUnit`s in its table as a dictionary.
 """
-struct UnitSubstitution{U<:OperatorUnit, S<:OperatorSum, T<:AbstractDict{U, S}} <: AbstractUnitSubstitution{U, S}
+struct TabledUnitSubstitution{U<:OperatorUnit, S<:OperatorSum, T<:AbstractDict{U, S}} <: UnitSubstitution{U, S}
     table::T
-    function UnitSubstitution(table::AbstractDict{<:OperatorUnit, <:OperatorSum})
+    function TabledUnitSubstitution(table::AbstractDict{<:OperatorUnit, <:OperatorSum})
         new{keytype(table), valtype(table), typeof(table)}(table)
     end
 end
-(unitsubstitution::UnitSubstitution)(m::OperatorUnit; kwargs...) = unitsubstitution.table[m]
+(unitsubstitution::TabledUnitSubstitution)(m::OperatorUnit; kwargs...) = unitsubstitution.table[m]
 
 """
-    RankFilter{R} <: Transformation
+    RankFilter{R} <: LinearTransformation
 
 Rank filter, which filters out the `OperatorPack` with a given rank `R`.
 """
-struct RankFilter{R} <: Transformation
+struct RankFilter{R} <: LinearTransformation
     function RankFilter(rank::Int)
         @assert rank>=0 "RankFilter error: the wanted rank must be non-negative."
         new{rank}()

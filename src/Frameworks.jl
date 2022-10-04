@@ -7,7 +7,7 @@ using RecipesBase: RecipesBase, @recipe
 using Serialization: serialize
 using TimerOutputs: TimerOutput, TimerOutputs, @timeit
 using ..DegreesOfFreedom: plain, Boundary, Hilbert, Table, Term, ismodulatable
-using ..QuantumOperators: Operators, Transformation, identity, optype
+using ..QuantumOperators: Operators, LinearTransformation, LinearTransformationWrapper, Transformation, identity, optype
 using ..Spatials: AbstractLattice, Bond, Neighbors, bonds!, isintracell
 using ..Toolkit: atol, efficientoperations, rtol, decimaltostr
 
@@ -199,11 +199,11 @@ end
 @inline combineops(::Nothing, ::Nothing, ops, value, ::Nothing) = deepcopy(ops)
 
 """
-    (transformation::Transformation)(entry::Entry; kwargs...) -> Entry
+    (transformation::LinearTransformation)(entry::Entry; kwargs...) -> Entry
 
-Apply a transformation to an entry of (representations of) quantum operators.
+Apply a linear transformation to an entry of (representations of) quantum operators.
 """
-function (transformation::Transformation)(entry::Entry; kwargs...)
+function (transformation::LinearTransformation)(entry::Entry; kwargs...)
     wrapper(m) = transformation(m; kwargs...)
     constops = wrapper(entry.constops)
     alterops = NamedTuple{keys(entry.alterops)}(map(wrapper, values(entry.alterops)))
@@ -253,24 +253,24 @@ function update!(entry::Entry{<:Operators}; parameters...)
     if !match(Parameters(entry.boundary), NamedTuple{keys(parameters)}(values(parameters)))
         old = copy(entry.boundary.values)
         update!(entry.boundary; parameters...)
-        map(ops->map!(op->entry.boundary(op, origin=old), ops), values(entry.boundops))
+        map(ops->map!(LinearTransformationWrapper(op->entry.boundary(op, origin=old)), ops), values(entry.boundops))
     end
     return entry
 end
 
 """
-    update!(entry::Entry, transformation::Transformation, source::Entry{<:Operators}; kwargs...) -> Entry
+    update!(entry::Entry, transformation::LinearTransformation, source::Entry{<:Operators}; kwargs...) -> Entry
 
-Update the parameters (including the boundary parameters) of an entry based on its source entry of quantum operators and the corresponding transformation.
+Update the parameters (including the boundary parameters) of an entry based on its source entry of quantum operators and the corresponding linear transformation.
 
 !!! Note
     The coefficients of `boundops` are also updated due to the change of the boundary parameters.
 """
-function update!(entry::Entry, transformation::Transformation, source::Entry{<:Operators}; kwargs...)
+function update!(entry::Entry, transformation::LinearTransformation, source::Entry{<:Operators}; kwargs...)
     entry.parameters = update(entry.parameters; source.parameters...)
     if !match(Parameters(entry.boundary), Parameters(source.boundary))
         update!(entry.boundary; Parameters(source.boundary)...)
-        map((dest, ops)->map!(op->transformation(op; kwargs...), empty!(dest), ops), values(entry.boundops), values(source.boundops))
+        map((dest, ops)->map!(LinearTransformationWrapper(op->transformation(op; kwargs...)), empty!(dest), ops), values(entry.boundops), values(source.boundops))
     end
     return entry
 end
@@ -313,14 +313,15 @@ function reset!(entry::Entry{<:Operators}, terms::Tuple{Vararg{Term}}, bonds::Ve
 end
 
 """
-    reset!(entry::Entry, transformation::Transformation, source::Entry{<:Operators}; kwargs...)
+    reset!(entry::Entry, transformation::LinearTransformation, source::Entry{<:Operators}; kwargs...)
 
-Reset an entry by its source entry of quantum operators and the corresponding transformation.
+Reset an entry by its source entry of quantum operators and the corresponding linear transformation.
 """
-function reset!(entry::Entry, transformation::Transformation, source::Entry{<:Operators}; kwargs...)
-    map!(op->transformation(op; kwargs...), empty!(entry.constops), source.constops)
-    map((dest, ops)->map!(op->transformation(op; kwargs...), empty!(dest), ops), values(entry.alterops), values(source.alterops))
-    map((dest, ops)->map!(op->transformation(op; kwargs...), empty!(dest), ops), values(entry.boundops), values(source.boundops))
+function reset!(entry::Entry, transformation::LinearTransformation, source::Entry{<:Operators}; kwargs...)
+    wrapper = LinearTransformationWrapper(op->transformation(op; kwargs...))
+    map!(wrapper, empty!(entry.constops), source.constops)
+    map((dest, ops)->map!(wrapper, empty!(dest), ops), values(entry.alterops), values(source.alterops))
+    map((dest, ops)->map!(wrapper, empty!(dest), ops), values(entry.boundops), values(source.boundops))
     entry.parameters = update(entry.parameters; source.parameters...)
     merge!(entry.boundary, source.boundary)
     return entry

@@ -199,9 +199,9 @@ end
     @test latexstring(opts) ∈ (candidate₁, candidate₂)
 end
 
-struct UnitCoeffAddition <: Transformation end
-Base.valtype(::Type{UnitCoeffAddition}, M::Type{<:Union{Operator, Operators}}) = M
-@inline (unitcoeffaddition::UnitCoeffAddition)(m::Operator) = replace(m, value=one(valtype(m))+value(m))
+struct DoubleCoeff <: LinearTransformation end
+@inline Base.valtype(::Type{DoubleCoeff}, M::Type{<:Union{Operator, Operators}}) = M
+@inline (double::DoubleCoeff)(m::Operator) = replace(m, value=value(m)*2)
 
 @testset "Transformation" begin
     m = Operator(1, AID(1, 1))
@@ -214,15 +214,14 @@ Base.valtype(::Type{UnitCoeffAddition}, M::Type{<:Union{Operator, Operators}}) =
     @test i(m)==m && i(s)==s
 
     n = Numericalization{Float64}()
-    @test valtype(n) == valtype(typeof(n)) == Float64
     @test valtype(n, m) == valtype(typeof(n), typeof(m)) == Operator{Float, Tuple{AID{Int, Int}}}
     @test valtype(n, s) == valtype(typeof(n), typeof(s)) == OperatorSum{Operator{Float, Tuple{AID{Int, Int}}}, Tuple{AID{Int, Int}}}
     @test n(m) == replace(m, value=1.0)
     @test n(s) == Operators(replace(m, value=1.0))
 
-    unitcoeffaddition = UnitCoeffAddition()
-    @test map!(unitcoeffaddition, s) == s == Operators(Operator(2, AID(1, 1)))
-    @test map!(unitcoeffaddition, zero(s), s) == Operators(Operator(3, AID(1, 1)))
+    double = DoubleCoeff()
+    @test map!(double, s) == s == Operators(Operator(2, AID(1, 1)))
+    @test map!(double, zero(s), s) == Operators(Operator(4, AID(1, 1)))
 end
 
 @testset "Permutation" begin
@@ -250,7 +249,7 @@ end
 
     M = promote_type(eltype(ops₁), eltype(ops₂))
     table = Dict{eltype(opt), Operators{M, idtype(M)}}(id₁=>ops₁, id₂=>ops₂)
-    substitution = UnitSubstitution(table)
+    substitution = TabledUnitSubstitution(table)
     @test substitution(opt) == 1.5*ops₁*ops₂
     @test substitution(Operators(opt)) == 1.5*ops₁*ops₂
 end
