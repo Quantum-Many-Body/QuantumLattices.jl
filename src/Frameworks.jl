@@ -790,6 +790,9 @@ Define the recipe for the visualization of an assignment of an algorithm.
     titlefontsize --> 10
     legend --> false
     seriestype --> (isa(pack[2].data, Tuple{Any, Any, Any}) ? :heatmap : :path)
+    xminorticks --> 10
+    yminorticks --> 10
+    minorgrid --> true
     pack[2].data
 end
 
