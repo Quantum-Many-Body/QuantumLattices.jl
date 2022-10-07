@@ -165,16 +165,16 @@ end
 @inline run!(alg::Algorithm{VCA}, assign::Assignment{GF}) = (assign.action.count += 1; assign.data[:, :] .= alg.frontend.t+alg.frontend.U)
 
 mutable struct DOS <: Action
-    mu::Float
+    μ::Float
 end
-@inline update!(eb::DOS; kwargs...) = (eb.mu = get(kwargs, :mu, eb.mu); eb)
+@inline update!(eb::DOS; kwargs...) = (eb.μ = get(kwargs, :μ, eb.μ); eb)
 @inline initialize(dos::DOS, vca::VCA) = 0.0
 @inline function run!(alg::Algorithm{VCA}, assign::Assignment{DOS})
     prepare!(alg, assign)
     gf = alg.assignments[first(assign.dependences)]
     assign.data = tr(gf.data)
 end
-@inline dosmap(params::Parameters) = Parameters{(:t, :U, :mu)}(params.t, params.U, -params.U/2)
+@inline dosmap(params::Parameters) = Parameters{(:t, :U, :μ)}(params.t, params.U, -params.U/2)
 
 @testset "Framework" begin
     vca = VCA(1.0, 8.0, 4)
@@ -192,8 +192,8 @@ end
     @test vca == deepcopy(vca)
     @test isequal(vca, deepcopy(vca))
     @test Parameters(vca) == vca.parameters
-    @test repr(vca, ≠(:U)) == "test(VCA)_1.0"
-    @test repr(vca) == "test(VCA)_1.0_8.0"
+    @test repr(vca, ≠(:U)) == "test(VCA)-t(1.0)"
+    @test repr(vca) == "test(VCA)-t(1.0)U(8.0)"
 
     add!(vca, :GF, GF(0))
     rex = r"Action DOS\(DOS\)\: time consumed [0-9]*\.[0-9]*(e[+-][0-9]*)*s."
@@ -205,12 +205,12 @@ end
     @test Parameters(dos) == dos.parameters
     @test valtype(dos) == valtype(typeof(dos)) == Float
     @test dos.data == 32.0
-    @test dos.action.mu == -3.5
-    @test nameof(vca, dos) == "test(VCA)_1.0_7.0_DOS"
+    @test dos.action.μ == -3.5
+    @test nameof(vca, dos) == "test(VCA)-t(1.0)U(7.0)-DOS"
 
     update!(dos, U=6.0)
     vca(:DOS, info=false)
     @test dos.parameters == (t=1.0, U=6.0)
     @test dos.data == 28.0
-    @test dos.action.mu == -3.0
+    @test dos.action.μ == -3.0
 end

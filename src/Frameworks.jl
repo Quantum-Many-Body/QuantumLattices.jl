@@ -652,11 +652,11 @@ Get the repr representation of an algorithm.
 Optionally, some parameters of the algorithm can be filtered by specifying the `f` function. Besides, the maximum number of decimals of the parameters can also be specified by the keyword argument `ndecimal`.
 """
 function Base.repr(alg::Algorithm, f::Function=param->true; ndecimal::Int=10)
-    result = [@sprintf "%s(%s)" alg.name alg.frontend]
+    result = String[]
     for (name, value) in pairs(alg.parameters)
-        f(name) && push!(result, decimaltostr(value, ndecimal))
+        f(name) && push!(result, @sprintf "%s(%s)" name decimaltostr(value, ndecimal))
     end
-    return join(result, "_")
+    return @sprintf "%s(%s)-%s" alg.name alg.frontend join(result, "")
 end
 
 """
@@ -674,7 +674,7 @@ end
 
 Get the name of the combination of an algorithm and an assignment.
 """
-@inline Base.nameof(alg::Algorithm, assign::Assignment) = @sprintf "%s_%s" repr(alg) assign.id
+@inline Base.nameof(alg::Algorithm, assign::Assignment) = @sprintf "%s-%s" repr(alg) assign.id
 
 """
     add!(alg::Algorithm, id::Symbol, action::Action; parameters::Parameters=Parameters{()}(), map::Function=identity, dependences::Tuple=(), kwargs...) -> Tuple{Algorithm, Assignment}
