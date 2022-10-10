@@ -602,11 +602,11 @@ Overloaded `/` between a quantum operator and a number.
 @inline Base.:/(m::QuantumOperator, factor::Number) = m * (one(dtype(optype(m)))/factor)
 
 """
-    //(m::QuantumOperator, factor::Integer) -> QuantumOperator
+    //(m::QuantumOperator, factor::Number) -> QuantumOperator
 
-Overloaded `//` between a quantum operator and an integer.
+Overloaded `//` between a quantum operator and a number.
 """
-@inline Base.://(m::QuantumOperator, factor::Integer) = m * (1//factor)
+@inline Base.://(m::QuantumOperator, factor::Number) = m * (1//factor)
 
 """
     ^(m::QuantumOperator, n::Integer) -> QuantumOperator
