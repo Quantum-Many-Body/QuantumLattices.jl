@@ -297,6 +297,8 @@ end
     @test mc[1] == Coupling(-1, Index(:, DID(1)), Index(:, DID(2)))
     @test mc[2] == Coupling(+1, Index(:, DID(2)), Index(:, DID(1)))
     @test mc^2 == mc*mc
+    @test mc/2 == mc*(1/2)
+    @test -mc  == (-1)*mc
 
     another = MatrixCoupling((1, 2), DID, Component([:], [:], hcat(2.0)))
     @test another[1] == Coupling(2.0, Index(1, DID(:)), Index(2, DID(:)))
@@ -313,6 +315,8 @@ end
     @test mc*mcp == MatrixCouplingProd(mc, mc, another)
     @test mcp*mcp == MatrixCouplingProd(mc, another, mc, another)
     @test mcp^2 == mcp*mcp
+    @test mcp/2 == mcp*(1/2) == MatrixCouplingProd(1/2, mc, another)
+    @test -mcp == (-1)*mcp
 
     mc₁ = MatrixCoupling((1, 2), DID, Component([1, 2], [2, 1], [0 1; 1 0]))
     mc₂ = MatrixCoupling((2, 1), DID, Component([1, 2], [2, 1], [0 1im; -1im 0]))
@@ -331,6 +335,14 @@ end
     @test mcp*mcs == MatrixCouplingSum(mc*another*mc₁, mc*another*mc₂)
     @test mcs*mcp == MatrixCouplingSum(mc₁*mc*another, mc₂*mc*another)
     @test mcs^2 == mcs*mcs
+    @test mcs/2 == mcs*(1/2) == MatrixCouplingSum(mc₁/2, mc₂/2)
+    @test -mcs == (-1)*mcs == MatrixCouplingSum(-mc₁, -mc₂)
+
+    mcs₂ = mc₁ - mc₂
+    @test mcs₂ == MatrixCouplingSum(mc₁, -mc₂)
+    @test mcs - mc₁ == MatrixCouplingSum(mc₁, mc₂, -mc₁)     
+    @test mc₁ - mcs₂ == MatrixCouplingSum(mc₁, -mc₁, mc₂)
+    @test mcs - mcs₂ == MatrixCouplingSum(mc₁, mc₂, -mc₁, mc₂)
 
     @test mcs+mc₁ == MatrixCouplingSum(mc₁, mc₂, mc₁)
     @test mc₁+mcs == MatrixCouplingSum(mc₁, mc₁, mc₂)

@@ -923,7 +923,7 @@ end
     *(mcp::MatrixCouplingProd, mc::MatrixCoupling) -> MatrixCouplingProd
     *(mcp₁::MatrixCouplingProd, mcp₂::MatrixCouplingProd) -> MatrixCouplingProd
     *(mc::MatrixCoupling, factor::Number) -> MatrixCouplingProd
-    *(mc::MatrixCoupling, factor::Number) -> MatrixCouplingProd
+    *(factor::Number, mc::MatrixCoupling) -> MatrixCouplingProd
     *(factor::Number, mcp::MatrixCouplingProd) -> MatrixCouplingProd
     *(mcp::MatrixCouplingProd, factor::Number) -> MatrixCouplingProd
     *(mcs::MatrixCouplingSum, element::Union{Number, MatrixCoupling, MatrixCouplingProd}) -> MatrixCouplingSum
@@ -952,7 +952,7 @@ The product between `MatrixCoupling`s and `MatrixCouplingProd`s.
     +(mcs::MatrixCouplingSum, mc::Union{MatrixCoupling, MatrixCouplingProd}) -> MatrixCouplingSum
     +(mcs₁::MatrixCouplingSum, mcs₂::MatrixCouplingSum) -> MatrixCouplingSum
 
-The product between `MatrixCoupling`s and `MatrixCouplingProd`s.
+The addition between `MatrixCoupling`s and `MatrixCouplingProd`s.
 """
 @inline Base.:+(mc₁::Union{MatrixCoupling, MatrixCouplingProd}, mc₂::Union{MatrixCoupling, MatrixCouplingProd}) = MatrixCouplingSum(mc₁, mc₂)
 @inline Base.:+(mc::Union{MatrixCoupling, MatrixCouplingProd}, mcs::MatrixCouplingSum) = MatrixCouplingSum(mc, mcs.contents...)
@@ -965,6 +965,32 @@ The product between `MatrixCoupling`s and `MatrixCouplingProd`s.
 Get the nth power of a `MatrixCoupling`/`MatrixCouplingProd`/`MatrixCouplingSum`.
 """
 @inline Base.:^(mc::Union{MatrixCoupling, MatrixCouplingProd, MatrixCouplingSum}, n::Int) = prod(ntuple(i->mc, Val(n)); init=1)
+"""
+    /(mcp::MatrixCouplingProd, factor::Number) -> MatrixCouplingProd
+    /(mcs::MatrixCouplingSum, factor::Number) -> MatrixCouplingSum
+    /(mc::MatrixCoupling, factor::Number) -> MatrixCouplingProd
+    -(mc::MatrixCoupling) -> MatrixCouplingProd
+    -(mcp::MatrixCouplingProd) -> MatrixCouplingProd
+    -(mcs::MatrixCouplingSum) -> MatrixCouplingSum
+    -(mc₁::Union{MatrixCoupling, MatrixCouplingProd}, mc₂::Union{MatrixCoupling, MatrixCouplingProd}) -> MatrixCouplingSum
+    -(mc::Union{MatrixCoupling, MatrixCouplingProd}, mcs::MatrixCouplingSum) -> MatrixCouplingSum
+    -(mcs::MatrixCouplingSum, mc::Union{MatrixCoupling, MatrixCouplingProd}) -> MatrixCouplingSum
+    -(mcs₁::MatrixCouplingSum, mcs₂::MatrixCouplingSum) -> MatrixCouplingSum
+
+Define right-division, minus, substraction operator.
+"""
+@inline Base.:/(mcp::MatrixCouplingProd, factor::Number) = MatrixCouplingProd(mcp.value/factor, mcp.contents)
+@inline Base.:/(mcs::MatrixCouplingSum, factor::Number) = MatrixCouplingSum(map(m->m/factor, mcs.contents))
+@inline Base.:/(mc::MatrixCoupling, factor::Number) = MatrixCouplingProd(1/factor, mc)
+@inline Base.:-(mc::MatrixCoupling) = MatrixCouplingProd(-1, mc)
+@inline Base.:-(mcp::MatrixCouplingProd) = MatrixCouplingProd(-1*mcp.value, mcp.contents)
+@inline Base.:-(mcs::MatrixCouplingSum) = MatrixCouplingSum(map(m->-m, mcs.contents))
+
+@inline Base.:-(mc₁::Union{MatrixCoupling, MatrixCouplingProd}, mc₂::Union{MatrixCoupling, MatrixCouplingProd}) = MatrixCouplingSum(mc₁, -mc₂)
+@inline Base.:-(mc::Union{MatrixCoupling, MatrixCouplingProd}, mcs::MatrixCouplingSum) = MatrixCouplingSum(mc, map(m->-m, mcs.contents)...)
+@inline Base.:-(mcs::MatrixCouplingSum, mc::Union{MatrixCoupling, MatrixCouplingProd}) = MatrixCouplingSum(mcs.contents..., -mc)
+@inline Base.:-(mcs₁::MatrixCouplingSum, mcs₂::MatrixCouplingSum) = MatrixCouplingSum(mcs₁.contents..., map(m->-m, mcs₂.contents)...)
+
 
 # Term
 """
