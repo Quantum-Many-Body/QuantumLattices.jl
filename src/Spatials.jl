@@ -854,14 +854,14 @@ end
 @inline Base.size(segment::Segment) = (segment.length,)
 function Base.getindex(segment::Segment, i::Integer)
     length = segment.length+count(isequal(false), segment.ends)-1
-    step = (segment.stop-segment.start)/length
+    step = convert(eltype(segment), (segment.stop-segment.start)/length)
     start = segment.ends[1] ? segment.start : segment.start+step
     return start+(i-1)*step
 end
 function iterate(segment::Segment)
     segment.length==0 && return
     length = segment.length+count(isequal(false), segment.ends)-1
-    step = (segment.stop-segment.start)/length
+    step = convert(eltype(segment), (segment.stop-segment.start)/length)
     start = segment.ends[1] ? segment.start : segment.start+step
     return start, (1, start, step)
 end
