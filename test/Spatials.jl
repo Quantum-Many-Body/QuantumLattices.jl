@@ -316,3 +316,13 @@ end
     rp = ReciprocalPath{:q}([b₁, b₂], hexagon"Γ-K-M-Γ", length=10)
     @test rp == ReciprocalPath{:q}([b₁, b₂], (0//1, 0//1)=>(2//3, 1//3), (2//3, 1//3)=>(1//2, 1//2), (1//2, 1//2)=>(0//1, 0//1), length=10)
 end
+
+@testset "selectpath" begin
+    b₁, b₂ = [1.0, 0.0], [0.0, 1.0]
+    rz = ReciprocalZone([b₁, b₂], Segment(0,1,4), Segment(0,1,4))
+    line = [([0.0, 0.0], b₁/2), (b₁/2, b₁/2+b₂/2), (b₂/2+b₁/2, b₁*0) ]
+    path₁, pos₁ = selectpath(([0.0, 0.0],[0, 0.5]), rz; ends=(true,true))
+    @test path₁ == rz[pos₁]
+    path, pos = selectpath(line, rz; ends=[false,false,true])
+    @test rz[pos] == collect(path)
+end
