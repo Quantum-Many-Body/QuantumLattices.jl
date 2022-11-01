@@ -325,4 +325,8 @@ end
     @test path₁ == rz[pos₁]
     path, pos = selectpath(line, rz; ends=[false,false,true])
     @test rz[pos] == collect(path)
+
+    plt = plot(rz, path)
+    display(plt)
+    savefig(plt, "ReciprocalZone.png")
 end
