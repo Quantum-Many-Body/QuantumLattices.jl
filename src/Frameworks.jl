@@ -103,8 +103,10 @@ mutable struct AnalyticalExpression{F<:Function, P<:Parameters} <: Representatio
 end
 @inline function update!(expression::AnalyticalExpression; parameters...)
     expression.parameters = update(expression.parameters; parameters...)
+    update!(expression.expression; parameters...)
     return expression
 end
+@inline update!(expression::Function; parameters...) = expression
 @inline Parameters(expression::AnalyticalExpression) = expression.parameters
 @inline (expression::AnalyticalExpression)(; kwargs...) = expression.expression(values(expression.parameters)...; kwargs...)
 

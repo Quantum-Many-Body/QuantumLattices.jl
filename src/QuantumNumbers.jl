@@ -702,21 +702,6 @@ Abstract type for momentum.
 abstract type Momentum <: AbelianNumber end
 
 """
-    expand(momentum::Momentum, reciprocals::AbstractVector{<:AbstractVector}) -> eltype(reciprocals)
-
-Expand the momentum from integral values to real values with the given reciprocals.
-"""
-@inline function expand(momentum::Momentum, reciprocals::AbstractVector{<:AbstractVector})
-    p = periods(momentum)
-    @assert length(p)==length(reciprocals) "expand error: mismatched momentum and reciprocals."
-    result = zero(first(reciprocals))
-    for i = 1:length(p)
-        result += reciprocals[i]*(Int(momentum[i])//p[i])
-    end
-    return result
-end
-
-"""
     Momentum₁{N}(k::Real) where N
 
 One dimensional momentum.

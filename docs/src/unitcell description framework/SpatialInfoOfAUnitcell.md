@@ -14,11 +14,10 @@ The first step toward the complete description of a quantum lattice system is th
 
 In general, a lattice has translation symmetry. This symmetry introduces an equivalence relation for the points in a lattice when they can be translated into each other by multiple times of the translation vectors. This observation sets the mathematical foundation of the unitcell construction. As a result, it is enough for a lattice to restrict all points within the origin unitcell together with the translation vectors.
 
-[`Lattice`](@ref) is the simplest structure to encode all the spatial information within the origin unitcell. Apparently, it must contain all the coordinates of the points in the origin unitcell and the translation vectors of the lattice. Other stuff appears to be useful as well, such as the name of the lattice and the reciprocals dual to the translation vectors. Therefore, in this package, [`Lattice`](@ref) has four attributes:
+[`Lattice`](@ref) is the simplest structure to encode all the spatial information within the origin unitcell. Apparently, it must contain all the coordinates of the points in the origin unitcell and the translation vectors of the lattice. It also appears to be useful to associate a lattice with a name. Therefore, in this package, [`Lattice`](@ref) has three attributes:
 * `name::Symbol`: the name of the lattice
 * `coordinates::Matrix{<:Number}`: the coordinates of the points within the origin unitcell
 * `vectors::Vector{<:StaticArraysCore.SVector}`: the translation vectors of the lattice
-* `reciprocals::Vector{<:StaticArraysCore.SVector}`: the reciprocals dual to the translation vectors
 
 [`Lattice`](@ref) can be constructed by offering the coordinates, with optional keyword arguments to specify its name and translation vectors:
 ```jldoctest unitcell
@@ -49,7 +48,7 @@ Lattice(Cube)
     [0.0, 1.0, 0.0]
     [0.0, 0.0, 1.0]
 ```
-The coordinates could be specified by vectors or tuples. It is noted that the `reciprocals` attribute need not be assigned because it can be deduced from the input `vectors`.
+The coordinates could be specified by vectors or tuples.
 
 Iteration over a lattice will get the coordinates of the points in it:
 ```jldoctest unitcell
@@ -67,6 +66,16 @@ julia> collect(lattice)
 2-element Vector{StaticArraysCore.SVector{2, Float64}}:
  [0.0, 0.0]
  [0.5, 0.5]
+```
+
+The reciprocal translation vectors of the dual lattice can be obtained by [`reciprocals`](@ref):
+```jldoctest unitcell
+julia> lattice = Lattice((0.0, 0.0); vectors=[[1.0, 0.0], [0.0, 1.0]]);
+
+julia> reciprocals(lattice)
+2-element Vector{StaticArraysCore.SVector{2, Float64}}:
+ [6.283185307179586, -0.0]
+ [-0.0, 6.283185307179586]
 ```
 
 ## Request for the bonds of a lattice

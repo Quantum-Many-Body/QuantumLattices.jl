@@ -6,14 +6,15 @@ using NearestNeighbors: KDTree, inrange, knn
 using Printf: @printf, @sprintf
 using RecipesBase: RecipesBase, @recipe, @series
 using StaticArrays: SVector
-using ..QuantumNumbers: AbelianNumbers, Momentum, Momentum₁, Momentum₂, Momentum₃, periods
+using ..QuantumNumbers: AbelianNumbers, Momentum, periods
 using ..Toolkit: atol, rtol, efficientoperations, CompositeDict, Float, VectorSpace, SimpleNamedVectorSpace, VectorSpaceStyle, VectorSpaceCartesian
 
-import ..QuantumLattices: decompose, dimension, dtype, kind, reset!
+import ..QuantumLattices: decompose, dimension, dtype, expand, kind, reset!
+import ..QuantumNumbers: Momentum₁, Momentum₂, Momentum₃
 import ..Toolkit: contentnames, getcontent, shape
 
 export azimuth, azimuthd, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, polar, polard, reciprocals, rotate, translate, tile, volume
-export AbstractLattice, Bond, BrillouinZone, Lattice, Neighbors, Point, ReciprocalSpace, ReciprocalZone, ReciprocalPath, Segment, Translations, bonds!, bonds, icoordinate, isintracell, nneighbor, rcoordinate, @translations_str
+export AbstractLattice, Bond, BrillouinZone, Lattice, Neighbors, Point, ReciprocalSpace, ReciprocalZone, ReciprocalPath, Segment, Translations, bonds!, bonds, icoordinate, isintracell, nneighbor, rcoordinate
 export hexagon120°map, hexagon60°map, linemap, rectanglemap, @hexagon_str, @line_str, @rectangle_str, selectpath
 
 """
@@ -236,39 +237,42 @@ function issubordinate(coordinate::AbstractVector{<:Number}, vectors::AbstractVe
 end
 
 """
-    reciprocals(vectors::AbstractVector{AbstractVector{<:Number}}) -> Vector{Vector{<:Number}}
+    reciprocals(vectors::AbstractVector{AbstractVector{<:Number}}) -> Vector{<:AbstractVector{<:Number}}
 
 Get the reciprocals dual to the input vectors.
 """
 function reciprocals(vectors::AbstractVector{<:AbstractVector{<:Number}})
     @assert length(vectors)<4 "reciprocals error: the number of input vectors should not be greater than 3."
     @assert mapreduce(v->length(v)∈(1, 2, 3), &, vectors, init=true) "reciprocals error: all input vectors must be 1, 2 or 3 dimensional."
-    datatype = promote_type(Float, eltype(eltype(vectors)))
-    result = Vector{datatype}[]
+    result = vtype(eltype(vectors))[]
     if length(vectors) == 1
-        push!(result, 2*convert(datatype, pi)/mapreduce(vi->vi^2, +, vectors[1])*vectors[1])
+        push!(result, 2*convert(eltype(eltype(result)), pi)/mapreduce(vi->vi^2, +, vectors[1])*vectors[1])
     elseif length(vectors) == 2
         v₁, v₂ = vectors[1], vectors[2]
         @assert length(v₁)==length(v₂) "reciprocals error: mismatched length of input vectors."
         if length(v₁) == 2
-            det = 2*convert(datatype, pi) / (v₁[1]*v₂[2]-v₁[2]*v₂[1])
-            push!(result, [det*v₂[2], -det*v₂[1]])
-            push!(result, [-det*v₁[2], det*v₁[1]])
+            det = 2*convert(eltype(eltype(result)), pi) / (v₁[1]*v₂[2]-v₁[2]*v₂[1])
+            push!(result, vector(eltype(result), (det*v₂[2], -det*v₂[1])))
+            push!(result, vector(eltype(result), (-det*v₁[2], det*v₁[1])))
         else
-            v₃ = SVector{3, datatype}(v₁[2]*v₂[3]-v₁[3]*v₂[2], v₁[3]*v₂[1]-v₁[1]*v₂[3], v₁[1]*v₂[2]-v₁[2]*v₂[1])
-            V = 2*convert(datatype, pi) / volume(v₁, v₂, v₃)
-            push!(result, [v₂[2]*v₃[3]*V-v₂[3]*v₃[2]*V, v₂[3]*v₃[1]*V-v₂[1]*v₃[3]*V, v₂[1]*v₃[2]*V-v₂[2]*v₃[1]*V])
-            push!(result, [v₃[2]*v₁[3]*V-v₃[3]*v₁[2]*V, v₃[3]*v₁[1]*V-v₃[1]*v₁[3]*V, v₃[1]*v₁[2]*V-v₃[2]*v₁[1]*V])
+            v₃ = SVector{3, eltype(eltype(result))}(v₁[2]*v₂[3]-v₁[3]*v₂[2], v₁[3]*v₂[1]-v₁[1]*v₂[3], v₁[1]*v₂[2]-v₁[2]*v₂[1])
+            V = 2*convert(eltype(eltype(result)), pi) / volume(v₁, v₂, v₃)
+            push!(result, vector(eltype(result), (v₂[2]*v₃[3]*V-v₂[3]*v₃[2]*V, v₂[3]*v₃[1]*V-v₂[1]*v₃[3]*V, v₂[1]*v₃[2]*V-v₂[2]*v₃[1]*V)))
+            push!(result, vector(eltype(result), (v₃[2]*v₁[3]*V-v₃[3]*v₁[2]*V, v₃[3]*v₁[1]*V-v₃[1]*v₁[3]*V, v₃[1]*v₁[2]*V-v₃[2]*v₁[1]*V)))
         end
     elseif length(vectors) == 3
         v₁, v₂, v₃ = vectors
-        V = 2*convert(datatype, pi) / volume(v₁, v₂, v₃)
-        push!(result, [v₂[2]*v₃[3]*V-v₂[3]*v₃[2]*V, v₂[3]*v₃[1]*V-v₂[1]*v₃[3]*V, v₂[1]*v₃[2]*V-v₂[2]*v₃[1]*V])
-        push!(result, [v₃[2]*v₁[3]*V-v₃[3]*v₁[2]*V, v₃[3]*v₁[1]*V-v₃[1]*v₁[3]*V, v₃[1]*v₁[2]*V-v₃[2]*v₁[1]*V])
-        push!(result, [v₁[2]*v₂[3]*V-v₁[3]*v₂[2]*V, v₁[3]*v₂[1]*V-v₁[1]*v₂[3]*V, v₁[1]*v₂[2]*V-v₁[2]*v₂[1]*V])
+        V = 2*convert(eltype(eltype(result)), pi) / volume(v₁, v₂, v₃)
+        push!(result, vector(eltype(result), (v₂[2]*v₃[3]*V-v₂[3]*v₃[2]*V, v₂[3]*v₃[1]*V-v₂[1]*v₃[3]*V, v₂[1]*v₃[2]*V-v₂[2]*v₃[1]*V)))
+        push!(result, vector(eltype(result), (v₃[2]*v₁[3]*V-v₃[3]*v₁[2]*V, v₃[3]*v₁[1]*V-v₃[1]*v₁[3]*V, v₃[1]*v₁[2]*V-v₃[2]*v₁[1]*V)))
+        push!(result, vector(eltype(result), (v₁[2]*v₂[3]*V-v₁[3]*v₂[2]*V, v₁[3]*v₂[1]*V-v₁[1]*v₂[3]*V, v₁[1]*v₂[2]*V-v₁[2]*v₂[1]*V)))
     end
     return result
 end
+@inline vtype(::Type{V}) where {V<:Vector} = Vector{promote_type(Float, eltype(V))}
+@inline vtype(::Type{V}) where {V<:SVector} = SVector{length(V), promote_type(Float, eltype(V))}
+@inline vector(::Type{<:Vector}, v::Tuple) = collect(v)
+@inline vector(::Type{<:SVector}, v::Tuple) = SVector(v)
 
 """
     rotate(cluster::AbstractMatrix{<:Number}, angle::Number; axis::Tuple{Union{AbstractVector{<:Number}, Nothing}, Tuple{<:Number, <:Number}}=(nothing, (0, 0))) -> Matrix{<:Number}
@@ -343,13 +347,13 @@ function tile(cluster::AbstractMatrix{<:Number}, vectors::AbstractVector{<:Abstr
 end
 
 """
-    minimumlengths(cluster::AbstractMatrix{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}, nneighbor::Int=1; coordination::Int=8) -> Vector{Float}
+    minimumlengths(cluster::AbstractMatrix{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}, nneighbor::Int=1; coordination::Int=12) -> Vector{Float}
 
 Use kdtree to search the lowest several minimum bond lengths within a lattice translated by a cluster.
 
 When the translation vectors are not empty, the lattice will be considered periodic in the corresponding directions. Otherwise the lattice will be open in all directions. To search for the bonds across the periodic boundaries, the cluster will be pre-translated to become a supercluster, which has open boundaries but is large enough to contain all the nearest neighbors within the required order. The `coordination` parameter sets the average number of each order of nearest neighbors. If it is to small, larger bond lengths may not be searched, and the result will contain `Inf`. This is a sign that you may need a larger `coordination`. Another situation that `Inf` appears in the result occurs when the minimum lengths are searched in open lattices. Indeed, the cluster may be too small so that the required order just goes beyond it. In this case the warning message can be safely ignored.
 """
-function minimumlengths(cluster::AbstractMatrix{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}, nneighbor::Int=1; coordination::Int=8)
+function minimumlengths(cluster::AbstractMatrix{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}, nneighbor::Int=1; coordination::Int=12)
     @assert nneighbor>=0 "minimumlengths error: input nneighbor must be non negative."
     result = [Inf for i = 1:nneighbor]
     if size(cluster, 2) > 0
@@ -389,7 +393,7 @@ struct Neighbors{K, V<:Number} <: CompositeDict{K, V}
     contents::Dict{K, V}
 end
 @inline Neighbors(pairs...) = Neighbors(Dict(pairs...))
-@inline Neighbors(lengths::Vector{<:Number}) = Neighbors((i-1)=>length for (i, length) in enumerate(lengths))
+@inline Neighbors(lengths::Vector{<:Number}, ordinals=0:length(lengths)-1) = Neighbors(ordinal=>length for (ordinal, length) in zip(ordinals, lengths))
 @inline Base.max(neighbors::Neighbors) = max(values(neighbors)...)
 @inline nneighbor(neighbors::Neighbors{<:Integer}) = max(keys(neighbors)...)
 @inline nneighbor(neighbors::Neighbors) = length(neighbors)
@@ -427,38 +431,35 @@ end
 A set of translations. The boundary conditions along each translation direction are also included.
 """
 struct Translations{N} <: VectorSpace{NTuple{N, Int}}
-    ranges::NTuple{N, Int}
+    ranges::NTuple{N, UnitRange{Int}}
     boundaries::NTuple{N, Char}
-    function Translations(ranges::NTuple{N, Int}, boundaries::NTuple{N, Char}) where N
-        @assert all(map(>(0), ranges)) "Translations error: ranges must be positive."
+    function Translations(ranges::NTuple{N, UnitRange{Int}}, boundaries::NTuple{N, Char}) where N
         @assert all(map(in(('P', 'O', 'p', 'o')), boundaries)) "Translations error: boundary conditions must be either 'P'/'p' for 'periodic' or 'O'/'o' for 'open'."
         new{N}(ranges, map(uppercase, boundaries))
     end
 end
 @inline VectorSpaceStyle(::Type{<:Translations}) = VectorSpaceCartesian()
-@inline shape(translations::Translations) = map(i->0:i-1, translations.ranges)
+@inline shape(translations::Translations) = reverse(translations.ranges)
 @inline Base.CartesianIndex(translation::NTuple{N, Int}, ::Translations{N}) where N = CartesianIndex(translation)
-@inline Tuple(index::CartesianIndex{N}, ::Translations{N}) where N = Tuple(index)
+@inline Tuple(index::CartesianIndex{N}, ::Translations{N}) where N = Tuple(reverse(index.I))
 function Base.show(io::IO, translations::Translations{N}) where N
     for i = 1:N
         i>1 && @printf io "%s" '-'
-        @printf io "%s%s" translations.ranges[i] translations.boundaries[i]
+        @printf io "%s%s" translations.ranges[i].start==0 ? translations.ranges[i].stop+1 : string("(", translations.ranges[i], ")") translations.boundaries[i]
     end
 end
 
 """
-    translations"n₁P/O-n₁P/O-..." -> Translations
+    Translations(ranges::NTuple{N, Int}, boundaries::NTuple{N, Char}=ntuple(i->'O', N); mode::Symbol=:nonnegative) where N
 
-Construct a set of translations from a string literal.
+Construct a set of translations.
 """
-macro translations_str(str::String)
-    patterns = split(str, "-")
-    ranges, boundaries = Int[], Char[]
-    for pattern in patterns
-        push!(ranges, Meta.parse(pattern[1:end-1]))
-        push!(boundaries, pattern[end])
-    end
-    return Translations(Tuple(ranges), Tuple(boundaries))
+function Translations(ranges::NTuple{N, Int}, boundaries::NTuple{N, Char}=ntuple(i->'O', N); mode::Symbol=:nonnegative) where N
+    @assert mode∈(:center, :nonnegative) "Translations error: wrong mode($(repr(mode)))."
+    return Translations(
+        mode==:center ? map(i->-Int(floor((i-1)/2)):i-1-Int(floor((i-1)/2)), ranges) : map(i->0:i-1, ranges),
+        boundaries
+    )
 end
 
 """
@@ -631,10 +632,9 @@ It should have the following contents:
 - `name::Symbol`: the name of the lattice
 - `coordinates::Matrix{D}`: the coordinates of the lattice
 - `vectors::Vector{SVector{N, D}}`: the translation vectors of the lattice
-- `reciprocals::Vector{SVector{N, D}}`: the reciprocals of the lattice
 """
 abstract type AbstractLattice{N, D<:Number} end
-@inline contentnames(::Type{<:AbstractLattice}) = (:name, :coordinates, :vectors, :reciprocals)
+@inline contentnames(::Type{<:AbstractLattice}) = (:name, :coordinates, :vectors)
 @inline Base.:(==)(lattice₁::AbstractLattice, lattice₂::AbstractLattice) = ==(efficientoperations, lattice₁, lattice₂)
 @inline Base.isequal(lattice₁::AbstractLattice, lattice₂::AbstractLattice) = isequal(efficientoperations, lattice₁, lattice₂)
 @inline Base.eltype(lattice::AbstractLattice) = eltype(typeof(lattice))
@@ -691,28 +691,35 @@ Get the ith coordinate.
 @inline Base.getindex(lattice::AbstractLattice, i::Integer) = SVector{dimension(lattice), dtype(lattice)}(ntuple(j->lattice.coordinates[j, i], Val(dimension(lattice))))
 
 """
-    Neighbors(lattice::AbstractLattice, nneighbor::Integer; coordination::Int=8)
+    reciprocals(lattice::AbstractLattice) -> Vector{<:SVector}
+
+Get the reciprocal translation vectors of the dual lattice.
+"""
+@inline reciprocals(lattice::AbstractLattice) = reciprocals(getcontent(lattice, :vectors))
+
+"""
+    Neighbors(lattice::AbstractLattice, nneighbor::Integer; coordination::Int=12)
 
 Get the neighbor vs. bond length map of a lattice up to the `nneighbor`th order.
 """
-@inline Neighbors(lattice::AbstractLattice, nneighbor::Integer; coordination::Int=8) = Neighbors(minimumlengths(getcontent(lattice, :coordinates), getcontent(lattice, :vectors), nneighbor; coordination=coordination))
+@inline Neighbors(lattice::AbstractLattice, nneighbor::Integer; coordination::Int=12) = Neighbors(minimumlengths(getcontent(lattice, :coordinates), getcontent(lattice, :vectors), nneighbor; coordination=coordination))
 
 """
-    bonds(lattice::AbstractLattice, nneighbor::Int; coordination::Int=8) -> Vector{Bond{Int, Point{dimension(lattice), dtype(lattice)}}}
+    bonds(lattice::AbstractLattice, nneighbor::Int; coordination::Int=12) -> Vector{Bond{Int, Point{dimension(lattice), dtype(lattice)}}}
     bonds(lattice::AbstractLattice, neighbors::Neighbors) -> Vector{Bond{keytype(neighbors), Point{dimension(lattice), dtype(lattice)}}}
 
 Get the required bonds of a lattice.
 """
-@inline bonds(lattice::AbstractLattice, nneighbor::Int; coordination::Int=8) = bonds!(Bond{Int, Point{dimension(lattice), dtype(lattice)}}[], lattice, nneighbor; coordination=coordination)
+@inline bonds(lattice::AbstractLattice, nneighbor::Int; coordination::Int=12) = bonds!(Bond{Int, Point{dimension(lattice), dtype(lattice)}}[], lattice, nneighbor; coordination=coordination)
 @inline bonds(lattice::AbstractLattice, neighbors::Neighbors) = bonds!(Bond{keytype(neighbors), Point{dimension(lattice), dtype(lattice)}}[], lattice, neighbors)
 
 """
-    bonds!(bonds::Vector, lattice::AbstractLattice, nneighbor::Int; coordination::Int=8)
+    bonds!(bonds::Vector, lattice::AbstractLattice, nneighbor::Int; coordination::Int=12)
     bonds!(bonds::Vector, lattice::AbstractLattice, neighbors::Neighbors) -> typeof(bonds)
 
 Get the required bonds of a lattice and append them to the input bonds.
 """
-@inline bonds!(bonds::Vector, lattice::AbstractLattice, nneighbor::Int; coordination::Int=8) = bonds!(bonds, lattice, Neighbors(lattice, nneighbor; coordination=coordination))
+@inline bonds!(bonds::Vector, lattice::AbstractLattice, nneighbor::Int; coordination::Int=12) = bonds!(bonds, lattice, Neighbors(lattice, nneighbor; coordination=coordination))
 function bonds!(bonds::Vector, lattice::AbstractLattice, neighbors::Neighbors)
     origin = zero(SVector{dimension(lattice), dtype(lattice)})
     reverse = Dict(length=>order for (order, length) in neighbors)
@@ -795,14 +802,12 @@ struct Lattice{N, D<:Number} <: AbstractLattice{N, D}
     name::Symbol
     coordinates::Matrix{D}
     vectors::Vector{SVector{N, D}}
-    reciprocals::Vector{SVector{N, D}}
     function Lattice{N}(name::Symbol, coordinates::Matrix{<:Number}, vectors::Vector{<:AbstractVector{<:Number}}) where N
         @assert N==size(coordinates, 1) "Lattice error: shape mismatched."
         datatype = promote_type(Float, eltype(coordinates), eltype(eltype(vectors)))
         coordinates = convert(Matrix{datatype}, coordinates)
         vectors = convert(Vector{SVector{N, datatype}}, vectors)
-        recipls = convert(Vector{SVector{N, datatype}}, reciprocals(vectors))
-        new{N, datatype}(name, coordinates, vectors, recipls)
+        new{N, datatype}(name, coordinates, vectors)
     end
 end
 
@@ -833,7 +838,7 @@ function Lattice(lattice::Lattice, translations::Translations)
     coordinates = tile(lattice.coordinates, lattice.vectors, translations)
     vectors = SVector{dimension(lattice), dtype(lattice)}[]
     for (i, vector) in enumerate(lattice.vectors)
-        translations.boundaries[i]=='P' && push!(vectors, vector*translations.ranges[i])
+        translations.boundaries[i]=='P' && push!(vectors, vector*length(translations.ranges[i]))
     end
     return Lattice{dimension(lattice)}(name, coordinates, vectors)
 end
@@ -1291,6 +1296,49 @@ Define the recipe for the visualization of a reciprocal zone and a reciprocal pa
             coordinates
         end
     end
+end
+
+"""
+    expand(momentum::Momentum, reciprocals::AbstractVector{<:AbstractVector}) -> eltype(reciprocals)
+
+Expand the momentum from integral values to real values with the given reciprocals.
+"""
+@inline function expand(momentum::Momentum, reciprocals::AbstractVector{<:AbstractVector})
+    p = periods(momentum)
+    @assert length(p)==length(reciprocals) "expand error: mismatched momentum and reciprocals."
+    result = zero(first(reciprocals))
+    for i = 1:length(p)
+        result += reciprocals[i]*(Int(momentum[i])//p[i])
+    end
+    return result
+end
+
+"""
+    Momentum₁{N}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}) where N
+    Momentum₂{N₁, N₂}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}) where {N₁, N₂}
+    Momentum₃{N₁, N₂, N₃}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}) where {N₁, N₂, N₃}
+
+Construct a quantum momentum by the coordinates.
+"""
+function Momentum₁{N}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}) where N
+    @assert length(reciprocals)==1 "Momentum₁ error: mismatched length of reciprocals."
+    k = decompose(momentum, reciprocals[1])[1]*N
+    @assert isapprox(round(k), k; atol=atol, rtol=rtol) "Momentum₁ error: input momentum not on grid."
+    return Momentum₁{N}(k)
+end
+function Momentum₂{N₁, N₂}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}) where {N₁, N₂}
+    @assert length(reciprocals)==2 "Momentum₂ error: mismatched length of reciprocals."
+    k₁, k₂ = decompose(momentum, reciprocals[1], reciprocals[2])
+    k₁, k₂ = k₁*N₁, k₂*N₂
+    @assert isapprox(round(k₁), k₁; atol=atol, rtol=rtol) && isapprox(round(k₂), k₂; atol=atol, rtol=rtol) "Momentum₂ error: input momentum not on grid."
+    return Momentum₂{N₁, N₂}(k₁, k₂)
+end
+function Momentum₃{N₁, N₂, N₃}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}) where {N₁, N₂, N₃}
+    @assert length(reciprocals)==3 "Momentum₃ error: mismatched length of reciprocals."
+    k₁, k₂, k₃ = decompose(momentum, reciprocals[1], reciprocals[2], reciprocals[3])
+    k₁, k₂, k₃ = k₁*N₁, k₂*N₂, k₃*N₃
+    @assert isapprox(round(k₁), k₁; atol=atol, rtol=rtol) && isapprox(round(k₂), k₂; atol=atol, rtol=rtol) && isapprox(round(k₃), k₃; atol=atol, rtol=rtol) "Momentum₃ error: input momentum not on grid."
+    return Momentum₃{N₁, N₂, N₃}(k₁, k₂, k₃)
 end
 
 end #module

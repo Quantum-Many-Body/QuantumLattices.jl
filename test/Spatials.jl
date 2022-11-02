@@ -1,6 +1,6 @@
 using Plots: plot, savefig
 using QuantumLattices.Spatials
-using QuantumLattices: decompose, dimension, dtype
+using QuantumLattices: decompose, dimension, dtype, expand
 using QuantumLattices.QuantumNumbers: AbelianNumbers, Momentum₁, Momentum₂, Momentum₃
 using QuantumLattices.Toolkit: Float, contentnames, getcontent, shape
 using Random: seed!
@@ -145,12 +145,14 @@ end
 end
 
 @testset "Translations" begin
-    translations = translations"2P-3O"
-    @test translations == Translations((2, 3), ('P', 'O'))
-    @test shape(translations) == (0:1, 0:2)
+    translations = Translations((2, 3), ('P', 'O'); mode=:nonnegative)
+    @test shape(translations) == (0:2, 0:1)
     @test CartesianIndex((0, 0), translations) == CartesianIndex(0, 0)
     @test Tuple(CartesianIndex(0, 0), translations) == (0, 0)
     @test string(translations) == "2P-3O"
+
+    translations = Translations((2, 3), ('P', 'O'); mode=:center)
+    @test string(translations) == "2P-(-1:1)O"
 end
 
 @testset "Point" begin
@@ -182,7 +184,7 @@ end
 
 @testset "Lattice" begin
     lattice = Lattice([0.5, 0.5]; name=:Tuanzi, vectors=[[1.0, 0.0], [0.0, 1.0]])
-    @test lattice|>typeof|>contentnames == (:name, :coordinates, :vectors, :reciprocals)
+    @test lattice|>typeof|>contentnames == (:name, :coordinates, :vectors)
     @test lattice|>deepcopy == lattice
     @test isequal(lattice|>deepcopy, lattice)
     @test lattice|>string == "Lattice(Tuanzi)\n  with 1 point:\n    [0.5, 0.5]\n  with 2 translation vectors:\n    [1.0, 0.0]\n    [0.0, 1.0]\n"
@@ -190,6 +192,7 @@ end
     @test lattice|>dimension == lattice|>typeof|>dimension == 2
     @test lattice|>dtype == lattice|>typeof|>dtype == Float
     @test lattice[1] == SVector(0.5, 0.5)
+    @test reciprocals(lattice) == reciprocals(lattice.vectors)
     @test Neighbors(lattice, 1) == Neighbors([0.0, 1.0])
     @test Neighbors(lattice, 2) == Neighbors([0.0, 1.0, √2])
 
@@ -200,8 +203,8 @@ end
     ]
 
     unit = Lattice((0.0, 0.0); name=:Square, vectors=[[1.0, 0.0], [0.0, 1.0]])
-    lattice = Lattice(unit, translations"2P-3O")
-    @test lattice == Lattice([0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0], [0.0, 2.0], [1.0, 2.0]; name=Symbol("Square(2P-3O)"), vectors=[[2.0, 0.0]])
+    lattice = Lattice(unit, Translations((2, 3), ('P', 'O')))
+    @test lattice == Lattice([0.0, 0.0], [0.0, 1.0], [0.0, 2.0], [1.0, 0.0], [1.0, 1.0], [1.0, 2.0]; name=Symbol("Square(2P-3O)"), vectors=[[2.0, 0.0]])
 end
 
 @testset "plot" begin
@@ -329,4 +332,14 @@ end
     plt = plot(rz, path)
     display(plt)
     savefig(plt, "ReciprocalZone.png")
+end
+
+@testset "Momentum" begin
+    @test expand(Momentum₁{10}(1), [[1.0, 0.0, 0.0]]) == [0.1, 0.0, 0.0]
+    @test expand(Momentum₂{10, 100}(1, 1), [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]) == [0.1, 0.01, 0.0]
+    @test expand(Momentum₃{10, 100, 1000}(1, 1, 1), [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]) == [0.1, 0.01, 0.001]
+
+    @test Momentum₁{10}([0.1, 0.0, 0.0], [[1.0, 0.0, 0.0]]) == Momentum₁{10}(1)
+    @test Momentum₂{10, 100}([0.1, 0.01, 0.0], [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]) == Momentum₂{10, 100}(1, 1)
+    @test Momentum₃{10, 100, 1000}([0.1, 0.01, 0.001],[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]) == Momentum₃{10, 100, 1000}(1, 1, 1)
 end

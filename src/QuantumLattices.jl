@@ -47,7 +47,7 @@ export particlenumbers, periods, spinfulparticles, spinzs, @abeliannumber
 include("Spatials.jl")
 using .Spatials
 export azimuth, azimuthd, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, polar, polard, reciprocals, rotate, translate, tile, volume
-export AbstractLattice, Bond, BrillouinZone, Lattice, Neighbors, Point, ReciprocalSpace, ReciprocalZone, ReciprocalPath, Segment, Translations, bonds!, bonds, icoordinate, isintracell, rcoordinate, @translations_str
+export AbstractLattice, Bond, BrillouinZone, Lattice, Neighbors, Point, ReciprocalSpace, ReciprocalZone, ReciprocalPath, Segment, Translations, bonds!, bonds, icoordinate, isintracell, rcoordinate
 export @hexagon_str, @line_str, @rectangle_str
 
 # DegreesOfFreedom
