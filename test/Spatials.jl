@@ -323,12 +323,22 @@ end
 @testset "selectpath" begin
     b₁, b₂ = [1.0, 0.0], [0.0, 1.0]
     rz = ReciprocalZone([b₁, b₂], Segment(0,1,4), Segment(0,1,4))
-    line = [([0.0, 0.0], b₁/2), (b₁/2, b₁/2+b₂/2), (b₂/2+b₁/2, b₁*0) ]
-    path₁, pos₁ = selectpath(([0.0, 0.0],[0, 0.5]), rz; ends=(true,true))
-    @test path₁ == rz[pos₁]
-    path, pos = selectpath(line, rz; ends=[false,false,true])
+    line = [([0.0, 0.0], b₁/2), (b₁/2, b₁/2 + b₂/2), (b₂/2 + b₁/2, b₁*0)]
+    path₀, pos₀ = selectpath(([0.0, 0.0], [0, 0.5]), rz; ends=(true,true), atol=1e-9, rtol=1e-9)
+    @test path₀ == rz[pos₀]
+    path, pos = selectpath(line, rz; ends=[false, true, true], atol=1e-9, rtol=1e-9)
     @test rz[pos] == collect(path)
+    @test path[5] != path[6]
 
+    line₁ = [ (b₂/2 - 3*b₁/2, -3*b₁)]
+    path₁, pos₁ = selectpath(line₁, rz; ends=[true], atol=1e-9, rtol=1e-9)
+    @test rz[pos₁] == [[0.5, 0.5], [0.75, 0.25], [0.0, 0.0]]
+    
+    plt₁ = plot(rz, path₁)
+    plot!(plt₁, [Tuple(p) for p in rz[pos₁]], st=:scatter)
+    display(plt₁)
+    savefig(plt₁, "PickPoint.png")
+    
     plt = plot(rz, path)
     display(plt)
     savefig(plt, "ReciprocalZone.png")
