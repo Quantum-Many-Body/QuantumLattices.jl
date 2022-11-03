@@ -1,4 +1,4 @@
-using Plots: plot, savefig
+using Plots: plot, savefig, plot!
 using QuantumLattices.Spatials
 using QuantumLattices: decompose, dimension, dtype, expand
 using QuantumLattices.QuantumNumbers: AbelianNumbers, Momentum₁, Momentum₂, Momentum₃
@@ -318,6 +318,30 @@ end
 
     rp = ReciprocalPath{:q}([b₁, b₂], hexagon"Γ-K-M-Γ", length=10)
     @test rp == ReciprocalPath{:q}([b₁, b₂], (0//1, 0//1)=>(2//3, 1//3), (2//3, 1//3)=>(1//2, 1//2), (1//2, 1//2)=>(0//1, 0//1), length=10)
+end
+
+@testset "selectpath" begin
+    b₁, b₂ = [1.0, 0.0], [0.0, 1.0]
+    rz = ReciprocalZone([b₁, b₂], Segment(0,1,4), Segment(0,1,4))
+    line = [([0.0, 0.0], b₁/2), (b₁/2, b₁/2 + b₂/2), (b₂/2 + b₁/2, b₁*0)]
+    path₀, pos₀ = selectpath(([0.0, 0.0], [0, 0.5]), rz; ends=(true,true), atol=1e-9, rtol=1e-9)
+    @test path₀ == rz[pos₀]
+    path, pos = selectpath(line, rz; ends=[false, true, true], atol=1e-9, rtol=1e-9)
+    @test rz[pos] == collect(path)
+    @test path[5] != path[6]
+
+    line₁ = [ (b₂/2 - 3*b₁/2, -3*b₁)]
+    path₁, pos₁ = selectpath(line₁, rz; ends=[true], atol=1e-9, rtol=1e-9)
+    @test rz[pos₁] == [[0.5, 0.5], [0.75, 0.25], [0.0, 0.0]]
+    
+    plt₁ = plot(rz, path₁)
+    plot!(plt₁, [Tuple(p) for p in rz[pos₁]], st=:scatter)
+    display(plt₁)
+    savefig(plt₁, "PickPoint.png")
+    
+    plt = plot(rz, path)
+    display(plt)
+    savefig(plt, "ReciprocalZone.png")
 end
 
 @testset "Momentum" begin

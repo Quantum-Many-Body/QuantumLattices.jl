@@ -15,7 +15,7 @@ import ..Toolkit: contentnames, getcontent, shape
 
 export azimuth, azimuthd, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, polar, polard, reciprocals, rotate, translate, tile, volume
 export AbstractLattice, Bond, BrillouinZone, Lattice, Neighbors, Point, ReciprocalSpace, ReciprocalZone, ReciprocalPath, Segment, Translations, bonds!, bonds, icoordinate, isintracell, nneighbor, rcoordinate
-export hexagon120°map, hexagon60°map, linemap, rectanglemap, @hexagon_str, @line_str, @rectangle_str
+export hexagon120°map, hexagon60°map, linemap, rectanglemap, @hexagon_str, @line_str, @rectangle_str, selectpath
 
 """
     distance(p₁::AbstractVector{<:Number}, p₂::AbstractVector{<:Number}) -> Number
@@ -1196,6 +1196,106 @@ macro hexagon_str(str::String)
     @assert length(points)>1 "@hexagon_str error: too few points."
     map = (length(str)==1 || str[2]=="120°") ? hexagon120°map : hexagon60°map
     return ntuple(i->map[points[i]]=>map[points[i+1]], length(points)-1)
+end
+
+
+# select a path from the ReciprocalZone
+"""
+    selectpath(stsp::Tuple{<:AbstractVector, <:AbstractVector}, rz::ReciprocalZone; ends::Tuple{Bool, Bool}=(true, false), atol::Real=atol, rtol::Real=rtol) -> Tuple(Vector{Vector{Float64}}, Vector{Int})
+
+Select a path from the reciprocal zone.
+"""
+function selectpath(stsp::Tuple{<:AbstractVector, <:AbstractVector}, rz::ReciprocalZone; ends::Tuple{Bool, Bool}=(true, false), atol::Real=atol, rtol::Real=rtol) 
+    start, stop = stsp[1], stsp[2]
+    dimₖ = length(rz[1])
+    dim₁ = length(rz.reciprocals)
+    @assert dimₖ == dim₁ "selectpath error: the dimension of k point does not match with the the number of reciprocals"
+    recpr = zeros(Float64, dimₖ, dim₁)
+    for i in 1:dim₁
+        recpr[:, i] = rz.reciprocals[i]
+    end
+    startrp = recpr\(start - rz[1]) 
+    stoprp = recpr\(stop - rz[1]) 
+    intstart = floor.(Int, round.(startrp; digits=4))
+    intstop = floor.(Int, round.(stoprp; digits=4))
+    mes = []
+    for i in 1:dimₖ
+        if intstop[i] >= intstart[i]
+            step = 1
+        elseif intstop[i] < intstart[i]
+            step = -1
+        end
+        push!(mes, intstart[i]:step:intstop[i])
+    end
+    disps = [recpr*[disp...] for disp in product(mes...)]
+    psegments = Vector{Float64}[]
+    isegments, dsegments = Int[], []
+    for (pos, k) in enumerate(rz)
+        for disp in disps
+            rcoord = k + disp
+            if isonline(rcoord, start, stop; ends=ends, atol=atol, rtol=rtol)
+                push!(psegments, rcoord)
+                push!(isegments, pos)
+                push!(dsegments, norm(rcoord-start))
+            end
+        end
+    end
+    p = sortperm(dsegments)
+    return psegments[p], isegments[p]
+end
+"""
+    selectpath(path::AbstractVector{<:Tuple{<:AbstractVector, <:AbstractVector}}, bz::ReciprocalZone;ends::Union{<:AbstractVector{Bool},Nothing}=nothing, atol::Real=atol, rtol::Real=rtol) -> Tuple(Vector{Vector{Float64}}, Vector{Int})  -> -> Tuple(ReciprocalPath, Vector{Int})
+
+Select a path from the reciprocal zone. Return ReciprocalPath and positions of points in the reciprocal zone.
+"""
+function selectpath(path::AbstractVector{<:Tuple{<:AbstractVector, <:AbstractVector}}, bz::ReciprocalZone;ends::Union{<:AbstractVector{Bool},Nothing}=nothing, atol::Real=atol, rtol::Real=rtol)
+    points = Vector{Float64}[]
+    positions = Int[]
+    endss = isnothing(ends) ? [false for _ in 1:length(path)] : ends 
+    @assert length(path) == length(endss) "selectpath error: the number of ends is not equal to that of path."
+    for (i,stsp) in enumerate(path)
+        psegments, isegments = selectpath(stsp, bz; ends=(true, endss[i]), atol=atol, rtol=rtol)
+        if i>1 && length(isegments)>0 && length(positions)>0 && positions[end] == isegments[1]
+            popfirst!(psegments) 
+            popfirst!(isegments) 
+        end
+            append!(points, psegments)
+            append!(positions, isegments)
+    end
+    return ReciprocalPath(points), positions
+end
+
+"""
+    @recipe plot(rz::ReciprocalZone, path::Union{ReciprocalPath,Nothing}=nothing)
+
+Define the recipe for the visualization of a reciprocal zone and a reciprocal path
+"""
+@recipe function plot(rz::ReciprocalZone, path::Union{ReciprocalPath,Nothing}=nothing)
+    title := "ReciprocalZone"
+    titlefontsize --> 10
+    legend := false
+    aspect_ratio := :equal
+    @series begin
+        seriestype := :scatter
+        coordinates = NTuple{length(eltype(rz)), eltype(eltype(rz))}[]
+        for i in rz
+            push!(coordinates, Tuple(i))
+        end
+        coordinates
+    end
+    if !(isnothing(path))
+        coordinates = NTuple{length(eltype(path)), eltype(eltype(path))}[]
+        for i in path
+            push!(coordinates, Tuple(i))
+        end  
+        @series begin
+            seriestype := :scatter
+            coordinates
+        end
+        @series begin
+            coordinates
+        end
+    end
 end
 
 """
