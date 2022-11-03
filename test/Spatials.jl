@@ -1,4 +1,4 @@
-using Plots: plot, savefig
+using Plots: plot, savefig, plot!
 using QuantumLattices.Spatials
 using QuantumLattices: decompose, dimension, dtype, expand
 using QuantumLattices.QuantumNumbers: AbelianNumbers, Momentum₁, Momentum₂, Momentum₃
