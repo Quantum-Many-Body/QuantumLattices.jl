@@ -149,17 +149,6 @@ end
     @test interlinks(ps1, ps2, neighbors) == links
 end
 
-@testset "Translations" begin
-    translations = Translations((2, 3), ('P', 'O'); mode=:nonnegative)
-    @test shape(translations) == (0:2, 0:1)
-    @test CartesianIndex((0, 0), translations) == CartesianIndex(0, 0)
-    @test Tuple(CartesianIndex(0, 0), translations) == (0, 0)
-    @test string(translations) == "2P-3O"
-
-    translations = Translations((2, 3), ('P', 'O'); mode=:center)
-    @test string(translations) == "2P-(-1:1)O"
-end
-
 @testset "Point" begin
     point = Point(1, (0.0, 0.0), (0.0, 0.0))
     @test point == Point(1, [0.0, 0.0], [0.0, 0.0])
@@ -208,8 +197,8 @@ end
     ]
 
     unit = Lattice((0.0, 0.0); name=:Square, vectors=[[1.0, 0.0], [0.0, 1.0]])
-    lattice = Lattice(unit, Translations((2, 3), ('P', 'O')))
-    @test lattice == Lattice([0.0, 0.0], [0.0, 1.0], [0.0, 2.0], [1.0, 0.0], [1.0, 1.0], [1.0, 2.0]; name=Symbol("Square(2P-3O)"), vectors=[[2.0, 0.0]])
+    @test Lattice(unit, (2, 3), ('P', 'O')) == Lattice([0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0], [0.0, 2.0], [1.0, 2.0]; name=Symbol("Square[0:1](0:2)"), vectors=[[2.0, 0.0]])
+    @test Lattice(unit, (2, 3), ('P', 'O'); mode=:center) == Lattice([0.0, -1.0], [1.0, -1.0], [0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]; name=Symbol("Square[0:1](-1:1)"), vectors=[[2.0, 0.0]])
 end
 
 @testset "plot" begin

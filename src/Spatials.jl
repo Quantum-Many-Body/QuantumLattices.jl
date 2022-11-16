@@ -7,7 +7,7 @@ using Printf: @printf, @sprintf
 using RecipesBase: RecipesBase, @recipe, @series
 using StaticArrays: SVector
 using ..QuantumNumbers: Momenta, Momentum, periods
-using ..Toolkit: atol, rtol, efficientoperations, CompositeDict, Float, SimpleNamedVectorSpace, VectorSpace, VectorSpaceCartesian, VectorSpaceEnumerative, VectorSpaceStyle
+using ..Toolkit: atol, rtol, efficientoperations, CompositeDict, Float, SimpleNamedVectorSpace, VectorSpaceCartesian, VectorSpaceEnumerative, VectorSpaceStyle
 
 import StaticArrays: SArray
 import ..QuantumLattices: decompose, dimension, dtype, expand, kind, reset!
@@ -15,7 +15,7 @@ import ..QuantumNumbers: Momentum₁, Momentum₂, Momentum₃
 import ..Toolkit: contentnames, getcontent, shape
 
 export azimuth, azimuthd, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, polar, polard, reciprocals, rotate, translate, tile, volume
-export AbstractLattice, Bond, BrillouinZone, Lattice, Neighbors, Point, ReciprocalSpace, ReciprocalZone, ReciprocalPath, Segment, Translations, bonds!, bonds, icoordinate, isintracell, nneighbor, rcoordinate, selectpath
+export AbstractLattice, Bond, BrillouinZone, Lattice, Neighbors, Point, ReciprocalSpace, ReciprocalZone, ReciprocalPath, Segment, bonds, bonds!, icoordinate, isintracell, nneighbor, rcoordinate, selectpath
 export hexagon120°map, hexagon60°map, linemap, rectanglemap, @hexagon_str, @line_str, @rectangle_str
 
 """
@@ -444,43 +444,6 @@ function interlinks(cluster₁::AbstractMatrix{<:Number}, cluster₂::AbstractMa
 end
 
 """
-    Translations{N} <: VectorSpace{NTuple{N, Int}}
-
-A set of translations. The boundary conditions along each translation direction are also included.
-"""
-struct Translations{N} <: VectorSpace{NTuple{N, Int}}
-    ranges::NTuple{N, UnitRange{Int}}
-    boundaries::NTuple{N, Char}
-    function Translations(ranges::NTuple{N, UnitRange{Int}}, boundaries::NTuple{N, Char}) where N
-        @assert all(map(in(('P', 'O', 'p', 'o')), boundaries)) "Translations error: boundary conditions must be either 'P'/'p' for 'periodic' or 'O'/'o' for 'open'."
-        new{N}(ranges, map(uppercase, boundaries))
-    end
-end
-@inline VectorSpaceStyle(::Type{<:Translations}) = VectorSpaceCartesian()
-@inline shape(translations::Translations) = reverse(translations.ranges)
-@inline Base.CartesianIndex(translation::NTuple{N, Int}, ::Translations{N}) where N = CartesianIndex(translation)
-@inline Tuple(index::CartesianIndex{N}, ::Translations{N}) where N = Tuple(reverse(index.I))
-function Base.show(io::IO, translations::Translations{N}) where N
-    for i = 1:N
-        i>1 && @printf io "%s" '-'
-        @printf io "%s%s" translations.ranges[i].start==0 ? translations.ranges[i].stop+1 : string("(", translations.ranges[i], ")") translations.boundaries[i]
-    end
-end
-
-"""
-    Translations(ranges::NTuple{N, Int}, boundaries::NTuple{N, Char}=ntuple(i->'O', N); mode::Symbol=:nonnegative) where N
-
-Construct a set of translations.
-"""
-function Translations(ranges::NTuple{N, Int}, boundaries::NTuple{N, Char}=ntuple(i->'O', N); mode::Symbol=:nonnegative) where N
-    @assert mode∈(:center, :nonnegative) "Translations error: wrong mode($(repr(mode)))."
-    return Translations(
-        mode==:center ? map(i->-Int(floor((i-1)/2)):i-1-Int(floor((i-1)/2)), ranges) : map(i->0:i-1, ranges),
-        boundaries
-    )
-end
-
-"""
     Point{N, D<:Number}
 
 A point in a unitcell-described lattice.
@@ -849,16 +812,24 @@ function Lattice(coordinates::Vector{<:Number}...; name::Symbol=:lattice, vector
 end
 
 """
-    Lattice(lattice::Lattice, translations::Translations)
+    Lattice(lattice::Lattice, ranges::NTuple{N, Int}, boundaries::NTuple{N, Char}=ntuple(i->'O', Val(N)); mode::Symbol=:nonnegative) where N
+    Lattice(lattice::Lattice, ranges::NTuple{N, UnitRange{Int}}, boundaries::NTuple{N, Char}=ntuple(i->'O', Val(N))) where N
 
 Construct a lattice from the translations of another.
 """
-function Lattice(lattice::Lattice, translations::Translations)
-    name = Symbol(@sprintf "%s(%s)" lattice.name translations)
-    coordinates = tile(lattice.coordinates, lattice.vectors, translations)
+function Lattice(lattice::Lattice, ranges::NTuple{N, Int}, boundaries::NTuple{N, Char}=ntuple(i->'O', Val(N)); mode::Symbol=:nonnegative) where N
+    @assert mode∈(:center, :nonnegative) "Lattice error: wrong mode($(repr(mode)))."
+    return Lattice(lattice, mode==:center ? map(i->-floor(Int, (i-1)/2):-floor(Int, (i-1)/2)+i-1, ranges) : map(i->0:i-1, ranges), boundaries)
+end
+function Lattice(lattice::Lattice, ranges::NTuple{N, UnitRange{Int}}, boundaries::NTuple{N, Char}=ntuple(i->'O', Val(N))) where N
+    @assert all(map(in(('P', 'O', 'p', 'o')), boundaries)) "Lattice error: boundary conditions must be either 'P'/'p' for 'periodic' or 'O'/'o' for 'open'."
+    @assert length(boundaries)==N "Lattice error: mismatched number of ranges and boundaries conditions."
+    boundaries = map(uppercase, boundaries)
+    name = Symbol(@sprintf "%s%s" lattice.name join([@sprintf("%s%s%s", boundary=='P' ? "[" : "(", range, boundary=='P' ? "]" : ")") for (range, boundary) in zip(ranges, boundaries)]))
+    coordinates = tile(lattice.coordinates, lattice.vectors, product(ranges...))
     vectors = SVector{dimension(lattice), dtype(lattice)}[]
     for (i, vector) in enumerate(lattice.vectors)
-        translations.boundaries[i]=='P' && push!(vectors, vector*length(translations.ranges[i]))
+        boundaries[i]=='P' && push!(vectors, vector*length(ranges[i]))
     end
     return Lattice{dimension(lattice)}(name, coordinates, vectors)
 end
