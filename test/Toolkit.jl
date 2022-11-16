@@ -424,11 +424,11 @@ end
 
 struct SimpleVectorSpace{B, N} <: VectorSpace{B}
     sorted::Bool
-    table::NTuple{N, B}
-    SimpleVectorSpace(sorted::Bool, table::NTuple{N, B}) where {B, N} = new{B, N}(sorted, table)
+    contents::NTuple{N, B}
+    SimpleVectorSpace(sorted::Bool, contents::NTuple{N, B}) where {B, N} = new{B, N}(sorted, contents)
 end
 @inline VectorSpaceStyle(::Type{<:SimpleVectorSpace}) = VectorSpaceEnumerative()
-@inline contentnames(::Type{<:SimpleVectorSpace}) = (:sorted, :table)
+@inline contentnames(::Type{<:SimpleVectorSpace}) = (:sorted, :contents)
 @inline Base.issorted(vs::SimpleVectorSpace) = vs.sorted
 
 @testset "VectorSpaceEnumerative" begin
@@ -441,6 +441,7 @@ end
     @test vs|>dimension == 3
     @test vs|>collect == [id1, id2, id3]
     @test vs[1]==id1 && vs[2]==id2 && vs[3]==id3
+    @test vs[[1, 2, 3]] == [id1, id2, id3]
     @test searchsortedfirst(vs, id0)==1 && searchsortedfirst(vs, id4)==4
     @test searchsortedfirst(vs, id1)==1 && searchsortedfirst(vs, id2)==2 && searchsortedfirst(vs, id3)==3
     @test isnothing(findfirst(id0, vs)) && isnothing(findfirst(id4, vs))
@@ -498,11 +499,11 @@ end
 
 @testset "NamedVectorSpace" begin
     t = ParameterSpace{:t}(1:2)
-    @test contentnames(typeof(t)) == (:content,)
+    @test contentnames(typeof(t)) == (:contents,)
     @test dimension(t) == 2
     @test t≠ParameterSpace{:μ}(1:2) && t==ParameterSpace{:t}(1:2)
     @test !isequal(t, ParameterSpace{:μ}(1:2)) && isequal(t, ParameterSpace{:t}(1:2))
-    @test keys(t) == keys(typeof(t)) == (:t,)
+    @test names(t) == names(typeof(t)) == (:t,)
     @test t[1]==1 && t[2]==2
     @test t[1]∈t && t[2]∈t
     ps = pairs(t)
@@ -514,7 +515,7 @@ end
     zps = ZippedNamedVectorSpace(t, U)
     @test VectorSpaceStyle(zps) == VectorSpaceZipped()
     @test eltype(zps) == eltype(typeof(zps)) == Tuple{Int, Float64}
-    @test keys(zps) == keys(typeof(zps)) == (:t, :U)
+    @test names(zps) == names(typeof(zps)) == (:t, :U)
     @test dimension(zps) == 2
     @test zps[1]==(1, 8.0) && zps[2]==(2, 9.0)
     ps = pairs(zps)
@@ -524,7 +525,7 @@ end
     pps = DirectProductedNamedVectorSpace(t, U)
     @test VectorSpaceStyle(pps) == VectorSpaceDirectProducted()
     @test eltype(pps) == eltype(typeof(pps)) == Tuple{Int, Float64}
-    @test keys(pps) == keys(typeof(pps)) == (:t, :U)
+    @test names(pps) == names(typeof(pps)) == (:t, :U)
     @test dimension(pps) == 4
     @test pps[1]==(1, 8.0) && pps[2]==(2, 8.0) && pps[3]==(1, 9.0) && pps[4]==(2, 9.0)
 

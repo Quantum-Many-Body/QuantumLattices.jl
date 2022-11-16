@@ -25,7 +25,7 @@ export CompositeDict, CompositeNTuple, CompositeTuple, CompositeVector, NamedCon
 export HomoNamedVector, NamedVector
 
 # Vector spaces
-export DirectProductedNamedVectorSpace, NamedVectorSpace, ParameterSpace, SimpleNamedVectorSpace, VectorSpace, ZippedNamedVectorSpace
+export CompositeNamedVectorSpace, DirectProductedNamedVectorSpace, NamedVectorSpace, ParameterSpace, SimpleNamedVectorSpace, VectorSpace, ZippedNamedVectorSpace
 export VectorSpaceCartesian, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceEnumerative, VectorSpaceStyle, VectorSpaceZipped
 export shape
 
@@ -293,6 +293,13 @@ end
 Get the "raw part" of a type. That is, the type without all its type parameters.
 """
 @inline @generated rawtype(::Type{T}) where T = _rawtype(T)
+
+"""
+    map(f::Function, ::Type{T}) where {T<:Tuple} -> Type{Tuple}
+
+Apply the `f` function on the fieldtypes of a type of tuple `T`.
+"""
+@inline @generated Base.map(f::Function, ::Type{T}) where {T<:Tuple} = Expr(:curly, Tuple, [:(f($type)) for type in fieldtypes(T)]...)
 
 ## with type parameters
 """
@@ -939,6 +946,7 @@ abstract type VectorSpaceStyle end
 
 @inline dimension(vs::VectorSpace) = dimension(VectorSpaceStyle(vs), vs)
 @inline Base.getindex(vs::VectorSpace, i) = getindex(VectorSpaceStyle(vs), vs, i)
+@inline Base.getindex(style::VectorSpaceStyle, vs::VectorSpace, indexes) = map(index->getindex(style, vs, index), indexes)
 @inline Base.issorted(vs::VectorSpace) = issorted(VectorSpaceStyle(vs), vs)
 @inline Base.findfirst(basis::B, vs::VectorSpace{B}) where B = findfirst(VectorSpaceStyle(vs), basis, vs)
 @inline Base.searchsortedfirst(vs::VectorSpace{B}, basis::B) where B = searchsortedfirst(VectorSpaceStyle(vs), vs, basis)
@@ -966,11 +974,12 @@ end
 """
     VectorSpaceEnumerative <: VectorSpaceStyle
 
-Enumerative vector space style, which indicates that the vector space has a predefined content named `table` that contains all its bases.
+Enumerative vector space style, which indicates that the vector space has a predefined content named `contents` that contains all its bases.
 """
 struct VectorSpaceEnumerative <: VectorSpaceStyle end
-@inline dimension(::VectorSpaceEnumerative, vs::VectorSpace) = length(getcontent(vs, :table))
-@inline Base.getindex(::VectorSpaceEnumerative, vs::VectorSpace, i::Int) = getcontent(vs, :table)[i]
+@inline dimension(::VectorSpaceEnumerative, vs::VectorSpace) = length(getcontent(vs, :contents))
+@inline Base.getindex(::VectorSpaceEnumerative, vs::VectorSpace, i::Integer) = getcontent(vs, :contents)[i]
+@inline Base.in(::VectorSpaceEnumerative, vs::VectorSpace{B}, basis::B) where B = in(basis, getcontent(vs, :contents))
 
 """
     VectorSpaceCartesian <: VectorSpaceStyle
@@ -1040,33 +1049,25 @@ end
 Abstract named vector space.
 """
 abstract type NamedVectorSpace{B} <: VectorSpace{B} end
-@inline Base.keys(vs::NamedVectorSpace) = keys(typeof(vs))
-@inline Base.:(==)(vs₁::NamedVectorSpace, vs₂::NamedVectorSpace) = keys(vs₁)==keys(vs₂) && invoke(==, Tuple{VectorSpace, VectorSpace}, vs₁, vs₂)
-@inline Base.isequal(vs₁::NamedVectorSpace, vs₂::NamedVectorSpace) = isequal(keys(vs₁), keys(vs₂)) && invoke(isequal, Tuple{VectorSpace, VectorSpace}, vs₁, vs₂)
+@inline Base.names(vs::NamedVectorSpace) = names(typeof(vs))
+@inline Base.:(==)(vs₁::NamedVectorSpace, vs₂::NamedVectorSpace) = names(vs₁)==names(vs₂) && invoke(==, Tuple{VectorSpace, VectorSpace}, vs₁, vs₂)
+@inline Base.isequal(vs₁::NamedVectorSpace, vs₂::NamedVectorSpace) = isequal(names(vs₁), names(vs₂)) && invoke(isequal, Tuple{VectorSpace, VectorSpace}, vs₁, vs₂)
 @inline Base.pairs(vs::NamedVectorSpace) = NamedVectorSpacePairIteration(vs)
-struct NamedVectorSpacePairIteration{VS<:NamedVectorSpace} <: AbstractVector{NamedTuple}
-    vs::VS
+struct NamedVectorSpacePairIteration{V<:NamedVectorSpace, B<:NamedTuple} <: AbstractVector{B}
+    namedvectorspace::V
+    NamedVectorSpacePairIteration(vs::NamedVectorSpace) = new{typeof(vs), pairtype(typeof(vs))}(vs)
 end
-@inline Base.size(ps::NamedVectorSpacePairIteration) = size(ps.vs)
-@inline Base.eltype(::Type{<:NamedVectorSpacePairIteration{VS}}) where {VS<:NamedVectorSpace} = NamedTuple{keys(VS), eltype(VS)}
-@inline Base.getindex(ps::NamedVectorSpacePairIteration{VS}, i::Integer) where {VS<:NamedVectorSpace} = NamedTuple{keys(VS)}(ps.vs[i])
+@inline Base.size(ps::NamedVectorSpacePairIteration) = size(ps.namedvectorspace)
 
 """
     SimpleNamedVectorSpace{N, B} <: NamedVectorSpace{B}
 
 Abstract simple named vector space.
-
-The subtypes must have the following predefined content:
-* `content::T`: the content of the named vector space.
 """
 abstract type SimpleNamedVectorSpace{N, B} <: NamedVectorSpace{B} end
-@inline contentnames(::Type{<:SimpleNamedVectorSpace}) = (:content,)
-@inline dimension(vs::SimpleNamedVectorSpace) = length(getcontent(vs, :content))
-@inline Base.getindex(vs::SimpleNamedVectorSpace, i) = getcontent(vs, :content)[i]
-@inline Base.in(basis::B, vs::SimpleNamedVectorSpace{N, B}) where {N, B} = in(basis, getcontent(vs, :content))
-@inline Base.keys(::Type{<:SimpleNamedVectorSpace{N}}) where N = (N,)
-@inline Base.eltype(::Type{<:NamedVectorSpacePairIteration{VS}}) where {VS<:SimpleNamedVectorSpace} = NamedTuple{keys(VS), Tuple{eltype(VS)}}
-@inline Base.getindex(ps::NamedVectorSpacePairIteration{VS}, i::Integer) where {VS<:SimpleNamedVectorSpace} = NamedTuple{keys(VS)}((ps.vs[i],))
+@inline Base.names(::Type{<:SimpleNamedVectorSpace{N}}) where N = (N,)
+@inline pairtype(::Type{V}) where {V<:SimpleNamedVectorSpace} = NamedTuple{names(V), Tuple{eltype(V)}}
+@inline Base.getindex(ps::NamedVectorSpacePairIteration{V}, i::Integer) where {V<:SimpleNamedVectorSpace} = NamedTuple{names(V)}((ps.namedvectorspace[i],))
 
 """
     ParameterSpace{N, T, B} <: SimpleNamedVectorSpace{N, B}
@@ -1074,40 +1075,48 @@ abstract type SimpleNamedVectorSpace{N, B} <: NamedVectorSpace{B} end
 Parameter space.
 """
 struct ParameterSpace{N, T, B} <: SimpleNamedVectorSpace{N, B}
-    content::T
-    function ParameterSpace{N}(content) where N
+    contents::T
+    function ParameterSpace{N}(contents) where N
         @assert isa(N, Symbol) "ParameterSpace error: $(N) is not a Symbol."
-        new{N, typeof(content), eltype(content)}(content)
+        new{N, typeof(contents), eltype(contents)}(contents)
     end
 end
+@inline VectorSpaceStyle(::Type{<:ParameterSpace}) = VectorSpaceEnumerative()
 
 """
-    ZippedNamedVectorSpace{T<:Tuple{Vararg{NamedVectorSpace}}} <: NamedVectorSpace{Any}
+    CompositeNamedVectorSpace{T<:Tuple{Vararg{SimpleNamedVectorSpace}}, B<:Tuple} <: NamedVectorSpace{B}
+
+Abstract composite named vector space.
+"""
+abstract type CompositeNamedVectorSpace{T<:Tuple{Vararg{SimpleNamedVectorSpace}}, B<:Tuple} <: NamedVectorSpace{B} end
+@inline @generated Base.names(::Type{<:CompositeNamedVectorSpace{T}}) where {T<:Tuple{Vararg{SimpleNamedVectorSpace}}} = map(first, map(names, fieldtypes(T)))
+@inline pairtype(::Type{V}) where {V<:CompositeNamedVectorSpace} = NamedTuple{names(V), eltype(V)}
+@inline Tuple(basis::Tuple, ::CompositeNamedVectorSpace) = basis
+@inline Base.getindex(ps::NamedVectorSpacePairIteration{V}, i::Integer) where {V<:CompositeNamedVectorSpace} = NamedTuple{names(V)}(ps.namedvectorspace[i])
+
+"""
+    ZippedNamedVectorSpace{T<:Tuple{Vararg{SimpleNamedVectorSpace}}, B<:Tuple} <: CompositeNamedVectorSpace{T, B}
 
 Zipped named vector space.
 """
-struct ZippedNamedVectorSpace{T<:Tuple{Vararg{NamedVectorSpace}}} <: NamedVectorSpace{Any}
+struct ZippedNamedVectorSpace{T<:Tuple{Vararg{SimpleNamedVectorSpace}}, B<:Tuple} <: CompositeNamedVectorSpace{T, B}
     contents::T
+    ZippedNamedVectorSpace(contents::Tuple{Vararg{SimpleNamedVectorSpace}}) = new{typeof(contents), map(eltype, typeof(contents))}(contents)
 end
-@inline ZippedNamedVectorSpace(contents::NamedVectorSpace...) = ZippedNamedVectorSpace(contents)
+@inline ZippedNamedVectorSpace(contents::SimpleNamedVectorSpace...) = ZippedNamedVectorSpace(contents)
 @inline VectorSpaceStyle(::Type{<:ZippedNamedVectorSpace}) = VectorSpaceZipped()
-@inline @generated Base.eltype(::Type{<:ZippedNamedVectorSpace{T}}) where {T<:Tuple{Vararg{NamedVectorSpace}}} = Tuple{map(eltype, fieldtypes(T))...}
-@inline @generated Base.keys(::Type{<:ZippedNamedVectorSpace{T}}) where {T<:Tuple{Vararg{NamedVectorSpace}}} = map(first, map(keys, fieldtypes(T)))
-@inline Tuple(basis::Tuple, ::ZippedNamedVectorSpace) = basis
 
 """
-    DirectProductedNamedVectorSpace{T<:Tuple{Vararg{NamedVectorSpace}}} <: NamedVectorSpace{Any}
+    DirectProductedNamedVectorSpace{T<:Tuple{Vararg{SimpleNamedVectorSpace}}, B<:Tuple} <: CompositeNamedVectorSpace{T, B}
 
-Zipped named vector space.
+Direct producted named vector space.
 """
-struct DirectProductedNamedVectorSpace{T<:Tuple{Vararg{NamedVectorSpace}}} <: NamedVectorSpace{Any}
+struct DirectProductedNamedVectorSpace{T<:Tuple{Vararg{SimpleNamedVectorSpace}}, B<:Tuple} <: CompositeNamedVectorSpace{T, B}
     contents::T
+    DirectProductedNamedVectorSpace(contents::Tuple{Vararg{SimpleNamedVectorSpace}}) = new{typeof(contents), map(eltype, typeof(contents))}(contents)
 end
-@inline DirectProductedNamedVectorSpace(contents::NamedVectorSpace...) = DirectProductedNamedVectorSpace(contents)
+@inline DirectProductedNamedVectorSpace(contents::SimpleNamedVectorSpace...) = DirectProductedNamedVectorSpace(contents)
 @inline VectorSpaceStyle(::Type{<:DirectProductedNamedVectorSpace}) = VectorSpaceDirectProducted()
-@inline @generated Base.eltype(::Type{<:DirectProductedNamedVectorSpace{T}}) where {T<:Tuple{Vararg{NamedVectorSpace}}} = Tuple{map(eltype, fieldtypes(T))...}
-@inline @generated Base.keys(::Type{<:DirectProductedNamedVectorSpace{T}}) where {T<:Tuple{Vararg{NamedVectorSpace}}} = map(first, map(keys, fieldtypes(T)))
-@inline Tuple(basis::Tuple, ::DirectProductedNamedVectorSpace) = basis
 
 """
     ⊕(vs₁::SimpleNamedVectorSpace, vs₂::SimpleNamedVectorSpace) -> ZipNamedVectorSpace

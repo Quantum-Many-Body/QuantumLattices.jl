@@ -2,7 +2,6 @@ using Base.Iterators: Iterators
 using DataStructures: OrderedDict
 using QuantumLattices: ⊕, ⊗, decompose, dimension, expand, permute
 using QuantumLattices.QuantumNumbers
-using QuantumLattices.Toolkit: contentnames, getcontent
 
 import QuantumLattices.QuantumNumbers: periods
 
@@ -17,8 +16,6 @@ import QuantumLattices.QuantumNumbers: periods
 end
 
 @testset "AbelianNumbers" begin
-    @test contentnames(AbelianNumbers) == (:form, :table, :indptr)
-
     qn₁, qn₂ = CNZ4(+1.0, +3.0), CNZ4(-1.0, +1.0)
     qns₁ = AbelianNumbers('U', [qn₁, qn₂], [0, 2, 5], :indptr)
     qns₂ = AbelianNumbers('U', [qn₁, qn₂], [2, 3], :counts)
@@ -32,7 +29,6 @@ end
     @test qns == AbelianNumbers('U', [qn₁, qn₂], [1, 1], :counts)
 
     qns = AbelianNumbers('U', [qn₁, qn₂], [0, 3, 5], :indptr)
-    @test getcontent(qns, Val(:table)) == qns.contents
     @test qns|>dimension == 5
     @test qns|>string == "QNS(2, 5)"
     @test qns|>size == (2,)
@@ -200,4 +196,10 @@ end
     @test Int(Momentum₁{10}(2)) == 3
     @test Int(Momentum₂{10, 20}(2, 3)) == 44
     @test Int(Momentum₃{10, 20, 30}(2, 3, 4)) == 1295
+
+    momenta = Momenta(Momentum₂{2, 3})
+    @test collect(momenta) == [Momentum₂{2, 3}(0.0, 0.0), Momentum₂{2, 3}(0.0, 1.0), Momentum₂{2, 3}(0.0, 2.0), Momentum₂{2, 3}(1.0, 0.0), Momentum₂{2, 3}(1.0, 1.0), Momentum₂{2, 3}(1.0, 2.0)]
+    for momentum in momenta
+        @test momenta[CartesianIndex(momentum, momenta)] == momentum
+    end
 end

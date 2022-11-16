@@ -1,17 +1,17 @@
 module QuantumNumbers
 
-using Base.Iterators: Reverse, flatten, product, reverse
+using Base.Iterators: Reverse, flatten, product
 using DataStructures: OrderedDict
 using LinearAlgebra: norm
 using Printf: @printf, @sprintf
 using Random: MersenneTwister, seed!, shuffle!
-using ..Toolkit: Float, Combinations, HomoNamedVector, VectorSpace, VectorSpaceEnumerative, VectorSpaceStyle
+using ..Toolkit: Float, Combinations, HomoNamedVector, VectorSpace, VectorSpaceCartesian, VectorSpaceEnumerative, VectorSpaceStyle
 
 import ..QuantumLattices: ⊕, ⊗, decompose, dimension, expand, permute
-import ..Toolkit: contentnames, getcontent
+import ..Toolkit: shape
 
 export AbelianNumber, AbelianNumbers, regularize, regularize!, periods, @abeliannumber
-export Momentum, Momentum₁, Momentum₂, Momentum₃, ParticleNumber, SpinfulParticle, SpinZ, particlenumbers, spinfulparticles, spinzs
+export Momenta, Momentum, Momentum₁, Momentum₂, Momentum₃, ParticleNumber, SpinfulParticle, SpinZ, particlenumbers, spinfulparticles, spinzs
 
 """
     positives(inputs::NTuple{N, Any}) where N -> NTuple{N, Int}
@@ -172,8 +172,6 @@ struct AbelianNumbers{QN<:AbelianNumber} <: VectorSpace{QN}
     end
 end
 @inline VectorSpaceStyle(::Type{<:AbelianNumbers}) = VectorSpaceEnumerative()
-@inline contentnames(::Type{<:AbelianNumbers}) = (:form, :table, :indptr)
-@inline getcontent(qns::AbelianNumbers, ::Val{:table}) = qns.contents
 @inline dimension(qns::AbelianNumbers) = @inbounds(qns.indptr[end])
 @inline Base.size(qns::AbelianNumbers) = (length(qns.contents),)
 @inline Base.issorted(qns::AbelianNumbers) = qns.form=='C'
@@ -767,5 +765,17 @@ struct Momentum₃{N₁, N₂, N₃} <: Momentum
 end
 @inline periods(::Type{<:Momentum₃{N₁, N₂, N₃}}) where {N₁, N₂, N₃} = (N₁, N₂, N₃)
 @inline Int(m::Momentum₃{N₁, N₂, N₃}) where {N₁, N₂, N₃} = (Int(m.k₁)*N₂ + Int(m.k₂))*N₃ + Int(m.k₃) + 1
+
+"""
+    Momenta{P<:Momentum} <: VectorSpace{P}
+
+The allowed set of momenta.
+"""
+struct Momenta{P<:Momentum} <: VectorSpace{P} end
+@inline Momenta(::Type{P}) where {P<:Momentum} = Momenta{P}()
+@inline VectorSpaceStyle(::Type{<:Momenta}) = VectorSpaceCartesian()
+@inline shape(::Momenta{P}) where {P<:Momentum} = map(period->0:period-1, reverse(periods(P)))
+@inline Base.CartesianIndex(m::P, ::Momenta{P}) where {P<:Momentum} = CartesianIndex(Int.(reverse(values(m))))
+@inline (::Type{<:Momentum})(index::CartesianIndex, ::Momenta{P}) where {P<:Momentum} = P(reverse(index.I)...)
 
 end #module

@@ -40,14 +40,14 @@ export ishermitian, latexname, latexformat, matrix, script, sequence
 # QuantumNumbers
 include("QuantumNumbers.jl")
 using .QuantumNumbers
-export AbelianNumber, AbelianNumbers, Momentum, Momentum₁, Momentum₂, Momentum₃, ParticleNumber, SpinfulParticle, SpinZ
+export AbelianNumber, AbelianNumbers, Momenta, Momentum, Momentum₁, Momentum₂, Momentum₃, ParticleNumber, SpinfulParticle, SpinZ
 export particlenumbers, periods, spinfulparticles, spinzs, @abeliannumber
 
 # Spatials
 include("Spatials.jl")
 using .Spatials
 export azimuth, azimuthd, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, polar, polard, reciprocals, rotate, translate, tile, volume
-export AbstractLattice, Bond, BrillouinZone, Lattice, Neighbors, Point, ReciprocalSpace, ReciprocalZone, ReciprocalPath, Segment, Translations, bonds!, bonds, icoordinate, isintracell, rcoordinate
+export AbstractLattice, Bond, BrillouinZone, Lattice, Neighbors, Point, ReciprocalSpace, ReciprocalZone, ReciprocalPath, Segment, Translations, bonds!, bonds, icoordinate, isintracell, rcoordinate, selectpath
 export @hexagon_str, @line_str, @rectangle_str
 
 # DegreesOfFreedom
