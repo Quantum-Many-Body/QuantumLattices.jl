@@ -222,7 +222,8 @@ end
     @test dtype(bz) == dtype(typeof(bz)) == Float
     @test dimension(bz) == dimension(typeof(bz)) == 2
     @test shape(bz) == (0:3, 0:1)
-    @test keys(bz) == Momenta(Momentum₂{2, 3})
+    @test keys(bz) == Momenta(Momentum₂{2, 4})
+    @test keytype(bz) == keytype(typeof(bz)) == Momentum₂{2, 4}
     @test collect(bz) == [ [0.0, 0.0], [0.0, 0.25], [0.0, 0.5], [0.0, 0.75], [0.5, 0.0], [0.5, 0.25], [0.5, 0.5], [0.5, 0.75]]
     savefig(plot(bz), "BrillouinZone.png")
 

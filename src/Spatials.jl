@@ -918,6 +918,8 @@ end
 @inline shape(::BrillouinZone{K, P}) where {K, P<:Momentum} = shape(Momenta(P))
 @inline SArray(index::CartesianIndex, brillouinzone::BrillouinZone{K, P}) where {K, P<:Momentum} = expand(P(index, Momenta(P)), brillouinzone.reciprocals)
 @inline Base.keys(::BrillouinZone{K, P}) where {K, P<:Momentum} = Momenta(P)
+@inline Base.keytype(brillouinzone::BrillouinZone) = keytype(typeof(brillouinzone))
+@inline Base.keytype(::Type{<:BrillouinZone{K, P} where K}) where {P<:Momentum} = P
 
 """
     BrillouinZone(reciprocals::AbstractVector{<:AbstractVector}, nk)

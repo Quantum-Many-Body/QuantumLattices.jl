@@ -198,6 +198,10 @@ end
     @test Int(Momentum₃{10, 20, 30}(2, 3, 4)) == 1295
 
     momenta = Momenta(Momentum₂{2, 3})
+    @test momenta == Momenta(Momentum₂{2, 3})
+    @test momenta ≠ Momenta(Momentum₂{2, 4})
+    @test isequal(momenta, Momenta(Momentum₂{2, 3}))
+    @test !isequal(momenta, Momenta(Momentum₂{2, 4}))
     @test collect(momenta) == [Momentum₂{2, 3}(0.0, 0.0), Momentum₂{2, 3}(0.0, 1.0), Momentum₂{2, 3}(0.0, 2.0), Momentum₂{2, 3}(1.0, 0.0), Momentum₂{2, 3}(1.0, 1.0), Momentum₂{2, 3}(1.0, 2.0)]
     for momentum in momenta
         @test momenta[CartesianIndex(momentum, momenta)] == momentum

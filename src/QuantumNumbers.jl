@@ -777,5 +777,7 @@ struct Momenta{P<:Momentum} <: VectorSpace{P} end
 @inline shape(::Momenta{P}) where {P<:Momentum} = map(period->0:period-1, reverse(periods(P)))
 @inline Base.CartesianIndex(m::P, ::Momenta{P}) where {P<:Momentum} = CartesianIndex(Int.(reverse(values(m))))
 @inline (::Type{<:Momentum})(index::CartesianIndex, ::Momenta{P}) where {P<:Momentum} = P(reverse(index.I)...)
+@inline Base.:(==)(ms₁::Momenta, ms₂::Momenta) = periods(eltype(ms₁))==periods(eltype(ms₂))
+@inline Base.isequal(ms₁::Momenta, ms₂::Momenta) = isequal( periods(eltype(ms₁)), periods(eltype(ms₂)))
 
 end #module
