@@ -885,6 +885,8 @@ Abstract type of reciprocal spaces.
 abstract type ReciprocalSpace{K, P<:SVector} <: SimpleNamedVectorSpace{K, P} end
 @inline dtype(reciprocalspace::ReciprocalSpace) = dtype(typeof(reciprocalspace))
 @inline dtype(::Type{<:ReciprocalSpace{K, P} where K}) where {P<:SVector} = eltype(P)
+@inline dimension(reciprocalspace::ReciprocalSpace) = dimension(typeof(reciprocalspace))
+@inline dimension(::Type{<:ReciprocalSpace{K, P} where K}) where {P<:SVector} = length(P)
 
 """
     @recipe plot(reciprocalspace::ReciprocalSpace)

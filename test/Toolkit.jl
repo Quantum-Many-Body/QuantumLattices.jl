@@ -1,7 +1,7 @@
 using QuantumLattices.Toolkit
 using StaticArrays: SVector
 
-import QuantumLattices: ⊕, ⊗, dimension, rank
+import QuantumLattices: ⊕, ⊗
 import QuantumLattices.Toolkit: VectorSpaceStyle, contentnames, contenttype, dissolve, getcontent, isparameterbound, parameternames, shape
 
 @testset "decimaltostr" begin
@@ -439,7 +439,7 @@ end
     @test vs == deepcopy(vs)
     @test isequal(vs, deepcopy(vs))
     @test vs|>size == (3,)
-    @test vs|>dimension == 3
+    @test vs|>length == 3
     @test vs|>collect == [id1, id2, id3]
     @test vs[1]==id1 && vs[2]==id2 && vs[3]==id3
     @test vs[[1, 2, 3]] == [id1, id2, id3]
@@ -468,7 +468,7 @@ end
 
 @testset "VectorSpaceCartesian" begin
     foi = SimpleIndices(2:3, 2:3, 2:3)
-    @test dimension(foi) == 8
+    @test length(foi) == 8
     @test issorted(foi) == true
     @test foi|>collect == CartesianIndex.([(2, 2, 2), (3, 2, 2), (2, 3, 2), (3, 3, 2), (2, 2, 3), (3, 2, 3), (2, 3, 3), (3, 3, 3)])
     for (i, index) in enumerate(CartesianIndices((2:3, 2:3, 2:3)))
@@ -494,14 +494,14 @@ end
     a = SimpleIndices(1:3)
     b = SimpleIndices(3:4, 7:7)
     c = DirectSummedVectorSpace(a, b)
-    @test dimension(c) == 5
+    @test length(c) == 5
     @test c[1]==CartesianIndex(1) && c[2]==CartesianIndex(2) && c[3]==CartesianIndex(3) && c[4]==CartesianIndex(3, 7) && c[5]==CartesianIndex(4, 7)
 end
 
 @testset "NamedVectorSpace" begin
     t = ParameterSpace{:t}(1:2)
     @test contentnames(typeof(t)) == (:contents,)
-    @test dimension(t) == 2
+    @test length(t) == 2
     @test t≠ParameterSpace{:μ}(1:2) && t==ParameterSpace{:t}(1:2)
     @test !isequal(t, ParameterSpace{:μ}(1:2)) && isequal(t, ParameterSpace{:t}(1:2))
     @test names(t) == names(typeof(t)) == (:t,)
@@ -517,7 +517,7 @@ end
     @test VectorSpaceStyle(zps) == VectorSpaceZipped()
     @test eltype(zps) == eltype(typeof(zps)) == Tuple{Int, Float64}
     @test names(zps) == names(typeof(zps)) == (:t, :U)
-    @test dimension(zps) == 2
+    @test length(zps) == 2
     @test zps[1]==(1, 8.0) && zps[2]==(2, 9.0)
     ps = pairs(zps)
     @test size(ps) == (2,)
@@ -527,7 +527,7 @@ end
     @test VectorSpaceStyle(pps) == VectorSpaceDirectProducted()
     @test eltype(pps) == eltype(typeof(pps)) == Tuple{Int, Float64}
     @test names(pps) == names(typeof(pps)) == (:t, :U)
-    @test dimension(pps) == 4
+    @test length(pps) == 4
     @test pps[1]==(1, 8.0) && pps[2]==(2, 8.0) && pps[3]==(1, 9.0) && pps[4]==(2, 9.0)
 
     μ = ParameterSpace{:μ}([11, 12])

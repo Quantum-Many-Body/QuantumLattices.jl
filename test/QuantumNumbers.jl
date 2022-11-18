@@ -31,7 +31,7 @@ end
     qns = AbelianNumbers('U', [qn₁, qn₂], [0, 3, 5], :indptr)
     @test qns|>dimension == 5
     @test qns|>string == "QNS(2, 5)"
-    @test qns|>size == (2,)
+    @test qns|>length == 2
     @test qns|>eltype == CNZ4
     @test qns|>typeof|>eltype == CNZ4
     @test qns|>issorted == false

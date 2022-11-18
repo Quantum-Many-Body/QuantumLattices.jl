@@ -220,6 +220,7 @@ end
     recipls = [[1.0, 0.0], [0.0, 1.0]]
     bz = BrillouinZone(Momentum₂{2, 4}, recipls)
     @test dtype(bz) == dtype(typeof(bz)) == Float
+    @test dimension(bz) == dimension(typeof(bz)) == 2
     @test shape(bz) == (0:3, 0:1)
     @test keys(bz) == Momenta(Momentum₂{2, 3})
     @test collect(bz) == [ [0.0, 0.0], [0.0, 0.25], [0.0, 0.5], [0.0, 0.75], [0.5, 0.0], [0.5, 0.25], [0.5, 0.5], [0.5, 0.75]]

@@ -642,7 +642,7 @@ Vector spaces are frequently encountered in physics, e.g. the Hilbert space in q
 
 Basically, a subtype should implement the following 3 methods:
 1) ```julia
-   dimension(vs::VectorSpace) -> Int
+   Base.length(vs::VectorSpace) -> Int
    ```
    Get the dimension of a vector space
 2) ```julia

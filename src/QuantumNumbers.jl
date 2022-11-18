@@ -173,7 +173,7 @@ struct AbelianNumbers{QN<:AbelianNumber} <: VectorSpace{QN}
 end
 @inline VectorSpaceStyle(::Type{<:AbelianNumbers}) = VectorSpaceEnumerative()
 @inline dimension(qns::AbelianNumbers) = @inbounds(qns.indptr[end])
-@inline Base.size(qns::AbelianNumbers) = (length(qns.contents),)
+@inline Base.length(qns::AbelianNumbers) = length(qns.contents)
 @inline Base.issorted(qns::AbelianNumbers) = qns.form=='C'
 @inline Base.string(qns::AbelianNumbers) = @sprintf "QNS(%s, %s)" qns|>length qns|>dimension
 @inline Base.show(io::IO, qns::AbelianNumbers) = @printf io "QNS(%s)" join((@sprintf("%s=>%s", qn, slice) for (qn, slice) in pairs(qns, :indptr)), ", ")
@@ -242,7 +242,7 @@ end
 
 Overloaded `[]` operator.
 !!! note
-    For an `AbelianNumbers`, all the `getindex` functions act on its `contents`, i.e. its compressed data, but not on its expansion, i.e. the uncompressed data. This definition is consistent with the size of an `AbelianNumbers`.
+    For an `AbelianNumbers`, all the `getindex` functions act on its `contents`, i.e. its compressed data, but not on its expansion, i.e. the uncompressed data. This definition is consistent with the `length` of an `AbelianNumbers`.
 """
 function Base.getindex(qns::AbelianNumbers, slice::UnitRange{Int})
     contents = qns.contents[slice]

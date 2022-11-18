@@ -4,7 +4,7 @@ using Formatting: FormatSpec, fmt
 using Printf: @printf
 using StaticArrays: SVector
 
-import QuantumLattices: ⊕, ⊗, dimension, rank
+import QuantumLattices: ⊕, ⊗
 
 # Utilities
 export atol, rtol, Float
@@ -935,7 +935,7 @@ Abstract vector space.
 abstract type VectorSpace{B} <: AbstractVector{B} end
 @inline Base.:(==)(vs₁::VectorSpace, vs₂::VectorSpace) = ==(efficientoperations, vs₁, vs₂)
 @inline Base.isequal(vs₁::VectorSpace, vs₂::VectorSpace) = isequal(efficientoperations, vs₁, vs₂)
-@inline Base.size(vs::VectorSpace) = (dimension(vs),)
+@inline Base.size(vs::VectorSpace) = (length(vs),)
 
 """
     VectorSpaceStyle
@@ -945,7 +945,7 @@ The style of a concrete type of vector space.
 abstract type VectorSpaceStyle end
 @inline VectorSpaceStyle(vs::VectorSpace) = VectorSpaceStyle(typeof(vs))
 
-@inline dimension(vs::VectorSpace) = dimension(VectorSpaceStyle(vs), vs)
+@inline Base.length(vs::VectorSpace) = length(VectorSpaceStyle(vs), vs)
 @inline Base.getindex(vs::VectorSpace, i) = getindex(VectorSpaceStyle(vs), vs, i)
 @inline Base.getindex(style::VectorSpaceStyle, vs::VectorSpace, indexes) = map(index->getindex(style, vs, index), indexes)
 @inline Base.issorted(vs::VectorSpace) = issorted(VectorSpaceStyle(vs), vs)
@@ -978,7 +978,7 @@ end
 Enumerative vector space style, which indicates that the vector space has a predefined content named `contents` that contains all its bases.
 """
 struct VectorSpaceEnumerative <: VectorSpaceStyle end
-@inline dimension(::VectorSpaceEnumerative, vs::VectorSpace) = length(getcontent(vs, :contents))
+@inline Base.length(::VectorSpaceEnumerative, vs::VectorSpace) = length(getcontent(vs, :contents))
 @inline Base.getindex(::VectorSpaceEnumerative, vs::VectorSpace, i::Integer) = getcontent(vs, :contents)[i]
 @inline Base.in(::VectorSpaceEnumerative, vs::VectorSpace{B}, basis::B) where B = in(basis, getcontent(vs, :contents))
 
@@ -989,7 +989,7 @@ Cartesian vector space style, which indicates that every basis in it could be re
 """
 struct VectorSpaceCartesian <: VectorSpaceStyle end
 function shape end
-@inline dimension(::VectorSpaceCartesian, vs::VectorSpace) = mapreduce(length, *, shape(vs))
+@inline Base.length(::VectorSpaceCartesian, vs::VectorSpace) = mapreduce(length, *, shape(vs))
 @inline Base.getindex(::VectorSpaceCartesian, vs::VectorSpace, i::Integer) = getindex(VectorSpaceCartesian(), vs, CartesianIndices(shape(vs))[i])
 @inline Base.getindex(::VectorSpaceCartesian, vs::VectorSpace, i::CartesianIndex) = rawtype(eltype(vs))(i, vs)
 @inline Base.issorted(::VectorSpaceCartesian, vs::VectorSpace) = true
@@ -1011,10 +1011,10 @@ end
 Vector space style which indicates that a vector space is the direct sum of its sub-components.
 """
 struct VectorSpaceDirectSummed <: VectorSpaceStyle end
-@inline dimension(::VectorSpaceDirectSummed, vs::VectorSpace) = mapreduce(dimension, +, getcontent(vs, :contents))
+@inline Base.length(::VectorSpaceDirectSummed, vs::VectorSpace) = mapreduce(length, +, getcontent(vs, :contents))
 @inline function Base.getindex(::VectorSpaceDirectSummed, vs::VectorSpace, i::Integer)
     contents = getcontent(vs, :contents)
-    dimsum = cumsum(map(dimension, contents))
+    dimsum = cumsum(map(length, contents))
     m = searchsortedfirst(dimsum, i)
     n = i-(m>1 ? dimsum[m-1] : 0)
     return contents[m][n]
@@ -1026,10 +1026,10 @@ end
 Vector space style which indicates that a vector space is the direct product of its sub-components.
 """
 struct VectorSpaceDirectProducted <: VectorSpaceStyle end
-@inline dimension(::VectorSpaceDirectProducted, vs::VectorSpace) = mapreduce(dimension, *, getcontent(vs, :contents))
+@inline Base.length(::VectorSpaceDirectProducted, vs::VectorSpace) = mapreduce(length, *, getcontent(vs, :contents))
 @inline function Base.getindex(::VectorSpaceDirectProducted, vs::VectorSpace, i::Integer)
     contents = getcontent(vs, :contents)
-    index = CartesianIndices(map(dimension, contents))[i]
+    index = CartesianIndices(map(length, contents))[i]
     return rawtype(eltype(vs))(map(getindex, contents, Tuple(index)), vs)
 end
 
@@ -1039,7 +1039,7 @@ end
 Vector space style which indicates that a vector space is the zip of its sub-components.
 """
 struct VectorSpaceZipped <: VectorSpaceStyle end
-@inline dimension(::VectorSpaceZipped, vs::VectorSpace) = mapreduce(dimension, min, getcontent(vs, :contents))
+@inline Base.length(::VectorSpaceZipped, vs::VectorSpace) = mapreduce(length, min, getcontent(vs, :contents))
 @inline function Base.getindex(::VectorSpaceZipped, vs::VectorSpace, i::Integer)
     return rawtype(eltype(vs))(map(content->getindex(content, i), getcontent(vs, :contents)), vs)
 end

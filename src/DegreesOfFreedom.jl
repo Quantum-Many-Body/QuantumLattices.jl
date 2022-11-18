@@ -3,13 +3,13 @@ module DegreesOfFreedom
 using Printf: @printf, @sprintf
 using SparseArrays: SparseMatrixCSC, nnz
 using StaticArrays: SVector
-using ..QuantumLattices: add!, decompose, dtype
+using ..QuantumLattices: add!, decompose, dimension, dtype
 using ..QuantumOperators: ID, LinearTransformation, Operator, OperatorPack, Operators, OperatorSum, OperatorUnit, valuetolatextext, valuetostr
 using ..Spatials: Bond, Point
 using ..Toolkit: atol, efficientoperations, rtol, CompositeDict, CompositeTuple, Float, NamedContainer, VectorSpace, VectorSpaceCartesian, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceStyle, commontype, concatenate, decimaltostr, fulltype, parametertype, rawtype, reparameter
 
 import LaTeXStrings: latexstring
-import ..QuantumLattices: ⊕, ⊗, dimension, expand, expand!, kind, id, ishermitian, rank, reset!, update!, value
+import ..QuantumLattices: ⊕, ⊗, expand, expand!, kind, id, ishermitian, rank, reset!, update!, value
 import ..QuantumOperators: idtype, optype, script
 import ..Spatials: icoordinate, rcoordinate
 import ..Toolkit: contentnames, getcontent, isparameterbound, parameternames, shape
@@ -829,7 +829,7 @@ struct Component{T₁, T₂, V<:AbstractVector{T₁}} <: VectorSpace{Tuple{T₁,
         new{eltype(V), T, V}(left, right, convert(SparseMatrixCSC{T, Int}, matrix))
     end
 end
-@inline dimension(component::Component) = nnz(component.matrix)
+@inline Base.length(component::Component) = nnz(component.matrix)
 @inline function Base.getindex(component::Component, i::Int)
     row = component.matrix.rowval[i]
     col = searchsortedlast(component.matrix.colptr, i)

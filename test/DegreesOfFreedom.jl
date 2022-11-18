@@ -1,7 +1,7 @@
 using LaTeXStrings: latexstring
 using LinearAlgebra: dot
 using Printf: @printf, @sprintf
-using QuantumLattices: ⊕, ⊗, dimension, expand, ishermitian, kind, rank, reset!, update!
+using QuantumLattices: ⊕, ⊗, expand, ishermitian, kind, rank, reset!, update!
 using QuantumLattices.DegreesOfFreedom
 using QuantumLattices.QuantumOperators: ID, LaTeX, Operator, Operators, id, idtype, latexformat, sequence
 using QuantumLattices.Spatials: Bond, Lattice, Point, bonds, decompose, icoordinate, rcoordinate
@@ -288,7 +288,7 @@ end
 
 @testset "MatrixCoupling" begin
     component = Component([1, 2], [2, 1], [-1 0; 0 1])
-    @test dimension(component) == 2
+    @test length(component) == 2
     @test component[1] == (1, 2, -1)
     @test component[2] == (2, 1, +1)
 
