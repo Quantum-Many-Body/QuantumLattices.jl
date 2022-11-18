@@ -252,8 +252,10 @@ end
     @test ReciprocalZone([b₁, b₂], -1=>1, -1=>1; length=10).volume == 4
     @test ReciprocalZone([b₁, b₂, b₃], -1=>1, -1=>1, -1=>1; length=10).volume == 8
 
-    rz = ReciprocalZone(BrillouinZone{:q}(Momentum₂{8, 8}, [[1.0, 0.0], [0.0, 1.0]]))
+    bz = BrillouinZone{:q}(Momentum₂{8, 8}, [[1.0, 0.0], [0.0, 1.0]])
+    rz = ReciprocalZone(bz)
     @test rz == ReciprocalZone{:q}([[1.0, 0.0], [0.0, 1.0]], 0=>1, 0=>1; length=8)
+    @test collect(rz) == collect(bz)
     savefig(plot(rz), "ReciprocalZone.png")
 end
 

@@ -964,7 +964,13 @@ struct ReciprocalZone{K, S<:SVector, N, V<:Number} <: ReciprocalSpace{K, S}
 end
 @inline VectorSpaceStyle(::Type{<:ReciprocalZone}) = VectorSpaceCartesian()
 @inline shape(reciprocalzone::ReciprocalZone) = map(bound->1:length(bound), reverse(reciprocalzone.bounds))
-@inline SArray(index::CartesianIndex, reciprocalzone::ReciprocalZone) = mapreduce(*, +, reciprocalzone.reciprocals, reverse(index.I))
+@inline function SArray(index::CartesianIndex, reciprocalzone::ReciprocalZone)
+    result = zero(eltype(reciprocalzone))
+    for (reciprocal, bound, i) in zip(reciprocalzone.reciprocals, reciprocalzone.bounds, reverse(index.I))
+        result += reciprocal*bound[i]
+    end
+    return result
+end
 
 """
     ReciprocalZone(
