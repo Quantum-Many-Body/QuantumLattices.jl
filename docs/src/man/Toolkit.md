@@ -18,10 +18,10 @@ using QuantumLattices.Toolkit
 *This module contains the toolkit of the package.*
 
 The constants, types, macros, functions defined in this module will **not** be exported by the package. Instead, they serve as the prerequisites. The range of the contents are quite wide, but basically, they fall into two categories:
-* Global constants and miscellaneous tiny useful functions;
+* Utilities, such as global constants and miscellaneous tiny useful functions;
 * Basic data structures as supplements to the `Julia.Base` and other common packages.
 
-## Constants and functions
+## Utilities
 
 ```@docs
 atol
@@ -31,6 +31,7 @@ concatenate
 decimaltostr
 delta
 ordinal
+Segment
 ```
 
 ## Combinatorics

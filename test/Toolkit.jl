@@ -1,4 +1,5 @@
 using QuantumLattices.Toolkit
+using StaticArrays: SVector
 
 import QuantumLattices: ⊕, ⊗, dimension, rank
 import QuantumLattices.Toolkit: VectorSpaceStyle, contentnames, contenttype, dissolve, getcontent, isparameterbound, parameternames, shape
@@ -538,6 +539,42 @@ end
     @test μ⊗pps == DirectProductedNamedVectorSpace(μ, t, U)
     @test pps⊗μ == DirectProductedNamedVectorSpace(t, U, μ)
     @test pps⊗DirectProductedNamedVectorSpace(μ) == DirectProductedNamedVectorSpace(t, U, μ)
+end
+
+@testset "Segment" begin
+    segment = Segment(SVector(0.0, 0.0), SVector(1.0, 1.0), 10)
+    @test segment == Segment((0.0, 0.0), (1.0, 1.0), 10)
+    @test isequal(segment,  Segment((0.0, 0.0), (1.0, 1.0), 10))
+    @test size(segment) == (10,)
+    @test string(segment) == "[p₁, p₂) with p₁=[0.0, 0.0] and p₂=[1.0, 1.0]"
+
+    segment = Segment(1, 5, 5, ends=(true, true))
+    @test string(segment) == "[1.0, 5.0]"
+    @test segment[1]==1 && segment[end]==5
+    for (i, seg) in enumerate(segment)
+        @test seg ≈ segment[i]
+    end
+
+    segment = Segment(1, 5, 4, ends=(true, false))
+    @test string(segment) == "[1.0, 5.0)"
+    @test segment[1]==1 && segment[end]==4
+    for (i, seg) in enumerate(segment)
+        @test seg ≈ segment[i]
+    end
+
+    segment = Segment(1, 5, 4, ends=(false, true))
+    @test string(segment) == "(1.0, 5.0]"
+    @test segment[1]==2 && segment[end]==5
+    for (i, seg) in enumerate(segment)
+        @test seg ≈ segment[i]
+    end
+
+    segment = Segment(1, 5, 3, ends=(false, false))
+    @test string(segment) == "(1.0, 5.0)"
+    @test segment[1]==2 && segment[end]==4
+    for (i, seg) in enumerate(segment)
+        @test seg ≈ segment[i]
+    end
 end
 
 struct Tree{N, D} <: AbstractSimpleTree{N, D}

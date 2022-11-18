@@ -2,12 +2,13 @@ module Toolkit
 
 using Formatting: FormatSpec, fmt
 using Printf: @printf
+using StaticArrays: SVector
 
 import QuantumLattices: ⊕, ⊗, dimension, rank
 
 # Utilities
 export atol, rtol, Float
-export concatenate, decimaltostr, delta, ordinal
+export Segment, concatenate, decimaltostr, delta, ordinal
 
 # Combinatorics
 export Combinatorics, Combinations, DuplicateCombinations, DuplicatePermutations, Permutations
@@ -1143,6 +1144,72 @@ The direct product of named vector spaces.
 @inline ⊗(vs₁::SimpleNamedVectorSpace, vs₂::DirectProductedNamedVectorSpace) = DirectProductedNamedVectorSpace(vs₁, vs₂.contents...)
 @inline ⊗(vs₁::DirectProductedNamedVectorSpace, vs₂::SimpleNamedVectorSpace) = DirectProductedNamedVectorSpace(vs₁.contents..., vs₂)
 @inline ⊗(vs₁::DirectProductedNamedVectorSpace, vs₂::DirectProductedNamedVectorSpace) = DirectProductedNamedVectorSpace(vs₁.contents..., vs₂.contents...)
+
+"""
+    Segment{S} <: AbstractVector{S}
+
+A segment.
+"""
+struct Segment{S} <: AbstractVector{S}
+    start::S
+    stop::S
+    length::Int
+    ends::Tuple{Bool, Bool}
+end
+@inline Base.:(==)(s₁::Segment, s₂::Segment) = ==(efficientoperations, s₁, s₂)
+@inline Base.isequal(s₁::Segment, s₂::Segment) = isequal(efficientoperations, s₁, s₂)
+@inline Base.size(segment::Segment) = (segment.length,)
+function Base.getindex(segment::Segment, i::Integer)
+    length = segment.length+count(isequal(false), segment.ends)-1
+    step = convert(eltype(segment), (segment.stop-segment.start)/length)
+    start = segment.ends[1] ? segment.start : segment.start+step
+    return start+(i-1)*step
+end
+function Base.iterate(segment::Segment)
+    segment.length==0 && return
+    length = segment.length+count(isequal(false), segment.ends)-1
+    step = convert(eltype(segment), (segment.stop-segment.start)/length)
+    start = segment.ends[1] ? segment.start : segment.start+step
+    return start, (1, start, step)
+end
+function Base.iterate(segment::Segment, state)
+    i, middle, step = state
+    i==segment.length && return
+    middle = middle+step
+    return middle, (i+1, middle, step)
+end
+function Base.show(io::IO, segment::Segment{<:Number})
+    left, right = (segment.ends[1] ? "[" : "("), (segment.ends[2] ? "]" : ")")
+    @printf io "%s%s, %s%s" left segment.start segment.stop right
+end
+function Base.show(io::IO, segment::Segment)
+    left, right = (segment.ends[1] ? "[" : "("), (segment.ends[2] ? "]" : ")")
+    @printf io "%sp₁, p₂%s with p₁=%s and p₂=%s" left right segment.start segment.stop
+end
+
+"""
+    Segment(start::Number, stop::Number, length::Integer; ends::Tuple{Bool, Bool}=(true, false))
+    Segment(start::AbstractVector, stop::AbstractVector, length::Integer; ends::Tuple{Bool, Bool}=(true, false))
+    Segment(start::NTuple{N, Number}, stop::NTuple{N, Number}, length::Integer; ends::Tuple{Bool, Bool}=(true, false)) where N
+
+Construct a segment.
+"""
+function Segment(start::Number, stop::Number, length::Integer; ends::Tuple{Bool, Bool}=(true, false))
+    @assert length>=0 "Segment error: length must be non-negative."
+    dtype = promote_type(typeof(start), typeof(stop), Float64)
+    return Segment(convert(dtype, start), convert(dtype, stop), length, ends)
+end
+function Segment(start::AbstractVector, stop::AbstractVector, length::Integer; ends::Tuple{Bool, Bool}=(true, false))
+    @assert length>=0 "Segment error: length must be non-negative."
+    @assert Base.length(start)==Base.length(stop) "Segment error: start and stop should have equal length."
+    dtype = SVector{Base.length(start), promote_type(eltype(start), eltype(stop), Float64)}
+    return Segment(convert(dtype, start), convert(dtype, stop), length, ends)
+end
+function Segment(start::NTuple{N, Number}, stop::NTuple{N, Number}, length::Integer; ends::Tuple{Bool, Bool}=(true, false)) where N
+    @assert length>=0 "Segment error: length must be non-negative."
+    dtype = SVector{N, promote_type(eltype(start), eltype(stop), Float64)}
+    return Segment(convert(dtype, start), convert(dtype, stop), length, ends)
+end
 
 # Simple trees
 """

@@ -216,42 +216,6 @@ end
     @test Momentum₃{10, 100, 1000}([0.1, 0.01, 0.001],[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]) == Momentum₃{10, 100, 1000}(1, 1, 1)
 end
 
-@testset "Segment" begin
-    segment = Segment(SVector(0.0, 0.0), SVector(1.0, 1.0), 10)
-    @test segment == Segment((0.0, 0.0), (1.0, 1.0), 10)
-    @test isequal(segment,  Segment((0.0, 0.0), (1.0, 1.0), 10))
-    @test size(segment) == (10,)
-    @test string(segment) == "[p₁, p₂) with p₁=[0.0, 0.0] and p₂=[1.0, 1.0]"
-
-    segment = Segment(1, 5, 5, ends=(true, true))
-    @test string(segment) == "[1.0, 5.0]"
-    @test segment[1]==1 && segment[end]==5
-    for (i, seg) in enumerate(segment)
-        @test seg ≈ segment[i]
-    end
-
-    segment = Segment(1, 5, 4, ends=(true, false))
-    @test string(segment) == "[1.0, 5.0)"
-    @test segment[1]==1 && segment[end]==4
-    for (i, seg) in enumerate(segment)
-        @test seg ≈ segment[i]
-    end
-
-    segment = Segment(1, 5, 4, ends=(false, true))
-    @test string(segment) == "(1.0, 5.0]"
-    @test segment[1]==2 && segment[end]==5
-    for (i, seg) in enumerate(segment)
-        @test seg ≈ segment[i]
-    end
-
-    segment = Segment(1, 5, 3, ends=(false, false))
-    @test string(segment) == "(1.0, 5.0)"
-    @test segment[1]==2 && segment[end]==4
-    for (i, seg) in enumerate(segment)
-        @test seg ≈ segment[i]
-    end
-end
-
 @testset "BrillouinZone" begin
     recipls = [[1.0, 0.0], [0.0, 1.0]]
     bz = BrillouinZone(Momentum₂{2, 4}, recipls)
@@ -273,22 +237,22 @@ end
 
 @testset "ReciprocalZone" begin
     rz = ReciprocalZone([[1.0]], length=10)
-    @test rz == ReciprocalZone([[1.0]], Segment(-1//2, 1//2, 10))
-    @test rz == ReciprocalZone([[1.0]], (Segment(-1//2, 1//2, 10),))
-    @test rz == ReciprocalZone([[1.0]], [Segment(-1//2, 1//2, 10)])
+    @test rz == ReciprocalZone([[1.0]], -1//2=>1//2; length=10)
+    @test rz == ReciprocalZone([[1.0]], (-1//2=>1//2,); length=10)
+    @test rz == ReciprocalZone([[1.0]], [-1//2=>1//2]; length=10)
 
     rz = ReciprocalZone{:q}([[1.0]], length=10)
-    @test rz == ReciprocalZone{:q}([[1.0]], Segment(-1//2, 1//2, 10))
-    @test rz == ReciprocalZone{:q}([[1.0]], (Segment(-1//2, 1//2, 10),))
-    @test rz == ReciprocalZone{:q}([[1.0]], [Segment(-1//2, 1//2, 10)])
+    @test rz == ReciprocalZone{:q}([[1.0]], -1//2=>1//2; length=10)
+    @test rz == ReciprocalZone{:q}([[1.0]], (-1//2=>1//2,); length=10)
+    @test rz == ReciprocalZone{:q}([[1.0]], [-1//2=>1//2]; length=10)
 
     b₁, b₂, b₃ = [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]
-    @test ReciprocalZone([b₁], Segment(-1, +1, 10)).volume == 2
-    @test ReciprocalZone([b₁, b₂], Segment(-1, +1, 10), Segment(-1, +1, 10)).volume == 4
-    @test ReciprocalZone([b₁, b₂, b₃], Segment(-1, +1, 10), Segment(-1, +1, 10), Segment(-1, +1, 10)).volume == 8
+    @test ReciprocalZone([b₁], -1=>1; length=10).volume == 2
+    @test ReciprocalZone([b₁, b₂], -1=>1, -1=>1; length=10).volume == 4
+    @test ReciprocalZone([b₁, b₂, b₃], -1=>1, -1=>1, -1=>1; length=10).volume == 8
 
     rz = ReciprocalZone(BrillouinZone{:q}(Momentum₂{8, 8}, [[1.0, 0.0], [0.0, 1.0]]))
-    @test rz == ReciprocalZone{:q}([[1.0, 0.0], [0.0, 1.0]], Segment(0, 1, 8), Segment(0, 1, 8))
+    @test rz == ReciprocalZone{:q}([[1.0, 0.0], [0.0, 1.0]], 0=>1, 0=>1; length=8)
     savefig(plot(rz), "ReciprocalZone.png")
 end
 
@@ -296,9 +260,9 @@ end
     @test contentnames(ReciprocalPath) == (:contents,)
 
     b₁, b₂ = [1.0, 0.0], [0.0, 1.0]
-    s₁ = Segment((0.0, 0.0), (0.5, 0.0), 100)
-    s₂ = Segment((0.5, 0.0), (0.5, 0.5), 100)
-    s₃ = Segment((0.5, 0.5), (0.0, 0.0), 100)
+    s₁ = (0.0, 0.0)=>(0.5, 0.0)
+    s₂ = (0.5, 0.0)=>(0.5, 0.5)
+    s₃ = (0.5, 0.5)=>(0.0, 0.0)
 
     rp = ReciprocalPath([b₁, b₂], s₁, s₂, s₃)
     @test getcontent(rp, :contents) == rp.momenta
@@ -309,6 +273,7 @@ end
     rp = ReciprocalPath{:q}([b₁, b₂], s₁, s₂, s₃)
     @test rp == ReciprocalPath{:q}(rp.momenta)
     @test rp == ReciprocalPath{:q}([b₁, b₂], (s₁, s₂, s₃))
+    @test rp == ReciprocalPath{:q}([b₁, b₂], [s₁, s₂, s₃])
 
     rp = ReciprocalPath([b₁+b₂], line"X₂-X₁", length=10)
     @test rp == ReciprocalPath([b₁+b₂], (-1//2,)=>(1//2,), length=10)
