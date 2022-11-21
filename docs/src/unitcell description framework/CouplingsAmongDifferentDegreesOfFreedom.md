@@ -294,12 +294,12 @@ Ising"z" => SparseMatrixCSC([0 0 0; 0 0 0; 0 0 1])
 # Γ terms
 Γ"x" => SparseMatrixCSC([0 0 0; 0 0 1; 0 1 0])
 Γ"y" => SparseMatrixCSC([0 0 1; 0 0 0; 1 0 0])
-Γ"z" => SparseMatrixCSC([0 1 0; 0 1 0; 0 0 0])
+Γ"z" => SparseMatrixCSC([0 1 0; 1 0 0; 0 0 0])
 
 # Dzyaloshinskii–Moriya terms
 DM"x" => SparseMatrixCSC([0 0 0; 0 0 1; 0 -1 0])
 DM"y" => SparseMatrixCSC([0 0 -1; 0 0 0; 1 0 0])
-DM"z" => SparseMatrixCSC([0 1 0; 0 -1 0; 0 0 0])
+DM"z" => SparseMatrixCSC([0 1 0; -1 0 0; 0 0 0])
 ```
 
 [`MatrixCoupling`](@ref)s can be producted or summed.
@@ -416,7 +416,7 @@ Hopping(
     id::Symbol,
     value,
     bondkind,
-    coupling=Coupling(Index(:, FID(:, :, :)), Index(:, FID(:, :, :));
+    coupling=Coupling(Index(:, FID(:, :, :)), Index(:, FID(:, :, :)));
     amplitude::Union{Function, Nothing}=nothing
 )
 

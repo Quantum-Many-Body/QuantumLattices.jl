@@ -657,28 +657,28 @@ end
 """
     Γ"x" => SparseMatrixCSC([0 0 0; 0 0 1; 0 1 0])
     Γ"y" => SparseMatrixCSC([0 0 1; 0 0 0; 1 0 0])
-    Γ"z" => SparseMatrixCSC([0 1 0; 0 1 0; 0 0 0])
+    Γ"z" => SparseMatrixCSC([0 1 0; 1 0 0; 0 0 0])
 
 The Γ coupling matrix.
 """
 macro Γ_str(str::String)
     str=="x" && return SparseMatrixCSC([0 0 0; 0 0 1; 0 1 0])
     str=="y" && return SparseMatrixCSC([0 0 1; 0 0 0; 1 0 0])
-    str=="z" && return SparseMatrixCSC([0 1 0; 0 1 0; 0 0 0])
+    str=="z" && return SparseMatrixCSC([0 1 0; 1 0 0; 0 0 0])
     error("@Γ_str error: wrong input string.")
 end
 
 """
     DM"x" => SparseMatrixCSC([0 0 0; 0 0 1; 0 -1 0])
     DM"y" => SparseMatrixCSC([0 0 -1; 0 0 0; 1 0 0])
-    DM"z" => SparseMatrixCSC([0 1 0; 0 -1 0; 0 0 0])
+    DM"z" => SparseMatrixCSC([0 1 0; -1 0 0; 0 0 0])
 
 The DM coupling matrix.
 """
 macro DM_str(str::String)
     str=="x" && return SparseMatrixCSC([0 0 0; 0 0 1; 0 -1 0])
     str=="y" && return SparseMatrixCSC([0 0 -1; 0 0 0; 1 0 0])
-    str=="z" && return SparseMatrixCSC([0 1 0; 0 -1 0; 0 0 0])
+    str=="z" && return SparseMatrixCSC([0 1 0; -1 0 0; 0 0 0])
     error("@DM_str error: wrong input string.")
 end
 
