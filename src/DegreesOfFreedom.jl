@@ -758,11 +758,17 @@ Construct a `Coupling` with the input `indexes` as the pattern.
 """
     Coupling(sites::Union{NTuple{N, Int}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleIID}
     Coupling(value, sites::Union{NTuple{N, Int}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleIID}
+    Coupling{N}(sites::Union{NTuple{N, Int}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleIID}
+    Coupling{N}(value, sites::Union{NTuple{N, Int}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleIID}
 
 Construct a `Coupling` with the input sites and the fields of a kind of simple iid.
 """
-@inline Coupling(sites::Union{NTuple{N, Int}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleIID} = Coupling(1, sites, I, fields...)
-@inline function Coupling(value, sites::Union{NTuple{N, Int}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleIID}
+
+
+@inline Coupling(sites::Union{NTuple{N, Int}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleIID} = Coupling{N}(sites, I, fields...)
+@inline Coupling(value, sites::Union{NTuple{N, Int}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleIID} = Coupling{N}(value, sites, I, fields...)
+@inline Coupling{N}(sites::Union{NTuple{N, Int}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleIID} = Coupling{N}(1, sites, I, fields...)
+@inline function Coupling{N}(value, sites::Union{NTuple{N, Int}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleIID}
     return Coupling(value, ID(Index, default(sites, Val(N)), ID(I, map(field->default(field, Val(N)), fields)...)))
 end
 @inline default(fields, ::Val) = fields
