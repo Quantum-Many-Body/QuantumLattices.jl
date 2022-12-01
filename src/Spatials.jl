@@ -735,11 +735,11 @@ function bonds!(bonds::Vector, lattice::AbstractLattice, neighbors::Neighbors)
 end
 
 """
-    @recipe plot(lattice::AbstractLattice, neighbors::Union{Int, Neighbors}, filter::Function=bond->true)
+    @recipe plot(lattice::AbstractLattice, neighbors::Union{Int, Neighbors}, filter::Function=bond->true; siteon::Bool=false)
 
 Define the recipe for the visualization of a lattice.
 """
-@recipe function plot(lattice::AbstractLattice, neighbors::Union{Int, Neighbors}, filter::Function=bond->true)
+@recipe function plot(lattice::AbstractLattice, neighbors::Union{Int, Neighbors}, filter::Function=bond->true; siteon::Bool=false)
     title --> String(getcontent(lattice, :name))
     titlefontsize --> 10
     legend := false
@@ -748,10 +748,15 @@ Define the recipe for the visualization of a lattice.
         @series begin
             seriestype := :scatter
             coordinates = NTuple{dimension(lattice), dtype(lattice)}[]
+            sites = String[]
             for i = 1:length(lattice)
                 bond = Bond(Point(i, lattice[i], zero(lattice[i])))
-                filter(bond) && push!(coordinates, Tuple(lattice[i]))
+                if filter(bond)
+                    push!(coordinates, Tuple(lattice[i]))
+                    push!(sites, siteon ? string(i) : "")
+                end
             end
+            series_annotations := sites
             coordinates
         end
     end
