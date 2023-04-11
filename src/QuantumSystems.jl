@@ -17,7 +17,7 @@ import ..Toolkit: shape
 
 # Canonical complex fermionic/bosonic systems
 export annihilation, creation, latexofbosons, latexoffermions, latexofparticles, @σ_str, @L_str
-export Coulomb, FID, Fock, FockTerm, Hopping, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, Onsite, PairHopping, Pairing, SpinFlip, isnormalordered
+export Coulomb, FID, Fock, FockTerm, Hopping, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, Onsite, PairHopping, Pairing, SpinFlip, isannihilation, iscreation, isnormalordered
 
 # SU(2) spin systems
 export latexofspins, SID, Spin, SpinTerm, totalspin, @Γ_str, @DM_str, @Heisenberg_str, @Ising_str
@@ -81,6 +81,28 @@ end
 @inline iidtype(::Type{FID}, ::Type{O}, ::Type{S}, ::Type{N}) where {O<:Union{Int, Symbol, Colon}, S<:Union{Rational{Int}, Symbol, Colon}, N<:Union{Int, Symbol, Colon}} = FID{wildcard, O, S, N}
 @inline iidtype(::Type{FID{T}}, ::Type{O}, ::Type{S}, ::Type{N}) where {T, O<:Union{Int, Symbol, Colon}, S<:Union{Rational{Int}, Symbol, Colon}, N<:Union{Int, Symbol, Colon}} = FID{T, O, S, N}
 
+"""
+    isannihilation(fid::FID) -> Bool
+    isannihilation(index::Index) -> Bool
+    isannihilation(index::AbstractCompositeIndex) -> Bool
+
+Judge whether the nambu index is `annihilation`.
+"""
+@inline isannihilation(fid::FID) = fid.nambu==annihilation
+@inline isannihilation(index::Index) = isannihilation(index.iid)
+@inline isannihilation(index::AbstractCompositeIndex) = isannihilation(getcontent(index, :index))
+
+"""
+    iscreation(fid::FID) -> Bool
+    iscreation(index::Index) -> Bool
+    iscreation(index::AbstractCompositeIndex) -> Bool
+
+Judge whether the nambu index is `creation`.
+"""
+@inline iscreation(fid::FID) = fid.nambu==creation
+@inline iscreation(index::Index) = iscreation(index.iid)
+@inline iscreation(index::AbstractCompositeIndex) = iscreation(getcontent(index, :index))
+
 ## Fock
 """
     Fock{T} <: SimpleInternal{FID{T, Int, Rational{Int}, Int}}
@@ -117,7 +139,7 @@ Get the requested script of an fid.
 @inline script(::Val{:orbital}, fid::FID; kwargs...) = default(fid.orbital)
 @inline script(::Val{:spin}, fid::FID; kwargs...) = default(fid.spin)
 @inline script(::Val{:spinsym}, fid::FID; kwargs...) = fid.spin==-1//2 ? "↓" : fid.spin==1//2 ? "↑" : fid.spin==0 ? "" : default(fid.spin)
-@inline script(::Val{:nambu}, fid::FID; kwargs...) = fid.nambu==creation ? "\\dagger" : fid.nambu==annihilation ? "" : default(fid.nambu)
+@inline script(::Val{:nambu}, fid::FID; kwargs...) = iscreation(fid) ? "\\dagger" : isannihilation(fid) ? "" : default(fid.nambu)
 
 """
     latexoffermions

@@ -15,17 +15,23 @@ using StaticArrays: SVector
     @test hash(fid) == hash((:f, 1, 1//2, 1))
     @test fid' == replace(fid, nambu=2)
     @test isequal(fid'', replace(fid, nambu=1))
+    @test isannihilation(fid) && isannihilation(Index(1, fid)) && isannihilation(CompositeIndex(Index(1, fid), [0.0], [0.0]))
+    @test !iscreation(fid) && !iscreation(Index(1, fid)) && !iscreation(CompositeIndex(Index(1, fid), [0.0], [0.0]))
 
-    fid = FID{:b}(1, -1//2, 1)
-    @test string(fid) == "FID{:b}(1, -1//2, 1)"
+    fid = FID{:b}(1, -1//2, 2)
+    @test string(fid) == "FID{:b}(1, -1//2, 2)"
     @test statistics(fid) == statistics(typeof(fid)) == :b
-    @test hash(fid) == hash((:b, 1, -1//2, 1))
+    @test hash(fid) == hash((:b, 1, -1//2, 2))
+    @test !isannihilation(fid) && !isannihilation(Index(1, fid)) && !isannihilation(CompositeIndex(Index(1, fid), [0.0], [0.0]))
+    @test iscreation(fid) && iscreation(Index(1, fid)) && iscreation(CompositeIndex(Index(1, fid), [0.0], [0.0]))
 
     fid = FID(1, :α, :)
     @test fid == FID{wildcard}(1, :α, :)
     @test string(fid) == "FID(1, α, :)"
     @test statistics(fid) == wildcard
     @test hash(fid) == hash((wildcard, 1, :α, :))
+    @test !isannihilation(fid) && !isannihilation(Index(1, fid)) && !isannihilation(CompositeIndex(Index(1, fid), [0.0], [0.0]))
+    @test !iscreation(fid) && !iscreation(Index(1, fid)) && !iscreation(CompositeIndex(Index(1, fid), [0.0], [0.0]))
 
     @test FID{:f}(1, 1//2, 1)≠FID{:b}(1, 1//2, 1)
     @test isequal(FID{:f}(1, 1//2, 1), FID{:f}(1, 1//2, 1))

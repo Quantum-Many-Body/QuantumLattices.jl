@@ -60,7 +60,7 @@ export plain, statistics, @indexes
 include("QuantumSystems.jl")
 using .QuantumSystems
 export annihilation, creation, latexofbosons, latexoffermions, latexofparticles, @σ_str, @L_str
-export Coulomb, FID, Fock, FockTerm, Hopping, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, Onsite, PairHopping, Pairing, SpinFlip, isnormalordered
+export Coulomb, FID, Fock, FockTerm, Hopping, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, Onsite, PairHopping, Pairing, SpinFlip, isannihilation, iscreation, isnormalordered
 export latexofspins, SID, Spin, SpinTerm, totalspin, @Γ_str, @DM_str, @Heisenberg_str, @Ising_str
 export latexofphonons, Elastic, PID, Phonon, Kinetic, Hooke, PhononTerm
 
