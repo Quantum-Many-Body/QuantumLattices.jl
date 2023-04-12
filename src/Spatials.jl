@@ -864,22 +864,25 @@ Construct a quantum momentum by the coordinates.
 function Momentum₁{N}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}) where N
     @assert length(reciprocals)==1 "Momentum₁ error: mismatched length of reciprocals."
     k = decompose(momentum, reciprocals[1])[1]*N
-    @assert isapprox(round(k), k; atol=atol, rtol=rtol) "Momentum₁ error: input momentum not on grid."
-    return Momentum₁{N}(k)
+    i = round(Int, k)
+    @assert isapprox(i, k; atol=atol, rtol=rtol) "Momentum₁ error: input momentum not on grid."
+    return Momentum₁{N}(i)
 end
 function Momentum₂{N₁, N₂}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}) where {N₁, N₂}
     @assert length(reciprocals)==2 "Momentum₂ error: mismatched length of reciprocals."
     k₁, k₂ = decompose(momentum, reciprocals[1], reciprocals[2])
     k₁, k₂ = k₁*N₁, k₂*N₂
-    @assert isapprox(round(k₁), k₁; atol=atol, rtol=rtol) && isapprox(round(k₂), k₂; atol=atol, rtol=rtol) "Momentum₂ error: input momentum not on grid."
-    return Momentum₂{N₁, N₂}(k₁, k₂)
+    i₁, i₂ = round(Int, k₁), round(Int, k₂)
+    @assert isapprox(i₁, k₁; atol=atol, rtol=rtol) && isapprox(i₂, k₂; atol=atol, rtol=rtol) "Momentum₂ error: input momentum not on grid."
+    return Momentum₂{N₁, N₂}(i₁, i₂)
 end
 function Momentum₃{N₁, N₂, N₃}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}) where {N₁, N₂, N₃}
     @assert length(reciprocals)==3 "Momentum₃ error: mismatched length of reciprocals."
     k₁, k₂, k₃ = decompose(momentum, reciprocals[1], reciprocals[2], reciprocals[3])
     k₁, k₂, k₃ = k₁*N₁, k₂*N₂, k₃*N₃
-    @assert isapprox(round(k₁), k₁; atol=atol, rtol=rtol) && isapprox(round(k₂), k₂; atol=atol, rtol=rtol) && isapprox(round(k₃), k₃; atol=atol, rtol=rtol) "Momentum₃ error: input momentum not on grid."
-    return Momentum₃{N₁, N₂, N₃}(k₁, k₂, k₃)
+    i₁, i₂, i₃ = round(Int, k₁), round(Int, k₂), round(Int, k₃)
+    @assert isapprox(i₁, k₁; atol=atol, rtol=rtol) && isapprox(i₂, k₂; atol=atol, rtol=rtol) && isapprox(i₃, k₃; atol=atol, rtol=rtol) "Momentum₃ error: input momentum not on grid."
+    return Momentum₃{N₁, N₂, N₃}(i₁, i₂, i₃)
 end
 
 """
