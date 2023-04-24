@@ -1238,7 +1238,7 @@ function selectpath(
     representations=segments, ends=nothing, atol::Real=atol, rtol::Real=rtol
 ) where N
     @assert length(brillouinzone.reciprocals)==N "selectpath error: mismatched number of reciprocals ($(length(brillouinzone.reciprocals)) v.s. $N)."
-    isnothing(ends) || @assert fieldcount(typeof(segments))==M "selectpath error: mismatched number of segments."
+    isnothing(ends) || @assert fieldcount(typeof(segments))==length(ends) "selectpath error: mismatched number of segments."
     isnothing(ends) && (ends = ntuple(i->i<fieldcount(typeof(segments)) ? (true, false) : (true, true), fieldcount(typeof(segments))))
     contents, indexes = ntuple(i->eltype(brillouinzone)[], fieldcount(typeof(segments))), Int[]
     for (n, segment) in enumerate(segments)
