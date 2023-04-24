@@ -751,12 +751,17 @@ Save the data of an assignment registered on an algorithm.
     delimited ? save(filename, assign.data) : serialize(filename, assign.data)
     return (alg, assign)
 end
-function save(filename::AbstractString, data::Tuple{AbstractVector, Union{AbstractVector, AbstractMatrix}})
+function save(filename::AbstractString, data::Tuple{AbstractVector{<:Number}, Union{AbstractVector{<:Number}, AbstractMatrix{<:Number}}})
     open(filename, "w") do f
         writedlm(f, [data[1] data[2]])
     end
 end
-function save(filename::AbstractString, data::Tuple{AbstractVector, AbstractVector, Union{AbstractMatrix, AbstractArray{<:Any, 3}}})
+function save(filename::AbstractString, data::Tuple{AbstractVector{<:AbstractVector}, Union{AbstractVector{<:Number}, AbstractMatrix{<:Number}}})
+    open(filename, "w") do f
+        writedlm(f, [reduce(hcat, data[1])' data[2]])
+    end
+end
+function save(filename::AbstractString, data::Tuple{AbstractVector{<:Number}, AbstractVector{<:Number}, Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}}})
     open(filename, "w") do f
         len = length(data[1])*length(data[2])
         x = reshape(ones(length(data[2]))*data[1]', len)
