@@ -5,9 +5,9 @@ using QuantumLattices.QuantumNumbers
 
 import QuantumLattices.QuantumNumbers: periods
 
-@abeliannumber "CN" (:N,) (Inf,)
-@abeliannumber "Z4" (:Z,) (4,)
-@abeliannumber "CNZ4" (:N, :Z) (Inf, 4)
+@abeliannumber "CN" Int (:N,) (Inf,)
+@abeliannumber "Z4" Int (:Z,) (4,)
+@abeliannumber "CNZ4" Int (:N, :Z) (Inf, 4)
 
 @testset "regularize" begin
     @test regularize(CNZ4, [1.5, 5.0]) == [1.5, 1.0]
@@ -16,7 +16,7 @@ import QuantumLattices.QuantumNumbers: periods
 end
 
 @testset "AbelianNumbers" begin
-    qn₁, qn₂ = CNZ4(+1.0, +3.0), CNZ4(-1.0, +1.0)
+    qn₁, qn₂ = CNZ4(+1, +3), CNZ4(-1, +1)
     qns₁ = AbelianNumbers('U', [qn₁, qn₂], [0, 2, 5], :indptr)
     qns₂ = AbelianNumbers('U', [qn₁, qn₂], [2, 3], :counts)
     @test isequal(qns₁, qns₂)
@@ -35,7 +35,7 @@ end
     @test qns|>eltype == CNZ4
     @test qns|>typeof|>eltype == CNZ4
     @test qns|>issorted == false
-    @test repr(qns) == "QNS(CNZ4(1.0, 3.0)=>1:3, CNZ4(-1.0, 1.0)=>4:5)"
+    @test repr(qns) == "QNS(CNZ4(1, 3)=>1:3, CNZ4(-1, 1)=>4:5)"
     @test qns[1] == qn₁
     @test qns[2] == qn₂
     @test qns[1:2] == AbelianNumbers('U', [qn₁, qn₂], [0, 3, 5], :indptr)
@@ -50,28 +50,28 @@ end
 end
 
 @testset "OrderedDict" begin
-    qn₁, qn₂ = CNZ4(1.0, 2.0), CNZ4(2.0, 3.0)
+    qn₁, qn₂ = CNZ4(1, 2), CNZ4(2, 3)
     qns = AbelianNumbers('U', [qn₁, qn₂], [2, 3], :counts)
     @test OrderedDict(qns, :indptr) == OrderedDict(qn₁=>1:2, qn₂=>3:5)
     @test OrderedDict(qns, :counts) == OrderedDict(qn₁=>2, qn₂=>3)
 end
 
 @testset "arithmetic" begin
-    qn = CNZ4(1.0, 3.0)
+    qn = CNZ4(1, 3)
     @test qn|>dimension == 1
     @test qn|>typeof|>dimension == 1
-    @test +qn == CNZ4(+1.0, +3.0)
-    @test -qn == CNZ4(-1.0, +1.0)
-    @test qn*4 == 4*qn == CNZ4(4.0, 0.0)
-    @test qn^3 == CNZ4(3.0, 1.0)
+    @test +qn == CNZ4(+1, +3)
+    @test -qn == CNZ4(-1, +1)
+    @test qn*4 == 4*qn == CNZ4(4, 0)
+    @test qn^3 == CNZ4(3, 1)
 
-    qn₁, qn₂ = CNZ4(1.0, 2.0), CNZ4(2.0, 3.0)
-    @test qn₁+qn₂ == CNZ4(3.0, 1.0)
-    @test qn₁-qn₂ == CNZ4(-1.0, 3.0)
-    @test kron(qn₁, qn₂, signs=(+1, +1)) == CNZ4(+3.0, 1.0)
-    @test kron(qn₁, qn₂, signs=(+1, -1)) == CNZ4(-1.0, 3.0)
-    @test kron(qn₁, qn₂, signs=(-1, +1)) == CNZ4(+1.0, 1.0)
-    @test kron(qn₁, qn₂, signs=(-1, -1)) == CNZ4(-3.0, 3.0)
+    qn₁, qn₂ = CNZ4(1, 2), CNZ4(2, 3)
+    @test qn₁+qn₂ == CNZ4(3, 1)
+    @test qn₁-qn₂ == CNZ4(-1, 3)
+    @test kron(qn₁, qn₂, signs=(+1, +1)) == CNZ4(+3, 1)
+    @test kron(qn₁, qn₂, signs=(+1, -1)) == CNZ4(-1, 3)
+    @test kron(qn₁, qn₂, signs=(-1, +1)) == CNZ4(+1, 1)
+    @test kron(qn₁, qn₂, signs=(-1, -1)) == CNZ4(-3, 3)
     @test union(qn₁, qn₂, signs=(+1, +1)) == AbelianNumbers('G', [+qn₁, +qn₂], [0, 1, 2], :indptr)
     @test union(qn₁, qn₂, signs=(+1, -1)) == AbelianNumbers('G', [+qn₁, -qn₂], [0, 1, 2], :indptr)
     @test union(qn₁, qn₂, signs=(-1, +1)) == AbelianNumbers('G', [-qn₁, +qn₂], [0, 1, 2], :indptr)
@@ -104,7 +104,7 @@ end
 end
 
 @testset "sort" begin
-    qn₁, qn₂, qn₃, qn₄ = CNZ4(3.0, 2.0), CNZ4(4.0, 1.0), CNZ4(4.0, 2.0), CNZ4(3.0, 3.0)
+    qn₁, qn₂, qn₃, qn₄ = CNZ4(3, 2), CNZ4(4, 1), CNZ4(4, 2), CNZ4(3, 3)
     oldqns = AbelianNumbers('G', [qn₁, qn₂, qn₃, qn₄, qn₂, qn₃, qn₁, qn₄], [2, 1, 3, 4, 1, 1, 2, 3], :counts)
     newqns, permutation = sort(oldqns)
     @test newqns == AbelianNumbers('C', [qn₁, qn₄, qn₂, qn₃], [4, 7, 2, 4], :counts)
@@ -112,7 +112,7 @@ end
 end
 
 @testset "findall" begin
-    qn₁, qn₂, qn₃ = CNZ4(2.0, 3.0), CNZ4(1.0, 2.0), CNZ4(0.0, 0.0)
+    qn₁, qn₂, qn₃ = CNZ4(2, 3), CNZ4(1, 2), CNZ4(0, 0)
     qns = AbelianNumbers('C', [qn₂, qn₁], [2, 3], :counts)
     @test findall(qn₁, qns, :compression) == [2]
     @test findall(qn₂, qns, :compression) == [1]
@@ -131,14 +131,14 @@ end
 end
 
 @testset "filter" begin
-    qn₁, qn₂ = CNZ4(1.0, 2.0), CNZ4(3.0, 0.0)
+    qn₁, qn₂ = CNZ4(1, 2), CNZ4(3, 0)
     qns = AbelianNumbers('G', [qn₁, qn₂, qn₁, qn₂], [1, 2, 3, 4], :counts)
     @test filter((qn₁, qn₂), qns) == AbelianNumbers('G', [qn₁, qn₂, qn₁, qn₂], [1, 2, 3, 4], :counts)
     @test filter(qn₂, qns) == AbelianNumbers('G', [qn₂, qn₂], [2, 4], :counts)
 end
 
 @testset "prod" begin
-    qn₁, qn₂ = CNZ4(1.0, 1.0), CNZ4(2.0, 3.0)
+    qn₁, qn₂ = CNZ4(1, 1), CNZ4(2, 3)
     qns₁ = AbelianNumbers('U', [qn₂, qn₁], [4, 5], :counts)
     qns₂ = AbelianNumbers('U', [qn₁, qn₂], [2, 3], :counts)
     qns, records = prod(qns₁, qns₂, signs=(+1, -1))
@@ -150,23 +150,23 @@ end
 end
 
 @testset "expand" begin
-    qn = CNZ4(3.0, 2.0)
+    qn = CNZ4(3, 2)
     qns = AbelianNumbers(qn, 4)
     @test expand(qns, :indices) == [1, 1, 1, 1]
     @test expand(qns, :contents) == [qn, qn, qn, qn]
 end
 
 @testset "decompose" begin
-    qn₁, qn₂ = CNZ4(0.0, 0.0), CNZ4(1.0, 1.0)
+    qn₁, qn₂ = CNZ4(0, 0), CNZ4(1, 1)
     qns = AbelianNumbers('U', [qn₁, qn₂], [0, 1, 2], :indptr)
-    target = CNZ4(2.0, 2.0)
+    target = CNZ4(2, 2)
     result = Set(((1, 1, 2, 2), (1, 2, 1, 2), (1, 2, 2, 1), (2, 1, 1, 2), (2, 1, 2, 1), (2, 2, 1, 1)))
     @test ⊆(Set(decompose(target, qns, qns, qns, qns; signs=(1, 1, 1, 1), nmax=10, method=:bruteforce)), result)
     @test ⊆(Set(decompose(target, qns, qns, qns, qns; signs=(1, 1, 1, 1), nmax=10, method=:montecarlo)), result)
 end
 
 @testset "permute" begin
-    qn₁, qn₂, qn₃ = CNZ4(1.0, 2.0), CNZ4(3.0, 0.0), CNZ4(4.0, 1.0)
+    qn₁, qn₂, qn₃ = CNZ4(1, 2), CNZ4(3, 0), CNZ4(4, 1)
     qns = AbelianNumbers('G', [qn₁, qn₂, qn₃], [2, 3, 4], :counts)
     @test permute(qns, [3, 2, 1], :compression) == AbelianNumbers('G', [qn₃, qn₂, qn₁], [4, 3, 2], :counts)
     @test permute(qns, [4, 6, 9, 8], :expansion) == AbelianNumbers('G', [qn₂, qn₃, qn₃, qn₃], [1, 1, 1, 1], :counts)
@@ -180,7 +180,7 @@ end
     @test SpinfulParticle|>fieldnames == (:N, :Sz)
     @test SpinfulParticle|>periods == (Inf, Inf)
     @test spinzs(0.5) == AbelianNumbers('C', [SpinZ(-0.5), SpinZ(0.5)], [0, 1, 2], :indptr)
-    @test particlenumbers(1.0) == AbelianNumbers('C', [ParticleNumber(0.0), ParticleNumber(1.0)], [0, 1, 2], :indptr)
+    @test particlenumbers(1.0) == AbelianNumbers('C', [ParticleNumber(0), ParticleNumber(1)], [0, 1, 2], :indptr)
     @test spinfulparticles(0.5) == AbelianNumbers('C', [SpinfulParticle(0.0, 0.0), SpinfulParticle(1.0, -0.5), SpinfulParticle(1.0, 0.5), SpinfulParticle(2.0, 0.0)], [0, 1, 2, 3, 4], :indptr)
 
     @test Momentum₁{10} |> periods == (10,)
@@ -202,7 +202,7 @@ end
     @test momenta ≠ Momenta(Momentum₂{2, 4})
     @test isequal(momenta, Momenta(Momentum₂{2, 3}))
     @test !isequal(momenta, Momenta(Momentum₂{2, 4}))
-    @test collect(momenta) == [Momentum₂{2, 3}(0.0, 0.0), Momentum₂{2, 3}(0.0, 1.0), Momentum₂{2, 3}(0.0, 2.0), Momentum₂{2, 3}(1.0, 0.0), Momentum₂{2, 3}(1.0, 1.0), Momentum₂{2, 3}(1.0, 2.0)]
+    @test collect(momenta) == [Momentum₂{2, 3}(0, 0), Momentum₂{2, 3}(0, 1), Momentum₂{2, 3}(0, 2), Momentum₂{2, 3}(1, 0), Momentum₂{2, 3}(1, 1), Momentum₂{2, 3}(1, 2)]
     for momentum in momenta
         @test momenta[CartesianIndex(momentum, momenta)] == momentum
     end

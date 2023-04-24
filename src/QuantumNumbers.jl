@@ -5,7 +5,7 @@ using DataStructures: OrderedDict
 using LinearAlgebra: norm
 using Printf: @printf, @sprintf
 using Random: MersenneTwister, seed!, shuffle!
-using ..Toolkit: Float, Combinations, HomoNamedVector, VectorSpace, VectorSpaceCartesian, VectorSpaceEnumerative, VectorSpaceStyle
+using ..Toolkit: Combinations, HomoNamedVector, VectorSpace, VectorSpaceCartesian, VectorSpaceEnumerative, VectorSpaceStyle
 
 import ..QuantumLattices: ⊕, ⊗, decompose, dimension, expand, permute
 import ..Toolkit: shape
@@ -20,8 +20,12 @@ Return a tuple of all positive signs.
 """
 @inline positives(inputs::NTuple{N, Any}) where N = ntuple(i->1, Val(N))
 
-"Abstract type for all concrete quantum numbers for a single basis."
-abstract type AbelianNumber <: HomoNamedVector{Float} end
+"""
+    AbelianNumber{T<:Real} <: HomoNamedVector{T}
+
+Abstract type for all concrete quantum numbers for a single basis.
+"""
+abstract type AbelianNumber{T<:Real} <: HomoNamedVector{T} end
 
 """
     periods(qn::AbelianNumber)
@@ -53,15 +57,15 @@ Overloaded `+` operator for `AbelianNumber`.
 
 """
     -(qn::AbelianNumber) -> typeof(qn)
-    -(qn1::QN, qn2::QN) where {QN<:AbelianNumber} -> QN
+    -(qn₁::QN, qn₂::QN) where {QN<:AbelianNumber} -> QN
 
-Overloaded `-` operator for `AbelianNumber` and `AbelianNumbers`.
+Overloaded `-` operator for `AbelianNumber`.
 
 !!! note
     To ensure type stability, an `AbelianNumber` can be subtracted by another `AbelianNumber` if and only if they are of the same type.
 """
 @inline Base.:-(qn::AbelianNumber) = map(-, qn)
-@inline Base.:-(qn1::QN, qn2::QN) where {QN<:AbelianNumber} = map(-, qn1, qn2)
+@inline Base.:-(qn₁::QN, qn₂::QN) where {QN<:AbelianNumber} = map(-, qn₁, qn₂)
 
 """
     *(factor::Integer, qn::AbelianNumber) -> typeof(qn)
@@ -104,7 +108,7 @@ Get the direct product of some `AbelianNumber`s.
 Regularize the elements of an array in place so that it can represent quantum numbers.
 """
 function regularize!(::Type{QN}, array::AbstractVector{<:Real}) where {QN<:AbelianNumber}
-    @assert array|>length == QN|>length "regularize! error: not consistent shape of input array and $QN."
+    @assert array|>length == QN|>length "regularize! error: inconsistent shape of input array and $QN."
     for (i, period) in enumerate(QN|>periods)
         period==Inf || @inbounds begin
             remainder = array[i] % period
@@ -114,7 +118,7 @@ function regularize!(::Type{QN}, array::AbstractVector{<:Real}) where {QN<:Abeli
     return array
 end
 function regularize!(::Type{QN}, array::AbstractMatrix{<:Real}) where {QN<:AbelianNumber}
-    @assert size(array, 1) == QN|>length "regularize! error: not consistent shape of input array and $QN."
+    @assert size(array, 1) == QN|>length "regularize! error: inconsistent shape of input array and $QN."
     for (i, period) in enumerate(QN|>periods)
         period==Inf || @inbounds for j = 1:size(array, 2)
             remainder = array[i, j] % period
@@ -132,11 +136,11 @@ Regularize the elements of an array and return a copy that can represent quantum
 @inline regularize(::Type{QN}, array::Union{AbstractVector{<:Real}, AbstractMatrix{<:Real}}) where {QN<:AbelianNumber} = regularize!(QN, deepcopy(array))
 
 """
-    @abeliannumber typename fields periods
+    @abeliannumber typename T fields periods
 
-Construct a concrete `AbelianNumber` with the type name being `typename`, fieldnames specified by `fields` and periods specified by `periods`.
+Construct a concrete `AbelianNumber` with the type name being `typename`, fieldtype specified by `T`, fieldnames specified by `fields`, and periods specified by `periods`.
 """
-macro abeliannumber(typename, fields, periods)
+macro abeliannumber(typename, T, fields, periods)
     typename = Symbol(typename)
     fields = tuple(eval(fields)...)
     periods = tuple(eval(periods)...)
@@ -151,7 +155,7 @@ macro abeliannumber(typename, fields, periods)
         title = Expr(:call, :($(esc(typename))), arguments..., Expr(:kw, :(regularize::Bool), :true))
         body = Expr(:call, :new, (p==Inf ? arg : :(regularize ? (r=$arg%$p; r<0 ? r+$p : r) : $arg) for (p, arg) in zip(periods, arguments))...)
     end
-    newtype = Expr(:struct, false, :($(esc(typename))<:AbelianNumber), Expr(:block, (:($field::Float) for field in fields)..., Expr(:(=), title, body)))
+    newtype = Expr(:struct, false, :($(esc(typename))<:AbelianNumber{$(esc(T))}), Expr(:block, (:($field::$(esc(T))) for field in fields)..., Expr(:(=), title, body)))
     functions = Expr(:block, :(periods(::Type{<:$(esc(typename))}) = $periods))
     return Expr(:block, :(global periods), :(Base.@__doc__($newtype)), functions)
 end
@@ -647,21 +651,21 @@ end
 
 The concrete `AbelianNumber` of a quantum system with spin z-component `Sz` conserved.
 """
-@abeliannumber "SpinZ" (:Sz,) (Inf,)
+@abeliannumber "SpinZ" Float64 (:Sz,) (Inf,)
 
 """
     ParticleNumber(N::Real)
 
 The concrete `AbelianNumber` of a quantum system with particle number `N` conserved.
 """
-@abeliannumber "ParticleNumber" (:N,) (Inf,)
+@abeliannumber "ParticleNumber" Int (:N,) (Inf,)
 
 """
     SpinfulParticle(N::Real, Sz::Real)
 
 The concrete `AbelianNumber` of a quantum system with both particle number `N` and spin z-component `Sz` conserved.
 """
-@abeliannumber "SpinfulParticle" (:N, :Sz) (Inf, Inf)
+@abeliannumber "SpinfulParticle" Float64 (:N, :Sz) (Inf, Inf)
 
 """
     spinzs(S::Real) -> AbelianNumbers{SpinZ}
@@ -693,42 +697,42 @@ function spinfulparticles(S::Real)
 end
 
 """
-    Momentum <: AbelianNumber
+    Momentum <: AbelianNumber{Int}
 
 Abstract type for momentum.
 """
-abstract type Momentum <: AbelianNumber end
+abstract type Momentum <: AbelianNumber{Int} end
 
 """
-    Momentum₁{N}(k::Real) where N
+    Momentum₁{N}(k::Integer) where N
 
 One dimensional momentum.
 """
 struct Momentum₁{N} <: Momentum
-    k::Float
-    function Momentum₁{N}(k::Real) where N
-        @assert isa(N, Integer) && N>0 "Momentum₁ error: wrong period ($N)."
+    k::Int
+    function Momentum₁{N}(k::Integer) where N
+        @assert N>0 "Momentum₁ error: wrong period ($N)."
         remainder = k % N
         remainder < 0 && (remainder = remainder + N)
         new{N}(remainder)
     end
 end
 @inline periods(::Type{<:Momentum₁{N}}) where N = (N,)
-@inline Int(m::Momentum₁) = Int(m.k) + 1
+@inline Int(m::Momentum₁) = m.k + 1
 
 """
-    Momentum₂{N}(k₁::Real, k₂::Real) where N
-    Momentum₂{N₁, N₂}(k₁::Real, k₂::Real) where {N₁, N₂}
+    Momentum₂{N}(k₁::Integer, k₂::Integer) where N
+    Momentum₂{N₁, N₂}(k₁::Integer, k₂::Integer) where {N₁, N₂}
 
 Two dimensional momentum.
 """
 struct Momentum₂{N₁, N₂} <: Momentum
-    k₁::Float
-    k₂::Float
-    Momentum₂{N}(k₁::Real, k₂::Real) where N =  Momentum₂{N, N}(k₁, k₂)
-    function Momentum₂{N₁, N₂}(k₁::Real, k₂::Real) where {N₁, N₂}
-        @assert isa(N₁, Integer) && N₁>0 "Momentum₂ error: wrong 1st period ($N₁)."
-        @assert isa(N₂, Integer) && N₂>0 "Momentum₂ error: wrong 2nd period ($N₂)."
+    k₁::Int
+    k₂::Int
+    Momentum₂{N}(k₁::Integer, k₂::Integer) where N =  Momentum₂{N, N}(k₁, k₂)
+    function Momentum₂{N₁, N₂}(k₁::Integer, k₂::Integer) where {N₁, N₂}
+        @assert N₁>0 "Momentum₂ error: wrong 1st period ($N₁)."
+        @assert N₂>0 "Momentum₂ error: wrong 2nd period ($N₂)."
         r₁ = k₁ % N₁
         r₂ = k₂ % N₂
         r₁ < 0 && (r₁ = r₁ + N₁)
@@ -737,23 +741,23 @@ struct Momentum₂{N₁, N₂} <: Momentum
     end
 end
 @inline periods(::Type{<:Momentum₂{N₁, N₂}}) where {N₁, N₂} = (N₁, N₂)
-@inline Int(m::Momentum₂{N₁, N₂}) where {N₁, N₂} = Int(m.k₂) + Int(m.k₁)*N₂ + 1
+@inline Int(m::Momentum₂{N₁, N₂}) where {N₁, N₂} = m.k₂ + m.k₁*N₂ + 1
 
 """
-    Momentum₃{N}(k₁::Real, k₂::Real, k₃::Real) where N
-    Momentum₃{N₁, N₂, N₃}(k₁::Real, k₂::Real, k₃::Real) where {N₁, N₂, N₃}
+    Momentum₃{N}(k₁::Integer, k₂::Integer, k₃::Integer) where N
+    Momentum₃{N₁, N₂, N₃}(k₁::Integer, k₂::Integer, k₃::Integer) where {N₁, N₂, N₃}
 
 Three dimensional momentum.
 """
 struct Momentum₃{N₁, N₂, N₃} <: Momentum
-    k₁::Float
-    k₂::Float
-    k₃::Float
-    Momentum₃{N}(k₁::Real, k₂::Real, k₃::Real) where N =  Momentum₃{N, N, N}(k₁, k₂, k₃)
-    function Momentum₃{N₁, N₂, N₃}(k₁::Real, k₂::Real, k₃::Real) where {N₁, N₂, N₃}
-        @assert isa(N₁, Integer) && N₁>0 "Momentum₃ error: wrong 1st period ($N₁)."
-        @assert isa(N₂, Integer) && N₂>0 "Momentum₃ error: wrong 2nd period ($N₂)."
-        @assert isa(N₃, Integer) && N₃>0 "Momentum₃ error: wrong 3rd period ($N₃)."
+    k₁::Int
+    k₂::Int
+    k₃::Int
+    Momentum₃{N}(k₁::Integer, k₂::Integer, k₃::Integer) where N =  Momentum₃{N, N, N}(k₁, k₂, k₃)
+    function Momentum₃{N₁, N₂, N₃}(k₁::Integer, k₂::Integer, k₃::Integer) where {N₁, N₂, N₃}
+        @assert N₁>0 "Momentum₃ error: wrong 1st period ($N₁)."
+        @assert N₂>0 "Momentum₃ error: wrong 2nd period ($N₂)."
+        @assert N₃>0 "Momentum₃ error: wrong 3rd period ($N₃)."
         r₁ = k₁ % N₁
         r₂ = k₂ % N₂
         r₃ = k₃ % N₃
@@ -764,7 +768,7 @@ struct Momentum₃{N₁, N₂, N₃} <: Momentum
     end
 end
 @inline periods(::Type{<:Momentum₃{N₁, N₂, N₃}}) where {N₁, N₂, N₃} = (N₁, N₂, N₃)
-@inline Int(m::Momentum₃{N₁, N₂, N₃}) where {N₁, N₂, N₃} = (Int(m.k₁)*N₂ + Int(m.k₂))*N₃ + Int(m.k₃) + 1
+@inline Int(m::Momentum₃{N₁, N₂, N₃}) where {N₁, N₂, N₃} = (m.k₁*N₂+m.k₂)*N₃ + m.k₃ + 1
 
 """
     Momenta{P<:Momentum} <: VectorSpace{P}
