@@ -219,6 +219,9 @@ end
 @testset "BrillouinZone" begin
     recipls = [[1.0, 0.0], [0.0, 1.0]]
     bz = BrillouinZone(Momentum₂{2, 4}, recipls)
+    @test bz==deepcopy(bz) && isequal(bz, deepcopy(bz))
+    @test bz≠BrillouinZone(recipls, 4) && !isequal(bz, BrillouinZone(recipls, 4))
+    @test hash(bz) == hash(((SVector(1.0, 0.0), SVector(0.0, 1.0)), (2, 4)))
     @test dtype(bz) == dtype(typeof(bz)) == Float
     @test dimension(bz) == dimension(typeof(bz)) == 2
     @test shape(bz) == (0:3, 0:1)
@@ -261,7 +264,7 @@ end
 end
 
 @testset "ReciprocalPath" begin
-    @test contentnames(ReciprocalPath) == (:contents,)
+    @test contentnames(ReciprocalPath) == (:contents, :representations)
 
     b₁, b₂ = [1.0, 0.0], [0.0, 1.0]
     s₁ = (0.0, 0.0)=>(0.5, 0.0)
@@ -269,38 +272,40 @@ end
     s₃ = (0.5, 0.5)=>(0.0, 0.0)
 
     rp = ReciprocalPath([b₁, b₂], s₁, s₂, s₃)
-    @test getcontent(rp, :contents) == rp.momenta
-    @test rp == ReciprocalPath(rp.momenta)
+    @test rp == ReciprocalPath(rp.contents, rp.representations)
     @test rp == ReciprocalPath([b₁, b₂], (s₁, s₂, s₃))
-    savefig(plot(rp), "ReciprocalPath.png")
+    @test ticks(rp) == ([0, 100, 200, 300], ["(0.0, 0.0)", "(0.5, 0.0)", "(0.5, 0.5)", "(0.0, 0.0)"])
+    savefig(plot(rp), "ReciprocalPath-1.png")
+
+    rp = ReciprocalPath([b₁, b₂], s₁, s₃; representations=("Γ"=>"X", "M"=>"Γ"))
+    @test ticks(rp) == ([0, 100, 200], ["Γ", "X / M", "Γ"])
+    savefig(plot(rp), "ReciprocalPath-2.png")
 
     rp = ReciprocalPath{:q}([b₁, b₂], s₁, s₂, s₃)
-    @test rp == ReciprocalPath{:q}(rp.momenta)
+    @test rp == ReciprocalPath{:q}(rp.contents, rp.representations)
     @test rp == ReciprocalPath{:q}([b₁, b₂], (s₁, s₂, s₃))
-    @test rp == ReciprocalPath{:q}([b₁, b₂], [s₁, s₂, s₃])
 
     rp = ReciprocalPath([b₁+b₂], line"X₂-X₁", length=10)
-    @test rp == ReciprocalPath([b₁+b₂], (-1//2,)=>(1//2,), length=10)
+    @test rp == ReciprocalPath([b₁+b₂], (-1//2,)=>(1//2,); representations=("X₂"=>"X₁",), length=10)
 
     rp = ReciprocalPath([b₁, b₂], rectangle"Γ-X-M-Γ", length=10)
-    @test rp == ReciprocalPath([b₁, b₂], (0//1, 0//1)=>(1//2, 0//1), (1//2, 0//1)=>(1//2, 1//2), (1//2, 1//2)=>(0//1, 0//1), length=10)
+    @test rp == ReciprocalPath([b₁, b₂], (0//1, 0//1)=>(1//2, 0//1), (1//2, 0//1)=>(1//2, 1//2), (1//2, 1//2)=>(0//1, 0//1); representations=("Γ"=>"X", "X"=>"M", "M"=>"Γ"), length=10)
 
     rp = ReciprocalPath{:q}([b₁, b₂], hexagon"Γ-K-M-Γ", length=10)
-    @test rp == ReciprocalPath{:q}([b₁, b₂], (0//1, 0//1)=>(2//3, 1//3), (2//3, 1//3)=>(1//2, 1//2), (1//2, 1//2)=>(0//1, 0//1), length=10)
+    @test rp == ReciprocalPath{:q}([b₁, b₂], (0//1, 0//1)=>(2//3, 1//3), (2//3, 1//3)=>(1//2, 1//2), (1//2, 1//2)=>(0//1, 0//1); representations=("Γ"=>"K", "K"=>"M", "M"=>"Γ"), length=10)
 end
 
 @testset "selectpath" begin
-    b₁, b₂ = [1.0, 0.0], [0.0, 1.0]
-    bz = BrillouinZone([b₁, b₂], 4)
-    segments = ((0.0, 0.0)=>(0.5, 0.0), (0.5, 0.0)=>(0.5, 0.5), (0.5, 0.5)=>(0.0, 0.0))
+    bz = BrillouinZone([[1.0, 0.0], [0.0, 1.0]], 4)
 
-    path, indexes = selectpath(bz, segments; ends=(true, true), atol=1e-9, rtol=1e-9)
+    path, indexes = selectpath(bz, ((0.0, 0.0)=>(0.5, 0.0), (0.5, 0.0)=>(0.5, 0.5), (0.5, 0.5)=>(0.0, 0.0)); atol=1e-9, rtol=1e-9)
     @test indexes == [1, 5, 9, 10, 11, 6, 1]
     @test path == bz[indexes]
 
-    path, indexes = selectpath(bz, segments; ends=(true, false), atol=1e-9, rtol=1e-9)
-    @test indexes == [1, 5, 9, 10, 11, 6]
+    path, indexes = selectpath(bz, rectangle"Γ-X-M-Γ")
+    @test indexes == [1, 5, 9, 10, 11, 6, 1]
     @test path == bz[indexes]
+    @test path.representations == ("Γ"=>"X", "X"=>"M", "M"=>"Γ")
 
     path, indexes = selectpath(bz, (-1.5, 0.5)=>(-3.0, 0.0))
     @test collect(path) == [[-1.5, 0.5], [-2.25, 0.25], [-3.0, 0.0]]
