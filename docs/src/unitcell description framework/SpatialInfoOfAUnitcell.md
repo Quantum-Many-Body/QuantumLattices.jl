@@ -73,7 +73,7 @@ The reciprocal translation vectors of the dual lattice can be obtained by [`reci
 julia> lattice = Lattice((0.0, 0.0); vectors=[[1.0, 0.0], [0.0, 1.0]]);
 
 julia> reciprocals(lattice)
-2-element Vector{StaticArraysCore.SVector{2, Float64}}:
+2-element StaticArraysCore.SVector{2, StaticArraysCore.SVector{2, Float64}} with indices SOneTo(2):
  [6.283185307179586, -0.0]
  [-0.0, 6.283185307179586]
 ```
