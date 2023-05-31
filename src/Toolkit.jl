@@ -947,6 +947,7 @@ abstract type VectorSpaceStyle end
 
 @inline Base.length(vs::VectorSpace) = length(VectorSpaceStyle(vs), vs)
 @inline Base.getindex(vs::VectorSpace, i) = getindex(VectorSpaceStyle(vs), vs, i)
+@inline Base.getindex(vs::VectorSpace, i::CartesianIndex{1}) = vs[i[1]]
 @inline Base.getindex(style::VectorSpaceStyle, vs::VectorSpace, indexes) = map(index->getindex(style, vs, index), indexes)
 @inline Base.issorted(vs::VectorSpace) = issorted(VectorSpaceStyle(vs), vs)
 @inline Base.findfirst(basis::B, vs::VectorSpace{B}) where B = findfirst(VectorSpaceStyle(vs), basis, vs)
@@ -1165,6 +1166,7 @@ function Base.getindex(segment::Segment, i::Integer)
     start = segment.ends[1] ? segment.start : segment.start+step
     return start+(i-1)*step
 end
+@inline Base.getindex(segment::Segment, range::OrdinalRange{<:Integer}) = Segment(segment[first(range)], segment[last(range)], length(range), (true, true))
 function Base.iterate(segment::Segment)
     segment.length==0 && return
     length = segment.length+count(isequal(false), segment.ends)-1

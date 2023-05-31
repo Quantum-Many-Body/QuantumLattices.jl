@@ -441,7 +441,7 @@ end
     @test vs|>size == (3,)
     @test vs|>length == 3
     @test vs|>collect == [id1, id2, id3]
-    @test vs[1]==id1 && vs[2]==id2 && vs[3]==id3
+    @test vs[1]==vs[CartesianIndex(1)]==id1 && vs[2]==vs[CartesianIndex(2)]==id2 && vs[3]==vs[CartesianIndex(3)]==id3
     @test vs[[1, 2, 3]] == [id1, id2, id3]
     @test searchsortedfirst(vs, id0)==1 && searchsortedfirst(vs, id4)==4
     @test searchsortedfirst(vs, id1)==1 && searchsortedfirst(vs, id2)==2 && searchsortedfirst(vs, id3)==3
@@ -547,6 +547,8 @@ end
     @test isequal(segment,  Segment((0.0, 0.0), (1.0, 1.0), 10))
     @test size(segment) == (10,)
     @test string(segment) == "[p₁, p₂) with p₁=[0.0, 0.0] and p₂=[1.0, 1.0]"
+    @test segment[1:4] == Segment(segment[1], segment[4], 4, (true, true))
+    @test segment[6:-1:2] == Segment(segment[6], segment[2], 5, (true, true))
 
     segment = Segment(1, 5, 5, ends=(true, true))
     @test string(segment) == "[1.0, 5.0]"
