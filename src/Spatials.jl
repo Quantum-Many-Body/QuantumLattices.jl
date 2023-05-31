@@ -1353,6 +1353,7 @@ end
 # plot utilities
 block = quote
     seriestype --> :path
+    titlefontsize --> 10
     legend --> false
     minorgrid --> true
     xminorticks --> 10
@@ -1367,6 +1368,7 @@ end
 
 @recipe function plot(path::ReciprocalPath, y::AbstractVector, data::AbstractMatrix)
     seriestype --> :heatmap
+    titlefontsize --> 10
     xticks --> ticks(path)
     xlabel --> string(names(path)[1])
     xlims --> (0, length(path)-1)
@@ -1380,6 +1382,7 @@ block = quote
     x, y = xaxis(reciprocalspace), yaxis(reciprocalspace)
     Δx, Δy= x[2]-x[1], y[2]-y[1]
     seriestype --> :heatmap
+    titlefontsize --> 10
     aspect_ratio --> :equal
     xlims --> (x[1]-Δx, x[end]+Δx)
     ylims --> (y[1]-Δy, y[end]+Δy)
@@ -1401,7 +1404,7 @@ setup(expr::Expr) = quote
         @series begin
             isnothing(subtitles) || begin
                 title := subtitles[i]
-                isnothing(subtitlefontsize) || (titlefontsize := subtitlefontsize)
+                titlefontsize := subtitlefontsize
             end
             subplot := i
             clims --> clims
@@ -1417,9 +1420,9 @@ setup(expr::Expr) = quote
     ylabel := ""
     LinRange(clims..., 100), [0, 1], [LinRange(clims..., 100)'; LinRange(clims..., 100)']
 end
-@eval @recipe plot(path::ReciprocalPath, y::AbstractVector, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=nothing) = $(setup(:(path, y, data[:, :, i])))
-@eval @recipe plot(reciprocalspace::BrillouinZone, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=nothing) = $(setup(:(reciprocalspace, data[:, :, i])))
-@eval @recipe plot(reciprocalspace::ReciprocalZone, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=nothing) = $(setup(:(reciprocalspace, data[:, :, i])))
+@eval @recipe plot(path::ReciprocalPath, y::AbstractVector, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8) = $(setup(:(path, y, data[:, :, i])))
+@eval @recipe plot(reciprocalspace::BrillouinZone, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8) = $(setup(:(reciprocalspace, data[:, :, i])))
+@eval @recipe plot(reciprocalspace::ReciprocalZone, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8) = $(setup(:(reciprocalspace, data[:, :, i])))
 
 # save utilities
 function save(filename::AbstractString, path::ReciprocalPath, data::Union{AbstractVector{<:Number}, AbstractMatrix{<:Number}})

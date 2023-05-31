@@ -791,6 +791,7 @@ Define the recipe for the visualization of an assignment of an algorithm.
 """
 @recipe function plot(pack::Tuple{Algorithm, Assignment})
     title --> nameof(pack...)
+    titlefontsize --> 10
     attr = seriestype(pack)
     isnothing(attr) || begin
         seriestype --> attr
