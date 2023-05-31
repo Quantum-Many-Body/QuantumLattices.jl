@@ -5,6 +5,7 @@
 deps/deps.jl
 docs/build/
 test/*.png
+test/*.dat
 
 .ipynb_checkpoints/
 .vscode/

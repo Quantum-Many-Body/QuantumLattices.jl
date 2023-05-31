@@ -12,6 +12,7 @@ using ..Spatials: AbstractLattice, Bond, Neighbors, bonds!, isintracell
 using ..Toolkit: atol, efficientoperations, rtol, decimaltostr
 
 import ..QuantumLattices: add!, expand, expand!, id, reset!, update, update!
+import ..Spatials: save
 import ..Toolkit: contentnames, getcontent
 
 export Action, Algorithm, AnalyticalExpression, Assignment, CompositeGenerator, Entry, Frontend, Image, OperatorGenerator, Parameters, RepresentationGenerator, initialize, prepare!, run!, save
@@ -751,24 +752,20 @@ Save the data of an assignment registered on an algorithm.
     delimited ? save(filename, assign.data) : serialize(filename, assign.data)
     return (alg, assign)
 end
-function save(filename::AbstractString, data::Tuple{AbstractVector{<:Number}, Union{AbstractVector{<:Number}, AbstractMatrix{<:Number}}})
+@inline save(filename::AbstractString, data::Tuple) = save(filename, data...)
+function save(filename::AbstractString, x::AbstractVector{<:Number}, y::Union{AbstractVector{<:Number}, AbstractMatrix{<:Number}})
+    @assert length(x)==size(y)[1] "save error: mismatched size of x and y."
     open(filename, "w") do f
-        writedlm(f, [data[1] data[2]])
+        writedlm(f, [x y])
     end
 end
-function save(filename::AbstractString, data::Tuple{AbstractVector{<:AbstractVector}, Union{AbstractVector{<:Number}, AbstractMatrix{<:Number}}})
+function save(filename::AbstractString, x::AbstractVector{<:Number}, y::AbstractVector{<:Number}, z::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}})
+    @assert size(z)[1:2]==(length(y), length(x)) "save error: mismatched size of x, y and z."
     open(filename, "w") do f
-        writedlm(f, [reduce(hcat, data[1])' data[2]])
-    end
-end
-function save(filename::AbstractString, data::Tuple{AbstractVector{<:Number}, AbstractVector{<:Number}, Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}}})
-    open(filename, "w") do f
-        len = length(data[1])*length(data[2])
-        x = reshape(ones(length(data[2]))*data[1]', len)
-        y = reshape(data[2]*ones(length(data[1]))', len)
-        dim = ndims(data[3])==2 ? 1 : size(data[3])[3]
-        z = reshape(data[3], len, dim)
-        writedlm(f, [x y z])
+        new_x = kron(x, ones(length(y)))
+        new_y = kron(ones(length(x)), y)
+        new_z = reshape(z, length(x)*length(y), :)
+        writedlm(f, [new_x new_y new_z])
     end
 end
 
@@ -793,14 +790,22 @@ end
 Define the recipe for the visualization of an assignment of an algorithm.
 """
 @recipe function plot(pack::Tuple{Algorithm, Assignment})
-    title --> nameof(pack[1], pack[2])
-    titlefontsize --> 10
-    legend --> false
-    seriestype --> (isa(pack[2].data, Tuple{Any, Any, Any}) ? :heatmap : :path)
-    xminorticks --> 10
-    yminorticks --> 10
-    minorgrid --> true
+    title --> nameof(pack...)
+    attr = seriestype(pack)
+    isnothing(attr) || begin
+        seriestype --> attr
+        attr==:path && begin
+            legend --> false
+            minorgrid --> true
+            xminorticks --> 10
+            yminorticks --> 10
+        end
+    end
     pack[2].data
 end
+@inline seriestype(_...) = nothing
+@inline seriestype(pack::Tuple{Algorithm, Assignment}) = seriestype(pack[2].data...)
+@inline seriestype(::AbstractVector{<:Number}, ::Union{AbstractVector{<:Number}, AbstractMatrix{<:Number}}, _...) = :path
+@inline seriestype(::AbstractVector{<:Number}, ::AbstractVector{<:Number}, ::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}}, _...) = :heatmap
 
 end  # module

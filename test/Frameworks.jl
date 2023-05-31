@@ -213,4 +213,7 @@ end
     @test dos.parameters == (t=1.0, U=6.0)
     @test dos.data == 28.0
     @test dos.action.μ == -3.0
+
+    save("path.dat", 1:100, rand(100, 2))
+    save("heatmap.dat", 1:100, 1:50, rand(50, 100))
 end

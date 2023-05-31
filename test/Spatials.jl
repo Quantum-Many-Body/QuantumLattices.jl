@@ -2,7 +2,7 @@ using Plots: plot, savefig, plot!
 using QuantumLattices.Spatials
 using QuantumLattices: decompose, dimension, dtype, expand
 using QuantumLattices.QuantumNumbers: AbelianNumbers, Momenta, Momentum₁, Momentum₂, Momentum₃
-using QuantumLattices.Toolkit: Float, contentnames, getcontent, shape
+using QuantumLattices.Toolkit: Float, Segment, contentnames, getcontent, shape
 using Random: seed!
 using StaticArrays: SVector
 
@@ -238,6 +238,11 @@ end
 
     recipls = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
     @test BrillouinZone(Momentum₃{10, 10, 10}, recipls) == BrillouinZone(recipls, 10)
+
+    bz = BrillouinZone(Momentum₃{10, 100, 1000}, recipls)
+    @test xaxis(bz) == collect(Float64, 0:9)/10
+    @test yaxis(bz) == collect(Float64, 0:99)/100
+    @test zaxis(bz) == collect(Float64, 0:999)/1000
 end
 
 @testset "ReciprocalZone" begin
@@ -245,6 +250,7 @@ end
     @test rz == ReciprocalZone([[1.0]], -1//2=>1//2; length=10)
     @test rz == ReciprocalZone([[1.0]], (-1//2=>1//2,); length=10)
     @test rz == ReciprocalZone([[1.0]], [-1//2=>1//2]; length=10)
+    @test all(shrink(rz, 1:5) .== ReciprocalZone([[1.0]], -0.5=>-0.1, length=5, ends=(true, true)))
 
     rz = ReciprocalZone{:q}([[1.0]], length=10)
     @test rz == ReciprocalZone{:q}([[1.0]], -1//2=>1//2; length=10)
@@ -255,6 +261,11 @@ end
     @test ReciprocalZone([b₁], -1=>1; length=10).volume == 2
     @test ReciprocalZone([b₁, b₂], -1=>1, -1=>1; length=10).volume == 4
     @test ReciprocalZone([b₁, b₂, b₃], -1=>1, -1=>1, -1=>1; length=10).volume == 8
+
+    rz = ReciprocalZone([b₁, b₂, b₃], -2=>2, -1=>1, -3=>3; length=10)
+    @test xaxis(rz) == collect(Segment(-2, 2, 10))
+    @test yaxis(rz) == collect(Segment(-1, 1, 10))
+    @test zaxis(rz) == collect(Segment(-3, 3, 10))
 
     bz = BrillouinZone{:q}(Momentum₂{8, 8}, [[1.0, 0.0], [0.0, 1.0]])
     rz = ReciprocalZone(bz)
@@ -316,4 +327,52 @@ end
     plot!(plt, path)
     plot!(plt, map(index->Tuple(bz[index]), indexes), seriestype=:scatter)
     savefig(plt, "PickPoint.png")
+end
+
+@testset "utilities" begin
+    path = ReciprocalPath([[2pi, 0], [0, 2pi]], rectangle"Γ-X-M-Γ")
+    band = map(k->-2cos(k[1])-2cos(k[2]), path)
+    savefig(plot(path, band), "SingleBand.png")
+    save("SingleBand.dat", path, band)
+    savefig(plot(path, [band -band]), "MultiBands.png")
+    save("MultiBands.dat", path, [band -band])
+
+    energies = LinRange(-6.0, 6.0, 401)
+    spectrum = [-imag(1/(energies[i]+0.1im-band[j])) for i=1:length(energies), j=1:length(band)]
+    savefig(plot(path, energies, spectrum), "SingleSpectrum.png")
+    save("SingleSpectrum.dat", path, energies, spectrum)
+
+    spectra = zeros(size(spectrum)..., 2)
+    spectra[:, :, 1] = spectrum
+    spectra[:, :, 2] = spectrum
+    savefig(plot(path, energies, spectra), "MultiSpectra.png")
+    save("MultiSpectra.dat", path, energies, spectra)
+
+    bz = BrillouinZone([[2pi, 0], [0, 2pi]], 200)
+    surface = zeros(Float64, (200, 200))
+    for (i, k) in enumerate(bz)
+        surface[i] = -imag(1/(0.1im+2cos(k[1])+2cos(k[2])))
+    end
+    savefig(plot(bz, surface), "SingleSurface.png")
+    save("SingleSurface.dat", bz, surface)
+
+    surfaces = zeros(size(surface)..., 2)
+    surfaces[:, :, 1] = surface
+    surfaces[:, :, 2] = surface
+    savefig(plot(bz, surfaces), "MultiSurfaces.png")
+    save("MultiSurfaces.dat", bz, surfaces)
+
+    rz = ReciprocalZone([[2pi, 0], [0, 2pi]], -2=>2, -1=>1, length=(400, 200))
+    surface = zeros(Float64, (200, 400))
+    for (i, k) in enumerate(rz)
+        surface[i] = -imag(1/(0.1im+2cos(k[1])+2cos(k[2])))
+    end
+    savefig(plot(rz, surface), "SingleExtendedSurface.png")
+    save("SingleExtendedSurface.dat", rz, surface)
+
+    surfaces = zeros(size(surface)..., 2)
+    surfaces[:, :, 1] = surface
+    surfaces[:, :, 2] = surface
+    savefig(plot(rz, surfaces), "MultiExtendedSurfaces.png")
+    save("MultiExtendedSurfaces.dat", rz, surfaces)
 end

@@ -1,10 +1,11 @@
 module Spatials
 
 using Base.Iterators: flatten, product
+using DelimitedFiles: writedlm
 using LinearAlgebra: cross, dot, norm
 using NearestNeighbors: KDTree, inrange, knn
 using Printf: @printf, @sprintf
-using RecipesBase: RecipesBase, @recipe, @series
+using RecipesBase: RecipesBase, @recipe, @series, @layout
 using StaticArrays: SVector
 using ..QuantumNumbers: Momenta, Momentum, periods
 using ..Toolkit: atol, rtol, efficientoperations, CompositeDict, Float, SimpleNamedVectorSpace, Segment, VectorSpaceCartesian, VectorSpaceDirectSummed, VectorSpaceStyle, getcontent
@@ -15,7 +16,7 @@ import ..QuantumNumbers: Momentum₁, Momentum₂, Momentum₃
 import ..Toolkit: contentnames, shape
 
 export azimuth, azimuthd, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, polar, polard, reciprocals, rotate, translate, tile, volume
-export AbstractLattice, Bond, BrillouinZone, Lattice, Neighbors, Point, ReciprocalSpace, ReciprocalZone, ReciprocalPath, bonds, bonds!, icoordinate, isintracell, nneighbor, rcoordinate, selectpath, ticks
+export AbstractLattice, Bond, BrillouinZone, Lattice, Neighbors, Point, ReciprocalSpace, ReciprocalZone, ReciprocalPath, bonds, bonds!, icoordinate, isintracell, nneighbor, rcoordinate, save, selectpath, shrink, ticks, xaxis, yaxis, zaxis
 export hexagon120°map, hexagon60°map, linemap, rectanglemap, @hexagon_str, @line_str, @rectangle_str
 
 """
@@ -934,6 +935,9 @@ end
 @inline Base.keys(::BrillouinZone{K, P}) where {K, P<:Momentum} = Momenta(P)
 @inline Base.keytype(brillouinzone::BrillouinZone) = keytype(typeof(brillouinzone))
 @inline Base.keytype(::Type{<:BrillouinZone{K, P} where K}) where {P<:Momentum} = P
+@inline xaxis(brillouinzone::BrillouinZone) = (n=periods(keytype(brillouinzone))[1]; collect(Float64, 0:(n-1))/n)
+@inline yaxis(brillouinzone::BrillouinZone) = (n=periods(keytype(brillouinzone))[2]; collect(Float64, 0:(n-1))/n)
+@inline zaxis(brillouinzone::BrillouinZone) = (n=periods(keytype(brillouinzone))[3]; collect(Float64, 0:(n-1))/n)
 
 """
     BrillouinZone(reciprocals::AbstractVector{<:AbstractVector}, nk)
@@ -982,6 +986,19 @@ end
         result += reciprocal*bound[i]
     end
     return result
+end
+@inline xaxis(reciprocalzone::ReciprocalZone) = collect(Float64, reciprocalzone.bounds[1])
+@inline yaxis(reciprocalzone::ReciprocalZone) = collect(Float64, reciprocalzone.bounds[2])
+@inline zaxis(reciprocalzone::ReciprocalZone) = collect(Float64, reciprocalzone.bounds[3])
+
+"""
+    shrink(reciprocalzone::ReciprocalZone{K}, ranges::Vararg{OrdinalRange{<:Integer}, N}) where {K, N} -> ReciprocalZone
+
+Shrink a reciprocal zone.
+"""
+function shrink(reciprocalzone::ReciprocalZone{K}, ranges::Vararg{OrdinalRange{<:Integer}, N}) where {K, N}
+    @assert length(ranges)==length(reciprocalzone.reciprocals) "shrink error: mismatched number of ranges and reciprocals."
+    return ReciprocalZone{K}(reciprocalzone.reciprocals, ntuple(i->reciprocalzone.bounds[i][ranges[i]], N|>Val))
 end
 
 """
@@ -1331,6 +1348,107 @@ macro hexagon_str(str::String)
     @assert length(points)>1 "@hexagon_str error: too few points."
     map = (length(str)==1 || str[2]=="120°") ? hexagon120°map : hexagon60°map
     return ntuple(i->map[points[i]]=>map[points[i+1]], length(points)-1), ntuple(i->points[i]=>points[i+1], length(points)-1)
+end
+
+# plot utilities
+block = quote
+    seriestype --> :path
+    legend --> false
+    minorgrid --> true
+    xminorticks --> 10
+    yminorticks --> 10
+    xticks --> ticks(path)
+    xlabel --> string(names(path)[1])
+    xlims --> (0, length(path)-1)
+    collect(0:length(path)-1), data
+end
+@eval @recipe plot(path::ReciprocalPath, data::AbstractVector) = $block
+@eval @recipe plot(path::ReciprocalPath, data::AbstractMatrix) = $block
+
+@recipe function plot(path::ReciprocalPath, y::AbstractVector, data::AbstractMatrix)
+    seriestype --> :heatmap
+    xticks --> ticks(path)
+    xlabel --> string(names(path)[1])
+    xlims --> (0, length(path)-1)
+    ylims --> (minimum(y), maximum(y))
+    clims --> extrema(data)
+    collect(0:length(path)-1), y, data
+end
+
+block = quote
+    @assert length(reciprocalspace.reciprocals)==2 "plot error: only two dimensional reciprocal spaces are supported."
+    x, y = xaxis(reciprocalspace), yaxis(reciprocalspace)
+    Δx, Δy= x[2]-x[1], y[2]-y[1]
+    seriestype --> :heatmap
+    aspect_ratio --> :equal
+    xlims --> (x[1]-Δx, x[end]+Δx)
+    ylims --> (y[1]-Δy, y[end]+Δy)
+    clims --> extrema(data)
+    xlabel --> string(names(reciprocalspace)[1], "₁")
+    ylabel --> string(names(reciprocalspace)[1], "₂")
+    x, y, data
+end
+@eval @recipe plot(reciprocalspace::BrillouinZone, data::AbstractMatrix) = $block
+@eval @recipe plot(reciprocalspace::ReciprocalZone, data::AbstractMatrix) = $block
+
+setup(expr::Expr) = quote
+    clims = extrema(data)
+    nr = round(Int, sqrt(size(data)[3]))
+    nc = ceil(Int, size(data)[3]/nr)
+    layout := @layout [(nr, nc); b{0.05h}]
+    colorbar := false
+    for i = 1:size(data)[3]
+        @series begin
+            isnothing(subtitles) || begin
+                title := subtitles[i]
+                isnothing(subtitlefontsize) || (titlefontsize := subtitlefontsize)
+            end
+            subplot := i
+            clims --> clims
+            $expr
+        end
+    end
+    subplot := nr*nc+1
+    seriestype := :heatmap
+    xlims := (minimum(clims), maximum(clims))
+    xlabel := ""
+    ylims := (0, 1)
+    yticks := (0:1, ("", ""))
+    ylabel := ""
+    LinRange(clims..., 100), [0, 1], [LinRange(clims..., 100)'; LinRange(clims..., 100)']
+end
+@eval @recipe plot(path::ReciprocalPath, y::AbstractVector, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=nothing) = $(setup(:(path, y, data[:, :, i])))
+@eval @recipe plot(reciprocalspace::BrillouinZone, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=nothing) = $(setup(:(reciprocalspace, data[:, :, i])))
+@eval @recipe plot(reciprocalspace::ReciprocalZone, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=nothing) = $(setup(:(reciprocalspace, data[:, :, i])))
+
+# save utilities
+function save(filename::AbstractString, path::ReciprocalPath, data::Union{AbstractVector{<:Number}, AbstractMatrix{<:Number}})
+    @assert length(path)==size(data)[1] "save error: mismatched size of path and data."
+    open(filename, "w") do f
+        writedlm(f, [matrix(path) data])
+    end
+end
+function save(filename::AbstractString, path::ReciprocalPath, y::AbstractVector, data::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}})
+    @assert size(data)[1:2]==(length(y), length(path)) "save error: mismatched size of path, y and data."
+    open(filename, "w") do f
+        x = matrix(kron(path, ones(length(y))))
+        y = kron(ones(length(path)), y)
+        z = reshape(data, prod(size(data)[1:2]), :)
+        writedlm(f, [x y z])
+    end
+end
+function save(filename::AbstractString, reciprocalspace::Union{BrillouinZone, ReciprocalZone}, data::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}})
+    @assert length(reciprocalspace)==prod(size(data)[1:2]) "save error: mismatched size of reciprocal space and data."
+    open(filename, "w") do f
+        writedlm(f, [matrix(reciprocalspace) reshape(data, prod(size(data)[1:2]), :)])
+    end
+end
+function matrix(vs::AbstractVector{<:AbstractVector})
+    result = zeros(eltype(eltype(vs)), length(vs), length(vs[1]))
+    for (i, v) in enumerate(vs)
+        result[i, :] = v
+    end
+    return result
 end
 
 end #module
