@@ -275,7 +275,7 @@ end
 end
 
 @testset "ReciprocalPath" begin
-    @test contentnames(ReciprocalPath) == (:contents, :representations)
+    @test contentnames(ReciprocalPath) == (:contents, :labels)
 
     b₁, b₂ = [1.0, 0.0], [0.0, 1.0]
     s₁ = (0.0, 0.0)=>(0.5, 0.0)
@@ -283,27 +283,27 @@ end
     s₃ = (0.5, 0.5)=>(0.0, 0.0)
 
     rp = ReciprocalPath([b₁, b₂], s₁, s₂, s₃)
-    @test rp == ReciprocalPath(rp.contents, rp.representations)
+    @test rp == ReciprocalPath(rp.contents, rp.labels)
     @test rp == ReciprocalPath([b₁, b₂], (s₁, s₂, s₃))
     @test ticks(rp) == ([0, 100, 200, 300], ["(0.0, 0.0)", "(0.5, 0.0)", "(0.5, 0.5)", "(0.0, 0.0)"])
     savefig(plot(rp), "ReciprocalPath-1.png")
 
-    rp = ReciprocalPath([b₁, b₂], s₁, s₃; representations=("Γ"=>"X", "M"=>"Γ"))
+    rp = ReciprocalPath([b₁, b₂], s₁, s₃; labels=("Γ"=>"X", "M"=>"Γ"))
     @test ticks(rp) == ([0, 100, 200], ["Γ", "X / M", "Γ"])
     savefig(plot(rp), "ReciprocalPath-2.png")
 
     rp = ReciprocalPath{:q}([b₁, b₂], s₁, s₂, s₃)
-    @test rp == ReciprocalPath{:q}(rp.contents, rp.representations)
+    @test rp == ReciprocalPath{:q}(rp.contents, rp.labels)
     @test rp == ReciprocalPath{:q}([b₁, b₂], (s₁, s₂, s₃))
 
     rp = ReciprocalPath([b₁+b₂], line"X₂-X₁", length=10)
-    @test rp == ReciprocalPath([b₁+b₂], (-1//2,)=>(1//2,); representations=("X₂"=>"X₁",), length=10)
+    @test rp == ReciprocalPath([b₁+b₂], (-1//2,)=>(1//2,); labels=("X₂"=>"X₁",), length=10)
 
     rp = ReciprocalPath([b₁, b₂], rectangle"Γ-X-M-Γ", length=10)
-    @test rp == ReciprocalPath([b₁, b₂], (0//1, 0//1)=>(1//2, 0//1), (1//2, 0//1)=>(1//2, 1//2), (1//2, 1//2)=>(0//1, 0//1); representations=("Γ"=>"X", "X"=>"M", "M"=>"Γ"), length=10)
+    @test rp == ReciprocalPath([b₁, b₂], (0//1, 0//1)=>(1//2, 0//1), (1//2, 0//1)=>(1//2, 1//2), (1//2, 1//2)=>(0//1, 0//1); labels=("Γ"=>"X", "X"=>"M", "M"=>"Γ"), length=10)
 
     rp = ReciprocalPath{:q}([b₁, b₂], hexagon"Γ-K-M-Γ", length=10)
-    @test rp == ReciprocalPath{:q}([b₁, b₂], (0//1, 0//1)=>(2//3, 1//3), (2//3, 1//3)=>(1//2, 1//2), (1//2, 1//2)=>(0//1, 0//1); representations=("Γ"=>"K", "K"=>"M", "M"=>"Γ"), length=10)
+    @test rp == ReciprocalPath{:q}([b₁, b₂], (0//1, 0//1)=>(2//3, 1//3), (2//3, 1//3)=>(1//2, 1//2), (1//2, 1//2)=>(0//1, 0//1); labels=("Γ"=>"K", "K"=>"M", "M"=>"Γ"), length=10)
 end
 
 @testset "selectpath" begin
@@ -316,7 +316,7 @@ end
     path, indexes = selectpath(bz, rectangle"Γ-X-M-Γ")
     @test indexes == [1, 5, 9, 10, 11, 6, 1]
     @test path == bz[indexes]
-    @test path.representations == ("Γ"=>"X", "X"=>"M", "M"=>"Γ")
+    @test path.labels == ("Γ"=>"X", "X"=>"M", "M"=>"Γ")
 
     path, indexes = selectpath(bz, (-1.5, 0.5)=>(-3.0, 0.0))
     @test collect(path) == [[-1.5, 0.5], [-2.25, 0.25], [-3.0, 0.0]]

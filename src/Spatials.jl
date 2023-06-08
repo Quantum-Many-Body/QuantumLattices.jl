@@ -1075,14 +1075,14 @@ A path in the reciprocal space.
 """
 struct ReciprocalPath{K, S<:SVector, N, R} <: ReciprocalSpace{K, S}
     contents::NTuple{N, Vector{S}}
-    representations::NTuple{N, Pair{R, R}}
-    function ReciprocalPath{K}(contents::NTuple{N, AbstractVector{<:AbstractVector}}, representations::NTuple{N, Pair{R, R}}) where {K, N, R}
+    labels::NTuple{N, Pair{R, R}}
+    function ReciprocalPath{K}(contents::NTuple{N, AbstractVector{<:AbstractVector}}, labels::NTuple{N, Pair{R, R}}) where {K, N, R}
         @assert isa(K, Symbol) "ReciprocalPath error: K must be a Symbol."
-        new{K, eltype(eltype(contents)), N, R}(map(vectorconvert, contents), representations)
+        new{K, eltype(eltype(contents)), N, R}(map(vectorconvert, contents), labels)
     end
 end
-@inline ReciprocalPath(contents::Tuple{Vararg{AbstractVector{<:AbstractVector}}}, representations::Tuple{Vararg{Pair}}) = ReciprocalPath{:k}(contents, representations)
-@inline contentnames(::Type{<:ReciprocalPath}) = (:contents, :representations)
+@inline ReciprocalPath(contents::Tuple{Vararg{AbstractVector{<:AbstractVector}}}, labels::Tuple{Vararg{Pair}}) = ReciprocalPath{:k}(contents, labels)
+@inline contentnames(::Type{<:ReciprocalPath}) = (:contents, :labels)
 @inline VectorSpaceStyle(::Type{<:ReciprocalPath}) = VectorSpaceDirectSummed()
 function ticks(path::ReciprocalPath)
     result = (Int[], String[])
@@ -1090,15 +1090,15 @@ function ticks(path::ReciprocalPath)
     for i = 1:length(path.contents)
         push!(result[1], count)
         if i==1
-            push!(result[2], string(path.representations[i].first))
+            push!(result[2], string(path.labels[i].first))
         else
-            previous, current = path.representations[i-1].second, path.representations[i].first
+            previous, current = path.labels[i-1].second, path.labels[i].first
             push!(result[2], previous==current ? string(previous) : string(previous, " / ", current))
         end
         count += length(path.contents[i])
     end
     push!(result[1], count-1)
-    push!(result[2], string(path.representations[end].second))
+    push!(result[2], string(path.labels[end].second))
     return result
 end
 
@@ -1109,11 +1109,11 @@ end
     ) where M
     ReciprocalPath(
         reciprocals::AbstractVector{<:AbstractVector}, segments::Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}...;
-        representations=segments, length=100, ends=nothing
+        labels=segments, length=100, ends=nothing
     ) where N
     ReciprocalPath(
         reciprocals::AbstractVector{<:AbstractVector}, segments::Tuple{Vararg{Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}}};
-        representations=segments, length=100, ends=nothing
+        labels=segments, length=100, ends=nothing
     ) where N
 
     ReciprocalPath{K}(
@@ -1122,11 +1122,11 @@ end
     ) where {K, M}
     ReciprocalPath{K}(
         reciprocals::AbstractVector{<:AbstractVector}, segments::Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}...;
-        representations=segments, length=100, ends=nothing
+        labels=segments, length=100, ends=nothing
     ) where {K, N}
     ReciprocalPath{K}(
         reciprocals::AbstractVector{<:AbstractVector}, segments::Tuple{Vararg{Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}}};
-        representations=segments, length=100, ends=nothing
+        labels=segments, length=100, ends=nothing
     ) where {K, N}
 
 Construct a path in the reciprocal space.
@@ -1142,31 +1142,31 @@ When `ends` is `nothing`, the start point will be included while the end point w
 end
 @inline function ReciprocalPath(
     reciprocals::AbstractVector{<:AbstractVector}, segments::Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}...;
-    representations=segments, length=100, ends=nothing
+    labels=segments, length=100, ends=nothing
 ) where N
-    return ReciprocalPath(reciprocals, segments; representations=representations, length=length, ends=ends)
+    return ReciprocalPath(reciprocals, segments; labels=labels, length=length, ends=ends)
 end
 @inline function ReciprocalPath(
     reciprocals::AbstractVector{<:AbstractVector}, segments::Tuple{Vararg{Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}}};
-    representations=segments, length=100, ends=nothing
+    labels=segments, length=100, ends=nothing
 ) where N
-    return ReciprocalPath{:k}(reciprocals, segments...; representations=representations, length=length, ends=ends)
+    return ReciprocalPath{:k}(reciprocals, segments...; labels=labels, length=length, ends=ends)
 end
 @inline function ReciprocalPath{K}(
     reciprocals::AbstractVector{<:AbstractVector}, contents::Tuple{NTuple{M, Pair}, NTuple{M, Pair}};
     length=100, ends=nothing
 ) where {K, M}
-    return ReciprocalPath{K}(reciprocals, contents[1]; representations=contents[2], length=length, ends=ends)
+    return ReciprocalPath{K}(reciprocals, contents[1]; labels=contents[2], length=length, ends=ends)
 end
 @inline function ReciprocalPath{K}(
     reciprocals::AbstractVector{<:AbstractVector}, segments::Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}...;
-    representations=segments, length=100, ends=nothing
+    labels=segments, length=100, ends=nothing
 ) where {K, N}
-    return ReciprocalPath{K}(reciprocals, segments; representations=representations, length=length, ends=ends)
+    return ReciprocalPath{K}(reciprocals, segments; labels=labels, length=length, ends=ends)
 end
 @inline function ReciprocalPath{K}(
     reciprocals::AbstractVector{<:AbstractVector}, segments::Tuple{Vararg{Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}}};
-    representations=segments, length=100, ends=nothing
+    labels=segments, length=100, ends=nothing
 ) where {K, N}
     @assert Base.length(reciprocals)==N "ReciprocalPath error: mismatched input reciprocals and segments."
     isa(length, Integer) && (length = ntuple(i->i<fieldcount(typeof(segments)) ? length : length+1, fieldcount(typeof(segments))))
@@ -1183,7 +1183,7 @@ end
             end
         end
     end
-    return ReciprocalPath{K}(contents, representations)
+    return ReciprocalPath{K}(contents, labels)
 end
 
 """
@@ -1206,12 +1206,12 @@ Define the recipe for the visualization of a reciprocal path.
         if length(path.contents[i])>0
             push!(x, path.contents[i][1][1])
             push!(y, path.contents[i][1][2])
-            push!(text, string(path.representations[i].first))
-            j = i%length(path.representations)+1
-            if length(path.contents[i])>1 && path.representations[i].second≠path.representations[j].first
+            push!(text, string(path.labels[i].first))
+            j = i%length(path.labels)+1
+            if length(path.contents[i])>1 && path.labels[i].second≠path.labels[j].first
                 push!(x, path.contents[i][end][1])
                 push!(y, path.contents[i][end][2])
-                push!(text, string(path.representations[i].second))
+                push!(text, string(path.labels[i].second))
             end
         end
     end
@@ -1226,11 +1226,11 @@ end
     ) where M
     selectpath(
         brillouinzone::BrillouinZone, segments::Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}...;
-        representations=segments, ends=nothing, atol::Real=atol, rtol::Real=rtol
+        labels=segments, ends=nothing, atol::Real=atol, rtol::Real=rtol
     ) where N -> Tuple(ReciprocalPath, Vector{Int})
     selectpath(
         brillouinzone::BrillouinZone, segments::Tuple{Vararg{Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}}};
-        representations=segments, ends=nothing, atol::Real=atol, rtol::Real=rtol
+        labels=segments, ends=nothing, atol::Real=atol, rtol::Real=rtol
     ) where N -> Tuple(ReciprocalPath, Vector{Int})
 
 
@@ -1242,17 +1242,17 @@ When `ends` is `nothing`, the start point will be included while the end point w
     brillouinzone::BrillouinZone, contents::Tuple{NTuple{M, Pair}, NTuple{M, Pair}};
     ends=nothing, atol::Real=atol, rtol::Real=rtol
 ) where M
-    return selectpath(brillouinzone, contents[1]; representations=contents[2], ends=ends, atol=atol, rtol=rtol)
+    return selectpath(brillouinzone, contents[1]; labels=contents[2], ends=ends, atol=atol, rtol=rtol)
 end
 @inline function selectpath(
     brillouinzone::BrillouinZone, segments::Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}...;
-    representations=segments, ends=nothing, atol::Real=atol, rtol::Real=rtol
+    labels=segments, ends=nothing, atol::Real=atol, rtol::Real=rtol
 ) where N
-    return selectpath(brillouinzone, segments; representations=representations, ends=ends, atol=atol, rtol=rtol)
+    return selectpath(brillouinzone, segments; labels=labels, ends=ends, atol=atol, rtol=rtol)
 end
 function selectpath(
     brillouinzone::BrillouinZone, segments::Tuple{Vararg{Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}}};
-    representations=segments, ends=nothing, atol::Real=atol, rtol::Real=rtol
+    labels=segments, ends=nothing, atol::Real=atol, rtol::Real=rtol
 ) where N
     @assert length(brillouinzone.reciprocals)==N "selectpath error: mismatched number of reciprocals ($(length(brillouinzone.reciprocals)) v.s. $N)."
     isnothing(ends) || @assert fieldcount(typeof(segments))==length(ends) "selectpath error: mismatched number of segments."
@@ -1289,7 +1289,7 @@ function selectpath(
         positions = positions[permutation]
         append!(indexes, positions)
     end
-    return ReciprocalPath{first(names(brillouinzone))}(contents, representations), indexes
+    return ReciprocalPath{first(names(brillouinzone))}(contents, labels), indexes
 end
 
 const linemap = Dict(
