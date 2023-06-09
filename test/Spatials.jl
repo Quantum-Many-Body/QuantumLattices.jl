@@ -297,19 +297,19 @@ end
     @test rp == ReciprocalPath{:q}([b₁, b₂], (s₁, s₂, s₃))
 
     rp = ReciprocalPath([b₁+b₂], line"X₂-X₁", length=10)
-    @test rp == ReciprocalPath([b₁+b₂], (-1//2,)=>(1//2,); labels=("X₂"=>"X₁",), length=10)
+    @test rp == ReciprocalPath([b₁+b₂], (-1//2,), (1//2,); labels=("X₂", "X₁"), length=10)
 
     rp = ReciprocalPath([b₁, b₂], rectangle"Γ-X-M-Γ", length=10)
-    @test rp == ReciprocalPath([b₁, b₂], (0//1, 0//1)=>(1//2, 0//1), (1//2, 0//1)=>(1//2, 1//2), (1//2, 1//2)=>(0//1, 0//1); labels=("Γ"=>"X", "X"=>"M", "M"=>"Γ"), length=10)
+    @test rp == ReciprocalPath([b₁, b₂], (0//1, 0//1), (1//2, 0//1), (1//2, 1//2), (0//1, 0//1); labels=("Γ", "X", "M", "Γ"), length=10)
 
     rp = ReciprocalPath{:q}([b₁, b₂], hexagon"Γ-K-M-Γ", length=10)
-    @test rp == ReciprocalPath{:q}([b₁, b₂], (0//1, 0//1)=>(2//3, 1//3), (2//3, 1//3)=>(1//2, 1//2), (1//2, 1//2)=>(0//1, 0//1); labels=("Γ"=>"K", "K"=>"M", "M"=>"Γ"), length=10)
+    @test rp == ReciprocalPath{:q}([b₁, b₂], (0//1, 0//1), (2//3, 1//3), (1//2, 1//2), (0//1, 0//1); labels=("Γ", "K", "M", "Γ"), length=10)
 end
 
 @testset "selectpath" begin
     bz = BrillouinZone([[1.0, 0.0], [0.0, 1.0]], 4)
 
-    path, indexes = selectpath(bz, ((0.0, 0.0)=>(0.5, 0.0), (0.5, 0.0)=>(0.5, 0.5), (0.5, 0.5)=>(0.0, 0.0)); atol=1e-9, rtol=1e-9)
+    path, indexes = selectpath(bz, (0.0, 0.0), (0.5, 0.0), (0.5, 0.5), (0.0, 0.0); atol=1e-9, rtol=1e-9)
     @test indexes == [1, 5, 9, 10, 11, 6, 1]
     @test path == bz[indexes]
 
