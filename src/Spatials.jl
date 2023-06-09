@@ -1343,7 +1343,7 @@ end
 @eval @recipe plot(reciprocalspace::ReciprocalZone, data::AbstractMatrix) = $block
 
 setup(expr::Expr) = quote
-    clims = extrema(data)
+    isnothing(clims) && (clims = extrema(data))
     isnothing(nrow) && (nrow = round(Int, sqrt(size(data)[3])))
     isnothing(ncol) && (ncol = ceil(Int, size(data)[3]/nrow))
     layout := @layout [(nrow, ncol); b{0.05h}]
@@ -1368,9 +1368,9 @@ setup(expr::Expr) = quote
     ylabel := ""
     LinRange(clims..., 100), [0, 1], [LinRange(clims..., 100)'; LinRange(clims..., 100)']
 end
-@eval @recipe plot(path::ReciprocalPath, y::AbstractVector, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8, nrow=nothing, ncol=nothing) = $(setup(:(path, y, data[:, :, i])))
-@eval @recipe plot(reciprocalspace::BrillouinZone, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8, nrow=nothing, ncol=nothing) = $(setup(:(reciprocalspace, data[:, :, i])))
-@eval @recipe plot(reciprocalspace::ReciprocalZone, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8, nrow=nothing, ncol=nothing) = $(setup(:(reciprocalspace, data[:, :, i])))
+@eval @recipe plot(path::ReciprocalPath, y::AbstractVector, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8, nrow=nothing, ncol=nothing, clims=nothing) = $(setup(:(path, y, data[:, :, i])))
+@eval @recipe plot(reciprocalspace::BrillouinZone, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8, nrow=nothing, ncol=nothing, clims=nothing) = $(setup(:(reciprocalspace, data[:, :, i])))
+@eval @recipe plot(reciprocalspace::ReciprocalZone, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8, nrow=nothing, ncol=nothing, clims=nothing) = $(setup(:(reciprocalspace, data[:, :, i])))
 
 # save utilities
 function save(filename::AbstractString, path::ReciprocalPath, data::Union{AbstractVector{<:Number}, AbstractMatrix{<:Number}})
