@@ -1344,9 +1344,9 @@ end
 
 setup(expr::Expr) = quote
     clims = extrema(data)
-    nr = round(Int, sqrt(size(data)[3]))
-    nc = ceil(Int, size(data)[3]/nr)
-    layout := @layout [(nr, nc); b{0.05h}]
+    isnothing(nrow) && (nrow = round(Int, sqrt(size(data)[3])))
+    isnothing(ncol) && (ncol = ceil(Int, size(data)[3]/nrow))
+    layout := @layout [(nrow, ncol); b{0.05h}]
     colorbar := false
     for i = 1:size(data)[3]
         @series begin
@@ -1359,7 +1359,7 @@ setup(expr::Expr) = quote
             $expr
         end
     end
-    subplot := nr*nc+1
+    subplot := nrow*ncol+1
     seriestype := :heatmap
     xlims := (minimum(clims), maximum(clims))
     xlabel := ""
@@ -1368,9 +1368,9 @@ setup(expr::Expr) = quote
     ylabel := ""
     LinRange(clims..., 100), [0, 1], [LinRange(clims..., 100)'; LinRange(clims..., 100)']
 end
-@eval @recipe plot(path::ReciprocalPath, y::AbstractVector, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8) = $(setup(:(path, y, data[:, :, i])))
-@eval @recipe plot(reciprocalspace::BrillouinZone, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8) = $(setup(:(reciprocalspace, data[:, :, i])))
-@eval @recipe plot(reciprocalspace::ReciprocalZone, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8) = $(setup(:(reciprocalspace, data[:, :, i])))
+@eval @recipe plot(path::ReciprocalPath, y::AbstractVector, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8, nrow=nothing, ncol=nothing) = $(setup(:(path, y, data[:, :, i])))
+@eval @recipe plot(reciprocalspace::BrillouinZone, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8, nrow=nothing, ncol=nothing) = $(setup(:(reciprocalspace, data[:, :, i])))
+@eval @recipe plot(reciprocalspace::ReciprocalZone, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8, nrow=nothing, ncol=nothing) = $(setup(:(reciprocalspace, data[:, :, i])))
 
 # save utilities
 function save(filename::AbstractString, path::ReciprocalPath, data::Union{AbstractVector{<:Number}, AbstractMatrix{<:Number}})
