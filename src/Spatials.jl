@@ -1355,7 +1355,7 @@ setup(expr::Expr) = quote
                 titlefontsize := subtitlefontsize
             end
             subplot := i
-            clims --> clims
+            clims := clims
             $expr
         end
     end
