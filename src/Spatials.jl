@@ -1114,7 +1114,6 @@ end
 @inline function ReciprocalPath(reciprocals::AbstractVector{<:AbstractVector}, segments::Tuple{Vararg{Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}}}; labels=segments, length=100, ends=nothing) where N
     return ReciprocalPath{:k}(reciprocals, segments...; labels=labels, length=length, ends=ends)
 end
-
 @inline function ReciprocalPath{K}(reciprocals::AbstractVector{<:AbstractVector}, contents::NamedTuple{(:points, :labels), <:Tuple{<:Tuple, <:Tuple}}; length=100, ends=nothing) where K
     return ReciprocalPath{K}(reciprocals, contents.points...; labels=contents.labels, length=length, ends=ends)
 end
@@ -1131,8 +1130,8 @@ end
     @assert Base.length(reciprocals)==N "ReciprocalPath error: mismatched input reciprocals and segments."
     isa(length, Integer) && (length = ntuple(i->i<fieldcount(typeof(segments)) ? length : length+1, fieldcount(typeof(segments))))
     isnothing(ends) && (ends = ntuple(i->i<fieldcount(typeof(segments)) ? (true, false) : (true, true), fieldcount(typeof(segments))))
-    @assert fieldcount(typeof(segments))==fieldcount(typeof(length)) "ReciprocalPath error: the number of length should be ($(fieldcount(typeof(bounds)))) if it is not `Integer`."
-    @assert fieldcount(typeof(segments))==fieldcount(typeof(ends)) "ReciprocalPath error: the number of ends should be ($(fieldcount(typeof(bounds)))) if it is not `NTuple{2, Bool}`."
+    @assert fieldcount(typeof(segments))==fieldcount(typeof(length)) "ReciprocalPath error: the number of length should be ($(fieldcount(typeof(segments)))) if it is not `Integer`."
+    @assert fieldcount(typeof(segments))==fieldcount(typeof(ends)) "ReciprocalPath error: the number of ends should be ($(fieldcount(typeof(segments)))) if it is not `NTuple{2, Bool}`."
     reciprocals = vectorconvert(reciprocals)
     segments = ntuple(i->Segment(segments[i].first, segments[i].second, length[i]; ends=ends[i]), fieldcount(typeof(segments)))
     contents = ntuple(i->zeros(SVector{Base.length(eltype(reciprocals)), promote_type(eltype(eltype(reciprocals)), eltype(eltype(eltype(segments))))}, Base.length(segments[i])), fieldcount(typeof(segments)))
