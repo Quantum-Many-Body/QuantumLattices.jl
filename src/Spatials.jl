@@ -790,7 +790,7 @@ struct Lattice{N, D<:Number, M} <: AbstractLattice{N, D, M}
     name::Symbol
     coordinates::Matrix{D}
     vectors::SVector{M, SVector{N, D}}
-    function Lattice(name::Symbol, coordinates::Matrix{<:Number}, vectors::SVector{M, <:SVector{N, <:Number}}) where {N, M}
+    function Lattice(name::Symbol, coordinates::AbstractMatrix{<:Number}, vectors::SVector{M, <:SVector{N, <:Number}}) where {N, M}
         @assert N==size(coordinates, 1) "Lattice error: shape mismatched."
         datatype = promote_type(Float, eltype(coordinates), eltype(eltype(vectors)))
         coordinates = convert(Matrix{datatype}, coordinates)
@@ -801,7 +801,7 @@ end
 
 """
     Lattice(coordinates::NTuple{N, Number}...; name::Symbol=:lattice, vectors::Union{AbstractVector{<:AbstractVector{<:Number}}, Nothing}=nothing) where N
-    Lattice(coordinates::Vector{<:Number}...; name::Symbol=:lattice, vectors::Union{AbstractVector{<:AbstractVector{<:Number}}, Nothing}=nothing)
+    Lattice(coordinates::AbstractVector{<:Number}...; name::Symbol=:lattice, vectors::Union{AbstractVector{<:AbstractVector{<:Number}}, Nothing}=nothing)
 
 Construct a lattice.
 """
@@ -810,7 +810,7 @@ function Lattice(coordinates::NTuple{N, Number}...; name::Symbol=:lattice, vecto
     coordinates = [coordinates[j][i] for i=1:N, j=1:length(coordinates)]
     return Lattice(name, coordinates, vectors)
 end
-function Lattice(coordinates::Vector{<:Number}...; name::Symbol=:lattice, vectors::Union{AbstractVector{<:AbstractVector{<:Number}}, Nothing}=nothing)
+function Lattice(coordinates::AbstractVector{<:Number}...; name::Symbol=:lattice, vectors::Union{AbstractVector{<:AbstractVector{<:Number}}, Nothing}=nothing)
     coordinates = hcat(coordinates...)
     vectors = isnothing(vectors) ? SVector{0, SVector{size(coordinates)[1], eltype(coordinates)}}() : vectorconvert(vectors)
     return Lattice(name, coordinates, vectors)
@@ -1062,23 +1062,6 @@ end
 @inline ReciprocalPath(contents::Tuple{Vararg{AbstractVector{<:AbstractVector}}}, labels::Tuple{Vararg{Pair}}) = ReciprocalPath{:k}(contents, labels)
 @inline contentnames(::Type{<:ReciprocalPath}) = (:contents, :labels)
 @inline VectorSpaceStyle(::Type{<:ReciprocalPath}) = VectorSpaceDirectSummed()
-function ticks(path::ReciprocalPath)
-    result = (Int[], String[])
-    count = 0
-    for i = 1:length(path.contents)
-        push!(result[1], count)
-        if i==1
-            push!(result[2], string(path.labels[i].first))
-        else
-            previous, current = path.labels[i-1].second, path.labels[i].first
-            push!(result[2], previous==current ? string(previous) : string(previous, " / ", current))
-        end
-        count += length(path.contents[i])
-    end
-    push!(result[1], count-1)
-    push!(result[2], string(path.labels[end].second))
-    return result
-end
 
 points2segments(points::NTuple{M}) where M = ntuple(i->points[i]=>points[i+1], Val(M-1))
 """
@@ -1128,8 +1111,8 @@ end
 end
 @inline function ReciprocalPath{K}(reciprocals::AbstractVector{<:AbstractVector}, segments::Tuple{Vararg{Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}}}; labels=segments, length=100, ends=nothing) where {K, N}
     @assert Base.length(reciprocals)==N "ReciprocalPath error: mismatched input reciprocals and segments."
-    isa(length, Integer) && (length = ntuple(i->i<fieldcount(typeof(segments)) ? length : length+1, fieldcount(typeof(segments))))
-    isnothing(ends) && (ends = ntuple(i->i<fieldcount(typeof(segments)) ? (true, false) : (true, true), fieldcount(typeof(segments))))
+    isa(length, Integer) && (length = ntuple(i->i<fieldcount(typeof(segments)) ? (segments[i].second==segments[i+1].first ? length : length+1) : length+1, fieldcount(typeof(segments))))
+    isnothing(ends) && (ends = ntuple(i->i<fieldcount(typeof(segments)) ? (true, segments[i].second==segments[i+1].first ? false : true) : (true, true), fieldcount(typeof(segments))))
     @assert fieldcount(typeof(segments))==fieldcount(typeof(length)) "ReciprocalPath error: the number of length should be ($(fieldcount(typeof(segments)))) if it is not `Integer`."
     @assert fieldcount(typeof(segments))==fieldcount(typeof(ends)) "ReciprocalPath error: the number of ends should be ($(fieldcount(typeof(segments)))) if it is not `NTuple{2, Bool}`."
     reciprocals = vectorconvert(reciprocals)
@@ -1143,6 +1126,67 @@ end
         end
     end
     return ReciprocalPath{K}(contents, Tuple(labels))
+end
+
+"""
+    step(path::ReciprocalPath, i::Int) -> dtype(path)
+
+Get the step between the ith and the (i+1)th points in the path.
+"""
+@inline Base.step(path::ReciprocalPath, i::Int) = distance(path[i], path[i+1])
+
+"""
+    distance(path::ReciprocalPath) -> dtype(path)
+    distance(path::ReciprocalPath, i::Int) -> dtype(path)
+    distance(path::ReciprocalPath, i::Int, j::Int) -> dtype(path)
+
+Get the distance
+1) of the total path,
+2) from the start point to the ith point in the path,
+3) from the ith point to the jth point in the path (when i is greater than j, the value is negative).
+"""
+@inline distance(path::ReciprocalPath) = distance(path, 1, length(path))
+@inline distance(path::ReciprocalPath, i::Int) = distance(path, 1, i)
+function distance(path::ReciprocalPath, i::Int, j::Int)
+    i==j && return zero(dtype(path))
+    i>j && return -distance(path, j, i)
+    dimsum = cumsum(map(length, path.contents))
+    i₁ = searchsortedfirst(dimsum, i)
+    j₁ = searchsortedfirst(dimsum, j)
+    i₂ = i₁>1 ? (i-dimsum[i₁-1]) : i
+    j₂ = j₁>1 ? (j-dimsum[j₁-1]) : j
+    i₁==j₁ && return distance(path.contents[i₁][j₁], path.contents[i₂][j₂])
+    result = distance(path.contents[i₁][i₂], path.contents[i₁][end]) + distance(path.contents[j₁][1], path.contents[j₁][j₂])
+    for l = (i₁+1):(j₁-1)
+        path.labels[l-1].second==path.labels[l].first && (result += distance(path.contents[l-1][end], path.contents[l][1]))
+        result += distance(path.contents[l][1], path.contents[l][end])
+    end
+    path.labels[j₁-1].second==path.labels[j₁].first && (result += distance(path.contents[j₁-1][end], path.contents[j₁][1]))
+    return result
+end
+
+"""
+    ticks(path::ReciprocalPath) -> Tuple{Vector{dtype(path)}, Vector{String}}
+
+Get the position-label pairs of the ticks of a path.
+"""
+function ticks(path::ReciprocalPath)
+    result = (dtype(path)[], String[])
+    d = zero(dtype(path))
+    for i = 1:length(path.contents)
+        if i==1
+            push!(result[2], string(path.labels[i].first))
+        else
+            previous, current = path.labels[i-1].second, path.labels[i].first
+            previous==current && (d += distance(path.contents[i-1][end], path.contents[i][1]))
+            push!(result[2], previous==current ? string(previous) : string(previous, " / ", current))
+        end
+        push!(result[1], d)
+        d += distance(path.contents[i][1], path.contents[i][end])
+    end
+    push!(result[1], d)
+    push!(result[2], string(path.labels[end].second))
+    return result
 end
 
 """
@@ -1204,7 +1248,7 @@ end
 function selectpath(brillouinzone::BrillouinZone, segments::Tuple{Vararg{Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}}}; labels=segments, ends=nothing, atol::Real=atol, rtol::Real=rtol) where N
     @assert length(brillouinzone.reciprocals)==N "selectpath error: mismatched number of reciprocals ($(length(brillouinzone.reciprocals)) v.s. $N)."
     isnothing(ends) || @assert fieldcount(typeof(segments))==length(ends) "selectpath error: mismatched number of segments."
-    isnothing(ends) && (ends = ntuple(i->i<fieldcount(typeof(segments)) ? (true, false) : (true, true), fieldcount(typeof(segments))))
+    isnothing(ends) && (ends = ntuple(i->i<fieldcount(typeof(segments)) ? (true, segments[i].second==segments[i+1].first ? false : true) : (true, true), fieldcount(typeof(segments))))
     contents, indexes = ntuple(i->eltype(brillouinzone)[], fieldcount(typeof(segments))), Int[]
     for (n, segment) in enumerate(segments)
         start = trunc.(Int, segment.first)
@@ -1308,7 +1352,7 @@ block = quote
     yminorticks --> 10
     xticks --> ticks(path)
     xlabel --> string(names(path)[1])
-    collect(0:length(path)-1), data
+    [distance(path, i) for i=1:length(path)], data
 end
 @eval @recipe plot(path::ReciprocalPath, data::AbstractVector) = $block
 @eval @recipe plot(path::ReciprocalPath, data::AbstractMatrix) = $block
@@ -1318,10 +1362,10 @@ end
     titlefontsize --> 10
     xticks --> ticks(path)
     xlabel --> string(names(path)[1])
-    xlims --> (0, length(path)-1)
+    xlims --> (0, distance(path))
     ylims --> (minimum(y), maximum(y))
     clims --> extrema(data)
-    collect(0:length(path)-1), y, data
+    [distance(path, i) for i=1:length(path)], y, data
 end
 
 block = quote

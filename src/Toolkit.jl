@@ -1017,7 +1017,7 @@ struct VectorSpaceDirectSummed <: VectorSpaceStyle end
     contents = getcontent(vs, :contents)
     dimsum = cumsum(map(length, contents))
     m = searchsortedfirst(dimsum, i)
-    n = i-(m>1 ? dimsum[m-1] : 0)
+    n = m>1 ? (i-dimsum[m-1]) : i
     return contents[m][n]
 end
 

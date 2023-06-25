@@ -285,11 +285,17 @@ end
     rp = ReciprocalPath([b₁, b₂], s₁, s₂, s₃)
     @test rp == ReciprocalPath(rp.contents, rp.labels)
     @test rp == ReciprocalPath([b₁, b₂], (s₁, s₂, s₃))
-    @test ticks(rp) == ([0, 100, 200, 300], ["(0.0, 0.0)", "(0.5, 0.0)", "(0.5, 0.5)", "(0.0, 0.0)"])
+    @test all(map((x, y)->isapprox(x, y; atol=10^-12), cumsum([step(rp, i) for i=1:length(rp)-1]), [distance(rp, i) for i=2:length(rp)]))
+
+    positions, labels = ticks(rp)
+    @test all(map((x, y)->isapprox(x, y; atol=10^-12), positions, [0.0, 0.5, 1.0, 1.0+sqrt(2)/2]))
+    @test labels == ["(0.0, 0.0)", "(0.5, 0.0)", "(0.5, 0.5)", "(0.0, 0.0)"]
     savefig(plot(rp), "ReciprocalPath-1.png")
 
     rp = ReciprocalPath([b₁, b₂], s₁, s₃; labels=("Γ"=>"X", "M"=>"Γ"))
-    @test ticks(rp) == ([0, 100, 200], ["Γ", "X / M", "Γ"])
+    positions, labels = ticks(rp)
+    @test all(map((x, y)->isapprox(x, y; atol=10^-12), positions, [0.0, 0.5, (1+sqrt(2))/2]))
+    @test labels == ["Γ", "X / M", "Γ"]
     savefig(plot(rp), "ReciprocalPath-2.png")
 
     rp = ReciprocalPath{:q}([b₁, b₂], s₁, s₂, s₃)
