@@ -452,6 +452,24 @@ Construct a Hilbert space the same way as a Dict.
 @inline Hilbert(ps::Pair...) = Hilbert(ps)
 @inline Hilbert(kv) = Hilbert(Dict(kv))
 
+"""
+    Hilbert(internals::Internal...)
+    Hilbert(internals::Tuple{Vararg{Internal}})
+    Hilbert(internals::AbstractVector{<:Internal})
+
+Construct a Hilbert space with the given internals.
+"""
+@inline Hilbert(internals::Internal...) = Hilbert(internals)
+@inline Hilbert(internals::Tuple{Vararg{Internal}}) = Hilbert(i=>internal for (i, internal) in enumerate(internals))
+@inline Hilbert(internals::AbstractVector{<:Internal}) = Hilbert(i=>internal for (i, internal) in enumerate(internals))
+
+"""
+    Hilbert(internal::Internal, num::Int)
+
+Construct a Hilbert space with all internal spaces the same.
+"""
+@inline Hilbert(internal::Internal, num::Int) = Hilbert(i=>internal for i in 1:num)
+
 # Coupling
 ## IIDSpace
 """

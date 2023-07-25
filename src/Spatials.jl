@@ -820,23 +820,23 @@ end
 @inline vectorconvert(vectors::AbstractVector{<:AbstractVector}) = convert(SVector{length(vectors), SVector{length(first(vectors)), eltype(eltype(vectors))}}, vectors)
 
 """
-    Lattice(lattice::Lattice, ranges::NTuple{N, Int}, boundaries::NTuple{N, Char}=ntuple(i->'O', Val(N)); mode::Symbol=:nonnegative) where N
-    Lattice(lattice::Lattice, ranges::NTuple{N, UnitRange{Int}}, boundaries::NTuple{N, Char}=ntuple(i->'O', Val(N))) where N
+    Lattice(lattice::AbstractLattice, ranges::NTuple{N, Int}, boundaries::NTuple{N, Char}=ntuple(i->'O', Val(N)); mode::Symbol=:nonnegative) where N
+    Lattice(lattice::AbstractLattice, ranges::NTuple{N, UnitRange{Int}}, boundaries::NTuple{N, Char}=ntuple(i->'O', Val(N))) where N
 
 Construct a lattice from the translations of another.
 """
-function Lattice(lattice::Lattice, ranges::NTuple{N, Int}, boundaries::NTuple{N, Char}=ntuple(i->'O', Val(N)); mode::Symbol=:nonnegative) where N
+function Lattice(lattice::AbstractLattice, ranges::NTuple{N, Int}, boundaries::NTuple{N, Char}=ntuple(i->'O', Val(N)); mode::Symbol=:nonnegative) where N
     @assert mode∈(:center, :nonnegative) "Lattice error: wrong mode($(repr(mode)))."
     return Lattice(lattice, mode==:center ? map(i->-floor(Int, (i-1)/2):-floor(Int, (i-1)/2)+i-1, ranges) : map(i->0:i-1, ranges), boundaries)
 end
-function Lattice(lattice::Lattice, ranges::NTuple{N, UnitRange{Int}}, boundaries::NTuple{N, Char}=ntuple(i->'O', Val(N))) where N
+function Lattice(lattice::AbstractLattice, ranges::NTuple{N, UnitRange{Int}}, boundaries::NTuple{N, Char}=ntuple(i->'O', Val(N))) where N
     @assert all(map(in(('P', 'O', 'p', 'o')), boundaries)) "Lattice error: boundary conditions must be either 'P'/'p' for 'periodic' or 'O'/'o' for 'open'."
     @assert length(boundaries)==N "Lattice error: mismatched number of ranges and boundaries conditions."
     boundaries = map(uppercase, boundaries)
-    name = Symbol(@sprintf "%s%s" lattice.name join([@sprintf("%s%s%s", boundary=='P' ? "[" : "(", range, boundary=='P' ? "]" : ")") for (range, boundary) in zip(ranges, boundaries)]))
-    coordinates = tile(lattice.coordinates, lattice.vectors, product(ranges...))
+    name = Symbol(@sprintf "%s%s" getcontent(lattice, :name) join([@sprintf("%s%s%s", boundary=='P' ? "[" : "(", range, boundary=='P' ? "]" : ")") for (range, boundary) in zip(ranges, boundaries)]))
+    coordinates = tile(getcontent(lattice, :coordinates), getcontent(lattice, :vectors), product(ranges...))
     vectors = SVector{dimension(lattice), dtype(lattice)}[]
-    for (i, vector) in enumerate(lattice.vectors)
+    for (i, vector) in enumerate(getcontent(lattice, :vectors))
         boundaries[i]=='P' && push!(vectors, vector*length(ranges[i]))
     end
     return Lattice(name, coordinates, vectorconvert(vectors))
