@@ -123,8 +123,8 @@ end
     opt = Operator(1.0, id₁, id₂)
     @test latexstring(opt) == "b^{\\dagger}_{2, 1, ↓}b^{}_{2, 1, ↓}"
 
-    @test permute(id₁, id₂) == (Operator(+1), Operator(1, id₂, id₁))
-    @test permute(id₂, id₁) == (Operator(-1), Operator(1, id₁, id₂))
+    @test permute(id₁, id₂) == (Operator(-1), Operator(1, id₂, id₁))
+    @test permute(id₂, id₁) == (Operator(+1), Operator(1, id₁, id₂))
     @test permute(id₁, id₄) == (Operator(1, id₄, id₁),)
     @test permute(id₄, id₁) == (Operator(1, id₁, id₄),)
 end

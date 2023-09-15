@@ -242,7 +242,7 @@ function permute(id₁::FID{:f}, id₂::FID{:f})
 end
 function permute(id₁::FID{:b}, id₂::FID{:b})
     if id₁'==id₂
-        return (Operator(id₁.nambu==creation ? 1 : -1), Operator(1, id₂, id₁))
+        return (Operator(iscreation(id₁) ? -1 : +1), Operator(1, id₂, id₁))
     else
         return (Operator(1, id₂, id₁),)
     end
