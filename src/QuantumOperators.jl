@@ -683,18 +683,19 @@ Judge whether a set of operators as a whole is Hermitian.
 
 LaTeX string representation of quantum operators.
 """
-struct LaTeX{SP, SB, B, O}
+struct LaTeX{SP, SB, B<:Function, O}
     body::B
     spdelimiter::String
     sbdelimiter::String
     options::O
-    function LaTeX{SP, SB}(body, spdelimiter::String=", ", sbdelimiter::String=", "; options...) where {SP, SB}
+    function LaTeX{SP, SB}(body::Function, spdelimiter::String=", ", sbdelimiter::String=", "; options...) where {SP, SB}
         @assert isa(SP, Tuple{Vararg{Symbol}}) && isa(SB, Tuple{Vararg{Symbol}}) "LaTeX error: SP and SB must be tuple of symbols."
         new{SP, SB, typeof(body), typeof(options)}(body, spdelimiter, sbdelimiter, options)
     end
 end
 @inline superscript(::Type{<:LaTeX{SP}}) where SP = SP
 @inline subscript(::Type{<:LaTeX{SP, SB} where SP}) where SB = SB
+@inline LaTeX{SP, SB}(body, spdelimiter::String=", ", sbdelimiter::String=", "; options...) where {SP, SB} = LaTeX{SP, SB}(::OperatorUnit->body, spdelimiter, sbdelimiter; options...)
 
 """
     latexname(T::Type{<:OperatorUnit}) -> Symbol
@@ -720,7 +721,7 @@ Get/Set the LaTeX format for a subtype of `OperatorUnit`.
 
 Get the body/superscript/subscript of the LaTeX string representation of an operator unit.
 """
-@inline script(::Val{:BD}, u::OperatorUnit, l::LaTeX) = l.body
+@inline script(::Val{:BD}, u::OperatorUnit, l::LaTeX) = l.body(u)
 @inline @generated script(::Val{:SP}, u::OperatorUnit, l::LaTeX) = Expr(:tuple, [:(script(Val($sup), u; l.options...)) for sup in QuoteNode.(l|>superscript)]...)
 @inline @generated script(::Val{:SB}, u::OperatorUnit, l::LaTeX) = Expr(:tuple, [:(script(Val($sub), u; l.options...)) for sub in QuoteNode.(l|>subscript)]...)
 
@@ -927,7 +928,7 @@ end
 @inline Base.valtype(P::Type{<:Permutation}, M::Type{<:OperatorSum}) = valtype(P, eltype(M))
 
 """
-    (permutation::Permutation)(m::OperatorProd; kwargs...) -> OperatorSum
+    (permutation::Permutation)(m::OperatorProd; rev::Bool=false, kwargs...) -> OperatorSum
 
 Permute the operator units of an `OperatorProd` to the descending order according to the table contained in `permutation`.
 
@@ -938,12 +939,12 @@ Permute the operator units of an `OperatorProd` to the descending order accordin
     ```
     Here, `u₁` and `u₂` are two arbitrary operator units contained in `id(m)`.
 """
-@inline function (permutation::Permutation)(m::OperatorProd; kwargs...)
+@inline function (permutation::Permutation)(m::OperatorProd; rev::Bool=false, kwargs...)
     result = zero(permutation, m)
     cache = eltype(result)[m]
     while length(cache) > 0
         current = pop!(cache)
-        pos = operatorprodcommuteposition(sequence(current, permutation.table))
+        pos = operatorprodcommuteposition(sequence(current, permutation.table); rev=rev)
         if isnothing(pos)
             add!(result, current)
         else
@@ -957,10 +958,10 @@ Permute the operator units of an `OperatorProd` to the descending order accordin
     end
     return result
 end
-function operatorprodcommuteposition(sequences)
+function operatorprodcommuteposition(sequences; rev::Bool)
     pos = 1
     while pos < length(sequences)
-        (sequences[pos] < sequences[pos+1]) && return pos
+        ((rev && sequences[pos]>sequences[pos+1]) || (!rev && sequences[pos]<sequences[pos+1])) && return pos
         pos += 1
     end
     return nothing

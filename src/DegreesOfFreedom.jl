@@ -9,7 +9,7 @@ using ..Spatials: Bond, Point
 using ..Toolkit: atol, efficientoperations, rtol, CompositeDict, CompositeTuple, Float, NamedContainer, VectorSpace, VectorSpaceCartesian, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceStyle, commontype, concatenate, decimaltostr, fulltype, parametertype, rawtype, reparameter
 
 import LaTeXStrings: latexstring
-import ..QuantumLattices: ⊕, ⊗, expand, expand!, kind, id, ishermitian, rank, reset!, update!, value
+import ..QuantumLattices: ⊕, ⊗, expand, expand!, id, ishermitian, kind, permute, rank, reset!, update!, value
 import ..QuantumOperators: idtype, optype, script
 import ..Spatials: icoordinate, rcoordinate
 import ..Toolkit: contentnames, getcontent, isparameterbound, parameternames, shape
@@ -300,6 +300,20 @@ Get the adjoint of an index.
 @inline Base.adjoint(index::Index) = rawtype(typeof(index))(index.site, adjoint(index.iid))
 
 """
+    permute(index₁::Index, index₂::Index) -> Tuple{Vararg{Operator}}
+
+Get the permutation of two indexes.
+"""
+function permute(index₁::Index, index₂::Index)
+    if index₁.site ≠ index₂.site
+        return (Operator(statistics(index₁)==:f && statistics(Index₂)==:f ? -1 : 1, index₂, index₁),)
+    else
+        site = index₁.site
+        return map(operator->Operator(value(operator), map(iid->Index(site, iid), id(operator))), permute(index₁.iid, index₂.iid))
+    end
+end
+
+"""
     AbstractCompositeIndex{I<:Index} <: OperatorUnit
 
 The abstract type of a composite index.
@@ -362,6 +376,20 @@ Construct an operator id.
 Get the adjoint of an operator id.
 """
 @inline Base.adjoint(index::CompositeIndex) = CompositeIndex(index.index', index.rcoordinate, index.icoordinate)
+
+"""
+    permute(index₁::CompositeIndex, index₂::CompositeIndex) -> Tuple{Vararg{Operator}}
+
+Get the permutation of two composite indexes.
+"""
+function permute(index₁::CompositeIndex, index₂::CompositeIndex)
+    if index₁.rcoordinate ≠ index₂.rcoordinate || index₁.icoordinate ≠ index₂.icoordinate
+        return (Operator(statistics(index₁)==:f && statistics(index₂)==:f ? -1 : 1, index₂, index₁),)
+    else
+        rcoordinate, icoordinate = index₁.rcoordinate, index₁.icoordinate
+        return map(operator->Operator(value(operator), map(index->CompositeIndex(index, rcoordinate, icoordinate), id(operator))), permute(index₁.index, index₂.index))
+    end
+end
 
 """
     indextype(I::Type{<:SimpleInternal}, P::Type{<:Point}, ::Val)

@@ -103,7 +103,7 @@ end
 
     op₁ = Operator(1.5, id₁, id₂)
     op₂ = Operator(2.0, id₂, id₁)
-    @test op₁*op₂ == nothing
+    @test op₁*op₂ == 0
 
     op₁ = Operator(1.5, id₁, id₂)
     op₂ = Operator(2.0, id₁, id₂)

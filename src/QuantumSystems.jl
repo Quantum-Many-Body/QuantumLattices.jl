@@ -211,53 +211,44 @@ function isnormalordered(opt::Operator{<:Number, <:ID{AbstractCompositeIndex{<:I
 end
 
 """
-    *(
-        f1::Operator{<:Number, <:ID{AbstractCompositeIndex{<:Index{Int, <:FID{:f}}}}},
-        f2::Operator{<:Number, <:ID{AbstractCompositeIndex{<:Index{Int, <:FID{:f}}}}}
-    ) -> Union{Nothing, Operator}
+    *(f₁::Operator{<:Number, <:ID{FID{:f}}}, f₂::Operator{<:Number, <:ID{FID{:f}}}) -> Union{typeof(0), Operator}
+    *(f₁::Operator{<:Number, <:ID{Index{Int, <:FID{:f}}}}, f₂::Operator{<:Number, <:ID{Index{Int, <:FID{:f}}}}) -> Union{typeof(0), Operator}
+    *(f₁::Operator{<:Number, <:ID{AbstractCompositeIndex{<:Index{Int, <:FID{:f}}}}}, f₂::Operator{<:Number, <:ID{AbstractCompositeIndex{<:Index{Int, <:FID{:f}}}}}) -> Union{typeof(0), Operator}
 
 Get the multiplication of two fermionic Fock operators.
 """
-@inline function Base.:*(
-        f1::Operator{<:Number, <:ID{AbstractCompositeIndex{<:Index{Int, <:FID{:f}}}}},
-        f2::Operator{<:Number, <:ID{AbstractCompositeIndex{<:Index{Int, <:FID{:f}}}}}
-        )
-    rank(f1)>0 && rank(f2)>0 && f1.id[end]==f2.id[1] && return nothing
-    return invoke(*, Tuple{OperatorProd, OperatorProd}, f1, f2)
+const block = quote
+    rank(f₁)>0 && rank(f₂)>0 && f₁.id[end]==f₂.id[1] && return 0
+    return invoke(*, Tuple{OperatorProd, OperatorProd}, f₁, f₂)
 end
+@eval @inline Base.:*(f₁::Operator{<:Number, <:ID{FID{:f}}}, f₂::Operator{<:Number, <:ID{FID{:f}}}) = $block
+@eval @inline Base.:*(f₁::Operator{<:Number, <:ID{Index{Int, <:FID{:f}}}}, f₂::Operator{<:Number, <:ID{Index{Int, <:FID{:f}}}}) = $block
+@eval @inline Base.:*(f₁::Operator{<:Number, <:ID{AbstractCompositeIndex{<:Index{Int, <:FID{:f}}}}}, f₂::Operator{<:Number, <:ID{AbstractCompositeIndex{<:Index{Int, <:FID{:f}}}}}) = $block
+@inline Base.:*(m₁::Operator{<:Number, Tuple{}}, m₂::Operator{<:Number, Tuple{}}) = Operator(m₁.value*m₂.value)
 
 ## Permutation
 """
-    permute(id₁::CompositeIndex{<:Index{Int, <:FID{:f}}}, id₂::CompositeIndex{<:Index{Int, <:FID{:f}}}) -> Tuple{Vararg{Operator}}
+    permute(id₁::FID, id₂::FID) -> Tuple{Vararg{Operator}}
 
-Permute two fermionic indexes and get the result.
+Permute two Fock indexes and get the result.
 """
-function permute(id₁::CompositeIndex{<:Index{Int, <:FID{:f}}}, id₂::CompositeIndex{<:Index{Int, <:FID{:f}}})
-    @assert id₁.index≠id₂.index || id₁.rcoordinate≠id₂.rcoordinate || id₁.icoordinate≠id₂.icoordinate "permute error: permuted ids should not be equal to each other."
-    if id₁.index'==id₂.index && id₁.rcoordinate==id₂.rcoordinate && id₁.icoordinate==id₂.icoordinate
+function permute(id₁::FID{:f}, id₂::FID{:f})
+    @assert id₁ ≠ id₂ "permute error: two identical fermionic indexes should vanish due to the fermionic statistics."
+    if id₁' == id₂
         return (Operator(1), Operator(-1, id₂, id₁))
     else
         return (Operator(-1, id₂, id₁),)
     end
 end
-
-"""
-    permute(id₁::CompositeIndex{<:Index{Int, <:FID{:b}}}, id₂::CompositeIndex{<:Index{Int, <:FID{:b}}}) -> Tuple{Vararg{Operator}}
-
-Permute two bosonic indexes and get the result.
-"""
-function permute(id₁::CompositeIndex{<:Index{Int, <:FID{:b}}}, id₂::CompositeIndex{<:Index{Int, <:FID{:b}}})
-    @assert id₁.index≠id₂.index || id₁.rcoordinate≠id₂.rcoordinate || id₁.icoordinate≠id₂.icoordinate "permute error: permuted ids should not be equal to each other."
-    if id₁.index'==id₂.index && id₁.rcoordinate==id₂.rcoordinate && id₁.icoordinate==id₂.icoordinate
-        if id₁.index.iid.nambu == creation
-            return (Operator(1), Operator(1, id₂, id₁))
-        else
-            return (Operator(-1), Operator(1, id₂, id₁))
-        end
+function permute(id₁::FID{:b}, id₂::FID{:b})
+    if id₁'==id₂
+        return (Operator(id₁.nambu==creation ? 1 : -1), Operator(1, id₂, id₁))
     else
         return (Operator(1, id₂, id₁),)
     end
 end
+@inline permute(id₁::FID{:b}, id₂::FID{:f}) = (Operator(1, id₂, id₁),)
+@inline permute(id₁::FID{:f}, id₂::FID{:b}) = (Operator(1, id₂, id₁),)
 
 ## Coupling
 ### requested by IIDSpace
@@ -598,44 +589,44 @@ latexformat(SID, LaTeX{(:tag,), ()}('S'))
 
 ## Permutation
 """
-    permute(id₁::CompositeIndex{<:Index{Int, SID{S, Char}}}, id₂::CompositeIndex{<:Index{Int, SID{S, Char}}}) where S -> Tuple{Vararg{Operator}}
+    permute(id₁::SID, id₂::SID) -> Tuple{Vararg{Operator}}
 
 Permute two spin indexes and get the result.
 """
-function permute(id₁::CompositeIndex{<:Index{Int, SID{S, Char}}}, id₂::CompositeIndex{<:Index{Int, SID{S, Char}}}) where S
-    @assert id₁.index≠id₂.index || id₁.rcoordinate≠id₂.rcoordinate || id₁.icoordinate≠id₂.icoordinate "permute error: permuted ids should not be equal to each other."
-    if id₁.index.site==id₂.index.site && id₁.rcoordinate==id₂.rcoordinate && id₁.icoordinate==id₂.icoordinate
-        if id₁.index.iid.tag == 'x'
-            id₂.index.iid.tag=='y' && return (Operator(+1im, permutespinindex(id₁, 'z')), Operator(1, id₂, id₁))
-            id₂.index.iid.tag=='z' && return (Operator(-1im, permutespinindex(id₁, 'y')), Operator(1, id₂, id₁))
-            id₂.index.iid.tag=='+' && return (Operator(-1, permutespinindex(id₁, 'z')), Operator(1, id₂, id₁))
-            id₂.index.iid.tag=='-' && return (Operator(+1, permutespinindex(id₁, 'z')), Operator(1, id₂, id₁))
-        elseif id₁.index.iid.tag == 'y'
-            id₂.index.iid.tag=='x' && return (Operator(-1im, permutespinindex(id₁, 'z')), Operator(1, id₂, id₁))
-            id₂.index.iid.tag=='z' && return (Operator(+1im, permutespinindex(id₁, 'x')), Operator(1, id₂, id₁))
-            id₂.index.iid.tag=='+' && return (Operator(-1im, permutespinindex(id₁, 'z')), Operator(1, id₂, id₁))
-            id₂.index.iid.tag=='-' && return (Operator(-1im, permutespinindex(id₁, 'z')), Operator(1, id₂, id₁))
-        elseif id₁.index.iid.tag == 'z'
-            id₂.index.iid.tag=='x' && return (Operator(+1im, permutespinindex(id₁, 'y')), Operator(1, id₂, id₁))
-            id₂.index.iid.tag=='y' && return (Operator(-1im, permutespinindex(id₁, 'x')), Operator(1, id₂, id₁))
-            id₂.index.iid.tag=='+' && return (Operator(+1, id₂), Operator(1, id₂, id₁))
-            id₂.index.iid.tag=='-' && return (Operator(-1, id₂), Operator(1, id₂, id₁))
-        elseif id₁.index.iid.tag == '+'
-            id₂.index.iid.tag=='x' && return (Operator(+1, permutespinindex(id₁, 'z')), Operator(1, id₂, id₁))
-            id₂.index.iid.tag=='y' && return (Operator(+1im, permutespinindex(id₁, 'z')), Operator(1, id₂, id₁))
-            id₂.index.iid.tag=='z' && return (Operator(-1, id₁), Operator(1, id₂, id₁))
-            id₂.index.iid.tag=='-' && return (Operator(+2, permutespinindex(id₁, 'z')), Operator(1, id₂, id₁))
-        elseif id₁.index.iid.tag == '-'
-            id₂.index.iid.tag=='x' && return (Operator(-1, permutespinindex(id₁, 'z')), Operator(1, id₂, id₁))
-            id₂.index.iid.tag=='y' && return (Operator(1im, permutespinindex(id₁, 'z')), Operator(1, id₂, id₁))
-            id₂.index.iid.tag=='z' && return (Operator(+1, id₁), Operator(1, id₂, id₁))
-            id₂.index.iid.tag=='+' && return (Operator(-2, permutespinindex(id₁, 'z')), Operator(1, id₂, id₁))
+function permute(id₁::SID, id₂::SID)
+    if id₁ ≠ id₂
+        S = totalspin(id₁)
+        if id₁.tag == 'x'
+            id₂.tag=='y' && return (Operator(+1im, SID{S}('z')), Operator(1, id₂, id₁))
+            id₂.tag=='z' && return (Operator(-1im, SID{S}('y')), Operator(1, id₂, id₁))
+            id₂.tag=='+' && return (Operator(-1, SID{S}('z')), Operator(1, id₂, id₁))
+            id₂.tag=='-' && return (Operator(+1, SID{S}('z')), Operator(1, id₂, id₁))
+        elseif id₁.tag == 'y'
+            id₂.tag=='x' && return (Operator(-1im, SID{S}('z')), Operator(1, id₂, id₁))
+            id₂.tag=='z' && return (Operator(+1im, SID{S}('x')), Operator(1, id₂, id₁))
+            id₂.tag=='+' && return (Operator(-1im, SID{S}('z')), Operator(1, id₂, id₁))
+            id₂.tag=='-' && return (Operator(-1im, SID{S}('z')), Operator(1, id₂, id₁))
+        elseif id₁.tag == 'z'
+            id₂.tag=='x' && return (Operator(+1im, SID{S}('y')), Operator(1, id₂, id₁))
+            id₂.tag=='y' && return (Operator(-1im, SID{S}('x')), Operator(1, id₂, id₁))
+            id₂.tag=='+' && return (Operator(+1, SID{S}('+')), Operator(1, id₂, id₁))
+            id₂.tag=='-' && return (Operator(-1, SID{S}('-')), Operator(1, id₂, id₁))
+        elseif id₁.tag == '+'
+            id₂.tag=='x' && return (Operator(+1, SID{S}('z')), Operator(1, id₂, id₁))
+            id₂.tag=='y' && return (Operator(+1im, SID{S}('z')), Operator(1, id₂, id₁))
+            id₂.tag=='z' && return (Operator(-1, SID{S}('+')), Operator(1, id₂, id₁))
+            id₂.tag=='-' && return (Operator(+2, SID{S}('z')), Operator(1, id₂, id₁))
+        elseif id₁.tag == '-'
+            id₂.tag=='x' && return (Operator(-1, SID{S}('z')), Operator(1, id₂, id₁))
+            id₂.tag=='y' && return (Operator(1im, SID{S}('z')), Operator(1, id₂, id₁))
+            id₂.tag=='z' && return (Operator(+1, SID{S}('-')), Operator(1, id₂, id₁))
+            id₂.tag=='+' && return (Operator(-2, SID{S}('z')), Operator(1, id₂, id₁))
         end
+        error("permute error: not supported spin indexes.")
     else
         return (Operator(1, id₂, id₁),)
     end
 end
-@inline permutespinindex(id::CompositeIndex{<:Index{Int, <:SID}}, tag::Char) = replace(id, index=replace(id.index, iid=replace(id.index.iid, tag=tag)))
 
 ## Coupling
 ### requested by IIDSpace
@@ -772,43 +763,31 @@ Get the requested script of an pid.
 """
 @inline script(::Val{:direction}, pid::PID; kwargs...) = pid.direction==(:) ? ":" : string(pid.direction)
 
-"""
-    script(::Val{:BD}, pid::PID, l::LaTeX) -> String
-    script(::Val{:BD}, index::Index{<:Union{Int, Colon}, <:PID}, l::LaTeX) -> String
-    script(::Val{:BD}, index::AbstractCompositeIndex{<:Index{<:Union{Int, Colon}, <:PID}}, l::LaTeX) -> String
-
-Get the requested script of a phonon index.
-"""
-@inline script(::Val{:BD}, pid::PID, l::LaTeX) = l.body[pid.tag]
-@inline script(::Val{:BD}, index::Index{<:Union{Int, Colon}, <:PID}, l::LaTeX) = l.body[index.iid.tag]
-@inline script(::Val{:BD}, index::AbstractCompositeIndex{<:Index{<:Union{Int, Colon}, <:PID}}, l::LaTeX) = l.body[getcontent(index, :index).iid.tag]
-
+@inline body(pid::PID) = string(pid.tag)
+@inline body(index::Index{<:Union{Int, Colon}, <:PID}) = string(index.iid.tag)
+@inline body(index::AbstractCompositeIndex{<:Index{<:Union{Int, Colon}, <:PID}}) = string(getcontent(index, :index).iid.tag)
 """
     latexofphonons
 
 The default LaTeX format of a phonon index.
 """
-const latexofphonons = LaTeX{(:direction,), (:site,)}(Dict('p'=>"p", 'u'=>"u"), "", "")
+const latexofphonons = LaTeX{(:direction,), (:site,)}(body, "", "")
 @inline latexname(::Type{<:Index{<:Union{Int, Colon}, <:PID}}) = Symbol("Index{Union{Int, Colon}, PID}")
 @inline latexname(::Type{<:AbstractCompositeIndex{<:Index{<:Union{Int, Colon}, <:PID}}}) = Symbol("AbstractCompositeIndex{Index{Union{Int, Colon}, PID}}")
 latexformat(Index{<:Union{Int, Colon}, <:PID}, latexofphonons)
 latexformat(AbstractCompositeIndex{<:Index{<:Union{Int, Colon}, <:PID}}, latexofphonons)
 @inline latexname(::Type{<:PID}) = Symbol("PID")
-latexformat(PID, LaTeX{(:direction,), ()}(Dict('p'=>"p", 'u'=>"u"), "", ""))
+latexformat(PID, LaTeX{(:direction,), ()}(body, "", ""))
 
 ## Permutation
 """
-    permute(id₁::CompositeIndex{<:Index{Int, PID{Char}}}, id₂::CompositeIndex{<:Index{Int, PID{Char}}}) -> Tuple{Vararg{Operator}}
+    permute(id₁::PID, id₂::PID) -> Tuple{Vararg{Operator}}
 
 Permute two phonon indexes and get the result.
 """
-function permute(id₁::CompositeIndex{<:Index{Int, PID{Char}}}, id₂::CompositeIndex{<:Index{Int, PID{Char}}})
-    if id₁.index.iid.direction==id₂.index.iid.direction && id₁.index.iid.tag≠id₂.index.iid.tag && id₁.rcoordinate==id₂.rcoordinate && id₁.icoordinate==id₂.icoordinate
-        if id₁.index.iid.tag=='u'
-            return (Operator(1im), Operator(1, id₂, id₁))
-        else
-            return (Operator(-1im), Operator(1, id₂, id₁))
-        end
+function permute(id₁::PID, id₂::PID)
+    if id₁.direction==id₂.direction && id₁.tag≠id₂.tag
+        return (Operator(id₁.tag=='u' ? 1im : -1im), Operator(1, id₂, id₁))
     else
         return (Operator(1, id₂, id₁),)
     end
