@@ -204,8 +204,8 @@ Judge whether an operator is normal ordered.
 function isnormalordered(opt::Operator{<:Number, <:ID{AbstractCompositeIndex{<:Index{Int, <:FID}}}})
     flag = true
     for i = 1:rank(opt)
-        flag && (opt.id[i].index.iid.nambu == annihilation) && (flag = false)
-        flag || (opt.id[i].index.iid.nambu == creation) && return false
+        flag && (opt[i].index.iid.nambu == annihilation) && (flag = false)
+        flag || (opt[i].index.iid.nambu == creation) && return false
     end
     return true
 end
@@ -218,7 +218,7 @@ end
 Get the multiplication of two fermionic Fock operators.
 """
 const block = quote
-    rank(f₁)>0 && rank(f₂)>0 && f₁.id[end]==f₂.id[1] && return 0
+    rank(f₁)>0 && rank(f₂)>0 && f₁[end]==f₂[1] && return 0
     return invoke(*, Tuple{OperatorProd, OperatorProd}, f₁, f₂)
 end
 @eval @inline Base.:*(f₁::Operator{<:Number, <:ID{FID{:f}}}, f₂::Operator{<:Number, <:ID{FID{:f}}}) = $block
