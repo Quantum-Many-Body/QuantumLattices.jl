@@ -11,7 +11,7 @@ using ..QuantumNumbers: Momenta, Momentum, periods
 using ..Toolkit: atol, rtol, efficientoperations, CompositeDict, Float, SimpleNamedVectorSpace, Segment, VectorSpaceCartesian, VectorSpaceDirectSummed, VectorSpaceStyle, getcontent
 
 import StaticArrays: SArray
-import ..QuantumLattices: decompose, dimension, dtype, expand, kind, reset!
+import ..QuantumLattices: decompose, dimension, dtype, expand, kind
 import ..QuantumNumbers: Momentum₁, Momentum₂, Momentum₃
 import ..Toolkit: contentnames, shape
 

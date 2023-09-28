@@ -133,8 +133,13 @@ Construct an entry of quantum operators based on the input terms, bonds, Hilbert
 """
 function Entry(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert; half::Bool=false, boundary::Boundary=plain)
     constterms, alterterms, choosedterms = termclassifier(terms)
-    innerbonds = filter(bond->isintracell(bond), bonds)
-    boundbonds = filter(bond->!isintracell(bond), bonds)
+    if boundary === plain
+        innerbonds = bonds
+        boundbonds = eltype(bonds)[]
+    else
+        innerbonds = filter(bond->isintracell(bond), bonds)
+        boundbonds = filter(bond->!isintracell(bond), bonds)
+    end
     constops = Operators{mapreduce(term->optype(typeof(term), typeof(hilbert), eltype(bonds)), promote_type, choosedterms)}()
     map(term->expand!(constops, term, innerbonds, hilbert; half=half), constterms)
     alterops = NamedTuple{map(id, alterterms)}(map(term->expand(one(term), innerbonds, hilbert; half=half), alterterms))
@@ -305,8 +310,13 @@ Reset an entry of quantum operators by the new terms, bonds, Hilbert space and (
 function reset!(entry::Entry{<:Operators}, terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert; half::Bool=false, boundary::Boundary=entry.boundary)
     empty!(entry)
     constterms, alterterms, _ = termclassifier(terms)
-    innerbonds = filter(bond->isintracell(bond), bonds)
-    boundbonds = filter(bond->!isintracell(bond), bonds)
+    if boundary === plain
+        innerbonds = bonds
+        boundbonds = eltype(bonds)[]
+    else
+        innerbonds = filter(bond->isintracell(bond), bonds)
+        boundbonds = filter(bond->!isintracell(bond), bonds)
+    end
     map(term->expand!(entry.constops, term, innerbonds, hilbert; half=half), constterms)
     map(term->expand!(getfield(entry.alterops, id(term)), one(term), innerbonds, hilbert; half=half), alterterms)
     map(term->map!(boundary, expand!(getfield(entry.boundops, id(term)), one(term), boundbonds, hilbert; half=half)), terms)
@@ -433,15 +443,14 @@ Expand an operator generator to get:
 function expand(gen::OperatorGenerator, name::Symbol)
     result = zero(valtype(gen))
     term = get(gen.terms, Val(name))
-    if !ismodulatable(term)
-        expand!(result, term, filter(bond->isintracell(bond), gen.bonds), gen.hilbert; half=gen.half)
-    else
-        for opt in getfield(gen.operators.alterops, name)
-            add!(result, opt*term.value)
+    for bond in gen.bonds
+        if isintracell(bond)
+            expand!(result, term, bond, gen.hilbert; half=gen.half)
+        else
+            for opt in expand(term, bond, gen.hilbert; half=gen.half)
+                add!(result, gen.operators.boundary(opt))
+            end
         end
-    end
-    for opt in getfield(gen.operators.boundops, name)
-        add!(result, opt*term.value)
     end
     return result
 end

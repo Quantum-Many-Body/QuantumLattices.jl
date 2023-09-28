@@ -1,6 +1,6 @@
 using LinearAlgebra: dot, tr
 using QuantumLattices: add!, expand, expand!, reset!, update
-using QuantumLattices.DegreesOfFreedom: Boundary, CompositeIndex, Coupling, Hilbert, IIDSpace, Index, OperatorUnitToTuple, SimpleIID, SimpleInternal, Table, Term
+using QuantumLattices.DegreesOfFreedom: plain, Boundary, CompositeIndex, Coupling, Hilbert, IIDSpace, Index, OperatorUnitToTuple, SimpleIID, SimpleInternal, Table, Term
 using QuantumLattices.Frameworks
 using QuantumLattices.QuantumOperators: ID, Identity, Operator, Operators, id, idtype
 using QuantumLattices.Spatials: Lattice, Point, bonds, decompose, isintracell
@@ -143,6 +143,46 @@ end
     @test empty!(deepcopy(sgen)) == Image(empty(cgen.operators), i, empty(table), objectid(cgen)) == empty(sgen)
     @test update!(sgen, μ=3.5)|>expand ≈ tops₁+tops₂*2.0+μops*3.5
     @test update!(sgen, cgen)|>expand ≈ tops₁+tops₂*2.0+μops*1.5
+    @test reset!(empty(sgen), i, cgen; table=table) == sgen
+
+    t = Term{:Hp}(:t, 2.0, 1, Coupling(1.0, (1, 2), FID, (2, 1)), false; modulate=false)
+    μ = Term{:Mu}(:μ, 1.0, 0, Coupling(1.0, (1, 1), FID, (2, 1)), true)
+    tops = expand(t, bs, hilbert; half=true)
+    μops = expand(one(μ), bs, hilbert; half=true)
+    optp = Operator{Complex{Float}, ID{CompositeIndex{Index{Int, FID{Int}}, SVector{1, Float}}, 2}}
+    entry = Entry(tops, (μ=μops,), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain)
+    @test entry == Entry((t, μ), bs, hilbert; half=true, boundary=plain)
+    @test isequal(entry, i(entry))
+    @test Parameters(entry) == (t=2.0, μ=1.0)
+    @test entry+entry == entry*2 == 2*entry == Entry(tops*2, (μ=μops,), (t=Operators{optp}(), μ=Operators{optp}()), (t=4.0, μ=2.0), plain)
+    @test expand(entry) == expand!(Operators{optp}(), entry) ≈ tops+μops
+
+    entry₁ = Entry(tops, NamedTuple(), (t=Operators{optp}(),), (t=2.0,), plain)
+    entry₂ = Entry(zero(tops), (μ=μops,), (μ=Operators{optp}(),), (μ=1.0,), plain)
+    @test entry₁+entry₂ == Entry(tops, (μ=μops,), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain)
+
+    another = Entry(empty(tops), (μ=empty(μops),), (t=empty(tops), μ=Operators{optp}()), (t=2.0, μ=1.0), plain)
+    @test empty(entry) == empty!(deepcopy(entry)) == another
+    @test reset!(deepcopy(another), (t, μ), bs, hilbert; half=true, boundary=plain) == entry
+    @test reset!(deepcopy(another), i, entry) == entry
+
+    cgen = OperatorGenerator((t, μ), bs, hilbert; half=true, boundary=plain, table=table)
+    @test expand(cgen) ≈ tops + μops
+    @test expand(cgen, :t) ≈ tops
+    @test expand(cgen, :μ) ≈ μops
+    @test expand(cgen, 1)+expand(cgen, 2)+expand(cgen, 3)+expand(cgen, 4) ≈ expand(cgen)
+    @test expand(cgen, :μ, 1)+expand(cgen, :μ, 2) ≈ μops
+    @test expand(cgen, :t, 3)+expand(cgen, :t, 4) ≈ tops
+    @test reset!(empty(cgen), lattice, hilbert) == cgen
+    @test update!(cgen, μ=1.5)|>expand ≈ tops+μops*1.5
+
+    sgen = i(cgen; table=table)
+    @test sgen == Image(cgen.operators, i, table, objectid(cgen))
+    @test Parameters(sgen) == (t=2.0, μ=1.5)
+    @test expand!(Operators{optp}(), sgen) == expand(sgen) ≈ tops+μops*1.5
+    @test empty!(deepcopy(sgen)) == Image(empty(cgen.operators), i, empty(table), objectid(cgen)) == empty(sgen)
+    @test update!(sgen, μ=3.5)|>expand ≈ tops+μops*3.5
+    @test update!(sgen, cgen)|>expand ≈ tops+μops*1.5
     @test reset!(empty(sgen), i, cgen; table=table) == sgen
 end
 
