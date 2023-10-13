@@ -658,7 +658,7 @@ The concrete `AbelianNumber` of a quantum system with spin z-component `Sz` cons
 
 The concrete `AbelianNumber` of a quantum system with particle number `N` conserved.
 """
-@abeliannumber "ParticleNumber" Int (:N,) (Inf,)
+@abeliannumber "ParticleNumber" Float64 (:N,) (Inf,)
 
 """
     SpinfulParticle(N::Real, Sz::Real)
