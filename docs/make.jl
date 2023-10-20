@@ -12,7 +12,7 @@ makedocs(
                 ),
     sitename=   "QuantumLattices.jl",
     pages=      [
-                    "Home"      =>  "index.md",
+                    "Home" => "index.md",
                     "Unitcell Description Framework" => [
                         "unitcell description framework/Introduction.md",
                         "unitcell description framework/SpatialInfoOfAUnitcell.md",
@@ -29,7 +29,7 @@ makedocs(
                         "advanced topics/Transformations.md",
                         "advanced topics/ManageProjects.md",
                     ],
-                    "Manual"    =>  [
+                    "Manual" =>  [
                         "man/Toolkit.md",
                         "man/QuantumOperators.md",
                         "man/QuantumNumbers.md",
