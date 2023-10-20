@@ -4,10 +4,11 @@ using QuantumLattices
 
 makedocs(
     format=     Documenter.HTML(
-                    prettyurls= get(ENV, "CI", "false") == "true",
-                    canonical=  "https://quantum-many-body.github.io/QuantumLattices.jl/latest/",
-                    assets=     ["assets/favicon.ico"],
-                    analytics=  "UA-89508993-1",
+                    prettyurls = get(ENV, "CI", "false") == "true",
+                    canonical = "https://quantum-many-body.github.io/QuantumLattices.jl/latest/",
+                    assets = ["assets/favicon.ico"],
+                    analytics = "UA-89508993-1",
+                    size_threshold_warn = 204800,
                 ),
     sitename=   "QuantumLattices.jl",
     pages=      [

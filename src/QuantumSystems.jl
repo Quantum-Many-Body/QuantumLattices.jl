@@ -218,8 +218,9 @@ end
 Get the multiplication of two fermionic Fock operators.
 """
 const block = quote
-    rank(f₁)>0 && rank(f₂)>0 && f₁[end]==f₂[1] && return 0
-    return invoke(*, Tuple{OperatorProd, OperatorProd}, f₁, f₂)
+    result = invoke(*, Tuple{OperatorProd, OperatorProd}, f₁, f₂)
+    rank(f₁)>0 && rank(f₂)>0 && f₁[end]==f₂[1] && return replace(result, value=zero(valtype(result)))
+    return result
 end
 @eval @inline Base.:*(f₁::Operator{<:Number, <:ID{FID{:f}}}, f₂::Operator{<:Number, <:ID{FID{:f}}}) = $block
 @eval @inline Base.:*(f₁::Operator{<:Number, <:ID{Index{Int, <:FID{:f}}}}, f₂::Operator{<:Number, <:ID{Index{Int, <:FID{:f}}}}) = $block

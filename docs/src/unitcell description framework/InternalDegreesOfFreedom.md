@@ -521,11 +521,9 @@ Operators with 2 Operator
 julia> another = Operator(2, FID{:f}(1, 1//2, 1)) + Operator(3, FID{:f}(1, 1//2, 2));
 
 julia> ops * another 
-Operators with 4 Operator
+Operators with 2 Operator
   Operator(6, FID{:f}(1, 1//2, 1), FID{:f}(1, 1//2, 2))
   Operator(6, FID{:f}(1, 1//2, 2), FID{:f}(1, 1//2, 1))
-  Operator(9, FID{:f}(1, 1//2, 2), FID{:f}(1, 1//2, 2))
-  Operator(4, FID{:f}(1, 1//2, 1), FID{:f}(1, 1//2, 1))
 
 julia> 2 * ops
 Operators with 2 Operator
@@ -537,7 +535,7 @@ Operators with 2 Operator
   Operator(6, FID{:f}(1, 1//2, 2))
   Operator(4, FID{:f}(1, 1//2, 1))
 ```
-It is noted that in the result, the distributive law automatically applies.
+It is noted that in the result, the distributive law automatically applies. Besides, the fermion operator relation $c^2=c\dagger^2=0$ is also used.
 
 As is usual, the Hermitian conjugate of an [`Operators`](@ref) can be obtained by the adjoint operator:
 ```jldoctest
