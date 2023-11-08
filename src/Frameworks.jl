@@ -639,8 +639,8 @@ end
 
 Construct an algorithm.
 """
-@inline function Algorithm(name::Symbol, frontend::Frontend; din::String=".", dout::String=".", parameters::Parameters=Parameters(frontend), map::Function=identity)
-    return Algorithm(name, frontend, din, dout, parameters, map, Dict{Symbol, Assignment}(), TimerOutput())
+@inline function Algorithm(name::Symbol, frontend::Frontend; din::String=".", dout::String=".", parameters::Parameters=Parameters(frontend), map::Function=identity, timer::TimerOutput=TimerOutput())
+    return Algorithm(name, frontend, din, dout, parameters, map, Dict{Symbol, Assignment}(), timer)
 end
 
 """
