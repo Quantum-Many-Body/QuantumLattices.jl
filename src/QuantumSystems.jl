@@ -637,11 +637,14 @@ end
 
 ### MatrixCoupling
 """
-    MatrixCoupling(sites::Union{NTuple{2, Int}, Colon}, ::Type{S}, matrix::AbstractMatrix) where {S<:SID}
+    MatrixCoupling(sites::Union{NTuple{2, Int}, Colon}, ::Type{S}, matrix::AbstractMatrix; rows::AbstractVector=SVector('x', 'y', 'z'), cols::AbstractVector=SVector('x', 'y', 'z')) where {S<:SID}
 
 Construct a set of `Coupling`s between two `Index{<:Union{Int, Colon}, <:SID}`s with the coefficients specified by a matrix.
 """
-@inline MatrixCoupling(sites::Union{NTuple{2, Int}, Colon}, ::Type{S}, matrix::AbstractMatrix) where {S<:SID} = MatrixCoupling(sites, S, Component(SVector('x', 'y', 'z'), SVector('x', 'y', 'z'), matrix))
+function MatrixCoupling(sites::Union{NTuple{2, Int}, Colon}, ::Type{S}, matrix::AbstractMatrix; rows::AbstractVector=SVector('x', 'y', 'z'), cols::AbstractVector=SVector('x', 'y', 'z')) where {S<:SID}
+    @assert size(matrix)==(length(rows), length(cols)) "MatrixCoupling error: mismatched input matrix and rows/cols."
+    return MatrixCoupling(sites, S, Component(rows, cols, matrix))
+end
 
 ### Spin coupling matrix
 """
@@ -808,15 +811,16 @@ end
 
 ### MatrixCoupling
 """
-    MatrixCoupling(sites::Union{NTuple{2, Int}, Colon}, ::Type{PID}, matrix::AbstractMatrix)
+    MatrixCoupling(sites::Union{NTuple{2, Int}, Colon}, ::Type{PID}, matrix::AbstractMatrix; rows::Union{AbstractVector, Nothing}=nothing, cols::Union{AbstractVector, Nothing}=nothing)
 
 Construct a set of `Coupling`s corresponding to the dynamical matrix of phonons.
 """
-function MatrixCoupling(sites::Union{NTuple{2, Int}, Colon}, ::Type{PID}, matrix::AbstractMatrix)
+function MatrixCoupling(sites::Union{NTuple{2, Int}, Colon}, ::Type{PID}, matrix::AbstractMatrix; rows::Union{AbstractVector, Nothing}=nothing, cols::Union{AbstractVector, Nothing}=nothing)
     @assert size(matrix)[1]∈(1, 2, 3) && size(matrix)[2]∈(1, 2, 3) "MatrixCoupling error: mismatched dimension of input matrix."
-    left = size(matrix)[1]==1 ? SVector('x') : size(matrix)[1]==2 ? SVector('x', 'y') : SVector('x', 'y', 'z')
-    right = size(matrix)[2]==1 ? SVector('x') : size(matrix)[2]==2 ? SVector('x', 'y') : SVector('x', 'y', 'z')
-    return MatrixCoupling(sites, PID, Component(SVector('u'), SVector('u'), default_matrix), Component(left, right, matrix))
+    isnothing(rows) && (rows = size(matrix)[1]==1 ? SVector('x') : size(matrix)[1]==2 ? SVector('x', 'y') : SVector('x', 'y', 'z'))
+    isnothing(cols) && (cols = size(matrix)[2]==1 ? SVector('x') : size(matrix)[2]==2 ? SVector('x', 'y') : SVector('x', 'y', 'z'))
+    @assert size(matrix)==(length(rows), length(cols)) "MatrixCoupling error: mismatched input matrix and rows/cols."
+    return MatrixCoupling(sites, PID, Component(SVector('u'), SVector('u'), default_matrix), Component(rows, cols, matrix))
 end
 
 ### expand
