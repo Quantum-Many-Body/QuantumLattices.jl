@@ -20,7 +20,7 @@ Main features include:
 In particular, `AbelianNumber <: HomoNamedVector{Float}`, all features supported by `HomoNamedVector` are also available for `HomoNamedVector`. See also [HomoNamedVector](@ref).
 
 For convenience, **3** kinds of quantum numbers are predefined in this module, i.e.
-* [`SpinZ`](@ref): for spin z-component reserved systems
+* [`Sz`](@ref): for spin z-component reserved systems
 * [`ParticleNumber`](@ref): for particle number reserved systems
 * [`SpinfulParticle`](@ref): for both particle number and spin-z component reserved systems
 
@@ -47,11 +47,6 @@ Main features include:
 * arithmetic operations: `+`, `-`, `*`, `^`, `⊗`, `⊕`
 * iterable: various iteration supports, including functions such as `iterate`, `keys`, `values` and `pairs`
 For a complete summation of its features, please refer to the [manual](@ref qnmanual).
-
-For convenience, **3** functions are predefined to generate the `AbelianNumbers` of common physical systems, i.e.
-* [`spinzs`](@ref): a single spin
-* [`particlenumbers`](@ref): a single-particle state with at most `N` identical particles
-* [`spinfulparticles`](@ref): a single site with internal degrees of freedom that can be ascribed to a spin
 
 ## [Manual](@id qnmanual)
 
