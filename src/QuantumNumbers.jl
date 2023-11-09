@@ -5,13 +5,13 @@ using DataStructures: OrderedDict
 using LinearAlgebra: norm
 using Printf: @printf, @sprintf
 using Random: MersenneTwister, seed!, shuffle!
-using ..Toolkit: Combinations, HomoNamedVector, VectorSpace, VectorSpaceCartesian, VectorSpaceEnumerative, VectorSpaceStyle
+using ..Toolkit: HomoNamedVector, VectorSpace, VectorSpaceCartesian, VectorSpaceEnumerative, VectorSpaceStyle
 
 import ..QuantumLattices: ⊕, ⊗, decompose, dimension, expand, permute
 import ..Toolkit: shape
 
 export AbelianNumber, AbelianNumbers, regularize, regularize!, periods, @abeliannumber
-export Momenta, Momentum, Momentum₁, Momentum₂, Momentum₃, ParticleNumber, SpinfulParticle, SpinZ, particlenumbers, spinfulparticles, spinzs
+export Momenta, Momentum, Momentum₁, Momentum₂, Momentum₃, ParticleNumber, SpinfulParticle, Sz
 
 """
     positives(inputs::NTuple{N, Any}) where N -> NTuple{N, Int}
@@ -647,11 +647,11 @@ function _decompose(::Val{:montecarlo}, target::QN, qnses::AbelianNumbers{QN}...
 end
 
 """
-    SpinZ(Sz::Real)
+    Sz(Sz::Real)
 
 The concrete `AbelianNumber` of a quantum system with spin z-component `Sz` conserved.
 """
-@abeliannumber "SpinZ" Float64 (:Sz,) (Inf,)
+@abeliannumber "Sz" Float64 (:Sz,) (Inf,)
 
 """
     ParticleNumber(N::Real)
@@ -666,35 +666,6 @@ The concrete `AbelianNumber` of a quantum system with particle number `N` conser
 The concrete `AbelianNumber` of a quantum system with both particle number `N` and spin z-component `Sz` conserved.
 """
 @abeliannumber "SpinfulParticle" Float64 (:N, :Sz) (Inf, Inf)
-
-"""
-    spinzs(S::Real) -> AbelianNumbers{SpinZ}
-
-Construct the `AbelianNumbers` of the Hilbert space of a single spin `S`.
-"""
-@inline spinzs(S::Real) = AbelianNumbers('C', [SpinZ(sz) for sz = -S:S], collect(0:Int(2*S+1)), :indptr)
-
-"""
-    particlenumbers(N::Real) -> AbelianNumbers{ParticleNumber}
-
-Construct the `AbelianNumbers` of the Hilbert space of a single-particle state with at most `N` identical particles.
-"""
-@inline particlenumbers(N::Real) = AbelianNumbers('C', [ParticleNumber(np) for np = 0:N], collect(0:Int(N)+1), :indptr)
-
-"""
-    spinfulparticles(S::Real) -> AbelianNumbers{SpinfulParticle}
-
-Construct the `AbelianNumbers` of the Hilbert space of a single site with internal degrees of freedom that can be ascribed to a spin `S`.
-"""
-function spinfulparticles(S::Real)
-    contents = [SpinfulParticle(0.0, 0.0)]
-    for n = 1:Int(2*S+1)
-        for szs in Combinations{n}(-S:S)
-            push!(contents, SpinfulParticle(n, sum(szs)))
-        end
-    end
-    return sort(AbelianNumbers('G', contents, collect(0:length(contents)), :indptr))[1]
-end
 
 """
     Momentum <: AbelianNumber{Int}

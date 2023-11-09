@@ -173,15 +173,12 @@ end
 end
 
 @testset "ConcreteAbelianNumbers" begin
-    @test SpinZ|>fieldnames == (:Sz,)
-    @test SpinZ|>periods == (Inf,)
+    @test Sz|>fieldnames == (:Sz,)
+    @test Sz|>periods == (Inf,)
     @test ParticleNumber|>fieldnames == (:N,)
     @test ParticleNumber|>periods == (Inf,)
     @test SpinfulParticle|>fieldnames == (:N, :Sz)
     @test SpinfulParticle|>periods == (Inf, Inf)
-    @test spinzs(0.5) == AbelianNumbers('C', [SpinZ(-0.5), SpinZ(0.5)], [0, 1, 2], :indptr)
-    @test particlenumbers(1.0) == AbelianNumbers('C', [ParticleNumber(0), ParticleNumber(1)], [0, 1, 2], :indptr)
-    @test spinfulparticles(0.5) == AbelianNumbers('C', [SpinfulParticle(0.0, 0.0), SpinfulParticle(1.0, -0.5), SpinfulParticle(1.0, 0.5), SpinfulParticle(2.0, 0.0)], [0, 1, 2, 3, 4], :indptr)
 
     @test Momentum₁{10} |> periods == (10,)
     @test Momentum₂{10, 15} |> periods == (10, 15)

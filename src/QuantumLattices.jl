@@ -40,8 +40,8 @@ export ishermitian, latexname, latexformat, matrix, script, sequence
 # QuantumNumbers
 include("QuantumNumbers.jl")
 using .QuantumNumbers
-export AbelianNumber, AbelianNumbers, Momenta, Momentum, Momentum₁, Momentum₂, Momentum₃, ParticleNumber, SpinfulParticle, SpinZ
-export particlenumbers, periods, spinfulparticles, spinzs, @abeliannumber
+export AbelianNumber, AbelianNumbers, Momenta, Momentum, Momentum₁, Momentum₂, Momentum₃, ParticleNumber, SpinfulParticle, Sz
+export periods, @abeliannumber
 
 # Spatials
 include("Spatials.jl")
