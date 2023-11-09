@@ -809,8 +809,6 @@ Construct a `Coupling` with the input `indexes` as the pattern.
 
 Construct a `Coupling` with the input sites and the fields of a kind of simple iid.
 """
-
-
 @inline Coupling(sites::Union{NTuple{N, Int}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleIID} = Coupling{N}(sites, I, fields...)
 @inline Coupling(value, sites::Union{NTuple{N, Int}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleIID} = Coupling{N}(value, sites, I, fields...)
 @inline Coupling{N}(sites::Union{NTuple{N, Int}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleIID} = Coupling{N}(1, sites, I, fields...)
