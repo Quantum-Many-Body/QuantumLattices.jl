@@ -511,10 +511,27 @@ end
     exprs = [:(get(kwargs, $name, getfield(sid, $name))) for name in QuoteNode.(fieldnames(sid))]
     return :(rawtype(typeof(sid)){totalspin(sid)}($(exprs...)))
 end
-@inline totalspin(sid::SID) = totalspin(typeof(sid))
-@inline totalspin(::Type{<:SID{S}}) where S = S
 @inline statistics(::Type{<:SID}) = :b
 @inline SID(iid::SID, ::CompositeInternal) = iid
+
+"""
+    totalspin(::SID) -> Rational{Int}/Int/Symbol
+    totalspin(::Type{<:SID}) -> Rational{Int}/Int/Symbol
+
+    totalspin(::Index{<:Union{Int, Colon}, <:SID}) -> Rational{Int}/Int/Symbol
+    totalspin(::Type{<:Index{<:Union{Int, Colon}, <:SID}}) -> Rational{Int}/Int/Symbol
+
+    totalspin(::AbstractCompositeIndex{<:Index{<:Union{Int, Colon}, <:SID}}) -> Rational{Int}/Int/Symbol
+    totalspin(::Type{<:AbstractCompositeIndex{<:Index{<:Union{Int, Colon}, <:SID}}}) -> Rational{Int}/Int/Symbol
+
+Get the total spin.
+"""
+@inline totalspin(sid::SID) = totalspin(typeof(sid))
+@inline totalspin(index::Index{<:Union{Int, Colon}, <:SID}) = totalspin(typeof(index))
+@inline totalspin(index::AbstractCompositeIndex{<:Index{<:Union{Int, Colon}, <:SID}}) = totalspin(typeof(index))
+@inline totalspin(::Type{<:SID{S}}) where S = S
+@inline totalspin(::Type{<:Index{<:Union{Int, Colon}, <:SID{S}}}) where S = S
+@inline totalspin(::Type{<:AbstractCompositeIndex{<:Index{<:Union{Int, Colon}, <:SID{S}}}}) where S = S
 
 ### requested by Constraint
 @inline isdefinite(::Type{<:SID{T, Char} where T}) = true
@@ -524,6 +541,8 @@ end
 ### matrix
 """
     matrix(sid::SID{S, Char}, dtype::Type{<:Number}=Complex{Float}) where S -> Matrix{dtype}
+    matrix(index::Index{<:Union{Int, Colon}, <:SID}, dtype::Type{<:Number}=Complex{Float}) -> Matrix{dtype}
+    matrix(index::AbstractCompositeIndex{<:Index{<:Union{Int, Colon}, <:SID}}, dtype::Type{<:Number}=Complex{Float}) -> Matrix{dtype}
 
 Get the matrix representation of a sid.
 """
@@ -542,6 +561,8 @@ function matrix(sid::SID{S, Char}, dtype::Type{<:Number}=Complex{Float}) where S
     end
     return result
 end
+@inline matrix(index::Index{<:Union{Int, Colon}, <:SID}, dtype::Type{<:Number}=Complex{Float}) = matrix(index.iid, dtype)
+@inline matrix(index::AbstractCompositeIndex{<:Index{<:Union{Int, Colon}, <:SID}}, dtype::Type{<:Number}=Complex{Float}) = matrix(getcontent(index, :index), dtype)
 
 ## Spin
 """
@@ -560,12 +581,19 @@ end
 @inline Base.CartesianIndex(sid::SID, ::Spin) = CartesianIndex(sidseqmap[sid.tag])
 @inline SID(index::CartesianIndex{1}, sp::Spin) = SID{totalspin(sp)}(sidtagmap[index[1]])
 @inline Base.summary(io::IO, spin::Spin) = @printf io "%s-element Spin{%s}" length(spin) totalspin(spin)
-@inline totalspin(spin::Spin) = totalspin(typeof(spin))
-@inline totalspin(::Type{<:Spin{S}}) where S = S
 @inline Base.show(io::IO, spin::Spin) = @printf io "%s{%s}()" spin|>typeof|>nameof totalspin(spin)
 @inline Base.match(::Type{<:SID{wildcard}}, ::Type{<:Spin{S}}) where S = true
 @inline Base.match(::Type{<:SID{S}}, ::Type{<:Spin{S}}) where S = true
 @inline Base.match(::Type{<:SID{S₁}}, ::Type{<:Spin{S₂}}) where {S₁, S₂} = false
+
+"""
+    totalspin(::Spin) -> Rational{Int}/Int/Symbol
+    totalspin(::Type{<:Spin}) -> Rational{Int}/Int/Symbol
+
+Get the total spin.
+"""
+@inline totalspin(spin::Spin) = totalspin(typeof(spin))
+@inline totalspin(::Type{<:Spin{S}}) where S = S
 
 ## LaTeX format output
 """

@@ -502,6 +502,7 @@ end
     @test replace(sid, tag='z') == SID{3//2}('z')
     @test hash(sid) == hash((3//2, 'x'))
     @test totalspin(sid) == totalspin(typeof(sid)) == 3//2
+    @test totalspin(Index(:, sid)) == totalspin(CompositeIndex(Index(:, sid), [0], [0])) == 3//2
     @test statistics(sid) == statistics(typeof(sid)) == :b
 
     sid = SID{wildcard}('z')
@@ -525,6 +526,9 @@ end
     @test isapprox(matrix(SID{1//2}('y')), [[0.0, -0.5im] [0.5im, 0.0]])
     @test isapprox(matrix(SID{1//2}('+')), [[0.0, 1.0] [0.0, 0.0]])
     @test isapprox(matrix(SID{1//2}('-')), [[0.0, 0.0] [1.0, 0.0]])
+
+    @test isapprox(matrix(Index(:, SID{1//2}('z'))), [[-0.5, 0.0] [0.0, 0.5]])
+    @test isapprox(matrix(CompositeIndex(Index(:, SID{1//2}('z')), [0], [0])), [[-0.5, 0.0] [0.0, 0.5]])
 
     @test isapprox(matrix(SID{1}('z')), [[-1.0, 0.0, 0.0] [0.0, 0.0, 0.0] [0.0, 0.0, 1.0]])
     @test isapprox(matrix(SID{1}('x')), [[0.0, √2/2, 0.0] [√2/2, 0.0, √2/2] [0.0, √2/2, 0.0]])
