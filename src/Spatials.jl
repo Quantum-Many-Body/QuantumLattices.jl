@@ -8,7 +8,7 @@ using Printf: @printf, @sprintf
 using RecipesBase: RecipesBase, @recipe, @series, @layout
 using StaticArrays: SVector
 using ..QuantumNumbers: Momenta, Momentum, periods
-using ..Toolkit: atol, rtol, efficientoperations, CompositeDict, Float, SimpleNamedVectorSpace, Segment, VectorSpaceCartesian, VectorSpaceDirectSummed, VectorSpaceStyle, getcontent
+using ..Toolkit: atol, rtol, efficientoperations, CompositeDict, Float, SimpleNamedVectorSpace, Segment, VectorSpaceCartesian, VectorSpaceDirectSummed, VectorSpaceStyle, getcontent, VectorSpaceEnumerative
 
 import StaticArrays: SArray
 import ..QuantumLattices: decompose, dimension, dtype, expand, kind
@@ -16,7 +16,7 @@ import ..QuantumNumbers: Momentum₁, Momentum₂, Momentum₃
 import ..Toolkit: contentnames, shape
 
 export azimuth, azimuthd, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, polar, polard, reciprocals, rotate, translate, tile, volume
-export AbstractLattice, Bond, BrillouinZone, Lattice, Neighbors, Point, ReciprocalSpace, ReciprocalZone, ReciprocalPath, bonds, bonds!, icoordinate, isintracell, nneighbor, rcoordinate, save, selectpath, shrink, ticks, xaxis, yaxis, zaxis
+export AbstractLattice, Bond, BrillouinZone, Lattice, Neighbors, Point, ReciprocalSpace, ReciprocalZone, ReciprocalPath, bonds, bonds!, icoordinate, isintracell, nneighbor, rcoordinate, save, selectpath, shrink, ticks, xaxis, yaxis, zaxis, ReciprocalCurve
 export hexagon120°map, hexagon60°map, linemap, rectanglemap, @hexagon_str, @line_str, @rectangle_str
 
 """
@@ -1340,6 +1340,50 @@ macro hexagon_str(str::String)
     @assert length(points)>1 "@hexagon_str error: too few points."
     map = (length(str)==1 || str[2]=="120°") ? hexagon120°map : hexagon60°map
     return (points=ntuple(i->map[points[i]], length(points)), labels=ntuple(i->points[i], length(points)))
+end
+
+
+"""
+    ReciprocalCurve{K, S<:SVector, N, R} <: ReciprocalSpace{K, S}
+
+A curve in the reciprocal space.
+"""
+struct ReciprocalCurve{K, S<:SVector} <: ReciprocalSpace{K, S}
+    contents::Vector{S}
+    function ReciprocalCurve{K}(contents::AbstractVector{<:AbstractVector}) where {K}
+        @assert isa(K, Symbol) "ReciprocalRing error: K must be a Symbol."
+        S = SVector{length(first(contents)), eltype(eltype(contents))}
+        new{K, S}(map(x->SVector{length(x)}(x), contents))
+    end
+end
+@inline ReciprocalCurve(contents::AbstractVector{<:NTuple{N, T}}) where {N, T<:Real} = ReciprocalCurve{:k}(collect.(contents))
+@inline ReciprocalCurve(contents::AbstractVector{<:AbstractVector}) = ReciprocalCurve{:k}(contents)
+@inline function ReciprocalCurve(contents::ReciprocalPath) 
+    points = collect(contents)
+    return ReciprocalCurve{:k}(points)
+end
+@inline contentnames(::Type{<:ReciprocalCurve}) = (:contents, )
+@inline VectorSpaceStyle(::Type{<:ReciprocalCurve}) = VectorSpaceEnumerative()
+
+"""
+    @recipe plot(path::ReciprocalCurve)
+
+Define the recipe for the visualization of a reciprocal curve.
+"""
+@recipe function plot(ring::ReciprocalCurve)
+    title --> string(nameof(typeof(ring)))
+    titlefontsize --> 10
+    legend := false
+    aspect_ratio := :equal
+    coordinates = map(Tuple, ring)
+    @series begin
+        seriestype := :scatter
+        coordinates
+    end
+    @series begin
+        seriestype := :path
+        coordinates
+    end
 end
 
 # plot utilities
