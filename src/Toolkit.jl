@@ -1,6 +1,6 @@
 module Toolkit
 
-using Formatting: FormatSpec, fmt
+using Format: FormatSpec, pyfmt
 using Printf: @printf
 using StaticArrays: SVector
 
@@ -60,10 +60,10 @@ function decimaltostr(number::AbstractFloat, n::Int=5)
     if number == 0.0
         result = "0.0"
     elseif 10^-5 < abs(number) < 10^6
-        result = rstrip(fmt(FormatSpec(".$(n)f"), number), '0')
+        result = rstrip(pyfmt(FormatSpec(".$(n)f"), number), '0')
         (result[end] == '.') && (result = result * '0')
     else
-        result = fmt(FormatSpec(".$(n)e"), number)
+        result = pyfmt(FormatSpec(".$(n)e"), number)
         epos = findfirst(isequal('e'), result)
         temp = rstrip(result[1:epos-1], '0')
         result = (temp[end] == '.') ? (temp * "0" * result[epos:end]) : (temp * result[epos:end])
