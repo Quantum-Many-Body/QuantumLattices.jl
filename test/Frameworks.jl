@@ -32,7 +32,6 @@ end
 @inline shape(f::FFock) = (1:f.nnambu,)
 @inline FID(i::CartesianIndex, vs::FFock) = FID(i.I...)
 @inline CartesianIndex(fid::FID{Int}, vs::FFock) = CartesianIndex(fid.nambu)
-@inline shape(iidspace::IIDSpace{FID{Symbol}, FFock}) = (1:iidspace.internal.nnambu,)
 @inline shape(iidspace::IIDSpace{FID{Int}, FFock}) = (iidspace.iid.nambu:iidspace.iid.nambu,)
 @inline shape(iidspace::IIDSpace{FID{Symbol}, FFock}) = (1:iidspace.internal.nnambu,)
 @inline shape(iidspace::IIDSpace{FID{Int}, FFock}) = (iidspace.iid.nambu:iidspace.iid.nambu,)

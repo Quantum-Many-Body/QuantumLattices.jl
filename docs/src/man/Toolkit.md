@@ -313,7 +313,7 @@ Pair{:content, Real}
 And a new trait function [`parameterpairs`](@ref) can be used to inquire all the name-type pairs of the parameters of a type:
 ```jldoctest traits
 julia> parameterpairs(Hi{<:Real})
-NamedTuple{(:content,), Tuple{Real}}
+@NamedTuple{content::Real}
 ```
 
 The parameters of a type can be altered all at once by giving the name-type pairs to [`fulltype`](@ref):
