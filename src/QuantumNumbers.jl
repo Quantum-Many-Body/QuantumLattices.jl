@@ -10,7 +10,7 @@ using ..Toolkit: HomoNamedVector, VectorSpace, VectorSpaceCartesian, VectorSpace
 import ..QuantumLattices: ⊕, ⊗, decompose, dimension, expand, permute
 import ..Toolkit: shape
 
-export AbelianNumber, AbelianNumbers, regularize, regularize!, periods, @abeliannumber
+export AbelianNumber, AbelianNumbers, findindex, regularize, regularize!, periods, @abeliannumber
 export Momenta, Momentum, Momentum₁, Momentum₂, Momentum₃, ParticleNumber, SpinfulParticle, Sz
 
 """
@@ -265,6 +265,27 @@ function Base.getindex(qns::AbelianNumbers, indices::Vector{Int})
 end
 
 """
+    count(qns::AbelianNumbers, i::Integer) -> Int
+
+Get the number of duplicates of the ith quantum number.
+"""
+@inline Base.count(qns::AbelianNumbers, i::Integer) = qns.indptr[i+1]-qns.indptr[i]
+
+"""
+    range(qns::AbelianNumbers, i::Integer) -> UnitRange{Int}
+
+Get the slice of duplicates of the ith quantum number.
+"""
+@inline Base.range(qns::AbelianNumbers, i::Integer) = qns.indptr[i]+1:qns.indptr[i+1]
+
+"""
+    cumsum(qns::AbelianNumbers, i::Integer) -> Int
+
+Get the accumulative number of the duplicate quantum numbers up to the ith in the contents.
+"""
+@inline Base.cumsum(qns::AbelianNumbers, i::Integer) = qns.indptr[i+1]
+
+"""
     keys(qns::AbelianNumbers) -> Vector{qns|>eltype}
 
 Iterate over the concrete `AbelianNumber`s contained in an `AbelianNumbers`.
@@ -279,8 +300,8 @@ Iterate over the concrete `AbelianNumber`s contained in an `AbelianNumbers`.
 Iterate over the slices/counts of the `AbelianNumbers`.
 """
 @inline Base.values(qns::AbelianNumbers, choice::Symbol) = values(qns, choice|>Val)
-@inline @views Base.values(qns::AbelianNumbers, ::Val{:indptr}) = ((start+1):stop for (start, stop) in zip(qns.indptr[1:end-1], qns.indptr[2:end]))
-@inline @views Base.values(qns::AbelianNumbers, ::Val{:counts}) = (stop-start for (start, stop) in zip(qns.indptr[1:end-1], qns.indptr[2:end]))
+@inline @views Base.values(qns::AbelianNumbers, ::Val{:indptr}) = (range(qns, i) for i=1:length(qns))
+@inline @views Base.values(qns::AbelianNumbers, ::Val{:counts}) = (count(qns, i) for i=1:length(qns))
 
 """
     pairs(qns::AbelianNumbers, choice::Symbol)
@@ -291,6 +312,13 @@ Iterate over the `AbelianNumber=>slice` or `AbelianNumber=>count` pairs.
 """
 @inline Base.pairs(qns::AbelianNumbers, choice::Symbol) = pairs(qns, choice|>Val)
 @inline Base.pairs(qns::AbelianNumbers, choice::Union{Val{:indptr}, Val{:counts}}) = Base.Generator(=>, keys(qns), values(qns, choice))
+
+"""
+    findindex(position::Integer, qns::AbelianNumbers, guess::Integer=1) -> Int
+
+Find the index of a quantum number in the contents of an `AbelianNumbers` beginning at `guess` whose position in the expansion is `position`.
+"""
+@inline findindex(position::Integer, qns::AbelianNumbers, guess::Integer) = findnext(>(position-1), qns.indptr, guess+1)-1
 
 """
     OrderedDict(qns::AbelianNumbers, choice::Symbol) -> OrderedDict

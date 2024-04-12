@@ -623,6 +623,12 @@ end
     @test Γ"z" == SparseMatrixCSC([0 1 0; 1 0 0; 0 0 0])
 end
 
+@testset "Γ′" begin
+    @test Γ′"x" == SparseMatrixCSC([0 1 1; 1 0 0; 1 0 0])
+    @test Γ′"y" == SparseMatrixCSC([0 1 0; 1 0 1; 0 1 0])
+    @test Γ′"z" == SparseMatrixCSC([0 0 1; 0 0 1; 1 1 0])
+end
+
 @testset "DM" begin
     @test DM"x" == SparseMatrixCSC([0 0 0; 0 0 1; 0 -1 0])
     @test DM"y" == SparseMatrixCSC([0 0 -1; 0 0 0; 1 0 0])

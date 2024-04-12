@@ -41,7 +41,7 @@ export ishermitian, latexname, latexformat, matrix, script, sequence
 include("QuantumNumbers.jl")
 using .QuantumNumbers
 export AbelianNumber, AbelianNumbers, Momenta, Momentum, Momentum₁, Momentum₂, Momentum₃, ParticleNumber, SpinfulParticle, Sz
-export periods, @abeliannumber
+export findindex, periods, @abeliannumber
 
 # Spatials
 include("Spatials.jl")
@@ -61,7 +61,7 @@ include("QuantumSystems.jl")
 using .QuantumSystems
 export annihilation, creation, latexofbosons, latexoffermions, latexofparticles, @σ_str, @L_str
 export Coulomb, FID, Fock, FockTerm, Hopping, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, Onsite, PairHopping, Pairing, SpinFlip, isannihilation, iscreation, isnormalordered
-export latexofspins, SID, Spin, SpinTerm, totalspin, @Γ_str, @DM_str, @Heisenberg_str, @Ising_str
+export latexofspins, SID, Spin, SpinTerm, totalspin, @Γ_str, @Γ′_str, @DM_str, @Heisenberg_str, @Ising_str
 export latexofphonons, Elastic, PID, Phonon, Kinetic, Hooke, PhononTerm
 
 # Frameworks

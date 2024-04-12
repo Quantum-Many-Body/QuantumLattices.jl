@@ -20,7 +20,7 @@ export annihilation, creation, latexofbosons, latexoffermions, latexofparticles,
 export Coulomb, FID, Fock, FockTerm, Hopping, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, Onsite, PairHopping, Pairing, SpinFlip, isannihilation, iscreation, isnormalordered
 
 # SU(2) spin systems
-export latexofspins, SID, Spin, SpinTerm, totalspin, @Γ_str, @DM_str, @Heisenberg_str, @Ising_str
+export latexofspins, SID, Spin, SpinTerm, totalspin, @Γ_str, @Γ′_str, @DM_str, @Heisenberg_str, @Ising_str
 
 # Phononic systems
 export latexofphonons, Elastic, PID, Phonon, Kinetic, Hooke, PhononTerm
@@ -711,6 +711,20 @@ macro Γ_str(str::String)
     str=="y" && return SparseMatrixCSC([0 0 1; 0 0 0; 1 0 0])
     str=="z" && return SparseMatrixCSC([0 1 0; 1 0 0; 0 0 0])
     error("@Γ_str error: wrong input string.")
+end
+
+"""
+    Γ′"x" => SparseMatrixCSC([0 1 1; 1 0 0; 1 0 0])
+    Γ′"y" => SparseMatrixCSC([0 1 0; 1 0 1; 0 1 0])
+    Γ′"z" => SparseMatrixCSC([0 0 1; 0 0 1; 1 1 0])
+
+The Γ′ coupling matrix.
+"""
+macro Γ′_str(str::String)
+    str=="x" && return SparseMatrixCSC([0 1 1; 1 0 0; 1 0 0])
+    str=="y" && return SparseMatrixCSC([0 1 0; 1 0 1; 0 1 0])
+    str=="z" && return SparseMatrixCSC([0 0 1; 0 0 1; 1 1 0])
+    error("@Γ′_str error: wrong input string.")
 end
 
 """

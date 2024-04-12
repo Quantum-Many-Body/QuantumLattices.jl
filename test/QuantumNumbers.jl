@@ -43,10 +43,19 @@ end
     @test qns|>collect == [qn₁, qn₂]
     @test qns|>Iterators.reverse|>collect == [qn₂, qn₁]
     @test qns|>keys|>collect == [qn₁, qn₂]
+    @test count(qns, 1)==3 && count(qns, 2)==2
+    @test range(qns, 1)==1:3 && range(qns, 2)==4:5
+    @test [cumsum(qns, i) for i=1:2] == [3, 5]
     @test values(qns, :indptr)|>collect == [1:3, 4:5]
     @test values(qns, :counts)|>collect == [3, 2]
     @test pairs(qns, :indptr)|>collect == [qn₁=>1:3, qn₂=>4:5]
     @test pairs(qns, :counts)|>collect == [qn₁=>3, qn₂=>2]
+
+    res = [1, 1, 1, 2, 2]
+    guesses = [1, 1, 1, 1, 2]
+    for i = 1:5
+        @test findindex(i, qns, guesses[i]) == res[i]
+    end
 end
 
 @testset "OrderedDict" begin
