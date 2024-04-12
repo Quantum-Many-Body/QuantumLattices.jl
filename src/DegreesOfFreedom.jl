@@ -6,7 +6,7 @@ using StaticArrays: SVector
 using ..QuantumLattices: add!, decompose, dimension, dtype
 using ..QuantumOperators: ID, LinearTransformation, Operator, OperatorPack, Operators, OperatorSum, OperatorUnit, valuetolatextext, valuetostr
 using ..Spatials: Bond, Point
-using ..Toolkit: atol, efficientoperations, rtol, CompositeDict, CompositeTuple, Float, NamedContainer, VectorSpace, VectorSpaceCartesian, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceStyle, commontype, concatenate, decimaltostr, fulltype, parametertype, rawtype, reparameter
+using ..Toolkit: atol, efficientoperations, rtol, CompositeDict, Float, VectorSpace, VectorSpaceCartesian, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceStyle, commontype, concatenate, decimaltostr, fulltype, parametertype, rawtype, reparameter
 
 import LaTeXStrings: latexstring
 import ..QuantumLattices: ⊕, ⊗, expand, expand!, id, ishermitian, kind, permute, rank, reset!, update!, value
