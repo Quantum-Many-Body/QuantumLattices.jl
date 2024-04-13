@@ -17,8 +17,6 @@ Main features include:
 * iterable: concrete instances are iterable over their values
 * comparable: two concrete instances can be compared
 
-In particular, `AbelianNumber <: HomoNamedVector{Float}`, all features supported by `HomoNamedVector` are also available for `HomoNamedVector`. See also [HomoNamedVector](@ref).
-
 For convenience, **3** kinds of quantum numbers are predefined in this module, i.e.
 * [`Sz`](@ref): for spin z-component reserved systems
 * [`ParticleNumber`](@ref): for particle number reserved systems
