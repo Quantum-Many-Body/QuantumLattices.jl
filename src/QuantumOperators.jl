@@ -26,6 +26,9 @@ abstract type QuantumOperator end
 @inline dot(m₁::QuantumOperator, m₂::QuantumOperator) = conj(m₁) * m₂
 @inline dot(m::QuantumOperator, c::Number) = conj(m) * c
 @inline dot(c::Number, m::QuantumOperator) = conj(c) * m
+@inline ⊗(m₁::QuantumOperator, m₂::QuantumOperator) = m₁ * m₂
+@inline ⊗(m::QuantumOperator, c::Number) = m * c
+@inline ⊗(c::Number, m::QuantumOperator) = c * m
 
 """
     replace(m::QuantumOperator; kwargs...) -> typeof(m)
@@ -636,17 +639,6 @@ Overloaded `//` between a quantum operator and a number.
 Overloaded `^` between a quantum operator and an integer.
 """
 @inline Base.:^(m::QuantumOperator, n::Integer) = (@assert n>0 "^ error: non-positive integers are not allowed."; prod(ntuple(i->m, Val(n)), init=1))
-
-"""
-    ⊗(m::Union{OperatorUnit, OperatorPack}, ms::OperatorSum) -> OperatorSum
-    ⊗(ms::OperatorSum, m::Union{OperatorUnit, OperatorPack}) -> OperatorSum
-    ⊗(ms₁::OperatorSum, ms₂::OperatorSum) -> OperatorSum
-
-Overloaded `⊗` between quantum operators.
-"""
-@inline ⊗(m::Union{OperatorUnit, OperatorPack}, ms::OperatorSum) = OperatorSum(collect(m ⊗ mm for mm in ms))
-@inline ⊗(ms::OperatorSum, m::Union{OperatorUnit, OperatorPack}) = OperatorSum(collect(mm ⊗ m for mm in ms))
-@inline ⊗(ms₁::OperatorSum, ms₂::OperatorSum) = OperatorSum(collect(m₁ ⊗ m₂ for m₁ in ms₁ for m₂ in ms₂))
 
 # Operators
 """

@@ -159,7 +159,7 @@ end
 
     @test +opts == opts
     @test -opts == Operators(-opt₁, -opt₂)
-    @test opts*2 == 2*opts == Operators(2opt₁, 2opt₂)
+    @test opts*2 == 2*opts == 2⊗opts == opts⊗2 == Operators(2opt₁, 2opt₂)
     @test opts/2 == Operators(opt₁/2, opt₂/2)
     @test opts^2 == opts*opts == opts⊗opts == Operators(opt₁*opt₁, opt₁*opt₂, opt₂*opt₁, opt₂*opt₂)
     @test opts+1 == 1+opts == Operators(Operator(1), opt₁, opt₂)
