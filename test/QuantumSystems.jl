@@ -1,5 +1,5 @@
 using LaTeXStrings: latexstring
-using QuantumLattices: ⊗, ⋅, expand, permute, rank
+using QuantumLattices: ⊗, expand, permute, rank
 using QuantumLattices.DegreesOfFreedom: wildcard, AbstractCompositeIndex, CompositeIID, CompositeIndex, Constraint, Coupling, Diagonal, Hilbert, Index, IIDSpace, MatrixCoupling, iidtype, isdefinite, statistics, @indexes
 using QuantumLattices.QuantumOperators: Operator, Operators, latexname, matrix, script
 using QuantumLattices.QuantumSystems

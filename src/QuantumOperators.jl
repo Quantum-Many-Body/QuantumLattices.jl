@@ -5,7 +5,8 @@ using Printf: @printf, @sprintf
 using ..Toolkit: atol, efficientoperations, rtol, contentorder, decimaltostr, fulltype, getcontent, parameterpairs, parametertype, promoteparameters, rawtype, reparameter
 
 import LaTeXStrings: latexstring
-import ..QuantumLattices: ⊗, ⋅, add!, div!, dtype, id, ishermitian, mul!, permute, rank, sub!, value
+import LinearAlgebra: dot
+import ..QuantumLattices: ⊗, add!, div!, dtype, id, ishermitian, mul!, permute, rank, sub!, value
 import ..Toolkit: contentnames, dissolve, isparameterbound, parameternames
 
 export ID, Operator, OperatorPack, OperatorProd, Operators, OperatorSum, OperatorUnit, LaTeX, QuantumOperator
@@ -21,6 +22,10 @@ The abstract type of any quantum operator.
 abstract type QuantumOperator end
 @inline Base.:(==)(m₁::QuantumOperator, m₂::QuantumOperator) = ==(efficientoperations, m₁, m₂)
 @inline Base.isequal(m₁::QuantumOperator, m₂::QuantumOperator) = isequal(efficientoperations, m₁, m₂)
+@inline Base.zero(m::QuantumOperator) = zero(typeof(m))
+@inline dot(m₁::QuantumOperator, m₂::QuantumOperator) = conj(m₁) * m₂
+@inline dot(m::QuantumOperator, c::Number) = conj(m) * c
+@inline dot(c::Number, m::QuantumOperator) = conj(c) * m
 
 """
     replace(m::QuantumOperator; kwargs...) -> typeof(m)
@@ -428,13 +433,30 @@ Compare two `OperatorSum`s and judge whether they are approximate to each other.
 end
 
 """
-    zero(ms::OperatorSum) -> OperatorSum
-    zero(::Type{MS}) where {MS<:OperatorSum} -> OperatorSum
+    zero(::Type{M}) where {M<:QuantumOperator} -> OperatorSum
 
 Get the zero sum.
 """
-@inline Base.zero(ms::OperatorSum) = zero(typeof(ms))
-@inline Base.zero(::Type{MS}) where {MS<:OperatorSum} = OperatorSum{eltype(MS)}()
+@inline Base.zero(::Type{M}) where {M<:OperatorUnit} = zero(optype(M))
+@inline Base.zero(::Type{M}) where {M<:OperatorPack} = OperatorSum{M}()
+@inline Base.zero(::Type{M}) where {M<:OperatorSum} = OperatorSum{eltype(M)}()
+
+"""
+    conj(m::OperatorUnit) -> OperatorUnit
+    conj(m::OperatorPack) -> OperatorPack
+    conj(m::OperatorSum) -> OperatorSum
+
+Get the conjugation.
+"""
+@inline Base.conj(m::OperatorUnit) = m
+@inline Base.conj(m::OperatorPack) = replace(m, conj(value(m)))
+function Base.conj(ms::OperatorSum)
+    result = zero(ms)
+    for m in ms
+        add!(result, conj(m))
+    end
+    return result
+end
 
 """
     add!(ms::OperatorSum) -> typeof(ms)
@@ -583,8 +605,8 @@ Overloaded `*` between quantum operators or a quantum operator and a number.
 end
 @inline Base.:*(factor::Number, ms::OperatorSum) = ms * factor
 function Base.:*(ms::OperatorSum, factor::Number)
-    abs(factor)==0 && return zero(ms)
     result = OperatorSum{promote_type(eltype(ms), typeof(factor))}()
+    abs(factor)==0 && return result
     for m in ms
         add!(result, m*factor)
     end
@@ -625,17 +647,6 @@ Overloaded `⊗` between quantum operators.
 @inline ⊗(m::Union{OperatorUnit, OperatorPack}, ms::OperatorSum) = OperatorSum(collect(m ⊗ mm for mm in ms))
 @inline ⊗(ms::OperatorSum, m::Union{OperatorUnit, OperatorPack}) = OperatorSum(collect(mm ⊗ m for mm in ms))
 @inline ⊗(ms₁::OperatorSum, ms₂::OperatorSum) = OperatorSum(collect(m₁ ⊗ m₂ for m₁ in ms₁ for m₂ in ms₂))
-
-"""
-    ⋅(m::Union{OperatorUnit, OperatorPack}, ms::OperatorSum) -> OperatorSum
-    ⋅(ms::OperatorSum, m::Union{OperatorUnit, OperatorPack}) -> OperatorSum
-    ⋅(ms₁::OperatorSum, ms₂::OperatorSum) -> OperatorSum
-
-Overloaded `⋅` between quantum operators.
-"""
-@inline ⋅(m::Union{OperatorUnit, OperatorPack}, ms::OperatorSum) = OperatorSum(collect(m ⋅ mm for mm in ms))
-@inline ⋅(ms::OperatorSum, m::Union{OperatorUnit, OperatorPack}) = OperatorSum(collect(mm ⋅ m for mm in ms))
-@inline ⋅(ms₁::OperatorSum, ms₂::OperatorSum) = OperatorSum(collect(m₁ ⋅ m₂ for m₁ in ms₁ for m₂ in ms₂))
 
 # Operators
 """

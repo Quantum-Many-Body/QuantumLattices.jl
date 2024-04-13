@@ -34,7 +34,6 @@ end
 @inline CartesianIndex(fid::FID{Int}, vs::FFock) = CartesianIndex(fid.nambu)
 @inline shape(iidspace::IIDSpace{FID{Int}, FFock}) = (iidspace.iid.nambu:iidspace.iid.nambu,)
 @inline shape(iidspace::IIDSpace{FID{Symbol}, FFock}) = (1:iidspace.internal.nnambu,)
-@inline shape(iidspace::IIDSpace{FID{Int}, FFock}) = (iidspace.iid.nambu:iidspace.iid.nambu,)
 
 @testset "Parameters" begin
     ps1 = Parameters{(:t1, :t2, :U)}(1.0im, 1.0, 2.0)

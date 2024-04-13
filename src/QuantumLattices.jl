@@ -1,10 +1,10 @@
 module QuantumLattices
 
-import LinearAlgebra: ishermitian, rank, mul!, ⋅
+import LinearAlgebra: ishermitian, rank, mul!
 
 # interfaces
 export dimension, id, ishermitian, rank, value
-export ⊕, ⊗, ⋅, add!, div!, mul!, sub!
+export ⊕, ⊗, add!, div!, mul!, sub!
 export decompose, decompose!, expand, expand!, permute
 export dtype, kind, reset!, update, update!
 function id end

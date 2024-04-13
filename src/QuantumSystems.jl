@@ -11,7 +11,7 @@ using ..Spatials: Bond, Point, rcoordinate
 using ..Toolkit: atol, efficientoperations, rtol, Float, VectorSpace, VectorSpaceCartesian, VectorSpaceStyle, decimaltostr, delta, getcontent, rawtype
 
 import ..DegreesOfFreedom: MatrixCoupling, diagonalizablefields, iidtype, isdefinite, sitestructure, statistics
-import ..QuantumLattices: ⊗, ⋅, expand, expand!, permute, rank
+import ..QuantumLattices: ⊗, expand, expand!, permute, rank
 import ..QuantumOperators: latexname, matrix, optype, script
 import ..Toolkit: shape
 
