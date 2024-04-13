@@ -296,6 +296,11 @@ Ising"z" => SparseMatrixCSC([0 0 0; 0 0 0; 0 0 1])
 Γ"y" => SparseMatrixCSC([0 0 1; 0 0 0; 1 0 0])
 Γ"z" => SparseMatrixCSC([0 1 0; 1 0 0; 0 0 0])
 
+# Γ′ terms
+Γ′"x" => SparseMatrixCSC([0 1 1; 1 0 0; 1 0 0])
+Γ′"y" => SparseMatrixCSC([0 1 0; 1 0 1; 0 1 0])
+Γ′"z" => SparseMatrixCSC([0 0 1; 0 0 1; 1 1 0])
+
 # Dzyaloshinskii–Moriya terms
 DM"x" => SparseMatrixCSC([0 0 0; 0 0 1; 0 -1 0])
 DM"y" => SparseMatrixCSC([0 0 -1; 0 0 0; 1 0 0])
