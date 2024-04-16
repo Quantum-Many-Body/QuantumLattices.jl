@@ -15,7 +15,7 @@ import ..QuantumLattices: decompose, dimension, dtype, expand, kind
 import ..QuantumNumbers: Momentum₁, Momentum₂, Momentum₃
 import ..Toolkit: contentnames, shape
 
-export azimuth, azimuthd, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, polar, polard, reciprocals, rotate, translate, tile, volume
+export azimuth, azimuthd, direction, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, polar, polard, reciprocals, rotate, translate, tile, volume
 export AbstractLattice, Bond, BrillouinZone, Lattice, Neighbors, Point, ReciprocalSpace, ReciprocalZone, ReciprocalPath, bonds, bonds!, icoordinate, isintracell, nneighbor, rcoordinate, save, selectpath, shrink, ticks, xaxis, yaxis, zaxis
 export hexagon120°map, hexagon60°map, linemap, rectanglemap, @hexagon_str, @line_str, @rectangle_str
 
@@ -78,6 +78,43 @@ Get the polar angle in degrees of a vector.
 function polard(v::AbstractVector{<:Number})
     @assert length(v)==3 "polard error: wrong dimensioned input vector."
     return acosd(v[3]/norm(v))
+end
+
+"""
+    direction(v::Char, args...) -> SVector{3}
+    direction(v::Number, unit::Symbol) -> SVector{2}
+    direction(v::Tuple{Number, Number}, unit::Symbol) -> SVector{3}
+    direction(v::AbstractVector{<:Number}, args...) -> AbstractVector
+
+Get the unit vector that specifies the direction of a vector.
+"""
+function direction(v::Char, args...)
+    @assert lowercase(v)∈('x', 'y', 'z') "direction error: not one of 'x', 'y' and 'z'."
+    return lowercase(v)=='x' ? SVector(1, 0, 0) : lowercase(v)=='y' ? SVector(0, 1, 0) : SVector(0, 0, 1)
+end
+function direction(v::Number, unit::Symbol)
+    @assert unit∈(:degree, :radian) "direction error: not supported unit of angles."
+    if unit==:degree
+        return SVector(cosd(v), sind(v))
+    else
+        return SVector(cos(v), sin(v))
+    end
+end
+function direction(v::Tuple{Number, Number}, unit::Symbol)
+    @assert unit∈(:degree, :radian) "direction error: not supported unit of angles."
+    θ, ϕ = v[1], v[2]
+    if unit==:degree
+        sinθ = sind(θ)
+        return SVector(sinθ*cosd(ϕ), sinθ*sind(ϕ), cosd(θ))
+    else
+        sinθ = sin(θ)
+        return SVector(sinθ*cos(ϕ), sinθ*sin(ϕ), cos(θ))
+    end
+end
+function direction(v::AbstractVector{<:Number}, args...)
+    @assert length(v)∈(2, 3) "direction error: input vector length should be 2 or 3."
+    n = norm(v)
+    return map(i->i/n, v)
 end
 
 """

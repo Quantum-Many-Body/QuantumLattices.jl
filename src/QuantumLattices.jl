@@ -46,7 +46,7 @@ export findindex, periods, @abeliannumber
 # Spatials
 include("Spatials.jl")
 using .Spatials
-export azimuth, azimuthd, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, polar, polard, reciprocals, rotate, translate, tile, volume
+export azimuth, azimuthd, direction, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, polar, polard, reciprocals, rotate, translate, tile, volume
 export AbstractLattice, Bond, BrillouinZone, Lattice, Neighbors, Point, ReciprocalSpace, ReciprocalZone, ReciprocalPath, bonds, bonds!, icoordinate, isintracell, rcoordinate, save, selectpath, shrink
 export @hexagon_str, @line_str, @rectangle_str
 
@@ -61,7 +61,8 @@ include("QuantumSystems.jl")
 using .QuantumSystems
 export annihilation, creation, latexofbosons, latexoffermions, latexofparticles, @σ_str, @L_str
 export Coulomb, FID, Fock, FockTerm, Hopping, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, Onsite, PairHopping, Pairing, SpinFlip, isannihilation, iscreation, isnormalordered
-export latexofspins, SID, Spin, SpinTerm, totalspin, @Γ_str, @Γ′_str, @DM_str, @Heisenberg_str, @Ising_str
+export latexofspins, SID, Spin, totalspin, @Γ_str, @Γ′_str, @DM_str, @Heisenberg_str, @Ising_str
+export DM, Heisenberg, Ising, Kitaev, SingleIonAnisotropy, SpinTerm, Zeeman, Γ, Γ′
 export latexofphonons, Elastic, PID, Phonon, Kinetic, Hooke, PhononTerm
 
 # Frameworks
