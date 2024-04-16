@@ -761,17 +761,17 @@ end
 end
 
 """
-    Zeeman(id::Symbol, value, dir::Char, g::Number=1; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
-    Zeeman(id::Symbol, value, dir::Union{AbstractVector{<:Number}, Tuple{Number, Number}}, g::Union{Number, AbstractMatrix{<:Number}}=1; unit::Symbol=:degree, amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    Zeeman(id::Symbol, value, direction::Char, g::Number=1; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    Zeeman(id::Symbol, value, direction::Union{AbstractVector{<:Number}, Tuple{Number, Number}}, g::Union{Number, AbstractMatrix{<:Number}}=1; unit::Symbol=:degree, amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
 
 Zeeman term.
 
 Type alias for `Term{:Zeeman, id, V, Int, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
 """
 const Zeeman{id, V, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Zeeman, id, V, Int, C, A, M}
-@inline function Zeeman(id::Symbol, value, dir::Char, g::Number=1; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
-    @assert lowercase(dir)∈('x', 'y', 'z') "Zeeman error: not supported direction."
-    coupling = Coupling(g, :, SID, (lowercase(dir),))
+@inline function Zeeman(id::Symbol, value, direction::Char, g::Number=1; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    @assert lowercase(direction)∈('x', 'y', 'z') "Zeeman error: not supported direction."
+    coupling = Coupling(g, :, SID, (lowercase(direction),))
     return Term{:Zeeman}(id, value, 0, coupling, true; amplitude=amplitude, modulate=modulate)
 end
 @inline function Zeeman(id::Symbol, value, dir::Union{AbstractVector{<:Number}, Tuple{Number, Number}}, g::Union{Number, AbstractMatrix{<:Number}}=1; unit::Symbol=:degree, amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
@@ -782,37 +782,37 @@ end
 @inline Lande(g::AbstractMatrix{<:Number}) = (@assert(size(g)==(3, 3), "Lande error: the g-tensor must be 3×3."); g)
 
 """
-    SingleIonAnisotropy(id::Symbol, value, dir::Char; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
-    SingleIonAnisotropy(id::Symbol, value, m::AbstractMatrix{<:Number}; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    SingleIonAnisotropy(id::Symbol, value, direction::Char; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    SingleIonAnisotropy(id::Symbol, value, matrix::AbstractMatrix{<:Number}; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
 
 Single ion anisotropy term.
 
 Type alias for `Term{:SingleIonAnisotropy, id, V, Int, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
 """
 const SingleIonAnisotropy{id, V, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:SingleIonAnisotropy, id, V, Int, C, A, M}
-@inline function SingleIonAnisotropy(id::Symbol, value, dir::Char; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
-    @assert lowercase(dir)∈('x', 'y', 'z') "SingleIonAnisotropy error: not supported direction."
-    coupling = Coupling(:, SID, (lowercase(dir), lowercase(dir)))
+@inline function SingleIonAnisotropy(id::Symbol, value, direction::Char; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    @assert lowercase(direction)∈('x', 'y', 'z') "SingleIonAnisotropy error: not supported direction."
+    coupling = Coupling(:, SID, (lowercase(direction), lowercase(direction)))
     return Term{:SingleIonAnisotropy}(id, value, 0, coupling, true; amplitude=amplitude, modulate=modulate)
 end
-@inline function SingleIonAnisotropy(id::Symbol, value, m::AbstractMatrix{<:Number}; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
-    @assert ishermitian(m) "SingleIonAnisotropy error: the anisotropy matrix must be Hermitian."
-    @assert size(m)==(3, 3) "SingleIonAnisotropy error: the anisotropy matrix must be 3×3."
-    couplings = dot(SVector(Coupling(:, SID, ('x',)), Coupling(:, SID, ('y',)), Coupling(:, SID, ('z',))), m, SVector(Coupling(:, SID, ('x',)), Coupling(:, SID, ('y',)), Coupling(:, SID, ('z',))))
+@inline function SingleIonAnisotropy(id::Symbol, value, matrix::AbstractMatrix{<:Number}; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    @assert ishermitian(matrix) "SingleIonAnisotropy error: the anisotropy matrix must be Hermitian."
+    @assert size(matrix)==(3, 3) "SingleIonAnisotropy error: the anisotropy matrix must be 3×3."
+    couplings = dot(SVector(Coupling(:, SID, ('x',)), Coupling(:, SID, ('y',)), Coupling(:, SID, ('z',))), matrix, SVector(Coupling(:, SID, ('x',)), Coupling(:, SID, ('y',)), Coupling(:, SID, ('z',))))
     return Term{:SingleIonAnisotropy}(id, value, 0, couplings, true; amplitude=amplitude, modulate=modulate)
 end
 
 """
-    Ising(id::Symbol, value, bondkind, dir::Char; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    Ising(id::Symbol, value, bondkind, direction::Char; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
 
 Ising term.
 
 Type alias for `Term{:Ising, id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
 """
 const Ising{id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Ising, id, V, B, C, A, M}
-@inline function Ising(id::Symbol, value, bondkind, dir::Char; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
-    @assert lowercase(dir)∈('x', 'y', 'z') "Ising error: not supported direction."
-    coupling = Coupling(:, SID, (lowercase(dir), lowercase(dir)))
+@inline function Ising(id::Symbol, value, bondkind, direction::Char; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    @assert lowercase(direction)∈('x', 'y', 'z') "Ising error: not supported direction."
+    coupling = Coupling(:, SID, (lowercase(direction), lowercase(direction)))
     return Term{:Ising}(id, value, bondkind, coupling, true; amplitude=amplitude, modulate=modulate)
 end
 
