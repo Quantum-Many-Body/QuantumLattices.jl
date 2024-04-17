@@ -127,11 +127,11 @@ end
 @inline Base.eltype(E::Type{<:Entry}) = eltype(valtype(E))
 
 """
-    Entry(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert; half::Bool=false, boundary::Boundary=plain)
+    Entry(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain; half::Bool=false)
 
 Construct an entry of quantum operators based on the input terms, bonds, Hilbert space and (twisted) boundary condition.
 """
-function Entry(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert; half::Bool=false, boundary::Boundary=plain)
+function Entry(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain; half::Bool=false)
     constterms, alterterms, choosedterms = termclassifier(terms)
     if boundary === plain
         innerbonds = bonds
@@ -303,11 +303,11 @@ end
 end
 
 """
-    reset!(entry::Entry{<:Operators}, terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert; half::Bool=false, boundary::Boundary=entry.boundary) -> Entry
+    reset!(entry::Entry{<:Operators}, terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=entry.boundary; half::Bool=false) -> Entry
 
 Reset an entry of quantum operators by the new terms, bonds, Hilbert space and (twisted) boundary condition.
 """
-function reset!(entry::Entry{<:Operators}, terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert; half::Bool=false, boundary::Boundary=entry.boundary)
+function reset!(entry::Entry{<:Operators}, terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=entry.boundary; half::Bool=false)
     empty!(entry)
     constterms, alterterms, _ = termclassifier(terms)
     if boundary === plain
@@ -380,12 +380,12 @@ end
 @inline contentnames(::Type{<:OperatorGenerator}) = (:operators, :terms, :bonds, :hilbert, :half, :table)
 
 """
-    OperatorGenerator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert; half::Bool=false, boundary::Boundary=plain, table::Union{Table,Nothing}=nothing)
+    OperatorGenerator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain, table::Union{Table,Nothing}=nothing; half::Bool=false)
 
 Construct a generator of operators.
 """
-@inline function OperatorGenerator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert; half::Bool=false, boundary::Boundary=plain, table::Union{Table,Nothing}=nothing)
-    return OperatorGenerator(Entry(terms, bonds, hilbert; half=half, boundary=boundary), terms, bonds, hilbert, half, table)
+@inline function OperatorGenerator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain, table::Union{Table,Nothing}=nothing; half::Bool=false)
+    return OperatorGenerator(Entry(terms, bonds, hilbert, boundary; half=half), terms, bonds, hilbert, half, table)
 end
 
 """
@@ -426,7 +426,7 @@ function reset!(gen::OperatorGenerator, lattice::AbstractLattice, hilbert::Hilbe
     bonds!(empty!(gen.bonds), lattice, neighbors)
     merge!(empty!(gen.hilbert), hilbert)
     isnothing(gen.table) || reset!(gen.table, gen.hilbert)
-    reset!(gen.operators, gen.terms, gen.bonds, gen.hilbert; half=gen.half, boundary=replace(gen.operators.boundary; vectors=lattice.vectors))
+    reset!(gen.operators, gen.terms, gen.bonds, gen.hilbert, replace(gen.operators.boundary; vectors=lattice.vectors); half=gen.half)
     return gen
 end
 
@@ -491,11 +491,11 @@ end
 @inline contentnames(::Type{<:Image}) = (:operators, :transformation, :table, :sourceid)
 
 """
-    (transformation::Transformation)(gen::RepresentationGenerator; table::Union{Table, Nothing}=nothing, kwargs...) -> Image
+    (transformation::Transformation)(gen::RepresentationGenerator, table::Union{Table, Nothing}=nothing; kwargs...) -> Image
 
 Get the image of a transformation applied to a representation of a quantum lattice system.
 """
-@inline function (transformation::Transformation)(gen::RepresentationGenerator; table::Union{Table, Nothing}=nothing, kwargs...)
+@inline function (transformation::Transformation)(gen::RepresentationGenerator, table::Union{Table, Nothing}=nothing; kwargs...)
     return Image(transformation(Entry(gen); kwargs...), transformation, table, objectid(gen))
 end
 
@@ -534,15 +534,18 @@ Update the parameters of the image based on its source representation.
 end
 
 """
-    reset!(gen::Image, transformation::Transformation, source::RepresentationGenerator; table::Union{Table, Nothing}=nothing, kwargs...) -> Image
+    reset!(gen::Image, transformation::Transformation, source::CompositeGenerator, table::Union{Table, Nothing}=getcontent(source, :table); kwargs...) -> Image
+    reset!(gen::Image, transformation::Transformation, source::RepresentationGenerator, table::Union{Table, Nothing}=gen.table; kwargs...) -> Image
 
 Reset the image of a transformation applied to a representation.
 """
-@inline function reset!(gen::Image, transformation::Transformation, source::RepresentationGenerator; table::Union{Table, Nothing}=nothing, kwargs...)
+@inline function reset!(gen::Image, transformation::Transformation, source::CompositeGenerator, table::Union{Table, Nothing}=getcontent(source, :table); kwargs...)
+    return invoke(reset!, Tuple{Image, Transformation, RepresentationGenerator, Union{Table, Nothing}}, gen, transformation, source, table; kwargs...)
+end
+@inline function reset!(gen::Image, transformation::Transformation, source::RepresentationGenerator, table::Union{Table, Nothing}=gen.table; kwargs...)
     @assert gen.sourceid==objectid(source) "reset! error: mismatched image, transformation and source representation."
     reset!(gen.operators, transformation, Entry(source); kwargs...)
     gen.transformation = transformation
-    isnothing(table) && (table = isa(source, CompositeGenerator) ? getcontent(source, :table) : gen.table)
     isnothing(table) || gen.table===table || merge!(empty!(gen.table), table)
     return gen
 end

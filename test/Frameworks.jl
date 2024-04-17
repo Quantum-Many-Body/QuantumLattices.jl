@@ -81,7 +81,7 @@ end
 
     optp = Operator{Complex{Float}, ID{CompositeIndex{Index{Int, FID{Int}}, SVector{1, Float}}, 2}}
     entry = Entry(tops₁, (μ=μops,), (t=tops₂, μ=Operators{optp}()), (t=2.0, μ=1.0), boundary)
-    @test entry == Entry((t, μ), bs, hilbert; half=true, boundary=boundary)
+    @test entry == Entry((t, μ), bs, hilbert, boundary; half=true)
     @test isequal(entry, i(entry))
     @test Parameters(entry) == (t=2.0, μ=1.0, θ=0.1)
     @test entry+entry == entry*2 == 2*entry == Entry(tops₁*2, (μ=μops,), (t=tops₂, μ=Operators{optp}()), (t=4.0, μ=2.0), boundary)
@@ -114,10 +114,10 @@ end
     @test dest == another
     @test expand(dest) ≈ tops₁+another.boundary(tops₂, origin=[0.1])*2.0+μops*1.5
 
-    @test reset!(deepcopy(another), (t, μ), bs, hilbert; half=true, boundary=boundary) == entry
+    @test reset!(deepcopy(another), (t, μ), bs, hilbert, boundary; half=true) == entry
     @test reset!(deepcopy(another), i, entry) == entry
 
-    cgen = OperatorGenerator((t, μ), bs, hilbert; half=true, boundary=boundary, table=table)
+    cgen = OperatorGenerator((t, μ), bs, hilbert, boundary, table; half=true)
     @test cgen == deepcopy(cgen) && isequal(cgen, deepcopy(cgen))
     @test cgen|>eltype == cgen|>typeof|>eltype == optp
     @test cgen|>valtype == cgen|>typeof|>valtype == Operators{optp, idtype(optp)}
@@ -130,18 +130,18 @@ end
     @test expand(cgen, :μ, 1)+expand(cgen, :μ, 2) ≈ μops
     @test expand(cgen, :t, 3) ≈ tops₁
     @test expand(cgen, :t, 4) ≈ tops₂*2.0
-    @test empty!(deepcopy(cgen)) == OperatorGenerator((t, μ), empty(bs), empty(hilbert); half=true, boundary=boundary, table=empty(table)) == empty(cgen)
+    @test empty!(deepcopy(cgen)) == OperatorGenerator((t, μ), empty(bs), empty(hilbert), boundary, empty(table); half=true) == empty(cgen)
     @test reset!(empty(cgen), lattice, hilbert) == cgen
     @test update!(cgen, μ=1.5)|>expand ≈ tops₁+tops₂*2.0+μops*1.5
 
-    sgen = i(cgen; table=table)
+    sgen = i(cgen, table)
     @test sgen == Image(cgen.operators, i, table, objectid(cgen))
     @test Parameters(sgen) == (t=2.0, μ=1.5, θ=0.1)
     @test expand!(Operators{optp}(), sgen) == expand(sgen) ≈ tops₁+tops₂*2.0+μops*1.5
     @test empty!(deepcopy(sgen)) == Image(empty(cgen.operators), i, empty(table), objectid(cgen)) == empty(sgen)
     @test update!(sgen, μ=3.5)|>expand ≈ tops₁+tops₂*2.0+μops*3.5
     @test update!(sgen, cgen)|>expand ≈ tops₁+tops₂*2.0+μops*1.5
-    @test reset!(empty(sgen), i, cgen; table=table) == sgen
+    @test reset!(empty(sgen), i, cgen, table) == sgen
 
     t = Term{:Hp}(:t, 2.0, 1, Coupling(1.0, (1, 2), FID, (2, 1)), false; modulate=false)
     μ = Term{:Mu}(:μ, 1.0, 0, Coupling(1.0, (1, 1), FID, (2, 1)), true)
@@ -149,7 +149,7 @@ end
     μops = expand(one(μ), bs, hilbert; half=true)
     optp = Operator{Complex{Float}, ID{CompositeIndex{Index{Int, FID{Int}}, SVector{1, Float}}, 2}}
     entry = Entry(tops, (μ=μops,), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain)
-    @test entry == Entry((t, μ), bs, hilbert; half=true, boundary=plain)
+    @test entry == Entry((t, μ), bs, hilbert, plain; half=true)
     @test isequal(entry, i(entry))
     @test Parameters(entry) == (t=2.0, μ=1.0)
     @test entry+entry == entry*2 == 2*entry == Entry(tops*2, (μ=μops,), (t=Operators{optp}(), μ=Operators{optp}()), (t=4.0, μ=2.0), plain)
@@ -161,10 +161,10 @@ end
 
     another = Entry(empty(tops), (μ=empty(μops),), (t=empty(tops), μ=Operators{optp}()), (t=2.0, μ=1.0), plain)
     @test empty(entry) == empty!(deepcopy(entry)) == another
-    @test reset!(deepcopy(another), (t, μ), bs, hilbert; half=true, boundary=plain) == entry
+    @test reset!(deepcopy(another), (t, μ), bs, hilbert, plain; half=true) == entry
     @test reset!(deepcopy(another), i, entry) == entry
 
-    cgen = OperatorGenerator((t, μ), bs, hilbert; half=true, boundary=plain, table=table)
+    cgen = OperatorGenerator((t, μ), bs, hilbert, plain, table; half=true)
     @test expand(cgen) ≈ tops + μops
     @test expand(cgen, :t) ≈ tops
     @test expand(cgen, :μ) ≈ μops
@@ -174,14 +174,14 @@ end
     @test reset!(empty(cgen), lattice, hilbert) == cgen
     @test update!(cgen, μ=1.5)|>expand ≈ tops+μops*1.5
 
-    sgen = i(cgen; table=table)
+    sgen = i(cgen, table)
     @test sgen == Image(cgen.operators, i, table, objectid(cgen))
     @test Parameters(sgen) == (t=2.0, μ=1.5)
     @test expand!(Operators{optp}(), sgen) == expand(sgen) ≈ tops+μops*1.5
     @test empty!(deepcopy(sgen)) == Image(empty(cgen.operators), i, empty(table), objectid(cgen)) == empty(sgen)
     @test update!(sgen, μ=3.5)|>expand ≈ tops+μops*3.5
     @test update!(sgen, cgen)|>expand ≈ tops+μops*1.5
-    @test reset!(empty(sgen), i, cgen; table=table) == sgen
+    @test reset!(empty(sgen), i, cgen, table) == sgen
 end
 
 mutable struct VCA <: Frontend
