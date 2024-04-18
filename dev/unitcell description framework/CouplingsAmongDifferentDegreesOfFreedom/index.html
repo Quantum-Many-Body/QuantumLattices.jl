@@ -284,22 +284,44 @@ Coulomb(
 )</code></pre><p>Default rules for such terms when the <code>site</code> attribute of <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Index"><code>Index</code></a> and the <code>orbital</code>, <code>spin</code> and <code>nambu</code> attributes of <a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.FID"><code>FID</code></a> initialized by the <code>:</code> operator are listed as follows:</p><table><tr><th style="text-align: center"></th><th style="text-align: center">site</th><th style="text-align: center">orbital</th><th style="text-align: center">spin</th><th style="text-align: center">nambu</th></tr><tr><td style="text-align: center"><a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.Onsite"><code>Onsite</code></a></td><td style="text-align: center">(1, 1)</td><td style="text-align: center">diagonal</td><td style="text-align: center">diagonal</td><td style="text-align: center">(2, 1)</td></tr><tr><td style="text-align: center"><a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.Hopping"><code>Hopping</code></a></td><td style="text-align: center">(1, 2)</td><td style="text-align: center">diagonal</td><td style="text-align: center">diagonal</td><td style="text-align: center">(2, 1)</td></tr><tr><td style="text-align: center"><a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.Pairing"><code>Pairing</code></a></td><td style="text-align: center">(1, 1)/(1, 2)</td><td style="text-align: center">diagonal</td><td style="text-align: center">diagonal</td><td style="text-align: center">(1, 1)</td></tr><tr><td style="text-align: center"><a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.Hubbard"><code>Hubbard</code></a></td><td style="text-align: center">(1, 1, 1, 1)</td><td style="text-align: center">diagonal</td><td style="text-align: center"></td><td style="text-align: center"></td></tr><tr><td style="text-align: center"><a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.InterOrbitalInterSpin"><code>InterOrbitalInterSpin</code></a></td><td style="text-align: center">(1, 1, 1, 1)</td><td style="text-align: center"></td><td style="text-align: center"></td><td style="text-align: center"></td></tr><tr><td style="text-align: center"><a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.InterOrbitalIntraSpin"><code>InterOrbitalIntraSpin</code></a></td><td style="text-align: center">(1, 1, 1, 1)</td><td style="text-align: center"></td><td style="text-align: center"></td><td style="text-align: center"></td></tr><tr><td style="text-align: center"><a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.SpinFlip"><code>SpinFlip</code></a></td><td style="text-align: center">(1, 1, 1, 1)</td><td style="text-align: center"></td><td style="text-align: center"></td><td style="text-align: center"></td></tr><tr><td style="text-align: center"><a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.PairHopping"><code>PairHopping</code></a></td><td style="text-align: center">(1, 1, 1, 1)</td><td style="text-align: center"></td><td style="text-align: center"></td><td style="text-align: center"></td></tr><tr><td style="text-align: center"><a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.Coulomb"><code>Coulomb</code></a></td><td style="text-align: center">(1, 1, 2, 2)</td><td style="text-align: center">diagonal</td><td style="text-align: center">diagonal</td><td style="text-align: center">(2, 1, 2, 1)</td></tr></table><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><ul><li>For the <a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.Pairing"><code>Pairing</code></a> term, the <code>site</code> attributes will be <code>(1, 1)</code> when <code>bondkind=0</code>, otherwise <code>(1, 2)</code>.</li><li>Blank cells in the above table mean that the corresponding attributes have been explicitly specified by the specialized construction functions. See the comments of the above code block in this subsection.</li></ul></div></div><h3 id="Terms-for-SU(2)-spin-systems"><a class="docs-heading-anchor" href="#Terms-for-SU(2)-spin-systems">Terms for SU(2) spin systems</a><a id="Terms-for-SU(2)-spin-systems-1"></a><a class="docs-heading-anchor-permalink" href="#Terms-for-SU(2)-spin-systems" title="Permalink"></a></h3><p>Standard concrete spin terms are summarized as follows:</p><pre><code class="language-julia hljs"># termkind = :Zeeman
 # bondkind = 0
 # ishermitian = true
-Zeeman(id::Symbol, value, direction::Char, g::Number=1; amplitude::Union{Function, Nothing}=nothing)
-Zeeman(id::Symbol, value, direction::Union{AbstractVector{&lt;:Number}, Tuple{Number, Number}}, g::Union{Number, AbstractMatrix{&lt;:Number}}=1; unit::Symbol=:degree, amplitude::Union{Function, Nothing}=nothing)
+Zeeman(
+    id::Symbol, value, direction::Char, g::Number=1;
+    amplitude::Union{Function, Nothing}=nothing
+)
+Zeeman(
+    id::Symbol,
+    value,
+    direction::Union{AbstractVector{&lt;:Number}, Tuple{Number, Number}},
+    g::Union{Number, AbstractMatrix{&lt;:Number}}=1;
+    unit::Symbol=:degree,
+    amplitude::Union{Function, Nothing}=nothing
+)
 
 # termkind = :SingleIonAnisotropy
 # bondkind = 0
 # ishermitian = true
-SingleIonAnisotropy(id::Symbol, value, direction::Char; amplitude::Union{Function, Nothing}=nothing)
-SingleIonAnisotropy(id::Symbol, value, matrix::AbstractMatrix{&lt;:Number}; amplitude::Union{Function, Nothing}=nothing)
+SingleIonAnisotropy(
+    id::Symbol, value, direction::Char;
+    amplitude::Union{Function, Nothing}=nothing
+)
+SingleIonAnisotropy(
+    id::Symbol, value, matrix::AbstractMatrix{&lt;:Number};
+    amplitude::Union{Function, Nothing}=nothing
+)
 
 # termkind = :Ising
 # ishermitian = true
-Ising(id::Symbol, value, bondkind, direction::Char; amplitude::Union{Function, Nothing}=nothing)
+Ising(
+    id::Symbol, value, bondkind, direction::Char;
+    amplitude::Union{Function, Nothing}=nothing
+)
 
 # termkind = :Heisenberg
 # ishermitian = true
-Heisenberg(id::Symbol, value, bondkind; form::Symbol=Symbol(&quot;+-z&quot;), amplitude::Union{Function, Nothing}=nothing)
+Heisenberg(
+    id::Symbol, value, bondkind;
+    form::Symbol=Symbol(&quot;+-z&quot;), amplitude::Union{Function, Nothing}=nothing
+)
 
 # termkind = :Kitaev
 # ishermitian = true
@@ -397,4 +419,4 @@ Operators with 8 Operator
   Operator(1.0, CompositeIndex(Index(2, FID{:f}(1, 1//2, 2)), [0.5], [0.0]), CompositeIndex(Index(1, FID{:f}(1, 1//2, 1)), [0.0], [0.0]))
   Operator(1.0, CompositeIndex(Index(2, FID{:f}(1, -1//2, 2)), [-0.5], [-1.0]), CompositeIndex(Index(1, FID{:f}(1, -1//2, 1)), [0.0], [0.0]))
   Operator(1.0, CompositeIndex(Index(1, FID{:f}(1, -1//2, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, -1//2, 1)), [-0.5], [-1.0]))
-  Operator(1.0, CompositeIndex(Index(2, FID{:f}(1, -1//2, 2)), [0.5], [0.0]), CompositeIndex(Index(1, FID{:f}(1, -1//2, 1)), [0.0], [0.0]))</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../InternalDegreesOfFreedom/">« Internal degrees of freedom</a><a class="docs-footer-nextpage" href="../GeneratorOfOperators/">Generator of operators »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.4.0 on <span class="colophon-date" title="Thursday 18 April 2024 14:57">Thursday 18 April 2024</span>. Using Julia version 1.10.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+  Operator(1.0, CompositeIndex(Index(2, FID{:f}(1, -1//2, 2)), [0.5], [0.0]), CompositeIndex(Index(1, FID{:f}(1, -1//2, 1)), [0.0], [0.0]))</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../InternalDegreesOfFreedom/">« Internal degrees of freedom</a><a class="docs-footer-nextpage" href="../GeneratorOfOperators/">Generator of operators »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.4.0 on <span class="colophon-date" title="Thursday 18 April 2024 15:07">Thursday 18 April 2024</span>. Using Julia version 1.10.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
