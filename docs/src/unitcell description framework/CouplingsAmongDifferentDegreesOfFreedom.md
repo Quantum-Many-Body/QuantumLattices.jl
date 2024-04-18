@@ -519,22 +519,44 @@ Standard concrete spin terms are summarized as follows:
 # termkind = :Zeeman
 # bondkind = 0
 # ishermitian = true
-Zeeman(id::Symbol, value, direction::Char, g::Number=1; amplitude::Union{Function, Nothing}=nothing)
-Zeeman(id::Symbol, value, direction::Union{AbstractVector{<:Number}, Tuple{Number, Number}}, g::Union{Number, AbstractMatrix{<:Number}}=1; unit::Symbol=:degree, amplitude::Union{Function, Nothing}=nothing)
+Zeeman(
+    id::Symbol, value, direction::Char, g::Number=1;
+    amplitude::Union{Function, Nothing}=nothing
+)
+Zeeman(
+    id::Symbol,
+    value,
+    direction::Union{AbstractVector{<:Number}, Tuple{Number, Number}},
+    g::Union{Number, AbstractMatrix{<:Number}}=1;
+    unit::Symbol=:degree,
+    amplitude::Union{Function, Nothing}=nothing
+)
 
 # termkind = :SingleIonAnisotropy
 # bondkind = 0
 # ishermitian = true
-SingleIonAnisotropy(id::Symbol, value, direction::Char; amplitude::Union{Function, Nothing}=nothing)
-SingleIonAnisotropy(id::Symbol, value, matrix::AbstractMatrix{<:Number}; amplitude::Union{Function, Nothing}=nothing)
+SingleIonAnisotropy(
+    id::Symbol, value, direction::Char;
+    amplitude::Union{Function, Nothing}=nothing
+)
+SingleIonAnisotropy(
+    id::Symbol, value, matrix::AbstractMatrix{<:Number};
+    amplitude::Union{Function, Nothing}=nothing
+)
 
 # termkind = :Ising
 # ishermitian = true
-Ising(id::Symbol, value, bondkind, direction::Char; amplitude::Union{Function, Nothing}=nothing)
+Ising(
+    id::Symbol, value, bondkind, direction::Char;
+    amplitude::Union{Function, Nothing}=nothing
+)
 
 # termkind = :Heisenberg
 # ishermitian = true
-Heisenberg(id::Symbol, value, bondkind; form::Symbol=Symbol("+-z"), amplitude::Union{Function, Nothing}=nothing)
+Heisenberg(
+    id::Symbol, value, bondkind;
+    form::Symbol=Symbol("+-z"), amplitude::Union{Function, Nothing}=nothing
+)
 
 # termkind = :Kitaev
 # ishermitian = true
