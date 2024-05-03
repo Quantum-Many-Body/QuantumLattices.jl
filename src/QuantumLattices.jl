@@ -46,13 +46,10 @@ export findindex, periods, @abeliannumber
 # Spatials
 include("Spatials.jl")
 using .Spatials
-<<<<<<< HEAD
 export azimuth, azimuthd, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, polar, polard, reciprocals, rotate, translate, tile, volume
 export AbstractLattice, Bond, BrillouinZone, Lattice, Neighbors, Point, ReciprocalSpace, ReciprocalZone, ReciprocalPath, bonds, bonds!, icoordinate, isintracell, rcoordinate, save, selectpath, shrink, ReciprocalCurve
-=======
 export azimuth, azimuthd, direction, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, polar, polard, reciprocals, rotate, translate, tile, volume
 export AbstractLattice, Bond, BrillouinZone, Lattice, Neighbors, Point, ReciprocalSpace, ReciprocalZone, ReciprocalPath, bonds, bonds!, icoordinate, isintracell, rcoordinate, save, selectpath, shrink
->>>>>>> 8b1ab78cd16ac0223f77b01a5eb3bc00ba532a6b
 export @hexagon_str, @line_str, @rectangle_str
 
 # DegreesOfFreedom
