@@ -36,6 +36,15 @@ end
     @test polar([1.0, 0.0, 1.0]) ≈ 1//4*pi
 end
 
+@testset "direction" begin
+    @test direction('x') == SVector(1, 0, 0)
+    @test direction('y') == SVector(0, 1, 0)
+    @test direction('z') == SVector(0, 0, 1)
+
+    @test direction(30, :degree) ≈ direction(pi/6, :radian) ≈ direction([√3, 1]) ≈ SVector(√3/2, 1/2)
+    @test direction((90, 30), :degree) ≈ direction((pi/2, pi/6), :radian) ≈ direction([√3, 1, 0]) ≈ SVector(√3/2, 1/2, 0)
+end
+
 @testset "volume" begin
     @test volume([[1]]) == volume([1]) == volume([1, 0]) == volume([1, 0, 0]) == 1
     @test volume([1], [2]) == 0

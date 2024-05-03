@@ -9,6 +9,23 @@ import QuantumLattices.QuantumNumbers: periods
 @abeliannumber "Z4" Int (:Z,) (4,)
 @abeliannumber "CNZ4" Int (:N, :Z) (Inf, 4)
 
+@testset "QuantumNumber" begin
+    qn = CNZ4(1, 3)
+    @test eltype(qn) == eltype(typeof(qn)) == Int
+    @test qn==CNZ4(1, 3) && isequal(qn, CNZ4(1, 3))
+    @test qn[1]==1 && qn[2]==3
+    @test qn<CNZ4(2, 1) && isless(qn, CNZ4(2, 1))
+    @test hash(qn) == hash((1, 3))
+    @test length(qn) == length(typeof(qn)) == 2
+    @test collect(qn) == [1, 3]
+    @test keys(qn)==(:N, :Z) && values(qn)==(1, 3) && collect(pairs(qn))==[:N=>1, :Z=>3]
+    @test string(qn) == "CNZ4(1, 3)"
+    @test convert(CNZ4, (1, 3))==qn && convert(Tuple, qn)==(1, 3)
+    @test zero(qn) == zero(typeof(qn)) == CNZ4(0, 0)
+    @test replace(qn; N=2) == CNZ4(2, 3)
+    @test dimension(qn) == dimension(typeof(qn)) == 1
+end
+
 @testset "regularize" begin
     @test regularize(CNZ4, [1.5, 5.0]) == [1.5, 1.0]
     @test regularize(CNZ4, [4.0, -1.0]) == [4.0, 3.0]
@@ -43,10 +60,19 @@ end
     @test qns|>collect == [qn₁, qn₂]
     @test qns|>Iterators.reverse|>collect == [qn₂, qn₁]
     @test qns|>keys|>collect == [qn₁, qn₂]
+    @test count(qns, 1)==3 && count(qns, 2)==2
+    @test range(qns, 1)==1:3 && range(qns, 2)==4:5
+    @test [cumsum(qns, i) for i=1:2] == [3, 5]
     @test values(qns, :indptr)|>collect == [1:3, 4:5]
     @test values(qns, :counts)|>collect == [3, 2]
     @test pairs(qns, :indptr)|>collect == [qn₁=>1:3, qn₂=>4:5]
     @test pairs(qns, :counts)|>collect == [qn₁=>3, qn₂=>2]
+
+    res = [1, 1, 1, 2, 2]
+    guesses = [1, 1, 1, 1, 2]
+    for i = 1:5
+        @test findindex(i, qns, guesses[i]) == res[i]
+    end
 end
 
 @testset "OrderedDict" begin

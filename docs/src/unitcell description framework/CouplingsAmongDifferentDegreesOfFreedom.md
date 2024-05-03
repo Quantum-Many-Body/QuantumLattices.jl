@@ -296,6 +296,11 @@ Ising"z" => SparseMatrixCSC([0 0 0; 0 0 0; 0 0 1])
 Γ"y" => SparseMatrixCSC([0 0 1; 0 0 0; 1 0 0])
 Γ"z" => SparseMatrixCSC([0 1 0; 1 0 0; 0 0 0])
 
+# Γ′ terms
+Γ′"x" => SparseMatrixCSC([0 1 1; 1 0 0; 1 0 0])
+Γ′"y" => SparseMatrixCSC([0 1 0; 1 0 1; 0 1 0])
+Γ′"z" => SparseMatrixCSC([0 0 1; 0 0 1; 1 1 0])
+
 # Dzyaloshinskii–Moriya terms
 DM"x" => SparseMatrixCSC([0 0 0; 0 0 1; 0 -1 0])
 DM"y" => SparseMatrixCSC([0 0 -1; 0 0 0; 1 0 0])
@@ -358,10 +363,10 @@ the coupling pattern can be represented by the following function:
 ```julia
 function kitaev(bond::Bond)
     ϕ = azimuth(rcoordinate(bond)) # get the azimuth angle of a bond in radians
-    @assert any(≈(ϕ), (π/6, 7π/6, 5π/6, 11π/6, π/2, 3π/2)) "kitaev error: wrong input bond."
     any(≈(ϕ), (π/6, 7π/6)) && return Coupling(:, SID, ('x'), ('x'))
     any(≈(ϕ), (5π/6, 11π/6)) && return Coupling(:, SID, ('y'), ('y'))
-    return Coupling(:, SID, ('z'), ('z'))
+    any(≈(ϕ), (π/2, 3π/2)) && return Coupling(:, SID, ('z'), ('z'))
+    error("kitaev error: wrong input bond.")
 end
 ```
 Note in all cases, **the function to specify a bond dependent coupling pattern can only accept an instance of [`Bond`](@ref) as its sole argument, but it can return either a [`Coupling`](@ref) or an iterator of [`Coupling`](@ref)s**.
@@ -509,12 +514,102 @@ Default rules for such terms when the `site` attribute of [`Index`](@ref) and th
 
 ### Terms for SU(2) spin systems
 
+Standard concrete spin terms are summarized as follows:
+```julia
+# termkind = :Zeeman
+# bondkind = 0
+# ishermitian = true
+Zeeman(
+    id::Symbol, value, direction::Char, g::Number=1;
+    amplitude::Union{Function, Nothing}=nothing
+)
+Zeeman(
+    id::Symbol,
+    value,
+    direction::Union{AbstractVector{<:Number}, Tuple{Number, Number}},
+    g::Union{Number, AbstractMatrix{<:Number}}=1;
+    unit::Symbol=:degree,
+    amplitude::Union{Function, Nothing}=nothing
+)
+
+# termkind = :SingleIonAnisotropy
+# bondkind = 0
+# ishermitian = true
+SingleIonAnisotropy(
+    id::Symbol, value, direction::Char;
+    amplitude::Union{Function, Nothing}=nothing
+)
+SingleIonAnisotropy(
+    id::Symbol, value, matrix::AbstractMatrix{<:Number};
+    amplitude::Union{Function, Nothing}=nothing
+)
+
+# termkind = :Ising
+# ishermitian = true
+Ising(
+    id::Symbol, value, bondkind, direction::Char;
+    amplitude::Union{Function, Nothing}=nothing
+)
+
+# termkind = :Heisenberg
+# ishermitian = true
+Heisenberg(
+    id::Symbol, value, bondkind;
+    form::Symbol=Symbol("+-z"), amplitude::Union{Function, Nothing}=nothing
+)
+
+# termkind = :Kitaev
+# ishermitian = true
+Kitaev(
+    id::Symbol, value, bondkind;
+    x::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+    y::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+    z::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+    unit::Symbol=:degree,
+    amplitude::Union{Function, Nothing}=nothing
+)
+
+# termkind = :Γ
+# ishermitian = true
+Γ(
+    id::Symbol, value, bondkind;
+    x::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+    y::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+    z::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+    unit::Symbol=:degree,
+    amplitude::Union{Function, Nothing}=nothing
+)
+
+# termkind = :Γ′
+# ishermitian = true
+Γ′(
+    id::Symbol, value, bondkind;
+    x::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+    y::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+    z::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+    unit::Symbol=:degree,
+    amplitude::Union{Function, Nothing}=nothing
+)
+
+# termkind = :DM
+# ishermitian = true
+DM(
+    id::Symbol,
+    value,
+    bondkind,
+    vectors::Pair{<:AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}}, <:Union{Char, AbstractVector{<:Number}}}...;
+    unit::Symbol=:degree,
+    amplitude::Union{Function, Nothing}=nothing
+)
+```
+
+Beyond the above standard concrete terms, the generic spin term can be used:
 ```julia
 # termkind = :SpinTerm
 # ishermitian = true
 SpinTerm(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothing}=nothing)
 ```
-For spin systems, only the `site` attribute of [`Index`](@ref) can be initialized by the `:` operator. Depending on the rank of the term (i.e. the number of [`Index`](@ref)es in the coupling pattern) and the length of the bonds to be summed over, it will be `(1, 1, ...)` when the bond length is 1 and `(1, 2, 1, 2...)` when the bond length is 2. For other generic bonds with more points, no default rule exists.
+Here, only the `site` attribute of [`Index`](@ref) can be initialized by the `:` operator. Depending on its rank (i.e. the number of [`Index`](@ref)es in the coupling pattern) and the length of the bonds to be summed over, it will be `(1, 1, ...)` when the bond length is 1 and `(1, 2, 1, 2...)` when the bond length is 2. For other generic bonds with more points, no default rule exists.
 
 ### Terms for phononic systems
 ```julia

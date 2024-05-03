@@ -48,6 +48,44 @@ end
     @test searchsortedfirst(idx, CartesianIndex(3, 3, 3)) == 9
 end
 
+@testset "Segment" begin
+    segment = Segment(SVector(0.0, 0.0), SVector(1.0, 1.0), 10)
+    @test segment == Segment((0.0, 0.0), (1.0, 1.0), 10)
+    @test isequal(segment,  Segment((0.0, 0.0), (1.0, 1.0), 10))
+    @test size(segment) == (10,)
+    @test string(segment) == "[p₁, p₂) with p₁=[0.0, 0.0] and p₂=[1.0, 1.0]"
+    @test segment[1:4] == Segment(segment[1], segment[4], 4, (true, true))
+    @test segment[6:-1:2] == Segment(segment[6], segment[2], 5, (true, true))
+
+    segment = Segment(1, 5, 5, ends=(true, true))
+    @test string(segment) == "[1.0, 5.0]"
+    @test segment[1]==1 && segment[end]==5
+    for (i, seg) in enumerate(segment)
+        @test seg ≈ segment[i]
+    end
+
+    segment = Segment(1, 5, 4, ends=(true, false))
+    @test string(segment) == "[1.0, 5.0)"
+    @test segment[1]==1 && segment[end]==4
+    for (i, seg) in enumerate(segment)
+        @test seg ≈ segment[i]
+    end
+
+    segment = Segment(1, 5, 4, ends=(false, true))
+    @test string(segment) == "(1.0, 5.0]"
+    @test segment[1]==2 && segment[end]==5
+    for (i, seg) in enumerate(segment)
+        @test seg ≈ segment[i]
+    end
+
+    segment = Segment(1, 5, 3, ends=(false, false))
+    @test string(segment) == "(1.0, 5.0)"
+    @test segment[1]==2 && segment[end]==4
+    for (i, seg) in enumerate(segment)
+        @test seg ≈ segment[i]
+    end
+end
+
 @testset "Combinations" begin
     @test Combinations{0}("abc")|>collect == [()]
     @test Combinations{1}("abc")|>collect == [('a',), ('b',), ('c',)]
@@ -223,36 +261,6 @@ Base.replace(fc::EFO; kwargs...) = replace(efficientoperations, fc; kwargs...)
     @test replace(EFO(1, 2, 3), f1='c') == EFO('c', 2, 3)
 end
 
-struct CT{S, N, T} <: CompositeNTuple{N, T}
-    info::S
-    contents::NTuple{N, T}
-end
-contentnames(::Type{<:CT}) = (:info, :contents)
-
-@testset "CompositeTuple" begin
-    @test contentnames(CompositeTuple) == (:contents,)
-
-    t = CT("Info", (1, 2, 3, 4))
-    @test contentnames(typeof(t)) == (:info, :contents)
-    @test length(t) == 4
-    @test length(typeof(t)) == 4
-    @test eltype(t) == Int
-    @test eltype(typeof(t)) == Int
-    @test t == deepcopy(t)
-    @test isequal(t, deepcopy(t))
-    @test hash(t) == hash(("Info", (1, 2, 3, 4)))
-    @test t[1] == 1
-    @test t[end] == 4
-    @test t[1:3] == CT("Info", (1, 2, 3))
-    @test collect(t) == [1, 2, 3, 4]
-    @test collect(t|>Iterators.reverse) == [4, 3, 2, 1]
-    @test keys(t) == keys((1, 2, 3, 4))
-    @test values(t) == values((1, 2, 3, 4))
-    @test pairs(t)|>collect == pairs((1, 2, 3, 4))|>collect
-    @test reverse(t) == CT("Info", (4, 3, 2, 1))
-    @test Tuple(t) == (1, 2, 3, 4)
-end
-
 struct CV{S, T} <: CompositeVector{T}
     info::S
     contents::Vector{T}
@@ -351,76 +359,6 @@ getcontent(m::CD, ::Val{:contents}) = getfield(m, :newcontents)
     @test collect(pairs(d)) == collect(pairs(Dict("a"=>1, "b"=>2, "c"=>3, "d"=>4)))
     @test (filter(p->p.second<=3, d) == CD("Info", Dict("a"=>1, "b"=>2, "c"=>3))) && (d == CD("Info", Dict("a"=>1, "b"=>2, "c"=>3, "d"=>4)))
     @test (filter!(p->p.second<=3, d) == CD("Info", Dict("a"=>1, "b"=>2, "c"=>3))) && (d == CD("Info", Dict("a"=>1, "b"=>2, "c"=>3)))
-end
-
-@testset "NamedContainer" begin
-    @test NamedContainer{(:a, :b)}((1, 'h')) == (a=1, b='h')
-    @test NamedContainer{()}(()) == NamedTuple()
-end
-
-mutable struct NonHomo <: NamedVector
-    scope::String
-    site::Int
-end
-
-@testset "NonHomo" begin
-    @test length(NonHomo) == 2
-
-    pid = NonHomo("A", 0)
-    @test pid == convert(NonHomo, ("A", 0))
-    @test string(pid) == "NonHomo(\"A\", 0)"
-    @test length(pid) == 2
-    @test collect(Iterators.reverse(pid)) == [0, "A"]
-    @test pid[1] == pid.scope == "A"
-    @test pid[2] == pid.site == 0
-    @test replace(pid, scope="B") == NonHomo("B", 0)
-    @test replace(pid, site=1) == NonHomo("A", 1)
-    @test replace(pid, scope="B", site=1) == NonHomo("B", 1)
-    @test (pid[1] = "B"; pid[1] == "B")
-    @test (pid.site = 2; pid.site == 2)
-
-    @test NonHomo("A", 2.0) < NonHomo("B", 0.0)
-    @test NonHomo("A", 2.0) < NonHomo("A", 3.0)
-    @test isless(NonHomo("A", 2.0), NonHomo("B", 0.0))
-    @test isless(NonHomo("A", 2.0), NonHomo("A", 3.0))
-
-    dict = Dict(NonHomo("A", 0)=>1, NonHomo("A", 1)=>2)
-    @test dict[NonHomo("A", 0)] == 1
-    @test dict[NonHomo("A", 1)] == 2
-end
-
-mutable struct Homo{T<:Real} <: HomoNamedVector{T}
-    scope::T
-    site::T
-end
-
-@testset "Homo" begin
-    @test length(Homo) == 2
-    @test eltype(Homo{Int}) == Int
-    @test zero(Homo{Int}) == Homo(0, 0)
-    @test eltype(Homo{Float64}) == Float64
-    @test zero(Homo{Float64}) == Homo(0.0, 0.0)
-
-    pid = Homo(1, 0)
-    @test pid == convert(Homo{Int}, (1, 0))
-    @test string(pid) == "Homo(1, 0)"
-    @test length(pid) == 2
-    @test eltype(pid) == Int
-    @test zero(pid) == Homo(0, 0)
-    @test pid[1] == pid.scope == 1
-    @test pid[2] == pid.site == 0
-    @test replace(pid, scope=2) == Homo(2, 0)
-    @test replace(pid, site=1) == Homo(1, 1)
-    @test replace(pid, scope=2, site=1) == Homo(2, 1)
-    @test (pid[1] = 2; pid[1] == 2)
-    @test (pid.site = 3; pid.site == 3)
-
-    @test Homo(1.0, 2.0) < Homo(2.0, 0.0)
-    @test Homo(1.0, 2.0) < Homo(1.0, 3.0)
-
-    dict = Dict(Homo(0, 0)=>1, Homo(0, 1)=>2)
-    @test dict[Homo(0, 0)] == 1
-    @test dict[Homo(0, 1)] == 2
 end
 
 struct SimpleVectorSpace{B, N} <: VectorSpace{B}
@@ -539,109 +477,4 @@ end
     @test μ⊗pps == DirectProductedNamedVectorSpace(μ, t, U)
     @test pps⊗μ == DirectProductedNamedVectorSpace(t, U, μ)
     @test pps⊗DirectProductedNamedVectorSpace(μ) == DirectProductedNamedVectorSpace(t, U, μ)
-end
-
-@testset "Segment" begin
-    segment = Segment(SVector(0.0, 0.0), SVector(1.0, 1.0), 10)
-    @test segment == Segment((0.0, 0.0), (1.0, 1.0), 10)
-    @test isequal(segment,  Segment((0.0, 0.0), (1.0, 1.0), 10))
-    @test size(segment) == (10,)
-    @test string(segment) == "[p₁, p₂) with p₁=[0.0, 0.0] and p₂=[1.0, 1.0]"
-    @test segment[1:4] == Segment(segment[1], segment[4], 4, (true, true))
-    @test segment[6:-1:2] == Segment(segment[6], segment[2], 5, (true, true))
-
-    segment = Segment(1, 5, 5, ends=(true, true))
-    @test string(segment) == "[1.0, 5.0]"
-    @test segment[1]==1 && segment[end]==5
-    for (i, seg) in enumerate(segment)
-        @test seg ≈ segment[i]
-    end
-
-    segment = Segment(1, 5, 4, ends=(true, false))
-    @test string(segment) == "[1.0, 5.0)"
-    @test segment[1]==1 && segment[end]==4
-    for (i, seg) in enumerate(segment)
-        @test seg ≈ segment[i]
-    end
-
-    segment = Segment(1, 5, 4, ends=(false, true))
-    @test string(segment) == "(1.0, 5.0]"
-    @test segment[1]==2 && segment[end]==5
-    for (i, seg) in enumerate(segment)
-        @test seg ≈ segment[i]
-    end
-
-    segment = Segment(1, 5, 3, ends=(false, false))
-    @test string(segment) == "(1.0, 5.0)"
-    @test segment[1]==2 && segment[end]==4
-    for (i, seg) in enumerate(segment)
-        @test seg ≈ segment[i]
-    end
-end
-
-struct Tree{N, D} <: AbstractSimpleTree{N, D}
-    TREECORE::SimpleTreeCore{N, D}
-end
-Tree{N, D}() where {N, D} = Tree(SimpleTreeCore{N, D}())
-
-@testset "AbstractSimpleTree" begin
-    tree = Tree{String, Int}()
-
-    @test contentnames(typeof(tree)) == (:TREECORE,)
-    @test eltype(tree) == Pair{String, Int}
-    @test keytype(tree) == String
-    @test valtype(tree) == Int
-    @test root(tree) === nothing
-
-    push!(tree, "L0", 0)
-    push!(tree, "L0", "L1-1", 2)
-    push!(tree, "L0", "L1-2", 3)
-    push!(tree, "L1-1", "L2-1", 4)
-    push!(tree, "L1-1", "L2-2", 5)
-    push!(tree, "L1-2", "L2-3", 6)
-    push!(tree, "L1-2", "L2-4", 7)
-    tree["L0"] = 1
-
-    @test root(tree) == "L0"
-    @test length(tree) == 7
-    @test collect(keys(tree, simpletreedepth)) == ["L0", "L1-1", "L2-1", "L2-2", "L1-2", "L2-3", "L2-4"]
-    @test collect(keys(tree, simpletreewidth)) == ["L0", "L1-1", "L1-2", "L2-1", "L2-2", "L2-3", "L2-4"]
-    @test collect(values(tree, simpletreedepth)) == [1, 2, 4, 5, 3, 6, 7]
-    @test collect(values(tree, simpletreewidth)) == [1, 2, 3, 4, 5, 6, 7]
-    @test collect(pairs(tree, simpletreedepth)) == [("L0", 1), ("L1-1", 2), ("L2-1", 4), ("L2-2", 5), ("L1-2", 3), ("L2-3", 6), ("L2-4", 7)]
-    @test collect(pairs(tree, simpletreewidth)) == [("L0", 1), ("L1-1", 2), ("L1-2", 3), ("L2-1", 4), ("L2-2", 5), ("L2-3", 6), ("L2-4", 7)]
-    @test [isleaf(tree, node) for node in keys(tree, simpletreewidth)] == [false, false, false, true, true, true, true]
-    @test [level(tree, node) for node in keys(tree, simpletreewidth)] == [1, 2, 2, 3, 3, 3, 3]
-    @test [ancestor(tree, "L2-1", i) for i = 0:2] == ["L2-1", "L1-1", "L0"]
-    @test [ancestor(tree, "L2-3", i) for i = 0:2] == ["L2-3", "L1-2", "L0"]
-    @test descendants(tree, "L0", 0) == ["L0"]
-    @test descendants(tree, "L0", 1) == ["L1-1", "L1-2"]
-    @test descendants(tree, "L0", 2) == ["L2-1", "L2-2", "L2-3", "L2-4"]
-    @test siblings(tree, "L0") == []
-    @test siblings(tree, "L1-1") == ["L1-2"]
-    @test siblings(tree, "L2-1") == ["L2-2"]
-    @test leaves(tree) == ["L2-1", "L2-2", "L2-3", "L2-4"]
-
-    backup = deepcopy(tree)
-
-    sub = subtree(tree, "L0")
-    empty!(tree)
-    append!(tree, sub)
-    @test tree == backup
-    @test isequal(tree, backup)
-
-    sub = subtree(tree, "L1-1")
-    delete!(tree, "L1-1")
-    append!(tree, "L0", sub)
-    move!(tree, "L1-2", "L0")
-    @test tree == backup
-    @test isequal(tree, backup)
-end
-
-@testset "SimpleTree" begin
-    tree = SimpleTree{String, Int}()
-    @test eltype(tree)  == eltype(typeof(tree)) == Pair{String, Int}
-    @test keytype(tree) == keytype(typeof(tree)) == String
-    @test valtype(tree) == valtype(typeof(tree)) == Int
-    @test root(tree) === nothing
 end

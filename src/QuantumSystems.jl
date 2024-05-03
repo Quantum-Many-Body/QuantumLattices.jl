@@ -1,17 +1,17 @@
 module QuantumSystems
 
-using LinearAlgebra: dot, norm
+using LinearAlgebra: dot, ishermitian, norm
 using Printf: @printf, @sprintf
 using SparseArrays: SparseMatrixCSC
-using StaticArrays: SVector
+using StaticArrays: SMatrix, SVector
 using ..DegreesOfFreedom: wildcard, AbstractCompositeIndex, Component, CompositeIID, CompositeIndex, CompositeInternal, Coupling, Hilbert, IIDSpace, Index, SimpleIID, SimpleInternal, Term, TermAmplitude, TermCoupling, TermModulate, @indexes
 using ..QuantumLattices: decompose, dtype, kind
 using ..QuantumOperators: ID, LaTeX, Operator, OperatorProd, Operators, latexformat
-using ..Spatials: Bond, Point, rcoordinate
+using ..Spatials: Bond, Point, direction, isparallel, rcoordinate
 using ..Toolkit: atol, efficientoperations, rtol, Float, VectorSpace, VectorSpaceCartesian, VectorSpaceStyle, decimaltostr, delta, getcontent, rawtype
 
 import ..DegreesOfFreedom: MatrixCoupling, diagonalizablefields, iidtype, isdefinite, sitestructure, statistics
-import ..QuantumLattices: ⊗, ⋅, expand, expand!, permute, rank
+import ..QuantumLattices: ⊗, expand, expand!, permute, rank
 import ..QuantumOperators: latexname, matrix, optype, script
 import ..Toolkit: shape
 
@@ -20,7 +20,8 @@ export annihilation, creation, latexofbosons, latexoffermions, latexofparticles,
 export Coulomb, FID, Fock, FockTerm, Hopping, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, Onsite, PairHopping, Pairing, SpinFlip, isannihilation, iscreation, isnormalordered
 
 # SU(2) spin systems
-export latexofspins, SID, Spin, SpinTerm, totalspin, @Γ_str, @DM_str, @Heisenberg_str, @Ising_str
+export latexofspins, SID, Spin, totalspin, @Γ_str, @Γ′_str, @DM_str, @Heisenberg_str, @Ising_str
+export DM, Heisenberg, Ising, Kitaev, SingleIonAnisotropy, SpinTerm, Zeeman, Γ, Γ′
 
 # Phononic systems
 export latexofphonons, Elastic, PID, Phonon, Kinetic, Hooke, PhononTerm
@@ -714,6 +715,20 @@ macro Γ_str(str::String)
 end
 
 """
+    Γ′"x" => SparseMatrixCSC([0 1 1; 1 0 0; 1 0 0])
+    Γ′"y" => SparseMatrixCSC([0 1 0; 1 0 1; 0 1 0])
+    Γ′"z" => SparseMatrixCSC([0 0 1; 0 0 1; 1 1 0])
+
+The Γ′ coupling matrix.
+"""
+macro Γ′_str(str::String)
+    str=="x" && return SparseMatrixCSC([0 1 1; 1 0 0; 1 0 0])
+    str=="y" && return SparseMatrixCSC([0 1 0; 1 0 1; 0 1 0])
+    str=="z" && return SparseMatrixCSC([0 0 1; 0 0 1; 1 1 0])
+    error("@Γ′_str error: wrong input string.")
+end
+
+"""
     DM"x" => SparseMatrixCSC([0 0 0; 0 0 1; 0 -1 0])
     DM"y" => SparseMatrixCSC([0 0 -1; 0 0 0; 1 0 0])
     DM"z" => SparseMatrixCSC([0 1 0; -1 0 0; 0 0 0])
@@ -731,7 +746,7 @@ end
 """
     SpinTerm(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
 
-Spin term.
+Generic spin term.
 
 Type alias for `Term{:SpinTerm, id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
 """
@@ -743,6 +758,250 @@ end
     bondlength==1 && return ntuple(i->1, Val(termrank))
     bondlength==2 && return ntuple(i->2-i%2, Val(termrank))
     error("sitestructure error: not supported for a generic bond containing $bondlength points.")
+end
+
+"""
+    Zeeman(id::Symbol, value, direction::Char, g::Number=1; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    Zeeman(id::Symbol, value, direction::Union{AbstractVector{<:Number}, Tuple{Number, Number}}, g::Union{Number, AbstractMatrix{<:Number}}=1; unit::Symbol=:degree, amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+
+Zeeman term.
+
+Type alias for `Term{:Zeeman, id, V, Int, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
+"""
+const Zeeman{id, V, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Zeeman, id, V, Int, C, A, M}
+@inline function Zeeman(id::Symbol, value, direction::Char, g::Number=1; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    @assert lowercase(direction)∈('x', 'y', 'z') "Zeeman error: not supported direction."
+    coupling = Coupling(g, :, SID, (lowercase(direction),))
+    return Term{:Zeeman}(id, value, 0, coupling, true; amplitude=amplitude, modulate=modulate)
+end
+@inline function Zeeman(id::Symbol, value, dir::Union{AbstractVector{<:Number}, Tuple{Number, Number}}, g::Union{Number, AbstractMatrix{<:Number}}=1; unit::Symbol=:degree, amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    couplings = dot(direction(dir, unit), Lande(g), SVector(Coupling(:, SID, ('x',)), Coupling(:, SID, ('y',)), Coupling(:, SID, ('z',))))
+    return Term{:Zeeman}(id, value, 0, couplings, true; amplitude=amplitude, modulate=modulate)
+end
+@inline Lande(g::Number) = SMatrix{3, 3}(g, 0, 0, 0, g, 0, 0, 0, g)
+@inline Lande(g::AbstractMatrix{<:Number}) = (@assert(size(g)==(3, 3), "Lande error: the g-tensor must be 3×3."); g)
+
+"""
+    SingleIonAnisotropy(id::Symbol, value, direction::Char; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    SingleIonAnisotropy(id::Symbol, value, matrix::AbstractMatrix{<:Number}; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+
+Single ion anisotropy term.
+
+Type alias for `Term{:SingleIonAnisotropy, id, V, Int, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
+"""
+const SingleIonAnisotropy{id, V, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:SingleIonAnisotropy, id, V, Int, C, A, M}
+@inline function SingleIonAnisotropy(id::Symbol, value, direction::Char; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    @assert lowercase(direction)∈('x', 'y', 'z') "SingleIonAnisotropy error: not supported direction."
+    coupling = Coupling(:, SID, (lowercase(direction), lowercase(direction)))
+    return Term{:SingleIonAnisotropy}(id, value, 0, coupling, true; amplitude=amplitude, modulate=modulate)
+end
+@inline function SingleIonAnisotropy(id::Symbol, value, matrix::AbstractMatrix{<:Number}; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    @assert ishermitian(matrix) "SingleIonAnisotropy error: the anisotropy matrix must be Hermitian."
+    @assert size(matrix)==(3, 3) "SingleIonAnisotropy error: the anisotropy matrix must be 3×3."
+    couplings = dot(SVector(Coupling(:, SID, ('x',)), Coupling(:, SID, ('y',)), Coupling(:, SID, ('z',))), matrix, SVector(Coupling(:, SID, ('x',)), Coupling(:, SID, ('y',)), Coupling(:, SID, ('z',))))
+    return Term{:SingleIonAnisotropy}(id, value, 0, couplings, true; amplitude=amplitude, modulate=modulate)
+end
+
+"""
+    Ising(id::Symbol, value, bondkind, direction::Char; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+
+Ising term.
+
+Type alias for `Term{:Ising, id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
+"""
+const Ising{id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Ising, id, V, B, C, A, M}
+@inline function Ising(id::Symbol, value, bondkind, direction::Char; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    @assert lowercase(direction)∈('x', 'y', 'z') "Ising error: not supported direction."
+    coupling = Coupling(:, SID, (lowercase(direction), lowercase(direction)))
+    return Term{:Ising}(id, value, bondkind, coupling, true; amplitude=amplitude, modulate=modulate)
+end
+
+"""
+    Heisenberg(id::Symbol, value, bondkind; form::Symbol=Symbol("+-z"), amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+
+Heisenberg term.
+
+Type alias for `Term{:Heisenberg, id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
+"""
+const Heisenberg{id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Heisenberg, id, V, B, C, A, M}
+@inline function Heisenberg(id::Symbol, value, bondkind; form::Symbol=Symbol("+-z"), amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    @assert form∈(:xyz, Symbol("+-z")) "Heisenberg error: form should :xyz or Symbol(\"+-z\")."
+    couplings = if form==:xyz
+        Coupling(1//1, :, SID, ('x', 'x')) + Coupling(1//1, :, SID, ('y', 'y')) + Coupling(1//1, :, SID, ('z', 'z'))
+    else
+        Coupling(1//2, :, SID, ('+', '-')) + Coupling(1//2, :, SID, ('-', '+')) + Coupling(1//1, :, SID, ('z', 'z'))
+    end
+    return Term{:Heisenberg}(id, value, bondkind, couplings, true; amplitude=amplitude, modulate=modulate)
+end
+
+"""
+    Kitaev(
+        id::Symbol, value, bondkind;
+        x::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+        y::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+        z::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+        unit::Symbol=:degree,
+        amplitude::Union{Function, Nothing}=nothing,
+        modulate::Union{Function, Bool}=true
+    )
+
+Kitaev term. Since Kitaev term is symmetric on every bond, only one direction of a bond is needed. The inverse direction of a bond can be handled automatically by this function.
+
+Here, `x`, `y` and `z` assign the x-bonds, y-bonds, and z-bonds, respectively, with each kind of bond can be
+1) a `Number` specifying the azimuth angle of a bond in the 2-dimensional case, or
+2) a `Tuple{Number, Number}` specifying the polar and azimuth angle pairs of a bond in the 3-dimensional case, or
+3) an `AbstractVector{<:Number}` specifying the direction of a bond.
+
+Type alias for `Term{:Kitaev, id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
+"""
+const Kitaev{id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Kitaev, id, V, B, C, A, M}
+function Kitaev(
+    id::Symbol, value, bondkind;
+    x::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+    y::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+    z::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+    unit::Symbol=:degree,
+    amplitude::Union{Function, Nothing}=nothing,
+    modulate::Union{Function, Bool}=true
+)
+    dirs = (x=direction.(x, unit), y=direction.(y, unit), z=direction.(z, unit))
+    function kitaev(bond::Bond)
+        coordinate = rcoordinate(bond)
+        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.x) && return MatrixCoupling(: , SID, Ising"x")
+        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.y) && return MatrixCoupling(: , SID, Ising"y")
+        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.z) && return MatrixCoupling(: , SID, Ising"z")
+        error("Kitaev error: wrong bond.")
+    end
+    return Term{:Kitaev}(id, value, bondkind, kitaev, true; amplitude=amplitude, modulate=modulate)
+end
+
+"""
+    Γ(
+        id::Symbol, value, bondkind;
+        x::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+        y::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+        z::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+        unit::Symbol=:degree,
+        amplitude::Union{Function, Nothing}=nothing,
+        modulate::Union{Function, Bool}=true
+    )
+
+Γ Term. Since Γ term is symmetric on every bond, only one direction of a bond is needed. The inverse direction of a bond can be handled automatically by this function.
+
+Here, `x`, `y` and `z` assign the x-bonds, y-bonds, and z-bonds, respectively, with each kind of bond can be
+1) a `Number` specifying the azimuth angle of a bond in the 2-dimensional case, or
+2) a `Tuple{Number, Number}` specifying the polar and azimuth angle pairs of a bond in the 3-dimensional case, or
+3) an `AbstractVector{<:Number}` specifying the direction of a bond.
+
+Type alias for `Term{:Γ, id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
+"""
+const Γ{id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Γ, id, V, B, C, A, M}
+function Γ(
+    id::Symbol, value, bondkind;
+    x::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+    y::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+    z::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+    unit::Symbol=:degree,
+    amplitude::Union{Function, Nothing}=nothing,
+    modulate::Union{Function, Bool}=true
+)
+    dirs = (x=direction.(x, unit), y=direction.(y, unit), z=direction.(z, unit))
+    function γ(bond::Bond)
+        coordinate = rcoordinate(bond)
+        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.x) && return MatrixCoupling(: , SID, Γ"x")
+        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.y) && return MatrixCoupling(: , SID, Γ"y")
+        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.z) && return MatrixCoupling(: , SID, Γ"z")
+        error("Γ error: wrong bond.")
+    end
+    return Term{:Γ}(id, value, bondkind, γ, true; amplitude=amplitude, modulate=modulate)
+end
+
+"""
+    Γ′(
+        id::Symbol, value, bondkind;
+        x::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+        y::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+        z::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+        unit::Symbol=:degree,
+        amplitude::Union{Function, Nothing}=nothing,
+        modulate::Union{Function, Bool}=true
+    )
+
+Γ′ Term. Since Γ′ term is symmetric on every bond, only one direction of a bond is needed. The inverse direction of a bond can be handled automatically by this function.
+
+Here, `x`, `y` and `z` assign the x-bonds, y-bonds, and z-bonds, respectively, with each bond can be
+1) a `Number` specifying the azimuth angle of a bond in the 2-dimensional case, or
+2) a `Tuple{Number, Number}` specifying the polar and azimuth angle pairs of a bond in the 3-dimensional case, or
+3) an `AbstractVector{<:Number}` specifying the direction of a bond.
+
+Type alias for `Term{:Γ′, id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
+"""
+const Γ′{id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Γ′, id, V, B, C, A, M}
+function Γ′(
+    id::Symbol, value, bondkind;
+    x::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+    y::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+    z::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+    unit::Symbol=:degree,
+    amplitude::Union{Function, Nothing}=nothing,
+    modulate::Union{Function, Bool}=true
+)
+    dirs = (x=direction.(x, unit), y=direction.(y, unit), z=direction.(z, unit))
+    function γ′(bond::Bond)
+        coordinate = rcoordinate(bond)
+        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.x) && return MatrixCoupling(: , SID, Γ′"x")
+        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.y) && return MatrixCoupling(: , SID, Γ′"y")
+        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.z) && return MatrixCoupling(: , SID, Γ′"z")
+        error("Γ′ error: wrong bond.")
+    end
+    return Term{:Γ′}(id, value, bondkind, γ′, true; amplitude=amplitude, modulate=modulate)
+end
+
+"""
+    DM(
+        id::Symbol,
+        value,
+        bondkind,
+        vectors::Pair{<:AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}}, <:Union{Char, AbstractVector{<:Number}}}...;
+        unit::Symbol=:degree,
+        amplitude::Union{Function, Nothing}=nothing,
+        modulate::Union{Function, Bool}=true
+    )
+
+DM term. Since DM term is antisymmetric on every bond, only the positive direction of a bond is needed. The negative direction of a bond can be handled automatically by this function.
+
+Here, `vectors` specify the unit DM vector on every bond in the form `[bond₁, bond₂, ...]=>v`, where `bondᵢ` can be
+1) a `Number` specifying the azimuth angle of a bond in the 2-dimensional case, or
+2) a `Tuple{Number, Number}` specifying the polar and azimuth angle pairs of a bond in the 3-dimensional case, or
+3) an `AbstractVector{<:Number}` specifying the direction of a bond;
+and `v` can be
+1) a `Char` of 'x', 'y' or 'z', indicating the unit DM vector on the set of bonds is along the x, y or z direction, or
+2) an `AbstractVector{<:Number}`, specifying the direction of the DM vector on the set of bonds.
+
+Type alias for `Term{:DM, id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
+"""
+const DM{id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:DM, id, V, B, C, A, M}
+function DM(
+    id::Symbol,
+    value,
+    bondkind,
+    vectors::Pair{<:AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}}, <:Union{Char, AbstractVector{<:Number}}}...;
+    unit::Symbol=:degree,
+    amplitude::Union{Function, Nothing}=nothing,
+    modulate::Union{Function, Bool}=true
+)
+    dirs = [direction.(pair.first, unit)=>direction(pair.second) for pair in vectors]
+    function dm(bond::Bond)
+        coordinate = rcoordinate(bond)
+        for pair in dirs
+            for v in pair.first
+                parallel = isparallel(v, coordinate; atol=atol, rtol=rtol)
+                abs(parallel)==1 && return MatrixCoupling(:, SID, parallel*(pair.second[1]*DM"x"+pair.second[2]*DM"y"+pair.second[3]*DM"z"))
+            end
+        end
+        error("dm error: wrong bond.")
+    end
+    return Term{:DM}(id, value, bondkind, dm, true; amplitude=amplitude, modulate=modulate)
 end
 
 # Phononic systems

@@ -1,6 +1,6 @@
 module Toolkit
 
-using Formatting: FormatSpec, fmt
+using Format: FormatSpec, pyfmt
 using Printf: @printf
 using StaticArrays: SVector
 
@@ -20,19 +20,12 @@ export contentcount, contentname, contentnames, contentorder, contenttype, conte
 export efficientoperations
 
 # Composite structures
-export CompositeDict, CompositeNTuple, CompositeTuple, CompositeVector, NamedContainer
-
-# Named vectors
-export HomoNamedVector, NamedVector
+export CompositeDict, CompositeVector
 
 # Vector spaces
 export CompositeNamedVectorSpace, DirectProductedNamedVectorSpace, NamedVectorSpace, ParameterSpace, SimpleNamedVectorSpace, VectorSpace, ZippedNamedVectorSpace
 export VectorSpaceCartesian, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceEnumerative, VectorSpaceStyle, VectorSpaceZipped
 export shape
-
-# Simple trees
-export simpletreedepth, simpletreewidth, AbstractSimpleTree, SimpleTree, SimpleTreeCore
-export addnode!, ancestor, children, deletenode!, descendants, isleaf, leaves, level, move!, root, siblings, subtree
 
 # Utilities
 "Absolute tolerance for float numbers."
@@ -60,10 +53,10 @@ function decimaltostr(number::AbstractFloat, n::Int=5)
     if number == 0.0
         result = "0.0"
     elseif 10^-5 < abs(number) < 10^6
-        result = rstrip(fmt(FormatSpec(".$(n)f"), number), '0')
+        result = rstrip(pyfmt(FormatSpec(".$(n)f"), number), '0')
         (result[end] == '.') && (result = result * '0')
     else
-        result = fmt(FormatSpec(".$(n)e"), number)
+        result = pyfmt(FormatSpec(".$(n)e"), number)
         epos = findfirst(isequal('e'), result)
         temp = rstrip(result[1:epos-1], '0')
         result = (temp[end] == '.') ? (temp * "0" * result[epos:end]) : (temp * result[epos:end])
@@ -120,6 +113,73 @@ function Base.searchsortedfirst(table, basis; compare=<)
         end
     end
     return hi
+end
+
+"""
+    Segment{S} <: AbstractVector{S}
+
+A segment.
+"""
+struct Segment{S} <: AbstractVector{S}
+    start::S
+    stop::S
+    length::Int
+    ends::Tuple{Bool, Bool}
+end
+@inline Base.:(==)(s₁::Segment, s₂::Segment) = ==(efficientoperations, s₁, s₂)
+@inline Base.isequal(s₁::Segment, s₂::Segment) = isequal(efficientoperations, s₁, s₂)
+@inline Base.size(segment::Segment) = (segment.length,)
+function Base.getindex(segment::Segment, i::Integer)
+    length = segment.length+count(isequal(false), segment.ends)-1
+    step = convert(eltype(segment), (segment.stop-segment.start)/length)
+    start = segment.ends[1] ? segment.start : segment.start+step
+    return start+(i-1)*step
+end
+@inline Base.getindex(segment::Segment, range::OrdinalRange{<:Integer}) = Segment(segment[first(range)], segment[last(range)], length(range), (true, true))
+function Base.iterate(segment::Segment)
+    segment.length==0 && return
+    length = segment.length+count(isequal(false), segment.ends)-1
+    step = convert(eltype(segment), (segment.stop-segment.start)/length)
+    start = segment.ends[1] ? segment.start : segment.start+step
+    return start, (1, start, step)
+end
+function Base.iterate(segment::Segment, state)
+    i, middle, step = state
+    i==segment.length && return
+    middle = middle+step
+    return middle, (i+1, middle, step)
+end
+function Base.show(io::IO, segment::Segment{<:Number})
+    left, right = (segment.ends[1] ? "[" : "("), (segment.ends[2] ? "]" : ")")
+    @printf io "%s%s, %s%s" left segment.start segment.stop right
+end
+function Base.show(io::IO, segment::Segment)
+    left, right = (segment.ends[1] ? "[" : "("), (segment.ends[2] ? "]" : ")")
+    @printf io "%sp₁, p₂%s with p₁=%s and p₂=%s" left right segment.start segment.stop
+end
+
+"""
+    Segment(start::Number, stop::Number, length::Integer; ends::Tuple{Bool, Bool}=(true, false))
+    Segment(start::AbstractVector, stop::AbstractVector, length::Integer; ends::Tuple{Bool, Bool}=(true, false))
+    Segment(start::NTuple{N, Number}, stop::NTuple{N, Number}, length::Integer; ends::Tuple{Bool, Bool}=(true, false)) where N
+
+Construct a segment.
+"""
+function Segment(start::Number, stop::Number, length::Integer; ends::Tuple{Bool, Bool}=(true, false))
+    @assert length>=0 "Segment error: length must be non-negative."
+    dtype = promote_type(typeof(start), typeof(stop), Float64)
+    return Segment(convert(dtype, start), convert(dtype, stop), length, ends)
+end
+function Segment(start::AbstractVector, stop::AbstractVector, length::Integer; ends::Tuple{Bool, Bool}=(true, false))
+    @assert length>=0 "Segment error: length must be non-negative."
+    @assert Base.length(start)==Base.length(stop) "Segment error: start and stop should have equal length."
+    dtype = SVector{Base.length(start), promote_type(eltype(start), eltype(stop), Float64)}
+    return Segment(convert(dtype, start), convert(dtype, stop), length, ends)
+end
+function Segment(start::NTuple{N, Number}, stop::NTuple{N, Number}, length::Integer; ends::Tuple{Bool, Bool}=(true, false)) where N
+    @assert length>=0 "Segment error: length must be non-negative."
+    dtype = SVector{N, promote_type(eltype(start), eltype(stop), Float64)}
+    return Segment(convert(dtype, start), convert(dtype, stop), length, ends)
 end
 
 # Combinatorics
@@ -731,43 +791,6 @@ end
 
 # Composite structures
 """
-    CompositeTuple{T<:Tuple}
-
-A composite tuple can be considered as a tuple that is implemented by including an ordinary `Tuple` as its data attribute.
-"""
-abstract type CompositeTuple{T<:Tuple} end
-@inline contentnames(::Type{<:CompositeTuple}) = (:contents,)
-@inline dissolve(ct::CompositeTuple, ::Val{:contents}, f::Function, args::Tuple, kwargs::NamedTuple) = f(getcontent(ct, :contents), args...; kwargs...)
-
-@inline Base.length(::CompositeTuple{T}) where T = fieldcount(T)
-@inline Base.length(::Type{<:CompositeTuple{T}}) where T = fieldcount(T)
-@inline Base.eltype(::CompositeTuple{T}) where T = eltype(T)
-@inline Base.eltype(::Type{<:CompositeTuple{T}}) where T = eltype(T)
-@inline Base.hash(ct::CompositeTuple, h::UInt) = hash(dissolve(ct), h)
-@inline Base.:(==)(ct1::CompositeTuple, ct2::CompositeTuple) = ==(efficientoperations, ct1, ct2)
-@inline Base.isequal(ct1::CompositeTuple, ct2::CompositeTuple) = isequal(efficientoperations, ct1, ct2)
-@inline Base.getindex(ct::CompositeTuple, i::Union{<:Integer, CartesianIndex}) = getcontent(ct, :contents)[i]
-@inline Base.getindex(ct::CompositeTuple, inds) = rawtype(typeof(ct))(dissolve(ct, getindex, (inds,))...)
-@inline Base.lastindex(ct::CompositeTuple) = lastindex(getcontent(ct, :contents))
-@inline Base.iterate(ct::CompositeTuple) = iterate(getcontent(ct, :contents))
-@inline Base.iterate(ct::CompositeTuple, state) = iterate(getcontent(ct, :contents), state)
-@inline Base.iterate(rv::Iterators.Reverse{<:CompositeTuple}, state=length(rv.itr)) = (state < 1) ? nothing : (rv.itr[state], state-1)
-@inline Base.keys(ct::CompositeTuple) = keys(getcontent(ct, :contents))
-@inline Base.values(ct::CompositeTuple) = values(getcontent(ct, :contents))
-@inline Base.pairs(ct::CompositeTuple) = pairs(getcontent(ct, :contents))
-@inline Base.reverse(ct::CompositeTuple) = rawtype(typeof(ct))(dissolve(ct, reverse)...)
-@inline Base.Tuple(ct::CompositeTuple) = getcontent(ct, :contents)
-
-"""
-    CompositeNTuple{N, T}
-
-A composite ntuple can be considered as a ntuple that is implemented by including an ordinary `NTuple` as its data attribute.
-
-Alias for `CompositeTuple{NTuple{N, T}}`.
-"""
-const CompositeNTuple{N, T} = CompositeTuple{NTuple{N, T}}
-
-"""
     CompositeVector{T}
 
 A composite vector can be considered as a vector that is implemented by including a concrete subtype of `AbstractVector` as its data attribute.
@@ -840,91 +863,6 @@ abstract type CompositeDict{K, V} <: AbstractDict{K, V} end
 @inline Base.keys(cd::CompositeDict) = keys(getcontent(cd, :contents))
 @inline Base.values(cd::CompositeDict) = values(getcontent(cd, :contents))
 @inline Base.pairs(cd::CompositeDict) = pairs(getcontent(cd, :contents))
-
-"""
-    NamedContainer{T, Names} = NamedTuple{Names, <:Tuple{Vararg{T}}}
-
-NamedContainer is just a wrapper of Julia NamedTuple, but not a composite type.
-"""
-const NamedContainer{T, Names} = NamedTuple{Names, <:Tuple{Vararg{T}}}
-@inline NamedContainer{Names}(contents::Tuple) where Names = NamedTuple{Names}(contents)
-
-# Named vectors
-"""
-    NamedVector
-
-Abstract type for all named vectors.
-"""
-abstract type NamedVector end
-@inline Base.:(==)(nv₁::NamedVector, nv₂::NamedVector) = keys(nv₁)==keys(nv₂) && values(nv₁)==values(nv₂)
-@inline Base.isequal(nv₁::NamedVector, nv₂::NamedVector) = isequal(keys(nv₁), keys(nv₂)) && isequal(values(nv₁), values(nv₂))
-@inline Base.getindex(nv::NamedVector, index::Int) = getfield(nv, index)
-@inline Base.setindex!(nv::NamedVector, value, index::Int) = setfield!(nv, index, value)
-@inline Base.:<(nv₁::NamedVector, nv₂::NamedVector) = <(efficientoperations, nv₁, nv₂)
-@inline Base.isless(nv₁::NamedVector, nv₂::NamedVector) = isless(efficientoperations, nv₁, nv₂)
-@inline Base.hash(nv::NamedVector, h::UInt) = hash(values(nv), h)
-@inline Base.length(::Type{NV}) where {NV<:NamedVector} = fieldcount(NV)
-@inline Base.length(nv::NamedVector) = length(typeof(nv))
-@inline Base.iterate(nv::NamedVector, state=1) = (state > length(nv)) ? nothing : (getfield(nv, state), state+1)
-@inline Base.iterate(rv::Iterators.Reverse{<:NamedVector}, state=length(rv.itr)) = (state < 1) ? nothing : (getfield(rv.itr, state), state-1)
-@inline Base.keys(nv::NamedVector) = fieldnames(typeof(nv))
-@inline Base.values(nv::NamedVector) = convert(Tuple, nv)
-@inline Base.pairs(nv::NamedVector) = Base.Generator(=>, keys(nv), values(nv))
-Base.show(io::IO, nv::NamedVector) = @printf io "%s(%s)" nameof(typeof(nv)) join(repr.(values(nv)), ", ")
-
-"""
-    convert(::Type{Tuple}, nv::NamedVector) -> Tuple
-    convert(::Type{NV}, nv::Tuple) where {NV<:NamedVector} -> NV
-
-Convert a named vector to tuple and vice versa.
-"""
-@generated Base.convert(::Type{Tuple}, nv::NamedVector) = Expr(:tuple, (:(getfield(nv, $i)) for i = 1:fieldcount(nv))...)
-function Base.convert(::Type{NV}, nv::Tuple) where NV<:NamedVector
-    @assert fieldcount(NV) == length(nv) "convert error: mismatched length between $NV($(fieldcount(NV))) and input tuple($(length(nv)))."
-    return NV(nv...)
-end
-
-"""
-    zero(::Type{NV}) where NV<:NamedVector -> NV
-    zero(nv::NamedVector) -> typeof(nv)
-
-Get a concrete `NamedVector` with all values being zero.
-"""
-@inline @generated function Base.zero(::Type{NV}) where NV<:NamedVector
-    zeros = (zero(fieldtype(NV, i)) for i = 1:fieldcount(NV))
-    return :(NV($(zeros...)))
-end
-@inline Base.zero(nv::NamedVector) = zero(typeof(nv))
-
-"""
-    replace(nv::NamedVector; kwargs...) -> typeof(nv)
-
-Return a copy of a concrete `NamedVector` with some of the field values replaced by the keyword arguments.
-"""
-@inline Base.replace(nv::NamedVector; kwargs...) = replace(efficientoperations, nv; kwargs...)
-
-"""
-    map(f, nvs::NV...) where NV<:NamedVector -> NV
-
-Apply function `f` element-wisely on the input named vectors.
-"""
-@generated function Base.map(f, nvs::NV...) where NV<:NamedVector
-    exprs = Vector{Expr}(undef, fieldcount(NV))
-    for i = 1:length(exprs)
-        tmp = [:(nvs[$j][$i]) for j = 1:length(nvs)]
-        exprs[i] = :(f($(tmp...)))
-    end
-    return :(($NV)($(exprs...)))
-end
-
-"""
-    HomoNamedVector{T}
-
-Abstract type for all homogeneous named vectors.
-"""
-abstract type HomoNamedVector{T} <: NamedVector end
-@inline Base.eltype(::Type{<:HomoNamedVector{T}}) where T = T
-@inline Base.eltype(nv::HomoNamedVector) = eltype(typeof(nv))
 
 # Vector spaces
 """
@@ -1145,442 +1083,5 @@ The direct product of named vector spaces.
 @inline ⊗(vs₁::SimpleNamedVectorSpace, vs₂::DirectProductedNamedVectorSpace) = DirectProductedNamedVectorSpace(vs₁, vs₂.contents...)
 @inline ⊗(vs₁::DirectProductedNamedVectorSpace, vs₂::SimpleNamedVectorSpace) = DirectProductedNamedVectorSpace(vs₁.contents..., vs₂)
 @inline ⊗(vs₁::DirectProductedNamedVectorSpace, vs₂::DirectProductedNamedVectorSpace) = DirectProductedNamedVectorSpace(vs₁.contents..., vs₂.contents...)
-
-"""
-    Segment{S} <: AbstractVector{S}
-
-A segment.
-"""
-struct Segment{S} <: AbstractVector{S}
-    start::S
-    stop::S
-    length::Int
-    ends::Tuple{Bool, Bool}
-end
-@inline Base.:(==)(s₁::Segment, s₂::Segment) = ==(efficientoperations, s₁, s₂)
-@inline Base.isequal(s₁::Segment, s₂::Segment) = isequal(efficientoperations, s₁, s₂)
-@inline Base.size(segment::Segment) = (segment.length,)
-function Base.getindex(segment::Segment, i::Integer)
-    length = segment.length+count(isequal(false), segment.ends)-1
-    step = convert(eltype(segment), (segment.stop-segment.start)/length)
-    start = segment.ends[1] ? segment.start : segment.start+step
-    return start+(i-1)*step
-end
-@inline Base.getindex(segment::Segment, range::OrdinalRange{<:Integer}) = Segment(segment[first(range)], segment[last(range)], length(range), (true, true))
-function Base.iterate(segment::Segment)
-    segment.length==0 && return
-    length = segment.length+count(isequal(false), segment.ends)-1
-    step = convert(eltype(segment), (segment.stop-segment.start)/length)
-    start = segment.ends[1] ? segment.start : segment.start+step
-    return start, (1, start, step)
-end
-function Base.iterate(segment::Segment, state)
-    i, middle, step = state
-    i==segment.length && return
-    middle = middle+step
-    return middle, (i+1, middle, step)
-end
-function Base.show(io::IO, segment::Segment{<:Number})
-    left, right = (segment.ends[1] ? "[" : "("), (segment.ends[2] ? "]" : ")")
-    @printf io "%s%s, %s%s" left segment.start segment.stop right
-end
-function Base.show(io::IO, segment::Segment)
-    left, right = (segment.ends[1] ? "[" : "("), (segment.ends[2] ? "]" : ")")
-    @printf io "%sp₁, p₂%s with p₁=%s and p₂=%s" left right segment.start segment.stop
-end
-
-"""
-    Segment(start::Number, stop::Number, length::Integer; ends::Tuple{Bool, Bool}=(true, false))
-    Segment(start::AbstractVector, stop::AbstractVector, length::Integer; ends::Tuple{Bool, Bool}=(true, false))
-    Segment(start::NTuple{N, Number}, stop::NTuple{N, Number}, length::Integer; ends::Tuple{Bool, Bool}=(true, false)) where N
-
-Construct a segment.
-"""
-function Segment(start::Number, stop::Number, length::Integer; ends::Tuple{Bool, Bool}=(true, false))
-    @assert length>=0 "Segment error: length must be non-negative."
-    dtype = promote_type(typeof(start), typeof(stop), Float64)
-    return Segment(convert(dtype, start), convert(dtype, stop), length, ends)
-end
-function Segment(start::AbstractVector, stop::AbstractVector, length::Integer; ends::Tuple{Bool, Bool}=(true, false))
-    @assert length>=0 "Segment error: length must be non-negative."
-    @assert Base.length(start)==Base.length(stop) "Segment error: start and stop should have equal length."
-    dtype = SVector{Base.length(start), promote_type(eltype(start), eltype(stop), Float64)}
-    return Segment(convert(dtype, start), convert(dtype, stop), length, ends)
-end
-function Segment(start::NTuple{N, Number}, stop::NTuple{N, Number}, length::Integer; ends::Tuple{Bool, Bool}=(true, false)) where N
-    @assert length>=0 "Segment error: length must be non-negative."
-    dtype = SVector{N, promote_type(eltype(start), eltype(stop), Float64)}
-    return Segment(convert(dtype, start), convert(dtype, stop), length, ends)
-end
-
-# Simple trees
-"""
-    SimpleTreeCore()
-
-The core of a simple tree.
-"""
-mutable struct SimpleTreeCore{N, D}
-    root::Union{N, Nothing}
-    const contents::Dict{N, D}
-    const parent::Dict{N, N}
-    const children::Dict{N, Vector{N}}
-    SimpleTreeCore{N, D}() where {N, D} = new{N, D}(nothing, Dict{N, D}(), Dict{N, N}(), Dict{N, Vector{N}}())
-end
-@inline Base.:(==)(tc1::TC, tc2::TC) where {TC<:SimpleTreeCore} = ==(efficientoperations, tc1, tc2)
-@inline Base.isequal(tc1::TC, tc2::TC) where {TC<:SimpleTreeCore} = isequal(efficientoperations, tc1, tc2)
-
-abstract type SimpleTreeIteration end
-struct SimpleTreeDepth <: SimpleTreeIteration end
-struct SimpleTreeWidth <: SimpleTreeIteration end
-
-"""
-    simpletreedepth
-
-Indicate that the iteration over a tree is depth-first.
-"""
-const simpletreedepth = SimpleTreeDepth()
-
-"""
-    simpletreewidth
-
-Indicate that the iteration over a tree is width-first.
-"""
-const simpletreewidth = SimpleTreeWidth()
-
-"""
-    AbstractSimpleTree{Node, Data}
-
-Abstract type for all concrete trees.
-"""
-abstract type AbstractSimpleTree{N, D} end
-@inline contentnames(::Type{<:AbstractSimpleTree}) = (:TREECORE,)
-@inline Base.:(==)(t₁::T, t₂::T) where {T<:AbstractSimpleTree} = ==(efficientoperations, t₁, t₂)
-@inline Base.isequal(t₁::T, t₂::T) where {T<:AbstractSimpleTree} = isequal(efficientoperations, t₁, t₂)
-
-"""
-    SimpleTreeCore(tree::AbstractSimpleTree) -> SimpleTreeCore
-
-Get the core of a simple tree.
-"""
-@inline SimpleTreeCore(tree::AbstractSimpleTree) = getcontent(tree, :TREECORE)
-
-"""
-    keytype(tree::AbstractSimpleTree)
-    keytype(::Type{T}) where {T<:AbstractSimpleTree}
-
-Get a tree's node type.
-"""
-@inline Base.keytype(tree::AbstractSimpleTree) = keytype(typeof(tree))
-@inline @generated Base.keytype(::Type{T}) where {T<:AbstractSimpleTree} = parametertype(supertype(T, :AbstractSimpleTree), 1)
-
-"""
-    valtype(tree::AbstractSimpleTree)
-    valtype(::Type{T}) where {T<:AbstractSimpleTree}
-
-Get a tree's data type.
-"""
-@inline Base.valtype(tree::AbstractSimpleTree) = valtype(typeof(tree))
-@inline @generated Base.valtype(::Type{T}) where {T<:AbstractSimpleTree} = parametertype(supertype(T, :AbstractSimpleTree), 2)
-
-"""
-    eltype(tree::AbstractSimpleTree)
-    eltype(::Type{T}) where {T<:AbstractSimpleTree}
-
-Get the eltype of a tree.
-"""
-@inline Base.eltype(tree::AbstractSimpleTree) = eltype(typeof(tree))
-@inline Base.eltype(::Type{T}) where {T<:AbstractSimpleTree} = Pair{keytype(T), valtype(T)}
-
-"""
-    root(tree::AbstractSimpleTree) -> Union{keytype(tree), Nothing}
-
-Get a tree's root node.
-"""
-@inline root(tree::AbstractSimpleTree) = SimpleTreeCore(tree).root
-
-"""
-    haskey(tree::AbstractSimpleTree{N}, node::N) where N -> Bool
-
-Check whether a node is in a tree.
-"""
-@inline Base.haskey(tree::AbstractSimpleTree{N}, node::N) where N = haskey(SimpleTreeCore(tree).contents, node)
-
-"""
-    length(tree::AbstractSimpleTree) -> Int
-
-Get the number of a tree's nodes.
-"""
-@inline Base.length(tree::AbstractSimpleTree) = length(SimpleTreeCore(tree).contents)
-
-"""
-    parent(tree::AbstractSimpleTree{N}, node::N, superparent::Union{N, Nothing}=nothing) where N -> Union{N, Nothing}
-
-Get the parent of a tree's node. When `node` is the tree's root, return `superparent`.
-"""
-@inline Base.parent(tree::AbstractSimpleTree{N}, node::N, superparent::Union{N, Nothing}=nothing) where {N} = (node == root(tree) ? superparent : SimpleTreeCore(tree).parent[node])
-
-"""
-    children(tree::AbstractSimpleTree) -> Vector{keytype(tree)}
-    children(tree::AbstractSimpleTree, ::Nothing) -> Vector{keytype(tree)}
-    children(tree::AbstractSimpleTree{N}, node::N) where N -> Vector{N}
-
-Get the children of a tree's node.
-"""
-@inline children(tree::AbstractSimpleTree) = children(tree, nothing)
-@inline children(tree::AbstractSimpleTree, ::Nothing) = (root(tree) === nothing) ? error("children error: empty tree!") : [root(tree)]
-@inline children(tree::AbstractSimpleTree{N}, node::N) where N = SimpleTreeCore(tree).children[node]
-
-"""
-    addnode!(tree::AbstractSimpleTree{N}, node::N) where N} -> typeof(tree)
-    addnode!(tree::AbstractSimpleTree{N}, ::Nothing, node::N) where N -> typeof(tree)
-    addnode!(tree::AbstractSimpleTree{N}, parent::N, node::N) where N -> typeof(tree)
-
-Update the structure of a tree by adding a node. When the parent is `nothing`, the input tree must be empty and the input node becomes the tree's root.
-"""
-@inline addnode!(tree::AbstractSimpleTree{N}, node::N) where {N} = addnode!(tree, nothing, node)
-function addnode!(tree::AbstractSimpleTree{N}, ::Nothing, node::N) where N
-    @assert root(tree) === nothing "addnode! error: not empty tree."
-    SimpleTreeCore(tree).root = node
-    SimpleTreeCore(tree).children[node] = N[]
-    return tree
-end
-function addnode!(tree::AbstractSimpleTree{N}, parent::N, node::N) where N
-    @assert haskey(tree, parent) "addnode! error: parent($parent) not in tree."
-    @assert !haskey(tree, node) "addnode! error: node($node) already in tree."
-    push!(SimpleTreeCore(tree).children[parent], node)
-    SimpleTreeCore(tree).parent[node] = parent
-    SimpleTreeCore(tree).children[node] = N[]
-    return tree
-end
-
-"""
-    deletenode!(tree::AbstractSimpleTree{N}, node::N) where N -> typeof(tree)
-
-Update the structure of a tree by deleting a node.
-"""
-function deletenode!(tree::AbstractSimpleTree{N}, node::N) where N
-    @assert haskey(tree, node) "deletenode! error: node($node) not in tree."
-    if node == root(tree)
-        SimpleTreeCore(tree).root = nothing
-    else
-        pnode = parent(tree, node)
-        haskey(SimpleTreeCore(tree).children, pnode) && filter!(!=(node), SimpleTreeCore(tree).children[pnode])
-    end
-    pop!(SimpleTreeCore(tree).contents, node)
-    pop!(SimpleTreeCore(tree).parent, node, nothing)
-    pop!(SimpleTreeCore(tree).children, node)
-    return tree
-end
-
-"""
-    getindex(tree::AbstractSimpleTree{N}, node::N) where N -> N
-
-Get the data of a tree's node.
-"""
-@inline Base.getindex(tree::AbstractSimpleTree{N}, node::N) where {N} = SimpleTreeCore(tree).contents[node]
-
-"""
-    setindex!(tree::AbstractSimpleTree{N, D}, data::D, node::N) where {N, D}
-
-Set the data of a tree's node.
-"""
-@inline Base.setindex!(tree::AbstractSimpleTree{N, D}, data::D, node::N) where {N, D} = (SimpleTreeCore(tree).contents[node] = data)
-
-"""
-    empty(tree::AbstractSimpleTree)
-
-Construct an empty tree of the same type with the input one.
-"""
-@inline Base.empty(tree::AbstractSimpleTree) = rawtype(typeof(tree))(dissolve(tree, empty)...)
-@inline dissolve(tree::AbstractSimpleTree{N, D}, ::Val{:TREECORE}, ::typeof(empty), args::Tuple, kwargs::NamedTuple) where {N, D} = SimpleTreeCore{N, D}()
-
-"""
-    keys(tree::AbstractSimpleTree{N}, ::SimpleTreeDepth, node::Union{N, Nothing}=root(tree)) where N
-    keys(tree::AbstractSimpleTree{N}, ::SimpleTreeWidth, node::Union{N, Nothing}=root(tree)) where N
-
-Iterate over a tree's nodes starting from a certain `node` by depth first search or width first search.
-"""
-function Base.keys(tree::AbstractSimpleTree{N}, ti::SimpleTreeIteration, node::Union{N, Nothing}=root(tree)) where N
-    TreeKeys{typeof(ti), N, valtype(tree), typeof(tree)}(tree, node)
-end
-struct TreeKeys{P<:SimpleTreeIteration, N, D, T<:AbstractSimpleTree{N, D}}
-    tree::T
-    node::Union{N, Nothing}
-end
-Base.eltype(::Type{<:TreeKeys{<:SimpleTreeIteration, N, D, <:AbstractSimpleTree{N, D}} where D}) where {N} = N
-Base.IteratorSize(::Type{<:TreeKeys}) = Base.SizeUnknown()
-Base.iterate(tk::TreeKeys) = (root(tk.tree) === nothing) ? nothing : (tk.node, copy(children(tk.tree, tk.node)))
-function Base.iterate(tk::TreeKeys{SimpleTreeDepth, N}, state::Vector{N}) where N
-    (length(state) == 0) ? nothing : (node = popfirst!(state); prepend!(state, children(tk.tree, node)); (node, state))
-end
-function Base.iterate(tk::TreeKeys{SimpleTreeWidth, N}, state::Vector{N}) where N
-    (length(state) == 0) ? nothing : (node = popfirst!(state); append!(state, children(tk.tree, node)); (node, state))
-end
-
-"""
-    values(tree::AbstractSimpleTree{N}, ::SimpleTreeDepth, node::Union{N, Nothing}=root(tree)) where N
-    values(tree::AbstractSimpleTree{N}, ::SimpleTreeWidth, node::Union{N, Nothing}=root(tree)) where N
-
-Iterate over a tree's data starting from a certain `node` by depth first search or width first search.
-"""
-@inline Base.values(tree::AbstractSimpleTree{N}, ti::SimpleTreeIteration, node::Union{N, Nothing}=root(tree)) where {N} = (tree[key] for key in keys(tree, ti, node))
-
-"""
-    pairs(tree::AbstractSimpleTree{N}, ::SimpleTreeDepth, node::Union{N, Nothing}=root(tree)) where N
-    pairs(tree::AbstractSimpleTree{N}, ::SimpleTreeWidth, node::Union{N, Nothing}=root(tree)) where N
-
-Iterate over a tree's (node, data) pairs starting from a certain `node` by depth first search or width first search.
-"""
-@inline Base.pairs(tree::AbstractSimpleTree{N}, ti::SimpleTreeIteration, node::Union{N, Nothing}=root(tree)) where {N} = ((key, tree[key]) for key in keys(tree, ti, node))
-
-"""
-    isleaf(tree::AbstractSimpleTree{N}, node::N) where N -> Bool
-
-Judge whether a tree's node is a leaf (a node without children) or not.
-"""
-@inline isleaf(tree::AbstractSimpleTree{N}, node::N) where {N} = length(children(tree, node)) == 0
-
-"""
-    level(tree::AbstractSimpleTree{N}, node::N) where N -> Int
-
-Get the level of tree's node.
-"""
-@inline function level(tree::AbstractSimpleTree{N}, node::N) where N
-    result = 1
-    while node != root(tree)
-        result += 1
-        node = parent(tree, node)
-    end
-    return result
-end
-
-"""
-    ancestor(tree::AbstractSimpleTree{N}, node::N, generation::Int=1) where N -> N
-
-Get the ancestor of a tree's node of the n-th generation.
-"""
-@inline function ancestor(tree::AbstractSimpleTree{N}, node::N, generation::Int=1) where N
-    @assert generation >= 0 "ancestor error: generation($generation) must be non-negative."
-    result = node
-    for i = 1:generation
-        result = parent(tree, result)
-    end
-    result
-end
-
-"""
-    descendants(tree::AbstractSimpleTree{N}, node::N, generation::Int=1) where N -> Vector{N}
-
-Get the descendants of a tree's node of the nth generation.
-"""
-function descendants(tree::AbstractSimpleTree{N}, node::N, generation::Int=1) where N
-    @assert generation >= 0 "descendants error: generation($generation) must be non-negative."
-    result = N[node]
-    for i = 1:generation
-        result = vcat((children(tree, node) for node in result)...)
-    end
-    result
-end
-
-"""
-    siblings(tree::AbstractSimpleTree{N}, node::N) where N -> Vector{N}
-
-Get the siblings (other nodes sharing the same parent) of a tree's node.
-"""
-@inline siblings(tree::AbstractSimpleTree{N}, node::N) where N = filter(!=(node), children(tree, parent(tree, node)))
-
-"""
-    leaves(tree::AbstractSimpleTree) -> Vector{keytype(tree)}
-
-Get a tree's leaves.
-"""
-@inline leaves(tree::AbstractSimpleTree) = keytype(tree)[node for node in keys(tree, simpletreedepth) if isleaf(tree, node)]
-
-"""
-    push!(tree::AbstractSimpleTree{N, D}, node::N, data::D) where {N, D} -> typeof(tree)
-    push!(tree::AbstractSimpleTree{N, D}, parent::Union{N, Nothing}, node::N, data::D) where {N, D} -> typeof(tree)
-
-Push a new node to a tree. When `parent` is `nothing`, this function set the root node of an empty tree.
-"""
-Base.push!(tree::AbstractSimpleTree{N, D}, node::N, data::D) where {N, D} = push!(tree, nothing, node, data)
-function Base.push!(tree::AbstractSimpleTree{N, D}, parent::Union{N, Nothing}, node::N, data::D) where {N, D}
-    addnode!(tree, parent, node)
-    tree[node] = data
-    return tree
-end
-
-"""
-    append!(tree::AbstractSimpleTree{N, D}, subtree::AbstractSimpleTree{N, D}) where {N, D} -> typeof(tree)
-    append!(tree::AbstractSimpleTree{N, D}, node::Union{N, Nothing}, subtree::AbstractSimpleTree{N, D}) where {N, D} -> typeof(tree)
-
-Append a subtree to a tree.
-"""
-Base.append!(tree::AbstractSimpleTree{N, D}, subtree::AbstractSimpleTree{N, D}) where {N, D} = append!(tree, nothing, subtree)
-function Base.append!(tree::AbstractSimpleTree{N, D}, node::Union{N, Nothing}, subtree::AbstractSimpleTree{N, D}) where {N, D}
-    for (key, value) in pairs(subtree, simpletreewidth)
-        push!(tree, parent(subtree, key, node), key, value)
-    end
-    return tree
-end
-
-"""
-    delete!(tree::AbstractSimpleTree{N}, node::N) where N -> typeof(tree)
-
-Delete a node and all its descendants from a tree.
-"""
-function Base.delete!(tree::AbstractSimpleTree{N}, node::N) where N
-    for key in collect(N, keys(tree, simpletreedepth, node))
-        deletenode!(tree, key)
-    end
-    return tree
-end
-
-"""
-    empty!(tree::AbstractSimpleTree) -> typeof(tree)
-
-Empty a tree.
-"""
-@inline Base.empty!(tree::AbstractSimpleTree) = delete!(tree, root(tree))
-
-"""
-    subtree(tree::AbstractSimpleTree{N}, node::N) where N -> typeof(tree)
-
-Get a subtree whose root is `node`.
-"""
-function subtree(tree::AbstractSimpleTree{N}, node::N) where N
-    result = empty(tree)
-    for (i, (key, value)) in enumerate(pairs(tree, simpletreedepth, node))
-        push!(result, (i == 1) ? nothing : parent(tree, key), key, value)
-    end
-    return result
-end
-
-"""
-    move!(tree::AbstractSimpleTree{N}, node::N, parent::N) where N -> typeof(tree)
-
-Move a subtree to a new position.
-"""
-function move!(tree::AbstractSimpleTree{N}, node::N, parent::N) where N
-    sub = subtree(tree, node)
-    delete!(tree, node)
-    append!(tree, parent, sub)
-    return tree
-end
-
-"""
-    SimpleTree{N, D} <: AbstractSimpleTree{N, D}
-
-The minimum tree structure that implements all the default tree methods.
-"""
-struct SimpleTree{N, D} <: AbstractSimpleTree{N, D}
-    TREECORE::SimpleTreeCore{N, D}
-end
-
-"""
-    SimpleTree{N, D}() where {N, D}
-
-Construct an empty simple tree.
-"""
-SimpleTree{N, D}() where {N, D} = SimpleTree(SimpleTreeCore{N, D}())
 
 end # module

@@ -1,9 +1,9 @@
 using LaTeXStrings: latexstring
-using QuantumLattices: ⊗, ⋅, expand, permute, rank
+using QuantumLattices: ⊗, expand, permute, rank
 using QuantumLattices.DegreesOfFreedom: wildcard, AbstractCompositeIndex, CompositeIID, CompositeIndex, Constraint, Coupling, Diagonal, Hilbert, Index, IIDSpace, MatrixCoupling, iidtype, isdefinite, statistics, @indexes
 using QuantumLattices.QuantumOperators: Operator, Operators, latexname, matrix, script
 using QuantumLattices.QuantumSystems
-using QuantumLattices.Spatials: Bond, Point, azimuthd, rcoordinate
+using QuantumLattices.Spatials: Bond, Lattice, Neighbors, Point, azimuthd, bonds, rcoordinate, icoordinate
 using QuantumLattices.Toolkit: Permutations, shape
 using SparseArrays: SparseMatrixCSC
 using StaticArrays: SVector
@@ -623,6 +623,12 @@ end
     @test Γ"z" == SparseMatrixCSC([0 1 0; 1 0 0; 0 0 0])
 end
 
+@testset "Γ′" begin
+    @test Γ′"x" == SparseMatrixCSC([0 1 1; 1 0 0; 1 0 0])
+    @test Γ′"y" == SparseMatrixCSC([0 1 0; 1 0 1; 0 1 0])
+    @test Γ′"z" == SparseMatrixCSC([0 0 1; 0 0 1; 1 1 0])
+end
+
 @testset "DM" begin
     @test DM"x" == SparseMatrixCSC([0 0 0; 0 0 1; 0 -1 0])
     @test DM"y" == SparseMatrixCSC([0 0 -1; 0 0 0; 1 0 0])
@@ -647,6 +653,191 @@ end
         Operator(1.5, CompositeIndex(Index(2, SID{1//2}('z')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, SID{1//2}('z')), [0.0, 0.0], [0.0, 0.0])),
     )
     @test expand(term, bond, hilbert) == operators
+end
+
+@testset "Zeeman" begin
+    point = Point(1, (0.5, 0.5), (0.0, 0.0))
+    hilbert = Hilbert(point.site=>Spin{1//2}())
+    term = Zeeman(:h, 1.5, 'x', 2)
+    operators = Operators(Operator(3.0, CompositeIndex(Index(1, SID{1//2}('x')), [0.5, 0.5], [0.0, 0.0])))
+    @test expand(term, Bond(point), hilbert) == operators
+
+    term = Zeeman(:h, 1.5, [1, 1, 1], 2)
+    operators = Operators(
+        Operator(√3, CompositeIndex(Index(1, SID{1//2}('x')), [0.5, 0.5], [0.0, 0.0])),
+        Operator(√3, CompositeIndex(Index(1, SID{1//2}('y')), [0.5, 0.5], [0.0, 0.0])),
+        Operator(√3, CompositeIndex(Index(1, SID{1//2}('z')), [0.5, 0.5], [0.0, 0.0]))
+    )
+    @test expand(term, Bond(point), hilbert) ≈ operators
+
+    term = Zeeman(:h, 1.5, [1, -1, 2], [1 0 0; 0 2 0; 0 0 3])
+    operators = Operators(
+        Operator(√6/4, CompositeIndex(Index(1, SID{1//2}('x')), [0.5, 0.5], [0.0, 0.0])),
+        Operator(-√6/2, CompositeIndex(Index(1, SID{1//2}('y')), [0.5, 0.5], [0.0, 0.0])),
+        Operator(3*√6/2, CompositeIndex(Index(1, SID{1//2}('z')), [0.5, 0.5], [0.0, 0.0]))
+    )
+    @test expand(term, Bond(point), hilbert) ≈ operators
+end
+
+@testset "SingleIonAnisotropy" begin
+    point = Point(1, (0.5, 0.5), (0.0, 0.0))
+    hilbert = Hilbert(point.site=>Spin{1//2}())
+    term = SingleIonAnisotropy(:A, 1.5, 'z')
+    operators = Operators(Operator(1.5, CompositeIndex(Index(1, SID{1//2}('z')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, SID{1//2}('z')), [0.5, 0.5], [0.0, 0.0])))
+    @test expand(term, Bond(point), hilbert) == operators
+
+    term = SingleIonAnisotropy(:A, 1.5, [1 0 0; 0 2 0; 0 0 3])
+    operators = Operators(
+        Operator(1.5, CompositeIndex(Index(1, SID{1//2}('x')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, SID{1//2}('x')), [0.5, 0.5], [0.0, 0.0])),
+        Operator(3.0, CompositeIndex(Index(1, SID{1//2}('y')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, SID{1//2}('y')), [0.5, 0.5], [0.0, 0.0])),
+        Operator(4.5, CompositeIndex(Index(1, SID{1//2}('z')), [0.5, 0.5], [0.0, 0.0]), CompositeIndex(Index(1, SID{1//2}('z')), [0.5, 0.5], [0.0, 0.0]))
+    )
+    @test expand(term, Bond(point), hilbert) == operators
+end
+
+@testset "Ising" begin
+    bond = Bond(1, Point(1, (0.0, 0.0), (0.0, 0.0)), Point(2, (0.5, 0.5), (0.0, 0.0)))
+    hilbert = Hilbert(Spin{1//2}(), 2)
+    term = Ising(:J, 1.5, 1, 'x')
+    operators = Operators(Operator(1.5, CompositeIndex(Index(1, SID{1//2}('x')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, SID{1//2}('x')), [0.5, 0.5], [0.0, 0.0])))
+    @test expand(term, bond, hilbert) == operators
+
+    term = Ising(:J, 1.5, 1, 'y')
+    operators = Operators(Operator(1.5, CompositeIndex(Index(1, SID{1//2}('y')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, SID{1//2}('y')), [0.5, 0.5], [0.0, 0.0])))
+    @test expand(term, bond, hilbert) == operators
+
+    term = Ising(:J, 1.5, 1, 'z')
+    operators = Operators(Operator(1.5, CompositeIndex(Index(1, SID{1//2}('z')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, SID{1//2}('z')), [0.5, 0.5], [0.0, 0.0])))
+    @test expand(term, bond, hilbert) == operators
+end
+
+@testset "Heisenberg" begin
+    bond = Bond(1, Point(1, (0.0, 0.0), (0.0, 0.0)), Point(2, (0.5, 0.5), (0.0, 0.0)))
+    hilbert = Hilbert(Spin{1//2}(), 2)
+    term = Heisenberg(:J, 1.5, 1; form=:xyz)
+    operators = Operators(
+        Operator(1.5, CompositeIndex(Index(1, SID{1//2}('x')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, SID{1//2}('x')), [0.5, 0.5], [0.0, 0.0])),
+        Operator(1.5, CompositeIndex(Index(1, SID{1//2}('y')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, SID{1//2}('y')), [0.5, 0.5], [0.0, 0.0])),
+        Operator(1.5, CompositeIndex(Index(1, SID{1//2}('z')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, SID{1//2}('z')), [0.5, 0.5], [0.0, 0.0]))
+    )
+    @test expand(term, bond, hilbert) == operators
+
+    term = Heisenberg(:J, 1.5, 1; form=Symbol("+-z"))
+    operators = Operators(
+        Operator(0.75, CompositeIndex(Index(1, SID{1//2}('+')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, SID{1//2}('-')), [0.5, 0.5], [0.0, 0.0])),
+        Operator(0.75, CompositeIndex(Index(1, SID{1//2}('-')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, SID{1//2}('+')), [0.5, 0.5], [0.0, 0.0])),
+        Operator(1.5, CompositeIndex(Index(1, SID{1//2}('z')), [0.0, 0.0], [0.0, 0.0]), CompositeIndex(Index(2, SID{1//2}('z')), [0.5, 0.5], [0.0, 0.0]))
+    )
+    @test expand(term, bond, hilbert) == operators
+end
+
+@testset "Kitaev" begin
+    lattice = Lattice((0.0, 0.0), (0.0, √3/3); vectors=[[1.0, 0.0], [0.5, √3/2]])
+    bond₁, bond₂, bond₃ = bonds(lattice, Neighbors(1=>1/√3))
+    hilbert = Hilbert(Spin{1//2}(), length(lattice))
+    term = Kitaev(:K, 1.5, 1; x=[90], y=[210], z=[330], unit=:degree)
+
+    operators = Operators(Operator(1.5, CompositeIndex(Index(2, SID{1//2}('x')), -rcoordinate(bond₁), -icoordinate(bond₁)), CompositeIndex(Index(1, SID{1//2}('x')), [0.0, 0.0], [0.0, 0.0])))
+    @test expand(term, bond₁, hilbert) == operators
+    @test expand(term, reverse(bond₁), hilbert) == operators'
+
+    operators = Operators(Operator(1.5, CompositeIndex(Index(2, SID{1//2}('y')), -rcoordinate(bond₂), -icoordinate(bond₂)), CompositeIndex(Index(1, SID{1//2}('y')), [0.0, 0.0], [0.0, 0.0])))
+    @test expand(term, bond₂, hilbert) == operators
+    @test expand(term, reverse(bond₂), hilbert) == operators'
+
+    operators = Operators(Operator(1.5, CompositeIndex(Index(2, SID{1//2}('z')), -rcoordinate(bond₃), -icoordinate(bond₃)), CompositeIndex(Index(1, SID{1//2}('z')), [0.0, 0.0], [0.0, 0.0])))
+    @test expand(term, bond₃, hilbert) == operators
+    @test expand(term, reverse(bond₃), hilbert) == operators'
+end
+
+@testset "Γ" begin
+    lattice = Lattice((0.0, 0.0), (0.0, √3/3); vectors=[[1.0, 0.0], [0.5, √3/2]])
+    bond₁, bond₂, bond₃ = bonds(lattice, Neighbors(1=>1/√3))
+    hilbert = Hilbert(Spin{1//2}(), length(lattice))
+    term = Γ(:Γ, 1.5, 1; x=[90], y=[210], z=[330], unit=:degree)
+
+    operators = Operators(
+        Operator(1.5, CompositeIndex(Index(2, SID{1//2}('y')), -rcoordinate(bond₁), -icoordinate(bond₁)), CompositeIndex(Index(1, SID{1//2}('z')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(1.5, CompositeIndex(Index(2, SID{1//2}('z')), -rcoordinate(bond₁), -icoordinate(bond₁)), CompositeIndex(Index(1, SID{1//2}('y')), [0.0, 0.0], [0.0, 0.0]))
+    )
+    @test expand(term, bond₁, hilbert) == operators
+    @test expand(term, reverse(bond₁), hilbert) == operators'
+
+    operators = Operators(
+        Operator(1.5, CompositeIndex(Index(2, SID{1//2}('z')), -rcoordinate(bond₂), -icoordinate(bond₂)), CompositeIndex(Index(1, SID{1//2}('x')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(1.5, CompositeIndex(Index(2, SID{1//2}('x')), -rcoordinate(bond₂), -icoordinate(bond₂)), CompositeIndex(Index(1, SID{1//2}('z')), [0.0, 0.0], [0.0, 0.0]))
+    )
+    @test expand(term, bond₂, hilbert) == operators
+    @test expand(term, reverse(bond₂), hilbert) == operators'
+
+    operators = Operators(
+        Operator(1.5, CompositeIndex(Index(2, SID{1//2}('y')), -rcoordinate(bond₃), -icoordinate(bond₃)), CompositeIndex(Index(1, SID{1//2}('x')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(1.5, CompositeIndex(Index(2, SID{1//2}('x')), -rcoordinate(bond₃), -icoordinate(bond₃)), CompositeIndex(Index(1, SID{1//2}('y')), [0.0, 0.0], [0.0, 0.0]))
+    )
+    @test expand(term, bond₃, hilbert) == operators
+    @test expand(term, reverse(bond₃), hilbert) == operators'
+end
+
+@testset "Γ′" begin
+    lattice = Lattice((0.0, 0.0), (0.0, √3/3); vectors=[[1.0, 0.0], [0.5, √3/2]])
+    bond₁, bond₂, bond₃ = bonds(lattice, Neighbors(1=>1/√3))
+    hilbert = Hilbert(Spin{1//2}(), length(lattice))
+    term = Γ′(:Γ′, 1.5, 1; x=[90], y=[210], z=[330], unit=:degree)
+
+    operators = Operators(
+        Operator(1.5, CompositeIndex(Index(2, SID{1//2}('z')), -rcoordinate(bond₁), -icoordinate(bond₁)), CompositeIndex(Index(1, SID{1//2}('x')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(1.5, CompositeIndex(Index(2, SID{1//2}('x')), -rcoordinate(bond₁), -icoordinate(bond₁)), CompositeIndex(Index(1, SID{1//2}('y')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(1.5, CompositeIndex(Index(2, SID{1//2}('x')), -rcoordinate(bond₁), -icoordinate(bond₁)), CompositeIndex(Index(1, SID{1//2}('z')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(1.5, CompositeIndex(Index(2, SID{1//2}('y')), -rcoordinate(bond₁), -icoordinate(bond₁)), CompositeIndex(Index(1, SID{1//2}('x')), [0.0, 0.0], [0.0, 0.0]))
+    )
+    @test expand(term, bond₁, hilbert) == operators
+    @test expand(term, reverse(bond₁), hilbert) == operators'
+
+    operators = Operators(
+        Operator(1.5, CompositeIndex(Index(2, SID{1//2}('z')), -rcoordinate(bond₂), -icoordinate(bond₂)), CompositeIndex(Index(1, SID{1//2}('y')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(1.5, CompositeIndex(Index(2, SID{1//2}('x')), -rcoordinate(bond₂), -icoordinate(bond₂)), CompositeIndex(Index(1, SID{1//2}('y')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(1.5, CompositeIndex(Index(2, SID{1//2}('y')), -rcoordinate(bond₂), -icoordinate(bond₂)), CompositeIndex(Index(1, SID{1//2}('x')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(1.5, CompositeIndex(Index(2, SID{1//2}('y')), -rcoordinate(bond₂), -icoordinate(bond₂)), CompositeIndex(Index(1, SID{1//2}('z')), [0.0, 0.0], [0.0, 0.0]))
+    )
+    @test expand(term, bond₂, hilbert) == operators
+    @test expand(term, reverse(bond₂), hilbert) == operators'
+
+    operators = Operators(
+        Operator(1.5, CompositeIndex(Index(2, SID{1//2}('z')), -rcoordinate(bond₃), -icoordinate(bond₃)), CompositeIndex(Index(1, SID{1//2}('x')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(1.5, CompositeIndex(Index(2, SID{1//2}('y')), -rcoordinate(bond₃), -icoordinate(bond₃)), CompositeIndex(Index(1, SID{1//2}('z')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(1.5, CompositeIndex(Index(2, SID{1//2}('z')), -rcoordinate(bond₃), -icoordinate(bond₃)), CompositeIndex(Index(1, SID{1//2}('y')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(1.5, CompositeIndex(Index(2, SID{1//2}('x')), -rcoordinate(bond₃), -icoordinate(bond₃)), CompositeIndex(Index(1, SID{1//2}('z')), [0.0, 0.0], [0.0, 0.0]))
+    )
+    @test expand(term, bond₃, hilbert) == operators
+    @test expand(term, reverse(bond₃), hilbert) == operators'
+end
+
+@testset "DM" begin
+    lattice = Lattice((0.0, 0.0), (0.0, √3/3); vectors=[[1.0, 0.0], [0.5, √3/2]])
+    bond₁, bond₂, bond₃ = bonds(lattice, Neighbors(1=>1/√3))
+    hilbert = Hilbert(Spin{1//2}(), length(lattice))
+    term = DM(:DM, 1.5, 1, [90]=>'x', [210]=>'y', [330]=>'z'; unit=:degree)
+
+    operators = Operators(
+        Operator(-1.5, CompositeIndex(Index(2, SID{1//2}('y')), -rcoordinate(bond₁), -icoordinate(bond₁)), CompositeIndex(Index(1, SID{1//2}('z')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(1.5, CompositeIndex(Index(2, SID{1//2}('z')), -rcoordinate(bond₁), -icoordinate(bond₁)), CompositeIndex(Index(1, SID{1//2}('y')), [0.0, 0.0], [0.0, 0.0]))
+    )
+    @test expand(term, bond₁, hilbert) == operators
+    @test expand(term, reverse(bond₁), hilbert) == operators'
+
+    operators = Operators(
+        Operator(-1.5, CompositeIndex(Index(2, SID{1//2}('z')), -rcoordinate(bond₂), -icoordinate(bond₂)), CompositeIndex(Index(1, SID{1//2}('x')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(1.5, CompositeIndex(Index(2, SID{1//2}('x')), -rcoordinate(bond₂), -icoordinate(bond₂)), CompositeIndex(Index(1, SID{1//2}('z')), [0.0, 0.0], [0.0, 0.0]))
+    )
+    @test expand(term, bond₂, hilbert) == operators
+    @test expand(term, reverse(bond₂), hilbert) == operators'
+
+    operators = Operators(
+        Operator(1.5, CompositeIndex(Index(2, SID{1//2}('y')), -rcoordinate(bond₃), -icoordinate(bond₃)), CompositeIndex(Index(1, SID{1//2}('x')), [0.0, 0.0], [0.0, 0.0])),
+        Operator(-1.5, CompositeIndex(Index(2, SID{1//2}('x')), -rcoordinate(bond₃), -icoordinate(bond₃)), CompositeIndex(Index(1, SID{1//2}('y')), [0.0, 0.0], [0.0, 0.0]))
+    )
+    @test expand(term, bond₃, hilbert) == operators
+    @test expand(term, reverse(bond₃), hilbert) == operators'
 end
 
 @testset "PID" begin

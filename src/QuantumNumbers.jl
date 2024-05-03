@@ -1,16 +1,16 @@
 module QuantumNumbers
 
-using Base.Iterators: Reverse, flatten, product
+using Base.Iterators: product
 using DataStructures: OrderedDict
 using LinearAlgebra: norm
 using Printf: @printf, @sprintf
 using Random: MersenneTwister, seed!, shuffle!
-using ..Toolkit: HomoNamedVector, VectorSpace, VectorSpaceCartesian, VectorSpaceEnumerative, VectorSpaceStyle
+using ..Toolkit: VectorSpace, VectorSpaceCartesian, VectorSpaceEnumerative, VectorSpaceStyle, efficientoperations
 
 import ..QuantumLattices: ⊕, ⊗, decompose, dimension, expand, permute
 import ..Toolkit: shape
 
-export AbelianNumber, AbelianNumbers, regularize, regularize!, periods, @abeliannumber
+export AbelianNumber, AbelianNumbers, QuantumNumber, findindex, regularize, regularize!, periods, @abeliannumber
 export Momenta, Momentum, Momentum₁, Momentum₂, Momentum₃, ParticleNumber, SpinfulParticle, Sz
 
 """
@@ -21,11 +21,61 @@ Return a tuple of all positive signs.
 @inline positives(inputs::NTuple{N, Any}) where N = ntuple(i->1, Val(N))
 
 """
-    AbelianNumber{T<:Real} <: HomoNamedVector{T}
+    QuantumNumber
+
+Abstract type for all quantum numbers.
+"""
+abstract type QuantumNumber{T} end
+@inline Base.eltype(qn::QuantumNumber) = eltype(typeof(qn))
+@inline Base.eltype(::Type{<:QuantumNumber{T}}) where T = T
+@inline Base.:(==)(qn₁::QuantumNumber, qn₂::QuantumNumber) = keys(qn₁)==keys(qn₂) && values(qn₁)==values(qn₂)
+@inline Base.isequal(qn₁::QuantumNumber, qn₂::QuantumNumber) = isequal(keys(qn₁), keys(qn₂)) && isequal(values(qn₁), values(qn₂))
+@inline Base.getindex(qn::QuantumNumber, index::Int) = getfield(qn, index)
+@inline Base.:<(qn₁::QuantumNumber, qn₂::QuantumNumber) = <(efficientoperations, qn₁, qn₂)
+@inline Base.isless(qn₁::QuantumNumber, qn₂::QuantumNumber) = isless(efficientoperations, qn₁, qn₂)
+@inline Base.hash(qn::QuantumNumber, h::UInt) = hash(values(qn), h)
+@inline Base.length(::Type{QN}) where {QN<:QuantumNumber} = fieldcount(QN)
+@inline Base.length(qn::QuantumNumber) = length(typeof(qn))
+@inline Base.iterate(qn::QuantumNumber, state=1) = (state > length(qn)) ? nothing : (getfield(qn, state), state+1)
+@inline Base.keys(qn::QuantumNumber) = fieldnames(typeof(qn))
+@inline Base.values(qn::QuantumNumber) = convert(Tuple, qn)
+@inline Base.pairs(qn::QuantumNumber) = Base.Generator(=>, keys(qn), values(qn))
+Base.show(io::IO, qn::QuantumNumber) = @printf io "%s(%s)" nameof(typeof(qn)) join(repr.(values(qn)), ", ")
+@generated Base.convert(::Type{Tuple}, qn::QuantumNumber) = Expr(:tuple, (:(getfield(qn, $i)) for i = 1:fieldcount(qn))...)
+function Base.convert(::Type{QN}, qn::Tuple) where {QN<:QuantumNumber}
+    @assert fieldcount(QN) == length(qn) "convert error: mismatched length between $QN($(fieldcount(QN))) and input tuple($(length(qn)))."
+    return QN(qn...)
+end
+@inline @generated function Base.zero(::Type{QN}) where {QN<:QuantumNumber}
+    zeros = (zero(fieldtype(QN, i)) for i = 1:fieldcount(QN))
+    return :(QN($(zeros...)))
+end
+@inline Base.zero(qn::QuantumNumber) = zero(typeof(qn))
+@inline Base.replace(qn::QuantumNumber; kwargs...) = replace(efficientoperations, qn; kwargs...)
+@generated function Base.map(f, qns::QN...) where {QN<:QuantumNumber}
+    exprs = Vector{Expr}(undef, fieldcount(QN))
+    for i = 1:length(exprs)
+        tmp = [:(qns[$j][$i]) for j = 1:length(qns)]
+        exprs[i] = :(f($(tmp...)))
+    end
+    return :(($QN)($(exprs...)))
+end
+
+"""
+    dimension(::Type{<:QuantumNumber}) -> Int
+    dimension(::QuantumNumber) -> Int
+
+The dimension of the Hilbert space an `QuantumNumber` represents. Apparently, this is always 1.
+"""
+@inline dimension(::Type{<:QuantumNumber}) = 1
+@inline dimension(::QuantumNumber) = 1
+
+"""
+    AbelianNumber{T<:Real} <: QuantumNumber{T}
 
 Abstract type for all concrete quantum numbers for a single basis.
 """
-abstract type AbelianNumber{T<:Real} <: HomoNamedVector{T} end
+abstract type AbelianNumber{T<:Real} <: QuantumNumber{T} end
 
 """
     periods(qn::AbelianNumber)
@@ -33,15 +83,6 @@ abstract type AbelianNumber{T<:Real} <: HomoNamedVector{T} end
 The periods of the components of a concrete `AbelianNumber`.
 """
 @inline periods(qn::AbelianNumber) = periods(typeof(qn))
-
-"""
-    dimension(::Type{<:AbelianNumber}) -> Int
-    dimension(::AbelianNumber) -> Int
-
-The dimension of the Hilbert space an `AbelianNumber` represents. Apparently, this is always 1.
-"""
-@inline dimension(::Type{<:AbelianNumber}) = 1
-@inline dimension(::AbelianNumber) = 1
 
 """
     +(qn::AbelianNumber) -> typeof(qn)
@@ -77,13 +118,18 @@ Overloaded `*` operator for the multiplication between an integer and an `Abelia
 @inline Base.:*(qn::AbelianNumber, factor::Integer) = typeof(qn)(map(num->num*factor, convert(Tuple, qn))...)
 
 """
-    ^(qn::AbelianNumber, factor::Integer) -> typeof(qn)
+    ^(qn::AbelianNumber, power::Integer) -> typeof(qn)
 
 Overloaded `^` operator for `AbelianNumber`.
-
-This operation translates into the direct product of `factor` copies of `qn`.
 """
-@inline Base.:^(qn::AbelianNumber, factor::Integer) = kron(NTuple{factor, typeof(qn)}(qn for i = 1:factor)...)
+function Base.:^(qn::AbelianNumber, power::Integer)
+    @assert power>0 "^ error: power should be positive integer."
+    result = qn
+    for i = 2:power
+        result += qn
+    end
+    return result
+end
 
 """
     ⊗(qns::AbelianNumber...) -> eltype(qns)
@@ -93,13 +139,20 @@ Get the direct product of some `AbelianNumber`s.
 @inline ⊗(qns::AbelianNumber...) = kron(qns...)
 
 """
-    kron(qns::Vararg{AbelianNumber}; signs=positives(qns))-> eltype(qns)
+    kron(qns::AbelianNumber...; signs=positives(qns))-> eltype(qns)
 
 Get the direct product of some `AbelianNumber`s.
+
 !!! note
     Physically, the direct product of a couple of `AbelianNumber`s are defined through the direct product of the bases of the Hilbert spaces they represent. Apparently, the result is still an `AbelianNumber` whose dimension is 1. At the same time, each component of the result is obtained by a summation of the corresponding components of the inputs with the correct signs. This is a direct consequence of the Abelian nature of our quantum numbers.
 """
-@inline Base.kron(qns::Vararg{AbelianNumber}; signs=positives(qns)) = sum(sign==1 ? qn : -qn for (sign, qn) in zip(signs, qns))
+function Base.kron(qns::AbelianNumber...; signs=positives(qns))
+    result = first(signs)==1 ? first(qns) : -first(qns)
+    for i = 2:length(qns)
+        result += signs[i]==1 ? qns[i] : -qns[i]
+    end
+    return result
+end
 
 """
     regularize!(::Type{QN}, array::AbstractVector{<:Real}) where {QN<:AbelianNumber} -> typeof(array)
@@ -265,6 +318,27 @@ function Base.getindex(qns::AbelianNumbers, indices::Vector{Int})
 end
 
 """
+    count(qns::AbelianNumbers, i::Integer) -> Int
+
+Get the number of duplicates of the ith quantum number.
+"""
+@inline Base.count(qns::AbelianNumbers, i::Integer) = qns.indptr[i+1]-qns.indptr[i]
+
+"""
+    range(qns::AbelianNumbers, i::Integer) -> UnitRange{Int}
+
+Get the slice of duplicates of the ith quantum number.
+"""
+@inline Base.range(qns::AbelianNumbers, i::Integer) = qns.indptr[i]+1:qns.indptr[i+1]
+
+"""
+    cumsum(qns::AbelianNumbers, i::Integer) -> Int
+
+Get the accumulative number of the duplicate quantum numbers up to the ith in the contents.
+"""
+@inline Base.cumsum(qns::AbelianNumbers, i::Integer) = qns.indptr[i+1]
+
+"""
     keys(qns::AbelianNumbers) -> Vector{qns|>eltype}
 
 Iterate over the concrete `AbelianNumber`s contained in an `AbelianNumbers`.
@@ -279,8 +353,8 @@ Iterate over the concrete `AbelianNumber`s contained in an `AbelianNumbers`.
 Iterate over the slices/counts of the `AbelianNumbers`.
 """
 @inline Base.values(qns::AbelianNumbers, choice::Symbol) = values(qns, choice|>Val)
-@inline @views Base.values(qns::AbelianNumbers, ::Val{:indptr}) = ((start+1):stop for (start, stop) in zip(qns.indptr[1:end-1], qns.indptr[2:end]))
-@inline @views Base.values(qns::AbelianNumbers, ::Val{:counts}) = (stop-start for (start, stop) in zip(qns.indptr[1:end-1], qns.indptr[2:end]))
+@inline @views Base.values(qns::AbelianNumbers, ::Val{:indptr}) = (range(qns, i) for i=1:length(qns))
+@inline @views Base.values(qns::AbelianNumbers, ::Val{:counts}) = (count(qns, i) for i=1:length(qns))
 
 """
     pairs(qns::AbelianNumbers, choice::Symbol)
@@ -291,6 +365,13 @@ Iterate over the `AbelianNumber=>slice` or `AbelianNumber=>count` pairs.
 """
 @inline Base.pairs(qns::AbelianNumbers, choice::Symbol) = pairs(qns, choice|>Val)
 @inline Base.pairs(qns::AbelianNumbers, choice::Union{Val{:indptr}, Val{:counts}}) = Base.Generator(=>, keys(qns), values(qns, choice))
+
+"""
+    findindex(position::Integer, qns::AbelianNumbers, guess::Integer=1) -> Int
+
+Find the index of a quantum number in the contents of an `AbelianNumbers` beginning at `guess` whose position in the expansion is `position`.
+"""
+@inline findindex(position::Integer, qns::AbelianNumbers, guess::Integer) = findnext(>(position-1), qns.indptr, guess+1)-1
 
 """
     OrderedDict(qns::AbelianNumbers, choice::Symbol) -> OrderedDict
@@ -476,13 +557,13 @@ Overloaded `*` operator for the multiplication between an integer and an `Abelia
 @inline Base.:*(qns::AbelianNumbers, factor::Integer) = AbelianNumbers(qns.form=='G' ? 'G' : 'U', [qn*factor for qn in qns.contents], qns.indptr, :indptr)
 
 """
-    ^(qns::AbelianNumbers, factor::Integer) -> AbelianNumbers
+    ^(qns::AbelianNumbers, power::Integer) -> AbelianNumbers
 
 Overloaded `^` operator for `AbelianNumbers`.
 
-This operation translates into the direct product of `factor` copies of `qns`.
+This operation translates into the direct product of `power` copies of `qns`.
 """
-@inline Base.:^(qns::AbelianNumbers, factor::Integer) = kron(NTuple{factor, qns|>typeof}(qns for i = 1:factor)...)
+@inline Base.:^(qns::AbelianNumbers, power::Integer) = kron([qns for i = 1:power]...)
 
 """
     ⊕(qns::AbelianNumber...) -> AbelianNumbers{qns|>eltype}

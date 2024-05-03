@@ -313,7 +313,7 @@ Pair{:content, Real}
 And a new trait function [`parameterpairs`](@ref) can be used to inquire all the name-type pairs of the parameters of a type:
 ```jldoctest traits
 julia> parameterpairs(Hi{<:Real})
-NamedTuple{(:content,), Tuple{Real}}
+@NamedTuple{content::Real}
 ```
 
 The parameters of a type can be altered all at once by giving the name-type pairs to [`fulltype`](@ref):
@@ -525,20 +525,7 @@ efficientoperations
 
 ## Composite structures
 
-In principle, Julia is not an object-oriented programming language. For example, only abstract types can be inherited so that subtype cannot inherit fields from their parents. Therefore, Julia prefers composition over inheritance. However, to make a new concrete type behaves much alike another one, tedious repetitions of redefining the generic interfaces are usually not avoidable, especially for the basic types in Julia base. In this module, we implement three such composited types, [`CompositeTuple`](@ref), [`CompositeVector`](@ref) and [`CompositeDict`](@ref), for the sake of future usages. Besides, [`NamedContainer`](@ref), as a wrapper of Julia `NamedTuple`, is also provided here so that the construction of a Julia `NamedTuple` can be more flexible over the standard `(name=value, ... )` syntax.
-
-### CompositeTuple and CompositeNTuple
-
-A composite tuple (ntuple) can be considered as a tuple (ntuple) that is implemented by including an ordinary [`Tuple`](https://docs.julialang.org/en/v1/base/base/#Core.Tuple)([`NTuple`](https://docs.julialang.org/en/v1/manual/types/#Vararg-Tuple-Types)) as its data attribute.
-
-To take full advantages of the Julia base, the following interfaces are defined:
-* inquiry of info: `length`, `eltype`, `hash`
-* comparison between objects: `==`, `isequal`
-* obtainment of old elements: `getindex`
-* iteration: `iterate`, `keys`, `values`, `pairs`
-* construction of new objects: `reverse`
-
-Note that arithmetic operations and logical operations excluding `==` and `isequal` are not supported. Besides, a composite tuple is **not** a tuple since Julia has no abstract tuples.
+In principle, Julia is not an object-oriented programming language. For example, only abstract types can be inherited so that subtype cannot inherit fields from their parents. Therefore, Julia prefers composition over inheritance. However, to make a new concrete type behaves much alike another one, tedious repetitions of redefining the generic interfaces are usually not avoidable, especially for the basic types in Julia base. In this module, we implement to such composited types, [`CompositeVector`](@ref) and [`CompositeDict`](@ref), for the sake of future usages.
 
 ### CompositeVector
 
@@ -569,64 +556,11 @@ To take full advantages of the Julia base, the following interfaces are redefine
 * construction of new objects: `merge`, `empty`
 * iteration: `iterate`, `keys`, `values`, `pairs`
 
-### NamedContainer
-
-[`NamedContainer`](@ref) is just a wrapper (type alias) of Julia NamedTuple, but not a composite type.
-
-Julia NamedTuple is useful to keep type stability of codes when we deal with inhomogeneous immutable dict-like objects, but its default constructor is not so convenient because the names and contents must be assigned pair by pair in a pair of parentheses explicitly. Therefore, we define a type alias of NamedTuple under the name of [`NamedContainer`](@ref), so that we can construct a NamedTuple by the usual-formed constructor [`NamedContainer`](@ref), e.g.
-```@example toolkit
-NamedContainer{(:a, :b)}((1, 2))
-```
-
 ### Manual
 
 ```@docs
 CompositeDict
-CompositeNTuple
-CompositeTuple
 CompositeVector
-NamedContainer
-```
-
-## Named vectors
-
-A named vector is similar to a named tuple, which associate each of its values with a name. Although the names of a named vector cannot be changed, the values can be modified if needed. In contrast to the predefined [`NamedTuple`](https://docs.julialang.org/en/v1/base/base/#Core.NamedTuple) in Julia, which employs the names as type parameters, we just implement a named vector as a composite struct equipped with the `getindex` and `setindex!` functions, with the fieldnames being its names. This simple implementation makes it possible to define your own concrete named vector with any of your preferred type names, and ensures that all instances of a certain concrete named vector share the same names. Therefore, if you are familiar with Python, you will find that our named vector is more qualified to be the counterpart of the [`namedtuple`](https://docs.python.org/3.7/library/collections.html#collections.namedtuple) in Python than the default Julia implementation. Last but not least important, it is also worth noted that **a named vector is not a vector**, as is similar to that a named tuple is not a tuple in Julia. This results from our basic expectation that a named vector should be more like a tuple other than a vector so that not all operations valid to vectors are also valid to named vectors.
-
-### NamedVector
-
-[`NamedVector`](@ref) defines the abstract type for all concrete named vectors.
-
-Main features include:
-* Values can be accessed or modified either by the `.` operator or by the `[]` operator.
-* Comparisons, such as `≡`, `≢`, `==`, `≠`, `>`, `<`, `≥`, `≤` are supported. Therefore a vector of named vectors can be sorted by the default `sort` function.
-* Hash is supported by `hash`. Therefore, a named vector can be used as the key of a dict or set.
-* Iteration over its fieldnames is supported by `keys`, over its values is supported by `values`, over its field-value pairs is supported by `pairs`.
-* A reverse iteration is also supported.
-
-To subtype it, please note:
-1. A concrete type can be either mutable or immutable as you need, which is different from tuples.
-2. The fields of a concrete type can be of the same type or not. For the former, we denote the named vector as "homogeneous" while for the latter as "inhomogeneous". For homogeneous ones, we define a sub abstract type, [`HomoNamedVector`](@ref) for further optimization of the default methods. See [HomoNamedVector](@ref) below.
-3. For all concrete subtypes, if inner constructors are defined, the one which has the same interface with the default one must be implemented. Otherwise, some functionalities will not work.
-4. Arithmetic operations, such as `+`, `-`, `*`, `/`, `%`, `÷`, etc. are **not** supported. However, the function `map` is implemented, which can help users do the overloading of these operations.
-
-### HomoNamedVector
-
-[`HomoNamedVector`](@ref) is the subtype of [`NamedVector`](@ref) that of all its fields share the same type. Compared to [`NamedVector`](@ref), one more default method is implemented with [`HomoNamedVector`](@ref), i.e. `eltype`, which returns the type of its fields. This function ensures the type stability of all the methods that involves an iteration of the field values of a named vector. Therefore, homogeneous named vector are usually more efficient than inhomogeneous ones. Use homogeneous ones as much as possible unless the code efficiency does not matter.
-
-To subtype [`HomoNamedVector`](@ref), all the suggestions mentioned in the previous subsection for [`NamedVector`](@ref) also applies. A recommended template for a subtype is
-```julia
-[mutable] struct YourNamedVector{T} <: HomoNamedVector{T}
-    filed1::T
-    filed2::T
-    ...
-end
-```
-
-### Manual
-
-```@docs
-HomoNamedVector
-NamedVector
 ```
 
 ## Vector spaces
@@ -679,115 +613,4 @@ VectorSpaceCartesian
 VectorSpaceDirectProducted
 VectorSpaceDirectSummed
 VectorSpaceZipped
-```
-
-## Simple trees
-
-The aim of this set of functions and types is to represent the standard tree structure in **efficiency-non-sensitive** cases. Please note that the default implementation of tree methods are far from optimal in efficiency. Therefore, please **DO NOT** use it if you need an efficient tree for addition, deletion, sort and inquiry. This module of codes apply only when the structure of tree matters but not the efficiency.
-
-### AbstractSimpleTree
-
-[`AbstractSimpleTree{N, D}`](@ref) is the abstract type for all concrete trees. By design, it has two type parameters:
-* `N`: the type of the tree's node
-* `D`: the type of the tree's data
-To fully utilize the methods designed for a tree structure, in our protocol, a concrete subtype must implement the following methods:
-* inquiry related methods
-  - ```julia
-    root(tree::AbstractSimpleTree{N}) where N -> Union{N, Nothing}
-    ```
-    Get a tree's root node (`nothing` for empty trees)
-  - ```julia
-    haskey(tree::AbstractSimpleTree{N}, node::N) where N -> Bool
-    ```
-    Check whether a node is in a tree.
-  - ```julia
-    length(tree::AbstractSimpleTree) -> Int
-    ```
-    Get the number of a tree's nodes.
-  - ```julia
-    parent(tree::AbstractSimpleTree{N},
-           node::N,
-           superparent::Union{N, Nothing}=nothing
-           ) where N -> Union{N, Nothing}
-    ```
-    Get the parent of a tree's node or return superparent when the input node is the tree's root.
-  - ```julia
-    children(tree::AbstractSimpleTree{N}, node::N) where N -> Vector{N}
-    ```
-    Get the children of a tree's node.
-* structure modification related methods
-  - ```julia
-    addnode!(tree::AbstractSimpleTree{N},
-             parent::Union{N, Nothing},
-             node::N
-             ) where N -> typeof(tree)
-    ```
-    Update the structure of a tree by adding a node. When the parent is `nothing`, the input tree must be empty and the input node becomes the tree's root.
-  - ```julia
-    deletenode!(tree::AbstractSimpleTree{N}, node::N) where N -> typeof(tree)
-    ```
-    Update the structure of a tree by deleting a node.
-* index related methods
-  - ```julia
-    getindex(tree::AbstractSimpleTree{N, D}, node::N) where {N, D} -> D
-    ```
-    Get the data of a tree's node
-  - ```julia
-    setindex!(tree::AbstractSimpleTree{N, D}, node::N, data::D) where {N, D}
-    ```
-    Set the data of a tree's node.
-Based on these methods, we implement several generic functions for inquiries and manipulations
-* inquiry for type parameters: `keytype`, `valtype`, `eltype`
-* expansion over nodes/data-records: `keys`, `values`, `pairs`
-* inquiry for info of nodes: [`isleaf`](@ref), [`level`](@ref)
-* inquiry for nodes: [`ancestor`](@ref), [`descendants`](@ref), [`siblings`](@ref), [`leaves`](@ref)
-* modification: `push!`, `append!`, `delete!`, `empty!`
-
-And optionally, when a subtype implement the following method,
-```julia
-empty(tree::AbstractSimpleTree) -> typeof(tree)
-```
-which constructs an empty tree of the same type with the input one, two more methods are supported:
-* [`subtree`](@ref): Get a subtree starting from a node.
-* [`move!`](@ref): Move a subtree to a new position.
-
-### SimpleTreeCore and SimpleTree
-
-To implement all the prerequisites listed above costs a bit efforts. We provide two lazy ways to get over this:
-1. Inheritance `AbstractSimpleTree` with `TREECORE::SimpleTreeCore` as one of its attribute
-2. Inclusion an attribute which is an instance of [`SimpleTree`](@ref)
-
-#### SimpleTreeCore
-
-[`SimpleTreeCore{N, D}`](@ref), as the literal meaning indicates, is the core of a tree. It encapsulates all the data structures needed by the default implementation, which contains **4** attributes:
-* `root::N`: the tree's root node
-* `contents::Dict{N, D}`: the tree's (node, data) pairs
-* `parent::Dict{N, N}`: records of the parent of each of the tree's nodes
-* `children::Dict{N, Vector{N}}`: records of the children of each of the tree's nodes
-As above, the first lazy way is to include this struct with the special name `TREECORE` in your concrete subtype as one of its attribute.
-
-#### SimpleTree
-
-[`SimpleTree{N, D}`](@ref) is the minimum struct that implements all the default tree methods. You can include an instance of it as an attribute in your own type to utilize all the tree methods.
-
-### Manual
-
-```@docs
-simpletreedepth
-simpletreewidth
-AbstractSimpleTree
-SimpleTree
-SimpleTreeCore
-addnode!
-ancestor
-children
-deletenode!
-descendants
-isleaf
-leaves
-level
-move!
-root
-siblings
-subtree
 ```

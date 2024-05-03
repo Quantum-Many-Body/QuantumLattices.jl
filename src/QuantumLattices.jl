@@ -1,10 +1,10 @@
 module QuantumLattices
 
-import LinearAlgebra: ishermitian, rank, mul!, ⋅
+import LinearAlgebra: ishermitian, rank, mul!
 
 # interfaces
 export dimension, id, ishermitian, rank, value
-export ⊕, ⊗, ⋅, add!, div!, mul!, sub!
+export ⊕, ⊗, add!, div!, mul!, sub!
 export decompose, decompose!, expand, expand!, permute
 export dtype, kind, reset!, update, update!
 function id end
@@ -40,14 +40,19 @@ export ishermitian, latexname, latexformat, matrix, script, sequence
 # QuantumNumbers
 include("QuantumNumbers.jl")
 using .QuantumNumbers
-export AbelianNumber, AbelianNumbers, Momenta, Momentum, Momentum₁, Momentum₂, Momentum₃, ParticleNumber, SpinfulParticle, Sz
-export periods, @abeliannumber
+export AbelianNumber, AbelianNumbers, Momenta, Momentum, Momentum₁, Momentum₂, Momentum₃, ParticleNumber, QuantumNumber, SpinfulParticle, Sz
+export findindex, periods, @abeliannumber
 
 # Spatials
 include("Spatials.jl")
 using .Spatials
+<<<<<<< HEAD
 export azimuth, azimuthd, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, polar, polard, reciprocals, rotate, translate, tile, volume
 export AbstractLattice, Bond, BrillouinZone, Lattice, Neighbors, Point, ReciprocalSpace, ReciprocalZone, ReciprocalPath, bonds, bonds!, icoordinate, isintracell, rcoordinate, save, selectpath, shrink, ReciprocalCurve
+=======
+export azimuth, azimuthd, direction, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, polar, polard, reciprocals, rotate, translate, tile, volume
+export AbstractLattice, Bond, BrillouinZone, Lattice, Neighbors, Point, ReciprocalSpace, ReciprocalZone, ReciprocalPath, bonds, bonds!, icoordinate, isintracell, rcoordinate, save, selectpath, shrink
+>>>>>>> 8b1ab78cd16ac0223f77b01a5eb3bc00ba532a6b
 export @hexagon_str, @line_str, @rectangle_str
 
 # DegreesOfFreedom
@@ -61,7 +66,8 @@ include("QuantumSystems.jl")
 using .QuantumSystems
 export annihilation, creation, latexofbosons, latexoffermions, latexofparticles, @σ_str, @L_str
 export Coulomb, FID, Fock, FockTerm, Hopping, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, Onsite, PairHopping, Pairing, SpinFlip, isannihilation, iscreation, isnormalordered
-export latexofspins, SID, Spin, SpinTerm, totalspin, @Γ_str, @DM_str, @Heisenberg_str, @Ising_str
+export latexofspins, SID, Spin, totalspin, @Γ_str, @Γ′_str, @DM_str, @Heisenberg_str, @Ising_str
+export DM, Heisenberg, Ising, Kitaev, SingleIonAnisotropy, SpinTerm, Zeeman, Γ, Γ′
 export latexofphonons, Elastic, PID, Phonon, Kinetic, Hooke, PhononTerm
 
 # Frameworks
