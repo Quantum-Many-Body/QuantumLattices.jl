@@ -90,6 +90,11 @@ end
     c₁, c₂, c₃ = randn(3)
     @test all(decompose(c₁*a₁+c₂*a₂+c₃*a₃, a₁, a₂, a₃) .≈ (c₁, c₂, c₃))
     @test decompose(c₁*a₁+c₂*a₂+c₃*a₃, [a₁, a₂, a₃]) ≈ [c₁, c₂, c₃]
+
+    σ⁰, σ¹, σ², σ³ = [1 0; 0 1], [0 1; 1 0], [0 -1im; 1im 0], [1 0; 0 -1]
+    m = σ⁰ + 2σ¹ + 3σ² + 4σ³
+    @test decompose(m, (σ⁰, σ¹, σ², σ³)) == (1, 2, 3, 4)
+    @test decompose(m, [σ⁰, σ¹, σ², σ³]) == [1, 2, 3, 4]
 end
 
 @testset "isintratriangle" begin

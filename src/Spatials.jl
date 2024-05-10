@@ -199,6 +199,26 @@ function decompose(v₀::AbstractVector{<:Number}, vs::AbstractVector{<:Abstract
 end
 
 """
+    decompose(m::AbstractMatrix, m₀::AbstractMatrix) -> Number
+    decompose(m::AbstractMatrix, ms::Tuple{Vararg{AbstractMatrix}}) -> Tuple{Vararg{Number}}
+    decompose(m::AbstractMatrix, ms::AbstractVector{<:AbstractMatrix}) -> Vector{<:Number}
+
+Decompose a matrix.
+"""
+function decompose(m::AbstractMatrix, m₀::AbstractMatrix)
+    @assert size(m)==size(m₀) "decompose error: mismatched size."
+    result = zero(promote_type(eltype(m), eltype(m₀)))
+    n = zero(result)
+    for (i, j) in zip(m, m₀)
+        result += conj(j) * i
+        n += conj(j) * j
+    end
+    return result/n
+end
+@inline decompose(m::AbstractMatrix, ms::Tuple{Vararg{AbstractMatrix}}) = map(m₀->decompose(m, m₀), ms)
+@inline decompose(m::AbstractMatrix, ms::AbstractVector{<:AbstractMatrix}) = map(m₀->decompose(m, m₀), ms)
+
+"""
     isintratriangle(
         p::AbstractVector{<:Number}, p₁::AbstractVector{<:Number}, p₂::AbstractVector{<:Number}, p₃::AbstractVector{<:Number};
         vertexes::NTuple{3, Bool}=(true, true, true), edges::NTuple{3, Bool}=(true, true, true), atol::Real=atol, rtol::Real=rtol
