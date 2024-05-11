@@ -4,7 +4,7 @@ using LinearAlgebra: dot, ishermitian, norm
 using Printf: @printf, @sprintf
 using SparseArrays: SparseMatrixCSC
 using StaticArrays: SMatrix, SVector
-using ..DegreesOfFreedom: wildcard, AbstractCompositeIndex, Component, CompositeIID, CompositeIndex, CompositeInternal, Coupling, Hilbert, IIDSpace, Index, SimpleIID, SimpleInternal, Term, TermAmplitude, TermCoupling, TermModulate, @indexes
+using ..DegreesOfFreedom: wildcard, AbstractCompositeIndex, Component, CompositeIID, CompositeIndex, CompositeInternal, Coupling, Hilbert, IIDSpace, Index, SimpleIID, SimpleInternal, Term, TermAmplitude, TermCoupling, @indexes
 using ..QuantumLattices: decompose, dtype, kind
 using ..QuantumOperators: ID, LaTeX, Operator, OperatorProd, Operators, latexformat
 using ..Spatials: Bond, Point, direction, isparallel, rcoordinate
@@ -336,40 +336,40 @@ end
 
 ## Term
 """
-    Onsite(id::Symbol, value, coupling=Coupling(Index(:, FID(:, :, :)), Index(:, FID(:, :, :))); ishermitian::Bool=true, amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    Onsite(id::Symbol, value, coupling=Coupling(Index(:, FID(:, :, :)), Index(:, FID(:, :, :))); ishermitian::Bool=true, amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
 
 Onsite term.
 
-Type alias for `Term{:Onsite, id, V, Int, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
+Type alias for `Term{:Onsite, id, V, Int, C<:TermCoupling, A<:TermAmplitude}`.
 """
-const Onsite{id, V, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Onsite, id, V, Int, C, A, M}
-@inline function Onsite(id::Symbol, value, coupling=Coupling(Index(:, FID(:, :, :)), Index(:, FID(:, :, :))); ishermitian::Bool=true, amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
-    return Term{:Onsite}(id, value, 0, coupling, ishermitian; amplitude=amplitude, modulate=modulate)
+const Onsite{id, V, C<:TermCoupling, A<:TermAmplitude} = Term{:Onsite, id, V, Int, C, A}
+@inline function Onsite(id::Symbol, value, coupling=Coupling(Index(:, FID(:, :, :)), Index(:, FID(:, :, :))); ishermitian::Bool=true, amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+    return Term{:Onsite}(id, value, 0, coupling, ishermitian; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 
 """
-    Hopping(id::Symbol, value, bondkind, coupling=Coupling(Index(:, FID(:, :, :)), Index(:, FID(:, :, :))); amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    Hopping(id::Symbol, value, bondkind, coupling=Coupling(Index(:, FID(:, :, :)), Index(:, FID(:, :, :))); amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
 
 Hopping term.
 
-Type alias for `Term{:Hopping, id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
+Type alias for `Term{:Hopping, id, V, B, C<:TermCoupling, A<:TermAmplitude}`.
 """
-const Hopping{id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Hopping, id, V, B, C, A, M}
-@inline function Hopping(id::Symbol, value, bondkind, coupling=Coupling(Index(:, FID(:, :, :)), Index(:, FID(:, :, :))); amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+const Hopping{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:Hopping, id, V, B, C, A}
+@inline function Hopping(id::Symbol, value, bondkind, coupling=Coupling(Index(:, FID(:, :, :)), Index(:, FID(:, :, :))); amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
     @assert bondkind≠0 "Hopping error: input bondkind (neighbor) cannot be 0. Use `Onsite` instead."
-    return Term{:Hopping}(id, value, bondkind, coupling, false; amplitude=amplitude, modulate=modulate)
+    return Term{:Hopping}(id, value, bondkind, coupling, false; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 
 """
-    Pairing(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    Pairing(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
 
 Pairing term.
 
-Type alias for `Term{:Pairing, id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
+Type alias for `Term{:Pairing, id, V, B, C<:TermCoupling, A<:TermAmplitude}`.
 """
-const Pairing{id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Pairing, id, V, B, C, A, M}
-@inline function Pairing(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
-    return Term{:Pairing}(id, value, bondkind, coupling, false; amplitude=amplitude, modulate=modulate)
+const Pairing{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:Pairing, id, V, B, C, A}
+@inline function Pairing(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+    return Term{:Pairing}(id, value, bondkind, coupling, false; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 @inline nambu(::Val{:Pairing}, ::Colon, ::Int) = annihilation
 function expand!(operators::Operators, term::Pairing, bond::Bond, hilbert::Hilbert; half::Bool=false)
@@ -380,74 +380,74 @@ function expand!(operators::Operators, term::Pairing, bond::Bond, hilbert::Hilbe
 end
 
 """
-    Hubbard(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    Hubbard(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
 
 Hubbard term.
 
-Type alias for `Term{:Hubbard, id, V, Int, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
+Type alias for `Term{:Hubbard, id, V, Int, C<:TermCoupling, A<:TermAmplitude}`.
 """
-const Hubbard{id, V, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Hubbard, id, V, Int, C, A, M}
-@inline function Hubbard(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
-    return Term{:Hubbard}(id, value, 0, Coupling(:, FID, :, (1//2, 1//2, -1//2, -1//2), (2, 1, 2, 1)), true; amplitude=amplitude, modulate=modulate)
+const Hubbard{id, V, C<:TermCoupling, A<:TermAmplitude} = Term{:Hubbard, id, V, Int, C, A}
+@inline function Hubbard(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+    return Term{:Hubbard}(id, value, 0, Coupling(:, FID, :, (1//2, 1//2, -1//2, -1//2), (2, 1, 2, 1)), true; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 
 """
-    InterOrbitalInterSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    InterOrbitalInterSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
 
 Interorbital-interspin term.
 
-Type alias for `Term{:InterOrbitalInterSpin, id, V, Int, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
+Type alias for `Term{:InterOrbitalInterSpin, id, V, Int, C<:TermCoupling, A<:TermAmplitude}`.
 """
-const InterOrbitalInterSpin{id, V, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:InterOrbitalInterSpin, id, V, Int, C, A, M}
-@inline function InterOrbitalInterSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+const InterOrbitalInterSpin{id, V, C<:TermCoupling, A<:TermAmplitude} = Term{:InterOrbitalInterSpin, id, V, Int, C, A}
+@inline function InterOrbitalInterSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
     return Term{:InterOrbitalInterSpin}(
         id, value, 0, Coupling(@indexes(Index(:, FID(α, σ₁, 2)), Index(:, FID(α, σ₁, 1)), Index(:, FID(β, σ₂, 2)), Index(:, FID(β, σ₂, 1)); constraint=α<β && σ₁≠σ₂)), true;
-        amplitude=amplitude, modulate=modulate
+        amplitude=amplitude, ismodulatable=ismodulatable
     )
 end
 
 """
-    InterOrbitalIntraSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    InterOrbitalIntraSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
 
 Interorbital-intraspin term.
 
-Type alias for `Term{:InterOrbitalIntraSpin, id, V, Int, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
+Type alias for `Term{:InterOrbitalIntraSpin, id, V, Int, C<:TermCoupling, A<:TermAmplitude}`.
 """
-const InterOrbitalIntraSpin{id, V, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:InterOrbitalIntraSpin, id, V, Int, C, A, M}
-@inline function InterOrbitalIntraSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+const InterOrbitalIntraSpin{id, V, C<:TermCoupling, A<:TermAmplitude} = Term{:InterOrbitalIntraSpin, id, V, Int, C, A}
+@inline function InterOrbitalIntraSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
     return Term{:InterOrbitalIntraSpin}(
         id, value, 0, Coupling(@indexes(Index(:, FID(α, σ, 2)), Index(:, FID(α, σ, 1)), Index(:, FID(β, σ, 2)), Index(:, FID(β, σ, 1)); constraint=α<β)), true;
-        amplitude=amplitude, modulate=modulate
+        amplitude=amplitude, ismodulatable=ismodulatable
     )
 end
 
 """
-    SpinFlip(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    SpinFlip(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
 
 Spin-flip term.
 
-Type alias for `Term{:SpinFlip, id, V, Int, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
+Type alias for `Term{:SpinFlip, id, V, Int, C<:TermCoupling, A<:TermAmplitude}`.
 """
-const SpinFlip{id, V, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:SpinFlip, id, V, Int, C, A, M}
-@inline function SpinFlip(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+const SpinFlip{id, V, C<:TermCoupling, A<:TermAmplitude} = Term{:SpinFlip, id, V, Int, C, A}
+@inline function SpinFlip(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
     return Term{:SpinFlip}(
         id, value, 0, Coupling(@indexes(Index(:, FID(α, 1//2, 2)), Index(:, FID(β, -1//2, 2)), Index(:, FID(α, -1//2, 1)), Index(:, FID(β, 1//2, 1)); constraint=α<β)), false;
-        amplitude=amplitude, modulate=modulate
+        amplitude=amplitude, ismodulatable=ismodulatable
     )
 end
 
 """
-    PairHopping(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    PairHopping(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
 
 Pair-hopping term.
 
-Type alias for `Term{:PairHopping, id, V, Int, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
+Type alias for `Term{:PairHopping, id, V, Int, C<:TermCoupling, A<:TermAmplitude}`.
 """
-const PairHopping{id, V, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:PairHopping, id, V, Int, C, A, M}
-@inline function PairHopping(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+const PairHopping{id, V, C<:TermCoupling, A<:TermAmplitude} = Term{:PairHopping, id, V, Int, C, A}
+@inline function PairHopping(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
     return Term{:PairHopping}(
         id, value, 0, Coupling(@indexes(Index(:, FID(α, 1//2, 2)), Index(:, FID(α, -1//2, 2)), Index(:, FID(β, -1//2, 1)), Index(:, FID(β, 1//2, 1)); constraint=α<β)), false;
-        amplitude=amplitude, modulate=modulate
+        amplitude=amplitude, ismodulatable=ismodulatable
     )
 end
 
@@ -456,21 +456,21 @@ end
         id::Symbol, value, bondkind, coupling=Coupling(Index(:, FID(:, :, :)), Index(:, FID(:, :, :)))^2;
         ishermitian::Bool=true,
         amplitude::Union{Function, Nothing}=nothing,
-        modulate::Union{Function, Bool}=true
+        ismodulatable::Bool=true
     )
 
 Coulomb term.
 
-Type alias for `Term{:Coulomb, id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
+Type alias for `Term{:Coulomb, id, V, B, C<:TermCoupling, A<:TermAmplitude}`.
 """
-const Coulomb{id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Coulomb, id, V, B, C, A, M}
+const Coulomb{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:Coulomb, id, V, B, C, A}
 @inline function Coulomb(
     id::Symbol, value, bondkind, coupling=Coupling(Index(:, FID(:, :, :)), Index(:, FID(:, :, :)))^2;
     ishermitian::Bool=true,
     amplitude::Union{Function, Nothing}=nothing,
-    modulate::Union{Function, Bool}=true
+    ismodulatable::Bool=true
 )
-    return Term{:Coulomb}(id, value, bondkind, coupling, ishermitian; amplitude=amplitude, modulate=modulate)
+    return Term{:Coulomb}(id, value, bondkind, coupling, ishermitian; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 
 """
@@ -744,15 +744,15 @@ end
 
 ## Term
 """
-    SpinTerm(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    SpinTerm(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
 
 Generic spin term.
 
-Type alias for `Term{:SpinTerm, id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
+Type alias for `Term{:SpinTerm, id, V, B, C<:TermCoupling, A<:TermAmplitude}`.
 """
-const SpinTerm{id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:SpinTerm, id, V, B, C, A, M}
-@inline function SpinTerm(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
-    return Term{:SpinTerm}(id, value, bondkind, coupling, true; amplitude=amplitude, modulate=modulate)
+const SpinTerm{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:SpinTerm, id, V, B, C, A}
+@inline function SpinTerm(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+    return Term{:SpinTerm}(id, value, bondkind, coupling, true; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 @inline function sitestructure(::Val{:SpinTerm}, ::Val{termrank}, bondlength::Integer) where termrank
     bondlength==1 && return ntuple(i->1, Val(termrank))
@@ -761,77 +761,77 @@ end
 end
 
 """
-    Zeeman(id::Symbol, value, direction::Char, g::Number=1; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
-    Zeeman(id::Symbol, value, direction::Union{AbstractVector{<:Number}, Tuple{Number, Number}}, g::Union{Number, AbstractMatrix{<:Number}}=1; unit::Symbol=:degree, amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    Zeeman(id::Symbol, value, direction::Char, g::Number=1; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+    Zeeman(id::Symbol, value, direction::Union{AbstractVector{<:Number}, Tuple{Number, Number}}, g::Union{Number, AbstractMatrix{<:Number}}=1; unit::Symbol=:degree, amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
 
 Zeeman term.
 
-Type alias for `Term{:Zeeman, id, V, Int, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
+Type alias for `Term{:Zeeman, id, V, Int, C<:TermCoupling, A<:TermAmplitude}`.
 """
-const Zeeman{id, V, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Zeeman, id, V, Int, C, A, M}
-@inline function Zeeman(id::Symbol, value, direction::Char, g::Number=1; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+const Zeeman{id, V, C<:TermCoupling, A<:TermAmplitude} = Term{:Zeeman, id, V, Int, C, A}
+@inline function Zeeman(id::Symbol, value, direction::Char, g::Number=1; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
     @assert lowercase(direction)∈('x', 'y', 'z') "Zeeman error: not supported direction."
     coupling = Coupling(g, :, SID, (lowercase(direction),))
-    return Term{:Zeeman}(id, value, 0, coupling, true; amplitude=amplitude, modulate=modulate)
+    return Term{:Zeeman}(id, value, 0, coupling, true; amplitude=amplitude, ismodulatable=ismodulatable)
 end
-@inline function Zeeman(id::Symbol, value, dir::Union{AbstractVector{<:Number}, Tuple{Number, Number}}, g::Union{Number, AbstractMatrix{<:Number}}=1; unit::Symbol=:degree, amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+@inline function Zeeman(id::Symbol, value, dir::Union{AbstractVector{<:Number}, Tuple{Number, Number}}, g::Union{Number, AbstractMatrix{<:Number}}=1; unit::Symbol=:degree, amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
     couplings = dot(direction(dir, unit), Lande(g), SVector(Coupling(:, SID, ('x',)), Coupling(:, SID, ('y',)), Coupling(:, SID, ('z',))))
-    return Term{:Zeeman}(id, value, 0, couplings, true; amplitude=amplitude, modulate=modulate)
+    return Term{:Zeeman}(id, value, 0, couplings, true; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 @inline Lande(g::Number) = SMatrix{3, 3}(g, 0, 0, 0, g, 0, 0, 0, g)
 @inline Lande(g::AbstractMatrix{<:Number}) = (@assert(size(g)==(3, 3), "Lande error: the g-tensor must be 3×3."); g)
 
 """
-    SingleIonAnisotropy(id::Symbol, value, direction::Char; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
-    SingleIonAnisotropy(id::Symbol, value, matrix::AbstractMatrix{<:Number}; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    SingleIonAnisotropy(id::Symbol, value, direction::Char; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+    SingleIonAnisotropy(id::Symbol, value, matrix::AbstractMatrix{<:Number}; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
 
 Single ion anisotropy term.
 
-Type alias for `Term{:SingleIonAnisotropy, id, V, Int, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
+Type alias for `Term{:SingleIonAnisotropy, id, V, Int, C<:TermCoupling, A<:TermAmplitude}`.
 """
-const SingleIonAnisotropy{id, V, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:SingleIonAnisotropy, id, V, Int, C, A, M}
-@inline function SingleIonAnisotropy(id::Symbol, value, direction::Char; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+const SingleIonAnisotropy{id, V, C<:TermCoupling, A<:TermAmplitude} = Term{:SingleIonAnisotropy, id, V, Int, C, A}
+@inline function SingleIonAnisotropy(id::Symbol, value, direction::Char; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
     @assert lowercase(direction)∈('x', 'y', 'z') "SingleIonAnisotropy error: not supported direction."
     coupling = Coupling(:, SID, (lowercase(direction), lowercase(direction)))
-    return Term{:SingleIonAnisotropy}(id, value, 0, coupling, true; amplitude=amplitude, modulate=modulate)
+    return Term{:SingleIonAnisotropy}(id, value, 0, coupling, true; amplitude=amplitude, ismodulatable=ismodulatable)
 end
-@inline function SingleIonAnisotropy(id::Symbol, value, matrix::AbstractMatrix{<:Number}; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+@inline function SingleIonAnisotropy(id::Symbol, value, matrix::AbstractMatrix{<:Number}; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
     @assert ishermitian(matrix) "SingleIonAnisotropy error: the anisotropy matrix must be Hermitian."
     @assert size(matrix)==(3, 3) "SingleIonAnisotropy error: the anisotropy matrix must be 3×3."
     couplings = dot(SVector(Coupling(:, SID, ('x',)), Coupling(:, SID, ('y',)), Coupling(:, SID, ('z',))), matrix, SVector(Coupling(:, SID, ('x',)), Coupling(:, SID, ('y',)), Coupling(:, SID, ('z',))))
-    return Term{:SingleIonAnisotropy}(id, value, 0, couplings, true; amplitude=amplitude, modulate=modulate)
+    return Term{:SingleIonAnisotropy}(id, value, 0, couplings, true; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 
 """
-    Ising(id::Symbol, value, bondkind, direction::Char; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    Ising(id::Symbol, value, bondkind, direction::Char; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
 
 Ising term.
 
-Type alias for `Term{:Ising, id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
+Type alias for `Term{:Ising, id, V, B, C<:TermCoupling, A<:TermAmplitude}`.
 """
-const Ising{id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Ising, id, V, B, C, A, M}
-@inline function Ising(id::Symbol, value, bondkind, direction::Char; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+const Ising{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:Ising, id, V, B, C, A}
+@inline function Ising(id::Symbol, value, bondkind, direction::Char; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
     @assert lowercase(direction)∈('x', 'y', 'z') "Ising error: not supported direction."
     coupling = Coupling(:, SID, (lowercase(direction), lowercase(direction)))
-    return Term{:Ising}(id, value, bondkind, coupling, true; amplitude=amplitude, modulate=modulate)
+    return Term{:Ising}(id, value, bondkind, coupling, true; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 
 """
-    Heisenberg(id::Symbol, value, bondkind; form::Symbol=Symbol("+-z"), amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    Heisenberg(id::Symbol, value, bondkind; form::Symbol=Symbol("+-z"), amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
 
 Heisenberg term.
 
-Type alias for `Term{:Heisenberg, id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
+Type alias for `Term{:Heisenberg, id, V, B, C<:TermCoupling, A<:TermAmplitude}`.
 """
-const Heisenberg{id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Heisenberg, id, V, B, C, A, M}
-@inline function Heisenberg(id::Symbol, value, bondkind; form::Symbol=Symbol("+-z"), amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+const Heisenberg{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:Heisenberg, id, V, B, C, A}
+@inline function Heisenberg(id::Symbol, value, bondkind; form::Symbol=Symbol("+-z"), amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
     @assert form∈(:xyz, Symbol("+-z")) "Heisenberg error: form should :xyz or Symbol(\"+-z\")."
     couplings = if form==:xyz
         Coupling(1//1, :, SID, ('x', 'x')) + Coupling(1//1, :, SID, ('y', 'y')) + Coupling(1//1, :, SID, ('z', 'z'))
     else
         Coupling(1//2, :, SID, ('+', '-')) + Coupling(1//2, :, SID, ('-', '+')) + Coupling(1//1, :, SID, ('z', 'z'))
     end
-    return Term{:Heisenberg}(id, value, bondkind, couplings, true; amplitude=amplitude, modulate=modulate)
+    return Term{:Heisenberg}(id, value, bondkind, couplings, true; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 
 """
@@ -842,7 +842,7 @@ end
         z::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
         unit::Symbol=:degree,
         amplitude::Union{Function, Nothing}=nothing,
-        modulate::Union{Function, Bool}=true
+        ismodulatable::Bool=true
     )
 
 Kitaev term. Since Kitaev term is symmetric on every bond, only one direction of a bond is needed. The inverse direction of a bond can be handled automatically by this function.
@@ -852,9 +852,9 @@ Here, `x`, `y` and `z` assign the x-bonds, y-bonds, and z-bonds, respectively, w
 2) a `Tuple{Number, Number}` specifying the polar and azimuth angle pairs of a bond in the 3-dimensional case, or
 3) an `AbstractVector{<:Number}` specifying the direction of a bond.
 
-Type alias for `Term{:Kitaev, id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
+Type alias for `Term{:Kitaev, id, V, B, C<:TermCoupling, A<:TermAmplitude}`.
 """
-const Kitaev{id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Kitaev, id, V, B, C, A, M}
+const Kitaev{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:Kitaev, id, V, B, C, A}
 function Kitaev(
     id::Symbol, value, bondkind;
     x::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
@@ -862,7 +862,7 @@ function Kitaev(
     z::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
     unit::Symbol=:degree,
     amplitude::Union{Function, Nothing}=nothing,
-    modulate::Union{Function, Bool}=true
+    ismodulatable::Bool=true
 )
     dirs = (x=direction.(x, unit), y=direction.(y, unit), z=direction.(z, unit))
     function kitaev(bond::Bond)
@@ -872,7 +872,7 @@ function Kitaev(
         any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.z) && return MatrixCoupling(: , SID, Ising"z")
         error("Kitaev error: wrong bond.")
     end
-    return Term{:Kitaev}(id, value, bondkind, kitaev, true; amplitude=amplitude, modulate=modulate)
+    return Term{:Kitaev}(id, value, bondkind, kitaev, true; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 
 """
@@ -883,7 +883,7 @@ end
         z::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
         unit::Symbol=:degree,
         amplitude::Union{Function, Nothing}=nothing,
-        modulate::Union{Function, Bool}=true
+        ismodulatable::Bool=true
     )
 
 Γ Term. Since Γ term is symmetric on every bond, only one direction of a bond is needed. The inverse direction of a bond can be handled automatically by this function.
@@ -893,9 +893,9 @@ Here, `x`, `y` and `z` assign the x-bonds, y-bonds, and z-bonds, respectively, w
 2) a `Tuple{Number, Number}` specifying the polar and azimuth angle pairs of a bond in the 3-dimensional case, or
 3) an `AbstractVector{<:Number}` specifying the direction of a bond.
 
-Type alias for `Term{:Γ, id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
+Type alias for `Term{:Γ, id, V, B, C<:TermCoupling, A<:TermAmplitude}`.
 """
-const Γ{id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Γ, id, V, B, C, A, M}
+const Γ{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:Γ, id, V, B, C, A}
 function Γ(
     id::Symbol, value, bondkind;
     x::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
@@ -903,7 +903,7 @@ function Γ(
     z::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
     unit::Symbol=:degree,
     amplitude::Union{Function, Nothing}=nothing,
-    modulate::Union{Function, Bool}=true
+    ismodulatable::Bool=true
 )
     dirs = (x=direction.(x, unit), y=direction.(y, unit), z=direction.(z, unit))
     function γ(bond::Bond)
@@ -913,7 +913,7 @@ function Γ(
         any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.z) && return MatrixCoupling(: , SID, Γ"z")
         error("Γ error: wrong bond.")
     end
-    return Term{:Γ}(id, value, bondkind, γ, true; amplitude=amplitude, modulate=modulate)
+    return Term{:Γ}(id, value, bondkind, γ, true; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 
 """
@@ -924,7 +924,7 @@ end
         z::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
         unit::Symbol=:degree,
         amplitude::Union{Function, Nothing}=nothing,
-        modulate::Union{Function, Bool}=true
+        ismodulatable::Bool=true
     )
 
 Γ′ Term. Since Γ′ term is symmetric on every bond, only one direction of a bond is needed. The inverse direction of a bond can be handled automatically by this function.
@@ -934,9 +934,9 @@ Here, `x`, `y` and `z` assign the x-bonds, y-bonds, and z-bonds, respectively, w
 2) a `Tuple{Number, Number}` specifying the polar and azimuth angle pairs of a bond in the 3-dimensional case, or
 3) an `AbstractVector{<:Number}` specifying the direction of a bond.
 
-Type alias for `Term{:Γ′, id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
+Type alias for `Term{:Γ′, id, V, B, C<:TermCoupling, A<:TermAmplitude}`.
 """
-const Γ′{id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Γ′, id, V, B, C, A, M}
+const Γ′{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:Γ′, id, V, B, C, A}
 function Γ′(
     id::Symbol, value, bondkind;
     x::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
@@ -944,7 +944,7 @@ function Γ′(
     z::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
     unit::Symbol=:degree,
     amplitude::Union{Function, Nothing}=nothing,
-    modulate::Union{Function, Bool}=true
+    ismodulatable::Bool=true
 )
     dirs = (x=direction.(x, unit), y=direction.(y, unit), z=direction.(z, unit))
     function γ′(bond::Bond)
@@ -954,7 +954,7 @@ function Γ′(
         any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.z) && return MatrixCoupling(: , SID, Γ′"z")
         error("Γ′ error: wrong bond.")
     end
-    return Term{:Γ′}(id, value, bondkind, γ′, true; amplitude=amplitude, modulate=modulate)
+    return Term{:Γ′}(id, value, bondkind, γ′, true; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 
 """
@@ -965,7 +965,7 @@ end
         vectors::Pair{<:AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}}, <:Union{Char, AbstractVector{<:Number}}}...;
         unit::Symbol=:degree,
         amplitude::Union{Function, Nothing}=nothing,
-        modulate::Union{Function, Bool}=true
+        ismodulatable::Bool=true
     )
 
 DM term. Since DM term is antisymmetric on every bond, only the positive direction of a bond is needed. The negative direction of a bond can be handled automatically by this function.
@@ -978,9 +978,9 @@ and `v` can be
 1) a `Char` of 'x', 'y' or 'z', indicating the unit DM vector on the set of bonds is along the x, y or z direction, or
 2) an `AbstractVector{<:Number}`, specifying the direction of the DM vector on the set of bonds.
 
-Type alias for `Term{:DM, id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
+Type alias for `Term{:DM, id, V, B, C<:TermCoupling, A<:TermAmplitude}`.
 """
-const DM{id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:DM, id, V, B, C, A, M}
+const DM{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:DM, id, V, B, C, A}
 function DM(
     id::Symbol,
     value,
@@ -988,7 +988,7 @@ function DM(
     vectors::Pair{<:AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}}, <:Union{Char, AbstractVector{<:Number}}}...;
     unit::Symbol=:degree,
     amplitude::Union{Function, Nothing}=nothing,
-    modulate::Union{Function, Bool}=true
+    ismodulatable::Bool=true
 )
     dirs = [direction.(pair.first, unit)=>direction(pair.second) for pair in vectors]
     function dm(bond::Bond)
@@ -1001,7 +1001,7 @@ function DM(
         end
         error("dm error: wrong bond.")
     end
-    return Term{:DM}(id, value, bondkind, dm, true; amplitude=amplitude, modulate=modulate)
+    return Term{:DM}(id, value, bondkind, dm, true; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 
 # Phononic systems
@@ -1144,40 +1144,40 @@ end
 
 ## Term
 """
-    Kinetic(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    Kinetic(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
 
 Kinetic energy of phonons.
 
-Type alias for `Term{:Kinetic, id, V, Int, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`.
+Type alias for `Term{:Kinetic, id, V, Int, C<:TermCoupling, A<:TermAmplitude}`.
 """
-const Kinetic{id, V, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Kinetic, id, V, Int, C, A, M}
-@inline function Kinetic(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
-    return Term{:Kinetic}(id, value, 0, Coupling(:, PID, ('p', 'p'), :), true; amplitude=amplitude, modulate=modulate)
+const Kinetic{id, V, C<:TermCoupling, A<:TermAmplitude} = Term{:Kinetic, id, V, Int, C, A}
+@inline function Kinetic(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+    return Term{:Kinetic}(id, value, 0, Coupling(:, PID, ('p', 'p'), :), true; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 
 """
-    Hooke(id::Symbol, value, bondkind; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    Hooke(id::Symbol, value, bondkind; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
 
 Potential energy of phonons by the Hooke's law.
 
-Type alias for `Term{:Hooke, id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`
+Type alias for `Term{:Hooke, id, V, B, C<:TermCoupling, A<:TermAmplitude}`
 """
-const Hooke{id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Hooke, id, V, B, C, A, M}
-@inline function Hooke(id::Symbol, value, bondkind; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
-    return Term{:Hooke}(id, value, bondkind, Coupling(:, PID, ('u', 'u'), :), true; amplitude=amplitude, modulate=modulate)
+const Hooke{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:Hooke, id, V, B, C, A}
+@inline function Hooke(id::Symbol, value, bondkind; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+    return Term{:Hooke}(id, value, bondkind, Coupling(:, PID, ('u', 'u'), :), true; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 
 """
-    Elastic(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+    Elastic(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
 
 Generic elastic energy of phonons.
 
-Type alias for `Term{:Elastic, id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}`
+Type alias for `Term{:Elastic, id, V, B, C<:TermCoupling, A<:TermAmplitude}`
 """
-const Elastic{id, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate} = Term{:Elastic, id, V, B, C, A, M}
-@inline function Elastic(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true)
+const Elastic{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:Elastic, id, V, B, C, A}
+@inline function Elastic(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
     value, factor = promote(value, 1//2)
-    return Term{:Elastic, id}(value, bondkind, TermCoupling(coupling), TermAmplitude(amplitude), true, TermModulate(id, modulate), factor)
+    return Term{:Elastic, id}(value, bondkind, TermCoupling(coupling), TermAmplitude(amplitude), true, ismodulatable, factor)
 end
 function expand!(operators::Operators, term::Elastic, bond::Bond, hilbert::Hilbert; half::Bool=false)
     argtypes = Tuple{Operators, Term, Bond, Hilbert}

@@ -363,9 +363,9 @@ the coupling pattern can be represented by the following function:
 ```julia
 function kitaev(bond::Bond)
     ϕ = azimuth(rcoordinate(bond)) # get the azimuth angle of a bond in radians
-    any(≈(ϕ), (π/6, 7π/6)) && return Coupling(:, SID, ('x'), ('x'))
-    any(≈(ϕ), (5π/6, 11π/6)) && return Coupling(:, SID, ('y'), ('y'))
-    any(≈(ϕ), (π/2, 3π/2)) && return Coupling(:, SID, ('z'), ('z'))
+    any(≈(ϕ), (π/6, 7π/6)) && return Coupling(:, SID, ('x', 'x'))
+    any(≈(ϕ), (5π/6, 11π/6)) && return Coupling(:, SID, ('y', 'y'))
+    any(≈(ϕ), (π/2, 3π/2)) && return Coupling(:, SID, ('z', 'z'))
     error("kitaev error: wrong input bond.")
 end
 ```

@@ -17,7 +17,7 @@ import ..Toolkit: contentnames, getcontent, isparameterbound, parameternames, sh
 export CompositeIID, CompositeInternal, IID, Internal, SimpleIID, SimpleInternal
 export AbstractCompositeIndex, CompositeIndex, Hilbert, Index, iidtype, indextype, statistics
 export wildcard, Component, Constraint, Coupling, Diagonal, IIDSpace, MatrixCoupling, MatrixCouplingProd, MatrixCouplingSum, Pattern, diagonalizablefields, isdefinite, @indexes
-export Term, TermAmplitude, TermCoupling, TermFunction, TermModulate, ismodulatable, sitestructure
+export Term, TermAmplitude, TermCoupling, TermFunction, sitestructure
 export Metric, OperatorUnitToTuple, Table
 export Boundary, plain
 
@@ -1085,53 +1085,35 @@ end
 @inline (termcoupling::TermCoupling{<:Coupling, <:Function})(bond::Bond) = termcoupling.coupling(bond)
 
 """
-    TermModulate(id::Symbol, modulate::Function)
-    TermModulate(id::Symbol, modulate::Bool)
-
-The function for the modulation of a term.
-"""
-struct TermModulate{M<:Union{Function, Val{true}, Val{false}}, id} <: TermFunction
-    modulate::M
-    TermModulate(id::Symbol, modulate::Function) = new{typeof(modulate), id}(modulate)
-    TermModulate(id::Symbol, modulate::Bool=true) = new{Val{modulate}, id}(modulate|>Val)
-end
-@inline (termmodulate::TermModulate{Val{true}, id})(args...; kwargs...) where id = get(kwargs, id, nothing)
-@inline (termmodulate::TermModulate{<:Function})(args...; kwargs...) = termmodulate.modulate(args...; kwargs...)
-@inline ismodulatable(termmodulate::TermModulate) = ismodulatable(typeof(termmodulate))
-@inline ismodulatable(::Type{<:TermModulate{Val{B}}}) where B = B
-@inline ismodulatable(::Type{<:TermModulate{<:Function}}) = true
-
-"""
-    Term{K, I, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}
+    Term{K, I, V, B, C<:TermCoupling, A<:TermAmplitude}
 
 A term of a quantum lattice system.
 """
-mutable struct Term{K, I, V, B, C<:TermCoupling, A<:TermAmplitude, M<:TermModulate}
+mutable struct Term{K, I, V, B, C<:TermCoupling, A<:TermAmplitude}
     value::V
     const bondkind::B
     const coupling::C
     const amplitude::A
     const ishermitian::Bool
-    const modulate::M
+    const ismodulatable::Bool
     const factor::V
-    function Term{K, I}(value, bondkind, coupling::TermCoupling, amplitude::TermAmplitude, ishermitian::Bool, modulate::TermModulate, factor) where {K, I}
+    function Term{K, I}(value, bondkind, coupling::TermCoupling, amplitude::TermAmplitude, ishermitian::Bool, ismodulatable::Bool, factor) where {K, I}
         @assert isa(K, Symbol) "Term error: kind must be a Symbol."
         @assert isa(I, Symbol) "Term error: id must be a Symbol."
-        @assert value==value' "Term error: only real values are allowed. Complex values should be specified by the amplitude function."
-        V, B, C, A, M = typeof(value), typeof(bondkind), typeof(coupling), typeof(amplitude), typeof(modulate)
-        new{K, I, V, B, C, A, M}(value, bondkind, coupling, amplitude, ishermitian, modulate, factor)
+        @assert value==value' "Term error: only real values are allowed. Complex values always have the positive directions, therefore, they must be specified by the amplitude function."
+        new{K, I, typeof(value), typeof(bondkind), typeof(coupling), typeof(amplitude)}(value, bondkind, coupling, amplitude, ishermitian, ismodulatable, factor)
     end
 end
 @inline Base.:(==)(term₁::Term, term₂::Term) = ==(efficientoperations, term₁, term₂)
 @inline Base.isequal(term₁::Term, term₂::Term) = isequal(efficientoperations, term₁, term₂)
 
 """
-    Term{K}(id::Symbol, value, bondkind, coupling, ishermitian::Bool; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true) where K
+    Term{K}(id::Symbol, value, bondkind, coupling, ishermitian::Bool; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true) where K
 
 Construct a term.
 """
-@inline function Term{K}(id::Symbol, value, bondkind, coupling, ishermitian::Bool; amplitude::Union{Function, Nothing}=nothing, modulate::Union{Function, Bool}=true) where K
-    return Term{K, id}(value, bondkind, TermCoupling(coupling), TermAmplitude(amplitude), ishermitian, TermModulate(id, modulate), 1)
+@inline function Term{K}(id::Symbol, value, bondkind, coupling, ishermitian::Bool; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true) where K
+    return Term{K, id}(value, bondkind, TermCoupling(coupling), TermAmplitude(amplitude), ishermitian, ismodulatable, 1)
 end
 
 """
@@ -1169,15 +1151,6 @@ Get the rank of a term.
 """
 @inline rank(term::Term) = rank(typeof(term))
 @inline rank(::Type{<:Term{K, I, V, B, C} where {K, I, V, B}}) where {C<:TermCoupling} = rank(valtype(C))
-
-"""
-    ismodulatable(term::Term) -> Bool
-    ismodulatable(::Type{<:Term}) -> Bool
-
-Judge whether a term could be modulated by its modulate function.
-"""
-@inline ismodulatable(term::Term) = ismodulatable(typeof(term))
-@inline ismodulatable(::Type{<:Term{K, I, V, B, <:TermCoupling, <:TermAmplitude, M} where {K, I, V, B}}) where M = ismodulatable(M)
 
 """
     repr(term::Term, bond::Bond, hilbert::Hilbert) -> String
@@ -1228,12 +1201,11 @@ Get a zero term.
 """
     update!(term::Term, args...; kwargs...) -> Term
 
-Update the value of a term by its `modulate` function.
+Update the value of a term if it is ismodulatable.
 """
 function update!(term::Term, args...; kwargs...)
-    @assert ismodulatable(term) "update! error: not modulatable term."
-    value = term.modulate(args...; kwargs...)
-    isnothing(value) || (term.value = value)
+    @assert term.ismodulatable "update! error: not modulatable term."
+    term.value = get(kwargs, id(term), term.value)
     return term
 end
 

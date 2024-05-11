@@ -374,29 +374,16 @@ end
     @test valtype(termcouplings) == valtype(typeof(termcouplings)) == typejoin(typeof(fx(bond₁)), typeof(fx(bond₂)))
     @test termcouplings(bond₁) == fx(bond₁)
     @test termcouplings(bond₂) == fx(bond₂)
-
-    @test ismodulatable(TermModulate{Val{true}}) == ismodulatable(TermModulate{<:Function}) == true
-    @test ismodulatable(TermModulate{Val{false}}) == false
-    termmodulate = TermModulate(:t)
-    @test termmodulate(t=1) == 1
-    @test isnothing(termmodulate(mu=1))
-    @test isnothing(termmodulate())
-    @test ismodulatable(termmodulate) == true
-
-    termmodulate = TermModulate(:t, t->t*2.0)
-    @test ismodulatable(termmodulate) == true
-    @test termmodulate(2) == 4
 end
 
 @testset "Term" begin
     point = Point(1, (0.0, 0.0), (0.0, 0.0))
     hilbert = Hilbert(point.site=>DFock(2))
-    term = Term{:Mu}(:μ, 1.5, 0, Coupling(1.0, (1, 1), DID, (2, 1)), true; amplitude=bond->3, modulate=false)
+    term = Term{:Mu}(:μ, 1.5, 0, Coupling(1.0, (1, 1), DID, (2, 1)), true; amplitude=bond->3, ismodulatable=false)
     @test term|>kind == term|>typeof|>kind == :Mu
     @test term|>id == term|>typeof|>id == :μ
     @test term|>valtype == term|>typeof|>valtype == Float
     @test term|>rank == term|>typeof|>rank == 2
-    @test term|>ismodulatable == term|>typeof|>ismodulatable == false
     @test term == deepcopy(term)
     @test isequal(term, deepcopy(term))
     @test repr(term, Bond(point), hilbert) == "4.5 Index(1, DID(2)) Index(1, DID(1))"
@@ -405,13 +392,10 @@ end
     p₂ = Point(2, (1.0, 0.0), (0.0, 0.0))
     hilbert = Hilbert(site=>DFock(2) for site in [1, 2])
     term = Term{:Mu}(:μ, 1.5, 0, bond->bond[1].site%2==0 ? Coupling(1.0, (1, 1), DID, (2, 2)) : Coupling(1.0, (1, 1), DID, (1, 1)), true; amplitude=bond->3)
-    @test term|>ismodulatable == term|>typeof|>ismodulatable == true
     @test repr(term, Bond(p₁), hilbert) == "4.5 Index(1, DID(1)) Index(1, DID(1))"
     @test repr(term, Bond(p₂), hilbert) == "4.5 Index(1, DID(2)) Index(1, DID(2))"
     @test one(term) == replace(term, value=1.0)
     @test zero(term) == replace(term, value=0.0)
-    @test term.modulate(μ=4.0) == 4.0
-    @test isnothing(term.modulate(t=1.0))
     @test update!(term, μ=4.25) == replace(term, value=4.25)
     @test term.value == 4.25
 

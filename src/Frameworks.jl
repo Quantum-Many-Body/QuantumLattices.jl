@@ -6,7 +6,7 @@ using Printf: @printf, @sprintf
 using RecipesBase: RecipesBase, @recipe
 using Serialization: serialize
 using TimerOutputs: TimerOutput, TimerOutputs, @timeit
-using ..DegreesOfFreedom: plain, Boundary, Hilbert, Table, Term, ismodulatable
+using ..DegreesOfFreedom: plain, Boundary, Hilbert, Table, Term
 using ..QuantumOperators: Operators, LinearFunction, LinearTransformation, Transformation, identity, optype
 using ..Spatials: AbstractLattice, Bond, Neighbors, bonds!, isintracell
 using ..Toolkit: atol, efficientoperations, rtol, decimaltostr
@@ -132,7 +132,7 @@ end
 Construct an entry of quantum operators based on the input terms, bonds, Hilbert space and (twisted) boundary condition.
 """
 function Entry(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain; half::Bool=false)
-    constterms, alterterms, choosedterms = termclassifier(terms)
+    emptybonds = eltype(bonds)[]
     if boundary === plain
         innerbonds = bonds
         boundbonds = eltype(bonds)[]
@@ -140,20 +140,12 @@ function Entry(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbe
         innerbonds = filter(bond->isintracell(bond), bonds)
         boundbonds = filter(bond->!isintracell(bond), bonds)
     end
-    constops = Operators{mapreduce(term->optype(typeof(term), typeof(hilbert), eltype(bonds)), promote_type, choosedterms)}()
-    map(term->expand!(constops, term, innerbonds, hilbert; half=half), constterms)
-    alterops = NamedTuple{map(id, alterterms)}(map(term->expand(one(term), innerbonds, hilbert; half=half), alterterms))
+    constops = Operators{mapreduce(term->optype(typeof(term), typeof(hilbert), eltype(bonds)), promote_type, terms)}()
+    map(term->expand!(constops, term, term.ismodulatable ? emptybonds : innerbonds, hilbert; half=half), terms)
+    alterops = NamedTuple{map(id, terms)}(map(term->expand(one(term), term.ismodulatable ? innerbonds : emptybonds, hilbert; half=half), terms))
     boundops = NamedTuple{map(id, terms)}(map(term->map!(boundary, expand!(Operators{valtype(typeof(boundary), optype(typeof(term), typeof(hilbert), eltype(bonds)))}(), one(term), boundbonds, hilbert, half=half)), terms))
     parameters = NamedTuple{map(id, terms)}(map(term->term.value, terms))
     return Entry(constops, alterops, boundops, parameters, boundary)
-end
-@generated function termclassifier(terms::Tuple{Vararg{Term}})
-    constterms, alterterms = [], []
-    for (i, term) in enumerate(fieldtypes(terms))
-        ismodulatable(term) ? push!(alterterms, :(terms[$i])) : push!(constterms, :(terms[$i]))
-    end
-    constterms, alterterms = Expr(:tuple, constterms...), Expr(:tuple, alterterms...)
-    return Expr(:tuple, constterms, alterterms, (length(constterms.args)>0 ? constterms : alterterms))
 end
 
 """
@@ -309,7 +301,6 @@ Reset an entry of quantum operators by the new terms, bonds, Hilbert space and (
 """
 function reset!(entry::Entry{<:Operators}, terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=entry.boundary; half::Bool=false)
     empty!(entry)
-    constterms, alterterms, _ = termclassifier(terms)
     if boundary === plain
         innerbonds = bonds
         boundbonds = eltype(bonds)[]
@@ -317,8 +308,9 @@ function reset!(entry::Entry{<:Operators}, terms::Tuple{Vararg{Term}}, bonds::Ve
         innerbonds = filter(bond->isintracell(bond), bonds)
         boundbonds = filter(bond->!isintracell(bond), bonds)
     end
-    map(term->expand!(entry.constops, term, innerbonds, hilbert; half=half), constterms)
-    map(term->expand!(getfield(entry.alterops, id(term)), one(term), innerbonds, hilbert; half=half), alterterms)
+    emptybonds = eltype(bonds)[]
+    map(term->expand!(entry.constops, term, term.ismodulatable ? emptybonds : innerbonds, hilbert; half=half), terms)
+    map(term->expand!(getfield(entry.alterops, id(term)), one(term), term.ismodulatable ? innerbonds : emptybonds, hilbert; half=half), terms)
     map(term->map!(boundary, expand!(getfield(entry.boundops, id(term)), one(term), boundbonds, hilbert; half=half)), terms)
     entry.parameters = NamedTuple{map(id, terms)}(map(term->term.value, terms))
     merge!(entry.boundary, boundary)
@@ -395,7 +387,7 @@ Update the coefficients of the terms in a generator.
 """
 @inline function update!(gen::OperatorGenerator; parameters...)
     update!(gen.operators; parameters...)
-    map(term->(ismodulatable(term) ? update!(term; parameters...) : term), gen.terms)
+    map(term->(term.ismodulatable ? update!(term; parameters...) : term), gen.terms)
     return gen
 end
 
