@@ -1048,39 +1048,40 @@ Define right-division, minus and subtraction operator.
 
 # Term
 """
-    TermFunction <: Function
+    TermFunction{F} <: Function
 
 Abstract type for concrete term functions.
 """
-abstract type TermFunction <: Function end
-@inline Base.:(==)(tf₁::TermFunction, tf₂::TermFunction) = ==(efficientoperations, tf₁, tf₂)
-@inline Base.isequal(tf₁::TermFunction, tf₂::TermFunction) = isequal(efficientoperations, tf₁, tf₂)
+abstract type TermFunction{F} <: Function end
+@inline Base.:(==)(tf₁::TermFunction{F₁}, tf₂::TermFunction{F₂}) where {F₁, F₂} = F₁==F₂ && ==(efficientoperations, tf₁, tf₂)
+@inline Base.isequal(tf₁::TermFunction{F₁}, tf₂::TermFunction{F₂}) where {F₁, F₂} = isequal(F₁, F₂) && isequal(efficientoperations, tf₁, tf₂)
 
 """
-    TermAmplitude(amplitude::Union{Function, Nothing}=nothing)
+    TermAmplitude{F} <: TermFunction{F}
 
 The function for the amplitude of a term.
 """
-struct TermAmplitude{A<:Union{Function, Nothing}} <: TermFunction
-    amplitude::A
-    TermAmplitude(amplitude::Union{Function, Nothing}=nothing) = new{typeof(amplitude)}(amplitude)
+struct TermAmplitude{F} <: TermFunction{F}
+    TermAmplitude(amplitude::Union{Function, Nothing}) = new{amplitude}()
 end
-@inline (termamplitude::TermAmplitude{Nothing})(::Bond) = 1
-@inline (termamplitude::TermAmplitude{<:Function})(bond::Bond) = termamplitude.amplitude(bond)
+@inline (::TermAmplitude{nothing})(::Bond) = 1
+@inline (::TermAmplitude{F})(bond::Bond) where F = F(bond)
+@inline Base.valtype(tf::TermFunction, bond::Bond) = valtype(typeof(tf), typeof(bond))
+@inline Base.valtype(::Type{TermAmplitude{nothing}}, ::Type{<:Bond}) = Int
+@inline Base.valtype(::Type{TermAmplitude{F}}, ::Type{B}) where {F, B<:Bond} = Core.Compiler.return_type(F, Tuple{B})
 
 """
-    TermCoupling{E<:Coupling, C} <: TermFunction
+    TermCoupling{C<:Coupling, F} <: TermFunction{F}
 
 The function for the coupling of a term.
 """
-struct TermCoupling{E<:Coupling, C} <: TermFunction
-    coupling::C
+struct TermCoupling{C<:Coupling, F} <: TermFunction{F}
+    coupling::F
     TermCoupling(coupling) = new{eltype(coupling), typeof(coupling)}(coupling)
-    TermCoupling(coupling::Function) = new{eltype(commontype(coupling, Tuple{Bond}, Any)), typeof(coupling)}(coupling)
-    TermCoupling{E}(coupling::Function) where {E<:Coupling} = new{E, typeof(coupling)}(coupling)
+    TermCoupling(coupling::Function) = new{eltype(Core.Compiler.return_type(coupling, Tuple{Bond})), typeof(coupling)}(coupling)
 end
 @inline Base.valtype(termcoupling::TermCoupling) = valtype(typeof(termcoupling))
-@inline Base.valtype(::Type{<:TermCoupling{E}}) where {E<:Coupling} = E
+@inline Base.valtype(::Type{<:TermCoupling{C}}) where {C<:Coupling} = C
 @inline (termcoupling::TermCoupling)(::Bond) = termcoupling.coupling
 @inline (termcoupling::TermCoupling{<:Coupling, <:Function})(bond::Bond) = termcoupling.coupling(bond)
 
@@ -1217,8 +1218,9 @@ Get the compatible `Operator` type from the type of a term, a Hilbert space and 
 @inline function optype(::Type{T}, ::Type{H}, ::Type{B}) where {T<:Term, H<:Hilbert, B<:Bond}
     C = valtype(fieldtype(T, :coupling))
     @assert C<:Coupling "optype error: not supported."
+    V = promote_type(valtype(T), valtype(C), valtype(fieldtype(T, :amplitude), B))
     indextypes = ntuple(i->indextype(filter(iidtype(fieldtype(parametertype(C, :indexes), i)) , valtype(H)), eltype(B), Val(kind(T))), Val(rank(C)))
-    return fulltype(Operator, NamedTuple{(:value, :id), Tuple{valtype(T), Tuple{indextypes...}}})
+    return fulltype(Operator, NamedTuple{(:value, :id), Tuple{V, Tuple{indextypes...}}})
 end
 
 """

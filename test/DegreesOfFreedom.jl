@@ -353,10 +353,13 @@ end
 @testset "TermFunction" begin
     bond = Bond(1, Point(1, [0.0], [0.0]), Point(2, [0.5], [0.0]))
 
-    ta = TermAmplitude()
+    ta = TermAmplitude(nothing)
     @test ta(bond) == 1
-    ta = TermAmplitude(bond::Bond->bond.kind+3)
-    @test ta(bond) == 4
+    @test valtype(ta, bond) == valtype(typeof(ta), typeof(bond)) == Int
+
+    ta = TermAmplitude(bond::Bond->bond.kind+3.0)
+    @test ta(bond) == 4.0
+    @test valtype(ta, bond) == valtype(typeof(ta), typeof(bond)) == Float64
 
     tcs = Coupling(1.0, (1, 2), DID, (1, 1)) + Coupling(2.0, (1, 2), DID, (2, 2))
     termcouplings = TermCoupling(tcs)
@@ -370,7 +373,6 @@ end
 
     fx = bond::Bond -> bond.kind==1 ? Coupling(1.0, (1, 2), DID, (1, 1)) : Coupling(1.0, (1, 2), DID, (2, 2))
     termcouplings = TermCoupling(fx)
-    @test termcouplings == TermCoupling{typejoin(typeof(fx(bond₁)), typeof(fx(bond₂)))}(fx)
     @test valtype(termcouplings) == valtype(typeof(termcouplings)) == typejoin(typeof(fx(bond₁)), typeof(fx(bond₂)))
     @test termcouplings(bond₁) == fx(bond₁)
     @test termcouplings(bond₂) == fx(bond₂)
