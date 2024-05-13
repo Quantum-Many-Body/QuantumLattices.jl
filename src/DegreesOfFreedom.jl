@@ -1218,7 +1218,10 @@ Get the compatible `Operator` type from the type of a term, a Hilbert space and 
 @inline function optype(::Type{T}, ::Type{H}, ::Type{B}) where {T<:Term, H<:Hilbert, B<:Bond}
     C = valtype(fieldtype(T, :coupling))
     @assert C<:Coupling "optype error: not supported."
-    V = promote_type(valtype(T), valtype(C), valtype(fieldtype(T, :amplitude), B))
+    V, V′, V′′ = valtype(T), valtype(C), valtype(fieldtype(T, :amplitude), B)
+    isconcretetype(V′) && (V = promote_type(V, V′))
+    isconcretetype(V′′) && (V = promote_type(V, V′′))
+    V₁, V₂, V₃ = valtype(T), valtype(C), valtype(fieldtype(T, :amplitude), B)
     indextypes = ntuple(i->indextype(filter(iidtype(fieldtype(parametertype(C, :indexes), i)) , valtype(H)), eltype(B), Val(kind(T))), Val(rank(C)))
     return fulltype(Operator, NamedTuple{(:value, :id), Tuple{V, Tuple{indextypes...}}})
 end
