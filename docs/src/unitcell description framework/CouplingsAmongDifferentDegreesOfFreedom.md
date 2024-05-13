@@ -69,8 +69,8 @@ julia> Coupling(Index(1, PID('p', :)), Index(1, PID('p', :)))
 
 Of course, it also supports usual [`Index`](@ref)es to initialize more specific coupling patterns, e.g., the coupling pattern of the orbital-1 spin-down hopping term of fermions $t\sum_{⟨ij⟩}c^†_{i, 1, ↓}c_{j, 1, ↓} + h.c.$ is
 ```jldoctest HM
-julia> Coupling(Index(1, FID{:f}(1, 1//2, 2)), Index(2, FID{:f}(1, 1//2, 1)))
-Index(1, FID{:f}(1, 1//2, 2)) Index(2, FID{:f}(1, 1//2, 1))
+julia> Coupling(Index(1, FID{:f}(1, -1//2, 2)), Index(2, FID{:f}(1, -1//2, 1)))
+Index(1, FID{:f}(1, -1//2, 2)) Index(2, FID{:f}(1, -1//2, 1))
 ```
 
 The [`Index`](@ref)es can be of different types, which corresponds to a hybrid quantum lattice system that couples different categories of internal degrees of freedom:
