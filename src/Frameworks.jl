@@ -1,5 +1,7 @@
 module Frameworks
 
+using Base: @propagate_inbounds
+using Base.Iterators: flatten, repeated
 using DelimitedFiles: writedlm
 using LaTeXStrings: latexstring
 using Printf: @printf, @sprintf
@@ -7,7 +9,7 @@ using RecipesBase: RecipesBase, @recipe
 using Serialization: serialize
 using TimerOutputs: TimerOutput, TimerOutputs, @timeit
 using ..DegreesOfFreedom: plain, Boundary, Hilbert, Table, Term
-using ..QuantumOperators: Operators, LinearFunction, LinearTransformation, Transformation, identity, optype
+using ..QuantumOperators: Operators, OperatorSet, LinearFunction, LinearTransformation, Transformation, identity, optype
 using ..Spatials: AbstractLattice, Bond, Neighbors, bonds!, isintracell
 using ..Toolkit: atol, efficientoperations, rtol, decimaltostr
 
@@ -15,7 +17,7 @@ import ..QuantumLattices: add!, expand, expand!, id, reset!, update, update!
 import ..Spatials: save
 import ..Toolkit: contentnames, getcontent
 
-export Action, Algorithm, AnalyticalExpression, Assignment, CompositeGenerator, Entry, Frontend, Image, OperatorGenerator, Parameters, RepresentationGenerator, initialize, prepare!, run!, save
+export eager, lazy, Action, Algorithm, AnalyticalExpression, Assignment, CompositeGenerator, Eager, Entry, ExpansionStyle, Frontend, Image, Lazy, OperatorGenerator, Parameters, RepresentationGenerator, initialize, prepare!, run!, save
 
 """
     Parameters{Names}(values::Number...) where Names
@@ -64,20 +66,56 @@ abstract type Frontend end
 @inline Parameters(frontend::Frontend) = error("Parameters error: not implemented for $(nameof(typeof(frontend))).")
 
 """
+    ExpansionStyle
+
+Expansion style of a representation generator. It has two singleton subtypes, [`Eager`](@ref) and [`Lazy`](@ref).
+"""
+abstract type ExpansionStyle end
+
+"""
+    Eager <: ExpansionStyle
+
+Eager expansion style with eager computation so that similar terms are combined in the final result.
+"""
+struct Eager <: ExpansionStyle end
+
+"""
+    const eager = Eager()
+
+Singleton instance of [`Eager`](@ref).
+"""
+const eager = Eager()
+
+"""
+    Lazy <: ExpansionStyle
+
+Lazy expansion style with lazy computation so that similar terms are not combined in the final result.
+"""
+struct Lazy <: ExpansionStyle end
+
+"""
+    const lazy = Lazy()
+
+Singleton instance of [`Lazy`](@ref).
+"""
+const lazy = Lazy()
+
+"""
     RepresentationGenerator <: Frontend
 
 Representation generator of a quantum lattice system.
 """
 abstract type RepresentationGenerator <: Frontend end
+@inline ExpansionStyle(gen::RepresentationGenerator) = ExpansionStyle(typeof(gen))
 @inline Base.eltype(gen::RepresentationGenerator) = eltype(typeof(gen))
 @inline Base.IteratorSize(::Type{<:RepresentationGenerator}) = Base.SizeUnknown()
-@inline function Base.iterate(gen::RepresentationGenerator)
+@propagate_inbounds function Base.iterate(gen::RepresentationGenerator)
     ops = expand(gen)
     index = iterate(ops)
     isnothing(index) && return nothing
     return index[1], (ops, index[2])
 end
-@inline function Base.iterate(gen::RepresentationGenerator, state)
+@propagate_inbounds function Base.iterate(::RepresentationGenerator, state)
     index = iterate(state[1], state[2])
     isnothing(index) && return nothing
     return index[1], (state[1], index[2])
@@ -85,13 +123,27 @@ end
 @inline Base.show(io::IO, ::MIME"text/latex", gen::RepresentationGenerator) = show(io, MIME"text/latex"(), latexstring(latexstring(expand(gen))))
 
 """
-    expand(gen::RepresentationGenerator) -> valtype(gen)
+    expand(gen::RepresentationGenerator)
+    expand(gen::RepresentationGenerator, ::Eager)
+    expand(gen::RepresentationGenerator, ::Lazy)
+
+Expand the generator to get the representation of the quantum lattice system.
+"""
+@inline expand(gen::RepresentationGenerator) = expand(gen, ExpansionStyle(gen))
+@inline expand(gen::RepresentationGenerator, ::Eager) = expand!(zero(valtype(gen)), gen)
+@inline expand(gen::RepresentationGenerator, ::Lazy) = error("expand! error: not implemented for $(nameof(typeof(gen))).")
+
+"""
     expand!(result, gen::RepresentationGenerator) -> typeof(result)
 
-Expand the generator to get the representation of the quantum lattice system (or some part of it).
+Expand the generator to add the representation of the quantum lattice system to `result`.
 """
-@inline expand(gen::RepresentationGenerator) = expand!(zero(valtype(gen)), gen)
-@inline expand!(result, gen::RepresentationGenerator) = error("expand! error: not implemented for $(nameof(typeof(gen))).")
+function expand!(result, gen::RepresentationGenerator)
+    for op in expand(gen, lazy)
+        add!(result, op)
+    end
+    return result
+end
 
 """
     AnalyticalExpression{F<:Function, P<:Parameters} <: RepresentationGenerator
@@ -112,26 +164,30 @@ end
 @inline (expression::AnalyticalExpression)(; kwargs...) = expression.expression(values(expression.parameters)...; kwargs...)
 
 """
-    Entry{C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:Boundary} <: RepresentationGenerator
+    Entry{C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:Boundary, S<:ExpansionStyle} <: RepresentationGenerator
 
 The basic representation generator of a quantum lattice system that records the quantum operators or a representation of the quantum operators related to (part of) the system.
 """
-mutable struct Entry{C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:Boundary} <: RepresentationGenerator
+mutable struct Entry{C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:Boundary, S<:ExpansionStyle} <: RepresentationGenerator
     const constops::C
     const alterops::A
     const boundops::B
     parameters::P
     const boundary::D
+    function Entry(constops, alterops::NamedTuple, boundops::NamedTuple, parameters::Parameters, boundary::Boundary, style::ExpansionStyle)
+        new{typeof(constops), typeof(alterops), typeof(boundops), typeof(parameters), typeof(boundary), typeof(style)}(constops, alterops, boundops, parameters, boundary)
+    end
 end
 @inline Entry(entry::Entry) = entry
 @inline Base.eltype(E::Type{<:Entry}) = eltype(valtype(E))
+@inline ExpansionStyle(::Type{<:Entry{C, <:NamedTuple, <:NamedTuple, <:Parameters, <:Boundary, S} where C}) where {S<:ExpansionStyle} = S()
 
 """
-    Entry(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain; half::Bool=false)
+    Entry(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain, style::ExpansionStyle=eager; half::Bool=false)
 
 Construct an entry of quantum operators based on the input terms, bonds, Hilbert space and (twisted) boundary condition.
 """
-function Entry(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain; half::Bool=false)
+function Entry(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain, style::ExpansionStyle=eager; half::Bool=false)
     emptybonds = eltype(bonds)[]
     if boundary === plain
         innerbonds = bonds
@@ -145,7 +201,7 @@ function Entry(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbe
     alterops = NamedTuple{map(id, terms)}(map(term->expand(one(term), term.ismodulatable ? innerbonds : emptybonds, hilbert; half=half), terms))
     boundops = NamedTuple{map(id, terms)}(map(term->map!(boundary, expand!(Operators{valtype(typeof(boundary), optype(typeof(term), typeof(hilbert), eltype(bonds)))}(), one(term), boundbonds, hilbert, half=half)), terms))
     parameters = NamedTuple{map(id, terms)}(map(term->term.value, terms))
-    return Entry(constops, alterops, boundops, parameters, boundary)
+    return Entry(constops, alterops, boundops, parameters, boundary, style)
 end
 
 """
@@ -157,7 +213,7 @@ Multiply an entry of quantum operators with a factor.
 @inline Base.:*(entry::Entry, factor) = factor * entry
 @inline function Base.:*(factor, entry::Entry)
     parameters = NamedTuple{keys(entry.parameters)}(map(value->factor*value, values(entry.parameters)))
-    return Entry(factor*entry.constops, entry.alterops, entry.boundops, parameters, entry.boundary)
+    return Entry(factor*entry.constops, entry.alterops, entry.boundops, parameters, entry.boundary, ExpansionStyle(entry))
 end
 
 """
@@ -167,6 +223,7 @@ Addition of two entries of quantum operators.
 """
 function Base.:+(entry₁::Entry, entry₂::Entry)
     @assert entry₁.boundary==entry₂.boundary "+ error: in order to be added, two entries must share the same boundary condition (including the twist angles at the boundary)."
+    @assert ExpansionStyle(entry₁)==ExpansionStyle(entry₂) "+ error: in order to be added, two entries must share the same expansion style."
     constops = entry₁.constops + entry₂.constops
     alls, allshares = totalkeys(entry₁.parameters, entry₂.parameters), sharedkeys(entry₁.parameters, entry₂.parameters)
     allmatches = NamedTuple{keymaps(allshares)}(map(key->opsmatch(entry₁.alterops, entry₂.alterops, key) && opsmatch(entry₁.boundops, entry₂.boundops, key), allshares))
@@ -177,7 +234,7 @@ function Base.:+(entry₁::Entry, entry₂::Entry)
     boundmatches = NamedTuple{keymaps(boundshares)}(map(((::Val{key}) where key)->getfield(allmatches, key), boundshares))
     alterops = NamedTuple{keymaps(alteralls)}(map(key->combineops(entry₁.alterops, entry₁.parameters, entry₂.alterops, entry₂.parameters, altermatches, key), alteralls))
     boundops = NamedTuple{keymaps(boundalls)}(map(key->combineops(entry₁.boundops, entry₁.parameters, entry₂.boundops, entry₂.parameters, boundmatches, key), boundalls))
-    return Entry(constops, alterops, boundops, parameters, deepcopy(entry₁.boundary))
+    return Entry(constops, alterops, boundops, parameters, deepcopy(entry₁.boundary), ExpansionStyle(entry₁))
 end
 @inline keymaps(keys) = map(((::Val{key}) where key)->key, keys)
 @generated totalkeys(content₁::NamedTuple, content₂::NamedTuple) = map(Val, Tuple(unique((fieldnames(content₁)..., fieldnames(content₂)...))))
@@ -208,7 +265,7 @@ function (transformation::LinearTransformation)(entry::Entry; kwargs...)
     constops = wrapper(entry.constops)
     alterops = NamedTuple{keys(entry.alterops)}(map(wrapper, values(entry.alterops)))
     boundops = NamedTuple{keys(entry.boundops)}(map(wrapper, values(entry.boundops)))
-    return Entry(constops, alterops, boundops, entry.parameters, deepcopy(entry.boundary))
+    return Entry(constops, alterops, boundops, entry.parameters, deepcopy(entry.boundary), ExpansionStyle(entry))
 end
 
 """
@@ -224,20 +281,31 @@ Get the valtype of an entry of (representations of) quantum operators.
 end
 
 """
-    expand!(result, entry::Entry) -> typeof(result)
+    expand(entry::Entry, ::Lazy)
 
 Expand an entry to get the (representation of) quantum operators related to a quantum lattice system.
 """
-@generated function expand!(result, entry::Entry)
-    exprs = [:(add!(result, entry.constops))]
-    for name in QuoteNode.(fieldnames(fieldtype(entry, :alterops)))
-        push!(exprs, :(add!(result, get(entry.parameters, $name, 1)*getfield(entry.alterops, $name))))
-    end
-    for name in QuoteNode.(fieldnames(fieldtype(entry, :boundops)))
-        push!(exprs, :(add!(result, get(entry.parameters, $name, 1)*getfield(entry.boundops, $name))))
-    end
-    push!(exprs, :(return result))
-    return Expr(:block, exprs...)
+function expand(entry::Entry, ::Lazy)
+    params = (one(eltype(entry.parameters)), values(entry.parameters, keys(entry.alterops)|>Val)..., values(entry.parameters, keys(entry.alterops)|>Val)...)
+    counts = (length(entry.constops), map(length, values(entry.alterops))..., map(length, values(entry.boundops))...)
+    ops = (entry.constops, values(entry.alterops)..., values(entry.boundops)...)
+    return EntryExpand{eltype(entry)}(flatten(map((param, count)->repeated(param, count), params, counts)), flatten(ops))
+end
+@inline @generated function Base.values(parameters::Parameters, ::Val{KS}) where KS
+    exprs = [:(getfield(parameters, $name)) for name in QuoteNode.(KS)]
+    return Expr(:tuple, exprs...)
+end
+struct EntryExpand{E, VS, OS} <: OperatorSet{E}
+    values::VS
+    ops::OS
+    EntryExpand{E}(values, ops) where E = new{E, typeof(values), typeof(ops)}(values, ops)
+end
+@inline Base.length(ee::EntryExpand) = mapreduce(length, +, ee.values.it)
+@propagate_inbounds function Base.iterate(ee::EntryExpand, state=((), ()))
+    v = iterate(ee.values, state[1])
+    isnothing(v) && return nothing
+    op = iterate(ee.ops, state[2])
+    return op[1]*v[1], (v[2], op[2])
 end
 
 """
@@ -285,7 +353,7 @@ Get an empty copy of an entry or empty an entry of (representations of) quantum 
     constops = empty(entry.constops)
     alterops = NamedTuple{keys(entry.alterops)}(map(empty, values(entry.alterops)))
     boundops = NamedTuple{keys(entry.boundops)}(map(empty, values(entry.boundops)))
-    return Entry(constops, alterops, boundops, entry.parameters, deepcopy(entry.boundary))
+    return Entry(constops, alterops, boundops, entry.parameters, deepcopy(entry.boundary), ExpansionStyle(entry))
 end
 @inline function Base.empty!(entry::Entry)
     empty!(entry.constops)
@@ -349,10 +417,11 @@ By protocol, it must have the following predefined contents:
 * `table::T`: the index-sequence table if it is not nothing
 """
 abstract type CompositeGenerator{E<:Entry, T<:Union{Table, Nothing}} <: RepresentationGenerator end
+@inline ExpansionStyle(::Type{<:CompositeGenerator{E}}) where {E<:Entry} = ExpansionStyle(E)
 @inline contentnames(::Type{<:CompositeGenerator}) = (:operators, :table)
 @inline Base.valtype(::Type{<:CompositeGenerator{E}}) where {E<:Entry} = valtype(E)
 @inline Base.eltype(::Type{<:CompositeGenerator{E}}) where {E<:Entry} = eltype(E)
-@inline expand!(result, gen::CompositeGenerator) = expand!(result, getcontent(gen, :operators))
+@inline expand(gen::CompositeGenerator, ::Lazy) = expand(getcontent(gen, :operators), lazy)
 @inline Parameters(gen::CompositeGenerator) = Parameters(getcontent(gen, :operators))
 @inline Entry(gen::CompositeGenerator) = getcontent(gen, :operators)
 
@@ -372,12 +441,12 @@ end
 @inline contentnames(::Type{<:OperatorGenerator}) = (:operators, :terms, :bonds, :hilbert, :half, :table)
 
 """
-    OperatorGenerator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain, table::Union{Table,Nothing}=nothing; half::Bool=false)
+    OperatorGenerator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain, table::Union{Table,Nothing}=nothing, style::ExpansionStyle=eager; half::Bool=false)
 
 Construct a generator of operators.
 """
-@inline function OperatorGenerator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain, table::Union{Table,Nothing}=nothing; half::Bool=false)
-    return OperatorGenerator(Entry(terms, bonds, hilbert, boundary; half=half), terms, bonds, hilbert, half, table)
+@inline function OperatorGenerator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain, table::Union{Table,Nothing}=nothing, style::ExpansionStyle=eager; half::Bool=false)
+    return OperatorGenerator(Entry(terms, bonds, hilbert, boundary, style; half=half), terms, bonds, hilbert, half, table)
 end
 
 """

@@ -80,31 +80,31 @@ end
     i = Identity()
 
     optp = Operator{Complex{Float}, ID{CompositeIndex{Index{Int, FID{Int}}, SVector{1, Float}}, 2}}
-    entry = Entry(tops₁, (t=Operators{optp}(), μ=μops), (t=tops₂, μ=Operators{optp}()), (t=2.0, μ=1.0), boundary)
-    @test entry == Entry((t, μ), bs, hilbert, boundary; half=true)
+    entry = Entry(tops₁, (t=Operators{optp}(), μ=μops), (t=tops₂, μ=Operators{optp}()), (t=2.0, μ=1.0), boundary, eager)
+    @test entry == Entry((t, μ), bs, hilbert, boundary, eager; half=true)
     @test isequal(entry, i(entry))
     @test Parameters(entry) == (t=2.0, μ=1.0, θ=0.1)
-    @test entry+entry == entry*2 == 2*entry == Entry(tops₁*2, (t=Operators{optp}(), μ=μops), (t=tops₂, μ=Operators{optp}()), (t=4.0, μ=2.0), boundary)
+    @test entry+entry == entry*2 == 2*entry == Entry(tops₁*2, (t=Operators{optp}(), μ=μops), (t=tops₂, μ=Operators{optp}()), (t=4.0, μ=2.0), boundary, eager)
     @test entry|>valtype == entry|>typeof|>valtype == Operators{optp, idtype(optp)}
     @test entry|>eltype == entry|>typeof|>eltype == optp
     @test expand(entry) == expand!(Operators{optp}(), entry) ≈ tops₁+tops₂*2.0+μops
 
-    entry₁ = Entry(tops₁, (t=Operators{optp}(),), (t=tops₂,), (t=2.0,), boundary)
-    entry₂ = Entry(Operators{optp}(), (μ=μops,), (μ=Operators{optp}(),), (μ=1.0,), boundary)
-    @test entry₁+entry₂ == Entry(tops₁, (t=Operators{optp}(), μ=μops), (t=tops₂, μ=Operators{optp}()), (t=2.0, μ=1.0), boundary)
+    entry₁ = Entry(tops₁, (t=Operators{optp}(),), (t=tops₂,), (t=2.0,), boundary, eager)
+    entry₂ = Entry(Operators{optp}(), (μ=μops,), (μ=Operators{optp}(),), (μ=1.0,), boundary, eager)
+    @test entry₁+entry₂ == Entry(tops₁, (t=Operators{optp}(), μ=μops), (t=tops₂, μ=Operators{optp}()), (t=2.0, μ=1.0), boundary, eager)
 
     μops₁ = expand(one(μ), bs[1], hilbert; half=true)
     μops₂ = expand(one(μ), bs[2], hilbert; half=true)
-    entry₁ = Entry(Operators{optp}(), (μ=μops₁,), (μ=Operators{optp}(),), (μ=1.0,), boundary)
-    entry₂ = Entry(Operators{optp}(), (μ=μops₂,), (μ=Operators{optp}(),), (μ=1.0,), boundary)
-    @test entry₁*2+entry₂*2 == Entry(Operators{optp}(), (μ=μops,), (μ=Operators{optp}(),), (μ=2.0,), boundary)
-    @test entry₁*2+entry₂*3 == Entry(Operators{optp}(), (μ=μops₁*2+μops₂*3,), (μ=Operators{optp}(),), (μ=1.0,), boundary)
+    entry₁ = Entry(Operators{optp}(), (μ=μops₁,), (μ=Operators{optp}(),), (μ=1.0,), boundary, eager)
+    entry₂ = Entry(Operators{optp}(), (μ=μops₂,), (μ=Operators{optp}(),), (μ=1.0,), boundary, eager)
+    @test entry₁*2+entry₂*2 == Entry(Operators{optp}(), (μ=μops,), (μ=Operators{optp}(),), (μ=2.0,), boundary, eager)
+    @test entry₁*2+entry₂*3 == Entry(Operators{optp}(), (μ=μops₁*2+μops₂*3,), (μ=Operators{optp}(),), (μ=1.0,), boundary, eager)
 
-    another = Entry(Operators{optp}(), (t=Operators{optp}(), μ=Operators{optp}()), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), boundary)
+    another = Entry(Operators{optp}(), (t=Operators{optp}(), μ=Operators{optp}()), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), boundary, eager)
     @test empty(entry) == empty!(deepcopy(entry)) == another
 
     nb = update!(deepcopy(boundary); θ=0.5)
-    another = Entry(tops₁, (t=Operators{optp}(), μ=μops), (t=nb(tops₂, origin=[0.1]), μ=Operators{optp}()), (t=2.0, μ=1.5), nb)
+    another = Entry(tops₁, (t=Operators{optp}(), μ=μops), (t=nb(tops₂, origin=[0.1]), μ=Operators{optp}()), (t=2.0, μ=1.5), nb, eager)
     dest = deepcopy(entry)
     update!(dest; μ=1.5, θ=0.5)
     @test dest == another
@@ -148,18 +148,18 @@ end
     tops = expand(t, bs, hilbert; half=true)
     μops = expand(one(μ), bs, hilbert; half=true)
     optp = Operator{Complex{Float}, ID{CompositeIndex{Index{Int, FID{Int}}, SVector{1, Float}}, 2}}
-    entry = Entry(tops, (t=Operators{optp}(), μ=μops), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain)
-    @test entry == Entry((t, μ), bs, hilbert, plain; half=true)
+    entry = Entry(tops, (t=Operators{optp}(), μ=μops), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain, eager)
+    @test entry == Entry((t, μ), bs, hilbert, plain, eager; half=true)
     @test isequal(entry, i(entry))
     @test Parameters(entry) == (t=2.0, μ=1.0)
-    @test entry+entry == entry*2 == 2*entry == Entry(tops*2, (t=Operators{optp}(), μ=μops), (t=Operators{optp}(), μ=Operators{optp}()), (t=4.0, μ=2.0), plain)
+    @test entry+entry == entry*2 == 2*entry == Entry(tops*2, (t=Operators{optp}(), μ=μops), (t=Operators{optp}(), μ=Operators{optp}()), (t=4.0, μ=2.0), plain, eager)
     @test expand(entry) == expand!(Operators{optp}(), entry) ≈ tops+μops
 
-    entry₁ = Entry(tops, (t=Operators{optp}(),), (t=Operators{optp}(),), (t=2.0,), plain)
-    entry₂ = Entry(Operators{optp}(), (μ=μops,), (μ=Operators{optp}(),), (μ=1.0,), plain)
-    @test entry₁+entry₂ == Entry(tops, (t=Operators{optp}(), μ=μops), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain)
+    entry₁ = Entry(tops, (t=Operators{optp}(),), (t=Operators{optp}(),), (t=2.0,), plain, eager)
+    entry₂ = Entry(Operators{optp}(), (μ=μops,), (μ=Operators{optp}(),), (μ=1.0,), plain, eager)
+    @test entry₁+entry₂ == Entry(tops, (t=Operators{optp}(), μ=μops), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain, eager)
 
-    another = Entry(Operators{optp}(), (t=Operators{optp}(), μ=Operators{optp}()), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain)
+    another = Entry(Operators{optp}(), (t=Operators{optp}(), μ=Operators{optp}()), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain, eager)
     @test empty(entry) == empty!(deepcopy(entry)) == another
     @test reset!(deepcopy(another), (t, μ), bs, hilbert, plain; half=true) == entry
     @test reset!(deepcopy(another), i, entry) == entry
