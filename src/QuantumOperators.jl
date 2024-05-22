@@ -9,7 +9,7 @@ import LinearAlgebra: dot
 import ..QuantumLattices: ⊗, add!, div!, dtype, id, ishermitian, mul!, permute, rank, sub!, value
 import ..Toolkit: contentnames, dissolve, isparameterbound, parameternames
 
-export ID, Operator, OperatorPack, OperatorProd, Operators, OperatorSum, OperatorUnit, LaTeX, QuantumOperator
+export ID, Operator, OperatorPack, OperatorProd, Operators, OperatorSet, OperatorSum, OperatorUnit, LaTeX, QuantumOperator
 export Identity, LinearFunction, LinearTransformation, MatrixRepresentation, Numericalization, Permutation, RankFilter, TabledUnitSubstitution, Transformation, UnitSubstitution
 export idtype, ishermitian, latexname, latexformat, matrix, optype, script, sequence, subscript, superscript
 
@@ -358,29 +358,41 @@ Convert an operator unit to an operator.
     return Operator(one(valtype(M)), ID(u))
 end
 
-# Operator sum
+# Operator set
 """
-    OperatorSum{M<:OperatorPack, I<:Tuple} <: QuantumOperator
+    OperatorSet{M<:OperatorPack} <: QuantumOperator
 
-The sum of `OperatorPack`s.
+The set of `OperatorPack`s.
 
-Similar items are automatically merged with the aid of the id system.
+1) The relation between two `OperatorPack`s in an `OperatorSet` can be viewed as addition.
+2) But in general, only iteration over `OperatorPack`s and length are supported.
+3) To use arithmetic operations, please refer to its subtype, `OperatorSum`.
 """
-struct OperatorSum{M<:OperatorPack, I<:Tuple} <: QuantumOperator
-    contents::Dict{I, M}
-    OperatorSum(contents::Dict{<:Tuple, <:OperatorPack}) = new{valtype(contents), keytype(contents)}(contents)
-end
-@inline Base.eltype(ms::OperatorSum) = eltype(typeof(ms))
-@inline Base.eltype(::Type{<:OperatorSum{M}}) where {M<:OperatorPack} = M
-@inline Base.iterate(ms::OperatorSum) = iterate(values(ms.contents))
-@inline Base.iterate(ms::OperatorSum, state) = iterate(values(ms.contents), state)
-@inline Base.length(ms::OperatorSum) = length(ms.contents)
-function Base.show(io::IO, ms::OperatorSum)
+abstract type OperatorSet{M<:OperatorPack} <: QuantumOperator end
+@inline Base.eltype(ms::OperatorSet) = eltype(typeof(ms))
+@inline Base.eltype(::Type{<:OperatorSet{M}}) where {M<:OperatorPack} = M
+function Base.show(io::IO, ms::OperatorSet)
     @printf io "%s with %s %s\n" summary(ms) length(ms) nameof(eltype(ms))
     for m in ms
         @printf io "  %s\n" m
     end
 end
+
+# Operator sum
+"""
+    OperatorSum{M<:OperatorPack, I<:Tuple} <: OperatorSet{M}
+
+The sum of `OperatorPack`s.
+
+Similar items are automatically merged with the aid of the id system.
+"""
+struct OperatorSum{M<:OperatorPack, I<:Tuple} <: OperatorSet{M}
+    contents::Dict{I, M}
+    OperatorSum(contents::Dict{<:Tuple, <:OperatorPack}) = new{valtype(contents), keytype(contents)}(contents)
+end
+@inline Base.iterate(ms::OperatorSum) = iterate(values(ms.contents))
+@inline Base.iterate(ms::OperatorSum, state) = iterate(values(ms.contents), state)
+@inline Base.length(ms::OperatorSum) = length(ms.contents)
 @inline Base.haskey(ms::OperatorSum, id::Tuple) = haskey(ms.contents, id)
 @inline Base.getindex(ms::OperatorSum, id::Tuple) = ms.contents[id]
 @inline Base.setindex!(ms::OperatorSum, m::OperatorPack, id::Tuple) = (ms.contents[id] = m; m)
@@ -537,7 +549,7 @@ Get the corresponding `OperatorPack` type of a generic quantum operator.
 @inline optype(m::QuantumOperator) = optype(typeof(m))
 @inline optype(::Type{M}) where {M<:OperatorUnit} = fulltype(Operator, NamedTuple{(:value, :id), Tuple{Int, Tuple{M}}})
 @inline optype(::Type{M}) where {M<:OperatorPack} = M
-@inline optype(::Type{M}) where {M<:OperatorSum} = eltype(M)
+@inline optype(::Type{M}) where {M<:OperatorSet} = eltype(M)
 
 """
     +(m::QuantumOperator) -> typeof(m)
@@ -784,13 +796,13 @@ function valuetolatextext(value)
 end
 
 """
-    latexstring(opts::OperatorSum) -> String
+    latexstring(opts::OperatorSet) -> String
 
 Get the string representation of a set of operators in the LaTeX format.
 """
-function latexstring(opts::OperatorSum)
+function latexstring(opts::OperatorSet)
     result = String[]
-    for (i, opt) in enumerate(values(opts))
+    for (i, opt) in enumerate(opts)
         rep = latexstring(opt)
         i>1 && rep[1]≠'-' && push!(result, "+")
         push!(result, rep)
@@ -825,11 +837,11 @@ abstract type LinearTransformation <: Transformation end
 @inline Base.zero(transformation::LinearTransformation, m::QuantumOperator) = zero(valtype(transformation, m))
 
 """
-    (transformation::LinearTransformation)(ms::OperatorSum; kwargs...) -> OperatorSum
+    (transformation::LinearTransformation)(ms::OperatorSet; kwargs...) -> OperatorSet
 
 Get the linear transformed quantum operators.
 """
-function (transformation::LinearTransformation)(ms::OperatorSum; kwargs...)
+function (transformation::LinearTransformation)(ms::OperatorSet; kwargs...)
     result = zero(transformation, ms)
     for m in ms
         add!(result, transformation, m; kwargs...)
