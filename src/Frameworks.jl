@@ -9,7 +9,7 @@ using RecipesBase: RecipesBase, @recipe
 using Serialization: serialize
 using TimerOutputs: TimerOutput, TimerOutputs, @timeit
 using ..DegreesOfFreedom: plain, Boundary, Hilbert, Table, Term
-using ..QuantumOperators: Operators, OperatorSet, LinearFunction, LinearTransformation, Transformation, identity, optype
+using ..QuantumOperators: OperatorPack, Operators, OperatorSet, LinearFunction, LinearTransformation, Transformation, identity, optype
 using ..Spatials: AbstractLattice, Bond, Neighbors, bonds!, isintracell
 using ..Toolkit: atol, efficientoperations, rtol, decimaltostr
 
@@ -274,10 +274,11 @@ end
 Get the valtype of an entry of (representations of) quantum operators.
 """
 @inline @generated function Base.valtype(::Type{<:Entry{C, A, B}}) where {C, A<:NamedTuple, B<:NamedTuple}
-    optp = C
-    (fieldcount(A) > 0) && (optp = reduce(promote_type, fieldtypes(A), init=optp))
-    (fieldcount(B) > 0) && (optp = reduce(promote_type, fieldtypes(B), init=optp))
-    return optp
+    exprs = [:(optp = C)]
+    fieldcount(A)>0 && append!(exprs, [:(optp = promote_type(optp, $T)) for T in fieldtypes(A)])
+    fieldcount(B)>0 && append!(exprs, [:(optp = promote_type(optp, $T)) for T in fieldtypes(B)])
+    push!(exprs, :(return optp))
+    return Expr(:block, exprs...)
 end
 
 """
@@ -295,7 +296,7 @@ end
     exprs = [:(getfield(parameters, $name)) for name in QuoteNode.(KS)]
     return Expr(:tuple, exprs...)
 end
-struct EntryExpand{E, VS, OS} <: OperatorSet{E}
+struct EntryExpand{E<:OperatorPack, VS, OS} <: OperatorSet{E}
     values::VS
     ops::OS
     EntryExpand{E}(values, ops) where E = new{E, typeof(values), typeof(ops)}(values, ops)
