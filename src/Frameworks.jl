@@ -8,7 +8,7 @@ using Printf: @printf, @sprintf
 using RecipesBase: RecipesBase, @recipe
 using Serialization: serialize
 using TimerOutputs: TimerOutput, TimerOutputs, @timeit
-using ..DegreesOfFreedom: plain, Boundary, Hilbert, Table, Term
+using ..DegreesOfFreedom: plain, Boundary, Hilbert, Term
 using ..QuantumOperators: OperatorPack, Operators, OperatorSet, OperatorSum, LinearFunction, LinearTransformation, Transformation, identity, optype
 using ..Spatials: AbstractLattice, Bond, Neighbors, bonds!, isintracell
 using ..Toolkit: atol, efficientoperations, rtol, decimaltostr
@@ -410,17 +410,16 @@ Get the complete set of parameters of an entry of (representations of) quantum o
 @inline Parameters(entry::Entry) = merge(entry.parameters, Parameters(entry.boundary))
 
 """
-    CompositeGenerator{E<:Entry, T<:Union{Table, Nothing}} <: RepresentationGenerator
+    CompositeGenerator{E<:Entry} <: RepresentationGenerator
 
 Abstract type for a composite representation generator of a quantum lattice system.
 
 By protocol, it must have the following predefined contents:
 * `operators::E`: the entry for the generated (representations of) quantum operators
-* `table::T`: the index-sequence table if it is not nothing
 """
-abstract type CompositeGenerator{E<:Entry, T<:Union{Table, Nothing}} <: RepresentationGenerator end
+abstract type CompositeGenerator{E<:Entry} <: RepresentationGenerator end
 @inline ExpansionStyle(::Type{<:CompositeGenerator{E}}) where {E<:Entry} = ExpansionStyle(E)
-@inline contentnames(::Type{<:CompositeGenerator}) = (:operators, :table)
+@inline contentnames(::Type{<:CompositeGenerator}) = (:operators,)
 @inline Base.valtype(::Type{<:CompositeGenerator{E}}) where {E<:Entry} = valtype(E)
 @inline Base.eltype(::Type{<:CompositeGenerator{E}}) where {E<:Entry} = eltype(E)
 @inline expand(gen::CompositeGenerator, ::Lazy) = expand(getcontent(gen, :operators), lazy)
@@ -428,27 +427,26 @@ abstract type CompositeGenerator{E<:Entry, T<:Union{Table, Nothing}} <: Represen
 @inline Entry(gen::CompositeGenerator) = getcontent(gen, :operators)
 
 """
-    OperatorGenerator{E<:Entry{<:Operators}, TS<:Tuple{Vararg{Term}}, B<:Bond, H<:Hilbert, T<:Union{Table, Nothing}} <: CompositeGenerator{E, T}
+    OperatorGenerator{E<:Entry{<:Operators}, TS<:Tuple{Vararg{Term}}, B<:Bond, H<:Hilbert} <: CompositeGenerator{E}
 
 A generator of operators based on the terms, bonds and Hilbert space of a quantum lattice system.
 """
-struct OperatorGenerator{E<:Entry{<:Operators}, TS<:Tuple{Vararg{Term}}, B<:Bond, H<:Hilbert, T<:Union{Table, Nothing}} <: CompositeGenerator{E, T}
+struct OperatorGenerator{E<:Entry{<:Operators}, TS<:Tuple{Vararg{Term}}, B<:Bond, H<:Hilbert} <: CompositeGenerator{E}
     operators::E
     terms::TS
     bonds::Vector{B}
     hilbert::H
     half::Bool
-    table::T
 end
-@inline contentnames(::Type{<:OperatorGenerator}) = (:operators, :terms, :bonds, :hilbert, :half, :table)
+@inline contentnames(::Type{<:OperatorGenerator}) = (:operators, :terms, :bonds, :hilbert, :half)
 
 """
-    OperatorGenerator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain, table::Union{Table,Nothing}=nothing, style::ExpansionStyle=eager; half::Bool=false)
+    OperatorGenerator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain, style::ExpansionStyle=eager; half::Bool=false)
 
 Construct a generator of operators.
 """
-@inline function OperatorGenerator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain, table::Union{Table,Nothing}=nothing, style::ExpansionStyle=eager; half::Bool=false)
-    return OperatorGenerator(Entry(terms, bonds, hilbert, boundary, style; half=half), terms, bonds, hilbert, half, table)
+@inline function OperatorGenerator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain, style::ExpansionStyle=eager; half::Bool=false)
+    return OperatorGenerator(Entry(terms, bonds, hilbert, boundary, style; half=half), terms, bonds, hilbert, half)
 end
 
 """
@@ -469,12 +467,11 @@ end
 Get an empty copy of or empty an operator generator.
 """
 @inline function Base.empty(gen::OperatorGenerator)
-    return OperatorGenerator(empty(gen.operators), gen.terms, empty(gen.bonds), empty(gen.hilbert), gen.half, isnothing(gen.table) ? nothing : empty(gen.table))
+    return OperatorGenerator(empty(gen.operators), gen.terms, empty(gen.bonds), empty(gen.hilbert), gen.half)
 end
 function Base.empty!(gen::OperatorGenerator)
     empty!(gen.bonds)
     empty!(gen.hilbert)
-    isnothing(gen.table) || empty!(gen.table)
     empty!(gen.operators)
     return gen
 end
@@ -488,7 +485,6 @@ function reset!(gen::OperatorGenerator, lattice::AbstractLattice, hilbert::Hilbe
     isa(neighbors, Neighbors) || (neighbors = Neighbors(lattice, neighbors))
     bonds!(empty!(gen.bonds), lattice, neighbors)
     merge!(empty!(gen.hilbert), hilbert)
-    isnothing(gen.table) || reset!(gen.table, gen.hilbert)
     reset!(gen.operators, gen.terms, gen.bonds, gen.hilbert, replace(gen.operators.boundary; vectors=lattice.vectors); half=gen.half)
     return gen
 end
@@ -541,25 +537,24 @@ end
 end
 
 """
-    Image{E<:Entry, H<:Transformation, T<:Union{Table, Nothing}} <: CompositeGenerator{E, T}
+    Image{E<:Entry, H<:Transformation} <: CompositeGenerator{E}
 
 The image of a transformation applied to a representation of a quantum lattice system.
 """
-mutable struct Image{E<:Entry, H<:Transformation, T<:Union{Table, Nothing}} <: CompositeGenerator{E, T}
+mutable struct Image{E<:Entry, H<:Transformation} <: CompositeGenerator{E}
     const operators::E
     transformation::H
-    const table::T
     const sourceid::UInt
 end
-@inline contentnames(::Type{<:Image}) = (:operators, :transformation, :table, :sourceid)
+@inline contentnames(::Type{<:Image}) = (:operators, :transformation, :sourceid)
 
 """
-    (transformation::Transformation)(gen::RepresentationGenerator, table::Union{Table, Nothing}=nothing; kwargs...) -> Image
+    (transformation::Transformation)(gen::RepresentationGenerator; kwargs...) -> Image
 
 Get the image of a transformation applied to a representation of a quantum lattice system.
 """
-@inline function (transformation::Transformation)(gen::RepresentationGenerator, table::Union{Table, Nothing}=nothing; kwargs...)
-    return Image(transformation(Entry(gen); kwargs...), transformation, table, objectid(gen))
+@inline function (transformation::Transformation)(gen::RepresentationGenerator; kwargs...)
+    return Image(transformation(Entry(gen); kwargs...), transformation, objectid(gen))
 end
 
 """
@@ -568,10 +563,9 @@ end
 
 Get an empty copy of or empty the image of a transformation applied to a representation.
 """
-@inline Base.empty(gen::Image) = Image(empty(gen.operators), gen.transformation, isnothing(gen.table) ? nothing : empty(gen.table), gen.sourceid)
+@inline Base.empty(gen::Image) = Image(empty(gen.operators), gen.transformation, gen.sourceid)
 @inline function Base.empty!(gen::Image)
     empty!(gen.operators)
-    isnothing(gen.table) || empty!(gen.table)
     return gen
 end
 
@@ -597,19 +591,18 @@ Update the parameters of the image based on its source representation.
 end
 
 """
-    reset!(gen::Image, transformation::Transformation, source::CompositeGenerator, table::Union{Table, Nothing}=getcontent(source, :table); kwargs...) -> Image
-    reset!(gen::Image, transformation::Transformation, source::RepresentationGenerator, table::Union{Table, Nothing}=gen.table; kwargs...) -> Image
+    reset!(gen::Image, transformation::Transformation, source::CompositeGenerator; kwargs...) -> Image
+    reset!(gen::Image, transformation::Transformation, source::RepresentationGenerator; kwargs...) -> Image
 
 Reset the image of a transformation applied to a representation.
 """
-@inline function reset!(gen::Image, transformation::Transformation, source::CompositeGenerator, table::Union{Table, Nothing}=getcontent(source, :table); kwargs...)
-    return invoke(reset!, Tuple{Image, Transformation, RepresentationGenerator, Union{Table, Nothing}}, gen, transformation, source, table; kwargs...)
+@inline function reset!(gen::Image, transformation::Transformation, source::CompositeGenerator; kwargs...)
+    return invoke(reset!, Tuple{Image, Transformation, RepresentationGenerator}, gen, transformation, source; kwargs...)
 end
-@inline function reset!(gen::Image, transformation::Transformation, source::RepresentationGenerator, table::Union{Table, Nothing}=gen.table; kwargs...)
+@inline function reset!(gen::Image, transformation::Transformation, source::RepresentationGenerator; kwargs...)
     @assert gen.sourceid==objectid(source) "reset! error: mismatched image, transformation and source representation."
     reset!(gen.operators, transformation, Entry(source); kwargs...)
     gen.transformation = transformation
-    isnothing(table) || gen.table===table || merge!(empty!(gen.table), table)
     return gen
 end
 
