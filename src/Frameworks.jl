@@ -9,7 +9,7 @@ using RecipesBase: RecipesBase, @recipe
 using Serialization: serialize
 using TimerOutputs: TimerOutput, TimerOutputs, @timeit
 using ..DegreesOfFreedom: plain, Boundary, Hilbert, Table, Term
-using ..QuantumOperators: OperatorPack, Operators, OperatorSet, LinearFunction, LinearTransformation, Transformation, identity, optype
+using ..QuantumOperators: OperatorPack, Operators, OperatorSet, OperatorSum, LinearFunction, LinearTransformation, Transformation, identity, optype
 using ..Spatials: AbstractLattice, Bond, Neighbors, bonds!, isintracell
 using ..Toolkit: atol, efficientoperations, rtol, decimaltostr
 
@@ -198,8 +198,9 @@ function Entry(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbe
     end
     constops = Operators{mapreduce(term->optype(typeof(term), typeof(hilbert), eltype(bonds)), promote_type, terms)}()
     map(term->expand!(constops, term, term.ismodulatable ? emptybonds : innerbonds, hilbert; half=half), terms)
-    alterops = NamedTuple{map(id, terms)}(map(term->expand(one(term), term.ismodulatable ? innerbonds : emptybonds, hilbert; half=half), terms))
-    boundops = NamedTuple{map(id, terms)}(map(term->map!(boundary, expand!(Operators{valtype(typeof(boundary), optype(typeof(term), typeof(hilbert), eltype(bonds)))}(), one(term), boundbonds, hilbert, half=half)), terms))
+    V = valtype(eltype(constops))
+    alterops = NamedTuple{map(id, terms)}(map(term->expand(replace(term, value=one(V)), term.ismodulatable ? innerbonds : emptybonds, hilbert; half=half), terms))
+    boundops = NamedTuple{map(id, terms)}(map(term->map!(boundary, expand!(Operators{promote_type(valtype(typeof(boundary), optype(typeof(term), typeof(hilbert), eltype(bonds))), V)}(), one(term), boundbonds, hilbert, half=half)), terms))
     parameters = NamedTuple{map(id, terms)}(map(term->term.value, terms))
     return Entry(constops, alterops, boundops, parameters, boundary, style)
 end
@@ -310,14 +311,14 @@ end
 end
 
 """
-    update!(entry::Entry{<:Operators}; parameters...) -> Entry
+    update!(entry::Entry{<:OperatorSum}; parameters...) -> Entry
 
 Update the parameters (including the boundary parameters) of an entry of quantum operators.
 
 !!! Note
     The coefficients of `boundops` are also updated due to the change of the boundary parameters.
 """
-function update!(entry::Entry{<:Operators}; parameters...)
+function update!(entry::Entry{<:OperatorSum}; parameters...)
     entry.parameters = update(entry.parameters; parameters...)
     if !match(Parameters(entry.boundary), NamedTuple{keys(parameters)}(values(parameters)))
         old = copy(entry.boundary.values)
