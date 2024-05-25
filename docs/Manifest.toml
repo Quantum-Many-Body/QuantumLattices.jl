@@ -817,15 +817,15 @@ version = "7.2.1+1"
 
 [[deps.SymPy]]
 deps = ["CommonEq", "CommonSolve", "LinearAlgebra", "PyCall", "SpecialFunctions", "SymPyCore"]
-git-tree-sha1 = "8d727c118eb31ffad73cce569b7bb29eef5fb9ad"
+git-tree-sha1 = "b8ce3d36b736a21939ba999f8d4dfc1012b2c3a3"
 uuid = "24249f21-da20-56a4-8eb1-6a02cf4ae2e6"
-version = "2.0.1"
+version = "2.1.0"
 
 [[deps.SymPyCore]]
 deps = ["CommonEq", "CommonSolve", "Latexify", "LinearAlgebra", "Markdown", "RecipesBase", "SpecialFunctions"]
-git-tree-sha1 = "d2e8b52c18ad76cc8827eb134b9ba4bb7699ec59"
+git-tree-sha1 = "ce356b121b103ef4218d39e2566b9ee8c1f81765"
 uuid = "458b697b-88f0-4a86-b56b-78b75cfb3531"
-version = "0.1.18"
+version = "0.2.1"
 
     [deps.SymPyCore.extensions]
     SymPyCoreSymbolicUtilsExt = "SymbolicUtils"
