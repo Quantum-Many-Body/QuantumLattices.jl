@@ -45,6 +45,7 @@ function azimuth(v::AbstractVector{<:Number})
     @assert length(v)∈(1, 2, 3) "azimuth error: wrong dimensioned input vector."
     result = acos(v[1]/(length(v)==3 ? sqrt(v[1]^2+v[2]^2) : norm(v)))
     (length(v)>1 && v[2]<0) && (result = 2*convert(typeof(result), pi) - result)
+    isnan(result) && (result = zero(result))
     return result
 end
 
@@ -57,6 +58,7 @@ function azimuthd(v::AbstractVector{<:Number})
     @assert length(v)∈(1, 2, 3) "azimuthd error: wrong dimensioned input vector."
     result = acosd(v[1]/(length(v)==3 ? sqrt(v[1]^2+v[2]^2) : norm(v)))
     (length(v)>1 && v[2]<0) && (result = 360 - result)
+    isnan(result) && (result = zero(result))
     return result
 end
 
