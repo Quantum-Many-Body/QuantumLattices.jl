@@ -101,6 +101,7 @@ end
 
     another = Entry(Operators{optp}(), (t=Operators{optp}(), μ=Operators{optp}()), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), boundary, eager)
     @test empty(entry) == empty!(deepcopy(entry)) == another
+    @test !isempty(entry) && isempty(empty(entry))
 
     nb = update!(deepcopy(boundary); θ=0.5)
     another = Entry(tops₁, (t=Operators{optp}(), μ=μops), (t=nb(tops₂, origin=[0.1]), μ=Operators{optp}()), (t=2.0, μ=1.5), nb, eager)
@@ -130,6 +131,7 @@ end
     @test expand(cgen, :t, 3) ≈ tops₁
     @test expand(cgen, :t, 4) ≈ tops₂*2.0
     @test empty!(deepcopy(cgen)) == OperatorGenerator((t, μ), empty(bs), empty(hilbert), boundary; half=true) == empty(cgen)
+    @test !isempty(cgen) && isempty(empty(cgen)) 
     @test reset!(empty(cgen), lattice, hilbert) == cgen
     @test update!(cgen, μ=1.5)|>expand ≈ tops₁+tops₂*2.0+μops*1.5
 
@@ -138,6 +140,7 @@ end
     @test Parameters(sgen) == (t=2.0, μ=1.5, θ=0.1)
     @test expand!(Operators{optp}(), sgen) == expand(sgen) ≈ tops₁+tops₂*2.0+μops*1.5
     @test empty!(deepcopy(sgen)) == Image(empty(cgen.operators), i, objectid(cgen)) == empty(sgen)
+    @test !isempty(sgen) && isempty(empty(sgen)) 
     @test update!(sgen, μ=3.5)|>expand ≈ tops₁+tops₂*2.0+μops*3.5
     @test update!(sgen, cgen)|>expand ≈ tops₁+tops₂*2.0+μops*1.5
     @test reset!(empty(sgen), i, cgen) == sgen

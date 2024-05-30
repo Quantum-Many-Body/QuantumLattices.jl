@@ -181,6 +181,7 @@ end
 @inline Entry(entry::Entry) = entry
 @inline Base.eltype(E::Type{<:Entry}) = eltype(valtype(E))
 @inline ExpansionStyle(::Type{<:Entry{C, <:NamedTuple, <:NamedTuple, <:Parameters, <:Boundary, S} where C}) where {S<:ExpansionStyle} = S()
+@inline Base.isempty(entry::Entry) = isempty(entry.constops) && all(map(isempty, values(entry.alterops))) && all(map(isempty, values(entry.boundops)))
 
 """
     Entry(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain, style::ExpansionStyle=eager; half::Bool=false)
@@ -425,6 +426,7 @@ abstract type CompositeGenerator{E<:Entry} <: RepresentationGenerator end
 @inline expand(gen::CompositeGenerator, ::Lazy) = expand(getcontent(gen, :operators), lazy)
 @inline Parameters(gen::CompositeGenerator) = Parameters(getcontent(gen, :operators))
 @inline Entry(gen::CompositeGenerator) = getcontent(gen, :operators)
+@inline Base.isempty(gen::CompositeGenerator) = isempty(getcontent(gen, :operators))
 
 """
     OperatorGenerator{E<:Entry{<:Operators}, TS<:Tuple{Vararg{Term}}, B<:Bond, H<:Hilbert} <: CompositeGenerator{E}
