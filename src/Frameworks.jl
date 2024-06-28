@@ -161,7 +161,10 @@ end
 end
 @inline update!(expression::Function; parameters...) = expression
 @inline Parameters(expression::AnalyticalExpression) = expression.parameters
-@inline (expression::AnalyticalExpression)(; kwargs...) = expression.expression(values(expression.parameters)...; kwargs...)
+@inline @generated function (expression::AnalyticalExpression)(; kwargs...)
+    exprs = [:(getfield(expression.parameters, $i)) for i = 1:fieldcount(fieldtype(expression, :parameters))]
+    return :(expression.expression($(exprs...); kwargs...))
+end
 
 """
     Entry{C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:Boundary, S<:ExpansionStyle} <: RepresentationGenerator
