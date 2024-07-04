@@ -117,6 +117,7 @@ end
     @test string(opts) == @sprintf "Operators with 2 Operator\n  %s\n" join(opts, "\n  ")
     @test haskey(opts, id(opt₁)) && haskey(opts, id(opt₂)) && !haskey(opts, ID(AID(3, 1)))
     @test opts[id(opt₁)]==opt₁ && opts[id(opt₂)]==opt₂
+    @test opts[1]==opt₁ && opts[2]==opt₂
     @test empty(opts) == empty!(deepcopy(opts)) == zero(opts)
     optp₁ = promote_type(typeof(opts), OperatorSum{Operator{Complex{Int}, NTuple{2, AID{Float, Float}}}, NTuple{2, AID{Float, Float}}})
     optp₂ = OperatorSum{Operator{Complex{Float}, <:Tuple{AID, Vararg{AID{Float, Float}}}}, Tuple{AID, Vararg{AID{Float, Float}}}}

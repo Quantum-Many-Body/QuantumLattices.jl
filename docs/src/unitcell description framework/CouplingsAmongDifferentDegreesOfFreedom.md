@@ -651,10 +651,10 @@ julia> hilbert = Hilbert(1=>Fock{:f}(1, 2), 2=>Fock{:f}(1, 2));
 
 julia> expand(t, bond, hilbert)
 Operators with 4 Operator
-  Operator(2.0, CompositeIndex(Index(1, FID{:f}(1, 1//2, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, 1//2, 1)), [0.5], [0.0]))
   Operator(2.0, CompositeIndex(Index(1, FID{:f}(1, -1//2, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, -1//2, 1)), [0.5], [0.0]))
-  Operator(2.0, CompositeIndex(Index(2, FID{:f}(1, 1//2, 2)), [0.5], [0.0]), CompositeIndex(Index(1, FID{:f}(1, 1//2, 1)), [0.0], [0.0]))
   Operator(2.0, CompositeIndex(Index(2, FID{:f}(1, -1//2, 2)), [0.5], [0.0]), CompositeIndex(Index(1, FID{:f}(1, -1//2, 1)), [0.0], [0.0]))
+  Operator(2.0, CompositeIndex(Index(1, FID{:f}(1, 1//2, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, 1//2, 1)), [0.5], [0.0]))
+  Operator(2.0, CompositeIndex(Index(2, FID{:f}(1, 1//2, 2)), [0.5], [0.0]), CompositeIndex(Index(1, FID{:f}(1, 1//2, 1)), [0.0], [0.0]))
 ```
 
 When a bond and a term do not match each other, the [`expand`](@ref) function will return an empty [`Operators`](@ref):
@@ -682,12 +682,12 @@ julia> hilbert = Hilbert(1=>Fock{:f}(1, 2), 2=>Fock{:f}(1, 2));
 
 julia> expand(t, bonds, hilbert)
 Operators with 8 Operator
-  Operator(1.0, CompositeIndex(Index(2, FID{:f}(1, 1//2, 2)), [-0.5], [-1.0]), CompositeIndex(Index(1, FID{:f}(1, 1//2, 1)), [0.0], [0.0]))
-  Operator(1.0, CompositeIndex(Index(1, FID{:f}(1, 1//2, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, 1//2, 1)), [0.5], [0.0]))
-  Operator(1.0, CompositeIndex(Index(1, FID{:f}(1, 1//2, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, 1//2, 1)), [-0.5], [-1.0]))
+  Operator(1.0, CompositeIndex(Index(2, FID{:f}(1, -1//2, 2)), [0.5], [0.0]), CompositeIndex(Index(1, FID{:f}(1, -1//2, 1)), [0.0], [0.0]))
   Operator(1.0, CompositeIndex(Index(1, FID{:f}(1, -1//2, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, -1//2, 1)), [0.5], [0.0]))
   Operator(1.0, CompositeIndex(Index(2, FID{:f}(1, 1//2, 2)), [0.5], [0.0]), CompositeIndex(Index(1, FID{:f}(1, 1//2, 1)), [0.0], [0.0]))
+  Operator(1.0, CompositeIndex(Index(1, FID{:f}(1, 1//2, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, 1//2, 1)), [0.5], [0.0]))
   Operator(1.0, CompositeIndex(Index(2, FID{:f}(1, -1//2, 2)), [-0.5], [-1.0]), CompositeIndex(Index(1, FID{:f}(1, -1//2, 1)), [0.0], [0.0]))
   Operator(1.0, CompositeIndex(Index(1, FID{:f}(1, -1//2, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, -1//2, 1)), [-0.5], [-1.0]))
-  Operator(1.0, CompositeIndex(Index(2, FID{:f}(1, -1//2, 2)), [0.5], [0.0]), CompositeIndex(Index(1, FID{:f}(1, -1//2, 1)), [0.0], [0.0]))
+  Operator(1.0, CompositeIndex(Index(2, FID{:f}(1, 1//2, 2)), [-0.5], [-1.0]), CompositeIndex(Index(1, FID{:f}(1, 1//2, 1)), [0.0], [0.0]))
+  Operator(1.0, CompositeIndex(Index(1, FID{:f}(1, 1//2, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, 1//2, 1)), [-0.5], [-1.0]))
 ```

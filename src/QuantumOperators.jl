@@ -1,5 +1,6 @@
 module QuantumOperators
 
+using DataStructures: OrderedDict
 using Latexify: unicode2latex
 using Printf: @printf, @sprintf
 using ..Toolkit: atol, efficientoperations, rtol, contentorder, decimaltostr, fulltype, getcontent, parameterpairs, parametertype, promoteparameters, rawtype, reparameter
@@ -387,14 +388,15 @@ The sum of `OperatorPack`s.
 Similar items are automatically merged with the aid of the id system.
 """
 struct OperatorSum{M<:OperatorPack, I<:Tuple} <: OperatorSet{M}
-    contents::Dict{I, M}
-    OperatorSum(contents::Dict{<:Tuple, <:OperatorPack}) = new{valtype(contents), keytype(contents)}(contents)
+    contents::OrderedDict{I, M}
+    OperatorSum(contents::OrderedDict{<:Tuple, <:OperatorPack}) = new{valtype(contents), keytype(contents)}(contents)
 end
 @inline Base.iterate(ms::OperatorSum) = iterate(values(ms.contents))
 @inline Base.iterate(ms::OperatorSum, state) = iterate(values(ms.contents), state)
 @inline Base.length(ms::OperatorSum) = length(ms.contents)
 @inline Base.haskey(ms::OperatorSum, id::Tuple) = haskey(ms.contents, id)
 @inline Base.getindex(ms::OperatorSum, id::Tuple) = ms.contents[id]
+@inline Base.getindex(ms::OperatorSum, index::Integer) = iterate(ms.contents, index)[1][2]
 @inline Base.setindex!(ms::OperatorSum, m::OperatorPack, id::Tuple) = (ms.contents[id] = m; m)
 @inline Base.empty(ms::OperatorSum) = OperatorSum(empty(ms.contents))
 @inline Base.empty!(ms::OperatorSum) = (empty!(ms.contents); ms)
@@ -419,7 +421,7 @@ Get the sum of `OperatorPack`s.
 @inline OperatorSum(ms) = OperatorSum{eltype(ms)}(ms)
 @inline OperatorSum{M}(ms::QuantumOperator...) where {M<:OperatorPack} = OperatorSum{M}(ms)
 function OperatorSum{M}(ms) where {M<:OperatorPack}
-    result = OperatorSum(Dict{idtype(M), M}())
+    result = OperatorSum(OrderedDict{idtype(M), M}())
     for m in ms
         add!(result, m)
     end

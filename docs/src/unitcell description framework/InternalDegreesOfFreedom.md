@@ -482,13 +482,13 @@ Operator(2)
 ```jldoctest OO
 julia> Operators(Operator(2, FID{:f}(1, 1//2, 1)), Operator(3, FID{:f}(1, 1//2, 2)))
 Operators with 2 Operator
-  Operator(3, FID{:f}(1, 1//2, 2))
   Operator(2, FID{:f}(1, 1//2, 1))
+  Operator(3, FID{:f}(1, 1//2, 2))
 
 julia> Operator(2, FID{:f}(1, 1//2, 1)) - Operator(3, FID{:b}(1, 1//2, 2))
 Operators with 2 Operator
-  Operator(-3, FID{:b}(1, 1//2, 2))
   Operator(2, FID{:f}(1, 1//2, 1))
+  Operator(-3, FID{:b}(1, 1//2, 2))
 ```
 
 Similar items are automatically merged during the construction of [`Operators`](@ref):
@@ -510,8 +510,8 @@ julia> op = Operator(2, FID{:f}(2, 1//2, 1));
 
 julia> ops * op
 Operators with 2 Operator
-  Operator(6, FID{:f}(1, 1//2, 2), FID{:f}(2, 1//2, 1))
   Operator(4, FID{:f}(1, 1//2, 1), FID{:f}(2, 1//2, 1))
+  Operator(6, FID{:f}(1, 1//2, 2), FID{:f}(2, 1//2, 1))
 
 julia> op * ops
 Operators with 2 Operator
@@ -527,13 +527,13 @@ Operators with 2 Operator
 
 julia> 2 * ops
 Operators with 2 Operator
-  Operator(6, FID{:f}(1, 1//2, 2))
   Operator(4, FID{:f}(1, 1//2, 1))
+  Operator(6, FID{:f}(1, 1//2, 2))
 
 julia> ops * 2
 Operators with 2 Operator
-  Operator(6, FID{:f}(1, 1//2, 2))
   Operator(4, FID{:f}(1, 1//2, 1))
+  Operator(6, FID{:f}(1, 1//2, 2))
 ```
 It is noted that in the result, the distributive law automatically applies. Besides, the fermion operator relation $c^2=c\dagger^2=0$ is also used.
 
@@ -547,21 +547,23 @@ julia> ops = op₁ + op₂;
 
 julia> ops'
 Operators with 2 Operator
-  Operator(4, FID{:f}(2, 1//2, 2), FID{:f}(1, 1//2, 2))
   Operator(6, FID{:f}(2, 1//2, 2), FID{:f}(1, 1//2, 1))
+  Operator(4, FID{:f}(2, 1//2, 2), FID{:f}(1, 1//2, 2))
 ```
 
-[`Operators`](@ref) can be iterated, but cannot be indexed:
+[`Operators`](@ref) can be iterated and indexed:
 ```jldoctest OO
 julia> ops = Operator(2, FID{:f}(1, 1//2, 1)) + Operator(3, FID{:f}(1, 1//2, 2));
 
 julia> collect(ops)
 2-element Vector{Operator{Int64, Tuple{FID{:f, Int64, Rational{Int64}, Int64}}}}:
- Operator(3, FID{:f}(1, 1//2, 2))
  Operator(2, FID{:f}(1, 1//2, 1))
+ Operator(3, FID{:f}(1, 1//2, 2))
 
 julia> ops[1]
-ERROR: MethodError: no method matching getindex(::Operators{Operator{Int64, Tuple{FID{:f, Int64, Rational{Int64}, Int64}}}, Tuple{FID{:f, Int64, Rational{Int64}, Int64}}}, ::Int64)
-[...]
+Operator(2, FID{:f}(1, 1//2, 1))
+
+julia> ops[2]
+Operator(3, FID{:f}(1, 1//2, 2))
 ```
-The different behaviors between [`Operator`](@ref) and [`Operators`](@ref) when they are indexed result from their underlying implementations: [`Operator`](@ref) is something like a tuple while [`Operators`](@ref) is something like a dictionary. Do not ask why not to implement them based on [expression trees](https://en.wikipedia.org/wiki/Binary_expression_tree). If you have to ask, then the answer will be the authors of the package don't know how. So if you are not satisfied with this implementation, feel free to post a pull request.
+The index order of an [`Operators`](@ref) is the insertion order of the operators it contains.
