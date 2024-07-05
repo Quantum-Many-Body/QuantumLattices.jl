@@ -435,16 +435,16 @@ Compare two `OperatorSum`s and judge whether they are approximate to each other.
 """
 @inline function Base.isapprox(ms₁::OperatorSum, ms₂::OperatorSum; atol::Real=atol, rtol::Real=rtol)
     for m in ms₁
-        isapprox(value(m), 0, atol=atol, rtol=rtol) && continue
+        isapprox(value(m), 0; atol=atol, rtol=rtol) && continue
         k = id(m)
         haskey(ms₂, k) || return false
-        isapprox(m, ms₂[k]) || return false
+        isapprox(m, ms₂[k]; atol=atol, rtol=rtol) || return false
     end
     for m in ms₂
-        isapprox(value(m), 0,  atol=atol, rtol=rtol) && continue
+        isapprox(value(m), 0; atol=atol, rtol=rtol) && continue
         k = id(m)
         haskey(ms₁, k) || return false
-        isapprox(m, ms₁[k]) || return false
+        isapprox(m, ms₁[k]; atol=atol, rtol=rtol) || return false
     end
     return true
 end

@@ -203,8 +203,17 @@ function Entry(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbe
     constops = Operators{mapreduce(term->optype(typeof(term), typeof(hilbert), eltype(bonds)), promote_type, terms)}()
     map(term->expand!(constops, term, term.ismodulatable ? emptybonds : innerbonds, hilbert; half=half), terms)
     V = valtype(eltype(constops))
-    alterops = NamedTuple{map(id, terms)}(map(term->expand(replace(term, value=one(V)), term.ismodulatable ? innerbonds : emptybonds, hilbert; half=half), terms))
-    boundops = NamedTuple{map(id, terms)}(map(term->map!(boundary, expand!(Operators{promote_type(valtype(typeof(boundary), optype(typeof(term), typeof(hilbert), eltype(bonds))), V)}(), one(term), boundbonds, hilbert, half=half)), terms))
+    alterops = NamedTuple{map(id, terms)}(
+        map(terms) do term
+            expand(replace(term, value=one(V)), term.ismodulatable ? innerbonds : emptybonds, hilbert; half=half)
+        end
+    )
+    boundops = NamedTuple{map(id, terms)}(
+        map(terms) do term
+            O = promote_type(valtype(typeof(boundary), optype(typeof(term), typeof(hilbert), eltype(bonds))), V)
+            map!(boundary, expand!(Operators{O}(), one(term), boundbonds, hilbert, half=half))
+        end
+    )
     parameters = NamedTuple{map(id, terms)}(map(term->term.value, terms))
     return Entry(constops, alterops, boundops, parameters, boundary, style)
 end
