@@ -397,6 +397,8 @@ end
 @inline Base.haskey(ms::OperatorSum, id::Tuple) = haskey(ms.contents, id)
 @inline Base.getindex(ms::OperatorSum, id::Tuple) = ms.contents[id]
 @inline Base.getindex(ms::OperatorSum, index::Integer) = iterate(ms.contents, index)[1][2]
+@inline Base.getindex(ms::OperatorSum, indexes::AbstractVector{<:Integer}) = OperatorSum{eltype(ms)}(ms[index] for index in indexes)
+@inline Base.getindex(ms::OperatorSum, ::Colon) = OperatorSum(copy(ms.contents))
 @inline Base.setindex!(ms::OperatorSum, m::OperatorPack, id::Tuple) = (ms.contents[id] = m; m)
 @inline Base.empty(ms::OperatorSum) = OperatorSum(empty(ms.contents))
 @inline Base.empty!(ms::OperatorSum) = (empty!(ms.contents); ms)
