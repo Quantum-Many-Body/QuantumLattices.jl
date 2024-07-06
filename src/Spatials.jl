@@ -897,20 +897,20 @@ Expand the momentum from integral values to real values with the given reciproca
 end
 
 """
-    Momentum₁{N}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}) where N
-    Momentum₂{N₁, N₂}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}) where {N₁, N₂}
-    Momentum₃{N₁, N₂, N₃}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}) where {N₁, N₂, N₃}
+    Momentum₁{N}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}; atol=atol, rtol=rtol) where N
+    Momentum₂{N₁, N₂}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}; atol=atol, rtol=rtol) where {N₁, N₂}
+    Momentum₃{N₁, N₂, N₃}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}; atol=atol, rtol=rtol) where {N₁, N₂, N₃}
 
 Construct a quantum momentum by the coordinates.
 """
-function Momentum₁{N}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}) where N
+function Momentum₁{N}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}; atol=atol, rtol=rtol) where N
     @assert length(reciprocals)==1 "Momentum₁ error: mismatched length of reciprocals."
     k = decompose(momentum, reciprocals[1])[1]*N
     i = round(Int, k)
     @assert isapprox(i, k; atol=atol, rtol=rtol) "Momentum₁ error: input momentum not on grid."
     return Momentum₁{N}(i)
 end
-function Momentum₂{N₁, N₂}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}) where {N₁, N₂}
+function Momentum₂{N₁, N₂}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}; atol=atol, rtol=rtol) where {N₁, N₂}
     @assert length(reciprocals)==2 "Momentum₂ error: mismatched length of reciprocals."
     k₁, k₂ = decompose(momentum, reciprocals[1], reciprocals[2])
     k₁, k₂ = k₁*N₁, k₂*N₂
@@ -918,7 +918,7 @@ function Momentum₂{N₁, N₂}(momentum::AbstractVector, reciprocals::Abstract
     @assert isapprox(i₁, k₁; atol=atol, rtol=rtol) && isapprox(i₂, k₂; atol=atol, rtol=rtol) "Momentum₂ error: input momentum not on grid."
     return Momentum₂{N₁, N₂}(i₁, i₂)
 end
-function Momentum₃{N₁, N₂, N₃}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}) where {N₁, N₂, N₃}
+function Momentum₃{N₁, N₂, N₃}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}; atol=atol, rtol=rtol) where {N₁, N₂, N₃}
     @assert length(reciprocals)==3 "Momentum₃ error: mismatched length of reciprocals."
     k₁, k₂, k₃ = decompose(momentum, reciprocals[1], reciprocals[2], reciprocals[3])
     k₁, k₂, k₃ = k₁*N₁, k₂*N₂, k₃*N₃
@@ -1396,7 +1396,7 @@ struct ReciprocalCurve{K, S<:SVector} <: ReciprocalSpace{K, S}
     end
 end
 @inline ReciprocalCurve(contents::AbstractVector{<:NTuple{N, T}}) where {N, T<:Real} = ReciprocalCurve{:k}(collect.(contents))
-@inline ReciprocalCurve(contents::AbstractVector{<:AbstractVector}) = ReciprocalCurve{:k}(contents)
+@inline ReciprocalCurve(contents::AbstractVector{<:AbstractVector{<:Real}}) = ReciprocalCurve{:k}(contents)
 @inline function ReciprocalCurve(contents::ReciprocalPath) 
     points = collect(contents)
     return ReciprocalCurve{:k}(points)
@@ -1417,10 +1417,6 @@ Define the recipe for the visualization of a reciprocal curve.
     coordinates = map(Tuple, ring)
     @series begin
         seriestype := :scatter
-        coordinates
-    end
-    @series begin
-        seriestype := :path
         coordinates
     end
 end
