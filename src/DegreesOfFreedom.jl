@@ -1,5 +1,6 @@
 module DegreesOfFreedom
 
+using DataStructures: OrderedDict
 using Printf: @printf, @sprintf
 using SparseArrays: SparseMatrixCSC, nnz
 using StaticArrays: SVector
@@ -467,18 +468,18 @@ Get the required script of a spin index.
 Hilbert space at a lattice.
 """
 struct Hilbert{I<:Internal} <: CompositeDict{Int, I}
-    contents::Dict{Int, I}
-    Hilbert(contents::Dict{Int, <:Internal}) = new{valtype(contents)}(contents)
+    contents::OrderedDict{Int, I}
+    Hilbert(contents::OrderedDict{Int, <:Internal}) = new{valtype(contents)}(contents)
 end
 
 """
     Hilbert(ps::Pair...)
     Hilbert(kv)
 
-Construct a Hilbert space the same way as a Dict.
+Construct a Hilbert space the same way as an `OrderedDict`.
 """
 @inline Hilbert(ps::Pair...) = Hilbert(ps)
-@inline Hilbert(kv) = Hilbert(Dict(kv))
+@inline Hilbert(kv) = Hilbert(OrderedDict(kv))
 
 """
     Hilbert(internals::Internal...)
@@ -1419,15 +1420,15 @@ end
 """
     Table{I, B<:Metric} <: CompositeDict{I, Int}
 
-The table of operator unit vs. sequence pairs.
+The table of operator unit v.s. sequence pairs.
 """
 struct Table{I, B<:Metric} <: CompositeDict{I, Int}
     by::B
-    contents::Dict{I, Int}
+    contents::OrderedDict{I, Int}
 end
 @inline contentnames(::Type{<:Table}) = (:by, :contents)
-@inline Table{I}(by::Metric) where {I<:OperatorUnit} = Table(by, Dict{valtype(typeof(by), I), Int}())
-@inline vec2dict(vs::AbstractVector) = Dict{eltype(vs), Int}(v=>i for (i, v) in enumerate(vs))
+@inline Table{I}(by::Metric) where {I<:OperatorUnit} = Table(by, OrderedDict{valtype(typeof(by), I), Int}())
+@inline vec2dict(vs::AbstractVector) = OrderedDict{eltype(vs), Int}(v=>i for (i, v) in enumerate(vs))
 
 """
     getindex(table::Table, operatorunit::OperatorUnit) -> Int
