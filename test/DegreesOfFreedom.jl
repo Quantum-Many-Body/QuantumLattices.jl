@@ -495,6 +495,10 @@ end
     @test table == Table([inds₁; inds₂])
     @test reset!(empty(table), [inds₁; inds₂]) == table
     @test reset!(empty(table), hilbert) == table
+
+    hilbert = Hilbert(DFock(2), 5)
+    table = Table(hilbert)
+    @test findall(index->index.site∈2:4 && index.iid.nambu==1, hilbert, table) == [3, 5, 7]
 end
 
 @testset "Boundary" begin

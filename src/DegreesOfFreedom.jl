@@ -1514,6 +1514,24 @@ function reset!(table::Table, hilbert::Hilbert)
     return reset!(table, indices)
 end
 
+"""
+    findall(select::Function, hilbert::Hilbert, table::Table) -> Vector{Int}
+
+Find all the sequences of indexes contained in a Hilbert space according to a table and a select function.
+"""
+function Base.findall(select::Function, hilbert::Hilbert, table::Table)
+    result = Int[]
+    for (site, internal) in pairs(hilbert)
+        for iid in internal
+            index = Index(site, iid)
+            if select(index)
+                push!(result, table[index])
+            end
+        end
+    end
+    return sort!(unique!(result))
+end
+
 # Boundary
 """
     Boundary{Names}(values::AbstractVector{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}) where Names
