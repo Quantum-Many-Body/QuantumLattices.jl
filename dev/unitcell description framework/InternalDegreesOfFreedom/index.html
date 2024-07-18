@@ -43,36 +43,46 @@ julia&gt; fck |&gt; collect
  FID{:f}(1, 0, 2)
  FID{:f}(2, 0, 2)</code></pre><p>This is isomorphic to the mathematical fact that a local algebra is a vector space of the local generators.</p><h4 id="Unitcell-level:-Hilbert-and-Index"><a class="docs-heading-anchor" href="#Unitcell-level:-Hilbert-and-Index">Unitcell level: Hilbert and Index</a><a id="Unitcell-level:-Hilbert-and-Index-1"></a><a class="docs-heading-anchor-permalink" href="#Unitcell-level:-Hilbert-and-Index" title="Permalink"></a></h4><p>To specify the Fock algebra at the unitcell level, <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Hilbert"><code>Hilbert</code></a> associate each point within the origin unitcell with an instance of <a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.Fock"><code>Fock</code></a>:</p><pre><code class="language-julia-repl hljs">julia&gt; Hilbert(1=&gt;Fock{:f}(1, 2), 2=&gt;Fock{:f}(1, 2))
 Hilbert{Fock{:f}} with 2 entries:
-  2 =&gt; Fock{:f}(norbital=1, nspin=2)
   1 =&gt; Fock{:f}(norbital=1, nspin=2)
+  2 =&gt; Fock{:f}(norbital=1, nspin=2)
 
 julia&gt; Hilbert(site=&gt;Fock{:f}(2, 2) for site=1:2)
 Hilbert{Fock{:f}} with 2 entries:
+  1 =&gt; Fock{:f}(norbital=2, nspin=2)
   2 =&gt; Fock{:f}(norbital=2, nspin=2)
-  1 =&gt; Fock{:f}(norbital=2, nspin=2)</code></pre><p>In general, at different sites, the local Fock algebra could be different:</p><pre><code class="language-julia-repl hljs">julia&gt; Hilbert(site=&gt;Fock{:f}(iseven(site) ? 2 : 1, 1) for site=1:2)
+
+julia&gt; Hilbert(Fock{:f}(2, 2), 2)
 Hilbert{Fock{:f}} with 2 entries:
-  2 =&gt; Fock{:f}(norbital=2, nspin=1)
+  1 =&gt; Fock{:f}(norbital=2, nspin=2)
+  2 =&gt; Fock{:f}(norbital=2, nspin=2)
+
+julia&gt; Hilbert([Fock{:f}(2, 2), Fock{:f}(2, 2)])
+Hilbert{Fock{:f}} with 2 entries:
+  1 =&gt; Fock{:f}(norbital=2, nspin=2)
+  2 =&gt; Fock{:f}(norbital=2, nspin=2)</code></pre><p>In general, at different sites, the local Fock algebra could be different:</p><pre><code class="language-julia-repl hljs">julia&gt; Hilbert(site=&gt;Fock{:f}(iseven(site) ? 2 : 1, 1) for site=1:2)
+Hilbert{Fock{:f}} with 2 entries:
   1 =&gt; Fock{:f}(norbital=1, nspin=1)
+  2 =&gt; Fock{:f}(norbital=2, nspin=1)
 
 julia&gt; Hilbert(1=&gt;Fock{:f}(1, 2), 2=&gt;Fock{:b}(1, 2))
 Hilbert{Fock} with 2 entries:
-  2 =&gt; Fock{:b}(norbital=1, nspin=2)
-  1 =&gt; Fock{:f}(norbital=1, nspin=2)</code></pre><p><a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Hilbert"><code>Hilbert</code></a> itself is a subtype of <code>AbstractDict</code>, the iteration over the keys gives the sites, and the iteration over the values gives the local algebras:</p><pre><code class="language-julia-repl hljs">julia&gt; hilbert = Hilbert(site=&gt;Fock{:f}(iseven(site) ? 2 : 1, 1) for site=1:2);
+  1 =&gt; Fock{:f}(norbital=1, nspin=2)
+  2 =&gt; Fock{:b}(norbital=1, nspin=2)</code></pre><p><a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Hilbert"><code>Hilbert</code></a> itself is a subtype of <code>AbstractDict</code>, the iteration over the keys gives the sites, and the iteration over the values gives the local algebras:</p><pre><code class="language-julia-repl hljs">julia&gt; hilbert = Hilbert(site=&gt;Fock{:f}(iseven(site) ? 2 : 1, 1) for site=1:2);
 
 julia&gt; collect(keys(hilbert))
 2-element Vector{Int64}:
- 2
  1
+ 2
 
 julia&gt; collect(values(hilbert))
 2-element Vector{Fock{:f}}:
- Fock{:f}(norbital=2, nspin=1)
  Fock{:f}(norbital=1, nspin=1)
+ Fock{:f}(norbital=2, nspin=1)
 
 julia&gt; collect(hilbert)
 2-element Vector{Pair{Int64, Fock{:f}}}:
- 2 =&gt; Fock{:f}(norbital=2, nspin=1)
  1 =&gt; Fock{:f}(norbital=1, nspin=1)
+ 2 =&gt; Fock{:f}(norbital=2, nspin=1)
 
 julia&gt; [hilbert[1], hilbert[2]]
 2-element Vector{Fock{:f}}:
@@ -183,8 +193,8 @@ julia&gt; sp |&gt; collect
  SID{1}(&#39;+&#39;)
  SID{1}(&#39;-&#39;)</code></pre><p>It is noted that a <a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.Spin"><code>Spin</code></a> instance generates <a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.SID"><code>SID</code></a> instances not only limited to those corresponding to <span>$S^x$</span>, <span>$S^y$</span>, <span>$S^z$</span>, but also those to <span>$S^+$</span> and <span>$S^-$</span> although the former three already forms a complete set of the generators of the local SU(2) spin algebra. This overcomplete feature is for the convenience to the construction of spin Hamiltonians.</p><h4 id="Unitcell-and-global-levels:-Hilbert,-Index-and-CompositeIndex"><a class="docs-heading-anchor" href="#Unitcell-and-global-levels:-Hilbert,-Index-and-CompositeIndex">Unitcell and global levels: Hilbert, Index and CompositeIndex</a><a id="Unitcell-and-global-levels:-Hilbert,-Index-and-CompositeIndex-1"></a><a class="docs-heading-anchor-permalink" href="#Unitcell-and-global-levels:-Hilbert,-Index-and-CompositeIndex" title="Permalink"></a></h4><p>At the unitcell and global levels to construct the SU(2) spin algebra and spin generators, it is completely the same to that of the Fock algebra and Fock generators as long as we replace <a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.Fock"><code>Fock</code></a> and <a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.FID"><code>FID</code></a> with <a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.Spin"><code>Spin</code></a> and <a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.SID"><code>SID</code></a>, respectively:</p><pre><code class="language-julia-repl hljs">julia&gt; Hilbert(1=&gt;Spin{1//2}(), 2=&gt;Spin{1}())
 Hilbert{Spin} with 2 entries:
-  2 =&gt; Spin{1}()
   1 =&gt; Spin{1//2}()
+  2 =&gt; Spin{1}()
 
 julia&gt; Index(1, SID{1//2}(&#39;+&#39;))
 Index(1, SID{1//2}(&#39;+&#39;))
@@ -217,9 +227,9 @@ julia&gt; Phonon(3) # three-dimensional lattice vibration has the x, y and z com
  PID(&#39;u&#39;, &#39;z&#39;)
  PID(&#39;p&#39;, &#39;z&#39;)</code></pre><h4 id="Unitcell-and-global-levels:-Hilbert,-Index-and-CompositeIndex-2"><a class="docs-heading-anchor" href="#Unitcell-and-global-levels:-Hilbert,-Index-and-CompositeIndex-2">Unitcell and global levels: Hilbert, Index and CompositeIndex</a><a class="docs-heading-anchor-permalink" href="#Unitcell-and-global-levels:-Hilbert,-Index-and-CompositeIndex-2" title="Permalink"></a></h4><p>At the unitcell and global levels, lattice-vibration algebras and generators are the same to previous situations by <a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.Phonon"><code>Phonon</code></a> and <a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.PID"><code>PID</code></a> replaced with in the corresponding types:</p><pre><code class="language-julia-repl hljs">julia&gt; Hilbert(site=&gt;Phonon(2) for site=1:3)
 Hilbert{Phonon} with 3 entries:
+  1 =&gt; Phonon(ndirection=2)
   2 =&gt; Phonon(ndirection=2)
   3 =&gt; Phonon(ndirection=2)
-  1 =&gt; Phonon(ndirection=2)
 
 julia&gt; Index(1, PID(&#39;u&#39;, &#39;x&#39;))
 Index(1, PID(&#39;u&#39;, &#39;x&#39;))
@@ -327,4 +337,4 @@ julia&gt; ops[1]
 Operator(2, FID{:f}(1, 1//2, 1))
 
 julia&gt; ops[2]
-Operator(3, FID{:f}(1, 1//2, 2))</code></pre><p>The index order of an <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operators"><code>Operators</code></a> is the insertion order of the operators it contains.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../SpatialInfoOfAUnitcell/">« Spatial information of a unitcell</a><a class="docs-footer-nextpage" href="../CouplingsAmongDifferentDegreesOfFreedom/">Couplings among different degrees of freedom »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.4.1 on <span class="colophon-date" title="Friday 5 July 2024 06:27">Friday 5 July 2024</span>. Using Julia version 1.10.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+Operator(3, FID{:f}(1, 1//2, 2))</code></pre><p>The index order of an <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operators"><code>Operators</code></a> is the insertion order of the operators it contains.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../SpatialInfoOfAUnitcell/">« Spatial information of a unitcell</a><a class="docs-footer-nextpage" href="../CouplingsAmongDifferentDegreesOfFreedom/">Couplings among different degrees of freedom »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.4.1 on <span class="colophon-date" title="Thursday 18 July 2024 08:16">Thursday 18 July 2024</span>. Using Julia version 1.10.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
