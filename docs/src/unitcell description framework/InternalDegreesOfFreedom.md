@@ -116,26 +116,36 @@ To specify the Fock algebra at the unitcell level, [`Hilbert`](@ref) associate e
 ```jldoctest FFF
 julia> Hilbert(1=>Fock{:f}(1, 2), 2=>Fock{:f}(1, 2))
 Hilbert{Fock{:f}} with 2 entries:
-  2 => Fock{:f}(norbital=1, nspin=2)
   1 => Fock{:f}(norbital=1, nspin=2)
+  2 => Fock{:f}(norbital=1, nspin=2)
 
 julia> Hilbert(site=>Fock{:f}(2, 2) for site=1:2)
 Hilbert{Fock{:f}} with 2 entries:
-  2 => Fock{:f}(norbital=2, nspin=2)
   1 => Fock{:f}(norbital=2, nspin=2)
+  2 => Fock{:f}(norbital=2, nspin=2)
+
+julia> Hilbert(Fock{:f}(2, 2), 2)
+Hilbert{Fock{:f}} with 2 entries:
+  1 => Fock{:f}(norbital=2, nspin=2)
+  2 => Fock{:f}(norbital=2, nspin=2)
+
+julia> Hilbert([Fock{:f}(2, 2), Fock{:f}(2, 2)])
+Hilbert{Fock{:f}} with 2 entries:
+  1 => Fock{:f}(norbital=2, nspin=2)
+  2 => Fock{:f}(norbital=2, nspin=2)
 ```
 
 In general, at different sites, the local Fock algebra could be different:
 ```jldoctest FFF
 julia> Hilbert(site=>Fock{:f}(iseven(site) ? 2 : 1, 1) for site=1:2)
 Hilbert{Fock{:f}} with 2 entries:
-  2 => Fock{:f}(norbital=2, nspin=1)
   1 => Fock{:f}(norbital=1, nspin=1)
+  2 => Fock{:f}(norbital=2, nspin=1)
 
 julia> Hilbert(1=>Fock{:f}(1, 2), 2=>Fock{:b}(1, 2))
 Hilbert{Fock} with 2 entries:
-  2 => Fock{:b}(norbital=1, nspin=2)
   1 => Fock{:f}(norbital=1, nspin=2)
+  2 => Fock{:b}(norbital=1, nspin=2)
 ```
 
 [`Hilbert`](@ref) itself is a subtype of `AbstractDict`, the iteration over the keys gives the sites, and the iteration over the values gives the local algebras:
@@ -144,18 +154,18 @@ julia> hilbert = Hilbert(site=>Fock{:f}(iseven(site) ? 2 : 1, 1) for site=1:2);
 
 julia> collect(keys(hilbert))
 2-element Vector{Int64}:
- 2
  1
+ 2
 
 julia> collect(values(hilbert))
 2-element Vector{Fock{:f}}:
- Fock{:f}(norbital=2, nspin=1)
  Fock{:f}(norbital=1, nspin=1)
+ Fock{:f}(norbital=2, nspin=1)
 
 julia> collect(hilbert)
 2-element Vector{Pair{Int64, Fock{:f}}}:
- 2 => Fock{:f}(norbital=2, nspin=1)
  1 => Fock{:f}(norbital=1, nspin=1)
+ 2 => Fock{:f}(norbital=2, nspin=1)
 
 julia> [hilbert[1], hilbert[2]]
 2-element Vector{Fock{:f}}:
@@ -332,8 +342,8 @@ At the unitcell and global levels to construct the SU(2) spin algebra and spin g
 ```jldoctest SSS
 julia> Hilbert(1=>Spin{1//2}(), 2=>Spin{1}())
 Hilbert{Spin} with 2 entries:
-  2 => Spin{1}()
   1 => Spin{1//2}()
+  2 => Spin{1}()
 
 julia> Index(1, SID{1//2}('+'))
 Index(1, SID{1//2}('+'))
@@ -388,9 +398,9 @@ At the unitcell and global levels, lattice-vibration algebras and generators are
 ```jldoctest PPP
 julia> Hilbert(site=>Phonon(2) for site=1:3)
 Hilbert{Phonon} with 3 entries:
+  1 => Phonon(ndirection=2)
   2 => Phonon(ndirection=2)
   3 => Phonon(ndirection=2)
-  1 => Phonon(ndirection=2)
 
 julia> Index(1, PID('u', 'x'))
 Index(1, PID('u', 'x'))
