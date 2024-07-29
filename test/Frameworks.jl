@@ -220,7 +220,6 @@ end
     vca = VCA(1.0, 8.0, 4)
     @test vca == deepcopy(vca)
     @test isequal(vca, deepcopy(vca))
-    @test repr(vca) == "VCA"
     @test string(vca) == "VCA"
 
     gf = GF(0)
@@ -232,7 +231,7 @@ end
     @test vca == deepcopy(vca)
     @test isequal(vca, deepcopy(vca))
     @test Parameters(vca) == vca.parameters
-    @test repr(vca, ≠(:U)) == "test(VCA)-t(1.0)"
+    @test repr(vca; context=:select=>≠(:U)) == "test(VCA)-t(1.0)"
     @test repr(vca) == "test(VCA)-t(1.0)U(8.0)"
 
     add!(vca, :GF, GF(0))

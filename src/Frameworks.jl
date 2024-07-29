@@ -59,7 +59,6 @@ The frontend of algorithms applied to a quantum lattice system.
 abstract type Frontend end
 @inline Base.:(==)(frontend₁::Frontend, frontend₂::Frontend) = ==(efficientoperations, frontend₁, frontend₂)
 @inline Base.isequal(frontend₁::Frontend, frontend₂::Frontend) = isequal(efficientoperations, frontend₁, frontend₂)
-@inline Base.repr(frontend::Frontend) = String(nameof(typeof(frontend)))
 @inline Base.show(io::IO, frontend::Frontend) = @printf io "%s" nameof(typeof(frontend))
 @inline Base.valtype(frontend::Frontend) = valtype(typeof(frontend))
 @inline update!(frontend::Frontend; kwargs...) = error("update! error: not implemented for $(nameof(typeof(frontend))).")
@@ -699,12 +698,6 @@ end
         (algorithm₂.name, algorithm₂.frontend, algorithm₂.din, algorithm₂.dout, algorithm₂.parameters, algorithm₂.map, algorithm₂.assignments),
     )
 end
-function Base.show(io::IO, alg::Algorithm)
-    @printf io "%s(%s)" alg.name alg.frontend
-    for (name, value) in pairs(alg.parameters)
-        @printf io "_%s" decimaltostr(value, 10)
-    end
-end
 @inline Parameters(algorithm::Algorithm) = algorithm.parameters
 
 """
@@ -730,18 +723,24 @@ function update!(alg::Algorithm; parameters...)
 end
 
 """
-    repr(alg::Algorithm, f::Function=param->true; ndecimal::Int=10) -> String
+    show(io::IO, alg::Algorithm)
 
-Get the repr representation of an algorithm.
+Show an algorithm.
 
-Optionally, some parameters of the algorithm can be filtered by specifying the `f` function. Besides, the maximum number of decimals of the parameters can also be specified by the keyword argument `ndecimal`.
+Optionally, some parameters of the algorithm can be filtered by specifying the `:select` context in `io`. Besides, the maximum number of decimals of the parameters can also be specified by the `:ndecimal` context in `io`.
 """
-function Base.repr(alg::Algorithm, f::Function=param->true; ndecimal::Int=10)
-    result = String[]
+function Base.show(io::IO, alg::Algorithm)
+    select = get(io, :select, param->true)
+    ndecimal = get(io, :ndecimal, 10)
+    @printf io "%s(%s)" alg.name alg.frontend
+    flag = false
     for (name, value) in pairs(alg.parameters)
-        f(name) && push!(result, @sprintf "%s(%s)" name decimaltostr(value, ndecimal))
+        if select(name)
+            flag || @printf io "-"
+            flag = true
+            @printf io "%s(%s)" name decimaltostr(value, ndecimal)
+        end
     end
-    return @sprintf "%s(%s)-%s" alg.name alg.frontend join(result, "")
 end
 
 """
@@ -759,7 +758,7 @@ end
 
 Get the name of the combination of an algorithm and an assignment.
 """
-@inline Base.nameof(alg::Algorithm, assign::Assignment) = @sprintf "%s-%s" repr(alg) assign.id
+@inline Base.nameof(alg::Algorithm, assign::Assignment) = @sprintf "%s-%s" alg assign.id
 
 """
     add!(alg::Algorithm, id::Symbol, action::Action; parameters::Parameters=Parameters{()}(), map::Function=identity, dependences::Tuple=(), kwargs...) -> Tuple{Algorithm, Assignment}
