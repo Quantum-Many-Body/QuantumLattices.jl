@@ -111,6 +111,7 @@ Representation generator of a quantum lattice system.
 abstract type RepresentationGenerator <: Frontend end
 @inline ExpansionStyle(gen::RepresentationGenerator) = ExpansionStyle(typeof(gen))
 @inline Base.eltype(gen::RepresentationGenerator) = eltype(typeof(gen))
+@inline Base.eltype(::Type{T}) where {T<:RepresentationGenerator} = eltype(valtype(T))
 @inline Base.IteratorSize(::Type{<:RepresentationGenerator}) = Base.SizeUnknown()
 @propagate_inbounds function Base.iterate(gen::RepresentationGenerator)
     ops = expand(gen)
@@ -185,7 +186,6 @@ mutable struct Entry{C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:Boundary
     end
 end
 @inline Entry(entry::Entry) = entry
-@inline Base.eltype(E::Type{<:Entry}) = eltype(valtype(E))
 @inline ExpansionStyle(::Type{<:Entry{C, <:NamedTuple, <:NamedTuple, <:Parameters, <:Boundary, S} where C}) where {S<:ExpansionStyle} = S()
 @inline Base.isempty(entry::Entry) = isempty(entry.constops) && all(map(isempty, values(entry.alterops))) && all(map(isempty, values(entry.boundops)))
 
@@ -437,7 +437,6 @@ abstract type CompositeGenerator{E<:Entry} <: RepresentationGenerator end
 @inline ExpansionStyle(::Type{<:CompositeGenerator{E}}) where {E<:Entry} = ExpansionStyle(E)
 @inline contentnames(::Type{<:CompositeGenerator}) = (:operators,)
 @inline Base.valtype(::Type{<:CompositeGenerator{E}}) where {E<:Entry} = valtype(E)
-@inline Base.eltype(::Type{<:CompositeGenerator{E}}) where {E<:Entry} = eltype(E)
 @inline expand(gen::CompositeGenerator, ::Lazy) = expand(getcontent(gen, :operators), lazy)
 @inline Parameters(gen::CompositeGenerator) = Parameters(getcontent(gen, :operators))
 @inline Entry(gen::CompositeGenerator) = getcontent(gen, :operators)
