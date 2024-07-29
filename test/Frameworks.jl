@@ -36,12 +36,15 @@ end
 @inline shape(iidspace::IIDSpace{FID{Symbol}, FFock}) = (1:iidspace.internal.nnambu,)
 
 @testset "Parameters" begin
-    ps1 = Parameters{(:t1, :t2, :U)}(1.0im, 1.0, 2.0)
-    ps2 = Parameters{(:t1, :U)}(1.0im, 2.0)
-    ps3 = Parameters{(:t1, :U)}(1.0im, 2.1)
+    ps1 = Parameters{(:t₁, :t₂, :U)}(1.0im, 1.0, 2.0)
+    ps2 = Parameters{(:t₁, :U)}(1.0im, 2.0)
+    ps3 = Parameters{(:t₁, :U)}(1.0im, 2.1)
     @test match(ps1, ps2) == true
     @test match(ps1, ps3) == false
-    @test update(ps1; ps3...) == Parameters{(:t1, :t2, :U)}(1.0im, 1.0, 2.1)
+    @test update(ps1; ps3...) == Parameters{(:t₁, :t₂, :U)}(1.0im, 1.0, 2.1)
+
+    params = Parameters{(:t₁, :t₂)}(1.11111111, 2.2222222222)
+    @test repr(params; context=:ndecimal=>2) == "(t₁ = 1.11, t₂ = 2.22)"
 
     bound = Boundary{(:θ₁, :θ₂)}([0.1, 0.2], [[1.0, 0.0], [0.0, 1.0]])
     @test Parameters(bound) == (θ₁=0.1, θ₂=0.2)

@@ -31,6 +31,10 @@ const Parameters{Names} = NamedTuple{Names, <:Tuple{Vararg{Number}}}
     values = Expr(:tuple, [:(get(parameters, $name, getfield(params, $name))) for name in QuoteNode.(names)]...)
     return :(NamedTuple{$names}($values))
 end
+function Base.show(io::IO, params::Parameters)
+    haskey(io, :ndecimal) && (params = NamedTuple{keys(params)}(map(value->round(value; digits=io[:ndecimal]), values(params))))
+    invoke(show, Tuple{IO, NamedTuple}, io, params)
+end
 
 """
     match(params₁::Parameters, params₂::Parameters; atol=atol, rtol=rtol) -> Bool
