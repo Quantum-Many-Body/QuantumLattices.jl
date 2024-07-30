@@ -34,7 +34,7 @@ using .Toolkit
 include("QuantumOperators.jl")
 using .QuantumOperators
 export ID, Operator, OperatorPack, OperatorProd, Operators, OperatorSet, OperatorSum, OperatorUnit, LaTeX, QuantumOperator
-export Identity, LinearFunction, LinearTransformation, Matrixization, Numericalization, Permutation, RankFilter, TabledUnitSubstitution, Transformation, UnitSubstitution
+export Identity, LinearFunction, LinearTransformation, Matrixization, Numericalization, Permutation, RankFilter, Representation, TabledUnitSubstitution, Transformation, UnitSubstitution
 export ishermitian, latexname, latexformat, matrix, script, sequence
 
 # QuantumNumbers
