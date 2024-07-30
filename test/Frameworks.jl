@@ -63,7 +63,7 @@ end
     @test f(k=[pi/2, pi/2]) ≈ [0.3 0.2+0.2im; 0.2-0.2im -0.3]
 end
 
-@testset "IterableGenerator" begin
+@testset "Generator" begin
     @test contentnames(CompositeGenerator) == (:operators,)
     @test contentnames(OperatorGenerator) == (:operators, :terms, :bonds, :hilbert, :half)
     @test contentnames(Image) == (:operators, :transformation, :sourceid)

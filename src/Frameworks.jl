@@ -9,7 +9,7 @@ using RecipesBase: RecipesBase, @recipe
 using Serialization: serialize
 using TimerOutputs: TimerOutput, TimerOutputs, @timeit
 using ..DegreesOfFreedom: plain, Boundary, Hilbert, Term
-using ..QuantumOperators: OperatorPack, Operators, OperatorSet, OperatorSum, LinearFunction, LinearTransformation, Transformation, identity, optype
+using ..QuantumOperators: OperatorPack, Operators, OperatorSet, OperatorSum, LinearFunction, LinearTransformation, Representation, Transformation, identity, optype
 using ..Spatials: AbstractLattice, Bond, Neighbors, bonds!, isintracell
 using ..Toolkit: atol, efficientoperations, rtol, decimaltostr
 
@@ -17,7 +17,7 @@ import ..QuantumLattices: add!, expand, expand!, id, reset!, update, update!
 import ..Spatials: save
 import ..Toolkit: contentnames, getcontent
 
-export eager, lazy, Action, Algorithm, AnalyticalExpression, Assignment, CategorizedGenerator, CompositeGenerator, Eager, ExpansionStyle, Frontend, Image, IterableGenerator, Lazy, OperatorGenerator, Parameters, RepresentationGenerator, initialize, prepare!, run!, save
+export eager, lazy, Action, Algorithm, AnalyticalExpression, Assignment, CategorizedGenerator, CompositeGenerator, Eager, ExpansionStyle, Frontend, Generator, Image, Lazy, OperatorGenerator, Parameters, initialize, prepare!, run!, save
 
 """
     Parameters{Names}(values::Number...) where Names
@@ -56,31 +56,11 @@ Get the parameters of the twisted boundary condition.
 @inline Parameters(bound::Boundary) = NamedTuple{keys(bound)}(ntuple(i->bound.values[i], Val(fieldcount(typeof(keys(bound))))))
 
 """
-    Frontend
-
-The frontend of algorithms applied to a quantum lattice system.
-"""
-abstract type Frontend end
-@inline Base.:(==)(frontend₁::Frontend, frontend₂::Frontend) = ==(efficientoperations, frontend₁, frontend₂)
-@inline Base.isequal(frontend₁::Frontend, frontend₂::Frontend) = isequal(efficientoperations, frontend₁, frontend₂)
-@inline Base.show(io::IO, frontend::Frontend) = @printf io "%s" nameof(typeof(frontend))
-@inline Base.valtype(frontend::Frontend) = valtype(typeof(frontend))
-@inline update!(frontend::Frontend; kwargs...) = error("update! error: not implemented for $(nameof(typeof(frontend))).")
-@inline Parameters(frontend::Frontend) = error("Parameters error: not implemented for $(nameof(typeof(frontend))).")
-
-"""
-    RepresentationGenerator <: Frontend
-
-Representation generator of a quantum lattice system.
-"""
-abstract type RepresentationGenerator <: Frontend end
-
-"""
-    AnalyticalExpression{F<:Function, P<:Parameters} <: RepresentationGenerator
+    AnalyticalExpression{F<:Function, P<:Parameters} <: Representation
 
 Representation of a quantum lattice system by an analytical expression.
 """
-mutable struct AnalyticalExpression{F<:Function, P<:Parameters} <: RepresentationGenerator
+mutable struct AnalyticalExpression{F<:Function, P<:Parameters} <: Representation
     const expression::F
     parameters::P
 end
@@ -132,45 +112,46 @@ Singleton instance of [`Lazy`](@ref).
 const lazy = Lazy()
 
 """
-    IterableGenerator <: RepresentationGenerator
+    Generator <: Representation
 
-Iterable representation generator of a quantum lattice system.
+Representation generator of a quantum lattice system.
 """
-abstract type IterableGenerator <: RepresentationGenerator end
-@inline ExpansionStyle(gen::IterableGenerator) = ExpansionStyle(typeof(gen))
-@inline Base.eltype(gen::IterableGenerator) = eltype(typeof(gen))
-@inline Base.eltype(::Type{T}) where {T<:IterableGenerator} = eltype(valtype(T))
-@inline Base.IteratorSize(::Type{<:IterableGenerator}) = Base.SizeUnknown()
-@propagate_inbounds function Base.iterate(gen::IterableGenerator)
+abstract type Generator <: Representation end
+@inline ExpansionStyle(gen::Generator) = ExpansionStyle(typeof(gen))
+@inline Base.valtype(gen::Generator) = valtype(typeof(gen))
+@inline Base.eltype(gen::Generator) = eltype(typeof(gen))
+@inline Base.eltype(::Type{T}) where {T<:Generator} = eltype(valtype(T))
+@inline Base.IteratorSize(::Type{<:Generator}) = Base.SizeUnknown()
+@propagate_inbounds function Base.iterate(gen::Generator)
     ops = expand(gen)
     index = iterate(ops)
     isnothing(index) && return nothing
     return index[1], (ops, index[2])
 end
-@propagate_inbounds function Base.iterate(::IterableGenerator, state)
+@propagate_inbounds function Base.iterate(::Generator, state)
     index = iterate(state[1], state[2])
     isnothing(index) && return nothing
     return index[1], (state[1], index[2])
 end
-@inline Base.show(io::IO, ::MIME"text/latex", gen::IterableGenerator) = show(io, MIME"text/latex"(), latexstring(latexstring(expand(gen))))
+@inline Base.show(io::IO, ::MIME"text/latex", gen::Generator) = show(io, MIME"text/latex"(), latexstring(latexstring(expand(gen))))
 
 """
-    expand(gen::IterableGenerator)
-    expand(gen::IterableGenerator, ::Eager)
-    expand(gen::IterableGenerator, ::Lazy)
+    expand(gen::Generator)
+    expand(gen::Generator, ::Eager)
+    expand(gen::Generator, ::Lazy)
 
 Expand the generator to get the representation of the quantum lattice system.
 """
-@inline expand(gen::IterableGenerator) = expand(gen, ExpansionStyle(gen))
-@inline expand(gen::IterableGenerator, ::Eager) = expand!(zero(valtype(gen)), gen)
-@inline expand(gen::IterableGenerator, ::Lazy) = error("expand! error: not implemented for $(nameof(typeof(gen))).")
+@inline expand(gen::Generator) = expand(gen, ExpansionStyle(gen))
+@inline expand(gen::Generator, ::Eager) = expand!(zero(valtype(gen)), gen)
+@inline expand(gen::Generator, ::Lazy) = error("expand! error: not implemented for $(nameof(typeof(gen))).")
 
 """
-    expand!(result, gen::IterableGenerator) -> typeof(result)
+    expand!(result, gen::Generator) -> typeof(result)
 
 Expand the generator to add the representation of the quantum lattice system to `result`.
 """
-function expand!(result, gen::IterableGenerator)
+function expand!(result, gen::Generator)
     for op in expand(gen, lazy)
         add!(result, op)
     end
@@ -178,13 +159,13 @@ function expand!(result, gen::IterableGenerator)
 end
 
 """
-    CategorizedGenerator{C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:Boundary, S<:ExpansionStyle} <: IterableGenerator
+    CategorizedGenerator{C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:Boundary, S<:ExpansionStyle} <: Generator
 
 The categorized representation generator of a quantum lattice system that records the quantum operators or a representation of the quantum operators related to (part of) the system.
 
 For convenience, the (representation of) operators are categorized into three groups, i.e., the constant, the alterable, and the boundary.
 """
-mutable struct CategorizedGenerator{C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:Boundary, S<:ExpansionStyle} <: IterableGenerator
+mutable struct CategorizedGenerator{C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:Boundary, S<:ExpansionStyle} <: Generator
     const constops::C
     const alterops::A
     const boundops::B
@@ -437,14 +418,14 @@ Get the complete set of parameters of a categorized generator of (a representati
 @inline Parameters(cat::CategorizedGenerator) = merge(cat.parameters, Parameters(cat.boundary))
 
 """
-    CompositeGenerator{CG<:CategorizedGenerator} <: IterableGenerator
+    CompositeGenerator{CG<:CategorizedGenerator} <: Generator
 
 Abstract type for a composite representation generator of a quantum lattice system.
 
 By protocol, it must have the following predefined contents:
 * `operators::CG`: the categorized generator of (a representation of) quantum operators
 """
-abstract type CompositeGenerator{CG<:CategorizedGenerator} <: IterableGenerator end
+abstract type CompositeGenerator{CG<:CategorizedGenerator} <: Generator end
 @inline ExpansionStyle(::Type{<:CompositeGenerator{CG}}) where {CG<:CategorizedGenerator} = ExpansionStyle(CG)
 @inline contentnames(::Type{<:CompositeGenerator}) = (:operators,)
 @inline Base.valtype(::Type{<:CompositeGenerator{CG}}) where {CG<:CategorizedGenerator} = valtype(CG)
@@ -628,6 +609,19 @@ Reset the image of a transformation applied to a representation.
     gen.transformation = transformation
     return gen
 end
+
+"""
+    Frontend
+
+The frontend of algorithms applied to a quantum lattice system.
+"""
+abstract type Frontend end
+@inline Base.:(==)(frontend₁::Frontend, frontend₂::Frontend) = ==(efficientoperations, frontend₁, frontend₂)
+@inline Base.isequal(frontend₁::Frontend, frontend₂::Frontend) = isequal(efficientoperations, frontend₁, frontend₂)
+@inline Base.show(io::IO, frontend::Frontend) = @printf io "%s" nameof(typeof(frontend))
+@inline Base.valtype(frontend::Frontend) = valtype(typeof(frontend))
+@inline update!(frontend::Frontend; kwargs...) = error("update! error: not implemented for $(nameof(typeof(frontend))).")
+@inline Parameters(frontend::Frontend) = error("Parameters error: not implemented for $(nameof(typeof(frontend))).")
 
 """
     Action
