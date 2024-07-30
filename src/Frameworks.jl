@@ -17,7 +17,7 @@ import ..QuantumLattices: add!, expand, expand!, id, reset!, update, update!
 import ..Spatials: save
 import ..Toolkit: contentnames, getcontent
 
-export eager, lazy, Action, Algorithm, AnalyticalExpression, Assignment, CategorizedGenerator, CompositeGenerator, Eager, ExpansionStyle, Frontend, Image, Lazy, OperatorGenerator, Parameters, RepresentationGenerator, initialize, prepare!, run!, save
+export eager, lazy, Action, Algorithm, AnalyticalExpression, Assignment, CategorizedGenerator, CompositeGenerator, Eager, ExpansionStyle, Frontend, Image, IterableGenerator, Lazy, OperatorGenerator, Parameters, RepresentationGenerator, initialize, prepare!, run!, save
 
 """
     Parameters{Names}(values::Number...) where Names
@@ -69,6 +69,34 @@ abstract type Frontend end
 @inline Parameters(frontend::Frontend) = error("Parameters error: not implemented for $(nameof(typeof(frontend))).")
 
 """
+    RepresentationGenerator <: Frontend
+
+Representation generator of a quantum lattice system.
+"""
+abstract type RepresentationGenerator <: Frontend end
+
+"""
+    AnalyticalExpression{F<:Function, P<:Parameters} <: RepresentationGenerator
+
+Representation of a quantum lattice system by an analytical expression.
+"""
+mutable struct AnalyticalExpression{F<:Function, P<:Parameters} <: RepresentationGenerator
+    const expression::F
+    parameters::P
+end
+@inline function update!(expression::AnalyticalExpression; parameters...)
+    expression.parameters = update(expression.parameters; parameters...)
+    update!(expression.expression; parameters...)
+    return expression
+end
+@inline update!(expression::Function; parameters...) = expression
+@inline Parameters(expression::AnalyticalExpression) = expression.parameters
+@inline @generated function (expression::AnalyticalExpression)(; kwargs...)
+    exprs = [:(getfield(expression.parameters, $i)) for i = 1:fieldcount(fieldtype(expression, :parameters))]
+    return :(expression.expression($(exprs...); kwargs...))
+end
+
+"""
     ExpansionStyle
 
 Expansion style of a representation generator. It has two singleton subtypes, [`Eager`](@ref) and [`Lazy`](@ref).
@@ -104,45 +132,45 @@ Singleton instance of [`Lazy`](@ref).
 const lazy = Lazy()
 
 """
-    RepresentationGenerator <: Frontend
+    IterableGenerator <: RepresentationGenerator
 
-Representation generator of a quantum lattice system.
+Iterable representation generator of a quantum lattice system.
 """
-abstract type RepresentationGenerator <: Frontend end
-@inline ExpansionStyle(gen::RepresentationGenerator) = ExpansionStyle(typeof(gen))
-@inline Base.eltype(gen::RepresentationGenerator) = eltype(typeof(gen))
-@inline Base.eltype(::Type{T}) where {T<:RepresentationGenerator} = eltype(valtype(T))
-@inline Base.IteratorSize(::Type{<:RepresentationGenerator}) = Base.SizeUnknown()
-@propagate_inbounds function Base.iterate(gen::RepresentationGenerator)
+abstract type IterableGenerator <: RepresentationGenerator end
+@inline ExpansionStyle(gen::IterableGenerator) = ExpansionStyle(typeof(gen))
+@inline Base.eltype(gen::IterableGenerator) = eltype(typeof(gen))
+@inline Base.eltype(::Type{T}) where {T<:IterableGenerator} = eltype(valtype(T))
+@inline Base.IteratorSize(::Type{<:IterableGenerator}) = Base.SizeUnknown()
+@propagate_inbounds function Base.iterate(gen::IterableGenerator)
     ops = expand(gen)
     index = iterate(ops)
     isnothing(index) && return nothing
     return index[1], (ops, index[2])
 end
-@propagate_inbounds function Base.iterate(::RepresentationGenerator, state)
+@propagate_inbounds function Base.iterate(::IterableGenerator, state)
     index = iterate(state[1], state[2])
     isnothing(index) && return nothing
     return index[1], (state[1], index[2])
 end
-@inline Base.show(io::IO, ::MIME"text/latex", gen::RepresentationGenerator) = show(io, MIME"text/latex"(), latexstring(latexstring(expand(gen))))
+@inline Base.show(io::IO, ::MIME"text/latex", gen::IterableGenerator) = show(io, MIME"text/latex"(), latexstring(latexstring(expand(gen))))
 
 """
-    expand(gen::RepresentationGenerator)
-    expand(gen::RepresentationGenerator, ::Eager)
-    expand(gen::RepresentationGenerator, ::Lazy)
+    expand(gen::IterableGenerator)
+    expand(gen::IterableGenerator, ::Eager)
+    expand(gen::IterableGenerator, ::Lazy)
 
 Expand the generator to get the representation of the quantum lattice system.
 """
-@inline expand(gen::RepresentationGenerator) = expand(gen, ExpansionStyle(gen))
-@inline expand(gen::RepresentationGenerator, ::Eager) = expand!(zero(valtype(gen)), gen)
-@inline expand(gen::RepresentationGenerator, ::Lazy) = error("expand! error: not implemented for $(nameof(typeof(gen))).")
+@inline expand(gen::IterableGenerator) = expand(gen, ExpansionStyle(gen))
+@inline expand(gen::IterableGenerator, ::Eager) = expand!(zero(valtype(gen)), gen)
+@inline expand(gen::IterableGenerator, ::Lazy) = error("expand! error: not implemented for $(nameof(typeof(gen))).")
 
 """
-    expand!(result, gen::RepresentationGenerator) -> typeof(result)
+    expand!(result, gen::IterableGenerator) -> typeof(result)
 
 Expand the generator to add the representation of the quantum lattice system to `result`.
 """
-function expand!(result, gen::RepresentationGenerator)
+function expand!(result, gen::IterableGenerator)
     for op in expand(gen, lazy)
         add!(result, op)
     end
@@ -150,34 +178,13 @@ function expand!(result, gen::RepresentationGenerator)
 end
 
 """
-    AnalyticalExpression{F<:Function, P<:Parameters} <: RepresentationGenerator
-
-Representation of a quantum lattice system by an analytical expression.
-"""
-mutable struct AnalyticalExpression{F<:Function, P<:Parameters} <: RepresentationGenerator
-    const expression::F
-    parameters::P
-end
-@inline function update!(expression::AnalyticalExpression; parameters...)
-    expression.parameters = update(expression.parameters; parameters...)
-    update!(expression.expression; parameters...)
-    return expression
-end
-@inline update!(expression::Function; parameters...) = expression
-@inline Parameters(expression::AnalyticalExpression) = expression.parameters
-@inline @generated function (expression::AnalyticalExpression)(; kwargs...)
-    exprs = [:(getfield(expression.parameters, $i)) for i = 1:fieldcount(fieldtype(expression, :parameters))]
-    return :(expression.expression($(exprs...); kwargs...))
-end
-
-"""
-    CategorizedGenerator{C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:Boundary, S<:ExpansionStyle} <: RepresentationGenerator
+    CategorizedGenerator{C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:Boundary, S<:ExpansionStyle} <: IterableGenerator
 
 The categorized representation generator of a quantum lattice system that records the quantum operators or a representation of the quantum operators related to (part of) the system.
 
 For convenience, the (representation of) operators are categorized into three groups, i.e., the constant, the alterable, and the boundary.
 """
-mutable struct CategorizedGenerator{C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:Boundary, S<:ExpansionStyle} <: RepresentationGenerator
+mutable struct CategorizedGenerator{C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:Boundary, S<:ExpansionStyle} <: IterableGenerator
     const constops::C
     const alterops::A
     const boundops::B
@@ -430,14 +437,14 @@ Get the complete set of parameters of a categorized generator of (a representati
 @inline Parameters(cat::CategorizedGenerator) = merge(cat.parameters, Parameters(cat.boundary))
 
 """
-    CompositeGenerator{CG<:CategorizedGenerator} <: RepresentationGenerator
+    CompositeGenerator{CG<:CategorizedGenerator} <: IterableGenerator
 
 Abstract type for a composite representation generator of a quantum lattice system.
 
 By protocol, it must have the following predefined contents:
 * `operators::CG`: the categorized generator of (a representation of) quantum operators
 """
-abstract type CompositeGenerator{CG<:CategorizedGenerator} <: RepresentationGenerator end
+abstract type CompositeGenerator{CG<:CategorizedGenerator} <: IterableGenerator end
 @inline ExpansionStyle(::Type{<:CompositeGenerator{CG}}) where {CG<:CategorizedGenerator} = ExpansionStyle(CG)
 @inline contentnames(::Type{<:CompositeGenerator}) = (:operators,)
 @inline Base.valtype(::Type{<:CompositeGenerator{CG}}) where {CG<:CategorizedGenerator} = valtype(CG)
@@ -569,11 +576,11 @@ end
 @inline contentnames(::Type{<:Image}) = (:operators, :transformation, :sourceid)
 
 """
-    (transformation::Transformation)(gen::RepresentationGenerator; kwargs...) -> Image
+    (transformation::Transformation)(gen::CompositeGenerator; kwargs...) -> Image
 
 Get the image of a transformation applied to a representation of a quantum lattice system.
 """
-@inline function (transformation::Transformation)(gen::RepresentationGenerator; kwargs...)
+@inline function (transformation::Transformation)(gen::CompositeGenerator; kwargs...)
     return Image(transformation(CategorizedGenerator(gen); kwargs...), transformation, objectid(gen))
 end
 
@@ -600,11 +607,11 @@ Update the parameters of the image of a transformation applied to a representati
 end
 
 """
-    update!(gen::Image, source::RepresentationGenerator; kwargs...) -> Image
+    update!(gen::Image, source::CompositeGenerator; kwargs...) -> Image
 
 Update the parameters of the image based on its source representation.
 """
-@inline function update!(gen::Image, source::RepresentationGenerator; kwargs...)
+@inline function update!(gen::Image, source::CompositeGenerator; kwargs...)
     @assert gen.sourceid==objectid(source) "update! error: mismatched image, transformation and source representation."
     update!(gen.operators, gen.transformation, CategorizedGenerator(source); kwargs...)
     return gen
@@ -612,14 +619,10 @@ end
 
 """
     reset!(gen::Image, transformation::Transformation, source::CompositeGenerator; kwargs...) -> Image
-    reset!(gen::Image, transformation::Transformation, source::RepresentationGenerator; kwargs...) -> Image
 
 Reset the image of a transformation applied to a representation.
 """
 @inline function reset!(gen::Image, transformation::Transformation, source::CompositeGenerator; kwargs...)
-    return invoke(reset!, Tuple{Image, Transformation, RepresentationGenerator}, gen, transformation, source; kwargs...)
-end
-@inline function reset!(gen::Image, transformation::Transformation, source::RepresentationGenerator; kwargs...)
     @assert gen.sourceid==objectid(source) "reset! error: mismatched image, transformation and source representation."
     reset!(gen.operators, transformation, CategorizedGenerator(source); kwargs...)
     gen.transformation = transformation
