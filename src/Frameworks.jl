@@ -17,7 +17,7 @@ import ..QuantumLattices: add!, expand, expand!, id, reset!, update, update!
 import ..Spatials: save
 import ..Toolkit: contentnames, getcontent
 
-export eager, lazy, Action, Algorithm, AnalyticalExpression, Assignment, CompositeGenerator, Eager, Entry, ExpansionStyle, Frontend, Image, Lazy, OperatorGenerator, Parameters, RepresentationGenerator, initialize, prepare!, run!, save
+export eager, lazy, Action, Algorithm, AnalyticalExpression, Assignment, CategorizedGenerator, CompositeGenerator, Eager, ExpansionStyle, Frontend, Image, Lazy, OperatorGenerator, Parameters, RepresentationGenerator, initialize, prepare!, run!, save
 
 """
     Parameters{Names}(values::Number...) where Names
@@ -171,30 +171,34 @@ end
 end
 
 """
-    Entry{C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:Boundary, S<:ExpansionStyle} <: RepresentationGenerator
+    CategorizedGenerator{C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:Boundary, S<:ExpansionStyle} <: RepresentationGenerator
 
-The basic representation generator of a quantum lattice system that records the quantum operators or a representation of the quantum operators related to (part of) the system.
+The categorized representation generator of a quantum lattice system that records the quantum operators or a representation of the quantum operators related to (part of) the system.
+
+For convenience, the (representation of) operators are categorized into three groups, i.e., the constant, the alterable, and the boundary.
 """
-mutable struct Entry{C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:Boundary, S<:ExpansionStyle} <: RepresentationGenerator
+mutable struct CategorizedGenerator{C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:Boundary, S<:ExpansionStyle} <: RepresentationGenerator
     const constops::C
     const alterops::A
     const boundops::B
     parameters::P
     const boundary::D
-    function Entry(constops, alterops::NamedTuple, boundops::NamedTuple, parameters::Parameters, boundary::Boundary, style::ExpansionStyle)
+    function CategorizedGenerator(constops, alterops::NamedTuple, boundops::NamedTuple, parameters::Parameters, boundary::Boundary, style::ExpansionStyle)
         new{typeof(constops), typeof(alterops), typeof(boundops), typeof(parameters), typeof(boundary), typeof(style)}(constops, alterops, boundops, parameters, boundary)
     end
 end
-@inline Entry(entry::Entry) = entry
-@inline ExpansionStyle(::Type{<:Entry{C, <:NamedTuple, <:NamedTuple, <:Parameters, <:Boundary, S} where C}) where {S<:ExpansionStyle} = S()
-@inline Base.isempty(entry::Entry) = isempty(entry.constops) && all(map(isempty, values(entry.alterops))) && all(map(isempty, values(entry.boundops)))
+@inline CategorizedGenerator(cat::CategorizedGenerator) = cat
+@inline ExpansionStyle(::Type{<:CategorizedGenerator{C, <:NamedTuple, <:NamedTuple, <:Parameters, <:Boundary, S} where C}) where {S<:ExpansionStyle} = S()
+@inline Base.isempty(cat::CategorizedGenerator) = isempty(cat.constops) && all(map(isempty, values(cat.alterops))) && all(map(isempty, values(cat.boundops)))
 
 """
-    Entry(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain, style::ExpansionStyle=eager; half::Bool=false)
+    CategorizedGenerator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain, style::ExpansionStyle=eager; half::Bool=false)
 
-Construct an entry of quantum operators based on the input terms, bonds, Hilbert space and (twisted) boundary condition.
+Construct a categorized representation generator of quantum operators based on the input terms, bonds, Hilbert space and (twisted) boundary condition.
+
+When the boundary condition is [`plain`](@ref), the boundary operators will be set to be empty for simplicity.
 """
-function Entry(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain, style::ExpansionStyle=eager; half::Bool=false)
+function CategorizedGenerator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain, style::ExpansionStyle=eager; half::Bool=false)
     emptybonds = eltype(bonds)[]
     if boundary === plain
         innerbonds = bonds
@@ -218,40 +222,40 @@ function Entry(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbe
         end
     )
     parameters = NamedTuple{map(id, terms)}(map(term->term.value, terms))
-    return Entry(constops, alterops, boundops, parameters, boundary, style)
+    return CategorizedGenerator(constops, alterops, boundops, parameters, boundary, style)
 end
 
 """
-    *(entry::Entry, factor) -> Entry
-    *(factor, entry::Entry) -> Entry
+    *(cat::CategorizedGenerator, factor) -> CategorizedGenerator
+    *(factor, cat::CategorizedGenerator) -> CategorizedGenerator
 
-Multiply an entry of quantum operators with a factor.
+Multiply a categorized generator of (a representation of) quantum operators with a factor.
 """
-@inline Base.:*(entry::Entry, factor) = factor * entry
-@inline function Base.:*(factor, entry::Entry)
-    parameters = NamedTuple{keys(entry.parameters)}(map(value->factor*value, values(entry.parameters)))
-    return Entry(factor*entry.constops, entry.alterops, entry.boundops, parameters, entry.boundary, ExpansionStyle(entry))
+@inline Base.:*(cat::CategorizedGenerator, factor) = factor * cat
+@inline function Base.:*(factor, cat::CategorizedGenerator)
+    parameters = NamedTuple{keys(cat.parameters)}(map(value->factor*value, values(cat.parameters)))
+    return CategorizedGenerator(factor*cat.constops, cat.alterops, cat.boundops, parameters, cat.boundary, ExpansionStyle(cat))
 end
 
 """
-    +(entry₁::Entry, entry₂::Entry) -> Entry
+    +(cat₁::CategorizedGenerator, cat₂::CategorizedGenerator) -> CategorizedGenerator
 
-Addition of two entries of quantum operators.
+Addition of two categorized generators of (representations of) quantum operators.
 """
-function Base.:+(entry₁::Entry, entry₂::Entry)
-    @assert entry₁.boundary==entry₂.boundary "+ error: in order to be added, two entries must share the same boundary condition (including the twist angles at the boundary)."
-    @assert ExpansionStyle(entry₁)==ExpansionStyle(entry₂) "+ error: in order to be added, two entries must share the same expansion style."
-    constops = entry₁.constops + entry₂.constops
-    alls, allshares = totalkeys(entry₁.parameters, entry₂.parameters), sharedkeys(entry₁.parameters, entry₂.parameters)
-    allmatches = NamedTuple{keymaps(allshares)}(map(key->opsmatch(entry₁.alterops, entry₂.alterops, key) && opsmatch(entry₁.boundops, entry₂.boundops, key), allshares))
-    parameters = NamedTuple{keymaps(alls)}(map(key->combinevalue(entry₁.parameters, entry₂.parameters, allmatches, key), alls))
-    alteralls, altershares = totalkeys(entry₁.alterops, entry₂.alterops), sharedkeys(entry₁.alterops, entry₂.alterops)
-    boundalls, boundshares = totalkeys(entry₁.boundops, entry₂.boundops), sharedkeys(entry₁.boundops, entry₂.boundops)
+function Base.:+(cat₁::CategorizedGenerator, cat₂::CategorizedGenerator)
+    @assert cat₁.boundary==cat₂.boundary "+ error: in order to be added, two entries must share the same boundary condition (including the twist angles at the boundary)."
+    @assert ExpansionStyle(cat₁)==ExpansionStyle(cat₂) "+ error: in order to be added, two entries must share the same expansion style."
+    constops = cat₁.constops + cat₂.constops
+    alls, allshares = totalkeys(cat₁.parameters, cat₂.parameters), sharedkeys(cat₁.parameters, cat₂.parameters)
+    allmatches = NamedTuple{keymaps(allshares)}(map(key->opsmatch(cat₁.alterops, cat₂.alterops, key) && opsmatch(cat₁.boundops, cat₂.boundops, key), allshares))
+    parameters = NamedTuple{keymaps(alls)}(map(key->combinevalue(cat₁.parameters, cat₂.parameters, allmatches, key), alls))
+    alteralls, altershares = totalkeys(cat₁.alterops, cat₂.alterops), sharedkeys(cat₁.alterops, cat₂.alterops)
+    boundalls, boundshares = totalkeys(cat₁.boundops, cat₂.boundops), sharedkeys(cat₁.boundops, cat₂.boundops)
     altermatches = NamedTuple{keymaps(altershares)}(map(((::Val{key}) where key)->getfield(allmatches, key), altershares))
     boundmatches = NamedTuple{keymaps(boundshares)}(map(((::Val{key}) where key)->getfield(allmatches, key), boundshares))
-    alterops = NamedTuple{keymaps(alteralls)}(map(key->combineops(entry₁.alterops, entry₁.parameters, entry₂.alterops, entry₂.parameters, altermatches, key), alteralls))
-    boundops = NamedTuple{keymaps(boundalls)}(map(key->combineops(entry₁.boundops, entry₁.parameters, entry₂.boundops, entry₂.parameters, boundmatches, key), boundalls))
-    return Entry(constops, alterops, boundops, parameters, deepcopy(entry₁.boundary), ExpansionStyle(entry₁))
+    alterops = NamedTuple{keymaps(alteralls)}(map(key->combineops(cat₁.alterops, cat₁.parameters, cat₂.alterops, cat₂.parameters, altermatches, key), alteralls))
+    boundops = NamedTuple{keymaps(boundalls)}(map(key->combineops(cat₁.boundops, cat₁.parameters, cat₂.boundops, cat₂.parameters, boundmatches, key), boundalls))
+    return CategorizedGenerator(constops, alterops, boundops, parameters, deepcopy(cat₁.boundary), ExpansionStyle(cat₁))
 end
 @inline keymaps(keys) = map(((::Val{key}) where key)->key, keys)
 @generated totalkeys(content₁::NamedTuple, content₂::NamedTuple) = map(Val, Tuple(unique((fieldnames(content₁)..., fieldnames(content₂)...))))
@@ -273,24 +277,24 @@ end
 @inline combineops(::Nothing, ::Nothing, ops, value, ::Nothing) = deepcopy(ops)
 
 """
-    (transformation::LinearTransformation)(entry::Entry; kwargs...) -> Entry
+    (transformation::LinearTransformation)(cat::CategorizedGenerator; kwargs...) -> CategorizedGenerator
 
-Apply a linear transformation to an entry of (representations of) quantum operators.
+Apply a linear transformation to a categorized generator of (a representation of) quantum operators.
 """
-function (transformation::LinearTransformation)(entry::Entry; kwargs...)
+function (transformation::LinearTransformation)(cat::CategorizedGenerator; kwargs...)
     wrapper(m) = transformation(m; kwargs...)
-    constops = wrapper(entry.constops)
-    alterops = NamedTuple{keys(entry.alterops)}(map(wrapper, values(entry.alterops)))
-    boundops = NamedTuple{keys(entry.boundops)}(map(wrapper, values(entry.boundops)))
-    return Entry(constops, alterops, boundops, entry.parameters, deepcopy(entry.boundary), ExpansionStyle(entry))
+    constops = wrapper(cat.constops)
+    alterops = NamedTuple{keys(cat.alterops)}(map(wrapper, values(cat.alterops)))
+    boundops = NamedTuple{keys(cat.boundops)}(map(wrapper, values(cat.boundops)))
+    return CategorizedGenerator(constops, alterops, boundops, cat.parameters, deepcopy(cat.boundary), ExpansionStyle(cat))
 end
 
 """
-    valtype(::Type{<:Entry})
+    valtype(::Type{<:CategorizedGenerator})
 
-Get the valtype of an entry of (representations of) quantum operators.
+Get the valtype of a categorized generator of (a representation of) quantum operators.
 """
-@inline @generated function Base.valtype(::Type{<:Entry{C, A, B}}) where {C, A<:NamedTuple, B<:NamedTuple}
+@inline @generated function Base.valtype(::Type{<:CategorizedGenerator{C, A, B}}) where {C, A<:NamedTuple, B<:NamedTuple}
     exprs = [:(optp = C)]
     fieldcount(A)>0 && append!(exprs, [:(optp = promote_type(optp, $T)) for T in fieldtypes(A)])
     fieldcount(B)>0 && append!(exprs, [:(optp = promote_type(optp, $T)) for T in fieldtypes(B)])
@@ -299,27 +303,27 @@ Get the valtype of an entry of (representations of) quantum operators.
 end
 
 """
-    expand(entry::Entry, ::Lazy)
+    expand(cat::CategorizedGenerator, ::Lazy)
 
-Expand an entry to get the (representation of) quantum operators related to a quantum lattice system.
+Expand a categorized generator to get the (representation of) quantum operators related to a quantum lattice system.
 """
-function expand(entry::Entry, ::Lazy)
-    params = (one(eltype(entry.parameters)), values(entry.parameters, keys(entry.alterops)|>Val)..., values(entry.parameters, keys(entry.alterops)|>Val)...)
-    counts = (length(entry.constops), map(length, values(entry.alterops))..., map(length, values(entry.boundops))...)
-    ops = (entry.constops, values(entry.alterops)..., values(entry.boundops)...)
-    return EntryExpand{eltype(entry)}(flatten(map((param, count)->repeated(param, count), params, counts)), flatten(ops))
+function expand(cat::CategorizedGenerator, ::Lazy)
+    params = (one(eltype(cat.parameters)), values(cat.parameters, keys(cat.alterops)|>Val)..., values(cat.parameters, keys(cat.alterops)|>Val)...)
+    counts = (length(cat.constops), map(length, values(cat.alterops))..., map(length, values(cat.boundops))...)
+    ops = (cat.constops, values(cat.alterops)..., values(cat.boundops)...)
+    return CategorizedGeneratorExpand{eltype(cat)}(flatten(map((param, count)->repeated(param, count), params, counts)), flatten(ops))
 end
 @inline @generated function Base.values(parameters::Parameters, ::Val{KS}) where KS
     exprs = [:(getfield(parameters, $name)) for name in QuoteNode.(KS)]
     return Expr(:tuple, exprs...)
 end
-struct EntryExpand{E<:OperatorPack, VS, OS} <: OperatorSet{E}
+struct CategorizedGeneratorExpand{CG<:OperatorPack, VS, OS} <: OperatorSet{CG}
     values::VS
     ops::OS
-    EntryExpand{E}(values, ops) where E = new{E, typeof(values), typeof(ops)}(values, ops)
+    CategorizedGeneratorExpand{CG}(values, ops) where CG = new{CG, typeof(values), typeof(ops)}(values, ops)
 end
-@inline Base.length(ee::EntryExpand) = mapreduce(length, +, ee.values.it)
-@propagate_inbounds function Base.iterate(ee::EntryExpand, state=((), ()))
+@inline Base.length(ee::CategorizedGeneratorExpand) = mapreduce(length, +, ee.values.it)
+@propagate_inbounds function Base.iterate(ee::CategorizedGeneratorExpand, state=((), ()))
     v = iterate(ee.values, state[1])
     isnothing(v) && return nothing
     op = iterate(ee.ops, state[2])
@@ -327,66 +331,66 @@ end
 end
 
 """
-    update!(entry::Entry{<:OperatorSum}; parameters...) -> Entry
+    update!(cat::CategorizedGenerator{<:OperatorSum}; parameters...) -> CategorizedGenerator
 
-Update the parameters (including the boundary parameters) of an entry of quantum operators.
-
-!!! Note
-    The coefficients of `boundops` are also updated due to the change of the boundary parameters.
-"""
-function update!(entry::Entry{<:OperatorSum}; parameters...)
-    entry.parameters = update(entry.parameters; parameters...)
-    if !match(Parameters(entry.boundary), NamedTuple{keys(parameters)}(values(parameters)))
-        old = copy(entry.boundary.values)
-        update!(entry.boundary; parameters...)
-        map(ops->map!(LinearFunction(op->entry.boundary(op, origin=old)), ops), values(entry.boundops))
-    end
-    return entry
-end
-
-"""
-    update!(entry::Entry, transformation::LinearTransformation, source::Entry{<:Operators}; kwargs...) -> Entry
-
-Update the parameters (including the boundary parameters) of an entry based on its source entry of quantum operators and the corresponding linear transformation.
+Update the parameters (including the boundary parameters) of a categorized generator of (a representation of) quantum operators.
 
 !!! Note
     The coefficients of `boundops` are also updated due to the change of the boundary parameters.
 """
-function update!(entry::Entry, transformation::LinearTransformation, source::Entry{<:Operators}; kwargs...)
-    entry.parameters = update(entry.parameters; source.parameters...)
-    if !match(Parameters(entry.boundary), Parameters(source.boundary))
-        update!(entry.boundary; Parameters(source.boundary)...)
-        map((dest, ops)->map!(LinearFunction(op->transformation(op; kwargs...)), empty!(dest), ops), values(entry.boundops), values(source.boundops))
+function update!(cat::CategorizedGenerator{<:OperatorSum}; parameters...)
+    cat.parameters = update(cat.parameters; parameters...)
+    if !match(Parameters(cat.boundary), NamedTuple{keys(parameters)}(values(parameters)))
+        old = copy(cat.boundary.values)
+        update!(cat.boundary; parameters...)
+        map(ops->map!(LinearFunction(op->cat.boundary(op, origin=old)), ops), values(cat.boundops))
     end
-    return entry
+    return cat
 end
 
 """
-    empty(entry::Entry) -> Entry
-    empty!(entry::Entry) -> Entry
+    update!(cat::CategorizedGenerator, transformation::LinearTransformation, source::CategorizedGenerator{<:Operators}; kwargs...) -> CategorizedGenerator
 
-Get an empty copy of an entry or empty an entry of (representations of) quantum operators.
+Update the parameters (including the boundary parameters) of a categorized generator based on its source categorized generator of (a representation of) quantum operators and the corresponding linear transformation.
+
+!!! Note
+    The coefficients of `boundops` are also updated due to the change of the boundary parameters.
 """
-@inline function Base.empty(entry::Entry)
-    constops = empty(entry.constops)
-    alterops = NamedTuple{keys(entry.alterops)}(map(empty, values(entry.alterops)))
-    boundops = NamedTuple{keys(entry.boundops)}(map(empty, values(entry.boundops)))
-    return Entry(constops, alterops, boundops, entry.parameters, deepcopy(entry.boundary), ExpansionStyle(entry))
-end
-@inline function Base.empty!(entry::Entry)
-    empty!(entry.constops)
-    map(empty!, values(entry.alterops))
-    map(empty!, values(entry.boundops))
-    return entry
+function update!(cat::CategorizedGenerator, transformation::LinearTransformation, source::CategorizedGenerator{<:Operators}; kwargs...)
+    cat.parameters = update(cat.parameters; source.parameters...)
+    if !match(Parameters(cat.boundary), Parameters(source.boundary))
+        update!(cat.boundary; Parameters(source.boundary)...)
+        map((dest, ops)->map!(LinearFunction(op->transformation(op; kwargs...)), empty!(dest), ops), values(cat.boundops), values(source.boundops))
+    end
+    return cat
 end
 
 """
-    reset!(entry::Entry{<:Operators}, terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=entry.boundary; half::Bool=false) -> Entry
+    empty(cat::CategorizedGenerator) -> CategorizedGenerator
+    empty!(cat::CategorizedGenerator) -> CategorizedGenerator
 
-Reset an entry of quantum operators by the new terms, bonds, Hilbert space and (twisted) boundary condition.
+Get an empty copy of a categorized generator or empty a categorized generator of (a representation of) quantum operators.
 """
-function reset!(entry::Entry{<:Operators}, terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=entry.boundary; half::Bool=false)
-    empty!(entry)
+@inline function Base.empty(cat::CategorizedGenerator)
+    constops = empty(cat.constops)
+    alterops = NamedTuple{keys(cat.alterops)}(map(empty, values(cat.alterops)))
+    boundops = NamedTuple{keys(cat.boundops)}(map(empty, values(cat.boundops)))
+    return CategorizedGenerator(constops, alterops, boundops, cat.parameters, deepcopy(cat.boundary), ExpansionStyle(cat))
+end
+@inline function Base.empty!(cat::CategorizedGenerator)
+    empty!(cat.constops)
+    map(empty!, values(cat.alterops))
+    map(empty!, values(cat.boundops))
+    return cat
+end
+
+"""
+    reset!(cat::CategorizedGenerator{<:Operators}, terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=cat.boundary; half::Bool=false) -> CategorizedGenerator
+
+Reset a categorized generator of (a representation of) quantum operators by the new terms, bonds, Hilbert space and (twisted) boundary condition.
+"""
+function reset!(cat::CategorizedGenerator{<:Operators}, terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=cat.boundary; half::Bool=false)
+    empty!(cat)
     if boundary === plain
         innerbonds = bonds
         boundbonds = eltype(bonds)[]
@@ -395,60 +399,60 @@ function reset!(entry::Entry{<:Operators}, terms::Tuple{Vararg{Term}}, bonds::Ve
         boundbonds = filter(bond->!isintracell(bond), bonds)
     end
     emptybonds = eltype(bonds)[]
-    map(term->expand!(entry.constops, term, term.ismodulatable ? emptybonds : innerbonds, hilbert; half=half), terms)
-    map(term->expand!(getfield(entry.alterops, id(term)), one(term), term.ismodulatable ? innerbonds : emptybonds, hilbert; half=half), terms)
-    map(term->map!(boundary, expand!(getfield(entry.boundops, id(term)), one(term), boundbonds, hilbert; half=half)), terms)
-    entry.parameters = NamedTuple{map(id, terms)}(map(term->term.value, terms))
-    merge!(entry.boundary, boundary)
-    return entry
+    map(term->expand!(cat.constops, term, term.ismodulatable ? emptybonds : innerbonds, hilbert; half=half), terms)
+    map(term->expand!(getfield(cat.alterops, id(term)), one(term), term.ismodulatable ? innerbonds : emptybonds, hilbert; half=half), terms)
+    map(term->map!(boundary, expand!(getfield(cat.boundops, id(term)), one(term), boundbonds, hilbert; half=half)), terms)
+    cat.parameters = NamedTuple{map(id, terms)}(map(term->term.value, terms))
+    merge!(cat.boundary, boundary)
+    return cat
 end
 
 """
-    reset!(entry::Entry, transformation::LinearTransformation, source::Entry{<:Operators}; kwargs...)
+    reset!(cat::CategorizedGenerator, transformation::LinearTransformation, source::CategorizedGenerator{<:Operators}; kwargs...)
 
-Reset an entry by its source entry of quantum operators and the corresponding linear transformation.
+Reset a categorized generator by its source categorized generator of (a representation of) quantum operators and the corresponding linear transformation.
 """
-function reset!(entry::Entry, transformation::LinearTransformation, source::Entry{<:Operators}; kwargs...)
+function reset!(cat::CategorizedGenerator, transformation::LinearTransformation, source::CategorizedGenerator{<:Operators}; kwargs...)
     wrapper = LinearFunction(op->transformation(op; kwargs...))
-    map!(wrapper, empty!(entry.constops), source.constops)
-    map((dest, ops)->map!(wrapper, empty!(dest), ops), values(entry.alterops), values(source.alterops))
-    map((dest, ops)->map!(wrapper, empty!(dest), ops), values(entry.boundops), values(source.boundops))
-    entry.parameters = update(entry.parameters; source.parameters...)
-    merge!(entry.boundary, source.boundary)
-    return entry
+    map!(wrapper, empty!(cat.constops), source.constops)
+    map((dest, ops)->map!(wrapper, empty!(dest), ops), values(cat.alterops), values(source.alterops))
+    map((dest, ops)->map!(wrapper, empty!(dest), ops), values(cat.boundops), values(source.boundops))
+    cat.parameters = update(cat.parameters; source.parameters...)
+    merge!(cat.boundary, source.boundary)
+    return cat
 end
 
 """
-    Parameters(entry::Entry)
+    Parameters(cat::CategorizedGenerator)
 
-Get the complete set of parameters of an entry of (representations of) quantum operators.
+Get the complete set of parameters of a categorized generator of (a representation of) quantum operators.
 """
-@inline Parameters(entry::Entry) = merge(entry.parameters, Parameters(entry.boundary))
+@inline Parameters(cat::CategorizedGenerator) = merge(cat.parameters, Parameters(cat.boundary))
 
 """
-    CompositeGenerator{E<:Entry} <: RepresentationGenerator
+    CompositeGenerator{CG<:CategorizedGenerator} <: RepresentationGenerator
 
 Abstract type for a composite representation generator of a quantum lattice system.
 
 By protocol, it must have the following predefined contents:
-* `operators::E`: the entry for the generated (representations of) quantum operators
+* `operators::CG`: the categorized generator of (a representation of) quantum operators
 """
-abstract type CompositeGenerator{E<:Entry} <: RepresentationGenerator end
-@inline ExpansionStyle(::Type{<:CompositeGenerator{E}}) where {E<:Entry} = ExpansionStyle(E)
+abstract type CompositeGenerator{CG<:CategorizedGenerator} <: RepresentationGenerator end
+@inline ExpansionStyle(::Type{<:CompositeGenerator{CG}}) where {CG<:CategorizedGenerator} = ExpansionStyle(CG)
 @inline contentnames(::Type{<:CompositeGenerator}) = (:operators,)
-@inline Base.valtype(::Type{<:CompositeGenerator{E}}) where {E<:Entry} = valtype(E)
+@inline Base.valtype(::Type{<:CompositeGenerator{CG}}) where {CG<:CategorizedGenerator} = valtype(CG)
 @inline expand(gen::CompositeGenerator, ::Lazy) = expand(getcontent(gen, :operators), lazy)
 @inline Parameters(gen::CompositeGenerator) = Parameters(getcontent(gen, :operators))
-@inline Entry(gen::CompositeGenerator) = getcontent(gen, :operators)
+@inline CategorizedGenerator(gen::CompositeGenerator) = getcontent(gen, :operators)
 @inline Base.isempty(gen::CompositeGenerator) = isempty(getcontent(gen, :operators))
 
 """
-    OperatorGenerator{E<:Entry{<:Operators}, TS<:Tuple{Vararg{Term}}, B<:Bond, H<:Hilbert} <: CompositeGenerator{E}
+    OperatorGenerator{CG<:CategorizedGenerator{<:Operators}, TS<:Tuple{Vararg{Term}}, B<:Bond, H<:Hilbert} <: CompositeGenerator{CG}
 
 A generator of operators based on the terms, bonds and Hilbert space of a quantum lattice system.
 """
-struct OperatorGenerator{E<:Entry{<:Operators}, TS<:Tuple{Vararg{Term}}, B<:Bond, H<:Hilbert} <: CompositeGenerator{E}
-    operators::E
+struct OperatorGenerator{CG<:CategorizedGenerator{<:Operators}, TS<:Tuple{Vararg{Term}}, B<:Bond, H<:Hilbert} <: CompositeGenerator{CG}
+    operators::CG
     terms::TS
     bonds::Vector{B}
     hilbert::H
@@ -462,7 +466,7 @@ end
 Construct a generator of operators.
 """
 @inline function OperatorGenerator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain, style::ExpansionStyle=eager; half::Bool=false)
-    return OperatorGenerator(Entry(terms, bonds, hilbert, boundary, style; half=half), terms, bonds, hilbert, half)
+    return OperatorGenerator(CategorizedGenerator(terms, bonds, hilbert, boundary, style; half=half), terms, bonds, hilbert, half)
 end
 
 """
@@ -553,12 +557,12 @@ end
 end
 
 """
-    Image{E<:Entry, H<:Transformation} <: CompositeGenerator{E}
+    Image{CG<:CategorizedGenerator, H<:Transformation} <: CompositeGenerator{CG}
 
 The image of a transformation applied to a representation of a quantum lattice system.
 """
-mutable struct Image{E<:Entry, H<:Transformation} <: CompositeGenerator{E}
-    const operators::E
+mutable struct Image{CG<:CategorizedGenerator, H<:Transformation} <: CompositeGenerator{CG}
+    const operators::CG
     transformation::H
     const sourceid::UInt
 end
@@ -570,7 +574,7 @@ end
 Get the image of a transformation applied to a representation of a quantum lattice system.
 """
 @inline function (transformation::Transformation)(gen::RepresentationGenerator; kwargs...)
-    return Image(transformation(Entry(gen); kwargs...), transformation, objectid(gen))
+    return Image(transformation(CategorizedGenerator(gen); kwargs...), transformation, objectid(gen))
 end
 
 """
@@ -602,7 +606,7 @@ Update the parameters of the image based on its source representation.
 """
 @inline function update!(gen::Image, source::RepresentationGenerator; kwargs...)
     @assert gen.sourceid==objectid(source) "update! error: mismatched image, transformation and source representation."
-    update!(gen.operators, gen.transformation, Entry(source); kwargs...)
+    update!(gen.operators, gen.transformation, CategorizedGenerator(source); kwargs...)
     return gen
 end
 
@@ -617,7 +621,7 @@ Reset the image of a transformation applied to a representation.
 end
 @inline function reset!(gen::Image, transformation::Transformation, source::RepresentationGenerator; kwargs...)
     @assert gen.sourceid==objectid(source) "reset! error: mismatched image, transformation and source representation."
-    reset!(gen.operators, transformation, Entry(source); kwargs...)
+    reset!(gen.operators, transformation, CategorizedGenerator(source); kwargs...)
     gen.transformation = transformation
     return gen
 end

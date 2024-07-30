@@ -82,43 +82,43 @@ end
     i = Identity()
 
     optp = Operator{Complex{Float}, ID{CompositeIndex{Index{Int, FID{Int}}, SVector{1, Float}}, 2}}
-    entry = Entry(tops₁, (t=Operators{optp}(), μ=μops), (t=tops₂, μ=Operators{optp}()), (t=2.0, μ=1.0), boundary, eager)
-    @test entry == Entry((t, μ), bs, hilbert, boundary, eager; half=true)
-    @test isequal(entry, i(entry))
-    @test Parameters(entry) == (t=2.0, μ=1.0, θ=0.1)
-    @test entry+entry == entry*2 == 2*entry == Entry(tops₁*2, (t=Operators{optp}(), μ=μops), (t=tops₂, μ=Operators{optp}()), (t=4.0, μ=2.0), boundary, eager)
-    @test entry|>valtype == entry|>typeof|>valtype == Operators{optp, idtype(optp)}
-    @test entry|>eltype == entry|>typeof|>eltype == optp
-    @test expand(entry) == expand!(Operators{optp}(), entry) ≈ tops₁+tops₂*2.0+μops
+    cat = CategorizedGenerator(tops₁, (t=Operators{optp}(), μ=μops), (t=tops₂, μ=Operators{optp}()), (t=2.0, μ=1.0), boundary, eager)
+    @test cat == CategorizedGenerator((t, μ), bs, hilbert, boundary, eager; half=true)
+    @test isequal(cat, i(cat))
+    @test Parameters(cat) == (t=2.0, μ=1.0, θ=0.1)
+    @test cat+cat == cat*2 == 2*cat == CategorizedGenerator(tops₁*2, (t=Operators{optp}(), μ=μops), (t=tops₂, μ=Operators{optp}()), (t=4.0, μ=2.0), boundary, eager)
+    @test cat|>valtype == cat|>typeof|>valtype == Operators{optp, idtype(optp)}
+    @test cat|>eltype == cat|>typeof|>eltype == optp
+    @test expand(cat) == expand!(Operators{optp}(), cat) ≈ tops₁+tops₂*2.0+μops
 
-    entry₁ = Entry(tops₁, (t=Operators{optp}(),), (t=tops₂,), (t=2.0,), boundary, eager)
-    entry₂ = Entry(Operators{optp}(), (μ=μops,), (μ=Operators{optp}(),), (μ=1.0,), boundary, eager)
-    @test entry₁+entry₂ == Entry(tops₁, (t=Operators{optp}(), μ=μops), (t=tops₂, μ=Operators{optp}()), (t=2.0, μ=1.0), boundary, eager)
+    cat₁ = CategorizedGenerator(tops₁, (t=Operators{optp}(),), (t=tops₂,), (t=2.0,), boundary, eager)
+    cat₂ = CategorizedGenerator(Operators{optp}(), (μ=μops,), (μ=Operators{optp}(),), (μ=1.0,), boundary, eager)
+    @test cat₁+cat₂ == CategorizedGenerator(tops₁, (t=Operators{optp}(), μ=μops), (t=tops₂, μ=Operators{optp}()), (t=2.0, μ=1.0), boundary, eager)
 
     μops₁ = expand(one(μ), bs[1], hilbert; half=true)
     μops₂ = expand(one(μ), bs[2], hilbert; half=true)
-    entry₁ = Entry(Operators{optp}(), (μ=μops₁,), (μ=Operators{optp}(),), (μ=1.0,), boundary, eager)
-    entry₂ = Entry(Operators{optp}(), (μ=μops₂,), (μ=Operators{optp}(),), (μ=1.0,), boundary, eager)
-    @test entry₁*2+entry₂*2 == Entry(Operators{optp}(), (μ=μops,), (μ=Operators{optp}(),), (μ=2.0,), boundary, eager)
-    @test entry₁*2+entry₂*3 == Entry(Operators{optp}(), (μ=μops₁*2+μops₂*3,), (μ=Operators{optp}(),), (μ=1.0,), boundary, eager)
+    cat₁ = CategorizedGenerator(Operators{optp}(), (μ=μops₁,), (μ=Operators{optp}(),), (μ=1.0,), boundary, eager)
+    cat₂ = CategorizedGenerator(Operators{optp}(), (μ=μops₂,), (μ=Operators{optp}(),), (μ=1.0,), boundary, eager)
+    @test cat₁*2+cat₂*2 == CategorizedGenerator(Operators{optp}(), (μ=μops,), (μ=Operators{optp}(),), (μ=2.0,), boundary, eager)
+    @test cat₁*2+cat₂*3 == CategorizedGenerator(Operators{optp}(), (μ=μops₁*2+μops₂*3,), (μ=Operators{optp}(),), (μ=1.0,), boundary, eager)
 
-    another = Entry(Operators{optp}(), (t=Operators{optp}(), μ=Operators{optp}()), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), boundary, eager)
-    @test empty(entry) == empty!(deepcopy(entry)) == another
-    @test !isempty(entry) && isempty(empty(entry))
+    another = CategorizedGenerator(Operators{optp}(), (t=Operators{optp}(), μ=Operators{optp}()), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), boundary, eager)
+    @test empty(cat) == empty!(deepcopy(cat)) == another
+    @test !isempty(cat) && isempty(empty(cat))
 
     nb = update!(deepcopy(boundary); θ=0.5)
-    another = Entry(tops₁, (t=Operators{optp}(), μ=μops), (t=nb(tops₂, origin=[0.1]), μ=Operators{optp}()), (t=2.0, μ=1.5), nb, eager)
-    dest = deepcopy(entry)
+    another = CategorizedGenerator(tops₁, (t=Operators{optp}(), μ=μops), (t=nb(tops₂, origin=[0.1]), μ=Operators{optp}()), (t=2.0, μ=1.5), nb, eager)
+    dest = deepcopy(cat)
     update!(dest; μ=1.5, θ=0.5)
     @test dest == another
     @test expand(dest) ≈ tops₁+another.boundary(tops₂, origin=[0.1])*2.0+μops*1.5
-    dest = deepcopy(entry)
+    dest = deepcopy(cat)
     update!(dest, i, another)
     @test dest == another
     @test expand(dest) ≈ tops₁+another.boundary(tops₂, origin=[0.1])*2.0+μops*1.5
 
-    @test reset!(deepcopy(another), (t, μ), bs, hilbert, boundary; half=true) == entry
-    @test reset!(deepcopy(another), i, entry) == entry
+    @test reset!(deepcopy(another), (t, μ), bs, hilbert, boundary; half=true) == cat
+    @test reset!(deepcopy(another), i, cat) == cat
 
     cgen = OperatorGenerator((t, μ), bs, hilbert, boundary; half=true)
     @test cgen == deepcopy(cgen) && isequal(cgen, deepcopy(cgen))
@@ -153,21 +153,21 @@ end
     tops = expand(t, bs, hilbert; half=true)
     μops = expand(one(μ), bs, hilbert; half=true)
     optp = Operator{Complex{Float}, ID{CompositeIndex{Index{Int, FID{Int}}, SVector{1, Float}}, 2}}
-    entry = Entry(tops, (t=Operators{optp}(), μ=μops), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain, eager)
-    @test entry == Entry((t, μ), bs, hilbert, plain, eager; half=true)
-    @test isequal(entry, i(entry))
-    @test Parameters(entry) == (t=2.0, μ=1.0)
-    @test entry+entry == entry*2 == 2*entry == Entry(tops*2, (t=Operators{optp}(), μ=μops), (t=Operators{optp}(), μ=Operators{optp}()), (t=4.0, μ=2.0), plain, eager)
-    @test expand(entry) == expand!(Operators{optp}(), entry) ≈ tops+μops
+    cat = CategorizedGenerator(tops, (t=Operators{optp}(), μ=μops), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain, eager)
+    @test cat == CategorizedGenerator((t, μ), bs, hilbert, plain, eager; half=true)
+    @test isequal(cat, i(cat))
+    @test Parameters(cat) == (t=2.0, μ=1.0)
+    @test cat+cat == cat*2 == 2*cat == CategorizedGenerator(tops*2, (t=Operators{optp}(), μ=μops), (t=Operators{optp}(), μ=Operators{optp}()), (t=4.0, μ=2.0), plain, eager)
+    @test expand(cat) == expand!(Operators{optp}(), cat) ≈ tops+μops
 
-    entry₁ = Entry(tops, (t=Operators{optp}(),), (t=Operators{optp}(),), (t=2.0,), plain, eager)
-    entry₂ = Entry(Operators{optp}(), (μ=μops,), (μ=Operators{optp}(),), (μ=1.0,), plain, eager)
-    @test entry₁+entry₂ == Entry(tops, (t=Operators{optp}(), μ=μops), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain, eager)
+    cat₁ = CategorizedGenerator(tops, (t=Operators{optp}(),), (t=Operators{optp}(),), (t=2.0,), plain, eager)
+    cat₂ = CategorizedGenerator(Operators{optp}(), (μ=μops,), (μ=Operators{optp}(),), (μ=1.0,), plain, eager)
+    @test cat₁+cat₂ == CategorizedGenerator(tops, (t=Operators{optp}(), μ=μops), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain, eager)
 
-    another = Entry(Operators{optp}(), (t=Operators{optp}(), μ=Operators{optp}()), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain, eager)
-    @test empty(entry) == empty!(deepcopy(entry)) == another
-    @test reset!(deepcopy(another), (t, μ), bs, hilbert, plain; half=true) == entry
-    @test reset!(deepcopy(another), i, entry) == entry
+    another = CategorizedGenerator(Operators{optp}(), (t=Operators{optp}(), μ=Operators{optp}()), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain, eager)
+    @test empty(cat) == empty!(deepcopy(cat)) == another
+    @test reset!(deepcopy(another), (t, μ), bs, hilbert, plain; half=true) == cat
+    @test reset!(deepcopy(another), i, cat) == cat
 
     cgen = OperatorGenerator((t, μ), bs, hilbert, plain; half=true)
     @test expand(cgen) ≈ tops + μops
