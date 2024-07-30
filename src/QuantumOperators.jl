@@ -11,7 +11,7 @@ import ..QuantumLattices: ⊗, add!, div!, dtype, id, ishermitian, mul!, permute
 import ..Toolkit: contentnames, dissolve, isparameterbound, parameternames
 
 export ID, Operator, OperatorPack, OperatorProd, Operators, OperatorSet, OperatorSum, OperatorUnit, LaTeX, QuantumOperator
-export Identity, LinearFunction, LinearTransformation, MatrixRepresentation, Numericalization, Permutation, RankFilter, TabledUnitSubstitution, Transformation, UnitSubstitution
+export Identity, LinearFunction, LinearTransformation, Matrixization, Numericalization, Permutation, RankFilter, TabledUnitSubstitution, Transformation, UnitSubstitution
 export idtype, ishermitian, latexname, latexformat, matrix, optype, script, sequence, subscript, superscript
 
 # Generic quantum operator
@@ -919,11 +919,11 @@ end
 @inline (n::Numericalization)(m::OperatorPack; kwargs...) = convert(valtype(n, m), m)
 
 """
-    MatrixRepresentation <: LinearTransformation
+    Matrixization <: LinearTransformation
 
 The matrix representation.
 """
-abstract type MatrixRepresentation <: LinearTransformation end
+abstract type Matrixization <: LinearTransformation end
 
 """
     matrix
