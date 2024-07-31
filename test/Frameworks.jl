@@ -43,6 +43,8 @@ end
     @test match(ps1, ps3) == false
     @test update(ps1; ps3...) == Parameters{(:t₁, :t₂, :U)}(1.0im, 1.0, 2.1)
 
+    @test Parameters(FID(1)) == NamedTuple()
+
     params = Parameters{(:t₁, :t₂)}(1.11111111, 2.2222222222)
     @test repr(params; context=:ndecimal=>2) == "(t₁ = 1.11, t₂ = 2.22)"
 

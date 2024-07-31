@@ -35,6 +35,7 @@ function Base.show(io::IO, params::Parameters)
     haskey(io, :ndecimal) && (params = NamedTuple{keys(params)}(map(value->round(value; digits=io[:ndecimal]), values(params))))
     invoke(show, Tuple{IO, NamedTuple}, io, params)
 end
+Parameters(::Representation) = NamedTuple()
 
 """
     match(params₁::Parameters, params₂::Parameters; atol=atol, rtol=rtol) -> Bool
