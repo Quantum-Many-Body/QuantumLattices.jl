@@ -1403,7 +1403,6 @@ macro hexagon_str(str::String)
     return (points=ntuple(i->map[points[i]], length(points)), labels=ntuple(i->points[i], length(points)))
 end
 
-
 """
     ReciprocalCurve{K, S<:SVector, N, R} <: ReciprocalSpace{K, S}
 
@@ -1547,4 +1546,3 @@ function matrix(vs::AbstractVector{<:AbstractVector})
 end
 
 end #module
-#this is a test.
