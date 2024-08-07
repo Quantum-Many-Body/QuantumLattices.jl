@@ -325,7 +325,21 @@ end
     rp = ReciprocalPath{:q}([b₁, b₂], hexagon"Γ-K-M-Γ", length=10)
     @test rp == ReciprocalPath{:q}([b₁, b₂], (0//1, 0//1), (2//3, 1//3), (1//2, 1//2), (0//1, 0//1); labels=("Γ", "K", "M", "Γ"), length=10)
 end
+@testset "ReciprocalCurve" begin
+    @test contentnames(ReciprocalCurve) == (:contents, )
 
+    b₁, b₂ = [1.0, 0.0], [0.0, 1.0]
+    s₁ = (0.0, 0.0)=>(0.5, 0.0)
+    s₂ = (0.5, 0.0)=>(0.5, 0.5)
+    s₃ = (0.5, 0.5)=>(0.0, 0.0)
+
+    rc = ReciprocalCurve([[0.0, 0.0],[0.5, 0.0],[0.5, 0.5], [0.0, 0.0]])
+    @test rc == ReciprocalCurve([(0.0, 0.0),(0.5, 0.0),(0.5, 0.5),(0.0, 0.0)])
+    rp = ReciprocalPath([b₁, b₂], s₁, s₂, s₃, length=1)
+    @test rc == ReciprocalCurve(rp)
+
+    savefig(plot(rc), "ReciprocalCurve.png")
+end
 @testset "selectpath" begin
     bz = BrillouinZone([[1.0, 0.0], [0.0, 1.0]], 4)
 

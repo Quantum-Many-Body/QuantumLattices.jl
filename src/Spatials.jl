@@ -8,13 +8,15 @@ using Printf: @printf, @sprintf
 using RecipesBase: RecipesBase, @recipe, @series, @layout
 using StaticArrays: SVector
 using ..QuantumNumbers: Momenta, Momentum, periods
-using ..Toolkit: atol, rtol, efficientoperations, CompositeDict, Float, SimpleNamedVectorSpace, Segment, VectorSpaceCartesian, VectorSpaceDirectSummed, VectorSpaceStyle, getcontent
+using ..Toolkit: atol, rtol, efficientoperations, CompositeDict, Float, SimpleNamedVectorSpace, Segment, VectorSpaceCartesian, VectorSpaceDirectSummed, VectorSpaceStyle, getcontent, VectorSpaceEnumerative
 
 import StaticArrays: SArray
 import ..QuantumLattices: decompose, dimension, dtype, expand, kind
 import ..QuantumNumbers: Momentum₁, Momentum₂, Momentum₃
 import ..Toolkit: contentnames, shape
 
+export azimuth, azimuthd, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, polar, polard, reciprocals, rotate, translate, tile, volume
+export AbstractLattice, Bond, BrillouinZone, Lattice, Neighbors, Point, ReciprocalSpace, ReciprocalZone, ReciprocalPath, bonds, bonds!, icoordinate, isintracell, nneighbor, rcoordinate, save, selectpath, shrink, ticks, xaxis, yaxis, zaxis, ReciprocalCurve
 export azimuth, azimuthd, direction, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, polar, polard, reciprocals, rotate, translate, tile, volume
 export AbstractLattice, Bond, BrillouinZone, Lattice, Neighbors, Point, ReciprocalSpace, ReciprocalZone, ReciprocalPath, bonds, bonds!, icoordinate, isintracell, nneighbor, rcoordinate, save, selectpath, shrink, ticks, xaxis, yaxis, zaxis
 export hexagon120°map, hexagon60°map, linemap, rectanglemap, @hexagon_str, @line_str, @rectangle_str
@@ -917,20 +919,20 @@ Expand the momentum from integral values to real values with the given reciproca
 end
 
 """
-    Momentum₁{N}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}) where N
-    Momentum₂{N₁, N₂}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}) where {N₁, N₂}
-    Momentum₃{N₁, N₂, N₃}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}) where {N₁, N₂, N₃}
+    Momentum₁{N}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}; atol=atol, rtol=rtol) where N
+    Momentum₂{N₁, N₂}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}; atol=atol, rtol=rtol) where {N₁, N₂}
+    Momentum₃{N₁, N₂, N₃}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}; atol=atol, rtol=rtol) where {N₁, N₂, N₃}
 
 Construct a quantum momentum by the coordinates.
 """
-function Momentum₁{N}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}) where N
+function Momentum₁{N}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}; atol=atol, rtol=rtol) where N
     @assert length(reciprocals)==1 "Momentum₁ error: mismatched length of reciprocals."
     k = decompose(momentum, reciprocals[1])[1]*N
     i = round(Int, k)
     @assert isapprox(i, k; atol=atol, rtol=rtol) "Momentum₁ error: input momentum not on grid."
     return Momentum₁{N}(i)
 end
-function Momentum₂{N₁, N₂}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}) where {N₁, N₂}
+function Momentum₂{N₁, N₂}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}; atol=atol, rtol=rtol) where {N₁, N₂}
     @assert length(reciprocals)==2 "Momentum₂ error: mismatched length of reciprocals."
     k₁, k₂ = decompose(momentum, reciprocals[1], reciprocals[2])
     k₁, k₂ = k₁*N₁, k₂*N₂
@@ -938,7 +940,7 @@ function Momentum₂{N₁, N₂}(momentum::AbstractVector, reciprocals::Abstract
     @assert isapprox(i₁, k₁; atol=atol, rtol=rtol) && isapprox(i₂, k₂; atol=atol, rtol=rtol) "Momentum₂ error: input momentum not on grid."
     return Momentum₂{N₁, N₂}(i₁, i₂)
 end
-function Momentum₃{N₁, N₂, N₃}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}) where {N₁, N₂, N₃}
+function Momentum₃{N₁, N₂, N₃}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}; atol=atol, rtol=rtol) where {N₁, N₂, N₃}
     @assert length(reciprocals)==3 "Momentum₃ error: mismatched length of reciprocals."
     k₁, k₂, k₃ = decompose(momentum, reciprocals[1], reciprocals[2], reciprocals[3])
     k₁, k₂, k₃ = k₁*N₁, k₂*N₂, k₃*N₃
@@ -1401,6 +1403,46 @@ macro hexagon_str(str::String)
     return (points=ntuple(i->map[points[i]], length(points)), labels=ntuple(i->points[i], length(points)))
 end
 
+
+"""
+    ReciprocalCurve{K, S<:SVector, N, R} <: ReciprocalSpace{K, S}
+
+A curve in the reciprocal space.
+"""
+struct ReciprocalCurve{K, S<:SVector} <: ReciprocalSpace{K, S}
+    contents::Vector{S}
+    function ReciprocalCurve{K}(contents::AbstractVector{<:AbstractVector}) where {K}
+        @assert isa(K, Symbol) "ReciprocalRing error: K must be a Symbol."
+        S = SVector{length(first(contents)), eltype(eltype(contents))}
+        new{K, S}(map(x->SVector{length(x)}(x), contents))
+    end
+end
+@inline ReciprocalCurve(contents::AbstractVector{<:NTuple{N, T}}) where {N, T<:Real} = ReciprocalCurve{:k}(collect.(contents))
+@inline ReciprocalCurve(contents::AbstractVector{<:AbstractVector{<:Real}}) = ReciprocalCurve{:k}(contents)
+@inline function ReciprocalCurve(contents::ReciprocalPath) 
+    points = collect(contents)
+    return ReciprocalCurve{:k}(points)
+end
+@inline contentnames(::Type{<:ReciprocalCurve}) = (:contents, )
+@inline VectorSpaceStyle(::Type{<:ReciprocalCurve}) = VectorSpaceEnumerative()
+
+"""
+    @recipe plot(path::ReciprocalCurve)
+
+Define the recipe for the visualization of a reciprocal curve.
+"""
+@recipe function plot(ring::ReciprocalCurve)
+    title --> string(nameof(typeof(ring)))
+    titlefontsize --> 10
+    legend := false
+    aspect_ratio := :equal
+    coordinates = map(Tuple, ring)
+    @series begin
+        seriestype := :scatter
+        coordinates
+    end
+end
+
 # plot utilities
 block = quote
     seriestype --> :path
@@ -1505,3 +1547,4 @@ function matrix(vs::AbstractVector{<:AbstractVector})
 end
 
 end #module
+#this is a test.
