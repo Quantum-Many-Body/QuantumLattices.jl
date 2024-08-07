@@ -402,6 +402,7 @@ end
 @inline Base.iterate(ms::OperatorSum) = iterate(values(ms.contents))
 @inline Base.iterate(ms::OperatorSum, state) = iterate(values(ms.contents), state)
 @inline Base.length(ms::OperatorSum) = length(ms.contents)
+@inline Base.keys(ms::OperatorSum) = keys(ms.contents)
 @inline Base.haskey(ms::OperatorSum, id::Tuple) = haskey(ms.contents, id)
 @inline Base.getindex(ms::OperatorSum, id::Tuple) = ms.contents[id]
 @inline Base.getindex(ms::OperatorSum, index::Integer) = iterate(ms.contents, index)[1][2]

@@ -115,6 +115,7 @@ end
     @test length(opts) == 2
     @test summary(opts) == "Operators"
     @test string(opts) == @sprintf "Operators with 2 Operator\n  %s\n" join(opts, "\n  ")
+    @test keys(opts) == keys(opts.contents)
     @test haskey(opts, id(opt₁)) && haskey(opts, id(opt₂)) && !haskey(opts, ID(AID(3, 1)))
     @test opts[id(opt₁)]==opt₁ && opts[id(opt₂)]==opt₂
     @test opts[1]==opt₁ && opts[2]==opt₂
