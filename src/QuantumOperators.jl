@@ -930,7 +930,7 @@ end
 """
     Matrixization <: LinearTransformation
 
-The matrix representation.
+The matrixization transformation.
 """
 abstract type Matrixization <: LinearTransformation end
 
