@@ -164,7 +164,11 @@ end
     @test reparameter(Vector, 1, Real, false) ==  Vector{Real}
     @test reparameter(Vector{Int}, 2, 3, false) == Array{Int, 3}
 
-    @test contentnames(Vector) == ()
+    if Base.VERSION == v"1.11.0-rc2"
+        @test contentnames(Vector) == (:ref, :size)
+    else
+        @test contentnames(Vector) == ()
+    end
     @test rawtype(Int) == Int
     @test rawtype(Vector{Int}) == Array
     @test rawtype(Vector) == Array
