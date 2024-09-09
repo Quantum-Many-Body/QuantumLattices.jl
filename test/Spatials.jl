@@ -1,3 +1,5 @@
+using OffsetArrays: OffsetArray
+using LinearAlgebra: cross, det, dot, norm
 using Plots: plot, savefig, plot!
 using QuantumLattices.Spatials
 using QuantumLattices: decompose, dimension, dtype, expand
@@ -8,15 +10,7 @@ using StaticArrays: SVector
 
 @testset "distance" begin
     @test distance([0.0, 0.0], [1.0, 1.0]) ≈ sqrt(2.0)
-end
-
-@testset "azimuthd" begin
-    @test azimuthd([+1.0]) ≈ 0.0
-    @test azimuthd([-1.0]) ≈ 180.0
-    @test azimuthd([+1.0, +1.0]) ≈ 45.0
-    @test azimuthd([-1.0, -1.0]) ≈ 225.0
-    @test azimuthd([+1.0, +1.0, -2.0]) ≈ 45.0
-    @test azimuthd([+1.0, -1.0, +2.0]) ≈ 315.0
+    @test distance(OffsetArray([0.0, 0.0], -2:-1), OffsetArray([1.0, 1.0], -2:-1)) ≈ sqrt(2.0)
 end
 
 @testset "azimuth" begin
@@ -26,14 +20,39 @@ end
     @test azimuth([-1.0, -1.0]) ≈ 5//4*pi
     @test azimuth([+1.0, +1.0, -2.0]) ≈ 1//4*pi
     @test azimuth([+1.0, -1.0, +2.0]) ≈ 7//4*pi
+
+    @test azimuth(OffsetArray([+1.0], -1:-1)) ≈ 0.0
+    @test azimuth(OffsetArray([-1.0], -1:-1)) ≈ pi
+    @test azimuth(OffsetArray([+1.0, +1.0], -2:-1)) ≈ 1//4*pi
+    @test azimuth(OffsetArray([-1.0, -1.0], -2:-1)) ≈ 5//4*pi
+    @test azimuth(OffsetArray([+1.0, +1.0, -2.0], -3:-1)) ≈ 1//4*pi
+    @test azimuth(OffsetArray([+1.0, -1.0, +2.0], -3:-1)) ≈ 7//4*pi
+end
+
+@testset "azimuthd" begin
+    @test azimuthd([+1.0]) ≈ 0.0
+    @test azimuthd([-1.0]) ≈ 180.0
+    @test azimuthd([+1.0, +1.0]) ≈ 45.0
+    @test azimuthd([-1.0, -1.0]) ≈ 225.0
+    @test azimuthd([+1.0, +1.0, -2.0]) ≈ 45.0
+    @test azimuthd([+1.0, -1.0, +2.0]) ≈ 315.0
+
+    @test azimuthd(OffsetArray([+1.0], -1:-1)) ≈ 0.0
+    @test azimuthd(OffsetArray([-1.0], -1:-1)) ≈ 180.0
+    @test azimuthd(OffsetArray([+1.0, +1.0], -2:-1)) ≈ 45.0
+    @test azimuthd(OffsetArray([-1.0, -1.0], -2:-1)) ≈ 225.0
+    @test azimuthd(OffsetArray([+1.0, +1.0, -2.0], -3:-1)) ≈ 45.0
+    @test azimuthd(OffsetArray([+1.0, -1.0, +2.0], -3:-1)) ≈ 315.0
+end
+
+@testset "polar" begin
+    @test polar([1.0, 0.0, 1.0]) ≈ 1//4*pi
+    @test polar(OffsetArray([1.0, 0.0, 1.0], -3:-1)) ≈ 1//4*pi
 end
 
 @testset "polard" begin
     @test polard([1.0, 0.0, 1.0]) ≈ 45.0
-end
-
-@testset "polard" begin
-    @test polar([1.0, 0.0, 1.0]) ≈ 1//4*pi
+    @test polard(OffsetArray([1.0, 0.0, 1.0], -3:-1)) ≈ 45.0
 end
 
 @testset "direction" begin
@@ -43,32 +62,23 @@ end
 
     @test direction(30, :degree) ≈ direction(pi/6, :radian) ≈ direction([√3, 1]) ≈ SVector(√3/2, 1/2)
     @test direction((90, 30), :degree) ≈ direction((pi/2, pi/6), :radian) ≈ direction([√3, 1, 0]) ≈ SVector(√3/2, 1/2, 0)
+
+    @test direction(OffsetArray([√3, 1], -2:-1)) ≈ OffsetArray([√3/2, 1/2], -2:-1)
 end
 
 @testset "volume" begin
-    @test volume([[1]]) == volume([1]) == volume([1, 0]) == volume([1, 0, 0]) == 1
-    @test volume([1], [2]) == 0
-    @test volume([[1, 0], [0, 1]]) == volume([1, 0], [0, 1]) == volume([1, 0, 0], [0, 1, 0]) == 1
-    @test volume([1], [2], [3]) == volume([1, 0], [0, 1], [1, 1]) == 0
-    @test volume([[1, 0, 0], [0, 1, 0], [0, 0, 1]]) == volume([1, 0, 0], [0, 1, 0], [0, 0, 1]) == 1
-end
+    m = rand(3, 3)
 
-@testset "isparallel" begin
-    @test isparallel([0.0, 0.0], [1.0, 1.0]) == 1
-    @test isparallel([2.0, 2.0], [1.0, 1.0]) == 1
-    @test isparallel([-2.0, -2.0], [1.0, 1.0]) == -1
-    @test isparallel([1.0, -1.0], [1.0, 1.0]) == 0
-end
+    @test volume([[m[1, 1]]]) == volume([m[1, 1]]) == m[1, 1]
+    @test volume(m[1:2, 1]) ≈ norm(m[1:2, 1])
+    @test volume(m[1:3, 1]) ≈ norm(m[1:3, 1])
+    
+    @test volume([[m[1, 1]], [m[2, 1]]]) == volume([m[1, 1]], [m[2, 1]]) == 0
+    @test volume(m[1:2, 1], m[1:2, 2]) ≈ abs(det(m[1:2, 1:2]))
+    @test volume(m[1:3, 1], m[1:3, 2]) ≈ norm(cross(m[1:3, 1], m[1:3, 2]))
 
-@testset "isonline" begin
-    seed!()
-    p₁, p₂ = [0.0, 0.0], [1.0, 1.0]
-    @test isonline([0.0, 0.0], p₁, p₂, ends = (true, rand(Bool))) == true
-    @test isonline([0.0, 0.0], p₁, p₂, ends = (false, rand(Bool))) == false
-    @test isonline([1.0, 1.0], p₁, p₂, ends = (rand(Bool), true)) == true
-    @test isonline([1.0, 1.0], p₁, p₂, ends = (rand(Bool), false)) == false
-    @test isonline([0.5, 0.5], p₁, p₂, ends = (rand(Bool), rand(Bool))) == true
-    @test isonline([1.1, 1.1], p₁, p₂, ends = (rand(Bool), rand(Bool))) == false
+    @test volume([m[1, 1]], [m[2, 2]], [m[3, 3]]) == volume(m[1:2, 1], m[1:2, 2], m[1:2, 3]) == 0
+    @test volume([m[1:3, 1], m[1:3, 2], m[1:3, 3]]) ≈ volume(m[1:3, 1], m[1:3, 2], m[1:3, 3]) ≈ abs(det(m))
 end
 
 @testset "decompose" begin
@@ -99,7 +109,7 @@ end
 
 @testset "isintratriangle" begin
     seed!()
-    p₁, p₂, p₃ = [-1.0, 0.0], [0.0, 1.0], [1.0, 0.0]
+    p₁, p₂, p₃ = rand(2), rand(2), rand(2)
     for (i, p) in enumerate((p₁, p₂, p₃))
         @test isintratriangle(p, p₁, p₂, p₃, vertexes=Tuple(j == i ? true : rand(Bool) for j = 1:3), edges=(rand(Bool), rand(Bool), rand(Bool))) == true
         @test isintratriangle(p, p₁, p₂, p₃, vertexes=Tuple(j == i ? false : rand(Bool) for j = 1:3), edges=(rand(Bool), rand(Bool), rand(Bool))) == false
@@ -108,8 +118,27 @@ end
         @test isintratriangle(p, p₁, p₂, p₃, vertexes=(rand(Bool), rand(Bool), rand(Bool)), edges=Tuple(j == i ? true : rand(Bool) for j = 1:3)) == true
         @test isintratriangle(p, p₁, p₂, p₃, vertexes=(rand(Bool), rand(Bool), rand(Bool)), edges=Tuple(j == i ? false : rand(Bool) for j = 1:3)) == false
     end
-    @assert isintratriangle([0.0, 0.5], p₁, p₂, p₃, vertexes=(rand(Bool), rand(Bool), rand(Bool)), edges=(rand(Bool), rand(Bool), rand(Bool))) == true
-    @assert isintratriangle([0.0, 1.5], p₁, p₂, p₃, vertexes=(rand(Bool), rand(Bool), rand(Bool)), edges=(rand(Bool), rand(Bool), rand(Bool))) == false
+    @test isintratriangle((p₁+p₂+p₃)/3, p₁, p₂, p₃, vertexes=(rand(Bool), rand(Bool), rand(Bool)), edges=(rand(Bool), rand(Bool), rand(Bool))) == true
+    @test isintratriangle(p₁+p₂, p₁, p₂, p₃, vertexes=(rand(Bool), rand(Bool), rand(Bool)), edges=(rand(Bool), rand(Bool), rand(Bool))) == false
+end
+
+@testset "isonline" begin
+    seed!()
+    p₁, p₂ = rand(2), rand(2)
+    @test isonline(p₁, p₁, p₂, ends = (true, rand(Bool))) == true
+    @test isonline(p₁, p₁, p₂, ends = (false, rand(Bool))) == false
+    @test isonline(p₂, p₁, p₂, ends = (rand(Bool), true)) == true
+    @test isonline(p₂, p₁, p₂, ends = (rand(Bool), false)) == false
+    @test isonline((p₁+p₂)/2, p₁, p₂, ends = (rand(Bool), rand(Bool))) == true
+    @test isonline(p₁+p₂, p₁, p₂, ends = (rand(Bool), rand(Bool))) == false
+end
+
+@testset "isparallel" begin
+    v = rand(2)
+    @test isparallel([0.0, 0.0], v) == 1
+    @test isparallel(v, +rand()*v) == +1
+    @test isparallel(v, -rand()*v) == -1
+    @test isparallel(v, rand(2)) == 0
 end
 
 @testset "issubordinate" begin
@@ -122,29 +151,44 @@ end
 end
 
 @testset "reciprocals" begin
-    @test reciprocals([[1.0]]) ≈ [[1.0]]*2pi
-    @test reciprocals([[1.0, 0.0], [0.0, 1.0]]) ≈ [[1.0, 0.0], [0.0, 1.0]]*2pi
-    @test reciprocals([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]) ≈ [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]*2pi
-end
-
-@testset "translate" begin
-    @test translate([1.0 2.0; 3.0 4.0], [1.0, 2.0]) == [2.0 3.0; 5.0 6.0]
+    m = rand(3, 3)
+    @test [dot(a, b) for b in reciprocals([[m[1, 1]]]), a in [[m[1, 1]]]] ≈ [2pi;;]
+    @test [dot(a, b) for b in reciprocals([m[1:2, 1]]), a in [m[1:2, 1]]] ≈ [2pi;;]
+    @test [dot(a, b) for b in reciprocals([m[1:3, 1]]), a in [m[1:3, 1]]] ≈ [2pi;;]
+    @test [dot(a, b) for b in reciprocals([m[1:2, 1], m[1:2, 2]]), a in [m[1:2, 1], m[1:2, 2]]] ≈ [2pi 0; 0 2pi]
+    @test [dot(a, b) for b in reciprocals([m[1:3, 1], m[1:3, 2]]), a in [m[1:3, 1], m[1:3, 2]]] ≈ [2pi 0; 0 2pi]
+    @test [dot(a, b) for b in reciprocals([m[1:3, 1], m[1:3, 2], m[1:3, 3]]), a in [m[1:3, 1], m[1:3, 2], m[1:3, 3]]] ≈ [2pi 0 0; 0 2pi 0; 0 0 2pi]
 end
 
 @testset "rotate" begin
     @test rotate([1.0, 0.0], pi/2) ≈ [0.0, 1.0]
     @test rotate([1.0 2.0; 1.0 2.0], pi/4, axis=([1.0, 1.0], (0.0, 0.0))) ≈ [1.0 1.0; 1.0 1.0+√2.0]
-    @test rotate(reshape([2.0, 2.0, 2.0], 3, 1), pi/12, axis=([0.0, 1.0, 1.0], (pi/2, 0.0))) ≈ reshape([2.0, 1.0+√2/2, 1.0+√6/2], 3, 1)
-    @test rotate(reshape([2.0, 2.0, 2.0], 3, 1), pi/12, axis=([1.0, 0.0, 1.0], (pi/2, pi/2))) ≈ reshape([1.0+√6/2, 2.0, 1.0+√2/2], 3, 1)
-    @test rotate(reshape([2.0, 2.0, 2.0], 3, 1), pi/12, axis=([1.0, 1.0, 0.0], (0.0, 0.0))) ≈ reshape([1.0+√2/2, 1.0+√6/2, 2.0], 3, 1)
+    @test rotate([2.0; 2.0; 2.0;;], pi/12, axis=([0.0, 1.0, 1.0], (pi/2, 0.0))) ≈ [2.0; 1.0+√2/2; 1.0+√6/2;;]
+    @test rotate([2.0; 2.0; 2.0;;], pi/12, axis=([1.0, 0.0, 1.0], (pi/2, pi/2))) ≈ [1.0+√6/2; 2.0; 1.0+√2/2;;]
+    @test rotate([2.0; 2.0; 2.0;;], pi/12, axis=([1.0, 1.0, 0.0], (0.0, 0.0))) ≈ [1.0+√2/2; 1.0+√6/2; 2.0;;]
+
+    @test rotate(OffsetArray([1.0, 0.0], -2:-1), pi/2) ≈ OffsetArray([0.0, 1.0], -2:-1)
+    @test rotate(OffsetArray([1.0 2.0; 1.0 2.0], -2:-1, -4:-3), pi/4, axis=(OffsetArray([1.0, 1.0], -2:-1), (0.0, 0.0))) ≈ OffsetArray([1.0 1.0; 1.0 1.0+√2.0], -2:-1, -4:-3)
+    @test rotate(OffsetArray([2.0; 2.0; 2.0;;], -3:-1, -4:-4), pi/12, axis=(OffsetArray([0.0, 1.0, 1.0], -3:-1), (pi/2, 0.0))) ≈ OffsetArray([2.0; 1.0+√2/2; 1.0+√6/2;;], -3:-1, -4:-4)
+    @test rotate(OffsetArray([2.0; 2.0; 2.0;;], -3:-1, -4:-4), pi/12, axis=(OffsetArray([1.0, 0.0, 1.0], -3:-1), (pi/2, pi/2))) ≈ OffsetArray([1.0+√6/2; 2.0; 1.0+√2/2;;], -3:-1, -4:-4)
+    @test rotate(OffsetArray([2.0; 2.0; 2.0;;], -3:-1, -4:-4), pi/12, axis=(OffsetArray([1.0, 1.0, 0.0], -3:-1), (0.0, 0.0))) ≈ OffsetArray([1.0+√2/2; 1.0+√6/2; 2.0;;], -3:-1, -4:-4)
+end
+
+@testset "translate" begin
+    @test translate([1.0, 2.0], [1.0, 2.0]) == [2.0, 4.0]
+    @test translate([1.0 2.0; 3.0 4.0], [1.0, 2.0]) == [2.0 3.0; 5.0 6.0]
+    @test translate(OffsetArray([1.0, 2.0], -2:-1), OffsetArray([1.0, 2.0], -2:-1)) == OffsetArray([2.0, 4.0], -2:-1)
+    @test translate(OffsetArray([1.0 2.0; 3.0 4.0], -2:-1, -4:-3), OffsetArray([1.0, 2.0], -2:-1)) == OffsetArray([2.0 3.0; 5.0 6.0], -2:-1, -4:-3)
 end
 
 @testset "tile" begin
-    @test tile(reshape([0.0, 0.0], 2, 1), [[1.0, 0.0], [0.0, 1.0]], ((0.5, 0.5), (-0.5, -0.5))) == [0.5 -0.5; 0.5 -0.5]
+    @test tile([0.0, 0.0], [[1.0, 0.0], [0.0, 1.0]], ((0.5, 0.5), (-0.5, -0.5))) == [0.5 -0.5; 0.5 -0.5]
+    @test tile(OffsetArray([0.0, 0.0], -2:-1), [OffsetArray([1.0, 0.0], -2:-1), OffsetArray([0.0, 1.0], -2:-1)], ((0.5, 0.5), (-0.5, -0.5))) == OffsetArray([0.5 -0.5; 0.5 -0.5], -2:-1, 1:2)
 end
 
 @testset "minimumlengths" begin
-    @test minimumlengths(reshape([0.0, 0.0], 2, 1), [[1.0, 0.0], [0.0, 1.0]], 7) ≈ [0.0, 1.0, √2, 2.0, √5, 2*√2, 3.0, √10]
+    @test minimumlengths([0.0, 0.0], [[1.0, 0.0], [0.0, 1.0]], 7) ≈ [0.0, 1.0, √2, 2.0, √5, 2*√2, 3.0, √10]
+    @test minimumlengths(OffsetArray([0.0, 0.0], -2:-1), [[1.0, 0.0], [0.0, 1.0]], 7) ≈ [0.0, 1.0, √2, 2.0, √5, 2*√2, 3.0, √10]
 end
 
 @testset "Neighbors" begin
@@ -156,11 +200,13 @@ end
 end
 
 @testset "interlinks" begin
-    ps1 = [0.0 1.0; 0.0 0.0]
-    ps2 = [0.0 1.0; 1.0 1.0]
-    neighbors = Neighbors(1=>1.0)
-    links = [(1, 1, 1), (1, 2, 2)]
-    @test interlinks(ps1, ps2, neighbors) == links
+    ps₁ = [0.0 1.0; 0.0 0.0]
+    ps₂ = [0.0 1.0; 1.0 1.0]
+    @test interlinks(ps₁, ps₂, Neighbors(1=>1.0)) == [(1, 1, 1), (1, 2, 2)]
+
+    ps₁ = OffsetArray([0.0 1.0; 0.0 0.0], -2:-1, -4:-3)
+    ps₂ = OffsetArray([0.0 1.0; 1.0 1.0], -2:-1, -6:-5)
+    @test interlinks(ps₁, ps₂, Neighbors(1=>1.0)) == [(1, -4, -6), (1, -3, -5)]
 end
 
 @testset "Point" begin
@@ -374,7 +420,7 @@ end
     save("MultiBands.dat", path, [band -band])
 
     energies = LinRange(-6.0, 6.0, 401)
-    spectrum = [-imag(1/(energies[i]+0.1im-band[j])) for i=1:length(energies), j=1:length(band)]
+    spectrum = [-imag(1/(e+0.1im-b)) for e in energies, b in band]
     savefig(plot(path, energies, spectrum), "SingleSpectrum.png")
     save("SingleSpectrum.dat", path, energies, spectrum)
 

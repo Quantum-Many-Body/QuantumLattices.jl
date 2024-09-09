@@ -2,11 +2,11 @@ module Spatials
 
 using Base.Iterators: flatten, product
 using DelimitedFiles: writedlm
-using LinearAlgebra: cross, dot, norm
+using LinearAlgebra: cross, det, dot, norm
 using NearestNeighbors: KDTree, inrange, knn
 using Printf: @printf, @sprintf
 using RecipesBase: RecipesBase, @recipe, @series, @layout
-using StaticArrays: SVector
+using StaticArrays: MVector, SVector
 using ..QuantumNumbers: Momenta, Momentum, periods
 using ..Toolkit: atol, rtol, efficientoperations, CompositeDict, Float, SimpleNamedVectorSpace, Segment, VectorSpaceCartesian, VectorSpaceDirectSummed, VectorSpaceStyle, getcontent, VectorSpaceEnumerative
 
@@ -30,9 +30,8 @@ Get the distance between two points.
     Compared to `norm(p₁-p₂)`, this function avoids the memory allocation for `p₁-p₂`, thus is more efficient.
 """
 function distance(p₁::AbstractVector{<:Number}, p₂::AbstractVector{<:Number})
-    @assert length(p₁)==length(p₂) "distance error: mismatched length of input vectors."
     result = zero(promote_type(eltype(p₁), eltype(p₂)))
-    for i = 1:length(p₁)
+    for i in eachindex(p₁, p₂)
         result = result + (p₁[i]-p₂[i])^2
     end
     return sqrt(result)
@@ -45,8 +44,13 @@ Get the azimuth angle in radians of a vector.
 """
 function azimuth(v::AbstractVector{<:Number})
     @assert length(v)∈(1, 2, 3) "azimuth error: wrong dimensioned input vector."
-    result = acos(v[1]/(length(v)==3 ? sqrt(v[1]^2+v[2]^2) : norm(v)))
-    (length(v)>1 && v[2]<0) && (result = 2*convert(typeof(result), pi) - result)
+    if length(v)==1
+        result = acos(first(v)/abs(first(v)))
+    else
+        e₁, e₂ = v
+        result = acos(e₁/(length(v)==3 ? sqrt(e₁^2+e₂^2) : norm(v)))
+        e₂<0 && (result = 2*convert(typeof(result), pi) - result)
+    end
     isnan(result) && (result = zero(result))
     return result
 end
@@ -58,8 +62,13 @@ Get the azimuth angle in degrees of a vector.
 """
 function azimuthd(v::AbstractVector{<:Number})
     @assert length(v)∈(1, 2, 3) "azimuthd error: wrong dimensioned input vector."
-    result = acosd(v[1]/(length(v)==3 ? sqrt(v[1]^2+v[2]^2) : norm(v)))
-    (length(v)>1 && v[2]<0) && (result = 360 - result)
+    if length(v)==1
+        result = acosd(first(v)/abs(first(v)))
+    else
+        e₁, e₂ = v
+        result = acosd(e₁/(length(v)==3 ? sqrt(e₁^2+e₂^2) : norm(v)))
+        e₂<0 && (result = 360 - result)
+    end
     isnan(result) && (result = zero(result))
     return result
 end
@@ -71,7 +80,7 @@ Get the polar angle in radians of a vector.
 """
 function polar(v::AbstractVector{<:Number})
     @assert length(v)==3 "polard error: wrong dimensioned input vector."
-    return acos(v[3]/norm(v))
+    return acos(v[end]/norm(v))
 end
 
 """
@@ -81,7 +90,7 @@ Get the polar angle in degrees of a vector.
 """
 function polard(v::AbstractVector{<:Number})
     @assert length(v)==3 "polard error: wrong dimensioned input vector."
-    return acosd(v[3]/norm(v))
+    return acosd(v[end]/norm(v))
 end
 
 """
@@ -122,7 +131,7 @@ function direction(v::AbstractVector{<:Number}, args...)
 end
 
 """
-    volume(vectors::AbstractVector{<:SVector}) -> Number
+    volume(vectors::AbstractVector{<:AbstractVector{<:Number}}) -> Number
     volume(v::AbstractVector{<:Number}) -> Number
     volume(v₁::AbstractVector{<:Number}, v₂::AbstractVector{<:Number}) -> Number
     volume(v₁::AbstractVector{<:Number}, v₂::AbstractVector{<:Number}, v₃::AbstractVector{<:Number}) -> Number
@@ -132,22 +141,23 @@ Get the volume spanned by the input vectors.
 function volume(vectors::AbstractVector{<:AbstractVector{<:Number}})
     @assert length(vectors)∈(1, 2, 3) "volume error: unsupported number of vectors."
     length(vectors)==1 && return volume(first(vectors))
-    length(vectors)==2 && return volume(vectors[1], vectors[2])
-    return volume(vectors[1], vectors[2], vectors[3])
+    length(vectors)==2 && return volume(first(vectors), last(vectors))
+    v₁, v₂, v₃ = vectors
+    return volume(v₁, v₂, v₃)
 end
 @inline volume(v::AbstractVector{<:Number}) = norm(v)
 function volume(v₁::AbstractVector{<:Number}, v₂::AbstractVector{<:Number})
     @assert length(v₁)==length(v₂) "volume error: mismatched dimension of vectors."
     @assert length(v₁)∈(1, 2, 3) "volume error: unsupported dimension of vectors."
     length(v₁)==1 && return zero(eltype(v₁))
-    length(v₂)==2 && return abs(v₁[1]*v₂[2]-v₁[2]*v₂[1])
-    return norm(cross(v₁, v₂))
+    length(v₁)==2 && return abs(det(hcat(SVector{2}(v₁), SVector{2}(v₂))))
+    return norm(cross(SVector{3}(v₁), SVector{3}(v₂)))
 end
 function volume(v₁::AbstractVector{<:Number}, v₂::AbstractVector{<:Number}, v₃::AbstractVector{<:Number})
     @assert length(v₁)==length(v₂)==length(v₃) "volume error: mismatched dimension of vectors."
     @assert length(v₁)∈(1, 2, 3) "volume error: unsupported dimension of vectors."
     length(v₁)∈(1, 2) && return zero(eltype(v₁))
-    return v₁[1]*(v₂[2]*v₃[3]-v₂[3]*v₃[2]) + v₁[2]*(v₂[3]*v₃[1]-v₂[1]*v₃[3]) + v₁[3]*(v₂[1]*v₃[2]-v₂[2]*v₃[1])
+    return abs(det(hcat(SVector{3}(v₁), SVector{3}(v₂), SVector{3}(v₃))))
 end
 
 """
@@ -168,36 +178,32 @@ function decompose(v₀::AbstractVector{<:Number}, v₁::AbstractVector{<:Number
 end
 function decompose(v₀::AbstractVector{<:Number}, v₁::AbstractVector{<:Number}, v₂::AbstractVector{<:Number})
     @assert length(v₀)==length(v₁)==length(v₂) "decompose error: mismatched length of input vectors."
-    @assert length(v₀)==2 || length(v₀)==3 "decompose error: unsupported dimension($(length(v₀))) of input vectors."
+    @assert 1<length(v₀)<4 "decompose error: unsupported dimension($(length(v₀))) of input vectors."
     if length(v₀) == 2
-        det = v₁[1]*v₂[2] - v₁[2]*v₂[1]
-        x₁ = (v₀[1]*v₂[2]-v₀[2]*v₂[1]) / det
-        x₂ = (v₀[2]*v₁[1]-v₀[1]*v₁[2]) / det
+        result = inv(hcat(SVector{2}(v₁), SVector{2}(v₂))) * SVector{2}(v₀)
+        return result[1], result[2]
     else
-        v₃ = SVector{3, promote_type(eltype(v₀), eltype(v₁), eltype(v₂))}(v₁[2]*v₂[3]-v₁[3]*v₂[2], v₁[3]*v₂[1]-v₁[1]*v₂[3], v₁[1]*v₂[2]-v₁[2]*v₂[1])
-        x₁, x₂, x₃ = decompose(v₀, v₁, v₂, v₃)
+        v₁, v₂ = SVector{3}(v₁), SVector{3}(v₂)
+        x₁, x₂, x₃ = decompose(v₀, v₁, v₂, cross(v₁, v₂))
         @assert isapprox(x₃, 0.0, atol=atol, rtol=rtol) "decompose error: insufficient basis vectors."
+        return x₁, x₂
     end
-    return x₁, x₂
 end
 function decompose(v₀::AbstractVector{<:Number}, v₁::AbstractVector{<:Number}, v₂::AbstractVector{<:Number}, v₃::AbstractVector{<:Number})
     @assert length(v₀)==length(v₁)==length(v₂)==length(v₃) "decompose error: mismatched length of input vectors."
     @assert length(v₀)==3 "decompose error: unsupported dimension($(length(v₀))) of input vectors."
-    V = volume(v₁, v₂, v₃)
-    r₁ = (v₂[2]*v₃[3]/V-v₂[3]*v₃[2]/V, v₂[3]*v₃[1]/V-v₂[1]*v₃[3]/V, v₂[1]*v₃[2]/V-v₂[2]*v₃[1]/V)
-    r₂ = (v₃[2]*v₁[3]/V-v₃[3]*v₁[2]/V, v₃[3]*v₁[1]/V-v₃[1]*v₁[3]/V, v₃[1]*v₁[2]/V-v₃[2]*v₁[1]/V)
-    r₃ = (v₁[2]*v₂[3]/V-v₁[3]*v₂[2]/V, v₁[3]*v₂[1]/V-v₁[1]*v₂[3]/V, v₁[1]*v₂[2]/V-v₁[2]*v₂[1]/V)
-    return dot(r₁, v₀), dot(r₂, v₀), dot(r₃, v₀)
+    result = inv(hcat(SVector{3}(v₁), SVector{3}(v₂), SVector{3}(v₃))) * SVector{3}(v₀)
+    return result[1], result[2], result[3]
 end
 function decompose(v₀::AbstractVector{<:Number}, vs::AbstractVector{<:AbstractVector{<:Number}})
     @assert 0<length(vs)<4 "decompose error: not supported number ($(length(vs))) of vectors."
-    result = promote_type(eltype(v₀), eltype(eltype(vs)))[]
     if length(vs)==1
-        append!(result, decompose(v₀, vs[1]))
+        result = collect(decompose(v₀, first(vs)))
     elseif length(vs)==2
-        append!(result, decompose(v₀, vs[1], vs[2]))
+        result = collect(decompose(v₀, first(vs), last(vs)))
     else
-        append!(result, decompose(v₀, vs[1], vs[2], vs[3]))
+        v₁, v₂, v₃ = vs
+        result = collect(decompose(v₀, v₁, v₂, v₃))
     end
     return result
 end
@@ -230,7 +236,7 @@ end
 
 Judge whether a point belongs to the interior of a triangle whose vertexes are `p₁`, 'p₂' and `p₃` with the give tolerance. `vertexes` and `edges` define whether the interior should contain the vertexes or edges, respectively.
 !!! note
-    1. The vertexes are in the order (p₁, p₂, p₃) and the edges are in the order (p1p2, p2p3, p3p1).
+    1. The vertexes are in the order (p₁, p₂, p₃) and the edges are in the order (p₁p₂, p₂p₃, p₃p₁).
     2. The edges do not contain the vertexes.
 """
 function isintratriangle(
@@ -238,11 +244,13 @@ function isintratriangle(
     vertexes::NTuple{3, Bool}=(true, true, true), edges::NTuple{3, Bool}=(true, true, true), atol::Real=atol, rtol::Real=rtol
 )
     @assert length(p)==length(p₁)==length(p₂)==length(p₃) "isintratriangle error: shape mismatch of input point and triangle."
-    @assert length(p)==2 || length(p)==3 "isintratriangle error: unsupported dimension($(length(p))) of input points."
+    @assert 1<length(p)<4 "isintratriangle error: unsupported dimension($(length(p))) of input points."
     x = if length(p) == 2
-        decompose(SVector(p[1]-p₁[1], p[2]-p₁[2]), SVector(p₂[1]-p₁[1], p₂[2]-p₁[2]), SVector(p₃[1]-p₁[1], p₃[2]-p₁[2]))
+        p, p₁, p₂, p₃ = SVector{2}(p), SVector{2}(p₁), SVector{2}(p₂), SVector{2}(p₃)
+        decompose(p-p₁, p₂-p₁, p₃-p₁)
     else
-        decompose(SVector(p[1]-p₁[1], p[2]-p₁[2], p[3]-p₁[3]), SVector(p₂[1]-p₁[1], p₂[2]-p₁[2], p₂[3]-p₁[3]), SVector(p₃[1]-p₁[1], p₃[2]-p₁[2], p₃[3]-p₁[3]))
+        p, p₁, p₂, p₃ = SVector{3}(p), SVector{3}(p₁), SVector{3}(p₂), SVector{3}(p₃)
+        decompose(p-p₁, p₂-p₁, p₃-p₁)
     end
     x₁_approx_0, x₂_approx_0 = isapprox(x[1], 0.0, atol=atol, rtol=rtol), isapprox(x[2], 0.0, atol=atol, rtol=rtol)
     x₁_approx_1, x₂_approx_1 = isapprox(x[1], 1.0, atol=atol, rtol=rtol), isapprox(x[2], 1.0, atol=atol, rtol=rtol)
@@ -303,11 +311,12 @@ function issubordinate(coordinate::AbstractVector{<:Number}, vectors::AbstractVe
     @assert length(vectors)∈(1, 2, 3) "issubordinate error: the number of input basis vectors must be 1, 2 or 3."
     fapprox = xi->isapprox(round(xi), xi, atol=atol, rtol=rtol)
     if length(vectors) == 1
-        result = mapreduce(fapprox, &, decompose(coordinate, vectors[1]))
+        result = mapreduce(fapprox, &, decompose(coordinate, first(vectors)))
     elseif length(vectors) == 2
-        result = mapreduce(fapprox, &, decompose(coordinate, vectors[1], vectors[2]))
+        result = mapreduce(fapprox, &, decompose(coordinate, first(vectors), last(vectors)))
     else
-        result = mapreduce(fapprox, &, decompose(coordinate, vectors[1], vectors[2], vectors[3]))
+        v₁, v₂, v₃ = vectors
+        result = mapreduce(fapprox, &, decompose(coordinate, v₁, v₂, v₃))
     end
     return result
 end
@@ -320,38 +329,40 @@ Get the reciprocals dual to the input vectors.
 function reciprocals(vectors::AbstractVector{<:AbstractVector{<:Number}})
     @assert length(vectors)<4 "reciprocals error: the number of input vectors should not be greater than 3."
     @assert mapreduce(v->length(v)∈(1, 2, 3), &, vectors, init=true) "reciprocals error: all input vectors must be 1, 2 or 3 dimensional."
-    vtype = promote_type(Float, eltype(eltype(vectors)))
+    dpi = 2convert(promote_type(Float, eltype(eltype(vectors))), pi)
     if length(vectors) == 1
-        return vector(typeof(vectors), (2*convert(vtype, pi)/mapreduce(vi->vi^2, +, vectors[1])*vectors[1],))
+        v = first(vectors)
+        return vector(typeof(vectors), (dpi/mapreduce(vᵢ->vᵢ^2, +, v)*v,))
     elseif length(vectors) == 2
-        v₁, v₂ = vectors[1], vectors[2]
+        v₁, v₂ = first(vectors), last(vectors)
         @assert length(v₁)==length(v₂)>1 "reciprocals error: mismatched length of input vectors."
         if length(v₁) == 2
-            det = 2*convert(vtype, pi) / (v₁[1]*v₂[2]-v₁[2]*v₂[1])
-            rv₁ = vector(eltype(vectors), (det*v₂[2], -det*v₂[1]))
-            rv₂ = vector(eltype(vectors), (-det*v₁[2], det*v₁[1]))
+            m = dpi* inv(hcat(SVector{2}(v₁), SVector{2}(v₂)))
+            rv₁ = vector(eltype(vectors), Tuple(m[1, :]))
+            rv₂ = vector(eltype(vectors), Tuple(m[2, :]))
+            return vector(typeof(vectors), (rv₁, rv₂))
         else
-            v₃ = SVector{3, vtype}(v₁[2]*v₂[3]-v₁[3]*v₂[2], v₁[3]*v₂[1]-v₁[1]*v₂[3], v₁[1]*v₂[2]-v₁[2]*v₂[1])
-            V = 2*convert(eltype(v₃), pi) / volume(v₁, v₂, v₃)
-            rv₁ = vector(eltype(vectors), (v₂[2]*v₃[3]*V-v₂[3]*v₃[2]*V, v₂[3]*v₃[1]*V-v₂[1]*v₃[3]*V, v₂[1]*v₃[2]*V-v₂[2]*v₃[1]*V))
-            rv₂ = vector(eltype(vectors), (v₃[2]*v₁[3]*V-v₃[3]*v₁[2]*V, v₃[3]*v₁[1]*V-v₃[1]*v₁[3]*V, v₃[1]*v₁[2]*V-v₃[2]*v₁[1]*V))
+            v₁, v₂ = SVector{3}(v₁), SVector{3}(v₂)
+            m = dpi * inv(hcat(v₁, v₂, cross(v₁, v₂)))
+            rv₁ = vector(eltype(vectors), Tuple(m[1, :]))
+            rv₂ = vector(eltype(vectors), Tuple(m[2, :]))
+            return vector(typeof(vectors), (rv₁, rv₂))
         end
-        return vector(typeof(vectors), (rv₁, rv₂))
     elseif length(vectors) == 3
         v₁, v₂, v₃ = vectors
-        V = 2*convert(vtype, pi) / volume(v₁, v₂, v₃)
-        rv₁ = vector(eltype(vectors), (v₂[2]*v₃[3]*V-v₂[3]*v₃[2]*V, v₂[3]*v₃[1]*V-v₂[1]*v₃[3]*V, v₂[1]*v₃[2]*V-v₂[2]*v₃[1]*V))
-        rv₂ = vector(eltype(vectors), (v₃[2]*v₁[3]*V-v₃[3]*v₁[2]*V, v₃[3]*v₁[1]*V-v₃[1]*v₁[3]*V, v₃[1]*v₁[2]*V-v₃[2]*v₁[1]*V))
-        rv₃ = vector(eltype(vectors), (v₁[2]*v₂[3]*V-v₁[3]*v₂[2]*V, v₁[3]*v₂[1]*V-v₁[1]*v₂[3]*V, v₁[1]*v₂[2]*V-v₁[2]*v₂[1]*V))
+        m = dpi * inv(hcat(SVector{3}(v₁), SVector{3}(v₂), SVector{3}(v₃)))
+        rv₁ = vector(eltype(vectors), Tuple(m[1, :]))
+        rv₂ = vector(eltype(vectors), Tuple(m[2, :]))
+        rv₃ = vector(eltype(vectors), Tuple(m[3, :]))
         return vector(typeof(vectors), (rv₁, rv₂, rv₃))
     end
 end
-@inline vector(::Type{<:Vector}, v::Tuple) = collect(v)
+@inline vector(::Type{<:AbstractVector}, v::Tuple) = collect(v)
 @inline vector(::Type{<:SVector}, v::Tuple) = SVector(v)
 
 """
-    rotate(vector::AbstractVector{<:Number}, angle::Number; axis::Tuple{Union{AbstractVector{<:Number}, Nothing}, Tuple{<:Number, <:Number}}=(nothing, (0, 0))) -> Vector{<:Number}
-    rotate(cluster::AbstractMatrix{<:Number}, angle::Number; axis::Tuple{Union{AbstractVector{<:Number}, Nothing}, Tuple{<:Number, <:Number}}=(nothing, (0, 0))) -> Matrix{<:Number}
+    rotate(vector::AbstractVector{<:Number}, angle::Number; axis::Tuple{Union{AbstractVector{<:Number}, Nothing}, Tuple{<:Number, <:Number}}=(nothing, (0, 0))) -> AbstrctVector{<:Number}
+    rotate(cluster::AbstractMatrix{<:Number}, angle::Number; axis::Tuple{Union{AbstractVector{<:Number}, Nothing}, Tuple{<:Number, <:Number}}=(nothing, (0, 0))) -> AbstractMatrix{<:Number}
 
 Get a rotated vector/cluster of the original one by a certain angle around an axis.
 
@@ -362,62 +373,78 @@ The axis is determined by a point it gets through (`nothing` can be used to deno
     3. When the input vectors are 2 dimensional, both the polar and azimuth of the axis must be 0.
 """
 @inline function rotate(vector::AbstractVector{<:Number}, angle::Number; axis::Tuple{Union{AbstractVector{<:Number}, Nothing}, Tuple{<:Number, <:Number}}=(nothing, (0, 0)))
-    return reshape(rotate(reshape(vector, :, 1), angle; axis=axis), :)
+    return reshape(rotate(reshape(vector, axes(vector, 1), 1), angle; axis=axis), axes(vector, 1))
 end
 function rotate(cluster::AbstractMatrix{<:Number}, angle::Number; axis::Tuple{Union{AbstractVector{<:Number}, Nothing}, Tuple{<:Number, <:Number}}=(nothing, (0, 0)))
     @assert size(cluster, 1)∈(2, 3) "rotate error: only 2 and 3 dimensional vectors can be rotated."
     datatype = promote_type(eltype(cluster), typeof(angle), Float)
-    center, theta, phi = (isnothing(axis[1]) ? zeros(datatype, size(cluster, 1)) : axis[1]), axis[2][1], axis[2][2]
-    @assert length(center)==size(cluster, 1) "rotate error: mismatched shape of the input cluster and the point on axis."
+    center, theta, phi = (isnothing(axis[1]) ? fill!(similar(cluster, axes(cluster, 1)), zero(datatype)) : axis[1]), axis[2][1], axis[2][2]
+    @assert axes(center, 1)==axes(cluster, 1) "rotate error: mismatched shape of the input cluster and the point on axis."
     if length(center) == 2
         @assert isapprox(theta, 0, atol=atol, rtol=rtol) && isapprox(phi, 0, atol=atol, rtol=rtol) "rotate error: both the polar and azimuth of the axis for 2d vectors must be 0."
     end
     cosθ, sinθ = cos(angle), sin(angle)
-    k, w = SVector{3, datatype}(sin(theta)*cos(phi), sin(theta)*sin(phi), cos(theta)), zeros(datatype, 3)
-    result = zeros(datatype, size(cluster))
-    for i = 1:size(cluster, 2)
-        for j = 1:size(cluster, 1)
-            w[j] = cluster[j, i] - center[j]
+    k, w = SVector{3, datatype}(sin(theta)*cos(phi), sin(theta)*sin(phi), cos(theta)), zero(MVector{3, datatype})
+    result = similar(cluster, datatype, axes(cluster))
+    for i in axes(cluster, 2)
+        for (l, j) in enumerate(axes(cluster, 1))
+            w[l] = cluster[j, i] - center[j]
         end
         inner = dot(k, w)
-        outer = (k[2]*w[3]-k[3]*w[2], k[3]*w[1]-k[1]*w[3], k[1]*w[2]-k[2]*w[1])
-        for j = 1:size(cluster, 1)
-            result[j, i] = w[j]*cosθ + outer[j]*sinθ + k[j]*inner*(1-cosθ) + center[j]
+        outer = cross(k, w)
+        for (l, j) in enumerate(axes(cluster, 1))
+            result[j, i] = w[l]*cosθ + outer[l]*sinθ + k[l]*inner*(1-cosθ) + center[j]
         end
     end
     return result
 end
 
 """
-    translate(cluster::AbstractMatrix{<:Number}, vector::AbstractVector{<:Number}) -> Matrix{vector|>eltype}
+    translate(cluster::AbstractVector{<:Number}, vector::AbstractVector{<:Number}) -> AbstractVector{<:Number}
+    translate(cluster::AbstractMatrix{<:Number}, vector::AbstractVector{<:Number}) -> AbstractMatrix{<:Number}
 
 Get the translated cluster of the original one by a vector.
 """
-@inline translate(cluster::AbstractMatrix{<:Number}, vector::AbstractVector{<:Number}) = cluster .+ reshape(vector, (vector|>length, 1))
+@inline translate(cluster::AbstractVector{<:Number}, vector::AbstractVector{<:Number}) = cluster + vector 
+function translate(cluster::AbstractMatrix{<:Number}, vector::AbstractVector{<:Number})
+    @assert axes(cluster, 1)==axes(vector, 1) "translate error: mismatched shape of the input cluster and the translation vector."
+    result = similar(cluster, axes(cluster))
+    for i in axes(cluster, 2)
+        for j in axes(cluster, 1)
+            result[j, i] = cluster[j, i] + vector[j]
+        end
+    end
+    return result
+end 
 
 """
-    tile(cluster::AbstractMatrix{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}, translations) -> Matrix{<:Number}
+    tile(cluster::AbstractVector{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}, translations) -> AbstractMatrix{<:Number}
+    tile(cluster::AbstractMatrix{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}, translations) -> AbstractMatrix{<:Number}
 
 Tile a supercluster by translations of the input cluster.
 
 Basically, the final supercluster is composed of several parts, each of which is a translation of the original cluster, with the translation vectors specified by `vectors` and each set of the translation indices contained in `translations`. When translation vectors are empty, a copy of the original cluster will be returned.
 """
+@inline tile(cluster::AbstractVector{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}, translations) = tile(reshape(cluster, axes(cluster, 1), 1), vectors, translations)
 function tile(cluster::AbstractMatrix{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}, translations)
     length(vectors)==0 && return copy(cluster)
-    length(translations)>0 && @assert length(vectors)==length(first(translations)) "tile error: mismatched shape of input vectors and translations."
+    if length(translations)>0
+        @assert length(vectors)==length(first(translations)) "tile error: mismatched shape of input vectors and translations."
+        @assert all(v->axes(v, 1)==axes(cluster, 1), vectors) "tile error: mismatched shape of input cluster and vectors."
+    end
     datatype = promote_type(eltype(cluster), eltype(eltype(vectors)), Float)
-    supercluster = zeros(datatype, size(cluster, 1), size(cluster, 2)*length(translations))
-    disp = zeros(datatype, size(cluster, 1))
+    supercluster = similar(cluster, datatype, axes(cluster, 1), size(cluster, 2)*length(translations))
+    disp = similar(cluster, datatype, axes(cluster, 1))
     for (i, translation) in enumerate(translations)
-        for i = 1:length(disp)
-            disp[i] = zero(datatype)
-            for j = 1:length(vectors)
-                disp[i] += vectors[j][i] * translation[j]
+        for k in eachindex(disp)
+            disp[k] = zero(datatype)
+            for (j, vector) in enumerate(vectors)
+                disp[k] += vector[k] * translation[j]
             end
         end
-        for j = 1:size(cluster, 2)
-            col = (i-1)*size(cluster, 2) + j
-            for row = 1:size(cluster, 1)
+        for (k, j) in enumerate(axes(cluster, 2))
+            col = (i-1)*size(cluster, 2) + k
+            for row in axes(cluster, 1)
                 supercluster[row, col] = cluster[row, j] + disp[row]
             end
         end
@@ -426,17 +453,22 @@ function tile(cluster::AbstractMatrix{<:Number}, vectors::AbstractVector{<:Abstr
 end
 
 """
+    minimumlengths(cluster::AbstractVector{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}, nneighbor::Int=1; coordination::Int=12) -> Vector{Float}
     minimumlengths(cluster::AbstractMatrix{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}, nneighbor::Int=1; coordination::Int=12) -> Vector{Float}
 
 Use kdtree to search the lowest several minimum bond lengths within a lattice translated by a cluster.
 
 When the translation vectors are not empty, the lattice will be considered periodic in the corresponding directions. Otherwise the lattice will be open in all directions. To search for the bonds across the periodic boundaries, the cluster will be pre-translated to become a supercluster, which has open boundaries but is large enough to contain all the nearest neighbors within the required order. The `coordination` parameter sets the average number of each order of nearest neighbors. If it is to small, larger bond lengths may not be searched, and the result will contain `Inf`. This is a sign that you may need a larger `coordination`. Another situation that `Inf` appears in the result occurs when the minimum lengths are searched in open lattices. Indeed, the cluster may be too small so that the required order just goes beyond it. In this case the warning message can be safely ignored.
 """
+@inline function minimumlengths(cluster::AbstractVector{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}, nneighbor::Int=1; coordination::Int=12)
+    return minimumlengths(reshape(cluster, axes(cluster, 1), 1), vectors, nneighbor; coordination=coordination)
+end
 function minimumlengths(cluster::AbstractMatrix{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}, nneighbor::Int=1; coordination::Int=12)
     @assert nneighbor>=0 "minimumlengths error: input nneighbor must be non negative."
     result = [Inf for i = 1:nneighbor]
     if size(cluster, 2) > 0
-        cluster, vectors = convert(Matrix{Float}, cluster), convert(Vector{Vector{Float}}, vectors)
+        cluster = convert(Matrix{Float}, reshape(cluster, size(cluster)))
+        vectors = [convert(Vector{Float}, reshape(vector, size(vector))) for vector in vectors]
         translations = reshape(product((-nneighbor:nneighbor for i = 1:length(vectors))...)|>collect, :)
         for translation in translations
             if length(translation)>0 && mapreduce(≠(0), |, translation)
@@ -472,7 +504,7 @@ struct Neighbors{K, V<:Number} <: CompositeDict{K, V}
     contents::Dict{K, V}
 end
 @inline Neighbors(pairs...) = Neighbors(Dict(pairs...))
-@inline Neighbors(lengths::Vector{<:Number}, ordinals=0:length(lengths)-1) = Neighbors(ordinal=>length for (ordinal, length) in zip(ordinals, lengths))
+@inline Neighbors(lengths::AbstractVector{<:Number}, ordinals=0:length(lengths)-1) = Neighbors(ordinal=>length for (ordinal, length) in zip(ordinals, lengths))
 @inline Base.max(neighbors::Neighbors) = max(values(neighbors)...)
 @inline nneighbor(neighbors::Neighbors{<:Integer}) = max(keys(neighbors)...)
 @inline nneighbor(neighbors::Neighbors) = length(neighbors)
@@ -483,19 +515,27 @@ end
 Use kdtree to get the intercluster nearest neighbors.
 """
 function interlinks(cluster₁::AbstractMatrix{<:Number}, cluster₂::AbstractMatrix{<:Number}, neighbors::Neighbors)
-    @assert size(cluster₁, 1)==size(cluster₂, 1) "interlinks error: mismatched space dimension of input clusters."
+    @assert axes(cluster₁, 1)==axes(cluster₂, 1) "interlinks error: mismatched space dimension of input clusters."
     result = Tuple{Int, Int, Int}[]
     length(neighbors)==0 && return result
-    for (i, indices) in enumerate(inrange(KDTree(convert(Matrix{Float}, cluster₂)), convert(Matrix{Float}, cluster₁), max(neighbors)+atol, true))
+    indexes₁, indexes₂ = collect(axes(cluster₁, 2)), collect(axes(cluster₂, 2))
+    cluster₁, cluster₂ = convert(Matrix{Float}, reshape(cluster₁, size(cluster₁))), convert(Matrix{Float}, reshape(cluster₂, size(cluster₂)))
+    exchange = false
+    if size(cluster₁, 2) > size(cluster₂, 2)
+        cluster₁, cluster₂ = cluster₂, cluster₁
+        exchange = true
+    end
+    for (i, indices) in enumerate(inrange(KDTree(cluster₂), cluster₁, max(neighbors)+atol, true))
         for j in indices
             dist = zero(promote_type(eltype(cluster₁), eltype(cluster₂)))
-            for k = 1:size(cluster₁, 1)
+            for k in axes(cluster₁, 1)
                 dist = dist + (cluster₂[k, j]-cluster₁[k, i])^2
             end
             dist = sqrt(dist)
             for (nb, len) in neighbors
                 if isapprox(len, dist, atol=atol, rtol=rtol)
-                    push!(result, (nb, j, i))
+                    first, second = exchange ? (j, i) : (i, j)
+                    push!(result, (nb, indexes₁[first], indexes₂[second]))
                     break
                 end
             end
@@ -784,7 +824,7 @@ function bonds!(bonds::Vector, lattice::AbstractLattice, neighbors::Neighbors)
     if length(translations) > 0
         superrcoordinates = tile(getcontent(lattice, :coordinates), getcontent(lattice, :vectors), translations)
         supericoordinates = tile(zero(getcontent(lattice, :coordinates)), getcontent(lattice, :vectors), translations)
-        for (k, index₁, index₂) in interlinks(getcontent(lattice, :coordinates), superrcoordinates, neighbors)
+        for (k, index₁, index₂) in interlinks(superrcoordinates, getcontent(lattice, :coordinates), neighbors)
             rcoordinate = SVector{dimension(lattice), dtype(lattice)}(ntuple(j->superrcoordinates[j, index₁], Val(dimension(lattice))))
             icoordinate = SVector{dimension(lattice), dtype(lattice)}(ntuple(j->supericoordinates[j, index₁], Val(dimension(lattice))))
             point₁ = Point((index₁-1)%length(lattice)+1, rcoordinate, icoordinate)
@@ -823,7 +863,7 @@ Define the recipe for the visualization of a lattice.
     end
     @series begin
         data = Vector{Float64}[]
-        for i = 1:dimension(lattice)
+        for _ in 1:dimension(lattice)
             push!(data, Float64[])
         end
         for bond in bonds(lattice, neighbors)
