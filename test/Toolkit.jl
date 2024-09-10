@@ -1,3 +1,4 @@
+using OffsetArrays: OffsetArray
 using QuantumLattices.Toolkit
 using StaticArrays: SVector
 
@@ -91,6 +92,11 @@ end
     @test Combinations{1}("abc")|>collect == [('a',), ('b',), ('c',)]
     @test Combinations{2}("abc")|>collect == [('a', 'b'), ('a', 'c'), ('b', 'c')]
     @test Combinations{3}("abc")|>collect == [('a', 'b', 'c')]
+
+    @test Combinations{0}(OffsetArray(['a', 'b' , 'c'], -3:-1))|>collect == [()]
+    @test Combinations{1}(OffsetArray(['a', 'b' , 'c'], -3:-1))|>collect == [('a',), ('b',), ('c',)]
+    @test Combinations{2}(OffsetArray(['a', 'b' , 'c'], -3:-1))|>collect == [('a', 'b'), ('a', 'c'), ('b', 'c')]
+    @test Combinations{3}(OffsetArray(['a', 'b' , 'c'], -3:-1))|>collect == [('a', 'b', 'c')]
 end
 
 @testset "DuplicateCombinations" begin
@@ -98,6 +104,11 @@ end
     @test DuplicateCombinations{1}("abc")|>collect == [('a',), ('b',), ('c',)]
     @test DuplicateCombinations{2}("abc")|>collect == [('a', 'a'), ('a', 'b'), ('a', 'c'), ('b', 'b'), ('b', 'c'), ('c', 'c')]
     @test DuplicateCombinations{3}("abc")|>collect == [('a', 'a', 'a'), ('a', 'a', 'b'), ('a', 'a', 'c'), ('a', 'b', 'b'), ('a', 'b', 'c'), ('a', 'c', 'c'), ('b', 'b', 'b'), ('b', 'b', 'c'), ('b', 'c', 'c'), ('c', 'c', 'c')]
+
+    @test DuplicateCombinations{0}(OffsetArray(['a', 'b' , 'c'], -3:-1))|>collect == [()]
+    @test DuplicateCombinations{1}(OffsetArray(['a', 'b' , 'c'], -3:-1))|>collect == [('a',), ('b',), ('c',)]
+    @test DuplicateCombinations{2}(OffsetArray(['a', 'b' , 'c'], -3:-1))|>collect == [('a', 'a'), ('a', 'b'), ('a', 'c'), ('b', 'b'), ('b', 'c'), ('c', 'c')]
+    @test DuplicateCombinations{3}(OffsetArray(['a', 'b' , 'c'], -3:-1))|>collect == [('a', 'a', 'a'), ('a', 'a', 'b'), ('a', 'a', 'c'), ('a', 'b', 'b'), ('a', 'b', 'c'), ('a', 'c', 'c'), ('b', 'b', 'b'), ('b', 'b', 'c'), ('b', 'c', 'c'), ('c', 'c', 'c')]
 end
 
 @testset "Permutations" begin
@@ -105,6 +116,11 @@ end
     @test Permutations{1}("abc")|>collect == [('a',), ('b',), ('c',)]
     @test Permutations{2}("abc")|>collect == [('a', 'b'), ('a', 'c'), ('b', 'a'), ('b', 'c'), ('c', 'a'), ('c', 'b')]
     @test Permutations{3}("abc")|>collect == [('a', 'b', 'c'), ('a', 'c', 'b'), ('b', 'a', 'c'), ('b', 'c', 'a'), ('c', 'a', 'b'), ('c', 'b', 'a')]
+
+    @test Permutations{0}(OffsetArray(['a', 'b' , 'c'], -3:-1))|>collect == [()]
+    @test Permutations{1}(OffsetArray(['a', 'b' , 'c'], -3:-1))|>collect == [('a',), ('b',), ('c',)]
+    @test Permutations{2}(OffsetArray(['a', 'b' , 'c'], -3:-1))|>collect == [('a', 'b'), ('a', 'c'), ('b', 'a'), ('b', 'c'), ('c', 'a'), ('c', 'b')]
+    @test Permutations{3}(OffsetArray(['a', 'b' , 'c'], -3:-1))|>collect == [('a', 'b', 'c'), ('a', 'c', 'b'), ('b', 'a', 'c'), ('b', 'c', 'a'), ('c', 'a', 'b'), ('c', 'b', 'a')]
 end
 
 @testset "DuplicatePermutations" begin
@@ -112,6 +128,11 @@ end
     @test DuplicatePermutations{1}("abc")|>collect == [('a',), ('b',), ('c',)]
     @test DuplicatePermutations{2}("abc")|>collect == [('a', 'a'), ('a', 'b'), ('a', 'c'), ('b', 'a'), ('b', 'b'), ('b', 'c'), ('c', 'a'), ('c', 'b'), ('c', 'c')]
     @test DuplicatePermutations{3}("abc")|>collect == [(i, j, k) for i∈"abc" for j∈"abc" for k∈"abc"]
+
+    @test DuplicatePermutations{0}(OffsetArray(['a', 'b' , 'c'], -3:-1))|>collect == [()]
+    @test DuplicatePermutations{1}(OffsetArray(['a', 'b' , 'c'], -3:-1))|>collect == [('a',), ('b',), ('c',)]
+    @test DuplicatePermutations{2}(OffsetArray(['a', 'b' , 'c'], -3:-1))|>collect == [('a', 'a'), ('a', 'b'), ('a', 'c'), ('b', 'a'), ('b', 'b'), ('b', 'c'), ('c', 'a'), ('c', 'b'), ('c', 'c')]
+    @test DuplicatePermutations{3}(OffsetArray(['a', 'b' , 'c'], -3:-1))|>collect == [(i, j, k) for i∈"abc" for j∈"abc" for k∈"abc"]
 end
 
 abstract type FT{T} end
@@ -223,16 +244,16 @@ end
     @test dissolve(b, getindex, (2,)) == ("abcd", 2)
 end
 
-struct EFO{F1, F2, F3}
-    f1::F1
-    f2::F2
-    f3::F3
+struct EFO{F₁, F₂, F₃}
+    f₁::F₁
+    f₂::F₂
+    f₃::F₃
 end
-Base.:(==)(fc1::EFO, fc2::EFO) = ==(efficientoperations, fc1, fc2)
-Base.isequal(fc1::EFO, fc2::EFO) = isequal(efficientoperations, fc1, fc2)
-Base.:<(fc1::EFO, fc2::EFO) = <(efficientoperations, fc1, fc2)
-Base.isless(fc1::EFO, fc2::EFO) = isless(efficientoperations, fc1, fc2)
-Base.isapprox(fc1::EFO, fc2::EFO; atol::Real=10^-5, rtol::Real=10^-5) = isapprox(efficientoperations, (:f1, :f2), fc1, fc2; atol=atol, rtol=rtol)
+Base.:(==)(fc₁::EFO, fc₂::EFO) = ==(efficientoperations, fc₁, fc₂)
+Base.isequal(fc₁::EFO, fc₂::EFO) = isequal(efficientoperations, fc₁, fc₂)
+Base.:<(fc₁::EFO, fc₂::EFO) = <(efficientoperations, fc₁, fc₂)
+Base.isless(fc₁::EFO, fc₂::EFO) = isless(efficientoperations, fc₁, fc₂)
+Base.isapprox(fc₁::EFO, fc₂::EFO; atol::Real=10^-5, rtol::Real=10^-5) = isapprox(efficientoperations, (:f₁, :f₂), fc₁, fc₂; atol=atol, rtol=rtol)
 Base.replace(fc::EFO; kwargs...) = replace(efficientoperations, fc; kwargs...)
 
 @testset "efficientoperations" begin
@@ -244,21 +265,21 @@ Base.replace(fc::EFO; kwargs...) = replace(efficientoperations, fc; kwargs...)
     @test isapprox(efficientoperations, (), (), ()) == true
     @test isapprox(efficientoperations, (), (), (1,)) == false
 
-    fc1, fc2 = EFO(1.0, 2, 3), EFO(1, 2, 3)
-    @test fc1 == fc2
-    @test isequal(fc1, fc2)
-    fc1, fc2 = EFO(1.0, 2, 3), EFO(1, 2, 4.0)
-    @test fc1 < fc2
-    @test isless(fc1, fc2)
+    fc₁, fc₂ = EFO(1.0, 2, 3), EFO(1, 2, 3)
+    @test fc₁ == fc₂
+    @test isequal(fc₁, fc₂)
+    fc₁, fc₂ = EFO(1.0, 2, 3), EFO(1, 2, 4.0)
+    @test fc₁ < fc₂
+    @test isless(fc₁, fc₂)
 
-    fc1, fc2 = EFO(1.0+10^-6, 2, 3), EFO(1, 2, 3)
-    @test fc1 ≈ fc2
-    fc1, fc2 = EFO(1.0, 2-10^-6, 3), EFO(1, 2, 3)
-    @test fc1 ≈ fc2
-    fc1, fc2 = EFO(1.0, 2, 3-10^-6), EFO(1, 2, 3)
-    @test fc1 ≉  fc2
+    fc₁, fc₂ = EFO(1.0+10^-6, 2, 3), EFO(1, 2, 3)
+    @test fc₁ ≈ fc₂
+    fc₁, fc₂ = EFO(1.0, 2-10^-6, 3), EFO(1, 2, 3)
+    @test fc₁ ≈ fc₂
+    fc₁, fc₂ = EFO(1.0, 2, 3-10^-6), EFO(1, 2, 3)
+    @test fc₁ ≉  fc₂
 
-    @test replace(EFO(1, 2, 3), f1='c') == EFO('c', 2, 3)
+    @test replace(EFO(1, 2, 3), f₁='c') == EFO('c', 2, 3)
 end
 
 struct CV{S, T} <: CompositeVector{T}
@@ -272,9 +293,8 @@ contentnames(::Type{<:CV}) = (:info, :contents)
 
     v = CV("Info", [1, 3, 2, 4])
     @test contentnames(typeof(v)) == (:info, :contents)
+    @test axes(v) == (Base.OneTo(4),)
     @test size(v) == (4,)
-    @test size(v, 1) == 4
-    @test length(v) == 4
     @test v == deepcopy(v)
     @test isequal(v, deepcopy(v))
     @test v[end] == 4
@@ -303,9 +323,6 @@ contentnames(::Type{<:CV}) = (:info, :contents)
     v = CV("Info", [1, 3, 2, 2, 4])
     @test empty(v) == CV("Info", Int[])
     @test collect(v) == [1, 3, 2, 2, 4]
-    @test keys(v) == keys([1, 3, 2, 2, 4])
-    @test values(v) == values([1, 3, 2, 2, 4])
-    @test pairs(v) == pairs([1, 3, 2, 2, 4])
     @test reverse(v) == CV("Info", [4, 2, 2, 3, 1])
     @test (sort(v) == CV("Info", [1, 2, 2, 3, 4])) && (v == CV("Info", [1, 3, 2, 2, 4]))
     @test (sort!(v) == CV("Info", [1, 2, 2, 3, 4])) && (v == CV("Info", [1, 2, 2, 3, 4]))
@@ -371,28 +388,30 @@ end
 @inline Base.issorted(vs::SimpleVectorSpace) = vs.sorted
 
 @testset "VectorSpaceEnumerative" begin
-    id0, id4 = (1, 0), (1, 4)
-    id1, id2, id3 = (1, 1), (1, 2), (1, 3)
-    vs = SimpleVectorSpace(true, (id1, id2, id3))
+    id₀, id₄ = (1, 0), (1, 4)
+    id₁, id₂, id₃ = (1, 1), (1, 2), (1, 3)
+    vs = SimpleVectorSpace(true, (id₁, id₂, id₃))
     @test vs == deepcopy(vs)
     @test isequal(vs, deepcopy(vs))
+    @test axes(vs) == (Base.OneTo(3),)
     @test vs|>size == (3,)
     @test vs|>length == 3
-    @test vs|>collect == [id1, id2, id3]
-    @test vs[1]==vs[CartesianIndex(1)]==id1 && vs[2]==vs[CartesianIndex(2)]==id2 && vs[3]==vs[CartesianIndex(3)]==id3
-    @test vs[[1, 2, 3]] == [id1, id2, id3]
-    @test searchsortedfirst(vs, id0)==1 && searchsortedfirst(vs, id4)==4
-    @test searchsortedfirst(vs, id1)==1 && searchsortedfirst(vs, id2)==2 && searchsortedfirst(vs, id3)==3
-    @test isnothing(findfirst(id0, vs)) && isnothing(findfirst(id4, vs))
-    @test findfirst(id1, vs)==1 && findfirst(id2, vs)==2 && findfirst(id3, vs)==3
-    @test (id0∉vs) && (id4 ∉ vs)
-    @test (id1∈vs) && (id2∈vs) && (id3 ∈ vs)
+    @test IndexStyle(vs) == IndexLinear()
+    @test vs|>collect == [id₁, id₂, id₃]
+    @test vs[1]==id₁ && vs[2]==id₂ && vs[3]==id₃
+    @test vs[[1, 2, 3]] == [id₁, id₂, id₃]
+    @test searchsortedfirst(vs, id₀)==1 && searchsortedfirst(vs, id₄)==4
+    @test searchsortedfirst(vs, id₁)==1 && searchsortedfirst(vs, id₂)==2 && searchsortedfirst(vs, id₃)==3
+    @test isnothing(findfirst(id₀, vs)) && isnothing(findfirst(id₄, vs))
+    @test findfirst(id₁, vs)==1 && findfirst(id₂, vs)==2 && findfirst(id₃, vs)==3
+    @test (id₀∉vs) && (id₄∉vs)
+    @test (id₁∈vs) && (id₂∈vs) && (id₃∈vs)
 
-    vs = SimpleVectorSpace(false, (id1, id2, id3))
-    @test searchsortedfirst(vs, id0)==4 && searchsortedfirst(vs, id4)==4
-    @test searchsortedfirst(vs, id1)==1 && searchsortedfirst(vs, id2)==2 && searchsortedfirst(vs, id3)==3
-    @test isnothing(findfirst(id0, vs)) && isnothing(findfirst(id4, vs))
-    @test findfirst(id1, vs)==1 && findfirst(id2, vs)==2 && findfirst(id3, vs)==3
+    vs = SimpleVectorSpace(false, (id₁, id₂, id₃))
+    @test searchsortedfirst(vs, id₀)==4 && searchsortedfirst(vs, id₄)==4
+    @test searchsortedfirst(vs, id₁)==1 && searchsortedfirst(vs, id₂)==2 && searchsortedfirst(vs, id₃)==3
+    @test isnothing(findfirst(id₀, vs)) && isnothing(findfirst(id₄, vs))
+    @test findfirst(id₁, vs)==1 && findfirst(id₂, vs)==2 && findfirst(id₃, vs)==3
 end
 
 struct SimpleIndices{N} <: VectorSpace{CartesianIndex{N}}
@@ -437,11 +456,12 @@ end
 end
 
 @testset "NamedVectorSpace" begin
-    t = ParameterSpace{:t}(1:2)
+    values = OffsetArray(1:2, -2:-1)
+    t = ParameterSpace{:t}(values)
     @test contentnames(typeof(t)) == (:contents,)
     @test length(t) == 2
-    @test t≠ParameterSpace{:μ}(1:2) && t==ParameterSpace{:t}(1:2)
-    @test !isequal(t, ParameterSpace{:μ}(1:2)) && isequal(t, ParameterSpace{:t}(1:2))
+    @test t≠ParameterSpace{:μ}(values) && t==ParameterSpace{:t}(values)
+    @test !isequal(t, ParameterSpace{:μ}(values)) && isequal(t, ParameterSpace{:t}(values))
     @test names(t) == names(typeof(t)) == (:t,)
     @test t[1]==1 && t[2]==2
     @test t[1]∈t && t[2]∈t
@@ -450,7 +470,11 @@ end
     @test eltype(ps) == eltype(typeof(ps)) == NamedTuple{(:t,), Tuple{Int}}
     @test ps[1]==(t=1,) && ps[2]==(t=2,)
 
-    U = ParameterSpace{:U}([8.0, 9.0])
+    t′ = DirectSummedVectorSpace(t, ParameterSpace{:t}(OffsetArray(8:10, -10:-8)))
+    @test length(t′) == 5
+    @test t′[1]==1 && t′[2]==2 && t′[3]==8 && t′[4]==9 && t′[5]==10
+
+    U = ParameterSpace{:U}(OffsetArray([8.0, 9.0], -10:-9))
     zps = ZippedNamedVectorSpace(t, U)
     @test VectorSpaceStyle(zps) == VectorSpaceZipped()
     @test eltype(zps) == eltype(typeof(zps)) == Tuple{Int, Float64}

@@ -1,5 +1,6 @@
 module Toolkit
 
+using Base: @propagate_inbounds
 using Format: FormatSpec, pyfmt
 using Printf: @printf
 using StaticArrays: SVector
@@ -61,7 +62,7 @@ function decimaltostr(number::AbstractFloat, n::Int=5)
         temp = rstrip(result[1:epos-1], '0')
         result = (temp[end] == '.') ? (temp * "0" * result[epos:end]) : (temp * result[epos:end])
     end
-    result
+    return result
 end
 function decimaltostr(number::Complex, n::Int=5)
     sreal = (real(number) == 0) ? "0" : decimaltostr(real(number), n)
@@ -103,7 +104,7 @@ Concatenate tuples.
 Use the binary search method to find the position of a basis in a sorted table so that the order is preserved if the basis in inserted in that position.
 """
 function Base.searchsortedfirst(table, basis; compare=<)
-    lo, hi = 0, length(table)+1
+    lo, hi = firstindex(table)-1, lastindex(table)+1
     @inbounds while lo < hi-1
         m = (lo+hi) >>> 1
         if compare(table[m], basis)
@@ -130,7 +131,7 @@ end
 @inline Base.isequal(s₁::Segment, s₂::Segment) = isequal(efficientoperations, s₁, s₂)
 @inline Base.size(segment::Segment) = (segment.length,)
 function Base.getindex(segment::Segment, i::Integer)
-    length = segment.length+count(isequal(false), segment.ends)-1
+    length = segment.length + count(isequal(false), segment.ends) - 1
     step = convert(eltype(segment), (segment.stop-segment.start)/length)
     start = segment.ends[1] ? segment.start : segment.start+step
     return start+(i-1)*step
@@ -138,7 +139,7 @@ end
 @inline Base.getindex(segment::Segment, range::OrdinalRange{<:Integer}) = Segment(segment[first(range)], segment[last(range)], length(range), (true, true))
 function Base.iterate(segment::Segment)
     segment.length==0 && return
-    length = segment.length+count(isequal(false), segment.ends)-1
+    length = segment.length + count(isequal(false), segment.ends) - 1
     step = convert(eltype(segment), (segment.stop-segment.start)/length)
     start = segment.ends[1] ? segment.start : segment.start+step
     return start, (1, start, step)
@@ -146,7 +147,7 @@ end
 function Base.iterate(segment::Segment, state)
     i, middle, step = state
     i==segment.length && return
-    middle = middle+step
+    middle = middle + step
     return middle, (i+1, middle, step)
 end
 function Base.show(io::IO, segment::Segment{<:Number})
@@ -167,18 +168,18 @@ Construct a segment.
 """
 function Segment(start::Number, stop::Number, length::Integer; ends::Tuple{Bool, Bool}=(true, false))
     @assert length>=0 "Segment error: length must be non-negative."
-    dtype = promote_type(typeof(start), typeof(stop), Float64)
+    dtype = promote_type(typeof(start), typeof(stop), Float)
     return Segment(convert(dtype, start), convert(dtype, stop), length, ends)
 end
 function Segment(start::AbstractVector, stop::AbstractVector, length::Integer; ends::Tuple{Bool, Bool}=(true, false))
     @assert length>=0 "Segment error: length must be non-negative."
     @assert Base.length(start)==Base.length(stop) "Segment error: start and stop should have equal length."
-    dtype = SVector{Base.length(start), promote_type(eltype(start), eltype(stop), Float64)}
+    dtype = SVector{Base.length(start), promote_type(eltype(start), eltype(stop), Float)}
     return Segment(convert(dtype, start), convert(dtype, stop), length, ends)
 end
 function Segment(start::NTuple{N, Number}, stop::NTuple{N, Number}, length::Integer; ends::Tuple{Bool, Bool}=(true, false)) where N
     @assert length>=0 "Segment error: length must be non-negative."
-    dtype = SVector{N, promote_type(eltype(start), eltype(stop), Float64)}
+    dtype = SVector{N, promote_type(eltype(start), eltype(stop), Float)}
     return Segment(convert(dtype, start), convert(dtype, stop), length, ends)
 end
 
@@ -194,88 +195,129 @@ abstract type Combinatorics{M, C} end
 """
     Combinations{M}(contents::C) where {M, C}
 
-Combinations of M elements from contents. Duplicates are not allowed.
+Combinations of `M` elements from `contents`. Duplicates are not allowed.
 """
 struct Combinations{M, C} <: Combinatorics{M, C}
     contents::C
-    N::Int
-    Combinations{M}(contents::C) where {M, C} = new{M, C}(contents, length(contents))
+    firstindex::Int
+    lastindex::Int
+    length::Int
+    function Combinations{M}(contents::C) where {M, C}
+        fi, li, len = firstindex(contents), lastindex(contents), length(contents)
+        @assert M>=0 && len==li-fi+1 "Combinations error: not supported."
+        new{M, C}(contents, fi, li, len)
+    end
 end
-@inline Base.length(c::Combinations{M}) where M = binomial(c.N, M)
-Base.iterate(c::Combinations{M}) where M = (M > c.N) ? nothing : (M == 0) ? ((), [c.N+2]) : (ntuple(i->c.contents[i], Val(M)), nextmstate!(collect(1:M), c.N, M))
-Base.iterate(c::Combinations{M}, state) where M = (state[1] > c.N-M+1) ? nothing : (ntuple(i->c.contents[state[i]], Val(M)), nextmstate!(state, c.N, M))
-function nextmstate!(state::Vector{Int}, N::Int, M::Int)
+@inline Base.length(com::Combinations{M}) where M = binomial(com.length, M)
+@propagate_inbounds function Base.iterate(com::Combinations{M}) where M
+    M>com.length && return
+    M==0 && return (), [com.lastindex+2]
+    return ntuple(i->com.contents[com.firstindex+i-1], Val(M)), nextmstate!(collect(com.firstindex:com.firstindex+M-1), com.lastindex, M)
+end 
+@propagate_inbounds function Base.iterate(com::Combinations{M}, state) where M
+    state[1]>com.lastindex-M+1 && return
+    return ntuple(i->com.contents[state[i]], Val(M)), nextmstate!(state, com.lastindex, M)
+end
+@propagate_inbounds function nextmstate!(state::Vector{Int}, lastindex::Int, M::Int)
     for i = M:-1:1
         state[i] += 1
-        (state[i] > N-(M-i)) && continue
+        state[i]>lastindex-(M-i) && continue
         for j = i+1:M
             state[j] = state[j-1] + 1
         end
         break
     end
-    state
+    return state
 end
 
 """
     DuplicateCombinations{M}(contents::C) where {M, C}
 
-Combinations of M elements from contents. Duplicates are allowed.
+Combinations of `M` elements from `contents`. Duplicates are allowed.
 """
 struct DuplicateCombinations{M, C} <: Combinatorics{M, C}
     contents::C
-    N::Int
-    DuplicateCombinations{M}(contents::C) where {M, C} = new{M, C}(contents, length(contents))
+    firstindex::Int
+    lastindex::Int
+    length::Int
+    function DuplicateCombinations{M}(contents::C) where {M, C}
+        fi, li, len = firstindex(contents), lastindex(contents), length(contents)
+        @assert M>=0 && li-fi+1==len "DuplicateCombinations error: not supported."
+        new{M, C}(contents, fi, li, len)
+    end
 end
-@inline Base.length(c::DuplicateCombinations{M}) where M = binomial(c.N+M-1, c.N-1)
-function Base.iterate(c::DuplicateCombinations{M}) where M
-    (M == 0) ? ((), [c.N+1]) : (ntuple(i->c.contents[1], Val(M)), nextdmstate!(collect(ntuple(i->1, M)), c.N, M))
+@inline Base.length(com::DuplicateCombinations{M}) where M = binomial(com.length+M-1, com.length-1)
+@propagate_inbounds function Base.iterate(com::DuplicateCombinations{M}) where M
+    M==0 && return (), [com.length+1]
+    return ntuple(i->com.contents[com.firstindex], Val(M)), nextdmstate!(fill(com.firstindex, M), com.lastindex, M)
 end
-Base.iterate(c::DuplicateCombinations{M}, state) where M = (state[1] > c.N) ? nothing : (ntuple(i->c.contents[state[i]], Val(M)), nextdmstate!(state, c.N, M))
-function nextdmstate!(state::Vector{Int}, N::Int, M::Int)
+@propagate_inbounds function Base.iterate(com::DuplicateCombinations{M}, state) where M
+    state[1]>com.lastindex && return
+    return ntuple(i->com.contents[state[i]], Val(M)), nextdmstate!(state, com.lastindex, M)
+end
+@propagate_inbounds function nextdmstate!(state::Vector{Int}, lastindex::Int, M::Int)
     for i = M:-1:1
         state[i] += 1
-        (state[i] > N) && continue
+        state[i]>lastindex && continue
         for j = i+1:M
             state[j] = state[j-1]
         end
         break
     end
-    state
+    return state
 end
 
 """
     Permutations{M}(contents::C) where {M, C}
 
-Permutations of M elements from contents. Duplicates are not allowed.
+Permutations of `M` elements from `contents`. Duplicates are not allowed.
 """
 struct Permutations{M, C} <: Combinatorics{M, C}
     contents::C
-    N::Int
-    Permutations{M}(contents::C) where {M, C} = new{M, C}(contents, length(contents))
+    firstindex::Int
+    lastindex::Int
+    length::Int
+    function Permutations{M}(contents::C) where {M, C}
+        fi, li, len = firstindex(contents), lastindex(contents), length(contents)
+        @assert M>=0 && li-fi+1==len "Permutations error: not supported."
+        new{M, C}(contents, fi, li, len)
+    end
 end
-@inline Base.length(p::Permutations{M}) where M = (0 <= M <= p.N) ? prod((p.N-M+1):p.N) : 0
-function Base.iterate(p::Permutations{M}) where M
-    ((p.N == 0) && (M > 0) || (0 < p.N < M)) ? nothing : (state = collect(1:p.N); (ntuple(i->p.contents[state[i]], Val(M)), nextpstate!(state, p.N, M)))
+@inline Base.length(perm::Permutations{M}) where M = M<=perm.length ? prod((perm.length-M+1):perm.length) : 0
+@propagate_inbounds function Base.iterate(perm::Permutations{M}) where M
+    perm.length<M && return
+    M==0 && return (), [perm.lastindex+1]
+    state = collect(perm.firstindex:perm.lastindex)
+    return ntuple(i->perm.contents[state[i]], Val(M)), nextpstate!(state, perm.length, M)
 end
-function Base.iterate(p::Permutations{M}, state) where M
-    ((p.N == 0) && (M > 0) || (0 < p.N < max(state[1], M))) ? nothing : (ntuple(i->p.contents[state[i]], Val(M)), nextpstate!(state, p.N, M))
+@propagate_inbounds function Base.iterate(perm::Permutations{M}, state) where M
+    perm.lastindex<state[1] && return
+    return ntuple(i->perm.contents[state[i]], Val(M)), nextpstate!(state, perm.length, M)
 end
-function nextpstate!(state::Vector{Int}, N::Int, M::Int)
-    (M <= 0) && return [N+1]
-    (M < N) && (j = M + 1; while (j <= N) && (state[M] >= state[j]); j += 1; end)
-    if (M < N) && (j <= N)
+@propagate_inbounds function nextpstate!(state::Vector{Int}, length::Int, M::Int)
+    if M < length
+        j = M + 1
+        while j<=length && state[M]>=state[j]
+            j += 1
+        end
+    end
+    if M<length && j<=length
         state[M], state[j] = state[j], state[M]
     else
-        (M < N) && reverse!(state, M+1)
+        M<length && reverse!(state, M+1)
         i = M - 1
-        while (i >= 1) && (state[i] >= state[i+1]); i -= 1; end
+        while i>=1 && state[i]>=state[i+1]
+            i -= 1
+        end
         if i > 0
-            j = N
-            while (j > i) && (state[i] >= state[j]); j -= 1; end
+            j = length
+            while j>i && state[i]>=state[j]
+                j -= 1
+            end
             state[i], state[j] = state[j], state[i]
             reverse!(state, i+1)
         else
-            state[1] = N + 1
+            state[1] = typemax(eltype(state))
         end
     end
     return state
@@ -284,24 +326,32 @@ end
 """
     DuplicatePermutations{M}(contents::C) where {M, C}
 
-Permutations of M elements from contents. Duplicates are allowed.
+Permutations of `M` elements from `contents`. Duplicates are allowed.
 """
 struct DuplicatePermutations{M, C} <: Combinatorics{M, C}
     contents::C
-    N::Int
-    DuplicatePermutations{M}(contents::C) where {M, C} = new{M, C}(contents, length(contents))
+    firstindex::Int
+    lastindex::Int
+    length::Int
+    function DuplicatePermutations{M}(contents::C) where {M, C}
+        fi, li, len = firstindex(contents), lastindex(contents), length(contents)
+        @assert M>=0 && li-fi+1==len "DuplicatePermutations error: not supported."
+        new{M, C}(contents, fi, li, len)
+    end
 end
-@inline Base.length(p::DuplicatePermutations{M}) where M = p.N^M
-function Base.iterate(p::DuplicatePermutations{M}) where M
-    indices = CartesianIndices(ntuple(i->p.N, M|>Val))
-    index = iterate(indices)
-    isnothing(index) && return nothing
-    return ntuple(i->p.contents[reverse(index[1].I)[i]], M|>Val), (indices, index[2])
+@inline Base.length(perm::DuplicatePermutations{M}) where M = perm.length^M
+@propagate_inbounds function Base.iterate(perm::DuplicatePermutations{M}) where M
+    indices = CartesianIndices(ntuple(i->perm.firstindex:perm.lastindex, Val(M)))
+    current = iterate(indices)
+    isnothing(current) && return
+    index, state = reverse(current[1].I), current[2]
+    return ntuple(i->perm.contents[index[i]], Val(M)), (indices, state)
 end
-function Base.iterate(p::DuplicatePermutations{M}, state) where M
-    index = iterate(state[1], state[2])
-    isnothing(index) && return nothing
-    return ntuple(i->p.contents[reverse(index[1].I)[i]], M|>Val), (state[1], index[2])
+@propagate_inbounds function Base.iterate(perm::DuplicatePermutations{M}, state) where M
+    current = iterate(state[1], state[2])
+    isnothing(current) && return
+    indices, index, state = state[1], reverse(current[1].I), current[2]
+    return ntuple(i->perm.contents[index[i]], Val(M)), (indices, state)
 end
 
 # Traits
@@ -339,10 +389,10 @@ Get the supertype of `T` till termination.
 @inline Base.supertype(::Type{T}, termination::Symbol) where T = _supertype(T, Val(termination))
 @inline @generated function _supertype(::Type{T}, ::Val{termination}) where {T, termination}
     result = T
-    while nameof(result) != termination && nameof(result) != :Any
+    while nameof(result)≠termination && nameof(result)≠:Any
         result = supertype(result)
     end
-    (nameof(result) != termination) && error("_supertype error: termination is not the name of a valid supertype of $(nameof(T)).")
+    nameof(result)≠termination && error("_supertype error: termination is not the name of a valid supertype of $(nameof(T)).")
     return result
 end
 
@@ -396,7 +446,7 @@ For a type `T`, get the type of one of its type parameters.
 @inline parametertype(::Type{T}, i::Integer) where T = _parametertype(T, Val(i))
 @inline @generated function _parametertype(::Type{T}, ::Val{i}) where {T, i}
     result = DataType(T).parameters[i]
-    return isa(result, TypeVar) ? result.ub : result
+    return isa(result, TypeVar) ? result.ub : isa(result, Symbol) ? QuoteNode(result) : result
 end
 
 """
@@ -507,22 +557,22 @@ For a type `T`, replace the type of its ith type parameter with `P`. Here, `ub` 
 end
 
 """
-    promoteparameters(::Type{T1}, ::Type{T2}) where {T1<:NamedTuple, T2<:NamedTuple}
+    promoteparameters(::Type{T₁}, ::Type{T₂}) where {T₁<:NamedTuple, T₂<:NamedTuple}
 
 Promote the types specified by two named tuples with the same names accordingly.
 
 The result is stored in the type parameters of a `NamedTuple`.
 """
-@inline @generated function promoteparameters(::Type{T1}, ::Type{T2}) where {T1<:NamedTuple, T2<:NamedTuple}
+@inline @generated function promoteparameters(::Type{T₁}, ::Type{T₂}) where {T₁<:NamedTuple, T₂<:NamedTuple}
     exprs = []
-    names = Tuple(union(fieldnames(T1), fieldnames(T2)))
-    for (i, name) in enumerate(names)
-        hasfield(T1, name) && (F1 = fieldtype(T1, name))
-        hasfield(T2, name) && (F2 = fieldtype(T2, name))
-        if hasfield(T1, name) && hasfield(T2, name)
-            push!(exprs, :(promote_type($F1, $F2)))
+    names = Tuple(union(fieldnames(T₁), fieldnames(T₂)))
+    for (_, name) in enumerate(names)
+        hasfield(T₁, name) && (F₁ = fieldtype(T₁, name))
+        hasfield(T₂, name) && (F₂ = fieldtype(T₂, name))
+        if hasfield(T₁, name) && hasfield(T₂, name)
+            push!(exprs, :(promote_type($F₁, $F₂)))
         else
-            push!(exprs, hasfield(T1, name) ? F1 : F2)
+            push!(exprs, hasfield(T₁, name) ? F₁ : F₂)
         end
     end
     return Expr(:curly, :NamedTuple, names, Expr(:curly, :Tuple, exprs...))
@@ -675,19 +725,19 @@ Indicate that the efficient operations, i.e. "=="/"isequal", "<"/"isless" or "re
 const efficientoperations = EfficientOperations()
 
 """
-    ==(::EfficientOperations, o1, o2) -> Bool
+    ==(::EfficientOperations, o₁, o₂) -> Bool
 
 Compare two objects and judge whether they are equivalent to each other.
 """
-@inline @generated function Base.:(==)(::EfficientOperations, o1, o2)
-    fcount = fieldcount(o1)
-    if fcount == fieldcount(o2)
+@inline @generated function Base.:(==)(::EfficientOperations, o₁, o₂)
+    fcount = fieldcount(o₁)
+    if fcount == fieldcount(o₂)
         if fcount == 0
             return true
         else
-            expr = :(getfield(o1, 1) == getfield(o2, 1))
+            expr = :(getfield(o₁, 1) == getfield(o₂, 1))
             for i = 2:fcount
-                expr = Expr(:&&, expr, :(getfield(o1, $i) == getfield(o2, $i)))
+                expr = Expr(:&&, expr, :(getfield(o₁, $i) == getfield(o₂, $i)))
             end
             return expr
         end
@@ -697,19 +747,19 @@ Compare two objects and judge whether they are equivalent to each other.
 end
 
 """
-    isequal(::EfficientOperations, o1, o2) -> Bool
+    isequal(::EfficientOperations, o₁, o₂) -> Bool
 
 Compare two objects and judge whether they are equivalent to each other.
 """
-@inline @generated function Base.isequal(::EfficientOperations, o1, o2)
-    fcount = fieldcount(o1)
-    if fcount == fieldcount(o2)
+@inline @generated function Base.isequal(::EfficientOperations, o₁, o₂)
+    fcount = fieldcount(o₁)
+    if fcount == fieldcount(o₂)
         if fcount == 0
             return true
         else
-            expr = :(isequal(getfield(o1, 1), getfield(o2, 1)))
+            expr = :(isequal(getfield(o₁, 1), getfield(o₂, 1)))
             for i = 2:fcount
-                expr = Expr(:&&, expr, :(isequal(getfield(o1, $i), getfield(o2, $i))))
+                expr = Expr(:&&, expr, :(isequal(getfield(o₁, $i), getfield(o₂, $i))))
             end
             return expr
         end
@@ -719,61 +769,61 @@ Compare two objects and judge whether they are equivalent to each other.
 end
 
 """
-    <(::EfficientOperations, o1, o2) -> Bool
+    <(::EfficientOperations, o₁, o₂) -> Bool
 
 Compare two objects and judge whether the first is less than the second.
 """
-@inline @generated function Base.:<(::EfficientOperations, o1, o2)
-    n1, n2 = fieldcount(o1), fieldcount(o2)
-    N = min(n1, n2)
-    expr = (n1 < n2) ? Expr(:if, :(getfield(o1, $N) == getfield(o2, $N)), true, false) : false
-    expr = Expr(:if, :(getfield(o1, $N) < getfield(o2, $N)), true, expr)
+@inline @generated function Base.:<(::EfficientOperations, o₁, o₂)
+    n₁, n₂ = fieldcount(o₁), fieldcount(o₂)
+    N = min(n₁, n₂)
+    expr = (n₁ < n₂) ? Expr(:if, :(getfield(o₁, $N) == getfield(o₂, $N)), true, false) : false
+    expr = Expr(:if, :(getfield(o₁, $N) < getfield(o₂, $N)), true, expr)
     for i in range(N-1, stop=1, step=-1)
-        expr = Expr(:if, :(getfield(o1, $i) > getfield(o2, $i)), false, expr)
-        expr = Expr(:if, :(getfield(o1, $i) < getfield(o2, $i)), true, expr)
+        expr = Expr(:if, :(getfield(o₁, $i) > getfield(o₂, $i)), false, expr)
+        expr = Expr(:if, :(getfield(o₁, $i) < getfield(o₂, $i)), true, expr)
     end
     return expr
 end
 
 """
-    isless(::EfficientOperations, o1, o2) -> Bool
+    isless(::EfficientOperations, o₁, o₂) -> Bool
 
 Compare two objects and judge whether the first is less than the second.
 """
-@inline @generated function Base.isless(::EfficientOperations, o1, o2)
-    n1, n2 = fieldcount(o1), fieldcount(o2)
-    N = min(n1, n2)
-    expr = n1 < n2 ? Expr(:if, :(getfield(o1, $N) == getfield(o2, $N)), true, false) : false
-    expr = Expr(:if, :(isless(getfield(o1, $N), getfield(o2, $N))), true, expr)
+@inline @generated function Base.isless(::EfficientOperations, o₁, o₂)
+    n₁, n₂ = fieldcount(o₁), fieldcount(o₂)
+    N = min(n₁, n₂)
+    expr = n₁ < n₂ ? Expr(:if, :(getfield(o₁, $N) == getfield(o₂, $N)), true, false) : false
+    expr = Expr(:if, :(isless(getfield(o₁, $N), getfield(o₂, $N))), true, expr)
     for i in range(N-1, stop=1, step=-1)
-        expr = Expr(:if, :(isless(getfield(o2, $i), getfield(o1, $i))), false, expr)
-        expr = Expr(:if, :(isless(getfield(o1, $i), getfield(o2, $i))), true, expr)
+        expr = Expr(:if, :(isless(getfield(o₂, $i), getfield(o₁, $i))), false, expr)
+        expr = Expr(:if, :(isless(getfield(o₁, $i), getfield(o₂, $i))), true, expr)
     end
     return expr
 end
 
 """
-    isapprox(::EfficientOperations, o1, o2; atol=atol, rtol=rtol) -> Bool
-    isapprox(::EfficientOperations, fields::Union{Union{Nothing, Integer, Symbol}, Tuple{Vararg{Union{Integer, Symbol}}}}, o1, o2; atol=atol, rtol=rtol) -> Bool
-    isapprox(::EfficientOperations, ::Val{fields}, o1, o2; atol=atol, rtol=rtol) where fields -> Bool
+    isapprox(::EfficientOperations, o₁, o₂; atol=atol, rtol=rtol) -> Bool
+    isapprox(::EfficientOperations, fields::Union{Nothing, Union{Integer, Symbol}, Tuple{Vararg{Union{Integer, Symbol}}}}, o₁, o₂; atol=atol, rtol=rtol) -> Bool
+    isapprox(::EfficientOperations, ::Val{fields}, o₁, o₂; atol=atol, rtol=rtol) where fields -> Bool
 
 Compare two objects and judge whether they are inexactly equivalent to each other.
 """
-@inline Base.isapprox(::EfficientOperations, o1, o2; atol=atol, rtol=rtol) = isapprox(efficientoperations, nothing, o1, o2, atol=atol, rtol=rtol)
-@inline function Base.isapprox(::EfficientOperations, fields::Union{Nothing, Union{Integer, Symbol}, Tuple{Vararg{Union{Integer, Symbol}}}}, o1, o2; atol=atol, rtol=rtol)
-    isapprox(efficientoperations, fields|>Val, o1, o2; atol=atol, rtol=rtol)
+@inline Base.isapprox(::EfficientOperations, o₁, o₂; atol=atol, rtol=rtol) = isapprox(efficientoperations, nothing, o₁, o₂, atol=atol, rtol=rtol)
+@inline function Base.isapprox(::EfficientOperations, fields::Union{Nothing, Union{Integer, Symbol}, Tuple{Vararg{Union{Integer, Symbol}}}}, o₁, o₂; atol=atol, rtol=rtol)
+    isapprox(efficientoperations, fields|>Val, o₁, o₂; atol=atol, rtol=rtol)
 end
-@inline @generated function Base.isapprox(::EfficientOperations, ::Val{fields}, o1, o2; atol=atol, rtol=rtol) where fields
-    (fieldcount(o1)≠fieldcount(o2) || fieldnames(o1)≠fieldnames(o2)) && return false
-    isnothing(fields) && (fields = ntuple(i->i, fieldcount(o1)))
+@inline @generated function Base.isapprox(::EfficientOperations, ::Val{fields}, o₁, o₂; atol=atol, rtol=rtol) where fields
+    (fieldcount(o₁)≠fieldcount(o₂) || fieldnames(o₁)≠fieldnames(o₂)) && return false
+    isnothing(fields) && (fields = ntuple(i->i, fieldcount(o₁)))
     isa(fields, Union{Integer, Symbol}) && (fields = (fields,))
-    fields = Set(isa(field, Symbol) ? findfirst(isequal(field), fieldnames(o1)) : field for field in fields)
+    fields = Set(isa(field, Symbol) ? findfirst(isequal(field), fieldnames(o₁)) : field for field in fields)
     exprs = []
-    for i = 1:fieldcount(o1)
+    for i = 1:fieldcount(o₁)
         if i∈fields
-            push!(exprs, :(isapprox(getfield(o1, $i), getfield(o2, $i); atol=atol, rtol=rtol)::Bool))
+            push!(exprs, :(isapprox(getfield(o₁, $i), getfield(o₂, $i); atol=atol, rtol=rtol)::Bool))
         else
-            push!(exprs, :(isequal(getfield(o1, $i), getfield(o2, $i))::Bool))
+            push!(exprs, :(isequal(getfield(o₁, $i), getfield(o₂, $i))::Bool))
         end
     end
     return Expr(:&&, exprs...)
@@ -798,15 +848,12 @@ A composite vector can be considered as a vector that is implemented by includin
 abstract type CompositeVector{T} <: AbstractVector{T} end
 @inline contentnames(::Type{<:CompositeVector}) = (:contents,)
 @inline dissolve(cv::CompositeVector, ::Val{:contents}, f::Function, args::Tuple, kwargs::NamedTuple) = f(getcontent(cv, :contents), args...; kwargs...)
-
+@inline Base.axes(cv::CompositeVector) = axes(getcontent(cv, :contents))
 @inline Base.size(cv::CompositeVector) = size(getcontent(cv, :contents))
-@inline Base.size(cv::CompositeVector, i) = size(getcontent(cv, :contents), i)
-@inline Base.length(cv::CompositeVector) = length(getcontent(cv, :contents))
 @inline Base.:(==)(cv1::CompositeVector, cv2::CompositeVector) = ==(efficientoperations, cv1, cv2)
 @inline Base.isequal(cv1::CompositeVector, cv2::CompositeVector) = isequal(efficientoperations, cv1, cv2)
 @inline Base.getindex(cv::CompositeVector, i::Union{<:Integer, CartesianIndex}) = getcontent(cv, :contents)[i]
 @inline Base.getindex(cv::CompositeVector, inds) = rawtype(typeof(cv))(dissolve(cv, getindex, (inds,))...)
-@inline Base.lastindex(cv::CompositeVector) = lastindex(getcontent(cv, :contents))
 @inline Base.setindex!(cv::CompositeVector, value, inds) = (getcontent(cv, :contents)[inds] = value)
 @inline Base.push!(cv::CompositeVector, values...) = (push!(getcontent(cv, :contents), values...); cv)
 @inline Base.pushfirst!(cv::CompositeVector, values...) = (pushfirst!(getcontent(cv, :contents), values...); cv)
@@ -822,10 +869,6 @@ abstract type CompositeVector{T} <: AbstractVector{T} end
 @inline Base.empty(cv::CompositeVector) = rawtype(typeof(cv))(dissolve(cv, empty)...)
 @inline Base.reverse(cv::CompositeVector) =  rawtype(typeof(cv))(dissolve(cv, reverse)...)
 @inline Base.similar(cv::CompositeVector, dtype::Type=eltype(cv), dims::Tuple{Vararg{Int}}=size(cv)) = rawtype(typeof(cv))(dissolve(cv, similar, (dtype, dims))...)
-@inline Base.iterate(cv::CompositeVector, state=1) = iterate(getcontent(cv, :contents), state)
-@inline Base.keys(cv::CompositeVector) = keys(getcontent(cv, :contents))
-@inline Base.values(cv::CompositeVector) = values(getcontent(cv, :contents))
-@inline Base.pairs(cv::CompositeVector) = pairs(getcontent(cv, :contents))
 
 """
     CompositeDict{K, V}
@@ -835,7 +878,6 @@ A composite dict can be considered as a dict that is implemented by including a 
 abstract type CompositeDict{K, V} <: AbstractDict{K, V} end
 @inline contentnames(::Type{<:CompositeDict}) = (:contents,)
 @inline dissolve(cd::CompositeDict, ::Val{:contents}, f::Function, args::Tuple, kwargs::NamedTuple) = f(getcontent(cd, :contents), args...; kwargs...)
-
 @inline Base.isempty(cd::CompositeDict) = isempty(getcontent(cd, :contents))
 @inline Base.length(cd::CompositeDict) = length(getcontent(cd, :contents))
 @inline Base.haskey(cd::CompositeDict, key) = haskey(getcontent(cd, :contents), key)
@@ -873,7 +915,9 @@ Abstract vector space.
 abstract type VectorSpace{B} <: AbstractVector{B} end
 @inline Base.:(==)(vs₁::VectorSpace, vs₂::VectorSpace) = ==(efficientoperations, vs₁, vs₂)
 @inline Base.isequal(vs₁::VectorSpace, vs₂::VectorSpace) = isequal(efficientoperations, vs₁, vs₂)
+@inline Base.axes(vs::VectorSpace) = (Base.OneTo(length(vs)),)
 @inline Base.size(vs::VectorSpace) = (length(vs),)
+@inline Base.IndexStyle(::Type{<:VectorSpace}) = IndexLinear()
 
 """
     VectorSpaceStyle
@@ -885,14 +929,18 @@ abstract type VectorSpaceStyle end
 
 @inline Base.length(vs::VectorSpace) = length(VectorSpaceStyle(vs), vs)
 @inline Base.getindex(vs::VectorSpace, i) = getindex(VectorSpaceStyle(vs), vs, i)
-@inline Base.getindex(vs::VectorSpace, i::CartesianIndex{1}) = vs[i[1]]
 @inline Base.getindex(style::VectorSpaceStyle, vs::VectorSpace, indexes) = map(index->getindex(style, vs, index), indexes)
 @inline Base.issorted(vs::VectorSpace) = issorted(VectorSpaceStyle(vs), vs)
-@inline Base.findfirst(basis::B, vs::VectorSpace{B}) where B = findfirst(VectorSpaceStyle(vs), basis, vs)
-@inline Base.searchsortedfirst(vs::VectorSpace{B}, basis::B) where B = searchsortedfirst(VectorSpaceStyle(vs), vs, basis)
-@inline Base.in(basis::B, vs::VectorSpace{B}) where B = in(VectorSpaceStyle(vs), basis, vs)
-
 @inline Base.issorted(::VectorSpaceStyle, vs::VectorSpace) = false
+@inline Base.searchsortedfirst(vs::VectorSpace{B}, basis::B) where B = searchsortedfirst(VectorSpaceStyle(vs), vs, basis)
+@inline function Base.searchsortedfirst(::VectorSpaceStyle, vs::VectorSpace{B}, basis::B) where B
+    issorted(vs) && return invoke(searchsortedfirst, Tuple{Any, Any}, vs, basis)
+    for i = 1:length(vs) 
+        vs[i]==basis && return i
+    end
+    return length(vs)+1
+end
+@inline Base.findfirst(basis::B, vs::VectorSpace{B}) where B = findfirst(VectorSpaceStyle(vs), basis, vs)
 @inline function Base.findfirst(::VectorSpaceStyle, basis::B, vs::VectorSpace{B}) where B
     if issorted(vs)
         index = invoke(searchsortedfirst, Tuple{Any, Any}, vs, basis)
@@ -902,13 +950,7 @@ abstract type VectorSpaceStyle end
         vs[i]==basis && return i
     end
 end
-@inline function Base.searchsortedfirst(::VectorSpaceStyle, vs::VectorSpace{B}, basis::B) where B
-    issorted(vs) && return invoke(searchsortedfirst, Tuple{Any, Any}, vs, basis)
-    for i = 1:length(vs) 
-        vs[i]==basis && return i
-    end
-    return length(vs)+1
-end
+@inline Base.in(basis::B, vs::VectorSpace{B}) where B = in(VectorSpaceStyle(vs), basis, vs)
 @inline Base.in(::VectorSpaceStyle, basis::B, vs::VectorSpace{B}) where B = isa(findfirst(basis, vs), Integer)
 
 """
@@ -918,7 +960,10 @@ Enumerative vector space style, which indicates that the vector space has a pred
 """
 struct VectorSpaceEnumerative <: VectorSpaceStyle end
 @inline Base.length(::VectorSpaceEnumerative, vs::VectorSpace) = length(getcontent(vs, :contents))
-@inline Base.getindex(::VectorSpaceEnumerative, vs::VectorSpace, i::Integer) = getcontent(vs, :contents)[i]
+@inline function Base.getindex(::VectorSpaceEnumerative, vs::VectorSpace, i::Integer)
+    contents = getcontent(vs, :contents)
+    return contents[(firstindex(contents):lastindex(contents))[i]]
+end
 @inline Base.in(::VectorSpaceEnumerative, vs::VectorSpace{B}, basis::B) where B = in(basis, getcontent(vs, :contents))
 
 """
@@ -932,12 +977,12 @@ function shape end
 @inline Base.getindex(::VectorSpaceCartesian, vs::VectorSpace, i::Integer) = getindex(VectorSpaceCartesian(), vs, CartesianIndices(shape(vs))[i])
 @inline Base.getindex(::VectorSpaceCartesian, vs::VectorSpace, i::CartesianIndex) = rawtype(eltype(vs))(i, vs)
 @inline Base.issorted(::VectorSpaceCartesian, vs::VectorSpace) = true
-@inline function Base.findfirst(::VectorSpaceCartesian, basis::B, vs::VectorSpace{B}) where B
+@propagate_inbounds function Base.findfirst(::VectorSpaceCartesian, basis::B, vs::VectorSpace{B}) where B
     index, idx = CartesianIndex(basis, vs), CartesianIndices(shape(vs))
-    index∉idx && return nothing
+    index∉idx && return
     return LinearIndices(shape(vs))[index-first(idx)+oneunit(typeof(index))]
 end
-@inline function Base.searchsortedfirst(::VectorSpaceCartesian, vs::VectorSpace{B}, basis::B) where B
+@propagate_inbounds function Base.searchsortedfirst(::VectorSpaceCartesian, vs::VectorSpace{B}, basis::B) where B
     index, idx = CartesianIndex(basis, vs), CartesianIndices(shape(vs))
     index∈idx && return LinearIndices(shape(vs))[index-first(idx)+oneunit(typeof(index))]
     return searchsortedfirst(idx, index)
@@ -956,7 +1001,9 @@ struct VectorSpaceDirectSummed <: VectorSpaceStyle end
     dimsum = cumsum(map(length, contents))
     m = searchsortedfirst(dimsum, i)
     n = m>1 ? (i-dimsum[m-1]) : i
-    return contents[m][n]
+    content = contents[m]
+    index = (firstindex(content):lastindex(content))[n]
+    return content[index]
 end
 
 """
@@ -968,7 +1015,8 @@ struct VectorSpaceDirectProducted <: VectorSpaceStyle end
 @inline Base.length(::VectorSpaceDirectProducted, vs::VectorSpace) = mapreduce(length, *, getcontent(vs, :contents))
 @inline function Base.getindex(::VectorSpaceDirectProducted, vs::VectorSpace, i::Integer)
     contents = getcontent(vs, :contents)
-    index = CartesianIndices(map(length, contents))[i]
+    @assert isa(contents, Tuple) "getindex error: the `:contents` of a vector space that hosts the direct-producted style must be a tuple."
+    index = CartesianIndices(map(content->firstindex(content):lastindex(content), contents))[i]
     return rawtype(eltype(vs))(map(getindex, contents, Tuple(index)), vs)
 end
 
@@ -980,7 +1028,7 @@ Vector space style which indicates that a vector space is the zip of its sub-com
 struct VectorSpaceZipped <: VectorSpaceStyle end
 @inline Base.length(::VectorSpaceZipped, vs::VectorSpace) = mapreduce(length, min, getcontent(vs, :contents))
 @inline function Base.getindex(::VectorSpaceZipped, vs::VectorSpace, i::Integer)
-    return rawtype(eltype(vs))(map(content->getindex(content, i), getcontent(vs, :contents)), vs)
+    return rawtype(eltype(vs))(map(content->getindex(content, (firstindex(content):lastindex(content))[i]), getcontent(vs, :contents)), vs)
 end
 
 """
