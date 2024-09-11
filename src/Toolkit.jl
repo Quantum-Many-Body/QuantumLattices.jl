@@ -693,8 +693,8 @@ dissolve(m, Val(name), f, args...; kwargs...)
 Here, `name` is the name of the corresponding content of `m`.
 
 Basically, the rule of how `f` operates on each field of `m` can be overridden by redefining the above `dissolve` function.
-!!!note
-   The default `dissolve` function ignores the operation of function `f` and just return the content value of `m`.
+!!! note
+    The default `dissolve` function ignores the operation of function `f` and just return the content value of `m`.
 """
 @inline dissolve(m, f::Function=identity, args...; kwargs...) = dissolvehelper(m, Val(contentnames(typeof(m))), f, args...; kwargs...)
 @inline @generated function dissolvehelper(m, ::Val{names}, f::Function, args...; kwargs...) where names
