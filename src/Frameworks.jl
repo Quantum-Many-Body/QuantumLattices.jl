@@ -9,7 +9,7 @@ using RecipesBase: RecipesBase, @recipe
 using Serialization: serialize
 using TimerOutputs: TimerOutput, TimerOutputs, @timeit
 using ..DegreesOfFreedom: plain, Boundary, Hilbert, Term
-using ..QuantumOperators: OperatorPack, Operators, OperatorSet, OperatorSum, LinearFunction, LinearTransformation, Representation, Transformation, identity, optype
+using ..QuantumOperators: OperatorPack, Operators, OperatorSet, OperatorSum, LinearTransformation, Representation, Transformation, identity, optype
 using ..Spatials: AbstractLattice, Bond, Neighbors, bonds!, isintracell
 using ..Toolkit: atol, efficientoperations, rtol, decimaltostr
 
@@ -332,7 +332,7 @@ function update!(cat::CategorizedGenerator{<:OperatorSum}; parameters...)
     if !match(Parameters(cat.boundary), NamedTuple{keys(parameters)}(values(parameters)))
         old = copy(cat.boundary.values)
         update!(cat.boundary; parameters...)
-        map(ops->map!(LinearFunction(op->cat.boundary(op, origin=old)), ops), values(cat.boundops))
+        map(ops->map!(op->cat.boundary(op, origin=old), ops), values(cat.boundops))
     end
     return cat
 end
@@ -349,7 +349,7 @@ function update!(cat::CategorizedGenerator, transformation::LinearTransformation
     cat.parameters = update(cat.parameters; source.parameters...)
     if !match(Parameters(cat.boundary), Parameters(source.boundary))
         update!(cat.boundary; Parameters(source.boundary)...)
-        map((dest, ops)->map!(LinearFunction(op->transformation(op; kwargs...)), empty!(dest), ops), values(cat.boundops), values(source.boundops))
+        map((dest, ops)->add!(empty!(dest), transformation, ops; kwargs...), values(cat.boundops), values(source.boundops))
     end
     return cat
 end
@@ -402,10 +402,9 @@ end
 Reset a categorized generator by its source categorized generator of (a representation of) quantum operators and the corresponding linear transformation.
 """
 function reset!(cat::CategorizedGenerator, transformation::LinearTransformation, source::CategorizedGenerator{<:Operators}; kwargs...)
-    wrapper = LinearFunction(op->transformation(op; kwargs...))
-    map!(wrapper, empty!(cat.constops), source.constops)
-    map((dest, ops)->map!(wrapper, empty!(dest), ops), values(cat.alterops), values(source.alterops))
-    map((dest, ops)->map!(wrapper, empty!(dest), ops), values(cat.boundops), values(source.boundops))
+    add!(empty!(cat.constops), transformation, source.constops; kwargs...)
+    map((dest, ops)->add!(empty!(dest), transformation, ops; kwargs...), values(cat.alterops), values(source.alterops))
+    map((dest, ops)->add!(empty!(dest), transformation, ops; kwargs...), values(cat.boundops), values(source.boundops))
     cat.parameters = update(cat.parameters; source.parameters...)
     merge!(cat.boundary, source.boundary)
     return cat
@@ -526,18 +525,14 @@ function expand(gen::OperatorGenerator, i::Int)
     bond = gen.bonds[i]
     result = zero(valtype(gen))
     map(term->expand!(result, term, bond, gen.hilbert; half=gen.half), gen.terms)
-    isintracell(bond) || for opt in result
-        result[id(opt)] = gen.operators.boundary(opt)
-    end
+    isintracell(bond) || map!(gen.operators.boundary, result)
     return result
 end
 function expand(gen::OperatorGenerator, name::Symbol, i::Int)
     bond = gen.bonds[i]
     term = get(gen.terms, Val(name))
     result = expand!(zero(valtype(gen)), term, bond, gen.hilbert; half=gen.half)
-    isintracell(bond) || for opt in result
-        result[id(opt)] = gen.operators.boundary(opt)
-    end
+    isintracell(bond) || map!(gen.operators.boundary, result)
     return result
 end
 @inline @generated function Base.get(terms::Tuple{Vararg{Term}}, ::Val{Name}) where Name

@@ -10,9 +10,9 @@ import LinearAlgebra: dot
 import ..QuantumLattices: ⊗, add!, div!, dtype, id, ishermitian, mul!, permute, rank, sub!, value
 import ..Toolkit: contentnames, dissolve, isparameterbound, parameternames
 
-export ID, Operator, OperatorPack, OperatorProd, Operators, OperatorSet, OperatorSum, OperatorUnit, LaTeX, QuantumOperator
-export Identity, LinearFunction, LinearTransformation, Matrixization, Numericalization, Permutation, RankFilter, Representation, TabledUnitSubstitution, Transformation, UnitSubstitution
-export idtype, ishermitian, latexname, latexformat, matrix, optype, script, sequence, subscript, superscript
+export ID, LaTeX, Operator, OperatorPack, OperatorProd, Operators, OperatorSet, OperatorSum, OperatorUnit, QuantumOperator, Representation
+export LinearFunction, LinearTransformation, Matrixization, Permutation, RankFilter, TabledUnitSubstitution, Transformation, UnitSubstitution
+export idtype, ishermitian, isscalartype, latexname, latexformat, matrix, optype, script, sequence, subscript, superscript
 
 # Generic representation of (a part of) a quantum lattice system
 """
@@ -121,13 +121,11 @@ end
 
 """
     rank(id::ID{OperatorUnit}) -> Int
-    rank(::Type{<:ID{OperatorUnit}}) -> Any
     rank(::Type{<:ID{OperatorUnit, N}}) where N -> Int
 
 Get the rank of an id.
 """
 @inline rank(id::ID{OperatorUnit}) = rank(typeof(id))
-@inline rank(::Type{<:ID{OperatorUnit}}) = Any
 @inline rank(::Type{<:ID{OperatorUnit, N}}) where N = N
 
 """
@@ -151,36 +149,27 @@ end
 
 # Operator pack
 """
-    OperatorPack{V, I<:Tuple} <: QuantumOperator
+    OperatorPack{V, I} <: QuantumOperator
 
-The entity that represent the pack of a number and several quantum units.
+The entity that represent the pack of a number and an id of a quantum operator.
 
 Basically, a concrete subtype should contain two predefined contents:
 - `value::V`: the coefficient of the pack
-- `id::I`: the total id of the pack
+- `id::I`: the id of the pack
 """
-abstract type OperatorPack{V, I<:Tuple} <: QuantumOperator end
+abstract type OperatorPack{V, I} <: QuantumOperator end
 @inline contentnames(::Type{<:OperatorPack}) = (:value, :id)
 @inline parameternames(::Type{<:OperatorPack}) = (:value, :id)
 @inline isparameterbound(::Type{<:OperatorPack}, ::Val{:value}, ::Type{V}) where V = false
-@inline isparameterbound(::Type{<:OperatorPack}, ::Val{:id}, ::Type{I}) where {I<:Tuple} = !isconcretetype(I)
+@inline isparameterbound(::Type{<:OperatorPack}, ::Val{:id}, ::Type{I}) where I = !isconcretetype(I)
+@inline isscalartype(::Type{<:OperatorPack}) = false
 @inline function Base.promote_rule(::Type{M₁}, ::Type{M₂}) where {M₁<:OperatorPack, M₂<:OperatorPack}
     M₁<:M₂ && return M₂
     M₂<:M₁ && return M₁
-    r₁, r₂ = rank(M₁), rank(M₂)
-    M = r₂==0 ? rawtype(M₁) : r₁==0 ? rawtype(M₂) : typejoin(rawtype(M₁), rawtype(M₂))
+    s₁, s₂ = isscalartype(M₁), isscalartype(M₂)
+    M = s₂ ? rawtype(M₁) : s₁ ? rawtype(M₂) : typejoin(rawtype(M₁), rawtype(M₂))
     return fulltype(M, promoteparameters(parameterpairs(M₁), parameterpairs(M₂)))
 end
-@inline Base.promote_rule(::Type{M}, ::Type{N}) where {M<:OperatorPack, N<:Number} = reparameter(M, :value, promote_type(valtype(M), N))
-
-"""
-    rank(m::OperatorPack) -> Int
-    rank(::Type{M}) where {M<:OperatorPack} -> Int
-
-Get the rank of an `OperatorPack`.
-"""
-@inline rank(m::OperatorPack) = rank(typeof(m))
-@inline rank(::Type{M}) where {M<:OperatorPack} = rank(idtype(M))
 
 """
     valtype(m::OperatorPack)
@@ -237,38 +226,16 @@ Replace the value of an `OperatorPack`.
 Compare two `OperatorPack`s and judge whether they are approximate to each other.
 """
 @inline function Base.isapprox(m₁::OperatorPack, m₂::OperatorPack; atol::Real=atol, rtol::Real=rtol)
-    return isapprox(efficientoperations, contentorder(typeof(m₁), :value)|>Val, dissolve(m₁), dissolve(m₂); atol=atol, rtol=rtol)::Bool
+    return isapprox(efficientoperations, Val(contentorder(typeof(m₁), :value)), dissolve(m₁), dissolve(m₂); atol=atol, rtol=rtol)::Bool
 end
 
 """
-    one(::Type{M}) where M<:OperatorPack
-    one(m::OperatorPack)
-
-Get the identity quantum operator.
-"""
-@inline function Base.one(::Type{M}) where M<:OperatorPack
-    rtype = rawtype(M)
-    vtype = isconcretetype(valtype(M)) ? valtype(M) : Int
-    @assert fieldnames(rtype) == (:value, :id) "one error: not supported type($(nameof(rtype)))."
-    return rtype(one(vtype), ())
-end
-@inline Base.one(m::OperatorPack) = rawtype(typeof(m))(dissolve(m, one)...)
-@inline dissolve(m::OperatorPack, ::Val{:value}, ::typeof(one)) = one(valtype(m))
-@inline dissolve(::OperatorPack, ::Val{:id}, ::typeof(one)) = ID()
-
-"""
-    convert(::Type{M}, m::Number) where {M<:OperatorPack}
     convert(::Type{M}, m::OperatorPack) where {M<:OperatorPack}
 
-1) Convert a number to a quantum operator.
-2) Convert a quantum operator from one type to another.
+Convert a quantum operator from one type to another.
 """
-@inline function Base.convert(::Type{M}, m::Number) where {M<:OperatorPack}
-    @assert isa(one(M), M) "convert error: not convertible."
-    return one(M)*convert(dtype(M), m)
-end
 @inline function Base.convert(::Type{M}, m::OperatorPack) where {M<:OperatorPack}
-    (typeof(m) <: M) && return m
+    typeof(m)<:M && return m
     @assert convertible(M, m) "convert error: $(typeof(m)) cannot be converted to $M."
     return replace(m, convert(valtype(M), value(m)))
 end
@@ -283,15 +250,28 @@ end
 
 # Operator prod
 """
-    OperatorProd{V, I<:ID{OperatorUnit}} <: OperatorPack{V, I}
+    OperatorProd{V, I<:Tuple} <: OperatorPack{V, I}
 
-A special kind of `OperatorPack`, where the relation between the coefficient and quantum units could be viewed as product.
+A special kind of `OperatorPack`, where the relation between the coefficient and each component of the opeator id can be viewed as product.
 """
-abstract type OperatorProd{V, I<:ID{OperatorUnit}} <: OperatorPack{V, I} end
+abstract type OperatorProd{V, I<:Tuple} <: OperatorPack{V, I} end
 @inline Base.eltype(m::OperatorProd) = eltype(typeof(m))
 @inline Base.eltype(::Type{M}) where {M<:OperatorProd} = eltype(idtype(M))
 @inline Base.iterate(m::OperatorProd) = iterate(id(m))
 @inline Base.iterate(m::OperatorProd, state) = iterate(id(m), state)
+@inline Base.firstindex(m::OperatorProd) = 1
+@inline Base.lastindex(m::OperatorProd) = rank(m)
+@inline Base.promote_rule(::Type{M}, ::Type{N}) where {M<:OperatorProd, N<:Number} = reparameter(M, :value, promote_type(valtype(M), N))
+@inline isscalartype(::Type{<:OperatorProd{V, Tuple{}} where V}) = true
+
+"""
+    rank(m::OperatorProd) -> Int
+    rank(::Type{M}) where {M<:OperatorProd} -> Int
+
+Get the rank of an `OperatorProd`.
+"""
+@inline rank(m::OperatorProd) = rank(typeof(m))
+@inline rank(::Type{M}) where {M<:OperatorProd} = fieldcount(idtype(M))
 
 """
     length(m::OperatorProd) -> Int
@@ -299,8 +279,6 @@ abstract type OperatorProd{V, I<:ID{OperatorUnit}} <: OperatorPack{V, I} end
 Get the length of an `OperatorProd`.
 """
 @inline Base.length(m::OperatorProd) = rank(m)
-@inline Base.firstindex(m::OperatorProd) = 1
-@inline Base.lastindex(m::OperatorProd) = rank(m)
 
 """
     getindex(m::OperatorProd, i::Integer) -> OperatorUnit
@@ -314,11 +292,37 @@ Overloaded `[]`.
 @inline dissolve(m::OperatorProd, ::Val{:id}, ::typeof(getindex), slice) = id(m)[slice]
 
 """
-    split(m::OperatorProd) -> Tuple{valtype(m), Vararg{OperatorUnit}}
+    split(m::OperatorProd) -> Tuple{valtype(m), Vararg{Any}}
 
-Split an `OperatorProd` into the coefficient and a sequence of `OperatorUnit`s.
+Split an `OperatorProd` into the coefficient and a sequence of the components of its id.
 """
 @inline Base.split(m::OperatorProd) = (value(m), id(m)...)
+
+"""
+    one(::Type{M}) where {M<:OperatorProd}
+    one(m::OperatorProd)
+
+Get the identity quantum operator.
+"""
+@inline function Base.one(::Type{M}) where {M<:OperatorProd}
+    rtype = rawtype(M)
+    vtype = isconcretetype(valtype(M)) ? valtype(M) : Int
+    @assert fieldnames(rtype) == (:value, :id) "one error: not supported type($(nameof(rtype)))."
+    return rtype(one(vtype), ())
+end
+@inline Base.one(m::OperatorProd) = rawtype(typeof(m))(dissolve(m, one)...)
+@inline dissolve(m::OperatorProd, ::Val{:value}, ::typeof(one)) = one(valtype(m))
+@inline dissolve(::OperatorProd, ::Val{:id}, ::typeof(one)) = ()
+
+"""
+    convert(::Type{M}, m::Number) where {M<:OperatorProd}
+
+Convert a number to a quantum operator.
+"""
+@inline function Base.convert(::Type{M}, m::Number) where {M<:OperatorProd}
+    @assert isa(one(M), M) "convert error: not convertible."
+    return one(M)*convert(dtype(M), m)
+end
 
 """
     sequence(m::OperatorProd, table) -> NTuple{rank(m), Int}
@@ -354,14 +358,14 @@ Get the adjoint of an operator.
 
 Judge whether an operator is Hermitian.
 """
-@inline ishermitian(m::Operator) = isa(value(m), Real) && ishermitian(id(m))
+@inline ishermitian(m::Operator) = isreal(value(m)) && ishermitian(id(m))
 
 """
-    convert(::Type{M}, u::OperatorUnit) where {M<:Operator{<:Number, <:ID{OperatorUnit}}}
+    convert(::Type{M}, u::OperatorUnit) where {M<:Operator}
 
 Convert an operator unit to an operator.
 """
-@inline function Base.convert(::Type{M}, u::OperatorUnit) where {M<:Operator{<:Number, <:ID{OperatorUnit}}}
+@inline function Base.convert(::Type{M}, u::OperatorUnit) where {M<:Operator}
     @assert Tuple{typeof(u)} <: idtype(M) "convert error: not convertible."
     return Operator(one(valtype(M)), ID(u))
 end
@@ -388,28 +392,20 @@ end
 
 # Operator sum
 """
-    OperatorSum{M<:OperatorPack, I<:Tuple} <: OperatorSet{M}
+    OperatorSum{M<:OperatorPack, I} <: OperatorSet{M}
 
 The sum of `OperatorPack`s.
 
 Similar items are automatically merged with the aid of the id system.
 """
-struct OperatorSum{M<:OperatorPack, I<:Tuple} <: OperatorSet{M}
+struct OperatorSum{M<:OperatorPack, I} <: OperatorSet{M}
     contents::OrderedDict{I, M}
-    OperatorSum(contents::OrderedDict{<:Tuple, <:OperatorPack}) = new{valtype(contents), keytype(contents)}(contents)
+    OperatorSum(contents::OrderedDict{I, M}) where {I, M<:OperatorPack} = new{M, I}(contents)
 end
 @inline Base.iterate(ms::OperatorSum) = iterate(values(ms.contents))
 @inline Base.iterate(ms::OperatorSum, state) = iterate(values(ms.contents), state)
-@inline Base.length(ms::OperatorSum) = length(ms.contents)
-@inline Base.keys(ms::OperatorSum) = keys(ms.contents)
-@inline Base.haskey(ms::OperatorSum, id::Tuple) = haskey(ms.contents, id)
-@inline Base.getindex(ms::OperatorSum, id::Tuple) = ms.contents[id]
-@inline Base.getindex(ms::OperatorSum, index::Integer) = iterate(ms.contents, index)[1][2]
-@inline Base.getindex(ms::OperatorSum, indexes::AbstractVector{<:Integer}) = OperatorSum{eltype(ms)}(ms[index] for index in indexes)
-@inline Base.getindex(ms::OperatorSum, ::Colon) = OperatorSum(copy(ms.contents))
-@inline Base.setindex!(ms::OperatorSum, m::OperatorPack, id::Tuple) = (ms.contents[id] = m; m)
-@inline Base.empty(ms::OperatorSum) = OperatorSum(empty(ms.contents))
-@inline Base.empty!(ms::OperatorSum) = (empty!(ms.contents); ms)
+@inline Base.firstindex(::OperatorSum) = 1
+@inline Base.lastindex(ms::OperatorSum) = length(ms)
 @inline function Base.promote_rule(::Type{MS₁}, ::Type{MS₂}) where {MS₁<:OperatorSum, MS₂<:OperatorSum}
     M = promote_type(eltype(MS₁), eltype(MS₂))
     return OperatorSum{M, idtype(M)}
@@ -433,10 +429,44 @@ Get the sum of `OperatorPack`s.
 function OperatorSum{M}(ms) where {M<:OperatorPack}
     result = OperatorSum(OrderedDict{idtype(M), M}())
     for m in ms
-        add!(result, m)
+        value(m)≠0 && add!(result, m)
     end
     return result
 end
+
+"""
+    length(ms::OperatorSum) -> Int
+
+Get the number of `OperatorPack`s contained in an `OperatorSum`.
+"""
+@inline Base.length(ms::OperatorSum) = length(ms.contents)
+
+"""
+    haskey(ms::OperatorSum, id) -> Bool
+
+Judge whether an `OperatorSum` contains an `OperatorPack` with the given `id`. 
+"""
+@inline Base.haskey(ms::OperatorSum, id) = haskey(ms.contents, id)
+
+"""
+    getindex(ms::OperatorSum, index::Integer) -> eltype(ms)
+    getindex(ms::OperatorSum, indexes::AbstractVector{<:Integer}) -> typeof(ms)
+    getindex(ms::OperatorSum, ::Colon) -> typeof(ms)
+
+Overloaded `[]`.
+"""
+@inline Base.getindex(ms::OperatorSum, index::Integer) = iterate(ms.contents, index)[1][2]
+@inline Base.getindex(ms::OperatorSum, indexes::AbstractVector{<:Integer}) = OperatorSum{eltype(ms)}(ms[index] for index in indexes)
+@inline Base.getindex(ms::OperatorSum, ::Colon) = OperatorSum(copy(ms.contents))
+
+"""
+    empty(ms::OperatorSum) -> typeof(ms)
+    empty!(ms::OperatorSum) -> typeof(ms)
+
+Get an empty copy or empty an `OperatorSum`.
+"""
+@inline Base.empty(ms::OperatorSum) = OperatorSum(empty(ms.contents))
+@inline Base.empty!(ms::OperatorSum) = (empty!(ms.contents); ms)
 
 """
     isapprox(ms₁::OperatorSum, ms₂::OperatorSum; atol::Real=atol, rtol::Real=rtol) -> Bool
@@ -448,16 +478,152 @@ Compare two `OperatorSum`s and judge whether they are approximate to each other.
         isapprox(value(m), 0; atol=atol, rtol=rtol) && continue
         k = id(m)
         haskey(ms₂, k) || return false
-        isapprox(m, ms₂[k]; atol=atol, rtol=rtol) || return false
+        isapprox(m, ms₂.contents[k]; atol=atol, rtol=rtol) || return false
     end
     for m in ms₂
         isapprox(value(m), 0; atol=atol, rtol=rtol) && continue
         k = id(m)
         haskey(ms₁, k) || return false
-        isapprox(m, ms₁[k]; atol=atol, rtol=rtol) || return false
+        isapprox(m, ms₁.contents[k]; atol=atol, rtol=rtol) || return false
     end
     return true
 end
+
+"""
+    add!(ms::OperatorSum) -> typeof(ms)
+    add!(ms::OperatorSum, m::Union{Number, OperatorUnit, OperatorPack}) -> typeof(ms)
+    add!(ms::OperatorSum, mms::OperatorSum) -> typeof(ms)
+
+Get the in-place addition of quantum operators.
+"""
+@inline add!(ms::OperatorSum) = ms
+@inline function add!(ms::OperatorSum, m::Union{Number, OperatorUnit, OperatorPack})
+    isa(m, Number) && m==0 && return ms
+    m = convert(eltype(ms), m)
+    old = get(ms.contents, id(m), nothing)
+    new = isnothing(old) ? m : replace(old, value(old)+value(m))
+    value(new)==0 ? delete!(ms.contents, id(m)) : (ms.contents[id(m)] = new)
+    return ms
+end
+@inline function add!(ms::OperatorSum, mms::OperatorSum)
+    for m in mms
+        add!(ms, m)
+    end
+    return ms
+end
+
+"""
+    sub!(ms::OperatorSum) -> typeof(ms)
+    sub!(ms::OperatorSum, m::Union{Number, OperatorUnit, OperatorPack}) -> typeof(ms)
+    sub!(ms::OperatorSum, mms::OperatorSum) -> typeof(ms)
+
+Get the in-place subtraction of quantum operators.
+"""
+@inline sub!(ms::OperatorSum) = ms
+@inline function sub!(ms::OperatorSum, m::Union{Number, OperatorUnit, OperatorPack})
+    isa(m, Number) && abs(m)==0 && return ms
+    m = convert(eltype(ms), m)
+    old = get(ms.contents, id(m), nothing)
+    new = isnothing(old) ? -m : replace(old, value(old)-value(m))
+    value(new)==0 ? delete!(ms.contents, id(m)) : (ms.contents[id(m)] = new)
+    return ms
+end
+@inline function sub!(ms::OperatorSum, mms::OperatorSum)
+    for m in mms
+        sub!(ms, m)
+    end
+    return ms
+end
+
+"""
+    mul!(ms::OperatorSum, factor::Number) -> OperatorSum
+
+Get the in-place multiplication of an `OperatorSum` with a number.
+"""
+function mul!(ms::OperatorSum, factor::Number)
+    abs(factor)==0 && return empty!(ms)
+    for m in ms
+        ms.contents[id(m)] = replace(m, value(m)*factor)
+    end
+    return ms
+end
+
+"""
+    div!(ms::OperatorSum, factor::Number) -> OperatorSum
+
+Get the in-place division of an `OperatorSum` with a number.
+"""
+function div!(ms::OperatorSum, factor::Number)
+    isinf(factor) && return empty!(ms)
+    for m in ms
+        ms.contents[id(m)] = replace(m, value(m)/factor)
+    end
+    return ms
+end
+
+"""
+    map!(f::Function, ms::OperatorSum; kwargs...) -> typeof(ms)
+
+In place map of an `OperatorSum` by the function `f` elementally.
+"""
+function Base.map!(f::Function, ms::OperatorSum; kwargs...)
+    for m in ms
+        ms.contents[id(m)] = f(m; kwargs...)
+    end
+    return ms
+end
+
+# Operators
+"""
+    Operators{O<:Operator, I<:ID{OperatorUnit}}
+
+A set of operators.
+
+Type alias for `OperatorSum{O<:Operator, I<:ID{OperatorUnit}}`.
+"""
+const Operators{O<:Operator, I<:ID{OperatorUnit}} = OperatorSum{O, I}
+@inline Base.summary(io::IO, ::Operators) = @printf io "Operators"
+
+"""
+    Operators(opts::Operator...)
+    Operators{M}(opts::Operator...)
+
+Get a set of operators.
+"""
+@inline Operators(opts::Operator...) = OperatorSum(opts)
+@inline Operators{M}(opts::Operator...) where {M<:Operator} = OperatorSum{M}(opts)
+
+"""
+    adjoint(opts::Operators) -> Operators
+
+Get the adjoint of a set of operators.
+"""
+function Base.adjoint(opts::Operators)
+    result = zero(opts)
+    for opt in opts
+        add!(result, opt')
+    end
+    return result
+end
+
+"""
+    ishermitian(opts::Operators) -> Bool
+
+Judge whether a set of operators as a whole is Hermitian.
+"""
+@inline ishermitian(opts::Operators) = opts == opts'
+
+# Arithmetic of quantum operators
+"""
+    optype(m::QuantumOperator)
+    optype(::Type{<:QuantumOperator})
+
+Get the corresponding `OperatorPack` type of a generic quantum operator.
+"""
+@inline optype(m::QuantumOperator) = optype(typeof(m))
+@inline optype(::Type{M}) where {M<:OperatorUnit} = fulltype(Operator, NamedTuple{(:value, :id), Tuple{Int, Tuple{M}}})
+@inline optype(::Type{M}) where {M<:OperatorPack} = M
+@inline optype(::Type{M}) where {M<:OperatorSet} = eltype(M)
 
 """
     zero(::Type{M}) where {M<:QuantumOperator} -> OperatorSum
@@ -484,84 +650,6 @@ function Base.conj(ms::OperatorSum)
     end
     return result
 end
-
-"""
-    add!(ms::OperatorSum) -> typeof(ms)
-    add!(ms::OperatorSum, m::Union{Number, OperatorUnit, OperatorPack}) -> typeof(ms)
-    add!(ms::OperatorSum, mms::OperatorSum) -> typeof(ms)
-
-Get the in-place addition of quantum operators.
-"""
-@inline add!(ms::OperatorSum) = ms
-@inline function add!(ms::OperatorSum, m::Union{Number, OperatorUnit, OperatorPack})
-    isa(m, Number) && m==0 && return ms
-    m = convert(eltype(ms), m)
-    old = get(ms.contents, id(m), nothing)
-    new = isnothing(old) ? m : replace(old, value(old)+value(m))
-    value(new)==0 ? delete!(ms.contents, id(m)) : (ms[id(m)] = new)
-    return ms
-end
-@inline function add!(ms::OperatorSum, mms::OperatorSum)
-    for m in mms
-        add!(ms, m)
-    end
-    return ms
-end
-
-"""
-    sub!(ms::OperatorSum) -> typeof(ms)
-    sub!(ms::OperatorSum, m::Union{Number, OperatorUnit, OperatorPack}) -> typeof(ms)
-    sub!(ms::OperatorSum, mms::OperatorSum) -> typeof(ms)
-
-Get the in-place subtraction of quantum operators.
-"""
-@inline sub!(ms::OperatorSum) = ms
-@inline function sub!(ms::OperatorSum, m::Union{Number, OperatorUnit, OperatorPack})
-    isa(m, Number) && abs(m)==0 && return ms
-    m = convert(eltype(ms), m)
-    old = get(ms.contents, id(m), nothing)
-    new = isnothing(old) ? -m : replace(old, value(old)-value(m))
-    value(new)==0 ? delete!(ms.contents, id(m)) : (ms[id(m)] = new)
-    return ms
-end
-@inline function sub!(ms::OperatorSum, mms::OperatorSum)
-    for m in mms
-        sub!(ms, m)
-    end
-    return ms
-end
-
-"""
-    mul!(ms::OperatorSum, factor::Number) -> OperatorSum
-
-Get the in-place multiplication of an `OperatorSum` with a number.
-"""
-function mul!(ms::OperatorSum, factor::Number)
-    abs(factor)==0 && return empty!(ms)
-    for m in ms
-        new = replace(m, value(m)*factor)
-        value(new)==0 ? delete!(ms.contents, id(m)) : (ms[id(m)] = new)
-    end
-    return ms
-end
-
-"""
-    div!(ms::OperatorSum, factor::Number) -> OperatorSum
-
-Get the in-place division of an `OperatorSum` with a number.
-"""
-@inline div!(ms::OperatorSum, factor::Number) = mul!(ms, one(dtype(eltype(ms)))/factor)
-
-"""
-    optype(m::QuantumOperator)
-    optype(::Type{<:QuantumOperator})
-
-Get the corresponding `OperatorPack` type of a generic quantum operator.
-"""
-@inline optype(m::QuantumOperator) = optype(typeof(m))
-@inline optype(::Type{M}) where {M<:OperatorUnit} = fulltype(Operator, NamedTuple{(:value, :id), Tuple{Int, Tuple{M}}})
-@inline optype(::Type{M}) where {M<:OperatorPack} = M
-@inline optype(::Type{M}) where {M<:OperatorSet} = eltype(M)
 
 """
     +(m::QuantumOperator) -> typeof(m)
@@ -612,6 +700,8 @@ end
     *(m₁::OperatorPack, m₂::OperatorPack) -> OperatorPack
     *(factor::Number, ms::OperatorSum) -> OperatorSum
     *(ms::OperatorSum, factor::Number) -> OperatorSum
+    *(m::OperatorUnit, ms::OperatorSum) -> OperatorSum
+    *(ms::OperatorSum, m::OperatorUnit) -> OperatorSum
     *(m::OperatorPack, ms::OperatorSum) -> OperatorSum
     *(ms::OperatorSum, m::OperatorPack) -> OperatorSum
     *(ms₁::OperatorSum, ms₂::OperatorSum) -> OperatorSum
@@ -639,8 +729,8 @@ function Base.:*(ms::OperatorSum, factor::Number)
     end
     return result
 end
-@inline Base.:*(m::OperatorPack, ms::OperatorSum) = OperatorSum(collect(m*mm for mm in ms))
-@inline Base.:*(ms::OperatorSum, m::OperatorPack) = OperatorSum(collect(mm*m for mm in ms))
+@inline Base.:*(m::Union{OperatorPack, OperatorUnit}, ms::OperatorSum) = OperatorSum(collect(m*mm for mm in ms))
+@inline Base.:*(ms::OperatorSum, m::Union{OperatorPack, OperatorUnit}) = OperatorSum(collect(mm*m for mm in ms))
 @inline Base.:*(ms₁::OperatorSum, ms₂::OperatorSum) = OperatorSum(collect(m₁*m₂ for m₁ in ms₁ for m₂ in ms₂))
 
 """
@@ -663,46 +753,6 @@ Overloaded `//` between a quantum operator and a number.
 Overloaded `^` between a quantum operator and an integer.
 """
 @inline Base.:^(m::QuantumOperator, n::Integer) = (@assert n>0 "^ error: non-positive integers are not allowed."; prod(ntuple(i->m, Val(n)), init=1))
-
-# Operators
-"""
-    Operators{O<:Operator, I<:ID{OperatorUnit}}
-
-A set of operators.
-
-Type alias for `OperatorSum{O<:Operator, I<:ID{OperatorUnit}}`.
-"""
-const Operators{O<:Operator, I<:ID{OperatorUnit}} = OperatorSum{O, I}
-@inline Base.summary(io::IO, opts::Operators) = @printf io "Operators"
-
-"""
-    Operators(opts::Operator...)
-    Operators{M}(opts::Operator...)
-
-Get a set of operators.
-"""
-@inline Operators(opts::Operator...) = OperatorSum(opts)
-@inline Operators{M}(opts::Operator...) where {M<:Operator} = OperatorSum{M}(opts)
-
-"""
-    adjoint(opts::Operators) -> Operators
-
-Get the adjoint of a set of operators.
-"""
-function Base.adjoint(opts::Operators)
-    result = zero(opts)
-    for opt in opts
-        add!(result, opt')
-    end
-    return result
-end
-
-"""
-    ishermitian(opts::Operators) -> Bool
-
-Judge whether a set of operators as a whole is Hermitian.
-"""
-@inline ishermitian(opts::Operators) = opts == opts'
 
 # LaTeX format of quantum operators
 """
@@ -763,25 +813,25 @@ LaTeX string representation of an operator unit.
 end
 
 """
-    latexstring(opt::OperatorPack) -> String
+    latexstring(opt::OperatorProd) -> String
 
 Get the string representation of an operator in the LaTeX format.
 """
-function latexstring(opt::OperatorPack)
+function latexstring(opt::OperatorProd)
     rank(opt)==0 && return replace(valuetolatextext(value(opt)), " "=>"")
     poses = Int[]
     push!(poses, 1)
     for i = 2:rank(opt)
-        id(opt)[i]≠id(opt)[i-1] && push!(poses, i)
+        opt[i]≠opt[i-1] && push!(poses, i)
     end
     push!(poses, rank(opt)+1)
     result = valuetostr(value(opt))
     for i = 1:length(poses)-1
         order = poses[i+1] - poses[i]
         if order == 1
-            result = @sprintf "%s%s" result latexstring(id(opt)[poses[i]])
+            result = @sprintf "%s%s" result latexstring(opt[poses[i]])
         else
-            result = @sprintf "%s(%s)^%s" result latexstring(id(opt)[poses[i]]) order
+            result = @sprintf "%s(%s)^%s" result latexstring(opt[poses[i]]) order
         end
     end
     return result
@@ -827,7 +877,7 @@ end
 
 Show a quantum operator.
 """
-Base.show(io::IO, ::MIME"text/latex", m::QuantumOperator) = show(io, MIME"text/latex"(), latexstring(unicode2latex(latexstring(m))))
+@inline Base.show(io::IO, ::MIME"text/latex", m::QuantumOperator) = show(io, MIME"text/latex"(), latexstring(unicode2latex(latexstring(m))))
 
 # Transformations
 """
@@ -862,33 +912,16 @@ function (transformation::LinearTransformation)(ms::OperatorSet; kwargs...)
 end
 
 """
-    add!(destination, transformation::LinearTransformation, op::QuantumOperator; kwargs...) -> typeof(destination)
+    add!(destination, transformation::LinearTransformation, op::OperatorPack; kwargs...) -> typeof(destination)
+    add!(destination, transformation::LinearTransformation, op::OperatorSet; kwargs...) -> typeof(destination)
 
 Add the result of the linear transformation on a quantum operator to the destination.
 """
-@inline function add!(destination, transformation::LinearTransformation, op::QuantumOperator; kwargs...)
-    add!(destination, transformation(op; kwargs...))
+@inline function add!(destination, transformation::LinearTransformation, op::OperatorPack; kwargs...)
+    return add!(destination, transformation(op; kwargs...))
 end
-
-"""
-    map!(transformation::LinearTransformation, ms::OperatorSum; kwargs...) -> typeof(ms)
-
-In place map of an `OperatorSum` by a linear transformation.
-"""
-function Base.map!(transformation::LinearTransformation, ms::OperatorSum; kwargs...)
-    for m in ms
-        ms[id(m)] = transformation(m; kwargs...)
-    end
-    return ms
-end
-
-"""
-    map!(transformation::LinearTransformation, destination, ms::OperatorSum; kwargs...) -> typeof(destination)
-
-In place map of an `OperatorSum` by a linear transformation.
-"""
-function Base.map!(transformation::LinearTransformation, destination, ms::OperatorSum; kwargs...)
-    for m in ms
+@inline function add!(destination, transformation::LinearTransformation, op::OperatorSet; kwargs...)
+    for m in op
         add!(destination, transformation, m; kwargs...)
     end
     return destination
@@ -902,29 +935,8 @@ Wrapper a function to be a linear transformation.
 struct LinearFunction{F<:Function} <: LinearTransformation
     f::F
 end
-@inline (f::LinearFunction)(op::QuantumOperator; kwargs...) = f.f(op; kwargs...)
-
-"""
-    Identity <: LinearTransformation
-
-The identity transformation.
-"""
-struct Identity <: LinearTransformation end
-@inline Base.valtype(::Type{Identity}, M::Type{<:QuantumOperator}) = M
-@inline (i::Identity)(m::Union{OperatorUnit, OperatorPack}; kwargs...) = m
-
-"""
-    Numericalization{T<:Number} <: LinearTransformation
-
-The numericalization transformation, which converts the value of a quantum operator to a number of type `T`.
-"""
-struct Numericalization{T<:Number} <: LinearTransformation end
-@inline Base.valtype(::Type{<:Numericalization{T}}, M::Type{<:OperatorPack}) where {T<:Number} = reparameter(M, :value, T)
-@inline function Base.valtype(T::Type{<:Numericalization}, M::Type{<:OperatorSum})
-    V = valtype(T, eltype(M))
-    return OperatorSum{V, idtype(V)}
-end
-@inline (n::Numericalization)(m::OperatorPack; kwargs...) = convert(valtype(n, m), m)
+@inline (f::LinearFunction)(op::OperatorPack; kwargs...) = f.f(op; kwargs...)
+@inline (f::LinearFunction)(op::OperatorSet; kwargs...) = f.f(op; kwargs...)
 
 """
     Matrixization <: LinearTransformation
@@ -1032,7 +1044,7 @@ end
 """
     RankFilter{R} <: LinearTransformation
 
-Rank filter, which filters out the `OperatorPack` with a given rank `R`.
+Rank filter, which filters out the `OperatorProd` with a given rank `R`.
 """
 struct RankFilter{R} <: LinearTransformation
     function RankFilter(rank::Int)
@@ -1040,13 +1052,13 @@ struct RankFilter{R} <: LinearTransformation
         new{rank}()
     end
 end
-@inline Base.valtype(::Type{RankFilter{R}}, M::Type{<:OperatorPack}) where R = reparameter(M, :id, ID{eltype(M), R})
+@inline Base.valtype(::Type{RankFilter{R}}, M::Type{<:OperatorProd}) where R = reparameter(M, :id, ID{eltype(M), R})
 @inline function Base.valtype(R::Type{<:RankFilter}, M::Type{<:OperatorSum})
     V = valtype(R, eltype(M))
     return OperatorSum{V, idtype(V)}
 end
 @inline rank(rf::RankFilter) = rank(typeof(rf))
 @inline rank(::Type{RankFilter{R}}) where R = R
-@inline @generated (rf::RankFilter)(m::OperatorPack; kwargs...) = rank(m)==rank(rf) ? :(m) : 0
+@inline @generated (rf::RankFilter)(m::OperatorProd; kwargs...) = rank(m)==rank(rf) ? :(m) : 0
 
 end #module

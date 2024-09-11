@@ -2,7 +2,7 @@ using LinearAlgebra: dot, tr
 using QuantumLattices: add!, expand, expand!, reset!, update
 using QuantumLattices.DegreesOfFreedom: plain, Boundary, CompositeIndex, Coupling, Hilbert, IIDSpace, Index, OperatorUnitToTuple, SimpleIID, SimpleInternal, Term
 using QuantumLattices.Frameworks
-using QuantumLattices.QuantumOperators: ID, Identity, Operator, Operators, id, idtype
+using QuantumLattices.QuantumOperators: ID, LinearFunction, Operator, Operators, id, idtype
 using QuantumLattices.Spatials: Lattice, Point, bonds, decompose, isintracell
 using QuantumLattices.Toolkit: Float, contentnames, reparameter
 using StaticArrays: SVector
@@ -81,7 +81,7 @@ end
     tops₁ = expand(t, filter(bond->isintracell(bond), bs), hilbert; half=true)
     tops₂ = boundary(expand(one(t), filter(bond->!isintracell(bond), bs), hilbert; half=true))
     μops = expand(one(μ), filter(bond->length(bond)==1, bs), hilbert; half=true)
-    i = Identity()
+    i = LinearFunction(identity)
 
     optp = Operator{Complex{Float}, ID{CompositeIndex{Index{Int, FID{Int}}, SVector{1, Float}}, 2}}
     cat = CategorizedGenerator(tops₁, (t=Operators{optp}(), μ=μops), (t=tops₂, μ=Operators{optp}()), (t=2.0, μ=1.0), boundary, eager)

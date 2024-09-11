@@ -32,7 +32,6 @@ function permute(u₁::AID, u₂::AID)
 end
 
 @testset "ID" begin
-    @test ID|>rank == Any
     @test promote_type(ID{AID{Int, Int}, 1}, ID{AID{Int, Int}}) == ID{AID{Int, Int}}
     @test promote_type(ID{AID{Int, Int}}, ID{AID{Int, Int}, 1}) == ID{AID{Int, Int}}
     @test promote_type(ID{AID{Int, Int}}, ID{AID{Int, Float}}) == ID{AID{Int, <:Real}}
@@ -67,7 +66,7 @@ end
 
     @test valtype(OperatorProd) == parametertype(OperatorProd, :value) == parametertype(OperatorProd, 1) == Any
     @test valtype(OperatorProd{Int}) == parametertype(OperatorProd{Int}, :value) == parametertype(OperatorProd{Int}, 1) == Int
-    @test idtype(OperatorProd{<:Number}) == parametertype(OperatorProd{<:Number}, :id) == parametertype(OperatorProd{<:Number}, 2) == ID{OperatorUnit}
+    @test idtype(OperatorProd{<:Number}) == parametertype(OperatorProd{<:Number}, :id) == parametertype(OperatorProd{<:Number}, 2) == Tuple
     @test idtype(OperatorProd{<:Number, ID{AID}}) == parametertype(OperatorProd{<:Number, ID{AID}}, :id) == parametertype(OperatorProd{<:Number, ID{AID}}, 2) == ID{AID}
 
     @test promote_type(Operator{Int}, Operator) == Operator
@@ -90,7 +89,7 @@ end
     @test replace(opt, 3) == replace(opt, value=3) == Operator(3, AID(1, 1))
     @test isapprox(opt, replace(opt, value=opt.value+10^-6); atol=10^-5)
     @test length(opt) == 1 && firstindex(opt) == 1 && lastindex(opt) ==1
-    @test opt[1]==AID(1, 1) && opt[1:1]==Operator(1.0, AID(1, 1))
+    @test opt[1]==opt[begin]==opt[end]==AID(1, 1) && opt[1:1]==Operator(1.0, AID(1, 1))
     @test split(opt) == (2.0, AID(1, 1))
     @test opt|>typeof|>one == opt|>one == Operator(1.0)
     @test convert(Operator{Float, Tuple{AID{Int, Int}}}, Operator(2, AID(1, 1))) == Operator(2.0, AID(1, 1))
@@ -115,10 +114,8 @@ end
     @test length(opts) == 2
     @test summary(opts) == "Operators"
     @test string(opts) == @sprintf "Operators with 2 Operator\n  %s\n" join(opts, "\n  ")
-    @test keys(opts) == keys(opts.contents)
     @test haskey(opts, id(opt₁)) && haskey(opts, id(opt₂)) && !haskey(opts, ID(AID(3, 1)))
-    @test opts[id(opt₁)]==opt₁ && opts[id(opt₂)]==opt₂
-    @test opts[1]==opt₁ && opts[2]==opt₂
+    @test opts[1]==opts[begin]==opt₁ && opts[2]==opts[end]==opt₂
     @test opts[1:2] == opts[:] == opts
     @test empty(opts) == empty!(deepcopy(opts)) == zero(opts)
     optp₁ = promote_type(typeof(opts), OperatorSum{Operator{Complex{Int}, NTuple{2, AID{Float, Float}}}, NTuple{2, AID{Float, Float}}})
@@ -218,21 +215,14 @@ struct DoubleCoeff <: LinearTransformation end
     m = Operator(1, AID(1, 1))
     s = Operators(m)
 
-    i = Identity()
+    i = LinearFunction(identity)
     @test i==deepcopy(i) && isequal(i, deepcopy(i))
-    @test valtype(i, m) == valtype(typeof(i), typeof(m)) == typeof(m)
-    @test valtype(i, s) == valtype(typeof(i), typeof(s)) == typeof(s)
     @test i(m)==m && i(s)==s
 
-    n = Numericalization{Float64}()
-    @test valtype(n, m) == valtype(typeof(n), typeof(m)) == Operator{Float, Tuple{AID{Int, Int}}}
-    @test valtype(n, s) == valtype(typeof(n), typeof(s)) == OperatorSum{Operator{Float, Tuple{AID{Int, Int}}}, Tuple{AID{Int, Int}}}
-    @test n(m) == replace(m, value=1.0)
-    @test n(s) == Operators(replace(m, value=1.0))
-
     double = DoubleCoeff()
+    @test valtype(double, m) == valtype(typeof(double), typeof(m)) == typeof(m)
+    @test valtype(double, s) == valtype(typeof(double), typeof(s)) == typeof(s)
     @test map!(double, s) == s == Operators(Operator(2, AID(1, 1)))
-    @test map!(double, zero(s), s) == Operators(Operator(4, AID(1, 1)))
 end
 
 @testset "Permutation" begin

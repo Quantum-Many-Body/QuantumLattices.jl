@@ -7,7 +7,7 @@ using StaticArrays: SVector
 using ..QuantumLattices: add!, decompose, dimension, dtype
 using ..QuantumOperators: ID, LinearTransformation, Operator, OperatorPack, Operators, OperatorSum, OperatorUnit, valuetolatextext, valuetostr
 using ..Spatials: Bond, Point
-using ..Toolkit: atol, efficientoperations, rtol, CompositeDict, Float, VectorSpace, VectorSpaceCartesian, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceStyle, commontype, concatenate, decimaltostr, fulltype, parametertype, rawtype, reparameter
+using ..Toolkit: atol, efficientoperations, rtol, CompositeDict, Float, VectorSpace, VectorSpaceCartesian, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceStyle, concatenate, decimaltostr, fulltype, parametertype, rawtype, reparameter
 
 import LaTeXStrings: latexstring
 import ..QuantumLattices: ⊕, ⊗, expand, expand!, id, ishermitian, kind, permute, rank, reset!, update!, value
@@ -759,6 +759,7 @@ end
 @inline isparameterbound(::Type{<:Coupling}, ::Val{:constraint}, ::Type{C}) where {C<:Constraint} = !isconcretetype(C)
 @inline idtype(M::Type{<:Coupling}) = Tuple{parametertype(M, :indexes), parametertype(M, :constraint)}
 @inline getcontent(coupling::Coupling, ::Val{:id}) = (coupling.indexes, coupling.constraint)
+@inline rank(coupling::Coupling) = rank(typeof(coupling))
 @inline rank(M::Type{<:Coupling}) = fieldcount(parametertype(M, :indexes))
 @inline Coupling(id::Tuple{ID{Index}, Constraint}) = Coupling(1, id)
 @inline Coupling(value, id::Tuple{ID{Index}, Constraint}) = Coupling(value, id...)
