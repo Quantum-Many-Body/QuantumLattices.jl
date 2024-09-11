@@ -50,7 +50,7 @@ Return a copy of a concrete `QuantumOperator` with some of the field values repl
 """
     OperatorUnit <: QuantumOperator
 
-An operator unit is the irreducible symbolic unit to represent a quantum operator.
+An operator unit is the irreducible symbolic unit to completely represent a quantum operator.
 
 It plays the role of the symbols as in usual computer algebras while it can host internal structures, which is convenient for quantum operators in representative of the internal degrees of freedom.
 """
@@ -223,14 +223,13 @@ Get the id of an `OperatorPack`.
 """
 @inline id(m::OperatorPack) = getcontent(m, :id)
 
-@inline newvalue(m::OperatorPack, v) = v
 """
     replace(m::OperatorPack, v) -> OperatorPack
 
 Replace the value of an `OperatorPack`.
 """
-@inline Base.replace(m::OperatorPack, v) = rawtype(typeof(m))(dissolve(m, newvalue, (v,))...)
-@inline dissolve(m::OperatorPack, ::Val{:value}, ::typeof(newvalue), args::Tuple, kwargs::NamedTuple) = newvalue(m, args...; kwargs...)
+@inline Base.replace(m::OperatorPack, v) = rawtype(typeof(m))(dissolve(m, replace, v)...)
+@inline dissolve(::OperatorPack, ::Val{:value}, ::typeof(replace), v) = v
 
 """
     isapprox(m₁::OperatorPack, m₂::OperatorPack; atol::Real=atol, rtol::Real=rtol) -> Bool
@@ -238,7 +237,7 @@ Replace the value of an `OperatorPack`.
 Compare two `OperatorPack`s and judge whether they are approximate to each other.
 """
 @inline function Base.isapprox(m₁::OperatorPack, m₂::OperatorPack; atol::Real=atol, rtol::Real=rtol)
-    isapprox(efficientoperations, contentorder(typeof(m₁), :value)|>Val, dissolve(m₁), dissolve(m₂); atol=atol, rtol=rtol)::Bool
+    return isapprox(efficientoperations, contentorder(typeof(m₁), :value)|>Val, dissolve(m₁), dissolve(m₂); atol=atol, rtol=rtol)::Bool
 end
 
 """
@@ -254,8 +253,8 @@ Get the identity quantum operator.
     return rtype(one(vtype), ())
 end
 @inline Base.one(m::OperatorPack) = rawtype(typeof(m))(dissolve(m, one)...)
-@inline dissolve(m::OperatorPack, ::Val{:value}, ::typeof(one), ::Tuple, ::NamedTuple) = one(valtype(m))
-@inline dissolve(::OperatorPack, ::Val{:id}, ::typeof(one), ::Tuple, ::NamedTuple) = ID()
+@inline dissolve(m::OperatorPack, ::Val{:value}, ::typeof(one)) = one(valtype(m))
+@inline dissolve(::OperatorPack, ::Val{:id}, ::typeof(one)) = ID()
 
 """
     convert(::Type{M}, m::Number) where {M<:OperatorPack}
@@ -310,9 +309,9 @@ Get the length of an `OperatorProd`.
 Overloaded `[]`.
 """
 @inline Base.getindex(m::OperatorProd, i::Integer) = id(m)[i]
-@inline Base.getindex(m::OperatorProd, slice) = rawtype(typeof(m))(dissolve(m, getindex, (slice,))...)
-@inline dissolve(m::OperatorProd, ::Val{:value}, ::typeof(getindex), ::Tuple{Any}, ::NamedTuple) = one(valtype(m))
-@inline dissolve(m::OperatorProd, ::Val{:id}, ::typeof(getindex), slice::Tuple{Any}, ::NamedTuple) = id(m)[first(slice)]
+@inline Base.getindex(m::OperatorProd, slice) = rawtype(typeof(m))(dissolve(m, getindex, slice)...)
+@inline dissolve(m::OperatorProd, ::Val{:value}, ::typeof(getindex), ::Any) = one(valtype(m))
+@inline dissolve(m::OperatorProd, ::Val{:id}, ::typeof(getindex), slice) = id(m)[slice]
 
 """
     split(m::OperatorProd) -> Tuple{valtype(m), Vararg{OperatorUnit}}

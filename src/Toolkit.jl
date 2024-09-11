@@ -682,38 +682,36 @@ For a type `T`, get the types of its predefined contents.
 end
 
 """
-    dissolve(m, f::Function=identity, args::Tuple=(), kwargs::NamedTuple=NamedTuple()) -> Tuple
+    dissolve(m, f::Function=identity, args...; kwargs...) -> Tuple
 
 Convert `m` to a tuple by the function `f` applied elementally to its contents with the extra positional arguments (`args`) and keyword arguments (`kwargs`). 
 
-The underlying called interface is the `dissolve` function when `f` is applied to each content of `m`:
+To each content of `m`, the underlying interface of the `dissolve` function when `f` is applied is as follows:
 ```julia
-dissolve(m, Val(name), f, args, kwargs)
+dissolve(m, Val(name), f, args...; kwargs...)
 ```
-Here, `name` is the name of a content of `m`.
+Here, `name` is the name of the corresponding content of `m`.
 
 Basically, the rule of how `f` operates on each field of `m` can be overridden by redefining the above `dissolve` function.
 !!!note
    The default `dissolve` function ignores the operation of function `f` and just return the content value of `m`.
 """
-@inline function dissolve(m, f::Function=identity, args::Tuple=(), kwargs::NamedTuple=NamedTuple())
-    dissolvehelper(m, f, args, kwargs, m|>typeof|>contentnames|>Val)
-end
-@inline @generated function dissolvehelper(m, f::Function, args::Tuple, kwargs::NamedTuple, ::Val{names}) where names
+@inline dissolve(m, f::Function=identity, args...; kwargs...) = dissolvehelper(m, Val(contentnames(typeof(m))), f, args...; kwargs...)
+@inline @generated function dissolvehelper(m, ::Val{names}, f::Function, args...; kwargs...) where names
     exprs = []
     for name in names
         name = Val(name)
-        push!(exprs, :(dissolve(m, $name, f, args, kwargs)))
+        push!(exprs, :(dissolve(m, $name, f, args...; kwargs...)))
     end
     return Expr(:tuple, exprs...)
 end
 
 """
-    dissolve(m, ::Val{name}, f::Function, args::Tuple, kwargs::NamedTuple) where name
+    dissolve(m, ::Val{name}, f::Function, args...; kwargs...) where name
 
 Dissolve the content specified by `name` of `m` by the function `f` applied with the extra positional arguments (`args`) and keyword arguments (`kwargs`).
 """
-@inline dissolve(m, ::Val{name}, f::Function, args::Tuple, kwargs::NamedTuple) where name = getcontent(m, name|>Val)
+@inline dissolve(m, ::Val{name}, ::Function, args...; kwargs...) where name = getcontent(m, Val(name))
 
 ## with type operations
 struct EfficientOperations end
@@ -847,13 +845,13 @@ A composite vector can be considered as a vector that is implemented by includin
 """
 abstract type CompositeVector{T} <: AbstractVector{T} end
 @inline contentnames(::Type{<:CompositeVector}) = (:contents,)
-@inline dissolve(cv::CompositeVector, ::Val{:contents}, f::Function, args::Tuple, kwargs::NamedTuple) = f(getcontent(cv, :contents), args...; kwargs...)
+@inline dissolve(cv::CompositeVector, ::Val{:contents}, f::Function, args...; kwargs...) = f(getcontent(cv, :contents), args...; kwargs...)
 @inline Base.axes(cv::CompositeVector) = axes(getcontent(cv, :contents))
 @inline Base.size(cv::CompositeVector) = size(getcontent(cv, :contents))
 @inline Base.:(==)(cv1::CompositeVector, cv2::CompositeVector) = ==(efficientoperations, cv1, cv2)
 @inline Base.isequal(cv1::CompositeVector, cv2::CompositeVector) = isequal(efficientoperations, cv1, cv2)
 @inline Base.getindex(cv::CompositeVector, i::Union{<:Integer, CartesianIndex}) = getcontent(cv, :contents)[i]
-@inline Base.getindex(cv::CompositeVector, inds) = rawtype(typeof(cv))(dissolve(cv, getindex, (inds,))...)
+@inline Base.getindex(cv::CompositeVector, inds) = rawtype(typeof(cv))(dissolve(cv, getindex, inds)...)
 @inline Base.setindex!(cv::CompositeVector, value, inds) = (getcontent(cv, :contents)[inds] = value)
 @inline Base.push!(cv::CompositeVector, values...) = (push!(getcontent(cv, :contents), values...); cv)
 @inline Base.pushfirst!(cv::CompositeVector, values...) = (pushfirst!(getcontent(cv, :contents), values...); cv)
@@ -861,14 +859,14 @@ abstract type CompositeVector{T} <: AbstractVector{T} end
 @inline Base.append!(cv::CompositeVector, values) = (append!(getcontent(cv, :contents), values); cv)
 @inline Base.prepend!(cv::CompositeVector, values) = (prepend!(getcontent(cv, :contents), values); cv)
 @inline Base.splice!(cv::CompositeVector, index::Integer, replacement=Base._default_splice) = splice!(getcontent(cv, :contents), index, replacement)
-@inline Base.splice!(cv::CompositeVector, range::UnitRange{<:Integer}, replacement=Base._default_splice) = rawtype(typeof(cv))(dissolve(cv, splice!, (range, replacement))...)
+@inline Base.splice!(cv::CompositeVector, range::UnitRange{<:Integer}, replacement=Base._default_splice) = rawtype(typeof(cv))(dissolve(cv, splice!, range, replacement)...)
 @inline Base.deleteat!(cv::CompositeVector, indices) = (deleteat!(getcontent(cv, :contents), indices); cv)
 @inline Base.pop!(cv::CompositeVector) = pop!(getcontent(cv, :contents))
 @inline Base.popfirst!(cv::CompositeVector) = popfirst!(getcontent(cv, :contents))
 @inline Base.empty!(cv::CompositeVector) = (empty!(getcontent(cv, :contents)); cv)
 @inline Base.empty(cv::CompositeVector) = rawtype(typeof(cv))(dissolve(cv, empty)...)
 @inline Base.reverse(cv::CompositeVector) =  rawtype(typeof(cv))(dissolve(cv, reverse)...)
-@inline Base.similar(cv::CompositeVector, dtype::Type=eltype(cv), dims::Tuple{Vararg{Int}}=size(cv)) = rawtype(typeof(cv))(dissolve(cv, similar, (dtype, dims))...)
+@inline Base.similar(cv::CompositeVector, dtype::Type=eltype(cv), dims::Tuple{Vararg{Int}}=size(cv)) = rawtype(typeof(cv))(dissolve(cv, similar, dtype, dims)...)
 
 """
     CompositeDict{K, V}
@@ -877,7 +875,7 @@ A composite dict can be considered as a dict that is implemented by including a 
 """
 abstract type CompositeDict{K, V} <: AbstractDict{K, V} end
 @inline contentnames(::Type{<:CompositeDict}) = (:contents,)
-@inline dissolve(cd::CompositeDict, ::Val{:contents}, f::Function, args::Tuple, kwargs::NamedTuple) = f(getcontent(cd, :contents), args...; kwargs...)
+@inline dissolve(cd::CompositeDict, ::Val{:contents}, f::Function, args...; kwargs...) = f(getcontent(cd, :contents), args...; kwargs...)
 @inline Base.isempty(cd::CompositeDict) = isempty(getcontent(cd, :contents))
 @inline Base.length(cd::CompositeDict) = length(getcontent(cd, :contents))
 @inline Base.haskey(cd::CompositeDict, key) = haskey(getcontent(cd, :contents), key)

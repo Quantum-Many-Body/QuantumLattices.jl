@@ -139,7 +139,7 @@ abstract type FT{T} end
 @inline parameternames(::Type{<:FT}) = (:content,)
 @inline isparameterbound(::Type{<:FT}, ::Val{:content}, D) = !isconcretetype(D)
 @inline contentnames(::Type{<:FT}) = (:content,)
-@inline dissolve(m::FT, ::Val{:content}, f::Function, args::Tuple, kwargs::NamedTuple) = f(getcontent(m, :content), args...; kwargs...)
+@inline dissolve(m::FT, ::Val{:content}, f::Function, args...; kwargs...) = f(getcontent(m, :content), args...; kwargs...)
 
 struct SameNameField <: FT{Vector{Int}}
     info::String
@@ -231,7 +231,7 @@ end
 
     a = SameNameField("abcd", [1, 2, 3, 4])
     @test getcontent(a, :content) == getcontent(a, 2) == getcontent(a, Val(:content)) == [1, 2, 3, 4]
-    @test dissolve(a, getindex, (1,)) == ("abcd", 1)
+    @test dissolve(a, getindex, 1) == ("abcd", 1)
 
     @test contentnames(DiffNameField) == (:info, :content)
     @test hasparameter(DiffNameField, :content) == false
@@ -241,7 +241,7 @@ end
 
     b = DiffNameField("abcd", [1, 2, 3, 4])
     @test getcontent(b, :content) == getcontent(b, 2) == getcontent(b, Val(:content)) == [1, 2, 3, 4]
-    @test dissolve(b, getindex, (2,)) == ("abcd", 2)
+    @test dissolve(b, getindex, 2) == ("abcd", 2)
 end
 
 struct EFO{F₁, F₂, F₃}
