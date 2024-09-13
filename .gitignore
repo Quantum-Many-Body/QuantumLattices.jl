@@ -11,3 +11,5 @@ test/*.dat
 .vscode/
 
 desktop.ini
+Manifest.toml
+test/Manifest.toml
