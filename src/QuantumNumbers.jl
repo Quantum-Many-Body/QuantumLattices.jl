@@ -10,15 +10,15 @@ using ..Toolkit: VectorSpace, VectorSpaceCartesian, VectorSpaceEnumerative, Vect
 import ..QuantumLattices: ⊕, ⊗, decompose, dimension, expand, permute
 import ..Toolkit: shape
 
-export AbelianNumber, AbelianNumbers, QuantumNumber, findindex, regularize, regularize!, periods, @abeliannumber
-export Momenta, Momentum, Momentum₁, Momentum₂, Momentum₃, ParticleNumber, SpinfulParticle, Sz
+export AbelianNumber, AbelianNumbers, Momenta, Momentum, Momentum₁, Momentum₂, Momentum₃, ParticleNumber, QuantumNumber, SpinfulParticle, Sz
+export findindex, regularize, regularize!, periods, @abeliannumber
 
 """
     positives(inputs::NTuple{N, Any}) where N -> NTuple{N, Int}
 
 Return a tuple of all positive signs.
 """
-@inline positives(inputs::NTuple{N, Any}) where N = ntuple(i->1, Val(N))
+@inline positives(::NTuple{N, Any}) where N = ntuple(i->1, Val(N))
 
 """
     QuantumNumber
@@ -43,7 +43,7 @@ abstract type QuantumNumber{T} end
 Base.show(io::IO, qn::QuantumNumber) = @printf io "%s(%s)" nameof(typeof(qn)) join(repr.(values(qn)), ", ")
 @generated Base.convert(::Type{Tuple}, qn::QuantumNumber) = Expr(:tuple, (:(getfield(qn, $i)) for i = 1:fieldcount(qn))...)
 function Base.convert(::Type{QN}, qn::Tuple) where {QN<:QuantumNumber}
-    @assert fieldcount(QN) == length(qn) "convert error: mismatched length between $QN($(fieldcount(QN))) and input tuple($(length(qn)))."
+    @assert fieldcount(QN)==length(qn) "convert error: mismatched length between $QN($(fieldcount(QN))) and input tuple($(length(qn)))."
     return QN(qn...)
 end
 @inline @generated function Base.zero(::Type{QN}) where {QN<:QuantumNumber}
@@ -62,15 +62,6 @@ end
 end
 
 """
-    dimension(::Type{<:QuantumNumber}) -> Int
-    dimension(::QuantumNumber) -> Int
-
-The dimension of the Hilbert space an `QuantumNumber` represents. Apparently, this is always 1.
-"""
-@inline dimension(::Type{<:QuantumNumber}) = 1
-@inline dimension(::QuantumNumber) = 1
-
-"""
     AbelianNumber{T<:Real} <: QuantumNumber{T}
 
 Abstract type for all concrete quantum numbers for a single basis.
@@ -83,6 +74,15 @@ abstract type AbelianNumber{T<:Real} <: QuantumNumber{T} end
 The periods of the components of a concrete `AbelianNumber`.
 """
 @inline periods(qn::AbelianNumber) = periods(typeof(qn))
+
+"""
+    dimension(::Type{<:AbelianNumber}) -> Int
+    dimension(::AbelianNumber) -> Int
+
+The dimension of the Hilbert space an `AbelianNumber` represents. Apparently, this is always 1.
+"""
+@inline dimension(::Type{<:AbelianNumber}) = 1
+@inline dimension(::AbelianNumber) = 1
 
 """
     +(qn::AbelianNumber) -> typeof(qn)
@@ -125,7 +125,7 @@ Overloaded `^` operator for `AbelianNumber`.
 function Base.:^(qn::AbelianNumber, power::Integer)
     @assert power>0 "^ error: power should be positive integer."
     result = qn
-    for i = 2:power
+    for _ = 2:power
         result += qn
     end
     return result
@@ -161,19 +161,19 @@ end
 Regularize the elements of an array in place so that it can represent quantum numbers.
 """
 function regularize!(::Type{QN}, array::AbstractVector{<:Real}) where {QN<:AbelianNumber}
-    @assert array|>length == QN|>length "regularize! error: inconsistent shape of input array and $QN."
-    for (i, period) in enumerate(QN|>periods)
+    @assert length(array)==length(QN) "regularize! error: inconsistent shape of input array and $QN."
+    for (index, period) in zip(eachindex(array), periods(QN))
         period==Inf || @inbounds begin
-            remainder = array[i] % period
-            array[i] = remainder<0 ? remainder+period : remainder
+            remainder = array[index] % period
+            array[index] = remainder<0 ? remainder+period : remainder
         end
     end
     return array
 end
 function regularize!(::Type{QN}, array::AbstractMatrix{<:Real}) where {QN<:AbelianNumber}
-    @assert size(array, 1) == QN|>length "regularize! error: inconsistent shape of input array and $QN."
-    for (i, period) in enumerate(QN|>periods)
-        period==Inf || @inbounds for j = 1:size(array, 2)
+    @assert size(array, 1)==length(QN) "regularize! error: inconsistent shape of input array and $QN."
+    for (i, period) in zip(axes(array, 1), periods(QN))
+        period==Inf || @inbounds for j in axes(array, 2)
             remainder = array[i, j] % period
             array[i, j] = remainder<0 ? remainder+period : remainder
         end
@@ -216,7 +216,7 @@ end
 """
     AbelianNumbers{QN<:AbelianNumber} <: VectorSpace{QN}
 
-The whole quantum numbers of the total bases of a Hilbert space.
+The whole Abelian quantum numbers of the total bases of a Hilbert space.
 """
 struct AbelianNumbers{QN<:AbelianNumber} <: VectorSpace{QN}
     form::Char
@@ -641,7 +641,7 @@ end
 Unitary Kronecker product of several `AbelianNumbers`es. The product result as well as the records of the product will be returned.
 !!! note
     1. All input `AbelianNumbers` must be 'U' formed or 'C' formed.
-    2. Since duplicate quantum number are not allowed in 'U' formed and 'C' formed `AbelianNumbers`es, in general, there exists a merge process of duplicate quantum numbers in the result. Therefore, records are needed to keep track of this process, which will be returned along with the product result. The records are stored in a `Dict{QN, Dict{NTuple{NTuple{length(qnses), QN}, UnitRange{Int}}}` typed dict, in which, for each nonduplicate quantum number `qn` in the result, there exist a record `Dict((qn₁, qn₂, ...)=>start:stop, ...)` telling what quantum numbers `(qn₁, qn₂, ...)` a merged duplicate `qn` comes from and what slice `start:stop` this merged duplicate corresponds in the result.
+    2. Since duplicate quantum number are not allowed in 'U' formed and 'C' formed `AbelianNumbers`es, in general, there exists a merge process of duplicate quantum numbers in the result. Therefore, records are needed to keep track of this process, which will be returned along with the product result. The records are stored in a `Dict{QN, Dict{NTuple{NTuple{length(qnses), QN}, UnitRange{Int}}}}` typed dict, in which, for each nonduplicate quantum number `qn` in the result, there exist a record `Dict((qn₁, qn₂, ...)=>start:stop, ...)` telling what quantum numbers `(qn₁, qn₂, ...)` a merged duplicate `qn` comes from and what slice `start:stop` this merged duplicate corresponds in the result.
 """
 function Base.prod(qnses::AbelianNumbers{QN}...; signs=positives(qnses)) where {QN<:AbelianNumber}
     @assert all((qns.form == 'U') || (qns.form == 'C') for qns in qnses) "prod error: all input qnses should be 'U' formed or 'C' formed."
