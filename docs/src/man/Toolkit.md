@@ -31,6 +31,7 @@ concatenate
 decimaltostr
 delta
 ordinal
+DirectSummedIndices
 Segment
 ```
 
@@ -574,7 +575,7 @@ Vector spaces are frequently encountered in physics, e.g. the Hilbert space in q
 [`VectorSpace{B}`](@ref) is the abstraction of a vector space, which has only one type parameter:
 * `B<:Any`: the type of the bases of the vector space
 
-Basically, a subtype should implement the following 3 methods:
+Basically, a subtype should implement the following 2 methods:
 1) ```julia
    Base.length(vs::VectorSpace) -> Int
    ```
@@ -583,15 +584,12 @@ Basically, a subtype should implement the following 3 methods:
    Base.getindex(vs::VectorSpace{B}, i::Int)  where B -> B
    ```
    Get the ith basis of a vector space
-3) ```julia
-   Base.searchsortedfirst(vs::VectorSpace{B}, basis::B) where B -> Int
-   ```
-   Search the index of a basis in a vector space
 
 Other features include
 * comparison: `==` and `isequal`
 * iteration: `iterate`
-* inquiry: `size`, `findfirst` and `in`
+* inquiry: `size` and `in`
+* search: `searchsortedfirst`
 
 ### Manual
 
@@ -608,6 +606,7 @@ ZippedNamedVectorSpace
 Predefined types of vector space style:
 ```@docs
 VectorSpaceStyle
+VectorSpaceGeneral
 VectorSpaceEnumerative
 VectorSpaceCartesian
 VectorSpaceDirectProducted

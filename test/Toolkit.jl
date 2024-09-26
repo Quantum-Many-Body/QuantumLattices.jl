@@ -49,6 +49,14 @@ end
     @test searchsortedfirst(idx, CartesianIndex(3, 3, 3)) == 9
 end
 
+@testset "DirectSummedIndices" begin
+    indexes₁ = DirectSummedIndices((-3:-1, 1:3, 1:4))
+    indexes₂ = collect(indexes₁)
+    for i in eachindex(indexes₁, indexes₂)
+        @test indexes₁[i] == indexes₂[i]
+    end
+end
+
 @testset "Segment" begin
     segment = Segment(SVector(0.0, 0.0), SVector(1.0, 1.0), 10)
     @test segment == Segment((0.0, 0.0), (1.0, 1.0), 10)
@@ -399,19 +407,10 @@ end
     @test IndexStyle(vs) == IndexLinear()
     @test vs|>collect == [id₁, id₂, id₃]
     @test vs[1]==id₁ && vs[2]==id₂ && vs[3]==id₃
-    @test vs[[1, 2, 3]] == [id₁, id₂, id₃]
     @test searchsortedfirst(vs, id₀)==1 && searchsortedfirst(vs, id₄)==4
     @test searchsortedfirst(vs, id₁)==1 && searchsortedfirst(vs, id₂)==2 && searchsortedfirst(vs, id₃)==3
-    @test isnothing(findfirst(id₀, vs)) && isnothing(findfirst(id₄, vs))
-    @test findfirst(id₁, vs)==1 && findfirst(id₂, vs)==2 && findfirst(id₃, vs)==3
     @test (id₀∉vs) && (id₄∉vs)
     @test (id₁∈vs) && (id₂∈vs) && (id₃∈vs)
-
-    vs = SimpleVectorSpace(false, (id₁, id₂, id₃))
-    @test searchsortedfirst(vs, id₀)==4 && searchsortedfirst(vs, id₄)==4
-    @test searchsortedfirst(vs, id₁)==1 && searchsortedfirst(vs, id₂)==2 && searchsortedfirst(vs, id₃)==3
-    @test isnothing(findfirst(id₀, vs)) && isnothing(findfirst(id₄, vs))
-    @test findfirst(id₁, vs)==1 && findfirst(id₂, vs)==2 && findfirst(id₃, vs)==3
 end
 
 struct SimpleIndices{N} <: VectorSpace{CartesianIndex{N}}
@@ -430,14 +429,11 @@ end
     @test foi|>collect == CartesianIndex.([(2, 2, 2), (3, 2, 2), (2, 3, 2), (3, 3, 2), (2, 2, 3), (3, 2, 3), (2, 3, 3), (3, 3, 3)])
     for (i, index) in enumerate(CartesianIndices((2:3, 2:3, 2:3)))
         @test foi[i] == foi[index] == index
-        @test findfirst(index, foi) == i
         @test searchsortedfirst(foi, index) == i
         @test index∈foi
     end
-    i1, i2 = CartesianIndex(1, 1, 1), CartesianIndex(4, 4, 4)
-    @test isnothing(findfirst(i1, foi)) && isnothing(findfirst(i2, foi))
-    @test searchsortedfirst(foi, i1) == 1 && searchsortedfirst(foi, i2) == 9
-    @test i1∉foi && i2∉foi
+    i₁, i₂ = CartesianIndex(1, 1, 1), CartesianIndex(4, 4, 4)
+    @test i₁∉foi && i₂∉foi
 end
 
 struct DirectSummedVectorSpace{T<:Tuple, B} <: VectorSpace{B}

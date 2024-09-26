@@ -9,7 +9,7 @@ import QuantumLattices: ⊕, ⊗
 
 # Utilities
 export atol, rtol, Float
-export Segment, concatenate, decimaltostr, delta, ordinal
+export DirectSummedIndices, Segment, concatenate, decimaltostr, delta, ordinal
 
 # Combinatorics
 export Combinatorics, Combinations, DuplicateCombinations, DuplicatePermutations, Permutations
@@ -25,7 +25,7 @@ export CompositeDict, CompositeVector
 
 # Vector spaces
 export CompositeNamedVectorSpace, DirectProductedNamedVectorSpace, NamedVectorSpace, ParameterSpace, SimpleNamedVectorSpace, VectorSpace, ZippedNamedVectorSpace
-export VectorSpaceCartesian, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceEnumerative, VectorSpaceStyle, VectorSpaceZipped
+export VectorSpaceCartesian, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceEnumerative, VectorSpaceGeneral, VectorSpaceStyle, VectorSpaceZipped
 export shape
 
 # Utilities
@@ -99,22 +99,59 @@ Concatenate tuples.
 @inline @generated concatenate(ts::Tuple...) = Expr(:tuple, map(i->:(ts[$i]...), 1:length(ts))...)
 
 """
-    searchsortedfirst(table, basis; compare=<) -> Int
+    searchsortedfirst(table, basis; by=identity, lt=isless, rev=false) -> Int
 
 Use the binary search method to find the position of a basis in a sorted table so that the order is preserved if the basis in inserted in that position.
 """
-function Base.searchsortedfirst(table, basis; compare=<)
+function Base.searchsortedfirst(table, basis; by=identity, lt=isless, rev=false)
     lo, hi = firstindex(table)-1, lastindex(table)+1
     @inbounds while lo < hi-1
         m = (lo+hi) >>> 1
-        if compare(table[m], basis)
-            lo = m
+        if lt(by(table[m]), by(basis)) ≠ rev
+            lo = m 
         else
             hi = m
         end
     end
     return hi
 end
+
+"""
+    DirectSummedIndices{T<:Tuple{Vararg{OrdinalRange{Int, Int}}}} <: AbstractVector{NTuple{3, Int}}
+
+Direct sum of indexes.
+"""
+struct DirectSummedIndices{T<:Tuple{Vararg{OrdinalRange{Int, Int}}}} <: AbstractVector{NTuple{3, Int}}
+    indices::T
+end
+@inline Base.size(indexes::DirectSummedIndices) = (sum(map(length, indexes.indices)),)
+@inline Base.iterate(indexes::DirectSummedIndices) = (1, first(first(indexes.indices)), 0), (1, first(first(indexes.indices)), 0)
+function Base.iterate(indexes::DirectSummedIndices, state::NTuple{3, Int})
+    m, n, len = state[1], state[2]+1, state[3]
+    if n>last(indexes.indices[m])
+        m += 1
+        m>length(indexes.indices) && return
+        n = first(indexes.indices[m])
+        len += length(indexes.indices[m-1])
+    end
+    return (m, n, len), (m, n, len)
+end
+function Base.getindex(indexes::DirectSummedIndices, i::Integer)
+    dimsum = (0, cumsum(map(length, indexes.indices))...)
+    m = searchsortedfirst(dimsum, i) - 1
+    n = i-dimsum[m]
+    return m, indexes.indices[m][n], dimsum[m]
+end
+
+"""
+    DirectSummedIndices(indexes::Tuple{Vararg{Union{<:Integer, OrdinalRange{<:Integer, <:Integer}}}})
+
+Construct a `DirectSummedIndices`.
+"""
+@inline DirectSummedIndices(indexes::Tuple{Vararg{Union{<:Integer, OrdinalRange{<:Integer, <:Integer}}}}) = DirectSummedIndices(map(index->convert2ind(index), indexes))
+@inline convert2ind(index::Integer) = Base.OneTo(index)
+@inline convert2ind(index::AbstractUnitRange{<:Integer}) = first(index):last(index)
+@inline convert2ind(index::OrdinalRange{<:Integer, <:Integer}) = first(index):step(index):last(index)
 
 """
     Segment{S} <: AbstractVector{S}
@@ -924,32 +961,22 @@ The style of a concrete type of vector space.
 """
 abstract type VectorSpaceStyle end
 @inline VectorSpaceStyle(vs::VectorSpace) = VectorSpaceStyle(typeof(vs))
-
 @inline Base.length(vs::VectorSpace) = length(VectorSpaceStyle(vs), vs)
 @inline Base.getindex(vs::VectorSpace, i) = getindex(VectorSpaceStyle(vs), vs, i)
-@inline Base.getindex(style::VectorSpaceStyle, vs::VectorSpace, indexes) = map(index->getindex(style, vs, index), indexes)
 @inline Base.issorted(vs::VectorSpace) = issorted(VectorSpaceStyle(vs), vs)
 @inline Base.issorted(::VectorSpaceStyle, vs::VectorSpace) = false
-@inline Base.searchsortedfirst(vs::VectorSpace{B}, basis::B) where B = searchsortedfirst(VectorSpaceStyle(vs), vs, basis)
-@inline function Base.searchsortedfirst(::VectorSpaceStyle, vs::VectorSpace{B}, basis::B) where B
-    issorted(vs) && return invoke(searchsortedfirst, Tuple{Any, Any}, vs, basis)
-    for i = 1:length(vs) 
-        vs[i]==basis && return i
-    end
-    return length(vs)+1
-end
-@inline Base.findfirst(basis::B, vs::VectorSpace{B}) where B = findfirst(VectorSpaceStyle(vs), basis, vs)
-@inline function Base.findfirst(::VectorSpaceStyle, basis::B, vs::VectorSpace{B}) where B
-    if issorted(vs)
-        index = invoke(searchsortedfirst, Tuple{Any, Any}, vs, basis)
-        return (0<index<=length(vs) && vs[index]==basis) ? index : nothing
-    end
-    for i = 1:length(vs)
-        vs[i]==basis && return i
-    end
-end
+@inline Base.searchsortedfirst(vs::VectorSpace{B}, basis::B; by=identity, lt=isless, rev=false) where B = searchsortedfirst(VectorSpaceStyle(vs), vs, basis; by=by, lt=lt, rev=rev)
+@inline Base.searchsortedfirst(::VectorSpaceStyle, vs::VectorSpace{B}, basis::B; by=identity, lt=isless, rev=false) where B = invoke(searchsortedfirst, Tuple{Any, Any}, vs, basis; by=by, lt=lt, rev=rev)
 @inline Base.in(basis::B, vs::VectorSpace{B}) where B = in(VectorSpaceStyle(vs), basis, vs)
-@inline Base.in(::VectorSpaceStyle, basis::B, vs::VectorSpace{B}) where B = isa(findfirst(basis, vs), Integer)
+@inline Base.in(::VectorSpaceStyle, basis::B, vs::VectorSpace{B}) where B = invoke(in, Tuple{Any, Any}, basis, vs)
+
+"""
+    VectorSpaceGeneral <: VectorSpaceStyle
+
+Default vector space style.
+"""
+struct VectorSpaceGeneral <: VectorSpaceStyle end
+@inline VectorSpaceStyle(::Type{<:VectorSpace}) = VectorSpaceGeneral()
 
 """
     VectorSpaceEnumerative <: VectorSpaceStyle
@@ -962,7 +989,6 @@ struct VectorSpaceEnumerative <: VectorSpaceStyle end
     contents = getcontent(vs, :contents)
     return contents[(firstindex(contents):lastindex(contents))[i]]
 end
-@inline Base.in(::VectorSpaceEnumerative, vs::VectorSpace{B}, basis::B) where B = in(basis, getcontent(vs, :contents))
 
 """
     VectorSpaceCartesian <: VectorSpaceStyle
@@ -972,18 +998,13 @@ Cartesian vector space style, which indicates that every basis in it could be re
 struct VectorSpaceCartesian <: VectorSpaceStyle end
 function shape end
 @inline Base.length(::VectorSpaceCartesian, vs::VectorSpace) = mapreduce(length, *, shape(vs))
-@inline Base.getindex(::VectorSpaceCartesian, vs::VectorSpace, i::Integer) = getindex(VectorSpaceCartesian(), vs, CartesianIndices(shape(vs))[i])
+@inline Base.getindex(style::VectorSpaceCartesian, vs::VectorSpace, i::Integer) = getindex(style, vs, CartesianIndices(shape(vs))[i])
 @inline Base.getindex(::VectorSpaceCartesian, vs::VectorSpace, i::CartesianIndex) = rawtype(eltype(vs))(i, vs)
 @inline Base.issorted(::VectorSpaceCartesian, vs::VectorSpace) = true
-@propagate_inbounds function Base.findfirst(::VectorSpaceCartesian, basis::B, vs::VectorSpace{B}) where B
-    index, idx = CartesianIndex(basis, vs), CartesianIndices(shape(vs))
-    index∉idx && return
-    return LinearIndices(shape(vs))[index-first(idx)+oneunit(typeof(index))]
-end
 @propagate_inbounds function Base.searchsortedfirst(::VectorSpaceCartesian, vs::VectorSpace{B}, basis::B) where B
     index, idx = CartesianIndex(basis, vs), CartesianIndices(shape(vs))
-    index∈idx && return LinearIndices(shape(vs))[index-first(idx)+oneunit(typeof(index))]
-    return searchsortedfirst(idx, index)
+    @assert index∈idx "searchsortedfirst error: basis($basis) not found."
+    return LinearIndices(shape(vs))[index-first(idx)+oneunit(typeof(index))]
 end
 @inline Base.in(::VectorSpaceCartesian, basis::B, vs::VectorSpace{B}) where B = CartesianIndex(basis, vs)∈CartesianIndices(shape(vs))
 
@@ -996,12 +1017,8 @@ struct VectorSpaceDirectSummed <: VectorSpaceStyle end
 @inline Base.length(::VectorSpaceDirectSummed, vs::VectorSpace) = mapreduce(length, +, getcontent(vs, :contents))
 @inline function Base.getindex(::VectorSpaceDirectSummed, vs::VectorSpace, i::Integer)
     contents = getcontent(vs, :contents)
-    dimsum = cumsum(map(length, contents))
-    m = searchsortedfirst(dimsum, i)
-    n = m>1 ? (i-dimsum[m-1]) : i
-    content = contents[m]
-    index = (firstindex(content):lastindex(content))[n]
-    return content[index]
+    m, n = DirectSummedIndices(map(eachindex, contents))[i]
+    return contents[m][n]
 end
 
 """
