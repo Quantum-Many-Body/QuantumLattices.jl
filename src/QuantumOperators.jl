@@ -455,7 +455,7 @@ Judge whether an `OperatorSum` contains an `OperatorPack` with the given `id`.
 
 Overloaded `[]`.
 """
-@inline Base.getindex(ms::OperatorSum, index::Integer) = iterate(ms.contents, index)[1][2]
+@inline Base.getindex(ms::OperatorSum, index::Integer) = value(ms.contents, index)
 @inline Base.getindex(ms::OperatorSum, indexes::AbstractVector{<:Integer}) = OperatorSum{eltype(ms)}(ms[index] for index in indexes)
 @inline Base.getindex(ms::OperatorSum, ::Colon) = OperatorSum(copy(ms.contents))
 
