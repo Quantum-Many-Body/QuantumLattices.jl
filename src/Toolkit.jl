@@ -1,11 +1,12 @@
 module Toolkit
 
 using Base: @propagate_inbounds
+using DataStructures: OrderedDict
 using Format: FormatSpec, pyfmt
 using Printf: @printf
 using StaticArrays: SVector
 
-import QuantumLattices: ⊕, ⊗
+import QuantumLattices: ⊕, ⊗, id, value
 
 # Utilities
 export atol, rtol, Float
@@ -97,6 +98,20 @@ Kronecker delta function.
 Concatenate tuples.
 """
 @inline @generated concatenate(ts::Tuple...) = Expr(:tuple, map(i->:(ts[$i]...), 1:length(ts))...)
+
+"""
+    id(od::OrderedDict, i::Integer) -> keytype(od)
+
+Get the ith key of an `OrderedDict`.
+"""
+@inline id(od::OrderedDict, i::Integer) = od.keys[i]
+
+"""
+    value(od::OrderedDict, i::Integer) -> valtype(od)
+
+Get the ith value of an `OrderedDict`.
+"""
+@inline value(od::OrderedDict, i::Integer) = od.vals[i]
 
 """
     searchsortedfirst(table, basis; by=identity, lt=isless, rev=false) -> Int

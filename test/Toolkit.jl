@@ -1,8 +1,9 @@
+using DataStructures: OrderedDict
 using OffsetArrays: OffsetArray
+using QuantumLattices: ⊕, ⊗, id, value
 using QuantumLattices.Toolkit
 using StaticArrays: SVector
 
-import QuantumLattices: ⊕, ⊗
 import QuantumLattices.Toolkit: VectorSpaceStyle, contentnames, contenttype, dissolve, getcontent, isparameterbound, parameternames, shape
 
 @testset "decimaltostr" begin
@@ -38,6 +39,12 @@ end
 
 @testset "concatenate" begin
     @test concatenate((1, 2), (:a, :b)) == (1, 2, :a, :b)
+end
+
+@testset "OrderedDict" begin
+    od = OrderedDict(2=>'a', 1=>'b', 3=>'c')
+    @test id(od, 1)==2 && id(od, 2)==1 && id(od, 3)==3
+    @test value(od, 1)=='a' && value(od, 2)=='b' && value(od, 3)=='c'
 end
 
 @testset "searchsortedfirst" begin

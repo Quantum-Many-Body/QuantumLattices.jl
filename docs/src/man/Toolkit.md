@@ -31,6 +31,8 @@ concatenate
 decimaltostr
 delta
 ordinal
+id
+value
 DirectSummedIndices
 Segment
 ```
