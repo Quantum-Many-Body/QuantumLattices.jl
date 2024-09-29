@@ -264,12 +264,12 @@ struct EFO{F₁, F₂, F₃}
     f₂::F₂
     f₃::F₃
 end
-Base.:(==)(fc₁::EFO, fc₂::EFO) = ==(efficientoperations, fc₁, fc₂)
-Base.isequal(fc₁::EFO, fc₂::EFO) = isequal(efficientoperations, fc₁, fc₂)
-Base.:<(fc₁::EFO, fc₂::EFO) = <(efficientoperations, fc₁, fc₂)
-Base.isless(fc₁::EFO, fc₂::EFO) = isless(efficientoperations, fc₁, fc₂)
-Base.isapprox(fc₁::EFO, fc₂::EFO; atol::Real=10^-5, rtol::Real=10^-5) = isapprox(efficientoperations, (:f₁, :f₂), fc₁, fc₂; atol=atol, rtol=rtol)
-Base.replace(fc::EFO; kwargs...) = replace(efficientoperations, fc; kwargs...)
+@inline Base.:(==)(fc₁::EFO, fc₂::EFO) = ==(efficientoperations, fc₁, fc₂)
+@inline Base.isequal(fc₁::EFO, fc₂::EFO) = isequal(efficientoperations, fc₁, fc₂)
+@inline Base.:<(fc₁::EFO, fc₂::EFO) = <(efficientoperations, fc₁, fc₂)
+@inline Base.isless(fc₁::EFO, fc₂::EFO) = isless(efficientoperations, fc₁, fc₂)
+@inline Base.isapprox(fc₁::EFO, fc₂::EFO; atol::Real=10^-5, rtol::Real=10^-5) = isapprox(efficientoperations, (:f₁, :f₂), fc₁, fc₂; atol=atol, rtol=rtol)
+@inline Base.replace(fc::EFO; kwargs...) = replace(efficientoperations, fc; kwargs...)
 
 @testset "efficientoperations" begin
     @test ==(efficientoperations, (), ())
@@ -301,7 +301,7 @@ struct CV{S, T} <: CompositeVector{T}
     info::S
     contents::Vector{T}
 end
-contentnames(::Type{<:CV}) = (:info, :contents)
+@inline contentnames(::Type{<:CV}) = (:info, :contents)
 
 @testset "CompositeVector" begin
     @test contentnames(CompositeVector) == (:contents,)
@@ -352,8 +352,8 @@ struct CD{S, P, I} <: CompositeDict{P, I}
     info::S
     newcontents::Dict{P, I}
 end
-contentnames(::Type{<:CD}) = (:info, :contents)
-getcontent(m::CD, ::Val{:contents}) = getfield(m, :newcontents)
+@inline contentnames(::Type{<:CD}) = (:info, :contents)
+@inline getcontent(m::CD, ::Val{:contents}) = getfield(m, :newcontents)
 
 @testset "CompositeDict" begin
     @test contentnames(CompositeDict) == (:contents,)
@@ -427,7 +427,7 @@ end
 @inline SimpleIndices(shape::UnitRange{Int}...) = SimpleIndices(shape)
 @inline VectorSpaceStyle(::Type{<:SimpleIndices}) = VectorSpaceCartesian()
 @inline shape(vs::SimpleIndices) = vs.shape
-@inline Base.CartesianIndex(basis::CartesianIndex{N}, ::SimpleIndices{N}) where N = basis
+@inline Base.convert(::Type{<:CartesianIndex}, basis::CartesianIndex{N}, ::SimpleIndices{N}) where N = basis
 
 @testset "VectorSpaceCartesian" begin
     foi = SimpleIndices(2:3, 2:3, 2:3)

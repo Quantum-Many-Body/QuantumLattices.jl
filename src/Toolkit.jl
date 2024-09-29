@@ -1014,14 +1014,14 @@ struct VectorSpaceCartesian <: VectorSpaceStyle end
 function shape end
 @inline Base.length(::VectorSpaceCartesian, vs::VectorSpace) = mapreduce(length, *, shape(vs))
 @inline Base.getindex(style::VectorSpaceCartesian, vs::VectorSpace, i::Integer) = getindex(style, vs, CartesianIndices(shape(vs))[i])
-@inline Base.getindex(::VectorSpaceCartesian, vs::VectorSpace, i::CartesianIndex) = rawtype(eltype(vs))(i, vs)
+@inline Base.getindex(::VectorSpaceCartesian, vs::VectorSpace, i::CartesianIndex) = convert(eltype(vs), i, vs)
 @inline Base.issorted(::VectorSpaceCartesian, vs::VectorSpace) = true
 @propagate_inbounds function Base.searchsortedfirst(::VectorSpaceCartesian, vs::VectorSpace{B}, basis::B) where B
-    index, idx = CartesianIndex(basis, vs), CartesianIndices(shape(vs))
+    index, idx = convert(CartesianIndex, basis, vs), CartesianIndices(shape(vs))
     @assert index∈idx "searchsortedfirst error: basis($basis) not found."
     return LinearIndices(shape(vs))[index-first(idx)+oneunit(typeof(index))]
 end
-@inline Base.in(::VectorSpaceCartesian, basis::B, vs::VectorSpace{B}) where B = CartesianIndex(basis, vs)∈CartesianIndices(shape(vs))
+@inline Base.in(::VectorSpaceCartesian, basis::B, vs::VectorSpace{B}) where B = convert(CartesianIndex, basis, vs)∈CartesianIndices(shape(vs))
 
 """
     VectorSpaceDirectSummed <: VectorSpaceStyle
@@ -1047,7 +1047,7 @@ struct VectorSpaceDirectProducted <: VectorSpaceStyle end
     contents = getcontent(vs, :contents)
     @assert isa(contents, Tuple) "getindex error: the `:contents` of a vector space that hosts the direct-producted style must be a tuple."
     index = CartesianIndices(map(content->firstindex(content):lastindex(content), contents))[i]
-    return rawtype(eltype(vs))(map(getindex, contents, Tuple(index)), vs)
+    return convert(eltype(vs), map(getindex, contents, Tuple(index)), vs)
 end
 
 """
@@ -1058,7 +1058,7 @@ Vector space style which indicates that a vector space is the zip of its sub-com
 struct VectorSpaceZipped <: VectorSpaceStyle end
 @inline Base.length(::VectorSpaceZipped, vs::VectorSpace) = mapreduce(length, min, getcontent(vs, :contents))
 @inline function Base.getindex(::VectorSpaceZipped, vs::VectorSpace, i::Integer)
-    return rawtype(eltype(vs))(map(content->getindex(content, (firstindex(content):lastindex(content))[i]), getcontent(vs, :contents)), vs)
+    return convert(eltype(vs), map(content->getindex(content, (firstindex(content):lastindex(content))[i]), getcontent(vs, :contents)), vs)
 end
 
 """
@@ -1109,7 +1109,7 @@ Abstract composite named vector space.
 abstract type CompositeNamedVectorSpace{T<:Tuple{Vararg{SimpleNamedVectorSpace}}, B<:Tuple} <: NamedVectorSpace{B} end
 @inline @generated Base.names(::Type{<:CompositeNamedVectorSpace{T}}) where {T<:Tuple{Vararg{SimpleNamedVectorSpace}}} = map(first, map(names, fieldtypes(T)))
 @inline pairtype(::Type{V}) where {V<:CompositeNamedVectorSpace} = NamedTuple{names(V), eltype(V)}
-@inline Tuple(basis::Tuple, ::CompositeNamedVectorSpace) = basis
+@inline Base.convert(::Type{T}, basis::T, ::CompositeNamedVectorSpace) where {T<:Tuple} = basis
 @inline Base.getindex(ps::NamedVectorSpacePairIteration{V}, i::Integer) where {V<:CompositeNamedVectorSpace} = NamedTuple{names(V)}(ps.namedvectorspace[i])
 
 """
