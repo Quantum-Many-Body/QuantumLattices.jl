@@ -488,11 +488,16 @@ end
     @test size(ps) == (2,)
     @test eltype(ps) == eltype(typeof(ps)) == NamedTuple{(:t, :U), Tuple{Int, Float64}}
     @test ps[1]==(t=1, U=8.0) && ps[2]==(t=2, U=9.0)
-    pps = DirectProductedNamedVectorSpace(t, U)
-    @test VectorSpaceStyle(pps) == VectorSpaceDirectProducted()
+
+    pps = DirectProductedNamedVectorSpace{:backward}(t, U)
+    @test VectorSpaceStyle(pps) == VectorSpaceDirectProducted(:backward)
     @test eltype(pps) == eltype(typeof(pps)) == Tuple{Int, Float64}
     @test names(pps) == names(typeof(pps)) == (:t, :U)
     @test length(pps) == 4
+    @test pps[1]==(1, 8.0) && pps[2]==(1, 9.0) && pps[3]==(2, 8.0) && pps[4]==(2, 9.0)
+
+    pps = DirectProductedNamedVectorSpace{:forward}(t, U)
+    @test VectorSpaceStyle(pps) == VectorSpaceDirectProducted(:forward)
     @test pps[1]==(1, 8.0) && pps[2]==(2, 8.0) && pps[3]==(1, 9.0) && pps[4]==(2, 9.0)
 
     μ = ParameterSpace{:μ}([11, 12])
@@ -501,7 +506,7 @@ end
     @test zps⊕μ == ZippedNamedVectorSpace(t, U, μ)
     @test zps⊕ZippedNamedVectorSpace(μ) == ZippedNamedVectorSpace(t, U, μ)
     @test t⊗U == pps
-    @test μ⊗pps == DirectProductedNamedVectorSpace(μ, t, U)
-    @test pps⊗μ == DirectProductedNamedVectorSpace(t, U, μ)
-    @test pps⊗DirectProductedNamedVectorSpace(μ) == DirectProductedNamedVectorSpace(t, U, μ)
+    @test μ⊗pps == DirectProductedNamedVectorSpace{:forward}(μ, t, U)
+    @test pps⊗μ == DirectProductedNamedVectorSpace{:forward}(t, U, μ)
+    @test pps⊗DirectProductedNamedVectorSpace{:forward}(μ) == DirectProductedNamedVectorSpace{:forward}(t, U, μ)
 end
