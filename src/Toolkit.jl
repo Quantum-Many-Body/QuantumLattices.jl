@@ -6,7 +6,7 @@ using Format: FormatSpec, pyfmt
 using Printf: @printf
 using StaticArrays: SVector
 
-import QuantumLattices: ⊕, ⊗, id, value
+import QuantumLattices: ⊞, ⊗, id, value
 
 # Utilities
 export atol, rtol, Float
@@ -100,18 +100,18 @@ Concatenate tuples.
 @inline @generated concatenate(ts::Tuple...) = Expr(:tuple, map(i->:(ts[$i]...), 1:length(ts))...)
 
 """
-    id(od::OrderedDict, i::Integer) -> keytype(od)
+    id(od::OrderedDict, i) -> keytype(od)
 
 Get the ith key of an `OrderedDict`.
 """
-@inline id(od::OrderedDict, i::Integer) = od.keys[i]
+@inline id(od::OrderedDict, i) = od.keys[i]
 
 """
-    value(od::OrderedDict, i::Integer) -> valtype(od)
+    value(od::OrderedDict, i) -> valtype(od)
 
 Get the ith value of an `OrderedDict`.
 """
-@inline value(od::OrderedDict, i::Integer) = od.vals[i]
+@inline value(od::OrderedDict, i) = od.vals[i]
 
 """
     searchsortedfirst(table, basis; by=identity, lt=isless, rev=false) -> Int
@@ -132,15 +132,15 @@ function Base.searchsortedfirst(table, basis; by=identity, lt=isless, rev=false)
 end
 
 """
-    DirectSummedIndices{T<:Tuple{Vararg{OrdinalRange{Int, Int}}}} <: AbstractVector{NTuple{3, Int}}
+    DirectSummedIndices{T<:Tuple{Vararg{OrdinalRange{Int, Int}}}} <: AbstractVector{CartesianIndex{3}}
 
 Direct sum of indexes.
 """
-struct DirectSummedIndices{T<:Tuple{Vararg{OrdinalRange{Int, Int}}}} <: AbstractVector{NTuple{3, Int}}
+struct DirectSummedIndices{T<:Tuple{Vararg{OrdinalRange{Int, Int}}}} <: AbstractVector{CartesianIndex{3}}
     indices::T
 end
 @inline Base.size(indexes::DirectSummedIndices) = (sum(map(length, indexes.indices)),)
-@inline Base.iterate(indexes::DirectSummedIndices) = (1, first(first(indexes.indices)), 0), (1, first(first(indexes.indices)), 0)
+@inline Base.iterate(indexes::DirectSummedIndices) = CartesianIndex(1, first(first(indexes.indices)), 0), (1, first(first(indexes.indices)), 0)
 function Base.iterate(indexes::DirectSummedIndices, state::NTuple{3, Int})
     m, n, len = state[1], state[2]+1, state[3]
     if n>last(indexes.indices[m])
@@ -149,13 +149,13 @@ function Base.iterate(indexes::DirectSummedIndices, state::NTuple{3, Int})
         n = first(indexes.indices[m])
         len += length(indexes.indices[m-1])
     end
-    return (m, n, len), (m, n, len)
+    return CartesianIndex(m, n, len), (m, n, len)
 end
 function Base.getindex(indexes::DirectSummedIndices, i::Integer)
     dimsum = (0, cumsum(map(length, indexes.indices))...)
     m = searchsortedfirst(dimsum, i) - 1
     n = i-dimsum[m]
-    return m, indexes.indices[m][n], dimsum[m]
+    return CartesianIndex(m, indexes.indices[m][n], dimsum[m])
 end
 
 """
@@ -970,6 +970,7 @@ abstract type VectorSpace{B} <: AbstractVector{B} end
 @inline Base.axes(vs::VectorSpace) = (Base.OneTo(length(vs)),)
 @inline Base.size(vs::VectorSpace) = (length(vs),)
 @inline Base.IndexStyle(::Type{<:VectorSpace}) = IndexLinear()
+@inline Base.getindex(vs::VectorSpace, i::Integer) = getindex(vs, CartesianIndex(i, vs))
 
 """
     VectorSpaceStyle
@@ -979,13 +980,11 @@ The style of a concrete type of vector space.
 abstract type VectorSpaceStyle end
 @inline VectorSpaceStyle(vs::VectorSpace) = VectorSpaceStyle(typeof(vs))
 @inline Base.length(vs::VectorSpace) = length(VectorSpaceStyle(vs), vs)
-@inline Base.getindex(vs::VectorSpace, i) = getindex(VectorSpaceStyle(vs), vs, i)
+@inline Base.CartesianIndex(i::Integer, vs::VectorSpace) = CartesianIndex(VectorSpaceStyle(vs), i, vs)
+@inline Base.getindex(vs::VectorSpace, i::CartesianIndex) = getindex(VectorSpaceStyle(vs), vs, i)
 @inline Base.issorted(vs::VectorSpace) = issorted(VectorSpaceStyle(vs), vs)
-@inline Base.issorted(::VectorSpaceStyle, vs::VectorSpace) = false
 @inline Base.searchsortedfirst(vs::VectorSpace{B}, basis::B; by=identity, lt=isless, rev=false) where B = searchsortedfirst(VectorSpaceStyle(vs), vs, basis; by=by, lt=lt, rev=rev)
-@inline Base.searchsortedfirst(::VectorSpaceStyle, vs::VectorSpace{B}, basis::B; by=identity, lt=isless, rev=false) where B = invoke(searchsortedfirst, Tuple{Any, Any}, vs, basis; by=by, lt=lt, rev=rev)
 @inline Base.in(basis::B, vs::VectorSpace{B}) where B = in(VectorSpaceStyle(vs), basis, vs)
-@inline Base.in(::VectorSpaceStyle, basis::B, vs::VectorSpace{B}) where B = invoke(in, Tuple{Any, Any}, basis, vs)
 
 """
     VectorSpaceGeneral <: VectorSpaceStyle
@@ -994,6 +993,10 @@ Default vector space style.
 """
 struct VectorSpaceGeneral <: VectorSpaceStyle end
 @inline VectorSpaceStyle(::Type{<:VectorSpace}) = VectorSpaceGeneral()
+@inline Base.CartesianIndex(::VectorSpaceStyle, i::Integer, ::VectorSpace) = CartesianIndex(i)
+@inline Base.issorted(::VectorSpaceStyle, vs::VectorSpace) = false
+@inline Base.searchsortedfirst(::VectorSpaceStyle, vs::VectorSpace{B}, basis::B; by=identity, lt=isless, rev=false) where B = invoke(searchsortedfirst, Tuple{Any, Any}, vs, basis; by=by, lt=lt, rev=rev)
+@inline Base.in(::VectorSpaceStyle, basis::B, vs::VectorSpace{B}) where B = invoke(in, Tuple{Any, Any}, basis, vs)
 
 """
     VectorSpaceEnumerative <: VectorSpaceStyle
@@ -1002,7 +1005,7 @@ Enumerative vector space style, which indicates that the vector space has a pred
 """
 struct VectorSpaceEnumerative <: VectorSpaceStyle end
 @inline Base.length(::VectorSpaceEnumerative, vs::VectorSpace) = length(getcontent(vs, :contents))
-@inline function Base.getindex(::VectorSpaceEnumerative, vs::VectorSpace, i::Integer)
+@inline function Base.getindex(::VectorSpaceEnumerative, vs::VectorSpace, i::CartesianIndex)
     contents = getcontent(vs, :contents)
     return contents[(firstindex(contents):lastindex(contents))[i]]
 end
@@ -1015,7 +1018,7 @@ Cartesian vector space style, which indicates that every basis in it could be re
 struct VectorSpaceCartesian <: VectorSpaceStyle end
 function shape end
 @inline Base.length(::VectorSpaceCartesian, vs::VectorSpace) = mapreduce(length, *, shape(vs))
-@inline Base.getindex(style::VectorSpaceCartesian, vs::VectorSpace, i::Integer) = getindex(style, vs, CartesianIndices(shape(vs))[i])
+@inline Base.CartesianIndex(::VectorSpaceCartesian, i::Integer, vs::VectorSpace) = CartesianIndices(shape(vs))[i]
 @inline Base.getindex(::VectorSpaceCartesian, vs::VectorSpace, i::CartesianIndex) = convert(eltype(vs), i, vs)
 @inline Base.issorted(::VectorSpaceCartesian, vs::VectorSpace) = true
 @propagate_inbounds function Base.searchsortedfirst(::VectorSpaceCartesian, vs::VectorSpace{B}, basis::B) where B
@@ -1032,9 +1035,10 @@ Vector space style which indicates that a vector space is the direct sum of its 
 """
 struct VectorSpaceDirectSummed <: VectorSpaceStyle end
 @inline Base.length(::VectorSpaceDirectSummed, vs::VectorSpace) = mapreduce(length, +, getcontent(vs, :contents))
-@inline function Base.getindex(::VectorSpaceDirectSummed, vs::VectorSpace, i::Integer)
+@inline Base.CartesianIndex(::VectorSpaceDirectSummed, i::Integer, vs::VectorSpace) = DirectSummedIndices(map(eachindex, getcontent(vs, :contents)))[i]
+@inline function Base.getindex(::VectorSpaceDirectSummed, vs::VectorSpace, i::CartesianIndex{3})
     contents = getcontent(vs, :contents)
-    m, n = DirectSummedIndices(map(eachindex, contents))[i]
+    m, n = i.I
     return contents[m][n]
 end
 
@@ -1053,17 +1057,19 @@ struct VectorSpaceDirectProducted{Order} <: VectorSpaceStyle end
     return VectorSpaceDirectProducted{order}()
 end
 @inline Base.length(::VectorSpaceDirectProducted, vs::VectorSpace) = mapreduce(length, *, getcontent(vs, :contents))
-@inline function Base.getindex(::VectorSpaceDirectProducted{:forward}, vs::VectorSpace, i::Integer)
+@inline function Base.CartesianIndex(::VectorSpaceDirectProducted{:forward}, i::Integer, vs::VectorSpace)
     contents = getcontent(vs, :contents)
-    @assert isa(contents, Tuple) "getindex error: the `:contents` of a vector space that hosts the direct-producted style must be a tuple."
     index = CartesianIndices(map(content->firstindex(content):lastindex(content), contents))[i]
-    return convert(eltype(vs), map(getindex, contents, index.I), vs)
+    return index
 end
-@inline function Base.getindex(::VectorSpaceDirectProducted{:backward}, vs::VectorSpace, i::Integer)
-    contents = getcontent(vs, :contents)
-    @assert isa(contents, Tuple) "getindex error: the `:contents` of a vector space that hosts the direct-producted style must be a tuple."
-    index = CartesianIndices(map(content->firstindex(content):lastindex(content), reverse(contents)))[i]
-    return convert(eltype(vs), map(getindex, contents, reverse(index.I)), vs)
+@inline function Base.CartesianIndex(::VectorSpaceDirectProducted{:backward}, i::Integer, vs::VectorSpace)
+    contents = reverse(getcontent(vs, :contents))
+    index = CartesianIndices(map(content->firstindex(content):lastindex(content), contents))[i]
+    return CartesianIndex(reverse(index.I))
+end
+@inline function Base.getindex(::VectorSpaceDirectProducted, vs::VectorSpace, i::CartesianIndex)
+    components = map(getindex, getcontent(vs, :contents), i.I)
+    return convert(eltype(vs), components, vs)
 end
 
 """
@@ -1073,8 +1079,14 @@ Vector space style which indicates that a vector space is the zip of its sub-com
 """
 struct VectorSpaceZipped <: VectorSpaceStyle end
 @inline Base.length(::VectorSpaceZipped, vs::VectorSpace) = mapreduce(length, min, getcontent(vs, :contents))
-@inline function Base.getindex(::VectorSpaceZipped, vs::VectorSpace, i::Integer)
-    return convert(eltype(vs), map(content->getindex(content, (firstindex(content):lastindex(content))[i]), getcontent(vs, :contents)), vs)
+@inline function Base.CartesianIndex(::VectorSpaceZipped, i::Integer, vs::VectorSpace)
+    contents = getcontent(vs, :contents)
+    index = map(content->(firstindex(content):lastindex(content))[i], contents)
+    return CartesianIndex(index)
+end
+@inline function Base.getindex(::VectorSpaceZipped, vs::VectorSpace, i::CartesianIndex)
+    components = map(getindex, getcontent(vs, :contents), i.I)
+    return convert(eltype(vs), components, vs)
 end
 
 """
@@ -1154,17 +1166,17 @@ end
 @inline VectorSpaceStyle(::Type{<:DirectProductedNamedVectorSpace{Order}}) where Order = VectorSpaceDirectProducted{Order}()
 
 """
-    ⊕(vs₁::SimpleNamedVectorSpace, vs₂::SimpleNamedVectorSpace) -> ZipNamedVectorSpace
-    ⊕(vs₁::SimpleNamedVectorSpace, vs₂::ZippedNamedVectorSpace) -> ZipNamedVectorSpace
-    ⊕(vs₁::ZippedNamedVectorSpace, vs₂::SimpleNamedVectorSpace) -> ZipNamedVectorSpace
-    ⊕(vs₁::ZippedNamedVectorSpace, vs₂::ZippedNamedVectorSpace) -> ZipNamedVectorSpace
+    ⊞(vs₁::SimpleNamedVectorSpace, vs₂::SimpleNamedVectorSpace) -> ZipNamedVectorSpace
+    ⊞(vs₁::SimpleNamedVectorSpace, vs₂::ZippedNamedVectorSpace) -> ZipNamedVectorSpace
+    ⊞(vs₁::ZippedNamedVectorSpace, vs₂::SimpleNamedVectorSpace) -> ZipNamedVectorSpace
+    ⊞(vs₁::ZippedNamedVectorSpace, vs₂::ZippedNamedVectorSpace) -> ZipNamedVectorSpace
 
 The zip of named vector spaces.
 """
-@inline ⊕(vs₁::SimpleNamedVectorSpace, vs₂::SimpleNamedVectorSpace) = ZippedNamedVectorSpace(vs₁, vs₂)
-@inline ⊕(vs₁::SimpleNamedVectorSpace, vs₂::ZippedNamedVectorSpace) = ZippedNamedVectorSpace(vs₁, vs₂.contents...)
-@inline ⊕(vs₁::ZippedNamedVectorSpace, vs₂::SimpleNamedVectorSpace) = ZippedNamedVectorSpace(vs₁.contents..., vs₂)
-@inline ⊕(vs₁::ZippedNamedVectorSpace, vs₂::ZippedNamedVectorSpace) = ZippedNamedVectorSpace(vs₁.contents..., vs₂.contents...)
+@inline ⊞(vs₁::SimpleNamedVectorSpace, vs₂::SimpleNamedVectorSpace) = ZippedNamedVectorSpace(vs₁, vs₂)
+@inline ⊞(vs₁::SimpleNamedVectorSpace, vs₂::ZippedNamedVectorSpace) = ZippedNamedVectorSpace(vs₁, vs₂.contents...)
+@inline ⊞(vs₁::ZippedNamedVectorSpace, vs₂::SimpleNamedVectorSpace) = ZippedNamedVectorSpace(vs₁.contents..., vs₂)
+@inline ⊞(vs₁::ZippedNamedVectorSpace, vs₂::ZippedNamedVectorSpace) = ZippedNamedVectorSpace(vs₁.contents..., vs₂.contents...)
 
 """
     ⊗(vs₁::SimpleNamedVectorSpace, vs₂::SimpleNamedVectorSpace, order::Symbol=:forward) -> DirectProductedNamedVectorSpace{order}

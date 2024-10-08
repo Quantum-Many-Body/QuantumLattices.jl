@@ -1,6 +1,6 @@
 using DataStructures: OrderedDict
 using OffsetArrays: OffsetArray
-using QuantumLattices: ⊕, ⊗, id, value
+using QuantumLattices: ⊞, ⊗, id, value
 using QuantumLattices.Toolkit
 using StaticArrays: SVector
 
@@ -501,12 +501,12 @@ end
     @test pps[1]==(1, 8.0) && pps[2]==(2, 8.0) && pps[3]==(1, 9.0) && pps[4]==(2, 9.0)
 
     μ = ParameterSpace{:μ}([11, 12])
-    @test t⊕U == zps
-    @test μ⊕zps == ZippedNamedVectorSpace(μ, t, U)
-    @test zps⊕μ == ZippedNamedVectorSpace(t, U, μ)
-    @test zps⊕ZippedNamedVectorSpace(μ) == ZippedNamedVectorSpace(t, U, μ)
-    @test t⊗U == pps
-    @test μ⊗pps == DirectProductedNamedVectorSpace{:forward}(μ, t, U)
-    @test pps⊗μ == DirectProductedNamedVectorSpace{:forward}(t, U, μ)
-    @test pps⊗DirectProductedNamedVectorSpace{:forward}(μ) == DirectProductedNamedVectorSpace{:forward}(t, U, μ)
+    @test t ⊞ U == zps
+    @test μ ⊞ zps == ZippedNamedVectorSpace(μ, t, U)
+    @test zps ⊞ μ == ZippedNamedVectorSpace(t, U, μ)
+    @test zps ⊞ ZippedNamedVectorSpace(μ) == ZippedNamedVectorSpace(t, U, μ)
+    @test t ⊗ U == pps
+    @test μ ⊗ pps == DirectProductedNamedVectorSpace{:forward}(μ, t, U)
+    @test pps ⊗ μ == DirectProductedNamedVectorSpace{:forward}(t, U, μ)
+    @test pps ⊗ DirectProductedNamedVectorSpace{:forward}(μ) == DirectProductedNamedVectorSpace{:forward}(t, U, μ)
 end
