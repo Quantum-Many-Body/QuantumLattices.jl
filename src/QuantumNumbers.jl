@@ -1,839 +1,843 @@
 module QuantumNumbers
 
+using Base: @propagate_inbounds
 using Base.Iterators: product
 using DataStructures: OrderedDict
+using HalfIntegers: HalfInt
 using LinearAlgebra: norm
-using Printf: @printf, @sprintf
-using Random: MersenneTwister, seed!, shuffle!
-using ..Toolkit: VectorSpace, VectorSpaceCartesian, VectorSpaceEnumerative, VectorSpaceStyle, efficientoperations
+using Printf: @printf
+using QuantumLattices: id, value
+using Random: seed!
+using ..Toolkit: DirectSummedIndices, VectorSpace, VectorSpaceCartesian, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceStyle, efficientoperations
 
-import ..QuantumLattices: ⊕, ⊗, decompose, dimension, expand, permute
+import ..QuantumLattices: ⊕, ⊗, ⊠, decompose, dimension, rank
 import ..Toolkit: shape
 
-export AbelianNumber, AbelianNumbers, Momenta, Momentum, Momentum₁, Momentum₂, Momentum₃, ParticleNumber, QuantumNumber, SpinfulParticle, Sz
-export findindex, regularize, regularize!, periods, @abeliannumber
+export Abelian, AbelianQuantumNumber, AbelianGradedSpace, DirectProductedAbelianGradedSpace, DirectSummedAbelianGradedSpace, Graded, Momenta, RepresentationSpace, SimpleAbelianQuantumNumber, TensorProductedAbelianQuantumNumber
+export Momentum, Momentum₁, Momentum₂, Momentum₃, 𝕂, ℕ, 𝕊ᶻ, 𝕌₁, ℤ, ℤ₂, ℤ₃, ℤ₄, findindex, period, periods, regularize, regularize!
 
 """
-    positives(inputs::NTuple{N, Any}) where N -> NTuple{N, Int}
+    AbelianQuantumNumber
 
-Return a tuple of all positive signs.
-"""
-@inline positives(::NTuple{N, Any}) where N = ntuple(i->1, Val(N))
+Abstract type of Abelian quantum numbers.
 
+An Abelian quantum number is the label of a irreducible representation of an Abelian group acted on a quantum representation space. 
 """
-    QuantumNumber
-
-Abstract type for all quantum numbers.
-"""
-abstract type QuantumNumber{T} end
-@inline Base.eltype(qn::QuantumNumber) = eltype(typeof(qn))
-@inline Base.eltype(::Type{<:QuantumNumber{T}}) where T = T
-@inline Base.:(==)(qn₁::QuantumNumber, qn₂::QuantumNumber) = keys(qn₁)==keys(qn₂) && values(qn₁)==values(qn₂)
-@inline Base.isequal(qn₁::QuantumNumber, qn₂::QuantumNumber) = isequal(keys(qn₁), keys(qn₂)) && isequal(values(qn₁), values(qn₂))
-@inline Base.getindex(qn::QuantumNumber, index::Int) = getfield(qn, index)
-@inline Base.:<(qn₁::QuantumNumber, qn₂::QuantumNumber) = <(efficientoperations, qn₁, qn₂)
-@inline Base.isless(qn₁::QuantumNumber, qn₂::QuantumNumber) = isless(efficientoperations, qn₁, qn₂)
-@inline Base.hash(qn::QuantumNumber, h::UInt) = hash(values(qn), h)
-@inline Base.length(::Type{QN}) where {QN<:QuantumNumber} = fieldcount(QN)
-@inline Base.length(qn::QuantumNumber) = length(typeof(qn))
-@inline Base.iterate(qn::QuantumNumber, state=1) = (state > length(qn)) ? nothing : (getfield(qn, state), state+1)
-@inline Base.keys(qn::QuantumNumber) = fieldnames(typeof(qn))
-@inline Base.values(qn::QuantumNumber) = convert(Tuple, qn)
-@inline Base.pairs(qn::QuantumNumber) = Base.Generator(=>, keys(qn), values(qn))
-Base.show(io::IO, qn::QuantumNumber) = @printf io "%s(%s)" nameof(typeof(qn)) join(repr.(values(qn)), ", ")
-@generated Base.convert(::Type{Tuple}, qn::QuantumNumber) = Expr(:tuple, (:(getfield(qn, $i)) for i = 1:fieldcount(qn))...)
-function Base.convert(::Type{QN}, qn::Tuple) where {QN<:QuantumNumber}
-    @assert fieldcount(QN)==length(qn) "convert error: mismatched length between $QN($(fieldcount(QN))) and input tuple($(length(qn)))."
-    return QN(qn...)
-end
-@inline @generated function Base.zero(::Type{QN}) where {QN<:QuantumNumber}
-    zeros = (zero(fieldtype(QN, i)) for i = 1:fieldcount(QN))
-    return :(QN($(zeros...)))
-end
-@inline Base.zero(qn::QuantumNumber) = zero(typeof(qn))
-@inline Base.replace(qn::QuantumNumber; kwargs...) = replace(efficientoperations, qn; kwargs...)
-@generated function Base.map(f, qns::QN...) where {QN<:QuantumNumber}
-    exprs = Vector{Expr}(undef, fieldcount(QN))
-    for i = 1:length(exprs)
-        tmp = [:(qns[$j][$i]) for j = 1:length(qns)]
-        exprs[i] = :(f($(tmp...)))
-    end
-    return :(($QN)($(exprs...)))
-end
+abstract type AbelianQuantumNumber end
+@inline Base.:(==)(qn₁::QN, qn₂::QN) where {QN<:AbelianQuantumNumber} = ==(efficientoperations, qn₁, qn₂)
+@inline Base.isequal(qn₁::QN, qn₂::QN) where {QN<:AbelianQuantumNumber} = isequal(efficientoperations, qn₁, qn₂)
+@inline Base.:<(qn₁::QN, qn₂::QN) where {QN<:AbelianQuantumNumber} = <(efficientoperations, qn₁, qn₂)
+@inline Base.isless(qn₁::QN, qn₂::QN) where {QN<:AbelianQuantumNumber} = isless(efficientoperations, qn₁, qn₂)
+@inline Base.hash(qn::AbelianQuantumNumber, h::UInt) = hash(values(qn), h)
+@inline Base.show(io::IO, ::Type{T}) where {T<:AbelianQuantumNumber} = @printf io "%s" nameof(T)
+@inline Base.iterate(qn::AbelianQuantumNumber) = (qn, nothing)
+@inline Base.iterate(::AbelianQuantumNumber, ::Nothing) = nothing
 
 """
-    AbelianNumber{T<:Real} <: QuantumNumber{T}
+    const Abelian = AbelianQuantumNumber
 
-Abstract type for all concrete quantum numbers for a single basis.
+Type alias for `AbelianQuantumNumber`.
 """
-abstract type AbelianNumber{T<:Real} <: QuantumNumber{T} end
-
-"""
-    periods(qn::AbelianNumber)
-
-The periods of the components of a concrete `AbelianNumber`.
-"""
-@inline periods(qn::AbelianNumber) = periods(typeof(qn))
+const Abelian = AbelianQuantumNumber
 
 """
-    dimension(::Type{<:AbelianNumber}) -> Int
-    dimension(::AbelianNumber) -> Int
+    getindex(::Type{Abelian}, ::Type{T}) where {T<:AbelianQuantumNumber} -> Type{T}
 
-The dimension of the Hilbert space an `AbelianNumber` represents. Apparently, this is always 1.
+Overloaded `[]` for `Abelian`, i.e., the support of syntax `Abelian[T]` where `T<:AbelianQuantumNumber`, which is helpful for the construction of tensor producted Abelian quantum numbers.
 """
-@inline dimension(::Type{<:AbelianNumber}) = 1
-@inline dimension(::AbelianNumber) = 1
+@inline Base.getindex(::Type{Abelian}, ::Type{T}) where {T<:AbelianQuantumNumber} = T
 
 """
-    +(qn::AbelianNumber) -> typeof(qn)
-    +(qn::QN, qns::QN...) where {QN<:AbelianNumber} -> QN
+    zero(qn::AbelianQuantumNumber) -> typeof(qn)
+    zero(::Type{QN}) where {QN<:AbelianQuantumNumber} -> QN
 
-Overloaded `+` operator for `AbelianNumber`.
-
-!!! note
-    To ensure type stability, two `AbelianNumber` can be added together if and only if they are of the same type.
+Get the zero Abelian quantum number.
 """
-@inline Base.:+(qn::AbelianNumber) = qn
-@inline Base.:+(qn::QN, qns::QN...) where {QN<:AbelianNumber} = map(+, qn, qns...)
+@inline Base.zero(qn::AbelianQuantumNumber) = zero(typeof(qn))
 
 """
-    -(qn::AbelianNumber) -> typeof(qn)
-    -(qn₁::QN, qn₂::QN) where {QN<:AbelianNumber} -> QN
+    ⊗(qns::AbelianQuantumNumber...) -> eltype(qns)
 
-Overloaded `-` operator for `AbelianNumber`.
+Get the direct product of some `AbelianQuantumNumber`s.
+"""
+@inline ⊗(qns::AbelianQuantumNumber...) = +(qns...)
+
+"""
+    periods(qn::AbelianQuantumNumber) -> Tuple{Vararg{Number}}
+    periods(::Type{QN}) where {QN<:AbelianQuantumNumber} -> Tuple{Vararg{Number}}
+
+The periods of Abelian quantum numbers.
+"""
+@inline periods(qn::AbelianQuantumNumber) = periods(typeof(qn))
+
+"""
+    inv(qn::AbelianQuantumNumber, bool::Bool=true) -> typeof(qn)
+
+Get the inverse of an Abelian quantum number `qn` if `bool` is true. Otherwise, return `qn` itself.
+"""
+@inline Base.inv(qn::AbelianQuantumNumber, bool::Bool=true) = bool ? -qn : qn
+
+"""
+    +(qn::AbelianQuantumNumber) -> typeof(qn)
+
+Overloaded `+` operator for `AbelianQuantumNumber`.
+"""
+@inline Base.:+(qn::AbelianQuantumNumber) = qn
+
+"""
+    SimpleAbelianQuantumNumber <: AbelianQuantumNumber
+
+Abstract type of simple Abelian quantum numbers. That is, it contains only one label.
+"""
+abstract type SimpleAbelianQuantumNumber <: AbelianQuantumNumber end
+@inline Base.values(qn::SimpleAbelianQuantumNumber) = getfield(qn, 1)
+@inline Base.show(io::IO, qn::SimpleAbelianQuantumNumber) = @printf io "%s(%s)" typeof(qn) values(qn)
+@inline Base.zero(::Type{QN}) where {QN<:SimpleAbelianQuantumNumber} = QN(zero(fieldtype(QN, 1)))
+@inline periods(::Type{QN}) where {QN<:SimpleAbelianQuantumNumber} = (period(QN),)
+
+"""
+    +(qn₁::QN, qn₂::QN, qns::QN...) where {QN<:SimpleAbelianQuantumNumber} -> QN
+
+Overloaded `+` operator for `SimpleAbelianQuantumNumber`.
 
 !!! note
-    To ensure type stability, an `AbelianNumber` can be subtracted by another `AbelianNumber` if and only if they are of the same type.
+    To ensure type stability, two `SimpleAbelianQuantumNumber` can be added together if and only if they are of the same type.
 """
-@inline Base.:-(qn::AbelianNumber) = map(-, qn)
-@inline Base.:-(qn₁::QN, qn₂::QN) where {QN<:AbelianNumber} = map(-, qn₁, qn₂)
+@inline Base.:+(qn₁::QN, qn₂::QN, qns::QN...) where {QN<:SimpleAbelianQuantumNumber} = QN(sum(map(values, (qn₁, qn₂, qns...))))
 
 """
-    *(factor::Integer, qn::AbelianNumber) -> typeof(qn)
-    *(qn::AbelianNumber, factor::Integer) -> typeof(qn)
+    -(qn::SimpleAbelianQuantumNumber) -> typeof(qn)
+    -(qn₁::QN, qn₂::QN) where {QN<:SimpleAbelianQuantumNumber} -> QN
 
-Overloaded `*` operator for the multiplication between an integer and an `AbelianNumber`.
-"""
-@inline Base.:*(factor::Integer, qn::AbelianNumber) = qn * factor
-@inline Base.:*(qn::AbelianNumber, factor::Integer) = typeof(qn)(map(num->num*factor, convert(Tuple, qn))...)
-
-"""
-    ^(qn::AbelianNumber, power::Integer) -> typeof(qn)
-
-Overloaded `^` operator for `AbelianNumber`.
-"""
-function Base.:^(qn::AbelianNumber, power::Integer)
-    @assert power>0 "^ error: power should be positive integer."
-    result = qn
-    for _ = 2:power
-        result += qn
-    end
-    return result
-end
-
-"""
-    ⊗(qns::AbelianNumber...) -> eltype(qns)
-
-Get the direct product of some `AbelianNumber`s.
-"""
-@inline ⊗(qns::AbelianNumber...) = kron(qns...)
-
-"""
-    kron(qns::AbelianNumber...; signs=positives(qns))-> eltype(qns)
-
-Get the direct product of some `AbelianNumber`s.
+Overloaded `-` operator for `SimpleAbelianQuantumNumber`.
 
 !!! note
-    Physically, the direct product of a couple of `AbelianNumber`s are defined through the direct product of the bases of the Hilbert spaces they represent. Apparently, the result is still an `AbelianNumber` whose dimension is 1. At the same time, each component of the result is obtained by a summation of the corresponding components of the inputs with the correct signs. This is a direct consequence of the Abelian nature of our quantum numbers.
+    To ensure type stability, a `SimpleAbelianQuantumNumber` can be subtracted by another `SimpleAbelianQuantumNumber` if and only if they are of the same type.
 """
-function Base.kron(qns::AbelianNumber...; signs=positives(qns))
-    result = first(signs)==1 ? first(qns) : -first(qns)
-    for i = 2:length(qns)
-        result += signs[i]==1 ? qns[i] : -qns[i]
+@inline Base.:-(qn::SimpleAbelianQuantumNumber) = typeof(qn)(-values(qn))
+@inline Base.:-(qn₁::QN, qn₂::QN) where {QN<:SimpleAbelianQuantumNumber} = QN(values(qn₁)-values(qn₂))
+
+"""
+    period(qn::SimpleAbelianQuantumNumber) -> Number
+    period(::Type{QN}) where {QN<:SimpleAbelianQuantumNumber} -> Number
+
+The period of a simple Abelian quantum number.
+"""
+@inline period(qn::SimpleAbelianQuantumNumber) = period(typeof(qn))
+
+"""
+    𝕌₁ <: SimpleAbelianQuantumNumber
+
+Abstract type of 𝕌₁ quantum numbers.
+"""
+abstract type 𝕌₁ <: SimpleAbelianQuantumNumber end
+@inline period(::Type{<:𝕌₁}) = Inf
+
+"""
+    𝕊ᶻ <: 𝕌₁
+
+Concrete Abelian quantum number of the z-component of a spin.
+"""
+struct 𝕊ᶻ <: 𝕌₁
+    charge::HalfInt
+end
+
+"""
+    ℕ <: <: 𝕌₁
+
+Concrete Abelian quantum number of the particle number.
+"""
+struct ℕ <: 𝕌₁
+    charge::Int
+end
+
+"""
+    ℤ{N} <: SimpleAbelianQuantumNumber
+
+Abstract type of ℤₙ quantum numbers.
+"""
+abstract type ℤ{N} <: SimpleAbelianQuantumNumber end
+@inline period(::Type{<:ℤ{N}}) where N = N
+
+"""
+    ℤ₂ <: ℤ{2}
+
+Concrete ℤ₂ quantum number.
+"""
+struct ℤ₂ <: ℤ{2}
+    charge::Int
+    ℤ₂(charge::Integer) = new(mod(charge, 2))
+end
+
+"""
+    ℤ₃ <: ℤ{3}
+
+Concrete ℤ₃ quantum number.
+"""
+struct ℤ₃ <: ℤ{3}
+    charge::Int
+    ℤ₃(charge::Integer) = new(mod(charge, 3))
+end
+
+"""
+    ℤ₄ <: ℤ{4}
+
+Concrete ℤ₄ quantum number.
+"""
+struct ℤ₄ <: ℤ{4}
+    charge::Int
+    ℤ₄(charge::Integer) = new(mod(charge, 4))
+end
+
+"""
+    𝕂{N} <: ℤ{N}
+
+Concrete Abelian quantum number of lattice momentum.
+"""
+struct 𝕂{N} <: ℤ{N}
+    charge::Int
+    function 𝕂{N}(charge::Integer) where N
+        @assert N>0 "𝕂 error: non-positive period ($N)."
+        new{N}(mod(charge, N))
     end
-    return result
 end
 
 """
-    regularize!(::Type{QN}, array::AbstractVector{<:Real}) where {QN<:AbelianNumber} -> typeof(array)
-    regularize!(::Type{QN}, array::AbstractMatrix{<:Real}) where {QN<:AbelianNumber} -> typeof(array)
+    TensorProductedAbelianQuantumNumber{T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} <: AbelianQuantumNumber
 
-Regularize the elements of an array in place so that it can represent quantum numbers.
+Deligne tensor product of simple Abelian quantum numbers.
 """
-function regularize!(::Type{QN}, array::AbstractVector{<:Real}) where {QN<:AbelianNumber}
-    @assert length(array)==length(QN) "regularize! error: inconsistent shape of input array and $QN."
-    for (index, period) in zip(eachindex(array), periods(QN))
-        period==Inf || @inbounds begin
-            remainder = array[index] % period
-            array[index] = remainder<0 ? remainder+period : remainder
-        end
-    end
-    return array
+struct TensorProductedAbelianQuantumNumber{T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} <: AbelianQuantumNumber
+    contents::T
 end
-function regularize!(::Type{QN}, array::AbstractMatrix{<:Real}) where {QN<:AbelianNumber}
-    @assert size(array, 1)==length(QN) "regularize! error: inconsistent shape of input array and $QN."
-    for (i, period) in zip(axes(array, 1), periods(QN))
-        period==Inf || @inbounds for j in axes(array, 2)
-            remainder = array[i, j] % period
-            array[i, j] = remainder<0 ? remainder+period : remainder
-        end
-    end
-    return array
-end
+@inline Base.values(qn::TensorProductedAbelianQuantumNumber) = map(values, qn.contents)
+@inline Base.show(io::IO, qn::TensorProductedAbelianQuantumNumber) = @printf io "Abelian[%s]%s" join(fieldtypes(fieldtype(typeof(qn), :contents)), " ⊠ ") values(qn)
+@inline Base.zero(::Type{TensorProductedAbelianQuantumNumber{T}}) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = TensorProductedAbelianQuantumNumber(map(zero,  fieldtypes(T)))
+@inline Base.length(qn::TensorProductedAbelianQuantumNumber) = length(qn.contents)
+@inline Base.firstindex(::TensorProductedAbelianQuantumNumber) = 1
+@inline Base.lastindex(qn::TensorProductedAbelianQuantumNumber) = length(qn)
+@inline Base.getindex(qn::TensorProductedAbelianQuantumNumber, i::Integer) = qn.contents[i]
+@inline periods(::Type{TensorProductedAbelianQuantumNumber{T}}) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = map(period, fieldtypes(T))
+@inline TensorProductedAbelianQuantumNumber(contents::SimpleAbelianQuantumNumber...) = TensorProductedAbelianQuantumNumber(contents)
 
 """
-    regularize(::Type{QN}, array::Union{AbstractVector{<:Real}, AbstractMatrix{<:Real}}) where {QN<:AbelianNumber} -> typeof(array)
+    TensorProductedAbelianQuantumNumber{T}(vs::Vararg{Number, N}) where {N, T<:NTuple{N, SimpleAbelianQuantumNumber}}
+    TensorProductedAbelianQuantumNumber{T}(vs::NTuple{N, Number}) where {N, T<:NTuple{N, SimpleAbelianQuantumNumber}}
 
-Regularize the elements of an array and return a copy that can represent quantum numbers.
+Construct a Deligne tensor product of simple Abelian quantum numbers by their values.
 """
-@inline regularize(::Type{QN}, array::Union{AbstractVector{<:Real}, AbstractMatrix{<:Real}}) where {QN<:AbelianNumber} = regularize!(QN, deepcopy(array))
-
-"""
-    @abeliannumber typename T fields periods
-
-Construct a concrete `AbelianNumber` with the type name being `typename`, fieldtype specified by `T`, fieldnames specified by `fields`, and periods specified by `periods`.
-"""
-macro abeliannumber(typename, T, fields, periods)
-    typename = Symbol(typename)
-    fields = tuple(eval(fields)...)
-    periods = tuple(eval(periods)...)
-    arguments = ntuple(i->Symbol(:v, i), length(fields))
-    @assert length(fields) == length(periods) "@abeliannumber error: number of fields($(length(fields))) and periods($(length(periods))) not equal."
-    @assert all(isa(name, Symbol) for name in fields) "@abeliannumber error: all field names should be Symbol."
-    @assert all(periods .> 0) "@abeliannumber error: all field periods should be positive."
-    if all(periods .== Inf)
-        title = Expr(:call, :($(esc(typename))), arguments...)
-        body = Expr(:call, :new, arguments...)
-    else
-        title = Expr(:call, :($(esc(typename))), arguments..., Expr(:kw, :(regularize::Bool), :true))
-        body = Expr(:call, :new, (p==Inf ? arg : :(regularize ? (r=$arg%$p; r<0 ? r+$p : r) : $arg) for (p, arg) in zip(periods, arguments))...)
-    end
-    newtype = Expr(:struct, false, :($(esc(typename))<:AbelianNumber{$(esc(T))}), Expr(:block, (:($field::$(esc(T))) for field in fields)..., Expr(:(=), title, body)))
-    functions = Expr(:block, :(periods(::Type{<:$(esc(typename))}) = $periods))
-    return Expr(:block, :(global periods), :(Base.@__doc__($newtype)), functions)
-end
+@inline TensorProductedAbelianQuantumNumber{T}(vs::Vararg{Number, N}) where {N, T<:NTuple{N, SimpleAbelianQuantumNumber}} = TensorProductedAbelianQuantumNumber{T}(vs)
+@inline TensorProductedAbelianQuantumNumber{T}(vs::NTuple{N, Number}) where {N, T<:NTuple{N, SimpleAbelianQuantumNumber}} = TensorProductedAbelianQuantumNumber(map((T, v)->T(v), fieldtypes(T), vs))
 
 """
-    AbelianNumbers{QN<:AbelianNumber} <: VectorSpace{QN}
+    period(qn::TensorProductedAbelianQuantumNumber, i::Integer) -> Number
+    period(::Type{TensorProductedAbelianQuantumNumber{T}}, i::Integer) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} -> Number
 
-The whole Abelian quantum numbers of the total bases of a Hilbert space.
+Get the period of the ith simple Abelian number contained in a Deligne tensor product.
 """
-struct AbelianNumbers{QN<:AbelianNumber} <: VectorSpace{QN}
-    form::Char
-    contents::Vector{QN}
-    indptr::Vector{Int}
-    function AbelianNumbers(form::Char, contents::Vector{<:AbelianNumber}, indptr::Vector{Int})
-        @assert uppercase(form)∈('G', 'U', 'C') "AbelianNumbers error: 'form'($form) is not 'G', 'U' or 'C'."
-        @assert length(contents)+1==length(indptr) "AbelianNumbers error: mismatch shapes of contents and indptr ($(length(contents))+1!=$length(indptr))."
-        return new{contents|>eltype}(form|>uppercase, contents, indptr)
-    end
-end
-@inline VectorSpaceStyle(::Type{<:AbelianNumbers}) = VectorSpaceEnumerative()
-@inline dimension(qns::AbelianNumbers) = @inbounds(qns.indptr[end])
-@inline Base.length(qns::AbelianNumbers) = length(qns.contents)
-@inline Base.issorted(qns::AbelianNumbers) = qns.form=='C'
-@inline Base.string(qns::AbelianNumbers) = @sprintf "QNS(%s, %s)" qns|>length qns|>dimension
-@inline Base.show(io::IO, qns::AbelianNumbers) = @printf io "QNS(%s)" join((@sprintf("%s=>%s", qn, slice) for (qn, slice) in pairs(qns, :indptr)), ", ")
+@inline period(qn::TensorProductedAbelianQuantumNumber, i::Integer) = period(typeof(qn), i)
+@inline period(::Type{TensorProductedAbelianQuantumNumber{T}}, i::Integer) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = period(fieldtype(T, i))
 
 """
-    AbelianNumbers(form::Char, contents::Vector{<:AbelianNumber}, indptr::Vector{Int}, choice::Symbol)
-    AbelianNumbers(form::Char, contents::Vector{<:AbelianNumber}, counts::Vector{Int}, ::Val{:counts})
-    AbelianNumbers(form::Char, contents::Vector{<:AbelianNumber}, indptr::Vector{Int}, ::Val{:indptr})
+    +(qn₁::QN, qn₂::QN, qns::QN...) where {QN<:TensorProductedAbelianQuantumNumber} -> QN
 
-Construct an `AbelianNumbers` from a vector of concrete quantum numbers and an vector containing their counts or indptr.
-"""
-@inline AbelianNumbers(form::Char, contents::Vector{<:AbelianNumber}, indptr::Vector{Int}, choice::Symbol) = AbelianNumbers(form, contents, indptr, choice|>Val)
-@inline AbelianNumbers(form::Char, contents::Vector{<:AbelianNumber}, counts::Vector{Int}, ::Val{:counts}) = AbelianNumbers(form|>uppercase, contents, [0, cumsum(counts)...])
-@inline AbelianNumbers(form::Char, contents::Vector{<:AbelianNumber}, indptr::Vector{Int}, ::Val{:indptr}) = AbelianNumbers(form|>uppercase, contents, indptr)
+Overloaded `+` operator for `TensorProductedAbelianQuantumNumber`.
 
-"""
-    AbelianNumbers(form::Char, contents::Vector{<:AbelianNumber})
-
-Construct an `AbelianNumbers` with a set of quantum numbers whose counts are all one.
-"""
-@inline function AbelianNumbers(form::Char, contents::Vector{<:AbelianNumber})
-    return AbelianNumbers(form, contents, collect(0:length(contents)), Val(:indptr))
-end
-
-"""
-    AbelianNumbers(qn::AbelianNumber, count::Int=1)
-
-Construct an `AbelianNumbers` with one unique quantum number which occurs `count` times.
-"""
-@inline AbelianNumbers(qn::AbelianNumber, count::Int=1) = AbelianNumbers('C', [qn], [0, count], :indptr)
-
-"""
-    AbelianNumbers(od::OrderedDict{<:AbelianNumber, <:Integer})
-
-Construct an `AbelianNumbers` from an ordered dict containing concrete quantum numbers and their counts.
-"""
-function AbelianNumbers(od::OrderedDict{<:AbelianNumber, <:Integer})
-    contents = Vector{od|>keytype}(undef, length(od))
-    indptr = zeros(Int, length(od)+1)
-    for (i, (qn, count)) in enumerate(od)
-        @inbounds contents[i] = qn
-        @inbounds indptr[i+1] = indptr[i] + count
-    end
-    return AbelianNumbers('U', contents, indptr, :indptr)
-end
-
-"""
-    AbelianNumbers(od::OrderedDict{<:AbelianNumber, <:UnitRange{<:Integer}})
-
-Construct an `AbelianNumbers` from an ordered dict containing concrete quantum numbers and their slices.
-"""
-function AbelianNumbers(od::OrderedDict{<:AbelianNumber, <:UnitRange{<:Integer}})
-    contents = Vector{od|>keytype}(undef, length(od))
-    indptr = zeros(Int, length(od)+1)
-    for (i, (qn, slice)) in enumerate(od)
-        @inbounds contents[i] = qn
-        @inbounds @assert indptr[i]+1==slice.start "AbelianNumbers error: slice not consistent."
-        @inbounds indptr[i+1] = slice.stop
-    end
-    return AbelianNumbers('U', contents, indptr, :indptr)
-end
-
-"""
-    getindex(qns::AbelianNumbers, slice::UnitRange{Int}) -> AbelianNumbers
-    getindex(qns::AbelianNumbers, indices::Vector{Int}) -> AbelianNumbers
-
-Overloaded `[]` operator.
 !!! note
-    For an `AbelianNumbers`, all the `getindex` functions act on its `contents`, i.e. its compressed data, but not on its expansion, i.e. the uncompressed data. This definition is consistent with the `length` of an `AbelianNumbers`.
+    To ensure type stability, two `TensorProductedAbelianQuantumNumber` can be added together if and only if they are of the same type.
 """
-function Base.getindex(qns::AbelianNumbers, slice::UnitRange{Int})
-    contents = qns.contents[slice]
-    indptr = qns.indptr[slice.start:slice.stop+1]
-    indptr .= indptr .- qns.indptr[slice.start]
-    return AbelianNumbers(qns.form, contents, indptr, :indptr)
-end
-function Base.getindex(qns::AbelianNumbers, indices::Vector{Int})
-    contents = Vector{qns|>eltype}(undef, length(indices))
-    indptr = zeros(Int, length(indices)+1)
-    for (i, index) in enumerate(indices)
-        contents[i] = qns.contents[index]
-        indptr[i+1] = indptr[i] + qns.indptr[index+1] - qns.indptr[index]
-    end
-    return AbelianNumbers('G', contents, indptr, :indptr)
-end
+@inline Base.:+(qn₁::QN, qn₂::QN, qns::QN...) where {QN<:TensorProductedAbelianQuantumNumber} = QN(mapreduce(values, .+, (qn₁, qn₂, qns...)))
 
 """
-    count(qns::AbelianNumbers, i::Integer) -> Int
+    -(qn::TensorProductedAbelianQuantumNumber) -> typeof(qn)
+    -(qn₁::QN, qn₂::QN) where {QN<:TensorProductedAbelianQuantumNumber} -> QN
 
-Get the number of duplicates of the ith quantum number.
-"""
-@inline Base.count(qns::AbelianNumbers, i::Integer) = qns.indptr[i+1]-qns.indptr[i]
+Overloaded `-` operator for `TensorProductedAbelianQuantumNumber`.
 
-"""
-    range(qns::AbelianNumbers, i::Integer) -> UnitRange{Int}
-
-Get the slice of duplicates of the ith quantum number.
-"""
-@inline Base.range(qns::AbelianNumbers, i::Integer) = qns.indptr[i]+1:qns.indptr[i+1]
-
-"""
-    cumsum(qns::AbelianNumbers, i::Integer) -> Int
-
-Get the accumulative number of the duplicate quantum numbers up to the ith in the contents.
-"""
-@inline Base.cumsum(qns::AbelianNumbers, i::Integer) = qns.indptr[i+1]
-
-"""
-    keys(qns::AbelianNumbers) -> Vector{qns|>eltype}
-
-Iterate over the concrete `AbelianNumber`s contained in an `AbelianNumbers`.
-"""
-@inline Base.keys(qns::AbelianNumbers) = qns.contents
-
-"""
-    values(qns::AbelianNumbers, choice::Symbol)
-    values(qns::AbelianNumbers, ::Val{:indptr})
-    values(qns::AbelianNumbers, ::Val{:counts})
-
-Iterate over the slices/counts of the `AbelianNumbers`.
-"""
-@inline Base.values(qns::AbelianNumbers, choice::Symbol) = values(qns, choice|>Val)
-@inline @views Base.values(qns::AbelianNumbers, ::Val{:indptr}) = (range(qns, i) for i=1:length(qns))
-@inline @views Base.values(qns::AbelianNumbers, ::Val{:counts}) = (count(qns, i) for i=1:length(qns))
-
-"""
-    pairs(qns::AbelianNumbers, choice::Symbol)
-    pairs(qns::AbelianNumbers, ::Val{:indptr})
-    pairs(qns::AbelianNumbers, ::Val{:counts})
-
-Iterate over the `AbelianNumber=>slice` or `AbelianNumber=>count` pairs.
-"""
-@inline Base.pairs(qns::AbelianNumbers, choice::Symbol) = pairs(qns, choice|>Val)
-@inline Base.pairs(qns::AbelianNumbers, choice::Union{Val{:indptr}, Val{:counts}}) = Base.Generator(=>, keys(qns), values(qns, choice))
-
-"""
-    findindex(position::Integer, qns::AbelianNumbers, guess::Integer=1) -> Int
-
-Find the index of a quantum number in the contents of an `AbelianNumbers` beginning at `guess` whose position in the expansion is `position`.
-"""
-@inline findindex(position::Integer, qns::AbelianNumbers, guess::Integer) = findnext(>(position-1), qns.indptr, guess+1)-1
-
-"""
-    OrderedDict(qns::AbelianNumbers, choice::Symbol) -> OrderedDict
-    OrderedDict(qns::AbelianNumbers, ::Val{:indptr}) -> OrderedDict{qns|>eltype, UnitRange{Int}}
-    OrderedDict(qns::AbelianNumbers, ::Val{:counts}) -> OrderedDict{qns|>eltype, Int}
-
-Convert an `AbelianNumbers` to an ordered dict.
-"""
-@inline OrderedDict(qns::AbelianNumbers, choice::Symbol) = OrderedDict(qns, choice|>Val)
-function OrderedDict(qns::AbelianNumbers, ::Val{:indptr})
-    @assert qns.form≠'G' "OrderedDict error: input `AbelianNumbers` cannot be `G` formed."
-    result = OrderedDict{qns|>eltype, UnitRange{Int}}()
-    @inbounds for i = 1:length(qns)
-        result[qns.contents[i]] = qns.indptr[i]+1:qns.indptr[i+1]
-    end
-    return result
-end
-function OrderedDict(qns::AbelianNumbers, ::Val{:counts})
-    @assert qns.form≠'G' "OrderedDict error: input `AbelianNumbers` cannot be `G` formed."
-    result = OrderedDict{qns|>eltype, Int}()
-    @inbounds for i = 1:length(qns)
-        result[qns.contents[i]] = qns.indptr[i+1] - qns.indptr[i]
-    end
-    return result
-end
-
-"""
-    sort(qns::AbelianNumbers) -> Tuple{AbelianNumbers, Vector{Int}}
-
-Sort the quantum numbers of an `AbelianNumbers`, return the sorted `AbelianNumbers` and the permutation array that sorts the expansion of the original `AbelianNumbers`.
-"""
-function Base.sort(qns::AbelianNumbers)
-    ctpts = sortperm(qns.contents, alg=Base.Sort.QuickSort)
-    masks = Vector{Bool}(undef, length(qns.contents))
-    masks[1] = true
-    nonduplicate = 1
-    @inbounds for i = 2:length(ctpts)
-        masks[i] = qns.contents[ctpts[i]]≠qns.contents[ctpts[i-1]]
-        masks[i] && (nonduplicate += 1)
-    end
-    contents = Vector{qns|>eltype}(undef, nonduplicate)
-    indptr = zeros(Int, nonduplicate+1)
-    permutation = Vector{Int}(undef, dimension(qns))
-    qncount, ptcount = 0, 0
-    @inbounds for (mask, index) in zip(masks, ctpts)
-        mask && (qncount += 1; contents[qncount] = qns.contents[index]; indptr[qncount+1] = indptr[qncount])
-        indptr[qncount+1] += qns.indptr[index+1] - qns.indptr[index]
-        for (i, p) in enumerate(qns.indptr[index]+1:qns.indptr[index+1])
-            permutation[ptcount+i] = p
-        end
-        ptcount += qns.indptr[index+1] - qns.indptr[index]
-    end
-    return AbelianNumbers('C', contents, indptr, :indptr), permutation
-end
-
-"""
-    findall(target::Union{QN, Tuple{Vararg{QN}}}, qns::AbelianNumbers{QN}, choice::Symbol) where {QN<:AbelianNumber} -> Vector{Int}
-    findall(target::Union{QN, Tuple{Vararg{QN}}}, qns::AbelianNumbers{QN}, ::Val{:compression}) where {QN<:AbelianNumber} -> Vector{Int})
-    findall(target::Union{QN, Tuple{Vararg{QN}}}, qns::AbelianNumbers{QN}, ::Val{:expansion}) where {QN<:AbelianNumber} -> Vector{Int}
-
-Find all the indices of the target quantum numbers in the contents or the expansion of an `AbelianNumbers`.
-"""
-@inline Base.findall(target::Union{QN, Tuple{Vararg{QN}}}, qns::AbelianNumbers{QN}, choice::Symbol) where {QN<:AbelianNumber} = findall(target, qns, choice|>Val)
-@inline Base.findall(target::QN, qns::AbelianNumbers{QN}, ::Val{:compression}) where {QN<:AbelianNumber} = findall((target,), qns, :compression|>Val)
-@inline Base.findall(target::QN, qns::AbelianNumbers{QN}, ::Val{:expansion}) where {QN<:AbelianNumber} = findall((target,), qns, :expansion|>Val)
-function Base.findall(targets::Tuple{Vararg{QN}}, qns::AbelianNumbers{QN}, ::Val{:compression}) where {QN<:AbelianNumber}
-    result = Int[]
-    if issorted(qns)
-        for qn in targets
-            range = searchsorted(qns.contents, qn)
-            range.start<=range.stop && push!(result, range.start)
-        end
-    else
-        for (i, qn) in enumerate(qns)
-            qn∈targets && push!(result, i)
-        end
-    end
-    return result
-end
-function Base.findall(targets::Tuple{Vararg{QN}}, qns::AbelianNumbers{QN}, ::Val{:expansion}) where {QN<:AbelianNumber}
-    result = Int[]
-    @inbounds for index in findall(targets, qns, :compression)
-        append!(result, qns.indptr[index]+1:qns.indptr[index+1])
-    end
-    return result
-end
-
-"""
-    filter(target::QN, qns::AbelianNumbers{QN}) where {QN<:AbelianNumber} -> AbelianNumbers{QN}
-    filter(targets::Tuple{Vararg{QN}}, qns::AbelianNumbers{QN}) where {QN<:AbelianNumber} -> AbelianNumbers{QN}
-
-Find a subset of an `AbelianNumbers` by picking out the target quantum numbers.
-"""
-@inline Base.filter(target::QN, qns::AbelianNumbers{QN}) where {QN<:AbelianNumber} = qns[findall(target, qns, :compression)]
-@inline Base.filter(targets::Tuple{Vararg{QN}}, qns::AbelianNumbers{QN}) where {QN<:AbelianNumber} = qns[findall(targets, qns, :compression)]
-
-"""
-    permute(qns::AbelianNumbers, permutation::Vector{Int}, choice::Symbol) -> AbelianNumbers
-    permute(qns::AbelianNumbers, permutation::Vector{Int}, ::Val{:compression}) -> AbelianNumbers
-    permute(qns::AbelianNumbers, permutation::Vector{Int}, ::Val{:expansion}) -> AbelianNumbers
-
-Reorder the quantum numbers contained in an `AbelianNumbers` with a permutation and return the new one.
-
-For `:compression` case, the permutation is for the compressed contents of the original `AbelianNumbers` while for `:expansion` case, the permutation is for the expanded contents of the original `AbelianNumbers`.
-"""
-@inline permute(qns::AbelianNumbers, permutation::Vector{Int}, choice::Symbol) = permute(qns, permutation, choice|>Val)
-@inline permute(qns::AbelianNumbers, permutation::Vector{Int}, ::Val{:compression}) = qns[permutation]
-function permute(qns::AbelianNumbers, permutation::Vector{Int}, ::Val{:expansion})
-    contents = Vector{qns|>eltype}(undef, length(permutation))
-    indptr = zeros(Int, length(permutation)+1)
-    expansion = expand(qns, :indices)
-    @inbounds for (i, p) in enumerate(permutation)
-        contents[i] = qns.contents[expansion[p]]
-        indptr[i+1] = indptr[i] + 1
-    end
-    return AbelianNumbers('G', contents, indptr, :indptr)
-end
-
-"""
-    expand(qns::AbelianNumbers, choice::Symbol)
-    expand(qns::AbelianNumbers, ::Val{:contents}) -> Vector{eltype(qns)}
-    expand(qns::AbelianNumbers, ::Val{:indices}) -> Vector{Int}
-
-Expand the contents or indices of an `AbelianNumbers` to the uncompressed form.
-"""
-@inline expand(qns::AbelianNumbers, choice::Symbol) = expand(qns, choice|>Val)
-function expand(qns::AbelianNumbers, ::Val{:contents})
-    result = Vector{qns|>eltype}(undef, dimension(qns))
-    @inbounds for i = 1:length(qns)
-        for j = qns.indptr[i]+1:qns.indptr[i+1]
-            result[j] = qns.contents[i]
-        end
-    end
-    return result
-end
-function expand(qns::AbelianNumbers, ::Val{:indices})
-    result = Vector{Int}(undef, dimension(qns))
-    @inbounds for i = 1:length(qns)
-        for j = qns.indptr[i]+1:qns.indptr[i+1]
-            result[j] = i
-        end
-    end
-    return result
-end
-
-"""
-    +(qns::AbelianNumbers) -> AbelianNumbers
-    +(qn::QN, qns::AbelianNumbers{QN}) where {QN<:AbelianNumber} -> AbelianNumbers{QN}
-    +(qns::AbelianNumbers{QN}, qn::QN) where {QN<:AbelianNumber} -> AbelianNumbers{QN}
-
-Overloaded `+` operator for `AbelianNumber`/`AbelianNumbers`.
 !!! note
-    1. The addition between an `AbelianNumbers` and an `AbelianNumber` is just a global shift of the contents of the `AbelianNumbers` by the `AbelianNumber`, therefore, the result is an `AbelianNumbers`.
-    2. `+` cannot be used between two `AbelianNumbers` because the result is ambiguous. Instead, use `⊕` for direct sum and `⊗` for direct product.
-    3. To ensure type stability, an `AbelianNumber` and an `AbelianNumbers` can be added together if and only if the former's type is the same with the latter's eltype.
+    To ensure type stability, a `TensorProductedAbelianQuantumNumber` can be subtracted by another `TensorProductedAbelianQuantumNumber` if and only if they are of the same type.
 """
-@inline Base.:+(qns::AbelianNumbers) = qns
-@inline Base.:+(qn::QN, qns::AbelianNumbers{QN}) where {QN<:AbelianNumber} = qns + qn
-@inline Base.:+(qns::AbelianNumbers{QN}, qn::QN) where {QN<:AbelianNumber} = AbelianNumbers(qns.form=='G' ? 'G' : 'U', [iqn+qn for iqn in qns], qns.indptr, :indptr)
+@inline Base.:-(qn::TensorProductedAbelianQuantumNumber) = TensorProductedAbelianQuantumNumber(map(-, qn.contents))
+@inline Base.:-(qn₁::QN, qn₂::QN) where {QN<:TensorProductedAbelianQuantumNumber} = QN(map((i₁, i₂)->i₁-i₂, qn₁.contents, qn₂.contents))
 
 """
-    -(qns::AbelianNumbers) -> AbelianNumbers
-    -(qn::QN, qns::AbelianNumbers{QN}) where {QN<:AbelianNumber} -> AbelianNumbers{QN}
-    -(qns::AbelianNumbers{QN}, qn::QN) where {QN<:AbelianNumber} -> AbelianNumbers{QN}
+    ⊠(qns::SimpleAbelianQuantumNumber...) -> TensorProductedAbelianQuantumNumber
+    ⊠(qn₁::SimpleAbelianQuantumNumber, qn₂::TensorProductedAbelianQuantumNumber) -> TensorProductedAbelianQuantumNumber
+    ⊠(qn₁::TensorProductedAbelianQuantumNumber, qn₂::SimpleAbelianQuantumNumber) -> TensorProductedAbelianQuantumNumber
+    ⊠(qn₁::TensorProductedAbelianQuantumNumber, qn₂::TensorProductedAbelianQuantumNumber) -> TensorProductedAbelianQuantumNumber
 
-Overloaded `-` operator for `AbelianNumber`/`AbelianNumbers`.
-!!! note
-    1. The subtraction between an `AbelianNumbers` and an `AbelianNumber` is just a global shift of the contents of the `AbelianNumbers` by the `AbelianNumber`, therefore, the result is an `AbelianNumbers`.
-    2. `-` cannot be used between two `AbelianNumbers` because the result is ambiguous. Instead, use `⊕` with signs for direct sum and `⊗` with signs for direct product.
-    3. To ensure type stability, an `AbelianNumber` can be subtracted by an `AbelianNumbers` or vice versa if and only if the former's type is the same with the latter's eltype.
+Deligne tensor product of Abelian quantum numbers.
 """
-@inline Base.:-(qns::AbelianNumbers) = AbelianNumbers(qns.form=='G' ? 'G' : 'U', -qns.contents, qns.indptr, :indptr)
-@inline Base.:-(qn::QN, qns::AbelianNumbers{QN}) where {QN<:AbelianNumber} = AbelianNumbers(qns.form=='G' ? 'G' : 'U', [qn-iqn for iqn in qns], qns.indptr, :indptr)
-@inline Base.:-(qns::AbelianNumbers{QN}, qn::QN) where {QN<:AbelianNumber} = AbelianNumbers(qns.form=='G' ? 'G' : 'U', [iqn-qn for iqn in qns], qns.indptr, :indptr)
+@inline ⊠(qns::SimpleAbelianQuantumNumber...) = TensorProductedAbelianQuantumNumber(qns...)
+@inline ⊠(qn₁::SimpleAbelianQuantumNumber, qn₂::TensorProductedAbelianQuantumNumber) = TensorProductedAbelianQuantumNumber(qn₁, qn₂.contents...)
+@inline ⊠(qn₁::TensorProductedAbelianQuantumNumber, qn₂::SimpleAbelianQuantumNumber) = TensorProductedAbelianQuantumNumber(qn₁.contents..., qn₂)
+@inline ⊠(qn₁::TensorProductedAbelianQuantumNumber, qn₂::TensorProductedAbelianQuantumNumber) = TensorProductedAbelianQuantumNumber(qn₁.contents..., qn₂.contents...)
 
 """
-    *(factor::Integer, qns::AbelianNumbers) -> AbelianNumbers
-    *(qns::AbelianNumbers, factor::Integer) -> AbelianNumbers
+    ⊠(QNS::Type{<:SimpleAbelianQuantumNumber}...) -> Type{TensorProductedAbelianQuantumNumber{Tuple{QNS...}}}
+    ⊠(::Type{QN}, ::Type{TensorProductedAbelianQuantumNumber{T}}) where {QN<:SimpleAbelianQuantumNumber, T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} -> Type{TensorProductedAbelianQuantumNumber{Tuple{QN, fieldtypes(T)...}}}
+    ⊠(::Type{TensorProductedAbelianQuantumNumber{T}}, ::Type{QN}) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}, QN<:SimpleAbelianQuantumNumber} -> Type{TensorProductedAbelianQuantumNumber{Tuple{fieldtypes(T)...}, QN}}
+    ⊠(::Type{TensorProductedAbelianQuantumNumber{T₁}}, ::Type{TensorProductedAbelianQuantumNumber{T₂}}) where {T₁<:Tuple{Vararg{SimpleAbelianQuantumNumber}}, T₂<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} -> Type{TensorProductedAbelianQuantumNumber{Tuple{fieldtypes(T₁)..., fieldtypes(T₂)...}}}
 
-Overloaded `*` operator for the multiplication between an integer and an `AbelianNumbers`.
+Deligne tensor product of Abelian quantum numbers.
 """
-@inline Base.:*(factor::Integer, qns::AbelianNumbers) = qns * factor
-@inline Base.:*(qns::AbelianNumbers, factor::Integer) = AbelianNumbers(qns.form=='G' ? 'G' : 'U', [qn*factor for qn in qns.contents], qns.indptr, :indptr)
-
-"""
-    ^(qns::AbelianNumbers, power::Integer) -> AbelianNumbers
-
-Overloaded `^` operator for `AbelianNumbers`.
-
-This operation translates into the direct product of `power` copies of `qns`.
-"""
-@inline Base.:^(qns::AbelianNumbers, power::Integer) = kron([qns for i = 1:power]...)
+@inline ⊠(QNS::Type{<:SimpleAbelianQuantumNumber}...) = TensorProductedAbelianQuantumNumber{Tuple{QNS...}}
+@inline ⊠(::Type{QN}, ::Type{TensorProductedAbelianQuantumNumber{T}}) where {QN<:SimpleAbelianQuantumNumber, T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = TensorProductedAbelianQuantumNumber{Tuple{QN, fieldtypes(T)...}}
+@inline ⊠(::Type{TensorProductedAbelianQuantumNumber{T}}, ::Type{QN}) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}, QN<:SimpleAbelianQuantumNumber} = TensorProductedAbelianQuantumNumber{Tuple{fieldtypes(T)..., QN}}
+@inline ⊠(::Type{TensorProductedAbelianQuantumNumber{T₁}}, ::Type{TensorProductedAbelianQuantumNumber{T₂}}) where {T₁<:Tuple{Vararg{SimpleAbelianQuantumNumber}}, T₂<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = TensorProductedAbelianQuantumNumber{Tuple{fieldtypes(T₁)..., fieldtypes(T₂)...}}
 
 """
-    ⊕(qns::AbelianNumber...) -> AbelianNumbers{qns|>eltype}
-    ⊕(qnses::AbelianNumbers...) -> qnses|>eltype
+    const Momentum = TensorProductedAbelianQuantumNumber{<:Tuple{Vararg{𝕂}}}
+    const Momentum₁{N} = TensorProductedAbelianQuantumNumber{Tuple{𝕂{N}}}
+    const Momentum₂{N₁, N₂} = TensorProductedAbelianQuantumNumber{Tuple{𝕂{N₁}, 𝕂{N₂}}}
+    const Momentum₃{N₁, N₂, N₃} = TensorProductedAbelianQuantumNumber{Tuple{𝕂{N₁}, 𝕂{N₂}, 𝕂{N₃}}}
 
-Get the direct sum of some `AbelianNumber`s or `AbelianNumbers`es.
+Type alias for the Abelian quantum numbers of 1d, 2d and 3d momentum.
 """
-@inline ⊕(qns::AbelianNumber...) = union(qns...)
-@inline ⊕(qnses::AbelianNumbers...) = union(qnses...)
-
-"""
-    ⊗(qnses::AbelianNumbers...) -> eltype(qnses)
-
-Get the direct product of some `AbelianNumbers`es.
-"""
-@inline ⊗(qnses::AbelianNumbers...) = kron(qnses...)
-
-"""
-    union(qns::AbelianNumber...; signs=positives(qns)) -> AbelianNumbers
-    union(qnses::AbelianNumbers{QN}...; signs=positives(qnses)) where {QN<:AbelianNumber} -> AbelianNumbers{QN}
-
-Get the direct sum of some `AbelianNumber`s or `AbelianNumbers`es.
-!!! note
-    1. Physically, the direct sum of a couple of `AbelianNumber`s or `AbelianNumbers`es is defined by the direct sum of the bases of the Hilbert spaces they represent. Therefore, the dimension of the result equals the summation of those of the inputs. As a consequence, even for `AbelianNumber`s, the result will be an `AbelianNumbers` because the dimension of the result is greater than 1.
-    2. Signs of `AbelianNumber`s or `AbelianNumbers`es can be provided when getting their direct sums.
-"""
-@inline function Base.union(qns::AbelianNumber...; signs=positives(qns))
-    contents = [sign==1 ? qn : -qn for (sign, qn) in zip(signs, qns)]
-    indptr = collect(0:length(qns))
-    return AbelianNumbers('G', contents, indptr, :indptr)
-end
-function Base.union(qnses::AbelianNumbers{QN}...; signs=positives(qnses)) where {QN<:AbelianNumber}
-    lengths = NTuple{fieldcount(typeof(qnses)), Int}(length(qns) for qns in qnses)
-    contents = Vector{QN}(undef, sum(lengths))
-    indptr = zeros(Int, sum(lengths)+1)
-    count = 0
-    @inbounds for (sign, qns, length) in zip(signs, qnses, lengths)
-        for i = 1:length
-            contents[count+i] = (sign == 1) ? qns.contents[i] : -qns.contents[i]
-            indptr[count+i+1] = indptr[count+i] + qns.indptr[i+1] - qns.indptr[i]
-        end
-        count += length
-    end
-    return AbelianNumbers('G', contents, indptr, :indptr)
-end
-
-"""
-    kron(qnses::AbelianNumbers{QN}...; signs=positives(qnses)) where {QN<:AbelianNumber} -> AbelianNumbers{QN}
-
-Get the direct product of some `AbelianNumbers`es.
-!!! note
-    Physically, the direct product of a couple of `AbelianNumbers`es are defined by the direct product of the bases of the Hilbert spaces they represent. Therefore, the dimension of the result equals the product of those of the inputs. Meanwhile, each quantum number in the contents of the result is obtained by a summation of the corresponding quantum numbers of the inputs with the correct signs. This is a direct consequence of the Abelian nature of our quantum numbers.
-"""
-function Base.kron(qnses::AbelianNumbers{QN}...; signs=positives(qnses)) where {QN<:AbelianNumber}
-    N = fieldcount(typeof(qnses))
-    lengths = NTuple{N, Int}(i<N ? dimension(qns) : length(qns) for (i, qns) in enumerate(qnses))
-    contents = Vector{QN}(undef, prod(lengths))
-    indptr = zeros(Int, prod(lengths)+1)
-    cache = Vector{QN}(undef, N)
-    @inbounds expansions = NTuple{N-1, Vector{Int}}(expand(qnses[i], :indices) for i = 1:N-1)
-    @inbounds for (i, indices) in enumerate(product(NTuple{N, UnitRange{Int64}}(1:length for length in reverse(lengths))...))
-        for (j, (sign, qns, index)) in enumerate(zip(signs, qnses, reverse(indices)))
-            pos = j<N ? expansions[j][index] : index
-            cache[j] = sign==1 ? qns.contents[pos] : -qns.contents[pos]
-        end
-        indptr[i+1] = indptr[i] + qnses[end].indptr[indices[1]+1] - qnses[end].indptr[indices[1]]
-        contents[i] = sum(cache)
-    end
-    return AbelianNumbers('G', contents, indptr, :indptr)
-end
-
-"""
-    prod(qnses::AbelianNumbers{QN}...; signs=positives(qnses)) where {QN<:AbelianNumber} -> AbelianNumbers{QN}, Dict{QN, Dict{NTuple{length(qnses), QN}, UnitRange{Int}}}
-
-Unitary Kronecker product of several `AbelianNumbers`es. The product result as well as the records of the product will be returned.
-!!! note
-    1. All input `AbelianNumbers` must be 'U' formed or 'C' formed.
-    2. Since duplicate quantum number are not allowed in 'U' formed and 'C' formed `AbelianNumbers`es, in general, there exists a merge process of duplicate quantum numbers in the result. Therefore, records are needed to keep track of this process, which will be returned along with the product result. The records are stored in a `Dict{QN, Dict{NTuple{NTuple{length(qnses), QN}, UnitRange{Int}}}}` typed dict, in which, for each nonduplicate quantum number `qn` in the result, there exist a record `Dict((qn₁, qn₂, ...)=>start:stop, ...)` telling what quantum numbers `(qn₁, qn₂, ...)` a merged duplicate `qn` comes from and what slice `start:stop` this merged duplicate corresponds in the result.
-"""
-function Base.prod(qnses::AbelianNumbers{QN}...; signs=positives(qnses)) where {QN<:AbelianNumber}
-    @assert all((qns.form == 'U') || (qns.form == 'C') for qns in qnses) "prod error: all input qnses should be 'U' formed or 'C' formed."
-    N = fieldcount(typeof(qnses))
-    lengths = NTuple{N, Int}(length(qns) for qns in qnses)
-    cache = Vector{QN}(undef, N)
-    container = OrderedDict{QN, Int}()
-    records = Dict{QN, Dict{NTuple{N, QN}, UnitRange{Int}}}()
-    for indices in product(NTuple{N, UnitRange{Int64}}(1:length for length in reverse(lengths))...)
-        qn, count = QN|>zero, 1
-        @inbounds for (j, (sign, qns, index)) in enumerate(zip(signs, qnses, reverse(indices)))
-            cache[j] = qns.contents[index]
-            qn = sign==1 ? (qn+cache[j]) : (qn-cache[j])
-            count = count * (qns.indptr[index+1]-qns.indptr[index])
-        end
-        container[qn] = get(container, qn, 0) + count
-        !haskey(records, qn) && (records[qn] = Dict{NTuple{N, QN}, UnitRange{Int}}())
-        records[qn][NTuple{N, QN}(cache)] = (container[qn]-count+1):container[qn]
-    end
-    contents = QN[qn for qn in keys(container)]
-    sort!(contents)
-    indptr = zeros(Int, length(container)+1)
-    @inbounds for (i, qn) in enumerate(contents)
-        indptr[i+1] = indptr[i] + container[qn]
-    end
-    return AbelianNumbers('C', contents, indptr, :indptr), records
-end
-
-"""
-    decompose(target::QN, qnses::AbelianNumbers{QN}...; signs=positives(qnses), method=:montecarlo, nmax=20) where {QN<:AbelianNumber} -> Vector{NTuple{length(qnses), Int}}
-
-Find a couple of decompositions of `target` with respect to `qnses`.
-!!! note
-    A tuple of integers `(i₁, i₂, ...)` is called a decomposition of a given `target` with respect to the given `qnses` if and only if they satisfy the "decomposition rule":
-    ```math
-    \\sum_\\text{j} \\text{signs}[\\text{j}]\\times\\text{qnses}[\\text{j}][\\text{i}_{\\text{j}}]==\\text{target}
-    ```
-    This equation is in fact a set of restricted [linear Diophantine equations](https://en.wikipedia.org/wiki/Diophantine_equation#Linear_Diophantine_equations). Indeed, our quantum numbers are always discrete Abelian ones and all instances of a concrete `AbelianNumber` forms a [module](https://en.wikipedia.org/wiki/Module_(mathematics)) over the [ring](https://en.wikipedia.org/wiki/Ring_(mathematics)) of integers. Therefore, each quantum number can be represented as a integral multiple of the unit element of the Abelian module, which results in the final reduction of the above equation to a set of linear Diophantine equations. Then finding a decomposition is equivalent to find a solution of the reduced linear Diophantine equations, with the restriction that the quantum numbers constructed from the solution should be in the corresponding `qnses`. Here we provide two methods to find such decompositions, one is by brute force, and the other is by Monte Carlo simulations.
-"""
-@inline decompose(target::QN, qnses::AbelianNumbers{QN}...; signs=positives(qnses), method=:montecarlo, nmax=20) where {QN<:AbelianNumber} = _decompose(Val(method), target, qnses...; signs=signs, nmax=nmax)
-function _decompose(::Val{:bruteforce}, target::QN, qnses::AbelianNumbers{QN}...; signs, nmax) where {QN<:AbelianNumber}
-    N = fieldcount(typeof(qnses))
-    result = Set{NTuple{N, Int}}()
-    cache = Vector{Int}(undef, N)
-    dimensions = NTuple{N, Int}(dimension(qns) for qns in reverse(qnses))
-    indices = findall(target, kron(qnses...; signs=signs), :expansion)
-    nmax<length(indices) && (shuffle!(MersenneTwister(), indices); indices = @views indices[1:nmax])
-    for index in indices
-        @inbounds for (i, dimension) in enumerate(dimensions)
-            cache[end+1-i] = (index-1)%dimension + 1
-            index = (index-1)÷dimension + 1
-        end
-        push!(result, NTuple{N, Int}(cache))
-    end
-    return collect(NTuple{N, Int}, result)
-end
-function _decompose(::Val{:montecarlo}, target::QN, qnses::AbelianNumbers{QN}...; signs, nmax) where {QN<:AbelianNumber}
-    seed!()
-    N = fieldcount(typeof(qnses))
-    result = Set{NTuple{N, Int}}()
-    expansions = Vector{QN}[expand(qns, :contents) for qns in qnses]
-    dimensions = NTuple{N, Int}(dimension(qns) for qns in qnses)
-    diff = indices->norm(sum(sign==1 ? expansion[index] : -expansion[index] for (sign, expansion, index) in zip(signs, expansions, indices))-target)
-    count = 1
-    while true
-        oldindices, newindices = Int[rand(1:dimension) for dimension in dimensions], ones(Int, N)
-        olddiff, newdiff = diff(oldindices), diff(newindices)
-        @inbounds while newdiff > 0
-            pos = rand(1:N)
-            index = rand(1:dimensions[pos]-1)
-            newindices[pos] = index<newindices[pos] ? index : index+1
-            newdiff = diff(newindices)
-            if newdiff<=olddiff || exp(olddiff-newdiff)>rand()
-                oldindices[:] = newindices
-                olddiff = newdiff
-            end
-            newindices[:] = oldindices
-        end
-        count = count + 1
-        push!(result, NTuple{N, Int}(newindices))
-        (length(result)>=nmax || count>nmax*5) && break
-    end
-    return collect(NTuple{N, Int}, result)
-end
-
-"""
-    Sz(Sz::Real)
-
-The concrete `AbelianNumber` of a quantum system with spin z-component `Sz` conserved.
-"""
-@abeliannumber "Sz" Float64 (:Sz,) (Inf,)
-
-"""
-    ParticleNumber(N::Real)
-
-The concrete `AbelianNumber` of a quantum system with particle number `N` conserved.
-"""
-@abeliannumber "ParticleNumber" Float64 (:N,) (Inf,)
-
-"""
-    SpinfulParticle(N::Real, Sz::Real)
-
-The concrete `AbelianNumber` of a quantum system with both particle number `N` and spin z-component `Sz` conserved.
-"""
-@abeliannumber "SpinfulParticle" Float64 (:N, :Sz) (Inf, Inf)
-
-"""
-    Momentum <: AbelianNumber{Int}
-
-Abstract type for momentum.
-"""
-abstract type Momentum <: AbelianNumber{Int} end
+const Momentum = TensorProductedAbelianQuantumNumber{<:Tuple{Vararg{𝕂}}}
+const Momentum₁{N} = TensorProductedAbelianQuantumNumber{Tuple{𝕂{N}}}
+const Momentum₂{N₁, N₂} = TensorProductedAbelianQuantumNumber{Tuple{𝕂{N₁}, 𝕂{N₂}}}
+const Momentum₃{N₁, N₂, N₃} = TensorProductedAbelianQuantumNumber{Tuple{𝕂{N₁}, 𝕂{N₂}, 𝕂{N₃}}}
+@inline Int(m::Momentum₁) = m[1].charge + 1
+@inline Int(m::Momentum₂{N₁, N₂}) where {N₁, N₂} = m[2].charge + m[1].charge*N₂ + 1
+@inline Int(m::Momentum₃{N₁, N₂, N₃}) where {N₁, N₂, N₃} = (m[1].charge*N₂+m[2].charge)*N₃ + m[3].charge + 1
+@inline Base.show(io::IO, m::Momentum₁{N}) where N = @printf io "Momentum₁{%s}(%s)" N m[1].charge
+@inline Base.show(io::IO, m::Momentum₂{N₁, N₂}) where {N₁, N₂} = @printf io "Momentum₂{%s, %s}(%s, %s)" N₁ N₂ m[1].charge m[2].charge
+@inline Base.show(io::IO, m::Momentum₃{N₁, N₂, N₃}) where {N₁, N₂, N₃} = @printf io "Momentum₃{%s, %s, %s}(%s, %s, %s)" N₁ N₂ N₃ m[1].charge m[2].charge m[3].charge
+@inline Base.show(io::IO, ::Type{Momentum₁{N}}) where N = @printf io "Momentum₁{%s}" N
+@inline Base.show(io::IO, ::Type{Momentum₂{N₁, N₂}}) where {N₁, N₂} = @printf io "Momentum₂{%s, %s}" N₁ N₂
+@inline Base.show(io::IO, ::Type{Momentum₃{N₁, N₂, N₃}}) where {N₁, N₂, N₃} = @printf io "Momentum₃{%s, %s, %s}" N₁ N₂ N₃
 
 """
     Momentum₁{N}(k::Integer) where N
-
-One dimensional momentum.
-"""
-struct Momentum₁{N} <: Momentum
-    k::Int
-    function Momentum₁{N}(k::Integer) where N
-        @assert N>0 "Momentum₁ error: wrong period ($N)."
-        remainder = k % N
-        remainder < 0 && (remainder = remainder + N)
-        new{N}(remainder)
-    end
-end
-@inline periods(::Type{<:Momentum₁{N}}) where N = (N,)
-@inline Int(m::Momentum₁) = m.k + 1
-
-"""
     Momentum₂{N}(k₁::Integer, k₂::Integer) where N
     Momentum₂{N₁, N₂}(k₁::Integer, k₂::Integer) where {N₁, N₂}
-
-Two dimensional momentum.
-"""
-struct Momentum₂{N₁, N₂} <: Momentum
-    k₁::Int
-    k₂::Int
-    Momentum₂{N}(k₁::Integer, k₂::Integer) where N =  Momentum₂{N, N}(k₁, k₂)
-    function Momentum₂{N₁, N₂}(k₁::Integer, k₂::Integer) where {N₁, N₂}
-        @assert N₁>0 "Momentum₂ error: wrong 1st period ($N₁)."
-        @assert N₂>0 "Momentum₂ error: wrong 2nd period ($N₂)."
-        r₁ = k₁ % N₁
-        r₂ = k₂ % N₂
-        r₁ < 0 && (r₁ = r₁ + N₁)
-        r₂ < 0 && (r₂ = r₂ + N₂)
-        new{N₁, N₂}(r₁, r₂)
-    end
-end
-@inline periods(::Type{<:Momentum₂{N₁, N₂}}) where {N₁, N₂} = (N₁, N₂)
-@inline Int(m::Momentum₂{N₁, N₂}) where {N₁, N₂} = m.k₂ + m.k₁*N₂ + 1
-
-"""
     Momentum₃{N}(k₁::Integer, k₂::Integer, k₃::Integer) where N
     Momentum₃{N₁, N₂, N₃}(k₁::Integer, k₂::Integer, k₃::Integer) where {N₁, N₂, N₃}
 
-Three dimensional momentum.
+Construct 1d, 2d and 3d momentum.
 """
-struct Momentum₃{N₁, N₂, N₃} <: Momentum
-    k₁::Int
-    k₂::Int
-    k₃::Int
-    Momentum₃{N}(k₁::Integer, k₂::Integer, k₃::Integer) where N =  Momentum₃{N, N, N}(k₁, k₂, k₃)
-    function Momentum₃{N₁, N₂, N₃}(k₁::Integer, k₂::Integer, k₃::Integer) where {N₁, N₂, N₃}
-        @assert N₁>0 "Momentum₃ error: wrong 1st period ($N₁)."
-        @assert N₂>0 "Momentum₃ error: wrong 2nd period ($N₂)."
-        @assert N₃>0 "Momentum₃ error: wrong 3rd period ($N₃)."
-        r₁ = k₁ % N₁
-        r₂ = k₂ % N₂
-        r₃ = k₃ % N₃
-        r₁ < 0 && (r₁ = r₁ + N₁)
-        r₂ < 0 && (r₂ = r₂ + N₂)
-        r₃ < 0 && (r₃ = r₃ + N₃)
-        new{N₁, N₂, N₃}(r₁, r₂, r₃)
-    end
+@inline Momentum₁{N}(k::Integer) where N = TensorProductedAbelianQuantumNumber(𝕂{N}(k))
+@inline Momentum₂{N}(k₁::Integer, k₂::Integer) where N = Momentum₂{N, N}(k₁, k₂)
+@inline Momentum₂{N₁, N₂}(k₁::Integer, k₂::Integer) where {N₁, N₂} = TensorProductedAbelianQuantumNumber(𝕂{N₁}(k₁), 𝕂{N₂}(k₂))
+@inline Momentum₃{N}(k₁::Integer, k₂::Integer, k₃::Integer) where N =  Momentum₃{N, N, N}(k₁, k₂, k₃)
+@inline Momentum₃{N₁, N₂, N₃}(k₁::Integer, k₂::Integer, k₃::Integer) where {N₁, N₂, N₃} = TensorProductedAbelianQuantumNumber(𝕂{N₁}(k₁), 𝕂{N₂}(k₂), 𝕂{N₃}(k₃))
+
+"""
+    RepresentationSpace{QN<:AbelianQuantumNumber} <: VectorSpace{QN}
+
+Abstract type of quantum representation spaces of Abelian groups.
+"""
+abstract type RepresentationSpace{QN<:AbelianQuantumNumber} <: VectorSpace{QN} end
+@inline Base.show(io::IO, ::MIME"text/plain", rs::RepresentationSpace) = show(io, rs)
+@inline dimension(::Type{<:RepresentationSpace}) = Int
+@inline Base.range(::Type{<:RepresentationSpace}) = UnitRange{Int}
+
+"""
+    dimension(rs::RepresentationSpace, i::Integer) -> Int
+
+Get the degenerate dimension of the ith Abelian quantum number contained in a representation space.
+"""
+@inline dimension(rs::RepresentationSpace, i::Integer) = dimension(rs, CartesianIndex(i, rs)) 
+
+"""
+    range(rs::RepresentationSpace, i::Integer)
+
+Get the slice of the degenerate dimension of the ith Abelian quantum number contained in a representation space.
+"""
+@inline Base.range(rs::RepresentationSpace, i::Integer) = range(rs, CartesianIndex(i, rs))
+
+"""
+    cumsum(rs::RepresentationSpace, i::Union{Integer, CartesianIndex}) -> Int
+
+Get the accumulative degenerate dimension up to the ith Abelian quantum number contained in a representation space.
+"""
+@inline Base.cumsum(rs::RepresentationSpace, i::Union{Integer, CartesianIndex}) = iszero(i) ? 0 : range(rs, i).stop
+
+"""
+    pairs(rs::RepresentationSpace, ::typeof(dimension)) -> RepresentationSpacePairs
+    pairs(rs::RepresentationSpace, ::typeof(range)) -> RepresentationSpacePairs
+
+Return an iterator that iterates over the pairs of the Abelian quantum numbers and their corresponding (slices of the) degenerate dimensions contained in a representation space.
+"""
+@inline Base.pairs(rs::RepresentationSpace, ::typeof(dimension)) = RepresentationSpacePairs{dimension(typeof(rs))}(rs)
+@inline Base.pairs(rs::RepresentationSpace, ::typeof(range)) = RepresentationSpacePairs{range(typeof(rs))}(rs)
+struct RepresentationSpacePairs{R<:Union{Int, AbstractVector{Int}}, QN<:AbelianQuantumNumber, S<:RepresentationSpace{QN}} <: AbstractVector{Pair{QN, R}}
+    space::S
+    RepresentationSpacePairs{R}(space::RepresentationSpace) where {R<:Union{Int, AbstractVector{Int}}} = new{R, eltype(space), typeof(space)}(space)
 end
-@inline periods(::Type{<:Momentum₃{N₁, N₂, N₃}}) where {N₁, N₂, N₃} = (N₁, N₂, N₃)
-@inline Int(m::Momentum₃{N₁, N₂, N₃}) where {N₁, N₂, N₃} = (m.k₁*N₂+m.k₂)*N₃ + m.k₃ + 1
+@inline Base.size(ps::RepresentationSpacePairs) = (length(ps.space),)
+@inline function Base.getindex(ps::RepresentationSpacePairs{Int}, i::Integer)
+    index = CartesianIndex(i, ps.space)
+    return ps.space[index]=>dimension(ps.space, index)
+end
+@inline function Base.getindex(ps::RepresentationSpacePairs{<:AbstractVector{Int}}, i::Integer)
+    index = CartesianIndex(i, ps.space)
+    return ps.space[index]=>range(ps.space, index)
+end
 
 """
-    Momenta{P<:Momentum} <: VectorSpace{P}
+    Momenta{P<:Momentum} <: RepresentationSpace{P}
 
-The allowed set of momenta.
+The complete allowed set of momenta.
 """
-struct Momenta{P<:Momentum} <: VectorSpace{P} end
+struct Momenta{P<:Momentum} <: RepresentationSpace{P} end
 @inline Momenta(::Type{P}) where {P<:Momentum} = Momenta{P}()
 @inline VectorSpaceStyle(::Type{<:Momenta}) = VectorSpaceCartesian()
 @inline shape(::Momenta{P}) where {P<:Momentum} = map(period->0:period-1, reverse(periods(P)))
-@inline Base.CartesianIndex(m::P, ::Momenta{P}) where {P<:Momentum} = CartesianIndex(Int.(reverse(values(m))))
-@inline (::Type{<:Momentum})(index::CartesianIndex, ::Momenta{P}) where {P<:Momentum} = P(reverse(index.I)...)
+@inline Base.convert(::Type{<:CartesianIndex}, m::P, ::Momenta{P}) where {P<:Momentum} = CartesianIndex(reverse(values(m)))
+@inline Base.convert(::Type{P}, index::CartesianIndex, ::Momenta{P}) where {P<:Momentum} = P(reverse(index.I)...)
 @inline Base.:(==)(ms₁::Momenta, ms₂::Momenta) = periods(eltype(ms₁))==periods(eltype(ms₂))
-@inline Base.isequal(ms₁::Momenta, ms₂::Momenta) = isequal( periods(eltype(ms₁)), periods(eltype(ms₂)))
+@inline Base.isequal(ms₁::Momenta, ms₂::Momenta) = isequal(periods(eltype(ms₁)), periods(eltype(ms₂)))
+
+"""
+    regularize!(quantumnumbers::Vector{<:AbelianQuantumNumber}, dimensions::Vector{Int}; check::Bool=false) -> Tuple{typeof(quantumnumbers), typeof(dimensions), Vector{Int}}
+
+In place regularization of the input Abelian quantum numbers and their corresponding degenerate dimensions.
+
+After the regularization, the Abelian quantum numbers will be sorted in the ascending order and duplicates will be merged together.The degenerate dimensions will be processed accordingly. When `check` is `true`, this function also check whether all input degenerate dimensions are positive. The regularized Abelian quantum numbers and degenerate dimensions, as well as the permutation vector that sorts the input Abelian quantum numbers, will be returned. 
+"""
+function regularize!(quantumnumbers::Vector{<:AbelianQuantumNumber}, dimensions::Vector{Int}; check::Bool=false)
+    check && @assert all(>(0), dimensions) "regularize! error: input dimensions must be positive integers."
+    perm = sortperm(quantumnumbers)
+    permute!(quantumnumbers, perm)
+    permute!(dimensions, perm)
+    count = 1
+    x = first(quantumnumbers)
+    for i = 2:length(perm)
+        y = quantumnumbers[i]
+        d = dimensions[i]
+        if y ≠ x
+            count += 1
+            quantumnumbers[count] = y
+            dimensions[count] = d
+            x = y
+        else
+            dimensions[count] += d
+        end
+    end
+    resize!(quantumnumbers, count)
+    resize!(dimensions, count)
+    return quantumnumbers, dimensions, perm
+end
+
+"""
+    regularize(quantumnumbers::AbstractVector{<:AbelianQuantumNumber}, dimension::AbstractVector{<:Integer}; check::Bool=false) -> Tuple{Vector{eltype(quantumnumbers)}, Vector{Int}, Vector{Int}}
+
+Regularize of the input Abelian quantum numbers and their corresponding degenerate dimensions.
+
+See [`regularize!`](@ref).
+"""
+@inline function regularize(quantumnumbers::AbstractVector{<:AbelianQuantumNumber}, dimension::AbstractVector{<:Integer}; check::Bool=false)
+    return regularize!(collect(quantumnumbers), collect(Int, dimension); check=check)
+end
+
+"""
+    AbelianGradedSpace{QN<:AbelianQuantumNumber} <: RepresentationSpace{QN}
+
+A quantum representation space of an Abelian group that has been decomposed into the direct sum of its irreducible representations.
+"""
+struct AbelianGradedSpace{QN<:AbelianQuantumNumber} <: RepresentationSpace{QN}
+    contents::OrderedDict{QN, UnitRange{Int}}
+    dual::Bool
+end
+@inline Base.getindex(::VectorSpaceStyle, gs::AbelianGradedSpace, i::CartesianIndex) = inv(id(gs.contents, i), gs.dual)
+function Base.show(io::IO, gs::AbelianGradedSpace)
+    @printf io "Graded{%s}(" eltype(gs)
+    for (i, qn) in enumerate(keys(gs.contents))
+        @printf io "%s=>%s" values(qn) dimension(gs, i)
+        i<length(gs) && @printf io "%s" ", "
+    end
+    @printf io "%s%s" ")" gs.dual ? "'" : ""
+end
+
+"""
+    const Graded = AbelianGradedSpace
+
+Type alias for `AbelianGradedSpace`.
+"""
+const Graded = AbelianGradedSpace
+
+"""
+    AbelianGradedSpace(quantumnumbers::AbstractVector{<:AbelianQuantumNumber}, dimensions::AbstractVector{<:Integer}, dual::Bool=false; ordercheck::Bool=false, duplicatecheck::Bool=false, degeneracycheck::Bool=false)
+
+Construct an Abelian graded space.
+
+Here:
+- `quantumnumbers` specifies the Abelian quantum numbers labeling the irreducible representations of the corresponding Abelian group which must be sorted in the ascending order. Such an ordering should be manually guaranteed by the user. When and only when the keyword argument `ordercheck` is `true`, the constructor will check whether this condition is satisfied and raise an error if it doesn't. Besides, `quantumnumbers` must not contain duplicate Abelian quantum numbers, manually guaranteed by the user as well. This condition can be checked when and only when both `ordercheck==true` and `duplicatecheck==true`. An error will be raised if this check fails.
+- `dimensions` specifies the degenerate dimensions of the corresponding Abelian quantum numbers. Apparently, each degenerate dimension must be positive, which should also be manually guaranteed by the user. When and only when the keyword argument `degeneracycheck` is `true`, the constructor will check whether this condition is satisfied and raise an error if it doesn't.
+- `dual` specifies whether the graded space is the dual representation of the corresponding Abelian group, which roughly speaking, can be viewed as the direction of the arrow of the Abelian quantum numbers labeling the irreducible representations. We assume `dual==true` corresponds to the in-arrow and `dual==false` corresponds to the out-arrow.
+"""
+function AbelianGradedSpace(quantumnumbers::AbstractVector{<:AbelianQuantumNumber}, dimensions::AbstractVector{<:Integer}, dual::Bool=false; ordercheck::Bool=false, duplicatecheck::Bool=false, degeneracycheck::Bool=false)
+    @assert length(quantumnumbers)==length(dimensions) "AbelianGradedSpace error: mismatched Abelian quantum numbers and accumulative degenerate dimensions."
+    if ordercheck
+        @assert issorted(quantumnumbers) "AbelianGradedSpace error: Abelian quantum numbers are not sorted."
+        duplicatecheck && @assert all(i->quantumnumbers[i]≠quantumnumbers[i+1], firstindex(quantumnumbers):lastindex(quantumnumbers)-1) "AbelianGradedSpace error: duplicate Abelian quantum numbers found."
+    end
+    degeneracycheck &&  @assert all(>(0), dimensions) "AbelianGradedSpace error: non-positive degenerate dimensions."
+    contents = OrderedDict{eltype(quantumnumbers), UnitRange{Int}}()
+    start, stop = 1, 0
+    @inbounds for (quantumnumber, dimension) in zip(quantumnumbers, dimensions)
+        stop += dimension
+        contents[quantumnumber] = start:stop
+        start += dimension
+    end
+    return AbelianGradedSpace(contents, dual)
+end
+
+"""
+    AbelianGradedSpace(pairs; dual::Bool=false)
+    AbelianGradedSpace(pairs::Pair...; dual::Bool=false)
+    AbelianGradedSpace{QN}(pairs; dual::Bool=false) where {QN<:AbelianQuantumNumber}
+    AbelianGradedSpace{QN}(pairs::Pair...; dual::Bool=false) where {QN<:AbelianQuantumNumber}
+
+Construct an Abelian graded space.
+
+In this function, the Abelian quantum numbers will be sorted automatically, therefore, their orders need not be worried. Duplicate and dimension checks of the quantum numbers are also carried out and errors will be raised if either such checks fails.
+"""
+@inline AbelianGradedSpace(pairs; dual::Bool=false) = AbelianGradedSpace{fieldtype(eltype(pairs), 1)}(pairs; dual=dual)
+@inline AbelianGradedSpace(pairs::Pair...; dual::Bool=false) = AbelianGradedSpace(pairs; dual=dual)
+@propagate_inbounds function AbelianGradedSpace{QN}(pairs; dual::Bool=false) where {QN<:AbelianQuantumNumber}
+    quantumnumbers, dimensions = zeros(QN, length(pairs)), zeros(Int, length(pairs))
+    for (i, (qn, dimension)) in enumerate(pairs)
+        quantumnumbers[i] = isa(qn, QN) ? qn : QN(qn)
+        dimensions[i] = dimension
+    end
+    quantumnumbers, dimensions = regularize!(quantumnumbers, dimensions; check=true)
+    return AbelianGradedSpace(quantumnumbers, dimensions, dual; ordercheck=false, duplicatecheck=false, degeneracycheck=false)
+end
+@inline AbelianGradedSpace{QN}(pairs::Pair...; dual::Bool=false) where {QN<:AbelianQuantumNumber} = AbelianGradedSpace{QN}(pairs; dual=dual)
+
+"""
+    length(gs::AbelianGradedSpace) -> Int
+
+Get the number of inequivalent irreducible representations (i.e., the Abelian quantum numbers) of an Abelian graded space.
+"""
+@inline Base.length(gs::AbelianGradedSpace) = length(gs.contents)
+
+"""
+    getindex(gs::AbelianGradedSpace, indexes::AbstractVector{<:Integer}) -> typeof(gs)
+    getindex(gs::AbelianGradedSpace{QN}, quantumnumbers::AbstractVector{QN}) where {QN<:AbelianQuantumNumber} -> AbelianGradedSpace{QN}
+
+Get a subset of an Abelian graded space.
+"""
+function Base.getindex(gs::AbelianGradedSpace, indexes::AbstractVector{<:Integer})
+    issorted(indexes) || (indexes = sort(indexes))
+    quantumnumbers, dimensions = zeros(eltype(gs), length(indexes)), zeros(Int, length(indexes))
+    for (i, index) in enumerate(indexes)
+        quantumnumbers[i] = id(gs.contents, index)
+        dimensions[i] = dimension(gs, index)
+    end
+    return AbelianGradedSpace(quantumnumbers, dimensions, gs.dual; ordercheck=false, duplicatecheck=false, degeneracycheck=false)
+end
+function Base.getindex(gs::AbelianGradedSpace{QN}, quantumnumbers::AbstractVector{QN}) where {QN<:AbelianQuantumNumber}
+    quantumnumbers = [inv(qn, gs.dual) for qn in quantumnumbers]
+    sort!(quantumnumbers)
+    dimensions = zeros(Int, length(quantumnumbers))
+    @inbounds for (i, qn) in enumerate(quantumnumbers)
+        dimensions[i] =  dimension(gs, inv(qn, gs.dual))
+    end
+    return AbelianGradedSpace(quantumnumbers, dimensions, gs.dual; ordercheck=false, duplicatecheck=false, degeneracycheck=false)
+end
+
+"""
+    in(qn::QN, gs::AbelianGradedSpace{QN}) where {QN<:AbelianQuantumNumber} -> Bool
+
+Check whether an Abelian quantum number is contained in an Abelian graded space.
+"""
+@inline Base.in(qn::QN, gs::AbelianGradedSpace{QN}) where {QN<:AbelianQuantumNumber} = haskey(gs.contents, inv(qn, gs.dual))
+
+"""
+    adjoint(gs::AbelianGradedSpace) -> typeof(gs)
+
+Get the dual of an Abelian graded space.
+"""
+@inline Base.adjoint(gs::AbelianGradedSpace) = AbelianGradedSpace(gs.contents, !gs.dual)
+
+"""
+    dimension(gs::AbelianGradedSpace) -> Int
+
+Get the total dimension of an Abelian graded space.
+"""
+@inline dimension(gs::AbelianGradedSpace) = last(gs.contents).second.stop
+
+"""
+    dimension(gs::AbelianGradedSpace, qn::CartesianIndex) -> Int
+    dimension(gs::AbelianGradedSpace{QN}, qn::QN) where {QN<:AbelianQuantumNumber} -> Int
+
+Get the degenerate dimension of an Abelian quantum number contained in an Abelian graded space.
+"""
+@inline dimension(gs::AbelianGradedSpace, qn::CartesianIndex) = length(value(gs.contents, qn))
+@inline dimension(gs::AbelianGradedSpace{QN}, qn::QN) where {QN<:AbelianQuantumNumber} = length(gs.contents[inv(qn, gs.dual)])
+
+"""
+    range(gs::AbelianGradedSpace, qn::CartesianIndex) -> UnitRange{Int}
+    range(gs::AbelianGradedSpace{QN}, qn::QN) where {QN<:AbelianQuantumNumber} -> UnitRange{Int}
+
+Get the slice of the degenerate dimension of an Abelian quantum number contained in an Abelian graded space.
+"""
+@inline Base.range(gs::AbelianGradedSpace, qn::CartesianIndex) = value(gs.contents, qn)
+@inline Base.range(gs::AbelianGradedSpace{QN}, qn::QN) where {QN<:AbelianQuantumNumber} = gs.contents[inv(qn, gs.dual)]
+
+"""
+    cumsum(gs::AbelianGradedSpace{QN}, qn::QN) where {QN<:AbelianQuantumNumber} -> Int
+
+Get the accumulative dimension of an Abelian graded space up to a certain Abelian quantum number contained in an Abelian graded space.
+"""
+@inline Base.cumsum(gs::AbelianGradedSpace{QN}, qn::QN) where {QN<:AbelianQuantumNumber} = gs.contents[inv(qn, gs.dual)].stop
+
+"""
+    findindex(position::Integer, gs::AbelianGradedSpace, guess::Integer) -> Int
+
+Find the index of an Abelian quantum number in an Abelian graded space beginning at `guess` whose position in the complete dimension range is `position`.
+"""
+@inline findindex(position::Integer, gs::AbelianGradedSpace, guess::Integer) = findnext(i->cumsum(gs, i)>position-1, Base.OneTo(length(gs)), guess)
+
+"""
+    CompositeAbelianGradedSpace{N, QN<:AbelianQuantumNumber} <: RepresentationSpace{QN}
+
+Abstract type of composite Abelian graded spaces.
+"""
+abstract type CompositeAbelianGradedSpace{N, QN<:AbelianQuantumNumber} <: RepresentationSpace{QN} end
+
+"""
+    rank(rs::CompositeAbelianGradedSpace) -> Int
+    rank(::Type{<:CompositeAbelianGradedSpace{N}}) where N -> Int
+
+Get the number of Abelian graded spaces in the direct sum.
+"""
+@inline rank(rs::CompositeAbelianGradedSpace) = rank(typeof(rs))
+@inline rank(::Type{<:CompositeAbelianGradedSpace{N}}) where N = N
+
+"""
+    decompose(rs::CompositeAbelianGradedSpace; expand::Bool=true) -> Tuple{AbelianGradedSpace{eltype(rs)}, Vector{Int}}
+
+Decompose a composite of several Abelian graded spaces to the canonical one.
+
+When `expand` is `false`, the corresponding permutation vector that sorts the Abelian quantum numbers will be returned as well.
+When `expand` is `true`, the expanded dimension indexes of the permutation vector that sorts the Abelian quantum numbers will be returned as well.
+"""
+@propagate_inbounds function decompose(rs::CompositeAbelianGradedSpace; expand::Bool=true)
+    len = length(rs)
+    quantumnumbers, dimensions = zeros(eltype(rs), len), zeros(Int, len)
+    for (i, (qn, dim)) in enumerate(pairs(rs, dimension))
+        quantumnumbers[i] = qn
+        dimensions[i] = dim
+    end
+    quantumnumbers, dimensions, perm = regularize!(quantumnumbers, dimensions)
+    if expand
+        expansion = Int[]
+        for index in perm
+            append!(expansion, range(rs, index))
+        end
+        perm = expansion
+    end
+    return AbelianGradedSpace(quantumnumbers, dimensions, false; ordercheck=false, duplicatecheck=false, degeneracycheck=false), perm
+end
+
+"""
+    DirectSummedAbelianGradedSpace{N, QN<:AbelianQuantumNumber} <: CompositeAbelianGradedSpace{N, QN}
+
+Direct sum of Abelian graded spaces.
+"""
+struct DirectSummedAbelianGradedSpace{N, QN<:AbelianQuantumNumber} <: CompositeAbelianGradedSpace{N, QN}
+    contents::NTuple{N, AbelianGradedSpace{QN}}
+end
+@inline DirectSummedAbelianGradedSpace(gses::AbelianGradedSpace...) = DirectSummedAbelianGradedSpace(gses)
+@inline VectorSpaceStyle(::Type{<:DirectSummedAbelianGradedSpace}) = VectorSpaceDirectSummed()
+function Base.show(io::IO, rs::DirectSummedAbelianGradedSpace)
+    for (count, content) in enumerate(rs.contents)
+        @printf io "%s" content
+        count<rank(rs) && @printf io "%s" " ⊕ "
+    end
+end
+
+"""
+    ⊕(gses::AbelianGradedSpace...) -> DirectSummedAbelianGradedSpace
+    ⊕(gs::AbelianGradedSpace, rs::DirectSummedAbelianGradedSpace) -> DirectSummedAbelianGradedSpace
+    ⊕(rs::DirectSummedAbelianGradedSpace, gs::AbelianGradedSpace) -> DirectSummedAbelianGradedSpace
+    ⊕(rs₁::DirectSummedAbelianGradedSpace, rs₂::DirectSummedAbelianGradedSpace) -> DirectSummedAbelianGradedSpace
+
+Get the direct sum of some Abelian graded spaces.
+"""
+@inline ⊕(gses::AbelianGradedSpace...) = DirectSummedAbelianGradedSpace(gses...)
+@inline ⊕(gs::AbelianGradedSpace, rs::DirectSummedAbelianGradedSpace) = DirectSummedAbelianGradedSpace(gs, rs.contents...)
+@inline ⊕(rs::DirectSummedAbelianGradedSpace, gs::AbelianGradedSpace) = DirectSummedAbelianGradedSpace(rs.contents..., gs)
+@inline ⊕(rs₁::DirectSummedAbelianGradedSpace, rs₂::DirectSummedAbelianGradedSpace) = DirectSummedAbelianGradedSpace(rs₁.contents..., rs₂.contents...)
+
+"""
+    dimension(rs::DirectSummedAbelianGradedSpace) -> Int
+
+Get the total dimension of the direct sum of several Abelian graded spaces.
+"""
+@inline dimension(rs::DirectSummedAbelianGradedSpace) = sum(dimension, rs.contents)
+
+"""
+    dimension(rs::DirectSummedAbelianGradedSpace, i::CartesianIndex) -> Int
+
+Get the degenerate dimension of the ith Abelian quantum number in the direct sum of several Abelian graded spaces.
+"""
+@inline function dimension(rs::DirectSummedAbelianGradedSpace, i::CartesianIndex)
+    m, n = i.I
+    return dimension(rs.contents[m], n)
+end
+
+"""
+    range(rs::DirectSummedAbelianGradedSpace, i::CartesianIndex) -> UnitRange{Int}
+
+Get the slice of the degenerate dimension of the ith Abelian quantum number in the direct sum of several Abelian graded spaces.
+"""
+@inline function Base.range(rs::DirectSummedAbelianGradedSpace, i::CartesianIndex)
+    m, n = i.I
+    d = sum(i->dimension(rs.contents[i]), 1:m-1; init=0)
+    slice = range(rs.contents[m], n)
+    return (slice.start+d):(slice.stop+d)
+end
+
+"""
+    DirectProductedAbelianGradedSpace{N, QN<:AbelianQuantumNumber} <: CompositeAbelianGradedSpace{N, QN}
+
+Direct product of Abelian graded spaces.
+"""
+struct DirectProductedAbelianGradedSpace{N, QN<:AbelianQuantumNumber} <: CompositeAbelianGradedSpace{N, QN}
+    contents::NTuple{N, AbelianGradedSpace{QN}}
+end
+@inline DirectProductedAbelianGradedSpace(gses::AbelianGradedSpace...) = DirectProductedAbelianGradedSpace(gses)
+@inline VectorSpaceStyle(::Type{<:DirectProductedAbelianGradedSpace}) = VectorSpaceDirectProducted(:backward)
+function Base.show(io::IO, rs::DirectProductedAbelianGradedSpace)
+    for (count, content) in enumerate(rs.contents)
+        @printf io "%s" content
+        count<rank(rs) && @printf io "%s" " ⊗ "
+    end
+end
+@inline Base.convert(::Type{QN}, qns::NTuple{N, QN}, rs::DirectProductedAbelianGradedSpace{N, QN}) where {N, QN<:AbelianQuantumNumber} = ⊗(qns...)
+@inline Base.range(::Type{<:DirectProductedAbelianGradedSpace{N}}) where N = DirectProductedAbelianGradedSpaceRange{N}
+
+"""
+    ⊗(gses::AbelianGradedSpace...) -> DirectProductedAbelianGradedSpace
+    ⊗(gs::AbelianGradedSpace, rs::DirectProductedAbelianGradedSpace) -> DirectProductedAbelianGradedSpace
+    ⊗(rs::DirectProductedAbelianGradedSpace, gs::AbelianGradedSpace) -> DirectProductedAbelianGradedSpace
+    ⊗(rs₁::DirectProductedAbelianGradedSpace, rs₂::DirectProductedAbelianGradedSpace) -> DirectProductedAbelianGradedSpace
+
+Get the direct product of some Abelian graded spaces.
+"""
+@inline ⊗(gses::AbelianGradedSpace...) = DirectProductedAbelianGradedSpace(gses...)
+@inline ⊗(gs::AbelianGradedSpace, rs::DirectProductedAbelianGradedSpace) = DirectProductedAbelianGradedSpace(gs, rs.contents...)
+@inline ⊗(rs::DirectProductedAbelianGradedSpace, gs::AbelianGradedSpace) = DirectProductedAbelianGradedSpace(rs.contents..., gs)
+@inline ⊗(rs₁::DirectProductedAbelianGradedSpace, rs₂::DirectProductedAbelianGradedSpace) = DirectProductedAbelianGradedSpace(rs₁.contents..., rs₂.contents...)
+
+"""
+    dimension(rs::DirectProductedAbelianGradedSpace) -> Int
+
+Get the total dimension of the direct product of several Abelian graded spaces.
+"""
+@inline dimension(rs::DirectProductedAbelianGradedSpace) = prod(dimension, rs.contents)
+
+"""
+    dimension(rs::DirectProductedAbelianGradedSpace, i::CartesianIndex) -> Int
+
+Get the degenerate dimension of the ith Abelian quantum number in the direct product of several Abelian graded spaces.
+"""
+@inline dimension(rs::DirectProductedAbelianGradedSpace, i::CartesianIndex) = prod(map(dimension, rs.contents, i.I))
+
+"""
+    dimension(rs::DirectProductedAbelianGradedSpace{N, QN}, qns::NTuple{N, QN}) where {N, QN<:AbelianQuantumNumber} -> Int
+
+Get the degenerate dimension of the Abelian quantum number fused by `qns` in the direct product of several Abelian graded spaces.
+"""
+@inline dimension(rs::DirectProductedAbelianGradedSpace{N, QN}, qns::NTuple{N, QN}) where {N, QN<:AbelianQuantumNumber} = prod(map(dimension, rs.contents, qns))
+
+"""
+    range(rs::DirectProductedAbelianGradedSpace, i::CartesianIndex) -> AbstractVector{Int}
+
+Get the slice of the degenerate dimension of the ith Abelian quantum number in the direct product of several Abelian graded spaces.
+"""
+@inline function Base.range(rs::DirectProductedAbelianGradedSpace, i::CartesianIndex)
+    contents = reverse(rs.contents)
+    linear = LinearIndices(map(dimension, contents))
+    cartesian = CartesianIndices(map(range, contents, reverse(i.I)))
+    return DirectProductedAbelianGradedSpaceRange(linear, cartesian)
+end
+struct DirectProductedAbelianGradedSpaceRange{N} <: AbstractVector{Int}
+    linear::LinearIndices{N, NTuple{N, Base.OneTo{Int}}}
+    cartesian::CartesianIndices{N, NTuple{N, UnitRange{Int}}}
+end
+@inline Base.size(r::DirectProductedAbelianGradedSpaceRange) = (length(r.cartesian),)
+@inline Base.getindex(r::DirectProductedAbelianGradedSpaceRange, i::Integer) = r.linear[r.cartesian[i]]
+
+"""
+    range(rs::DirectProductedAbelianGradedSpace{N, QN}, qns::NTuple{N, QN}) where {N, QN<:AbelianQuantumNumber} -> AbstractVector{Int}
+
+Get the slice of the degenerate dimension of the Abelian quantum number fused by `qns` in the direct product of several Abelian graded spaces.
+"""
+@inline function Base.range(rs::DirectProductedAbelianGradedSpace{N, QN}, qns::NTuple{N, QN}) where {N, QN<:AbelianQuantumNumber}
+    contents = reverse(rs.contents)
+    linear = LinearIndices(map(dimension, contents))
+    cartesian = CartesianIndices(map(range, contents, reverse(qns)))
+    return DirectProductedAbelianGradedSpaceRange(linear, cartesian)
+end
+
+"""
+    merge(rs::DirectProductedAbelianGradedSpace) -> Tuple{AbelianGradedSpace{eltype(rs)}, Dict{eltype(rs), Vector{NTuple{rank(rs), eltype(rs)}}}}
+
+Get the decomposition of the direct product of several Abelian graded spaces and its corresponding fusion processes.
+
+For a set of Abelian graded spaces (gs₁, gs₂, ...), their direct product space can contain several equivalent irreducible representations because for different sets of Abelian quantum numbers (qn₁, qn₂, ...) where qnᵢ∈gsᵢ, the fusion, i.e., `⊗(qn₁, qn₂, ...)` may give the same result `qn`. This function returns the decomposition of the direct product of (gs₁, gs₂, ...) as well as all the fusion processes of each quantum number contained in the decomposition.
+"""
+function Base.merge(rs::DirectProductedAbelianGradedSpace)
+    fusion = Dict{eltype(rs), Vector{NTuple{rank(rs), eltype(rs)}}}()
+    record = Dict{eltype(rs), Int}()
+    for ps in product(map(content->pairs(content, dimension), reverse(rs.contents))...)
+        qns = reverse(map(p->p.first, ps))
+        dim = prod(map(p->p.second, ps))
+        qn = ⊗(qns...)
+        if haskey(fusion, qn)
+            push!(fusion[qn], qns)
+            record[qn] += dim
+        else
+            fusion[qn] = [qns]
+            record[qn] = dim
+        end
+    end
+    quantumnumbers, dimensions = collect(keys(record)), collect(values(record))
+    perm = sortperm(quantumnumbers)
+    return AbelianGradedSpace(permute!(quantumnumbers, perm), permute!(dimensions, perm), false; ordercheck=false, duplicatecheck=false, degeneracycheck=false), fusion
+end
+
+"""
+    split(target::QN, rs::DirectProductedAbelianGradedSpace{N, QN}; nmax::Real=20) where {N, QN<:AbelianQuantumNumber} -> Set{NTuple{N, QN}}
+
+Find a set of splittings of the target Abelian quantum number with respect to the direct product of several Abelian graded spaces.
+"""
+function Base.split(target::QN, rs::DirectProductedAbelianGradedSpace{N, QN}; nmax::Real=20) where {N, QN<:AbelianQuantumNumber}
+    result = Set{NTuple{N, QN}}()
+    if isinf(nmax)
+        for qns in product(rs.contents...)
+            ⊗(qns...)==target && push!(result, qns)
+        end
+    else
+        seed!()
+        diff(indexes::NTuple{N, Int}) = norm(values(⊗(map(getindex, rs.contents, indexes)...)-target))
+        count = 1
+        while true
+            indexes = map(content->rand(1:length(content)), rs.contents)
+            Δ = diff(indexes)
+            @inbounds while Δ > 0
+                pos = rand(1:rank(rs))
+                index = rand(1:length(rs.contents[pos])-1)
+                newindexes = ntuple(i->i==pos ? (index<indexes[pos] ? index : index+1) : indexes[i], Val(N))
+                newΔ = diff(newindexes)
+                if newΔ<=Δ || exp(Δ-newΔ)>rand()
+                    indexes = newindexes
+                    Δ = newΔ
+                end
+            end
+            push!(result, map(getindex, rs.contents, indexes))
+            count = count + 1
+            (length(result)>=nmax || count>nmax*5) && break
+        end
+    end
+    return result
+end
 
 end #module
