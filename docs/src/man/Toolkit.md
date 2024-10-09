@@ -29,6 +29,8 @@ rtol
 Float
 concatenate
 decimaltostr
+subscript
+superscript
 delta
 ordinal
 id

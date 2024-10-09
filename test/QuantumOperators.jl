@@ -3,7 +3,7 @@ using LinearAlgebra: dot
 using Printf: @sprintf
 using QuantumLattices: add!, div!, dtype, mul!, id, rank, sub!, value
 using QuantumLattices.QuantumOperators
-using QuantumLattices.Toolkit: Float, contentnames, isparameterbound, parameternames, parametertype
+using QuantumLattices.Toolkit: Float, contentnames, isparameterbound, parameternames, parametertype, subscript, superscript
 
 import QuantumLattices: ⊗, permute
 import QuantumLattices.QuantumOperators: script

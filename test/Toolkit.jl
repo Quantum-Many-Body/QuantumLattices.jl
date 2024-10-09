@@ -24,6 +24,14 @@ import QuantumLattices.Toolkit: VectorSpaceStyle, contentnames, contenttype, dis
     @test decimaltostr(0.1-0.12im) == "0.1-0.12im"
 end
 
+@testset "superscript" begin
+    @test superscript(1234567890) == "¹²³⁴⁵⁶⁷⁸⁹⁰"
+end
+
+@testset "subscript" begin
+    @test subscript(1234567890) == "₁₂₃₄₅₆₇₈₉₀"
+end
+
 @testset "ordinal" begin
     @test ordinal(1) == "1st"
     @test ordinal(2) == "2nd"

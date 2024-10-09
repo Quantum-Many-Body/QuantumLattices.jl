@@ -8,11 +8,11 @@ using ..Toolkit: atol, efficientoperations, rtol, contentorder, decimaltostr, fu
 import LaTeXStrings: latexstring
 import LinearAlgebra: dot
 import ..QuantumLattices: ⊗, add!, div!, dtype, id, ishermitian, mul!, permute, rank, sub!, value
-import ..Toolkit: contentnames, dissolve, isparameterbound, parameternames
+import ..Toolkit: contentnames, dissolve, isparameterbound, parameternames, subscript, superscript
 
 export ID, LaTeX, Operator, OperatorPack, OperatorProd, Operators, OperatorSet, OperatorSum, OperatorUnit, QuantumOperator, Representation
 export LinearFunction, LinearTransformation, Matrixization, Permutation, RankFilter, TabledUnitSubstitution, Transformation, UnitSubstitution
-export idtype, ishermitian, isscalartype, latexname, latexformat, matrix, optype, script, sequence, subscript, superscript
+export idtype, ishermitian, isscalartype, latexname, latexformat, matrix, optype, script, sequence
 
 # Generic representation of (a part of) a quantum lattice system
 """

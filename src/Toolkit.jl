@@ -10,7 +10,7 @@ import QuantumLattices: ⊞, ⊗, id, value
 
 # Utilities
 export atol, rtol, Float
-export DirectSummedIndices, Segment, concatenate, decimaltostr, delta, ordinal
+export DirectSummedIndices, Segment, concatenate, decimaltostr, delta, ordinal, subscript, superscript
 
 # Combinatorics
 export Combinatorics, Combinations, DuplicateCombinations, DuplicatePermutations, Permutations
@@ -74,6 +74,20 @@ function decimaltostr(number::Complex, n::Int=5)
     (length(result) == 0) && (result = "0.0")
     return result
 end
+
+"""
+    superscript(i::Integer) -> String
+
+Convert an integer to the superscript.
+"""
+@inline superscript(i::Integer) = join(d==1 ? '¹' : d==2 ? '²' : d==3 ? '³' : '⁰'+d for d in Iterators.reverse(digits(i)))
+
+"""
+    subscript(i::Integer) -> String
+
+Convert an integer to the subscript.
+"""
+@inline subscript(i::Integer) = join('₀'+d for d in Iterators.reverse(digits(i)))
 
 """
     ordinal(number::Integer)
