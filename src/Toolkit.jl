@@ -25,7 +25,7 @@ export efficientoperations
 export CompositeDict, CompositeVector
 
 # Vector spaces
-export CompositeNamedVectorSpace, DirectProductedNamedVectorSpace, NamedVectorSpace, ParameterSpace, SimpleNamedVectorSpace, VectorSpace, ZippedNamedVectorSpace
+export CompositeNamedVectorSpace, NamedVectorSpace, NamedVectorSpaceProd, NamedVectorSpaceZip, ParameterSpace, SimpleNamedVectorSpace, VectorSpace
 export VectorSpaceCartesian, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceEnumerative, VectorSpaceGeneral, VectorSpaceStyle, VectorSpaceZipped
 export shape
 
@@ -1146,56 +1146,56 @@ abstract type CompositeNamedVectorSpace{T<:Tuple{Vararg{SimpleNamedVectorSpace}}
 @inline Base.getindex(ps::NamedVectorSpacePairIteration{V}, i::Integer) where {V<:CompositeNamedVectorSpace} = NamedTuple{names(V)}(ps.namedvectorspace[i])
 
 """
-    ZippedNamedVectorSpace{T<:Tuple{Vararg{SimpleNamedVectorSpace}}, B<:Tuple} <: CompositeNamedVectorSpace{T, B}
+    NamedVectorSpaceZip{T<:Tuple{Vararg{SimpleNamedVectorSpace}}, B<:Tuple} <: CompositeNamedVectorSpace{T, B}
 
 Zipped named vector space.
 """
-struct ZippedNamedVectorSpace{T<:Tuple{Vararg{SimpleNamedVectorSpace}}, B<:Tuple} <: CompositeNamedVectorSpace{T, B}
+struct NamedVectorSpaceZip{T<:Tuple{Vararg{SimpleNamedVectorSpace}}, B<:Tuple} <: CompositeNamedVectorSpace{T, B}
     contents::T
-    ZippedNamedVectorSpace(contents::Tuple{Vararg{SimpleNamedVectorSpace}}) = new{typeof(contents), map(eltype, typeof(contents))}(contents)
+    NamedVectorSpaceZip(contents::Tuple{Vararg{SimpleNamedVectorSpace}}) = new{typeof(contents), map(eltype, typeof(contents))}(contents)
 end
-@inline ZippedNamedVectorSpace(contents::SimpleNamedVectorSpace...) = ZippedNamedVectorSpace(contents)
-@inline VectorSpaceStyle(::Type{<:ZippedNamedVectorSpace}) = VectorSpaceZipped()
+@inline NamedVectorSpaceZip(contents::SimpleNamedVectorSpace...) = NamedVectorSpaceZip(contents)
+@inline VectorSpaceStyle(::Type{<:NamedVectorSpaceZip}) = VectorSpaceZipped()
 
 """
-    DirectProductedNamedVectorSpace{Order, T<:Tuple{Vararg{SimpleNamedVectorSpace}}, B<:Tuple} <: CompositeNamedVectorSpace{T, B}
+    NamedVectorSpaceProd{Order, T<:Tuple{Vararg{SimpleNamedVectorSpace}}, B<:Tuple} <: CompositeNamedVectorSpace{T, B}
 
 Direct producted named vector space.
 """
-struct DirectProductedNamedVectorSpace{Order, T<:Tuple{Vararg{SimpleNamedVectorSpace}}, B<:Tuple} <: CompositeNamedVectorSpace{T, B}
+struct NamedVectorSpaceProd{Order, T<:Tuple{Vararg{SimpleNamedVectorSpace}}, B<:Tuple} <: CompositeNamedVectorSpace{T, B}
     contents::T
-    function DirectProductedNamedVectorSpace{Order}(contents::Tuple{Vararg{SimpleNamedVectorSpace}}) where Order
-        @assert Order∈(:forward, :backward) "DirectProductedNamedVectorSpace error: not supported order."
+    function NamedVectorSpaceProd{Order}(contents::Tuple{Vararg{SimpleNamedVectorSpace}}) where Order
+        @assert Order∈(:forward, :backward) "NamedVectorSpaceProd error: not supported order."
         new{Order, typeof(contents), map(eltype, typeof(contents))}(contents)
     end
 end
-@inline DirectProductedNamedVectorSpace{Order}(contents::SimpleNamedVectorSpace...) where Order = DirectProductedNamedVectorSpace{Order}(contents)
-@inline VectorSpaceStyle(::Type{<:DirectProductedNamedVectorSpace{Order}}) where Order = VectorSpaceDirectProducted{Order}()
+@inline NamedVectorSpaceProd{Order}(contents::SimpleNamedVectorSpace...) where Order = NamedVectorSpaceProd{Order}(contents)
+@inline VectorSpaceStyle(::Type{<:NamedVectorSpaceProd{Order}}) where Order = VectorSpaceDirectProducted{Order}()
 
 """
     ⊞(vs₁::SimpleNamedVectorSpace, vs₂::SimpleNamedVectorSpace) -> ZipNamedVectorSpace
-    ⊞(vs₁::SimpleNamedVectorSpace, vs₂::ZippedNamedVectorSpace) -> ZipNamedVectorSpace
-    ⊞(vs₁::ZippedNamedVectorSpace, vs₂::SimpleNamedVectorSpace) -> ZipNamedVectorSpace
-    ⊞(vs₁::ZippedNamedVectorSpace, vs₂::ZippedNamedVectorSpace) -> ZipNamedVectorSpace
+    ⊞(vs₁::SimpleNamedVectorSpace, vs₂::NamedVectorSpaceZip) -> ZipNamedVectorSpace
+    ⊞(vs₁::NamedVectorSpaceZip, vs₂::SimpleNamedVectorSpace) -> ZipNamedVectorSpace
+    ⊞(vs₁::NamedVectorSpaceZip, vs₂::NamedVectorSpaceZip) -> ZipNamedVectorSpace
 
 The zip of named vector spaces.
 """
-@inline ⊞(vs₁::SimpleNamedVectorSpace, vs₂::SimpleNamedVectorSpace) = ZippedNamedVectorSpace(vs₁, vs₂)
-@inline ⊞(vs₁::SimpleNamedVectorSpace, vs₂::ZippedNamedVectorSpace) = ZippedNamedVectorSpace(vs₁, vs₂.contents...)
-@inline ⊞(vs₁::ZippedNamedVectorSpace, vs₂::SimpleNamedVectorSpace) = ZippedNamedVectorSpace(vs₁.contents..., vs₂)
-@inline ⊞(vs₁::ZippedNamedVectorSpace, vs₂::ZippedNamedVectorSpace) = ZippedNamedVectorSpace(vs₁.contents..., vs₂.contents...)
+@inline ⊞(vs₁::SimpleNamedVectorSpace, vs₂::SimpleNamedVectorSpace) = NamedVectorSpaceZip(vs₁, vs₂)
+@inline ⊞(vs₁::SimpleNamedVectorSpace, vs₂::NamedVectorSpaceZip) = NamedVectorSpaceZip(vs₁, vs₂.contents...)
+@inline ⊞(vs₁::NamedVectorSpaceZip, vs₂::SimpleNamedVectorSpace) = NamedVectorSpaceZip(vs₁.contents..., vs₂)
+@inline ⊞(vs₁::NamedVectorSpaceZip, vs₂::NamedVectorSpaceZip) = NamedVectorSpaceZip(vs₁.contents..., vs₂.contents...)
 
 """
-    ⊗(vs₁::SimpleNamedVectorSpace, vs₂::SimpleNamedVectorSpace, order::Symbol=:forward) -> DirectProductedNamedVectorSpace{order}
-    ⊗(vs₁::SimpleNamedVectorSpace, vs₂::DirectProductedNamedVectorSpace{Order}) where Order -> DirectProductedNamedVectorSpace{Order}
-    ⊗(vs₁::DirectProductedNamedVectorSpace{Order}, vs₂::SimpleNamedVectorSpace) where Order -> DirectProductedNamedVectorSpace{Order}
-    ⊗(vs₁::DirectProductedNamedVectorSpace{Order}, vs₂::DirectProductedNamedVectorSpace{Order}) where Order -> DirectProductedNamedVectorSpace{Order}
+    ⊗(vs₁::SimpleNamedVectorSpace, vs₂::SimpleNamedVectorSpace, order::Symbol=:forward) -> NamedVectorSpaceProd{order}
+    ⊗(vs₁::SimpleNamedVectorSpace, vs₂::NamedVectorSpaceProd{Order}) where Order -> NamedVectorSpaceProd{Order}
+    ⊗(vs₁::NamedVectorSpaceProd{Order}, vs₂::SimpleNamedVectorSpace) where Order -> NamedVectorSpaceProd{Order}
+    ⊗(vs₁::NamedVectorSpaceProd{Order}, vs₂::NamedVectorSpaceProd{Order}) where Order -> NamedVectorSpaceProd{Order}
 
 The direct product of named vector spaces.
 """
-@inline ⊗(vs₁::SimpleNamedVectorSpace, vs₂::SimpleNamedVectorSpace, order::Symbol=:forward) = DirectProductedNamedVectorSpace{order}(vs₁, vs₂)
-@inline ⊗(vs₁::SimpleNamedVectorSpace, vs₂::DirectProductedNamedVectorSpace{Order}) where Order = DirectProductedNamedVectorSpace{Order}(vs₁, vs₂.contents...)
-@inline ⊗(vs₁::DirectProductedNamedVectorSpace{Order}, vs₂::SimpleNamedVectorSpace) where Order = DirectProductedNamedVectorSpace{Order}(vs₁.contents..., vs₂)
-@inline ⊗(vs₁::DirectProductedNamedVectorSpace{Order}, vs₂::DirectProductedNamedVectorSpace{Order}) where Order = DirectProductedNamedVectorSpace{Order}(vs₁.contents..., vs₂.contents...)
+@inline ⊗(vs₁::SimpleNamedVectorSpace, vs₂::SimpleNamedVectorSpace, order::Symbol=:forward) = NamedVectorSpaceProd{order}(vs₁, vs₂)
+@inline ⊗(vs₁::SimpleNamedVectorSpace, vs₂::NamedVectorSpaceProd{Order}) where Order = NamedVectorSpaceProd{Order}(vs₁, vs₂.contents...)
+@inline ⊗(vs₁::NamedVectorSpaceProd{Order}, vs₂::SimpleNamedVectorSpace) where Order = NamedVectorSpaceProd{Order}(vs₁.contents..., vs₂)
+@inline ⊗(vs₁::NamedVectorSpaceProd{Order}, vs₂::NamedVectorSpaceProd{Order}) where Order = NamedVectorSpaceProd{Order}(vs₁.contents..., vs₂.contents...)
 
 end # module

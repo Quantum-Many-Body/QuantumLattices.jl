@@ -478,7 +478,7 @@ end
     @test t′[1]==1 && t′[2]==2 && t′[3]==8 && t′[4]==9 && t′[5]==10
 
     U = ParameterSpace{:U}(OffsetArray([8.0, 9.0], -10:-9))
-    zps = ZippedNamedVectorSpace(t, U)
+    zps = NamedVectorSpaceZip(t, U)
     @test VectorSpaceStyle(zps) == VectorSpaceZipped()
     @test eltype(zps) == eltype(typeof(zps)) == Tuple{Int, Float64}
     @test names(zps) == names(typeof(zps)) == (:t, :U)
@@ -489,24 +489,24 @@ end
     @test eltype(ps) == eltype(typeof(ps)) == NamedTuple{(:t, :U), Tuple{Int, Float64}}
     @test ps[1]==(t=1, U=8.0) && ps[2]==(t=2, U=9.0)
 
-    pps = DirectProductedNamedVectorSpace{:backward}(t, U)
+    pps = NamedVectorSpaceProd{:backward}(t, U)
     @test VectorSpaceStyle(pps) == VectorSpaceDirectProducted(:backward)
     @test eltype(pps) == eltype(typeof(pps)) == Tuple{Int, Float64}
     @test names(pps) == names(typeof(pps)) == (:t, :U)
     @test length(pps) == 4
     @test pps[1]==(1, 8.0) && pps[2]==(1, 9.0) && pps[3]==(2, 8.0) && pps[4]==(2, 9.0)
 
-    pps = DirectProductedNamedVectorSpace{:forward}(t, U)
+    pps = NamedVectorSpaceProd{:forward}(t, U)
     @test VectorSpaceStyle(pps) == VectorSpaceDirectProducted(:forward)
     @test pps[1]==(1, 8.0) && pps[2]==(2, 8.0) && pps[3]==(1, 9.0) && pps[4]==(2, 9.0)
 
     μ = ParameterSpace{:μ}([11, 12])
     @test t ⊞ U == zps
-    @test μ ⊞ zps == ZippedNamedVectorSpace(μ, t, U)
-    @test zps ⊞ μ == ZippedNamedVectorSpace(t, U, μ)
-    @test zps ⊞ ZippedNamedVectorSpace(μ) == ZippedNamedVectorSpace(t, U, μ)
+    @test μ ⊞ zps == NamedVectorSpaceZip(μ, t, U)
+    @test zps ⊞ μ == NamedVectorSpaceZip(t, U, μ)
+    @test zps ⊞ NamedVectorSpaceZip(μ) == NamedVectorSpaceZip(t, U, μ)
     @test t ⊗ U == pps
-    @test μ ⊗ pps == DirectProductedNamedVectorSpace{:forward}(μ, t, U)
-    @test pps ⊗ μ == DirectProductedNamedVectorSpace{:forward}(t, U, μ)
-    @test pps ⊗ DirectProductedNamedVectorSpace{:forward}(μ) == DirectProductedNamedVectorSpace{:forward}(t, U, μ)
+    @test μ ⊗ pps == NamedVectorSpaceProd{:forward}(μ, t, U)
+    @test pps ⊗ μ == NamedVectorSpaceProd{:forward}(t, U, μ)
+    @test pps ⊗ NamedVectorSpaceProd{:forward}(μ) == NamedVectorSpaceProd{:forward}(t, U, μ)
 end
