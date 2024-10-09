@@ -7,10 +7,9 @@ using NearestNeighbors: KDTree, inrange, knn
 using Printf: @printf, @sprintf
 using RecipesBase: RecipesBase, @recipe, @series, @layout
 using StaticArrays: MVector, SVector
-using ..QuantumNumbers: Momenta, Momentum, periods
-using ..Toolkit: atol, rtol, efficientoperations, CompositeDict, Float, SimpleNamedVectorSpace, Segment, VectorSpaceCartesian, VectorSpaceDirectSummed, VectorSpaceStyle, getcontent, VectorSpaceEnumerative
+using ..QuantumNumbers: Momenta, Momentum, period, periods
+using ..Toolkit: atol, rtol, efficientoperations, CompositeDict, Float, SimpleNamedVectorSpace, Segment, VectorSpaceCartesian, VectorSpaceDirectSummed, VectorSpaceEnumerative, VectorSpaceStyle, getcontent
 
-import StaticArrays: SArray
 import ..QuantumLattices: decompose, dimension, dtype, expand, kind
 import ..QuantumNumbers: Momentum₁, Momentum₂, Momentum₃
 import ..Toolkit: contentnames, shape
@@ -161,7 +160,7 @@ function volume(v₁::AbstractVector{<:Number}, v₂::AbstractVector{<:Number}, 
 end
 
 """
-    decompose(v₀::AbstractVector{<:Number}, v₁::AbstractVector{<:Number}) -> Tuple{Number}
+    decompose(v₀::AbstractVector{<:Number}, v₁::AbstractVector{<:Number}) -> Number
     decompose(v₀::AbstractVector{<:Number}, v₁::AbstractVector{<:Number}, v₂::AbstractVector{<:Number}) -> Tuple{Number, Number}
     decompose(v₀::AbstractVector{<:Number}, v₁::AbstractVector{<:Number}, v₂::AbstractVector{<:Number}, v₃::AbstractVector{<:Number}) -> Tuple{Number, Number, Number}
     decompose(v₀::AbstractVector{<:Number}, vs::AbstractVector{<:AbstractVector{<:Number}}) -> Vector{<:Number}
@@ -174,7 +173,7 @@ function decompose(v₀::AbstractVector{<:Number}, v₁::AbstractVector{<:Number
     abs(n₀)≈0 && return zero(n₀)
     sign = dot(v₀, v₁) / n₀ / n₁
     @assert isapprox(abs(sign), 1.0, atol=atol, rtol=rtol) "decompose error: insufficient basis vectors."
-    return (sign*n₀/n₁,)
+    return sign*n₀/n₁
 end
 function decompose(v₀::AbstractVector{<:Number}, v₁::AbstractVector{<:Number}, v₂::AbstractVector{<:Number})
     @assert length(v₀)==length(v₁)==length(v₂) "decompose error: mismatched length of input vectors."
@@ -198,7 +197,7 @@ end
 function decompose(v₀::AbstractVector{<:Number}, vs::AbstractVector{<:AbstractVector{<:Number}})
     @assert 0<length(vs)<4 "decompose error: not supported number ($(length(vs))) of vectors."
     if length(vs)==1
-        result = collect(decompose(v₀, first(vs)))
+        result = [decompose(v₀, first(vs))]
     elseif length(vs)==2
         result = collect(decompose(v₀, first(vs), last(vs)))
     else
@@ -465,14 +464,14 @@ When the translation vectors are not empty, the lattice will be considered perio
 end
 function minimumlengths(cluster::AbstractMatrix{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}, nneighbor::Int=1; coordination::Int=12)
     @assert nneighbor>=0 "minimumlengths error: input nneighbor must be non negative."
-    result = [Inf for i = 1:nneighbor]
+    result = fill(Inf, nneighbor)
     if size(cluster, 2) > 0
         cluster = convert(Matrix{Float}, reshape(cluster, size(cluster)))
         vectors = [convert(Vector{Float}, reshape(vector, size(vector))) for vector in vectors]
-        translations = reshape(product((-nneighbor:nneighbor for i = 1:length(vectors))...)|>collect, :)
+        translations = reshape(collect(product(map(v->-nneighbor:nneighbor, vectors)...)), :)
         for translation in translations
             if length(translation)>0 && mapreduce(≠(0), |, translation)
-                remove = ntuple(i->-translation[i], length(translation))
+                remove = map(-, translation)
                 filter!(≠(remove), translations)
             end
         end
@@ -560,12 +559,12 @@ end
 
 """
     Point(site::Integer, rcoordinate::SVector{N, D}, icoordinate::SVector{N, D}) where {N, D<:Number}
-    Point(site::Integer, rcoordinate::NTuple{N, <:Number}, icoordinate::NTuple{N, <:Number}=ntuple(i->0, N)) where N
+    Point(site::Integer, rcoordinate::NTuple{N, <:Number}, icoordinate::NTuple{N, <:Number}=ntuple(i->0, Val(N))) where N
     Point(site::Integer, rcoordinate::AbstractVector{<:Number}, icoordinate::AbstractVector{<:Number}=zero(SVector{length(rcoordinate), Int}))
 
 Construct a labeled point.
 """
-@inline function Point(site::Integer, rcoordinate::NTuple{N, <:Number}, icoordinate::NTuple{N, <:Number}=ntuple(i->0, N)) where N
+@inline function Point(site::Integer, rcoordinate::NTuple{N, <:Number}, icoordinate::NTuple{N, <:Number}=ntuple(i->0, Val(N))) where N
     datatype = promote_type(eltype(rcoordinate), eltype(icoordinate))
     return Point(site, convert(SVector{N, datatype}, rcoordinate), convert(SVector{N, datatype}, icoordinate))
 end
@@ -816,9 +815,9 @@ function bonds!(bonds::Vector, lattice::AbstractLattice, neighbors::Neighbors)
         end
     end
     nnb = nneighbor(neighbors)
-    translations = reshape(product((-nnb:nnb for i = 1:length(getcontent(lattice, :vectors)))...)|>collect, :)
+    translations = reshape(collect(product(map(v->-nnb:nnb, getcontent(lattice, :vectors))...)), :)
     for translation in translations
-        remove = ntuple(i->-translation[i], length(translation))
+        remove = map(-, translation)
         filter!(≠(remove), translations)
     end
     if length(translations) > 0
@@ -845,7 +844,7 @@ Define the recipe for the visualization of a lattice.
     titlefontsize --> 10
     legend := false
     aspect_ratio := :equal
-    (isa(neighbors, Int) || 0∈keys(neighbors)) && begin
+    if isa(neighbors, Int) || 0∈keys(neighbors)
         @series begin
             seriestype := :scatter
             coordinates = NTuple{dimension(lattice), dtype(lattice)}[]
@@ -921,19 +920,19 @@ end
 @inline vectorconvert(vectors::AbstractVector{<:AbstractVector}) = convert(SVector{length(vectors), SVector{length(first(vectors)), eltype(eltype(vectors))}}, vectors)
 
 """
-    Lattice(lattice::AbstractLattice, ranges::NTuple{N, Int}, boundaries::NTuple{N, Char}=ntuple(i->'O', Val(N)); mode::Symbol=:nonnegative) where N
-    Lattice(lattice::AbstractLattice, ranges::NTuple{N, UnitRange{Int}}, boundaries::NTuple{N, Char}=ntuple(i->'O', Val(N))) where N
+    Lattice(lattice::AbstractLattice, ranges::NTuple{N, Int}, boundaries::NTuple{N, Union{Char, String, Symbol}}=ntuple(i->'O', Val(N)); mode::Symbol=:nonnegative) where N
+    Lattice(lattice::AbstractLattice, ranges::NTuple{N, UnitRange{Int}}, boundaries::NTuple{N, Union{Char, String, Symbol}}=ntuple(i->'O', Val(N))) where N
 
 Construct a lattice from the translations of another.
 """
-function Lattice(lattice::AbstractLattice, ranges::NTuple{N, Int}, boundaries::NTuple{N, Char}=ntuple(i->'O', Val(N)); mode::Symbol=:nonnegative) where N
+function Lattice(lattice::AbstractLattice, ranges::NTuple{N, Int}, boundaries::NTuple{N, Union{Char, String, Symbol}}=ntuple(i->'O', Val(N)); mode::Symbol=:nonnegative) where N
     @assert mode∈(:center, :nonnegative) "Lattice error: wrong mode($(repr(mode)))."
     return Lattice(lattice, mode==:center ? map(i->-floor(Int, (i-1)/2):-floor(Int, (i-1)/2)+i-1, ranges) : map(i->0:i-1, ranges), boundaries)
 end
-function Lattice(lattice::AbstractLattice, ranges::NTuple{N, UnitRange{Int}}, boundaries::NTuple{N, Char}=ntuple(i->'O', Val(N))) where N
-    @assert all(map(in(('P', 'O', 'p', 'o')), boundaries)) "Lattice error: boundary conditions must be either 'P'/'p' for 'periodic' or 'O'/'o' for 'open'."
+function Lattice(lattice::AbstractLattice, ranges::NTuple{N, UnitRange{Int}}, boundaries::NTuple{N, Union{Char, String, Symbol}}=ntuple(i->'O', Val(N))) where N
+    @assert all(map(in(('P', 'O', 'p', 'o', "P", "O", "p", "o", :periodic, :open)), boundaries)) "Lattice error: boundary conditions must be either 'P'/'p'/\"P\"/\"p\"/:periodic for periodic or 'O'/'o'/\"O\"/\"o\"/:open for open."
     @assert length(boundaries)==N "Lattice error: mismatched number of ranges and boundaries conditions."
-    boundaries = map(uppercase, boundaries)
+    boundaries = map(boundary, boundaries)
     name = Symbol(@sprintf "%s%s" getcontent(lattice, :name) join([@sprintf("%s%s%s", boundary=='P' ? "[" : "(", range, boundary=='P' ? "]" : ")") for (range, boundary) in zip(ranges, boundaries)]))
     coordinates = tile(getcontent(lattice, :coordinates), getcontent(lattice, :vectors), product(ranges...))
     vectors = SVector{dimension(lattice), dtype(lattice)}[]
@@ -942,47 +941,50 @@ function Lattice(lattice::AbstractLattice, ranges::NTuple{N, UnitRange{Int}}, bo
     end
     return Lattice(name, coordinates, vectorconvert(vectors))
 end
+@inline boundary(b::Union{Char, String}) = first(uppercase(b))
+@inline boundary(b::Symbol) = b==:open ? 'O' : 'P'
 
 """
-    expand(momentum::Momentum, reciprocals::AbstractVector{<:AbstractVector}) -> eltype(reciprocals)
+    expand(momentum::Momentum, reciprocals::AbstractVector{<:AbstractVector{<:Number}}) -> eltype(reciprocals)
 
 Expand the momentum from integral values to real values with the given reciprocals.
 """
-@inline function expand(momentum::Momentum, reciprocals::AbstractVector{<:AbstractVector})
-    p = periods(momentum)
-    @assert length(p)==length(reciprocals) "expand error: mismatched momentum and reciprocals."
+@inline function expand(momentum::Momentum, reciprocals::AbstractVector{<:AbstractVector{<:Number}})
+    @assert length(momentum)==length(reciprocals) "expand error: mismatched momentum and reciprocals."
+    vs, ps = values(momentum), periods(momentum)
     result = zero(first(reciprocals))
-    for i = 1:length(p)
-        result += reciprocals[i]*(momentum[i]//p[i])
+    for (i, index) in enumerate(eachindex(reciprocals))
+        result += reciprocals[index] * (vs[i]//ps[i])
     end
     return result
 end
 
 """
-    Momentum₁{N}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}; atol=atol, rtol=rtol) where N
-    Momentum₂{N₁, N₂}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}; atol=atol, rtol=rtol) where {N₁, N₂}
-    Momentum₃{N₁, N₂, N₃}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}; atol=atol, rtol=rtol) where {N₁, N₂, N₃}
+    Momentum₁{N}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where N
+    Momentum₂{N₁, N₂}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where {N₁, N₂}
+    Momentum₃{N₁, N₂, N₃}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where {N₁, N₂, N₃}
 
 Construct a quantum momentum by the coordinates.
 """
-function Momentum₁{N}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}; atol=atol, rtol=rtol) where N
+function Momentum₁{N}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where N
     @assert length(reciprocals)==1 "Momentum₁ error: mismatched length of reciprocals."
-    k = decompose(momentum, reciprocals[1])[1]*N
+    k = decompose(momentum, first(reciprocals)) * N
     i = round(Int, k)
     @assert isapprox(i, k; atol=atol, rtol=rtol) "Momentum₁ error: input momentum not on grid."
     return Momentum₁{N}(i)
 end
-function Momentum₂{N₁, N₂}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}; atol=atol, rtol=rtol) where {N₁, N₂}
+function Momentum₂{N₁, N₂}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where {N₁, N₂}
     @assert length(reciprocals)==2 "Momentum₂ error: mismatched length of reciprocals."
-    k₁, k₂ = decompose(momentum, reciprocals[1], reciprocals[2])
+    k₁, k₂ = decompose(momentum, first(reciprocals), last(reciprocals))
     k₁, k₂ = k₁*N₁, k₂*N₂
     i₁, i₂ = round(Int, k₁), round(Int, k₂)
     @assert isapprox(i₁, k₁; atol=atol, rtol=rtol) && isapprox(i₂, k₂; atol=atol, rtol=rtol) "Momentum₂ error: input momentum not on grid."
     return Momentum₂{N₁, N₂}(i₁, i₂)
 end
-function Momentum₃{N₁, N₂, N₃}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector}; atol=atol, rtol=rtol) where {N₁, N₂, N₃}
+function Momentum₃{N₁, N₂, N₃}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where {N₁, N₂, N₃}
     @assert length(reciprocals)==3 "Momentum₃ error: mismatched length of reciprocals."
-    k₁, k₂, k₃ = decompose(momentum, reciprocals[1], reciprocals[2], reciprocals[3])
+    v₁, v₂, v₃ = reciprocals
+    k₁, k₂, k₃ = decompose(momentum, v₁, v₂, v₃)
     k₁, k₂, k₃ = k₁*N₁, k₂*N₂, k₃*N₃
     i₁, i₂, i₃ = round(Int, k₁), round(Int, k₂), round(Int, k₃)
     @assert isapprox(i₁, k₁; atol=atol, rtol=rtol) && isapprox(i₂, k₂; atol=atol, rtol=rtol) && isapprox(i₃, k₃; atol=atol, rtol=rtol) "Momentum₃ error: input momentum not on grid."
@@ -1023,42 +1025,47 @@ struct BrillouinZone{K, P<:Momentum, S<:SVector, N} <: ReciprocalSpace{K, S}
     reciprocals::SVector{N, S}
     function BrillouinZone{K, P}(reciprocals::SVector{N, <:SVector}) where {K, P<:Momentum, N}
         @assert isa(K, Symbol) "BrillouinZone error: K must be a Symbol."
-        @assert fieldcount(P)==N "BrillouinZone error: mismatched momentum and reciprocals."
+        @assert length(P)==N "BrillouinZone error: mismatched momentum and reciprocals."
         new{K, P, eltype(reciprocals), N}(reciprocals)
     end
 end
-@inline Base.:(==)(bz₁::BrillouinZone, bz₂::BrillouinZone) = keytype(bz₁)==keytype(bz₂) && bz₁.reciprocals==bz₂.reciprocals
-@inline Base.isequal(bz₁::BrillouinZone, bz₂::BrillouinZone) = isequal(keytype(bz₁), keytype(bz₂)) && isequal(bz₁.reciprocals, bz₂.reciprocals)
-@inline Base.hash(brillouinzone::BrillouinZone, h::UInt) = hash((ntuple(i->brillouinzone.reciprocals[i], brillouinzone|>keytype|>fieldcount|>Val), brillouinzone|>keytype|>periods), h)
 @inline VectorSpaceStyle(::Type{<:BrillouinZone}) = VectorSpaceCartesian()
 @inline shape(::BrillouinZone{K, P}) where {K, P<:Momentum} = shape(Momenta(P))
-@inline SArray(index::CartesianIndex, brillouinzone::BrillouinZone{K, P}) where {K, P<:Momentum} = expand(P(index, Momenta(P)), brillouinzone.reciprocals)
+@inline Base.convert(::Type{<:SVector}, index::CartesianIndex, brillouinzone::BrillouinZone{K, P}) where {K, P<:Momentum} = expand(Momenta(P)[index], brillouinzone.reciprocals)
+@inline Base.hash(brillouinzone::BrillouinZone, h::UInt) = hash((Tuple(brillouinzone.reciprocals), periods(keytype(brillouinzone))), h)
 @inline Base.keys(::BrillouinZone{K, P}) where {K, P<:Momentum} = Momenta(P)
 @inline Base.keytype(brillouinzone::BrillouinZone) = keytype(typeof(brillouinzone))
 @inline Base.keytype(::Type{<:BrillouinZone{K, P} where K}) where {P<:Momentum} = P
-@inline xaxis(brillouinzone::BrillouinZone) = (n=periods(keytype(brillouinzone))[1]; collect(Float64, 0:(n-1))/n)
-@inline yaxis(brillouinzone::BrillouinZone) = (n=periods(keytype(brillouinzone))[2]; collect(Float64, 0:(n-1))/n)
-@inline zaxis(brillouinzone::BrillouinZone) = (n=periods(keytype(brillouinzone))[3]; collect(Float64, 0:(n-1))/n)
+@inline xaxis(brillouinzone::BrillouinZone) = (n=period(keytype(brillouinzone), 1); collect(Float64, 0:(n-1))/n)
+@inline yaxis(brillouinzone::BrillouinZone) = (n=period(keytype(brillouinzone), 2); collect(Float64, 0:(n-1))/n)
+@inline zaxis(brillouinzone::BrillouinZone) = (n=period(keytype(brillouinzone), 3); collect(Float64, 0:(n-1))/n)
 
 """
-    BrillouinZone(reciprocals::AbstractVector{<:AbstractVector}, nk)
-    BrillouinZone{K}(reciprocals::AbstractVector{<:AbstractVector}, nk) where K
-    BrillouinZone(::Type{P}, reciprocals::AbstractVector{<:AbstractVector}) where {P<:Momentum}
-    BrillouinZone{K}(::Type{P}, reciprocals::AbstractVector{<:AbstractVector}) where {K, P<:Momentum}
+    volume(brillouinzone::BrillouinZone) -> Number
+
+Get the volume of a Brillouin zone.
+"""
+@inline volume(brillouinzone::BrillouinZone) = volume(brillouinzone.reciprocals)
+
+"""
+    BrillouinZone(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, nk)
+    BrillouinZone{K}(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, nk) where K
+    BrillouinZone(::Type{P}, reciprocals::AbstractVector{<:AbstractVector{<:Number}}) where {P<:Momentum}
+    BrillouinZone{K}(::Type{P}, reciprocals::AbstractVector{<:AbstractVector{<:Number}}) where {K, P<:Momentum}
 
 Construct a Brillouin zone.
 """
-@inline BrillouinZone(reciprocals::AbstractVector{<:AbstractVector}, nk) = BrillouinZone{:k}(reciprocals, nk)
-@inline BrillouinZone(::Type{P}, reciprocals::AbstractVector{<:AbstractVector}) where {P<:Momentum} = BrillouinZone{:k}(P, reciprocals)
-@inline function BrillouinZone{K}(reciprocals::AbstractVector{<:AbstractVector}, nk) where K
-    isa(nk, Integer) && (nk = ntuple(i->nk, length(reciprocals)))
+@inline BrillouinZone(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, nk) = BrillouinZone{:k}(reciprocals, nk)
+@inline BrillouinZone(::Type{P}, reciprocals::AbstractVector{<:AbstractVector{<:Number}}) where {P<:Momentum} = BrillouinZone{:k}(P, reciprocals)
+@inline function BrillouinZone{K}(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, nk) where K
+    isa(nk, Integer) && (nk = map(v->nk, reciprocals))
     @assert length(nk)==length(reciprocals) "BrillouinZone error: mismatched number of reciprocals and periods of momenta."
     length(reciprocals)==1 && return BrillouinZone{K}(Momentum₁{nk[1]}, reciprocals)
     length(reciprocals)==2 && return BrillouinZone{K}(Momentum₂{nk[1], nk[2]}, reciprocals)
     length(reciprocals)==3 && return BrillouinZone{K}(Momentum₃{nk[1], nk[2], nk[3]}, reciprocals)
     error("BrillouinZone error: only 1d, 2d and 3d are supported.")
 end
-@inline BrillouinZone{K}(::Type{P}, reciprocals::AbstractVector{<:AbstractVector}) where {K, P<:Momentum} = BrillouinZone{K, P}(vectorconvert(reciprocals))
+@inline BrillouinZone{K}(::Type{P}, reciprocals::AbstractVector{<:AbstractVector{<:Number}}) where {K, P<:Momentum} = BrillouinZone{K, P}(vectorconvert(reciprocals))
 
 """
     ReciprocalZone{K, S<:SVector, V<:Number} <: ReciprocalSpace{K, S}
@@ -1069,22 +1076,22 @@ struct ReciprocalZone{K, S<:SVector, N, V<:Number} <: ReciprocalSpace{K, S}
     reciprocals::SVector{N, S}
     bounds::NTuple{N, Segment{V}}
     volume::V
-    function ReciprocalZone{K}(reciprocals::SVector{N, <:SVector}, bounds::NTuple{N, <:Segment}) where {K, N}
+    function ReciprocalZone{K}(reciprocals::SVector{N, <:SVector}, bounds::NTuple{N, Segment}) where {K, N}
         @assert isa(K, Symbol) "ReciprocalZone error: K must be a Symbol."
         ratio = one(promote_type(eltype(eltype(reciprocals)), eltype(eltype(bounds))))
         for i = 1:length(bounds)
-            ratio = ratio*(bounds[i].stop-bounds[i].start)
+            ratio = ratio * (bounds[i].stop-bounds[i].start)
         end
-        v = ratio*volume(reciprocals)
+        v = ratio * volume(reciprocals)
         new{K, eltype(reciprocals), N, typeof(v)}(reciprocals, bounds, v)
     end
 end
 @inline VectorSpaceStyle(::Type{<:ReciprocalZone}) = VectorSpaceCartesian()
 @inline shape(reciprocalzone::ReciprocalZone) = map(bound->1:length(bound), reverse(reciprocalzone.bounds))
-@inline function SArray(index::CartesianIndex, reciprocalzone::ReciprocalZone)
+@inline function Base.convert(::Type{<:SVector}, index::CartesianIndex, reciprocalzone::ReciprocalZone)
     result = zero(eltype(reciprocalzone))
     for (reciprocal, bound, i) in zip(reciprocalzone.reciprocals, reciprocalzone.bounds, reverse(index.I))
-        result += reciprocal*bound[i]
+        result += reciprocal * bound[i]
     end
     return result
 end
@@ -1099,42 +1106,49 @@ Shrink a reciprocal zone.
 """
 function shrink(reciprocalzone::ReciprocalZone{K}, ranges::Vararg{OrdinalRange{<:Integer}, N}) where {K, N}
     @assert length(ranges)==length(reciprocalzone.reciprocals) "shrink error: mismatched number of ranges and reciprocals."
-    return ReciprocalZone{K}(reciprocalzone.reciprocals, ntuple(i->reciprocalzone.bounds[i][ranges[i]], N|>Val))
+    return ReciprocalZone{K}(reciprocalzone.reciprocals, ntuple(i->reciprocalzone.bounds[i][ranges[i]], Val(N)))
 end
 
 """
-    ReciprocalZone(reciprocals::AbstractVector{<:AbstractVector}; length=100, ends=(true, false))
-    ReciprocalZone(reciprocals::AbstractVector{<:AbstractVector}, bounds::Pair{<:Number, <:Number}...; length=100, ends=(true, false))
-    ReciprocalZone(reciprocals::AbstractVector{<:AbstractVector}, bounds::Union{Tuple{Vararg{Pair{<:Number, <:Number}}}, Vector{<:Pair{<:Number, <:Number}}}; length=100, ends=(true, false))
+    volume(reciprocalzone::ReciprocalZone) -> Number
 
-    ReciprocalZone{K}(reciprocals::AbstractVector{<:AbstractVector}; length=100, ends=(true, false)) where K
-    ReciprocalZone{K}(reciprocals::AbstractVector{<:AbstractVector}, bounds::Pair{<:Number, <:Number}...; length=100, ends=(true, false)) where K
-    ReciprocalZone{K}(reciprocals::AbstractVector{<:AbstractVector}, bounds::Union{Tuple{Vararg{Pair{<:Number, <:Number}}}, Vector{<:Pair{<:Number, <:Number}}}; length=100, ends=(true, false)) where K
+Get the volume of a reciprocal zone.
+"""
+@inline volume(reciprocalzone::ReciprocalZone) = reciprocalzone.volume
+
+"""
+    ReciprocalZone(reciprocals::AbstractVector{<:AbstractVector{<:Number}}; length=100, ends=(true, false))
+    ReciprocalZone(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, bounds::Pair{<:Number, <:Number}...; length=100, ends=(true, false))
+    ReciprocalZone(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, bounds::Union{Tuple{Vararg{Pair{<:Number, <:Number}}}, Vector{<:Pair{<:Number, <:Number}}}; length=100, ends=(true, false))
+
+    ReciprocalZone{K}(reciprocals::AbstractVector{<:AbstractVector{<:Number}}; length=100, ends=(true, false)) where K
+    ReciprocalZone{K}(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, bounds::Pair{<:Number, <:Number}...; length=100, ends=(true, false)) where K
+    ReciprocalZone{K}(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, bounds::Union{Tuple{Vararg{Pair{<:Number, <:Number}}}, Vector{<:Pair{<:Number, <:Number}}}; length=100, ends=(true, false)) where K
 
 Construct a rectangular zone in the reciprocal space.
 """
-@inline function ReciprocalZone(reciprocals::AbstractVector{<:AbstractVector}; length=100, ends=(true, false))
+@inline function ReciprocalZone(reciprocals::AbstractVector{<:AbstractVector{<:Number}}; length=100, ends=(true, false))
     return ReciprocalZone{:k}(vectorconvert(reciprocals); length=length, ends=ends)
 end
-@inline function ReciprocalZone(reciprocals::AbstractVector{<:AbstractVector}, bound::Pair{<:Number, <:Number}, bounds::Pair{<:Number, <:Number}...; length=100, ends=(true, false))
+@inline function ReciprocalZone(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, bound::Pair{<:Number, <:Number}, bounds::Pair{<:Number, <:Number}...; length=100, ends=(true, false))
     return ReciprocalZone{:k}(vectorconvert(reciprocals), bound, bounds...; length=length, ends=ends)
 end
-@inline function ReciprocalZone(reciprocals::AbstractVector{<:AbstractVector}, bounds::Union{Tuple{Vararg{Pair{<:Number, <:Number}}}, Vector{<:Pair{<:Number, <:Number}}}; length=100, ends=(true, false))
+@inline function ReciprocalZone(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, bounds::Union{Tuple{Vararg{Pair{<:Number, <:Number}}}, Vector{<:Pair{<:Number, <:Number}}}; length=100, ends=(true, false))
     return ReciprocalZone{:k}(vectorconvert(reciprocals), bounds; length=length, ends=ends)
 end
-@inline function ReciprocalZone{K}(reciprocals::AbstractVector{<:AbstractVector}; length=100, ends=(true, false)) where K
-    return ReciprocalZone{K}(vectorconvert(reciprocals), ntuple(i->-1//2=>1//2, Base.length(reciprocals)); length=length, ends=ends)
+@inline function ReciprocalZone{K}(reciprocals::AbstractVector{<:AbstractVector{<:Number}}; length=100, ends=(true, false)) where K
+    return ReciprocalZone{K}(vectorconvert(reciprocals), ntuple(i->-1//2=>1//2, Val(Base.length(reciprocals))); length=length, ends=ends)
 end
-@inline function ReciprocalZone{K}(reciprocals::AbstractVector{<:AbstractVector}, bound::Pair{<:Number, <:Number}, bounds::Pair{<:Number, <:Number}...; length=100, ends=(true, false)) where K
+@inline function ReciprocalZone{K}(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, bound::Pair{<:Number, <:Number}, bounds::Pair{<:Number, <:Number}...; length=100, ends=(true, false)) where K
     return ReciprocalZone{K}(vectorconvert(reciprocals), (bound, bounds...); length=length, ends=ends)
 end
-@inline function ReciprocalZone{K}(reciprocals::AbstractVector{<:AbstractVector}, bounds::Union{Tuple{Vararg{Pair{<:Number, <:Number}}}, Vector{<:Pair{<:Number, <:Number}}}; length=100, ends=(true, false)) where K
+@inline function ReciprocalZone{K}(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, bounds::Union{Tuple{Vararg{Pair{<:Number, <:Number}}}, Vector{<:Pair{<:Number, <:Number}}}; length=100, ends=(true, false)) where K
     @assert Base.length(reciprocals)==Base.length(bounds) "ReciprocalZone error: the numbers of the input reciprocals($(Base.length(reciprocals))) and bounds($(Base.length(bounds))) do not match."
-    isa(length, Integer) && (length = map(i->length, 1:Base.length(bounds)))
-    isa(ends, NTuple{2, Bool}) && (ends = map(i->ends, 1:Base.length(bounds)))
-    @assert Base.length(bounds)==Base.length(length) "ReciprocalZone error: the number of length should be ($(Base.length(bounds))) if it is not `Integer`."
-    @assert Base.length(bounds)==Base.length(ends) "ReciprocalZone error: the number of ends should be ($(Base.length(bounds))) if it is not `NTuple{2, Bool}`."
-    segments = ntuple(i->Segment(bounds[i].first, bounds[i].second, length[i]; ends=ends[i]), Base.length(bounds))
+    isa(length, Integer) && (length = map(i->length, 1:Base.length(reciprocals)))
+    isa(ends, NTuple{2, Bool}) && (ends = map(i->ends, 1:Base.length(reciprocals)))
+    @assert Base.length(reciprocals)==Base.length(length) "ReciprocalZone error: the number of length should be ($(Base.length(reciprocals))) if it is not `Integer`."
+    @assert Base.length(reciprocals)==Base.length(ends) "ReciprocalZone error: the number of ends should be ($(Base.length(reciprocals))) if it is not `NTuple{2, Bool}`."
+    segments = ntuple(i->Segment(bounds[i].first, bounds[i].second, length[i]; ends=ends[i]), Val(Base.length(bounds)))
     return ReciprocalZone{K}(vectorconvert(reciprocals), segments)
 end
 
@@ -1155,70 +1169,71 @@ A path in the reciprocal space.
 struct ReciprocalPath{K, S<:SVector, N, R} <: ReciprocalSpace{K, S}
     contents::NTuple{N, Vector{S}}
     labels::NTuple{N, Pair{R, R}}
-    function ReciprocalPath{K}(contents::NTuple{N, AbstractVector{<:AbstractVector}}, labels::NTuple{N, Pair{R, R}}) where {K, N, R}
+    function ReciprocalPath{K}(contents::NTuple{N, AbstractVector{<:AbstractVector{<:Number}}}, labels::NTuple{N, Pair{R, R}}) where {K, N, R}
         @assert isa(K, Symbol) "ReciprocalPath error: K must be a Symbol."
         new{K, eltype(eltype(contents)), N, R}(map(vectorconvert, contents), labels)
     end
 end
-@inline ReciprocalPath(contents::Tuple{Vararg{AbstractVector{<:AbstractVector}}}, labels::Tuple{Vararg{Pair}}) = ReciprocalPath{:k}(contents, labels)
+@inline ReciprocalPath(contents::Tuple{Vararg{AbstractVector{<:AbstractVector{<:Number}}}}, labels::Tuple{Vararg{Pair}}) = ReciprocalPath{:k}(contents, labels)
 @inline contentnames(::Type{<:ReciprocalPath}) = (:contents, :labels)
 @inline VectorSpaceStyle(::Type{<:ReciprocalPath}) = VectorSpaceDirectSummed()
 
-points2segments(points::NTuple{M}) where M = ntuple(i->points[i]=>points[i+1], Val(M-1))
+points2segments(points::NTuple{M, Any}) where M = ntuple(i->points[i]=>points[i+1], Val(M-1))
 """
-    ReciprocalPath(reciprocals::AbstractVector{<:AbstractVector}, contents::NamedTuple{(:points, :labels), <:Tuple{<:Tuple, <:Tuple}}; length=100, ends=nothing)
-    ReciprocalPath(reciprocals::AbstractVector{<:AbstractVector}, points::NTuple{N, Number}...; labels=points, length=100, ends=nothing) where N
-    ReciprocalPath(reciprocals::AbstractVector{<:AbstractVector}, points::Tuple{Vararg{NTuple{N, Number}}}; labels=points, length=100, ends=nothing) where N
-    ReciprocalPath(reciprocals::AbstractVector{<:AbstractVector}, segments::Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}...; labels=segments, length=100, ends=nothing) where N
-    ReciprocalPath(reciprocals::AbstractVector{<:AbstractVector}, segments::Tuple{Vararg{Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}}}; labels=segments, length=100, ends=nothing) where N
+    ReciprocalPath(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, contents::NamedTuple{(:points, :labels), <:Tuple{<:Tuple, <:Tuple}}; length=100, ends=nothing)
+    ReciprocalPath(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, points::NTuple{N, Number}...; labels=points, length=100, ends=nothing) where N
+    ReciprocalPath(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, points::Tuple{Vararg{NTuple{N, Number}}}; labels=points, length=100, ends=nothing) where N
+    ReciprocalPath(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, segments::Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}...; labels=segments, length=100, ends=nothing) where N
+    ReciprocalPath(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, segments::Tuple{Vararg{Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}}}; labels=segments, length=100, ends=nothing) where N
 
-    ReciprocalPath{K}(reciprocals::AbstractVector{<:AbstractVector}, contents::NamedTuple{(:points, :labels), <:Tuple{<:Tuple, <:Tuple}}; length=100, ends=nothing) where K
-    ReciprocalPath{K}(reciprocals::AbstractVector{<:AbstractVector}, points::NTuple{N, Number}...; labels=points, length=100, ends=nothing) where {K, N}
-    ReciprocalPath{K}(reciprocals::AbstractVector{<:AbstractVector}, points::Tuple{Vararg{NTuple{N, Number}}}; labels=points, length=100, ends=nothing) where {K, N}
-    ReciprocalPath{K}(reciprocals::AbstractVector{<:AbstractVector}, segments::Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}...; labels=segments, length=100, ends=nothing) where {K, N}
-    ReciprocalPath{K}(reciprocals::AbstractVector{<:AbstractVector}, segments::Tuple{Vararg{Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}}}; labels=segments, length=100, ends=nothing) where {K, N}
+    ReciprocalPath{K}(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, contents::NamedTuple{(:points, :labels), <:Tuple{<:Tuple, <:Tuple}}; length=100, ends=nothing) where K
+    ReciprocalPath{K}(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, points::NTuple{N, Number}...; labels=points, length=100, ends=nothing) where {K, N}
+    ReciprocalPath{K}(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, points::Tuple{Vararg{NTuple{N, Number}}}; labels=points, length=100, ends=nothing) where {K, N}
+    ReciprocalPath{K}(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, segments::Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}...; labels=segments, length=100, ends=nothing) where {K, N}
+    ReciprocalPath{K}(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, segments::Tuple{Vararg{Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}}}; labels=segments, length=100, ends=nothing) where {K, N}
 
 Construct a path in the reciprocal space.
 
 When `length` is an integer, it specifies the length of each segment except for the last whose length will be `length+1`.
 When `ends` is `nothing`, the start point will be included while the end point will be not for each segment except for the last whose both points will be included.
 """
-@inline function ReciprocalPath(reciprocals::AbstractVector{<:AbstractVector}, contents::NamedTuple{(:points, :labels), <:Tuple{<:Tuple, <:Tuple}}; length=100, ends=nothing)
+@inline function ReciprocalPath(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, contents::NamedTuple{(:points, :labels), <:Tuple{<:Tuple, <:Tuple}}; length=100, ends=nothing)
     return ReciprocalPath(reciprocals, contents.points...; labels=contents.labels, length=length, ends=ends)
 end
-@inline function ReciprocalPath(reciprocals::AbstractVector{<:AbstractVector}, points::NTuple{N, Number}...; labels=points, length=100, ends=nothing) where N
+@inline function ReciprocalPath(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, points::NTuple{N, Number}...; labels=points, length=100, ends=nothing) where N
     return ReciprocalPath(reciprocals, points; labels=labels, length=length, ends=ends)
 end
-@inline function ReciprocalPath(reciprocals::AbstractVector{<:AbstractVector}, points::Tuple{Vararg{NTuple{N, Number}}}; labels=points, length=100, ends=nothing) where N
+@inline function ReciprocalPath(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, points::Tuple{Vararg{NTuple{N, Number}}}; labels=points, length=100, ends=nothing) where N
     return ReciprocalPath(reciprocals, points2segments(points)...; labels=points2segments(Tuple(labels)), length=length, ends=ends)
 end
-@inline function ReciprocalPath(reciprocals::AbstractVector{<:AbstractVector}, segments::Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}...; labels=segments, length=100, ends=nothing) where N
+@inline function ReciprocalPath(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, segments::Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}...; labels=segments, length=100, ends=nothing) where N
     return ReciprocalPath(reciprocals, segments; labels=labels, length=length, ends=ends)
 end
-@inline function ReciprocalPath(reciprocals::AbstractVector{<:AbstractVector}, segments::Tuple{Vararg{Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}}}; labels=segments, length=100, ends=nothing) where N
+@inline function ReciprocalPath(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, segments::Tuple{Vararg{Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}}}; labels=segments, length=100, ends=nothing) where N
     return ReciprocalPath{:k}(reciprocals, segments...; labels=labels, length=length, ends=ends)
 end
-@inline function ReciprocalPath{K}(reciprocals::AbstractVector{<:AbstractVector}, contents::NamedTuple{(:points, :labels), <:Tuple{<:Tuple, <:Tuple}}; length=100, ends=nothing) where K
+@inline function ReciprocalPath{K}(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, contents::NamedTuple{(:points, :labels), <:Tuple{<:Tuple, <:Tuple}}; length=100, ends=nothing) where K
     return ReciprocalPath{K}(reciprocals, contents.points...; labels=contents.labels, length=length, ends=ends)
 end
-@inline function ReciprocalPath{K}(reciprocals::AbstractVector{<:AbstractVector}, points::NTuple{N, Number}...; labels=points, length=100, ends=nothing) where {K, N}
+@inline function ReciprocalPath{K}(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, points::NTuple{N, Number}...; labels=points, length=100, ends=nothing) where {K, N}
     return ReciprocalPath{K}(reciprocals, points; labels=labels, length=length, ends=ends)
 end
-@inline function ReciprocalPath{K}(reciprocals::AbstractVector{<:AbstractVector}, points::Tuple{Vararg{NTuple{N, Number}}}; labels=points, length=100, ends=nothing) where {K, N}
+@inline function ReciprocalPath{K}(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, points::Tuple{Vararg{NTuple{N, Number}}}; labels=points, length=100, ends=nothing) where {K, N}
     return ReciprocalPath{K}(reciprocals, points2segments(points)...; labels=points2segments(Tuple(labels)), length=length, ends=ends)
 end
-@inline function ReciprocalPath{K}(reciprocals::AbstractVector{<:AbstractVector}, segments::Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}...; labels=segments, length=100, ends=nothing) where {K, N}
+@inline function ReciprocalPath{K}(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, segments::Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}...; labels=segments, length=100, ends=nothing) where {K, N}
     return ReciprocalPath{K}(reciprocals, segments; labels=labels, length=length, ends=ends)
 end
-@inline function ReciprocalPath{K}(reciprocals::AbstractVector{<:AbstractVector}, segments::Tuple{Vararg{Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}}}; labels=segments, length=100, ends=nothing) where {K, N}
+@inline Base.@propagate_inbounds function ReciprocalPath{K}(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, segments::Tuple{Vararg{Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}}}; labels=segments, length=100, ends=nothing) where {K, N}
     @assert Base.length(reciprocals)==N "ReciprocalPath error: mismatched input reciprocals and segments."
-    isa(length, Integer) && (length = ntuple(i->i<fieldcount(typeof(segments)) ? (segments[i].second==segments[i+1].first ? length : length+1) : length+1, fieldcount(typeof(segments))))
-    isnothing(ends) && (ends = ntuple(i->i<fieldcount(typeof(segments)) ? (true, segments[i].second==segments[i+1].first ? false : true) : (true, true), fieldcount(typeof(segments))))
+    isa(length, Integer) && (length = ntuple(i->i<fieldcount(typeof(segments)) ? (segments[i].second==segments[i+1].first ? length : length+1) : length+1, Val(fieldcount(typeof(segments)))))
+    isnothing(ends) && (ends = ntuple(i->i<fieldcount(typeof(segments)) ? (true, segments[i].second==segments[i+1].first ? false : true) : (true, true), Val(fieldcount(typeof(segments)))))
     @assert fieldcount(typeof(segments))==fieldcount(typeof(length)) "ReciprocalPath error: the number of length should be ($(fieldcount(typeof(segments)))) if it is not `Integer`."
     @assert fieldcount(typeof(segments))==fieldcount(typeof(ends)) "ReciprocalPath error: the number of ends should be ($(fieldcount(typeof(segments)))) if it is not `NTuple{2, Bool}`."
+    @assert all((segments[i+1].first==segments[i].second)==(labels[i+1].first==labels[i].second) for i = 1:fieldcount(typeof(segments))-1) "ReciprocalPath error: labels are not consistent with segments."
     reciprocals = vectorconvert(reciprocals)
-    segments = ntuple(i->Segment(segments[i].first, segments[i].second, length[i]; ends=ends[i]), fieldcount(typeof(segments)))
-    contents = ntuple(i->zeros(SVector{Base.length(eltype(reciprocals)), promote_type(eltype(eltype(reciprocals)), eltype(eltype(eltype(segments))))}, Base.length(segments[i])), fieldcount(typeof(segments)))
+    segments = map((segment, length, ends)->Segment(segment.first, segment.second, length; ends=ends), segments, length, ends)
+    contents = map(segment->zeros(SVector{Base.length(eltype(reciprocals)), promote_type(eltype(eltype(reciprocals)), eltype(eltype(eltype(segments))))}, Base.length(segment)), segments)
     for (m, segment) in enumerate(segments)
         for (n, index) in enumerate(segment)
             for i = 1:Base.length(index)
@@ -1324,7 +1339,7 @@ Define the recipe for the visualization of a reciprocal path.
 end
 
 """
-    selectpath(brillouinzone::BrillouinZone, contents::NamedTuple{(:points, :labels), <:Tuple{<:Tuple, <:Tuple}}; ends=nothing, atol::Real=atol, rtol::Real=rtol)
+    selectpath(brillouinzone::BrillouinZone, contents::NamedTuple{(:points, :labels), <:Tuple{<:Tuple, <:Tuple}}; ends=nothing, atol::Real=atol, rtol::Real=rtol) -> Tuple(ReciprocalPath, Vector{Int})
     selectpath(brillouinzone::BrillouinZone, points::NTuple{N, Number}...; labels=points, ends=nothing, atol::Real=atol, rtol::Real=rtol) where N -> Tuple(ReciprocalPath, Vector{Int})
     selectpath(brillouinzone::BrillouinZone, points::Tuple{Vararg{NTuple{N, Number}}}; labels=points, ends=nothing, atol::Real=atol, rtol::Real=rtol) where N -> Tuple(ReciprocalPath, Vector{Int})
     selectpath(brillouinzone::BrillouinZone, segments::Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}...; labels=segments, ends=nothing, atol::Real=atol, rtol::Real=rtol) where N -> Tuple(ReciprocalPath, Vector{Int})
@@ -1349,8 +1364,8 @@ end
 function selectpath(brillouinzone::BrillouinZone, segments::Tuple{Vararg{Pair{<:NTuple{N, Number}, <:NTuple{N, Number}}}}; labels=segments, ends=nothing, atol::Real=atol, rtol::Real=rtol) where N
     @assert length(brillouinzone.reciprocals)==N "selectpath error: mismatched number of reciprocals ($(length(brillouinzone.reciprocals)) v.s. $N)."
     isnothing(ends) || @assert fieldcount(typeof(segments))==length(ends) "selectpath error: mismatched number of segments."
-    isnothing(ends) && (ends = ntuple(i->i<fieldcount(typeof(segments)) ? (true, segments[i].second==segments[i+1].first ? false : true) : (true, true), fieldcount(typeof(segments))))
-    contents, indexes = ntuple(i->eltype(brillouinzone)[], fieldcount(typeof(segments))), Int[]
+    isnothing(ends) && (ends = ntuple(i->i<fieldcount(typeof(segments)) ? (true, segments[i].second==segments[i+1].first ? false : true) : (true, true), Val(fieldcount(typeof(segments)))))
+    contents, indexes = ntuple(i->eltype(brillouinzone)[], Val(fieldcount(typeof(segments)))), Int[]
     for (n, segment) in enumerate(segments)
         start = trunc.(Int, segment.first)
         stop = trunc.(Int, segment.second)
@@ -1386,7 +1401,7 @@ function selectpath(brillouinzone::BrillouinZone, segments::Tuple{Vararg{Pair{<:
 end
 
 const linemap = Dict(
-    "Γ"=>(0//1,), "X"=>(1//2,), "Γ₁"=>(0//1,), "Γ₂"=>(1//1,), "X₁"=>(1//2,), "X₂"=>(-1//2,)
+    "Γ"=>(0,), "X"=>(1//2,), "Γ₁"=>(0,), "Γ₂"=>(1//1,), "X₁"=>(1//2,), "X₂"=>(-1//2,)
 )
 """
     line"P₁-P₂-P₃-..."
@@ -1400,8 +1415,8 @@ macro line_str(str::String)
 end
 
 const rectanglemap = Dict(
-    "Γ"=>(0//1, 0//1), "X"=>(1//2, 0//1), "Y"=>(0//1, 1//2), "M"=>(1//2, 1//2),
-    "X₁"=>(1//2, 0//1), "X₂"=>(-1//2, 0//1), "Y₁"=>(0//1, 1//2), "Y₂"=>(0//1, -1//2),
+    "Γ"=>(0, 0), "X"=>(1//2, 0), "Y"=>(0, 1//2), "M"=>(1//2, 1//2),
+    "X₁"=>(1//2, 0), "X₂"=>(-1//2, 0), "Y₁"=>(0, 1//2), "Y₂"=>(0, -1//2),
     "M₁"=>(1//2, 1//2), "M₂"=>(-1//2, 1//2), "M₃"=>(-1//2, -1//2), "M₄"=>(1//2, -1//2)
 )
 """
@@ -1416,15 +1431,15 @@ macro rectangle_str(str::String)
 end
 # High-symmetric point in the hexagonal Brillouin zone when the angle between the reciprocal vectors is 120°
 const hexagon120°map = Dict(
-    "Γ"=>(0//1, 0//1), "K"=>(2//3, 1//3), "M"=>(1//2, 1//2),
+    "Γ"=>(0, 0), "K"=>(2//3, 1//3), "M"=>(1//2, 1//2),
     "K₁"=>(2//3, 1//3), "K₂"=>(1//3, 2//3), "K₃"=>(1//3, -1//3), "K₄"=>(-2//3, -1//3), "K₅"=>(-1//3, -2//3), "K₆"=>(-1//3, 1//3),
-    "M₁"=>(1//2, 1//2), "M₂"=>(1//2, 0//1), "M₃"=>(0//1, -1//2), "M₄"=>(-1//2, -1//2), "M₅"=>(-1//2, 0//1), "M₆"=>(0//1, 1//2)
+    "M₁"=>(1//2, 1//2), "M₂"=>(1//2, 0), "M₃"=>(0, -1//2), "M₄"=>(-1//2, -1//2), "M₅"=>(-1//2, 0), "M₆"=>(0, 1//2)
 )
 # High-symmetric point in the hexagonal Brillouin zone when the angle between the reciprocal vectors is 60°
 const hexagon60°map = Dict(
-    "Γ"=>(0//1, 0//1), "K"=>(1//3, 1//3), "M"=>(0//1, 1//2),
+    "Γ"=>(0, 0), "K"=>(1//3, 1//3), "M"=>(0, 1//2),
     "K₁"=>(1//3, 1//3), "K₂"=>(2//3, -1//3), "K₃"=>(1//3, -2//3), "K₄"=>(-1//3, -1//3), "K₅"=>(-2//3, 1//3), "K₆"=>(-1//3, 2//3),
-    "M₁"=>(0//1, 1//2), "M₂"=>(1//2, 0//1), "M₃"=>(1//2, -1//2), "M₄"=>(0//1, -1//2), "M₅"=>(-1//2, 0//1), "M₆"=>(-1//2, 1//2)
+    "M₁"=>(0, 1//2), "M₂"=>(1//2, 0), "M₃"=>(1//2, -1//2), "M₄"=>(0, -1//2), "M₅"=>(-1//2, 0), "M₆"=>(-1//2, 1//2)
 )
 """
     hexagon"P₁-P₂-P₃-..."
@@ -1444,38 +1459,50 @@ macro hexagon_str(str::String)
 end
 
 """
-    ReciprocalCurve{K, S<:SVector, N, R} <: ReciprocalSpace{K, S}
+    ReciprocalCurve{K, S<:SVector} <: ReciprocalSpace{K, S}
 
 A curve in the reciprocal space.
 """
 struct ReciprocalCurve{K, S<:SVector} <: ReciprocalSpace{K, S}
     contents::Vector{S}
-    function ReciprocalCurve{K}(contents::AbstractVector{<:AbstractVector}) where {K}
+    function ReciprocalCurve{K}(curve::AbstractVector{<:AbstractVector{<:Number}}) where K
         @assert isa(K, Symbol) "ReciprocalRing error: K must be a Symbol."
-        S = SVector{length(first(contents)), eltype(eltype(contents))}
-        new{K, S}(map(x->SVector{length(x)}(x), contents))
+        curve = map(x->SVector{length(x)}(x), curve)
+        new{K, eltype(curve)}(curve)
     end
 end
-@inline ReciprocalCurve(contents::AbstractVector{<:NTuple{N, T}}) where {N, T<:Real} = ReciprocalCurve{:k}(collect.(contents))
-@inline ReciprocalCurve(contents::AbstractVector{<:AbstractVector{<:Real}}) = ReciprocalCurve{:k}(contents)
-@inline function ReciprocalCurve(contents::ReciprocalPath) 
-    points = collect(contents)
-    return ReciprocalCurve{:k}(points)
-end
-@inline contentnames(::Type{<:ReciprocalCurve}) = (:contents, )
 @inline VectorSpaceStyle(::Type{<:ReciprocalCurve}) = VectorSpaceEnumerative()
+
+"""
+    ReciprocalCurve(curve::AbstractVector{<:NTuple{N, Number}}) where N
+    ReciprocalCurve(curve::AbstractVector{<:AbstractVector{<:Number}})
+    ReciprocalCurve{K}(curve::AbstractVector{<:NTuple{N, Number}}) where {K, N}
+    ReciprocalCurve{K}(curve::AbstractVector{<:AbstractVector{<:Number}}) where K
+
+Construct a curve in the reciprocal space.
+"""
+@inline ReciprocalCurve(curve::AbstractVector{<:NTuple{N, Number}}) where N = ReciprocalCurve{:k}(curve)
+@inline ReciprocalCurve(curve::AbstractVector{<:AbstractVector{<:Number}}) = ReciprocalCurve{:k}(curve)
+@inline ReciprocalCurve{K}(curve::AbstractVector{<:NTuple{N, Number}}) where {K, N} = ReciprocalCurve{K}(map(content->SVector{N}(content), curve))
+
+"""
+    ReciprocalCurve(path::ReciprocalPath)
+
+Construct a reciprocal curve from a reciprocal path.
+"""
+@inline ReciprocalCurve(path::ReciprocalPath) = ReciprocalCurve{:k}(collect(path))
 
 """
     @recipe plot(path::ReciprocalCurve)
 
 Define the recipe for the visualization of a reciprocal curve.
 """
-@recipe function plot(ring::ReciprocalCurve)
-    title --> string(nameof(typeof(ring)))
+@recipe function plot(curve::ReciprocalCurve)
+    title --> string(nameof(typeof(curve)))
     titlefontsize --> 10
     legend := false
     aspect_ratio := :equal
-    coordinates = map(Tuple, ring)
+    coordinates = map(Tuple, curve)
     @series begin
         seriestype := :scatter
         coordinates

@@ -3,8 +3,8 @@ using LinearAlgebra: cross, det, dot, norm
 using Plots: plot, savefig, plot!
 using QuantumLattices.Spatials
 using QuantumLattices: decompose, dimension, dtype, expand
-using QuantumLattices.QuantumNumbers: AbelianNumbers, Momenta, Momentum₁, Momentum₂, Momentum₃
-using QuantumLattices.Toolkit: Float, Segment, contentnames, getcontent, shape
+using QuantumLattices.QuantumNumbers: Momenta, Momentum₁, Momentum₂, Momentum₃
+using QuantumLattices.Toolkit: Float, Segment, contentnames, shape
 using Random: seed!
 using StaticArrays: SVector
 
@@ -83,7 +83,7 @@ end
 
 @testset "decompose" begin
     a, c = randn(3), randn()
-    @test all(decompose(c*a, a) .≈ (c,))
+    @test decompose(c*a, a) ≈ c
     @test decompose(c*a, [a]) ≈ [c] 
 
     a₁, a₂ = randn(2), randn(2)
@@ -258,7 +258,7 @@ end
 
     unit = Lattice((0.0, 0.0); name=:Square, vectors=[[1.0, 0.0], [0.0, 1.0]])
     @test Lattice(unit, (2, 3), ('P', 'O')) == Lattice([0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0], [0.0, 2.0], [1.0, 2.0]; name=Symbol("Square[0:1](0:2)"), vectors=[[2.0, 0.0]])
-    @test Lattice(unit, (2, 3), ('P', 'O'); mode=:center) == Lattice([0.0, -1.0], [1.0, -1.0], [0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]; name=Symbol("Square[0:1](-1:1)"), vectors=[[2.0, 0.0]])
+    @test Lattice(unit, (2, 3), (:periodic, :open); mode=:center) == Lattice([0.0, -1.0], [1.0, -1.0], [0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]; name=Symbol("Square[0:1](-1:1)"), vectors=[[2.0, 0.0]])
 end
 
 @testset "plot" begin
@@ -287,7 +287,8 @@ end
     @test shape(bz) == (0:3, 0:1)
     @test keys(bz) == Momenta(Momentum₂{2, 4})
     @test keytype(bz) == keytype(typeof(bz)) == Momentum₂{2, 4}
-    @test collect(bz) == [ [0.0, 0.0], [0.0, 0.25], [0.0, 0.5], [0.0, 0.75], [0.5, 0.0], [0.5, 0.25], [0.5, 0.5], [0.5, 0.75]]
+    @test collect(bz) == [[0.0, 0.0], [0.0, 0.25], [0.0, 0.5], [0.0, 0.75], [0.5, 0.0], [0.5, 0.25], [0.5, 0.5], [0.5, 0.75]]
+    @test volume(bz) == 1.0
     savefig(plot(bz), "BrillouinZone.png")
 
     recipls = [[1.0, 0.0, 0.0]]
@@ -318,9 +319,9 @@ end
     @test rz == ReciprocalZone{:q}([[1.0]], [-1//2=>1//2]; length=10)
 
     b₁, b₂, b₃ = [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]
-    @test ReciprocalZone([b₁], -1=>1; length=10).volume == 2
-    @test ReciprocalZone([b₁, b₂], -1=>1, -1=>1; length=10).volume == 4
-    @test ReciprocalZone([b₁, b₂, b₃], -1=>1, -1=>1, -1=>1; length=10).volume == 8
+    @test volume(ReciprocalZone([b₁], -1=>1; length=10)) == 2
+    @test volume(ReciprocalZone([b₁, b₂], -1=>1, -1=>1; length=10)) == 4
+    @test volume(ReciprocalZone([b₁, b₂, b₃], -1=>1, -1=>1, -1=>1; length=10)) == 8
 
     rz = ReciprocalZone([b₁, b₂, b₃], -2=>2, -1=>1, -3=>3; length=10)
     @test xaxis(rz) == collect(Segment(-2, 2, 10))
@@ -338,9 +339,9 @@ end
     @test contentnames(ReciprocalPath) == (:contents, :labels)
 
     b₁, b₂ = [1.0, 0.0], [0.0, 1.0]
-    s₁ = (0.0, 0.0)=>(0.5, 0.0)
-    s₂ = (0.5, 0.0)=>(0.5, 0.5)
-    s₃ = (0.5, 0.5)=>(0.0, 0.0)
+    s₁ = (0.0, 0.0) => (0.5, 0.0)
+    s₂ = (0.5, 0.0) => (0.5, 0.5)
+    s₃ = (0.5, 0.5) => (0.0, 0.0)
 
     rp = ReciprocalPath([b₁, b₂], s₁, s₂, s₃)
     @test rp == ReciprocalPath(rp.contents, rp.labels)
@@ -363,29 +364,13 @@ end
     @test rp == ReciprocalPath{:q}([b₁, b₂], (s₁, s₂, s₃))
 
     rp = ReciprocalPath([b₁+b₂], line"X₂-X₁", length=10)
-    @test rp == ReciprocalPath([b₁+b₂], (-1//2,), (1//2,); labels=("X₂", "X₁"), length=10)
+    @test rp ≈ ReciprocalPath([b₁+b₂], (-1//2,), (1//2,); labels=("X₂", "X₁"), length=10)
 
     rp = ReciprocalPath([b₁, b₂], rectangle"Γ-X-M-Γ", length=10)
-    @test rp == ReciprocalPath([b₁, b₂], (0//1, 0//1), (1//2, 0//1), (1//2, 1//2), (0//1, 0//1); labels=("Γ", "X", "M", "Γ"), length=10)
+    @test rp ≈ ReciprocalPath([b₁, b₂], (0, 0), (1//2, 0), (1//2, 1//2), (0, 0); labels=("Γ", "X", "M", "Γ"), length=10)
 
     rp = ReciprocalPath{:q}([b₁, b₂], hexagon"Γ-K-M-Γ", length=10)
-    @test rp == ReciprocalPath{:q}([b₁, b₂], (0//1, 0//1), (2//3, 1//3), (1//2, 1//2), (0//1, 0//1); labels=("Γ", "K", "M", "Γ"), length=10)
-end
-
-@testset "ReciprocalCurve" begin
-    @test contentnames(ReciprocalCurve) == (:contents,)
-
-    b₁, b₂ = [1.0, 0.0], [0.0, 1.0]
-    s₁ = (0.0, 0.0)=>(0.5, 0.0)
-    s₂ = (0.5, 0.0)=>(0.5, 0.5)
-    s₃ = (0.5, 0.5)=>(0.0, 0.0)
-
-    rc = ReciprocalCurve([[0.0, 0.0],[0.5, 0.0],[0.5, 0.5], [0.0, 0.0]])
-    @test rc == ReciprocalCurve([(0.0, 0.0),(0.5, 0.0),(0.5, 0.5),(0.0, 0.0)])
-    rp = ReciprocalPath([b₁, b₂], s₁, s₂, s₃, length=1)
-    @test rc == ReciprocalCurve(rp)
-
-    savefig(plot(rc), "ReciprocalCurve.png")
+    @test rp ≈ ReciprocalPath{:q}([b₁, b₂], (0, 0), (2//3, 1//3), (1//2, 1//2), (0, 0); labels=("Γ", "K", "M", "Γ"), length=10)
 end
 
 @testset "selectpath" begin
@@ -409,6 +394,15 @@ end
     plot!(plt, path)
     plot!(plt, map(index->Tuple(bz[index]), indexes), seriestype=:scatter)
     savefig(plt, "PickPoint.png")
+end
+
+@testset "ReciprocalCurve" begin
+    rc = ReciprocalCurve([[0.0, 0.0], [0.5, 0.0], [0.5, 0.5], [0.0, 0.0]])
+    @test rc == ReciprocalCurve([(0.0, 0.0), (0.5, 0.0), (0.5, 0.5), (0.0, 0.0)])
+    savefig(plot(rc), "ReciprocalCurve.png")
+
+    rp = ReciprocalPath([[1.0, 0.0], [0.0, 1.0]], (0.0, 0.0)=>(0.5, 0.0), (0.5, 0.0)=>(0.5, 0.5), (0.5, 0.5)=>(0.0, 0.0); length=1)
+    @test rc == ReciprocalCurve(rp)
 end
 
 @testset "utilities" begin
