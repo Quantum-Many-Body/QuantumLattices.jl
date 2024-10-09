@@ -188,7 +188,8 @@ end
 @inline Base.values(qn::CompositeAbelianQuantumNumber) = map(values, qn.contents)
 @inline Base.show(io::IO, qn::CompositeAbelianQuantumNumber) = @printf io "Abelian[%s]%s" join(fieldtypes(fieldtype(typeof(qn), :contents)), " ⊠ ") values(qn)
 @inline Base.zero(::Type{CompositeAbelianQuantumNumber{T}}) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = CompositeAbelianQuantumNumber(map(zero,  fieldtypes(T)))
-@inline Base.length(qn::CompositeAbelianQuantumNumber) = length(qn.contents)
+@inline Base.length(qn::CompositeAbelianQuantumNumber) = length(typeof(qn))
+@inline Base.length(::Type{<:CompositeAbelianQuantumNumber{T}}) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = fieldcount(T)
 @inline Base.firstindex(::CompositeAbelianQuantumNumber) = 1
 @inline Base.lastindex(qn::CompositeAbelianQuantumNumber) = length(qn)
 @inline Base.getindex(qn::CompositeAbelianQuantumNumber, i::Integer) = qn.contents[i]

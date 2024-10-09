@@ -26,7 +26,7 @@ using QuantumLattices.QuantumNumbers
     @test hash(sp, UInt(1)) == hash((n.charge, sz.charge), UInt(1))
     @test string(sp) == "Abelian[ℕ ⊠ 𝕊ᶻ](1, 1/2)"
     @test zero(sp) == zero(typeof(sp)) == Abelian[ℕ ⊠ 𝕊ᶻ](0, 0)
-    @test length(sp) == 2
+    @test length(sp) == length(typeof(sp)) == 2
     @test sp[1]==sp[begin]==n && sp[2]==sp[end]==sz
     @test periods(sp) == periods(typeof(sp)) == (Inf, Inf)
     @test period(sp, 1) == period(sp, 2) == Inf
