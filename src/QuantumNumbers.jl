@@ -8,13 +8,13 @@ using LinearAlgebra: norm
 using Printf: @printf
 using QuantumLattices: id, value
 using Random: seed!
-using ..Toolkit: VectorSpace, VectorSpaceCartesian, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceStyle, efficientoperations
+using ..Toolkit: VectorSpace, VectorSpaceCartesian, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceStyle, efficientoperations, subscript
 
 import ..QuantumLattices: ⊕, ⊗, ⊠, decompose, dimension, rank
 import ..Toolkit: shape
 
 export Abelian, AbelianQuantumNumber, AbelianGradedSpace, AbelianGradedSpaceProd, AbelianGradedSpaceSum, CompositeAbelianQuantumNumber, Graded, Momenta, RepresentationSpace, SimpleAbelianQuantumNumber
-export Momentum, Momentum₁, Momentum₂, Momentum₃, 𝕂, ℕ, 𝕊ᶻ, 𝕌₁, ℤ, ℤ₂, ℤ₃, ℤ₄, findindex, period, periods, regularize, regularize!
+export Momentum, Momentum₁, Momentum₂, Momentum₃, ℕ, 𝕊ᶻ, 𝕌₁, ℤ, ℤ₂, ℤ₃, ℤ₄, findindex, period, periods, regularize, regularize!
 
 """
     AbelianQuantumNumber
@@ -154,53 +154,28 @@ end
 """
     ℤ{N} <: SimpleAbelianQuantumNumber
 
-Abstract type of ℤₙ quantum numbers.
+ℤₙ quantum numbers.
 """
-abstract type ℤ{N} <: SimpleAbelianQuantumNumber end
-@inline period(::Type{<:ℤ{N}}) where N = N
-
-"""
-    ℤ₂ <: ℤ{2}
-
-Concrete ℤ₂ quantum number.
-"""
-struct ℤ₂ <: ℤ{2}
+struct ℤ{N} <: SimpleAbelianQuantumNumber
     charge::Int
-    ℤ₂(charge::Integer) = new(mod(charge, 2))
-end
-
-"""
-    ℤ₃ <: ℤ{3}
-
-Concrete ℤ₃ quantum number.
-"""
-struct ℤ₃ <: ℤ{3}
-    charge::Int
-    ℤ₃(charge::Integer) = new(mod(charge, 3))
-end
-
-"""
-    ℤ₄ <: ℤ{4}
-
-Concrete ℤ₄ quantum number.
-"""
-struct ℤ₄ <: ℤ{4}
-    charge::Int
-    ℤ₄(charge::Integer) = new(mod(charge, 4))
-end
-
-"""
-    𝕂{N} <: ℤ{N}
-
-Concrete Abelian quantum number of lattice momentum.
-"""
-struct 𝕂{N} <: ℤ{N}
-    charge::Int
-    function 𝕂{N}(charge::Integer) where N
-        @assert N>0 "𝕂 error: non-positive period ($N)."
+    function ℤ{N}(charge::Integer) where N
+        @assert N>0 "ℤ error: non-positive period ($N)."
         new{N}(mod(charge, N))
     end
 end
+@inline period(::Type{ℤ{N}}) where N = N
+@inline Base.show(io::IO, ::Type{ℤ{N}}) where N = @printf io "ℤ%s" N<5 ? subscript(N) : string("{", N, "}")
+
+"""
+    const ℤ₂ = ℤ{2}
+    const ℤ₃ = ℤ{3}
+    const ℤ₄ = ℤ{4}
+
+Alias for ℤ₂/ℤ₃/ℤ₄ quantum numbers.
+"""
+const ℤ₂ = ℤ{2}
+const ℤ₃ = ℤ{3}
+const ℤ₄ = ℤ{4}
 
 """
     CompositeAbelianQuantumNumber{T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} <: AbelianQuantumNumber
@@ -287,17 +262,17 @@ Deligne tensor product of Abelian quantum numbers.
 @inline ⊠(::Type{CompositeAbelianQuantumNumber{T₁}}, ::Type{CompositeAbelianQuantumNumber{T₂}}) where {T₁<:Tuple{Vararg{SimpleAbelianQuantumNumber}}, T₂<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = CompositeAbelianQuantumNumber{Tuple{fieldtypes(T₁)..., fieldtypes(T₂)...}}
 
 """
-    const Momentum = CompositeAbelianQuantumNumber{<:Tuple{Vararg{𝕂}}}
-    const Momentum₁{N} = CompositeAbelianQuantumNumber{Tuple{𝕂{N}}}
-    const Momentum₂{N₁, N₂} = CompositeAbelianQuantumNumber{Tuple{𝕂{N₁}, 𝕂{N₂}}}
-    const Momentum₃{N₁, N₂, N₃} = CompositeAbelianQuantumNumber{Tuple{𝕂{N₁}, 𝕂{N₂}, 𝕂{N₃}}}
+    const Momentum = CompositeAbelianQuantumNumber{<:Tuple{Vararg{ℤ}}}
+    const Momentum₁{N} = CompositeAbelianQuantumNumber{Tuple{ℤ{N}}}
+    const Momentum₂{N₁, N₂} = CompositeAbelianQuantumNumber{Tuple{ℤ{N₁}, ℤ{N₂}}}
+    const Momentum₃{N₁, N₂, N₃} = CompositeAbelianQuantumNumber{Tuple{ℤ{N₁}, ℤ{N₂}, ℤ{N₃}}}
 
 Type alias for the Abelian quantum numbers of 1d, 2d and 3d momentum.
 """
-const Momentum = CompositeAbelianQuantumNumber{<:Tuple{Vararg{𝕂}}}
-const Momentum₁{N} = CompositeAbelianQuantumNumber{Tuple{𝕂{N}}}
-const Momentum₂{N₁, N₂} = CompositeAbelianQuantumNumber{Tuple{𝕂{N₁}, 𝕂{N₂}}}
-const Momentum₃{N₁, N₂, N₃} = CompositeAbelianQuantumNumber{Tuple{𝕂{N₁}, 𝕂{N₂}, 𝕂{N₃}}}
+const Momentum = CompositeAbelianQuantumNumber{<:Tuple{Vararg{ℤ}}}
+const Momentum₁{N} = CompositeAbelianQuantumNumber{Tuple{ℤ{N}}}
+const Momentum₂{N₁, N₂} = CompositeAbelianQuantumNumber{Tuple{ℤ{N₁}, ℤ{N₂}}}
+const Momentum₃{N₁, N₂, N₃} = CompositeAbelianQuantumNumber{Tuple{ℤ{N₁}, ℤ{N₂}, ℤ{N₃}}}
 @inline Int(m::Momentum₁) = m[1].charge + 1
 @inline Int(m::Momentum₂{N₁, N₂}) where {N₁, N₂} = m[2].charge + m[1].charge*N₂ + 1
 @inline Int(m::Momentum₃{N₁, N₂, N₃}) where {N₁, N₂, N₃} = (m[1].charge*N₂+m[2].charge)*N₃ + m[3].charge + 1
@@ -317,11 +292,11 @@ const Momentum₃{N₁, N₂, N₃} = CompositeAbelianQuantumNumber{Tuple{𝕂{N
 
 Construct 1d, 2d and 3d momentum.
 """
-@inline Momentum₁{N}(k::Integer) where N = CompositeAbelianQuantumNumber(𝕂{N}(k))
+@inline Momentum₁{N}(k::Integer) where N = CompositeAbelianQuantumNumber(ℤ{N}(k))
 @inline Momentum₂{N}(k₁::Integer, k₂::Integer) where N = Momentum₂{N, N}(k₁, k₂)
-@inline Momentum₂{N₁, N₂}(k₁::Integer, k₂::Integer) where {N₁, N₂} = CompositeAbelianQuantumNumber(𝕂{N₁}(k₁), 𝕂{N₂}(k₂))
+@inline Momentum₂{N₁, N₂}(k₁::Integer, k₂::Integer) where {N₁, N₂} = CompositeAbelianQuantumNumber(ℤ{N₁}(k₁), ℤ{N₂}(k₂))
 @inline Momentum₃{N}(k₁::Integer, k₂::Integer, k₃::Integer) where N =  Momentum₃{N, N, N}(k₁, k₂, k₃)
-@inline Momentum₃{N₁, N₂, N₃}(k₁::Integer, k₂::Integer, k₃::Integer) where {N₁, N₂, N₃} = CompositeAbelianQuantumNumber(𝕂{N₁}(k₁), 𝕂{N₂}(k₂), 𝕂{N₃}(k₃))
+@inline Momentum₃{N₁, N₂, N₃}(k₁::Integer, k₂::Integer, k₃::Integer) where {N₁, N₂, N₃} = CompositeAbelianQuantumNumber(ℤ{N₁}(k₁), ℤ{N₂}(k₂), ℤ{N₃}(k₃))
 
 """
     RepresentationSpace{QN<:AbelianQuantumNumber} <: VectorSpace{QN}
