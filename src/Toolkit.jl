@@ -1187,10 +1187,10 @@ end
 @inline VectorSpaceStyle(::Type{<:NamedVectorSpaceProd{Order}}) where Order = VectorSpaceDirectProducted{Order}()
 
 """
-    ⊞(vs₁::SimpleNamedVectorSpace, vs₂::SimpleNamedVectorSpace) -> ZipNamedVectorSpace
-    ⊞(vs₁::SimpleNamedVectorSpace, vs₂::NamedVectorSpaceZip) -> ZipNamedVectorSpace
-    ⊞(vs₁::NamedVectorSpaceZip, vs₂::SimpleNamedVectorSpace) -> ZipNamedVectorSpace
-    ⊞(vs₁::NamedVectorSpaceZip, vs₂::NamedVectorSpaceZip) -> ZipNamedVectorSpace
+    ⊞(vs₁::SimpleNamedVectorSpace, vs₂::SimpleNamedVectorSpace) -> NamedVectorSpaceZip
+    ⊞(vs₁::SimpleNamedVectorSpace, vs₂::NamedVectorSpaceZip) -> NamedVectorSpaceZip
+    ⊞(vs₁::NamedVectorSpaceZip, vs₂::SimpleNamedVectorSpace) -> NamedVectorSpaceZip
+    ⊞(vs₁::NamedVectorSpaceZip, vs₂::NamedVectorSpaceZip) -> NamedVectorSpaceZip
 
 The zip of named vector spaces.
 """
