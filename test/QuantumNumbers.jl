@@ -1,6 +1,5 @@
-using Base.Iterators: flatten, product
-using DataStructures: OrderedDict
-using QuantumLattices: ⊕, ⊗, ⊠, decompose, dimension, expand, permute, rank
+using Base.Iterators: product
+using QuantumLattices: ⊕, ⊗, ⊠, decompose, dimension, rank
 using QuantumLattices.QuantumNumbers
 
 @testset "AbelianQuantumNumber" begin
