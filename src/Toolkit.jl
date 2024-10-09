@@ -152,10 +152,17 @@ function Base.iterate(indexes::DirectSummedIndices, state::NTuple{3, Int})
     return CartesianIndex(m, n, len), (m, n, len)
 end
 function Base.getindex(indexes::DirectSummedIndices, i::Integer)
-    dimsum = (0, cumsum(map(length, indexes.indices))...)
-    m = searchsortedfirst(dimsum, i) - 1
-    n = i-dimsum[m]
-    return CartesianIndex(m, indexes.indices[m][n], dimsum[m])
+    count = 0
+    @inbounds for (m, index) in enumerate(indexes.indices)
+        len = length(index)
+        if i<=len
+            return CartesianIndex(m, index[i], count)
+        else
+            i -= len
+            count += len
+        end
+    end
+    error("getindex error: out of range.")
 end
 
 """
