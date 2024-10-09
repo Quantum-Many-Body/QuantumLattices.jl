@@ -23,7 +23,7 @@ using QuantumLattices.QuantumNumbers
     sz = 𝕊ᶻ(1/2)
     sp = n ⊠ sz
     @test values(sp) == (1, 1/2)
-    @test sp == Abelian[ℕ ⊠ 𝕊ᶻ](1, 1/2) == Abelian[ℕ ⊠ 𝕊ᶻ]((1, 1/2)) == TensorProductedAbelianQuantumNumber(n, sz)
+    @test sp == Abelian[ℕ ⊠ 𝕊ᶻ](1, 1/2) == Abelian[ℕ ⊠ 𝕊ᶻ]((1, 1/2)) == CompositeAbelianQuantumNumber(n, sz)
     @test hash(sp, UInt(1)) == hash((n.charge, sz.charge), UInt(1))
     @test string(sp) == "Abelian[ℕ ⊠ 𝕊ᶻ](1, 1/2)"
     @test zero(sp) == zero(typeof(sp)) == Abelian[ℕ ⊠ 𝕊ᶻ](0, 0)
@@ -108,12 +108,12 @@ end
     @test [findindex(i, qns, guess) for (i, guess) in zip(1:dimension(qns), [1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 4])] == [1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 4, 4]
 end
 
-@testset "DirectSummedAbelianGradedSpace" begin
+@testset "AbelianGradedSpaceSum" begin
     qns₁, qns₂, qns₃ = Graded{ℕ}(1=>2, 2=>4, 4=>1), Graded{ℕ}(1=>1, 2=>4, 3=>1), Graded{ℕ}(1=>1, 2=>4, 4=>1)
-    qns = DirectSummedAbelianGradedSpace(qns₁, qns₂, qns₃)
+    qns = AbelianGradedSpaceSum(qns₁, qns₂, qns₃)
     @test string(qns) == "Graded{ℕ}(1=>2, 2=>4, 4=>1) ⊕ Graded{ℕ}(1=>1, 2=>4, 3=>1) ⊕ Graded{ℕ}(1=>1, 2=>4, 4=>1)"
     @test rank(qns) == rank(typeof(qns)) == 3
-    @test qns == qns₁ ⊕ qns₂ ⊕ qns₃ == (qns₁ ⊕ qns₂) ⊕ qns₃ == qns₁ ⊕ (qns₂ ⊕ qns₃) == (qns₁ ⊕ qns₂) ⊕ DirectSummedAbelianGradedSpace(qns₃)
+    @test qns == qns₁ ⊕ qns₂ ⊕ qns₃ == (qns₁ ⊕ qns₂) ⊕ qns₃ == qns₁ ⊕ (qns₂ ⊕ qns₃) == (qns₁ ⊕ qns₂) ⊕ AbelianGradedSpaceSum(qns₃)
     @test dimension(qns) == 19
     @test [dimension(qns, i) for i = 1:length(qns)] == [2, 4, 1, 1, 4, 1, 1, 4, 1]
     @test [range(qns, i) for i = 1:length(qns)] == [1:2, 3:6, 7:7, 8:8, 9:12, 13:13, 14:14, 15:18, 19:19]
@@ -123,12 +123,12 @@ end
     @test decompose(qns; expand=true) == (Graded{ℕ}(1=>4, 2=>12, 3=>1, 4=>2), [1, 2, 8, 14, 3, 4, 5, 6, 9, 10, 11, 12, 15, 16, 17, 18, 13, 7, 19])
 end
 
-@testset "DirectProductedAbelianGradedSpace" begin
+@testset "AbelianGradedSpaceProd" begin
     qns₁, qns₂, qns₃ = Graded{𝕊ᶻ}(-1/2=>1, 1/2=>2), Graded{𝕊ᶻ}(-1/2=>2, 1/2=>1), Graded{𝕊ᶻ}(-1/2=>2, 1/2=>2)
-    qns = DirectProductedAbelianGradedSpace(qns₁, qns₂, qns₃)
+    qns = AbelianGradedSpaceProd(qns₁, qns₂, qns₃)
     @test string(qns) == "Graded{𝕊ᶻ}(-1/2=>1, 1/2=>2) ⊗ Graded{𝕊ᶻ}(-1/2=>2, 1/2=>1) ⊗ Graded{𝕊ᶻ}(-1/2=>2, 1/2=>2)"
     @test rank(qns) == rank(typeof(qns)) == 3
-    @test qns == qns₁ ⊗ qns₂ ⊗ qns₃ == (qns₁ ⊗ qns₂) ⊗ qns₃ == qns₁ ⊗ (qns₂ ⊗ qns₃) == (qns₁ ⊗ qns₂) ⊗ DirectProductedAbelianGradedSpace(qns₃)
+    @test qns == qns₁ ⊗ qns₂ ⊗ qns₃ == (qns₁ ⊗ qns₂) ⊗ qns₃ == qns₁ ⊗ (qns₂ ⊗ qns₃) == (qns₁ ⊗ qns₂) ⊗ AbelianGradedSpaceProd(qns₃)
     @test dimension(qns) == 36
     @test [dimension(qns, i) for i = 1:length(qns)] == [4, 4, 2, 2, 8, 8, 4, 4]
     @test [dimension(qns, i) for i in reverse.(reshape(collect(product(qns₃, qns₂, qns₁)), :))] == [4, 4, 2, 2, 8, 8, 4, 4]

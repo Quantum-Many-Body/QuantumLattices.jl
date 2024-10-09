@@ -8,12 +8,12 @@ using LinearAlgebra: norm
 using Printf: @printf
 using QuantumLattices: id, value
 using Random: seed!
-using ..Toolkit: DirectSummedIndices, VectorSpace, VectorSpaceCartesian, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceStyle, efficientoperations
+using ..Toolkit: VectorSpace, VectorSpaceCartesian, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceStyle, efficientoperations
 
 import ..QuantumLattices: ⊕, ⊗, ⊠, decompose, dimension, rank
 import ..Toolkit: shape
 
-export Abelian, AbelianQuantumNumber, AbelianGradedSpace, DirectProductedAbelianGradedSpace, DirectSummedAbelianGradedSpace, Graded, Momenta, RepresentationSpace, SimpleAbelianQuantumNumber, TensorProductedAbelianQuantumNumber
+export Abelian, AbelianQuantumNumber, AbelianGradedSpace, AbelianGradedSpaceProd, AbelianGradedSpaceSum, CompositeAbelianQuantumNumber, Graded, Momenta, RepresentationSpace, SimpleAbelianQuantumNumber
 export Momentum, Momentum₁, Momentum₂, Momentum₃, 𝕂, ℕ, 𝕊ᶻ, 𝕌₁, ℤ, ℤ₂, ℤ₃, ℤ₄, findindex, period, periods, regularize, regularize!
 
 """
@@ -203,101 +203,101 @@ struct 𝕂{N} <: ℤ{N}
 end
 
 """
-    TensorProductedAbelianQuantumNumber{T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} <: AbelianQuantumNumber
+    CompositeAbelianQuantumNumber{T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} <: AbelianQuantumNumber
 
 Deligne tensor product of simple Abelian quantum numbers.
 """
-struct TensorProductedAbelianQuantumNumber{T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} <: AbelianQuantumNumber
+struct CompositeAbelianQuantumNumber{T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} <: AbelianQuantumNumber
     contents::T
 end
-@inline Base.values(qn::TensorProductedAbelianQuantumNumber) = map(values, qn.contents)
-@inline Base.show(io::IO, qn::TensorProductedAbelianQuantumNumber) = @printf io "Abelian[%s]%s" join(fieldtypes(fieldtype(typeof(qn), :contents)), " ⊠ ") values(qn)
-@inline Base.zero(::Type{TensorProductedAbelianQuantumNumber{T}}) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = TensorProductedAbelianQuantumNumber(map(zero,  fieldtypes(T)))
-@inline Base.length(qn::TensorProductedAbelianQuantumNumber) = length(qn.contents)
-@inline Base.firstindex(::TensorProductedAbelianQuantumNumber) = 1
-@inline Base.lastindex(qn::TensorProductedAbelianQuantumNumber) = length(qn)
-@inline Base.getindex(qn::TensorProductedAbelianQuantumNumber, i::Integer) = qn.contents[i]
-@inline periods(::Type{TensorProductedAbelianQuantumNumber{T}}) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = map(period, fieldtypes(T))
-@inline TensorProductedAbelianQuantumNumber(contents::SimpleAbelianQuantumNumber...) = TensorProductedAbelianQuantumNumber(contents)
+@inline Base.values(qn::CompositeAbelianQuantumNumber) = map(values, qn.contents)
+@inline Base.show(io::IO, qn::CompositeAbelianQuantumNumber) = @printf io "Abelian[%s]%s" join(fieldtypes(fieldtype(typeof(qn), :contents)), " ⊠ ") values(qn)
+@inline Base.zero(::Type{CompositeAbelianQuantumNumber{T}}) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = CompositeAbelianQuantumNumber(map(zero,  fieldtypes(T)))
+@inline Base.length(qn::CompositeAbelianQuantumNumber) = length(qn.contents)
+@inline Base.firstindex(::CompositeAbelianQuantumNumber) = 1
+@inline Base.lastindex(qn::CompositeAbelianQuantumNumber) = length(qn)
+@inline Base.getindex(qn::CompositeAbelianQuantumNumber, i::Integer) = qn.contents[i]
+@inline periods(::Type{CompositeAbelianQuantumNumber{T}}) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = map(period, fieldtypes(T))
+@inline CompositeAbelianQuantumNumber(contents::SimpleAbelianQuantumNumber...) = CompositeAbelianQuantumNumber(contents)
 
 """
-    TensorProductedAbelianQuantumNumber{T}(vs::Vararg{Number, N}) where {N, T<:NTuple{N, SimpleAbelianQuantumNumber}}
-    TensorProductedAbelianQuantumNumber{T}(vs::NTuple{N, Number}) where {N, T<:NTuple{N, SimpleAbelianQuantumNumber}}
+    CompositeAbelianQuantumNumber{T}(vs::Vararg{Number, N}) where {N, T<:NTuple{N, SimpleAbelianQuantumNumber}}
+    CompositeAbelianQuantumNumber{T}(vs::NTuple{N, Number}) where {N, T<:NTuple{N, SimpleAbelianQuantumNumber}}
 
 Construct a Deligne tensor product of simple Abelian quantum numbers by their values.
 """
-@inline TensorProductedAbelianQuantumNumber{T}(vs::Vararg{Number, N}) where {N, T<:NTuple{N, SimpleAbelianQuantumNumber}} = TensorProductedAbelianQuantumNumber{T}(vs)
-@inline TensorProductedAbelianQuantumNumber{T}(vs::NTuple{N, Number}) where {N, T<:NTuple{N, SimpleAbelianQuantumNumber}} = TensorProductedAbelianQuantumNumber(map((T, v)->T(v), fieldtypes(T), vs))
+@inline CompositeAbelianQuantumNumber{T}(vs::Vararg{Number, N}) where {N, T<:NTuple{N, SimpleAbelianQuantumNumber}} = CompositeAbelianQuantumNumber{T}(vs)
+@inline CompositeAbelianQuantumNumber{T}(vs::NTuple{N, Number}) where {N, T<:NTuple{N, SimpleAbelianQuantumNumber}} = CompositeAbelianQuantumNumber(map((T, v)->T(v), fieldtypes(T), vs))
 
 """
-    period(qn::TensorProductedAbelianQuantumNumber, i::Integer) -> Number
-    period(::Type{TensorProductedAbelianQuantumNumber{T}}, i::Integer) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} -> Number
+    period(qn::CompositeAbelianQuantumNumber, i::Integer) -> Number
+    period(::Type{CompositeAbelianQuantumNumber{T}}, i::Integer) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} -> Number
 
 Get the period of the ith simple Abelian number contained in a Deligne tensor product.
 """
-@inline period(qn::TensorProductedAbelianQuantumNumber, i::Integer) = period(typeof(qn), i)
-@inline period(::Type{TensorProductedAbelianQuantumNumber{T}}, i::Integer) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = period(fieldtype(T, i))
+@inline period(qn::CompositeAbelianQuantumNumber, i::Integer) = period(typeof(qn), i)
+@inline period(::Type{CompositeAbelianQuantumNumber{T}}, i::Integer) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = period(fieldtype(T, i))
 
 """
-    +(qn₁::QN, qn₂::QN, qns::QN...) where {QN<:TensorProductedAbelianQuantumNumber} -> QN
+    +(qn₁::QN, qn₂::QN, qns::QN...) where {QN<:CompositeAbelianQuantumNumber} -> QN
 
-Overloaded `+` operator for `TensorProductedAbelianQuantumNumber`.
+Overloaded `+` operator for `CompositeAbelianQuantumNumber`.
 
 !!! note
-    To ensure type stability, two `TensorProductedAbelianQuantumNumber` can be added together if and only if they are of the same type.
+    To ensure type stability, two `CompositeAbelianQuantumNumber` can be added together if and only if they are of the same type.
 """
-@inline Base.:+(qn₁::QN, qn₂::QN, qns::QN...) where {QN<:TensorProductedAbelianQuantumNumber} = QN(mapreduce(values, .+, (qn₁, qn₂, qns...)))
+@inline Base.:+(qn₁::QN, qn₂::QN, qns::QN...) where {QN<:CompositeAbelianQuantumNumber} = QN(mapreduce(values, .+, (qn₁, qn₂, qns...)))
 
 """
-    -(qn::TensorProductedAbelianQuantumNumber) -> typeof(qn)
-    -(qn₁::QN, qn₂::QN) where {QN<:TensorProductedAbelianQuantumNumber} -> QN
+    -(qn::CompositeAbelianQuantumNumber) -> typeof(qn)
+    -(qn₁::QN, qn₂::QN) where {QN<:CompositeAbelianQuantumNumber} -> QN
 
-Overloaded `-` operator for `TensorProductedAbelianQuantumNumber`.
+Overloaded `-` operator for `CompositeAbelianQuantumNumber`.
 
 !!! note
-    To ensure type stability, a `TensorProductedAbelianQuantumNumber` can be subtracted by another `TensorProductedAbelianQuantumNumber` if and only if they are of the same type.
+    To ensure type stability, a `CompositeAbelianQuantumNumber` can be subtracted by another `CompositeAbelianQuantumNumber` if and only if they are of the same type.
 """
-@inline Base.:-(qn::TensorProductedAbelianQuantumNumber) = TensorProductedAbelianQuantumNumber(map(-, qn.contents))
-@inline Base.:-(qn₁::QN, qn₂::QN) where {QN<:TensorProductedAbelianQuantumNumber} = QN(map((i₁, i₂)->i₁-i₂, qn₁.contents, qn₂.contents))
+@inline Base.:-(qn::CompositeAbelianQuantumNumber) = CompositeAbelianQuantumNumber(map(-, qn.contents))
+@inline Base.:-(qn₁::QN, qn₂::QN) where {QN<:CompositeAbelianQuantumNumber} = QN(map((i₁, i₂)->i₁-i₂, qn₁.contents, qn₂.contents))
 
 """
-    ⊠(qns::SimpleAbelianQuantumNumber...) -> TensorProductedAbelianQuantumNumber
-    ⊠(qn₁::SimpleAbelianQuantumNumber, qn₂::TensorProductedAbelianQuantumNumber) -> TensorProductedAbelianQuantumNumber
-    ⊠(qn₁::TensorProductedAbelianQuantumNumber, qn₂::SimpleAbelianQuantumNumber) -> TensorProductedAbelianQuantumNumber
-    ⊠(qn₁::TensorProductedAbelianQuantumNumber, qn₂::TensorProductedAbelianQuantumNumber) -> TensorProductedAbelianQuantumNumber
+    ⊠(qns::SimpleAbelianQuantumNumber...) -> CompositeAbelianQuantumNumber
+    ⊠(qn₁::SimpleAbelianQuantumNumber, qn₂::CompositeAbelianQuantumNumber) -> CompositeAbelianQuantumNumber
+    ⊠(qn₁::CompositeAbelianQuantumNumber, qn₂::SimpleAbelianQuantumNumber) -> CompositeAbelianQuantumNumber
+    ⊠(qn₁::CompositeAbelianQuantumNumber, qn₂::CompositeAbelianQuantumNumber) -> CompositeAbelianQuantumNumber
 
 Deligne tensor product of Abelian quantum numbers.
 """
-@inline ⊠(qns::SimpleAbelianQuantumNumber...) = TensorProductedAbelianQuantumNumber(qns...)
-@inline ⊠(qn₁::SimpleAbelianQuantumNumber, qn₂::TensorProductedAbelianQuantumNumber) = TensorProductedAbelianQuantumNumber(qn₁, qn₂.contents...)
-@inline ⊠(qn₁::TensorProductedAbelianQuantumNumber, qn₂::SimpleAbelianQuantumNumber) = TensorProductedAbelianQuantumNumber(qn₁.contents..., qn₂)
-@inline ⊠(qn₁::TensorProductedAbelianQuantumNumber, qn₂::TensorProductedAbelianQuantumNumber) = TensorProductedAbelianQuantumNumber(qn₁.contents..., qn₂.contents...)
+@inline ⊠(qns::SimpleAbelianQuantumNumber...) = CompositeAbelianQuantumNumber(qns...)
+@inline ⊠(qn₁::SimpleAbelianQuantumNumber, qn₂::CompositeAbelianQuantumNumber) = CompositeAbelianQuantumNumber(qn₁, qn₂.contents...)
+@inline ⊠(qn₁::CompositeAbelianQuantumNumber, qn₂::SimpleAbelianQuantumNumber) = CompositeAbelianQuantumNumber(qn₁.contents..., qn₂)
+@inline ⊠(qn₁::CompositeAbelianQuantumNumber, qn₂::CompositeAbelianQuantumNumber) = CompositeAbelianQuantumNumber(qn₁.contents..., qn₂.contents...)
 
 """
-    ⊠(QNS::Type{<:SimpleAbelianQuantumNumber}...) -> Type{TensorProductedAbelianQuantumNumber{Tuple{QNS...}}}
-    ⊠(::Type{QN}, ::Type{TensorProductedAbelianQuantumNumber{T}}) where {QN<:SimpleAbelianQuantumNumber, T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} -> Type{TensorProductedAbelianQuantumNumber{Tuple{QN, fieldtypes(T)...}}}
-    ⊠(::Type{TensorProductedAbelianQuantumNumber{T}}, ::Type{QN}) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}, QN<:SimpleAbelianQuantumNumber} -> Type{TensorProductedAbelianQuantumNumber{Tuple{fieldtypes(T)...}, QN}}
-    ⊠(::Type{TensorProductedAbelianQuantumNumber{T₁}}, ::Type{TensorProductedAbelianQuantumNumber{T₂}}) where {T₁<:Tuple{Vararg{SimpleAbelianQuantumNumber}}, T₂<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} -> Type{TensorProductedAbelianQuantumNumber{Tuple{fieldtypes(T₁)..., fieldtypes(T₂)...}}}
+    ⊠(QNS::Type{<:SimpleAbelianQuantumNumber}...) -> Type{CompositeAbelianQuantumNumber{Tuple{QNS...}}}
+    ⊠(::Type{QN}, ::Type{CompositeAbelianQuantumNumber{T}}) where {QN<:SimpleAbelianQuantumNumber, T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} -> Type{CompositeAbelianQuantumNumber{Tuple{QN, fieldtypes(T)...}}}
+    ⊠(::Type{CompositeAbelianQuantumNumber{T}}, ::Type{QN}) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}, QN<:SimpleAbelianQuantumNumber} -> Type{CompositeAbelianQuantumNumber{Tuple{fieldtypes(T)...}, QN}}
+    ⊠(::Type{CompositeAbelianQuantumNumber{T₁}}, ::Type{CompositeAbelianQuantumNumber{T₂}}) where {T₁<:Tuple{Vararg{SimpleAbelianQuantumNumber}}, T₂<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} -> Type{CompositeAbelianQuantumNumber{Tuple{fieldtypes(T₁)..., fieldtypes(T₂)...}}}
 
 Deligne tensor product of Abelian quantum numbers.
 """
-@inline ⊠(QNS::Type{<:SimpleAbelianQuantumNumber}...) = TensorProductedAbelianQuantumNumber{Tuple{QNS...}}
-@inline ⊠(::Type{QN}, ::Type{TensorProductedAbelianQuantumNumber{T}}) where {QN<:SimpleAbelianQuantumNumber, T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = TensorProductedAbelianQuantumNumber{Tuple{QN, fieldtypes(T)...}}
-@inline ⊠(::Type{TensorProductedAbelianQuantumNumber{T}}, ::Type{QN}) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}, QN<:SimpleAbelianQuantumNumber} = TensorProductedAbelianQuantumNumber{Tuple{fieldtypes(T)..., QN}}
-@inline ⊠(::Type{TensorProductedAbelianQuantumNumber{T₁}}, ::Type{TensorProductedAbelianQuantumNumber{T₂}}) where {T₁<:Tuple{Vararg{SimpleAbelianQuantumNumber}}, T₂<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = TensorProductedAbelianQuantumNumber{Tuple{fieldtypes(T₁)..., fieldtypes(T₂)...}}
+@inline ⊠(QNS::Type{<:SimpleAbelianQuantumNumber}...) = CompositeAbelianQuantumNumber{Tuple{QNS...}}
+@inline ⊠(::Type{QN}, ::Type{CompositeAbelianQuantumNumber{T}}) where {QN<:SimpleAbelianQuantumNumber, T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = CompositeAbelianQuantumNumber{Tuple{QN, fieldtypes(T)...}}
+@inline ⊠(::Type{CompositeAbelianQuantumNumber{T}}, ::Type{QN}) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}, QN<:SimpleAbelianQuantumNumber} = CompositeAbelianQuantumNumber{Tuple{fieldtypes(T)..., QN}}
+@inline ⊠(::Type{CompositeAbelianQuantumNumber{T₁}}, ::Type{CompositeAbelianQuantumNumber{T₂}}) where {T₁<:Tuple{Vararg{SimpleAbelianQuantumNumber}}, T₂<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = CompositeAbelianQuantumNumber{Tuple{fieldtypes(T₁)..., fieldtypes(T₂)...}}
 
 """
-    const Momentum = TensorProductedAbelianQuantumNumber{<:Tuple{Vararg{𝕂}}}
-    const Momentum₁{N} = TensorProductedAbelianQuantumNumber{Tuple{𝕂{N}}}
-    const Momentum₂{N₁, N₂} = TensorProductedAbelianQuantumNumber{Tuple{𝕂{N₁}, 𝕂{N₂}}}
-    const Momentum₃{N₁, N₂, N₃} = TensorProductedAbelianQuantumNumber{Tuple{𝕂{N₁}, 𝕂{N₂}, 𝕂{N₃}}}
+    const Momentum = CompositeAbelianQuantumNumber{<:Tuple{Vararg{𝕂}}}
+    const Momentum₁{N} = CompositeAbelianQuantumNumber{Tuple{𝕂{N}}}
+    const Momentum₂{N₁, N₂} = CompositeAbelianQuantumNumber{Tuple{𝕂{N₁}, 𝕂{N₂}}}
+    const Momentum₃{N₁, N₂, N₃} = CompositeAbelianQuantumNumber{Tuple{𝕂{N₁}, 𝕂{N₂}, 𝕂{N₃}}}
 
 Type alias for the Abelian quantum numbers of 1d, 2d and 3d momentum.
 """
-const Momentum = TensorProductedAbelianQuantumNumber{<:Tuple{Vararg{𝕂}}}
-const Momentum₁{N} = TensorProductedAbelianQuantumNumber{Tuple{𝕂{N}}}
-const Momentum₂{N₁, N₂} = TensorProductedAbelianQuantumNumber{Tuple{𝕂{N₁}, 𝕂{N₂}}}
-const Momentum₃{N₁, N₂, N₃} = TensorProductedAbelianQuantumNumber{Tuple{𝕂{N₁}, 𝕂{N₂}, 𝕂{N₃}}}
+const Momentum = CompositeAbelianQuantumNumber{<:Tuple{Vararg{𝕂}}}
+const Momentum₁{N} = CompositeAbelianQuantumNumber{Tuple{𝕂{N}}}
+const Momentum₂{N₁, N₂} = CompositeAbelianQuantumNumber{Tuple{𝕂{N₁}, 𝕂{N₂}}}
+const Momentum₃{N₁, N₂, N₃} = CompositeAbelianQuantumNumber{Tuple{𝕂{N₁}, 𝕂{N₂}, 𝕂{N₃}}}
 @inline Int(m::Momentum₁) = m[1].charge + 1
 @inline Int(m::Momentum₂{N₁, N₂}) where {N₁, N₂} = m[2].charge + m[1].charge*N₂ + 1
 @inline Int(m::Momentum₃{N₁, N₂, N₃}) where {N₁, N₂, N₃} = (m[1].charge*N₂+m[2].charge)*N₃ + m[3].charge + 1
@@ -317,11 +317,11 @@ const Momentum₃{N₁, N₂, N₃} = TensorProductedAbelianQuantumNumber{Tuple{
 
 Construct 1d, 2d and 3d momentum.
 """
-@inline Momentum₁{N}(k::Integer) where N = TensorProductedAbelianQuantumNumber(𝕂{N}(k))
+@inline Momentum₁{N}(k::Integer) where N = CompositeAbelianQuantumNumber(𝕂{N}(k))
 @inline Momentum₂{N}(k₁::Integer, k₂::Integer) where N = Momentum₂{N, N}(k₁, k₂)
-@inline Momentum₂{N₁, N₂}(k₁::Integer, k₂::Integer) where {N₁, N₂} = TensorProductedAbelianQuantumNumber(𝕂{N₁}(k₁), 𝕂{N₂}(k₂))
+@inline Momentum₂{N₁, N₂}(k₁::Integer, k₂::Integer) where {N₁, N₂} = CompositeAbelianQuantumNumber(𝕂{N₁}(k₁), 𝕂{N₂}(k₂))
 @inline Momentum₃{N}(k₁::Integer, k₂::Integer, k₃::Integer) where N =  Momentum₃{N, N, N}(k₁, k₂, k₃)
-@inline Momentum₃{N₁, N₂, N₃}(k₁::Integer, k₂::Integer, k₃::Integer) where {N₁, N₂, N₃} = TensorProductedAbelianQuantumNumber(𝕂{N₁}(k₁), 𝕂{N₂}(k₂), 𝕂{N₃}(k₃))
+@inline Momentum₃{N₁, N₂, N₃}(k₁::Integer, k₂::Integer, k₃::Integer) where {N₁, N₂, N₃} = CompositeAbelianQuantumNumber(𝕂{N₁}(k₁), 𝕂{N₂}(k₂), 𝕂{N₃}(k₃))
 
 """
     RepresentationSpace{QN<:AbelianQuantumNumber} <: VectorSpace{QN}
@@ -636,16 +636,16 @@ When `expand` is `true`, the expanded dimension indexes of the permutation vecto
 end
 
 """
-    DirectSummedAbelianGradedSpace{N, QN<:AbelianQuantumNumber} <: CompositeAbelianGradedSpace{N, QN}
+    AbelianGradedSpaceSum{N, QN<:AbelianQuantumNumber} <: CompositeAbelianGradedSpace{N, QN}
 
 Direct sum of Abelian graded spaces.
 """
-struct DirectSummedAbelianGradedSpace{N, QN<:AbelianQuantumNumber} <: CompositeAbelianGradedSpace{N, QN}
+struct AbelianGradedSpaceSum{N, QN<:AbelianQuantumNumber} <: CompositeAbelianGradedSpace{N, QN}
     contents::NTuple{N, AbelianGradedSpace{QN}}
 end
-@inline DirectSummedAbelianGradedSpace(gses::AbelianGradedSpace...) = DirectSummedAbelianGradedSpace(gses)
-@inline VectorSpaceStyle(::Type{<:DirectSummedAbelianGradedSpace}) = VectorSpaceDirectSummed()
-function Base.show(io::IO, rs::DirectSummedAbelianGradedSpace)
+@inline AbelianGradedSpaceSum(gses::AbelianGradedSpace...) = AbelianGradedSpaceSum(gses)
+@inline VectorSpaceStyle(::Type{<:AbelianGradedSpaceSum}) = VectorSpaceDirectSummed()
+function Base.show(io::IO, rs::AbelianGradedSpaceSum)
     for (count, content) in enumerate(rs.contents)
         @printf io "%s" content
         count<rank(rs) && @printf io "%s" " ⊕ "
@@ -653,41 +653,41 @@ function Base.show(io::IO, rs::DirectSummedAbelianGradedSpace)
 end
 
 """
-    ⊕(gses::AbelianGradedSpace...) -> DirectSummedAbelianGradedSpace
-    ⊕(gs::AbelianGradedSpace, rs::DirectSummedAbelianGradedSpace) -> DirectSummedAbelianGradedSpace
-    ⊕(rs::DirectSummedAbelianGradedSpace, gs::AbelianGradedSpace) -> DirectSummedAbelianGradedSpace
-    ⊕(rs₁::DirectSummedAbelianGradedSpace, rs₂::DirectSummedAbelianGradedSpace) -> DirectSummedAbelianGradedSpace
+    ⊕(gses::AbelianGradedSpace...) -> AbelianGradedSpaceSum
+    ⊕(gs::AbelianGradedSpace, rs::AbelianGradedSpaceSum) -> AbelianGradedSpaceSum
+    ⊕(rs::AbelianGradedSpaceSum, gs::AbelianGradedSpace) -> AbelianGradedSpaceSum
+    ⊕(rs₁::AbelianGradedSpaceSum, rs₂::AbelianGradedSpaceSum) -> AbelianGradedSpaceSum
 
 Get the direct sum of some Abelian graded spaces.
 """
-@inline ⊕(gses::AbelianGradedSpace...) = DirectSummedAbelianGradedSpace(gses...)
-@inline ⊕(gs::AbelianGradedSpace, rs::DirectSummedAbelianGradedSpace) = DirectSummedAbelianGradedSpace(gs, rs.contents...)
-@inline ⊕(rs::DirectSummedAbelianGradedSpace, gs::AbelianGradedSpace) = DirectSummedAbelianGradedSpace(rs.contents..., gs)
-@inline ⊕(rs₁::DirectSummedAbelianGradedSpace, rs₂::DirectSummedAbelianGradedSpace) = DirectSummedAbelianGradedSpace(rs₁.contents..., rs₂.contents...)
+@inline ⊕(gses::AbelianGradedSpace...) = AbelianGradedSpaceSum(gses...)
+@inline ⊕(gs::AbelianGradedSpace, rs::AbelianGradedSpaceSum) = AbelianGradedSpaceSum(gs, rs.contents...)
+@inline ⊕(rs::AbelianGradedSpaceSum, gs::AbelianGradedSpace) = AbelianGradedSpaceSum(rs.contents..., gs)
+@inline ⊕(rs₁::AbelianGradedSpaceSum, rs₂::AbelianGradedSpaceSum) = AbelianGradedSpaceSum(rs₁.contents..., rs₂.contents...)
 
 """
-    dimension(rs::DirectSummedAbelianGradedSpace) -> Int
+    dimension(rs::AbelianGradedSpaceSum) -> Int
 
 Get the total dimension of the direct sum of several Abelian graded spaces.
 """
-@inline dimension(rs::DirectSummedAbelianGradedSpace) = sum(dimension, rs.contents)
+@inline dimension(rs::AbelianGradedSpaceSum) = sum(dimension, rs.contents)
 
 """
-    dimension(rs::DirectSummedAbelianGradedSpace, i::CartesianIndex) -> Int
+    dimension(rs::AbelianGradedSpaceSum, i::CartesianIndex) -> Int
 
 Get the degenerate dimension of the ith Abelian quantum number in the direct sum of several Abelian graded spaces.
 """
-@inline function dimension(rs::DirectSummedAbelianGradedSpace, i::CartesianIndex)
+@inline function dimension(rs::AbelianGradedSpaceSum, i::CartesianIndex)
     m, n = i.I
     return dimension(rs.contents[m], n)
 end
 
 """
-    range(rs::DirectSummedAbelianGradedSpace, i::CartesianIndex) -> UnitRange{Int}
+    range(rs::AbelianGradedSpaceSum, i::CartesianIndex) -> UnitRange{Int}
 
 Get the slice of the degenerate dimension of the ith Abelian quantum number in the direct sum of several Abelian graded spaces.
 """
-@inline function Base.range(rs::DirectSummedAbelianGradedSpace, i::CartesianIndex)
+@inline function Base.range(rs::AbelianGradedSpaceSum, i::CartesianIndex)
     m, n = i.I
     d = sum(i->dimension(rs.contents[i]), 1:m-1; init=0)
     slice = range(rs.contents[m], n)
@@ -695,64 +695,64 @@ Get the slice of the degenerate dimension of the ith Abelian quantum number in t
 end
 
 """
-    DirectProductedAbelianGradedSpace{N, QN<:AbelianQuantumNumber} <: CompositeAbelianGradedSpace{N, QN}
+    AbelianGradedSpaceProd{N, QN<:AbelianQuantumNumber} <: CompositeAbelianGradedSpace{N, QN}
 
 Direct product of Abelian graded spaces.
 """
-struct DirectProductedAbelianGradedSpace{N, QN<:AbelianQuantumNumber} <: CompositeAbelianGradedSpace{N, QN}
+struct AbelianGradedSpaceProd{N, QN<:AbelianQuantumNumber} <: CompositeAbelianGradedSpace{N, QN}
     contents::NTuple{N, AbelianGradedSpace{QN}}
 end
-@inline DirectProductedAbelianGradedSpace(gses::AbelianGradedSpace...) = DirectProductedAbelianGradedSpace(gses)
-@inline VectorSpaceStyle(::Type{<:DirectProductedAbelianGradedSpace}) = VectorSpaceDirectProducted(:backward)
-function Base.show(io::IO, rs::DirectProductedAbelianGradedSpace)
+@inline AbelianGradedSpaceProd(gses::AbelianGradedSpace...) = AbelianGradedSpaceProd(gses)
+@inline VectorSpaceStyle(::Type{<:AbelianGradedSpaceProd}) = VectorSpaceDirectProducted(:backward)
+function Base.show(io::IO, rs::AbelianGradedSpaceProd)
     for (count, content) in enumerate(rs.contents)
         @printf io "%s" content
         count<rank(rs) && @printf io "%s" " ⊗ "
     end
 end
-@inline Base.convert(::Type{QN}, qns::NTuple{N, QN}, rs::DirectProductedAbelianGradedSpace{N, QN}) where {N, QN<:AbelianQuantumNumber} = ⊗(qns...)
-@inline Base.range(::Type{<:DirectProductedAbelianGradedSpace{N}}) where N = DirectProductedAbelianGradedSpaceRange{N}
+@inline Base.convert(::Type{QN}, qns::NTuple{N, QN}, rs::AbelianGradedSpaceProd{N, QN}) where {N, QN<:AbelianQuantumNumber} = ⊗(qns...)
+@inline Base.range(::Type{<:AbelianGradedSpaceProd{N}}) where N = DirectProductedAbelianGradedSpaceRange{N}
 
 """
-    ⊗(gses::AbelianGradedSpace...) -> DirectProductedAbelianGradedSpace
-    ⊗(gs::AbelianGradedSpace, rs::DirectProductedAbelianGradedSpace) -> DirectProductedAbelianGradedSpace
-    ⊗(rs::DirectProductedAbelianGradedSpace, gs::AbelianGradedSpace) -> DirectProductedAbelianGradedSpace
-    ⊗(rs₁::DirectProductedAbelianGradedSpace, rs₂::DirectProductedAbelianGradedSpace) -> DirectProductedAbelianGradedSpace
+    ⊗(gses::AbelianGradedSpace...) -> AbelianGradedSpaceProd
+    ⊗(gs::AbelianGradedSpace, rs::AbelianGradedSpaceProd) -> AbelianGradedSpaceProd
+    ⊗(rs::AbelianGradedSpaceProd, gs::AbelianGradedSpace) -> AbelianGradedSpaceProd
+    ⊗(rs₁::AbelianGradedSpaceProd, rs₂::AbelianGradedSpaceProd) -> AbelianGradedSpaceProd
 
 Get the direct product of some Abelian graded spaces.
 """
-@inline ⊗(gses::AbelianGradedSpace...) = DirectProductedAbelianGradedSpace(gses...)
-@inline ⊗(gs::AbelianGradedSpace, rs::DirectProductedAbelianGradedSpace) = DirectProductedAbelianGradedSpace(gs, rs.contents...)
-@inline ⊗(rs::DirectProductedAbelianGradedSpace, gs::AbelianGradedSpace) = DirectProductedAbelianGradedSpace(rs.contents..., gs)
-@inline ⊗(rs₁::DirectProductedAbelianGradedSpace, rs₂::DirectProductedAbelianGradedSpace) = DirectProductedAbelianGradedSpace(rs₁.contents..., rs₂.contents...)
+@inline ⊗(gses::AbelianGradedSpace...) = AbelianGradedSpaceProd(gses...)
+@inline ⊗(gs::AbelianGradedSpace, rs::AbelianGradedSpaceProd) = AbelianGradedSpaceProd(gs, rs.contents...)
+@inline ⊗(rs::AbelianGradedSpaceProd, gs::AbelianGradedSpace) = AbelianGradedSpaceProd(rs.contents..., gs)
+@inline ⊗(rs₁::AbelianGradedSpaceProd, rs₂::AbelianGradedSpaceProd) = AbelianGradedSpaceProd(rs₁.contents..., rs₂.contents...)
 
 """
-    dimension(rs::DirectProductedAbelianGradedSpace) -> Int
+    dimension(rs::AbelianGradedSpaceProd) -> Int
 
 Get the total dimension of the direct product of several Abelian graded spaces.
 """
-@inline dimension(rs::DirectProductedAbelianGradedSpace) = prod(dimension, rs.contents)
+@inline dimension(rs::AbelianGradedSpaceProd) = prod(dimension, rs.contents)
 
 """
-    dimension(rs::DirectProductedAbelianGradedSpace, i::CartesianIndex) -> Int
+    dimension(rs::AbelianGradedSpaceProd, i::CartesianIndex) -> Int
 
 Get the degenerate dimension of the ith Abelian quantum number in the direct product of several Abelian graded spaces.
 """
-@inline dimension(rs::DirectProductedAbelianGradedSpace, i::CartesianIndex) = prod(map(dimension, rs.contents, i.I))
+@inline dimension(rs::AbelianGradedSpaceProd, i::CartesianIndex) = prod(map(dimension, rs.contents, i.I))
 
 """
-    dimension(rs::DirectProductedAbelianGradedSpace{N, QN}, qns::NTuple{N, QN}) where {N, QN<:AbelianQuantumNumber} -> Int
+    dimension(rs::AbelianGradedSpaceProd{N, QN}, qns::NTuple{N, QN}) where {N, QN<:AbelianQuantumNumber} -> Int
 
 Get the degenerate dimension of the Abelian quantum number fused by `qns` in the direct product of several Abelian graded spaces.
 """
-@inline dimension(rs::DirectProductedAbelianGradedSpace{N, QN}, qns::NTuple{N, QN}) where {N, QN<:AbelianQuantumNumber} = prod(map(dimension, rs.contents, qns))
+@inline dimension(rs::AbelianGradedSpaceProd{N, QN}, qns::NTuple{N, QN}) where {N, QN<:AbelianQuantumNumber} = prod(map(dimension, rs.contents, qns))
 
 """
-    range(rs::DirectProductedAbelianGradedSpace, i::CartesianIndex) -> AbstractVector{Int}
+    range(rs::AbelianGradedSpaceProd, i::CartesianIndex) -> AbstractVector{Int}
 
 Get the slice of the degenerate dimension of the ith Abelian quantum number in the direct product of several Abelian graded spaces.
 """
-@inline function Base.range(rs::DirectProductedAbelianGradedSpace, i::CartesianIndex)
+@inline function Base.range(rs::AbelianGradedSpaceProd, i::CartesianIndex)
     contents = reverse(rs.contents)
     linear = LinearIndices(map(dimension, contents))
     cartesian = CartesianIndices(map(range, contents, reverse(i.I)))
@@ -766,11 +766,11 @@ end
 @inline Base.getindex(r::DirectProductedAbelianGradedSpaceRange, i::Integer) = r.linear[r.cartesian[i]]
 
 """
-    range(rs::DirectProductedAbelianGradedSpace{N, QN}, qns::NTuple{N, QN}) where {N, QN<:AbelianQuantumNumber} -> AbstractVector{Int}
+    range(rs::AbelianGradedSpaceProd{N, QN}, qns::NTuple{N, QN}) where {N, QN<:AbelianQuantumNumber} -> AbstractVector{Int}
 
 Get the slice of the degenerate dimension of the Abelian quantum number fused by `qns` in the direct product of several Abelian graded spaces.
 """
-@inline function Base.range(rs::DirectProductedAbelianGradedSpace{N, QN}, qns::NTuple{N, QN}) where {N, QN<:AbelianQuantumNumber}
+@inline function Base.range(rs::AbelianGradedSpaceProd{N, QN}, qns::NTuple{N, QN}) where {N, QN<:AbelianQuantumNumber}
     contents = reverse(rs.contents)
     linear = LinearIndices(map(dimension, contents))
     cartesian = CartesianIndices(map(range, contents, reverse(qns)))
@@ -778,13 +778,13 @@ Get the slice of the degenerate dimension of the Abelian quantum number fused by
 end
 
 """
-    merge(rs::DirectProductedAbelianGradedSpace) -> Tuple{AbelianGradedSpace{eltype(rs)}, Dict{eltype(rs), Vector{NTuple{rank(rs), eltype(rs)}}}}
+    merge(rs::AbelianGradedSpaceProd) -> Tuple{AbelianGradedSpace{eltype(rs)}, Dict{eltype(rs), Vector{NTuple{rank(rs), eltype(rs)}}}}
 
 Get the decomposition of the direct product of several Abelian graded spaces and its corresponding fusion processes.
 
 For a set of Abelian graded spaces (gs₁, gs₂, ...), their direct product space can contain several equivalent irreducible representations because for different sets of Abelian quantum numbers (qn₁, qn₂, ...) where qnᵢ∈gsᵢ, the fusion, i.e., `⊗(qn₁, qn₂, ...)` may give the same result `qn`. This function returns the decomposition of the direct product of (gs₁, gs₂, ...) as well as all the fusion processes of each quantum number contained in the decomposition.
 """
-function Base.merge(rs::DirectProductedAbelianGradedSpace)
+function Base.merge(rs::AbelianGradedSpaceProd)
     fusion = Dict{eltype(rs), Vector{NTuple{rank(rs), eltype(rs)}}}()
     record = Dict{eltype(rs), Int}()
     for ps in product(map(content->pairs(content, dimension), reverse(rs.contents))...)
@@ -805,11 +805,11 @@ function Base.merge(rs::DirectProductedAbelianGradedSpace)
 end
 
 """
-    split(target::QN, rs::DirectProductedAbelianGradedSpace{N, QN}; nmax::Real=20) where {N, QN<:AbelianQuantumNumber} -> Set{NTuple{N, QN}}
+    split(target::QN, rs::AbelianGradedSpaceProd{N, QN}; nmax::Real=20) where {N, QN<:AbelianQuantumNumber} -> Set{NTuple{N, QN}}
 
 Find a set of splittings of the target Abelian quantum number with respect to the direct product of several Abelian graded spaces.
 """
-function Base.split(target::QN, rs::DirectProductedAbelianGradedSpace{N, QN}; nmax::Real=20) where {N, QN<:AbelianQuantumNumber}
+function Base.split(target::QN, rs::AbelianGradedSpaceProd{N, QN}; nmax::Real=20) where {N, QN<:AbelianQuantumNumber}
     result = Set{NTuple{N, QN}}()
     if isinf(nmax)
         for qns in product(rs.contents...)
