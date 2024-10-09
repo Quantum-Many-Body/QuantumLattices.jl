@@ -234,7 +234,7 @@ end
 
 """
     Segment(start::Number, stop::Number, length::Integer; ends::Tuple{Bool, Bool}=(true, false))
-    Segment(start::AbstractVector, stop::AbstractVector, length::Integer; ends::Tuple{Bool, Bool}=(true, false))
+    Segment(start::AbstractVector{<:Number}, stop::AbstractVector{<:Number}, length::Integer; ends::Tuple{Bool, Bool}=(true, false))
     Segment(start::NTuple{N, Number}, stop::NTuple{N, Number}, length::Integer; ends::Tuple{Bool, Bool}=(true, false)) where N
 
 Construct a segment.
@@ -244,7 +244,7 @@ function Segment(start::Number, stop::Number, length::Integer; ends::Tuple{Bool,
     dtype = promote_type(typeof(start), typeof(stop), Float)
     return Segment(convert(dtype, start), convert(dtype, stop), length, ends)
 end
-function Segment(start::AbstractVector, stop::AbstractVector, length::Integer; ends::Tuple{Bool, Bool}=(true, false))
+function Segment(start::AbstractVector{<:Number}, stop::AbstractVector{<:Number}, length::Integer; ends::Tuple{Bool, Bool}=(true, false))
     @assert length>=0 "Segment error: length must be non-negative."
     @assert Base.length(start)==Base.length(stop) "Segment error: start and stop should have equal length."
     dtype = SVector{Base.length(start), promote_type(eltype(start), eltype(stop), Float)}
@@ -252,7 +252,7 @@ function Segment(start::AbstractVector, stop::AbstractVector, length::Integer; e
 end
 function Segment(start::NTuple{N, Number}, stop::NTuple{N, Number}, length::Integer; ends::Tuple{Bool, Bool}=(true, false)) where N
     @assert length>=0 "Segment error: length must be non-negative."
-    dtype = SVector{N, promote_type(eltype(start), eltype(stop), Float)}
+    dtype = SVector{N, promote_type(reduce(promote_type, fieldtypes(typeof(start))), reduce(promote_type, fieldtypes(typeof(start))), Float)}
     return Segment(convert(dtype, start), convert(dtype, stop), length, ends)
 end
 
