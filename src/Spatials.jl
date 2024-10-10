@@ -7,6 +7,7 @@ using NearestNeighbors: KDTree, inrange, knn
 using Printf: @printf, @sprintf
 using RecipesBase: RecipesBase, @recipe, @series, @layout
 using StaticArrays: MVector, SVector
+using ..QuantumLattices: rank
 using ..QuantumNumbers: Momenta, Momentum, period, periods
 using ..Toolkit: atol, rtol, efficientoperations, CompositeDict, Float, SimpleNamedVectorSpace, Segment, VectorSpaceCartesian, VectorSpaceDirectSummed, VectorSpaceEnumerative, VectorSpaceStyle, getcontent
 
@@ -1024,7 +1025,7 @@ struct BrillouinZone{K, P<:Momentum, S<:SVector, N} <: ReciprocalSpace{K, S}
     reciprocals::SVector{N, S}
     function BrillouinZone{K, P}(reciprocals::SVector{N, <:SVector}) where {K, P<:Momentum, N}
         @assert isa(K, Symbol) "BrillouinZone error: K must be a Symbol."
-        @assert length(P)==N "BrillouinZone error: mismatched momentum and reciprocals."
+        @assert rank(P)==N "BrillouinZone error: mismatched momentum and reciprocals."
         new{K, P, eltype(reciprocals), N}(reciprocals)
     end
 end

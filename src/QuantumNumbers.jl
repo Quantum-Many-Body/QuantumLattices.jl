@@ -188,8 +188,7 @@ end
 @inline Base.values(qn::CompositeAbelianQuantumNumber) = map(values, qn.contents)
 @inline Base.show(io::IO, qn::CompositeAbelianQuantumNumber) = @printf io "Abelian[%s]%s" join(fieldtypes(fieldtype(typeof(qn), :contents)), " ⊠ ") values(qn)
 @inline Base.zero(::Type{CompositeAbelianQuantumNumber{T}}) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = CompositeAbelianQuantumNumber(map(zero,  fieldtypes(T)))
-@inline Base.length(qn::CompositeAbelianQuantumNumber) = length(typeof(qn))
-@inline Base.length(::Type{<:CompositeAbelianQuantumNumber{T}}) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = fieldcount(T)
+@inline Base.length(qn::CompositeAbelianQuantumNumber) = rank(qn)
 @inline Base.firstindex(::CompositeAbelianQuantumNumber) = 1
 @inline Base.lastindex(qn::CompositeAbelianQuantumNumber) = length(qn)
 @inline Base.getindex(qn::CompositeAbelianQuantumNumber, i::Integer) = qn.contents[i]
@@ -204,6 +203,15 @@ Construct a Deligne tensor product of simple Abelian quantum numbers by their va
 """
 @inline CompositeAbelianQuantumNumber{T}(vs::Vararg{Number, N}) where {N, T<:NTuple{N, SimpleAbelianQuantumNumber}} = CompositeAbelianQuantumNumber{T}(vs)
 @inline CompositeAbelianQuantumNumber{T}(vs::NTuple{N, Number}) where {N, T<:NTuple{N, SimpleAbelianQuantumNumber}} = CompositeAbelianQuantumNumber(map((T, v)->T(v), fieldtypes(T), vs))
+
+"""
+    rank(qn::CompositeAbelianQuantumNumber) -> Int
+    rank(::Type{<:CompositeAbelianQuantumNumber}) -> Int
+
+Get the rank of a composite Abelian quantum number.
+"""
+@inline rank(qn::CompositeAbelianQuantumNumber) = rank(typeof(qn))
+@inline rank(::Type{<:CompositeAbelianQuantumNumber{T}}) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = fieldcount(T)
 
 """
     period(qn::CompositeAbelianQuantumNumber, i::Integer) -> Number
