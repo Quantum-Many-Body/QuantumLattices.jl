@@ -14,8 +14,8 @@ struct AID{O<:Real, S<:Real} <: OperatorUnit
 end
 @inline Base.adjoint(id::AID) = AID(id.orbital, 3-id.nambu)
 @inline ⊗(m₁::Operator{<:Number, <:ID{AID}}, m₂::Operator{<:Number, <:ID{AID}}) = m₁ * m₂
-@inline script(::Val{:orbital}, id::AID; kwargs...) = id.orbital
-@inline script(::Val{:nambu}, id::AID; kwargs...) = id.nambu==2 ? "\\dagger" : ""
+@inline script(id::AID, ::Val{:orbital}; kwargs...) = id.orbital
+@inline script(id::AID, ::Val{:nambu}; kwargs...) = id.nambu==2 ? "\\dagger" : ""
 latexformat(AID, LaTeX{(:nambu,), (:orbital,)}('c'))
 
 function permute(u₁::AID, u₂::AID)
@@ -185,9 +185,9 @@ end
     latexformat(AID, latex)
 
     aid = AID(1, 2)
-    @test script(Val(:BD), aid, latex) == 'd'
-    @test script(Val(:SP), aid, latex) == ("\\dagger",)
-    @test script(Val(:SB), aid, latex) == (1,)
+    @test script(aid, latex, Val(:BD)) == 'd'
+    @test script(aid, latex, Val(:SP)) == ("\\dagger",)
+    @test script(aid, latex, Val(:SB)) == (1,)
     @test latexstring(aid) == "d^{\\dagger}_{1}"
 
     opt = Operator(1.0, AID(2, 2), AID(1, 1))

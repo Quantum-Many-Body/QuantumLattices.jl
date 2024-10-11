@@ -792,15 +792,15 @@ Get/Set the LaTeX format for a subtype of `OperatorUnit`.
 @inline latexformat(T::Type{<:OperatorUnit}, l::LaTeX) = latexformats[latexname(T)] = l
 
 """
-    script(::Val{:BD}, u::OperatorUnit, l::LaTeX) -> Any
-    script(::Val{:SP}, u::OperatorUnit, l::LaTeX) -> Tuple
-    script(::Val{:SB}, u::OperatorUnit, l::LaTeX) -> Tuple
+    script(u::OperatorUnit, l::LaTeX, ::Val{:BD}) -> Any
+    script(u::OperatorUnit, l::LaTeX, ::Val{:SP}) -> Tuple
+    script(u::OperatorUnit, l::LaTeX, ::Val{:SB}) -> Tuple
 
 Get the body/superscript/subscript of the LaTeX string representation of an operator unit.
 """
-@inline script(::Val{:BD}, u::OperatorUnit, l::LaTeX) = l.body(u)
-@inline @generated script(::Val{:SP}, u::OperatorUnit, l::LaTeX) = Expr(:tuple, [:(script(Val($sup), u; l.options...)) for sup in QuoteNode.(l|>superscript)]...)
-@inline @generated script(::Val{:SB}, u::OperatorUnit, l::LaTeX) = Expr(:tuple, [:(script(Val($sub), u; l.options...)) for sub in QuoteNode.(l|>subscript)]...)
+@inline script(u::OperatorUnit, l::LaTeX, ::Val{:BD}) = l.body(u)
+@inline @generated script(u::OperatorUnit, l::LaTeX, ::Val{:SP}) = Expr(:tuple, [:(script(u, Val($sup); l.options...)) for sup in QuoteNode.(l|>superscript)]...)
+@inline @generated script(u::OperatorUnit, l::LaTeX, ::Val{:SB}) = Expr(:tuple, [:(script(u, Val($sub); l.options...)) for sub in QuoteNode.(l|>subscript)]...)
 
 """
     latexstring(u::OperatorUnit) -> String
@@ -809,7 +809,10 @@ LaTeX string representation of an operator unit.
 """
 @inline function latexstring(u::OperatorUnit)
     l = latexformat(typeof(u))
-    return @sprintf "%s^{%s}_{%s}" script(Val(:BD), u, l) join([str for str in script(Val(:SP), u, l) if length(str)>0], l.spdelimiter) join([str for str in script(Val(:SB), u, l) if length(str)>0], l.sbdelimiter)
+    body = script(u, l, Val(:BD))
+    superscript = join((str for str in script(u, l, Val(:SP)) if length(str)>0), l.spdelimiter)
+    subscript = join((str for str in script(u, l, Val(:SB)) if length(str)>0), l.sbdelimiter)
+    return @sprintf "%s^{%s}_{%s}" body superscript subscript
 end
 
 """
