@@ -1532,7 +1532,13 @@ Define the recipe for the visualization of a reciprocal curve.
 end
 
 # plot utilities
-block = quote
+"""
+    @recipe plot(path::ReciprocalPath, data::AbstractVector)
+    @recipe plot(path::ReciprocalPath, data::AbstractMatrix)
+
+Define the recipe for the line visualization of data along a reciprocal path.
+"""
+const line = quote
     seriestype --> :path
     titlefontsize --> 10
     legend --> false
@@ -1543,9 +1549,14 @@ block = quote
     xlabel --> string(names(path)[1])
     [distance(path, i) for i=1:length(path)], data
 end
-@eval @recipe plot(path::ReciprocalPath, data::AbstractVector) = $block
-@eval @recipe plot(path::ReciprocalPath, data::AbstractMatrix) = $block
+@eval @recipe plot(path::ReciprocalPath, data::AbstractVector) = $line
+@eval @recipe plot(path::ReciprocalPath, data::AbstractMatrix) = $line
 
+"""
+    @recipe plot(path::ReciprocalPath, y::AbstractVector, data::AbstractMatrix)
+
+Define the recipe for the heatmap visualization of data on the x-y plain with the x axis being a reciprocal path.
+"""
 @recipe function plot(path::ReciprocalPath, y::AbstractVector, data::AbstractMatrix)
     seriestype --> :heatmap
     titlefontsize --> 10
@@ -1557,7 +1568,13 @@ end
     [distance(path, i) for i=1:length(path)], y, data
 end
 
-block = quote
+"""
+    @recipe plot(reciprocalspace::BrillouinZone, data::AbstractMatrix)
+    @recipe plot(reciprocalspace::ReciprocalZone, data::AbstractMatrix)
+
+Define the recipe for the heatmap visualization of data on a Brillouin/reciprocal zone.
+"""
+const heatmap = quote
     @assert length(reciprocalspace.reciprocals)==2 "plot error: only two dimensional reciprocal spaces are supported."
     x, y = xaxis(reciprocalspace), yaxis(reciprocalspace)
     Δx, Δy= x[2]-x[1], y[2]-y[1]
@@ -1571,9 +1588,19 @@ block = quote
     ylabel --> string(names(reciprocalspace)[1], "₂")
     x, y, data
 end
-@eval @recipe plot(reciprocalspace::BrillouinZone, data::AbstractMatrix) = $block
-@eval @recipe plot(reciprocalspace::ReciprocalZone, data::AbstractMatrix) = $block
+@eval @recipe plot(reciprocalspace::BrillouinZone, data::AbstractMatrix) = $heatmap
+@eval @recipe plot(reciprocalspace::ReciprocalZone, data::AbstractMatrix) = $heatmap
 
+"""
+    @recipe plot(path::ReciprocalPath, y::AbstractVector, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8, nrow=nothing, ncol=nothing, clims=nothing)
+    @recipe plot(reciprocalspace::BrillouinZone, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8, nrow=nothing, ncol=nothing, clims=nothing)
+    @recipe plot(reciprocalspace::ReciprocalZone, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8, nrow=nothing, ncol=nothing, clims=nothing)
+
+Define the recipe for the heatmap visualization of a series of data on 
+1) the x-y plain with the x axis being a reciprocal path,
+2) a Brillouin zone,
+3) a reciprocal zone.
+"""
 setup(expr::Expr) = quote
     isnothing(clims) && (clims = extrema(data))
     isnothing(nrow) && (nrow = round(Int, sqrt(size(data)[3])))
@@ -1603,22 +1630,6 @@ end
 @eval @recipe plot(path::ReciprocalPath, y::AbstractVector, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8, nrow=nothing, ncol=nothing, clims=nothing) = $(setup(:(path, y, data[:, :, i])))
 @eval @recipe plot(reciprocalspace::BrillouinZone, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8, nrow=nothing, ncol=nothing, clims=nothing) = $(setup(:(reciprocalspace, data[:, :, i])))
 @eval @recipe plot(reciprocalspace::ReciprocalZone, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8, nrow=nothing, ncol=nothing, clims=nothing) = $(setup(:(reciprocalspace, data[:, :, i])))
-
-"""
-    @recipe plot(path::ReciprocalPath, data::Union{AbstractVector, AbstractMatrix})
-    @recipe plot(path::ReciprocalPath, y::AbstractVector, data::AbstractMatrix)
-    @recipe plot(reciprocalspace::Union{BrillouinZone, ReciprocalZone}, data::AbstractMatrix)
-    @recipe plot(path::ReciprocalPath, y::AbstractVector, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8, nrow=nothing, ncol=nothing, clims=nothing)
-    @recipe plot(reciprocalspace::Union{BrillouinZone, ReciprocalZone}, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8, nrow=nothing, ncol=nothing, clims=nothing)
-
-Define the recipe for the
-1) line visualization of data along a reciprocal path,
-2) heatmap visualization of data on the x-y plain with the x axis being a reciprocal path,
-3) heatmap visualization of data on a Brillouin/reciprocal zone,
-4) heatmap visualization of a series of data on the x-y plain with the x axis being a reciprocal path,
-5) heatmap visualization of a series of data on a Brillouin/reciprocal zone.
-"""
-function plot end
 
 # save utilities
 """
