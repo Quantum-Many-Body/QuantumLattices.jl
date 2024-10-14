@@ -32,7 +32,6 @@ decimaltostr
 subscript
 superscript
 delta
-ordinal
 id
 value
 DirectSummedIndices

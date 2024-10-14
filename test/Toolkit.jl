@@ -32,14 +32,6 @@ end
     @test subscript(1234567890) == "₁₂₃₄₅₆₇₈₉₀"
 end
 
-@testset "ordinal" begin
-    @test ordinal(1) == "1st"
-    @test ordinal(2) == "2nd"
-    @test ordinal(3) == "3rd"
-    @test ordinal(4) == "4th"
-    @test ordinal(5) == "5th"
-end
-
 @testset "delta" begin
     @test delta(1, 2) == 0
     @test delta(1, 1) == 1

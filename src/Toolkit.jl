@@ -10,7 +10,7 @@ import QuantumLattices: ⊞, ⊗, id, value
 
 # Utilities
 export atol, rtol, Float
-export DirectSummedIndices, Segment, concatenate, decimaltostr, delta, ordinal, subscript, superscript
+export DirectSummedIndices, Segment, concatenate, decimaltostr, delta, subscript, superscript
 
 # Combinatorics
 export Combinatorics, Combinations, DuplicateCombinations, DuplicatePermutations, Permutations
@@ -88,16 +88,6 @@ Convert an integer to the superscript.
 Convert an integer to the subscript.
 """
 @inline subscript(i::Integer) = join('₀'+d for d in Iterators.reverse(digits(i)))
-
-"""
-    ordinal(number::Integer)
-
-Convert a positive number to its corresponding ordinal.
-"""
-@inline function ordinal(number::Integer)
-    @assert number > 0 "ordinal error: input number must be positive."
-    (number == 1) ? "1st" : (number == 2) ? "2nd" : (number == 3) ? "3rd" : "$(number)th"
-end
 
 """
     delta(i, j) -> Int
