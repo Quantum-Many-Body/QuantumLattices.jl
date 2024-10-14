@@ -13,7 +13,7 @@ using ..Toolkit: VectorSpace, VectorSpaceCartesian, VectorSpaceDirectProducted, 
 import ..QuantumLattices: ⊕, ⊗, ⊠, decompose, dimension, rank
 import ..Toolkit: shape
 
-export Abelian, AbelianQuantumNumber, AbelianGradedSpace, AbelianGradedSpaceProd, AbelianGradedSpaceSum, CompositeAbelianQuantumNumber, Graded, Momenta, RepresentationSpace, SimpleAbelianQuantumNumber
+export Abelian, AbelianQuantumNumber, AbelianQuantumNumberProd, AbelianGradedSpace, AbelianGradedSpaceProd, AbelianGradedSpaceSum, Graded, Momenta, RepresentationSpace, SimpleAbelianQuantumNumber
 export Momentum, Momentum₁, Momentum₂, Momentum₃, ℕ, 𝕊ᶻ, 𝕌₁, ℤ, ℤ₂, ℤ₃, ℤ₄, findindex, period, periods, regularize, regularize!
 
 """
@@ -178,110 +178,110 @@ const ℤ₃ = ℤ{3}
 const ℤ₄ = ℤ{4}
 
 """
-    CompositeAbelianQuantumNumber{T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} <: AbelianQuantumNumber
+    AbelianQuantumNumberProd{T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} <: AbelianQuantumNumber
 
 Deligne tensor product of simple Abelian quantum numbers.
 """
-struct CompositeAbelianQuantumNumber{T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} <: AbelianQuantumNumber
+struct AbelianQuantumNumberProd{T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} <: AbelianQuantumNumber
     contents::T
 end
-@inline Base.values(qn::CompositeAbelianQuantumNumber) = map(values, qn.contents)
-@inline Base.show(io::IO, qn::CompositeAbelianQuantumNumber) = @printf io "Abelian[%s]%s" join(fieldtypes(fieldtype(typeof(qn), :contents)), " ⊠ ") values(qn)
-@inline Base.zero(::Type{CompositeAbelianQuantumNumber{T}}) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = CompositeAbelianQuantumNumber(map(zero,  fieldtypes(T)))
-@inline Base.length(qn::CompositeAbelianQuantumNumber) = rank(qn)
-@inline Base.firstindex(::CompositeAbelianQuantumNumber) = 1
-@inline Base.lastindex(qn::CompositeAbelianQuantumNumber) = length(qn)
-@inline Base.getindex(qn::CompositeAbelianQuantumNumber, i::Integer) = qn.contents[i]
-@inline periods(::Type{CompositeAbelianQuantumNumber{T}}) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = map(period, fieldtypes(T))
-@inline CompositeAbelianQuantumNumber(contents::SimpleAbelianQuantumNumber...) = CompositeAbelianQuantumNumber(contents)
+@inline Base.values(qn::AbelianQuantumNumberProd) = map(values, qn.contents)
+@inline Base.show(io::IO, qn::AbelianQuantumNumberProd) = @printf io "Abelian[%s]%s" join(fieldtypes(fieldtype(typeof(qn), :contents)), " ⊠ ") values(qn)
+@inline Base.zero(::Type{AbelianQuantumNumberProd{T}}) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = AbelianQuantumNumberProd(map(zero,  fieldtypes(T)))
+@inline Base.length(qn::AbelianQuantumNumberProd) = rank(qn)
+@inline Base.firstindex(::AbelianQuantumNumberProd) = 1
+@inline Base.lastindex(qn::AbelianQuantumNumberProd) = length(qn)
+@inline Base.getindex(qn::AbelianQuantumNumberProd, i::Integer) = qn.contents[i]
+@inline periods(::Type{AbelianQuantumNumberProd{T}}) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = map(period, fieldtypes(T))
+@inline AbelianQuantumNumberProd(contents::SimpleAbelianQuantumNumber...) = AbelianQuantumNumberProd(contents)
 
 """
-    CompositeAbelianQuantumNumber{T}(vs::Vararg{Number, N}) where {N, T<:NTuple{N, SimpleAbelianQuantumNumber}}
-    CompositeAbelianQuantumNumber{T}(vs::NTuple{N, Number}) where {N, T<:NTuple{N, SimpleAbelianQuantumNumber}}
+    AbelianQuantumNumberProd{T}(vs::Vararg{Number, N}) where {N, T<:NTuple{N, SimpleAbelianQuantumNumber}}
+    AbelianQuantumNumberProd{T}(vs::NTuple{N, Number}) where {N, T<:NTuple{N, SimpleAbelianQuantumNumber}}
 
 Construct a Deligne tensor product of simple Abelian quantum numbers by their values.
 """
-@inline CompositeAbelianQuantumNumber{T}(vs::Vararg{Number, N}) where {N, T<:NTuple{N, SimpleAbelianQuantumNumber}} = CompositeAbelianQuantumNumber{T}(vs)
-@inline CompositeAbelianQuantumNumber{T}(vs::NTuple{N, Number}) where {N, T<:NTuple{N, SimpleAbelianQuantumNumber}} = CompositeAbelianQuantumNumber(map((T, v)->T(v), fieldtypes(T), vs))
+@inline AbelianQuantumNumberProd{T}(vs::Vararg{Number, N}) where {N, T<:NTuple{N, SimpleAbelianQuantumNumber}} = AbelianQuantumNumberProd{T}(vs)
+@inline AbelianQuantumNumberProd{T}(vs::NTuple{N, Number}) where {N, T<:NTuple{N, SimpleAbelianQuantumNumber}} = AbelianQuantumNumberProd(map((T, v)->T(v), fieldtypes(T), vs))
 
 """
-    rank(qn::CompositeAbelianQuantumNumber) -> Int
-    rank(::Type{<:CompositeAbelianQuantumNumber}) -> Int
+    rank(qn::AbelianQuantumNumberProd) -> Int
+    rank(::Type{<:AbelianQuantumNumberProd}) -> Int
 
-Get the rank of a composite Abelian quantum number.
+Get the rank of a Deligne tensor product of simple Abelian quantum numbers.
 """
-@inline rank(qn::CompositeAbelianQuantumNumber) = rank(typeof(qn))
-@inline rank(::Type{<:CompositeAbelianQuantumNumber{T}}) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = fieldcount(T)
+@inline rank(qn::AbelianQuantumNumberProd) = rank(typeof(qn))
+@inline rank(::Type{<:AbelianQuantumNumberProd{T}}) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = fieldcount(T)
 
 """
-    period(qn::CompositeAbelianQuantumNumber, i::Integer) -> Number
-    period(::Type{CompositeAbelianQuantumNumber{T}}, i::Integer) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} -> Number
+    period(qn::AbelianQuantumNumberProd, i::Integer) -> Number
+    period(::Type{AbelianQuantumNumberProd{T}}, i::Integer) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} -> Number
 
 Get the period of the ith simple Abelian number contained in a Deligne tensor product.
 """
-@inline period(qn::CompositeAbelianQuantumNumber, i::Integer) = period(typeof(qn), i)
-@inline period(::Type{CompositeAbelianQuantumNumber{T}}, i::Integer) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = period(fieldtype(T, i))
+@inline period(qn::AbelianQuantumNumberProd, i::Integer) = period(typeof(qn), i)
+@inline period(::Type{AbelianQuantumNumberProd{T}}, i::Integer) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = period(fieldtype(T, i))
 
 """
-    +(qn₁::QN, qn₂::QN, qns::QN...) where {QN<:CompositeAbelianQuantumNumber} -> QN
+    +(qn₁::QN, qn₂::QN, qns::QN...) where {QN<:AbelianQuantumNumberProd} -> QN
 
-Overloaded `+` operator for `CompositeAbelianQuantumNumber`.
+Overloaded `+` operator for `AbelianQuantumNumberProd`.
 
 !!! note
-    To ensure type stability, two `CompositeAbelianQuantumNumber` can be added together if and only if they are of the same type.
+    To ensure type stability, two `AbelianQuantumNumberProd` can be added together if and only if they are of the same type.
 """
-@inline Base.:+(qn₁::QN, qn₂::QN, qns::QN...) where {QN<:CompositeAbelianQuantumNumber} = QN(mapreduce(values, .+, (qn₁, qn₂, qns...)))
+@inline Base.:+(qn₁::QN, qn₂::QN, qns::QN...) where {QN<:AbelianQuantumNumberProd} = QN(mapreduce(values, .+, (qn₁, qn₂, qns...)))
 
 """
-    -(qn::CompositeAbelianQuantumNumber) -> typeof(qn)
-    -(qn₁::QN, qn₂::QN) where {QN<:CompositeAbelianQuantumNumber} -> QN
+    -(qn::AbelianQuantumNumberProd) -> typeof(qn)
+    -(qn₁::QN, qn₂::QN) where {QN<:AbelianQuantumNumberProd} -> QN
 
-Overloaded `-` operator for `CompositeAbelianQuantumNumber`.
+Overloaded `-` operator for `AbelianQuantumNumberProd`.
 
 !!! note
-    To ensure type stability, a `CompositeAbelianQuantumNumber` can be subtracted by another `CompositeAbelianQuantumNumber` if and only if they are of the same type.
+    To ensure type stability, a `AbelianQuantumNumberProd` can be subtracted by another `AbelianQuantumNumberProd` if and only if they are of the same type.
 """
-@inline Base.:-(qn::CompositeAbelianQuantumNumber) = CompositeAbelianQuantumNumber(map(-, qn.contents))
-@inline Base.:-(qn₁::QN, qn₂::QN) where {QN<:CompositeAbelianQuantumNumber} = QN(map((i₁, i₂)->i₁-i₂, qn₁.contents, qn₂.contents))
+@inline Base.:-(qn::AbelianQuantumNumberProd) = AbelianQuantumNumberProd(map(-, qn.contents))
+@inline Base.:-(qn₁::QN, qn₂::QN) where {QN<:AbelianQuantumNumberProd} = QN(map((i₁, i₂)->i₁-i₂, qn₁.contents, qn₂.contents))
 
 """
-    ⊠(qns::SimpleAbelianQuantumNumber...) -> CompositeAbelianQuantumNumber
-    ⊠(qn₁::SimpleAbelianQuantumNumber, qn₂::CompositeAbelianQuantumNumber) -> CompositeAbelianQuantumNumber
-    ⊠(qn₁::CompositeAbelianQuantumNumber, qn₂::SimpleAbelianQuantumNumber) -> CompositeAbelianQuantumNumber
-    ⊠(qn₁::CompositeAbelianQuantumNumber, qn₂::CompositeAbelianQuantumNumber) -> CompositeAbelianQuantumNumber
+    ⊠(qns::SimpleAbelianQuantumNumber...) -> AbelianQuantumNumberProd
+    ⊠(qn₁::SimpleAbelianQuantumNumber, qn₂::AbelianQuantumNumberProd) -> AbelianQuantumNumberProd
+    ⊠(qn₁::AbelianQuantumNumberProd, qn₂::SimpleAbelianQuantumNumber) -> AbelianQuantumNumberProd
+    ⊠(qn₁::AbelianQuantumNumberProd, qn₂::AbelianQuantumNumberProd) -> AbelianQuantumNumberProd
 
 Deligne tensor product of Abelian quantum numbers.
 """
-@inline ⊠(qns::SimpleAbelianQuantumNumber...) = CompositeAbelianQuantumNumber(qns...)
-@inline ⊠(qn₁::SimpleAbelianQuantumNumber, qn₂::CompositeAbelianQuantumNumber) = CompositeAbelianQuantumNumber(qn₁, qn₂.contents...)
-@inline ⊠(qn₁::CompositeAbelianQuantumNumber, qn₂::SimpleAbelianQuantumNumber) = CompositeAbelianQuantumNumber(qn₁.contents..., qn₂)
-@inline ⊠(qn₁::CompositeAbelianQuantumNumber, qn₂::CompositeAbelianQuantumNumber) = CompositeAbelianQuantumNumber(qn₁.contents..., qn₂.contents...)
+@inline ⊠(qns::SimpleAbelianQuantumNumber...) = AbelianQuantumNumberProd(qns...)
+@inline ⊠(qn₁::SimpleAbelianQuantumNumber, qn₂::AbelianQuantumNumberProd) = AbelianQuantumNumberProd(qn₁, qn₂.contents...)
+@inline ⊠(qn₁::AbelianQuantumNumberProd, qn₂::SimpleAbelianQuantumNumber) = AbelianQuantumNumberProd(qn₁.contents..., qn₂)
+@inline ⊠(qn₁::AbelianQuantumNumberProd, qn₂::AbelianQuantumNumberProd) = AbelianQuantumNumberProd(qn₁.contents..., qn₂.contents...)
 
 """
-    ⊠(QNS::Type{<:SimpleAbelianQuantumNumber}...) -> Type{CompositeAbelianQuantumNumber{Tuple{QNS...}}}
-    ⊠(::Type{QN}, ::Type{CompositeAbelianQuantumNumber{T}}) where {QN<:SimpleAbelianQuantumNumber, T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} -> Type{CompositeAbelianQuantumNumber{Tuple{QN, fieldtypes(T)...}}}
-    ⊠(::Type{CompositeAbelianQuantumNumber{T}}, ::Type{QN}) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}, QN<:SimpleAbelianQuantumNumber} -> Type{CompositeAbelianQuantumNumber{Tuple{fieldtypes(T)...}, QN}}
-    ⊠(::Type{CompositeAbelianQuantumNumber{T₁}}, ::Type{CompositeAbelianQuantumNumber{T₂}}) where {T₁<:Tuple{Vararg{SimpleAbelianQuantumNumber}}, T₂<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} -> Type{CompositeAbelianQuantumNumber{Tuple{fieldtypes(T₁)..., fieldtypes(T₂)...}}}
+    ⊠(QNS::Type{<:SimpleAbelianQuantumNumber}...) -> Type{AbelianQuantumNumberProd{Tuple{QNS...}}}
+    ⊠(::Type{QN}, ::Type{AbelianQuantumNumberProd{T}}) where {QN<:SimpleAbelianQuantumNumber, T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} -> Type{AbelianQuantumNumberProd{Tuple{QN, fieldtypes(T)...}}}
+    ⊠(::Type{AbelianQuantumNumberProd{T}}, ::Type{QN}) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}, QN<:SimpleAbelianQuantumNumber} -> Type{AbelianQuantumNumberProd{Tuple{fieldtypes(T)...}, QN}}
+    ⊠(::Type{AbelianQuantumNumberProd{T₁}}, ::Type{AbelianQuantumNumberProd{T₂}}) where {T₁<:Tuple{Vararg{SimpleAbelianQuantumNumber}}, T₂<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} -> Type{AbelianQuantumNumberProd{Tuple{fieldtypes(T₁)..., fieldtypes(T₂)...}}}
 
 Deligne tensor product of Abelian quantum numbers.
 """
-@inline ⊠(QNS::Type{<:SimpleAbelianQuantumNumber}...) = CompositeAbelianQuantumNumber{Tuple{QNS...}}
-@inline ⊠(::Type{QN}, ::Type{CompositeAbelianQuantumNumber{T}}) where {QN<:SimpleAbelianQuantumNumber, T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = CompositeAbelianQuantumNumber{Tuple{QN, fieldtypes(T)...}}
-@inline ⊠(::Type{CompositeAbelianQuantumNumber{T}}, ::Type{QN}) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}, QN<:SimpleAbelianQuantumNumber} = CompositeAbelianQuantumNumber{Tuple{fieldtypes(T)..., QN}}
-@inline ⊠(::Type{CompositeAbelianQuantumNumber{T₁}}, ::Type{CompositeAbelianQuantumNumber{T₂}}) where {T₁<:Tuple{Vararg{SimpleAbelianQuantumNumber}}, T₂<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = CompositeAbelianQuantumNumber{Tuple{fieldtypes(T₁)..., fieldtypes(T₂)...}}
+@inline ⊠(QNS::Type{<:SimpleAbelianQuantumNumber}...) = AbelianQuantumNumberProd{Tuple{QNS...}}
+@inline ⊠(::Type{QN}, ::Type{AbelianQuantumNumberProd{T}}) where {QN<:SimpleAbelianQuantumNumber, T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = AbelianQuantumNumberProd{Tuple{QN, fieldtypes(T)...}}
+@inline ⊠(::Type{AbelianQuantumNumberProd{T}}, ::Type{QN}) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}, QN<:SimpleAbelianQuantumNumber} = AbelianQuantumNumberProd{Tuple{fieldtypes(T)..., QN}}
+@inline ⊠(::Type{AbelianQuantumNumberProd{T₁}}, ::Type{AbelianQuantumNumberProd{T₂}}) where {T₁<:Tuple{Vararg{SimpleAbelianQuantumNumber}}, T₂<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = AbelianQuantumNumberProd{Tuple{fieldtypes(T₁)..., fieldtypes(T₂)...}}
 
 """
-    const Momentum = CompositeAbelianQuantumNumber{<:Tuple{Vararg{ℤ}}}
-    const Momentum₁{N} = CompositeAbelianQuantumNumber{Tuple{ℤ{N}}}
-    const Momentum₂{N₁, N₂} = CompositeAbelianQuantumNumber{Tuple{ℤ{N₁}, ℤ{N₂}}}
-    const Momentum₃{N₁, N₂, N₃} = CompositeAbelianQuantumNumber{Tuple{ℤ{N₁}, ℤ{N₂}, ℤ{N₃}}}
+    const Momentum = AbelianQuantumNumberProd{<:Tuple{Vararg{ℤ}}}
+    const Momentum₁{N} = AbelianQuantumNumberProd{Tuple{ℤ{N}}}
+    const Momentum₂{N₁, N₂} = AbelianQuantumNumberProd{Tuple{ℤ{N₁}, ℤ{N₂}}}
+    const Momentum₃{N₁, N₂, N₃} = AbelianQuantumNumberProd{Tuple{ℤ{N₁}, ℤ{N₂}, ℤ{N₃}}}
 
 Type alias for the Abelian quantum numbers of 1d, 2d and 3d momentum.
 """
-const Momentum = CompositeAbelianQuantumNumber{<:Tuple{Vararg{ℤ}}}
-const Momentum₁{N} = CompositeAbelianQuantumNumber{Tuple{ℤ{N}}}
-const Momentum₂{N₁, N₂} = CompositeAbelianQuantumNumber{Tuple{ℤ{N₁}, ℤ{N₂}}}
-const Momentum₃{N₁, N₂, N₃} = CompositeAbelianQuantumNumber{Tuple{ℤ{N₁}, ℤ{N₂}, ℤ{N₃}}}
+const Momentum = AbelianQuantumNumberProd{<:Tuple{Vararg{ℤ}}}
+const Momentum₁{N} = AbelianQuantumNumberProd{Tuple{ℤ{N}}}
+const Momentum₂{N₁, N₂} = AbelianQuantumNumberProd{Tuple{ℤ{N₁}, ℤ{N₂}}}
+const Momentum₃{N₁, N₂, N₃} = AbelianQuantumNumberProd{Tuple{ℤ{N₁}, ℤ{N₂}, ℤ{N₃}}}
 @inline Int(m::Momentum₁) = m[1].charge + 1
 @inline Int(m::Momentum₂{N₁, N₂}) where {N₁, N₂} = m[2].charge + m[1].charge*N₂ + 1
 @inline Int(m::Momentum₃{N₁, N₂, N₃}) where {N₁, N₂, N₃} = (m[1].charge*N₂+m[2].charge)*N₃ + m[3].charge + 1
@@ -301,11 +301,11 @@ const Momentum₃{N₁, N₂, N₃} = CompositeAbelianQuantumNumber{Tuple{ℤ{N�
 
 Construct 1d, 2d and 3d momentum.
 """
-@inline Momentum₁{N}(k::Integer) where N = CompositeAbelianQuantumNumber(ℤ{N}(k))
+@inline Momentum₁{N}(k::Integer) where N = AbelianQuantumNumberProd(ℤ{N}(k))
 @inline Momentum₂{N}(k₁::Integer, k₂::Integer) where N = Momentum₂{N, N}(k₁, k₂)
-@inline Momentum₂{N₁, N₂}(k₁::Integer, k₂::Integer) where {N₁, N₂} = CompositeAbelianQuantumNumber(ℤ{N₁}(k₁), ℤ{N₂}(k₂))
+@inline Momentum₂{N₁, N₂}(k₁::Integer, k₂::Integer) where {N₁, N₂} = AbelianQuantumNumberProd(ℤ{N₁}(k₁), ℤ{N₂}(k₂))
 @inline Momentum₃{N}(k₁::Integer, k₂::Integer, k₃::Integer) where N =  Momentum₃{N, N, N}(k₁, k₂, k₃)
-@inline Momentum₃{N₁, N₂, N₃}(k₁::Integer, k₂::Integer, k₃::Integer) where {N₁, N₂, N₃} = CompositeAbelianQuantumNumber(ℤ{N₁}(k₁), ℤ{N₂}(k₂), ℤ{N₃}(k₃))
+@inline Momentum₃{N₁, N₂, N₃}(k₁::Integer, k₂::Integer, k₃::Integer) where {N₁, N₂, N₃} = AbelianQuantumNumberProd(ℤ{N₁}(k₁), ℤ{N₂}(k₂), ℤ{N₃}(k₃))
 
 """
     RepresentationSpace{QN<:AbelianQuantumNumber} <: VectorSpace{QN}

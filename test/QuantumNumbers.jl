@@ -22,7 +22,7 @@ using QuantumLattices.QuantumNumbers
     sz = 𝕊ᶻ(1/2)
     sp = n ⊠ sz
     @test values(sp) == (1, 1/2)
-    @test sp == Abelian[ℕ ⊠ 𝕊ᶻ](1, 1/2) == Abelian[ℕ ⊠ 𝕊ᶻ]((1, 1/2)) == CompositeAbelianQuantumNumber(n, sz)
+    @test sp == Abelian[ℕ ⊠ 𝕊ᶻ](1, 1/2) == Abelian[ℕ ⊠ 𝕊ᶻ]((1, 1/2)) == AbelianQuantumNumberProd(n, sz)
     @test hash(sp, UInt(1)) == hash((n.charge, sz.charge), UInt(1))
     @test string(sp) == "Abelian[ℕ ⊠ 𝕊ᶻ](1, 1/2)"
     @test zero(sp) == zero(typeof(sp)) == Abelian[ℕ ⊠ 𝕊ᶻ](0, 0)
