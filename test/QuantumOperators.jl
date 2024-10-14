@@ -1,11 +1,11 @@
 using LaTeXStrings: latexstring
 using LinearAlgebra: dot
 using Printf: @sprintf
-using QuantumLattices: add!, div!, dtype, mul!, id, rank, sub!, value
+using QuantumLattices: ⊗, add!, div!, dtype, mul!, id, rank, sub!, value
 using QuantumLattices.QuantumOperators
 using QuantumLattices.Toolkit: Float, contentnames, isparameterbound, parameternames, parametertype, subscript, superscript
 
-import QuantumLattices: ⊗, permute
+import QuantumLattices: permute
 import QuantumLattices.QuantumOperators: script
 
 struct AID{O<:Real, S<:Real} <: OperatorUnit
@@ -13,7 +13,6 @@ struct AID{O<:Real, S<:Real} <: OperatorUnit
     nambu::S
 end
 @inline Base.adjoint(id::AID) = AID(id.orbital, 3-id.nambu)
-@inline ⊗(m₁::Operator{<:Number, <:ID{AID}}, m₂::Operator{<:Number, <:ID{AID}}) = m₁ * m₂
 @inline script(id::AID, ::Val{:orbital}; kwargs...) = id.orbital
 @inline script(id::AID, ::Val{:nambu}; kwargs...) = id.nambu==2 ? "\\dagger" : ""
 latexformat(AID, LaTeX{(:nambu,), (:orbital,)}('c'))
@@ -160,7 +159,7 @@ end
     @test -opts == Operators(-opt₁, -opt₂)
     @test opts*2 == 2*opts == 2⊗opts == opts⊗2 == Operators(2opt₁, 2opt₂)
     @test opts/2 == Operators(opt₁/2, opt₂/2)
-    @test opts^2 == opts*opts == opts⊗opts == Operators(opt₁*opt₁, opt₁*opt₂, opt₂*opt₁, opt₂*opt₂)
+    @test opts^2 == opts*opts == Operators(opt₁*opt₁, opt₁*opt₂, opt₂*opt₁, opt₂*opt₂)
     @test opts+1 == 1+opts == Operators(Operator(1), opt₁, opt₂)
     @test 1-opts == Operators(Operator(1), -opt₁, -opt₂)
     @test opts-1 == Operators(opt₁, opt₂, Operator(-1))
@@ -170,8 +169,8 @@ end
     @test opts-opt₁ == Operators(opt₂)
     @test opt₁-opts == Operators(-opt₂)
     @test opts-opts == zero(opts) == zero(typeof(opts))
-    @test opts*opt == Operators(opt₁*opt, opt₂*opt) == opts⊗opt
-    @test opt*opts == Operators(opt*opt₁, opt*opt₂) == opt⊗opts
+    @test opts*opt == Operators(opt₁*opt, opt₂*opt)
+    @test opt*opts == Operators(opt*opt₁, opt*opt₂)
 end
 
 @testset "LaTeX" begin

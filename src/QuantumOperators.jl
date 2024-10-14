@@ -35,7 +35,6 @@ abstract type QuantumOperator <: Representation end
 @inline dot(m₁::QuantumOperator, m₂::QuantumOperator) = conj(m₁) * m₂
 @inline dot(m::QuantumOperator, c::Number) = conj(m) * c
 @inline dot(c::Number, m::QuantumOperator) = conj(c) * m
-@inline ⊗(m₁::QuantumOperator, m₂::QuantumOperator) = m₁ * m₂
 @inline ⊗(m::QuantumOperator, c::Number) = m * c
 @inline ⊗(c::Number, m::QuantumOperator) = c * m
 
