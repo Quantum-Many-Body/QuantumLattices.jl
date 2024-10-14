@@ -62,7 +62,6 @@ end
     @test contentnames(OperatorProd) == (:value, :id)
     @test parameternames(OperatorProd) == (:value, :id)
     @test isparameterbound(OperatorProd, :value, Any) == false
-    @test isparameterbound(OperatorProd, :id, ID{AID{Int, Int}, 2}) == false
 
     @test valtype(OperatorProd) == parametertype(OperatorProd, :value) == parametertype(OperatorProd, 1) == Any
     @test valtype(OperatorProd{Int}) == parametertype(OperatorProd{Int}, :value) == parametertype(OperatorProd{Int}, 1) == Int

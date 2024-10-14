@@ -526,12 +526,19 @@ The result is stored in the type parameters of a `Pair`.
 """
     isparameterbound(::Type{T}, i::Integer, D) where T -> Bool
     isparameterbound(::Type{T}, name::Symbol, D) where T -> Bool
-    isparameterbound(::Type{}, ::Val{}, ::Any) -> Bool
 
 For a type `T`, judge whether a type `D` should be considered as the upper bound of one of its type parameters.
+
+!!! note
+    The default implementations of this function is
+    ```julia
+    isparameterbound(::Type{}, ::Val{}, ::Type{D}) where D = !isconcretetype(D)
+    isparameterbound(::Type{}, ::Val{}, ::Any) = false
+    ```
 """
 @inline isparameterbound(::Type{T}, i::Integer, D) where T = isparameterbound(T, Val(i), D)
 @inline isparameterbound(::Type{T}, name::Symbol, D) where T = isparameterbound(T, Val(name), D)
+@inline isparameterbound(::Type{}, ::Val{}, ::Type{D}) where D = !isconcretetype(D)
 @inline isparameterbound(::Type{}, ::Val{}, ::Any) = false
 
 """

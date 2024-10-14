@@ -161,7 +161,6 @@ abstract type OperatorPack{V, I} <: QuantumOperator end
 @inline contentnames(::Type{<:OperatorPack}) = (:value, :id)
 @inline parameternames(::Type{<:OperatorPack}) = (:value, :id)
 @inline isparameterbound(::Type{<:OperatorPack}, ::Val{:value}, ::Type{V}) where V = false
-@inline isparameterbound(::Type{<:OperatorPack}, ::Val{:id}, ::Type{I}) where I = !isconcretetype(I)
 @inline isscalartype(::Type{<:OperatorPack}) = false
 @inline function Base.promote_rule(::Type{M₁}, ::Type{M₂}) where {M₁<:OperatorPack, M₂<:OperatorPack}
     M₁<:M₂ && return M₂

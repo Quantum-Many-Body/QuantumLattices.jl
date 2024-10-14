@@ -152,7 +152,7 @@ end
 
 abstract type FT{T} end
 @inline parameternames(::Type{<:FT}) = (:content,)
-@inline isparameterbound(::Type{<:FT}, ::Val{:content}, D) = !isconcretetype(D)
+@inline isparameterbound(::Type{<:FT}, ::Val{:content}, ::Type{D}) where D = !isconcretetype(D)
 @inline contentnames(::Type{<:FT}) = (:content,)
 @inline dissolve(m::FT, ::Val{:content}, f::Function, args...; kwargs...) = f(getcontent(m, :content), args...; kwargs...)
 
@@ -193,9 +193,6 @@ end
     @test parametertype(Vector{<:Real}, 1) == Real
     @test parametertype(Vector{<:Real}, 2) == 1
     @test parametertypes(Vector{<:Real}) == Tuple{Real, 1}
-    @test isparameterbound(Vector, 1, Real) == false
-    @test isparameterbound(Vector, 2, 1) == false
-    @test isparameterbounds(Vector{<:Real}, Tuple{Real, 1}) == (false, false)
     @test reparameter(Vector, 1, Real, true) == Vector{<:Real}
     @test reparameter(Vector, 1, Real, false) ==  Vector{Real}
     @test reparameter(Vector{Int}, 2, 3, false) == Array{Int, 3}
@@ -216,9 +213,9 @@ end
     @test parametertype(FT{Vector}, 1) == parametertype(FT{<:Vector}, :content) == Vector
     @test parametertype(FT{Vector{Int}}, 1) == parametertype(FT{Vector{Int}}, :content) == Vector{Int}
     @test parameterpair(FT{Vector}, :content) == parameterpair(FT{Vector}, 1) == Pair{:content, Vector}
-    @test isparameterbound(FT, :nocotent, Vector) == false
     @test isparameterbound(FT, :content, Vector) == true
     @test isparameterbound(FT, :content, Vector{Int}) == false
+    @test isparameterbound(FT, :content, 1) == false
     @test hasparameter(FT, :content) == true
 
     @test parameternames(FT) == (:content,)
