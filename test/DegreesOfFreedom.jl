@@ -301,7 +301,7 @@ end
 
 @testset "Coupling" begin
     tc = Coupling(:, DID, (2,))
-    @test tc == Coupling(1, :, DID, (2,)) == Coupling(𝕕(:, 2)) == Coupling(:, 𝕕, (2,)) == Coupling(1, :, 𝕕, (2,))
+    @test tc == Coupling(tc.pattern) == Coupling(1, :, DID, (2,)) == Coupling(𝕕(:, 2)) == Coupling(:, 𝕕, (2,)) == Coupling(1, :, 𝕕, (2,))
     @test id(tc) == tc.pattern
     @test length(tc) == length(typeof(tc)) == 1
     @test eltype(tc) == eltype(typeof(tc)) == typeof(tc)

@@ -1063,6 +1063,14 @@ end
 @inline Base.show(io::IO, coupling::Coupling) = @printf io "%s%s" (coupling.value≈1 ? "" : coupling.value≈-1 ? "- " : string(tostr(coupling.value), " ")) coupling.pattern
 
 """
+    Coupling(value, pattern::Pattern)
+    Coupling(pattern::Pattern)
+
+Construct a coupling.
+"""
+@inline Coupling(pattern::Pattern) = Coupling(1, pattern)
+
+"""
     Coupling(indexes::Index...)
     Coupling(value, indexes::Index...)
     Coupling(value, indexes::Tuple{Vararg{Index}})
