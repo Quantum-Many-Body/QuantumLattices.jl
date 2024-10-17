@@ -186,6 +186,7 @@ end
     @test script(aid, latex, Val(:BD)) == 'd'
     @test script(aid, latex, Val(:SP)) == ("\\dagger",)
     @test script(aid, latex, Val(:SB)) == (1,)
+    @test script(aid, Val(:spin)) == ""
     @test latexstring(aid) == "d^{\\dagger}_{1}"
 
     opt = Operator(1.0, AID(2, 2), AID(1, 1))

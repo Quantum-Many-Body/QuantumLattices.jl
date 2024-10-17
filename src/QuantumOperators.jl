@@ -801,6 +801,13 @@ Get the body/superscript/subscript of the LaTeX string representation of an oper
 @inline @generated script(u::OperatorUnit, l::LaTeX, ::Val{:SB}) = Expr(:tuple, [:(script(u, Val($sub); l.options...)) for sub in QuoteNode.(l|>subscript)]...)
 
 """
+    script(u::OperatorUnit, ::Val{}; kwargs...) -> String
+
+Default script for an operator unit, which always return an empty string.
+"""
+@inline script(u::OperatorUnit, ::Val{}; kwargs...) = ""
+
+"""
     latexstring(u::OperatorUnit) -> String
 
 LaTeX string representation of an operator unit.
