@@ -33,6 +33,10 @@ function Base.angle(id::CoordinatedIndex{Index{DID{Int}, Int}}, vectors::Abstrac
     return (id.index.internal.nambu == 1) ? phase : -phase
 end
 @inline indextype(::Type{DID}, ::Type{T}) where {T<:Union{Int, Symbol, Colon}} = DID{T}
+@inline 𝕕(nambu::Union{Int, Symbol, Colon}) = DID(nambu)
+@inline 𝕕(site::Union{Int, Ordinal, Colon}, nambu::Union{Int, Symbol, Colon}) = Index(site, DID(nambu))
+@inline 𝕕(site::Union{Int, Ordinal, Colon}, nambu::Union{Int, Symbol, Colon}, rcoordinate, icoordinate) = CoordinatedIndex(Index(site, DID(nambu)), rcoordinate, icoordinate)
+@inline Base.getindex(::Type{AbstractIndex}, ::Type{D}) where {D<:Union{DID, Index{<:DID}, CoordinatedIndex{<:Index{<:DID}}}} = 𝕕
 
 struct DFock <: SimpleInternal{DID{Int}}
     nnambu::Int
@@ -50,18 +54,18 @@ latexformat(Index{<:DID, <:Union{Int, Ordinal, Colon}}, LaTeX{(), (:site, :nambu
 latexformat(DID, LaTeX{(), (:nambu,)}('d'))
 
 @testset "InternalIndex" begin
-    did = DID(1)
+    did = 𝕕(1)
     @test statistics(did) == statistics(typeof(did)) == :f
     @test isdefinite(did) == isdefinite(typeof(did)) == true
-    @test isdefinite(DID(:a)) == isdefinite(DID{Symbol}) == false
+    @test isdefinite(𝕕(:a)) == isdefinite(DID{Symbol}) == false
 
-    did₁, did₂ = DID(1), DID(2)
+    did₁, did₂ = 𝕕(1), 𝕕(2)
     ciid = InternalIndexProd(did₁, did₂)
-    @test string(ciid) == "DID(1) ⊗ DID(2)"
+    @test string(ciid) == "𝕕(1) ⊗ 𝕕(2)"
     @test length(ciid) == rank(ciid) == rank(typeof(ciid)) == 2
     @test ciid[1]==ciid[begin]==did₁ && ciid[2]==ciid[end]==did₂
     @test ciid[2:2] == InternalIndexProd(did₂)
-    @test ciid.contents==(DID(1), DID(2)) && ciid.nambus==(1, 2)
+    @test ciid.contents==(𝕕(1), 𝕕(2)) && ciid.nambus==(1, 2)
     @test isdefinite(ciid)
     @test did₁⊗did₂ == ciid
     @test did₁⊗ciid == InternalIndexProd(did₁, did₁, did₂)
@@ -72,11 +76,11 @@ end
 @testset "SimpleInternal" begin
     it = DFock(2)
     @test string(it) == "DFock(nnambu=2)"
-    @test collect(it) == [DID(1), DID(2)]
+    @test collect(it) == [𝕕(1), 𝕕(2)]
     @test statistics(it) == statistics(typeof(it)) == :f
-    @test match(DID(1), it) && match(DID, it) && match(DID(1), DFock) && match(DID, DFock)
-    @test filter(DID(1), it) == filter(DID, it) == it
-    @test filter(DID(1), DFock) == filter(DID, DFock) == DFock
+    @test match(𝕕(1), it) && match(DID, it) && match(𝕕(1), DFock) && match(DID, DFock)
+    @test filter(𝕕(1), it) == filter(DID, it) == it
+    @test filter(𝕕(1), DFock) == filter(DID, DFock) == DFock
 end
 
 @testset "CompositeInternal" begin
@@ -91,8 +95,8 @@ end
     @test it₁⊕ci == InternalSum(it₁, it₁, it₂)
     @test ci⊕it₁ == InternalSum(it₁, it₂, it₁)
     @test ci⊕ci == InternalSum(it₁, it₂, it₁, it₂)
-    @test filter(DID(1), ci) == filter(DID, ci) == ci
-    @test filter(DID(1), typeof(ci)) == filter(DID, typeof(ci)) == typeof(ci)
+    @test filter(𝕕(1), ci) == filter(DID, ci) == ci
+    @test filter(𝕕(1), typeof(ci)) == filter(DID, typeof(ci)) == typeof(ci)
 
     ci = InternalProd(it₁, it₂)
     @test eltype(ci) == eltype(typeof(ci)) == InternalIndexProd{Tuple{DID{Int}, DID{Int}}}
@@ -103,60 +107,60 @@ end
     @test it₁⊗ci == InternalProd(it₁, it₁, it₂)
     @test ci⊗it₁ == InternalProd(it₁, it₂, it₁)
     @test ci⊗ci == InternalProd(it₁, it₂, it₁, it₂)
-    @test filter(DID(1), ci) == filter(DID, ci) == ci
-    @test filter(DID(1), typeof(ci)) == filter(DID, typeof(ci)) == typeof(ci)
+    @test filter(𝕕(1), ci) == filter(DID, ci) == ci
+    @test filter(𝕕(1), typeof(ci)) == filter(DID, typeof(ci)) == typeof(ci)
 end
 
 @testset "ConstrainedInternal" begin
     allequal = AllEqual(DID{Int})
     @test string(allequal) == "AllEqual()"
-    @test allequal(DID(1) ⊗ DID(1)) && allequal(DID(1) ⊗ DID(2))
+    @test allequal(𝕕(1) ⊗ 𝕕(1)) && allequal(𝕕(1) ⊗ 𝕕(2))
 
     allequal = AllEqual(DID{Colon})
     @test string(allequal) == "AllEqual(:nambu)"
-    @test allequal(DID(1) ⊗ DID(1)) && !allequal(DID(1) ⊗ DID(2))
+    @test allequal(𝕕(1) ⊗ 𝕕(1)) && !allequal(𝕕(1) ⊗ 𝕕(2))
 
-    pattern = InternalPattern(DID(:)⊗DID(:), allequal, "AllEqual(:nambu)")
-    @test pattern == InternalPattern(DID(:)⊗DID(:))
-    @test isequal(pattern, InternalPattern(DID(:)⊗DID(:)))
-    @test hash(pattern, UInt(8)) == hash((2, DID(:), DID(:), "AllEqual(:nambu)"), UInt(8))
-    @test string(pattern) == "∑[DID(:) DID(:)]"
+    pattern = InternalPattern(𝕕(:)⊗𝕕(:), allequal, "AllEqual(:nambu)")
+    @test pattern == InternalPattern(𝕕(:)⊗𝕕(:))
+    @test isequal(pattern, InternalPattern(𝕕(:)⊗𝕕(:)))
+    @test hash(pattern, UInt(8)) == hash((2, 𝕕(:), 𝕕(:), "AllEqual(:nambu)"), UInt(8))
+    @test string(pattern) == "∑[𝕕(:) 𝕕(:)]"
     @test partition(pattern) == partition(typeof(pattern)) == (2,)
     @test rank(pattern) == rank(typeof(pattern)) == 2
     @test rank(pattern, 1) == rank(typeof(pattern), 1) == 2
-    @test match(pattern, DID(1)⊗DID(1)) && !match(pattern, DID(1)⊗DID(2))
+    @test match(pattern, 𝕕(1)⊗𝕕(1)) && !match(pattern, 𝕕(1)⊗𝕕(2))
     @test latexstring(pattern) == "\\sum_{} d^{}_{:} d^{}_{:}"
 
     another = pattern ⊗ pattern
-    @test string(another) == "∑[DID(:) DID(:)] ⊗ ∑[DID(:) DID(:)]"
+    @test string(another) == "∑[𝕕(:) 𝕕(:)] ⊗ ∑[𝕕(:) 𝕕(:)]"
     @test partition(another) == partition(typeof(another)) == (2, 2)
     @test rank(another) == rank(typeof(another)) == 4
     @test rank(another, 1) == rank(typeof(another), 1) == 2
     @test rank(another, 2) == rank(typeof(another), 2) == 2
-    @test match(another, DID(1)⊗DID(1)⊗DID(2)⊗DID(2)) && !match(another, DID(1)⊗DID(1)⊗DID(2)⊗DID(1))
+    @test match(another, 𝕕(1)⊗𝕕(1)⊗𝕕(2)⊗𝕕(2)) && !match(another, 𝕕(1)⊗𝕕(1)⊗𝕕(2)⊗𝕕(1))
     @test latexstring(another) == "\\sum_{} d^{}_{:} d^{}_{:} \\cdot \\sum_{} d^{}_{:} d^{}_{:}"
 
-    pattern = InternalPattern(DID(:a)⊗DID(:b), index->index[1].nambu<index[2].nambu, "a < b")
-    @test string(pattern) == "∑[DID(a) DID(b)](a < b)"
-    @test match(pattern, DID(1)⊗DID(2)) && !match(pattern, DID(2)⊗DID(1))
+    pattern = InternalPattern(𝕕(:a)⊗𝕕(:b), index->index[1].nambu<index[2].nambu, "a < b")
+    @test string(pattern) == "∑[𝕕(a) 𝕕(b)](a < b)"
+    @test match(pattern, 𝕕(1)⊗𝕕(2)) && !match(pattern, 𝕕(2)⊗𝕕(1))
     @test latexstring(pattern) == "\\sum_{a < b} d^{}_{a} d^{}_{b}"
 
     another = pattern ⊗ pattern
-    @test string(another) == "∑[DID(a) DID(b)](a < b) ⊗ ∑[DID(a) DID(b)](a < b)"
-    @test match(another, DID(1)⊗DID(2)⊗DID(3)⊗DID(4)) && !match(another, DID(2)⊗DID(1)⊗DID(3)⊗DID(4)) && !match(another, DID(1)⊗DID(2)⊗DID(4)⊗DID(3))
+    @test string(another) == "∑[𝕕(a) 𝕕(b)](a < b) ⊗ ∑[𝕕(a) 𝕕(b)](a < b)"
+    @test match(another, 𝕕(1)⊗𝕕(2)⊗𝕕(3)⊗𝕕(4)) && !match(another, 𝕕(2)⊗𝕕(1)⊗𝕕(3)⊗𝕕(4)) && !match(another, 𝕕(1)⊗𝕕(2)⊗𝕕(4)⊗𝕕(3))
     @test latexstring(another) == "\\sum_{a < b} d^{}_{a} d^{}_{b} \\cdot \\sum_{a < b} d^{}_{a} d^{}_{b}"
 
-    con = ConstrainedInternal(DFock(2), InternalPattern(DID(:)))
+    con = ConstrainedInternal(DFock(2), InternalPattern(𝕕(:)))
     @test eltype(con) == eltype(typeof(con)) == InternalIndexProd{Tuple{DID{Int}}}
-    @test collect(con) == InternalIndexProd.([DID(1), DID(2)])
+    @test collect(con) == InternalIndexProd.([𝕕(1), 𝕕(2)])
 
-    con = ConstrainedInternal(DFock(2)⊗DFock(2), InternalPattern(DID(:)⊗DID(:)))
+    con = ConstrainedInternal(DFock(2)⊗DFock(2), InternalPattern(𝕕(:)⊗𝕕(:)))
     @test eltype(con) == eltype(typeof(con)) == InternalIndexProd{Tuple{DID{Int}, DID{Int}}}
-    @test collect(con) == [DID(1)⊗DID(1), DID(2)⊗DID(2)]
+    @test collect(con) == [𝕕(1)⊗𝕕(1), 𝕕(2)⊗𝕕(2)]
 
-    con = ConstrainedInternal(DFock(2)⊗DFock(2)⊗DFock(2)⊗DFock(2), InternalPattern(DID(:)⊗DID(:))⊗InternalPattern(DID(:)⊗DID(:)))
+    con = ConstrainedInternal(DFock(2)⊗DFock(2)⊗DFock(2)⊗DFock(2), InternalPattern(𝕕(:)⊗𝕕(:))⊗InternalPattern(𝕕(:)⊗𝕕(:)))
     @test eltype(con) == eltype(typeof(con)) == InternalIndexProd{Tuple{DID{Int}, DID{Int}, DID{Int}, DID{Int}}}
-    @test collect(con) == [DID(1)⊗DID(1)⊗DID(1)⊗DID(1), DID(2)⊗DID(2)⊗DID(1)⊗DID(1), DID(1)⊗DID(1)⊗DID(2)⊗DID(2), DID(2)⊗DID(2)⊗DID(2)⊗DID(2)]
+    @test collect(con) == [𝕕(1)⊗𝕕(1)⊗𝕕(1)⊗𝕕(1), 𝕕(2)⊗𝕕(2)⊗𝕕(1)⊗𝕕(1), 𝕕(1)⊗𝕕(1)⊗𝕕(2)⊗𝕕(2), 𝕕(2)⊗𝕕(2)⊗𝕕(2)⊗𝕕(2)]
 end
 
 @testset "Index" begin
@@ -167,29 +171,29 @@ end
 
     @test parameternames(Index) == (:internal, :site)
 
-    index = Index(4, DID(1))
+    index = Index(4, 𝕕(1))
     @test indextype(index) == indextype(typeof(index)) == DID{Int}
-    @test index' == Index{DID}(4, 2)
+    @test index' == 𝕕(4, 2)
     @test statistics(index) == statistics(typeof(index)) == :f
     @test ishermitian(ID(index', index)) == true
     @test ishermitian(ID(index, index)) == false
     @test isdefinite(index) == isdefinite(typeof(index)) == true
     @test isdefinite((index, index)) == isdefinite(typeof((index, index))) == true
 
-    @test string(Index{DID}(:, 2)) == "Index{DID}(:, 2)"
-    @test string(Index{DID}(1ˢᵗ, 2)) == "Index{DID}(1ˢᵗ, 2)"
-    @test string(Index{DID}(2ⁿᵈ, 2)) == "Index{DID}(2ⁿᵈ, 2)"
-    @test string(Index{DID}(3ʳᵈ, 2)) == "Index{DID}(3ʳᵈ, 2)"
-    @test string(Index{DID}(4ᵗʰ, 2)) == "Index{DID}(4ᵗʰ, 2)"
+    @test string(𝕕(:, 2)) == "𝕕(:, 2)"
+    @test string(𝕕(1ˢᵗ, 2)) == "𝕕(1ˢᵗ, 2)"
+    @test string(𝕕(2ⁿᵈ, 2)) == "𝕕(2ⁿᵈ, 2)"
+    @test string(𝕕(3ʳᵈ, 2)) == "𝕕(3ʳᵈ, 2)"
+    @test string(𝕕(4ᵗʰ, 2)) == "𝕕(4ᵗʰ, 2)"
 
-    @test script(Index{DID}(1, 2), Val(:site)) == "1"
-    @test script(Index{DID}(:, 2), Val(:site)) == ":"
-    @test script(Index{DID}(1, 2), Val(:nambu)) == "2"
+    @test script(𝕕(1, 2), Val(:site)) == "1"
+    @test script(𝕕(:, 2), Val(:site)) == ":"
+    @test script(𝕕(1, 2), Val(:nambu)) == "2"
 
-    index₁, index₂ = Index{DID}(1, 2), Index{DID}(1, 1)
+    index₁, index₂ = 𝕕(1, 2), 𝕕(1, 1)
     @test permute(index₁, index₂) == (Operator(1), Operator(-1, index₂, index₁))
 
-    index₁, index₂ = Index{DID}(1, 2), Index{DID}(2, 2)
+    index₁, index₂ = 𝕕(1, 2), 𝕕(2, 2)
     @test permute(index₁, index₂) == (Operator(-1, index₂, index₁),)
 
     @test indextype(DFock) == Index{DID{Int}, Int}
@@ -202,41 +206,38 @@ end
     @test contentnames(CoordinatedIndex) == (:index, :rcoordinate, :icoordinate)
     @test parameternames(CoordinatedIndex) == (:index, :coordination)
 
-    index = CoordinatedIndex(Index{DID}(1, 1), [0.0, -0.0], [0.0, 0.0])
+    index = 𝕕(1, 1, [0.0, -0.0], [0.0, 0.0])
     @test indextype(index) == indextype(typeof(index)) == Index{DID{Int}, Int}
     @test statistics(index) == statistics(typeof(index)) == :f
-    @test hash(index, UInt(1)) == hash(CoordinatedIndex(Index{DID}(1, 1), SVector(0.0, 0.0), SVector(0.0, 1.0)), UInt(1))
+    @test hash(index, UInt(1)) == hash(CoordinatedIndex(𝕕(1, 1), SVector(0.0, 0.0), SVector(0.0, 1.0)), UInt(1))
     @test propertynames(ID(index)) == (:indexes, :rcoordinates, :icoordinates)
-    @test string(index) == "CoordinatedIndex(Index{DID}(1, 1), [0.0, 0.0], [0.0, 0.0])"
-    @test index' == CoordinatedIndex(Index{DID}(1, 2), rcoordinate=SVector(0.0, 0.0), icoordinate=SVector(0.0, 0.0))
+    @test string(index) == "𝕕(1, 1, [0.0, 0.0], [0.0, 0.0])"
+    @test index' == CoordinatedIndex(𝕕(1, 2), rcoordinate=SVector(0.0, 0.0), icoordinate=SVector(0.0, 0.0))
     @test ID(index', index)' == ID(index', index)
     @test ishermitian(ID(index', index)) && !ishermitian(ID(index, index))
 
-    index = CoordinatedIndex(Index{DID}(1, 2), SVector(0.0, 0.0), SVector(1.0, 0.0))
+    index = 𝕕(1, 2, SVector(0.0, 0.0), SVector(1.0, 0.0))
     @test script(index, Val(:rcoordinate)) == "[0.0, 0.0]"
     @test script(index, Val(:icoordinate)) == "[1.0, 0.0]"
     @test script(index, Val(:integercoordinate); vectors=(SVector(1.0, 0.0), SVector(0.0, 1.0))) == "[1, 0]"
     @test script(index, Val(:site)) == "1"
     @test script(index, Val(:nambu)) == "2"
 
-    index₁ = CoordinatedIndex(Index{DID}(1, 1), (1.0, 0.0), (0.0, 0.0))
-    index₂ = CoordinatedIndex(Index{DID}(1, 1), (2.0, 0.0), (0.0, 0.0))
+    index₁ = 𝕕(1, 1, (1.0, 0.0), (0.0, 0.0))
+    index₂ = 𝕕(1, 1, (2.0, 0.0), (0.0, 0.0))
     @test permute(index₁, index₂) == (Operator(-1, index₂, index₁),)
 
-    index₁ = CoordinatedIndex(Index{DID}(1, 1), (1.0, 0.0), (0.0, 0.0))
-    index₂ = CoordinatedIndex(Index{DID}(1, 2), (1.0, 0.0), (0.0, 0.0))
+    index₁ = 𝕕(1, 1, (1.0, 0.0), (0.0, 0.0))
+    index₂ = 𝕕(1, 2, (1.0, 0.0), (0.0, 0.0))
     @test permute(index₁, index₂) == (Operator(1), Operator(-1, index₂, index₁),)
 
     @test indextype(DFock, Point{2, Float}) == CoordinatedIndex{Index{DID{Int}, Int}, SVector{2, Float}}
 
-    op = Operator(1.0,
-        CoordinatedIndex(Index{DID}(1, 2), SVector(0.5, 0.5), SVector(1.0, 1.0)),
-        CoordinatedIndex(Index{DID}(1, 1), SVector(0.0, 0.5), SVector(0.0, 1.0))
-        )
+    op = Operator(1.0, 𝕕(1, 2, SVector(0.5, 0.5), SVector(1.0, 1.0)), 𝕕(1, 1, SVector(0.0, 0.5), SVector(0.0, 1.0)))
     @test rcoordinate(op) == SVector(-0.5, 0.0)
     @test icoordinate(op) == SVector(-1.0, 0.0)
 
-    op = Operator(1.0, CoordinatedIndex(Index{DID}(1, 2), SVector(0.5, 0.0), SVector(1.0, 0.0)))
+    op = Operator(1.0, 𝕕(1, 2, SVector(0.5, 0.0), SVector(1.0, 0.0)))
     @test rcoordinate(op) == SVector(0.5, 0.0)
     @test icoordinate(op) == SVector(1.0, 0.0)
 end
@@ -254,43 +255,43 @@ end
 @testset "Pattern" begin
     @test parameternames(Pattern) == (:sites, :internal)
 
-    pattern = @pattern(Index(1ˢᵗ, DID(a)), Index(1ˢᵗ, DID(a)), Index(2ⁿᵈ, DID(b)), Index(2ⁿᵈ, DID(b)))
-    @test pattern == @pattern(Index{DID}(1ˢᵗ, a), Index{DID}(1ˢᵗ, a), Index{DID}(2ⁿᵈ, b), Index{DID}(2ⁿᵈ, b))
-    @test isequal(pattern, @pattern(Index{DID}(1ˢᵗ, a), Index{DID}(1ˢᵗ, a), Index{DID}(2ⁿᵈ, b), Index{DID}(2ⁿᵈ, b)))
+    pattern = @pattern(Index(1ˢᵗ, 𝕕(a)), Index(1ˢᵗ, 𝕕(a)), Index(2ⁿᵈ, 𝕕(b)), Index(2ⁿᵈ, 𝕕(b)))
+    @test pattern == @pattern(𝕕(1ˢᵗ, a), 𝕕(1ˢᵗ, a), 𝕕(2ⁿᵈ, b), 𝕕(2ⁿᵈ, b))
+    @test isequal(pattern, @pattern(𝕕(1ˢᵗ, a), 𝕕(1ˢᵗ, a), 𝕕(2ⁿᵈ, b), 𝕕(2ⁿᵈ, b)))
     @test hash(pattern, UInt(8)) == hash((pattern.sites, pattern.internal), UInt(8))
-    @test string(pattern) == "∑[Index{DID}(1ˢᵗ, a) Index{DID}(1ˢᵗ, a) Index{DID}(2ⁿᵈ, b) Index{DID}(2ⁿᵈ, b)]"
+    @test string(pattern) == "∑[𝕕(1ˢᵗ, a) 𝕕(1ˢᵗ, a) 𝕕(2ⁿᵈ, b) 𝕕(2ⁿᵈ, b)]"
     @test rank(pattern) == rank(typeof(pattern)) == 4
     @test latexstring(pattern) == "\\sum_{} d^{}_{1ˢᵗ,\\,a} d^{}_{1ˢᵗ,\\,a} d^{}_{2ⁿᵈ,\\,b} d^{}_{2ⁿᵈ,\\,b}"
-    @test match(pattern.internal, DID(3)⊗DID(3)⊗DID(1)⊗DID(1))
-    @test !match(pattern.internal, DID(3)⊗DID(3)⊗DID(1)⊗DID(2))
-    @test !match(pattern.internal, DID(3)⊗DID(1)⊗DID(2)⊗DID(2))
+    @test match(pattern.internal, 𝕕(3)⊗𝕕(3)⊗𝕕(1)⊗𝕕(1))
+    @test !match(pattern.internal, 𝕕(3)⊗𝕕(3)⊗𝕕(1)⊗𝕕(2))
+    @test !match(pattern.internal, 𝕕(3)⊗𝕕(1)⊗𝕕(2)⊗𝕕(2))
 
-    pattern = @pattern(Index{DID}(1ˢᵗ, 1), Index{DID}(1ˢᵗ, a), Index{DID}(2ⁿᵈ, 2), Index{DID}(2ⁿᵈ, b); constraint=a<b)
-    @test string(pattern) == "∑[Index{DID}(1ˢᵗ, 1) Index{DID}(1ˢᵗ, a) Index{DID}(2ⁿᵈ, 2) Index{DID}(2ⁿᵈ, b)](a < b)"
+    pattern = @pattern(𝕕(1ˢᵗ, 1), 𝕕(1ˢᵗ, a), 𝕕(2ⁿᵈ, 2), 𝕕(2ⁿᵈ, b); constraint=a<b)
+    @test string(pattern) == "∑[𝕕(1ˢᵗ, 1) 𝕕(1ˢᵗ, a) 𝕕(2ⁿᵈ, 2) 𝕕(2ⁿᵈ, b)](a < b)"
     @test latexstring(pattern) == "\\sum_{a < b} d^{}_{1ˢᵗ,\\,1} d^{}_{1ˢᵗ,\\,a} d^{}_{2ⁿᵈ,\\,2} d^{}_{2ⁿᵈ,\\,b}"
-    @test match(pattern.internal, DID(1)⊗DID(3)⊗DID(2)⊗DID(4))
-    @test !match(pattern.internal, DID(10)⊗DID(3)⊗DID(2)⊗DID(4))
-    @test !match(pattern.internal, DID(1)⊗DID(3)⊗DID(2)⊗DID(3))
-    @test !match(pattern.internal, DID(1)⊗DID(3)⊗DID(4)⊗DID(5))
+    @test match(pattern.internal, 𝕕(1)⊗𝕕(3)⊗𝕕(2)⊗𝕕(4))
+    @test !match(pattern.internal, 𝕕(10)⊗𝕕(3)⊗𝕕(2)⊗𝕕(4))
+    @test !match(pattern.internal, 𝕕(1)⊗𝕕(3)⊗𝕕(2)⊗𝕕(3))
+    @test !match(pattern.internal, 𝕕(1)⊗𝕕(3)⊗𝕕(4)⊗𝕕(5))
 
-    pattern = Pattern(Index{DID}(1ˢᵗ, :), Index{DID}(1ˢᵗ, :))
-    @test string(pattern) == "∑[Index{DID}(1ˢᵗ, :) Index{DID}(1ˢᵗ, :)]"
+    pattern = Pattern(𝕕(1ˢᵗ, :), 𝕕(1ˢᵗ, :))
+    @test string(pattern) == "∑[𝕕(1ˢᵗ, :) 𝕕(1ˢᵗ, :)]"
     @test latexstring(pattern) == "\\sum_{} d^{}_{1ˢᵗ,\\,:} d^{}_{1ˢᵗ,\\,:}"
-    @test match(pattern.internal, DID(1)⊗DID(1))
-    @test !match(pattern.internal, DID(1)⊗DID(3))
+    @test match(pattern.internal, 𝕕(1)⊗𝕕(1))
+    @test !match(pattern.internal, 𝕕(1)⊗𝕕(3))
 
     another = pattern ⊗ pattern
-    @test string(another) == "∑[Index{DID}(1ˢᵗ, :) Index{DID}(1ˢᵗ, :)] ⊗ ∑[Index{DID}(1ˢᵗ, :) Index{DID}(1ˢᵗ, :)]"
+    @test string(another) == "∑[𝕕(1ˢᵗ, :) 𝕕(1ˢᵗ, :)] ⊗ ∑[𝕕(1ˢᵗ, :) 𝕕(1ˢᵗ, :)]"
     @test latexstring(another) == "\\sum_{} d^{}_{1ˢᵗ,\\,:} d^{}_{1ˢᵗ,\\,:} \\cdot \\sum_{} d^{}_{1ˢᵗ,\\,:} d^{}_{1ˢᵗ,\\,:}"
-    @test match(another.internal, DID(1)⊗DID(1)⊗DID(2)⊗DID(2))
-    @test !match(another.internal, DID(1)⊗DID(3)⊗DID(2)⊗DID(2))
-    @test !match(another.internal, DID(1)⊗DID(1)⊗DID(3)⊗DID(2))
+    @test match(another.internal, 𝕕(1)⊗𝕕(1)⊗𝕕(2)⊗𝕕(2))
+    @test !match(another.internal, 𝕕(1)⊗𝕕(3)⊗𝕕(2)⊗𝕕(2))
+    @test !match(another.internal, 𝕕(1)⊗𝕕(1)⊗𝕕(3)⊗𝕕(2))
 end
 
 @testset "patternrule" begin
     @test patternrule((1, 2, 3, 4), Val(:)) == (1, 2, 3, 4)
-    @test patternrule(DID(1)⊗DID(:), Val(:)) == DID(1)⊗DID(:)
-    @test patternrule(DID(1)⊗DID(2), Val(:)) == DID(1)⊗DID(2)
+    @test patternrule(𝕕(1)⊗𝕕(:), Val(:)) == 𝕕(1)⊗𝕕(:)
+    @test patternrule(𝕕(1)⊗𝕕(2), Val(:)) == 𝕕(1)⊗𝕕(2)
     @test patternrule((1, 2), Val(:), DID, Val(:nambu)) == (1, 2)
     @test patternrule((:, :), Val(:), 1) == (1ˢᵗ, 1ˢᵗ)
     @test patternrule((:, :), Val(:), 2) == (1ˢᵗ, 2ⁿᵈ)
@@ -299,42 +300,30 @@ end
 
 @testset "Coupling" begin
     tc = Coupling(:, DID, (2,))
-    @test tc == Coupling(1, :, DID, (2,)) == Coupling(Index{DID}(:, 2))
+    @test tc == Coupling(1, :, DID, (2,)) == Coupling(𝕕(:, 2))
     @test id(tc) == tc.pattern
     @test length(tc) == length(typeof(tc)) == 1
     @test eltype(tc) == eltype(typeof(tc)) == typeof(tc)
     @test collect(tc) == [tc]
     @test rank(tc) == rank(typeof(tc)) == 1
     @test tc * tc == tc ⊗ tc
-    @test string(tc) == "Index{DID}(:, 2)"
+    @test string(tc) == "𝕕(:, 2)"
     @test latexstring(tc) == "d^{}_{:,\\,2}"
 
     point = Point(1, (0.0, 0.0), (0.0, 0.0))
     bond = Bond(point)
     hilbert = Hilbert(point.site=>DFock(2))
     tc₁ = Coupling(1.5, :, DID, (1, 2))
-    tc₂ = Coupling(2.0, @pattern(Index{DID}(:, a), Index{DID}(:, b); constraint=a<b))
+    tc₂ = Coupling(2.0, @pattern(𝕕(:, a), 𝕕(:, b); constraint=a<b))
     ex = expand(tc₁, Val(:), bond, hilbert)
     @test eltype(ex) == eltype(typeof(ex)) == Operator{Float64, NTuple{2, CoordinatedIndex{Index{DID{Int}, Int}, SVector{2, Float64}}}}
-    @test collect(ex) == [
-        Operator(1.5, ID(
-            CoordinatedIndex(Index{DID}(1, 1), SVector(0.0, 0.0), SVector(0.0, 0.0)),
-            CoordinatedIndex(Index{DID}(1, 2), SVector(0.0, 0.0), SVector(0.0, 0.0))
-            )
-        )
-    ]
+    @test collect(ex) == [Operator(1.5, 𝕕(1, 1, SVector(0.0, 0.0), SVector(0.0, 0.0)), 𝕕(1, 2, SVector(0.0, 0.0), SVector(0.0, 0.0)))]
     ex = expand(tc₂, Val(:), bond, hilbert)
     @test eltype(ex) == eltype(typeof(ex)) == Operator{Float64, NTuple{2, CoordinatedIndex{Index{DID{Int}, Int}, SVector{2, Float64}}}}
-    @test collect(ex) == [
-        Operator(2.0, ID(
-            CoordinatedIndex(Index{DID}(1, 1), SVector(0.0, 0.0), SVector(0.0, 0.0)),
-            CoordinatedIndex(Index{DID}(1, 2), SVector(0.0, 0.0), SVector(0.0, 0.0))
-            )
-        )
-    ]
+    @test collect(ex) == [Operator(2.0, 𝕕(1, 1, SVector(0.0, 0.0), SVector(0.0, 0.0)), 𝕕(1, 2, SVector(0.0, 0.0), SVector(0.0, 0.0)))]
 
     tc = tc₁*tc₂
-    @test string(tc) == "3.0 [Index{DID}(:, 1) Index{DID}(:, 2)] ⊗ ∑[Index{DID}(:, a) Index{DID}(:, b)](a < b)"
+    @test string(tc) == "3.0 [𝕕(:, 1) 𝕕(:, 2)] ⊗ ∑[𝕕(:, a) 𝕕(:, b)](a < b)"
     @test latexstring(tc) == "3.0\\,d^{}_{:,\\,1} d^{}_{:,\\,2} \\cdot \\sum_{a < b} d^{}_{:,\\,a} d^{}_{:,\\,b}"
 end
 
@@ -346,15 +335,15 @@ end
 
     mc = MatrixCoupling(:, DID, component)
     @test eltype(typeof(mc)) == Coupling{Int64, Pattern{Tuple{Colon, Colon}, InternalPattern{(2,), Tuple{DID{Int}, DID{Int}}, 1, Tuple{AllEqual{()}}}}}
-    @test mc[1] == Coupling(-1, Index{DID}(:, 1), Index{DID}(:, 2))
-    @test mc[2] == Coupling(+1, Index{DID}(:, 2), Index{DID}(:, 1))
+    @test mc[1] == Coupling(-1, 𝕕(:, 1), 𝕕(:, 2))
+    @test mc[2] == Coupling(+1, 𝕕(:, 2), 𝕕(:, 1))
     @test mc^2 == mc*mc
     @test mc/2 == mc*(1/2)
     @test mc//2 == mc*(1//2)
     @test -mc  == (-1)*mc
 
     another = MatrixCoupling((1ˢᵗ, 2ⁿᵈ), DID, Component([:], [:], hcat(2.0)))
-    @test another[1] == Coupling(2.0, Index{DID}(1ˢᵗ, :), Index{DID}(2ⁿᵈ, :))
+    @test another[1] == Coupling(2.0, 𝕕(1ˢᵗ, :), 𝕕(2ⁿᵈ, :))
 
     mcp = 2 * mc * another
     @test mcp == MatrixCouplingProd(mc, another) * 2
@@ -377,10 +366,10 @@ end
     @test mcs == MatrixCouplingSum(mc₁, mc₂)
     @test eltype(mcs) == Coupling{Complex{Int64}, Pattern{Tuple{Ordinal, Ordinal}, InternalPattern{(2,), Tuple{DID{Int}, DID{Int}}, 1, Tuple{AllEqual{()}}}}}
     @test collect(mcs) == [
-        Coupling(Index{DID}(1ˢᵗ, 2), Index{DID}(2ⁿᵈ, 2)),
-        Coupling(Index{DID}(1ˢᵗ, 1), Index{DID}(2ⁿᵈ, 1)),
-        Coupling(-1im, Index{DID}(2ⁿᵈ, 2), Index{DID}(1ˢᵗ, 2)),
-        Coupling(1im, Index{DID}(2ⁿᵈ, 1), Index{DID}(1ˢᵗ, 1))
+        Coupling(𝕕(1ˢᵗ, 2), 𝕕(2ⁿᵈ, 2)),
+        Coupling(𝕕(1ˢᵗ, 1), 𝕕(2ⁿᵈ, 1)),
+        Coupling(-1im, 𝕕(2ⁿᵈ, 2), 𝕕(1ˢᵗ, 2)),
+        Coupling(1im, 𝕕(2ⁿᵈ, 1), 𝕕(1ˢᵗ, 1))
     ]
     @test mcs*2 == 2*mcs == MatrixCouplingSum(2*mc₁, 2*mc₂)
     @test mcs*mc₁ == MatrixCouplingSum(mc₁*mc₁, mc₂*mc₁)
@@ -441,8 +430,8 @@ end
 
     p₁, p₂ = Point(1, (0.0, 0.0), (0.0, 0.0)), Point(2, (1.0, 0.0), (0.0, 0.0))
     hilbert = Hilbert(DFock(2), 2)
-    @test string(term, Bond(p₁), hilbert) == "4.5 Index{DID}(1ˢᵗ, 1) Index{DID}(1ˢᵗ, 1)"
-    @test string(term, Bond(p₂), hilbert) == "4.5 Index{DID}(1ˢᵗ, 2) Index{DID}(1ˢᵗ, 2)"
+    @test string(term, Bond(p₁), hilbert) == "4.5 𝕕(1ˢᵗ, 1) 𝕕(1ˢᵗ, 1)"
+    @test string(term, Bond(p₂), hilbert) == "4.5 𝕕(1ˢᵗ, 2) 𝕕(1ˢᵗ, 2)"
     @test one(term) == replace(term, value=1.0)
     @test zero(term) == replace(term, value=0.0)
     @test update!(term, μ=4.25) == replace(term, value=4.25)
@@ -451,26 +440,16 @@ end
     term = Term{:Mu}(:μ, 1.5, 0, Coupling(1.0, :, DID, (2, 1)), true; amplitude=bond->3, ismodulatable=false)
     bond = Bond(Point(1, (0.0, 0.0), (0.0, 0.0)))
     hilbert = Hilbert(DFock(2))
-    @test string(term, bond, hilbert) == "4.5 Index{DID}(:, 2) Index{DID}(:, 1)"
-    operators = Operators(
-        Operator(+2.25,
-            CoordinatedIndex(Index{DID}(1, 2), SVector(0.0, 0.0), SVector(0.0, 0.0)),
-            CoordinatedIndex(Index{DID}(1, 1), SVector(0.0, 0.0), SVector(0.0, 0.0))
-        )
-    )
+    @test string(term, bond, hilbert) == "4.5 𝕕(:, 2) 𝕕(:, 1)"
+    operators = Operators(Operator(+2.25, 𝕕(1, 2, SVector(0.0, 0.0), SVector(0.0, 0.0)), 𝕕(1, 1, SVector(0.0, 0.0), SVector(0.0, 0.0))))
     @test expand(term, bond, hilbert, half=true) == expand(term, [bond], hilbert, half=true) == operators
     @test expand(term, bond, hilbert, half=false) == expand(term, [bond], hilbert, half=false) == operators*2
 
     term = Term{:Hp}(:t, 1.5, 1, Coupling(1.0, (1ˢᵗ, 2ⁿᵈ), DID, (2, 1)), false; amplitude=bond->3.0)
     bond = Bond(1, Point(2, (1.5, 1.5), (1.0, 1.0)), Point(1, (0.5, 0.5), (0.0, 0.0)))
     hilbert = Hilbert(DFock(2), 2)
-    @test string(term, bond, hilbert) == "4.5 Index{DID}(1ˢᵗ, 2) Index{DID}(2ⁿᵈ, 1) + h.c."
-    operators = Operators(
-        Operator(4.5,
-            CoordinatedIndex(Index{DID}(2, 2), SVector(1.5, 1.5), SVector(1.0, 1.0)),
-            CoordinatedIndex(Index{DID}(1, 1), SVector(0.5, 0.5), SVector(0.0, 0.0))
-        )
-    )
+    @test string(term, bond, hilbert) == "4.5 𝕕(1ˢᵗ, 2) 𝕕(2ⁿᵈ, 1) + h.c."
+    operators = Operators(Operator(4.5, 𝕕(2, 2, SVector(1.5, 1.5), SVector(1.0, 1.0)), 𝕕(1, 1, SVector(0.5, 0.5), SVector(0.0, 0.0))))
     @test expand(term, bond, hilbert, half=true) == operators
     @test expand(term, bond, hilbert, half=false) == operators+operators'
 end
@@ -486,7 +465,7 @@ end
     @test valtype(typeof(m), Index{DID{Int}, Int}) == Tuple{Int, Int}
     @test valtype(typeof(m), CompositeIndex{Index{DID{Int}, Int}}) == Tuple{Int, Int}
 
-    index = CoordinatedIndex(Index{DID}(4, 1), SVector(0.5, 0.0), SVector(1.0, 0.0))
+    index = 𝕕(4, 1, SVector(0.5, 0.0), SVector(1.0, 0.0))
     @test m(index.index) == (4, 1) == m(index)
 end
 
@@ -495,9 +474,9 @@ end
 
     by = OperatorUnitToTuple(:site)
 
-    table = Table([Index{DID}(1, 1), Index{DID}(1, 2)], by)
+    table = Table([𝕕(1, 1), 𝕕(1, 2)], by)
     @test empty(table) == Table{Index{DID{Int}, Int}}(by)
-    @test table[Index{DID}(1, 1)]==1 && table[Index{DID}(1, 2)]==1
+    @test table[𝕕(1, 1)]==1 && table[𝕕(1, 2)]==1
 
     hilbert = Hilbert(site=>DFock(2) for site in [1, 2])
     inds₁ = (Index(1, internal) for internal in DFock(2))|>collect
@@ -505,10 +484,7 @@ end
     @test Table(hilbert, by) == Table([inds₁; inds₂], by)
     @test Table(hilbert, by) == union(Table(inds₁, by), Table(inds₂, by))
 
-    opt = Operator(1.0im,
-        CoordinatedIndex(Index{DID}(1, 2), SVector(0.0, 0.0), SVector(1.0, 0.0)),
-        CoordinatedIndex(Index{DID}(1, 1), SVector(0.0, 0.0), SVector(0.0, 0.0))
-        )
+    opt = Operator(1.0im, 𝕕(1, 2, SVector(0.0, 0.0), SVector(1.0, 0.0)), 𝕕(1, 1, SVector(0.0, 0.0), SVector(0.0, 0.0)))
     @test sequence(opt, table) == (1, 1)
     @test haskey(table, opt.id) == (true, true)
 
@@ -523,10 +499,7 @@ end
 end
 
 @testset "Boundary" begin
-    op = Operator(4.5,
-        CoordinatedIndex(Index{DID}(1, 2), SVector(0.5, 0.5), SVector(0.0, 0.0)),
-        CoordinatedIndex(Index{DID}(2, 1), SVector(1.5, 1.5), SVector(1.0, 1.0))
-        )
+    op = Operator(4.5, 𝕕(1, 2, SVector(0.5, 0.5), SVector(0.0, 0.0)), 𝕕(2, 1, SVector(1.5, 1.5), SVector(1.0, 1.0)))
     bound = Boundary{(:θ₁, :θ₂)}([0.1, 0.2], [[1.0, 0.0], [0.0, 1.0]])
     M = reparameter(typeof(op), :value, Complex{Float64})
     @test valtype(typeof(bound), typeof(op)) == M

@@ -15,17 +15,26 @@ import ..QuantumOperators: idtype, optype, script
 import ..Spatials: icoordinate, rcoordinate
 import ..Toolkit: contentnames, getcontent, parameternames, shape
 
-export AllEqual, Boundary, CompositeInternal, ConstrainedInternal, Internal, InternalIndex, InternalIndexProd, InternalPattern, InternalProd, InternalSum, SimpleInternal, SimpleInternalIndex
+export AbstractIndex, AllEqual, Boundary, CompositeInternal, ConstrainedInternal, Internal, InternalIndex, InternalIndexProd, InternalPattern, InternalProd, InternalSum, SimpleInternal, SimpleInternalIndex
 export Component, CompositeIndex, CoordinatedIndex, Coupling, Hilbert, Index, MatrixCoupling, MatrixCouplingProd, MatrixCouplingSum, Metric, OperatorUnitToTuple, Ordinal, Pattern, Table, Term, TermAmplitude, TermCoupling, TermFunction
 export ˢᵗ, ⁿᵈ, ʳᵈ, ᵗʰ, plain, allequalfields, indextype, isdefinite, partition, patternrule, sitestructure, statistics, @pattern
 
+# AbstractIndex
+"""
+    AbstractIndex <: OperatorUnit
+
+Abstract type of the index of degrees of freedom.
+"""
+abstract type AbstractIndex <: OperatorUnit end
+@inline Base.getindex(::Type{AbstractIndex}, ::Type{I}) where {I<:AbstractIndex} = I
+
 # InternalIndex and Internal
 """
-    InternalIndex <: OperatorUnit
+    InternalIndex <: AbstractIndex
 
 Internal index of the internal degrees of freedom.
 """
-abstract type InternalIndex <: OperatorUnit end
+abstract type InternalIndex <: AbstractIndex end
 
 """
     isdefinite(ii::InternalIndex) -> Bool
@@ -42,7 +51,7 @@ Simple internal index, i.e., a complete set of indexes to denote an internal deg
 """
 abstract type SimpleInternalIndex <: InternalIndex end
 @inline isdefinite(::Type{<:SimpleInternalIndex}) = false
-@inline Base.show(io::IO, ii::SimpleInternalIndex) = @printf io "%s(%s)" typeof(ii) join(map(tostr, ntuple(i->getfield(ii, i), Val(fieldcount(typeof(ii))))), ", ")
+@inline Base.show(io::IO, ii::SimpleInternalIndex) = @printf io "%s(%s)" AbstractIndex[typeof(ii)] join(map(tostr, ntuple(i->getfield(ii, i), Val(fieldcount(typeof(ii))))), ", ")
 
 """
     statistics(ii::SimpleInternalIndex) -> Symbol
@@ -557,11 +566,11 @@ Constant ordinals.
 const ˢᵗ = ⁿᵈ = ʳᵈ = ᵗʰ = Ordinal(1)
 
 """
-    Index{I<:SimpleInternalIndex, S<:Union{Int, Ordinal, Colon}} <: OperatorUnit
+    Index(site::Union{Int, Ordinal, Colon}, internal::SimpleInternalIndex)
 
 Index of a degree of freedom, which consist of the spatial part (i.e., the site index) and the internal part (i.e., the internal index).
 """
-struct Index{I<:SimpleInternalIndex, S<:Union{Int, Ordinal, Colon}} <: OperatorUnit
+struct Index{I<:SimpleInternalIndex, S<:Union{Int, Ordinal, Colon}} <: AbstractIndex
     site::S
     internal::I
 end
@@ -573,16 +582,8 @@ function Base.show(io::IO, index::Index)
         push!(internal, tostr(value))
     end
     internal = join(internal, ", ")
-    @printf io "Index{%s}(%s%s%s)" indextype(index) tostr(index.site) (length(internal)>0 ? ", " : "") internal
+    @printf io "%s(%s%s%s)" AbstractIndex[typeof(index)] tostr(index.site) (length(internal)>0 ? ", " : "") internal
 end
-
-"""
-    Index(site::Union{Int, Ordinal, Colon}, internal::SimpleInternalIndex)
-    Index{I}(site::Union{Int, Ordinal, Colon}, fields...) where {I<:SimpleInternalIndex}
-
-Construct an index.
-"""
-@inline Index{I}(site::Union{Int, Ordinal, Colon}, fields...) where {I<:SimpleInternalIndex} = Index(site, I(fields...))
 
 """
     isdefinite(index::Index) -> Bool
@@ -658,11 +659,11 @@ Get the compatible type of the index based on the type of an internal space.
 
 # CompositeIndex and CoordinatedIndex
 """
-    CompositeIndex{I<:Index} <: OperatorUnit
+    CompositeIndex{I<:Index} <: AbstractIndex
 
 Abstract type of a composite index.
 """
-abstract type CompositeIndex{I<:Index} <: OperatorUnit end
+abstract type CompositeIndex{I<:Index} <: AbstractIndex end
 @inline contentnames(::Type{<:CompositeIndex}) = (:index,)
 @inline parameternames(::Type{<:CompositeIndex}) = (:index,)
 
@@ -706,7 +707,15 @@ end
 @inline parameternames(::Type{<:CoordinatedIndex}) = (:index, :coordination)
 @inline Base.hash(index::CoordinatedIndex, h::UInt) = hash((index.index, Tuple(index.rcoordinate)), h)
 @inline Base.propertynames(::ID{CoordinatedIndex}) = (:indexes, :rcoordinates, :icoordinates)
-@inline Base.show(io::IO, index::CoordinatedIndex) = @printf io "CoordinatedIndex(%s, %s, %s)" index.index index.rcoordinate index.icoordinate
+function Base.show(io::IO, index::CoordinatedIndex)
+    internal = String[]
+    for i = 1:fieldcount(typeof(index.index.internal))
+        value = getfield(index.index.internal, i)
+        push!(internal, tostr(value))
+    end
+    internal = join(internal, ", ")
+    @printf io "%s(%s%s%s, %s, %s)" AbstractIndex[typeof(index)] tostr(index.index.site) (length(internal)>0 ? ", " : "") internal index.rcoordinate index.icoordinate
+end
 @inline compositeindexcoordinate(vector::SVector) = vector
 @inline compositeindexcoordinate(vector::SVector{N, Float}) where N = SVector(ntuple(i->vector[i]===-0.0 ? 0.0 : vector[i], Val(N)))
 
