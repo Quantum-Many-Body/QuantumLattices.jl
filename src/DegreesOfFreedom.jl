@@ -1181,7 +1181,8 @@ end
 end
 
 """
-    MatrixCoupling{I<:SimpleInternalIndex, S<:Union{Ordinal, Colon}, C<:Tuple{Vararg{Component}}} <: VectorSpace{Coupling}
+    MatrixCoupling{I}(sites::Union{NTuple{2, Ordinal}, NTuple{2, Colon}}, contents::Tuple{Vararg{Component}}) where {I<:SimpleInternalIndex}
+    MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{I}, contents::Component...) where {I<:SimpleInternalIndex}
 
 Matrix coupling, i.e., a set of couplings whose coefficients are specified by matrices acting on separated internal spaces.
 """
