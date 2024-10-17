@@ -7,7 +7,7 @@ using StaticArrays: SVector
 using ..QuantumLattices: add!, decompose, dimension, dtype
 using ..QuantumOperators: ID, LinearTransformation, Operator, OperatorPack, Operators, OperatorUnit, QuantumOperator, valuetolatextext
 using ..Spatials: Bond, Point
-using ..Toolkit: atol, efficientoperations, rtol, CompositeDict, Float, VectorSpace, VectorSpaceCartesian, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceStyle, concatenate, decimaltostr, fulltype, parametertype, rawtype, reparameter
+using ..Toolkit: atol, efficientoperations, rtol, CompositeDict, Float, VectorSpace, VectorSpaceCartesian, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceStyle, concatenate, fulltype, parametertype, rawtype, reparameter, tostr
 
 import LaTeXStrings: latexstring
 import ..QuantumLattices: ⊕, ⊗, expand, expand!, id, ishermitian, kind, permute, rank, reset!, update!, value
@@ -42,6 +42,7 @@ Simple internal index, i.e., a complete set of indexes to denote an internal deg
 """
 abstract type SimpleInternalIndex <: InternalIndex end
 @inline isdefinite(::Type{<:SimpleInternalIndex}) = false
+@inline Base.show(io::IO, ii::SimpleInternalIndex) = @printf io "%s(%s)" typeof(ii) join(map(tostr, ntuple(i->getfield(ii, i), Val(fieldcount(typeof(ii))))), ", ")
 
 """
     statistics(ii::SimpleInternalIndex) -> Symbol
@@ -569,10 +570,10 @@ function Base.show(io::IO, index::Index)
     internal = String[]
     for i = 1:fieldcount(indextype(index))
         value = getfield(index.internal, i)
-        push!(internal, value==Colon() ? ":" : string(value))
+        push!(internal, tostr(value))
     end
     internal = join(internal, ", ")
-    @printf io "Index{%s}(%s%s%s)" indextype(index) script(index, Val(:site)) (length(internal)>0 ? ", " : "") internal
+    @printf io "Index{%s}(%s%s%s)" indextype(index) tostr(index.site) (length(internal)>0 ? ", " : "") internal
 end
 
 """
@@ -632,8 +633,7 @@ Get the adjoint of an index.
 
 Get the required script of an index.
 """
-@inline script(index::Index, ::Val{:site}; kwargs...) = string(index.site)
-@inline script(index::Index{<:SimpleInternalIndex, Colon}, ::Val{:site}; kwargs...) = ":"
+@inline script(index::Index, ::Val{:site}; kwargs...) = tostr(index.site)
 @inline script(index::Index, attr::Val; kwargs...) = script(index.internal, attr; kwargs...)
 
 """
@@ -1050,7 +1050,7 @@ end
 @inline Base.eltype(C::Type{<:Coupling}) = C
 @inline Base.iterate(coupling::Coupling) = (coupling, nothing)
 @inline Base.iterate(::Coupling, ::Nothing) = nothing
-@inline Base.show(io::IO, coupling::Coupling) = @printf io "%s%s" (coupling.value≈1 ? "" : coupling.value≈-1 ? "- " : string(decimaltostr(coupling.value), " ")) coupling.pattern
+@inline Base.show(io::IO, coupling::Coupling) = @printf io "%s%s" (coupling.value≈1 ? "" : coupling.value≈-1 ? "- " : string(tostr(coupling.value), " ")) coupling.pattern
 
 """
     Coupling(indexes::Index...)
@@ -1103,7 +1103,7 @@ Get the multiplication between two coupling.
 
 Convert a coupling to the latex format.
 """
-@inline latexstring(coupling::Coupling) = @sprintf "%s%s" (coupling.value≈1 ? "" : coupling.value≈-1 ? "- " : string(decimaltostr(coupling.value), "\\,")) latexstring(coupling.pattern)
+@inline latexstring(coupling::Coupling) = @sprintf "%s%s" (coupling.value≈1 ? "" : coupling.value≈-1 ? "- " : string(tostr(coupling.value), "\\,")) latexstring(coupling.pattern)
 
 """
     expand(coupling::Coupling, ::Val{Rule}, bond::Bond, hilbert::Hilbert) where Rule

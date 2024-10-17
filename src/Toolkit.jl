@@ -10,7 +10,7 @@ import QuantumLattices: ⊞, ⊗, id, value
 
 # Utilities
 export atol, rtol, Float
-export DirectSummedIndices, Segment, concatenate, decimaltostr, delta, subscript, superscript
+export DirectSummedIndices, Segment, concatenate, delta, subscript, superscript, tostr
 
 # Combinatorics
 export Combinatorics, Combinations, DuplicateCombinations, DuplicatePermutations, Permutations
@@ -40,18 +40,18 @@ const rtol = √atol
 const Float = Float64
 
 """
-    decimaltostr(number, ::Integer=5)
-    decimaltostr(number::Integer, n::Integer=5)
-    decimaltostr(number::Rational, n::Integer=5)
-    decimaltostr(number::AbstractFloat, n::Integer=5)
-    decimaltostr(number::Complex, n::Integer=5)
+    tostr(number, ::Integer=5) -> String
+    tostr(number::Integer, n::Integer=5) -> String
+    tostr(number::Rational, n::Integer=5) -> String
+    tostr(number::AbstractFloat, n::Integer=5) -> String
+    tostr(number::Complex, n::Integer=5) -> String
 
 Convert a number to a string with at most `n` decimal places.
 """
-@inline decimaltostr(number, ::Integer=5) = repr(number)
-@inline decimaltostr(number::Integer, ::Integer=5) = string(number)
-@inline decimaltostr(number::Rational, ::Integer=5) = string(number)
-function decimaltostr(number::AbstractFloat, n::Integer=5)
+@inline tostr(number, ::Integer=5) = repr(number)
+@inline tostr(number::Integer, ::Integer=5) = string(number)
+@inline tostr(number::Rational, ::Integer=5) = number.den==1 ? repr(number.num) : repr(number)
+function tostr(number::AbstractFloat, n::Integer=5)
     if number == 0.0
         result = "0.0"
     elseif 10^-5 < abs(number) < 10^6
@@ -65,15 +65,26 @@ function decimaltostr(number::AbstractFloat, n::Integer=5)
     end
     return result
 end
-function decimaltostr(number::Complex, n::Integer=5)
-    sreal = (real(number) == 0) ? "0" : decimaltostr(real(number), n)
-    simag = (imag(number) == 0) ? "0" : decimaltostr(imag(number), n)
+function tostr(number::Complex, n::Integer=5)
+    sreal = (real(number) == 0) ? "0" : tostr(real(number), n)
+    simag = (imag(number) == 0) ? "0" : tostr(imag(number), n)
     result = ""
     (sreal == "0") || (result = result * sreal)
     (simag == "0") || (result = ((simag[1] == '-') ? (result * simag) : (length(result) == 0) ? simag : (result * "+" * simag)) * "im")
     (length(result) == 0) && (result = "0.0")
     return result
 end
+
+"""
+    tostr(value::Symbol) -> String
+    tostr(value::Colon) -> String
+    tostr(value::Char) -> String
+
+Convert a single value to string.
+"""
+@inline tostr(value::Symbol) = string(value)
+@inline tostr(::Colon) = ":"
+@inline tostr(value::Char) = repr(value)
 
 """
     superscript(i::Integer) -> String

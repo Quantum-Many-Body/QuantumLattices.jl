@@ -16,7 +16,6 @@ import QuantumLattices.Toolkit: shape
 struct DID{N<:Union{Int, Symbol, Colon}} <: SimpleInternalIndex
     nambu::N
 end
-@inline Base.show(io::IO, did::DID) = @printf io "DID(%s)" did.nambu==Colon() ? ":" : string(did.nambu)
 @inline Base.show(io::IO, ::Type{<:DID}) = @printf io "%s" "DID"
 @inline Base.adjoint(sl::DID{Int}) = DID(3-sl.nambu)
 @inline statistics(::Type{<:DID}) = :f

@@ -6,22 +6,26 @@ using StaticArrays: SVector
 
 import QuantumLattices.Toolkit: VectorSpaceStyle, contentnames, contenttype, dissolve, getcontent, isparameterbound, parameternames, shape
 
-@testset "decimaltostr" begin
-    @test decimaltostr(:a) == ":a"
-    @test decimaltostr(1) == "1"
-    @test decimaltostr(10^6) == "1000000"
-    @test decimaltostr(1//7) == "1//7"
-    @test decimaltostr(1.0) == "1.0"
-    @test decimaltostr(10.0^6) == "1.0e+06"
-    @test decimaltostr(10^-5) == "1.0e-05"
-    @test decimaltostr(1/7) == "0.14286"
-    @test decimaltostr(1/7, 8) == "0.14285714"
-    @test decimaltostr(0im) == "0.0"
-    @test decimaltostr(1//7+0im) == "1//7"
-    @test decimaltostr(1.0im) == "1.0im"
-    @test decimaltostr(-1.0im) == "-1.0im"
-    @test decimaltostr(0.1+0.12im) == "0.1+0.12im"
-    @test decimaltostr(0.1-0.12im) == "0.1-0.12im"
+@testset "tostr" begin
+    @test tostr((1, 2)) == "(1, 2)"
+    @test tostr(1) == "1"
+    @test tostr(10^6) == "1000000"
+    @test tostr(1//7) == "1//7"
+    @test tostr(7//1) == "7"
+    @test tostr(1.0) == "1.0"
+    @test tostr(10.0^6) == "1.0e+06"
+    @test tostr(10^-5) == "1.0e-05"
+    @test tostr(1/7) == "0.14286"
+    @test tostr(1/7, 8) == "0.14285714"
+    @test tostr(0im) == "0.0"
+    @test tostr(1//7+0im) == "1//7"
+    @test tostr(1.0im) == "1.0im"
+    @test tostr(-1.0im) == "-1.0im"
+    @test tostr(0.1+0.12im) == "0.1+0.12im"
+    @test tostr(0.1-0.12im) == "0.1-0.12im"
+    @test tostr(:a) =="a"
+    @test tostr(:) == ":"
+    @test tostr('a') == "'a'"
 end
 
 @testset "superscript" begin
