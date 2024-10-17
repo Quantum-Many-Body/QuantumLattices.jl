@@ -33,9 +33,9 @@ function Base.angle(id::CoordinatedIndex{Index{DID{Int}, Int}}, vectors::Abstrac
     return (id.index.internal.nambu == 1) ? phase : -phase
 end
 @inline indextype(::Type{DID}, ::Type{T}) where {T<:Union{Int, Symbol, Colon}} = DID{T}
-@inline 𝕕(nambu::Union{Int, Symbol, Colon}) = DID(nambu)
-@inline 𝕕(site::Union{Int, Ordinal, Colon}, nambu::Union{Int, Symbol, Colon}) = Index(site, DID(nambu))
-@inline 𝕕(site::Union{Int, Ordinal, Colon}, nambu::Union{Int, Symbol, Colon}, rcoordinate, icoordinate) = CoordinatedIndex(Index(site, DID(nambu)), rcoordinate, icoordinate)
+@inline 𝕕(nambu) = DID(nambu)
+@inline 𝕕(site, nambu) = Index(site, DID(nambu))
+@inline 𝕕(site, nambu, rcoordinate, icoordinate) = CoordinatedIndex(Index(site, DID(nambu)), rcoordinate, icoordinate)
 @inline Base.getindex(::Type{AbstractIndex}, ::Type{D}) where {D<:Union{DID, Index{<:DID}, CoordinatedIndex{<:Index{<:DID}}}} = 𝕕
 
 struct DFock <: SimpleInternal{DID{Int}}
