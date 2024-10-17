@@ -37,6 +37,7 @@ end
 @inline 𝕕(site, nambu) = Index(site, DID(nambu))
 @inline 𝕕(site, nambu, rcoordinate, icoordinate) = CoordinatedIndex(Index(site, DID(nambu)), rcoordinate, icoordinate)
 @inline Base.getindex(::Type{AbstractIndex}, ::Type{D}) where {D<:Union{DID, Index{<:DID}, CoordinatedIndex{<:Index{<:DID}}}} = 𝕕
+@inline Base.getindex(::Type{AbstractIndex}, ::typeof(𝕕)) = DID
 
 struct DFock <: SimpleInternal{DID{Int}}
     nnambu::Int
@@ -300,7 +301,7 @@ end
 
 @testset "Coupling" begin
     tc = Coupling(:, DID, (2,))
-    @test tc == Coupling(1, :, DID, (2,)) == Coupling(𝕕(:, 2))
+    @test tc == Coupling(1, :, DID, (2,)) == Coupling(𝕕(:, 2)) == Coupling(:, 𝕕, (2,)) == Coupling(1, :, 𝕕, (2,))
     @test id(tc) == tc.pattern
     @test length(tc) == length(typeof(tc)) == 1
     @test eltype(tc) == eltype(typeof(tc)) == typeof(tc)

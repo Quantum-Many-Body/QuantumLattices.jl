@@ -1024,8 +1024,9 @@ Define the default rule for the internal index in an internal pattern.
         vs = Expr(:tuple, [:(getfield(index[$i], $name)) for i = 1:N]...)
         push!(exprs, :(patternrule($vs, Val($(QuoteNode(Name))), eltype(T), Val($name))))
     end
-    return :(InternalIndexProd(map(eltype(T), $(exprs...))))
+    return :(InternalIndexProd(map(apply, fieldtypes(T), $(exprs...))))
 end
+@inline apply(::Type{F}, args...) where F = F(args...)
 
 """
     patternrule(sites::NTuple{N, Colon}, ::Val, bondlength::Integer) where N -> NTuple{N, Ordinal}
@@ -1078,8 +1079,17 @@ Construct a coupling with the input indexes as the pattern.
     Coupling{N}(sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleInternalIndex}
     Coupling{N}(value, sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleInternalIndex}
 
+    Coupling(sites::Union{NTuple{N, Ordinal}, Colon}, f::Function, fields::Union{NTuple{N}, Colon}...) where N
+    Coupling(value, sites::Union{NTuple{N, Ordinal}, Colon}, f::Function, fields::Union{NTuple{N}, Colon}...) where N
+    Coupling{N}(sites::Union{NTuple{N, Ordinal}, Colon}, f::Function, fields::Union{NTuple{N}, Colon}...) where N
+    Coupling{N}(value, sites::Union{NTuple{N, Ordinal}, Colon}, f::Function, fields::Union{NTuple{N}, Colon}...) where N
+
 Construct a `Coupling` with the input sites and the fields of a kind of simple internal index.
 """
+@inline Coupling(sites::Union{NTuple{N, Ordinal}, Colon}, f::Function, fields::Union{NTuple{N}, Colon}...) where N = Coupling{N}(sites, f, fields...)
+@inline Coupling(value, sites::Union{NTuple{N, Ordinal}, Colon}, f::Function, fields::Union{NTuple{N}, Colon}...) where N = Coupling{N}(value, sites, f, fields...)
+@inline Coupling{N}(sites::Union{NTuple{N, Ordinal}, Colon}, f::Function, fields::Union{NTuple{N}, Colon}...) where N = Coupling{N}(1, sites, f, fields...)
+@inline Coupling{N}(value, sites::Union{NTuple{N, Ordinal}, Colon}, f::Function, fields::Union{NTuple{N}, Colon}...) where N = Coupling{N}(value, sites, AbstractIndex[f], fields...)
 @inline Coupling(sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleInternalIndex} = Coupling{N}(sites, I, fields...)
 @inline Coupling(value, sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleInternalIndex} = Coupling{N}(value, sites, I, fields...)
 @inline Coupling{N}(sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleInternalIndex} = Coupling{N}(1, sites, I, fields...)
