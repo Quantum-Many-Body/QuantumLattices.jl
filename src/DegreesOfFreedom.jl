@@ -1087,17 +1087,17 @@ Construct a coupling with the input indexes as the pattern.
     Coupling{N}(sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleInternalIndex}
     Coupling{N}(value, sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleInternalIndex}
 
-    Coupling(sites::Union{NTuple{N, Ordinal}, Colon}, f::Function, fields::Union{NTuple{N}, Colon}...) where N
-    Coupling(value, sites::Union{NTuple{N, Ordinal}, Colon}, f::Function, fields::Union{NTuple{N}, Colon}...) where N
-    Coupling{N}(sites::Union{NTuple{N, Ordinal}, Colon}, f::Function, fields::Union{NTuple{N}, Colon}...) where N
-    Coupling{N}(value, sites::Union{NTuple{N, Ordinal}, Colon}, f::Function, fields::Union{NTuple{N}, Colon}...) where N
+    Coupling(sites::Union{NTuple{N, Ordinal}, Colon}, f::Union{Function, Type{<:Function}}, fields::Union{NTuple{N}, Colon}...) where N
+    Coupling(value, sites::Union{NTuple{N, Ordinal}, Colon}, f::Union{Function, Type{<:Function}}, fields::Union{NTuple{N}, Colon}...) where N
+    Coupling{N}(sites::Union{NTuple{N, Ordinal}, Colon}, f::Union{Function, Type{<:Function}}, fields::Union{NTuple{N}, Colon}...) where N
+    Coupling{N}(value, sites::Union{NTuple{N, Ordinal}, Colon}, f::Union{Function, Type{<:Function}}, fields::Union{NTuple{N}, Colon}...) where N
 
 Construct a `Coupling` with the input sites and the fields of a kind of simple internal index.
 """
-@inline Coupling(sites::Union{NTuple{N, Ordinal}, Colon}, f::Function, fields::Union{NTuple{N}, Colon}...) where N = Coupling{N}(sites, f, fields...)
-@inline Coupling(value, sites::Union{NTuple{N, Ordinal}, Colon}, f::Function, fields::Union{NTuple{N}, Colon}...) where N = Coupling{N}(value, sites, f, fields...)
-@inline Coupling{N}(sites::Union{NTuple{N, Ordinal}, Colon}, f::Function, fields::Union{NTuple{N}, Colon}...) where N = Coupling{N}(1, sites, f, fields...)
-@inline Coupling{N}(value, sites::Union{NTuple{N, Ordinal}, Colon}, f::Function, fields::Union{NTuple{N}, Colon}...) where N = Coupling{N}(value, sites, AbstractIndex[f], fields...)
+@inline Coupling(sites::Union{NTuple{N, Ordinal}, Colon}, f::Union{Function, Type{<:Function}}, fields::Union{NTuple{N}, Colon}...) where N = Coupling{N}(sites, f, fields...)
+@inline Coupling(value, sites::Union{NTuple{N, Ordinal}, Colon}, f::Union{Function, Type{<:Function}}, fields::Union{NTuple{N}, Colon}...) where N = Coupling{N}(value, sites, f, fields...)
+@inline Coupling{N}(sites::Union{NTuple{N, Ordinal}, Colon}, f::Union{Function, Type{<:Function}}, fields::Union{NTuple{N}, Colon}...) where N = Coupling{N}(1, sites, f, fields...)
+@inline Coupling{N}(value, sites::Union{NTuple{N, Ordinal}, Colon}, f::Union{Function, Type{<:Function}}, fields::Union{NTuple{N}, Colon}...) where N = Coupling{N}(value, sites, AbstractIndex[f], fields...)
 @inline Coupling(sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleInternalIndex} = Coupling{N}(sites, I, fields...)
 @inline Coupling(value, sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleInternalIndex} = Coupling{N}(value, sites, I, fields...)
 @inline Coupling{N}(sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleInternalIndex} = Coupling{N}(1, sites, I, fields...)
