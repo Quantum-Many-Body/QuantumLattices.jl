@@ -16,15 +16,15 @@ import ..QuantumOperators: latexname, matrix, optype, script
 import ..Toolkit: shape
 
 # Canonical complex fermionic/bosonic systems
-export 𝕓, 𝕗, 𝔽, annihilation, creation, latexofbosons, latexoffermions, latexofparticles, @σ_str, @L_str
-export Coulomb, FockIndex, Fock, FockTerm, Hopping, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, Onsite, PairHopping, Pairing, SpinFlip, isannihilation, iscreation, isnormalordered
+export annihilation, creation, latexofbosons, latexoffermions, latexofparticles, 𝕓, 𝕗, 𝔽, isannihilation, iscreation, isnormalordered, @σ_str, @L_str
+export Coulomb, Fock, FockIndex, FockTerm, Hopping, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, Onsite, PairHopping, Pairing, SpinFlip
 
 # SU(2) spin systems
-export latexofspins, SID, Spin, totalspin, @Γ_str, @Γ′_str, @DM_str, @Heisenberg_str, @Ising_str
+export latexofspins, 𝕊, SpinIndex, Spin, totalspin, @Γ_str, @Γ′_str, @DM_str, @Heisenberg_str, @Ising_str
 export DM, Heisenberg, Ising, Kitaev, SingleIonAnisotropy, SpinTerm, Zeeman, Γ, Γ′
 
 # Phononic systems
-export latexofphonons, Elastic, PID, Phonon, Kinetic, Hooke, PhononTerm
+export latexofphonons, Elastic, Phonon, PhononIndex, Kinetic, Hooke, PhononTerm
 
 # Canonical complex fermionic/bosonic systems and hardcore bosonic systems
 ## FockIndex
@@ -45,7 +45,7 @@ const creation = 2
 """
     FockIndex{T, O<:Union{Int, Symbol, Colon}, S<:Union{Rational{Int}, Symbol, Colon}, N<:Union{Int, Symbol, Colon}} <: SimpleInternalIndex
 
-Fock index, i.e., the internal index of a Fock space.
+Fock index, i.e., the internal index to specify the generators of a Fock space.
 """
 struct FockIndex{T, O<:Union{Int, Symbol, Colon}, S<:Union{Rational{Int}, Symbol, Colon}, N<:Union{Int, Symbol, Colon}} <: SimpleInternalIndex
     orbital::O
@@ -86,6 +86,28 @@ Construct a Fock index.
 @inline FockIndex(orbital::Union{Int, Symbol, Colon}, spin::Union{Rational{Int}, Int, Symbol, Colon}, nambu::Union{Int, Symbol, Colon}) = FockIndex{:}(orbital, spin, nambu)
 @inline FockIndex{T, O, S, N}(orbital::Union{Int, Symbol, Colon}, spin::Union{Rational{Int}, Symbol, Colon}, nambu::Union{Int, Symbol, Colon}) where {T, O, S, N} = FockIndex{T}(orbital, spin, nambu)
 
+"""
+    isannihilation(index::FockIndex) -> Bool
+    isannihilation(index::Index) -> Bool
+    isannihilation(index::CompositeIndex) -> Bool
+
+Judge whether the nambu index is `annihilation`.
+"""
+@inline isannihilation(index::FockIndex) = index.nambu==annihilation
+@inline isannihilation(index::Index) = isannihilation(index.internal)
+@inline isannihilation(index::CompositeIndex) = isannihilation(getcontent(index, :index))
+
+"""
+    iscreation(index::FockIndex) -> Bool
+    iscreation(index::Index) -> Bool
+    iscreation(index::CompositeIndex) -> Bool
+
+Judge whether the nambu index is `creation`.
+"""
+@inline iscreation(index::FockIndex) = index.nambu==creation
+@inline iscreation(index::Index) = iscreation(index.internal)
+@inline iscreation(index::CompositeIndex) = iscreation(getcontent(index, :index))
+
 ### convenient construction and string representation 
 """
     𝕗(orbital, spin, nambu) -> FockIndex{:f}
@@ -111,31 +133,10 @@ end
 @inline Base.getindex(::Type{AbstractIndex}, ::Type{I}) where {I<:Union{FockIndex{:f}, Index{<:FockIndex{:f}}, CoordinatedIndex{<:Index{<:FockIndex{:f}}}}} = 𝕗
 @inline Base.getindex(::Type{AbstractIndex}, ::Type{I}) where {I<:Union{FockIndex{:b}, Index{<:FockIndex{:b}}, CoordinatedIndex{<:Index{<:FockIndex{:b}}}}} = 𝕓
 @inline Base.getindex(::Type{AbstractIndex}, ::Type{I}) where {I<:Union{FockIndex{:}, Index{<:FockIndex{:}}, CoordinatedIndex{<:Index{<:FockIndex{:}}}}} = 𝔽
+@inline Base.getindex(::Type{AbstractIndex}, ::Type{I}) where {I<:Union{FockIndex, Index{<:FockIndex}, CoordinatedIndex{<:Index{<:FockIndex}}}} = 𝔽
 @inline Base.getindex(::Type{AbstractIndex}, ::typeof(𝕗)) = FockIndex{:f}
 @inline Base.getindex(::Type{AbstractIndex}, ::typeof(𝕓)) = FockIndex{:b}
 @inline Base.getindex(::Type{AbstractIndex}, ::typeof(𝔽)) = FockIndex{:}
-
-"""
-    isannihilation(index::FockIndex) -> Bool
-    isannihilation(index::Index) -> Bool
-    isannihilation(index::CompositeIndex) -> Bool
-
-Judge whether the nambu index is `annihilation`.
-"""
-@inline isannihilation(index::FockIndex) = index.nambu==annihilation
-@inline isannihilation(index::Index) = isannihilation(index.internal)
-@inline isannihilation(index::CompositeIndex) = isannihilation(getcontent(index, :index))
-
-"""
-    iscreation(index::FockIndex) -> Bool
-    iscreation(index::Index) -> Bool
-    iscreation(index::CompositeIndex) -> Bool
-
-Judge whether the nambu index is `creation`.
-"""
-@inline iscreation(index::FockIndex) = index.nambu==creation
-@inline iscreation(index::Index) = iscreation(index.internal)
-@inline iscreation(index::CompositeIndex) = iscreation(getcontent(index, :index))
 
 ### patternrule
 """
@@ -145,7 +146,7 @@ Default pattern rule for the `:nambu` attribute of Fock indexes.
 """
 @inline patternrule(::NTuple{N, Colon}, ::Val{}, ::Type{<:FockIndex}, ::Val{:nambu}) where N = ntuple(i->isodd(i) ? creation : annihilation, Val(N))
 
-## LaTeX format output
+### LaTeX format output
 """
     script(index::FockIndex, ::Val{:orbital}; kwargs...) -> String
     script(index::FockIndex, ::Val{:spin}; kwargs...) -> String
@@ -205,7 +206,7 @@ latexformat(CompositeIndex{<:Index{<:FockIndex{:}}}, latexofparticles)
 """
     Fock{T} <: SimpleInternal{FockIndex{T, Int, Rational{Int}, Int}}
 
-Fock space at a single point.
+Fock space of Fock generators at a single point.
 """
 struct Fock{T} <: SimpleInternal{FockIndex{T, Int, Rational{Int}, Int}}
     norbital::Int
@@ -311,13 +312,8 @@ end
 ### MatrixCoupling
 const default_matrix = SparseMatrixCSC(hcat(1))
 """
-    MatrixCoupling(
-        sites::Union{NTuple{2, Ordinal}, Colon},
-        F::Union{Type{<:FockIndex}, typeof(𝕗), typeof(𝕓), typeof(𝔽)},
-        orbital::Union{AbstractMatrix, Colon},
-        spin::Union{AbstractMatrix, Colon},
-        nambu::Union{AbstractMatrix, Colon}
-    )
+    MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, F::Union{typeof(𝕗), typeof(𝕓), typeof(𝔽)}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon})
+    MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{F}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) where {F<:FockIndex}
 
 Construct a matrix coupling for Fock systems.
 """
@@ -328,10 +324,9 @@ end
     return MatrixCoupling(sites, F, Component(F, Val(:orbital), orbital), Component(F, Val(:spin), spin), Component(F, Val(:nambu), nambu))
 end
 @inline Component(::Type{<:FockIndex}, ::Val, ::Colon) = Component(SVector(:), SVector(:), default_matrix)
-@inline Component(::Type{<:FockIndex}, ::Val{:orbital}, matrix::AbstractMatrix) = (check(matrix); Component(1:size(matrix)[1], 1:size(matrix)[2], matrix))
-@inline Component(::Type{<:FockIndex}, ::Val{:spin}, matrix::AbstractMatrix) = (check(matrix); Component((size(matrix)[1]-1)//2:-1:(1-size(matrix)[1])//2, (size(matrix)[2]-1)//2:-1:(1-size(matrix)[2])//2, matrix))
-@inline Component(::Type{<:FockIndex}, ::Val{:nambu}, matrix::AbstractMatrix) = (check(matrix); @assert size(matrix)==(2, 2) "Component error: for nambu subspace, the input matrix must be 2×2."; Component(1:1:2, 2:-1:1, matrix))
-@inline check(matrix::AbstractMatrix) = @assert map(firstindex, axes(matrix))==(1, 1) "Component error: matrix check fails."
+@inline Component(::Type{<:FockIndex}, ::Val{:orbital}, matrix::AbstractMatrix) = Component(1:size(matrix)[1], 1:size(matrix)[2], matrix)
+@inline Component(::Type{<:FockIndex}, ::Val{:spin}, matrix::AbstractMatrix) = Component((size(matrix)[1]-1)//2:-1:(1-size(matrix)[1])//2, (size(matrix)[2]-1)//2:-1:(1-size(matrix)[2])//2, matrix)
+@inline Component(::Type{<:FockIndex}, ::Val{:nambu}, matrix::AbstractMatrix) = (@assert size(matrix)==(2, 2) "Component error: for nambu subspace, the input matrix must be 2×2."; Component(1:1:2, 2:-1:1, matrix))
 
 ### Pauli matrices
 """
@@ -344,7 +339,7 @@ end
     σ"11" => SparseMatrixCSC([1 0; 0 0])
     σ"22" => SparseMatrixCSC([0 0; 0 1])
 
-The Pauli matrix σ⁰, σˣ, σʸ, σᶻ, σ⁺, σ⁻, σ¹¹, σ²².
+Pauli matrix σ⁰, σˣ, σʸ, σᶻ, σ⁺, σ⁻, σ¹¹, σ²².
 """
 macro σ_str(str::String)
     str=="0" && return SparseMatrixCSC([1 0; 0 1])
@@ -364,7 +359,7 @@ end
     L"y" => SparseMatrixCSC([0 0 -1im; 0 0 0; 1im 0 0])
     L"z" => SparseMatrixCSC([0 1im 0; -1im 0 0; 0 0 0])
 
-The three-dimensional rotation generators.
+Three-dimensional rotation generators.
 """
 macro L_str(str::String)
     str=="x" && return SparseMatrixCSC([0 0 0; 0 0 1im; 0 -1im 0])
@@ -439,10 +434,7 @@ Type alias for `Term{:InterOrbitalInterSpin, id, V, Int, C<:TermCoupling, A<:Ter
 """
 const InterOrbitalInterSpin{id, V, C<:TermCoupling, A<:TermAmplitude} = Term{:InterOrbitalInterSpin, id, V, Int, C, A}
 @inline function InterOrbitalInterSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
-    return Term{:InterOrbitalInterSpin}(
-        id, value, 0, Coupling(@pattern(𝔽(:, α, σ, 2), 𝔽(:, α, σ, 1), 𝔽(:, β, σ′, 2), 𝔽(:, β, σ′, 1); constraint=α<β && σ≠σ′)), true;
-        amplitude=amplitude, ismodulatable=ismodulatable
-    )
+    return Term{:InterOrbitalInterSpin}(id, value, 0, Coupling(@pattern(𝔽(:, α, σ, 2), 𝔽(:, α, σ, 1), 𝔽(:, β, σ′, 2), 𝔽(:, β, σ′, 1); constraint=α<β && σ≠σ′)), true; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 
 """
@@ -454,10 +446,7 @@ Type alias for `Term{:InterOrbitalIntraSpin, id, V, Int, C<:TermCoupling, A<:Ter
 """
 const InterOrbitalIntraSpin{id, V, C<:TermCoupling, A<:TermAmplitude} = Term{:InterOrbitalIntraSpin, id, V, Int, C, A}
 @inline function InterOrbitalIntraSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
-    return Term{:InterOrbitalIntraSpin}(
-        id, value, 0, Coupling(@pattern(𝔽(:, α, σ, 2), 𝔽(:, α, σ, 1), 𝔽(:, β, σ, 2), 𝔽(:, β, σ, 1); constraint=α<β)), true;
-        amplitude=amplitude, ismodulatable=ismodulatable
-    )
+    return Term{:InterOrbitalIntraSpin}(id, value, 0, Coupling(@pattern(𝔽(:, α, σ, 2), 𝔽(:, α, σ, 1), 𝔽(:, β, σ, 2), 𝔽(:, β, σ, 1); constraint=α<β)), true; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 
 """
@@ -469,10 +458,7 @@ Type alias for `Term{:SpinFlip, id, V, Int, C<:TermCoupling, A<:TermAmplitude}`.
 """
 const SpinFlip{id, V, C<:TermCoupling, A<:TermAmplitude} = Term{:SpinFlip, id, V, Int, C, A}
 @inline function SpinFlip(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
-    return Term{:SpinFlip}(
-        id, value, 0, Coupling(@pattern(𝔽(:, α, 1//2, 2), 𝔽(:, β, -1//2, 2), 𝔽(:, α, -1//2, 1), 𝔽(:, β, 1//2, 1); constraint=α<β)), false;
-        amplitude=amplitude, ismodulatable=ismodulatable
-    )
+    return Term{:SpinFlip}(id, value, 0, Coupling(@pattern(𝔽(:, α, 1//2, 2), 𝔽(:, β, -1//2, 2), 𝔽(:, α, -1//2, 1), 𝔽(:, β, 1//2, 1); constraint=α<β)), false; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 
 """
@@ -484,31 +470,18 @@ Type alias for `Term{:PairHopping, id, V, Int, C<:TermCoupling, A<:TermAmplitude
 """
 const PairHopping{id, V, C<:TermCoupling, A<:TermAmplitude} = Term{:PairHopping, id, V, Int, C, A}
 @inline function PairHopping(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
-    return Term{:PairHopping}(
-        id, value, 0, Coupling(@pattern(𝔽(:, α, 1//2, 2), 𝔽(:, α, -1//2, 2), 𝔽(:, β, -1//2, 1), 𝔽(:, β, 1//2, 1); constraint=α<β)), false;
-        amplitude=amplitude, ismodulatable=ismodulatable
-    )
+    return Term{:PairHopping}(id, value, 0, Coupling(@pattern(𝔽(:, α, 1//2, 2), 𝔽(:, α, -1//2, 2), 𝔽(:, β, -1//2, 1), 𝔽(:, β, 1//2, 1); constraint=α<β)), false; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 
 """
-    Coulomb(
-        id::Symbol, value, bondkind, coupling=Coupling(𝔽(:, :, :, :), 𝔽(:, :, :, :))^2;
-        ishermitian::Bool=true,
-        amplitude::Union{Function, Nothing}=nothing,
-        ismodulatable::Bool=true
-    )
+    Coulomb(id::Symbol, value, bondkind, coupling=Coupling(𝔽(:, :, :, :), 𝔽(:, :, :, :))^2; ishermitian::Bool=true, amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
 
 Coulomb term.
 
 Type alias for `Term{:Coulomb, id, V, B, C<:TermCoupling, A<:TermAmplitude}`.
 """
 const Coulomb{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:Coulomb, id, V, B, C, A}
-@inline function Coulomb(
-    id::Symbol, value, bondkind, coupling=Coupling(𝔽(:, :, :, :), 𝔽(:, :, :, :))^2;
-    ishermitian::Bool=true,
-    amplitude::Union{Function, Nothing}=nothing,
-    ismodulatable::Bool=true
-)
+@inline function Coulomb(id::Symbol, value, bondkind, coupling=Coupling(𝔽(:, :, :, :), 𝔽(:, :, :, :))^2; ishermitian::Bool=true, amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
     return Term{:Coulomb}(id, value, bondkind, coupling, ishermitian; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 
@@ -519,529 +492,575 @@ Type alias for `Union{Onsite, Hopping, Pairing, Hubbard, InterOrbitalInterSpin, 
 """
 const FockTerm = Union{Onsite, Hopping, Pairing, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, SpinFlip, PairHopping, Coulomb}
 
-# # SU(2) spin systems
-# const sidtagmap = Dict(1=>'x', 2=>'y', 3=>'z', 4=>'+', 5=>'-')
-# const sidseqmap = Dict(v=>k for (k, v) in sidtagmap)
-# const sidajointmap = Dict('x'=>'x', 'y'=>'y', 'z'=>'z', '+'=>'-', '-'=>'+')
-# const sidrepmap = Dict('x'=>'ˣ', 'y'=>'ʸ', 'z'=>'ᶻ', '+'=>'⁺', '-'=>'⁻', '0'=>'⁰')
-# const sidreprevmap = Dict(v=>k for (k, v) in sidrepmap)
+# SU(2) spin systems
+const spintagmap = Dict(1=>'x', 2=>'y', 3=>'z', 4=>'+', 5=>'-')
+const spinseqmap = Dict(v=>k for (k, v) in spintagmap)
+const spinajointmap = Dict('x'=>'x', 'y'=>'y', 'z'=>'z', '+'=>'-', '-'=>'+')
 
-# ## SID
-# """
-#     SID{S, T<:Union{Char, Symbol, Colon}} <: SimpleInternalIndex
+## SpinIndex
+"""
+    SpinIndex{S, T<:Union{Char, Symbol, Colon}} <: SimpleInternalIndex
 
-# The spin id.
-# """
-# struct SID{S, T<:Union{Char, Symbol, Colon}} <: SimpleInternalIndex
-#     tag::T
-#     function SID{S}(tag::Union{Char, Symbol, Colon}) where S
-#         @assert isa(S, Rational{Int}) && S.den==2 || isa(S, Integer) || S==: "SID error: not supported spin($S)."
-#         isa(tag, Char) && @assert tag in ('x', 'y', 'z', '+', '-') "SID error: not supported tag($tag)."
-#         new{S, typeof(tag)}(tag)
-#     end
-# end
-# @inline SID(tag::Union{Char, Symbol, Colon}) = SID{:}(tag)
-# @inline Base.:(==)(sid₁::SID, sid₂::SID) = totalspin(sid₁)==totalspin(sid₂) && ==(efficientoperations, sid₁, sid₂)
-# @inline Base.isequal(sid₁::SID, sid₂::SID) = isequal(totalspin(sid₁), totalspin(sid₂)) && isequal(efficientoperations, sid₁, sid₂)
-# @inline Base.adjoint(sid::SID) = SID{totalspin(sid)}(sidajointmap[sid.tag])
-# @inline Base.hash(sid::SID, h::UInt) = hash((totalspin(sid), sid.tag), h)
-# @inline Base.show(io::IO, sid::SID) = @printf io "SID{%s}(%s)" totalspin(sid) default(sid.tag)
-# @inline Base.show(io::IO, sid::SID{:}) = @printf io "SID(%s)" default(sid.tag)
-# @inline @generated function Base.replace(sid::SID; kwargs...)
-#     exprs = [:(get(kwargs, $name, getfield(sid, $name))) for name in QuoteNode.(fieldnames(sid))]
-#     return :(rawtype(typeof(sid)){totalspin(sid)}($(exprs...)))
-# end
-# @inline statistics(::Type{<:SID}) = :b
-# @inline SID(iid::SID, ::CompositeInternal) = iid
+Spin index, i.e., the internal index to specify the generators of a spin space.
+"""
+struct SpinIndex{S, T<:Union{Char, Symbol, Colon}} <: SimpleInternalIndex
+    tag::T
+    function SpinIndex{S}(tag::Union{Char, Symbol, Colon}) where S
+        @assert isa(S, Rational{Int}) && S.den==2 || isa(S, Int) || S==Colon() "SpinIndex error: not supported spin($S)."
+        isa(tag, Char) && @assert tag in ('x', 'y', 'z', '+', '-') "SpinIndex error: not supported tag($tag)."
+        new{S, typeof(tag)}(tag)
+    end
+end
+### basic methods of concrete SimpleInternalIndex
+@inline statistics(::Type{<:SpinIndex}) = :b
+@inline isdefinite(::Type{<:SpinIndex{T, Char} where T}) = true
+@inline Base.:(==)(index₁::SpinIndex, index₂::SpinIndex) = totalspin(index₁)==totalspin(index₂) && ==(efficientoperations, index₁, index₂)
+@inline Base.isequal(index₁::SpinIndex, index₂::SpinIndex) = isequal(totalspin(index₁), totalspin(index₂)) && isequal(efficientoperations, index₁, index₂)
+@inline Base.hash(index::SpinIndex, h::UInt) = hash((totalspin(index), index.tag), h)
+@inline Base.adjoint(index::SpinIndex) = SpinIndex{totalspin(index)}(spinajointmap[index.tag])
+@inline @generated function Base.replace(index::SpinIndex; kwargs...)
+    exprs = [:(get(kwargs, $name, getfield(index, $name))) for name in QuoteNode.(fieldnames(index))]
+    return :(rawtype(typeof(index)){totalspin(index)}($(exprs...)))
+end
+### requested by MatrixCouplingProd
+@inline indextype(::Type{SpinIndex}, ::Type{T}) where {T<:Union{Char, Symbol, Colon}} = SpinIndex{:, T}
+@inline indextype(::Type{SpinIndex{S}}, ::Type{T}) where {S, T<:Union{Char, Symbol, Colon}} = SpinIndex{S, T}
 
-# """
-#     totalspin(::SID) -> Rational{Int}/Int/Symbol
-#     totalspin(::Type{<:SID}) -> Rational{Int}/Int/Symbol
+"""
+    SpinIndex(tag::Union{Char, Symbol, Colon})
+    SpinIndex{S}(tag::Union{Char, Symbol, Colon}) where S
+    SpinIndex{S, T}(tag::Union{Char, Symbol, Colon}) where {S, T}
 
-#     totalspin(::Index{<:Union{Int, Colon}, <:SID}) -> Rational{Int}/Int/Symbol
-#     totalspin(::Type{<:Index{<:Union{Int, Colon}, <:SID}}) -> Rational{Int}/Int/Symbol
+Construct a spin index.
+"""
+@inline SpinIndex(tag::Union{Char, Symbol, Colon}) = SpinIndex{:}(tag)
+@inline SpinIndex{S, T}(tag::Union{Char, Symbol, Colon}) where {S, T} = SpinIndex{S}(tag)
 
-#     totalspin(::CompositeIndex{<:Index{<:Union{Int, Colon}, <:SID}}) -> Rational{Int}/Int/Symbol
-#     totalspin(::Type{<:CompositeIndex{<:Index{<:Union{Int, Colon}, <:SID}}}) -> Rational{Int}/Int/Symbol
+"""
+    totalspin(::SpinIndex) -> Rational{Int}/Int/Colon
+    totalspin(::Type{<:SpinIndex}) -> Rational{Int}/Int/Colon
 
-# Get the total spin.
-# """
-# @inline totalspin(sid::SID) = totalspin(typeof(sid))
-# @inline totalspin(index::Index{<:Union{Int, Colon}, <:SID}) = totalspin(typeof(index))
-# @inline totalspin(index::CompositeIndex{<:Index{<:Union{Int, Colon}, <:SID}}) = totalspin(typeof(index))
-# @inline totalspin(::Type{<:SID{S}}) where S = S
-# @inline totalspin(::Type{<:Index{<:Union{Int, Colon}, <:SID{S}}}) where S = S
-# @inline totalspin(::Type{<:CompositeIndex{<:Index{<:Union{Int, Colon}, <:SID{S}}}}) where S = S
+    totalspin(::Index{<:SpinIndex}) -> Rational{Int}/Int/Colon
+    totalspin(::Type{<:Index{<:SpinIndex}}) -> Rational{Int}/Int/Colon
 
-# ### requested by Constraint
-# @inline isdefinite(::Type{<:SID{T, Char} where T}) = true
-# @inline indextype(::Type{SID}, ::Type{T}) where {T<:Union{Char, Symbol, Colon}} = SID{:, T}
-# @inline indextype(::Type{SID{S}}, ::Type{T}) where {S, T<:Union{Char, Symbol, Colon}} = SID{S, T}
+    totalspin(::CompositeIndex{<:Index{<:SpinIndex}}) -> Rational{Int}/Int/Colon
+    totalspin(::Type{<:CompositeIndex{<:Index{<:SpinIndex}}}) -> Rational{Int}/Int/Colon
 
-# ### matrix
-# """
-#     matrix(sid::SID{S, Char}, dtype::Type{<:Number}=Complex{Float}) where S -> Matrix{dtype}
-#     matrix(index::Index{<:Union{Int, Colon}, <:SID}, dtype::Type{<:Number}=Complex{Float}) -> Matrix{dtype}
-#     matrix(index::CompositeIndex{<:Index{<:Union{Int, Colon}, <:SID}}, dtype::Type{<:Number}=Complex{Float}) -> Matrix{dtype}
+Get the total spin.
+"""
+@inline totalspin(index::SpinIndex) = totalspin(typeof(index))
+@inline totalspin(index::Index{<:SpinIndex}) = totalspin(typeof(index))
+@inline totalspin(index::CompositeIndex{<:Index{<:SpinIndex}}) = totalspin(typeof(index))
+@inline totalspin(::Type{<:SpinIndex{S}}) where S = S
+@inline totalspin(::Type{<:Index{<:SpinIndex{S}}}) where S = S
+@inline totalspin(::Type{<:CompositeIndex{<:Index{<:SpinIndex{S}}}}) where S = S
 
-# Get the matrix representation of a sid.
-# """
-# function matrix(sid::SID{S, Char}, dtype::Type{<:Number}=Complex{Float}) where S
-#     N = Int(2*S+1)
-#     result = zeros(dtype, (N, N))
-#     spin = convert(dtype, S)
-#     for i = 1:N, j = 1:N
-#         row, col = N+1-i, N+1-j
-#         m, n = spin+1-i, spin+1-j
-#         result[row, col] = (sid.tag == 'x') ? (delta(i+1, j)+delta(i, j+1))*sqrt(spin*(spin+1)-m*n)/2 :
-#             (sid.tag == 'y') ? (delta(i+1, j)-delta(i, j+1))*sqrt(spin*(spin+1)-m*n)/2im :
-#             (sid.tag == 'z') ? delta(i, j)*m :
-#             (sid.tag == '+') ? delta(i+1, j)*sqrt(spin*(spin+1)-m*n) :
-#             delta(i, j+1)*sqrt(spin*(spin+1)-m*n)
-#     end
-#     return result
-# end
-# @inline matrix(index::Index{<:Union{Int, Colon}, <:SID}, dtype::Type{<:Number}=Complex{Float}) = matrix(index.iid, dtype)
-# @inline matrix(index::CompositeIndex{<:Index{<:Union{Int, Colon}, <:SID}}, dtype::Type{<:Number}=Complex{Float}) = matrix(getcontent(index, :index), dtype)
+### convenient construction and string representation 
+"""
+    𝕊(tag) -> SpinIndex
+    𝕊(site, tag) -> Index{<:SpinIndex}
+    𝕊(site, tag, rcoordinate, icoordinate) -> CoordinatedIndex{<:Index{<:SpinIndex}}
 
-# ## Spin
-# """
-#     Spin{S} <: SimpleInternal{SID{S, Char}}
+    𝕊{S}(tag) where S -> SpinIndex{S}
+    𝕊{S}(site, tag) where S -> Index{<:SpinIndex{S}}
+    𝕊{S}(site, tag, rcoordinate, icoordinate) where S -> CoordinatedIndex{<:Index{<:SpinIndex{S}}}
 
-# The spin internal degrees of freedom.
-# """
-# struct Spin{S} <: SimpleInternal{SID{S, Char}}
-#     function Spin{S}() where S
-#         @assert isa(S, Rational{Int}) && S.den==2 || isa(S, Integer) "Spin error: not supported spin($S)."
-#         new{S}()
-#     end
-# end
-# @inline Base.eltype(::Type{Spin}) = (SID{S, Char} where S)
-# @inline shape(sp::Spin) = (1:length(sidtagmap),)
-# @inline Base.CartesianIndex(sid::SID, ::Spin) = CartesianIndex(sidseqmap[sid.tag])
-# @inline SID(index::CartesianIndex{1}, sp::Spin) = SID{totalspin(sp)}(sidtagmap[index[1]])
-# @inline Base.summary(io::IO, spin::Spin) = @printf io "%s-element Spin{%s}" length(spin) totalspin(spin)
-# @inline Base.show(io::IO, spin::Spin) = @printf io "%s{%s}()" spin|>typeof|>nameof totalspin(spin)
-# @inline Base.match(::Type{<:SID{:}}, ::Type{<:Spin{S}}) where S = true
-# @inline Base.match(::Type{<:SID{S}}, ::Type{<:Spin{S}}) where S = true
-# @inline Base.match(::Type{<:SID{S₁}}, ::Type{<:Spin{S₂}}) where {S₁, S₂} = false
+Convenient construction of `SpinIndex`, `Index{<:SpinIndex}`, `CoordinatedIndex{<:Index{<:SpinIndex}}`.
+"""
+struct 𝕊{S} <: Function end
+@inline Base.show(io::IO, ::Type{𝕊{S}}) where S = @printf io "𝕊{%s}" tostr(S)
+@inline Base.show(io::IO, ::Type{𝕊{:}}) = @printf io "%s" "𝕊"
+@inline Base.show(io::IO, ::Type{<:𝕊}) = @printf io "%s" "𝕊"
+@inline 𝕊(tag) = SpinIndex(tag)
+@inline 𝕊(site, tag) = Index(site, SpinIndex(tag))
+@inline 𝕊(site, tag, rcoordinate, icoordinate) = CoordinatedIndex(Index(site, SpinIndex(tag)), rcoordinate, icoordinate)
+@inline 𝕊{S}(tag) where S = SpinIndex{S}(tag)
+@inline 𝕊{S}(site, tag) where S = Index(site, SpinIndex{S}(tag))
+@inline 𝕊{S}(site, tag, rcoordinate, icoordinate) where S = CoordinatedIndex(Index(site, SpinIndex{S}(tag)), rcoordinate, icoordinate)
+@inline Base.getindex(::Type{AbstractIndex}, ::Type{I}) where {I<:Union{SpinIndex, Index{<:SpinIndex}, CoordinatedIndex{<:Index{<:SpinIndex}}}} = 𝕊
+@inline Base.getindex(::Type{AbstractIndex}, ::Type{I}) where {I<:Union{SpinIndex{:}, Index{<:SpinIndex{:}}, CoordinatedIndex{<:Index{<:SpinIndex{:}}}}} = 𝕊
+@inline Base.getindex(::Type{AbstractIndex}, ::Type{I}) where {S, I<:Union{SpinIndex{S}, Index{<:SpinIndex{S}}, CoordinatedIndex{<:Index{<:SpinIndex{S}}}}} = 𝕊{S}
+@inline Base.getindex(::Type{AbstractIndex}, ::Type{𝕊}) = SpinIndex{:}
+@inline Base.getindex(::Type{AbstractIndex}, ::Type{𝕊{S}}) where S = SpinIndex{S}
 
-# """
-#     totalspin(::Spin) -> Rational{Int}/Int/Symbol
-#     totalspin(::Type{<:Spin}) -> Rational{Int}/Int/Symbol
+### matrix
+"""
+    matrix(index::SpinIndex{S, Char}, dtype::Type{<:Number}=Complex{Float}) where S -> Matrix{dtype}
+    matrix(index::Index{<:SpinIndex}, dtype::Type{<:Number}=Complex{Float}) -> Matrix{dtype}
+    matrix(index::CompositeIndex{<:Index{<:SpinIndex}}, dtype::Type{<:Number}=Complex{Float}) -> Matrix{dtype}
 
-# Get the total spin.
-# """
-# @inline totalspin(spin::Spin) = totalspin(typeof(spin))
-# @inline totalspin(::Type{<:Spin{S}}) where S = S
+Get the matrix representation of an index acting on the local 𝕊ᶻ space.
+"""
+function matrix(index::SpinIndex{S, Char}, dtype::Type{<:Number}=Complex{Float}) where S
+    N = Int(2*S+1)
+    result = zeros(dtype, (N, N))
+    spin = convert(dtype, S)
+    for i = 1:N, j = 1:N
+        row, col = N+1-i, N+1-j
+        m, n = spin+1-i, spin+1-j
+        result[row, col] = (index.tag == 'x') ? (delta(i+1, j)+delta(i, j+1))*sqrt(spin*(spin+1)-m*n)/2 :
+            (index.tag == 'y') ? (delta(i+1, j)-delta(i, j+1))*sqrt(spin*(spin+1)-m*n)/2im :
+            (index.tag == 'z') ? delta(i, j)*m :
+            (index.tag == '+') ? delta(i+1, j)*sqrt(spin*(spin+1)-m*n) :
+            delta(i, j+1)*sqrt(spin*(spin+1)-m*n)
+    end
+    return result
+end
+@inline matrix(index::Index{<:SpinIndex}, dtype::Type{<:Number}=Complex{Float}) = matrix(index.internal, dtype)
+@inline matrix(index::CompositeIndex{<:Index{<:SpinIndex}}, dtype::Type{<:Number}=Complex{Float}) = matrix(getcontent(index, :index), dtype)
 
-# ## LaTeX format output
-# """
-#     script(::Val{:tag}, sid::SID; kwargs...) -> String
+## LaTeX format output
+"""
+    script(index::SpinIndex, ::Val{:tag}; kwargs...) -> String
 
-# Get the requested script of an sid.
-# """
-# @inline script(::Val{:tag}, sid::SID; kwargs...) = sid.tag==(:) ? ":" : string(sid.tag)
+Get the requested script of a spin index.
+"""
+@inline script(index::SpinIndex{S, Colon}, ::Val{:tag}; kwargs...) where S = ":"
+@inline script(index::SpinIndex, ::Val{:tag}; kwargs...) = string(index.tag)
 
-# """
-#     latexofspins
+"""
+    latexofspins
 
-# The default LaTeX format of a spin index.
-# """
-# const latexofspins = LaTeX{(:tag,), (:site,)}('S')
-# @inline latexname(::Type{<:Index{<:Union{Int, Colon}, <:SID}}) = Symbol("Index{Union{Int, Colon}, SID}")
-# @inline latexname(::Type{<:CompositeIndex{<:Index{<:Union{Int, Colon}, <:SID}}}) = Symbol("CompositeIndex{Index{Union{Int, Colon}, SID}}")
-# latexformat(Index{<:Union{Int, Colon}, <:SID}, latexofspins)
-# latexformat(CompositeIndex{<:Index{<:Union{Int, Colon}, <:SID}}, latexofspins)
-# @inline latexname(::Type{<:SID}) = Symbol("SID")
-# latexformat(SID, LaTeX{(:tag,), ()}('S'))
+Default LaTeX format of a spin index.
+"""
+const latexofspins = LaTeX{(:tag,), (:site,)}('S')
+@inline latexname(::Type{<:SpinIndex}) = Symbol("SpinIndex")
+@inline latexname(::Type{<:Index{<:SpinIndex}}) = Symbol("Index{SpinIndex}")
+@inline latexname(::Type{<:CompositeIndex{<:Index{<:SpinIndex}}}) = Symbol("CompositeIndex{Index{SpinIndex}}")
+latexformat(SpinIndex, latexofspins)
+latexformat(Index{<:SpinIndex}, latexofspins)
+latexformat(CompositeIndex{<:Index{<:SpinIndex}}, latexofspins)
 
-# ## Permutation
-# """
-#     permute(id₁::SID, id₂::SID) -> Tuple{Vararg{Operator}}
+## Spin
+"""
+    Spin{S} <: SimpleInternal{SpinIndex{S, Char}}
 
-# Permute two spin indexes and get the result.
-# """
-# function permute(id₁::SID, id₂::SID)
-#     if id₁ ≠ id₂
-#         S = totalspin(id₁)
-#         if id₁.tag == 'x'
-#             id₂.tag=='y' && return (Operator(+1im, SID{S}('z')), Operator(1, id₂, id₁))
-#             id₂.tag=='z' && return (Operator(-1im, SID{S}('y')), Operator(1, id₂, id₁))
-#             id₂.tag=='+' && return (Operator(-1, SID{S}('z')), Operator(1, id₂, id₁))
-#             id₂.tag=='-' && return (Operator(+1, SID{S}('z')), Operator(1, id₂, id₁))
-#         elseif id₁.tag == 'y'
-#             id₂.tag=='x' && return (Operator(-1im, SID{S}('z')), Operator(1, id₂, id₁))
-#             id₂.tag=='z' && return (Operator(+1im, SID{S}('x')), Operator(1, id₂, id₁))
-#             id₂.tag=='+' && return (Operator(-1im, SID{S}('z')), Operator(1, id₂, id₁))
-#             id₂.tag=='-' && return (Operator(-1im, SID{S}('z')), Operator(1, id₂, id₁))
-#         elseif id₁.tag == 'z'
-#             id₂.tag=='x' && return (Operator(+1im, SID{S}('y')), Operator(1, id₂, id₁))
-#             id₂.tag=='y' && return (Operator(-1im, SID{S}('x')), Operator(1, id₂, id₁))
-#             id₂.tag=='+' && return (Operator(+1, SID{S}('+')), Operator(1, id₂, id₁))
-#             id₂.tag=='-' && return (Operator(-1, SID{S}('-')), Operator(1, id₂, id₁))
-#         elseif id₁.tag == '+'
-#             id₂.tag=='x' && return (Operator(+1, SID{S}('z')), Operator(1, id₂, id₁))
-#             id₂.tag=='y' && return (Operator(+1im, SID{S}('z')), Operator(1, id₂, id₁))
-#             id₂.tag=='z' && return (Operator(-1, SID{S}('+')), Operator(1, id₂, id₁))
-#             id₂.tag=='-' && return (Operator(+2, SID{S}('z')), Operator(1, id₂, id₁))
-#         elseif id₁.tag == '-'
-#             id₂.tag=='x' && return (Operator(-1, SID{S}('z')), Operator(1, id₂, id₁))
-#             id₂.tag=='y' && return (Operator(1im, SID{S}('z')), Operator(1, id₂, id₁))
-#             id₂.tag=='z' && return (Operator(+1, SID{S}('-')), Operator(1, id₂, id₁))
-#             id₂.tag=='+' && return (Operator(-2, SID{S}('z')), Operator(1, id₂, id₁))
-#         end
-#         error("permute error: not supported spin indexes.")
-#     else
-#         return (Operator(1, id₂, id₁),)
-#     end
-# end
+Spin space of spin generators at a single point.
+"""
+struct Spin{S} <: SimpleInternal{SpinIndex{S, Char}}
+    function Spin{S}() where S
+        @assert isa(S, Rational{Int}) && S.den==2 || isa(S, Int) "Spin error: not supported spin($S)."
+        new{S}()
+    end
+end
+@inline shape(::Spin) = (1:length(spintagmap),)
+@inline Base.eltype(::Type{Spin}) = (SpinIndex{S, Char} where S)
+@inline Base.convert(::Type{<:CartesianIndex}, index::SpinIndex, ::Spin) = CartesianIndex(spinseqmap[index.tag])
+@inline Base.convert(::Type{<:SpinIndex}, index::CartesianIndex{1}, sp::Spin) = SpinIndex{totalspin(sp)}(spintagmap[index[1]])
+@inline Base.summary(io::IO, spin::Spin) = @printf io "%s-element Spin{%s}" length(spin) totalspin(spin)
+@inline Base.show(io::IO, spin::Spin) = @printf io "%s{%s}()" spin|>typeof|>nameof totalspin(spin)
+@inline Base.match(::Type{<:SpinIndex{:}}, ::Type{<:Spin{S}}) where S = true
+@inline Base.match(::Type{<:SpinIndex{S}}, ::Type{<:Spin{S}}) where S = true
+@inline Base.match(::Type{<:SpinIndex{S₁}}, ::Type{<:Spin{S₂}}) where {S₁, S₂} = false
+### requested by ConstrainedInternal
+@inline shape(::Spin, index::SpinIndex) = (spinshape(index.tag),)
+@inline spinshape(::Union{Symbol, Colon}) = 1:5
+@inline spinshape(tag::Char) = (pos=spinseqmap[tag]; pos:pos)
 
-# ## Coupling
-# ### requested by ConstrainedInternal
-# @inline shape(iidspace::ConstrainedInternal{<:SID, <:Spin}) = (sidrange(iidspace.iid.tag),)
-# @inline sidrange(::Union{Symbol, Colon}) = 1:5
-# @inline sidrange(tag::Char) = (pos=sidseqmap[tag]; pos:pos)
+"""
+    totalspin(::Spin) -> Rational{Int}/Int/Colon
+    totalspin(::Type{<:Spin}) -> Rational{Int}/Int/Colon
 
-# ### MatrixCoupling
-# """
-#     MatrixCoupling(sites::Union{NTuple{2, Int}, Colon}, ::Type{S}, matrix::AbstractMatrix; rows::AbstractVector=SVector('x', 'y', 'z'), cols::AbstractVector=SVector('x', 'y', 'z')) where {S<:SID}
+Get the total spin.
+"""
+@inline totalspin(spin::Spin) = totalspin(typeof(spin))
+@inline totalspin(::Type{<:Spin{S}}) where S = S
 
-# Construct a set of `Coupling`s between two `Index{<:Union{Int, Colon}, <:SID}`s with the coefficients specified by a matrix.
-# """
-# function MatrixCoupling(sites::Union{NTuple{2, Int}, Colon}, ::Type{S}, matrix::AbstractMatrix; rows::AbstractVector=SVector('x', 'y', 'z'), cols::AbstractVector=SVector('x', 'y', 'z')) where {S<:SID}
-#     @assert size(matrix)==(length(rows), length(cols)) "MatrixCoupling error: mismatched input matrix and rows/cols."
-#     return MatrixCoupling(sites, S, Component(rows, cols, matrix))
-# end
+## Permutation
+"""
+    permute(id₁::SpinIndex, id₂::SpinIndex) -> Tuple{Vararg{Operator}}
 
-# ### Spin coupling matrix
-# """
-#     Heisenberg"" => SparseMatrixCSC([1 0 0; 0 1 0; 0 0 1])
+Permute two spin indexes and get the result.
+"""
+function permute(id₁::SpinIndex, id₂::SpinIndex)
+    if id₁ ≠ id₂
+        S = totalspin(id₁)
+        if id₁.tag == 'x'
+            id₂.tag=='y' && return (Operator(+1im, 𝕊{S}('z')), Operator(1, id₂, id₁))
+            id₂.tag=='z' && return (Operator(-1im, 𝕊{S}('y')), Operator(1, id₂, id₁))
+            id₂.tag=='+' && return (Operator(-1, 𝕊{S}('z')), Operator(1, id₂, id₁))
+            id₂.tag=='-' && return (Operator(+1, 𝕊{S}('z')), Operator(1, id₂, id₁))
+        elseif id₁.tag == 'y'
+            id₂.tag=='x' && return (Operator(-1im, 𝕊{S}('z')), Operator(1, id₂, id₁))
+            id₂.tag=='z' && return (Operator(+1im, 𝕊{S}('x')), Operator(1, id₂, id₁))
+            id₂.tag=='+' && return (Operator(-1im, 𝕊{S}('z')), Operator(1, id₂, id₁))
+            id₂.tag=='-' && return (Operator(-1im, 𝕊{S}('z')), Operator(1, id₂, id₁))
+        elseif id₁.tag == 'z'
+            id₂.tag=='x' && return (Operator(+1im, 𝕊{S}('y')), Operator(1, id₂, id₁))
+            id₂.tag=='y' && return (Operator(-1im, 𝕊{S}('x')), Operator(1, id₂, id₁))
+            id₂.tag=='+' && return (Operator(+1, 𝕊{S}('+')), Operator(1, id₂, id₁))
+            id₂.tag=='-' && return (Operator(-1, 𝕊{S}('-')), Operator(1, id₂, id₁))
+        elseif id₁.tag == '+'
+            id₂.tag=='x' && return (Operator(+1, 𝕊{S}('z')), Operator(1, id₂, id₁))
+            id₂.tag=='y' && return (Operator(+1im, 𝕊{S}('z')), Operator(1, id₂, id₁))
+            id₂.tag=='z' && return (Operator(-1, 𝕊{S}('+')), Operator(1, id₂, id₁))
+            id₂.tag=='-' && return (Operator(+2, 𝕊{S}('z')), Operator(1, id₂, id₁))
+        elseif id₁.tag == '-'
+            id₂.tag=='x' && return (Operator(-1, 𝕊{S}('z')), Operator(1, id₂, id₁))
+            id₂.tag=='y' && return (Operator(1im, 𝕊{S}('z')), Operator(1, id₂, id₁))
+            id₂.tag=='z' && return (Operator(+1, 𝕊{S}('-')), Operator(1, id₂, id₁))
+            id₂.tag=='+' && return (Operator(-2, 𝕊{S}('z')), Operator(1, id₂, id₁))
+        end
+        error("permute error: not supported spin indexes.")
+    else
+        return (Operator(1, id₂, id₁),)
+    end
+end
 
-# The Heisenberg coupling matrix.
-# """
-# macro Heisenberg_str(str::String)
-#     str=="" && return SparseMatrixCSC([1 0 0; 0 1 0; 0 0 1])
-#     error("@Heisenberg_str error: wrong input string.")
-# end
+## Coupling
+### MatrixCoupling
+"""
+    MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{S}, matrix::AbstractMatrix; rows::AbstractVector=SVector('x', 'y', 'z'), cols::AbstractVector=SVector('x', 'y', 'z')) where {S<:Union{𝕊, SpinIndex}}
 
-# """
-#     Ising"x" => SparseMatrixCSC([1 0 0; 0 0 0; 0 0 0])
-#     Ising"y" => SparseMatrixCSC([0 0 0; 0 1 0; 0 0 0])
-#     Ising"z" => SparseMatrixCSC([0 0 0; 0 0 0; 0 0 1])
+Construct a matrix coupling for spin systems.
+"""
+@inline function MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{S}, matrix::AbstractMatrix; rows::AbstractVector=SVector('x', 'y', 'z'), cols::AbstractVector=SVector('x', 'y', 'z')) where {S<:𝕊}
+    return MatrixCoupling(sites, AbstractIndex[S], matrix; rows=rows, cols=cols)
+end
+@inline function MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{S}, matrix::AbstractMatrix; rows::AbstractVector=SVector('x', 'y', 'z'), cols::AbstractVector=SVector('x', 'y', 'z')) where {S<:SpinIndex}
+    @assert size(matrix)==(length(rows), length(cols)) "MatrixCoupling error: mismatched input matrix and rows/cols."
+    return MatrixCoupling(sites, S, Component(rows, cols, matrix))
+end
 
-# The Ising coupling matrix.
-# """
-# macro Ising_str(str::String)
-#     str=="x" && return SparseMatrixCSC([1 0 0; 0 0 0; 0 0 0])
-#     str=="y" && return SparseMatrixCSC([0 0 0; 0 1 0; 0 0 0])
-#     str=="z" && return SparseMatrixCSC([0 0 0; 0 0 0; 0 0 1])
-#     error("@Ising_str error: wrong input string.")
-# end
+### Spin coupling matrix
+"""
+    Heisenberg"" => SparseMatrixCSC([1 0 0; 0 1 0; 0 0 1])
 
-# """
-#     Γ"x" => SparseMatrixCSC([0 0 0; 0 0 1; 0 1 0])
-#     Γ"y" => SparseMatrixCSC([0 0 1; 0 0 0; 1 0 0])
-#     Γ"z" => SparseMatrixCSC([0 1 0; 1 0 0; 0 0 0])
+Heisenberg coupling matrix.
+"""
+macro Heisenberg_str(str::String)
+    str=="" && return SparseMatrixCSC([1 0 0; 0 1 0; 0 0 1])
+    error("@Heisenberg_str error: wrong input string.")
+end
 
-# The Γ coupling matrix.
-# """
-# macro Γ_str(str::String)
-#     str=="x" && return SparseMatrixCSC([0 0 0; 0 0 1; 0 1 0])
-#     str=="y" && return SparseMatrixCSC([0 0 1; 0 0 0; 1 0 0])
-#     str=="z" && return SparseMatrixCSC([0 1 0; 1 0 0; 0 0 0])
-#     error("@Γ_str error: wrong input string.")
-# end
+"""
+    Ising"x" => SparseMatrixCSC([1 0 0; 0 0 0; 0 0 0])
+    Ising"y" => SparseMatrixCSC([0 0 0; 0 1 0; 0 0 0])
+    Ising"z" => SparseMatrixCSC([0 0 0; 0 0 0; 0 0 1])
 
-# """
-#     Γ′"x" => SparseMatrixCSC([0 1 1; 1 0 0; 1 0 0])
-#     Γ′"y" => SparseMatrixCSC([0 1 0; 1 0 1; 0 1 0])
-#     Γ′"z" => SparseMatrixCSC([0 0 1; 0 0 1; 1 1 0])
+Ising coupling matrix.
+"""
+macro Ising_str(str::String)
+    str=="x" && return SparseMatrixCSC([1 0 0; 0 0 0; 0 0 0])
+    str=="y" && return SparseMatrixCSC([0 0 0; 0 1 0; 0 0 0])
+    str=="z" && return SparseMatrixCSC([0 0 0; 0 0 0; 0 0 1])
+    error("@Ising_str error: wrong input string.")
+end
 
-# The Γ′ coupling matrix.
-# """
-# macro Γ′_str(str::String)
-#     str=="x" && return SparseMatrixCSC([0 1 1; 1 0 0; 1 0 0])
-#     str=="y" && return SparseMatrixCSC([0 1 0; 1 0 1; 0 1 0])
-#     str=="z" && return SparseMatrixCSC([0 0 1; 0 0 1; 1 1 0])
-#     error("@Γ′_str error: wrong input string.")
-# end
+"""
+    Γ"x" => SparseMatrixCSC([0 0 0; 0 0 1; 0 1 0])
+    Γ"y" => SparseMatrixCSC([0 0 1; 0 0 0; 1 0 0])
+    Γ"z" => SparseMatrixCSC([0 1 0; 1 0 0; 0 0 0])
 
-# """
-#     DM"x" => SparseMatrixCSC([0 0 0; 0 0 1; 0 -1 0])
-#     DM"y" => SparseMatrixCSC([0 0 -1; 0 0 0; 1 0 0])
-#     DM"z" => SparseMatrixCSC([0 1 0; -1 0 0; 0 0 0])
+Γ coupling matrix.
+"""
+macro Γ_str(str::String)
+    str=="x" && return SparseMatrixCSC([0 0 0; 0 0 1; 0 1 0])
+    str=="y" && return SparseMatrixCSC([0 0 1; 0 0 0; 1 0 0])
+    str=="z" && return SparseMatrixCSC([0 1 0; 1 0 0; 0 0 0])
+    error("@Γ_str error: wrong input string.")
+end
 
-# The DM coupling matrix.
-# """
-# macro DM_str(str::String)
-#     str=="x" && return SparseMatrixCSC([0 0 0; 0 0 1; 0 -1 0])
-#     str=="y" && return SparseMatrixCSC([0 0 -1; 0 0 0; 1 0 0])
-#     str=="z" && return SparseMatrixCSC([0 1 0; -1 0 0; 0 0 0])
-#     error("@DM_str error: wrong input string.")
-# end
+"""
+    Γ′"x" => SparseMatrixCSC([0 1 1; 1 0 0; 1 0 0])
+    Γ′"y" => SparseMatrixCSC([0 1 0; 1 0 1; 0 1 0])
+    Γ′"z" => SparseMatrixCSC([0 0 1; 0 0 1; 1 1 0])
 
-# ## Term
-# """
-#     SpinTerm(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+Γ′ coupling matrix.
+"""
+macro Γ′_str(str::String)
+    str=="x" && return SparseMatrixCSC([0 1 1; 1 0 0; 1 0 0])
+    str=="y" && return SparseMatrixCSC([0 1 0; 1 0 1; 0 1 0])
+    str=="z" && return SparseMatrixCSC([0 0 1; 0 0 1; 1 1 0])
+    error("@Γ′_str error: wrong input string.")
+end
 
-# Generic spin term.
+"""
+    DM"x" => SparseMatrixCSC([0 0 0; 0 0 1; 0 -1 0])
+    DM"y" => SparseMatrixCSC([0 0 -1; 0 0 0; 1 0 0])
+    DM"z" => SparseMatrixCSC([0 1 0; -1 0 0; 0 0 0])
 
-# Type alias for `Term{:SpinTerm, id, V, B, C<:TermCoupling, A<:TermAmplitude}`.
-# """
-# const SpinTerm{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:SpinTerm, id, V, B, C, A}
-# @inline function SpinTerm(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
-#     return Term{:SpinTerm}(id, value, bondkind, coupling, true; amplitude=amplitude, ismodulatable=ismodulatable)
-# end
-# @inline function patternrule(::Val{:SpinTerm}, ::Val{termrank}, bondlength::Integer) where termrank
-#     bondlength==1 && return ntuple(i->1, Val(termrank))
-#     bondlength==2 && return ntuple(i->2-i%2, Val(termrank))
-#     error("patternrule error: not supported for a generic bond containing $bondlength points.")
-# end
+DM coupling matrix.
+"""
+macro DM_str(str::String)
+    str=="x" && return SparseMatrixCSC([0 0 0; 0 0 1; 0 -1 0])
+    str=="y" && return SparseMatrixCSC([0 0 -1; 0 0 0; 1 0 0])
+    str=="z" && return SparseMatrixCSC([0 1 0; -1 0 0; 0 0 0])
+    error("@DM_str error: wrong input string.")
+end
 
-# """
-#     Zeeman(id::Symbol, value, direction::Char, g::Number=1; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
-#     Zeeman(id::Symbol, value, direction::Union{AbstractVector{<:Number}, Tuple{Number, Number}}, g::Union{Number, AbstractMatrix{<:Number}}=1; unit::Symbol=:degree, amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+## Term
+"""
+    SpinTerm(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
 
-# Zeeman term.
+Generic spin term.
 
-# Type alias for `Term{:Zeeman, id, V, Int, C<:TermCoupling, A<:TermAmplitude}`.
-# """
-# const Zeeman{id, V, C<:TermCoupling, A<:TermAmplitude} = Term{:Zeeman, id, V, Int, C, A}
-# @inline function Zeeman(id::Symbol, value, direction::Char, g::Number=1; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
-#     @assert lowercase(direction)∈('x', 'y', 'z') "Zeeman error: not supported direction."
-#     coupling = Coupling(g, :, SID, (lowercase(direction),))
-#     return Term{:Zeeman}(id, value, 0, coupling, true; amplitude=amplitude, ismodulatable=ismodulatable)
-# end
-# @inline function Zeeman(id::Symbol, value, dir::Union{AbstractVector{<:Number}, Tuple{Number, Number}}, g::Union{Number, AbstractMatrix{<:Number}}=1; unit::Symbol=:degree, amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
-#     couplings = dot(direction(dir, unit), Lande(g), SVector(Coupling(:, SID, ('x',)), Coupling(:, SID, ('y',)), Coupling(:, SID, ('z',))))
-#     return Term{:Zeeman}(id, value, 0, couplings, true; amplitude=amplitude, ismodulatable=ismodulatable)
-# end
-# @inline Lande(g::Number) = SMatrix{3, 3}(g, 0, 0, 0, g, 0, 0, 0, g)
-# @inline Lande(g::AbstractMatrix{<:Number}) = (@assert(size(g)==(3, 3), "Lande error: the g-tensor must be 3×3."); g)
+Type alias for `Term{:SpinTerm, id, V, B, C<:TermCoupling, A<:TermAmplitude}`.
+"""
+const SpinTerm{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:SpinTerm, id, V, B, C, A}
+@inline function SpinTerm(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+    return Term{:SpinTerm}(id, value, bondkind, coupling, true; amplitude=amplitude, ismodulatable=ismodulatable)
+end
+@inline function patternrule(::NTuple{N, Colon}, ::Val{:SpinTerm}, bondlength::Integer) where N
+    bondlength==1 && return ntuple(i->1, Val(N))
+    bondlength==2 && return ntuple(i->2-i%2, Val(N))
+    error("patternrule error: not supported for a generic bond containing $bondlength points.")
+end
 
-# """
-#     SingleIonAnisotropy(id::Symbol, value, direction::Char; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
-#     SingleIonAnisotropy(id::Symbol, value, matrix::AbstractMatrix{<:Number}; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+"""
+    Zeeman(
+        id::Symbol, value, direction::Char, g::Number=1;
+        amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true
+    )
+    Zeeman(
+        id::Symbol, value, direction::Union{AbstractVector{<:Number}, Tuple{Number, Number}}, g::Union{Number, AbstractMatrix{<:Number}}=1;
+        unit::Symbol=:degree, amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true
+    )
 
-# Single ion anisotropy term.
+Zeeman term.
 
-# Type alias for `Term{:SingleIonAnisotropy, id, V, Int, C<:TermCoupling, A<:TermAmplitude}`.
-# """
-# const SingleIonAnisotropy{id, V, C<:TermCoupling, A<:TermAmplitude} = Term{:SingleIonAnisotropy, id, V, Int, C, A}
-# @inline function SingleIonAnisotropy(id::Symbol, value, direction::Char; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
-#     @assert lowercase(direction)∈('x', 'y', 'z') "SingleIonAnisotropy error: not supported direction."
-#     coupling = Coupling(:, SID, (lowercase(direction), lowercase(direction)))
-#     return Term{:SingleIonAnisotropy}(id, value, 0, coupling, true; amplitude=amplitude, ismodulatable=ismodulatable)
-# end
-# @inline function SingleIonAnisotropy(id::Symbol, value, matrix::AbstractMatrix{<:Number}; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
-#     @assert ishermitian(matrix) "SingleIonAnisotropy error: the anisotropy matrix must be Hermitian."
-#     @assert size(matrix)==(3, 3) "SingleIonAnisotropy error: the anisotropy matrix must be 3×3."
-#     couplings = dot(SVector(Coupling(:, SID, ('x',)), Coupling(:, SID, ('y',)), Coupling(:, SID, ('z',))), matrix, SVector(Coupling(:, SID, ('x',)), Coupling(:, SID, ('y',)), Coupling(:, SID, ('z',))))
-#     return Term{:SingleIonAnisotropy}(id, value, 0, couplings, true; amplitude=amplitude, ismodulatable=ismodulatable)
-# end
+Type alias for `Term{:Zeeman, id, V, Int, C<:TermCoupling, A<:TermAmplitude}`.
+"""
+const Zeeman{id, V, C<:TermCoupling, A<:TermAmplitude} = Term{:Zeeman, id, V, Int, C, A}
+@inline function Zeeman(
+    id::Symbol, value, direction::Char, g::Number=1;
+    amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true
+)
+    @assert lowercase(direction)∈('x', 'y', 'z') "Zeeman error: not supported direction."
+    coupling = Coupling(g, 𝕊(:, lowercase(direction)))
+    return Term{:Zeeman}(id, value, 0, coupling, true; amplitude=amplitude, ismodulatable=ismodulatable)
+end
+@inline function Zeeman(
+    id::Symbol, value, dir::Union{AbstractVector{<:Number}, Tuple{Number, Number}}, g::Union{Number, AbstractMatrix{<:Number}}=1;
+    unit::Symbol=:degree, amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true
+)
+    couplings = dot(direction(dir, unit), Lande(g), SVector(Coupling(𝕊(:, 'x')), Coupling(𝕊(:, 'y')), Coupling(𝕊(:, 'z'))))
+    return Term{:Zeeman}(id, value, 0, couplings, true; amplitude=amplitude, ismodulatable=ismodulatable)
+end
+@inline Lande(g::Number) = SMatrix{3, 3}(g, 0, 0, 0, g, 0, 0, 0, g)
+@inline Lande(g::AbstractMatrix{<:Number}) = (@assert(size(g)==(3, 3), "Lande error: the g-tensor must be 3×3."); g)
 
-# """
-#     Ising(id::Symbol, value, bondkind, direction::Char; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+"""
+    SingleIonAnisotropy(id::Symbol, value, direction::Char; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+    SingleIonAnisotropy(id::Symbol, value, matrix::AbstractMatrix{<:Number}; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
 
-# Ising term.
+Single ion anisotropy term.
 
-# Type alias for `Term{:Ising, id, V, B, C<:TermCoupling, A<:TermAmplitude}`.
-# """
-# const Ising{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:Ising, id, V, B, C, A}
-# @inline function Ising(id::Symbol, value, bondkind, direction::Char; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
-#     @assert lowercase(direction)∈('x', 'y', 'z') "Ising error: not supported direction."
-#     coupling = Coupling(:, SID, (lowercase(direction), lowercase(direction)))
-#     return Term{:Ising}(id, value, bondkind, coupling, true; amplitude=amplitude, ismodulatable=ismodulatable)
-# end
+Type alias for `Term{:SingleIonAnisotropy, id, V, Int, C<:TermCoupling, A<:TermAmplitude}`.
+"""
+const SingleIonAnisotropy{id, V, C<:TermCoupling, A<:TermAmplitude} = Term{:SingleIonAnisotropy, id, V, Int, C, A}
+@inline function SingleIonAnisotropy(id::Symbol, value, direction::Char; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+    @assert lowercase(direction)∈('x', 'y', 'z') "SingleIonAnisotropy error: not supported direction."
+    coupling = Coupling(:, 𝕊, (lowercase(direction), lowercase(direction)))
+    return Term{:SingleIonAnisotropy}(id, value, 0, coupling, true; amplitude=amplitude, ismodulatable=ismodulatable)
+end
+@inline function SingleIonAnisotropy(id::Symbol, value, matrix::AbstractMatrix{<:Number}; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+    @assert ishermitian(matrix) "SingleIonAnisotropy error: the anisotropy matrix must be Hermitian."
+    @assert size(matrix)==(3, 3) "SingleIonAnisotropy error: the anisotropy matrix must be 3×3."
+    return Term{:SingleIonAnisotropy}(id, value, 0, MatrixCoupling(:, 𝕊, matrix), true; amplitude=amplitude, ismodulatable=ismodulatable)
+end
 
-# """
-#     Heisenberg(id::Symbol, value, bondkind; form::Symbol=Symbol("+-z"), amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+"""
+    Ising(id::Symbol, value, bondkind, direction::Char; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
 
-# Heisenberg term.
+Ising term.
 
-# Type alias for `Term{:Heisenberg, id, V, B, C<:TermCoupling, A<:TermAmplitude}`.
-# """
-# const Heisenberg{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:Heisenberg, id, V, B, C, A}
-# @inline function Heisenberg(id::Symbol, value, bondkind; form::Symbol=Symbol("+-z"), amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
-#     @assert form∈(:xyz, Symbol("+-z")) "Heisenberg error: form should :xyz or Symbol(\"+-z\")."
-#     couplings = if form==:xyz
-#         Coupling(1//1, :, SID, ('x', 'x')) + Coupling(1//1, :, SID, ('y', 'y')) + Coupling(1//1, :, SID, ('z', 'z'))
-#     else
-#         Coupling(1//2, :, SID, ('+', '-')) + Coupling(1//2, :, SID, ('-', '+')) + Coupling(1//1, :, SID, ('z', 'z'))
-#     end
-#     return Term{:Heisenberg}(id, value, bondkind, couplings, true; amplitude=amplitude, ismodulatable=ismodulatable)
-# end
+Type alias for `Term{:Ising, id, V, B, C<:TermCoupling, A<:TermAmplitude}`.
+"""
+const Ising{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:Ising, id, V, B, C, A}
+@inline function Ising(id::Symbol, value, bondkind, direction::Char; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+    @assert lowercase(direction)∈('x', 'y', 'z') "Ising error: not supported direction."
+    coupling = Coupling(:, 𝕊, (lowercase(direction), lowercase(direction)))
+    return Term{:Ising}(id, value, bondkind, coupling, true; amplitude=amplitude, ismodulatable=ismodulatable)
+end
 
-# """
-#     Kitaev(
-#         id::Symbol, value, bondkind;
-#         x::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
-#         y::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
-#         z::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
-#         unit::Symbol=:degree,
-#         amplitude::Union{Function, Nothing}=nothing,
-#         ismodulatable::Bool=true
-#     )
+"""
+    Heisenberg(id::Symbol, value, bondkind; form::Symbol=Symbol("+-z"), amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
 
-# Kitaev term. Since Kitaev term is symmetric on every bond, only one direction of a bond is needed. The inverse direction of a bond can be handled automatically by this function.
+Heisenberg term.
 
-# Here, `x`, `y` and `z` assign the x-bonds, y-bonds, and z-bonds, respectively, with each kind of bond can be
-# 1) a `Number` specifying the azimuth angle of a bond in the 2-dimensional case, or
-# 2) a `Tuple{Number, Number}` specifying the polar and azimuth angle pairs of a bond in the 3-dimensional case, or
-# 3) an `AbstractVector{<:Number}` specifying the direction of a bond.
+Type alias for `Term{:Heisenberg, id, V, B, C<:TermCoupling, A<:TermAmplitude}`.
+"""
+const Heisenberg{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:Heisenberg, id, V, B, C, A}
+@inline function Heisenberg(id::Symbol, value, bondkind; form::Symbol=Symbol("+-z"), amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+    @assert form∈(:xyz, Symbol("+-z")) "Heisenberg error: form should :xyz or Symbol(\"+-z\")."
+    couplings = if form==:xyz
+        Coupling(1//1, :, 𝕊, ('x', 'x')) + Coupling(1//1, :, 𝕊, ('y', 'y')) + Coupling(1//1, :, 𝕊, ('z', 'z'))
+    else
+        Coupling(1//2, :, 𝕊, ('+', '-')) + Coupling(1//2, :, 𝕊, ('-', '+')) + Coupling(1//1, :, 𝕊, ('z', 'z'))
+    end
+    return Term{:Heisenberg}(id, value, bondkind, couplings, true; amplitude=amplitude, ismodulatable=ismodulatable)
+end
 
-# Type alias for `Term{:Kitaev, id, V, B, C<:TermCoupling, A<:TermAmplitude}`.
-# """
-# const Kitaev{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:Kitaev, id, V, B, C, A}
-# function Kitaev(
-#     id::Symbol, value, bondkind;
-#     x::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
-#     y::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
-#     z::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
-#     unit::Symbol=:degree,
-#     amplitude::Union{Function, Nothing}=nothing,
-#     ismodulatable::Bool=true
-# )
-#     dirs = (x=direction.(x, unit), y=direction.(y, unit), z=direction.(z, unit))
-#     function kitaev(bond::Bond)
-#         coordinate = rcoordinate(bond)
-#         any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.x) && return MatrixCoupling(: , SID, Ising"x")
-#         any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.y) && return MatrixCoupling(: , SID, Ising"y")
-#         any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.z) && return MatrixCoupling(: , SID, Ising"z")
-#         error("Kitaev error: wrong bond.")
-#     end
-#     return Term{:Kitaev}(id, value, bondkind, kitaev, true; amplitude=amplitude, ismodulatable=ismodulatable)
-# end
+"""
+    Kitaev(
+        id::Symbol, value, bondkind;
+        x::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+        y::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+        z::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+        unit::Symbol=:degree,
+        amplitude::Union{Function, Nothing}=nothing,
+        ismodulatable::Bool=true
+    )
 
-# """
-#     Γ(
-#         id::Symbol, value, bondkind;
-#         x::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
-#         y::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
-#         z::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
-#         unit::Symbol=:degree,
-#         amplitude::Union{Function, Nothing}=nothing,
-#         ismodulatable::Bool=true
-#     )
+Kitaev term. Since Kitaev term is symmetric on every bond, only one direction of a bond is needed. The inverse direction of a bond can be handled automatically by this function.
 
-# Γ Term. Since Γ term is symmetric on every bond, only one direction of a bond is needed. The inverse direction of a bond can be handled automatically by this function.
+Here, `x`, `y` and `z` assign the x-bonds, y-bonds, and z-bonds, respectively, with each kind of bond can be
+1) a `Number` specifying the azimuth angle of a bond in the 2-dimensional case, or
+2) a `Tuple{Number, Number}` specifying the polar and azimuth angle pairs of a bond in the 3-dimensional case, or
+3) an `AbstractVector{<:Number}` specifying the direction of a bond.
 
-# Here, `x`, `y` and `z` assign the x-bonds, y-bonds, and z-bonds, respectively, with each kind of bond can be
-# 1) a `Number` specifying the azimuth angle of a bond in the 2-dimensional case, or
-# 2) a `Tuple{Number, Number}` specifying the polar and azimuth angle pairs of a bond in the 3-dimensional case, or
-# 3) an `AbstractVector{<:Number}` specifying the direction of a bond.
+Type alias for `Term{:Kitaev, id, V, B, C<:TermCoupling, A<:TermAmplitude}`.
+"""
+const Kitaev{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:Kitaev, id, V, B, C, A}
+function Kitaev(
+    id::Symbol, value, bondkind;
+    x::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+    y::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+    z::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+    unit::Symbol=:degree,
+    amplitude::Union{Function, Nothing}=nothing,
+    ismodulatable::Bool=true
+)
+    dirs = (x=direction.(x, unit), y=direction.(y, unit), z=direction.(z, unit))
+    function kitaev(bond::Bond)
+        coordinate = rcoordinate(bond)
+        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.x) && return MatrixCoupling(: , 𝕊, Ising"x")
+        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.y) && return MatrixCoupling(: , 𝕊, Ising"y")
+        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.z) && return MatrixCoupling(: , 𝕊, Ising"z")
+        error("Kitaev error: wrong bond.")
+    end
+    return Term{:Kitaev}(id, value, bondkind, kitaev, true; amplitude=amplitude, ismodulatable=ismodulatable)
+end
 
-# Type alias for `Term{:Γ, id, V, B, C<:TermCoupling, A<:TermAmplitude}`.
-# """
-# const Γ{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:Γ, id, V, B, C, A}
-# function Γ(
-#     id::Symbol, value, bondkind;
-#     x::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
-#     y::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
-#     z::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
-#     unit::Symbol=:degree,
-#     amplitude::Union{Function, Nothing}=nothing,
-#     ismodulatable::Bool=true
-# )
-#     dirs = (x=direction.(x, unit), y=direction.(y, unit), z=direction.(z, unit))
-#     function γ(bond::Bond)
-#         coordinate = rcoordinate(bond)
-#         any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.x) && return MatrixCoupling(: , SID, Γ"x")
-#         any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.y) && return MatrixCoupling(: , SID, Γ"y")
-#         any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.z) && return MatrixCoupling(: , SID, Γ"z")
-#         error("Γ error: wrong bond.")
-#     end
-#     return Term{:Γ}(id, value, bondkind, γ, true; amplitude=amplitude, ismodulatable=ismodulatable)
-# end
+"""
+    Γ(
+        id::Symbol, value, bondkind;
+        x::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+        y::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+        z::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+        unit::Symbol=:degree,
+        amplitude::Union{Function, Nothing}=nothing,
+        ismodulatable::Bool=true
+    )
 
-# """
-#     Γ′(
-#         id::Symbol, value, bondkind;
-#         x::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
-#         y::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
-#         z::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
-#         unit::Symbol=:degree,
-#         amplitude::Union{Function, Nothing}=nothing,
-#         ismodulatable::Bool=true
-#     )
+Γ Term. Since Γ term is symmetric on every bond, only one direction of a bond is needed. The inverse direction of a bond can be handled automatically by this function.
 
-# Γ′ Term. Since Γ′ term is symmetric on every bond, only one direction of a bond is needed. The inverse direction of a bond can be handled automatically by this function.
+Here, `x`, `y` and `z` assign the x-bonds, y-bonds, and z-bonds, respectively, with each kind of bond can be
+1) a `Number` specifying the azimuth angle of a bond in the 2-dimensional case, or
+2) a `Tuple{Number, Number}` specifying the polar and azimuth angle pairs of a bond in the 3-dimensional case, or
+3) an `AbstractVector{<:Number}` specifying the direction of a bond.
 
-# Here, `x`, `y` and `z` assign the x-bonds, y-bonds, and z-bonds, respectively, with each bond can be
-# 1) a `Number` specifying the azimuth angle of a bond in the 2-dimensional case, or
-# 2) a `Tuple{Number, Number}` specifying the polar and azimuth angle pairs of a bond in the 3-dimensional case, or
-# 3) an `AbstractVector{<:Number}` specifying the direction of a bond.
+Type alias for `Term{:Γ, id, V, B, C<:TermCoupling, A<:TermAmplitude}`.
+"""
+const Γ{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:Γ, id, V, B, C, A}
+function Γ(
+    id::Symbol, value, bondkind;
+    x::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+    y::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+    z::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+    unit::Symbol=:degree,
+    amplitude::Union{Function, Nothing}=nothing,
+    ismodulatable::Bool=true
+)
+    dirs = (x=direction.(x, unit), y=direction.(y, unit), z=direction.(z, unit))
+    function γ(bond::Bond)
+        coordinate = rcoordinate(bond)
+        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.x) && return MatrixCoupling(: , 𝕊, Γ"x")
+        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.y) && return MatrixCoupling(: , 𝕊, Γ"y")
+        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.z) && return MatrixCoupling(: , 𝕊, Γ"z")
+        error("Γ error: wrong bond.")
+    end
+    return Term{:Γ}(id, value, bondkind, γ, true; amplitude=amplitude, ismodulatable=ismodulatable)
+end
 
-# Type alias for `Term{:Γ′, id, V, B, C<:TermCoupling, A<:TermAmplitude}`.
-# """
-# const Γ′{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:Γ′, id, V, B, C, A}
-# function Γ′(
-#     id::Symbol, value, bondkind;
-#     x::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
-#     y::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
-#     z::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
-#     unit::Symbol=:degree,
-#     amplitude::Union{Function, Nothing}=nothing,
-#     ismodulatable::Bool=true
-# )
-#     dirs = (x=direction.(x, unit), y=direction.(y, unit), z=direction.(z, unit))
-#     function γ′(bond::Bond)
-#         coordinate = rcoordinate(bond)
-#         any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.x) && return MatrixCoupling(: , SID, Γ′"x")
-#         any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.y) && return MatrixCoupling(: , SID, Γ′"y")
-#         any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.z) && return MatrixCoupling(: , SID, Γ′"z")
-#         error("Γ′ error: wrong bond.")
-#     end
-#     return Term{:Γ′}(id, value, bondkind, γ′, true; amplitude=amplitude, ismodulatable=ismodulatable)
-# end
+"""
+    Γ′(
+        id::Symbol, value, bondkind;
+        x::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+        y::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+        z::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+        unit::Symbol=:degree,
+        amplitude::Union{Function, Nothing}=nothing,
+        ismodulatable::Bool=true
+    )
 
-# """
-#     DM(
-#         id::Symbol,
-#         value,
-#         bondkind,
-#         vectors::Pair{<:AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}}, <:Union{Char, AbstractVector{<:Number}}}...;
-#         unit::Symbol=:degree,
-#         amplitude::Union{Function, Nothing}=nothing,
-#         ismodulatable::Bool=true
-#     )
+Γ′ Term. Since Γ′ term is symmetric on every bond, only one direction of a bond is needed. The inverse direction of a bond can be handled automatically by this function.
 
-# DM term. Since DM term is antisymmetric on every bond, only the positive direction of a bond is needed. The negative direction of a bond can be handled automatically by this function.
+Here, `x`, `y` and `z` assign the x-bonds, y-bonds, and z-bonds, respectively, with each bond can be
+1) a `Number` specifying the azimuth angle of a bond in the 2-dimensional case, or
+2) a `Tuple{Number, Number}` specifying the polar and azimuth angle pairs of a bond in the 3-dimensional case, or
+3) an `AbstractVector{<:Number}` specifying the direction of a bond.
 
-# Here, `vectors` specify the unit DM vector on every bond in the form `[bond₁, bond₂, ...]=>v`, where `bondᵢ` can be
-# 1) a `Number` specifying the azimuth angle of a bond in the 2-dimensional case, or
-# 2) a `Tuple{Number, Number}` specifying the polar and azimuth angle pairs of a bond in the 3-dimensional case, or
-# 3) an `AbstractVector{<:Number}` specifying the direction of a bond;
-# and `v` can be
-# 1) a `Char` of 'x', 'y' or 'z', indicating the unit DM vector on the set of bonds is along the x, y or z direction, or
-# 2) an `AbstractVector{<:Number}`, specifying the direction of the DM vector on the set of bonds.
+Type alias for `Term{:Γ′, id, V, B, C<:TermCoupling, A<:TermAmplitude}`.
+"""
+const Γ′{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:Γ′, id, V, B, C, A}
+function Γ′(
+    id::Symbol, value, bondkind;
+    x::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+    y::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+    z::AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}},
+    unit::Symbol=:degree,
+    amplitude::Union{Function, Nothing}=nothing,
+    ismodulatable::Bool=true
+)
+    dirs = (x=direction.(x, unit), y=direction.(y, unit), z=direction.(z, unit))
+    function γ′(bond::Bond)
+        coordinate = rcoordinate(bond)
+        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.x) && return MatrixCoupling(: , 𝕊, Γ′"x")
+        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.y) && return MatrixCoupling(: , 𝕊, Γ′"y")
+        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.z) && return MatrixCoupling(: , 𝕊, Γ′"z")
+        error("Γ′ error: wrong bond.")
+    end
+    return Term{:Γ′}(id, value, bondkind, γ′, true; amplitude=amplitude, ismodulatable=ismodulatable)
+end
 
-# Type alias for `Term{:DM, id, V, B, C<:TermCoupling, A<:TermAmplitude}`.
-# """
-# const DM{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:DM, id, V, B, C, A}
-# function DM(
-#     id::Symbol,
-#     value,
-#     bondkind,
-#     vectors::Pair{<:AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}}, <:Union{Char, AbstractVector{<:Number}}}...;
-#     unit::Symbol=:degree,
-#     amplitude::Union{Function, Nothing}=nothing,
-#     ismodulatable::Bool=true
-# )
-#     dirs = [direction.(pair.first, unit)=>direction(pair.second) for pair in vectors]
-#     function dm(bond::Bond)
-#         coordinate = rcoordinate(bond)
-#         for pair in dirs
-#             for v in pair.first
-#                 parallel = isparallel(v, coordinate; atol=atol, rtol=rtol)
-#                 abs(parallel)==1 && return MatrixCoupling(:, SID, parallel*(pair.second[1]*DM"x"+pair.second[2]*DM"y"+pair.second[3]*DM"z"))
-#             end
-#         end
-#         error("dm error: wrong bond.")
-#     end
-#     return Term{:DM}(id, value, bondkind, dm, true; amplitude=amplitude, ismodulatable=ismodulatable)
-# end
+"""
+    DM(
+        id::Symbol,
+        value,
+        bondkind,
+        vectors::Pair{<:AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}}, <:Union{Char, AbstractVector{<:Number}}}...;
+        unit::Symbol=:degree,
+        amplitude::Union{Function, Nothing}=nothing,
+        ismodulatable::Bool=true
+    )
+
+DM term. Since DM term is antisymmetric on every bond, only the positive direction of a bond is needed. The negative direction of a bond can be handled automatically by this function.
+
+Here, `vectors` specify the unit DM vector on every bond in the form `[bond₁, bond₂, ...]=>v`, where `bondᵢ` can be
+1) a `Number` specifying the azimuth angle of a bond in the 2-dimensional case, or
+2) a `Tuple{Number, Number}` specifying the polar and azimuth angle pairs of a bond in the 3-dimensional case, or
+3) an `AbstractVector{<:Number}` specifying the direction of a bond;
+and `v` can be
+1) a `Char` of 'x', 'y' or 'z', indicating the unit DM vector on the set of bonds is along the x, y or z direction, or
+2) an `AbstractVector{<:Number}`, specifying the direction of the DM vector on the set of bonds.
+
+Type alias for `Term{:DM, id, V, B, C<:TermCoupling, A<:TermAmplitude}`.
+"""
+const DM{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:DM, id, V, B, C, A}
+function DM(
+    id::Symbol,
+    value,
+    bondkind,
+    vectors::Pair{<:AbstractVector{<:Union{Number, Tuple{Number, Number}, AbstractVector{<:Number}}}, <:Union{Char, AbstractVector{<:Number}}}...;
+    unit::Symbol=:degree,
+    amplitude::Union{Function, Nothing}=nothing,
+    ismodulatable::Bool=true
+)
+    dirs = [direction.(pair.first, unit)=>direction(pair.second) for pair in vectors]
+    function dm(bond::Bond)
+        coordinate = rcoordinate(bond)
+        for pair in dirs
+            for v in pair.first
+                parallel = isparallel(v, coordinate; atol=atol, rtol=rtol)
+                abs(parallel)==1 && return MatrixCoupling(:, 𝕊, parallel*(pair.second[1]*DM"x"+pair.second[2]*DM"y"+pair.second[3]*DM"z"))
+            end
+        end
+        error("dm error: wrong bond.")
+    end
+    return Term{:DM}(id, value, bondkind, dm, true; amplitude=amplitude, ismodulatable=ismodulatable)
+end
 
 # # Phononic systems
 # ## PID
@@ -1094,18 +1113,18 @@ const FockTerm = Union{Onsite, Hopping, Pairing, Hubbard, InterOrbitalInterSpin,
 # @inline script(::Val{:direction}, pid::PID; kwargs...) = pid.direction==(:) ? ":" : string(pid.direction)
 
 # @inline body(pid::PID) = string(pid.tag)
-# @inline body(index::Index{<:Union{Int, Colon}, <:PID}) = string(index.iid.tag)
-# @inline body(index::CompositeIndex{<:Index{<:Union{Int, Colon}, <:PID}}) = string(getcontent(index, :index).iid.tag)
+# @inline body(index::Index{<:PID}) = string(index.iid.tag)
+# @inline body(index::CompositeIndex{<:Index{<:PID}}) = string(getcontent(index, :index).iid.tag)
 # """
 #     latexofphonons
 
 # The default LaTeX format of a phonon index.
 # """
 # const latexofphonons = LaTeX{(:direction,), (:site,)}(body, "", "")
-# @inline latexname(::Type{<:Index{<:Union{Int, Colon}, <:PID}}) = Symbol("Index{Union{Int, Colon}, PID}")
-# @inline latexname(::Type{<:CompositeIndex{<:Index{<:Union{Int, Colon}, <:PID}}}) = Symbol("CompositeIndex{Index{Union{Int, Colon}, PID}}")
-# latexformat(Index{<:Union{Int, Colon}, <:PID}, latexofphonons)
-# latexformat(CompositeIndex{<:Index{<:Union{Int, Colon}, <:PID}}, latexofphonons)
+# @inline latexname(::Type{<:Index{<:PID}}) = Symbol("Index{PID}")
+# @inline latexname(::Type{<:CompositeIndex{<:Index{<:PID}}}) = Symbol("CompositeIndex{Index{PID}}")
+# latexformat(Index{<:PID}, latexofphonons)
+# latexformat(CompositeIndex{<:Index{<:PID}}, latexofphonons)
 # @inline latexname(::Type{<:PID}) = Symbol("PID")
 # latexformat(PID, LaTeX{(:direction,), ()}(body, "", ""))
 
@@ -1151,11 +1170,11 @@ const FockTerm = Union{Onsite, Hopping, Pairing, Hubbard, InterOrbitalInterSpin,
 
 # ### expand
 # """
-#     expand(::Val{:Hooke}, pnc::Coupling{<:Number, <:NTuple{2, Index{<:Union{Int, Colon}, PID{Colon}}}}, bond::Bond, hilbert::Hilbert) -> PPExpand
+#     expand(::Val{:Hooke}, pnc::Coupling{<:Number, <:NTuple{2, Index{PID{Colon}}}}, bond::Bond, hilbert::Hilbert) -> PPExpand
 
 # Expand the default phonon potential coupling on a given bond.
 # """
-# function expand(::Val{:Hooke}, pnc::Coupling{<:Number, <:NTuple{2, Index{<:Union{Int, Colon}, PID{Colon}}}}, bond::Bond, hilbert::Hilbert)
+# function expand(::Val{:Hooke}, pnc::Coupling{<:Number, <:NTuple{2, Index{PID{Colon}}}}, bond::Bond, hilbert::Hilbert)
 #     R̂ = rcoordinate(bond)/norm(rcoordinate(bond))
 #     @assert pnc.indexes.iids.tags==('u', 'u') "expand error: wrong tags of Hooke coupling."
 #     @assert isapprox(pnc.value, 1, atol=atol, rtol=rtol) "expand error: wrong coefficient of Hooke coupling."

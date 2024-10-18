@@ -4,7 +4,7 @@ using QuantumLattices.DegreesOfFreedom: ˢᵗ, ⁿᵈ, AbstractIndex, CompositeI
 using QuantumLattices.QuantumOperators: Operator, Operators, latexname, matrix, script
 using QuantumLattices.QuantumSystems
 using QuantumLattices.Spatials: Bond, Lattice, Neighbors, Point, azimuthd, bonds, rcoordinate, icoordinate
-using QuantumLattices.Toolkit: Permutations, shape
+using QuantumLattices.Toolkit: DuplicatePermutations, shape
 using SparseArrays: SparseMatrixCSC
 using StaticArrays: SVector
 
@@ -53,6 +53,7 @@ using StaticArrays: SVector
     @test AbstractIndex[FockIndex{:f}] == AbstractIndex[Index{<:FockIndex{:f}}] ==  AbstractIndex[CoordinatedIndex{<:Index{<:FockIndex{:f}}}] == 𝕗
     @test AbstractIndex[FockIndex{:b}] == AbstractIndex[Index{<:FockIndex{:b}}] ==  AbstractIndex[CoordinatedIndex{<:Index{<:FockIndex{:b}}}] == 𝕓
     @test AbstractIndex[FockIndex{:}] == AbstractIndex[Index{<:FockIndex{:}}] ==  AbstractIndex[CoordinatedIndex{<:Index{<:FockIndex{:}}}] == 𝔽
+    @test AbstractIndex[FockIndex] == AbstractIndex[Index{<:FockIndex}] ==  AbstractIndex[CoordinatedIndex{<:Index{<:FockIndex}}] == 𝔽
     @test AbstractIndex[𝕗] == FockIndex{:f}
     @test AbstractIndex[𝕓] == FockIndex{:b}
     @test AbstractIndex[𝔽] == FockIndex{:}
@@ -367,355 +368,350 @@ end
     @test expand(term, bond, hilbert, half=false) == operators*2
 end
 
-# @testset "SID" begin
-#     @test SID{1//2}('z')' == SID{1//2}('z')
-#     @test SID{1//2}('x')' == SID{1//2}('x')
-#     @test SID{1//2}('y')' == SID{1//2}('y')
-#     @test SID{1//2}('+')' == SID{1//2}('-')
-#     @test SID{1//2}('-')' == SID{1//2}('+')
+@testset "SpinIndex" begin
+    index = 𝕊{3//2}('x')
+    @test statistics(index) == statistics(typeof(index)) == :b
+    @test isdefinite(index) == isdefinite(typeof(index)) == true
+    @test index == SpinIndex{3//2, Colon}('x')
+    @test isequal(index, index')
+    @test hash(index) == hash((3//2, 'x'))
+    @test replace(index, tag='z') == 𝕊{3//2}('z')
+    @test string(index) == "𝕊{3//2}('x')"
+    @test totalspin(index) == totalspin(typeof(index)) == 3//2
+    @test totalspin(𝕊{3//2}(:, 'x')) == totalspin(typeof(𝕊{3//2}(:, 'x'))) ==3//2
+    @test totalspin(𝕊{3//2}(:, 'x', [0], [0])) == totalspin(typeof(𝕊{3//2}(:, 'x', [0], [0]))) == 3//2
 
-#     sid = SID{3//2}('x')
-#     @test string(sid) == "SID{3//2}('x')"
-#     @test replace(sid, tag='z') == SID{3//2}('z')
-#     @test hash(sid) == hash((3//2, 'x'))
-#     @test totalspin(sid) == totalspin(typeof(sid)) == 3//2
-#     @test totalspin(Index(:, sid)) == totalspin(CoordinatedIndex(Index(:, sid), [0], [0])) == 3//2
-#     @test statistics(sid) == statistics(typeof(sid)) == :b
+    index = 𝕊('z')
+    @test index == 𝕊{:}('z')
+    @test string(index) == "𝕊('z')"
+    @test string(𝕊{:}) == "𝕊"
+    @test 𝕊(:, 'z') == Index(:, index)
+    @test 𝕊(:, 'z', [0.0], [0.0]) == CoordinatedIndex(Index(:, index), [0.0], [0.0])
 
-#     sid = SID{:}('z')
-#     @test sid == SID('z')
-#     @test string(sid) == "SID('z')"
+    @test 𝕊{1//2}('z') ≠ 𝕊{3//2}('z')
+    @test isequal(𝕊{1//2}('z'), 𝕊{1//2}('z'))
+    @test !isequal(𝕊{1//2}('z'), 𝕊{3//2}('z'))
 
-#     @test SID{1//2}('z')≠SID{3//2}('z')
-#     @test isequal(SID{1//2}('z'), SID{1//2}('z'))
-#     @test !isequal(SID{1//2}('z'), SID{3//2}('z'))
+    @test isdefinite(SpinIndex{:, Char})
+    @test !isdefinite(SpinIndex{1//2, Symbol})
+    @test !isdefinite(SpinIndex{1, Colon})
+    @test indextype(SpinIndex, Char) == SpinIndex{:, Char}
+    @test indextype(SpinIndex{1//2}, Symbol) == SpinIndex{1//2, Symbol}
 
-#     @test isdefinite(SID{:, Char})
-#     @test !isdefinite(SID{1//2, Symbol})
-#     @test !isdefinite(SID{1, typeof(:)})
-#     @test indextype(SID, Char) == SID{:, Char}
-#     @test indextype(SID{1//2}, Symbol) == SID{1//2, Symbol}
-# end
+    @test AbstractIndex[SpinIndex] == AbstractIndex[Index{<:SpinIndex}] ==  AbstractIndex[CoordinatedIndex{<:Index{<:SpinIndex}}] == 𝕊
+    @test AbstractIndex[SpinIndex{:}] == AbstractIndex[Index{<:SpinIndex{:}}] ==  AbstractIndex[CoordinatedIndex{<:Index{<:SpinIndex{:}}}] == 𝕊
+    @test AbstractIndex[SpinIndex{1//2}] == AbstractIndex[Index{<:SpinIndex{1//2}}] ==  AbstractIndex[CoordinatedIndex{<:Index{<:SpinIndex{1//2}}}] == 𝕊{1//2}
+    @test AbstractIndex[𝕊] == SpinIndex{:}
+    @test AbstractIndex[𝕊{1//2}] == SpinIndex{1//2}
+end
 
-# @testset "matrix" begin
-#     @test isapprox(matrix(SID{1//2}('z')), [[-0.5, 0.0] [0.0, 0.5]])
-#     @test isapprox(matrix(SID{1//2}('x')), [[0.0, 0.5] [0.5, 0.0]])
-#     @test isapprox(matrix(SID{1//2}('y')), [[0.0, -0.5im] [0.5im, 0.0]])
-#     @test isapprox(matrix(SID{1//2}('+')), [[0.0, 1.0] [0.0, 0.0]])
-#     @test isapprox(matrix(SID{1//2}('-')), [[0.0, 0.0] [1.0, 0.0]])
+@testset "matrix" begin
+    @test isapprox(matrix(𝕊{1//2}('z')), [[-0.5, 0.0] [0.0, 0.5]])
+    @test isapprox(matrix(𝕊{1//2}('x')), [[0.0, 0.5] [0.5, 0.0]])
+    @test isapprox(matrix(𝕊{1//2}('y')), [[0.0, -0.5im] [0.5im, 0.0]])
+    @test isapprox(matrix(𝕊{1//2}('+')), [[0.0, 1.0] [0.0, 0.0]])
+    @test isapprox(matrix(𝕊{1//2}('-')), [[0.0, 0.0] [1.0, 0.0]])
 
-#     @test isapprox(matrix(Index(:, SID{1//2}('z'))), [[-0.5, 0.0] [0.0, 0.5]])
-#     @test isapprox(matrix(CoordinatedIndex(Index(:, SID{1//2}('z')), [0], [0])), [[-0.5, 0.0] [0.0, 0.5]])
+    @test isapprox(matrix(𝕊{1//2}(:, 'z')), [[-0.5, 0.0] [0.0, 0.5]])
+    @test isapprox(matrix(𝕊{1//2}(:, 'z', [0], [0])), [[-0.5, 0.0] [0.0, 0.5]])
 
-#     @test isapprox(matrix(SID{1}('z')), [[-1.0, 0.0, 0.0] [0.0, 0.0, 0.0] [0.0, 0.0, 1.0]])
-#     @test isapprox(matrix(SID{1}('x')), [[0.0, √2/2, 0.0] [√2/2, 0.0, √2/2] [0.0, √2/2, 0.0]])
-#     @test isapprox(matrix(SID{1}('y')), [[0.0, -√2im/2, 0.0] [√2im/2, 0.0, -√2im/2] [0.0, √2im/2, 0.0]])
-#     @test isapprox(matrix(SID{1}('+')), [[0.0, √2, 0.0] [0.0, 0.0, √2] [0.0, 0.0, 0.0]])
-#     @test isapprox(matrix(SID{1}('-')), [[0.0, 0.0, 0.0] [√2, 0.0, 0.0] [0.0, √2, 0.0]])
-# end
+    @test isapprox(matrix(𝕊{1}('z')), [[-1.0, 0.0, 0.0] [0.0, 0.0, 0.0] [0.0, 0.0, 1.0]])
+    @test isapprox(matrix(𝕊{1}('x')), [[0.0, √2/2, 0.0] [√2/2, 0.0, √2/2] [0.0, √2/2, 0.0]])
+    @test isapprox(matrix(𝕊{1}('y')), [[0.0, -√2im/2, 0.0] [√2im/2, 0.0, -√2im/2] [0.0, √2im/2, 0.0]])
+    @test isapprox(matrix(𝕊{1}('+')), [[0.0, √2, 0.0] [0.0, 0.0, √2] [0.0, 0.0, 0.0]])
+    @test isapprox(matrix(𝕊{1}('-')), [[0.0, 0.0, 0.0] [√2, 0.0, 0.0] [0.0, √2, 0.0]])
+end
 
-# @testset "Spin" begin
-#     @test eltype(Spin) == (SID{S, Char} where S)
-#     spin = Spin{1}()
-#     @test shape(spin) == (1:5,)
-#     @test CartesianIndex(SID{1}('z'), spin) == CartesianIndex(3)
-#     @test SID(CartesianIndex(1), spin) == SID{1}('x')
-#     @test summary(spin) == "5-element Spin{1}"
-#     @test string(spin) == "Spin{1}()"
-#     @test totalspin(spin) == totalspin(typeof(spin)) == 1
-#     @test collect(spin) == [SID{1}('x'), SID{1}('y'), SID{1}('z'), SID{1}('+'), SID{1}('-')]
+@testset "Spin latex" begin
+    @test script(𝕊{1//2}(1, 'z'), Val(:site)) == script(𝕊{1//2}(1, 'z', [0.0], [0.0]), Val(:site)) == "1"
+    @test script(𝕊{1//2}('z'), Val(:tag)) == script(𝕊{1//2}(1, 'z'), Val(:tag)) == script(𝕊{1//2}(1, 'z', [0.0], [0.0]), Val(:tag)) == "z"
+    @test script(𝕊{1//2}(:), Val(:tag)) == script(𝕊{1//2}(1, :), Val(:tag)) == script(𝕊{1//2}(1, :, [0.0], [0.0]), Val(:tag)) == ":"
 
-#     @test match(SID{:}, Spin{1//2}) == true
-#     @test match(SID{1//2}, Spin{1//2}) == true
-#     @test match(SID{1//2}, Spin{1}) == match(SID{1}, Spin{1//2}) == false
-# end
+    @test latexname(SpinIndex) == Symbol("SpinIndex")
+    @test latexname(Index{<:SpinIndex}) == Symbol("Index{SpinIndex}")
+    @test latexname(CompositeIndex{<:Index{<:SpinIndex}}) == Symbol("CompositeIndex{Index{SpinIndex}}")
+end
 
-# @testset "latex" begin
-#     index = Index(1, SID{1//2}('z'))
-#     @test script(Val(:site), index) == "1"
-#     @test script(Val(:tag), index.iid) == script(Val(:tag), index) == "z"
+@testset "Spin" begin
+    @test eltype(Spin) == (SpinIndex{S, Char} where S)
+    spin = Spin{1}()
+    @test shape(spin) == (1:5,)
+    @test convert(CartesianIndex, 𝕊{1}('z'), spin) == CartesianIndex(3)
+    @test convert(SpinIndex, CartesianIndex(1), spin) == 𝕊{1}('x')
+    @test summary(spin) == "5-element Spin{1}"
+    @test string(spin) == "Spin{1}()"
+    @test totalspin(spin) == totalspin(typeof(spin)) == 1
+    @test collect(spin) == [𝕊{1}('x'), 𝕊{1}('y'), 𝕊{1}('z'), 𝕊{1}('+'), 𝕊{1}('-')]
 
-#     @test latexname(Index{<:<:SID}) == Symbol("Index{SID}")
-#     @test latexname(CompositeIndex{<:Index{<:<:SID}}) == Symbol("CompositeIndex{Index{SID}}")
-#     @test latexname(SID) == Symbol("SID")
-# end
+    @test match(SpinIndex{:}, Spin{1//2}) == true
+    @test match(SpinIndex{1//2}, Spin{1//2}) == true
+    @test match(SpinIndex{1//2}, Spin{1}) == match(SpinIndex{1}, Spin{1//2}) == false
 
-# @testset "SpinOperator" begin
-#     opt = Operator(
-#         1.0,
-#         CoordinatedIndex(Index(1, SID{1//2}('+')), [0.0, 0.0], [0.0, 0.0]),
-#         CoordinatedIndex(Index(1, SID{1//2}('-')), [0.0, 0.0], [0.0, 0.0])
-#     )
-#     @test opt' == Operator(
-#         1.0,
-#         CoordinatedIndex(Index(1, SID{1//2}('+')), [0.0, 0.0], [0.0, 0.0]),
-#         CoordinatedIndex(Index(1, SID{1//2}('-')), [0.0, 0.0], [0.0, 0.0])
-#     )
-#     @test latexstring(opt) == "S^{+}_{1}S^{-}_{1}"
-# end
+    @test shape(Spin{1}(), 𝕊{1}(:)) == (1:5,)
+    @test shape(Spin{1}(), 𝕊{1}('z')) == (3:3,)
+end
 
-# @testset "permute" begin
-#     soptrep(opt::Operator) = opt.value * prod([matrix(opt.id[i].index.iid) for i = 1:rank(opt)])
-#     for S in (1//2, 1, 3//2)
-#         indexes = [CoordinatedIndex(Index(1, SID{S}(tag)), [0.0, 0.0], [0.0, 0.0]) for tag in ('x', 'y', 'z', '+', '-')]
-#         for (id₁, id₂) in Permutations{2}(indexes)
-#             left = soptrep(Operator(1, id₁, id₂))
-#             right = sum([soptrep(opt) for opt in permute(id₁, id₂)])
-#             @test isapprox(left, right)
-#         end
-#     end
-#     id₁ = CoordinatedIndex(Index(1, SID{1//2}('z')), [0.0, 0.0], [0.0, 0.0])
-#     id₂ = CoordinatedIndex(Index(2, SID{1//2}('z')), [0.0, 0.0], [0.0, 0.0])
-#     @test permute(id₁, id₂) == (Operator(1, id₂, id₁),)
-# end
+@testset "Spin operator" begin
+    opt = Operator(1.0, 𝕊{1//2}(1, '+', [0.0, 0.0], [0.0, 0.0]), 𝕊{1//2}(1, '-', [0.0, 0.0], [0.0, 0.0]))
+    @test opt' == Operator(1.0, 𝕊{1//2}(1, '+', [0.0, 0.0], [0.0, 0.0]), 𝕊{1//2}(1, '-', [0.0, 0.0], [0.0, 0.0]))
+    @test latexstring(opt) == "S^{+}_{1}S^{-}_{1}"
 
-# @testset "Spin ConstrainedInternal" begin
-#     @test shape(ConstrainedInternal(SID{1//2}('x'), Spin{1//2}())) == (1:1,)
-#     @test shape(ConstrainedInternal(SID{1//2}(:μ), Spin{1//2}())) == (1:5,)
-# end
+    representation(opt::Operator) = opt.value * prod([matrix(opt.id[i].index.internal) for i = 1:rank(opt)])
+    for S in (1//2, 1, 3//2)
+        indexes = [𝕊{S}(1, tag, [0.0, 0.0], [0.0, 0.0]) for tag in ('x', 'y', 'z', '+', '-')]
+        for (id₁, id₂) in DuplicatePermutations{2}(indexes)
+            left = representation(Operator(1, id₁, id₂))
+            right = sum([representation(opt) for opt in permute(id₁, id₂)])
+            @test isapprox(left, right)
+        end
+    end
+    id₁ = 𝕊{1//2}(1, 'z', [0.0, 0.0], [0.0, 0.0])
+    id₂ = 𝕊{1//2}(2, 'z', [0.0, 0.0], [0.0, 0.0])
+    @test permute(id₁, id₂) == (Operator(1, id₂, id₁),)
+end
 
-# @testset "Spin Coupling" begin
-#     @test collect(MatrixCoupling(:, SID, [1 0 0; 0 1 0; 0 0 1])) == [Coupling(:, SID, ('x', 'x')), Coupling(:, SID, ('y', 'y')), Coupling(:, SID, ('z', 'z'))]
+@testset "Spin Coupling" begin
+    @test collect(MatrixCoupling(:, SpinIndex, [1 0 0; 0 1 0; 0 0 1])) == collect(MatrixCoupling(:, 𝕊, [1 0 0; 0 1 0; 0 0 1])) == [
+        Coupling(:, 𝕊, ('x', 'x')), Coupling(:, 𝕊, ('y', 'y')), Coupling(:, 𝕊, ('z', 'z'))
+    ]
 
-#     sc = Coupling(2.0, (1, 2), SID, ('+', '-'))
-#     bond = Bond(1, Point(1, [0.0], [0.0]), Point(2, [0.5], [0.0]))
-#     hilbert = Hilbert(site=>Spin{1}() for site=1:2)
-#     ex = expand(Val(:SpinTerm), sc, bond, hilbert)
-#     @test collect(ex) == [Operator(2.0, CoordinatedIndex(Index(1, SID{1}('+')), [0.0], [0.0]), CoordinatedIndex(Index(2, SID{1}('-')), [0.5], [0.0]))]
-# end
+    sc = Coupling(2.0, (1ˢᵗ, 2ⁿᵈ), 𝕊, ('+', '-'))
+    bond = Bond(1, Point(1, [0.0], [0.0]), Point(2, [0.5], [0.0]))
+    hilbert = Hilbert(Spin{1}(), 2)
+    ex = expand(sc, Val(:SpinTerm), bond, hilbert)
+    @test collect(ex) == [Operator(2.0, 𝕊{1}(1, '+', [0.0], [0.0]), 𝕊{1}(2, '-', [0.5], [0.0]))]
+end
 
-# @testset "Heisenberg" begin
-#     @test Heisenberg"" == SparseMatrixCSC([1 0 0; 0 1 0; 0 0 1])
-# end
+@testset "Heisenberg" begin
+    @test Heisenberg"" == SparseMatrixCSC([1 0 0; 0 1 0; 0 0 1])
+end
 
-# @testset "Ising" begin
-#     @test Ising"x" == SparseMatrixCSC([1 0 0; 0 0 0; 0 0 0])
-#     @test Ising"y" == SparseMatrixCSC([0 0 0; 0 1 0; 0 0 0])
-#     @test Ising"z" == SparseMatrixCSC([0 0 0; 0 0 0; 0 0 1])
-# end
+@testset "Ising" begin
+    @test Ising"x" == SparseMatrixCSC([1 0 0; 0 0 0; 0 0 0])
+    @test Ising"y" == SparseMatrixCSC([0 0 0; 0 1 0; 0 0 0])
+    @test Ising"z" == SparseMatrixCSC([0 0 0; 0 0 0; 0 0 1])
+end
 
-# @testset "Γ" begin
-#     @test Γ"x" == SparseMatrixCSC([0 0 0; 0 0 1; 0 1 0])
-#     @test Γ"y" == SparseMatrixCSC([0 0 1; 0 0 0; 1 0 0])
-#     @test Γ"z" == SparseMatrixCSC([0 1 0; 1 0 0; 0 0 0])
-# end
+@testset "Γ" begin
+    @test Γ"x" == SparseMatrixCSC([0 0 0; 0 0 1; 0 1 0])
+    @test Γ"y" == SparseMatrixCSC([0 0 1; 0 0 0; 1 0 0])
+    @test Γ"z" == SparseMatrixCSC([0 1 0; 1 0 0; 0 0 0])
+end
 
-# @testset "Γ′" begin
-#     @test Γ′"x" == SparseMatrixCSC([0 1 1; 1 0 0; 1 0 0])
-#     @test Γ′"y" == SparseMatrixCSC([0 1 0; 1 0 1; 0 1 0])
-#     @test Γ′"z" == SparseMatrixCSC([0 0 1; 0 0 1; 1 1 0])
-# end
+@testset "Γ′" begin
+    @test Γ′"x" == SparseMatrixCSC([0 1 1; 1 0 0; 1 0 0])
+    @test Γ′"y" == SparseMatrixCSC([0 1 0; 1 0 1; 0 1 0])
+    @test Γ′"z" == SparseMatrixCSC([0 0 1; 0 0 1; 1 1 0])
+end
 
-# @testset "DM" begin
-#     @test DM"x" == SparseMatrixCSC([0 0 0; 0 0 1; 0 -1 0])
-#     @test DM"y" == SparseMatrixCSC([0 0 -1; 0 0 0; 1 0 0])
-#     @test DM"z" == SparseMatrixCSC([0 1 0; -1 0 0; 0 0 0])
-# end
+@testset "DM" begin
+    @test DM"x" == SparseMatrixCSC([0 0 0; 0 0 1; 0 -1 0])
+    @test DM"y" == SparseMatrixCSC([0 0 -1; 0 0 0; 1 0 0])
+    @test DM"z" == SparseMatrixCSC([0 1 0; -1 0 0; 0 0 0])
+end
 
-# @testset "SpinTerm" begin
-#     point = Point(1, (0.5, 0.5), (0.0, 0.0))
-#     hilbert = Hilbert(point.site=>Spin{1//2}())
-#     term = SpinTerm(:h, 1.5, 0, Coupling(Index(1, SID('z'))))
-#     operators = Operators(
-#         Operator(1.5, CoordinatedIndex(Index(1, SID{1//2}('z')), [0.5, 0.5], [0.0, 0.0])),
-#     )
-#     @test expand(term, Bond(point), hilbert) == operators
+@testset "SpinTerm" begin
+    bond = Bond(Point(1, (0.5, 0.5), (0.0, 0.0)))
+    hilbert = Hilbert(Spin{1//2}())
+    term = SpinTerm(:h, 1.5, 0, Coupling(𝕊(1ˢᵗ, 'z')))
+    operators = Operators(Operator(1.5, 𝕊{1//2}(1, 'z', [0.5, 0.5], [0.0, 0.0])))
+    @test expand(term, bond, hilbert) == operators
 
-#     bond = Bond(1, Point(2, (0.5, 0.5), (0.0, 0.0)), Point(1, (0.0, 0.0), (0.0, 0.0)))
-#     hilbert = Hilbert(site=>Spin{1//2}() for site=1:2)
-#     term = SpinTerm(:J, 1.5, 1, MatrixCoupling(:, SID, Heisenberg""))
-#     operators = Operators(
-#         Operator(1.5, CoordinatedIndex(Index(2, SID{1//2}('x')), [0.5, 0.5], [0.0, 0.0]), CoordinatedIndex(Index(1, SID{1//2}('x')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(1.5, CoordinatedIndex(Index(2, SID{1//2}('y')), [0.5, 0.5], [0.0, 0.0]), CoordinatedIndex(Index(1, SID{1//2}('y')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(1.5, CoordinatedIndex(Index(2, SID{1//2}('z')), [0.5, 0.5], [0.0, 0.0]), CoordinatedIndex(Index(1, SID{1//2}('z')), [0.0, 0.0], [0.0, 0.0])),
-#     )
-#     @test expand(term, bond, hilbert) == operators
-# end
+    bond = Bond(1, Point(2, (0.5, 0.5), (0.0, 0.0)), Point(1, (0.0, 0.0), (0.0, 0.0)))
+    hilbert = Hilbert(site=>Spin{1//2}() for site=1:2)
+    term = SpinTerm(:J, 1.5, 1, MatrixCoupling(:, 𝕊, Heisenberg""))
+    operators = Operators(
+        Operator(1.5, 𝕊{1//2}(2, 'x', [0.5, 0.5], [0.0, 0.0]), 𝕊{1//2}(1, 'x', [0.0, 0.0], [0.0, 0.0])),
+        Operator(1.5, 𝕊{1//2}(2, 'y', [0.5, 0.5], [0.0, 0.0]), 𝕊{1//2}(1, 'y', [0.0, 0.0], [0.0, 0.0])),
+        Operator(1.5, 𝕊{1//2}(2, 'z', [0.5, 0.5], [0.0, 0.0]), 𝕊{1//2}(1, 'z', [0.0, 0.0], [0.0, 0.0])),
+    )
+    @test expand(term, bond, hilbert) == operators
+end
 
-# @testset "Zeeman" begin
-#     point = Point(1, (0.5, 0.5), (0.0, 0.0))
-#     hilbert = Hilbert(point.site=>Spin{1//2}())
-#     term = Zeeman(:h, 1.5, 'x', 2)
-#     operators = Operators(Operator(3.0, CoordinatedIndex(Index(1, SID{1//2}('x')), [0.5, 0.5], [0.0, 0.0])))
-#     @test expand(term, Bond(point), hilbert) == operators
+@testset "Zeeman" begin
+    point = Point(1, (0.5, 0.5), (0.0, 0.0))
+    hilbert = Hilbert(point.site=>Spin{1//2}())
+    term = Zeeman(:h, 1.5, 'x', 2)
+    operators = Operators(Operator(3.0, 𝕊{1//2}(1, 'x', [0.5, 0.5], [0.0, 0.0])))
+    @test expand(term, Bond(point), hilbert) == operators
 
-#     term = Zeeman(:h, 1.5, [1, 1, 1], 2)
-#     operators = Operators(
-#         Operator(√3, CoordinatedIndex(Index(1, SID{1//2}('x')), [0.5, 0.5], [0.0, 0.0])),
-#         Operator(√3, CoordinatedIndex(Index(1, SID{1//2}('y')), [0.5, 0.5], [0.0, 0.0])),
-#         Operator(√3, CoordinatedIndex(Index(1, SID{1//2}('z')), [0.5, 0.5], [0.0, 0.0]))
-#     )
-#     @test expand(term, Bond(point), hilbert) ≈ operators
+    term = Zeeman(:h, 1.5, [1, 1, 1], 2)
+    operators = Operators(
+        Operator(√3, 𝕊{1//2}(1, 'x', [0.5, 0.5], [0.0, 0.0])),
+        Operator(√3, 𝕊{1//2}(1, 'y', [0.5, 0.5], [0.0, 0.0])),
+        Operator(√3, 𝕊{1//2}(1, 'z', [0.5, 0.5], [0.0, 0.0]))
+    )
+    @test expand(term, Bond(point), hilbert) ≈ operators
 
-#     term = Zeeman(:h, 1.5, [1, -1, 2], [1 0 0; 0 2 0; 0 0 3])
-#     operators = Operators(
-#         Operator(√6/4, CoordinatedIndex(Index(1, SID{1//2}('x')), [0.5, 0.5], [0.0, 0.0])),
-#         Operator(-√6/2, CoordinatedIndex(Index(1, SID{1//2}('y')), [0.5, 0.5], [0.0, 0.0])),
-#         Operator(3*√6/2, CoordinatedIndex(Index(1, SID{1//2}('z')), [0.5, 0.5], [0.0, 0.0]))
-#     )
-#     @test expand(term, Bond(point), hilbert) ≈ operators
-# end
+    term = Zeeman(:h, 1.5, [1, -1, 2], [1 0 0; 0 2 0; 0 0 3])
+    operators = Operators(
+        Operator(√6/4, 𝕊{1//2}(1, 'x', [0.5, 0.5], [0.0, 0.0])),
+        Operator(-√6/2, 𝕊{1//2}(1, 'y', [0.5, 0.5], [0.0, 0.0])),
+        Operator(3*√6/2, 𝕊{1//2}(1, 'z', [0.5, 0.5], [0.0, 0.0]))
+    )
+    @test expand(term, Bond(point), hilbert) ≈ operators
+end
 
-# @testset "SingleIonAnisotropy" begin
-#     point = Point(1, (0.5, 0.5), (0.0, 0.0))
-#     hilbert = Hilbert(point.site=>Spin{1//2}())
-#     term = SingleIonAnisotropy(:A, 1.5, 'z')
-#     operators = Operators(Operator(1.5, CoordinatedIndex(Index(1, SID{1//2}('z')), [0.5, 0.5], [0.0, 0.0]), CoordinatedIndex(Index(1, SID{1//2}('z')), [0.5, 0.5], [0.0, 0.0])))
-#     @test expand(term, Bond(point), hilbert) == operators
+@testset "SingleIonAnisotropy" begin
+    point = Point(1, (0.5, 0.5), (0.0, 0.0))
+    hilbert = Hilbert(point.site=>Spin{1//2}())
+    term = SingleIonAnisotropy(:A, 1.5, 'z')
+    operators = Operators(Operator(1.5, 𝕊{1//2}(1, 'z', [0.5, 0.5], [0.0, 0.0]), 𝕊{1//2}(1, 'z', [0.5, 0.5], [0.0, 0.0])))
+    @test expand(term, Bond(point), hilbert) == operators
 
-#     term = SingleIonAnisotropy(:A, 1.5, [1 0 0; 0 2 0; 0 0 3])
-#     operators = Operators(
-#         Operator(1.5, CoordinatedIndex(Index(1, SID{1//2}('x')), [0.5, 0.5], [0.0, 0.0]), CoordinatedIndex(Index(1, SID{1//2}('x')), [0.5, 0.5], [0.0, 0.0])),
-#         Operator(3.0, CoordinatedIndex(Index(1, SID{1//2}('y')), [0.5, 0.5], [0.0, 0.0]), CoordinatedIndex(Index(1, SID{1//2}('y')), [0.5, 0.5], [0.0, 0.0])),
-#         Operator(4.5, CoordinatedIndex(Index(1, SID{1//2}('z')), [0.5, 0.5], [0.0, 0.0]), CoordinatedIndex(Index(1, SID{1//2}('z')), [0.5, 0.5], [0.0, 0.0]))
-#     )
-#     @test expand(term, Bond(point), hilbert) == operators
-# end
+    term = SingleIonAnisotropy(:A, 1.5, [1 0 0; 0 2 0; 0 0 3])
+    operators = Operators(
+        Operator(1.5, 𝕊{1//2}(1, 'x', [0.5, 0.5], [0.0, 0.0]), 𝕊{1//2}(1, 'x', [0.5, 0.5], [0.0, 0.0])),
+        Operator(3.0, 𝕊{1//2}(1, 'y', [0.5, 0.5], [0.0, 0.0]), 𝕊{1//2}(1, 'y', [0.5, 0.5], [0.0, 0.0])),
+        Operator(4.5, 𝕊{1//2}(1, 'z', [0.5, 0.5], [0.0, 0.0]), 𝕊{1//2}(1, 'z', [0.5, 0.5], [0.0, 0.0]))
+    )
+    @test expand(term, Bond(point), hilbert) == operators
+end
 
-# @testset "Ising" begin
-#     bond = Bond(1, Point(1, (0.0, 0.0), (0.0, 0.0)), Point(2, (0.5, 0.5), (0.0, 0.0)))
-#     hilbert = Hilbert(Spin{1//2}(), 2)
-#     term = Ising(:J, 1.5, 1, 'x')
-#     operators = Operators(Operator(1.5, CoordinatedIndex(Index(1, SID{1//2}('x')), [0.0, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(2, SID{1//2}('x')), [0.5, 0.5], [0.0, 0.0])))
-#     @test expand(term, bond, hilbert) == operators
+@testset "Ising" begin
+    bond = Bond(1, Point(1, (0.0, 0.0), (0.0, 0.0)), Point(2, (0.5, 0.5), (0.0, 0.0)))
+    hilbert = Hilbert(Spin{1//2}(), 2)
+    term = Ising(:J, 1.5, 1, 'x')
+    operators = Operators(Operator(1.5, 𝕊{1//2}(1, 'x', [0.0, 0.0], [0.0, 0.0]), 𝕊{1//2}(2, 'x', [0.5, 0.5], [0.0, 0.0])))
+    @test expand(term, bond, hilbert) == operators
 
-#     term = Ising(:J, 1.5, 1, 'y')
-#     operators = Operators(Operator(1.5, CoordinatedIndex(Index(1, SID{1//2}('y')), [0.0, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(2, SID{1//2}('y')), [0.5, 0.5], [0.0, 0.0])))
-#     @test expand(term, bond, hilbert) == operators
+    term = Ising(:J, 1.5, 1, 'y')
+    operators = Operators(Operator(1.5, 𝕊{1//2}(1, 'y', [0.0, 0.0], [0.0, 0.0]), 𝕊{1//2}(2, 'y', [0.5, 0.5], [0.0, 0.0])))
+    @test expand(term, bond, hilbert) == operators
 
-#     term = Ising(:J, 1.5, 1, 'z')
-#     operators = Operators(Operator(1.5, CoordinatedIndex(Index(1, SID{1//2}('z')), [0.0, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(2, SID{1//2}('z')), [0.5, 0.5], [0.0, 0.0])))
-#     @test expand(term, bond, hilbert) == operators
-# end
+    term = Ising(:J, 1.5, 1, 'z')
+    operators = Operators(Operator(1.5, 𝕊{1//2}(1, 'z', [0.0, 0.0], [0.0, 0.0]), 𝕊{1//2}(2, 'z', [0.5, 0.5], [0.0, 0.0])))
+    @test expand(term, bond, hilbert) == operators
+end
 
-# @testset "Heisenberg" begin
-#     bond = Bond(1, Point(1, (0.0, 0.0), (0.0, 0.0)), Point(2, (0.5, 0.5), (0.0, 0.0)))
-#     hilbert = Hilbert(Spin{1//2}(), 2)
-#     term = Heisenberg(:J, 1.5, 1; form=:xyz)
-#     operators = Operators(
-#         Operator(1.5, CoordinatedIndex(Index(1, SID{1//2}('x')), [0.0, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(2, SID{1//2}('x')), [0.5, 0.5], [0.0, 0.0])),
-#         Operator(1.5, CoordinatedIndex(Index(1, SID{1//2}('y')), [0.0, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(2, SID{1//2}('y')), [0.5, 0.5], [0.0, 0.0])),
-#         Operator(1.5, CoordinatedIndex(Index(1, SID{1//2}('z')), [0.0, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(2, SID{1//2}('z')), [0.5, 0.5], [0.0, 0.0]))
-#     )
-#     @test expand(term, bond, hilbert) == operators
+@testset "Heisenberg" begin
+    bond = Bond(1, Point(1, (0.0, 0.0), (0.0, 0.0)), Point(2, (0.5, 0.5), (0.0, 0.0)))
+    hilbert = Hilbert(Spin{1//2}(), 2)
+    term = Heisenberg(:J, 1.5, 1; form=:xyz)
+    operators = Operators(
+        Operator(1.5, 𝕊{1//2}(1, 'x', [0.0, 0.0], [0.0, 0.0]), 𝕊{1//2}(2, 'x', [0.5, 0.5], [0.0, 0.0])),
+        Operator(1.5, 𝕊{1//2}(1, 'y', [0.0, 0.0], [0.0, 0.0]), 𝕊{1//2}(2, 'y', [0.5, 0.5], [0.0, 0.0])),
+        Operator(1.5, 𝕊{1//2}(1, 'z', [0.0, 0.0], [0.0, 0.0]), 𝕊{1//2}(2, 'z', [0.5, 0.5], [0.0, 0.0]))
+    )
+    @test expand(term, bond, hilbert) == operators
 
-#     term = Heisenberg(:J, 1.5, 1; form=Symbol("+-z"))
-#     operators = Operators(
-#         Operator(0.75, CoordinatedIndex(Index(1, SID{1//2}('+')), [0.0, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(2, SID{1//2}('-')), [0.5, 0.5], [0.0, 0.0])),
-#         Operator(0.75, CoordinatedIndex(Index(1, SID{1//2}('-')), [0.0, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(2, SID{1//2}('+')), [0.5, 0.5], [0.0, 0.0])),
-#         Operator(1.5, CoordinatedIndex(Index(1, SID{1//2}('z')), [0.0, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(2, SID{1//2}('z')), [0.5, 0.5], [0.0, 0.0]))
-#     )
-#     @test expand(term, bond, hilbert) == operators
-# end
+    term = Heisenberg(:J, 1.5, 1; form=Symbol("+-z"))
+    operators = Operators(
+        Operator(0.75, 𝕊{1//2}(1, '+', [0.0, 0.0], [0.0, 0.0]), 𝕊{1//2}(2, '-', [0.5, 0.5], [0.0, 0.0])),
+        Operator(0.75, 𝕊{1//2}(1, '-', [0.0, 0.0], [0.0, 0.0]), 𝕊{1//2}(2, '+', [0.5, 0.5], [0.0, 0.0])),
+        Operator(1.5, 𝕊{1//2}(1, 'z', [0.0, 0.0], [0.0, 0.0]), 𝕊{1//2}(2, 'z', [0.5, 0.5], [0.0, 0.0]))
+    )
+    @test expand(term, bond, hilbert) == operators
+end
 
-# @testset "Kitaev" begin
-#     lattice = Lattice((0.0, 0.0), (0.0, √3/3); vectors=[[1.0, 0.0], [0.5, √3/2]])
-#     bond₁, bond₂, bond₃ = bonds(lattice, Neighbors(1=>1/√3))
-#     hilbert = Hilbert(Spin{1//2}(), length(lattice))
-#     term = Kitaev(:K, 1.5, 1; x=[90], y=[210], z=[330], unit=:degree)
+@testset "Kitaev" begin
+    lattice = Lattice((0.0, 0.0), (0.0, √3/3); vectors=[[1.0, 0.0], [0.5, √3/2]])
+    bond₁, bond₂, bond₃ = bonds(lattice, Neighbors(1=>1/√3))
+    hilbert = Hilbert(Spin{1//2}(), length(lattice))
+    term = Kitaev(:K, 1.5, 1; x=[90], y=[210], z=[330], unit=:degree)
 
-#     operators = Operators(Operator(1.5, CoordinatedIndex(Index(2, SID{1//2}('x')), -rcoordinate(bond₁), -icoordinate(bond₁)), CoordinatedIndex(Index(1, SID{1//2}('x')), [0.0, 0.0], [0.0, 0.0])))
-#     @test expand(term, bond₁, hilbert) == operators
-#     @test expand(term, reverse(bond₁), hilbert) == operators'
+    operators = Operators(Operator(1.5, 𝕊{1//2}(2, 'x', -rcoordinate(bond₁), -icoordinate(bond₁)), 𝕊{1//2}(1, 'x', [0.0, 0.0], [0.0, 0.0])))
+    @test expand(term, bond₁, hilbert) == operators
+    @test expand(term, reverse(bond₁), hilbert) == operators'
 
-#     operators = Operators(Operator(1.5, CoordinatedIndex(Index(2, SID{1//2}('y')), -rcoordinate(bond₂), -icoordinate(bond₂)), CoordinatedIndex(Index(1, SID{1//2}('y')), [0.0, 0.0], [0.0, 0.0])))
-#     @test expand(term, bond₂, hilbert) == operators
-#     @test expand(term, reverse(bond₂), hilbert) == operators'
+    operators = Operators(Operator(1.5, 𝕊{1//2}(2, 'y', -rcoordinate(bond₂), -icoordinate(bond₂)), 𝕊{1//2}(1, 'y', [0.0, 0.0], [0.0, 0.0])))
+    @test expand(term, bond₂, hilbert) == operators
+    @test expand(term, reverse(bond₂), hilbert) == operators'
 
-#     operators = Operators(Operator(1.5, CoordinatedIndex(Index(2, SID{1//2}('z')), -rcoordinate(bond₃), -icoordinate(bond₃)), CoordinatedIndex(Index(1, SID{1//2}('z')), [0.0, 0.0], [0.0, 0.0])))
-#     @test expand(term, bond₃, hilbert) == operators
-#     @test expand(term, reverse(bond₃), hilbert) == operators'
-# end
+    operators = Operators(Operator(1.5, 𝕊{1//2}(2, 'z', -rcoordinate(bond₃), -icoordinate(bond₃)), 𝕊{1//2}(1, 'z', [0.0, 0.0], [0.0, 0.0])))
+    @test expand(term, bond₃, hilbert) == operators
+    @test expand(term, reverse(bond₃), hilbert) == operators'
+end
 
-# @testset "Γ" begin
-#     lattice = Lattice((0.0, 0.0), (0.0, √3/3); vectors=[[1.0, 0.0], [0.5, √3/2]])
-#     bond₁, bond₂, bond₃ = bonds(lattice, Neighbors(1=>1/√3))
-#     hilbert = Hilbert(Spin{1//2}(), length(lattice))
-#     term = Γ(:Γ, 1.5, 1; x=[90], y=[210], z=[330], unit=:degree)
+@testset "Γ" begin
+    lattice = Lattice((0.0, 0.0), (0.0, √3/3); vectors=[[1.0, 0.0], [0.5, √3/2]])
+    bond₁, bond₂, bond₃ = bonds(lattice, Neighbors(1=>1/√3))
+    hilbert = Hilbert(Spin{1//2}(), length(lattice))
+    term = Γ(:Γ, 1.5, 1; x=[90], y=[210], z=[330], unit=:degree)
 
-#     operators = Operators(
-#         Operator(1.5, CoordinatedIndex(Index(2, SID{1//2}('y')), -rcoordinate(bond₁), -icoordinate(bond₁)), CoordinatedIndex(Index(1, SID{1//2}('z')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(1.5, CoordinatedIndex(Index(2, SID{1//2}('z')), -rcoordinate(bond₁), -icoordinate(bond₁)), CoordinatedIndex(Index(1, SID{1//2}('y')), [0.0, 0.0], [0.0, 0.0]))
-#     )
-#     @test expand(term, bond₁, hilbert) == operators
-#     @test expand(term, reverse(bond₁), hilbert) == operators'
+    operators = Operators(
+        Operator(1.5, 𝕊{1//2}(2, 'y', -rcoordinate(bond₁), -icoordinate(bond₁)), 𝕊{1//2}(1, 'z', [0.0, 0.0], [0.0, 0.0])),
+        Operator(1.5, 𝕊{1//2}(2, 'z', -rcoordinate(bond₁), -icoordinate(bond₁)), 𝕊{1//2}(1, 'y', [0.0, 0.0], [0.0, 0.0]))
+    )
+    @test expand(term, bond₁, hilbert) == operators
+    @test expand(term, reverse(bond₁), hilbert) == operators'
 
-#     operators = Operators(
-#         Operator(1.5, CoordinatedIndex(Index(2, SID{1//2}('z')), -rcoordinate(bond₂), -icoordinate(bond₂)), CoordinatedIndex(Index(1, SID{1//2}('x')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(1.5, CoordinatedIndex(Index(2, SID{1//2}('x')), -rcoordinate(bond₂), -icoordinate(bond₂)), CoordinatedIndex(Index(1, SID{1//2}('z')), [0.0, 0.0], [0.0, 0.0]))
-#     )
-#     @test expand(term, bond₂, hilbert) == operators
-#     @test expand(term, reverse(bond₂), hilbert) == operators'
+    operators = Operators(
+        Operator(1.5, 𝕊{1//2}(2, 'z', -rcoordinate(bond₂), -icoordinate(bond₂)), 𝕊{1//2}(1, 'x', [0.0, 0.0], [0.0, 0.0])),
+        Operator(1.5, 𝕊{1//2}(2, 'x', -rcoordinate(bond₂), -icoordinate(bond₂)), 𝕊{1//2}(1, 'z', [0.0, 0.0], [0.0, 0.0]))
+    )
+    @test expand(term, bond₂, hilbert) == operators
+    @test expand(term, reverse(bond₂), hilbert) == operators'
 
-#     operators = Operators(
-#         Operator(1.5, CoordinatedIndex(Index(2, SID{1//2}('y')), -rcoordinate(bond₃), -icoordinate(bond₃)), CoordinatedIndex(Index(1, SID{1//2}('x')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(1.5, CoordinatedIndex(Index(2, SID{1//2}('x')), -rcoordinate(bond₃), -icoordinate(bond₃)), CoordinatedIndex(Index(1, SID{1//2}('y')), [0.0, 0.0], [0.0, 0.0]))
-#     )
-#     @test expand(term, bond₃, hilbert) == operators
-#     @test expand(term, reverse(bond₃), hilbert) == operators'
-# end
+    operators = Operators(
+        Operator(1.5, 𝕊{1//2}(2, 'y', -rcoordinate(bond₃), -icoordinate(bond₃)), 𝕊{1//2}(1, 'x', [0.0, 0.0], [0.0, 0.0])),
+        Operator(1.5, 𝕊{1//2}(2, 'x', -rcoordinate(bond₃), -icoordinate(bond₃)), 𝕊{1//2}(1, 'y', [0.0, 0.0], [0.0, 0.0]))
+    )
+    @test expand(term, bond₃, hilbert) == operators
+    @test expand(term, reverse(bond₃), hilbert) == operators'
+end
 
-# @testset "Γ′" begin
-#     lattice = Lattice((0.0, 0.0), (0.0, √3/3); vectors=[[1.0, 0.0], [0.5, √3/2]])
-#     bond₁, bond₂, bond₃ = bonds(lattice, Neighbors(1=>1/√3))
-#     hilbert = Hilbert(Spin{1//2}(), length(lattice))
-#     term = Γ′(:Γ′, 1.5, 1; x=[90], y=[210], z=[330], unit=:degree)
+@testset "Γ′" begin
+    lattice = Lattice((0.0, 0.0), (0.0, √3/3); vectors=[[1.0, 0.0], [0.5, √3/2]])
+    bond₁, bond₂, bond₃ = bonds(lattice, Neighbors(1=>1/√3))
+    hilbert = Hilbert(Spin{1//2}(), length(lattice))
+    term = Γ′(:Γ′, 1.5, 1; x=[90], y=[210], z=[330], unit=:degree)
 
-#     operators = Operators(
-#         Operator(1.5, CoordinatedIndex(Index(2, SID{1//2}('z')), -rcoordinate(bond₁), -icoordinate(bond₁)), CoordinatedIndex(Index(1, SID{1//2}('x')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(1.5, CoordinatedIndex(Index(2, SID{1//2}('x')), -rcoordinate(bond₁), -icoordinate(bond₁)), CoordinatedIndex(Index(1, SID{1//2}('y')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(1.5, CoordinatedIndex(Index(2, SID{1//2}('x')), -rcoordinate(bond₁), -icoordinate(bond₁)), CoordinatedIndex(Index(1, SID{1//2}('z')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(1.5, CoordinatedIndex(Index(2, SID{1//2}('y')), -rcoordinate(bond₁), -icoordinate(bond₁)), CoordinatedIndex(Index(1, SID{1//2}('x')), [0.0, 0.0], [0.0, 0.0]))
-#     )
-#     @test expand(term, bond₁, hilbert) == operators
-#     @test expand(term, reverse(bond₁), hilbert) == operators'
+    operators = Operators(
+        Operator(1.5, 𝕊{1//2}(2, 'z', -rcoordinate(bond₁), -icoordinate(bond₁)), 𝕊{1//2}(1, 'x', [0.0, 0.0], [0.0, 0.0])),
+        Operator(1.5, 𝕊{1//2}(2, 'x', -rcoordinate(bond₁), -icoordinate(bond₁)), 𝕊{1//2}(1, 'y', [0.0, 0.0], [0.0, 0.0])),
+        Operator(1.5, 𝕊{1//2}(2, 'x', -rcoordinate(bond₁), -icoordinate(bond₁)), 𝕊{1//2}(1, 'z', [0.0, 0.0], [0.0, 0.0])),
+        Operator(1.5, 𝕊{1//2}(2, 'y', -rcoordinate(bond₁), -icoordinate(bond₁)), 𝕊{1//2}(1, 'x', [0.0, 0.0], [0.0, 0.0]))
+    )
+    @test expand(term, bond₁, hilbert) == operators
+    @test expand(term, reverse(bond₁), hilbert) == operators'
 
-#     operators = Operators(
-#         Operator(1.5, CoordinatedIndex(Index(2, SID{1//2}('z')), -rcoordinate(bond₂), -icoordinate(bond₂)), CoordinatedIndex(Index(1, SID{1//2}('y')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(1.5, CoordinatedIndex(Index(2, SID{1//2}('x')), -rcoordinate(bond₂), -icoordinate(bond₂)), CoordinatedIndex(Index(1, SID{1//2}('y')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(1.5, CoordinatedIndex(Index(2, SID{1//2}('y')), -rcoordinate(bond₂), -icoordinate(bond₂)), CoordinatedIndex(Index(1, SID{1//2}('x')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(1.5, CoordinatedIndex(Index(2, SID{1//2}('y')), -rcoordinate(bond₂), -icoordinate(bond₂)), CoordinatedIndex(Index(1, SID{1//2}('z')), [0.0, 0.0], [0.0, 0.0]))
-#     )
-#     @test expand(term, bond₂, hilbert) == operators
-#     @test expand(term, reverse(bond₂), hilbert) == operators'
+    operators = Operators(
+        Operator(1.5, 𝕊{1//2}(2, 'z', -rcoordinate(bond₂), -icoordinate(bond₂)), 𝕊{1//2}(1, 'y', [0.0, 0.0], [0.0, 0.0])),
+        Operator(1.5, 𝕊{1//2}(2, 'x', -rcoordinate(bond₂), -icoordinate(bond₂)), 𝕊{1//2}(1, 'y', [0.0, 0.0], [0.0, 0.0])),
+        Operator(1.5, 𝕊{1//2}(2, 'y', -rcoordinate(bond₂), -icoordinate(bond₂)), 𝕊{1//2}(1, 'x', [0.0, 0.0], [0.0, 0.0])),
+        Operator(1.5, 𝕊{1//2}(2, 'y', -rcoordinate(bond₂), -icoordinate(bond₂)), 𝕊{1//2}(1, 'z', [0.0, 0.0], [0.0, 0.0]))
+    )
+    @test expand(term, bond₂, hilbert) == operators
+    @test expand(term, reverse(bond₂), hilbert) == operators'
 
-#     operators = Operators(
-#         Operator(1.5, CoordinatedIndex(Index(2, SID{1//2}('z')), -rcoordinate(bond₃), -icoordinate(bond₃)), CoordinatedIndex(Index(1, SID{1//2}('x')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(1.5, CoordinatedIndex(Index(2, SID{1//2}('y')), -rcoordinate(bond₃), -icoordinate(bond₃)), CoordinatedIndex(Index(1, SID{1//2}('z')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(1.5, CoordinatedIndex(Index(2, SID{1//2}('z')), -rcoordinate(bond₃), -icoordinate(bond₃)), CoordinatedIndex(Index(1, SID{1//2}('y')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(1.5, CoordinatedIndex(Index(2, SID{1//2}('x')), -rcoordinate(bond₃), -icoordinate(bond₃)), CoordinatedIndex(Index(1, SID{1//2}('z')), [0.0, 0.0], [0.0, 0.0]))
-#     )
-#     @test expand(term, bond₃, hilbert) == operators
-#     @test expand(term, reverse(bond₃), hilbert) == operators'
-# end
+    operators = Operators(
+        Operator(1.5, 𝕊{1//2}(2, 'z', -rcoordinate(bond₃), -icoordinate(bond₃)), 𝕊{1//2}(1, 'x', [0.0, 0.0], [0.0, 0.0])),
+        Operator(1.5, 𝕊{1//2}(2, 'y', -rcoordinate(bond₃), -icoordinate(bond₃)), 𝕊{1//2}(1, 'z', [0.0, 0.0], [0.0, 0.0])),
+        Operator(1.5, 𝕊{1//2}(2, 'z', -rcoordinate(bond₃), -icoordinate(bond₃)), 𝕊{1//2}(1, 'y', [0.0, 0.0], [0.0, 0.0])),
+        Operator(1.5, 𝕊{1//2}(2, 'x', -rcoordinate(bond₃), -icoordinate(bond₃)), 𝕊{1//2}(1, 'z', [0.0, 0.0], [0.0, 0.0]))
+    )
+    @test expand(term, bond₃, hilbert) == operators
+    @test expand(term, reverse(bond₃), hilbert) == operators'
+end
 
-# @testset "DM" begin
-#     lattice = Lattice((0.0, 0.0), (0.0, √3/3); vectors=[[1.0, 0.0], [0.5, √3/2]])
-#     bond₁, bond₂, bond₃ = bonds(lattice, Neighbors(1=>1/√3))
-#     hilbert = Hilbert(Spin{1//2}(), length(lattice))
-#     term = DM(:DM, 1.5, 1, [90]=>'x', [210]=>'y', [330]=>'z'; unit=:degree)
+@testset "DM" begin
+    lattice = Lattice((0.0, 0.0), (0.0, √3/3); vectors=[[1.0, 0.0], [0.5, √3/2]])
+    bond₁, bond₂, bond₃ = bonds(lattice, Neighbors(1=>1/√3))
+    hilbert = Hilbert(Spin{1//2}(), length(lattice))
+    term = DM(:DM, 1.5, 1, [90]=>'x', [210]=>'y', [330]=>'z'; unit=:degree)
 
-#     operators = Operators(
-#         Operator(-1.5, CoordinatedIndex(Index(2, SID{1//2}('y')), -rcoordinate(bond₁), -icoordinate(bond₁)), CoordinatedIndex(Index(1, SID{1//2}('z')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(1.5, CoordinatedIndex(Index(2, SID{1//2}('z')), -rcoordinate(bond₁), -icoordinate(bond₁)), CoordinatedIndex(Index(1, SID{1//2}('y')), [0.0, 0.0], [0.0, 0.0]))
-#     )
-#     @test expand(term, bond₁, hilbert) == operators
-#     @test expand(term, reverse(bond₁), hilbert) == operators'
+    operators = Operators(
+        Operator(-1.5, 𝕊{1//2}(2, 'y', -rcoordinate(bond₁), -icoordinate(bond₁)), 𝕊{1//2}(1, 'z', [0.0, 0.0], [0.0, 0.0])),
+        Operator(1.5, 𝕊{1//2}(2, 'z', -rcoordinate(bond₁), -icoordinate(bond₁)), 𝕊{1//2}(1, 'y', [0.0, 0.0], [0.0, 0.0]))
+    )
+    @test expand(term, bond₁, hilbert) == operators
+    @test expand(term, reverse(bond₁), hilbert) == operators'
 
-#     operators = Operators(
-#         Operator(-1.5, CoordinatedIndex(Index(2, SID{1//2}('z')), -rcoordinate(bond₂), -icoordinate(bond₂)), CoordinatedIndex(Index(1, SID{1//2}('x')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(1.5, CoordinatedIndex(Index(2, SID{1//2}('x')), -rcoordinate(bond₂), -icoordinate(bond₂)), CoordinatedIndex(Index(1, SID{1//2}('z')), [0.0, 0.0], [0.0, 0.0]))
-#     )
-#     @test expand(term, bond₂, hilbert) == operators
-#     @test expand(term, reverse(bond₂), hilbert) == operators'
+    operators = Operators(
+        Operator(-1.5, 𝕊{1//2}(2, 'z', -rcoordinate(bond₂), -icoordinate(bond₂)), 𝕊{1//2}(1, 'x', [0.0, 0.0], [0.0, 0.0])),
+        Operator(1.5, 𝕊{1//2}(2, 'x', -rcoordinate(bond₂), -icoordinate(bond₂)), 𝕊{1//2}(1, 'z', [0.0, 0.0], [0.0, 0.0]))
+    )
+    @test expand(term, bond₂, hilbert) == operators
+    @test expand(term, reverse(bond₂), hilbert) == operators'
 
-#     operators = Operators(
-#         Operator(1.5, CoordinatedIndex(Index(2, SID{1//2}('y')), -rcoordinate(bond₃), -icoordinate(bond₃)), CoordinatedIndex(Index(1, SID{1//2}('x')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(-1.5, CoordinatedIndex(Index(2, SID{1//2}('x')), -rcoordinate(bond₃), -icoordinate(bond₃)), CoordinatedIndex(Index(1, SID{1//2}('y')), [0.0, 0.0], [0.0, 0.0]))
-#     )
-#     @test expand(term, bond₃, hilbert) == operators
-#     @test expand(term, reverse(bond₃), hilbert) == operators'
-# end
+    operators = Operators(
+        Operator(1.5, 𝕊{1//2}(2, 'y', -rcoordinate(bond₃), -icoordinate(bond₃)), 𝕊{1//2}(1, 'x', [0.0, 0.0], [0.0, 0.0])),
+        Operator(-1.5, 𝕊{1//2}(2, 'x', -rcoordinate(bond₃), -icoordinate(bond₃)), 𝕊{1//2}(1, 'y', [0.0, 0.0], [0.0, 0.0]))
+    )
+    @test expand(term, bond₃, hilbert) == operators
+    @test expand(term, reverse(bond₃), hilbert) == operators'
+end
 
 # @testset "PID" begin
 #     @test PID('u', 'x')' == PID('u', 'x')
