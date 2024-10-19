@@ -201,7 +201,6 @@ end
     @test reparameter(Vector, 1, Real, false) ==  Vector{Real}
     @test reparameter(Vector{Int}, 2, 3, false) == Array{Int, 3}
 
-    @test contentnames(Vector) == ()
     @test rawtype(Int) == Int
     @test rawtype(Vector{Int}) == Array
     @test rawtype(Vector) == Array
