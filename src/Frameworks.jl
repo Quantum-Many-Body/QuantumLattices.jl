@@ -178,7 +178,6 @@ mutable struct CategorizedGenerator{C, A<:NamedTuple, B<:NamedTuple, P<:Paramete
 end
 @inline CategorizedGenerator(cat::CategorizedGenerator) = cat
 @inline ExpansionStyle(::Type{<:CategorizedGenerator{C, <:NamedTuple, <:NamedTuple, <:Parameters, <:Boundary, S} where C}) where {S<:ExpansionStyle} = S()
-@inline Base.isempty(cat::CategorizedGenerator) = isempty(cat.constops) && all(map(isempty, values(cat.alterops))) && all(map(isempty, values(cat.boundops)))
 
 """
     CategorizedGenerator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain, style::ExpansionStyle=eager; half::Bool=false)
@@ -212,6 +211,65 @@ function CategorizedGenerator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond},
     )
     parameters = NamedTuple{map(id, terms)}(map(term->term.value, terms))
     return CategorizedGenerator(constops, alterops, boundops, parameters, boundary, style)
+end
+
+"""
+    (transformation::LinearTransformation)(cat::CategorizedGenerator; kwargs...) -> CategorizedGenerator
+
+Apply a linear transformation to a categorized generator of (a representation of) quantum operators.
+"""
+function (transformation::LinearTransformation)(cat::CategorizedGenerator; kwargs...)
+    wrapper(m) = transformation(m; kwargs...)
+    constops = wrapper(cat.constops)
+    alterops = NamedTuple{keys(cat.alterops)}(map(wrapper, values(cat.alterops)))
+    boundops = NamedTuple{keys(cat.boundops)}(map(wrapper, values(cat.boundops)))
+    return CategorizedGenerator(constops, alterops, boundops, cat.parameters, deepcopy(cat.boundary), ExpansionStyle(cat))
+end
+
+"""
+    valtype(::Type{<:CategorizedGenerator})
+
+Get the valtype of a categorized generator of (a representation of) quantum operators.
+"""
+@inline @generated function Base.valtype(::Type{<:CategorizedGenerator{C, A, B}}) where {C, A<:NamedTuple, B<:NamedTuple}
+    exprs = [:(optp = C)]
+    fieldcount(A)>0 && append!(exprs, [:(optp = promote_type(optp, $T)) for T in fieldtypes(A)])
+    fieldcount(B)>0 && append!(exprs, [:(optp = promote_type(optp, $T)) for T in fieldtypes(B)])
+    push!(exprs, :(return optp))
+    return Expr(:block, exprs...)
+end
+
+"""
+    Parameters(cat::CategorizedGenerator)
+
+Get the complete set of parameters of a categorized generator of (a representation of) quantum operators.
+"""
+@inline Parameters(cat::CategorizedGenerator) = merge(cat.parameters, Parameters(cat.boundary))
+
+"""
+    isempty(cat::CategorizedGenerator) -> Bool
+
+Judge whether a categorized generator is empty.
+"""
+@inline Base.isempty(cat::CategorizedGenerator) = isempty(cat.constops) && all(map(isempty, values(cat.alterops))) && all(map(isempty, values(cat.boundops)))
+
+"""
+    empty(cat::CategorizedGenerator) -> CategorizedGenerator
+    empty!(cat::CategorizedGenerator) -> CategorizedGenerator
+
+Get an empty copy of a categorized generator or empty a categorized generator of (a representation of) quantum operators.
+"""
+@inline function Base.empty(cat::CategorizedGenerator)
+    constops = empty(cat.constops)
+    alterops = NamedTuple{keys(cat.alterops)}(map(empty, values(cat.alterops)))
+    boundops = NamedTuple{keys(cat.boundops)}(map(empty, values(cat.boundops)))
+    return CategorizedGenerator(constops, alterops, boundops, cat.parameters, deepcopy(cat.boundary), ExpansionStyle(cat))
+end
+@inline function Base.empty!(cat::CategorizedGenerator)
+    empty!(cat.constops)
+    map(empty!, values(cat.alterops))
+    map(empty!, values(cat.boundops))
+    return cat
 end
 
 """
@@ -264,32 +322,6 @@ end
 @inline combineops(ops₁, value₁, ops₂, value₂, flag::Bool) = flag ? deepcopy(ops₁) : value₁==value₂ ? ops₁+ops₂ : ops₁*value₁+ops₂*value₂
 @inline combineops(ops, value, ::Nothing, ::Nothing, ::Nothing) = deepcopy(ops)
 @inline combineops(::Nothing, ::Nothing, ops, value, ::Nothing) = deepcopy(ops)
-
-"""
-    (transformation::LinearTransformation)(cat::CategorizedGenerator; kwargs...) -> CategorizedGenerator
-
-Apply a linear transformation to a categorized generator of (a representation of) quantum operators.
-"""
-function (transformation::LinearTransformation)(cat::CategorizedGenerator; kwargs...)
-    wrapper(m) = transformation(m; kwargs...)
-    constops = wrapper(cat.constops)
-    alterops = NamedTuple{keys(cat.alterops)}(map(wrapper, values(cat.alterops)))
-    boundops = NamedTuple{keys(cat.boundops)}(map(wrapper, values(cat.boundops)))
-    return CategorizedGenerator(constops, alterops, boundops, cat.parameters, deepcopy(cat.boundary), ExpansionStyle(cat))
-end
-
-"""
-    valtype(::Type{<:CategorizedGenerator})
-
-Get the valtype of a categorized generator of (a representation of) quantum operators.
-"""
-@inline @generated function Base.valtype(::Type{<:CategorizedGenerator{C, A, B}}) where {C, A<:NamedTuple, B<:NamedTuple}
-    exprs = [:(optp = C)]
-    fieldcount(A)>0 && append!(exprs, [:(optp = promote_type(optp, $T)) for T in fieldtypes(A)])
-    fieldcount(B)>0 && append!(exprs, [:(optp = promote_type(optp, $T)) for T in fieldtypes(B)])
-    push!(exprs, :(return optp))
-    return Expr(:block, exprs...)
-end
 
 """
     expand(cat::CategorizedGenerator, ::Lazy)
@@ -355,25 +387,6 @@ function update!(cat::CategorizedGenerator, transformation::LinearTransformation
 end
 
 """
-    empty(cat::CategorizedGenerator) -> CategorizedGenerator
-    empty!(cat::CategorizedGenerator) -> CategorizedGenerator
-
-Get an empty copy of a categorized generator or empty a categorized generator of (a representation of) quantum operators.
-"""
-@inline function Base.empty(cat::CategorizedGenerator)
-    constops = empty(cat.constops)
-    alterops = NamedTuple{keys(cat.alterops)}(map(empty, values(cat.alterops)))
-    boundops = NamedTuple{keys(cat.boundops)}(map(empty, values(cat.boundops)))
-    return CategorizedGenerator(constops, alterops, boundops, cat.parameters, deepcopy(cat.boundary), ExpansionStyle(cat))
-end
-@inline function Base.empty!(cat::CategorizedGenerator)
-    empty!(cat.constops)
-    map(empty!, values(cat.alterops))
-    map(empty!, values(cat.boundops))
-    return cat
-end
-
-"""
     reset!(cat::CategorizedGenerator{<:Operators}, terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=cat.boundary; half::Bool=false) -> CategorizedGenerator
 
 Reset a categorized generator of (a representation of) quantum operators by the new terms, bonds, Hilbert space and (twisted) boundary condition.
@@ -409,13 +422,6 @@ function reset!(cat::CategorizedGenerator, transformation::LinearTransformation,
     merge!(cat.boundary, source.boundary)
     return cat
 end
-
-"""
-    Parameters(cat::CategorizedGenerator)
-
-Get the complete set of parameters of a categorized generator of (a representation of) quantum operators.
-"""
-@inline Parameters(cat::CategorizedGenerator) = merge(cat.parameters, Parameters(cat.boundary))
 
 """
     CompositeGenerator{CG<:CategorizedGenerator} <: Generator
