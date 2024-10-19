@@ -1,6 +1,6 @@
 using LinearAlgebra: dot, tr
 using QuantumLattices: add!, expand, expand!, reset!, update
-using QuantumLattices.DegreesOfFreedom: plain, Boundary, CompositeIndex, Coupling, Hilbert, IIDSpace, Index, OperatorUnitToTuple, SimpleIID, SimpleInternal, Term
+using QuantumLattices.DegreesOfFreedom: plain, Boundary, CoordinatedIndex, Coupling, Hilbert, Index, OperatorUnitToTuple, SimpleInternalIndex, SimpleInternal, Term
 using QuantumLattices.Frameworks
 using QuantumLattices.QuantumOperators: ID, LinearFunction, Operator, Operators, id, idtype
 using QuantumLattices.Spatials: Lattice, Point, bonds, decompose, isintracell
@@ -8,32 +8,29 @@ using QuantumLattices.Toolkit: Float, contentnames, reparameter
 using StaticArrays: SVector
 
 import QuantumLattices: update!
-import QuantumLattices.DegreesOfFreedom: iidtype, isdefinite
 import QuantumLattices.Frameworks: Parameters, initialize, run!
 import QuantumLattices.Toolkit: shape
 
-struct FID{N<:Union{Int, Symbol}} <: SimpleIID
+struct FID{N<:Union{Int, Symbol}} <: SimpleInternalIndex
     nambu::N
 end
 @inline Base.adjoint(sl::FID{Int}) = FID(3-sl.nambu)
-function Base.angle(id::CompositeIndex{Index{Int, FID{Int}}}, vectors::AbstractVector{<:AbstractVector{Float}}, values::AbstractVector{Float})
+function Base.angle(id::CoordinatedIndex{<:Index{FID{Int}}}, vectors::AbstractVector{<:AbstractVector{Float}}, values::AbstractVector{Float})
     phase=  (length(vectors) == 1) ? 2pi*dot(decompose(id.icoordinate, vectors[1]), values) :
             (length(vectors) == 2) ? 2pi*dot(decompose(id.icoordinate, vectors[1], vectors[2]), values) :
             (length(vectors) == 3) ? 2pi*dot(decompose(id.icoordinate, vectors[1], vectors[2], vectors[3]), values) :
             error("angle error: not supported number of input basis vectors.")
-    (id.index.iid.nambu == 1) ? phase : -phase
+    (id.index.internal.nambu == 1) ? phase : -phase
 end
-@inline isdefinite(::Type{FID{Int}}) = true
-@inline iidtype(::Type{FID}, ::Type{T}) where {T<:Union{Int, Symbol}} = FID{T}
 
 struct FFock <: SimpleInternal{FID{Int}}
     nnambu::Int
 end
 @inline shape(f::FFock) = (1:f.nnambu,)
-@inline FID(i::CartesianIndex, vs::FFock) = FID(i.I...)
-@inline CartesianIndex(fid::FID{Int}, vs::FFock) = CartesianIndex(fid.nambu)
-@inline shape(iidspace::IIDSpace{FID{Int}, FFock}) = (iidspace.iid.nambu:iidspace.iid.nambu,)
-@inline shape(iidspace::IIDSpace{FID{Symbol}, FFock}) = (1:iidspace.internal.nnambu,)
+@inline Base.convert(::Type{<:FID}, i::CartesianIndex, ::FFock) = FID(i.I...)
+@inline Base.convert(::Type{<:CartesianIndex}, fid::FID{Int}, ::FFock) = CartesianIndex(fid.nambu)
+@inline shape(::FFock, index::FID{Int}) = (index.nambu:index.nambu,)
+@inline shape(internal::FFock, ::FID{Symbol}) = (1:internal.nnambu,)
 
 @testset "Parameters" begin
     ps1 = Parameters{(:t₁, :t₂, :U)}(1.0im, 1.0, 2.0)
@@ -75,15 +72,15 @@ end
     hilbert = Hilbert(site=>FFock(2) for site=1:length(lattice))
     boundary = Boundary{(:θ,)}([0.1], lattice.vectors)
 
-    t = Term{:Hp}(:t, 2.0, 1, Coupling(1.0, (1, 2), FID, (2, 1)), false; ismodulatable=false)
-    μ = Term{:Mu}(:μ, 1.0, 0, Coupling(1.0, (1, 1), FID, (2, 1)), true)
+    t = Term{:Hp}(:t, 2.0, 1, Coupling(1.0, :, FID, (2, 1)), false; ismodulatable=false)
+    μ = Term{:Mu}(:μ, 1.0, 0, Coupling(1.0, :, FID, (2, 1)), true)
 
     tops₁ = expand(t, filter(bond->isintracell(bond), bs), hilbert; half=true)
     tops₂ = boundary(expand(one(t), filter(bond->!isintracell(bond), bs), hilbert; half=true))
     μops = expand(one(μ), filter(bond->length(bond)==1, bs), hilbert; half=true)
     i = LinearFunction(identity)
 
-    optp = Operator{Complex{Float}, ID{CompositeIndex{Index{Int, FID{Int}}, SVector{1, Float}}, 2}}
+    optp = Operator{Complex{Float}, ID{CoordinatedIndex{Index{FID{Int}, Int}, SVector{1, Float}}, 2}}
     cat = CategorizedGenerator(tops₁, (t=Operators{optp}(), μ=μops), (t=tops₂, μ=Operators{optp}()), (t=2.0, μ=1.0), boundary, eager)
     @test cat == CategorizedGenerator((t, μ), bs, hilbert, boundary, eager; half=true)
     @test isequal(cat, i(cat))
@@ -150,11 +147,11 @@ end
     @test update!(sgen, cgen)|>expand ≈ tops₁+tops₂*2.0+μops*1.5
     @test reset!(empty(sgen), i, cgen) == sgen
 
-    t = Term{:Hp}(:t, 2.0, 1, Coupling(1.0, (1, 2), FID, (2, 1)), false; ismodulatable=false)
-    μ = Term{:Mu}(:μ, 1.0, 0, Coupling(1.0, (1, 1), FID, (2, 1)), true)
+    t = Term{:Hp}(:t, 2.0, 1, Coupling(1.0, :, FID, (2, 1)), false; ismodulatable=false)
+    μ = Term{:Mu}(:μ, 1.0, 0, Coupling(1.0, :, FID, (2, 1)), true)
     tops = expand(t, bs, hilbert; half=true)
     μops = expand(one(μ), bs, hilbert; half=true)
-    optp = Operator{Complex{Float}, ID{CompositeIndex{Index{Int, FID{Int}}, SVector{1, Float}}, 2}}
+    optp = Operator{Complex{Float}, ID{CoordinatedIndex{Index{FID{Int}, Int}, SVector{1, Float}}, 2}}
     cat = CategorizedGenerator(tops, (t=Operators{optp}(), μ=μops), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain, eager)
     @test cat == CategorizedGenerator((t, μ), bs, hilbert, plain, eager; half=true)
     @test isequal(cat, i(cat))
@@ -216,7 +213,7 @@ end
 @inline initialize(dos::DOS, vca::VCA) = 0.0
 @inline function run!(alg::Algorithm{VCA}, assign::Assignment{DOS})
     prepare!(alg, assign)
-    gf = alg.assignments[first(assign.dependences)]
+    gf = alg.assignments[first(assign.dependencies)]
     assign.data = tr(gf.data)
 end
 @inline dosmap(params::Parameters) = Parameters{(:t, :U, :μ)}(params.t, params.U, -params.U/2)
@@ -241,7 +238,7 @@ end
 
     add!(vca, :GF, GF(0))
     rex = r"Action DOS\(DOS\)\: time consumed [0-9]*\.[0-9]*(e[+-][0-9]*)*s."
-    @test_logs (:info, rex) vca(:DOS, DOS(-3.5), parameters=(U=7.0,), map=dosmap, dependences=(:GF,))
+    @test_logs (:info, rex) vca(:DOS, DOS(-3.5), parameters=(U=7.0,), map=dosmap, dependencies=(:GF,))
 
     dos = vca.assignments[:DOS]
     @test dos == deepcopy(dos)

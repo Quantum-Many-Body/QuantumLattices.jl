@@ -11,20 +11,20 @@ using TimerOutputs: TimerOutput, TimerOutputs, @timeit
 using ..DegreesOfFreedom: plain, Boundary, Hilbert, Term
 using ..QuantumOperators: OperatorPack, Operators, OperatorSet, OperatorSum, LinearTransformation, Representation, Transformation, identity, optype
 using ..Spatials: AbstractLattice, Bond, Neighbors, bonds!, isintracell
-using ..Toolkit: atol, efficientoperations, rtol, decimaltostr
+using ..Toolkit: atol, efficientoperations, rtol, getcontent, tostr
 
 import ..QuantumLattices: add!, expand, expand!, id, reset!, update, update!
 import ..Spatials: save
-import ..Toolkit: contentnames, getcontent
+import ..Toolkit: contentnames
 
 export eager, lazy, Action, Algorithm, AnalyticalExpression, Assignment, CategorizedGenerator, CompositeGenerator, Eager, ExpansionStyle, Frontend, Generator, Image, Lazy, OperatorGenerator, Parameters, initialize, prepare!, run!, save
 
 """
     Parameters{Names}(values::Number...) where Names
 
-A NamedTuple that contain the key-value pairs.
+A NamedTuple that contains the key-value pairs.
 """
-const Parameters{Names} = NamedTuple{Names, <:Tuple{Vararg{Number}}}
+const Parameters{Names, T<:Tuple{Vararg{Number}}} = NamedTuple{Names, T}
 @inline Parameters{Names}(values::Number...) where {Names} = NamedTuple{Names}(values)
 @inline @generated function update(params::NamedTuple; parameters...)
     names = fieldnames(params)
@@ -35,7 +35,7 @@ function Base.show(io::IO, params::Parameters)
     haskey(io, :ndecimal) && (params = NamedTuple{keys(params)}(map(value->round(value; digits=io[:ndecimal]), values(params))))
     invoke(show, Tuple{IO, NamedTuple}, io, params)
 end
-Parameters(::Representation) = NamedTuple()
+@inline Parameters(::Representation) = NamedTuple()
 
 """
     match(params₁::Parameters, params₂::Parameters; atol=atol, rtol=rtol) -> Bool
@@ -162,7 +162,7 @@ end
 """
     CategorizedGenerator{C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:Boundary, S<:ExpansionStyle} <: Generator
 
-The categorized representation generator of a quantum lattice system that records the quantum operators or a representation of the quantum operators related to (part of) the system.
+Categorized representation generator of a quantum lattice system that records the quantum operators or a representation of the quantum operators related to (part of) the system.
 
 For convenience, the (representation of) operators are categorized into three groups, i.e., the constant, the alterable, and the boundary.
 """
@@ -543,7 +543,7 @@ end
 """
     Image{CG<:CategorizedGenerator, H<:Transformation} <: CompositeGenerator{CG}
 
-The image of a transformation applied to a representation of a quantum lattice system.
+Image of a transformation applied to a representation of a quantum lattice system.
 """
 mutable struct Image{CG<:CategorizedGenerator, H<:Transformation} <: CompositeGenerator{CG}
     const operators::CG
@@ -609,7 +609,7 @@ end
 """
     Frontend
 
-The frontend of algorithms applied to a quantum lattice system.
+Frontend of algorithms applied to a quantum lattice system.
 """
 abstract type Frontend end
 @inline Base.:(==)(frontend₁::Frontend, frontend₂::Frontend) = ==(efficientoperations, frontend₁, frontend₂)
@@ -640,7 +640,7 @@ mutable struct Assignment{A<:Action, P<:Parameters, M<:Function, N, D} <: Functi
     const action::A
     parameters::P
     const map::M
-    const dependences::NTuple{N, Symbol}
+    const dependencies::NTuple{N, Symbol}
     data::D
     ismatched::Bool
 end
@@ -738,7 +738,7 @@ function Base.show(io::IO, alg::Algorithm)
         if select(name)
             flag || @printf io "-"
             flag = true
-            @printf io "%s(%s)" name decimaltostr(value, ndecimal)
+            @printf io "%s(%s)" name tostr(value, ndecimal)
         end
     end
 end
@@ -761,12 +761,12 @@ Get the name of the combination of an algorithm and an assignment.
 @inline Base.nameof(alg::Algorithm, assign::Assignment) = @sprintf "%s-%s" alg assign.id
 
 """
-    add!(alg::Algorithm, id::Symbol, action::Action; parameters::Parameters=Parameters{()}(), map::Function=identity, dependences::Tuple=(), kwargs...) -> Tuple{Algorithm, Assignment}
+    add!(alg::Algorithm, id::Symbol, action::Action; parameters::Parameters=Parameters{()}(), map::Function=identity, dependencies::Tuple=(), kwargs...) -> Tuple{Algorithm, Assignment}
 
 Add an assignment on an algorithm by providing the contents of the assignment without the execution of it.
 """
-function add!(alg::Algorithm, id::Symbol, action::Action; parameters::Parameters=Parameters{()}(), map::Function=identity, dependences::Tuple=(), kwargs...)
-    assign = Assignment(id, action, merge(alg.parameters, parameters), map, dependences, initialize(action, alg.frontend), false)
+function add!(alg::Algorithm, id::Symbol, action::Action; parameters::Parameters=Parameters{()}(), map::Function=identity, dependencies::Tuple=(), kwargs...)
+    assign = Assignment(id, action, merge(alg.parameters, parameters), map, dependencies, initialize(action, alg.frontend), false)
     alg.assignments[id] = assign
     return (alg, assign)
 end
@@ -853,12 +853,12 @@ end
 """
     prepare!(alg::Algorithm, assign::Assignment, f::Function=assign->true) -> Tuple{Algorithm, Assignment}
 
-Run the dependences of an assignment.
+Run the dependencies of an assignment.
 
-Optionally, some dependences can be filtered by specifying the `f` function.
+Optionally, some dependencies can be filtered by specifying the `f` function.
 """
 function prepare!(alg::Algorithm, assign::Assignment, f::Function=assign->true)
-    for id in assign.dependences
+    for id in assign.dependencies
         dependence = alg.assignments[id]
         f(dependence) && dependence(alg)
     end
