@@ -1,18 +1,18 @@
 module QuantumSystems
 
 using LinearAlgebra: dot, ishermitian, norm
-using Printf: @printf, @sprintf
+using Printf: @printf
 using SparseArrays: SparseMatrixCSC
 using StaticArrays: SMatrix, SVector
-using ..DegreesOfFreedom: AbstractIndex, CompositeIndex, Component, InternalIndexProd, CoordinatedIndex, CompositeInternal, Coupling, Hilbert, ConstrainedInternal, Index, Ordinal, SimpleInternalIndex, SimpleInternal, Term, TermAmplitude, TermCoupling, @pattern
-using ..QuantumLattices: decompose, dtype, kind
+using ..DegreesOfFreedom: AbstractIndex, Component, CompositeIndex, ConstrainedInternal, CoordinatedIndex, Coupling, Hilbert, Index, InternalPattern, Ordinal, Pattern, SimpleInternal, SimpleInternalIndex, Term, TermAmplitude, TermCoupling, @pattern
+using ..QuantumLattices: decompose, dtype
 using ..QuantumOperators: ID, LaTeX, Operator, OperatorProd, Operators, latexformat
 using ..Spatials: Bond, Point, direction, isparallel, rcoordinate
 using ..Toolkit: atol, efficientoperations, rtol, Float, VectorSpace, VectorSpaceCartesian, VectorSpaceStyle, delta, getcontent, rawtype, tostr
 
 import ..DegreesOfFreedom: MatrixCoupling, allequalfields, indextype, isdefinite, patternrule, statistics
-import ..QuantumLattices: ⊗, expand, expand!, permute, rank
-import ..QuantumOperators: latexname, matrix, optype, script
+import ..QuantumLattices: expand, expand!, kind, permute, rank
+import ..QuantumOperators: latexname, matrix, script
 import ..Toolkit: shape
 
 # Canonical complex fermionic/bosonic systems
@@ -24,7 +24,7 @@ export latexofspins, 𝕊, SpinIndex, Spin, totalspin, @Γ_str, @Γ′_str, @DM_
 export DM, Heisenberg, Ising, Kitaev, SingleIonAnisotropy, SpinTerm, Zeeman, Γ, Γ′
 
 # Phononic systems
-export latexofphonons, Elastic, Phonon, PhononIndex, Kinetic, Hooke, PhononTerm
+export latexofphonons, Elastic, Phonon, PhononIndex, Kinetic, Hooke, PhononTerm, 𝕦, 𝕡
 
 # Canonical complex fermionic/bosonic systems and hardcore bosonic systems
 ## FockIndex
@@ -1062,192 +1062,274 @@ function DM(
     return Term{:DM}(id, value, bondkind, dm, true; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 
-# # Phononic systems
-# ## PID
-# """
-#     PID{D<:Union{Char, Symbol, Colon}} <: SimpleInternalIndex
+# Phononic systems
+## PhononIndex
+"""
+    PhononIndex{K, D<:Union{Char, Symbol, Colon}} <: SimpleInternalIndex
 
-# The phonon id.
-# """
-# struct PID{D<:Union{Char, Symbol, Colon}} <: SimpleInternalIndex
-#     tag::Char
-#     direction::D
-#     function PID(tag::Char, direction::Union{Char, Symbol, Colon})
-#         @assert tag∈('p', 'u') "PID error: wrong tag($tag)."
-#         isa(direction, Char) && @assert direction∈('x', 'y', 'z') "PID error: wrong direction($direction)."
-#         new{typeof(direction)}(tag, direction)
-#     end
-# end
-# @inline Base.adjoint(pid::PID) = pid
-# @inline statistics(::Type{<:PID}) = :b
-# @inline Base.show(io::IO, pid::PID) = @printf io "PID(%s, %s)" repr(pid.tag) default(pid.direction)
-# @inline PID(iid::PID, ::CompositeInternal) = iid
+Phonon index, i.e., the internal index to specify the generators of the vibration of a lattice point.
+"""
+struct PhononIndex{K, D<:Union{Char, Symbol, Colon}} <: SimpleInternalIndex
+    direction::D
+    function PhononIndex{K}(direction::Union{Char, Symbol, Colon}) where K
+        @assert K∈(:u, :p) "PhononIndex error: wrong kind($kind)."
+        isa(direction, Char) && @assert direction∈('x', 'y', 'z') "PhononIndex error: wrong direction($direction)."
+        new{K, typeof(direction)}(direction)
+    end
+end
+### basic methods of concrete SimpleInternalIndex
+@inline statistics(::Type{<:PhononIndex}) = :b
+@inline isdefinite(::Type{<:PhononIndex{K, Char} where K}) = true
+@inline Base.:(==)(index₁::PhononIndex, index₂::PhononIndex) = kind(index₁)==kind(index₂) && ==(efficientoperations, index₁, index₂)
+@inline Base.isequal(index₁::PhononIndex, index₂::PhononIndex) = isequal(kind(index₁), kind(index₂)) && isequal(efficientoperations, index₁, index₂)
+@inline Base.hash(index::PhononIndex, h::UInt) = hash((kind(index), index.direction), h)
+@inline Base.adjoint(index::PhononIndex) = index
+@inline @generated function Base.replace(index::PhononIndex; kwargs...)
+    exprs = [:(get(kwargs, $name, getfield(index, $name))) for name in QuoteNode.(fieldnames(index))]
+    return :(rawtype(typeof(index)){kind(index)}($(exprs...)))
+end
+### requested by MatrixCouplingProd
+@inline indextype(::Type{PhononIndex{K}}, ::Type{D}) where {K, D<:Union{Char, Symbol, Colon}} = PhononIndex{K, D}
 
-# ### requested by Constraint
-# @inline isdefinite(::Type{PID{Char}}) = true
-# @inline indextype(::Type{PID}, ::Type{Char}, ::Type{D}) where {D<:Union{Char, Symbol, Colon}} = PID{D}
+"""
+    PhononIndex{K}(direction::Union{Char, Symbol, Colon}) where K
+    PhononIndex{K, D}(direction::Union{Char, Symbol, Colon}) where {K, D}
 
-# ## Phonon
-# """
-#     Phonon <: SimpleInternal{PID{Char}}
+Construct a phonon index.
+"""
+@inline PhononIndex{K, D}(direction::Union{Char, Symbol, Colon}) where {K, D} = PhononIndex{K}(direction)
 
-# The phonon internal degrees of freedom.
-# """
-# struct Phonon <: SimpleInternal{PID{Char}}
-#     ndirection::Int
-#     function Phonon(ndirection::Integer)
-#         @assert ndirection∈(1, 2, 3) "Phonon error: wrong number of directions."
-#         new(ndirection)
-#     end
-# end
-# @inline shape(pn::Phonon) = (1:2, 1:pn.ndirection)
-# @inline Base.CartesianIndex(pid::PID{Char}, ::Phonon) = CartesianIndex(pid.tag=='u' ? 1 : 2, Int(pid.direction)-Int('x')+1)
-# @inline PID(index::CartesianIndex{2}, ::Phonon) = PID(index[1]==1 ? 'u' : 'p', Char(Int('x')+index[2]-1))
+### convenient construction and string representation 
+"""
+    𝕦(direction) -> PhononIndex{:u}
+    𝕦(site, direction) -> Index{<:PhononIndex{:u}}
+    𝕦(site, direction, rcoordinate, icoordinate) -> CoordinatedIndex{<:Index{<:PhononIndex{:u}}}
 
-# ## LaTeX format output
-# """
-#     script(::Val{:direction}, pid::PID; kwargs...) -> String
+    𝕡(direction) -> PhononIndex{:p}
+    𝕡(site, direction) -> Index{<:PhononIndex{:p}}
+    𝕡(site, direction, rcoordinate, icoordinate) -> CoordinatedIndex{<:Index{<:PhononIndex{:p}}}
 
-# Get the requested script of an pid.
-# """
-# @inline script(::Val{:direction}, pid::PID; kwargs...) = pid.direction==(:) ? ":" : string(pid.direction)
+Convenient construction of `SpinIndex`, `Index{<:SpinIndex}`, `CoordinatedIndex{<:Index{<:SpinIndex}}`.
+"""
+@inline 𝕦(direction) = PhononIndex{:u}(direction)
+@inline 𝕦(site, direction) = Index(site, PhononIndex{:u}(direction))
+@inline 𝕦(site, direction, rcoordinate, icoordinate) = CoordinatedIndex(Index(site, PhononIndex{:u}(direction)), rcoordinate, icoordinate)
+@inline 𝕡(direction) = PhononIndex{:p}(direction)
+@inline 𝕡(site, direction) = Index(site, PhononIndex{:p}(direction))
+@inline 𝕡(site, direction, rcoordinate, icoordinate) = CoordinatedIndex(Index(site, PhononIndex{:p}(direction)), rcoordinate, icoordinate)
+@inline Base.getindex(::Type{AbstractIndex}, ::Type{I}) where {I<:Union{PhononIndex{:u}, Index{<:PhononIndex{:u}}, CoordinatedIndex{<:Index{<:PhononIndex{:u}}}}} = 𝕦
+@inline Base.getindex(::Type{AbstractIndex}, ::Type{I}) where {I<:Union{PhononIndex{:p}, Index{<:PhononIndex{:p}}, CoordinatedIndex{<:Index{<:PhononIndex{:p}}}}} = 𝕡
+@inline Base.getindex(::Type{AbstractIndex}, ::typeof(𝕦)) = PhononIndex{:u}
+@inline Base.getindex(::Type{AbstractIndex}, ::typeof(𝕡)) = PhononIndex{:p}
 
-# @inline body(pid::PID) = string(pid.tag)
-# @inline body(index::Index{<:PID}) = string(index.iid.tag)
-# @inline body(index::CompositeIndex{<:Index{<:PID}}) = string(getcontent(index, :index).iid.tag)
-# """
-#     latexofphonons
+"""
+    kind(index::PhononIndex) -> Symbol
+    kind(::Type{<:PhononIndex{K}}) where K -> Symbol
 
-# The default LaTeX format of a phonon index.
-# """
-# const latexofphonons = LaTeX{(:direction,), (:site,)}(body, "", "")
-# @inline latexname(::Type{<:Index{<:PID}}) = Symbol("Index{PID}")
-# @inline latexname(::Type{<:CompositeIndex{<:Index{<:PID}}}) = Symbol("CompositeIndex{Index{PID}}")
-# latexformat(Index{<:PID}, latexofphonons)
-# latexformat(CompositeIndex{<:Index{<:PID}}, latexofphonons)
-# @inline latexname(::Type{<:PID}) = Symbol("PID")
-# latexformat(PID, LaTeX{(:direction,), ()}(body, "", ""))
+    kind(index::Index{<:PhononIndex}) -> Symbol
+    kind(::Type{<:Index{<:PhononIndex{K}}}) where K -> Symbol
 
-# ## Permutation
-# """
-#     permute(id₁::PID, id₂::PID) -> Tuple{Vararg{Operator}}
+    kind(index::CoordinatedIndex{<:Index{<:PhononIndex}}) -> Symbol
+    kind(::Type{<:CoordinatedIndex{<:Index{<:PhononIndex{K}}}}) where K -> Symbol
 
-# Permute two phonon indexes and get the result.
-# """
-# function permute(id₁::PID, id₂::PID)
-#     if id₁.direction==id₂.direction && id₁.tag≠id₂.tag
-#         return (Operator(id₁.tag=='u' ? 1im : -1im), Operator(1, id₂, id₁))
-#     else
-#         return (Operator(1, id₂, id₁),)
-#     end
-# end
+Get the kind of a phonon index.
+"""
+@inline kind(index::PhononIndex) = kind(typeof(index))
+@inline kind(index::Index{<:PhononIndex}) = kind(typeof(index))
+@inline kind(index::CoordinatedIndex{<:Index{<:PhononIndex}}) = kind(typeof(index))
+@inline kind(::Type{<:PhononIndex{K}}) where K = K
+@inline kind(::Type{<:Index{<:PhononIndex{K}}}) where K = K
+@inline kind(::Type{<:CoordinatedIndex{<:Index{<:PhononIndex{K}}}}) where K = K
 
-# ## Coupling
-# ### requested by ConstrainedInternal
-# @inline function shape(iidspace::ConstrainedInternal{<:PID, Phonon})
-#     return (iidspace.iid.tag=='u' ? (1:1) : (2:2), pidrange(iidspace.iid.direction, iidspace.internal.ndirection))
-# end
-# @inline pidrange(::Union{Symbol, Colon}, ndirection::Int) = 1:ndirection
-# @inline function pidrange(direction::Char, ndirection::Int)
-#     direction = Int(direction) - Int('x') + 1
-#     @assert 0<direction<ndirection+1 "pidrange error: direction out of range."
-#     return direction:direction
-# end
+## LaTeX format output
+"""
+    script(index::PhononIndex, ::Val{:direction}; kwargs...) -> String
 
-# ### MatrixCoupling
-# """
-#     MatrixCoupling(sites::Union{NTuple{2, Int}, Colon}, ::Type{PID}, matrix::AbstractMatrix; rows::Union{AbstractVector, Nothing}=nothing, cols::Union{AbstractVector, Nothing}=nothing)
+Get the requested script of a phonon index.
+"""
+@inline script(index::PhononIndex{K, Colon}, ::Val{:direction}; kwargs...) where K = ":"
+@inline script(index::PhononIndex, ::Val{:direction}; kwargs...) = string(index.direction)
 
-# Construct a set of `Coupling`s corresponding to the dynamical matrix of phonons.
-# """
-# function MatrixCoupling(sites::Union{NTuple{2, Int}, Colon}, ::Type{PID}, matrix::AbstractMatrix; rows::Union{AbstractVector, Nothing}=nothing, cols::Union{AbstractVector, Nothing}=nothing)
-#     @assert size(matrix)[1]∈(1, 2, 3) && size(matrix)[2]∈(1, 2, 3) "MatrixCoupling error: mismatched dimension of input matrix."
-#     isnothing(rows) && (rows = size(matrix)[1]==1 ? SVector('x') : size(matrix)[1]==2 ? SVector('x', 'y') : SVector('x', 'y', 'z'))
-#     isnothing(cols) && (cols = size(matrix)[2]==1 ? SVector('x') : size(matrix)[2]==2 ? SVector('x', 'y') : SVector('x', 'y', 'z'))
-#     @assert size(matrix)==(length(rows), length(cols)) "MatrixCoupling error: mismatched input matrix and rows/cols."
-#     return MatrixCoupling(sites, PID, Component(SVector('u'), SVector('u'), default_matrix), Component(rows, cols, matrix))
-# end
+@inline body(::PhononIndex{:u}) = "u"
+@inline body(::PhononIndex{:p}) = "p"
+@inline body(index::Index{<:PhononIndex}) = body(index.internal)
+@inline body(index::CompositeIndex{<:Index{<:PhononIndex}}) = body(getcontent(index, :index))
+"""
+    latexofphonons
 
-# ### expand
-# """
-#     expand(::Val{:Hooke}, pnc::Coupling{<:Number, <:NTuple{2, Index{PID{Colon}}}}, bond::Bond, hilbert::Hilbert) -> PPExpand
+Default LaTeX format of a phonon index.
+"""
+const latexofphonons = LaTeX{(:direction,), (:site,)}(body, "", "")
+@inline latexname(::Type{<:PhononIndex}) = Symbol("PhononIndex")
+@inline latexname(::Type{<:Index{<:PhononIndex}}) = Symbol("Index{PhononIndex}")
+@inline latexname(::Type{<:CompositeIndex{<:Index{<:PhononIndex}}}) = Symbol("CompositeIndex{Index{PhononIndex}}")
+latexformat(PhononIndex, latexofphonons)
+latexformat(Index{<:PhononIndex}, latexofphonons)
+latexformat(CompositeIndex{<:Index{<:PhononIndex}}, latexofphonons)
 
-# Expand the default phonon potential coupling on a given bond.
-# """
-# function expand(::Val{:Hooke}, pnc::Coupling{<:Number, <:NTuple{2, Index{PID{Colon}}}}, bond::Bond, hilbert::Hilbert)
-#     R̂ = rcoordinate(bond)/norm(rcoordinate(bond))
-#     @assert pnc.indexes.iids.tags==('u', 'u') "expand error: wrong tags of Hooke coupling."
-#     @assert isapprox(pnc.value, 1, atol=atol, rtol=rtol) "expand error: wrong coefficient of Hooke coupling."
-#     @assert pnc.indexes.sites∈((1, 2), (:, :)) "expand error: wrong sites of Hooke coupling."
-#     pn₁ = filter(pnc.indexes[1].iid, hilbert[bond[1].site])
-#     pn₂ = filter(pnc.indexes[2].iid, hilbert[bond[2].site])
-#     @assert pn₁.ndirection==pn₂.ndirection==length(R̂) "expand error: mismatched number of directions."
-#     return PPExpand(R̂, (bond[1], bond[2]))
-# end
-# struct PPExpand{N, D<:Number} <: VectorSpace{Operator{D, ID{CoordinatedIndex{Index{Int, PID{Char}}, SVector{N, D}}, 2}}}
-#     direction::SVector{N, D}
-#     points::NTuple{2, Point{N, D}}
-# end
-# @inline VectorSpaceStyle(::Type{<:PPExpand}) = VectorSpaceCartesian()
-# @inline shape(pnce::PPExpand) = (1:length(pnce.direction), 1:length(pnce.direction), 1:4)
-# function Operator(index::CartesianIndex{3}, pnce::PPExpand)
-#     direction₁ = Char(Int('x')+index[1]-1)
-#     direction₂ = Char(Int('x')+index[2]-1)
-#     coeff = index[3]∈(1, 4) ? 1 : -1
-#     pos₁, pos₂ = index[3]==1 ? (1, 1) : index[3]==2 ? (1, 2) : index[3]==3 ? (2, 1) : (2, 2)
-#     index₁ = CoordinatedIndex(Index(pnce.points[pos₁].site, PID('u', direction₁)), pnce.points[pos₁].rcoordinate, pnce.points[pos₁].icoordinate)
-#     index₂ = CoordinatedIndex(Index(pnce.points[pos₂].site, PID('u', direction₂)), pnce.points[pos₂].rcoordinate, pnce.points[pos₂].icoordinate)
-#     return Operator(pnce.direction[index[1]]*pnce.direction[index[2]]*coeff, index₁, index₂)
-# end
+## Phonon
+"""
+    Phonon{K} <: SimpleInternal{PhononIndex{K, Char}}
 
-# ## Term
-# """
-#     Kinetic(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+Phonon space of lattice vibration generators at a single point.
+"""
+struct Phonon{K} <: SimpleInternal{PhononIndex{K, Char}}
+    ndirection::Int
+    function Phonon{K}(ndirection::Integer) where K
+        @assert K∈(:u, :p, :) "Phonon error: wrong kind($K)."
+        @assert ndirection∈(1, 2, 3) "Phonon error: wrong number of directions."
+        new{K}(ndirection)
+    end
+end
+@inline shape(pn::Phonon) = (1:pn.ndirection,)
+@inline Base.convert(::Type{<:CartesianIndex}, index::PhononIndex{K, Char}, ::Phonon{K}) where K = CartesianIndex(Int(index.direction)-Int('x')+1)
+@inline Base.convert(::Type{<:PhononIndex}, index::CartesianIndex{1}, pn::Phonon) = PhononIndex{kind(pn)}(Char(Int('x')+index[1]-1))
+@inline Base.summary(io::IO, pn::Phonon) = @printf io "%s-element Phonon{%s}" length(pn) repr(kind(pn))
+@inline Base.show(io::IO, pn::Phonon) = @printf io "%s{%s}(%s)" pn|>typeof|>nameof repr(kind(pn)) join(("$name=$(getfield(pn, name))" for name in pn|>typeof|>fieldnames), ", ")
+@inline Base.match(::Type{<:PhononIndex{K}}, ::Type{<:Phonon{:}}) where K = true
+@inline Base.match(::Type{<:PhononIndex{K}}, ::Type{<:Phonon{K}}) where K = true
+@inline Base.match(::Type{<:PhononIndex{K₁}}, ::Type{<:Phonon{K₂}}) where {K₁, K₂} = false
+@inline Base.filter(::Type{<:PhononIndex{K}}, ph::Phonon{:}) where K = Phonon{K}(ph.ndirection)
+@inline Base.filter(::Type{<:PhononIndex{K}}, ::Type{Phonon{:}}) where K = Phonon{K}
+### requested by ConstrainedInternal
+@inline shape(pn::Phonon, index::PhononIndex) = (phononshape(index.direction, pn.ndirection),)
+@inline phononshape(::Union{Symbol, Colon}, n::Int) = 1:n
+@inline function phononshape(v::Char, n::Int)
+    index = Int(v) - Int('x') + 1
+    @assert 0<index<n+1 "shape error: out of range."
+    return index:index
+end
 
-# Kinetic energy of phonons.
+"""
+    Phonon(ndirection::Integer)
+    Phonon{K}(ndirection::Integer) where K
 
-# Type alias for `Term{:Kinetic, id, V, Int, C<:TermCoupling, A<:TermAmplitude}`.
-# """
-# const Kinetic{id, V, C<:TermCoupling, A<:TermAmplitude} = Term{:Kinetic, id, V, Int, C, A}
-# @inline function Kinetic(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
-#     return Term{:Kinetic}(id, value, 0, Coupling(:, PID, ('p', 'p'), :), true; amplitude=amplitude, ismodulatable=ismodulatable)
-# end
+Construct a phonon space.
+"""
+@inline Phonon(ndirection::Integer) = Phonon{:}(ndirection)
 
-# """
-#     Hooke(id::Symbol, value, bondkind; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+"""
+    kind(pn::Phonon)
+    kind(::Type{<:Phonon{K}}) where K
 
-# Potential energy of phonons by the Hooke's law.
+Get the kind of a phonon space.
+"""
+@inline kind(pn::Phonon) = kind(typeof(pn))
+@inline kind(::Type{<:Phonon{K}}) where K = K
 
-# Type alias for `Term{:Hooke, id, V, B, C<:TermCoupling, A<:TermAmplitude}`
-# """
-# const Hooke{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:Hooke, id, V, B, C, A}
-# @inline function Hooke(id::Symbol, value, bondkind; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
-#     return Term{:Hooke}(id, value, bondkind, Coupling(:, PID, ('u', 'u'), :), true; amplitude=amplitude, ismodulatable=ismodulatable)
-# end
+## Permutation
+"""
+    permute(id₁::PhononIndex, id₂::PhononIndex) -> Tuple{Vararg{Operator}}
 
-# """
-#     Elastic(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+Permute two phonon indexes and get the result.
+"""
+function permute(id₁::PhononIndex, id₂::PhononIndex)
+    k₁, k₂ = kind(id₁), kind(id₂)
+    if id₁.direction==id₂.direction && k₁≠k₂
+        return (Operator(k₁==:u ? 1im : -1im), Operator(1, id₂, id₁))
+    else
+        return (Operator(1, id₂, id₁),)
+    end
+end
 
-# Generic elastic energy of phonons.
+## Coupling
+### MatrixCoupling
+"""
+    MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::typeof(𝕦), matrix::AbstractMatrix; rows::Union{AbstractVector, Nothing}=nothing, cols::Union{AbstractVector, Nothing}=nothing)
+    MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{PhononIndex{:u}}, matrix::AbstractMatrix; rows::Union{AbstractVector, Nothing}=nothing, cols::Union{AbstractVector, Nothing}=nothing)
 
-# Type alias for `Term{:Elastic, id, V, B, C<:TermCoupling, A<:TermAmplitude}`
-# """
-# const Elastic{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:Elastic, id, V, B, C, A}
-# @inline function Elastic(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
-#     value, factor = promote(value, 1//2)
-#     return Term{:Elastic, id}(value, bondkind, TermCoupling(coupling), TermAmplitude(amplitude), true, ismodulatable, factor)
-# end
-# function expand!(operators::Operators, term::Elastic, bond::Bond, hilbert::Hilbert; half::Bool=false)
-#     argtypes = Tuple{Operators, Term, Bond, Hilbert}
-#     invoke(expand!, argtypes, operators, term, bond, hilbert; half=half)
-#     invoke(expand!, argtypes, operators, term, reverse(bond), hilbert; half=half)
-#     return operators
-# end
-# """
-#     PhononTerm
+Construct a set of `Coupling`s corresponding to the dynamical matrix of phonons.
+"""
+@inline function MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::typeof(𝕦), matrix::AbstractMatrix; rows::Union{AbstractVector, Nothing}=nothing, cols::Union{AbstractVector, Nothing}=nothing)
+    return MatrixCoupling(sites, AbstractIndex[𝕦], matrix; rows=rows, cols=cols)
+end
+function MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{PhononIndex{:u}}, matrix::AbstractMatrix; rows::Union{AbstractVector, Nothing}=nothing, cols::Union{AbstractVector, Nothing}=nothing)
+    @assert size(matrix)[1]∈(1, 2, 3) && size(matrix)[2]∈(1, 2, 3) "MatrixCoupling error: mismatched dimension of input matrix."
+    isnothing(rows) && (rows = size(matrix)[1]==1 ? SVector('x') : size(matrix)[1]==2 ? SVector('x', 'y') : SVector('x', 'y', 'z'))
+    isnothing(cols) && (cols = size(matrix)[2]==1 ? SVector('x') : size(matrix)[2]==2 ? SVector('x', 'y') : SVector('x', 'y', 'z'))
+    @assert size(matrix)==(length(rows), length(cols)) "MatrixCoupling error: mismatched input matrix and rows/cols."
+    return MatrixCoupling(sites, PhononIndex{:u}, Component(rows, cols, matrix))
+end
 
-# Type alias for `Union{Kinetic, Hooke, Elastic}`.
-# """
-# const PhononTerm = Union{Kinetic, Hooke, Elastic}
+### expand
+"""
+    expand(pnc::Coupling{<:Number, <:Pattern{<:NTuple{2, Colon}, <:InternalPattern{(2,), <:NTuple{2, PhononIndex{:u}}}}}, ::Val{:Hooke}, bond::Bond, hilbert::Hilbert) -> VectorSpace
+
+Expand the default phonon potential coupling on a given bond.
+"""
+function expand(pnc::Coupling{<:Number, <:Pattern{<:NTuple{2, Colon}, <:InternalPattern{(2,), <:NTuple{2, PhononIndex{:u}}}}}, ::Val{:Hooke}, bond::Bond, hilbert::Hilbert)
+    R̂ = rcoordinate(bond)/norm(rcoordinate(bond))
+    @assert isapprox(pnc.value, 1, atol=atol, rtol=rtol) "expand error: wrong coefficient of Hooke coupling."
+    pn₁ = filter(pnc.pattern.internal.index[1], hilbert[bond[1].site])
+    pn₂ = filter(pnc.pattern.internal.index[2], hilbert[bond[2].site])
+    @assert pn₁.ndirection==pn₂.ndirection==length(R̂) "expand error: mismatched number of directions."
+    return PPExpand(R̂, (bond[1], bond[2]))
+end
+struct PPExpand{N, D<:Number} <: VectorSpace{Operator{D, ID{CoordinatedIndex{Index{PhononIndex{:u, Char}, Int}, SVector{N, D}}, 2}}}
+    direction::SVector{N, D}
+    points::NTuple{2, Point{N, D}}
+end
+@inline VectorSpaceStyle(::Type{<:PPExpand}) = VectorSpaceCartesian()
+@inline shape(pnce::PPExpand) = (1:length(pnce.direction), 1:length(pnce.direction), 1:4)
+function Base.convert(::Type{<:Operator}, index::CartesianIndex{3}, pnce::PPExpand)
+    direction₁ = Char(Int('x')+index[1]-1)
+    direction₂ = Char(Int('x')+index[2]-1)
+    coeff = index[3]∈(1, 4) ? 1 : -1
+    pos₁, pos₂ = index[3]==1 ? (1, 1) : index[3]==2 ? (1, 2) : index[3]==3 ? (2, 1) : (2, 2)
+    index₁ = 𝕦(pnce.points[pos₁].site, direction₁, pnce.points[pos₁].rcoordinate, pnce.points[pos₁].icoordinate)
+    index₂ = 𝕦(pnce.points[pos₂].site, direction₂, pnce.points[pos₂].rcoordinate, pnce.points[pos₂].icoordinate)
+    return Operator(pnce.direction[index[1]]*pnce.direction[index[2]]*coeff, index₁, index₂)
+end
+
+## Term
+"""
+    Kinetic(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+
+Kinetic energy of phonons.
+
+Type alias for `Term{:Kinetic, id, V, Int, C<:TermCoupling, A<:TermAmplitude}`.
+"""
+const Kinetic{id, V, C<:TermCoupling, A<:TermAmplitude} = Term{:Kinetic, id, V, Int, C, A}
+@inline function Kinetic(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+    return Term{:Kinetic}(id, value, 0, Coupling(𝕡(:, :), 𝕡(:, :)), true; amplitude=amplitude, ismodulatable=ismodulatable)
+end
+
+"""
+    Hooke(id::Symbol, value, bondkind; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+
+Potential energy of phonons by the Hooke's law.
+
+Type alias for `Term{:Hooke, id, V, B, C<:TermCoupling, A<:TermAmplitude}`
+"""
+const Hooke{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:Hooke, id, V, B, C, A}
+@inline function Hooke(id::Symbol, value, bondkind; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+    return Term{:Hooke}(id, value, bondkind, Coupling(𝕦(:, :), 𝕦(:, :)), true; amplitude=amplitude, ismodulatable=ismodulatable)
+end
+
+"""
+    Elastic(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+
+Generic elastic energy of phonons.
+
+Type alias for `Term{:Elastic, id, V, B, C<:TermCoupling, A<:TermAmplitude}`
+"""
+const Elastic{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:Elastic, id, V, B, C, A}
+@inline function Elastic(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+    value, factor = promote(value, 1//2)
+    return Term{:Elastic, id}(value, bondkind, TermCoupling(coupling), TermAmplitude(amplitude), true, ismodulatable, factor)
+end
+function expand!(operators::Operators, term::Elastic, bond::Bond, hilbert::Hilbert; half::Bool=false)
+    argtypes = Tuple{Operators, Term, Bond, Hilbert}
+    invoke(expand!, argtypes, operators, term, bond, hilbert; half=half)
+    invoke(expand!, argtypes, operators, term, reverse(bond), hilbert; half=half)
+    return operators
+end
+
+"""
+    PhononTerm
+
+Type alias for `Union{Kinetic, Hooke, Elastic}`.
+"""
+const PhononTerm = Union{Kinetic, Hooke, Elastic}
 
 end # module

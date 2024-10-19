@@ -1,6 +1,6 @@
 using LaTeXStrings: latexstring
-using QuantumLattices: ⊗, expand, permute, rank
-using QuantumLattices.DegreesOfFreedom: ˢᵗ, ⁿᵈ, AbstractIndex, CompositeIndex, InternalIndexProd, CoordinatedIndex, Coupling, Hilbert, Index, ConstrainedInternal, MatrixCoupling, allequalfields, indextype, isdefinite, patternrule, statistics, @pattern
+using QuantumLattices: expand, kind, permute, rank
+using QuantumLattices.DegreesOfFreedom: ˢᵗ, ⁿᵈ, AbstractIndex, CompositeIndex, ConstrainedInternal, CoordinatedIndex, Coupling, Hilbert, Index, MatrixCoupling, allequalfields, indextype, isdefinite, patternrule, statistics, @pattern
 using QuantumLattices.QuantumOperators: Operator, Operators, latexname, matrix, script
 using QuantumLattices.QuantumSystems
 using QuantumLattices.Spatials: Bond, Lattice, Neighbors, Point, azimuthd, bonds, rcoordinate, icoordinate
@@ -40,7 +40,6 @@ using StaticArrays: SVector
     @test !iscreation(index) && !iscreation(𝔽(1, 1, :α, :)) && !iscreation(𝔽(1, 1, :α, :, [0.0], [0.0]))
 
     @test 𝕗(1, 1//2, 1) ≠ 𝕓(1, 1//2, 1)
-    @test isequal(𝕗(1, 1//2, 1), 𝕗(1, 1//2, 1))
     @test !isequal(𝕗(1, 1//2, 1), 𝕓(1, 1//2, 1))
 
     @test allequalfields(FockIndex) == (:orbital, :spin)
@@ -50,10 +49,10 @@ using StaticArrays: SVector
     @test indextype(FockIndex{:f}, typeof(:), Symbol, Symbol) == FockIndex{:f, typeof(:), Symbol, Symbol}
     @test indextype(FockIndex{:b}, typeof(:), Symbol, Symbol) == FockIndex{:b, typeof(:), Symbol, Symbol}
 
-    @test AbstractIndex[FockIndex{:f}] == AbstractIndex[Index{<:FockIndex{:f}}] ==  AbstractIndex[CoordinatedIndex{<:Index{<:FockIndex{:f}}}] == 𝕗
-    @test AbstractIndex[FockIndex{:b}] == AbstractIndex[Index{<:FockIndex{:b}}] ==  AbstractIndex[CoordinatedIndex{<:Index{<:FockIndex{:b}}}] == 𝕓
-    @test AbstractIndex[FockIndex{:}] == AbstractIndex[Index{<:FockIndex{:}}] ==  AbstractIndex[CoordinatedIndex{<:Index{<:FockIndex{:}}}] == 𝔽
-    @test AbstractIndex[FockIndex] == AbstractIndex[Index{<:FockIndex}] ==  AbstractIndex[CoordinatedIndex{<:Index{<:FockIndex}}] == 𝔽
+    @test AbstractIndex[FockIndex{:f}] == AbstractIndex[Index{<:FockIndex{:f}}] == AbstractIndex[CoordinatedIndex{<:Index{<:FockIndex{:f}}}] == 𝕗
+    @test AbstractIndex[FockIndex{:b}] == AbstractIndex[Index{<:FockIndex{:b}}] == AbstractIndex[CoordinatedIndex{<:Index{<:FockIndex{:b}}}] == 𝕓
+    @test AbstractIndex[FockIndex{:}] == AbstractIndex[Index{<:FockIndex{:}}] == AbstractIndex[CoordinatedIndex{<:Index{<:FockIndex{:}}}] == 𝔽
+    @test AbstractIndex[FockIndex] == AbstractIndex[Index{<:FockIndex}] == AbstractIndex[CoordinatedIndex{<:Index{<:FockIndex}}] == 𝔽
     @test AbstractIndex[𝕗] == FockIndex{:f}
     @test AbstractIndex[𝕓] == FockIndex{:b}
     @test AbstractIndex[𝔽] == FockIndex{:}
@@ -389,7 +388,6 @@ end
     @test 𝕊(:, 'z', [0.0], [0.0]) == CoordinatedIndex(Index(:, index), [0.0], [0.0])
 
     @test 𝕊{1//2}('z') ≠ 𝕊{3//2}('z')
-    @test isequal(𝕊{1//2}('z'), 𝕊{1//2}('z'))
     @test !isequal(𝕊{1//2}('z'), 𝕊{3//2}('z'))
 
     @test isdefinite(SpinIndex{:, Char})
@@ -398,9 +396,9 @@ end
     @test indextype(SpinIndex, Char) == SpinIndex{:, Char}
     @test indextype(SpinIndex{1//2}, Symbol) == SpinIndex{1//2, Symbol}
 
-    @test AbstractIndex[SpinIndex] == AbstractIndex[Index{<:SpinIndex}] ==  AbstractIndex[CoordinatedIndex{<:Index{<:SpinIndex}}] == 𝕊
-    @test AbstractIndex[SpinIndex{:}] == AbstractIndex[Index{<:SpinIndex{:}}] ==  AbstractIndex[CoordinatedIndex{<:Index{<:SpinIndex{:}}}] == 𝕊
-    @test AbstractIndex[SpinIndex{1//2}] == AbstractIndex[Index{<:SpinIndex{1//2}}] ==  AbstractIndex[CoordinatedIndex{<:Index{<:SpinIndex{1//2}}}] == 𝕊{1//2}
+    @test AbstractIndex[SpinIndex] == AbstractIndex[Index{<:SpinIndex}] == AbstractIndex[CoordinatedIndex{<:Index{<:SpinIndex}}] == 𝕊
+    @test AbstractIndex[SpinIndex{:}] == AbstractIndex[Index{<:SpinIndex{:}}] == AbstractIndex[CoordinatedIndex{<:Index{<:SpinIndex{:}}}] == 𝕊
+    @test AbstractIndex[SpinIndex{1//2}] == AbstractIndex[Index{<:SpinIndex{1//2}}] == AbstractIndex[CoordinatedIndex{<:Index{<:SpinIndex{1//2}}}] == 𝕊{1//2}
     @test AbstractIndex[𝕊] == SpinIndex{:}
     @test AbstractIndex[𝕊{1//2}] == SpinIndex{1//2}
 end
@@ -713,201 +711,229 @@ end
     @test expand(term, reverse(bond₃), hilbert) == operators'
 end
 
-# @testset "PID" begin
-#     @test PID('u', 'x')' == PID('u', 'x')
-#     @test PID('p', 'y')' == PID('p', 'y')
-#     @test statistics(PID('p', 'x')) == statistics(PID) == :b
-#     @test string(PID('p', :)) == "PID('p', :)"
-#     @test string(PID('u', 'x')) == "PID('u', 'x')"
+@testset "PhononIndex" begin
+    index = 𝕦('x')
+    @test statistics(index) == statistics(typeof(index)) == :b
+    @test isdefinite(index) == isdefinite(typeof(index)) == true
+    @test index == PhononIndex{:u, Colon}('x')
+    @test isequal(index, index')
+    @test hash(index) == hash((:u, 'x'))
+    @test replace(index, direction='y') == 𝕦('y')
+    @test string(index) == "𝕦('x')"
+    @test kind(index) == kind(typeof(index)) == :u
+    @test kind(𝕦(1, 'x')) == kind(typeof(𝕦(1, 'x'))) == :u
+    @test kind(𝕦(1, 'x', [0.0], [0.0])) == kind(typeof(𝕦(1, 'x', [0.0], [0.0]))) == :u
 
-#     @test isdefinite(PID{Char})
-#     @test !isdefinite(PID{Symbol})
-#     @test !isdefinite(PID{typeof(:)})
-#     @test indextype(PID, Char, Char) == PID{Char}
-#     @test indextype(PID, Char, Symbol) == PID{Symbol}
-#     @test indextype(PID, Char, typeof(:)) == PID{typeof(:)}
-# end
+    index = 𝕡('x')
+    @test statistics(index) == statistics(typeof(index)) == :b
+    @test isdefinite(index) == isdefinite(typeof(index)) == true
+    @test index == PhononIndex{:p, Colon}('x')
+    @test isequal(index, index')
+    @test hash(index) == hash((:p, 'x'))
+    @test replace(index, direction='y') == 𝕡('y')
+    @test string(index) == "𝕡('x')"
+    @test kind(index) == kind(typeof(index)) == :p
+    @test kind(𝕡(1, 'x')) == kind(typeof(𝕡(1, 'x'))) == :p
+    @test kind(𝕡(1, 'x', [0.0], [0.0])) == kind(typeof(𝕡(1, 'x', [0.0], [0.0]))) == :p
 
-# @testset "Phonon" begin
-#     pn = Phonon(3)
-#     @test shape(pn) == (1:2, 1:3)
-#     for i = 1:length(pn)
-#         @test PID(CartesianIndex(pn[i], pn), pn) == pn[i]
-#     end
-#     @test collect(pn) == [PID('u', 'x'), PID('p', 'x'), PID('u', 'y'), PID('p', 'y'), PID('u', 'z'), PID('p', 'z')]
-# end
+    @test 𝕦('x') ≠ 𝕡('x')
+    @test !isequal(𝕦('x'), 𝕡('x'))
 
-# @testset "latex" begin
-#     index = Index(1, PID('u', 'x'))
-#     @test script(Val(:BD), index.iid, latexofphonons) == "u"
-#     @test script(Val(:BD), index, latexofphonons) == "u"
-#     @test script(Val(:BD), CoordinatedIndex(index, [0.0, 0.0], [0.0, 0.0]), latexofphonons) == "u"
-#     @test script(Val(:site), index) == "1"
-#     @test script(Val(:direction), index.iid) == "x"
-#     @test script(Val(:direction), index) == "x"
+    @test isdefinite(PhononIndex{:u, Char}) == isdefinite(PhononIndex{:p, Char}) == true
+    @test isdefinite(PhononIndex{:u, Symbol}) == isdefinite(PhononIndex{:p, Symbol}) == false
+    @test isdefinite(PhononIndex{:u, Colon}) == isdefinite(PhononIndex{:p, Colon}) == false
+    @test indextype(PhononIndex{:u}, Char) == PhononIndex{:u, Char}
+    @test indextype(PhononIndex{:p}, Symbol) == PhononIndex{:p, Symbol}
+    @test indextype(PhononIndex{:}, Colon) == PhononIndex{:, Colon}
 
-#     index = Index(2, PID('p', 'y'))
-#     @test script(Val(:BD), index.iid, latexofphonons) == "p"
-#     @test script(Val(:BD), index, latexofphonons) == "p"
-#     @test script(Val(:BD), CoordinatedIndex(index, [0.0, 0.0], [0.0, 0.0]), latexofphonons) == "p"
-#     @test script(Val(:site), index) == "2"
-#     @test script(Val(:direction), index.iid) == "y"
-#     @test script(Val(:direction), index) == "y"
+    @test AbstractIndex[PhononIndex{:u}] == AbstractIndex[Index{<:PhononIndex{:u}}] == AbstractIndex[CoordinatedIndex{<:Index{<:PhononIndex{:u}}}] == 𝕦
+    @test AbstractIndex[PhononIndex{:p}] == AbstractIndex[Index{<:PhononIndex{:p}}] == AbstractIndex[CoordinatedIndex{<:Index{<:PhononIndex{:p}}}] == 𝕡
+    @test AbstractIndex[𝕦] == PhononIndex{:u}
+    @test AbstractIndex[𝕡] == PhononIndex{:p}
+end
 
-#     @test latexname(Index{<:<:PID}) == Symbol("Index{PID}")
-#     @test latexname(CompositeIndex{<:Index{<:<:PID}}) == Symbol("CompositeIndex{Index{PID}}")
-#     @test latexname(PID) == Symbol("PID")
-# end
+@testset "Phonon latex" begin
+    index = 𝕦(1, 'x', [0.0, 0.0], [0.0, 0.0])
+    @test script(index, latexofphonons, Val(:BD)) == "u"
+    @test script(index.index, latexofphonons, Val(:BD)) == "u"
+    @test script(index.index.internal, latexofphonons, Val(:BD)) == "u"
+    @test script(index, Val(:site)) == script(index.index, Val(:site)) == "1"
+    @test script(index, Val(:direction)) == script(index.index, Val(:direction)) == script(index.index.internal, Val(:direction)) == "x"
 
-# @testset "PhononOperator" begin
-#     opt = Operator(1.0,
-#         CoordinatedIndex(Index(1, PID('p', 'x')), [0.0, 0.0], [0.0, 0.0]),
-#         CoordinatedIndex(Index(1, PID('p', 'x')), [0.0, 0.0], [0.0, 0.0])
-#         )
-#     @test opt' == Operator(1.0,
-#         CoordinatedIndex(Index(1, PID('p', 'x')), [0.0, 0.0], [0.0, 0.0]),
-#         CoordinatedIndex(Index(1, PID('p', 'x')), [0.0, 0.0], [0.0, 0.0])
-#         )
-#     @test latexstring(opt) == "(p^{x}_{1})^2"
-# end
+    index = 𝕡(2, 'y', [0.0, 0.0], [0.0, 0.0])
+    @test script(index, latexofphonons, Val(:BD)) == "p"
+    @test script(index.index, latexofphonons, Val(:BD)) == "p"
+    @test script(index.index.internal, latexofphonons, Val(:BD)) == "p"
+    @test script(index, Val(:site)) == script(index.index, Val(:site)) == "2"
+    @test script(index, Val(:direction)) == script(index.index, Val(:direction)) == script(index.index.internal, Val(:direction)) == "y"
 
-# @testset "permute" begin
-#     id₁ = CoordinatedIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0])
-#     id₂ = CoordinatedIndex(Index(1, PID('p', 'x')), [0.0, 0.0], [0.0, 0.0])
-#     @test permute(id₁, id₂) == (Operator(+1im), Operator(1, id₂, id₁))
-#     @test permute(id₂, id₁) == (Operator(-1im), Operator(1, id₁, id₂))
+    @test latexname(PhononIndex) == Symbol("PhononIndex")
+    @test latexname(Index{<:PhononIndex}) == Symbol("Index{PhononIndex}")
+    @test latexname(CompositeIndex{<:Index{<:PhononIndex}}) == Symbol("CompositeIndex{Index{PhononIndex}}")
+end
 
-#     id₁ = CoordinatedIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0])
-#     id₂ = CoordinatedIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0])
-#     @test permute(id₁, id₂) == (Operator(1, id₂, id₁),)
+@testset "Phonon" begin
+    pn = Phonon{:u}(3)
+    @test shape(pn) == (1:3,)
+    for i in axes(pn, 1)
+        @test convert(PhononIndex, convert(CartesianIndex, pn[i], pn), pn) == pn[i]
+    end
+    @test summary(pn) == "3-element Phonon{:u}"
+    @test string(pn) == "Phonon{:u}(ndirection=3)"
+    @test kind(pn) == kind(typeof(pn)) == :u
+    @test collect(pn) == [𝕦('x'), 𝕦('y'), 𝕦('z')]
 
-#     id₁ = CoordinatedIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0])
-#     id₂ = CoordinatedIndex(Index(1, PID('p', 'y')), [0.0, 0.0], [0.0, 0.0])
-#     @test permute(id₁, id₂) == (Operator(1, id₂, id₁),)
-# end
+    pn = Phonon{:p}(3)
+    @test shape(pn) == (1:3,)
+    for i in axes(pn, 1)
+        @test convert(PhononIndex, convert(CartesianIndex, pn[i], pn), pn) == pn[i]
+    end
+    @test summary(pn) == "3-element Phonon{:p}"
+    @test string(pn) == "Phonon{:p}(ndirection=3)"
+    @test kind(pn) == kind(typeof(pn)) == :p
+    @test collect(pn) == [𝕡('x'), 𝕡('y'), 𝕡('z')]
 
-# @testset "Phonon ConstrainedInternal" begin
-#     @test shape(ConstrainedInternal(PID('u', :), Phonon(3))) == (1:1, 1:3)
-#     @test shape(ConstrainedInternal(PID('u', 'x'), Phonon(3))) == (1:1, 1:1)
-#     @test shape(ConstrainedInternal(PID('u', 'y'), Phonon(3))) == (1:1, 2:2)
-#     @test shape(ConstrainedInternal(PID('u', 'z'), Phonon(3))) == (1:1, 3:3)
+    @test Phonon(3) == Phonon{:}(3)
 
-#     @test shape(ConstrainedInternal(PID('p', :), Phonon(2))) == (2:2, 1:2)
-#     @test shape(ConstrainedInternal(PID('p', 'x'), Phonon(3))) == (2:2, 1:1)
-#     @test shape(ConstrainedInternal(PID('p', 'y'), Phonon(3))) == (2:2, 2:2)
-#     @test shape(ConstrainedInternal(PID('p', 'z'), Phonon(3))) == (2:2, 3:3)
-# end
+    @test match(PhononIndex{:u}, Phonon{:}) == match(PhononIndex{:p}, Phonon{:}) == true
+    @test match(PhononIndex{:u}, Phonon{:u}) == match(PhononIndex{:p}, Phonon{:p}) == true
+    @test match(PhononIndex{:u}, Phonon{:p}) == match(PhononIndex{:p}, Phonon{:u}) == false
 
-# @testset "Phonon Coupling" begin
-#     @test collect(MatrixCoupling(:, PID, [1 0 1; 0 1 0; 1 0 1])) == [
-#         Coupling(Index(:, PID('u', 'x')), Index(:, PID('u', 'x'))),
-#         Coupling(Index(:, PID('u', 'z')), Index(:, PID('u', 'x'))),
-#         Coupling(Index(:, PID('u', 'y')), Index(:, PID('u', 'y'))),
-#         Coupling(Index(:, PID('u', 'x')), Index(:, PID('u', 'z'))),
-#         Coupling(Index(:, PID('u', 'z')), Index(:, PID('u', 'z')))
-#     ]
+    @test filter(PhononIndex{:u}, Phonon(3)) == Phonon{:u}(3)
+    @test filter(PhononIndex{:p}, Phonon(3)) == Phonon{:p}(3)
+    @test filter(PhononIndex{:u}, Phonon{:}) == Phonon{:u}
+    @test filter(PhononIndex{:p}, Phonon{:}) == Phonon{:p}
 
-#     pnc = Coupling(2.0, @pattern(Index(1, PID('p', μ)), Index(1, PID('p', μ))))
-#     point = Point(1, [0.5, 0.0], [0.0, 0.0])
-#     hilbert = Hilbert(point.site=>Phonon(2))
-#     ex = expand(Val(:Kinetic), pnc, Bond(point), hilbert)
-#     @test collect(ex) == [
-#         Operator(2.0, CoordinatedIndex(Index(1, PID('p', 'x')), [0.5, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(1, PID('p', 'x')), [0.5, 0.0], [0.0, 0.0])),
-#         Operator(2.0, CoordinatedIndex(Index(1, PID('p', 'y')), [0.5, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(1, PID('p', 'y')), [0.5, 0.0], [0.0, 0.0]))
-#     ]
+    @test shape(Phonon{:u}(3), 𝕦(:)) == (1:3,)
+    @test shape(Phonon{:u}(3), 𝕦('x')) == (1:1,)
+    @test shape(Phonon{:p}(3), 𝕡(:)) == (1:3,)
+    @test shape(Phonon{:p}(3), 𝕡('y')) == (2:2,)
+end
 
-#     pnc = Coupling(Index(1, PID('u', :)), Index(2, PID('u', :)))
-#     bond = Bond(1, Point(1, [0.0, 0.0], [0.0, 0.0]), Point(2, [0.5, 0.0], [0.0, 0.0]))
-#     hilbert = Hilbert(site=>Phonon(2) for site=1:2)
-#     ex = expand(Val(:Hooke), pnc, bond, hilbert)
-#     @test shape(ex) == (1:2, 1:2, 1:4)
-#     @test collect(ex) ==[
-#         Operator(+1.0, CoordinatedIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(-0.0, CoordinatedIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(-0.0, CoordinatedIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(+0.0, CoordinatedIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(-1.0, CoordinatedIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(2, PID('u', 'x')), [0.5, 0.0], [0.0, 0.0])),
-#         Operator(+0.0, CoordinatedIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(2, PID('u', 'x')), [0.5, 0.0], [0.0, 0.0])),
-#         Operator(+0.0, CoordinatedIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(2, PID('u', 'y')), [0.5, 0.0], [0.0, 0.0])),
-#         Operator(-0.0, CoordinatedIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(2, PID('u', 'y')), [0.5, 0.0], [0.0, 0.0])),
-#         Operator(-1.0, CoordinatedIndex(Index(2, PID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(+0.0, CoordinatedIndex(Index(2, PID('u', 'y')), [0.5, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(+0.0, CoordinatedIndex(Index(2, PID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(-0.0, CoordinatedIndex(Index(2, PID('u', 'y')), [0.5, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(+1.0, CoordinatedIndex(Index(2, PID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(2, PID('u', 'x')), [0.5, 0.0], [0.0, 0.0])),
-#         Operator(-0.0, CoordinatedIndex(Index(2, PID('u', 'y')), [0.5, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(2, PID('u', 'x')), [0.5, 0.0], [0.0, 0.0])),
-#         Operator(-0.0, CoordinatedIndex(Index(2, PID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(2, PID('u', 'y')), [0.5, 0.0], [0.0, 0.0])),
-#         Operator(+0.0, CoordinatedIndex(Index(2, PID('u', 'y')), [0.5, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(2, PID('u', 'y')), [0.5, 0.0], [0.0, 0.0]))
-#         ]
-# end
+@testset "PhononOperator" begin
+    opt = Operator(1.0, 𝕡(1, 'x', [0.0, 0.0], [0.0, 0.0]), 𝕡(1, 'x', [0.0, 0.0], [0.0, 0.0]))
+    @test opt' == Operator(1.0, 𝕡(1, 'x', [0.0, 0.0], [0.0, 0.0]), 𝕡(1, 'x', [0.0, 0.0], [0.0, 0.0]))
+    @test latexstring(opt) == "(p^{x}_{1})^2"
 
-# @testset "Kinetic" begin
-#     term = Kinetic(:T, 2.0)
-#     point = Point(1, [0.5, 0.0], [0.0, 0.0])
-#     hilbert = Hilbert(point.site=>Phonon(2))
-#     operators = Operators(
-#         Operator(2.0, CoordinatedIndex(Index(1, PID('p', 'x')), [0.5, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(1, PID('p', 'x')), [0.5, 0.0], [0.0, 0.0])),
-#         Operator(2.0, CoordinatedIndex(Index(1, PID('p', 'y')), [0.5, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(1, PID('p', 'y')), [0.5, 0.0], [0.0, 0.0]))
-#     )
-#     @test expand(term, Bond(point), hilbert) == operators
-# end
+    id₁ = 𝕦(1, 'x', [0.0, 0.0], [0.0, 0.0])
+    id₂ = 𝕡(1, 'x', [0.0, 0.0], [0.0, 0.0])
+    @test permute(id₁, id₂) == (Operator(+1im), Operator(1, id₂, id₁))
+    @test permute(id₂, id₁) == (Operator(-1im), Operator(1, id₁, id₂))
 
-# @testset "Hooke" begin
-#     term = Hooke(:V, 2.0, 1)
+    id₁ = 𝕦(1, 'x', [0.0, 0.0], [0.0, 0.0])
+    id₂ = 𝕦(1, 'x', [0.0, 0.0], [0.0, 0.0])
+    @test permute(id₁, id₂) == (Operator(1, id₂, id₁),)
 
-#     bond = Bond(1, Point(1, [0.0, 0.0], [0.0, 0.0]), Point(2, [0.5, 0.0], [0.0, 0.0]))
-#     hilbert = Hilbert(site=>Phonon(2) for site=1:2)
-#     operators = Operators(
-#         Operator(+2.0, CoordinatedIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(-2.0, CoordinatedIndex(Index(2, PID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(-2.0, CoordinatedIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(2, PID('u', 'x')), [0.5, 0.0], [0.0, 0.0])),
-#         Operator(+2.0, CoordinatedIndex(Index(2, PID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(2, PID('u', 'x')), [0.5, 0.0], [0.0, 0.0]))
-#     )
-#     @test expand(term, bond, hilbert) == operators
+    id₁ = 𝕦(1, 'x', [0.0, 0.0], [0.0, 0.0])
+    id₂ = 𝕡(1, 'y', [0.0, 0.0], [0.0, 0.0])
+    @test permute(id₁, id₂) == (Operator(1, id₂, id₁),)
+end
 
-#     bond = Bond(1, Point(1, [0.0, 0.0], [0.0, 0.0]), Point(2, [0.0, 0.5], [0.0, 0.0]))
-#     hilbert = Hilbert(site=>Phonon(2) for site=1:2)
-#     operators = Operators(
-#         Operator(+2.0, CoordinatedIndex(Index(2, PID('u', 'y')), [0.0, 0.5], [0.0, 0.0]), CoordinatedIndex(Index(2, PID('u', 'y')), [0.0, 0.5], [0.0, 0.0])),
-#         Operator(+2.0, CoordinatedIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(-2.0, CoordinatedIndex(Index(2, PID('u', 'y')), [0.0, 0.5], [0.0, 0.0]), CoordinatedIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(-2.0, CoordinatedIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(2, PID('u', 'y')), [0.0, 0.5], [0.0, 0.0]))
-#     )
-#     @test expand(term, bond, hilbert) == operators
+@testset "Phonon Coupling" begin
+    @test collect(MatrixCoupling(:, 𝕦, [1 0 1; 0 1 0; 1 0 1])) == collect(MatrixCoupling(:, PhononIndex{:u}, [1 0 1; 0 1 0; 1 0 1])) == [
+        Coupling(𝕦(:, 'x'), 𝕦(:, 'x')), Coupling(𝕦(:, 'z'), 𝕦(:, 'x')), Coupling(𝕦(:, 'y'), 𝕦(:, 'y')), Coupling(𝕦(:, 'x'), 𝕦(:, 'z')), Coupling(𝕦(:, 'z'), 𝕦(:, 'z'))
+    ]
 
-#     bond = Bond(1, Point(1, [0.0, 0.0], [0.0, 0.0]), Point(2, [0.5, 0.5], [0.0, 0.0]))
-#     hilbert = Hilbert(site=>Phonon(2) for site=1:2)
-#     operators = Operators(
-#         Operator(-1.0, CoordinatedIndex(Index(2, PID('u', 'x')), [0.5, 0.5], [0.0, 0.0]), CoordinatedIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(-1.0, CoordinatedIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(2, PID('u', 'y')), [0.5, 0.5], [0.0, 0.0])),
-#         Operator(-1.0, CoordinatedIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(2, PID('u', 'x')), [0.5, 0.5], [0.0, 0.0])),
-#         Operator(-1.0, CoordinatedIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(2, PID('u', 'x')), [0.5, 0.5], [0.0, 0.0])),
-#         Operator(-1.0, CoordinatedIndex(Index(2, PID('u', 'x')), [0.5, 0.5], [0.0, 0.0]), CoordinatedIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(-1.0, CoordinatedIndex(Index(2, PID('u', 'y')), [0.5, 0.5], [0.0, 0.0]), CoordinatedIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(+1.0, CoordinatedIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(-1.0, CoordinatedIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(2, PID('u', 'y')), [0.5, 0.5], [0.0, 0.0])),
-#         Operator(+1.0, CoordinatedIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(+1.0, CoordinatedIndex(Index(2, PID('u', 'y')), [0.5, 0.5], [0.0, 0.0]), CoordinatedIndex(Index(2, PID('u', 'y')), [0.5, 0.5], [0.0, 0.0])),
-#         Operator(+1.0, CoordinatedIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(+1.0, CoordinatedIndex(Index(2, PID('u', 'y')), [0.5, 0.5], [0.0, 0.0]), CoordinatedIndex(Index(2, PID('u', 'x')), [0.5, 0.5], [0.0, 0.0])),
-#         Operator(+1.0, CoordinatedIndex(Index(2, PID('u', 'x')), [0.5, 0.5], [0.0, 0.0]), CoordinatedIndex(Index(2, PID('u', 'x')), [0.5, 0.5], [0.0, 0.0])),
-#         Operator(-1.0, CoordinatedIndex(Index(2, PID('u', 'y')), [0.5, 0.5], [0.0, 0.0]), CoordinatedIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(+1.0, CoordinatedIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(+1.0, CoordinatedIndex(Index(2, PID('u', 'x')), [0.5, 0.5], [0.0, 0.0]), CoordinatedIndex(Index(2, PID('u', 'y')), [0.5, 0.5], [0.0, 0.0]))
-#     )
-#     @test expand(term, bond, hilbert) ≈ operators
-# end
+    pnc = Coupling(2.0, @pattern(𝕡(:, μ), 𝕡(:, μ)))
+    bond = Bond(Point(1, [0.5, 0.0], [0.0, 0.0]))
+    hilbert = Hilbert(Phonon(2))
+    ex = expand(pnc, Val(:Kinetic), bond, hilbert)
+    @test collect(ex) == [
+        Operator(2.0, 𝕡(1, 'x', [0.5, 0.0], [0.0, 0.0]), 𝕡(1, 'x', [0.5, 0.0], [0.0, 0.0])),
+        Operator(2.0, 𝕡(1, 'y', [0.5, 0.0], [0.0, 0.0]), 𝕡(1, 'y', [0.5, 0.0], [0.0, 0.0]))
+    ]
 
-# @testset "Elastic" begin
-#     term = Elastic(:V, 2.0, 1, MatrixCoupling(:, PID, [0 1; 1 0]))
+    pnc = Coupling(𝕦(:, :), 𝕦(:, :))
+    bond = Bond(1, Point(1, [0.0, 0.0], [0.0, 0.0]), Point(2, [0.5, 0.0], [0.0, 0.0]))
+    hilbert = Hilbert(site=>Phonon(2) for site=1:2)
+    ex = expand(pnc, Val(:Hooke), bond, hilbert)
+    @test shape(ex) == (1:2, 1:2, 1:4)
+    @test collect(ex) ==[
+        Operator(+1.0, 𝕦(1, 'x', [0.0, 0.0], [0.0, 0.0]), 𝕦(1, 'x', [0.0, 0.0], [0.0, 0.0])),
+        Operator(-0.0, 𝕦(1, 'y', [0.0, 0.0], [0.0, 0.0]), 𝕦(1, 'x', [0.0, 0.0], [0.0, 0.0])),
+        Operator(-0.0, 𝕦(1, 'x', [0.0, 0.0], [0.0, 0.0]), 𝕦(1, 'y', [0.0, 0.0], [0.0, 0.0])),
+        Operator(+0.0, 𝕦(1, 'y', [0.0, 0.0], [0.0, 0.0]), 𝕦(1, 'y', [0.0, 0.0], [0.0, 0.0])),
+        Operator(-1.0, 𝕦(1, 'x', [0.0, 0.0], [0.0, 0.0]), 𝕦(2, 'x', [0.5, 0.0], [0.0, 0.0])),
+        Operator(+0.0, 𝕦(1, 'y', [0.0, 0.0], [0.0, 0.0]), 𝕦(2, 'x', [0.5, 0.0], [0.0, 0.0])),
+        Operator(+0.0, 𝕦(1, 'x', [0.0, 0.0], [0.0, 0.0]), 𝕦(2, 'y', [0.5, 0.0], [0.0, 0.0])),
+        Operator(-0.0, 𝕦(1, 'y', [0.0, 0.0], [0.0, 0.0]), 𝕦(2, 'y', [0.5, 0.0], [0.0, 0.0])),
+        Operator(-1.0, 𝕦(2, 'x', [0.5, 0.0], [0.0, 0.0]), 𝕦(1, 'x', [0.0, 0.0], [0.0, 0.0])),
+        Operator(+0.0, 𝕦(2, 'y', [0.5, 0.0], [0.0, 0.0]), 𝕦(1, 'x', [0.0, 0.0], [0.0, 0.0])),
+        Operator(+0.0, 𝕦(2, 'x', [0.5, 0.0], [0.0, 0.0]), 𝕦(1, 'y', [0.0, 0.0], [0.0, 0.0])),
+        Operator(-0.0, 𝕦(2, 'y', [0.5, 0.0], [0.0, 0.0]), 𝕦(1, 'y', [0.0, 0.0], [0.0, 0.0])),
+        Operator(+1.0, 𝕦(2, 'x', [0.5, 0.0], [0.0, 0.0]), 𝕦(2, 'x', [0.5, 0.0], [0.0, 0.0])),
+        Operator(-0.0, 𝕦(2, 'y', [0.5, 0.0], [0.0, 0.0]), 𝕦(2, 'x', [0.5, 0.0], [0.0, 0.0])),
+        Operator(-0.0, 𝕦(2, 'x', [0.5, 0.0], [0.0, 0.0]), 𝕦(2, 'y', [0.5, 0.0], [0.0, 0.0])),
+        Operator(+0.0, 𝕦(2, 'y', [0.5, 0.0], [0.0, 0.0]), 𝕦(2, 'y', [0.5, 0.0], [0.0, 0.0]))
+    ]
+end
 
-#     bond = Bond(1, Point(1, [0.0, 0.0], [0.0, 0.0]), Point(2, [0.5, 0.0], [0.0, 0.0]))
-#     hilbert = Hilbert(site=>Phonon(2) for site=1:2)
-#     operators = Operators(
-#         Operator(1.0, CoordinatedIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(2, PID('u', 'y')), [0.5, 0.0], [0.0, 0.0])),
-#         Operator(1.0, CoordinatedIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(2, PID('u', 'x')), [0.5, 0.0], [0.0, 0.0])),
-#         Operator(1.0, CoordinatedIndex(Index(2, PID('u', 'x')), [0.5, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(1, PID('u', 'y')), [0.0, 0.0], [0.0, 0.0])),
-#         Operator(1.0, CoordinatedIndex(Index(2, PID('u', 'y')), [0.5, 0.0], [0.0, 0.0]), CoordinatedIndex(Index(1, PID('u', 'x')), [0.0, 0.0], [0.0, 0.0])),
-#     )
-#     @test expand(term, bond, hilbert) == operators
-# end
+@testset "Kinetic" begin
+    term = Kinetic(:T, 2.0)
+    point = Point(1, [0.5, 0.0], [0.0, 0.0])
+    hilbert = Hilbert(point.site=>Phonon(2))
+    operators = Operators(
+        Operator(2.0, 𝕡(1, 'x', [0.5, 0.0], [0.0, 0.0]), 𝕡(1, 'x', [0.5, 0.0], [0.0, 0.0])),
+        Operator(2.0, 𝕡(1, 'y', [0.5, 0.0], [0.0, 0.0]), 𝕡(1, 'y', [0.5, 0.0], [0.0, 0.0]))
+    )
+    @test expand(term, Bond(point), hilbert) == operators
+end
+
+@testset "Hooke" begin
+    term = Hooke(:V, 2.0, 1)
+
+    bond = Bond(1, Point(1, [0.0, 0.0], [0.0, 0.0]), Point(2, [0.5, 0.0], [0.0, 0.0]))
+    hilbert = Hilbert(site=>Phonon(2) for site=1:2)
+    operators = Operators(
+        Operator(+2.0, 𝕦(1, 'x', [0.0, 0.0], [0.0, 0.0]), 𝕦(1, 'x', [0.0, 0.0], [0.0, 0.0])),
+        Operator(-2.0, 𝕦(2, 'x', [0.5, 0.0], [0.0, 0.0]), 𝕦(1, 'x', [0.0, 0.0], [0.0, 0.0])),
+        Operator(-2.0, 𝕦(1, 'x', [0.0, 0.0], [0.0, 0.0]), 𝕦(2, 'x', [0.5, 0.0], [0.0, 0.0])),
+        Operator(+2.0, 𝕦(2, 'x', [0.5, 0.0], [0.0, 0.0]), 𝕦(2, 'x', [0.5, 0.0], [0.0, 0.0]))
+    )
+    @test expand(term, bond, hilbert) == operators
+
+    bond = Bond(1, Point(1, [0.0, 0.0], [0.0, 0.0]), Point(2, [0.0, 0.5], [0.0, 0.0]))
+    hilbert = Hilbert(site=>Phonon(2) for site=1:2)
+    operators = Operators(
+        Operator(+2.0, 𝕦(2, 'y', [0.0, 0.5], [0.0, 0.0]), 𝕦(2, 'y', [0.0, 0.5], [0.0, 0.0])),
+        Operator(+2.0, 𝕦(1, 'y', [0.0, 0.0], [0.0, 0.0]), 𝕦(1, 'y', [0.0, 0.0], [0.0, 0.0])),
+        Operator(-2.0, 𝕦(2, 'y', [0.0, 0.5], [0.0, 0.0]), 𝕦(1, 'y', [0.0, 0.0], [0.0, 0.0])),
+        Operator(-2.0, 𝕦(1, 'y', [0.0, 0.0], [0.0, 0.0]), 𝕦(2, 'y', [0.0, 0.5], [0.0, 0.0]))
+    )
+    @test expand(term, bond, hilbert) == operators
+
+    bond = Bond(1, Point(1, [0.0, 0.0], [0.0, 0.0]), Point(2, [0.5, 0.5], [0.0, 0.0]))
+    hilbert = Hilbert(site=>Phonon(2) for site=1:2)
+    operators = Operators(
+        Operator(-1.0, 𝕦(2, 'x', [0.5, 0.5], [0.0, 0.0]), 𝕦(1, 'x', [0.0, 0.0], [0.0, 0.0])),
+        Operator(-1.0, 𝕦(1, 'y', [0.0, 0.0], [0.0, 0.0]), 𝕦(2, 'y', [0.5, 0.5], [0.0, 0.0])),
+        Operator(-1.0, 𝕦(1, 'x', [0.0, 0.0], [0.0, 0.0]), 𝕦(2, 'x', [0.5, 0.5], [0.0, 0.0])),
+        Operator(-1.0, 𝕦(1, 'y', [0.0, 0.0], [0.0, 0.0]), 𝕦(2, 'x', [0.5, 0.5], [0.0, 0.0])),
+        Operator(-1.0, 𝕦(2, 'x', [0.5, 0.5], [0.0, 0.0]), 𝕦(1, 'y', [0.0, 0.0], [0.0, 0.0])),
+        Operator(-1.0, 𝕦(2, 'y', [0.5, 0.5], [0.0, 0.0]), 𝕦(1, 'y', [0.0, 0.0], [0.0, 0.0])),
+        Operator(+1.0, 𝕦(1, 'x', [0.0, 0.0], [0.0, 0.0]), 𝕦(1, 'y', [0.0, 0.0], [0.0, 0.0])),
+        Operator(-1.0, 𝕦(1, 'x', [0.0, 0.0], [0.0, 0.0]), 𝕦(2, 'y', [0.5, 0.5], [0.0, 0.0])),
+        Operator(+1.0, 𝕦(1, 'y', [0.0, 0.0], [0.0, 0.0]), 𝕦(1, 'y', [0.0, 0.0], [0.0, 0.0])),
+        Operator(+1.0, 𝕦(2, 'y', [0.5, 0.5], [0.0, 0.0]), 𝕦(2, 'y', [0.5, 0.5], [0.0, 0.0])),
+        Operator(+1.0, 𝕦(1, 'y', [0.0, 0.0], [0.0, 0.0]), 𝕦(1, 'x', [0.0, 0.0], [0.0, 0.0])),
+        Operator(+1.0, 𝕦(2, 'y', [0.5, 0.5], [0.0, 0.0]), 𝕦(2, 'x', [0.5, 0.5], [0.0, 0.0])),
+        Operator(+1.0, 𝕦(2, 'x', [0.5, 0.5], [0.0, 0.0]), 𝕦(2, 'x', [0.5, 0.5], [0.0, 0.0])),
+        Operator(-1.0, 𝕦(2, 'y', [0.5, 0.5], [0.0, 0.0]), 𝕦(1, 'x', [0.0, 0.0], [0.0, 0.0])),
+        Operator(+1.0, 𝕦(1, 'x', [0.0, 0.0], [0.0, 0.0]), 𝕦(1, 'x', [0.0, 0.0], [0.0, 0.0])),
+        Operator(+1.0, 𝕦(2, 'x', [0.5, 0.5], [0.0, 0.0]), 𝕦(2, 'y', [0.5, 0.5], [0.0, 0.0]))
+    )
+    @test expand(term, bond, hilbert) ≈ operators
+end
+
+@testset "Elastic" begin
+    term = Elastic(:V, 2.0, 1, MatrixCoupling(:, 𝕦, [0 1; 1 0]))
+    bond = Bond(1, Point(1, [0.0, 0.0], [0.0, 0.0]), Point(2, [0.5, 0.0], [0.0, 0.0]))
+    hilbert = Hilbert(site=>Phonon(2) for site=1:2)
+    operators = Operators(
+        Operator(1.0, 𝕦(1, 'x', [0.0, 0.0], [0.0, 0.0]), 𝕦(2, 'y', [0.5, 0.0], [0.0, 0.0])),
+        Operator(1.0, 𝕦(1, 'y', [0.0, 0.0], [0.0, 0.0]), 𝕦(2, 'x', [0.5, 0.0], [0.0, 0.0])),
+        Operator(1.0, 𝕦(2, 'x', [0.5, 0.0], [0.0, 0.0]), 𝕦(1, 'y', [0.0, 0.0], [0.0, 0.0])),
+        Operator(1.0, 𝕦(2, 'y', [0.5, 0.0], [0.0, 0.0]), 𝕦(1, 'x', [0.0, 0.0], [0.0, 0.0])),
+    )
+    @test expand(term, bond, hilbert) == operators
+end
