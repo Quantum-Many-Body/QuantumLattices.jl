@@ -193,10 +193,10 @@ It is noted that `Vector` has 2 type parameters because it is just a type alias 
 To change the parameters of a type, [`reparameter`](@ref) can be used:
 ```jldoctest traits
 julia> reparameter(Hi{Int64}, 1, Real)
-Hi{Real}
+Hi{<:Real}
 
 julia> reparameter(Vector{Int64}, 1, Real)
-Vector{Real} (alias for Array{Real, 1})
+Vector{<:Real} (alias for Array{<:Real, 1})
 
 julia> reparameter(Vector{<:Real}, 2, 3)
 Array{<:Real, 3}
@@ -207,12 +207,18 @@ Hi{Real}
 julia> reparameter(Hi{Int64}, 1, Real, true)
 Hi{<:Real}
 ```
-We want to remark that by providing the fourth positional argument with the `true` value, a `UnionAll` type could be generated. When the fourth positional argument is omitted, it is actually determined by another trait function, i.e., [`isparameterbound`](@ref). This function judges whether an input type should be considered as the upper bound of the new parameter of a type. By default, it is always defined to be `false`. This function can be overloaded to change the behavior for a certain type:
-```jldoctest traits
-julia> isparameterbound(::Type{<:Hi}, ::Val{1}, D) = !isconcretetype(D);
+We want to remark that by providing the fourth positional argument with the `true` value, a `UnionAll` type could be generated. When the fourth positional argument is omitted, it is actually determined by another trait function, i.e., [`isparameterbound`](@ref). This function judges whether an input type should be considered as the upper bound of the new parameter of a type. By default, it is defined to be
+```julia
+julia> isparameterbound(::Type{}, ::Val{}, ::Type{D}) where D = !isconcretetype(D)
 
-julia> reparameter(Hi, 1, Real)
-Hi{<:Real}
+julia> isparameterbound(::Type{}, ::Val{}, ::Any) = false
+```
+This function can be overloaded to change the behavior for a certain type:
+```jldoctest traits
+julia> isparameterbound(::Type{<:Vector}, ::Val{1}, ::Type{D}) where D = false;
+
+julia> reparameter(Vector, 1, Real)
+Vector{Real} (alias for Array{Real, 1})
 ```
 The second positional argument of [`isparameterbound`](@ref) must be of type `Val` because in principle you should be able to assign different behaviors for different parameters of a type separately. If it is of type `Integer`, a single overloading would change the behaviors for all.
 
@@ -274,18 +280,18 @@ julia> parametertype(Hi{<:Real}, :content)
 Real
 
 julia> reparameter(Hi{Int}, :content, Real)
-Hi{Real}
-
-julia> reparameter(Hi{Int}, :content, Real, true)
 Hi{<:Real}
+
+julia> reparameter(Hi{Int}, :content, Real, false)
+Hi{Real}
 ```
 
 To change the [`reparameter`](@ref) behavior when its last positional argument is omitted, you should overload the [`isparameterbound`](@ref) function accordingly, e.g.:
 ```jldoctest traits
-julia> isparameterbound(::Type{<:Hi}, ::Val{:content}, D) = !isconcretetype(D);
+julia> isparameterbound(::Type{<:Hi}, ::Val{:content}, ::Type{D}) where D = false;
 
 julia> reparameter(Hi{Int}, :content, Real)
-Hi{<:Real}
+Hi{Real}
 ```
 !!! note
     Accessing or altering a parameter of a type by its name is independent from that by its position order. Thus, even the following method
@@ -328,8 +334,8 @@ Hi{Real}
 julia> fulltype(Hi{Int}, NamedTuple{(:content,), Tuple{Real}}, (true,))
 Hi{<:Real}
 
-julia> fulltype(Hi{Int}, NamedTuple{(:content,),Tuple{Real}})
-Hi{<:Real}
+julia> fulltype(Hi{Int}, NamedTuple{(:content,), Tuple{Real}})
+Hi{Real}
 ```
 Here, the last positional argument can be omitted whose default value would be determined by the [`isparameterbounds`](@ref) function which successively calls the [`isparameterbound`](@ref) function on each of the named parameter. Note that similar to the situation of the [`reparameter`](@ref) function in this subsubsection, the [`isparameterbound`](@ref) function called here is also the version that takes the parameter name as the input rather than that of the position order.
 
@@ -602,8 +608,8 @@ VectorSpace
 NamedVectorSpace
 SimpleNamedVectorSpace
 ParameterSpace
-DirectProductedNamedVectorSpace
-ZippedNamedVectorSpace
+NamedVectorSpaceProd
+NamedVectorSpaceZip
 ```
 
 Predefined types of vector space style:

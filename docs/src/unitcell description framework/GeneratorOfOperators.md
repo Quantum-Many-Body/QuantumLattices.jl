@@ -74,10 +74,10 @@ julia> Parameters(gen)
 
 julia> expand(gen)
 Operators with 4 Operator
-  Operator(1.0, CompositeIndex(Index(2, FID{:f}(1, -1//2, 2)), [1.0], [0.0]), CompositeIndex(Index(1, FID{:f}(1, -1//2, 1)), [0.0], [0.0]))
-  Operator(1.0, CompositeIndex(Index(1, FID{:f}(1, -1//2, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, -1//2, 1)), [1.0], [0.0]))
-  Operator(1.0, CompositeIndex(Index(2, FID{:f}(1, 1//2, 2)), [1.0], [0.0]), CompositeIndex(Index(1, FID{:f}(1, 1//2, 1)), [0.0], [0.0]))
-  Operator(1.0, CompositeIndex(Index(1, FID{:f}(1, 1//2, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, 1//2, 1)), [1.0], [0.0]))
+  Operator(1.0, 𝕗(2, 1, -1//2, 2, [1.0], [0.0]), 𝕗(1, 1, -1//2, 1, [0.0], [0.0]))
+  Operator(1.0, 𝕗(1, 1, -1//2, 2, [0.0], [0.0]), 𝕗(2, 1, -1//2, 1, [1.0], [0.0]))
+  Operator(1.0, 𝕗(2, 1, 1//2, 2, [1.0], [0.0]), 𝕗(1, 1, 1//2, 1, [0.0], [0.0]))
+  Operator(1.0, 𝕗(1, 1, 1//2, 2, [0.0], [0.0]), 𝕗(2, 1, 1//2, 1, [1.0], [0.0]))
 
 julia> update!(gen; t=2.0);
 
@@ -86,8 +86,8 @@ julia> Parameters(gen)
 
 julia> expand(gen)
 Operators with 4 Operator
-  Operator(2.0, CompositeIndex(Index(2, FID{:f}(1, -1//2, 2)), [1.0], [0.0]), CompositeIndex(Index(1, FID{:f}(1, -1//2, 1)), [0.0], [0.0]))
-  Operator(2.0, CompositeIndex(Index(1, FID{:f}(1, -1//2, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, -1//2, 1)), [1.0], [0.0]))
-  Operator(2.0, CompositeIndex(Index(2, FID{:f}(1, 1//2, 2)), [1.0], [0.0]), CompositeIndex(Index(1, FID{:f}(1, 1//2, 1)), [0.0], [0.0]))
-  Operator(2.0, CompositeIndex(Index(1, FID{:f}(1, 1//2, 2)), [0.0], [0.0]), CompositeIndex(Index(2, FID{:f}(1, 1//2, 1)), [1.0], [0.0]))
+  Operator(2.0, 𝕗(2, 1, -1//2, 2, [1.0], [0.0]), 𝕗(1, 1, -1//2, 1, [0.0], [0.0]))
+  Operator(2.0, 𝕗(1, 1, -1//2, 2, [0.0], [0.0]), 𝕗(2, 1, -1//2, 1, [1.0], [0.0]))
+  Operator(2.0, 𝕗(2, 1, 1//2, 2, [1.0], [0.0]), 𝕗(1, 1, 1//2, 1, [0.0], [0.0]))
+  Operator(2.0, 𝕗(1, 1, 1//2, 2, [0.0], [0.0]), 𝕗(2, 1, 1//2, 1, [1.0], [0.0]))
 ```
