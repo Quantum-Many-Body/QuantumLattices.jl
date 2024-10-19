@@ -1185,7 +1185,8 @@ end
 @inline Base.convert(::Type{<:CartesianIndex}, index::PhononIndex{K, Char}, ::Phonon{K}) where K = CartesianIndex(Int(index.direction)-Int('x')+1)
 @inline Base.convert(::Type{<:PhononIndex}, index::CartesianIndex{1}, pn::Phonon) = PhononIndex{kind(pn)}(Char(Int('x')+index[1]-1))
 @inline Base.summary(io::IO, pn::Phonon) = @printf io "%s-element Phonon{%s}" length(pn) repr(kind(pn))
-@inline Base.show(io::IO, pn::Phonon) = @printf io "%s{%s}(%s)" pn|>typeof|>nameof repr(kind(pn)) join(("$name=$(getfield(pn, name))" for name in pn|>typeof|>fieldnames), ", ")
+@inline Base.show(io::IO, pn::Phonon{K}) where K = @printf io "%s%s(%s)" pn|>typeof|>nameof (K==Colon() ? "" : "{$(repr(K))}") join(("$name=$(getfield(pn, name))" for name in pn|>typeof|>fieldnames), ", ")
+@inline Base.show(io::IO, ::Type{Phonon{:}}) = @printf io "%s" "Phonon{:}"
 @inline Base.match(::Type{<:PhononIndex{K}}, ::Type{<:Phonon{:}}) where K = true
 @inline Base.match(::Type{<:PhononIndex{K}}, ::Type{<:Phonon{K}}) where K = true
 @inline Base.match(::Type{<:PhononIndex{K₁}}, ::Type{<:Phonon{K₂}}) where {K₁, K₂} = false

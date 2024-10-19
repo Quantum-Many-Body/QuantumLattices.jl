@@ -794,6 +794,7 @@ end
     @test collect(pn) == [𝕡('x'), 𝕡('y'), 𝕡('z')]
 
     @test Phonon(3) == Phonon{:}(3)
+    @test string(Phonon{:}) == "Phonon{:}"
 
     @test match(PhononIndex{:u}, Phonon{:}) == match(PhononIndex{:p}, Phonon{:}) == true
     @test match(PhononIndex{:u}, Phonon{:u}) == match(PhononIndex{:p}, Phonon{:p}) == true

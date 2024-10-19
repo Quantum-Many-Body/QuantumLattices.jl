@@ -467,7 +467,7 @@ function minimumlengths(cluster::AbstractMatrix{<:Number}, vectors::AbstractVect
     result = fill(Inf, nneighbor)
     if size(cluster, 2) > 0
         cluster = convert(Matrix{Float}, reshape(cluster, size(cluster)))
-        vectors = [convert(Vector{Float}, reshape(vector, size(vector))) for vector in vectors]
+        vectors = Vector{Float}[convert(Vector{Float}, reshape(vector, size(vector))) for vector in vectors]
         translations = reshape(collect(product(map(v->-nneighbor:nneighbor, vectors)...)), :)
         for translation in translations
             if length(translation)>0 && mapreduce(≠(0), |, translation)

@@ -310,6 +310,7 @@ end
     @test tc * tc == tc ⊗ tc
     @test string(tc) == "𝕕(:, 2)"
     @test latexstring(tc) == "d^{}_{:,\\,2}"
+    @test summary([tc]) == "1-element Vector{Coupling}"
 
     point = Point(1, (0.0, 0.0), (0.0, 0.0))
     bond = Bond(point)

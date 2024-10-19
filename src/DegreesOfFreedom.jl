@@ -1061,6 +1061,7 @@ end
 @inline Base.iterate(coupling::Coupling) = (coupling, nothing)
 @inline Base.iterate(::Coupling, ::Nothing) = nothing
 @inline Base.show(io::IO, coupling::Coupling) = @printf io "%s%s" (coupling.value≈1 ? "" : coupling.value≈-1 ? "- " : string(tostr(coupling.value), " ")) coupling.pattern
+@inline Base.summary(io::IO, couplings::Vector{<:Coupling}) = @printf io "%s-element Vector{Coupling}" length(couplings)
 
 """
     Coupling(value, pattern::Pattern)
