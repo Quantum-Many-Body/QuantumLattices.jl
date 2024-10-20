@@ -961,10 +961,8 @@ end
 
 """
     Momentum₁{N}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where N
-    Momentum₂{N₁, N₂}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where {N₁, N₂}
-    Momentum₃{N₁, N₂, N₃}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where {N₁, N₂, N₃}
 
-Construct a quantum momentum by the coordinates.
+Construct a 1d quantum momentum by the coordinates.
 """
 function Momentum₁{N}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where N
     @assert length(reciprocals)==1 "Momentum₁ error: mismatched length of reciprocals."
@@ -973,6 +971,12 @@ function Momentum₁{N}(momentum::AbstractVector, reciprocals::AbstractVector{<:
     @assert isapprox(i, k; atol=atol, rtol=rtol) "Momentum₁ error: input momentum not on grid."
     return Momentum₁{N}(i)
 end
+
+"""
+    Momentum₂{N₁, N₂}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where {N₁, N₂}
+
+Construct a 2d quantum momentum by the coordinates.
+"""
 function Momentum₂{N₁, N₂}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where {N₁, N₂}
     @assert length(reciprocals)==2 "Momentum₂ error: mismatched length of reciprocals."
     k₁, k₂ = decompose(momentum, first(reciprocals), last(reciprocals))
@@ -981,6 +985,12 @@ function Momentum₂{N₁, N₂}(momentum::AbstractVector, reciprocals::Abstract
     @assert isapprox(i₁, k₁; atol=atol, rtol=rtol) && isapprox(i₂, k₂; atol=atol, rtol=rtol) "Momentum₂ error: input momentum not on grid."
     return Momentum₂{N₁, N₂}(i₁, i₂)
 end
+
+"""
+    Momentum₃{N₁, N₂, N₃}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where {N₁, N₂, N₃}
+
+Construct a 3d quantum momentum by the coordinates.
+"""
 function Momentum₃{N₁, N₂, N₃}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where {N₁, N₂, N₃}
     @assert length(reciprocals)==3 "Momentum₃ error: mismatched length of reciprocals."
     v₁, v₂, v₃ = reciprocals

@@ -614,12 +614,12 @@ Get the type of the internal part of an index.
 
 """
     statistics(index::Index) -> Symbol
-    statistics(::Type{<:Index{I}}) where {I<:SimpleInternalIndex} -> Symbol
+    statistics(::Type{I}) where {I<:Index} -> Symbol
 
 Get the statistics of an index.
 """
 @inline statistics(index::Index) = statistics(typeof(index))
-@inline statistics(::Type{<:Index{I}}) where {I<:SimpleInternalIndex} = statistics(I)
+@inline statistics(::Type{I}) where {I<:Index} = statistics(indextype(I))
 
 """
     adjoint(index::Index) -> typeof(index)
@@ -678,12 +678,12 @@ Get the index type of a composite index.
 
 """
     statistics(index::CompositeIndex) -> Symbol
-    statistics(::Type{<:CompositeIndex{I}}) where {I<:Index} -> Symbol
+    statistics(::Type{I}) where {I<:CompositeIndex} -> Symbol
 
 Get the statistics of a composite index.
 """
 @inline statistics(index::CompositeIndex) = statistics(typeof(index))
-@inline statistics(::Type{<:CompositeIndex{I}}) where {I<:Index} = statistics(I)
+@inline statistics(::Type{I}) where {I<:CompositeIndex} = statistics(indextype(I))
 
 """
     script(index::CompositeIndex, ::Val{attr}; kwargs...) where attr
@@ -1610,18 +1610,25 @@ abstract type Metric <: Function end
 """
     OperatorUnitToTuple{Fields} <: Metric
 
-A rule that converts an operator unit to a tuple by iterating over a set of selected fields in a specific order.
+A rule that converts an operator unit into a tuple based on the specified type parameter `Fields`.
+
+Here, `Fields` must be a tuple of `Union{Symbol, Function}`, which determines the elements of the converted tuple on an element-by-element basis.
+
+For the ith element of `Fields`:
+
+1) If it is a Symbol, it represents the name of a single index of an `OperatorUnit`, and its value will become the corresponding element in the converted tuple.
+2) If it is a Function, it should be a trait function of an `OperatorUnit`, and its return value will become the corresponding element in the converted tuple.
 """
 struct OperatorUnitToTuple{Fields} <: Metric
-    OperatorUnitToTuple(fields::Tuple{Vararg{Symbol}}) = new{fields}()
+    OperatorUnitToTuple(fields::Tuple{Vararg{Union{Symbol, Function}}}) = new{fields}()
 end
-@inline OperatorUnitToTuple(fields::Symbol...) = OperatorUnitToTuple(fields)
+@inline OperatorUnitToTuple(fields::Union{Symbol, Function}...) = OperatorUnitToTuple(fields)
 
 """
     keys(::OperatorUnitToTuple{Fields}) where Fields -> Fields
     keys(::Type{<:OperatorUnitToTuple{Fields}}) where Fields -> Fields
 
-Get the names of the selected fields.
+Get the values of the type parameter `Fields`.
 """
 @inline Base.keys(::OperatorUnitToTuple{Fields}) where Fields = Fields
 @inline Base.keys(::Type{<:OperatorUnitToTuple{Fields}}) where Fields = Fields
@@ -1641,7 +1648,9 @@ Get the valtype of applying an `OperatorUnitToTuple` rule to an `Index`.
 @inline @generated function Base.valtype(::Type{M}, ::Type{I}) where {M<:OperatorUnitToTuple, I<:Index}
     types = []
     for field in keys(M)
-        if field==:site
+        if isa(field, Function)
+            push!(types, :(Core.Compiler.return_type($field, Tuple{Type{I}})))
+        elseif field==:site
             push!(types, Int)
         elseif hasfield(indextype(I), field)
             push!(types, fieldtype(indextype(I), field))
@@ -1658,11 +1667,12 @@ Convert an index to a tuple.
 @inline @generated function (operatorunittotuple::OperatorUnitToTuple)(index::Index)
     exprs = []
     for name in keys(operatorunittotuple)
-        field = QuoteNode(name)
-        if name==:site
+        if isa(name, Function)
+            push!(exprs, :(($name)(typeof(index))))
+        elseif name==:site
             push!(exprs, :(index.site))
         elseif hasfield(indextype(index), name)
-            push!(exprs, :(getfield(index.internal, $field)))
+            push!(exprs, :(getfield(index.internal, $(QuoteNode(name)))))
         end
     end
     return Expr(:tuple, exprs...)
@@ -1686,7 +1696,7 @@ end
 
 Inquiry the sequence of an operator unit.
 """
-@inline Base.getindex(table::Table, operatorunit::OperatorUnit) = table[table.by(operatorunit)]
+@inline Base.getindex(table::Table, operatorunit::OperatorUnit) = table[convert(keytype(table), table.by(operatorunit))]
 
 """
     haskey(table::Table, operatorunit::OperatorUnit) -> Bool
@@ -1712,10 +1722,10 @@ The input operator units are measured by the input `by` function with the duplic
 Get the index-sequence table of a Hilbert space.
 """
 function Table(hilbert::Hilbert, by::Metric=OperatorUnitToTuple(typeof(hilbert)))
-    result = Index{hilbert|>valtype|>eltype, Int}[]
+    result = fulltype(Index, Tuple{hilbert|>valtype|>eltype, Int})[]
     for (site, internal) in hilbert
         for index in internal
-            push!(result, (result|>eltype)(site, index))
+            push!(result, Index(site, index))
         end
     end
     return Table(result, by)

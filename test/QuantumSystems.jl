@@ -42,6 +42,7 @@ using StaticArrays: SVector
     @test 𝕗(1, 1//2, 1) ≠ 𝕓(1, 1//2, 1)
     @test !isequal(𝕗(1, 1//2, 1), 𝕓(1, 1//2, 1))
 
+    @test statistics(FockIndex) == statistics(Index{<:FockIndex}) == statistics(CoordinatedIndex{<:Index{<:FockIndex}}) == Symbol(":")
     @test allequalfields(FockIndex) == (:orbital, :spin)
     @test isdefinite(FockIndex{:, Int, Rational{Int}, Int})
     @test !isdefinite(FockIndex{:f, Symbol, typeof(:), Int})
@@ -390,6 +391,7 @@ end
     @test 𝕊{1//2}('z') ≠ 𝕊{3//2}('z')
     @test !isequal(𝕊{1//2}('z'), 𝕊{3//2}('z'))
 
+    @test allequal((totalspin(SpinIndex), totalspin(Index{<:SpinIndex}), totalspin(CoordinatedIndex{<:Index{<:SpinIndex}}), NaN))
     @test isdefinite(SpinIndex{:, Char})
     @test !isdefinite(SpinIndex{1//2, Symbol})
     @test !isdefinite(SpinIndex{1, Colon})
@@ -739,6 +741,7 @@ end
     @test 𝕦('x') ≠ 𝕡('x')
     @test !isequal(𝕦('x'), 𝕡('x'))
 
+    @test kind(PhononIndex) == kind(Index{<:PhononIndex}) == kind(CoordinatedIndex{<:Index{<:PhononIndex}}) == Symbol(":")
     @test isdefinite(PhononIndex{:u, Char}) == isdefinite(PhononIndex{:p, Char}) == true
     @test isdefinite(PhononIndex{:u, Symbol}) == isdefinite(PhononIndex{:p, Symbol}) == false
     @test isdefinite(PhononIndex{:u, Colon}) == isdefinite(PhononIndex{:p, Colon}) == false

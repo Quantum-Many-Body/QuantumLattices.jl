@@ -60,6 +60,7 @@ struct FockIndex{T, O<:Union{Int, Symbol, Colon}, S<:Union{Rational{Int}, Symbol
     end
 end
 ### basic methods of concrete SimpleInternalIndex
+@inline statistics(::Type{<:FockIndex}) = Symbol(":")
 @inline statistics(::Type{<:FockIndex{T}}) where T = T
 @inline isdefinite(::Type{<:FockIndex{T, Int, Rational{Int}} where T}) = true
 @inline Base.:(==)(index₁::FockIndex, index₂::FockIndex) = statistics(index₁)==statistics(index₂) && ==(efficientoperations, index₁, index₂)
@@ -114,16 +115,28 @@ Judge whether the nambu index is `creation`.
     𝕗(site, orbital, spin, nambu) -> Index{<:FockIndex{:f}}
     𝕗(site, orbital, spin, nambu, rcoordinate, icoordinate) -> CoordinatedIndex{<:Index{<:FockIndex{:f}}}
 
+Convenient construction of `FockIndex{:f}`, `Index{<:FockIndex{:f}}`, `CoordinatedIndex{<:Index{<:FockIndex{f}}}`.
+"""
+function 𝕗 end
+
+"""
     𝕓(orbital, spin, nambu) -> FockIndex{:b}
     𝕓(site, orbital, spin, nambu) -> Index{<:FockIndex{:b}}
     𝕓(site, orbital, spin, nambu, rcoordinate, icoordinate) -> CoordinatedIndex{<:Index{<:FockIndex{:b}}}
 
+Convenient construction of `FockIndex{:b}`, `Index{<:FockIndex{:b}}`, `CoordinatedIndex{<:Index{<:FockIndex{:b}}}`.
+"""
+function 𝕓 end
+
+"""
     𝔽(orbital, spin, nambu) -> FockIndex{:}
     𝔽(site, orbital, spin, nambu) -> Index{<:FockIndex{:}}
     𝔽(site, orbital, spin, nambu, rcoordinate, icoordinate) -> CoordinatedIndex{<:Index{<:FockIndex{:}}}
 
-Convenient construction of `FockIndex`, `Index{<:FockIndex}`, `CoordinatedIndex{<:Index{<:FockIndex}}`.
+Convenient construction of `FockIndex{:}`, `Index{<:FockIndex{:}}`, `CoordinatedIndex{<:Index{<:FockIndex{:}}}`.
 """
+function 𝔽 end
+
 const _fock_ = (:𝕗, :𝕓, :𝔽), (QuoteNode(:f), QuoteNode(:b), :)
 for (name, statistics) in zip(_fock_...)
     @eval @inline $name(orbital, spin, nambu) = FockIndex{$statistics}(orbital, spin, nambu)
@@ -538,22 +551,23 @@ Construct a spin index.
 
 """
     totalspin(::SpinIndex) -> Rational{Int}/Int/Colon
-    totalspin(::Type{<:SpinIndex}) -> Rational{Int}/Int/Colon
+    totalspin(::Type{<:SpinIndex}) -> Rational{Int}/Int/Colon/Float64
 
     totalspin(::Index{<:SpinIndex}) -> Rational{Int}/Int/Colon
-    totalspin(::Type{<:Index{<:SpinIndex}}) -> Rational{Int}/Int/Colon
+    totalspin(::Type{<:Index{<:SpinIndex}}) -> Rational{Int}/Int/Colon/Float64
 
     totalspin(::CompositeIndex{<:Index{<:SpinIndex}}) -> Rational{Int}/Int/Colon
-    totalspin(::Type{<:CompositeIndex{<:Index{<:SpinIndex}}}) -> Rational{Int}/Int/Colon
+    totalspin(::Type{<:CompositeIndex{<:Index{<:SpinIndex}}}) -> Rational{Int}/Int/Colon/Float64
 
 Get the total spin.
 """
 @inline totalspin(index::SpinIndex) = totalspin(typeof(index))
 @inline totalspin(index::Index{<:SpinIndex}) = totalspin(typeof(index))
 @inline totalspin(index::CompositeIndex{<:Index{<:SpinIndex}}) = totalspin(typeof(index))
+@inline totalspin(::Type{<:SpinIndex}) = NaN
 @inline totalspin(::Type{<:SpinIndex{S}}) where S = S
-@inline totalspin(::Type{<:Index{<:SpinIndex{S}}}) where S = S
-@inline totalspin(::Type{<:CompositeIndex{<:Index{<:SpinIndex{S}}}}) where S = S
+@inline totalspin(::Type{I}) where {I<:Index{<:SpinIndex}} = totalspin(indextype(I))
+@inline totalspin(::Type{I}) where {I<:CompositeIndex{<:Index{<:SpinIndex}}} = totalspin(indextype(I))
 
 ### convenient construction and string representation 
 """
@@ -1105,15 +1119,19 @@ Construct a phonon index.
     𝕦(site, direction) -> Index{<:PhononIndex{:u}}
     𝕦(site, direction, rcoordinate, icoordinate) -> CoordinatedIndex{<:Index{<:PhononIndex{:u}}}
 
-    𝕡(direction) -> PhononIndex{:p}
-    𝕡(site, direction) -> Index{<:PhononIndex{:p}}
-    𝕡(site, direction, rcoordinate, icoordinate) -> CoordinatedIndex{<:Index{<:PhononIndex{:p}}}
-
-Convenient construction of `SpinIndex`, `Index{<:SpinIndex}`, `CoordinatedIndex{<:Index{<:SpinIndex}}`.
+Convenient construction of `SpinIndex{:u}`, `Index{<:SpinIndex{:u}}`, `CoordinatedIndex{<:Index{<:SpinIndex{:u}}}`.
 """
 @inline 𝕦(direction) = PhononIndex{:u}(direction)
 @inline 𝕦(site, direction) = Index(site, PhononIndex{:u}(direction))
 @inline 𝕦(site, direction, rcoordinate, icoordinate) = CoordinatedIndex(Index(site, PhononIndex{:u}(direction)), rcoordinate, icoordinate)
+
+"""
+    𝕡(direction) -> PhononIndex{:p}
+    𝕡(site, direction) -> Index{<:PhononIndex{:p}}
+    𝕡(site, direction, rcoordinate, icoordinate) -> CoordinatedIndex{<:Index{<:PhononIndex{:p}}}
+
+Convenient construction of `SpinIndex{:p}`, `Index{<:SpinIndex{:p}}`, `CoordinatedIndex{<:Index{<:SpinIndex{:p}}}`.
+"""
 @inline 𝕡(direction) = PhononIndex{:p}(direction)
 @inline 𝕡(site, direction) = Index(site, PhononIndex{:p}(direction))
 @inline 𝕡(site, direction, rcoordinate, icoordinate) = CoordinatedIndex(Index(site, PhononIndex{:p}(direction)), rcoordinate, icoordinate)
@@ -1137,9 +1155,10 @@ Get the kind of a phonon index.
 @inline kind(index::PhononIndex) = kind(typeof(index))
 @inline kind(index::Index{<:PhononIndex}) = kind(typeof(index))
 @inline kind(index::CoordinatedIndex{<:Index{<:PhononIndex}}) = kind(typeof(index))
+@inline kind(::Type{<:PhononIndex}) = Symbol(":")
 @inline kind(::Type{<:PhononIndex{K}}) where K = K
-@inline kind(::Type{<:Index{<:PhononIndex{K}}}) where K = K
-@inline kind(::Type{<:CoordinatedIndex{<:Index{<:PhononIndex{K}}}}) where K = K
+@inline kind(::Type{I}) where {I<:Index{<:PhononIndex}} = kind(indextype(I))
+@inline kind(::Type{I}) where {I<:CoordinatedIndex{<:Index{<:PhononIndex}}} = kind(indextype(I))
 
 ## LaTeX format output
 """

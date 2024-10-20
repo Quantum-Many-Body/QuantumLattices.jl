@@ -457,18 +457,19 @@ end
 end
 
 @testset "Metric" begin
-    m = OperatorUnitToTuple((:site, :nambu))
-    @test m == OperatorUnitToTuple(:site, :nambu)
-    @test isequal(m, OperatorUnitToTuple(:site, :nambu))
-    @test keys(m) == keys(typeof(m)) == (:site, :nambu)
+    m = OperatorUnitToTuple((statistics, :site, :nambu))
+    @test m == OperatorUnitToTuple(statistics, :site, :nambu)
+    @test isequal(m, OperatorUnitToTuple(statistics, :site, :nambu))
+    @test keys(m) == keys(typeof(m)) == (statistics, :site, :nambu)
+    @test valtype(typeof(m), Index{DID{Int}, Int}) == Tuple{Symbol, Int, Int}
+    @test valtype(typeof(m), CompositeIndex{Index{DID{Int}, Int}}) == Tuple{Symbol, Int, Int}
+
+    index = 𝕕(4, 1, SVector(0.5, 0.0), SVector(1.0, 0.0))
+    @test m(index.index) == (:f, 4, 1) == m(index)
+
     @test OperatorUnitToTuple(Index{DID{Int}, Int}) == OperatorUnitToTuple(:site, :nambu)
     @test OperatorUnitToTuple(CompositeIndex{Index{DID{Int}, Int}}) == OperatorUnitToTuple(:site, :nambu)
     @test OperatorUnitToTuple(Hilbert{DFock}) == OperatorUnitToTuple(:site, :nambu)
-    @test valtype(typeof(m), Index{DID{Int}, Int}) == Tuple{Int, Int}
-    @test valtype(typeof(m), CompositeIndex{Index{DID{Int}, Int}}) == Tuple{Int, Int}
-
-    index = 𝕕(4, 1, SVector(0.5, 0.0), SVector(1.0, 0.0))
-    @test m(index.index) == (4, 1) == m(index)
 end
 
 @testset "Table" begin
