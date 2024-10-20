@@ -16,7 +16,7 @@ Now we arrive at the final step toward the complete description of a quantum lat
 
 In this package, the type [`Term`](@ref) is the representation of a term in lattice Hamiltonians.
 
-As is well-known, different quantum lattice models have different terms. For example, the [Hubbard model](https://en.wikipedia.org/wiki/Hubbard_model) consist of an usual hopping term $t\sum_{⟨ij⟩}c^†_ic_j + h.c.$ and a Hubbard term $U\sum_i c^†_{i↑} c_{i↑} c^†_{i↓}c_{i↓}$ while the [transverse-field Ising model](https://en.wikipedia.org/wiki/Transverse-field_Ising_model) contains an Ising term $J\sum_{⟨ij⟩}S^z_iS^z_j$ as well as a transverse-field term $h\sum_iS^x_i$. Despite the rich diversity of the terms in quantum lattice models, they host common ingredients:
+As is well-known, different quantum lattice models have different terms. For example, the [Hubbard model](https://en.wikipedia.org/wiki/Hubbard_model) consists of an usual hopping term $t\sum_{⟨ij⟩}c^†_ic_j + h.c.$ and a Hubbard term $U\sum_i c^†_{i↑} c_{i↑} c^†_{i↓}c_{i↓}$ while the [transverse-field Ising model](https://en.wikipedia.org/wiki/Transverse-field_Ising_model) contains an Ising term $J\sum_{⟨ij⟩}S^z_iS^z_j$ as well as a transverse-field term $h\sum_iS^x_i$. Despite the rich diversity of the terms in quantum lattice models, they host common ingredients:
 
 * **Overall coefficient**: every term has an overall coefficient, e.g., the hopping amplitude $t$ for the usual hopping term, the Hubbard interaction strength $U$ for the Hubbard term, etc.
 * **Kind of bonds to be summed over**: as the natural result of lattice symmetry, every term contains a summation over some kind of generic bonds, e.g., the usual hopping term sums over the nearest-neighbor bonds $⟨ij⟩$, the Hubbard term sums over all individual points (namely the 1-point bonds), etc.
@@ -604,7 +604,7 @@ Hooke(id::Symbol, value, bondkind; amplitude::Union{Function, Nothing}=nothing)
 Elastic(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothing}=nothing)
 ```
 
-For [`Hooke`](@ref), the `site` attribute of [`Index`](@ref) and the `direction` attribute of [`PhononIndex{:u}`](@ref) can be initialized by the `:` operator. The default rules are also summarized in the comments of the above code block.
+For [`Elastic`](@ref), the `site` attribute of [`Index`](@ref) and the `direction` attribute of [`PhononIndex{:u}`](@ref) can be initialized by the `:` operator. The default rules are also summarized in the comments of the above code block.
 
 ## Expand terms to obtain operators
 
