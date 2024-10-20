@@ -209,9 +209,8 @@ Hi{<:Real}
 ```
 We want to remark that by providing the fourth positional argument with the `true` value, a `UnionAll` type could be generated. When the fourth positional argument is omitted, it is actually determined by another trait function, i.e., [`isparameterbound`](@ref). This function judges whether an input type should be considered as the upper bound of the new parameter of a type. By default, it is defined to be
 ```julia
-julia> isparameterbound(::Type{}, ::Val{}, ::Type{D}) where D = !isconcretetype(D)
-
-julia> isparameterbound(::Type{}, ::Val{}, ::Any) = false
+isparameterbound(::Type{}, ::Val{}, ::Type{D}) where D = !isconcretetype(D)
+isparameterbound(::Type{}, ::Val{}, ::Any) = false
 ```
 This function can be overloaded to change the behavior for a certain type:
 ```jldoctest traits
