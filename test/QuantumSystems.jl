@@ -29,15 +29,15 @@ using StaticArrays: SVector
     @test !isannihilation(index) && !isannihilation(𝕓(1, 1, -1//2, 2)) && !isannihilation(𝕓(1, 1, -1//2, 2, [0.0], [0.0]))
     @test iscreation(index) && iscreation(𝕓(1, 1, -1//2, 2)) && iscreation(𝕓(1, 1, -1//2, 2, [0.0], [0.0]))
 
-    index = 𝔽(1, :α, :)
+    index = 𝕠(1, :α, :)
     @test FockIndex{:, Colon, Colon, Colon}(1, :α, :) == index
     @test statistics(index) == statistics(typeof(index)) == Colon()
     @test isdefinite(index) == isdefinite(typeof(index)) == false
     @test index == FockIndex(1, :α, :)
     @test hash(index) == hash((:, 1, :α, :))
-    @test string(index) == "𝔽(1, α, :)"
-    @test !isannihilation(index) && !isannihilation(𝔽(1, 1, :α, :)) && !isannihilation(𝔽(1, 1, :α, :, [0.0], [0.0]))
-    @test !iscreation(index) && !iscreation(𝔽(1, 1, :α, :)) && !iscreation(𝔽(1, 1, :α, :, [0.0], [0.0]))
+    @test string(index) == "𝕠(1, α, :)"
+    @test !isannihilation(index) && !isannihilation(𝕠(1, 1, :α, :)) && !isannihilation(𝕠(1, 1, :α, :, [0.0], [0.0]))
+    @test !iscreation(index) && !iscreation(𝕠(1, 1, :α, :)) && !iscreation(𝕠(1, 1, :α, :, [0.0], [0.0]))
 
     @test 𝕗(1, 1//2, 1) ≠ 𝕓(1, 1//2, 1)
     @test !isequal(𝕗(1, 1//2, 1), 𝕓(1, 1//2, 1))
@@ -52,11 +52,11 @@ using StaticArrays: SVector
 
     @test AbstractIndex[FockIndex{:f}] == AbstractIndex[Index{<:FockIndex{:f}}] == AbstractIndex[CoordinatedIndex{<:Index{<:FockIndex{:f}}}] == 𝕗
     @test AbstractIndex[FockIndex{:b}] == AbstractIndex[Index{<:FockIndex{:b}}] == AbstractIndex[CoordinatedIndex{<:Index{<:FockIndex{:b}}}] == 𝕓
-    @test AbstractIndex[FockIndex{:}] == AbstractIndex[Index{<:FockIndex{:}}] == AbstractIndex[CoordinatedIndex{<:Index{<:FockIndex{:}}}] == 𝔽
-    @test AbstractIndex[FockIndex] == AbstractIndex[Index{<:FockIndex}] == AbstractIndex[CoordinatedIndex{<:Index{<:FockIndex}}] == 𝔽
+    @test AbstractIndex[FockIndex{:}] == AbstractIndex[Index{<:FockIndex{:}}] == AbstractIndex[CoordinatedIndex{<:Index{<:FockIndex{:}}}] == 𝕠
+    @test AbstractIndex[FockIndex] == AbstractIndex[Index{<:FockIndex}] == AbstractIndex[CoordinatedIndex{<:Index{<:FockIndex}}] == 𝕠
     @test AbstractIndex[𝕗] == FockIndex{:f}
     @test AbstractIndex[𝕓] == FockIndex{:b}
-    @test AbstractIndex[𝔽] == FockIndex{:}
+    @test AbstractIndex[𝕠] == FockIndex{:}
 
     patternrule((:, :, :, :), Val(:), FockIndex, Val(:nambu)) == (2, 1, 2, 1)
 end
@@ -149,8 +149,8 @@ end
 end
 
 @testset "Fock Coupling" begin
-    @test collect(MatrixCoupling(:, FockIndex, :, :, :)) == collect(MatrixCoupling(:, 𝔽, :, :, :)) == [Coupling(𝔽(:, :, :, :), 𝔽(:, :, :, :))]
-    @test collect(MatrixCoupling(:, FockIndex{:}, σ"+", σ"-", :)) == [Coupling(𝔽(:, 1, -1//2, :), 𝔽(:, 2, 1//2, :))]
+    @test collect(MatrixCoupling(:, FockIndex, :, :, :)) == collect(MatrixCoupling(:, 𝕠, :, :, :)) == [Coupling(𝕠(:, :, :, :), 𝕠(:, :, :, :))]
+    @test collect(MatrixCoupling(:, FockIndex{:}, σ"+", σ"-", :)) == [Coupling(𝕠(:, 1, -1//2, :), 𝕠(:, 2, 1//2, :))]
     @test collect(MatrixCoupling((1ˢᵗ, 2ⁿᵈ), FockIndex{:f}, :, σ"y", σ"z")) == collect(MatrixCoupling((1ˢᵗ, 2ⁿᵈ), 𝕗, :, σ"y", σ"z")) == [
         Coupling(+1im, 𝕗(1ˢᵗ, :, -1//2, 1), 𝕗(2ⁿᵈ, :, 1//2, 2)), Coupling(-1im, 𝕗(1ˢᵗ, :, 1//2, 1), 𝕗(2ⁿᵈ, :, -1//2, 2)),
         Coupling(-1im, 𝕗(1ˢᵗ, :, -1//2, 2), 𝕗(2ⁿᵈ, :, 1//2, 1)), Coupling(+1im, 𝕗(1ˢᵗ, :, 1//2, 2), 𝕗(2ⁿᵈ, :, -1//2, 1))
@@ -169,7 +169,7 @@ end
         Operator(2.0, 𝕗(1, 1, +1//2, 2, SVector(0.0), SVector(0.0)), 𝕗(2, 2, +1//2, 1, SVector(0.5), SVector(0.0)))
     ]
 
-    fc = Coupling(2.0, (1ˢᵗ, 1ˢᵗ, 1ˢᵗ, 1ˢᵗ), 𝔽, :, (1//2, 1//2, -1//2, -1//2), (2, 1, 2, 1))
+    fc = Coupling(2.0, (1ˢᵗ, 1ˢᵗ, 1ˢᵗ, 1ˢᵗ), 𝕠, :, (1//2, 1//2, -1//2, -1//2), (2, 1, 2, 1))
     point = Point(1, SVector(0.0), SVector(0.0))
     hilbert = Hilbert(point.site=>Fock{:b}(2, 2))
     ex = expand(fc, Val(:term), Bond(point), hilbert)
@@ -178,7 +178,7 @@ end
         Operator(2.0, 𝕓(1, 2, +1//2, 2, SVector(0.0), SVector(0.0)), 𝕓(1, 2, +1//2, 1, SVector(0.0), SVector(0.0)), 𝕓(1, 2, -1//2, 2, SVector(0.0), SVector(0.0)), 𝕓(1, 2, -1//2, 1, SVector(0.0), SVector(0.0)))
     ]
 
-    fc = Coupling(2.0, @pattern(𝔽(:, α, 1//2, 2), 𝔽(:, α, -1//2, 2), 𝔽(:, β, -1//2, 1), 𝔽(:, β, 1//2, 1); constraint=α<β))
+    fc = Coupling(2.0, @pattern(𝕠(:, α, 1//2, 2), 𝕠(:, α, -1//2, 2), 𝕠(:, β, -1//2, 1), 𝕠(:, β, 1//2, 1); constraint=α<β))
     point = Point(1, SVector(0.5), SVector(0.0))
     hilbert = Hilbert(point.site=>Fock{:f}(3, 2))
     ex = expand(fc, Val(:term), Bond(point), hilbert)
@@ -188,8 +188,8 @@ end
         Operator(2.0, 𝕗(1, 2, +1//2, 2, SVector(0.5), SVector(0.0)), 𝕗(1, 2, -1//2, 2, SVector(0.5), SVector(0.0)), 𝕗(1, 3, -1//2, 1, SVector(0.5), SVector(0.0)), 𝕗(1, 3, +1//2, 1, SVector(0.5), SVector(0.0)))
     ]
 
-    fc₁ = Coupling(+1.0, :, 𝔽, :, (+1//2, +1//2), (2, 1))
-    fc₂ = Coupling(-1.0, :, 𝔽, :, (-1//2, -1//2), (2, 1))
+    fc₁ = Coupling(+1.0, :, 𝕠, :, (+1//2, +1//2), (2, 1))
+    fc₂ = Coupling(-1.0, :, 𝕠, :, (-1//2, -1//2), (2, 1))
     point = Point(1, SVector(0.0), SVector(0.0))
     hilbert = Hilbert(point.site=>Fock{:f}(2, 2))
     ex = expand(fc₁*fc₂, Val(:term), Bond(point), hilbert)
@@ -261,7 +261,7 @@ end
 @testset "Pairing" begin
     bond = Bond(1, Point(2, (0.0, 0.0), (0.0, 0.0)), Point(1, (0.5, 0.5), (0.0, 0.0)))
     hilbert = Hilbert(site=>Fock{:f}(1, 1) for site=1:2)
-    term = Pairing(:Δ, 1.5, 1, Coupling{2}(:, 𝔽, :, :, :); amplitude=bond->(bond|>rcoordinate|>azimuthd ≈ 45 ? 1 : -1))
+    term = Pairing(:Δ, 1.5, 1, Coupling{2}(:, 𝕠, :, :, :); amplitude=bond->(bond|>rcoordinate|>azimuthd ≈ 45 ? 1 : -1))
     operators = Operators(
         Operator(+1.5, 𝕗(2, 1, 0, 1, [0.0, 0.0], [0.0, 0.0]), 𝕗(1, 1, 0, 1, [0.5, 0.5], [0.0, 0.0])),
         Operator(-1.5, 𝕗(1, 1, 0, 1, [0.5, 0.5], [0.0, 0.0]), 𝕗(2, 1, 0, 1, [0.0, 0.0], [0.0, 0.0]))
@@ -271,7 +271,7 @@ end
 
     point = Point(1, (0.5, 0.5), (0.0, 0.0))
     hilbert = Hilbert(point.site=>Fock{:f}(1, 2))
-    term = Pairing(:Δ, 1.5, 0, MatrixCoupling(:, 𝔽, :, [0 -1; 1 0], :))
+    term = Pairing(:Δ, 1.5, 0, MatrixCoupling(:, 𝕠, :, [0 -1; 1 0], :))
     operators = Operators(
         Operator(-1.5, 𝕗(1, 1, +1//2, 1, [0.5, 0.5], [0.0, 0.0]), 𝕗(1, 1, -1//2, 1, [0.5, 0.5], [0.0, 0.0])),
         Operator(+1.5, 𝕗(1, 1, -1//2, 1, [0.5, 0.5], [0.0, 0.0]), 𝕗(1, 1, +1//2, 1, [0.5, 0.5], [0.0, 0.0]))

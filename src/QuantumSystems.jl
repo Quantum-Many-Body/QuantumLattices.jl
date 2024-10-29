@@ -16,7 +16,7 @@ import ..QuantumOperators: latexname, matrix, script
 import ..Toolkit: shape
 
 # Canonical complex fermionic/bosonic systems
-export annihilation, creation, latexofbosons, latexoffermions, latexofparticles, 𝕓, 𝕗, 𝔽, isannihilation, iscreation, isnormalordered, @σ_str, @L_str
+export annihilation, creation, latexofbosons, latexoffermions, latexofparticles, 𝕓, 𝕗, 𝕠, isannihilation, iscreation, isnormalordered, @σ_str, @L_str
 export Coulomb, Fock, FockIndex, FockTerm, Hopping, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, Onsite, PairHopping, Pairing, SpinFlip
 
 # SU(2) spin systems
@@ -129,15 +129,15 @@ Convenient construction of `FockIndex{:b}`, `Index{<:FockIndex{:b}}`, `Coordinat
 function 𝕓 end
 
 """
-    𝔽(orbital, spin, nambu) -> FockIndex{:}
-    𝔽(site, orbital, spin, nambu) -> Index{<:FockIndex{:}}
-    𝔽(site, orbital, spin, nambu, rcoordinate, icoordinate) -> CoordinatedIndex{<:Index{<:FockIndex{:}}}
+    𝕠(orbital, spin, nambu) -> FockIndex{:}
+    𝕠(site, orbital, spin, nambu) -> Index{<:FockIndex{:}}
+    𝕠(site, orbital, spin, nambu, rcoordinate, icoordinate) -> CoordinatedIndex{<:Index{<:FockIndex{:}}}
 
 Convenient construction of `FockIndex{:}`, `Index{<:FockIndex{:}}`, `CoordinatedIndex{<:Index{<:FockIndex{:}}}`.
 """
-function 𝔽 end
+function 𝕠 end
 
-const _fock_ = (:𝕗, :𝕓, :𝔽), (QuoteNode(:f), QuoteNode(:b), :)
+const _fock_ = (:𝕗, :𝕓, :𝕠), (QuoteNode(:f), QuoteNode(:b), :)
 for (name, statistics) in zip(_fock_...)
     @eval @inline $name(orbital, spin, nambu) = FockIndex{$statistics}(orbital, spin, nambu)
     @eval @inline $name(site, orbital, spin, nambu) = Index(site, FockIndex{$statistics}(orbital, spin, nambu))
@@ -145,11 +145,11 @@ for (name, statistics) in zip(_fock_...)
 end
 @inline Base.getindex(::Type{AbstractIndex}, ::Type{I}) where {I<:Union{FockIndex{:f}, Index{<:FockIndex{:f}}, CoordinatedIndex{<:Index{<:FockIndex{:f}}}}} = 𝕗
 @inline Base.getindex(::Type{AbstractIndex}, ::Type{I}) where {I<:Union{FockIndex{:b}, Index{<:FockIndex{:b}}, CoordinatedIndex{<:Index{<:FockIndex{:b}}}}} = 𝕓
-@inline Base.getindex(::Type{AbstractIndex}, ::Type{I}) where {I<:Union{FockIndex{:}, Index{<:FockIndex{:}}, CoordinatedIndex{<:Index{<:FockIndex{:}}}}} = 𝔽
-@inline Base.getindex(::Type{AbstractIndex}, ::Type{I}) where {I<:Union{FockIndex, Index{<:FockIndex}, CoordinatedIndex{<:Index{<:FockIndex}}}} = 𝔽
+@inline Base.getindex(::Type{AbstractIndex}, ::Type{I}) where {I<:Union{FockIndex{:}, Index{<:FockIndex{:}}, CoordinatedIndex{<:Index{<:FockIndex{:}}}}} = 𝕠
+@inline Base.getindex(::Type{AbstractIndex}, ::Type{I}) where {I<:Union{FockIndex, Index{<:FockIndex}, CoordinatedIndex{<:Index{<:FockIndex}}}} = 𝕠
 @inline Base.getindex(::Type{AbstractIndex}, ::typeof(𝕗)) = FockIndex{:f}
 @inline Base.getindex(::Type{AbstractIndex}, ::typeof(𝕓)) = FockIndex{:b}
-@inline Base.getindex(::Type{AbstractIndex}, ::typeof(𝔽)) = FockIndex{:}
+@inline Base.getindex(::Type{AbstractIndex}, ::typeof(𝕠)) = FockIndex{:}
 
 ### patternrule
 """
@@ -325,12 +325,12 @@ end
 ### MatrixCoupling
 const default_matrix = SparseMatrixCSC(hcat(1))
 """
-    MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, F::Union{typeof(𝕗), typeof(𝕓), typeof(𝔽)}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon})
+    MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, F::Union{typeof(𝕗), typeof(𝕓), typeof(𝕠)}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon})
     MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{F}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) where {F<:FockIndex}
 
 Construct a matrix coupling for Fock systems.
 """
-@inline function MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, F::Union{typeof(𝕗), typeof(𝕓), typeof(𝔽)}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon})
+@inline function MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, F::Union{typeof(𝕗), typeof(𝕓), typeof(𝕠)}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon})
     return MatrixCoupling(sites, AbstractIndex[F], orbital, spin, nambu)
 end
 @inline function MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{F}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) where {F<:FockIndex}
@@ -383,26 +383,26 @@ end
 
 ## Term
 """
-    Onsite(id::Symbol, value, coupling=Coupling(𝔽(:, :, :, :), 𝔽(:, :, :, :)); ishermitian::Bool=true, amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+    Onsite(id::Symbol, value, coupling=Coupling(𝕠(:, :, :, :), 𝕠(:, :, :, :)); ishermitian::Bool=true, amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
 
 Onsite term.
 
 Type alias for `Term{:Onsite, id, V, Int, C<:TermCoupling, A<:TermAmplitude}`.
 """
 const Onsite{id, V, C<:TermCoupling, A<:TermAmplitude} = Term{:Onsite, id, V, Int, C, A}
-@inline function Onsite(id::Symbol, value, coupling=Coupling(𝔽(:, :, :, :), 𝔽(:, :, :, :)); ishermitian::Bool=true, amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+@inline function Onsite(id::Symbol, value, coupling=Coupling(𝕠(:, :, :, :), 𝕠(:, :, :, :)); ishermitian::Bool=true, amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
     return Term{:Onsite}(id, value, 0, coupling, ishermitian; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 
 """
-    Hopping(id::Symbol, value, bondkind, coupling=Coupling(𝔽(:, :, :, :), 𝔽(:, :, :, :)); amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+    Hopping(id::Symbol, value, bondkind, coupling=Coupling(𝕠(:, :, :, :), 𝕠(:, :, :, :)); amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
 
 Hopping term.
 
 Type alias for `Term{:Hopping, id, V, B, C<:TermCoupling, A<:TermAmplitude}`.
 """
 const Hopping{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:Hopping, id, V, B, C, A}
-@inline function Hopping(id::Symbol, value, bondkind, coupling=Coupling(𝔽(:, :, :, :), 𝔽(:, :, :, :)); amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+@inline function Hopping(id::Symbol, value, bondkind, coupling=Coupling(𝕠(:, :, :, :), 𝕠(:, :, :, :)); amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
     @assert bondkind≠0 "Hopping error: input bondkind (neighbor) cannot be 0. Use `Onsite` instead."
     return Term{:Hopping}(id, value, bondkind, coupling, false; amplitude=amplitude, ismodulatable=ismodulatable)
 end
@@ -435,7 +435,7 @@ Type alias for `Term{:Hubbard, id, V, Int, C<:TermCoupling, A<:TermAmplitude}`.
 """
 const Hubbard{id, V, C<:TermCoupling, A<:TermAmplitude} = Term{:Hubbard, id, V, Int, C, A}
 @inline function Hubbard(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
-    return Term{:Hubbard}(id, value, 0, Coupling(:, 𝔽, :, (1//2, 1//2, -1//2, -1//2), (2, 1, 2, 1)), true; amplitude=amplitude, ismodulatable=ismodulatable)
+    return Term{:Hubbard}(id, value, 0, Coupling(:, 𝕠, :, (1//2, 1//2, -1//2, -1//2), (2, 1, 2, 1)), true; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 
 """
@@ -447,7 +447,7 @@ Type alias for `Term{:InterOrbitalInterSpin, id, V, Int, C<:TermCoupling, A<:Ter
 """
 const InterOrbitalInterSpin{id, V, C<:TermCoupling, A<:TermAmplitude} = Term{:InterOrbitalInterSpin, id, V, Int, C, A}
 @inline function InterOrbitalInterSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
-    return Term{:InterOrbitalInterSpin}(id, value, 0, Coupling(@pattern(𝔽(:, α, σ, 2), 𝔽(:, α, σ, 1), 𝔽(:, β, σ′, 2), 𝔽(:, β, σ′, 1); constraint=α<β && σ≠σ′)), true; amplitude=amplitude, ismodulatable=ismodulatable)
+    return Term{:InterOrbitalInterSpin}(id, value, 0, Coupling(@pattern(𝕠(:, α, σ, 2), 𝕠(:, α, σ, 1), 𝕠(:, β, σ′, 2), 𝕠(:, β, σ′, 1); constraint=α<β && σ≠σ′)), true; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 
 """
@@ -459,7 +459,7 @@ Type alias for `Term{:InterOrbitalIntraSpin, id, V, Int, C<:TermCoupling, A<:Ter
 """
 const InterOrbitalIntraSpin{id, V, C<:TermCoupling, A<:TermAmplitude} = Term{:InterOrbitalIntraSpin, id, V, Int, C, A}
 @inline function InterOrbitalIntraSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
-    return Term{:InterOrbitalIntraSpin}(id, value, 0, Coupling(@pattern(𝔽(:, α, σ, 2), 𝔽(:, α, σ, 1), 𝔽(:, β, σ, 2), 𝔽(:, β, σ, 1); constraint=α<β)), true; amplitude=amplitude, ismodulatable=ismodulatable)
+    return Term{:InterOrbitalIntraSpin}(id, value, 0, Coupling(@pattern(𝕠(:, α, σ, 2), 𝕠(:, α, σ, 1), 𝕠(:, β, σ, 2), 𝕠(:, β, σ, 1); constraint=α<β)), true; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 
 """
@@ -471,7 +471,7 @@ Type alias for `Term{:SpinFlip, id, V, Int, C<:TermCoupling, A<:TermAmplitude}`.
 """
 const SpinFlip{id, V, C<:TermCoupling, A<:TermAmplitude} = Term{:SpinFlip, id, V, Int, C, A}
 @inline function SpinFlip(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
-    return Term{:SpinFlip}(id, value, 0, Coupling(@pattern(𝔽(:, α, 1//2, 2), 𝔽(:, β, -1//2, 2), 𝔽(:, α, -1//2, 1), 𝔽(:, β, 1//2, 1); constraint=α<β)), false; amplitude=amplitude, ismodulatable=ismodulatable)
+    return Term{:SpinFlip}(id, value, 0, Coupling(@pattern(𝕠(:, α, 1//2, 2), 𝕠(:, β, -1//2, 2), 𝕠(:, α, -1//2, 1), 𝕠(:, β, 1//2, 1); constraint=α<β)), false; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 
 """
@@ -483,18 +483,18 @@ Type alias for `Term{:PairHopping, id, V, Int, C<:TermCoupling, A<:TermAmplitude
 """
 const PairHopping{id, V, C<:TermCoupling, A<:TermAmplitude} = Term{:PairHopping, id, V, Int, C, A}
 @inline function PairHopping(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
-    return Term{:PairHopping}(id, value, 0, Coupling(@pattern(𝔽(:, α, 1//2, 2), 𝔽(:, α, -1//2, 2), 𝔽(:, β, -1//2, 1), 𝔽(:, β, 1//2, 1); constraint=α<β)), false; amplitude=amplitude, ismodulatable=ismodulatable)
+    return Term{:PairHopping}(id, value, 0, Coupling(@pattern(𝕠(:, α, 1//2, 2), 𝕠(:, α, -1//2, 2), 𝕠(:, β, -1//2, 1), 𝕠(:, β, 1//2, 1); constraint=α<β)), false; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 
 """
-    Coulomb(id::Symbol, value, bondkind, coupling=Coupling(𝔽(:, :, :, :), 𝔽(:, :, :, :))^2; ishermitian::Bool=true, amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+    Coulomb(id::Symbol, value, bondkind, coupling=Coupling(𝕠(:, :, :, :), 𝕠(:, :, :, :))^2; ishermitian::Bool=true, amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
 
 Coulomb term.
 
 Type alias for `Term{:Coulomb, id, V, B, C<:TermCoupling, A<:TermAmplitude}`.
 """
 const Coulomb{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:Coulomb, id, V, B, C, A}
-@inline function Coulomb(id::Symbol, value, bondkind, coupling=Coupling(𝔽(:, :, :, :), 𝔽(:, :, :, :))^2; ishermitian::Bool=true, amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+@inline function Coulomb(id::Symbol, value, bondkind, coupling=Coupling(𝕠(:, :, :, :), 𝕠(:, :, :, :))^2; ishermitian::Bool=true, amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
     return Term{:Coulomb}(id, value, bondkind, coupling, ishermitian; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 

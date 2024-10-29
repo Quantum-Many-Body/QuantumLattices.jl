@@ -48,11 +48,11 @@ Here, when `value` is omitted, it will be set to `1`.
 Let's see a typical example, which represents the coupling pattern of the usual hopping term $t\sum_{⟨ij⟩}c^†_ic_j + h.c.$:
 ```jldoctest HM
 julia> Coupling(Index(1ˢᵗ, FockIndex(:, :, 2)), Index(2ⁿᵈ, FockIndex(:, :, 1)))
-∑[𝔽(1ˢᵗ, :, :, 2) 𝔽(2ⁿᵈ, :, :, 1)]
+∑[𝕠(1ˢᵗ, :, :, 2) 𝕠(2ⁿᵈ, :, :, 1)]
 ```
 There are several differences of the [`Index`](@ref)es here compared to those introduced in the previous page of [Internal degrees of freedom](@ref):
 * **The `site` attributes are not the site indexes of the points in a lattice, instead, they are the ordinals of the points contained in a bond**. In fact, in the expression of $c^†_ic_j$, $i$ is always the first site of a bond while $j$ is always the second, thus, the `site` attributes here are `1ˢᵗ` and `2ⁿᵈ` for the first [`Index`](@ref) and the second [`Index`](@ref), respectively. Here, `1ˢᵗ` and `2ⁿᵈ` are instances of [`Ordinal`](@ref), and an arbitrary ordinal can be obtained by an integer followed by the corresponding special constants, e.g., `1ˢᵗ`, `2ⁿᵈ`, `3ʳᵈ`, `4ᵗʰ`, `5ᵗʰ`, etc.
-* The `internal` attributes are initialized by special [`FockIndex`](@ref) instances, which do not have the type parameter `:f` or `:b` to specify the statistics, and whose `orbital` and `spin` attributes are initialized by the `:` operator rather than integers. **Without the statistics of `:f` or `:b`, [`FockIndex`](@ref) could suit for both fermionic and bosonic quantum lattice systems**, as the coupling pattern of an usual hopping term is the same for both kinds of systems. Here, `𝔽` (\bbF<tab>) is the function that is convenient to construct and display instances of [`FockIndex`](@ref) suitable for both fermionic and bosonic statistics. **When the `:` operator is used in the initialization for either the `orbital` or the `spin` attribute, the default rule applies in the coupling pattern, that orbitals or spins are summed diagonally**, i.e., $c^†_ic_j≡\sum_{ασ}c^†_{iασ}c_{jασ}$. This rule is in fact a tradition in the literature of condensed matter physics. This implicit summation in the construction of a [`Coupling`](@ref) is made explicit in its string representation by the `∑` symbol, as can be seen in the above example.
+* The `internal` attributes are initialized by special [`FockIndex`](@ref) instances, which do not have the type parameter `:f` or `:b` to specify the statistics, and whose `orbital` and `spin` attributes are initialized by the `:` operator rather than integers. **Without the statistics of `:f` or `:b`, [`FockIndex`](@ref) could suit for both fermionic and bosonic quantum lattice systems**, as the coupling pattern of an usual hopping term is the same for both kinds of systems. Here, `𝕠` (\bbo<tab>) is the function that is convenient to construct and display instances of [`FockIndex`](@ref) suitable for both fermionic and bosonic statistics. **When the `:` operator is used in the initialization for either the `orbital` or the `spin` attribute, the default rule applies in the coupling pattern, that orbitals or spins are summed diagonally**, i.e., $c^†_ic_j≡\sum_{ασ}c^†_{iασ}c_{jασ}$. This rule is in fact a tradition in the literature of condensed matter physics. This implicit summation in the construction of a [`Coupling`](@ref) is made explicit in its string representation by the `∑` symbol, as can be seen in the above example.
 
 Similarly, **the total spin of [`SpinIndex`](@ref) can be omitted during the construction of the coupling patterns of spin terms, meaning that it suits any allowable value of total spins**, e.g., the coupling pattern of the spin-flip term of any total spin $J\sum_{⟨ij⟩}S^+_iS^-_j + h.c.$ is as follows:
 ```jldoctest
@@ -79,7 +79,7 @@ When all [`Index`](@ref)es are of the same type, a [`Coupling`](@ref) can be ini
 Coupling(
     [value, ]
     sites::Union{Colon, NTuple{N, Ordinal}},
-    ::Union{Type{<:FockIndex}, typeof(𝕗), typeof(𝕓), typeof(𝔽)},
+    ::Union{Type{<:FockIndex}, typeof(𝕗), typeof(𝕓), typeof(𝕠)},
     orbitals::Union{NTuple{N, Int}, Colon},
     spins::Union{NTuple{N, Union{Rational{Int}, Int}}, Colon},
     nambus::Union{NTuple{N, Int}, Colon}
@@ -106,10 +106,10 @@ Here, as is usual, when `value` is omitted, the coefficient of the [`Coupling`](
 See examples:
 ```jldoctest HM
 julia> Coupling((1ˢᵗ, 1ˢᵗ, 2ⁿᵈ, 2ⁿᵈ), FockIndex, :, :, (2, 2, 1, 1))
-∑[𝔽(1ˢᵗ, :, :, 2) 𝔽(1ˢᵗ, :, :, 2) 𝔽(2ⁿᵈ, :, :, 1) 𝔽(2ⁿᵈ, :, :, 1)]
+∑[𝕠(1ˢᵗ, :, :, 2) 𝕠(1ˢᵗ, :, :, 2) 𝕠(2ⁿᵈ, :, :, 1) 𝕠(2ⁿᵈ, :, :, 1)]
 
-julia> Coupling((1ˢᵗ, 1ˢᵗ, 2ⁿᵈ, 2ⁿᵈ), 𝔽, :, :, (2, 2, 1, 1))
-∑[𝔽(1ˢᵗ, :, :, 2) 𝔽(1ˢᵗ, :, :, 2) 𝔽(2ⁿᵈ, :, :, 1) 𝔽(2ⁿᵈ, :, :, 1)]
+julia> Coupling((1ˢᵗ, 1ˢᵗ, 2ⁿᵈ, 2ⁿᵈ), 𝕠, :, :, (2, 2, 1, 1))
+∑[𝕠(1ˢᵗ, :, :, 2) 𝕠(1ˢᵗ, :, :, 2) 𝕠(2ⁿᵈ, :, :, 1) 𝕠(2ⁿᵈ, :, :, 1)]
 
 julia> Coupling((1ˢᵗ, 2ⁿᵈ), SpinIndex, ('z', 'z'))
 𝕊(1ˢᵗ, 'z') 𝕊(2ⁿᵈ, 'z')
@@ -137,22 +137,22 @@ julia> 3 * coupling
 
 Two [`Coupling`](@ref)s can be multiplied together:
 ```jldoctest
-julia> cp₁ = Coupling((1ˢᵗ, 1ˢᵗ), 𝔽, (:, :), (1//2, 1//2), (2, 1));
+julia> cp₁ = Coupling((1ˢᵗ, 1ˢᵗ), 𝕠, (:, :), (1//2, 1//2), (2, 1));
 
-julia> cp₂ = Coupling((1ˢᵗ, 1ˢᵗ), 𝔽, (:, :), (-1//2, -1//2), (2, 1));
+julia> cp₂ = Coupling((1ˢᵗ, 1ˢᵗ), 𝕠, (:, :), (-1//2, -1//2), (2, 1));
 
 julia> cp₁ * cp₂
-∑[𝔽(1ˢᵗ, :, 1//2, 2) 𝔽(1ˢᵗ, :, 1//2, 1)] ⊗ ∑[𝔽(1ˢᵗ, :, -1//2, 2) 𝔽(1ˢᵗ, :, -1//2, 1)]
+∑[𝕠(1ˢᵗ, :, 1//2, 2) 𝕠(1ˢᵗ, :, 1//2, 1)] ⊗ ∑[𝕠(1ˢᵗ, :, -1//2, 2) 𝕠(1ˢᵗ, :, -1//2, 1)]
 ```
 
 It is noted that due to the implicit summation of the orbital index in the coupling pattern, the above product is not equal to the coupling pattern of the Hubbard term $U\sum_i c^†_{i↑} c_{i↑} c^†_{i↓}c_{i↓}$:
 ```jldoctest
-julia> cp₁ = Coupling((1ˢᵗ, 1ˢᵗ), 𝔽, :, (1//2, 1//2), (2, 1));
+julia> cp₁ = Coupling((1ˢᵗ, 1ˢᵗ), 𝕠, :, (1//2, 1//2), (2, 1));
 
-julia> cp₂ = Coupling((1ˢᵗ, 1ˢᵗ), 𝔽, :, (-1//2, -1//2), (2, 1));
+julia> cp₂ = Coupling((1ˢᵗ, 1ˢᵗ), 𝕠, :, (-1//2, -1//2), (2, 1));
 
-julia> cp = Coupling((1ˢᵗ, 1ˢᵗ, 1ˢᵗ, 1ˢᵗ), 𝔽, :, (1//2, 1//2, -1//2, -1//2), (2, 1, 2, 1)) # Hubbard coupling pattern
-∑[𝔽(1ˢᵗ, :, 1//2, 2) 𝔽(1ˢᵗ, :, 1//2, 1) 𝔽(1ˢᵗ, :, -1//2, 2) 𝔽(1ˢᵗ, :, -1//2, 1)]
+julia> cp = Coupling((1ˢᵗ, 1ˢᵗ, 1ˢᵗ, 1ˢᵗ), 𝕠, :, (1//2, 1//2, -1//2, -1//2), (2, 1, 2, 1)) # Hubbard coupling pattern
+∑[𝕠(1ˢᵗ, :, 1//2, 2) 𝕠(1ˢᵗ, :, 1//2, 1) 𝕠(1ˢᵗ, :, -1//2, 2) 𝕠(1ˢᵗ, :, -1//2, 1)]
 
 julia> cp == cp₁ * cp₂
 false
@@ -175,11 +175,11 @@ The default rules cannot handle complicated summation conditions on the local in
 For example, the coupling pattern of the above interorbital-interspin Hubbard term can be constructed as follows:
 ```jldoctest
 julia> Coupling(@pattern(
-           𝔽(:, α, σ, 2), 𝔽(:, α, σ, 1), 𝔽(:, β, σ′, 2), 𝔽(:, β, σ′, 1);
+           𝕠(:, α, σ, 2), 𝕠(:, α, σ, 1), 𝕠(:, β, σ′, 2), 𝕠(:, β, σ′, 1);
            constraint=α<β && σ≠σ′
            )
        )
-∑[𝔽(:, α, σ, 2) 𝔽(:, α, σ, 1) 𝔽(:, β, σ′, 2) 𝔽(:, β, σ′, 1)](α < β && σ ≠ σ′)
+∑[𝕠(:, α, σ, 2) 𝕠(:, α, σ, 1) 𝕠(:, β, σ′, 2) 𝕠(:, β, σ′, 1)](α < β && σ ≠ σ′)
 ```
 The keyword argument `constraint` can be omitted if there are no constraints in the summation, e.g., for a special kind of phonon potential $V\sum_{⟨ij⟩}\frac{1}{2}\sum_{μν}u_i^μ u_j^ν$, the coupling pattern can be written as
 ```jldoctest
@@ -189,8 +189,8 @@ julia> Coupling(1//2, @pattern 𝕦(:, μ) 𝕦(:, ν))
 
 The [`Index`](@ref)es in the [`@pattern`](@ref) macro can be of different types, e.g., for a fabricated term just for illustration $λ\sum_{⟨ij⟩}\frac{1}{2}\sum_{αβσ} c^\dagger_{iασ} c_{iβσ} u^x_i$, where itinerant electrons are coupled to lattice vibrations, the coupling pattern is
 ```jldoctest
-julia> Coupling(1//2, @pattern 𝔽(1ˢᵗ, α, σ, 2) 𝔽(1ˢᵗ, β, σ, 1) 𝕦(1ˢᵗ, x))
-1//2 ∑[𝔽(1ˢᵗ, α, σ, 2) 𝔽(1ˢᵗ, β, σ, 1) 𝕦(1ˢᵗ, x)]
+julia> Coupling(1//2, @pattern 𝕠(1ˢᵗ, α, σ, 2) 𝕠(1ˢᵗ, β, σ, 1) 𝕦(1ˢᵗ, x))
+1//2 ∑[𝕠(1ˢᵗ, α, σ, 2) 𝕠(1ˢᵗ, β, σ, 1) 𝕦(1ˢᵗ, x)]
 ```
 In principle, the couplings of hybrid quantum lattice systems that couple different categories of internal degrees of freedom can be initialized in these ways. For more discussions on hybrid systems, please refer to the page of [Hybrid systems](@ref).
 
@@ -203,7 +203,7 @@ At times, the coupling pattern of a term is not compact enough to be represented
 # Fock systems
 MatrixCoupling(
     sites::Union{NTuple{2, Ordinal}, Colon},
-    ::Union{Type{<:FockIndex}, typeof(𝕗), typeof(𝕓), typeof(𝔽)},
+    ::Union{Type{<:FockIndex}, typeof(𝕗), typeof(𝕓), typeof(𝕠)},
     orbital::Union{AbstractMatrix, Colon},
     spin::Union{AbstractMatrix, Colon},
     nambu::Union{AbstractMatrix, Colon}
@@ -227,16 +227,16 @@ is designed to represent the coupling patterns in such cases. Here, in the secon
 
 The following codes construct the coupling pattern of the above spin-dependent hopping example:
 ```jldoctest
-julia> mc = MatrixCoupling(:, 𝔽, :, σ"z", :);
+julia> mc = MatrixCoupling(:, 𝕠, :, σ"z", :);
 
 julia> length(mc)
 2
 
 julia> mc[1]
-∑[𝔽(:, :, 1//2, :) 𝔽(:, :, 1//2, :)]
+∑[𝕠(:, :, 1//2, :) 𝕠(:, :, 1//2, :)]
 
 julia> mc[2]
-- ∑[𝔽(:, :, -1//2, :) 𝔽(:, :, -1//2, :)]
+- ∑[𝕠(:, :, -1//2, :) 𝕠(:, :, -1//2, :)]
 ```
 Here, [`@σ_str`](@ref) is a string literal that returns the generalized Pauli matrices:
 ```julia
@@ -298,48 +298,48 @@ DM"z" => SparseMatrixCSC([0 1 0; -1 0 0; 0 0 0])
 
 For one example, for the nearest-neighbor spin exchange interactions of itinerant fermions $J\sum_{⟨ij⟩}c^†_i\vec{σ}_ic_i ⋅ c^†_j\vec{σ}_jc_j$ where $\vec{σ}_i=(σ^x_i, σ^y_i, σ^z_i)^T$ acts on the local spin space at site $i$, the coupling pattern can be constructed as follows:
 ```jldoctest
-julia> mc₁ = MatrixCoupling(:, 𝔽, :, σ"+", :);
+julia> mc₁ = MatrixCoupling(:, 𝕠, :, σ"+", :);
 
-julia> mc₂ = MatrixCoupling(:, 𝔽, :, σ"-", :);
+julia> mc₂ = MatrixCoupling(:, 𝕠, :, σ"-", :);
 
-julia> mc₃ = MatrixCoupling(:, 𝔽, :, σ"z", :);
+julia> mc₃ = MatrixCoupling(:, 𝕠, :, σ"z", :);
 
 julia> coupling = 1//2*mc₁*mc₂ + 1//2*mc₂*mc₁ + mc₃*mc₃;
 
 julia> collect(coupling)
 6-element Vector{Coupling}:
- 1//2 ∑[𝔽(:, :, 1//2, :) 𝔽(:, :, -1//2, :)] ⊗ ∑[𝔽(:, :, -1//2, :) 𝔽(:, :, 1//2, :)]
- 1//2 ∑[𝔽(:, :, -1//2, :) 𝔽(:, :, 1//2, :)] ⊗ ∑[𝔽(:, :, 1//2, :) 𝔽(:, :, -1//2, :)]
- ∑[𝔽(:, :, 1//2, :) 𝔽(:, :, 1//2, :)] ⊗ ∑[𝔽(:, :, 1//2, :) 𝔽(:, :, 1//2, :)]
- - ∑[𝔽(:, :, -1//2, :) 𝔽(:, :, -1//2, :)] ⊗ ∑[𝔽(:, :, 1//2, :) 𝔽(:, :, 1//2, :)]
- - ∑[𝔽(:, :, 1//2, :) 𝔽(:, :, 1//2, :)] ⊗ ∑[𝔽(:, :, -1//2, :) 𝔽(:, :, -1//2, :)]
- ∑[𝔽(:, :, -1//2, :) 𝔽(:, :, -1//2, :)] ⊗ ∑[𝔽(:, :, -1//2, :) 𝔽(:, :, -1//2, :)]
+ 1//2 ∑[𝕠(:, :, 1//2, :) 𝕠(:, :, -1//2, :)] ⊗ ∑[𝕠(:, :, -1//2, :) 𝕠(:, :, 1//2, :)]
+ 1//2 ∑[𝕠(:, :, -1//2, :) 𝕠(:, :, 1//2, :)] ⊗ ∑[𝕠(:, :, 1//2, :) 𝕠(:, :, -1//2, :)]
+ ∑[𝕠(:, :, 1//2, :) 𝕠(:, :, 1//2, :)] ⊗ ∑[𝕠(:, :, 1//2, :) 𝕠(:, :, 1//2, :)]
+ - ∑[𝕠(:, :, -1//2, :) 𝕠(:, :, -1//2, :)] ⊗ ∑[𝕠(:, :, 1//2, :) 𝕠(:, :, 1//2, :)]
+ - ∑[𝕠(:, :, 1//2, :) 𝕠(:, :, 1//2, :)] ⊗ ∑[𝕠(:, :, -1//2, :) 𝕠(:, :, -1//2, :)]
+ ∑[𝕠(:, :, -1//2, :) 𝕠(:, :, -1//2, :)] ⊗ ∑[𝕠(:, :, -1//2, :) 𝕠(:, :, -1//2, :)]
 ```
 
 For another example, for the onsite spin-orbital coupling of the $(d_{yz}, d_{xz}, d_{xy})^T$ $t_2g$ orbitals $\lambda\sum_i c^\dagger_i \vec{L}_i\cdot\vec{σ}_i c_i$ where $\vec{L}_i=(L^x_i, L^y_i, L^z_i)^T$ acts on the local orbital space and $\vec{σ}_i=(σ^x_i, σ^y_i, σ^z_i)^T$ acts on the local spin space, the coupling pattern can be constructed as follows:
 ```jldoctest
-julia> mc₁ = MatrixCoupling(:, 𝔽, L"x", σ"x", :);
+julia> mc₁ = MatrixCoupling(:, 𝕠, L"x", σ"x", :);
 
-julia> mc₂ = MatrixCoupling(:, 𝔽, L"y", σ"y", :);
+julia> mc₂ = MatrixCoupling(:, 𝕠, L"y", σ"y", :);
 
-julia> mc₃ = MatrixCoupling(:, 𝔽, L"z", σ"z", :);
+julia> mc₃ = MatrixCoupling(:, 𝕠, L"z", σ"z", :);
 
 julia> coupling = mc₁ + mc₂ + mc₃;
 
 julia> collect(coupling)
 12-element Vector{Coupling}:
- -1im 𝔽(:, 3, -1//2, :) 𝔽(:, 2, 1//2, :)
- 1im 𝔽(:, 2, -1//2, :) 𝔽(:, 3, 1//2, :)
- -1im 𝔽(:, 3, 1//2, :) 𝔽(:, 2, -1//2, :)
- 1im 𝔽(:, 2, 1//2, :) 𝔽(:, 3, -1//2, :)
- - 𝔽(:, 3, -1//2, :) 𝔽(:, 1, 1//2, :)
- 𝔽(:, 1, -1//2, :) 𝔽(:, 3, 1//2, :)
- 𝔽(:, 3, 1//2, :) 𝔽(:, 1, -1//2, :)
- - 𝔽(:, 1, 1//2, :) 𝔽(:, 3, -1//2, :)
- -1im 𝔽(:, 2, 1//2, :) 𝔽(:, 1, 1//2, :)
- 1im 𝔽(:, 1, 1//2, :) 𝔽(:, 2, 1//2, :)
- 1im 𝔽(:, 2, -1//2, :) 𝔽(:, 1, -1//2, :)
- -1im 𝔽(:, 1, -1//2, :) 𝔽(:, 2, -1//2, :)
+ -1im 𝕠(:, 3, -1//2, :) 𝕠(:, 2, 1//2, :)
+ 1im 𝕠(:, 2, -1//2, :) 𝕠(:, 3, 1//2, :)
+ -1im 𝕠(:, 3, 1//2, :) 𝕠(:, 2, -1//2, :)
+ 1im 𝕠(:, 2, 1//2, :) 𝕠(:, 3, -1//2, :)
+ - 𝕠(:, 3, -1//2, :) 𝕠(:, 1, 1//2, :)
+ 𝕠(:, 1, -1//2, :) 𝕠(:, 3, 1//2, :)
+ 𝕠(:, 3, 1//2, :) 𝕠(:, 1, -1//2, :)
+ - 𝕠(:, 1, 1//2, :) 𝕠(:, 3, -1//2, :)
+ -1im 𝕠(:, 2, 1//2, :) 𝕠(:, 1, 1//2, :)
+ 1im 𝕠(:, 1, 1//2, :) 𝕠(:, 2, 1//2, :)
+ 1im 𝕠(:, 2, -1//2, :) 𝕠(:, 1, -1//2, :)
+ -1im 𝕠(:, 1, -1//2, :) 𝕠(:, 2, -1//2, :)
 ```
 
 ### Bond-dependent coupling patterns
@@ -397,7 +397,7 @@ For each certain kind of terms, some of the input parameters of the basic constr
 # termkind = :Onsite
 # bondkind = 0
 Onsite(
-    id::Symbol, value, coupling=Coupling(𝔽(:, :, :, :), 𝔽(:, :, :, :));
+    id::Symbol, value, coupling=Coupling(𝕠(:, :, :, :), 𝕠(:, :, :, :));
     ishermitian::Bool=true,
     amplitude::Union{Function, Nothing}=nothing
 )
@@ -408,7 +408,7 @@ Hopping(
     id::Symbol,
     value,
     bondkind,
-    coupling=Coupling(𝔽(:, :, :, :), 𝔽(:, :, :, :));
+    coupling=Coupling(𝕠(:, :, :, :), 𝕠(:, :, :, :));
     amplitude::Union{Function, Nothing}=nothing
 )
 
@@ -418,14 +418,14 @@ Pairing(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothin
 
 # termkind = :Hubbard
 # bondkind = 0
-# coupling = Coupling(:, 𝔽, :, (1//2, 1//2, -1//2, -1//2), (2, 1, 2, 1))
+# coupling = Coupling(:, 𝕠, :, (1//2, 1//2, -1//2, -1//2), (2, 1, 2, 1))
 # ishermitian = true
 Hubbard(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing)
 
 # termkind = :InterOrbitalInterSpin
 # bondkind = 0
 # coupling = Coupling(@pattern(
-#     𝔽(:, α, σ, 2), 𝔽(:, α, σ, 1), 𝔽(:, β, σ′, 2), 𝔽(:, β, σ′, 1);
+#     𝕠(:, α, σ, 2), 𝕠(:, α, σ, 1), 𝕠(:, β, σ′, 2), 𝕠(:, β, σ′, 1);
 #     constraint=α<β && σ≠σ′
 # ))
 # ishermitian = true
@@ -434,7 +434,7 @@ InterOrbitalInterSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=not
 # termkind = :InterOrbitalIntraSpin
 # bondkind = 0
 # coupling = Coupling(@pattern(
-#     𝔽(:, α, σ, 2), 𝔽(:, α, σ, 1), 𝔽(:, β, σ, 2), 𝔽(:, β, σ, 1);
+#     𝕠(:, α, σ, 2), 𝕠(:, α, σ, 1), 𝕠(:, β, σ, 2), 𝕠(:, β, σ, 1);
 #     constraint=α<β
 # ))
 # ishermitian = true
@@ -443,7 +443,7 @@ InterOrbitalIntraSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=not
 # termkind = :SpinFlip
 # bondkind = 0
 # coupling = Coupling(@pattern(
-#     𝔽(:, α, 1//2, 2), 𝔽(:, β, -1//2, 2), 𝔽(:, α, -1//2, 1), 𝔽(:, β, 1//2, 1);
+#     𝕠(:, α, 1//2, 2), 𝕠(:, β, -1//2, 2), 𝕠(:, α, -1//2, 1), 𝕠(:, β, 1//2, 1);
 #     constraint=α<β
 # ))
 # ishermitian = false
@@ -452,7 +452,7 @@ SpinFlip(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing)
 # termkind = :PairHopping
 # bondkind = 0
 # coupling = Coupling(@pattern(
-#     𝔽(:, α, 1//2, 2), 𝔽(:, α, -1//2, 2), 𝔽(:, β, -1//2, 1), 𝔽(:, β, 1//2, 1);
+#     𝕠(:, α, 1//2, 2), 𝕠(:, α, -1//2, 2), 𝕠(:, β, -1//2, 1), 𝕠(:, β, 1//2, 1);
 #     constraint=α<β
 # ))
 # ishermitian = false
@@ -463,7 +463,7 @@ Coulomb(
     id::Symbol,
     value,
     bondkind,
-    coupling=Coupling(𝔽(:, :, :, :), 𝔽(:, :, :, :))^2;
+    coupling=Coupling(𝕠(:, :, :, :), 𝕠(:, :, :, :))^2;
     ishermitian::Bool=true,
     amplitude::Union{Function, Nothing}=nothing
 )
