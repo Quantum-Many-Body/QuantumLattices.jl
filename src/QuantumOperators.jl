@@ -331,11 +331,11 @@ Get the sequence of the id of a quantum operator according to a table.
 
 # Operator
 """
-    Operator{V<:Number, I<:ID{OperatorUnit}} <: OperatorProd{V, I}
+    Operator{V, I<:ID{OperatorUnit}} <: OperatorProd{V, I}
 
 Operator.
 """
-struct Operator{V<:Number, I<:ID{OperatorUnit}} <: OperatorProd{V, I}
+struct Operator{V, I<:ID{OperatorUnit}} <: OperatorProd{V, I}
     value::V
     id::I
 end
