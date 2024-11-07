@@ -613,13 +613,11 @@ Reset the image of a transformation applied to a representation.
 end
 
 """
-    Frontend
+    Frontend <: Representation
 
 Frontend of algorithms applied to a quantum lattice system.
 """
-abstract type Frontend end
-@inline Base.:(==)(frontend₁::Frontend, frontend₂::Frontend) = ==(efficientoperations, frontend₁, frontend₂)
-@inline Base.isequal(frontend₁::Frontend, frontend₂::Frontend) = isequal(efficientoperations, frontend₁, frontend₂)
+abstract type Frontend <: Representation end
 @inline Base.show(io::IO, frontend::Frontend) = @printf io "%s" nameof(typeof(frontend))
 @inline Base.valtype(frontend::Frontend) = valtype(typeof(frontend))
 @inline update!(frontend::Frontend; kwargs...) = error("update! error: not implemented for $(nameof(typeof(frontend))).")
