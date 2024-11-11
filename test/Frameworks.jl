@@ -1,5 +1,5 @@
 using LinearAlgebra: dot, tr
-using QuantumLattices: add!, expand, expand!, reset!, update
+using QuantumLattices: add!, dtype, expand, expand!, reset!, update
 using QuantumLattices.DegreesOfFreedom: plain, Boundary, CoordinatedIndex, Coupling, Hilbert, Index, OperatorUnitToTuple, SimpleInternalIndex, SimpleInternal, Term
 using QuantumLattices.Frameworks
 using QuantumLattices.QuantumOperators: ID, LinearFunction, Operator, Operators, id, idtype
@@ -48,11 +48,13 @@ end
 end
 
 @testset "Formula" begin
-    A(t, μ, Δ; k) = [
+    A(t, μ, Δ; k=SVector(0, 0)) = [
         2t*cos(k[1]) + 2t*cos(k[2]) + μ   2im*Δ*sin(k[1]) + 2Δ*sin(k[2]);
         -2im*Δ*sin(k[1]) + 2Δ*sin(k[2])   -2t*cos(k[1]) - 2t*cos(k[2]) - μ
-    ]
+    ]::Matrix{ComplexF64}
     f = Formula(A, (t=1.0, μ=0.0, Δ=0.1))
+    @test valtype(f) == Matrix{ComplexF64}
+    @test eltype(f) == dtype(f) == ComplexF64
     @test Parameters(f) == (t=1.0, μ=0.0, Δ=0.1)
     @test f(k=[0.0, 0.0]) ≈ [4 0; 0 -4]
 
@@ -81,6 +83,7 @@ end
     @test isequal(cat, i(cat))
     @test cat|>valtype == cat|>typeof|>valtype == Operators{optp, idtype(optp)}
     @test cat|>eltype == cat|>typeof|>eltype == optp
+    @test cat|>dtype == cat|>typeof|>dtype == Complex{Float}
     @test Parameters(cat) == (t=2.0, μ=1.0, θ=0.1)
     @test !isempty(cat) && isempty(empty(cat))
     @test empty(cat) == empty!(deepcopy(cat)) == CategorizedGenerator(Operators{optp}(), (t=Operators{optp}(), μ=Operators{optp}()), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), boundary, eager)

@@ -13,7 +13,7 @@ using ..QuantumOperators: OperatorPack, Operators, OperatorSet, OperatorSum, Lin
 using ..Spatials: AbstractLattice, Bond, Neighbors, bonds!, isintracell
 using ..Toolkit: atol, efficientoperations, rtol, getcontent, tostr
 
-import ..QuantumLattices: add!, expand, expand!, id, reset!, update, update!
+import ..QuantumLattices: add!, dtype, expand, expand!, id, reset!, update, update!
 import ..Spatials: save
 import ..Toolkit: contentnames
 
@@ -66,6 +66,9 @@ mutable struct Formula{F<:Function, P<:Parameters}
 end
 @inline Base.:(==)(formula₁::Formula, formula₂::Formula) = ==(efficientoperations, formula₁, formula₂)
 @inline Base.isequal(formula₁::Formula, formula₂::Formula) = isequal(efficientoperations, formula₁, formula₂)
+@inline Base.valtype(formula::Formula) = Core.Compiler.return_type(formula, Tuple{})
+@inline Base.eltype(formula::Formula) = eltype(valtype(formula))
+@inline dtype(formula::Formula) = dtype(eltype(formula))
 @inline function update!(formula::Formula; parameters...)
     formula.parameters = update(formula.parameters; parameters...)
     update!(formula.expression; parameters...)
@@ -125,6 +128,8 @@ abstract type Generator end
 @inline Base.valtype(gen::Generator) = valtype(typeof(gen))
 @inline Base.eltype(gen::Generator) = eltype(typeof(gen))
 @inline Base.eltype(::Type{T}) where {T<:Generator} = eltype(valtype(T))
+@inline dtype(gen::Generator) = dtype(typeof(gen))
+@inline dtype(::Type{T}) where {T<:Generator} = dtype(eltype(T))
 @inline Base.IteratorSize(::Type{<:Generator}) = Base.SizeUnknown()
 @propagate_inbounds function Base.iterate(gen::Generator)
     ops = expand(gen)

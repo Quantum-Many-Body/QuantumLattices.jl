@@ -22,11 +22,13 @@ function expand! end
 function decompose end
 function decompose! end
 function permute end
-function dtype end
 function kind end
 function update end
 function update! end
 function reset! end
+
+@inline dtype(t::Number) = dtype(typeof(t))
+@inline dtype(::Type{T}) where {T<:Number} = T
 
 # Toolkit
 include("Toolkit.jl")
