@@ -117,7 +117,6 @@ end
     lattice = Lattice([0.0], [0.5]; vectors=[[1.0]])
     bs = bonds(lattice, 1)
     hilbert = Hilbert(site=>FFock(2) for site=1:length(lattice))
-    boundary = Boundary{(:θ,)}([0.1], lattice.vectors)
     t = Term{:Hp}(:t, 2.0, 1, Coupling(1.0, :, FID, (2, 1)), false; ismodulatable=false)
     μ = Term{:Mu}(:μ, 1.0, 0, Coupling(1.0, :, FID, (2, 1)), true)
     i = LinearFunction(identity)
@@ -197,7 +196,6 @@ end
     lattice = Lattice([0.0], [0.5]; vectors=[[1.0]])
     bs = bonds(lattice, 1)
     hilbert = Hilbert(site=>FFock(2) for site=1:length(lattice))
-    boundary = Boundary{(:θ,)}([0.1], lattice.vectors)
     t = Term{:Hp}(:t, 2.0, 1, Coupling(1.0, :, FID, (2, 1)), false; ismodulatable=false)
     μ = Term{:Mu}(:μ, 1.0, 0, Coupling(1.0, :, FID, (2, 1)), true)
     optp = Operator{Complex{Float}, ID{CoordinatedIndex{Index{FID{Int}, Int}, SVector{1, Float}}, 2}}
@@ -223,6 +221,44 @@ end
     @test update!(sgen, μ=3.5)|>expand ≈ tops + μops*3.5
     @test update!(sgen, cgen)|>expand ≈ tops + μops*1.5
     @test reset!(empty(sgen), i, cgen) == sgen
+end
+
+@testset "Hamiltonian" begin
+    A(t, μ, Δ; k=SVector(0, 0)) = [
+        2t*cos(k[1]) + 2t*cos(k[2]) + μ   2im*Δ*sin(k[1]) + 2Δ*sin(k[2]);
+        -2im*Δ*sin(k[1]) + 2Δ*sin(k[2])   -2t*cos(k[1]) - 2t*cos(k[2]) - μ
+    ]::Matrix{ComplexF64}
+    h = Hamiltonian(Formula(A, (t=1.0, μ=0.0, Δ=0.1)))
+    @test h == Hamiltonian(Formula(A, (t=1, μ=0, Δ=0.1)))
+    @test isequal(h, Hamiltonian(Formula(A, (t=1, μ=0, Δ=0.1))))
+    @test h.representation == Formula(A, (t=1.0, μ=0.0, Δ=0.1))
+    @test propertynames(h) == keys(h) == keys(typeof(h)) == (:representation,)
+    @test hasproperty(h, :representation) == haskey(h, :representation) == haskey(typeof(h), :representation) == true
+    @test !hasproperty(h, :representations) == !haskey(h, :representations) == !haskey(typeof(h), :representations) == true
+    @test valtype(h) == Matrix{ComplexF64}
+    @test eltype(h) == dtype(h) == ComplexF64
+    @test Parameters(h) == (t=1.0, μ=0.0, Δ=0.1)
+    @test update!(h; μ=0.2) == Hamiltonian(Formula(A, (t=1.0, μ=0.2, Δ=0.1)))
+
+    lattice = Lattice([0.0], [0.5]; vectors=[[1.0]])
+    hilbert = Hilbert(site=>FFock(2) for site=1:length(lattice))
+    t = Term{:Hp}(:t, 2.0, 1, Coupling(1.0, :, FID, (2, 1)), false; ismodulatable=false)
+    μ = Term{:Mu}(:μ, 1.0, 0, Coupling(1.0, :, FID, (2, 1)), true)
+    cat = CategorizedGenerator((t, μ), bonds(lattice, 1), hilbert, plain, eager; half=true)
+    h = Hamiltonian(cat)
+    @test valtype(h) == valtype(typeof(h)) == valtype(cat)
+    @test eltype(h) == eltype(typeof(h)) == eltype(cat)
+    @test dtype(h) == dtype(typeof(h)) == dtype(cat)
+    @test Parameters(h) == Parameters(cat)
+    @test update!(h; μ=0.2) == Hamiltonian(cat)
+
+    ops = expand(cat)
+    h = Hamiltonian(ops)
+    @test valtype(h) == valtype(typeof(h)) == typeof(ops)
+    @test eltype(h) == eltype(typeof(h)) == eltype(ops)
+    @test dtype(h) == dtype(typeof(h)) == dtype(ops)
+    @test Parameters(h) == NamedTuple()
+    @test update!(h; μ=0.8) == Hamiltonian(ops)
 end
 
 mutable struct VCA <: Frontend

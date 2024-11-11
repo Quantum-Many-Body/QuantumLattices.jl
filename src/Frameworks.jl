@@ -17,7 +17,7 @@ import ..QuantumLattices: add!, dtype, expand, expand!, id, reset!, update, upda
 import ..Spatials: save
 import ..Toolkit: contentnames
 
-export eager, lazy, Action, Algorithm, Assignment, CategorizedGenerator, CompositeGenerator, Eager, ExpansionStyle, Formula, Frontend, Generator, Image, Lazy, OperatorGenerator, Parameters, initialize, prepare!, run!, save
+export eager, lazy, Action, Algorithm, Assignment, CategorizedGenerator, CompositeGenerator, Eager, ExpansionStyle, Formula, Frontend, Generator, Hamiltonian, Image, Lazy, OperatorGenerator, Parameters, initialize, prepare!, run!, save
 
 """
     Parameters{Names}(values::Number...) where Names
@@ -617,6 +617,57 @@ Reset the image of a transformation applied to a generator of quantum operators.
     gen.transformation = transformation
     return gen
 end
+
+"""
+    Hamiltonian{T<:Tuple, N}
+
+Hamiltonian of a quantum lattice system.
+"""
+struct Hamiltonian{T<:Tuple, N}
+    contents::NamedTuple{N, T}
+end
+@inline Base.:(==)(hamiltonian₁::Hamiltonian, hamiltonian₂::Hamiltonian) = ==(efficientoperations, hamiltonian₁, hamiltonian₂)
+@inline Base.isequal(hamiltonian₁::Hamiltonian, hamiltonian₂::Hamiltonian) = isequal(efficientoperations, hamiltonian₁, hamiltonian₂)
+@inline Base.getproperty(hamiltonian::Hamiltonian, field::Symbol) = getfield(getfield(hamiltonian, :contents), field)
+@inline Base.propertynames(hamiltonian::Hamiltonian) = keys(hamiltonian)
+@inline Base.hasproperty(hamiltonian::Hamiltonian, field::Symbol) = haskey(hamiltonian, field)
+@inline Base.keys(hamiltonian::Hamiltonian) = keys(typeof(hamiltonian))
+@inline Base.keys(::Type{<:Hamiltonian{<:Tuple, N}}) where N = N
+@inline Base.haskey(hamiltonian::Hamiltonian, field::Symbol) = haskey(typeof(hamiltonian), field)
+@inline Base.haskey(::Type{H}, field::Symbol) where {H<:Hamiltonian} = hasfield(fieldtype(H, :contents), field)
+@inline Base.valtype(hamiltonian::Hamiltonian) = valtype(typeof(hamiltonian))
+@inline Base.valtype(hamiltonian::Hamiltonian{<:Tuple{Formula}, (:representation,)}) = valtype(hamiltonian.representation)
+@inline Base.valtype(::Type{<:Hamiltonian{<:Tuple{H}}}) where {H<:OperatorSet} = H
+@inline Base.valtype(::Type{<:Hamiltonian{<:Tuple{H}}}) where {H<:Generator} = valtype(H)
+@inline Base.eltype(hamiltonian::Hamiltonian) = eltype(valtype(hamiltonian))
+@inline Base.eltype(::Type{H}) where {H<:Hamiltonian} = eltype(valtype(H))
+@inline dtype(hamiltonian::Hamiltonian) = dtype(eltype(hamiltonian))
+@inline dtype(::Type{H}) where {H<:Hamiltonian} = dtype(eltype(H))
+
+"""
+    Hamiltonian(representation::Union{OperatorSet, Formula, Generator}) -> Hamiltonian{Tuple{typeof(representation)}, (:representation,)}
+
+Construct the Hamiltonian of a quantum lattice system by its representation, which could be an `OperatorSet`, a `Generator`, or a `Formula`.
+"""
+@inline Hamiltonian(representation::Union{OperatorSet, Formula, Generator}) = Hamiltonian((representation=representation,))
+
+"""
+    Parameters(hamiltonian::Hamiltonian{<:Tuple{OperatorSet}}) -> Parameters{(), Tuple{}}
+    Parameters(hamiltonian::Hamiltonian{<:Tuple{Union{Formula, Generator}}, (:representation,)}) -> Parameters
+
+Get the parameters of a Hamiltonian.
+"""
+@inline Parameters(hamiltonian::Hamiltonian{<:Tuple{OperatorSet}}) = NamedTuple()
+@inline Parameters(hamiltonian::Hamiltonian{<:Tuple{Union{Formula, Generator}}, (:representation,)}) = Parameters(hamiltonian.representation)
+
+"""
+    update!(hamiltonian::Hamiltonian{<:Tuple{OperatorSet}}; parameters...) -> typeof(hamiltonian)
+    update!(hamiltonian::Hamiltonian{<:Tuple{Union{Formula, Generator}}, (:representation,)}; parameters...) -> typeof(hamiltonian)
+
+Update the parameters of a Hamiltonian.
+"""
+@inline update!(hamiltonian::Hamiltonian{<:Tuple{OperatorSet}}; parameters...) = hamiltonian
+@inline update!(hamiltonian::Hamiltonian{<:Tuple{Union{Formula, Generator}}, (:representation,)}; parameters...) = (update!(hamiltonian.representation; parameters...); hamiltonian)
 
 """
     Frontend
