@@ -17,7 +17,7 @@ import ..QuantumLattices: add!, expand, expand!, id, reset!, update, update!
 import ..Spatials: save
 import ..Toolkit: contentnames
 
-export eager, lazy, Action, Algorithm, AnalyticalExpression, Assignment, CategorizedGenerator, CompositeGenerator, Eager, ExpansionStyle, Frontend, Generator, Image, Lazy, OperatorGenerator, Parameters, initialize, prepare!, run!, save
+export eager, lazy, Action, Algorithm, Assignment, CategorizedGenerator, CompositeGenerator, Eager, ExpansionStyle, Formula, Frontend, Generator, Image, Lazy, OperatorGenerator, Parameters, initialize, prepare!, run!, save
 
 """
     Parameters{Names}(values::Number...) where Names
@@ -56,26 +56,26 @@ Get the parameters of the twisted boundary condition.
 @inline Parameters(bound::Boundary) = NamedTuple{keys(bound)}(ntuple(i->bound.values[i], Val(fieldcount(typeof(keys(bound))))))
 
 """
-    AnalyticalExpression{F<:Function, P<:Parameters}
+    Formula{F<:Function, P<:Parameters}
 
-Representation of a quantum lattice system by an analytical expression.
+Representation of a quantum lattice system with an explicit analytical formula.
 """
-mutable struct AnalyticalExpression{F<:Function, P<:Parameters}
+mutable struct Formula{F<:Function, P<:Parameters}
     const expression::F
     parameters::P
 end
-@inline Base.:(==)(expression₁::AnalyticalExpression, expression₂::AnalyticalExpression) = ==(efficientoperations, expression₁, expression₂)
-@inline Base.isequal(expression₁::AnalyticalExpression, expression₂::AnalyticalExpression) = isequal(efficientoperations, expression₁, expression₂)
-@inline function update!(expression::AnalyticalExpression; parameters...)
-    expression.parameters = update(expression.parameters; parameters...)
-    update!(expression.expression; parameters...)
-    return expression
+@inline Base.:(==)(formula₁::Formula, formula₂::Formula) = ==(efficientoperations, formula₁, formula₂)
+@inline Base.isequal(formula₁::Formula, formula₂::Formula) = isequal(efficientoperations, formula₁, formula₂)
+@inline function update!(formula::Formula; parameters...)
+    formula.parameters = update(formula.parameters; parameters...)
+    update!(formula.expression; parameters...)
+    return formula
 end
 @inline update!(expression::Function; parameters...) = expression
-@inline Parameters(expression::AnalyticalExpression) = expression.parameters
-@inline @generated function (expression::AnalyticalExpression)(; kwargs...)
-    exprs = [:(getfield(expression.parameters, $i)) for i = 1:fieldcount(fieldtype(expression, :parameters))]
-    return :(expression.expression($(exprs...); kwargs...))
+@inline Parameters(formula::Formula) = formula.parameters
+@inline @generated function (formula::Formula)(; kwargs...)
+    exprs = [:(getfield(formula.parameters, $i)) for i = 1:fieldcount(fieldtype(formula, :parameters))]
+    return :(formula.expression($(exprs...); kwargs...))
 end
 
 """

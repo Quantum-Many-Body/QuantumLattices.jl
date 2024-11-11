@@ -47,12 +47,12 @@ end
     @test Parameters(bound) == (θ₁=0.1, θ₂=0.2)
 end
 
-@testset "AnalyticalExpression" begin
+@testset "Formula" begin
     A(t, μ, Δ; k) = [
         2t*cos(k[1]) + 2t*cos(k[2]) + μ   2im*Δ*sin(k[1]) + 2Δ*sin(k[2]);
         -2im*Δ*sin(k[1]) + 2Δ*sin(k[2])   -2t*cos(k[1]) - 2t*cos(k[2]) - μ
     ]
-    f = AnalyticalExpression(A, (t=1.0, μ=0.0, Δ=0.1))
+    f = Formula(A, (t=1.0, μ=0.0, Δ=0.1))
     @test Parameters(f) == (t=1.0, μ=0.0, Δ=0.1)
     @test f(k=[0.0, 0.0]) ≈ [4 0; 0 -4]
 
