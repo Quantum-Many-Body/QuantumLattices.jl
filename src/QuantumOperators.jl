@@ -10,27 +10,19 @@ import LinearAlgebra: dot
 import ..QuantumLattices: ⊗, add!, div!, dtype, id, ishermitian, mul!, permute, rank, sub!, value
 import ..Toolkit: contentnames, dissolve, isparameterbound, parameternames, subscript, superscript
 
-export ID, LaTeX, Operator, OperatorPack, OperatorProd, Operators, OperatorSet, OperatorSum, OperatorUnit, QuantumOperator, Representation
+export ID, LaTeX, Operator, OperatorPack, OperatorProd, Operators, OperatorSet, OperatorSum, OperatorUnit, QuantumOperator
 export LinearFunction, LinearTransformation, Matrixization, Permutation, RankFilter, TabledUnitSubstitution, Transformation, UnitSubstitution
 export idtype, ishermitian, isscalartype, latexname, latexformat, matrix, optype, script, sequence
 
-# Generic representation of (a part of) a quantum lattice system
-"""
-    Representation
-
-The abstract type of a representation of (a part of) a quantum lattice system.
-"""
-abstract type Representation end
-@inline Base.:(==)(r₁::Representation, r₂::Representation) = ==(efficientoperations, r₁, r₂)
-@inline Base.isequal(r₁::Representation, r₂::Representation) = isequal(efficientoperations, r₁, r₂)
-
 # Generic quantum operator
 """
-    QuantumOperator <: Representation
+    QuantumOperator
 
 The abstract type of any quantum operator.
 """
-abstract type QuantumOperator <: Representation end
+abstract type QuantumOperator end
+@inline Base.:(==)(m₁::QuantumOperator, m₂::QuantumOperator) = ==(efficientoperations, m₁, m₂)
+@inline Base.isequal(m₁::QuantumOperator, m₂::QuantumOperator) = isequal(efficientoperations, m₁, m₂)
 @inline Base.zero(m::QuantumOperator) = zero(typeof(m))
 @inline dot(m₁::QuantumOperator, m₂::QuantumOperator) = conj(m₁) * m₂
 @inline dot(m::QuantumOperator, c::Number) = conj(m) * c

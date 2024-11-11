@@ -9,7 +9,7 @@ using RecipesBase: RecipesBase, @recipe
 using Serialization: serialize
 using TimerOutputs: TimerOutput, TimerOutputs, @timeit
 using ..DegreesOfFreedom: plain, Boundary, Hilbert, Term
-using ..QuantumOperators: OperatorPack, Operators, OperatorSet, OperatorSum, LinearTransformation, Representation, Transformation, identity, optype
+using ..QuantumOperators: OperatorPack, Operators, OperatorSet, OperatorSum, LinearTransformation, Transformation, identity, optype
 using ..Spatials: AbstractLattice, Bond, Neighbors, bonds!, isintracell
 using ..Toolkit: atol, efficientoperations, rtol, getcontent, tostr
 
@@ -35,7 +35,6 @@ function Base.show(io::IO, params::Parameters)
     haskey(io, :ndecimal) && (params = NamedTuple{keys(params)}(map(value->round(value; digits=io[:ndecimal]), values(params))))
     invoke(show, Tuple{IO, NamedTuple}, io, params)
 end
-@inline Parameters(::Representation) = NamedTuple()
 
 """
     match(params₁::Parameters, params₂::Parameters; atol=atol, rtol=rtol) -> Bool
@@ -57,14 +56,16 @@ Get the parameters of the twisted boundary condition.
 @inline Parameters(bound::Boundary) = NamedTuple{keys(bound)}(ntuple(i->bound.values[i], Val(fieldcount(typeof(keys(bound))))))
 
 """
-    AnalyticalExpression{F<:Function, P<:Parameters} <: Representation
+    AnalyticalExpression{F<:Function, P<:Parameters}
 
 Representation of a quantum lattice system by an analytical expression.
 """
-mutable struct AnalyticalExpression{F<:Function, P<:Parameters} <: Representation
+mutable struct AnalyticalExpression{F<:Function, P<:Parameters}
     const expression::F
     parameters::P
 end
+@inline Base.:(==)(expression₁::AnalyticalExpression, expression₂::AnalyticalExpression) = ==(efficientoperations, expression₁, expression₂)
+@inline Base.isequal(expression₁::AnalyticalExpression, expression₂::AnalyticalExpression) = isequal(efficientoperations, expression₁, expression₂)
 @inline function update!(expression::AnalyticalExpression; parameters...)
     expression.parameters = update(expression.parameters; parameters...)
     update!(expression.expression; parameters...)
@@ -80,7 +81,7 @@ end
 """
     ExpansionStyle
 
-Expansion style of a representation generator. It has two singleton subtypes, [`Eager`](@ref) and [`Lazy`](@ref).
+Expansion style of a generator of quantum operators. It has two singleton subtypes, [`Eager`](@ref) and [`Lazy`](@ref).
 """
 abstract type ExpansionStyle end
 
@@ -113,11 +114,13 @@ Singleton instance of [`Lazy`](@ref).
 const lazy = Lazy()
 
 """
-    Generator <: Representation
+    Generator
 
-Representation generator of a quantum lattice system.
+Generator of quantum operators in a quantum lattice system.
 """
-abstract type Generator <: Representation end
+abstract type Generator end
+@inline Base.:(==)(gen₁::Generator, gen₂::Generator) = ==(efficientoperations, gen₁, gen₂)
+@inline Base.isequal(gen₁::Generator, gen₂::Generator) = isequal(efficientoperations, gen₁, gen₂)
 @inline ExpansionStyle(gen::Generator) = ExpansionStyle(typeof(gen))
 @inline Base.valtype(gen::Generator) = valtype(typeof(gen))
 @inline Base.eltype(gen::Generator) = eltype(typeof(gen))
@@ -141,7 +144,7 @@ end
     expand(gen::Generator, ::Eager)
     expand(gen::Generator, ::Lazy)
 
-Expand the generator to get the representation of the quantum lattice system.
+Expand the generator to get the quantum operators in a quantum lattice system.
 """
 @inline expand(gen::Generator) = expand(gen, ExpansionStyle(gen))
 @inline expand(gen::Generator, ::Eager) = expand!(zero(valtype(gen)), gen)
@@ -150,7 +153,7 @@ Expand the generator to get the representation of the quantum lattice system.
 """
     expand!(result, gen::Generator) -> typeof(result)
 
-Expand the generator to add the representation of the quantum lattice system to `result`.
+Expand the generator to add the quantum operators in a quantum lattice system to `result`.
 """
 function expand!(result, gen::Generator)
     for op in expand(gen, lazy)
@@ -162,9 +165,7 @@ end
 """
     CategorizedGenerator{C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:Boundary, S<:ExpansionStyle} <: Generator
 
-Categorized representation generator of a quantum lattice system that records the quantum operators or a representation of the quantum operators related to (part of) the system.
-
-For convenience, the (representation of) operators are categorized into three groups, i.e., the constant, the alterable, and the boundary.
+Categorized generator that groups the quantum operators in a quantum lattice system into three categories, i.e., the constant, the alterable, and the boundary.
 """
 mutable struct CategorizedGenerator{C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:Boundary, S<:ExpansionStyle} <: Generator
     const constops::C
@@ -182,9 +183,9 @@ end
 """
     CategorizedGenerator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain, style::ExpansionStyle=eager; half::Bool=false)
 
-Construct a categorized representation generator of quantum operators based on the input terms, bonds, Hilbert space and (twisted) boundary condition.
+Construct a categorized generator of quantum operators based on the input terms, bonds, Hilbert space and (twisted) boundary condition.
 
-When the boundary condition is [`plain`](@ref), the boundary operators will be set to be empty for simplicity.
+When the boundary condition is [`plain`](@ref), the boundary operators will be set to be empty for simplicity and efficiency.
 """
 function CategorizedGenerator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain, style::ExpansionStyle=eager; half::Bool=false)
     emptybonds = eltype(bonds)[]
@@ -216,7 +217,7 @@ end
 """
     (transformation::LinearTransformation)(cat::CategorizedGenerator; kwargs...) -> CategorizedGenerator
 
-Apply a linear transformation to a categorized generator of (a representation of) quantum operators.
+Apply a linear transformation to a categorized generator of quantum operators.
 """
 function (transformation::LinearTransformation)(cat::CategorizedGenerator; kwargs...)
     wrapper(m) = transformation(m; kwargs...)
@@ -229,7 +230,7 @@ end
 """
     valtype(::Type{<:CategorizedGenerator})
 
-Get the valtype of a categorized generator of (a representation of) quantum operators.
+Get the valtype of a categorized generator of quantum operators.
 """
 @inline @generated function Base.valtype(::Type{<:CategorizedGenerator{C, A, B}}) where {C, A<:NamedTuple, B<:NamedTuple}
     exprs = [:(optp = C)]
@@ -242,7 +243,7 @@ end
 """
     Parameters(cat::CategorizedGenerator)
 
-Get the complete set of parameters of a categorized generator of (a representation of) quantum operators.
+Get the complete set of parameters of a categorized generator of quantum operators.
 """
 @inline Parameters(cat::CategorizedGenerator) = merge(cat.parameters, Parameters(cat.boundary))
 
@@ -257,7 +258,7 @@ Judge whether a categorized generator is empty.
     empty(cat::CategorizedGenerator) -> CategorizedGenerator
     empty!(cat::CategorizedGenerator) -> CategorizedGenerator
 
-Get an empty copy of a categorized generator or empty a categorized generator of (a representation of) quantum operators.
+Get an empty copy of a categorized generator or empty a categorized generator of quantum operators.
 """
 @inline function Base.empty(cat::CategorizedGenerator)
     constops = empty(cat.constops)
@@ -276,7 +277,7 @@ end
     *(cat::CategorizedGenerator, factor) -> CategorizedGenerator
     *(factor, cat::CategorizedGenerator) -> CategorizedGenerator
 
-Multiply a categorized generator of (a representation of) quantum operators with a factor.
+Multiply a categorized generator of quantum operators with a factor.
 """
 @inline Base.:*(cat::CategorizedGenerator, factor) = factor * cat
 @inline function Base.:*(factor, cat::CategorizedGenerator)
@@ -287,7 +288,7 @@ end
 """
     +(cat₁::CategorizedGenerator, cat₂::CategorizedGenerator) -> CategorizedGenerator
 
-Addition of two categorized generators of (representations of) quantum operators.
+Addition of two categorized generators of quantum operators.
 """
 function Base.:+(cat₁::CategorizedGenerator, cat₂::CategorizedGenerator)
     @assert cat₁.boundary==cat₂.boundary "+ error: in order to be added, two entries must share the same boundary condition (including the twist angles at the boundary)."
@@ -326,7 +327,7 @@ end
 """
     expand(cat::CategorizedGenerator, ::Lazy)
 
-Expand a categorized generator to get the (representation of) quantum operators related to a quantum lattice system.
+Expand a categorized generator to get the quantum operators in a quantum lattice system.
 """
 function expand(cat::CategorizedGenerator, ::Lazy)
     params = (one(eltype(cat.parameters)), values(cat.parameters, keys(cat.alterops)|>Val)..., values(cat.parameters, keys(cat.alterops)|>Val)...)
@@ -354,7 +355,7 @@ end
 """
     update!(cat::CategorizedGenerator{<:OperatorSum}; parameters...) -> CategorizedGenerator
 
-Update the parameters (including the boundary parameters) of a categorized generator of (a representation of) quantum operators.
+Update the parameters (including the boundary parameters) of a categorized generator of quantum operators.
 
 !!! Note
     The coefficients of `boundops` are also updated due to the change of the boundary parameters.
@@ -372,7 +373,7 @@ end
 """
     update!(cat::CategorizedGenerator, transformation::LinearTransformation, source::CategorizedGenerator{<:Operators}; kwargs...) -> CategorizedGenerator
 
-Update the parameters (including the boundary parameters) of a categorized generator based on its source categorized generator of (a representation of) quantum operators and the corresponding linear transformation.
+Update the parameters (including the boundary parameters) of a categorized generator based on its source categorized generator of quantum operators and the corresponding linear transformation.
 
 !!! Note
     The coefficients of `boundops` are also updated due to the change of the boundary parameters.
@@ -389,7 +390,7 @@ end
 """
     reset!(cat::CategorizedGenerator{<:Operators}, terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=cat.boundary; half::Bool=false) -> CategorizedGenerator
 
-Reset a categorized generator of (a representation of) quantum operators by the new terms, bonds, Hilbert space and (twisted) boundary condition.
+Reset a categorized generator of quantum operators by the new terms, bonds, Hilbert space and (twisted) boundary condition.
 """
 function reset!(cat::CategorizedGenerator{<:Operators}, terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=cat.boundary; half::Bool=false)
     empty!(cat)
@@ -412,7 +413,7 @@ end
 """
     reset!(cat::CategorizedGenerator, transformation::LinearTransformation, source::CategorizedGenerator{<:Operators}; kwargs...)
 
-Reset a categorized generator by its source categorized generator of (a representation of) quantum operators and the corresponding linear transformation.
+Reset a categorized generator by its source categorized generator of quantum operators and the corresponding linear transformation.
 """
 function reset!(cat::CategorizedGenerator, transformation::LinearTransformation, source::CategorizedGenerator{<:Operators}; kwargs...)
     add!(empty!(cat.constops), transformation, source.constops; kwargs...)
@@ -426,10 +427,10 @@ end
 """
     CompositeGenerator{CG<:CategorizedGenerator} <: Generator
 
-Abstract type for a composite representation generator of a quantum lattice system.
+Abstract type for a composite generator quantum operators in a quantum lattice system.
 
-By protocol, it must have the following predefined contents:
-* `operators::CG`: the categorized generator of (a representation of) quantum operators
+By protocol, it must have the following predefined content:
+* `operators::CG`: the categorized generator of quantum operators
 """
 abstract type CompositeGenerator{CG<:CategorizedGenerator} <: Generator end
 @inline ExpansionStyle(::Type{<:CompositeGenerator{CG}}) where {CG<:CategorizedGenerator} = ExpansionStyle(CG)
@@ -549,7 +550,7 @@ end
 """
     Image{CG<:CategorizedGenerator, H<:Transformation} <: CompositeGenerator{CG}
 
-Image of a transformation applied to a representation of a quantum lattice system.
+Generator representing the image of a transformation applied to a generator of quantum operators.
 """
 mutable struct Image{CG<:CategorizedGenerator, H<:Transformation} <: CompositeGenerator{CG}
     const operators::CG
@@ -561,7 +562,7 @@ end
 """
     (transformation::Transformation)(gen::CompositeGenerator; kwargs...) -> Image
 
-Get the image of a transformation applied to a representation of a quantum lattice system.
+Get the image of a transformation applied to a generator of quantum operators.
 """
 @inline function (transformation::Transformation)(gen::CompositeGenerator; kwargs...)
     return Image(transformation(CategorizedGenerator(gen); kwargs...), transformation, objectid(gen))
@@ -571,7 +572,7 @@ end
     empty(gen::Image) -> Image
     empty!(gen::Image) -> Image
 
-Get an empty copy of or empty the image of a transformation applied to a representation.
+Get an empty copy of or empty the image of a transformation applied to a generator of quantum operators.
 """
 @inline Base.empty(gen::Image) = Image(empty(gen.operators), gen.transformation, gen.sourceid)
 @inline function Base.empty!(gen::Image)
@@ -582,7 +583,7 @@ end
 """
     update!(gen::Image; parameters...) -> typeof(gen)
 
-Update the parameters of the image of a transformation applied to a representation.
+Update the parameters of the image of a transformation applied to a generator of quantum operators.
 """
 @inline function update!(gen::Image; parameters...)
     update!(gen.operators; parameters...)
@@ -592,10 +593,10 @@ end
 """
     update!(gen::Image, source::CompositeGenerator; kwargs...) -> Image
 
-Update the parameters of the image based on its source representation.
+Update the parameters of the image based on its source generator of quantum operators.
 """
 @inline function update!(gen::Image, source::CompositeGenerator; kwargs...)
-    @assert gen.sourceid==objectid(source) "update! error: mismatched image, transformation and source representation."
+    @assert gen.sourceid==objectid(source) "update! error: mismatched image, transformation and source generator."
     update!(gen.operators, gen.transformation, CategorizedGenerator(source); kwargs...)
     return gen
 end
@@ -603,21 +604,23 @@ end
 """
     reset!(gen::Image, transformation::Transformation, source::CompositeGenerator; kwargs...) -> Image
 
-Reset the image of a transformation applied to a representation.
+Reset the image of a transformation applied to a generator of quantum operators.
 """
 @inline function reset!(gen::Image, transformation::Transformation, source::CompositeGenerator; kwargs...)
-    @assert gen.sourceid==objectid(source) "reset! error: mismatched image, transformation and source representation."
+    @assert gen.sourceid==objectid(source) "reset! error: mismatched image, transformation and source generator."
     reset!(gen.operators, transformation, CategorizedGenerator(source); kwargs...)
     gen.transformation = transformation
     return gen
 end
 
 """
-    Frontend <: Representation
+    Frontend
 
 Frontend of algorithms applied to a quantum lattice system.
 """
-abstract type Frontend <: Representation end
+abstract type Frontend end
+@inline Base.:(==)(frontend₁::Frontend, frontend₂::Frontend) = ==(efficientoperations, frontend₁, frontend₂)
+@inline Base.isequal(frontend₁::Frontend, frontend₂::Frontend) = isequal(efficientoperations, frontend₁, frontend₂)
 @inline Base.show(io::IO, frontend::Frontend) = @printf io "%s" nameof(typeof(frontend))
 @inline Base.valtype(frontend::Frontend) = valtype(typeof(frontend))
 @inline update!(frontend::Frontend; kwargs...) = error("update! error: not implemented for $(nameof(typeof(frontend))).")
