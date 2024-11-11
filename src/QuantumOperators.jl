@@ -373,6 +373,8 @@ The set of `OperatorPack`s.
 abstract type OperatorSet{M<:OperatorPack} <: QuantumOperator end
 @inline Base.eltype(ms::OperatorSet) = eltype(typeof(ms))
 @inline Base.eltype(::Type{<:OperatorSet{M}}) where {M<:OperatorPack} = M
+@inline dtype(ms::OperatorSet) = dtype(typeof(ms))
+@inline dtype(::Type{<:OperatorSet{M}}) where {M<:OperatorPack} = dtype(M)
 function Base.show(io::IO, ms::OperatorSet)
     @printf io "%s with %s %s\n" summary(ms) length(ms) nameof(eltype(ms))
     for m in ms
