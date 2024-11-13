@@ -233,9 +233,6 @@ end
     @test h == Hamiltonian(Formula(A, (t=1, μ=0, Δ=0.1)))
     @test isequal(h, Hamiltonian(Formula(A, (t=1, μ=0, Δ=0.1))))
     @test h.representation == Formula(A, (t=1.0, μ=0.0, Δ=0.1))
-    @test propertynames(h) == keys(h) == keys(typeof(h)) == (:representation,)
-    @test hasproperty(h, :representation) == haskey(h, :representation) == haskey(typeof(h), :representation) == true
-    @test !hasproperty(h, :representations) == !haskey(h, :representations) == !haskey(typeof(h), :representations) == true
     @test valtype(h) == Matrix{ComplexF64}
     @test eltype(h) == dtype(h) == ComplexF64
     @test Parameters(h) == (t=1.0, μ=0.0, Δ=0.1)

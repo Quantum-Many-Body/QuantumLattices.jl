@@ -17,7 +17,8 @@ import ..QuantumLattices: add!, dimension, dtype, expand, expand!, id, matrix, r
 import ..Spatials: save
 import ..Toolkit: contentnames
 
-export eager, lazy, Action, Algorithm, Assignment, CategorizedGenerator, CompositeGenerator, Eager, ExpansionStyle, Formula, Frontend, Generator, Hamiltonian, Image, Lazy, OperatorGenerator, Parameters, initialize, prepare!, run!, save
+export Action, Algorithm, Assignment, CategorizedGenerator, CompositeGenerator, Eager, ExpansionStyle, Formula, Frontend, Generator, Hamiltonian, Image, Lazy, OperatorGenerator, Parameters, SimpleHamiltonian
+export eager, lazy, initialize, prepare!, run!, save
 
 """
     Parameters{Names}(values::Number...) where Names
@@ -630,69 +631,69 @@ Reset the image of a transformation applied to a generator of quantum operators.
 end
 
 """
-    Hamiltonian{T<:Tuple, N}
+    Hamiltonian
 
-Hamiltonian of a quantum lattice system.
+Abstract type of the Hamiltonian of a quantum lattice system.
 """
-struct Hamiltonian{T<:Tuple, N}
-    contents::NamedTuple{N, T}
-end
+abstract type Hamiltonian end
 @inline Base.:(==)(hamiltonian₁::Hamiltonian, hamiltonian₂::Hamiltonian) = ==(efficientoperations, hamiltonian₁, hamiltonian₂)
 @inline Base.isequal(hamiltonian₁::Hamiltonian, hamiltonian₂::Hamiltonian) = isequal(efficientoperations, hamiltonian₁, hamiltonian₂)
-@inline Base.getproperty(hamiltonian::Hamiltonian, field::Symbol) = getfield(getfield(hamiltonian, :contents), field)
-@inline Base.propertynames(hamiltonian::Hamiltonian) = keys(hamiltonian)
-@inline Base.hasproperty(hamiltonian::Hamiltonian, field::Symbol) = haskey(hamiltonian, field)
-@inline Base.keys(hamiltonian::Hamiltonian) = keys(typeof(hamiltonian))
-@inline Base.keys(::Type{<:Hamiltonian{<:Tuple, N}}) where N = N
-@inline Base.haskey(hamiltonian::Hamiltonian, field::Symbol) = haskey(typeof(hamiltonian), field)
-@inline Base.haskey(::Type{H}, field::Symbol) where {H<:Hamiltonian} = hasfield(fieldtype(H, :contents), field)
 @inline Base.valtype(hamiltonian::Hamiltonian) = valtype(typeof(hamiltonian))
-@inline Base.valtype(hamiltonian::Hamiltonian{<:Tuple{Formula}, (:representation,)}) = valtype(hamiltonian.representation)
-@inline Base.valtype(::Type{<:Hamiltonian{<:Tuple{H}}}) where {H<:OperatorSet} = H
-@inline Base.valtype(::Type{<:Hamiltonian{<:Tuple{H}}}) where {H<:Generator} = valtype(H)
 @inline Base.eltype(hamiltonian::Hamiltonian) = eltype(valtype(hamiltonian))
 @inline Base.eltype(::Type{H}) where {H<:Hamiltonian} = eltype(valtype(H))
 @inline dtype(hamiltonian::Hamiltonian) = dtype(eltype(hamiltonian))
 @inline dtype(::Type{H}) where {H<:Hamiltonian} = dtype(eltype(H))
 
 """
-    Hamiltonian(representation::Union{OperatorSet, Formula, Generator}) -> Hamiltonian{Tuple{typeof(representation)}, (:representation,)}
+    SimpleHamiltonian{R<:Union{OperatorSet, Formula, Generator}} <: Hamiltonian
 
-Construct the Hamiltonian of a quantum lattice system by its representation, which could be an `OperatorSet`, a `Generator`, or a `Formula`.
+Hamiltonian of a quantum lattice system by its representation, which could be an `OperatorSet`, a `Formula`, or a `Generator`.
 """
-@inline Hamiltonian(representation::Union{OperatorSet, Formula, Generator}) = Hamiltonian((representation=representation,))
+struct SimpleHamiltonian{R<:Union{OperatorSet, Formula, Generator}} <: Hamiltonian
+    representation::R
+end
+@inline Base.valtype(hamiltonian::SimpleHamiltonian{<:Formula}) = valtype(hamiltonian.representation)
+@inline Base.valtype(::Type{<:SimpleHamiltonian{<:R}}) where {R<:OperatorSet} = R
+@inline Base.valtype(::Type{<:SimpleHamiltonian{<:R}}) where {R<:Generator} = valtype(R)
 
 """
-    Parameters(hamiltonian::Hamiltonian{<:Tuple{OperatorSet}}) -> Parameters{(), Tuple{}}
-    Parameters(hamiltonian::Hamiltonian{<:Tuple{Union{Formula, Generator}}, (:representation,)}) -> Parameters
+    Parameters(hamiltonian::SimpleHamiltonian{<:OperatorSet}) -> NamedTuple{(), Tuple{}}
+    Parameters(hamiltonian::SimpleHamiltonian{<:Union{Formula, Generator}}) -> Parameters
 
 Get the parameters of a Hamiltonian.
 """
-@inline Parameters(hamiltonian::Hamiltonian{<:Tuple{OperatorSet}}) = NamedTuple()
-@inline Parameters(hamiltonian::Hamiltonian{<:Tuple{Union{Formula, Generator}}, (:representation,)}) = Parameters(hamiltonian.representation)
+@inline Parameters(hamiltonian::SimpleHamiltonian{<:OperatorSet}) = NamedTuple()
+@inline Parameters(hamiltonian::SimpleHamiltonian{<:Union{Formula, Generator}}) = Parameters(hamiltonian.representation)
 
 """
-    update!(hamiltonian::Hamiltonian{<:Tuple{OperatorSet}}; parameters...) -> typeof(hamiltonian)
-    update!(hamiltonian::Hamiltonian{<:Tuple{Union{Formula, Generator}}, (:representation,)}; parameters...) -> typeof(hamiltonian)
+    update!(hamiltonian::SimpleHamiltonian{<:OperatorSet}; parameters...) -> typeof(hamiltonian)
+    update!(hamiltonian::SimpleHamiltonian{<:Union{Formula, Generator}}; parameters...) -> typeof(hamiltonian)
 
 Update the parameters of a Hamiltonian.
 """
-@inline update!(hamiltonian::Hamiltonian{<:Tuple{OperatorSet}}; parameters...) = hamiltonian
-@inline update!(hamiltonian::Hamiltonian{<:Tuple{Union{Formula, Generator}}, (:representation,)}; parameters...) = (update!(hamiltonian.representation; parameters...); hamiltonian)
+@inline update!(hamiltonian::SimpleHamiltonian{<:OperatorSet}; parameters...) = hamiltonian
+@inline update!(hamiltonian::SimpleHamiltonian{<:Union{Formula, Generator}}; parameters...) = (update!(hamiltonian.representation; parameters...); hamiltonian)
 
 """
-    matrix(hamiltonian::Hamiltonian{<:Tuple{Formula}}; kwargs...) -> valtype(hamiltonian)
+    matrix(hamiltonian::SimpleHamiltonian{<:Formula}; kwargs...) -> AbstractMatrix
 
 Get the matrix representation of a Hamiltonian.
 """
-@inline matrix(hamiltonian::Hamiltonian{<:Tuple{Formula}}; kwargs...) = matrix(hamiltonian.representation; kwargs...)
+@inline matrix(hamiltonian::SimpleHamiltonian{<:Formula}; kwargs...) = matrix(hamiltonian.representation; kwargs...)
 
 """
-    dimension(hamiltonian::Hamiltonian{<:Tuple{Formula}}) -> Int
+    dimension(hamiltonian::SimpleHamiltonian{<:Formula}) -> Int
 
 Get the dimension of the matrix representation of a Hamiltonian.
 """
-@inline dimension(hamiltonian::Hamiltonian{<:Tuple{Formula}}) = dimension(hamiltonian.representation)
+@inline dimension(hamiltonian::SimpleHamiltonian{<:Formula}) = dimension(hamiltonian.representation)
+
+"""
+    Hamiltonian(representation::Union{OperatorSet, Formula, Generator}) -> SimpleHamiltonian
+
+Construct the Hamiltonian of a quantum lattice system by its representation, which could be an `OperatorSet`, a `Formula`, or a `Generator`.
+"""
+@inline Hamiltonian(representation::Union{OperatorSet, Formula, Generator}) = SimpleHamiltonian(representation)
 
 """
     Frontend
