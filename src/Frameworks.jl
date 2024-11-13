@@ -15,9 +15,8 @@ using ..Toolkit: atol, efficientoperations, rtol, getcontent, tostr
 
 import ..QuantumLattices: add!, dimension, dtype, expand, expand!, id, matrix, reset!, update, update!
 import ..Spatials: save
-import ..Toolkit: contentnames
 
-export Action, Algorithm, Assignment, CategorizedGenerator, CompositeGenerator, Eager, ExpansionStyle, Formula, Frontend, Generator, Hamiltonian, Image, Lazy, OperatorGenerator, Parameters, SimpleHamiltonian
+export Action, Algorithm, Assignment, CategorizedGenerator, Eager, ExpansionStyle, Formula, Frontend, Generator, Hamiltonian, Lazy, OperatorGenerator, Parameters, SimpleHamiltonian
 export eager, lazy, initialize, prepare!, run!, save
 
 """
@@ -183,42 +182,7 @@ mutable struct CategorizedGenerator{C, A<:NamedTuple, B<:NamedTuple, P<:Paramete
         new{typeof(constops), typeof(alterops), typeof(boundops), typeof(parameters), typeof(boundary), typeof(style)}(constops, alterops, boundops, parameters, boundary)
     end
 end
-@inline CategorizedGenerator(cat::CategorizedGenerator) = cat
 @inline ExpansionStyle(::Type{<:CategorizedGenerator{C, <:NamedTuple, <:NamedTuple, <:Parameters, <:Boundary, S} where C}) where {S<:ExpansionStyle} = S()
-
-"""
-    CategorizedGenerator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain, style::ExpansionStyle=eager; half::Bool=false)
-
-Construct a categorized generator of quantum operators based on the input terms, bonds, Hilbert space and (twisted) boundary condition.
-
-When the boundary condition is [`plain`](@ref), the boundary operators will be set to be empty for simplicity and efficiency.
-"""
-function CategorizedGenerator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain, style::ExpansionStyle=eager; half::Bool=false)
-    emptybonds = eltype(bonds)[]
-    if boundary === plain
-        innerbonds = bonds
-        boundbonds = eltype(bonds)[]
-    else
-        innerbonds = filter(bond->isintracell(bond), bonds)
-        boundbonds = filter(bond->!isintracell(bond), bonds)
-    end
-    constops = Operators{mapreduce(term->optype(typeof(term), typeof(hilbert), eltype(bonds)), promote_type, terms)}()
-    map(term->expand!(constops, term, term.ismodulatable ? emptybonds : innerbonds, hilbert; half=half), terms)
-    V = valtype(eltype(constops))
-    alterops = NamedTuple{map(id, terms)}(
-        map(terms) do term
-            expand(replace(term, value=one(V)), term.ismodulatable ? innerbonds : emptybonds, hilbert; half=half)
-        end
-    )
-    boundops = NamedTuple{map(id, terms)}(
-        map(terms) do term
-            O = promote_type(valtype(typeof(boundary), optype(typeof(term), typeof(hilbert), eltype(bonds))), V)
-            map!(boundary, expand!(Operators{O}(), one(term), boundbonds, hilbert, half=half))
-        end
-    )
-    parameters = NamedTuple{map(id, terms)}(map(term->term.value, terms))
-    return CategorizedGenerator(constops, alterops, boundops, parameters, boundary, style)
-end
 
 """
     (transformation::LinearTransformation)(cat::CategorizedGenerator; kwargs...) -> CategorizedGenerator
@@ -431,43 +395,55 @@ function reset!(cat::CategorizedGenerator, transformation::LinearTransformation,
 end
 
 """
-    CompositeGenerator{CG<:CategorizedGenerator} <: Generator
-
-Abstract type for a composite generator quantum operators in a quantum lattice system.
-
-By protocol, it must have the following predefined content:
-* `operators::CG`: the categorized generator of quantum operators
-"""
-abstract type CompositeGenerator{CG<:CategorizedGenerator} <: Generator end
-@inline ExpansionStyle(::Type{<:CompositeGenerator{CG}}) where {CG<:CategorizedGenerator} = ExpansionStyle(CG)
-@inline contentnames(::Type{<:CompositeGenerator}) = (:operators,)
-@inline Base.valtype(::Type{<:CompositeGenerator{CG}}) where {CG<:CategorizedGenerator} = valtype(CG)
-@inline expand(gen::CompositeGenerator, ::Lazy) = expand(getcontent(gen, :operators), lazy)
-@inline Parameters(gen::CompositeGenerator) = Parameters(getcontent(gen, :operators))
-@inline CategorizedGenerator(gen::CompositeGenerator) = getcontent(gen, :operators)
-@inline Base.isempty(gen::CompositeGenerator) = isempty(getcontent(gen, :operators))
-
-"""
-    OperatorGenerator{CG<:CategorizedGenerator{<:Operators}, TS<:Tuple{Vararg{Term}}, B<:Bond, H<:Hilbert} <: CompositeGenerator{CG}
+    OperatorGenerator{CG<:CategorizedGenerator{<:Operators}, TS<:Tuple{Vararg{Term}}, B<:Bond, H<:Hilbert} <: Generator
 
 A generator of operators based on the terms, bonds and Hilbert space of a quantum lattice system.
 """
-struct OperatorGenerator{CG<:CategorizedGenerator{<:Operators}, TS<:Tuple{Vararg{Term}}, B<:Bond, H<:Hilbert} <: CompositeGenerator{CG}
+struct OperatorGenerator{CG<:CategorizedGenerator{<:Operators}, TS<:Tuple{Vararg{Term}}, B<:Bond, H<:Hilbert} <: Generator
     operators::CG
     terms::TS
     bonds::Vector{B}
     hilbert::H
     half::Bool
 end
-@inline contentnames(::Type{<:OperatorGenerator}) = (:operators, :terms, :bonds, :hilbert, :half)
+@inline ExpansionStyle(::Type{<:OperatorGenerator{CG}}) where {CG<:CategorizedGenerator} = ExpansionStyle(CG)
+@inline Base.valtype(::Type{<:OperatorGenerator{CG}}) where {CG<:CategorizedGenerator} = valtype(CG)
+@inline expand(gen::OperatorGenerator, ::Lazy) = expand(gen.operators, lazy)
+@inline Parameters(gen::OperatorGenerator) = Parameters(gen.operators)
+@inline Base.isempty(gen::OperatorGenerator) = isempty(gen.operators)
 
 """
     OperatorGenerator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain, style::ExpansionStyle=eager; half::Bool=false)
 
-Construct a generator of operators.
+Construct a generator of quantum operators based on the input terms, bonds, Hilbert space and (twisted) boundary condition.
+
+When the boundary condition is [`plain`](@ref), the boundary operators will be set to be empty for simplicity and efficiency.
 """
 @inline function OperatorGenerator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain, style::ExpansionStyle=eager; half::Bool=false)
-    return OperatorGenerator(CategorizedGenerator(terms, bonds, hilbert, boundary, style; half=half), terms, bonds, hilbert, half)
+    emptybonds = eltype(bonds)[]
+    if boundary === plain
+        innerbonds = bonds
+        boundbonds = eltype(bonds)[]
+    else
+        innerbonds = filter(bond->isintracell(bond), bonds)
+        boundbonds = filter(bond->!isintracell(bond), bonds)
+    end
+    constops = Operators{mapreduce(term->optype(typeof(term), typeof(hilbert), eltype(bonds)), promote_type, terms)}()
+    map(term->expand!(constops, term, term.ismodulatable ? emptybonds : innerbonds, hilbert; half=half), terms)
+    V = valtype(eltype(constops))
+    alterops = NamedTuple{map(id, terms)}(
+        map(terms) do term
+            expand(replace(term, value=one(V)), term.ismodulatable ? innerbonds : emptybonds, hilbert; half=half)
+        end
+    )
+    boundops = NamedTuple{map(id, terms)}(
+        map(terms) do term
+            O = promote_type(valtype(typeof(boundary), optype(typeof(term), typeof(hilbert), eltype(bonds))), V)
+            map!(boundary, expand!(Operators{O}(), one(term), boundbonds, hilbert, half=half))
+        end
+    )
+    parameters = NamedTuple{map(id, terms)}(map(term->term.value, terms))
+    return OperatorGenerator(CategorizedGenerator(constops, alterops, boundops, parameters, boundary, style), terms, bonds, hilbert, half)
 end
 
 """
@@ -554,70 +530,11 @@ end
 end
 
 """
-    Image{CG<:CategorizedGenerator, H<:Transformation} <: CompositeGenerator{CG}
+    (transformation::Transformation)(gen::OperatorGenerator; kwargs...) -> CategorizedGenerator
 
-Generator representing the image of a transformation applied to a generator of quantum operators.
+Get the transformation applied to a generator of quantum operators.
 """
-mutable struct Image{CG<:CategorizedGenerator, H<:Transformation} <: CompositeGenerator{CG}
-    const operators::CG
-    transformation::H
-    const sourceid::UInt
-end
-@inline contentnames(::Type{<:Image}) = (:operators, :transformation, :sourceid)
-
-"""
-    (transformation::Transformation)(gen::CompositeGenerator; kwargs...) -> Image
-
-Get the image of a transformation applied to a generator of quantum operators.
-"""
-@inline function (transformation::Transformation)(gen::CompositeGenerator; kwargs...)
-    return Image(transformation(CategorizedGenerator(gen); kwargs...), transformation, objectid(gen))
-end
-
-"""
-    empty(gen::Image) -> Image
-    empty!(gen::Image) -> Image
-
-Get an empty copy of or empty the image of a transformation applied to a generator of quantum operators.
-"""
-@inline Base.empty(gen::Image) = Image(empty(gen.operators), gen.transformation, gen.sourceid)
-@inline function Base.empty!(gen::Image)
-    empty!(gen.operators)
-    return gen
-end
-
-"""
-    update!(gen::Image; parameters...) -> typeof(gen)
-
-Update the parameters of the image of a transformation applied to a generator of quantum operators.
-"""
-@inline function update!(gen::Image; parameters...)
-    update!(gen.operators; parameters...)
-    return gen
-end
-
-"""
-    update!(gen::Image, source::CompositeGenerator; kwargs...) -> Image
-
-Update the parameters of the image based on its source generator of quantum operators.
-"""
-@inline function update!(gen::Image, source::CompositeGenerator; kwargs...)
-    @assert gen.sourceid==objectid(source) "update! error: mismatched image, transformation and source generator."
-    update!(gen.operators, gen.transformation, CategorizedGenerator(source); kwargs...)
-    return gen
-end
-
-"""
-    reset!(gen::Image, transformation::Transformation, source::CompositeGenerator; kwargs...) -> Image
-
-Reset the image of a transformation applied to a generator of quantum operators.
-"""
-@inline function reset!(gen::Image, transformation::Transformation, source::CompositeGenerator; kwargs...)
-    @assert gen.sourceid==objectid(source) "reset! error: mismatched image, transformation and source generator."
-    reset!(gen.operators, transformation, CategorizedGenerator(source); kwargs...)
-    gen.transformation = transformation
-    return gen
-end
+@inline (transformation::Transformation)(gen::OperatorGenerator; kwargs...) = transformation(gen.operators; kwargs...)
 
 """
     Hamiltonian

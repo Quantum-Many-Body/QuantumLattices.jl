@@ -4,7 +4,7 @@ using QuantumLattices.DegreesOfFreedom: plain, Boundary, CoordinatedIndex, Coupl
 using QuantumLattices.Frameworks
 using QuantumLattices.QuantumOperators: ID, LinearFunction, Operator, Operators, id, idtype
 using QuantumLattices.Spatials: Lattice, Point, bonds, decompose, isintracell
-using QuantumLattices.Toolkit: Float, contentnames, reparameter
+using QuantumLattices.Toolkit: Float, reparameter
 using StaticArrays: SVector
 
 import QuantumLattices: update!
@@ -79,7 +79,7 @@ end
     μops₂ = expand(one(μ), bs[2], hilbert; half=true)
 
     cat = CategorizedGenerator(tops₁, (t=Operators{optp}(), μ=μops), (t=tops₂, μ=Operators{optp}()), (t=2.0, μ=1.0), boundary, eager)
-    @test cat == CategorizedGenerator(cat) == CategorizedGenerator((t, μ), bs, hilbert, boundary, eager; half=true)
+    @test cat == deepcopy(cat)
     @test isequal(cat, i(cat))
     @test cat|>valtype == cat|>typeof|>valtype == Operators{optp, idtype(optp)}
     @test cat|>eltype == cat|>typeof|>eltype == optp
@@ -125,7 +125,7 @@ end
     μops = expand(one(μ), bs, hilbert; half=true)
 
     cat = CategorizedGenerator(tops, (t=Operators{optp}(), μ=μops), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain, eager)
-    @test cat == CategorizedGenerator(cat) == CategorizedGenerator((t, μ), bs, hilbert, plain, eager; half=true)
+    @test cat == deepcopy(cat)
     @test isequal(cat, i(cat))
     @test Parameters(cat) == (t=2.0, μ=1.0)
     @test cat*2 == 2*cat == cat+cat == CategorizedGenerator(tops*2, (t=Operators{optp}(), μ=μops), (t=Operators{optp}(), μ=Operators{optp}()), (t=4.0, μ=2.0), plain, eager)
@@ -145,11 +145,7 @@ end
     @test reset!(deepcopy(new), i, cat) == cat
 end
 
-@testset "CompositeGenerator twist" begin
-    @test contentnames(CompositeGenerator) == (:operators,)
-    @test contentnames(OperatorGenerator) == (:operators, :terms, :bonds, :hilbert, :half)
-    @test contentnames(Image) == (:operators, :transformation, :sourceid)
-
+@testset "OperatorGenerator twist" begin
     lattice = Lattice([0.0], [0.5]; vectors=[[1.0]])
     bs = bonds(lattice, 1)
     hilbert = Hilbert(site=>FFock(2) for site=1:length(lattice))
@@ -160,14 +156,15 @@ end
     tops₁ = expand(t, filter(bond->isintracell(bond), bs), hilbert; half=true)
     tops₂ = boundary(expand(one(t), filter(bond->!isintracell(bond), bs), hilbert; half=true))
     μops = expand(one(μ), filter(bond->length(bond)==1, bs), hilbert; half=true)
+    cat = CategorizedGenerator(tops₁, (t=Operators{optp}(), μ=μops), (t=tops₂, μ=Operators{optp}()), (t=2.0, μ=1.0), boundary, eager)
 
-    cgen = OperatorGenerator((t, μ), bs, hilbert, boundary; half=true)
-    @test cgen == deepcopy(cgen) && isequal(cgen, deepcopy(cgen))
+    cgen = OperatorGenerator(cat, (t, μ), bs, hilbert, true)
+    @test cgen == OperatorGenerator((t, μ), bs, hilbert, boundary; half=true)
+    @test isequal(cgen, OperatorGenerator((t, μ), bs, hilbert, boundary; half=true))
     @test cgen|>eltype == cgen|>typeof|>eltype == optp
     @test cgen|>valtype == cgen|>typeof|>valtype == Operators{optp, idtype(optp)}
     @test collect(cgen) == collect(expand(cgen))
     @test Parameters(cgen) == (t=2.0, μ=1.0, θ=0.1)
-    @test CategorizedGenerator(cgen) == cgen.operators
     @test expand!(Operators{optp}(), cgen) == expand(cgen) ≈ tops₁ + tops₂*2.0 + μops
     @test expand(cgen, :t) ≈ tops₁ + tops₂*2.0
     @test expand(cgen, :μ) ≈ μops
@@ -179,20 +176,10 @@ end
     @test !isempty(cgen) && isempty(empty(cgen)) 
     @test reset!(empty(cgen), lattice, hilbert) == cgen
     @test update!(cgen, μ=1.5)|>expand ≈ tops₁ + tops₂*2.0 + μops*1.5
-
-    i = LinearFunction(identity)
-    sgen = i(cgen)
-    @test sgen == Image(cgen.operators, i, objectid(cgen))
-    @test Parameters(sgen) == (t=2.0, μ=1.5, θ=0.1)
-    @test expand!(Operators{optp}(), sgen) == expand(sgen) ≈ tops₁ + tops₂*2.0 + μops*1.5
-    @test empty!(deepcopy(sgen)) == Image(empty(cgen.operators), i, objectid(cgen)) == empty(sgen)
-    @test !isempty(sgen) && isempty(empty(sgen)) 
-    @test update!(sgen, μ=3.5)|>expand ≈ tops₁ + tops₂*2.0 + μops*3.5
-    @test update!(sgen, cgen)|>expand ≈ tops₁ + tops₂*2.0 + μops*1.5
-    @test reset!(empty(sgen), i, cgen) == sgen
+    @test LinearFunction(identity)(cgen) == cgen.operators
 end
 
-@testset "CompositeGenerator plain" begin
+@testset "OperatorGenerator plain" begin
     lattice = Lattice([0.0], [0.5]; vectors=[[1.0]])
     bs = bonds(lattice, 1)
     hilbert = Hilbert(site=>FFock(2) for site=1:length(lattice))
@@ -201,8 +188,10 @@ end
     optp = Operator{Complex{Float}, ID{CoordinatedIndex{Index{FID{Int}, Int}, SVector{1, Float}}, 2}}
     tops = expand(t, bs, hilbert; half=true)
     μops = expand(one(μ), bs, hilbert; half=true)
+    cat = CategorizedGenerator(tops, (t=Operators{optp}(), μ=μops), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain, eager)
 
-    cgen = OperatorGenerator((t, μ), bs, hilbert, plain; half=true)
+    cgen = OperatorGenerator(cat, (t, μ), bs, hilbert, true)
+    @test cgen == OperatorGenerator((t, μ), bs, hilbert, plain; half=true)
     @test expand(cgen) ≈ tops + μops
     @test expand(cgen, :t) ≈ tops
     @test expand(cgen, :μ) ≈ μops
@@ -211,16 +200,7 @@ end
     @test expand(cgen, :t, 3) + expand(cgen, :t, 4) ≈ tops
     @test reset!(empty(cgen), lattice, hilbert) == cgen
     @test update!(cgen, μ=1.5)|>expand ≈ tops + μops*1.5
-
-    i = LinearFunction(identity)
-    sgen = i(cgen)
-    @test sgen == Image(cgen.operators, i, objectid(cgen))
-    @test Parameters(sgen) == (t=2.0, μ=1.5)
-    @test expand!(Operators{optp}(), sgen) == expand(sgen) ≈ tops + μops*1.5
-    @test empty!(deepcopy(sgen)) == Image(empty(cgen.operators), i, objectid(cgen)) == empty(sgen)
-    @test update!(sgen, μ=3.5)|>expand ≈ tops + μops*3.5
-    @test update!(sgen, cgen)|>expand ≈ tops + μops*1.5
-    @test reset!(empty(sgen), i, cgen) == sgen
+    @test LinearFunction(identity)(cgen) == cgen.operators
 end
 
 @testset "Hamiltonian" begin
@@ -243,7 +223,7 @@ end
     hilbert = Hilbert(site=>FFock(2) for site=1:length(lattice))
     t = Term{:Hp}(:t, 2.0, 1, Coupling(1.0, :, FID, (2, 1)), false; ismodulatable=false)
     μ = Term{:Mu}(:μ, 1.0, 0, Coupling(1.0, :, FID, (2, 1)), true)
-    cat = CategorizedGenerator((t, μ), bonds(lattice, 1), hilbert, plain, eager; half=true)
+    cat = OperatorGenerator((t, μ), bonds(lattice, 1), hilbert, plain, eager; half=true)
     h = Hamiltonian(cat)
     @test valtype(h) == valtype(typeof(h)) == valtype(cat)
     @test eltype(h) == eltype(typeof(h)) == eltype(cat)
