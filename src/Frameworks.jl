@@ -13,7 +13,7 @@ using ..QuantumOperators: OperatorPack, Operators, OperatorSet, OperatorSum, Lin
 using ..Spatials: AbstractLattice, Bond, Neighbors, bonds!, isintracell
 using ..Toolkit: atol, efficientoperations, rtol, getcontent, tostr
 
-import ..QuantumLattices: add!, dtype, expand, expand!, id, reset!, update, update!
+import ..QuantumLattices: add!, dimension, dtype, expand, expand!, id, matrix, reset!, update, update!
 import ..Spatials: save
 import ..Toolkit: contentnames
 
@@ -66,7 +66,7 @@ mutable struct Formula{F<:Function, P<:Parameters}
 end
 @inline Base.:(==)(formula₁::Formula, formula₂::Formula) = ==(efficientoperations, formula₁, formula₂)
 @inline Base.isequal(formula₁::Formula, formula₂::Formula) = isequal(efficientoperations, formula₁, formula₂)
-@inline Base.valtype(formula::Formula) = Core.Compiler.return_type(formula, Tuple{})
+@inline Base.valtype(formula::Formula) = Core.Compiler.return_type(matrix, Tuple{typeof(formula)})
 @inline Base.eltype(formula::Formula) = eltype(valtype(formula))
 @inline dtype(formula::Formula) = dtype(eltype(formula))
 @inline function update!(formula::Formula; parameters...)
@@ -76,9 +76,20 @@ end
 end
 @inline update!(expression::Function; parameters...) = expression
 @inline Parameters(formula::Formula) = formula.parameters
-@inline @generated function (formula::Formula)(; kwargs...)
+@inline @generated function matrix(formula::Formula; kwargs...)
     exprs = [:(getfield(formula.parameters, $i)) for i = 1:fieldcount(fieldtype(formula, :parameters))]
     return :(formula.expression($(exprs...); kwargs...))
+end
+function dimension(formula::Formula)
+    try
+        return dimension(formula.expression)
+    catch
+        m = matrix(formula)
+        @assert ndims(m)==2 "dimension error: formula does not construct a matrix."
+        m, n = size(m)
+        @assert m==n "dimension error: matrix constructed by formula is not square."
+        return m
+    end
 end
 
 """
@@ -668,6 +679,20 @@ Update the parameters of a Hamiltonian.
 """
 @inline update!(hamiltonian::Hamiltonian{<:Tuple{OperatorSet}}; parameters...) = hamiltonian
 @inline update!(hamiltonian::Hamiltonian{<:Tuple{Union{Formula, Generator}}, (:representation,)}; parameters...) = (update!(hamiltonian.representation; parameters...); hamiltonian)
+
+"""
+    matrix(hamiltonian::Hamiltonian{<:Tuple{Formula}}; kwargs...) -> valtype(hamiltonian)
+
+Get the matrix representation of a Hamiltonian.
+"""
+@inline matrix(hamiltonian::Hamiltonian{<:Tuple{Formula}}; kwargs...) = matrix(hamiltonian.representation; kwargs...)
+
+"""
+    dimension(hamiltonian::Hamiltonian{<:Tuple{Formula}}) -> Int
+
+Get the dimension of the matrix representation of a Hamiltonian.
+"""
+@inline dimension(hamiltonian::Hamiltonian{<:Tuple{Formula}}) = dimension(hamiltonian.representation)
 
 """
     Frontend
