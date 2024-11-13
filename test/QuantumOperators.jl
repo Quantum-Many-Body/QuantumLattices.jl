@@ -107,6 +107,7 @@ end
     opts = Operators(opt₁, opt₂)
     @test opts == Operators{eltype(opts)}(opt₁, opt₂)
     @test opts == OperatorSum(opt₁, opt₂) == OperatorSum((opt₁, opt₂)) == OperatorSum{eltype(opts)}(opt₁, opt₂) == OperatorSum{eltype(opts)}((opt₁, opt₂))
+    @test valtype(opts) == valtype(typeof(opts)) == typeof(opts)
     @test eltype(opts) == eltype(typeof(opts)) == Operator{Float, ID{AID{Int, Int}, 1}}
     @test dtype(opts) == dtype(typeof(opts)) == Float
     @test collect(opts) == collect(values(opts.contents))

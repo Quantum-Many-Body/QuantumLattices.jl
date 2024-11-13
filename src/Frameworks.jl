@@ -56,6 +56,20 @@ Get the parameters of the twisted boundary condition.
 @inline Parameters(bound::Boundary) = NamedTuple{keys(bound)}(ntuple(i->bound.values[i], Val(fieldcount(typeof(keys(bound))))))
 
 """
+    Parameters(ops::OperatorSet) -> NamedTuple{(), Tuple{}}
+
+Get the parameters of an `OperatorSet`, which is defined to be an empty `NamedTuple`.
+"""
+@inline Parameters(ops::OperatorSet) = NamedTuple()
+
+"""
+    update!(ops::OperatorSet; parameters...)
+
+Update the parameters of an `OperatorSet`, which is defined to be doing nothing but returning the `OperatorSet` itself.
+"""
+@inline update!(ops::OperatorSet; parameters...) = ops
+
+"""
     Formula{F<:Function, P<:Parameters}
 
 Representation of a quantum lattice system with an explicit analytical formula.
@@ -559,26 +573,21 @@ struct SimpleHamiltonian{R<:Union{OperatorSet, Formula, Generator}} <: Hamiltoni
     representation::R
 end
 @inline Base.valtype(hamiltonian::SimpleHamiltonian{<:Formula}) = valtype(hamiltonian.representation)
-@inline Base.valtype(::Type{<:SimpleHamiltonian{<:R}}) where {R<:OperatorSet} = R
-@inline Base.valtype(::Type{<:SimpleHamiltonian{<:R}}) where {R<:Generator} = valtype(R)
+@inline Base.valtype(::Type{<:SimpleHamiltonian{<:R}}) where {R<:Union{OperatorSet, Generator}} = valtype(R)
 
 """
-    Parameters(hamiltonian::SimpleHamiltonian{<:OperatorSet}) -> NamedTuple{(), Tuple{}}
-    Parameters(hamiltonian::SimpleHamiltonian{<:Union{Formula, Generator}}) -> Parameters
+    Parameters(hamiltonian::SimpleHamiltonian) -> Parameters
 
 Get the parameters of a Hamiltonian.
 """
-@inline Parameters(hamiltonian::SimpleHamiltonian{<:OperatorSet}) = NamedTuple()
-@inline Parameters(hamiltonian::SimpleHamiltonian{<:Union{Formula, Generator}}) = Parameters(hamiltonian.representation)
+@inline Parameters(hamiltonian::SimpleHamiltonian) = Parameters(hamiltonian.representation)
 
 """
-    update!(hamiltonian::SimpleHamiltonian{<:OperatorSet}; parameters...) -> typeof(hamiltonian)
-    update!(hamiltonian::SimpleHamiltonian{<:Union{Formula, Generator}}; parameters...) -> typeof(hamiltonian)
+    update!(hamiltonian::SimpleHamiltonian; parameters...) -> typeof(hamiltonian)
 
 Update the parameters of a Hamiltonian.
 """
-@inline update!(hamiltonian::SimpleHamiltonian{<:OperatorSet}; parameters...) = hamiltonian
-@inline update!(hamiltonian::SimpleHamiltonian{<:Union{Formula, Generator}}; parameters...) = (update!(hamiltonian.representation; parameters...); hamiltonian)
+@inline update!(hamiltonian::SimpleHamiltonian; parameters...) = (update!(hamiltonian.representation; parameters...); hamiltonian)
 
 """
     matrix(hamiltonian::SimpleHamiltonian{<:Formula}; kwargs...) -> AbstractMatrix

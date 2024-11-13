@@ -45,6 +45,10 @@ end
 
     bound = Boundary{(:θ₁, :θ₂)}([0.1, 0.2], [[1.0, 0.0], [0.0, 1.0]])
     @test Parameters(bound) == (θ₁=0.1, θ₂=0.2)
+
+    ops = Operator(1, FID(1)) + Operator(2, FID(2))
+    @test Parameters(ops) == NamedTuple()
+    @test update!(ops; t₁=1.0, t₂=2.0) == ops
 end
 
 @testset "Formula" begin

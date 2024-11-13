@@ -371,6 +371,8 @@ The set of `OperatorPack`s.
 3) To use arithmetic operations, please refer to its subtype, `OperatorSum`.
 """
 abstract type OperatorSet{M<:OperatorPack} <: QuantumOperator end
+@inline Base.valtype(ms::OperatorSet) = valtype(typeof(ms))
+@inline Base.valtype(::Type{<:M}) where {M<:OperatorSet} = M
 @inline Base.eltype(ms::OperatorSet) = eltype(typeof(ms))
 @inline Base.eltype(::Type{<:OperatorSet{M}}) where {M<:OperatorPack} = M
 @inline dtype(ms::OperatorSet) = dtype(typeof(ms))
