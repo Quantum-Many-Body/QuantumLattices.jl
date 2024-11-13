@@ -612,6 +612,13 @@ Construct the Hamiltonian of a quantum lattice system by its representation, whi
 @inline Hamiltonian(representation::Union{OperatorSet, Formula, Generator}) = SimpleHamiltonian(representation)
 
 """
+    Hamiltonian(expression::Function, parameters::Parameters) -> SimpleHamiltonian
+
+Construct the Hamiltonian of a quantum lattice system which is represented by an analytical expression.
+"""
+@inline Hamiltonian(expression::Function, parameters::Parameters) = SimpleHamiltonian(Formula(expression, parameters))
+
+"""
     Frontend
 
 Frontend of algorithms applied to a quantum lattice system.

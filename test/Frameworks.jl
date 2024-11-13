@@ -208,7 +208,7 @@ end
         2t*cos(k[1]) + 2t*cos(k[2]) + μ   2im*Δ*sin(k[1]) + 2Δ*sin(k[2]);
         -2im*Δ*sin(k[1]) + 2Δ*sin(k[2])   -2t*cos(k[1]) - 2t*cos(k[2]) - μ
     ]::Matrix{ComplexF64}
-    h = Hamiltonian(Formula(A, (t=1.0, μ=0.0, Δ=0.1)))
+    h = Hamiltonian(A, (t=1.0, μ=0.0, Δ=0.1))
     @test h == Hamiltonian(Formula(A, (t=1, μ=0, Δ=0.1)))
     @test isequal(h, Hamiltonian(Formula(A, (t=1, μ=0, Δ=0.1))))
     @test h.representation == Formula(A, (t=1.0, μ=0.0, Δ=0.1))
