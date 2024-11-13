@@ -56,11 +56,10 @@ end
     @test valtype(f) == Matrix{ComplexF64}
     @test eltype(f) == dtype(f) == ComplexF64
     @test Parameters(f) == (t=1.0, μ=0.0, Δ=0.1)
-    @test matrix(f; k=[0.0, 0.0]) ≈ [4 0; 0 -4]
-    @test dimension(f) == 2
+    @test f(; k=[0.0, 0.0]) ≈ [4 0; 0 -4]
 
     update!(f; μ=0.3)
-    @test matrix(f; k=[pi/2, pi/2]) ≈ [0.3 0.2+0.2im; 0.2-0.2im -0.3]
+    @test f(; k=[pi/2, pi/2]) ≈ [0.3 0.2+0.2im; 0.2-0.2im -0.3]
 end
 
 @testset "CategorizedGenerator twist" begin

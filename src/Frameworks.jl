@@ -67,7 +67,7 @@ mutable struct Formula{F<:Function, P<:Parameters}
 end
 @inline Base.:(==)(formula₁::Formula, formula₂::Formula) = ==(efficientoperations, formula₁, formula₂)
 @inline Base.isequal(formula₁::Formula, formula₂::Formula) = isequal(efficientoperations, formula₁, formula₂)
-@inline Base.valtype(formula::Formula) = Core.Compiler.return_type(matrix, Tuple{typeof(formula)})
+@inline Base.valtype(formula::Formula) = Core.Compiler.return_type(formula, Tuple{})
 @inline Base.eltype(formula::Formula) = eltype(valtype(formula))
 @inline dtype(formula::Formula) = dtype(eltype(formula))
 @inline function update!(formula::Formula; parameters...)
@@ -77,20 +77,9 @@ end
 end
 @inline update!(expression::Function; parameters...) = expression
 @inline Parameters(formula::Formula) = formula.parameters
-@inline @generated function matrix(formula::Formula; kwargs...)
+@inline @generated function (formula::Formula)(; kwargs...)
     exprs = [:(getfield(formula.parameters, $i)) for i = 1:fieldcount(fieldtype(formula, :parameters))]
     return :(formula.expression($(exprs...); kwargs...))
-end
-function dimension(formula::Formula)
-    try
-        return dimension(formula.expression)
-    catch
-        m = matrix(formula)
-        @assert ndims(m)==2 "dimension error: formula does not construct a matrix."
-        m, n = size(m)
-        @assert m==n "dimension error: matrix constructed by formula is not square."
-        return m
-    end
 end
 
 """
@@ -679,14 +668,24 @@ Update the parameters of a Hamiltonian.
 
 Get the matrix representation of a Hamiltonian.
 """
-@inline matrix(hamiltonian::SimpleHamiltonian{<:Formula}; kwargs...) = matrix(hamiltonian.representation; kwargs...)
+@inline matrix(hamiltonian::SimpleHamiltonian{<:Formula}; kwargs...) = hamiltonian.representation(; kwargs...)
 
 """
     dimension(hamiltonian::SimpleHamiltonian{<:Formula}) -> Int
 
 Get the dimension of the matrix representation of a Hamiltonian.
 """
-@inline dimension(hamiltonian::SimpleHamiltonian{<:Formula}) = dimension(hamiltonian.representation)
+function dimension(hamiltonian::SimpleHamiltonian{<:Formula})
+    try
+        return dimension(hamiltonian.formula.expression)
+    catch
+        m = matrix(hamiltonian)
+        @assert ndims(m)==2 "dimension error: matrix representation of the Hamiltonian is not a matrix."
+        m, n = size(m)
+        @assert m==n "dimension error: matrix representation of the Hamiltonian is not square."
+        return m
+    end
+end
 
 """
     Hamiltonian(representation::Union{OperatorSet, Formula, Generator}) -> SimpleHamiltonian
