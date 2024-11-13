@@ -63,13 +63,6 @@ Get the parameters of an `OperatorSet`, which is defined to be an empty `NamedTu
 @inline Parameters(ops::OperatorSet) = NamedTuple()
 
 """
-    update!(ops::OperatorSet; parameters...)
-
-Update the parameters of an `OperatorSet`, which is defined to be doing nothing but returning the `OperatorSet` itself.
-"""
-@inline update!(ops::OperatorSet; parameters...) = ops
-
-"""
     Formula{F<:Function, P<:Parameters}
 
 Representation of a quantum lattice system with an explicit analytical formula.

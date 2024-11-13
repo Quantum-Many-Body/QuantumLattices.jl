@@ -48,7 +48,6 @@ end
 
     ops = Operator(1, FID(1)) + Operator(2, FID(2))
     @test Parameters(ops) == NamedTuple()
-    @test update!(ops; t₁=1.0, t₂=2.0) == ops
 end
 
 @testset "Formula" begin

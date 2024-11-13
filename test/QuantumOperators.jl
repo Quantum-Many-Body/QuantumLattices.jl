@@ -1,7 +1,7 @@
 using LaTeXStrings: latexstring
 using LinearAlgebra: dot
 using Printf: @sprintf
-using QuantumLattices: ⊗, add!, div!, dtype, mul!, id, rank, sub!, value
+using QuantumLattices: ⊗, add!, div!, dtype, expand, mul!, id, rank, sub!, update!, value
 using QuantumLattices.QuantumOperators
 using QuantumLattices.Toolkit: Float, contentnames, isparameterbound, parameternames, parametertype, subscript, superscript
 
@@ -110,6 +110,7 @@ end
     @test valtype(opts) == valtype(typeof(opts)) == typeof(opts)
     @test eltype(opts) == eltype(typeof(opts)) == Operator{Float, ID{AID{Int, Int}, 1}}
     @test dtype(opts) == dtype(typeof(opts)) == Float
+    @test update!(opts) == expand(opts) == opts
     @test collect(opts) == collect(values(opts.contents))
     @test length(opts) == 2
     @test summary(opts) == "Operators"

@@ -7,7 +7,7 @@ using ..Toolkit: atol, efficientoperations, rtol, contentorder, fulltype, getcon
 
 import LaTeXStrings: latexstring
 import LinearAlgebra: dot
-import ..QuantumLattices: ⊗, add!, div!, dtype, id, ishermitian, mul!, permute, rank, sub!, value
+import ..QuantumLattices: ⊗, add!, div!, dtype, expand, id, ishermitian, mul!, permute, rank, sub!, update!, value
 import ..Toolkit: contentnames, dissolve, isparameterbound, parameternames, subscript, superscript
 
 export ID, LaTeX, Operator, OperatorPack, OperatorProd, Operators, OperatorSet, OperatorSum, OperatorUnit, QuantumOperator
@@ -377,6 +377,8 @@ abstract type OperatorSet{M<:OperatorPack} <: QuantumOperator end
 @inline Base.eltype(::Type{<:OperatorSet{M}}) where {M<:OperatorPack} = M
 @inline dtype(ms::OperatorSet) = dtype(typeof(ms))
 @inline dtype(::Type{<:OperatorSet{M}}) where {M<:OperatorPack} = dtype(M)
+@inline update!(ms::OperatorSet; parameters...) = ms
+@inline expand(ms::OperatorSet) = ms
 function Base.show(io::IO, ms::OperatorSet)
     @printf io "%s with %s %s\n" summary(ms) length(ms) nameof(eltype(ms))
     for m in ms
