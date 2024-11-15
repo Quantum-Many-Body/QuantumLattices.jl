@@ -365,29 +365,6 @@ function update!(cat::CategorizedGenerator, transformation::LinearTransformation
 end
 
 """
-    reset!(cat::CategorizedGenerator{<:Operators}, terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=cat.boundary; half::Bool=false) -> CategorizedGenerator
-
-Reset a categorized generator of quantum operators by the new terms, bonds, Hilbert space and (twisted) boundary condition.
-"""
-function reset!(cat::CategorizedGenerator{<:Operators}, terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=cat.boundary; half::Bool=false)
-    empty!(cat)
-    if boundary === plain
-        innerbonds = bonds
-        boundbonds = eltype(bonds)[]
-    else
-        innerbonds = filter(bond->isintracell(bond), bonds)
-        boundbonds = filter(bond->!isintracell(bond), bonds)
-    end
-    emptybonds = eltype(bonds)[]
-    map(term->expand!(cat.constops, term, term.ismodulatable ? emptybonds : innerbonds, hilbert; half=half), terms)
-    map(term->expand!(getfield(cat.alterops, id(term)), one(term), term.ismodulatable ? innerbonds : emptybonds, hilbert; half=half), terms)
-    map(term->map!(boundary, expand!(getfield(cat.boundops, id(term)), one(term), boundbonds, hilbert; half=half)), terms)
-    cat.parameters = NamedTuple{map(id, terms)}(map(term->term.value, terms))
-    merge!(cat.boundary, boundary)
-    return cat
-end
-
-"""
     reset!(cat::CategorizedGenerator, transformation::LinearTransformation, source::CategorizedGenerator{<:Operators}; kwargs...)
 
 Reset a categorized generator by its source categorized generator of quantum operators and the corresponding linear transformation.
@@ -428,12 +405,10 @@ When the boundary condition is [`plain`](@ref), the boundary operators will be s
 """
 @inline function OperatorGenerator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain, style::ExpansionStyle=eager; half::Bool=false)
     emptybonds = eltype(bonds)[]
-    if boundary === plain
-        innerbonds = bonds
-        boundbonds = eltype(bonds)[]
+    innerbonds, boundbonds = if boundary == plain
+        bonds, eltype(bonds)[]
     else
-        innerbonds = filter(bond->isintracell(bond), bonds)
-        boundbonds = filter(bond->!isintracell(bond), bonds)
+        filter(bond->isintracell(bond), bonds), filter(bond->!isintracell(bond), bonds)
     end
     constops = Operators{mapreduce(term->optype(typeof(term), typeof(hilbert), eltype(bonds)), promote_type, terms)}()
     map(term->expand!(constops, term, term.ismodulatable ? emptybonds : innerbonds, hilbert; half=half), terms)
@@ -489,7 +464,17 @@ function reset!(gen::OperatorGenerator, lattice::AbstractLattice, hilbert::Hilbe
     isa(neighbors, Neighbors) || (neighbors = Neighbors(lattice, neighbors))
     bonds!(empty!(gen.bonds), lattice, neighbors)
     merge!(empty!(gen.hilbert), hilbert)
-    reset!(gen.operators, gen.terms, gen.bonds, gen.hilbert, replace(gen.operators.boundary; vectors=lattice.vectors); half=gen.half)
+    empty!(gen.operators)
+    merge!(gen.operators.boundary, replace(gen.operators.boundary; vectors=lattice.vectors))
+    emptybonds = eltype(gen.bonds)[]
+    innerbonds, boundbonds = if gen.operators.boundary == plain
+        gen.bonds, eltype(gen.bonds)[]
+    else
+        filter(bond->isintracell(bond), gen.bonds), filter(bond->!isintracell(bond), gen.bonds)
+    end
+    map(term->expand!(gen.operators.constops, term, term.ismodulatable ? emptybonds : innerbonds, gen.hilbert; half=gen.half), gen.terms)
+    map(term->expand!(getfield(gen.operators.alterops, id(term)), one(term), term.ismodulatable ? innerbonds : emptybonds, gen.hilbert; half=gen.half), gen.terms)
+    map(term->map!(gen.operators.boundary, expand!(getfield(gen.operators.boundops, id(term)), one(term), boundbonds, gen.hilbert; half=gen.half)), gen.terms)
     return gen
 end
 

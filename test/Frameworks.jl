@@ -111,8 +111,6 @@ end
     dest = update!(deepcopy(cat), i, new)
     @test dest == new
     @test expand(dest) ≈ tops₁ + new.boundary(tops₂, origin=[0.1])*2.0 + μops*1.5
-
-    @test reset!(deepcopy(new), (t, μ), bs, hilbert, boundary; half=true) == cat
     @test reset!(deepcopy(new), i, cat) == cat
 end
 
@@ -144,7 +142,6 @@ end
     @test expand(dest) ≈ tops + μops*1.5
     dest = update!(deepcopy(cat), i, dest)
     @test expand(dest) ≈ tops + μops*1.5
-    @test reset!(deepcopy(new), (t, μ), bs, hilbert, plain; half=true) == cat
     @test reset!(deepcopy(new), i, cat) == cat
 end
 
