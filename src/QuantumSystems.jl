@@ -312,7 +312,7 @@ function permute(id₁::FockIndex{:f}, id₂::FockIndex{:f})
     end
 end
 function permute(id₁::FockIndex{:b}, id₂::FockIndex{:b})
-    if id₁'==id₂
+    if id₁' == id₂
         return (Operator(iscreation(id₁) ? -1 : +1), Operator(1, id₂, id₁))
     else
         return (Operator(1, id₂, id₁),)

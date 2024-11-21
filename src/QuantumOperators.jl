@@ -49,6 +49,13 @@ abstract type OperatorUnit <: QuantumOperator end
 @inline Base.show(io::IO, u::OperatorUnit) = @printf io "%s(%s)" nameof(typeof(u)) join(map(repr, ntuple(i->getfield(u, i), Val(fieldcount(typeof(u))))), ", ")
 @inline @generated Base.hash(u::OperatorUnit, h::UInt) = Expr(:call, :hash, Expr(:tuple, [:(getfield(u, $i)) for i=1:fieldcount(u)]...), :h)
 
+"""
+    iszero(u::OperatorUnit) -> Bool
+
+Judge whether an `OperatorUnit` is zero, which is defined to be always `false`.
+"""
+@inline Base.iszero(::OperatorUnit) = false
+
 # ID of a composite quantum operator
 """
     ID{U<:OperatorUnit, N}
@@ -209,6 +216,13 @@ Replace the value of an `OperatorPack`.
 """
 @inline Base.replace(m::OperatorPack, v) = rawtype(typeof(m))(dissolve(m, replace, v)...)
 @inline dissolve(::OperatorPack, ::Val{:value}, ::typeof(replace), v) = v
+
+"""
+    iszero(m::OperatorPack) -> Bool
+
+Judge whether an `OperatorPack` is zero, i.e., its value is zero.
+"""
+@inline Base.iszero(m::OperatorPack) = iszero(value(m))
 
 """
     isapprox(m₁::OperatorPack, m₂::OperatorPack; atol::Real=atol, rtol::Real=rtol) -> Bool
@@ -386,6 +400,13 @@ function Base.show(io::IO, ms::OperatorSet)
     end
 end
 
+"""
+    iszero(ms::OperatorSet) -> Bool
+
+Judge whether an `OperatorSet` is zero, i.e, it does not contain any `OperatorPack`.
+"""
+@inline Base.iszero(ms::OperatorSet) = isempty(ms)
+
 # Operator sum
 """
     OperatorSum{M<:OperatorPack, I} <: OperatorSet{M}
@@ -429,6 +450,13 @@ function OperatorSum{M}(ms) where {M<:OperatorPack}
     end
     return result
 end
+
+"""
+    iszero(ms::OperatorSum) -> Bool
+
+Judge whether an `OperatorSum` is zero, i.e, it does not contain any `OperatorPack`.
+"""
+@inline Base.iszero(ms::OperatorSum) = iszero(length(ms))
 
 """
     length(ms::OperatorSum) -> Int
@@ -494,11 +522,11 @@ Get the in-place addition of quantum operators.
 """
 @inline add!(ms::OperatorSum) = ms
 @inline function add!(ms::OperatorSum, m::Union{Number, OperatorUnit, OperatorPack})
-    isa(m, Number) && m==0 && return ms
+    iszero(m) && return ms
     m = convert(eltype(ms), m)
     old = get(ms.contents, id(m), nothing)
     new = isnothing(old) ? m : replace(old, value(old)+value(m))
-    value(new)==0 ? delete!(ms.contents, id(m)) : (ms.contents[id(m)] = new)
+    iszero(new) ? delete!(ms.contents, id(m)) : (ms.contents[id(m)] = new)
     return ms
 end
 @inline function add!(ms::OperatorSum, mms::OperatorSum)
@@ -517,11 +545,11 @@ Get the in-place subtraction of quantum operators.
 """
 @inline sub!(ms::OperatorSum) = ms
 @inline function sub!(ms::OperatorSum, m::Union{Number, OperatorUnit, OperatorPack})
-    isa(m, Number) && abs(m)==0 && return ms
+    iszero(m) && return ms
     m = convert(eltype(ms), m)
     old = get(ms.contents, id(m), nothing)
     new = isnothing(old) ? -m : replace(old, value(old)-value(m))
-    value(new)==0 ? delete!(ms.contents, id(m)) : (ms.contents[id(m)] = new)
+    iszero(new) ? delete!(ms.contents, id(m)) : (ms.contents[id(m)] = new)
     return ms
 end
 @inline function sub!(ms::OperatorSum, mms::OperatorSum)
@@ -993,9 +1021,9 @@ Permute the operator units of an `OperatorProd` to the descending order accordin
         if isnothing(pos)
             add!(result, current)
         else
-            left = current[1:pos-1] * value(m)
+            left = current[1:pos-1] * value(current)
             right = current[pos+2:end]
-            for middle in permute(id(current)[pos], id(current)[pos+1])
+            for middle in permute(current[pos], current[pos+1])
                 temp = left * middle * right
                 isnothing(temp) || push!(cache, temp)
             end

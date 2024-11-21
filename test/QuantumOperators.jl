@@ -39,6 +39,7 @@ end
 
     sid = AID(1, 1)
     @test string(sid) == "AID(1, 1)"
+    @test !iszero(sid)
     @test sid'==AID(1, 2)
 
     cid = ID(AID(2, 1), AID(Inf, 1))
@@ -85,6 +86,7 @@ end
     @test value(opt) == 2.0
     @test id(opt) == ID(AID(1, 1))
     @test replace(opt, 3) == replace(opt, value=3) == Operator(3, AID(1, 1))
+    @test !iszero(opt) && iszero(replace(opt, 0))
     @test isapprox(opt, replace(opt, value=opt.value+10^-6); atol=10^-5)
     @test length(opt) == 1 && firstindex(opt) == 1 && lastindex(opt) ==1
     @test opt[1]==opt[begin]==opt[end]==AID(1, 1) && opt[1:1]==Operator(1.0, AID(1, 1))
@@ -119,6 +121,8 @@ end
     @test opts[1]==opts[begin]==opt₁ && opts[2]==opts[end]==opt₂
     @test opts[1:2] == opts[:] == opts
     @test empty(opts) == empty!(deepcopy(opts)) == zero(opts)
+    @test !iszero(opts) && iszero(zero(opts))
+    @test !invoke(iszero, Tuple{OperatorSet}, opts) && invoke(iszero, Tuple{OperatorSet}, zero(opts))
     optp₁ = promote_type(typeof(opts), OperatorSum{Operator{Complex{Int}, NTuple{2, AID{Float, Float}}}, NTuple{2, AID{Float, Float}}})
     optp₂ = OperatorSum{Operator{Complex{Float}, <:Tuple{AID, Vararg{AID{Float, Float}}}}, Tuple{AID, Vararg{AID{Float, Float}}}}
     @test optp₁ == optp₂
