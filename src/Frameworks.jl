@@ -92,9 +92,9 @@ end
 end
 @inline update!(expression::Function; parameters...) = expression
 @inline Parameters(formula::Formula) = formula.parameters
-@inline @generated function (formula::Formula)(; kwargs...)
+@inline @generated function (formula::Formula)(args...; kwargs...)
     exprs = [:(getfield(formula.parameters, $i)) for i = 1:fieldcount(fieldtype(formula, :parameters))]
-    return :(formula.expression($(exprs...); kwargs...))
+    return :(formula.expression($(exprs...), args...; kwargs...))
 end
 
 """

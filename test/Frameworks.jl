@@ -51,7 +51,7 @@ end
 end
 
 @testset "Formula" begin
-    A(t, μ, Δ; k=SVector(0, 0)) = [
+    A(t, μ, Δ, k=SVector(0, 0)) = [
         2t*cos(k[1]) + 2t*cos(k[2]) + μ   2im*Δ*sin(k[1]) + 2Δ*sin(k[2]);
         -2im*Δ*sin(k[1]) + 2Δ*sin(k[2])   -2t*cos(k[1]) - 2t*cos(k[2]) - μ
     ]::Matrix{ComplexF64}
@@ -59,10 +59,10 @@ end
     @test valtype(f) == valtype(typeof(f)) == Matrix{ComplexF64}
     @test eltype(f) == eltype(typeof(f)) == dtype(f) == dtype(typeof(f)) == ComplexF64
     @test Parameters(f) == (t=1.0, μ=0.0, Δ=0.1)
-    @test f(; k=[0.0, 0.0]) ≈ [4 0; 0 -4]
+    @test f([0.0, 0.0]) ≈ [4 0; 0 -4]
 
     update!(f; μ=0.3)
-    @test f(; k=[pi/2, pi/2]) ≈ [0.3 0.2+0.2im; 0.2-0.2im -0.3]
+    @test f([pi/2, pi/2]) ≈ [0.3 0.2+0.2im; 0.2-0.2im -0.3]
 end
 
 @testset "CategorizedGenerator twist" begin
