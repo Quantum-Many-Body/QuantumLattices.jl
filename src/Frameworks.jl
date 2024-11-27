@@ -14,11 +14,11 @@ using ..QuantumOperators: OperatorPack, Operators, OperatorSet, OperatorSum, Lin
 using ..Spatials: AbstractLattice, Bond, Neighbors, bonds!, isintracell
 using ..Toolkit: atol, efficientoperations, rtol, parametertype, tostr
 
-import ..QuantumLattices: add!, dimension, dtype, expand, expand!, id, matrix, reset!, update, update!
+import ..QuantumLattices: add!, dtype, expand, expand!, id, reset!, update, update!
 import ..Spatials: save
 
-export Action, Algorithm, Assignment, CategorizedGenerator, Eager, ExpansionStyle, Formula, Frontend, Generator, Hamiltonian, Lazy, OperatorGenerator, Parameters, SimpleHamiltonian
-export eager, lazy, initialize, prepare!, run!, save
+export Action, Algorithm, Assignment, CategorizedGenerator, Eager, ExpansionStyle, Formula, Frontend, Generator, Lazy, OperatorGenerator, Parameters
+export eager, lazy, initialize, prepare!, run!
 
 """
     Parameters{Names}(values::Number...) where Names
@@ -555,83 +555,6 @@ end
 Get the transformation applied to a generator of (representations of) quantum operators.
 """
 @inline (transformation::Transformation)(gen::OperatorGenerator; kwargs...) = transformation(gen.operators; kwargs...)
-
-"""
-    Hamiltonian
-
-Abstract type of the Hamiltonian of a quantum lattice system.
-"""
-abstract type Hamiltonian end
-@inline Base.:(==)(hamiltonian₁::Hamiltonian, hamiltonian₂::Hamiltonian) = ==(efficientoperations, hamiltonian₁, hamiltonian₂)
-@inline Base.isequal(hamiltonian₁::Hamiltonian, hamiltonian₂::Hamiltonian) = isequal(efficientoperations, hamiltonian₁, hamiltonian₂)
-@inline Base.valtype(hamiltonian::Hamiltonian) = valtype(typeof(hamiltonian))
-@inline Base.eltype(hamiltonian::Hamiltonian) = eltype(valtype(hamiltonian))
-@inline Base.eltype(::Type{H}) where {H<:Hamiltonian} = eltype(valtype(H))
-@inline dtype(hamiltonian::Hamiltonian) = dtype(eltype(hamiltonian))
-@inline dtype(::Type{H}) where {H<:Hamiltonian} = dtype(eltype(H))
-
-"""
-    SimpleHamiltonian{R<:Union{OperatorSet, Formula, Generator}} <: Hamiltonian
-
-Hamiltonian of a quantum lattice system by its representation, which could be an `OperatorSet`, a `Formula`, or a `Generator`.
-"""
-struct SimpleHamiltonian{R<:Union{OperatorSet, Formula, Generator}} <: Hamiltonian
-    representation::R
-end
-@inline Base.valtype(hamiltonian::SimpleHamiltonian{<:Formula}) = valtype(hamiltonian.representation)
-@inline Base.valtype(::Type{<:SimpleHamiltonian{<:R}}) where {R<:Union{OperatorSet, Generator}} = valtype(R)
-
-"""
-    Parameters(hamiltonian::SimpleHamiltonian) -> Parameters
-
-Get the parameters of a Hamiltonian.
-"""
-@inline Parameters(hamiltonian::SimpleHamiltonian) = Parameters(hamiltonian.representation)
-
-"""
-    update!(hamiltonian::SimpleHamiltonian; parameters...) -> typeof(hamiltonian)
-
-Update the parameters of a Hamiltonian.
-"""
-@inline update!(hamiltonian::SimpleHamiltonian; parameters...) = (update!(hamiltonian.representation; parameters...); hamiltonian)
-
-"""
-    matrix(hamiltonian::SimpleHamiltonian{<:Formula}; kwargs...) -> AbstractMatrix
-
-Get the matrix representation of a Hamiltonian.
-"""
-@inline matrix(hamiltonian::SimpleHamiltonian{<:Formula}; kwargs...) = hamiltonian.representation(; kwargs...)
-
-"""
-    dimension(hamiltonian::SimpleHamiltonian{<:Formula}) -> Int
-
-Get the dimension of the matrix representation of a Hamiltonian.
-"""
-function dimension(hamiltonian::SimpleHamiltonian{<:Formula})
-    try
-        return dimension(hamiltonian.formula.expression)
-    catch
-        m = matrix(hamiltonian)
-        @assert ndims(m)==2 "dimension error: matrix representation of the Hamiltonian is not a matrix."
-        m, n = size(m)
-        @assert m==n "dimension error: matrix representation of the Hamiltonian is not square."
-        return m
-    end
-end
-
-"""
-    Hamiltonian(representation::Union{OperatorSet, Formula, Generator}) -> SimpleHamiltonian
-
-Construct the Hamiltonian of a quantum lattice system by its representation, which could be an `OperatorSet`, a `Formula`, or a `Generator`.
-"""
-@inline Hamiltonian(representation::Union{OperatorSet, Formula, Generator}) = SimpleHamiltonian(representation)
-
-"""
-    Hamiltonian(expression::Function, parameters::Parameters) -> SimpleHamiltonian
-
-Construct the Hamiltonian of a quantum lattice system which is represented by an analytical expression.
-"""
-@inline Hamiltonian(expression::Function, parameters::Parameters) = SimpleHamiltonian(Formula(expression, parameters))
 
 """
     Frontend

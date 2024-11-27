@@ -73,7 +73,7 @@ export latexofphonons, Elastic, Phonon, PhononIndex, Kinetic, Hooke, PhononTerm,
 # Frameworks
 include("Frameworks.jl")
 using .Frameworks
-export Action, Algorithm, Assignment, CategorizedGenerator, Eager, ExpansionStyle, Formula, Frontend, Generator, Hamiltonian, Lazy, OperatorGenerator, Parameters, SimpleHamiltonian
-export eager, lazy, initialize, prepare!, run!, save
+export Action, Algorithm, Assignment, CategorizedGenerator, Eager, ExpansionStyle, Formula, Frontend, Generator, Lazy, OperatorGenerator, Parameters
+export eager, lazy, initialize, prepare!, run!
 
 end
