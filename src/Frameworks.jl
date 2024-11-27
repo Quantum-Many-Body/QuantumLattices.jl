@@ -210,6 +210,15 @@ end
 end
 
 """
+    Generator(constops, alterops::NamedTuple, boundops::NamedTuple, parameters::Parameters, boundary::Boundary, style::ExpansionStyle) -> CategorizedGenerator
+
+Construct a `CategorizedGenerator`.
+"""
+@inline function Generator(constops, alterops::NamedTuple, boundops::NamedTuple, parameters::Parameters, boundary::Boundary, style::ExpansionStyle)
+    return CategorizedGenerator(constops, alterops, boundops, parameters, boundary, style)
+end
+
+"""
     (transformation::LinearTransformation)(cat::CategorizedGenerator; kwargs...) -> CategorizedGenerator
 
 Apply a linear transformation to a categorized generator of (representations of) quantum operators.
@@ -432,6 +441,19 @@ function expandto(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hi
         O = promote_type(valtype(typeof(boundary), optype(typeof(term), typeof(hilbert), eltype(bonds))), V)
         map!(boundary, expand!(Operators{O}(), one(term), bonds, hilbert, half=half))
     end
+end
+
+"""
+    Generator(operators::CategorizedGenerator{<:Operators}, terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, half::Bool) -> OperatorGenerator
+    Generator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain, style::ExpansionStyle=eager; half::Bool=false) -> OperatorGenerator
+
+Construct an `OperatorGenerator`.
+"""
+@inline function Generator(operators::CategorizedGenerator{<:Operators}, terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, half::Bool)
+    return OperatorGenerator(operators, terms, bonds, hilbert, half)
+end
+@inline function Generator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain, style::ExpansionStyle=eager; half::Bool=false)
+    return OperatorGenerator(terms, bonds, hilbert, boundary, style; half=half)
 end
 
 """

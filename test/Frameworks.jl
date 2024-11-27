@@ -84,6 +84,7 @@ end
     cat = CategorizedGenerator(tops₁, (t=Operators{optp}(), μ=μops), (t=tops₂, μ=Operators{optp}()), (t=2.0, μ=1.0), boundary, eager)
     @test cat == deepcopy(cat)
     @test isequal(cat, i(cat))
+    @test cat == Generator(tops₁, (t=Operators{optp}(), μ=μops), (t=tops₂, μ=Operators{optp}()), (t=2.0, μ=1.0), boundary, eager)
     @test cat|>valtype == cat|>typeof|>valtype == Operators{optp, idtype(optp)}
     @test cat|>eltype == cat|>typeof|>eltype == optp
     @test cat|>dtype == cat|>typeof|>dtype == Complex{Float}
@@ -161,6 +162,7 @@ end
     cgen = OperatorGenerator(cat, (t, μ), bs, hilbert, true)
     @test cgen == OperatorGenerator((t, μ), bs, hilbert, boundary; half=true)
     @test isequal(cgen, OperatorGenerator((t, μ), bs, hilbert, boundary; half=true))
+    @test cgen == Generator(cat, (t, μ), bs, hilbert, true) == Generator((t, μ), bs, hilbert, boundary; half=true)
     @test cgen|>eltype == cgen|>typeof|>eltype == optp
     @test cgen|>valtype == cgen|>typeof|>valtype == Operators{optp, idtype(optp)}
     @test collect(cgen) == collect(expand(cgen))
