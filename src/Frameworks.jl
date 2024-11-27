@@ -422,7 +422,7 @@ function OperatorGenerator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hi
     innerbonds, boundbonds = if boundary == plain
         bonds, eltype(bonds)[]
     else
-        filter(bond->isintracell(bond), bonds), filter(bond->!isintracell(bond), bonds)
+        filter(isintracell, bonds), filter((!)∘isintracell, bonds)
     end
     constops = Operators{mapreduce(term->optype(typeof(term), typeof(hilbert), eltype(bonds)), promote_type, terms)}()
     map(term->expand!(constops, term, term.ismodulatable ? emptybonds : innerbonds, hilbert; half=half), terms)
