@@ -647,7 +647,7 @@ The result is stored in the type parameters of a `NamedTuple`.
 @inline @generated function promoteparameters(::Type{T₁}, ::Type{T₂}) where {T₁<:NamedTuple, T₂<:NamedTuple}
     exprs = []
     names = Tuple(union(fieldnames(T₁), fieldnames(T₂)))
-    for (_, name) in enumerate(names)
+    for name in names
         hasfield(T₁, name) && (F₁ = fieldtype(T₁, name))
         hasfield(T₂, name) && (F₂ = fieldtype(T₂, name))
         if hasfield(T₁, name) && hasfield(T₂, name)
