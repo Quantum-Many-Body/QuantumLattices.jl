@@ -250,6 +250,7 @@ function update!(vca::VCA; kwargs...)
     vca.U = get(kwargs, :U, vca.U)
     return vca
 end
+@inline Base.valtype(::Type{VCA}) = Float
 @inline Parameters(vca::VCA) = Parameters{(:t, :U)}(vca.t, vca.U)
 
 mutable struct GF <: Action
@@ -275,6 +276,7 @@ end
     @test vca == deepcopy(vca)
     @test isequal(vca, deepcopy(vca))
     @test string(vca) == "VCA"
+    @test valtype(vca) == valtype(typeof(vca)) == eltype(vca) == eltype(typeof(vca)) == dtype(vca) == dtype(typeof(vca)) == Float
 
     gf = GF(0)
     @test gf == deepcopy(gf)

@@ -621,6 +621,10 @@ abstract type Frontend end
 @inline Base.isequal(frontend₁::Frontend, frontend₂::Frontend) = isequal(efficientoperations, frontend₁, frontend₂)
 @inline Base.show(io::IO, frontend::Frontend) = @printf io "%s" nameof(typeof(frontend))
 @inline Base.valtype(frontend::Frontend) = valtype(typeof(frontend))
+@inline Base.eltype(frontend::Frontend) = eltype(typeof(frontend))
+@inline Base.eltype(::Type{F}) where {F<:Frontend} = eltype(valtype(F))
+@inline dtype(frontend::Frontend) = dtype(typeof(frontend))
+@inline dtype(::Type{F}) where {F<:Frontend} = dtype(eltype(F))
 @inline update!(frontend::Frontend; kwargs...) = error("update! error: not implemented for $(nameof(typeof(frontend))).")
 @inline Parameters(frontend::Frontend) = error("Parameters error: not implemented for $(nameof(typeof(frontend))).")
 
@@ -657,7 +661,7 @@ end
     valtype(assign::Assignment)
     valtype(::Type{<:Assignment})
 
-The type of the data(result) of an assignment.
+Type of the data (result) of an assignment.
 """
 @inline Base.valtype(assign::Assignment) = valtype(typeof(assign))
 @inline Base.valtype(::Type{<:Assignment{<:Action, <:Parameters, <:Function, N, R} where N}) where R = R
