@@ -378,7 +378,7 @@ end
 """
     OperatorSet{M<:OperatorPack} <: QuantumOperator
 
-The set of `OperatorPack`s.
+Set of `OperatorPack`s.
 
 1) The relation between two `OperatorPack`s in an `OperatorSet` can be viewed as addition.
 2) But in general, only iteration over `OperatorPack`s and length are supported.

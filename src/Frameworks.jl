@@ -312,10 +312,10 @@ end
     exprs = [:(getfield(parameters, $name)) for name in QuoteNode.(KS)]
     return Expr(:tuple, exprs...)
 end
-struct CategorizedGeneratorExpand{CG<:OperatorPack, VS, OS} <: OperatorSet{CG}
+struct CategorizedGeneratorExpand{M<:OperatorPack, VS, OS} <: OperatorSet{M}
     values::VS
     ops::OS
-    CategorizedGeneratorExpand{CG}(values, ops) where CG = new{CG, typeof(values), typeof(ops)}(values, ops)
+    CategorizedGeneratorExpand{M}(values, ops) where {M<:OperatorPack} = new{M, typeof(values), typeof(ops)}(values, ops)
 end
 @inline Base.length(ee::CategorizedGeneratorExpand) = mapreduce(length, +, ee.values.it)
 @propagate_inbounds function Base.iterate(ee::CategorizedGeneratorExpand, state=((), ()))
