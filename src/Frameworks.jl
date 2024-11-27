@@ -12,7 +12,7 @@ using ..DegreesOfFreedom: plain, Boundary, Hilbert, Term
 using ..QuantumLattices: value
 using ..QuantumOperators: OperatorPack, Operators, OperatorSet, OperatorSum, LinearTransformation, Transformation, identity, optype
 using ..Spatials: AbstractLattice, Bond, Neighbors, bonds!, isintracell
-using ..Toolkit: atol, efficientoperations, rtol, getcontent, tostr
+using ..Toolkit: atol, efficientoperations, rtol, parametertype, tostr
 
 import ..QuantumLattices: add!, dimension, dtype, expand, expand!, id, matrix, reset!, update, update!
 import ..Spatials: save
@@ -64,19 +64,27 @@ Get the parameters of an `OperatorSet`, which is defined to be an empty `NamedTu
 @inline Parameters(ops::OperatorSet) = NamedTuple()
 
 """
-    Formula{F<:Function, P<:Parameters}
+    Formula{V, F<:Function, P<:Parameters}
 
 Representation of a quantum lattice system with an explicit analytical formula.
 """
-mutable struct Formula{F<:Function, P<:Parameters}
+mutable struct Formula{V, F<:Function, P<:Parameters}
     const expression::F
     parameters::P
+    function Formula(expression::Function, parameters::Parameters)
+        V = Core.Compiler.return_type(expression, parametertype(typeof(parameters), 2))
+        @assert isconcretetype(V) "Formula error: input expression is not type-stable."
+        new{V, typeof(expression), typeof(parameters)}(expression, parameters)
+    end
 end
 @inline Base.:(==)(formula₁::Formula, formula₂::Formula) = ==(efficientoperations, formula₁, formula₂)
 @inline Base.isequal(formula₁::Formula, formula₂::Formula) = isequal(efficientoperations, formula₁, formula₂)
-@inline Base.valtype(formula::Formula) = Core.Compiler.return_type(formula, Tuple{})
-@inline Base.eltype(formula::Formula) = eltype(valtype(formula))
-@inline dtype(formula::Formula) = dtype(eltype(formula))
+@inline Base.valtype(formula::Formula) = valtype(typeof(formula))
+@inline Base.valtype(::Type{<:Formula{V}}) where V = V
+@inline Base.eltype(formula::Formula) = eltype(typeof(formula))
+@inline Base.eltype(::Type{F}) where {F<:Formula} = eltype(valtype(F))
+@inline dtype(formula::Formula) = dtype(typeof(formula))
+@inline dtype(::Type{F}) where {F<:Formula} = dtype(eltype(F))
 @inline function update!(formula::Formula; parameters...)
     formula.parameters = update(formula.parameters; parameters...)
     update!(formula.expression; parameters...)

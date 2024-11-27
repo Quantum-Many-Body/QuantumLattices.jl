@@ -56,8 +56,8 @@ end
         -2im*Δ*sin(k[1]) + 2Δ*sin(k[2])   -2t*cos(k[1]) - 2t*cos(k[2]) - μ
     ]::Matrix{ComplexF64}
     f = Formula(A, (t=1.0, μ=0.0, Δ=0.1))
-    @test valtype(f) == Matrix{ComplexF64}
-    @test eltype(f) == dtype(f) == ComplexF64
+    @test valtype(f) == valtype(typeof(f)) == Matrix{ComplexF64}
+    @test eltype(f) == eltype(typeof(f)) == dtype(f) == dtype(typeof(f)) == ComplexF64
     @test Parameters(f) == (t=1.0, μ=0.0, Δ=0.1)
     @test f(; k=[0.0, 0.0]) ≈ [4 0; 0 -4]
 
