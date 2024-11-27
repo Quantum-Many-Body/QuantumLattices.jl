@@ -1450,6 +1450,13 @@ Get the id of a term.
 @inline id(::Type{<:Term{K, I} where K}) where I = I
 
 """
+    value(term::Term) -> valtype(term)
+
+Get the value of a term.
+"""
+@inline value(term::Term) = term.value
+
+"""
     valtype(term::Term)
     valtype(::Type{<:Term)
 
@@ -1490,13 +1497,12 @@ function Base.string(term::Term, bond::Bond, hilbert::Hilbert)
 end
 
 """
-    replace(term::Term; kwargs...) -> Term
+    replace(term::Term, value) -> Term
 
-Replace some attributes of a term with key word arguments.
+Replace the value of a term.
 """
-@inline @generated function Base.replace(term::Term; kwargs...)
-    exprs = [:(get(kwargs, $name, getfield(term, $name))) for name in QuoteNode.(term|>fieldnames)]
-    return :(Term{kind(term), id(term)}($(exprs...)))
+@inline function Base.replace(term::Term, value)
+    return Term{kind(term), id(term)}(value, term.bondkind, term.coupling, term.amplitude, term.ishermitian, term.ismodulatable, convert(typeof(value), term.factor))
 end
 
 """
@@ -1504,14 +1510,14 @@ end
 
 Get a unit term.
 """
-@inline Base.one(term::Term) = replace(term, value=one(term.value))
+@inline Base.one(term::Term) = replace(term, one(term.value))
 
 """
     zero(term::Term) -> Term
 
 Get a zero term.
 """
-@inline Base.zero(term::Term) = replace(term, value=zero(term.value))
+@inline Base.zero(term::Term) = replace(term, zero(term.value))
 
 """
     update!(term::Term, args...; kwargs...) -> Term

@@ -9,6 +9,7 @@ using RecipesBase: RecipesBase, @recipe
 using Serialization: serialize
 using TimerOutputs: TimerOutput, TimerOutputs, @timeit
 using ..DegreesOfFreedom: plain, Boundary, Hilbert, Term
+using ..QuantumLattices: value
 using ..QuantumOperators: OperatorPack, Operators, OperatorSet, OperatorSum, LinearTransformation, Transformation, identity, optype
 using ..Spatials: AbstractLattice, Bond, Neighbors, bonds!, isintracell
 using ..Toolkit: atol, efficientoperations, rtol, getcontent, tostr
@@ -399,7 +400,7 @@ Construct a generator of (representations of) quantum operators based on the inp
 
 When the boundary condition is [`plain`](@ref), the boundary operators will be set to be empty for simplicity and efficiency.
 """
-@inline function OperatorGenerator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain, style::ExpansionStyle=eager; half::Bool=false)
+function OperatorGenerator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain, style::ExpansionStyle=eager; half::Bool=false)
     emptybonds = eltype(bonds)[]
     innerbonds, boundbonds = if boundary == plain
         bonds, eltype(bonds)[]
@@ -408,20 +409,21 @@ When the boundary condition is [`plain`](@ref), the boundary operators will be s
     end
     constops = Operators{mapreduce(term->optype(typeof(term), typeof(hilbert), eltype(bonds)), promote_type, terms)}()
     map(term->expand!(constops, term, term.ismodulatable ? emptybonds : innerbonds, hilbert; half=half), terms)
-    V = valtype(eltype(constops))
-    alterops = NamedTuple{map(id, terms)}(
-        map(terms) do term
-            expand(replace(term, value=one(V)), term.ismodulatable ? innerbonds : emptybonds, hilbert; half=half)
-        end
-    )
-    boundops = NamedTuple{map(id, terms)}(
-        map(terms) do term
-            O = promote_type(valtype(typeof(boundary), optype(typeof(term), typeof(hilbert), eltype(bonds))), V)
-            map!(boundary, expand!(Operators{O}(), one(term), boundbonds, hilbert, half=half))
-        end
-    )
-    parameters = NamedTuple{map(id, terms)}(map(term->term.value, terms))
+    alterops = NamedTuple{map(id, terms)}(expandto(terms, emptybonds, innerbonds, hilbert, valtype(eltype(constops)); half=half))
+    boundops = NamedTuple{map(id, terms)}(expandto(terms, boundbonds, hilbert, boundary, valtype(eltype(constops)); half=half))
+    parameters = NamedTuple{map(id, terms)}(map(value, terms))
     return OperatorGenerator(CategorizedGenerator(constops, alterops, boundops, parameters, boundary, style), terms, bonds, hilbert, half)
+end
+function expandto(terms::Tuple{Vararg{Term}}, emptybonds::Vector{<:Bond}, innerbonds::Vector{<:Bond}, hilbert::Hilbert, ::Type{V}; half) where V
+    return map(terms) do term
+        expand(replace(term, one(V)), term.ismodulatable ? innerbonds : emptybonds, hilbert; half=half)
+    end
+end
+function expandto(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary, ::Type{V}; half) where V
+    return map(terms) do term
+        O = promote_type(valtype(typeof(boundary), optype(typeof(term), typeof(hilbert), eltype(bonds))), V)
+        map!(boundary, expand!(Operators{O}(), one(term), bonds, hilbert, half=half))
+    end
 end
 
 """

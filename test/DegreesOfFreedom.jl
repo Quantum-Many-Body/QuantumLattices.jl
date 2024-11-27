@@ -1,7 +1,7 @@
 using LaTeXStrings: latexstring
 using LinearAlgebra: dot, ishermitian
 using Printf: @printf
-using QuantumLattices: ⊕, ⊗, expand, kind, rank, reset!, update!
+using QuantumLattices: ⊕, ⊗, expand, kind, rank, reset!, update!, value
 using QuantumLattices.DegreesOfFreedom
 using QuantumLattices.QuantumOperators: ID, LaTeX, Operator, Operators, id, latexformat, sequence
 using QuantumLattices.Spatials: Bond, Point, decompose, icoordinate, rcoordinate
@@ -427,6 +427,7 @@ end
     @test isequal(term, deepcopy(term))
     @test term|>kind == term|>typeof|>kind == :Mu
     @test term|>id == term|>typeof|>id == :μ
+    @test term|>value == 1.5
     @test term|>valtype == term|>typeof|>valtype == Float
     @test term|>rank == term|>typeof|>rank == 2
 
@@ -434,9 +435,9 @@ end
     hilbert = Hilbert(DFock(2), 2)
     @test string(term, Bond(p₁), hilbert) == "4.5 𝕕(1ˢᵗ, 1) 𝕕(1ˢᵗ, 1)"
     @test string(term, Bond(p₂), hilbert) == "4.5 𝕕(1ˢᵗ, 2) 𝕕(1ˢᵗ, 2)"
-    @test one(term) == replace(term, value=1.0)
-    @test zero(term) == replace(term, value=0.0)
-    @test update!(term, μ=4.25) == replace(term, value=4.25)
+    @test one(term) == replace(term, 1.0)
+    @test zero(term) == replace(term, 0.0)
+    @test update!(term, μ=4.25) == replace(term, 4.25)
     @test term.value == 4.25
 
     term = Term{:Mu}(:μ, 1.5, 0, Coupling(1.0, :, DID, (2, 1)), true; amplitude=bond->3, ismodulatable=false)
