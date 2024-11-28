@@ -93,10 +93,10 @@ function polard(v::AbstractVector{<:Number})
 end
 
 """
-    direction(v::Char, args...) -> SVector{3}
-    direction(v::Number, unit::Symbol) -> SVector{2}
-    direction(v::Tuple{Number, Number}, unit::Symbol) -> SVector{3}
-    direction(v::AbstractVector{<:Number}, args...) -> AbstractVector
+    direction(v::Char, args...) -> SVector{3, <:Number}
+    direction(v::Number, unit::Symbol) -> SVector{2, <:Number}
+    direction(v::Tuple{Number, Number}, unit::Symbol) -> SVector{3, <:Number}
+    direction(v::AbstractVector{<:Number}, args...) -> AbstractVector{<:Number}
 
 Get the unit vector that specifies the direction of a vector.
 """
@@ -208,13 +208,13 @@ function decompose(v₀::AbstractVector{<:Number}, vs::AbstractVector{<:Abstract
 end
 
 """
-    decompose(m::AbstractMatrix, m₀::AbstractMatrix) -> Number
-    decompose(m::AbstractMatrix, ms::Tuple{Vararg{AbstractMatrix}}) -> Tuple{Vararg{Number}}
-    decompose(m::AbstractMatrix, ms::AbstractVector{<:AbstractMatrix}) -> Vector{<:Number}
+    decompose(m::AbstractMatrix{<:Number}, m₀::AbstractMatrix{<:Number}) -> Number
+    decompose(m::AbstractMatrix{<:Number}, ms::Tuple{Vararg{AbstractMatrix{<:Number}}}) -> Tuple{Vararg{Number}}
+    decompose(m::AbstractMatrix{<:Number}, ms::AbstractVector{<:AbstractMatrix{<:Number}}) -> Vector{<:Number}
 
 Decompose a matrix.
 """
-function decompose(m::AbstractMatrix, m₀::AbstractMatrix)
+function decompose(m::AbstractMatrix{<:Number}, m₀::AbstractMatrix{<:Number})
     @assert size(m)==size(m₀) "decompose error: mismatched size."
     result = zero(promote_type(eltype(m), eltype(m₀)))
     n = zero(result)
@@ -224,8 +224,8 @@ function decompose(m::AbstractMatrix, m₀::AbstractMatrix)
     end
     return result/n
 end
-@inline decompose(m::AbstractMatrix, ms::Tuple{Vararg{AbstractMatrix}}) = map(m₀->decompose(m, m₀), ms)
-@inline decompose(m::AbstractMatrix, ms::AbstractVector{<:AbstractMatrix}) = map(m₀->decompose(m, m₀), ms)
+@inline decompose(m::AbstractMatrix{<:Number}, ms::Tuple{Vararg{AbstractMatrix{<:Number}}}) = map(m₀->decompose(m, m₀), ms)
+@inline decompose(m::AbstractMatrix{<:Number}, ms::AbstractVector{<:AbstractMatrix{<:Number}}) = map(m₀->decompose(m, m₀), ms)
 
 """
     isintratriangle(
@@ -960,11 +960,11 @@ Expand the momentum from integral values to real values with the given reciproca
 end
 
 """
-    Momentum₁{N}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where N
+    Momentum₁{N}(momentum::AbstractVector{<:Number}, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where N
 
 Construct a 1d quantum momentum by the coordinates.
 """
-function Momentum₁{N}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where N
+function Momentum₁{N}(momentum::AbstractVector{<:Number}, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where N
     @assert length(reciprocals)==1 "Momentum₁ error: mismatched length of reciprocals."
     k = decompose(momentum, first(reciprocals)) * N
     i = round(Int, k)
@@ -973,11 +973,11 @@ function Momentum₁{N}(momentum::AbstractVector, reciprocals::AbstractVector{<:
 end
 
 """
-    Momentum₂{N₁, N₂}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where {N₁, N₂}
+    Momentum₂{N₁, N₂}(momentum::AbstractVector{<:Number}, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where {N₁, N₂}
 
 Construct a 2d quantum momentum by the coordinates.
 """
-function Momentum₂{N₁, N₂}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where {N₁, N₂}
+function Momentum₂{N₁, N₂}(momentum::AbstractVector{<:Number}, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where {N₁, N₂}
     @assert length(reciprocals)==2 "Momentum₂ error: mismatched length of reciprocals."
     k₁, k₂ = decompose(momentum, first(reciprocals), last(reciprocals))
     k₁, k₂ = k₁*N₁, k₂*N₂
@@ -987,11 +987,11 @@ function Momentum₂{N₁, N₂}(momentum::AbstractVector, reciprocals::Abstract
 end
 
 """
-    Momentum₃{N₁, N₂, N₃}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where {N₁, N₂, N₃}
+    Momentum₃{N₁, N₂, N₃}(momentum::AbstractVector{<:Number}, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where {N₁, N₂, N₃}
 
 Construct a 3d quantum momentum by the coordinates.
 """
-function Momentum₃{N₁, N₂, N₃}(momentum::AbstractVector, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where {N₁, N₂, N₃}
+function Momentum₃{N₁, N₂, N₃}(momentum::AbstractVector{<:Number}, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where {N₁, N₂, N₃}
     @assert length(reciprocals)==3 "Momentum₃ error: mismatched length of reciprocals."
     v₁, v₂, v₃ = reciprocals
     k₁, k₂, k₃ = decompose(momentum, v₁, v₂, v₃)
@@ -1543,8 +1543,8 @@ end
 
 # plot utilities
 """
-    @recipe plot(path::ReciprocalPath, data::AbstractVector)
-    @recipe plot(path::ReciprocalPath, data::AbstractMatrix)
+    @recipe plot(path::ReciprocalPath, data::AbstractVector{<:Number})
+    @recipe plot(path::ReciprocalPath, data::AbstractMatrix{<:Number})
 
 Define the recipe for the line visualization of data along a reciprocal path.
 """
@@ -1559,15 +1559,15 @@ const line = quote
     xlabel --> string(names(path)[1])
     [distance(path, i) for i=1:length(path)], data
 end
-@eval @recipe plot(path::ReciprocalPath, data::AbstractVector) = $line
-@eval @recipe plot(path::ReciprocalPath, data::AbstractMatrix) = $line
+@eval @recipe plot(path::ReciprocalPath, data::AbstractVector{<:Number}) = $line
+@eval @recipe plot(path::ReciprocalPath, data::AbstractMatrix{<:Number}) = $line
 
 """
-    @recipe plot(path::ReciprocalPath, y::AbstractVector, data::AbstractMatrix)
+    @recipe plot(path::ReciprocalPath, y::AbstractVector{<:Number}, data::AbstractMatrix{<:Number})
 
 Define the recipe for the heatmap visualization of data on the x-y plain with the x axis being a reciprocal path.
 """
-@recipe function plot(path::ReciprocalPath, y::AbstractVector, data::AbstractMatrix)
+@recipe function plot(path::ReciprocalPath, y::AbstractVector{<:Number}, data::AbstractMatrix{<:Number})
     seriestype --> :heatmap
     titlefontsize --> 10
     xticks --> ticks(path)
@@ -1579,8 +1579,8 @@ Define the recipe for the heatmap visualization of data on the x-y plain with th
 end
 
 """
-    @recipe plot(reciprocalspace::BrillouinZone, data::AbstractMatrix)
-    @recipe plot(reciprocalspace::ReciprocalZone, data::AbstractMatrix)
+    @recipe plot(reciprocalspace::BrillouinZone, data::AbstractMatrix{<:Number})
+    @recipe plot(reciprocalspace::ReciprocalZone, data::AbstractMatrix{<:Number})
 
 Define the recipe for the heatmap visualization of data on a Brillouin/reciprocal zone.
 """
@@ -1598,11 +1598,11 @@ const heatmap = quote
     ylabel --> string(names(reciprocalspace)[1], "₂")
     x, y, data
 end
-@eval @recipe plot(reciprocalspace::BrillouinZone, data::AbstractMatrix) = $heatmap
-@eval @recipe plot(reciprocalspace::ReciprocalZone, data::AbstractMatrix) = $heatmap
+@eval @recipe plot(reciprocalspace::BrillouinZone, data::AbstractMatrix{<:Number}) = $heatmap
+@eval @recipe plot(reciprocalspace::ReciprocalZone, data::AbstractMatrix{<:Number}) = $heatmap
 
 """
-    @recipe plot(path::ReciprocalPath, y::AbstractVector, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8, nrow=nothing, ncol=nothing, clims=nothing)
+    @recipe plot(path::ReciprocalPath, y::AbstractVector{<:Number}, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8, nrow=nothing, ncol=nothing, clims=nothing)
     @recipe plot(reciprocalspace::BrillouinZone, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8, nrow=nothing, ncol=nothing, clims=nothing)
     @recipe plot(reciprocalspace::ReciprocalZone, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8, nrow=nothing, ncol=nothing, clims=nothing)
 
@@ -1637,14 +1637,14 @@ setup(expr::Expr) = quote
     ylabel := ""
     LinRange(clims..., 100), [0, 1], [LinRange(clims..., 100)'; LinRange(clims..., 100)']
 end
-@eval @recipe plot(path::ReciprocalPath, y::AbstractVector, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8, nrow=nothing, ncol=nothing, clims=nothing) = $(setup(:(path, y, data[:, :, i])))
+@eval @recipe plot(path::ReciprocalPath, y::AbstractVector{<:Number}, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8, nrow=nothing, ncol=nothing, clims=nothing) = $(setup(:(path, y, data[:, :, i])))
 @eval @recipe plot(reciprocalspace::BrillouinZone, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8, nrow=nothing, ncol=nothing, clims=nothing) = $(setup(:(reciprocalspace, data[:, :, i])))
 @eval @recipe plot(reciprocalspace::ReciprocalZone, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8, nrow=nothing, ncol=nothing, clims=nothing) = $(setup(:(reciprocalspace, data[:, :, i])))
 
 # save utilities
 """
     save(filename::AbstractString, path::ReciprocalPath, data::Union{AbstractVector{<:Number}, AbstractMatrix{<:Number}})
-    save(filename::AbstractString, path::ReciprocalPath, y::AbstractVector, data::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}})
+    save(filename::AbstractString, path::ReciprocalPath, y::AbstractVector{<:Number}, data::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}})
     save(filename::AbstractString, reciprocalspace::Union{BrillouinZone, ReciprocalZone}, data::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}})
 
 Save data to delimited files.
@@ -1655,7 +1655,7 @@ function save(filename::AbstractString, path::ReciprocalPath, data::Union{Abstra
         writedlm(f, [matrix(path) data])
     end
 end
-function save(filename::AbstractString, path::ReciprocalPath, y::AbstractVector, data::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}})
+function save(filename::AbstractString, path::ReciprocalPath, y::AbstractVector{<:Number}, data::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}})
     @assert size(data)[1:2]==(length(y), length(path)) "save error: mismatched size of path, y and data."
     open(filename, "w") do f
         x = matrix(kron(path, ones(length(y))))
