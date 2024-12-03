@@ -18,7 +18,7 @@ import ..QuantumLattices: add!, dtype, expand, expand!, id, reset!, update, upda
 import ..Spatials: save
 
 export Action, Algorithm, Assignment, CategorizedGenerator, Eager, ExpansionStyle, Formula, Frontend, Generator, Lazy, OperatorGenerator, Parameters
-export eager, lazy, initialize, prepare!, run!
+export checkoptions, eager, lazy, initialize, options, prepare!, run!
 
 """
     Parameters{Names}(values::Number...) where Names
@@ -583,6 +583,12 @@ abstract type Action end
 @inline Base.isequal(action₁::Action, action₂::Action) = isequal(efficientoperations, action₁, action₂)
 @inline initialize(action::Action, frontend::Frontend) = error("initialize error: not implemented.")
 @inline update!(action::Action; parameters...) = action
+@inline options(::Type{<:Action}) = ()
+@inline function checkoptions(::Type{A}; kwargs...) where A
+    for candidate in keys(kwargs)
+        @assert candidate∈options(A) "checkoptions error: $candidate is not a proper option for an instance of `$(nameof(A))`, which should be one of $(options(A))."
+    end
+end
 
 """
     Assignment{A<:Action, P<:Parameters, M<:Function, N, D} <: Function

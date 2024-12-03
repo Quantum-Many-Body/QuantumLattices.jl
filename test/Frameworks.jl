@@ -220,12 +220,20 @@ end
 
 mutable struct GF <: Action
     count::Int
+    function GF(count::Int; kwargs...)
+        checkoptions(GF; kwargs...)
+        new(count)
+    end
 end
 @inline initialize(gf::GF, vca::VCA) = Matrix{Float}(undef, vca.dim, vca.dim)
 @inline run!(alg::Algorithm{VCA}, assign::Assignment{GF}) = (assign.action.count += 1; assign.data[:, :] .= alg.frontend.t+alg.frontend.U)
 
 mutable struct DOS <: Action
     μ::Float
+    function DOS(μ::Float; kwargs...)
+        checkoptions(DOS; kwargs...)
+        new(μ)
+    end
 end
 @inline update!(eb::DOS; kwargs...) = (eb.μ = get(kwargs, :μ, eb.μ); eb)
 @inline initialize(dos::DOS, vca::VCA) = 0.0
