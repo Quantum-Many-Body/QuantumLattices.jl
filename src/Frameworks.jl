@@ -583,10 +583,11 @@ abstract type Action end
 @inline Base.isequal(action₁::Action, action₂::Action) = isequal(efficientoperations, action₁, action₂)
 @inline initialize(action::Action, frontend::Frontend) = error("initialize error: not implemented.")
 @inline update!(action::Action; parameters...) = action
-@inline options(::Type{<:Action}) = ()
+@inline options(::Type{<:Action}) = Dict{Symbol, String}()
 @inline function checkoptions(::Type{A}; kwargs...) where A
+    legals = options(A)
     for candidate in keys(kwargs)
-        @assert candidate∈options(A) "checkoptions error: $candidate is not a proper option for an instance of `$(nameof(A))`, which should be one of $(options(A))."
+        @assert candidate∈keys(legals) "checkoptions error: improper option(`:$candidate`) for `$(nameof(A))`, which should be\n$(join(("$i) `:$key`: $value" for (i, (key, value)) in enumerate(legals)), ";\n"))."
     end
 end
 
