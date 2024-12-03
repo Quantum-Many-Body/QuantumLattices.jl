@@ -1088,17 +1088,8 @@ Construct a coupling with the input indexes as the pattern.
     Coupling{N}(sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleInternalIndex}
     Coupling{N}(value, sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleInternalIndex}
 
-    Coupling(sites::Union{NTuple{N, Ordinal}, Colon}, f::Union{Function, Type{<:Function}}, fields::Union{NTuple{N}, Colon}...) where N
-    Coupling(value, sites::Union{NTuple{N, Ordinal}, Colon}, f::Union{Function, Type{<:Function}}, fields::Union{NTuple{N}, Colon}...) where N
-    Coupling{N}(sites::Union{NTuple{N, Ordinal}, Colon}, f::Union{Function, Type{<:Function}}, fields::Union{NTuple{N}, Colon}...) where N
-    Coupling{N}(value, sites::Union{NTuple{N, Ordinal}, Colon}, f::Union{Function, Type{<:Function}}, fields::Union{NTuple{N}, Colon}...) where N
-
 Construct a `Coupling` with the input sites and the fields of a kind of simple internal index.
 """
-@inline Coupling(sites::Union{NTuple{N, Ordinal}, Colon}, f::Union{Function, Type{<:Function}}, fields::Union{NTuple{N}, Colon}...) where N = Coupling{N}(sites, f, fields...)
-@inline Coupling(value, sites::Union{NTuple{N, Ordinal}, Colon}, f::Union{Function, Type{<:Function}}, fields::Union{NTuple{N}, Colon}...) where N = Coupling{N}(value, sites, f, fields...)
-@inline Coupling{N}(sites::Union{NTuple{N, Ordinal}, Colon}, f::Union{Function, Type{<:Function}}, fields::Union{NTuple{N}, Colon}...) where N = Coupling{N}(1, sites, f, fields...)
-@inline Coupling{N}(value, sites::Union{NTuple{N, Ordinal}, Colon}, f::Union{Function, Type{<:Function}}, fields::Union{NTuple{N}, Colon}...) where N = Coupling{N}(value, sites, AbstractIndex[f], fields...)
 @inline Coupling(sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleInternalIndex} = Coupling{N}(sites, I, fields...)
 @inline Coupling(value, sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleInternalIndex} = Coupling{N}(value, sites, I, fields...)
 @inline Coupling{N}(sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleInternalIndex} = Coupling{N}(1, sites, I, fields...)
@@ -1107,6 +1098,21 @@ Construct a `Coupling` with the input sites and the fields of a kind of simple i
 end
 @inline default(fields, ::Val) = fields
 @inline default(::Colon, N::Val) = ntuple(i->:, N)
+
+"""
+    Coupling(f::Union{Function, Type{<:Function}}, sites::Union{NTuple{N, Ordinal}, Colon}, fields::Union{NTuple{N}, Colon}...) where N
+    Coupling(value::Number, f::Union{Function, Type{<:Function}}, sites::Union{NTuple{N, Ordinal}, Colon}, fields::Union{NTuple{N}, Colon}...) where N
+    Coupling{N}(f::Union{Function, Type{<:Function}}, sites::Union{NTuple{N, Ordinal}, Colon}, fields::Union{NTuple{N}, Colon}...) where N
+    Coupling{N}(value::Number, f::Union{Function, Type{<:Function}}, sites::Union{NTuple{N, Ordinal}, Colon}, fields::Union{NTuple{N}, Colon}...) where N
+
+Construct a `Coupling` by a function that can construct an `Index` with the input sites and the fields of a kind of simple internal index.
+"""
+@inline Coupling(f::Union{Function, Type{<:Function}}, sites::Union{NTuple{N, Ordinal}, Colon}, fields::Union{NTuple{N}, Colon}...) where N = Coupling{N}(f, sites, fields...)
+@inline Coupling(value::Number, f::Union{Function, Type{<:Function}}, sites::Union{NTuple{N, Ordinal}, Colon}, fields::Union{NTuple{N}, Colon}...) where N = Coupling{N}(value, f, sites, fields...)
+@inline Coupling{N}(f::Union{Function, Type{<:Function}}, sites::Union{NTuple{N, Ordinal}, Colon}, fields::Union{NTuple{N}, Colon}...) where N = Coupling{N}(1, f, sites, fields...)
+@inline function Coupling{N}(value::Number, f::Union{Function, Type{<:Function}}, sites::Union{NTuple{N, Ordinal}, Colon}, fields::Union{NTuple{N}, Colon}...) where N
+    return Coupling(value, map(f, default(sites, Val(N)), map(field->default(field, Val(N)), fields)...))
+end
 
 """
     rank(coupling::Coupling) -> Int

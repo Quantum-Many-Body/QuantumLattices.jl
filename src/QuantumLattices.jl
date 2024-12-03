@@ -64,11 +64,11 @@ export ˢᵗ, ⁿᵈ, ʳᵈ, ᵗʰ, plain, allequalfields, indextype, isdefinite
 # QuantumSystems
 include("QuantumSystems.jl")
 using .QuantumSystems
-export annihilation, creation, latexofbosons, latexoffermions, latexofparticles, 𝕓, 𝕕, 𝕗, isannihilation, iscreation, isnormalordered, @σ_str, @L_str
+export annihilation, creation, latexofbosons, latexoffermions, latexofparticles, 𝕓, 𝕓⁺𝕓, 𝕕, 𝕕⁺𝕕, 𝕗, 𝕗⁺𝕗, isannihilation, iscreation, isnormalordered, @σ_str, @L_str
 export Coulomb, Fock, FockIndex, FockTerm, Hopping, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, Onsite, PairHopping, Pairing, SpinFlip
-export latexofspins, 𝕊, SpinIndex, Spin, totalspin, @Γ_str, @Γ′_str, @DM_str, @Heisenberg_str, @Ising_str
+export latexofspins, 𝕊, 𝕊ᵀ𝕊, SpinIndex, Spin, totalspin, @Γ_str, @Γ′_str, @DM_str, @Heisenberg_str, @Ising_str
 export DM, Heisenberg, Ising, Kitaev, SingleIonAnisotropy, SpinTerm, Zeeman, Γ, Γ′
-export latexofphonons, Elastic, Phonon, PhononIndex, Kinetic, Hooke, PhononTerm, 𝕦, 𝕡
+export latexofphonons, Elastic, Phonon, PhononIndex, Kinetic, Hooke, PhononTerm, 𝕦, 𝕦ᵀ𝕦, 𝕡
 
 # Frameworks
 include("Frameworks.jl")

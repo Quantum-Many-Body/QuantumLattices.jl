@@ -79,7 +79,15 @@ When all [`Index`](@ref)es are of the same type, a [`Coupling`](@ref) can be ini
 Coupling(
     [value, ]
     sites::Union{Colon, NTuple{N, Ordinal}},
-    ::Union{Type{<:FockIndex}, typeof(𝕗), typeof(𝕓), typeof(𝕕)},
+    ::Type{<:FockIndex},
+    orbitals::Union{NTuple{N, Int}, Colon},
+    spins::Union{NTuple{N, Union{Rational{Int}, Int}}, Colon},
+    nambus::Union{NTuple{N, Int}, Colon}
+) where N
+Coupling(
+    [value, ]
+    ::Union{typeof(𝕗), typeof(𝕓), typeof(𝕕)},
+    sites::Union{Colon, NTuple{N, Ordinal}},
     orbitals::Union{NTuple{N, Int}, Colon},
     spins::Union{NTuple{N, Union{Rational{Int}, Int}}, Colon},
     nambus::Union{NTuple{N, Int}, Colon}
@@ -89,7 +97,13 @@ Coupling(
 Coupling(
     [value, ]
     sites::Union{Colon, NTuple{N, Ordinal}},
-    ::Union{Type{<:SpinIndex}, Type{<:𝕊}},
+    ::Type{<:SpinIndex},
+    tags::NTuple{N, Char}
+) where N
+Coupling(
+    [value, ]
+    ::Type{<:𝕊},
+    sites::Union{Colon, NTuple{N, Ordinal}},
     tags::NTuple{N, Char}
 ) where N
 
@@ -97,7 +111,13 @@ Coupling(
 Coupling(
     [value, ]
     sites::Union{Colon, NTuple{N, Ordinal}},
-    ::Union{Type{<:PhononIndex{:u}}, Type{<:PhononIndex{:p}}, typeof(𝕦), typeof(𝕡)},
+    ::Type{<:Union{PhononIndex{:u}, PhononIndex{:p}}},
+    directions::Union{Colon, NTuple{N, Char}}
+) where N
+Coupling(
+    [value, ]
+    ::Union{typeof(𝕦), typeof(𝕡)},
+    sites::Union{Colon, NTuple{N, Ordinal}},
     directions::Union{Colon, NTuple{N, Char}}
 ) where N
 ```
@@ -108,19 +128,19 @@ See examples:
 julia> Coupling((1ˢᵗ, 1ˢᵗ, 2ⁿᵈ, 2ⁿᵈ), FockIndex, :, :, (2, 2, 1, 1))
 ∑[𝕕(1ˢᵗ, :, :, 2) 𝕕(1ˢᵗ, :, :, 2) 𝕕(2ⁿᵈ, :, :, 1) 𝕕(2ⁿᵈ, :, :, 1)]
 
-julia> Coupling((1ˢᵗ, 1ˢᵗ, 2ⁿᵈ, 2ⁿᵈ), 𝕕, :, :, (2, 2, 1, 1))
+julia> Coupling(𝕕, (1ˢᵗ, 1ˢᵗ, 2ⁿᵈ, 2ⁿᵈ), :, :, (2, 2, 1, 1))
 ∑[𝕕(1ˢᵗ, :, :, 2) 𝕕(1ˢᵗ, :, :, 2) 𝕕(2ⁿᵈ, :, :, 1) 𝕕(2ⁿᵈ, :, :, 1)]
 
 julia> Coupling((1ˢᵗ, 2ⁿᵈ), SpinIndex, ('z', 'z'))
 𝕊(1ˢᵗ, 'z') 𝕊(2ⁿᵈ, 'z')
 
-julia> Coupling((1ˢᵗ, 2ⁿᵈ), 𝕊, ('z', 'z'))
+julia> Coupling(𝕊, (1ˢᵗ, 2ⁿᵈ), ('z', 'z'))
 𝕊(1ˢᵗ, 'z') 𝕊(2ⁿᵈ, 'z')
 
 julia> Coupling((1ˢᵗ, 1ˢᵗ), PhononIndex{:p}, :)
 ∑[𝕡(1ˢᵗ, :) 𝕡(1ˢᵗ, :)]
 
-julia> Coupling((1ˢᵗ, 1ˢᵗ), 𝕡, :)
+julia> Coupling(𝕡, (1ˢᵗ, 1ˢᵗ), :)
 ∑[𝕡(1ˢᵗ, :) 𝕡(1ˢᵗ, :)]
 ```
 
@@ -137,9 +157,9 @@ julia> 3 * coupling
 
 Two [`Coupling`](@ref)s can be multiplied together:
 ```jldoctest
-julia> cp₁ = Coupling((1ˢᵗ, 1ˢᵗ), 𝕕, (:, :), (1//2, 1//2), (2, 1));
+julia> cp₁ = Coupling(𝕕, (1ˢᵗ, 1ˢᵗ), (:, :), (1//2, 1//2), (2, 1));
 
-julia> cp₂ = Coupling((1ˢᵗ, 1ˢᵗ), 𝕕, (:, :), (-1//2, -1//2), (2, 1));
+julia> cp₂ = Coupling(𝕕, (1ˢᵗ, 1ˢᵗ), (:, :), (-1//2, -1//2), (2, 1));
 
 julia> cp₁ * cp₂
 ∑[𝕕(1ˢᵗ, :, 1//2, 2) 𝕕(1ˢᵗ, :, 1//2, 1)] ⊗ ∑[𝕕(1ˢᵗ, :, -1//2, 2) 𝕕(1ˢᵗ, :, -1//2, 1)]
@@ -147,11 +167,11 @@ julia> cp₁ * cp₂
 
 It is noted that due to the implicit summation of the orbital index in the coupling pattern, the above product is not equal to the coupling pattern of the Hubbard term $U\sum_i c^†_{i↑} c_{i↑} c^†_{i↓}c_{i↓}$:
 ```jldoctest
-julia> cp₁ = Coupling((1ˢᵗ, 1ˢᵗ), 𝕕, :, (1//2, 1//2), (2, 1));
+julia> cp₁ = Coupling(𝕕, (1ˢᵗ, 1ˢᵗ), :, (1//2, 1//2), (2, 1));
 
-julia> cp₂ = Coupling((1ˢᵗ, 1ˢᵗ), 𝕕, :, (-1//2, -1//2), (2, 1));
+julia> cp₂ = Coupling(𝕕, (1ˢᵗ, 1ˢᵗ), :, (-1//2, -1//2), (2, 1));
 
-julia> cp = Coupling((1ˢᵗ, 1ˢᵗ, 1ˢᵗ, 1ˢᵗ), 𝕕, :, (1//2, 1//2, -1//2, -1//2), (2, 1, 2, 1)) # Hubbard coupling pattern
+julia> cp = Coupling(𝕕, (1ˢᵗ, 1ˢᵗ, 1ˢᵗ, 1ˢᵗ), :, (1//2, 1//2, -1//2, -1//2), (2, 1, 2, 1)) # Hubbard coupling pattern
 ∑[𝕕(1ˢᵗ, :, 1//2, 2) 𝕕(1ˢᵗ, :, 1//2, 1) 𝕕(1ˢᵗ, :, -1//2, 2) 𝕕(1ˢᵗ, :, -1//2, 1)]
 
 julia> cp == cp₁ * cp₂
@@ -203,7 +223,32 @@ At times, the coupling pattern of a term is not compact enough to be represented
 # Fock systems
 MatrixCoupling(
     sites::Union{NTuple{2, Ordinal}, Colon},
-    ::Union{Type{<:FockIndex}, typeof(𝕗), typeof(𝕓), typeof(𝕕)},
+    ::Type{<:FockIndex},
+    orbital::Union{AbstractMatrix, Colon},
+    spin::Union{AbstractMatrix, Colon},
+    nambu::Union{AbstractMatrix, Colon}
+)
+MatrixCoupling(
+    ::Union{typeof(𝕗), typeof(𝕓), typeof(𝕕)},
+    sites::Union{NTuple{2, Ordinal}, Colon},
+    orbital::Union{AbstractMatrix, Colon},
+    spin::Union{AbstractMatrix, Colon},
+    nambu::Union{AbstractMatrix, Colon}
+)
+𝕗⁺𝕗(
+    sites::Union{NTuple{2, Ordinal}, Colon},
+    orbital::Union{AbstractMatrix, Colon},
+    spin::Union{AbstractMatrix, Colon},
+    nambu::Union{AbstractMatrix, Colon}
+)
+𝕓⁺𝕓(
+    sites::Union{NTuple{2, Ordinal}, Colon},
+    orbital::Union{AbstractMatrix, Colon},
+    spin::Union{AbstractMatrix, Colon},
+    nambu::Union{AbstractMatrix, Colon}
+)
+𝕕⁺𝕕(
+    sites::Union{NTuple{2, Ordinal}, Colon},
     orbital::Union{AbstractMatrix, Colon},
     spin::Union{AbstractMatrix, Colon},
     nambu::Union{AbstractMatrix, Colon}
@@ -212,22 +257,40 @@ MatrixCoupling(
 # Spin systems
 MatrixCoupling(
     sites::Union{NTuple{2, Ordinal}, Colon},
-    ::Union{Type{<:SpinIndex}, Type{<:𝕊}},
+    ::Type{<:SpinIndex},
+    matrix::AbstractMatrix
+)
+MatrixCoupling(
+    ::Type{<:𝕊},
+    sites::Union{NTuple{2, Ordinal}, Colon},
+    matrix::AbstractMatrix
+)
+𝕊ᵀ𝕊(
+    sites::Union{NTuple{2, Ordinal}, Colon},
     matrix::AbstractMatrix
 )
 
 # Phonon systems
 MatrixCoupling(
     sites::Union{NTuple{2, Ordinal}, Colon},
-    ::Union{Type{<:PhononIndex{:u}}, typeof(𝕦)},
+    ::Type{<:PhononIndex{:u}},
+    matrix::AbstractMatrix
+)
+MatrixCoupling(
+    ::typeof(𝕦),
+    sites::Union{NTuple{2, Ordinal}, Colon},
+    matrix::AbstractMatrix
+)
+𝕦ᵀ𝕦(
+    sites::Union{NTuple{2, Ordinal}, Colon},
     matrix::AbstractMatrix
 )
 ```
-is designed to represent the coupling patterns in such cases. Here, in the second construction function the `matrix` acts on the local $(S^x, S^y, S^z)^T$ vector space, and in the third construction function the `matrix` acts on the local $(u^x[, u^y[, u^z]])^T$ vector space depending on the dimension of the lattice vibrations.
+is designed to represent the coupling patterns in such cases. Here, in construction functions for spin systems the `matrix` acts on the local $(S^x, S^y, S^z)^T$ vector space, and in the construction functions for phonon systems the `matrix` acts on the local $(u^x[, u^y[, u^z]])^T$ vector space depending on the dimension of the lattice vibrations.
 
 The following codes construct the coupling pattern of the above spin-dependent hopping example:
 ```jldoctest
-julia> mc = MatrixCoupling(:, 𝕕, :, σ"z", :);
+julia> mc = MatrixCoupling(𝕕, :, :, σ"z", :);
 
 julia> length(mc)
 2
@@ -237,6 +300,9 @@ julia> mc[1]
 
 julia> mc[2]
 - ∑[𝕕(:, :, -1//2, :) 𝕕(:, :, -1//2, :)]
+
+julia> mc == 𝕕⁺𝕕(:, :, σ"z", :)
+true
 ```
 Here, [`@σ_str`](@ref) is a string literal that returns the generalized Pauli matrices:
 ```julia
@@ -252,7 +318,7 @@ Here, [`@σ_str`](@ref) is a string literal that returns the generalized Pauli m
 
 The coupling pattern of the [Heisenberg term](https://en.wikipedia.org/wiki/Quantum_Heisenberg_model) $J\sum_{⟨ij⟩}S^x_iS^x_j+S^y_iS^y_j+S^z_iS^z_j$ can be constructed as follows:
 ```jldoctest
-julia> mc = MatrixCoupling(:, 𝕊, Heisenberg"");
+julia> mc = MatrixCoupling(𝕊, :, Heisenberg"");
 
 julia> length(mc)
 3
@@ -265,6 +331,9 @@ julia> mc[2]
 
 julia> mc[3]
 𝕊(:, 'z') 𝕊(:, 'z')
+
+julia> mc == 𝕊ᵀ𝕊(:, Heisenberg"")
+true
 ```
 where [`@Heisenberg_str`](@ref) is a string literal that helps to specify common spin terms.
 
@@ -298,11 +367,11 @@ DM"z" => SparseMatrixCSC([0 1 0; -1 0 0; 0 0 0])
 
 For one example, for the nearest-neighbor spin exchange interactions of itinerant fermions $J\sum_{⟨ij⟩}c^†_i\vec{σ}_ic_i ⋅ c^†_j\vec{σ}_jc_j$ where $\vec{σ}_i=(σ^x_i, σ^y_i, σ^z_i)^T$ acts on the local spin space at site $i$, the coupling pattern can be constructed as follows:
 ```jldoctest
-julia> mc₁ = MatrixCoupling(:, 𝕕, :, σ"+", :);
+julia> mc₁ = 𝕕⁺𝕕(:, :, σ"+", :);
 
-julia> mc₂ = MatrixCoupling(:, 𝕕, :, σ"-", :);
+julia> mc₂ = 𝕕⁺𝕕(:, :, σ"-", :);
 
-julia> mc₃ = MatrixCoupling(:, 𝕕, :, σ"z", :);
+julia> mc₃ = 𝕕⁺𝕕(:, :, σ"z", :);
 
 julia> coupling = 1//2*mc₁*mc₂ + 1//2*mc₂*mc₁ + mc₃*mc₃;
 
@@ -318,11 +387,11 @@ julia> collect(coupling)
 
 For another example, for the onsite spin-orbital coupling of the $(d_{yz}, d_{xz}, d_{xy})^T$ $t_2g$ orbitals $\lambda\sum_i c^\dagger_i \vec{L}_i\cdot\vec{σ}_i c_i$ where $\vec{L}_i=(L^x_i, L^y_i, L^z_i)^T$ acts on the local orbital space and $\vec{σ}_i=(σ^x_i, σ^y_i, σ^z_i)^T$ acts on the local spin space, the coupling pattern can be constructed as follows:
 ```jldoctest
-julia> mc₁ = MatrixCoupling(:, 𝕕, L"x", σ"x", :);
+julia> mc₁ = 𝕕⁺𝕕(:, L"x", σ"x", :);
 
-julia> mc₂ = MatrixCoupling(:, 𝕕, L"y", σ"y", :);
+julia> mc₂ = 𝕕⁺𝕕(:, L"y", σ"y", :);
 
-julia> mc₃ = MatrixCoupling(:, 𝕕, L"z", σ"z", :);
+julia> mc₃ = 𝕕⁺𝕕(:, L"z", σ"z", :);
 
 julia> coupling = mc₁ + mc₂ + mc₃;
 
@@ -350,9 +419,9 @@ the coupling pattern can be represented by the following function:
 ```julia
 function kitaev(bond::Bond)
     ϕ = azimuth(rcoordinate(bond)) # get the azimuth angle of a bond in radians
-    any(≈(ϕ), (π/6, 7π/6)) && return Coupling(:, 𝕊, ('x', 'x'))
-    any(≈(ϕ), (5π/6, 11π/6)) && return Coupling(:, 𝕊, ('y', 'y'))
-    any(≈(ϕ), (π/2, 3π/2)) && return Coupling(:, 𝕊, ('z', 'z'))
+    any(≈(ϕ), (π/6, 7π/6)) && return Coupling(𝕊, :, ('x', 'x'))
+    any(≈(ϕ), (5π/6, 11π/6)) && return Coupling(𝕊, :, ('y', 'y'))
+    any(≈(ϕ), (π/2, 3π/2)) && return Coupling(𝕊, :, ('z', 'z'))
     error("kitaev error: wrong input bond.")
 end
 ```
@@ -418,7 +487,7 @@ Pairing(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothin
 
 # termkind = :Hubbard
 # bondkind = 0
-# coupling = Coupling(:, 𝕕, :, (1//2, 1//2, -1//2, -1//2), (2, 1, 2, 1))
+# coupling = Coupling(𝕕, :, :, (1//2, 1//2, -1//2, -1//2), (2, 1, 2, 1))
 # ishermitian = true
 Hubbard(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing)
 

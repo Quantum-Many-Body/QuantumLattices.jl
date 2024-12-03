@@ -149,13 +149,13 @@ end
 end
 
 @testset "Fock Coupling" begin
-    @test collect(MatrixCoupling(:, FockIndex, :, :, :)) == collect(MatrixCoupling(:, 𝕕, :, :, :)) == [Coupling(𝕕(:, :, :, :), 𝕕(:, :, :, :))]
+    @test collect(MatrixCoupling(:, FockIndex, :, :, :)) == collect(MatrixCoupling(𝕕, :, :, :, :)) == collect(𝕕⁺𝕕(:, :, :, :)) == [Coupling(𝕕(:, :, :, :), 𝕕(:, :, :, :))]
     @test collect(MatrixCoupling(:, FockIndex{:}, σ"+", σ"-", :)) == [Coupling(𝕕(:, 1, -1//2, :), 𝕕(:, 2, 1//2, :))]
-    @test collect(MatrixCoupling((1ˢᵗ, 2ⁿᵈ), FockIndex{:f}, :, σ"y", σ"z")) == collect(MatrixCoupling((1ˢᵗ, 2ⁿᵈ), 𝕗, :, σ"y", σ"z")) == [
+    @test collect(MatrixCoupling((1ˢᵗ, 2ⁿᵈ), FockIndex{:f}, :, σ"y", σ"z")) == collect(MatrixCoupling(𝕗, (1ˢᵗ, 2ⁿᵈ), :, σ"y", σ"z")) == collect(𝕗⁺𝕗((1ˢᵗ, 2ⁿᵈ), :, σ"y", σ"z")) == [
         Coupling(+1im, 𝕗(1ˢᵗ, :, -1//2, 1), 𝕗(2ⁿᵈ, :, 1//2, 2)), Coupling(-1im, 𝕗(1ˢᵗ, :, 1//2, 1), 𝕗(2ⁿᵈ, :, -1//2, 2)),
         Coupling(-1im, 𝕗(1ˢᵗ, :, -1//2, 2), 𝕗(2ⁿᵈ, :, 1//2, 1)), Coupling(+1im, 𝕗(1ˢᵗ, :, 1//2, 2), 𝕗(2ⁿᵈ, :, -1//2, 1))
     ]
-    @test collect(MatrixCoupling((1ˢᵗ, 2ⁿᵈ), FockIndex{:b}, σ"x", :, σ"0")) == collect(MatrixCoupling((1ˢᵗ, 2ⁿᵈ), 𝕓, σ"x", :, σ"0")) == [
+    @test collect(MatrixCoupling((1ˢᵗ, 2ⁿᵈ), FockIndex{:b}, σ"x", :, σ"0")) == collect(MatrixCoupling(𝕓, (1ˢᵗ, 2ⁿᵈ), σ"x", :, σ"0")) == collect(𝕓⁺𝕓((1ˢᵗ, 2ⁿᵈ), σ"x", :, σ"0")) == [
         Coupling(𝕓(1ˢᵗ, 2, :, 1), 𝕓(2ⁿᵈ, 1, :, 2)), Coupling(𝕓(1ˢᵗ, 1, :, 1), 𝕓(2ⁿᵈ, 2, :, 2)),
         Coupling(𝕓(1ˢᵗ, 2, :, 2), 𝕓(2ⁿᵈ, 1, :, 1)), Coupling(𝕓(1ˢᵗ, 1, :, 2), 𝕓(2ⁿᵈ, 2, :, 1))
     ]
@@ -169,7 +169,7 @@ end
         Operator(2.0, 𝕗(1, 1, +1//2, 2, SVector(0.0), SVector(0.0)), 𝕗(2, 2, +1//2, 1, SVector(0.5), SVector(0.0)))
     ]
 
-    fc = Coupling(2.0, (1ˢᵗ, 1ˢᵗ, 1ˢᵗ, 1ˢᵗ), 𝕕, :, (1//2, 1//2, -1//2, -1//2), (2, 1, 2, 1))
+    fc = Coupling(2.0, 𝕕, (1ˢᵗ, 1ˢᵗ, 1ˢᵗ, 1ˢᵗ), :, (1//2, 1//2, -1//2, -1//2), (2, 1, 2, 1))
     point = Point(1, SVector(0.0), SVector(0.0))
     hilbert = Hilbert(point.site=>Fock{:b}(2, 2))
     ex = expand(fc, Val(:term), Bond(point), hilbert)
@@ -188,8 +188,8 @@ end
         Operator(2.0, 𝕗(1, 2, +1//2, 2, SVector(0.5), SVector(0.0)), 𝕗(1, 2, -1//2, 2, SVector(0.5), SVector(0.0)), 𝕗(1, 3, -1//2, 1, SVector(0.5), SVector(0.0)), 𝕗(1, 3, +1//2, 1, SVector(0.5), SVector(0.0)))
     ]
 
-    fc₁ = Coupling(+1.0, :, 𝕕, :, (+1//2, +1//2), (2, 1))
-    fc₂ = Coupling(-1.0, :, 𝕕, :, (-1//2, -1//2), (2, 1))
+    fc₁ = Coupling(+1.0, 𝕕, :, :, (+1//2, +1//2), (2, 1))
+    fc₂ = Coupling(-1.0, 𝕕, :, :, (-1//2, -1//2), (2, 1))
     point = Point(1, SVector(0.0), SVector(0.0))
     hilbert = Hilbert(point.site=>Fock{:f}(2, 2))
     ex = expand(fc₁*fc₂, Val(:term), Bond(point), hilbert)
@@ -223,7 +223,7 @@ end
     bond = Bond(point)
     hilbert = Hilbert(point.site=>Fock{:f}(2, 2))
 
-    term = Onsite(:mu, 1.5, MatrixCoupling(:, FockIndex, σ"z", σ"x", :))
+    term = Onsite(:mu, 1.5, 𝕕⁺𝕕(:, σ"z", σ"x", :))
     operators = Operators(
         Operator(-0.75, 𝕗(1, 2, +1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕗(1, 2, -1//2, 1, [0.5, 0.5], [0.0, 0.0])),
         Operator(+0.75, 𝕗(1, 1, -1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕗(1, 1, +1//2, 1, [0.5, 0.5], [0.0, 0.0])),
@@ -233,7 +233,7 @@ end
     @test expand(term, bond, hilbert, half=true) == operators
     @test expand(term, bond, hilbert, half=false) == operators*2
 
-    term = Onsite(:mu, 1.5, MatrixCoupling(:, FockIndex, σ"z", σ"z", :))
+    term = Onsite(:mu, 1.5, 𝕕⁺𝕕(:, σ"z", σ"z", :))
     operators = Operators(
         Operator(+0.75, 𝕗(1, 2, -1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕗(1, 2, -1//2, 1, [0.5, 0.5], [0.0, 0.0])),
         Operator(+0.75, 𝕗(1, 1, +1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕗(1, 1, +1//2, 1, [0.5, 0.5], [0.0, 0.0])),
@@ -261,7 +261,7 @@ end
 @testset "Pairing" begin
     bond = Bond(1, Point(2, (0.0, 0.0), (0.0, 0.0)), Point(1, (0.5, 0.5), (0.0, 0.0)))
     hilbert = Hilbert(site=>Fock{:f}(1, 1) for site=1:2)
-    term = Pairing(:Δ, 1.5, 1, Coupling{2}(:, 𝕕, :, :, :); amplitude=bond->(bond|>rcoordinate|>azimuthd ≈ 45 ? 1 : -1))
+    term = Pairing(:Δ, 1.5, 1, Coupling{2}(𝕕, :, :, :, :); amplitude=bond->(bond|>rcoordinate|>azimuthd ≈ 45 ? 1 : -1))
     operators = Operators(
         Operator(+1.5, 𝕗(2, 1, 0, 1, [0.0, 0.0], [0.0, 0.0]), 𝕗(1, 1, 0, 1, [0.5, 0.5], [0.0, 0.0])),
         Operator(-1.5, 𝕗(1, 1, 0, 1, [0.5, 0.5], [0.0, 0.0]), 𝕗(2, 1, 0, 1, [0.0, 0.0], [0.0, 0.0]))
@@ -271,7 +271,7 @@ end
 
     point = Point(1, (0.5, 0.5), (0.0, 0.0))
     hilbert = Hilbert(point.site=>Fock{:f}(1, 2))
-    term = Pairing(:Δ, 1.5, 0, MatrixCoupling(:, 𝕕, :, [0 -1; 1 0], :))
+    term = Pairing(:Δ, 1.5, 0, 𝕕⁺𝕕(:, :, [0 -1; 1 0], :))
     operators = Operators(
         Operator(-1.5, 𝕗(1, 1, +1//2, 1, [0.5, 0.5], [0.0, 0.0]), 𝕗(1, 1, -1//2, 1, [0.5, 0.5], [0.0, 0.0])),
         Operator(+1.5, 𝕗(1, 1, -1//2, 1, [0.5, 0.5], [0.0, 0.0]), 𝕗(1, 1, +1//2, 1, [0.5, 0.5], [0.0, 0.0]))
@@ -347,7 +347,7 @@ end
     bond = Bond(1, Point(2, (0.0, 0.0), (0.0, 0.0)), Point(1, (0.5, 0.5), (0.0, 0.0)))
     hilbert = Hilbert(site=>Fock{:f}(1, 2) for site=1:2)
 
-    term = Coulomb(:V, 2.5, 1, MatrixCoupling(:, FockIndex, :, σ"z", :)^2)
+    term = Coulomb(:V, 2.5, 1, 𝕕⁺𝕕(:, :, σ"z", :)^2)
     operators = Operators(
         Operator(-1.25, 𝕗(2, 1, -1//2, 2, [0.0, 0.0], [0.0, 0.0]), 𝕗(2, 1, -1//2, 1, [0.0, 0.0], [0.0, 0.0]), 𝕗(1, 1, +1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕗(1, 1, +1//2, 1, [0.5, 0.5], [0.0, 0.0])),
         Operator(+1.25, 𝕗(2, 1, -1//2, 2, [0.0, 0.0], [0.0, 0.0]), 𝕗(2, 1, -1//2, 1, [0.0, 0.0], [0.0, 0.0]), 𝕗(1, 1, -1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕗(1, 1, -1//2, 1, [0.5, 0.5], [0.0, 0.0])),
@@ -357,7 +357,7 @@ end
     @test expand(term, bond, hilbert, half=true) == operators
     @test expand(term, bond, hilbert, half=false) == operators*2
 
-    term = Coulomb(:V, 2.5, 1, MatrixCoupling(:, FockIndex, :, σ"x", :)*MatrixCoupling(:, FockIndex, :, σ"z", :))
+    term = Coulomb(:V, 2.5, 1, 𝕕⁺𝕕(:, :, σ"x", :)*𝕕⁺𝕕(:, :, σ"z", :))
     operators = Operators(
         Operator(-1.25, 𝕗(2, 1, +1//2, 2, [0.0, 0.0], [0.0, 0.0]), 𝕗(2, 1, -1//2, 1, [0.0, 0.0], [0.0, 0.0]), 𝕗(1, 1, -1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕗(1, 1, -1//2, 1, [0.5, 0.5], [0.0, 0.0])),
         Operator(+1.25, 𝕗(2, 1, -1//2, 2, [0.0, 0.0], [0.0, 0.0]), 𝕗(2, 1, +1//2, 1, [0.0, 0.0], [0.0, 0.0]), 𝕗(1, 1, +1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕗(1, 1, +1//2, 1, [0.5, 0.5], [0.0, 0.0])),
@@ -471,11 +471,11 @@ end
 end
 
 @testset "Spin Coupling" begin
-    @test collect(MatrixCoupling(:, SpinIndex, [1 0 0; 0 1 0; 0 0 1])) == collect(MatrixCoupling(:, 𝕊, [1 0 0; 0 1 0; 0 0 1])) == [
-        Coupling(:, 𝕊, ('x', 'x')), Coupling(:, 𝕊, ('y', 'y')), Coupling(:, 𝕊, ('z', 'z'))
+    @test collect(MatrixCoupling(:, SpinIndex, [1 0 0; 0 1 0; 0 0 1])) == collect(MatrixCoupling(𝕊, :, [1 0 0; 0 1 0; 0 0 1])) == collect(𝕊ᵀ𝕊(:, [1 0 0; 0 1 0; 0 0 1])) == [
+        Coupling(𝕊, :, ('x', 'x')), Coupling(𝕊, :, ('y', 'y')), Coupling(𝕊, :, ('z', 'z'))
     ]
 
-    sc = Coupling(2.0, (1ˢᵗ, 2ⁿᵈ), 𝕊, ('+', '-'))
+    sc = Coupling(2.0, 𝕊, (1ˢᵗ, 2ⁿᵈ), ('+', '-'))
     bond = Bond(1, Point(1, [0.0], [0.0]), Point(2, [0.5], [0.0]))
     hilbert = Hilbert(Spin{1}(), 2)
     ex = expand(sc, Val(:SpinTerm), bond, hilbert)
@@ -519,7 +519,7 @@ end
 
     bond = Bond(1, Point(2, (0.5, 0.5), (0.0, 0.0)), Point(1, (0.0, 0.0), (0.0, 0.0)))
     hilbert = Hilbert(site=>Spin{1//2}() for site=1:2)
-    term = SpinTerm(:J, 1.5, 1, MatrixCoupling(:, 𝕊, Heisenberg""))
+    term = SpinTerm(:J, 1.5, 1, 𝕊ᵀ𝕊(:, Heisenberg""))
     operators = Operators(
         Operator(1.5, 𝕊{1//2}(2, 'x', [0.5, 0.5], [0.0, 0.0]), 𝕊{1//2}(1, 'x', [0.0, 0.0], [0.0, 0.0])),
         Operator(1.5, 𝕊{1//2}(2, 'y', [0.5, 0.5], [0.0, 0.0]), 𝕊{1//2}(1, 'y', [0.0, 0.0], [0.0, 0.0])),
@@ -834,7 +834,7 @@ end
 end
 
 @testset "Phonon Coupling" begin
-    @test collect(MatrixCoupling(:, 𝕦, [1 0 1; 0 1 0; 1 0 1])) == collect(MatrixCoupling(:, PhononIndex{:u}, [1 0 1; 0 1 0; 1 0 1])) == [
+    @test collect(MatrixCoupling(:, PhononIndex{:u}, [1 0 1; 0 1 0; 1 0 1])) == collect(MatrixCoupling(𝕦, :, [1 0 1; 0 1 0; 1 0 1])) == collect(𝕦ᵀ𝕦(:, [1 0 1; 0 1 0; 1 0 1])) == [
         Coupling(𝕦(:, 'x'), 𝕦(:, 'x')), Coupling(𝕦(:, 'z'), 𝕦(:, 'x')), Coupling(𝕦(:, 'y'), 𝕦(:, 'y')), Coupling(𝕦(:, 'x'), 𝕦(:, 'z')), Coupling(𝕦(:, 'z'), 𝕦(:, 'z'))
     ]
 
@@ -930,7 +930,7 @@ end
 end
 
 @testset "Elastic" begin
-    term = Elastic(:V, 2.0, 1, MatrixCoupling(:, 𝕦, [0 1; 1 0]))
+    term = Elastic(:V, 2.0, 1, 𝕦ᵀ𝕦(:, [0 1; 1 0]))
     bond = Bond(1, Point(1, [0.0, 0.0], [0.0, 0.0]), Point(2, [0.5, 0.0], [0.0, 0.0]))
     hilbert = Hilbert(site=>Phonon(2) for site=1:2)
     operators = Operators(

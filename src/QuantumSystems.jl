@@ -16,15 +16,15 @@ import ..QuantumOperators: latexname, matrix, script
 import ..Toolkit: shape
 
 # Canonical complex fermionic/bosonic systems
-export annihilation, creation, latexofbosons, latexoffermions, latexofparticles, 𝕓, 𝕕, 𝕗, isannihilation, iscreation, isnormalordered, @σ_str, @L_str
+export annihilation, creation, latexofbosons, latexoffermions, latexofparticles, 𝕓, 𝕓⁺𝕓, 𝕕, 𝕕⁺𝕕, 𝕗, 𝕗⁺𝕗, isannihilation, iscreation, isnormalordered, @σ_str, @L_str
 export Coulomb, Fock, FockIndex, FockTerm, Hopping, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, Onsite, PairHopping, Pairing, SpinFlip
 
 # SU(2) spin systems
-export latexofspins, 𝕊, SpinIndex, Spin, totalspin, @Γ_str, @Γ′_str, @DM_str, @Heisenberg_str, @Ising_str
+export latexofspins, 𝕊, 𝕊ᵀ𝕊, SpinIndex, Spin, totalspin, @Γ_str, @Γ′_str, @DM_str, @Heisenberg_str, @Ising_str
 export DM, Heisenberg, Ising, Kitaev, SingleIonAnisotropy, SpinTerm, Zeeman, Γ, Γ′
 
 # Phononic systems
-export latexofphonons, Elastic, Phonon, PhononIndex, Kinetic, Hooke, PhononTerm, 𝕦, 𝕡
+export latexofphonons, Elastic, Phonon, PhononIndex, Kinetic, Hooke, PhononTerm, 𝕦, 𝕦ᵀ𝕦, 𝕡
 
 # Canonical complex fermionic/bosonic systems and hardcore bosonic systems
 ## FockIndex
@@ -325,12 +325,12 @@ end
 ### MatrixCoupling
 const default_matrix = SparseMatrixCSC(hcat(1))
 """
-    MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, F::Union{typeof(𝕗), typeof(𝕓), typeof(𝕕)}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon})
+    MatrixCoupling(F::Union{typeof(𝕗), typeof(𝕓), typeof(𝕕)}, sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon})
     MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{F}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) where {F<:FockIndex}
 
 Construct a matrix coupling for Fock systems.
 """
-@inline function MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, F::Union{typeof(𝕗), typeof(𝕓), typeof(𝕕)}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon})
+@inline function MatrixCoupling(F::Union{typeof(𝕗), typeof(𝕓), typeof(𝕕)}, sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon})
     return MatrixCoupling(sites, AbstractIndex[F], orbital, spin, nambu)
 end
 @inline function MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{F}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) where {F<:FockIndex}
@@ -340,6 +340,17 @@ end
 @inline Component(::Type{<:FockIndex}, ::Val{:orbital}, matrix::AbstractMatrix) = Component(1:size(matrix)[1], 1:size(matrix)[2], matrix)
 @inline Component(::Type{<:FockIndex}, ::Val{:spin}, matrix::AbstractMatrix) = Component((size(matrix)[1]-1)//2:-1:(1-size(matrix)[1])//2, (size(matrix)[2]-1)//2:-1:(1-size(matrix)[2])//2, matrix)
 @inline Component(::Type{<:FockIndex}, ::Val{:nambu}, matrix::AbstractMatrix) = (@assert size(matrix)==(2, 2) "Component error: for nambu subspace, the input matrix must be 2×2."; Component(1:1:2, 2:-1:1, matrix))
+
+"""
+    𝕗⁺𝕗(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) -> MatrixCoupling
+    𝕓⁺𝕓(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) -> MatrixCoupling
+    𝕕⁺𝕕(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) -> MatrixCoupling
+
+Construct a matrix coupling for Fock systems.
+"""
+@inline 𝕗⁺𝕗(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) = MatrixCoupling(𝕗, sites, orbital, spin, nambu)
+@inline 𝕓⁺𝕓(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) = MatrixCoupling(𝕓, sites, orbital, spin, nambu)
+@inline 𝕕⁺𝕕(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) = MatrixCoupling(𝕕, sites, orbital, spin, nambu)
 
 ### Pauli matrices
 """
@@ -435,7 +446,7 @@ Type alias for `Term{:Hubbard, id, V, Int, C<:TermCoupling, A<:TermAmplitude}`.
 """
 const Hubbard{id, V, C<:TermCoupling, A<:TermAmplitude} = Term{:Hubbard, id, V, Int, C, A}
 @inline function Hubbard(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
-    return Term{:Hubbard}(id, value, 0, Coupling(:, 𝕕, :, (1//2, 1//2, -1//2, -1//2), (2, 1, 2, 1)), true; amplitude=amplitude, ismodulatable=ismodulatable)
+    return Term{:Hubbard}(id, value, 0, Coupling(𝕕, :, :, (1//2, 1//2, -1//2, -1//2), (2, 1, 2, 1)), true; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 
 """
@@ -724,17 +735,25 @@ end
 ## Coupling
 ### MatrixCoupling
 """
-    MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{S}, matrix::AbstractMatrix; rows::AbstractVector=SVector('x', 'y', 'z'), cols::AbstractVector=SVector('x', 'y', 'z')) where {S<:Union{𝕊, SpinIndex}}
+    MatrixCoupling(::Type{<:𝕊}, sites::Union{NTuple{2, Ordinal}, Colon}, matrix::AbstractMatrix; rows::AbstractVector=SVector('x', 'y', 'z'), cols::AbstractVector=SVector('x', 'y', 'z'))
+    MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{<:SpinIndex}, matrix::AbstractMatrix; rows::AbstractVector=SVector('x', 'y', 'z'), cols::AbstractVector=SVector('x', 'y', 'z'))
 
 Construct a matrix coupling for spin systems.
 """
-@inline function MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{S}, matrix::AbstractMatrix; rows::AbstractVector=SVector('x', 'y', 'z'), cols::AbstractVector=SVector('x', 'y', 'z')) where {S<:𝕊}
+@inline function MatrixCoupling(::Type{S}, sites::Union{NTuple{2, Ordinal}, Colon}, matrix::AbstractMatrix; rows::AbstractVector=SVector('x', 'y', 'z'), cols::AbstractVector=SVector('x', 'y', 'z')) where {S<:𝕊}
     return MatrixCoupling(sites, AbstractIndex[S], matrix; rows=rows, cols=cols)
 end
 @inline function MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{S}, matrix::AbstractMatrix; rows::AbstractVector=SVector('x', 'y', 'z'), cols::AbstractVector=SVector('x', 'y', 'z')) where {S<:SpinIndex}
     @assert size(matrix)==(length(rows), length(cols)) "MatrixCoupling error: mismatched input matrix and rows/cols."
     return MatrixCoupling(sites, S, Component(rows, cols, matrix))
 end
+
+"""
+    𝕊ᵀ𝕊(sites::Union{NTuple{2, Ordinal}, Colon}, matrix::AbstractMatrix; rows::AbstractVector=SVector('x', 'y', 'z'), cols::AbstractVector=SVector('x', 'y', 'z')) -> MatrixCoupling
+
+Construct a matrix coupling for spin system.
+"""
+@inline 𝕊ᵀ𝕊(sites::Union{NTuple{2, Ordinal}, Colon}, matrix::AbstractMatrix; rows::AbstractVector=SVector('x', 'y', 'z'), cols::AbstractVector=SVector('x', 'y', 'z')) = MatrixCoupling(𝕊, sites, matrix; rows=rows, cols=cols)
 
 ### Spin coupling matrix
 """
@@ -865,13 +884,13 @@ Type alias for `Term{:SingleIonAnisotropy, id, V, Int, C<:TermCoupling, A<:TermA
 const SingleIonAnisotropy{id, V, C<:TermCoupling, A<:TermAmplitude} = Term{:SingleIonAnisotropy, id, V, Int, C, A}
 @inline function SingleIonAnisotropy(id::Symbol, value, direction::Char; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
     @assert lowercase(direction)∈('x', 'y', 'z') "SingleIonAnisotropy error: not supported direction."
-    coupling = Coupling(:, 𝕊, (lowercase(direction), lowercase(direction)))
+    coupling = Coupling(𝕊, :, (lowercase(direction), lowercase(direction)))
     return Term{:SingleIonAnisotropy}(id, value, 0, coupling, true; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 @inline function SingleIonAnisotropy(id::Symbol, value, matrix::AbstractMatrix{<:Number}; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
     @assert ishermitian(matrix) "SingleIonAnisotropy error: the anisotropy matrix must be Hermitian."
     @assert size(matrix)==(3, 3) "SingleIonAnisotropy error: the anisotropy matrix must be 3×3."
-    return Term{:SingleIonAnisotropy}(id, value, 0, MatrixCoupling(:, 𝕊, matrix), true; amplitude=amplitude, ismodulatable=ismodulatable)
+    return Term{:SingleIonAnisotropy}(id, value, 0, 𝕊ᵀ𝕊(:, matrix), true; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 
 """
@@ -884,7 +903,7 @@ Type alias for `Term{:Ising, id, V, B, C<:TermCoupling, A<:TermAmplitude}`.
 const Ising{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:Ising, id, V, B, C, A}
 @inline function Ising(id::Symbol, value, bondkind, direction::Char; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
     @assert lowercase(direction)∈('x', 'y', 'z') "Ising error: not supported direction."
-    coupling = Coupling(:, 𝕊, (lowercase(direction), lowercase(direction)))
+    coupling = Coupling(𝕊, :, (lowercase(direction), lowercase(direction)))
     return Term{:Ising}(id, value, bondkind, coupling, true; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 
@@ -899,9 +918,9 @@ const Heisenberg{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:Heisenberg
 @inline function Heisenberg(id::Symbol, value, bondkind; form::Symbol=Symbol("+-z"), amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
     @assert form∈(:xyz, Symbol("+-z")) "Heisenberg error: form should :xyz or Symbol(\"+-z\")."
     couplings = if form==:xyz
-        Coupling(1//1, :, 𝕊, ('x', 'x')) + Coupling(1//1, :, 𝕊, ('y', 'y')) + Coupling(1//1, :, 𝕊, ('z', 'z'))
+        Coupling(1//1, 𝕊, :, ('x', 'x')) + Coupling(1//1, 𝕊, :, ('y', 'y')) + Coupling(1//1, 𝕊, :, ('z', 'z'))
     else
-        Coupling(1//2, :, 𝕊, ('+', '-')) + Coupling(1//2, :, 𝕊, ('-', '+')) + Coupling(1//1, :, 𝕊, ('z', 'z'))
+        Coupling(1//2, 𝕊, :, ('+', '-')) + Coupling(1//2, 𝕊, :, ('-', '+')) + Coupling(1//1, 𝕊, :, ('z', 'z'))
     end
     return Term{:Heisenberg}(id, value, bondkind, couplings, true; amplitude=amplitude, ismodulatable=ismodulatable)
 end
@@ -939,9 +958,9 @@ function Kitaev(
     dirs = (x=direction.(x, unit), y=direction.(y, unit), z=direction.(z, unit))
     function kitaev(bond::Bond)
         coordinate = rcoordinate(bond)
-        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.x) && return MatrixCoupling(: , 𝕊, Ising"x")
-        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.y) && return MatrixCoupling(: , 𝕊, Ising"y")
-        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.z) && return MatrixCoupling(: , 𝕊, Ising"z")
+        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.x) && return 𝕊ᵀ𝕊(:, Ising"x")
+        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.y) && return 𝕊ᵀ𝕊(:, Ising"y")
+        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.z) && return 𝕊ᵀ𝕊(:, Ising"z")
         error("Kitaev error: wrong bond.")
     end
     return Term{:Kitaev}(id, value, bondkind, kitaev, true; amplitude=amplitude, ismodulatable=ismodulatable)
@@ -980,9 +999,9 @@ function Γ(
     dirs = (x=direction.(x, unit), y=direction.(y, unit), z=direction.(z, unit))
     function γ(bond::Bond)
         coordinate = rcoordinate(bond)
-        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.x) && return MatrixCoupling(: , 𝕊, Γ"x")
-        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.y) && return MatrixCoupling(: , 𝕊, Γ"y")
-        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.z) && return MatrixCoupling(: , 𝕊, Γ"z")
+        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.x) && return 𝕊ᵀ𝕊(:, Γ"x")
+        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.y) && return 𝕊ᵀ𝕊(:, Γ"y")
+        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.z) && return 𝕊ᵀ𝕊(:, Γ"z")
         error("Γ error: wrong bond.")
     end
     return Term{:Γ}(id, value, bondkind, γ, true; amplitude=amplitude, ismodulatable=ismodulatable)
@@ -1021,9 +1040,9 @@ function Γ′(
     dirs = (x=direction.(x, unit), y=direction.(y, unit), z=direction.(z, unit))
     function γ′(bond::Bond)
         coordinate = rcoordinate(bond)
-        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.x) && return MatrixCoupling(: , 𝕊, Γ′"x")
-        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.y) && return MatrixCoupling(: , 𝕊, Γ′"y")
-        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.z) && return MatrixCoupling(: , 𝕊, Γ′"z")
+        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.x) && return 𝕊ᵀ𝕊(:, Γ′"x")
+        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.y) && return 𝕊ᵀ𝕊(:, Γ′"y")
+        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.z) && return 𝕊ᵀ𝕊(:, Γ′"z")
         error("Γ′ error: wrong bond.")
     end
     return Term{:Γ′}(id, value, bondkind, γ′, true; amplitude=amplitude, ismodulatable=ismodulatable)
@@ -1068,7 +1087,7 @@ function DM(
         for pair in dirs
             for v in pair.first
                 parallel = isparallel(v, coordinate; atol=atol, rtol=rtol)
-                abs(parallel)==1 && return MatrixCoupling(:, 𝕊, parallel*(pair.second[1]*DM"x"+pair.second[2]*DM"y"+pair.second[3]*DM"z"))
+                abs(parallel)==1 && return 𝕊ᵀ𝕊(:, parallel*(pair.second[1]*DM"x"+pair.second[2]*DM"y"+pair.second[3]*DM"z"))
             end
         end
         error("dm error: wrong bond.")
@@ -1255,12 +1274,12 @@ end
 ## Coupling
 ### MatrixCoupling
 """
-    MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::typeof(𝕦), matrix::AbstractMatrix; rows::Union{AbstractVector, Nothing}=nothing, cols::Union{AbstractVector, Nothing}=nothing)
+    MatrixCoupling(::typeof(𝕦), sites::Union{NTuple{2, Ordinal}, Colon}, matrix::AbstractMatrix; rows::Union{AbstractVector, Nothing}=nothing, cols::Union{AbstractVector, Nothing}=nothing)
     MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{PhononIndex{:u}}, matrix::AbstractMatrix; rows::Union{AbstractVector, Nothing}=nothing, cols::Union{AbstractVector, Nothing}=nothing)
 
 Construct a set of `Coupling`s corresponding to the dynamical matrix of phonons.
 """
-@inline function MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::typeof(𝕦), matrix::AbstractMatrix; rows::Union{AbstractVector, Nothing}=nothing, cols::Union{AbstractVector, Nothing}=nothing)
+@inline function MatrixCoupling(::typeof(𝕦), sites::Union{NTuple{2, Ordinal}, Colon}, matrix::AbstractMatrix; rows::Union{AbstractVector, Nothing}=nothing, cols::Union{AbstractVector, Nothing}=nothing)
     return MatrixCoupling(sites, AbstractIndex[𝕦], matrix; rows=rows, cols=cols)
 end
 function MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{PhononIndex{:u}}, matrix::AbstractMatrix; rows::Union{AbstractVector, Nothing}=nothing, cols::Union{AbstractVector, Nothing}=nothing)
@@ -1270,6 +1289,13 @@ function MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{PhononIn
     @assert size(matrix)==(length(rows), length(cols)) "MatrixCoupling error: mismatched input matrix and rows/cols."
     return MatrixCoupling(sites, PhononIndex{:u}, Component(rows, cols, matrix))
 end
+
+"""
+    𝕦ᵀ𝕦(sites::Union{NTuple{2, Ordinal}, Colon}, matrix::AbstractMatrix; rows::Union{AbstractVector, Nothing}=nothing, cols::Union{AbstractVector, Nothing}=nothing) -> MatrixCoupling
+
+Construct a set of `Coupling`s corresponding to the dynamical matrix of phonons.
+"""
+@inline 𝕦ᵀ𝕦(sites::Union{NTuple{2, Ordinal}, Colon}, matrix::AbstractMatrix; rows::Union{AbstractVector, Nothing}=nothing, cols::Union{AbstractVector, Nothing}=nothing) = MatrixCoupling(𝕦, sites, matrix; rows=rows, cols=cols)
 
 ### expand
 """

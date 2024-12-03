@@ -301,7 +301,7 @@ end
 
 @testset "Coupling" begin
     tc = Coupling(:, DID, (2,))
-    @test tc == Coupling(tc.pattern) == Coupling(1, :, DID, (2,)) == Coupling(𝕕(:, 2)) == Coupling(:, 𝕕, (2,)) == Coupling(1, :, 𝕕, (2,))
+    @test tc == Coupling(tc.pattern) == Coupling(1, :, DID, (2,)) == Coupling(𝕕(:, 2)) == Coupling(𝕕, :, (2,)) == Coupling(1, 𝕕, :, (2,))
     @test id(tc) == tc.pattern
     @test length(tc) == length(typeof(tc)) == 1
     @test eltype(tc) == eltype(typeof(tc)) == typeof(tc)
@@ -315,7 +315,7 @@ end
     point = Point(1, (0.0, 0.0), (0.0, 0.0))
     bond = Bond(point)
     hilbert = Hilbert(point.site=>DFock(2))
-    tc₁ = Coupling(1.5, :, DID, (1, 2))
+    tc₁ = Coupling(1.5, 𝕕, :, (1, 2))
     tc₂ = Coupling(2.0, @pattern(𝕕(:, a), 𝕕(:, b); constraint=a<b))
     ex = expand(tc₁, Val(:), bond, hilbert)
     @test eltype(ex) == eltype(typeof(ex)) == Operator{Float64, NTuple{2, CoordinatedIndex{Index{DID{Int}, Int}, SVector{2, Float64}}}}
@@ -404,7 +404,7 @@ end
     @test ta(bond) == 4.0
     @test valtype(ta, bond) == valtype(typeof(ta), typeof(bond)) == Float64
 
-    tcs = Coupling(1.0, (1ˢᵗ, 2ⁿᵈ), DID, (1, 1)) + Coupling(2.0, (1ˢᵗ, 2ⁿᵈ), DID, (2, 2))
+    tcs = Coupling(1.0, 𝕕, (1ˢᵗ, 2ⁿᵈ), (1, 1)) + Coupling(2.0, 𝕕, (1ˢᵗ, 2ⁿᵈ), (2, 2))
     termcouplings = TermCoupling(tcs)
     @test termcouplings == deepcopy(TermCoupling(tcs))
     @test isequal(termcouplings, deepcopy(TermCoupling(tcs)))
@@ -414,7 +414,7 @@ end
     bond₁ = Bond(1, Point(1, [0.0], [0.0]), Point(2, [0.5], [0.0]))
     bond₂ = Bond(2, Point(1, [0.0], [0.0]), Point(2, [0.5], [0.0]))
 
-    fx = bond::Bond -> bond.kind==1 ? Coupling(1.0, (1ˢᵗ, 2ⁿᵈ), DID, (1, 1)) : Coupling(1.0, (1ˢᵗ, 2ⁿᵈ), DID, (2, 2))
+    fx = bond::Bond -> bond.kind==1 ? Coupling(1.0, 𝕕, (1ˢᵗ, 2ⁿᵈ), (1, 1)) : Coupling(1.0, 𝕕, (1ˢᵗ, 2ⁿᵈ), (2, 2))
     termcouplings = TermCoupling(fx)
     @test valtype(termcouplings) == valtype(typeof(termcouplings)) == typejoin(typeof(fx(bond₁)), typeof(fx(bond₂)))
     @test termcouplings(bond₁) == fx(bond₁)
@@ -422,7 +422,7 @@ end
 end
 
 @testset "Term" begin
-    term = Term{:Mu}(:μ, 1.5, 0, bond->iseven(bond[1].site) ? Coupling(1.0, (1ˢᵗ, 1ˢᵗ), DID, (2, 2)) : Coupling(1.0, (1ˢᵗ, 1ˢᵗ), DID, (1, 1)), true; amplitude=bond->3)
+    term = Term{:Mu}(:μ, 1.5, 0, bond->iseven(bond[1].site) ? Coupling(1.0, 𝕕, (1ˢᵗ, 1ˢᵗ), (2, 2)) : Coupling(1.0, 𝕕, (1ˢᵗ, 1ˢᵗ), (1, 1)), true; amplitude=bond->3)
     @test term == deepcopy(term)
     @test isequal(term, deepcopy(term))
     @test term|>kind == term|>typeof|>kind == :Mu
@@ -440,7 +440,7 @@ end
     @test update!(term, μ=4.25) == replace(term, 4.25)
     @test term.value == 4.25
 
-    term = Term{:Mu}(:μ, 1.5, 0, Coupling(1.0, :, DID, (2, 1)), true; amplitude=bond->3, ismodulatable=false)
+    term = Term{:Mu}(:μ, 1.5, 0, Coupling(1.0, 𝕕, :, (2, 1)), true; amplitude=bond->3, ismodulatable=false)
     bond = Bond(Point(1, (0.0, 0.0), (0.0, 0.0)))
     hilbert = Hilbert(DFock(2))
     @test string(term, bond, hilbert) == "4.5 𝕕(:, 2) 𝕕(:, 1)"
@@ -448,7 +448,7 @@ end
     @test expand(term, bond, hilbert, half=true) == expand(term, [bond], hilbert, half=true) == operators
     @test expand(term, bond, hilbert, half=false) == expand(term, [bond], hilbert, half=false) == operators*2
 
-    term = Term{:Hp}(:t, 1.5, 1, Coupling(1.0, (1ˢᵗ, 2ⁿᵈ), DID, (2, 1)), false; amplitude=bond->3.0)
+    term = Term{:Hp}(:t, 1.5, 1, Coupling(1.0, 𝕕, (1ˢᵗ, 2ⁿᵈ), (2, 1)), false; amplitude=bond->3.0)
     bond = Bond(1, Point(2, (1.5, 1.5), (1.0, 1.0)), Point(1, (0.5, 0.5), (0.0, 0.0)))
     hilbert = Hilbert(DFock(2), 2)
     @test string(term, bond, hilbert) == "4.5 𝕕(1ˢᵗ, 2) 𝕕(2ⁿᵈ, 1) + h.c."
