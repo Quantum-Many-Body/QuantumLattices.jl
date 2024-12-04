@@ -182,9 +182,9 @@ version = "1.6.0"
 
 [[deps.EpollShim_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "8e9441ee83492030ace98f9789a654a6d0b1f643"
+git-tree-sha1 = "8a4be429317c42cfae6a7fc03c31bad1970c310d"
 uuid = "2702e6a9-849d-5ed8-8c21-79e8b8f9ee43"
-version = "0.0.20230411+0"
+version = "0.0.20230411+1"
 
 [[deps.ExceptionUnwrapping]]
 deps = ["Test"]
@@ -194,9 +194,9 @@ version = "0.1.11"
 
 [[deps.Expat_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "cc5231d52eb1771251fbd37171dbc408bcc8a1b6"
+git-tree-sha1 = "e51db81749b0777b2147fbe7b783ee79045b8e99"
 uuid = "2e619515-83b5-522b-bb60-26c02a35a201"
-version = "2.6.4+0"
+version = "2.6.4+1"
 
 [[deps.FFMPEG]]
 deps = ["FFMPEG_jll"]
@@ -281,9 +281,9 @@ version = "2.47.1+0"
 
 [[deps.Glib_jll]]
 deps = ["Artifacts", "Gettext_jll", "JLLWrappers", "Libdl", "Libffi_jll", "Libiconv_jll", "Libmount_jll", "PCRE2_jll", "Zlib_jll"]
-git-tree-sha1 = "b36c7e110080ae48fdef61b0c31e6b17ada23b33"
+git-tree-sha1 = "48b5d4c75b2c9078ead62e345966fa51a25c05ad"
 uuid = "7746bdde-850d-59dc-9ae8-88ece973131d"
-version = "2.82.2+0"
+version = "2.82.2+1"
 
 [[deps.Graphite2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
