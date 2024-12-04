@@ -332,23 +332,24 @@ Judge whether the direct product of a set of homogenous simple internal indexes 
 end
 
 """
-    InternalPattern{P, I<:Tuple{Vararg{SimpleInternalIndex}}, N, C<:NTuple{N, Function}} <: QuantumOperator
+    InternalPattern{I, P, N, C<:NTuple{N, Function}} <: QuantumOperator
 
 Internal pattern for the direct product of a set of simple internal indexes with extra constraints.
 """
-struct InternalPattern{P, I<:Tuple{Vararg{SimpleInternalIndex}}, N, C<:NTuple{N, Function}} <: QuantumOperator
+struct InternalPattern{I, P, N, C<:NTuple{N, Function}} <: QuantumOperator
     index::InternalIndexProd{I}
     constraints::C
     representations::NTuple{N, String}
     function InternalPattern{P}(index::InternalIndexProd{I}, constraints::NTuple{N, Function}, representations::NTuple{N, String}=map(string, constraints))  where {P, I<:Tuple{Vararg{SimpleInternalIndex}}, N}
         @assert isa(P, NTuple{N, Int}) "InternalPattern error: partition ($P) is not $N-tuple of integers."
         @assert sum(P)==rank(index) "InternalPattern error: sum of partition ($(sum(P))) is not equal to the rank ($(rank(index))) of the direct product of simple internal indexes."
-        new{P, I, N, typeof(constraints)}(index, constraints, representations)
+        new{I, P, N, typeof(constraints)}(index, constraints, representations)
     end
 end
-@inline Base.:(==)(pattern₁::InternalPattern{P₁}, pattern₂::InternalPattern{P₂}) where {P₁, P₂} = P₁==P₂ && pattern₁.index==pattern₂.index && pattern₁.representations==pattern₂.representations
-@inline Base.:isequal(pattern₁::InternalPattern{P₁}, pattern₂::InternalPattern{P₂}) where {P₁, P₂} = isequal(P₁, P₂) && isequal(pattern₁.index, pattern₂.index) && isequal(pattern₁.representations, pattern₂.representations)
-@inline Base.hash(pattern::InternalPattern{P}, h::UInt) where P = hash((P..., pattern.index.contents..., pattern.representations...), h)
+@inline parameternames(::Type{<:InternalPattern}) = (:index, :partition, :npartition, :constraints)
+@inline Base.:(==)(pattern₁::InternalPattern, pattern₂::InternalPattern) = partition(pattern₁)==partition(pattern₂) && pattern₁.index==pattern₂.index && pattern₁.representations==pattern₂.representations
+@inline Base.:isequal(pattern₁::InternalPattern, pattern₂::InternalPattern) = isequal(partition(pattern₁), partition(pattern₂)) && isequal(pattern₁.index, pattern₂.index) && isequal(pattern₁.representations, pattern₂.representations)
+@inline Base.hash(pattern::InternalPattern, h::UInt) = hash((partition(pattern)..., pattern.index.contents..., pattern.representations...), h)
 function Base.show(io::IO, pattern::InternalPattern)
     len, count = length(pattern.representations), 1
     for i = 1:len
@@ -388,40 +389,40 @@ Construct an internal pattern whose constraint is an [`AllEqual`](@ref) function
 
 """
     partition(pattern::InternalPattern) -> Tuple{Vararg{Int}}
-    partition(::Type{<:InternalPattern{P}}) where P -> P
+    partition(::Type{<:InternalPattern{I, P} where I}) where P -> P
 
 Get the partition of the direct product of a set of simple internal indexes on which the extra constraints operate independently.
 """
 @inline partition(pattern::InternalPattern) = partition(typeof(pattern))
-@inline partition(::Type{<:InternalPattern{P}}) where P = P
+@inline partition(::Type{<:InternalPattern{I, P} where I}) where P = P
 
 """
     rank(pattern::InternalPattern) -> Int
-    rank(::Type{<:InternalPattern{P}}) where P -> Int
+    rank(::Type{P}) where {P<:InternalPattern} -> Int
 
 Get the rank of the direct product of the simple internal indexes that an internal pattern can apply.
 """
 @inline rank(pattern::InternalPattern) = rank(typeof(pattern))
-@inline @generated rank(::Type{<:InternalPattern{P}}) where P = sum(P)
+@inline @generated rank(::Type{P}) where {P<:InternalPattern} = sum(partition(P))
 
 """
     rank(pattern::InternalPattern, i::Integer) -> Int
-    rank(::Type{<:InternalPattern{P}}, i::Integer) where P -> Int
+    rank(::Type{P}, i::Integer) where {P<:InternalPattern} -> Int
 
 Get the rank of the direct product of the simple internal indexes that the ith constraint in an internal pattern can apply.
 """
 @inline rank(pattern::InternalPattern, i::Integer) = rank(typeof(pattern), i)
-@inline rank(::Type{<:InternalPattern{P}}, i::Integer) where P = P[i]
+@inline rank(::Type{P}, i::Integer) where {P<:InternalPattern} = partition(P)[i]
 
 """
     match(pattern::InternalPattern, index::InternalIndexProd) -> Bool
 
 Judge whether the direct product of a set of simple internal indexes satisfies an internal pattern.
 """
-@generated function Base.match(pattern::InternalPattern{P}, index::InternalIndexProd) where P
+@generated function Base.match(pattern::InternalPattern, index::InternalIndexProd)
     @assert rank(pattern)==rank(index) "match error: mismatched ranks of the direct product of simple internal indexes and internal pattern."
     exprs, count = [], 1
-    for (i, r) in enumerate(P)
+    for (i, r) in enumerate(partition(pattern))
         start, stop = count, count+r-1
         segment = Expr(:call, :InternalIndexProd, Expr(:tuple, [:(index[$pos]) for pos=start:stop]...))
         push!(exprs, :(pattern.constraints[$i]($segment)::Bool))
@@ -435,8 +436,8 @@ end
 
 Get the combination of two internal patterns.
 """
-@inline function ⊗(pattern₁::InternalPattern{P₁}, pattern₂::InternalPattern{P₂}) where {P₁, P₂}
-    return InternalPattern{(P₁..., P₂...)}(pattern₁.index⊗pattern₂.index, (pattern₁.constraints..., pattern₂.constraints...), (pattern₁.representations..., pattern₂.representations...))
+@inline function ⊗(pattern₁::InternalPattern, pattern₂::InternalPattern)
+    return InternalPattern{(partition(pattern₁)..., partition(pattern₂)...)}(pattern₁.index⊗pattern₂.index, (pattern₁.constraints..., pattern₂.constraints...), (pattern₁.representations..., pattern₂.representations...))
 end
 
 """
@@ -1225,7 +1226,7 @@ end
     V = Expr(:call, :promote_type, [:(parametertype($C, 2)) for C in types]...)
     S = parametertype(MC, 2)
     I = Expr(:call, :indextype, parametertype(MC, 1), [:(parametertype($C, 1)) for C in types]...)
-    C = :(InternalPattern{(2,), Tuple{$I, $I}, 1, Tuple{typeof(AllEqual($I))}})
+    C = :(InternalPattern{Tuple{$I, $I}, (2,), 1, Tuple{typeof(AllEqual($I))}})
     return :(Coupling{$V, Pattern{Tuple{$S, $S}, $C}})
 end
 @inline VectorSpaceStyle(::Type{<:MatrixCoupling}) = VectorSpaceDirectProducted(:forward)
@@ -1260,11 +1261,11 @@ end
     types = fieldtypes(TS)
     MV = promote_type(V, map(valtype, types)...)
     SS = Tuple{concatenate(map(C->fieldtypes(parametertype(idtype(C), :sites)), types)...)...}
-    IS = Tuple{concatenate(map(C->fieldtypes(parametertype(parametertype(idtype(C), :internal), 2)), types)...)...}
-    FS = Tuple{concatenate(map(C->fieldtypes(parametertype(parametertype(idtype(C), :internal), 4)), types)...)...}
+    IS = Tuple{concatenate(map(C->fieldtypes(parametertype(parametertype(idtype(C), :internal), :index)), types)...)...}
+    FS = Tuple{concatenate(map(C->fieldtypes(parametertype(parametertype(idtype(C), :internal), :constraints)), types)...)...}
     N = length(types)
     RS = ntuple(i->2, Val(N))
-    P = InternalPattern{RS, IS, N, FS}
+    P = InternalPattern{IS, RS, N, FS}
     return Coupling{MV, Pattern{SS, P}}
 end
 @inline VectorSpaceStyle(::Type{<:MatrixCouplingProd}) = VectorSpaceDirectProducted(:forward)
@@ -1547,7 +1548,7 @@ Get the compatible `Operator` type from the type of a term, a Hilbert space and 
     V, V′, V′′ = valtype(T), valtype(C), valtype(fieldtype(T, :amplitude), B)
     isconcretetype(V′) && (V = promote_type(V, V′))
     isconcretetype(V′′) && (V = promote_type(V, V′′))
-    indextypes = ntuple(i->indextype(filter(fieldtype(parametertype(parametertype(idtype(C), :internal), 2), i), valtype(H)), eltype(B)), Val(rank(C)))
+    indextypes = ntuple(i->indextype(filter(fieldtype(parametertype(parametertype(idtype(C), :internal), :index), i), valtype(H)), eltype(B)), Val(rank(C)))
     return fulltype(Operator, NamedTuple{(:value, :id), Tuple{V, Tuple{indextypes...}}})
 end
 
