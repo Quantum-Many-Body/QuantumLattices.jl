@@ -332,11 +332,13 @@ end
 
 @testset "MatrixCoupling" begin
     component = Component([1, 2], [2, 1], [-1 0; 0 1])
+    @test parameternames(typeof(component)) == (:basistype, :datatype, :basis)
     @test length(component) == 2
     @test component[1] == (1, 2, -1)
     @test component[2] == (2, 1, +1)
 
     mc = MatrixCoupling(:, DID, component)
+    @test parameternames(typeof(mc)) == (:internal, :site, :components)
     @test eltype(typeof(mc)) == Coupling{Int64, Pattern{InternalPattern{Tuple{DID{Int}, DID{Int}}, (2,), 1, Tuple{AllEqual{()}}}, Tuple{Colon, Colon}}}
     @test mc[1] == Coupling(-1, 𝕕(:, 1), 𝕕(:, 2))
     @test mc[2] == Coupling(+1, 𝕕(:, 2), 𝕕(:, 1))

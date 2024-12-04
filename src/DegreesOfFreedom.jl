@@ -1199,6 +1199,7 @@ struct Component{T₁, T₂, V<:AbstractVector{T₁}} <: VectorSpace{Tuple{T₁,
         new{eltype(V), T, V}(left, right, convert(SparseMatrixCSC{T, Int}, matrix))
     end
 end
+@inline parameternames(::Type{<:Component}) = (:basistype, :datatype, :basis)
 @inline Base.length(component::Component) = nnz(component.matrix)
 @inline function Base.getindex(component::Component, i::Integer)
     row = component.matrix.rowval[i]
@@ -1224,12 +1225,13 @@ struct MatrixCoupling{I<:SimpleInternalIndex, S<:Union{Ordinal, Colon}, C<:Tuple
         new{I, eltype(sites), typeof(contents)}(sites, contents)
     end
 end
+@inline parameternames(::Type{<:MatrixCoupling}) = (:internal, :site, :components)
 @inline MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{I}, contents::Component...) where {I<:SimpleInternalIndex} = MatrixCoupling{I}(default(sites, Val(2)), contents)
 @inline @generated function Base.eltype(::Type{MC}) where {MC<:MatrixCoupling}
-    types = fieldtypes(fieldtype(MC, :contents))
-    V = Expr(:call, :promote_type, [:(parametertype($C, 2)) for C in types]...)
-    S = parametertype(MC, 2)
-    I = Expr(:call, :indextype, parametertype(MC, 1), [:(parametertype($C, 1)) for C in types]...)
+    types = fieldtypes(parametertype(MC, :components))
+    V = Expr(:call, :promote_type, [:(parametertype($C, :datatype)) for C in types]...)
+    S = parametertype(MC, :site)
+    I = Expr(:call, :indextype, parametertype(MC, :internal), [:(parametertype($C, :basistype)) for C in types]...)
     C = :(InternalPattern{Tuple{$I, $I}, (2,), 1, Tuple{typeof(AllEqual($I))}})
     return :(Coupling{$V, Pattern{$C, Tuple{$S, $S}}})
 end
