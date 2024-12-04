@@ -840,15 +840,19 @@ Construct a Hilbert space with all same internal spaces.
 
 # Pattern
 """
-    Pattern{S<:Tuple{Vararg{Union{Ordinal, Colon}}}, C<:InternalPattern} <: QuantumOperator
+    Pattern{C<:InternalPattern, S<:Tuple{Vararg{Union{Ordinal, Colon}}}} <: QuantumOperator
 
 Coupling pattern.
 """
-struct Pattern{S<:Tuple{Vararg{Union{Ordinal, Colon}}}, C<:InternalPattern} <: QuantumOperator
+struct Pattern{C<:InternalPattern, S<:Tuple{Vararg{Union{Ordinal, Colon}}}} <: QuantumOperator
     sites::S
     internal::C
+    function Pattern(sites::Tuple{Vararg{Union{Ordinal, Colon}}}, internal::InternalPattern)
+        @assert length(sites)==rank(internal) "Pattern error: mismatched ranks of sites ($(length(sites))) and internal pattern ($(rank(internal)))."
+        new{typeof(internal), typeof(sites)}(sites, internal)
+    end
 end
-@inline parameternames(::Type{<:Pattern}) = (:sites, :internal)
+@inline parameternames(::Type{<:Pattern}) = (:internal, :sites)
 @inline Base.hash(pattern::Pattern, h::UInt) = hash((pattern.sites, pattern.internal), h)
 function Base.show(io::IO, pattern::Pattern)
     len, count = length(pattern.internal.representations), 1
@@ -881,12 +885,12 @@ Construct a coupling pattern from a set of indexes.
 
 """
     rank(pattern::Pattern) -> Int
-    rank(::Type{<:Pattern{S}}) where {S<:Tuple{Vararg{Union{Ordinal, Colon}}} -> Int
+    rank(::Type{<:Pattern{<:InternalPattern, S}}) where {S<:Tuple{Vararg{Union{Ordinal, Colon}}}} -> Int
 
 Get the rank of a coupling pattern.
 """
 @inline rank(pattern::Pattern) = rank(typeof(pattern))
-@inline rank(::Type{<:Pattern{S}}) where {S<:Tuple{Vararg{Union{Ordinal, Colon}}}} = fieldcount(S)
+@inline rank(::Type{<:Pattern{<:InternalPattern, S}}) where {S<:Tuple{Vararg{Union{Ordinal, Colon}}}} = fieldcount(S)
 
 """
     ⊗(pattern₁::Pattern, pattern₂::Pattern) -> Pattern
@@ -1227,7 +1231,7 @@ end
     S = parametertype(MC, 2)
     I = Expr(:call, :indextype, parametertype(MC, 1), [:(parametertype($C, 1)) for C in types]...)
     C = :(InternalPattern{Tuple{$I, $I}, (2,), 1, Tuple{typeof(AllEqual($I))}})
-    return :(Coupling{$V, Pattern{Tuple{$S, $S}, $C}})
+    return :(Coupling{$V, Pattern{$C, Tuple{$S, $S}}})
 end
 @inline VectorSpaceStyle(::Type{<:MatrixCoupling}) = VectorSpaceDirectProducted(:forward)
 function Base.convert(::Type{<:Coupling}, contents::Tuple, mc::MatrixCoupling{I}) where {I<:SimpleInternalIndex}
@@ -1266,7 +1270,7 @@ end
     N = length(types)
     RS = ntuple(i->2, Val(N))
     P = InternalPattern{IS, RS, N, FS}
-    return Coupling{MV, Pattern{SS, P}}
+    return Coupling{MV, Pattern{P, SS}}
 end
 @inline VectorSpaceStyle(::Type{<:MatrixCouplingProd}) = VectorSpaceDirectProducted(:forward)
 @inline Base.convert(::Type{<:Coupling}, contents::Tuple{Vararg{Coupling}}, mcp::MatrixCouplingProd) = prod(contents; init=mcp.value)

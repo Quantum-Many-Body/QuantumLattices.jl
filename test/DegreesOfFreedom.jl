@@ -255,7 +255,7 @@ end
 end
 
 @testset "Pattern" begin
-    @test parameternames(Pattern) == (:sites, :internal)
+    @test parameternames(Pattern) == (:internal, :sites)
 
     pattern = @pattern(Index(1ˢᵗ, 𝕕(a)), Index(1ˢᵗ, 𝕕(a)), Index(2ⁿᵈ, 𝕕(b)), Index(2ⁿᵈ, 𝕕(b)))
     @test pattern == @pattern(𝕕(1ˢᵗ, a), 𝕕(1ˢᵗ, a), 𝕕(2ⁿᵈ, b), 𝕕(2ⁿᵈ, b))
@@ -337,7 +337,7 @@ end
     @test component[2] == (2, 1, +1)
 
     mc = MatrixCoupling(:, DID, component)
-    @test eltype(typeof(mc)) == Coupling{Int64, Pattern{Tuple{Colon, Colon}, InternalPattern{Tuple{DID{Int}, DID{Int}}, (2,), 1, Tuple{AllEqual{()}}}}}
+    @test eltype(typeof(mc)) == Coupling{Int64, Pattern{InternalPattern{Tuple{DID{Int}, DID{Int}}, (2,), 1, Tuple{AllEqual{()}}}, Tuple{Colon, Colon}}}
     @test mc[1] == Coupling(-1, 𝕕(:, 1), 𝕕(:, 2))
     @test mc[2] == Coupling(+1, 𝕕(:, 2), 𝕕(:, 1))
     @test mc^2 == mc*mc
@@ -350,7 +350,7 @@ end
 
     mcp = 2 * mc * another
     @test mcp == MatrixCouplingProd(mc, another) * 2
-    @test eltype(mcp) == Coupling{Float64, Pattern{Tuple{Colon, Colon, Ordinal, Ordinal}, InternalPattern{Tuple{DID{Int}, DID{Int}, DID{Colon}, DID{Colon}}, (2, 2), 2, Tuple{AllEqual{()}, AllEqual{(:nambu,)}}}}}
+    @test eltype(mcp) == Coupling{Float64, Pattern{InternalPattern{Tuple{DID{Int}, DID{Int}, DID{Colon}, DID{Colon}}, (2, 2), 2, Tuple{AllEqual{()}, AllEqual{(:nambu,)}}}, Tuple{Colon, Colon, Ordinal, Ordinal}}}
     @test mcp[1] == 2 * mc[1] * another[1]
     @test mcp[2] == 2 * mc[2] * another[1]
     @test mc*2 == 2*mc == MatrixCouplingProd(2, mc)
@@ -367,7 +367,7 @@ end
     mc₂ = MatrixCoupling((2ⁿᵈ, 1ˢᵗ), DID, Component([1, 2], [2, 1], [0 1im; -1im 0]))
     mcs = mc₁ + mc₂
     @test mcs == MatrixCouplingSum(mc₁, mc₂)
-    @test eltype(mcs) == Coupling{Complex{Int64}, Pattern{Tuple{Ordinal, Ordinal}, InternalPattern{Tuple{DID{Int}, DID{Int}}, (2,), 1, Tuple{AllEqual{()}}}}}
+    @test eltype(mcs) == Coupling{Complex{Int64}, Pattern{InternalPattern{Tuple{DID{Int}, DID{Int}}, (2,), 1, Tuple{AllEqual{()}}}, Tuple{Ordinal, Ordinal}}}
     @test collect(mcs) == [
         Coupling(𝕕(1ˢᵗ, 2), 𝕕(2ⁿᵈ, 2)),
         Coupling(𝕕(1ˢᵗ, 1), 𝕕(2ⁿᵈ, 1)),

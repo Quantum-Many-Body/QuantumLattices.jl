@@ -1299,13 +1299,14 @@ Construct a set of `Coupling`s corresponding to the dynamical matrix of phonons.
 
 ### expand
 """
-    expand(pnc::Coupling{<:Number, <:Pattern{<:NTuple{2, Colon}, <:InternalPattern{<:NTuple{2, PhononIndex{:u}}}}}, ::Val{:Hooke}, bond::Bond, hilbert::Hilbert) -> VectorSpace
+    expand(pnc::Coupling{<:Number, <:Pattern{<:InternalPattern{<:NTuple{2, PhononIndex{:u}}}}}, ::Val{:Hooke}, bond::Bond, hilbert::Hilbert) -> VectorSpace
 
 Expand the default phonon potential coupling on a given bond.
 """
-function expand(pnc::Coupling{<:Number, <:Pattern{<:NTuple{2, Colon}, <:InternalPattern{<:NTuple{2, PhononIndex{:u}}}}}, ::Val{:Hooke}, bond::Bond, hilbert::Hilbert)
+function expand(pnc::Coupling{<:Number, <:Pattern{<:InternalPattern{<:NTuple{2, PhononIndex{:u}}}}}, ::Val{:Hooke}, bond::Bond, hilbert::Hilbert)
     R̂ = rcoordinate(bond)/norm(rcoordinate(bond))
     @assert isapprox(pnc.value, 1, atol=atol, rtol=rtol) "expand error: wrong coefficient of Hooke coupling."
+    @assert isa(pnc.pattern.sites, NTuple{2, Colon}) "expand error: the `:sites` attributes of the Hooke coupling pattern must be a 2-tuple of colons."
     pn₁ = filter(pnc.pattern.internal.index[1], hilbert[bond[1].site])
     pn₂ = filter(pnc.pattern.internal.index[2], hilbert[bond[2].site])
     @assert pn₁.ndirection==pn₂.ndirection==length(R̂) "expand error: mismatched number of directions."
