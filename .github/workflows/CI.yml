@@ -49,34 +49,27 @@ jobs:
   docs:
     name: Documentation
     runs-on: ubuntu-latest
-    permissions:
-      actions: write # needed to allow julia-actions/cache to proactively delete old caches that it has created
-      contents: write
-      statuses: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: julia-actions/setup-julia@v2
+      - uses: actions/checkout@v2
+      - uses: julia-actions/setup-julia@v1
         with:
           version: '1'
-      - uses: julia-actions/cache@v2
-      - name: Configure doc environment
-        shell: julia --project=docs --color=yes {0}
-        run: |
-          using Pkg
-          Pkg.develop(PackageSpec(path=pwd()))
-          Pkg.instantiate()
-          ENV["PYTHON"]=""
-          Pkg.build("PyCall")'
-      - uses: julia-actions/julia-buildpkg@v1
-      - uses: julia-actions/julia-docdeploy@v1
+      - run: |
+          julia --project=docs -e '
+            using Pkg
+            Pkg.develop(PackageSpec(path=pwd()))
+            Pkg.instantiate()
+            ENV["PYTHON"]=""
+            Pkg.build("PyCall")'
+      - run: |
+          julia --project=docs -e '
+            using Documenter: DocMeta, doctest
+            using QuantumLattices
+            DocMeta.setdocmeta!(QuantumLattices, :DocTestSetup, :(using QuantumLattices); recursive=true)
+            doctest(QuantumLattices)'
+      - run: julia --project=docs docs/make.jl
         env:
+          JULIA_PKG_SERVER: ""
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
           GKSwstype: "100" # https://discourse.julialang.org/t/generation-of-documentation-fails-qt-qpa-xcb-could-not-connect-to-display/60988
-      - name: Run doctests
-        shell: julia --project=docs --color=yes {0}
-        run: |
-          using Documenter: DocMeta, doctest
-          using QuantumLattices
-          DocMeta.setdocmeta!(QuantumLattices, :DocTestSetup, :(using QuantumLattices); recursive=true)
-          doctest(QuantumLattices)
