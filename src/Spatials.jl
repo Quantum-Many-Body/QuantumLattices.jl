@@ -372,7 +372,7 @@ The axis is determined by a point it gets through (`nothing` can be used to deno
     3. When the input vectors are 2 dimensional, both the polar and azimuth of the axis must be 0.
 """
 @inline function rotate(vector::AbstractVector{<:Number}, angle::Number; axis::Tuple{Union{AbstractVector{<:Number}, Nothing}, Tuple{<:Number, <:Number}}=(nothing, (0, 0)))
-    return reshape(rotate(reshape(vector, axes(vector, 1), 1), angle; axis=axis), axes(vector, 1))
+    return reshape(rotate(reshape(vector, size(vector, 1), 1), angle; axis=axis), axes(vector, 1))
 end
 function rotate(cluster::AbstractMatrix{<:Number}, angle::Number; axis::Tuple{Union{AbstractVector{<:Number}, Nothing}, Tuple{<:Number, <:Number}}=(nothing, (0, 0)))
     @assert size(cluster, 1)∈(2, 3) "rotate error: only 2 and 3 dimensional vectors can be rotated."
