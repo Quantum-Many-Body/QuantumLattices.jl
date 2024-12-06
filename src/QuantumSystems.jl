@@ -73,7 +73,7 @@ end
 end
 ### requested by InternalPattern
 @inline allequalfields(::Type{<:FockIndex}) = (:orbital, :spin)
-### requested by MatrixCouplingProd
+### requested by MatrixCoupling
 @inline indextype(::Type{FockIndex}, ::Type{O}, ::Type{S}, ::Type{N}) where {O<:Union{Int, Symbol, Colon}, S<:Union{Rational{Int}, Symbol, Colon}, N<:Union{Int, Symbol, Colon}} = FockIndex{:, O, S, N}
 @inline indextype(::Type{FockIndex{T}}, ::Type{O}, ::Type{S}, ::Type{N}) where {T, O<:Union{Int, Symbol, Colon}, S<:Union{Rational{Int}, Symbol, Colon}, N<:Union{Int, Symbol, Colon}} = FockIndex{T, O, S, N}
 
@@ -546,7 +546,7 @@ end
     exprs = [:(get(kwargs, $name, getfield(index, $name))) for name in QuoteNode.(fieldnames(index))]
     return :(rawtype(typeof(index)){totalspin(index)}($(exprs...)))
 end
-### requested by MatrixCouplingProd
+### requested by MatrixCoupling
 @inline indextype(::Type{SpinIndex}, ::Type{T}) where {T<:Union{Char, Symbol, Colon}} = SpinIndex{:, T}
 @inline indextype(::Type{SpinIndex{S}}, ::Type{T}) where {S, T<:Union{Char, Symbol, Colon}} = SpinIndex{S, T}
 
@@ -1121,7 +1121,7 @@ end
     exprs = [:(get(kwargs, $name, getfield(index, $name))) for name in QuoteNode.(fieldnames(index))]
     return :(rawtype(typeof(index)){kind(index)}($(exprs...)))
 end
-### requested by MatrixCouplingProd
+### requested by MatrixCoupling
 @inline indextype(::Type{PhononIndex{K}}, ::Type{D}) where {K, D<:Union{Char, Symbol, Colon}} = PhononIndex{K, D}
 
 """
