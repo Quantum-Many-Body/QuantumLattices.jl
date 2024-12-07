@@ -12,7 +12,7 @@
 
 *Julia package for the construction of quantum lattice systems.*
 
-Welcome to **[QuantumLattices](https://github.com/Quantum-Many-Body/QuantumLattices.jl)**. Here we provide a general framework to construct the **operator-formed Hamiltonian of any quantum lattice system**, with the inputs as simple as its description by the natural language. This operator-formed Hamiltonian supports **complete symbolic computations** when combined with **[SymPy](https://github.com/JuliaPy/SymPy.jl)**, and can serve as a convenient **frontend of quantum many-body algorithms**, such as **[TBA (tight-bind approximation)](https://github.com/Quantum-Many-Body/TightBindingApproximation.jl)**, **[LSWT (linear spin wave theory)](https://github.com/Quantum-Many-Body/SpinWaveTheory.jl)**, **[SCMF (self-consistent mean field theory)](https://github.com/Quantum-Many-Body/MeanFieldTheory.jl)**, **[ED (exact diagonalization)](https://github.com/Quantum-Many-Body/ExactDiagonalization.jl)**, **[CPT/VCA (cluster perturbation theory / variational cluster approach)](https://github.com/Quantum-Many-Body/QuantumClusterTheories.jl)**, **[DMRG (density matrix renormalization group)](https://github.com/ZongYongyue/DynamicalCorrelators.jl)**, etc. Generic interfaces are defined to provide a unified access to these algorithms with automatic project management.
+Welcome to **[QuantumLattices](https://github.com/Quantum-Many-Body/QuantumLattices.jl)**. Here we provide a general framework to construct the **operator-formed Hamiltonian of any quantum lattice system**, with the inputs as simple as its description by the natural language. This operator-formed Hamiltonian supports **complete symbolic computations** when combined with **[SymPy](https://github.com/JuliaPy/SymPy.jl)**, and can serve as a convenient **frontend of quantum many-body algorithms**, such as **[TBA (tight-bind approximation)](https://github.com/Quantum-Many-Body/TightBindingApproximation.jl)**, **[LSWT (linear spin wave theory)](https://github.com/Quantum-Many-Body/SpinWaveTheory.jl)**, **[SCMF (self-consistent mean field theory)](https://github.com/Quantum-Many-Body/MeanFieldTheory.jl)**, **[ED (exact diagonalization)](https://github.com/Quantum-Many-Body/ExactDiagonalization.jl)**, **[CPT/VCA (cluster perturbation theory / variational cluster approach)](https://github.com/Quantum-Many-Body/QuantumClusterTheories.jl)**, **[DMRG (density matrix renormalization group)](https://github.com/ZongYongyue/DynamicalCorrelators.jl)**, **[RPA (random phase approximation)](https://github.com/Quantum-Many-Body/RandomPhaseApproximation.jl)**, etc. Generic interfaces are defined to provide a unified access to these algorithms with automatic project management.
 
 ## Installation
 
@@ -49,11 +49,12 @@ Furthermore, other systems can be supported easily by extending the generic prot
 
 Concrete algorithms could be considered as the "backend" of quantum lattice systems. They are developed in separate packages (still in progress):
 * **[TBA](https://github.com/Quantum-Many-Body/TightBindingApproximation.jl)**: tight-binding approximation for complex-fermionic/complex-bosonic/phononic systems;
+* **[LSWT](https://github.com/Quantum-Many-Body/SpinWaveTheory.jl)**: linear spin wave theory for magnetically ordered local-spin systems;
 * **[SCMF](https://github.com/Quantum-Many-Body/MeanFieldTheory.jl)**: self-consistent mean field theory for complex fermionic systems;
 * **[ED](https://github.com/Quantum-Many-Body/ExactDiagonalization.jl)**: exact diagonalization for complex-fermionic/hard-core-bosonic/local-spin systems;
 * **[CPT/VCA](https://github.com/Quantum-Many-Body/QuantumClusterTheories.jl)**: cluster perturbation theory and variational cluster approach for complex fermionic and local spin systems;
 * **[DMRG](https://github.com/ZongYongyue/DynamicalCorrelators.jl)**: density matrix renormalization group for complex-fermionic/hard-core-bosonic/local-spin systems based on [TensorKit](https://github.com/Jutho/TensorKit.jl) and [MPSKit](https://github.com/QuantumKitHub/MPSKit.jl);
-* **[LSWT](https://github.com/Quantum-Many-Body/SpinWaveTheory.jl)**: linear spin wave theory for magnetically ordered local-spin systems.
+* **[RPA](https://github.com/Quantum-Many-Body/RandomPhaseApproximation.jl)**: random phase approximation for complex fermionic systems.
 
 ## Getting Started
 * [Tutorials: unitcell description](@ref UnitcellDescriptionIntroduction)
