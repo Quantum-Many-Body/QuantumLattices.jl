@@ -8,11 +8,11 @@ using Printf: @printf, @sprintf
 using RecipesBase: RecipesBase, @recipe, @series, @layout
 using StaticArrays: MVector, SVector
 using ..QuantumLattices: rank
-using ..QuantumNumbers: Momenta, Momentum, period, periods
+using ..QuantumNumbers: Momenta, 𝕂, period, periods
 using ..Toolkit: atol, rtol, efficientoperations, CompositeDict, Float, SimpleNamedVectorSpace, Segment, VectorSpaceCartesian, VectorSpaceDirectSummed, VectorSpaceEnumerative, VectorSpaceStyle, getcontent
 
 import ..QuantumLattices: decompose, dimension, dtype, expand, kind
-import ..QuantumNumbers: Momentum₁, Momentum₂, Momentum₃
+import ..QuantumNumbers: 𝕂¹, 𝕂², 𝕂³
 import ..Toolkit: contentnames, shape
 
 export azimuth, azimuthd, direction, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, polar, polard, reciprocals, rotate, translate, tile, volume
@@ -945,11 +945,11 @@ end
 @inline boundary(b::Symbol) = b==:open ? 'O' : 'P'
 
 """
-    expand(momentum::Momentum, reciprocals::AbstractVector{<:AbstractVector{<:Number}}) -> eltype(reciprocals)
+    expand(momentum::𝕂, reciprocals::AbstractVector{<:AbstractVector{<:Number}}) -> eltype(reciprocals)
 
 Expand the momentum from integral values to real values with the given reciprocals.
 """
-@inline function expand(momentum::Momentum, reciprocals::AbstractVector{<:AbstractVector{<:Number}})
+@inline function expand(momentum::𝕂, reciprocals::AbstractVector{<:AbstractVector{<:Number}})
     @assert length(momentum)==length(reciprocals) "expand error: mismatched momentum and reciprocals."
     vs, ps = values(momentum), periods(momentum)
     result = zero(first(reciprocals))
@@ -960,45 +960,45 @@ Expand the momentum from integral values to real values with the given reciproca
 end
 
 """
-    Momentum₁{N}(momentum::AbstractVector{<:Number}, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where N
+    𝕂¹{N}(momentum::AbstractVector{<:Number}, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where N
 
 Construct a 1d quantum momentum by the coordinates.
 """
-function Momentum₁{N}(momentum::AbstractVector{<:Number}, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where N
-    @assert length(reciprocals)==1 "Momentum₁ error: mismatched length of reciprocals."
+function 𝕂¹{N}(momentum::AbstractVector{<:Number}, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where N
+    @assert length(reciprocals)==1 "𝕂¹ error: mismatched length of reciprocals."
     k = decompose(momentum, first(reciprocals)) * N
     i = round(Int, k)
-    @assert isapprox(i, k; atol=atol, rtol=rtol) "Momentum₁ error: input momentum not on grid."
-    return Momentum₁{N}(i)
+    @assert isapprox(i, k; atol=atol, rtol=rtol) "𝕂¹ error: input momentum not on grid."
+    return 𝕂¹{N}(i)
 end
 
 """
-    Momentum₂{N₁, N₂}(momentum::AbstractVector{<:Number}, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where {N₁, N₂}
+    𝕂²{N₁, N₂}(momentum::AbstractVector{<:Number}, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where {N₁, N₂}
 
 Construct a 2d quantum momentum by the coordinates.
 """
-function Momentum₂{N₁, N₂}(momentum::AbstractVector{<:Number}, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where {N₁, N₂}
-    @assert length(reciprocals)==2 "Momentum₂ error: mismatched length of reciprocals."
+function 𝕂²{N₁, N₂}(momentum::AbstractVector{<:Number}, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where {N₁, N₂}
+    @assert length(reciprocals)==2 "𝕂² error: mismatched length of reciprocals."
     k₁, k₂ = decompose(momentum, first(reciprocals), last(reciprocals))
     k₁, k₂ = k₁*N₁, k₂*N₂
     i₁, i₂ = round(Int, k₁), round(Int, k₂)
-    @assert isapprox(i₁, k₁; atol=atol, rtol=rtol) && isapprox(i₂, k₂; atol=atol, rtol=rtol) "Momentum₂ error: input momentum not on grid."
-    return Momentum₂{N₁, N₂}(i₁, i₂)
+    @assert isapprox(i₁, k₁; atol=atol, rtol=rtol) && isapprox(i₂, k₂; atol=atol, rtol=rtol) "𝕂² error: input momentum not on grid."
+    return 𝕂²{N₁, N₂}(i₁, i₂)
 end
 
 """
-    Momentum₃{N₁, N₂, N₃}(momentum::AbstractVector{<:Number}, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where {N₁, N₂, N₃}
+    𝕂³{N₁, N₂, N₃}(momentum::AbstractVector{<:Number}, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where {N₁, N₂, N₃}
 
 Construct a 3d quantum momentum by the coordinates.
 """
-function Momentum₃{N₁, N₂, N₃}(momentum::AbstractVector{<:Number}, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where {N₁, N₂, N₃}
-    @assert length(reciprocals)==3 "Momentum₃ error: mismatched length of reciprocals."
+function 𝕂³{N₁, N₂, N₃}(momentum::AbstractVector{<:Number}, reciprocals::AbstractVector{<:AbstractVector{<:Number}}; atol=atol, rtol=rtol) where {N₁, N₂, N₃}
+    @assert length(reciprocals)==3 "𝕂³ error: mismatched length of reciprocals."
     v₁, v₂, v₃ = reciprocals
     k₁, k₂, k₃ = decompose(momentum, v₁, v₂, v₃)
     k₁, k₂, k₃ = k₁*N₁, k₂*N₂, k₃*N₃
     i₁, i₂, i₃ = round(Int, k₁), round(Int, k₂), round(Int, k₃)
-    @assert isapprox(i₁, k₁; atol=atol, rtol=rtol) && isapprox(i₂, k₂; atol=atol, rtol=rtol) && isapprox(i₃, k₃; atol=atol, rtol=rtol) "Momentum₃ error: input momentum not on grid."
-    return Momentum₃{N₁, N₂, N₃}(i₁, i₂, i₃)
+    @assert isapprox(i₁, k₁; atol=atol, rtol=rtol) && isapprox(i₂, k₂; atol=atol, rtol=rtol) && isapprox(i₃, k₃; atol=atol, rtol=rtol) "𝕂³ error: input momentum not on grid."
+    return 𝕂³{N₁, N₂, N₃}(i₁, i₂, i₃)
 end
 
 """
@@ -1027,25 +1027,25 @@ Define the recipe for the visualization of a reciprocal space.
 end
 
 """
-    BrillouinZone{K, P<:Momentum, S<:SVector, N} <: ReciprocalSpace{K, S}
+    BrillouinZone{K, P<:𝕂, S<:SVector, N} <: ReciprocalSpace{K, S}
 
 The Brillouin zone of a lattice.
 """
-struct BrillouinZone{K, P<:Momentum, S<:SVector, N} <: ReciprocalSpace{K, S}
+struct BrillouinZone{K, P<:𝕂, S<:SVector, N} <: ReciprocalSpace{K, S}
     reciprocals::SVector{N, S}
-    function BrillouinZone{K, P}(reciprocals::SVector{N, <:SVector}) where {K, P<:Momentum, N}
+    function BrillouinZone{K, P}(reciprocals::SVector{N, <:SVector}) where {K, P<:𝕂, N}
         @assert isa(K, Symbol) "BrillouinZone error: K must be a Symbol."
         @assert rank(P)==N "BrillouinZone error: mismatched momentum and reciprocals."
         new{K, P, eltype(reciprocals), N}(reciprocals)
     end
 end
 @inline VectorSpaceStyle(::Type{<:BrillouinZone}) = VectorSpaceCartesian()
-@inline shape(::BrillouinZone{K, P}) where {K, P<:Momentum} = shape(Momenta(P))
-@inline Base.convert(::Type{<:SVector}, index::CartesianIndex, brillouinzone::BrillouinZone{K, P}) where {K, P<:Momentum} = expand(Momenta(P)[index], brillouinzone.reciprocals)
+@inline shape(::BrillouinZone{K, P}) where {K, P<:𝕂} = shape(Momenta(P))
+@inline Base.convert(::Type{<:SVector}, index::CartesianIndex, brillouinzone::BrillouinZone{K, P}) where {K, P<:𝕂} = expand(Momenta(P)[index], brillouinzone.reciprocals)
 @inline Base.hash(brillouinzone::BrillouinZone, h::UInt) = hash((Tuple(brillouinzone.reciprocals), periods(keytype(brillouinzone))), h)
-@inline Base.keys(::BrillouinZone{K, P}) where {K, P<:Momentum} = Momenta(P)
+@inline Base.keys(::BrillouinZone{K, P}) where {K, P<:𝕂} = Momenta(P)
 @inline Base.keytype(brillouinzone::BrillouinZone) = keytype(typeof(brillouinzone))
-@inline Base.keytype(::Type{<:BrillouinZone{K, P} where K}) where {P<:Momentum} = P
+@inline Base.keytype(::Type{<:BrillouinZone{K, P} where K}) where {P<:𝕂} = P
 @inline xaxis(brillouinzone::BrillouinZone) = (n=period(keytype(brillouinzone), 1); collect(Float64, 0:(n-1))/n)
 @inline yaxis(brillouinzone::BrillouinZone) = (n=period(keytype(brillouinzone), 2); collect(Float64, 0:(n-1))/n)
 @inline zaxis(brillouinzone::BrillouinZone) = (n=period(keytype(brillouinzone), 3); collect(Float64, 0:(n-1))/n)
@@ -1060,22 +1060,22 @@ Get the volume of a Brillouin zone.
 """
     BrillouinZone(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, nk)
     BrillouinZone{K}(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, nk) where K
-    BrillouinZone(::Type{P}, reciprocals::AbstractVector{<:AbstractVector{<:Number}}) where {P<:Momentum}
-    BrillouinZone{K}(::Type{P}, reciprocals::AbstractVector{<:AbstractVector{<:Number}}) where {K, P<:Momentum}
+    BrillouinZone(::Type{P}, reciprocals::AbstractVector{<:AbstractVector{<:Number}}) where {P<:𝕂}
+    BrillouinZone{K}(::Type{P}, reciprocals::AbstractVector{<:AbstractVector{<:Number}}) where {K, P<:𝕂}
 
 Construct a Brillouin zone.
 """
 @inline BrillouinZone(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, nk) = BrillouinZone{:k}(reciprocals, nk)
-@inline BrillouinZone(::Type{P}, reciprocals::AbstractVector{<:AbstractVector{<:Number}}) where {P<:Momentum} = BrillouinZone{:k}(P, reciprocals)
+@inline BrillouinZone(::Type{P}, reciprocals::AbstractVector{<:AbstractVector{<:Number}}) where {P<:𝕂} = BrillouinZone{:k}(P, reciprocals)
 @inline function BrillouinZone{K}(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, nk) where K
     isa(nk, Integer) && (nk = map(v->nk, reciprocals))
     @assert length(nk)==length(reciprocals) "BrillouinZone error: mismatched number of reciprocals and periods of momenta."
-    length(reciprocals)==1 && return BrillouinZone{K}(Momentum₁{nk[1]}, reciprocals)
-    length(reciprocals)==2 && return BrillouinZone{K}(Momentum₂{nk[1], nk[2]}, reciprocals)
-    length(reciprocals)==3 && return BrillouinZone{K}(Momentum₃{nk[1], nk[2], nk[3]}, reciprocals)
+    length(reciprocals)==1 && return BrillouinZone{K}(𝕂¹{nk[1]}, reciprocals)
+    length(reciprocals)==2 && return BrillouinZone{K}(𝕂²{nk[1], nk[2]}, reciprocals)
+    length(reciprocals)==3 && return BrillouinZone{K}(𝕂³{nk[1], nk[2], nk[3]}, reciprocals)
     error("BrillouinZone error: only 1d, 2d and 3d are supported.")
 end
-@inline BrillouinZone{K}(::Type{P}, reciprocals::AbstractVector{<:AbstractVector{<:Number}}) where {K, P<:Momentum} = BrillouinZone{K, P}(vectorconvert(reciprocals))
+@inline BrillouinZone{K}(::Type{P}, reciprocals::AbstractVector{<:AbstractVector{<:Number}}) where {K, P<:𝕂} = BrillouinZone{K, P}(vectorconvert(reciprocals))
 
 """
     ReciprocalZone{K, S<:SVector, V<:Number} <: ReciprocalSpace{K, S}
@@ -1177,7 +1177,7 @@ end
 
 Construct a reciprocal zone from a Brillouin zone.
 """
-@inline function ReciprocalZone(brillouinzone::BrillouinZone{K, P}) where {K, P<:Momentum}
+@inline function ReciprocalZone(brillouinzone::BrillouinZone{K, P}) where {K, P<:𝕂}
     return ReciprocalZone{K}(brillouinzone.reciprocals, map(length->Segment(0, 1, length; ends=(true, false)), periods(P)))
 end
 

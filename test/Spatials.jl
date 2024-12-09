@@ -3,7 +3,7 @@ using LinearAlgebra: cross, det, dot, norm
 using Plots: plot, savefig, plot!
 using QuantumLattices.Spatials
 using QuantumLattices: decompose, dimension, dtype, expand
-using QuantumLattices.QuantumNumbers: Momenta, Momentum₁, Momentum₂, Momentum₃
+using QuantumLattices.QuantumNumbers: Momenta, 𝕂¹, 𝕂², 𝕂³
 using QuantumLattices.Toolkit: Float, Segment, contentnames, shape
 using Random: seed!
 using StaticArrays: SVector
@@ -266,41 +266,41 @@ end
     savefig(plot(lattice, 2), "Lattice.png")
 end
 
-@testset "Momentum" begin
-    @test expand(Momentum₁{10}(1), [[1.0, 0.0, 0.0]]) == [0.1, 0.0, 0.0]
-    @test expand(Momentum₂{10, 100}(1, 1), [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]) == [0.1, 0.01, 0.0]
-    @test expand(Momentum₃{10, 100, 1000}(1, 1, 1), [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]) == [0.1, 0.01, 0.001]
+@testset "𝕂" begin
+    @test expand(𝕂¹{10}(1), [[1.0, 0.0, 0.0]]) == [0.1, 0.0, 0.0]
+    @test expand(𝕂²{10, 100}(1, 1), [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]) == [0.1, 0.01, 0.0]
+    @test expand(𝕂³{10, 100, 1000}(1, 1, 1), [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]) == [0.1, 0.01, 0.001]
 
-    @test Momentum₁{10}([0.1, 0.0, 0.0], [[1.0, 0.0, 0.0]]) == Momentum₁{10}(1)
-    @test Momentum₂{10, 100}([0.1, 0.01, 0.0], [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]) == Momentum₂{10, 100}(1, 1)
-    @test Momentum₃{10, 100, 1000}([0.1, 0.01, 0.001],[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]) == Momentum₃{10, 100, 1000}(1, 1, 1)
+    @test 𝕂¹{10}([0.1, 0.0, 0.0], [[1.0, 0.0, 0.0]]) == 𝕂¹{10}(1)
+    @test 𝕂²{10, 100}([0.1, 0.01, 0.0], [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]) == 𝕂²{10, 100}(1, 1)
+    @test 𝕂³{10, 100, 1000}([0.1, 0.01, 0.001],[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]) == 𝕂³{10, 100, 1000}(1, 1, 1)
 end
 
 @testset "BrillouinZone" begin
     recipls = [[1.0, 0.0], [0.0, 1.0]]
-    bz = BrillouinZone(Momentum₂{2, 4}, recipls)
+    bz = BrillouinZone(𝕂²{2, 4}, recipls)
     @test bz==deepcopy(bz) && isequal(bz, deepcopy(bz))
     @test bz≠BrillouinZone(recipls, 4) && !isequal(bz, BrillouinZone(recipls, 4))
     @test hash(bz) == hash(((SVector(1.0, 0.0), SVector(0.0, 1.0)), (2, 4)))
     @test dtype(bz) == dtype(typeof(bz)) == Float
     @test dimension(bz) == dimension(typeof(bz)) == 2
     @test shape(bz) == (0:3, 0:1)
-    @test keys(bz) == Momenta(Momentum₂{2, 4})
-    @test keytype(bz) == keytype(typeof(bz)) == Momentum₂{2, 4}
+    @test keys(bz) == Momenta(𝕂²{2, 4})
+    @test keytype(bz) == keytype(typeof(bz)) == 𝕂²{2, 4}
     @test collect(bz) == [[0.0, 0.0], [0.0, 0.25], [0.0, 0.5], [0.0, 0.75], [0.5, 0.0], [0.5, 0.25], [0.5, 0.5], [0.5, 0.75]]
     @test volume(bz) == 1.0
     savefig(plot(bz), "BrillouinZone.png")
 
     recipls = [[1.0, 0.0, 0.0]]
-    @test BrillouinZone{:q}(Momentum₁{10}, recipls) == BrillouinZone{:q}(recipls, 10)
+    @test BrillouinZone{:q}(𝕂¹{10}, recipls) == BrillouinZone{:q}(recipls, 10)
 
     recipls = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]
-    @test BrillouinZone(Momentum₂{10, 10}, recipls) == BrillouinZone(recipls, 10)
+    @test BrillouinZone(𝕂²{10, 10}, recipls) == BrillouinZone(recipls, 10)
 
     recipls = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
-    @test BrillouinZone(Momentum₃{10, 10, 10}, recipls) == BrillouinZone(recipls, 10)
+    @test BrillouinZone(𝕂³{10, 10, 10}, recipls) == BrillouinZone(recipls, 10)
 
-    bz = BrillouinZone(Momentum₃{10, 100, 1000}, recipls)
+    bz = BrillouinZone(𝕂³{10, 100, 1000}, recipls)
     @test xaxis(bz) == collect(Float64, 0:9)/10
     @test yaxis(bz) == collect(Float64, 0:99)/100
     @test zaxis(bz) == collect(Float64, 0:999)/1000
@@ -328,7 +328,7 @@ end
     @test yaxis(rz) == collect(Segment(-1, 1, 10))
     @test zaxis(rz) == collect(Segment(-3, 3, 10))
 
-    bz = BrillouinZone{:q}(Momentum₂{8, 8}, [[1.0, 0.0], [0.0, 1.0]])
+    bz = BrillouinZone{:q}(𝕂²{8, 8}, [[1.0, 0.0], [0.0, 1.0]])
     rz = ReciprocalZone(bz)
     @test rz == ReciprocalZone{:q}([[1.0, 0.0], [0.0, 1.0]], 0=>1, 0=>1; length=8)
     @test collect(rz) == collect(bz)

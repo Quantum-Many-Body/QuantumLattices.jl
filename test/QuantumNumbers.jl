@@ -39,35 +39,35 @@ using QuantumLattices.QuantumNumbers
     @test ℤ₄(-4)==ℤ₄(0)==ℤ₄(4) && ℤ₄(-3)==ℤ₄(1)==ℤ₄(5) && ℤ₄(-2)==ℤ₄(2)==ℤ₄(6) && ℤ₄(-1)==ℤ₄(3)==ℤ₄(7)
     @test string(ℤ₂(0)) == "ℤ₂(0)" && string(ℤ₃(0)) == "ℤ₃(0)" && string(ℤ₄(0)) == "ℤ₄(0)" && string(ℤ{5}(0)) == "ℤ{5}(0)"
 
-    @test Momentum₁{10} |> periods == (10,)
-    @test Momentum₂{10, 15} |> periods == (10, 15)
-    @test Momentum₃{10, 15, 20} |> periods == (10, 15, 20)
+    @test 𝕂¹{10} |> periods == (10,)
+    @test 𝕂²{10, 15} |> periods == (10, 15)
+    @test 𝕂³{10, 15, 20} |> periods == (10, 15, 20)
 
-    @test Momentum₁{10}(1) == Momentum₁{10}(11) == Momentum₁{10}(-9)
-    @test Momentum₂{10}(1, 1) == Momentum₂{10}(11, 11) == Momentum₂{10}(-9, -9)
-    @test Momentum₃{10}(1, 1, 1) == Momentum₃{10}(11, 11, 11) == Momentum₃{10}(-9, -9, -9)
-    @test Momentum₂{10, 20}(1, 1) == Momentum₂{10, 20}(11, 21) == Momentum₂{10, 20}(-9, -19)
-    @test Momentum₃{10, 20, 30}(1, 1, 1) == Momentum₃{10, 20, 30}(11, 21, 31) == Momentum₃{10, 20, 30}(-9, -19, -29)
+    @test 𝕂¹{10}(1) == 𝕂¹{10}(11) == 𝕂¹{10}(-9)
+    @test 𝕂²{10}(1, 1) == 𝕂²{10}(11, 11) == 𝕂²{10}(-9, -9)
+    @test 𝕂³{10}(1, 1, 1) == 𝕂³{10}(11, 11, 11) == 𝕂³{10}(-9, -9, -9)
+    @test 𝕂²{10, 20}(1, 1) == 𝕂²{10, 20}(11, 21) == 𝕂²{10, 20}(-9, -19)
+    @test 𝕂³{10, 20, 30}(1, 1, 1) == 𝕂³{10, 20, 30}(11, 21, 31) == 𝕂³{10, 20, 30}(-9, -19, -29)
 
-    @test string(Momentum₁{10}) == "Momentum₁{10}"
-    @test string(Momentum₂{10, 15}) == "Momentum₂{10, 15}"
-    @test string(Momentum₃{10, 15, 20}) == "Momentum₃{10, 15, 20}"
-    @test string(Momentum₁{10}(2)) == "Momentum₁{10}(2)"
-    @test string(Momentum₂{10, 20}(2, 3)) == "Momentum₂{10, 20}(2, 3)"
-    @test string(Momentum₃{10, 20, 30}(2, 3, 4)) == "Momentum₃{10, 20, 30}(2, 3, 4)"
+    @test string(𝕂¹{10}) == "𝕂¹{10}"
+    @test string(𝕂²{10, 15}) == "𝕂²{10, 15}"
+    @test string(𝕂³{10, 15, 20}) == "𝕂³{10, 15, 20}"
+    @test string(𝕂¹{10}(2)) == "𝕂¹{10}(2)"
+    @test string(𝕂²{10, 20}(2, 3)) == "𝕂²{10, 20}(2, 3)"
+    @test string(𝕂³{10, 20, 30}(2, 3, 4)) == "𝕂³{10, 20, 30}(2, 3, 4)"
 
-    @test Int(Momentum₁{10}(2)) == 3
-    @test Int(Momentum₂{10, 20}(2, 3)) == 44
-    @test Int(Momentum₃{10, 20, 30}(2, 3, 4)) == 1295
+    @test Int(𝕂¹{10}(2)) == 3
+    @test Int(𝕂²{10, 20}(2, 3)) == 44
+    @test Int(𝕂³{10, 20, 30}(2, 3, 4)) == 1295
 end
 
 @testset "Momenta" begin
-    momenta = Momenta(Momentum₂{2, 3})
-    @test momenta == Momenta(Momentum₂{2, 3})
-    @test momenta ≠ Momenta(Momentum₂{2, 4})
-    @test isequal(momenta, Momenta(Momentum₂{2, 3}))
-    @test !isequal(momenta, Momenta(Momentum₂{2, 4}))
-    @test collect(momenta) == [Momentum₂{2, 3}(0, 0), Momentum₂{2, 3}(0, 1), Momentum₂{2, 3}(0, 2), Momentum₂{2, 3}(1, 0), Momentum₂{2, 3}(1, 1), Momentum₂{2, 3}(1, 2)]
+    momenta = Momenta(𝕂²{2, 3})
+    @test momenta == Momenta(𝕂²{2, 3})
+    @test momenta ≠ Momenta(𝕂²{2, 4})
+    @test isequal(momenta, Momenta(𝕂²{2, 3}))
+    @test !isequal(momenta, Momenta(𝕂²{2, 4}))
+    @test collect(momenta) == [𝕂²{2, 3}(0, 0), 𝕂²{2, 3}(0, 1), 𝕂²{2, 3}(0, 2), 𝕂²{2, 3}(1, 0), 𝕂²{2, 3}(1, 1), 𝕂²{2, 3}(1, 2)]
     for momentum in momenta
         @test momenta[convert(CartesianIndex, momentum, momenta)] == momentum
     end 

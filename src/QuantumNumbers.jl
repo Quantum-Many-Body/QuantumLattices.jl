@@ -14,7 +14,7 @@ import ..QuantumLattices: ⊕, ⊗, ⊠, decompose, dimension, rank
 import ..Toolkit: shape
 
 export Abelian, AbelianQuantumNumber, AbelianQuantumNumberProd, AbelianGradedSpace, AbelianGradedSpaceProd, AbelianGradedSpaceSum, Graded, Momenta, RepresentationSpace, SimpleAbelianQuantumNumber
-export Momentum, Momentum₁, Momentum₂, Momentum₃, ℕ, 𝕊ᶻ, 𝕌₁, ℤ, ℤ₁, ℤ₂, ℤ₃, ℤ₄, findindex, period, periods, regularize, regularize!
+export 𝕂, 𝕂¹, 𝕂², 𝕂³, ℕ, 𝕊ᶻ, 𝕌₁, ℤ, ℤ₁, ℤ₂, ℤ₃, ℤ₄, findindex, period, periods, regularize, regularize!
 
 """
     AbelianQuantumNumber
@@ -273,41 +273,41 @@ Deligne tensor product of Abelian quantum numbers.
 @inline ⊠(::Type{AbelianQuantumNumberProd{T₁}}, ::Type{AbelianQuantumNumberProd{T₂}}) where {T₁<:Tuple{Vararg{SimpleAbelianQuantumNumber}}, T₂<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = AbelianQuantumNumberProd{Tuple{fieldtypes(T₁)..., fieldtypes(T₂)...}}
 
 """
-    const Momentum = AbelianQuantumNumberProd{<:Tuple{Vararg{ℤ}}}
-    const Momentum₁{N} = AbelianQuantumNumberProd{Tuple{ℤ{N}}}
-    const Momentum₂{N₁, N₂} = AbelianQuantumNumberProd{Tuple{ℤ{N₁}, ℤ{N₂}}}
-    const Momentum₃{N₁, N₂, N₃} = AbelianQuantumNumberProd{Tuple{ℤ{N₁}, ℤ{N₂}, ℤ{N₃}}}
+    const 𝕂 = AbelianQuantumNumberProd{<:Tuple{Vararg{ℤ}}}
+    const 𝕂¹{N} = AbelianQuantumNumberProd{Tuple{ℤ{N}}}
+    const 𝕂²{N₁, N₂} = AbelianQuantumNumberProd{Tuple{ℤ{N₁}, ℤ{N₂}}}
+    const 𝕂³{N₁, N₂, N₃} = AbelianQuantumNumberProd{Tuple{ℤ{N₁}, ℤ{N₂}, ℤ{N₃}}}
 
 Type alias for the Abelian quantum numbers of 1d, 2d and 3d momentum.
 """
-const Momentum = AbelianQuantumNumberProd{<:Tuple{Vararg{ℤ}}}
-const Momentum₁{N} = AbelianQuantumNumberProd{Tuple{ℤ{N}}}
-const Momentum₂{N₁, N₂} = AbelianQuantumNumberProd{Tuple{ℤ{N₁}, ℤ{N₂}}}
-const Momentum₃{N₁, N₂, N₃} = AbelianQuantumNumberProd{Tuple{ℤ{N₁}, ℤ{N₂}, ℤ{N₃}}}
-@inline Int(m::Momentum₁) = m[1].charge + 1
-@inline Int(m::Momentum₂{N₁, N₂}) where {N₁, N₂} = m[2].charge + m[1].charge*N₂ + 1
-@inline Int(m::Momentum₃{N₁, N₂, N₃}) where {N₁, N₂, N₃} = (m[1].charge*N₂+m[2].charge)*N₃ + m[3].charge + 1
-@inline Base.show(io::IO, m::Momentum₁{N}) where N = @printf io "Momentum₁{%s}(%s)" N m[1].charge
-@inline Base.show(io::IO, m::Momentum₂{N₁, N₂}) where {N₁, N₂} = @printf io "Momentum₂{%s, %s}(%s, %s)" N₁ N₂ m[1].charge m[2].charge
-@inline Base.show(io::IO, m::Momentum₃{N₁, N₂, N₃}) where {N₁, N₂, N₃} = @printf io "Momentum₃{%s, %s, %s}(%s, %s, %s)" N₁ N₂ N₃ m[1].charge m[2].charge m[3].charge
-@inline Base.show(io::IO, ::Type{Momentum₁{N}}) where N = @printf io "Momentum₁{%s}" N
-@inline Base.show(io::IO, ::Type{Momentum₂{N₁, N₂}}) where {N₁, N₂} = @printf io "Momentum₂{%s, %s}" N₁ N₂
-@inline Base.show(io::IO, ::Type{Momentum₃{N₁, N₂, N₃}}) where {N₁, N₂, N₃} = @printf io "Momentum₃{%s, %s, %s}" N₁ N₂ N₃
+const 𝕂 = AbelianQuantumNumberProd{<:Tuple{Vararg{ℤ}}}
+const 𝕂¹{N} = AbelianQuantumNumberProd{Tuple{ℤ{N}}}
+const 𝕂²{N₁, N₂} = AbelianQuantumNumberProd{Tuple{ℤ{N₁}, ℤ{N₂}}}
+const 𝕂³{N₁, N₂, N₃} = AbelianQuantumNumberProd{Tuple{ℤ{N₁}, ℤ{N₂}, ℤ{N₃}}}
+@inline Int(m::𝕂¹) = m[1].charge + 1
+@inline Int(m::𝕂²{N₁, N₂}) where {N₁, N₂} = m[2].charge + m[1].charge*N₂ + 1
+@inline Int(m::𝕂³{N₁, N₂, N₃}) where {N₁, N₂, N₃} = (m[1].charge*N₂+m[2].charge)*N₃ + m[3].charge + 1
+@inline Base.show(io::IO, m::𝕂¹{N}) where N = @printf io "𝕂¹{%s}(%s)" N m[1].charge
+@inline Base.show(io::IO, m::𝕂²{N₁, N₂}) where {N₁, N₂} = @printf io "𝕂²{%s, %s}(%s, %s)" N₁ N₂ m[1].charge m[2].charge
+@inline Base.show(io::IO, m::𝕂³{N₁, N₂, N₃}) where {N₁, N₂, N₃} = @printf io "𝕂³{%s, %s, %s}(%s, %s, %s)" N₁ N₂ N₃ m[1].charge m[2].charge m[3].charge
+@inline Base.show(io::IO, ::Type{𝕂¹{N}}) where N = @printf io "𝕂¹{%s}" N
+@inline Base.show(io::IO, ::Type{𝕂²{N₁, N₂}}) where {N₁, N₂} = @printf io "𝕂²{%s, %s}" N₁ N₂
+@inline Base.show(io::IO, ::Type{𝕂³{N₁, N₂, N₃}}) where {N₁, N₂, N₃} = @printf io "𝕂³{%s, %s, %s}" N₁ N₂ N₃
 
 """
-    Momentum₁{N}(k::Integer) where N
-    Momentum₂{N}(k₁::Integer, k₂::Integer) where N
-    Momentum₂{N₁, N₂}(k₁::Integer, k₂::Integer) where {N₁, N₂}
-    Momentum₃{N}(k₁::Integer, k₂::Integer, k₃::Integer) where N
-    Momentum₃{N₁, N₂, N₃}(k₁::Integer, k₂::Integer, k₃::Integer) where {N₁, N₂, N₃}
+    𝕂¹{N}(k::Integer) where N
+    𝕂²{N}(k₁::Integer, k₂::Integer) where N
+    𝕂²{N₁, N₂}(k₁::Integer, k₂::Integer) where {N₁, N₂}
+    𝕂³{N}(k₁::Integer, k₂::Integer, k₃::Integer) where N
+    𝕂³{N₁, N₂, N₃}(k₁::Integer, k₂::Integer, k₃::Integer) where {N₁, N₂, N₃}
 
 Construct 1d, 2d and 3d momentum.
 """
-@inline Momentum₁{N}(k::Integer) where N = AbelianQuantumNumberProd(ℤ{N}(k))
-@inline Momentum₂{N}(k₁::Integer, k₂::Integer) where N = Momentum₂{N, N}(k₁, k₂)
-@inline Momentum₂{N₁, N₂}(k₁::Integer, k₂::Integer) where {N₁, N₂} = AbelianQuantumNumberProd(ℤ{N₁}(k₁), ℤ{N₂}(k₂))
-@inline Momentum₃{N}(k₁::Integer, k₂::Integer, k₃::Integer) where N =  Momentum₃{N, N, N}(k₁, k₂, k₃)
-@inline Momentum₃{N₁, N₂, N₃}(k₁::Integer, k₂::Integer, k₃::Integer) where {N₁, N₂, N₃} = AbelianQuantumNumberProd(ℤ{N₁}(k₁), ℤ{N₂}(k₂), ℤ{N₃}(k₃))
+@inline 𝕂¹{N}(k::Integer) where N = AbelianQuantumNumberProd(ℤ{N}(k))
+@inline 𝕂²{N}(k₁::Integer, k₂::Integer) where N = 𝕂²{N, N}(k₁, k₂)
+@inline 𝕂²{N₁, N₂}(k₁::Integer, k₂::Integer) where {N₁, N₂} = AbelianQuantumNumberProd(ℤ{N₁}(k₁), ℤ{N₂}(k₂))
+@inline 𝕂³{N}(k₁::Integer, k₂::Integer, k₃::Integer) where N =  𝕂³{N, N, N}(k₁, k₂, k₃)
+@inline 𝕂³{N₁, N₂, N₃}(k₁::Integer, k₂::Integer, k₃::Integer) where {N₁, N₂, N₃} = AbelianQuantumNumberProd(ℤ{N₁}(k₁), ℤ{N₂}(k₂), ℤ{N₃}(k₃))
 
 """
     RepresentationSpace{QN<:AbelianQuantumNumber} <: VectorSpace{QN}
@@ -363,16 +363,16 @@ end
 end
 
 """
-    Momenta{P<:Momentum} <: RepresentationSpace{P}
+    Momenta{P<:𝕂} <: RepresentationSpace{P}
 
 The complete allowed set of momenta.
 """
-struct Momenta{P<:Momentum} <: RepresentationSpace{P} end
-@inline Momenta(::Type{P}) where {P<:Momentum} = Momenta{P}()
+struct Momenta{P<:𝕂} <: RepresentationSpace{P} end
+@inline Momenta(::Type{P}) where {P<:𝕂} = Momenta{P}()
 @inline VectorSpaceStyle(::Type{<:Momenta}) = VectorSpaceCartesian()
-@inline shape(::Momenta{P}) where {P<:Momentum} = map(period->0:period-1, reverse(periods(P)))
-@inline Base.convert(::Type{<:CartesianIndex}, m::P, ::Momenta{P}) where {P<:Momentum} = CartesianIndex(reverse(values(m)))
-@inline Base.convert(::Type{P}, index::CartesianIndex, ::Momenta{P}) where {P<:Momentum} = P(reverse(index.I)...)
+@inline shape(::Momenta{P}) where {P<:𝕂} = map(period->0:period-1, reverse(periods(P)))
+@inline Base.convert(::Type{<:CartesianIndex}, m::P, ::Momenta{P}) where {P<:𝕂} = CartesianIndex(reverse(values(m)))
+@inline Base.convert(::Type{P}, index::CartesianIndex, ::Momenta{P}) where {P<:𝕂} = P(reverse(index.I)...)
 @inline Base.:(==)(ms₁::Momenta, ms₂::Momenta) = periods(eltype(ms₁))==periods(eltype(ms₂))
 @inline Base.isequal(ms₁::Momenta, ms₂::Momenta) = isequal(periods(eltype(ms₁)), periods(eltype(ms₂)))
 
