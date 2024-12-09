@@ -14,7 +14,7 @@ import ..QuantumLattices: ⊕, ⊗, ⊠, decompose, dimension, rank
 import ..Toolkit: shape
 
 export Abelian, AbelianQuantumNumber, AbelianQuantumNumberProd, AbelianGradedSpace, AbelianGradedSpaceProd, AbelianGradedSpaceSum, Graded, Momenta, RepresentationSpace, SimpleAbelianQuantumNumber
-export Momentum, Momentum₁, Momentum₂, Momentum₃, ℕ, 𝕊ᶻ, 𝕌₁, ℤ, ℤ₂, ℤ₃, ℤ₄, findindex, period, periods, regularize, regularize!
+export Momentum, Momentum₁, Momentum₂, Momentum₃, ℕ, 𝕊ᶻ, 𝕌₁, ℤ, ℤ₁, ℤ₂, ℤ₃, ℤ₄, findindex, period, periods, regularize, regularize!
 
 """
     AbelianQuantumNumber
@@ -167,12 +167,14 @@ end
 @inline Base.show(io::IO, ::Type{ℤ{N}}) where N = @printf io "ℤ%s" N<5 ? subscript(N) : string("{", N, "}")
 
 """
+    const ℤ₁ = ℤ{1}
     const ℤ₂ = ℤ{2}
     const ℤ₃ = ℤ{3}
     const ℤ₄ = ℤ{4}
 
-Alias for ℤ₂/ℤ₃/ℤ₄ quantum numbers.
+Alias for ℤ₁/ℤ₂/ℤ₃/ℤ₄ quantum numbers.
 """
+const ℤ₁ = ℤ{1}
 const ℤ₂ = ℤ{2}
 const ℤ₃ = ℤ{3}
 const ℤ₄ = ℤ{4}

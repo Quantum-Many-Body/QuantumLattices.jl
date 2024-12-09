@@ -45,7 +45,7 @@ export idtype, ishermitian, isscalartype, latexname, latexformat, matrix, script
 include("QuantumNumbers.jl")
 using .QuantumNumbers
 export Abelian, AbelianQuantumNumber, AbelianGradedSpace, AbelianGradedSpaceProd, AbelianGradedSpaceSum, CompositeAbelianQuantumNumber, Graded, Momenta, RepresentationSpace, SimpleAbelianQuantumNumber
-export Momentum, Momentum₁, Momentum₂, Momentum₃, ℕ, 𝕊ᶻ, 𝕌₁, ℤ, ℤ₂, ℤ₃, ℤ₄, findindex, period, periods, regularize, regularize!
+export Momentum, Momentum₁, Momentum₂, Momentum₃, ℕ, 𝕊ᶻ, 𝕌₁, ℤ, ℤ₁, ℤ₂, ℤ₃, ℤ₄, findindex, period, periods, regularize, regularize!
 
 # Spatials
 include("Spatials.jl")
