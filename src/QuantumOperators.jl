@@ -193,7 +193,7 @@ The type of the id of an `OperatorPack`.
 The data type of the coefficient of an `OperatorPack`.
 """
 @inline dtype(m::OperatorPack) = dtype(typeof(m))
-@inline dtype(::Type{T}) where {T<:OperatorPack} = valtype(T)
+@inline dtype(::Type{T}) where {T<:OperatorPack} = eltype(valtype(T))
 
 """
     value(m::OperatorPack) -> valtype(m)
