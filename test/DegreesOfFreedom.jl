@@ -4,7 +4,7 @@ using Printf: @printf
 using QuantumLattices: ⊕, ⊗, expand, kind, rank, reset!, update!, value
 using QuantumLattices.DegreesOfFreedom
 using QuantumLattices.QuantumOperators: ID, LaTeX, Operator, Operators, id, latexformat, sequence
-using QuantumLattices.Spatials: Bond, Point, decompose, icoordinate, rcoordinate
+using QuantumLattices.Spatials: Bond, Point, decompose, icoordinate, nneighbor, rcoordinate
 using QuantumLattices.Toolkit: Float, contentnames, parameternames, reparameter
 using StaticArrays: SVector
 
@@ -433,6 +433,7 @@ end
     @test term|>value == 1.5
     @test term|>valtype == term|>typeof|>valtype == Float
     @test term|>rank == term|>typeof|>rank == 2
+    @test term|>nneighbor == 0
 
     p₁, p₂ = Point(1, (0.0, 0.0), (0.0, 0.0)), Point(2, (1.0, 0.0), (0.0, 0.0))
     hilbert = Hilbert(DFock(2), 2)
@@ -443,21 +444,26 @@ end
     @test update!(term, μ=4.25) == replace(term, 4.25)
     @test term.value == 4.25
 
-    term = Term{:Mu}(:μ, 1.5, 0, Coupling(1.0, 𝕕, :, (2, 1)), true; amplitude=bond->3, ismodulatable=false)
+    another = Term{:Mu}(:μ, 1.5, 0, Coupling(1.0, 𝕕, :, (2, 1)), true; amplitude=bond->3, ismodulatable=false)
     bond = Bond(Point(1, (0.0, 0.0), (0.0, 0.0)))
     hilbert = Hilbert(DFock(2))
-    @test string(term, bond, hilbert) == "4.5 𝕕(:, 2) 𝕕(:, 1)"
+    @test string(another, bond, hilbert) == "4.5 𝕕(:, 2) 𝕕(:, 1)"
     operators = Operators(Operator(+2.25, 𝕕(1, 2, SVector(0.0, 0.0), SVector(0.0, 0.0)), 𝕕(1, 1, SVector(0.0, 0.0), SVector(0.0, 0.0))))
-    @test expand(term, bond, hilbert, half=true) == expand(term, [bond], hilbert, half=true) == operators
-    @test expand(term, bond, hilbert, half=false) == expand(term, [bond], hilbert, half=false) == operators*2
+    @test expand(another, bond, hilbert, half=true) == expand(another, [bond], hilbert, half=true) == operators
+    @test expand(another, bond, hilbert, half=false) == expand(another, [bond], hilbert, half=false) == operators*2
 
-    term = Term{:Hp}(:t, 1.5, 1, Coupling(1.0, 𝕕, (1ˢᵗ, 2ⁿᵈ), (2, 1)), false; amplitude=bond->3.0)
+    third = Term{:Hp}(:t, 1.5, 1, Coupling(1.0, 𝕕, (1ˢᵗ, 2ⁿᵈ), (2, 1)), false; amplitude=bond->3.0)
     bond = Bond(1, Point(2, (1.5, 1.5), (1.0, 1.0)), Point(1, (0.5, 0.5), (0.0, 0.0)))
     hilbert = Hilbert(DFock(2), 2)
-    @test string(term, bond, hilbert) == "4.5 𝕕(1ˢᵗ, 2) 𝕕(2ⁿᵈ, 1) + h.c."
+    @test string(third, bond, hilbert) == "4.5 𝕕(1ˢᵗ, 2) 𝕕(2ⁿᵈ, 1) + h.c."
     operators = Operators(Operator(4.5, 𝕕(2, 2, SVector(1.5, 1.5), SVector(1.0, 1.0)), 𝕕(1, 1, SVector(0.5, 0.5), SVector(0.0, 0.0))))
-    @test expand(term, bond, hilbert, half=true) == operators
-    @test expand(term, bond, hilbert, half=false) == operators+operators'
+    @test expand(third, bond, hilbert, half=true) == operators
+    @test expand(third, bond, hilbert, half=false) == operators+operators'
+    @test third|>nneighbor == 1
+
+    terms = (term, another, third)
+    @test terms|>valtype == terms|>typeof|>valtype == Float
+    @test terms|>nneighbor == 1
 end
 
 @testset "Metric" begin

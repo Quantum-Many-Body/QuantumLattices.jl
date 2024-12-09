@@ -12,7 +12,7 @@ using ..Toolkit: atol, efficientoperations, rtol, CompositeDict, Float, VectorSp
 import LaTeXStrings: latexstring
 import ..QuantumLattices: ⊕, ⊗, expand, expand!, id, ishermitian, kind, permute, rank, reset!, update!, value
 import ..QuantumOperators: idtype, optype, script
-import ..Spatials: icoordinate, rcoordinate
+import ..Spatials: icoordinate, nneighbor, rcoordinate
 import ..Toolkit: contentnames, getcontent, parameternames, shape
 
 export AbstractIndex, AllEqual, Boundary, CompositeInternal, ConstrainedInternal, Internal, InternalIndex, InternalIndexProd, InternalPattern, InternalProd, InternalSum, SimpleInternal, SimpleInternalIndex
@@ -1479,6 +1479,15 @@ Get the value type of a term.
 @inline Base.valtype(::Type{<:Term{K, I, V} where {K, I}}) where V = V
 
 """
+    valtype(terms::Tuple{Term, Vararg{Term}})
+    valtype(::Type{<:T}) where {T<:Tuple{Term, Vararg{Term}}}
+
+Get the common value type of a set of terms.
+"""
+@inline Base.valtype(terms::Tuple{Term, Vararg{Term}}) = valtype(typeof(terms))
+@inline @generated Base.valtype(::Type{<:T}) where {T<:Tuple{Term, Vararg{Term}}} = mapreduce(valtype, promote_type, fieldtypes(T))
+
+"""
     rank(term::Term) -> Int
     rank(::Type{<:Term) -> Int
 
@@ -1609,6 +1618,17 @@ end
     M = optype(term|>typeof, hilbert|>typeof, bonds|>eltype)
     expand!(Operators{M}(), term, bonds, hilbert; half=half)
 end
+
+"""
+    nneighbor(term::Term) -> Int
+    nneighbor(terms::Tuple{Term, Vararg{Term}}) -> Int
+
+Get the
+1) order of neighbor in a single term;
+2) highest order of neighbors in a set of terms.
+"""
+@inline nneighbor(term::Term) = term.bondkind::Int
+@inline nneighbor(terms::Tuple{Term, Vararg{Term}}) = maximum(nneighbor, terms)::Int
 
 # Metric and Table
 """

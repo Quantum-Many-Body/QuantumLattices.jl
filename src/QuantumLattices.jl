@@ -50,7 +50,7 @@ export Momentum, Momentum₁, Momentum₂, Momentum₃, ℕ, 𝕊ᶻ, 𝕌₁, �
 # Spatials
 include("Spatials.jl")
 using .Spatials
-export azimuth, azimuthd, direction, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, polar, polard, reciprocals, rotate, translate, tile, volume
+export azimuth, azimuthd, direction, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, nneighbor, polar, polard, reciprocals, rotate, translate, tile, volume
 export AbstractLattice, Bond, BrillouinZone, Lattice, Neighbors, Point, ReciprocalCurve, ReciprocalSpace, ReciprocalZone, ReciprocalPath, bonds, bonds!, icoordinate, isintracell, rcoordinate, save, selectpath, shrink
 export @hexagon_str, @line_str, @rectangle_str
 
