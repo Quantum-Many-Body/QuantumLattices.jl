@@ -17,8 +17,24 @@ using ..Toolkit: atol, efficientoperations, rtol, parametertype, tostr
 import ..QuantumLattices: add!, dtype, expand, expand!, id, reset!, update, update!
 import ..Spatials: save
 
-export Action, Algorithm, Assignment, CategorizedGenerator, Eager, ExpansionStyle, Formula, Frontend, Generator, Lazy, OperatorGenerator, Parameters
+export Action, Algorithm, Assignment, CategorizedGenerator, Eager, ExpansionStyle, Formula, Frontend, Generator, Lazy, OneOrMore, OperatorGenerator, Parameters
 export checkoptions, eager, lazy, initialize, options, prepare!, run!
+
+"""
+    const OneOrMore{A} = Union{A, Tuple{A, Vararg{A}}}
+
+One or more something.
+"""
+const OneOrMore{A} = Union{A, Tuple{A, Vararg{A}}}
+
+"""
+    OneOrMore(x) -> Tuple{typeof(x)}
+    OneOrMore(x::Tuple) -> typeof(x)
+
+If `x` is a tuple, return itself; if not, return `(x,)`.
+"""
+@inline OneOrMore(x) = (x,)
+@inline OneOrMore(xs::Tuple) = xs
 
 """
     Parameters{Names}(values::Number...) where Names
