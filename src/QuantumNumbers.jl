@@ -381,7 +381,7 @@ struct Momenta{P<:𝕂} <: RepresentationSpace{P} end
 
 In place regularization of the input Abelian quantum numbers and their corresponding degenerate dimensions.
 
-After the regularization, the Abelian quantum numbers will be sorted in the ascending order and duplicates will be merged together.The degenerate dimensions will be processed accordingly. When `check` is `true`, this function also check whether all input degenerate dimensions are positive. The regularized Abelian quantum numbers and degenerate dimensions, as well as the permutation vector that sorts the input Abelian quantum numbers, will be returned. 
+After the regularization, the Abelian quantum numbers will be sorted in the ascending order and duplicates will be merged together. The degenerate dimensions will be processed accordingly. When `check` is `true`, this function also check whether all input degenerate dimensions are positive. The regularized Abelian quantum numbers and degenerate dimensions, as well as the permutation vector that sorts the input Abelian quantum numbers, will be returned. 
 """
 function regularize!(quantumnumbers::Vector{<:AbelianQuantumNumber}, dimensions::Vector{Int}; check::Bool=false)
     check && @assert all(>(0), dimensions) "regularize! error: input dimensions must be positive integers."

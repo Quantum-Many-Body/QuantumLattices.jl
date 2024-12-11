@@ -5,13 +5,15 @@ using Printf: @printf
 using SparseArrays: SparseMatrixCSC
 using StaticArrays: SMatrix, SVector
 using ..DegreesOfFreedom: AbstractIndex, Component, CompositeIndex, CoordinatedIndex, Coupling, Hilbert, Index, InternalPattern, Ordinal, Pattern, SimpleInternal, SimpleInternalIndex, Term, TermAmplitude, TermCoupling, @pattern
-using ..QuantumLattices: decompose, dtype
+using ..QuantumLattices: ⊠, ⊗, decompose, dtype
+using ..QuantumNumbers: ℕ, 𝕊ᶻ, ℤ₁
 using ..QuantumOperators: ID, LaTeX, Operator, OperatorProd, Operators, latexformat
 using ..Spatials: Bond, Point, direction, isparallel, rcoordinate
 using ..Toolkit: atol, efficientoperations, rtol, Float, VectorSpace, VectorSpaceCartesian, VectorSpaceStyle, delta, getcontent, rawtype, tostr
 
 import ..DegreesOfFreedom: MatrixCoupling, allequalfields, indextype, isdefinite, patternrule, statistics
 import ..QuantumLattices: expand, expand!, kind, permute, rank
+import ..QuantumNumbers: Graded
 import ..QuantumOperators: latexname, matrix, script
 import ..Toolkit: shape
 
@@ -248,6 +250,39 @@ end
     @assert abs(v)<=(n-1)//2 "shape error: out of range."
     index = Int(v+(n-1)//2)+1
     return index:index
+end
+
+## Graded
+"""
+    Graded(fock::Fock{:f})
+    Graded{ℤ₁}(fock::Fock{:f})
+    Graded{ℕ}(fock::Fock{:f})
+    Graded{𝕊ᶻ}(fock::Fock{:f})
+    Graded{ℕ ⊠ 𝕊ᶻ}(fock::Fock{:f})
+    Graded{𝕊ᶻ ⊠ ℕ}(fock::Fock{:f})
+
+Decompose a local fermionic Fock space into an Abelian graded space that preserves 1, 2) no symmetry, 3) particle number symmetry, 4) spin-z component symmetry, and 5, 6) both particle-number and spin-z component symmetry.
+"""
+@inline Graded(fock::Fock{:f}) = Graded{ℤ₁}(fock)
+@inline Graded{ℤ₁}(fock::Fock{:f}) = Graded{ℤ₁}(0=>2^(length(fock)÷2))
+function Graded{ℕ}(fock::Fock{:f})
+    n = length(fock)÷2
+    return Graded{ℕ}(i=>binomial(n, i) for i in 0:n)
+end
+function Graded{𝕊ᶻ}(fock::Fock{:f})
+    n = length(fock)÷2
+    qns = ⊗((Graded{𝕊ᶻ}(0=>1, fock[i].spin=>1) for i in 1:n)...)
+    return decompose(qns)[1]
+end
+function Graded{ℕ ⊠ 𝕊ᶻ}(fock::Fock{:f})
+    n = length(fock)÷2
+    qns = ⊗((Graded{ℕ ⊠ 𝕊ᶻ}((0, 0)=>1, (1, fock[i].spin)=>1) for i in 1:n)...)
+    return decompose(qns)[1]
+end
+function Graded{𝕊ᶻ ⊠ ℕ}(fock::Fock{:f})
+    n = length(fock)÷2
+    qns = ⊗((Graded{𝕊ᶻ ⊠ ℕ}((0, 0)=>1, (fock[i].spin, 1)=>1) for i in 1:n)...)
+    return decompose(qns)[1]
 end
 
 ## Boundary
@@ -690,6 +725,21 @@ Get the total spin.
 """
 @inline totalspin(spin::Spin) = totalspin(typeof(spin))
 @inline totalspin(::Type{<:Spin{S}}) where S = S
+
+## Graded
+"""
+    Graded(spin::Spin)
+    Graded{ℤ₁}(spin::Spin)
+    Graded{𝕊ᶻ}(spin::Spin)
+
+Decompose a local spin space into an Abelian graded space that preserves 1, 2) no symmetry, and 3) spin-z component symmetry.
+"""
+@inline Graded(spin::Spin) = Graded{ℤ₁}(spin)
+@inline Graded{ℤ₁}(spin::Spin) = Graded{ℤ₁}(0=>Int(2*totalspin(spin)+1))
+function Graded{𝕊ᶻ}(spin::Spin)
+    S = totalspin(spin)
+    return Graded{𝕊ᶻ}(sz=>1 for sz in -S:1:S)
+end
 
 ## Permutation
 """
