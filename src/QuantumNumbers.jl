@@ -202,7 +202,7 @@ struct AbelianQuantumNumberProd{T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} <:
 end
 @inline Base.hash(qn::AbelianQuantumNumberProd, h::UInt) = hash(values(qn), h)
 @inline Base.show(io::IO, qn::AbelianQuantumNumberProd) = @printf io "Abelian[%s]%s" join(fieldtypes(fieldtype(typeof(qn), :contents)), " ⊠ ") values(qn)
-@inline Base.show(io::IO, ::Type{T}) where {T<:AbelianQuantumNumberProd} = @printf io "%s" join(fieldtypes(fieldtype(T, :contents)), " ⊠ ")
+@inline Base.show(io::IO, ::Type{AbelianQuantumNumberProd{T}}) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = @printf io "%s" join(fieldtypes(T), " ⊠ ")
 @inline Base.zero(::Type{AbelianQuantumNumberProd{T}}) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = AbelianQuantumNumberProd(map(zero,  fieldtypes(T)))
 @inline periods(::Type{AbelianQuantumNumberProd{T}}) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = map(period, fieldtypes(T))
 
