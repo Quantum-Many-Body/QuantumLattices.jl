@@ -33,7 +33,7 @@ t = Hopping(:t, symbols("t", real=true), 1)
 U = Hubbard(:U, symbols("U", real=true))
 
 # get the Hamiltonian
-operators = expand(OperatorGenerator((t, U), bonds(lattice, 1), hilbert))
+operators = expand(OperatorGenerator(bonds(lattice, 1), hilbert, (t, U)))
 ```
 The last line displays all the generated operators in the Hamiltonian in the LaTeX format. Here, in the subscript of the electronic annihilation/creation operator, an extra orbital index is also displayed.
 

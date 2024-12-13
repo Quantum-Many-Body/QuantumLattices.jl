@@ -22,7 +22,7 @@ In previous pages we have introduced the essential elements in detail of a quant
 
 Accordingly, [`OperatorGenerator`](@ref) is the type to incorporate all these elements:
 ```julia
-OperatorGenerator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert)
+OperatorGenerator(bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term})
 ```
 Then, the operator representation of the lattice Hamiltonian can be obtained by the [`expand`](@ref) function:
 ```julia
@@ -36,7 +36,7 @@ lattice = Lattice([zero(Sym)], [one(Sym)]);
 hilbert = Hilbert(site=>Fock{:f}(1, 2) for site=1:length(lattice));
 t = Hopping(:t, symbols("t", real=true), 1);
 U = Hubbard(:U, symbols("U", real=true));
-operators = expand(OperatorGenerator((t, U), bonds(lattice, 1), hilbert))
+operators = expand(OperatorGenerator(bonds(lattice, 1), hilbert, (t, U)))
 ```
 Note to run the above codes, `SymPy.Sym` and `SymPy.symbols` should be imported first.
 
@@ -67,7 +67,7 @@ julia> hilbert = Hilbert(site=>Fock{:f}(1, 2) for site=1:length(lattice));
 
 julia> t = Hopping(:t, 1.0, 1);
 
-julia> gen = OperatorGenerator((t,), bonds(lattice, 1), hilbert);
+julia> gen = OperatorGenerator(bonds(lattice, 1), hilbert, t);
 
 julia> Parameters(gen)
 (t = 1.0,)
