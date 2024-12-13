@@ -1,10 +1,10 @@
 using Base.Iterators: product
-using QuantumLattices: ⊕, ⊗, ⊠, decompose, dimension, rank
+using QuantumLattices: ⊕, ⊗, ⊠, decompose, dimension, rank, value
 using QuantumLattices.QuantumNumbers
 
 @testset "AbelianQuantumNumber" begin
     n = ℕ(1)
-    @test values(n) == 1
+    @test value(n)==1 && values(n)==(1,)
     @test n==ℕ(1) && isequal(n, ℕ(1))
     @test n<ℕ(2) && isless(n, ℕ(2))
     @test periods(n) == periods(typeof(n)) == (Inf,)
@@ -21,7 +21,7 @@ using QuantumLattices.QuantumNumbers
 
     sz = 𝕊ᶻ(1/2)
     sp = n ⊠ sz
-    @test values(sp) == (1, 1/2)
+    @test values(sp) == (1, 1/2) && value(sp, 1)==1 && value(sp, 2)==1/2
     @test sp == Abelian[ℕ ⊠ 𝕊ᶻ](1, 1/2) == Abelian[ℕ ⊠ 𝕊ᶻ]((1, 1/2)) == AbelianQuantumNumberProd(n, sz)
     @test hash(sp, UInt(1)) == hash((n.charge, sz.charge), UInt(1))
     @test string(sp) == "Abelian[ℕ ⊠ 𝕊ᶻ](1, 1/2)"
@@ -94,15 +94,15 @@ end
     @test collect(pairs(qns, dimension))==[ℕ(1)=>4, ℕ(2)=>12, ℕ(3)=>1, ℕ(4)=>2] && collect(pairs(qns, range))==[ℕ(1)=>1:4, ℕ(2)=>5:16, ℕ(3)=>17:17, ℕ(4)=>18:19]
     @test [findindex(i, qns, guess) for (i, guess) in zip(1:dimension(qns), [1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 4])] == [1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 4, 4]
 
-    qns = qns'
-    @test string(qns)=="Graded{ℕ}(1=>4, 2=>12, 3=>1, 4=>2)'"
-    @test qns[1]==ℕ(-1) && qns[2]==ℕ(-2) && qns[3]==ℕ(-3) && qns[4]==ℕ(-4)
-    @test qns[2:-1:1] == qns[[ℕ(-2), ℕ(-1)]] == Graded{ℕ}(1=>4, 2=>12; dual=true)
-    @test ℕ(-1)∈qns && ℕ(-2)∈qns && ℕ(-3)∈qns && ℕ(-4)∈qns && ℕ(-5)∉qns
-    @test dimension(qns)==19 && dimension(qns, 1)==dimension(qns, ℕ(-1))==4 && dimension(qns, 2)==dimension(qns, ℕ(-2))==12 && dimension(qns, 3)==dimension(qns, ℕ(-3))==1 && dimension(qns, 4)==dimension(qns, ℕ(-4))==2
-    @test range(qns, 1)==range(qns, ℕ(-1))==1:4 && range(qns, 2)==range(qns, ℕ(-2))==5:16 && range(qns, 3)==range(qns, ℕ(-3))==17:17 && range(qns, 4)==range(qns, ℕ(-4))==18:19
-    @test cumsum(qns, 0)==0 && cumsum(qns, 1)==cumsum(qns, ℕ(-1))==4 && cumsum(qns, 2)==cumsum(qns, ℕ(-2))==16 && cumsum(qns, 3)==cumsum(qns, ℕ(-3))==17 && cumsum(qns, 4)==cumsum(qns, ℕ(-4))==19
-    @test collect(pairs(qns, dimension))==[ℕ(-1)=>4, ℕ(-2)=>12, ℕ(-3)=>1, ℕ(-4)=>2] && collect(pairs(qns, range))==[ℕ(-1)=>1:4, ℕ(-2)=>5:16, ℕ(-3)=>17:17, ℕ(-4)=>18:19]
+    qns = AbelianGradedSpace([ℕ(1)⊠𝕊ᶻ(1//2), ℕ(2)⊠𝕊ᶻ(1//2), ℕ(3)⊠𝕊ᶻ(1//2), ℕ(4)⊠𝕊ᶻ(1//2)], [4, 12, 1, 2]; ordercheck=true, duplicatecheck=true, degeneracycheck=true)'
+    @test string(qns)=="Graded{ℕ ⊠ 𝕊ᶻ}((1, 1/2)=>4, (2, 1/2)=>12, (3, 1/2)=>1, (4, 1/2)=>2)'"
+    @test qns[1]==ℕ(-1)⊠𝕊ᶻ(-1//2) && qns[2]==ℕ(-2)⊠𝕊ᶻ(-1//2) && qns[3]==ℕ(-3)⊠𝕊ᶻ(-1//2) && qns[4]==ℕ(-4)⊠𝕊ᶻ(-1//2)
+    @test qns[2:-1:1] == qns[[ℕ(-2)⊠𝕊ᶻ(-1//2), ℕ(-1)⊠𝕊ᶻ(-1//2)]] == Graded{ℕ ⊠ 𝕊ᶻ}((1, 1/2)=>4, (2, 1/2)=>12; dual=true)
+    @test ℕ(-1)⊠𝕊ᶻ(-1//2)∈qns && ℕ(-2)⊠𝕊ᶻ(-1//2)∈qns && ℕ(-3)⊠𝕊ᶻ(-1//2)∈qns && ℕ(-4)⊠𝕊ᶻ(-1//2)∈qns && ℕ(-5)⊠𝕊ᶻ(-1//2)∉qns
+    @test dimension(qns)==19 && dimension(qns, 1)==dimension(qns, ℕ(-1)⊠𝕊ᶻ(-1//2))==4 && dimension(qns, 2)==dimension(qns, ℕ(-2)⊠𝕊ᶻ(-1//2))==12 && dimension(qns, 3)==dimension(qns, ℕ(-3)⊠𝕊ᶻ(-1//2))==1 && dimension(qns, 4)==dimension(qns, ℕ(-4)⊠𝕊ᶻ(-1//2))==2
+    @test range(qns, 1)==range(qns, ℕ(-1)⊠𝕊ᶻ(-1//2))==1:4 && range(qns, 2)==range(qns, ℕ(-2)⊠𝕊ᶻ(-1//2))==5:16 && range(qns, 3)==range(qns, ℕ(-3)⊠𝕊ᶻ(-1//2))==17:17 && range(qns, 4)==range(qns, ℕ(-4)⊠𝕊ᶻ(-1//2))==18:19
+    @test cumsum(qns, 0)==0 && cumsum(qns, 1)==cumsum(qns, ℕ(-1)⊠𝕊ᶻ(-1//2))==4 && cumsum(qns, 2)==cumsum(qns, ℕ(-2)⊠𝕊ᶻ(-1//2))==16 && cumsum(qns, 3)==cumsum(qns, ℕ(-3)⊠𝕊ᶻ(-1//2))==17 && cumsum(qns, 4)==cumsum(qns, ℕ(-4)⊠𝕊ᶻ(-1//2))==19
+    @test collect(pairs(qns, dimension))==[ℕ(-1)⊠𝕊ᶻ(-1//2)=>4, ℕ(-2)⊠𝕊ᶻ(-1//2)=>12, ℕ(-3)⊠𝕊ᶻ(-1//2)=>1, ℕ(-4)⊠𝕊ᶻ(-1//2)=>2] && collect(pairs(qns, range))==[ℕ(-1)⊠𝕊ᶻ(-1//2)=>1:4, ℕ(-2)⊠𝕊ᶻ(-1//2)=>5:16, ℕ(-3)⊠𝕊ᶻ(-1//2)=>17:17, ℕ(-4)⊠𝕊ᶻ(-1//2)=>18:19]
     @test [findindex(i, qns, guess) for (i, guess) in zip(1:dimension(qns), [1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 4])] == [1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 4, 4]
 end
 

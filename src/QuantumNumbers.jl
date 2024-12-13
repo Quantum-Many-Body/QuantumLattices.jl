@@ -6,11 +6,11 @@ using DataStructures: OrderedDict
 using HalfIntegers: HalfInt
 using LinearAlgebra: norm
 using Printf: @printf
-using QuantumLattices: id, value
+using QuantumLattices: id
 using Random: seed!
 using ..Toolkit: VectorSpace, VectorSpaceCartesian, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceStyle, efficientoperations, subscript
 
-import ..QuantumLattices: ⊕, ⊗, ⊠, decompose, dimension, rank
+import ..QuantumLattices: ⊕, ⊗, ⊠, decompose, dimension, rank, value
 import ..Toolkit: shape
 
 export Abelian, AbelianQuantumNumber, AbelianQuantumNumberProd, AbelianGradedSpace, AbelianGradedSpaceProd, AbelianGradedSpaceSum, Graded, Momenta, RepresentationSpace, SimpleAbelianQuantumNumber
@@ -28,8 +28,6 @@ abstract type AbelianQuantumNumber end
 @inline Base.isequal(qn₁::QN, qn₂::QN) where {QN<:AbelianQuantumNumber} = isequal(efficientoperations, qn₁, qn₂)
 @inline Base.:<(qn₁::QN, qn₂::QN) where {QN<:AbelianQuantumNumber} = <(efficientoperations, qn₁, qn₂)
 @inline Base.isless(qn₁::QN, qn₂::QN) where {QN<:AbelianQuantumNumber} = isless(efficientoperations, qn₁, qn₂)
-@inline Base.hash(qn::AbelianQuantumNumber, h::UInt) = hash(values(qn), h)
-@inline Base.show(io::IO, ::Type{T}) where {T<:AbelianQuantumNumber} = @printf io "%s" nameof(T)
 @inline Base.iterate(qn::AbelianQuantumNumber) = (qn, nothing)
 @inline Base.iterate(::AbelianQuantumNumber, ::Nothing) = nothing
 
@@ -90,10 +88,25 @@ Overloaded `+` operator for `AbelianQuantumNumber`.
 Abstract type of simple Abelian quantum numbers. That is, it contains only one label.
 """
 abstract type SimpleAbelianQuantumNumber <: AbelianQuantumNumber end
-@inline Base.values(qn::SimpleAbelianQuantumNumber) = getfield(qn, 1)
-@inline Base.show(io::IO, qn::SimpleAbelianQuantumNumber) = @printf io "%s(%s)" typeof(qn) values(qn)
+@inline Base.hash(qn::SimpleAbelianQuantumNumber, h::UInt) = hash(value(qn), h)
+@inline Base.show(io::IO, qn::SimpleAbelianQuantumNumber) = @printf io "%s(%s)" typeof(qn) value(qn)
+@inline Base.show(io::IO, ::Type{T}) where {T<:SimpleAbelianQuantumNumber} = @printf io "%s" nameof(T)
 @inline Base.zero(::Type{QN}) where {QN<:SimpleAbelianQuantumNumber} = QN(zero(fieldtype(QN, 1)))
 @inline periods(::Type{QN}) where {QN<:SimpleAbelianQuantumNumber} = (period(QN),)
+
+"""
+    value(qn::SimpleAbelianQuantumNumber) -> Number
+
+Get the value of a simple Abelian quantum number.
+"""
+@inline value(qn::SimpleAbelianQuantumNumber) = getfield(qn, 1)
+
+"""
+    values(qn::SimpleAbelianQuantumNumber) -> Tuple{Number}
+
+Get the value of a simple Abelian quantum number and return it as the sole element of a tuple.
+"""
+@inline Base.values(qn::SimpleAbelianQuantumNumber) = (value(qn),)
 
 """
     +(qn₁::QN, qn₂::QN, qns::QN...) where {QN<:SimpleAbelianQuantumNumber} -> QN
@@ -103,7 +116,7 @@ Overloaded `+` operator for `SimpleAbelianQuantumNumber`.
 !!! note
     To ensure type stability, two `SimpleAbelianQuantumNumber` can be added together if and only if they are of the same type.
 """
-@inline Base.:+(qn₁::QN, qn₂::QN, qns::QN...) where {QN<:SimpleAbelianQuantumNumber} = QN(sum(map(values, (qn₁, qn₂, qns...))))
+@inline Base.:+(qn₁::QN, qn₂::QN, qns::QN...) where {QN<:SimpleAbelianQuantumNumber} = QN(sum(map(value, (qn₁, qn₂, qns...))))
 
 """
     -(qn::SimpleAbelianQuantumNumber) -> typeof(qn)
@@ -114,8 +127,8 @@ Overloaded `-` operator for `SimpleAbelianQuantumNumber`.
 !!! note
     To ensure type stability, a `SimpleAbelianQuantumNumber` can be subtracted by another `SimpleAbelianQuantumNumber` if and only if they are of the same type.
 """
-@inline Base.:-(qn::SimpleAbelianQuantumNumber) = typeof(qn)(-values(qn))
-@inline Base.:-(qn₁::QN, qn₂::QN) where {QN<:SimpleAbelianQuantumNumber} = QN(values(qn₁)-values(qn₂))
+@inline Base.:-(qn::SimpleAbelianQuantumNumber) = typeof(qn)(-value(qn))
+@inline Base.:-(qn₁::QN, qn₂::QN) where {QN<:SimpleAbelianQuantumNumber} = QN(value(qn₁)-value(qn₂))
 
 """
     period(qn::SimpleAbelianQuantumNumber) -> Number
@@ -187,14 +200,18 @@ Deligne tensor product of simple Abelian quantum numbers.
 struct AbelianQuantumNumberProd{T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} <: AbelianQuantumNumber
     contents::T
 end
-@inline Base.values(qn::AbelianQuantumNumberProd) = map(values, qn.contents)
+@inline Base.hash(qn::AbelianQuantumNumberProd, h::UInt) = hash(values(qn), h)
 @inline Base.show(io::IO, qn::AbelianQuantumNumberProd) = @printf io "Abelian[%s]%s" join(fieldtypes(fieldtype(typeof(qn), :contents)), " ⊠ ") values(qn)
+@inline Base.show(io::IO, ::Type{T}) where {T<:AbelianQuantumNumberProd} = @printf io "%s" join(fieldtypes(fieldtype(T, :contents)), " ⊠ ")
 @inline Base.zero(::Type{AbelianQuantumNumberProd{T}}) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = AbelianQuantumNumberProd(map(zero,  fieldtypes(T)))
-@inline Base.length(qn::AbelianQuantumNumberProd) = rank(qn)
-@inline Base.firstindex(::AbelianQuantumNumberProd) = 1
-@inline Base.lastindex(qn::AbelianQuantumNumberProd) = length(qn)
-@inline Base.getindex(qn::AbelianQuantumNumberProd, i::Integer) = qn.contents[i]
 @inline periods(::Type{AbelianQuantumNumberProd{T}}) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = map(period, fieldtypes(T))
+
+"""
+    AbelianQuantumNumberProd(contents::SimpleAbelianQuantumNumber...)
+    AbelianQuantumNumberProd(contents::Tuple{Vararg{SimpleAbelianQuantumNumber}})
+
+Construct a Deligne tensor product of simple Abelian quantum numbers.
+"""
 @inline AbelianQuantumNumberProd(contents::SimpleAbelianQuantumNumber...) = AbelianQuantumNumberProd(contents)
 
 """
@@ -205,6 +222,36 @@ Construct a Deligne tensor product of simple Abelian quantum numbers by their va
 """
 @inline AbelianQuantumNumberProd{T}(vs::Vararg{Number, N}) where {N, T<:NTuple{N, SimpleAbelianQuantumNumber}} = AbelianQuantumNumberProd{T}(vs)
 @inline AbelianQuantumNumberProd{T}(vs::NTuple{N, Number}) where {N, T<:NTuple{N, SimpleAbelianQuantumNumber}} = AbelianQuantumNumberProd(map((T, v)->T(v), fieldtypes(T), vs))
+
+"""
+    values(qn::AbelianQuantumNumberProd) -> NTuple{rank(qn), Number}
+
+Get the values of the simple Abelian quantum numbers in a Deligne tensor product.
+"""
+@inline Base.values(qn::AbelianQuantumNumberProd) = map(value, qn.contents)
+
+"""
+    value(qn::AbelianQuantumNumberProd, i::Integer) -> Number
+
+Get the value of the ith simple Abelian quantum number in a Deligne tensor product.
+"""
+@inline value(qn::AbelianQuantumNumberProd, i::Integer) = values(qn)[i]
+
+"""
+    length(qn::AbelianQuantumNumberProd) -> Int
+
+Get the length of a Deligne tensor product.
+"""
+@inline Base.length(qn::AbelianQuantumNumberProd) = rank(qn)
+@inline Base.firstindex(::AbelianQuantumNumberProd) = 1
+@inline Base.lastindex(qn::AbelianQuantumNumberProd) = length(qn)
+
+"""
+    getindex(qn::AbelianQuantumNumberProd, i::Integer) -> SimpleAbelianQuantumNumber
+
+Get the ith simple Abelian quantum number in a Deligne tensor product.
+"""
+@inline Base.getindex(qn::AbelianQuantumNumberProd, i::Integer) = qn.contents[i]
 
 """
     rank(qn::AbelianQuantumNumberProd) -> Int
@@ -431,11 +478,13 @@ end
 function Base.show(io::IO, gs::AbelianGradedSpace)
     @printf io "Graded{%s}(" eltype(gs)
     for (i, qn) in enumerate(keys(gs.contents))
-        @printf io "%s=>%s" values(qn) dimension(gs, i)
+        @printf io "%s=>%s" _value_(qn) dimension(gs, i)
         i<length(gs) && @printf io "%s" ", "
     end
     @printf io "%s%s" ")" gs.dual ? "'" : ""
 end
+@inline _value_(qn::SimpleAbelianQuantumNumber) = value(qn)
+@inline _value_(qn::AbelianQuantumNumberProd) = values(qn)
 
 """
     const Graded = AbelianGradedSpace
