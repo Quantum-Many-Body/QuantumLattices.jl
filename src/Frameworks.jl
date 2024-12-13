@@ -499,7 +499,7 @@ function OperatorGenerator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hi
     else
         filter(isintracell, bonds), filter((!)∘isintracell, bonds)
     end
-    constops = Operators{mapreduce(term->operatortype(typeof(term), typeof(hilbert), eltype(bonds)), promote_type, terms)}()
+    constops = Operators{mapreduce(term->operatortype(eltype(bonds), typeof(hilbert), typeof(term)), promote_type, terms)}()
     map(term->expand!(constops, term, term.ismodulatable ? emptybonds : innerbonds, hilbert; half=half), terms)
     alterops = NamedTuple{map(id, terms)}(expandto(terms, emptybonds, innerbonds, hilbert, valtype(eltype(constops)); half=half))
     boundops = NamedTuple{map(id, terms)}(expandto(terms, boundbonds, hilbert, boundary, valtype(eltype(constops)); half=half))
@@ -513,7 +513,7 @@ function expandto(terms::Tuple{Vararg{Term}}, emptybonds::Vector{<:Bond}, innerb
 end
 function expandto(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary, ::Type{V}; half) where V
     return map(terms) do term
-        O = promote_type(valtype(typeof(boundary), operatortype(typeof(term), typeof(hilbert), eltype(bonds))), V)
+        O = promote_type(valtype(typeof(boundary), operatortype(eltype(bonds), typeof(hilbert), typeof(term))), V)
         map!(boundary, expand!(Operators{O}(), one(term), bonds, hilbert, half=half))
     end
 end

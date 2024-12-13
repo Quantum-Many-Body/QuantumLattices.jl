@@ -1553,11 +1553,11 @@ function update!(term::Term, args...; kwargs...)
 end
 
 """
-    operatortype(::Type{T}, ::Type{H}, ::Type{B}) where {T<:Term, H<:Hilbert, B<:Bond}
+    operatortype(::Type{B}, ::Type{H}, ::Type{T}) where {B<:Bond, H<:Hilbert, T<:Term}
 
 Get the compatible `Operator` type from the type of a term, a Hilbert space and a bond.
 """
-@inline function operatortype(::Type{T}, ::Type{H}, ::Type{B}) where {T<:Term, H<:Hilbert, B<:Bond}
+@inline function operatortype(::Type{B}, ::Type{H}, ::Type{T}) where {B<:Bond, H<:Hilbert, T<:Term}
     C = valtype(fieldtype(T, :coupling))
     @assert C<:Coupling "operatortype error: not supported."
     V, V′, V′′ = valtype(T), valtype(C), valtype(fieldtype(T, :amplitude), B)
@@ -1611,11 +1611,11 @@ end
 Expand the operators of a term on a bond/set-of-bonds with a given Hilbert space.
 """
 @inline function expand(term::Term, bond::Bond, hilbert::Hilbert; half::Bool=false)
-    M = operatortype(term|>typeof, hilbert|>typeof, bond|>typeof)
+    M = operatortype(bond|>typeof, hilbert|>typeof, term|>typeof)
     expand!(Operators{M}(), term, bond, hilbert; half=half)
 end
 @inline function expand(term::Term, bonds, hilbert::Hilbert; half::Bool=false)
-    M = operatortype(term|>typeof, hilbert|>typeof, bonds|>eltype)
+    M = operatortype(bonds|>eltype, hilbert|>typeof, term|>typeof)
     expand!(Operators{M}(), term, bonds, hilbert; half=half)
 end
 
