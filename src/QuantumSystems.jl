@@ -5,7 +5,7 @@ using Printf: @printf
 using SparseArrays: SparseMatrixCSC
 using StaticArrays: SMatrix, SVector
 using ..DegreesOfFreedom: AbstractIndex, Component, CompositeIndex, CoordinatedIndex, Coupling, Hilbert, Index, InternalPattern, Ordinal, Pattern, SimpleInternal, SimpleInternalIndex, Term, TermAmplitude, TermCoupling, @pattern
-using ..QuantumLattices: ⊠, ⊗, decompose, dtype
+using ..QuantumLattices: ⊠, ⊗, decompose
 using ..QuantumNumbers: ℕ, 𝕊ᶻ, ℤ₁
 using ..QuantumOperators: ID, LaTeX, Operator, OperatorProd, Operators, latexformat
 using ..Spatials: Bond, Point, direction, isparallel, rcoordinate

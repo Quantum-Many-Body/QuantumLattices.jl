@@ -4,14 +4,14 @@ using DataStructures: OrderedDict
 using Printf: @printf, @sprintf
 using SparseArrays: SparseMatrixCSC, nnz
 using StaticArrays: SVector
-using ..QuantumLattices: add!, decompose, dimension, dtype
-using ..QuantumOperators: ID, LinearTransformation, Operator, OperatorPack, Operators, OperatorUnit, QuantumOperator, valuetolatextext
+using ..QuantumLattices: add!, decompose, dimension
+using ..QuantumOperators: ID, LinearTransformation, Operator, OperatorPack, Operators, OperatorUnit, QuantumOperator, scalartype, valuetolatextext
 using ..Spatials: Bond, Point
 using ..Toolkit: atol, efficientoperations, rtol, CompositeDict, Float, VectorSpace, VectorSpaceCartesian, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceStyle, concatenate, fulltype, parametertype, rawtype, reparameter, tostr
 
 import LaTeXStrings: latexstring
 import ..QuantumLattices: ⊕, ⊗, expand, expand!, id, ishermitian, kind, permute, rank, reset!, update!, value
-import ..QuantumOperators: idtype, optype, script
+import ..QuantumOperators: idtype, operatortype, script
 import ..Spatials: icoordinate, nneighbor, rcoordinate
 import ..Toolkit: contentnames, getcontent, parameternames, shape
 
@@ -776,7 +776,7 @@ end
 
 Get the compatible type of the coordinated index based on the type of an internal space and the type of a point.
 """
-@inline indextype(I::Type{<:SimpleInternal}, P::Type{<:Point}) = fulltype(CoordinatedIndex, NamedTuple{(:index, :coordination), Tuple{indextype(I), SVector{dimension(P), dtype(P)}}})
+@inline indextype(I::Type{<:SimpleInternal}, P::Type{<:Point}) = fulltype(CoordinatedIndex, NamedTuple{(:index, :coordination), Tuple{indextype(I), SVector{dimension(P), scalartype(P)}}})
 
 """
     rcoordinate(opt::Operator{<:Number, <:ID{CoordinatedIndex}}) -> SVector
@@ -1553,13 +1553,13 @@ function update!(term::Term, args...; kwargs...)
 end
 
 """
-    optype(::Type{T}, ::Type{H}, ::Type{B}) where {T<:Term, H<:Hilbert, B<:Bond}
+    operatortype(::Type{T}, ::Type{H}, ::Type{B}) where {T<:Term, H<:Hilbert, B<:Bond}
 
 Get the compatible `Operator` type from the type of a term, a Hilbert space and a bond.
 """
-@inline function optype(::Type{T}, ::Type{H}, ::Type{B}) where {T<:Term, H<:Hilbert, B<:Bond}
+@inline function operatortype(::Type{T}, ::Type{H}, ::Type{B}) where {T<:Term, H<:Hilbert, B<:Bond}
     C = valtype(fieldtype(T, :coupling))
-    @assert C<:Coupling "optype error: not supported."
+    @assert C<:Coupling "operatortype error: not supported."
     V, V′, V′′ = valtype(T), valtype(C), valtype(fieldtype(T, :amplitude), B)
     isconcretetype(V′) && (V = promote_type(V, V′))
     isconcretetype(V′′) && (V = promote_type(V, V′′))
@@ -1611,11 +1611,11 @@ end
 Expand the operators of a term on a bond/set-of-bonds with a given Hilbert space.
 """
 @inline function expand(term::Term, bond::Bond, hilbert::Hilbert; half::Bool=false)
-    M = optype(term|>typeof, hilbert|>typeof, bond|>typeof)
+    M = operatortype(term|>typeof, hilbert|>typeof, bond|>typeof)
     expand!(Operators{M}(), term, bond, hilbert; half=half)
 end
 @inline function expand(term::Term, bonds, hilbert::Hilbert; half::Bool=false)
-    M = optype(term|>typeof, hilbert|>typeof, bonds|>eltype)
+    M = operatortype(term|>typeof, hilbert|>typeof, bonds|>eltype)
     expand!(Operators{M}(), term, bonds, hilbert; half=half)
 end
 

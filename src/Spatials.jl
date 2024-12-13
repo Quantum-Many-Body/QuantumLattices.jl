@@ -11,8 +11,9 @@ using ..QuantumLattices: rank
 using ..QuantumNumbers: Momenta, 𝕂, period, periods
 using ..Toolkit: atol, rtol, efficientoperations, CompositeDict, Float, SimpleNamedVectorSpace, Segment, VectorSpaceCartesian, VectorSpaceDirectSummed, VectorSpaceEnumerative, VectorSpaceStyle, getcontent
 
-import ..QuantumLattices: decompose, dimension, dtype, expand, kind
+import ..QuantumLattices: decompose, dimension, expand, kind
 import ..QuantumNumbers: 𝕂¹, 𝕂², 𝕂³
+import ..QuantumOperators: scalartype
 import ..Toolkit: contentnames, shape
 
 export azimuth, azimuthd, direction, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, polar, polard, reciprocals, rotate, translate, tile, volume
@@ -583,13 +584,11 @@ Get the spatial dimension of a point.
 @inline dimension(::Type{<:Point{N}}) where N = N
 
 """
-    dtype(point::Point)
-    dtype(::Type{<:Point{N, D} where N}) where {D<:Number}
+    scalartype(::Type{<:Point{N, D} where N}) where {D<:Number}
 
 Get the data type of the coordinates of a point.
 """
-@inline dtype(point::Point) = dtype(typeof(point))
-@inline dtype(::Type{<:Point{N, D} where N}) where {D<:Number} = D
+@inline scalartype(::Type{<:Point{N, D} where N}) where {D<:Number} = D
 
 """
     isintracell(point::Point) -> Bool
@@ -630,13 +629,11 @@ Get the space dimension of a concrete bond.
 @inline dimension(::Type{<:Bond{K, P} where K}) where {P<:Point} = dimension(P)
 
 """
-    dtype(bond::Bond)
-    dtype(::Type{<:Bond{K, P} where K}) where {P<:Point}
+    scalartype(::Type{<:Bond{K, P} where K}) where {P<:Point}
 
 Get the data type of the coordinates of the points contained in a generic bond.
 """
-@inline dtype(bond::Bond) = dtype(typeof(bond))
-@inline dtype(::Type{<:Bond{K, P} where K}) where {P<:Point} = dtype(P)
+@inline scalartype(::Type{<:Bond{K, P} where K}) where {P<:Point} = scalartype(P)
 
 """
     length(bond::Bond) -> Int
@@ -749,13 +746,11 @@ Get the space dimension of the lattice.
 @inline dimension(::Type{<:AbstractLattice{N}}) where N = N
 
 """
-    dtype(lattice::AbstractLattice)
-    dtype(::Type{<:AbstractLattice{N, D} where N}) where {D<:Number}
+    scalartype(::Type{<:AbstractLattice{N, D} where N}) where {D<:Number}
 
 Get the data type of the coordinates of a lattice.
 """
-@inline dtype(lattice::AbstractLattice) = dtype(typeof(lattice))
-@inline dtype(::Type{<:AbstractLattice{N, D} where N}) where {D<:Number} = D
+@inline scalartype(::Type{<:AbstractLattice{N, D} where N}) where {D<:Number} = D
 
 """
     length(lattice::AbstractLattice) -> Int
@@ -769,7 +764,7 @@ Get the number of points contained in a lattice.
 
 Get the ith coordinate.
 """
-@inline Base.getindex(lattice::AbstractLattice, i::Integer) = SVector{dimension(lattice), dtype(lattice)}(ntuple(j->lattice.coordinates[j, i], Val(dimension(lattice))))
+@inline Base.getindex(lattice::AbstractLattice, i::Integer) = SVector{dimension(lattice), scalartype(lattice)}(ntuple(j->lattice.coordinates[j, i], Val(dimension(lattice))))
 
 """
     reciprocals(lattice::AbstractLattice) -> Vector{<:SVector}
@@ -786,13 +781,13 @@ Get the neighbor vs. bond length map of a lattice up to the `nneighbor`th order.
 @inline Neighbors(lattice::AbstractLattice, nneighbor::Integer; coordination::Integer=12) = Neighbors(minimumlengths(getcontent(lattice, :coordinates), getcontent(lattice, :vectors), nneighbor; coordination=coordination))
 
 """
-    bonds(lattice::AbstractLattice, nneighbor::Integer; coordination::Integer=12) -> Vector{Bond{Int, Point{dimension(lattice), dtype(lattice)}}}
-    bonds(lattice::AbstractLattice, neighbors::Neighbors) -> Vector{Bond{keytype(neighbors), Point{dimension(lattice), dtype(lattice)}}}
+    bonds(lattice::AbstractLattice, nneighbor::Integer; coordination::Integer=12) -> Vector{Bond{Int, Point{dimension(lattice), scalartype(lattice)}}}
+    bonds(lattice::AbstractLattice, neighbors::Neighbors) -> Vector{Bond{keytype(neighbors), Point{dimension(lattice), scalartype(lattice)}}}
 
 Get the required bonds of a lattice.
 """
-@inline bonds(lattice::AbstractLattice, nneighbor::Integer; coordination::Integer=12) = bonds!(Bond{Int, Point{dimension(lattice), dtype(lattice)}}[], lattice, nneighbor; coordination=coordination)
-@inline bonds(lattice::AbstractLattice, neighbors::Neighbors) = bonds!(Bond{keytype(neighbors), Point{dimension(lattice), dtype(lattice)}}[], lattice, neighbors)
+@inline bonds(lattice::AbstractLattice, nneighbor::Integer; coordination::Integer=12) = bonds!(Bond{Int, Point{dimension(lattice), scalartype(lattice)}}[], lattice, nneighbor; coordination=coordination)
+@inline bonds(lattice::AbstractLattice, neighbors::Neighbors) = bonds!(Bond{keytype(neighbors), Point{dimension(lattice), scalartype(lattice)}}[], lattice, neighbors)
 
 """
     bonds!(bonds::Vector, lattice::AbstractLattice, nneighbor::Integer; coordination::Integer=12)
@@ -802,7 +797,7 @@ Get the required bonds of a lattice and append them to the input bonds.
 """
 @inline bonds!(bonds::Vector, lattice::AbstractLattice, nneighbor::Integer; coordination::Integer=12) = bonds!(bonds, lattice, Neighbors(lattice, nneighbor; coordination=coordination))
 function bonds!(bonds::Vector, lattice::AbstractLattice, neighbors::Neighbors)
-    origin = zero(SVector{dimension(lattice), dtype(lattice)})
+    origin = zero(SVector{dimension(lattice), scalartype(lattice)})
     reverse = Dict(length=>order for (order, length) in neighbors)
     haskey(reverse, zero(valtype(neighbors))) && for (i, coordinate) in enumerate(lattice)
         push!(bonds, Bond(reverse[zero(valtype(neighbors))], [Point(i, coordinate, origin)]))
@@ -824,8 +819,8 @@ function bonds!(bonds::Vector, lattice::AbstractLattice, neighbors::Neighbors)
         superrcoordinates = tile(getcontent(lattice, :coordinates), getcontent(lattice, :vectors), translations)
         supericoordinates = tile(zero(getcontent(lattice, :coordinates)), getcontent(lattice, :vectors), translations)
         for (k, index₁, index₂) in interlinks(superrcoordinates, getcontent(lattice, :coordinates), neighbors)
-            rcoordinate = SVector{dimension(lattice), dtype(lattice)}(ntuple(j->superrcoordinates[j, index₁], Val(dimension(lattice))))
-            icoordinate = SVector{dimension(lattice), dtype(lattice)}(ntuple(j->supericoordinates[j, index₁], Val(dimension(lattice))))
+            rcoordinate = SVector{dimension(lattice), scalartype(lattice)}(ntuple(j->superrcoordinates[j, index₁], Val(dimension(lattice))))
+            icoordinate = SVector{dimension(lattice), scalartype(lattice)}(ntuple(j->supericoordinates[j, index₁], Val(dimension(lattice))))
             point₁ = Point((index₁-1)%length(lattice)+1, rcoordinate, icoordinate)
             point₂ = Point(index₂, lattice[index₂], origin)
             push!(bonds, Bond(k, point₁, point₂))
@@ -847,7 +842,7 @@ Define the recipe for the visualization of a lattice.
     if isa(neighbors, Int) || 0∈keys(neighbors)
         @series begin
             seriestype := :scatter
-            coordinates = NTuple{dimension(lattice), dtype(lattice)}[]
+            coordinates = NTuple{dimension(lattice), scalartype(lattice)}[]
             sites = String[]
             for i = 1:length(lattice)
                 bond = Bond(Point(i, lattice[i], zero(lattice[i])))
@@ -935,7 +930,7 @@ function Lattice(lattice::AbstractLattice, ranges::NTuple{N, UnitRange{Int}}, bo
     boundaries = map(boundary, boundaries)
     name = Symbol(@sprintf "%s%s" getcontent(lattice, :name) join([@sprintf("%s%s%s", boundary=='P' ? "[" : "(", range, boundary=='P' ? "]" : ")") for (range, boundary) in zip(ranges, boundaries)]))
     coordinates = tile(getcontent(lattice, :coordinates), getcontent(lattice, :vectors), product(ranges...))
-    vectors = SVector{dimension(lattice), dtype(lattice)}[]
+    vectors = SVector{dimension(lattice), scalartype(lattice)}[]
     for (i, vector) in enumerate(getcontent(lattice, :vectors))
         boundaries[i]=='P' && push!(vectors, vector*length(ranges[i]))
     end
@@ -1007,8 +1002,7 @@ end
 Abstract type of reciprocal spaces.
 """
 abstract type ReciprocalSpace{K, P<:SVector} <: SimpleNamedVectorSpace{K, P} end
-@inline dtype(reciprocalspace::ReciprocalSpace) = dtype(typeof(reciprocalspace))
-@inline dtype(::Type{<:ReciprocalSpace{K, P} where K}) where {P<:SVector} = eltype(P)
+@inline scalartype(::Type{<:ReciprocalSpace{K, P} where K}) where {P<:SVector} = eltype(P)
 @inline dimension(reciprocalspace::ReciprocalSpace) = dimension(typeof(reciprocalspace))
 @inline dimension(::Type{<:ReciprocalSpace{K, P} where K}) where {P<:SVector} = length(P)
 
@@ -1272,16 +1266,16 @@ end
 @inline points2segments(points::NTuple{M, Any}) where M = ntuple(i->points[i]=>points[i+1], Val(M-1))
 
 """
-    step(path::ReciprocalPath, i::Integer) -> dtype(path)
+    step(path::ReciprocalPath, i::Integer) -> scalartype(path)
 
 Get the step between the ith and the (i+1)th points in the path.
 """
 @inline Base.step(path::ReciprocalPath, i::Integer) = distance(path[i], path[i+1])
 
 """
-    distance(path::ReciprocalPath) -> dtype(path)
-    distance(path::ReciprocalPath, i::Integer) -> dtype(path)
-    distance(path::ReciprocalPath, i::Integer, j::Integer) -> dtype(path)
+    distance(path::ReciprocalPath) -> scalartype(path)
+    distance(path::ReciprocalPath, i::Integer) -> scalartype(path)
+    distance(path::ReciprocalPath, i::Integer, j::Integer) -> scalartype(path)
 
 Get the distance
 1) of the total path,
@@ -1291,7 +1285,7 @@ Get the distance
 @inline distance(path::ReciprocalPath) = distance(path, 1, length(path))
 @inline distance(path::ReciprocalPath, i::Integer) = distance(path, 1, i)
 function distance(path::ReciprocalPath, i::Integer, j::Integer)
-    i==j && return zero(dtype(path))
+    i==j && return zero(scalartype(path))
     i>j && return -distance(path, j, i)
     dimsum = cumsum(map(length, path.contents))
     i₁ = searchsortedfirst(dimsum, i)
@@ -1309,13 +1303,13 @@ function distance(path::ReciprocalPath, i::Integer, j::Integer)
 end
 
 """
-    ticks(path::ReciprocalPath) -> Tuple{Vector{dtype(path)}, Vector{String}}
+    ticks(path::ReciprocalPath) -> Tuple{Vector{scalartype(path)}, Vector{String}}
 
 Get the position-label pairs of the ticks of a path.
 """
 function ticks(path::ReciprocalPath)
-    result = (dtype(path)[], String[])
-    d = zero(dtype(path))
+    result = (scalartype(path)[], String[])
+    d = zero(scalartype(path))
     for i = 1:length(path.contents)
         if i==1
             push!(result[2], string(path.labels[i].first))
@@ -1412,7 +1406,7 @@ function selectpath(brillouinzone::BrillouinZone{K}, segments::NTuple{M, Pair{<:
         translations = [mapreduce(*, +, translation, brillouinzone.reciprocals) for translation in product(mesh...)]
         start = mapreduce(*, +, segment.first, brillouinzone.reciprocals)
         stop = mapreduce(*, +, segment.second, brillouinzone.reciprocals)
-        positions, distances = Int[], dtype(brillouinzone)[]
+        positions, distances = Int[], scalartype(brillouinzone)[]
         for (pos, k) in enumerate(brillouinzone)
             for translation in translations
                 coord = k + translation

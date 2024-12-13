@@ -10,11 +10,12 @@ using Serialization: serialize
 using TimerOutputs: TimerOutput, TimerOutputs, @timeit
 using ..DegreesOfFreedom: plain, Boundary, Hilbert, Term
 using ..QuantumLattices: value
-using ..QuantumOperators: OperatorPack, Operators, OperatorSet, OperatorSum, LinearTransformation, Transformation, identity, optype
+using ..QuantumOperators: OperatorPack, Operators, OperatorSet, OperatorSum, LinearTransformation, Transformation, identity, operatortype
 using ..Spatials: AbstractLattice, Bond, Neighbors, bonds!, isintracell
 using ..Toolkit: atol, efficientoperations, rtol, parametertype, tostr
 
-import ..QuantumLattices: add!, dtype, expand, expand!, id, reset!, update, update!
+import ..QuantumLattices: add!, expand, expand!, id, reset!, update, update!
+import ..QuantumOperators: scalartype
 import ..Spatials: save
 
 export Action, Algorithm, Assignment, CategorizedGenerator, Eager, ExpansionStyle, Formula, Frontend, Generator, Lazy, OneOrMore, OperatorGenerator, Parameters
@@ -43,14 +44,20 @@ A NamedTuple that contains the key-value pairs.
 """
 const Parameters{Names, T<:Tuple{Vararg{Number}}} = NamedTuple{Names, T}
 @inline Parameters{Names}(values::Number...) where {Names} = NamedTuple{Names}(values)
+function Base.show(io::IO, params::Parameters)
+    haskey(io, :ndecimal) && (params = NamedTuple{keys(params)}(map(value->round(value; digits=io[:ndecimal]), values(params))))
+    invoke(show, Tuple{IO, NamedTuple}, io, params)
+end
+
+"""
+    update(params::NamedTuple; parameters...) -> Parameters
+
+Update a set of `Parameters` and return the updated one.
+"""
 @inline @generated function update(params::NamedTuple; parameters...)
     names = fieldnames(params)
     values = Expr(:tuple, [:(get(parameters, $name, getfield(params, $name))) for name in QuoteNode.(names)]...)
     return :(NamedTuple{$names}($values))
-end
-function Base.show(io::IO, params::Parameters)
-    haskey(io, :ndecimal) && (params = NamedTuple{keys(params)}(map(value->round(value; digits=io[:ndecimal]), values(params))))
-    invoke(show, Tuple{IO, NamedTuple}, io, params)
 end
 
 """
@@ -95,19 +102,47 @@ mutable struct Formula{V, F<:Function, P<:Parameters}
 end
 @inline Base.:(==)(formula₁::Formula, formula₂::Formula) = ==(efficientoperations, formula₁, formula₂)
 @inline Base.isequal(formula₁::Formula, formula₂::Formula) = isequal(efficientoperations, formula₁, formula₂)
+
+"""
+    valtype(formula::Formula)
+    valtype(::Type{<:Formula{V}})
+
+Get the valtype of a `Formula`.
+"""
 @inline Base.valtype(formula::Formula) = valtype(typeof(formula))
 @inline Base.valtype(::Type{<:Formula{V}}) where V = V
-@inline Base.eltype(formula::Formula) = eltype(typeof(formula))
-@inline Base.eltype(::Type{F}) where {F<:Formula} = eltype(valtype(F))
-@inline dtype(formula::Formula) = dtype(typeof(formula))
-@inline dtype(::Type{F}) where {F<:Formula} = dtype(eltype(F))
+
+"""
+    scalartype(::Type{F}) where {F<:Formula}
+
+Get the scalar type of a `Formula`.
+"""
+@inline scalartype(::Type{F}) where {F<:Formula} = scalartype(valtype(F))
+
+"""
+    update!(formula::Formula; parameters...) -> Formula
+
+Update the parameters of a `Formula` in place and return itself after update.
+"""
 @inline function update!(formula::Formula; parameters...)
     formula.parameters = update(formula.parameters; parameters...)
     update!(formula.expression; parameters...)
     return formula
 end
 @inline update!(expression::Function; parameters...) = expression
+
+"""
+    Parameters(formula::Formula) -> Parameters
+
+Get the parameters of a `Formula`.
+"""
 @inline Parameters(formula::Formula) = formula.parameters
+
+"""
+    (formula::Formula)(args...; kwargs...) -> valtype(formula)
+
+Get the result of a `Formula`.
+"""
 @inline @generated function (formula::Formula)(args...; kwargs...)
     exprs = [:(getfield(formula.parameters, $i)) for i = 1:fieldcount(fieldtype(formula, :parameters))]
     return :(formula.expression($(exprs...), args...; kwargs...))
@@ -156,14 +191,41 @@ Generator of (representations of) quantum operators in a quantum lattice system.
 abstract type Generator{V} end
 @inline Base.:(==)(gen₁::Generator, gen₂::Generator) = ==(efficientoperations, gen₁, gen₂)
 @inline Base.isequal(gen₁::Generator, gen₂::Generator) = isequal(efficientoperations, gen₁, gen₂)
+@inline Base.show(io::IO, ::MIME"text/latex", gen::Generator) = show(io, MIME"text/latex"(), latexstring(latexstring(expand(gen))))
 @inline ExpansionStyle(gen::Generator) = ExpansionStyle(typeof(gen))
+@inline Base.IteratorSize(::Type{<:Generator}) = Base.SizeUnknown()
+
+"""
+    valtype(gen::Generator)
+    valtype(::Type{<:Generator{V}}) where V
+
+Get the valtype of a `Generator`.
+"""
 @inline Base.valtype(gen::Generator) = valtype(typeof(gen))
 @inline Base.valtype(::Type{<:Generator{V}}) where V = V
+
+"""
+    eltype(gen::Generator)
+    eltype(::Type{T}) where {T<:Generator}
+
+Get the eltype of a `Generator`.
+"""
 @inline Base.eltype(gen::Generator) = eltype(typeof(gen))
 @inline Base.eltype(::Type{T}) where {T<:Generator} = eltype(valtype(T))
-@inline dtype(gen::Generator) = dtype(typeof(gen))
-@inline dtype(::Type{T}) where {T<:Generator} = dtype(eltype(T))
-@inline Base.IteratorSize(::Type{<:Generator}) = Base.SizeUnknown()
+
+"""
+    scalartype(::Type{T}) where {T<:Generator}
+
+Get the scalar type of a `Generator`.
+"""
+@inline scalartype(::Type{T}) where {T<:Generator} = scalartype(valtype(T))
+
+"""
+    iterate(gen::Generator)
+    iterate(::Generator, state)
+
+Iterate over a `Generator`.
+"""
 @propagate_inbounds function Base.iterate(gen::Generator)
     ops = expand(gen)
     index = iterate(ops)
@@ -175,7 +237,6 @@ end
     isnothing(index) && return nothing
     return index[1], (state[1], index[2])
 end
-@inline Base.show(io::IO, ::MIME"text/latex", gen::Generator) = show(io, MIME"text/latex"(), latexstring(latexstring(expand(gen))))
 
 """
     expand(gen::Generator)
@@ -423,8 +484,6 @@ end
 @inline ExpansionStyle(::Type{<:OperatorGenerator{<:Operators, CG}}) where {CG<:CategorizedGenerator} = ExpansionStyle(CG)
 @inline Base.valtype(::Type{<:OperatorGenerator{V}}) where {V<:Operators} = V
 @inline expand(gen::OperatorGenerator, ::Lazy) = expand(gen.operators, lazy)
-@inline Parameters(gen::OperatorGenerator) = Parameters(gen.operators)
-@inline Base.isempty(gen::OperatorGenerator) = isempty(gen.operators)
 
 """
     OperatorGenerator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain, style::ExpansionStyle=eager; half::Bool=false)
@@ -440,7 +499,7 @@ function OperatorGenerator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hi
     else
         filter(isintracell, bonds), filter((!)∘isintracell, bonds)
     end
-    constops = Operators{mapreduce(term->optype(typeof(term), typeof(hilbert), eltype(bonds)), promote_type, terms)}()
+    constops = Operators{mapreduce(term->operatortype(typeof(term), typeof(hilbert), eltype(bonds)), promote_type, terms)}()
     map(term->expand!(constops, term, term.ismodulatable ? emptybonds : innerbonds, hilbert; half=half), terms)
     alterops = NamedTuple{map(id, terms)}(expandto(terms, emptybonds, innerbonds, hilbert, valtype(eltype(constops)); half=half))
     boundops = NamedTuple{map(id, terms)}(expandto(terms, boundbonds, hilbert, boundary, valtype(eltype(constops)); half=half))
@@ -454,7 +513,7 @@ function expandto(terms::Tuple{Vararg{Term}}, emptybonds::Vector{<:Bond}, innerb
 end
 function expandto(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary, ::Type{V}; half) where V
     return map(terms) do term
-        O = promote_type(valtype(typeof(boundary), optype(typeof(term), typeof(hilbert), eltype(bonds))), V)
+        O = promote_type(valtype(typeof(boundary), operatortype(typeof(term), typeof(hilbert), eltype(bonds))), V)
         map!(boundary, expand!(Operators{O}(), one(term), bonds, hilbert, half=half))
     end
 end
@@ -471,6 +530,20 @@ end
 @inline function Generator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain, style::ExpansionStyle=eager; half::Bool=false)
     return OperatorGenerator(terms, bonds, hilbert, boundary, style; half=half)
 end
+
+"""
+    Parameters(gen::OperatorGenerator) -> Parameters
+
+Get the parameters of an `OperatorGenerator`.
+"""
+@inline Parameters(gen::OperatorGenerator) = Parameters(gen.operators)
+
+"""
+    isempty(gen::OperatorGenerator) -> Bool
+
+Judge whether an `OperatorGenerator` is empty.
+"""
+@inline Base.isempty(gen::OperatorGenerator) = isempty(gen.operators)
 
 """
     update!(gen::OperatorGenerator; parameters...) -> typeof(gen)
@@ -581,11 +654,6 @@ abstract type Frontend end
 @inline Base.:(==)(frontend₁::Frontend, frontend₂::Frontend) = ==(efficientoperations, frontend₁, frontend₂)
 @inline Base.isequal(frontend₁::Frontend, frontend₂::Frontend) = isequal(efficientoperations, frontend₁, frontend₂)
 @inline Base.show(io::IO, frontend::Frontend) = @printf io "%s" nameof(typeof(frontend))
-@inline Base.valtype(frontend::Frontend) = valtype(typeof(frontend))
-@inline Base.eltype(frontend::Frontend) = eltype(typeof(frontend))
-@inline Base.eltype(::Type{F}) where {F<:Frontend} = eltype(valtype(F))
-@inline dtype(frontend::Frontend) = dtype(typeof(frontend))
-@inline dtype(::Type{F}) where {F<:Frontend} = dtype(eltype(F))
 @inline update!(frontend::Frontend; kwargs...) = error("update! error: not implemented for $(nameof(typeof(frontend))).")
 @inline Parameters(frontend::Frontend) = error("Parameters error: not implemented for $(nameof(typeof(frontend))).")
 

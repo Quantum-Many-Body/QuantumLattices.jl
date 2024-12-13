@@ -2,8 +2,9 @@ using OffsetArrays: OffsetArray
 using LinearAlgebra: cross, det, dot, norm
 using Plots: plot, savefig, plot!
 using QuantumLattices.Spatials
-using QuantumLattices: decompose, dimension, dtype, expand
+using QuantumLattices: decompose, dimension, expand
 using QuantumLattices.QuantumNumbers: Momenta, 𝕂¹, 𝕂², 𝕂³
+using QuantumLattices.QuantumOperators: scalartype
 using QuantumLattices.Toolkit: Float, Segment, contentnames, shape
 using Random: seed!
 using StaticArrays: SVector
@@ -215,7 +216,7 @@ end
     @test isequal(point, Point(1, SVector(0.0, 0.0), SVector(0.0, 0.0)))
     @test point|>string == "Point(1, [0.0, 0.0], [0.0, 0.0])"
     @test point|>dimension == point|>typeof|>dimension == 2
-    @test point|>dtype == point|>typeof|>dtype == Float
+    @test point|>scalartype == point|>typeof|>scalartype == Float
     @test isintracell(Point(1, (0.0, 0.0), (0.0, 0.0))) == true
     @test isintracell(Point(1, (0.0, 0.0), (1.0, 0.0))) == false
 end
@@ -226,7 +227,7 @@ end
     @test isequal(bond|>deepcopy, bond)
     @test bond|>string == "Bond(1, Point(2, [0.0, 1.0], [0.0, 1.0]), Point(1, [0.0, 0.0], [0.0, 0.0]))"
     @test bond|>dimension == bond|>typeof|>dimension == 2
-    @test bond|>dtype == bond|>typeof|>dtype == Float
+    @test bond|>scalartype == bond|>typeof|>scalartype == Float
     @test bond|>length == 2
     @test bond|>eltype == bond|>typeof|>eltype == Point{2, Float}
     @test bond|>reverse == Bond(1, Point(1, (0.0, 0.0), (0.0, 0.0)), Point(2, (0.0, 1.0), (0.0, 1.0)))
@@ -244,7 +245,7 @@ end
     @test lattice|>string == "Lattice(Tuanzi)\n  with 1 point:\n    [0.5, 0.5]\n  with 2 translation vectors:\n    [1.0, 0.0]\n    [0.0, 1.0]\n"
     @test lattice|>length == 1
     @test lattice|>dimension == lattice|>typeof|>dimension == 2
-    @test lattice|>dtype == lattice|>typeof|>dtype == Float
+    @test lattice|>scalartype == lattice|>typeof|>scalartype == Float
     @test lattice[1] == SVector(0.5, 0.5)
     @test reciprocals(lattice) == reciprocals(lattice.vectors)
     @test Neighbors(lattice, 1) == Neighbors([0.0, 1.0])
@@ -282,7 +283,7 @@ end
     @test bz==deepcopy(bz) && isequal(bz, deepcopy(bz))
     @test bz≠BrillouinZone(recipls, 4) && !isequal(bz, BrillouinZone(recipls, 4))
     @test hash(bz) == hash(((SVector(1.0, 0.0), SVector(0.0, 1.0)), (2, 4)))
-    @test dtype(bz) == dtype(typeof(bz)) == Float
+    @test scalartype(bz) == scalartype(typeof(bz)) == Float
     @test dimension(bz) == dimension(typeof(bz)) == 2
     @test shape(bz) == (0:3, 0:1)
     @test keys(bz) == Momenta(𝕂²{2, 4})

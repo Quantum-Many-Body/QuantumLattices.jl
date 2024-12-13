@@ -1,7 +1,7 @@
 using LaTeXStrings: latexstring
 using LinearAlgebra: dot
 using Printf: @sprintf
-using QuantumLattices: ⊗, add!, div!, dtype, expand, mul!, id, rank, sub!, update!, value
+using QuantumLattices: add!, div!, expand, mul!, id, rank, sub!, update!, value
 using QuantumLattices.QuantumOperators
 using QuantumLattices.Toolkit: Float, contentnames, isparameterbound, parameternames, parametertype, subscript, superscript
 
@@ -28,6 +28,12 @@ function permute(u₁::AID, u₂::AID)
     else
         return (Operator(1, u₂, u₁),)
     end
+end
+
+@testset "scalartype" begin
+    @test scalartype(1) == scalartype(Int) == Int
+    @test scalartype(Vector{Int}) == scalartype(Matrix{Int}) == scalartype(Vector{Matrix{Int}}) == Int
+    @test scalartype(Tuple{Int}) == scalartype(Tuple{Tuple{Int, Int}}) == Int
 end
 
 @testset "ID" begin
@@ -76,13 +82,14 @@ end
     @test promote_type(Operator{Int}, Float) == Operator{Float}
 
     opt = Operator(2.0, AID(1, 1))
-    @test deepcopy(opt)==opt && isequal(deepcopy(opt), opt)
+    @test deepcopy(opt)==expand(opt) && isequal(deepcopy(opt), expand(opt))
     @test eltype(opt) == eltype(typeof(opt)) == AID{Int, Int}
     @test collect(opt) == [AID(1, 1)]
     @test opt|>rank == opt|>typeof|>rank == 1
     @test opt|>valtype == opt|>typeof|>valtype == parametertype(opt|>typeof, :value) == Float
     @test opt|>idtype == opt|>typeof|>idtype == parametertype(opt|>typeof, :id) == ID{AID{Int, Int}, 1}
-    @test opt|>dtype == opt|>typeof|>dtype == Float
+    @test opt|>scalartype == opt|>typeof|>scalartype == Float
+    @test opt|>equivalenttoscalar == opt|>typeof|>equivalenttoscalar == false
     @test value(opt) == 2.0
     @test id(opt) == ID(AID(1, 1))
     @test replace(opt, 3) == replace(opt, value=3) == Operator(3, AID(1, 1))
@@ -107,12 +114,11 @@ end
     opt₁ = Operator(1.0, AID(1, 1))
     opt₂ = Operator(2.0, AID(1, 2))
     opts = Operators(opt₁, opt₂)
-    @test opts == Operators{eltype(opts)}(opt₁, opt₂)
-    @test opts == OperatorSum(opt₁, opt₂) == OperatorSum((opt₁, opt₂)) == OperatorSum{eltype(opts)}(opt₁, opt₂) == OperatorSum{eltype(opts)}((opt₁, opt₂))
-    @test valtype(opts) == valtype(typeof(opts)) == typeof(opts)
+    @test opts == Operators{eltype(opts)}(opt₁, opt₂) == OperatorSum(opt₁, opt₂) == OperatorSum((opt₁, opt₂)) == OperatorSum{eltype(opts)}(opt₁, opt₂) == OperatorSum{eltype(opts)}((opt₁, opt₂)) == expand(opts)
     @test eltype(opts) == eltype(typeof(opts)) == Operator{Float, ID{AID{Int, Int}, 1}}
-    @test dtype(opts) == dtype(typeof(opts)) == Float
-    @test update!(opts) == expand(opts) == opts
+    @test scalartype(opts) == scalartype(typeof(opts)) == Float
+    @test equivalenttoscalar(opts) == equivalenttoscalar(typeof(opts)) == false
+    @test update!(opts) == opts
     @test collect(opts) == collect(values(opts.contents))
     @test length(opts) == 2
     @test summary(opts) == "Operators"
@@ -136,10 +142,10 @@ end
     @test mul!(deepcopy(opts), 2.0) == opts*2
     @test div!(deepcopy(opts), 2.0) == opts/2
 
-    @test optype(AID(1, 1)) == optype(AID{Int, Int}) == Operator{Int, Tuple{AID{Int, Int}}}
-    @test optype(AID) == Operator{Int, <:Tuple{AID}}
-    @test optype(opt) == optype(typeof(opt)) == Operator{Float, Tuple{AID{Int, Int}}}
-    @test optype(opts) == optype(typeof(opts)) == eltype(opts)
+    @test operatortype(AID(1, 1)) == operatortype(AID{Int, Int}) == Operator{Int, Tuple{AID{Int, Int}}}
+    @test operatortype(AID) == Operator{Int, <:Tuple{AID}}
+    @test operatortype(opt) == operatortype(typeof(opt)) == Operator{Float, Tuple{AID{Int, Int}}}
+    @test operatortype(opts) == operatortype(typeof(opts)) == eltype(opts)
 
     @test zero(AID(1, 1)) == zero(Operator(1, AID(1, 1))) == zero(Operator(1, AID(1, 1))+Operator(1, AID(2, 1)))
     @test conj(AID(1, 1)) == AID(1, 1)
@@ -164,7 +170,7 @@ end
 
     @test +opts == opts
     @test -opts == Operators(-opt₁, -opt₂)
-    @test opts*2 == 2*opts == 2⊗opts == opts⊗2 == Operators(2opt₁, 2opt₂)
+    @test opts*2 == 2*opts == Operators(2opt₁, 2opt₂)
     @test opts/2 == Operators(opt₁/2, opt₂/2)
     @test opts^2 == opts*opts == Operators(opt₁*opt₁, opt₁*opt₂, opt₂*opt₁, opt₂*opt₂)
     @test opts+1 == 1+opts == Operators(Operator(1), opt₁, opt₂)

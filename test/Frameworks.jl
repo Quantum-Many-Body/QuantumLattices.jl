@@ -1,8 +1,8 @@
 using LinearAlgebra: dot, tr
-using QuantumLattices: add!, dimension, dtype, expand, expand!, matrix, reset!, update
+using QuantumLattices: add!, dimension, expand, expand!, matrix, reset!, update
 using QuantumLattices.DegreesOfFreedom: plain, Boundary, CoordinatedIndex, Coupling, Hilbert, Index, OperatorUnitToTuple, SimpleInternalIndex, SimpleInternal, Term
 using QuantumLattices.Frameworks
-using QuantumLattices.QuantumOperators: ID, LinearFunction, Operator, Operators, id, idtype
+using QuantumLattices.QuantumOperators: ID, LinearFunction, Operator, Operators, id, idtype, scalartype
 using QuantumLattices.Spatials: Lattice, Point, bonds, decompose, isintracell, save
 using QuantumLattices.Toolkit: Float, reparameter
 using StaticArrays: SVector
@@ -62,7 +62,7 @@ end
     ]::Matrix{ComplexF64}
     f = Formula(A, (t=1.0, μ=0.0, Δ=0.1))
     @test valtype(f) == valtype(typeof(f)) == Matrix{ComplexF64}
-    @test eltype(f) == eltype(typeof(f)) == dtype(f) == dtype(typeof(f)) == ComplexF64
+    @test scalartype(f) == scalartype(typeof(f)) == ComplexF64
     @test Parameters(f) == (t=1.0, μ=0.0, Δ=0.1)
     @test f([0.0, 0.0]) ≈ [4 0; 0 -4]
 
@@ -92,7 +92,7 @@ end
     @test cat == Generator(tops₁, (t=Operators{optp}(), μ=μops), (t=tops₂, μ=Operators{optp}()), (t=2.0, μ=1.0), boundary, eager)
     @test cat|>valtype == cat|>typeof|>valtype == Operators{optp, idtype(optp)}
     @test cat|>eltype == cat|>typeof|>eltype == optp
-    @test cat|>dtype == cat|>typeof|>dtype == Complex{Float}
+    @test cat|>scalartype == cat|>typeof|>scalartype == Complex{Float}
     @test Parameters(cat) == (t=2.0, μ=1.0, θ=0.1)
     @test !isempty(cat) && isempty(empty(cat))
     @test empty(cat) == empty!(deepcopy(cat)) == CategorizedGenerator(Operators{optp}(), (t=Operators{optp}(), μ=Operators{optp}()), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), boundary, eager)
@@ -168,8 +168,9 @@ end
     @test cgen == OperatorGenerator((t, μ), bs, hilbert, boundary; half=true)
     @test isequal(cgen, OperatorGenerator((t, μ), bs, hilbert, boundary; half=true))
     @test cgen == Generator(cat, (t, μ), bs, hilbert, true) == Generator((t, μ), bs, hilbert, boundary; half=true)
-    @test cgen|>eltype == cgen|>typeof|>eltype == optp
     @test cgen|>valtype == cgen|>typeof|>valtype == Operators{optp, idtype(optp)}
+    @test cgen|>eltype == cgen|>typeof|>eltype == optp
+    @test cgen|>scalartype == cgen|>typeof|>scalartype == Complex{Float}
     @test collect(cgen) == collect(expand(cgen))
     @test Parameters(cgen) == (t=2.0, μ=1.0, θ=0.1)
     @test expand!(Operators{optp}(), cgen) == expand(cgen) ≈ tops₁ + tops₂*2.0 + μops
@@ -220,7 +221,6 @@ function update!(vca::VCA; kwargs...)
     vca.U = get(kwargs, :U, vca.U)
     return vca
 end
-@inline Base.valtype(::Type{VCA}) = Float
 @inline Parameters(vca::VCA) = Parameters{(:t, :U)}(vca.t, vca.U)
 
 mutable struct GF <: Action
@@ -254,7 +254,6 @@ end
     @test vca == deepcopy(vca)
     @test isequal(vca, deepcopy(vca))
     @test string(vca) == "VCA"
-    @test valtype(vca) == valtype(typeof(vca)) == eltype(vca) == eltype(typeof(vca)) == dtype(vca) == dtype(typeof(vca)) == Float
 
     gf = GF(0)
     @test gf == deepcopy(gf)

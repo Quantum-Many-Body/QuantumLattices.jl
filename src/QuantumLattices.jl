@@ -3,32 +3,27 @@ module QuantumLattices
 import LinearAlgebra: ishermitian, rank, mul!
 
 # interfaces
-export dimension, id, ishermitian, rank, value
-export ⊞, ⊠, ⊕, ⊗, add!, div!, mul!, sub!
-export decompose, decompose!, expand, expand!, permute
-export dtype, kind, reset!, update, update!
-function id end
-function value end
-function dimension end
+export ⊞, ⊠, ⊕, ⊗, add!, decompose, decompose!, dimension, div!, expand, expand!, id, ishermitian, kind, mul!, permute, rank, reset!, sub!, update, update!, value
+
 function ⊞ end
 function ⊠ end
 function ⊕ end
 function ⊗ end
 function add! end
-function sub! end
+function decompose end
+function decompose! end
+function dimension end
 function div! end
 function expand end
 function expand! end
-function decompose end
-function decompose! end
-function permute end
+function id end
 function kind end
+function permute end
+function reset! end
+function sub! end
 function update end
 function update! end
-function reset! end
-
-@inline dtype(t::Number) = dtype(typeof(t))
-@inline dtype(::Type{T}) where {T<:Number} = T
+function value end
 
 # Toolkit
 include("Toolkit.jl")
@@ -39,7 +34,7 @@ include("QuantumOperators.jl")
 using .QuantumOperators
 export ID, LaTeX, Operator, OperatorPack, OperatorProd, Operators, OperatorSet, OperatorSum, OperatorUnit, QuantumOperator
 export LinearFunction, LinearTransformation, Matrixization, Permutation, RankFilter, TabledUnitSubstitution, Transformation, UnitSubstitution
-export idtype, ishermitian, isscalartype, latexname, latexformat, matrix, script, sequence
+export equivalenttoscalar, idtype, ishermitian, latexname, latexformat, matrix, scalartype, script, sequence
 
 # QuantumNumbers
 include("QuantumNumbers.jl")
