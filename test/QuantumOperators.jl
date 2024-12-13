@@ -8,7 +8,7 @@ using QuantumLattices.Toolkit: Float, contentnames, isparameterbound, parametern
 import QuantumLattices: permute
 import QuantumLattices.QuantumOperators: script
 
-struct AID{O<:Real, S<:Real} <: OperatorUnit
+struct AID{O<:Real, S<:Real} <: OperatorIndex
     orbital::O
     nambu::S
 end

@@ -1,10 +1,10 @@
 using LinearAlgebra: dot, tr
-using QuantumLattices: add!, dimension, expand, expand!, matrix, reset!, update
-using QuantumLattices.DegreesOfFreedom: plain, Boundary, CoordinatedIndex, Coupling, Hilbert, Index, OperatorUnitToTuple, SimpleInternalIndex, SimpleInternal, Term
+using QuantumLattices: add!, expand, expand!, reset!, update
+using QuantumLattices.DegreesOfFreedom: plain, Boundary, CoordinatedIndex, Coupling, Hilbert, Index, SimpleInternalIndex, SimpleInternal, Term
 using QuantumLattices.Frameworks
 using QuantumLattices.QuantumOperators: ID, LinearFunction, Operator, Operators, id, idtype, scalartype
-using QuantumLattices.Spatials: Lattice, Point, bonds, decompose, isintracell, save
-using QuantumLattices.Toolkit: Float, reparameter
+using QuantumLattices.Spatials: Lattice, bonds, decompose, isintracell, save
+using QuantumLattices.Toolkit: Float
 using StaticArrays: SVector
 
 import QuantumLattices: update!

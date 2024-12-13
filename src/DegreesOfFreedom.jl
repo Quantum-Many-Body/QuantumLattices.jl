@@ -5,7 +5,7 @@ using Printf: @printf, @sprintf
 using SparseArrays: SparseMatrixCSC, nnz
 using StaticArrays: SVector
 using ..QuantumLattices: add!, decompose, dimension
-using ..QuantumOperators: ID, LinearTransformation, Operator, OperatorPack, Operators, OperatorUnit, QuantumOperator, scalartype, valuetolatextext
+using ..QuantumOperators: ID, LinearTransformation, Operator, OperatorIndex, OperatorPack, Operators, QuantumOperator, scalartype, valuetolatextext
 using ..Spatials: Bond, Point
 using ..Toolkit: atol, efficientoperations, rtol, CompositeDict, Float, VectorSpace, VectorSpaceCartesian, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceStyle, concatenate, fulltype, parametertype, rawtype, reparameter, tostr
 
@@ -15,26 +15,17 @@ import ..QuantumOperators: idtype, operatortype, script
 import ..Spatials: icoordinate, nneighbor, rcoordinate
 import ..Toolkit: contentnames, getcontent, parameternames, shape
 
-export AbstractIndex, AllEqual, Boundary, CompositeInternal, ConstrainedInternal, Internal, InternalIndex, InternalIndexProd, InternalPattern, InternalProd, InternalSum, SimpleInternal, SimpleInternalIndex
-export Component, CompositeIndex, CoordinatedIndex, Coupling, Hilbert, Index, MatrixCoupling, MatrixCouplingProd, MatrixCouplingSum, Metric, OperatorUnitToTuple, Ordinal, Pattern, Table, Term, TermAmplitude, TermCoupling, TermFunction
+export AllEqual, Boundary, CompositeInternal, ConstrainedInternal, Internal, InternalIndex, InternalIndexProd, InternalPattern, InternalProd, InternalSum, SimpleInternal, SimpleInternalIndex
+export Component, CompositeIndex, CoordinatedIndex, Coupling, Hilbert, Index, MatrixCoupling, MatrixCouplingProd, MatrixCouplingSum, Metric, OperatorIndexToTuple, Ordinal, Pattern, Table, Term, TermAmplitude, TermCoupling, TermFunction
 export ˢᵗ, ⁿᵈ, ʳᵈ, ᵗʰ, plain, allequalfields, coordinatedindextype, indextype, internalindextype, isdefinite, partition, patternrule, sitestructure, statistics, @pattern
-
-# AbstractIndex
-"""
-    AbstractIndex <: OperatorUnit
-
-Abstract type of the index of a degree of freedom.
-"""
-abstract type AbstractIndex <: OperatorUnit end
-@inline Base.getindex(::Type{AbstractIndex}, ::Type{I}) where {I<:AbstractIndex} = I
 
 # InternalIndex and Internal
 """
-    InternalIndex <: AbstractIndex
+    InternalIndex <: OperatorIndex
 
 Internal index of an internal degree of freedom.
 """
-abstract type InternalIndex <: AbstractIndex end
+abstract type InternalIndex <: OperatorIndex end
 
 """
     isdefinite(ii::InternalIndex) -> Bool
@@ -51,7 +42,7 @@ Simple internal index, i.e., a complete set of indexes to denote an internal deg
 """
 abstract type SimpleInternalIndex <: InternalIndex end
 @inline isdefinite(::Type{<:SimpleInternalIndex}) = false
-@inline Base.show(io::IO, ii::SimpleInternalIndex) = @printf io "%s(%s)" AbstractIndex[typeof(ii)] join(map(tostr, ntuple(i->getfield(ii, i), Val(fieldcount(typeof(ii))))), ", ")
+@inline Base.show(io::IO, ii::SimpleInternalIndex) = @printf io "%s(%s)" OperatorIndex[typeof(ii)] join(map(tostr, ntuple(i->getfield(ii, i), Val(fieldcount(typeof(ii))))), ", ")
 
 """
     statistics(ii::SimpleInternalIndex) -> Symbol
@@ -571,7 +562,7 @@ const ˢᵗ = ⁿᵈ = ʳᵈ = ᵗʰ = Ordinal(1)
 
 Index of a degree of freedom, which consist of the spatial part (i.e., the site index) and the internal part (i.e., the internal index).
 """
-struct Index{I<:SimpleInternalIndex, S<:Union{Int, Ordinal, Colon}} <: AbstractIndex
+struct Index{I<:SimpleInternalIndex, S<:Union{Int, Ordinal, Colon}} <: OperatorIndex
     site::S
     internal::I
 end
@@ -583,7 +574,7 @@ function Base.show(io::IO, index::Index)
         push!(internal, tostr(value))
     end
     internal = join(internal, ", ")
-    @printf io "%s(%s%s%s)" AbstractIndex[typeof(index)] tostr(index.site) (length(internal)>0 ? ", " : "") internal
+    @printf io "%s(%s%s%s)" OperatorIndex[typeof(index)] tostr(index.site) (length(internal)>0 ? ", " : "") internal
 end
 
 """
@@ -660,11 +651,11 @@ Get the compatible type of the index based on the type of an internal space.
 
 # CompositeIndex and CoordinatedIndex
 """
-    CompositeIndex{I<:Index} <: AbstractIndex
+    CompositeIndex{I<:Index} <: OperatorIndex
 
 Abstract type of a composite index.
 """
-abstract type CompositeIndex{I<:Index} <: AbstractIndex end
+abstract type CompositeIndex{I<:Index} <: OperatorIndex end
 @inline contentnames(::Type{<:CompositeIndex}) = (:index,)
 @inline parameternames(::Type{<:CompositeIndex}) = (:index,)
 
@@ -715,7 +706,7 @@ function Base.show(io::IO, index::CoordinatedIndex)
         push!(internal, tostr(value))
     end
     internal = join(internal, ", ")
-    @printf io "%s(%s%s%s, %s, %s)" AbstractIndex[typeof(index)] tostr(index.index.site) (length(internal)>0 ? ", " : "") internal index.rcoordinate index.icoordinate
+    @printf io "%s(%s%s%s, %s, %s)" OperatorIndex[typeof(index)] tostr(index.index.site) (length(internal)>0 ? ", " : "") internal index.rcoordinate index.icoordinate
 end
 @inline compositeindexcoordinate(vector::SVector) = vector
 @inline compositeindexcoordinate(vector::SVector{N, Float}) where N = SVector(ntuple(i->vector[i]===-0.0 ? 0.0 : vector[i], Val(N)))
@@ -1634,9 +1625,9 @@ Get the
 """
     Metric <: Function
 
-Rules for measuring an operator unit so that different operator units can be compared.
+Rules for measuring an operator index so that different operator indexes can be compared.
 
-As a function, every instance should accept only one positional argument, i.e. the operator unit to be measured.
+As a function, every instance should accept only one positional argument, i.e. the operator index to be measured.
 """
 abstract type Metric <: Function end
 @inline Base.:(==)(m₁::T, m₂::T) where {T<:Metric} = ==(efficientoperations, m₁, m₂)
@@ -1647,44 +1638,44 @@ abstract type Metric <: Function end
 @inline Base.valtype(::Type{M}, ::Type{I}) where {M<:Metric, I<:CompositeIndex} = valtype(M, indextype(I))
 
 """
-    OperatorUnitToTuple{Fields} <: Metric
+    OperatorIndexToTuple{Fields} <: Metric
 
-A rule that converts an operator unit into a tuple based on the specified type parameter `Fields`.
+A rule that converts an operator index into a tuple based on the specified type parameter `Fields`.
 
 Here, `Fields` must be a tuple of `Union{Symbol, Function}`, which determines the elements of the converted tuple on an element-by-element basis.
 
 For the ith element of `Fields`:
 
-1) If it is a Symbol, it represents the name of a single index of an `OperatorUnit`, and its value will become the corresponding element in the converted tuple.
-2) If it is a Function, it should be a trait function of an `OperatorUnit`, and its return value will become the corresponding element in the converted tuple.
+1) If it is a Symbol, it represents the name of a single index of an `OperatorIndex`, and its value will become the corresponding element in the converted tuple.
+2) If it is a Function, it should be a trait function of an `OperatorIndex`, and its return value will become the corresponding element in the converted tuple.
 """
-struct OperatorUnitToTuple{Fields} <: Metric
-    OperatorUnitToTuple(fields::Tuple{Vararg{Union{Symbol, Function}}}) = new{fields}()
+struct OperatorIndexToTuple{Fields} <: Metric
+    OperatorIndexToTuple(fields::Tuple{Vararg{Union{Symbol, Function}}}) = new{fields}()
 end
-@inline OperatorUnitToTuple(fields::Union{Symbol, Function}...) = OperatorUnitToTuple(fields)
+@inline OperatorIndexToTuple(fields::Union{Symbol, Function}...) = OperatorIndexToTuple(fields)
 
 """
-    keys(::OperatorUnitToTuple{Fields}) where Fields -> Fields
-    keys(::Type{<:OperatorUnitToTuple{Fields}}) where Fields -> Fields
+    keys(::OperatorIndexToTuple{Fields}) where Fields -> Fields
+    keys(::Type{<:OperatorIndexToTuple{Fields}}) where Fields -> Fields
 
 Get the values of the type parameter `Fields`.
 """
-@inline Base.keys(::OperatorUnitToTuple{Fields}) where Fields = Fields
-@inline Base.keys(::Type{<:OperatorUnitToTuple{Fields}}) where Fields = Fields
+@inline Base.keys(::OperatorIndexToTuple{Fields}) where Fields = Fields
+@inline Base.keys(::Type{<:OperatorIndexToTuple{Fields}}) where Fields = Fields
 
 """
-    OperatorUnitToTuple(::Type{I}) where {I<:Index}
+    OperatorIndexToTuple(::Type{I}) where {I<:Index}
 
 Construct the metric rule from the information of the `Index` type.
 """
-@inline OperatorUnitToTuple(::Type{I}) where {I<:Index} = OperatorUnitToTuple(:site, (fieldnames(internalindextype(I)))...)
+@inline OperatorIndexToTuple(::Type{I}) where {I<:Index} = OperatorIndexToTuple(:site, (fieldnames(internalindextype(I)))...)
 
 """
-    valtype(::Type{<:OperatorUnitToTuple}, ::Type{<:Index})
+    valtype(::Type{<:OperatorIndexToTuple}, ::Type{<:Index})
 
-Get the valtype of applying an `OperatorUnitToTuple` rule to an `Index`.
+Get the valtype of applying an `OperatorIndexToTuple` rule to an `Index`.
 """
-@inline @generated function Base.valtype(::Type{M}, ::Type{I}) where {M<:OperatorUnitToTuple, I<:Index}
+@inline @generated function Base.valtype(::Type{M}, ::Type{I}) where {M<:OperatorIndexToTuple, I<:Index}
     types = []
     for field in keys(M)
         if isa(field, Function)
@@ -1699,11 +1690,11 @@ Get the valtype of applying an `OperatorUnitToTuple` rule to an `Index`.
 end
 
 """
-    (operatorunittotuple::OperatorUnitToTuple)(index::Index) -> Tuple
+    (operatorunittotuple::OperatorIndexToTuple)(index::Index) -> Tuple
 
 Convert an index to a tuple.
 """
-@inline @generated function (operatorunittotuple::OperatorUnitToTuple)(index::Index)
+@inline @generated function (operatorunittotuple::OperatorIndexToTuple)(index::Index)
     exprs = []
     for name in keys(operatorunittotuple)
         if isa(name, Function)
@@ -1720,47 +1711,47 @@ end
 """
     Table{I, B<:Metric} <: CompositeDict{I, Int}
 
-Table of operator unit v.s. sequence pairs.
+Table of operator index v.s. sequence pairs.
 """
 struct Table{I, B<:Metric} <: CompositeDict{I, Int}
     by::B
     contents::OrderedDict{I, Int}
 end
 @inline contentnames(::Type{<:Table}) = (:by, :contents)
-@inline Table{I}(by::Metric) where {I<:OperatorUnit} = Table(by, OrderedDict{valtype(typeof(by), I), Int}())
+@inline Table{I}(by::Metric) where {I<:OperatorIndex} = Table(by, OrderedDict{valtype(typeof(by), I), Int}())
 @inline vec2dict(vs::AbstractVector) = OrderedDict{eltype(vs), Int}(v=>i for (i, v) in enumerate(vs))
 
 """
-    getindex(table::Table, operatorunit::OperatorUnit) -> Int
+    getindex(table::Table, index::OperatorIndex) -> Int
 
-Inquiry the sequence of an operator unit.
+Inquiry the sequence of an operator index.
 """
-@inline Base.getindex(table::Table, operatorunit::OperatorUnit) = table[convert(keytype(table), table.by(operatorunit))]
-
-"""
-    haskey(table::Table, operatorunit::OperatorUnit) -> Bool
-    haskey(table::Table, operatorunits::ID{OperatorUnit}) -> Tuple{Vararg{Bool}}
-
-Judge whether a single operator unit or a set of operator units have been assigned with sequences in table.
-"""
-@inline Base.haskey(table::Table, operatorunit::OperatorUnit) = haskey(table, table.by(operatorunit))
-@inline Base.haskey(table::Table, operatorunits::ID{OperatorUnit}) = map(operatorunit->haskey(table, operatorunit), operatorunits)
+@inline Base.getindex(table::Table, index::OperatorIndex) = table[convert(keytype(table), table.by(index))]
 
 """
-    Table(operatorunits::AbstractVector{<:OperatorUnit}, by::Metric=OperatorUnitToTuple(eltype(operatorunits)))
+    haskey(table::Table, index::OperatorIndex) -> Bool
+    haskey(table::Table, indexes::ID{OperatorIndex}) -> Tuple{Vararg{Bool}}
 
-Convert a set of operator units to the corresponding table of operator unit vs. sequence pairs.
-
-The input operator units are measured by the input `by` function with the duplicates removed. The resulting unique values are sorted, which determines the sequence of the input `operatorunits`. Note that two operator units have the same sequence if their converted values are equal to each other.
+Judge whether a single operator index or a set of operator indexes have been assigned with sequences in table.
 """
-@inline Table(operatorunits::AbstractVector{<:OperatorUnit}, by::Metric=OperatorUnitToTuple(eltype(operatorunits))) = Table(by, [by(operatorunit) for operatorunit in operatorunits]|>unique!|>sort!|>vec2dict)
+@inline Base.haskey(table::Table, index::OperatorIndex) = haskey(table, table.by(index))
+@inline Base.haskey(table::Table, indexes::ID{OperatorIndex}) = map(index->haskey(table, index), indexes)
 
 """
-    Table(hilbert::Hilbert, by::Metric=OperatorUnitToTuple(typeof(hilbert))) -> Table
+    Table(indexes::AbstractVector{<:OperatorIndex}, by::Metric=OperatorIndexToTuple(eltype(indexes)))
+
+Convert a set of operator units to the corresponding table of operator index vs. sequence pairs.
+
+The input operator units are measured by the input `by` function with the duplicates removed. The resulting unique values are sorted, which determines the sequence of the input `indexes`. Note that two operator units have the same sequence if their converted values are equal to each other.
+"""
+@inline Table(indexes::AbstractVector{<:OperatorIndex}, by::Metric=OperatorIndexToTuple(eltype(indexes))) = Table(by, [by(index) for index in indexes]|>unique!|>sort!|>vec2dict)
+
+"""
+    Table(hilbert::Hilbert, by::Metric=OperatorIndexToTuple(typeof(hilbert))) -> Table
 
 Get the index-sequence table of a Hilbert space.
 """
-function Table(hilbert::Hilbert, by::Metric=OperatorUnitToTuple(typeof(hilbert)))
+function Table(hilbert::Hilbert, by::Metric=OperatorIndexToTuple(typeof(hilbert)))
     result = fulltype(Index, Tuple{hilbert|>valtype|>eltype, Int})[]
     for (site, internal) in hilbert
         for index in internal
@@ -1773,7 +1764,7 @@ end
 """
     union(tables::Table...) -> Table
 
-Unite several operator unit vs. sequence tables.
+Unite several operator index vs. sequence tables.
 """
 function Base.union(tables::Table...)
     @assert allequal(map(table->table.by, tables)) "union error: all input tables should have the same `by` attribute."
@@ -1787,13 +1778,13 @@ function Base.union(tables::Table...)
 end
 
 """
-    reset!(table::Table, operatorunits::AbstractVector{<:OperatorUnit}) -> Table
+    reset!(table::Table, indexes::AbstractVector{<:OperatorIndex}) -> Table
 
-Reset a table by a new set of operatorunits.
+Reset a table by a new set of indexes.
 """
-function reset!(table::Table, operatorunits::AbstractVector{<:OperatorUnit})
+function reset!(table::Table, indexes::AbstractVector{<:OperatorIndex})
     empty!(table)
-    for (i, id) in enumerate([table.by(operatorunit) for operatorunit in operatorunits]|>unique!|>sort!)
+    for (i, id) in enumerate([table.by(index) for index in indexes]|>unique!|>sort!)
         table[id] = i
     end
     return table

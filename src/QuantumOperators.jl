@@ -10,7 +10,7 @@ import LinearAlgebra: dot
 import ..QuantumLattices: add!, div!, expand, id, ishermitian, mul!, permute, rank, sub!, update!, value
 import ..Toolkit: contentnames, dissolve, isparameterbound, parameternames, subscript, superscript
 
-export ID, LaTeX, Operator, OperatorPack, OperatorProd, Operators, OperatorSet, OperatorSum, OperatorUnit, QuantumOperator
+export ID, LaTeX, Operator, OperatorIndex, OperatorPack, OperatorProd, Operators, OperatorSet, OperatorSum, QuantumOperator
 export LinearFunction, LinearTransformation, Matrixization, Permutation, RankFilter, TabledUnitSubstitution, Transformation, UnitSubstitution
 export equivalenttoscalar, idtype, ishermitian, latexname, latexformat, matrix, operatortype, scalartype, script, sequence
 
@@ -101,56 +101,57 @@ Expand a `QuantumOperator`, which is defined to be itself.
 """
 @inline expand(m::QuantumOperator) = m
 
-# Operator unit
+# Operator index
 """
-    OperatorUnit <: QuantumOperator
+    OperatorIndex <: QuantumOperator
 
-An operator unit is the irreducible symbolic unit to completely represent a quantum operator.
+An operator index is the irreducible symbolic unit to completely represent a quantum operator.
 
 It plays the role of the symbols as in usual computer algebras while it can host internal structures, which is convenient to represent quantum operators with complicated spatial and/or internal degrees of freedom.
 """
-abstract type OperatorUnit <: QuantumOperator end
-@inline Base.show(io::IO, u::OperatorUnit) = @printf io "%s(%s)" nameof(typeof(u)) join(map(repr, ntuple(i->getfield(u, i), Val(fieldcount(typeof(u))))), ", ")
-@inline @generated Base.hash(u::OperatorUnit, h::UInt) = Expr(:call, :hash, Expr(:tuple, [:(getfield(u, $i)) for i=1:fieldcount(u)]...), :h)
+abstract type OperatorIndex <: QuantumOperator end
+@inline Base.show(io::IO, u::OperatorIndex) = @printf io "%s(%s)" nameof(typeof(u)) join(map(repr, ntuple(i->getfield(u, i), Val(fieldcount(typeof(u))))), ", ")
+@inline @generated Base.hash(u::OperatorIndex, h::UInt) = Expr(:call, :hash, Expr(:tuple, [:(getfield(u, $i)) for i=1:fieldcount(u)]...), :h)
+@inline Base.getindex(::Type{OperatorIndex}, ::Type{I}) where {I<:OperatorIndex} = I
 
 """
-    iszero(u::OperatorUnit) -> Bool
+    iszero(u::OperatorIndex) -> Bool
 
-Judge whether an `OperatorUnit` is zero, which is defined to be always `false`.
+Judge whether an `OperatorIndex` is zero, which is defined to be always `false`.
 """
-@inline Base.iszero(::OperatorUnit) = false
+@inline Base.iszero(::OperatorIndex) = false
 
 # ID of a composite quantum operator
 """
-    ID{U<:OperatorUnit, N}
+    ID{U<:OperatorIndex, N}
 
 ID of a composite quantum operator, which is an ordered set of operator units.
 
-Type alias for `NTuple{N, U} where {U<:OperatorUnit}`.
+Type alias for `NTuple{N, U} where {U<:OperatorIndex}`.
 """
-const ID{U<:OperatorUnit, N} = NTuple{N, U}
-@inline Base.promote_rule(::Type{Tuple{}}, I::Type{<:Tuple{OperatorUnit, Vararg{OperatorUnit}}}) = ID{I|>eltype}
-@inline Base.promote_rule(I::Type{<:Tuple{OperatorUnit, Vararg{OperatorUnit}}}, ::Type{Tuple{}}) = ID{I|>eltype}
+const ID{U<:OperatorIndex, N} = NTuple{N, U}
+@inline Base.promote_rule(::Type{Tuple{}}, I::Type{<:Tuple{OperatorIndex, Vararg{OperatorIndex}}}) = ID{I|>eltype}
+@inline Base.promote_rule(I::Type{<:Tuple{OperatorIndex, Vararg{OperatorIndex}}}, ::Type{Tuple{}}) = ID{I|>eltype}
 
 """
-    ID(id::OperatorUnit...)
-    ID(u::OperatorUnit, id::ID{OperatorUnit})
-    ID(id::ID{OperatorUnit}, u::OperatorUnit)
-    ID(id₁::ID{OperatorUnit}, id₂::ID{OperatorUnit})
+    ID(id::OperatorIndex...)
+    ID(u::OperatorIndex, id::ID{OperatorIndex})
+    ID(id::ID{OperatorIndex}, u::OperatorIndex)
+    ID(id₁::ID{OperatorIndex}, id₂::ID{OperatorIndex})
 
 Get the id from operator units/ids.
 """
-@inline ID(id::OperatorUnit...) = id
-@inline ID(u::OperatorUnit, id::ID{OperatorUnit}) = ID(u, id...)
-@inline ID(id::ID{OperatorUnit}, u::OperatorUnit) = ID(id..., u)
-@inline ID(id₁::ID{OperatorUnit}, id₂::ID{OperatorUnit}) = ID(id₁..., id₂...)
+@inline ID(id::OperatorIndex...) = id
+@inline ID(u::OperatorIndex, id::ID{OperatorIndex}) = ID(u, id...)
+@inline ID(id::ID{OperatorIndex}, u::OperatorIndex) = ID(id..., u)
+@inline ID(id₁::ID{OperatorIndex}, id₂::ID{OperatorIndex}) = ID(id₁..., id₂...)
 
 """
-    ID(::Type{U}, attrs::Vararg{NTuple{N}, M}) where {U<:OperatorUnit, N, M}
+    ID(::Type{U}, attrs::Vararg{NTuple{N}, M}) where {U<:OperatorIndex, N, M}
 
 Get the composite id from the components of singular ids.
 """
-@inline @generated function ID(::Type{U}, attrs::Vararg{NTuple{N, Any}, M}) where {U<:OperatorUnit, N, M}
+@inline @generated function ID(::Type{U}, attrs::Vararg{NTuple{N, Any}, M}) where {U<:OperatorIndex, N, M}
     exprs = []
     for i = 1:N
         args = [:(attrs[$j][$i]) for j = 1:M]
@@ -160,49 +161,49 @@ Get the composite id from the components of singular ids.
 end
 
 """
-    propertynames(::Type{I}) where I<:ID{OperatorUnit} -> Tuple{Vararg{Symbol}}
+    propertynames(::Type{I}) where I<:ID{OperatorIndex} -> Tuple{Vararg{Symbol}}
 
 Get the property names of a composite id.
 """
-@inline @generated function Base.propertynames(I::ID{OperatorUnit})
+@inline @generated function Base.propertynames(I::ID{OperatorIndex})
     exprs = [QuoteNode(Symbol(name, 's')) for name in I|>eltype|>fieldnames]
     return Expr(:tuple, exprs...)
 end
 
 """
-    getproperty(id::ID{OperatorUnit}, name::Symbol)
+    getproperty(id::ID{OperatorIndex}, name::Symbol)
 
 Get the property of a composite id.
 """
-@inline Base.getproperty(id::ID{OperatorUnit}, name::Symbol) = idgetproperty(id, Val(name), Val(id|>propertynames))
-@inline @generated function idgetproperty(id::ID{OperatorUnit}, ::Val{name}, ::Val{names}) where {name, names}
+@inline Base.getproperty(id::ID{OperatorIndex}, name::Symbol) = idgetproperty(id, Val(name), Val(id|>propertynames))
+@inline @generated function idgetproperty(id::ID{OperatorIndex}, ::Val{name}, ::Val{names}) where {name, names}
     index = findfirst(isequal(name), names)::Int
     exprs = [:(getfield(id[$i], $index)) for i = 1:fieldcount(id)]
     return Expr(:tuple, exprs...)
 end
 
 """
-    rank(id::ID{OperatorUnit}) -> Int
-    rank(::Type{<:ID{OperatorUnit, N}}) where N -> Int
+    rank(id::ID{OperatorIndex}) -> Int
+    rank(::Type{<:ID{OperatorIndex, N}}) where N -> Int
 
 Get the rank of an id.
 """
-@inline rank(id::ID{OperatorUnit}) = rank(typeof(id))
-@inline rank(::Type{<:ID{OperatorUnit, N}}) where N = N
+@inline rank(id::ID{OperatorIndex}) = rank(typeof(id))
+@inline rank(::Type{<:ID{OperatorIndex, N}}) where N = N
 
 """
-    adjoint(id::ID{OperatorUnit}) -> ID
+    adjoint(id::ID{OperatorIndex}) -> ID
 
 Get the adjoint of an id.
 """
-@inline Base.adjoint(id::ID{OperatorUnit}) = map(adjoint, reverse(id))
+@inline Base.adjoint(id::ID{OperatorIndex}) = map(adjoint, reverse(id))
 
 """
-    ishermitian(id::ID{OperatorUnit}) -> Bool
+    ishermitian(id::ID{OperatorIndex}) -> Bool
 
 Judge whether an id is Hermitian.
 """
-function ishermitian(id::ID{OperatorUnit})
+function ishermitian(id::ID{OperatorIndex})
     for i = 1:((rank(id)+1)÷2)
         id[i]'==id[rank(id)+1-i] || return false
     end
@@ -420,15 +421,15 @@ Get the sequence of the id of a quantum operator according to a table.
 
 # Operator
 """
-    Operator{V, I<:ID{OperatorUnit}} <: OperatorProd{V, I}
+    Operator{V, I<:ID{OperatorIndex}} <: OperatorProd{V, I}
 
 Operator.
 """
-struct Operator{V, I<:ID{OperatorUnit}} <: OperatorProd{V, I}
+struct Operator{V, I<:ID{OperatorIndex}} <: OperatorProd{V, I}
     value::V
     id::I
 end
-@inline Operator(value::Number, id::OperatorUnit...) = Operator(value, id)
+@inline Operator(value::Number, id::OperatorIndex...) = Operator(value, id)
 function Base.show(io::IO, m::Operator)
     @printf io "%s(%s%s%s)" nameof(typeof(m)) tostr(value(m)) (rank(m)>0 ? ", " : "") join(id(m), ", ")
 end
@@ -448,11 +449,11 @@ Judge whether an operator is Hermitian.
 @inline ishermitian(m::Operator) = isreal(value(m)) && ishermitian(id(m))
 
 """
-    convert(::Type{M}, u::OperatorUnit) where {M<:Operator}
+    convert(::Type{M}, u::OperatorIndex) where {M<:Operator}
 
-Convert an operator unit to an operator.
+Convert an operator index to an operator.
 """
-@inline function Base.convert(::Type{M}, u::OperatorUnit) where {M<:Operator}
+@inline function Base.convert(::Type{M}, u::OperatorIndex) where {M<:Operator}
     @assert Tuple{typeof(u)} <: idtype(M) "convert error: not convertible."
     return Operator(one(valtype(M)), ID(u))
 end
@@ -606,13 +607,13 @@ end
 
 """
     add!(ms::OperatorSum) -> typeof(ms)
-    add!(ms::OperatorSum, m::Union{Number, OperatorUnit, OperatorPack}) -> typeof(ms)
+    add!(ms::OperatorSum, m::Union{Number, OperatorIndex, OperatorPack}) -> typeof(ms)
     add!(ms::OperatorSum, mms::OperatorSum) -> typeof(ms)
 
 Get the in-place addition of quantum operators.
 """
 @inline add!(ms::OperatorSum) = ms
-@inline function add!(ms::OperatorSum, m::Union{Number, OperatorUnit, OperatorPack})
+@inline function add!(ms::OperatorSum, m::Union{Number, OperatorIndex, OperatorPack})
     iszero(m) && return ms
     m = convert(eltype(ms), m)
     old = get(ms.contents, id(m), nothing)
@@ -629,13 +630,13 @@ end
 
 """
     sub!(ms::OperatorSum) -> typeof(ms)
-    sub!(ms::OperatorSum, m::Union{Number, OperatorUnit, OperatorPack}) -> typeof(ms)
+    sub!(ms::OperatorSum, m::Union{Number, OperatorIndex, OperatorPack}) -> typeof(ms)
     sub!(ms::OperatorSum, mms::OperatorSum) -> typeof(ms)
 
 Get the in-place subtraction of quantum operators.
 """
 @inline sub!(ms::OperatorSum) = ms
-@inline function sub!(ms::OperatorSum, m::Union{Number, OperatorUnit, OperatorPack})
+@inline function sub!(ms::OperatorSum, m::Union{Number, OperatorIndex, OperatorPack})
     iszero(m) && return ms
     m = convert(eltype(ms), m)
     old = get(ms.contents, id(m), nothing)
@@ -690,13 +691,13 @@ end
 
 # Operators
 """
-    Operators{O<:Operator, I<:ID{OperatorUnit}}
+    Operators{O<:Operator, I<:ID{OperatorIndex}}
 
 A set of operators.
 
-Type alias for `OperatorSum{O<:Operator, I<:ID{OperatorUnit}}`.
+Type alias for `OperatorSum{O<:Operator, I<:ID{OperatorIndex}}`.
 """
-const Operators{O<:Operator, I<:ID{OperatorUnit}} = OperatorSum{O, I}
+const Operators{O<:Operator, I<:ID{OperatorIndex}} = OperatorSum{O, I}
 @inline Base.summary(io::IO, ::Operators) = @printf io "Operators"
 
 """
@@ -730,35 +731,35 @@ Judge whether a set of operators as a whole is Hermitian.
 
 # Arithmetic of quantum operators
 """
-    operatortype(::Type{M}) where {M<:OperatorUnit}
+    operatortype(::Type{M}) where {M<:OperatorIndex}
     operatortype(::Type{M}) where {M<:OperatorPack}
     operatortype(::Type{M}) where {M<:OperatorSet}
 
 Get the corresponding `OperatorPack` type of a quantum operator.
 """
-@inline operatortype(::Type{M}) where {M<:OperatorUnit} = fulltype(Operator, NamedTuple{(:value, :id), Tuple{Int, Tuple{M}}})
+@inline operatortype(::Type{M}) where {M<:OperatorIndex} = fulltype(Operator, NamedTuple{(:value, :id), Tuple{Int, Tuple{M}}})
 @inline operatortype(::Type{M}) where {M<:OperatorPack} = M
 @inline operatortype(::Type{M}) where {M<:OperatorSet} = eltype(M)
 
 """
-    zero(::Type{M}) where {M<:OperatorUnit} -> OperatorSum
+    zero(::Type{M}) where {M<:OperatorIndex} -> OperatorSum
     zero(::Type{M}) where {M<:OperatorPack} -> OperatorSum
     zero(::Type{M}) where {M<:OperatorSum} -> OperatorSum
 
 Get the zero sum.
 """
-@inline Base.zero(::Type{M}) where {M<:OperatorUnit} = zero(operatortype(M))
+@inline Base.zero(::Type{M}) where {M<:OperatorIndex} = zero(operatortype(M))
 @inline Base.zero(::Type{M}) where {M<:OperatorPack} = OperatorSum{M}()
 @inline Base.zero(::Type{M}) where {M<:OperatorSum} = OperatorSum{eltype(M)}()
 
 """
-    conj(m::OperatorUnit) -> OperatorUnit
+    conj(m::OperatorIndex) -> OperatorIndex
     conj(m::OperatorPack) -> OperatorPack
     conj(m::OperatorSum) -> OperatorSum
 
 Get the conjugation.
 """
-@inline Base.conj(m::OperatorUnit) = m
+@inline Base.conj(m::OperatorIndex) = m
 @inline Base.conj(m::OperatorPack) = replace(m, conj(value(m)))
 function Base.conj(ms::OperatorSum)
     result = zero(ms)
@@ -807,31 +808,31 @@ end
 @inline Base.:-(m::QuantumOperator, factor::Number) = m - one(operatortype(m))*factor
 
 """
-    *(factor::Number, m::OperatorUnit) -> Operator
-    *(m::OperatorUnit, factor::Number) -> Operator
-    *(m₁::OperatorUnit, m₂::OperatorUnit) -> Operator
+    *(factor::Number, m::OperatorIndex) -> Operator
+    *(m::OperatorIndex, factor::Number) -> Operator
+    *(m₁::OperatorIndex, m₂::OperatorIndex) -> Operator
     *(factor::Number, m::OperatorPack) -> OperatorPack
     *(m::OperatorPack, factor::Number) -> OperatorPack
-    *(m₁::OperatorPack, m₂::OperatorUnit) -> OperatorPack
-    *(m₁::OperatorUnit, m₁::OperatorPack) -> OperatorPack
+    *(m₁::OperatorPack, m₂::OperatorIndex) -> OperatorPack
+    *(m₁::OperatorIndex, m₁::OperatorPack) -> OperatorPack
     *(m₁::OperatorPack, m₂::OperatorPack) -> OperatorPack
     *(factor::Number, ms::OperatorSum) -> OperatorSum
     *(ms::OperatorSum, factor::Number) -> OperatorSum
-    *(m::OperatorUnit, ms::OperatorSum) -> OperatorSum
-    *(ms::OperatorSum, m::OperatorUnit) -> OperatorSum
+    *(m::OperatorIndex, ms::OperatorSum) -> OperatorSum
+    *(ms::OperatorSum, m::OperatorIndex) -> OperatorSum
     *(m::OperatorPack, ms::OperatorSum) -> OperatorSum
     *(ms::OperatorSum, m::OperatorPack) -> OperatorSum
     *(ms₁::OperatorSum, ms₂::OperatorSum) -> OperatorSum
 
 Overloaded `*` between quantum operators or a quantum operator and a number.
 """
-@inline Base.:*(factor::Number, m::OperatorUnit) = Operator(factor, m)
-@inline Base.:*(m::OperatorUnit, factor::Number) = Operator(factor, m)
-@inline Base.:*(m₁::OperatorUnit, m₂::OperatorUnit) = Operator(1, m₁, m₂)
+@inline Base.:*(factor::Number, m::OperatorIndex) = Operator(factor, m)
+@inline Base.:*(m::OperatorIndex, factor::Number) = Operator(factor, m)
+@inline Base.:*(m₁::OperatorIndex, m₂::OperatorIndex) = Operator(1, m₁, m₂)
 @inline Base.:*(factor::Number, m::OperatorPack) = replace(m, factor*value(m))
 @inline Base.:*(m::OperatorPack, factor::Number) = replace(m, value(m)*factor)
-@inline Base.:*(m₁::OperatorPack, m₂::OperatorUnit) = m₁*Operator(1, m₂)
-@inline Base.:*(m₁::OperatorUnit, m₂::OperatorPack) = Operator(1, m₁)*m₂
+@inline Base.:*(m₁::OperatorPack, m₂::OperatorIndex) = m₁*Operator(1, m₂)
+@inline Base.:*(m₁::OperatorIndex, m₂::OperatorPack) = Operator(1, m₁)*m₂
 @inline function Base.:*(m₁::OperatorPack, m₂::OperatorPack)
     M₁, M₂ = typeof(m₁), typeof(m₂)
     @assert nameof(M₁)==nameof(M₂) && contentnames(M₁)==(:value, :id)==contentnames(M₂) "\"*\" error: not implemented between $(nameof(M₁)) and $(nameof(M₂))."
@@ -846,8 +847,8 @@ function Base.:*(ms::OperatorSum, factor::Number)
     end
     return result
 end
-@inline Base.:*(m::Union{OperatorPack, OperatorUnit}, ms::OperatorSum) = OperatorSum(collect(m*mm for mm in ms))
-@inline Base.:*(ms::OperatorSum, m::Union{OperatorPack, OperatorUnit}) = OperatorSum(collect(mm*m for mm in ms))
+@inline Base.:*(m::Union{OperatorPack, OperatorIndex}, ms::OperatorSum) = OperatorSum(collect(m*mm for mm in ms))
+@inline Base.:*(ms::OperatorSum, m::Union{OperatorPack, OperatorIndex}) = OperatorSum(collect(mm*m for mm in ms))
 @inline Base.:*(ms₁::OperatorSum, ms₂::OperatorSum) = OperatorSum(collect(m₁*m₂ for m₁ in ms₁ for m₂ in ms₂))
 
 """
@@ -889,49 +890,49 @@ struct LaTeX{SP, SB, B<:Function, O}
 end
 @inline superscript(::Type{<:LaTeX{SP}}) where SP = SP
 @inline subscript(::Type{<:LaTeX{SP, SB} where SP}) where SB = SB
-@inline LaTeX{SP, SB}(body, spdelimiter::String=",\\,", sbdelimiter::String=",\\,"; options...) where {SP, SB} = LaTeX{SP, SB}(::OperatorUnit->body, spdelimiter, sbdelimiter; options...)
+@inline LaTeX{SP, SB}(body, spdelimiter::String=",\\,", sbdelimiter::String=",\\,"; options...) where {SP, SB} = LaTeX{SP, SB}(::OperatorIndex->body, spdelimiter, sbdelimiter; options...)
 
 """
-    latexname(T::Type{<:OperatorUnit}) -> Symbol
+    latexname(T::Type{<:OperatorIndex}) -> Symbol
 
-Get the name of a type of `OperatorUnit` in the latex format lookups.
+Get the name of a type of `OperatorIndex` in the latex format lookups.
 """
-@inline latexname(T::Type{<:OperatorUnit}) = nameof(T)
+@inline latexname(T::Type{<:OperatorIndex}) = nameof(T)
 
 const latexformats = Dict{Symbol, LaTeX}()
 """
-    latexformat(T::Type{<:OperatorUnit}) -> LaTeX
-    latexformat(T::Type{<:OperatorUnit}, l::LaTeX) -> LaTeX
+    latexformat(T::Type{<:OperatorIndex}) -> LaTeX
+    latexformat(T::Type{<:OperatorIndex}, l::LaTeX) -> LaTeX
 
-Get/Set the LaTeX format for a subtype of `OperatorUnit`.
+Get/Set the LaTeX format for a subtype of `OperatorIndex`.
 """
-@inline latexformat(T::Type{<:OperatorUnit}) = latexformats[latexname(T)]
-@inline latexformat(T::Type{<:OperatorUnit}, l::LaTeX) = latexformats[latexname(T)] = l
-
-"""
-    script(u::OperatorUnit, l::LaTeX, ::Val{:BD}) -> Any
-    script(u::OperatorUnit, l::LaTeX, ::Val{:SP}) -> Tuple
-    script(u::OperatorUnit, l::LaTeX, ::Val{:SB}) -> Tuple
-
-Get the body/superscript/subscript of the LaTeX string representation of an operator unit.
-"""
-@inline script(u::OperatorUnit, l::LaTeX, ::Val{:BD}) = l.body(u)
-@inline @generated script(u::OperatorUnit, l::LaTeX, ::Val{:SP}) = Expr(:tuple, [:(script(u, Val($sup); l.options...)) for sup in QuoteNode.(l|>superscript)]...)
-@inline @generated script(u::OperatorUnit, l::LaTeX, ::Val{:SB}) = Expr(:tuple, [:(script(u, Val($sub); l.options...)) for sub in QuoteNode.(l|>subscript)]...)
+@inline latexformat(T::Type{<:OperatorIndex}) = latexformats[latexname(T)]
+@inline latexformat(T::Type{<:OperatorIndex}, l::LaTeX) = latexformats[latexname(T)] = l
 
 """
-    script(u::OperatorUnit, ::Val{}; kwargs...) -> String
+    script(u::OperatorIndex, l::LaTeX, ::Val{:BD}) -> Any
+    script(u::OperatorIndex, l::LaTeX, ::Val{:SP}) -> Tuple
+    script(u::OperatorIndex, l::LaTeX, ::Val{:SB}) -> Tuple
 
-Default script for an operator unit, which always return an empty string.
+Get the body/superscript/subscript of the LaTeX string representation of an operator index.
 """
-@inline script(u::OperatorUnit, ::Val{}; kwargs...) = ""
+@inline script(u::OperatorIndex, l::LaTeX, ::Val{:BD}) = l.body(u)
+@inline @generated script(u::OperatorIndex, l::LaTeX, ::Val{:SP}) = Expr(:tuple, [:(script(u, Val($sup); l.options...)) for sup in QuoteNode.(l|>superscript)]...)
+@inline @generated script(u::OperatorIndex, l::LaTeX, ::Val{:SB}) = Expr(:tuple, [:(script(u, Val($sub); l.options...)) for sub in QuoteNode.(l|>subscript)]...)
 
 """
-    latexstring(u::OperatorUnit) -> String
+    script(u::OperatorIndex, ::Val{}; kwargs...) -> String
 
-LaTeX string representation of an operator unit.
+Default script for an operator index, which always return an empty string.
 """
-@inline function latexstring(u::OperatorUnit)
+@inline script(u::OperatorIndex, ::Val{}; kwargs...) = ""
+
+"""
+    latexstring(u::OperatorIndex) -> String
+
+LaTeX string representation of an operator index.
+"""
+@inline function latexstring(u::OperatorIndex)
     l = latexformat(typeof(u))
     body = script(u, l, Val(:BD))
     superscript = join((str for str in script(u, l, Val(:SP)) if length(str)>0), l.spdelimiter)
@@ -1101,7 +1102,7 @@ Permute the operator units of an `OperatorProd` to the descending order accordin
 !!! note
     To use this function, the user must implement a method of `permute`, which computes the result of the permutation of two operator units:
     ```julia
-    permute(u₁::OperatorUnit, u₂::OperatorUnit) -> Union{OperatorProd, OperatorSum}
+    permute(u₁::OperatorIndex, u₂::OperatorIndex) -> Union{OperatorProd, OperatorSum}
     ```
     Here, `u₁` and `u₂` are two arbitrary operator units contained in `id(m)`.
 """
@@ -1134,13 +1135,13 @@ function operatorprodcommuteposition(sequences; rev::Bool)
 end
 
 """
-    UnitSubstitution{U<:OperatorUnit, S<:OperatorSum} <: LinearTransformation
+    UnitSubstitution{U<:OperatorIndex, S<:OperatorSum} <: LinearTransformation
 
-Unit substitution transformation, which substitutes each `OperatorUnit` in the old quantum operators to a new expression represented by an `OperatorSum`.
+Unit substitution transformation, which substitutes each `OperatorIndex` in the old quantum operators to a new expression represented by an `OperatorSum`.
 """
-abstract type UnitSubstitution{U<:OperatorUnit, S<:OperatorSum} <: LinearTransformation end
-@inline function Base.valtype(::Type{<:UnitSubstitution{U, S}}, M::Type{<:OperatorProd}) where {U<:OperatorUnit, S<:OperatorSum}
-    @assert U<:eltype(eltype(M)) "valtype error: mismatched unit transformation."
+abstract type UnitSubstitution{U<:OperatorIndex, S<:OperatorSum} <: LinearTransformation end
+@inline function Base.valtype(::Type{<:UnitSubstitution{U, S}}, M::Type{<:OperatorProd}) where {U<:OperatorIndex, S<:OperatorSum}
+    @assert U<:eltype(eltype(M)) "valtype error: mismatched unit substitution transformation."
     V = fulltype(eltype(S), NamedTuple{(:value, :id), Tuple{promote_type(valtype(eltype(S)), valtype(M)), ID{eltype(eltype(S))}}})
     return OperatorSum{V, idtype(V)}
 end
@@ -1149,24 +1150,24 @@ end
 """
     (unitsubstitution::UnitSubstitution)(m::OperatorProd; kwargs...) -> OperatorSum
 
-Substitute every `OperatorUnit` in an `OperatorProd` with a new `OperatorSum`.
+Substitute every `OperatorIndex` in an `OperatorProd` with a new `OperatorSum`.
 """
 function (unitsubstitution::UnitSubstitution)(m::OperatorProd; kwargs...)
     return prod(ntuple(i->unitsubstitution(m[i]; kwargs...), Val(rank(m))), init=value(m))
 end
 
 """
-    TabledUnitSubstitution{U<:OperatorUnit, S<:OperatorSum, T<:AbstractDict{U, S}} <: UnitSubstitution{U, S}
+    TabledUnitSubstitution{U<:OperatorIndex, S<:OperatorSum, T<:AbstractDict{U, S}} <: UnitSubstitution{U, S}
 
-A concrete "unit substitution" transformation, which stores every substitution of the old `OperatorUnit`s in its table as a dictionary.
+A concrete unit substitution transformation, which stores every substitution of the old `OperatorIndex`s in its table as a dictionary.
 """
-struct TabledUnitSubstitution{U<:OperatorUnit, S<:OperatorSum, T<:AbstractDict{U, S}} <: UnitSubstitution{U, S}
+struct TabledUnitSubstitution{U<:OperatorIndex, S<:OperatorSum, T<:AbstractDict{U, S}} <: UnitSubstitution{U, S}
     table::T
-    function TabledUnitSubstitution(table::AbstractDict{<:OperatorUnit, <:OperatorSum})
+    function TabledUnitSubstitution(table::AbstractDict{<:OperatorIndex, <:OperatorSum})
         new{keytype(table), valtype(table), typeof(table)}(table)
     end
 end
-(unitsubstitution::TabledUnitSubstitution)(m::OperatorUnit; kwargs...) = unitsubstitution.table[m]
+(unitsubstitution::TabledUnitSubstitution)(m::OperatorIndex; kwargs...) = unitsubstitution.table[m]
 
 """
     RankFilter{R} <: LinearTransformation

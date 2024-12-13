@@ -3,7 +3,7 @@ using LinearAlgebra: dot, ishermitian
 using Printf: @printf
 using QuantumLattices: ⊕, ⊗, expand, kind, rank, reset!, update!, value
 using QuantumLattices.DegreesOfFreedom
-using QuantumLattices.QuantumOperators: ID, LaTeX, Operator, Operators, id, latexformat, sequence
+using QuantumLattices.QuantumOperators: ID, LaTeX, Operator, OperatorIndex, Operators, id, latexformat, sequence
 using QuantumLattices.Spatials: Bond, Point, decompose, icoordinate, nneighbor, rcoordinate
 using QuantumLattices.Toolkit: Float, contentnames, parameternames, reparameter
 using StaticArrays: SVector
@@ -36,8 +36,8 @@ end
 @inline 𝕕(nambu) = DID(nambu)
 @inline 𝕕(site, nambu) = Index(site, DID(nambu))
 @inline 𝕕(site, nambu, rcoordinate, icoordinate) = CoordinatedIndex(Index(site, DID(nambu)), rcoordinate, icoordinate)
-@inline Base.getindex(::Type{AbstractIndex}, ::Type{D}) where {D<:Union{DID, Index{<:DID}, CoordinatedIndex{<:Index{<:DID}}}} = 𝕕
-@inline Base.getindex(::Type{AbstractIndex}, ::typeof(𝕕)) = DID
+@inline Base.getindex(::Type{OperatorIndex}, ::Type{D}) where {D<:Union{DID, Index{<:DID}, CoordinatedIndex{<:Index{<:DID}}}} = 𝕕
+@inline Base.getindex(::Type{OperatorIndex}, ::typeof(𝕕)) = DID
 
 struct DFock <: SimpleInternal{DID{Int}}
     nnambu::Int
@@ -467,9 +467,9 @@ end
 end
 
 @testset "Metric" begin
-    m = OperatorUnitToTuple((statistics, :site, :nambu))
-    @test m == OperatorUnitToTuple(statistics, :site, :nambu)
-    @test isequal(m, OperatorUnitToTuple(statistics, :site, :nambu))
+    m = OperatorIndexToTuple((statistics, :site, :nambu))
+    @test m == OperatorIndexToTuple(statistics, :site, :nambu)
+    @test isequal(m, OperatorIndexToTuple(statistics, :site, :nambu))
     @test keys(m) == keys(typeof(m)) == (statistics, :site, :nambu)
     @test valtype(typeof(m), Index{DID{Int}, Int}) == Tuple{Symbol, Int, Int}
     @test valtype(typeof(m), CompositeIndex{Index{DID{Int}, Int}}) == Tuple{Symbol, Int, Int}
@@ -477,15 +477,15 @@ end
     index = 𝕕(4, 1, SVector(0.5, 0.0), SVector(1.0, 0.0))
     @test m(index.index) == (:f, 4, 1) == m(index)
 
-    @test OperatorUnitToTuple(Index{DID{Int}, Int}) == OperatorUnitToTuple(:site, :nambu)
-    @test OperatorUnitToTuple(CompositeIndex{Index{DID{Int}, Int}}) == OperatorUnitToTuple(:site, :nambu)
-    @test OperatorUnitToTuple(Hilbert{DFock}) == OperatorUnitToTuple(:site, :nambu)
+    @test OperatorIndexToTuple(Index{DID{Int}, Int}) == OperatorIndexToTuple(:site, :nambu)
+    @test OperatorIndexToTuple(CompositeIndex{Index{DID{Int}, Int}}) == OperatorIndexToTuple(:site, :nambu)
+    @test OperatorIndexToTuple(Hilbert{DFock}) == OperatorIndexToTuple(:site, :nambu)
 end
 
 @testset "Table" begin
     @test contentnames(Table) == (:by, :contents)
 
-    by = OperatorUnitToTuple(:site)
+    by = OperatorIndexToTuple(:site)
 
     table = Table([𝕕(1, 1), 𝕕(1, 2)], by)
     @test empty(table) == Table{Index{DID{Int}, Int}}(by)

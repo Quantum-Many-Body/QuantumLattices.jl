@@ -4,10 +4,10 @@ using LinearAlgebra: dot, ishermitian, norm
 using Printf: @printf
 using SparseArrays: SparseMatrixCSC
 using StaticArrays: SMatrix, SVector
-using ..DegreesOfFreedom: AbstractIndex, Component, CompositeIndex, CoordinatedIndex, Coupling, Hilbert, Index, InternalPattern, Ordinal, Pattern, SimpleInternal, SimpleInternalIndex, Term, TermAmplitude, TermCoupling, @pattern
+using ..DegreesOfFreedom: Component, CompositeIndex, CoordinatedIndex, Coupling, Hilbert, Index, InternalPattern, Ordinal, Pattern, SimpleInternal, SimpleInternalIndex, Term, TermAmplitude, TermCoupling, @pattern
 using ..QuantumLattices: ⊠, ⊗, decompose
 using ..QuantumNumbers: ℕ, 𝕊ᶻ, ℤ₁
-using ..QuantumOperators: ID, LaTeX, Operator, OperatorProd, Operators, latexformat
+using ..QuantumOperators: ID, LaTeX, Operator, OperatorIndex, OperatorProd, Operators, latexformat
 using ..Spatials: Bond, Point, direction, isparallel, rcoordinate
 using ..Toolkit: atol, efficientoperations, rtol, Float, VectorSpace, VectorSpaceCartesian, VectorSpaceStyle, delta, getcontent, rawtype, tostr
 
@@ -145,13 +145,13 @@ for (name, statistics) in zip(_fock_...)
     @eval @inline $name(site, orbital, spin, nambu) = Index(site, FockIndex{$statistics}(orbital, spin, nambu))
     @eval @inline $name(site, orbital, spin, nambu, rcoordinate, icoordinate) = CoordinatedIndex(Index(site, FockIndex{$statistics}(orbital, spin, nambu)), rcoordinate, icoordinate)
 end
-@inline Base.getindex(::Type{AbstractIndex}, ::Type{I}) where {I<:Union{FockIndex{:f}, Index{<:FockIndex{:f}}, CoordinatedIndex{<:Index{<:FockIndex{:f}}}}} = 𝕗
-@inline Base.getindex(::Type{AbstractIndex}, ::Type{I}) where {I<:Union{FockIndex{:b}, Index{<:FockIndex{:b}}, CoordinatedIndex{<:Index{<:FockIndex{:b}}}}} = 𝕓
-@inline Base.getindex(::Type{AbstractIndex}, ::Type{I}) where {I<:Union{FockIndex{:}, Index{<:FockIndex{:}}, CoordinatedIndex{<:Index{<:FockIndex{:}}}}} = 𝕕
-@inline Base.getindex(::Type{AbstractIndex}, ::Type{I}) where {I<:Union{FockIndex, Index{<:FockIndex}, CoordinatedIndex{<:Index{<:FockIndex}}}} = 𝕕
-@inline Base.getindex(::Type{AbstractIndex}, ::typeof(𝕗)) = FockIndex{:f}
-@inline Base.getindex(::Type{AbstractIndex}, ::typeof(𝕓)) = FockIndex{:b}
-@inline Base.getindex(::Type{AbstractIndex}, ::typeof(𝕕)) = FockIndex{:}
+@inline Base.getindex(::Type{OperatorIndex}, ::Type{I}) where {I<:Union{FockIndex{:f}, Index{<:FockIndex{:f}}, CoordinatedIndex{<:Index{<:FockIndex{:f}}}}} = 𝕗
+@inline Base.getindex(::Type{OperatorIndex}, ::Type{I}) where {I<:Union{FockIndex{:b}, Index{<:FockIndex{:b}}, CoordinatedIndex{<:Index{<:FockIndex{:b}}}}} = 𝕓
+@inline Base.getindex(::Type{OperatorIndex}, ::Type{I}) where {I<:Union{FockIndex{:}, Index{<:FockIndex{:}}, CoordinatedIndex{<:Index{<:FockIndex{:}}}}} = 𝕕
+@inline Base.getindex(::Type{OperatorIndex}, ::Type{I}) where {I<:Union{FockIndex, Index{<:FockIndex}, CoordinatedIndex{<:Index{<:FockIndex}}}} = 𝕕
+@inline Base.getindex(::Type{OperatorIndex}, ::typeof(𝕗)) = FockIndex{:f}
+@inline Base.getindex(::Type{OperatorIndex}, ::typeof(𝕓)) = FockIndex{:b}
+@inline Base.getindex(::Type{OperatorIndex}, ::typeof(𝕕)) = FockIndex{:}
 
 ### patternrule
 """
@@ -366,7 +366,7 @@ const default_matrix = SparseMatrixCSC(hcat(1))
 Construct a matrix coupling for Fock systems.
 """
 @inline function MatrixCoupling(F::Union{typeof(𝕗), typeof(𝕓), typeof(𝕕)}, sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon})
-    return MatrixCoupling(sites, AbstractIndex[F], orbital, spin, nambu)
+    return MatrixCoupling(sites, OperatorIndex[F], orbital, spin, nambu)
 end
 @inline function MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{F}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) where {F<:FockIndex}
     return MatrixCoupling(sites, F, Component(F, Val(:orbital), orbital), Component(F, Val(:spin), spin), Component(F, Val(:nambu), nambu))
@@ -637,11 +637,11 @@ struct 𝕊{S} <: Function end
 @inline 𝕊{S}(tag) where S = SpinIndex{S}(tag)
 @inline 𝕊{S}(site, tag) where S = Index(site, SpinIndex{S}(tag))
 @inline 𝕊{S}(site, tag, rcoordinate, icoordinate) where S = CoordinatedIndex(Index(site, SpinIndex{S}(tag)), rcoordinate, icoordinate)
-@inline Base.getindex(::Type{AbstractIndex}, ::Type{I}) where {I<:Union{SpinIndex, Index{<:SpinIndex}, CoordinatedIndex{<:Index{<:SpinIndex}}}} = 𝕊
-@inline Base.getindex(::Type{AbstractIndex}, ::Type{I}) where {I<:Union{SpinIndex{:}, Index{<:SpinIndex{:}}, CoordinatedIndex{<:Index{<:SpinIndex{:}}}}} = 𝕊
-@inline Base.getindex(::Type{AbstractIndex}, ::Type{I}) where {S, I<:Union{SpinIndex{S}, Index{<:SpinIndex{S}}, CoordinatedIndex{<:Index{<:SpinIndex{S}}}}} = 𝕊{S}
-@inline Base.getindex(::Type{AbstractIndex}, ::Type{𝕊}) = SpinIndex{:}
-@inline Base.getindex(::Type{AbstractIndex}, ::Type{𝕊{S}}) where S = SpinIndex{S}
+@inline Base.getindex(::Type{OperatorIndex}, ::Type{I}) where {I<:Union{SpinIndex, Index{<:SpinIndex}, CoordinatedIndex{<:Index{<:SpinIndex}}}} = 𝕊
+@inline Base.getindex(::Type{OperatorIndex}, ::Type{I}) where {I<:Union{SpinIndex{:}, Index{<:SpinIndex{:}}, CoordinatedIndex{<:Index{<:SpinIndex{:}}}}} = 𝕊
+@inline Base.getindex(::Type{OperatorIndex}, ::Type{I}) where {S, I<:Union{SpinIndex{S}, Index{<:SpinIndex{S}}, CoordinatedIndex{<:Index{<:SpinIndex{S}}}}} = 𝕊{S}
+@inline Base.getindex(::Type{OperatorIndex}, ::Type{𝕊}) = SpinIndex{:}
+@inline Base.getindex(::Type{OperatorIndex}, ::Type{𝕊{S}}) where S = SpinIndex{S}
 
 ### matrix
 """
@@ -791,7 +791,7 @@ end
 Construct a matrix coupling for spin systems.
 """
 @inline function MatrixCoupling(::Type{S}, sites::Union{NTuple{2, Ordinal}, Colon}, matrix::AbstractMatrix; rows::AbstractVector=SVector('x', 'y', 'z'), cols::AbstractVector=SVector('x', 'y', 'z')) where {S<:𝕊}
-    return MatrixCoupling(sites, AbstractIndex[S], matrix; rows=rows, cols=cols)
+    return MatrixCoupling(sites, OperatorIndex[S], matrix; rows=rows, cols=cols)
 end
 @inline function MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{S}, matrix::AbstractMatrix; rows::AbstractVector=SVector('x', 'y', 'z'), cols::AbstractVector=SVector('x', 'y', 'z')) where {S<:SpinIndex}
     @assert size(matrix)==(length(rows), length(cols)) "MatrixCoupling error: mismatched input matrix and rows/cols."
@@ -1204,10 +1204,10 @@ Convenient construction of `SpinIndex{:p}`, `Index{<:SpinIndex{:p}}`, `Coordinat
 @inline 𝕡(direction) = PhononIndex{:p}(direction)
 @inline 𝕡(site, direction) = Index(site, PhononIndex{:p}(direction))
 @inline 𝕡(site, direction, rcoordinate, icoordinate) = CoordinatedIndex(Index(site, PhononIndex{:p}(direction)), rcoordinate, icoordinate)
-@inline Base.getindex(::Type{AbstractIndex}, ::Type{I}) where {I<:Union{PhononIndex{:u}, Index{<:PhononIndex{:u}}, CoordinatedIndex{<:Index{<:PhononIndex{:u}}}}} = 𝕦
-@inline Base.getindex(::Type{AbstractIndex}, ::Type{I}) where {I<:Union{PhononIndex{:p}, Index{<:PhononIndex{:p}}, CoordinatedIndex{<:Index{<:PhononIndex{:p}}}}} = 𝕡
-@inline Base.getindex(::Type{AbstractIndex}, ::typeof(𝕦)) = PhononIndex{:u}
-@inline Base.getindex(::Type{AbstractIndex}, ::typeof(𝕡)) = PhononIndex{:p}
+@inline Base.getindex(::Type{OperatorIndex}, ::Type{I}) where {I<:Union{PhononIndex{:u}, Index{<:PhononIndex{:u}}, CoordinatedIndex{<:Index{<:PhononIndex{:u}}}}} = 𝕦
+@inline Base.getindex(::Type{OperatorIndex}, ::Type{I}) where {I<:Union{PhononIndex{:p}, Index{<:PhononIndex{:p}}, CoordinatedIndex{<:Index{<:PhononIndex{:p}}}}} = 𝕡
+@inline Base.getindex(::Type{OperatorIndex}, ::typeof(𝕦)) = PhononIndex{:u}
+@inline Base.getindex(::Type{OperatorIndex}, ::typeof(𝕡)) = PhononIndex{:p}
 
 """
     kind(index::PhononIndex) -> Symbol
@@ -1330,7 +1330,7 @@ end
 Construct a set of `Coupling`s corresponding to the dynamical matrix of phonons.
 """
 @inline function MatrixCoupling(::typeof(𝕦), sites::Union{NTuple{2, Ordinal}, Colon}, matrix::AbstractMatrix; rows::Union{AbstractVector, Nothing}=nothing, cols::Union{AbstractVector, Nothing}=nothing)
-    return MatrixCoupling(sites, AbstractIndex[𝕦], matrix; rows=rows, cols=cols)
+    return MatrixCoupling(sites, OperatorIndex[𝕦], matrix; rows=rows, cols=cols)
 end
 function MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{PhononIndex{:u}}, matrix::AbstractMatrix; rows::Union{AbstractVector, Nothing}=nothing, cols::Union{AbstractVector, Nothing}=nothing)
     @assert size(matrix)[1]∈(1, 2, 3) && size(matrix)[2]∈(1, 2, 3) "MatrixCoupling error: mismatched dimension of input matrix."
