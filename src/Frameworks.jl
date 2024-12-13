@@ -9,12 +9,12 @@ using RecipesBase: RecipesBase, @recipe
 using Serialization: serialize
 using TimerOutputs: TimerOutput, TimerOutputs, @timeit
 using ..DegreesOfFreedom: plain, Boundary, Hilbert, Term
-using ..QuantumLattices: value
+using ..QuantumLattices: id, value
 using ..QuantumOperators: OperatorPack, Operators, OperatorSet, OperatorSum, LinearTransformation, Transformation, identity, operatortype
-using ..Spatials: AbstractLattice, Bond, Neighbors, bonds!, isintracell
+using ..Spatials: Bond, isintracell
 using ..Toolkit: atol, efficientoperations, rtol, parametertype, tostr
 
-import ..QuantumLattices: add!, expand, expand!, id, reset!, update, update!
+import ..QuantumLattices: add!, expand, expand!, reset!, update, update!
 import ..QuantumOperators: scalartype
 import ..Spatials: save
 
@@ -470,15 +470,15 @@ function reset!(cat::CategorizedGenerator, transformation::LinearTransformation,
 end
 
 """
-    OperatorGenerator{V<:Operators, CG<:CategorizedGenerator{V}, TS<:Tuple{Vararg{Term}}, B<:Bond, H<:Hilbert} <: Generator{V}
+    OperatorGenerator{V<:Operators, CG<:CategorizedGenerator{V}, B<:Bond, H<:Hilbert, TS<:Tuple{Vararg{Term}}} <: Generator{V}
 
 A generator of operators based on the terms, bonds and Hilbert space of a quantum lattice system.
 """
-struct OperatorGenerator{V<:Operators, CG<:CategorizedGenerator{V}, TS<:Tuple{Vararg{Term}}, B<:Bond, H<:Hilbert} <: Generator{V}
+struct OperatorGenerator{V<:Operators, CG<:CategorizedGenerator{V}, B<:Bond, H<:Hilbert, TS<:Tuple{Vararg{Term}}} <: Generator{V}
     operators::CG
-    terms::TS
     bonds::Vector{B}
     hilbert::H
+    terms::TS
     half::Bool
 end
 @inline ExpansionStyle(::Type{<:OperatorGenerator{<:Operators, CG}}) where {CG<:CategorizedGenerator} = ExpansionStyle(CG)
@@ -486,13 +486,13 @@ end
 @inline expand(gen::OperatorGenerator, ::Lazy) = expand(gen.operators, lazy)
 
 """
-    OperatorGenerator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain, style::ExpansionStyle=eager; half::Bool=false)
+    OperatorGenerator(bonds::Vector{<:Bond}, hilbert::Hilbert, terms::Tuple{Vararg{Term}}, boundary::Boundary=plain, style::ExpansionStyle=eager; half::Bool=false)
 
-Construct a generator of (representations of) quantum operators based on the input terms, bonds, Hilbert space and (twisted) boundary condition.
+Construct a generator of quantum operators based on the input bonds, Hilbert space, terms and (twisted) boundary condition.
 
 When the boundary condition is [`plain`](@ref), the boundary operators will be set to be empty for simplicity and efficiency.
 """
-function OperatorGenerator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain, style::ExpansionStyle=eager; half::Bool=false)
+function OperatorGenerator(bonds::Vector{<:Bond}, hilbert::Hilbert, terms::Tuple{Vararg{Term}}, boundary::Boundary=plain, style::ExpansionStyle=eager; half::Bool=false)
     emptybonds = eltype(bonds)[]
     innerbonds, boundbonds = if boundary == plain
         bonds, eltype(bonds)[]
@@ -501,17 +501,17 @@ function OperatorGenerator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hi
     end
     constops = Operators{mapreduce(term->operatortype(eltype(bonds), typeof(hilbert), typeof(term)), promote_type, terms)}()
     map(term->expand!(constops, term, term.ismodulatable ? emptybonds : innerbonds, hilbert; half=half), terms)
-    alterops = NamedTuple{map(id, terms)}(expandto(terms, emptybonds, innerbonds, hilbert, valtype(eltype(constops)); half=half))
-    boundops = NamedTuple{map(id, terms)}(expandto(terms, boundbonds, hilbert, boundary, valtype(eltype(constops)); half=half))
+    alterops = NamedTuple{map(id, terms)}(expansion(terms, emptybonds, innerbonds, hilbert, valtype(eltype(constops)); half=half))
+    boundops = NamedTuple{map(id, terms)}(expansion(terms, boundbonds, hilbert, boundary, valtype(eltype(constops)); half=half))
     parameters = NamedTuple{map(id, terms)}(map(value, terms))
-    return OperatorGenerator(CategorizedGenerator(constops, alterops, boundops, parameters, boundary, style), terms, bonds, hilbert, half)
+    return OperatorGenerator(CategorizedGenerator(constops, alterops, boundops, parameters, boundary, style), bonds, hilbert, terms, half)
 end
-function expandto(terms::Tuple{Vararg{Term}}, emptybonds::Vector{<:Bond}, innerbonds::Vector{<:Bond}, hilbert::Hilbert, ::Type{V}; half) where V
+function expansion(terms::Tuple{Vararg{Term}}, emptybonds::Vector{<:Bond}, innerbonds::Vector{<:Bond}, hilbert::Hilbert, ::Type{V}; half) where V
     return map(terms) do term
         expand(replace(term, one(V)), term.ismodulatable ? innerbonds : emptybonds, hilbert; half=half)
     end
 end
-function expandto(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary, ::Type{V}; half) where V
+function expansion(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary, ::Type{V}; half) where V
     return map(terms) do term
         O = promote_type(valtype(typeof(boundary), operatortype(eltype(bonds), typeof(hilbert), typeof(term))), V)
         map!(boundary, expand!(Operators{O}(), one(term), bonds, hilbert, half=half))
@@ -519,16 +519,16 @@ function expandto(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hi
 end
 
 """
-    Generator(operators::CategorizedGenerator{<:Operators}, terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, half::Bool) -> OperatorGenerator
-    Generator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain, style::ExpansionStyle=eager; half::Bool=false) -> OperatorGenerator
+    Generator(operators::CategorizedGenerator{<:Operators}, bonds::Vector{<:Bond}, hilbert::Hilbert, terms::Tuple{Vararg{Term}}, half::Bool) -> OperatorGenerator
+    Generator(bonds::Vector{<:Bond}, hilbert::Hilbert, terms::Tuple{Vararg{Term}}, boundary::Boundary=plain, style::ExpansionStyle=eager; half::Bool=false) -> OperatorGenerator
 
 Construct an `OperatorGenerator`.
 """
-@inline function Generator(operators::CategorizedGenerator{<:Operators}, terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, half::Bool)
-    return OperatorGenerator(operators, terms, bonds, hilbert, half)
+@inline function Generator(operators::CategorizedGenerator{<:Operators}, bonds::Vector{<:Bond}, hilbert::Hilbert, terms::Tuple{Vararg{Term}}, half::Bool)
+    return OperatorGenerator(operators, bonds, hilbert, terms, half)
 end
-@inline function Generator(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary=plain, style::ExpansionStyle=eager; half::Bool=false)
-    return OperatorGenerator(terms, bonds, hilbert, boundary, style; half=half)
+@inline function Generator(bonds::Vector{<:Bond}, hilbert::Hilbert, terms::Tuple{Vararg{Term}}, boundary::Boundary=plain, style::ExpansionStyle=eager; half::Bool=false)
+    return OperatorGenerator(bonds, hilbert, terms, boundary, style; half=half)
 end
 
 """
@@ -563,26 +563,25 @@ end
 Get an empty copy of or empty an operator generator.
 """
 @inline function Base.empty(gen::OperatorGenerator)
-    return OperatorGenerator(empty(gen.operators), gen.terms, empty(gen.bonds), empty(gen.hilbert), gen.half)
+    return OperatorGenerator(empty(gen.operators), empty(gen.bonds), empty(gen.hilbert), gen.terms, gen.half)
 end
 function Base.empty!(gen::OperatorGenerator)
+    empty!(gen.operators)
     empty!(gen.bonds)
     empty!(gen.hilbert)
-    empty!(gen.operators)
     return gen
 end
 
 """
-    reset!(gen::OperatorGenerator, lattice::AbstractLattice, hilbert::Hilbert; neighbors=max(map(term->term.bondkind, gen.terms)...)) -> OperatorGenerator
+    reset!(gen::OperatorGenerator, bonds::AbstractVector{<:Bond}, hilbert::Hilbert; vectors::AbstractVector{<:AbstractVector}=gen.operators.boundary.vectors) -> OperatorGenerator
 
 Reset an operator generator by a new lattice and the corresponding new hilbert space.
 """
-function reset!(gen::OperatorGenerator, lattice::AbstractLattice, hilbert::Hilbert; neighbors=max(map(term->term.bondkind, gen.terms)...))
-    isa(neighbors, Neighbors) || (neighbors = Neighbors(lattice, neighbors))
-    bonds!(empty!(gen.bonds), lattice, neighbors)
+function reset!(gen::OperatorGenerator, bonds::AbstractVector{<:Bond}, hilbert::Hilbert; vectors::AbstractVector{<:AbstractVector}=gen.operators.boundary.vectors)
+    append!(empty!(gen.bonds), bonds)
     merge!(empty!(gen.hilbert), hilbert)
     empty!(gen.operators)
-    merge!(gen.operators.boundary, replace(gen.operators.boundary; vectors=lattice.vectors))
+    merge!(gen.operators.boundary, replace(gen.operators.boundary; vectors=vectors))
     emptybonds = eltype(gen.bonds)[]
     innerbonds, boundbonds = if gen.operators.boundary == plain
         gen.bonds, eltype(gen.bonds)[]
@@ -641,7 +640,7 @@ end
 """
     (transformation::Transformation)(gen::OperatorGenerator; kwargs...) -> CategorizedGenerator
 
-Get the transformation applied to a generator of (representations of) quantum operators.
+Get the transformation applied to a generator of quantum operators.
 """
 @inline (transformation::Transformation)(gen::OperatorGenerator; kwargs...) = transformation(gen.operators; kwargs...)
 

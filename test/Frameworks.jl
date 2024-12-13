@@ -164,10 +164,10 @@ end
     μops = expand(one(μ), filter(bond->length(bond)==1, bs), hilbert; half=true)
     cat = CategorizedGenerator(tops₁, (t=Operators{optp}(), μ=μops), (t=tops₂, μ=Operators{optp}()), (t=2.0, μ=1.0), boundary, eager)
 
-    cgen = OperatorGenerator(cat, (t, μ), bs, hilbert, true)
-    @test cgen == OperatorGenerator((t, μ), bs, hilbert, boundary; half=true)
-    @test isequal(cgen, OperatorGenerator((t, μ), bs, hilbert, boundary; half=true))
-    @test cgen == Generator(cat, (t, μ), bs, hilbert, true) == Generator((t, μ), bs, hilbert, boundary; half=true)
+    cgen = OperatorGenerator(cat, bs, hilbert, (t, μ), true)
+    @test cgen == OperatorGenerator(bs, hilbert, (t, μ), boundary; half=true)
+    @test isequal(cgen, OperatorGenerator(bs, hilbert, (t, μ), boundary; half=true))
+    @test cgen == Generator(cat, bs, hilbert, (t, μ), true) == Generator(bs, hilbert, (t, μ), boundary; half=true)
     @test cgen|>valtype == cgen|>typeof|>valtype == Operators{optp, idtype(optp)}
     @test cgen|>eltype == cgen|>typeof|>eltype == optp
     @test cgen|>scalartype == cgen|>typeof|>scalartype == Complex{Float}
@@ -180,9 +180,9 @@ end
     @test expand(cgen, :μ, 1) + expand(cgen, :μ, 2) ≈ μops
     @test expand(cgen, :t, 3) ≈ tops₁
     @test expand(cgen, :t, 4) ≈ tops₂*2.0
-    @test empty!(deepcopy(cgen)) == OperatorGenerator((t, μ), empty(bs), empty(hilbert), boundary; half=true) == empty(cgen)
+    @test empty!(deepcopy(cgen)) == OperatorGenerator(empty(bs), empty(hilbert), (t, μ), boundary; half=true) == empty(cgen)
     @test !isempty(cgen) && isempty(empty(cgen)) 
-    @test reset!(empty(cgen), lattice, hilbert) == cgen
+    @test reset!(empty(cgen), bs, hilbert; vectors=lattice.vectors) == cgen
     @test update!(cgen, μ=1.5)|>expand ≈ tops₁ + tops₂*2.0 + μops*1.5
     @test LinearFunction(identity)(cgen) == cgen.operators
 end
@@ -198,15 +198,15 @@ end
     μops = expand(one(μ), bs, hilbert; half=true)
     cat = CategorizedGenerator(tops, (t=Operators{optp}(), μ=μops), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain, eager)
 
-    cgen = OperatorGenerator(cat, (t, μ), bs, hilbert, true)
-    @test cgen == OperatorGenerator((t, μ), bs, hilbert, plain; half=true)
+    cgen = OperatorGenerator(cat, bs, hilbert, (t, μ), true)
+    @test cgen == OperatorGenerator(bs, hilbert, (t, μ), plain; half=true)
     @test expand(cgen) ≈ tops + μops
     @test expand(cgen, :t) ≈ tops
     @test expand(cgen, :μ) ≈ μops
     @test expand(cgen, 1) + expand(cgen, 2) + expand(cgen, 3) + expand(cgen, 4) ≈ expand(cgen)
     @test expand(cgen, :μ, 1) + expand(cgen, :μ, 2) ≈ μops
     @test expand(cgen, :t, 3) + expand(cgen, :t, 4) ≈ tops
-    @test reset!(empty(cgen), lattice, hilbert) == cgen
+    @test reset!(empty(cgen), bs, hilbert; vectors=lattice.vectors) == cgen
     @test update!(cgen, μ=1.5)|>expand ≈ tops + μops*1.5
     @test LinearFunction(identity)(cgen) == cgen.operators
 end
