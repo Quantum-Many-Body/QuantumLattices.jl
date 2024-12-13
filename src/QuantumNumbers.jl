@@ -66,7 +66,7 @@ Get the direct product of some `AbelianQuantumNumber`s.
     periods(qn::AbelianQuantumNumber) -> Tuple{Vararg{Number}}
     periods(::Type{QN}) where {QN<:AbelianQuantumNumber} -> Tuple{Vararg{Number}}
 
-The periods of Abelian quantum numbers.
+Get the periods of Abelian quantum numbers.
 """
 @inline periods(qn::AbelianQuantumNumber) = periods(typeof(qn))
 
@@ -121,7 +121,7 @@ Overloaded `-` operator for `SimpleAbelianQuantumNumber`.
     period(qn::SimpleAbelianQuantumNumber) -> Number
     period(::Type{QN}) where {QN<:SimpleAbelianQuantumNumber} -> Number
 
-The period of a simple Abelian quantum number.
+Get the period of a simple Abelian quantum number.
 """
 @inline period(qn::SimpleAbelianQuantumNumber) = period(typeof(qn))
 
@@ -365,7 +365,7 @@ end
 """
     Momenta{P<:𝕂} <: RepresentationSpace{P}
 
-The complete allowed set of momenta.
+Complete allowed set of momenta.
 """
 struct Momenta{P<:𝕂} <: RepresentationSpace{P} end
 @inline Momenta(::Type{P}) where {P<:𝕂} = Momenta{P}()

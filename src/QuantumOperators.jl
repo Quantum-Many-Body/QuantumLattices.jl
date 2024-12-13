@@ -31,7 +31,7 @@ Get the scalar type of an object.
 """
     QuantumOperator
 
-The abstract type of any quantum operator.
+Abstract type of any quantum operator.
 """
 abstract type QuantumOperator end
 @inline Base.:(==)(m₁::QuantumOperator, m₂::QuantumOperator) = ==(efficientoperations, m₁, m₂)
@@ -107,7 +107,7 @@ Expand a `QuantumOperator`, which is defined to be itself.
 
 An operator unit is the irreducible symbolic unit to completely represent a quantum operator.
 
-It plays the role of the symbols as in usual computer algebras while it can host internal structures, which is convenient for quantum operators in representative of the internal degrees of freedom.
+It plays the role of the symbols as in usual computer algebras while it can host internal structures, which is convenient to represent quantum operators with complicated spatial and/or internal degrees of freedom.
 """
 abstract type OperatorUnit <: QuantumOperator end
 @inline Base.show(io::IO, u::OperatorUnit) = @printf io "%s(%s)" nameof(typeof(u)) join(map(repr, ntuple(i->getfield(u, i), Val(fieldcount(typeof(u))))), ", ")
@@ -124,7 +124,7 @@ Judge whether an `OperatorUnit` is zero, which is defined to be always `false`.
 """
     ID{U<:OperatorUnit, N}
 
-The id of a composite quantum operator, which is an ordered set of operator units.
+ID of a composite quantum operator, which is an ordered set of operator units.
 
 Type alias for `NTuple{N, U} where {U<:OperatorUnit}`.
 """
@@ -213,7 +213,7 @@ end
 """
     OperatorPack{V, I} <: QuantumOperator
 
-The entity that represent the pack of a number and an id of a quantum operator.
+Entity that represent the pack of a number and an id of a quantum operator.
 
 Basically, a concrete subtype should contain two predefined contents:
 - `value::V`: the coefficient of the pack
@@ -244,7 +244,7 @@ Get the type of the value of an `OperatorPack`.
     idtype(m::OperatorPack)
     idtype(::Type{T}) where {T<:OperatorPack}
 
-The type of the id of an `OperatorPack`.
+Get the type of the id of an `OperatorPack`.
 """
 @inline idtype(m::OperatorPack) = idtype(typeof(m))
 @inline @generated idtype(::Type{T}) where {T<:OperatorPack} = parametertype(supertype(T, :OperatorPack), :id)
@@ -368,7 +368,7 @@ Get the length of an `OperatorProd`.
 @inline Base.lastindex(m::OperatorProd) = rank(m)
 
 """
-    getindex(m::OperatorProd, i::Integer) -> OperatorUnit
+    getindex(m::OperatorProd, i::Integer) -> eltype(idtype(m))
     getindex(m::OperatorProd, slice) -> OperatorProd
 
 Overloaded `[]`.
@@ -495,7 +495,7 @@ Judge whether an `OperatorSet` is zero, i.e, it does not contain any `OperatorPa
 """
     OperatorSum{M<:OperatorPack, I} <: OperatorSet{M}
 
-The sum of `OperatorPack`s.
+Sum of `OperatorPack`s.
 
 Similar items are automatically merged with the aid of the id system.
 """
@@ -1068,7 +1068,7 @@ end
 """
     Matrixization <: LinearTransformation
 
-The matrixization transformation.
+Matrixization transformation.
 """
 abstract type Matrixization <: LinearTransformation end
 
@@ -1082,7 +1082,7 @@ function matrix end
 """
     Permutation{T} <: LinearTransformation
 
-The permutation transformation.
+Permutation transformation.
 """
 struct Permutation{T} <: LinearTransformation
     table::T
@@ -1136,7 +1136,7 @@ end
 """
     UnitSubstitution{U<:OperatorUnit, S<:OperatorSum} <: LinearTransformation
 
-The "unit substitution" transformation, which substitutes each `OperatorUnit` in the old quantum operators to a new expression represented by an `OperatorSum`.
+Unit substitution transformation, which substitutes each `OperatorUnit` in the old quantum operators to a new expression represented by an `OperatorSum`.
 """
 abstract type UnitSubstitution{U<:OperatorUnit, S<:OperatorSum} <: LinearTransformation end
 @inline function Base.valtype(::Type{<:UnitSubstitution{U, S}}, M::Type{<:OperatorProd}) where {U<:OperatorUnit, S<:OperatorSum}

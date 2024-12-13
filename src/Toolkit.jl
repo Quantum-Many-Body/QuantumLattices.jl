@@ -774,6 +774,7 @@ dissolve(m, Val(name), f, args...; kwargs...)
 Here, `name` is the name of the corresponding content of `m`.
 
 Basically, the rule of how `f` operates on each field of `m` can be overridden by redefining the above `dissolve` function.
+
 !!! note
     The default `dissolve` function ignores the operation of function `f` and just return the content value of `m`.
 """
@@ -1004,7 +1005,7 @@ abstract type VectorSpace{B} <: AbstractVector{B} end
 """
     VectorSpaceStyle
 
-The style of a concrete type of vector space.
+Style of a concrete type of vector space.
 """
 abstract type VectorSpaceStyle end
 @inline VectorSpaceStyle(vs::VectorSpace) = VectorSpaceStyle(typeof(vs))
@@ -1200,7 +1201,7 @@ end
     ⊞(vs₁::NamedVectorSpaceZip, vs₂::SimpleNamedVectorSpace) -> NamedVectorSpaceZip
     ⊞(vs₁::NamedVectorSpaceZip, vs₂::NamedVectorSpaceZip) -> NamedVectorSpaceZip
 
-The zip of named vector spaces.
+Zip of named vector spaces.
 """
 @inline ⊞(vs₁::SimpleNamedVectorSpace, vs₂::SimpleNamedVectorSpace) = NamedVectorSpaceZip(vs₁, vs₂)
 @inline ⊞(vs₁::SimpleNamedVectorSpace, vs₂::NamedVectorSpaceZip) = NamedVectorSpaceZip(vs₁, vs₂.contents...)
@@ -1213,7 +1214,7 @@ The zip of named vector spaces.
     ⊗(vs₁::NamedVectorSpaceProd{Order}, vs₂::SimpleNamedVectorSpace) where Order -> NamedVectorSpaceProd{Order}
     ⊗(vs₁::NamedVectorSpaceProd{Order}, vs₂::NamedVectorSpaceProd{Order}) where Order -> NamedVectorSpaceProd{Order}
 
-The direct product of named vector spaces.
+Direct product of named vector spaces.
 """
 @inline ⊗(vs₁::SimpleNamedVectorSpace, vs₂::SimpleNamedVectorSpace, order::Symbol=:forward) = NamedVectorSpaceProd{order}(vs₁, vs₂)
 @inline ⊗(vs₁::SimpleNamedVectorSpace, vs₂::NamedVectorSpaceProd{Order}) where Order = NamedVectorSpaceProd{Order}(vs₁, vs₂.contents...)

@@ -23,7 +23,7 @@ export ˢᵗ, ⁿᵈ, ʳᵈ, ᵗʰ, plain, allequalfields, coordinatedindextype,
 """
     AbstractIndex <: OperatorUnit
 
-Abstract type of the index of degrees of freedom.
+Abstract type of the index of a degree of freedom.
 """
 abstract type AbstractIndex <: OperatorUnit end
 @inline Base.getindex(::Type{AbstractIndex}, ::Type{I}) where {I<:AbstractIndex} = I
@@ -32,7 +32,7 @@ abstract type AbstractIndex <: OperatorUnit end
 """
     InternalIndex <: AbstractIndex
 
-Internal index of the internal degrees of freedom.
+Internal index of an internal degree of freedom.
 """
 abstract type InternalIndex <: AbstractIndex end
 
@@ -536,7 +536,7 @@ Construct a constrained internal space.
 """
     shape(internal::SimpleInternal, index::SimpleInternalIndex) -> OrdinalRange{Int, Int}
 
-The shape of a simple internal space when a labeled simple internal index are considered.
+Get the shape of a simple internal space when a labeled simple internal index are considered.
 
 A constrained internal space need this function to generate all the internal indexes that match the internal pattern, which gets a default implementation, i.e.,
 ```julia
@@ -1386,7 +1386,7 @@ abstract type TermFunction{F} <: Function end
 """
     TermAmplitude{F} <: TermFunction{F}
 
-The function for the amplitude of a term.
+Function for the amplitude of a term.
 """
 struct TermAmplitude{F} <: TermFunction{F}
     TermAmplitude(amplitude::Union{Function, Nothing}) = new{amplitude}()
@@ -1400,7 +1400,7 @@ end
 """
     TermCoupling{C<:Coupling, F} <: TermFunction{F}
 
-The function for the coupling of a term.
+Function for the coupling of a term.
 """
 struct TermCoupling{C<:Coupling, F} <: TermFunction{F}
     coupling::F
@@ -1634,7 +1634,7 @@ Get the
 """
     Metric <: Function
 
-The rules for measuring an operator unit so that different operator units can be compared.
+Rules for measuring an operator unit so that different operator units can be compared.
 
 As a function, every instance should accept only one positional argument, i.e. the operator unit to be measured.
 """
@@ -1720,7 +1720,7 @@ end
 """
     Table{I, B<:Metric} <: CompositeDict{I, Int}
 
-The table of operator unit v.s. sequence pairs.
+Table of operator unit v.s. sequence pairs.
 """
 struct Table{I, B<:Metric} <: CompositeDict{I, Int}
     by::B

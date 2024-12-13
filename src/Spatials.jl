@@ -361,7 +361,7 @@ end
 @inline vector(::Type{<:SVector}, v::Tuple) = SVector(v)
 
 """
-    rotate(vector::AbstractVector{<:Number}, angle::Number; axis::Tuple{Union{AbstractVector{<:Number}, Nothing}, Tuple{<:Number, <:Number}}=(nothing, (0, 0))) -> AbstrctVector{<:Number}
+    rotate(vector::AbstractVector{<:Number}, angle::Number; axis::Tuple{Union{AbstractVector{<:Number}, Nothing}, Tuple{<:Number, <:Number}}=(nothing, (0, 0))) -> AbstractVector{<:Number}
     rotate(cluster::AbstractMatrix{<:Number}, angle::Number; axis::Tuple{Union{AbstractVector{<:Number}, Nothing}, Tuple{<:Number, <:Number}}=(nothing, (0, 0))) -> AbstractMatrix{<:Number}
 
 Get a rotated vector/cluster of the original one by a certain angle around an axis.
@@ -1023,7 +1023,7 @@ end
 """
     BrillouinZone{K, P<:𝕂, S<:SVector, N} <: ReciprocalSpace{K, S}
 
-The Brillouin zone of a lattice.
+Brillouin zone of a lattice.
 """
 struct BrillouinZone{K, P<:𝕂, S<:SVector, N} <: ReciprocalSpace{K, S}
     reciprocals::SVector{N, S}
