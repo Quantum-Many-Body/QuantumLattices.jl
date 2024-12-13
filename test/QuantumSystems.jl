@@ -1,6 +1,6 @@
 using LaTeXStrings: latexstring
 using QuantumLattices: ⊠, ⊗, decompose, expand, kind, permute, rank
-using QuantumLattices.DegreesOfFreedom: ˢᵗ, ⁿᵈ, AbstractIndex, CompositeIndex, ConstrainedInternal, CoordinatedIndex, Coupling, Hilbert, Index, MatrixCoupling, allequalfields, indextype, isdefinite, patternrule, statistics, @pattern
+using QuantumLattices.DegreesOfFreedom: ˢᵗ, ⁿᵈ, AbstractIndex, CompositeIndex, ConstrainedInternal, CoordinatedIndex, Coupling, Hilbert, Index, MatrixCoupling, allequalfields, internalindextype, isdefinite, patternrule, statistics, @pattern
 using QuantumLattices.QuantumNumbers: Graded, ℕ, 𝕊ᶻ, ℤ₁
 using QuantumLattices.QuantumOperators: Operator, Operators, latexname, matrix, script
 using QuantumLattices.QuantumSystems
@@ -47,9 +47,9 @@ using StaticArrays: SVector
     @test allequalfields(FockIndex) == (:orbital, :spin)
     @test isdefinite(FockIndex{:, Int, Rational{Int}, Int})
     @test !isdefinite(FockIndex{:f, Symbol, typeof(:), Int})
-    @test indextype(FockIndex, Int, typeof(:), Int) == FockIndex{:, Int, typeof(:), Int}
-    @test indextype(FockIndex{:f}, typeof(:), Symbol, Symbol) == FockIndex{:f, typeof(:), Symbol, Symbol}
-    @test indextype(FockIndex{:b}, typeof(:), Symbol, Symbol) == FockIndex{:b, typeof(:), Symbol, Symbol}
+    @test internalindextype(FockIndex, Int, typeof(:), Int) == FockIndex{:, Int, typeof(:), Int}
+    @test internalindextype(FockIndex{:f}, typeof(:), Symbol, Symbol) == FockIndex{:f, typeof(:), Symbol, Symbol}
+    @test internalindextype(FockIndex{:b}, typeof(:), Symbol, Symbol) == FockIndex{:b, typeof(:), Symbol, Symbol}
 
     @test AbstractIndex[FockIndex{:f}] == AbstractIndex[Index{<:FockIndex{:f}}] == AbstractIndex[CoordinatedIndex{<:Index{<:FockIndex{:f}}}] == 𝕗
     @test AbstractIndex[FockIndex{:b}] == AbstractIndex[Index{<:FockIndex{:b}}] == AbstractIndex[CoordinatedIndex{<:Index{<:FockIndex{:b}}}] == 𝕓
@@ -405,8 +405,8 @@ end
     @test isdefinite(SpinIndex{:, Char})
     @test !isdefinite(SpinIndex{1//2, Symbol})
     @test !isdefinite(SpinIndex{1, Colon})
-    @test indextype(SpinIndex, Char) == SpinIndex{:, Char}
-    @test indextype(SpinIndex{1//2}, Symbol) == SpinIndex{1//2, Symbol}
+    @test internalindextype(SpinIndex, Char) == SpinIndex{:, Char}
+    @test internalindextype(SpinIndex{1//2}, Symbol) == SpinIndex{1//2, Symbol}
 
     @test AbstractIndex[SpinIndex] == AbstractIndex[Index{<:SpinIndex}] == AbstractIndex[CoordinatedIndex{<:Index{<:SpinIndex}}] == 𝕊
     @test AbstractIndex[SpinIndex{:}] == AbstractIndex[Index{<:SpinIndex{:}}] == AbstractIndex[CoordinatedIndex{<:Index{<:SpinIndex{:}}}] == 𝕊
@@ -761,9 +761,9 @@ end
     @test isdefinite(PhononIndex{:u, Char}) == isdefinite(PhononIndex{:p, Char}) == true
     @test isdefinite(PhononIndex{:u, Symbol}) == isdefinite(PhononIndex{:p, Symbol}) == false
     @test isdefinite(PhononIndex{:u, Colon}) == isdefinite(PhononIndex{:p, Colon}) == false
-    @test indextype(PhononIndex{:u}, Char) == PhononIndex{:u, Char}
-    @test indextype(PhononIndex{:p}, Symbol) == PhononIndex{:p, Symbol}
-    @test indextype(PhononIndex{:}, Colon) == PhononIndex{:, Colon}
+    @test internalindextype(PhononIndex{:u}, Char) == PhononIndex{:u, Char}
+    @test internalindextype(PhononIndex{:p}, Symbol) == PhononIndex{:p, Symbol}
+    @test internalindextype(PhononIndex{:}, Colon) == PhononIndex{:, Colon}
 
     @test AbstractIndex[PhononIndex{:u}] == AbstractIndex[Index{<:PhononIndex{:u}}] == AbstractIndex[CoordinatedIndex{<:Index{<:PhononIndex{:u}}}] == 𝕦
     @test AbstractIndex[PhononIndex{:p}] == AbstractIndex[Index{<:PhononIndex{:p}}] == AbstractIndex[CoordinatedIndex{<:Index{<:PhononIndex{:p}}}] == 𝕡

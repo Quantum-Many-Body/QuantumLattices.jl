@@ -54,7 +54,7 @@ include("DegreesOfFreedom.jl")
 using .DegreesOfFreedom
 export AbstractIndex, AllEqual, Boundary, CompositeInternal, ConstrainedInternal, Internal, InternalIndex, InternalIndexProd, InternalPattern, InternalProd, InternalSum, SimpleInternal, SimpleInternalIndex
 export Component, CompositeIndex, CoordinatedIndex, Coupling, Hilbert, Index, MatrixCoupling, MatrixCouplingProd, MatrixCouplingSum, Metric, OperatorUnitToTuple, Ordinal, Pattern, Table, Term, TermAmplitude, TermCoupling, TermFunction
-export ˢᵗ, ⁿᵈ, ʳᵈ, ᵗʰ, plain, allequalfields, indextype, isdefinite, partition, patternrule, sitestructure, statistics, @pattern
+export ˢᵗ, ⁿᵈ, ʳᵈ, ᵗʰ, plain, allequalfields, coordinatedindextype, indextype, internalindextype, isdefinite, partition, patternrule, sitestructure, statistics, @pattern
 
 # QuantumSystems
 include("QuantumSystems.jl")

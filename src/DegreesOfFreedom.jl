@@ -17,7 +17,7 @@ import ..Toolkit: contentnames, getcontent, parameternames, shape
 
 export AbstractIndex, AllEqual, Boundary, CompositeInternal, ConstrainedInternal, Internal, InternalIndex, InternalIndexProd, InternalPattern, InternalProd, InternalSum, SimpleInternal, SimpleInternalIndex
 export Component, CompositeIndex, CoordinatedIndex, Coupling, Hilbert, Index, MatrixCoupling, MatrixCouplingProd, MatrixCouplingSum, Metric, OperatorUnitToTuple, Ordinal, Pattern, Table, Term, TermAmplitude, TermCoupling, TermFunction
-export ˢᵗ, ⁿᵈ, ʳᵈ, ᵗʰ, plain, allequalfields, indextype, isdefinite, partition, patternrule, sitestructure, statistics, @pattern
+export ˢᵗ, ⁿᵈ, ʳᵈ, ᵗʰ, plain, allequalfields, coordinatedindextype, indextype, internalindextype, isdefinite, partition, patternrule, sitestructure, statistics, @pattern
 
 # AbstractIndex
 """
@@ -578,7 +578,7 @@ end
 @inline parameternames(::Type{<:Index}) = (:internal, :site)
 function Base.show(io::IO, index::Index)
     internal = String[]
-    for i = 1:fieldcount(indextype(index))
+    for i = 1:fieldcount(internalindextype(index))
         value = getfield(index.internal, i)
         push!(internal, tostr(value))
     end
@@ -605,13 +605,13 @@ Determine whether a tuple of indexes denotes a definite degree of freedom.
 @inline isdefinite(::Type{T}) where {T<:Tuple{Vararg{Index}}} = all(map(isdefinite, fieldtypes(T)))
 
 """
-    indextype(index::Index)
-    indextype(::Type{I}) where {I<:Index}
+    internalindextype(index::Index)
+    internalindextype(::Type{I}) where {I<:Index}
 
 Get the type of the internal part of an index.
 """
-@inline indextype(index::Index) = indextype(typeof(index))
-@inline indextype(::Type{I}) where {I<:Index} = parametertype(I, :internal)
+@inline internalindextype(index::Index) = internalindextype(typeof(index))
+@inline internalindextype(::Type{I}) where {I<:Index} = parametertype(I, :internal)
 
 """
     statistics(index::Index) -> Symbol
@@ -620,7 +620,7 @@ Get the type of the internal part of an index.
 Get the statistics of an index.
 """
 @inline statistics(index::Index) = statistics(typeof(index))
-@inline statistics(::Type{I}) where {I<:Index} = statistics(indextype(I))
+@inline statistics(::Type{I}) where {I<:Index} = statistics(internalindextype(I))
 
 """
     adjoint(index::Index) -> typeof(index)
@@ -772,11 +772,11 @@ function permute(index₁::CoordinatedIndex, index₂::CoordinatedIndex)
 end
 
 """
-    indextype(I::Type{<:SimpleInternal}, P::Type{<:Point})
+    coordinatedindextype(I::Type{<:SimpleInternal}, P::Type{<:Point})
 
 Get the compatible type of the coordinated index based on the type of an internal space and the type of a point.
 """
-@inline indextype(I::Type{<:SimpleInternal}, P::Type{<:Point}) = fulltype(CoordinatedIndex, NamedTuple{(:index, :coordination), Tuple{indextype(I), SVector{dimension(P), scalartype(P)}}})
+@inline coordinatedindextype(I::Type{<:SimpleInternal}, P::Type{<:Point}) = fulltype(CoordinatedIndex, NamedTuple{(:index, :coordination), Tuple{indextype(I), SVector{dimension(P), scalartype(P)}}})
 
 """
     rcoordinate(opt::Operator{<:Number, <:ID{CoordinatedIndex}}) -> SVector
@@ -1231,7 +1231,7 @@ end
     types = fieldtypes(parametertype(MC, :components))
     V = Expr(:call, :promote_type, [:(parametertype($C, :datatype)) for C in types]...)
     S = parametertype(MC, :site)
-    I = Expr(:call, :indextype, parametertype(MC, :internal), [:(parametertype($C, :basistype)) for C in types]...)
+    I = Expr(:call, :internalindextype, parametertype(MC, :internal), [:(parametertype($C, :basistype)) for C in types]...)
     C = :(InternalPattern{Tuple{$I, $I}, (2,), 1, Tuple{typeof(AllEqual($I))}})
     return :(Coupling{$V, Pattern{$C, Tuple{$S, $S}}})
 end
@@ -1563,8 +1563,8 @@ Get the compatible `Operator` type from the type of a term, a Hilbert space and 
     V, V′, V′′ = valtype(T), valtype(C), valtype(fieldtype(T, :amplitude), B)
     isconcretetype(V′) && (V = promote_type(V, V′))
     isconcretetype(V′′) && (V = promote_type(V, V′′))
-    indextypes = ntuple(i->indextype(filter(fieldtype(parametertype(parametertype(idtype(C), :internal), :index), i), valtype(H)), eltype(B)), Val(rank(C)))
-    return fulltype(Operator, NamedTuple{(:value, :id), Tuple{V, Tuple{indextypes...}}})
+    coordinatedindextypes = ntuple(i->coordinatedindextype(filter(fieldtype(parametertype(parametertype(idtype(C), :internal), :index), i), valtype(H)), eltype(B)), Val(rank(C)))
+    return fulltype(Operator, NamedTuple{(:value, :id), Tuple{V, Tuple{coordinatedindextypes...}}})
 end
 
 """
@@ -1677,7 +1677,7 @@ Get the values of the type parameter `Fields`.
 
 Construct the metric rule from the information of the `Index` type.
 """
-@inline OperatorUnitToTuple(::Type{I}) where {I<:Index} = OperatorUnitToTuple(:site, (fieldnames(indextype(I)))...)
+@inline OperatorUnitToTuple(::Type{I}) where {I<:Index} = OperatorUnitToTuple(:site, (fieldnames(internalindextype(I)))...)
 
 """
     valtype(::Type{<:OperatorUnitToTuple}, ::Type{<:Index})
@@ -1691,8 +1691,8 @@ Get the valtype of applying an `OperatorUnitToTuple` rule to an `Index`.
             push!(types, :(Core.Compiler.return_type($field, Tuple{Type{I}})))
         elseif field==:site
             push!(types, Int)
-        elseif hasfield(indextype(I), field)
-            push!(types, fieldtype(indextype(I), field))
+        elseif hasfield(internalindextype(I), field)
+            push!(types, fieldtype(internalindextype(I), field))
         end
     end
     return  Expr(:curly, :Tuple, types...)
@@ -1710,7 +1710,7 @@ Convert an index to a tuple.
             push!(exprs, :(($name)(typeof(index))))
         elseif name==:site
             push!(exprs, :(index.site))
-        elseif hasfield(indextype(index), name)
+        elseif hasfield(internalindextype(index), name)
             push!(exprs, :(getfield(index.internal, $(QuoteNode(name)))))
         end
     end

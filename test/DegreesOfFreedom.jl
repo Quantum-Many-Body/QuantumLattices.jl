@@ -9,7 +9,7 @@ using QuantumLattices.Toolkit: Float, contentnames, parameternames, reparameter
 using StaticArrays: SVector
 
 import QuantumLattices: permute
-import QuantumLattices.DegreesOfFreedom: indextype, isdefinite, statistics
+import QuantumLattices.DegreesOfFreedom: internalindextype, isdefinite, statistics
 import QuantumLattices.QuantumOperators: latexname, script
 import QuantumLattices.Toolkit: shape
 
@@ -32,7 +32,7 @@ function Base.angle(id::CoordinatedIndex{Index{DID{Int}, Int}}, vectors::Abstrac
             error("angle error: not supported number of input basis vectors.")
     return (id.index.internal.nambu == 1) ? phase : -phase
 end
-@inline indextype(::Type{DID}, ::Type{T}) where {T<:Union{Int, Symbol, Colon}} = DID{T}
+@inline internalindextype(::Type{DID}, ::Type{T}) where {T<:Union{Int, Symbol, Colon}} = DID{T}
 @inline 𝕕(nambu) = DID(nambu)
 @inline 𝕕(site, nambu) = Index(site, DID(nambu))
 @inline 𝕕(site, nambu, rcoordinate, icoordinate) = CoordinatedIndex(Index(site, DID(nambu)), rcoordinate, icoordinate)
@@ -174,7 +174,7 @@ end
     @test parameternames(Index) == (:internal, :site)
 
     index = Index(4, 𝕕(1))
-    @test indextype(index) == indextype(typeof(index)) == DID{Int}
+    @test internalindextype(index) == internalindextype(typeof(index)) == DID{Int}
     @test index' == 𝕕(4, 2)
     @test statistics(index) == statistics(typeof(index)) == :f
     @test ishermitian(ID(index', index)) == true
@@ -233,7 +233,7 @@ end
     index₂ = 𝕕(1, 2, (1.0, 0.0), (0.0, 0.0))
     @test permute(index₁, index₂) == (Operator(1), Operator(-1, index₂, index₁),)
 
-    @test indextype(DFock, Point{2, Float}) == CoordinatedIndex{Index{DID{Int}, Int}, SVector{2, Float}}
+    @test coordinatedindextype(DFock, Point{2, Float}) == CoordinatedIndex{Index{DID{Int}, Int}, SVector{2, Float}}
 
     op = Operator(1.0, 𝕕(1, 2, SVector(0.5, 0.5), SVector(1.0, 1.0)), 𝕕(1, 1, SVector(0.0, 0.5), SVector(0.0, 1.0)))
     @test rcoordinate(op) == SVector(-0.5, 0.0)

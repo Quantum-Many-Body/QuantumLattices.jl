@@ -11,7 +11,7 @@ using ..QuantumOperators: ID, LaTeX, Operator, OperatorProd, Operators, latexfor
 using ..Spatials: Bond, Point, direction, isparallel, rcoordinate
 using ..Toolkit: atol, efficientoperations, rtol, Float, VectorSpace, VectorSpaceCartesian, VectorSpaceStyle, delta, getcontent, rawtype, tostr
 
-import ..DegreesOfFreedom: MatrixCoupling, allequalfields, indextype, isdefinite, patternrule, statistics
+import ..DegreesOfFreedom: MatrixCoupling, allequalfields, indextype, internalindextype, isdefinite, patternrule, statistics
 import ..QuantumLattices: expand, expand!, kind, permute, rank
 import ..QuantumNumbers: Graded
 import ..QuantumOperators: latexname, matrix, script
@@ -76,8 +76,8 @@ end
 ### requested by InternalPattern
 @inline allequalfields(::Type{<:FockIndex}) = (:orbital, :spin)
 ### requested by MatrixCoupling
-@inline indextype(::Type{FockIndex}, ::Type{O}, ::Type{S}, ::Type{N}) where {O<:Union{Int, Symbol, Colon}, S<:Union{Rational{Int}, Symbol, Colon}, N<:Union{Int, Symbol, Colon}} = FockIndex{:, O, S, N}
-@inline indextype(::Type{FockIndex{T}}, ::Type{O}, ::Type{S}, ::Type{N}) where {T, O<:Union{Int, Symbol, Colon}, S<:Union{Rational{Int}, Symbol, Colon}, N<:Union{Int, Symbol, Colon}} = FockIndex{T, O, S, N}
+@inline internalindextype(::Type{FockIndex}, ::Type{O}, ::Type{S}, ::Type{N}) where {O<:Union{Int, Symbol, Colon}, S<:Union{Rational{Int}, Symbol, Colon}, N<:Union{Int, Symbol, Colon}} = FockIndex{:, O, S, N}
+@inline internalindextype(::Type{FockIndex{T}}, ::Type{O}, ::Type{S}, ::Type{N}) where {T, O<:Union{Int, Symbol, Colon}, S<:Union{Rational{Int}, Symbol, Colon}, N<:Union{Int, Symbol, Colon}} = FockIndex{T, O, S, N}
 
 """
     FockIndex(orbital::Union{Int, Symbol, Colon}, spin::Union{Rational{Int}, Int, Symbol, Colon}, nambu::Union{Int, Symbol, Colon})
@@ -582,8 +582,8 @@ end
     return :(rawtype(typeof(index)){totalspin(index)}($(exprs...)))
 end
 ### requested by MatrixCoupling
-@inline indextype(::Type{SpinIndex}, ::Type{T}) where {T<:Union{Char, Symbol, Colon}} = SpinIndex{:, T}
-@inline indextype(::Type{SpinIndex{S}}, ::Type{T}) where {S, T<:Union{Char, Symbol, Colon}} = SpinIndex{S, T}
+@inline internalindextype(::Type{SpinIndex}, ::Type{T}) where {T<:Union{Char, Symbol, Colon}} = SpinIndex{:, T}
+@inline internalindextype(::Type{SpinIndex{S}}, ::Type{T}) where {S, T<:Union{Char, Symbol, Colon}} = SpinIndex{S, T}
 
 """
     SpinIndex(tag::Union{Char, Symbol, Colon})
@@ -612,7 +612,7 @@ Get the total spin.
 @inline totalspin(index::CompositeIndex{<:Index{<:SpinIndex}}) = totalspin(typeof(index))
 @inline totalspin(::Type{<:SpinIndex}) = NaN
 @inline totalspin(::Type{<:SpinIndex{S}}) where S = S
-@inline totalspin(::Type{I}) where {I<:Index{<:SpinIndex}} = totalspin(indextype(I))
+@inline totalspin(::Type{I}) where {I<:Index{<:SpinIndex}} = totalspin(internalindextype(I))
 @inline totalspin(::Type{I}) where {I<:CompositeIndex{<:Index{<:SpinIndex}}} = totalspin(indextype(I))
 
 ### convenient construction and string representation 
@@ -1172,7 +1172,7 @@ end
     return :(rawtype(typeof(index)){kind(index)}($(exprs...)))
 end
 ### requested by MatrixCoupling
-@inline indextype(::Type{PhononIndex{K}}, ::Type{D}) where {K, D<:Union{Char, Symbol, Colon}} = PhononIndex{K, D}
+@inline internalindextype(::Type{PhononIndex{K}}, ::Type{D}) where {K, D<:Union{Char, Symbol, Colon}} = PhononIndex{K, D}
 
 """
     PhononIndex{K}(direction::Union{Char, Symbol, Colon}) where K
@@ -1226,7 +1226,7 @@ Get the kind of a phonon index.
 @inline kind(index::CoordinatedIndex{<:Index{<:PhononIndex}}) = kind(typeof(index))
 @inline kind(::Type{<:PhononIndex}) = Symbol(":")
 @inline kind(::Type{<:PhononIndex{K}}) where K = K
-@inline kind(::Type{I}) where {I<:Index{<:PhononIndex}} = kind(indextype(I))
+@inline kind(::Type{I}) where {I<:Index{<:PhononIndex}} = kind(internalindextype(I))
 @inline kind(::Type{I}) where {I<:CoordinatedIndex{<:Index{<:PhononIndex}}} = kind(indextype(I))
 
 ## LaTeX format output
