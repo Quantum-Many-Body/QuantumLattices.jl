@@ -327,7 +327,7 @@ end
 """
     OperatorProd{V, I<:Tuple} <: OperatorPack{V, I}
 
-A special kind of `OperatorPack`, where the relation between the coefficient and each component of the opeator id can be viewed as product.
+A special kind of `OperatorPack`, where the relation between the coefficient and each component of the operator id can be viewed as product.
 """
 abstract type OperatorProd{V, I<:Tuple} <: OperatorPack{V, I} end
 @inline Base.promote_rule(::Type{M}, ::Type{N}) where {M<:OperatorProd, N<:Number} = reparameter(M, :value, promote_type(valtype(M), N))

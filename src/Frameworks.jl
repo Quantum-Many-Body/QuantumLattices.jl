@@ -506,8 +506,8 @@ function OperatorGenerator(bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOr
     terms = OneOrMore(terms)
     constops = Operators{mapreduce(term->operatortype(eltype(bonds), typeof(hilbert), typeof(term)), promote_type, terms)}()
     map(term->expand!(constops, term, term.ismodulatable ? emptybonds : innerbonds, hilbert; half=half), terms)
-    alterops = NamedTuple{map(id, terms)}(expansion(terms, emptybonds, innerbonds, hilbert, valtype(eltype(constops)); half=half))
-    boundops = NamedTuple{map(id, terms)}(expansion(terms, boundbonds, hilbert, boundary, valtype(eltype(constops)); half=half))
+    alterops = NamedTuple{map(id, terms)}(expansion(terms, emptybonds, innerbonds, hilbert, scalartype(constops); half=half))
+    boundops = NamedTuple{map(id, terms)}(expansion(terms, boundbonds, hilbert, boundary, scalartype(constops); half=half))
     parameters = NamedTuple{map(id, terms)}(map(value, terms))
     return OperatorGenerator(CategorizedGenerator(constops, alterops, boundops, parameters, boundary, style), bonds, hilbert, terms, half)
 end

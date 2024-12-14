@@ -1571,14 +1571,14 @@ The `half` parameter determines the behavior of generating operators, which fall
 function expand!(operators::Operators, term::Term, bond::Bond, hilbert::Hilbert; half::Bool=false)
     if term.bondkind == bond.kind
         value = term.value * term.amplitude(bond) * term.factor
-        if !isapprox(value, 0.0, atol=atol, rtol=rtol)
+        if !isapprox(value, 0, atol=atol, rtol=rtol)
             for coupling in term.coupling(bond)
                 for opt in expand(coupling, Val(kind(term)), bond, hilbert)
-                    isapprox(opt.value, 0.0, atol=atol, rtol=rtol) && continue
+                    isapprox(opt.value, 0, atol=atol, rtol=rtol) && continue
                     if half
-                        add!(operators, opt*valtype(eltype(operators))(value/(term.ishermitian ? 2 : 1)))
+                        add!(operators, opt*scalartype(operators)(value/(term.ishermitian ? 2 : 1)))
                     else
-                        opt = opt*valtype(eltype(operators))(value)
+                        opt = opt*scalartype(operators)(value)
                         add!(operators, opt)
                         term.ishermitian || add!(operators, opt')
                     end
@@ -1840,7 +1840,7 @@ struct Boundary{Names, D<:Number, V<:AbstractVector} <: LinearTransformation
 end
 @inline Base.:(==)(bound₁::Boundary, bound₂::Boundary) = keys(bound₁)==keys(bound₂) && ==(efficientoperations, bound₁, bound₂)
 @inline Base.isequal(bound₁::Boundary, bound₂::Boundary) = isequal(keys(bound₁), keys(bound₂)) && isequal(efficientoperations, bound₁, bound₂)
-@inline Base.valtype(::Type{<:Boundary}, M::Type{<:Operator}) = reparameter(M, :value, promote_type(Complex{Int}, valtype(M)))
+@inline Base.valtype(::Type{<:Boundary}, M::Type{<:Operator}) = reparameter(M, :value, promote_type(Complex{Int}, scalartype(M)))
 @inline Base.valtype(B::Type{<:Boundary}, MS::Type{<:Operators}) = (M = valtype(B, eltype(MS)); Operators{M, idtype(M)})
 
 """
