@@ -70,7 +70,8 @@ end
     @test collect(momenta) == [𝕂²{2, 3}(0, 0), 𝕂²{2, 3}(0, 1), 𝕂²{2, 3}(0, 2), 𝕂²{2, 3}(1, 0), 𝕂²{2, 3}(1, 1), 𝕂²{2, 3}(1, 2)]
     for momentum in momenta
         @test momenta[convert(CartesianIndex, momentum, momenta)] == momentum
-    end 
+    end
+    @test string(momenta) == "Momenta(𝕂²{2, 3})"
 end
 
 @testset "regularize" begin

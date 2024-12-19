@@ -422,6 +422,7 @@ struct Momenta{P<:𝕂} <: RepresentationSpace{P} end
 @inline Base.convert(::Type{P}, index::CartesianIndex, ::Momenta{P}) where {P<:𝕂} = P(reverse(index.I)...)
 @inline Base.:(==)(ms₁::Momenta, ms₂::Momenta) = periods(eltype(ms₁))==periods(eltype(ms₂))
 @inline Base.isequal(ms₁::Momenta, ms₂::Momenta) = isequal(periods(eltype(ms₁)), periods(eltype(ms₂)))
+@inline Base.show(io::IO, ms::Momenta) = @printf io "Momenta(%s)" eltype(ms)
 
 """
     regularize!(quantumnumbers::Vector{<:AbelianQuantumNumber}, dimensions::Vector{Int}; check::Bool=false) -> Tuple{typeof(quantumnumbers), typeof(dimensions), Vector{Int}}
