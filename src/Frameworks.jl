@@ -439,14 +439,14 @@ function update!(cat::CategorizedGenerator{<:OperatorSum}; parameters...)
 end
 
 """
-    update!(cat::CategorizedGenerator, transformation::LinearTransformation, source::CategorizedGenerator{<:Operators}; kwargs...) -> CategorizedGenerator
+    update!(cat::CategorizedGenerator, transformation::LinearTransformation, source::CategorizedGenerator; kwargs...) -> CategorizedGenerator
 
 Update the parameters (including the boundary parameters) of a categorized generator based on its source categorized generator of (representations of) quantum operators and the corresponding linear transformation.
 
 !!! Note
     The coefficients of `boundops` are also updated due to the change of the boundary parameters.
 """
-function update!(cat::CategorizedGenerator, transformation::LinearTransformation, source::CategorizedGenerator{<:Operators}; kwargs...)
+function update!(cat::CategorizedGenerator, transformation::LinearTransformation, source::CategorizedGenerator; kwargs...)
     cat.parameters = update(cat.parameters; source.parameters...)
     if !match(Parameters(cat.boundary), Parameters(source.boundary))
         update!(cat.boundary; Parameters(source.boundary)...)
@@ -456,11 +456,11 @@ function update!(cat::CategorizedGenerator, transformation::LinearTransformation
 end
 
 """
-    reset!(cat::CategorizedGenerator, transformation::LinearTransformation, source::CategorizedGenerator{<:Operators}; kwargs...)
+    reset!(cat::CategorizedGenerator, transformation::LinearTransformation, source::CategorizedGenerator; kwargs...)
 
 Reset a categorized generator by its source categorized generator of (representations of) quantum operators and the corresponding linear transformation.
 """
-function reset!(cat::CategorizedGenerator, transformation::LinearTransformation, source::CategorizedGenerator{<:Operators}; kwargs...)
+function reset!(cat::CategorizedGenerator, transformation::LinearTransformation, source::CategorizedGenerator; kwargs...)
     add!(empty!(cat.constops), transformation, source.constops; kwargs...)
     map((dest, ops)->add!(empty!(dest), transformation, ops; kwargs...), values(cat.alterops), values(source.alterops))
     map((dest, ops)->add!(empty!(dest), transformation, ops; kwargs...), values(cat.boundops), values(source.boundops))
@@ -648,6 +648,23 @@ end
 Get the transformation applied to a generator of quantum operators.
 """
 @inline (transformation::Transformation)(gen::OperatorGenerator; kwargs...) = transformation(gen.operators; kwargs...)
+
+"""
+    update!(cat::CategorizedGenerator, transformation::LinearTransformation, source::OperatorGenerator; kwargs...) -> CategorizedGenerator
+
+Update the parameters (including the boundary parameters) of a categorized generator based on its source operator generator of (representations of) quantum operators and the corresponding linear transformation.
+
+!!! Note
+    The coefficients of `boundops` are also updated due to the change of the boundary parameters.
+"""
+@inline update!(cat::CategorizedGenerator, transformation::LinearTransformation, source::OperatorGenerator; kwargs...) = update!(cat, transformation, source.operators; kwargs...)
+
+"""
+    reset!(cat::CategorizedGenerator, transformation::LinearTransformation, source::OperatorGenerator; kwargs...)
+
+Reset a categorized generator by its source operator generator of (representations of) quantum operators and the corresponding linear transformation.
+"""
+@inline reset!(cat::CategorizedGenerator, transformation::LinearTransformation, source::OperatorGenerator; kwargs...) = reset!(cat, transformation, source.operators; kwargs...)
 
 """
     Frontend

@@ -183,8 +183,10 @@ end
     @test empty!(deepcopy(cgen)) == OperatorGenerator(empty(bs), empty(hilbert), (t, μ), boundary; half=true) == empty(cgen)
     @test !isempty(cgen) && isempty(empty(cgen)) 
     @test reset!(empty(cgen), bs, hilbert; vectors=lattice.vectors) == cgen
-    @test update!(cgen, μ=1.5)|>expand ≈ tops₁ + tops₂*2.0 + μops*1.5
+    @test update!(deepcopy(cgen), μ=1.5)|>expand ≈ tops₁ + tops₂*2.0 + μops*1.5
     @test LinearFunction(identity)(cgen) == cgen.operators
+    @test reset!(empty(cat), LinearFunction(identity), cgen) == cat
+    @test update!(deepcopy(cat), LinearFunction(identity), update!(deepcopy(cgen), μ=1.5))|>expand ≈ tops₁ + tops₂*2.0 + μops*1.5
 end
 
 @testset "OperatorGenerator plain" begin
@@ -207,8 +209,10 @@ end
     @test expand(cgen, :μ, 1) + expand(cgen, :μ, 2) ≈ μops
     @test expand(cgen, :t, 3) + expand(cgen, :t, 4) ≈ tops
     @test reset!(empty(cgen), bs, hilbert; vectors=lattice.vectors) == cgen
-    @test update!(cgen, μ=1.5)|>expand ≈ tops + μops*1.5
+    @test update!(deepcopy(cgen), μ=1.5)|>expand ≈ tops + μops*1.5
     @test LinearFunction(identity)(cgen) == cgen.operators
+    @test reset!(empty(cat), LinearFunction(identity), cgen) == cat
+    @test update!(deepcopy(cat), LinearFunction(identity), update!(deepcopy(cgen), μ=1.5))|>expand ≈ tops + μops*1.5
 end
 
 mutable struct VCA <: Frontend
