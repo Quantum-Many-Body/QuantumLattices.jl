@@ -371,7 +371,7 @@ abstract type RepresentationSpace{QN<:AbelianQuantumNumber} <: VectorSpace{QN} e
 
 Get the degenerate dimension of the ith Abelian quantum number contained in a representation space.
 """
-@inline dimension(rs::RepresentationSpace, i::Integer) = dimension(rs, CartesianIndex(i, rs)) 
+@inline dimension(rs::RepresentationSpace, i::Integer) = dimension(rs, CartesianIndex(i, rs))
 
 """
     range(rs::RepresentationSpace, i::Integer)
@@ -423,6 +423,7 @@ struct Momenta{P<:𝕂} <: RepresentationSpace{P} end
 @inline Base.:(==)(ms₁::Momenta, ms₂::Momenta) = periods(eltype(ms₁))==periods(eltype(ms₂))
 @inline Base.isequal(ms₁::Momenta, ms₂::Momenta) = isequal(periods(eltype(ms₁)), periods(eltype(ms₂)))
 @inline Base.show(io::IO, ms::Momenta) = @printf io "Momenta(%s)" eltype(ms)
+@inline dimension(m::Momenta) = length(m)
 
 """
     regularize!(quantumnumbers::Vector{<:AbelianQuantumNumber}, dimensions::Vector{Int}; check::Bool=false) -> Tuple{typeof(quantumnumbers), typeof(dimensions), Vector{Int}}

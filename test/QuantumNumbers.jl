@@ -72,6 +72,7 @@ end
         @test momenta[convert(CartesianIndex, momentum, momenta)] == momentum
     end
     @test string(momenta) == "Momenta(𝕂²{2, 3})"
+    @test dimension(momenta) == 6
 end
 
 @testset "regularize" begin

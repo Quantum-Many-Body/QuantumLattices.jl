@@ -4,13 +4,13 @@ using DataStructures: OrderedDict
 using Printf: @printf, @sprintf
 using SparseArrays: SparseMatrixCSC, nnz
 using StaticArrays: SVector
-using ..QuantumLattices: add!, decompose, dimension
+using ..QuantumLattices: add!, decompose
 using ..QuantumOperators: ID, LinearTransformation, Operator, OperatorIndex, OperatorPack, Operators, QuantumOperator, scalartype, valuetolatextext
 using ..Spatials: Bond, Point
 using ..Toolkit: atol, efficientoperations, rtol, CompositeDict, Float, VectorSpace, VectorSpaceCartesian, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceStyle, concatenate, fulltype, parametertype, rawtype, reparameter, tostr
 
 import LaTeXStrings: latexstring
-import ..QuantumLattices: ⊕, ⊗, expand, expand!, id, ishermitian, kind, permute, rank, reset!, update!, value
+import ..QuantumLattices: ⊕, ⊗, dimension, expand, expand!, id, ishermitian, kind, permute, rank, reset!, update!, value
 import ..QuantumOperators: idtype, operatortype, script
 import ..Spatials: icoordinate, nneighbor, rcoordinate
 import ..Toolkit: contentnames, getcontent, parameternames, shape
@@ -105,6 +105,13 @@ Direct product between internal indexes.
 Internal space at a single point.
 """
 abstract type Internal{I<:InternalIndex} <: VectorSpace{I} end
+
+"""
+    dimension(i::Internal) -> Int
+
+Get the dimension of an internal space at a single point.
+"""
+@inline dimension(i::Internal) = length(i)
 
 """
     SimpleInternal{I<:SimpleInternalIndex} <: Internal{I}

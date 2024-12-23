@@ -1,7 +1,7 @@
 using LaTeXStrings: latexstring
 using LinearAlgebra: dot, ishermitian
 using Printf: @printf
-using QuantumLattices: ⊕, ⊗, expand, kind, rank, reset!, update!, value
+using QuantumLattices: ⊕, ⊗, dimension, expand, kind, rank, reset!, update!, value
 using QuantumLattices.DegreesOfFreedom
 using QuantumLattices.QuantumOperators: ID, LaTeX, Operator, OperatorIndex, Operators, id, latexformat, sequence
 using QuantumLattices.Spatials: Bond, Point, decompose, icoordinate, nneighbor, rcoordinate
@@ -76,6 +76,7 @@ end
 
 @testset "SimpleInternal" begin
     it = DFock(2)
+    @test dimension(it) == 2
     @test string(it) == "DFock(nnambu=2)"
     @test collect(it) == [𝕕(1), 𝕕(2)]
     @test statistics(it) == statistics(typeof(it)) == :f
@@ -88,6 +89,7 @@ end
     it₁, it₂ = DFock(2), DFock(3)
 
     ci = InternalSum(it₁, it₂)
+    @test dimension(ci) == 5
     @test eltype(ci) == eltype(typeof(ci)) == DID{Int}
     @test rank(ci) == rank(typeof(ci)) == 2
     @test string(ci) == "DFock(nnambu=2) ⊕ DFock(nnambu=3)"
@@ -100,6 +102,7 @@ end
     @test filter(𝕕(1), typeof(ci)) == filter(DID, typeof(ci)) == typeof(ci)
 
     ci = InternalProd(it₁, it₂)
+    @test dimension(ci) == 6
     @test eltype(ci) == eltype(typeof(ci)) == InternalIndexProd{Tuple{DID{Int}, DID{Int}}}
     @test rank(ci) == rank(typeof(ci)) == 2
     @test string(ci) == "DFock(nnambu=2) ⊗ DFock(nnambu=3)"
