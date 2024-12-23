@@ -3,6 +3,7 @@ module Toolkit
 using Base: @propagate_inbounds
 using DataStructures: OrderedDict
 using Format: FormatSpec, pyfmt
+using InteractiveUtils: subtypes
 using Printf: @printf
 using StaticArrays: SVector
 
@@ -16,7 +17,7 @@ export DirectSummedIndices, Segment, concatenate, delta, subscript, superscript,
 export Combinatorics, Combinations, DuplicateCombinations, DuplicatePermutations, Permutations
 
 # Traits
-export commontype, dissolve, fulltype, rawtype
+export SubTypeTree, commontype, dissolve, fulltype, rawtype
 export hasparameter, isparameterbound, isparameterbounds, parametercount, parametername, parameternames, parameterorder, parameterpair, parameterpairs, parametertype, parametertypes, promoteparameters, reparameter 
 export contentcount, contentname, contentnames, contentorder, contenttype, contenttypes, getcontent, hascontent
 export efficientoperations
@@ -430,6 +431,43 @@ end
 
 # Traits
 ## with type themselves
+"""
+    SubTypeTree(root::Type)
+
+Construct the complete depth-first subtype tree of a root `Type`.
+"""
+struct SubTypeTree
+    root::Type
+end
+@inline Base.eltype(subtypetree::SubTypeTree) = eltype(typeof(subtypetree))
+@inline Base.eltype(::Type{SubTypeTree}) = Type
+@inline Base.IteratorSize(::Type{<:SubTypeTree}) = Base.SizeUnknown()
+@inline function Base.iterate(subtypetree::SubTypeTree, state=Type[subtypetree.root])
+    length(state)==0 && return
+    current = popfirst!(state)
+    prepend!(state, subtypes(current))
+    return current, state
+end
+function Base.show(io::IO, subtypetree::SubTypeTree)
+    println(io, subtypetree.root)
+    depth = get(io, :depth, 0)
+    prefix = get(io, :prefix, "")
+    middle, terminator, skip, dash = "├", "└", "│", "─"
+    children = subtypes(subtypetree.root)
+    for (i, child) in enumerate(children)
+        print(io, prefix)
+        extra = if i == length(children)
+            print(io, terminator)
+            " " ^ (textwidth(skip)+textwidth(dash)+1)
+        else
+            print(io, middle)
+            skip * " "^(textwidth(dash)+1)
+        end
+        print(io, dash, " ")
+        show(IOContext(io, :depth=>depth+1, :prefix=>prefix*extra), SubTypeTree(child))
+    end
+end
+
 """
     commontype(f::Function, types, ::Type{T}=Any) where T
 

@@ -176,6 +176,13 @@ end
 @inline getcontent(m::DiffNameField, ::Val{:content}) = getfield(m, :table)
 @inline contenttype(DF::Type{DiffNameField}, ::Val{:content}) = fieldtype(DF, :table)
 
+@testset "SubTypeTree" begin
+    subtypetree = SubTypeTree(Integer)
+    @test eltype(subtypetree) == eltype(typeof(subtypetree)) == Type
+    @test collect(subtypetree) == [Integer, Bool, Signed, BigInt, Int128, Int16, Int32, Int64, Int8, Unsigned, UInt128, UInt16, UInt32, UInt64, UInt8]
+    @test string(subtypetree) == "Integer\n├─ Bool\n├─ Signed\n│  ├─ BigInt\n│  ├─ Int128\n│  ├─ Int16\n│  ├─ Int32\n│  ├─ Int64\n│  └─ Int8\n└─ Unsigned\n   ├─ UInt128\n   ├─ UInt16\n   ├─ UInt32\n   ├─ UInt64\n   └─ UInt8\n"
+end
+
 @testset "commontype" begin
     @test commontype(Int) == Int
     @test commontype(Union{Int, Float64}) == Float64

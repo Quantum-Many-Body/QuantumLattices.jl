@@ -490,6 +490,7 @@ At runtime of the generated `==` function, it compares the values of `getfield(o
 
 For traits with types themselves:
 ```@docs
+SubTypeTree
 commontype
 fulltype
 rawtype
