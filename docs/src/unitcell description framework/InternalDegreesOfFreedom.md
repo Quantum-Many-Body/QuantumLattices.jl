@@ -306,23 +306,23 @@ julia> 𝕊{1//2}('x') |> matrix
 
 julia> 𝕊{1//2}('y') |> matrix
 2×2 Matrix{ComplexF64}:
- 0.0-0.0im  -0.0+0.5im
- 0.0-0.5im   0.0-0.0im
+  0.0-0.0im  0.0-0.5im
+ -0.0+0.5im  0.0-0.0im
 
 julia> 𝕊{1//2}('z') |> matrix
 2×2 Matrix{ComplexF64}:
- -0.5+0.0im  -0.0+0.0im
-  0.0+0.0im   0.5+0.0im
+  0.5+0.0im   0.0+0.0im
+ -0.0+0.0im  -0.5+0.0im
 
 julia> 𝕊{1//2}('+') |> matrix
 2×2 Matrix{ComplexF64}:
+ 0.0+0.0im  1.0+0.0im
  0.0+0.0im  0.0+0.0im
- 1.0+0.0im  0.0+0.0im
 
 julia> 𝕊{1//2}('-') |> matrix
 2×2 Matrix{ComplexF64}:
- 0.0+0.0im  1.0+0.0im
  0.0+0.0im  0.0+0.0im
+ 1.0+0.0im  0.0+0.0im
 ```
 
 A [`Spin`](@ref) instance can be initialized as follows:

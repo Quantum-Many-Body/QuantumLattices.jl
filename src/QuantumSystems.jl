@@ -656,7 +656,8 @@ function matrix(index::SpinIndex{S, Char}, dtype::Type{<:Number}=Complex{Float})
     result = zeros(dtype, (N, N))
     spin = convert(dtype, S)
     for i = 1:N, j = 1:N
-        row, col = N+1-i, N+1-j
+        # row, col = N+1-i, N+1-j # Sᶻ in ascending order
+        row, col = i, j # Sᶻ in descending order
         m, n = spin+1-i, spin+1-j
         result[row, col] = (index.tag == 'x') ? (delta(i+1, j)+delta(i, j+1))*sqrt(spin*(spin+1)-m*n)/2 :
             (index.tag == 'y') ? (delta(i+1, j)-delta(i, j+1))*sqrt(spin*(spin+1)-m*n)/2im :

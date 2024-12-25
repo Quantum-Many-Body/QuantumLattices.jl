@@ -416,20 +416,20 @@ end
 end
 
 @testset "matrix" begin
-    @test isapprox(matrix(𝕊{1//2}('z')), [[-0.5, 0.0] [0.0, 0.5]])
-    @test isapprox(matrix(𝕊{1//2}('x')), [[0.0, 0.5] [0.5, 0.0]])
-    @test isapprox(matrix(𝕊{1//2}('y')), [[0.0, -0.5im] [0.5im, 0.0]])
-    @test isapprox(matrix(𝕊{1//2}('+')), [[0.0, 1.0] [0.0, 0.0]])
-    @test isapprox(matrix(𝕊{1//2}('-')), [[0.0, 0.0] [1.0, 0.0]])
+    @test isapprox(matrix(𝕊{1//2}('z')), [0.5 0.0; 0.0 -0.5])
+    @test isapprox(matrix(𝕊{1//2}('x')), [0.0 0.5; 0.5 0.0])
+    @test isapprox(matrix(𝕊{1//2}('y')), [0.0 -0.5im; 0.5im 0.0])
+    @test isapprox(matrix(𝕊{1//2}('+')), [0.0 1.0; 0.0 0.0])
+    @test isapprox(matrix(𝕊{1//2}('-')), [0.0 0.0; 1.0 0.0])
 
-    @test isapprox(matrix(𝕊{1//2}(:, 'z')), [[-0.5, 0.0] [0.0, 0.5]])
-    @test isapprox(matrix(𝕊{1//2}(:, 'z', [0], [0])), [[-0.5, 0.0] [0.0, 0.5]])
+    @test isapprox(matrix(𝕊{1//2}(:, 'z')), [0.5 0.0; 0.0 -0.5])
+    @test isapprox(matrix(𝕊{1//2}(:, 'z', [0], [0])), [0.5 0.0; 0.0 -0.5])
 
-    @test isapprox(matrix(𝕊{1}('z')), [[-1.0, 0.0, 0.0] [0.0, 0.0, 0.0] [0.0, 0.0, 1.0]])
-    @test isapprox(matrix(𝕊{1}('x')), [[0.0, √2/2, 0.0] [√2/2, 0.0, √2/2] [0.0, √2/2, 0.0]])
-    @test isapprox(matrix(𝕊{1}('y')), [[0.0, -√2im/2, 0.0] [√2im/2, 0.0, -√2im/2] [0.0, √2im/2, 0.0]])
-    @test isapprox(matrix(𝕊{1}('+')), [[0.0, √2, 0.0] [0.0, 0.0, √2] [0.0, 0.0, 0.0]])
-    @test isapprox(matrix(𝕊{1}('-')), [[0.0, 0.0, 0.0] [√2, 0.0, 0.0] [0.0, √2, 0.0]])
+    @test isapprox(matrix(𝕊{1}('z')), [1.0 0.0 0.0; 0.0 0.0 0.0; 0.0 0.0 -1.0])
+    @test isapprox(matrix(𝕊{1}('x')), [0.0 √2/2 0.0; √2/2 0.0 √2/2; 0.0 √2/2 0.0])
+    @test isapprox(matrix(𝕊{1}('y')), [0.0 -√2im/2 0.0; √2im/2 0.0 -√2im/2; 0.0 √2im/2 0.0])
+    @test isapprox(matrix(𝕊{1}('+')), [0.0 √2 0.0; 0.0 0.0 √2; 0.0 0.0 0.0])
+    @test isapprox(matrix(𝕊{1}('-')), [0.0 0.0 0.0; √2 0.0 0.0; 0.0 √2 0.0])
 end
 
 @testset "Spin latex" begin
@@ -472,7 +472,7 @@ end
     @test opt' == Operator(1.0, 𝕊{1//2}(1, '+', [0.0, 0.0], [0.0, 0.0]), 𝕊{1//2}(1, '-', [0.0, 0.0], [0.0, 0.0]))
     @test latexstring(opt) == "S^{+}_{1}S^{-}_{1}"
 
-    representation(opt::Operator) = opt.value * prod([matrix(opt.id[i].index.internal) for i = 1:rank(opt)])
+    representation(opt::Operator) = opt.value * prod([matrix(opt[i]) for i = 1:rank(opt)])
     for S in (1//2, 1, 3//2)
         indexes = [𝕊{S}(1, tag, [0.0, 0.0], [0.0, 0.0]) for tag in ('x', 'y', 'z', '+', '-')]
         for (id₁, id₂) in DuplicatePermutations{2}(indexes)
