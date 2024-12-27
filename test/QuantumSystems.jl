@@ -1,7 +1,6 @@
 using LaTeXStrings: latexstring
-using QuantumLattices: ⊠, ⊗, decompose, expand, kind, permute, rank
+using QuantumLattices: expand, kind, permute, rank
 using QuantumLattices.DegreesOfFreedom: ˢᵗ, ⁿᵈ, CompositeIndex, CoordinatedIndex, Coupling, Hilbert, Index, InternalIndex, MatrixCoupling, allequalfields, internalindextype, isdefinite, patternrule, statistics, @pattern
-using QuantumLattices.QuantumNumbers: Graded, ℕ, 𝕊ᶻ, ℤ₁
 using QuantumLattices.QuantumOperators: Operator, OperatorIndex, Operators, latexname, matrix, script
 using QuantumLattices.QuantumSystems
 using QuantumLattices.Spatials: Bond, Lattice, Neighbors, Point, azimuthd, bonds, rcoordinate, icoordinate
@@ -106,15 +105,6 @@ end
     @test shape(Fock{:f}(3, 2), 𝕔(1, :, 2)) ==(1:1, 1:2, 2:2) 
     @test shape(Fock{:f}(3, 2), 𝕔(:, -1//2, 1)) == (1:3, 1:1, 1:1)
     @test shape(Fock{:f}(3, 2), 𝕔(:, :, 2)) == (1:3, 1:2, 2:2)
-end
-
-@testset "Graded Fock" begin
-    fock = Fock{:f}(2, 3)
-    @test Graded(fock) == Graded{ℤ₁}(fock) == decompose(⊗((Graded{ℤ₁}(0=>2) for i in 1:length(fock)÷2)...))[1]
-    @test Graded{ℕ}(fock) == decompose(⊗((Graded{ℕ}(0=>1, 1=>1) for i in 1:length(fock)÷2)...))[1]
-    @test Graded{𝕊ᶻ}(fock) == decompose(⊗((Graded{𝕊ᶻ}(0=>1, fock[i].spin=>1) for i in 1:length(fock)÷2)...))[1]
-    @test Graded{ℕ ⊠ 𝕊ᶻ}(fock) == decompose(⊗((Graded{ℕ ⊠ 𝕊ᶻ}((0, 0)=>1, (1, fock[i].spin)=>1) for i in 1:length(fock)÷2)...))[1]
-    @test Graded{𝕊ᶻ ⊠ ℕ}(fock) == decompose(⊗((Graded{𝕊ᶻ ⊠ ℕ}((0, 0)=>1, (fock[i].spin, 1)=>1) for i in 1:length(fock)÷2)...))[1]
 end
 
 @testset "angle" begin
@@ -459,12 +449,6 @@ end
 
     @test shape(Spin{1}(), 𝕊{1}(:)) == (1:5,)
     @test shape(Spin{1}(), 𝕊{1}('z')) == (3:3,)
-end
-
-@testset "Grad Spin" begin
-    spin = Spin{3//2}()
-    @test Graded(spin) == Graded{ℤ₁}(spin) == Graded{ℤ₁}(0=>4)
-    @test Graded{𝕊ᶻ}(spin) == Graded{𝕊ᶻ}(-3//2=>1, -1//2=>1, 1//2=>1, 3//2=>1)'
 end
 
 @testset "Spin operator" begin
