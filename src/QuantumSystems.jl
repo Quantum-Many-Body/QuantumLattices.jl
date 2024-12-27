@@ -739,7 +739,7 @@ Decompose a local spin space into an Abelian graded space that preserves 1, 2) n
 @inline Graded{ℤ₁}(spin::Spin) = Graded{ℤ₁}(0=>Int(2*totalspin(spin)+1))
 function Graded{𝕊ᶻ}(spin::Spin)
     S = totalspin(spin)
-    return Graded{𝕊ᶻ}(sz=>1 for sz in -S:1:S)
+    return Graded{𝕊ᶻ}(sz=>1 for sz in -S:1:S)'
 end
 
 ## Permutation

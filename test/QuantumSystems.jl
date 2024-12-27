@@ -464,7 +464,7 @@ end
 @testset "Grad Spin" begin
     spin = Spin{3//2}()
     @test Graded(spin) == Graded{ℤ₁}(spin) == Graded{ℤ₁}(0=>4)
-    @test Graded{𝕊ᶻ}(spin) == Graded{𝕊ᶻ}(-3//2=>1, -1//2=>1, 1//2=>1, 3//2=>1)
+    @test Graded{𝕊ᶻ}(spin) == Graded{𝕊ᶻ}(-3//2=>1, -1//2=>1, 1//2=>1, 3//2=>1)'
 end
 
 @testset "Spin operator" begin
