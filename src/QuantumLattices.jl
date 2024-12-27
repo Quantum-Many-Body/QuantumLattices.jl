@@ -59,7 +59,7 @@ export ˢᵗ, ⁿᵈ, ʳᵈ, ᵗʰ, plain, allequalfields, coordinatedindextype,
 # QuantumSystems
 include("QuantumSystems.jl")
 using .QuantumSystems
-export annihilation, creation, latexofbosons, latexoffermions, latexofparticles, 𝕓, 𝕓⁺𝕓, 𝕕, 𝕕⁺𝕕, 𝕗, 𝕗⁺𝕗, isannihilation, iscreation, isnormalordered, @σ_str, @L_str
+export annihilation, creation, latexofbosons, latexoffermions, latexofparticles, 𝕒, 𝕒⁺𝕒, 𝕓, 𝕓⁺𝕓, 𝕔, 𝕔⁺𝕔, 𝕕, 𝕕⁺𝕕, 𝕗, 𝕗⁺𝕗, isannihilation, iscreation, isnormalordered, @σ_str, @L_str
 export Coulomb, Fock, FockIndex, FockTerm, Hopping, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, Onsite, PairHopping, Pairing, SpinFlip
 export latexofspins, 𝕊, 𝕊ᵀ𝕊, SpinIndex, Spin, totalspin, @Γ_str, @Γ′_str, @DM_str, @Heisenberg_str, @Ising_str
 export DM, Heisenberg, Ising, Kitaev, SingleIonAnisotropy, SpinTerm, Zeeman, Γ, Γ′

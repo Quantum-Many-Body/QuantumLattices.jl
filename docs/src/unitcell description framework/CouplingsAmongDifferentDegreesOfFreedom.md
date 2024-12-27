@@ -69,8 +69,8 @@ julia> Coupling(𝕡(1ˢᵗ, :), 𝕡(1ˢᵗ, :))
 
 Of course, more specific coupling patterns can be initialized with more specific internal indexes, e.g., the coupling pattern of the orbital-1 spin-down hopping term of fermions $t\sum_{⟨ij⟩}c^†_{i, 1, ↓}c_{j, 1, ↓} + h.c.$ is
 ```jldoctest HM
-julia> Coupling(𝕗(1ˢᵗ, 1, -1//2, 2), 𝕗(2ⁿᵈ, 1, -1//2, 1))
-𝕗(1ˢᵗ, 1, -1//2, 2) 𝕗(2ⁿᵈ, 1, -1//2, 1)
+julia> Coupling(𝕔(1ˢᵗ, 1, -1//2, 2), 𝕔(2ⁿᵈ, 1, -1//2, 1))
+𝕔(1ˢᵗ, 1, -1//2, 2) 𝕔(2ⁿᵈ, 1, -1//2, 1)
 ```
 
 When all [`Index`](@ref)es are of the same type, a [`Coupling`](@ref) can be initialized in different simpler ways:
@@ -86,7 +86,7 @@ Coupling(
 ) where N
 Coupling(
     [value, ]
-    ::Union{typeof(𝕗), typeof(𝕓), typeof(𝕕)},
+    ::Union{typeof(𝕔), typeof(𝕓), typeof(𝕕)},
     sites::Union{Colon, NTuple{N, Ordinal}},
     orbitals::Union{NTuple{N, Int}, Colon},
     spins::Union{NTuple{N, Union{Rational{Int}, Int}}, Colon},
@@ -229,13 +229,13 @@ MatrixCoupling(
     nambu::Union{AbstractMatrix, Colon}
 )
 MatrixCoupling(
-    ::Union{typeof(𝕗), typeof(𝕓), typeof(𝕕)},
+    ::Union{typeof(𝕔), typeof(𝕓), typeof(𝕕)},
     sites::Union{NTuple{2, Ordinal}, Colon},
     orbital::Union{AbstractMatrix, Colon},
     spin::Union{AbstractMatrix, Colon},
     nambu::Union{AbstractMatrix, Colon}
 )
-𝕗⁺𝕗(
+𝕔⁺𝕔(
     sites::Union{NTuple{2, Ordinal}, Colon},
     orbital::Union{AbstractMatrix, Colon},
     spin::Union{AbstractMatrix, Colon},
@@ -693,10 +693,10 @@ julia> hilbert = Hilbert(1=>Fock{:f}(1, 2), 2=>Fock{:f}(1, 2));
 
 julia> expand(t, bond, hilbert)
 Operators with 4 Operator
-  Operator(2.0, 𝕗(1, 1, -1//2, 2, [0.0], [0.0]), 𝕗(2, 1, -1//2, 1, [0.5], [0.0]))
-  Operator(2.0, 𝕗(2, 1, -1//2, 2, [0.5], [0.0]), 𝕗(1, 1, -1//2, 1, [0.0], [0.0]))
-  Operator(2.0, 𝕗(1, 1, 1//2, 2, [0.0], [0.0]), 𝕗(2, 1, 1//2, 1, [0.5], [0.0]))
-  Operator(2.0, 𝕗(2, 1, 1//2, 2, [0.5], [0.0]), 𝕗(1, 1, 1//2, 1, [0.0], [0.0]))
+  Operator(2.0, 𝕔(1, 1, -1//2, 2, [0.0], [0.0]), 𝕔(2, 1, -1//2, 1, [0.5], [0.0]))
+  Operator(2.0, 𝕔(2, 1, -1//2, 2, [0.5], [0.0]), 𝕔(1, 1, -1//2, 1, [0.0], [0.0]))
+  Operator(2.0, 𝕔(1, 1, 1//2, 2, [0.0], [0.0]), 𝕔(2, 1, 1//2, 1, [0.5], [0.0]))
+  Operator(2.0, 𝕔(2, 1, 1//2, 2, [0.5], [0.0]), 𝕔(1, 1, 1//2, 1, [0.0], [0.0]))
 ```
 
 When a bond and a term do not match each other, the [`expand`](@ref) function will return an empty [`Operators`](@ref):
@@ -724,12 +724,12 @@ julia> hilbert = Hilbert(1=>Fock{:f}(1, 2), 2=>Fock{:f}(1, 2));
 
 julia> expand(t, bonds, hilbert)
 Operators with 8 Operator
-  Operator(1.0, 𝕗(2, 1, -1//2, 2, [0.5], [0.0]), 𝕗(1, 1, -1//2, 1, [0.0], [0.0]))
-  Operator(1.0, 𝕗(1, 1, -1//2, 2, [0.0], [0.0]), 𝕗(2, 1, -1//2, 1, [0.5], [0.0]))
-  Operator(1.0, 𝕗(2, 1, 1//2, 2, [0.5], [0.0]), 𝕗(1, 1, 1//2, 1, [0.0], [0.0]))
-  Operator(1.0, 𝕗(1, 1, 1//2, 2, [0.0], [0.0]), 𝕗(2, 1, 1//2, 1, [0.5], [0.0]))
-  Operator(1.0, 𝕗(2, 1, -1//2, 2, [-0.5], [-1.0]), 𝕗(1, 1, -1//2, 1, [0.0], [0.0]))
-  Operator(1.0, 𝕗(1, 1, -1//2, 2, [0.0], [0.0]), 𝕗(2, 1, -1//2, 1, [-0.5], [-1.0]))
-  Operator(1.0, 𝕗(2, 1, 1//2, 2, [-0.5], [-1.0]), 𝕗(1, 1, 1//2, 1, [0.0], [0.0]))
-  Operator(1.0, 𝕗(1, 1, 1//2, 2, [0.0], [0.0]), 𝕗(2, 1, 1//2, 1, [-0.5], [-1.0]))
+  Operator(1.0, 𝕔(2, 1, -1//2, 2, [0.5], [0.0]), 𝕔(1, 1, -1//2, 1, [0.0], [0.0]))
+  Operator(1.0, 𝕔(1, 1, -1//2, 2, [0.0], [0.0]), 𝕔(2, 1, -1//2, 1, [0.5], [0.0]))
+  Operator(1.0, 𝕔(2, 1, 1//2, 2, [0.5], [0.0]), 𝕔(1, 1, 1//2, 1, [0.0], [0.0]))
+  Operator(1.0, 𝕔(1, 1, 1//2, 2, [0.0], [0.0]), 𝕔(2, 1, 1//2, 1, [0.5], [0.0]))
+  Operator(1.0, 𝕔(2, 1, -1//2, 2, [-0.5], [-1.0]), 𝕔(1, 1, -1//2, 1, [0.0], [0.0]))
+  Operator(1.0, 𝕔(1, 1, -1//2, 2, [0.0], [0.0]), 𝕔(2, 1, -1//2, 1, [-0.5], [-1.0]))
+  Operator(1.0, 𝕔(2, 1, 1//2, 2, [-0.5], [-1.0]), 𝕔(1, 1, 1//2, 1, [0.0], [0.0]))
+  Operator(1.0, 𝕔(1, 1, 1//2, 2, [0.0], [0.0]), 𝕔(2, 1, 1//2, 1, [-0.5], [-1.0]))
 ```

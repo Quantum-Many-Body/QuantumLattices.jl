@@ -28,6 +28,22 @@ Internal index of an internal degree of freedom.
 abstract type InternalIndex <: OperatorIndex end
 
 """
+    InternalIndex(index::OperatorIndex)
+
+Get the `InternalIndex` part of an `OperatorIndex`.
+"""
+@inline InternalIndex(index::InternalIndex) = index
+
+"""
+    internalindextype(index::OperatorIndex)
+    internalindextype(::Type{I}) where {I<:OperatorIndex}
+
+Get the type of the `InternalIndex` part of an `OperatorIndex`.
+"""
+@inline internalindextype(index::OperatorIndex) = internalindextype(typeof(index))
+@inline internalindextype(::Type{I}) where {I<:InternalIndex} = I
+
+"""
     isdefinite(ii::InternalIndex) -> Bool
     isdefinite(::Type{<:InternalIndex}) -> Bool
 
@@ -583,6 +599,24 @@ function Base.show(io::IO, index::Index)
     internal = join(internal, ", ")
     @printf io "%s(%s%s%s)" OperatorIndex[typeof(index)] tostr(index.site) (length(internal)>0 ? ", " : "") internal
 end
+@inline InternalIndex(index::Index) = index.internal
+@inline internalindextype(::Type{I}) where {I<:Index} = parametertype(I, :internal)
+
+"""
+    Index(index::OperatorIndex)
+
+Get the `Index` part of an `OperatorIndex`.
+"""
+@inline Index(index::Index) = index
+
+"""
+    indextype(index::OperatorIndex)
+    indextype(::Type{I}) where {I<:OperatorIndex}
+
+Get the type of the `Index` part of an `OperatorIndex`.
+"""
+@inline indextype(index::OperatorIndex) = indextype(typeof(index))
+@inline indextype(::Type{I}) where {I<:Index} = I
 
 """
     isdefinite(index::Index) -> Bool
@@ -601,15 +635,6 @@ Determine whether a tuple of indexes denotes a definite degree of freedom.
 """
 @inline isdefinite(indexes::Tuple{Vararg{Index}}) = isdefinite(typeof(indexes))
 @inline isdefinite(::Type{T}) where {T<:Tuple{Vararg{Index}}} = all(map(isdefinite, fieldtypes(T)))
-
-"""
-    internalindextype(index::Index)
-    internalindextype(::Type{I}) where {I<:Index}
-
-Get the type of the internal part of an index.
-"""
-@inline internalindextype(index::Index) = internalindextype(typeof(index))
-@inline internalindextype(::Type{I}) where {I<:Index} = parametertype(I, :internal)
 
 """
     statistics(index::Index) -> Symbol
@@ -665,14 +690,9 @@ Abstract type of a composite index.
 abstract type CompositeIndex{I<:Index} <: OperatorIndex end
 @inline contentnames(::Type{<:CompositeIndex}) = (:index,)
 @inline parameternames(::Type{<:CompositeIndex}) = (:index,)
-
-"""
-    indextype(::CompositeIndex)
-    indextype(::Type{<:CompositeIndex})
-
-Get the index type of a composite index.
-"""
-@inline indextype(index::CompositeIndex) = indextype(typeof(index))
+@inline InternalIndex(index::CompositeIndex) = InternalIndex(Index(index))
+@inline internalindextype(::Type{<:CompositeIndex{I}}) where {I<:Index} = internalindextype(I)
+@inline Index(index::CompositeIndex) = getcontent(index, :index)
 @inline @generated indextype(::Type{I}) where {I<:CompositeIndex} = parametertype(supertype(I, :CompositeIndex), :index)
 
 """
@@ -708,8 +728,8 @@ end
 @inline Base.propertynames(::ID{CoordinatedIndex}) = (:indexes, :rcoordinates, :icoordinates)
 function Base.show(io::IO, index::CoordinatedIndex)
     internal = String[]
-    for i = 1:fieldcount(typeof(index.index.internal))
-        value = getfield(index.index.internal, i)
+    for i = 1:fieldcount(internalindextype(index))
+        value = getfield(InternalIndex(index), i)
         push!(internal, tostr(value))
     end
     internal = join(internal, ", ")
@@ -1709,7 +1729,7 @@ Convert an index to a tuple.
         elseif name==:site
             push!(exprs, :(index.site))
         elseif hasfield(internalindextype(index), name)
-            push!(exprs, :(getfield(index.internal, $(QuoteNode(name)))))
+            push!(exprs, :(getfield(InternalIndex(index), $(QuoteNode(name)))))
         end
     end
     return Expr(:tuple, exprs...)

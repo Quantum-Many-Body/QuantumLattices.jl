@@ -57,6 +57,8 @@ latexformat(DID, LaTeX{(), (:nambu,)}('d'))
 @testset "InternalIndex" begin
     did = 𝕕(1)
     @test statistics(did) == statistics(typeof(did)) == :f
+    @test InternalIndex(did) == did
+    @test internalindextype(did) == internalindextype(typeof(did)) == typeof(did)
     @test isdefinite(did) == isdefinite(typeof(did)) == true
     @test isdefinite(𝕕(:a)) == isdefinite(DID{Symbol}) == false
 
@@ -177,7 +179,10 @@ end
     @test parameternames(Index) == (:internal, :site)
 
     index = Index(4, 𝕕(1))
+    @test InternalIndex(index) == 𝕕(1)
     @test internalindextype(index) == internalindextype(typeof(index)) == DID{Int}
+    @test Index(index) == index
+    @test indextype(index) == indextype(typeof(index)) == typeof(index)
     @test index' == 𝕕(4, 2)
     @test statistics(index) == statistics(typeof(index)) == :f
     @test ishermitian(ID(index', index)) == true
@@ -212,6 +217,9 @@ end
     @test parameternames(CoordinatedIndex) == (:index, :coordination)
 
     index = 𝕕(1, 1, [0.0, -0.0], [0.0, 0.0])
+    @test InternalIndex(index) == 𝕕(1)
+    @test internalindextype(index) == internalindextype(typeof(index)) == DID{Int}
+    @test Index(index) == 𝕕(1, 1)
     @test indextype(index) == indextype(typeof(index)) == Index{DID{Int}, Int}
     @test statistics(index) == statistics(typeof(index)) == :f
     @test hash(index, UInt(1)) == hash(CoordinatedIndex(𝕕(1, 1), SVector(0.0, 0.0), SVector(0.0, 1.0)), UInt(1))

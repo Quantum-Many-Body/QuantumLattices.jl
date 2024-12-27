@@ -4,12 +4,12 @@ using LinearAlgebra: dot, ishermitian, norm
 using Printf: @printf
 using SparseArrays: SparseMatrixCSC
 using StaticArrays: SMatrix, SVector
-using ..DegreesOfFreedom: Component, CompositeIndex, CoordinatedIndex, Coupling, Hilbert, Index, InternalPattern, Ordinal, Pattern, SimpleInternal, SimpleInternalIndex, Term, TermAmplitude, TermCoupling, @pattern
+using ..DegreesOfFreedom: Component, CompositeIndex, CoordinatedIndex, Coupling, Hilbert, Index, InternalIndex, InternalPattern, Ordinal, Pattern, SimpleInternal, SimpleInternalIndex, Term, TermAmplitude, TermCoupling, @pattern
 using ..QuantumLattices: ⊠, ⊗, decompose
 using ..QuantumNumbers: ℕ, 𝕊ᶻ, ℤ₁
 using ..QuantumOperators: ID, LaTeX, Operator, OperatorIndex, OperatorProd, Operators, latexformat
 using ..Spatials: Bond, Point, direction, isparallel, rcoordinate
-using ..Toolkit: atol, efficientoperations, rtol, Float, VectorSpace, VectorSpaceCartesian, VectorSpaceStyle, delta, getcontent, rawtype, tostr
+using ..Toolkit: atol, efficientoperations, rtol, Float, VectorSpace, VectorSpaceCartesian, VectorSpaceStyle, delta, rawtype, tostr
 
 import ..DegreesOfFreedom: MatrixCoupling, allequalfields, indextype, internalindextype, isdefinite, patternrule, statistics
 import ..QuantumLattices: expand, expand!, kind, permute, rank
@@ -18,7 +18,7 @@ import ..QuantumOperators: latexname, matrix, script
 import ..Toolkit: shape
 
 # Canonical complex fermionic/bosonic systems
-export annihilation, creation, latexofbosons, latexoffermions, latexofparticles, 𝕓, 𝕓⁺𝕓, 𝕕, 𝕕⁺𝕕, 𝕗, 𝕗⁺𝕗, isannihilation, iscreation, isnormalordered, @σ_str, @L_str
+export annihilation, creation, latexofbosons, latexoffermions, latexofparticles, 𝕒, 𝕒⁺𝕒, 𝕓, 𝕓⁺𝕓, 𝕔, 𝕔⁺𝕔, 𝕕, 𝕕⁺𝕕, 𝕗, 𝕗⁺𝕗, isannihilation, iscreation, isnormalordered, @σ_str, @L_str
 export Coulomb, Fock, FockIndex, FockTerm, Hopping, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, Onsite, PairHopping, Pairing, SpinFlip
 
 # SU(2) spin systems
@@ -97,8 +97,8 @@ Construct a Fock index.
 Judge whether the nambu index is `annihilation`.
 """
 @inline isannihilation(index::FockIndex) = index.nambu==annihilation
-@inline isannihilation(index::Index) = isannihilation(index.internal)
-@inline isannihilation(index::CompositeIndex) = isannihilation(getcontent(index, :index))
+@inline isannihilation(index::Index) = isannihilation(InternalIndex(index))
+@inline isannihilation(index::CompositeIndex) = isannihilation(Index(index))
 
 """
     iscreation(index::FockIndex) -> Bool
@@ -108,10 +108,19 @@ Judge whether the nambu index is `annihilation`.
 Judge whether the nambu index is `creation`.
 """
 @inline iscreation(index::FockIndex) = index.nambu==creation
-@inline iscreation(index::Index) = iscreation(index.internal)
-@inline iscreation(index::CompositeIndex) = iscreation(getcontent(index, :index))
+@inline iscreation(index::Index) = iscreation(InternalIndex(index))
+@inline iscreation(index::CompositeIndex) = iscreation(Index(index))
 
 ### convenient construction and string representation 
+"""
+    𝕔(orbital, spin, nambu) -> FockIndex{:f}
+    𝕔(site, orbital, spin, nambu) -> Index{<:FockIndex{:f}}
+    𝕔(site, orbital, spin, nambu, rcoordinate, icoordinate) -> CoordinatedIndex{<:Index{<:FockIndex{:f}}}
+
+Convenient construction of `FockIndex{:f}`, `Index{<:FockIndex{:f}}`, `CoordinatedIndex{<:Index{<:FockIndex{f}}}`.
+"""
+function 𝕔 end
+
 """
     𝕗(orbital, spin, nambu) -> FockIndex{:f}
     𝕗(site, orbital, spin, nambu) -> Index{<:FockIndex{:f}}
@@ -119,7 +128,7 @@ Judge whether the nambu index is `creation`.
 
 Convenient construction of `FockIndex{:f}`, `Index{<:FockIndex{:f}}`, `CoordinatedIndex{<:Index{<:FockIndex{f}}}`.
 """
-function 𝕗 end
+const 𝕗 = 𝕔
 
 """
     𝕓(orbital, spin, nambu) -> FockIndex{:b}
@@ -131,6 +140,15 @@ Convenient construction of `FockIndex{:b}`, `Index{<:FockIndex{:b}}`, `Coordinat
 function 𝕓 end
 
 """
+    𝕒(orbital, spin, nambu) -> FockIndex{:b}
+    𝕒(site, orbital, spin, nambu) -> Index{<:FockIndex{:b}}
+    𝕒(site, orbital, spin, nambu, rcoordinate, icoordinate) -> CoordinatedIndex{<:Index{<:FockIndex{:b}}}
+
+Convenient construction of `FockIndex{:b}`, `Index{<:FockIndex{:b}}`, `CoordinatedIndex{<:Index{<:FockIndex{:b}}}`.
+"""
+const 𝕒 = 𝕓
+
+"""
     𝕕(orbital, spin, nambu) -> FockIndex{:}
     𝕕(site, orbital, spin, nambu) -> Index{<:FockIndex{:}}
     𝕕(site, orbital, spin, nambu, rcoordinate, icoordinate) -> CoordinatedIndex{<:Index{<:FockIndex{:}}}
@@ -139,17 +157,17 @@ Convenient construction of `FockIndex{:}`, `Index{<:FockIndex{:}}`, `Coordinated
 """
 function 𝕕 end
 
-const _fock_ = (:𝕗, :𝕓, :𝕕), (QuoteNode(:f), QuoteNode(:b), :)
+const _fock_ = (:𝕔, :𝕓, :𝕕), (QuoteNode(:f), QuoteNode(:b), :)
 for (name, statistics) in zip(_fock_...)
     @eval @inline $name(orbital, spin, nambu) = FockIndex{$statistics}(orbital, spin, nambu)
     @eval @inline $name(site, orbital, spin, nambu) = Index(site, FockIndex{$statistics}(orbital, spin, nambu))
     @eval @inline $name(site, orbital, spin, nambu, rcoordinate, icoordinate) = CoordinatedIndex(Index(site, FockIndex{$statistics}(orbital, spin, nambu)), rcoordinate, icoordinate)
 end
-@inline Base.getindex(::Type{OperatorIndex}, ::Type{I}) where {I<:Union{FockIndex{:f}, Index{<:FockIndex{:f}}, CoordinatedIndex{<:Index{<:FockIndex{:f}}}}} = 𝕗
+@inline Base.getindex(::Type{OperatorIndex}, ::Type{I}) where {I<:Union{FockIndex{:f}, Index{<:FockIndex{:f}}, CoordinatedIndex{<:Index{<:FockIndex{:f}}}}} = 𝕔
 @inline Base.getindex(::Type{OperatorIndex}, ::Type{I}) where {I<:Union{FockIndex{:b}, Index{<:FockIndex{:b}}, CoordinatedIndex{<:Index{<:FockIndex{:b}}}}} = 𝕓
 @inline Base.getindex(::Type{OperatorIndex}, ::Type{I}) where {I<:Union{FockIndex{:}, Index{<:FockIndex{:}}, CoordinatedIndex{<:Index{<:FockIndex{:}}}}} = 𝕕
 @inline Base.getindex(::Type{OperatorIndex}, ::Type{I}) where {I<:Union{FockIndex, Index{<:FockIndex}, CoordinatedIndex{<:Index{<:FockIndex}}}} = 𝕕
-@inline Base.getindex(::Type{OperatorIndex}, ::typeof(𝕗)) = FockIndex{:f}
+@inline Base.getindex(::Type{OperatorIndex}, ::typeof(𝕔)) = FockIndex{:f}
 @inline Base.getindex(::Type{OperatorIndex}, ::typeof(𝕓)) = FockIndex{:b}
 @inline Base.getindex(::Type{OperatorIndex}, ::typeof(𝕕)) = FockIndex{:}
 
@@ -209,7 +227,7 @@ latexformat(CompositeIndex{<:Index{<:FockIndex{:b}}}, latexofbosons)
 
 Default LaTeX format of a wildcard Fock index.
 """
-const latexofparticles = LaTeX{(:nambu,), (:site, :orbital, :spinsym)}('f')
+const latexofparticles = LaTeX{(:nambu,), (:site, :orbital, :spinsym)}('d')
 @inline latexname(::Type{<:Index{<:FockIndex{:}}}) = Symbol("Index{FockIndex}")
 @inline latexname(::Type{<:CompositeIndex{<:Index{<:FockIndex{:}}}}) = Symbol("CompositeIndex{Index{FockIndex}}")
 @inline latexname(::Type{<:FockIndex{:}}) = Symbol("FockIndex")
@@ -302,15 +320,15 @@ end
 
 ## New methods
 """
-    isnormalordered(opt::Operator{<:Number, <:ID{CompositeIndex{<:Index{<:FockIndex}}}}) -> Bool
+    isnormalordered(opt::Operator{<:Number, <:ID{Union{CompositeIndex{<:Index{<:FockIndex}}, Index{<:FockIndex}, FockIndex}}}) -> Bool
 
 Judge whether an operator is normal ordered.
 """
-function isnormalordered(opt::Operator{<:Number, <:ID{CompositeIndex{<:Index{<:FockIndex}}}})
+function isnormalordered(opt::Operator{<:Number, <:ID{Union{CompositeIndex{<:Index{<:FockIndex}}, Index{<:FockIndex}, FockIndex}}})
     flag = true
     for i = 1:rank(opt)
-        flag && (opt[i].index.internal.nambu == annihilation) && (flag = false)
-        flag || (opt[i].index.internal.nambu == creation) && return false
+        flag && isannihilation(opt[i]) && (flag = false)
+        flag || iscreation(opt[i]) && return false
     end
     return true
 end
@@ -360,12 +378,12 @@ end
 ### MatrixCoupling
 const default_matrix = SparseMatrixCSC(hcat(1))
 """
-    MatrixCoupling(F::Union{typeof(𝕗), typeof(𝕓), typeof(𝕕)}, sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon})
+    MatrixCoupling(F::Union{typeof(𝕔), typeof(𝕓), typeof(𝕕)}, sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon})
     MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{F}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) where {F<:FockIndex}
 
 Construct a matrix coupling for Fock systems.
 """
-@inline function MatrixCoupling(F::Union{typeof(𝕗), typeof(𝕓), typeof(𝕕)}, sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon})
+@inline function MatrixCoupling(F::Union{typeof(𝕔), typeof(𝕓), typeof(𝕕)}, sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon})
     return MatrixCoupling(sites, OperatorIndex[F], orbital, spin, nambu)
 end
 @inline function MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{F}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) where {F<:FockIndex}
@@ -377,15 +395,24 @@ end
 @inline Component(::Type{<:FockIndex}, ::Val{:nambu}, matrix::AbstractMatrix) = (@assert size(matrix)==(2, 2) "Component error: for nambu subspace, the input matrix must be 2×2."; Component(1:1:2, 2:-1:1, matrix))
 
 """
-    𝕗⁺𝕗(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) -> MatrixCoupling
+    𝕔⁺𝕔(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) -> MatrixCoupling
     𝕓⁺𝕓(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) -> MatrixCoupling
     𝕕⁺𝕕(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) -> MatrixCoupling
 
 Construct a matrix coupling for Fock systems.
 """
-@inline 𝕗⁺𝕗(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) = MatrixCoupling(𝕗, sites, orbital, spin, nambu)
+@inline 𝕔⁺𝕔(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) = MatrixCoupling(𝕗, sites, orbital, spin, nambu)
 @inline 𝕓⁺𝕓(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) = MatrixCoupling(𝕓, sites, orbital, spin, nambu)
 @inline 𝕕⁺𝕕(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) = MatrixCoupling(𝕕, sites, orbital, spin, nambu)
+
+"""
+    𝕗⁺𝕗(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) -> MatrixCoupling
+    𝕒⁺𝕒(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) -> MatrixCoupling
+
+Construct a matrix coupling for Fock systems.
+"""
+const 𝕗⁺𝕗 = 𝕔⁺𝕔
+const 𝕒⁺𝕒 = 𝕓⁺𝕓
 
 ### Pauli matrices
 """
@@ -667,8 +694,8 @@ function matrix(index::SpinIndex{S, Char}, dtype::Type{<:Number}=Complex{Float})
     end
     return result
 end
-@inline matrix(index::Index{<:SpinIndex}, dtype::Type{<:Number}=Complex{Float}) = matrix(index.internal, dtype)
-@inline matrix(index::CompositeIndex{<:Index{<:SpinIndex}}, dtype::Type{<:Number}=Complex{Float}) = matrix(getcontent(index, :index), dtype)
+@inline matrix(index::Index{<:SpinIndex}, dtype::Type{<:Number}=Complex{Float}) = matrix(InternalIndex(index), dtype)
+@inline matrix(index::CompositeIndex{<:Index{<:SpinIndex}}, dtype::Type{<:Number}=Complex{Float}) = matrix(Index(index), dtype)
 
 ## LaTeX format output
 """
@@ -1241,8 +1268,8 @@ Get the requested script of a phonon index.
 
 @inline body(::PhononIndex{:u}) = "u"
 @inline body(::PhononIndex{:p}) = "p"
-@inline body(index::Index{<:PhononIndex}) = body(index.internal)
-@inline body(index::CompositeIndex{<:Index{<:PhononIndex}}) = body(getcontent(index, :index))
+@inline body(index::Index{<:PhononIndex}) = body(InternalIndex(index))
+@inline body(index::CompositeIndex{<:Index{<:PhononIndex}}) = body(Index(index))
 """
     latexofphonons
 
