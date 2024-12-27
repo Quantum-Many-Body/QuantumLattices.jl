@@ -637,16 +637,15 @@ struct 𝕊{S} <: Function end
 
 ### matrix
 """
-    matrix(index::SpinIndex{S, Char}, dtype::Type{<:Number}=Complex{Float}) where S -> Matrix{dtype}
-    matrix(index::Index{<:SpinIndex}, dtype::Type{<:Number}=Complex{Float}) -> Matrix{dtype}
-    matrix(index::CompositeIndex{<:Index{<:SpinIndex}}, dtype::Type{<:Number}=Complex{Float}) -> Matrix{dtype}
+    matrix(index::Union{SpinIndex{S, Char}, Index{SpinIndex{S, Char}}, CompositeIndex{<:Index{SpinIndex{S, Char}}}}, dtype::Type{<:Number}=ComplexF64) where S -> Matrix{dtype}
 
 Get the matrix representation of an index acting on the local spin space.
 """
-function matrix(index::SpinIndex{S, Char}, dtype::Type{<:Number}=Complex{Float}) where S
+function matrix(index::Union{SpinIndex{S, Char}, Index{SpinIndex{S, Char}}, CompositeIndex{<:Index{SpinIndex{S, Char}}}}, dtype::Type{<:Number}=ComplexF64) where S
     N = Int(2*S+1)
     result = zeros(dtype, (N, N))
     spin = convert(dtype, S)
+    index = InternalIndex(index)
     for i = 1:N, j = 1:N
         # row, col = N+1-i, N+1-j # Sᶻ in ascending order
         row, col = i, j # Sᶻ in descending order
@@ -659,8 +658,6 @@ function matrix(index::SpinIndex{S, Char}, dtype::Type{<:Number}=Complex{Float})
     end
     return result
 end
-@inline matrix(index::Index{<:SpinIndex}, dtype::Type{<:Number}=Complex{Float}) = matrix(InternalIndex(index), dtype)
-@inline matrix(index::CompositeIndex{<:Index{<:SpinIndex}}, dtype::Type{<:Number}=Complex{Float}) = matrix(Index(index), dtype)
 
 ## LaTeX format output
 """
