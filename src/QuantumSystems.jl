@@ -4,14 +4,14 @@ using LinearAlgebra: dot, ishermitian, norm
 using Printf: @printf
 using SparseArrays: SparseMatrixCSC
 using StaticArrays: SMatrix, SVector
-using ..DegreesOfFreedom: Component, CompositeIndex, CoordinatedIndex, Coupling, Hilbert, Index, InternalIndex, InternalPattern, Ordinal, Pattern, SimpleInternal, SimpleInternalIndex, Term, TermAmplitude, TermCoupling, @pattern
-using ..QuantumLattices: decompose
+using ..DegreesOfFreedom: Component, CompositeIndex, CoordinatedIndex, Coupling, Hilbert, Index, InternalIndex, InternalPattern, Ordinal, Pattern, SimpleInternal, SimpleInternalIndex, Term, TermAmplitude, TermCoupling, indextype, @pattern
+using ..QuantumLattices: decompose, rank
 using ..QuantumOperators: ID, LaTeX, Operator, OperatorIndex, OperatorProd, Operators, latexformat
 using ..Spatials: Bond, Point, direction, isparallel, rcoordinate
 using ..Toolkit: atol, efficientoperations, rtol, Float, VectorSpace, VectorSpaceCartesian, VectorSpaceStyle, delta, rawtype, tostr
 
-import ..DegreesOfFreedom: MatrixCoupling, allequalfields, indextype, internalindextype, isdefinite, patternrule, statistics
-import ..QuantumLattices: expand, expand!, kind, permute, rank
+import ..DegreesOfFreedom: MatrixCoupling, allequalfields, internalindextype, isdefinite, patternrule, statistics
+import ..QuantumLattices: expand, expand!, kind, permute
 import ..QuantumOperators: latexname, matrix, script
 import ..Toolkit: shape
 
