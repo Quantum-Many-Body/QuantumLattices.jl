@@ -24,7 +24,7 @@ using QuantumLattices.QuantumNumbers
     @test values(sp) == (1, 1/2) && value(sp, 1)==1 && value(sp, 2)==1/2
     @test sp == Abelian[ℕ ⊠ 𝕊ᶻ](1, 1/2) == Abelian[ℕ ⊠ 𝕊ᶻ]((1, 1/2)) == AbelianQuantumNumberProd(n, sz)
     @test hash(sp, UInt(1)) == hash((n.charge, sz.charge), UInt(1))
-    @test string(sp) == "Abelian[ℕ ⊠ 𝕊ᶻ](1, 1/2)"
+    @test string(sp) == "ℕ(1) ⊠ 𝕊ᶻ(1/2)"
     @test zero(sp) == zero(typeof(sp)) == Abelian[ℕ ⊠ 𝕊ᶻ](0, 0)
     @test length(sp) == rank(sp) == rank(typeof(sp)) == 2
     @test sp[1]==sp[begin]==n && sp[2]==sp[end]==sz
