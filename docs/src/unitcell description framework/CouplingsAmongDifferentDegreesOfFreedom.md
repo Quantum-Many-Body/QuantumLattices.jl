@@ -8,7 +8,7 @@ DocTestSetup = quote
 end
 ```
 
-# Couplings among different degrees of freedom
+# [Couplings among different degrees of freedom](@id CouplingsAmongDifferentDegreesOfFreedom)
 
 Now we arrive at the final step toward the complete description of a quantum lattice system, i.e., the terms that represent the couplings among different degrees of freedom.
 

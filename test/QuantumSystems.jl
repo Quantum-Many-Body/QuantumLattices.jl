@@ -435,19 +435,18 @@ end
 @testset "Spin" begin
     @test eltype(Spin) == (SpinIndex{S, Char} where S)
     spin = Spin{1}()
-    @test shape(spin) == (1:5,)
+    @test shape(spin) == (1:3,)
     @test convert(CartesianIndex, 𝕊{1}('z'), spin) == CartesianIndex(3)
     @test convert(SpinIndex, CartesianIndex(1), spin) == 𝕊{1}('x')
-    @test summary(spin) == "5-element Spin{1}"
+    @test summary(spin) == "3-element Spin{1}"
     @test string(spin) == "Spin{1}()"
     @test totalspin(spin) == totalspin(typeof(spin)) == 1
-    @test collect(spin) == [𝕊{1}('x'), 𝕊{1}('y'), 𝕊{1}('z'), 𝕊{1}('+'), 𝕊{1}('-')]
+    @test collect(spin) == [𝕊{1}('x'), 𝕊{1}('y'), 𝕊{1}('z')]
 
     @test match(SpinIndex{:}, Spin{1//2}) == true
     @test match(SpinIndex{1//2}, Spin{1//2}) == true
     @test match(SpinIndex{1//2}, Spin{1}) == match(SpinIndex{1}, Spin{1//2}) == false
 
-    @test shape(Spin{1}(), 𝕊{1}(:)) == (1:5,)
     @test shape(Spin{1}(), 𝕊{1}('z')) == (3:3,)
 end
 

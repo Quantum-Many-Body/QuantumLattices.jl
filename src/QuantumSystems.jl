@@ -544,8 +544,6 @@ Type alias for `Union{Onsite, Hopping, Pairing, Hubbard, InterOrbitalInterSpin, 
 const FockTerm = Union{Onsite, Hopping, Pairing, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, SpinFlip, PairHopping, Coulomb}
 
 # SU(2) spin systems
-const spintagmap = Dict(1=>'x', 2=>'y', 3=>'z', 4=>'+', 5=>'-')
-const spinseqmap = Dict(v=>k for (k, v) in spintagmap)
 const spinajointmap = Dict('x'=>'x', 'y'=>'y', 'z'=>'z', '+'=>'-', '-'=>'+')
 
 ## SpinIndex
@@ -693,19 +691,21 @@ struct Spin{S} <: SimpleInternal{SpinIndex{S, Char}}
         new{S}()
     end
 end
-@inline shape(::Spin) = (1:length(spintagmap),)
+@inline shape(::Spin) = (1:3,)
 @inline Base.eltype(::Type{Spin}) = (SpinIndex{S, Char} where S)
-@inline Base.convert(::Type{<:CartesianIndex}, index::SpinIndex, ::Spin) = CartesianIndex(spinseqmap[index.tag])
-@inline Base.convert(::Type{<:SpinIndex}, index::CartesianIndex{1}, sp::Spin) = SpinIndex{totalspin(sp)}(spintagmap[index[1]])
+@inline Base.convert(::Type{<:CartesianIndex}, index::SpinIndex, ::Spin) = CartesianIndex(Int(index.tag)-Int('x')+1)
+@inline Base.convert(::Type{<:SpinIndex}, index::CartesianIndex{1}, sp::Spin) = SpinIndex{totalspin(sp)}(Char(index[1]+Int('x')-1))
 @inline Base.summary(io::IO, spin::Spin) = @printf io "%s-element Spin{%s}" length(spin) totalspin(spin)
 @inline Base.show(io::IO, spin::Spin) = @printf io "%s{%s}()" spin|>typeof|>nameof totalspin(spin)
 @inline Base.match(::Type{<:SpinIndex{:}}, ::Type{<:Spin{S}}) where S = true
 @inline Base.match(::Type{<:SpinIndex{S}}, ::Type{<:Spin{S}}) where S = true
 @inline Base.match(::Type{<:SpinIndex{S₁}}, ::Type{<:Spin{S₂}}) where {S₁, S₂} = false
 ### requested by ConstrainedInternal
-@inline shape(::Spin, index::SpinIndex) = (spinshape(index.tag),)
-@inline spinshape(::Union{Symbol, Colon}) = 1:5
-@inline spinshape(tag::Char) = (pos=spinseqmap[tag]; pos:pos)
+@inline function shape(::Spin, index::SpinIndex)
+    @assert isa(index.tag, Char) "shape error: input `SpinIndex` not definite."
+    pos = Int(index.tag) - Int('x') + 1
+    return (pos:pos,)
+end
 
 """
     totalspin(::Spin) -> Rational{Int}/Int/Colon

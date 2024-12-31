@@ -273,7 +273,7 @@ julia> SpinIndex{1}('+')
 𝕊{1}('+')
 ```
 
-Here, the type `𝕊` (\bbS<tab>) plays a similar role in spin systems as `𝕔` and `𝕓` in Fock system.
+Here, the type `𝕊` (\bbS<tab>) plays a similar role in spin systems as `𝕔` and `𝕓` in Fock systems.
 ```jldoctest SSS
 julia> 𝕊{3//2}('x') isa SpinIndex{3//2}
 true
@@ -328,23 +328,19 @@ julia> 𝕊{1//2}('-') |> matrix
 A [`Spin`](@ref) instance can be initialized as follows:
 ```jldoctest SSS
 julia> Spin{1}()
-5-element Spin{1}:
+3-element Spin{1}:
  𝕊{1}('x')
  𝕊{1}('y')
  𝕊{1}('z')
- 𝕊{1}('+')
- 𝕊{1}('-')
 
 julia> Spin{1//2}()
-5-element Spin{1//2}:
+3-element Spin{1//2}:
  𝕊{1//2}('x')
  𝕊{1//2}('y')
  𝕊{1//2}('z')
- 𝕊{1//2}('+')
- 𝕊{1//2}('-')
 ```
 
-Similar to [`Fock`](@ref), a [`Spin`](@ref) instance behaves like a vector whose iteration generates all the allowed [`SpinIndex`](@ref) instances on its associated spatial point:
+Similar to [`Fock`](@ref), a [`Spin`](@ref) instance behaves like a vector whose iteration generates the [`SpinIndex`](@ref) instances on its associated spatial point:
 ```jldoctest SSS
 julia> sp = Spin{1}();
 
@@ -352,25 +348,21 @@ julia> sp |> typeof |> eltype
 SpinIndex{1, Char}
 
 julia> sp |> length
-5
+3
 
-julia> [sp[1], sp[2], sp[3], sp[4], sp[5]]
-5-element Vector{SpinIndex{1, Char}}:
+julia> [sp[1], sp[2], sp[3]]
+3-element Vector{SpinIndex{1, Char}}:
  𝕊{1}('x')
  𝕊{1}('y')
  𝕊{1}('z')
- 𝕊{1}('+')
- 𝕊{1}('-')
 
 julia> sp |> collect
-5-element Vector{SpinIndex{1, Char}}:
+3-element Vector{SpinIndex{1, Char}}:
  𝕊{1}('x')
  𝕊{1}('y')
  𝕊{1}('z')
- 𝕊{1}('+')
- 𝕊{1}('-')
 ```
-It is noted that a [`Spin`](@ref) instance generates [`SpinIndex`](@ref) instances not only limited to those corresponding to $S^x$, $S^y$, $S^z$, but also those to $S^+$ and $S^-$ although the former three already forms a complete set of the generators of the local SU(2) spin algebra. This overcomplete feature is for the convenience to the construction of spin Hamiltonians.
+It is noted that a [`Spin`](@ref) instance only generates [`SpinIndex`](@ref) instances limited to those of $S^x$, $S^y$, $S^z$ but not those of $S^+$ and $S^-$ because the former three has already formed a complete set of the generators of the local SU(2) spin algebra. This doesn't matter if you also want to construct your spin Hamiltonian by use of $S^+$ and $S^-$. For more details, see [Couplings among different degrees of freedom](@ref CouplingsAmongDifferentDegreesOfFreedom).
 
 #### Unitcell and global levels: Hilbert, Index and CoordinatedIndex
 
@@ -627,7 +619,7 @@ Operators with 2 Operator
   Operator(4, 𝕔(1, 1//2, 1))
   Operator(6, 𝕔(1, 1//2, 2))
 ```
-It is noted that in the result, the distributive law automatically applies. Besides, the fermion operator relation $c^2=c\dagger^2=0$ is also used.
+It is noted that in the result, the distributive law automatically applies. Besides, the fermion operator relation $c^2=(c^\dagger)^2=0$ is also used.
 
 As is usual, the Hermitian conjugate of an [`Operators`](@ref) can be obtained by the adjoint operator:
 ```jldoctest
