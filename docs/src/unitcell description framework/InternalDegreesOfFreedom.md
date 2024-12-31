@@ -604,7 +604,7 @@ Operators with 2 Operator
 
 julia> another = Operator(2, 𝕔(1, 1//2, 1)) + Operator(3, 𝕔(1, 1//2, 2));
 
-julia> ops * another 
+julia> ops * another
 Operators with 2 Operator
   Operator(6, 𝕔(1, 1//2, 1), 𝕔(1, 1//2, 2))
   Operator(6, 𝕔(1, 1//2, 2), 𝕔(1, 1//2, 1))
