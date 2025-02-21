@@ -10,9 +10,9 @@ With the help of the structure constants of the algebra, the result of the bilin
 
 In general, there are three basic operations on quantum operators, i.e. the scalar multiplication between a scalar and a quantum operator, the usual addition and the usual multiplication between quantum operators. Other complicated operations can be composed from these basic ones. These basic operations are implemented in this module.
 
-## OperatorUnit
+## OperatorIndex
 
-[`OperatorUnit`](@ref) is the building block of quantum operators, which specifies the basis of the vector space of the corresponding algebra.
+[`OperatorIndex`](@ref) is the building block of quantum operators, which specifies the basis of the vector space of the corresponding algebra.
 
 ## OperatorProd and OperatorSum
 

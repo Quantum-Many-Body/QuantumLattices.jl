@@ -716,7 +716,7 @@ In the [`expand`](@ref) function, an `AbstractVector` of [`Bond`](@ref)s can als
 julia> t = Hopping(:t, 1.0, 1);
 
 julia> bonds = [
-           Bond(1, Point(2, [0.5], [0.0]), Point(1, [0.0], [0.0]))
+           Bond(1, Point(2, [0.5], [0.0]), Point(1, [0.0], [0.0])),
            Bond(1, Point(2, [-0.5], [-1.0]), Point(1, [0.0], [0.0]))
        ];
 
