@@ -223,13 +223,12 @@ end
 
 @testset "Bond" begin
     bond = Bond(1, Point(2, (0.0, 1.0), (0.0, 1.0)), Point(1, (0.0, 0.0), (0.0, 0.0)))
-    @test bond|>deepcopy == bond
-    @test isequal(bond|>deepcopy, bond)
+    @test bond|>scalartype == bond|>typeof|>scalartype == Float
+    @test bond|>eltype == bond|>typeof|>eltype == Point{2, Float}
+    @test bond|>length == 2
+    @test bond[begin]==bond[1] && bond[end]==bond[2]
     @test bond|>string == "Bond(1, Point(2, [0.0, 1.0], [0.0, 1.0]), Point(1, [0.0, 0.0], [0.0, 0.0]))"
     @test bond|>dimension == bond|>typeof|>dimension == 2
-    @test bond|>scalartype == bond|>typeof|>scalartype == Float
-    @test bond|>length == 2
-    @test bond|>eltype == bond|>typeof|>eltype == Point{2, Float}
     @test bond|>reverse == Bond(1, Point(1, (0.0, 0.0), (0.0, 0.0)), Point(2, (0.0, 1.0), (0.0, 1.0)))
     @test bond|>collect == [Point(2, (0.0, 1.0), (0.0, 1.0)), Point(1, (0.0, 0.0), (0.0, 0.0))]
     @test bond|>rcoordinate == [0.0, -1.0]
@@ -346,7 +345,6 @@ end
 
     rp = ReciprocalPath([b₁, b₂], s₁, s₂, s₃)
     @test rp == ReciprocalPath(rp.contents, rp.labels)
-    @test rp == ReciprocalPath([b₁, b₂], (s₁, s₂, s₃))
     @test all(map((x, y)->isapprox(x, y; atol=10^-12), cumsum([step(rp, i) for i=1:length(rp)-1]), [distance(rp, i) for i=2:length(rp)]))
 
     positions, labels = ticks(rp)
@@ -362,10 +360,9 @@ end
 
     rp = ReciprocalPath{:q}([b₁, b₂], s₁, s₂, s₃)
     @test rp == ReciprocalPath{:q}(rp.contents, rp.labels)
-    @test rp == ReciprocalPath{:q}([b₁, b₂], (s₁, s₂, s₃))
 
     rp = ReciprocalPath([b₁+b₂], line"X₂-X₁", length=10)
-    @test rp ≈ ReciprocalPath([b₁+b₂], (-1//2,), (1//2,); labels=("X₂", "X₁"), length=10)
+    @test rp ≈ ReciprocalPath([b₁+b₂], -1//2, 1//2; labels=("X₂", "X₁"), length=10)
 
     rp = ReciprocalPath([b₁, b₂], rectangle"Γ-X-M-Γ", length=10)
     @test rp ≈ ReciprocalPath([b₁, b₂], (0, 0), (1//2, 0), (1//2, 1//2), (0, 0); labels=("Γ", "X", "M", "Γ"), length=10)

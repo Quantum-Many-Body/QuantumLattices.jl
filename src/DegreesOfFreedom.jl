@@ -4,7 +4,7 @@ using DataStructures: OrderedDict
 using Printf: @printf, @sprintf
 using SparseArrays: SparseMatrixCSC, nnz
 using StaticArrays: SVector
-using ..QuantumLattices: add!, decompose
+using ..QuantumLattices: OneAtLeast, add!, decompose
 using ..QuantumOperators: ID, LinearTransformation, Operator, OperatorIndex, OperatorPack, Operators, QuantumOperator, scalartype, valuetolatextext
 using ..Spatials: Bond, Point
 using ..Toolkit: atol, efficientoperations, rtol, CompositeDict, Float, VectorSpace, VectorSpaceCartesian, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceStyle, concatenate, fulltype, parametertype, rawtype, reparameter, tostr
@@ -17,7 +17,7 @@ import ..Toolkit: contentnames, getcontent, parameternames, shape
 
 export AllEqual, Boundary, CompositeInternal, ConstrainedInternal, Internal, InternalIndex, InternalIndexProd, InternalPattern, InternalProd, InternalSum, SimpleInternal, SimpleInternalIndex
 export Component, CompositeIndex, CoordinatedIndex, Coupling, Hilbert, Index, MatrixCoupling, MatrixCouplingProd, MatrixCouplingSum, Metric, OperatorIndexToTuple, Ordinal, Pattern, Table, Term, TermAmplitude, TermCoupling, TermFunction
-export ˢᵗ, ⁿᵈ, ʳᵈ, ᵗʰ, plain, allequalfields, coordinatedindextype, indextype, internalindextype, isdefinite, partition, patternrule, sitestructure, statistics, @pattern
+export ˢᵗ, ⁿᵈ, ʳᵈ, ᵗʰ, plain, allequalfields, coordinatedindextype, indextype, internalindextype, isdefinite, partition, patternrule, statistics, @pattern
 
 # InternalIndex and Internal
 """
@@ -103,14 +103,14 @@ Get the number of simple internal indexes in a direct product.
 @inline rank(::Type{<:InternalIndexProd{T}}) where {T<:Tuple{Vararg{SimpleInternalIndex}}} = fieldcount(T)
 
 """
-    ⊗(iis::SimpleInternalIndex...) -> InternalIndexProd
+    ⊗(ii::SimpleInternalIndex, iis::SimpleInternalIndex...) -> InternalIndexProd
     ⊗(ii::SimpleInternalIndex, cii::InternalIndexProd) -> InternalIndexProd
     ⊗(cii::InternalIndexProd, ii::SimpleInternalIndex) -> InternalIndexProd
     ⊗(cii₁::InternalIndexProd, cii₂::InternalIndexProd) -> InternalIndexProd
 
 Direct product between internal indexes.
 """
-@inline ⊗(iis::SimpleInternalIndex...) = InternalIndexProd(iis...)
+@inline ⊗(ii::SimpleInternalIndex, iis::SimpleInternalIndex...) = InternalIndexProd(ii, iis...)
 @inline ⊗(ii::SimpleInternalIndex, cii::InternalIndexProd) = InternalIndexProd(ii, cii.contents...)
 @inline ⊗(cii::InternalIndexProd, ii::SimpleInternalIndex) = InternalIndexProd(cii.contents..., ii)
 @inline ⊗(cii₁::InternalIndexProd, cii₂::InternalIndexProd) = InternalIndexProd(cii₁.contents..., cii₂.contents...)
@@ -248,14 +248,14 @@ end
 @inline InternalSum(contents::SimpleInternal...) = InternalSum(contents)
 
 """
-    ⊕(is::SimpleInternal...) -> InternalSum
+    ⊕(i::SimpleInternal, is::SimpleInternal...) -> InternalSum
     ⊕(i::SimpleInternal, ci::InternalSum) -> InternalSum
     ⊕(ci::InternalSum, i::SimpleInternal) -> InternalSum
     ⊕(ci₁::InternalSum, ci₂::InternalSum) -> InternalSum
 
 Direct sum between simple internal spaces and composite internal spaces.
 """
-@inline ⊕(is::SimpleInternal...) = InternalSum(is...)
+@inline ⊕(i::SimpleInternal, is::SimpleInternal...) = InternalSum(i, is...)
 @inline ⊕(i::SimpleInternal, ci::InternalSum) = InternalSum(i, ci.contents...)
 @inline ⊕(ci::InternalSum, i::SimpleInternal) = InternalSum(ci.contents..., i)
 @inline ⊕(ci₁::InternalSum, ci₂::InternalSum) = InternalSum(ci₁.contents..., ci₂.contents...)
@@ -276,14 +276,14 @@ end
 @inline InternalProd(contents::SimpleInternal...) = InternalProd(contents)
 
 """
-    ⊗(is::SimpleInternal...) -> InternalProd
+    ⊗(i::SimpleInternal, is::SimpleInternal...) -> InternalProd
     ⊗(i::SimpleInternal, ci::InternalProd) -> InternalProd
     ⊗(ci::InternalProd, i::SimpleInternal) -> InternalProd
     ⊗(ci₁::InternalProd, ci₂::InternalProd) -> InternalProd
 
 Direct product between simple internal spaces and composite internal spaces.
 """
-@inline ⊗(is::SimpleInternal...) = InternalProd(is...)
+@inline ⊗(i::SimpleInternal, is::SimpleInternal...) = InternalProd(i, is...)
 @inline ⊗(i::SimpleInternal, ci::InternalProd) = InternalProd(i, ci.contents...)
 @inline ⊗(ci::InternalProd, i::SimpleInternal) = InternalProd(ci.contents..., i)
 @inline ⊗(ci₁::InternalProd, ci₂::InternalProd) = InternalProd(ci₁.contents..., ci₂.contents...)
@@ -571,7 +571,8 @@ struct Ordinal
 end
 @inline Base.show(io::IO, nth::Ordinal) = @printf io "%s" nth.n==1 ? "1ˢᵗ" : nth.n==2 ? "2ⁿᵈ" : nth.n==3 ? "3ʳᵈ" : "$(nth.n)ᵗʰ"
 @inline Base.:*(i::Int, nth::Ordinal) = Ordinal(i*nth.n)
-@inline Base.getindex(v, i::Ordinal) = v[i.n]
+@inline Base.getindex(v::Tuple, i::Ordinal) = v[i.n]
+@inline Base.getindex(v::Bond, i::Ordinal) = v[i.n]
 
 """
     const ˢᵗ = ⁿᵈ = ʳᵈ = ᵗʰ = Ordinal(1)
@@ -835,18 +836,18 @@ end
 
 Construct a Hilbert space the same way as an `OrderedDict`.
 """
-@inline Hilbert(ps::Pair...) = Hilbert(ps)
+@inline Hilbert(p::Pair, ps::Pair...) = Hilbert((p, ps...))
 @inline Hilbert(kv) = Hilbert(OrderedDict(kv))
 
 """
     Hilbert(internals::Internal...)
-    Hilbert(internals::Tuple{Vararg{Internal}})
+    Hilbert(internals::OneAtLeast{Internal})
     Hilbert(internals::AbstractVector{<:Internal})
 
 Construct a Hilbert space with the given internal spaces.
 """
-@inline Hilbert(internals::Internal...) = Hilbert(internals)
-@inline Hilbert(internals::Tuple{Vararg{Internal}}) = Hilbert(i=>internal for (i, internal) in enumerate(internals))
+@inline Hilbert(internal::Internal, internals::Internal...) = Hilbert((internal, internals...))
+@inline Hilbert(internals::OneAtLeast{Internal}) = Hilbert(i=>internal for (i, internal) in enumerate(internals))
 @inline Hilbert(internals::AbstractVector{<:Internal}) = Hilbert(i=>internal for (i, internal) in enumerate(internals))
 
 """
@@ -1096,27 +1097,27 @@ Construct a coupling.
 
 """
     Coupling(indexes::Index...)
-    Coupling(value, indexes::Index...)
-    Coupling(value, indexes::Tuple{Vararg{Index}})
+    Coupling(value::Number, indexes::Index...)
+    Coupling(value::Number, indexes::Tuple{Vararg{Index}})
 
 Construct a coupling with the input indexes as the pattern.
 """
 @inline Coupling(indexes::Index...) = Coupling(1, indexes...)
-@inline Coupling(value, indexes::Index...) = Coupling(value, indexes)
-@inline Coupling(value, indexes::Tuple{Vararg{Index}}) = Coupling(value, Pattern(indexes))
+@inline Coupling(value::Number, indexes::Index...) = Coupling(value, indexes)
+@inline Coupling(value::Number, indexes::Tuple{Vararg{Index}}) = Coupling(value, Pattern(indexes))
 
 """
     Coupling(sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleInternalIndex}
-    Coupling(value, sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleInternalIndex}
+    Coupling(value::Number, sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleInternalIndex}
     Coupling{N}(sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleInternalIndex}
-    Coupling{N}(value, sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleInternalIndex}
+    Coupling{N}(value::Number, sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleInternalIndex}
 
 Construct a `Coupling` with the input sites and the fields of a kind of simple internal index.
 """
 @inline Coupling(sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleInternalIndex} = Coupling{N}(sites, I, fields...)
-@inline Coupling(value, sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleInternalIndex} = Coupling{N}(value, sites, I, fields...)
+@inline Coupling(value::Number, sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleInternalIndex} = Coupling{N}(value, sites, I, fields...)
 @inline Coupling{N}(sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleInternalIndex} = Coupling{N}(1, sites, I, fields...)
-@inline function Coupling{N}(value, sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleInternalIndex}
+@inline function Coupling{N}(value::Number, sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleInternalIndex}
     return Coupling(value, map(Index, default(sites, Val(N)), map(I, map(field->default(field, Val(N)), fields)...)))
 end
 @inline default(fields, ::Val) = fields

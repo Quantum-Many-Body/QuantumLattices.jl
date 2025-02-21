@@ -5,7 +5,7 @@ using Printf: @printf
 using SparseArrays: SparseMatrixCSC
 using StaticArrays: SMatrix, SVector
 using ..DegreesOfFreedom: Component, CompositeIndex, CoordinatedIndex, Coupling, Hilbert, Index, InternalIndex, InternalPattern, Ordinal, Pattern, SimpleInternal, SimpleInternalIndex, Term, TermAmplitude, TermCoupling, indextype, @pattern
-using ..QuantumLattices: decompose, rank
+using ..QuantumLattices: OneAtLeast, decompose, rank
 using ..QuantumOperators: ID, LaTeX, Operator, OperatorIndex, OperatorProd, Operators, latexformat
 using ..Spatials: Bond, Point, direction, isparallel, rcoordinate
 using ..Toolkit: atol, efficientoperations, rtol, Float, VectorSpace, VectorSpaceCartesian, VectorSpaceStyle, delta, rawtype, tostr
@@ -299,21 +299,20 @@ function isnormalordered(opt::Operator{<:Number, <:ID{Union{CompositeIndex{<:Ind
 end
 
 """
-    *(f₁::Operator{<:Number, <:ID{FockIndex{:f}}}, f₂::Operator{<:Number, <:ID{FockIndex{:f}}}) -> Operator
-    *(f₁::Operator{<:Number, <:ID{Index{<:FockIndex{:f}, Int}}}, f₂::Operator{<:Number, <:ID{Index{<:FockIndex{:f}, Int}}}) -> Operator
-    *(f₁::Operator{<:Number, <:ID{CompositeIndex{<:Index{<:FockIndex{:f}, Int}}}}, f₂::Operator{<:Number, <:ID{CompositeIndex{<:Index{<:FockIndex{:f}, Int}}}}) -> Operator
+    *(f₁::Operator{<:Number, <:OneAtLeast{FockIndex{:f}}}, f₂::Operator{<:Number, <:OneAtLeast{FockIndex{:f}}}) -> Operator
+    *(f₁::Operator{<:Number, <:OneAtLeast{Index{<:FockIndex{:f}, Int}}}, f₂::Operator{<:Number, <:OneAtLeast{Index{<:FockIndex{:f}, Int}}}) -> Operator
+    *(f₁::Operator{<:Number, <:OneAtLeast{CompositeIndex{<:Index{<:FockIndex{:f}, Int}}}}, f₂::Operator{<:Number, <:OneAtLeast{CompositeIndex{<:Index{<:FockIndex{:f}, Int}}}}) -> Operator
 
 Get the multiplication of two fermionic Fock operators.
 """
 const block = quote
     result = invoke(*, Tuple{OperatorProd, OperatorProd}, f₁, f₂)
-    rank(f₁)>0 && rank(f₂)>0 && f₁[end]==f₂[1] && return replace(result, value=zero(valtype(result)))
+    rank(f₁)>0 && rank(f₂)>0 && f₁[end]==f₂[1] && return replace(result, zero(valtype(result)))
     return result
 end
-@eval @inline Base.:*(f₁::Operator{<:Number, <:ID{FockIndex{:f}}}, f₂::Operator{<:Number, <:ID{FockIndex{:f}}}) = $block
-@eval @inline Base.:*(f₁::Operator{<:Number, <:ID{Index{<:FockIndex{:f}, Int}}}, f₂::Operator{<:Number, <:ID{Index{<:FockIndex{:f}, Int}}}) = $block
-@eval @inline Base.:*(f₁::Operator{<:Number, <:ID{CompositeIndex{<:Index{<:FockIndex{:f}, Int}}}}, f₂::Operator{<:Number, <:ID{CompositeIndex{<:Index{<:FockIndex{:f}, Int}}}}) = $block
-@inline Base.:*(m₁::Operator{<:Number, Tuple{}}, m₂::Operator{<:Number, Tuple{}}) = Operator(m₁.value*m₂.value)
+@eval @inline Base.:*(f₁::Operator{<:Number, <:OneAtLeast{FockIndex{:f}}}, f₂::Operator{<:Number, <:OneAtLeast{FockIndex{:f}}}) = $block
+@eval @inline Base.:*(f₁::Operator{<:Number, <:OneAtLeast{Index{<:FockIndex{:f}, Int}}}, f₂::Operator{<:Number, <:OneAtLeast{Index{<:FockIndex{:f}, Int}}}) = $block
+@eval @inline Base.:*(f₁::Operator{<:Number, <:OneAtLeast{CompositeIndex{<:Index{<:FockIndex{:f}, Int}}}}, f₂::Operator{<:Number, <:OneAtLeast{CompositeIndex{<:Index{<:FockIndex{:f}, Int}}}}) = $block
 
 ## Permutation
 """

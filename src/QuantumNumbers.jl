@@ -8,7 +8,7 @@ using LinearAlgebra: norm
 using Printf: @printf
 using QuantumLattices: id
 using Random: seed!
-using ..Toolkit: VectorSpace, VectorSpaceCartesian, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceStyle, efficientoperations, subscript
+using ..Toolkit: VectorSpace, VectorSpaceCartesian, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceGeneral, VectorSpaceStyle, efficientoperations, subscript
 
 import ..QuantumLattices: ⊕, ⊗, ⊠, decompose, dimension, rank, value
 import ..Toolkit: shape
@@ -54,11 +54,11 @@ Get the zero Abelian quantum number.
 @inline Base.zero(qn::AbelianQuantumNumber) = zero(typeof(qn))
 
 """
-    ⊗(qns::AbelianQuantumNumber...) -> eltype(qns)
+    ⊗(qn::AbelianQuantumNumber, qns::AbelianQuantumNumber...) -> eltype(qns)
 
 Get the direct product of some `AbelianQuantumNumber`s.
 """
-@inline ⊗(qns::AbelianQuantumNumber...) = +(qns...)
+@inline ⊗(qn::AbelianQuantumNumber, qns::AbelianQuantumNumber...) = +(qn, qns...)
 
 """
     periods(qn::AbelianQuantumNumber) -> Tuple{Vararg{Number}}
@@ -294,27 +294,27 @@ Overloaded `-` operator for `AbelianQuantumNumberProd`.
 @inline Base.:-(qn₁::QN, qn₂::QN) where {QN<:AbelianQuantumNumberProd} = QN(map((i₁, i₂)->i₁-i₂, qn₁.contents, qn₂.contents))
 
 """
-    ⊠(qns::SimpleAbelianQuantumNumber...) -> AbelianQuantumNumberProd
+    ⊠(qn::SimpleAbelianQuantumNumber, qns::SimpleAbelianQuantumNumber...) -> AbelianQuantumNumberProd
     ⊠(qn₁::SimpleAbelianQuantumNumber, qn₂::AbelianQuantumNumberProd) -> AbelianQuantumNumberProd
     ⊠(qn₁::AbelianQuantumNumberProd, qn₂::SimpleAbelianQuantumNumber) -> AbelianQuantumNumberProd
     ⊠(qn₁::AbelianQuantumNumberProd, qn₂::AbelianQuantumNumberProd) -> AbelianQuantumNumberProd
 
 Deligne tensor product of Abelian quantum numbers.
 """
-@inline ⊠(qns::SimpleAbelianQuantumNumber...) = AbelianQuantumNumberProd(qns...)
+@inline ⊠(qn::SimpleAbelianQuantumNumber, qns::SimpleAbelianQuantumNumber...) = AbelianQuantumNumberProd(qn, qns...)
 @inline ⊠(qn₁::SimpleAbelianQuantumNumber, qn₂::AbelianQuantumNumberProd) = AbelianQuantumNumberProd(qn₁, qn₂.contents...)
 @inline ⊠(qn₁::AbelianQuantumNumberProd, qn₂::SimpleAbelianQuantumNumber) = AbelianQuantumNumberProd(qn₁.contents..., qn₂)
 @inline ⊠(qn₁::AbelianQuantumNumberProd, qn₂::AbelianQuantumNumberProd) = AbelianQuantumNumberProd(qn₁.contents..., qn₂.contents...)
 
 """
-    ⊠(QNS::Type{<:SimpleAbelianQuantumNumber}...) -> Type{AbelianQuantumNumberProd{Tuple{QNS...}}}
+    ⊠(QN::Type{<:SimpleAbelianQuantumNumber}, QNS::Type{<:SimpleAbelianQuantumNumber}...) -> Type{AbelianQuantumNumberProd{Tuple{QN, QNS...}}}
     ⊠(::Type{QN}, ::Type{AbelianQuantumNumberProd{T}}) where {QN<:SimpleAbelianQuantumNumber, T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} -> Type{AbelianQuantumNumberProd{Tuple{QN, fieldtypes(T)...}}}
     ⊠(::Type{AbelianQuantumNumberProd{T}}, ::Type{QN}) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}, QN<:SimpleAbelianQuantumNumber} -> Type{AbelianQuantumNumberProd{Tuple{fieldtypes(T)...}, QN}}
     ⊠(::Type{AbelianQuantumNumberProd{T₁}}, ::Type{AbelianQuantumNumberProd{T₂}}) where {T₁<:Tuple{Vararg{SimpleAbelianQuantumNumber}}, T₂<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} -> Type{AbelianQuantumNumberProd{Tuple{fieldtypes(T₁)..., fieldtypes(T₂)...}}}
 
 Deligne tensor product of Abelian quantum numbers.
 """
-@inline ⊠(QNS::Type{<:SimpleAbelianQuantumNumber}...) = AbelianQuantumNumberProd{Tuple{QNS...}}
+@inline ⊠(QN::Type{<:SimpleAbelianQuantumNumber}, QNS::Type{<:SimpleAbelianQuantumNumber}...) = AbelianQuantumNumberProd{Tuple{QN, QNS...}}
 @inline ⊠(::Type{QN}, ::Type{AbelianQuantumNumberProd{T}}) where {QN<:SimpleAbelianQuantumNumber, T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = AbelianQuantumNumberProd{Tuple{QN, fieldtypes(T)...}}
 @inline ⊠(::Type{AbelianQuantumNumberProd{T}}, ::Type{QN}) where {T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}, QN<:SimpleAbelianQuantumNumber} = AbelianQuantumNumberProd{Tuple{fieldtypes(T)..., QN}}
 @inline ⊠(::Type{AbelianQuantumNumberProd{T₁}}, ::Type{AbelianQuantumNumberProd{T₂}}) where {T₁<:Tuple{Vararg{SimpleAbelianQuantumNumber}}, T₂<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} = AbelianQuantumNumberProd{Tuple{fieldtypes(T₁)..., fieldtypes(T₂)...}}
@@ -476,7 +476,7 @@ struct AbelianGradedSpace{QN<:AbelianQuantumNumber} <: RepresentationSpace{QN}
     contents::OrderedDict{QN, UnitRange{Int}}
     dual::Bool
 end
-@inline Base.getindex(::VectorSpaceStyle, gs::AbelianGradedSpace, i::CartesianIndex) = inv(id(gs.contents, i), gs.dual)
+@inline Base.getindex(::VectorSpaceGeneral, gs::AbelianGradedSpace, i::CartesianIndex) = inv(id(gs.contents, i), gs.dual)
 function Base.show(io::IO, gs::AbelianGradedSpace)
     @printf io "Graded{%s}(" eltype(gs)
     for (i, qn) in enumerate(keys(gs.contents))
@@ -690,14 +690,14 @@ function Base.show(io::IO, rs::AbelianGradedSpaceSum)
 end
 
 """
-    ⊕(gses::AbelianGradedSpace...) -> AbelianGradedSpaceSum
+    ⊕(gs::AbelianGradedSpace, gses::AbelianGradedSpace...) -> AbelianGradedSpaceSum
     ⊕(gs::AbelianGradedSpace, rs::AbelianGradedSpaceSum) -> AbelianGradedSpaceSum
     ⊕(rs::AbelianGradedSpaceSum, gs::AbelianGradedSpace) -> AbelianGradedSpaceSum
     ⊕(rs₁::AbelianGradedSpaceSum, rs₂::AbelianGradedSpaceSum) -> AbelianGradedSpaceSum
 
 Get the direct sum of some Abelian graded spaces.
 """
-@inline ⊕(gses::AbelianGradedSpace...) = AbelianGradedSpaceSum(gses...)
+@inline ⊕(gs::AbelianGradedSpace, gses::AbelianGradedSpace...) = AbelianGradedSpaceSum(gs, gses...)
 @inline ⊕(gs::AbelianGradedSpace, rs::AbelianGradedSpaceSum) = AbelianGradedSpaceSum(gs, rs.contents...)
 @inline ⊕(rs::AbelianGradedSpaceSum, gs::AbelianGradedSpace) = AbelianGradedSpaceSum(rs.contents..., gs)
 @inline ⊕(rs₁::AbelianGradedSpaceSum, rs₂::AbelianGradedSpaceSum) = AbelianGradedSpaceSum(rs₁.contents..., rs₂.contents...)
@@ -751,14 +751,14 @@ end
 @inline Base.range(::Type{<:AbelianGradedSpaceProd{N}}) where N = DirectProductedAbelianGradedSpaceRange{N}
 
 """
-    ⊗(gses::AbelianGradedSpace...) -> AbelianGradedSpaceProd
+    ⊗(gs::AbelianGradedSpace, gses::AbelianGradedSpace...) -> AbelianGradedSpaceProd
     ⊗(gs::AbelianGradedSpace, rs::AbelianGradedSpaceProd) -> AbelianGradedSpaceProd
     ⊗(rs::AbelianGradedSpaceProd, gs::AbelianGradedSpace) -> AbelianGradedSpaceProd
     ⊗(rs₁::AbelianGradedSpaceProd, rs₂::AbelianGradedSpaceProd) -> AbelianGradedSpaceProd
 
 Get the direct product of some Abelian graded spaces.
 """
-@inline ⊗(gses::AbelianGradedSpace...) = AbelianGradedSpaceProd(gses...)
+@inline ⊗(gs::AbelianGradedSpace, gses::AbelianGradedSpace...) = AbelianGradedSpaceProd(gs, gses...)
 @inline ⊗(gs::AbelianGradedSpace, rs::AbelianGradedSpaceProd) = AbelianGradedSpaceProd(gs, rs.contents...)
 @inline ⊗(rs::AbelianGradedSpaceProd, gs::AbelianGradedSpace) = AbelianGradedSpaceProd(rs.contents..., gs)
 @inline ⊗(rs₁::AbelianGradedSpaceProd, rs₂::AbelianGradedSpaceProd) = AbelianGradedSpaceProd(rs₁.contents..., rs₂.contents...)
