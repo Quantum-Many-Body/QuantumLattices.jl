@@ -9,7 +9,7 @@ using RecipesBase: RecipesBase, @recipe
 using Serialization: serialize
 using TimerOutputs: TimerOutput, TimerOutputs, @timeit
 using ..DegreesOfFreedom: plain, Boundary, Hilbert, Term
-using ..QuantumLattices: id, value
+using ..QuantumLattices: OneOrMore, id, value
 using ..QuantumOperators: OperatorPack, Operators, OperatorSet, OperatorSum, LinearTransformation, Transformation, identity, operatortype
 using ..Spatials: Bond, isintracell
 using ..Toolkit: atol, efficientoperations, rtol, parametertype, tostr
@@ -18,24 +18,8 @@ import ..QuantumLattices: add!, expand, expand!, reset!, update, update!
 import ..QuantumOperators: scalartype
 import ..Spatials: save
 
-export Action, Algorithm, Assignment, CategorizedGenerator, Eager, ExpansionStyle, Formula, Frontend, Generator, Lazy, OneOrMore, OperatorGenerator, Parameters
+export Action, Algorithm, Assignment, CategorizedGenerator, Eager, ExpansionStyle, Formula, Frontend, Generator, Lazy, OperatorGenerator, Parameters
 export checkoptions, eager, lazy, initialize, options, prepare!, run!
-
-"""
-    const OneOrMore{A} = Union{A, Tuple{A, Vararg{A}}}
-
-One or more something.
-"""
-const OneOrMore{A} = Union{A, Tuple{A, Vararg{A}}}
-
-"""
-    OneOrMore(x) -> Tuple{typeof(x)}
-    OneOrMore(x::Tuple) -> typeof(x)
-
-If `x` is a tuple, return itself; if not, return `(x,)`.
-"""
-@inline OneOrMore(x) = (x,)
-@inline OneOrMore(xs::Tuple) = xs
 
 """
     Parameters{Names}(values::Number...) where Names
@@ -342,13 +326,13 @@ end
 end
 
 """
-    *(cat::CategorizedGenerator, factor) -> CategorizedGenerator
-    *(factor, cat::CategorizedGenerator) -> CategorizedGenerator
+    *(cat::CategorizedGenerator, factor::Number) -> CategorizedGenerator
+    *(factor::Number, cat::CategorizedGenerator) -> CategorizedGenerator
 
 Multiply a categorized generator of (representations of) quantum operators with a factor.
 """
-@inline Base.:*(cat::CategorizedGenerator, factor) = factor * cat
-@inline function Base.:*(factor, cat::CategorizedGenerator)
+@inline Base.:*(cat::CategorizedGenerator, factor::Number) = factor * cat
+@inline function Base.:*(factor::Number, cat::CategorizedGenerator)
     parameters = NamedTuple{keys(cat.parameters)}(map(value->factor*value, values(cat.parameters)))
     return CategorizedGenerator(factor*cat.constops, cat.alterops, cat.boundops, parameters, cat.boundary, ExpansionStyle(cat))
 end

@@ -1,29 +1,10 @@
 module QuantumLattices
 
-import LinearAlgebra: ishermitian, rank, mul!
-
 # interfaces
+import LinearAlgebra: ishermitian, rank, mul!
+include("Interfaces.jl")
+export OneAtLeast, OneOrMore
 export ⊞, ⊠, ⊕, ⊗, add!, decompose, decompose!, dimension, div!, expand, expand!, id, ishermitian, kind, mul!, permute, rank, reset!, sub!, update, update!, value
-
-function ⊞ end
-function ⊠ end
-function ⊕ end
-function ⊗ end
-function add! end
-function decompose end
-function decompose! end
-function dimension end
-function div! end
-function expand end
-function expand! end
-function id end
-function kind end
-function permute end
-function reset! end
-function sub! end
-function update end
-function update! end
-function value end
 
 # Toolkit
 include("Toolkit.jl")
@@ -39,7 +20,7 @@ export equivalenttoscalar, idtype, ishermitian, latexname, latexformat, matrix, 
 # QuantumNumbers
 include("QuantumNumbers.jl")
 using .QuantumNumbers
-export Abelian, AbelianQuantumNumber, AbelianGradedSpace, AbelianGradedSpaceProd, AbelianGradedSpaceSum, CompositeAbelianQuantumNumber, Graded, Momenta, RepresentationSpace, SimpleAbelianQuantumNumber
+export Abelian, AbelianQuantumNumber, AbelianQuantumNumberProd, AbelianGradedSpace, AbelianGradedSpaceProd, AbelianGradedSpaceSum, Graded, Momenta, RepresentationSpace, SimpleAbelianQuantumNumber
 export 𝕂, 𝕂¹, 𝕂², 𝕂³, ℕ, 𝕊ᶻ, 𝕌₁, ℤ, ℤ₁, ℤ₂, ℤ₃, ℤ₄, findindex, period, periods, regularize, regularize!
 
 # Spatials
@@ -54,7 +35,7 @@ include("DegreesOfFreedom.jl")
 using .DegreesOfFreedom
 export AllEqual, Boundary, CompositeInternal, ConstrainedInternal, Internal, InternalIndex, InternalIndexProd, InternalPattern, InternalProd, InternalSum, SimpleInternal, SimpleInternalIndex
 export Component, CompositeIndex, CoordinatedIndex, Coupling, Hilbert, Index, MatrixCoupling, MatrixCouplingProd, MatrixCouplingSum, Metric, OperatorIndexToTuple, Ordinal, Pattern, Table, Term, TermAmplitude, TermCoupling, TermFunction
-export ˢᵗ, ⁿᵈ, ʳᵈ, ᵗʰ, plain, allequalfields, coordinatedindextype, indextype, internalindextype, isdefinite, partition, patternrule, sitestructure, statistics, @pattern
+export ˢᵗ, ⁿᵈ, ʳᵈ, ᵗʰ, plain, allequalfields, coordinatedindextype, indextype, internalindextype, isdefinite, partition, patternrule, statistics, @pattern
 
 # QuantumSystems
 include("QuantumSystems.jl")
@@ -68,7 +49,7 @@ export latexofphonons, Elastic, Phonon, PhononIndex, Kinetic, Hooke, PhononTerm,
 # Frameworks
 include("Frameworks.jl")
 using .Frameworks
-export Action, Algorithm, Assignment, CategorizedGenerator, Eager, ExpansionStyle, Formula, Frontend, Generator, Lazy, OneOrMore, OperatorGenerator, Parameters
+export Action, Algorithm, Assignment, CategorizedGenerator, Eager, ExpansionStyle, Formula, Frontend, Generator, Lazy, OperatorGenerator, Parameters
 export checkoptions, eager, lazy, initialize, options, prepare!, run!
 
 end
