@@ -92,9 +92,9 @@ end
     @test opt|>equivalenttoscalar == opt|>typeof|>equivalenttoscalar == false
     @test value(opt) == 2.0
     @test id(opt) == ID(AID(1, 1))
-    @test replace(opt, 3) == replace(opt, value=3) == Operator(3, AID(1, 1))
+    @test replace(opt, 3) == Operator(3, AID(1, 1))
     @test !iszero(opt) && iszero(replace(opt, 0))
-    @test isapprox(opt, replace(opt, value=opt.value+10^-6); atol=10^-5)
+    @test isapprox(opt, replace(opt, opt.value+10^-6); atol=10^-5)
     @test length(opt) == 1 && firstindex(opt) == 1 && lastindex(opt) ==1
     @test opt[1]==opt[begin]==opt[end]==AID(1, 1) && opt[1:1]==Operator(1.0, AID(1, 1))
     @test split(opt) == (2.0, AID(1, 1))
@@ -221,7 +221,7 @@ end
 
 struct DoubleCoeff <: LinearTransformation end
 @inline Base.valtype(::Type{DoubleCoeff}, M::Type{<:Union{Operator, Operators}}) = M
-@inline (double::DoubleCoeff)(m::Operator) = replace(m, value=value(m)*2)
+@inline (double::DoubleCoeff)(m::Operator) = replace(m, value(m)*2)
 
 @testset "Transformation" begin
     m = Operator(1, AID(1, 1))

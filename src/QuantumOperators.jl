@@ -79,13 +79,6 @@ Judge whether a `QuantumOperator` is equivalent to a scalar.
 @inline equivalenttoscalar(::Type{M}) where {M<:QuantumOperator} = equivalenttoscalar(operatortype(M))
 
 """
-    replace(m::QuantumOperator; kwargs...) -> typeof(m)
-
-Return a copy of a concrete `QuantumOperator` with some of the field values replaced by the keyword arguments.
-"""
-@inline Base.replace(m::QuantumOperator; kwargs...) = replace(efficientoperations, m; kwargs...)
-
-"""
     update!(m::QuantumOperator; parameters...) -> typeof(m)
 
 Update the parameters of a `QuantumOperator` in place and return the updated one.

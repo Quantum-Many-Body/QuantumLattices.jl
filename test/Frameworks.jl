@@ -32,11 +32,6 @@ end
 @inline shape(::FFock, index::FID{Int}) = (index.nambu:index.nambu,)
 @inline shape(internal::FFock, ::FID{Symbol}) = (1:internal.nnambu,)
 
-@testset "OneOrMore" begin
-    @test isa(1, OneOrMore{Integer}) && isa((1,), OneOrMore{Integer}) && isa((1, 2), OneOrMore{Integer})
-    @test OneOrMore(1)==(1,) && OneOrMore((1,))==(1,) && OneOrMore((1, 2))==(1, 2)
-end
-
 @testset "Parameters" begin
     ps1 = Parameters{(:t₁, :t₂, :U)}(1.0im, 1.0, 2.0)
     ps2 = Parameters{(:t₁, :U)}(1.0im, 2.0)

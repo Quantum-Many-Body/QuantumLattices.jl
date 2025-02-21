@@ -947,16 +947,6 @@ end
     return Expr(:&&, exprs...)
 end
 
-"""
-    replace(::EfficientOperations, o; kwargs...) -> typeof(o)
-
-Return a copy of the input object with some of the field values replaced by the keyword arguments.
-"""
-@inline @generated function Base.replace(::EfficientOperations, o; kwargs...)
-    exprs = [:(get(kwargs, $name, getfield(o, $name))) for name in QuoteNode.(fieldnames(o))]
-    return :(rawtype(typeof(o))($(exprs...)))
-end
-
 # Composite structures
 """
     CompositeVector{T}

@@ -276,7 +276,6 @@ end
 @inline Base.:<(fc₁::EFO, fc₂::EFO) = <(efficientoperations, fc₁, fc₂)
 @inline Base.isless(fc₁::EFO, fc₂::EFO) = isless(efficientoperations, fc₁, fc₂)
 @inline Base.isapprox(fc₁::EFO, fc₂::EFO; atol::Real=10^-5, rtol::Real=10^-5) = isapprox(efficientoperations, (:f₁, :f₂), fc₁, fc₂; atol=atol, rtol=rtol)
-@inline Base.replace(fc::EFO; kwargs...) = replace(efficientoperations, fc; kwargs...)
 
 @testset "efficientoperations" begin
     @test ==(efficientoperations, (), ())
@@ -300,8 +299,6 @@ end
     @test fc₁ ≈ fc₂
     fc₁, fc₂ = EFO(1.0, 2, 3-10^-6), EFO(1, 2, 3)
     @test fc₁ ≉  fc₂
-
-    @test replace(EFO(1, 2, 3), f₁='c') == EFO('c', 2, 3)
 end
 
 struct CV{S, T} <: CompositeVector{T}
