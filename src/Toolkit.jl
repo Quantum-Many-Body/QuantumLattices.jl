@@ -7,7 +7,7 @@ using InteractiveUtils: subtypes
 using Printf: @printf
 using StaticArrays: SVector
 
-import QuantumLattices: ⊞, ⊗, id, value
+import QuantumLattices: ⊞, ⊗, id, shape, value
 
 # Utilities
 export atol, rtol, Float
@@ -28,7 +28,6 @@ export CompositeDict, CompositeVector
 # Vector spaces
 export CompositeNamedVectorSpace, NamedVectorSpace, NamedVectorSpaceProd, NamedVectorSpaceZip, ParameterSpace, SimpleNamedVectorSpace, VectorSpace
 export VectorSpaceCartesian, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceEnumerative, VectorSpaceGeneral, VectorSpaceStyle, VectorSpaceZipped
-export shape
 
 # Utilities
 "Absolute tolerance for float numbers."

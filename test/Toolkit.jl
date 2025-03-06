@@ -4,7 +4,8 @@ using QuantumLattices: ⊞, ⊗, id, value
 using QuantumLattices.Toolkit
 using StaticArrays: SVector
 
-import QuantumLattices.Toolkit: VectorSpaceStyle, contentnames, contenttype, dissolve, getcontent, isparameterbound, parameternames, shape
+import QuantumLattices: shape
+import QuantumLattices.Toolkit: VectorSpaceStyle, contentnames, contenttype, dissolve, getcontent, isparameterbound, parameternames
 
 @testset "tostr" begin
     @test tostr((1, 2)) == "(1, 2)"

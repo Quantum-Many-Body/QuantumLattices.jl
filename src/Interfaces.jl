@@ -36,6 +36,7 @@ function id end
 function kind end
 function permute end
 function reset! end
+function shape end
 function sub! end
 function update end
 function update! end

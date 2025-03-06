@@ -11,9 +11,8 @@ using ..Spatials: Bond, Point, direction, isparallel, rcoordinate
 using ..Toolkit: atol, efficientoperations, rtol, Float, VectorSpace, VectorSpaceCartesian, VectorSpaceStyle, delta, rawtype, tostr
 
 import ..DegreesOfFreedom: MatrixCoupling, allequalfields, internalindextype, isdefinite, patternrule, statistics
-import ..QuantumLattices: expand, expand!, kind, permute
+import ..QuantumLattices: expand, expand!, kind, permute, shape
 import ..QuantumOperators: latexname, matrix, script
-import ..Toolkit: shape
 
 # Canonical complex fermionic/bosonic systems
 export annihilation, creation, latexofbosons, latexoffermions, latexofparticles, 𝕒, 𝕒⁺𝕒, 𝕓, 𝕓⁺𝕓, 𝕔, 𝕔⁺𝕔, 𝕕, 𝕕⁺𝕕, 𝕗, 𝕗⁺𝕗, isannihilation, iscreation, isnormalordered, @σ_str, @L_str

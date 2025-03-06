@@ -11,10 +11,10 @@ using ..QuantumLattices: OneAtLeast, OneOrMore, rank
 using ..QuantumNumbers: Momenta, 𝕂, period, periods
 using ..Toolkit: atol, rtol, efficientoperations, CompositeDict, Float, SimpleNamedVectorSpace, Segment, VectorSpaceCartesian, VectorSpaceDirectSummed, VectorSpaceEnumerative, VectorSpaceStyle, concatenate, getcontent
 
-import ..QuantumLattices: decompose, dimension, expand, kind
+import ..QuantumLattices: decompose, dimension, expand, kind, shape
 import ..QuantumNumbers: 𝕂¹, 𝕂², 𝕂³
 import ..QuantumOperators: scalartype
-import ..Toolkit: contentnames, shape
+import ..Toolkit: contentnames
 
 export azimuth, azimuthd, direction, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, polar, polard, reciprocals, rotate, translate, tile, volume
 export AbstractLattice, Bond, BrillouinZone, Lattice, Neighbors, Point, ReciprocalCurve, ReciprocalSpace, ReciprocalZone, ReciprocalPath

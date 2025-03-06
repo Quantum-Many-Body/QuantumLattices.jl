@@ -10,8 +10,7 @@ using QuantumLattices: id
 using Random: seed!
 using ..Toolkit: VectorSpace, VectorSpaceCartesian, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceGeneral, VectorSpaceStyle, efficientoperations, subscript
 
-import ..QuantumLattices: ⊕, ⊗, ⊠, decompose, dimension, rank, value
-import ..Toolkit: shape
+import ..QuantumLattices: ⊕, ⊗, ⊠, decompose, dimension, rank, shape, value
 
 export Abelian, AbelianQuantumNumber, AbelianQuantumNumberProd, AbelianGradedSpace, AbelianGradedSpaceProd, AbelianGradedSpaceSum, Graded, Momenta, RepresentationSpace, SimpleAbelianQuantumNumber
 export 𝕂, 𝕂¹, 𝕂², 𝕂³, ℕ, 𝕊ᶻ, 𝕌₁, ℤ, ℤ₁, ℤ₂, ℤ₃, ℤ₄, findindex, period, periods, regularize, regularize!
