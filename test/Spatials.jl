@@ -301,9 +301,9 @@ end
     @test BrillouinZone(𝕂³{10, 10, 10}, recipls) == BrillouinZone(recipls, 10)
 
     bz = BrillouinZone(𝕂³{10, 100, 1000}, recipls)
-    @test xaxis(bz) == collect(Float64, 0:9)/10
-    @test yaxis(bz) == collect(Float64, 0:99)/100
-    @test zaxis(bz) == collect(Float64, 0:999)/1000
+    @test axis(bz, 1) ≈ collect(Float64, 0:9)/10
+    @test axis(bz, 2) ≈ collect(Float64, 0:99)/100
+    @test axis(bz, 3) ≈ collect(Float64, 0:999)/1000
 end
 
 @testset "ReciprocalZone" begin
@@ -324,9 +324,9 @@ end
     @test volume(ReciprocalZone([b₁, b₂, b₃], -1=>1, -1=>1, -1=>1; length=10)) == 8
 
     rz = ReciprocalZone([b₁, b₂, b₃], -2=>2, -1=>1, -3=>3; length=10)
-    @test xaxis(rz) == collect(Segment(-2, 2, 10))
-    @test yaxis(rz) == collect(Segment(-1, 1, 10))
-    @test zaxis(rz) == collect(Segment(-3, 3, 10))
+    @test axis(rz, 1) ≈ collect(Segment(-2, 2, 10))
+    @test axis(rz, 2) ≈ collect(Segment(-1, 1, 10))
+    @test axis(rz, 3) ≈ collect(Segment(-3, 3, 10))
 
     bz = BrillouinZone{:q}(𝕂²{8, 8}, [[1.0, 0.0], [0.0, 1.0]])
     rz = ReciprocalZone(bz)

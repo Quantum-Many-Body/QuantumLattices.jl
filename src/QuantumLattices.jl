@@ -4,7 +4,7 @@ module QuantumLattices
 import LinearAlgebra: ishermitian, rank, mul!
 include("Interfaces.jl")
 export OneAtLeast, OneOrMore
-export ⊞, ⊠, ⊕, ⊗, axis, add!, decompose, decompose!, dimension, div!, expand, expand!, id, ishermitian, kind, mul!, permute, rank, reset!, shape, sub!, update, update!, value
+export ⊞, ⊠, ⊕, ⊗, add!, decompose, decompose!, dimension, div!, expand, expand!, id, ishermitian, kind, mul!, permute, rank, reset!, shape, sub!, update, update!, value
 
 # Toolkit
 include("Toolkit.jl")
@@ -27,7 +27,7 @@ export 𝕂, 𝕂¹, 𝕂², 𝕂³, ℕ, 𝕊ᶻ, 𝕌₁, ℤ, ℤ₁, ℤ₂,
 include("Spatials.jl")
 using .Spatials
 export azimuth, azimuthd, direction, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, nneighbor, polar, polard, reciprocals, rotate, translate, tile, volume
-export AbstractLattice, Bond, BrillouinZone, Lattice, Neighbors, Point, ReciprocalCurve, ReciprocalSpace, ReciprocalZone, ReciprocalPath, bonds, bonds!, icoordinate, isintracell, rcoordinate, save, selectpath, shrink
+export AbstractLattice, Bond, BrillouinZone, Lattice, Neighbors, Point, ReciprocalCurve, ReciprocalSpace, ReciprocalZone, ReciprocalPath, axis, bonds, bonds!, icoordinate, isintracell, rcoordinate, save, selectpath, shrink
 export @hexagon_str, @line_str, @rectangle_str
 
 # DegreesOfFreedom

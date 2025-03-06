@@ -18,7 +18,7 @@ import ..Toolkit: contentnames
 
 export azimuth, azimuthd, direction, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, polar, polard, reciprocals, rotate, translate, tile, volume
 export AbstractLattice, Bond, BrillouinZone, Lattice, Neighbors, Point, ReciprocalCurve, ReciprocalSpace, ReciprocalZone, ReciprocalPath
-export bonds, bonds!, icoordinate, isintracell, nneighbor, rcoordinate, save, selectpath, shrink, ticks, xaxis, yaxis, zaxis
+export axis, bonds, bonds!, icoordinate, isintracell, nneighbor, rcoordinate, save, selectpath, shrink, ticks
 export hexagon120°map, hexagon60°map, linemap, rectanglemap, @hexagon_str, @line_str, @rectangle_str
 
 """
@@ -1014,9 +1014,16 @@ end
 @inline Base.keys(::BrillouinZone{K, P}) where {K, P<:𝕂} = Momenta(P)
 @inline Base.keytype(brillouinzone::BrillouinZone) = keytype(typeof(brillouinzone))
 @inline Base.keytype(::Type{<:BrillouinZone{K, P} where K}) where {P<:𝕂} = P
-@inline xaxis(brillouinzone::BrillouinZone) = (n=period(keytype(brillouinzone), 1); collect(Float64, 0:(n-1))/n)
-@inline yaxis(brillouinzone::BrillouinZone) = (n=period(keytype(brillouinzone), 2); collect(Float64, 0:(n-1))/n)
-@inline zaxis(brillouinzone::BrillouinZone) = (n=period(keytype(brillouinzone), 3); collect(Float64, 0:(n-1))/n)
+
+"""
+    axis(brillouinzone::BrillouinZone, i::Integer) -> StepRangeLen{Float64}
+
+Get the ith axis range of a Brillouin zone.
+"""
+@inline function axis(brillouinzone::BrillouinZone, i::Integer)
+    n = period(keytype(brillouinzone), i)
+    return range(0, (n-1)/n, n)
+end
 
 """
     volume(brillouinzone::BrillouinZone) -> Number
@@ -1073,9 +1080,16 @@ end
     end
     return result
 end
-@inline xaxis(reciprocalzone::ReciprocalZone) = collect(Float64, reciprocalzone.bounds[1])
-@inline yaxis(reciprocalzone::ReciprocalZone) = collect(Float64, reciprocalzone.bounds[2])
-@inline zaxis(reciprocalzone::ReciprocalZone) = collect(Float64, reciprocalzone.bounds[3])
+
+"""
+    axis(reciprocalzone::ReciprocalZone, i::Integer) -> StepRangeLen{Float64}
+
+Get the ith axis range of a reciprocal zone.
+"""
+@inline function axis(reciprocalzone::ReciprocalZone, i::Integer)
+    bound = reciprocalzone.bounds[i]
+    return range(first(bound), last(bound), length(bound))
+end
 
 """
     shrink(reciprocalzone::ReciprocalZone{K}, ranges::Vararg{OrdinalRange{<:Integer}, N}) where {K, N} -> ReciprocalZone
@@ -1543,7 +1557,7 @@ Define the recipe for the heatmap visualization of data on a Brillouin/reciproca
 """
 const heatmap = quote
     @assert length(reciprocalspace.reciprocals)==2 "plot error: only two dimensional reciprocal spaces are supported."
-    x, y = xaxis(reciprocalspace), yaxis(reciprocalspace)
+    x, y = axis(reciprocalspace, 1), axis(reciprocalspace, 2)
     Δx, Δy= x[2]-x[1], y[2]-y[1]
     seriestype --> :heatmap
     titlefontsize --> 10
