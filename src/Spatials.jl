@@ -17,7 +17,7 @@ import ..QuantumOperators: scalartype
 import ..Toolkit: contentnames
 
 export azimuth, azimuthd, direction, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, polar, polard, reciprocals, rotate, translate, tile, volume
-export AbstractLattice, Bond, BrillouinZone, Lattice, Neighbors, Point, ReciprocalCurve, ReciprocalSpace, ReciprocalZone, ReciprocalPath
+export AbstractLattice, Bond, BrillouinZone, Lattice, Neighbors, Point, ReciprocalCurve, ReciprocalScatter, ReciprocalSpace, ReciprocalZone, ReciprocalPath
 export axis, bonds, bonds!, icoordinate, isintracell, nneighbor, rcoordinate, save, selectpath, shrink, ticks
 export hexagon120°map, hexagon60°map, linemap, rectanglemap, @hexagon_str, @line_str, @rectangle_str
 
@@ -1462,6 +1462,55 @@ macro hexagon_str(str::String)
 end
 
 """
+    ReciprocalScatter{K, N, V<:SVector, S<:SVector{N}} <: ReciprocalSpace{K, V}
+
+A set of scatter points in the reciprocal space.
+"""
+struct ReciprocalScatter{K, N, V<:SVector, S<:SVector{N}} <: ReciprocalSpace{K, V}
+    reciprocals::SVector{N, V}
+    coordinates::Vector{S}
+    function ReciprocalScatter{K}(reciprocals::SVector{N, <:SVector}, coordinates::Vector{<:SVector{N}}) where {K, N}
+        @assert isa(K, Symbol) "ReciprocalScatter error: K must be a Symbol."
+        new{K, N, eltype(reciprocals), eltype(coordinates)}(reciprocals, coordinates)
+    end
+end
+@inline Base.getindex(reciprocalscatter::ReciprocalScatter, i::Integer) = mapreduce(*, +, reciprocalscatter.reciprocals, reciprocalscatter.coordinates[i])
+
+"""
+    ReciprocalScatter(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, coordinates::AbstractVector{<:AbstractVector{<:Number}})
+    ReciprocalScatter{K}(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, coordinates::AbstractVector{<:AbstractVector{<:Number}}) where K
+
+Construct a set of reciprocal scatter points.
+"""
+@inline ReciprocalScatter(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, coordinates::AbstractVector{<:AbstractVector{<:Number}}) = ReciprocalScatter{:k}(reciprocals, coordinates)
+function ReciprocalScatter{K}(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, coordinates::AbstractVector{<:AbstractVector{<:Number}}) where K
+    reciprocals = vectorconvert(reciprocals)
+    coordinates = collect(SVector{length(reciprocals), eltype(eltype(reciprocals))}, coordinates)
+    return ReciprocalScatter{K}(reciprocals, coordinates)
+end
+
+"""
+    @recipe plot(scatter::ReciprocalScatter)
+
+Define the recipe for the visualization of a set of reciprocal scatter points.
+"""
+@recipe function plot(scatter::ReciprocalScatter)
+    @assert length(scatter.reciprocals)∈(2, 3) "plot error: only two and three dimensional reciprocal spaces are supported."
+    title --> string(nameof(typeof(scatter)))
+    titlefontsize --> 10
+    legend := false
+    aspect_ratio := :equal
+    xlabel --> string(names(scatter)[1], "₁")
+    ylabel --> string(names(scatter)[1], "₂")
+    length(scatter.reciprocals)==3 && (zlabel --> string(names(scatter)[1], "₃"))
+    coordinates = map(Tuple, scatter.coordinates)
+    @series begin
+        seriestype := :scatter
+        coordinates
+    end
+end
+
+"""
     ReciprocalCurve{K, S<:SVector} <: ReciprocalSpace{K, S}
 
 A curve in the reciprocal space.
@@ -1469,7 +1518,7 @@ A curve in the reciprocal space.
 struct ReciprocalCurve{K, S<:SVector} <: ReciprocalSpace{K, S}
     contents::Vector{S}
     function ReciprocalCurve{K}(curve::AbstractVector{<:AbstractVector{<:Number}}) where K
-        @assert isa(K, Symbol) "ReciprocalRing error: K must be a Symbol."
+        @assert isa(K, Symbol) "ReciprocalCurve error: K must be a Symbol."
         curve = map(x->SVector{length(x)}(x), curve)
         new{K, eltype(curve)}(curve)
     end
@@ -1514,6 +1563,29 @@ end
 
 # plot utilities
 """
+    @recipe plot(reciprocalspace::BrillouinZone, data::AbstractMatrix{<:Number})
+    @recipe plot(reciprocalspace::ReciprocalZone, data::AbstractMatrix{<:Number})
+
+Define the recipe for the heatmap visualization of data on a Brillouin/reciprocal zone.
+"""
+const heatmap = quote
+    @assert length(reciprocalspace.reciprocals)==2 "plot error: only two dimensional reciprocal spaces are supported."
+    x, y = axis(reciprocalspace, 1), axis(reciprocalspace, 2)
+    Δx, Δy= x[2]-x[1], y[2]-y[1]
+    seriestype --> :heatmap
+    titlefontsize --> 10
+    aspect_ratio --> :equal
+    xlims --> (x[1]-Δx, x[end]+Δx)
+    ylims --> (y[1]-Δy, y[end]+Δy)
+    clims --> extrema(data)
+    xlabel --> string(names(reciprocalspace)[1], "₁")
+    ylabel --> string(names(reciprocalspace)[1], "₂")
+    x, y, data
+end
+@eval @recipe plot(reciprocalspace::BrillouinZone, data::AbstractMatrix{<:Number}) = $heatmap
+@eval @recipe plot(reciprocalspace::ReciprocalZone, data::AbstractMatrix{<:Number}) = $heatmap
+
+"""
     @recipe plot(path::ReciprocalPath, data::AbstractVector{<:Number})
     @recipe plot(path::ReciprocalPath, data::AbstractMatrix{<:Number})
 
@@ -1550,37 +1622,14 @@ Define the recipe for the heatmap visualization of data on the x-y plain with th
 end
 
 """
-    @recipe plot(reciprocalspace::BrillouinZone, data::AbstractMatrix{<:Number})
-    @recipe plot(reciprocalspace::ReciprocalZone, data::AbstractMatrix{<:Number})
-
-Define the recipe for the heatmap visualization of data on a Brillouin/reciprocal zone.
-"""
-const heatmap = quote
-    @assert length(reciprocalspace.reciprocals)==2 "plot error: only two dimensional reciprocal spaces are supported."
-    x, y = axis(reciprocalspace, 1), axis(reciprocalspace, 2)
-    Δx, Δy= x[2]-x[1], y[2]-y[1]
-    seriestype --> :heatmap
-    titlefontsize --> 10
-    aspect_ratio --> :equal
-    xlims --> (x[1]-Δx, x[end]+Δx)
-    ylims --> (y[1]-Δy, y[end]+Δy)
-    clims --> extrema(data)
-    xlabel --> string(names(reciprocalspace)[1], "₁")
-    ylabel --> string(names(reciprocalspace)[1], "₂")
-    x, y, data
-end
-@eval @recipe plot(reciprocalspace::BrillouinZone, data::AbstractMatrix{<:Number}) = $heatmap
-@eval @recipe plot(reciprocalspace::ReciprocalZone, data::AbstractMatrix{<:Number}) = $heatmap
-
-"""
-    @recipe plot(path::ReciprocalPath, y::AbstractVector{<:Number}, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8, nrow=nothing, ncol=nothing, clims=nothing)
     @recipe plot(reciprocalspace::BrillouinZone, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8, nrow=nothing, ncol=nothing, clims=nothing)
     @recipe plot(reciprocalspace::ReciprocalZone, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8, nrow=nothing, ncol=nothing, clims=nothing)
+    @recipe plot(path::ReciprocalPath, y::AbstractVector{<:Number}, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8, nrow=nothing, ncol=nothing, clims=nothing)
 
 Define the recipe for the heatmap visualization of a series of data on 
-1) the x-y plain with the x axis being a reciprocal path,
-2) a Brillouin zone,
-3) a reciprocal zone.
+1) a Brillouin zone,
+2) a reciprocal zone,
+3) the x-y plain with the x axis being a reciprocal path.
 """
 setup(expr::Expr) = quote
     isnothing(clims) && (clims = extrema(data))
@@ -1608,18 +1657,24 @@ setup(expr::Expr) = quote
     ylabel := ""
     LinRange(clims..., 100), [0, 1], [LinRange(clims..., 100)'; LinRange(clims..., 100)']
 end
-@eval @recipe plot(path::ReciprocalPath, y::AbstractVector{<:Number}, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8, nrow=nothing, ncol=nothing, clims=nothing) = $(setup(:(path, y, data[:, :, i])))
 @eval @recipe plot(reciprocalspace::BrillouinZone, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8, nrow=nothing, ncol=nothing, clims=nothing) = $(setup(:(reciprocalspace, data[:, :, i])))
 @eval @recipe plot(reciprocalspace::ReciprocalZone, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8, nrow=nothing, ncol=nothing, clims=nothing) = $(setup(:(reciprocalspace, data[:, :, i])))
+@eval @recipe plot(path::ReciprocalPath, y::AbstractVector{<:Number}, data::AbstractArray{<:Number, 3}; subtitles=nothing, subtitlefontsize=8, nrow=nothing, ncol=nothing, clims=nothing) = $(setup(:(path, y, data[:, :, i])))
 
 # save utilities
 """
+    save(filename::AbstractString, reciprocalspace::Union{BrillouinZone, ReciprocalZone}, data::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}})
     save(filename::AbstractString, path::ReciprocalPath, data::Union{AbstractVector{<:Number}, AbstractMatrix{<:Number}})
     save(filename::AbstractString, path::ReciprocalPath, y::AbstractVector{<:Number}, data::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}})
-    save(filename::AbstractString, reciprocalspace::Union{BrillouinZone, ReciprocalZone}, data::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}})
 
 Save data to delimited files.
 """
+function save(filename::AbstractString, reciprocalspace::Union{BrillouinZone, ReciprocalZone}, data::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}})
+    @assert length(reciprocalspace)==prod(size(data)[1:2]) "save error: mismatched size of reciprocal space and data."
+    open(filename, "w") do f
+        writedlm(f, [matrix(reciprocalspace) reshape(data, prod(size(data)[1:2]), :)])
+    end
+end
 function save(filename::AbstractString, path::ReciprocalPath, data::Union{AbstractVector{<:Number}, AbstractMatrix{<:Number}})
     @assert length(path)==size(data)[1] "save error: mismatched size of path and data."
     open(filename, "w") do f
@@ -1633,12 +1688,6 @@ function save(filename::AbstractString, path::ReciprocalPath, y::AbstractVector{
         y = kron(ones(length(path)), y)
         z = reshape(data, prod(size(data)[1:2]), :)
         writedlm(f, [x y z])
-    end
-end
-function save(filename::AbstractString, reciprocalspace::Union{BrillouinZone, ReciprocalZone}, data::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}})
-    @assert length(reciprocalspace)==prod(size(data)[1:2]) "save error: mismatched size of reciprocal space and data."
-    open(filename, "w") do f
-        writedlm(f, [matrix(reciprocalspace) reshape(data, prod(size(data)[1:2]), :)])
     end
 end
 

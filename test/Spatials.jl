@@ -394,6 +394,16 @@ end
     savefig(plt, "PickPoint.png")
 end
 
+@testset "ReciprocalScatter" begin
+    b₁, b₂ = [2.0, 0.0, 0.0], [0.0, 2.0, 0.0]
+    coordinates = [[0.0, 0.5], [0.25, 0.25], [0.5, 0.0], [0.25, -0.25], [0.0, -0.5], [-0.25, -0.25], [-0.5, 0.0], [-0.25, 0.25]]
+    rs = ReciprocalScatter([b₁, b₂], coordinates)
+    for (i, coordinate) in enumerate(coordinates)
+        @test rs[i] == b₁*coordinate[1] + b₂*coordinate[2]
+    end
+    savefig(plot(rs), "ReciprocalScatter.png")
+end
+
 @testset "ReciprocalCurve" begin
     rc = ReciprocalCurve([[0.0, 0.0], [0.5, 0.0], [0.5, 0.5], [0.0, 0.0]])
     @test rc == ReciprocalCurve([(0.0, 0.0), (0.5, 0.0), (0.5, 0.5), (0.0, 0.0)])
@@ -404,24 +414,6 @@ end
 end
 
 @testset "utilities" begin
-    path = ReciprocalPath([[2pi, 0], [0, 2pi]], rectangle"Γ-X-M-Γ")
-    band = map(k->-2cos(k[1])-2cos(k[2]), path)
-    savefig(plot(path, band), "SingleBand.png")
-    save("SingleBand.dat", path, band)
-    savefig(plot(path, [band -band]), "MultiBands.png")
-    save("MultiBands.dat", path, [band -band])
-
-    energies = LinRange(-6.0, 6.0, 401)
-    spectrum = [-imag(1/(e+0.1im-b)) for e in energies, b in band]
-    savefig(plot(path, energies, spectrum), "SingleSpectrum.png")
-    save("SingleSpectrum.dat", path, energies, spectrum)
-
-    spectra = zeros(size(spectrum)..., 2)
-    spectra[:, :, 1] = spectrum
-    spectra[:, :, 2] = spectrum
-    savefig(plot(path, energies, spectra), "MultiSpectra.png")
-    save("MultiSpectra.dat", path, energies, spectra)
-
     bz = BrillouinZone([[2pi, 0], [0, 2pi]], 200)
     surface = zeros(Float64, (200, 200))
     for (i, k) in enumerate(bz)
@@ -449,4 +441,22 @@ end
     surfaces[:, :, 2] = surface
     savefig(plot(rz, surfaces), "MultiExtendedSurfaces.png")
     save("MultiExtendedSurfaces.dat", rz, surfaces)
+
+    path = ReciprocalPath([[2pi, 0], [0, 2pi]], rectangle"Γ-X-M-Γ")
+    band = map(k->-2cos(k[1])-2cos(k[2]), path)
+    savefig(plot(path, band), "SingleBand.png")
+    save("SingleBand.dat", path, band)
+    savefig(plot(path, [band -band]), "MultiBands.png")
+    save("MultiBands.dat", path, [band -band])
+
+    energies = LinRange(-6.0, 6.0, 401)
+    spectrum = [-imag(1/(e+0.1im-b)) for e in energies, b in band]
+    savefig(plot(path, energies, spectrum), "SingleSpectrum.png")
+    save("SingleSpectrum.dat", path, energies, spectrum)
+
+    spectra = zeros(size(spectrum)..., 2)
+    spectra[:, :, 1] = spectrum
+    spectra[:, :, 2] = spectrum
+    savefig(plot(path, energies, spectra), "MultiSpectra.png")
+    save("MultiSpectra.dat", path, energies, spectra)
 end
