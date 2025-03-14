@@ -449,6 +449,11 @@ end
     savefig(plot(path, [band -band]), "MultiBands.png")
     save("MultiBands.dat", path, [band -band])
 
+    weights = fill(0.01, length(path), 2, 2)
+    weights[:, 1, 1] = abs2.(band)
+    weights[:, 2, 2] = abs2.(band)
+    savefig(plot(path, [band -band], weights; weightmultiplier=1.0, weightwidth=2.0, weightcolors=(:blue, :red), weightlabels=("↑", "↓")), "MultiBandsWithWeights.png")
+
     energies = LinRange(-6.0, 6.0, 401)
     spectrum = [-imag(1/(e+0.1im-b)) for e in energies, b in band]
     savefig(plot(path, energies, spectrum), "SingleSpectrum.png")

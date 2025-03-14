@@ -1,6 +1,7 @@
 module Spatials
 
 using Base.Iterators: flatten, product
+using Colors: RGBA
 using DelimitedFiles: writedlm
 using LinearAlgebra: cross, det, dot, norm
 using NearestNeighbors: KDTree, inrange, knn
@@ -1604,6 +1605,28 @@ const line = quote
 end
 @eval @recipe plot(path::ReciprocalPath, data::AbstractVector{<:Number}) = $line
 @eval @recipe plot(path::ReciprocalPath, data::AbstractMatrix{<:Number}) = $line
+
+"""
+    @recipe plot(path::ReciprocalPath, data::AbstractMatrix{<:Number}, weights::AbstractArray{<:Number, 3}; weightmultiplier=10.0, weightwidth=1.0, weightcolors=nothing, weightlabels=nothing)
+
+Define the recipe for the scatter visualization of data along a reciprocal path with a series of weights.
+"""
+@recipe function plot(path::ReciprocalPath, data::AbstractMatrix{<:Number}, weights::AbstractArray{<:Number, 3}; weightmultiplier=10.0, weightwidth=1.0, weightcolors=nothing, weightlabels=nothing)
+    legend --> !isnothing(weightlabels)
+    seriestype := :scatter
+    markercolor := RGBA(1, 1, 1, 0)
+    for i in axes(weights, 3)
+        weightlabel = isnothing(weightlabels) ? "" : weightlabels[i]
+        pos = isnothing(weightlabels) ? 1 : argmax(weights[:, :, i])[2]
+        @series begin
+            markersize := weights[:, :, i] * weightmultiplier
+            markerstrokewidth := weightwidth
+            markerstrokecolor := isnothing(weightcolors) ? i : weightcolors[i]
+            label := reshape([j==pos ? weightlabel : "" for j in 1:size(data, 2)], 1, :)
+            path, data
+        end
+    end
+end
 
 """
     @recipe plot(path::ReciprocalPath, y::AbstractVector{<:Number}, data::AbstractMatrix{<:Number})
