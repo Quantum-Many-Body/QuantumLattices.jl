@@ -8,7 +8,7 @@ using LinearAlgebra: norm
 using Printf: @printf
 using QuantumLattices: id
 using Random: seed!
-using ..Toolkit: VectorSpace, VectorSpaceCartesian, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceGeneral, VectorSpaceStyle, efficientoperations, subscript
+using ..Toolkit: VectorSpace, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceGeneral, VectorSpaceStyle, efficientoperations, subscript
 
 import ..QuantumLattices: ⊕, ⊗, ⊠, decompose, dimension, rank, shape, value
 
@@ -415,10 +415,10 @@ Complete allowed set of momenta.
 """
 struct Momenta{P<:𝕂} <: RepresentationSpace{P} end
 @inline Momenta(::Type{P}) where {P<:𝕂} = Momenta{P}()
-@inline VectorSpaceStyle(::Type{<:Momenta}) = VectorSpaceCartesian()
-@inline shape(::Momenta{P}) where {P<:𝕂} = map(period->0:period-1, reverse(periods(P)))
-@inline Base.convert(::Type{<:CartesianIndex}, m::P, ::Momenta{P}) where {P<:𝕂} = CartesianIndex(reverse(values(m)))
-@inline Base.convert(::Type{P}, index::CartesianIndex, ::Momenta{P}) where {P<:𝕂} = P(reverse(index.I)...)
+@inline VectorSpaceStyle(::Type{<:Momenta}) = VectorSpaceDirectProducted(:backward)
+@inline shape(::Momenta{P}) where {P<:𝕂} = map(period->0:period-1, periods(P))
+@inline Base.convert(::Type{<:CartesianIndex}, m::P, ::Momenta{P}) where {P<:𝕂} = CartesianIndex(values(m))
+@inline Base.convert(::Type{P}, index::CartesianIndex, ::Momenta{P}) where {P<:𝕂} = P(index.I...)
 @inline Base.:(==)(ms₁::Momenta, ms₂::Momenta) = periods(eltype(ms₁))==periods(eltype(ms₂))
 @inline Base.isequal(ms₁::Momenta, ms₂::Momenta) = isequal(periods(eltype(ms₁)), periods(eltype(ms₂)))
 @inline Base.show(io::IO, ms::Momenta) = @printf io "Momenta(%s)" eltype(ms)
@@ -746,7 +746,7 @@ function Base.show(io::IO, rs::AbelianGradedSpaceProd)
         count<rank(rs) && @printf io "%s" " ⊗ "
     end
 end
-@inline Base.convert(::Type{QN}, qns::NTuple{N, QN}, rs::AbelianGradedSpaceProd{N, QN}) where {N, QN<:AbelianQuantumNumber} = ⊗(qns...)
+@inline Base.convert(::Type{QN}, index::CartesianIndex{N}, rs::AbelianGradedSpaceProd{N, QN}) where {N, QN<:AbelianQuantumNumber} = ⊗(map(getindex, rs.contents, index.I)...)
 @inline Base.range(::Type{<:AbelianGradedSpaceProd{N}}) where N = DirectProductedAbelianGradedSpaceRange{N}
 
 """
