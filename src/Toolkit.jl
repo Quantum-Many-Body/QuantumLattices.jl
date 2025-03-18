@@ -7,11 +7,11 @@ using InteractiveUtils: subtypes
 using Printf: @printf
 using StaticArrays: SVector
 
-import QuantumLattices: ⊞, ⊗, id, shape, value
+import QuantumLattices: id, shape, value
 
 # Utilities
 export atol, rtol, Float
-export DirectSummedIndices, Segment, concatenate, delta, subscript, superscript, tostr
+export DirectProductedIndices, DirectSummedIndices, Segment, concatenate, delta, subscript, superscript, tostr
 
 # Combinatorics
 export Combinatorics, Combinations, DuplicateCombinations, DuplicatePermutations, Permutations
@@ -26,8 +26,7 @@ export efficientoperations
 export CompositeDict, CompositeVector
 
 # Vector spaces
-export CompositeNamedVectorSpace, NamedVectorSpace, NamedVectorSpaceProd, NamedVectorSpaceZip, ParameterSpace, SimpleNamedVectorSpace, VectorSpace
-export VectorSpaceCartesian, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceEnumerative, VectorSpaceGeneral, VectorSpaceStyle, VectorSpaceZipped
+export VectorSpace, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceEnumerative, VectorSpaceGeneral, VectorSpaceStyle, VectorSpaceZipped
 
 # Utilities
 "Absolute tolerance for float numbers."
@@ -189,6 +188,42 @@ Construct a `DirectSummedIndices`.
 @inline convert2ind(index::Integer) = Base.OneTo(index)
 @inline convert2ind(index::AbstractUnitRange{<:Integer}) = first(index):last(index)
 @inline convert2ind(index::OrdinalRange{<:Integer, <:Integer}) = first(index):step(index):last(index)
+
+"""
+    DirectProductedIndices{Order, N, T<:NTuple{N, OrdinalRange{Int, Int}}} <: AbstractVector{CartesianIndex{N}}
+
+Direct product of indexes.
+
+Here, the type parameter `Order` must be either `:forward` or `:backward`:
+1) `:forward`: the direct product iterates over the first sub-index first like a Julia array;
+2) `:backward`: the direct product iterates over the last sub-index first like a C/C++ array.
+"""
+struct DirectProductedIndices{Order, N, T<:NTuple{N, OrdinalRange{Int, Int}}} <: AbstractVector{CartesianIndex{N}}
+    indices::T
+    function DirectProductedIndices{Order}(indices::NTuple{N, OrdinalRange{Int, Int}}) where {Order, N}
+        @assert Order∈(:forward, :backward) "DirectProductedIndices error: `Order` must be either `:forward` or `:backward`."
+        new{Order, N, typeof(indices)}(indices)
+    end
+end
+@inline Base.size(indexes::DirectProductedIndices) = (mapreduce(length, *, indexes.indices),)
+@inline Base.getindex(indexes::DirectProductedIndices{:forward}, i::Integer) = CartesianIndices(indexes.indices)[i]
+@inline Base.getindex(indexes::DirectProductedIndices{:backward}, i::Integer) = CartesianIndex(reverse(CartesianIndices(reverse(indexes.indices))[i].I)...)
+@inline function Base.searchsortedfirst(indexes::DirectProductedIndices{:forward, N}, index::CartesianIndex{N}) where N
+    return LinearIndices(indexes.indices)[index-first(indexes)+oneunit(typeof(index))]
+end
+@inline function Base.searchsortedfirst(indexes::DirectProductedIndices{:backward, N}, index::CartesianIndex{N}) where N
+    return LinearIndices(reverse(indexes.indices))[CartesianIndex(reverse((index-first(indexes)+oneunit(typeof(index))).I)...)]
+end
+@inline Base.in(index::CartesianIndex, indexes::DirectProductedIndices) = index in CartesianIndices(indexes.indices)
+
+"""
+    DirectProductedIndices{Order}(indexes::Tuple{Vararg{Union{<:Integer, OrdinalRange{<:Integer, <:Integer}}}}) where Order
+
+Construct a `DirectProductedIndices`.
+"""
+@inline function DirectProductedIndices{Order}(indexes::Tuple{Vararg{Union{<:Integer, OrdinalRange{<:Integer, <:Integer}}}}) where Order
+    return DirectProductedIndices{Order}(map(index->convert2ind(index), indexes))
+end
 
 """
     Segment{S} <: AbstractVector{S}
@@ -1039,8 +1074,7 @@ abstract type VectorSpaceStyle end
 @inline Base.length(vs::VectorSpace) = length(VectorSpaceStyle(vs), vs)
 @inline Base.CartesianIndex(i::Integer, vs::VectorSpace) = CartesianIndex(VectorSpaceStyle(vs), i, vs)
 @inline Base.getindex(vs::VectorSpace, i::CartesianIndex) = getindex(VectorSpaceStyle(vs), vs, i)
-@inline Base.issorted(vs::VectorSpace) = issorted(VectorSpaceStyle(vs), vs)
-@inline Base.searchsortedfirst(vs::VectorSpace{B}, basis::B; by=identity, lt=isless, rev=false) where B = searchsortedfirst(VectorSpaceStyle(vs), vs, basis; by=by, lt=lt, rev=rev)
+@inline Base.searchsortedfirst(vs::VectorSpace{B}, basis::B) where B = searchsortedfirst(VectorSpaceStyle(vs), vs, basis)
 @inline Base.in(basis::B, vs::VectorSpace{B}) where B = in(VectorSpaceStyle(vs), basis, vs)
 
 """
@@ -1051,8 +1085,7 @@ Default vector space style.
 struct VectorSpaceGeneral <: VectorSpaceStyle end
 @inline VectorSpaceStyle(::Type{<:VectorSpace}) = VectorSpaceGeneral()
 @inline Base.CartesianIndex(::VectorSpaceStyle, i::Integer, ::VectorSpace) = CartesianIndex(i)
-@inline Base.issorted(::VectorSpaceStyle, vs::VectorSpace) = false
-@inline Base.searchsortedfirst(::VectorSpaceStyle, vs::VectorSpace{B}, basis::B; by=identity, lt=isless, rev=false) where B = invoke(searchsortedfirst, Tuple{Any, Any}, vs, basis; by=by, lt=lt, rev=rev)
+@inline Base.searchsortedfirst(::VectorSpaceStyle, vs::VectorSpace{B}, basis::B) where B = invoke(searchsortedfirst, Tuple{Any, Any}, vs, basis)
 @inline Base.in(::VectorSpaceStyle, basis::B, vs::VectorSpace{B}) where B = invoke(in, Tuple{Any, Any}, basis, vs)
 
 """
@@ -1064,26 +1097,8 @@ struct VectorSpaceEnumerative <: VectorSpaceStyle end
 @inline Base.length(::VectorSpaceEnumerative, vs::VectorSpace) = length(getcontent(vs, :contents))
 @inline function Base.getindex(::VectorSpaceEnumerative, vs::VectorSpace, i::CartesianIndex)
     contents = getcontent(vs, :contents)
-    return contents[(firstindex(contents):lastindex(contents))[i]]
+    return contents[first(axes(contents))[i]]
 end
-
-"""
-    VectorSpaceCartesian <: VectorSpaceStyle
-
-Cartesian vector space style, which indicates that every basis in it could be represented by a Cartesian index.
-"""
-struct VectorSpaceCartesian <: VectorSpaceStyle end
-function shape end
-@inline Base.length(::VectorSpaceCartesian, vs::VectorSpace) = mapreduce(length, *, shape(vs))
-@inline Base.CartesianIndex(::VectorSpaceCartesian, i::Integer, vs::VectorSpace) = CartesianIndices(shape(vs))[i]
-@inline Base.getindex(::VectorSpaceCartesian, vs::VectorSpace, i::CartesianIndex) = convert(eltype(vs), i, vs)
-@inline Base.issorted(::VectorSpaceCartesian, vs::VectorSpace) = true
-@propagate_inbounds function Base.searchsortedfirst(::VectorSpaceCartesian, vs::VectorSpace{B}, basis::B) where B
-    index, idx = convert(CartesianIndex, basis, vs), CartesianIndices(shape(vs))
-    @assert index∈idx "searchsortedfirst error: basis($basis) not found."
-    return LinearIndices(shape(vs))[index-first(idx)+oneunit(typeof(index))]
-end
-@inline Base.in(::VectorSpaceCartesian, basis::B, vs::VectorSpace{B}) where B = convert(CartesianIndex, basis, vs)∈CartesianIndices(shape(vs))
 
 """
     VectorSpaceDirectSummed <: VectorSpaceStyle
@@ -1113,21 +1128,16 @@ struct VectorSpaceDirectProducted{Order} <: VectorSpaceStyle end
     @assert order∈(:forward, :backward) "VectorSpaceDirectProducted error: not supported order."
     return VectorSpaceDirectProducted{order}()
 end
-@inline Base.length(::VectorSpaceDirectProducted, vs::VectorSpace) = mapreduce(length, *, getcontent(vs, :contents))
-@inline function Base.CartesianIndex(::VectorSpaceDirectProducted{:forward}, i::Integer, vs::VectorSpace)
-    contents = getcontent(vs, :contents)
-    index = CartesianIndices(map(content->firstindex(content):lastindex(content), contents))[i]
-    return index
+@inline shape(vs::VectorSpace) = concatenate(map(axes, getcontent(vs, :contents))...)
+@inline Base.length(::VectorSpaceDirectProducted, vs::VectorSpace) = mapreduce(length, *, shape(vs))
+@inline Base.CartesianIndex(::VectorSpaceDirectProducted{Order}, i::Integer, vs::VectorSpace) where Order = DirectProductedIndices{Order}(shape(vs))[i]
+@inline Base.getindex(::VectorSpaceDirectProducted, vs::VectorSpace, index::CartesianIndex) = convert(eltype(vs), index, vs)
+function Base.searchsortedfirst(::VectorSpaceDirectProducted{Order}, vs::VectorSpace{B}, basis::B) where {Order, B}
+    index = convert(CartesianIndex, basis, vs)
+    indexes = DirectProductedIndices{Order}(shape(vs))
+    return searchsortedfirst(indexes, index)
 end
-@inline function Base.CartesianIndex(::VectorSpaceDirectProducted{:backward}, i::Integer, vs::VectorSpace)
-    contents = reverse(getcontent(vs, :contents))
-    index = CartesianIndices(map(content->firstindex(content):lastindex(content), contents))[i]
-    return CartesianIndex(reverse(index.I))
-end
-@inline function Base.getindex(::VectorSpaceDirectProducted, vs::VectorSpace, i::CartesianIndex)
-    components = map(getindex, getcontent(vs, :contents), i.I)
-    return convert(eltype(vs), components, vs)
-end
+@inline Base.in(::VectorSpaceDirectProducted{Order}, basis::B, vs::VectorSpace{B}) where {Order, B} = convert(CartesianIndex, basis, vs) in DirectProductedIndices{Order}(shape(vs))
 
 """
     VectorSpaceZipped <: VectorSpaceStyle
@@ -1138,114 +1148,9 @@ struct VectorSpaceZipped <: VectorSpaceStyle end
 @inline Base.length(::VectorSpaceZipped, vs::VectorSpace) = mapreduce(length, min, getcontent(vs, :contents))
 @inline function Base.CartesianIndex(::VectorSpaceZipped, i::Integer, vs::VectorSpace)
     contents = getcontent(vs, :contents)
-    index = map(content->(firstindex(content):lastindex(content))[i], contents)
+    index = map(content->first(axes(content))[i], contents)
     return CartesianIndex(index)
 end
-@inline function Base.getindex(::VectorSpaceZipped, vs::VectorSpace, i::CartesianIndex)
-    components = map(getindex, getcontent(vs, :contents), i.I)
-    return convert(eltype(vs), components, vs)
-end
-
-"""
-    NamedVectorSpace{B} <: VectorSpace{B}
-
-Abstract named vector space.
-"""
-abstract type NamedVectorSpace{B} <: VectorSpace{B} end
-@inline Base.names(vs::NamedVectorSpace) = names(typeof(vs))
-@inline Base.pairs(vs::NamedVectorSpace) = NamedVectorSpacePairIteration(vs)
-struct NamedVectorSpacePairIteration{V<:NamedVectorSpace, B<:NamedTuple} <: AbstractVector{B}
-    namedvectorspace::V
-    NamedVectorSpacePairIteration(vs::NamedVectorSpace) = new{typeof(vs), pairtype(typeof(vs))}(vs)
-end
-@inline Base.size(ps::NamedVectorSpacePairIteration) = size(ps.namedvectorspace)
-
-"""
-    SimpleNamedVectorSpace{N, B} <: NamedVectorSpace{B}
-
-Abstract simple named vector space.
-"""
-abstract type SimpleNamedVectorSpace{N, B} <: NamedVectorSpace{B} end
-@inline Base.names(::Type{<:SimpleNamedVectorSpace{N}}) where N = (N,)
-@inline pairtype(::Type{V}) where {V<:SimpleNamedVectorSpace} = NamedTuple{names(V), Tuple{eltype(V)}}
-@inline Base.getindex(ps::NamedVectorSpacePairIteration{V}, i::Integer) where {V<:SimpleNamedVectorSpace} = NamedTuple{names(V)}((ps.namedvectorspace[i],))
-
-"""
-    ParameterSpace{N, T, B} <: SimpleNamedVectorSpace{N, B}
-
-Parameter space.
-"""
-struct ParameterSpace{N, T, B} <: SimpleNamedVectorSpace{N, B}
-    contents::T
-    function ParameterSpace{N}(contents) where N
-        @assert isa(N, Symbol) "ParameterSpace error: $(N) is not a Symbol."
-        new{N, typeof(contents), eltype(contents)}(contents)
-    end
-end
-@inline VectorSpaceStyle(::Type{<:ParameterSpace}) = VectorSpaceEnumerative()
-
-"""
-    CompositeNamedVectorSpace{T<:Tuple{Vararg{SimpleNamedVectorSpace}}, B<:Tuple} <: NamedVectorSpace{B}
-
-Abstract composite named vector space.
-"""
-abstract type CompositeNamedVectorSpace{T<:Tuple{Vararg{SimpleNamedVectorSpace}}, B<:Tuple} <: NamedVectorSpace{B} end
-@inline @generated Base.names(::Type{<:CompositeNamedVectorSpace{T}}) where {T<:Tuple{Vararg{SimpleNamedVectorSpace}}} = map(first, map(names, fieldtypes(T)))
-@inline pairtype(::Type{V}) where {V<:CompositeNamedVectorSpace} = NamedTuple{names(V), eltype(V)}
-@inline Base.convert(::Type{T}, basis::T, ::CompositeNamedVectorSpace) where {T<:Tuple} = basis
-@inline Base.getindex(ps::NamedVectorSpacePairIteration{V}, i::Integer) where {V<:CompositeNamedVectorSpace} = NamedTuple{names(V)}(ps.namedvectorspace[i])
-
-"""
-    NamedVectorSpaceZip{T<:Tuple{Vararg{SimpleNamedVectorSpace}}, B<:Tuple} <: CompositeNamedVectorSpace{T, B}
-
-Zipped named vector space.
-"""
-struct NamedVectorSpaceZip{T<:Tuple{Vararg{SimpleNamedVectorSpace}}, B<:Tuple} <: CompositeNamedVectorSpace{T, B}
-    contents::T
-    NamedVectorSpaceZip(contents::Tuple{Vararg{SimpleNamedVectorSpace}}) = new{typeof(contents), map(eltype, typeof(contents))}(contents)
-end
-@inline NamedVectorSpaceZip(contents::SimpleNamedVectorSpace...) = NamedVectorSpaceZip(contents)
-@inline VectorSpaceStyle(::Type{<:NamedVectorSpaceZip}) = VectorSpaceZipped()
-
-"""
-    NamedVectorSpaceProd{Order, T<:Tuple{Vararg{SimpleNamedVectorSpace}}, B<:Tuple} <: CompositeNamedVectorSpace{T, B}
-
-Direct producted named vector space.
-"""
-struct NamedVectorSpaceProd{Order, T<:Tuple{Vararg{SimpleNamedVectorSpace}}, B<:Tuple} <: CompositeNamedVectorSpace{T, B}
-    contents::T
-    function NamedVectorSpaceProd{Order}(contents::Tuple{Vararg{SimpleNamedVectorSpace}}) where Order
-        @assert Order∈(:forward, :backward) "NamedVectorSpaceProd error: not supported order."
-        new{Order, typeof(contents), map(eltype, typeof(contents))}(contents)
-    end
-end
-@inline NamedVectorSpaceProd{Order}(contents::SimpleNamedVectorSpace...) where Order = NamedVectorSpaceProd{Order}(contents)
-@inline VectorSpaceStyle(::Type{<:NamedVectorSpaceProd{Order}}) where Order = VectorSpaceDirectProducted{Order}()
-
-"""
-    ⊞(vs₁::SimpleNamedVectorSpace, vs₂::SimpleNamedVectorSpace) -> NamedVectorSpaceZip
-    ⊞(vs₁::SimpleNamedVectorSpace, vs₂::NamedVectorSpaceZip) -> NamedVectorSpaceZip
-    ⊞(vs₁::NamedVectorSpaceZip, vs₂::SimpleNamedVectorSpace) -> NamedVectorSpaceZip
-    ⊞(vs₁::NamedVectorSpaceZip, vs₂::NamedVectorSpaceZip) -> NamedVectorSpaceZip
-
-Zip of named vector spaces.
-"""
-@inline ⊞(vs₁::SimpleNamedVectorSpace, vs₂::SimpleNamedVectorSpace) = NamedVectorSpaceZip(vs₁, vs₂)
-@inline ⊞(vs₁::SimpleNamedVectorSpace, vs₂::NamedVectorSpaceZip) = NamedVectorSpaceZip(vs₁, vs₂.contents...)
-@inline ⊞(vs₁::NamedVectorSpaceZip, vs₂::SimpleNamedVectorSpace) = NamedVectorSpaceZip(vs₁.contents..., vs₂)
-@inline ⊞(vs₁::NamedVectorSpaceZip, vs₂::NamedVectorSpaceZip) = NamedVectorSpaceZip(vs₁.contents..., vs₂.contents...)
-
-"""
-    ⊗(vs₁::SimpleNamedVectorSpace, vs₂::SimpleNamedVectorSpace, order::Symbol=:forward) -> NamedVectorSpaceProd{order}
-    ⊗(vs₁::SimpleNamedVectorSpace, vs₂::NamedVectorSpaceProd{Order}) where Order -> NamedVectorSpaceProd{Order}
-    ⊗(vs₁::NamedVectorSpaceProd{Order}, vs₂::SimpleNamedVectorSpace) where Order -> NamedVectorSpaceProd{Order}
-    ⊗(vs₁::NamedVectorSpaceProd{Order}, vs₂::NamedVectorSpaceProd{Order}) where Order -> NamedVectorSpaceProd{Order}
-
-Direct product of named vector spaces.
-"""
-@inline ⊗(vs₁::SimpleNamedVectorSpace, vs₂::SimpleNamedVectorSpace, order::Symbol=:forward) = NamedVectorSpaceProd{order}(vs₁, vs₂)
-@inline ⊗(vs₁::SimpleNamedVectorSpace, vs₂::NamedVectorSpaceProd{Order}) where Order = NamedVectorSpaceProd{Order}(vs₁, vs₂.contents...)
-@inline ⊗(vs₁::NamedVectorSpaceProd{Order}, vs₂::SimpleNamedVectorSpace) where Order = NamedVectorSpaceProd{Order}(vs₁.contents..., vs₂)
-@inline ⊗(vs₁::NamedVectorSpaceProd{Order}, vs₂::NamedVectorSpaceProd{Order}) where Order = NamedVectorSpaceProd{Order}(vs₁.contents..., vs₂.contents...)
+@inline Base.getindex(::VectorSpaceZipped, vs::VectorSpace, index::CartesianIndex) = convert(eltype(vs), index, vs)
 
 end # module

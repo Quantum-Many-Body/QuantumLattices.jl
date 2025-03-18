@@ -1,10 +1,9 @@
 using DataStructures: OrderedDict
 using OffsetArrays: OffsetArray
-using QuantumLattices: ⊞, ⊗, id, value
+using QuantumLattices: id, shape, value
 using QuantumLattices.Toolkit
 using StaticArrays: SVector
 
-import QuantumLattices: shape
 import QuantumLattices.Toolkit: VectorSpaceStyle, contentnames, contenttype, dissolve, getcontent, isparameterbound, parameternames
 
 @testset "tostr" begin
@@ -67,6 +66,28 @@ end
     for i in eachindex(indexes₁, indexes₂)
         @test indexes₁[i] == indexes₂[i]
     end
+end
+
+@testset "DirectProductedIndices" begin
+    forward = DirectProductedIndices{:forward}((-2:-1, 2:3))
+    @test length(forward) == 4
+    @test collect(forward) == [CartesianIndex(-2, 2), CartesianIndex(-1, 2), CartesianIndex(-2, 3), CartesianIndex(-1, 3)]
+    for i in eachindex(forward)
+        @test forward[i] in forward
+        @test searchsortedfirst(forward, forward[i]) == i
+    end
+    @test CartesianIndex(1, 1) ∉ forward
+
+    backward = DirectProductedIndices{:backward}((-2:-1, 2:3))
+    @test length(backward) == 4
+    @test collect(backward) == [CartesianIndex(-2, 2), CartesianIndex(-2, 3), CartesianIndex(-1, 2), CartesianIndex(-1, 3)]
+    for i in eachindex(backward)
+        @test backward[i] in backward
+        @test searchsortedfirst(backward, backward[i]) == i
+    end
+    @test CartesianIndex(1, 1) ∉ backward
+
+    @test DirectProductedIndices{:backward}((2, 2:3)) == DirectProductedIndices{:backward}((1:2, 2:3))
 end
 
 @testset "Segment" begin
@@ -399,18 +420,15 @@ end
 end
 
 struct SimpleVectorSpace{B, N} <: VectorSpace{B}
-    sorted::Bool
     contents::NTuple{N, B}
-    SimpleVectorSpace(sorted::Bool, contents::NTuple{N, B}) where {B, N} = new{B, N}(sorted, contents)
 end
 @inline VectorSpaceStyle(::Type{<:SimpleVectorSpace}) = VectorSpaceEnumerative()
-@inline contentnames(::Type{<:SimpleVectorSpace}) = (:sorted, :contents)
-@inline Base.issorted(vs::SimpleVectorSpace) = vs.sorted
+@inline SimpleVectorSpace(contents...) = SimpleVectorSpace(contents)
 
 @testset "VectorSpaceEnumerative" begin
     id₀, id₄ = (1, 0), (1, 4)
     id₁, id₂, id₃ = (1, 1), (1, 2), (1, 3)
-    vs = SimpleVectorSpace(true, (id₁, id₂, id₃))
+    vs = SimpleVectorSpace(id₁, id₂, id₃)
     @test vs == deepcopy(vs)
     @test isequal(vs, deepcopy(vs))
     @test axes(vs) == (Base.OneTo(3),)
@@ -425,29 +443,6 @@ end
     @test (id₁∈vs) && (id₂∈vs) && (id₃∈vs)
 end
 
-struct SimpleIndices{N} <: VectorSpace{CartesianIndex{N}}
-    shape::NTuple{N, UnitRange{Int}}
-    SimpleIndices(shape::NTuple{N, UnitRange{Int}}) where N = new{N}(shape)
-end
-@inline SimpleIndices(shape::UnitRange{Int}...) = SimpleIndices(shape)
-@inline VectorSpaceStyle(::Type{<:SimpleIndices}) = VectorSpaceCartesian()
-@inline shape(vs::SimpleIndices) = vs.shape
-@inline Base.convert(::Type{<:CartesianIndex}, basis::CartesianIndex{N}, ::SimpleIndices{N}) where N = basis
-
-@testset "VectorSpaceCartesian" begin
-    foi = SimpleIndices(2:3, 2:3, 2:3)
-    @test length(foi) == 8
-    @test issorted(foi) == true
-    @test foi|>collect == CartesianIndex.([(2, 2, 2), (3, 2, 2), (2, 3, 2), (3, 3, 2), (2, 2, 3), (3, 2, 3), (2, 3, 3), (3, 3, 3)])
-    for (i, index) in enumerate(CartesianIndices((2:3, 2:3, 2:3)))
-        @test foi[i] == foi[index] == index
-        @test searchsortedfirst(foi, index) == i
-        @test index∈foi
-    end
-    i₁, i₂ = CartesianIndex(1, 1, 1), CartesianIndex(4, 4, 4)
-    @test i₁∉foi && i₂∉foi
-end
-
 struct DirectSummedVectorSpace{T<:Tuple, B} <: VectorSpace{B}
     contents::T
     DirectSummedVectorSpace(contents::Tuple) = new{typeof(contents), mapreduce(eltype, typejoin, contents)}(contents)
@@ -456,62 +451,57 @@ end
 @inline DirectSummedVectorSpace(contents...) = DirectSummedVectorSpace(contents)
 
 @testset "VectorSpaceDirectSummed" begin
-    a = SimpleIndices(1:3)
-    b = SimpleIndices(3:4, 7:7)
+    a = SimpleVectorSpace(1, 2, 3)
+    b = SimpleVectorSpace((3, 7), (4, 7))
     c = DirectSummedVectorSpace(a, b)
     @test length(c) == 5
-    @test c[1]==CartesianIndex(1) && c[2]==CartesianIndex(2) && c[3]==CartesianIndex(3) && c[4]==CartesianIndex(3, 7) && c[5]==CartesianIndex(4, 7)
+    @test c[1]==1 && c[2]==2 && c[3]==3 && c[4]==(3, 7) && c[5]==(4, 7)
 end
 
-@testset "NamedVectorSpace" begin
-    values = OffsetArray(1:2, -2:-1)
-    t = ParameterSpace{:t}(values)
-    @test contentnames(typeof(t)) == (:contents,)
-    @test length(t) == 2
-    @test t≠ParameterSpace{:μ}(values) && t==ParameterSpace{:t}(values)
-    @test !isequal(t, ParameterSpace{:μ}(values)) && isequal(t, ParameterSpace{:t}(values))
-    @test names(t) == names(typeof(t)) == (:t,)
-    @test t[1]==1 && t[2]==2
-    @test t[1]∈t && t[2]∈t
-    ps = pairs(t)
-    @test size(ps) == (2,)
-    @test eltype(ps) == eltype(typeof(ps)) == NamedTuple{(:t,), Tuple{Int}}
-    @test ps[1]==(t=1,) && ps[2]==(t=2,)
+struct DirectProductedVectorSpace{Order, T<:Tuple, B<:Tuple} <: VectorSpace{B}
+    contents::T
+    DirectProductedVectorSpace{Order}(contents::Tuple) where Order = new{Order, typeof(contents), Tuple{map(eltype, fieldtypes(typeof(contents)))...}}(contents)
+end
+@inline VectorSpaceStyle(::Type{<:DirectProductedVectorSpace{Order}}) where Order = VectorSpaceDirectProducted(Order)
+@inline DirectProductedVectorSpace{Order}(contents...) where Order = DirectProductedVectorSpace{Order}(contents)
+@inline Base.convert(::Type{<:Tuple}, index::CartesianIndex, vs::DirectProductedVectorSpace) = map(getindex, vs.contents, index.I)
+@inline Base.convert(::Type{<:CartesianIndex}, basis::Tuple, vs::DirectProductedVectorSpace) = CartesianIndex(map(searchsortedfirst, vs.contents, basis)...)
 
-    t′ = DirectSummedVectorSpace(t, ParameterSpace{:t}(OffsetArray(8:10, -10:-8)))
-    @test length(t′) == 5
-    @test t′[1]==1 && t′[2]==2 && t′[3]==8 && t′[4]==9 && t′[5]==10
+@testset "VectorSpaceDirectProducted" begin
+    a = SimpleVectorSpace(1, 2)
+    b = SimpleVectorSpace(4, 5)
 
-    U = ParameterSpace{:U}(OffsetArray([8.0, 9.0], -10:-9))
-    zps = NamedVectorSpaceZip(t, U)
-    @test VectorSpaceStyle(zps) == VectorSpaceZipped()
-    @test eltype(zps) == eltype(typeof(zps)) == Tuple{Int, Float64}
-    @test names(zps) == names(typeof(zps)) == (:t, :U)
-    @test length(zps) == 2
-    @test zps[1]==(1, 8.0) && zps[2]==(2, 9.0)
-    ps = pairs(zps)
-    @test size(ps) == (2,)
-    @test eltype(ps) == eltype(typeof(ps)) == NamedTuple{(:t, :U), Tuple{Int, Float64}}
-    @test ps[1]==(t=1, U=8.0) && ps[2]==(t=2, U=9.0)
+    forward = DirectProductedVectorSpace{:forward}(a, b)
+    @test shape(forward) == (Base.OneTo(2), Base.OneTo(2))
+    @test length(forward) == 4
+    @test collect(forward) == [(1, 4), (2, 4), (1, 5), (2, 5)]
+    for i in eachindex(forward)
+        @test forward[i] ∈ forward
+        @test searchsortedfirst(forward, forward[i]) == i
+    end
 
-    pps = NamedVectorSpaceProd{:backward}(t, U)
-    @test VectorSpaceStyle(pps) == VectorSpaceDirectProducted(:backward)
-    @test eltype(pps) == eltype(typeof(pps)) == Tuple{Int, Float64}
-    @test names(pps) == names(typeof(pps)) == (:t, :U)
-    @test length(pps) == 4
-    @test pps[1]==(1, 8.0) && pps[2]==(1, 9.0) && pps[3]==(2, 8.0) && pps[4]==(2, 9.0)
+    backward = DirectProductedVectorSpace{:backward}(a, b)
+    @test shape(backward) == (Base.OneTo(2), Base.OneTo(2))
+    @test length(backward) == 4
+    @test collect(backward) == [(1, 4), (1, 5), (2, 4), (2, 5)]
+    for i in eachindex(backward)
+        @test backward[i] ∈ backward
+        @test searchsortedfirst(backward, backward[i]) == i
+    end
+end
 
-    pps = NamedVectorSpaceProd{:forward}(t, U)
-    @test VectorSpaceStyle(pps) == VectorSpaceDirectProducted(:forward)
-    @test pps[1]==(1, 8.0) && pps[2]==(2, 8.0) && pps[3]==(1, 9.0) && pps[4]==(2, 9.0)
+struct ZippedVectorSpace{T<:Tuple, B<:Tuple} <: VectorSpace{B}
+    contents::T
+    ZippedVectorSpace(contents::Tuple) = new{typeof(contents), Tuple{map(eltype, fieldtypes(typeof(contents)))...}}(contents)
+end
+@inline VectorSpaceStyle(::Type{<:ZippedVectorSpace}) = VectorSpaceZipped()
+@inline ZippedVectorSpace(contents...) = ZippedVectorSpace(contents)
+@inline Base.convert(::Type{<:Tuple}, index::CartesianIndex, vs::ZippedVectorSpace) = map(getindex, vs.contents, index.I)
 
-    μ = ParameterSpace{:μ}([11, 12])
-    @test t ⊞ U == zps
-    @test μ ⊞ zps == NamedVectorSpaceZip(μ, t, U)
-    @test zps ⊞ μ == NamedVectorSpaceZip(t, U, μ)
-    @test zps ⊞ NamedVectorSpaceZip(μ) == NamedVectorSpaceZip(t, U, μ)
-    @test t ⊗ U == pps
-    @test μ ⊗ pps == NamedVectorSpaceProd{:forward}(μ, t, U)
-    @test pps ⊗ μ == NamedVectorSpaceProd{:forward}(t, U, μ)
-    @test pps ⊗ NamedVectorSpaceProd{:forward}(μ) == NamedVectorSpaceProd{:forward}(t, U, μ)
+@testset "VectorSpaceZipped" begin
+    a = SimpleVectorSpace(1, 2, 3)
+    b = SimpleVectorSpace(4, 5, 6)
+    c = ZippedVectorSpace(a, b)
+    @test length(c) == 3
+    @test collect(c) == [(1, 4), (2, 5), (3, 6)]
 end
