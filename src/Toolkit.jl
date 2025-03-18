@@ -27,6 +27,7 @@ export CompositeDict, CompositeVector
 
 # Vector spaces
 export VectorSpace, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceEnumerative, VectorSpaceGeneral, VectorSpaceStyle, VectorSpaceZipped
+export DirectProductedVectorSpace, DirectSummedVectorSpace, ZippedVectorSpace
 
 # Utilities
 "Absolute tolerance for float numbers."
@@ -1152,5 +1153,73 @@ struct VectorSpaceZipped <: VectorSpaceStyle end
     return CartesianIndex(index)
 end
 @inline Base.getindex(::VectorSpaceZipped, vs::VectorSpace, index::CartesianIndex) = convert(eltype(vs), index, vs)
+
+"""
+    DirectSummedVectorSpace{B, T<:Tuple} <: VectorSpace{B}
+
+A simple direct summed vector space.
+"""
+struct DirectSummedVectorSpace{B, T<:Tuple} <: VectorSpace{B}
+    contents::T
+    DirectSummedVectorSpace(contents::Tuple) = new{mapreduce(eltype, typejoin, contents), typeof(contents)}(contents)
+end
+@inline VectorSpaceStyle(::Type{<:DirectSummedVectorSpace}) = VectorSpaceDirectSummed()
+
+"""
+    DirectSummedVectorSpace(contents...)
+    DirectSummedVectorSpace(contents::Tuple)
+
+Construct a simple direct summed vector space.
+"""
+@inline DirectSummedVectorSpace(contents...) = DirectSummedVectorSpace(contents)
+
+"""
+    DirectProductedVectorSpace{Order, B, T<:Tuple} <: VectorSpace{B}
+
+A simple direct producted vector space.
+"""
+struct DirectProductedVectorSpace{Order, B, T<:Tuple} <: VectorSpace{B}
+    contents::T
+    DirectProductedVectorSpace{Order, B}(contents::Tuple) where {Order, B} = new{Order, B, typeof(contents)}(contents)
+end
+@inline VectorSpaceStyle(::Type{<:DirectProductedVectorSpace{Order}}) where Order = VectorSpaceDirectProducted(Order)
+@inline Base.convert(::Type{B}, index::CartesianIndex, vs::DirectProductedVectorSpace{Order, B}) where {B, Order} = B(map(getindex, vs.contents, index.I))
+@inline Base.convert(::Type{<:CartesianIndex}, basis::B, vs::DirectProductedVectorSpace{Order, B}) where {B<:Tuple, Order} = CartesianIndex(map(searchsortedfirst, vs.contents, basis)...)
+
+"""
+    DirectProductedVectorSpace{Order}(contents...) where Order
+    DirectProductedVectorSpace{Order}(contents::Tuple) where Order
+    DirectProductedVectorSpace{Order, B}(contents...) where {Order, B}
+    DirectProductedVectorSpace{Order, B}(contents::Tuple) where {Order, B}
+
+Construct a simple direct producted vector space.
+"""
+@inline DirectProductedVectorSpace{Order}(contents...) where Order = DirectProductedVectorSpace{Order}(contents)
+@inline DirectProductedVectorSpace{Order}(contents::Tuple) where Order = DirectProductedVectorSpace{Order, Tuple{map(eltype, fieldtypes(typeof(contents)))...}}(contents...)
+@inline DirectProductedVectorSpace{Order, B}(contents...) where {Order, B} = DirectProductedVectorSpace{Order, B}(contents)
+
+"""
+    ZippedVectorSpace{B, T<:Tuple} <: VectorSpace{B}
+
+A simple zipped vector space.
+"""
+struct ZippedVectorSpace{B, T<:Tuple} <: VectorSpace{B}
+    contents::T
+    ZippedVectorSpace{B}(contents::Tuple) where B = new{B, typeof(contents)}(contents)
+end
+@inline VectorSpaceStyle(::Type{<:ZippedVectorSpace}) = VectorSpaceZipped()
+@inline Base.convert(::Type{B}, index::CartesianIndex, vs::ZippedVectorSpace{B}) where B = B(map(getindex, vs.contents, index.I))
+
+"""
+    ZippedVectorSpace(contents...)
+    ZippedVectorSpace(contents::Tuple)
+    ZippedVectorSpace{B}(contents...) where B
+    ZippedVectorSpace{B}(contents::Tuple) where B
+
+Construct a simple zipped vector space.
+"""
+@inline ZippedVectorSpace(contents...) = ZippedVectorSpace(contents)
+@inline ZippedVectorSpace(contents::Tuple) = ZippedVectorSpace{Tuple{map(eltype, fieldtypes(typeof(contents)))...}}(contents...)
+@inline ZippedVectorSpace{B}(contents...) where B = ZippedVectorSpace{B}(contents)
 
 end # module

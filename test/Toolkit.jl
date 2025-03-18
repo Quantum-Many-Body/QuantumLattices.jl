@@ -443,13 +443,6 @@ end
     @test (id₁∈vs) && (id₂∈vs) && (id₃∈vs)
 end
 
-struct DirectSummedVectorSpace{T<:Tuple, B} <: VectorSpace{B}
-    contents::T
-    DirectSummedVectorSpace(contents::Tuple) = new{typeof(contents), mapreduce(eltype, typejoin, contents)}(contents)
-end
-@inline VectorSpaceStyle(::Type{<:DirectSummedVectorSpace}) = VectorSpaceDirectSummed()
-@inline DirectSummedVectorSpace(contents...) = DirectSummedVectorSpace(contents)
-
 @testset "VectorSpaceDirectSummed" begin
     a = SimpleVectorSpace(1, 2, 3)
     b = SimpleVectorSpace((3, 7), (4, 7))
@@ -457,15 +450,6 @@ end
     @test length(c) == 5
     @test c[1]==1 && c[2]==2 && c[3]==3 && c[4]==(3, 7) && c[5]==(4, 7)
 end
-
-struct DirectProductedVectorSpace{Order, T<:Tuple, B<:Tuple} <: VectorSpace{B}
-    contents::T
-    DirectProductedVectorSpace{Order}(contents::Tuple) where Order = new{Order, typeof(contents), Tuple{map(eltype, fieldtypes(typeof(contents)))...}}(contents)
-end
-@inline VectorSpaceStyle(::Type{<:DirectProductedVectorSpace{Order}}) where Order = VectorSpaceDirectProducted(Order)
-@inline DirectProductedVectorSpace{Order}(contents...) where Order = DirectProductedVectorSpace{Order}(contents)
-@inline Base.convert(::Type{<:Tuple}, index::CartesianIndex, vs::DirectProductedVectorSpace) = map(getindex, vs.contents, index.I)
-@inline Base.convert(::Type{<:CartesianIndex}, basis::Tuple, vs::DirectProductedVectorSpace) = CartesianIndex(map(searchsortedfirst, vs.contents, basis)...)
 
 @testset "VectorSpaceDirectProducted" begin
     a = SimpleVectorSpace(1, 2)
@@ -489,14 +473,6 @@ end
         @test searchsortedfirst(backward, backward[i]) == i
     end
 end
-
-struct ZippedVectorSpace{T<:Tuple, B<:Tuple} <: VectorSpace{B}
-    contents::T
-    ZippedVectorSpace(contents::Tuple) = new{typeof(contents), Tuple{map(eltype, fieldtypes(typeof(contents)))...}}(contents)
-end
-@inline VectorSpaceStyle(::Type{<:ZippedVectorSpace}) = VectorSpaceZipped()
-@inline ZippedVectorSpace(contents...) = ZippedVectorSpace(contents)
-@inline Base.convert(::Type{<:Tuple}, index::CartesianIndex, vs::ZippedVectorSpace) = map(getindex, vs.contents, index.I)
 
 @testset "VectorSpaceZipped" begin
     a = SimpleVectorSpace(1, 2, 3)
