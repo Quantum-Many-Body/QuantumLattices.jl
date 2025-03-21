@@ -2,10 +2,10 @@ using OffsetArrays: OffsetArray
 using LinearAlgebra: cross, det, dot, norm
 using Plots: plot, savefig, plot!
 using QuantumLattices.Spatials
-using QuantumLattices: decompose, dimension, expand
+using QuantumLattices: decompose, dimension, expand, shape
 using QuantumLattices.QuantumNumbers: Momenta, 𝕂¹, 𝕂², 𝕂³
 using QuantumLattices.QuantumOperators: scalartype
-using QuantumLattices.Toolkit: Float, Segment, contentnames, shape
+using QuantumLattices.Toolkit: Float, Segment, contentnames
 using Random: seed!
 using StaticArrays: SVector
 
@@ -277,19 +277,27 @@ end
 end
 
 @testset "BrillouinZone" begin
-    recipls = [[1.0, 0.0], [0.0, 1.0]]
+    recipls = [[2.0, 0.0], [0.0, 3.0]]
     bz = BrillouinZone(𝕂²{2, 4}, recipls)
     @test bz==deepcopy(bz) && isequal(bz, deepcopy(bz))
     @test bz≠BrillouinZone(recipls, 4) && !isequal(bz, BrillouinZone(recipls, 4))
-    @test hash(bz) == hash(((SVector(1.0, 0.0), SVector(0.0, 1.0)), (2, 4)))
     @test scalartype(bz) == scalartype(typeof(bz)) == Float
     @test dimension(bz) == dimension(typeof(bz)) == 2
-    @test shape(bz) == (0:3, 0:1)
-    @test keys(bz) == Momenta(𝕂²{2, 4})
+    @test label(bz) == label(typeof(bz)) == :k
+    @test label(bz, 1) == label(typeof(bz), 1) == "k₁"
+    @test label(bz, 2) == label(typeof(bz), 2) == "k₂"
+    @test reciprocals(bz) == recipls
+    @test fractionals(bz) == [[0.0, 0.0], [0.0, 0.25], [0.0, 0.5], [0.0, 0.75], [0.5, 0.0], [0.5, 0.25], [0.5, 0.5], [0.5, 0.75]]
+    @test shape(bz) == (0:1, 0:3)
+    @test hash(bz) == hash(((SVector(2.0, 0.0), SVector(0.0, 3.0)), (2, 4)))
     @test keytype(bz) == keytype(typeof(bz)) == 𝕂²{2, 4}
-    @test collect(bz) == [[0.0, 0.0], [0.0, 0.25], [0.0, 0.5], [0.0, 0.75], [0.5, 0.0], [0.5, 0.25], [0.5, 0.5], [0.5, 0.75]]
-    @test volume(bz) == 1.0
-    savefig(plot(bz), "BrillouinZone.png")
+    @test keys(bz) == Momenta(𝕂²{2, 4})
+    @test collect(bz) == [bz[key] for key in keys(bz)] == [[0.0, 0.0], [0.0, 0.75], [0.0, 1.5], [0.0, 2.25], [1.0, 0.0], [1.0, 0.75], [1.0, 1.5], [1.0, 2.25]]
+    @test range(bz, 1)==range(0.0, 0.5, 2)
+    @test range(bz, 2)==range(0.0, 0.75, 4)
+    @test volume(bz) == 6.0
+    savefig(plot(bz; fractional=false), "BrillouinZone.png")
+    savefig(plot(bz; fractional=true), "BrillouinZone-fractional.png")
 
     recipls = [[1.0, 0.0, 0.0]]
     @test BrillouinZone{:q}(𝕂¹{10}, recipls) == BrillouinZone{:q}(recipls, 10)
@@ -299,11 +307,6 @@ end
 
     recipls = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
     @test BrillouinZone(𝕂³{10, 10, 10}, recipls) == BrillouinZone(recipls, 10)
-
-    bz = BrillouinZone(𝕂³{10, 100, 1000}, recipls)
-    @test axis(bz, 1) ≈ collect(Float64, 0:9)/10
-    @test axis(bz, 2) ≈ collect(Float64, 0:99)/100
-    @test axis(bz, 3) ≈ collect(Float64, 0:999)/1000
 end
 
 @testset "ReciprocalZone" begin
@@ -312,6 +315,7 @@ end
     @test rz == ReciprocalZone([[1.0]], (-1//2=>1//2,); length=10)
     @test rz == ReciprocalZone([[1.0]], [-1//2=>1//2]; length=10)
     @test all(shrink(rz, 1:5) .== ReciprocalZone([[1.0]], -0.5=>-0.1, length=5, ends=(true, true)))
+    @test fractionals(rz) ≈ [[-0.5], [-0.4], [-0.3], [-0.2], [-0.1], [0.0], [0.1], [0.2], [0.3], [0.4]]
 
     rz = ReciprocalZone{:q}([[1.0]], length=10)
     @test rz == ReciprocalZone{:q}([[1.0]], -1//2=>1//2; length=10)
@@ -324,15 +328,31 @@ end
     @test volume(ReciprocalZone([b₁, b₂, b₃], -1=>1, -1=>1, -1=>1; length=10)) == 8
 
     rz = ReciprocalZone([b₁, b₂, b₃], -2=>2, -1=>1, -3=>3; length=10)
-    @test axis(rz, 1) ≈ collect(Segment(-2, 2, 10))
-    @test axis(rz, 2) ≈ collect(Segment(-1, 1, 10))
-    @test axis(rz, 3) ≈ collect(Segment(-3, 3, 10))
+    @test range(rz, 1) ≈ collect(Segment(-2, 2, 10))
+    @test range(rz, 2) ≈ collect(Segment(-1, 1, 10))
+    @test range(rz, 3) ≈ collect(Segment(-3, 3, 10))
 
     bz = BrillouinZone{:q}(𝕂²{8, 8}, [[1.0, 0.0], [0.0, 1.0]])
     rz = ReciprocalZone(bz)
     @test rz == ReciprocalZone{:q}([[1.0, 0.0], [0.0, 1.0]], 0=>1, 0=>1; length=8)
     @test collect(rz) == collect(bz)
-    savefig(plot(rz), "ReciprocalZone.png")
+    savefig(plot(rz; fractional=false), "ReciprocalZone.png")
+    savefig(plot(rz; fractional=true), "ReciprocalZone-fractional.png")
+end
+
+@testset "ReciprocalScatter" begin
+    b₁, b₂ = [2.0, 0.0, 0.0], [0.0, 2.0, 0.0]
+    coordinates = [[0.0, 0.5], [0.25, 0.25], [0.5, 0.0], [0.25, -0.25], [0.0, -0.5], [-0.25, -0.25], [-0.5, 0.0], [-0.25, 0.25]]
+    rs = ReciprocalScatter([b₁, b₂], coordinates)
+    for (i, coordinate) in enumerate(fractionals(rs))
+        @test rs[i] == b₁*coordinate[1] + b₂*coordinate[2]
+    end
+    savefig(plot(rs; fractional=false), "ReciprocalScatter.png")
+    savefig(plot(rs; fractional=true), "ReciprocalScatter-fractional.png")
+
+    rs = ReciprocalScatter{:q}([b₁, b₂], [[0.0, 0.0], [0.0, 0.25], [0.0, 0.5], [0.0, 0.75], [0.5, 0.0], [0.5, 0.25], [0.5, 0.5], [0.5, 0.75]])
+    @test rs == ReciprocalScatter(BrillouinZone{:q}(𝕂²{2, 4}, [b₁, b₂]))
+    @test rs == ReciprocalScatter(ReciprocalZone{:q}([b₁, b₂], 0=>1, 0=>1; length=(2, 4), ends=(true, false)))
 end
 
 @testset "ReciprocalPath" begin
@@ -394,16 +414,6 @@ end
     savefig(plt, "PickPoint.png")
 end
 
-@testset "ReciprocalScatter" begin
-    b₁, b₂ = [2.0, 0.0, 0.0], [0.0, 2.0, 0.0]
-    coordinates = [[0.0, 0.5], [0.25, 0.25], [0.5, 0.0], [0.25, -0.25], [0.0, -0.5], [-0.25, -0.25], [-0.5, 0.0], [-0.25, 0.25]]
-    rs = ReciprocalScatter([b₁, b₂], coordinates)
-    for (i, coordinate) in enumerate(coordinates)
-        @test rs[i] == b₁*coordinate[1] + b₂*coordinate[2]
-    end
-    savefig(plot(rs), "ReciprocalScatter.png")
-end
-
 @testset "ReciprocalCurve" begin
     rc = ReciprocalCurve([[0.0, 0.0], [0.5, 0.0], [0.5, 0.5], [0.0, 0.0]])
     @test rc == ReciprocalCurve([(0.0, 0.0), (0.5, 0.0), (0.5, 0.5), (0.0, 0.0)])
@@ -420,13 +430,13 @@ end
         surface[i] = -imag(1/(0.1im+2cos(k[1])+2cos(k[2])))
     end
     savefig(plot(bz, surface), "SingleSurface.png")
-    save("SingleSurface.dat", bz, surface)
+    save("SingleSurface.dat", bz, surface; fractional=false)
 
     surfaces = zeros(size(surface)..., 2)
     surfaces[:, :, 1] = surface
     surfaces[:, :, 2] = surface
     savefig(plot(bz, surfaces), "MultiSurfaces.png")
-    save("MultiSurfaces.dat", bz, surfaces)
+    save("MultiSurfaces.dat", bz, surfaces; fractional=true)
 
     rz = ReciprocalZone([[2pi, 0], [0, 2pi]], -2=>2, -1=>1, length=(400, 200))
     surface = zeros(Float64, (200, 400))
@@ -434,34 +444,36 @@ end
         surface[i] = -imag(1/(0.1im+2cos(k[1])+2cos(k[2])))
     end
     savefig(plot(rz, surface), "SingleExtendedSurface.png")
-    save("SingleExtendedSurface.dat", rz, surface)
+    save("SingleExtendedSurface.dat", rz, surface; fractional=false)
 
     surfaces = zeros(size(surface)..., 2)
     surfaces[:, :, 1] = surface
     surfaces[:, :, 2] = surface
     savefig(plot(rz, surfaces), "MultiExtendedSurfaces.png")
-    save("MultiExtendedSurfaces.dat", rz, surfaces)
+    save("MultiExtendedSurfaces.dat", rz, surfaces; fractional=true)
 
     path = ReciprocalPath([[2pi, 0], [0, 2pi]], rectangle"Γ-X-M-Γ")
     band = map(k->-2cos(k[1])-2cos(k[2]), path)
-    savefig(plot(path, band), "SingleBand.png")
-    save("SingleBand.dat", path, band)
-    savefig(plot(path, [band -band]), "MultiBands.png")
-    save("MultiBands.dat", path, [band -band])
+    bands = [band -band]
+    savefig(plot(path, bands), "MultiBands.png")
+    save("MultiBands-1.dat", path, bands; distance=false)
+    save("MultiBands-2.dat", path, bands; distance=true)
 
     weights = fill(0.01, length(path), 2, 2)
     weights[:, 1, 1] = abs2.(band)
     weights[:, 2, 2] = abs2.(band)
-    savefig(plot(path, [band -band], weights; weightmultiplier=1.0, weightwidth=2.0, weightcolors=(:blue, :red), weightlabels=("↑", "↓")), "MultiBandsWithWeights.png")
+    savefig(plot(path, bands, weights; weightmultiplier=1.0, weightwidth=2.0, weightcolors=(:blue, :red), weightlabels=("↑", "↓")), "MultiBandsWithWeights.png")
+    save("MultiBandsWithWeights-1.dat", path, bands, weights; distance=false)
+    save("MultiBandsWithWeights-2.dat", path, bands, weights; distance=true)
 
     energies = LinRange(-6.0, 6.0, 401)
     spectrum = [-imag(1/(e+0.1im-b)) for e in energies, b in band]
     savefig(plot(path, energies, spectrum), "SingleSpectrum.png")
-    save("SingleSpectrum.dat", path, energies, spectrum)
+    save("SingleSpectrum.dat", path, energies, spectrum; distance=false)
 
     spectra = zeros(size(spectrum)..., 2)
     spectra[:, :, 1] = spectrum
     spectra[:, :, 2] = spectrum
     savefig(plot(path, energies, spectra), "MultiSpectra.png")
-    save("MultiSpectra.dat", path, energies, spectra)
+    save("MultiSpectra.dat", path, energies, spectra; distance=true)
 end

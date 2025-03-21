@@ -10,7 +10,7 @@ using RecipesBase: RecipesBase, @recipe, @series, @layout
 using StaticArrays: MVector, SVector
 using ..QuantumLattices: OneAtLeast, OneOrMore, rank
 using ..QuantumNumbers: Momenta, 𝕂, period, periods
-using ..Toolkit: atol, rtol, efficientoperations, CompositeDict, Float, SimpleNamedVectorSpace, Segment, VectorSpaceCartesian, VectorSpaceDirectSummed, VectorSpaceEnumerative, VectorSpaceStyle, concatenate, getcontent
+using ..Toolkit: atol, rtol, efficientoperations, CompositeDict, DirectProductedVectorSpace, Float, Segment, VectorSpace, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceEnumerative, VectorSpaceStyle, concatenate, getcontent, subscript
 
 import ..QuantumLattices: decompose, dimension, expand, kind, shape
 import ..QuantumNumbers: 𝕂¹, 𝕂², 𝕂³
@@ -18,8 +18,8 @@ import ..QuantumOperators: scalartype
 import ..Toolkit: contentnames
 
 export azimuth, azimuthd, direction, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, polar, polard, reciprocals, rotate, translate, tile, volume
-export AbstractLattice, Bond, BrillouinZone, Lattice, Neighbors, Point, ReciprocalCurve, ReciprocalScatter, ReciprocalSpace, ReciprocalZone, ReciprocalPath
-export axis, bonds, bonds!, icoordinate, isintracell, nneighbor, rcoordinate, save, selectpath, shrink, ticks
+export AbstractLattice, Bond, BrillouinZone, FractionalReciprocalSpace, Lattice, Neighbors, Point, ProductedReciprocalSpace, ReciprocalCurve, ReciprocalScatter, ReciprocalSpace, ReciprocalZone, ReciprocalPath
+export bonds, bonds!, fractionals, icoordinate, isintracell, label, nneighbor, rcoordinate, save, selectpath, shrink, ticks
 export hexagon120°map, hexagon60°map, linemap, rectanglemap, @hexagon_str, @line_str, @rectangle_str
 
 """
@@ -972,66 +972,122 @@ function 𝕂³{N₁, N₂, N₃}(momentum::AbstractVector{<:Number}, reciprocal
 end
 
 """
-    ReciprocalSpace{K, P<:SVector} <: SimpleNamedVectorSpace{K, P}
+    ReciprocalSpace{K, P<:SVector} <: VectorSpace{P}
 
 Abstract type of reciprocal spaces.
 """
-abstract type ReciprocalSpace{K, P<:SVector} <: SimpleNamedVectorSpace{K, P} end
+abstract type ReciprocalSpace{K, P<:SVector} <: VectorSpace{P} end
+
+"""
+    scalartype(::Type{<:ReciprocalSpace{K, P} where K}) where {P<:SVector}
+
+Get the data type of the coordinates of a reciprocal space.
+"""
 @inline scalartype(::Type{<:ReciprocalSpace{K, P} where K}) where {P<:SVector} = eltype(P)
+
+"""
+    dimension(reciprocalspace::ReciprocalSpace) -> Int
+    dimension(::Type{<:ReciprocalSpace{K, P} where K}) where {P<:SVector} -> Int
+
+Get the spatial dimension of a reciprocal space.
+"""
 @inline dimension(reciprocalspace::ReciprocalSpace) = dimension(typeof(reciprocalspace))
 @inline dimension(::Type{<:ReciprocalSpace{K, P} where K}) where {P<:SVector} = length(P)
 
 """
-    @recipe plot(reciprocalspace::ReciprocalSpace)
+    label(reciprocalspace::ReciprocalSpace) -> Symbol
+    label(::Type{<:ReciprocalSpace{K}}) where K -> Symbol
 
-Define the recipe for the visualization of a reciprocal space.
+Get the label of a reciprocal space.
 """
-@recipe function plot(reciprocalspace::ReciprocalSpace)
-    title --> string(nameof(typeof(reciprocalspace)))
+@inline label(reciprocalspace::ReciprocalSpace) = label(typeof(reciprocalspace))
+@inline label(::Type{<:ReciprocalSpace{K}}) where K = K
+
+"""
+    label(reciprocalspace::ReciprocalSpace, i::Integer) -> String
+    label(::Type{<:ReciprocalSpace{K}}, i::Integer) where K -> String
+
+Get the label of the ith axis of a reciprocal space.
+"""
+@inline label(reciprocalspace::ReciprocalSpace, i::Integer) = label(typeof(reciprocalspace), i)
+@inline label(::Type{<:ReciprocalSpace{K}}, i::Integer) where K = string(K, subscript(i))
+
+"""
+    FractionalReciprocalSpace{K, P<:SVector, N} <: ReciprocalSpace{K, P}
+
+Abstract type of reciprocal spaces with fractional coordinates.
+"""
+abstract type FractionalReciprocalSpace{K, N, P<:SVector} <: ReciprocalSpace{K, P} end
+
+"""
+    reciprocals(reciprocalspace::FractionalReciprocalSpace) -> AbstractVector{<:AbstractVector{<:Number}}
+
+Get the reciprocal lattice vectors of a reciprocal space with fractional coordinates.
+"""
+@inline reciprocals(reciprocalspace::FractionalReciprocalSpace) = getcontent(reciprocalspace, :reciprocals)
+
+"""
+    @recipe plot(reciprocalspace::FractionalReciprocalSpace; fractional=false)
+
+Define the recipe for the visualization of a reciprocal space with fractional coordinates.
+
+When `fractional` is `true`, the fractional coordinates will be plotted. Otherwise the Cartesian coordinates will be plotted.
+"""
+@recipe function plot(reciprocalspace::FractionalReciprocalSpace{K, N}; fractional=false) where {K, N}
     titlefontsize --> 10
-    legend := false
-    aspect_ratio := :equal
+    aspect_ratio --> :equal
+    legend --> false
     seriestype := :scatter
-    map(Tuple, reciprocalspace)
+    if fractional
+        N>0 && (xlabel --> label(reciprocalspace, 1))
+        N>1 && (ylabel --> label(reciprocalspace, 2))
+        N>2 && (zlabel --> label(reciprocalspace, 3))
+        @series begin
+            map(NTuple{N, scalartype(reciprocalspace)}, fractionals(reciprocalspace))
+        end
+    else
+        dim = dimension(reciprocalspace)
+        dim>0 && (xlabel --> label(reciprocalspace, 1))
+        dim>1 && (ylabel --> label(reciprocalspace, 2))
+        dim>2 && (zlabel --> label(reciprocalspace, 3))
+        @series begin
+            map(NTuple{dim, scalartype(reciprocalspace)}, reciprocalspace)
+        end
+    end
 end
 
 """
-    BrillouinZone{K, P<:𝕂, S<:SVector, N} <: ReciprocalSpace{K, S}
+    ProductedReciprocalSpace{K, N, P<:SVector} <: FractionalReciprocalSpace{K, N, P}
+
+Abstract type of reciprocal spaces whose fractional coordinates are composed of the direct product of several ranges.
+"""
+abstract type ProductedReciprocalSpace{K, N, P<:SVector} <: FractionalReciprocalSpace{K, N, P} end
+@inline VectorSpaceStyle(::Type{<:ProductedReciprocalSpace}) = VectorSpaceDirectProducted(:backward)
+
+"""
+    fractionals(reciprocalspace::ProductedReciprocalSpace{K, N}) where {K, N} -> AbstractVector{SVector{N, scalartype(reciprocalspace)}}
+
+Get the fractional coordinates of a reciprocal space.
+"""
+@inline function fractionals(reciprocalspace::ProductedReciprocalSpace{K, N}) where {K, N}
+    return DirectProductedVectorSpace{:backward, SVector{N, scalartype(reciprocalspace)}}(ntuple(i->range(reciprocalspace, i), Val(N)))
+end
+
+"""
+    BrillouinZone{K, P<:𝕂, N, S<:SVector} <: ProductedReciprocalSpace{K, N, S}
 
 Brillouin zone of a lattice.
 """
-struct BrillouinZone{K, P<:𝕂, S<:SVector, N} <: ReciprocalSpace{K, S}
+struct BrillouinZone{K, P<:𝕂, N, S<:SVector} <: ProductedReciprocalSpace{K, N, S}
     reciprocals::SVector{N, S}
     function BrillouinZone{K, P}(reciprocals::SVector{N, <:SVector}) where {K, P<:𝕂, N}
         @assert isa(K, Symbol) "BrillouinZone error: K must be a Symbol."
         @assert rank(P)==N "BrillouinZone error: mismatched momentum and reciprocals."
-        new{K, P, eltype(reciprocals), N}(reciprocals)
+        new{K, P, N, eltype(reciprocals)}(reciprocals)
     end
 end
-@inline VectorSpaceStyle(::Type{<:BrillouinZone}) = VectorSpaceCartesian()
 @inline shape(::BrillouinZone{K, P}) where {K, P<:𝕂} = shape(Momenta(P))
 @inline Base.convert(::Type{<:SVector}, index::CartesianIndex, brillouinzone::BrillouinZone{K, P}) where {K, P<:𝕂} = expand(Momenta(P)[index], brillouinzone.reciprocals)
-@inline Base.hash(brillouinzone::BrillouinZone, h::UInt) = hash((Tuple(brillouinzone.reciprocals), periods(keytype(brillouinzone))), h)
-@inline Base.keys(::BrillouinZone{K, P}) where {K, P<:𝕂} = Momenta(P)
-@inline Base.keytype(brillouinzone::BrillouinZone) = keytype(typeof(brillouinzone))
-@inline Base.keytype(::Type{<:BrillouinZone{K, P} where K}) where {P<:𝕂} = P
-
-"""
-    axis(brillouinzone::BrillouinZone, i::Integer) -> StepRangeLen{Float64}
-
-Get the ith axis range of a Brillouin zone.
-"""
-@inline function axis(brillouinzone::BrillouinZone, i::Integer)
-    n = period(keytype(brillouinzone), i)
-    return range(0, (n-1)/n, n)
-end
-
-"""
-    volume(brillouinzone::BrillouinZone) -> Number
-
-Get the volume of a Brillouin zone.
-"""
-@inline volume(brillouinzone::BrillouinZone) = volume(brillouinzone.reciprocals)
 
 """
     BrillouinZone(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, nk)
@@ -1054,11 +1110,58 @@ end
 @inline BrillouinZone{K}(::Type{P}, reciprocals::AbstractVector{<:AbstractVector{<:Number}}) where {K, P<:𝕂} = BrillouinZone{K, P}(vectorconvert(reciprocals))
 
 """
-    ReciprocalZone{K, S<:SVector, V<:Number} <: ReciprocalSpace{K, S}
+    hash(brillouinzone::BrillouinZone, h::UInt)
+
+Hash a Brillouin zone.
+"""
+@inline Base.hash(brillouinzone::BrillouinZone, h::UInt) = hash((Tuple(brillouinzone.reciprocals), periods(keytype(brillouinzone))), h)
+
+"""
+    keytype(brillouinzone::BrillouinZone)
+    keytype(::Type{<:BrillouinZone{K, P} where K}) where {P<:𝕂}
+
+Get the keytype of a Brillouin zone, which is defined to be the type of the Abelian quantum number representing a momentum in the Brillouin zone.
+"""
+@inline Base.keytype(brillouinzone::BrillouinZone) = keytype(typeof(brillouinzone))
+@inline Base.keytype(::Type{<:BrillouinZone{K, P} where K}) where {P<:𝕂} = P
+
+"""
+    keys(::BrillouinZone{K, P}) where {K, P<:𝕂} -> Momenta{P}
+
+Get the keys of a Brillouin zone, which is defined to be the complete allowed set of Abelian quantum numbers representing the momenta in the Brillouin zone.
+"""
+@inline Base.keys(::BrillouinZone{K, P}) where {K, P<:𝕂} = Momenta(P)
+
+"""
+    getindex(brillouinzone::BrillouinZone{K, P}, index::P) where {K, P<:𝕂} -> eltype(brillouinzone)
+
+Get the coordinates of a momentum in a Brillouin zone by its corresponding Abelian quantum number.
+"""
+@inline Base.getindex(brillouinzone::BrillouinZone{K, P}, index::P) where {K, P<:𝕂} = expand(index, brillouinzone.reciprocals)
+
+"""
+    range(brillouinzone::BrillouinZone, i::Integer) -> StepRangeLen{Float64}
+
+Get the ith axis range of the fractional coordinates of a Brillouin zone.
+"""
+@inline function Base.range(brillouinzone::BrillouinZone, i::Integer)
+    n = period(keytype(brillouinzone), i)
+    return range(0, (n-1)/n, n)
+end
+
+"""
+    volume(brillouinzone::BrillouinZone) -> Number
+
+Get the volume of a Brillouin zone.
+"""
+@inline volume(brillouinzone::BrillouinZone) = volume(brillouinzone.reciprocals)
+
+"""
+    ReciprocalZone{K, N, S<:SVector, V<:Number} <: ProductedReciprocalSpace{K, N, S}
 
 A zone in the reciprocal space.
 """
-struct ReciprocalZone{K, S<:SVector, N, V<:Number} <: ReciprocalSpace{K, S}
+struct ReciprocalZone{K, N, S<:SVector, V<:Number} <: ProductedReciprocalSpace{K, N, S}
     reciprocals::SVector{N, S}
     bounds::NTuple{N, Segment{V}}
     volume::V
@@ -1069,45 +1172,17 @@ struct ReciprocalZone{K, S<:SVector, N, V<:Number} <: ReciprocalSpace{K, S}
             ratio = ratio * (bounds[i].stop-bounds[i].start)
         end
         v = ratio * volume(reciprocals)
-        new{K, eltype(reciprocals), N, typeof(v)}(reciprocals, bounds, v)
+        new{K, N, eltype(reciprocals), typeof(v)}(reciprocals, bounds, v)
     end
 end
-@inline VectorSpaceStyle(::Type{<:ReciprocalZone}) = VectorSpaceCartesian()
-@inline shape(reciprocalzone::ReciprocalZone) = map(bound->1:length(bound), reverse(reciprocalzone.bounds))
-@inline function Base.convert(::Type{<:SVector}, index::CartesianIndex, reciprocalzone::ReciprocalZone)
+@inline shape(reciprocalzone::ReciprocalZone) = map(bound->1:length(bound), reciprocalzone.bounds)
+@inline function Base.convert(::Type{<:SVector}, index::CartesianIndex{N}, reciprocalzone::ReciprocalZone{K, N}) where {K, N}
     result = zero(eltype(reciprocalzone))
-    for (reciprocal, bound, i) in zip(reciprocalzone.reciprocals, reciprocalzone.bounds, reverse(index.I))
+    for (reciprocal, bound, i) in zip(reciprocalzone.reciprocals, reciprocalzone.bounds, index.I)
         result += reciprocal * bound[i]
     end
     return result
 end
-
-"""
-    axis(reciprocalzone::ReciprocalZone, i::Integer) -> StepRangeLen{Float64}
-
-Get the ith axis range of a reciprocal zone.
-"""
-@inline function axis(reciprocalzone::ReciprocalZone, i::Integer)
-    bound = reciprocalzone.bounds[i]
-    return range(first(bound), last(bound), length(bound))
-end
-
-"""
-    shrink(reciprocalzone::ReciprocalZone{K}, ranges::Vararg{OrdinalRange{<:Integer}, N}) where {K, N} -> ReciprocalZone
-
-Shrink a reciprocal zone.
-"""
-function shrink(reciprocalzone::ReciprocalZone{K}, ranges::Vararg{OrdinalRange{<:Integer}, N}) where {K, N}
-    @assert length(ranges)==length(reciprocalzone.reciprocals) "shrink error: mismatched number of ranges and reciprocals."
-    return ReciprocalZone{K}(reciprocalzone.reciprocals, ntuple(i->reciprocalzone.bounds[i][ranges[i]], Val(N)))
-end
-
-"""
-    volume(reciprocalzone::ReciprocalZone) -> Number
-
-Get the volume of a reciprocal zone.
-"""
-@inline volume(reciprocalzone::ReciprocalZone) = reciprocalzone.volume
 
 """
     ReciprocalZone(reciprocals::AbstractVector{<:AbstractVector{<:Number}}; length=100, ends=(true, false))
@@ -1157,13 +1232,86 @@ end
 end
 
 """
-    ReciprocalZone(brillouinzone::BrillouinZone)
+    ReciprocalZone(reciprocalspace::ProductedReciprocalSpace)
 
-Construct a reciprocal zone from a Brillouin zone.
+Construct a reciprocal zone from a reciprocal space whose fractional coordinates are composed of the direct product of several ranges.
 """
-@inline function ReciprocalZone(brillouinzone::BrillouinZone{K, P}) where {K, P<:𝕂}
-    return ReciprocalZone{K}(brillouinzone.reciprocals, map(length->Segment(0, 1, length; ends=(true, false)), periods(P)))
+@inline function ReciprocalZone(reciprocalspace::ProductedReciprocalSpace{K, N}) where {K, N}
+    return ReciprocalZone{K}(
+        reciprocals(reciprocalspace),
+        ntuple(i->(bound=range(reciprocalspace, i); Segment(first(bound), last(bound)+step(bound), length(bound); ends=(true, false))), Val(N))
+    )
 end
+
+"""
+    range(reciprocalzone::ReciprocalZone, i::Integer) -> StepRangeLen{Float64}
+
+Get the ith axis range of the fractional coordinates of a reciprocal zone.
+"""
+@inline function Base.range(reciprocalzone::ReciprocalZone, i::Integer)
+    bound = reciprocalzone.bounds[i]
+    return range(first(bound), last(bound), length(bound))
+end
+
+"""
+    shrink(reciprocalzone::ReciprocalZone{K}, ranges::Vararg{OrdinalRange{<:Integer}, N}) where {K, N} -> ReciprocalZone
+
+Shrink a reciprocal zone.
+"""
+function shrink(reciprocalzone::ReciprocalZone{K}, ranges::Vararg{OrdinalRange{<:Integer}, N}) where {K, N}
+    @assert length(ranges)==length(reciprocalzone.reciprocals) "shrink error: mismatched number of ranges and reciprocals."
+    return ReciprocalZone{K}(reciprocalzone.reciprocals, ntuple(i->reciprocalzone.bounds[i][ranges[i]], Val(N)))
+end
+
+"""
+    volume(reciprocalzone::ReciprocalZone) -> Number
+
+Get the volume of a reciprocal zone.
+"""
+@inline volume(reciprocalzone::ReciprocalZone) = reciprocalzone.volume
+
+"""
+    ReciprocalScatter{K, N, S<:SVector, V<:SVector{N}} <: FractionalReciprocalSpace{K, N, S}
+
+A set of scatter points in the reciprocal space.
+"""
+struct ReciprocalScatter{K, N, S<:SVector, V<:SVector{N}} <: FractionalReciprocalSpace{K, N, S}
+    reciprocals::SVector{N, S}
+    coordinates::Vector{V}
+    function ReciprocalScatter{K}(reciprocals::SVector{N, <:SVector}, coordinates::Vector{<:SVector{N}}) where {K, N}
+        @assert isa(K, Symbol) "ReciprocalScatter error: K must be a Symbol."
+        new{K, N, eltype(reciprocals), eltype(coordinates)}(reciprocals, coordinates)
+    end
+end
+@inline Base.length(reciprocalscatter::ReciprocalScatter) = length(reciprocalscatter.coordinates)
+@inline Base.getindex(reciprocalscatter::ReciprocalScatter, i::Integer) = mapreduce(*, +, reciprocalscatter.reciprocals, reciprocalscatter.coordinates[i])
+
+"""
+    ReciprocalScatter(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, coordinates::AbstractVector{<:AbstractVector{<:Number}})
+    ReciprocalScatter{K}(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, coordinates::AbstractVector{<:AbstractVector{<:Number}}) where K
+
+Construct a set of reciprocal scatter points.
+"""
+@inline ReciprocalScatter(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, coordinates::AbstractVector{<:AbstractVector{<:Number}}) = ReciprocalScatter{:k}(reciprocals, coordinates)
+function ReciprocalScatter{K}(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, coordinates::AbstractVector{<:AbstractVector{<:Number}}) where K
+    reciprocals = vectorconvert(reciprocals)
+    coordinates = collect(SVector{length(reciprocals), eltype(eltype(reciprocals))}, coordinates)
+    return ReciprocalScatter{K}(reciprocals, coordinates)
+end
+
+"""
+    ReciprocalScatter(reciprocalspace::FractionalReciprocalSpace)
+
+Construct a set of reciprocal scatter points from a reciprocal space with fractional coordinates.
+"""
+@inline ReciprocalScatter(reciprocalspace::FractionalReciprocalSpace) = ReciprocalScatter{label(reciprocalspace)}(reciprocals(reciprocalspace), fractionals(reciprocalspace))
+
+"""
+    fractionals(reciprocalscatter::ReciprocalScatter) -> Vector{<:SVector}
+
+Get the fractional coordinates of a reciprocal space.
+"""
+@inline fractionals(reciprocalscatter::ReciprocalScatter) = reciprocalscatter.coordinates
 
 """
     ReciprocalPath{K, S<:SVector, N, R} <: ReciprocalSpace{K, S}
@@ -1317,10 +1465,13 @@ end
 Define the recipe for the visualization of a reciprocal path.
 """
 @recipe function plot(path::ReciprocalPath)
-    title --> string(nameof(typeof(path)))
     titlefontsize --> 10
-    legend := false
-    aspect_ratio := :equal
+    legend --> false
+    aspect_ratio --> :equal
+    dim = dimension(path)
+    dim>0 && (xlabel --> label(path, 1))
+    dim>1 && (ylabel --> label(path, 2))
+    dim>2 && (zlabel --> label(path, 3))
     coordinates = map(Tuple, path)
     @series begin
         seriestype := :scatter
@@ -1463,55 +1614,6 @@ macro hexagon_str(str::String)
 end
 
 """
-    ReciprocalScatter{K, N, V<:SVector, S<:SVector{N}} <: ReciprocalSpace{K, V}
-
-A set of scatter points in the reciprocal space.
-"""
-struct ReciprocalScatter{K, N, V<:SVector, S<:SVector{N}} <: ReciprocalSpace{K, V}
-    reciprocals::SVector{N, V}
-    coordinates::Vector{S}
-    function ReciprocalScatter{K}(reciprocals::SVector{N, <:SVector}, coordinates::Vector{<:SVector{N}}) where {K, N}
-        @assert isa(K, Symbol) "ReciprocalScatter error: K must be a Symbol."
-        new{K, N, eltype(reciprocals), eltype(coordinates)}(reciprocals, coordinates)
-    end
-end
-@inline Base.getindex(reciprocalscatter::ReciprocalScatter, i::Integer) = mapreduce(*, +, reciprocalscatter.reciprocals, reciprocalscatter.coordinates[i])
-
-"""
-    ReciprocalScatter(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, coordinates::AbstractVector{<:AbstractVector{<:Number}})
-    ReciprocalScatter{K}(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, coordinates::AbstractVector{<:AbstractVector{<:Number}}) where K
-
-Construct a set of reciprocal scatter points.
-"""
-@inline ReciprocalScatter(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, coordinates::AbstractVector{<:AbstractVector{<:Number}}) = ReciprocalScatter{:k}(reciprocals, coordinates)
-function ReciprocalScatter{K}(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, coordinates::AbstractVector{<:AbstractVector{<:Number}}) where K
-    reciprocals = vectorconvert(reciprocals)
-    coordinates = collect(SVector{length(reciprocals), eltype(eltype(reciprocals))}, coordinates)
-    return ReciprocalScatter{K}(reciprocals, coordinates)
-end
-
-"""
-    @recipe plot(scatter::ReciprocalScatter)
-
-Define the recipe for the visualization of a set of reciprocal scatter points.
-"""
-@recipe function plot(scatter::ReciprocalScatter)
-    @assert length(scatter.reciprocals)∈(2, 3) "plot error: only two and three dimensional reciprocal spaces are supported."
-    title --> string(nameof(typeof(scatter)))
-    titlefontsize --> 10
-    legend := false
-    aspect_ratio := :equal
-    xlabel --> string(names(scatter)[1], "₁")
-    ylabel --> string(names(scatter)[1], "₂")
-    length(scatter.reciprocals)==3 && (zlabel --> string(names(scatter)[1], "₃"))
-    coordinates = map(Tuple, scatter.coordinates)
-    @series begin
-        seriestype := :scatter
-        coordinates
-    end
-end
-
-"""
     ReciprocalCurve{K, S<:SVector} <: ReciprocalSpace{K, S}
 
 A curve in the reciprocal space.
@@ -1539,26 +1641,28 @@ Construct a curve in the reciprocal space.
 @inline ReciprocalCurve{K}(curve::AbstractVector{<:NTuple{N, Number}}) where {K, N} = ReciprocalCurve{K}(map(content->SVector{N}(content), curve))
 
 """
-    ReciprocalCurve(path::ReciprocalPath)
+    ReciprocalCurve(reciprocalspace::ReciprocalSpace)
 
-Construct a reciprocal curve from a reciprocal path.
+Construct a reciprocal curve from a reciprocal space.
 """
-@inline ReciprocalCurve(path::ReciprocalPath) = ReciprocalCurve{:k}(collect(path))
+@inline ReciprocalCurve(reciprocalspace::ReciprocalSpace) = ReciprocalCurve{label(reciprocalspace)}(collect(reciprocalspace))
 
 """
-    @recipe plot(path::ReciprocalCurve)
+    @recipe plot(curve::ReciprocalCurve)
 
 Define the recipe for the visualization of a reciprocal curve.
 """
 @recipe function plot(curve::ReciprocalCurve)
-    title --> string(nameof(typeof(curve)))
     titlefontsize --> 10
-    legend := false
-    aspect_ratio := :equal
-    coordinates = map(Tuple, curve)
+    legend --> false
+    aspect_ratio --> :equal
+    dim = dimension(curve)
+    dim>0 && (xlabel --> label(curve, 1))
+    dim>1 && (ylabel --> label(curve, 2))
+    dim>2 && (zlabel --> label(curve, 3))
     @series begin
         seriestype := :scatter
-        coordinates
+        map(Tuple, curve)
     end
 end
 
@@ -1571,7 +1675,7 @@ Define the recipe for the heatmap visualization of data on a Brillouin/reciproca
 """
 const heatmap = quote
     @assert length(reciprocalspace.reciprocals)==2 "plot error: only two dimensional reciprocal spaces are supported."
-    x, y = axis(reciprocalspace, 1), axis(reciprocalspace, 2)
+    x, y = range(reciprocalspace, 1), range(reciprocalspace, 2)
     Δx, Δy= x[2]-x[1], y[2]-y[1]
     seriestype --> :heatmap
     titlefontsize --> 10
@@ -1579,20 +1683,19 @@ const heatmap = quote
     xlims --> (x[1]-Δx, x[end]+Δx)
     ylims --> (y[1]-Δy, y[end]+Δy)
     clims --> extrema(data)
-    xlabel --> string(names(reciprocalspace)[1], "₁")
-    ylabel --> string(names(reciprocalspace)[1], "₂")
+    xlabel --> label(reciprocalspace, 1)
+    ylabel --> label(reciprocalspace, 2)
     x, y, data
 end
 @eval @recipe plot(reciprocalspace::BrillouinZone, data::AbstractMatrix{<:Number}) = $heatmap
 @eval @recipe plot(reciprocalspace::ReciprocalZone, data::AbstractMatrix{<:Number}) = $heatmap
 
 """
-    @recipe plot(path::ReciprocalPath, data::AbstractVector{<:Number})
     @recipe plot(path::ReciprocalPath, data::AbstractMatrix{<:Number})
 
 Define the recipe for the line visualization of data along a reciprocal path.
 """
-const line = quote
+@recipe function plot(path::ReciprocalPath, data::AbstractMatrix{<:Number})
     seriestype --> :path
     titlefontsize --> 10
     legend --> false
@@ -1600,11 +1703,9 @@ const line = quote
     xminorticks --> 10
     yminorticks --> 10
     xticks --> ticks(path)
-    xlabel --> string(names(path)[1])
+    xlabel --> label(path)
     [distance(path, i) for i=1:length(path)], data
 end
-@eval @recipe plot(path::ReciprocalPath, data::AbstractVector{<:Number}) = $line
-@eval @recipe plot(path::ReciprocalPath, data::AbstractMatrix{<:Number}) = $line
 
 """
     @recipe plot(path::ReciprocalPath, data::AbstractMatrix{<:Number}, weights::AbstractArray{<:Number, 3}; weightmultiplier=10.0, weightwidth=1.0, weightcolors=nothing, weightlabels=nothing)
@@ -1613,7 +1714,7 @@ Define the recipe for the scatter visualization of data along a reciprocal path 
 """
 @recipe function plot(path::ReciprocalPath, data::AbstractMatrix{<:Number}, weights::AbstractArray{<:Number, 3}; weightmultiplier=10.0, weightwidth=1.0, weightcolors=nothing, weightlabels=nothing)
     legend --> !isnothing(weightlabels)
-    seriestype := :scatter
+    seriestype --> :scatter
     markercolor := RGBA(1, 1, 1, 0)
     for i in axes(weights, 3)
         weightlabel = isnothing(weightlabels) ? "" : weightlabels[i]
@@ -1637,7 +1738,7 @@ Define the recipe for the heatmap visualization of data on the x-y plain with th
     seriestype --> :heatmap
     titlefontsize --> 10
     xticks --> ticks(path)
-    xlabel --> string(names(path)[1])
+    xlabel --> label(path)
     xlims --> (0, distance(path))
     ylims --> (minimum(y), maximum(y))
     clims --> extrema(data)
@@ -1686,31 +1787,59 @@ end
 
 # save utilities
 """
-    save(filename::AbstractString, reciprocalspace::Union{BrillouinZone, ReciprocalZone}, data::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}})
-    save(filename::AbstractString, path::ReciprocalPath, data::Union{AbstractVector{<:Number}, AbstractMatrix{<:Number}})
-    save(filename::AbstractString, path::ReciprocalPath, y::AbstractVector{<:Number}, data::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}})
+    save(filename::AbstractString, reciprocalspace::Union{BrillouinZone, ReciprocalZone}, data::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}}; fractional::Bool=false)
+    save(filename::AbstractString, path::ReciprocalPath, data::AbstractMatrix{<:Number}; distance::Bool=false)
+    save(filename::AbstractString, path::ReciprocalPath, data::AbstractMatrix{<:Number}, weights::AbstractArray{<:Number, 3}; distance::Bool=false)
+    save(filename::AbstractString, path::ReciprocalPath, y::AbstractVector{<:Number}, data::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}}; distance::Bool=false)
 
 Save data to delimited files.
 """
-function save(filename::AbstractString, reciprocalspace::Union{BrillouinZone, ReciprocalZone}, data::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}})
-    @assert length(reciprocalspace)==prod(size(data)[1:2]) "save error: mismatched size of reciprocal space and data."
+function save(filename::AbstractString, reciprocalspace::Union{BrillouinZone, ReciprocalZone}, data::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}}; fractional::Bool=false)
+    @assert map(length, shape(reciprocalspace))==reverse(size(data)[1:2]) "save error: mismatched size of reciprocal space and data."
     open(filename, "w") do f
-        writedlm(f, [matrix(reciprocalspace) reshape(data, prod(size(data)[1:2]), :)])
+        if fractional
+            writedlm(f, [matrix(fractionals(reciprocalspace)) reshape(data, length(reciprocalspace), :)])
+        else
+            writedlm(f, [matrix(reciprocalspace) reshape(data, length(reciprocalspace), :)])
+        end
     end
 end
-function save(filename::AbstractString, path::ReciprocalPath, data::Union{AbstractVector{<:Number}, AbstractMatrix{<:Number}})
+function save(filename::AbstractString, path::ReciprocalPath, data::AbstractMatrix{<:Number}; distance::Bool=false)
     @assert length(path)==size(data)[1] "save error: mismatched size of path and data."
     open(filename, "w") do f
-        writedlm(f, [matrix(path) data])
+        if distance
+            writedlm(f, [[Spatials.distance(path, i) for i=1:length(path)] data])
+        else
+            writedlm(f, [matrix(path) data])
+        end
     end
 end
-function save(filename::AbstractString, path::ReciprocalPath, y::AbstractVector{<:Number}, data::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}})
-    @assert size(data)[1:2]==(length(y), length(path)) "save error: mismatched size of path, y and data."
+function save(filename::AbstractString, path::ReciprocalPath, data::AbstractMatrix{<:Number}, weights::AbstractArray{<:Number, 3}; distance::Bool=false)
+    @assert length(path)==size(data, 1) && (length(path), size(data, 2))==size(weights)[1:2] "save error: mismatched size of path, data and weights."
     open(filename, "w") do f
-        x = matrix(kron(path, ones(length(y))))
+        y = reshape(data, :)
+        z = reshape(weights, :, size(weights, 3))
+        if distance
+            x = kron(ones(size(data, 2)), [Spatials.distance(path, i) for i=1:length(path)])
+            writedlm(f, [x y z])
+        else
+            x = matrix(kron(ones(size(data, 2)), path))
+            writedlm(f, [x y z])
+        end
+    end
+end
+function save(filename::AbstractString, path::ReciprocalPath, y::AbstractVector{<:Number}, data::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}}; distance::Bool=false)
+    @assert (length(y), length(path))==size(data)[1:2] "save error: mismatched size of path, y and data."
+    open(filename, "w") do f
         y = kron(ones(length(path)), y)
         z = reshape(data, prod(size(data)[1:2]), :)
-        writedlm(f, [x y z])
+        if distance
+            x = kron([Spatials.distance(path, i) for i=1:length(path)], ones(size(data, 1)))
+            writedlm(f, [x y z])
+        else
+            x = matrix(kron(path, ones(size(data, 1))))
+            writedlm(f, [x y z])
+        end
     end
 end
 
