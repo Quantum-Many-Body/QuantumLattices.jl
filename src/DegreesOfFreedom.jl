@@ -7,7 +7,7 @@ using StaticArrays: SVector
 using ..QuantumLattices: OneAtLeast, add!, decompose
 using ..QuantumOperators: ID, LinearTransformation, Operator, OperatorIndex, OperatorPack, Operators, QuantumOperator, scalartype, valuetolatextext
 using ..Spatials: Bond, Point
-using ..Toolkit: atol, efficientoperations, rtol, CompositeDict, Float, VectorSpace, VectorSpaceCartesian, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceStyle, concatenate, fulltype, parametertype, rawtype, reparameter, tostr
+using ..Toolkit: atol, efficientoperations, rtol, CompositeDict, Float, VectorSpace, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceStyle, concatenate, fulltype, parametertype, rawtype, reparameter, tostr
 
 import LaTeXStrings: latexstring
 import ..QuantumLattices: ⊕, ⊗, dimension, expand, expand!, id, ishermitian, kind, permute, rank, reset!, shape, update!, value
@@ -135,7 +135,7 @@ Get the dimension of an internal space at a single point.
 Simple internal space at a single point.
 """
 abstract type SimpleInternal{I<:SimpleInternalIndex} <: Internal{I} end
-@inline VectorSpaceStyle(::Type{<:SimpleInternal}) = VectorSpaceCartesian()
+@inline VectorSpaceStyle(::Type{<:SimpleInternal}) = VectorSpaceDirectProducted(:forward)
 @inline Base.show(io::IO, i::SimpleInternal) = @printf io "%s(%s)" typeof(i) join(("$name=$(getfield(i, name))" for name in fieldnames(typeof(i))), ", ")
 
 """
@@ -270,7 +270,7 @@ struct InternalProd{T<:Tuple{Vararg{SimpleInternal}}, I<:InternalIndex} <: Compo
     InternalProd(contents::Tuple{Vararg{SimpleInternal}}) = new{typeof(contents), eltype(InternalProd, fieldtypes(typeof(contents))...)}(contents)
 end
 @inline VectorSpaceStyle(::Type{<:InternalProd}) = VectorSpaceDirectProducted(:forward)
-@inline Base.convert(::Type{<:InternalIndexProd{T}}, ii::T, ::InternalProd) where {T<:Tuple{Vararg{SimpleInternalIndex}}} = InternalIndexProd(ii)
+@inline Base.convert(::Type{<:InternalIndexProd}, index::CartesianIndex, ci::InternalProd) = InternalIndexProd(map(getindex, ci.contents, index.I))
 @inline Base.show(io::IO, ci::InternalProd) = @printf io "%s" join((string(ci.contents[i]) for i = 1:rank(ci)), " ⊗ ")
 @inline Base.eltype(::Type{InternalProd}, types...) = InternalIndexProd{Tuple{map(eltype, types)...}}
 @inline InternalProd(contents::SimpleInternal...) = InternalProd(contents)
@@ -527,10 +527,10 @@ end
 @inline function getcontent(iispace::InternalIndexSpace{<:InternalIndexProd, <:InternalIndexProd, <:CompositeInternal}, ::Val{:contents})
     return map((internal, index)->InternalIndexSpace(internal, index), iispace.internal.contents, iispace.index.contents)
 end
-@inline function Base.convert(::Type{InternalIndexProd{T}}, indexes::T, ::InternalIndexSpace{<:InternalIndexProd, InternalIndexProd{T}, <:CompositeInternal}) where {T<:Tuple{Vararg{SimpleInternalIndex}}}
-    return InternalIndexProd(indexes)
+@inline function Base.convert(::Type{<:InternalIndexProd}, index::CartesianIndex, iispace::InternalIndexSpace{<:InternalIndexProd, <:InternalIndexProd, <:CompositeInternal})
+    return InternalIndexProd(map(getindex, getcontent(iispace, :contents), index.I))
 end
-@inline VectorSpaceStyle(::Type{<:InternalIndexSpace{<:SimpleInternalIndex, <:SimpleInternalIndex, <:SimpleInternal}}) = VectorSpaceCartesian()
+@inline VectorSpaceStyle(::Type{<:InternalIndexSpace{<:SimpleInternalIndex, <:SimpleInternalIndex, <:SimpleInternal}}) = VectorSpaceDirectProducted(:forward)
 @inline shape(iispace::InternalIndexSpace{<:SimpleInternalIndex, <:SimpleInternalIndex, <:SimpleInternal}) = shape(iispace.internal, iispace.index)
 @inline function Base.convert(::Type{<:CartesianIndex}, index::E, iispace::InternalIndexSpace{<:SimpleInternalIndex, E, <:SimpleInternal}) where {E<:SimpleInternalIndex}
     return convert(CartesianIndex, index, iispace.internal)
@@ -1255,7 +1255,8 @@ end
     return :(Coupling{$V, Pattern{$C, Tuple{$S, $S}}})
 end
 @inline VectorSpaceStyle(::Type{<:MatrixCoupling}) = VectorSpaceDirectProducted(:forward)
-function Base.convert(::Type{<:Coupling}, contents::Tuple, mc::MatrixCoupling{I}) where {I<:SimpleInternalIndex}
+function Base.convert(::Type{<:Coupling}, index::CartesianIndex, mc::MatrixCoupling{I}) where {I<:SimpleInternalIndex}
+    contents = map(getindex, getcontent(mc, :contents), index.I)
     value = mapreduce(content->content[3], *, contents, init=1)
     index₁ = Index(mc.sites[1], I(map(content->content[1], contents)...))
     index₂ = Index(mc.sites[2], I(map(content->content[2], contents)...))
@@ -1294,7 +1295,10 @@ end
     return Coupling{MV, Pattern{P, SS}}
 end
 @inline VectorSpaceStyle(::Type{<:MatrixCouplingProd}) = VectorSpaceDirectProducted(:forward)
-@inline Base.convert(::Type{<:Coupling}, contents::Tuple{Vararg{Coupling}}, mcp::MatrixCouplingProd) = prod(contents; init=mcp.value)
+@inline function Base.convert(::Type{<:Coupling}, index::CartesianIndex, mcp::MatrixCouplingProd)
+    contents = map(getindex, getcontent(mcp, :contents), index.I)
+    return prod(contents; init=mcp.value)
+end
 @inline function Base.promote_rule(::Type{MatrixCouplingProd{V₁, C₁}}, ::Type{MatrixCouplingProd{V₂, C₂}}) where {V₁<:Number, C₁<:Tuple{Vararg{MatrixCoupling}}, V₂<:Number, C₂<:Tuple{Vararg{MatrixCoupling}}}
     return MatrixCouplingProd{promote_type(V₁, V₂), _promote_type_(C₁, C₂)}
 end
