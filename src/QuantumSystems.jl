@@ -8,7 +8,7 @@ using ..DegreesOfFreedom: Component, CompositeIndex, CoordinatedIndex, Coupling,
 using ..QuantumLattices: OneAtLeast, decompose, rank
 using ..QuantumOperators: ID, LaTeX, Operator, OperatorIndex, OperatorProd, Operators, latexformat
 using ..Spatials: Bond, Point, direction, isparallel, rcoordinate
-using ..Toolkit: atol, efficientoperations, rtol, Float, VectorSpace, VectorSpaceCartesian, VectorSpaceStyle, delta, rawtype, tostr
+using ..Toolkit: atol, efficientoperations, rtol, Float, VectorSpace, VectorSpaceDirectProducted, VectorSpaceStyle, delta, rawtype, tostr
 
 import ..DegreesOfFreedom: MatrixCoupling, allequalfields, internalindextype, isdefinite, patternrule, statistics
 import ..QuantumLattices: expand, expand!, kind, permute, shape
@@ -1339,7 +1339,7 @@ struct PPExpand{N, D<:Number} <: VectorSpace{Operator{D, ID{CoordinatedIndex{Ind
     direction::SVector{N, D}
     points::NTuple{2, Point{N, D}}
 end
-@inline VectorSpaceStyle(::Type{<:PPExpand}) = VectorSpaceCartesian()
+@inline VectorSpaceStyle(::Type{<:PPExpand}) = VectorSpaceDirectProducted(:forward)
 @inline shape(pnce::PPExpand) = (1:length(pnce.direction), 1:length(pnce.direction), 1:4)
 function Base.convert(::Type{<:Operator}, index::CartesianIndex{3}, pnce::PPExpand)
     direction₁ = Char(Int('x')+index[1]-1)
