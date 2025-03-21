@@ -874,23 +874,23 @@ function (alg::Algorithm)(id::Symbol; info::Bool=true, parameters::Parameters=Pa
 end
 
 """
-    save(alg::Algorithm, assign::Assignment; delimited=false) -> Tuple{Algorithm, Assignment}
+    save(alg::Algorithm, assign::Assignment; delimited=false, kwargs...) -> Tuple{Algorithm, Assignment}
 
 Save the data of an assignment registered on an algorithm.
 """
-@inline function save(alg::Algorithm, assign::Assignment; delimited=false)
+@inline function save(alg::Algorithm, assign::Assignment; delimited=false, kwargs...)
     filename = @sprintf("%s/%s.dat", alg.dout, nameof(alg, assign))
-    delimited ? save(filename, assign.data) : serialize(filename, assign.data)
+    delimited ? save(filename, assign.data; kwargs...) : serialize(filename, assign.data)
     return (alg, assign)
 end
-@inline save(filename::AbstractString, data::Tuple) = save(filename, data...)
-function save(filename::AbstractString, x::AbstractVector{<:Number}, y::Union{AbstractVector{<:Number}, AbstractMatrix{<:Number}})
+@inline save(filename::AbstractString, data::Tuple; kwargs...) = save(filename, data...; kwargs...)
+function save(filename::AbstractString, x::AbstractVector{<:Number}, y::Union{AbstractVector{<:Number}, AbstractMatrix{<:Number}}; kwargs...)
     @assert length(x)==size(y)[1] "save error: mismatched size of x and y."
     open(filename, "w") do f
         writedlm(f, [x y])
     end
 end
-function save(filename::AbstractString, x::AbstractVector{<:Number}, y::AbstractVector{<:Number}, z::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}})
+function save(filename::AbstractString, x::AbstractVector{<:Number}, y::AbstractVector{<:Number}, z::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}}; kwargs...)
     @assert size(z)[1:2]==(length(y), length(x)) "save error: mismatched size of x, y and z."
     open(filename, "w") do f
         new_x = kron(x, ones(length(y)))
