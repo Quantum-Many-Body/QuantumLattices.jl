@@ -605,11 +605,9 @@ Other features include
 Predefined types of vector spaces:
 ```@docs
 VectorSpace
-NamedVectorSpace
-SimpleNamedVectorSpace
-ParameterSpace
-NamedVectorSpaceProd
-NamedVectorSpaceZip
+DirectProductedVectorSpace
+DirectSummedVectorSpace
+ZippedVectorSpace
 ```
 
 Predefined types of vector space style:
@@ -617,7 +615,6 @@ Predefined types of vector space style:
 VectorSpaceStyle
 VectorSpaceGeneral
 VectorSpaceEnumerative
-VectorSpaceCartesian
 VectorSpaceDirectProducted
 VectorSpaceDirectSummed
 VectorSpaceZipped
