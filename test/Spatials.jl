@@ -454,14 +454,23 @@ end
 
     path = ReciprocalPath([[2pi, 0], [0, 2pi]], rectangle"Γ-X-M-Γ")
     band = map(k->-2cos(k[1])-2cos(k[2]), path)
+    savefig(plot(path, band), "SingleBand.png")
+    save("SingleBand-1.dat", path, band; distance=false)
+    save("SingleBand-2.dat", path, band; distance=true)
+
+    weights = [abs2.(band)]
+    savefig(plot(path, band, weights; weightmultiplier=1.0, weightwidth=2.0, weightcolors=(:blue, :red), weightlabels=["↑"]), "SingleBandWithWeights.png")
+    save("SingleBandWithWeights-1.dat", path, band, weights; distance=false)
+    save("SingleBandWithWeights-2.dat", path, band, weights; distance=true)
+
     bands = [band -band]
     savefig(plot(path, bands), "MultiBands.png")
     save("MultiBands-1.dat", path, bands; distance=false)
     save("MultiBands-2.dat", path, bands; distance=true)
 
-    weights = fill(0.01, length(path), 2, 2)
-    weights[:, 1, 1] = abs2.(band)
-    weights[:, 2, 2] = abs2.(band)
+    weights = [fill(0.01, length(path), 2), fill(0.01, length(path), 2)]
+    weights[1][:, 1] = abs2.(band)
+    weights[2][:, 2] = abs2.(band)
     savefig(plot(path, bands, weights; weightmultiplier=1.0, weightwidth=2.0, weightcolors=(:blue, :red), weightlabels=("↑", "↓")), "MultiBandsWithWeights.png")
     save("MultiBandsWithWeights-1.dat", path, bands, weights; distance=false)
     save("MultiBandsWithWeights-2.dat", path, bands, weights; distance=true)
