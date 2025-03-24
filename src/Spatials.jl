@@ -1708,17 +1708,17 @@ Define the recipe for the line visualization of data along a reciprocal path.
 end
 
 """
-    @recipe plot(path::ReciprocalPath, data::AbstractMatrix{<:Number}, weights::AbstractArray{<:Number, 3}; weightmultiplier=10.0, weightwidth=1.0, weightcolors=nothing, weightlabels=nothing)
+    @recipe plot(path::ReciprocalPath, data::AbstractMatrix{<:Number}, weights::AbstractArray{<:Number, 3}; weightmultiplier=5.0, weightwidth=1.0, weightcolors=nothing, weightlabels=nothing)
 
 Define the recipe for the scatter visualization of data along a reciprocal path with a series of weights.
 """
-@recipe function plot(path::ReciprocalPath, data::AbstractMatrix{<:Number}, weights::AbstractArray{<:Number, 3}; weightmultiplier=10.0, weightwidth=1.0, weightcolors=nothing, weightlabels=nothing)
+@recipe function plot(path::ReciprocalPath, data::AbstractMatrix{<:Number}, weights::AbstractArray{<:Number, 3}; weightmultiplier=5.0, weightwidth=1.0, weightcolors=nothing, weightlabels=nothing)
     legend --> !isnothing(weightlabels)
     seriestype --> :scatter
     markercolor := RGBA(1, 1, 1, 0)
     for i in axes(weights, 3)
         weightlabel = isnothing(weightlabels) ? "" : weightlabels[i]
-        pos = isnothing(weightlabels) ? 1 : argmax(weights[:, :, i])[2]
+        pos = isnothing(weightlabels) ? 1 : argmax(weights[1, :, i])
         @series begin
             markersize := weights[:, :, i] * weightmultiplier
             markerstrokewidth := weightwidth
