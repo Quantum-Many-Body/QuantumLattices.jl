@@ -468,7 +468,7 @@ end
     save("MultiBands-1.dat", path, bands; distance=false)
     save("MultiBands-2.dat", path, bands; distance=true)
 
-    weights = [fill(0.01, length(path), 2), fill(0.01, length(path), 2)]
+    weights = [fill(0.01, length(path), 2) for _ in 1:2]
     weights[1][:, 1] = abs2.(band)
     weights[2][:, 2] = abs2.(band)
     savefig(plot(path, bands, weights; weightmultiplier=1.0, weightwidth=2.0, weightcolors=(:blue, :red), weightlabels=("↑", "↓")), "MultiBandsWithWeights.png")
