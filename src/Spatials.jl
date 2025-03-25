@@ -1,7 +1,6 @@
 module Spatials
 
 using Base.Iterators: flatten, product
-using Colors: RGBA
 using DelimitedFiles: writedlm
 using LinearAlgebra: cross, det, dot, norm
 using NearestNeighbors: KDTree, inrange, knn
@@ -12,7 +11,7 @@ using ..QuantumLattices: OneAtLeast, OneOrMore, rank
 using ..QuantumNumbers: Momenta, 𝕂, period, periods
 using ..Toolkit: atol, rtol, efficientoperations, CompositeDict, DirectProductedVectorSpace, Float, Segment, VectorSpace, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceEnumerative, VectorSpaceStyle, concatenate, getcontent, subscript
 
-import ..QuantumLattices: decompose, dimension, expand, kind, shape
+import ..QuantumLattices: decompose, dimension, expand, kind, matrix, shape
 import ..QuantumNumbers: 𝕂¹, 𝕂², 𝕂³
 import ..QuantumOperators: scalartype
 import ..Toolkit: contentnames
@@ -815,6 +814,7 @@ Define the recipe for the visualization of a lattice.
     if isa(neighbors, Int) || 0∈keys(neighbors)
         @series begin
             seriestype := :scatter
+            markerstrokewidth --> 0
             coordinates = NTuple{dimension(lattice), scalartype(lattice)}[]
             sites = String[]
             for i = 1:length(lattice)
@@ -828,23 +828,18 @@ Define the recipe for the visualization of a lattice.
             coordinates
         end
     end
-    @series begin
-        data = Vector{Float64}[]
-        for _ in 1:dimension(lattice)
-            push!(data, Float64[])
-        end
-        for bond in bonds(lattice, neighbors)
-            if length(bond)>0 && filter(bond)
-                for i = 1:dimension(lattice)
-                    for point in bond
-                        push!(data[i], point.rcoordinate[i])
-                    end
-                    push!(data[i], NaN)
+    data = [Float64[] for _ in 1:dimension(lattice)]
+    for bond in bonds(lattice, neighbors)
+        if length(bond)>0 && filter(bond)
+            for i = 1:dimension(lattice)
+                for point in bond
+                    push!(data[i], point.rcoordinate[i])
                 end
+                push!(data[i], NaN)
             end
         end
-        Tuple(data)
     end
+    Tuple(data)
 end
 
 """
@@ -1027,32 +1022,32 @@ Get the reciprocal lattice vectors of a reciprocal space with fractional coordin
 @inline reciprocals(reciprocalspace::FractionalReciprocalSpace) = getcontent(reciprocalspace, :reciprocals)
 
 """
-    @recipe plot(reciprocalspace::FractionalReciprocalSpace; fractional=false)
+    @recipe plot(reciprocalspace::FractionalReciprocalSpace; fractional=false, autolims=true)
 
 Define the recipe for the visualization of a reciprocal space with fractional coordinates.
 
 When `fractional` is `true`, the fractional coordinates will be plotted. Otherwise the Cartesian coordinates will be plotted.
 """
-@recipe function plot(reciprocalspace::FractionalReciprocalSpace{K, N}; fractional=false) where {K, N}
+@recipe function plot(reciprocalspace::FractionalReciprocalSpace{K, N}; fractional=false, autolims=true) where {K, N}
+    seriestype --> :scatter
+    markerstrokewidth --> 0
     titlefontsize --> 10
     aspect_ratio --> :equal
     legend --> false
-    seriestype := :scatter
+    minorgrid --> true
     if fractional
-        N>0 && (xlabel --> label(reciprocalspace, 1))
-        N>1 && (ylabel --> label(reciprocalspace, 2))
-        N>2 && (zlabel --> label(reciprocalspace, 3))
-        @series begin
-            map(NTuple{N, scalartype(reciprocalspace)}, fractionals(reciprocalspace))
-        end
+        coordinates = map(NTuple{N, scalartype(reciprocalspace)}, fractionals(reciprocalspace))
+        N>0 && (xlabel-->label(reciprocalspace, 1); autolims || (xlims-->extrema(v->v[1], coordinates)))
+        N>1 && (ylabel-->label(reciprocalspace, 2); autolims || (ylims-->extrema(v->v[2], coordinates)))
+        N>2 && (zlabel-->label(reciprocalspace, 3); autolims || (zlims-->extrema(v->v[3], coordinates)))
+        coordinates
     else
         dim = dimension(reciprocalspace)
-        dim>0 && (xlabel --> label(reciprocalspace, 1))
-        dim>1 && (ylabel --> label(reciprocalspace, 2))
-        dim>2 && (zlabel --> label(reciprocalspace, 3))
-        @series begin
-            map(NTuple{dim, scalartype(reciprocalspace)}, reciprocalspace)
-        end
+        coordinates = map(NTuple{dim, scalartype(reciprocalspace)}, reciprocalspace)
+        dim>0 && (xlabel-->label(reciprocalspace, 1); autolims || (xlims-->extrema(v->v[1], coordinates)))
+        dim>1 && (ylabel-->label(reciprocalspace, 2); autolims || (ylims-->extrema(v->v[2], coordinates)))
+        dim>2 && (zlabel-->label(reciprocalspace, 3); autolims || (zlims-->extrema(v->v[3], coordinates)))
+        coordinates
     end
 end
 
@@ -1465,18 +1460,16 @@ end
 Define the recipe for the visualization of a reciprocal path.
 """
 @recipe function plot(path::ReciprocalPath)
+    seriestype --> :scatter
+    markerstrokewidth --> 0
     titlefontsize --> 10
     legend --> false
     aspect_ratio --> :equal
+    minorgrid --> true
     dim = dimension(path)
     dim>0 && (xlabel --> label(path, 1))
     dim>1 && (ylabel --> label(path, 2))
     dim>2 && (zlabel --> label(path, 3))
-    coordinates = map(Tuple, path)
-    @series begin
-        seriestype := :scatter
-        coordinates
-    end
     x, y, text = [], [], []
     for i = 1:length(path.contents)
         if length(path.contents[i])>0
@@ -1492,7 +1485,7 @@ Define the recipe for the visualization of a reciprocal path.
         end
     end
     annotation := (x, y, text)
-    coordinates
+    coordinates = map(Tuple, path)
 end
 
 """
@@ -1653,17 +1646,17 @@ Construct a reciprocal curve from a reciprocal space.
 Define the recipe for the visualization of a reciprocal curve.
 """
 @recipe function plot(curve::ReciprocalCurve)
+    seriestype --> :scatter
+    markerstrokewidth --> 0
     titlefontsize --> 10
     legend --> false
     aspect_ratio --> :equal
+    minorgrid --> true
     dim = dimension(curve)
     dim>0 && (xlabel --> label(curve, 1))
     dim>1 && (ylabel --> label(curve, 2))
     dim>2 && (zlabel --> label(curve, 3))
-    @series begin
-        seriestype := :scatter
-        map(Tuple, curve)
-    end
+    map(Tuple, curve)
 end
 
 # plot utilities
@@ -1675,11 +1668,11 @@ Define the recipe for the heatmap visualization of data on a Brillouin/reciproca
 """
 const heatmap = quote
     @assert length(reciprocalspace.reciprocals)==2 "plot error: only two dimensional reciprocal spaces are supported."
-    x, y = range(reciprocalspace, 1), range(reciprocalspace, 2)
-    Δx, Δy= x[2]-x[1], y[2]-y[1]
     seriestype --> :heatmap
     titlefontsize --> 10
     aspect_ratio --> :equal
+    x, y = range(reciprocalspace, 1), range(reciprocalspace, 2)
+    Δx, Δy= x[2]-x[1], y[2]-y[1]
     xlims --> (x[1]-Δx, x[end]+Δx)
     ylims --> (y[1]-Δy, y[end]+Δy)
     clims --> extrema(data)
@@ -1691,6 +1684,35 @@ end
 @eval @recipe plot(reciprocalspace::ReciprocalZone, data::AbstractMatrix{<:Number}) = $heatmap
 
 """
+    @recipe plot(reciprocalscatter::ReciprocalScatter, weights::AbstractVector{<:AbstractVector{<:Number}}; fractional=true, weightmultiplier=1.0, weightcolors=nothing, weightlabels=nothing)
+
+Define the recipe for the scatter visualization of reciprocal points with a series of weights.
+"""
+@recipe function plot(reciprocalscatter::ReciprocalScatter{K, N}, weights::AbstractVector{<:AbstractVector{<:Number}}; fractional=true, weightmultiplier=1.0, weightcolors=nothing, weightlabels=nothing) where {K, N}
+    seriestype --> :scatter
+    markerstrokewidth --> 0
+    legend --> !isnothing(weightlabels)
+    point = fractional ? [ntuple(i->0, N)] : [ntuple(i->0, dimension(reciprocalscatter))]
+    fractional := fractional
+    autolims := false
+    for (i, weight) in enumerate(weights)
+        color = isnothing(weightcolors) ? i : weightcolors[i]
+        @series begin
+            markersize := atol
+            markercolor := color
+            label := isnothing(weightlabels) ? "" : weightlabels[i]
+            point
+        end
+        @series begin
+            markersize := weight*weightmultiplier .+ atol
+            markercolor := color
+            label := false
+            reciprocalscatter
+        end
+    end
+end
+
+"""
     @recipe plot(path::ReciprocalPath, data::AbstractVector{<:Number})
     @recipe plot(path::ReciprocalPath, data::AbstractMatrix{<:Number})
 
@@ -1700,6 +1722,7 @@ const line = quote
     seriestype --> :path
     titlefontsize --> 10
     legend --> false
+    xlims --> (0, distance(path))
     minorgrid --> true
     xminorticks --> 10
     yminorticks --> 10
@@ -1711,33 +1734,36 @@ end
 @eval @recipe plot(path::ReciprocalPath, data::AbstractMatrix{<:Number}) = $line
 
 """
-    @recipe plot(path::ReciprocalPath, data::AbstractVector{<:Number}, weights::AbstractVector{<:AbstractVector{<:Number}}; weightmultiplier=5.0, weightwidth=1.0, weightcolors=nothing, weightlabels=nothing)
-    @recipe plot(path::ReciprocalPath, data::AbstractMatrix{<:Number}, weights::AbstractVector{<:AbstractMatrix{<:Number}}; weightmultiplier=5.0, weightwidth=1.0, weightcolors=nothing, weightlabels=nothing)
+    @recipe plot(path::ReciprocalPath, data::AbstractVector{<:Number}, weights::AbstractVector{<:AbstractVector{<:Number}}; weightmultiplier=5.0, weightcolors=nothing, weightlabels=nothing)
+    @recipe plot(path::ReciprocalPath, data::AbstractMatrix{<:Number}, weights::AbstractVector{<:AbstractMatrix{<:Number}}; weightmultiplier=5.0, weightcolors=nothing, weightlabels=nothing)
 
 Define the recipe for the scatter visualization of data along a reciprocal path with a series of weights.
 """
 const scatter = quote
-    legend --> !isnothing(weightlabels)
     seriestype --> :scatter
-    markercolor := RGBA(1, 1, 1, 0)
-    for (i, weight) in enumerate(weights)
-        weightlabel = isnothing(weightlabels) ? "" : weightlabels[i]
+    markerstrokewidth := 0
+    legend --> !isnothing(weightlabels)
+    xlims --> (0, distance(path))
+    alpha --> 0.8
+    for i in 1:length(weights)
         @series begin
-            markersize := weight * weightmultiplier
-            markerstrokewidth := weightwidth
-            markerstrokecolor := isnothing(weightcolors) ? i : weightcolors[i]
-            labels := labels(weight, weightlabel)
+            markersize := atol
+            markercolor := isnothing(weightcolors) ? i : weightcolors[i]
+            label := isnothing(weightlabels) ? i : weightlabels[i]
+            [(0, 0)]
+        end
+    end
+    for (i, weight) in enumerate(weights)
+        @series begin
+            markersize := weight*weightmultiplier .+ atol
+            markercolor := isnothing(weightcolors) ? i : weightcolors[i]
+            label := false
             path, data
         end
     end
 end
-@inline labels(::AbstractVector{<:Number}, label) = label
-function labels(weight::AbstractMatrix{<:Number}, label)
-    pos = label=="" ? 1 : argmax(weight[1, :])
-    return reshape([i==pos ? label : "" for i in 1:size(weight, 2)], 1, :)
-end
-@eval @recipe plot(path::ReciprocalPath, data::AbstractVector{<:Number}, weights::AbstractVector{<:AbstractVector{<:Number}}; weightmultiplier=5.0, weightwidth=1.0, weightcolors=nothing, weightlabels=nothing) = $scatter
-@eval @recipe plot(path::ReciprocalPath, data::AbstractMatrix{<:Number}, weights::AbstractVector{<:AbstractMatrix{<:Number}}; weightmultiplier=5.0, weightwidth=1.0, weightcolors=nothing, weightlabels=nothing) = $scatter
+@eval @recipe plot(path::ReciprocalPath, data::AbstractVector{<:Number}, weights::AbstractVector{<:AbstractVector{<:Number}}; weightmultiplier=5.0, weightcolors=nothing, weightlabels=nothing) = $scatter
+@eval @recipe plot(path::ReciprocalPath, data::AbstractMatrix{<:Number}, weights::AbstractVector{<:AbstractMatrix{<:Number}}; weightmultiplier=5.0, weightcolors=nothing, weightlabels=nothing) = $scatter
 
 """
     @recipe plot(path::ReciprocalPath, y::AbstractVector{<:Number}, data::AbstractMatrix{<:Number})
@@ -1766,6 +1792,7 @@ Define the recipe for the heatmap visualization of a series of data on
 3) the x-y plain with the x axis being a reciprocal path.
 """
 setup(expr::Expr) = quote
+    seriestype := :heatmap
     isnothing(clims) && (clims = extrema(data))
     isnothing(nrow) && (nrow = round(Int, sqrt(size(data)[3])))
     isnothing(ncol) && (ncol = ceil(Int, size(data)[3]/nrow))
@@ -1783,7 +1810,6 @@ setup(expr::Expr) = quote
         end
     end
     subplot := nrow*ncol+1
-    seriestype := :heatmap
     xlims := (minimum(clims), maximum(clims))
     xlabel := ""
     ylims := (0, 1)
@@ -1798,6 +1824,7 @@ end
 # save utilities
 """
     save(filename::AbstractString, reciprocalspace::Union{BrillouinZone, ReciprocalZone}, data::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}}; fractional::Bool=false)
+    save(filename::AbstractString, reciprocalscatter::ReciprocalScatter, weights::AbstractVector{<:AbstractVector{<:Number}}; fractional::Bool=false)
     save(filename::AbstractString, path::ReciprocalPath, data::Union{AbstractVector{<:Number}, AbstractMatrix{<:Number}}; distance::Bool=false)
     save(filename::AbstractString, path::ReciprocalPath, data::AbstractVector{<:Number}, weights::AbstractVector{<:AbstractVector{<:Number}}; distance::Bool=false)
     save(filename::AbstractString, path::ReciprocalPath, data::AbstractMatrix{<:Number}, weights::AbstractVector{<:AbstractMatrix{<:Number}}; distance::Bool=false)
@@ -1808,62 +1835,51 @@ Save data to delimited files.
 function save(filename::AbstractString, reciprocalspace::Union{BrillouinZone, ReciprocalZone}, data::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}}; fractional::Bool=false)
     @assert map(length, shape(reciprocalspace))==reverse(size(data)[1:2]) "save error: mismatched size of reciprocal space and data."
     open(filename, "w") do f
-        if fractional
-            writedlm(f, [matrix(fractionals(reciprocalspace)) reshape(data, length(reciprocalspace), :)])
-        else
-            writedlm(f, [matrix(reciprocalspace) reshape(data, length(reciprocalspace), :)])
-        end
+        x = fractional ? matrix(fractionals(reciprocalspace)) : matrix(reciprocalspace)
+        y = reshape(data, length(reciprocalspace), :)
+        writedlm(f, [x y])
+    end
+end
+function save(filename::AbstractString, reciprocalscatter::ReciprocalScatter, weights::AbstractVector{<:AbstractVector{<:Number}}; fractional::Bool=false)
+    @assert all(weight->length(weight)==length(reciprocalscatter), weights) "save error: mismatched size of reciprocal scatter points and weights."
+    open(filename, "w") do f
+        x = fractional ? matrix(fractionals(reciprocalspace)) : matrix(reciprocalspace)
+        y = length(weights)>0 ? transpose(matrix(weights)) : zeros(scalartype(weights), length(reciprocalscatter), 0)
+        writedlm(f, [x y])
     end
 end
 function save(filename::AbstractString, path::ReciprocalPath, data::Union{AbstractVector{<:Number}, AbstractMatrix{<:Number}}; distance::Bool=false)
     @assert length(path)==size(data, 1) "save error: mismatched size of path and data."
     open(filename, "w") do f
-        if distance
-            writedlm(f, [[Spatials.distance(path, i) for i=1:length(path)] data])
-        else
-            writedlm(f, [matrix(path) data])
-        end
+        x = distance ? [Spatials.distance(path, i) for i=1:length(path), _=1:1] : matrix(path)
+        writedlm(f, [x data])
     end
 end
 function save(filename::AbstractString, path::ReciprocalPath, data::AbstractVector{<:Number}, weights::AbstractVector{<:AbstractVector{<:Number}}; distance::Bool=false)
     @assert length(path)==size(data, 1) && all(weight->size(data)==size(weight), weights) "save error: mismatched size of path, data and weights."
     open(filename, "w") do f
-        y, z = data, transpose(matrix(weights))
-        if distance
-            x = [Spatials.distance(path, i) for i=1:length(path)]
-            writedlm(f, [x y z])
-        else
-            x = matrix(path)
-            writedlm(f, [x y z])
-        end
+        x = distance ? [Spatials.distance(path, i) for i=1:length(path), _=1:1] : matrix(path)
+        y = data
+        z = length(weights)>0 ? transpose(matrix(weights)) : zeros(scalartype(weights), length(y), 0)
+        writedlm(f, [x y z])
     end
 end
 function save(filename::AbstractString, path::ReciprocalPath, data::AbstractMatrix{<:Number}, weights::AbstractVector{<:AbstractMatrix{<:Number}}; distance::Bool=false)
     @assert length(path)==size(data, 1) && all(weight->size(data)==size(weight), weights) "save error: mismatched size of path, data and weights."
     open(filename, "w") do f
+        x = distance ? kron(ones(size(data, 2)), [Spatials.distance(path, i) for i=1:length(path), _=1:1]) : matrix(kron(ones(size(data, 2)), path))
         y = reshape(data, :)
-        z = transpose(matrix([reshape(weight, :) for weight in weights]))
-        if distance
-            x = kron(ones(size(data, 2)), [Spatials.distance(path, i) for i=1:length(path)])
-            writedlm(f, [x y z])
-        else
-            x = matrix(kron(ones(size(data, 2)), path))
-            writedlm(f, [x y z])
-        end
+        z = length(weights)>0 ? transpose(matrix([reshape(weight, :) for weight in weights])) : zeros(scalartype(weights), length(y), 0)
+        writedlm(f, [x y z])
     end
 end
 function save(filename::AbstractString, path::ReciprocalPath, y::AbstractVector{<:Number}, data::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}}; distance::Bool=false)
     @assert (length(y), length(path))==size(data)[1:2] "save error: mismatched size of path, y and data."
     open(filename, "w") do f
+        x = distance ? kron([Spatials.distance(path, i) for i=1:length(path), _=1:1], ones(size(data, 1))) : matrix(kron(path, ones(size(data, 1))))
         y = kron(ones(length(path)), y)
         z = reshape(data, prod(size(data)[1:2]), :)
-        if distance
-            x = kron([Spatials.distance(path, i) for i=1:length(path)], ones(size(data, 1)))
-            writedlm(f, [x y z])
-        else
-            x = matrix(kron(path, ones(size(data, 1))))
-            writedlm(f, [x y z])
-        end
+        writedlm(f, [x y z])
     end
 end
 
