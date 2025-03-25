@@ -430,13 +430,15 @@ end
         surface[i] = -imag(1/(0.1im+2cos(k[1])+2cos(k[2])))
     end
     savefig(plot(bz, surface), "SingleSurface.png")
-    save("SingleSurface.dat", bz, surface; fractional=false)
+    save("SingleSurface-1.dat", bz, surface; fractional=false)
+    save("SingleSurface-2.dat", bz, surface; fractional=true)
 
     surfaces = zeros(size(surface)..., 2)
     surfaces[:, :, 1] = surface
     surfaces[:, :, 2] = surface
     savefig(plot(bz, surfaces), "MultiSurfaces.png")
-    save("MultiSurfaces.dat", bz, surfaces; fractional=true)
+    save("MultiSurfaces-1.dat", bz, surfaces; fractional=false)
+    save("MultiSurfaces-2.dat", bz, surfaces; fractional=true)
 
     rz = ReciprocalZone([[2pi, 0], [0, 2pi]], -2=>2, -1=>1, length=(400, 200))
     surface = zeros(Float64, (200, 400))
@@ -444,13 +446,35 @@ end
         surface[i] = -imag(1/(0.1im+2cos(k[1])+2cos(k[2])))
     end
     savefig(plot(rz, surface), "SingleExtendedSurface.png")
-    save("SingleExtendedSurface.dat", rz, surface; fractional=false)
+    save("SingleExtendedSurface-1.dat", rz, surface; fractional=false)
+    save("SingleExtendedSurface-2.dat", rz, surface; fractional=true)
 
     surfaces = zeros(size(surface)..., 2)
     surfaces[:, :, 1] = surface
     surfaces[:, :, 2] = surface
     savefig(plot(rz, surfaces), "MultiExtendedSurfaces.png")
-    save("MultiExtendedSurfaces.dat", rz, surfaces; fractional=true)
+    save("MultiExtendedSurfaces-1.dat", rz, surfaces; fractional=false)
+    save("MultiExtendedSurfaces-2.dat", rz, surfaces; fractional=true)
+
+    coordinates = SVector{2, Float64}[]
+    weights = [Float64[], Float64[]]
+    append!(coordinates, Segment(SVector(0.0, 1.0), SVector(1.0, 0.0), 100))
+    append!(weights[1], fill(1.0, 100))
+    append!(weights[2], fill(0.0, 100))
+    append!(coordinates, Segment(SVector(1.0, 0.0), SVector(0.0, -1.0), 100))
+    append!(weights[1], fill(0.0, 100))
+    append!(weights[2], fill(1.0, 100))
+    append!(coordinates, Segment(SVector(0.0, -1.0), SVector(-1.0, 0.0), 100))
+    append!(weights[1], fill(1.0, 100))
+    append!(weights[2], fill(0.0, 100))
+    append!(coordinates, Segment(SVector(-1.0, 0.0), SVector(0.0, 1.0), 100))
+    append!(weights[1], fill(0.0, 100))
+    append!(weights[2], fill(1.0, 100))
+    rs = ReciprocalScatter([[2pi, 0], [0, 2pi]], coordinates)
+    savefig(plot(rs, weights; fractional=false), "Surface-1.png")
+    savefig(plot(rs, weights; fractional=true), "Surface-2.png")
+    save("Surface-1.dat", rs, weights; fractional=false)
+    save("Surface-2.dat", rs, weights; fractional=true)
 
     path = ReciprocalPath([[2pi, 0], [0, 2pi]], rectangle"Γ-X-M-Γ")
     band = map(k->-2cos(k[1])-2cos(k[2]), path)
@@ -478,11 +502,13 @@ end
     energies = LinRange(-6.0, 6.0, 401)
     spectrum = [-imag(1/(e+0.1im-b)) for e in energies, b in band]
     savefig(plot(path, energies, spectrum), "SingleSpectrum.png")
-    save("SingleSpectrum.dat", path, energies, spectrum; distance=false)
+    save("SingleSpectrum-1.dat", path, energies, spectrum; distance=false)
+    save("SingleSpectrum-2.dat", path, energies, spectrum; distance=true)
 
     spectra = zeros(size(spectrum)..., 2)
     spectra[:, :, 1] = spectrum
     spectra[:, :, 2] = spectrum
     savefig(plot(path, energies, spectra), "MultiSpectra.png")
-    save("MultiSpectra.dat", path, energies, spectra; distance=true)
+    save("MultiSpectra-1.dat", path, energies, spectra; distance=false)
+    save("MultiSpectra-2.dat", path, energies, spectra; distance=true)
 end
