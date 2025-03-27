@@ -125,7 +125,6 @@ function direction(v::Tuple{Number, Number}, unit::Symbol)
     end
 end
 function direction(v::AbstractVector{<:Number}, args...)
-    @assert length(v)∈(2, 3) "direction error: input vector length should be 2 or 3."
     n = norm(v)
     return map(i->i/n, v)
 end
