@@ -294,7 +294,7 @@ end
 
     dos = tba(:DOS, DensityOfStates(101, 0.1), (t=1.0, U=4.0), params, (eigensystem,))
     @test sum(dos.data.values)*(maximum(dos.data.energies)-minimum(dos.data.energies))/(dos.action.ne-1)/length(eigensystem.action.brillouinzone) ≈ 0.9964676726997486
-    summary(dos)
+    summary(tba)
     savefig(plot(dos), "DensityOfStatesU4.png")
 
     update!(dos; U=8.0)
