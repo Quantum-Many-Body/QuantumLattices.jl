@@ -4,6 +4,7 @@ using QuantumLattices: expand, expand!, reset!, update
 using QuantumLattices.DegreesOfFreedom: plain, Boundary, CoordinatedIndex, Coupling, Hilbert, Index, SimpleInternalIndex, SimpleInternal, Term
 using QuantumLattices.Frameworks
 using QuantumLattices.Frameworks: seriestype
+using QuantumLattices.QuantumNumbers: periods
 using QuantumLattices.QuantumOperators: ID, LinearFunction, Operator, Operators, idtype, scalartype
 using QuantumLattices.Spatials: BrillouinZone, Lattice, bonds, decompose, isintracell
 using StaticArrays: SVector, SMatrix, @SMatrix
@@ -221,6 +222,7 @@ end
 struct EigenSystem{B<:BrillouinZone} <: Action
     brillouinzone::B
 end
+Base.show(io::IO, eigensystem::EigenSystem) = print(io, "EigenSystem(", join(periods(keytype(eigensystem.brillouinzone)), "×"), ")")
 struct EigenSystemData <: Data
     values::Vector{Vector{Float64}}
     vectors::Vector{Matrix{ComplexF64}}
@@ -285,12 +287,19 @@ end
     @test valtype(eigensystem) == valtype(typeof(eigensystem)) == EigenSystemData
     update!(eigensystem; U=1.0)
     @test Parameters(eigensystem) == (t=1.0, U=1.0)
+    @test string(eigensystem) == "eigensystem(EigenSystem)-t(1.0)U(1.0)"
+    io = IOBuffer()
+    show(io, MIME"text/plain"(), eigensystem)
+    @test String(take!(io)) == "eigensystem\n  action:\n    EigenSystem(100×100)\n  parameters:\n    t: 1.0\n    U: 1.0"
 
     tba = Algorithm(:Square, tba, (t=1.0, U=2.0), params)
     @test tba==deepcopy(tba) && isequal(tba, deepcopy(tba))
     update!(tba; U=1.0)
     @test Parameters(tba) == (t=1.0, U=1.0)
-    @test string(tba) == "Square\n  frontend:\n    TBA\n  parameters:\n    t: 1.0\n    U: 1.0"
+    @test string(tba) == "Square(TBA)"
+    io = IOBuffer()
+    show(io, MIME"text/plain"(), tba)
+    @test String(take!(io)) == "Square\n  frontend:\n    TBA\n  parameters:\n    t: 1.0\n    U: 1.0"
 
     dos = tba(:DOS, DensityOfStates(101, 0.1), (t=1.0, U=4.0), params, (eigensystem,))
     @test sum(dos.data.values)*(maximum(dos.data.energies)-minimum(dos.data.energies))/(dos.action.ne-1)/length(eigensystem.action.brillouinzone) ≈ 0.9964676726997486

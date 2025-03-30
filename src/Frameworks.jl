@@ -763,6 +763,43 @@ function update!(assign::Assignment; parameters...)
 end
 
 """
+    show(io::IO, assign::Assignment)
+    show(io::IO, ::MIME"text/plain", assign::Assignment)
+
+Show an assignment.
+
+Optionally, some parameters of the algorithm can be filtered by specifying the `:select` context in `io`. Besides, the maximum number of decimals of the parameters can also be specified by the `:ndecimal` context in `io`.
+"""
+@inline function Base.show(io::IO, assign::Assignment)
+    select = get(io, :select, param->true)
+    ndecimal = get(io, :ndecimal, 10)
+    print(io, assign.name, "(", nameof(typeof(assign.action)), ")")
+    flag = false
+    for (name, value) in pairs(assign.parameters)
+        if select(name)
+            flag || print(io, "-")
+            flag = true
+            print(io, name, "(", tostr(value, ndecimal), ")")
+        end
+    end
+end
+function Base.show(io::IO, ::MIME"text/plain", assign::Assignment)
+    io₁ = indent(io, 2)
+    io₂ = indent(io, 4)
+    print(io, assign.name)
+    print(io₁, '\n', "action:")
+    print(io₂, '\n', assign.action)
+    print(io₁, '\n', "parameters:")
+    select = get(io, :select, param->true)
+    ndecimal = get(io, :ndecimal, 10)
+    for (name, value) in pairs(assign.parameters)
+        if select(name)
+            print(io₂, '\n', name, ": ", tostr(value, ndecimal))
+        end
+    end
+end
+
+"""
     @recipe plot(assignment::Assignment)
 
 Define the recipe for the visualization of an assignment of an algorithm.
@@ -844,13 +881,19 @@ end
 
 """
     show(io::IO, alg::Algorithm)
+
+Show an algorithm.
+"""
+@inline Base.show(io::IO, alg::Algorithm) = print(io, alg.name, "(", nameof(typeof(alg.frontend)), ")")
+
+"""
     show(io::IO, ::MIME"text/plain", alg::Algorithm)
 
 Show an algorithm.
 
 Optionally, some parameters of the algorithm can be filtered by specifying the `:select` context in `io`. Besides, the maximum number of decimals of the parameters can also be specified by the `:ndecimal` context in `io`.
 """
-function Base.show(io::IO, alg::Algorithm)
+function Base.show(io::IO, ::MIME"text/plain", alg::Algorithm)
     io₁ = indent(io, 2)
     io₂ = indent(io, 4)
     print(io, alg.name)
@@ -865,7 +908,6 @@ function Base.show(io::IO, alg::Algorithm)
         end
     end
 end
-@inline Base.show(io::IO, ::MIME"text/plain", alg::Algorithm) = show(io, alg)
 
 """
     summary(alg::Algorithm)
