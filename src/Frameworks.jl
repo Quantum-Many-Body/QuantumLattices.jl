@@ -3,11 +3,10 @@ module Frameworks
 using Base: @propagate_inbounds
 using Base.Iterators: flatten, repeated
 using DelimitedFiles: writedlm
+using IndentWrappers: indent
 using LaTeXStrings: latexstring
-using Printf: @printf, @sprintf
 using RecipesBase: RecipesBase, @recipe
-using Serialization: serialize
-using TimerOutputs: TimerOutput, TimerOutputs, @timeit
+using TimerOutputs: TimerOutput, time, @timeit
 using ..DegreesOfFreedom: plain, Boundary, Hilbert, Term
 using ..QuantumLattices: OneOrMore, id, value
 using ..QuantumOperators: OperatorPack, Operators, OperatorSet, OperatorSum, LinearTransformation, Transformation, identity, operatortype
@@ -16,10 +15,9 @@ using ..Toolkit: atol, efficientoperations, rtol, parametertype, tostr
 
 import ..QuantumLattices: add!, expand, expand!, reset!, update, update!
 import ..QuantumOperators: scalartype
-import ..Spatials: save
 
-export Action, Algorithm, Assignment, CategorizedGenerator, Eager, ExpansionStyle, Formula, Frontend, Generator, Lazy, OperatorGenerator, Parameters
-export checkoptions, eager, lazy, initialize, options, prepare!, run!
+export Action, Algorithm, Assignment, CategorizedGenerator, Data, Eager, ExpansionStyle, Formula, Frontend, Generator, Lazy, OperatorGenerator, Parameters
+export eager, lazy, checkoptions, options, run!
 
 """
     Parameters{Names}(values::Number...) where Names
@@ -27,6 +25,7 @@ export checkoptions, eager, lazy, initialize, options, prepare!, run!
 A NamedTuple that contains the key-value pairs.
 """
 const Parameters{Names, T<:Tuple{Vararg{Number}}} = NamedTuple{Names, T}
+@inline Parameters() = NamedTuple()
 @inline Parameters{Names}(values::Number...) where {Names} = NamedTuple{Names}(values)
 function Base.show(io::IO, params::Parameters)
     haskey(io, :ndecimal) && (params = NamedTuple{keys(params)}(map(value->round(value; digits=io[:ndecimal]), values(params))))
@@ -68,7 +67,7 @@ Get the parameters of the twisted boundary condition.
 
 Get the parameters of an `OperatorSet`, which is defined to be an empty `NamedTuple`.
 """
-@inline Parameters(ops::OperatorSet) = NamedTuple()
+@inline Parameters(ops::OperatorSet) = Parameters()
 
 """
     Formula{V, F<:Function, P<:Parameters}
@@ -658,9 +657,6 @@ Frontend of algorithms applied to a quantum lattice system.
 abstract type Frontend end
 @inline Base.:(==)(frontend₁::Frontend, frontend₂::Frontend) = ==(efficientoperations, frontend₁, frontend₂)
 @inline Base.isequal(frontend₁::Frontend, frontend₂::Frontend) = isequal(efficientoperations, frontend₁, frontend₂)
-@inline Base.show(io::IO, frontend::Frontend) = @printf io "%s" nameof(typeof(frontend))
-@inline update!(frontend::Frontend; kwargs...) = error("update! error: not implemented for $(nameof(typeof(frontend))).")
-@inline Parameters(frontend::Frontend) = error("Parameters error: not implemented for $(nameof(typeof(frontend))).")
 
 """
     Action
@@ -670,32 +666,78 @@ Abstract type for all actions.
 abstract type Action end
 @inline Base.:(==)(action₁::Action, action₂::Action) = ==(efficientoperations, action₁, action₂)
 @inline Base.isequal(action₁::Action, action₂::Action) = isequal(efficientoperations, action₁, action₂)
-@inline initialize(action::Action, frontend::Frontend) = error("initialize error: not implemented.")
+
+"""
+    update!(action::Action; parameters...) -> Action
+
+Update the parameters of an action.
+"""
 @inline update!(action::Action; parameters...) = action
+
+"""
+    options(::Type{<:Action}) -> Dict{Symbol, String}
+
+Get the options of a type of action.
+"""
 @inline options(::Type{<:Action}) = Dict{Symbol, String}()
-@inline function checkoptions(::Type{A}; kwargs...) where A
+
+"""
+    checkoptions(::Type{A}; kwargs...) where {A<:Action}
+
+Check whether the keyword arguments are legal options of a certain type of action.
+"""
+@inline function checkoptions(::Type{A}; kwargs...) where {A<:Action}
     legals = options(A)
     for candidate in keys(kwargs)
         @assert candidate∈keys(legals) "checkoptions error: improper option(`:$candidate`) for `$(nameof(A))`, which should be\n$(join(("$i) `:$key`: $value" for (i, (key, value)) in enumerate(legals)), ";\n"))."
     end
+    return true
 end
 
 """
-    Assignment{A<:Action, P<:Parameters, M<:Function, N, D} <: Function
+    Data
+
+Abstract type for the data of an action.
+"""
+abstract type Data end
+@inline Base.:(==)(data₁::Data, data₂::Data) = ==(efficientoperations, data₁, data₂)
+@inline Base.isequal(data₁::Data, data₂::Data) = isequal(efficientoperations, data₁, data₂)
+
+"""
+    Tuple(data::Data)
+
+Convert `Data` to `Tuple`.
+"""
+@inline @generated function Tuple(data::Data)
+    exprs = [:(getfield(data, $i)) for i in 1:fieldcount(data)]
+    return Expr(:tuple, exprs...)
+end
+
+"""
+    Assignment{A<:Action, P<:Parameters, M<:Function, N, D<:Data} <: Function
 
 An assignment associated with an action.
 """
-mutable struct Assignment{A<:Action, P<:Parameters, M<:Function, N, D} <: Function
-    const id::Symbol
+mutable struct Assignment{A<:Action, P<:Parameters, M<:Function, T<:Tuple, D<:Data} <: Function
+    const name::Symbol
     const action::A
     parameters::P
     const map::M
-    const dependencies::NTuple{N, Symbol}
-    data::D
+    const dependencies::T
+    const data::D
     ismatched::Bool
+    function Assignment(name::Symbol, action::Action, parameters::Parameters, map::Function, dependencies::Tuple{Vararg{Assignment}}, data::Data, ismatched::Bool)
+        new{typeof(action), typeof(parameters), typeof(map), typeof(dependencies), typeof(data)}(name, action, parameters, map, dependencies, data, ismatched)
+    end
 end
 @inline Base.:(==)(assign₁::Assignment, assign₂::Assignment) = ==(efficientoperations, assign₁, assign₂)
 @inline Base.isequal(assign₁::Assignment, assign₂::Assignment) = isequal(efficientoperations, assign₁, assign₂)
+
+"""
+    Parameters(assignment::Assignment) -> Parameters
+
+Get the parameters of an assignment.
+"""
 @inline Parameters(assignment::Assignment) = assignment.parameters
 
 """
@@ -705,7 +747,7 @@ end
 Type of the data (result) of an assignment.
 """
 @inline Base.valtype(assign::Assignment) = valtype(typeof(assign))
-@inline Base.valtype(::Type{<:Assignment{<:Action, <:Parameters, <:Function, N, R} where N}) where R = R
+@inline Base.valtype(::Type{<:Assignment{<:Action, <:Parameters, <:Function, <:Tuple, D}}) where {D<:Data} = D
 
 """
     update!(assign::Assignment; parameters...) -> Assignment
@@ -721,6 +763,55 @@ function update!(assign::Assignment; parameters...)
 end
 
 """
+    @recipe plot(assignment::Assignment)
+
+Define the recipe for the visualization of an assignment of an algorithm.
+"""
+@recipe function plot(assignment::Assignment)
+    titlefontsize --> 10
+    attr = seriestype(assignment.data)
+    isnothing(attr) || begin
+        seriestype --> attr
+        attr==:path && begin
+            legend --> false
+            minorgrid --> true
+            xminorticks --> 10
+            yminorticks --> 10
+        end
+    end
+    Tuple(assignment.data)
+end
+@inline seriestype(_...) = nothing
+@inline seriestype(data::Data) = seriestype(Tuple(data)...)
+@inline seriestype(::AbstractVector{<:Number}, ::Union{AbstractVector{<:Number}, AbstractMatrix{<:Number}}, _...) = :path
+@inline seriestype(::AbstractVector{<:Number}, ::AbstractVector{<:Number}, ::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}}, _...) = :heatmap
+
+# """
+#     save(filename::AbstractString, assign::Assignment; delimited=false, kwargs...)
+
+# Save the data of an assignment registered on an algorithm.
+# """
+# @inline save(filename::AbstractString, assign::Assignment; delimited=false, kwargs...)
+#     delimited ? save(filename, assign.data; kwargs...) : serialize(filename, assign.data)
+# end
+# @inline save(filename::AbstractString, data::Tuple; kwargs...) = save(filename, data...; kwargs...)
+# function save(filename::AbstractString, x::AbstractVector{<:Number}, y::Union{AbstractVector{<:Number}, AbstractMatrix{<:Number}}; kwargs...)
+#     @assert length(x)==size(y)[1] "save error: mismatched size of x and y."
+#     open(filename, "w") do f
+#         writedlm(f, [x y])
+#     end
+# end
+# function save(filename::AbstractString, x::AbstractVector{<:Number}, y::AbstractVector{<:Number}, z::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}}; kwargs...)
+#     @assert size(z)[1:2]==(length(y), length(x)) "save error: mismatched size of x, y and z."
+#     open(filename, "w") do f
+#         new_x = kron(x, ones(length(y)))
+#         new_y = kron(ones(length(x)), y)
+#         new_z = reshape(z, length(x)*length(y), :)
+#         writedlm(f, [new_x new_y new_z])
+#     end
+# end
+
+"""
     Algorithm{F<:Frontend, P<:Parameters, M<:Function} <: Function
 
 An algorithm associated with an frontend.
@@ -732,32 +823,36 @@ mutable struct Algorithm{F<:Frontend, P<:Parameters, M<:Function} <: Function
     const dout::String
     parameters::P
     const map::M
-    const assignments::Dict{Symbol, Assignment}
     const timer::TimerOutput
 end
-@inline run!(alg::Algorithm, assign::Assignment) = nothing
 @inline function Base.:(==)(algorithm₁::Algorithm, algorithm₂::Algorithm)
     return ==(
-        (algorithm₁.name, algorithm₁.frontend, algorithm₁.din, algorithm₁.dout, algorithm₁.parameters, algorithm₁.map, algorithm₁.assignments),
-        (algorithm₂.name, algorithm₂.frontend, algorithm₂.din, algorithm₂.dout, algorithm₂.parameters, algorithm₂.map, algorithm₂.assignments),
+        (algorithm₁.name, algorithm₁.frontend, algorithm₁.din, algorithm₁.dout, algorithm₁.parameters, algorithm₁.map),
+        (algorithm₂.name, algorithm₂.frontend, algorithm₂.din, algorithm₂.dout, algorithm₂.parameters, algorithm₂.map),
     )
 end
 @inline function Base.isequal(algorithm₁::Algorithm, algorithm₂::Algorithm)
     return isequal(
-        (algorithm₁.name, algorithm₁.frontend, algorithm₁.din, algorithm₁.dout, algorithm₁.parameters, algorithm₁.map, algorithm₁.assignments),
-        (algorithm₂.name, algorithm₂.frontend, algorithm₂.din, algorithm₂.dout, algorithm₂.parameters, algorithm₂.map, algorithm₂.assignments),
+        (algorithm₁.name, algorithm₁.frontend, algorithm₁.din, algorithm₁.dout, algorithm₁.parameters, algorithm₁.map),
+        (algorithm₂.name, algorithm₂.frontend, algorithm₂.din, algorithm₂.dout, algorithm₂.parameters, algorithm₂.map),
     )
 end
-@inline Parameters(algorithm::Algorithm) = algorithm.parameters
 
 """
-    Algorithm(name::Symbol, frontend::Frontend; din::String=".", dout::String=".", parameters::Parameters=Parameters(frontend), map::Function=identity)
+    Algorithm(name::Symbol, frontend::Frontend, parameters::Parameters=Parameters(frontend), map::Function=identity; din::String=".", dout::String=".", timer::TimerOutput=TimerOutput())
 
 Construct an algorithm.
 """
-@inline function Algorithm(name::Symbol, frontend::Frontend; din::String=".", dout::String=".", parameters::Parameters=Parameters(frontend), map::Function=identity, timer::TimerOutput=TimerOutput())
-    return Algorithm(name, frontend, din, dout, parameters, map, Dict{Symbol, Assignment}(), timer)
+@inline function Algorithm(name::Symbol, frontend::Frontend, parameters::Parameters=Parameters(frontend), map::Function=identity; din::String=".", dout::String=".", timer::TimerOutput=TimerOutput())
+    return Algorithm(name, frontend, din, dout, parameters, map, timer)
 end
+
+"""
+    Parameters(algorithm::Algorithm)
+
+Get the parameters of an algorithm.
+"""
+@inline Parameters(algorithm::Algorithm) = algorithm.parameters
 
 """
     update!(alg::Algorithm; parameters...) -> Algorithm
@@ -774,24 +869,28 @@ end
 
 """
     show(io::IO, alg::Algorithm)
+    show(io::IO, ::MIME"text/plain", alg::Algorithm)
 
 Show an algorithm.
 
 Optionally, some parameters of the algorithm can be filtered by specifying the `:select` context in `io`. Besides, the maximum number of decimals of the parameters can also be specified by the `:ndecimal` context in `io`.
 """
 function Base.show(io::IO, alg::Algorithm)
+    io₁ = indent(io, 2)
+    io₂ = indent(io, 4)
+    print(io, alg.name)
+    print(io₁, '\n', "frontend:")
+    print(io₂, '\n', alg.frontend)
+    print(io₁, '\n', "parameters:")
     select = get(io, :select, param->true)
     ndecimal = get(io, :ndecimal, 10)
-    @printf io "%s(%s)" alg.name alg.frontend
-    flag = false
     for (name, value) in pairs(alg.parameters)
         if select(name)
-            flag || @printf io "-"
-            flag = true
-            @printf io "%s(%s)" name tostr(value, ndecimal)
+            print(io₂, '\n', name, ": ", tostr(value, ndecimal))
         end
     end
 end
+@inline Base.show(io::IO, ::MIME"text/plain", alg::Algorithm) = show(io, alg)
 
 """
     summary(alg::Algorithm)
@@ -799,145 +898,63 @@ end
 Provide a summary of an algorithm.
 """
 function Base.summary(alg::Algorithm)
-    @info "Summary of $(alg.name)($(nameof(typeof(alg.frontend)))):"
+    @info "Summary of $(alg.name) with $(nameof(typeof(alg.frontend))) frontend:"
     @info string(alg.timer)
 end
 
 """
-    nameof(alg::Algorithm, assign::Assignment) -> String
-
-Get the name of the combination of an algorithm and an assignment.
-"""
-@inline Base.nameof(alg::Algorithm, assign::Assignment) = @sprintf "%s-%s" alg assign.id
-
-"""
-    add!(alg::Algorithm, id::Symbol, action::Action; parameters::Parameters=Parameters{()}(), map::Function=identity, dependencies::Tuple=(), kwargs...) -> Tuple{Algorithm, Assignment}
-
-Add an assignment on an algorithm by providing the contents of the assignment without the execution of it.
-"""
-function add!(alg::Algorithm, id::Symbol, action::Action; parameters::Parameters=Parameters{()}(), map::Function=identity, dependencies::Tuple=(), kwargs...)
-    assign = Assignment(id, action, merge(alg.parameters, parameters), map, dependencies, initialize(action, alg.frontend), false)
-    alg.assignments[id] = assign
-    return (alg, assign)
-end
-
-"""
-    (alg::Algorithm)(assign::Assignment) -> Tuple{Algorithm, Assignment}
-    (assign::Assignment)(alg::Algorithm) -> Tuple{Algorithm, Assignment}
+    (alg::Algorithm)(assign::Assignment) -> Assignment
+    (assign::Assignment)(alg::Algorithm) -> Assignment
 
 Run an assignment based on an algorithm.
 
 The difference between these two methods is that the first uses the parameters of `assign` as the current parameters while the second uses those of `alg`.
 """
 function (alg::Algorithm)(assign::Assignment)
-    ismatched = match(assign.parameters, alg.parameters)
-    if !(assign.ismatched && ismatched)
-        ismatched || update!(alg; assign.parameters...)
-        run!(alg, assign)
-        assign.ismatched = true
+    @timeit alg.timer string(assign.name) begin
+        ismatched = match(assign.parameters, alg.parameters)
+        if !(assign.ismatched && ismatched)
+            ismatched || update!(alg; assign.parameters...)
+            map(dependency->dependency(alg), assign.dependencies)
+            run!(alg, assign)
+            assign.ismatched = true
+        end
     end
-    return (alg, assign)
+    return assign
 end
 function (assign::Assignment)(alg::Algorithm)
-    ismatched = match(alg.parameters, assign.parameters)
-    if !(assign.ismatched && ismatched)
-        ismatched || update!(assign; alg.parameters...)
-        run!(alg, assign)
-        assign.ismatched = true
+    @timeit alg.timer string(assign.name) begin
+        ismatched = match(alg.parameters, assign.parameters)
+        if !(assign.ismatched && ismatched)
+            ismatched || update!(assign; alg.parameters...)
+            map(dependency->dependency(alg), assign.dependencies)
+            run!(alg, assign)
+            assign.ismatched = true
+        end
     end
-    return (alg, assign)
+    return assign
 end
 
 """
-    (alg::Algorithm)(id::Symbol, action::Action; info::Bool=true, kwargs...) -> Tuple{Algorithm, Assignment}
+    (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters=Parameters(), map::Function=identity, dependencies::Tuple{Vararg{Assignment}}=(); info::Bool=true) -> Assignment
 
 Add an assignment on a algorithm by providing the contents of the assignment, and run this assignment.
 """
-@inline function (alg::Algorithm)(id::Symbol, action::Action; info::Bool=true, kwargs...)
-    add!(alg, id, action; kwargs...)
-    alg(id, info=info)
-end
-
-"""
-    (alg::Algorithm)(id::Symbol; info::Bool=true, parameters::Parameters=Parameters{()}()) -> Tuple{Algorithm, Assignment}
-
-Run an assignment specified by its id.
-
-Optionally, the time of the run process can be informed by setting the `info` argument to be `true`.
-"""
-function (alg::Algorithm)(id::Symbol; info::Bool=true, parameters::Parameters=Parameters{()}())
-    assign = alg.assignments[id]
-    update!(assign; parameters...)
-    @timeit alg.timer string(id) alg(assign)
-    info && @info "Action $id($(nameof(assign.action|>typeof))): time consumed $(TimerOutputs.time(alg.timer[string(id)]) / 10^9)s."
-    return (alg, assign)
-end
-
-"""
-    save(alg::Algorithm, assign::Assignment; delimited=false, kwargs...) -> Tuple{Algorithm, Assignment}
-
-Save the data of an assignment registered on an algorithm.
-"""
-@inline function save(alg::Algorithm, assign::Assignment; delimited=false, kwargs...)
-    filename = @sprintf("%s/%s.dat", alg.dout, nameof(alg, assign))
-    delimited ? save(filename, assign.data; kwargs...) : serialize(filename, assign.data)
-    return (alg, assign)
-end
-@inline save(filename::AbstractString, data::Tuple; kwargs...) = save(filename, data...; kwargs...)
-function save(filename::AbstractString, x::AbstractVector{<:Number}, y::Union{AbstractVector{<:Number}, AbstractMatrix{<:Number}}; kwargs...)
-    @assert length(x)==size(y)[1] "save error: mismatched size of x and y."
-    open(filename, "w") do f
-        writedlm(f, [x y])
+@inline function (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters=Parameters(), map::Function=identity, dependencies::Tuple{Vararg{Assignment}}=(); info::Bool=true)
+    assign = Assignment(name, action, merge(alg.parameters, parameters), map, dependencies, Data(action, alg.frontend), false)
+    alg(assign)
+    if info
+        name = string(name)
+        haskey(alg.timer, name) && @info "Action $name: time consumed $(time(alg.timer[name])/10^9)s."
     end
-end
-function save(filename::AbstractString, x::AbstractVector{<:Number}, y::AbstractVector{<:Number}, z::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}}; kwargs...)
-    @assert size(z)[1:2]==(length(y), length(x)) "save error: mismatched size of x, y and z."
-    open(filename, "w") do f
-        new_x = kron(x, ones(length(y)))
-        new_y = kron(ones(length(x)), y)
-        new_z = reshape(z, length(x)*length(y), :)
-        writedlm(f, [new_x new_y new_z])
-    end
+    return assign
 end
 
 """
-    prepare!(alg::Algorithm, assign::Assignment, f::Function=assign->true) -> Tuple{Algorithm, Assignment}
+    run!(alg::Algorithm, assign::Assignment)
 
-Run the dependencies of an assignment.
-
-Optionally, some dependencies can be filtered by specifying the `f` function.
+Run an assignment based on an algorithm.
 """
-function prepare!(alg::Algorithm, assign::Assignment, f::Function=assign->true)
-    for id in assign.dependencies
-        dependence = alg.assignments[id]
-        f(dependence) && dependence(alg)
-    end
-    return (alg, assign)
-end
-
-"""
-    @recipe plot(pack::Tuple{Algorithm, Assignment})
-
-Define the recipe for the visualization of an assignment of an algorithm.
-"""
-@recipe function plot(pack::Tuple{Algorithm, Assignment})
-    title --> nameof(pack...)
-    titlefontsize --> 10
-    attr = seriestype(pack)
-    isnothing(attr) || begin
-        seriestype --> attr
-        attr==:path && begin
-            legend --> false
-            minorgrid --> true
-            xminorticks --> 10
-            yminorticks --> 10
-        end
-    end
-    pack[2].data
-end
-@inline seriestype(_...) = nothing
-@inline seriestype(pack::Tuple{Algorithm, Assignment}) = seriestype(pack[2].data...)
-@inline seriestype(::AbstractVector{<:Number}, ::Union{AbstractVector{<:Number}, AbstractMatrix{<:Number}}, _...) = :path
-@inline seriestype(::AbstractVector{<:Number}, ::AbstractVector{<:Number}, ::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}}, _...) = :heatmap
+function run! end
 
 end  # module

@@ -1,21 +1,22 @@
-using LinearAlgebra: dot, tr
-using QuantumLattices: add!, expand, expand!, reset!, update
+using LinearAlgebra: dot, eigen
+using Plots: plot, savefig
+using QuantumLattices: expand, expand!, reset!, update
 using QuantumLattices.DegreesOfFreedom: plain, Boundary, CoordinatedIndex, Coupling, Hilbert, Index, SimpleInternalIndex, SimpleInternal, Term
 using QuantumLattices.Frameworks
-using QuantumLattices.QuantumOperators: ID, LinearFunction, Operator, Operators, id, idtype, scalartype
-using QuantumLattices.Spatials: Lattice, bonds, decompose, isintracell, save
-using QuantumLattices.Toolkit: Float
-using StaticArrays: SVector
+using QuantumLattices.Frameworks: seriestype
+using QuantumLattices.QuantumOperators: ID, LinearFunction, Operator, Operators, idtype, scalartype
+using QuantumLattices.Spatials: BrillouinZone, Lattice, bonds, decompose, isintracell, save
+using StaticArrays: SVector, SMatrix, @SMatrix
 
-import QuantumLattices: update!
-import QuantumLattices.Frameworks: Parameters, initialize, run!
+import QuantumLattices: dimension, update!
+import QuantumLattices.Frameworks: Parameters, run!
 import QuantumLattices.Toolkit: shape
 
 struct FID{N<:Union{Int, Symbol}} <: SimpleInternalIndex
     nambu::N
 end
 @inline Base.adjoint(sl::FID{Int}) = FID(3-sl.nambu)
-function Base.angle(id::CoordinatedIndex{<:Index{FID{Int}}}, vectors::AbstractVector{<:AbstractVector{Float}}, values::AbstractVector{Float})
+function Base.angle(id::CoordinatedIndex{<:Index{FID{Int}}}, vectors::AbstractVector{<:AbstractVector{Float64}}, values::AbstractVector{Float64})
     phase=  (length(vectors) == 1) ? 2pi*dot(decompose(id.icoordinate, vectors[1]), values) :
             (length(vectors) == 2) ? 2pi*dot(decompose(id.icoordinate, vectors[1], vectors[2]), values) :
             (length(vectors) == 3) ? 2pi*dot(decompose(id.icoordinate, vectors[1], vectors[2], vectors[3]), values) :
@@ -47,16 +48,16 @@ end
     @test Parameters(bound) == (θ₁=0.1, θ₂=0.2)
 
     ops = Operator(1, FID(1)) + Operator(2, FID(2))
-    @test Parameters(ops) == NamedTuple()
+    @test Parameters(ops) == Parameters()
 end
 
 @testset "Formula" begin
-    A(t, μ, Δ, k=SVector(0, 0)) = [
+    A(t, μ, Δ, k=SVector(0, 0)) = @SMatrix([
         2t*cos(k[1]) + 2t*cos(k[2]) + μ   2im*Δ*sin(k[1]) + 2Δ*sin(k[2]);
         -2im*Δ*sin(k[1]) + 2Δ*sin(k[2])   -2t*cos(k[1]) - 2t*cos(k[2]) - μ
-    ]::Matrix{ComplexF64}
+    ])
     f = Formula(A, (t=1.0, μ=0.0, Δ=0.1))
-    @test valtype(f) == valtype(typeof(f)) == Matrix{ComplexF64}
+    @test valtype(f) == valtype(typeof(f)) == SMatrix{2, 2, ComplexF64, 4}
     @test scalartype(f) == scalartype(typeof(f)) == ComplexF64
     @test Parameters(f) == (t=1.0, μ=0.0, Δ=0.1)
     @test f([0.0, 0.0]) ≈ [4 0; 0 -4]
@@ -74,7 +75,7 @@ end
     μ = Term{:Mu}(:μ, 1.0, 0, Coupling(1.0, :, FID, (2, 1)), true)
     i = LinearFunction(identity)
 
-    optp = Operator{Complex{Float}, ID{CoordinatedIndex{Index{FID{Int}, Int}, SVector{1, Float}}, 2}}
+    optp = Operator{ComplexF64, ID{CoordinatedIndex{Index{FID{Int}, Int}, SVector{1, Float64}}, 2}}
     tops₁ = expand(t, filter(bond->isintracell(bond), bs), hilbert; half=true)
     tops₂ = boundary(expand(one(t), filter(bond->!isintracell(bond), bs), hilbert; half=true))
     μops = expand(one(μ), filter(bond->length(bond)==1, bs), hilbert; half=true)
@@ -87,7 +88,7 @@ end
     @test cat == Generator(tops₁, (t=Operators{optp}(), μ=μops), (t=tops₂, μ=Operators{optp}()), (t=2.0, μ=1.0), boundary, eager)
     @test cat|>valtype == cat|>typeof|>valtype == Operators{optp, idtype(optp)}
     @test cat|>eltype == cat|>typeof|>eltype == optp
-    @test cat|>scalartype == cat|>typeof|>scalartype == Complex{Float}
+    @test cat|>scalartype == cat|>typeof|>scalartype == ComplexF64
     @test Parameters(cat) == (t=2.0, μ=1.0, θ=0.1)
     @test !isempty(cat) && isempty(empty(cat))
     @test empty(cat) == empty!(deepcopy(cat)) == CategorizedGenerator(Operators{optp}(), (t=Operators{optp}(), μ=Operators{optp}()), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), boundary, eager)
@@ -122,7 +123,7 @@ end
     t = Term{:Hp}(:t, 2.0, 1, Coupling(1.0, :, FID, (2, 1)), false; ismodulatable=false)
     μ = Term{:Mu}(:μ, 1.0, 0, Coupling(1.0, :, FID, (2, 1)), true)
     i = LinearFunction(identity)
-    optp = Operator{Complex{Float}, ID{CoordinatedIndex{Index{FID{Int}, Int}, SVector{1, Float}}, 2}}
+    optp = Operator{ComplexF64, ID{CoordinatedIndex{Index{FID{Int}, Int}, SVector{1, Float64}}, 2}}
     tops = expand(t, bs, hilbert; half=true)
     μops = expand(one(μ), bs, hilbert; half=true)
 
@@ -153,7 +154,7 @@ end
     boundary = Boundary{(:θ,)}([0.1], lattice.vectors)
     t = Term{:Hp}(:t, 2.0, 1, Coupling(1.0, :, FID, (2, 1)), false; ismodulatable=false)
     μ = Term{:Mu}(:μ, 1.0, 0, Coupling(1.0, :, FID, (2, 1)), true)
-    optp = Operator{Complex{Float}, ID{CoordinatedIndex{Index{FID{Int}, Int}, SVector{1, Float}}, 2}}
+    optp = Operator{ComplexF64, ID{CoordinatedIndex{Index{FID{Int}, Int}, SVector{1, Float64}}, 2}}
     tops₁ = expand(t, filter(bond->isintracell(bond), bs), hilbert; half=true)
     tops₂ = boundary(expand(one(t), filter(bond->!isintracell(bond), bs), hilbert; half=true))
     μops = expand(one(μ), filter(bond->length(bond)==1, bs), hilbert; half=true)
@@ -165,7 +166,7 @@ end
     @test cgen == Generator(cat, bs, hilbert, (t, μ), true) == Generator(bs, hilbert, (t, μ), boundary; half=true)
     @test cgen|>valtype == cgen|>typeof|>valtype == Operators{optp, idtype(optp)}
     @test cgen|>eltype == cgen|>typeof|>eltype == optp
-    @test cgen|>scalartype == cgen|>typeof|>scalartype == Complex{Float}
+    @test cgen|>scalartype == cgen|>typeof|>scalartype == ComplexF64
     @test collect(cgen) == collect(expand(cgen))
     @test Parameters(cgen) == (t=2.0, μ=1.0, θ=0.1)
     @test expand!(Operators{optp}(), cgen) == expand(cgen) ≈ tops₁ + tops₂*2.0 + μops
@@ -190,7 +191,7 @@ end
     hilbert = Hilbert(site=>FFock(2) for site=1:length(lattice))
     t = Term{:Hp}(:t, 2.0, 1, Coupling(1.0, :, FID, (2, 1)), false; ismodulatable=false)
     μ = Term{:Mu}(:μ, 1.0, 0, Coupling(1.0, :, FID, (2, 1)), true)
-    optp = Operator{Complex{Float}, ID{CoordinatedIndex{Index{FID{Int}, Int}, SVector{1, Float}}, 2}}
+    optp = Operator{ComplexF64, ID{CoordinatedIndex{Index{FID{Int}, Int}, SVector{1, Float64}}, 2}}
     tops = expand(t, bs, hilbert; half=true)
     μops = expand(one(μ), bs, hilbert; half=true)
     cat = CategorizedGenerator(tops, (t=Operators{optp}(), μ=μops), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain, eager)
@@ -210,81 +211,99 @@ end
     @test update!(deepcopy(cat), LinearFunction(identity), update!(deepcopy(cgen), μ=1.5))|>expand ≈ tops + μops*1.5
 end
 
-mutable struct VCA <: Frontend
-    t::Float
-    U::Float
-    dim::Int
+struct TBA{F<:Formula} <: Frontend
+    formula::F
 end
-function update!(vca::VCA; kwargs...)
-    vca.t = get(kwargs, :t, vca.t)
-    vca.U = get(kwargs, :U, vca.U)
-    return vca
-end
-@inline Parameters(vca::VCA) = Parameters{(:t, :U)}(vca.t, vca.U)
+@inline Base.show(io::IO, ::TBA) = print(io, "TBA")
+@inline Parameters(tba::TBA) = tba.formula.parameters
+@inline update!(tba::TBA; parameters...) = (update!(tba.formula; parameters...); tba)
 
-mutable struct GF <: Action
-    count::Int
-    function GF(count::Int; kwargs...)
-        checkoptions(GF; kwargs...)
-        new(count)
+struct EigenSystem{B<:BrillouinZone} <: Action
+    brillouinzone::B
+end
+struct EigenSystemData <: Data
+    values::Vector{Vector{Float64}}
+    vectors::Vector{Matrix{ComplexF64}}
+end
+@inline Data(eigensystem::EigenSystem, tba::TBA) = EigenSystemData(Vector{Float64}[], Matrix{ComplexF64}[])
+function run!(tba::Algorithm{<:TBA}, eigensystem::Assignment{<:EigenSystem})
+    data = eigensystem.data
+    empty!(data.values)
+    empty!(data.vectors)
+    for k in eigensystem.action.brillouinzone
+        values, vectors = eigen(tba.frontend.formula(k))
+        push!(data.values, values)
+        push!(data.vectors, vectors)
     end
 end
-@inline initialize(gf::GF, vca::VCA) = Matrix{Float}(undef, vca.dim, vca.dim)
-@inline run!(alg::Algorithm{VCA}, assign::Assignment{GF}) = (assign.action.count += 1; assign.data[:, :] .= alg.frontend.t+alg.frontend.U)
 
-mutable struct DOS <: Action
-    μ::Float
-    function DOS(μ::Float; kwargs...)
-        checkoptions(DOS; kwargs...)
-        new(μ)
+struct DensityOfStates <:Action
+    ne::Int
+    σ::Float64
+end
+struct DensityOfStatesData <: Data
+    energies::Vector{Float64}
+    values::Vector{Float64}
+end
+@inline Data(dos::DensityOfStates, ::TBA) = DensityOfStatesData(zeros(dos.ne), zeros(dos.ne))
+function run!(tba::Algorithm{<:TBA}, dos::Assignment{<:DensityOfStates})
+    @assert isa(dos.dependencies, Tuple{Assignment{<:EigenSystem}}) "run! error: wrong dependencies."
+    eigensystem = tba(dos.dependencies[1])
+    emin = mapreduce(minimum, min, eigensystem.data.values)
+    emax = mapreduce(maximum, max, eigensystem.data.values)
+    for (i, ω) in enumerate(range(emin, emax, dos.action.ne))
+        dos.data.energies[i] = ω
+        dos.data.values[i] = 0.0
+        for energies in eigensystem.data.values
+            for e in energies
+                dos.data.values[i] += exp(-(ω-e)^2/2dos.action.σ^2)
+            end
+        end
+        dos.data.values[i] /= √(2pi)*dos.action.σ
     end
 end
-@inline update!(eb::DOS; kwargs...) = (eb.μ = get(kwargs, :μ, eb.μ); eb)
-@inline initialize(dos::DOS, vca::VCA) = 0.0
-@inline function run!(alg::Algorithm{VCA}, assign::Assignment{DOS})
-    prepare!(alg, assign)
-    gf = alg.assignments[first(assign.dependencies)]
-    assign.data = tr(gf.data)
-end
-@inline dosmap(params::Parameters) = Parameters{(:t, :U, :μ)}(params.t, params.U, -params.U/2)
 
 @testset "Framework" begin
-    vca = VCA(1.0, 8.0, 4)
-    @test vca == deepcopy(vca)
-    @test isequal(vca, deepcopy(vca))
-    @test string(vca) == "VCA"
+    A(t, μ, k=SVector(0.0, 0.0); kwargs...) = SMatrix{1, 1}(2t*cos(k[1])+2t*cos(k[2])+μ)
+    tba = TBA(Formula(A, (t=1.0, μ=0.5)))
+    @test tba==deepcopy(tba) && isequal(tba, deepcopy(tba))
 
-    gf = GF(0)
-    @test gf == deepcopy(gf)
-    @test isequal(gf, deepcopy(gf))
-    @test update!(gf) == gf
+    eigensystem = EigenSystem(BrillouinZone([[2pi, 0], [0, 2pi]], 100))
+    @test eigensystem==deepcopy(eigensystem) && isequal(eigensystem, deepcopy(eigensystem))
+    @test update!(eigensystem; Parameters(tba)...) == eigensystem
+    @test options(typeof(eigensystem)) == Dict{Symbol, String}()
+    @test checkoptions(typeof(eigensystem))
 
-    vca = Algorithm(:test, vca)
-    @test vca == deepcopy(vca)
-    @test isequal(vca, deepcopy(vca))
-    @test Parameters(vca) == vca.parameters
-    @test repr(vca; context=:select=>≠(:U)) == "test(VCA)-t(1.0)"
-    @test repr(vca) == "test(VCA)-t(1.0)U(8.0)"
+    eigensystemdata = Data(eigensystem, tba)
+    @test eigensystemdata==deepcopy(eigensystemdata) && isequal(eigensystemdata, deepcopy(eigensystemdata))
+    @test Tuple(eigensystemdata) == (Vector{Float64}[], Matrix{ComplexF64}[])
 
-    add!(vca, :GF, GF(0))
-    rex = r"Action DOS\(DOS\)\: time consumed [0-9]*\.[0-9]*(e[+-][0-9]*)*s."
-    @test_logs (:info, rex) vca(:DOS, DOS(-3.5), parameters=(U=7.0,), map=dosmap, dependencies=(:GF,))
+    params(parameters::Parameters) = (t=parameters.t, μ=parameters.U/2)
+    eigensystem = Assignment(:eigensystem, eigensystem, (t=1.0, U=2.0), params, (), eigensystemdata, false)
+    @test eigensystem==deepcopy(eigensystem) && isequal(eigensystem, deepcopy(eigensystem))
+    @test Parameters(eigensystem) == (t=1.0, U=2.0)
+    @test valtype(eigensystem) == valtype(typeof(eigensystem)) == EigenSystemData
+    update!(eigensystem; U=1.0)
+    @test Parameters(eigensystem) == (t=1.0, U=1.0)
 
-    dos = vca.assignments[:DOS]
-    @test dos == deepcopy(dos)
-    @test isequal(dos, deepcopy(dos))
-    @test Parameters(dos) == dos.parameters
-    @test valtype(dos) == valtype(typeof(dos)) == Float
-    @test dos.data == 32.0
-    @test dos.action.μ == -3.5
-    @test nameof(vca, dos) == "test(VCA)-t(1.0)U(7.0)-DOS"
+    tba = Algorithm(:Square, tba, (t=1.0, U=2.0), params)
+    @test tba==deepcopy(tba) && isequal(tba, deepcopy(tba))
+    update!(tba; U=1.0)
+    @test Parameters(tba) == (t=1.0, U=1.0)
+    @test string(tba) == "Square\n  frontend:\n    TBA\n  parameters:\n    t: 1.0\n    U: 1.0"
 
-    update!(dos, U=6.0)
-    vca(:DOS, info=false)
-    @test dos.parameters == (t=1.0, U=6.0)
-    @test dos.data == 28.0
-    @test dos.action.μ == -3.0
+    dos = tba(:DOS, DensityOfStates(101, 0.1), (t=1.0, U=4.0), params, (eigensystem,))
+    @test sum(dos.data.values)*(maximum(dos.data.energies)-minimum(dos.data.energies))/(dos.action.ne-1)/length(eigensystem.action.brillouinzone) ≈ 0.9964676726997486
+    summary(dos)
+    savefig(plot(dos), "DensityOfStatesU4.png")
 
-    save("path.dat", 1:100, rand(100, 2))
-    save("heatmap.dat", 1:100, 1:50, rand(50, 100))
+    update!(dos; U=8.0)
+    savefig(plot(tba(dos)), "DensityOfStatesU8.png")
+
+    @test isnothing(seriestype())
+    @test seriestype(dos.data) == seriestype(dos.data.energies, dos.data.values) == :path
+    @test seriestype(zeros(0), zeros(0), zeros(0, 0)) == :heatmap
+
+#     save("path.dat", 1:100, rand(100, 2))
+#     save("heatmap.dat", 1:100, 1:50, rand(50, 100))
 end
