@@ -359,11 +359,11 @@ end
 @inline keymaps(keys) = map(((::Val{key}) where key)->key, keys)
 @generated totalkeys(content₁::NamedTuple, content₂::NamedTuple) = map(Val, Tuple(unique((fieldnames(content₁)..., fieldnames(content₂)...))))
 @generated sharedkeys(content₁::NamedTuple, content₂::NamedTuple) = map(Val, Tuple(intersect(fieldnames(content₁), fieldnames(content₂))))
-@inline opsmatch(ops₁::NamedTuple, ops₂::NamedTuple, ::Val{key}) where key = opsmatch(get(ops₁, key, nothing), get(ops₂, key, nothing))
+@inline function opsmatch(ops₁::NamedTuple, ops₂::NamedTuple, ::Val{key}) where key
+    content = (get(ops₁, key, nothing), get(ops₂, key, nothing))
+    return any(isnothing, content) || opsmatch(content...)
+end
 @inline opsmatch(ops₁, ops₂) = ops₁==ops₂ || zero(ops₁)==ops₁ || zero(ops₂)==ops₂
-@inline opsmatch(ops, ::Nothing) = true
-@inline opsmatch(::Nothing, ops) = true
-@inline opsmatch(::Nothing, ::Nothing) = true
 @inline combinevalue(params₁::Parameters, params₂::Parameters, matches::NamedTuple, ::Val{key}) where key = combinevalue(get(params₁, key, nothing), get(params₂, key, nothing), get(matches, key, nothing))
 @inline combinevalue(value₁, value₂, flag::Bool) = flag ? value₁+value₂ : value₁==value₂ ? value₁ : promote(one(value₁), one(value₂))[1]
 @inline combinevalue(value, ::Nothing, ::Nothing) = value
