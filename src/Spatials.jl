@@ -18,7 +18,7 @@ import ..Toolkit: contentnames
 
 export azimuth, azimuthd, direction, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, polar, polard, reciprocals, rotate, translate, tile, volume
 export AbstractLattice, Bond, BrillouinZone, FractionalReciprocalSpace, Lattice, Neighbors, Point, ProductedReciprocalSpace, ReciprocalCurve, ReciprocalScatter, ReciprocalSpace, ReciprocalZone, ReciprocalPath
-export bonds, bonds!, fractionals, icoordinate, isintracell, label, nneighbor, rcoordinate, save, selectpath, shrink, ticks
+export bonds, bonds!, fractionals, icoordinate, isintracell, label, nneighbor, rcoordinate, savedlm, selectpath, shrink, ticks
 export hexagon120°map, hexagon60°map, linemap, rectanglemap, @hexagon_str, @line_str, @rectangle_str
 
 """
@@ -1822,63 +1822,80 @@ end
 
 # save utilities
 """
-    save(filename::AbstractString, reciprocalspace::Union{BrillouinZone, ReciprocalZone}, data::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}}; fractional::Bool=true)
-    save(filename::AbstractString, reciprocalscatter::ReciprocalScatter, weights::AbstractVector{<:AbstractVector{<:Number}}; fractional::Bool=true)
-    save(filename::AbstractString, path::ReciprocalPath, data::Union{AbstractVector{<:Number}, AbstractMatrix{<:Number}}; distance::Bool=true)
-    save(filename::AbstractString, path::ReciprocalPath, data::AbstractVector{<:Number}, weights::AbstractVector{<:AbstractVector{<:Number}}; distance::Bool=true)
-    save(filename::AbstractString, path::ReciprocalPath, data::AbstractMatrix{<:Number}, weights::AbstractVector{<:AbstractMatrix{<:Number}}; distance::Bool=true)
-    save(filename::AbstractString, path::ReciprocalPath, y::AbstractVector{<:Number}, data::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}}; distance::Bool=true)
+    savedlm(filename::AbstractString, x::AbstractVector{<:Number}, y::Union{AbstractVector{<:Number}, AbstractMatrix{<:Number}}, delim='\t')
+    savedlm(filename::AbstractString, x::AbstractVector{<:Number}, y::AbstractVector{<:Number}, z::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}}, delim='\t')
+    savedlm(filename::AbstractString, reciprocalspace::Union{BrillouinZone, ReciprocalZone}, data::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}}, delim='\t'; fractional::Bool=true)
+    savedlm(filename::AbstractString, reciprocalscatter::ReciprocalScatter, weights::AbstractVector{<:AbstractVector{<:Number}}, delim='\t'; fractional::Bool=true)
+    savedlm(filename::AbstractString, path::ReciprocalPath, data::Union{AbstractVector{<:Number}, AbstractMatrix{<:Number}}, delim='\t'; distance::Bool=true)
+    savedlm(filename::AbstractString, path::ReciprocalPath, data::AbstractVector{<:Number}, weights::AbstractVector{<:AbstractVector{<:Number}}, delim='\t'; distance::Bool=true)
+    savedlm(filename::AbstractString, path::ReciprocalPath, data::AbstractMatrix{<:Number}, weights::AbstractVector{<:AbstractMatrix{<:Number}}, delim='\t'; distance::Bool=true)
+    savedlm(filename::AbstractString, path::ReciprocalPath, y::AbstractVector{<:Number}, data::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}}, delim='\t'; distance::Bool=true)
 
 Save data to delimited files.
 """
-function save(filename::AbstractString, reciprocalspace::Union{BrillouinZone, ReciprocalZone}, data::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}}; fractional::Bool=true)
-    @assert map(length, shape(reciprocalspace))==reverse(size(data)[1:2]) "save error: mismatched size of reciprocal space and data."
+function savedlm(filename::AbstractString, x::AbstractVector{<:Number}, y::Union{AbstractVector{<:Number}, AbstractMatrix{<:Number}}, delim='\t')
+    @assert length(x)==size(y, 1) "savedlm error: mismatched size of x and y."
+    open(filename, "w") do f
+        writedlm(f, [x y], delim)
+    end
+end
+function savedlm(filename::AbstractString, x::AbstractVector{<:Number}, y::AbstractVector{<:Number}, z::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}}, delim='\t')
+    @assert size(z)[1:2]==(length(y), length(x)) "savedlm error: mismatched size of x, y and z."
+    open(filename, "w") do f
+        new_x = kron(x, ones(length(y)))
+        new_y = kron(ones(length(x)), y)
+        new_z = reshape(z, length(x)*length(y), :)
+        writedlm(f, [new_x new_y new_z], delim)
+    end
+end
+function savedlm(filename::AbstractString, reciprocalspace::Union{BrillouinZone, ReciprocalZone}, data::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}}, delim='\t'; fractional::Bool=true)
+    @assert map(length, shape(reciprocalspace))==reverse(size(data)[1:2]) "savedlm error: mismatched size of reciprocal space and data."
     open(filename, "w") do f
         x = fractional ? matrix(fractionals(reciprocalspace)) : matrix(reciprocalspace)
         y = reshape(data, length(reciprocalspace), :)
-        writedlm(f, [x y])
+        writedlm(f, [x y], delim)
     end
 end
-function save(filename::AbstractString, reciprocalscatter::ReciprocalScatter, weights::AbstractVector{<:AbstractVector{<:Number}}; fractional::Bool=true)
-    @assert all(weight->length(weight)==length(reciprocalscatter), weights) "save error: mismatched size of reciprocal scatter points and weights."
+function savedlm(filename::AbstractString, reciprocalscatter::ReciprocalScatter, weights::AbstractVector{<:AbstractVector{<:Number}}, delim='\t'; fractional::Bool=true)
+    @assert all(weight->length(weight)==length(reciprocalscatter), weights) "savedlm error: mismatched size of reciprocal scatter points and weights."
     open(filename, "w") do f
         x = fractional ? matrix(fractionals(reciprocalscatter)) : matrix(reciprocalscatter)
         y = length(weights)>0 ? transpose(matrix(weights)) : zeros(scalartype(weights), length(reciprocalscatter), 0)
-        writedlm(f, [x y])
+        writedlm(f, [x y], delim)
     end
 end
-function save(filename::AbstractString, path::ReciprocalPath, data::Union{AbstractVector{<:Number}, AbstractMatrix{<:Number}}; distance::Bool=true)
-    @assert length(path)==size(data, 1) "save error: mismatched size of path and data."
+function savedlm(filename::AbstractString, path::ReciprocalPath, data::Union{AbstractVector{<:Number}, AbstractMatrix{<:Number}}, delim='\t'; distance::Bool=true)
+    @assert length(path)==size(data, 1) "savedlm error: mismatched size of path and data."
     open(filename, "w") do f
         x = distance ? [Spatials.distance(path, i) for i=1:length(path), _=1:1] : matrix(path)
-        writedlm(f, [x data])
+        writedlm(f, [x data], delim)
     end
 end
-function save(filename::AbstractString, path::ReciprocalPath, data::AbstractVector{<:Number}, weights::AbstractVector{<:AbstractVector{<:Number}}; distance::Bool=true)
-    @assert length(path)==size(data, 1) && all(weight->size(data)==size(weight), weights) "save error: mismatched size of path, data and weights."
+function savedlm(filename::AbstractString, path::ReciprocalPath, data::AbstractVector{<:Number}, weights::AbstractVector{<:AbstractVector{<:Number}}, delim='\t'; distance::Bool=true)
+    @assert length(path)==size(data, 1) && all(weight->size(data)==size(weight), weights) "savedlm error: mismatched size of path, data and weights."
     open(filename, "w") do f
         x = distance ? [Spatials.distance(path, i) for i=1:length(path), _=1:1] : matrix(path)
         y = data
         z = length(weights)>0 ? transpose(matrix(weights)) : zeros(scalartype(weights), length(y), 0)
-        writedlm(f, [x y z])
+        writedlm(f, [x y z], delim)
     end
 end
-function save(filename::AbstractString, path::ReciprocalPath, data::AbstractMatrix{<:Number}, weights::AbstractVector{<:AbstractMatrix{<:Number}}; distance::Bool=true)
-    @assert length(path)==size(data, 1) && all(weight->size(data)==size(weight), weights) "save error: mismatched size of path, data and weights."
+function savedlm(filename::AbstractString, path::ReciprocalPath, data::AbstractMatrix{<:Number}, weights::AbstractVector{<:AbstractMatrix{<:Number}}, delim='\t'; distance::Bool=true)
+    @assert length(path)==size(data, 1) && all(weight->size(data)==size(weight), weights) "savedlm error: mismatched size of path, data and weights."
     open(filename, "w") do f
         x = distance ? kron(ones(size(data, 2)), [Spatials.distance(path, i) for i=1:length(path), _=1:1]) : matrix(kron(ones(size(data, 2)), path))
         y = reshape(data, :)
         z = length(weights)>0 ? transpose(matrix([reshape(weight, :) for weight in weights])) : zeros(scalartype(weights), length(y), 0)
-        writedlm(f, [x y z])
+        writedlm(f, [x y z], delim)
     end
 end
-function save(filename::AbstractString, path::ReciprocalPath, y::AbstractVector{<:Number}, data::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}}; distance::Bool=true)
-    @assert (length(y), length(path))==size(data)[1:2] "save error: mismatched size of path, y and data."
+function savedlm(filename::AbstractString, path::ReciprocalPath, y::AbstractVector{<:Number}, data::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}}, delim='\t'; distance::Bool=true)
+    @assert (length(y), length(path))==size(data)[1:2] "savedlm error: mismatched size of path, y and data."
     open(filename, "w") do f
         x = distance ? kron([Spatials.distance(path, i) for i=1:length(path), _=1:1], ones(size(data, 1))) : matrix(kron(path, ones(size(data, 1))))
         y = kron(ones(length(path)), y)
         z = reshape(data, prod(size(data)[1:2]), :)
-        writedlm(f, [x y z])
+        writedlm(f, [x y z], delim)
     end
 end
 

@@ -786,31 +786,6 @@ end
 @inline seriestype(::AbstractVector{<:Number}, ::Union{AbstractVector{<:Number}, AbstractMatrix{<:Number}}, _...) = :path
 @inline seriestype(::AbstractVector{<:Number}, ::AbstractVector{<:Number}, ::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}}, _...) = :heatmap
 
-# """
-#     save(filename::AbstractString, assign::Assignment; delimited=false, kwargs...)
-
-# Save the data of an assignment registered on an algorithm.
-# """
-# @inline save(filename::AbstractString, assign::Assignment; delimited=false, kwargs...)
-#     delimited ? save(filename, assign.data; kwargs...) : serialize(filename, assign.data)
-# end
-# @inline save(filename::AbstractString, data::Tuple; kwargs...) = save(filename, data...; kwargs...)
-# function save(filename::AbstractString, x::AbstractVector{<:Number}, y::Union{AbstractVector{<:Number}, AbstractMatrix{<:Number}}; kwargs...)
-#     @assert length(x)==size(y)[1] "save error: mismatched size of x and y."
-#     open(filename, "w") do f
-#         writedlm(f, [x y])
-#     end
-# end
-# function save(filename::AbstractString, x::AbstractVector{<:Number}, y::AbstractVector{<:Number}, z::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}}; kwargs...)
-#     @assert size(z)[1:2]==(length(y), length(x)) "save error: mismatched size of x, y and z."
-#     open(filename, "w") do f
-#         new_x = kron(x, ones(length(y)))
-#         new_y = kron(ones(length(x)), y)
-#         new_z = reshape(z, length(x)*length(y), :)
-#         writedlm(f, [new_x new_y new_z])
-#     end
-# end
-
 """
     Algorithm{F<:Frontend, P<:Parameters, M<:Function} <: Function
 

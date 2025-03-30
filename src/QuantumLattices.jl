@@ -28,7 +28,7 @@ include("Spatials.jl")
 using .Spatials
 export azimuth, azimuthd, direction, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, nneighbor, polar, polard, reciprocals, rotate, translate, tile, volume
 export AbstractLattice, Bond, BrillouinZone, FractionalReciprocalSpace, Lattice, Neighbors, Point, ProductedReciprocalSpace, ReciprocalCurve, ReciprocalPath, ReciprocalScatter, ReciprocalSpace, ReciprocalZone
-export bonds, bonds!, fractionals, icoordinate, isintracell, label, rcoordinate, save, selectpath, shrink, ticks, @hexagon_str, @line_str, @rectangle_str
+export bonds, bonds!, fractionals, icoordinate, isintracell, label, rcoordinate, savedlm, selectpath, shrink, ticks, @hexagon_str, @line_str, @rectangle_str
 
 # DegreesOfFreedom
 include("DegreesOfFreedom.jl")

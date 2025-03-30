@@ -5,7 +5,7 @@ using QuantumLattices.DegreesOfFreedom: plain, Boundary, CoordinatedIndex, Coupl
 using QuantumLattices.Frameworks
 using QuantumLattices.Frameworks: seriestype
 using QuantumLattices.QuantumOperators: ID, LinearFunction, Operator, Operators, idtype, scalartype
-using QuantumLattices.Spatials: BrillouinZone, Lattice, bonds, decompose, isintracell, save
+using QuantumLattices.Spatials: BrillouinZone, Lattice, bonds, decompose, isintracell
 using StaticArrays: SVector, SMatrix, @SMatrix
 
 import QuantumLattices: dimension, update!
@@ -303,7 +303,4 @@ end
     @test isnothing(seriestype())
     @test seriestype(dos.data) == seriestype(dos.data.energies, dos.data.values) == :path
     @test seriestype(zeros(0), zeros(0), zeros(0, 0)) == :heatmap
-
-#     save("path.dat", 1:100, rand(100, 2))
-#     save("heatmap.dat", 1:100, 1:50, rand(50, 100))
 end
