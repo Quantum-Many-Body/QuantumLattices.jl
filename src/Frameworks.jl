@@ -773,11 +773,11 @@ Optionally, some parameters of the algorithm can be filtered by specifying the `
 @inline function Base.show(io::IO, assign::Assignment)
     select = get(io, :select, param->true)
     ndecimal = get(io, :ndecimal, 10)
-    print(io, assign.name, "(", nameof(typeof(assign.action)), ")")
+    print(io, assign.name)
     flag = false
     for (name, value) in pairs(assign.parameters)
         if select(name)
-            flag || print(io, "-")
+            flag || print(io, ": ")
             flag = true
             print(io, name, "(", tostr(value, ndecimal), ")")
         end
@@ -805,6 +805,7 @@ end
 Define the recipe for the visualization of an assignment of an algorithm.
 """
 @recipe function plot(assignment::Assignment)
+    title --> string(assignment)
     titlefontsize --> 10
     attr = seriestype(assignment.data)
     isnothing(attr) || begin

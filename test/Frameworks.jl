@@ -287,7 +287,7 @@ end
     @test valtype(eigensystem) == valtype(typeof(eigensystem)) == EigenSystemData
     update!(eigensystem; U=1.0)
     @test Parameters(eigensystem) == (t=1.0, U=1.0)
-    @test string(eigensystem) == "eigensystem(EigenSystem)-t(1.0)U(1.0)"
+    @test string(eigensystem) == "eigensystem: t(1.0)U(1.0)"
     io = IOBuffer()
     show(io, MIME"text/plain"(), eigensystem)
     @test String(take!(io)) == "eigensystem\n  action:\n    EigenSystem(100×100)\n  parameters:\n    t: 1.0\n    U: 1.0"
