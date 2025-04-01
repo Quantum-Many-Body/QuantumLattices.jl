@@ -810,6 +810,7 @@ Define the recipe for the visualization of a lattice.
     titlefontsize --> 10
     legend := false
     aspect_ratio := :equal
+    framestyle --> :box
     if isa(neighbors, Int) || 0∈keys(neighbors)
         @series begin
             seriestype := :scatter
@@ -1034,6 +1035,7 @@ When `fractional` is `true`, the fractional coordinates will be plotted. Otherwi
     aspect_ratio --> :equal
     legend --> false
     minorgrid --> true
+    framestyle --> :box
     if fractional
         coordinates = map(NTuple{N, scalartype(reciprocalspace)}, fractionals(reciprocalspace))
         N>0 && (xlabel-->label(reciprocalspace, 1); autolims || (xlims-->extrema(v->v[1], coordinates)))
@@ -1465,6 +1467,7 @@ Define the recipe for the visualization of a reciprocal path.
     legend --> false
     aspect_ratio --> :equal
     minorgrid --> true
+    framestyle --> :box
     dim = dimension(path)
     dim>0 && (xlabel --> label(path, 1))
     dim>1 && (ylabel --> label(path, 2))
@@ -1651,6 +1654,7 @@ Define the recipe for the visualization of a reciprocal curve.
     legend --> false
     aspect_ratio --> :equal
     minorgrid --> true
+    framestyle --> :box
     dim = dimension(curve)
     dim>0 && (xlabel --> label(curve, 1))
     dim>1 && (ylabel --> label(curve, 2))
