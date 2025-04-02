@@ -954,10 +954,14 @@ function (assign::Assignment)(alg::Algorithm)
 end
 
 """
+    (alg::Algorithm)(name::Symbol, action::Action, dependencies::Tuple{Vararg{Assignment}}; info::Bool=true) -> Assignment
+    (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters, dependencies::Tuple{Vararg{Assignment}}; info::Bool=true) -> Assignment
     (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters=Parameters(), map::Function=identity, dependencies::Tuple{Vararg{Assignment}}=(); info::Bool=true) -> Assignment
 
 Add an assignment on a algorithm by providing the contents of the assignment, and run this assignment.
 """
+@inline (alg::Algorithm)(name::Symbol, action::Action, dependencies::Tuple{Vararg{Assignment}}; info::Bool=true) = alg(name, action, Parameters(), dependencies; info=info)
+@inline (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters, dependencies::Tuple{Vararg{Assignment}}; info::Bool=true) = alg(name, action, parameters, identity, dependencies; info=info)
 @inline function (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters=Parameters(), map::Function=identity, dependencies::Tuple{Vararg{Assignment}}=(); info::Bool=true)
     assign = Assignment(name, action, merge(alg.parameters, parameters), map, dependencies, Data(action, alg.frontend), false)
     alg(assign)

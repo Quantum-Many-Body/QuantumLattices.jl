@@ -250,7 +250,7 @@ end
 @inline Data(dos::DensityOfStates, ::TBA) = DensityOfStatesData(zeros(dos.ne), zeros(dos.ne))
 function run!(tba::Algorithm{<:TBA}, dos::Assignment{<:DensityOfStates})
     @assert isa(dos.dependencies, Tuple{Assignment{<:EigenSystem}}) "run! error: wrong dependencies."
-    eigensystem = tba(dos.dependencies[1])
+    eigensystem = tba(first(dos.dependencies))
     emin = mapreduce(minimum, min, eigensystem.data.values)
     emax = mapreduce(maximum, max, eigensystem.data.values)
     for (i, ω) in enumerate(range(emin, emax, dos.action.ne))
