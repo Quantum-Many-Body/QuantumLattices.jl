@@ -10,7 +10,7 @@ using QuantumLattices.Spatials: BrillouinZone, Lattice, bonds, decompose, isintr
 using StaticArrays: SVector, SMatrix, @SMatrix
 
 import QuantumLattices: dimension, update!
-import QuantumLattices.Frameworks: Parameters, run!
+import QuantumLattices.Frameworks: Parameters, options, run!
 import QuantumLattices.Toolkit: shape
 
 struct FID{N<:Union{Int, Symbol}} <: SimpleInternalIndex
@@ -239,9 +239,18 @@ function run!(tba::Algorithm{<:TBA}, eigensystem::Assignment{<:EigenSystem})
     end
 end
 
-struct DensityOfStates <:Action
-    ne::Int
-    σ::Float64
+mutable struct DensityOfStates <:Action
+    const ne::Int
+    const σ::Float64
+    options::NamedTuple
+end
+@inline options(::Type{DensityOfStates}) = Dict(
+    :emin=>"lower bound of the energy range",
+    :emax=>"upper bound of the energy range"
+)
+@inline function DensityOfStates(ne::Int, σ::Float64; options...)
+    checkoptions(DensityOfStates; options...)
+    return DensityOfStates(ne, σ, values(options))
 end
 struct DensityOfStatesData <: Data
     energies::Vector{Float64}
@@ -251,8 +260,8 @@ end
 function run!(tba::Algorithm{<:TBA}, dos::Assignment{<:DensityOfStates})
     @assert isa(dos.dependencies, Tuple{Assignment{<:EigenSystem}}) "run! error: wrong dependencies."
     eigensystem = tba(first(dos.dependencies))
-    emin = mapreduce(minimum, min, eigensystem.data.values)
-    emax = mapreduce(maximum, max, eigensystem.data.values)
+    emin = get(dos.action.options, :emin, mapreduce(minimum, min, eigensystem.data.values))
+    emax = get(dos.action.options, :emax, mapreduce(maximum, max, eigensystem.data.values))
     for (i, ω) in enumerate(range(emin, emax, dos.action.ne))
         dos.data.energies[i] = ω
         dos.data.values[i] = 0.0
@@ -265,8 +274,9 @@ function run!(tba::Algorithm{<:TBA}, dos::Assignment{<:DensityOfStates})
     end
 end
 
-@testset "Framework" begin
-    A(t, μ, k=SVector(0.0, 0.0); kwargs...) = SMatrix{1, 1}(2t*cos(k[1])+2t*cos(k[2])+μ)
+A(t, μ, k=SVector(0.0, 0.0); kwargs...) = SMatrix{1, 1}(2t*cos(k[1])+2t*cos(k[2])+μ)
+
+@testset "Frontend & Action & Data" begin
     tba = TBA(Formula(A, (t=1.0, μ=0.5)))
     @test tba==deepcopy(tba) && isequal(tba, deepcopy(tba))
 
@@ -279,20 +289,12 @@ end
     eigensystemdata = Data(eigensystem, tba)
     @test eigensystemdata==deepcopy(eigensystemdata) && isequal(eigensystemdata, deepcopy(eigensystemdata))
     @test Tuple(eigensystemdata) == (Vector{Float64}[], Matrix{ComplexF64}[])
+end
 
-    params(parameters::Parameters) = (t=parameters.t, μ=parameters.U/2)
-    eigensystem = Assignment(:eigensystem, eigensystem, (t=1.0, U=2.0), params, (), eigensystemdata, false)
-    @test eigensystem==deepcopy(eigensystem) && isequal(eigensystem, deepcopy(eigensystem))
-    @test Parameters(eigensystem) == (t=1.0, U=2.0)
-    @test valtype(eigensystem) == valtype(typeof(eigensystem)) == EigenSystemData
-    update!(eigensystem; U=1.0)
-    @test Parameters(eigensystem) == (t=1.0, U=1.0)
-    @test string(eigensystem) == "eigensystem: t(1.0)U(1.0)"
-    io = IOBuffer()
-    show(io, MIME"text/plain"(), eigensystem)
-    @test String(take!(io)) == "eigensystem\n  action:\n    EigenSystem(100×100)\n  parameters:\n    t: 1.0\n    U: 1.0"
+params(parameters::Parameters) = (t=parameters.t, μ=parameters.U/2)
 
-    tba = Algorithm(:Square, tba, (t=1.0, U=2.0), params)
+@testset "Assignment & Algorithm with map" begin
+    tba = Algorithm(:Square, TBA(Formula(A, (t=1.0, μ=0.5))), (t=1.0, U=2.0), params)
     @test tba==deepcopy(tba) && isequal(tba, deepcopy(tba))
     update!(tba; U=1.0)
     @test Parameters(tba) == (t=1.0, U=1.0)
@@ -301,13 +303,35 @@ end
     show(io, MIME"text/plain"(), tba)
     @test String(take!(io)) == "Square\n  frontend:\n    TBA\n  parameters:\n    t: 1.0\n    U: 1.0"
 
-    dos = tba(:DOS, DensityOfStates(101, 0.1), (t=1.0, U=4.0), params, (eigensystem,))
-    @test sum(dos.data.values)*(maximum(dos.data.energies)-minimum(dos.data.energies))/(dos.action.ne-1)/length(eigensystem.action.brillouinzone) ≈ 0.9964676726997486
-    summary(tba)
-    savefig(plot(dos), "DensityOfStatesU4.png")
+    eigensystem = Assignment(tba, :eigensystem, EigenSystem(BrillouinZone([[2pi, 0], [0, 2pi]], 100)))
+    @test eigensystem==deepcopy(eigensystem) && isequal(eigensystem, deepcopy(eigensystem))
+    @test Parameters(eigensystem) == (t=1.0, U=1.0)
+    @test valtype(eigensystem) == valtype(typeof(eigensystem)) == EigenSystemData
+    update!(eigensystem; U=2.0)
+    @test Parameters(eigensystem) == (t=1.0, U=2.0)
+    @test string(eigensystem) == "eigensystem-t(1.0)U(2.0)"
+    io = IOBuffer()
+    show(io, MIME"text/plain"(), eigensystem)
+    @test String(take!(io)) == "eigensystem\n  action:\n    EigenSystem(100×100)\n  parameters:\n    t: 1.0\n    U: 2.0"
 
+    dos = tba(:DOS, DensityOfStates(101, 0.1), (t=1.0, U=4.0), (eigensystem,))
+    @test sum(dos.data.values)*(maximum(dos.data.energies)-minimum(dos.data.energies))/(dos.action.ne-1)/length(eigensystem.action.brillouinzone) ≈ 0.9964676726997486
+    savefig(plot(dos), "$(string(dos)).png")
     update!(dos; U=8.0)
-    savefig(plot(tba(dos)), "DensityOfStatesU8.png")
+    tba(dos)
+    savefig(plot(tba(dos)), "$(string(dos)).png")
+    update!(dos; U=0.0)
+    updateoptions!(dos.action; emin=-5.0, emax=5.0)
+    tba(dos)
+    savefig(plot(tba(dos)), "$(string(dos)).png")
+    summary(tba)
+end
+
+@testset "Assignment & Algorithm without map" begin
+    tba = Algorithm(:Square, TBA(Formula(A, (t=1.0, μ=2.0))))
+    eigensystem = Assignment(tba, :eigensystem, EigenSystem(BrillouinZone([[2pi, 0], [0, 2pi]], 100)))
+    dos = tba(:DOS, DensityOfStates(101, 0.1), (eigensystem,))
+    savefig(plot(tba(dos)), "$(string(dos)).png")
 
     @test isnothing(seriestype())
     @test seriestype(dos.data) == seriestype(dos.data.energies, dos.data.values) == :path

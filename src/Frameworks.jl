@@ -17,7 +17,7 @@ import ..QuantumLattices: add!, expand, expand!, reset!, update, update!
 import ..QuantumOperators: scalartype
 
 export Action, Algorithm, Assignment, CategorizedGenerator, Data, Eager, ExpansionStyle, Formula, Frontend, Generator, Lazy, OperatorGenerator, Parameters
-export eager, lazy, checkoptions, options, run!
+export eager, lazy, checkoptions, options, run!, updateoptions!
 
 """
     Parameters{Names}(values::Number...) where Names
@@ -682,6 +682,17 @@ Get the options of a type of action.
 @inline options(::Type{<:Action}) = Dict{Symbol, String}()
 
 """
+    updateoptions!(action::Action; options...) -> Action
+
+In place update of the options of an action.
+"""
+function updateoptions!(action::Action; options...)
+    checkoptions(typeof(action); options...)
+    action.options = values(options)
+    return action
+end
+
+"""
     checkoptions(::Type{A}; kwargs...) where {A<:Action}
 
 Check whether the keyword arguments are legal options of a certain type of action.
@@ -777,7 +788,7 @@ Optionally, some parameters of the algorithm can be filtered by specifying the `
     flag = false
     for (name, value) in pairs(assign.parameters)
         if select(name)
-            flag || print(io, ": ")
+            flag || print(io, "-")
             flag = true
             print(io, name, "(", tostr(value, ndecimal), ")")
         end
@@ -858,6 +869,19 @@ Construct an algorithm.
 """
 @inline function Algorithm(name::Symbol, frontend::Frontend, parameters::Parameters=Parameters(frontend), map::Function=identity; din::String=".", dout::String=".", timer::TimerOutput=TimerOutput())
     return Algorithm(name, frontend, din, dout, parameters, map, timer)
+end
+
+"""
+    Assignment(alg::Algorithm, name::Symbol, action::Action, dependencies::Tuple{Vararg{Assignment}})
+    Assignment(alg::Algorithm, name::Symbol, action::Action, parameters::Parameters, dependencies::Tuple{Vararg{Assignment}})
+    Assignment(alg::Algorithm, name::Symbol, action::Action, parameters::Parameters=Parameters(), map::Function=identity, dependencies::Tuple{Vararg{Assignment}}=())
+
+Construct an `Assignment` based on an `Algorithm` and other essential information.
+"""
+@inline Assignment(alg::Algorithm, name::Symbol, action::Action, dependencies::Tuple{Vararg{Assignment}}) = Assignment(alg, name, action, Parameters(), dependencies)
+@inline Assignment(alg::Algorithm, name::Symbol, action::Action, parameters::Parameters, dependencies::Tuple{Vararg{Assignment}}) = Assignment(alg, name, action, parameters, identity, dependencies)
+@inline function Assignment(alg::Algorithm, name::Symbol, action::Action, parameters::Parameters=Parameters(), map::Function=identity, dependencies::Tuple{Vararg{Assignment}}=())
+    return Assignment(name, action, merge(alg.parameters, parameters), map, dependencies, Data(action, alg.frontend), false)
 end
 
 """
@@ -963,8 +987,7 @@ Add an assignment on a algorithm by providing the contents of the assignment, an
 @inline (alg::Algorithm)(name::Symbol, action::Action, dependencies::Tuple{Vararg{Assignment}}; info::Bool=true) = alg(name, action, Parameters(), dependencies; info=info)
 @inline (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters, dependencies::Tuple{Vararg{Assignment}}; info::Bool=true) = alg(name, action, parameters, identity, dependencies; info=info)
 @inline function (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters=Parameters(), map::Function=identity, dependencies::Tuple{Vararg{Assignment}}=(); info::Bool=true)
-    assign = Assignment(name, action, merge(alg.parameters, parameters), map, dependencies, Data(action, alg.frontend), false)
-    alg(assign)
+    assign = alg(Assignment(alg, name, action, parameters, map, dependencies))
     if info
         name = string(name)
         haskey(alg.timer, name) && @info "Action $name: time consumed $(time(alg.timer[name])/10^9)s."
