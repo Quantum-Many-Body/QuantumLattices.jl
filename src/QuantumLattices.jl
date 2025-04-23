@@ -50,6 +50,6 @@ export latexofphonons, Elastic, Phonon, PhononIndex, Kinetic, Hooke, PhononTerm,
 include("Frameworks.jl")
 using .Frameworks
 export Action, Algorithm, Assignment, CategorizedGenerator, Data, Eager, ExpansionStyle, Formula, Frontend, Generator, Lazy, OperatorGenerator, Parameters
-export eager, lazy, checkoptions, options, run!, updateoptions!
+export eager, lazy, checkoptions, hasoption, options, optionsinfo, run!
 
 end

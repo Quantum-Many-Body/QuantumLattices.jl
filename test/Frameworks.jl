@@ -9,7 +9,7 @@ using QuantumLattices.QuantumOperators: ID, LinearFunction, Operator, Operators,
 using QuantumLattices.Spatials: BrillouinZone, Lattice, bonds, decompose, isintracell
 using StaticArrays: SVector, SMatrix, @SMatrix
 
-import QuantumLattices: dimension, update!
+import QuantumLattices: update!
 import QuantumLattices.Frameworks: Parameters, options, run!
 import QuantumLattices.Toolkit: shape
 
@@ -228,7 +228,11 @@ struct EigenSystemData <: Data
     vectors::Vector{Matrix{ComplexF64}}
 end
 @inline Data(eigensystem::EigenSystem, tba::TBA) = EigenSystemData(Vector{Float64}[], Matrix{ComplexF64}[])
-function run!(tba::Algorithm{<:TBA}, eigensystem::Assignment{<:EigenSystem})
+@inline options(::Type{<:Assignment{<:EigenSystem}}) = (
+    showinfo = "show the information",
+)
+function run!(tba::Algorithm{<:TBA}, eigensystem::Assignment{<:EigenSystem}; options...)
+    get(options, :showinfo, false) && @info string(eigensystem)
     data = eigensystem.data
     empty!(data.values)
     empty!(data.vectors)
@@ -239,29 +243,24 @@ function run!(tba::Algorithm{<:TBA}, eigensystem::Assignment{<:EigenSystem})
     end
 end
 
-mutable struct DensityOfStates <:Action
-    const ne::Int
-    const σ::Float64
-    options::NamedTuple
-end
-@inline options(::Type{DensityOfStates}) = Dict(
-    :emin=>"lower bound of the energy range",
-    :emax=>"upper bound of the energy range"
-)
-@inline function DensityOfStates(ne::Int, σ::Float64; options...)
-    checkoptions(DensityOfStates; options...)
-    return DensityOfStates(ne, σ, values(options))
+struct DensityOfStates <:Action
+    ne::Int
+    σ::Float64
 end
 struct DensityOfStatesData <: Data
     energies::Vector{Float64}
     values::Vector{Float64}
 end
 @inline Data(dos::DensityOfStates, ::TBA) = DensityOfStatesData(zeros(dos.ne), zeros(dos.ne))
-function run!(tba::Algorithm{<:TBA}, dos::Assignment{<:DensityOfStates})
+@inline options(::Type{<:Assignment{<:DensityOfStates}}) = (
+    emin = "lower bound of the energy range",
+    emax = "upper bound of the energy range"
+)
+function run!(tba::Algorithm{<:TBA}, dos::Assignment{<:DensityOfStates}; emin=nothing, emax=nothing)
     @assert isa(dos.dependencies, Tuple{Assignment{<:EigenSystem}}) "run! error: wrong dependencies."
-    eigensystem = tba(first(dos.dependencies))
-    emin = get(dos.action.options, :emin, mapreduce(minimum, min, eigensystem.data.values))
-    emax = get(dos.action.options, :emax, mapreduce(maximum, max, eigensystem.data.values))
+    eigensystem = first(dos.dependencies)
+    isnothing(emin) && (emin = mapreduce(minimum, min, eigensystem.data.values))
+    isnothing(emax) && (emax = mapreduce(maximum, max, eigensystem.data.values))
     for (i, ω) in enumerate(range(emin, emax, dos.action.ne))
         dos.data.energies[i] = ω
         dos.data.values[i] = 0.0
@@ -283,8 +282,6 @@ A(t, μ, k=SVector(0.0, 0.0); kwargs...) = SMatrix{1, 1}(2t*cos(k[1])+2t*cos(k[2
     eigensystem = EigenSystem(BrillouinZone([[2pi, 0], [0, 2pi]], 100))
     @test eigensystem==deepcopy(eigensystem) && isequal(eigensystem, deepcopy(eigensystem))
     @test update!(eigensystem; Parameters(tba)...) == eigensystem
-    @test options(typeof(eigensystem)) == Dict{Symbol, String}()
-    @test checkoptions(typeof(eigensystem))
 
     eigensystemdata = Data(eigensystem, tba)
     @test eigensystemdata==deepcopy(eigensystemdata) && isequal(eigensystemdata, deepcopy(eigensystemdata))
@@ -303,6 +300,8 @@ params(parameters::Parameters) = (t=parameters.t, μ=parameters.U/2)
     show(io, MIME"text/plain"(), tba)
     @test String(take!(io)) == "Square\n  frontend:\n    TBA\n  parameters:\n    t: 1.0\n    U: 1.0"
 
+    @test options(Assignment) == NamedTuple()
+
     eigensystem = Assignment(tba, :eigensystem, EigenSystem(BrillouinZone([[2pi, 0], [0, 2pi]], 100)))
     @test eigensystem==deepcopy(eigensystem) && isequal(eigensystem, deepcopy(eigensystem))
     @test Parameters(eigensystem) == (t=1.0, U=1.0)
@@ -313,16 +312,19 @@ params(parameters::Parameters) = (t=parameters.t, μ=parameters.U/2)
     io = IOBuffer()
     show(io, MIME"text/plain"(), eigensystem)
     @test String(take!(io)) == "eigensystem\n  action:\n    EigenSystem(100×100)\n  parameters:\n    t: 1.0\n    U: 2.0"
+    @test options(typeof(eigensystem)) == (showinfo="show the information",)
+    @test optionsinfo(typeof(eigensystem)) == "Assignment{<:EigenSystem} options:\n  (1) `:showinfo`: show the information.\n"
 
     dos = tba(:DOS, DensityOfStates(101, 0.1), (t=1.0, U=4.0), (eigensystem,))
+    @test options(typeof(dos)) == (emin="lower bound of the energy range", emax="upper bound of the energy range")
+    @test optionsinfo(typeof(dos)) == "Assignment{<:DensityOfStates} options:\n  (1) `:emin`: lower bound of the energy range;\n  (2) `:emax`: upper bound of the energy range.\n\n  Dependency 1) Assignment{<:EigenSystem} options:\n    (1) `:showinfo`: show the information.\n"
     @test sum(dos.data.values)*(maximum(dos.data.energies)-minimum(dos.data.energies))/(dos.action.ne-1)/length(eigensystem.action.brillouinzone) ≈ 0.9964676726997486
     savefig(plot(dos), "$(string(dos)).png")
     update!(dos; U=8.0)
     tba(dos)
     savefig(plot(tba(dos)), "$(string(dos)).png")
     update!(dos; U=0.0)
-    updateoptions!(dos.action; emin=-5.0, emax=5.0)
-    tba(dos)
+    tba(dos; emin=-5.0, emax=5.0)
     savefig(plot(tba(dos)), "$(string(dos)).png")
     summary(tba)
 end

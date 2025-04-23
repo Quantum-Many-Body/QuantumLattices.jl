@@ -17,7 +17,7 @@ import ..QuantumLattices: add!, expand, expand!, reset!, update, update!
 import ..QuantumOperators: scalartype
 
 export Action, Algorithm, Assignment, CategorizedGenerator, Data, Eager, ExpansionStyle, Formula, Frontend, Generator, Lazy, OperatorGenerator, Parameters
-export eager, lazy, checkoptions, options, run!, updateoptions!
+export eager, lazy, checkoptions, hasoption, options, optionsinfo, run!
 
 """
     Parameters{Names}(values::Number...) where Names
@@ -675,37 +675,6 @@ Update the parameters of an action.
 @inline update!(action::Action; parameters...) = action
 
 """
-    options(::Type{<:Action}) -> Dict{Symbol, String}
-
-Get the options of a type of action.
-"""
-@inline options(::Type{<:Action}) = Dict{Symbol, String}()
-
-"""
-    updateoptions!(action::Action; options...) -> Action
-
-In place update of the options of an action.
-"""
-function updateoptions!(action::Action; options...)
-    checkoptions(typeof(action); options...)
-    action.options = values(options)
-    return action
-end
-
-"""
-    checkoptions(::Type{A}; kwargs...) where {A<:Action}
-
-Check whether the keyword arguments are legal options of a certain type of action.
-"""
-@inline function checkoptions(::Type{A}; kwargs...) where {A<:Action}
-    legals = options(A)
-    for candidate in keys(kwargs)
-        @assert candidate∈keys(legals) "checkoptions error: improper option(`:$candidate`) for `$(nameof(A))`, which should be\n$(join(("$i) `:$key`: $value" for (i, (key, value)) in enumerate(legals)), ";\n"))."
-    end
-    return true
-end
-
-"""
     Data
 
 Abstract type for the data of an action.
@@ -807,6 +776,56 @@ function Base.show(io::IO, ::MIME"text/plain", assign::Assignment)
         if select(name)
             print(io₂, '\n', name, ": ", tostr(value, ndecimal))
         end
+    end
+end
+
+"""
+    options(::Type{<:Assignment}) -> NamedTuple
+
+Get the options of a certain type of `Assignment`.
+"""
+@inline options(::Type{<:Assignment}) = NamedTuple()
+
+"""
+    optionsinfo(::Type{A}; level::Int=1) where {A<:Assignment} -> String
+
+Get the complete info of the options of a certain type of `Assignment`, including that of its dependencies.
+"""
+function optionsinfo(::Type{A}; level::Int=1) where {A<:Assignment}
+    io = IOBuffer()
+    indent = repeat(" ", 2level)
+    print(io, "Assignment{<:$(nameof(fieldtype(A, :action)))} options:\n")
+    options = Frameworks.options(A)
+    for (i, (key, value)) in enumerate(pairs(options))
+        print(io, indent, "($i) `:$key`: $value", i<length(options) ? ";" : ".", '\n')
+    end
+    for (i, D) in enumerate(fieldtypes(fieldtype(A, :dependencies)))
+        print(io, '\n', indent, "Dependency $i) ", optionsinfo(D; level=level+1))
+    end
+    return String(take!(io))
+end
+
+"""
+    hasoption(::Type{A}, option::Symbol) where {A<:Assignment} -> Bool
+
+Judge whether a certain type of `Assignment` has an option.
+"""
+function hasoption(::Type{A}, option::Symbol) where {A<:Assignment}
+    haskey(options(A), option) && return true
+    for D in fieldtypes(fieldtype(A, :dependencies))
+        hasoption(D, option) && return true
+    end
+    return false
+end
+
+"""
+    checkoptions(::Type{A}; options...) where {A<:Assignment}
+
+Check whether the keyword arguments are legal options of a certain type of `Assignment`.
+"""
+@inline function checkoptions(::Type{A}; options...) where {A<:Assignment}
+    for candidate in keys(options)
+        @assert(hasoption(A, candidate), "checkoptions error: improper option(`:$candidate`). See following.\n$(optionsinfo(A))")
     end
 end
 
@@ -945,32 +964,34 @@ function Base.summary(alg::Algorithm)
 end
 
 """
-    (alg::Algorithm)(assign::Assignment) -> Assignment
-    (assign::Assignment)(alg::Algorithm) -> Assignment
+    (alg::Algorithm)(assign::Assignment, checkoptions::Bool=true; options...) -> Assignment
+    (assign::Assignment)(alg::Algorithm, checkoptions::Bool=true; options...) -> Assignment
 
 Run an assignment based on an algorithm.
 
 The difference between these two methods is that the first uses the parameters of `assign` as the current parameters while the second uses those of `alg`.
 """
-function (alg::Algorithm)(assign::Assignment)
+function (alg::Algorithm)(assign::Assignment, checkoptions::Bool=true; options...)
     @timeit alg.timer string(assign.name) begin
+        checkoptions && Frameworks.checkoptions(typeof(assign); options...)
         ismatched = match(assign.parameters, alg.parameters)
         if !(assign.ismatched && ismatched)
             ismatched || update!(alg; assign.parameters...)
-            map(dependency->dependency(alg), assign.dependencies)
-            run!(alg, assign)
+            map(dependency->dependency(alg, false; options...), assign.dependencies)
+            @timeit alg.timer "run!" run!(alg, assign; options...)
             assign.ismatched = true
         end
     end
     return assign
 end
-function (assign::Assignment)(alg::Algorithm)
+function (assign::Assignment)(alg::Algorithm, checkoptions::Bool=true; options...)
     @timeit alg.timer string(assign.name) begin
+        checkoptions && Frameworks.checkoptions(typeof(assign); options...)
         ismatched = match(alg.parameters, assign.parameters)
         if !(assign.ismatched && ismatched)
             ismatched || update!(assign; alg.parameters...)
-            map(dependency->dependency(alg), assign.dependencies)
-            run!(alg, assign)
+            map(dependency->dependency(alg, false; options...), assign.dependencies)
+            @timeit alg.timer "run!" run!(alg, assign; options...)
             assign.ismatched = true
         end
     end
@@ -978,25 +999,23 @@ function (assign::Assignment)(alg::Algorithm)
 end
 
 """
-    (alg::Algorithm)(name::Symbol, action::Action, dependencies::Tuple{Vararg{Assignment}}; info::Bool=true) -> Assignment
-    (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters, dependencies::Tuple{Vararg{Assignment}}; info::Bool=true) -> Assignment
-    (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters=Parameters(), map::Function=identity, dependencies::Tuple{Vararg{Assignment}}=(); info::Bool=true) -> Assignment
+    (alg::Algorithm)(name::Symbol, action::Action, dependencies::Tuple{Vararg{Assignment}}; options...) -> Assignment
+    (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters, dependencies::Tuple{Vararg{Assignment}}; options...) -> Assignment
+    (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters=Parameters(), map::Function=identity, dependencies::Tuple{Vararg{Assignment}}=(); options...) -> Assignment
 
 Add an assignment on a algorithm by providing the contents of the assignment, and run this assignment.
 """
-@inline (alg::Algorithm)(name::Symbol, action::Action, dependencies::Tuple{Vararg{Assignment}}; info::Bool=true) = alg(name, action, Parameters(), dependencies; info=info)
-@inline (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters, dependencies::Tuple{Vararg{Assignment}}; info::Bool=true) = alg(name, action, parameters, identity, dependencies; info=info)
-@inline function (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters=Parameters(), map::Function=identity, dependencies::Tuple{Vararg{Assignment}}=(); info::Bool=true)
-    assign = alg(Assignment(alg, name, action, parameters, map, dependencies))
-    if info
-        name = string(name)
-        haskey(alg.timer, name) && @info "Action $name: time consumed $(time(alg.timer[name])/10^9)s."
-    end
+@inline (alg::Algorithm)(name::Symbol, action::Action, dependencies::Tuple{Vararg{Assignment}}; options...) = alg(name, action, Parameters(), dependencies; options...)
+@inline (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters, dependencies::Tuple{Vararg{Assignment}}; options...) = alg(name, action, parameters, identity, dependencies; options...)
+@inline function (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters=Parameters(), map::Function=identity, dependencies::Tuple{Vararg{Assignment}}=(); options...)
+    assign = alg(Assignment(alg, name, action, parameters, map, dependencies); options...)
+    name = string(name)
+    @info "Action $name: time consumed $(time(alg.timer[name])/10^9)s."
     return assign
 end
 
 """
-    run!(alg::Algorithm, assign::Assignment)
+    run!(alg::Algorithm, assign::Assignment; options...)
 
 Run an assignment based on an algorithm.
 """
