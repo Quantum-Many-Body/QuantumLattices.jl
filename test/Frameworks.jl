@@ -318,6 +318,7 @@ params(parameters::Parameters) = (t=parameters.t, μ=parameters.U/2)
     dos = tba(:DOS, DensityOfStates(101, 0.1), (t=1.0, U=4.0), (eigensystem,))
     @test options(typeof(dos)) == (emin="lower bound of the energy range", emax="upper bound of the energy range")
     @test optionsinfo(typeof(dos)) == "Assignment{<:DensityOfStates} options:\n  (1) `:emin`: lower bound of the energy range;\n  (2) `:emax`: upper bound of the energy range.\n\n  Dependency 1) Assignment{<:EigenSystem} options:\n    (1) `:showinfo`: show the information.\n"
+    @test hasoption(typeof(dos), :emin) && hasoption(typeof(dos), :emax) && hasoption(typeof(dos), :showinfo) && !hasoption(typeof(dos), :hello)
     @test sum(dos.data.values)*(maximum(dos.data.energies)-minimum(dos.data.energies))/(dos.action.ne-1)/length(eigensystem.action.brillouinzone) ≈ 0.9964676726997486
     savefig(plot(dos), "$(string(dos)).png")
     update!(dos; U=8.0)
