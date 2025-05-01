@@ -243,33 +243,34 @@ function run!(tba::Algorithm{<:TBA}, eigensystem::Assignment{<:EigenSystem}; opt
     end
 end
 
-struct DensityOfStates <:Action
-    ne::Int
-    σ::Float64
-end
-struct DensityOfStatesData <: Data
+struct DensityOfStates <:Action end
+mutable struct DensityOfStatesData <: Data
     energies::Vector{Float64}
     values::Vector{Float64}
+    DensityOfStatesData() = new()
 end
-@inline Data(dos::DensityOfStates, ::TBA) = DensityOfStatesData(zeros(dos.ne), zeros(dos.ne))
+@inline Data(dos::DensityOfStates, ::TBA) = DensityOfStatesData()
 @inline options(::Type{<:Assignment{<:DensityOfStates}}) = (
     emin = "lower bound of the energy range",
-    emax = "upper bound of the energy range"
+    emax = "upper bound of the energy range",
+    ne = "number of sample points in the energy range",
+    σ = "broadening factor"
 )
-function run!(tba::Algorithm{<:TBA}, dos::Assignment{<:DensityOfStates}; emin=nothing, emax=nothing)
+function run!(tba::Algorithm{<:TBA}, dos::Assignment{<:DensityOfStates}; emin=nothing, emax=nothing, ne::Int=101, σ=0.1)
     @assert isa(dos.dependencies, Tuple{Assignment{<:EigenSystem}}) "run! error: wrong dependencies."
     eigensystem = first(dos.dependencies)
     isnothing(emin) && (emin = mapreduce(minimum, min, eigensystem.data.values))
     isnothing(emax) && (emax = mapreduce(maximum, max, eigensystem.data.values))
-    for (i, ω) in enumerate(range(emin, emax, dos.action.ne))
-        dos.data.energies[i] = ω
+    dos.data.energies = range(emin, emax, ne)
+    dos.data.values = zeros(ne)
+    for (i, ω) in enumerate(dos.data.energies)
         dos.data.values[i] = 0.0
         for energies in eigensystem.data.values
             for e in energies
-                dos.data.values[i] += exp(-(ω-e)^2/2dos.action.σ^2)
+                dos.data.values[i] += exp(-(ω-e)^2/2σ^2)
             end
         end
-        dos.data.values[i] /= √(2pi)*dos.action.σ
+        dos.data.values[i] /= √(2pi)*σ
     end
 end
 
@@ -315,11 +316,11 @@ params(parameters::Parameters) = (t=parameters.t, μ=parameters.U/2)
     @test options(typeof(eigensystem)) == (showinfo="show the information",)
     @test optionsinfo(typeof(eigensystem)) == "Assignment{<:EigenSystem} options:\n  (1) `:showinfo`: show the information.\n"
 
-    dos = tba(:DOS, DensityOfStates(101, 0.1), (t=1.0, U=4.0), (eigensystem,))
-    @test options(typeof(dos)) == (emin="lower bound of the energy range", emax="upper bound of the energy range")
-    @test optionsinfo(typeof(dos)) == "Assignment{<:DensityOfStates} options:\n  (1) `:emin`: lower bound of the energy range;\n  (2) `:emax`: upper bound of the energy range.\n\n  Dependency 1) Assignment{<:EigenSystem} options:\n    (1) `:showinfo`: show the information.\n"
-    @test hasoption(typeof(dos), :emin) && hasoption(typeof(dos), :emax) && hasoption(typeof(dos), :showinfo) && !hasoption(typeof(dos), :hello)
-    @test sum(dos.data.values)*(maximum(dos.data.energies)-minimum(dos.data.energies))/(dos.action.ne-1)/length(eigensystem.action.brillouinzone) ≈ 0.9964676726997486
+    dos = tba(:DOS, DensityOfStates(), (t=1.0, U=4.0), (eigensystem,))
+    @test options(typeof(dos)) == (emin="lower bound of the energy range", emax="upper bound of the energy range", ne ="number of sample points in the energy range", σ="broadening factor")
+    @test optionsinfo(typeof(dos)) == "Assignment{<:DensityOfStates} options:\n  (1) `:emin`: lower bound of the energy range;\n  (2) `:emax`: upper bound of the energy range;\n  (3) `:ne`: number of sample points in the energy range;\n  (4) `:σ`: broadening factor.\n\n  Dependency 1) Assignment{<:EigenSystem} options:\n    (1) `:showinfo`: show the information.\n"
+    @test hasoption(typeof(dos), :emin) && hasoption(typeof(dos), :emax) && hasoption(typeof(dos), :ne) && hasoption(typeof(dos), :σ) && hasoption(typeof(dos), :showinfo) && !hasoption(typeof(dos), :hello)
+    @test sum(dos.data.values)*(maximum(dos.data.energies)-minimum(dos.data.energies))/(length(dos.data.energies)-1)/length(eigensystem.action.brillouinzone) ≈ 0.9964676726997486
     savefig(plot(dos), "$(string(dos)).png")
     update!(dos; U=8.0)
     tba(dos)
@@ -333,7 +334,7 @@ end
 @testset "Assignment & Algorithm without map" begin
     tba = Algorithm(:Square, TBA(Formula(A, (t=1.0, μ=2.0))))
     eigensystem = Assignment(tba, :eigensystem, EigenSystem(BrillouinZone([[2pi, 0], [0, 2pi]], 100)))
-    dos = tba(:DOS, DensityOfStates(101, 0.1), (eigensystem,))
+    dos = tba(:DOS, DensityOfStates(), (eigensystem,))
     savefig(plot(tba(dos)), "$(string(dos)).png")
 
     @test isnothing(seriestype())
