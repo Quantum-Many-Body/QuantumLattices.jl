@@ -459,20 +459,16 @@ end
     savedlm("MultiExtendedSurfaces-1.dat", rz, surfaces; fractional=false)
     savedlm("MultiExtendedSurfaces-2.dat", rz, surfaces; fractional=true)
 
-    coordinates = SVector{2, Float64}[]
-    weights = [Float64[], Float64[]]
-    append!(coordinates, Segment(SVector(0.0, 1.0), SVector(1.0, 0.0), 100))
-    append!(weights[1], fill(1.0, 100))
-    append!(weights[2], fill(0.0, 100))
-    append!(coordinates, Segment(SVector(1.0, 0.0), SVector(0.0, -1.0), 100))
-    append!(weights[1], fill(0.0, 100))
-    append!(weights[2], fill(1.0, 100))
-    append!(coordinates, Segment(SVector(0.0, -1.0), SVector(-1.0, 0.0), 100))
-    append!(weights[1], fill(1.0, 100))
-    append!(weights[2], fill(0.0, 100))
-    append!(coordinates, Segment(SVector(-1.0, 0.0), SVector(0.0, 1.0), 100))
-    append!(weights[1], fill(0.0, 100))
-    append!(weights[2], fill(1.0, 100))
+    coordinates = zeros(SVector{2, Float64}, 400)
+    coordinates[1:100] = Segment(SVector(0.0, 1.0), SVector(1.0, 0.0), 100)
+    coordinates[101:200] = Segment(SVector(1.0, 0.0), SVector(0.0, -1.0), 100)
+    coordinates[201:300] = Segment(SVector(0.0, -1.0), SVector(-1.0, 0.0), 100)
+    coordinates[301:400] = Segment(SVector(-1.0, 0.0), SVector(0.0, 1.0), 100)
+    weights = zeros(400, 2)
+    weights[1:100, 1] = fill(1.0, 100)
+    weights[101:200, 2] = fill(1.0, 100)
+    weights[201:300, 1] = fill(1.0, 100)
+    weights[301:400, 2] = fill(1.0, 100)
     rs = ReciprocalScatter([[2pi, 0], [0, 2pi]], coordinates)
     savefig(plot(rs, weights; fractional=false), "Surface-1.png")
     savefig(plot(rs, weights; fractional=true), "Surface-2.png")
@@ -481,23 +477,14 @@ end
 
     path = ReciprocalPath([[2pi, 0], [0, 2pi]], rectangle"Γ-X-M-Γ")
     band = map(k->-2cos(k[1])-2cos(k[2]), path)
-    savefig(plot(path, band), "SingleBand.png")
-    savedlm("SingleBand-1.dat", path, band; distance=false)
-    savedlm("SingleBand-2.dat", path, band; distance=true)
-
-    weights = [abs2.(band)]
-    savefig(plot(path, band, weights; weightmultiplier=1.0, weightwidth=2.0, weightcolors=(:blue, :red), weightlabels=["↑"]), "SingleBandWithWeights.png")
-    savedlm("SingleBandWithWeights-1.dat", path, band, weights; distance=false)
-    savedlm("SingleBandWithWeights-2.dat", path, band, weights; distance=true)
-
     bands = [band -band]
     savefig(plot(path, bands), "MultiBands.png")
     savedlm("MultiBands-1.dat", path, bands; distance=false)
     savedlm("MultiBands-2.dat", path, bands; distance=true)
 
-    weights = [fill(0.01, length(path), 2) for _ in 1:2]
-    weights[1][:, 1] = abs2.(band)
-    weights[2][:, 2] = abs2.(band)
+    weights = zeros(length(band), 2, 2)
+    weights[:, 1, 1] = abs2.(band)
+    weights[:, 2, 2] = abs2.(band)
     savefig(plot(path, bands, weights; weightmultiplier=1.0, weightwidth=2.0, weightcolors=(:blue, :red), weightlabels=("↑", "↓")), "MultiBandsWithWeights.png")
     savedlm("MultiBandsWithWeights-1.dat", path, bands, weights; distance=false)
     savedlm("MultiBandsWithWeights-2.dat", path, bands, weights; distance=true)
