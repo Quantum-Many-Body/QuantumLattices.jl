@@ -288,6 +288,7 @@ end
     @test label(bz, 2) == label(typeof(bz), 2) == "k₂"
     @test reciprocals(bz) == recipls
     @test fractionals(bz) == [[0.0, 0.0], [0.0, 0.25], [0.0, 0.5], [0.0, 0.75], [0.5, 0.0], [0.5, 0.25], [0.5, 0.5], [0.5, 0.75]]
+    @test collect(bz) ≈ [expand(bz, fractional) for fractional in fractionals(bz)]
     @test shape(bz) == (0:1, 0:3)
     @test hash(bz) == hash(((SVector(2.0, 0.0), SVector(0.0, 3.0)), (2, 4)))
     @test keytype(bz) == keytype(typeof(bz)) == 𝕂²{2, 4}
@@ -316,6 +317,7 @@ end
     @test rz == ReciprocalZone([[1.0]], [-1//2=>1//2]; length=10)
     @test all(shrink(rz, 1:5) .== ReciprocalZone([[1.0]], -0.5=>-0.1, length=5, ends=(true, true)))
     @test fractionals(rz) ≈ [[-0.5], [-0.4], [-0.3], [-0.2], [-0.1], [0.0], [0.1], [0.2], [0.3], [0.4]]
+    @test collect(rz) ≈ [expand(rz, fractional) for fractional in fractionals(rz)]
 
     rz = ReciprocalZone{:q}([[1.0]], length=10)
     @test rz == ReciprocalZone{:q}([[1.0]], -1//2=>1//2; length=10)
@@ -344,8 +346,8 @@ end
     b₁, b₂ = [2.0, 0.0, 0.0], [0.0, 2.0, 0.0]
     coordinates = [[0.0, 0.5], [0.25, 0.25], [0.5, 0.0], [0.25, -0.25], [0.0, -0.5], [-0.25, -0.25], [-0.5, 0.0], [-0.25, 0.25]]
     rs = ReciprocalScatter([b₁, b₂], coordinates)
-    for (i, coordinate) in enumerate(fractionals(rs))
-        @test rs[i] == b₁*coordinate[1] + b₂*coordinate[2]
+    for (i, fractional) in enumerate(fractionals(rs))
+        @test rs[i] == expand(rs, fractional) == b₁*fractional[1] + b₂*fractional[2]
     end
     savefig(plot(rs; fractional=false), "ReciprocalScatter.png")
     savefig(plot(rs; fractional=true), "ReciprocalScatter-fractional.png")

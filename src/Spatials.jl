@@ -1022,6 +1022,13 @@ Get the reciprocal lattice vectors of a reciprocal space with fractional coordin
 @inline reciprocals(reciprocalspace::FractionalReciprocalSpace) = getcontent(reciprocalspace, :reciprocals)
 
 """
+    expand(reciprocalspace::FractionalReciprocalSpace, fractional::AbstractVector{<:Number}) -> AbstractVector{<:AbstractVector{<:Number}}
+
+Expand the fractional coordinate in a reciprocal space to the Cartesian coordinate.
+"""
+@inline expand(reciprocalspace::FractionalReciprocalSpace, fractional::AbstractVector{<:Number}) = mapreduce(*, +, fractional, reciprocals(reciprocalspace))
+
+"""
     @recipe plot(reciprocalspace::FractionalReciprocalSpace; fractional=false, autolims=true)
 
 Define the recipe for the visualization of a reciprocal space with fractional coordinates.
@@ -1096,7 +1103,7 @@ Construct a Brillouin zone.
 @inline BrillouinZone(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, nk) = BrillouinZone{:k}(reciprocals, nk)
 @inline BrillouinZone(::Type{P}, reciprocals::AbstractVector{<:AbstractVector{<:Number}}) where {P<:𝕂} = BrillouinZone{:k}(P, reciprocals)
 @inline function BrillouinZone{K}(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, nk) where K
-    isa(nk, Integer) && (nk = map(v->nk, reciprocals))
+    isa(nk, Number) && (nk = map(v->nk, reciprocals))
     @assert length(nk)==length(reciprocals) "BrillouinZone error: mismatched number of reciprocals and periods of momenta."
     length(reciprocals)==1 && return BrillouinZone{K}(𝕂¹{nk[1]}, reciprocals)
     length(reciprocals)==2 && return BrillouinZone{K}(𝕂²{nk[1], nk[2]}, reciprocals)
@@ -1273,26 +1280,26 @@ A set of scatter points in the reciprocal space.
 """
 struct ReciprocalScatter{K, N, S<:SVector, V<:SVector{N}} <: FractionalReciprocalSpace{K, N, S}
     reciprocals::SVector{N, S}
-    coordinates::Vector{V}
-    function ReciprocalScatter{K}(reciprocals::SVector{N, <:SVector}, coordinates::Vector{<:SVector{N}}) where {K, N}
+    fractionals::Vector{V}
+    function ReciprocalScatter{K}(reciprocals::SVector{N, <:SVector}, fractionals::Vector{<:SVector{N}}) where {K, N}
         @assert isa(K, Symbol) "ReciprocalScatter error: K must be a Symbol."
-        new{K, N, eltype(reciprocals), eltype(coordinates)}(reciprocals, coordinates)
+        new{K, N, eltype(reciprocals), eltype(fractionals)}(reciprocals, fractionals)
     end
 end
-@inline Base.length(reciprocalscatter::ReciprocalScatter) = length(reciprocalscatter.coordinates)
-@inline Base.getindex(reciprocalscatter::ReciprocalScatter, i::Integer) = mapreduce(*, +, reciprocalscatter.reciprocals, reciprocalscatter.coordinates[i])
+@inline Base.length(reciprocalscatter::ReciprocalScatter) = length(reciprocalscatter.fractionals)
+@inline Base.getindex(reciprocalscatter::ReciprocalScatter, i::Integer) = mapreduce(*, +, reciprocalscatter.reciprocals, reciprocalscatter.fractionals[i])
 
 """
-    ReciprocalScatter(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, coordinates::AbstractVector{<:AbstractVector{<:Number}})
-    ReciprocalScatter{K}(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, coordinates::AbstractVector{<:AbstractVector{<:Number}}) where K
+    ReciprocalScatter(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, fractionals::AbstractVector{<:AbstractVector{<:Number}})
+    ReciprocalScatter{K}(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, fractionals::AbstractVector{<:AbstractVector{<:Number}}) where K
 
 Construct a set of reciprocal scatter points.
 """
-@inline ReciprocalScatter(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, coordinates::AbstractVector{<:AbstractVector{<:Number}}) = ReciprocalScatter{:k}(reciprocals, coordinates)
-function ReciprocalScatter{K}(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, coordinates::AbstractVector{<:AbstractVector{<:Number}}) where K
+@inline ReciprocalScatter(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, fractionals::AbstractVector{<:AbstractVector{<:Number}}) = ReciprocalScatter{:k}(reciprocals, fractionals)
+function ReciprocalScatter{K}(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, fractionals::AbstractVector{<:AbstractVector{<:Number}}) where K
     reciprocals = vectorconvert(reciprocals)
-    coordinates = collect(SVector{length(reciprocals), eltype(eltype(reciprocals))}, coordinates)
-    return ReciprocalScatter{K}(reciprocals, coordinates)
+    fractionals = collect(SVector{length(reciprocals), eltype(eltype(reciprocals))}, fractionals)
+    return ReciprocalScatter{K}(reciprocals, fractionals)
 end
 
 """
@@ -1307,7 +1314,7 @@ Construct a set of reciprocal scatter points from a reciprocal space with fracti
 
 Get the fractional coordinates of a reciprocal space.
 """
-@inline fractionals(reciprocalscatter::ReciprocalScatter) = reciprocalscatter.coordinates
+@inline fractionals(reciprocalscatter::ReciprocalScatter) = reciprocalscatter.fractionals
 
 """
     ReciprocalPath{K, S<:SVector, N, R} <: ReciprocalSpace{K, S}
