@@ -1754,7 +1754,7 @@ const line = quote
     xminorticks --> 10
     yminorticks --> 10
     xticks --> ticks(path)
-    xlabel --> label(path)
+    xlabel --> string(label(path))
     [distance(path, i) for i=1:length(path)], data
 end
 @eval @recipe plot(path::ReciprocalPath, data::AbstractMatrix{<:Number}) = $line
@@ -1798,7 +1798,7 @@ Define the recipe for the heatmap visualization of data on the x-y plain with th
     seriestype --> :heatmap
     titlefontsize --> 10
     xticks --> ticks(path)
-    xlabel --> label(path)
+    xlabel --> string(label(path))
     xlims --> (0, distance(path))
     ylims --> (minimum(y), maximum(y))
     clims --> extrema(data)
