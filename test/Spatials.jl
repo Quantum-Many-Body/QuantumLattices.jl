@@ -297,8 +297,18 @@ end
     @test range(bz, 1)==range(0.0, 0.5, 2)
     @test range(bz, 2)==range(0.0, 0.75, 4)
     @test volume(bz) == 6.0
+    @test iscontinuous(bz) == iscontinuous(typeof(bz)) == false
+    @test isdiscrete(bz) == isdiscrete(typeof(bz)) == true
     savefig(plot(bz; fractional=false), "BrillouinZone.png")
     savefig(plot(bz; fractional=true), "BrillouinZone-fractional.png")
+
+    bz = BrillouinZone(recipls, Inf)
+    @test iscontinuous(bz) == iscontinuous(typeof(bz)) == true
+    @test isdiscrete(bz) == isdiscrete(typeof(bz)) == false
+
+    bz = BrillouinZone(recipls, (4, Inf))
+    @test iscontinuous(bz) == iscontinuous(typeof(bz)) == false
+    @test isdiscrete(bz) == isdiscrete(typeof(bz)) == false
 
     recipls = [[1.0, 0.0, 0.0]]
     @test BrillouinZone{:q}(𝕂¹{10}, recipls) == BrillouinZone{:q}(recipls, 10)

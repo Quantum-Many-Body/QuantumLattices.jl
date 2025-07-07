@@ -18,7 +18,7 @@ import ..Toolkit: contentnames
 
 export azimuth, azimuthd, direction, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, polar, polard, reciprocals, rotate, translate, tile, volume
 export AbstractLattice, Bond, BrillouinZone, FractionalReciprocalSpace, Lattice, Neighbors, Point, ProductedReciprocalSpace, ReciprocalCurve, ReciprocalScatter, ReciprocalSpace, ReciprocalZone, ReciprocalPath
-export bonds, bonds!, fractionals, icoordinate, isintracell, label, nneighbor, rcoordinate, savedlm, selectpath, shrink, ticks
+export bonds, bonds!, fractionals, icoordinate, iscontinuous, isdiscrete, isintracell, label, nneighbor, rcoordinate, savedlm, selectpath, shrink, ticks
 export hexagon120°map, hexagon60°map, linemap, rectanglemap, @hexagon_str, @line_str, @rectangle_str
 
 """
@@ -1158,6 +1158,24 @@ end
 Get the volume of a Brillouin zone.
 """
 @inline volume(brillouinzone::BrillouinZone) = volume(brillouinzone.reciprocals)
+
+"""
+    iscontinuous(brillouinzone::BrillouinZone) -> Bool
+    iscontinuous(::Type{<:BrillouinZone{K, P} where K}) where {P<:𝕂} -> Bool
+
+Judge whether a Brillouin zone is continuous.
+"""
+@inline iscontinuous(brillouinzone::BrillouinZone) = iscontinuous(typeof(brillouinzone))
+@inline @generated iscontinuous(::Type{<:BrillouinZone{K, P} where K}) where {P<:𝕂} = all(==(Inf), periods(P))
+
+"""
+    isdiscrete(brillouinzone::BrillouinZone) -> Bool
+    isdiscrete(::Type{<:BrillouinZone{K, P} where K}) where {P<:𝕂} -> Bool
+
+Judge whether a Brillouin zone is discrete.
+"""
+@inline isdiscrete(brillouinzone::BrillouinZone) = isdiscrete(typeof(brillouinzone))
+@inline @generated isdiscrete(::Type{<:BrillouinZone{K, P} where K}) where {P<:𝕂} = all(≠(Inf), periods(P))
 
 """
     ReciprocalZone{K, N, S<:SVector, V<:Number} <: ProductedReciprocalSpace{K, N, S}
