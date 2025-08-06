@@ -227,29 +227,25 @@ struct EigenSystemData <: Data
     values::Vector{Vector{Float64}}
     vectors::Vector{Matrix{ComplexF64}}
 end
-@inline Data(eigensystem::EigenSystem, tba::TBA) = EigenSystemData(Vector{Float64}[], Matrix{ComplexF64}[])
 @inline options(::Type{<:Assignment{<:EigenSystem}}) = (
     showinfo = "show the information",
 )
 function run!(tba::Algorithm{<:TBA}, eigensystem::Assignment{<:EigenSystem}; options...)
     get(options, :showinfo, false) && @info string(eigensystem)
-    data = eigensystem.data
-    empty!(data.values)
-    empty!(data.vectors)
+    data = EigenSystemData(Vector{Float64}[], Matrix{ComplexF64}[])
     for k in eigensystem.action.brillouinzone
         values, vectors = eigen(tba.frontend.formula(k))
         push!(data.values, values)
         push!(data.vectors, vectors)
     end
+    return data
 end
 
 struct DensityOfStates <:Action end
 mutable struct DensityOfStatesData <: Data
     energies::Vector{Float64}
     values::Vector{Float64}
-    DensityOfStatesData() = new()
 end
-@inline Data(dos::DensityOfStates, ::TBA) = DensityOfStatesData()
 @inline options(::Type{<:Assignment{<:DensityOfStates}}) = (
     emin = "lower bound of the energy range",
     emax = "upper bound of the energy range",
@@ -261,17 +257,17 @@ function run!(tba::Algorithm{<:TBA}, dos::Assignment{<:DensityOfStates}; emin=no
     eigensystem = first(dos.dependencies)
     isnothing(emin) && (emin = mapreduce(minimum, min, eigensystem.data.values))
     isnothing(emax) && (emax = mapreduce(maximum, max, eigensystem.data.values))
-    dos.data.energies = range(emin, emax, ne)
-    dos.data.values = zeros(ne)
-    for (i, ω) in enumerate(dos.data.energies)
-        dos.data.values[i] = 0.0
+    data = DensityOfStatesData(range(emin, emax, ne), zeros(ne))
+    for (i, ω) in enumerate(data.energies)
+        data.values[i] = 0.0
         for energies in eigensystem.data.values
             for e in energies
-                dos.data.values[i] += exp(-(ω-e)^2/2σ^2)
+                data.values[i] += exp(-(ω-e)^2/2σ^2)
             end
         end
-        dos.data.values[i] /= √(2pi)*σ
+        data.values[i] /= √(2pi)*σ
     end
+    return data
 end
 
 A(t, μ, k=SVector(0.0, 0.0); kwargs...) = SMatrix{1, 1}(2t*cos(k[1])+2t*cos(k[2])+μ)
@@ -284,7 +280,7 @@ A(t, μ, k=SVector(0.0, 0.0); kwargs...) = SMatrix{1, 1}(2t*cos(k[1])+2t*cos(k[2
     @test eigensystem==deepcopy(eigensystem) && isequal(eigensystem, deepcopy(eigensystem))
     @test update!(eigensystem; Parameters(tba)...) == eigensystem
 
-    eigensystemdata = Data(eigensystem, tba)
+    eigensystemdata = EigenSystemData(Vector{Float64}[], Matrix{ComplexF64}[])
     @test eigensystemdata==deepcopy(eigensystemdata) && isequal(eigensystemdata, deepcopy(eigensystemdata))
     @test Tuple(eigensystemdata) == (Vector{Float64}[], Matrix{ComplexF64}[])
 end
@@ -304,7 +300,6 @@ params(parameters::Parameters) = (t=parameters.t, μ=parameters.U/2)
     @test options(Assignment) == NamedTuple()
 
     eigensystem = Assignment(tba, :eigensystem, EigenSystem(BrillouinZone([[2pi, 0], [0, 2pi]], 100)))
-    @test eigensystem==deepcopy(eigensystem) && isequal(eigensystem, deepcopy(eigensystem))
     @test Parameters(eigensystem) == (t=1.0, U=1.0)
     @test valtype(eigensystem) == valtype(typeof(eigensystem)) == EigenSystemData
     update!(eigensystem; U=2.0)
@@ -317,6 +312,7 @@ params(parameters::Parameters) = (t=parameters.t, μ=parameters.U/2)
     @test optionsinfo(typeof(eigensystem)) == "Assignment{<:EigenSystem} options:\n  (1) `:showinfo`: show the information.\n"
 
     dos = tba(:DOS, DensityOfStates(), (t=1.0, U=4.0), (eigensystem,))
+    @test dos==deepcopy(dos) && isequal(dos, deepcopy(dos))
     @test options(typeof(dos)) == (emin="lower bound of the energy range", emax="upper bound of the energy range", ne ="number of sample points in the energy range", σ="broadening factor")
     @test optionsinfo(typeof(dos)) == "Assignment{<:DensityOfStates} options:\n  (1) `:emin`: lower bound of the energy range;\n  (2) `:emax`: upper bound of the energy range;\n  (3) `:ne`: number of sample points in the energy range;\n  (4) `:σ`: broadening factor.\n\n  Dependency 1) Assignment{<:EigenSystem} options:\n    (1) `:showinfo`: show the information.\n"
     @test hasoption(typeof(dos), :emin) && hasoption(typeof(dos), :emax) && hasoption(typeof(dos), :ne) && hasoption(typeof(dos), :σ) && hasoption(typeof(dos), :showinfo) && !hasoption(typeof(dos), :hello)

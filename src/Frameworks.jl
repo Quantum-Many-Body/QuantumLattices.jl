@@ -17,7 +17,7 @@ import ..QuantumLattices: add!, expand, expand!, reset!, update, update!
 import ..QuantumOperators: scalartype
 
 export Action, Algorithm, Assignment, CategorizedGenerator, Data, Eager, ExpansionStyle, Formula, Frontend, Generator, Lazy, OperatorGenerator, Parameters
-export eager, lazy, checkoptions, hasoption, options, optionsinfo, run!
+export eager, lazy, checkoptions, datatype, hasoption, options, optionsinfo, run!
 
 """
     Parameters{Names}(values::Number...) where Names
@@ -704,10 +704,9 @@ mutable struct Assignment{A<:Action, P<:Parameters, M<:Function, T<:Tuple, D<:Da
     parameters::P
     const map::M
     const dependencies::T
-    const data::D
-    ismatched::Bool
-    function Assignment(name::Symbol, action::Action, parameters::Parameters, map::Function, dependencies::Tuple{Vararg{Assignment}}, data::Data, ismatched::Bool)
-        new{typeof(action), typeof(parameters), typeof(map), typeof(dependencies), typeof(data)}(name, action, parameters, map, dependencies, data, ismatched)
+    data::D
+    function Assignment(name::Symbol, action::Action, parameters::Parameters, map::Function, dependencies::Tuple{Vararg{Assignment}}, ::Type{D}) where {D<:Data}
+        new{typeof(action), typeof(parameters), typeof(map), typeof(dependencies), D}(name, action, parameters, map, dependencies)
     end
 end
 @inline Base.:(==)(assign₁::Assignment, assign₂::Assignment) = ==(efficientoperations, assign₁, assign₂)
@@ -900,7 +899,18 @@ Construct an `Assignment` based on an `Algorithm` and other essential informatio
 @inline Assignment(alg::Algorithm, name::Symbol, action::Action, dependencies::Tuple{Vararg{Assignment}}) = Assignment(alg, name, action, Parameters(), dependencies)
 @inline Assignment(alg::Algorithm, name::Symbol, action::Action, parameters::Parameters, dependencies::Tuple{Vararg{Assignment}}) = Assignment(alg, name, action, parameters, identity, dependencies)
 @inline function Assignment(alg::Algorithm, name::Symbol, action::Action, parameters::Parameters=Parameters(), map::Function=identity, dependencies::Tuple{Vararg{Assignment}}=())
-    return Assignment(name, action, merge(alg.parameters, parameters), map, dependencies, Data(action, alg.frontend), false)
+    return Assignment(name, action, merge(alg.parameters, parameters), map, dependencies, datatype(typeof(action), typeof(alg.frontend)))
+end
+
+"""
+    datatype(::Type{A}, ::Type{F}) where {A<:Action, F<:Frontend}
+
+Get the concrete subtype of `Data` according to the types of an `Action` and a `Frontend`.
+"""
+@inline function datatype(::Type{A}, ::Type{F}) where {A<:Action, F<:Frontend}
+    D = Core.Compiler.return_type(run!, Tuple{Algorithm{F}, Assignment{A}})
+    @assert isconcretetype(D) && D<:Data "datatype error: failure ($D) of the default method for type $A and type $F."
+    return D
 end
 
 """
@@ -975,11 +985,10 @@ function (alg::Algorithm)(assign::Assignment, checkoptions::Bool=true; options..
     @timeit alg.timer string(assign.name) begin
         checkoptions && Frameworks.checkoptions(typeof(assign); options...)
         ismatched = match(assign.parameters, alg.parameters)
-        if !(assign.ismatched && ismatched)
+        if !(isdefined(assign, :data) && ismatched)
             ismatched || update!(alg; assign.parameters...)
             map(dependency->dependency(alg, false; options...), assign.dependencies)
-            @timeit alg.timer "run!" run!(alg, assign; options...)
-            assign.ismatched = true
+            @timeit alg.timer "run!" (assign.data = run!(alg, assign; options...))
         end
     end
     return assign
@@ -988,11 +997,10 @@ function (assign::Assignment)(alg::Algorithm, checkoptions::Bool=true; options..
     @timeit alg.timer string(assign.name) begin
         checkoptions && Frameworks.checkoptions(typeof(assign); options...)
         ismatched = match(alg.parameters, assign.parameters)
-        if !(assign.ismatched && ismatched)
+        if !(isdefined(assign, :data) && ismatched)
             ismatched || update!(assign; alg.parameters...)
             map(dependency->dependency(alg, false; options...), assign.dependencies)
-            @timeit alg.timer "run!" run!(alg, assign; options...)
-            assign.ismatched = true
+            @timeit alg.timer "run!" (assign.data = run!(alg, assign; options...))
         end
     end
     return assign
