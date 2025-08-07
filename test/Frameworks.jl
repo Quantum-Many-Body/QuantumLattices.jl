@@ -58,6 +58,8 @@ end
         -2im*Δ*sin(k[1]) + 2Δ*sin(k[2])   -2t*cos(k[1]) - 2t*cos(k[2]) - μ
     ])
     f = Formula(A, (t=1.0, μ=0.0, Δ=0.1))
+    @test f == Formula{SMatrix{2, 2, ComplexF64, 4}}(A, (t=1.0, μ=0.0, Δ=0.1))
+    @test isequal(f, Formula{SMatrix{2, 2, ComplexF64, 4}}(A, (t=1.0, μ=0.0, Δ=0.1)))
     @test valtype(f) == valtype(typeof(f)) == SMatrix{2, 2, ComplexF64, 4}
     @test scalartype(f) == scalartype(typeof(f)) == ComplexF64
     @test Parameters(f) == (t=1.0, μ=0.0, Δ=0.1)

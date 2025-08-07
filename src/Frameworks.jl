@@ -82,6 +82,9 @@ mutable struct Formula{V, F<:Function, P<:Parameters}
         @assert isconcretetype(V) "Formula error: input expression is not type-stable."
         new{V, typeof(expression), typeof(parameters)}(expression, parameters)
     end
+    function Formula{V}(expression::Function, parameters::Parameters) where V
+        new{V, typeof(expression), typeof(parameters)}(expression, parameters)
+    end
 end
 @inline Base.:(==)(formula₁::Formula, formula₂::Formula) = ==(efficientoperations, formula₁, formula₂)
 @inline Base.isequal(formula₁::Formula, formula₂::Formula) = isequal(efficientoperations, formula₁, formula₂)
