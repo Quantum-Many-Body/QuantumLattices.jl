@@ -301,7 +301,7 @@ params(parameters::Parameters) = (t=parameters.t, μ=parameters.U/2)
 
     @test options(Assignment) == NamedTuple()
 
-    eigensystem = Assignment(tba, :eigensystem, EigenSystem(BrillouinZone([[2pi, 0], [0, 2pi]], 100)))
+    eigensystem = tba(:eigensystem, EigenSystem(BrillouinZone([[2pi, 0], [0, 2pi]], 100)); delay=true)
     @test Parameters(eigensystem) == (t=1.0, U=1.0)
     @test valtype(eigensystem) == valtype(typeof(eigensystem)) == EigenSystemData
     update!(eigensystem; U=2.0)
@@ -331,7 +331,7 @@ end
 
 @testset "Assignment & Algorithm without map" begin
     tba = Algorithm(:Square, TBA(Formula(A, (t=1.0, μ=2.0))))
-    eigensystem = Assignment(tba, :eigensystem, EigenSystem(BrillouinZone([[2pi, 0], [0, 2pi]], 100)))
+    eigensystem = tba(:eigensystem, EigenSystem(BrillouinZone([[2pi, 0], [0, 2pi]], 100)); delay=true)
     dos = tba(:DOS, DensityOfStates(), (eigensystem,))
     savefig(plot(tba(dos)), "$(string(dos)).png")
 

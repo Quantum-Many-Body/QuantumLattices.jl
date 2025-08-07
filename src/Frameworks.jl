@@ -702,14 +702,15 @@ end
 An assignment associated with an action.
 """
 mutable struct Assignment{A<:Action, P<:Parameters, M<:Function, T<:Tuple, D<:Data} <: Function
+    const dir::String
     const name::Symbol
     const action::A
     parameters::P
     const map::M
     const dependencies::T
     data::D
-    function Assignment(name::Symbol, action::Action, parameters::Parameters, map::Function, dependencies::Tuple{Vararg{Assignment}}, ::Type{D}) where {D<:Data}
-        new{typeof(action), typeof(parameters), typeof(map), typeof(dependencies), D}(name, action, parameters, map, dependencies)
+    function Assignment(::Type{D}, dir::String, name::Symbol, action::Action, parameters::Parameters, map::Function, dependencies::Tuple{Vararg{Assignment}}) where {D<:Data}
+        new{typeof(action), typeof(parameters), typeof(map), typeof(dependencies), D}(dir, name, action, parameters, map, dependencies)
     end
 end
 @inline Base.:(==)(assign₁::Assignment, assign₂::Assignment) = ==(efficientoperations, assign₁, assign₂)
@@ -862,47 +863,33 @@ end
 An algorithm associated with an frontend.
 """
 mutable struct Algorithm{F<:Frontend, P<:Parameters, M<:Function} <: Function
+    const dir::String
     const name::Symbol
     const frontend::F
-    const din::String
-    const dout::String
     parameters::P
     const map::M
     const timer::TimerOutput
 end
 @inline function Base.:(==)(algorithm₁::Algorithm, algorithm₂::Algorithm)
     return ==(
-        (algorithm₁.name, algorithm₁.frontend, algorithm₁.din, algorithm₁.dout, algorithm₁.parameters, algorithm₁.map),
-        (algorithm₂.name, algorithm₂.frontend, algorithm₂.din, algorithm₂.dout, algorithm₂.parameters, algorithm₂.map),
+        (algorithm₁.dir, algorithm₁.name, algorithm₁.frontend, algorithm₁.parameters, algorithm₁.map),
+        (algorithm₂.dir, algorithm₂.name, algorithm₂.frontend, algorithm₂.parameters, algorithm₂.map),
     )
 end
 @inline function Base.isequal(algorithm₁::Algorithm, algorithm₂::Algorithm)
     return isequal(
-        (algorithm₁.name, algorithm₁.frontend, algorithm₁.din, algorithm₁.dout, algorithm₁.parameters, algorithm₁.map),
-        (algorithm₂.name, algorithm₂.frontend, algorithm₂.din, algorithm₂.dout, algorithm₂.parameters, algorithm₂.map),
+        (algorithm₁.dir, algorithm₁.name, algorithm₁.frontend, algorithm₁.parameters, algorithm₁.map),
+        (algorithm₂.dir, algorithm₂.name, algorithm₂.frontend, algorithm₂.parameters, algorithm₂.map),
     )
 end
 
 """
-    Algorithm(name::Symbol, frontend::Frontend, parameters::Parameters=Parameters(frontend), map::Function=identity; din::String=".", dout::String=".", timer::TimerOutput=TimerOutput())
+    Algorithm(name::Symbol, frontend::Frontend, parameters::Parameters=Parameters(frontend), map::Function=identity; dir::String=".", timer::TimerOutput=TimerOutput())
 
 Construct an algorithm.
 """
-@inline function Algorithm(name::Symbol, frontend::Frontend, parameters::Parameters=Parameters(frontend), map::Function=identity; din::String=".", dout::String=".", timer::TimerOutput=TimerOutput())
-    return Algorithm(name, frontend, din, dout, parameters, map, timer)
-end
-
-"""
-    Assignment(alg::Algorithm, name::Symbol, action::Action, dependencies::Tuple{Vararg{Assignment}})
-    Assignment(alg::Algorithm, name::Symbol, action::Action, parameters::Parameters, dependencies::Tuple{Vararg{Assignment}})
-    Assignment(alg::Algorithm, name::Symbol, action::Action, parameters::Parameters=Parameters(), map::Function=identity, dependencies::Tuple{Vararg{Assignment}}=())
-
-Construct an `Assignment` based on an `Algorithm` and other essential information.
-"""
-@inline Assignment(alg::Algorithm, name::Symbol, action::Action, dependencies::Tuple{Vararg{Assignment}}) = Assignment(alg, name, action, Parameters(), dependencies)
-@inline Assignment(alg::Algorithm, name::Symbol, action::Action, parameters::Parameters, dependencies::Tuple{Vararg{Assignment}}) = Assignment(alg, name, action, parameters, identity, dependencies)
-@inline function Assignment(alg::Algorithm, name::Symbol, action::Action, parameters::Parameters=Parameters(), map::Function=identity, dependencies::Tuple{Vararg{Assignment}}=())
-    return Assignment(name, action, merge(alg.parameters, parameters), map, dependencies, datatype(typeof(action), typeof(alg.frontend)))
+@inline function Algorithm(name::Symbol, frontend::Frontend, parameters::Parameters=Parameters(frontend), map::Function=identity; dir::String=".", timer::TimerOutput=TimerOutput())
+    return Algorithm(dir, name, frontend, parameters, map, timer)
 end
 
 """
@@ -1010,18 +997,25 @@ function (assign::Assignment)(alg::Algorithm, checkoptions::Bool=true; options..
 end
 
 """
-    (alg::Algorithm)(name::Symbol, action::Action, dependencies::Tuple{Vararg{Assignment}}; options...) -> Assignment
-    (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters, dependencies::Tuple{Vararg{Assignment}}; options...) -> Assignment
-    (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters=Parameters(), map::Function=identity, dependencies::Tuple{Vararg{Assignment}}=(); options...) -> Assignment
+    (alg::Algorithm)(name::Symbol, action::Action, dependencies::Tuple{Vararg{Assignment}}; delay::Bool=false, dir::String=alg.dir, options...) -> Assignment
+    (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters, dependencies::Tuple{Vararg{Assignment}}; delay::Bool=false, dir::String=alg.dir, options...) -> Assignment
+    (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters=Parameters(), map::Function=identity, dependencies::Tuple{Vararg{Assignment}}=(); delay::Bool=false, dir::String=alg.dir, options...) -> Assignment
 
 Add an assignment on a algorithm by providing the contents of the assignment, and run this assignment.
 """
-@inline (alg::Algorithm)(name::Symbol, action::Action, dependencies::Tuple{Vararg{Assignment}}; options...) = alg(name, action, Parameters(), dependencies; options...)
-@inline (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters, dependencies::Tuple{Vararg{Assignment}}; options...) = alg(name, action, parameters, identity, dependencies; options...)
-@inline function (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters=Parameters(), map::Function=identity, dependencies::Tuple{Vararg{Assignment}}=(); options...)
-    assign = alg(Assignment(alg, name, action, parameters, map, dependencies); options...)
-    name = string(name)
-    @info "Action $name: time consumed $(time(alg.timer[name])/10^9)s."
+@inline function (alg::Algorithm)(name::Symbol, action::Action, dependencies::Tuple{Vararg{Assignment}}; delay::Bool=false, dir::String=alg.dir, options...)
+    return alg(name, action, Parameters(), dependencies; delay=delay, dir=dir, options...)
+end
+@inline function (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters, dependencies::Tuple{Vararg{Assignment}}; delay::Bool=false, dir::String=alg.dir, options...)
+    return alg(name, action, parameters, identity, dependencies; delay=delay, dir=dir, options...)
+end
+@inline function (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters=Parameters(), map::Function=identity, dependencies::Tuple{Vararg{Assignment}}=(); delay::Bool=false, dir::String=alg.dir, options...)
+    assign = Assignment(datatype(typeof(action), typeof(alg.frontend)), dir, name, action, merge(alg.parameters, parameters), map, dependencies)
+    delay || begin
+        alg(assign)
+        name = string(name)
+        @info "Action $name: time consumed $(time(alg.timer[name])/10^9)s."
+    end
     return assign
 end
 
