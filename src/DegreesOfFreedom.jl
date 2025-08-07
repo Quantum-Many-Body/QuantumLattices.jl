@@ -1429,6 +1429,7 @@ struct TermCoupling{C<:Coupling, F} <: TermFunction{F}
     coupling::F
     TermCoupling(coupling) = new{eltype(coupling), typeof(coupling)}(coupling)
     TermCoupling(coupling::Function) = new{eltype(Core.Compiler.return_type(coupling, Tuple{Bond})), typeof(coupling)}(coupling)
+    TermCoupling{C}(coupling::Function) where {C<:Coupling} = new{C, typeof(coupling)}(coupling)
 end
 @inline Base.valtype(termcoupling::TermCoupling) = valtype(typeof(termcoupling))
 @inline Base.valtype(::Type{<:TermCoupling{C}}) where {C<:Coupling} = C

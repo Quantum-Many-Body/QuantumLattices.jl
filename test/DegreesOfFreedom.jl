@@ -430,6 +430,8 @@ end
 
     fx = bond::Bond -> bond.kind==1 ? Coupling(1.0, 𝕕, (1ˢᵗ, 2ⁿᵈ), (1, 1)) : Coupling(1.0, 𝕕, (1ˢᵗ, 2ⁿᵈ), (2, 2))
     termcouplings = TermCoupling(fx)
+    @test termcouplings == TermCoupling{eltype(tcs)}(fx)
+    @test isequal(termcouplings, TermCoupling{eltype(tcs)}(fx))
     @test valtype(termcouplings) == valtype(typeof(termcouplings)) == typejoin(typeof(fx(bond₁)), typeof(fx(bond₂)))
     @test termcouplings(bond₁) == fx(bond₁)
     @test termcouplings(bond₂) == fx(bond₂)
