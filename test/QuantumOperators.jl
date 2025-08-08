@@ -89,7 +89,7 @@ end
     @test opt|>valtype == opt|>typeof|>valtype == parametertype(opt|>typeof, :value) == Float
     @test opt|>idtype == opt|>typeof|>idtype == parametertype(opt|>typeof, :id) == ID{AID{Int, Int}, 1}
     @test opt|>scalartype == opt|>typeof|>scalartype == Float
-    @test opt|>equivalenttoscalar == opt|>typeof|>equivalenttoscalar == false
+    @test opt|>isequivalenttoscalar == opt|>typeof|>isequivalenttoscalar == false
     @test value(opt) == 2.0
     @test id(opt) == ID(AID(1, 1))
     @test replace(opt, 3) == Operator(3, AID(1, 1))
@@ -117,7 +117,7 @@ end
     @test opts == Operators{eltype(opts)}(opt₁, opt₂) == OperatorSum(opt₁, opt₂) == OperatorSum((opt₁, opt₂)) == OperatorSum{eltype(opts)}(opt₁, opt₂) == OperatorSum{eltype(opts)}((opt₁, opt₂)) == expand(opts)
     @test eltype(opts) == eltype(typeof(opts)) == Operator{Float, ID{AID{Int, Int}, 1}}
     @test scalartype(opts) == scalartype(typeof(opts)) == Float
-    @test equivalenttoscalar(opts) == equivalenttoscalar(typeof(opts)) == false
+    @test isequivalenttoscalar(opts) == isequivalenttoscalar(typeof(opts)) == false
     @test update!(opts) == opts
     @test collect(opts) == collect(values(opts.contents))
     @test length(opts) == 2

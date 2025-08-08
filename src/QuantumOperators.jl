@@ -13,7 +13,7 @@ import ..Toolkit: contentnames, dissolve, isparameterbound, parameternames, subs
 
 export ID, LaTeX, Operator, OperatorIndex, OperatorPack, OperatorProd, Operators, OperatorSet, OperatorSum, QuantumOperator
 export LinearFunction, LinearTransformation, Matrixization, Permutation, RankFilter, TabledUnitSubstitution, Transformation, UnitSubstitution
-export equivalenttoscalar, idtype, ishermitian, latexname, latexformat, matrix, operatortype, scalartype, script, sequence
+export idtype, isequivalenttoscalar, ishermitian, latexname, latexformat, matrix, operatortype, scalartype, script, sequence
 
 # Generic quantum operator
 """
@@ -71,13 +71,13 @@ Get the scalar type of a `QuantumOperator`.
 @inline scalartype(::Type{M}) where {M<:QuantumOperator} = scalartype(operatortype(M))
 
 """
-    equivalenttoscalar(m::QuantumOperator) -> Bool
-    equivalenttoscalar(::Type{M}) where {M<:QuantumOperator} -> Bool
+    isequivalenttoscalar(m::QuantumOperator) -> Bool
+    isequivalenttoscalar(::Type{M}) where {M<:QuantumOperator} -> Bool
 
 Judge whether a `QuantumOperator` is equivalent to a scalar.
 """
-@inline equivalenttoscalar(m::QuantumOperator) = equivalenttoscalar(typeof(m))
-@inline equivalenttoscalar(::Type{M}) where {M<:QuantumOperator} = equivalenttoscalar(operatortype(M))
+@inline isequivalenttoscalar(m::QuantumOperator) = isequivalenttoscalar(typeof(m))
+@inline isequivalenttoscalar(::Type{M}) where {M<:QuantumOperator} = isequivalenttoscalar(operatortype(M))
 
 """
     update!(m::QuantumOperator; parameters...) -> typeof(m)
@@ -221,7 +221,7 @@ abstract type OperatorPack{V, I} <: QuantumOperator end
 @inline function Base.promote_rule(::Type{M₁}, ::Type{M₂}) where {M₁<:OperatorPack, M₂<:OperatorPack}
     M₁<:M₂ && return M₂
     M₂<:M₁ && return M₁
-    s₁, s₂ = equivalenttoscalar(M₁), equivalenttoscalar(M₂)
+    s₁, s₂ = isequivalenttoscalar(M₁), isequivalenttoscalar(M₂)
     M = s₂ ? rawtype(M₁) : s₁ ? rawtype(M₂) : typejoin(rawtype(M₁), rawtype(M₂))
     return fulltype(M, promoteparameters(parameterpairs(M₁), parameterpairs(M₂)))
 end
@@ -252,13 +252,13 @@ Scalar type of the coefficient of an `OperatorPack`.
 @inline scalartype(::Type{T}) where {T<:OperatorPack} = scalartype(valtype(T))
 
 """
-    equivalenttoscalar(::Type{<:OperatorPack})
-    equivalenttoscalar(::Type{<:OperatorPack{V, Tuple{}} where V})
+    isequivalenttoscalar(::Type{<:OperatorPack}) -> Bool
+    isequivalenttoscalar(::Type{<:OperatorPack{V, Tuple{}} where V}) -> Bool
 
 Judge whether an `OperatorPack` is equivalent to a scalar.
 """
-@inline equivalenttoscalar(::Type{<:OperatorPack}) = false
-@inline equivalenttoscalar(::Type{<:OperatorPack{V, Tuple{}} where V}) = true
+@inline isequivalenttoscalar(::Type{<:OperatorPack}) = false
+@inline isequivalenttoscalar(::Type{<:OperatorPack{V, Tuple{}} where V}) = true
 
 """
     value(m::OperatorPack) -> valtype(m)

@@ -15,7 +15,7 @@ include("QuantumOperators.jl")
 using .QuantumOperators
 export ID, LaTeX, Operator, OperatorIndex, OperatorPack, OperatorProd, Operators, OperatorSet, OperatorSum, QuantumOperator
 export LinearFunction, LinearTransformation, Matrixization, Permutation, RankFilter, TabledUnitSubstitution, Transformation, UnitSubstitution
-export equivalenttoscalar, idtype, ishermitian, latexname, latexformat, matrix, scalartype, script, sequence
+export idtype, isequivalenttoscalar, ishermitian, latexname, latexformat, matrix, scalartype, script, sequence
 
 # QuantumNumbers
 include("QuantumNumbers.jl")
