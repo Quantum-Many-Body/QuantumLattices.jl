@@ -1,31 +1,31 @@
 using DataStructures: OrderedDict
 using OffsetArrays: OffsetArray
-using QuantumLattices: id, shape, value
+using QuantumLattices: id, shape, str, value
 using QuantumLattices.Toolkit
 using StaticArrays: SVector
 
 import QuantumLattices.Toolkit: VectorSpaceStyle, contentnames, contenttype, dissolve, getcontent, isparameterbound, parameternames
 
-@testset "tostr" begin
-    @test tostr((1, 2)) == "(1, 2)"
-    @test tostr(1) == "1"
-    @test tostr(10^6) == "1000000"
-    @test tostr(1//7) == "1//7"
-    @test tostr(7//1) == "7"
-    @test tostr(1.0) == "1.0"
-    @test tostr(10.0^6) == "1.0e+06"
-    @test tostr(10^-5) == "1.0e-05"
-    @test tostr(1/7) == "0.14286"
-    @test tostr(1/7, 8) == "0.14285714"
-    @test tostr(0im) == "0.0"
-    @test tostr(1//7+0im) == "1//7"
-    @test tostr(1.0im) == "1.0im"
-    @test tostr(-1.0im) == "-1.0im"
-    @test tostr(0.1+0.12im) == "0.1+0.12im"
-    @test tostr(0.1-0.12im) == "0.1-0.12im"
-    @test tostr(:a) =="a"
-    @test tostr(:) == ":"
-    @test tostr('a') == "'a'"
+@testset "str" begin
+    @test str((1, 2)) == "(1, 2)"
+    @test str(1) == "1"
+    @test str(10^6) == "1000000"
+    @test str(1//7) == "1//7"
+    @test str(7//1) == "7"
+    @test str(1.0) == "1.0"
+    @test str(10.0^6) == "1.0e+06"
+    @test str(10^-5) == "1.0e-05"
+    @test str(1/7) == "0.14286"
+    @test str(1/7, 8) == "0.14285714"
+    @test str(0im) == "0.0"
+    @test str(1//7+0im) == "1//7"
+    @test str(1.0im) == "1.0im"
+    @test str(-1.0im) == "-1.0im"
+    @test str(0.1+0.12im) == "0.1+0.12im"
+    @test str(0.1-0.12im) == "0.1-0.12im"
+    @test str(:a) =="a"
+    @test str(:) == ":"
+    @test str('a') == "'a'"
 end
 
 @testset "superscript" begin

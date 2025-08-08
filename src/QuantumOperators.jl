@@ -3,7 +3,8 @@ module QuantumOperators
 using DataStructures: OrderedDict
 using Latexify: unicode2latex
 using Printf: @printf, @sprintf
-using ..Toolkit: atol, efficientoperations, rtol, contentorder, fulltype, getcontent, parameterpairs, parametertype, promoteparameters, rawtype, reparameter, tostr
+using ..QuantumLattices: str
+using ..Toolkit: atol, efficientoperations, rtol, contentorder, fulltype, getcontent, parameterpairs, parametertype, promoteparameters, rawtype, reparameter
 
 import LaTeXStrings: latexstring
 import LinearAlgebra: dot
@@ -424,7 +425,7 @@ struct Operator{V, I<:ID{OperatorIndex}} <: OperatorProd{V, I}
 end
 @inline Operator(value::Number, id::OperatorIndex...) = Operator(value, id)
 function Base.show(io::IO, m::Operator)
-    @printf io "%s(%s%s%s)" nameof(typeof(m)) tostr(value(m)) (rank(m)>0 ? ", " : "") join(id(m), ", ")
+    @printf io "%s(%s%s%s)" nameof(typeof(m)) str(value(m)) (rank(m)>0 ? ", " : "") join(id(m), ", ")
 end
 
 """
@@ -967,7 +968,7 @@ function valuetostr(v)
     end
     return result
 end
-@inline valuetolatextext(value::Union{Real, Complex}) = tostr(value)
+@inline valuetolatextext(value::Union{Real, Complex}) = str(value)
 function valuetolatextext(value)
     io = IOBuffer()
     if showable(MIME"text/latex"(), value)

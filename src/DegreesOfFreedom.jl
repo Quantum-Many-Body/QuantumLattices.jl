@@ -4,10 +4,10 @@ using DataStructures: OrderedDict
 using Printf: @printf, @sprintf
 using SparseArrays: SparseMatrixCSC, nnz
 using StaticArrays: SVector
-using ..QuantumLattices: OneAtLeast, add!, decompose
+using ..QuantumLattices: OneAtLeast, add!, decompose, str
 using ..QuantumOperators: ID, LinearTransformation, Operator, OperatorIndex, OperatorPack, Operators, QuantumOperator, scalartype, valuetolatextext
 using ..Spatials: Bond, Point
-using ..Toolkit: atol, efficientoperations, rtol, CompositeDict, Float, VectorSpace, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceStyle, concatenate, fulltype, parametertype, rawtype, reparameter, tostr
+using ..Toolkit: atol, efficientoperations, rtol, CompositeDict, Float, VectorSpace, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceStyle, concatenate, fulltype, parametertype, rawtype, reparameter
 
 import LaTeXStrings: latexstring
 import ..QuantumLattices: ⊕, ⊗, dimension, expand, expand!, id, ishermitian, kind, permute, rank, reset!, shape, update!, value
@@ -58,7 +58,7 @@ Simple internal index, i.e., a complete set of indexes to denote an internal deg
 """
 abstract type SimpleInternalIndex <: InternalIndex end
 @inline isdefinite(::Type{<:SimpleInternalIndex}) = false
-@inline Base.show(io::IO, ii::SimpleInternalIndex) = @printf io "%s(%s)" OperatorIndex[typeof(ii)] join(map(tostr, ntuple(i->getfield(ii, i), Val(fieldcount(typeof(ii))))), ", ")
+@inline Base.show(io::IO, ii::SimpleInternalIndex) = @printf io "%s(%s)" OperatorIndex[typeof(ii)] join(map(str, ntuple(i->getfield(ii, i), Val(fieldcount(typeof(ii))))), ", ")
 
 """
     statistics(ii::SimpleInternalIndex) -> Symbol
@@ -595,10 +595,10 @@ function Base.show(io::IO, index::Index)
     internal = String[]
     for i = 1:fieldcount(internalindextype(index))
         value = getfield(index.internal, i)
-        push!(internal, tostr(value))
+        push!(internal, str(value))
     end
     internal = join(internal, ", ")
-    @printf io "%s(%s%s%s)" OperatorIndex[typeof(index)] tostr(index.site) (length(internal)>0 ? ", " : "") internal
+    @printf io "%s(%s%s%s)" OperatorIndex[typeof(index)] str(index.site) (length(internal)>0 ? ", " : "") internal
 end
 @inline InternalIndex(index::Index) = index.internal
 @inline internalindextype(::Type{I}) where {I<:Index} = parametertype(I, :internal)
@@ -659,7 +659,7 @@ Get the adjoint of an index.
 
 Get the required script of an index.
 """
-@inline script(index::Index, ::Val{:site}; kwargs...) = tostr(index.site)
+@inline script(index::Index, ::Val{:site}; kwargs...) = str(index.site)
 @inline script(index::Index, attr::Val; kwargs...) = script(index.internal, attr; kwargs...)
 
 """
@@ -731,10 +731,10 @@ function Base.show(io::IO, index::CoordinatedIndex)
     internal = String[]
     for i = 1:fieldcount(internalindextype(index))
         value = getfield(InternalIndex(index), i)
-        push!(internal, tostr(value))
+        push!(internal, str(value))
     end
     internal = join(internal, ", ")
-    @printf io "%s(%s%s%s, %s, %s)" OperatorIndex[typeof(index)] tostr(index.index.site) (length(internal)>0 ? ", " : "") internal index.rcoordinate index.icoordinate
+    @printf io "%s(%s%s%s, %s, %s)" OperatorIndex[typeof(index)] str(index.index.site) (length(internal)>0 ? ", " : "") internal index.rcoordinate index.icoordinate
 end
 @inline compositeindexcoordinate(vector::SVector) = vector
 @inline compositeindexcoordinate(vector::SVector{N, Float}) where N = SVector(ntuple(i->vector[i]===-0.0 ? 0.0 : vector[i], Val(N)))
@@ -1084,7 +1084,7 @@ end
 @inline Base.eltype(C::Type{<:Coupling}) = C
 @inline Base.iterate(coupling::Coupling) = (coupling, nothing)
 @inline Base.iterate(::Coupling, ::Nothing) = nothing
-@inline Base.show(io::IO, coupling::Coupling) = @printf io "%s%s" (coupling.value≈1 ? "" : coupling.value≈-1 ? "- " : string(tostr(coupling.value), " ")) coupling.pattern
+@inline Base.show(io::IO, coupling::Coupling) = @printf io "%s%s" (coupling.value≈1 ? "" : coupling.value≈-1 ? "- " : string(str(coupling.value), " ")) coupling.pattern
 @inline Base.summary(io::IO, couplings::Vector{<:Coupling}) = @printf io "%s-element Vector{Coupling}" length(couplings)
 
 """
@@ -1161,7 +1161,7 @@ Get the multiplication between two coupling.
 
 Convert a coupling to the latex format.
 """
-@inline latexstring(coupling::Coupling) = @sprintf "%s%s" (coupling.value≈1 ? "" : coupling.value≈-1 ? "- " : string(tostr(coupling.value), "\\,")) latexstring(coupling.pattern)
+@inline latexstring(coupling::Coupling) = @sprintf "%s%s" (coupling.value≈1 ? "" : coupling.value≈-1 ? "- " : string(str(coupling.value), "\\,")) latexstring(coupling.pattern)
 
 """
     expand(coupling::Coupling, ::Val{Rule}, bond::Bond, hilbert::Hilbert) where Rule

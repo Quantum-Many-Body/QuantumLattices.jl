@@ -7,11 +7,11 @@ using InteractiveUtils: subtypes
 using Printf: @printf
 using StaticArrays: SVector
 
-import QuantumLattices: id, shape, value
+import QuantumLattices: id, shape, str, value
 
 # Utilities
 export atol, rtol, Float
-export DirectProductedIndices, DirectSummedIndices, Segment, concatenate, delta, subscript, superscript, tostr
+export DirectProductedIndices, DirectSummedIndices, Segment, concatenate, delta, subscript, superscript
 
 # Combinatorics
 export Combinatorics, Combinations, DuplicateCombinations, DuplicatePermutations, Permutations
@@ -40,34 +40,34 @@ const rtol = √atol
 const Float = Float64
 
 """
-    tostr(number, ::Integer=5) -> String
-    tostr(number::Integer, n::Integer=5) -> String
-    tostr(number::Rational, n::Integer=5) -> String
-    tostr(number::AbstractFloat, n::Integer=5) -> String
-    tostr(number::Complex, n::Integer=5) -> String
+    str(number, ndecimal::Integer=5) -> String
+    str(number::Integer, ndecimal::Integer=5) -> String
+    str(number::Rational, ndecimal::Integer=5) -> String
+    str(number::AbstractFloat, ndecimal::Integer=5) -> String
+    str(number::Complex, ndecimal::Integer=5) -> String
 
-Convert a number to a string with at most `n` decimal places.
+Convert a number to a string with at most `ndecimal` decimal places.
 """
-@inline tostr(number, ::Integer=5) = repr(number)
-@inline tostr(number::Integer, ::Integer=5) = string(number)
-@inline tostr(number::Rational, ::Integer=5) = number.den==1 ? repr(number.num) : repr(number)
-function tostr(number::AbstractFloat, n::Integer=5)
+@inline str(number, ::Integer=5) = repr(number)
+@inline str(number::Integer, ::Integer=5) = string(number)
+@inline str(number::Rational, ::Integer=5) = number.den==1 ? repr(number.num) : repr(number)
+function str(number::AbstractFloat, ndecimal::Integer=5)
     if number == 0.0
         result = "0.0"
     elseif 10^-5 < abs(number) < 10^6
-        result = rstrip(pyfmt(FormatSpec(".$(n)f"), number), '0')
+        result = rstrip(pyfmt(FormatSpec(".$(ndecimal)f"), number), '0')
         (result[end] == '.') && (result = result * '0')
     else
-        result = pyfmt(FormatSpec(".$(n)e"), number)
+        result = pyfmt(FormatSpec(".$(ndecimal)e"), number)
         epos = findfirst(isequal('e'), result)
         temp = rstrip(result[1:epos-1], '0')
         result = (temp[end] == '.') ? (temp * "0" * result[epos:end]) : (temp * result[epos:end])
     end
     return result
 end
-function tostr(number::Complex, n::Integer=5)
-    sreal = (real(number) == 0) ? "0" : tostr(real(number), n)
-    simag = (imag(number) == 0) ? "0" : tostr(imag(number), n)
+function str(number::Complex, ndecimal::Integer=5)
+    sreal = (real(number) == 0) ? "0" : str(real(number), ndecimal)
+    simag = (imag(number) == 0) ? "0" : str(imag(number), ndecimal)
     result = ""
     (sreal == "0") || (result = result * sreal)
     (simag == "0") || (result = ((simag[1] == '-') ? (result * simag) : (length(result) == 0) ? simag : (result * "+" * simag)) * "im")
@@ -76,15 +76,15 @@ function tostr(number::Complex, n::Integer=5)
 end
 
 """
-    tostr(value::Symbol) -> String
-    tostr(value::Colon) -> String
-    tostr(value::Char) -> String
+    str(value::Symbol) -> String
+    str(value::Colon) -> String
+    str(value::Char) -> String
 
 Convert a single value to string.
 """
-@inline tostr(value::Symbol) = string(value)
-@inline tostr(::Colon) = ":"
-@inline tostr(value::Char) = repr(value)
+@inline str(value::Symbol) = string(value)
+@inline str(::Colon) = ":"
+@inline str(value::Char) = repr(value)
 
 """
     superscript(i::Integer) -> String

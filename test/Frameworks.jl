@@ -1,6 +1,6 @@
 using LinearAlgebra: dot, eigen
 using Plots: plot, savefig
-using QuantumLattices: expand, expand!, reset!, update
+using QuantumLattices: expand, expand!, reset!, str, update
 using QuantumLattices.DegreesOfFreedom: plain, Boundary, CoordinatedIndex, Coupling, Hilbert, Index, SimpleInternalIndex, SimpleInternal, Term
 using QuantumLattices.Frameworks
 using QuantumLattices.Frameworks: seriestype
@@ -44,6 +44,8 @@ end
 
     params = Parameters{(:t₁, :t₂)}(1.11111111, 2.2222222222)
     @test repr(params; context=:ndecimal=>2) == "(t₁ = 1.11, t₂ = 2.22)"
+    @test str(params, 2) == "t₁(1.11)t₂(2.22)"
+    @test str(params, 2; select=isequal(:t₁)) == "t₁(1.11)"
 
     bound = Boundary{(:θ₁, :θ₂)}([0.1, 0.2], [[1.0, 0.0], [0.0, 1.0]])
     @test Parameters(bound) == (θ₁=0.1, θ₂=0.2)

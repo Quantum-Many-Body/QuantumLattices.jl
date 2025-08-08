@@ -5,10 +5,10 @@ using Printf: @printf
 using SparseArrays: SparseMatrixCSC
 using StaticArrays: SMatrix, SVector
 using ..DegreesOfFreedom: Component, CompositeIndex, CoordinatedIndex, Coupling, Hilbert, Index, InternalIndex, InternalPattern, Ordinal, Pattern, SimpleInternal, SimpleInternalIndex, Term, TermAmplitude, TermCoupling, indextype, @pattern
-using ..QuantumLattices: OneAtLeast, decompose, rank
+using ..QuantumLattices: OneAtLeast, decompose, rank, str
 using ..QuantumOperators: ID, LaTeX, Operator, OperatorIndex, OperatorProd, Operators, latexformat
 using ..Spatials: Bond, Point, direction, isparallel, rcoordinate
-using ..Toolkit: atol, efficientoperations, rtol, Float, VectorSpace, VectorSpaceDirectProducted, VectorSpaceStyle, delta, rawtype, tostr
+using ..Toolkit: atol, efficientoperations, rtol, Float, VectorSpace, VectorSpaceDirectProducted, VectorSpaceStyle, delta, rawtype
 
 import ..DegreesOfFreedom: MatrixCoupling, allequalfields, internalindextype, isdefinite, patternrule, statistics
 import ..QuantumLattices: expand, expand!, kind, permute, shape
@@ -185,13 +185,13 @@ Default pattern rule for the `:nambu` attribute of Fock indexes.
 
 Get the requested script of a Fock index.
 """
-@inline script(index::FockIndex, ::Val{:orbital}; kwargs...) = tostr(index.orbital)
-@inline script(index::FockIndex, ::Val{:spin}; kwargs...) = tostr(index.spin)
+@inline script(index::FockIndex, ::Val{:orbital}; kwargs...) = str(index.orbital)
+@inline script(index::FockIndex, ::Val{:spin}; kwargs...) = str(index.spin)
 @inline function script(index::FockIndex, ::Val{:spinsym}; kwargs...)
     nspin = get(kwargs, :nspin, nothing)
-    return (isnothing(nspin) || nspin==2) && index.spin==-1//2 ? "↓" : (isnothing(nspin) || nspin==2) && index.spin==1//2 ? "↑" : (isnothing(nspin) || nspin==1) && index.spin==0 ? "" : tostr(index.spin)
+    return (isnothing(nspin) || nspin==2) && index.spin==-1//2 ? "↓" : (isnothing(nspin) || nspin==2) && index.spin==1//2 ? "↑" : (isnothing(nspin) || nspin==1) && index.spin==0 ? "" : str(index.spin)
 end
-@inline script(index::FockIndex, ::Val{:nambu}; kwargs...) = iscreation(index) ? "\\dagger" : isannihilation(index) ? "" : tostr(index.nambu)
+@inline script(index::FockIndex, ::Val{:nambu}; kwargs...) = iscreation(index) ? "\\dagger" : isannihilation(index) ? "" : str(index.nambu)
 
 """
     latexoffermions
@@ -616,7 +616,7 @@ Get the total spin.
 Convenient construction of `SpinIndex`, `Index{<:SpinIndex}`, `CoordinatedIndex{<:Index{<:SpinIndex}}`.
 """
 struct 𝕊{S} <: Function end
-@inline Base.show(io::IO, ::Type{𝕊{S}}) where S = @printf io "𝕊{%s}" tostr(S)
+@inline Base.show(io::IO, ::Type{𝕊{S}}) where S = @printf io "𝕊{%s}" str(S)
 @inline Base.show(io::IO, ::Type{𝕊{:}}) = @printf io "%s" "𝕊"
 @inline Base.show(io::IO, ::Type{<:𝕊}) = @printf io "%s" "𝕊"
 @inline 𝕊(tag) = SpinIndex(tag)

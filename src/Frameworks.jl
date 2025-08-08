@@ -11,9 +11,9 @@ using ..DegreesOfFreedom: plain, Boundary, Hilbert, Term
 using ..QuantumLattices: OneOrMore, id, value
 using ..QuantumOperators: OperatorPack, Operators, OperatorSet, OperatorSum, LinearTransformation, Transformation, identity, operatortype
 using ..Spatials: Bond, isintracell
-using ..Toolkit: atol, efficientoperations, rtol, parametertype, tostr
+using ..Toolkit: atol, efficientoperations, rtol, parametertype
 
-import ..QuantumLattices: add!, expand, expand!, reset!, update, update!
+import ..QuantumLattices: add!, expand, expand!, reset!, str, update, update!
 import ..QuantumOperators: scalartype
 
 export Action, Algorithm, Assignment, CategorizedGenerator, Data, Eager, ExpansionStyle, Formula, Frontend, Generator, Lazy, OperatorGenerator, Parameters
@@ -53,6 +53,21 @@ function Base.match(params₁::Parameters, params₂::Parameters; atol=atol, rto
         haskey(params₁, name) && !isapprox(getfield(params₁, name), getfield(params₂, name); atol=atol, rtol=rtol) && return false
     end
     return true
+end
+
+"""
+    str(params::Parameters, ndecimal::Int=10; select::Function=name::Symbol->true) -> String
+
+Convert a set of `Parameters` to a string with each number hosting at most `ndecimal` decimal places. Here, the `select` function can select the key-value pairs to be contained by the keys.
+"""
+function str(params::Parameters, ndecimal::Int=10; select::Function=name::Symbol->true)
+    result = String[]
+    for (name, value) in pairs(params)
+        if select(name)
+            push!(result, string(name, "(", str(value, ndecimal), ")"))
+        end
+    end
+    return join(result)
 end
 
 """
@@ -754,17 +769,9 @@ Show an assignment.
 Optionally, some parameters of the algorithm can be filtered by specifying the `:select` context in `io`. Besides, the maximum number of decimals of the parameters can also be specified by the `:ndecimal` context in `io`.
 """
 @inline function Base.show(io::IO, assign::Assignment)
-    select = get(io, :select, param->true)
-    ndecimal = get(io, :ndecimal, 10)
     print(io, assign.name)
-    flag = false
-    for (name, value) in pairs(assign.parameters)
-        if select(name)
-            flag || print(io, "-")
-            flag = true
-            print(io, name, "(", tostr(value, ndecimal), ")")
-        end
-    end
+    params = str(assign.parameters, get(io, :ndecimal, 10); select=get(io, :select, param->true))
+    length(params)>0 && print(io, "-", params)
 end
 function Base.show(io::IO, ::MIME"text/plain", assign::Assignment)
     io₁ = indent(io, 2)
@@ -777,7 +784,7 @@ function Base.show(io::IO, ::MIME"text/plain", assign::Assignment)
     ndecimal = get(io, :ndecimal, 10)
     for (name, value) in pairs(assign.parameters)
         if select(name)
-            print(io₂, '\n', name, ": ", tostr(value, ndecimal))
+            print(io₂, '\n', name, ": ", str(value, ndecimal))
         end
     end
 end
@@ -948,7 +955,7 @@ function Base.show(io::IO, ::MIME"text/plain", alg::Algorithm)
     ndecimal = get(io, :ndecimal, 10)
     for (name, value) in pairs(alg.parameters)
         if select(name)
-            print(io₂, '\n', name, ": ", tostr(value, ndecimal))
+            print(io₂, '\n', name, ": ", str(value, ndecimal))
         end
     end
 end
