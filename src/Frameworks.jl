@@ -56,19 +56,21 @@ function Base.match(params₁::Parameters, params₂::Parameters; atol=atol, rto
 end
 
 """
-    str(params::Parameters, ndecimal::Int=10; select::Function=name::Symbol->true) -> String
+    str(params::Parameters, ndecimal::Int=10; select::Function=name::Symbol->true, front::String="", rear::String="") -> String
 
 Convert a set of `Parameters` to a string with each number hosting at most `ndecimal` decimal places. Here, the `select` function can select the key-value pairs to be contained by the keys.
 """
-function str(params::Parameters, ndecimal::Int=10; select::Function=name::Symbol->true)
+function str(params::Parameters, ndecimal::Int=10; select::Function=name::Symbol->true, front::String="", rear::String="")
     result = String[]
     for (name, value) in pairs(params)
         if select(name)
             push!(result, string(name, "(", str(value, ndecimal), ")"))
         end
     end
-    return join(result)
+    return string(append(front, "-"), join(result), prepend(rear, "-"))
 end
+@inline append(s::String, suffix::String) = isempty(s) ? s : string(s, suffix)
+@inline prepend(s::String, prefix::String) = isempty(s) ? s : string(prefix, s)
 
 """
     Parameters(bound::Boundary)
@@ -762,17 +764,18 @@ end
 
 """
     show(io::IO, assign::Assignment)
+
+Show an assignment.
+"""
+@inline Base.show(io::IO, assign::Assignment) = print(io, assign.name)
+
+"""
     show(io::IO, ::MIME"text/plain", assign::Assignment)
 
 Show an assignment.
 
 Optionally, some parameters of the algorithm can be filtered by specifying the `:select` context in `io`. Besides, the maximum number of decimals of the parameters can also be specified by the `:ndecimal` context in `io`.
 """
-@inline function Base.show(io::IO, assign::Assignment)
-    print(io, assign.name)
-    params = str(assign.parameters, get(io, :ndecimal, 10); select=get(io, :select, param->true))
-    length(params)>0 && print(io, "-", params)
-end
 function Base.show(io::IO, ::MIME"text/plain", assign::Assignment)
     io₁ = indent(io, 2)
     io₂ = indent(io, 4)
@@ -845,7 +848,7 @@ end
 Define the recipe for the visualization of an assignment of an algorithm.
 """
 @recipe function plot(assignment::Assignment)
-    title --> string(assignment)
+    title --> str(assignment)
     titlefontsize --> 10
     attr = seriestype(assignment.data)
     isnothing(attr) || begin
@@ -935,7 +938,7 @@ end
 
 Show an algorithm.
 """
-@inline Base.show(io::IO, alg::Algorithm) = print(io, alg.name, "(", nameof(typeof(alg.frontend)), ")")
+@inline Base.show(io::IO, alg::Algorithm) = print(io, alg.name, "-", nameof(typeof(alg.frontend)))
 
 """
     show(io::IO, ::MIME"text/plain", alg::Algorithm)
@@ -979,7 +982,7 @@ Run an assignment based on an algorithm.
 The difference between these two methods is that the first uses the parameters of `assign` as the current parameters while the second uses those of `alg`.
 """
 function (alg::Algorithm)(assign::Assignment, checkoptions::Bool=true; options...)
-    @timeit alg.timer string(assign.name) begin
+    @timeit alg.timer string(assign) begin
         checkoptions && Frameworks.checkoptions(typeof(assign); options...)
         ismatched = match(assign.parameters, alg.parameters)
         if !(isdefined(assign, :data) && ismatched)
@@ -991,7 +994,7 @@ function (alg::Algorithm)(assign::Assignment, checkoptions::Bool=true; options..
     return assign
 end
 function (assign::Assignment)(alg::Algorithm, checkoptions::Bool=true; options...)
-    @timeit alg.timer string(assign.name) begin
+    @timeit alg.timer string(assign) begin
         checkoptions && Frameworks.checkoptions(typeof(assign); options...)
         ismatched = match(alg.parameters, assign.parameters)
         if !(isdefined(assign, :data) && ismatched)
@@ -1020,8 +1023,7 @@ end
     assign = Assignment(datatype(typeof(action), typeof(alg.frontend)), dir, name, action, merge(alg.parameters, parameters), map, dependencies)
     delay || begin
         alg(assign)
-        name = string(name)
-        @info "Action $name: time consumed $(time(alg.timer[name])/10^9)s."
+        @info "Action $name: time consumed $(time(alg.timer[string(assign)])/10^9)s."
     end
     return assign
 end
@@ -1032,5 +1034,39 @@ end
 Run an assignment based on an algorithm.
 """
 function run! end
+
+"""
+    dirname(obj::Union{Assignment, Algorithm}) -> String
+
+Get the dirname of the data file of an assignment/algorithm.
+"""
+@inline Base.dirname(obj::Union{Assignment, Algorithm}) = obj.dir
+
+"""
+    basename(obj::Union{Assignment, Algorithm}; prefix::String="", suffix::String="", extension::String="jld2") -> String
+
+Get the basename of the data file of an assignment/algorithm.
+"""
+@inline function Base.basename(obj::Union{Assignment, Algorithm}; prefix::String="", suffix::String="", extension::String="jld2")
+    return string(append(prefix, "-"), string(obj), prepend(suffix, "-"), prepend(extension, "."))
+end
+
+"""
+    pathof(obj::Union{Assignment, Algorithm}; prefix::String="", suffix::String="", extension::String="jld2") -> String
+
+Get the path of the data file of an assignment/algorithm.
+"""
+@inline function Base.pathof(obj::Union{Assignment, Algorithm}; prefix::String="", suffix::String="", extension::String="jld2")
+    return joinpath(dirname(obj), basename(obj; prefix=prefix, suffix=suffix, extension=extension))
+end
+
+"""
+    str(obj::Union{Assignment, Algorithm}, ndecimal::Int=10; select::Function=name::Symbol->true, prefix::String="", suffix::String="", front::String="", rear::String="") -> String
+
+Get the string representation of an assignment/algorithm.
+"""
+@inline function str(obj::Union{Assignment, Algorithm}, ndecimal::Int=10; select::Function=name::Symbol->true, prefix::String="", suffix::String="", front::String="", rear::String="")
+    return string(basename(obj; prefix=prefix, suffix=suffix, extension=""), "-", str(Parameters(obj), ndecimal; select=select, front=front, rear=rear))
+end
 
 end  # module

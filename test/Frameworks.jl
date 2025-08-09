@@ -46,6 +46,9 @@ end
     @test repr(params; context=:ndecimal=>2) == "(t₁ = 1.11, t₂ = 2.22)"
     @test str(params, 2) == "t₁(1.11)t₂(2.22)"
     @test str(params, 2; select=isequal(:t₁)) == "t₁(1.11)"
+    @test str(params, 2; select=isequal(:t₁), front="SC") == "SC-t₁(1.11)"
+    @test str(params, 2; select=isequal(:t₁), rear="[0.0, 0.0]") == "t₁(1.11)-[0.0, 0.0]"
+    @test str(params, 2; select=isequal(:t₁), front="SC", rear="[0.0, 0.0]") == "SC-t₁(1.11)-[0.0, 0.0]"
 
     bound = Boundary{(:θ₁, :θ₂)}([0.1, 0.2], [[1.0, 0.0], [0.0, 1.0]])
     @test Parameters(bound) == (θ₁=0.1, θ₂=0.2)
@@ -296,7 +299,14 @@ params(parameters::Parameters) = (t=parameters.t, μ=parameters.U/2)
     @test tba==deepcopy(tba) && isequal(tba, deepcopy(tba))
     update!(tba; U=1.0)
     @test Parameters(tba) == (t=1.0, U=1.0)
-    @test string(tba) == "Square(TBA)"
+    @test string(tba) == "Square-TBA"
+    @test dirname(tba) == "."
+    @test basename(tba) == "Square-TBA.jld2"
+    @test basename(tba; prefix="Prefix") == "Prefix-Square-TBA.jld2"
+    @test basename(tba; suffix="Suffix") == "Square-TBA-Suffix.jld2"
+    @test basename(tba; extension="dat") == "Square-TBA.dat"
+    @test pathof(tba) == joinpath(dirname(tba), basename(tba))
+    @test str(tba) == "Square-TBA-t(1.0)U(1.0)"
     io = IOBuffer()
     show(io, MIME"text/plain"(), tba)
     @test String(take!(io)) == "Square\n  frontend:\n    TBA\n  parameters:\n    t: 1.0\n    U: 1.0"
@@ -308,7 +318,7 @@ params(parameters::Parameters) = (t=parameters.t, μ=parameters.U/2)
     @test valtype(eigensystem) == valtype(typeof(eigensystem)) == EigenSystemData
     update!(eigensystem; U=2.0)
     @test Parameters(eigensystem) == (t=1.0, U=2.0)
-    @test string(eigensystem) == "eigensystem-t(1.0)U(2.0)"
+    @test string(eigensystem) == "eigensystem"
     io = IOBuffer()
     show(io, MIME"text/plain"(), eigensystem)
     @test String(take!(io)) == "eigensystem\n  action:\n    EigenSystem(100×100)\n  parameters:\n    t: 1.0\n    U: 2.0"
