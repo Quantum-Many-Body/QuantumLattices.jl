@@ -56,15 +56,15 @@ function Base.match(params₁::Parameters, params₂::Parameters; atol=atol, rto
 end
 
 """
-    str(params::Parameters, ndecimal::Int=10; select::Function=name::Symbol->true, front::String="", rear::String="") -> String
+    str(params::Parameters; ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="") -> String
 
 Convert a set of `Parameters` to a string with each number hosting at most `ndecimal` decimal places. Here, the `select` function can select the key-value pairs to be contained by the keys.
 """
-function str(params::Parameters, ndecimal::Int=10; select::Function=name::Symbol->true, front::String="", rear::String="")
+function str(params::Parameters; ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="")
     result = String[]
     for (name, value) in pairs(params)
         if select(name)
-            push!(result, string(name, "(", str(value, ndecimal), ")"))
+            push!(result, string(name, "(", str(value; ndecimal=ndecimal), ")"))
         end
     end
     return string(append(front, "-"), join(result), prepend(rear, "-"))
@@ -787,7 +787,7 @@ function Base.show(io::IO, ::MIME"text/plain", assign::Assignment)
     ndecimal = get(io, :ndecimal, 10)
     for (name, value) in pairs(assign.parameters)
         if select(name)
-            print(io₂, '\n', name, ": ", str(value, ndecimal))
+            print(io₂, '\n', name, ": ", str(value; ndecimal=ndecimal))
         end
     end
 end
@@ -958,7 +958,7 @@ function Base.show(io::IO, ::MIME"text/plain", alg::Algorithm)
     ndecimal = get(io, :ndecimal, 10)
     for (name, value) in pairs(alg.parameters)
         if select(name)
-            print(io₂, '\n', name, ": ", str(value, ndecimal))
+            print(io₂, '\n', name, ": ", str(value; ndecimal=ndecimal))
         end
     end
 end
@@ -1066,7 +1066,7 @@ end
 Get the string representation of an assignment/algorithm.
 """
 @inline function str(obj::Union{Assignment, Algorithm}, ndecimal::Int=10; select::Function=name::Symbol->true, prefix::String="", suffix::String="", front::String="", rear::String="")
-    return string(basename(obj; prefix=prefix, suffix=suffix, extension=""), "-", str(Parameters(obj), ndecimal; select=select, front=front, rear=rear))
+    return string(basename(obj; prefix=prefix, suffix=suffix, extension=""), "-", str(Parameters(obj); ndecimal=ndecimal, select=select, front=front, rear=rear))
 end
 
 end  # module

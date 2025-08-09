@@ -16,7 +16,7 @@ import QuantumLattices.Toolkit: VectorSpaceStyle, contentnames, contenttype, dis
     @test str(10.0^6) == "1.0e+06"
     @test str(10^-5) == "1.0e-05"
     @test str(1/7) == "0.14286"
-    @test str(1/7, 8) == "0.14285714"
+    @test str(1/7; ndecimal=8) == "0.14285714"
     @test str(0im) == "0.0"
     @test str(1//7+0im) == "1//7"
     @test str(1.0im) == "1.0im"

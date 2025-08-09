@@ -40,18 +40,18 @@ const rtol = √atol
 const Float = Float64
 
 """
-    str(number, ndecimal::Integer=5) -> String
-    str(number::Integer, ndecimal::Integer=5) -> String
-    str(number::Rational, ndecimal::Integer=5) -> String
-    str(number::AbstractFloat, ndecimal::Integer=5) -> String
-    str(number::Complex, ndecimal::Integer=5) -> String
+    str(number; kwargs...) -> String
+    str(number::Integer; kwargs...) -> String
+    str(number::Rational; kwargs...) -> String
+    str(number::AbstractFloat; ndecimal::Integer=5) -> String
+    str(number::Complex; ndecimal::Integer=5) -> String
 
 Convert a number to a string with at most `ndecimal` decimal places.
 """
-@inline str(number, ::Integer=5) = repr(number)
-@inline str(number::Integer, ::Integer=5) = string(number)
-@inline str(number::Rational, ::Integer=5) = number.den==1 ? repr(number.num) : repr(number)
-function str(number::AbstractFloat, ndecimal::Integer=5)
+@inline str(number; kwargs...) = repr(number)
+@inline str(number::Integer; kwargs...) = string(number)
+@inline str(number::Rational; kwargs...) = number.den==1 ? repr(number.num) : repr(number)
+function str(number::AbstractFloat; ndecimal::Integer=5)
     if number == 0.0
         result = "0.0"
     elseif 10^-5 < abs(number) < 10^6
@@ -65,9 +65,9 @@ function str(number::AbstractFloat, ndecimal::Integer=5)
     end
     return result
 end
-function str(number::Complex, ndecimal::Integer=5)
-    sreal = (real(number) == 0) ? "0" : str(real(number), ndecimal)
-    simag = (imag(number) == 0) ? "0" : str(imag(number), ndecimal)
+function str(number::Complex; ndecimal::Integer=5)
+    sreal = (real(number) == 0) ? "0" : str(real(number), ndecimal=ndecimal)
+    simag = (imag(number) == 0) ? "0" : str(imag(number), ndecimal=ndecimal)
     result = ""
     (sreal == "0") || (result = result * sreal)
     (simag == "0") || (result = ((simag[1] == '-') ? (result * simag) : (length(result) == 0) ? simag : (result * "+" * simag)) * "im")
@@ -76,15 +76,15 @@ function str(number::Complex, ndecimal::Integer=5)
 end
 
 """
-    str(value::Symbol) -> String
-    str(value::Colon) -> String
-    str(value::Char) -> String
+    str(value::Symbol; kwargs...) -> String
+    str(value::Colon; kwargs...) -> String
+    str(value::Char; kwargs...) -> String
 
 Convert a single value to string.
 """
-@inline str(value::Symbol) = string(value)
-@inline str(::Colon) = ":"
-@inline str(value::Char) = repr(value)
+@inline str(value::Symbol; kwargs...) = string(value)
+@inline str(::Colon; kwargs...) = ":"
+@inline str(value::Char; kwargs...) = repr(value)
 
 """
     superscript(i::Integer) -> String

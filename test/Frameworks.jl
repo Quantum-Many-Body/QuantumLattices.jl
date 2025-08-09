@@ -44,11 +44,11 @@ end
 
     params = Parameters{(:t₁, :t₂)}(1.11111111, 2.2222222222)
     @test repr(params; context=:ndecimal=>2) == "(t₁ = 1.11, t₂ = 2.22)"
-    @test str(params, 2) == "t₁(1.11)t₂(2.22)"
-    @test str(params, 2; select=isequal(:t₁)) == "t₁(1.11)"
-    @test str(params, 2; select=isequal(:t₁), front="SC") == "SC-t₁(1.11)"
-    @test str(params, 2; select=isequal(:t₁), rear="[0.0, 0.0]") == "t₁(1.11)-[0.0, 0.0]"
-    @test str(params, 2; select=isequal(:t₁), front="SC", rear="[0.0, 0.0]") == "SC-t₁(1.11)-[0.0, 0.0]"
+    @test str(params; ndecimal=2) == "t₁(1.11)t₂(2.22)"
+    @test str(params; ndecimal=2, select=isequal(:t₁)) == "t₁(1.11)"
+    @test str(params; ndecimal=2, select=isequal(:t₁), front="SC") == "SC-t₁(1.11)"
+    @test str(params; ndecimal=2, select=isequal(:t₁), rear="[0.0, 0.0]") == "t₁(1.11)-[0.0, 0.0]"
+    @test str(params; ndecimal=2, select=isequal(:t₁), front="SC", rear="[0.0, 0.0]") == "SC-t₁(1.11)-[0.0, 0.0]"
 
     bound = Boundary{(:θ₁, :θ₂)}([0.1, 0.2], [[1.0, 0.0], [0.0, 1.0]])
     @test Parameters(bound) == (θ₁=0.1, θ₂=0.2)
