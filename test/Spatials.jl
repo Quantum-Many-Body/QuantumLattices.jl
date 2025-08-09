@@ -436,8 +436,8 @@ end
 end
 
 @testset "utilities" begin
-    savedlm("path.dat", rand(100), rand(100, 2))
-    savedlm("heatmap.dat", rand(100), rand(200), rand(200, 100, 3))
+    dlmsave("path.dlm", rand(100), rand(100, 2))
+    dlmsave("heatmap.dlm", rand(100), rand(200), rand(200, 100, 3))
 
     bz = BrillouinZone([[2pi, 0], [0, 2pi]], 200)
     surface = zeros(Float64, (200, 200))
@@ -445,15 +445,15 @@ end
         surface[i] = -imag(1/(0.1im+2cos(k[1])+2cos(k[2])))
     end
     savefig(plot(bz, surface), "SingleSurface.png")
-    savedlm("SingleSurface-1.dat", bz, surface; fractional=false)
-    savedlm("SingleSurface-2.dat", bz, surface; fractional=true)
+    dlmsave("SingleSurface-1.dlm", bz, surface; fractional=false)
+    dlmsave("SingleSurface-2.dlm", bz, surface; fractional=true)
 
     surfaces = zeros(size(surface)..., 2)
     surfaces[:, :, 1] = surface
     surfaces[:, :, 2] = surface
     savefig(plot(bz, surfaces), "MultiSurfaces.png")
-    savedlm("MultiSurfaces-1.dat", bz, surfaces; fractional=false)
-    savedlm("MultiSurfaces-2.dat", bz, surfaces; fractional=true)
+    dlmsave("MultiSurfaces-1.dlm", bz, surfaces; fractional=false)
+    dlmsave("MultiSurfaces-2.dlm", bz, surfaces; fractional=true)
 
     rz = ReciprocalZone([[2pi, 0], [0, 2pi]], -2=>2, -1=>1, length=(400, 200))
     surface = zeros(Float64, (200, 400))
@@ -461,15 +461,15 @@ end
         surface[i] = -imag(1/(0.1im+2cos(k[1])+2cos(k[2])))
     end
     savefig(plot(rz, surface), "SingleExtendedSurface.png")
-    savedlm("SingleExtendedSurface-1.dat", rz, surface; fractional=false)
-    savedlm("SingleExtendedSurface-2.dat", rz, surface; fractional=true)
+    dlmsave("SingleExtendedSurface-1.dlm", rz, surface; fractional=false)
+    dlmsave("SingleExtendedSurface-2.dlm", rz, surface; fractional=true)
 
     surfaces = zeros(size(surface)..., 2)
     surfaces[:, :, 1] = surface
     surfaces[:, :, 2] = surface
     savefig(plot(rz, surfaces), "MultiExtendedSurfaces.png")
-    savedlm("MultiExtendedSurfaces-1.dat", rz, surfaces; fractional=false)
-    savedlm("MultiExtendedSurfaces-2.dat", rz, surfaces; fractional=true)
+    dlmsave("MultiExtendedSurfaces-1.dlm", rz, surfaces; fractional=false)
+    dlmsave("MultiExtendedSurfaces-2.dlm", rz, surfaces; fractional=true)
 
     coordinates = zeros(SVector{2, Float64}, 400)
     coordinates[1:100] = Segment(SVector(0.0, 1.0), SVector(1.0, 0.0), 100)
@@ -484,33 +484,33 @@ end
     rs = ReciprocalScatter([[2pi, 0], [0, 2pi]], coordinates)
     savefig(plot(rs, weights; fractional=false), "Surface-1.png")
     savefig(plot(rs, weights; fractional=true), "Surface-2.png")
-    savedlm("Surface-1.dat", rs, weights; fractional=false)
-    savedlm("Surface-2.dat", rs, weights; fractional=true)
+    dlmsave("Surface-1.dlm", rs, weights; fractional=false)
+    dlmsave("Surface-2.dlm", rs, weights; fractional=true)
 
     path = ReciprocalPath([[2pi, 0], [0, 2pi]], rectangle"Γ-X-M-Γ")
     band = map(k->-2cos(k[1])-2cos(k[2]), path)
     bands = [band -band]
     savefig(plot(path, bands), "MultiBands.png")
-    savedlm("MultiBands-1.dat", path, bands; distance=false)
-    savedlm("MultiBands-2.dat", path, bands; distance=true)
+    dlmsave("MultiBands-1.dlm", path, bands; distance=false)
+    dlmsave("MultiBands-2.dlm", path, bands; distance=true)
 
     weights = zeros(length(band), 2, 2)
     weights[:, 1, 1] = abs2.(band)
     weights[:, 2, 2] = abs2.(band)
     savefig(plot(path, bands, weights; weightmultiplier=1.0, weightwidth=2.0, weightcolors=(:blue, :red), weightlabels=("↑", "↓")), "MultiBandsWithWeights.png")
-    savedlm("MultiBandsWithWeights-1.dat", path, bands, weights; distance=false)
-    savedlm("MultiBandsWithWeights-2.dat", path, bands, weights; distance=true)
+    dlmsave("MultiBandsWithWeights-1.dlm", path, bands, weights; distance=false)
+    dlmsave("MultiBandsWithWeights-2.dlm", path, bands, weights; distance=true)
 
     energies = LinRange(-6.0, 6.0, 401)
     spectrum = [-imag(1/(e+0.1im-b)) for e in energies, b in band]
     savefig(plot(path, energies, spectrum), "SingleSpectrum.png")
-    savedlm("SingleSpectrum-1.dat", path, energies, spectrum; distance=false)
-    savedlm("SingleSpectrum-2.dat", path, energies, spectrum; distance=true)
+    dlmsave("SingleSpectrum-1.dlm", path, energies, spectrum; distance=false)
+    dlmsave("SingleSpectrum-2.dlm", path, energies, spectrum; distance=true)
 
     spectra = zeros(size(spectrum)..., 2)
     spectra[:, :, 1] = spectrum
     spectra[:, :, 2] = spectrum
     savefig(plot(path, energies, spectra), "MultiSpectra.png")
-    savedlm("MultiSpectra-1.dat", path, energies, spectra; distance=false)
-    savedlm("MultiSpectra-2.dat", path, energies, spectra; distance=true)
+    dlmsave("MultiSpectra-1.dlm", path, energies, spectra; distance=false)
+    dlmsave("MultiSpectra-2.dlm", path, energies, spectra; distance=true)
 end
