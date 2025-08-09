@@ -28,7 +28,7 @@ atol
 rtol
 Float
 concatenate
-tostr
+str
 subscript
 superscript
 delta
