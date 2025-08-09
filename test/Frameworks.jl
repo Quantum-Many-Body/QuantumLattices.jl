@@ -301,9 +301,9 @@ params(parameters::Parameters) = (t=parameters.t, μ=parameters.U/2)
     @test Parameters(tba) == (t=1.0, U=1.0)
     @test string(tba) == "Square-TBA"
     @test dirname(tba) == "."
-    @test basename(tba) == "Square-TBA.jld2"
-    @test basename(tba; prefix="Prefix") == "Prefix-Square-TBA.jld2"
-    @test basename(tba; suffix="Suffix") == "Square-TBA-Suffix.jld2"
+    @test basename(tba) == "Square-TBA.qld"
+    @test basename(tba; prefix="Prefix") == "Prefix-Square-TBA.qld"
+    @test basename(tba; suffix="Suffix") == "Square-TBA-Suffix.qld"
     @test basename(tba; extension="dat") == "Square-TBA.dat"
     @test pathof(tba) == joinpath(dirname(tba), basename(tba))
     @test str(tba) == "Square-TBA-t(1.0)U(1.0)"
@@ -343,9 +343,14 @@ end
 
 @testset "Assignment & Algorithm without map" begin
     tba = Algorithm(:Square, TBA(Formula(A, (t=1.0, μ=2.0))))
-    eigensystem = tba(:eigensystem, EigenSystem(BrillouinZone([[2pi, 0], [0, 2pi]], 100)); delay=true)
-    dos = tba(:DOS, DensityOfStates(), (eigensystem,))
-    savefig(plot(tba(dos)), "$(string(dos)).png")
+    qldsave(tba)
+    loaded = qldload(pathof(tba), str(Parameters(tba)))
+    @test loaded == qldload(pathof(tba))[str(Parameters(tba))]
+    @test all(isequal(loaded), qldload(pathof(tba), str(Parameters(tba)), str(Parameters(tba))))
+
+    eigensystem = loaded(:eigensystem, EigenSystem(BrillouinZone([[2pi, 0], [0, 2pi]], 100)); delay=true)
+    dos = loaded(:DOS, DensityOfStates(), (eigensystem,))
+    savefig(plot(loaded(dos)), "$(string(dos)).png")
 
     @test isnothing(seriestype())
     @test seriestype(dos.data) == seriestype(dos.data.energies, dos.data.values) == :path

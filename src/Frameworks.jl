@@ -4,8 +4,10 @@ using Base: @propagate_inbounds
 using Base.Iterators: flatten, repeated
 using DelimitedFiles: writedlm
 using IndentWrappers: indent
+using JLD2: jldopen, loadtodict!
 using LaTeXStrings: latexstring
 using RecipesBase: RecipesBase, @recipe
+using Serialization: deserialize, serialize
 using TimerOutputs: TimerOutput, time, @timeit
 using ..DegreesOfFreedom: plain, Boundary, Hilbert, Term
 using ..QuantumLattices: OneOrMore, id, value
@@ -17,7 +19,7 @@ import ..QuantumLattices: add!, expand, expand!, reset!, str, update, update!
 import ..QuantumOperators: scalartype
 
 export Action, Algorithm, Assignment, CategorizedGenerator, Data, Eager, ExpansionStyle, Formula, Frontend, Generator, Lazy, OperatorGenerator, Parameters
-export eager, lazy, checkoptions, datatype, hasoption, options, optionsinfo, run!
+export eager, lazy, checkoptions, datatype, hasoption, options, optionsinfo, qldload, qldsave, run!
 
 """
     Parameters{Names}(values::Number...) where Names
@@ -1043,30 +1045,76 @@ Get the dirname of the data file of an assignment/algorithm.
 @inline Base.dirname(obj::Union{Assignment, Algorithm}) = obj.dir
 
 """
-    basename(obj::Union{Assignment, Algorithm}; prefix::String="", suffix::String="", extension::String="jld2") -> String
+    basename(obj::Union{Assignment, Algorithm}; prefix::String="", suffix::String="", extension::String="qld") -> String
 
 Get the basename of the data file of an assignment/algorithm.
 """
-@inline function Base.basename(obj::Union{Assignment, Algorithm}; prefix::String="", suffix::String="", extension::String="jld2")
+@inline function Base.basename(obj::Union{Assignment, Algorithm}; prefix::String="", suffix::String="", extension::String="qld")
     return string(append(prefix, "-"), string(obj), prepend(suffix, "-"), prepend(extension, "."))
 end
 
 """
-    pathof(obj::Union{Assignment, Algorithm}; prefix::String="", suffix::String="", extension::String="jld2") -> String
+    pathof(obj::Union{Assignment, Algorithm}; prefix::String="", suffix::String="", extension::String="qld") -> String
 
 Get the path of the data file of an assignment/algorithm.
 """
-@inline function Base.pathof(obj::Union{Assignment, Algorithm}; prefix::String="", suffix::String="", extension::String="jld2")
+@inline function Base.pathof(obj::Union{Assignment, Algorithm}; prefix::String="", suffix::String="", extension::String="qld")
     return joinpath(dirname(obj), basename(obj; prefix=prefix, suffix=suffix, extension=extension))
 end
 
 """
-    str(obj::Union{Assignment, Algorithm}, ndecimal::Int=10; select::Function=name::Symbol->true, prefix::String="", suffix::String="", front::String="", rear::String="") -> String
+    str(obj::Union{Assignment, Algorithm}; prefix::String="", suffix::String="", ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="") -> String
 
 Get the string representation of an assignment/algorithm.
 """
-@inline function str(obj::Union{Assignment, Algorithm}, ndecimal::Int=10; select::Function=name::Symbol->true, prefix::String="", suffix::String="", front::String="", rear::String="")
+@inline function str(obj::Union{Assignment, Algorithm}; prefix::String="", suffix::String="", ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="")
     return string(basename(obj; prefix=prefix, suffix=suffix, extension=""), "-", str(Parameters(obj); ndecimal=ndecimal, select=select, front=front, rear=rear))
+end
+
+"""
+    qldsave(obj::Union{Assignment, Algorithm}, objs::Union{Assignment, Algorithm}...; mode::String="a+", prefix::String="", suffix::String="", ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="")
+
+Save an assignment/algorithm to a qld file.
+"""
+function qldsave(obj::Union{Assignment, Algorithm}, objs::Union{Assignment, Algorithm}...; mode::String="a+", prefix::String="", suffix::String="", ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="")
+    @assert mode∈("a+", "w") "qldsave error: mode ($(repr(mode))) is not \"a+\" or \"w\"."
+    map((obj, objs...)) do object
+        jldopen(pathof(object; prefix=prefix, suffix=suffix), mode) do file
+            io = IOBuffer()
+            serialize(io, object)
+            bytes = take!(io)
+            file[str(Parameters(object); ndecimal=ndecimal, select=select, front=front, rear=rear)] = bytes
+        end
+    end
+end
+
+"""
+    qldload(filename::String) -> Dict{String, Any}
+    qldload(filename::String, name::String) -> Any
+    qldload(filename::String, name₁::String, name₂::String, names::String...) -> Tuple
+
+Load data from a qld file.
+"""
+function qldload(filename::String)
+    result = jldopen(filename, "r") do file
+        loadtodict!(Dict{String, Any}(), file)
+    end
+    for (key, bytes) in result
+        result[key] = deserialize(IOBuffer(bytes))
+    end
+    return result
+end
+function qldload(filename::String, name::String)
+    return jldopen(filename, "r") do file
+        deserialize(IOBuffer(file[name]))
+    end
+end
+function qldload(filename::String, name₁::String, name₂::String, names::String...)
+    return jldopen(filename, "r") do file
+        map((name₁, name₁, names...)) do name
+            deserialize(IOBuffer(file[name]))
+        end
+    end
 end
 
 end  # module
