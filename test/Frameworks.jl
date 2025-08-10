@@ -6,7 +6,7 @@ using QuantumLattices.Frameworks
 using QuantumLattices.Frameworks: seriestype
 using QuantumLattices.QuantumNumbers: periods
 using QuantumLattices.QuantumOperators: ID, LinearFunction, Operator, Operators, idtype, scalartype
-using QuantumLattices.Spatials: BrillouinZone, Lattice, bonds, decompose, isintracell
+using QuantumLattices.Spatials: BrillouinZone, Lattice, bonds, decompose, dlmsave, isintracell
 using StaticArrays: SVector, SMatrix, @SMatrix
 
 import QuantumLattices: update!
@@ -331,12 +331,15 @@ params(parameters::Parameters) = (t=parameters.t, μ=parameters.U/2)
     @test optionsinfo(typeof(dos)) == "Assignment{<:DensityOfStates} options:\n  (1) `:emin`: lower bound of the energy range;\n  (2) `:emax`: upper bound of the energy range;\n  (3) `:ne`: number of sample points in the energy range;\n  (4) `:σ`: broadening factor.\n\n  Dependency 1) Assignment{<:EigenSystem} options:\n    (1) `:showinfo`: show the information.\n"
     @test hasoption(typeof(dos), :emin) && hasoption(typeof(dos), :emax) && hasoption(typeof(dos), :ne) && hasoption(typeof(dos), :σ) && hasoption(typeof(dos), :showinfo) && !hasoption(typeof(dos), :hello)
     @test sum(dos.data.values)*(maximum(dos.data.energies)-minimum(dos.data.energies))/(length(dos.data.energies)-1)/length(eigensystem.action.brillouinzone) ≈ 0.9964676726997486
+    dlmsave(dos)
     savefig(plot(dos), "$(string(dos)).png")
     update!(dos; U=8.0)
     tba(dos)
+    dlmsave(dos)
     savefig(plot(tba(dos)), "$(string(dos)).png")
     update!(dos; U=0.0)
     tba(dos; emin=-5.0, emax=5.0)
+    dlmsave(dos)
     savefig(plot(tba(dos)), "$(string(dos)).png")
     summary(tba)
 end
@@ -350,6 +353,7 @@ end
 
     eigensystem = loaded(:eigensystem, EigenSystem(BrillouinZone([[2pi, 0], [0, 2pi]], 100)); delay=true)
     dos = loaded(:DOS, DensityOfStates(), (eigensystem,))
+    dlmsave(dos)
     savefig(plot(loaded(dos)), "$(string(dos)).png")
 
     @test isnothing(seriestype())

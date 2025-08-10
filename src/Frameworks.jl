@@ -17,6 +17,7 @@ using ..Toolkit: atol, efficientoperations, rtol, parametertype
 
 import ..QuantumLattices: add!, expand, expand!, reset!, str, update, update!
 import ..QuantumOperators: scalartype
+import ..Spatials: dlmsave
 
 export Action, Algorithm, Assignment, CategorizedGenerator, Data, Eager, ExpansionStyle, Formula, Frontend, Generator, Lazy, OperatorGenerator, Parameters
 export eager, lazy, checkoptions, datatype, hasoption, options, optionsinfo, qldload, qldsave, run!
@@ -1115,6 +1116,15 @@ function qldload(filename::String, name₁::String, name₂::String, names::Stri
             deserialize(IOBuffer(file[name]))
         end
     end
+end
+
+"""
+    dlmsave(assignment::Assignment, delim='\t'; prefix::String="", suffix::String="", ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="")
+
+Save the data of an assignment to a delimited file.
+"""
+@inline function dlmsave(assignment::Assignment, delim='\t'; prefix::String="", suffix::String="", ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="")
+    dlmsave(joinpath(dirname(assignment), string(str(assignment; prefix=prefix, suffix=suffix, ndecimal=ndecimal, select=select, front=front, rear=rear), ".dlm")), Tuple(assignment.data)..., delim)
 end
 
 end  # module
