@@ -1025,7 +1025,7 @@ end
 @inline function (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters=Parameters(), map::Function=identity, dependencies::Tuple{Vararg{Assignment}}=(); delay::Bool=false, dir::String=alg.dir, options...)
     assign = Assignment(datatype(typeof(action), typeof(alg.frontend)), dir, name, action, merge(alg.parameters, parameters), map, dependencies)
     delay || begin
-        alg(assign)
+        alg(assign; options...)
         @info "Action $name: time consumed $(time(alg.timer[string(assign)])/10^9)s."
     end
     return assign
