@@ -1075,7 +1075,7 @@ end
 """
     qldsave(obj::Union{Assignment, Algorithm}, objs::Union{Assignment, Algorithm}...; mode::String="a+", prefix::String="", suffix::String="", ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="")
 
-Save an assignment/algorithm to a qld file.
+Save a series of assignments/algorithms to qld files.
 """
 function qldsave(obj::Union{Assignment, Algorithm}, objs::Union{Assignment, Algorithm}...; mode::String="a+", prefix::String="", suffix::String="", ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="")
     @assert mode∈("a+", "w") "qldsave error: mode ($(repr(mode))) is not \"a+\" or \"w\"."
@@ -1083,8 +1083,24 @@ function qldsave(obj::Union{Assignment, Algorithm}, objs::Union{Assignment, Algo
         jldopen(pathof(object; prefix=prefix, suffix=suffix), mode) do file
             io = IOBuffer()
             serialize(io, object)
-            bytes = take!(io)
-            file[str(Parameters(object); ndecimal=ndecimal, select=select, front=front, rear=rear)] = bytes
+            file[str(Parameters(object); ndecimal=ndecimal, select=select, front=front, rear=rear)] = take!(io)
+        end
+    end
+end
+
+"""
+    qldsave(filename::String, args...; mode::String="a+")
+
+Save arbitrary data to a qld file.
+"""
+function qldsave(filename::String, args...; mode::String="a+")
+    @assert mode∈("a+", "w") "qldsave error: mode ($(repr(mode))) is not \"a+\" or \"w\"."
+    @assert iseven(length(args)) "qldsave error: wrong formed input data."
+    jldopen(filename, mode) do file
+        io = IOBuffer()
+        for i in 1:2:length(args)
+            serialize(io, args[i+1])
+            file[args[i]] = take!(io)
         end
     end
 end

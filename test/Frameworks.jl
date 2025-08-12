@@ -347,9 +347,10 @@ end
 @testset "Assignment & Algorithm without map" begin
     tba = Algorithm(:Square, TBA(Formula(A, (t=1.0, μ=2.0))))
     qldsave(tba; mode="w")
+    qldsave("Arbitrary.qld", "first copy", tba, "second copy", tba; mode="w")
     loaded = qldload(pathof(tba), str(Parameters(tba)))
     @test loaded == qldload(pathof(tba))[str(Parameters(tba))]
-    @test all(isequal(loaded), qldload(pathof(tba), str(Parameters(tba)), str(Parameters(tba))))
+    @test all(isequal(loaded), qldload("Arbitrary.qld", "first copy", "second copy"))
 
     eigensystem = loaded(:eigensystem, EigenSystem(BrillouinZone([[2pi, 0], [0, 2pi]], 100)); delay=true)
     dos = loaded(:DOS, DensityOfStates(), eigensystem)
