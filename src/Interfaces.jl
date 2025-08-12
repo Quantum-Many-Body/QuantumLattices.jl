@@ -21,6 +21,13 @@ If `x` is a tuple, return itself; if not, return `(x,)`.
 @inline OneOrMore(x) = (x,)
 @inline OneOrMore(xs::Tuple) = xs
 
+"""
+    const ZeroOrMore{A} = Union{A, Tuple{Vararg{A}}}
+
+Zero or more.
+"""
+const ZeroOrMore{A} = Union{A, Tuple{Vararg{A}}}
+
 function ⊞ end
 function ⊠ end
 function ⊕ end

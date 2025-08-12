@@ -325,7 +325,7 @@ params(parameters::Parameters) = (t=parameters.t, μ=parameters.U/2)
     @test options(typeof(eigensystem)) == (showinfo="show the information",)
     @test optionsinfo(typeof(eigensystem)) == "Assignment{<:EigenSystem} options:\n  (1) `:showinfo`: show the information.\n"
 
-    dos = tba(:DOS, DensityOfStates(), (t=1.0, U=4.0), (eigensystem,))
+    dos = tba(:DOS, DensityOfStates(), (t=1.0, U=4.0), eigensystem)
     @test dos==deepcopy(dos) && isequal(dos, deepcopy(dos))
     @test options(typeof(dos)) == (emin="lower bound of the energy range", emax="upper bound of the energy range", ne ="number of sample points in the energy range", σ="broadening factor")
     @test optionsinfo(typeof(dos)) == "Assignment{<:DensityOfStates} options:\n  (1) `:emin`: lower bound of the energy range;\n  (2) `:emax`: upper bound of the energy range;\n  (3) `:ne`: number of sample points in the energy range;\n  (4) `:σ`: broadening factor.\n\n  Dependency 1) Assignment{<:EigenSystem} options:\n    (1) `:showinfo`: show the information.\n"
@@ -346,13 +346,13 @@ end
 
 @testset "Assignment & Algorithm without map" begin
     tba = Algorithm(:Square, TBA(Formula(A, (t=1.0, μ=2.0))))
-    qldsave(tba)
+    qldsave(tba; mode="w")
     loaded = qldload(pathof(tba), str(Parameters(tba)))
     @test loaded == qldload(pathof(tba))[str(Parameters(tba))]
     @test all(isequal(loaded), qldload(pathof(tba), str(Parameters(tba)), str(Parameters(tba))))
 
     eigensystem = loaded(:eigensystem, EigenSystem(BrillouinZone([[2pi, 0], [0, 2pi]], 100)); delay=true)
-    dos = loaded(:DOS, DensityOfStates(), (eigensystem,))
+    dos = loaded(:DOS, DensityOfStates(), eigensystem)
     dlmsave(dos)
     savefig(plot(loaded(dos)), "$(string(dos)).png")
 

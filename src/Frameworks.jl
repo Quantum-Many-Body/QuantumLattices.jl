@@ -10,7 +10,7 @@ using RecipesBase: RecipesBase, @recipe
 using Serialization: deserialize, serialize
 using TimerOutputs: TimerOutput, time, @timeit
 using ..DegreesOfFreedom: plain, Boundary, Hilbert, Term
-using ..QuantumLattices: OneOrMore, id, value
+using ..QuantumLattices: OneOrMore, ZeroOrMore, id, value
 using ..QuantumOperators: OperatorPack, Operators, OperatorSet, OperatorSum, LinearTransformation, Transformation, identity, operatortype
 using ..Spatials: Bond, isintracell
 using ..Toolkit: atol, efficientoperations, rtol, parametertype
@@ -1010,23 +1010,23 @@ function (assign::Assignment)(alg::Algorithm, checkoptions::Bool=true; options..
 end
 
 """
-    (alg::Algorithm)(name::Symbol, action::Action, dependencies::Tuple{Vararg{Assignment}}; delay::Bool=false, dir::String=alg.dir, options...) -> Assignment
-    (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters, dependencies::Tuple{Vararg{Assignment}}; delay::Bool=false, dir::String=alg.dir, options...) -> Assignment
-    (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters=Parameters(), map::Function=identity, dependencies::Tuple{Vararg{Assignment}}=(); delay::Bool=false, dir::String=alg.dir, options...) -> Assignment
+    (alg::Algorithm)(name::Symbol, action::Action, dependencies::ZeroOrMore{Assignment}; dir::String=alg.dir, delay::Bool=false, options...) -> Assignment
+    (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters, dependencies::ZeroOrMore{Assignment}; dir::String=alg.dir, delay::Bool=false, options...) -> Assignment
+    (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters=Parameters(), map::Function=identity, dependencies::ZeroOrMore{Assignment}=(); dir::String=alg.dir, delay::Bool=false, options...) -> Assignment
 
 Add an assignment on a algorithm by providing the contents of the assignment, and run this assignment.
 """
-@inline function (alg::Algorithm)(name::Symbol, action::Action, dependencies::Tuple{Vararg{Assignment}}; delay::Bool=false, dir::String=alg.dir, options...)
+@inline function (alg::Algorithm)(name::Symbol, action::Action, dependencies::ZeroOrMore{Assignment}; dir::String=alg.dir, delay::Bool=false, options...)
     return alg(name, action, Parameters(), dependencies; delay=delay, dir=dir, options...)
 end
-@inline function (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters, dependencies::Tuple{Vararg{Assignment}}; delay::Bool=false, dir::String=alg.dir, options...)
+@inline function (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters, dependencies::ZeroOrMore{Assignment}; dir::String=alg.dir, delay::Bool=false, options...)
     return alg(name, action, parameters, identity, dependencies; delay=delay, dir=dir, options...)
 end
-@inline function (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters=Parameters(), map::Function=identity, dependencies::Tuple{Vararg{Assignment}}=(); delay::Bool=false, dir::String=alg.dir, options...)
-    assign = Assignment(datatype(typeof(action), typeof(alg.frontend)), dir, name, action, merge(alg.parameters, parameters), map, dependencies)
+@inline function (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters=Parameters(), map::Function=identity, dependencies::ZeroOrMore{Assignment}=(); dir::String=alg.dir, delay::Bool=false, options...)
+    assign = Assignment(datatype(typeof(action), typeof(alg.frontend)), dir, name, action, merge(alg.parameters, parameters), map, ZeroOrMore(dependencies))
     delay || begin
         alg(assign; options...)
-        @info "Action $name: time consumed $(time(alg.timer[string(assign)])/10^9)s."
+        @info "Assignment $name: time consumed $(time(alg.timer[string(assign)])/10^9)s."
     end
     return assign
 end
