@@ -1080,11 +1080,7 @@ Save a series of assignments/algorithms to qld files.
 function qldsave(obj::Union{Assignment, Algorithm}, objs::Union{Assignment, Algorithm}...; mode::String="a+", prefix::String="", suffix::String="", ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="")
     @assert mode∈("a+", "w") "qldsave error: mode ($(repr(mode))) is not \"a+\" or \"w\"."
     map((obj, objs...)) do object
-        jldopen(pathof(object; prefix=prefix, suffix=suffix), mode) do file
-            io = IOBuffer()
-            serialize(io, object)
-            file[str(Parameters(object); ndecimal=ndecimal, select=select, front=front, rear=rear)] = take!(io)
-        end
+        qldsave(pathof(object; prefix=prefix, suffix=suffix), str(Parameters(object); ndecimal=ndecimal, select=select, front=front, rear=rear), object; mode=mode)
     end
 end
 
