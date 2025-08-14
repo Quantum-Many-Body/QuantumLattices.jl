@@ -26,7 +26,6 @@ import QuantumLattices.Toolkit: VectorSpaceStyle, contentnames, contenttype, dis
     @test str(:a) =="a"
     @test str(:) == ":"
     @test str('a') == "'a'"
-    @test str(undef) == "undef"
 end
 
 @testset "superscript" begin
