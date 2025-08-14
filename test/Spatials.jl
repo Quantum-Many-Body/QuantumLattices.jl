@@ -259,6 +259,12 @@ end
     unit = Lattice((0.0, 0.0); name=:Square, vectors=[[1.0, 0.0], [0.0, 1.0]])
     @test Lattice(unit, (2, 3), ('P', 'O')) == Lattice([0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0], [0.0, 2.0], [1.0, 2.0]; name=Symbol("Square[0:1](0:2)"), vectors=[[2.0, 0.0]])
     @test Lattice(unit, (2, 3), (:periodic, :open); mode=:center) == Lattice([0.0, -1.0], [1.0, -1.0], [0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]; name=Symbol("Square[0:1](-1:1)"), vectors=[[2.0, 0.0]])
+    @test bonds(Lattice(unit, (1, 2)), undef) == [
+        Bond(undef, Point(1, [0.0, 0.0], [0.0, 0.0]), Point(1, [0.0, 0.0], [0.0, 0.0])),
+        Bond(undef, Point(1, [0.0, 0.0], [0.0, 0.0]), Point(2, [0.0, 1.0], [0.0, 0.0])),
+        Bond(undef, Point(2, [0.0, 1.0], [0.0, 0.0]), Point(1, [0.0, 0.0], [0.0, 0.0])),
+        Bond(undef, Point(2, [0.0, 1.0], [0.0, 0.0]), Point(2, [0.0, 1.0], [0.0, 0.0]))
+    ]
 end
 
 @testset "plot" begin

@@ -7,7 +7,7 @@ using NearestNeighbors: KDTree, inrange, knn
 using Printf: @printf, @sprintf
 using RecipesBase: RecipesBase, @recipe, @series, @layout
 using StaticArrays: MVector, SVector
-using ..QuantumLattices: OneAtLeast, OneOrMore, rank
+using ..QuantumLattices: OneAtLeast, OneOrMore, rank, str
 using ..QuantumNumbers: Momenta, 𝕂, period, periods
 using ..Toolkit: atol, rtol, efficientoperations, CompositeDict, DirectProductedVectorSpace, Float, Segment, VectorSpace, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceEnumerative, VectorSpaceStyle, concatenate, getcontent, subscript
 
@@ -609,7 +609,7 @@ end
 @inline Base.firstindex(bond::Bond) = 1
 @inline Base.lastindex(bond::Bond) = length(bond.points)
 @inline Base.show(io::IO, bond::Bond) = show(io, MIME"text/plain"(), bond)
-@inline Base.show(io::IO, ::MIME"text/plain", bond::Bond) = @printf io "Bond(%s, %s)" repr(bond.kind) join(map(string, bond.points), ", ")
+@inline Base.show(io::IO, ::MIME"text/plain", bond::Bond) = @printf io "Bond(%s, %s)" str(bond.kind) join(map(string, bond.points), ", ")
 
 """
     Bond(point::Point)
@@ -754,15 +754,18 @@ Get the neighbor vs. bond length map of a lattice up to the `nneighbor`th order.
 """
     bonds(lattice::AbstractLattice, nneighbor::Integer; coordination::Integer=12) -> Vector{Bond{Int, Point{dimension(lattice), scalartype(lattice)}}}
     bonds(lattice::AbstractLattice, neighbors::Neighbors) -> Vector{Bond{keytype(neighbors), Point{dimension(lattice), scalartype(lattice)}}}
+    bonds(lattice::AbstractLattice, ::UndefInitializer) -> Vector{Bond{UndefInitializer, Point{dimension(lattice), scalartype(lattice)}}}
 
 Get the required bonds of a lattice.
 """
 @inline bonds(lattice::AbstractLattice, nneighbor::Integer; coordination::Integer=12) = bonds!(Bond{Int, Point{dimension(lattice), scalartype(lattice)}}[], lattice, nneighbor; coordination=coordination)
 @inline bonds(lattice::AbstractLattice, neighbors::Neighbors) = bonds!(Bond{keytype(neighbors), Point{dimension(lattice), scalartype(lattice)}}[], lattice, neighbors)
+@inline bonds(lattice::AbstractLattice, ::UndefInitializer) = bonds!(Bond{UndefInitializer, Point{dimension(lattice), scalartype(lattice)}}[], lattice, undef)
 
 """
-    bonds!(bonds::Vector, lattice::AbstractLattice, nneighbor::Integer; coordination::Integer=12)
+    bonds!(bonds::Vector, lattice::AbstractLattice, nneighbor::Integer; coordination::Integer=12) -> typeof(bonds)
     bonds!(bonds::Vector, lattice::AbstractLattice, neighbors::Neighbors) -> typeof(bonds)
+    bonds!(bonds::Vector, lattice::AbstractLattice, ::UndefInitializer) -> typeof(bonds)
 
 Get the required bonds of a lattice and append them to the input bonds.
 """
@@ -796,6 +799,12 @@ function bonds!(bonds::Vector, lattice::AbstractLattice, neighbors::Neighbors)
             point₂ = Point(index₂, lattice[index₂], origin)
             push!(bonds, Bond(k, point₁, point₂))
         end
+    end
+    return bonds
+end
+function bonds!(bonds::Vector, lattice::AbstractLattice, ::UndefInitializer)
+    for i=1:length(lattice), j=1:length(lattice)
+        push!(bonds, Bond(undef, Point(i, lattice[i]), Point(j, lattice[j])))
     end
     return bonds
 end
