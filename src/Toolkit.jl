@@ -79,12 +79,14 @@ end
     str(value::Symbol; kwargs...) -> String
     str(value::Colon; kwargs...) -> String
     str(value::Char; kwargs...) -> String
+    str(value::UndefInitializer; kwargs...) -> String
 
 Convert a single value to string.
 """
 @inline str(value::Symbol; kwargs...) = string(value)
 @inline str(::Colon; kwargs...) = ":"
 @inline str(value::Char; kwargs...) = repr(value)
+@inline str(::UndefInitializer; kwargs...) = "undef"
 
 """
     superscript(i::Integer) -> String
