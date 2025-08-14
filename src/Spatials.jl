@@ -755,18 +755,18 @@ Get the neighbor vs. bond length map of a lattice up to the `nneighbor`th order.
 """
     bonds(lattice::AbstractLattice, nneighbor::Integer; coordination::Integer=12) -> Vector{Bond{Int, Point{dimension(lattice), scalartype(lattice)}}}
     bonds(lattice::AbstractLattice, neighbors::Neighbors) -> Vector{Bond{keytype(neighbors), Point{dimension(lattice), scalartype(lattice)}}}
-    bonds(lattice::AbstractLattice, ::UndefInitializer) -> Vector{Bond{UndefInitializer, Point{dimension(lattice), scalartype(lattice)}}}
+    bonds(lattice::AbstractLattice, ::Colon) -> Vector{Bond{Colon, Point{dimension(lattice), scalartype(lattice)}}}
 
 Get the required bonds of a lattice.
 """
 @inline bonds(lattice::AbstractLattice, nneighbor::Integer; coordination::Integer=12) = bonds!(Bond{Int, Point{dimension(lattice), scalartype(lattice)}}[], lattice, nneighbor; coordination=coordination)
 @inline bonds(lattice::AbstractLattice, neighbors::Neighbors) = bonds!(Bond{keytype(neighbors), Point{dimension(lattice), scalartype(lattice)}}[], lattice, neighbors)
-@inline bonds(lattice::AbstractLattice, ::UndefInitializer) = bonds!(Bond{UndefInitializer, Point{dimension(lattice), scalartype(lattice)}}[], lattice, undef)
+@inline bonds(lattice::AbstractLattice, ::Colon) = bonds!(Bond{Colon, Point{dimension(lattice), scalartype(lattice)}}[], lattice, :)
 
 """
     bonds!(bonds::Vector, lattice::AbstractLattice, nneighbor::Integer; coordination::Integer=12) -> typeof(bonds)
     bonds!(bonds::Vector, lattice::AbstractLattice, neighbors::Neighbors) -> typeof(bonds)
-    bonds!(bonds::Vector, lattice::AbstractLattice, ::UndefInitializer) -> typeof(bonds)
+    bonds!(bonds::Vector, lattice::AbstractLattice, ::Colon) -> typeof(bonds)
 
 Get the required bonds of a lattice and append them to the input bonds.
 """
@@ -803,9 +803,9 @@ function bonds!(bonds::Vector, lattice::AbstractLattice, neighbors::Neighbors)
     end
     return bonds
 end
-function bonds!(bonds::Vector, lattice::AbstractLattice, ::UndefInitializer)
+function bonds!(bonds::Vector, lattice::AbstractLattice, ::Colon)
     for i=1:length(lattice), j=1:length(lattice)
-        push!(bonds, Bond(undef, Point(i, lattice[i]), Point(j, lattice[j])))
+        push!(bonds, Bond(:, Point(i, lattice[i]), Point(j, lattice[j])))
     end
     return bonds
 end
