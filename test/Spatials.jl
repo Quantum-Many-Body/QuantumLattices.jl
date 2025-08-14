@@ -234,6 +234,7 @@ end
     @test bond|>rcoordinate == [0.0, -1.0]
     @test bond|>icoordinate == [0.0, -1.0]
     @test bond|>isintracell == false
+    @test Bond(:, Point(2, [1.0], [0.0]), Point(1, [0.0], [0.0]))|>string == "Bond(:, Point(2, [1.0], [0.0]), Point(1, [0.0], [0.0]))"
 end
 
 @testset "Lattice" begin

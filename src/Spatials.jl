@@ -7,7 +7,7 @@ using NearestNeighbors: KDTree, inrange, knn
 using Printf: @printf, @sprintf
 using RecipesBase: RecipesBase, @recipe, @series, @layout
 using StaticArrays: MVector, SVector
-using ..QuantumLattices: OneAtLeast, OneOrMore, rank, str
+using ..QuantumLattices: OneAtLeast, OneOrMore, rank
 using ..QuantumNumbers: Momenta, 𝕂, period, periods
 using ..Toolkit: atol, rtol, efficientoperations, CompositeDict, DirectProductedVectorSpace, Float, Segment, VectorSpace, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceEnumerative, VectorSpaceStyle, concatenate, getcontent, subscript
 
@@ -609,7 +609,8 @@ end
 @inline Base.firstindex(bond::Bond) = 1
 @inline Base.lastindex(bond::Bond) = length(bond.points)
 @inline Base.show(io::IO, bond::Bond) = show(io, MIME"text/plain"(), bond)
-@inline Base.show(io::IO, ::MIME"text/plain", bond::Bond) = @printf io "Bond(%s, %s)" str(bond.kind) join(map(string, bond.points), ", ")
+@inline Base.show(io::IO, ::MIME"text/plain", bond::Bond) = @printf io "Bond(%s, %s)" repr(bond.kind) join(map(string, bond.points), ", ")
+@inline Base.show(io::IO, ::MIME"text/plain", bond::Bond{Colon}) = @printf io "Bond(:, %s)" join(map(string, bond.points), ", ")
 
 """
     Bond(point::Point)
