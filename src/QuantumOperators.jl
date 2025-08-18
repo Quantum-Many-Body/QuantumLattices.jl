@@ -1001,6 +1001,32 @@ Show a quantum operator.
 """
 @inline Base.show(io::IO, ::MIME"text/latex", m::QuantumOperator) = show(io, MIME"text/latex"(), latexstring(unicode2latex(latexstring(m))))
 
+"""
+    show(io::IO, ::MIME"text/latex", ops::AbstractVector{<:QuantumOperator})
+    show(io::IO, ::MIME"text/latex", ops::AbstractMatrix{<:QuantumOperator})
+
+Show a vector/matrix of quantum operators.
+"""
+function Base.show(io::IO, ::MIME"text/latex", ops::AbstractVector{<:QuantumOperator})
+    print(io, "\\begin{bmatrix}")
+    for (i, op) in enumerate(ops)
+        print(io, latexstring(op))
+        i < length(ops) && print(io, " & ")
+    end
+    print(io, "\\end{bmatrix}")
+end
+function Base.show(io::IO, ::MIME"text/latex", ops::AbstractMatrix{<:QuantumOperator})
+    print(io, "\\begin{pmatrix}")
+    for i in 1:size(ops, 1)
+        for j in 1:size(ops, 2)
+            print(io, latexstring(ops[i, j]))
+            j < size(ops, 2) && print(io, " & ")
+        end
+        i < size(ops, 1) && print(io, " \\\\ ")
+    end
+    print(io, "\\end{pmatrix}")
+end
+
 # Transformations
 """
     Transformation <: Function

@@ -217,6 +217,11 @@ end
     candidate₁ = "(1.0-1.0im)c^{\\dagger}_{2}c^{}_{1}-c^{\\dagger}_{1}c^{}_{1}"
     candidate₂ = "-c^{\\dagger}_{1}c^{}_{1}+(1.0-1.0im)c^{\\dagger}_{2}c^{}_{1}"
     @test latexstring(opts) ∈ (candidate₁, candidate₂)
+
+    show(io, MIME"text/latex"(), [opts, opts])
+    @test String(take!(io)) == "\\begin{bmatrix}(1.0-1.0im)c^{\\dagger}_{2}c^{}_{1}-c^{\\dagger}_{1}c^{}_{1} & (1.0-1.0im)c^{\\dagger}_{2}c^{}_{1}-c^{\\dagger}_{1}c^{}_{1}\\end{bmatrix}"
+    show(io, MIME"text/latex"(), [opts opts; opts opts])
+    @test String(take!(io)) == "\\begin{pmatrix}(1.0-1.0im)c^{\\dagger}_{2}c^{}_{1}-c^{\\dagger}_{1}c^{}_{1} & (1.0-1.0im)c^{\\dagger}_{2}c^{}_{1}-c^{\\dagger}_{1}c^{}_{1} \\\\ (1.0-1.0im)c^{\\dagger}_{2}c^{}_{1}-c^{\\dagger}_{1}c^{}_{1} & (1.0-1.0im)c^{\\dagger}_{2}c^{}_{1}-c^{\\dagger}_{1}c^{}_{1}\\end{pmatrix}"
 end
 
 struct DoubleCoeff <: LinearTransformation end
