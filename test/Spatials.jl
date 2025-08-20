@@ -239,6 +239,7 @@ end
 
 @testset "Lattice" begin
     lattice = Lattice([0.5, 0.5]; name=:Tuanzi, vectors=[[1.0, 0.0], [0.0, 1.0]])
+    @test lattice == Lattice([0.5; 0.5;;]; name=:Tuanzi, vectors=[[1.0, 0.0], [0.0, 1.0]])
     @test lattice|>typeof|>contentnames == (:name, :coordinates, :vectors)
     @test lattice|>deepcopy == lattice
     @test isequal(lattice|>deepcopy, lattice)

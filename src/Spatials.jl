@@ -873,6 +873,7 @@ end
 """
     Lattice(coordinates::NTuple{N, Number}...; name::Symbol=:lattice, vectors::Union{AbstractVector{<:AbstractVector{<:Number}}, Nothing}=nothing) where N
     Lattice(coordinates::AbstractVector{<:Number}...; name::Symbol=:lattice, vectors::Union{AbstractVector{<:AbstractVector{<:Number}}, Nothing}=nothing)
+    Lattice(coordinates::AbstractMatrix{<:Number}; name::Symbol=:lattice, vectors::Union{AbstractVector{<:AbstractVector{<:Number}}, Nothing}=nothing)
 
 Construct a lattice.
 """
@@ -884,7 +885,11 @@ function Lattice(coordinate::NTuple{N, Number}, coordinates::NTuple{N, Number}..
 end
 function Lattice(coordinate::AbstractVector{<:Number}, coordinates::AbstractVector{<:Number}...; name::Symbol=:lattice, vectors::Union{AbstractVector{<:AbstractVector{<:Number}}, Nothing}=nothing)
     coordinates = hcat(coordinate, coordinates...)
-    vectors = isnothing(vectors) ? SVector{0, SVector{size(coordinates)[1], eltype(coordinates)}}() : vectorconvert(vectors)
+    vectors = isnothing(vectors) ? SVector{0, SVector{size(coordinates, 1), eltype(coordinates)}}() : vectorconvert(vectors)
+    return Lattice(name, coordinates, vectors)
+end
+function Lattice(coordinates::AbstractMatrix{<:Number}; name::Symbol=:lattice, vectors::Union{AbstractVector{<:AbstractVector{<:Number}}, Nothing}=nothing)
+    vectors = isnothing(vectors) ? SVector{0, SVector{size(coordinates, 1), eltype(coordinates)}}() : vectorconvert(vectors)
     return Lattice(name, coordinates, vectors)
 end
 @inline vectorconvert(vectors::SVector{N, <:SVector}) where N = vectors
