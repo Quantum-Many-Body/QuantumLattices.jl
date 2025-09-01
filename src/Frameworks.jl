@@ -1069,7 +1069,9 @@ end
 Get the string representation of an assignment/algorithm.
 """
 @inline function str(obj::Union{Assignment, Algorithm}; prefix::String="", suffix::String="", ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="")
-    return string(basename(obj; prefix=prefix, suffix=suffix, extension=""), "-", str(Parameters(obj); ndecimal=ndecimal, select=select, front=front, rear=rear))
+    base = basename(obj; prefix=prefix, suffix=suffix, extension="")
+    parameters = str(Parameters(obj); ndecimal=ndecimal, select=select, front=front, rear=rear)
+    return string(base, prepend(parameters, "-"))
 end
 
 """
