@@ -4,6 +4,7 @@ using DataStructures: OrderedDict
 using Latexify: unicode2latex
 using Printf: @printf, @sprintf
 using ..QuantumLattices: str
+using ..QuantumNumbers: Abelian
 using ..Toolkit: atol, efficientoperations, rtol, contentorder, fulltype, getcontent, parameterpairs, parametertype, promoteparameters, rawtype, reparameter
 
 import LaTeXStrings: latexstring
@@ -413,6 +414,19 @@ Get the sequence of the id of a quantum operator according to a table.
 """
 @inline sequence(m::OperatorProd, table) = map(u->table[u], id(m))
 
+"""
+    (op::OperatorProd)(quantumnumber::Abelian) -> Abelian
+
+Get the resulting Abelian quantum number after an `OperatorProd` acts upon an initial Abelian quantum number.
+"""
+function (op::OperatorProd)(quantumnumber::Abelian)
+    result = quantumnumber
+    for u in op
+        result = u(result)
+    end
+    return result
+end
+
 # Operator
 """
     Operator{V, I<:ID{OperatorIndex}} <: OperatorProd{V, I}
@@ -485,6 +499,24 @@ Get the eltype of an `OperatorSet`.
 Judge whether an `OperatorSet` is zero, i.e, it does not contain any `OperatorPack`.
 """
 @inline Base.iszero(ms::OperatorSet) = isempty(ms)
+
+"""
+    (ops::OperatorSet)(quantumnumber::Abelian) -> Abelian
+
+Get the resulting Abelian quantum number after an `OperatorSet` acts upon an initial Abelian quantum number.
+"""
+function (ops::OperatorSet)(quantumnumber::Abelian)
+    result, record = quantumnumber, quantumnumber
+    for (i, op) in enumerate(ops)
+        result = op(quantumnumber)
+        if i>1
+            @assert result==record "error: not a definite quantum number obtained."
+        else
+            record = result
+        end
+    end
+    return result
+end
 
 # Operator sum
 """

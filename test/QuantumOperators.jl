@@ -2,6 +2,7 @@ using LaTeXStrings: latexstring
 using LinearAlgebra: dot
 using Printf: @sprintf
 using QuantumLattices: add!, div!, expand, mul!, id, rank, sub!, update!, value
+using QuantumLattices.QuantumNumbers: ℕ
 using QuantumLattices.QuantumOperators
 using QuantumLattices.Toolkit: Float, contentnames, isparameterbound, parameternames, parametertype, subscript, superscript
 
@@ -16,7 +17,7 @@ end
 @inline script(id::AID, ::Val{:orbital}; kwargs...) = id.orbital
 @inline script(id::AID, ::Val{:nambu}; kwargs...) = id.nambu==2 ? "\\dagger" : ""
 latexformat(AID, LaTeX{(:nambu,), (:orbital,)}('c'))
-
+@inline (id::AID)(quantumnumber::ℕ) = id.nambu==2 ? ℕ(value(quantumnumber)+1) : ℕ(value(quantumnumber)-1)
 function permute(u₁::AID, u₂::AID)
     @assert u₁ ≠ u₂ "permute error: permuted operator units should not be equal to each other."
     if (u₁.nambu == 3-u₂.nambu) && (u₁.orbital == u₂.orbital)
@@ -106,6 +107,7 @@ end
     @test ishermitian(opt) == false
     @test ishermitian(Operator(2.0, AID(1, 1), AID(1, 2)))
     @test sequence(opt, Dict(AID(1, 1)=>1, AID(1, 2)=>2)) == (1,)
+    @test opt(ℕ(1))==ℕ(0) && opt'(ℕ(1))==ℕ(2) && (opt*opt')(ℕ(1))==ℕ(1)
     @test convert(typeof(opt), AID(1, 1)) == Operator(1.0, AID(1, 1))
     @test convert(Operator{Float, <:ID{AID}}, AID(1, 1)) == Operator(1.0, AID(1, 1))
     @test convert(Operator{Float, Tuple{}}, 2) == Operator(2.0)
@@ -141,6 +143,8 @@ end
     @test sub!(deepcopy(opts))==opts && sub!(deepcopy(opts), opts)==zero(opts)
     @test mul!(deepcopy(opts), 2.0) == opts*2
     @test div!(deepcopy(opts), 2.0) == opts/2
+    @test Operators(Operator(1.0, AID(1, 2)), Operator(1.0, AID(2, 2)))(ℕ(1)) == ℕ(2)
+    @test Operators(Operator(1.0, AID(1, 1)), Operator(1.0, AID(2, 1)))(ℕ(1)) == ℕ(0)
 
     @test operatortype(AID(1, 1)) == operatortype(AID{Int, Int}) == Operator{Int, Tuple{AID{Int, Int}}}
     @test operatortype(AID) == Operator{Int, <:Tuple{AID}}
