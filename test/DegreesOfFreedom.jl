@@ -3,6 +3,7 @@ using LinearAlgebra: dot, ishermitian
 using Printf: @printf
 using QuantumLattices: ⊕, ⊗, dimension, expand, kind, rank, reset!, update!, value
 using QuantumLattices.DegreesOfFreedom
+using QuantumLattices.QuantumNumbers: ℕ
 using QuantumLattices.QuantumOperators: ID, LaTeX, Operator, OperatorIndex, Operators, id, latexformat, sequence
 using QuantumLattices.Spatials: Bond, Point, decompose, icoordinate, nneighbor, rcoordinate
 using QuantumLattices.Toolkit: Float, contentnames, parameternames, reparameter
@@ -38,6 +39,7 @@ end
 @inline 𝕕(site, nambu, rcoordinate, icoordinate) = CoordinatedIndex(Index(site, DID(nambu)), rcoordinate, icoordinate)
 @inline Base.getindex(::Type{OperatorIndex}, ::Type{D}) where {D<:Union{DID, Index{<:DID}, CoordinatedIndex{<:Index{<:DID}}}} = 𝕕
 @inline Base.getindex(::Type{OperatorIndex}, ::typeof(𝕕)) = DID
+@inline (did::DID)(quantumnumber::ℕ) = did.nambu==2 ? ℕ(value(quantumnumber)+1) : ℕ(value(quantumnumber)-1)
 
 struct DFock <: SimpleInternal{DID{Int}}
     nnambu::Int
@@ -189,6 +191,7 @@ end
     @test ishermitian(ID(index, index)) == false
     @test isdefinite(index) == isdefinite(typeof(index)) == true
     @test isdefinite((index, index)) == isdefinite(typeof((index, index))) == true
+    @test index(ℕ(1))==ℕ(0) && index'(ℕ(1))==ℕ(2)
 
     @test string(𝕕(:, 2)) == "𝕕(:, 2)"
     @test string(𝕕(1ˢᵗ, 2)) == "𝕕(1ˢᵗ, 2)"
@@ -228,6 +231,7 @@ end
     @test index' == CoordinatedIndex(𝕕(1, 2), rcoordinate=SVector(0.0, 0.0), icoordinate=SVector(0.0, 0.0))
     @test ID(index', index)' == ID(index', index)
     @test ishermitian(ID(index', index)) && !ishermitian(ID(index, index))
+    @test index(ℕ(1))==ℕ(0) && index'(ℕ(1))==ℕ(2)
 
     index = 𝕕(1, 2, SVector(0.0, 0.0), SVector(1.0, 0.0))
     @test script(index, Val(:rcoordinate)) == "[0.0, 0.0]"
