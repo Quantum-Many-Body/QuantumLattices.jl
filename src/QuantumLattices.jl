@@ -4,7 +4,7 @@ module QuantumLattices
 import LinearAlgebra: ishermitian, rank, mul!
 include("Interfaces.jl")
 export OneAtLeast, OneOrMore, ZeroOrMore
-export ⊞, ⊠, ⊕, ⊗, add!, decompose, decompose!, dimension, div!, expand, expand!, id, ishermitian, kind, mul!, permute, rank, reset!, shape, str, sub!, update, update!, value
+export ⊠, ⊕, ⊗, add!, decompose, decompose!, dimension, div!, expand, expand!, id, ishermitian, kind, mul!, permute, rank, reset!, shape, str, sub!, update, update!, value
 
 # Toolkit
 include("Toolkit.jl")
@@ -14,7 +14,7 @@ using .Toolkit
 include("QuantumNumbers.jl")
 using .QuantumNumbers
 export Abelian, AbelianQuantumNumber, AbelianQuantumNumberProd, AbelianGradedSpace, AbelianGradedSpaceProd, AbelianGradedSpaceSum, Graded, Momenta, RepresentationSpace, SimpleAbelianQuantumNumber
-export 𝕂, 𝕂¹, 𝕂², 𝕂³, ℕ, 𝕊ᶻ, 𝕌₁, ℤ, ℤ₁, ℤ₂, ℤ₃, ℤ₄, findindex, period, periods, regularize, regularize!
+export 𝕂, 𝕂¹, 𝕂², 𝕂³, ℕ, 𝕊ᶻ, 𝕌₁, ℤ, ℤ₁, ℤ₂, ℤ₃, ℤ₄, fℤ₂, sℤ₂, findindex, period, periods, regularize, regularize!
 
 # QuantumOperators
 include("QuantumOperators.jl")

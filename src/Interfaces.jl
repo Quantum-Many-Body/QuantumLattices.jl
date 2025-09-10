@@ -28,7 +28,6 @@ Zero or more.
 """
 const ZeroOrMore{A} = Union{A, Tuple{Vararg{A}}}
 
-function ⊞ end
 function ⊠ end
 function ⊕ end
 function ⊗ end
