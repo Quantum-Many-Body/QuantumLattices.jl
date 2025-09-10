@@ -13,7 +13,7 @@ using ..Toolkit: VectorSpace, VectorSpaceDirectProducted, VectorSpaceDirectSumme
 import ..QuantumLattices: ⊕, ⊗, ⊠, decompose, dimension, rank, shape, value
 
 export Abelian, AbelianQuantumNumber, AbelianQuantumNumberProd, AbelianGradedSpace, AbelianGradedSpaceProd, AbelianGradedSpaceSum, Graded, Momenta, RepresentationSpace, SimpleAbelianQuantumNumber
-export 𝕂, 𝕂¹, 𝕂², 𝕂³, ℕ, 𝕊ᶻ, 𝕌₁, ℤ, ℤ₁, ℤ₂, ℤ₃, ℤ₄, findindex, period, periods, regularize, regularize!
+export 𝕂, 𝕂¹, 𝕂², 𝕂³, ℕ, 𝕊ᶻ, 𝕌₁, ℤ, ℤ₁, ℤ₂, ℤ₃, ℤ₄, fℤ₂, sℤ₂, findindex, period, periods, regularize, regularize!
 
 """
     AbelianQuantumNumber
@@ -190,6 +190,28 @@ const ℤ₁ = ℤ{1}
 const ℤ₂ = ℤ{2}
 const ℤ₃ = ℤ{3}
 const ℤ₄ = ℤ{4}
+
+"""
+    fℤ₂ <: SimpleAbelianQuantumNumber
+
+Fermion parity.
+"""
+struct fℤ₂ <: SimpleAbelianQuantumNumber
+    charge::Int
+    fℤ₂(charge::Integer) = new(mod(charge, 2))
+end
+@inline period(::Type{fℤ₂}) = 2
+
+"""
+    sℤ₂ <: SimpleAbelianQuantumNumber
+
+Spin parity.
+"""
+struct sℤ₂ <: SimpleAbelianQuantumNumber
+    charge::Int
+    sℤ₂(charge::Integer) = new(mod(charge, 2))
+end
+@inline period(::Type{sℤ₂}) = 2
 
 """
     AbelianQuantumNumberProd{T<:Tuple{Vararg{SimpleAbelianQuantumNumber}}} <: AbelianQuantumNumber
