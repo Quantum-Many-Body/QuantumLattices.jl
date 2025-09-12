@@ -4,7 +4,7 @@ using DataStructures: OrderedDict
 using Printf: @printf, @sprintf
 using SparseArrays: SparseMatrixCSC, nnz
 using StaticArrays: SVector
-using ..QuantumLattices: OneAtLeast, add!, decompose, str
+using ..QuantumLattices: OneAtLeast, OneOrMore, add!, decompose, str
 using ..QuantumNumbers: Abelian
 using ..QuantumOperators: ID, LinearTransformation, Operator, OperatorIndex, OperatorPack, Operators, QuantumOperator, scalartype, valuetolatextext
 using ..Spatials: Bond, Point
@@ -16,9 +16,9 @@ import ..QuantumOperators: idtype, operatortype, script
 import ..Spatials: icoordinate, nneighbor, rcoordinate
 import ..Toolkit: contentnames, getcontent, parameternames
 
-export AllEqual, Boundary, CompositeInternal, ConstrainedInternal, Internal, InternalIndex, InternalIndexProd, InternalPattern, InternalProd, InternalSum, SimpleInternal, SimpleInternalIndex
-export Component, CompositeIndex, CoordinatedIndex, Coupling, Hilbert, Index, MatrixCoupling, MatrixCouplingProd, MatrixCouplingSum, Metric, OperatorIndexToTuple, Ordinal, Pattern, Table, Term, TermAmplitude, TermCoupling, TermFunction
-export ˢᵗ, ⁿᵈ, ʳᵈ, ᵗʰ, plain, allequalfields, coordinatedindextype, indextype, internalindextype, isdefinite, partition, patternrule, statistics, @pattern
+export CompositeInternal, CompositeIndex, CoordinatedIndex, Hilbert, Index, Internal, InternalIndex, InternalProd, InternalSum, SimpleInternal
+export Boundary, Component, Coupling, MatrixCoupling, MatrixCouplingProd, MatrixCouplingSum, Metric, OperatorIndexToTuple, Ordinal, Pattern, Table, Term, TermAmplitude, TermCoupling, TermFunction
+export ˢᵗ, ⁿᵈ, ʳᵈ, ᵗʰ, plain, coordinatedindextype, diagonalfields, indextype, internalindextype, isdefinite, isdiagonal, partition, patternrule, showablefields, statistics, @pattern
 
 # InternalIndex and Internal
 """
@@ -27,6 +27,32 @@ export ˢᵗ, ⁿᵈ, ʳᵈ, ᵗʰ, plain, allequalfields, coordinatedindextype,
 Internal index of an internal degree of freedom.
 """
 abstract type InternalIndex <: OperatorIndex end
+@inline Base.show(io::IO, index::InternalIndex) = @printf io "%s(%s)" OperatorIndex[index] join(map(field->str(getfield(index, field)), showablefields(index)), ", ")
+
+"""
+    showablefields(index::InternalIndex) -> Tuple{Vararg{Symbol}}
+    showablefields(::Type{I}) where {I<:InternalIndex} -> Tuple{Vararg{Symbol}}
+
+Get the showable fields of an internal index or a type of internal index.
+"""
+@inline showablefields(index::InternalIndex) = showablefields(typeof(index))
+@inline showablefields(::Type{I}) where {I<:InternalIndex} = fieldnames(I)
+
+"""
+    isdefinite(index::InternalIndex) -> Bool
+    isdefinite(::Type{<:InternalIndex}) -> Bool
+
+Judge whether an internal index or a type of an internal index denotes a definite internal degree of freedom.
+"""
+@inline isdefinite(index::InternalIndex) = isdefinite(typeof(index))
+@inline isdefinite(::Type{<:InternalIndex}) = false
+
+"""
+    statistics(index::InternalIndex) -> Symbol
+
+Get the statistics of an internal index.
+"""
+@inline statistics(index::InternalIndex) = statistics(typeof(index))
 
 """
     InternalIndex(index::OperatorIndex)
@@ -45,186 +71,132 @@ Get the type of the `InternalIndex` part of an `OperatorIndex`.
 @inline internalindextype(::Type{I}) where {I<:InternalIndex} = I
 
 """
-    isdefinite(ii::InternalIndex) -> Bool
-    isdefinite(::Type{<:InternalIndex}) -> Bool
+    isdefinite(indexes::OneAtLeast{InternalIndex}) -> Bool
+    isdefinite(::Type{T}) where {T<:OneAtLeast{InternalIndex}} -> Bool
 
-Judge whether an internal index denotes a definite internal degree of freedom.
+Judge whether all of a set of internal indexes denote definite internal degrees of freedom.
 """
-@inline isdefinite(ii::InternalIndex) = isdefinite(typeof(ii))
-
-"""
-    SimpleInternalIndex <: InternalIndex
-
-Simple internal index, i.e., a complete set of indexes to denote an internal degree of freedom.
-"""
-abstract type SimpleInternalIndex <: InternalIndex end
-@inline isdefinite(::Type{<:SimpleInternalIndex}) = false
-@inline Base.show(io::IO, ii::SimpleInternalIndex) = @printf io "%s(%s)" OperatorIndex[typeof(ii)] join(map(str, ntuple(i->getfield(ii, i), Val(fieldcount(typeof(ii))))), ", ")
+@inline isdefinite(indexes::OneAtLeast{InternalIndex}) = isdefinite(typeof(indexes))
+@inline isdefinite(::Type{T}) where {T<:OneAtLeast{InternalIndex}} = all(map(isdefinite, fieldtypes(T)))
 
 """
-    statistics(ii::SimpleInternalIndex) -> Symbol
-
-Get the statistics of a simple internal index.
-"""
-@inline statistics(ii::SimpleInternalIndex) = statistics(typeof(ii))
-
-"""
-    InternalIndexProd{T<:Tuple{Vararg{SimpleInternalIndex}}} <: InternalIndex
-
-Direct product of several simple internal indexes.
-"""
-struct InternalIndexProd{T<:Tuple{Vararg{SimpleInternalIndex}}} <: InternalIndex
-    contents::T
-end
-@inline Base.show(io::IO, cii::InternalIndexProd) = @printf io "%s" join((string(cii[i]) for i = 1:rank(cii)), " ⊗ ")
-@inline Base.length(cii::InternalIndexProd) = rank(cii)
-@inline Base.firstindex(::InternalIndexProd) = 1
-@inline Base.lastindex(cii::InternalIndexProd) = length(cii)
-@inline Base.getindex(cii::InternalIndexProd, i::Integer) = cii.contents[i]
-@inline Base.getindex(cii::InternalIndexProd, slice::AbstractVector{<:Integer}) = InternalIndexProd(cii.contents[slice])
-@inline Base.getproperty(cii::InternalIndexProd, name::Symbol) = ciigetproperty(cii, Val(name))
-@inline ciigetproperty(cii::InternalIndexProd, ::Val{:contents}) = getfield(cii, :contents)
-@inline ciigetproperty(cii::InternalIndexProd, ::Val{name}) where name = getproperty(getfield(cii, :contents), name)
-@inline isdefinite(::Type{<:InternalIndexProd{T}}) where {T<:Tuple{Vararg{SimpleInternalIndex}}} = all(map(isdefinite, fieldtypes(T)))
-
-"""
-    InternalIndexProd(contents::SimpleInternalIndex...)
-
-Construct the direct product of several simple internal indexes.
-"""
-@inline InternalIndexProd(contents::SimpleInternalIndex...) = InternalIndexProd(contents)
-
-"""
-    rank(cii::InternalIndexProd) -> Int
-    rank(::Type{<:InternalIndexProd{T}}) where {T<:Tuple{Vararg{SimpleInternalIndex}}} -> Int
-
-Get the number of simple internal indexes in a direct product.
-"""
-@inline rank(cii::InternalIndexProd) = rank(typeof(cii))
-@inline rank(::Type{<:InternalIndexProd{T}}) where {T<:Tuple{Vararg{SimpleInternalIndex}}} = fieldcount(T)
-
-"""
-    ⊗(ii::SimpleInternalIndex, iis::SimpleInternalIndex...) -> InternalIndexProd
-    ⊗(ii::SimpleInternalIndex, cii::InternalIndexProd) -> InternalIndexProd
-    ⊗(cii::InternalIndexProd, ii::SimpleInternalIndex) -> InternalIndexProd
-    ⊗(cii₁::InternalIndexProd, cii₂::InternalIndexProd) -> InternalIndexProd
-
-Direct product between internal indexes.
-"""
-@inline ⊗(ii::SimpleInternalIndex, iis::SimpleInternalIndex...) = InternalIndexProd(ii, iis...)
-@inline ⊗(ii::SimpleInternalIndex, cii::InternalIndexProd) = InternalIndexProd(ii, cii.contents...)
-@inline ⊗(cii::InternalIndexProd, ii::SimpleInternalIndex) = InternalIndexProd(cii.contents..., ii)
-@inline ⊗(cii₁::InternalIndexProd, cii₂::InternalIndexProd) = InternalIndexProd(cii₁.contents..., cii₂.contents...)
-
-"""
-    Internal{I<:InternalIndex} <: VectorSpace{I}
+    Internal{I<:OneOrMore{InternalIndex}} <: VectorSpace{I}
 
 Internal space at a single point.
 """
-abstract type Internal{I<:InternalIndex} <: VectorSpace{I} end
+abstract type Internal{I<:OneOrMore{InternalIndex}} <: VectorSpace{I} end
 
 """
-    dimension(i::Internal) -> Int
+    dimension(internal::Internal) -> Int
 
 Get the dimension of an internal space at a single point.
 """
-@inline dimension(i::Internal) = length(i)
+@inline dimension(internal::Internal) = length(internal)
 
 """
-    SimpleInternal{I<:SimpleInternalIndex} <: Internal{I}
+    SimpleInternal{I<:InternalIndex} <: Internal{I}
 
 Simple internal space at a single point.
 """
-abstract type SimpleInternal{I<:SimpleInternalIndex} <: Internal{I} end
+abstract type SimpleInternal{I<:InternalIndex} <: Internal{I} end
 @inline VectorSpaceStyle(::Type{<:SimpleInternal}) = VectorSpaceDirectProducted(:forward)
-@inline Base.show(io::IO, i::SimpleInternal) = @printf io "%s(%s)" typeof(i) join(("$name=$(getfield(i, name))" for name in fieldnames(typeof(i))), ", ")
+@inline Base.show(io::IO, internal::SimpleInternal) = @printf io "%s(%s)" typeof(internal) join(("$name=$(getfield(internal, name))" for name in fieldnames(typeof(internal))), ", ")
 
 """
-    statistics(i::SimpleInternal) -> Symbol
-    statistics(::Type{<:SimpleInternal{I}}) where {I<:SimpleInternalIndex} -> Symbol
+    statistics(internal::SimpleInternal) -> Symbol
+    statistics(::Type{<:SimpleInternal{I}}) where {I<:InternalIndex} -> Symbol
 
 Get the statistics of a simple internal space.
 """
-@inline statistics(i::SimpleInternal) = statistics(typeof(i))
-@inline statistics(::Type{<:SimpleInternal{I}}) where {I<:SimpleInternalIndex} = statistics(I)
+@inline statistics(internal::SimpleInternal) = statistics(typeof(internal))
+@inline statistics(::Type{<:SimpleInternal{I}}) where {I<:InternalIndex} = statistics(I)
 
 """
-    match(ii::SimpleInternalIndex, i::SimpleInternal) -> Bool
-    match(::Type{I}, i::SimpleInternal) where {I<:SimpleInternalIndex} -> Bool
-    match(ii::SimpleInternalIndex, ::Type{SI}) where {SI<:SimpleInternal} -> Bool
-    match(::Type{I}, ::Type{SI}) where {I<:SimpleInternalIndex, SI<:SimpleInternal} -> Bool
+    match(index::InternalIndex, internal::SimpleInternal) -> Bool
+    match(::Type{I}, internal::SimpleInternal) where {I<:InternalIndex} -> Bool
+    match(index::InternalIndex, ::Type{SI}) where {SI<:SimpleInternal} -> Bool
+    match(::Type{I}, ::Type{SI}) where {I<:InternalIndex, SI<:SimpleInternal} -> Bool
 
-Judge whether a simple internal space or the type of a simple internal space matches a simple internal index or the type of a simple internal index.
+Judge whether a simple internal space or the type of a simple internal space matches an internal index or the type of an internal index.
 
-Here, "match" means that the `eltype` of the simple internal space is consistent with the type of the simple internal index, which usually means that they share the same type name.
+Here, "match" means that the `eltype` of the simple internal space is consistent with the type of the internal index, which usually means that they share the same type name.
 """
-@inline Base.match(ii::SimpleInternalIndex, i::SimpleInternal) = match(typeof(ii), typeof(i))
-@inline Base.match(::Type{I}, i::SimpleInternal) where {I<:SimpleInternalIndex} = match(I, typeof(i))
-@inline Base.match(ii::SimpleInternalIndex, ::Type{SI}) where {SI<:SimpleInternal} = match(typeof(ii), SI)
-@inline @generated Base.match(::Type{I}, ::Type{SI}) where {I<:SimpleInternalIndex, SI<:SimpleInternal} = nameof(I)==nameof(eltype(SI))
+@inline Base.match(index::InternalIndex, internal::SimpleInternal) = match(typeof(index), typeof(internal))
+@inline Base.match(::Type{I}, internal::SimpleInternal) where {I<:InternalIndex} = match(I, typeof(internal))
+@inline Base.match(index::InternalIndex, ::Type{SI}) where {SI<:SimpleInternal} = match(typeof(index), SI)
+@inline @generated Base.match(::Type{I}, ::Type{SI}) where {I<:InternalIndex, SI<:SimpleInternal} = nameof(I)==nameof(eltype(SI))
 
 """
-    filter(ii::SimpleInternalIndex, i::SimpleInternal) -> Union{Nothing, typeof(internal)}
-    filter(::Type{I}, i::SimpleInternal) where {I<:SimpleInternalIndex} -> Union{Nothing, typeof(internal)}
+    filter(index::InternalIndex, internal::SimpleInternal) -> Union{Nothing, typeof(internal)}
+    filter(::Type{I}, internal::SimpleInternal) where {I<:InternalIndex} -> Union{Nothing, typeof(internal)}
 
-Filter a simple internal space with respect to the input simple internal index or the type of a simple internal index.
+Filter a simple internal space with respect to the input internal index or the type of an internal index.
 """
-@inline Base.filter(ii::SimpleInternalIndex, i::SimpleInternal) = filter(typeof(ii), i)
-@inline Base.filter(::Type{I}, i::SimpleInternal) where {I<:SimpleInternalIndex} = filterhelper(Val(match(I, typeof(i))), i)
+@inline Base.filter(index::InternalIndex, internal::SimpleInternal) = filter(typeof(index), internal)
+@inline Base.filter(::Type{I}, internal::SimpleInternal) where {I<:InternalIndex} = filterhelper(Val(match(I, typeof(internal))), internal)
 @inline @generated filterhelper(::Val{B}, internal) where B = B ? :(internal) : nothing
 
 """
-    filter(ii::SimpleInternalIndex, ::Type{SI}) where {SI<:SimpleInternal}
-    filter(::Type{I}, ::Type{SI}) where {I<:SimpleInternalIndex, SI<:SimpleInternal}
+    filter(index::InternalIndex, ::Type{SI}) where {SI<:SimpleInternal}
+    filter(::Type{I}, ::Type{SI}) where {I<:InternalIndex, SI<:SimpleInternal}
 
-Filter the type of a simple internal space with respect to the input simple internal index or the type of a simple internal index.
+Filter the type of a simple internal space with respect to the input internal index or the type of an internal index.
 """
-@inline Base.filter(ii::SimpleInternalIndex, ::Type{SI}) where {SI<:SimpleInternal} = filter(typeof(ii), SI)
-@inline Base.filter(::Type{I}, ::Type{SI}) where {I<:SimpleInternalIndex, SI<:SimpleInternal} = filterhelper(Val(match(I, SI)), SI)
+@inline Base.filter(index::InternalIndex, ::Type{SI}) where {SI<:SimpleInternal} = filter(typeof(index), SI)
+@inline Base.filter(::Type{I}, ::Type{SI}) where {I<:InternalIndex, SI<:SimpleInternal} = filterhelper(Val(match(I, SI)), SI)
 
 """
-    CompositeInternal{T<:Tuple{Vararg{SimpleInternal}}, I<:InternalIndex} <: Internal{I}
+    shape(internal::SimpleInternal, index::InternalIndex) -> OrdinalRange{Int, Int}
+
+Get the shape of a simple internal space when a labeled internal index is considered.
+
+It can be overloaded to restrict the shape of a simple internal space based on the input internal index to significantly improve efficiency, but this is not necessary.
+"""
+@inline shape(internal::SimpleInternal, ::InternalIndex) = shape(internal)
+
+"""
+    CompositeInternal{T<:OneAtLeast{SimpleInternal}, I<:OneOrMore{InternalIndex}} <: Internal{I}
 
 Abstract type of the composition (i.e., direct sum or direct product) of several simple internal spaces.
 """
-abstract type CompositeInternal{T<:Tuple{Vararg{SimpleInternal}}, I<:InternalIndex} <: Internal{I} end
+abstract type CompositeInternal{T<:OneAtLeast{SimpleInternal}, I<:OneOrMore{InternalIndex}} <: Internal{I} end
 
 """
-    rank(ci::CompositeInternal) -> Int
-    rank(::Type{<:CompositeInternal{T}}) where {T<:Tuple{Vararg{SimpleInternal}}} -> Int
+    rank(internal::CompositeInternal) -> Int
+    rank(::Type{<:CompositeInternal{T}}) where {T<:OneAtLeast{SimpleInternal}} -> Int
 
 Get the number of simple internal spaces in a composite internal space.
 """
-@inline rank(ci::CompositeInternal) = rank(typeof(ci))
-@inline rank(::Type{<:CompositeInternal{T}}) where {T<:Tuple{Vararg{SimpleInternal}}} = fieldcount(T)
+@inline rank(internal::CompositeInternal) = rank(typeof(internal))
+@inline rank(::Type{<:CompositeInternal{T}}) where {T<:OneAtLeast{SimpleInternal}} = fieldcount(T)
 
 """
-    filter(ii::SimpleInternalIndex, ci::CompositeInternal) -> Union{Nothing, SimpleInternal, CompositeInternal}
-    filter(::Type{I}, ci::CompositeInternal) where {I<:SimpleInternalIndex} -> Union{Nothing, SimpleInternal, CompositeInternal}
+    filter(index::InternalIndex, internal::CompositeInternal) -> Union{Nothing, SimpleInternal, CompositeInternal}
+    filter(::Type{I}, internal::CompositeInternal) where {I<:InternalIndex} -> Union{Nothing, SimpleInternal, CompositeInternal}
 
-Filter the composite internal space and select those that match the input simple internal index or the type of a simple internal index.
+Filter the composite internal space and select those that match the input internal index or the type of an internal index.
 """
-@inline Base.filter(ii::SimpleInternalIndex, ci::CompositeInternal) = filter(typeof(ii), ci)
-@inline Base.filter(::Type{I}, ci::CompositeInternal{T}) where {I<:SimpleInternalIndex, T<:Tuple{Vararg{SimpleInternal}}} = filterhelper(Val(map(SI->match(I, SI), fieldtypes(T))), I, ci)
-@inline @generated function filterhelper(::Val{BS}, ::Type{I}, ci::CompositeInternal) where {BS, I<:SimpleInternalIndex}
+@inline Base.filter(index::InternalIndex, internal::CompositeInternal) = filter(typeof(index), internal)
+@inline Base.filter(::Type{I}, internal::CompositeInternal{T}) where {I<:InternalIndex, T<:OneAtLeast{SimpleInternal}} = filterhelper(Val(map(SI->match(I, SI), fieldtypes(T))), I, internal)
+@inline @generated function filterhelper(::Val{BS}, ::Type{I}, internal::CompositeInternal) where {BS, I<:InternalIndex}
     exprs = []
     for (i, B) in enumerate(BS)
-        B && push!(exprs, :(filter(I, ci.contents[$i])))
+        B && push!(exprs, :(filter(I, internal.contents[$i])))
     end
     length(exprs)==0 && return
-    length(exprs)==1 && return first(exprs)
-    return :(rawtype(typeof(ci))($(exprs...)))
+    length(exprs)==1 && return only(exprs)
+    return :(rawtype(typeof(internal))($(exprs...)))
 end
 
 """
-    filter(ii::SimpleInternalIndex, ::Type{CI}) where {CI<:CompositeInternal}
-    filter(::Type{I}, ::Type{CI}) where {I<:SimpleInternalIndex, CI<:CompositeInternal}
+    filter(index::InternalIndex, ::Type{CI}) where {CI<:CompositeInternal}
+    filter(::Type{I}, ::Type{CI}) where {I<:InternalIndex, CI<:CompositeInternal}
 
-Filter the type of a composite internal space and select those that match the input simple internal index or the type of a simple internal index.
+Filter the type of a composite internal space and select those that match the input internal index or the type of an internal index.
 """
-@inline Base.filter(ii::SimpleInternalIndex, ::Type{CI}) where {CI<:CompositeInternal} = filter(typeof(ii), CI)
-@inline Base.filter(::Type{I}, ::Type{CI}) where {I<:SimpleInternalIndex, T<:Tuple{Vararg{SimpleInternal}}, CI<:CompositeInternal{T}} = filterhelper(Val(map(SI->match(I, SI), fieldtypes(T))), I, CI)
-@inline @generated function filterhelper(::Val{BS}, ::Type{I}, ::Type{CI}) where {BS, I<:SimpleInternalIndex, T<:Tuple{Vararg{SimpleInternal}}, CI<:CompositeInternal{T}}
+@inline Base.filter(index::InternalIndex, ::Type{CI}) where {CI<:CompositeInternal} = filter(typeof(index), CI)
+@inline Base.filter(::Type{I}, ::Type{CI}) where {I<:InternalIndex, T<:OneAtLeast{SimpleInternal}, CI<:CompositeInternal{T}} = filterhelper(Val(map(SI->match(I, SI), fieldtypes(T))), I, CI)
+@inline @generated function filterhelper(::Val{BS}, ::Type{I}, ::Type{CI}) where {BS, I<:InternalIndex, T<:OneAtLeast{SimpleInternal}, CI<:CompositeInternal{T}}
     exprs = []
     for (i, B) in enumerate(BS)
         B && push!(exprs, :(filter(I, fieldtype(T, $i))))
@@ -235,331 +207,59 @@ Filter the type of a composite internal space and select those that match the in
 end
 
 """
-    InternalSum{T<:Tuple{Vararg{SimpleInternal}}, I<:InternalIndex} <: CompositeInternal{T, I}
+    InternalSum{T<:OneAtLeast{SimpleInternal}, I<:InternalIndex} <: CompositeInternal{T, I}
 
 Direct sum of several single internal spaces.
 """
-struct InternalSum{T<:Tuple{Vararg{SimpleInternal}}, I<:InternalIndex} <: CompositeInternal{T, I}
+struct InternalSum{T<:OneAtLeast{SimpleInternal}, I<:InternalIndex} <: CompositeInternal{T, I}
     contents::T
-    InternalSum(contents::Tuple{Vararg{SimpleInternal}}) = new{typeof(contents), eltype(InternalSum, fieldtypes(typeof(contents))...)}(contents)
+    InternalSum(contents::OneAtLeast{SimpleInternal}) = new{typeof(contents), eltype(InternalSum, fieldtypes(typeof(contents))...)}(contents)
 end
 @inline VectorSpaceStyle(::Type{<:InternalSum}) = VectorSpaceDirectSummed()
-@inline Base.show(io::IO, ci::InternalSum) = @printf io "%s" join((string(ci.contents[i]) for i = 1:rank(ci)), " ⊕ ")
 @inline Base.eltype(::Type{InternalSum}, types...) = mapreduce(eltype, typejoin, types; init=Union{})
+@inline Base.show(io::IO, internal::InternalSum) = @printf io "%s" join((string(internal.contents[i]) for i = 1:rank(internal)), " ⊕ ")
 @inline InternalSum(contents::SimpleInternal...) = InternalSum(contents)
 
 """
-    ⊕(i::SimpleInternal, is::SimpleInternal...) -> InternalSum
-    ⊕(i::SimpleInternal, ci::InternalSum) -> InternalSum
-    ⊕(ci::InternalSum, i::SimpleInternal) -> InternalSum
-    ⊕(ci₁::InternalSum, ci₂::InternalSum) -> InternalSum
+    ⊕(internal::SimpleInternal, internals::SimpleInternal...) -> InternalSum
+    ⊕(internal::SimpleInternal, internals::InternalSum) -> InternalSum
+    ⊕(internals::InternalSum, internal::SimpleInternal) -> InternalSum
+    ⊕(internals₁::InternalSum, internals₂::InternalSum) -> InternalSum
 
 Direct sum between simple internal spaces and composite internal spaces.
 """
-@inline ⊕(i::SimpleInternal, is::SimpleInternal...) = InternalSum(i, is...)
-@inline ⊕(i::SimpleInternal, ci::InternalSum) = InternalSum(i, ci.contents...)
-@inline ⊕(ci::InternalSum, i::SimpleInternal) = InternalSum(ci.contents..., i)
-@inline ⊕(ci₁::InternalSum, ci₂::InternalSum) = InternalSum(ci₁.contents..., ci₂.contents...)
+@inline ⊕(internal::SimpleInternal, internals::SimpleInternal...) = InternalSum(internal, internals...)
+@inline ⊕(internal::SimpleInternal, internals::InternalSum) = InternalSum(internal, internals.contents...)
+@inline ⊕(internals::InternalSum, internal::SimpleInternal) = InternalSum(internals.contents..., internal)
+@inline ⊕(internals₁::InternalSum, internals₂::InternalSum) = InternalSum(internals₁.contents..., internals₂.contents...)
 
 """
-    InternalProd{T<:Tuple{Vararg{SimpleInternal}}, I<:InternalIndex} <: CompositeInternal{T, I}
+    InternalProd{T<:OneAtLeast{SimpleInternal}, I<:OneAtLeast{InternalIndex}} <: CompositeInternal{T, I}
 
 Direct product of several single internal spaces.
 """
-struct InternalProd{T<:Tuple{Vararg{SimpleInternal}}, I<:InternalIndex} <: CompositeInternal{T, I}
+struct InternalProd{T<:OneAtLeast{SimpleInternal}, I<:OneAtLeast{InternalIndex}} <: CompositeInternal{T, I}
     contents::T
-    InternalProd(contents::Tuple{Vararg{SimpleInternal}}) = new{typeof(contents), eltype(InternalProd, fieldtypes(typeof(contents))...)}(contents)
+    InternalProd(contents::OneAtLeast{SimpleInternal}) = new{typeof(contents), eltype(InternalProd, fieldtypes(typeof(contents))...)}(contents)
 end
 @inline VectorSpaceStyle(::Type{<:InternalProd}) = VectorSpaceDirectProducted(:forward)
-@inline Base.convert(::Type{<:InternalIndexProd}, index::CartesianIndex, ci::InternalProd) = InternalIndexProd(map(getindex, ci.contents, index.I))
-@inline Base.show(io::IO, ci::InternalProd) = @printf io "%s" join((string(ci.contents[i]) for i = 1:rank(ci)), " ⊗ ")
-@inline Base.eltype(::Type{InternalProd}, types...) = InternalIndexProd{Tuple{map(eltype, types)...}}
+@inline Base.eltype(::Type{InternalProd}, types...) = Tuple{map(eltype, types)...}
+@inline Base.convert(::Type{<:OneAtLeast{InternalIndex}}, index::CartesianIndex, internal::InternalProd) = map(getindex, internal.contents, index.I)
+@inline Base.show(io::IO, internal::InternalProd) = @printf io "%s" join((string(internal.contents[i]) for i = 1:rank(internal)), " ⊗ ")
 @inline InternalProd(contents::SimpleInternal...) = InternalProd(contents)
 
 """
-    ⊗(i::SimpleInternal, is::SimpleInternal...) -> InternalProd
-    ⊗(i::SimpleInternal, ci::InternalProd) -> InternalProd
-    ⊗(ci::InternalProd, i::SimpleInternal) -> InternalProd
-    ⊗(ci₁::InternalProd, ci₂::InternalProd) -> InternalProd
+    ⊗(internal::SimpleInternal, internals::SimpleInternal...) -> InternalProd
+    ⊗(internal::SimpleInternal, internals::InternalProd) -> InternalProd
+    ⊗(internals::InternalProd, internal::SimpleInternal) -> InternalProd
+    ⊗(internals₁::InternalProd, internals₂::InternalProd) -> InternalProd
 
 Direct product between simple internal spaces and composite internal spaces.
 """
-@inline ⊗(i::SimpleInternal, is::SimpleInternal...) = InternalProd(i, is...)
-@inline ⊗(i::SimpleInternal, ci::InternalProd) = InternalProd(i, ci.contents...)
-@inline ⊗(ci::InternalProd, i::SimpleInternal) = InternalProd(ci.contents..., i)
-@inline ⊗(ci₁::InternalProd, ci₂::InternalProd) = InternalProd(ci₁.contents..., ci₂.contents...)
-
-# InternalPattern
-"""
-    AllEqual{Fields} <: Function
-
-All-equal constraint for the direct product of homogenous simple internal indexes that for every specified field the values of the internal indexes should be all equal.
-"""
-struct AllEqual{Fields} <: Function
-    AllEqual(fields::Tuple{Vararg{Symbol}}) = new{fields}()
-end
-@inline Base.show(io::IO, ::AllEqual{Fields}) where Fields = @printf io "AllEqual(%s)" join(map(repr, Fields), ", ")
-
-"""
-    AllEqual(fields::Tuple{Vararg{Symbol}})
-    AllEqual(fields::Symbol...)
-
-Construct an all-equal constraint.
-"""
-@inline AllEqual(fields::Symbol...) = AllEqual(fields)
-
-"""
-    AllEqual(::Type{I}) where {I<:SimpleInternalIndex}
-
-Construct an all-equal constraint based on the type of a simple internal index.
-"""
-@inline AllEqual(::Type{I}) where {I<:SimpleInternalIndex} = constraint(I, I|>allequalfields|>Val)
-@generated function constraint(::Type{I}, ::Val{fields}) where {I<:SimpleInternalIndex, fields}
-    result = Symbol[]
-    for field in fields
-        F = fieldtype(I, field)
-        F==Symbol && error("AllEqual error: $I is too complicated for an all-equal constraint to construct since it host the `:$field` field represented by a `Symbol` other than a `Colon`.")
-        F==Colon && push!(result, field)
-    end
-    return AllEqual(result...)
-end
-
-"""
-    allequalfields(::Type{I}) where {I<:SimpleInternalIndex} -> Tuple{Vararg{Symbol}}
-
-Get the field names that can be subject to all-equal constraint based on the type of a simple internal index.
-"""
-@inline allequalfields(::Type{I}) where {I<:SimpleInternalIndex} = fieldnames(I)
-
-"""
-    (constraint::AllEqual{fields})(index::InternalIndexProd{NTuple{N, I}}) where {fields, N, I<:SimpleInternalIndex} -> Bool
-
-Judge whether the direct product of a set of homogenous simple internal indexes is subject to an all-equal constraint.
-"""
-@generated function (constraint::AllEqual{fields})(index::InternalIndexProd{NTuple{N, I}}) where {fields, N, I<:SimpleInternalIndex}
-    N==0 && return true
-    exprs = []
-    for field in QuoteNode.(fields)
-        push!(exprs, Expr(:call, allequal, Expr(:tuple, [:(getfield(index[$i], $field)) for i=1:N]...)))
-    end
-    length(exprs)==0 && return true
-    return Expr(:call, all, Expr(:tuple, exprs...))
-end
-
-"""
-    InternalPattern{I, P, N, C<:NTuple{N, Function}} <: QuantumOperator
-
-Internal pattern for the direct product of a set of simple internal indexes with extra constraints.
-"""
-struct InternalPattern{I, P, N, C<:NTuple{N, Function}} <: QuantumOperator
-    index::InternalIndexProd{I}
-    constraints::C
-    representations::NTuple{N, String}
-    function InternalPattern{P}(index::InternalIndexProd{I}, constraints::NTuple{N, Function}, representations::NTuple{N, String}=map(string, constraints))  where {P, I<:Tuple{Vararg{SimpleInternalIndex}}, N}
-        @assert isa(P, NTuple{N, Int}) "InternalPattern error: partition ($P) is not $N-tuple of integers."
-        @assert sum(P)==rank(index) "InternalPattern error: sum of partition ($(sum(P))) is not equal to the rank ($(rank(index))) of the direct product of simple internal indexes."
-        new{I, P, N, typeof(constraints)}(index, constraints, representations)
-    end
-end
-@inline parameternames(::Type{<:InternalPattern}) = (:index, :partition, :npartition, :constraints)
-@inline Base.:(==)(pattern₁::InternalPattern, pattern₂::InternalPattern) = partition(pattern₁)==partition(pattern₂) && pattern₁.index==pattern₂.index && pattern₁.representations==pattern₂.representations
-@inline Base.:isequal(pattern₁::InternalPattern, pattern₂::InternalPattern) = isequal(partition(pattern₁), partition(pattern₂)) && isequal(pattern₁.index, pattern₂.index) && isequal(pattern₁.representations, pattern₂.representations)
-@inline Base.hash(pattern::InternalPattern, h::UInt) = hash((partition(pattern)..., pattern.index.contents..., pattern.representations...), h)
-function Base.show(io::IO, pattern::InternalPattern)
-    len, count = length(pattern.representations), 1
-    for i = 1:len
-        r = rank(pattern, i)
-        start, stop = count, count+r-1
-        index = pattern.index[start:stop]
-        if i==1
-            @printf io "%s" (isdefinite(index) ? "" : "∑")
-            (len>1 || !isdefinite(index)) && @printf io "%s" "["
-        else
-            @printf io " ⊗ %s[" (isdefinite(index) ? "" : "∑")
-        end
-        @printf io "%s" join(index.contents, " ")
-        (len>1 || !isdefinite(index)) && @printf io "%s" "]"
-        representation = pattern.representations[i]
-        length(representation)==0 || occursin("AllEqual", representation) || @printf io "(%s)" representation
-        count = stop+1
-    end
-end
-
-"""
-    InternalPattern(index::InternalIndexProd, constraint::Function, representation::String=string(constraint))
-    InternalPattern{P}(index::InternalIndexProd, constraints::NTuple{N, Function}, representations::NTuple{N, String}=map(string, constraints))  where {P, N}
-
-Construct an internal pattern for the direct product of a set of simple internal indexes with 1) only one constraint function, and 2) several constraint functions.
-"""
-@inline InternalPattern(index::InternalIndexProd, constraint::Function, representation::String=string(constraint)) = InternalPattern{(rank(index),)}(index, (constraint,), (representation,))
-
-"""
-    InternalPattern(index::SimpleInternalIndex)
-    InternalPattern(index::InternalIndexProd{<:Tuple{Vararg{I}}}) where {I<:SimpleInternalIndex}
-
-Construct an internal pattern whose constraint is an [`AllEqual`](@ref) function for the direct product of a homogeneous set of simple internal indexes.
-"""
-@inline InternalPattern(index::SimpleInternalIndex) = InternalPattern(InternalIndexProd(index))
-@inline InternalPattern(index::InternalIndexProd{<:Tuple{Vararg{I}}}) where {I<:SimpleInternalIndex} = InternalPattern(index, AllEqual(I))
-
-"""
-    partition(pattern::InternalPattern) -> Tuple{Vararg{Int}}
-    partition(::Type{<:InternalPattern{I, P} where I}) where P -> P
-
-Get the partition of the direct product of a set of simple internal indexes on which the extra constraints operate independently.
-"""
-@inline partition(pattern::InternalPattern) = partition(typeof(pattern))
-@inline partition(::Type{<:InternalPattern{I, P} where I}) where P = P
-
-"""
-    rank(pattern::InternalPattern) -> Int
-    rank(::Type{P}) where {P<:InternalPattern} -> Int
-
-Get the rank of the direct product of the simple internal indexes that an internal pattern can apply.
-"""
-@inline rank(pattern::InternalPattern) = rank(typeof(pattern))
-@inline @generated rank(::Type{P}) where {P<:InternalPattern} = sum(partition(P))
-
-"""
-    rank(pattern::InternalPattern, i::Integer) -> Int
-    rank(::Type{P}, i::Integer) where {P<:InternalPattern} -> Int
-
-Get the rank of the direct product of the simple internal indexes that the ith constraint in an internal pattern can apply.
-"""
-@inline rank(pattern::InternalPattern, i::Integer) = rank(typeof(pattern), i)
-@inline rank(::Type{P}, i::Integer) where {P<:InternalPattern} = partition(P)[i]
-
-"""
-    match(pattern::InternalPattern, index::InternalIndexProd) -> Bool
-
-Judge whether the direct product of a set of simple internal indexes satisfies an internal pattern.
-"""
-@generated function Base.match(pattern::InternalPattern, index::InternalIndexProd)
-    @assert rank(pattern)==rank(index) "match error: mismatched ranks of the direct product of simple internal indexes and internal pattern."
-    exprs, count = [], 1
-    for (i, r) in enumerate(partition(pattern))
-        start, stop = count, count+r-1
-        segment = Expr(:call, :InternalIndexProd, Expr(:tuple, [:(index[$pos]) for pos=start:stop]...))
-        push!(exprs, :(pattern.constraints[$i]($segment)::Bool))
-        count = stop+1
-    end
-    return Expr(:call, :all, Expr(:tuple, exprs...))
-end
-
-"""
-    ⊗(pattern₁::InternalPattern, pattern₂::InternalPattern) -> InternalPattern
-
-Get the combination of two internal patterns.
-"""
-@inline function ⊗(pattern₁::InternalPattern, pattern₂::InternalPattern)
-    return InternalPattern{(partition(pattern₁)..., partition(pattern₂)...)}(pattern₁.index⊗pattern₂.index, (pattern₁.constraints..., pattern₂.constraints...), (pattern₁.representations..., pattern₂.representations...))
-end
-
-"""
-    latexstring(pattern::InternalPattern) -> String
-
-Convert an internal pattern to the latex format.
-"""
-function latexstring(pattern::InternalPattern)
-    result = String[]
-    len, count = length(pattern.representations), 1
-    for i = 1:len
-        r = rank(pattern, i)
-        start, stop = count, count+r-1
-        index = pattern.index[start:stop]
-        representation = pattern.representations[i]
-        summation = occursin("AllEqual", representation) ? "" : replace(replace(representation, "&&"=>"\\,\\text{and}\\,"), "||"=>"\\,\\text{or}\\,")
-        summation=="" || (summation = join(push!(symbols(index.contents, representation), summation), ",\\,"))
-        context = isdefinite(index) ? "" : "\\sum_{$summation}" 
-        for content in index.contents
-            context = @sprintf "%s%s%s" context (length(context)>0 ? " " : "") latexstring(content)
-        end
-        push!(result, context)
-        count = stop+1
-    end
-    return join(result, " \\cdot ")
-end
-function symbols(indexes::Tuple{Vararg{SimpleInternalIndex}}, constraint::String)
-    result = String[]
-    for index in indexes
-        for i = 1:fieldcount(typeof(index))
-            attr = getfield(index, i)
-            if isa(attr, Symbol)
-                value = string(attr)
-                occursin(value, constraint) || push!(result, value)
-            end
-        end
-    end
-    return sort!(unique!(result))
-end
-
-# ConstrainedInternal
-"""
-    ConstrainedInternal{P<:InternalProd, C<:InternalPattern}
-
-Constrained internal space.
-"""
-struct ConstrainedInternal{P<:InternalProd, C<:InternalPattern}
-    internal::P
-    pattern::C
-    function ConstrainedInternal(internal::InternalProd, pattern::InternalPattern)
-        @assert rank(internal)==rank(pattern) "ConstrainedInternal error: mismatched ranks of the input internal space and internal pattern."
-        @assert all(map(match, pattern.index.contents, internal.contents)) "ConstrainedInternal error: mismatched simple internal spaces with respect to simple internal indexes."
-        new{typeof(internal), typeof(pattern)}(internal, pattern)
-    end
-end
-@inline Base.eltype(ci::ConstrainedInternal) = eltype(typeof(ci))
-@inline Base.eltype(::Type{<:ConstrainedInternal{P}}) where {P<:InternalProd} = eltype(P)
-@inline Base.IteratorSize(::Type{<:ConstrainedInternal}) = Base.SizeUnknown()
-function Base.iterate(ci::ConstrainedInternal, state=(space=InternalIndexSpace(ci.internal, ci.pattern.index); (space, iterate(space))))
-    space, state = state
-    while !isnothing(state)
-        index, state = state
-        state = iterate(space, state)
-        match(ci.pattern, index) && return index, (space, state)
-    end
-    return
-end
-struct InternalIndexSpace{I<:InternalIndex, E<:InternalIndex, V<:Internal{E}} <: VectorSpace{E}
-    internal::V
-    index::I
-end
-@inline VectorSpaceStyle(::Type{<:InternalIndexSpace{<:InternalIndexProd, <:InternalIndexProd, <:CompositeInternal}}) = VectorSpaceDirectProducted(:forward)
-@inline function getcontent(iispace::InternalIndexSpace{<:InternalIndexProd, <:InternalIndexProd, <:CompositeInternal}, ::Val{:contents})
-    return map((internal, index)->InternalIndexSpace(internal, index), iispace.internal.contents, iispace.index.contents)
-end
-@inline function Base.convert(::Type{<:InternalIndexProd}, index::CartesianIndex, iispace::InternalIndexSpace{<:InternalIndexProd, <:InternalIndexProd, <:CompositeInternal})
-    return InternalIndexProd(map(getindex, getcontent(iispace, :contents), index.I))
-end
-@inline VectorSpaceStyle(::Type{<:InternalIndexSpace{<:SimpleInternalIndex, <:SimpleInternalIndex, <:SimpleInternal}}) = VectorSpaceDirectProducted(:forward)
-@inline shape(iispace::InternalIndexSpace{<:SimpleInternalIndex, <:SimpleInternalIndex, <:SimpleInternal}) = shape(iispace.internal, iispace.index)
-@inline function Base.convert(::Type{<:CartesianIndex}, index::E, iispace::InternalIndexSpace{<:SimpleInternalIndex, E, <:SimpleInternal}) where {E<:SimpleInternalIndex}
-    return convert(CartesianIndex, index, iispace.internal)
-end
-@inline function Base.convert(::Type{E}, index::CartesianIndex, iispace::InternalIndexSpace{<:SimpleInternalIndex, E, <:SimpleInternal}) where {E<:SimpleInternalIndex}
-    return convert(E, index, iispace.internal)
-end
-
-"""
-    ConstrainedInternal(internal::SimpleInternal, pattern::InternalPattern)
-    ConstrainedInternal(internal::InternalProd, pattern::InternalPattern)
-
-Construct a constrained internal space.
-"""
-@inline ConstrainedInternal(internal::SimpleInternal, pattern::InternalPattern) = ConstrainedInternal(InternalProd(internal), pattern)
-
-"""
-    shape(internal::SimpleInternal, index::SimpleInternalIndex) -> OrdinalRange{Int, Int}
-
-Get the shape of a simple internal space when a labeled simple internal index are considered.
-
-A constrained internal space need this function to generate all the internal indexes that match the internal pattern, which gets a default implementation, i.e.,
-```julia
-shape(internal::SimpleInternal, index::SimpleInternalIndex) = shape(internal)
-```
-It can be overloaded to restrict the shape of a simple internal space based on the input simple internal index to significantly improve efficiency, but this is not necessary.
-"""
-@inline shape(internal::SimpleInternal, ::SimpleInternalIndex) = shape(internal)
+@inline ⊗(internal::SimpleInternal, internals::SimpleInternal...) = InternalProd(internal, internals...)
+@inline ⊗(internal::SimpleInternal, internals::InternalProd) = InternalProd(internal, internals.contents...)
+@inline ⊗(internals::InternalProd, internal::SimpleInternal) = InternalProd(internals.contents..., internal)
+@inline ⊗(internals₁::InternalProd, internals₂::InternalProd) = InternalProd(internals₁.contents..., internals₂.contents...)
 
 # Index
 """
@@ -583,23 +283,23 @@ Constant ordinals.
 const ˢᵗ = ⁿᵈ = ʳᵈ = ᵗʰ = Ordinal(1)
 
 """
-    Index(site::Union{Int, Ordinal, Colon}, internal::SimpleInternalIndex)
+    Index(site::Union{Int, Ordinal, Colon}, internal::InternalIndex)
 
 Index of a degree of freedom, which consist of the spatial part (i.e., the site index) and the internal part (i.e., the internal index).
 """
-struct Index{I<:SimpleInternalIndex, S<:Union{Int, Ordinal, Colon}} <: OperatorIndex
+struct Index{I<:InternalIndex, S<:Union{Int, Ordinal, Colon}} <: OperatorIndex
     site::S
     internal::I
 end
 @inline parameternames(::Type{<:Index}) = (:internal, :site)
 function Base.show(io::IO, index::Index)
     internal = String[]
-    for i = 1:fieldcount(internalindextype(index))
-        value = getfield(index.internal, i)
+    for field in showablefields(internalindextype(index))
+        value = getfield(index.internal, field)
         push!(internal, str(value))
     end
     internal = join(internal, ", ")
-    @printf io "%s(%s%s%s)" OperatorIndex[typeof(index)] str(index.site) (length(internal)>0 ? ", " : "") internal
+    @printf io "%s(%s%s%s)" OperatorIndex[index] str(index.site) (length(internal)>0 ? ", " : "") internal
 end
 @inline InternalIndex(index::Index) = index.internal
 @inline internalindextype(::Type{I}) where {I<:Index} = parametertype(I, :internal)
@@ -622,21 +322,21 @@ Get the type of the `Index` part of an `OperatorIndex`.
 
 """
     isdefinite(index::Index) -> Bool
-    isdefinite(::Type{<:Index{I}}) where {I<:SimpleInternalIndex} -> Bool
+    isdefinite(::Type{<:Index{I}}) where {I<:InternalIndex} -> Bool
 
 Determine whether an index denotes a definite degree of freedom.
 """
 @inline isdefinite(index::Index) = isdefinite(typeof(index))
-@inline isdefinite(::Type{<:Index{I}}) where {I<:SimpleInternalIndex} = isdefinite(I)
+@inline isdefinite(::Type{<:Index{I}}) where {I<:InternalIndex} = isdefinite(I)
 
 """
-    isdefinite(indexes::Tuple{Vararg{Index}}) -> Bool
-    isdefinite(::Type{T}) where {T<:Tuple{Vararg{Index}}} -> Bool
+    isdefinite(indexes::OneAtLeast{Index}) -> Bool
+    isdefinite(::Type{T}) where {T<:OneAtLeast{Index}} -> Bool
 
 Determine whether a tuple of indexes denotes a definite degree of freedom.
 """
-@inline isdefinite(indexes::Tuple{Vararg{Index}}) = isdefinite(typeof(indexes))
-@inline isdefinite(::Type{T}) where {T<:Tuple{Vararg{Index}}} = all(map(isdefinite, fieldtypes(T)))
+@inline isdefinite(indexes::OneAtLeast{Index}) = isdefinite(typeof(indexes))
+@inline isdefinite(::Type{T}) where {T<:OneAtLeast{Index}} = all(map(isdefinite, fieldtypes(T)))
 
 """
     statistics(index::Index) -> Symbol
@@ -744,12 +444,12 @@ end
 @inline Base.propertynames(::ID{CoordinatedIndex}) = (:indexes, :rcoordinates, :icoordinates)
 function Base.show(io::IO, index::CoordinatedIndex)
     internal = String[]
-    for i = 1:fieldcount(internalindextype(index))
-        value = getfield(InternalIndex(index), i)
+    for field in showablefields(internalindextype(index))
+        value = getfield(InternalIndex(index), field)
         push!(internal, str(value))
     end
     internal = join(internal, ", ")
-    @printf io "%s(%s%s%s, %s, %s)" OperatorIndex[typeof(index)] str(index.index.site) (length(internal)>0 ? ", " : "") internal index.rcoordinate index.icoordinate
+    @printf io "%s(%s%s%s, %s, %s)" OperatorIndex[index] str(index.index.site) (length(internal)>0 ? ", " : "") internal index.rcoordinate index.icoordinate
 end
 @inline compositeindexcoordinate(vector::SVector) = vector
 @inline compositeindexcoordinate(vector::SVector{N, Float}) where N = SVector(ntuple(i->vector[i]===-0.0 ? 0.0 : vector[i], Val(N)))
@@ -874,26 +574,59 @@ Construct a Hilbert space with all same internal spaces.
 
 # Pattern
 """
-    Pattern{C<:InternalPattern, S<:Tuple{Vararg{Union{Ordinal, Colon}}}} <: QuantumOperator
+    diagonalfields(::Type{I}) where {I<:InternalIndex} -> Tuple{Vararg{Symbol}}
+
+Get the field names that can be subject to all-equal constraint based on the type of an internal index.
+"""
+@inline diagonalfields(::Type{I}) where {I<:InternalIndex} = fieldnames(I)
+
+"""
+    isdiagonal(indexes::OneAtLeast{InternalIndex}, ::Val{fields}) where fields -> Bool
+
+Judge whether a set of homogenous internal indexes is subject to the "diagonal" constraint.
+"""
+@inline isdiagonal(::Type{I}, indexes::OneAtLeast{InternalIndex}) where {I<:InternalIndex} = _isdiagonal_(I, I|>diagonalfields|>Val, indexes)
+@generated function _isdiagonal_(::Type{I}, ::Val{candidates}, indexes::OneAtLeast{InternalIndex}) where {I<:InternalIndex, candidates}
+    fields = Symbol[]
+    for field in candidates
+        F = fieldtype(I, field)
+        F==Symbol && error("isdiagonal error: $I is too complicated for the \"diagonal\" constraint since it host the `:$field` field represented by a `Symbol` other than a `Colon`.")
+        F==Colon && push!(fields, field)
+    end
+    length(fields)==0 && return true
+    exprs = []
+    for field in QuoteNode.(fields)
+        push!(exprs, Expr(:call, allequal, Expr(:tuple, [:(getfield(indexes[$i], $field)) for i=1:fieldcount(indexes)]...)))
+    end
+    return Expr(:call, all, Expr(:tuple, exprs...))
+end
+
+"""
+    Pattern{I, P, N, C<:OneAtLeast{Function}} <: QuantumOperator
 
 Coupling pattern.
 """
-struct Pattern{C<:InternalPattern, S<:Tuple{Vararg{Union{Ordinal, Colon}}}} <: QuantumOperator
-    sites::S
-    internal::C
-    function Pattern(sites::Tuple{Vararg{Union{Ordinal, Colon}}}, internal::InternalPattern)
-        @assert length(sites)==rank(internal) "Pattern error: mismatched ranks of sites ($(length(sites))) and internal pattern ($(rank(internal)))."
-        new{typeof(internal), typeof(sites)}(sites, internal)
+struct Pattern{I, P, N, C<:OneAtLeast{Function}} <: QuantumOperator
+    indexes::I
+    constraints::C
+    representations::NTuple{N, String}
+    function Pattern{P}(indexes::OneAtLeast{Index}, constraints::NTuple{N, Function}, representations::NTuple{N, String}=map(string, constraints))  where {P, N}
+        @assert isa(P, NTuple{N, Int}) "Pattern error: partition ($P) is not $N-tuple of integers."
+        @assert isa(indexes.sites, OneAtLeast{Union{Ordinal, Colon}}) "Pattern error: for each index, the site must be an `Ordinal` or the `:`."
+        @assert sum(P)==length(indexes) "Pattern error: mismatched sum of partition ($(sum(P))) and number of indexes ($(length(indexes)))."
+        new{typeof(indexes), P, N, typeof(constraints)}(indexes, constraints, representations)
     end
 end
-@inline parameternames(::Type{<:Pattern}) = (:internal, :sites)
-@inline Base.hash(pattern::Pattern, h::UInt) = hash((pattern.sites, pattern.internal), h)
+@inline parameternames(::Type{<:Pattern}) = (:indexes, :partition, :npartition, :constraints)
+@inline Base.:(==)(pattern₁::Pattern, pattern₂::Pattern) = partition(pattern₁)==partition(pattern₂) && pattern₁.indexes==pattern₂.indexes && pattern₁.representations==pattern₂.representations
+@inline Base.:isequal(pattern₁::Pattern, pattern₂::Pattern) = isequal(partition(pattern₁), partition(pattern₂)) && isequal(pattern₁.indexes, pattern₂.indexes) && isequal(pattern₁.representations, pattern₂.representations)
+@inline Base.hash(pattern::Pattern, h::UInt) = hash((partition(pattern)..., pattern.indexes..., pattern.representations...), h)
 function Base.show(io::IO, pattern::Pattern)
-    len, count = length(pattern.internal.representations), 1
+    len, count = length(pattern.representations), 1
     for i = 1:len
-        r = rank(pattern.internal, i)
+        r = rank(pattern, i)
         start, stop = count, count+r-1
-        indexes = map(Index, pattern.sites[start:stop], pattern.internal.index[start:stop].contents)
+        indexes = pattern[start:stop]
         if i==1
             @printf io "%s" (isdefinite(indexes) ? "" : "∑")
             (len>1 || !isdefinite(indexes)) && @printf io "%s" "["
@@ -902,36 +635,62 @@ function Base.show(io::IO, pattern::Pattern)
         end
         @printf io "%s" join(indexes, " ")
         (len>1 || !isdefinite(indexes)) && @printf io "%s" "]"
-        representation = pattern.internal.representations[i]
-        length(representation)==0 || occursin("AllEqual", representation) || @printf io "(%s)" representation
+        representation = pattern.representations[i]
+        length(representation)==0 || occursin("isdiagonal", representation) || @printf io "(%s)" representation
         count = stop+1
     end
 end
 
 """
-    Pattern(indexes::Index...)
-    Pattern(indexes::Tuple{Vararg{Index}})
+    Pattern(indexes::OneAtLeast{Index}, constraint::Function, representation::String=string(constraint))
+    Pattern{P}(indexes::OneAtLeast{Index}, constraints::NTuple{N, Function}, representations::NTuple{N, String}=map(string, constraints))  where {P, N}
 
-Construct a coupling pattern from a set of indexes.
+Construct a coupling pattern with 1) only one constraint function, and 2) several constraint functions.
 """
-@inline Pattern(indexes::Index...) = Pattern(indexes)
-@inline Pattern(indexes::Tuple{Vararg{Index}}) = Pattern(indexes.sites, InternalPattern(InternalIndexProd(indexes.internals)))
+@inline Pattern(indexes::OneAtLeast{Index}, constraint::Function, representation::String=string(constraint)) = Pattern{(rank(indexes),)}(indexes, (constraint,), (representation,))
+
+"""
+    Pattern(indexes::OneAtLeast{Index})
+    Pattern(index::Index, indexes::Index...)
+
+Construct a coupling pattern subject to the "diagonal" constraint for a homogeneous set of indexes.
+"""
+@inline Pattern(index::Index, indexes::Index...) = Pattern((index, indexes...))
+@inline Pattern(indexes::OneAtLeast{Index}) = Pattern(indexes, isdiagonal)
+
+"""
+    getindex(pattern::Pattern, slice)
+
+Get the indexes specified by `slice` in a coupling pattern.
+"""
+@inline Base.getindex(pattern::Pattern, slice) = pattern.indexes[slice]
+
+"""
+    partition(pattern::Pattern) -> Tuple{Vararg{Int}}
+    partition(::Type{<:Pattern{I, P} where I}) where P -> P
+
+Get the partition of the coupling pattern.
+"""
+@inline partition(pattern::Pattern) = partition(typeof(pattern))
+@inline partition(::Type{<:Pattern{I, P} where I}) where P = P
 
 """
     rank(pattern::Pattern) -> Int
-    rank(::Type{<:Pattern{<:InternalPattern, S}}) where {S<:Tuple{Vararg{Union{Ordinal, Colon}}}} -> Int
+    rank(::Type{P}) where {P<:Pattern} -> Int
 
-Get the rank of a coupling pattern.
+Get the total rank of the coupling pattern.
 """
 @inline rank(pattern::Pattern) = rank(typeof(pattern))
-@inline rank(::Type{<:Pattern{<:InternalPattern, S}}) where {S<:Tuple{Vararg{Union{Ordinal, Colon}}}} = fieldcount(S)
+@inline @generated rank(::Type{P}) where {P<:Pattern} = sum(partition(P))
 
 """
-    ⊗(pattern₁::Pattern, pattern₂::Pattern) -> Pattern
+    rank(pattern::Pattern, i::Integer) -> Int
+    rank(::Type{P}, i::Integer) where {P<:Pattern} -> Int
 
-Get the combination of two coupling patterns.
+Get the ith rank of the coupling pattern where the ith constraint can apply.
 """
-@inline ⊗(pattern₁::Pattern, pattern₂::Pattern) = Pattern((pattern₁.sites..., pattern₂.sites...), pattern₁.internal⊗pattern₂.internal)
+@inline rank(pattern::Pattern, i::Integer) = rank(typeof(pattern), i)
+@inline rank(::Type{P}, i::Integer) where {P<:Pattern} = partition(P)[i]
 
 """
     latexstring(pattern::Pattern) -> String
@@ -940,22 +699,66 @@ Convert a coupling pattern to the latex format.
 """
 function latexstring(pattern::Pattern)
     result = String[]
-    len, count = length(pattern.internal.representations), 1
+    len, count = length(pattern.representations), 1
     for i = 1:len
-        r = rank(pattern.internal, i)
+        r = rank(pattern, i)
         start, stop = count, count+r-1
-        indexes = map(Index, pattern.sites[start:stop], pattern.internal.index[start:stop].contents)
-        representation = pattern.internal.representations[i]
-        summation = occursin("AllEqual", representation) ? "" : replace(replace(representation, "&&"=>"\\,\\text{and}\\,"), "||"=>"\\,\\text{or}\\,")
+        indexes = pattern[start:stop]
+        representation = pattern.representations[i]
+        summation = occursin("isdiagonal", representation) ? "" : replace(replace(representation, "&&"=>"\\,\\text{and}\\,"), "||"=>"\\,\\text{or}\\,")
         summation=="" || (summation = join(push!(symbols(indexes.internals, representation), summation), ",\\,"))
-        context = isdefinite(indexes) ? "" : "\\sum_{$summation}"
-        for index in indexes
-            context = @sprintf "%s%s%s" context (length(context)>0 ? " " : "") latexstring(index)
+        context = isdefinite(indexes) ? "" : "\\sum_{$summation}" 
+        for content in indexes
+            context = @sprintf "%s%s%s" context (length(context)>0 ? " " : "") latexstring(content)
         end
         push!(result, context)
         count = stop+1
     end
     return join(result, " \\cdot ")
+end
+function symbols(indexes::OneAtLeast{InternalIndex}, constraint::String)
+    result = String[]
+    for index in indexes
+        for i = 1:fieldcount(typeof(index))
+            attr = getfield(index, i)
+            if isa(attr, Symbol)
+                value = string(attr)
+                occursin(value, constraint) || push!(result, value)
+            end
+        end
+    end
+    return sort!(unique!(result))
+end
+
+"""
+    match(pattern::Pattern, indexes::OneAtLeast{InternalIndex}) -> Bool
+
+Judge whether a set of internal indexes satisfies a coupling pattern.
+"""
+@generated function Base.match(pattern::Pattern, indexes::OneAtLeast{InternalIndex})
+    @assert rank(pattern)==rank(indexes) "match error: mismatched ranks of the coupling pattern and the input indexes."
+    exprs, count = [], 1
+    for (i, r) in enumerate(partition(pattern))
+        start, stop = count, count+r-1
+        segment = Expr(:tuple, [:(indexes[$pos]) for pos=start:stop]...)
+        if fieldtype(fieldtype(pattern, :constraints), i) == typeof(isdiagonal)
+            I = Expr(:call, eltype, Expr(:tuple, [:(pattern.indexes[$pos].internal) for pos=start:stop]...))
+            push!(exprs, :(pattern.constraints[$i]($I, $segment)::Bool))
+        else
+            push!(exprs, :(pattern.constraints[$i]($segment)::Bool))
+        end
+        count = stop+1
+    end
+    return Expr(:call, :all, Expr(:tuple, exprs...))
+end
+
+"""
+    ⊗(pattern₁::Pattern, pattern₂::Pattern) -> Pattern
+
+Get the combination of two coupling patterns.
+"""
+@inline function ⊗(pattern₁::Pattern, pattern₂::Pattern)
+    return Pattern{(partition(pattern₁)..., partition(pattern₂)...)}((pattern₁.indexes..., pattern₂.indexes...), (pattern₁.constraints..., pattern₂.constraints...), (pattern₁.representations..., pattern₂.representations...))
 end
 
 """
@@ -998,16 +801,16 @@ macro pattern(exprs...)
                     push!(blocks, quote
                         local $attr
                         if @isdefined($attr)
-                            ($attr)!=getfield(index[$i], $j) && return false
+                            ($attr)!=getfield(indexes[$i], $j) && return false
                         else
-                            $attr = getfield(index[$i], $j)
+                            $attr = getfield(indexes[$i], $j)
                         end
                     end)
                     attr = QuoteNode(attr)
                 end
             else
                 push!(blocks, quote
-                    (getfield(index[$i], $j)!=$attr) && return false
+                    (getfield(indexes[$i], $j)!=$attr) && return false
                 end)
             end
             push!(attrs, attr)
@@ -1025,12 +828,12 @@ macro pattern(exprs...)
     iname, fname = gensym("indexes"), gensym("constraint")
     representation = constraint==true ? "" : string(constraint)
     return quote
-        function ($fname)(index::InternalIndexProd{<:NTuple{$N, SimpleInternalIndex}})
+        function ($fname)(indexes::NTuple{$N, InternalIndex})
             $blocks
             return $constraint
         end
         local $iname = $(esc(indexes))
-        Pattern($iname.sites, InternalPattern(InternalIndexProd($iname.internals), $fname, $representation))
+        Pattern(map(Index, $iname.sites, $iname.internals), $fname, $representation)
     end
 end
 
@@ -1052,27 +855,12 @@ Default pattern rule unless otherwise specified.
 @inline patternrule(value, ::Val, args...; kwargs...) = value
 
 """
-    patternrule(index::InternalIndexProd{T}, ::Val{Name}) where {N, T<:NTuple{N, SimpleInternalIndex}, Name} -> InternalIndexProd
-
-Define the default rule for the internal index in an internal pattern.
-"""
-@inline @generated function patternrule(index::InternalIndexProd{T}, ::Val{Name}) where {N, T<:NTuple{N, SimpleInternalIndex}, Name}
-    allequal(map(nameof, fieldtypes(T))) || return :(index)
-    exprs = []
-    for name in QuoteNode.(fieldnames(eltype(T)))
-        vs = Expr(:tuple, [:(getfield(index[$i], $name)) for i = 1:N]...)
-        push!(exprs, :(patternrule($vs, Val($(QuoteNode(Name))), eltype(T), Val($name))))
-    end
-    return :(InternalIndexProd(map(apply, fieldtypes(T), $(exprs...))))
-end
-@inline apply(::Type{F}, args...) where F = F(args...)
-
-"""
-    patternrule(sites::NTuple{N, Colon}, ::Val, bondlength::Integer) where N -> NTuple{N, Ordinal}
+    patternrule(sites::OneAtLeast{Colon}, ::Val, bondlength::Integer) -> OneAtLeast{Ordinal}
 
 Define the default rule for the sites of a set of indexes in a coupling pattern.
 """
-function patternrule(::NTuple{N, Colon}, ::Val, bondlength::Integer) where N
+function patternrule(sites::OneAtLeast{Colon}, ::Val, bondlength::Integer)
+    N = fieldcount(typeof(sites))
     bondlength==1 && return ntuple(i->1ˢᵗ, Val(N))
     bondlength==2 && begin
         N==2 && return (1ˢᵗ, 2ⁿᵈ)
@@ -1081,6 +869,22 @@ function patternrule(::NTuple{N, Colon}, ::Val, bondlength::Integer) where N
     end
     error("patternrule error: not implemented.")
 end
+
+"""
+    patternrule(indexes::OneAtLeast{InternalIndex}, ::Val{Name}) where Name -> OneAtLeast{InternalIndex}
+
+Define the default rule for the internal index in a coupling pattern.
+"""
+@inline @generated function patternrule(indexes::OneAtLeast{InternalIndex}, ::Val{Name}) where Name
+    allequal(map(nameof, fieldtypes(indexes))) || return :(indexes)
+    exprs = []
+    for name in QuoteNode.(fieldnames(eltype(indexes)))
+        vs = Expr(:tuple, [:(getfield(indexes[$i], $name)) for i = 1:fieldcount(indexes)]...)
+        push!(exprs, :(patternrule($vs, Val($(QuoteNode(Name))), eltype(indexes), Val($name))))
+    end
+    return :(map(apply, fieldtypes(typeof(indexes)), $(exprs...)))
+end
+@inline apply(::Type{F}, args...) where F = F(args...)
 
 # Coupling
 """
@@ -1122,17 +926,17 @@ Construct a coupling with the input indexes as the pattern.
 @inline Coupling(value::Number, indexes::Tuple{Vararg{Index}}) = Coupling(value, Pattern(indexes))
 
 """
-    Coupling(sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleInternalIndex}
-    Coupling(value::Number, sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleInternalIndex}
-    Coupling{N}(sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleInternalIndex}
-    Coupling{N}(value::Number, sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleInternalIndex}
+    Coupling(sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:InternalIndex}
+    Coupling(value::Number, sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:InternalIndex}
+    Coupling{N}(sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:InternalIndex}
+    Coupling{N}(value::Number, sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:InternalIndex}
 
-Construct a `Coupling` with the input sites and the fields of a kind of simple internal index.
+Construct a `Coupling` with the input sites and the fields of a kind of internal index.
 """
-@inline Coupling(sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleInternalIndex} = Coupling{N}(sites, I, fields...)
-@inline Coupling(value::Number, sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleInternalIndex} = Coupling{N}(value, sites, I, fields...)
-@inline Coupling{N}(sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleInternalIndex} = Coupling{N}(1, sites, I, fields...)
-@inline function Coupling{N}(value::Number, sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:SimpleInternalIndex}
+@inline Coupling(sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:InternalIndex} = Coupling{N}(sites, I, fields...)
+@inline Coupling(value::Number, sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:InternalIndex} = Coupling{N}(value, sites, I, fields...)
+@inline Coupling{N}(sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:InternalIndex} = Coupling{N}(1, sites, I, fields...)
+@inline function Coupling{N}(value::Number, sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:InternalIndex}
     return Coupling(value, map(Index, default(sites, Val(N)), map(I, map(field->default(field, Val(N)), fields)...)))
 end
 @inline default(fields, ::Val) = fields
@@ -1144,7 +948,7 @@ end
     Coupling{N}(f::Union{Function, Type{<:Function}}, sites::Union{NTuple{N, Ordinal}, Colon}, fields::Union{NTuple{N}, Colon}...) where N
     Coupling{N}(value::Number, f::Union{Function, Type{<:Function}}, sites::Union{NTuple{N, Ordinal}, Colon}, fields::Union{NTuple{N}, Colon}...) where N
 
-Construct a `Coupling` by a function that can construct an `Index` with the input sites and the fields of a kind of simple internal index.
+Construct a `Coupling` by a function that can construct an `Index` with the input sites and the fields of a kind of internal index.
 """
 @inline Coupling(f::Union{Function, Type{<:Function}}, sites::Union{NTuple{N, Ordinal}, Colon}, fields::Union{NTuple{N}, Colon}...) where N = Coupling{N}(f, sites, fields...)
 @inline Coupling(value::Number, f::Union{Function, Type{<:Function}}, sites::Union{NTuple{N, Ordinal}, Colon}, fields::Union{NTuple{N}, Colon}...) where N = Coupling{N}(value, f, sites, fields...)
@@ -1164,11 +968,9 @@ Get the rank of a coupling.
 
 """
     *(cp₁::Coupling, cp₂::Coupling) -> Coupling
-    ⊗(cp₁::Coupling, cp₂::Coupling) -> Coupling
 
 Get the multiplication between two coupling.
 """
-@inline ⊗(cp₁::Coupling, cp₂::Coupling) = cp₁ * cp₂
 @inline Base.:*(cp₁::Coupling, cp₂::Coupling) = Coupling(cp₁.value*cp₂.value, cp₁.pattern⊗cp₂.pattern)
 
 """
@@ -1184,38 +986,61 @@ Convert a coupling to the latex format.
 Expand a coupling with the given bond and Hilbert space under a given named pattern rule.
 """
 function expand(coupling::Coupling, ::Val{Rule}, bond::Bond, hilbert::Hilbert) where Rule
-    sites = patternrule(coupling.pattern.sites, Val(Rule), length(bond))
-    index = patternrule(coupling.pattern.internal.index, Val(Rule))
+    sites = patternrule(coupling.pattern.indexes.sites, Val(Rule), length(bond))
+    indexes = patternrule(coupling.pattern.indexes.internals, Val(Rule))
     points = ntuple(i->bond[sites[i]], Val(rank(coupling)))
-    internal = InternalProd(map((index, internal)->filter(index, internal), index.contents, ntuple(i->hilbert[points[i].site], Val(rank(coupling)))))
-    pattern = InternalPattern{partition(coupling.pattern.internal)}(index, coupling.pattern.internal.constraints, coupling.pattern.internal.representations)
-    return CExpand(coupling.value, points, ConstrainedInternal(internal, pattern))
+    internal = InternalProd(map((index, internal)->filter(index, internal), indexes, ntuple(i->hilbert[points[i].site], Val(rank(coupling)))))
+    pattern = Pattern{partition(coupling.pattern)}(map(Index, sites, indexes), coupling.pattern.constraints, coupling.pattern.representations)
+    return CouplingExpand(coupling.value, points, internal, pattern)
 end
-struct CExpand{V, N, SV<:SVector, S<:ConstrainedInternal}
+struct CouplingExpand{V, N, SV<:SVector, I<:InternalProd, P<:Pattern}
     value::V
     sites::NTuple{N, Int}
     rcoordinates::NTuple{N, SV}
     icoordinates::NTuple{N, SV}
-    internal::S
+    internal::I
+    pattern::P
 end
-function CExpand(value, points::NTuple{N, Point}, internal::ConstrainedInternal) where N
+function CouplingExpand(value, points::NTuple{N, Point}, internal::InternalProd, pattern::Pattern) where N
     sites = ntuple(i->points[i].site, Val(N))
     rcoordinates = ntuple(i->points[i].rcoordinate, Val(N))
     icoordinates = ntuple(i->points[i].icoordinate, Val(N))
-    return CExpand(value, sites, rcoordinates, icoordinates, internal)
+    return CouplingExpand(value, sites, rcoordinates, icoordinates, internal, pattern)
 end
-@inline Base.eltype(ex::CExpand) = eltype(typeof(ex))
-@inline @generated function Base.eltype(::Type{<:CExpand{V, N, SV, S}}) where {V, N, SV<:SVector, S<:ConstrainedInternal}
-    return Operator{V, Tuple{map(I->CoordinatedIndex{Index{I, Int}, SV}, fieldtypes(fieldtype(eltype(S), :contents)))...}}
+@inline Base.eltype(ex::CouplingExpand) = eltype(typeof(ex))
+@inline @generated function Base.eltype(::Type{<:CouplingExpand{V, N, SV, I}}) where {V, N, SV<:SVector, I<:InternalProd}
+    return Operator{V, Tuple{map(I->CoordinatedIndex{Index{I, Int}, SV}, fieldtypes(eltype(I)))...}}
 end
-@inline Base.IteratorSize(::Type{<:CExpand}) = Base.SizeUnknown()
-function Base.iterate(ex::CExpand, state=iterate(ex.internal))
+@inline Base.IteratorSize(::Type{<:CouplingExpand}) = Base.SizeUnknown()
+function Base.iterate(ex::CouplingExpand, state=(space=InternalIndexSpace(ex.pattern.indexes.internals, ex.internal); (space, iterate(space))))
+    space, state = state
     while !isnothing(state)
-        index, state = state
-        state = iterate(ex.internal, state)
-        return Operator(ex.value, map(CoordinatedIndex, map(Index, ex.sites, index.contents), ex.rcoordinates, ex.icoordinates)), state
+        indexes, state = state
+        state = iterate(space, state)
+        if match(ex.pattern, indexes)
+            return Operator(ex.value, map(CoordinatedIndex, map(Index, ex.sites, indexes), ex.rcoordinates, ex.icoordinates)), (space, state)
+        end
     end
     return
+end
+struct InternalIndexSpace{I<:OneOrMore{InternalIndex}, E<:OneOrMore{InternalIndex}, V<:Internal{E}} <: VectorSpace{E}
+    indexes::I
+    internal::V
+end
+@inline VectorSpaceStyle(::Type{<:InternalIndexSpace{<:OneAtLeast{InternalIndex}, <:OneAtLeast{InternalIndex}, <:CompositeInternal}}) = VectorSpaceDirectProducted(:forward)
+@inline function getcontent(space::InternalIndexSpace{<:OneAtLeast{InternalIndex}, <:OneAtLeast{InternalIndex}, <:CompositeInternal}, ::Val{:contents})
+    return map((internal, index)->InternalIndexSpace(index, internal), space.internal.contents, space.indexes)
+end
+@inline function Base.convert(::Type{<:OneAtLeast{InternalIndex}}, index::CartesianIndex, space::InternalIndexSpace{<:OneAtLeast{InternalIndex}, <:OneAtLeast{InternalIndex}, <:CompositeInternal})
+    return map(getindex, getcontent(space, :contents), index.I)
+end
+@inline VectorSpaceStyle(::Type{<:InternalIndexSpace{<:InternalIndex, <:InternalIndex, <:SimpleInternal}}) = VectorSpaceDirectProducted(:forward)
+@inline shape(space::InternalIndexSpace{<:InternalIndex, <:InternalIndex, <:SimpleInternal}) = shape(space.internal, space.indexes)
+@inline function Base.convert(::Type{<:CartesianIndex}, index::E, space::InternalIndexSpace{<:InternalIndex, E, <:SimpleInternal}) where {E<:InternalIndex}
+    return convert(CartesianIndex, index, space.internal)
+end
+@inline function Base.convert(::Type{E}, index::CartesianIndex, space::InternalIndexSpace{<:InternalIndex, E, <:SimpleInternal}) where {E<:InternalIndex}
+    return convert(E, index, space.internal)
 end
 
 # MatrixCoupling
@@ -1246,41 +1071,40 @@ end
 end
 
 """
-    MatrixCoupling{I}(sites::Union{NTuple{2, Ordinal}, NTuple{2, Colon}}, contents::Tuple{Vararg{Component}}) where {I<:SimpleInternalIndex}
-    MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{I}, contents::Component...) where {I<:SimpleInternalIndex}
+    MatrixCoupling{I}(sites::Union{NTuple{2, Ordinal}, NTuple{2, Colon}}, contents::Tuple{Vararg{Component}}) where {I<:InternalIndex}
+    MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{I}, contents::Component...) where {I<:InternalIndex}
 
 Matrix coupling, i.e., a set of couplings whose coefficients are specified by matrices acting on separated internal spaces.
 """
-struct MatrixCoupling{I<:SimpleInternalIndex, S<:Union{Ordinal, Colon}, C<:Tuple{Vararg{Component}}} <: VectorSpace{Coupling}
+struct MatrixCoupling{I<:InternalIndex, S<:Union{Ordinal, Colon}, C<:Tuple{Vararg{Component}}} <: VectorSpace{Coupling}
     sites::Tuple{S, S}
     contents::C
-    function MatrixCoupling{I}(sites::Union{NTuple{2, Ordinal}, NTuple{2, Colon}}, contents::Tuple{Vararg{Component}}) where {I<:SimpleInternalIndex}
+    function MatrixCoupling{I}(sites::Union{NTuple{2, Ordinal}, NTuple{2, Colon}}, contents::Tuple{Vararg{Component}}) where {I<:InternalIndex}
         @assert fieldcount(I)==length(contents) "MatrixCoupling error: mismatched type of internal index ($nameof(I)) and components (len=$length(contents))."
         new{I, eltype(sites), typeof(contents)}(sites, contents)
     end
 end
 @inline parameternames(::Type{<:MatrixCoupling}) = (:internal, :site, :components)
-@inline MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{I}, contents::Component...) where {I<:SimpleInternalIndex} = MatrixCoupling{I}(default(sites, Val(2)), contents)
+@inline MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{I}, contents::Component...) where {I<:InternalIndex} = MatrixCoupling{I}(default(sites, Val(2)), contents)
 @inline @generated function Base.eltype(::Type{MC}) where {MC<:MatrixCoupling}
     types = fieldtypes(parametertype(MC, :components))
     V = Expr(:call, :promote_type, [:(parametertype($C, :datatype)) for C in types]...)
     S = parametertype(MC, :site)
     I = Expr(:call, :internalindextype, parametertype(MC, :internal), [:(parametertype($C, :basistype)) for C in types]...)
-    C = :(InternalPattern{Tuple{$I, $I}, (2,), 1, Tuple{typeof(AllEqual($I))}})
-    return :(Coupling{$V, Pattern{$C, Tuple{$S, $S}}})
+    return :(Coupling{$V, Pattern{NTuple{2, Index{$I, $S}}, (2,), 1, Tuple{typeof(isdiagonal)}}})
 end
 @inline VectorSpaceStyle(::Type{<:MatrixCoupling}) = VectorSpaceDirectProducted(:forward)
-function Base.convert(::Type{<:Coupling}, index::CartesianIndex, mc::MatrixCoupling{I}) where {I<:SimpleInternalIndex}
+function Base.convert(::Type{<:Coupling}, index::CartesianIndex, mc::MatrixCoupling{I}) where {I<:InternalIndex}
     contents = map(getindex, getcontent(mc, :contents), index.I)
     value = mapreduce(content->content[3], *, contents, init=1)
     index₁ = Index(mc.sites[1], I(map(content->content[1], contents)...))
     index₂ = Index(mc.sites[2], I(map(content->content[2], contents)...))
     return Coupling(value, index₁, index₂)
 end
-@inline function Base.promote_rule(::Type{MatrixCoupling{I, S, C₁}}, ::Type{MatrixCoupling{I, S, C₂}}) where {I<:SimpleInternalIndex, S<:Union{Ordinal, Colon}, C₁<:Tuple{Vararg{Component}}, C₂<:Tuple{Vararg{Component}}}
+@inline function Base.promote_rule(::Type{MatrixCoupling{I, S, C₁}}, ::Type{MatrixCoupling{I, S, C₂}}) where {I<:InternalIndex, S<:Union{Ordinal, Colon}, C₁<:Tuple{Vararg{Component}}, C₂<:Tuple{Vararg{Component}}}
     return MatrixCoupling{I, S, _promote_type_(C₁, C₂)}
 end
-@inline Base.convert(::Type{MatrixCoupling{I, S, C}}, mc::MatrixCoupling{I, S}) where {I<:SimpleInternalIndex, S<:Union{Ordinal, Colon}, C<:Tuple{Vararg{Component}}} = MatrixCoupling{I}(mc.sites, convert(C, mc.contents))
+@inline Base.convert(::Type{MatrixCoupling{I, S, C}}, mc::MatrixCoupling{I, S}) where {I<:InternalIndex, S<:Union{Ordinal, Colon}, C<:Tuple{Vararg{Component}}} = MatrixCoupling{I}(mc.sites, convert(C, mc.contents))
 @inline @generated function _promote_type_(::Type{T₁}, ::Type{T₂}) where {N, T₁<:NTuple{N, Any}, T₂<:NTuple{N, Any}}
     return Expr(:curly, Tuple, [:(promote_type(fieldtype(T₁, $i), fieldtype(T₂, $i))) for i=1:N]...)
 end
@@ -1301,13 +1125,11 @@ end
 @inline @generated function _eltype_(::Type{V}, ::Type{TS}) where {V<:Number, TS<:Tuple}
     types = fieldtypes(TS)
     MV = promote_type(V, map(valtype, types)...)
-    SS = Tuple{concatenate(map(C->fieldtypes(parametertype(idtype(C), :sites)), types)...)...}
-    IS = Tuple{concatenate(map(C->fieldtypes(parametertype(parametertype(idtype(C), :internal), :index)), types)...)...}
-    FS = Tuple{concatenate(map(C->fieldtypes(parametertype(parametertype(idtype(C), :internal), :constraints)), types)...)...}
     N = length(types)
     RS = ntuple(i->2, Val(N))
-    P = InternalPattern{IS, RS, N, FS}
-    return Coupling{MV, Pattern{P, SS}}
+    IS = Tuple{concatenate(map(C->fieldtypes(parametertype(fieldtype(C, :pattern), :indexes)), types)...)...}
+    FS = Tuple{concatenate(map(C->fieldtypes(parametertype(fieldtype(C, :pattern), :constraints)), types)...)...}
+    return Coupling{MV, Pattern{IS, RS, N, FS}}
 end
 @inline VectorSpaceStyle(::Type{<:MatrixCouplingProd}) = VectorSpaceDirectProducted(:forward)
 @inline function Base.convert(::Type{<:Coupling}, index::CartesianIndex, mcp::MatrixCouplingProd)
@@ -1604,7 +1426,7 @@ Get the compatible `Operator` type from the type of a term, a Hilbert space and 
     V, V′, V′′ = valtype(T), valtype(C), valtype(fieldtype(T, :amplitude), B)
     isconcretetype(V′) && (V = promote_type(V, V′))
     isconcretetype(V′′) && (V = promote_type(V, V′′))
-    coordinatedindextypes = ntuple(i->coordinatedindextype(filter(fieldtype(parametertype(parametertype(idtype(C), :internal), :index), i), valtype(H)), eltype(B)), Val(rank(C)))
+    coordinatedindextypes = ntuple(i->coordinatedindextype(filter(internalindextype(fieldtype(fieldtype(fieldtype(C, :pattern), :indexes), i)), valtype(H)), eltype(B)), Val(rank(C)))
     return fulltype(Operator, NamedTuple{(:value, :id), Tuple{V, Tuple{coordinatedindextypes...}}})
 end
 

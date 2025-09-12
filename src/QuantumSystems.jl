@@ -4,13 +4,13 @@ using LinearAlgebra: dot, ishermitian, norm
 using Printf: @printf
 using SparseArrays: SparseMatrixCSC
 using StaticArrays: SMatrix, SVector
-using ..DegreesOfFreedom: Component, CompositeIndex, CoordinatedIndex, Coupling, Hilbert, Index, InternalIndex, InternalPattern, Ordinal, Pattern, SimpleInternal, SimpleInternalIndex, Term, TermAmplitude, TermCoupling, indextype, @pattern
+using ..DegreesOfFreedom: Component, CompositeIndex, CoordinatedIndex, Coupling, Hilbert, Index, InternalIndex, Ordinal, Pattern, SimpleInternal, Term, TermAmplitude, TermCoupling, indextype, @pattern
 using ..QuantumLattices: OneAtLeast, decompose, rank, str
 using ..QuantumOperators: ID, LaTeX, Operator, OperatorIndex, OperatorProd, Operators, latexformat
 using ..Spatials: Bond, Point, direction, isparallel, rcoordinate
 using ..Toolkit: atol, efficientoperations, rtol, Float, VectorSpace, VectorSpaceDirectProducted, VectorSpaceStyle, delta, rawtype
 
-import ..DegreesOfFreedom: MatrixCoupling, allequalfields, internalindextype, isdefinite, patternrule, statistics
+import ..DegreesOfFreedom: MatrixCoupling, diagonalfields, internalindextype, isdefinite, patternrule, statistics
 import ..QuantumLattices: expand, expand!, kind, permute, shape
 import ..QuantumOperators: latexname, matrix, script
 
@@ -42,11 +42,11 @@ Indicate that the nambu index is creation.
 const creation = 2
 
 """
-    FockIndex{T, O<:Union{Int, Symbol, Colon}, S<:Union{Rational{Int}, Symbol, Colon}, N<:Union{Int, Symbol, Colon}} <: SimpleInternalIndex
+    FockIndex{T, O<:Union{Int, Symbol, Colon}, S<:Union{Rational{Int}, Symbol, Colon}, N<:Union{Int, Symbol, Colon}} <: InternalIndex
 
 Fock index, i.e., the internal index to specify the generators of a Fock space.
 """
-struct FockIndex{T, O<:Union{Int, Symbol, Colon}, S<:Union{Rational{Int}, Symbol, Colon}, N<:Union{Int, Symbol, Colon}} <: SimpleInternalIndex
+struct FockIndex{T, O<:Union{Int, Symbol, Colon}, S<:Union{Rational{Int}, Symbol, Colon}, N<:Union{Int, Symbol, Colon}} <: InternalIndex
     orbital::O
     spin::S
     nambu::N
@@ -58,7 +58,7 @@ struct FockIndex{T, O<:Union{Int, Symbol, Colon}, S<:Union{Rational{Int}, Symbol
         new{T, typeof(orbital), typeof(spin), typeof(nambu)}(orbital, spin, nambu)
     end
 end
-### basic methods of concrete SimpleInternalIndex
+### basic methods of concrete InternalIndex
 @inline statistics(::Type{<:FockIndex}) = Symbol(":")
 @inline statistics(::Type{<:FockIndex{T}}) where T = T
 @inline isdefinite(::Type{<:FockIndex{T, Int, Rational{Int}} where T}) = true
@@ -70,8 +70,8 @@ end
     exprs = [:(get(kwargs, $name, getfield(index, $name))) for name in QuoteNode.(fieldnames(index))]
     return :(rawtype(typeof(index)){statistics(index)}($(exprs...)))
 end
-### requested by InternalPattern
-@inline allequalfields(::Type{<:FockIndex}) = (:orbital, :spin)
+### requested by Pattern
+@inline diagonalfields(::Type{<:FockIndex}) = (:orbital, :spin)
 ### requested by MatrixCoupling
 @inline internalindextype(::Type{FockIndex}, ::Type{O}, ::Type{S}, ::Type{N}) where {O<:Union{Int, Symbol, Colon}, S<:Union{Rational{Int}, Symbol, Colon}, N<:Union{Int, Symbol, Colon}} = FockIndex{:, O, S, N}
 @inline internalindextype(::Type{FockIndex{T}}, ::Type{O}, ::Type{S}, ::Type{N}) where {T, O<:Union{Int, Symbol, Colon}, S<:Union{Rational{Int}, Symbol, Colon}, N<:Union{Int, Symbol, Colon}} = FockIndex{T, O, S, N}
@@ -160,21 +160,21 @@ for (name, statistics) in zip(_fock_...)
     @eval @inline $name(site, orbital, spin, nambu) = Index(site, FockIndex{$statistics}(orbital, spin, nambu))
     @eval @inline $name(site, orbital, spin, nambu, rcoordinate, icoordinate) = CoordinatedIndex(Index(site, FockIndex{$statistics}(orbital, spin, nambu)), rcoordinate, icoordinate)
 end
-@inline Base.getindex(::Type{OperatorIndex}, ::Type{I}) where {I<:Union{FockIndex{:f}, Index{<:FockIndex{:f}}, CoordinatedIndex{<:Index{<:FockIndex{:f}}}}} = 𝕔
-@inline Base.getindex(::Type{OperatorIndex}, ::Type{I}) where {I<:Union{FockIndex{:b}, Index{<:FockIndex{:b}}, CoordinatedIndex{<:Index{<:FockIndex{:b}}}}} = 𝕓
-@inline Base.getindex(::Type{OperatorIndex}, ::Type{I}) where {I<:Union{FockIndex{:}, Index{<:FockIndex{:}}, CoordinatedIndex{<:Index{<:FockIndex{:}}}}} = 𝕕
-@inline Base.getindex(::Type{OperatorIndex}, ::Type{I}) where {I<:Union{FockIndex, Index{<:FockIndex}, CoordinatedIndex{<:Index{<:FockIndex}}}} = 𝕕
+@inline Base.getindex(::Type{OperatorIndex}, ::I) where {I<:Union{FockIndex{:f}, Index{<:FockIndex{:f}}, CoordinatedIndex{<:Index{<:FockIndex{:f}}}}} = 𝕔
+@inline Base.getindex(::Type{OperatorIndex}, ::I) where {I<:Union{FockIndex{:b}, Index{<:FockIndex{:b}}, CoordinatedIndex{<:Index{<:FockIndex{:b}}}}} = 𝕓
+@inline Base.getindex(::Type{OperatorIndex}, ::I) where {I<:Union{FockIndex{:}, Index{<:FockIndex{:}}, CoordinatedIndex{<:Index{<:FockIndex{:}}}}} = 𝕕
+@inline Base.getindex(::Type{OperatorIndex}, ::I) where {I<:Union{FockIndex, Index{<:FockIndex}, CoordinatedIndex{<:Index{<:FockIndex}}}} = 𝕕
 @inline Base.getindex(::Type{OperatorIndex}, ::typeof(𝕔)) = FockIndex{:f}
 @inline Base.getindex(::Type{OperatorIndex}, ::typeof(𝕓)) = FockIndex{:b}
 @inline Base.getindex(::Type{OperatorIndex}, ::typeof(𝕕)) = FockIndex{:}
 
 ### patternrule
 """
-    patternrule(nambus::NTuple{N, Colon}, ::Val{}, ::Type{<:FockIndex}, ::Val{:nambu}) where N -> NTuple{N, Int}
+    patternrule(nambus::OneAtLeast{Colon}, ::Val{}, ::Type{<:FockIndex}, ::Val{:nambu}) -> NTuple{fieldcount(typeof(nambus)), Int}
 
 Default pattern rule for the `:nambu` attribute of Fock indexes.
 """
-@inline patternrule(::NTuple{N, Colon}, ::Val{}, ::Type{<:FockIndex}, ::Val{:nambu}) where N = ntuple(i->isodd(i) ? creation : annihilation, Val(N))
+@inline patternrule(nambus::OneAtLeast{Colon}, ::Val{}, ::Type{<:FockIndex}, ::Val{:nambu}) = ntuple(i->isodd(i) ? creation : annihilation, Val(fieldcount(typeof(nambus))))
 
 ### LaTeX format output
 """
@@ -546,11 +546,11 @@ const spinajointmap = Dict('x'=>'x', 'y'=>'y', 'z'=>'z', '+'=>'-', '-'=>'+')
 
 ## SpinIndex
 """
-    SpinIndex{S, T<:Union{Char, Symbol, Colon}} <: SimpleInternalIndex
+    SpinIndex{S, T<:Union{Char, Symbol, Colon}} <: InternalIndex
 
 Spin index, i.e., the internal index to specify the generators of a spin space.
 """
-struct SpinIndex{S, T<:Union{Char, Symbol, Colon}} <: SimpleInternalIndex
+struct SpinIndex{S, T<:Union{Char, Symbol, Colon}} <: InternalIndex
     tag::T
     function SpinIndex{S}(tag::Union{Char, Symbol, Colon}) where S
         @assert isa(S, Rational{Int}) && S.den==2 || isa(S, Int) || S==Colon() "SpinIndex error: not supported spin($S)."
@@ -558,7 +558,7 @@ struct SpinIndex{S, T<:Union{Char, Symbol, Colon}} <: SimpleInternalIndex
         new{S, typeof(tag)}(tag)
     end
 end
-### basic methods of concrete SimpleInternalIndex
+### basic methods of concrete InternalIndex
 @inline statistics(::Type{<:SpinIndex}) = :b
 @inline isdefinite(::Type{<:SpinIndex{T, Char} where T}) = true
 @inline Base.:(==)(index₁::SpinIndex, index₂::SpinIndex) = totalspin(index₁)==totalspin(index₂) && ==(efficientoperations, index₁, index₂)
@@ -625,9 +625,9 @@ struct 𝕊{S} <: Function end
 @inline 𝕊{S}(tag) where S = SpinIndex{S}(tag)
 @inline 𝕊{S}(site, tag) where S = Index(site, SpinIndex{S}(tag))
 @inline 𝕊{S}(site, tag, rcoordinate, icoordinate) where S = CoordinatedIndex(Index(site, SpinIndex{S}(tag)), rcoordinate, icoordinate)
-@inline Base.getindex(::Type{OperatorIndex}, ::Type{I}) where {I<:Union{SpinIndex, Index{<:SpinIndex}, CoordinatedIndex{<:Index{<:SpinIndex}}}} = 𝕊
-@inline Base.getindex(::Type{OperatorIndex}, ::Type{I}) where {I<:Union{SpinIndex{:}, Index{<:SpinIndex{:}}, CoordinatedIndex{<:Index{<:SpinIndex{:}}}}} = 𝕊
-@inline Base.getindex(::Type{OperatorIndex}, ::Type{I}) where {S, I<:Union{SpinIndex{S}, Index{<:SpinIndex{S}}, CoordinatedIndex{<:Index{<:SpinIndex{S}}}}} = 𝕊{S}
+@inline Base.getindex(::Type{OperatorIndex}, ::I) where {I<:Union{SpinIndex, Index{<:SpinIndex}, CoordinatedIndex{<:Index{<:SpinIndex}}}} = 𝕊
+@inline Base.getindex(::Type{OperatorIndex}, ::I) where {I<:Union{SpinIndex{:}, Index{<:SpinIndex{:}}, CoordinatedIndex{<:Index{<:SpinIndex{:}}}}} = 𝕊
+@inline Base.getindex(::Type{OperatorIndex}, ::I) where {S, I<:Union{SpinIndex{S}, Index{<:SpinIndex{S}}, CoordinatedIndex{<:Index{<:SpinIndex{S}}}}} = 𝕊{S}
 @inline Base.getindex(::Type{OperatorIndex}, ::Type{𝕊}) = SpinIndex{:}
 @inline Base.getindex(::Type{OperatorIndex}, ::Type{𝕊{S}}) where S = SpinIndex{S}
 
@@ -857,9 +857,9 @@ const SpinTerm{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:SpinTerm, id
 @inline function SpinTerm(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
     return Term{:SpinTerm}(id, value, bondkind, coupling, true; amplitude=amplitude, ismodulatable=ismodulatable)
 end
-@inline function patternrule(::NTuple{N, Colon}, ::Val{:SpinTerm}, bondlength::Integer) where N
-    bondlength==1 && return ntuple(i->1, Val(N))
-    bondlength==2 && return ntuple(i->2-i%2, Val(N))
+@inline function patternrule(sites::OneAtLeast{Colon}, ::Val{:SpinTerm}, bondlength::Integer)
+    bondlength==1 && return ntuple(i->Ordinal(1), Val(fieldcount(typeof(sites))))
+    bondlength==2 && return ntuple(i->Ordinal(2-i%2), Val(fieldcount(typeof(sites))))
     error("patternrule error: not supported for a generic bond containing $bondlength points.")
 end
 
@@ -1121,11 +1121,11 @@ end
 # Phononic systems
 ## PhononIndex
 """
-    PhononIndex{K, D<:Union{Char, Symbol, Colon}} <: SimpleInternalIndex
+    PhononIndex{K, D<:Union{Char, Symbol, Colon}} <: InternalIndex
 
 Phonon index, i.e., the internal index to specify the generators of the vibration of a lattice point.
 """
-struct PhononIndex{K, D<:Union{Char, Symbol, Colon}} <: SimpleInternalIndex
+struct PhononIndex{K, D<:Union{Char, Symbol, Colon}} <: InternalIndex
     direction::D
     function PhononIndex{K}(direction::Union{Char, Symbol, Colon}) where K
         @assert K∈(:u, :p) "PhononIndex error: wrong kind($kind)."
@@ -1133,7 +1133,7 @@ struct PhononIndex{K, D<:Union{Char, Symbol, Colon}} <: SimpleInternalIndex
         new{K, typeof(direction)}(direction)
     end
 end
-### basic methods of concrete SimpleInternalIndex
+### basic methods of concrete InternalIndex
 @inline statistics(::Type{<:PhononIndex}) = :b
 @inline isdefinite(::Type{<:PhononIndex{K, Char} where K}) = true
 @inline Base.:(==)(index₁::PhononIndex, index₂::PhononIndex) = kind(index₁)==kind(index₂) && ==(efficientoperations, index₁, index₂)
@@ -1177,8 +1177,8 @@ Convenient construction of `SpinIndex{:p}`, `Index{<:SpinIndex{:p}}`, `Coordinat
 @inline 𝕡(direction) = PhononIndex{:p}(direction)
 @inline 𝕡(site, direction) = Index(site, PhononIndex{:p}(direction))
 @inline 𝕡(site, direction, rcoordinate, icoordinate) = CoordinatedIndex(Index(site, PhononIndex{:p}(direction)), rcoordinate, icoordinate)
-@inline Base.getindex(::Type{OperatorIndex}, ::Type{I}) where {I<:Union{PhononIndex{:u}, Index{<:PhononIndex{:u}}, CoordinatedIndex{<:Index{<:PhononIndex{:u}}}}} = 𝕦
-@inline Base.getindex(::Type{OperatorIndex}, ::Type{I}) where {I<:Union{PhononIndex{:p}, Index{<:PhononIndex{:p}}, CoordinatedIndex{<:Index{<:PhononIndex{:p}}}}} = 𝕡
+@inline Base.getindex(::Type{OperatorIndex}, ::I) where {I<:Union{PhononIndex{:u}, Index{<:PhononIndex{:u}}, CoordinatedIndex{<:Index{<:PhononIndex{:u}}}}} = 𝕦
+@inline Base.getindex(::Type{OperatorIndex}, ::I) where {I<:Union{PhononIndex{:p}, Index{<:PhononIndex{:p}}, CoordinatedIndex{<:Index{<:PhononIndex{:p}}}}} = 𝕡
 @inline Base.getindex(::Type{OperatorIndex}, ::typeof(𝕦)) = PhononIndex{:u}
 @inline Base.getindex(::Type{OperatorIndex}, ::typeof(𝕡)) = PhononIndex{:p}
 
@@ -1322,16 +1322,16 @@ Construct a set of `Coupling`s corresponding to the dynamical matrix of phonons.
 
 ### expand
 """
-    expand(pnc::Coupling{<:Number, <:Pattern{<:InternalPattern{<:NTuple{2, PhononIndex{:u}}}}}, ::Val{:Hooke}, bond::Bond, hilbert::Hilbert) -> VectorSpace
+    expand(pnc::Coupling{<:Number, <:Pattern{<:NTuple{2, Index{<:PhononIndex{:u}}}}}, ::Val{:Hooke}, bond::Bond, hilbert::Hilbert) -> VectorSpace
 
 Expand the default phonon potential coupling on a given bond.
 """
-function expand(pnc::Coupling{<:Number, <:Pattern{<:InternalPattern{<:NTuple{2, PhononIndex{:u}}}}}, ::Val{:Hooke}, bond::Bond, hilbert::Hilbert)
+function expand(pnc::Coupling{<:Number, <:Pattern{<:NTuple{2, Index{<:PhononIndex{:u}}}}}, ::Val{:Hooke}, bond::Bond, hilbert::Hilbert)
     R̂ = rcoordinate(bond)/norm(rcoordinate(bond))
     @assert isapprox(pnc.value, 1, atol=atol, rtol=rtol) "expand error: wrong coefficient of Hooke coupling."
-    @assert isa(pnc.pattern.sites, NTuple{2, Colon}) "expand error: the `:sites` attributes of the Hooke coupling pattern must be a 2-tuple of colons."
-    pn₁ = filter(pnc.pattern.internal.index[1], hilbert[bond[1].site])
-    pn₂ = filter(pnc.pattern.internal.index[2], hilbert[bond[2].site])
+    @assert isa(pnc.pattern.indexes.sites, NTuple{2, Colon}) "expand error: the `:sites` attributes of the Hooke coupling pattern must be a 2-tuple of colons."
+    pn₁ = filter(InternalIndex(pnc.pattern.indexes[1]), hilbert[bond[1].site])
+    pn₂ = filter(InternalIndex(pnc.pattern.indexes[2]), hilbert[bond[2].site])
     @assert pn₁.ndirection==pn₂.ndirection==length(R̂) "expand error: mismatched number of directions."
     return PPExpand(R̂, (bond[1], bond[2]))
 end

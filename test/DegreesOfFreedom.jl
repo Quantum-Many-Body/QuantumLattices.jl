@@ -14,7 +14,7 @@ import QuantumLattices.DegreesOfFreedom: internalindextype, isdefinite, statisti
 import QuantumLattices.QuantumOperators: latexname, script
 import QuantumLattices.Toolkit: shape
 
-struct DID{N<:Union{Int, Symbol, Colon}} <: SimpleInternalIndex
+struct DID{N<:Union{Int, Symbol, Colon}} <: InternalIndex
     nambu::N
 end
 @inline Base.show(io::IO, ::Type{<:DID}) = @printf io "%s" "DID"
@@ -37,7 +37,7 @@ end
 @inline 𝕕(nambu) = DID(nambu)
 @inline 𝕕(site, nambu) = Index(site, DID(nambu))
 @inline 𝕕(site, nambu, rcoordinate, icoordinate) = CoordinatedIndex(Index(site, DID(nambu)), rcoordinate, icoordinate)
-@inline Base.getindex(::Type{OperatorIndex}, ::Type{D}) where {D<:Union{DID, Index{<:DID}, CoordinatedIndex{<:Index{<:DID}}}} = 𝕕
+@inline Base.getindex(::Type{OperatorIndex}, ::Union{DID, Index{<:DID}, CoordinatedIndex{<:Index{<:DID}}}) = 𝕕
 @inline Base.getindex(::Type{OperatorIndex}, ::typeof(𝕕)) = DID
 @inline (did::DID)(quantumnumber::ℕ) = did.nambu==2 ? ℕ(value(quantumnumber)+1) : ℕ(value(quantumnumber)-1)
 
@@ -48,7 +48,6 @@ end
 @inline Base.show(io::IO, ::Type{DFock}) = @printf io "%s" "DFock"
 @inline Base.convert(::Type{<:DID}, i::CartesianIndex, ::DFock) = DID(i.I...)
 @inline Base.convert(::Type{<:CartesianIndex}, did::DID{Int}, ::DFock) = CartesianIndex(did.nambu)
-@inline shape(internal::DFock, ::DID) = (1:internal.nnambu,)
 @inline shape(::DFock, index::DID{Int}) = (index.nambu:index.nambu,)
 @inline latexname(::Type{<:CoordinatedIndex{<:Index{<:DID, <:Union{Int, Ordinal, Colon}}}}) = Symbol("CoordinatedIndex{Index{DID, Union{Int, Ordinal, Colon}}}")
 @inline latexname(::Type{<:Index{<:DID, <:Union{Int, Ordinal, Colon}}}) = Symbol("Index{DID, Union{Int, Ordinal, Colon}}")
@@ -58,24 +57,13 @@ latexformat(DID, LaTeX{(), (:nambu,)}('d'))
 
 @testset "InternalIndex" begin
     did = 𝕕(1)
+    @test showablefields(did) == showablefields(typeof(did)) == (:nambu,)
     @test statistics(did) == statistics(typeof(did)) == :f
     @test InternalIndex(did) == did
     @test internalindextype(did) == internalindextype(typeof(did)) == typeof(did)
     @test isdefinite(did) == isdefinite(typeof(did)) == true
     @test isdefinite(𝕕(:a)) == isdefinite(DID{Symbol}) == false
-
-    did₁, did₂ = 𝕕(1), 𝕕(2)
-    ciid = InternalIndexProd(did₁, did₂)
-    @test string(ciid) == "𝕕(1) ⊗ 𝕕(2)"
-    @test length(ciid) == rank(ciid) == rank(typeof(ciid)) == 2
-    @test ciid[1]==ciid[begin]==did₁ && ciid[2]==ciid[end]==did₂
-    @test ciid[2:2] == InternalIndexProd(did₂)
-    @test ciid.contents==(𝕕(1), 𝕕(2)) && ciid.nambus==(1, 2)
-    @test isdefinite(ciid)
-    @test did₁⊗did₂ == ciid
-    @test did₁⊗ciid == InternalIndexProd(did₁, did₁, did₂)
-    @test ciid⊗did₁ == InternalIndexProd(did₁, did₂, did₁)
-    @test ciid⊗ciid == InternalIndexProd(did₁, did₂, did₁, did₂)
+    @test isdefinite((𝕕(1), 𝕕(2))) == isdefinite(typeof((𝕕(1), 𝕕(2)))) == true
 end
 
 @testset "SimpleInternal" begin
@@ -107,10 +95,10 @@ end
 
     ci = InternalProd(it₁, it₂)
     @test dimension(ci) == 6
-    @test eltype(ci) == eltype(typeof(ci)) == InternalIndexProd{Tuple{DID{Int}, DID{Int}}}
+    @test eltype(ci) == eltype(typeof(ci)) == Tuple{DID{Int}, DID{Int}}
     @test rank(ci) == rank(typeof(ci)) == 2
     @test string(ci) == "DFock(nnambu=2) ⊗ DFock(nnambu=3)"
-    @test collect(ci) == InternalIndexProd.([(it₁[1], it₂[1]), (it₁[2], it₂[1]), (it₁[1], it₂[2]), (it₁[2], it₂[2]), (it₁[1], it₂[3]), (it₁[2], it₂[3])])
+    @test collect(ci) == [(it₁[1], it₂[1]), (it₁[2], it₂[1]), (it₁[1], it₂[2]), (it₁[2], it₂[2]), (it₁[1], it₂[3]), (it₁[2], it₂[3])]
     @test it₁⊗it₂ == ci
     @test it₁⊗ci == InternalProd(it₁, it₁, it₂)
     @test ci⊗it₁ == InternalProd(it₁, it₂, it₁)
@@ -119,58 +107,13 @@ end
     @test filter(𝕕(1), typeof(ci)) == filter(DID, typeof(ci)) == typeof(ci)
 end
 
-@testset "ConstrainedInternal" begin
-    allequal = AllEqual(DID{Int})
-    @test string(allequal) == "AllEqual()"
-    @test allequal(𝕕(1) ⊗ 𝕕(1)) && allequal(𝕕(1) ⊗ 𝕕(2))
+# @testset "InternalIndexSpace" begin
+#     space = InternalIndexSpace(DID(:), DFock(2))
+#     @test collect(space) == [𝕕(1), 𝕕(2)]
 
-    allequal = AllEqual(DID{Colon})
-    @test string(allequal) == "AllEqual(:nambu)"
-    @test allequal(𝕕(1) ⊗ 𝕕(1)) && !allequal(𝕕(1) ⊗ 𝕕(2))
-
-    pattern = InternalPattern(𝕕(:)⊗𝕕(:), allequal, "AllEqual(:nambu)")
-    @test parameternames(typeof(pattern)) == (:index, :partition, :npartition, :constraints)
-    @test pattern == InternalPattern(𝕕(:)⊗𝕕(:))
-    @test isequal(pattern, InternalPattern(𝕕(:)⊗𝕕(:)))
-    @test hash(pattern, UInt(8)) == hash((2, 𝕕(:), 𝕕(:), "AllEqual(:nambu)"), UInt(8))
-    @test string(pattern) == "∑[𝕕(:) 𝕕(:)]"
-    @test partition(pattern) == partition(typeof(pattern)) == (2,)
-    @test rank(pattern) == rank(typeof(pattern)) == 2
-    @test rank(pattern, 1) == rank(typeof(pattern), 1) == 2
-    @test match(pattern, 𝕕(1)⊗𝕕(1)) && !match(pattern, 𝕕(1)⊗𝕕(2))
-    @test latexstring(pattern) == "\\sum_{} d^{}_{:} d^{}_{:}"
-
-    another = pattern ⊗ pattern
-    @test string(another) == "∑[𝕕(:) 𝕕(:)] ⊗ ∑[𝕕(:) 𝕕(:)]"
-    @test partition(another) == partition(typeof(another)) == (2, 2)
-    @test rank(another) == rank(typeof(another)) == 4
-    @test rank(another, 1) == rank(typeof(another), 1) == 2
-    @test rank(another, 2) == rank(typeof(another), 2) == 2
-    @test match(another, 𝕕(1)⊗𝕕(1)⊗𝕕(2)⊗𝕕(2)) && !match(another, 𝕕(1)⊗𝕕(1)⊗𝕕(2)⊗𝕕(1))
-    @test latexstring(another) == "\\sum_{} d^{}_{:} d^{}_{:} \\cdot \\sum_{} d^{}_{:} d^{}_{:}"
-
-    pattern = InternalPattern(𝕕(:a)⊗𝕕(:b), index->index[1].nambu<index[2].nambu, "a < b")
-    @test string(pattern) == "∑[𝕕(a) 𝕕(b)](a < b)"
-    @test match(pattern, 𝕕(1)⊗𝕕(2)) && !match(pattern, 𝕕(2)⊗𝕕(1))
-    @test latexstring(pattern) == "\\sum_{a < b} d^{}_{a} d^{}_{b}"
-
-    another = pattern ⊗ pattern
-    @test string(another) == "∑[𝕕(a) 𝕕(b)](a < b) ⊗ ∑[𝕕(a) 𝕕(b)](a < b)"
-    @test match(another, 𝕕(1)⊗𝕕(2)⊗𝕕(3)⊗𝕕(4)) && !match(another, 𝕕(2)⊗𝕕(1)⊗𝕕(3)⊗𝕕(4)) && !match(another, 𝕕(1)⊗𝕕(2)⊗𝕕(4)⊗𝕕(3))
-    @test latexstring(another) == "\\sum_{a < b} d^{}_{a} d^{}_{b} \\cdot \\sum_{a < b} d^{}_{a} d^{}_{b}"
-
-    con = ConstrainedInternal(DFock(2), InternalPattern(𝕕(:)))
-    @test eltype(con) == eltype(typeof(con)) == InternalIndexProd{Tuple{DID{Int}}}
-    @test collect(con) == InternalIndexProd.([𝕕(1), 𝕕(2)])
-
-    con = ConstrainedInternal(DFock(2)⊗DFock(2), InternalPattern(𝕕(:)⊗𝕕(:)))
-    @test eltype(con) == eltype(typeof(con)) == InternalIndexProd{Tuple{DID{Int}, DID{Int}}}
-    @test collect(con) == [𝕕(1)⊗𝕕(1), 𝕕(2)⊗𝕕(2)]
-
-    con = ConstrainedInternal(DFock(2)⊗DFock(2)⊗DFock(2)⊗DFock(2), InternalPattern(𝕕(:)⊗𝕕(:))⊗InternalPattern(𝕕(:)⊗𝕕(:)))
-    @test eltype(con) == eltype(typeof(con)) == InternalIndexProd{Tuple{DID{Int}, DID{Int}, DID{Int}, DID{Int}}}
-    @test collect(con) == [𝕕(1)⊗𝕕(1)⊗𝕕(1)⊗𝕕(1), 𝕕(2)⊗𝕕(2)⊗𝕕(1)⊗𝕕(1), 𝕕(1)⊗𝕕(1)⊗𝕕(2)⊗𝕕(2), 𝕕(2)⊗𝕕(2)⊗𝕕(2)⊗𝕕(2)]
-end
+#     space = InternalIndexSpace((DID(1), DID(:)), DFock(2)⊗DFock(2))
+#     @test collect(space) == [(𝕕(1), 𝕕(1)), (𝕕(1), 𝕕(2))]
+# end
 
 @testset "Index" begin
     @test (4, 3, 2, 1)[1ˢᵗ] == 4
@@ -270,45 +213,50 @@ end
 end
 
 @testset "Pattern" begin
-    @test parameternames(Pattern) == (:internal, :sites)
+    @test isdiagonal(DID{Int}, (𝕕(1), 𝕕(1))) && isdiagonal(DID{Int}, (𝕕(1), 𝕕(2)))
+    @test isdiagonal(DID{Colon}, (𝕕(1), 𝕕(1))) && !isdiagonal(DID{Colon}, (𝕕(1), 𝕕(2)))
 
+    @test parameternames(Pattern) == (:indexes, :partition, :npartition, :constraints)
     pattern = @pattern(Index(1ˢᵗ, 𝕕(a)), Index(1ˢᵗ, 𝕕(a)), Index(2ⁿᵈ, 𝕕(b)), Index(2ⁿᵈ, 𝕕(b)))
     @test pattern == @pattern(𝕕(1ˢᵗ, a), 𝕕(1ˢᵗ, a), 𝕕(2ⁿᵈ, b), 𝕕(2ⁿᵈ, b))
     @test isequal(pattern, @pattern(𝕕(1ˢᵗ, a), 𝕕(1ˢᵗ, a), 𝕕(2ⁿᵈ, b), 𝕕(2ⁿᵈ, b)))
-    @test hash(pattern, UInt(8)) == hash((pattern.sites, pattern.internal), UInt(8))
+    @test hash(pattern, UInt(8)) == hash((4, pattern.indexes..., ""), UInt(8))
     @test string(pattern) == "∑[𝕕(1ˢᵗ, a) 𝕕(1ˢᵗ, a) 𝕕(2ⁿᵈ, b) 𝕕(2ⁿᵈ, b)]"
+    @test pattern[1]==Index(1ˢᵗ, 𝕕(:a)) && pattern[2]==Index(1ˢᵗ, 𝕕(:a)) && pattern[3]==Index(2ⁿᵈ, 𝕕(:b)) && pattern[4]==Index(2ⁿᵈ, 𝕕(:b))
+    @test partition(pattern) == partition(typeof(pattern)) == (4,)
     @test rank(pattern) == rank(typeof(pattern)) == 4
+    @test rank(pattern, 1) == rank(typeof(pattern), 1) == 4
     @test latexstring(pattern) == "\\sum_{} d^{}_{1ˢᵗ,\\,a} d^{}_{1ˢᵗ,\\,a} d^{}_{2ⁿᵈ,\\,b} d^{}_{2ⁿᵈ,\\,b}"
-    @test match(pattern.internal, 𝕕(3)⊗𝕕(3)⊗𝕕(1)⊗𝕕(1))
-    @test !match(pattern.internal, 𝕕(3)⊗𝕕(3)⊗𝕕(1)⊗𝕕(2))
-    @test !match(pattern.internal, 𝕕(3)⊗𝕕(1)⊗𝕕(2)⊗𝕕(2))
+    @test match(pattern, (𝕕(3), 𝕕(3), 𝕕(1), 𝕕(1)))
+    @test !match(pattern, (𝕕(3), 𝕕(3), 𝕕(1), 𝕕(2)))
+    @test !match(pattern, (𝕕(3), 𝕕(1), 𝕕(2), 𝕕(2)))
 
     pattern = @pattern(𝕕(1ˢᵗ, 1), 𝕕(1ˢᵗ, a), 𝕕(2ⁿᵈ, 2), 𝕕(2ⁿᵈ, b); constraint=a<b)
     @test string(pattern) == "∑[𝕕(1ˢᵗ, 1) 𝕕(1ˢᵗ, a) 𝕕(2ⁿᵈ, 2) 𝕕(2ⁿᵈ, b)](a < b)"
     @test latexstring(pattern) == "\\sum_{a < b} d^{}_{1ˢᵗ,\\,1} d^{}_{1ˢᵗ,\\,a} d^{}_{2ⁿᵈ,\\,2} d^{}_{2ⁿᵈ,\\,b}"
-    @test match(pattern.internal, 𝕕(1)⊗𝕕(3)⊗𝕕(2)⊗𝕕(4))
-    @test !match(pattern.internal, 𝕕(10)⊗𝕕(3)⊗𝕕(2)⊗𝕕(4))
-    @test !match(pattern.internal, 𝕕(1)⊗𝕕(3)⊗𝕕(2)⊗𝕕(3))
-    @test !match(pattern.internal, 𝕕(1)⊗𝕕(3)⊗𝕕(4)⊗𝕕(5))
+    @test match(pattern, (𝕕(1), 𝕕(3), 𝕕(2), 𝕕(4)))
+    @test !match(pattern, (𝕕(10), 𝕕(3), 𝕕(2), 𝕕(4)))
+    @test !match(pattern, (𝕕(1), 𝕕(3), 𝕕(2), 𝕕(3)))
+    @test !match(pattern, (𝕕(1), 𝕕(3), 𝕕(4), 𝕕(5)))
 
     pattern = Pattern(𝕕(1ˢᵗ, :), 𝕕(1ˢᵗ, :))
     @test string(pattern) == "∑[𝕕(1ˢᵗ, :) 𝕕(1ˢᵗ, :)]"
     @test latexstring(pattern) == "\\sum_{} d^{}_{1ˢᵗ,\\,:} d^{}_{1ˢᵗ,\\,:}"
-    @test match(pattern.internal, 𝕕(1)⊗𝕕(1))
-    @test !match(pattern.internal, 𝕕(1)⊗𝕕(3))
+    @test match(pattern, (𝕕(1), 𝕕(1)))
+    @test !match(pattern, (𝕕(1), 𝕕(3)))
 
     another = pattern ⊗ pattern
     @test string(another) == "∑[𝕕(1ˢᵗ, :) 𝕕(1ˢᵗ, :)] ⊗ ∑[𝕕(1ˢᵗ, :) 𝕕(1ˢᵗ, :)]"
     @test latexstring(another) == "\\sum_{} d^{}_{1ˢᵗ,\\,:} d^{}_{1ˢᵗ,\\,:} \\cdot \\sum_{} d^{}_{1ˢᵗ,\\,:} d^{}_{1ˢᵗ,\\,:}"
-    @test match(another.internal, 𝕕(1)⊗𝕕(1)⊗𝕕(2)⊗𝕕(2))
-    @test !match(another.internal, 𝕕(1)⊗𝕕(3)⊗𝕕(2)⊗𝕕(2))
-    @test !match(another.internal, 𝕕(1)⊗𝕕(1)⊗𝕕(3)⊗𝕕(2))
+    @test match(another, (𝕕(1), 𝕕(1), 𝕕(2), 𝕕(2)))
+    @test !match(another, (𝕕(1), 𝕕(3), 𝕕(2), 𝕕(2)))
+    @test !match(another, (𝕕(1), 𝕕(1), 𝕕(3), 𝕕(2)))
 end
 
 @testset "patternrule" begin
     @test patternrule((1, 2, 3, 4), Val(:)) == (1, 2, 3, 4)
-    @test patternrule(𝕕(1)⊗𝕕(:), Val(:)) == 𝕕(1)⊗𝕕(:)
-    @test patternrule(𝕕(1)⊗𝕕(2), Val(:)) == 𝕕(1)⊗𝕕(2)
+    @test patternrule((𝕕(1), 𝕕(:)), Val(:)) == (𝕕(1), 𝕕(:))
+    @test patternrule((𝕕(1), 𝕕(2)), Val(:)) == (𝕕(1), 𝕕(2))
     @test patternrule((1, 2), Val(:), DID, Val(:nambu)) == (1, 2)
     @test patternrule((:, :), Val(:), 1) == (1ˢᵗ, 1ˢᵗ)
     @test patternrule((:, :), Val(:), 2) == (1ˢᵗ, 2ⁿᵈ)
@@ -323,7 +271,7 @@ end
     @test eltype(tc) == eltype(typeof(tc)) == typeof(tc)
     @test collect(tc) == [tc]
     @test rank(tc) == rank(typeof(tc)) == 1
-    @test tc * tc == tc ⊗ tc
+    @test tc * tc == Coupling(tc.pattern⊗tc.pattern)
     @test string(tc) == "𝕕(:, 2)"
     @test latexstring(tc) == "d^{}_{:,\\,2}"
     @test summary([tc]) == "1-element Vector{Coupling}"
@@ -354,7 +302,7 @@ end
 
     mc = MatrixCoupling(:, DID, component)
     @test parameternames(typeof(mc)) == (:internal, :site, :components)
-    @test eltype(typeof(mc)) == Coupling{Int64, Pattern{InternalPattern{Tuple{DID{Int}, DID{Int}}, (2,), 1, Tuple{AllEqual{()}}}, Tuple{Colon, Colon}}}
+    @test eltype(typeof(mc)) == Coupling{Int64, Pattern{NTuple{2, Index{DID{Int}, Colon}}, (2,), 1, Tuple{typeof(isdiagonal)}}}
     @test mc[1] == Coupling(-1, 𝕕(:, 1), 𝕕(:, 2))
     @test mc[2] == Coupling(+1, 𝕕(:, 2), 𝕕(:, 1))
     @test mc^2 == mc*mc
@@ -367,7 +315,7 @@ end
 
     mcp = 2 * mc * another
     @test mcp == MatrixCouplingProd(mc, another) * 2
-    @test eltype(mcp) == Coupling{Float64, Pattern{InternalPattern{Tuple{DID{Int}, DID{Int}, DID{Colon}, DID{Colon}}, (2, 2), 2, Tuple{AllEqual{()}, AllEqual{(:nambu,)}}}, Tuple{Colon, Colon, Ordinal, Ordinal}}}
+    @test eltype(mcp) == Coupling{Float64, Pattern{Tuple{Index{DID{Int}, Colon}, Index{DID{Int}, Colon}, Index{DID{Colon}, Ordinal}, Index{DID{Colon}, Ordinal}}, (2, 2), 2, NTuple{2, typeof(isdiagonal)}}}
     @test mcp[1] == 2 * mc[1] * another[1]
     @test mcp[2] == 2 * mc[2] * another[1]
     @test mc*2 == 2*mc == MatrixCouplingProd(2, mc)
@@ -384,7 +332,7 @@ end
     mc₂ = MatrixCoupling((2ⁿᵈ, 1ˢᵗ), DID, Component([1, 2], [2, 1], [0 1im; -1im 0]))
     mcs = mc₁ + mc₂
     @test mcs == MatrixCouplingSum(mc₁, mc₂)
-    @test eltype(mcs) == Coupling{Complex{Int64}, Pattern{InternalPattern{Tuple{DID{Int}, DID{Int}}, (2,), 1, Tuple{AllEqual{()}}}, Tuple{Ordinal, Ordinal}}}
+    @test eltype(mcs) == Coupling{Complex{Int64}, Pattern{NTuple{2, Index{DID{Int}, Ordinal}}, (2,), 1, Tuple{typeof(isdiagonal)}}}
     @test collect(mcs) == [
         Coupling(𝕕(1ˢᵗ, 2), 𝕕(2ⁿᵈ, 2)),
         Coupling(𝕕(1ˢᵗ, 1), 𝕕(2ⁿᵈ, 1)),

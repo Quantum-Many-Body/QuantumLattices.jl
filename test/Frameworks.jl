@@ -1,7 +1,7 @@
 using LinearAlgebra: dot, eigen
 using Plots: plot, savefig
 using QuantumLattices: expand, expand!, reset!, str, update
-using QuantumLattices.DegreesOfFreedom: plain, Boundary, CoordinatedIndex, Coupling, Hilbert, Index, SimpleInternalIndex, SimpleInternal, Term
+using QuantumLattices.DegreesOfFreedom: plain, Boundary, CoordinatedIndex, Coupling, Hilbert, Index, InternalIndex, SimpleInternal, Term
 using QuantumLattices.Frameworks
 using QuantumLattices.Frameworks: seriestype
 using QuantumLattices.QuantumNumbers: periods
@@ -13,7 +13,7 @@ import QuantumLattices: update!
 import QuantumLattices.Frameworks: Parameters, options, run!
 import QuantumLattices.Toolkit: shape
 
-struct FID{N<:Union{Int, Symbol}} <: SimpleInternalIndex
+struct FID{N<:Union{Int, Symbol}} <: InternalIndex
     nambu::N
 end
 @inline Base.adjoint(sl::FID{Int}) = FID(3-sl.nambu)
@@ -32,7 +32,6 @@ end
 @inline Base.convert(::Type{<:FID}, i::CartesianIndex, ::FFock) = FID(i.I...)
 @inline Base.convert(::Type{<:CartesianIndex}, fid::FID{Int}, ::FFock) = CartesianIndex(fid.nambu)
 @inline shape(::FFock, index::FID{Int}) = (index.nambu:index.nambu,)
-@inline shape(internal::FFock, ::FID{Symbol}) = (1:internal.nnambu,)
 
 @testset "Parameters" begin
     ps1 = Parameters{(:t₁, :t₂, :U)}(1.0im, 1.0, 2.0)
