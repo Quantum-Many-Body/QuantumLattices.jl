@@ -355,21 +355,23 @@ end
     @test mcs - mcs₂ == MatrixCouplingSum(mc₁, mc₂, -mc₁, mc₂)
 end
 
-@testset "TermFunction" begin
+@testset "TermAmplitude & TermCoupling" begin
     bond = Bond(1, Point(1, [0.0], [0.0]), Point(2, [0.5], [0.0]))
 
     ta = TermAmplitude(nothing)
+    @test ta==deepcopy(ta) && isequal(ta, deepcopy(ta))
     @test ta(bond) == 1
     @test valtype(ta, bond) == valtype(typeof(ta), typeof(bond)) == Int
 
-    ta = TermAmplitude(bond::Bond->bond.kind+3.0)
+    fx = bond::Bond->bond.kind+3.0
+    ta = TermAmplitude(fx)
+    @test ta==deepcopy(ta) && isequal(ta, deepcopy(ta))
     @test ta(bond) == 4.0
     @test valtype(ta, bond) == valtype(typeof(ta), typeof(bond)) == Float64
 
     tcs = Coupling(1.0, 𝕕, (1ˢᵗ, 2ⁿᵈ), (1, 1)) + Coupling(2.0, 𝕕, (1ˢᵗ, 2ⁿᵈ), (2, 2))
     termcouplings = TermCoupling(tcs)
-    @test termcouplings == deepcopy(TermCoupling(tcs))
-    @test isequal(termcouplings, deepcopy(TermCoupling(tcs)))
+    @test termcouplings==deepcopy(termcouplings) && isequal(termcouplings, deepcopy(termcouplings))
     @test valtype(termcouplings) == valtype(typeof(termcouplings)) == eltype(typeof(tcs))
     @test termcouplings(bond) == tcs
 
@@ -378,8 +380,7 @@ end
 
     fx = bond::Bond -> bond.kind==1 ? Coupling(1.0, 𝕕, (1ˢᵗ, 2ⁿᵈ), (1, 1)) : Coupling(1.0, 𝕕, (1ˢᵗ, 2ⁿᵈ), (2, 2))
     termcouplings = TermCoupling(fx)
-    @test termcouplings == TermCoupling{eltype(tcs)}(fx)
-    @test isequal(termcouplings, TermCoupling{eltype(tcs)}(fx))
+    @test termcouplings==TermCoupling{eltype(tcs)}(fx) && isequal(termcouplings, TermCoupling{eltype(tcs)}(fx))
     @test valtype(termcouplings) == valtype(typeof(termcouplings)) == typejoin(typeof(fx(bond₁)), typeof(fx(bond₂)))
     @test termcouplings(bond₁) == fx(bond₁)
     @test termcouplings(bond₂) == fx(bond₂)

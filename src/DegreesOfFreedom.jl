@@ -16,7 +16,7 @@ import ..Spatials: icoordinate, nneighbor, rcoordinate
 import ..Toolkit: contentnames, getcontent, parameternames
 
 export CompositeInternal, CompositeIndex, CoordinatedIndex, Hilbert, Index, Internal, InternalIndex, InternalProd, InternalSum, SimpleInternal
-export Boundary, Component, Coupling, MatrixCoupling, MatrixCouplingProd, MatrixCouplingSum, Metric, OperatorIndexToTuple, Ordinal, Pattern, Table, Term, TermAmplitude, TermCoupling, TermFunction
+export Boundary, Component, Coupling, MatrixCoupling, MatrixCouplingProd, MatrixCouplingSum, Metric, OperatorIndexToTuple, Ordinal, Pattern, Table, Term, TermAmplitude, TermCoupling
 export ˢᵗ, ⁿᵈ, ʳᵈ, ᵗʰ, plain, coordinatedindextype, diagonalfields, indextype, internalindextype, isdefinite, isdiagonal, partition, patternrule, showablefields, statistics, @pattern
 
 # InternalIndex and Internal
@@ -1220,39 +1220,34 @@ Define right-division, minus and subtraction operator for a `MatrixCoupling`/`Ma
 
 # Term
 """
-    TermFunction{F} <: Function
-
-Abstract type for concrete term functions.
-"""
-abstract type TermFunction{F} <: Function end
-@inline Base.:(==)(tf₁::TermFunction{F₁}, tf₂::TermFunction{F₂}) where {F₁, F₂} = F₁==F₂ && ==(efficientoperations, tf₁, tf₂)
-@inline Base.isequal(tf₁::TermFunction{F₁}, tf₂::TermFunction{F₂}) where {F₁, F₂} = isequal(F₁, F₂) && isequal(efficientoperations, tf₁, tf₂)
-
-"""
-    TermAmplitude{F} <: TermFunction{F}
+    TermAmplitude{F} <: Function
 
 Function for the amplitude of a term.
 """
-struct TermAmplitude{F} <: TermFunction{F}
+struct TermAmplitude{F} <: Function
     TermAmplitude(amplitude::Union{Function, Nothing}) = new{amplitude}()
 end
+@inline Base.:(==)(::TermAmplitude{F₁}, ::TermAmplitude{F₂}) where {F₁, F₂} = F₁==F₂
+@inline Base.isequal(::TermAmplitude{F₁}, ::TermAmplitude{F₂}) where {F₁, F₂} = isequal(F₁, F₂)
 @inline (::TermAmplitude{nothing})(::Bond) = 1
 @inline (::TermAmplitude{F})(bond::Bond) where F = F(bond)
-@inline Base.valtype(tf::TermFunction, bond::Bond) = valtype(typeof(tf), typeof(bond))
+@inline Base.valtype(termamplitude::TermAmplitude, bond::Bond) = valtype(typeof(termamplitude), typeof(bond))
 @inline Base.valtype(::Type{TermAmplitude{nothing}}, ::Type{<:Bond}) = Int
 @inline Base.valtype(::Type{TermAmplitude{F}}, ::Type{B}) where {F, B<:Bond} = Core.Compiler.return_type(F, Tuple{B})
 
 """
-    TermCoupling{C<:Coupling, F} <: TermFunction{F}
+    TermCoupling{C<:Coupling, F} <: Function
 
 Function for the coupling of a term.
 """
-struct TermCoupling{C<:Coupling, F} <: TermFunction{F}
+struct TermCoupling{C<:Coupling, F} <: Function
     coupling::F
     TermCoupling(coupling) = new{eltype(coupling), typeof(coupling)}(coupling)
     TermCoupling(coupling::Function) = new{eltype(Core.Compiler.return_type(coupling, Tuple{Bond})), typeof(coupling)}(coupling)
     TermCoupling{C}(coupling::Function) where {C<:Coupling} = new{C, typeof(coupling)}(coupling)
 end
+@inline Base.:(==)(termcoupling₁::TermCoupling, termcoupling₂::TermCoupling) = ==(termcoupling₁.coupling, termcoupling₂.coupling)
+@inline Base.isequal(termcoupling₁::TermCoupling, termcoupling₂::TermCoupling) = isequal(termcoupling₁.coupling, termcoupling₂.coupling)
 @inline Base.valtype(termcoupling::TermCoupling) = valtype(typeof(termcoupling))
 @inline Base.valtype(::Type{<:TermCoupling{C}}) where {C<:Coupling} = C
 @inline (termcoupling::TermCoupling)(::Bond) = termcoupling.coupling
