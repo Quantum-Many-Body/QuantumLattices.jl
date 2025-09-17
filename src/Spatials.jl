@@ -7,15 +7,15 @@ using NearestNeighbors: KDTree, inrange, knn
 using Printf: @printf, @sprintf
 using RecipesBase: RecipesBase, @recipe, @series, @layout
 using StaticArrays: MVector, SVector
-using ..QuantumLattices: OneAtLeast, OneOrMore, rank
+using ..QuantumLattices: OneAtLeast, OneOrMore
 using ..Toolkit: atol, rtol, efficientoperations, CompositeDict, DirectProductedVectorSpace, Float, Segment, VectorSpace, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceEnumerative, VectorSpaceStyle, concatenate, getcontent, subscript
 
-import ..QuantumLattices: decompose, dimension, expand, kind, matrix, shape
+import ..QuantumLattices: decompose, dimension, expand, kind, matrix, rank, shape
 import ..QuantumOperators: scalartype
 import ..Toolkit: contentnames
 
 export azimuth, azimuthd, direction, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, nneighbor, polar, polard, reciprocals, rotate, translate, tile, volume
-export AbstractLattice, Bond, BrillouinZone, FractionalReciprocalSpace, Lattice, Neighbors, Point, ProductedReciprocalSpace, ReciprocalCurve, ReciprocalScatter, ReciprocalSpace, ReciprocalZone, ReciprocalPath
+export AbstractLattice, Bond, BrillouinZone, FractionalReciprocalSpace, Lattice, Neighbors, Point, ReciprocalCurve, ReciprocalScatter, ReciprocalSpace, ReciprocalZone, ReciprocalPath
 export bonds, bonds!, dlmsave, fractionals, icoordinate, iscontinuous, isdiscrete, isintracell, label, period, periods, rcoordinate, selectpath, shrink, ticks
 export hexagon120°map, hexagon60°map, linemap, rectanglemap, @hexagon_str, @line_str, @rectangle_str
 
@@ -976,6 +976,15 @@ Get the reciprocal lattice vectors of a reciprocal space with fractional coordin
 @inline reciprocals(reciprocalspace::FractionalReciprocalSpace) = getcontent(reciprocalspace, :reciprocals)
 
 """
+    rank(reciprocalspace::FractionalReciprocalSpace) -> Int
+    rank(::Type{<:FractionalReciprocalSpace{K, N} where K}) where N -> Int
+
+Get the rank, i.e., the number of reciprocal lattice vectors of a reciprocal space with fractional coordinates.
+"""
+@inline rank(reciprocalspace::FractionalReciprocalSpace) = rank(typeof(reciprocalspace))
+@inline rank(::Type{<:FractionalReciprocalSpace{K, N} where K}) where N = N
+
+"""
     expand(reciprocalspace::FractionalReciprocalSpace, fractional::AbstractVector{<:Number}) -> AbstractVector{<:AbstractVector{<:Number}}
 
 Expand the fractional coordinate in a reciprocal space to the Cartesian coordinate.
@@ -989,7 +998,7 @@ Define the recipe for the visualization of a reciprocal space with fractional co
 
 When `fractional` is `true`, the fractional coordinates will be plotted. Otherwise the Cartesian coordinates will be plotted.
 """
-@recipe function plot(reciprocalspace::FractionalReciprocalSpace{K, N}; fractional=false, autolims=true) where {K, N}
+@recipe function plot(reciprocalspace::FractionalReciprocalSpace; fractional=false, autolims=true)
     seriestype --> :scatter
     markerstrokewidth --> 0
     titlefontsize --> 10
@@ -998,6 +1007,7 @@ When `fractional` is `true`, the fractional coordinates will be plotted. Otherwi
     minorgrid --> true
     framestyle --> :box
     if fractional
+        N = rank(reciprocalspace)
         coordinates = map(NTuple{N, scalartype(reciprocalspace)}, fractionals(reciprocalspace))
         N>0 && (xlabel-->label(reciprocalspace, 1); autolims || (xlims-->extrema(v->v[1], coordinates)))
         N>1 && (ylabel-->label(reciprocalspace, 2); autolims || (ylims-->extrema(v->v[2], coordinates)))
@@ -1014,28 +1024,11 @@ When `fractional` is `true`, the fractional coordinates will be plotted. Otherwi
 end
 
 """
-    ProductedReciprocalSpace{K, N, P<:SVector} <: FractionalReciprocalSpace{K, N, P}
-
-Abstract type of reciprocal spaces whose fractional coordinates are composed of the direct product of several ranges.
-"""
-abstract type ProductedReciprocalSpace{K, N, P<:SVector} <: FractionalReciprocalSpace{K, N, P} end
-@inline VectorSpaceStyle(::Type{<:ProductedReciprocalSpace}) = VectorSpaceDirectProducted(:backward)
-
-"""
-    fractionals(reciprocalspace::ProductedReciprocalSpace{K, N}) where {K, N} -> AbstractVector{SVector{N, scalartype(reciprocalspace)}}
-
-Get the fractional coordinates of a reciprocal space.
-"""
-@inline function fractionals(reciprocalspace::ProductedReciprocalSpace{K, N}) where {K, N}
-    return DirectProductedVectorSpace{:backward, SVector{N, scalartype(reciprocalspace)}}(ntuple(i->range(reciprocalspace, i), Val(N)))
-end
-
-"""
-    BrillouinZone{K, P, N, S<:SVector} <: ProductedReciprocalSpace{K, N, S}
+    BrillouinZone{K, P, N, S<:SVector} <: FractionalReciprocalSpace{K, N, S}
 
 Brillouin zone of a lattice.
 """
-struct BrillouinZone{K, P, N, S<:SVector} <: ProductedReciprocalSpace{K, N, S}
+struct BrillouinZone{K, P, N, S<:SVector} <: FractionalReciprocalSpace{K, N, S}
     reciprocals::SVector{N, S}
     function BrillouinZone{K, P}(reciprocals::SVector{N, <:SVector}) where {K, P, N}
         @assert isa(K, Symbol) "BrillouinZone error: K must be a Symbol."
@@ -1043,12 +1036,15 @@ struct BrillouinZone{K, P, N, S<:SVector} <: ProductedReciprocalSpace{K, N, S}
         new{K, P, N, eltype(reciprocals)}(reciprocals)
     end
 end
+@inline VectorSpaceStyle(::Type{<:BrillouinZone}) = VectorSpaceDirectProducted(:backward)
 @inline shape(brillouinzone::BrillouinZone) = map(period->0:period-1, periods(typeof(brillouinzone)))
-function Base.convert(::Type{<:SVector}, index::CartesianIndex{N}, brillouinzone::BrillouinZone{K, P, N, S}) where {K, P, N, S<:SVector}
-    vs = map(mod, index.I, P)
-    result = zero(S)
+function Base.convert(::Type{<:SVector}, index::CartesianIndex, brillouinzone::BrillouinZone)
+    @assert length(index)==rank(brillouinzone) "convert error: mismatched index and Brillouin zone."
+    ps = periods(brillouinzone)
+    vs = map(mod, index.I, ps)
+    result = zero(eltype(brillouinzone))
     for (i, index) in enumerate(eachindex(brillouinzone.reciprocals))
-        result += brillouinzone.reciprocals[index] * (vs[i]//P[i])
+        result += brillouinzone.reciprocals[index] * (vs[i]//ps[i])
     end
     return result
 end
@@ -1137,11 +1133,20 @@ Judge whether a Brillouin zone is discrete.
 @inline @generated isdiscrete(::Type{<:BrillouinZone{K, P} where K}) where P = all(≠(Inf), P)
 
 """
-    ReciprocalZone{K, N, S<:SVector, V<:Number} <: ProductedReciprocalSpace{K, N, S}
+    fractionals(brillouinzone::BrillouinZone) -> AbstractVector{SVector{rank(brillouinzone), scalartype(brillouinzone)}}
+
+Get the fractional coordinates of a Brillouin zone.
+"""
+@inline function fractionals(brillouinzone::BrillouinZone)
+    return DirectProductedVectorSpace{:backward, SVector{rank(brillouinzone), scalartype(brillouinzone)}}(ntuple(i->range(brillouinzone, i), Val(rank(brillouinzone))))
+end
+
+"""
+    ReciprocalZone{K, N, S<:SVector, V<:Number} <: FractionalReciprocalSpace{K, N, S}
 
 A zone in the reciprocal space.
 """
-struct ReciprocalZone{K, N, S<:SVector, V<:Number} <: ProductedReciprocalSpace{K, N, S}
+struct ReciprocalZone{K, N, S<:SVector, V<:Number} <: FractionalReciprocalSpace{K, N, S}
     reciprocals::SVector{N, S}
     bounds::NTuple{N, Segment{V}}
     volume::V
@@ -1155,8 +1160,10 @@ struct ReciprocalZone{K, N, S<:SVector, V<:Number} <: ProductedReciprocalSpace{K
         new{K, N, eltype(reciprocals), typeof(v)}(reciprocals, bounds, v)
     end
 end
+@inline VectorSpaceStyle(::Type{<:ReciprocalZone}) = VectorSpaceDirectProducted(:backward)
 @inline shape(reciprocalzone::ReciprocalZone) = map(bound->1:length(bound), reciprocalzone.bounds)
-@inline function Base.convert(::Type{<:SVector}, index::CartesianIndex{N}, reciprocalzone::ReciprocalZone{K, N}) where {K, N}
+@inline function Base.convert(::Type{<:SVector}, index::CartesianIndex, reciprocalzone::ReciprocalZone)
+    @assert length(index)==rank(reciprocalzone) "convert error: mismatched index and reciprocal zone."
     result = zero(eltype(reciprocalzone))
     for (reciprocal, bound, i) in zip(reciprocalzone.reciprocals, reciprocalzone.bounds, index.I)
         result += reciprocal * bound[i]
@@ -1212,14 +1219,14 @@ end
 end
 
 """
-    ReciprocalZone(reciprocalspace::ProductedReciprocalSpace)
+    ReciprocalZone(brillouinzone::BrillouinZone)
 
-Construct a reciprocal zone from a reciprocal space whose fractional coordinates are composed of the direct product of several ranges.
+Construct a reciprocal zone from a Brillouin zone.
 """
-@inline function ReciprocalZone(reciprocalspace::ProductedReciprocalSpace{K, N}) where {K, N}
-    return ReciprocalZone{K}(
-        reciprocals(reciprocalspace),
-        ntuple(i->(bound=range(reciprocalspace, i); Segment(first(bound), last(bound)+step(bound), length(bound); ends=(true, false))), Val(N))
+@inline function ReciprocalZone(brillouinzone::BrillouinZone)
+    return ReciprocalZone{label(brillouinzone)}(
+        reciprocals(brillouinzone),
+        ntuple(i->(bound=range(brillouinzone, i); Segment(first(bound), last(bound)+step(bound), length(bound); ends=(true, false))), Val(rank(brillouinzone)))
     )
 end
 
@@ -1234,13 +1241,13 @@ Get the ith axis range of the fractional coordinates of a reciprocal zone.
 end
 
 """
-    shrink(reciprocalzone::ReciprocalZone{K}, ranges::Vararg{OrdinalRange{<:Integer}, N}) where {K, N} -> ReciprocalZone
+    shrink(reciprocalzone::ReciprocalZone, ranges::OrdinalRange{<:Integer}...) -> ReciprocalZone
 
 Shrink a reciprocal zone.
 """
-function shrink(reciprocalzone::ReciprocalZone{K}, ranges::Vararg{OrdinalRange{<:Integer}, N}) where {K, N}
-    @assert length(ranges)==length(reciprocalzone.reciprocals) "shrink error: mismatched number of ranges and reciprocals."
-    return ReciprocalZone{K}(reciprocalzone.reciprocals, ntuple(i->reciprocalzone.bounds[i][ranges[i]], Val(N)))
+function shrink(reciprocalzone::ReciprocalZone, ranges::OrdinalRange{<:Integer}...)
+    @assert length(ranges)==rank(reciprocalzone.reciprocals) "shrink error: mismatched number of ranges and reciprocals."
+    return ReciprocalZone{label(reciprocalzone)}(reciprocalzone.reciprocals, ntuple(i->reciprocalzone.bounds[i][ranges[i]], Val(rank(reciprocalzone))))
 end
 
 """
@@ -1249,6 +1256,15 @@ end
 Get the volume of a reciprocal zone.
 """
 @inline volume(reciprocalzone::ReciprocalZone) = reciprocalzone.volume
+
+"""
+    fractionals(reciprocalzone::ReciprocalZone) -> AbstractVector{SVector{rank(reciprocalzone), scalartype(reciprocalzone)}}
+
+Get the fractional coordinates of a reciprocal zone.
+"""
+@inline function fractionals(reciprocalzone::ReciprocalZone)
+    return DirectProductedVectorSpace{:backward, SVector{rank(reciprocalzone), scalartype(reciprocalzone)}}(ntuple(i->range(reciprocalzone, i), Val(rank(reciprocalzone))))
+end
 
 """
     ReciprocalScatter{K, N, S<:SVector, V<:SVector{N}} <: FractionalReciprocalSpace{K, N, S}
@@ -1675,11 +1691,11 @@ end
 
 Define the recipe for the scatter visualization of reciprocal points with a series of weights.
 """
-@recipe function plot(reciprocalscatter::ReciprocalScatter{K, N}, weights::AbstractMatrix{<:Number}; fractional=true, weightmultiplier=1.0, weightcolors=nothing, weightlabels=nothing) where {K, N}
+@recipe function plot(reciprocalscatter::ReciprocalScatter, weights::AbstractMatrix{<:Number}; fractional=true, weightmultiplier=1.0, weightcolors=nothing, weightlabels=nothing)
     seriestype --> :scatter
     markerstrokewidth --> 0
     legend --> !isnothing(weightlabels)
-    point = fractional ? [ntuple(i->0, N)] : [ntuple(i->0, dimension(reciprocalscatter))]
+    point = fractional ? [ntuple(i->0, rank(reciprocalscatter))] : [ntuple(i->0, dimension(reciprocalscatter))]
     fractional := fractional
     autolims := false
     for (i, index) in enumerate(axes(weights, 2))

@@ -2,8 +2,7 @@ using OffsetArrays: OffsetArray
 using LinearAlgebra: cross, det, dot, norm
 using Plots: plot, savefig, plot!
 using QuantumLattices.Spatials
-using QuantumLattices: decompose, dimension, expand, shape
-# using QuantumLattices.QuantumNumbers: Momenta, 𝕂¹, 𝕂², 𝕂³
+using QuantumLattices: decompose, dimension, expand, rank, shape
 using QuantumLattices.QuantumOperators: scalartype
 using QuantumLattices.Toolkit: Float, Segment, contentnames
 using Random: seed!
@@ -283,6 +282,7 @@ end
     @test label(bz, 1) == label(typeof(bz), 1) == "k₁"
     @test label(bz, 2) == label(typeof(bz), 2) == "k₂"
     @test reciprocals(bz) == recipls
+    @test rank(bz) == rank(typeof(bz)) == 2
     @test fractionals(bz) == [[0.0, 0.0], [0.0, 0.25], [0.0, 0.5], [0.0, 0.75], [0.5, 0.0], [0.5, 0.25], [0.5, 0.5], [0.5, 0.75]]
     @test collect(bz) ≈ [expand(bz, fractional) for fractional in fractionals(bz)]
     @test shape(bz) == (0:1, 0:3)
