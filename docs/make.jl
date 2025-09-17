@@ -31,7 +31,6 @@ makedocs(
                     ],
                     "Manual" =>  [
                         "man/Toolkit.md",
-                        "man/QuantumNumbers.md",
                         "man/QuantumOperators.md",
                         "man/Spatials.md",
                         "man/DegreesOfFreedom.md",

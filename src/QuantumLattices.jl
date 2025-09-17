@@ -4,17 +4,11 @@ module QuantumLattices
 import LinearAlgebra: ishermitian, rank, mul!
 include("Interfaces.jl")
 export OneAtLeast, OneOrMore, ZeroOrMore
-export ⊠, ⊕, ⊗, add!, decompose, decompose!, dimension, div!, expand, expand!, id, ishermitian, kind, mul!, permute, rank, reset!, shape, str, sub!, update, update!, value
+export ⊕, ⊗, add!, decompose, decompose!, dimension, div!, expand, expand!, id, ishermitian, kind, mul!, permute, rank, reset!, shape, str, sub!, update, update!, value
 
 # Toolkit
 include("Toolkit.jl")
 using .Toolkit
-
-# QuantumNumbers
-include("QuantumNumbers.jl")
-using .QuantumNumbers
-export Abelian, AbelianQuantumNumber, AbelianQuantumNumberProd, AbelianGradedSpace, AbelianGradedSpaceProd, AbelianGradedSpaceSum, Graded, Momenta, RepresentationSpace, SimpleAbelianQuantumNumber
-export 𝕂, 𝕂¹, 𝕂², 𝕂³, ℕ, 𝕊ᶻ, 𝕌₁, ℤ, ℤ₁, ℤ₂, ℤ₃, ℤ₄, fℤ₂, sℤ₂, findindex, period, periods, regularize, regularize!
 
 # QuantumOperators
 include("QuantumOperators.jl")
@@ -28,7 +22,7 @@ include("Spatials.jl")
 using .Spatials
 export azimuth, azimuthd, direction, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, nneighbor, polar, polard, reciprocals, rotate, translate, tile, volume
 export AbstractLattice, Bond, BrillouinZone, FractionalReciprocalSpace, Lattice, Neighbors, Point, ProductedReciprocalSpace, ReciprocalCurve, ReciprocalPath, ReciprocalScatter, ReciprocalSpace, ReciprocalZone
-export bonds, bonds!, dlmsave, fractionals, icoordinate, iscontinuous, isdiscrete, isintracell, label, rcoordinate, selectpath, shrink, ticks, @hexagon_str, @line_str, @rectangle_str
+export bonds, bonds!, dlmsave, fractionals, icoordinate, iscontinuous, isdiscrete, isintracell, label, period, periods, rcoordinate, selectpath, shrink, ticks, @hexagon_str, @line_str, @rectangle_str
 
 # DegreesOfFreedom
 include("DegreesOfFreedom.jl")

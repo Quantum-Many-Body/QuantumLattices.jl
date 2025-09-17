@@ -5,7 +5,6 @@ using Printf: @printf, @sprintf
 using SparseArrays: SparseMatrixCSC, nnz
 using StaticArrays: SVector
 using ..QuantumLattices: OneAtLeast, OneOrMore, add!, decompose, str
-using ..QuantumNumbers: Abelian
 using ..QuantumOperators: ID, LinearTransformation, Operator, OperatorIndex, OperatorPack, Operators, QuantumOperator, scalartype, valuetolatextext
 using ..Spatials: Bond, Point
 using ..Toolkit: atol, efficientoperations, rtol, CompositeDict, Float, VectorSpace, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceStyle, concatenate, fulltype, parametertype, rawtype, reparameter
@@ -383,13 +382,6 @@ Get the compatible type of the index based on the type of an internal space.
 """
 @inline indextype(I::Type{<:SimpleInternal}) = fulltype(Index, NamedTuple{(:internal, :site), Tuple{eltype(I), Int}})
 
-"""
-    (index::Index)(quantumnumber::Abelian) -> Abelian
-
-Get the resulting Abelian quantum number after an `Index` acts upon an initial Abelian quantum number.
-"""
-@inline (index::Index)(quantumnumber::Abelian) = index.internal(quantumnumber)
-
 # CompositeIndex and CoordinatedIndex
 """
     CompositeIndex{I<:Index} <: OperatorIndex
@@ -419,13 +411,6 @@ Get the statistics of a composite index.
 Get the `attr` script of a composite index.
 """
 @inline script(index::CompositeIndex, ::Val{attr}; kwargs...) where attr = script(getcontent(index, :index), Val(attr); kwargs...)
-
-"""
-    (index::CompositeIndex)(quantumnumber::Abelian) -> Abelian
-
-Get the resulting Abelian quantum number after a `CompositeIndex` acts upon an initial Abelian quantum number.
-"""
-@inline (index::CompositeIndex)(quantumnumber::Abelian) = Index(index)(quantumnumber)
 
 """
     CoordinatedIndex{I<:Index, V<:SVector} <: CompositeIndex{I}

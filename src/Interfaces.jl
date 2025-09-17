@@ -6,11 +6,11 @@ One at least.
 const OneAtLeast{A, N} = Tuple{A, Vararg{A, N}}
 
 """
-    const OneOrMore{A} = Union{A, OneAtLeast{A}}
+    const OneOrMore{A, N} = Union{A, OneAtLeast{A, N}}
 
 One or more.
 """
-const OneOrMore{A} = Union{A, OneAtLeast{A}}
+const OneOrMore{A, N} = Union{A, OneAtLeast{A, N}}
 
 """
     OneOrMore(x) -> Tuple{typeof(x)}
@@ -22,13 +22,12 @@ If `x` is a tuple, return itself; if not, return `(x,)`.
 @inline OneOrMore(xs::Tuple) = xs
 
 """
-    const ZeroOrMore{A} = Union{A, Tuple{Vararg{A}}}
+    const ZeroOrMore{A, N} = Union{A, Tuple{Vararg{A, N}}}
 
 Zero or more.
 """
-const ZeroOrMore{A} = Union{A, Tuple{Vararg{A}}}
+const ZeroOrMore{A, N} = Union{A, Tuple{Vararg{A, N}}}
 
-function ⊠ end
 function ⊕ end
 function ⊗ end
 function add! end

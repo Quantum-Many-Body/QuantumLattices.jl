@@ -3,7 +3,7 @@ using LinearAlgebra: cross, det, dot, norm
 using Plots: plot, savefig, plot!
 using QuantumLattices.Spatials
 using QuantumLattices: decompose, dimension, expand, shape
-using QuantumLattices.QuantumNumbers: Momenta, 𝕂¹, 𝕂², 𝕂³
+# using QuantumLattices.QuantumNumbers: Momenta, 𝕂¹, 𝕂², 𝕂³
 using QuantumLattices.QuantumOperators: scalartype
 using QuantumLattices.Toolkit: Float, Segment, contentnames
 using Random: seed!
@@ -272,19 +272,9 @@ end
     savefig(plot(lattice, 2), "Lattice.png")
 end
 
-@testset "𝕂" begin
-    @test expand(𝕂¹{10}(1), [[1.0, 0.0, 0.0]]) == [0.1, 0.0, 0.0]
-    @test expand(𝕂²{10, 100}(1, 1), [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]) == [0.1, 0.01, 0.0]
-    @test expand(𝕂³{10, 100, 1000}(1, 1, 1), [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]) == [0.1, 0.01, 0.001]
-
-    @test 𝕂¹{10}([0.1, 0.0, 0.0], [[1.0, 0.0, 0.0]]) == 𝕂¹{10}(1)
-    @test 𝕂²{10, 100}([0.1, 0.01, 0.0], [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]) == 𝕂²{10, 100}(1, 1)
-    @test 𝕂³{10, 100, 1000}([0.1, 0.01, 0.001],[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]) == 𝕂³{10, 100, 1000}(1, 1, 1)
-end
-
 @testset "BrillouinZone" begin
     recipls = [[2.0, 0.0], [0.0, 3.0]]
-    bz = BrillouinZone(𝕂²{2, 4}, recipls)
+    bz = BrillouinZone{(2, 4)}(recipls)
     @test bz==deepcopy(bz) && isequal(bz, deepcopy(bz))
     @test bz≠BrillouinZone(recipls, 4) && !isequal(bz, BrillouinZone(recipls, 4))
     @test scalartype(bz) == scalartype(typeof(bz)) == Float
@@ -297,9 +287,10 @@ end
     @test collect(bz) ≈ [expand(bz, fractional) for fractional in fractionals(bz)]
     @test shape(bz) == (0:1, 0:3)
     @test hash(bz) == hash(((SVector(2.0, 0.0), SVector(0.0, 3.0)), (2, 4)))
-    @test keytype(bz) == keytype(typeof(bz)) == 𝕂²{2, 4}
-    @test keys(bz) == Momenta(𝕂²{2, 4})
-    @test collect(bz) == [bz[key] for key in keys(bz)] == [[0.0, 0.0], [0.0, 0.75], [0.0, 1.5], [0.0, 2.25], [1.0, 0.0], [1.0, 0.75], [1.0, 1.5], [1.0, 2.25]]
+    @test periods(bz) == periods(typeof(bz)) == (2, 4)
+    @test period(bz, 1)==period(typeof(bz), 1)==2 && period(bz, 2)==period(typeof(bz), 2)==4
+    @test collect(bz) == [[0.0, 0.0], [0.0, 0.75], [0.0, 1.5], [0.0, 2.25], [1.0, 0.0], [1.0, 0.75], [1.0, 1.5], [1.0, 2.25]]
+    @test [convert(CartesianIndex, momentum, bz) for momentum in collect(bz)] == CartesianIndex.([(0, 0), (0, 1), (0, 2), (0, 3), (1, 0), (1, 1), (1, 2), (1, 3)])
     @test range(bz, 1)==range(0.0, 0.5, 2)
     @test range(bz, 2)==range(0.0, 0.75, 4)
     @test volume(bz) == 6.0
@@ -312,18 +303,18 @@ end
     @test iscontinuous(bz) == iscontinuous(typeof(bz)) == true
     @test isdiscrete(bz) == isdiscrete(typeof(bz)) == false
 
-    bz = BrillouinZone(recipls, (4, Inf))
+    bz = BrillouinZone{(4, Inf)}(recipls)
     @test iscontinuous(bz) == iscontinuous(typeof(bz)) == false
     @test isdiscrete(bz) == isdiscrete(typeof(bz)) == false
 
     recipls = [[1.0, 0.0, 0.0]]
-    @test BrillouinZone{:q}(𝕂¹{10}, recipls) == BrillouinZone{:q}(recipls, 10)
+    @test BrillouinZone{:q, (10,)}(recipls) == BrillouinZone{:q}(recipls, 10)
 
     recipls = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]
-    @test BrillouinZone(𝕂²{10, 10}, recipls) == BrillouinZone(recipls, 10)
+    @test BrillouinZone{(10, 10)}(recipls) == BrillouinZone(recipls, 10)
 
     recipls = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
-    @test BrillouinZone(𝕂³{10, 10, 10}, recipls) == BrillouinZone(recipls, 10)
+    @test BrillouinZone{(10, 10, 10)}(recipls) == BrillouinZone(recipls, 10)
 end
 
 @testset "ReciprocalZone" begin
@@ -350,7 +341,7 @@ end
     @test range(rz, 2) ≈ collect(Segment(-1, 1, 10))
     @test range(rz, 3) ≈ collect(Segment(-3, 3, 10))
 
-    bz = BrillouinZone{:q}(𝕂²{8, 8}, [[1.0, 0.0], [0.0, 1.0]])
+    bz = BrillouinZone{:q}([[1.0, 0.0], [0.0, 1.0]], 8)
     rz = ReciprocalZone(bz)
     @test rz == ReciprocalZone{:q}([[1.0, 0.0], [0.0, 1.0]], 0=>1, 0=>1; length=8)
     @test collect(rz) == collect(bz)
@@ -369,7 +360,7 @@ end
     savefig(plot(rs; fractional=true), "ReciprocalScatter-fractional.png")
 
     rs = ReciprocalScatter{:q}([b₁, b₂], [[0.0, 0.0], [0.0, 0.25], [0.0, 0.5], [0.0, 0.75], [0.5, 0.0], [0.5, 0.25], [0.5, 0.5], [0.5, 0.75]])
-    @test rs == ReciprocalScatter(BrillouinZone{:q}(𝕂²{2, 4}, [b₁, b₂]))
+    @test rs == ReciprocalScatter(BrillouinZone{:q}([b₁, b₂], (2, 4)))
     @test rs == ReciprocalScatter(ReciprocalZone{:q}([b₁, b₂], 0=>1, 0=>1; length=(2, 4), ends=(true, false)))
 end
 

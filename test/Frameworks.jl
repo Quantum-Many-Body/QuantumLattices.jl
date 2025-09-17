@@ -4,9 +4,8 @@ using QuantumLattices: expand, expand!, reset!, str, update
 using QuantumLattices.DegreesOfFreedom: plain, Boundary, CoordinatedIndex, Coupling, Hilbert, Index, InternalIndex, SimpleInternal, Term
 using QuantumLattices.Frameworks
 using QuantumLattices.Frameworks: seriestype
-using QuantumLattices.QuantumNumbers: periods
 using QuantumLattices.QuantumOperators: ID, LinearFunction, Operator, Operators, idtype, scalartype
-using QuantumLattices.Spatials: BrillouinZone, Lattice, bonds, decompose, dlmsave, isintracell
+using QuantumLattices.Spatials: BrillouinZone, Lattice, bonds, decompose, dlmsave, isintracell, periods
 using StaticArrays: SVector, SMatrix, @SMatrix
 
 import QuantumLattices: update!
@@ -228,7 +227,7 @@ end
 struct EigenSystem{B<:BrillouinZone} <: Action
     brillouinzone::B
 end
-Base.show(io::IO, eigensystem::EigenSystem) = print(io, "EigenSystem(", join(periods(keytype(eigensystem.brillouinzone)), "×"), ")")
+Base.show(io::IO, eigensystem::EigenSystem) = print(io, "EigenSystem(", join(periods(eigensystem.brillouinzone), "×"), ")")
 struct EigenSystemData <: Data
     values::Vector{Vector{Float64}}
     vectors::Vector{Matrix{ComplexF64}}
