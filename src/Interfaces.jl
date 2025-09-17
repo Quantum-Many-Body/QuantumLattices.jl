@@ -1,4 +1,11 @@
 """
+    const ZeroAtLeast{A, N} = Tuple{Vararg{A, N}}
+
+Zero at least.
+"""
+const ZeroAtLeast{A, N} = Tuple{Vararg{A, N}}
+
+"""
     const OneAtLeast{A, N} = Tuple{A, Vararg{A, N}}
 
 One at least.

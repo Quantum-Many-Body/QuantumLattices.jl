@@ -1,7 +1,7 @@
 using LaTeXStrings: latexstring
 using LinearAlgebra: dot
 using Printf: @sprintf
-using QuantumLattices: add!, div!, expand, mul!, id, rank, sub!, update!, value
+using QuantumLattices: ZeroAtLeast, ⊗, add!, div!, expand, mul!, id, rank, sub!, update!, value
 using QuantumLattices.QuantumOperators
 using QuantumLattices.Toolkit: Float, contentnames, isparameterbound, parameternames, parametertype, subscript, superscript
 
@@ -36,31 +36,31 @@ end
 end
 
 @testset "ID" begin
-    @test promote_type(ID{AID{Int, Int}, 1}, ID{AID{Int, Int}}) == ID{AID{Int, Int}}
-    @test promote_type(ID{AID{Int, Int}}, ID{AID{Int, Int}, 1}) == ID{AID{Int, Int}}
-    @test promote_type(ID{AID{Int, Int}}, ID{AID{Int, Float}}) == ID{AID{Int, <:Real}}
-    @test promote_type(Tuple{}, ID{AID{Int, Int}}) == ID{AID{Int, Int}}
-    @test promote_type(Tuple{}, ID{AID{Int, Int}, 2}) == ID{AID{Int, Int}}
+    @test promote_type(ZeroAtLeast{AID{Int, Int}, 1}, ZeroAtLeast{AID{Int, Int}}) == ZeroAtLeast{AID{Int, Int}}
+    @test promote_type(ZeroAtLeast{AID{Int, Int}}, ZeroAtLeast{AID{Int, Int}, 1}) == ZeroAtLeast{AID{Int, Int}}
+    @test promote_type(ZeroAtLeast{AID{Int, Int}}, ZeroAtLeast{AID{Int, Float}}) == ZeroAtLeast{AID{Int, <:Real}}
+    @test promote_type(Tuple{}, ZeroAtLeast{AID{Int, Int}}) == ZeroAtLeast{AID{Int, Int}}
+    @test promote_type(Tuple{}, ZeroAtLeast{AID{Int, Int}, 2}) == ZeroAtLeast{AID{Int, Int}}
 
     sid = AID(1, 1)
     @test string(sid) == "AID(1, 1)"
     @test !iszero(sid)
     @test sid'==AID(1, 2)
 
-    cid = ID(AID(2, 1), AID(Inf, 1))
-    @test cid == ID((AID(2, 1), AID(Inf, 1)))
-    @test ID(sid, cid) == ID(AID(1, 1), AID(2, 1), AID(Inf, 1))
-    @test ID(cid, sid) == ID(AID(2, 1), AID(Inf, 1), AID(1, 1))
-    @test ID(cid, cid) == ID(AID(2, 1), AID(Inf, 1), AID(2, 1), AID(Inf, 1))
-    @test cid == ID(AID, (2, Inf), (1, 1))
+    cid = (AID(2, 1), AID(Inf, 1))
+    @test cid == (AID(2, 1) ⊗ AID(Inf, 1))
+    @test ⊗(sid, cid) == ⊗(AID(1, 1), AID(2, 1), AID(Inf, 1))
+    @test ⊗(cid, sid) == ⊗(AID(2, 1), AID(Inf, 1), AID(1, 1))
+    @test ⊗(cid, cid) == ⊗(AID(2, 1), AID(Inf, 1), AID(2, 1), AID(Inf, 1))
+    @test cid == ZeroAtLeast(AID, (2, Inf), (1, 1))
     @test cid|>propertynames == (:orbitals, :nambus)
     @test cid.orbitals == (2, Inf)
     @test cid.nambus == (1, 1)
     @test cid|>eltype == AID{<:Real, Int}
     @test cid|>rank == cid|>typeof|>rank == 2
-    @test cid'==ID(AID(Inf, 2), AID(2, 2))
+    @test cid'==(AID(Inf, 2), AID(2, 2))
     @test ishermitian(cid)==false
-    @test ishermitian(ID(cid, cid'))
+    @test ishermitian(cid ⊗ cid')
 end
 
 @testset "QuantumOperator" begin
@@ -71,13 +71,13 @@ end
     @test valtype(OperatorProd) == parametertype(OperatorProd, :value) == parametertype(OperatorProd, 1) == Any
     @test valtype(OperatorProd{Int}) == parametertype(OperatorProd{Int}, :value) == parametertype(OperatorProd{Int}, 1) == Int
     @test idtype(OperatorProd{<:Number}) == parametertype(OperatorProd{<:Number}, :id) == parametertype(OperatorProd{<:Number}, 2) == Tuple
-    @test idtype(OperatorProd{<:Number, ID{AID}}) == parametertype(OperatorProd{<:Number, ID{AID}}, :id) == parametertype(OperatorProd{<:Number, ID{AID}}, 2) == ID{AID}
+    @test idtype(OperatorProd{<:Number, ZeroAtLeast{AID}}) == parametertype(OperatorProd{<:Number, ZeroAtLeast{AID}}, :id) == parametertype(OperatorProd{<:Number, ZeroAtLeast{AID}}, 2) == ZeroAtLeast{AID}
 
     @test promote_type(Operator{Int}, Operator) == Operator
     @test promote_type(Operator, Operator{Int}) == Operator
     @test promote_type(Operator{Int}, Operator{Float}) == Operator{Float}
-    @test promote_type(Operator{Int, ID{AID{Int, Int}, 2}}, Operator{Float, ID{AID{Int, Int}, 2}}) == Operator{Float, ID{AID{Int, Int}, 2}}
-    @test promote_type(Operator{Int, ID{AID}}, Operator{Float, ID{AID}}) == Operator{Float, <:ID{AID}}
+    @test promote_type(Operator{Int, ZeroAtLeast{AID{Int, Int}, 2}}, Operator{Float, ZeroAtLeast{AID{Int, Int}, 2}}) == Operator{Float, ZeroAtLeast{AID{Int, Int}, 2}}
+    @test promote_type(Operator{Int, ZeroAtLeast{AID}}, Operator{Float, ZeroAtLeast{AID}}) == Operator{Float, <:ZeroAtLeast{AID}}
     @test promote_type(Operator{Int}, Float) == Operator{Float}
 
     opt = Operator(2.0, AID(1, 1))
@@ -86,11 +86,11 @@ end
     @test collect(opt) == [AID(1, 1)]
     @test opt|>rank == opt|>typeof|>rank == 1
     @test opt|>valtype == opt|>typeof|>valtype == parametertype(opt|>typeof, :value) == Float
-    @test opt|>idtype == opt|>typeof|>idtype == parametertype(opt|>typeof, :id) == ID{AID{Int, Int}, 1}
+    @test opt|>idtype == opt|>typeof|>idtype == parametertype(opt|>typeof, :id) == ZeroAtLeast{AID{Int, Int}, 1}
     @test opt|>scalartype == opt|>typeof|>scalartype == Float
     @test opt|>isequivalenttoscalar == opt|>typeof|>isequivalenttoscalar == false
     @test value(opt) == 2.0
-    @test id(opt) == ID(AID(1, 1))
+    @test id(opt) == ⊗(AID(1, 1))
     @test replace(opt, 3) == Operator(3, AID(1, 1))
     @test !iszero(opt) && iszero(replace(opt, 0))
     @test isapprox(opt, replace(opt, opt.value+10^-6); atol=10^-5)
@@ -106,15 +106,15 @@ end
     @test ishermitian(Operator(2.0, AID(1, 1), AID(1, 2)))
     @test sequence(opt, Dict(AID(1, 1)=>1, AID(1, 2)=>2)) == (1,)
     @test convert(typeof(opt), AID(1, 1)) == Operator(1.0, AID(1, 1))
-    @test convert(Operator{Float, <:ID{AID}}, AID(1, 1)) == Operator(1.0, AID(1, 1))
+    @test convert(Operator{Float, <:ZeroAtLeast{AID}}, AID(1, 1)) == Operator(1.0, AID(1, 1))
     @test convert(Operator{Float, Tuple{}}, 2) == Operator(2.0)
-    @test convert(Operator{Float, <:ID{AID}}, 2) == Operator(2.0)
+    @test convert(Operator{Float, <:ZeroAtLeast{AID}}, 2) == Operator(2.0)
 
     opt₁ = Operator(1.0, AID(1, 1))
     opt₂ = Operator(2.0, AID(1, 2))
     opts = Operators(opt₁, opt₂)
     @test opts == Operators{eltype(opts)}(opt₁, opt₂) == OperatorSum(opt₁, opt₂) == OperatorSum((opt₁, opt₂)) == OperatorSum{eltype(opts)}(opt₁, opt₂) == OperatorSum{eltype(opts)}((opt₁, opt₂)) == expand(opts)
-    @test eltype(opts) == eltype(typeof(opts)) == Operator{Float, ID{AID{Int, Int}, 1}}
+    @test eltype(opts) == eltype(typeof(opts)) == Operator{Float, ZeroAtLeast{AID{Int, Int}, 1}}
     @test scalartype(opts) == scalartype(typeof(opts)) == Float
     @test isequivalenttoscalar(opts) == isequivalenttoscalar(typeof(opts)) == false
     @test update!(opts) == opts
@@ -122,7 +122,7 @@ end
     @test length(opts) == 2
     @test summary(opts) == "Operators"
     @test string(opts) == @sprintf "Operators with 2 Operator\n  %s\n" join(opts, "\n  ")
-    @test haskey(opts, id(opt₁)) && haskey(opts, id(opt₂)) && !haskey(opts, ID(AID(3, 1)))
+    @test haskey(opts, id(opt₁)) && haskey(opts, id(opt₂)) && !haskey(opts, ⊗(AID(3, 1)))
     @test opts[1]==opts[begin]==opt₁ && opts[2]==opts[end]==opt₂
     @test opts[1:2] == opts[:] == opts
     @test empty(opts) == empty!(deepcopy(opts)) == zero(opts)
@@ -227,7 +227,7 @@ struct DoubleCoeff <: LinearTransformation end
 @inline Base.valtype(::Type{DoubleCoeff}, M::Type{<:Union{Operator, Operators}}) = M
 @inline (double::DoubleCoeff)(m::Operator) = replace(m, value(m)*2)
 
-@testset "Transformation" begin
+@testset "LinearTransformation" begin
     m = Operator(1, AID(1, 1))
     s = Operators(m)
 

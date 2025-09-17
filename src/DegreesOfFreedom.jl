@@ -4,8 +4,8 @@ using DataStructures: OrderedDict
 using Printf: @printf, @sprintf
 using SparseArrays: SparseMatrixCSC, nnz
 using StaticArrays: SVector
-using ..QuantumLattices: OneAtLeast, OneOrMore, add!, decompose, str
-using ..QuantumOperators: ID, LinearTransformation, Operator, OperatorIndex, OperatorPack, Operators, QuantumOperator, scalartype, valuetolatextext
+using ..QuantumLattices: OneAtLeast, OneOrMore, ZeroAtLeast, add!, decompose, str
+using ..QuantumOperators: LinearTransformation, Operator, OperatorIndex, OperatorPack, Operators, QuantumOperator, scalartype, valuetolatextext
 using ..Spatials: Bond, Point
 using ..Toolkit: atol, efficientoperations, rtol, CompositeDict, Float, VectorSpace, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceStyle, concatenate, fulltype, parametertype, rawtype, reparameter
 
@@ -426,7 +426,7 @@ end
 @inline contentnames(::Type{<:CoordinatedIndex}) = (:index, :rcoordinate, :icoordinate)
 @inline parameternames(::Type{<:CoordinatedIndex}) = (:index, :coordination)
 @inline Base.hash(index::CoordinatedIndex, h::UInt) = hash((index.index, Tuple(index.rcoordinate)), h)
-@inline Base.propertynames(::ID{CoordinatedIndex}) = (:indexes, :rcoordinates, :icoordinates)
+@inline Base.propertynames(::ZeroAtLeast{CoordinatedIndex}) = (:indexes, :rcoordinates, :icoordinates)
 function Base.show(io::IO, index::CoordinatedIndex)
     internal = String[]
     for field in showablefields(internalindextype(index))
@@ -498,22 +498,22 @@ Get the compatible type of the coordinated index based on the type of an interna
 @inline coordinatedindextype(I::Type{<:SimpleInternal}, P::Type{<:Point}) = fulltype(CoordinatedIndex, NamedTuple{(:index, :coordination), Tuple{indextype(I), SVector{dimension(P), scalartype(P)}}})
 
 """
-    rcoordinate(opt::Operator{<:Number, <:ID{CoordinatedIndex}}) -> SVector
+    rcoordinate(opt::Operator{<:Number, <:ZeroAtLeast{CoordinatedIndex}}) -> SVector
 
 Get the whole rcoordinate of an operator.
 """
-@inline function rcoordinate(opt::Operator{<:Number, <:ID{CoordinatedIndex}})
+@inline function rcoordinate(opt::Operator{<:Number, <:ZeroAtLeast{CoordinatedIndex}})
     rank(opt)==1 && return id(opt)[1].rcoordinate
     rank(opt)==2 && return id(opt)[2].rcoordinate-id(opt)[1].rcoordinate
     error("rcoordinate error: not supported rank($(rank(opt))) of $(nameof(opt)).")
 end
 
 """
-    icoordinate(opt::Operator{<:Number, <:ID{CoordinatedIndex}}) -> SVector
+    icoordinate(opt::Operator{<:Number, <:ZeroAtLeast{CoordinatedIndex}}) -> SVector
 
 Get the whole icoordinate of an operator.
 """
-@inline function icoordinate(opt::Operator{<:Number, <:ID{CoordinatedIndex}})
+@inline function icoordinate(opt::Operator{<:Number, <:ZeroAtLeast{CoordinatedIndex}})
     rank(opt)==1 && return id(opt)[1].icoordinate
     rank(opt)==2 && return id(opt)[2].icoordinate-id(opt)[1].icoordinate
     error("icoordinate error: not supported rank($(rank(opt))) of $(nameof(opt)).")
@@ -1587,12 +1587,12 @@ Inquiry the sequence of an operator index.
 
 """
     haskey(table::Table, index::OperatorIndex) -> Bool
-    haskey(table::Table, indexes::ID{OperatorIndex}) -> Tuple{Vararg{Bool}}
+    haskey(table::Table, indexes::ZeroAtLeast{OperatorIndex}) -> Tuple{Vararg{Bool}}
 
 Judge whether a single operator index or a set of operator indexes have been assigned with sequences in table.
 """
 @inline Base.haskey(table::Table, index::OperatorIndex) = haskey(table, table.by(index))
-@inline Base.haskey(table::Table, indexes::ID{OperatorIndex}) = map(index->haskey(table, index), indexes)
+@inline Base.haskey(table::Table, indexes::ZeroAtLeast{OperatorIndex}) = map(index->haskey(table, index), indexes)
 
 """
     Table(indexes::AbstractVector{<:OperatorIndex}, by::Metric=OperatorIndexToTuple(eltype(indexes)))

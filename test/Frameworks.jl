@@ -1,10 +1,10 @@
 using LinearAlgebra: dot, eigen
 using Plots: plot, savefig
-using QuantumLattices: expand, expand!, reset!, str, update
+using QuantumLattices: ZeroAtLeast, expand, expand!, reset!, str, update
 using QuantumLattices.DegreesOfFreedom: plain, Boundary, CoordinatedIndex, Coupling, Hilbert, Index, InternalIndex, SimpleInternal, Term
 using QuantumLattices.Frameworks
 using QuantumLattices.Frameworks: seriestype
-using QuantumLattices.QuantumOperators: ID, LinearFunction, Operator, Operators, idtype, scalartype
+using QuantumLattices.QuantumOperators: LinearFunction, Operator, Operators, idtype, scalartype
 using QuantumLattices.Spatials: BrillouinZone, Lattice, bonds, decompose, dlmsave, isintracell, periods
 using StaticArrays: SVector, SMatrix, @SMatrix
 
@@ -81,7 +81,7 @@ end
     μ = Term{:Mu}(:μ, 1.0, 0, Coupling(1.0, :, FID, (2, 1)), true)
     i = LinearFunction(identity)
 
-    optp = Operator{ComplexF64, ID{CoordinatedIndex{Index{FID{Int}, Int}, SVector{1, Float64}}, 2}}
+    optp = Operator{ComplexF64, ZeroAtLeast{CoordinatedIndex{Index{FID{Int}, Int}, SVector{1, Float64}}, 2}}
     tops₁ = expand(t, filter(bond->isintracell(bond), bs), hilbert; half=true)
     tops₂ = boundary(expand(one(t), filter(bond->!isintracell(bond), bs), hilbert; half=true))
     μops = expand(one(μ), filter(bond->length(bond)==1, bs), hilbert; half=true)
@@ -129,7 +129,7 @@ end
     t = Term{:Hp}(:t, 2.0, 1, Coupling(1.0, :, FID, (2, 1)), false; ismodulatable=false)
     μ = Term{:Mu}(:μ, 1.0, 0, Coupling(1.0, :, FID, (2, 1)), true)
     i = LinearFunction(identity)
-    optp = Operator{ComplexF64, ID{CoordinatedIndex{Index{FID{Int}, Int}, SVector{1, Float64}}, 2}}
+    optp = Operator{ComplexF64, ZeroAtLeast{CoordinatedIndex{Index{FID{Int}, Int}, SVector{1, Float64}}, 2}}
     tops = expand(t, bs, hilbert; half=true)
     μops = expand(one(μ), bs, hilbert; half=true)
 
@@ -160,7 +160,7 @@ end
     boundary = Boundary{(:θ,)}([0.1], lattice.vectors)
     t = Term{:Hp}(:t, 2.0, 1, Coupling(1.0, :, FID, (2, 1)), false; ismodulatable=false)
     μ = Term{:Mu}(:μ, 1.0, 0, Coupling(1.0, :, FID, (2, 1)), true)
-    optp = Operator{ComplexF64, ID{CoordinatedIndex{Index{FID{Int}, Int}, SVector{1, Float64}}, 2}}
+    optp = Operator{ComplexF64, ZeroAtLeast{CoordinatedIndex{Index{FID{Int}, Int}, SVector{1, Float64}}, 2}}
     tops₁ = expand(t, filter(bond->isintracell(bond), bs), hilbert; half=true)
     tops₂ = boundary(expand(one(t), filter(bond->!isintracell(bond), bs), hilbert; half=true))
     μops = expand(one(μ), filter(bond->length(bond)==1, bs), hilbert; half=true)
@@ -197,7 +197,7 @@ end
     hilbert = Hilbert(site=>FFock(2) for site=1:length(lattice))
     t = Term{:Hp}(:t, 2.0, 1, Coupling(1.0, :, FID, (2, 1)), false; ismodulatable=false)
     μ = Term{:Mu}(:μ, 1.0, 0, Coupling(1.0, :, FID, (2, 1)), true)
-    optp = Operator{ComplexF64, ID{CoordinatedIndex{Index{FID{Int}, Int}, SVector{1, Float64}}, 2}}
+    optp = Operator{ComplexF64, ZeroAtLeast{CoordinatedIndex{Index{FID{Int}, Int}, SVector{1, Float64}}, 2}}
     tops = expand(t, bs, hilbert; half=true)
     μops = expand(one(μ), bs, hilbert; half=true)
     cat = CategorizedGenerator(tops, (t=Operators{optp}(), μ=μops), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain, eager)

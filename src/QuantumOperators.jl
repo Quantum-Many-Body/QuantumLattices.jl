@@ -3,16 +3,16 @@ module QuantumOperators
 using DataStructures: OrderedDict
 using Latexify: unicode2latex
 using Printf: @printf, @sprintf
-using ..QuantumLattices: str
+using ..QuantumLattices: OneAtLeast, ZeroAtLeast, str
 using ..Toolkit: atol, efficientoperations, rtol, contentorder, fulltype, getcontent, parameterpairs, parametertype, promoteparameters, rawtype, reparameter
 
 import LaTeXStrings: latexstring
 import LinearAlgebra: dot
-import ..QuantumLattices: add!, div!, expand, id, ishermitian, mul!, permute, rank, sub!, update!, value
+import ..QuantumLattices: ⊗, add!, div!, expand, id, ishermitian, mul!, permute, rank, sub!, update!, value
 import ..Toolkit: contentnames, dissolve, isparameterbound, parameternames, subscript, superscript
 
-export ID, LaTeX, Operator, OperatorIndex, OperatorPack, OperatorProd, Operators, OperatorSet, OperatorSum, QuantumOperator
-export LinearFunction, LinearTransformation, Matrixization, Permutation, RankFilter, TabledUnitSubstitution, Transformation, UnitSubstitution
+export LaTeX, Operator, OperatorIndex, OperatorPack, OperatorProd, Operators, OperatorSet, OperatorSum, QuantumOperator
+export LinearFunction, LinearTransformation, Matrixization, Permutation, RankFilter, TabledUnitSubstitution, UnitSubstitution
 export idtype, isequivalenttoscalar, ishermitian, latexname, latexformat, matrix, operatortype, scalartype, script, sequence
 
 # Generic quantum operator
@@ -20,14 +20,14 @@ export idtype, isequivalenttoscalar, ishermitian, latexname, latexformat, matrix
     scalartype(t)
     scalartype(::Type{T}) where {T<:Number}
     scalartype(::Type{<:AbstractArray{T}}) where T
-    scalartype(::Type{<:Tuple{Vararg{T}}}) where T
+    scalartype(::Type{<:ZeroAtLeast{T}}) where T
 
 Get the scalar type of an object.
 """
 @inline scalartype(t) = scalartype(typeof(t))
 @inline scalartype(::Type{T}) where {T<:Number} = T
 @inline scalartype(::Type{<:AbstractArray{T}}) where T = scalartype(T)
-@inline scalartype(::Type{<:Tuple{Vararg{T}}}) where T = scalartype(T)
+@inline scalartype(::Type{<:ZeroAtLeast{T}}) where T = scalartype(T)
 
 """
     QuantumOperator
@@ -116,88 +116,80 @@ Judge whether an `OperatorIndex` is zero, which is defined to be always `false`.
 @inline Base.iszero(::OperatorIndex) = false
 
 # ID of a composite quantum operator
-"""
-    ID{U<:OperatorIndex, N}
-
-ID of a composite quantum operator, which is an ordered set of operator units.
-
-Type alias for `NTuple{N, U} where {U<:OperatorIndex}`.
-"""
-const ID{U<:OperatorIndex, N} = NTuple{N, U}
-@inline Base.promote_rule(::Type{Tuple{}}, I::Type{<:Tuple{OperatorIndex, Vararg{OperatorIndex}}}) = ID{I|>eltype}
-@inline Base.promote_rule(I::Type{<:Tuple{OperatorIndex, Vararg{OperatorIndex}}}, ::Type{Tuple{}}) = ID{I|>eltype}
+@inline Base.promote_rule(::Type{Tuple{}}, I::Type{<:OneAtLeast{OperatorIndex}}) = ZeroAtLeast{eltype(I)}
+@inline Base.promote_rule(I::Type{<:OneAtLeast{OperatorIndex}}, ::Type{Tuple{}}) = ZeroAtLeast{eltype(I)}
 
 """
-    ID(id::OperatorIndex...)
-    ID(u::OperatorIndex, id::ID{OperatorIndex})
-    ID(id::ID{OperatorIndex}, u::OperatorIndex)
-    ID(id₁::ID{OperatorIndex}, id₂::ID{OperatorIndex})
+    ⊗(id::OperatorIndex...)
+    ⊗(u::OperatorIndex, id::ZeroAtLeast{OperatorIndex})
+    ⊗(id::ZeroAtLeast{OperatorIndex}, u::OperatorIndex)
+    ⊗(id₁::ZeroAtLeast{OperatorIndex}, id₂::ZeroAtLeast{OperatorIndex})
 
 Get the id from operator units/ids.
 """
-@inline ID(id::OperatorIndex...) = id
-@inline ID(u::OperatorIndex, id::ID{OperatorIndex}) = ID(u, id...)
-@inline ID(id::ID{OperatorIndex}, u::OperatorIndex) = ID(id..., u)
-@inline ID(id₁::ID{OperatorIndex}, id₂::ID{OperatorIndex}) = ID(id₁..., id₂...)
+@inline ⊗(id::OperatorIndex...) = id
+@inline ⊗(u::OperatorIndex, id::ZeroAtLeast{OperatorIndex}) = (u, id...)
+@inline ⊗(id::ZeroAtLeast{OperatorIndex}, u::OperatorIndex) = (id..., u)
+@inline ⊗(id₁::ZeroAtLeast{OperatorIndex}, id₂::ZeroAtLeast{OperatorIndex}) = (id₁..., id₂...)
 
 """
-    ID(::Type{U}, attrs::Vararg{NTuple{N}, M}) where {U<:OperatorIndex, N, M}
+    ZeroAtLeast(::Type{U}, attrs::Vararg{NTuple{N}, M}) where {U<:OperatorIndex, N, M}
 
 Get the composite id from the components of singular ids.
 """
-@inline @generated function ID(::Type{U}, attrs::Vararg{NTuple{N, Any}, M}) where {U<:OperatorIndex, N, M}
+@inline @generated function ZeroAtLeast(::Type{U}, attrs::Vararg{NTuple{N, Any}, M}) where {U<:OperatorIndex, N, M}
     exprs = []
     for i = 1:N
         args = [:(attrs[$j][$i]) for j = 1:M]
         push!(exprs, :(U($(args...))))
     end
-    return :(ID($(exprs...)))
+    return Expr(:tuple, exprs...)
 end
 
 """
-    propertynames(::Type{I}) where I<:ID{OperatorIndex} -> Tuple{Vararg{Symbol}}
+    propertynames(::Type{I}) where I<:ZeroAtLeast{OperatorIndex} -> Tuple{Vararg{Symbol}}
 
 Get the property names of a composite id.
 """
-@inline @generated function Base.propertynames(I::ID{OperatorIndex})
+@inline @generated function Base.propertynames(I::ZeroAtLeast{OperatorIndex})
     exprs = [QuoteNode(Symbol(name, 's')) for name in I|>eltype|>fieldnames]
     return Expr(:tuple, exprs...)
 end
 
 """
-    getproperty(id::ID{OperatorIndex}, name::Symbol)
+    getproperty(id::ZeroAtLeast{OperatorIndex}, name::Symbol)
 
 Get the property of a composite id.
 """
-@inline Base.getproperty(id::ID{OperatorIndex}, name::Symbol) = idgetproperty(id, Val(name), Val(id|>propertynames))
-@inline @generated function idgetproperty(id::ID{OperatorIndex}, ::Val{name}, ::Val{names}) where {name, names}
+@inline Base.getproperty(id::ZeroAtLeast{OperatorIndex}, name::Symbol) = idgetproperty(id, Val(name), Val(id|>propertynames))
+@inline @generated function idgetproperty(id::ZeroAtLeast{OperatorIndex}, ::Val{name}, ::Val{names}) where {name, names}
     index = findfirst(isequal(name), names)::Int
     exprs = [:(getfield(id[$i], $index)) for i = 1:fieldcount(id)]
     return Expr(:tuple, exprs...)
 end
 
 """
-    rank(id::ID{OperatorIndex}) -> Int
-    rank(::Type{<:ID{OperatorIndex, N}}) where N -> Int
+    rank(id::ZeroAtLeast{OperatorIndex}) -> Int
+    rank(::Type{<:ZeroAtLeast{OperatorIndex, N}}) where N -> Int
 
 Get the rank of an id.
 """
-@inline rank(id::ID{OperatorIndex}) = rank(typeof(id))
-@inline rank(::Type{<:ID{OperatorIndex, N}}) where N = N
+@inline rank(id::ZeroAtLeast{OperatorIndex}) = rank(typeof(id))
+@inline rank(::Type{<:ZeroAtLeast{OperatorIndex, N}}) where N = N
 
 """
-    adjoint(id::ID{OperatorIndex}) -> ID
+    adjoint(id::ZeroAtLeast{OperatorIndex}) -> ZeroAtLeast{OperatorIndex}
 
 Get the adjoint of an id.
 """
-@inline Base.adjoint(id::ID{OperatorIndex}) = map(adjoint, reverse(id))
+@inline Base.adjoint(id::ZeroAtLeast{OperatorIndex}) = map(adjoint, reverse(id))
 
 """
-    ishermitian(id::ID{OperatorIndex}) -> Bool
+    ishermitian(id::ZeroAtLeast{OperatorIndex}) -> Bool
 
 Judge whether an id is Hermitian.
 """
-function ishermitian(id::ID{OperatorIndex})
+function ishermitian(id::ZeroAtLeast{OperatorIndex})
     for i = 1:((rank(id)+1)÷2)
         id[i]'==id[rank(id)+1-i] || return false
     end
@@ -415,11 +407,11 @@ Get the sequence of the id of a quantum operator according to a table.
 
 # Operator
 """
-    Operator{V, I<:ID{OperatorIndex}} <: OperatorProd{V, I}
+    Operator{V, I<:ZeroAtLeast{OperatorIndex}} <: OperatorProd{V, I}
 
 Operator.
 """
-struct Operator{V, I<:ID{OperatorIndex}} <: OperatorProd{V, I}
+struct Operator{V, I<:ZeroAtLeast{OperatorIndex}} <: OperatorProd{V, I}
     value::V
     id::I
 end
@@ -449,7 +441,7 @@ Convert an operator index to an operator.
 """
 @inline function Base.convert(::Type{M}, u::OperatorIndex) where {M<:Operator}
     @assert Tuple{typeof(u)} <: idtype(M) "convert error: not convertible."
-    return Operator(one(valtype(M)), ID(u))
+    return Operator(one(valtype(M)), u)
 end
 
 # Operator set
@@ -685,13 +677,13 @@ end
 
 # Operators
 """
-    Operators{O<:Operator, I<:ID{OperatorIndex}}
+    Operators{O<:Operator, I<:ZeroAtLeast{OperatorIndex}}
 
 A set of operators.
 
-Type alias for `OperatorSum{O<:Operator, I<:ID{OperatorIndex}}`.
+Type alias for `OperatorSum{O<:Operator, I<:ZeroAtLeast{OperatorIndex}}`.
 """
-const Operators{O<:Operator, I<:ID{OperatorIndex}} = OperatorSum{O, I}
+const Operators{O<:Operator, I<:ZeroAtLeast{OperatorIndex}} = OperatorSum{O, I}
 @inline Base.summary(io::IO, ::Operators) = @printf io "Operators"
 
 """
@@ -830,7 +822,7 @@ Overloaded `*` between quantum operators or a quantum operator and a number.
 @inline function Base.:*(m₁::OperatorPack, m₂::OperatorPack)
     M₁, M₂ = typeof(m₁), typeof(m₂)
     @assert nameof(M₁)==nameof(M₂) && contentnames(M₁)==(:value, :id)==contentnames(M₂) "\"*\" error: not implemented between $(nameof(M₁)) and $(nameof(M₂))."
-    return rawtype(M₁)(value(m₁)*value(m₂), ID(id(m₁), id(m₂)))
+    return rawtype(M₁)(value(m₁)*value(m₂), id(m₁)⊗id(m₂))
 end
 @inline Base.:*(factor::Number, ms::OperatorSum) = ms * factor
 function Base.:*(ms::OperatorSum, factor::Number)
@@ -1027,22 +1019,15 @@ function Base.show(io::IO, ::MIME"text/latex", ops::AbstractMatrix{<:QuantumOper
     print(io, "\\end{pmatrix}")
 end
 
-# Transformations
+# Linear Transformations
 """
-    Transformation <: Function
-
-Abstract transformation on quantum operators.
-"""
-abstract type Transformation <: Function end
-@inline Base.:(==)(transformation₁::Transformation, transformation₂::Transformation) = ==(efficientoperations, transformation₁, transformation₂)
-@inline Base.isequal(transformation₁::Transformation, transformation₂::Transformation) = isequal(efficientoperations, transformation₁, transformation₂)
-
-"""
-    LinearTransformation <: Transformation
+    LinearTransformation <: Function
 
 Abstract linear transformation on quantum operators.
 """
-abstract type LinearTransformation <: Transformation end
+abstract type LinearTransformation <: Function end
+@inline Base.:(==)(transformation₁::LinearTransformation, transformation₂::LinearTransformation) = ==(efficientoperations, transformation₁, transformation₂)
+@inline Base.isequal(transformation₁::LinearTransformation, transformation₂::LinearTransformation) = isequal(efficientoperations, transformation₁, transformation₂)
 @inline Base.valtype(transformation::LinearTransformation, m::QuantumOperator) = valtype(typeof(transformation), typeof(m))
 @inline Base.zero(transformation::LinearTransformation, m::QuantumOperator) = zero(valtype(transformation, m))
 
@@ -1109,7 +1094,7 @@ struct Permutation{T} <: LinearTransformation
     table::T
 end
 @inline function Base.valtype(::Type{<:Permutation}, M::Type{<:OperatorProd})
-    M = reparameter(M, :id, ID{eltype(M)})
+    M = reparameter(M, :id, ZeroAtLeast{eltype(M)})
     return OperatorSum{M, idtype(M)}
 end
 @inline Base.valtype(P::Type{<:Permutation}, M::Type{<:OperatorSum}) = valtype(P, eltype(M))
@@ -1162,7 +1147,7 @@ Unit substitution transformation, which substitutes each `OperatorIndex` in the 
 abstract type UnitSubstitution{U<:OperatorIndex, S<:OperatorSum} <: LinearTransformation end
 @inline function Base.valtype(::Type{<:UnitSubstitution{U, S}}, M::Type{<:OperatorProd}) where {U<:OperatorIndex, S<:OperatorSum}
     @assert U<:eltype(eltype(M)) "valtype error: mismatched unit substitution transformation."
-    V = fulltype(eltype(S), NamedTuple{(:value, :id), Tuple{promote_type(valtype(eltype(S)), valtype(M)), ID{eltype(eltype(S))}}})
+    V = fulltype(eltype(S), NamedTuple{(:value, :id), Tuple{promote_type(valtype(eltype(S)), valtype(M)), ZeroAtLeast{eltype(eltype(S))}}})
     return OperatorSum{V, idtype(V)}
 end
 @inline Base.valtype(P::Type{<:UnitSubstitution}, M::Type{<:OperatorSum}) = valtype(P, eltype(M))
@@ -1200,7 +1185,7 @@ struct RankFilter{R} <: LinearTransformation
         new{rank}()
     end
 end
-@inline Base.valtype(::Type{RankFilter{R}}, M::Type{<:OperatorProd}) where R = reparameter(M, :id, ID{eltype(M), R})
+@inline Base.valtype(::Type{RankFilter{R}}, M::Type{<:OperatorProd}) where R = reparameter(M, :id, ZeroAtLeast{eltype(M), R})
 @inline function Base.valtype(R::Type{<:RankFilter}, M::Type{<:OperatorSum})
     V = valtype(R, eltype(M))
     return OperatorSum{V, idtype(V)}

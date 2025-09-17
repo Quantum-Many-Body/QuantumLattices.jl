@@ -3,7 +3,7 @@ using LinearAlgebra: dot, ishermitian
 using Printf: @printf
 using QuantumLattices: ⊕, ⊗, dimension, expand, kind, rank, reset!, update!, value
 using QuantumLattices.DegreesOfFreedom
-using QuantumLattices.QuantumOperators: ID, LaTeX, Operator, OperatorIndex, Operators, id, latexformat, sequence
+using QuantumLattices.QuantumOperators: LaTeX, Operator, OperatorIndex, Operators, id, latexformat, sequence
 using QuantumLattices.Spatials: Bond, Point, decompose, icoordinate, nneighbor, rcoordinate
 using QuantumLattices.Toolkit: Float, contentnames, parameternames, reparameter
 using StaticArrays: SVector
@@ -128,8 +128,8 @@ end
     @test indextype(index) == indextype(typeof(index)) == typeof(index)
     @test index' == 𝕕(4, 2)
     @test statistics(index) == statistics(typeof(index)) == :f
-    @test ishermitian(ID(index', index)) == true
-    @test ishermitian(ID(index, index)) == false
+    @test ishermitian(⊗(index', index)) == true
+    @test ishermitian(⊗(index, index)) == false
     @test isdefinite(index) == isdefinite(typeof(index)) == true
     @test isdefinite((index, index)) == isdefinite(typeof((index, index))) == true
 
@@ -166,11 +166,11 @@ end
     @test indextype(index) == indextype(typeof(index)) == Index{DID{Int}, Int}
     @test statistics(index) == statistics(typeof(index)) == :f
     @test hash(index, UInt(1)) == hash(CoordinatedIndex(𝕕(1, 1), SVector(0.0, 0.0), SVector(0.0, 1.0)), UInt(1))
-    @test propertynames(ID(index)) == (:indexes, :rcoordinates, :icoordinates)
+    @test propertynames(⊗(index)) == (:indexes, :rcoordinates, :icoordinates)
     @test string(index) == "𝕕(1, 1, [0.0, 0.0], [0.0, 0.0])"
     @test index' == CoordinatedIndex(𝕕(1, 2), rcoordinate=SVector(0.0, 0.0), icoordinate=SVector(0.0, 0.0))
-    @test ID(index', index)' == ID(index', index)
-    @test ishermitian(ID(index', index)) && !ishermitian(ID(index, index))
+    @test ⊗(index', index)' == ⊗(index', index)
+    @test ishermitian(⊗(index', index)) && !ishermitian(⊗(index, index))
 
     index = 𝕕(1, 2, SVector(0.0, 0.0), SVector(1.0, 0.0))
     @test script(index, Val(:rcoordinate)) == "[0.0, 0.0]"

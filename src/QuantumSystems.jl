@@ -5,8 +5,8 @@ using Printf: @printf
 using SparseArrays: SparseMatrixCSC
 using StaticArrays: SMatrix, SVector
 using ..DegreesOfFreedom: Component, CompositeIndex, CoordinatedIndex, Coupling, Hilbert, Index, InternalIndex, Ordinal, Pattern, SimpleInternal, Term, TermAmplitude, TermCoupling, indextype, @pattern
-using ..QuantumLattices: OneAtLeast, decompose, rank, str
-using ..QuantumOperators: ID, LaTeX, Operator, OperatorIndex, OperatorProd, Operators, latexformat
+using ..QuantumLattices: OneAtLeast, ZeroAtLeast, decompose, rank, str
+using ..QuantumOperators: LaTeX, Operator, OperatorIndex, OperatorProd, Operators, latexformat
 using ..Spatials: Bond, Point, direction, isparallel, rcoordinate
 using ..Toolkit: atol, efficientoperations, rtol, Float, VectorSpace, VectorSpaceDirectProducted, VectorSpaceStyle, delta, rawtype
 
@@ -284,11 +284,11 @@ end
 
 ## New methods
 """
-    isnormalordered(opt::Operator{<:Number, <:ID{Union{CompositeIndex{<:Index{<:FockIndex}}, Index{<:FockIndex}, FockIndex}}}) -> Bool
+    isnormalordered(opt::Operator{<:Number, <:ZeroAtLeast{Union{CompositeIndex{<:Index{<:FockIndex}}, Index{<:FockIndex}, FockIndex}}}) -> Bool
 
 Judge whether an operator is normal ordered.
 """
-function isnormalordered(opt::Operator{<:Number, <:ID{Union{CompositeIndex{<:Index{<:FockIndex}}, Index{<:FockIndex}, FockIndex}}})
+function isnormalordered(opt::Operator{<:Number, <:ZeroAtLeast{Union{CompositeIndex{<:Index{<:FockIndex}}, Index{<:FockIndex}, FockIndex}}})
     flag = true
     for i = 1:rank(opt)
         flag && isannihilation(opt[i]) && (flag = false)
@@ -1335,7 +1335,7 @@ function expand(pnc::Coupling{<:Number, <:Pattern{<:NTuple{2, Index{<:PhononInde
     @assert pn₁.ndirection==pn₂.ndirection==length(R̂) "expand error: mismatched number of directions."
     return PPExpand(R̂, (bond[1], bond[2]))
 end
-struct PPExpand{N, D<:Number} <: VectorSpace{Operator{D, ID{CoordinatedIndex{Index{PhononIndex{:u, Char}, Int}, SVector{N, D}}, 2}}}
+struct PPExpand{N, D<:Number} <: VectorSpace{Operator{D, ZeroAtLeast{CoordinatedIndex{Index{PhononIndex{:u, Char}, Int}, SVector{N, D}}, 2}}}
     direction::SVector{N, D}
     points::NTuple{2, Point{N, D}}
 end

@@ -11,7 +11,7 @@ using Serialization: deserialize, serialize
 using TimerOutputs: TimerOutput, time, @timeit
 using ..DegreesOfFreedom: plain, Boundary, Hilbert, Term
 using ..QuantumLattices: OneOrMore, ZeroOrMore, id, value
-using ..QuantumOperators: OperatorPack, Operators, OperatorSet, OperatorSum, LinearTransformation, Transformation, identity, operatortype
+using ..QuantumOperators: OperatorPack, Operators, OperatorSet, OperatorSum, LinearTransformation, identity, operatortype
 using ..Spatials: Bond, isintracell
 using ..Toolkit: atol, efficientoperations, rtol, parametertype
 
@@ -649,11 +649,11 @@ end
 end
 
 """
-    (transformation::Transformation)(gen::OperatorGenerator; kwargs...) -> CategorizedGenerator
+    (transformation::LinearTransformation)(gen::OperatorGenerator; kwargs...) -> CategorizedGenerator
 
 Get the transformation applied to a generator of quantum operators.
 """
-@inline (transformation::Transformation)(gen::OperatorGenerator; kwargs...) = transformation(gen.operators; kwargs...)
+@inline (transformation::LinearTransformation)(gen::OperatorGenerator; kwargs...) = transformation(gen.operators; kwargs...)
 
 """
     update!(cat::CategorizedGenerator, transformation::LinearTransformation, source::OperatorGenerator; kwargs...) -> CategorizedGenerator

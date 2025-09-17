@@ -3,7 +3,7 @@ module QuantumLattices
 # interfaces
 import LinearAlgebra: ishermitian, rank, mul!
 include("Interfaces.jl")
-export OneAtLeast, OneOrMore, ZeroOrMore
+export OneAtLeast, OneOrMore, ZeroAtLeast, ZeroOrMore
 export ⊕, ⊗, add!, decompose, decompose!, dimension, div!, expand, expand!, id, ishermitian, kind, mul!, permute, rank, reset!, shape, str, sub!, update, update!, value
 
 # Toolkit
@@ -13,8 +13,8 @@ using .Toolkit
 # QuantumOperators
 include("QuantumOperators.jl")
 using .QuantumOperators
-export ID, LaTeX, Operator, OperatorIndex, OperatorPack, OperatorProd, Operators, OperatorSet, OperatorSum, QuantumOperator
-export LinearFunction, LinearTransformation, Matrixization, Permutation, RankFilter, TabledUnitSubstitution, Transformation, UnitSubstitution
+export LaTeX, Operator, OperatorIndex, OperatorPack, OperatorProd, Operators, OperatorSet, OperatorSum, QuantumOperator
+export LinearFunction, LinearTransformation, Matrixization, Permutation, RankFilter, TabledUnitSubstitution, UnitSubstitution
 export idtype, isequivalenttoscalar, ishermitian, latexname, latexformat, matrix, scalartype, script, sequence
 
 # Spatials
