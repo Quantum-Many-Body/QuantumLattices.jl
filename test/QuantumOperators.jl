@@ -231,14 +231,22 @@ struct DoubleCoeff <: LinearTransformation end
     m = Operator(1, AID(1, 1))
     s = Operators(m)
 
-    i = LinearFunction(identity)
-    @test i==deepcopy(i) && isequal(i, deepcopy(i))
-    @test i(m)==m && i(s)==s
-
     double = DoubleCoeff()
     @test valtype(double, m) == valtype(typeof(double), typeof(m)) == typeof(m)
     @test valtype(double, s) == valtype(typeof(double), typeof(s)) == typeof(s)
     @test map!(double, s) == s == Operators(Operator(2, AID(1, 1)))
+
+    i = LinearFunction(identity)
+    @test i==deepcopy(i) && isequal(i, deepcopy(i))
+    @test i(m)==m && i(s)==s
+    @test valtype(LinearFunction{typeof(m), typeof(identity)}, typeof(m)) == typeof(m)
+    @test valtype(LinearFunction{typeof(m), typeof(identity)}, typeof(s)) == typeof(s)
+
+    op₀, op₁, op₂ = Operator(1), Operator(2, AID(1, 1)), Operator(3, AID(1, 1), AID(2, 1))
+    ops = Operators(op₀, op₁, op₂)
+    @test LinearFunction{Operator{Int, Tuple{}}}(op->rank(op)==0 ? op : 0)(ops) == Operators(op₀)
+    @test LinearFunction{Operator{Int, Tuple{AID{Int, Int}}}}(op->rank(op)==1 ? op : 0)(ops) == Operators(op₁)
+    @test LinearFunction{Operator{Int, NTuple{2, AID{Int, Int}}}}(op->rank(op)==2 ? op : 0)(ops) == Operators(op₂)
 end
 
 @testset "Permutation" begin
@@ -269,12 +277,4 @@ end
     substitution = TabledUnitSubstitution(table)
     @test substitution(opt) == 1.5*ops₁*ops₂
     @test substitution(Operators(opt)) == 1.5*ops₁*ops₂
-end
-
-@testset "RankFilter" begin
-    op₀, op₁, op₂ = Operator(1), Operator(2, AID(1, 1)), Operator(3, AID(1, 1), AID(2, 1))
-    ops = Operators(op₀, op₁, op₂)
-    @test RankFilter(0)(ops) == Operators(op₀)
-    @test RankFilter(1)(ops) == Operators(op₁)
-    @test RankFilter(2)(ops) == Operators(op₂)
 end

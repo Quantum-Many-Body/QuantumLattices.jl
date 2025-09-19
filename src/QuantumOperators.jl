@@ -12,7 +12,7 @@ import ..QuantumLattices: ⊗, add!, div!, expand, id, ishermitian, mul!, permut
 import ..Toolkit: contentnames, dissolve, isparameterbound, parameternames, subscript, superscript
 
 export LaTeX, Operator, OperatorIndex, OperatorPack, OperatorProd, Operators, OperatorSet, OperatorSum, QuantumOperator
-export LinearFunction, LinearTransformation, Matrixization, Permutation, RankFilter, TabledUnitSubstitution, UnitSubstitution
+export LinearFunction, LinearTransformation, Matrixization, Permutation, TabledUnitSubstitution, UnitSubstitution
 export idtype, isequivalenttoscalar, ishermitian, latexname, latexformat, matrix, operatortype, scalartype, script, sequence
 
 # Generic quantum operator
@@ -1061,15 +1061,19 @@ end
 end
 
 """
-    LinearFunction{F<:Function} <: LinearTransformation
+    LinearFunction{O<:Union{Union{}, OperatorPack}, F<:Function} <: LinearTransformation
 
 Wrapper a function to be a linear transformation.
 """
-struct LinearFunction{F<:Function} <: LinearTransformation
+struct LinearFunction{O<:Union{Union{}, OperatorPack}, F<:Function} <: LinearTransformation
     f::F
+    LinearFunction(f::Function) = new{Union{}, typeof(f)}(f)
+    LinearFunction{O}(f::Function) where {O<:OperatorPack} = new{O, typeof(f)}(f)
 end
 @inline (f::LinearFunction)(op::OperatorPack; kwargs...) = f.f(op; kwargs...)
-@inline (f::LinearFunction)(op::OperatorSet; kwargs...) = f.f(op; kwargs...)
+@inline (f::LinearFunction{Union{}})(op::OperatorSet; kwargs...) = f.f(op; kwargs...)
+@inline Base.valtype(::Type{<:LinearFunction{O}}, ::Type{<:OperatorPack}) where {O<:OperatorPack} = O
+@inline Base.valtype(::Type{<:LinearFunction{O}}, ::Type{<:OperatorSum}) where {O<:OperatorPack} = OperatorSum{O, idtype(O)}
 
 """
     Matrixization <: LinearTransformation
@@ -1173,25 +1177,5 @@ struct TabledUnitSubstitution{U<:OperatorIndex, S<:OperatorSum, T<:AbstractDict{
     end
 end
 (unitsubstitution::TabledUnitSubstitution)(m::OperatorIndex; kwargs...) = unitsubstitution.table[m]
-
-"""
-    RankFilter{R} <: LinearTransformation
-
-Rank filter, which filters out the `OperatorProd` with a given rank `R`.
-"""
-struct RankFilter{R} <: LinearTransformation
-    function RankFilter(rank::Int)
-        @assert rank>=0 "RankFilter error: the wanted rank must be non-negative."
-        new{rank}()
-    end
-end
-@inline Base.valtype(::Type{RankFilter{R}}, M::Type{<:OperatorProd}) where R = reparameter(M, :id, ZeroAtLeast{eltype(M), R})
-@inline function Base.valtype(R::Type{<:RankFilter}, M::Type{<:OperatorSum})
-    V = valtype(R, eltype(M))
-    return OperatorSum{V, idtype(V)}
-end
-@inline rank(rf::RankFilter) = rank(typeof(rf))
-@inline rank(::Type{RankFilter{R}}) where R = R
-@inline @generated (rf::RankFilter)(m::OperatorProd; kwargs...) = rank(m)==rank(rf) ? :(m) : 0
 
 end #module
