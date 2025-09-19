@@ -290,7 +290,7 @@ end
 end
 
 @testset "MatrixCoupling" begin
-    component = Component([1, 2], [2, 1], [-1 0; 0 1])
+    component = MatrixCouplingComponent([1, 2], [2, 1], [-1 0; 0 1])
     @test parameternames(typeof(component)) == (:basistype, :datatype, :basis)
     @test length(component) == 2
     @test component[1] == (1, 2, -1)
@@ -306,7 +306,7 @@ end
     @test mc//2 == mc*(1//2)
     @test -mc  == (-1)*mc
 
-    another = MatrixCoupling((1ˢᵗ, 2ⁿᵈ), DID, Component([:], [:], hcat(2.0)))
+    another = MatrixCoupling((1ˢᵗ, 2ⁿᵈ), DID, MatrixCouplingComponent([:], [:], hcat(2.0)))
     @test another[1] == Coupling(2.0, 𝕕(1ˢᵗ, :), 𝕕(2ⁿᵈ, :))
 
     mcp = 2 * mc * another
@@ -324,8 +324,8 @@ end
     @test mcp//4 == mcp*(1//4) == MatrixCouplingProd(1//2, mc, another)
     @test -mcp == (-1)*mcp
 
-    mc₁ = MatrixCoupling((1ˢᵗ, 2ⁿᵈ), DID, Component([1, 2], [2, 1], [0 1; 1 0]))
-    mc₂ = MatrixCoupling((2ⁿᵈ, 1ˢᵗ), DID, Component([1, 2], [2, 1], [0 1im; -1im 0]))
+    mc₁ = MatrixCoupling((1ˢᵗ, 2ⁿᵈ), DID, MatrixCouplingComponent([1, 2], [2, 1], [0 1; 1 0]))
+    mc₂ = MatrixCoupling((2ⁿᵈ, 1ˢᵗ), DID, MatrixCouplingComponent([1, 2], [2, 1], [0 1im; -1im 0]))
     mcs = mc₁ + mc₂
     @test mcs == MatrixCouplingSum(mc₁, mc₂)
     @test eltype(mcs) == Coupling{Complex{Int64}, Pattern{NTuple{2, Index{DID{Int}, Ordinal}}, (2,), 1, Tuple{typeof(isdiagonal)}}}

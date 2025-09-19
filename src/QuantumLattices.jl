@@ -28,7 +28,7 @@ export bonds, bonds!, dlmsave, fractionals, icoordinate, iscontinuous, isdiscret
 include("DegreesOfFreedom.jl")
 using .DegreesOfFreedom
 export CompositeInternal, CompositeIndex, CoordinatedIndex, Hilbert, Index, Internal, InternalIndex, InternalProd, InternalSum, SimpleInternal
-export Boundary, Component, Coupling, MatrixCoupling, MatrixCouplingProd, MatrixCouplingSum, Metric, OperatorIndexToTuple, Ordinal, Pattern, Table, Term, TermAmplitude, TermCoupling
+export Boundary, Coupling, MatrixCoupling, MatrixCouplingComponent, MatrixCouplingProd, MatrixCouplingSum, Metric, OperatorIndexToTuple, Ordinal, Pattern, Table, Term, TermAmplitude, TermCoupling
 export ˢᵗ, ⁿᵈ, ʳᵈ, ᵗʰ, plain, coordinatedindextype, diagonalfields, indextype, internalindextype, isdefinite, isdiagonal, partition, patternrule, showablefields, statistics, @pattern
 
 # QuantumSystems

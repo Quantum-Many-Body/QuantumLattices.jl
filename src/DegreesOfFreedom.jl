@@ -16,7 +16,7 @@ import ..Spatials: icoordinate, nneighbor, rcoordinate
 import ..Toolkit: contentnames, getcontent, parameternames
 
 export CompositeInternal, CompositeIndex, CoordinatedIndex, Hilbert, Index, Internal, InternalIndex, InternalProd, InternalSum, SimpleInternal
-export Boundary, Component, Coupling, MatrixCoupling, MatrixCouplingProd, MatrixCouplingSum, Metric, OperatorIndexToTuple, Ordinal, Pattern, Table, Term, TermAmplitude, TermCoupling
+export Boundary, Coupling, MatrixCoupling, MatrixCouplingComponent, MatrixCouplingProd, MatrixCouplingSum, Metric, OperatorIndexToTuple, Ordinal, Pattern, Table, Term, TermAmplitude, TermCoupling
 export ˢᵗ, ⁿᵈ, ʳᵈ, ᵗʰ, plain, coordinatedindextype, diagonalfields, indextype, internalindextype, isdefinite, isdiagonal, partition, patternrule, showablefields, statistics, @pattern
 
 # InternalIndex and Internal
@@ -1030,47 +1030,47 @@ end
 
 # MatrixCoupling
 """
-    Component{T₁, T₂} <: VectorSpace{Tuple{T₁, T₁, T₂}}
+    MatrixCouplingComponent{T₁, T₂} <: VectorSpace{Tuple{T₁, T₁, T₂}}
 
 A component of a matrix coupling, i.e., a matrix acting on a separated internal space.
 """
-struct Component{T₁, T₂, V<:AbstractVector{T₁}} <: VectorSpace{Tuple{T₁, T₁, T₂}}
+struct MatrixCouplingComponent{T₁, T₂, V<:AbstractVector{T₁}} <: VectorSpace{Tuple{T₁, T₁, T₂}}
     left::V
     right::V
     matrix::SparseMatrixCSC{T₂, Int}
-    function Component(left::V, right::V, matrix::AbstractMatrix{T}) where {V<:AbstractVector, T}
-        @assert length(left)==size(matrix)[1] && length(right)==size(matrix)[2] "Component error: mismatched inputs."
+    function MatrixCouplingComponent(left::V, right::V, matrix::AbstractMatrix{T}) where {V<:AbstractVector, T}
+        @assert length(left)==size(matrix)[1] && length(right)==size(matrix)[2] "MatrixCouplingComponent error: mismatched inputs."
         new{eltype(V), T, V}(left, right, convert(SparseMatrixCSC{T, Int}, matrix))
     end
 end
-@inline parameternames(::Type{<:Component}) = (:basistype, :datatype, :basis)
-@inline Base.length(component::Component) = nnz(component.matrix)
-@inline function Base.getindex(component::Component, i::Integer)
+@inline parameternames(::Type{<:MatrixCouplingComponent}) = (:basistype, :datatype, :basis)
+@inline Base.length(component::MatrixCouplingComponent) = nnz(component.matrix)
+@inline function Base.getindex(component::MatrixCouplingComponent, i::Integer)
     row = component.matrix.rowval[i]
     col = searchsortedlast(component.matrix.colptr, i)
     return (component.left[row], component.right[col], component.matrix.nzval[i])
 end
-@inline Base.promote_rule(::Type{Component{T, T₁, V}}, ::Type{Component{T, T₂, V}}) where {T, T₁, T₂, V<:AbstractVector{T}} = Component{T, promote_type(T₁, T₂), V}
-@inline function Base.convert(::Type{Component{T, T₁, V}}, component::Component{T, T₂, V}) where {T, T₁, T₂, V<:AbstractVector{T}}
-    return Component(component.left, component.right, convert(SparseMatrixCSC{T₁, Int}, component.matrix))
+@inline Base.promote_rule(::Type{MatrixCouplingComponent{T, T₁, V}}, ::Type{MatrixCouplingComponent{T, T₂, V}}) where {T, T₁, T₂, V<:AbstractVector{T}} = MatrixCouplingComponent{T, promote_type(T₁, T₂), V}
+@inline function Base.convert(::Type{MatrixCouplingComponent{T, T₁, V}}, component::MatrixCouplingComponent{T, T₂, V}) where {T, T₁, T₂, V<:AbstractVector{T}}
+    return MatrixCouplingComponent(component.left, component.right, convert(SparseMatrixCSC{T₁, Int}, component.matrix))
 end
 
 """
-    MatrixCoupling{I}(sites::Union{NTuple{2, Ordinal}, NTuple{2, Colon}}, contents::ZeroAtLeast{Component}) where {I<:InternalIndex}
-    MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{I}, contents::Component...) where {I<:InternalIndex}
+    MatrixCoupling{I}(sites::Union{NTuple{2, Ordinal}, NTuple{2, Colon}}, contents::ZeroAtLeast{MatrixCouplingComponent}) where {I<:InternalIndex}
+    MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{I}, contents::MatrixCouplingComponent...) where {I<:InternalIndex}
 
 Matrix coupling, i.e., a set of couplings whose coefficients are specified by matrices acting on separated internal spaces.
 """
-struct MatrixCoupling{I<:InternalIndex, S<:Union{Ordinal, Colon}, C<:ZeroAtLeast{Component}} <: VectorSpace{Coupling}
+struct MatrixCoupling{I<:InternalIndex, S<:Union{Ordinal, Colon}, C<:ZeroAtLeast{MatrixCouplingComponent}} <: VectorSpace{Coupling}
     sites::Tuple{S, S}
     contents::C
-    function MatrixCoupling{I}(sites::Union{NTuple{2, Ordinal}, NTuple{2, Colon}}, contents::ZeroAtLeast{Component}) where {I<:InternalIndex}
+    function MatrixCoupling{I}(sites::Union{NTuple{2, Ordinal}, NTuple{2, Colon}}, contents::ZeroAtLeast{MatrixCouplingComponent}) where {I<:InternalIndex}
         @assert fieldcount(I)==length(contents) "MatrixCoupling error: mismatched type of internal index ($nameof(I)) and components (len=$length(contents))."
         new{I, eltype(sites), typeof(contents)}(sites, contents)
     end
 end
 @inline parameternames(::Type{<:MatrixCoupling}) = (:internal, :site, :components)
-@inline MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{I}, contents::Component...) where {I<:InternalIndex} = MatrixCoupling{I}(default(sites, Val(2)), contents)
+@inline MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{I}, contents::MatrixCouplingComponent...) where {I<:InternalIndex} = MatrixCoupling{I}(default(sites, Val(2)), contents)
 @inline @generated function Base.eltype(::Type{MC}) where {MC<:MatrixCoupling}
     types = fieldtypes(parametertype(MC, :components))
     V = Expr(:call, :promote_type, [:(parametertype($C, :datatype)) for C in types]...)
@@ -1086,10 +1086,10 @@ function Base.convert(::Type{<:Coupling}, index::CartesianIndex, mc::MatrixCoupl
     index₂ = Index(mc.sites[2], I(map(content->content[2], contents)...))
     return Coupling(value, index₁, index₂)
 end
-@inline function Base.promote_rule(::Type{MatrixCoupling{I, S, C₁}}, ::Type{MatrixCoupling{I, S, C₂}}) where {I<:InternalIndex, S<:Union{Ordinal, Colon}, C₁<:ZeroAtLeast{Component}, C₂<:ZeroAtLeast{Component}}
+@inline function Base.promote_rule(::Type{MatrixCoupling{I, S, C₁}}, ::Type{MatrixCoupling{I, S, C₂}}) where {I<:InternalIndex, S<:Union{Ordinal, Colon}, C₁<:ZeroAtLeast{MatrixCouplingComponent}, C₂<:ZeroAtLeast{MatrixCouplingComponent}}
     return MatrixCoupling{I, S, _promote_type_(C₁, C₂)}
 end
-@inline Base.convert(::Type{MatrixCoupling{I, S, C}}, mc::MatrixCoupling{I, S}) where {I<:InternalIndex, S<:Union{Ordinal, Colon}, C<:ZeroAtLeast{Component}} = MatrixCoupling{I}(mc.sites, convert(C, mc.contents))
+@inline Base.convert(::Type{MatrixCoupling{I, S, C}}, mc::MatrixCoupling{I, S}) where {I<:InternalIndex, S<:Union{Ordinal, Colon}, C<:ZeroAtLeast{MatrixCouplingComponent}} = MatrixCoupling{I}(mc.sites, convert(C, mc.contents))
 @inline @generated function _promote_type_(::Type{T₁}, ::Type{T₂}) where {N, T₁<:NTuple{N, Any}, T₂<:NTuple{N, Any}}
     return Expr(:curly, Tuple, [:(promote_type(fieldtype(T₁, $i), fieldtype(T₂, $i))) for i=1:N]...)
 end

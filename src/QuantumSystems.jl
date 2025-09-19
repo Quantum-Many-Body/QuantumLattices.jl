@@ -4,7 +4,7 @@ using LinearAlgebra: dot, ishermitian, norm
 using Printf: @printf
 using SparseArrays: SparseMatrixCSC
 using StaticArrays: SMatrix, SVector
-using ..DegreesOfFreedom: Component, CompositeIndex, CoordinatedIndex, Coupling, Hilbert, Index, InternalIndex, Ordinal, Pattern, SimpleInternal, Term, TermAmplitude, TermCoupling, indextype, @pattern
+using ..DegreesOfFreedom: CompositeIndex, CoordinatedIndex, Coupling, Hilbert, Index, InternalIndex, MatrixCouplingComponent, Ordinal, Pattern, SimpleInternal, Term, TermAmplitude, TermCoupling, indextype, @pattern
 using ..QuantumLattices: OneAtLeast, ZeroAtLeast, decompose, rank, str
 using ..QuantumOperators: LaTeX, Operator, OperatorIndex, OperatorProd, Operators, latexformat
 using ..Spatials: Bond, Point, direction, isparallel, rcoordinate
@@ -350,12 +350,12 @@ Construct a matrix coupling for Fock systems.
     return MatrixCoupling(sites, OperatorIndex[F], orbital, spin, nambu)
 end
 @inline function MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{F}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) where {F<:FockIndex}
-    return MatrixCoupling(sites, F, Component(F, Val(:orbital), orbital), Component(F, Val(:spin), spin), Component(F, Val(:nambu), nambu))
+    return MatrixCoupling(sites, F, MatrixCouplingComponent(F, Val(:orbital), orbital), MatrixCouplingComponent(F, Val(:spin), spin), MatrixCouplingComponent(F, Val(:nambu), nambu))
 end
-@inline Component(::Type{<:FockIndex}, ::Val, ::Colon) = Component(SVector(:), SVector(:), default_matrix)
-@inline Component(::Type{<:FockIndex}, ::Val{:orbital}, matrix::AbstractMatrix) = Component(1:size(matrix)[1], 1:size(matrix)[2], matrix)
-@inline Component(::Type{<:FockIndex}, ::Val{:spin}, matrix::AbstractMatrix) = Component((size(matrix)[1]-1)//2:-1:(1-size(matrix)[1])//2, (size(matrix)[2]-1)//2:-1:(1-size(matrix)[2])//2, matrix)
-@inline Component(::Type{<:FockIndex}, ::Val{:nambu}, matrix::AbstractMatrix) = (@assert size(matrix)==(2, 2) "Component error: for nambu subspace, the input matrix must be 2×2."; Component(1:1:2, 2:-1:1, matrix))
+@inline MatrixCouplingComponent(::Type{<:FockIndex}, ::Val, ::Colon) = MatrixCouplingComponent(SVector(:), SVector(:), default_matrix)
+@inline MatrixCouplingComponent(::Type{<:FockIndex}, ::Val{:orbital}, matrix::AbstractMatrix) = MatrixCouplingComponent(1:size(matrix)[1], 1:size(matrix)[2], matrix)
+@inline MatrixCouplingComponent(::Type{<:FockIndex}, ::Val{:spin}, matrix::AbstractMatrix) = MatrixCouplingComponent((size(matrix)[1]-1)//2:-1:(1-size(matrix)[1])//2, (size(matrix)[2]-1)//2:-1:(1-size(matrix)[2])//2, matrix)
+@inline MatrixCouplingComponent(::Type{<:FockIndex}, ::Val{:nambu}, matrix::AbstractMatrix) = (@assert size(matrix)==(2, 2) "MatrixCouplingComponent error: for nambu subspace, the input matrix must be 2×2."; MatrixCouplingComponent(1:1:2, 2:-1:1, matrix))
 
 """
     𝕔⁺𝕔(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) -> MatrixCoupling
@@ -768,7 +768,7 @@ Construct a matrix coupling for spin systems.
 end
 @inline function MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{S}, matrix::AbstractMatrix; rows::AbstractVector=SVector('x', 'y', 'z'), cols::AbstractVector=SVector('x', 'y', 'z')) where {S<:SpinIndex}
     @assert size(matrix)==(length(rows), length(cols)) "MatrixCoupling error: mismatched input matrix and rows/cols."
-    return MatrixCoupling(sites, S, Component(rows, cols, matrix))
+    return MatrixCoupling(sites, S, MatrixCouplingComponent(rows, cols, matrix))
 end
 
 """
@@ -1310,7 +1310,7 @@ function MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{PhononIn
     isnothing(rows) && (rows = size(matrix)[1]==1 ? SVector('x') : size(matrix)[1]==2 ? SVector('x', 'y') : SVector('x', 'y', 'z'))
     isnothing(cols) && (cols = size(matrix)[2]==1 ? SVector('x') : size(matrix)[2]==2 ? SVector('x', 'y') : SVector('x', 'y', 'z'))
     @assert size(matrix)==(length(rows), length(cols)) "MatrixCoupling error: mismatched input matrix and rows/cols."
-    return MatrixCoupling(sites, PhononIndex{:u}, Component(rows, cols, matrix))
+    return MatrixCoupling(sites, PhononIndex{:u}, MatrixCouplingComponent(rows, cols, matrix))
 end
 
 """
