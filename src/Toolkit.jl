@@ -7,7 +7,7 @@ using InteractiveUtils: subtypes
 using Printf: @printf
 using StaticArrays: SVector
 
-import QuantumLattices: id, shape, str, value
+import QuantumLattices: OneAtLeast, ZeroOrMore, ZeroAtLeast, id, shape, str, value
 
 # Utilities
 export atol, rtol, Float
@@ -147,11 +147,11 @@ function Base.searchsortedfirst(table, basis; by=identity, lt=isless, rev=false)
 end
 
 """
-    DirectSummedIndices{T<:Tuple{Vararg{OrdinalRange{Int, Int}}}} <: AbstractVector{CartesianIndex{3}}
+    DirectSummedIndices{T<:OneAtLeast{OrdinalRange{Int, Int}}} <: AbstractVector{CartesianIndex{3}}
 
 Direct sum of indexes.
 """
-struct DirectSummedIndices{T<:Tuple{Vararg{OrdinalRange{Int, Int}}}} <: AbstractVector{CartesianIndex{3}}
+struct DirectSummedIndices{T<:OneAtLeast{OrdinalRange{Int, Int}}} <: AbstractVector{CartesianIndex{3}}
     indices::T
 end
 @inline Base.size(indexes::DirectSummedIndices) = (sum(map(length, indexes.indices)),)
@@ -181,11 +181,11 @@ function Base.getindex(indexes::DirectSummedIndices, i::Integer)
 end
 
 """
-    DirectSummedIndices(indexes::Tuple{Vararg{Union{<:Integer, OrdinalRange{<:Integer, <:Integer}}}})
+    DirectSummedIndices(indexes::OneAtLeast{Union{<:Integer, OrdinalRange{<:Integer, <:Integer}}})
 
 Construct a `DirectSummedIndices`.
 """
-@inline DirectSummedIndices(indexes::Tuple{Vararg{Union{<:Integer, OrdinalRange{<:Integer, <:Integer}}}}) = DirectSummedIndices(map(index->convert2ind(index), indexes))
+@inline DirectSummedIndices(indexes::OneAtLeast{Union{<:Integer, OrdinalRange{<:Integer, <:Integer}}}) = DirectSummedIndices(map(index->convert2ind(index), indexes))
 @inline convert2ind(index::Integer) = Base.OneTo(index)
 @inline convert2ind(index::AbstractUnitRange{<:Integer}) = first(index):last(index)
 @inline convert2ind(index::OrdinalRange{<:Integer, <:Integer}) = first(index):step(index):last(index)
@@ -218,11 +218,11 @@ end
 @inline Base.in(index::CartesianIndex, indexes::DirectProductedIndices) = index in CartesianIndices(indexes.indices)
 
 """
-    DirectProductedIndices{Order}(indexes::Tuple{Vararg{Union{<:Integer, OrdinalRange{<:Integer, <:Integer}}}}) where Order
+    DirectProductedIndices{Order}(indexes::OneAtLeast{Union{<:Integer, OrdinalRange{<:Integer, <:Integer}}}) where Order
 
 Construct a `DirectProductedIndices`.
 """
-@inline function DirectProductedIndices{Order}(indexes::Tuple{Vararg{Union{<:Integer, OrdinalRange{<:Integer, <:Integer}}}}) where Order
+@inline function DirectProductedIndices{Order}(indexes::OneAtLeast{Union{<:Integer, OrdinalRange{<:Integer, <:Integer}}}) where Order
     return DirectProductedIndices{Order}(map(index->convert2ind(index), indexes))
 end
 
@@ -634,7 +634,7 @@ For type `T`, judge whether it has a type parameter specified by `name`.
 @inline _hasparameter(::Val{name}, ::Val{names}) where {name, names} = name∈names
 
 """
-    parameternames(::Type{T}) where T -> Tuple{Vararg{Symbol}}
+    parameternames(::Type{T}) where T -> ZeroAtLeast{Symbol}
 
 For a type `T`, get the names of all its type parameters.
 """
@@ -666,8 +666,8 @@ The return types are stored in the type parameters of a `NamedTuple`.
 @inline parameterpairs(::Type{T}) where T = NamedTuple{parameternames(T), parametertypes(T)}
 
 """
-    isparameterbounds(::Type{T}, ::Type{PS}) where {T, PS<:Tuple} -> Tuple{Vararg{Bool}}
-    isparameterbounds(::Type{T}, ::Type{PS}) where {T, PS<:NamedTuple} -> Tuple{Vararg{Bool}}
+    isparameterbounds(::Type{T}, ::Type{PS}) where {T, PS<:Tuple} -> ZeroAtLeast{Bool}
+    isparameterbounds(::Type{T}, ::Type{PS}) where {T, PS<:NamedTuple} -> ZeroAtLeast{Bool}
 
 For a type `T`, judge whether the types specified by `PS` should be considered as the upper bounds of its corresponding type parameters.
 """
@@ -733,18 +733,18 @@ The result is stored in the type parameters of a `NamedTuple`.
 end
 
 """
-    fulltype(::Type{T}, ::Type{PS}, ubs::Tuple{Vararg{Bool}}=isparameterbounds(T, PS)) where {T, PS<:Tuple}
-    fulltype(::Type{T}, ::Type{PS}, ubs::Tuple{Vararg{Bool}}=isparameterbounds(T, PS)) where {T, PS<:NamedTuple}
+    fulltype(::Type{T}, ::Type{PS}, ubs::ZeroAtLeast{Bool}=isparameterbounds(T, PS)) where {T, PS<:Tuple}
+    fulltype(::Type{T}, ::Type{PS}, ubs::ZeroAtLeast{Bool}=isparameterbounds(T, PS)) where {T, PS<:NamedTuple}
 
 Get the full type of type `T` with the type parameters replaced by those of `PS`.
 
 Here, `ubs` determines whether the new type parameter should be considered as the upper bound accordingly.
 """
-@inline function fulltype(::Type{T}, ::Type{PS}, ubs::Tuple{Vararg{Bool}}=isparameterbounds(T, PS)) where {T, PS<:Tuple}
+@inline function fulltype(::Type{T}, ::Type{PS}, ubs::ZeroAtLeast{Bool}=isparameterbounds(T, PS)) where {T, PS<:Tuple}
     @assert parametercount(T) == fieldcount(PS) == length(ubs) "fulltype error: length-mismatched input parameters."
     return _fulltype(T, PS, Val(ubs))
 end
-@inline function fulltype(::Type{T}, ::Type{PS}, ubs::Tuple{Vararg{Bool}}=isparameterbounds(T, PS)) where {T, PS<:NamedTuple}
+@inline function fulltype(::Type{T}, ::Type{PS}, ubs::ZeroAtLeast{Bool}=isparameterbounds(T, PS)) where {T, PS<:NamedTuple}
     _fulltype(T, PS, parameternames(T)|>Val, Val(ubs))
 end
 @inline @generated function _fulltype(::Type{T}, ::Type{PS}, ::Val{ubs}) where {T, PS, ubs}
@@ -815,7 +815,7 @@ Get the value of the predefined content of `m`.
 @inline getcontent(m, ::Val{name}) where name = getfield(m, name)
 
 """
-    contentnames(::Type{T}) where T -> Tuple{Vararg{Symbol}}
+    contentnames(::Type{T}) where T -> ZeroAtLeast{Symbol}
 
 For a type `T`, define the names of its predefined contents.
 """
@@ -957,13 +957,13 @@ end
 
 """
     isapprox(::EfficientOperations, o₁, o₂; atol=atol, rtol=rtol) -> Bool
-    isapprox(::EfficientOperations, fields::Union{Nothing, Union{Integer, Symbol}, Tuple{Vararg{Union{Integer, Symbol}}}}, o₁, o₂; atol=atol, rtol=rtol) -> Bool
+    isapprox(::EfficientOperations, fields::Union{Nothing, ZeroOrMore{Union{Integer, Symbol}}}, o₁, o₂; atol=atol, rtol=rtol) -> Bool
     isapprox(::EfficientOperations, ::Val{fields}, o₁, o₂; atol=atol, rtol=rtol) where fields -> Bool
 
 Compare two objects and judge whether they are inexactly equivalent to each other.
 """
 @inline Base.isapprox(::EfficientOperations, o₁, o₂; atol=atol, rtol=rtol) = isapprox(efficientoperations, nothing, o₁, o₂, atol=atol, rtol=rtol)
-@inline function Base.isapprox(::EfficientOperations, fields::Union{Nothing, Union{Integer, Symbol}, Tuple{Vararg{Union{Integer, Symbol}}}}, o₁, o₂; atol=atol, rtol=rtol)
+@inline function Base.isapprox(::EfficientOperations, fields::Union{Nothing, ZeroOrMore{Union{Integer, Symbol}}}, o₁, o₂; atol=atol, rtol=rtol)
     isapprox(efficientoperations, fields|>Val, o₁, o₂; atol=atol, rtol=rtol)
 end
 @inline @generated function Base.isapprox(::EfficientOperations, ::Val{fields}, o₁, o₂; atol=atol, rtol=rtol) where fields
@@ -1011,7 +1011,7 @@ abstract type CompositeVector{T} <: AbstractVector{T} end
 @inline Base.empty!(cv::CompositeVector) = (empty!(getcontent(cv, :contents)); cv)
 @inline Base.empty(cv::CompositeVector) = rawtype(typeof(cv))(dissolve(cv, empty)...)
 @inline Base.reverse(cv::CompositeVector) =  rawtype(typeof(cv))(dissolve(cv, reverse)...)
-@inline Base.similar(cv::CompositeVector, dtype::Type=eltype(cv), dims::Tuple{Vararg{Int}}=size(cv)) = rawtype(typeof(cv))(dissolve(cv, similar, dtype, dims)...)
+@inline Base.similar(cv::CompositeVector, dtype::Type=eltype(cv), dims::ZeroAtLeast{Int}=size(cv)) = rawtype(typeof(cv))(dissolve(cv, similar, dtype, dims)...)
 
 """
     CompositeDict{K, V}

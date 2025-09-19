@@ -7,7 +7,7 @@ using NearestNeighbors: KDTree, inrange, knn
 using Printf: @printf, @sprintf
 using RecipesBase: RecipesBase, @recipe, @series, @layout
 using StaticArrays: MVector, SVector
-using ..QuantumLattices: OneAtLeast, OneOrMore
+using ..QuantumLattices: OneAtLeast, OneOrMore, ZeroAtLeast
 using ..Toolkit: atol, rtol, efficientoperations, CompositeDict, DirectProductedIndices, DirectProductedVectorSpace, Float, Segment, VectorSpace, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceEnumerative, VectorSpaceStyle, concatenate, getcontent, subscript
 
 import ..QuantumLattices: decompose, dimension, expand, kind, matrix, rank, shape
@@ -207,7 +207,7 @@ end
 
 """
     decompose(m::AbstractMatrix{<:Number}, m₀::AbstractMatrix{<:Number}) -> Number
-    decompose(m::AbstractMatrix{<:Number}, ms::Tuple{Vararg{AbstractMatrix{<:Number}}}) -> Tuple{Vararg{Number}}
+    decompose(m::AbstractMatrix{<:Number}, ms::ZeroAtLeast{AbstractMatrix{<:Number}}) -> ZeroAtLeast{Number}
     decompose(m::AbstractMatrix{<:Number}, ms::AbstractVector{<:AbstractMatrix{<:Number}}) -> Vector{<:Number}
 
 Decompose a matrix.
@@ -222,7 +222,7 @@ function decompose(m::AbstractMatrix{<:Number}, m₀::AbstractMatrix{<:Number})
     end
     return result/n
 end
-@inline decompose(m::AbstractMatrix{<:Number}, ms::Tuple{Vararg{AbstractMatrix{<:Number}}}) = map(m₀->decompose(m, m₀), ms)
+@inline decompose(m::AbstractMatrix{<:Number}, ms::ZeroAtLeast{AbstractMatrix{<:Number}}) = map(m₀->decompose(m, m₀), ms)
 @inline decompose(m::AbstractMatrix{<:Number}, ms::AbstractVector{<:AbstractMatrix{<:Number}}) = map(m₀->decompose(m, m₀), ms)
 
 """
@@ -1326,7 +1326,7 @@ struct ReciprocalPath{K, S<:SVector, N, R} <: ReciprocalSpace{K, S}
         new{K, eltype(eltype(contents)), N, R}(map(vectorconvert, contents), labels)
     end
 end
-@inline ReciprocalPath(contents::Tuple{Vararg{AbstractVector{<:AbstractVector{<:Number}}}}, labels::Tuple{Vararg{Pair}}) = ReciprocalPath{:k}(contents, labels)
+@inline ReciprocalPath(contents::ZeroAtLeast{AbstractVector{<:AbstractVector{<:Number}}}, labels::ZeroAtLeast{Pair}) = ReciprocalPath{:k}(contents, labels)
 @inline contentnames(::Type{<:ReciprocalPath}) = (:contents, :labels)
 @inline VectorSpaceStyle(::Type{<:ReciprocalPath}) = VectorSpaceDirectSummed()
 

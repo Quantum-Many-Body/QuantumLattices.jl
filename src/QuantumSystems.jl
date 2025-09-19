@@ -315,7 +315,7 @@ end
 
 ## Permutation
 """
-    permute(id₁::FockIndex, id₂::FockIndex) -> Tuple{Vararg{Operator}}
+    permute(id₁::FockIndex, id₂::FockIndex) -> ZeroAtLeast{Operator}
 
 Permute two Fock indexes and get the result.
 """
@@ -716,7 +716,7 @@ Get the total spin.
 
 ## Permutation
 """
-    permute(id₁::SpinIndex, id₂::SpinIndex) -> Tuple{Vararg{Operator}}
+    permute(id₁::SpinIndex, id₂::SpinIndex) -> ZeroAtLeast{Operator}
 
 Permute two spin indexes and get the result.
 """
@@ -1281,7 +1281,7 @@ Get the kind of a phonon space.
 
 ## Permutation
 """
-    permute(id₁::PhononIndex, id₂::PhononIndex) -> Tuple{Vararg{Operator}}
+    permute(id₁::PhononIndex, id₂::PhononIndex) -> ZeroAtLeast{Operator}
 
 Permute two phonon indexes and get the result.
 """

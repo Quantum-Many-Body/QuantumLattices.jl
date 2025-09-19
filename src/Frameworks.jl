@@ -10,7 +10,7 @@ using RecipesBase: RecipesBase, @recipe
 using Serialization: deserialize, serialize
 using TimerOutputs: TimerOutput, time, @timeit
 using ..DegreesOfFreedom: plain, Boundary, Hilbert, Term
-using ..QuantumLattices: OneOrMore, ZeroOrMore, id, value
+using ..QuantumLattices: OneOrMore, ZeroAtLeast, ZeroOrMore, id, value
 using ..QuantumOperators: OperatorPack, Operators, OperatorSet, OperatorSum, LinearTransformation, identity, operatortype
 using ..Spatials: Bond, isintracell
 using ..Toolkit: atol, efficientoperations, rtol, parametertype
@@ -27,7 +27,7 @@ export eager, lazy, checkoptions, datatype, hasoption, options, optionsinfo, qld
 
 A NamedTuple that contains the key-value pairs.
 """
-const Parameters{Names, T<:Tuple{Vararg{Number}}} = NamedTuple{Names, T}
+const Parameters{Names, T<:ZeroAtLeast{Number}} = NamedTuple{Names, T}
 @inline Parameters() = NamedTuple()
 @inline Parameters{Names}(values::Number...) where {Names} = NamedTuple{Names}(values)
 function Base.show(io::IO, params::Parameters)
@@ -476,11 +476,11 @@ function reset!(cat::CategorizedGenerator, transformation::LinearTransformation,
 end
 
 """
-    OperatorGenerator{V<:Operators, CG<:CategorizedGenerator{V}, B<:Bond, H<:Hilbert, TS<:Tuple{Vararg{Term}}} <: Generator{V}
+    OperatorGenerator{V<:Operators, CG<:CategorizedGenerator{V}, B<:Bond, H<:Hilbert, TS<:ZeroAtLeast{Term}} <: Generator{V}
 
 A generator of operators based on the terms, bonds and Hilbert space of a quantum lattice system.
 """
-struct OperatorGenerator{V<:Operators, CG<:CategorizedGenerator{V}, B<:Bond, H<:Hilbert, TS<:Tuple{Vararg{Term}}} <: Generator{V}
+struct OperatorGenerator{V<:Operators, CG<:CategorizedGenerator{V}, B<:Bond, H<:Hilbert, TS<:ZeroAtLeast{Term}} <: Generator{V}
     operators::CG
     bonds::Vector{B}
     hilbert::H
@@ -517,12 +517,12 @@ function OperatorGenerator(bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOr
     parameters = NamedTuple{map(id, terms)}(map(value, terms))
     return OperatorGenerator(CategorizedGenerator(constops, alterops, boundops, parameters, boundary, style), bonds, hilbert, terms, half)
 end
-function expansion(terms::Tuple{Vararg{Term}}, emptybonds::Vector{<:Bond}, innerbonds::Vector{<:Bond}, hilbert::Hilbert, ::Type{V}; half) where V
+function expansion(terms::ZeroAtLeast{Term}, emptybonds::Vector{<:Bond}, innerbonds::Vector{<:Bond}, hilbert::Hilbert, ::Type{V}; half) where V
     return map(terms) do term
         expand(replace(term, one(V)), term.ismodulatable ? innerbonds : emptybonds, hilbert; half=half)
     end
 end
-function expansion(terms::Tuple{Vararg{Term}}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary, ::Type{V}; half) where V
+function expansion(terms::ZeroAtLeast{Term}, bonds::Vector{<:Bond}, hilbert::Hilbert, boundary::Boundary, ::Type{V}; half) where V
     return map(terms) do term
         O = promote_type(valtype(typeof(boundary), operatortype(eltype(bonds), typeof(hilbert), typeof(term))), V)
         map!(boundary, expand!(Operators{O}(), one(term), bonds, hilbert, half=half))
@@ -643,7 +643,7 @@ function expand(gen::OperatorGenerator, name::Symbol, i::Int)
     isintracell(bond) || map!(gen.operators.boundary, result)
     return result
 end
-@inline @generated function Base.get(terms::Tuple{Vararg{Term}}, ::Val{Name}) where Name
+@inline @generated function Base.get(terms::ZeroAtLeast{Term}, ::Val{Name}) where Name
     i = findfirst(isequal(Name), map(id, fieldtypes(terms)))::Int
     return :(terms[$i])
 end
@@ -729,7 +729,7 @@ mutable struct Assignment{A<:Action, P<:Parameters, M<:Function, T<:Tuple, D<:Da
     const map::M
     const dependencies::T
     data::D
-    function Assignment(::Type{D}, dir::String, name::Symbol, action::Action, parameters::Parameters, map::Function, dependencies::Tuple{Vararg{Assignment}}) where {D<:Data}
+    function Assignment(::Type{D}, dir::String, name::Symbol, action::Action, parameters::Parameters, map::Function, dependencies::ZeroAtLeast{Assignment}) where {D<:Data}
         new{typeof(action), typeof(parameters), typeof(map), typeof(dependencies), D}(dir, name, action, parameters, map, dependencies)
     end
 end

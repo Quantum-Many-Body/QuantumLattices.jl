@@ -147,7 +147,7 @@ Get the composite id from the components of singular ids.
 end
 
 """
-    propertynames(::Type{I}) where I<:ZeroAtLeast{OperatorIndex} -> Tuple{Vararg{Symbol}}
+    propertynames(::Type{I}) where I<:ZeroAtLeast{OperatorIndex} -> ZeroAtLeast{Symbol}
 
 Get the property names of a composite id.
 """
@@ -870,7 +870,7 @@ struct LaTeX{SP, SB, B<:Function, O}
     sbdelimiter::String
     options::O
     function LaTeX{SP, SB}(body::Function, spdelimiter::String=",\\,", sbdelimiter::String=",\\,"; options...) where {SP, SB}
-        @assert isa(SP, Tuple{Vararg{Symbol}}) && isa(SB, Tuple{Vararg{Symbol}}) "LaTeX error: SP and SB must be tuple of symbols."
+        @assert isa(SP, ZeroAtLeast{Symbol}) && isa(SB, ZeroAtLeast{Symbol}) "LaTeX error: SP and SB must be tuple of symbols."
         new{SP, SB, typeof(body), typeof(options)}(body, spdelimiter, sbdelimiter, options)
     end
 end

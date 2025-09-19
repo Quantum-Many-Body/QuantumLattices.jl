@@ -29,8 +29,8 @@ abstract type InternalIndex <: OperatorIndex end
 @inline Base.show(io::IO, index::InternalIndex) = @printf io "%s(%s)" OperatorIndex[index] join(map(field->str(getfield(index, field)), showablefields(index)), ", ")
 
 """
-    showablefields(index::InternalIndex) -> Tuple{Vararg{Symbol}}
-    showablefields(::Type{I}) where {I<:InternalIndex} -> Tuple{Vararg{Symbol}}
+    showablefields(index::InternalIndex) -> ZeroAtLeast{Symbol}
+    showablefields(::Type{I}) where {I<:InternalIndex} -> ZeroAtLeast{Symbol}
 
 Get the showable fields of an internal index or a type of internal index.
 """
@@ -363,7 +363,7 @@ Get the required script of an index.
 @inline script(index::Index, attr::Val; kwargs...) = script(index.internal, attr; kwargs...)
 
 """
-    permute(index₁::Index, index₂::Index) -> Tuple{Vararg{Operator}}
+    permute(index₁::Index, index₂::Index) -> ZeroAtLeast{Operator}
 
 Get the permutation of two indexes.
 """
@@ -477,7 +477,7 @@ function script(index::CoordinatedIndex, ::Val{:integercoordinate}; vectors, kwa
 end
 
 """
-    permute(index₁::CoordinatedIndex, index₂::CoordinatedIndex) -> Tuple{Vararg{Operator}}
+    permute(index₁::CoordinatedIndex, index₂::CoordinatedIndex) -> ZeroAtLeast{Operator}
 
 Get the permutation of two coordinated indexes.
 """
@@ -559,7 +559,7 @@ Construct a Hilbert space with all same internal spaces.
 
 # Pattern
 """
-    diagonalfields(::Type{I}) where {I<:InternalIndex} -> Tuple{Vararg{Symbol}}
+    diagonalfields(::Type{I}) where {I<:InternalIndex} -> ZeroAtLeast{Symbol}
 
 Get the field names that can be subject to all-equal constraint based on the type of an internal index.
 """
@@ -651,7 +651,7 @@ Get the indexes specified by `slice` in a coupling pattern.
 @inline Base.getindex(pattern::Pattern, slice) = pattern.indexes[slice]
 
 """
-    partition(pattern::Pattern) -> Tuple{Vararg{Int}}
+    partition(pattern::Pattern) -> ZeroAtLeast{Int}
     partition(::Type{<:Pattern{I, P} where I}) where P -> P
 
 Get the partition of the coupling pattern.
@@ -902,13 +902,13 @@ Construct a coupling.
 """
     Coupling(indexes::Index...)
     Coupling(value::Number, indexes::Index...)
-    Coupling(value::Number, indexes::Tuple{Vararg{Index}})
+    Coupling(value::Number, indexes::ZeroAtLeast{Index})
 
 Construct a coupling with the input indexes as the pattern.
 """
 @inline Coupling(indexes::Index...) = Coupling(1, indexes...)
 @inline Coupling(value::Number, indexes::Index...) = Coupling(value, indexes)
-@inline Coupling(value::Number, indexes::Tuple{Vararg{Index}}) = Coupling(value, Pattern(indexes))
+@inline Coupling(value::Number, indexes::ZeroAtLeast{Index}) = Coupling(value, Pattern(indexes))
 
 """
     Coupling(sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:InternalIndex}
@@ -1056,15 +1056,15 @@ end
 end
 
 """
-    MatrixCoupling{I}(sites::Union{NTuple{2, Ordinal}, NTuple{2, Colon}}, contents::Tuple{Vararg{Component}}) where {I<:InternalIndex}
+    MatrixCoupling{I}(sites::Union{NTuple{2, Ordinal}, NTuple{2, Colon}}, contents::ZeroAtLeast{Component}) where {I<:InternalIndex}
     MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{I}, contents::Component...) where {I<:InternalIndex}
 
 Matrix coupling, i.e., a set of couplings whose coefficients are specified by matrices acting on separated internal spaces.
 """
-struct MatrixCoupling{I<:InternalIndex, S<:Union{Ordinal, Colon}, C<:Tuple{Vararg{Component}}} <: VectorSpace{Coupling}
+struct MatrixCoupling{I<:InternalIndex, S<:Union{Ordinal, Colon}, C<:ZeroAtLeast{Component}} <: VectorSpace{Coupling}
     sites::Tuple{S, S}
     contents::C
-    function MatrixCoupling{I}(sites::Union{NTuple{2, Ordinal}, NTuple{2, Colon}}, contents::Tuple{Vararg{Component}}) where {I<:InternalIndex}
+    function MatrixCoupling{I}(sites::Union{NTuple{2, Ordinal}, NTuple{2, Colon}}, contents::ZeroAtLeast{Component}) where {I<:InternalIndex}
         @assert fieldcount(I)==length(contents) "MatrixCoupling error: mismatched type of internal index ($nameof(I)) and components (len=$length(contents))."
         new{I, eltype(sites), typeof(contents)}(sites, contents)
     end
@@ -1086,20 +1086,20 @@ function Base.convert(::Type{<:Coupling}, index::CartesianIndex, mc::MatrixCoupl
     index₂ = Index(mc.sites[2], I(map(content->content[2], contents)...))
     return Coupling(value, index₁, index₂)
 end
-@inline function Base.promote_rule(::Type{MatrixCoupling{I, S, C₁}}, ::Type{MatrixCoupling{I, S, C₂}}) where {I<:InternalIndex, S<:Union{Ordinal, Colon}, C₁<:Tuple{Vararg{Component}}, C₂<:Tuple{Vararg{Component}}}
+@inline function Base.promote_rule(::Type{MatrixCoupling{I, S, C₁}}, ::Type{MatrixCoupling{I, S, C₂}}) where {I<:InternalIndex, S<:Union{Ordinal, Colon}, C₁<:ZeroAtLeast{Component}, C₂<:ZeroAtLeast{Component}}
     return MatrixCoupling{I, S, _promote_type_(C₁, C₂)}
 end
-@inline Base.convert(::Type{MatrixCoupling{I, S, C}}, mc::MatrixCoupling{I, S}) where {I<:InternalIndex, S<:Union{Ordinal, Colon}, C<:Tuple{Vararg{Component}}} = MatrixCoupling{I}(mc.sites, convert(C, mc.contents))
+@inline Base.convert(::Type{MatrixCoupling{I, S, C}}, mc::MatrixCoupling{I, S}) where {I<:InternalIndex, S<:Union{Ordinal, Colon}, C<:ZeroAtLeast{Component}} = MatrixCoupling{I}(mc.sites, convert(C, mc.contents))
 @inline @generated function _promote_type_(::Type{T₁}, ::Type{T₂}) where {N, T₁<:NTuple{N, Any}, T₂<:NTuple{N, Any}}
     return Expr(:curly, Tuple, [:(promote_type(fieldtype(T₁, $i), fieldtype(T₂, $i))) for i=1:N]...)
 end
 
 """
-    MatrixCouplingProd{V<:Number, C<:Tuple{Vararg{MatrixCoupling}}} <: VectorSpace{Coupling}
+    MatrixCouplingProd{V<:Number, C<:ZeroAtLeast{MatrixCoupling}} <: VectorSpace{Coupling}
 
 Product of matrix couplings together with an overall coefficient.
 """
-struct MatrixCouplingProd{V<:Number, C<:Tuple{Vararg{MatrixCoupling}}} <: VectorSpace{Coupling}
+struct MatrixCouplingProd{V<:Number, C<:ZeroAtLeast{MatrixCoupling}} <: VectorSpace{Coupling}
     value::V
     contents::C
 end
@@ -1121,10 +1121,10 @@ end
     contents = map(getindex, getcontent(mcp, :contents), index.I)
     return prod(contents; init=mcp.value)
 end
-@inline function Base.promote_rule(::Type{MatrixCouplingProd{V₁, C₁}}, ::Type{MatrixCouplingProd{V₂, C₂}}) where {V₁<:Number, C₁<:Tuple{Vararg{MatrixCoupling}}, V₂<:Number, C₂<:Tuple{Vararg{MatrixCoupling}}}
+@inline function Base.promote_rule(::Type{MatrixCouplingProd{V₁, C₁}}, ::Type{MatrixCouplingProd{V₂, C₂}}) where {V₁<:Number, C₁<:ZeroAtLeast{MatrixCoupling}, V₂<:Number, C₂<:ZeroAtLeast{MatrixCoupling}}
     return MatrixCouplingProd{promote_type(V₁, V₂), _promote_type_(C₁, C₂)}
 end
-@inline Base.convert(::Type{MatrixCouplingProd{V, C}}, mcp::MatrixCouplingProd) where {V<:Number, C<:Tuple{Vararg{MatrixCoupling}}} = MatrixCouplingProd(convert(V, mcp.value), convert(C, mcp.contents))
+@inline Base.convert(::Type{MatrixCouplingProd{V, C}}, mcp::MatrixCouplingProd) where {V<:Number, C<:ZeroAtLeast{MatrixCoupling}} = MatrixCouplingProd(convert(V, mcp.value), convert(C, mcp.contents))
 
 """
     MatrixCouplingSum{C<:MatrixCouplingProd, N} <: VectorSpace{Coupling}
@@ -1322,13 +1322,13 @@ Get the value type of a term.
 @inline Base.valtype(::Type{<:Term{K, I, V} where {K, I}}) where V = V
 
 """
-    valtype(terms::Tuple{Term, Vararg{Term}})
-    valtype(::Type{<:T}) where {T<:Tuple{Term, Vararg{Term}}}
+    valtype(terms::OneAtLeast{Term})
+    valtype(::Type{<:T}) where {T<:OneAtLeast{Term}}
 
 Get the common value type of a set of terms.
 """
-@inline Base.valtype(terms::Tuple{Term, Vararg{Term}}) = valtype(typeof(terms))
-@inline @generated Base.valtype(::Type{<:T}) where {T<:Tuple{Term, Vararg{Term}}} = mapreduce(valtype, promote_type, fieldtypes(T))
+@inline Base.valtype(terms::OneAtLeast{Term}) = valtype(typeof(terms))
+@inline @generated Base.valtype(::Type{<:T}) where {T<:OneAtLeast{Term}} = mapreduce(valtype, promote_type, fieldtypes(T))
 
 """
     rank(term::Term) -> Int
@@ -1464,14 +1464,14 @@ end
 
 """
     nneighbor(term::Term) -> Int
-    nneighbor(terms::Tuple{Term, Vararg{Term}}) -> Int
+    nneighbor(terms::OneAtLeast{Term}) -> Int
 
 Get the
 1) order of neighbor in a single term;
 2) highest order of neighbors in a set of terms.
 """
 @inline nneighbor(term::Term) = term.bondkind::Int
-@inline nneighbor(terms::Tuple{Term, Vararg{Term}}) = maximum(nneighbor, terms)::Int
+@inline nneighbor(terms::OneAtLeast{Term}) = maximum(nneighbor, terms)::Int
 
 # Metric and Table
 """
@@ -1502,7 +1502,7 @@ For the ith element of `Fields`:
 2) If it is a Function, it should be a trait function of an `OperatorIndex`, and its return value will become the corresponding element in the converted tuple.
 """
 struct OperatorIndexToTuple{Fields} <: Metric
-    OperatorIndexToTuple(fields::Tuple{Vararg{Union{Symbol, Function}}}) = new{fields}()
+    OperatorIndexToTuple(fields::ZeroAtLeast{Union{Symbol, Function}}) = new{fields}()
 end
 @inline OperatorIndexToTuple(fields::Union{Symbol, Function}...) = OperatorIndexToTuple(fields)
 
@@ -1582,7 +1582,7 @@ Inquiry the sequence of an operator index.
 
 """
     haskey(table::Table, index::OperatorIndex) -> Bool
-    haskey(table::Table, indexes::ZeroAtLeast{OperatorIndex}) -> Tuple{Vararg{Bool}}
+    haskey(table::Table, indexes::ZeroAtLeast{OperatorIndex}) -> ZeroAtLeast{Bool}
 
 Judge whether a single operator index or a set of operator indexes have been assigned with sequences in table.
 """
@@ -1696,7 +1696,7 @@ end
 @inline Base.valtype(B::Type{<:Boundary}, MS::Type{<:Operators}) = (M = valtype(B, eltype(MS)); Operators{M, idtype(M)})
 
 """
-    keys(bound::Boundary) -> Tuple{Vararg{Symbol}}
+    keys(bound::Boundary) -> ZeroAtLeast{Symbol}
     keys(::Type{<:Boundary{Names}}) where Names -> Names
 
 Get the names of the boundary parameters.
