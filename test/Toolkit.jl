@@ -429,14 +429,14 @@ end
     id₀, id₄ = (1, 0), (1, 4)
     id₁, id₂, id₃ = (1, 1), (1, 2), (1, 3)
     vs = SimpleVectorSpace(id₁, id₂, id₃)
-    @test vs == deepcopy(vs)
-    @test isequal(vs, deepcopy(vs))
+    @test vs==deepcopy(vs) && isequal(vs, deepcopy(vs))
     @test axes(vs) == (Base.OneTo(3),)
     @test vs|>size == (3,)
     @test vs|>length == 3
     @test IndexStyle(vs) == IndexLinear()
     @test vs|>collect == [id₁, id₂, id₃]
     @test vs[1]==id₁ && vs[2]==id₂ && vs[3]==id₃
+    @test vs[1:3] == [id₁, id₂, id₃]
     @test searchsortedfirst(vs, id₀)==1 && searchsortedfirst(vs, id₄)==4
     @test searchsortedfirst(vs, id₁)==1 && searchsortedfirst(vs, id₂)==2 && searchsortedfirst(vs, id₃)==3
     @test (id₀∉vs) && (id₄∉vs)
@@ -449,6 +449,9 @@ end
     c = DirectSummedVectorSpace(a, b)
     @test length(c) == 5
     @test c[1]==1 && c[2]==2 && c[3]==3 && c[4]==(3, 7) && c[5]==(4, 7)
+    for (i, index) in enumerate(DirectSummedIndices((eachindex(a), eachindex(b))))
+        @test Int(index, c) == Int(CartesianIndex(index[1], index[2]), c) == i
+    end
 end
 
 @testset "VectorSpaceDirectProducted" begin
@@ -463,6 +466,9 @@ end
         @test forward[i] ∈ forward
         @test searchsortedfirst(forward, forward[i]) == i
     end
+    for (i, index) in enumerate(DirectProductedIndices{:forward}(shape(forward)))
+        @test Int(index, forward) == i
+    end
 
     backward = DirectProductedVectorSpace{:backward}(a, b)
     @test shape(backward) == (Base.OneTo(2), Base.OneTo(2))
@@ -472,6 +478,9 @@ end
         @test backward[i] ∈ backward
         @test searchsortedfirst(backward, backward[i]) == i
     end
+    for (i, index) in enumerate(DirectProductedIndices{:backward}(shape(backward)))
+        @test Int(index, backward) == i
+    end
 end
 
 @testset "VectorSpaceZipped" begin
@@ -480,4 +489,7 @@ end
     c = ZippedVectorSpace(a, b)
     @test length(c) == 3
     @test collect(c) == [(1, 4), (2, 5), (3, 6)]
+    for i = 1:length(c)
+        @test Int(CartesianIndex(i, i), c) == i
+    end
 end

@@ -291,6 +291,7 @@ end
     @test period(bz, 1)==period(typeof(bz), 1)==2 && period(bz, 2)==period(typeof(bz), 2)==4
     @test collect(bz) == [[0.0, 0.0], [0.0, 0.75], [0.0, 1.5], [0.0, 2.25], [1.0, 0.0], [1.0, 0.75], [1.0, 1.5], [1.0, 2.25]]
     @test [convert(CartesianIndex, momentum, bz) for momentum in collect(bz)] == CartesianIndex.([(0, 0), (0, 1), (0, 2), (0, 3), (1, 0), (1, 1), (1, 2), (1, 3)])
+    @test [Int(index, bz) for index in CartesianIndex.([(2, 4), (0, 1), (0, 2), (0, 3), (1, 0), (1, 1), (1, 2), (1, 3)])] == 1:length(bz)
     @test range(bz, 1)==range(0.0, 0.5, 2)
     @test range(bz, 2)==range(0.0, 0.75, 4)
     @test volume(bz) == 6.0

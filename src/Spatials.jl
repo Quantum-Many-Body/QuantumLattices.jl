@@ -8,7 +8,7 @@ using Printf: @printf, @sprintf
 using RecipesBase: RecipesBase, @recipe, @series, @layout
 using StaticArrays: MVector, SVector
 using ..QuantumLattices: OneAtLeast, OneOrMore
-using ..Toolkit: atol, rtol, efficientoperations, CompositeDict, DirectProductedVectorSpace, Float, Segment, VectorSpace, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceEnumerative, VectorSpaceStyle, concatenate, getcontent, subscript
+using ..Toolkit: atol, rtol, efficientoperations, CompositeDict, DirectProductedIndices, DirectProductedVectorSpace, Float, Segment, VectorSpace, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceEnumerative, VectorSpaceStyle, concatenate, getcontent, subscript
 
 import ..QuantumLattices: decompose, dimension, expand, kind, matrix, rank, shape
 import ..QuantumOperators: scalartype
@@ -1054,6 +1054,10 @@ function Base.convert(::Type{<:CartesianIndex}, momentum::AbstractVector{<:Numbe
     @assert all(j->isapprox(is[j], ks[j]; atol=atol, rtol=rtol), eachindex(is, ks)) "convert error: input momentum not on grid."
     return CartesianIndex(is)
 end
+@inline function Int(index::CartesianIndex, brillouinzone::BrillouinZone)
+    index = CartesianIndex(map(mod, index.I, periods(brillouinzone)))
+    return Int(VectorSpaceStyle(brillouinzone), index, brillouinzone)
+end
 
 """
     BrillouinZone(reciprocals::AbstractVector{<:AbstractVector{<:Number}}, nk)
@@ -1246,7 +1250,7 @@ end
 Shrink a reciprocal zone.
 """
 function shrink(reciprocalzone::ReciprocalZone, ranges::OrdinalRange{<:Integer}...)
-    @assert length(ranges)==rank(reciprocalzone.reciprocals) "shrink error: mismatched number of ranges and reciprocals."
+    @assert length(ranges)==rank(reciprocalzone) "shrink error: mismatched number of ranges and reciprocals."
     return ReciprocalZone{label(reciprocalzone)}(reciprocalzone.reciprocals, ntuple(i->reciprocalzone.bounds[i][ranges[i]], Val(rank(reciprocalzone))))
 end
 
