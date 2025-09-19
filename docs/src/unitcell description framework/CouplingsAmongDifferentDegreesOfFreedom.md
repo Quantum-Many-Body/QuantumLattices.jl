@@ -4,6 +4,7 @@ DocTestFilters = [r"im +[-\+]0\.0[-\+]"]
 DocTestSetup = quote
     push!(LOAD_PATH, "../../../src/")
     using QuantumLattices
+    using SparseArrays: SparseMatrixCSC
     using SymPy: symbols
 end
 ```
@@ -290,7 +291,7 @@ is designed to represent the coupling patterns in such cases. Here, in construct
 
 The following codes construct the coupling pattern of the above spin-dependent hopping example:
 ```jldoctest
-julia> mc = MatrixCoupling(𝕕, :, :, σ"z", :);
+julia> mc = MatrixCoupling(𝕕, :, :, σᶻ, :);
 
 julia> length(mc)
 2
@@ -301,24 +302,24 @@ julia> mc[1]
 julia> mc[2]
 - ∑[𝕕(:, :, -1//2, :) 𝕕(:, :, -1//2, :)]
 
-julia> mc == 𝕕⁺𝕕(:, :, σ"z", :)
+julia> mc == 𝕕⁺𝕕(:, :, σᶻ, :)
 true
 ```
-Here, [`@σ_str`](@ref) is a string literal that returns the generalized Pauli matrices:
+Here, `σᶻ` is a constant of one of the following Pauli matrices:
 ```julia
-σ"0" => SparseMatrixCSC([1 0; 0 1])
-σ"x" => SparseMatrixCSC([0 1; 1 0])
-σ"y" => SparseMatrixCSC([0 -1im; 1im 0])
-σ"z" => SparseMatrixCSC([1 0; 0 -1])
-σ"+" => SparseMatrixCSC([0 1; 0 0])
-σ"-" => SparseMatrixCSC([0 0; 1 0])
-σ"11" => SparseMatrixCSC([1 0; 0 0])
-σ"22" => SparseMatrixCSC([0 0; 0 1])
+const σ⁰ = SparseMatrixCSC([1 0; 0 1])
+const σˣ = SparseMatrixCSC([0 1; 1 0])
+const σʸ = SparseMatrixCSC([0 -1im; 1im 0])
+const σᶻ = SparseMatrixCSC([1 0; 0 -1])
+const σ⁺ = SparseMatrixCSC([0 1; 0 0])
+const σ⁻ = SparseMatrixCSC([0 0; 1 0])
+const σ¹¹ = SparseMatrixCSC([1 0; 0 0])
+const σ²² = SparseMatrixCSC([0 0; 0 1])
 ```
 
 The coupling pattern of the [Heisenberg term](https://en.wikipedia.org/wiki/Quantum_Heisenberg_model) $J\sum_{⟨ij⟩}S^x_iS^x_j+S^y_iS^y_j+S^z_iS^z_j$ can be constructed as follows:
 ```jldoctest
-julia> mc = MatrixCoupling(𝕊, :, Heisenberg"");
+julia> mc = MatrixCoupling(𝕊, :, SparseMatrixCSC([1 0 0; 0 1 0; 0 0 1]));
 
 julia> length(mc)
 3
@@ -332,46 +333,42 @@ julia> mc[2]
 julia> mc[3]
 𝕊(:, 'z') 𝕊(:, 'z')
 
-julia> mc == 𝕊ᵀ𝕊(:, Heisenberg"")
+julia> mc == 𝕊ᵀ𝕊(:, SparseMatrixCSC([1 0 0; 0 1 0; 0 0 1]))
 true
 ```
-where [`@Heisenberg_str`](@ref) is a string literal that helps to specify common spin terms.
 
-Here lists all the predefined string literals that are helpful to local spin systems:
+Here lists all the predefined spin coupling matrices:
 ```julia
-# Heisenberg term
-Heisenberg"" => SparseMatrixCSC([1 0 0; 0 1 0; 0 0 1])
+# Ising matrices
+const Isingˣ = SparseMatrixCSC([1 0 0; 0 0 0; 0 0 0])
+const Isingʸ = SparseMatrixCSC([0 0 0; 0 1 0; 0 0 0])
+const Isingᶻ = SparseMatrixCSC([0 0 0; 0 0 0; 0 0 1])
 
-# Ising terms
-Ising"x" => SparseMatrixCSC([1 0 0; 0 0 0; 0 0 0])
-Ising"y" => SparseMatrixCSC([0 0 0; 0 1 0; 0 0 0])
-Ising"z" => SparseMatrixCSC([0 0 0; 0 0 0; 0 0 1])
+# Γ matrices
+const Γˣ = SparseMatrixCSC([0 0 0; 0 0 1; 0 1 0])
+const Γʸ = SparseMatrixCSC([0 0 1; 0 0 0; 1 0 0])
+const Γᶻ = SparseMatrixCSC([0 1 0; 1 0 0; 0 0 0])
 
-# Γ terms
-Γ"x" => SparseMatrixCSC([0 0 0; 0 0 1; 0 1 0])
-Γ"y" => SparseMatrixCSC([0 0 1; 0 0 0; 1 0 0])
-Γ"z" => SparseMatrixCSC([0 1 0; 1 0 0; 0 0 0])
+# Γ′ matrices
+const Γ′ˣ = SparseMatrixCSC([0 1 1; 1 0 0; 1 0 0])
+const Γ′ʸ = SparseMatrixCSC([0 1 0; 1 0 1; 0 1 0])
+const Γ′ᶻ = SparseMatrixCSC([0 0 1; 0 0 1; 1 1 0])
 
-# Γ′ terms
-Γ′"x" => SparseMatrixCSC([0 1 1; 1 0 0; 1 0 0])
-Γ′"y" => SparseMatrixCSC([0 1 0; 1 0 1; 0 1 0])
-Γ′"z" => SparseMatrixCSC([0 0 1; 0 0 1; 1 1 0])
-
-# Dzyaloshinskii–Moriya terms
-DM"x" => SparseMatrixCSC([0 0 0; 0 0 1; 0 -1 0])
-DM"y" => SparseMatrixCSC([0 0 -1; 0 0 0; 1 0 0])
-DM"z" => SparseMatrixCSC([0 1 0; -1 0 0; 0 0 0])
+# Dzyaloshinskii–Moriya matrices
+const DMˣ = SparseMatrixCSC([0 0 0; 0 0 1; 0 -1 0])
+const DMʸ = SparseMatrixCSC([0 0 -1; 0 0 0; 1 0 0])
+const DMᶻ = SparseMatrixCSC([0 1 0; -1 0 0; 0 0 0])
 ```
 
 [`MatrixCoupling`](@ref)s can be producted or summed.
 
 For one example, for the nearest-neighbor spin exchange interactions of itinerant fermions $J\sum_{⟨ij⟩}c^†_i\vec{σ}_ic_i ⋅ c^†_j\vec{σ}_jc_j$ where $\vec{σ}_i=(σ^x_i, σ^y_i, σ^z_i)^T$ acts on the local spin space at site $i$, the coupling pattern can be constructed as follows:
 ```jldoctest
-julia> mc₁ = 𝕕⁺𝕕(:, :, σ"+", :);
+julia> mc₁ = 𝕕⁺𝕕(:, :, σ⁺, :);
 
-julia> mc₂ = 𝕕⁺𝕕(:, :, σ"-", :);
+julia> mc₂ = 𝕕⁺𝕕(:, :, σ⁻, :);
 
-julia> mc₃ = 𝕕⁺𝕕(:, :, σ"z", :);
+julia> mc₃ = 𝕕⁺𝕕(:, :, σᶻ, :);
 
 julia> coupling = 1//2*mc₁*mc₂ + 1//2*mc₂*mc₁ + mc₃*mc₃;
 
@@ -387,11 +384,11 @@ julia> collect(coupling)
 
 For another example, for the onsite spin-orbital coupling of the $(d_{yz}, d_{xz}, d_{xy})^T$ $t_2g$ orbitals $\lambda\sum_i c^\dagger_i \vec{L}_i\cdot\vec{σ}_i c_i$ where $\vec{L}_i=(L^x_i, L^y_i, L^z_i)^T$ acts on the local orbital space and $\vec{σ}_i=(σ^x_i, σ^y_i, σ^z_i)^T$ acts on the local spin space, the coupling pattern can be constructed as follows:
 ```jldoctest
-julia> mc₁ = 𝕕⁺𝕕(:, L"x", σ"x", :);
+julia> mc₁ = 𝕕⁺𝕕(:, Lˣ, σˣ, :);
 
-julia> mc₂ = 𝕕⁺𝕕(:, L"y", σ"y", :);
+julia> mc₂ = 𝕕⁺𝕕(:, Lʸ, σʸ, :);
 
-julia> mc₃ = 𝕕⁺𝕕(:, L"z", σ"z", :);
+julia> mc₃ = 𝕕⁺𝕕(:, Lᶻ, σᶻ, :);
 
 julia> coupling = mc₁ + mc₂ + mc₃;
 

@@ -15,11 +15,12 @@ import ..QuantumLattices: expand, expand!, kind, permute, shape
 import ..QuantumOperators: latexname, matrix, script
 
 # Canonical complex fermionic/bosonic systems
-export annihilation, creation, latexofbosons, latexoffermions, latexofparticles, 𝕒, 𝕒⁺𝕒, 𝕓, 𝕓⁺𝕓, 𝕔, 𝕔⁺𝕔, 𝕕, 𝕕⁺𝕕, 𝕗, 𝕗⁺𝕗, isannihilation, iscreation, isnormalordered, @σ_str, @L_str
+export σ⁰, σˣ, σʸ, σᶻ, σ⁺, σ⁻, σ¹¹, σ²², annihilation, creation, latexofbosons, latexoffermions, latexofparticles, Lˣ, Lʸ, Lᶻ
+export 𝕒, 𝕒⁺𝕒, 𝕓, 𝕓⁺𝕓, 𝕔, 𝕔⁺𝕔, 𝕕, 𝕕⁺𝕕, 𝕗, 𝕗⁺𝕗, isannihilation, iscreation, isnormalordered
 export Coulomb, Fock, FockIndex, FockTerm, Hopping, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, Onsite, PairHopping, Pairing, SpinFlip
 
 # SU(2) spin systems
-export latexofspins, 𝕊, 𝕊ᵀ𝕊, SpinIndex, Spin, totalspin, @Γ_str, @Γ′_str, @DM_str, @Heisenberg_str, @Ising_str
+export Γˣ, Γʸ, Γᶻ, Γ′ˣ, Γ′ʸ, Γ′ᶻ, DMˣ, DMʸ, DMᶻ, Isingˣ, Isingʸ, Isingᶻ, latexofspins, 𝕊, 𝕊ᵀ𝕊, SpinIndex, Spin, totalspin
 export DM, Heisenberg, Ising, Kitaev, SingleIonAnisotropy, SpinTerm, Zeeman, Γ, Γ′
 
 # Phononic systems
@@ -379,43 +380,37 @@ const 𝕒⁺𝕒 = 𝕓⁺𝕓
 
 ### Pauli matrices
 """
-    σ"0" => SparseMatrixCSC([1 0; 0 1])
-    σ"x" => SparseMatrixCSC([0 1; 1 0])
-    σ"y" => SparseMatrixCSC([0 -1im; 1im 0])
-    σ"z" => SparseMatrixCSC([1 0; 0 -1])
-    σ"+" => SparseMatrixCSC([0 1; 0 0])
-    σ"-" => SparseMatrixCSC([0 0; 1 0])
-    σ"11" => SparseMatrixCSC([1 0; 0 0])
-    σ"22" => SparseMatrixCSC([0 0; 0 1])
+    const σ⁰ = SparseMatrixCSC([1 0; 0 1])
+    const σˣ = SparseMatrixCSC([0 1; 1 0])
+    const σʸ = SparseMatrixCSC([0 -1im; 1im 0])
+    const σᶻ = SparseMatrixCSC([1 0; 0 -1])
+    const σ⁺ = SparseMatrixCSC([0 1; 0 0])
+    const σ⁻ = SparseMatrixCSC([0 0; 1 0])
+    const σ¹¹ = SparseMatrixCSC([1 0; 0 0])
+    const σ²² = SparseMatrixCSC([0 0; 0 1])
 
-Pauli matrix σ⁰, σˣ, σʸ, σᶻ, σ⁺, σ⁻, σ¹¹, σ²².
+Pauli matrices σ⁰, σˣ, σʸ, σᶻ, σ⁺, σ⁻, σ¹¹ and σ²².
 """
-macro σ_str(str::String)
-    str=="0" && return SparseMatrixCSC([1 0; 0 1])
-    str=="x" && return SparseMatrixCSC([0 1; 1 0])
-    str=="y" && return SparseMatrixCSC([0 -1im; 1im 0])
-    str=="z" && return SparseMatrixCSC([1 0; 0 -1])
-    str=="+" && return SparseMatrixCSC([0 1; 0 0])
-    str=="-" && return SparseMatrixCSC([0 0; 1 0])
-    str=="11" && return SparseMatrixCSC([1 0; 0 0])
-    str=="22" && return SparseMatrixCSC([0 0; 0 1])
-    error("@σ_str error: wrong input string.")
-end
+const σ⁰ = SparseMatrixCSC([1 0; 0 1])
+const σˣ = SparseMatrixCSC([0 1; 1 0])
+const σʸ = SparseMatrixCSC([0 -1im; 1im 0])
+const σᶻ = SparseMatrixCSC([1 0; 0 -1])
+const σ⁺ = SparseMatrixCSC([0 1; 0 0])
+const σ⁻ = SparseMatrixCSC([0 0; 1 0])
+const σ¹¹ = SparseMatrixCSC([1 0; 0 0])
+const σ²² = SparseMatrixCSC([0 0; 0 1])
 
 ### Rotation matrices
 """
-    L"x" => SparseMatrixCSC([0 0 0; 0 0 1im; 0 -1im 0])
-    L"y" => SparseMatrixCSC([0 0 -1im; 0 0 0; 1im 0 0])
-    L"z" => SparseMatrixCSC([0 1im 0; -1im 0 0; 0 0 0])
+    const Lˣ = SparseMatrixCSC([0 0 0; 0 0 1im; 0 -1im 0])
+    const Lʸ = SparseMatrixCSC([0 0 -1im; 0 0 0; 1im 0 0])
+    const Lᶻ = SparseMatrixCSC([0 1im 0; -1im 0 0; 0 0 0])
 
-Three-dimensional rotation generators.
+Three-dimensional rotation generators Lˣ, Lʸ and Lᶻ.
 """
-macro L_str(str::String)
-    str=="x" && return SparseMatrixCSC([0 0 0; 0 0 1im; 0 -1im 0])
-    str=="y" && return SparseMatrixCSC([0 0 -1im; 0 0 0; 1im 0 0])
-    str=="z" && return SparseMatrixCSC([0 1im 0; -1im 0 0; 0 0 0])
-    error("@L_str error: wrong input string.")
-end
+const Lˣ = SparseMatrixCSC([0 0 0; 0 0 1im; 0 -1im 0])
+const Lʸ = SparseMatrixCSC([0 0 -1im; 0 0 0; 1im 0 0])
+const Lᶻ = SparseMatrixCSC([0 1im 0; -1im 0 0; 0 0 0])
 
 ## Term
 """
@@ -780,70 +775,48 @@ Construct a matrix coupling for spin system.
 
 ### Spin coupling matrix
 """
-    Heisenberg"" => SparseMatrixCSC([1 0 0; 0 1 0; 0 0 1])
+    const Isingˣ = SparseMatrixCSC([1 0 0; 0 0 0; 0 0 0])
+    const Isingʸ = SparseMatrixCSC([0 0 0; 0 1 0; 0 0 0])
+    const Isingᶻ = SparseMatrixCSC([0 0 0; 0 0 0; 0 0 1])
 
-Heisenberg coupling matrix.
+Ising coupling matrices Isingˣ, Isingʸ and Isingᶻ.
 """
-macro Heisenberg_str(str::String)
-    str=="" && return SparseMatrixCSC([1 0 0; 0 1 0; 0 0 1])
-    error("@Heisenberg_str error: wrong input string.")
-end
-
-"""
-    Ising"x" => SparseMatrixCSC([1 0 0; 0 0 0; 0 0 0])
-    Ising"y" => SparseMatrixCSC([0 0 0; 0 1 0; 0 0 0])
-    Ising"z" => SparseMatrixCSC([0 0 0; 0 0 0; 0 0 1])
-
-Ising coupling matrix.
-"""
-macro Ising_str(str::String)
-    str=="x" && return SparseMatrixCSC([1 0 0; 0 0 0; 0 0 0])
-    str=="y" && return SparseMatrixCSC([0 0 0; 0 1 0; 0 0 0])
-    str=="z" && return SparseMatrixCSC([0 0 0; 0 0 0; 0 0 1])
-    error("@Ising_str error: wrong input string.")
-end
+const Isingˣ = SparseMatrixCSC([1 0 0; 0 0 0; 0 0 0])
+const Isingʸ = SparseMatrixCSC([0 0 0; 0 1 0; 0 0 0])
+const Isingᶻ = SparseMatrixCSC([0 0 0; 0 0 0; 0 0 1])
 
 """
-    Γ"x" => SparseMatrixCSC([0 0 0; 0 0 1; 0 1 0])
-    Γ"y" => SparseMatrixCSC([0 0 1; 0 0 0; 1 0 0])
-    Γ"z" => SparseMatrixCSC([0 1 0; 1 0 0; 0 0 0])
+    const Γˣ = SparseMatrixCSC([0 0 0; 0 0 1; 0 1 0])
+    const Γʸ = SparseMatrixCSC([0 0 1; 0 0 0; 1 0 0])
+    const Γᶻ = SparseMatrixCSC([0 1 0; 1 0 0; 0 0 0])
 
-Γ coupling matrix.
+Γ coupling matrices Γˣ, Γʸ and Γᶻ.
 """
-macro Γ_str(str::String)
-    str=="x" && return SparseMatrixCSC([0 0 0; 0 0 1; 0 1 0])
-    str=="y" && return SparseMatrixCSC([0 0 1; 0 0 0; 1 0 0])
-    str=="z" && return SparseMatrixCSC([0 1 0; 1 0 0; 0 0 0])
-    error("@Γ_str error: wrong input string.")
-end
+const Γˣ = SparseMatrixCSC([0 0 0; 0 0 1; 0 1 0])
+const Γʸ = SparseMatrixCSC([0 0 1; 0 0 0; 1 0 0])
+const Γᶻ = SparseMatrixCSC([0 1 0; 1 0 0; 0 0 0])
 
 """
-    Γ′"x" => SparseMatrixCSC([0 1 1; 1 0 0; 1 0 0])
-    Γ′"y" => SparseMatrixCSC([0 1 0; 1 0 1; 0 1 0])
-    Γ′"z" => SparseMatrixCSC([0 0 1; 0 0 1; 1 1 0])
+    const Γ′ˣ = SparseMatrixCSC([0 1 1; 1 0 0; 1 0 0])
+    const Γ′ʸ = SparseMatrixCSC([0 1 0; 1 0 1; 0 1 0])
+    const Γ′ᶻ = SparseMatrixCSC([0 0 1; 0 0 1; 1 1 0])
 
-Γ′ coupling matrix.
+Γ′ coupling matrices Γ′ˣ, Γ′ʸ and Γ′ᶻ.
 """
-macro Γ′_str(str::String)
-    str=="x" && return SparseMatrixCSC([0 1 1; 1 0 0; 1 0 0])
-    str=="y" && return SparseMatrixCSC([0 1 0; 1 0 1; 0 1 0])
-    str=="z" && return SparseMatrixCSC([0 0 1; 0 0 1; 1 1 0])
-    error("@Γ′_str error: wrong input string.")
-end
+const Γ′ˣ = SparseMatrixCSC([0 1 1; 1 0 0; 1 0 0])
+const Γ′ʸ = SparseMatrixCSC([0 1 0; 1 0 1; 0 1 0])
+const Γ′ᶻ = SparseMatrixCSC([0 0 1; 0 0 1; 1 1 0])
 
 """
-    DM"x" => SparseMatrixCSC([0 0 0; 0 0 1; 0 -1 0])
-    DM"y" => SparseMatrixCSC([0 0 -1; 0 0 0; 1 0 0])
-    DM"z" => SparseMatrixCSC([0 1 0; -1 0 0; 0 0 0])
+    const DMˣ = SparseMatrixCSC([0 0 0; 0 0 1; 0 -1 0])
+    const DMʸ = SparseMatrixCSC([0 0 -1; 0 0 0; 1 0 0])
+    const DMᶻ = SparseMatrixCSC([0 1 0; -1 0 0; 0 0 0])
 
-DM coupling matrix.
+DM coupling matrices DMˣ, DMʸ and DMᶻ.
 """
-macro DM_str(str::String)
-    str=="x" && return SparseMatrixCSC([0 0 0; 0 0 1; 0 -1 0])
-    str=="y" && return SparseMatrixCSC([0 0 -1; 0 0 0; 1 0 0])
-    str=="z" && return SparseMatrixCSC([0 1 0; -1 0 0; 0 0 0])
-    error("@DM_str error: wrong input string.")
-end
+const DMˣ = SparseMatrixCSC([0 0 0; 0 0 1; 0 -1 0])
+const DMʸ = SparseMatrixCSC([0 0 -1; 0 0 0; 1 0 0])
+const DMᶻ = SparseMatrixCSC([0 1 0; -1 0 0; 0 0 0])
 
 ## Term
 """
@@ -981,9 +954,9 @@ function Kitaev(
     dirs = (x=direction.(x, unit), y=direction.(y, unit), z=direction.(z, unit))
     function kitaev(bond::Bond)
         coordinate = rcoordinate(bond)
-        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.x) && return 𝕊ᵀ𝕊(:, Ising"x")
-        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.y) && return 𝕊ᵀ𝕊(:, Ising"y")
-        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.z) && return 𝕊ᵀ𝕊(:, Ising"z")
+        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.x) && return 𝕊ᵀ𝕊(:, Isingˣ)
+        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.y) && return 𝕊ᵀ𝕊(:, Isingʸ)
+        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.z) && return 𝕊ᵀ𝕊(:, Isingᶻ)
         error("Kitaev error: wrong bond.")
     end
     return Term{:Kitaev}(id, value, bondkind, kitaev, true; amplitude=amplitude, ismodulatable=ismodulatable)
@@ -1022,9 +995,9 @@ function Γ(
     dirs = (x=direction.(x, unit), y=direction.(y, unit), z=direction.(z, unit))
     function γ(bond::Bond)
         coordinate = rcoordinate(bond)
-        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.x) && return 𝕊ᵀ𝕊(:, Γ"x")
-        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.y) && return 𝕊ᵀ𝕊(:, Γ"y")
-        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.z) && return 𝕊ᵀ𝕊(:, Γ"z")
+        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.x) && return 𝕊ᵀ𝕊(:, Γˣ)
+        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.y) && return 𝕊ᵀ𝕊(:, Γʸ)
+        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.z) && return 𝕊ᵀ𝕊(:, Γᶻ)
         error("Γ error: wrong bond.")
     end
     return Term{:Γ}(id, value, bondkind, γ, true; amplitude=amplitude, ismodulatable=ismodulatable)
@@ -1063,9 +1036,9 @@ function Γ′(
     dirs = (x=direction.(x, unit), y=direction.(y, unit), z=direction.(z, unit))
     function γ′(bond::Bond)
         coordinate = rcoordinate(bond)
-        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.x) && return 𝕊ᵀ𝕊(:, Γ′"x")
-        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.y) && return 𝕊ᵀ𝕊(:, Γ′"y")
-        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.z) && return 𝕊ᵀ𝕊(:, Γ′"z")
+        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.x) && return 𝕊ᵀ𝕊(:, Γ′ˣ)
+        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.y) && return 𝕊ᵀ𝕊(:, Γ′ʸ)
+        any(v->abs(isparallel(v, coordinate; atol=atol, rtol=rtol))==1, dirs.z) && return 𝕊ᵀ𝕊(:, Γ′ᶻ)
         error("Γ′ error: wrong bond.")
     end
     return Term{:Γ′}(id, value, bondkind, γ′, true; amplitude=amplitude, ismodulatable=ismodulatable)
@@ -1110,7 +1083,7 @@ function DM(
         for pair in dirs
             for v in pair.first
                 parallel = isparallel(v, coordinate; atol=atol, rtol=rtol)
-                abs(parallel)==1 && return 𝕊ᵀ𝕊(:, parallel*(pair.second[1]*DM"x"+pair.second[2]*DM"y"+pair.second[3]*DM"z"))
+                abs(parallel)==1 && return 𝕊ᵀ𝕊(:, parallel*(pair.second[1]*DMˣ + pair.second[2]*DMʸ + pair.second[3]*DMᶻ))
             end
         end
         error("dm error: wrong bond.")

@@ -150,12 +150,12 @@ end
 
 @testset "Fock Coupling" begin
     @test collect(MatrixCoupling(:, FockIndex, :, :, :)) == collect(MatrixCoupling(𝕕, :, :, :, :)) == collect(𝕕⁺𝕕(:, :, :, :)) == [Coupling(𝕕(:, :, :, :), 𝕕(:, :, :, :))]
-    @test collect(MatrixCoupling(:, FockIndex{:}, σ"+", σ"-", :)) == [Coupling(𝕕(:, 1, -1//2, :), 𝕕(:, 2, 1//2, :))]
-    @test collect(MatrixCoupling((1ˢᵗ, 2ⁿᵈ), FockIndex{:f}, :, σ"y", σ"z")) == collect(MatrixCoupling(𝕔, (1ˢᵗ, 2ⁿᵈ), :, σ"y", σ"z")) == collect(𝕔⁺𝕔((1ˢᵗ, 2ⁿᵈ), :, σ"y", σ"z")) == [
+    @test collect(MatrixCoupling(:, FockIndex{:}, σ⁺, σ⁻, :)) == [Coupling(𝕕(:, 1, -1//2, :), 𝕕(:, 2, 1//2, :))]
+    @test collect(MatrixCoupling((1ˢᵗ, 2ⁿᵈ), FockIndex{:f}, :, σʸ, σᶻ)) == collect(MatrixCoupling(𝕔, (1ˢᵗ, 2ⁿᵈ), :, σʸ, σᶻ)) == collect(𝕔⁺𝕔((1ˢᵗ, 2ⁿᵈ), :, σʸ, σᶻ)) == [
         Coupling(+1im, 𝕔(1ˢᵗ, :, -1//2, 1), 𝕔(2ⁿᵈ, :, 1//2, 2)), Coupling(-1im, 𝕔(1ˢᵗ, :, 1//2, 1), 𝕔(2ⁿᵈ, :, -1//2, 2)),
         Coupling(-1im, 𝕔(1ˢᵗ, :, -1//2, 2), 𝕔(2ⁿᵈ, :, 1//2, 1)), Coupling(+1im, 𝕔(1ˢᵗ, :, 1//2, 2), 𝕔(2ⁿᵈ, :, -1//2, 1))
     ]
-    @test collect(MatrixCoupling((1ˢᵗ, 2ⁿᵈ), FockIndex{:b}, σ"x", :, σ"0")) == collect(MatrixCoupling(𝕓, (1ˢᵗ, 2ⁿᵈ), σ"x", :, σ"0")) == collect(𝕓⁺𝕓((1ˢᵗ, 2ⁿᵈ), σ"x", :, σ"0")) == [
+    @test collect(MatrixCoupling((1ˢᵗ, 2ⁿᵈ), FockIndex{:b}, σˣ, :, σ⁰)) == collect(MatrixCoupling(𝕓, (1ˢᵗ, 2ⁿᵈ), σˣ, :, σ⁰)) == collect(𝕓⁺𝕓((1ˢᵗ, 2ⁿᵈ), σˣ, :, σ⁰)) == [
         Coupling(𝕓(1ˢᵗ, 2, :, 1), 𝕓(2ⁿᵈ, 1, :, 2)), Coupling(𝕓(1ˢᵗ, 1, :, 1), 𝕓(2ⁿᵈ, 2, :, 2)),
         Coupling(𝕓(1ˢᵗ, 2, :, 2), 𝕓(2ⁿᵈ, 1, :, 1)), Coupling(𝕓(1ˢᵗ, 1, :, 2), 𝕓(2ⁿᵈ, 2, :, 1))
     ]
@@ -201,29 +201,12 @@ end
     ]
 end
 
-@testset "σ" begin
-    @test σ"0" == SparseMatrixCSC([1 0; 0 1])
-    @test σ"x" == SparseMatrixCSC([0 1; 1 0])
-    @test σ"y" == SparseMatrixCSC([0 -1im; 1im 0])
-    @test σ"z" == SparseMatrixCSC([1 0; 0 -1])
-    @test σ"+" == SparseMatrixCSC([0 1; 0 0])
-    @test σ"-" == SparseMatrixCSC([0 0; 1 0])
-    @test σ"11" == SparseMatrixCSC([1 0; 0 0])
-    @test σ"22" == SparseMatrixCSC([0 0; 0 1])
-end
-
-@testset "L" begin
-    @test L"x" == SparseMatrixCSC([0 0 0; 0 0 1im; 0 -1im 0])
-    @test L"y" == SparseMatrixCSC([0 0 -1im; 0 0 0; 1im 0 0])
-    @test L"z" == SparseMatrixCSC([0 1im 0; -1im 0 0; 0 0 0])
-end
-
 @testset "Onsite" begin
     point = Point(1, (0.5, 0.5), (0.0, 0.0))
     bond = Bond(point)
     hilbert = Hilbert(point.site=>Fock{:f}(2, 2))
 
-    term = Onsite(:mu, 1.5, 𝕕⁺𝕕(:, σ"z", σ"x", :))
+    term = Onsite(:mu, 1.5, 𝕕⁺𝕕(:, σᶻ, σˣ, :))
     operators = Operators(
         Operator(-0.75, 𝕔(1, 2, +1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 2, -1//2, 1, [0.5, 0.5], [0.0, 0.0])),
         Operator(+0.75, 𝕔(1, 1, -1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, +1//2, 1, [0.5, 0.5], [0.0, 0.0])),
@@ -233,7 +216,7 @@ end
     @test expand(term, bond, hilbert, half=true) == operators
     @test expand(term, bond, hilbert, half=false) == operators*2
 
-    term = Onsite(:mu, 1.5, 𝕕⁺𝕕(:, σ"z", σ"z", :))
+    term = Onsite(:mu, 1.5, 𝕕⁺𝕕(:, σᶻ, σᶻ, :))
     operators = Operators(
         Operator(+0.75, 𝕔(1, 2, -1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 2, -1//2, 1, [0.5, 0.5], [0.0, 0.0])),
         Operator(+0.75, 𝕔(1, 1, +1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, +1//2, 1, [0.5, 0.5], [0.0, 0.0])),
@@ -347,7 +330,7 @@ end
     bond = Bond(1, Point(2, (0.0, 0.0), (0.0, 0.0)), Point(1, (0.5, 0.5), (0.0, 0.0)))
     hilbert = Hilbert(site=>Fock{:f}(1, 2) for site=1:2)
 
-    term = Coulomb(:V, 2.5, 1, 𝕕⁺𝕕(:, :, σ"z", :)^2)
+    term = Coulomb(:V, 2.5, 1, 𝕕⁺𝕕(:, :, σᶻ, :)^2)
     operators = Operators(
         Operator(-1.25, 𝕔(2, 1, -1//2, 2, [0.0, 0.0], [0.0, 0.0]), 𝕔(2, 1, -1//2, 1, [0.0, 0.0], [0.0, 0.0]), 𝕔(1, 1, +1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, +1//2, 1, [0.5, 0.5], [0.0, 0.0])),
         Operator(+1.25, 𝕔(2, 1, -1//2, 2, [0.0, 0.0], [0.0, 0.0]), 𝕔(2, 1, -1//2, 1, [0.0, 0.0], [0.0, 0.0]), 𝕔(1, 1, -1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, -1//2, 1, [0.5, 0.5], [0.0, 0.0])),
@@ -357,7 +340,7 @@ end
     @test expand(term, bond, hilbert, half=true) == operators
     @test expand(term, bond, hilbert, half=false) == operators*2
 
-    term = Coulomb(:V, 2.5, 1, 𝕕⁺𝕕(:, :, σ"x", :)*𝕕⁺𝕕(:, :, σ"z", :))
+    term = Coulomb(:V, 2.5, 1, 𝕕⁺𝕕(:, :, σˣ, :)*𝕕⁺𝕕(:, :, σᶻ, :))
     operators = Operators(
         Operator(-1.25, 𝕔(2, 1, +1//2, 2, [0.0, 0.0], [0.0, 0.0]), 𝕔(2, 1, -1//2, 1, [0.0, 0.0], [0.0, 0.0]), 𝕔(1, 1, -1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, -1//2, 1, [0.5, 0.5], [0.0, 0.0])),
         Operator(+1.25, 𝕔(2, 1, -1//2, 2, [0.0, 0.0], [0.0, 0.0]), 𝕔(2, 1, +1//2, 1, [0.0, 0.0], [0.0, 0.0]), 𝕔(1, 1, +1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, +1//2, 1, [0.5, 0.5], [0.0, 0.0])),
@@ -481,34 +464,6 @@ end
     @test collect(ex) == [Operator(2.0, 𝕊{1}(1, '+', [0.0], [0.0]), 𝕊{1}(2, '-', [0.5], [0.0]))]
 end
 
-@testset "Heisenberg" begin
-    @test Heisenberg"" == SparseMatrixCSC([1 0 0; 0 1 0; 0 0 1])
-end
-
-@testset "Ising" begin
-    @test Ising"x" == SparseMatrixCSC([1 0 0; 0 0 0; 0 0 0])
-    @test Ising"y" == SparseMatrixCSC([0 0 0; 0 1 0; 0 0 0])
-    @test Ising"z" == SparseMatrixCSC([0 0 0; 0 0 0; 0 0 1])
-end
-
-@testset "Γ" begin
-    @test Γ"x" == SparseMatrixCSC([0 0 0; 0 0 1; 0 1 0])
-    @test Γ"y" == SparseMatrixCSC([0 0 1; 0 0 0; 1 0 0])
-    @test Γ"z" == SparseMatrixCSC([0 1 0; 1 0 0; 0 0 0])
-end
-
-@testset "Γ′" begin
-    @test Γ′"x" == SparseMatrixCSC([0 1 1; 1 0 0; 1 0 0])
-    @test Γ′"y" == SparseMatrixCSC([0 1 0; 1 0 1; 0 1 0])
-    @test Γ′"z" == SparseMatrixCSC([0 0 1; 0 0 1; 1 1 0])
-end
-
-@testset "DM" begin
-    @test DM"x" == SparseMatrixCSC([0 0 0; 0 0 1; 0 -1 0])
-    @test DM"y" == SparseMatrixCSC([0 0 -1; 0 0 0; 1 0 0])
-    @test DM"z" == SparseMatrixCSC([0 1 0; -1 0 0; 0 0 0])
-end
-
 @testset "SpinTerm" begin
     bond = Bond(Point(1, (0.5, 0.5), (0.0, 0.0)))
     hilbert = Hilbert(Spin{1//2}())
@@ -518,7 +473,7 @@ end
 
     bond = Bond(1, Point(2, (0.5, 0.5), (0.0, 0.0)), Point(1, (0.0, 0.0), (0.0, 0.0)))
     hilbert = Hilbert(site=>Spin{1//2}() for site=1:2)
-    term = SpinTerm(:J, 1.5, 1, 𝕊ᵀ𝕊(:, Heisenberg""))
+    term = SpinTerm(:J, 1.5, 1, 𝕊ᵀ𝕊(:, SparseMatrixCSC([1 0 0; 0 1 0; 0 0 1])))
     operators = Operators(
         Operator(1.5, 𝕊{1//2}(2, 'x', [0.5, 0.5], [0.0, 0.0]), 𝕊{1//2}(1, 'x', [0.0, 0.0], [0.0, 0.0])),
         Operator(1.5, 𝕊{1//2}(2, 'y', [0.5, 0.5], [0.0, 0.0]), 𝕊{1//2}(1, 'y', [0.0, 0.0], [0.0, 0.0])),
