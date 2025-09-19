@@ -160,7 +160,7 @@ MatrixCoupling(
 𝕦ᵀ𝕦(
     sites::Union{NTuple{2, Ordinal}, Colon},
     matrix::AbstractMatrix
-)</code></pre><p>is designed to represent the coupling patterns in such cases. Here, in construction functions for spin systems the <code>matrix</code> acts on the local <span>$(S^x, S^y, S^z)^T$</span> vector space, and in the construction functions for phonon systems the <code>matrix</code> acts on the local <span>$(u^x[, u^y[, u^z]])^T$</span> vector space depending on the dimension of the lattice vibrations.</p><p>The following codes construct the coupling pattern of the above spin-dependent hopping example:</p><pre><code class="language-julia-repl hljs">julia&gt; mc = MatrixCoupling(𝕕, :, :, σ&quot;z&quot;, :);
+)</code></pre><p>is designed to represent the coupling patterns in such cases. Here, in construction functions for spin systems the <code>matrix</code> acts on the local <span>$(S^x, S^y, S^z)^T$</span> vector space, and in the construction functions for phonon systems the <code>matrix</code> acts on the local <span>$(u^x[, u^y[, u^z]])^T$</span> vector space depending on the dimension of the lattice vibrations.</p><p>The following codes construct the coupling pattern of the above spin-dependent hopping example:</p><pre><code class="language-julia-repl hljs">julia&gt; mc = MatrixCoupling(𝕕, :, :, σᶻ, :);
 
 julia&gt; length(mc)
 2
@@ -171,15 +171,15 @@ julia&gt; mc[1]
 julia&gt; mc[2]
 - ∑[𝕕(:, :, -1//2, :) 𝕕(:, :, -1//2, :)]
 
-julia&gt; mc == 𝕕⁺𝕕(:, :, σ&quot;z&quot;, :)
-true</code></pre><p>Here, <a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.@σ_str-Tuple{String}"><code>@σ_str</code></a> is a string literal that returns the generalized Pauli matrices:</p><pre><code class="language-julia hljs">σ&quot;0&quot; =&gt; SparseMatrixCSC([1 0; 0 1])
-σ&quot;x&quot; =&gt; SparseMatrixCSC([0 1; 1 0])
-σ&quot;y&quot; =&gt; SparseMatrixCSC([0 -1im; 1im 0])
-σ&quot;z&quot; =&gt; SparseMatrixCSC([1 0; 0 -1])
-σ&quot;+&quot; =&gt; SparseMatrixCSC([0 1; 0 0])
-σ&quot;-&quot; =&gt; SparseMatrixCSC([0 0; 1 0])
-σ&quot;11&quot; =&gt; SparseMatrixCSC([1 0; 0 0])
-σ&quot;22&quot; =&gt; SparseMatrixCSC([0 0; 0 1])</code></pre><p>The coupling pattern of the <a href="https://en.wikipedia.org/wiki/Quantum_Heisenberg_model">Heisenberg term</a> <span>$J\sum_{⟨ij⟩}S^x_iS^x_j+S^y_iS^y_j+S^z_iS^z_j$</span> can be constructed as follows:</p><pre><code class="language-julia-repl hljs">julia&gt; mc = MatrixCoupling(𝕊, :, Heisenberg&quot;&quot;);
+julia&gt; mc == 𝕕⁺𝕕(:, :, σᶻ, :)
+true</code></pre><p>Here, <code>σᶻ</code> is a constant of one of the following Pauli matrices:</p><pre><code class="language-julia hljs">const σ⁰ = SparseMatrixCSC([1 0; 0 1])
+const σˣ = SparseMatrixCSC([0 1; 1 0])
+const σʸ = SparseMatrixCSC([0 -1im; 1im 0])
+const σᶻ = SparseMatrixCSC([1 0; 0 -1])
+const σ⁺ = SparseMatrixCSC([0 1; 0 0])
+const σ⁻ = SparseMatrixCSC([0 0; 1 0])
+const σ¹¹ = SparseMatrixCSC([1 0; 0 0])
+const σ²² = SparseMatrixCSC([0 0; 0 1])</code></pre><p>The coupling pattern of the <a href="https://en.wikipedia.org/wiki/Quantum_Heisenberg_model">Heisenberg term</a> <span>$J\sum_{⟨ij⟩}S^x_iS^x_j+S^y_iS^y_j+S^z_iS^z_j$</span> can be constructed as follows:</p><pre><code class="language-julia-repl hljs">julia&gt; mc = MatrixCoupling(𝕊, :, SparseMatrixCSC([1 0 0; 0 1 0; 0 0 1]));
 
 julia&gt; length(mc)
 3
@@ -193,33 +193,30 @@ julia&gt; mc[2]
 julia&gt; mc[3]
 𝕊(:, &#39;z&#39;) 𝕊(:, &#39;z&#39;)
 
-julia&gt; mc == 𝕊ᵀ𝕊(:, Heisenberg&quot;&quot;)
-true</code></pre><p>where <a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.@Heisenberg_str-Tuple{String}"><code>@Heisenberg_str</code></a> is a string literal that helps to specify common spin terms.</p><p>Here lists all the predefined string literals that are helpful to local spin systems:</p><pre><code class="language-julia hljs"># Heisenberg term
-Heisenberg&quot;&quot; =&gt; SparseMatrixCSC([1 0 0; 0 1 0; 0 0 1])
+julia&gt; mc == 𝕊ᵀ𝕊(:, SparseMatrixCSC([1 0 0; 0 1 0; 0 0 1]))
+true</code></pre><p>Here lists all the predefined spin coupling matrices:</p><pre><code class="language-julia hljs"># Ising matrices
+const Isingˣ = SparseMatrixCSC([1 0 0; 0 0 0; 0 0 0])
+const Isingʸ = SparseMatrixCSC([0 0 0; 0 1 0; 0 0 0])
+const Isingᶻ = SparseMatrixCSC([0 0 0; 0 0 0; 0 0 1])
 
-# Ising terms
-Ising&quot;x&quot; =&gt; SparseMatrixCSC([1 0 0; 0 0 0; 0 0 0])
-Ising&quot;y&quot; =&gt; SparseMatrixCSC([0 0 0; 0 1 0; 0 0 0])
-Ising&quot;z&quot; =&gt; SparseMatrixCSC([0 0 0; 0 0 0; 0 0 1])
+# Γ matrices
+const Γˣ = SparseMatrixCSC([0 0 0; 0 0 1; 0 1 0])
+const Γʸ = SparseMatrixCSC([0 0 1; 0 0 0; 1 0 0])
+const Γᶻ = SparseMatrixCSC([0 1 0; 1 0 0; 0 0 0])
 
-# Γ terms
-Γ&quot;x&quot; =&gt; SparseMatrixCSC([0 0 0; 0 0 1; 0 1 0])
-Γ&quot;y&quot; =&gt; SparseMatrixCSC([0 0 1; 0 0 0; 1 0 0])
-Γ&quot;z&quot; =&gt; SparseMatrixCSC([0 1 0; 1 0 0; 0 0 0])
+# Γ′ matrices
+const Γ′ˣ = SparseMatrixCSC([0 1 1; 1 0 0; 1 0 0])
+const Γ′ʸ = SparseMatrixCSC([0 1 0; 1 0 1; 0 1 0])
+const Γ′ᶻ = SparseMatrixCSC([0 0 1; 0 0 1; 1 1 0])
 
-# Γ′ terms
-Γ′&quot;x&quot; =&gt; SparseMatrixCSC([0 1 1; 1 0 0; 1 0 0])
-Γ′&quot;y&quot; =&gt; SparseMatrixCSC([0 1 0; 1 0 1; 0 1 0])
-Γ′&quot;z&quot; =&gt; SparseMatrixCSC([0 0 1; 0 0 1; 1 1 0])
+# Dzyaloshinskii–Moriya matrices
+const DMˣ = SparseMatrixCSC([0 0 0; 0 0 1; 0 -1 0])
+const DMʸ = SparseMatrixCSC([0 0 -1; 0 0 0; 1 0 0])
+const DMᶻ = SparseMatrixCSC([0 1 0; -1 0 0; 0 0 0])</code></pre><p><a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.MatrixCoupling"><code>MatrixCoupling</code></a>s can be producted or summed.</p><p>For one example, for the nearest-neighbor spin exchange interactions of itinerant fermions <span>$J\sum_{⟨ij⟩}c^†_i\vec{σ}_ic_i ⋅ c^†_j\vec{σ}_jc_j$</span> where <span>$\vec{σ}_i=(σ^x_i, σ^y_i, σ^z_i)^T$</span> acts on the local spin space at site <span>$i$</span>, the coupling pattern can be constructed as follows:</p><pre><code class="language-julia-repl hljs">julia&gt; mc₁ = 𝕕⁺𝕕(:, :, σ⁺, :);
 
-# Dzyaloshinskii–Moriya terms
-DM&quot;x&quot; =&gt; SparseMatrixCSC([0 0 0; 0 0 1; 0 -1 0])
-DM&quot;y&quot; =&gt; SparseMatrixCSC([0 0 -1; 0 0 0; 1 0 0])
-DM&quot;z&quot; =&gt; SparseMatrixCSC([0 1 0; -1 0 0; 0 0 0])</code></pre><p><a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.MatrixCoupling"><code>MatrixCoupling</code></a>s can be producted or summed.</p><p>For one example, for the nearest-neighbor spin exchange interactions of itinerant fermions <span>$J\sum_{⟨ij⟩}c^†_i\vec{σ}_ic_i ⋅ c^†_j\vec{σ}_jc_j$</span> where <span>$\vec{σ}_i=(σ^x_i, σ^y_i, σ^z_i)^T$</span> acts on the local spin space at site <span>$i$</span>, the coupling pattern can be constructed as follows:</p><pre><code class="language-julia-repl hljs">julia&gt; mc₁ = 𝕕⁺𝕕(:, :, σ&quot;+&quot;, :);
+julia&gt; mc₂ = 𝕕⁺𝕕(:, :, σ⁻, :);
 
-julia&gt; mc₂ = 𝕕⁺𝕕(:, :, σ&quot;-&quot;, :);
-
-julia&gt; mc₃ = 𝕕⁺𝕕(:, :, σ&quot;z&quot;, :);
+julia&gt; mc₃ = 𝕕⁺𝕕(:, :, σᶻ, :);
 
 julia&gt; coupling = 1//2*mc₁*mc₂ + 1//2*mc₂*mc₁ + mc₃*mc₃;
 
@@ -230,11 +227,11 @@ julia&gt; collect(coupling)
  ∑[𝕕(:, :, 1//2, :) 𝕕(:, :, 1//2, :)] ⊗ ∑[𝕕(:, :, 1//2, :) 𝕕(:, :, 1//2, :)]
  - ∑[𝕕(:, :, -1//2, :) 𝕕(:, :, -1//2, :)] ⊗ ∑[𝕕(:, :, 1//2, :) 𝕕(:, :, 1//2, :)]
  - ∑[𝕕(:, :, 1//2, :) 𝕕(:, :, 1//2, :)] ⊗ ∑[𝕕(:, :, -1//2, :) 𝕕(:, :, -1//2, :)]
- ∑[𝕕(:, :, -1//2, :) 𝕕(:, :, -1//2, :)] ⊗ ∑[𝕕(:, :, -1//2, :) 𝕕(:, :, -1//2, :)]</code></pre><p>For another example, for the onsite spin-orbital coupling of the <span>$(d_{yz}, d_{xz}, d_{xy})^T$</span> <span>$t_2g$</span> orbitals <span>$\lambda\sum_i c^\dagger_i \vec{L}_i\cdot\vec{σ}_i c_i$</span> where <span>$\vec{L}_i=(L^x_i, L^y_i, L^z_i)^T$</span> acts on the local orbital space and <span>$\vec{σ}_i=(σ^x_i, σ^y_i, σ^z_i)^T$</span> acts on the local spin space, the coupling pattern can be constructed as follows:</p><pre><code class="language-julia-repl hljs">julia&gt; mc₁ = 𝕕⁺𝕕(:, L&quot;x&quot;, σ&quot;x&quot;, :);
+ ∑[𝕕(:, :, -1//2, :) 𝕕(:, :, -1//2, :)] ⊗ ∑[𝕕(:, :, -1//2, :) 𝕕(:, :, -1//2, :)]</code></pre><p>For another example, for the onsite spin-orbital coupling of the <span>$(d_{yz}, d_{xz}, d_{xy})^T$</span> <span>$t_2g$</span> orbitals <span>$\lambda\sum_i c^\dagger_i \vec{L}_i\cdot\vec{σ}_i c_i$</span> where <span>$\vec{L}_i=(L^x_i, L^y_i, L^z_i)^T$</span> acts on the local orbital space and <span>$\vec{σ}_i=(σ^x_i, σ^y_i, σ^z_i)^T$</span> acts on the local spin space, the coupling pattern can be constructed as follows:</p><pre><code class="language-julia-repl hljs">julia&gt; mc₁ = 𝕕⁺𝕕(:, Lˣ, σˣ, :);
 
-julia&gt; mc₂ = 𝕕⁺𝕕(:, L&quot;y&quot;, σ&quot;y&quot;, :);
+julia&gt; mc₂ = 𝕕⁺𝕕(:, Lʸ, σʸ, :);
 
-julia&gt; mc₃ = 𝕕⁺𝕕(:, L&quot;z&quot;, σ&quot;z&quot;, :);
+julia&gt; mc₃ = 𝕕⁺𝕕(:, Lᶻ, σᶻ, :);
 
 julia&gt; coupling = mc₁ + mc₂ + mc₃;
 
@@ -471,4 +468,4 @@ Operators with 8 Operator
   Operator(1.0, 𝕔(2, 1, -1//2, 2, [-0.5], [-1.0]), 𝕔(1, 1, -1//2, 1, [0.0], [0.0]))
   Operator(1.0, 𝕔(1, 1, -1//2, 2, [0.0], [0.0]), 𝕔(2, 1, -1//2, 1, [-0.5], [-1.0]))
   Operator(1.0, 𝕔(2, 1, 1//2, 2, [-0.5], [-1.0]), 𝕔(1, 1, 1//2, 1, [0.0], [0.0]))
-  Operator(1.0, 𝕔(1, 1, 1//2, 2, [0.0], [0.0]), 𝕔(2, 1, 1//2, 1, [-0.5], [-1.0]))</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../InternalDegreesOfFreedom/">« Internal degrees of freedom</a><a class="docs-footer-nextpage" href="../GeneratorOfOperators/">Generator of operators »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.14.1 on <span class="colophon-date" title="Friday 19 September 2025 11:32">Friday 19 September 2025</span>. Using Julia version 1.11.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+  Operator(1.0, 𝕔(1, 1, 1//2, 2, [0.0], [0.0]), 𝕔(2, 1, 1//2, 1, [-0.5], [-1.0]))</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../InternalDegreesOfFreedom/">« Internal degrees of freedom</a><a class="docs-footer-nextpage" href="../GeneratorOfOperators/">Generator of operators »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.14.1 on <span class="colophon-date" title="Friday 19 September 2025 12:39">Friday 19 September 2025</span>. Using Julia version 1.11.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
