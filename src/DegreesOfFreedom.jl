@@ -426,7 +426,7 @@ end
 @inline contentnames(::Type{<:CoordinatedIndex}) = (:index, :rcoordinate, :icoordinate)
 @inline parameternames(::Type{<:CoordinatedIndex}) = (:index, :coordination)
 @inline Base.hash(index::CoordinatedIndex, h::UInt) = hash((index.index, Tuple(index.rcoordinate)), h)
-@inline Base.propertynames(::ZeroAtLeast{CoordinatedIndex}) = (:indexes, :rcoordinates, :icoordinates)
+@inline Base.propertynames(::OneAtLeast{CoordinatedIndex}) = (:indexes, :rcoordinates, :icoordinates)
 function Base.show(io::IO, index::CoordinatedIndex)
     internal = String[]
     for field in showablefields(internalindextype(index))
@@ -596,6 +596,7 @@ struct Pattern{I, P, N, C<:OneAtLeast{Function}} <: QuantumOperator
     constraints::C
     representations::NTuple{N, String}
     function Pattern{P}(indexes::OneAtLeast{Index}, constraints::NTuple{N, Function}, representations::NTuple{N, String}=map(string, constraints))  where {P, N}
+        @assert N>0 "Pattern error: non-positive N($N)."
         @assert isa(P, NTuple{N, Int}) "Pattern error: partition ($P) is not $N-tuple of integers."
         @assert isa(indexes.sites, OneAtLeast{Union{Ordinal, Colon}}) "Pattern error: for each index, the site must be an `Ordinal` or the `:`."
         @assert sum(P)==length(indexes) "Pattern error: mismatched sum of partition ($(sum(P))) and number of indexes ($(length(indexes)))."
@@ -651,7 +652,7 @@ Get the indexes specified by `slice` in a coupling pattern.
 @inline Base.getindex(pattern::Pattern, slice) = pattern.indexes[slice]
 
 """
-    partition(pattern::Pattern) -> ZeroAtLeast{Int}
+    partition(pattern::Pattern) -> OneAtLeast{Int}
     partition(::Type{<:Pattern{I, P} where I}) where P -> P
 
 Get the partition of the coupling pattern.
@@ -900,15 +901,15 @@ Construct a coupling.
 @inline Coupling(pattern::Pattern) = Coupling(1, pattern)
 
 """
-    Coupling(indexes::Index...)
-    Coupling(value::Number, indexes::Index...)
-    Coupling(value::Number, indexes::ZeroAtLeast{Index})
+    Coupling(index::Index, indexes::Index...)
+    Coupling(value::Number, index::Index, indexes::Index...)
+    Coupling(value::Number, indexes::OneAtLeast{Index})
 
 Construct a coupling with the input indexes as the pattern.
 """
-@inline Coupling(indexes::Index...) = Coupling(1, indexes...)
-@inline Coupling(value::Number, indexes::Index...) = Coupling(value, indexes)
-@inline Coupling(value::Number, indexes::ZeroAtLeast{Index}) = Coupling(value, Pattern(indexes))
+@inline Coupling(index::Index, indexes::Index...) = Coupling(1, index, indexes...)
+@inline Coupling(value::Number, index::Index, indexes::Index...) = Coupling(value, (index, indexes...))
+@inline Coupling(value::Number, indexes::OneAtLeast{Index}) = Coupling(value, Pattern(indexes))
 
 """
     Coupling(sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:InternalIndex}
@@ -1056,26 +1057,23 @@ end
 end
 
 """
-    MatrixCoupling{I}(sites::Union{NTuple{2, Ordinal}, NTuple{2, Colon}}, contents::ZeroAtLeast{MatrixCouplingComponent}) where {I<:InternalIndex}
-    MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{I}, contents::MatrixCouplingComponent...) where {I<:InternalIndex}
+    MatrixCoupling{I<:InternalIndex, S<:Union{Ordinal, Colon}, C<:OneAtLeast{MatrixCouplingComponent}, E<:Coupling} <: VectorSpace{E}
 
 Matrix coupling, i.e., a set of couplings whose coefficients are specified by matrices acting on separated internal spaces.
 """
-struct MatrixCoupling{I<:InternalIndex, S<:Union{Ordinal, Colon}, C<:ZeroAtLeast{MatrixCouplingComponent}} <: VectorSpace{Coupling}
+struct MatrixCoupling{I<:InternalIndex, S<:Union{Ordinal, Colon}, C<:OneAtLeast{MatrixCouplingComponent}, E<:Coupling} <: VectorSpace{E}
     sites::Tuple{S, S}
     contents::C
-    function MatrixCoupling{I}(sites::Union{NTuple{2, Ordinal}, NTuple{2, Colon}}, contents::ZeroAtLeast{MatrixCouplingComponent}) where {I<:InternalIndex}
+    function MatrixCoupling{I}(sites::Union{NTuple{2, Ordinal}, NTuple{2, Colon}}, contents::OneAtLeast{MatrixCouplingComponent}) where {I<:InternalIndex}
         @assert fieldcount(I)==length(contents) "MatrixCoupling error: mismatched type of internal index ($nameof(I)) and components (len=$length(contents))."
-        new{I, eltype(sites), typeof(contents)}(sites, contents)
+        new{I, eltype(sites), typeof(contents), _eltype_(I, eltype(sites), typeof(contents))}(sites, contents)
     end
 end
 @inline parameternames(::Type{<:MatrixCoupling}) = (:internal, :site, :components)
-@inline MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{I}, contents::MatrixCouplingComponent...) where {I<:InternalIndex} = MatrixCoupling{I}(default(sites, Val(2)), contents)
-@inline @generated function Base.eltype(::Type{MC}) where {MC<:MatrixCoupling}
-    types = fieldtypes(parametertype(MC, :components))
+@inline @generated function _eltype_(::Type{I}, ::Type{S}, ::Type{C}) where {I<:InternalIndex, S<:Union{Ordinal, Colon}, C<:OneAtLeast{MatrixCouplingComponent}}
+    types = fieldtypes(C)
     V = Expr(:call, :promote_type, [:(parametertype($C, :datatype)) for C in types]...)
-    S = parametertype(MC, :site)
-    I = Expr(:call, :internalindextype, parametertype(MC, :internal), [:(parametertype($C, :basistype)) for C in types]...)
+    I = Expr(:call, :internalindextype, I, [:(parametertype($C, :basistype)) for C in types]...)
     return :(Coupling{$V, Pattern{NTuple{2, Index{$I, $S}}, (2,), 1, Tuple{typeof(isdiagonal)}}})
 end
 @inline VectorSpaceStyle(::Type{<:MatrixCoupling}) = VectorSpaceDirectProducted(:forward)
@@ -1086,27 +1084,36 @@ function Base.convert(::Type{<:Coupling}, index::CartesianIndex, mc::MatrixCoupl
     index₂ = Index(mc.sites[2], I(map(content->content[2], contents)...))
     return Coupling(value, index₁, index₂)
 end
-@inline function Base.promote_rule(::Type{MatrixCoupling{I, S, C₁}}, ::Type{MatrixCoupling{I, S, C₂}}) where {I<:InternalIndex, S<:Union{Ordinal, Colon}, C₁<:ZeroAtLeast{MatrixCouplingComponent}, C₂<:ZeroAtLeast{MatrixCouplingComponent}}
-    return MatrixCoupling{I, S, _promote_type_(C₁, C₂)}
+@inline function Base.promote_rule(::Type{<:MatrixCoupling{I, S, C₁}}, ::Type{<:MatrixCoupling{I, S, C₂}}) where {I<:InternalIndex, S<:Union{Ordinal, Colon}, C₁<:OneAtLeast{MatrixCouplingComponent}, C₂<:OneAtLeast{MatrixCouplingComponent}}
+    C = _promote_type_(C₁, C₂)
+    return MatrixCoupling{I, S, C, _eltype_(I, S, C)}
 end
-@inline Base.convert(::Type{MatrixCoupling{I, S, C}}, mc::MatrixCoupling{I, S}) where {I<:InternalIndex, S<:Union{Ordinal, Colon}, C<:ZeroAtLeast{MatrixCouplingComponent}} = MatrixCoupling{I}(mc.sites, convert(C, mc.contents))
+@inline Base.convert(::Type{<:MatrixCoupling{I, S, C}}, mc::MatrixCoupling{I, S}) where {I<:InternalIndex, S<:Union{Ordinal, Colon}, C<:OneAtLeast{MatrixCouplingComponent}} = MatrixCoupling{I}(mc.sites, convert(C, mc.contents))
 @inline @generated function _promote_type_(::Type{T₁}, ::Type{T₂}) where {N, T₁<:NTuple{N, Any}, T₂<:NTuple{N, Any}}
     return Expr(:curly, Tuple, [:(promote_type(fieldtype(T₁, $i), fieldtype(T₂, $i))) for i=1:N]...)
 end
 
 """
-    MatrixCouplingProd{V<:Number, C<:ZeroAtLeast{MatrixCoupling}} <: VectorSpace{Coupling}
+    MatrixCoupling{I}(sites::Union{NTuple{2, Ordinal}, NTuple{2, Colon}}, contents::OneAtLeast{MatrixCouplingComponent}) where {I<:InternalIndex}
+    MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{I}, contents::MatrixCouplingComponent...) where {I<:InternalIndex}
+
+Construct a `MatrixCoupling`.
+"""
+@inline MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{I}, contents::MatrixCouplingComponent...) where {I<:InternalIndex} = MatrixCoupling{I}(default(sites, Val(2)), contents)
+
+"""
+    MatrixCouplingProd{V<:Number, C<:OneAtLeast{MatrixCoupling}, E<:Coupling} <: VectorSpace{E}
 
 Product of matrix couplings together with an overall coefficient.
 """
-struct MatrixCouplingProd{V<:Number, C<:ZeroAtLeast{MatrixCoupling}} <: VectorSpace{Coupling}
+struct MatrixCouplingProd{V<:Number, C<:OneAtLeast{MatrixCoupling}, E<:Coupling} <: VectorSpace{E}
     value::V
     contents::C
+    function MatrixCouplingProd(value::Number, contents::OneAtLeast{MatrixCoupling})
+        new{typeof(value), typeof(contents), _eltype_(typeof(value), _eltypes_(typeof(contents)))}(value, contents)
+    end
 end
-@inline MatrixCouplingProd(contents::MatrixCoupling...) = MatrixCouplingProd(1, contents)
-@inline MatrixCouplingProd(value::Number, contents::MatrixCoupling...) = MatrixCouplingProd(value, contents)
-@inline Base.eltype(::Type{MCP}) where {MCP<:MatrixCouplingProd} = _eltype_(fieldtype(MCP, :value), _eltypes_(MCP))
-@inline @generated _eltypes_(::Type{MCP}) where {MCP<:MatrixCouplingProd} = Expr(:curly, :Tuple, [:(eltype($C)) for C in fieldtypes(fieldtype(MCP, :contents))]...)
+@inline @generated _eltypes_(::Type{TS}) where {TS<:OneAtLeast{MatrixCoupling}} = Expr(:curly, :Tuple, [:(eltype($C)) for C in fieldtypes(TS)]...)
 @inline @generated function _eltype_(::Type{V}, ::Type{TS}) where {V<:Number, TS<:Tuple}
     types = fieldtypes(TS)
     MV = promote_type(V, map(valtype, types)...)
@@ -1121,22 +1128,45 @@ end
     contents = map(getindex, getcontent(mcp, :contents), index.I)
     return prod(contents; init=mcp.value)
 end
-@inline function Base.promote_rule(::Type{MatrixCouplingProd{V₁, C₁}}, ::Type{MatrixCouplingProd{V₂, C₂}}) where {V₁<:Number, C₁<:ZeroAtLeast{MatrixCoupling}, V₂<:Number, C₂<:ZeroAtLeast{MatrixCoupling}}
-    return MatrixCouplingProd{promote_type(V₁, V₂), _promote_type_(C₁, C₂)}
+@inline function Base.promote_rule(::Type{<:MatrixCouplingProd{V₁, C₁}}, ::Type{<:MatrixCouplingProd{V₂, C₂}}) where {V₁<:Number, C₁<:OneAtLeast{MatrixCoupling}, V₂<:Number, C₂<:OneAtLeast{MatrixCoupling}}
+    V = promote_type(V₁, V₂)
+    C = _promote_type_(C₁, C₂)
+    return MatrixCouplingProd{V, C, _eltype_(V, _eltypes_(C))}
 end
-@inline Base.convert(::Type{MatrixCouplingProd{V, C}}, mcp::MatrixCouplingProd) where {V<:Number, C<:ZeroAtLeast{MatrixCoupling}} = MatrixCouplingProd(convert(V, mcp.value), convert(C, mcp.contents))
+@inline Base.convert(::Type{<:MatrixCouplingProd{V, C}}, mcp::MatrixCouplingProd) where {V<:Number, C<:OneAtLeast{MatrixCoupling}} = MatrixCouplingProd(convert(V, mcp.value), convert(C, mcp.contents))
 
 """
-    MatrixCouplingSum{C<:MatrixCouplingProd, N} <: VectorSpace{Coupling}
+    MatrixCouplingProd(value::Number, contents::OneAtLeast{MatrixCoupling})
+    MatrixCouplingProd(content::MatrixCoupling, contents::MatrixCoupling...)
+    MatrixCouplingProd(value::Number, content::MatrixCoupling, contents::MatrixCoupling...)
+
+Construct a `MatrixCouplingProd`.
+"""
+@inline MatrixCouplingProd(content::MatrixCoupling, contents::MatrixCoupling...) = MatrixCouplingProd(1, content, contents...)
+@inline MatrixCouplingProd(value::Number, content::MatrixCoupling, contents::MatrixCoupling...) = MatrixCouplingProd(value, (content, contents...))
+
+"""
+    MatrixCouplingSum{C<:MatrixCouplingProd, N, E<:Coupling} <: VectorSpace{E}
 
 Sum of the products of matrix couplings.
 """
-struct MatrixCouplingSum{C<:MatrixCouplingProd, N} <: VectorSpace{Coupling}
+struct MatrixCouplingSum{C<:MatrixCouplingProd, N, E<:Coupling} <: VectorSpace{E}
     contents::NTuple{N, C}
+    function MatrixCouplingSum(contents::OneAtLeast{MatrixCouplingProd})
+        contents = promote(contents...)
+        new{eltype(contents), fieldcount(typeof(contents)), eltype(eltype(contents))}(contents)
+    end
 end
-@inline MatrixCouplingSum(contents::Union{MatrixCoupling, MatrixCouplingProd}...) = MatrixCouplingSum(promote(map(m->1*m, contents)...))
-@inline Base.eltype(::Type{<:MatrixCouplingSum{C}}) where {C<:MatrixCouplingProd} = eltype(C)
 @inline VectorSpaceStyle(::Type{<:MatrixCouplingSum}) = VectorSpaceDirectSummed()
+
+"""
+    MatrixCouplingSum(contents::OneAtLeast{Union{MatrixCoupling, MatrixCouplingProd}})
+    MatrixCouplingSum(content::Union{MatrixCoupling, MatrixCouplingProd}, contents::Union{MatrixCoupling, MatrixCouplingProd}...)
+
+Construct a `MatrixCouplingSum`.
+"""
+@inline MatrixCouplingSum(content::Union{MatrixCoupling, MatrixCouplingProd}, contents::Union{MatrixCoupling, MatrixCouplingProd}...) = MatrixCouplingSum((content, contents...))
+@inline MatrixCouplingSum(contents::OneAtLeast{Union{MatrixCoupling, MatrixCouplingProd}}) = MatrixCouplingSum(promote(map(m->1*m, contents)...))
 
 """
     *(mc₁::MatrixCoupling, mc₂::MatrixCoupling) -> MatrixCouplingProd
