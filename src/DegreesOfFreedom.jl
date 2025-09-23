@@ -298,7 +298,7 @@ function Base.show(io::IO, index::Index)
         push!(internal, str(value))
     end
     internal = join(internal, ", ")
-    @printf io "%s(%s%s%s)" OperatorIndex[index] str(index.site) (length(internal)>0 ? ", " : "") internal
+    @printf io "%s(%s%s%s)" OperatorIndex[index.internal] str(index.site) (length(internal)>0 ? ", " : "") internal
 end
 @inline InternalIndex(index::Index) = index.internal
 @inline internalindextype(::Type{I}) where {I<:Index} = parametertype(I, :internal)
@@ -434,7 +434,7 @@ function Base.show(io::IO, index::CoordinatedIndex)
         push!(internal, str(value))
     end
     internal = join(internal, ", ")
-    @printf io "%s(%s%s%s, %s, %s)" OperatorIndex[index] str(index.index.site) (length(internal)>0 ? ", " : "") internal index.rcoordinate index.icoordinate
+    @printf io "%s(%s%s%s, %s, %s)" OperatorIndex[index.index.internal] str(index.index.site) (length(internal)>0 ? ", " : "") internal index.rcoordinate index.icoordinate
 end
 @inline compositeindexcoordinate(vector::SVector) = vector
 @inline compositeindexcoordinate(vector::SVector{N, Float}) where N = SVector(ntuple(i->vector[i]===-0.0 ? 0.0 : vector[i], Val(N)))
@@ -1031,7 +1031,7 @@ end
 
 # MatrixCoupling
 """
-    MatrixCouplingComponent{T₁, T₂} <: VectorSpace{Tuple{T₁, T₁, T₂}}
+    MatrixCouplingComponent{T₁, T₂, V<:AbstractVector{T₁}} <: VectorSpace{Tuple{T₁, T₁, T₂}}
 
 A component of a matrix coupling, i.e., a matrix acting on a separated internal space.
 """

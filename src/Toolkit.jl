@@ -1057,9 +1057,9 @@ Abstract vector space.
 """
 abstract type VectorSpace{B} <: AbstractVector{B} end
 @inline Base.:(==)(vs₁::VS, vs₂::VS) where {VS<:VectorSpace} = ==(efficientoperations, vs₁, vs₂)
-@inline Base.:(==)(::VS₁, ::VS₂) where {VS₁<:VectorSpace, VS₂<:VectorSpace} = false
+@inline Base.:(==)(vs₁::VS₁, vs₂::VS₂) where {VS₁<:VectorSpace, VS₂<:VectorSpace} = invoke(==, Tuple{AbstractVector, AbstractVector}, vs₁, vs₂)
 @inline Base.isequal(vs₁::VS, vs₂::VS) where {VS<:VectorSpace} = isequal(efficientoperations, vs₁, vs₂)
-@inline Base.isequal(::VS₁, ::VS₂) where {VS₁<:VectorSpace, VS₂<:VectorSpace} = false
+@inline Base.isequal(vs₁::VS₁, vs₂::VS₂) where {VS₁<:VectorSpace, VS₂<:VectorSpace} = invoke(isequal, Tuple{AbstractVector, AbstractVector}, vs₁, vs₂)
 @inline Base.axes(vs::VectorSpace) = (Base.OneTo(length(vs)),)
 @inline Base.size(vs::VectorSpace) = (length(vs),)
 @inline Base.IndexStyle(::Type{<:VectorSpace}) = IndexLinear()

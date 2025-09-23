@@ -51,31 +51,43 @@ To distinguish whether the system is a fermionic one or a bosonic one, [`FockInd
 
 Now let's see some examples.
 
-An [`FockIndex`](@ref) instance can be initialized by giving all its three attributes:
+A [`FockIndex`](@ref) instance can be initialized by giving all its three attributes:
 ```jldoctest FFF
 julia> FockIndex{:f}(2, 1//2, 1)
-𝕔(2, 1//2, 1)
+𝕔(2, 1//2)
+
+julia> FockIndex{:f}(2, 1//2, 2)
+𝕔⁺(2, 1//2)
 
 julia> FockIndex{:b}(2, 0, 1)
-𝕓(2, 0, 1)
+𝕒(2, 0)
+
+julia> FockIndex{:b}(2, 0, 2)
+𝕒⁺(2, 0)
 ```
 
-Here, `𝕔` (\bbc<tab>) and `𝕓` (\bbb<tab>) are two functions that are convenient to construct and display instances of `FockIndex{:f}` and `FockIndex{:b}`, respectively.
+Here, `𝕔` (\bbc<tab>), `𝕔⁺` (\bbc<tab>\^+<tab>), `𝕒` (\bba<tab>) and `𝕒⁺` (\bba<tab>\^+<tab>) are functions that are convenient to construct and display instances of `FockIndex{:f}` and `FockIndex{:b}`, respectively.
 ```jldoctest FFF
-julia> 𝕔(2, 1//2, 1) isa FockIndex{:f}
+julia> 𝕔(2, 1//2) isa FockIndex{:f}
 true
 
-julia> 𝕓(2, 0, 1) isa FockIndex{:b}
+julia> 𝕔⁺(2, 1//2) isa FockIndex{:f}
+true
+
+julia> 𝕒(2, 0) isa FockIndex{:b}
+true
+
+julia> 𝕒⁺(2, 0) isa FockIndex{:b}
 true
 ```
 
-The adjoint of an [`FockIndex`](@ref) instance is also defined:
+The adjoint of a [`FockIndex`](@ref) instance is also defined:
 ```jldoctest FFF
-julia> 𝕔(3, 3//2, 1)'
-𝕔(3, 3//2, 2)
+julia> 𝕔(3, 3//2)'
+𝕔⁺(3, 3//2)
 
-julia> 𝕓(3, 3//2, 2)'
-𝕓(3, 3//2, 1)
+julia> 𝕒⁺(3, 3//2)'
+𝕒(3, 3//2)
 ```
 Apparently, this operation is nothing but the "Hermitian conjugate".
 
@@ -83,39 +95,39 @@ A [`Fock`](@ref) instance can be initialized by giving all its attributes:
 ```jldoctest FFF
 julia> Fock{:f}(1, 2)
 4-element Fock{:f}:
- 𝕔(1, -1//2, 1)
- 𝕔(1, 1//2, 1)
- 𝕔(1, -1//2, 2)
- 𝕔(1, 1//2, 2)
+ 𝕔(1, -1//2)
+ 𝕔(1, 1//2)
+ 𝕔⁺(1, -1//2)
+ 𝕔⁺(1, 1//2)
 
 julia> Fock{:b}(1, 1)
 2-element Fock{:b}:
- 𝕓(1, 0, 1)
- 𝕓(1, 0, 2)
+ 𝕒(1, 0)
+ 𝕒⁺(1, 0)
 ```
 As can be seen, a [`Fock`](@ref) instance behaves like a vector (because the parent type [`Internal`](@ref) is a subtype of `AbstractVector`), and its iteration just generates all the allowed [`FockIndex`](@ref) instances on its associated spatial point:
 ```jldoctest FFF
 julia> fck = Fock{:f}(2, 1);
 
 julia> fck |> typeof |> eltype
-FockIndex{:f, Int64, Rational{Int64}, Int64}
+FockIndex{:f, Int64, Rational{Int64}}
 
 julia> fck |> length
 4
 
 julia> [fck[1], fck[2], fck[3], fck[4]]
-4-element Vector{FockIndex{:f, Int64, Rational{Int64}, Int64}}:
- 𝕔(1, 0, 1)
- 𝕔(2, 0, 1)
- 𝕔(1, 0, 2)
- 𝕔(2, 0, 2)
+4-element Vector{FockIndex{:f, Int64, Rational{Int64}}}:
+ 𝕔(1, 0)
+ 𝕔(2, 0)
+ 𝕔⁺(1, 0)
+ 𝕔⁺(2, 0)
 
 julia> fck |> collect
-4-element Vector{FockIndex{:f, Int64, Rational{Int64}, Int64}}:
- 𝕔(1, 0, 1)
- 𝕔(2, 0, 1)
- 𝕔(1, 0, 2)
- 𝕔(2, 0, 2)
+4-element Vector{FockIndex{:f, Int64, Rational{Int64}}}:
+ 𝕔(1, 0)
+ 𝕔(2, 0)
+ 𝕔⁺(1, 0)
+ 𝕔⁺(2, 0)
 ```
 This is isomorphic to the mathematical fact that a local algebra is a vector space of the local generators.
 
@@ -185,31 +197,37 @@ julia> [hilbert[1], hilbert[2]]
 To specify a translation-equivalent generator of the Fock algebra within the unitcell, [`Index`](@ref) just combines a `site::Int` attribute and an `internal::FockIndex` attribute:
 ```jldoctest FFF
 julia> index = Index(1, FockIndex{:f}(1, -1//2, 2))
-𝕔(1, 1, -1//2, 2)
+𝕔⁺(1, 1, -1//2)
 
 julia> index.site
 1
 
 julia> index.internal
-𝕔(1, -1//2, 2)
+𝕔⁺(1, -1//2)
 ```
 
-Here, the functions `𝕔` and `𝕓` can also construct and display instances of `Index{<:FockIndex{:f}}` and `Index{<:FockIndex{:b}}`, respectively.
+Here, the functions `𝕔`, `𝕔⁺`, `𝕒` and `𝕒⁺` can also construct and display instances of `Index{<:FockIndex{:f}}` and `Index{<:FockIndex{:b}}`, respectively.
 ```jldoctest FFF
-julia> 𝕔(1, 1, -1//2, 2) isa Index{<:FockIndex{:f}}
+julia> 𝕔(1, 1, -1//2) isa Index{<:FockIndex{:f}}
 true
 
-julia> 𝕓(1, 1, -1//2, 2) isa Index{<:FockIndex{:b}}
+julia> 𝕔⁺(1, 1, -1//2) isa Index{<:FockIndex{:f}}
+true
+
+julia> 𝕒(1, 1, -1//2) isa Index{<:FockIndex{:b}}
+true
+
+julia> 𝕒⁺(1, 1, -1//2) isa Index{<:FockIndex{:b}}
 true
 ```
 
 The Hermitian conjugate of an [`Index`](@ref) is also defined:
 ```jldoctest FFF
-julia> 𝕔(1, 1, -1//2, 2)'
-𝕔(1, 1, -1//2, 1)
+julia> 𝕔⁺(1, 1, -1//2)'
+𝕔(1, 1, -1//2)
 
-julia> 𝕓(1, 1, -1//2, 1)'
-𝕓(1, 1, -1//2, 2)
+julia> 𝕒(1, 1, -1//2)'
+𝕒⁺(1, 1, -1//2)
 ```
 
 #### Global level: CoordinatedIndex
@@ -217,10 +235,10 @@ julia> 𝕓(1, 1, -1//2, 1)'
 Since the local algebra of a quantum lattice system can be defined point by point, the global algebra can be completely compressed into the origin unitcell. However, the generator outside the origin unitcell cannot be avoided because we have to use them to compose the Hamiltonian on the bonds that goes across the unitcell boundaries. This situation is similar to the case of [`Lattice`](@ref) and [`Point`](@ref). Therefore, we take a similar solution for the generators to that is adopted for the [`Point`](@ref), i.e., we include the $\mathbf{R}$ coordinate (by the `rcoordinate` attribute) and the $\mathbf{R}_i$ coordinate (by the `icoordinate` attribute) of the underlying point together with the `index::Index` attribute in the [`CoordinatedIndex`](@ref) type to represent a generator that could be inside or outside the origin unitcell:
 ```jldoctest FFF
 julia> index = CoordinatedIndex(Index(1, FockIndex{:f}(1, 0, 2)), [0.5, 0.0], [0.0, 0.0])
-𝕔(1, 1, 0, 2, [0.5, 0.0], [0.0, 0.0])
+𝕔⁺(1, 1, 0, [0.5, 0.0], [0.0, 0.0])
 
 julia> index.index
-𝕔(1, 1, 0, 2)
+𝕔⁺(1, 1, 0)
 
 julia> index.rcoordinate
 2-element StaticArraysCore.SVector{2, Float64} with indices SOneTo(2):
@@ -233,15 +251,21 @@ julia> index.icoordinate
  0.0
 
 julia> index' # the Hermitian conjugate of a CoordinatedIndex is also defined
-𝕔(1, 1, 0, 1, [0.5, 0.0], [0.0, 0.0])
+𝕔(1, 1, 0, [0.5, 0.0], [0.0, 0.0])
 ```
 
-Here, as can be expected, the functions `𝕔` and `𝕓` can construct and display instances of `CoordinatedIndex{<:Index{<:FockIndex{:f}}}` and `CoordinatedIndex{<:Index{<:FockIndex{:b}}}`, respectively, as well.
+Here, as can be expected, the functions `𝕔`, `𝕔⁺`, `𝕒` and `𝕒⁺` can construct and display instances of `CoordinatedIndex{<:Index{<:FockIndex{:f}}}` and `CoordinatedIndex{<:Index{<:FockIndex{:b}}}`, respectively, as well.
 ```jldoctest FFF
-julia> 𝕔(1, 1, 0, 2, [0.5, 0.0], [0.0, 0.0]) isa CoordinatedIndex{<:Index{<:FockIndex{:f}}}
+julia> 𝕔(1, 1, 0, [0.5, 0.0], [0.0, 0.0]) isa CoordinatedIndex{<:Index{<:FockIndex{:f}}}
 true
 
-julia> 𝕓(1, 1, 0, 2, [0.5, 0.0], [0.0, 0.0]) isa CoordinatedIndex{<:Index{<:FockIndex{:b}}}
+julia> 𝕔⁺(1, 1, 0, [0.5, 0.0], [0.0, 0.0]) isa CoordinatedIndex{<:Index{<:FockIndex{:f}}}
+true
+
+julia> 𝕒(1, 1, 0, [0.5, 0.0], [0.0, 0.0]) isa CoordinatedIndex{<:Index{<:FockIndex{:b}}}
+true
+
+julia> 𝕒⁺(1, 1, 0, [0.5, 0.0], [0.0, 0.0]) isa CoordinatedIndex{<:Index{<:FockIndex{:b}}}
 true
 ```
 
@@ -261,7 +285,7 @@ For [`SpinIndex`](@ref) and [`Spin`](@ref), it is also necessary to know what th
 
 Now let's see examples.
 
-An [`SpinIndex`](@ref) instance can be initialized as follows
+A [`SpinIndex`](@ref) instance can be initialized as follows
 ```jldoctest SSS
 julia> SpinIndex{3//2}('x')
 𝕊{3//2}('x')
@@ -273,7 +297,7 @@ julia> SpinIndex{1}('+')
 𝕊{1}('+')
 ```
 
-Here, the type `𝕊` (\bbS<tab>) plays a similar role in spin systems as `𝕔` and `𝕓` in Fock systems.
+Here, the type `𝕊` (\bbS<tab>) plays a similar role in spin systems as `𝕔`/`𝕔⁺` and `𝕒`/`𝕒⁺` in Fock systems.
 ```jldoctest SSS
 julia> 𝕊{3//2}('x') isa SpinIndex{3//2}
 true
@@ -493,67 +517,67 @@ Now we arrive at the core types of this package, the [`Operator`](@ref) and [`Op
 
 [`Operator`](@ref) can be initialized by two ways:
 ```jldoctest OO
-julia> Operator(2, 𝕔(1, -1//2, 2), 𝕔(1, -1//2, 1), 𝕊{1//2}('z'))
-Operator(2, 𝕔(1, -1//2, 2), 𝕔(1, -1//2, 1), 𝕊{1//2}('z'))
+julia> Operator(2, 𝕔⁺(1, -1//2), 𝕔(1, -1//2), 𝕊{1//2}('z'))
+Operator(2, 𝕔⁺(1, -1//2), 𝕔(1, -1//2), 𝕊{1//2}('z'))
 
-julia> 2 * 𝕔(1, 1, -1//2, 2) * 𝕊{1//2}(2, 'z')
-Operator(2, 𝕔(1, 1, -1//2, 2), 𝕊{1//2}(2, 'z'))
+julia> 2 * 𝕔⁺(1, 1, -1//2) * 𝕊{1//2}(2, 'z')
+Operator(2, 𝕔⁺(1, 1, -1//2), 𝕊{1//2}(2, 'z'))
 ```
 It is noted that the number of the generators can be any natural number.
 
 Although generators at different levels can be producted to make an [`Operator`](@ref), it is not recommended to do so because the logic will be muddled:
 ```jldoctest OO
-julia> Operator(2, 𝕔(1, 0, 2), 𝕔(2, 1, 0, 1, [0.0], [0.0])) # never do this !!!
-Operator(2, 𝕔(1, 0, 2), 𝕔(2, 1, 0, 1, [0.0], [0.0]))
+julia> Operator(2, 𝕔⁺(1, 0), 𝕔(2, 1, 0, [0.0], [0.0])) # never do this !!!
+Operator(2, 𝕔⁺(1, 0), 𝕔(2, 1, 0, [0.0], [0.0]))
 ```
 
 [`Operator`](@ref) can be iterated and indexed by integers, which will give the corresponding generators in the product:
 ```jldoctest OO
-julia> op = Operator(2, 𝕔(1, 1//2, 2), 𝕔(1, 1//2, 1));
+julia> op = Operator(2, 𝕔⁺(1, 1//2), 𝕔(1, 1//2));
 
 julia> length(op)
 2
 
 julia> [op[1], op[2]]
-2-element Vector{FockIndex{:f, Int64, Rational{Int64}, Int64}}:
- 𝕔(1, 1//2, 2)
- 𝕔(1, 1//2, 1)
+2-element Vector{FockIndex{:f, Int64, Rational{Int64}}}:
+ 𝕔⁺(1, 1//2)
+ 𝕔(1, 1//2)
 
 julia> collect(op)
-2-element Vector{FockIndex{:f, Int64, Rational{Int64}, Int64}}:
- 𝕔(1, 1//2, 2)
- 𝕔(1, 1//2, 1)
+2-element Vector{FockIndex{:f, Int64, Rational{Int64}}}:
+ 𝕔⁺(1, 1//2)
+ 𝕔(1, 1//2)
 ```
 
 To get the coefficient of an [`Operator`](@ref) or all its individual generators as a whole, use the [`value`](@ref) and [`id`](@ref) function exported by this package, respectively:
 ```jldoctest OO
-julia> op = Operator(2, 𝕔(1, 0, 2), 𝕔(1, 0, 1));
+julia> op = Operator(2, 𝕔⁺(1, 0), 𝕔(1, 0));
 
 julia> value(op)
 2
 
 julia> id(op)
-(𝕔(1, 0, 2), 𝕔(1, 0, 1))
+(𝕔⁺(1, 0), 𝕔(1, 0))
 ```
 
 The product between two [`Operator`](@ref)s, or the scalar multiplication between a number and an [`Operator`](@ref) is also an [`Operator`](@ref):
 ```jldoctest OO
-julia> Operator(2, 𝕔(1, 1//2, 2)) * Operator(3, 𝕔(1, 1//2, 1))
-Operator(6, 𝕔(1, 1//2, 2), 𝕔(1, 1//2, 1))
+julia> Operator(2, 𝕔⁺(1, 1//2)) * Operator(3, 𝕔(1, 1//2))
+Operator(6, 𝕔⁺(1, 1//2), 𝕔(1, 1//2))
 
-julia> 3 * Operator(2, 𝕔(1, 1//2, 2))
-Operator(6, 𝕔(1, 1//2, 2))
+julia> 3 * Operator(2, 𝕔⁺(1, 1//2))
+Operator(6, 𝕔⁺(1, 1//2))
 
-julia> Operator(2, 𝕔(1, 1//2, 2)) * 3
-Operator(6, 𝕔(1, 1//2, 2))
+julia> Operator(2, 𝕔⁺(1, 1//2)) * 3
+Operator(6, 𝕔⁺(1, 1//2))
 ```
 
 The Hermitian conjugate of an [`Operator`](@ref) can be obtained by the adjoint operator:
 ```jldoctest OO
-julia> op = Operator(6, 𝕔(2, 1//2, 2), 𝕔(1, 1//2, 1));
+julia> op = Operator(6, 𝕔⁺(2, 1//2), 𝕔(1, 1//2));
 
 julia> op'
-Operator(6, 𝕔(1, 1//2, 2), 𝕔(2, 1//2, 1))
+Operator(6, 𝕔⁺(1, 1//2), 𝕔(2, 1//2))
 ```
 
 There also exists a special [`Operator`](@ref), which only has the coefficient:
@@ -564,90 +588,90 @@ Operator(2)
 
 [`Operators`](@ref) can be initialized by two ways:
 ```jldoctest OO
-julia> Operators(Operator(2, 𝕔(1, 1//2, 1)), Operator(3, 𝕔(1, 1//2, 2)))
+julia> Operators(Operator(2, 𝕔(1, 1//2)), Operator(3, 𝕔⁺(1, 1//2)))
 Operators with 2 Operator
-  Operator(2, 𝕔(1, 1//2, 1))
-  Operator(3, 𝕔(1, 1//2, 2))
+  Operator(2, 𝕔(1, 1//2))
+  Operator(3, 𝕔⁺(1, 1//2))
 
-julia> Operator(2, 𝕔(1, 1//2, 1)) - Operator(3, 𝕓(1, 1//2, 2))
+julia> Operator(2, 𝕔(1, 1//2)) - Operator(3, 𝕒⁺(1, 1//2))
 Operators with 2 Operator
-  Operator(2, 𝕔(1, 1//2, 1))
-  Operator(-3, 𝕓(1, 1//2, 2))
+  Operator(2, 𝕔(1, 1//2))
+  Operator(-3, 𝕒⁺(1, 1//2))
 ```
 
 Similar items are automatically merged during the construction of [`Operators`](@ref):
 ```jldoctest OO
-julia> Operators(Operator(2, 𝕔(1, 1//2, 1)), Operator(3, 𝕔(1, 1//2, 1)))
+julia> Operators(Operator(2, 𝕔(1, 1//2)), Operator(3, 𝕔(1, 1//2)))
 Operators with 1 Operator
-  Operator(5, 𝕔(1, 1//2, 1))
+  Operator(5, 𝕔(1, 1//2))
 
-julia> Operator(2, 𝕔(1, 1//2, 1)) + Operator(3, 𝕔(1, 1//2, 1))
+julia> Operator(2, 𝕔(1, 1//2)) + Operator(3, 𝕔(1, 1//2))
 Operators with 1 Operator
-  Operator(5, 𝕔(1, 1//2, 1))
+  Operator(5, 𝕔(1, 1//2))
 ```
 
 The multiplication between two [`Operators`](@ref)es, or between an [`Operators`](@ref) and an [`Operator`](@ref), or between a number and an [`Operators`](@ref) are defined:
 ```jldoctest OO
-julia> ops = Operator(2, 𝕔(1, 1//2, 1)) + Operator(3, 𝕔(1, 1//2, 2));
+julia> ops = Operator(2, 𝕔(1, 1//2)) + Operator(3, 𝕔⁺(1, 1//2));
 
-julia> op = Operator(2, 𝕔(2, 1//2, 1));
+julia> op = Operator(2, 𝕔(2, 1//2));
 
 julia> ops * op
 Operators with 2 Operator
-  Operator(4, 𝕔(1, 1//2, 1), 𝕔(2, 1//2, 1))
-  Operator(6, 𝕔(1, 1//2, 2), 𝕔(2, 1//2, 1))
+  Operator(4, 𝕔(1, 1//2), 𝕔(2, 1//2))
+  Operator(6, 𝕔⁺(1, 1//2), 𝕔(2, 1//2))
 
 julia> op * ops
 Operators with 2 Operator
-  Operator(4, 𝕔(2, 1//2, 1), 𝕔(1, 1//2, 1))
-  Operator(6, 𝕔(2, 1//2, 1), 𝕔(1, 1//2, 2))
+  Operator(4, 𝕔(2, 1//2), 𝕔(1, 1//2))
+  Operator(6, 𝕔(2, 1//2), 𝕔⁺(1, 1//2))
 
-julia> another = Operator(2, 𝕔(1, 1//2, 1)) + Operator(3, 𝕔(1, 1//2, 2));
+julia> another = Operator(2, 𝕔(1, 1//2)) + Operator(3, 𝕔⁺(1, 1//2));
 
 julia> ops * another
 Operators with 2 Operator
-  Operator(6, 𝕔(1, 1//2, 1), 𝕔(1, 1//2, 2))
-  Operator(6, 𝕔(1, 1//2, 2), 𝕔(1, 1//2, 1))
+  Operator(6, 𝕔(1, 1//2), 𝕔⁺(1, 1//2))
+  Operator(6, 𝕔⁺(1, 1//2), 𝕔(1, 1//2))
 
 julia> 2 * ops
 Operators with 2 Operator
-  Operator(4, 𝕔(1, 1//2, 1))
-  Operator(6, 𝕔(1, 1//2, 2))
+  Operator(4, 𝕔(1, 1//2))
+  Operator(6, 𝕔⁺(1, 1//2))
 
 julia> ops * 2
 Operators with 2 Operator
-  Operator(4, 𝕔(1, 1//2, 1))
-  Operator(6, 𝕔(1, 1//2, 2))
+  Operator(4, 𝕔(1, 1//2))
+  Operator(6, 𝕔⁺(1, 1//2))
 ```
 It is noted that in the result, the distributive law automatically applies. Besides, the fermion operator relation $c^2=(c^\dagger)^2=0$ is also used.
 
 As is usual, the Hermitian conjugate of an [`Operators`](@ref) can be obtained by the adjoint operator:
 ```jldoctest
-julia> op₁ = Operator(6, 𝕔(1, 1//2, 2), 𝕔(2, 1//2, 1));
+julia> op₁ = Operator(6, 𝕔⁺(1, 1//2), 𝕔(2, 1//2));
 
-julia> op₂ = Operator(4, 𝕔(1, 1//2, 1), 𝕔(2, 1//2, 1));
+julia> op₂ = Operator(4, 𝕔(1, 1//2), 𝕔(2, 1//2));
 
 julia> ops = op₁ + op₂;
 
 julia> ops'
 Operators with 2 Operator
-  Operator(6, 𝕔(2, 1//2, 2), 𝕔(1, 1//2, 1))
-  Operator(4, 𝕔(2, 1//2, 2), 𝕔(1, 1//2, 2))
+  Operator(6, 𝕔⁺(2, 1//2), 𝕔(1, 1//2))
+  Operator(4, 𝕔⁺(2, 1//2), 𝕔⁺(1, 1//2))
 ```
 
 [`Operators`](@ref) can be iterated and indexed:
 ```jldoctest OO
-julia> ops = Operator(2, 𝕔(1, 1//2, 1)) + Operator(3, 𝕔(1, 1//2, 2));
+julia> ops = Operator(2, 𝕔(1, 1//2)) + Operator(3, 𝕔⁺(1, 1//2));
 
 julia> collect(ops)
-2-element Vector{Operator{Int64, Tuple{FockIndex{:f, Int64, Rational{Int64}, Int64}}}}:
- Operator(2, 𝕔(1, 1//2, 1))
- Operator(3, 𝕔(1, 1//2, 2))
+2-element Vector{Operator{Int64, Tuple{FockIndex{:f, Int64, Rational{Int64}}}}}:
+ Operator(2, 𝕔(1, 1//2))
+ Operator(3, 𝕔⁺(1, 1//2))
 
 julia> ops[1]
-Operator(2, 𝕔(1, 1//2, 1))
+Operator(2, 𝕔(1, 1//2))
 
 julia> ops[2]
-Operator(3, 𝕔(1, 1//2, 2))
+Operator(3, 𝕔⁺(1, 1//2))
 ```
 The index order of an [`Operators`](@ref) is the insertion order of the operators it contains.

@@ -34,12 +34,15 @@ export ˢᵗ, ⁿᵈ, ʳᵈ, ᵗʰ, plain, coordinatedindextype, diagonalfields,
 # QuantumSystems
 include("QuantumSystems.jl")
 using .QuantumSystems
-export σ⁰, σˣ, σʸ, σᶻ, σ⁺, σ⁻, σ¹¹, σ²², annihilation, creation, latexofbosons, latexoffermions, latexofparticles, Lˣ, Lʸ, Lᶻ
-export 𝕒, 𝕒⁺𝕒, 𝕓, 𝕓⁺𝕓, 𝕔, 𝕔⁺𝕔, 𝕕, 𝕕⁺𝕕, 𝕗, 𝕗⁺𝕗, isannihilation, iscreation, isnormalordered
-export Coulomb, Fock, FockIndex, FockTerm, Hopping, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, Onsite, PairHopping, Pairing, SpinFlip
-export Γˣ, Γʸ, Γᶻ, Γ′ˣ, Γ′ʸ, Γ′ᶻ, DMˣ, DMʸ, DMᶻ, Isingˣ, Isingʸ, Isingᶻ, latexofspins, 𝕊, 𝕊ᵀ𝕊, SpinIndex, Spin, totalspin
-export DM, Heisenberg, Ising, Kitaev, SingleIonAnisotropy, SpinTerm, Zeeman, Γ, Γ′
-export latexofphonons, Elastic, Phonon, PhononIndex, Kinetic, Hooke, PhononTerm, 𝕦, 𝕦ᵀ𝕦, 𝕡
+export σ⁰, σˣ, σʸ, σᶻ, σ⁺, σ⁻, σ¹¹, σ¹², σ²¹, σ²², annihilation, creation, latexofbosons, latexoffermions, latexofparticles, Lˣ, Lʸ, Lᶻ
+export 𝕒, 𝕒⁺, 𝕒𝕒, 𝕒𝕒⁺, 𝕒⁺𝕒, 𝕒⁺𝕒⁺, 𝕔, 𝕔⁺, 𝕔𝕔, 𝕔𝕔⁺, 𝕔⁺𝕔, 𝕔⁺𝕔⁺, 𝕕, 𝕕⁺, 𝕕𝕕, 𝕕𝕕⁺, 𝕕⁺𝕕, 𝕕⁺𝕕⁺, Fock, FockIndex, isannihilation, iscreation, isnormalordered
+export Coulomb, FockTerm, Hopping, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, Onsite, PairHopping, Pairing, SpinFlip
+export Γˣ, Γʸ, Γᶻ, Γ′ˣ, Γ′ʸ, Γ′ᶻ, DMˣ, DMʸ, DMᶻ, Isingˣ, Isingʸ, Isingᶻ, latexofspins
+export 𝕊, 𝕊ᵀ𝕊, SpinIndex, Spin, totalspin
+export Γ, Γ′, DM, Heisenberg, Ising, Kitaev, SingleIonAnisotropy, SpinTerm, Zeeman
+export latexofphonons
+export 𝕦, 𝕦ᵀ𝕦, 𝕡, Phonon, PhononIndex
+export Elastic, Kinetic, Hooke, PhononTerm
 
 # Frameworks
 include("Frameworks.jl")

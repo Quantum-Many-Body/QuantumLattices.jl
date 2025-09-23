@@ -10,21 +10,24 @@ using ..QuantumOperators: LaTeX, Operator, OperatorIndex, OperatorProd, Operator
 using ..Spatials: Bond, Point, direction, isparallel, rcoordinate
 using ..Toolkit: atol, efficientoperations, rtol, Float, VectorSpace, VectorSpaceDirectProducted, VectorSpaceStyle, delta, rawtype
 
-import ..DegreesOfFreedom: MatrixCoupling, diagonalfields, internalindextype, isdefinite, patternrule, statistics
+import ..DegreesOfFreedom: MatrixCoupling, diagonalfields, internalindextype, isdefinite, patternrule, showablefields, statistics
 import ..QuantumLattices: expand, expand!, kind, permute, shape
 import ..QuantumOperators: latexname, matrix, script
 
 # Canonical complex fermionic/bosonic systems
-export σ⁰, σˣ, σʸ, σᶻ, σ⁺, σ⁻, σ¹¹, σ²², annihilation, creation, latexofbosons, latexoffermions, latexofparticles, Lˣ, Lʸ, Lᶻ
-export 𝕒, 𝕒⁺𝕒, 𝕓, 𝕓⁺𝕓, 𝕔, 𝕔⁺𝕔, 𝕕, 𝕕⁺𝕕, 𝕗, 𝕗⁺𝕗, isannihilation, iscreation, isnormalordered
-export Coulomb, Fock, FockIndex, FockTerm, Hopping, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, Onsite, PairHopping, Pairing, SpinFlip
+export σ⁰, σˣ, σʸ, σᶻ, σ⁺, σ⁻, σ¹¹, σ¹², σ²¹, σ²², annihilation, creation, latexofbosons, latexoffermions, latexofparticles, Lˣ, Lʸ, Lᶻ
+export 𝕒, 𝕒⁺, 𝕒𝕒, 𝕒𝕒⁺, 𝕒⁺𝕒, 𝕒⁺𝕒⁺, 𝕔, 𝕔⁺, 𝕔𝕔, 𝕔𝕔⁺, 𝕔⁺𝕔, 𝕔⁺𝕔⁺, 𝕕, 𝕕⁺, 𝕕𝕕, 𝕕𝕕⁺, 𝕕⁺𝕕, 𝕕⁺𝕕⁺, Fock, FockIndex, isannihilation, iscreation, isnormalordered
+export Coulomb, FockTerm, Hopping, Hubbard, InterOrbitalInterSpin, InterOrbitalIntraSpin, Onsite, PairHopping, Pairing, SpinFlip
 
 # SU(2) spin systems
-export Γˣ, Γʸ, Γᶻ, Γ′ˣ, Γ′ʸ, Γ′ᶻ, DMˣ, DMʸ, DMᶻ, Isingˣ, Isingʸ, Isingᶻ, latexofspins, 𝕊, 𝕊ᵀ𝕊, SpinIndex, Spin, totalspin
-export DM, Heisenberg, Ising, Kitaev, SingleIonAnisotropy, SpinTerm, Zeeman, Γ, Γ′
+export Γˣ, Γʸ, Γᶻ, Γ′ˣ, Γ′ʸ, Γ′ᶻ, DMˣ, DMʸ, DMᶻ, Isingˣ, Isingʸ, Isingᶻ, latexofspins
+export 𝕊, 𝕊ᵀ𝕊, SpinIndex, Spin, totalspin
+export Γ, Γ′, DM, Heisenberg, Ising, Kitaev, SingleIonAnisotropy, SpinTerm, Zeeman
 
 # Phononic systems
-export latexofphonons, Elastic, Phonon, PhononIndex, Kinetic, Hooke, PhononTerm, 𝕦, 𝕦ᵀ𝕦, 𝕡
+export latexofphonons
+export 𝕦, 𝕦ᵀ𝕦, 𝕡, Phonon, PhononIndex
+export Elastic, Kinetic, Hooke, PhononTerm
 
 # Canonical complex fermionic/bosonic systems and hardcore bosonic systems
 ## FockIndex
@@ -43,20 +46,20 @@ Indicate that the nambu index is creation.
 const creation = 2
 
 """
-    FockIndex{T, O<:Union{Int, Symbol, Colon}, S<:Union{Rational{Int}, Symbol, Colon}, N<:Union{Int, Symbol, Colon}} <: InternalIndex
+    FockIndex{T, O<:Union{Int, Symbol, Colon}, S<:Union{Rational{Int}, Symbol, Colon}} <: InternalIndex
 
 Fock index, i.e., the internal index to specify the generators of a Fock space.
 """
-struct FockIndex{T, O<:Union{Int, Symbol, Colon}, S<:Union{Rational{Int}, Symbol, Colon}, N<:Union{Int, Symbol, Colon}} <: InternalIndex
+struct FockIndex{T, O<:Union{Int, Symbol, Colon}, S<:Union{Rational{Int}, Symbol, Colon}} <: InternalIndex
     orbital::O
     spin::S
-    nambu::N
-    function FockIndex{T}(orbital::Union{Int, Symbol, Colon}, spin::Union{Rational{Int}, Int, Symbol, Colon}, nambu::Union{Int, Symbol, Colon}) where T
+    nambu::Int
+    function FockIndex{T}(orbital::Union{Int, Symbol, Colon}, spin::Union{Rational{Int}, Int, Symbol, Colon}, nambu::Int) where T
         @assert T∈(:f, :b, :) "FockIndex error: wrong statistics."
         isa(spin, Rational{Int}) && @assert spin.den∈(1, 2) "FockIndex error: wrong spin."
-        isa(nambu, Int) && @assert nambu∈(annihilation, creation) "FockIndex error: wrong input nambu($nambu)."
+        @assert nambu∈(annihilation, creation) "FockIndex error: wrong input nambu($nambu)."
         isa(spin, Int) && (spin = convert(Rational{Int}, spin))
-        new{T, typeof(orbital), typeof(spin), typeof(nambu)}(orbital, spin, nambu)
+        new{T, typeof(orbital), typeof(spin)}(orbital, spin, nambu)
     end
 end
 ### basic methods of concrete InternalIndex
@@ -66,26 +69,28 @@ end
 @inline Base.:(==)(index₁::FockIndex, index₂::FockIndex) = statistics(index₁)==statistics(index₂) && ==(efficientoperations, index₁, index₂)
 @inline Base.isequal(index₁::FockIndex, index₂::FockIndex) = isequal(statistics(index₁), statistics(index₂)) && isequal(efficientoperations, index₁, index₂)
 @inline Base.hash(index::FockIndex, h::UInt) = hash((statistics(index), index.orbital, index.spin, index.nambu), h)
-@inline Base.adjoint(index::FockIndex{T, <:Union{Int, Symbol, Colon}, <:Union{Rational{Int}, Symbol, Colon}, Int}) where T = FockIndex{T}(index.orbital, index.spin, 3-index.nambu)
+@inline Base.adjoint(index::FockIndex) = FockIndex{statistics(index)}(index.orbital, index.spin, 3-index.nambu)
 @inline @generated function Base.replace(index::FockIndex; kwargs...)
     exprs = [:(get(kwargs, $name, getfield(index, $name))) for name in QuoteNode.(fieldnames(index))]
     return :(rawtype(typeof(index)){statistics(index)}($(exprs...)))
 end
+### requested by show
+@inline showablefields(::Type{<:FockIndex}) = (:orbital, :spin)
 ### requested by Pattern
 @inline diagonalfields(::Type{<:FockIndex}) = (:orbital, :spin)
 ### requested by MatrixCoupling
-@inline internalindextype(::Type{FockIndex}, ::Type{O}, ::Type{S}, ::Type{N}) where {O<:Union{Int, Symbol, Colon}, S<:Union{Rational{Int}, Symbol, Colon}, N<:Union{Int, Symbol, Colon}} = FockIndex{:, O, S, N}
-@inline internalindextype(::Type{FockIndex{T}}, ::Type{O}, ::Type{S}, ::Type{N}) where {T, O<:Union{Int, Symbol, Colon}, S<:Union{Rational{Int}, Symbol, Colon}, N<:Union{Int, Symbol, Colon}} = FockIndex{T, O, S, N}
+@inline internalindextype(::Type{FockIndex}, ::Type{O}, ::Type{S}, ::Type{Int}) where {O<:Union{Int, Symbol, Colon}, S<:Union{Rational{Int}, Symbol, Colon}} = FockIndex{:, O, S}
+@inline internalindextype(::Type{FockIndex{T}}, ::Type{O}, ::Type{S}, ::Type{Int}) where {T, O<:Union{Int, Symbol, Colon}, S<:Union{Rational{Int}, Symbol, Colon}} = FockIndex{T, O, S}
 
 """
-    FockIndex(orbital::Union{Int, Symbol, Colon}, spin::Union{Rational{Int}, Int, Symbol, Colon}, nambu::Union{Int, Symbol, Colon})
-    FockIndex{T}(orbital::Union{Int, Symbol, Colon}, spin::Union{Rational{Int}, Int, Symbol, Colon}, nambu::Union{Int, Symbol, Colon}) where T
-    FockIndex{T, O, S, N}(orbital::Union{Int, Symbol, Colon}, spin::Union{Rational{Int}, Symbol, Colon}, nambu::Union{Int, Symbol, Colon}) where {T, O, S, N}
+    FockIndex(orbital::Union{Int, Symbol, Colon}, spin::Union{Rational{Int}, Int, Symbol, Colon}, nambu::Int)
+    FockIndex{T}(orbital::Union{Int, Symbol, Colon}, spin::Union{Rational{Int}, Int, Symbol, Colon}, nambu::Int) where T
+    FockIndex{T, O, S}(orbital::Union{Int, Symbol, Colon}, spin::Union{Rational{Int}, Symbol, Colon}, nambu::Int) where {T, O, S}
 
 Construct a Fock index.
 """
-@inline FockIndex(orbital::Union{Int, Symbol, Colon}, spin::Union{Rational{Int}, Int, Symbol, Colon}, nambu::Union{Int, Symbol, Colon}) = FockIndex{:}(orbital, spin, nambu)
-@inline FockIndex{T, O, S, N}(orbital::Union{Int, Symbol, Colon}, spin::Union{Rational{Int}, Symbol, Colon}, nambu::Union{Int, Symbol, Colon}) where {T, O, S, N} = FockIndex{T}(orbital, spin, nambu)
+@inline FockIndex(orbital::Union{Int, Symbol, Colon}, spin::Union{Rational{Int}, Int, Symbol, Colon}, nambu::Int) = FockIndex{:}(orbital, spin, nambu)
+@inline FockIndex{T, O, S}(orbital::Union{Int, Symbol, Colon}, spin::Union{Rational{Int}, Symbol, Colon}, nambu::Int) where {T, O, S} = FockIndex{T}(orbital, spin, nambu)
 
 """
     isannihilation(index::FockIndex) -> Bool
@@ -111,71 +116,74 @@ Judge whether the nambu index is `creation`.
 
 ### convenient construction and string representation 
 """
-    𝕔(orbital, spin, nambu) -> FockIndex{:f}
-    𝕔(site, orbital, spin, nambu) -> Index{<:FockIndex{:f}}
-    𝕔(site, orbital, spin, nambu, rcoordinate, icoordinate) -> CoordinatedIndex{<:Index{<:FockIndex{:f}}}
+    𝕔(orbital, spin) -> FockIndex{:f}
+    𝕔(site, orbital, spin) -> Index{<:FockIndex{:f}}
+    𝕔(site, orbital, spin, rcoordinate, icoordinate) -> CoordinatedIndex{<:Index{<:FockIndex{:f}}}
 
-Convenient construction of `FockIndex{:f}`, `Index{<:FockIndex{:f}}`, `CoordinatedIndex{<:Index{<:FockIndex{f}}}`.
+Convenient construction of `FockIndex{:f}`, `Index{<:FockIndex{:f}}`, `CoordinatedIndex{<:Index{<:FockIndex{f}}}` with the `nambu` attribute being `annihilation`.
 """
 function 𝕔 end
 
 """
-    𝕗(orbital, spin, nambu) -> FockIndex{:f}
-    𝕗(site, orbital, spin, nambu) -> Index{<:FockIndex{:f}}
-    𝕗(site, orbital, spin, nambu, rcoordinate, icoordinate) -> CoordinatedIndex{<:Index{<:FockIndex{:f}}}
+    𝕔⁺(orbital, spin) -> FockIndex{:f}
+    𝕔⁺(site, orbital, spin) -> Index{<:FockIndex{:f}}
+    𝕔⁺(site, orbital, spin, rcoordinate, icoordinate) -> CoordinatedIndex{<:Index{<:FockIndex{:f}}}
 
-Convenient construction of `FockIndex{:f}`, `Index{<:FockIndex{:f}}`, `CoordinatedIndex{<:Index{<:FockIndex{f}}}`.
+Convenient construction of `FockIndex{:f}`, `Index{<:FockIndex{:f}}`, `CoordinatedIndex{<:Index{<:FockIndex{f}}}` with the `nambu` attribute being `creation`.
 """
-const 𝕗 = 𝕔
-
-"""
-    𝕓(orbital, spin, nambu) -> FockIndex{:b}
-    𝕓(site, orbital, spin, nambu) -> Index{<:FockIndex{:b}}
-    𝕓(site, orbital, spin, nambu, rcoordinate, icoordinate) -> CoordinatedIndex{<:Index{<:FockIndex{:b}}}
-
-Convenient construction of `FockIndex{:b}`, `Index{<:FockIndex{:b}}`, `CoordinatedIndex{<:Index{<:FockIndex{:b}}}`.
-"""
-function 𝕓 end
+function 𝕔⁺ end
 
 """
-    𝕒(orbital, spin, nambu) -> FockIndex{:b}
-    𝕒(site, orbital, spin, nambu) -> Index{<:FockIndex{:b}}
-    𝕒(site, orbital, spin, nambu, rcoordinate, icoordinate) -> CoordinatedIndex{<:Index{<:FockIndex{:b}}}
+    𝕒(orbital, spin) -> FockIndex{:b}
+    𝕒(site, orbital, spin) -> Index{<:FockIndex{:b}}
+    𝕒(site, orbital, spin, rcoordinate, icoordinate) -> CoordinatedIndex{<:Index{<:FockIndex{:b}}}
 
-Convenient construction of `FockIndex{:b}`, `Index{<:FockIndex{:b}}`, `CoordinatedIndex{<:Index{<:FockIndex{:b}}}`.
+Convenient construction of `FockIndex{:b}`, `Index{<:FockIndex{:b}}`, `CoordinatedIndex{<:Index{<:FockIndex{:b}}}` with the `nambu` attribute being `annihilation`.
 """
-const 𝕒 = 𝕓
+function 𝕒 end
 
 """
-    𝕕(orbital, spin, nambu) -> FockIndex{:}
-    𝕕(site, orbital, spin, nambu) -> Index{<:FockIndex{:}}
-    𝕕(site, orbital, spin, nambu, rcoordinate, icoordinate) -> CoordinatedIndex{<:Index{<:FockIndex{:}}}
+    𝕒⁺(orbital, spin) -> FockIndex{:b}
+    𝕒⁺(site, orbital, spin) -> Index{<:FockIndex{:b}}
+    𝕒⁺(site, orbital, spin, rcoordinate, icoordinate) -> CoordinatedIndex{<:Index{<:FockIndex{:b}}}
 
-Convenient construction of `FockIndex{:}`, `Index{<:FockIndex{:}}`, `CoordinatedIndex{<:Index{<:FockIndex{:}}}`.
+Convenient construction of `FockIndex{:b}`, `Index{<:FockIndex{:b}}`, `CoordinatedIndex{<:Index{<:FockIndex{:b}}}` with the `nambu` attribute being `creation`.
+"""
+function 𝕒⁺ end
+
+"""
+    𝕕(orbital, spin) -> FockIndex{:}
+    𝕕(site, orbital, spin) -> Index{<:FockIndex{:}}
+    𝕕(site, orbital, spin, rcoordinate, icoordinate) -> CoordinatedIndex{<:Index{<:FockIndex{:}}}
+
+Convenient construction of `FockIndex{:}`, `Index{<:FockIndex{:}}`, `CoordinatedIndex{<:Index{<:FockIndex{:}}}` with the `nambu` attribute being `annihilation`.
 """
 function 𝕕 end
 
-const _fock_ = (:𝕔, :𝕓, :𝕕), (QuoteNode(:f), QuoteNode(:b), :)
-for (name, statistics) in zip(_fock_...)
-    @eval @inline $name(orbital, spin, nambu) = FockIndex{$statistics}(orbital, spin, nambu)
-    @eval @inline $name(site, orbital, spin, nambu) = Index(site, FockIndex{$statistics}(orbital, spin, nambu))
-    @eval @inline $name(site, orbital, spin, nambu, rcoordinate, icoordinate) = CoordinatedIndex(Index(site, FockIndex{$statistics}(orbital, spin, nambu)), rcoordinate, icoordinate)
+"""
+    𝕕⁺(orbital, spin) -> FockIndex{:}
+    𝕕⁺(site, orbital, spin) -> Index{<:FockIndex{:}}
+    𝕕⁺(site, orbital, spin, rcoordinate, icoordinate) -> CoordinatedIndex{<:Index{<:FockIndex{:}}}
+
+Convenient construction of `FockIndex{:}`, `Index{<:FockIndex{:}}`, `CoordinatedIndex{<:Index{<:FockIndex{:}}}` with the `nambu` attribute being `creation`.
+"""
+function 𝕕⁺ end
+
+const _annihilation_ = (:𝕔, :𝕒, :𝕕), (QuoteNode(:f), QuoteNode(:b), :)
+for (name, statistics) in zip(_annihilation_...)
+    @eval @inline $name(orbital, spin) = FockIndex{$statistics}(orbital, spin, annihilation)
+    @eval @inline $name(site, orbital, spin) = Index(site, FockIndex{$statistics}(orbital, spin, annihilation))
+    @eval @inline $name(site, orbital, spin, rcoordinate, icoordinate) = CoordinatedIndex(Index(site, FockIndex{$statistics}(orbital, spin, annihilation)), rcoordinate, icoordinate)
 end
-@inline Base.getindex(::Type{OperatorIndex}, ::I) where {I<:Union{FockIndex{:f}, Index{<:FockIndex{:f}}, CoordinatedIndex{<:Index{<:FockIndex{:f}}}}} = 𝕔
-@inline Base.getindex(::Type{OperatorIndex}, ::I) where {I<:Union{FockIndex{:b}, Index{<:FockIndex{:b}}, CoordinatedIndex{<:Index{<:FockIndex{:b}}}}} = 𝕓
-@inline Base.getindex(::Type{OperatorIndex}, ::I) where {I<:Union{FockIndex{:}, Index{<:FockIndex{:}}, CoordinatedIndex{<:Index{<:FockIndex{:}}}}} = 𝕕
-@inline Base.getindex(::Type{OperatorIndex}, ::I) where {I<:Union{FockIndex, Index{<:FockIndex}, CoordinatedIndex{<:Index{<:FockIndex}}}} = 𝕕
-@inline Base.getindex(::Type{OperatorIndex}, ::typeof(𝕔)) = FockIndex{:f}
-@inline Base.getindex(::Type{OperatorIndex}, ::typeof(𝕓)) = FockIndex{:b}
-@inline Base.getindex(::Type{OperatorIndex}, ::typeof(𝕕)) = FockIndex{:}
-
-### patternrule
-"""
-    patternrule(nambus::OneAtLeast{Colon}, ::Val{}, ::Type{<:FockIndex}, ::Val{:nambu}) -> NTuple{fieldcount(typeof(nambus)), Int}
-
-Default pattern rule for the `:nambu` attribute of Fock indexes.
-"""
-@inline patternrule(nambus::OneAtLeast{Colon}, ::Val{}, ::Type{<:FockIndex}, ::Val{:nambu}) = ntuple(i->isodd(i) ? creation : annihilation, Val(fieldcount(typeof(nambus))))
+const _creation_ = (:𝕔⁺, :𝕒⁺, :𝕕⁺), (QuoteNode(:f), QuoteNode(:b), :)
+for (name, statistics) in zip(_creation_...)
+    @eval @inline $name(orbital, spin) = FockIndex{$statistics}(orbital, spin, creation)
+    @eval @inline $name(site, orbital, spin) = Index(site, FockIndex{$statistics}(orbital, spin, creation))
+    @eval @inline $name(site, orbital, spin, rcoordinate, icoordinate) = CoordinatedIndex(Index(site, FockIndex{$statistics}(orbital, spin, creation)), rcoordinate, icoordinate)
+end
+@inline Base.getindex(::Type{OperatorIndex}, index::FockIndex{:f}) = isannihilation(index) ? "𝕔" : iscreation(index) ? "𝕔⁺" : error("wrong index.")
+@inline Base.getindex(::Type{OperatorIndex}, index::FockIndex{:b}) = isannihilation(index) ? "𝕒" : iscreation(index) ? "𝕒⁺" : error("wrong index.")
+@inline Base.getindex(::Type{OperatorIndex}, index::FockIndex{:}) = isannihilation(index) ? "𝕕" : iscreation(index) ? "𝕕⁺" : error("wrong index.")
 
 ### LaTeX format output
 """
@@ -235,11 +243,11 @@ latexformat(CompositeIndex{<:Index{<:FockIndex{:}}}, latexofparticles)
 
 ## Fock
 """
-    Fock{T} <: SimpleInternal{FockIndex{T, Int, Rational{Int}, Int}}
+    Fock{T} <: SimpleInternal{FockIndex{T, Int, Rational{Int}}}
 
 Fock space of Fock generators at a single point.
 """
-struct Fock{T} <: SimpleInternal{FockIndex{T, Int, Rational{Int}, Int}}
+struct Fock{T} <: SimpleInternal{FockIndex{T, Int, Rational{Int}}}
     norbital::Int
     nspin::Int
     function Fock{T}(norbital::Int, nspin::Int) where T
@@ -248,7 +256,7 @@ struct Fock{T} <: SimpleInternal{FockIndex{T, Int, Rational{Int}, Int}}
     end
 end
 @inline shape(fock::Fock) = (1:fock.norbital, 1:fock.nspin, 1:2)
-@inline Base.eltype(::Type{Fock}) = (FockIndex{T, Int, Rational{Int}, Int} where T)
+@inline Base.eltype(::Type{Fock}) = (FockIndex{T, Int, Rational{Int}} where T)
 @inline Base.convert(::Type{<:CartesianIndex}, index::FockIndex{T}, fock::Fock{T}) where T = CartesianIndex(index.orbital, Int(index.spin+(fock.nspin-1)//2)+1, index.nambu)
 @inline Base.convert(::Type{<:FockIndex}, index::CartesianIndex{3}, fock::Fock{T}) where T = FockIndex{T}(index[1], index[2]-1-(fock.nspin-1)//2, index[3])
 @inline Base.summary(io::IO, fock::Fock) = @printf io "%s-element Fock{%s}" length(fock) repr(statistics(fock))
@@ -257,7 +265,7 @@ end
 @inline Base.match(::Type{<:FockIndex{T}}, ::Type{<:Fock{T}}) where T = true
 @inline Base.match(::Type{<:FockIndex{T₁}}, ::Type{<:Fock{T₂}}) where {T₁, T₂} = false
 ### requested by ConstrainedInternal
-@inline function shape(internal::Fock, index::FockIndex{T, <:Union{Int, Symbol, Colon}, <:Union{Rational{Int}, Symbol, Colon}, Int}) where T
+@inline function shape(internal::Fock, index::FockIndex{T, <:Union{Int, Symbol, Colon}, <:Union{Rational{Int}, Symbol, Colon}}) where T
     return (fockshape(index.orbital, internal.norbital), fockshape(index.spin, internal.nspin), index.nambu:index.nambu)
 end
 @inline fockshape(::Union{Symbol, Colon}, n::Int) = 1:n
@@ -339,45 +347,6 @@ end
 @inline permute(id₁::FockIndex{:f}, id₂::FockIndex{:b}) = (Operator(1, id₂, id₁),)
 
 ## Coupling
-### MatrixCoupling
-const default_matrix = SparseMatrixCSC(hcat(1))
-"""
-    MatrixCoupling(F::Union{typeof(𝕔), typeof(𝕓), typeof(𝕕)}, sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon})
-    MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{F}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) where {F<:FockIndex}
-
-Construct a matrix coupling for Fock systems.
-"""
-@inline function MatrixCoupling(F::Union{typeof(𝕔), typeof(𝕓), typeof(𝕕)}, sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon})
-    return MatrixCoupling(sites, OperatorIndex[F], orbital, spin, nambu)
-end
-@inline function MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{F}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) where {F<:FockIndex}
-    return MatrixCoupling(sites, F, MatrixCouplingComponent(F, Val(:orbital), orbital), MatrixCouplingComponent(F, Val(:spin), spin), MatrixCouplingComponent(F, Val(:nambu), nambu))
-end
-@inline MatrixCouplingComponent(::Type{<:FockIndex}, ::Val, ::Colon) = MatrixCouplingComponent(SVector(:), SVector(:), default_matrix)
-@inline MatrixCouplingComponent(::Type{<:FockIndex}, ::Val{:orbital}, matrix::AbstractMatrix) = MatrixCouplingComponent(1:size(matrix)[1], 1:size(matrix)[2], matrix)
-@inline MatrixCouplingComponent(::Type{<:FockIndex}, ::Val{:spin}, matrix::AbstractMatrix) = MatrixCouplingComponent((size(matrix)[1]-1)//2:-1:(1-size(matrix)[1])//2, (size(matrix)[2]-1)//2:-1:(1-size(matrix)[2])//2, matrix)
-@inline MatrixCouplingComponent(::Type{<:FockIndex}, ::Val{:nambu}, matrix::AbstractMatrix) = (@assert size(matrix)==(2, 2) "MatrixCouplingComponent error: for nambu subspace, the input matrix must be 2×2."; MatrixCouplingComponent(1:1:2, 2:-1:1, matrix))
-
-"""
-    𝕔⁺𝕔(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) -> MatrixCoupling
-    𝕓⁺𝕓(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) -> MatrixCoupling
-    𝕕⁺𝕕(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) -> MatrixCoupling
-
-Construct a matrix coupling for Fock systems.
-"""
-@inline 𝕔⁺𝕔(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) = MatrixCoupling(𝕗, sites, orbital, spin, nambu)
-@inline 𝕓⁺𝕓(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) = MatrixCoupling(𝕓, sites, orbital, spin, nambu)
-@inline 𝕕⁺𝕕(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) = MatrixCoupling(𝕕, sites, orbital, spin, nambu)
-
-"""
-    𝕗⁺𝕗(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) -> MatrixCoupling
-    𝕒⁺𝕒(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) -> MatrixCoupling
-
-Construct a matrix coupling for Fock systems.
-"""
-const 𝕗⁺𝕗 = 𝕔⁺𝕔
-const 𝕒⁺𝕒 = 𝕓⁺𝕓
-
 ### Pauli matrices
 """
     const σ⁰ = SparseMatrixCSC([1 0; 0 1])
@@ -387,9 +356,11 @@ const 𝕒⁺𝕒 = 𝕓⁺𝕓
     const σ⁺ = SparseMatrixCSC([0 1; 0 0])
     const σ⁻ = SparseMatrixCSC([0 0; 1 0])
     const σ¹¹ = SparseMatrixCSC([1 0; 0 0])
+    const σ¹² = SparseMatrixCSC([0 1; 0 0])
+    const σ²¹ = SparseMatrixCSC([0 0; 1 0])
     const σ²² = SparseMatrixCSC([0 0; 0 1])
 
-Pauli matrices σ⁰, σˣ, σʸ, σᶻ, σ⁺, σ⁻, σ¹¹ and σ²².
+Pauli matrices σ⁰, σˣ, σʸ, σᶻ, σ⁺, σ⁻, σ¹¹, σ¹², σ²¹ and σ²².
 """
 const σ⁰ = SparseMatrixCSC([1 0; 0 1])
 const σˣ = SparseMatrixCSC([0 1; 1 0])
@@ -398,6 +369,8 @@ const σᶻ = SparseMatrixCSC([1 0; 0 -1])
 const σ⁺ = SparseMatrixCSC([0 1; 0 0])
 const σ⁻ = SparseMatrixCSC([0 0; 1 0])
 const σ¹¹ = SparseMatrixCSC([1 0; 0 0])
+const σ¹² = SparseMatrixCSC([0 1; 0 0])
+const σ²¹ = SparseMatrixCSC([0 0; 1 0])
 const σ²² = SparseMatrixCSC([0 0; 0 1])
 
 ### Rotation matrices
@@ -412,28 +385,83 @@ const Lˣ = SparseMatrixCSC([0 0 0; 0 0 1im; 0 -1im 0])
 const Lʸ = SparseMatrixCSC([0 0 -1im; 0 0 0; 1im 0 0])
 const Lᶻ = SparseMatrixCSC([0 1im 0; -1im 0 0; 0 0 0])
 
+### MatrixCoupling
+const default_matrix = SparseMatrixCSC(hcat(1))
+"""
+    MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{F}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::AbstractMatrix) where {F<:FockIndex}
+
+Construct a matrix coupling for Fock systems.
+"""
+@inline function MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{F}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}, nambu::Union{AbstractMatrix, Colon}) where {F<:FockIndex}
+    return MatrixCoupling(sites, F, MatrixCouplingComponent(F, Val(:orbital), orbital), MatrixCouplingComponent(F, Val(:spin), spin), MatrixCouplingComponent(F, Val(:nambu), nambu))
+end
+@inline function MatrixCouplingComponent(::Type{<:FockIndex}, ::Val, ::Colon)
+    return MatrixCouplingComponent(SVector(:), SVector(:), default_matrix)
+end
+@inline function MatrixCouplingComponent(::Type{<:FockIndex}, ::Val{:orbital}, matrix::AbstractMatrix)
+    return MatrixCouplingComponent(1:size(matrix)[1], 1:size(matrix)[2], matrix)
+end
+@inline function MatrixCouplingComponent(::Type{<:FockIndex}, ::Val{:spin}, matrix::AbstractMatrix)
+    return MatrixCouplingComponent((size(matrix)[1]-1)//2:-1:(1-size(matrix)[1])//2, (size(matrix)[2]-1)//2:-1:(1-size(matrix)[2])//2, matrix)
+end
+@inline function MatrixCouplingComponent(::Type{<:FockIndex}, ::Val{:nambu}, matrix::AbstractMatrix)
+    @assert size(matrix)==(2, 2) "MatrixCouplingComponent error: for nambu subspace, the input matrix must be 2×2."
+    return MatrixCouplingComponent(SVector(creation, annihilation), SVector(annihilation, creation), matrix)
+end
+
+"""
+    𝕔⁺𝕔(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}) -> MatrixCoupling
+    𝕔⁺𝕔⁺(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}) -> MatrixCoupling
+    𝕔𝕔(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}) -> MatrixCoupling
+    𝕔𝕔⁺(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}) -> MatrixCoupling
+
+    𝕒⁺𝕒(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}) -> MatrixCoupling
+    𝕒⁺𝕒⁺(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}) -> MatrixCoupling
+    𝕒𝕒(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}) -> MatrixCoupling
+    𝕒𝕒⁺(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}) -> MatrixCoupling
+
+    𝕕⁺𝕕(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}) -> MatrixCoupling
+    𝕕⁺𝕕⁺(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}) -> MatrixCoupling
+    𝕕𝕕(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}) -> MatrixCoupling
+    𝕕𝕕⁺(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}) -> MatrixCoupling
+
+Construct a matrix coupling for Fock systems.
+"""
+@inline 𝕔⁺𝕔(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}) = MatrixCoupling(sites, FockIndex{:f}, orbital, spin, σ¹¹)
+@inline 𝕔⁺𝕔⁺(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}) = MatrixCoupling(sites, FockIndex{:f}, orbital, spin, σ¹²)
+@inline 𝕔𝕔(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}) = MatrixCoupling(sites, FockIndex{:f}, orbital, spin, σ²¹)
+@inline 𝕔𝕔⁺(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}) = MatrixCoupling(sites, FockIndex{:f}, orbital, spin, σ²²)
+@inline 𝕒⁺𝕒(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}) = MatrixCoupling(sites, FockIndex{:b}, orbital, spin, σ¹¹)
+@inline 𝕒⁺𝕒⁺(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}) = MatrixCoupling(sites, FockIndex{:b}, orbital, spin, σ¹²)
+@inline 𝕒𝕒(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}) = MatrixCoupling(sites, FockIndex{:b}, orbital, spin, σ²¹)
+@inline 𝕒𝕒⁺(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}) = MatrixCoupling(sites, FockIndex{:b}, orbital, spin, σ²²)
+@inline 𝕕⁺𝕕(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}) = MatrixCoupling(sites, FockIndex{:}, orbital, spin, σ¹¹)
+@inline 𝕕⁺𝕕⁺(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}) = MatrixCoupling(sites, FockIndex{:}, orbital, spin, σ¹²)
+@inline 𝕕𝕕(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}) = MatrixCoupling(sites, FockIndex{:}, orbital, spin, σ²¹)
+@inline 𝕕𝕕⁺(sites::Union{NTuple{2, Ordinal}, Colon}, orbital::Union{AbstractMatrix, Colon}, spin::Union{AbstractMatrix, Colon}) = MatrixCoupling(sites, FockIndex{:}, orbital, spin, σ²²)
+
 ## Term
 """
-    Onsite(id::Symbol, value, coupling=Coupling(𝕕(:, :, :, :), 𝕕(:, :, :, :)); ishermitian::Bool=true, amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+    Onsite(id::Symbol, value, coupling=Coupling(𝕕⁺(:, :, :), 𝕕(:, :, :)); ishermitian::Bool=true, amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
 
 Onsite term.
 
 Type alias for `Term{:Onsite, id, V, Int, C<:TermCoupling, A<:TermAmplitude}`.
 """
 const Onsite{id, V, C<:TermCoupling, A<:TermAmplitude} = Term{:Onsite, id, V, Int, C, A}
-@inline function Onsite(id::Symbol, value, coupling=Coupling(𝕕(:, :, :, :), 𝕕(:, :, :, :)); ishermitian::Bool=true, amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+@inline function Onsite(id::Symbol, value, coupling=Coupling(𝕕⁺(:, :, :), 𝕕(:, :, :)); ishermitian::Bool=true, amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
     return Term{:Onsite}(id, value, 0, coupling, ishermitian; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 
 """
-    Hopping(id::Symbol, value, bondkind, coupling=Coupling(𝕕(:, :, :, :), 𝕕(:, :, :, :)); amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+    Hopping(id::Symbol, value, bondkind, coupling=Coupling(𝕕⁺(:, :, :), 𝕕(:, :, :)); amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
 
 Hopping term.
 
 Type alias for `Term{:Hopping, id, V, B, C<:TermCoupling, A<:TermAmplitude}`.
 """
 const Hopping{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:Hopping, id, V, B, C, A}
-@inline function Hopping(id::Symbol, value, bondkind, coupling=Coupling(𝕕(:, :, :, :), 𝕕(:, :, :, :)); amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+@inline function Hopping(id::Symbol, value, bondkind, coupling=Coupling(𝕕⁺(:, :, :), 𝕕(:, :, :)); amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
     @assert bondkind≠0 "Hopping error: input bondkind (neighbor) cannot be 0. Use `Onsite` instead."
     return Term{:Hopping}(id, value, bondkind, coupling, false; amplitude=amplitude, ismodulatable=ismodulatable)
 end
@@ -449,7 +477,6 @@ const Pairing{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:Pairing, id, 
 @inline function Pairing(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
     return Term{:Pairing}(id, value, bondkind, coupling, false; amplitude=amplitude, ismodulatable=ismodulatable)
 end
-@inline patternrule(::NTuple{2, Colon}, ::Val{:Pairing}, ::Type{<:FockIndex}, ::Val{:nambu}) = (annihilation, annihilation)
 function expand!(operators::Operators, term::Pairing, bond::Bond, hilbert::Hilbert; half::Bool=false)
     argtypes = Tuple{Operators, Term, Bond, Hilbert}
     invoke(expand!, argtypes, operators, term, bond, hilbert; half=half)
@@ -466,7 +493,7 @@ Type alias for `Term{:Hubbard, id, V, Int, C<:TermCoupling, A<:TermAmplitude}`.
 """
 const Hubbard{id, V, C<:TermCoupling, A<:TermAmplitude} = Term{:Hubbard, id, V, Int, C, A}
 @inline function Hubbard(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
-    return Term{:Hubbard}(id, value, 0, Coupling(𝕕, :, :, (1//2, 1//2, -1//2, -1//2), (2, 1, 2, 1)), true; amplitude=amplitude, ismodulatable=ismodulatable)
+    return Term{:Hubbard}(id, value, 0, Coupling(:, FockIndex, :, (1//2, 1//2, -1//2, -1//2), (creation, annihilation, creation, annihilation)), true; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 
 """
@@ -478,7 +505,7 @@ Type alias for `Term{:InterOrbitalInterSpin, id, V, Int, C<:TermCoupling, A<:Ter
 """
 const InterOrbitalInterSpin{id, V, C<:TermCoupling, A<:TermAmplitude} = Term{:InterOrbitalInterSpin, id, V, Int, C, A}
 @inline function InterOrbitalInterSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
-    return Term{:InterOrbitalInterSpin}(id, value, 0, Coupling(@pattern(𝕕(:, α, σ, 2), 𝕕(:, α, σ, 1), 𝕕(:, β, σ′, 2), 𝕕(:, β, σ′, 1); constraint=α<β && σ≠σ′)), true; amplitude=amplitude, ismodulatable=ismodulatable)
+    return Term{:InterOrbitalInterSpin}(id, value, 0, Coupling(@pattern(𝕕⁺(:, α, σ), 𝕕(:, α, σ), 𝕕⁺(:, β, σ′), 𝕕(:, β, σ′); constraint=α<β && σ≠σ′)), true; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 
 """
@@ -490,7 +517,7 @@ Type alias for `Term{:InterOrbitalIntraSpin, id, V, Int, C<:TermCoupling, A<:Ter
 """
 const InterOrbitalIntraSpin{id, V, C<:TermCoupling, A<:TermAmplitude} = Term{:InterOrbitalIntraSpin, id, V, Int, C, A}
 @inline function InterOrbitalIntraSpin(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
-    return Term{:InterOrbitalIntraSpin}(id, value, 0, Coupling(@pattern(𝕕(:, α, σ, 2), 𝕕(:, α, σ, 1), 𝕕(:, β, σ, 2), 𝕕(:, β, σ, 1); constraint=α<β)), true; amplitude=amplitude, ismodulatable=ismodulatable)
+    return Term{:InterOrbitalIntraSpin}(id, value, 0, Coupling(@pattern(𝕕⁺(:, α, σ), 𝕕(:, α, σ), 𝕕⁺(:, β, σ), 𝕕(:, β, σ); constraint=α<β)), true; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 
 """
@@ -502,7 +529,7 @@ Type alias for `Term{:SpinFlip, id, V, Int, C<:TermCoupling, A<:TermAmplitude}`.
 """
 const SpinFlip{id, V, C<:TermCoupling, A<:TermAmplitude} = Term{:SpinFlip, id, V, Int, C, A}
 @inline function SpinFlip(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
-    return Term{:SpinFlip}(id, value, 0, Coupling(@pattern(𝕕(:, α, 1//2, 2), 𝕕(:, β, -1//2, 2), 𝕕(:, α, -1//2, 1), 𝕕(:, β, 1//2, 1); constraint=α<β)), false; amplitude=amplitude, ismodulatable=ismodulatable)
+    return Term{:SpinFlip}(id, value, 0, Coupling(@pattern(𝕕⁺(:, α, 1//2), 𝕕⁺(:, β, -1//2), 𝕕(:, α, -1//2), 𝕕(:, β, 1//2); constraint=α<β)), false; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 
 """
@@ -514,18 +541,18 @@ Type alias for `Term{:PairHopping, id, V, Int, C<:TermCoupling, A<:TermAmplitude
 """
 const PairHopping{id, V, C<:TermCoupling, A<:TermAmplitude} = Term{:PairHopping, id, V, Int, C, A}
 @inline function PairHopping(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
-    return Term{:PairHopping}(id, value, 0, Coupling(@pattern(𝕕(:, α, 1//2, 2), 𝕕(:, α, -1//2, 2), 𝕕(:, β, -1//2, 1), 𝕕(:, β, 1//2, 1); constraint=α<β)), false; amplitude=amplitude, ismodulatable=ismodulatable)
+    return Term{:PairHopping}(id, value, 0, Coupling(@pattern(𝕕⁺(:, α, 1//2), 𝕕⁺(:, α, -1//2), 𝕕(:, β, -1//2), 𝕕(:, β, 1//2); constraint=α<β)), false; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 
 """
-    Coulomb(id::Symbol, value, bondkind, coupling=Coupling(𝕕(:, :, :, :), 𝕕(:, :, :, :))^2; ishermitian::Bool=true, amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+    Coulomb(id::Symbol, value, bondkind, coupling=Coupling(𝕕⁺(:, :, :), 𝕕(:, :, :))^2; ishermitian::Bool=true, amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
 
 Coulomb term.
 
 Type alias for `Term{:Coulomb, id, V, B, C<:TermCoupling, A<:TermAmplitude}`.
 """
 const Coulomb{id, V, B, C<:TermCoupling, A<:TermAmplitude} = Term{:Coulomb, id, V, B, C, A}
-@inline function Coulomb(id::Symbol, value, bondkind, coupling=Coupling(𝕕(:, :, :, :), 𝕕(:, :, :, :))^2; ishermitian::Bool=true, amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
+@inline function Coulomb(id::Symbol, value, bondkind, coupling=Coupling(𝕕⁺(:, :, :), 𝕕(:, :, :))^2; ishermitian::Bool=true, amplitude::Union{Function, Nothing}=nothing, ismodulatable::Bool=true)
     return Term{:Coulomb}(id, value, bondkind, coupling, ishermitian; amplitude=amplitude, ismodulatable=ismodulatable)
 end
 
@@ -611,20 +638,14 @@ Get the total spin.
 Convenient construction of `SpinIndex`, `Index{<:SpinIndex}`, `CoordinatedIndex{<:Index{<:SpinIndex}}`.
 """
 struct 𝕊{S} <: Function end
-@inline Base.show(io::IO, ::Type{𝕊{S}}) where S = @printf io "𝕊{%s}" str(S)
-@inline Base.show(io::IO, ::Type{𝕊{:}}) = @printf io "%s" "𝕊"
-@inline Base.show(io::IO, ::Type{<:𝕊}) = @printf io "%s" "𝕊"
 @inline 𝕊(tag) = SpinIndex(tag)
 @inline 𝕊(site, tag) = Index(site, SpinIndex(tag))
 @inline 𝕊(site, tag, rcoordinate, icoordinate) = CoordinatedIndex(Index(site, SpinIndex(tag)), rcoordinate, icoordinate)
 @inline 𝕊{S}(tag) where S = SpinIndex{S}(tag)
 @inline 𝕊{S}(site, tag) where S = Index(site, SpinIndex{S}(tag))
 @inline 𝕊{S}(site, tag, rcoordinate, icoordinate) where S = CoordinatedIndex(Index(site, SpinIndex{S}(tag)), rcoordinate, icoordinate)
-@inline Base.getindex(::Type{OperatorIndex}, ::I) where {I<:Union{SpinIndex, Index{<:SpinIndex}, CoordinatedIndex{<:Index{<:SpinIndex}}}} = 𝕊
-@inline Base.getindex(::Type{OperatorIndex}, ::I) where {I<:Union{SpinIndex{:}, Index{<:SpinIndex{:}}, CoordinatedIndex{<:Index{<:SpinIndex{:}}}}} = 𝕊
-@inline Base.getindex(::Type{OperatorIndex}, ::I) where {S, I<:Union{SpinIndex{S}, Index{<:SpinIndex{S}}, CoordinatedIndex{<:Index{<:SpinIndex{S}}}}} = 𝕊{S}
-@inline Base.getindex(::Type{OperatorIndex}, ::Type{𝕊}) = SpinIndex{:}
-@inline Base.getindex(::Type{OperatorIndex}, ::Type{𝕊{S}}) where S = SpinIndex{S}
+@inline Base.getindex(::Type{OperatorIndex}, index::SpinIndex{:}) = "𝕊"
+@inline Base.getindex(::Type{OperatorIndex}, index::SpinIndex) = "𝕊{$(totalspin(index))}"
 
 ### matrix
 """
@@ -751,28 +772,6 @@ function permute(id₁::SpinIndex, id₂::SpinIndex)
 end
 
 ## Coupling
-### MatrixCoupling
-"""
-    MatrixCoupling(::Type{<:𝕊}, sites::Union{NTuple{2, Ordinal}, Colon}, matrix::AbstractMatrix; rows::AbstractVector=SVector('x', 'y', 'z'), cols::AbstractVector=SVector('x', 'y', 'z'))
-    MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{<:SpinIndex}, matrix::AbstractMatrix; rows::AbstractVector=SVector('x', 'y', 'z'), cols::AbstractVector=SVector('x', 'y', 'z'))
-
-Construct a matrix coupling for spin systems.
-"""
-@inline function MatrixCoupling(::Type{S}, sites::Union{NTuple{2, Ordinal}, Colon}, matrix::AbstractMatrix; rows::AbstractVector=SVector('x', 'y', 'z'), cols::AbstractVector=SVector('x', 'y', 'z')) where {S<:𝕊}
-    return MatrixCoupling(sites, OperatorIndex[S], matrix; rows=rows, cols=cols)
-end
-@inline function MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{S}, matrix::AbstractMatrix; rows::AbstractVector=SVector('x', 'y', 'z'), cols::AbstractVector=SVector('x', 'y', 'z')) where {S<:SpinIndex}
-    @assert size(matrix)==(length(rows), length(cols)) "MatrixCoupling error: mismatched input matrix and rows/cols."
-    return MatrixCoupling(sites, S, MatrixCouplingComponent(rows, cols, matrix))
-end
-
-"""
-    𝕊ᵀ𝕊(sites::Union{NTuple{2, Ordinal}, Colon}, matrix::AbstractMatrix; rows::AbstractVector=SVector('x', 'y', 'z'), cols::AbstractVector=SVector('x', 'y', 'z')) -> MatrixCoupling
-
-Construct a matrix coupling for spin system.
-"""
-@inline 𝕊ᵀ𝕊(sites::Union{NTuple{2, Ordinal}, Colon}, matrix::AbstractMatrix; rows::AbstractVector=SVector('x', 'y', 'z'), cols::AbstractVector=SVector('x', 'y', 'z')) = MatrixCoupling(𝕊, sites, matrix; rows=rows, cols=cols)
-
 ### Spin coupling matrix
 """
     const Isingˣ = SparseMatrixCSC([1 0 0; 0 0 0; 0 0 0])
@@ -817,6 +816,24 @@ DM coupling matrices DMˣ, DMʸ and DMᶻ.
 const DMˣ = SparseMatrixCSC([0 0 0; 0 0 1; 0 -1 0])
 const DMʸ = SparseMatrixCSC([0 0 -1; 0 0 0; 1 0 0])
 const DMᶻ = SparseMatrixCSC([0 1 0; -1 0 0; 0 0 0])
+
+### MatrixCoupling
+"""
+    MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{<:SpinIndex}, matrix::AbstractMatrix; rows::AbstractVector=SVector('x', 'y', 'z'), cols::AbstractVector=SVector('x', 'y', 'z'))
+
+Construct a matrix coupling for spin systems.
+"""
+@inline function MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{S}, matrix::AbstractMatrix; rows::AbstractVector=SVector('x', 'y', 'z'), cols::AbstractVector=SVector('x', 'y', 'z')) where {S<:SpinIndex}
+    @assert size(matrix)==(length(rows), length(cols)) "MatrixCoupling error: mismatched input matrix and rows/cols."
+    return MatrixCoupling(sites, S, MatrixCouplingComponent(rows, cols, matrix))
+end
+
+"""
+    𝕊ᵀ𝕊(sites::Union{NTuple{2, Ordinal}, Colon}, matrix::AbstractMatrix; rows::AbstractVector=SVector('x', 'y', 'z'), cols::AbstractVector=SVector('x', 'y', 'z')) -> MatrixCoupling
+
+Construct a matrix coupling for spin system.
+"""
+@inline 𝕊ᵀ𝕊(sites::Union{NTuple{2, Ordinal}, Colon}, matrix::AbstractMatrix; rows::AbstractVector=SVector('x', 'y', 'z'), cols::AbstractVector=SVector('x', 'y', 'z')) = MatrixCoupling(sites, SpinIndex, matrix; rows=rows, cols=cols)
 
 ## Term
 """
@@ -1150,10 +1167,8 @@ Convenient construction of `SpinIndex{:p}`, `Index{<:SpinIndex{:p}}`, `Coordinat
 @inline 𝕡(direction) = PhononIndex{:p}(direction)
 @inline 𝕡(site, direction) = Index(site, PhononIndex{:p}(direction))
 @inline 𝕡(site, direction, rcoordinate, icoordinate) = CoordinatedIndex(Index(site, PhononIndex{:p}(direction)), rcoordinate, icoordinate)
-@inline Base.getindex(::Type{OperatorIndex}, ::I) where {I<:Union{PhononIndex{:u}, Index{<:PhononIndex{:u}}, CoordinatedIndex{<:Index{<:PhononIndex{:u}}}}} = 𝕦
-@inline Base.getindex(::Type{OperatorIndex}, ::I) where {I<:Union{PhononIndex{:p}, Index{<:PhononIndex{:p}}, CoordinatedIndex{<:Index{<:PhononIndex{:p}}}}} = 𝕡
-@inline Base.getindex(::Type{OperatorIndex}, ::typeof(𝕦)) = PhononIndex{:u}
-@inline Base.getindex(::Type{OperatorIndex}, ::typeof(𝕡)) = PhononIndex{:p}
+@inline Base.getindex(::Type{OperatorIndex}, ::PhononIndex{:u}) = "𝕦"
+@inline Base.getindex(::Type{OperatorIndex}, ::PhononIndex{:p}) = "𝕡"
 
 """
     kind(index::PhononIndex) -> Symbol
@@ -1270,14 +1285,10 @@ end
 ## Coupling
 ### MatrixCoupling
 """
-    MatrixCoupling(::typeof(𝕦), sites::Union{NTuple{2, Ordinal}, Colon}, matrix::AbstractMatrix; rows::Union{AbstractVector, Nothing}=nothing, cols::Union{AbstractVector, Nothing}=nothing)
     MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{PhononIndex{:u}}, matrix::AbstractMatrix; rows::Union{AbstractVector, Nothing}=nothing, cols::Union{AbstractVector, Nothing}=nothing)
 
 Construct a set of `Coupling`s corresponding to the dynamical matrix of phonons.
 """
-@inline function MatrixCoupling(::typeof(𝕦), sites::Union{NTuple{2, Ordinal}, Colon}, matrix::AbstractMatrix; rows::Union{AbstractVector, Nothing}=nothing, cols::Union{AbstractVector, Nothing}=nothing)
-    return MatrixCoupling(sites, OperatorIndex[𝕦], matrix; rows=rows, cols=cols)
-end
 function MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{PhononIndex{:u}}, matrix::AbstractMatrix; rows::Union{AbstractVector, Nothing}=nothing, cols::Union{AbstractVector, Nothing}=nothing)
     @assert size(matrix)[1]∈(1, 2, 3) && size(matrix)[2]∈(1, 2, 3) "MatrixCoupling error: mismatched dimension of input matrix."
     isnothing(rows) && (rows = size(matrix)[1]==1 ? SVector('x') : size(matrix)[1]==2 ? SVector('x', 'y') : SVector('x', 'y', 'z'))
@@ -1291,7 +1302,9 @@ end
 
 Construct a set of `Coupling`s corresponding to the dynamical matrix of phonons.
 """
-@inline 𝕦ᵀ𝕦(sites::Union{NTuple{2, Ordinal}, Colon}, matrix::AbstractMatrix; rows::Union{AbstractVector, Nothing}=nothing, cols::Union{AbstractVector, Nothing}=nothing) = MatrixCoupling(𝕦, sites, matrix; rows=rows, cols=cols)
+@inline function 𝕦ᵀ𝕦(sites::Union{NTuple{2, Ordinal}, Colon}, matrix::AbstractMatrix; rows::Union{AbstractVector, Nothing}=nothing, cols::Union{AbstractVector, Nothing}=nothing)
+    return MatrixCoupling(sites, PhononIndex{:u}, matrix; rows=rows, cols=cols)
+end
 
 ### expand
 """

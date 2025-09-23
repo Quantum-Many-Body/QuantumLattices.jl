@@ -36,8 +36,7 @@ end
 @inline 𝕕(nambu) = DID(nambu)
 @inline 𝕕(site, nambu) = Index(site, DID(nambu))
 @inline 𝕕(site, nambu, rcoordinate, icoordinate) = CoordinatedIndex(Index(site, DID(nambu)), rcoordinate, icoordinate)
-@inline Base.getindex(::Type{OperatorIndex}, ::Union{DID, Index{<:DID}, CoordinatedIndex{<:Index{<:DID}}}) = 𝕕
-@inline Base.getindex(::Type{OperatorIndex}, ::typeof(𝕕)) = DID
+@inline Base.getindex(::Type{OperatorIndex}, ::DID) = "𝕕"
 
 struct DFock <: SimpleInternal{DID{Int}}
     nnambu::Int
@@ -104,14 +103,6 @@ end
     @test filter(𝕕(1), ci) == filter(DID, ci) == ci
     @test filter(𝕕(1), typeof(ci)) == filter(DID, typeof(ci)) == typeof(ci)
 end
-
-# @testset "InternalIndexSpace" begin
-#     space = InternalIndexSpace(DID(:), DFock(2))
-#     @test collect(space) == [𝕕(1), 𝕕(2)]
-
-#     space = InternalIndexSpace((DID(1), DID(:)), DFock(2)⊗DFock(2))
-#     @test collect(space) == [(𝕕(1), 𝕕(1)), (𝕕(1), 𝕕(2))]
-# end
 
 @testset "Index" begin
     @test (4, 3, 2, 1)[1ˢᵗ] == 4

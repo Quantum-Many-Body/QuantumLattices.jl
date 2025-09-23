@@ -1,6 +1,6 @@
 using LaTeXStrings: latexstring
 using QuantumLattices: expand, kind, permute, rank
-using QuantumLattices.DegreesOfFreedom: ˢᵗ, ⁿᵈ, CompositeIndex, CoordinatedIndex, Coupling, Hilbert, Index, InternalIndex, MatrixCoupling, diagonalfields, internalindextype, isdefinite, patternrule, statistics, @pattern
+using QuantumLattices.DegreesOfFreedom: ˢᵗ, ⁿᵈ, CompositeIndex, CoordinatedIndex, Coupling, Hilbert, Index, InternalIndex, MatrixCoupling, diagonalfields, internalindextype, isdefinite, patternrule, showablefields, statistics, @pattern
 using QuantumLattices.QuantumOperators: Operator, OperatorIndex, Operators, latexname, matrix, script
 using QuantumLattices.QuantumSystems
 using QuantumLattices.Spatials: Bond, Lattice, Neighbors, Point, azimuthd, bonds, rcoordinate, icoordinate
@@ -9,66 +9,60 @@ using SparseArrays: SparseMatrixCSC
 using StaticArrays: SVector
 
 @testset "FockIndex" begin
-    index = 𝕔(1, 1//2, 1)
-    @test FockIndex{:f, Colon, Colon, Colon}(1, 1//2, 1) == index
+    index = 𝕔(1, 1//2)
+    @test FockIndex{:f, Colon, Colon}(1, 1//2, 1) == index
     @test statistics(index) == statistics(typeof(index)) == :f
     @test isdefinite(index) == isdefinite(typeof(index)) == true
-    @test index' == replace(index, nambu=2)
+    @test index' == replace(index, nambu=2) == 𝕔⁺(1, 1//2)
     @test isequal(index'', replace(index, nambu=1))
     @test hash(index) == hash((:f, 1, 1//2, 1))
-    @test string(index) == "𝕔(1, 1//2, 1)"
-    @test isannihilation(index) && isannihilation(𝕔(1, 1, 1//2, 1)) && isannihilation(𝕔(1, 1, 1//2, 1, [0.0], [0.0]))
-    @test !iscreation(index) && !iscreation(𝕔(1, 1, 1//2, 1)) && !iscreation(𝕔(1, 1, 1//2, 1, [0.0], [0.0]))
+    @test string(index)=="𝕔(1, 1//2)" && string(index')=="𝕔⁺(1, 1//2)"
+    @test isannihilation(index) && isannihilation(𝕔(1, 1, 1//2)) && isannihilation(𝕔(1, 1, 1//2, [0.0], [0.0]))
+    @test !iscreation(index) && !iscreation(𝕔(1, 1, 1//2)) && !iscreation(𝕔(1, 1, 1//2, [0.0], [0.0]))
 
-    index = 𝕓(1, -1//2, 2)
-    @test FockIndex{:b, Colon, Colon, Colon}(1, -1//2, 2) == index
+    index = 𝕒⁺(1, -1//2)
+    @test FockIndex{:b, Colon, Colon}(1, -1//2, 2) == index
     @test statistics(index) == statistics(typeof(index)) == :b
     @test isdefinite(index) == isdefinite(typeof(index)) == true
+    @test index' == 𝕒(1, -1//2)
     @test hash(index) == hash((:b, 1, -1//2, 2))
-    @test string(index) == "𝕓(1, -1//2, 2)"
-    @test !isannihilation(index) && !isannihilation(𝕓(1, 1, -1//2, 2)) && !isannihilation(𝕓(1, 1, -1//2, 2, [0.0], [0.0]))
-    @test iscreation(index) && iscreation(𝕓(1, 1, -1//2, 2)) && iscreation(𝕓(1, 1, -1//2, 2, [0.0], [0.0]))
+    @test string(index)=="𝕒⁺(1, -1//2)" && string(index')=="𝕒(1, -1//2)"
+    @test !isannihilation(index) && !isannihilation(𝕒⁺(1, 1, -1//2)) && !isannihilation(𝕒⁺(1, 1, -1//2, [0.0], [0.0]))
+    @test iscreation(index) && iscreation(𝕒⁺(1, 1, -1//2)) && iscreation(𝕒⁺(1, 1, -1//2, [0.0], [0.0]))
 
-    index = 𝕕(1, :α, :)
-    @test FockIndex{:, Colon, Colon, Colon}(1, :α, :) == index
+    index = 𝕕(1, :α)
+    @test FockIndex{:, Colon, Colon}(1, :α, annihilation) == index
     @test statistics(index) == statistics(typeof(index)) == Colon()
     @test isdefinite(index) == isdefinite(typeof(index)) == false
-    @test index == FockIndex(1, :α, :)
-    @test hash(index) == hash((:, 1, :α, :))
-    @test string(index) == "𝕕(1, α, :)"
-    @test !isannihilation(index) && !isannihilation(𝕕(1, 1, :α, :)) && !isannihilation(𝕕(1, 1, :α, :, [0.0], [0.0]))
-    @test !iscreation(index) && !iscreation(𝕕(1, 1, :α, :)) && !iscreation(𝕕(1, 1, :α, :, [0.0], [0.0]))
+    @test index' == 𝕕⁺(1, :α)
+    @test hash(index) == hash((:, 1, :α, 1))
+    @test string(index)=="𝕕(1, α)" && string(index')=="𝕕⁺(1, α)"
 
-    @test 𝕔(1, 1//2, 1) ≠ 𝕓(1, 1//2, 1)
-    @test !isequal(𝕔(1, 1//2, 1), 𝕓(1, 1//2, 1))
+    @test 𝕔(1, 1//2) ≠ 𝕒(1, 1//2)
+    @test !isequal(𝕔(1, 1//2), 𝕒(1, 1//2))
 
     @test statistics(FockIndex) == statistics(Index{<:FockIndex}) == statistics(CoordinatedIndex{<:Index{<:FockIndex}}) == Symbol(":")
+    @test showablefields(FockIndex) == (:orbital, :spin)
     @test diagonalfields(FockIndex) == (:orbital, :spin)
-    @test isdefinite(FockIndex{:, Int, Rational{Int}, Int})
-    @test !isdefinite(FockIndex{:f, Symbol, typeof(:), Int})
-    @test internalindextype(FockIndex, Int, typeof(:), Int) == FockIndex{:, Int, typeof(:), Int}
-    @test internalindextype(FockIndex{:f}, typeof(:), Symbol, Symbol) == FockIndex{:f, typeof(:), Symbol, Symbol}
-    @test internalindextype(FockIndex{:b}, typeof(:), Symbol, Symbol) == FockIndex{:b, typeof(:), Symbol, Symbol}
+    @test isdefinite(FockIndex{:, Int, Rational{Int}})
+    @test !isdefinite(FockIndex{:f, Symbol, typeof(:)})
+    @test internalindextype(FockIndex, Int, typeof(:), Int) == FockIndex{:, Int, typeof(:)}
+    @test internalindextype(FockIndex{:f}, typeof(:), Symbol, Int) == FockIndex{:f, typeof(:), Symbol}
+    @test internalindextype(FockIndex{:b}, typeof(:), Symbol, Int) == FockIndex{:b, typeof(:), Symbol}
 
-    # @test OperatorIndex[FockIndex{:f}] == OperatorIndex[Index{<:FockIndex{:f}}] == OperatorIndex[CoordinatedIndex{<:Index{<:FockIndex{:f}}}] == 𝕔
-    # @test OperatorIndex[FockIndex{:b}] == OperatorIndex[Index{<:FockIndex{:b}}] == OperatorIndex[CoordinatedIndex{<:Index{<:FockIndex{:b}}}] == 𝕓
-    # @test OperatorIndex[FockIndex{:}] == OperatorIndex[Index{<:FockIndex{:}}] == OperatorIndex[CoordinatedIndex{<:Index{<:FockIndex{:}}}] == 𝕕
-    # @test OperatorIndex[FockIndex] == OperatorIndex[Index{<:FockIndex}] == OperatorIndex[CoordinatedIndex{<:Index{<:FockIndex}}] == 𝕕
-    @test OperatorIndex[𝕔] == FockIndex{:f}
-    @test OperatorIndex[𝕓] == FockIndex{:b}
-    @test OperatorIndex[𝕕] == FockIndex{:}
-
-    patternrule((:, :, :, :), Val(:), FockIndex, Val(:nambu)) == (2, 1, 2, 1)
+    @test OperatorIndex[𝕔⁺(2, 1//2)] == "𝕔⁺" && OperatorIndex[𝕔(2, 1//2)] == "𝕔"
+    @test OperatorIndex[𝕒⁺(2, 1//2)] == "𝕒⁺" && OperatorIndex[𝕒(2, 1//2)] == "𝕒"
+    @test OperatorIndex[𝕕⁺(2, 1//2)] == "𝕕⁺" && OperatorIndex[𝕕(2, 1//2)] == "𝕕"
 end
 
 @testset "Fock latex" begin
-    @test script(𝕔(1, 2, 1//2, 1), Val(:site)) == script(𝕔(1, 2, 1//2, 1, [0.0], [0.0]), Val(:site)) == "1"
-    @test script(𝕔(2, 1//2, 1), Val(:orbital)) == script(𝕔(1, 2, 1//2, 1), Val(:orbital)) == script(𝕔(1, 2, 1//2, 1, [0.0], [0.0]), Val(:orbital)) == "2"
-    @test script(𝕔(2, 3//2, 1), Val(:spin)) == script(𝕔(1, 2, 3//2, 1), Val(:spin)) == script(𝕔(1, 2, 3//2, 1, [0.0], [0.0]), Val(:spin)) == "3//2"
-    @test script(𝕔(2, 1//2, 1), Val(:spinsym)) == script(𝕔(1, 2, 1//2, 1), Val(:spinsym)) == script(𝕔(1, 2, 1//2, 1, [0.0], [0.0]), Val(:spinsym)) == "↑"
-    @test script(𝕔(2, -1//2, 1), Val(:spinsym)) == script(𝕔(1, 2, -1//2, 1), Val(:spinsym)) == script(𝕔(1, 2, -1//2, 1, [0.0], [0.0]), Val(:spinsym)) == "↓"
-    @test script(𝕔(2, 3//2, 1), Val(:nambu)) == script(𝕔(1, 2, 3//2, 1), Val(:nambu)) == script(𝕔(1, 2, 3//2, 1, [0.0], [0.0]), Val(:nambu)) == ""
-    @test script(𝕔(2, 3//2, 2), Val(:nambu)) == script(𝕔(1, 2, 3//2, 2), Val(:nambu)) == script(𝕔(1, 2, 3//2, 2, [0.0], [0.0]), Val(:nambu)) == "\\dagger"
+    @test script(𝕔(1, 2, 1//2), Val(:site)) == script(𝕔(1, 2, 1//2, [0.0], [0.0]), Val(:site)) == "1"
+    @test script(𝕔(2, 1//2), Val(:orbital)) == script(𝕔(1, 2, 1//2), Val(:orbital)) == script(𝕔(1, 2, 1//2, [0.0], [0.0]), Val(:orbital)) == "2"
+    @test script(𝕔(2, 3//2), Val(:spin)) == script(𝕔(1, 2, 3//2), Val(:spin)) == script(𝕔(1, 2, 3//2, [0.0], [0.0]), Val(:spin)) == "3//2"
+    @test script(𝕔(2, 1//2), Val(:spinsym)) == script(𝕔(1, 2, 1//2), Val(:spinsym)) == script(𝕔(1, 2, 1//2, [0.0], [0.0]), Val(:spinsym)) == "↑"
+    @test script(𝕔(2, -1//2), Val(:spinsym)) == script(𝕔(1, 2, -1//2), Val(:spinsym)) == script(𝕔(1, 2, -1//2, [0.0], [0.0]), Val(:spinsym)) == "↓"
+    @test script(𝕔(2, 3//2), Val(:nambu)) == script(𝕔(1, 2, 3//2), Val(:nambu)) == script(𝕔(1, 2, 3//2, [0.0], [0.0]), Val(:nambu)) == ""
+    @test script(𝕔⁺(2, 3//2), Val(:nambu)) == script(𝕔⁺(1, 2, 3//2), Val(:nambu)) == script(𝕔⁺(1, 2, 3//2, [0.0], [0.0]), Val(:nambu)) == "\\dagger"
 
     @test latexname(FockIndex{:f}) == Symbol("FockIndex{:f}")
     @test latexname(Index{<:FockIndex{:f}}) == Symbol("Index{FockIndex{:f}}")
@@ -84,13 +78,13 @@ end
 end
 
 @testset "Fock" begin
-    @test eltype(Fock) == (FockIndex{S, Int, Rational{Int}, Int} where S)
+    @test eltype(Fock) == (FockIndex{S, Int, Rational{Int}} where S)
 
     fock = Fock{:b}(1, 2)
     @test shape(fock) == (1:1, 1:2, 1:2)
-    @test convert(CartesianIndex, 𝕓(1, -1//2, 1), fock) == CartesianIndex(1, 1, 1)
-    @test convert(FockIndex, CartesianIndex(1, 1, 1), fock) == 𝕓(1, -1//2, 1)
-    @test collect(fock) == [𝕓(1, -1//2, 1), 𝕓(1, 1//2, 1), 𝕓(1, -1//2, 2), 𝕓(1, 1//2, 2)]
+    @test convert(CartesianIndex, 𝕒(1, -1//2), fock) == CartesianIndex(1, 1, 1)
+    @test convert(FockIndex, CartesianIndex(1, 1, 1), fock) == 𝕒(1, -1//2)
+    @test collect(fock) == [𝕒(1, -1//2), 𝕒(1, 1//2), 𝕒⁺(1, -1//2), 𝕒⁺(1, 1//2)]
     @test statistics(fock) == statistics(typeof(fock)) == :b
     @test string(fock) == "Fock{:b}(norbital=1, nspin=2)"
 
@@ -101,22 +95,22 @@ end
     @test match(FockIndex{:f}, Fock{:f}) == match(FockIndex{:b}, Fock{:b}) == true
     @test match(FockIndex{:b}, Fock{:f}) == match(FockIndex{:f}, Fock{:b}) == false
 
-    @test shape(Fock{:f}(3, 2), 𝕔(2, 1//2, 1)) == (2:2, 2:2, 1:1)
-    @test shape(Fock{:f}(3, 2), 𝕔(1, :, 2)) ==(1:1, 1:2, 2:2) 
-    @test shape(Fock{:f}(3, 2), 𝕔(:, -1//2, 1)) == (1:3, 1:1, 1:1)
-    @test shape(Fock{:f}(3, 2), 𝕔(:, :, 2)) == (1:3, 1:2, 2:2)
+    @test shape(Fock{:f}(3, 2), 𝕔(2, 1//2)) == (2:2, 2:2, 1:1)
+    @test shape(Fock{:f}(3, 2), 𝕔⁺(1, :)) ==(1:1, 1:2, 2:2) 
+    @test shape(Fock{:f}(3, 2), 𝕔(:, -1//2)) == (1:3, 1:1, 1:1)
+    @test shape(Fock{:f}(3, 2), 𝕔⁺(:, :)) == (1:3, 1:2, 2:2)
 end
 
 @testset "angle" begin
-    @test angle(𝕔(1, 1, 1//2, 1, [0.0, 0.0], [1.0, 2.0]), [[1.0, 0.0], [0.0, 1.0]], [0.1, 0.0]) ≈ 2pi*0.1
-    @test angle(𝕔(1, 1, 1//2, 2, [0.0, 0.0], [1.0, 2.0]), [[1.0, 0.0], [0.0, 1.0]], [0.0, 0.2]) ≈ -2pi*0.4
+    @test angle(𝕔(1, 1, 1//2, [0.0, 0.0], [1.0, 2.0]), [[1.0, 0.0], [0.0, 1.0]], [0.1, 0.0]) ≈ 2pi*0.1
+    @test angle(𝕔⁺(1, 1, 1//2, [0.0, 0.0], [1.0, 2.0]), [[1.0, 0.0], [0.0, 1.0]], [0.0, 0.2]) ≈ -2pi*0.4
 end
 
 @testset "Fock Operator" begin
-    id₁ = 𝕔(2, 1, -1//2, 2, SVector(0.5, 0.0), SVector(0.0, 0.0))
-    id₂ = 𝕔(2, 1, -1//2, 1, SVector(0.5, 0.0), SVector(0.0, 0.0))
-    id₃ = 𝕔(1, 1, 1//2, 2, SVector(0.0, 0.0), SVector(0.0, 0.0))
-    id₄ = 𝕔(1, 1, 1//2, 1, SVector(0.0, 0.0), SVector(0.0, 0.0))
+    id₁ = 𝕔⁺(2, 1, -1//2, SVector(0.5, 0.0), SVector(0.0, 0.0))
+    id₂ = 𝕔(2, 1, -1//2, SVector(0.5, 0.0), SVector(0.0, 0.0))
+    id₃ = 𝕔⁺(1, 1, 1//2, SVector(0.0, 0.0), SVector(0.0, 0.0))
+    id₄ = 𝕔(1, 1, 1//2, SVector(0.0, 0.0), SVector(0.0, 0.0))
     opt = Operator(1.0, id₁, id₂)
     @test opt|>isnormalordered
     opt = Operator(1.0, id₁, id₂, id₃, id₄)
@@ -133,10 +127,10 @@ end
     @test permute(id₁, id₄) == (Operator(-1, id₄, id₁),)
     @test permute(id₄, id₁) == (Operator(-1, id₁, id₄),)
 
-    id₁ = 𝕓(2, 1, -1//2, 2, SVector(0.5, 0.0), SVector(0.0, 0.0))
-    id₂ = 𝕓(2, 1, -1//2, 1, SVector(0.5, 0.0), SVector(0.0, 0.0))
-    id₃ = 𝕓(1, 1, 1//2, 2, SVector(0.0, 0.0), SVector(0.0, 0.0))
-    id₄ = 𝕓(1, 1, 1//2, 1, SVector(0.0, 0.0), SVector(0.0, 0.0))
+    id₁ = 𝕒⁺(2, 1, -1//2, SVector(0.5, 0.0), SVector(0.0, 0.0))
+    id₂ = 𝕒(2, 1, -1//2, SVector(0.5, 0.0), SVector(0.0, 0.0))
+    id₃ = 𝕒⁺(1, 1, 1//2, SVector(0.0, 0.0), SVector(0.0, 0.0))
+    id₄ = 𝕒(1, 1, 1//2, SVector(0.0, 0.0), SVector(0.0, 0.0))
     opt = Operator(1.0, id₁, id₂)
     @test latexstring(opt) == "b^{\\dagger}_{2,\\,1,\\,↓}b^{}_{2,\\,1,\\,↓}"
     @test permute(id₁, id₂) == (Operator(-1), Operator(1, id₂, id₁))
@@ -144,20 +138,35 @@ end
     @test permute(id₁, id₄) == (Operator(1, id₄, id₁),)
     @test permute(id₄, id₁) == (Operator(1, id₁, id₄),)
 
-    permute(𝕔(1, -1//2, 2), 𝕓(1, -1//2, 2)) == Operator(1, 𝕓(1, -1//2, 2), 𝕔(1, -1//2, 2))
-    permute(𝕓(1, -1//2, 2), 𝕔(1, -1//2, 2)) == Operator(1, 𝕔(1, -1//2, 2), 𝕓(1, -1//2, 2))
+    permute(𝕔⁺(1, -1//2), 𝕒⁺(1, -1//2)) == Operator(1, 𝕒⁺(1, -1//2), 𝕔⁺(1, -1//2))
+    permute(𝕒⁺(1, -1//2), 𝕔⁺(1, -1//2)) == Operator(1, 𝕔⁺(1, -1//2), 𝕒⁺(1, -1//2))
 end
 
 @testset "Fock Coupling" begin
-    @test collect(MatrixCoupling(:, FockIndex, :, :, :)) == collect(MatrixCoupling(𝕕, :, :, :, :)) == collect(𝕕⁺𝕕(:, :, :, :)) == [Coupling(𝕕(:, :, :, :), 𝕕(:, :, :, :))]
-    @test collect(MatrixCoupling(:, FockIndex{:}, σ⁺, σ⁻, :)) == [Coupling(𝕕(:, 1, -1//2, :), 𝕕(:, 2, 1//2, :))]
-    @test collect(MatrixCoupling((1ˢᵗ, 2ⁿᵈ), FockIndex{:f}, :, σʸ, σᶻ)) == collect(MatrixCoupling(𝕔, (1ˢᵗ, 2ⁿᵈ), :, σʸ, σᶻ)) == collect(𝕔⁺𝕔((1ˢᵗ, 2ⁿᵈ), :, σʸ, σᶻ)) == [
-        Coupling(+1im, 𝕔(1ˢᵗ, :, -1//2, 1), 𝕔(2ⁿᵈ, :, 1//2, 2)), Coupling(-1im, 𝕔(1ˢᵗ, :, 1//2, 1), 𝕔(2ⁿᵈ, :, -1//2, 2)),
-        Coupling(-1im, 𝕔(1ˢᵗ, :, -1//2, 2), 𝕔(2ⁿᵈ, :, 1//2, 1)), Coupling(+1im, 𝕔(1ˢᵗ, :, 1//2, 2), 𝕔(2ⁿᵈ, :, -1//2, 1))
+    @test collect(MatrixCoupling(:, FockIndex{:f}, :, :, σ¹¹)) == collect(𝕔⁺𝕔(:, :, :)) == [Coupling(𝕔⁺(:, :, :), 𝕔(:, :, :))]
+    @test collect(MatrixCoupling(:, FockIndex{:f}, :, :, σ¹²)) == collect(𝕔⁺𝕔⁺(:, :, :)) == [Coupling(𝕔⁺(:, :, :), 𝕔⁺(:, :, :))]
+    @test collect(MatrixCoupling(:, FockIndex{:f}, :, :, σ²¹)) == collect(𝕔𝕔(:, :, :)) == [Coupling(𝕔(:, :, :), 𝕔(:, :, :))]
+    @test collect(MatrixCoupling(:, FockIndex{:f}, :, :, σ²²)) == collect(𝕔𝕔⁺(:, :, :)) == [Coupling(𝕔(:, :, :), 𝕔⁺(:, :, :))]
+
+    @test collect(MatrixCoupling(:, FockIndex{:b}, :, :, σ¹¹)) == collect(𝕒⁺𝕒(:, :, :)) == [Coupling(𝕒⁺(:, :, :), 𝕒(:, :, :))]
+    @test collect(MatrixCoupling(:, FockIndex{:b}, :, :, σ¹²)) == collect(𝕒⁺𝕒⁺(:, :, :)) == [Coupling(𝕒⁺(:, :, :), 𝕒⁺(:, :, :))]
+    @test collect(MatrixCoupling(:, FockIndex{:b}, :, :, σ²¹)) == collect(𝕒𝕒(:, :, :)) == [Coupling(𝕒(:, :, :), 𝕒(:, :, :))]
+    @test collect(MatrixCoupling(:, FockIndex{:b}, :, :, σ²²)) == collect(𝕒𝕒⁺(:, :, :)) == [Coupling(𝕒(:, :, :), 𝕒⁺(:, :, :))]
+
+
+    @test collect(MatrixCoupling(:, FockIndex, :, :, σ¹¹)) == collect(𝕕⁺𝕕(:, :, :)) == [Coupling(𝕕⁺(:, :, :), 𝕕(:, :, :))]
+    @test collect(MatrixCoupling(:, FockIndex, :, :, σ¹²)) == collect(𝕕⁺𝕕⁺(:, :, :)) == [Coupling(𝕕⁺(:, :, :), 𝕕⁺(:, :, :))]
+    @test collect(MatrixCoupling(:, FockIndex, :, :, σ²¹)) == collect(𝕕𝕕(:, :, :)) == [Coupling(𝕕(:, :, :), 𝕕(:, :, :))]
+    @test collect(MatrixCoupling(:, FockIndex, :, :, σ²²)) == collect(𝕕𝕕⁺(:, :, :)) == [Coupling(𝕕(:, :, :), 𝕕⁺(:, :, :))]
+
+    @test collect(MatrixCoupling((1ˢᵗ, 2ⁿᵈ), FockIndex{:f}, :, σʸ, σᶻ)) == [
+        Coupling(+1im, 𝕔⁺(1ˢᵗ, :, -1//2), 𝕔(2ⁿᵈ, :, 1//2)), Coupling(-1im, 𝕔⁺(1ˢᵗ, :, 1//2), 𝕔(2ⁿᵈ, :, -1//2)),
+        Coupling(-1im, 𝕔(1ˢᵗ, :, -1//2), 𝕔⁺(2ⁿᵈ, :, 1//2)), Coupling(+1im, 𝕔(1ˢᵗ, :, 1//2), 𝕔⁺(2ⁿᵈ, :, -1//2))
     ]
-    @test collect(MatrixCoupling((1ˢᵗ, 2ⁿᵈ), FockIndex{:b}, σˣ, :, σ⁰)) == collect(MatrixCoupling(𝕓, (1ˢᵗ, 2ⁿᵈ), σˣ, :, σ⁰)) == collect(𝕓⁺𝕓((1ˢᵗ, 2ⁿᵈ), σˣ, :, σ⁰)) == [
-        Coupling(𝕓(1ˢᵗ, 2, :, 1), 𝕓(2ⁿᵈ, 1, :, 2)), Coupling(𝕓(1ˢᵗ, 1, :, 1), 𝕓(2ⁿᵈ, 2, :, 2)),
-        Coupling(𝕓(1ˢᵗ, 2, :, 2), 𝕓(2ⁿᵈ, 1, :, 1)), Coupling(𝕓(1ˢᵗ, 1, :, 2), 𝕓(2ⁿᵈ, 2, :, 1))
+
+    @test collect(MatrixCoupling((1ˢᵗ, 2ⁿᵈ), FockIndex{:b}, σˣ, :, σ⁰)) == [
+        Coupling(𝕒⁺(1ˢᵗ, 2, :), 𝕒(2ⁿᵈ, 1, :)), Coupling(𝕒⁺(1ˢᵗ, 1, :), 𝕒(2ⁿᵈ, 2, :)),
+        Coupling(𝕒(1ˢᵗ, 2, :), 𝕒⁺(2ⁿᵈ, 1, :)), Coupling(𝕒(1ˢᵗ, 1, :), 𝕒⁺(2ⁿᵈ, 2, :))
     ]
 
     fc = Coupling(2.0, (1ˢᵗ, 2ⁿᵈ), FockIndex, (1, 2), :, (2, 1))
@@ -165,39 +174,39 @@ end
     hilbert = Hilbert(site=>Fock{:f}(2, 2) for site=1:2)
     ex = expand(fc, Val(:Hopping), bond, hilbert)
     @test collect(ex) == [
-        Operator(2.0, 𝕔(1, 1, -1//2, 2, SVector(0.0), SVector(0.0)), 𝕔(2, 2, -1//2, 1, SVector(0.5), SVector(0.0))),
-        Operator(2.0, 𝕔(1, 1, +1//2, 2, SVector(0.0), SVector(0.0)), 𝕔(2, 2, +1//2, 1, SVector(0.5), SVector(0.0)))
+        Operator(2.0, 𝕔⁺(1, 1, -1//2, SVector(0.0), SVector(0.0)), 𝕔(2, 2, -1//2, SVector(0.5), SVector(0.0))),
+        Operator(2.0, 𝕔⁺(1, 1, +1//2, SVector(0.0), SVector(0.0)), 𝕔(2, 2, +1//2, SVector(0.5), SVector(0.0)))
     ]
 
-    fc = Coupling(2.0, 𝕕, (1ˢᵗ, 1ˢᵗ, 1ˢᵗ, 1ˢᵗ), :, (1//2, 1//2, -1//2, -1//2), (2, 1, 2, 1))
+    fc = Coupling(2.0, (1ˢᵗ, 1ˢᵗ, 1ˢᵗ, 1ˢᵗ), FockIndex, :, (1//2, 1//2, -1//2, -1//2), (2, 1, 2, 1))
     point = Point(1, SVector(0.0), SVector(0.0))
     hilbert = Hilbert(point.site=>Fock{:b}(2, 2))
     ex = expand(fc, Val(:term), Bond(point), hilbert)
     @test collect(ex) == [
-        Operator(2.0, 𝕓(1, 1, +1//2, 2, SVector(0.0), SVector(0.0)), 𝕓(1, 1, +1//2, 1, SVector(0.0), SVector(0.0)), 𝕓(1, 1, -1//2, 2, SVector(0.0), SVector(0.0)), 𝕓(1, 1, -1//2, 1, SVector(0.0), SVector(0.0))),
-        Operator(2.0, 𝕓(1, 2, +1//2, 2, SVector(0.0), SVector(0.0)), 𝕓(1, 2, +1//2, 1, SVector(0.0), SVector(0.0)), 𝕓(1, 2, -1//2, 2, SVector(0.0), SVector(0.0)), 𝕓(1, 2, -1//2, 1, SVector(0.0), SVector(0.0)))
+        Operator(2.0, 𝕒⁺(1, 1, +1//2, SVector(0.0), SVector(0.0)), 𝕒(1, 1, +1//2, SVector(0.0), SVector(0.0)), 𝕒⁺(1, 1, -1//2, SVector(0.0), SVector(0.0)), 𝕒(1, 1, -1//2, SVector(0.0), SVector(0.0))),
+        Operator(2.0, 𝕒⁺(1, 2, +1//2, SVector(0.0), SVector(0.0)), 𝕒(1, 2, +1//2, SVector(0.0), SVector(0.0)), 𝕒⁺(1, 2, -1//2, SVector(0.0), SVector(0.0)), 𝕒(1, 2, -1//2, SVector(0.0), SVector(0.0)))
     ]
 
-    fc = Coupling(2.0, @pattern(𝕕(:, α, 1//2, 2), 𝕕(:, α, -1//2, 2), 𝕕(:, β, -1//2, 1), 𝕕(:, β, 1//2, 1); constraint=α<β))
+    fc = Coupling(2.0, @pattern(𝕕⁺(:, α, 1//2), 𝕕⁺(:, α, -1//2), 𝕕(:, β, -1//2), 𝕕(:, β, 1//2); constraint=α<β))
     point = Point(1, SVector(0.5), SVector(0.0))
     hilbert = Hilbert(point.site=>Fock{:f}(3, 2))
     ex = expand(fc, Val(:term), Bond(point), hilbert)
     @test collect(ex) == [
-        Operator(2.0, 𝕔(1, 1, +1//2, 2, SVector(0.5), SVector(0.0)), 𝕔(1, 1, -1//2, 2, SVector(0.5), SVector(0.0)), 𝕔(1, 2, -1//2, 1, SVector(0.5), SVector(0.0)), 𝕔(1, 2, +1//2, 1, SVector(0.5), SVector(0.0))),
-        Operator(2.0, 𝕔(1, 1, +1//2, 2, SVector(0.5), SVector(0.0)), 𝕔(1, 1, -1//2, 2, SVector(0.5), SVector(0.0)), 𝕔(1, 3, -1//2, 1, SVector(0.5), SVector(0.0)), 𝕔(1, 3, +1//2, 1, SVector(0.5), SVector(0.0))),
-        Operator(2.0, 𝕔(1, 2, +1//2, 2, SVector(0.5), SVector(0.0)), 𝕔(1, 2, -1//2, 2, SVector(0.5), SVector(0.0)), 𝕔(1, 3, -1//2, 1, SVector(0.5), SVector(0.0)), 𝕔(1, 3, +1//2, 1, SVector(0.5), SVector(0.0)))
+        Operator(2.0, 𝕔⁺(1, 1, +1//2, SVector(0.5), SVector(0.0)), 𝕔⁺(1, 1, -1//2, SVector(0.5), SVector(0.0)), 𝕔(1, 2, -1//2, SVector(0.5), SVector(0.0)), 𝕔(1, 2, +1//2, SVector(0.5), SVector(0.0))),
+        Operator(2.0, 𝕔⁺(1, 1, +1//2, SVector(0.5), SVector(0.0)), 𝕔⁺(1, 1, -1//2, SVector(0.5), SVector(0.0)), 𝕔(1, 3, -1//2, SVector(0.5), SVector(0.0)), 𝕔(1, 3, +1//2, SVector(0.5), SVector(0.0))),
+        Operator(2.0, 𝕔⁺(1, 2, +1//2, SVector(0.5), SVector(0.0)), 𝕔⁺(1, 2, -1//2, SVector(0.5), SVector(0.0)), 𝕔(1, 3, -1//2, SVector(0.5), SVector(0.0)), 𝕔(1, 3, +1//2, SVector(0.5), SVector(0.0)))
     ]
 
-    fc₁ = Coupling(+1.0, 𝕕, :, :, (+1//2, +1//2), (2, 1))
-    fc₂ = Coupling(-1.0, 𝕕, :, :, (-1//2, -1//2), (2, 1))
+    fc₁ = Coupling(+1.0, :, FockIndex, :, (+1//2, +1//2), (2, 1))
+    fc₂ = Coupling(-1.0, :, FockIndex, :, (-1//2, -1//2), (2, 1))
     point = Point(1, SVector(0.0), SVector(0.0))
     hilbert = Hilbert(point.site=>Fock{:f}(2, 2))
     ex = expand(fc₁*fc₂, Val(:term), Bond(point), hilbert)
     @test collect(ex) == [
-        Operator(-1.0, 𝕔(1, 1, +1//2, 2, SVector(0.0), SVector(0.0)), 𝕔(1, 1, +1//2, 1, SVector(0.0), SVector(0.0)), 𝕔(1, 1, -1//2, 2, SVector(0.0), SVector(0.0)), 𝕔(1, 1, -1//2, 1, SVector(0.0), SVector(0.0))),
-        Operator(-1.0, 𝕔(1, 2, +1//2, 2, SVector(0.0), SVector(0.0)), 𝕔(1, 2, +1//2, 1, SVector(0.0), SVector(0.0)), 𝕔(1, 1, -1//2, 2, SVector(0.0), SVector(0.0)), 𝕔(1, 1, -1//2, 1, SVector(0.0), SVector(0.0))),
-        Operator(-1.0, 𝕔(1, 1, +1//2, 2, SVector(0.0), SVector(0.0)), 𝕔(1, 1, +1//2, 1, SVector(0.0), SVector(0.0)), 𝕔(1, 2, -1//2, 2, SVector(0.0), SVector(0.0)), 𝕔(1, 2, -1//2, 1, SVector(0.0), SVector(0.0))),
-        Operator(-1.0, 𝕔(1, 2, +1//2, 2, SVector(0.0), SVector(0.0)), 𝕔(1, 2, +1//2, 1, SVector(0.0), SVector(0.0)), 𝕔(1, 2, -1//2, 2, SVector(0.0), SVector(0.0)), 𝕔(1, 2, -1//2, 1, SVector(0.0), SVector(0.0)))
+        Operator(-1.0, 𝕔⁺(1, 1, +1//2, SVector(0.0), SVector(0.0)), 𝕔(1, 1, +1//2, SVector(0.0), SVector(0.0)), 𝕔⁺(1, 1, -1//2, SVector(0.0), SVector(0.0)), 𝕔(1, 1, -1//2, SVector(0.0), SVector(0.0))),
+        Operator(-1.0, 𝕔⁺(1, 2, +1//2, SVector(0.0), SVector(0.0)), 𝕔(1, 2, +1//2, SVector(0.0), SVector(0.0)), 𝕔⁺(1, 1, -1//2, SVector(0.0), SVector(0.0)), 𝕔(1, 1, -1//2, SVector(0.0), SVector(0.0))),
+        Operator(-1.0, 𝕔⁺(1, 1, +1//2, SVector(0.0), SVector(0.0)), 𝕔(1, 1, +1//2, SVector(0.0), SVector(0.0)), 𝕔⁺(1, 2, -1//2, SVector(0.0), SVector(0.0)), 𝕔(1, 2, -1//2, SVector(0.0), SVector(0.0))),
+        Operator(-1.0, 𝕔⁺(1, 2, +1//2, SVector(0.0), SVector(0.0)), 𝕔(1, 2, +1//2, SVector(0.0), SVector(0.0)), 𝕔⁺(1, 2, -1//2, SVector(0.0), SVector(0.0)), 𝕔(1, 2, -1//2, SVector(0.0), SVector(0.0)))
     ]
 end
 
@@ -206,22 +215,22 @@ end
     bond = Bond(point)
     hilbert = Hilbert(point.site=>Fock{:f}(2, 2))
 
-    term = Onsite(:mu, 1.5, 𝕕⁺𝕕(:, σᶻ, σˣ, :))
+    term = Onsite(:mu, 1.5, 𝕕⁺𝕕(:, σᶻ, σˣ))
     operators = Operators(
-        Operator(-0.75, 𝕔(1, 2, +1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 2, -1//2, 1, [0.5, 0.5], [0.0, 0.0])),
-        Operator(+0.75, 𝕔(1, 1, -1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, +1//2, 1, [0.5, 0.5], [0.0, 0.0])),
-        Operator(-0.75, 𝕔(1, 2, -1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 2, +1//2, 1, [0.5, 0.5], [0.0, 0.0])),
-        Operator(+0.75, 𝕔(1, 1, +1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, -1//2, 1, [0.5, 0.5], [0.0, 0.0]))
+        Operator(-0.75, 𝕔⁺(1, 2, +1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 2, -1//2, [0.5, 0.5], [0.0, 0.0])),
+        Operator(+0.75, 𝕔⁺(1, 1, -1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, +1//2, [0.5, 0.5], [0.0, 0.0])),
+        Operator(-0.75, 𝕔⁺(1, 2, -1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 2, +1//2, [0.5, 0.5], [0.0, 0.0])),
+        Operator(+0.75, 𝕔⁺(1, 1, +1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, -1//2, [0.5, 0.5], [0.0, 0.0]))
     )
     @test expand(term, bond, hilbert, half=true) == operators
     @test expand(term, bond, hilbert, half=false) == operators*2
 
-    term = Onsite(:mu, 1.5, 𝕕⁺𝕕(:, σᶻ, σᶻ, :))
+    term = Onsite(:mu, 1.5, 𝕕⁺𝕕(:, σᶻ, σᶻ))
     operators = Operators(
-        Operator(+0.75, 𝕔(1, 2, -1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 2, -1//2, 1, [0.5, 0.5], [0.0, 0.0])),
-        Operator(+0.75, 𝕔(1, 1, +1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, +1//2, 1, [0.5, 0.5], [0.0, 0.0])),
-        Operator(-0.75, 𝕔(1, 2, +1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 2, +1//2, 1, [0.5, 0.5], [0.0, 0.0])),
-        Operator(-0.75, 𝕔(1, 1, -1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, -1//2, 1, [0.5, 0.5], [0.0, 0.0]))
+        Operator(+0.75, 𝕔⁺(1, 2, -1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 2, -1//2, [0.5, 0.5], [0.0, 0.0])),
+        Operator(+0.75, 𝕔⁺(1, 1, +1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, +1//2, [0.5, 0.5], [0.0, 0.0])),
+        Operator(-0.75, 𝕔⁺(1, 2, +1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 2, +1//2, [0.5, 0.5], [0.0, 0.0])),
+        Operator(-0.75, 𝕔⁺(1, 1, -1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, -1//2, [0.5, 0.5], [0.0, 0.0]))
     )
     @test expand(term, bond, hilbert, half=true) == operators
     @test expand(term, bond, hilbert, half=false) == operators*2
@@ -232,10 +241,10 @@ end
     hilbert = Hilbert(site=>Fock{:f}(2, 2) for site=1:2)
     term = Hopping(:t, 1.5, 1)
     operators = Operators(
-        Operator(1.5, 𝕔(2, 2, +1//2, 2, [0.0, 0.0], [0.0, 0.0]), 𝕔(1, 2, +1//2, 1, [0.5, 0.5], [0.0, 0.0])),
-        Operator(1.5, 𝕔(2, 2, -1//2, 2, [0.0, 0.0], [0.0, 0.0]), 𝕔(1, 2, -1//2, 1, [0.5, 0.5], [0.0, 0.0])),
-        Operator(1.5, 𝕔(2, 1, -1//2, 2, [0.0, 0.0], [0.0, 0.0]), 𝕔(1, 1, -1//2, 1, [0.5, 0.5], [0.0, 0.0])),
-        Operator(1.5, 𝕔(2, 1, +1//2, 2, [0.0, 0.0], [0.0, 0.0]), 𝕔(1, 1, +1//2, 1, [0.5, 0.5], [0.0, 0.0]))
+        Operator(1.5, 𝕔⁺(2, 2, +1//2, [0.0, 0.0], [0.0, 0.0]), 𝕔(1, 2, +1//2, [0.5, 0.5], [0.0, 0.0])),
+        Operator(1.5, 𝕔⁺(2, 2, -1//2, [0.0, 0.0], [0.0, 0.0]), 𝕔(1, 2, -1//2, [0.5, 0.5], [0.0, 0.0])),
+        Operator(1.5, 𝕔⁺(2, 1, -1//2, [0.0, 0.0], [0.0, 0.0]), 𝕔(1, 1, -1//2, [0.5, 0.5], [0.0, 0.0])),
+        Operator(1.5, 𝕔⁺(2, 1, +1//2, [0.0, 0.0], [0.0, 0.0]), 𝕔(1, 1, +1//2, [0.5, 0.5], [0.0, 0.0]))
     )
     @test expand(term, bond, hilbert, half=true) == operators
     @test expand(term, bond, hilbert, half=false) == operators+operators'
@@ -244,20 +253,20 @@ end
 @testset "Pairing" begin
     bond = Bond(1, Point(2, (0.0, 0.0), (0.0, 0.0)), Point(1, (0.5, 0.5), (0.0, 0.0)))
     hilbert = Hilbert(site=>Fock{:f}(1, 1) for site=1:2)
-    term = Pairing(:Δ, 1.5, 1, Coupling{2}(𝕕, :, :, :, :); amplitude=bond->(bond|>rcoordinate|>azimuthd ≈ 45 ? 1 : -1))
+    term = Pairing(:Δ, 1.5, 1, 𝕕𝕕(:, :, :); amplitude=bond->(bond|>rcoordinate|>azimuthd ≈ 45 ? 1 : -1))
     operators = Operators(
-        Operator(+1.5, 𝕔(2, 1, 0, 1, [0.0, 0.0], [0.0, 0.0]), 𝕔(1, 1, 0, 1, [0.5, 0.5], [0.0, 0.0])),
-        Operator(-1.5, 𝕔(1, 1, 0, 1, [0.5, 0.5], [0.0, 0.0]), 𝕔(2, 1, 0, 1, [0.0, 0.0], [0.0, 0.0]))
+        Operator(+1.5, 𝕔(2, 1, 0, [0.0, 0.0], [0.0, 0.0]), 𝕔(1, 1, 0, [0.5, 0.5], [0.0, 0.0])),
+        Operator(-1.5, 𝕔(1, 1, 0, [0.5, 0.5], [0.0, 0.0]), 𝕔(2, 1, 0, [0.0, 0.0], [0.0, 0.0]))
     )
     @test expand(term, bond, hilbert, half=true) == operators
     @test expand(term, bond, hilbert, half=false) == operators+operators'
 
     point = Point(1, (0.5, 0.5), (0.0, 0.0))
     hilbert = Hilbert(point.site=>Fock{:f}(1, 2))
-    term = Pairing(:Δ, 1.5, 0, 𝕕⁺𝕕(:, :, [0 -1; 1 0], :))
+    term = Pairing(:Δ, 1.5, 0, 𝕕𝕕(:, :, [0 -1; 1 0]))
     operators = Operators(
-        Operator(-1.5, 𝕔(1, 1, +1//2, 1, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, -1//2, 1, [0.5, 0.5], [0.0, 0.0])),
-        Operator(+1.5, 𝕔(1, 1, -1//2, 1, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, +1//2, 1, [0.5, 0.5], [0.0, 0.0]))
+        Operator(-1.5, 𝕔(1, 1, +1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, -1//2, [0.5, 0.5], [0.0, 0.0])),
+        Operator(+1.5, 𝕔(1, 1, -1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, +1//2, [0.5, 0.5], [0.0, 0.0]))
     )
     @test expand(term, Bond(point), hilbert, half=true) == operators
     @test expand(term, Bond(point), hilbert, half=false) == operators+operators'
@@ -269,8 +278,8 @@ end
     hilbert = Hilbert(point.site=>Fock{:f}(2, 2))
     term = Hubbard(:H, 2.5)
     operators = Operators(
-        Operator(1.25, 𝕔(1, 1, +1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, +1//2, 1, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, -1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, -1//2, 1, [0.5, 0.5], [0.0, 0.0])),
-        Operator(1.25, 𝕔(1, 2, +1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 2, +1//2, 1, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 2, -1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 2, -1//2, 1, [0.5, 0.5], [0.0, 0.0]))
+        Operator(1.25, 𝕔⁺(1, 1, +1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, +1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔⁺(1, 1, -1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, -1//2, [0.5, 0.5], [0.0, 0.0])),
+        Operator(1.25, 𝕔⁺(1, 2, +1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 2, +1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔⁺(1, 2, -1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 2, -1//2, [0.5, 0.5], [0.0, 0.0]))
     )
     @test expand(term, bond, hilbert, half=true) == operators
     @test expand(term, bond, hilbert, half=false) == operators*2
@@ -282,8 +291,8 @@ end
     hilbert = Hilbert(point.site=>Fock{:f}(2, 2))
     term = InterOrbitalInterSpin(:H, 2.5)
     operators = Operators(
-        Operator(1.25, 𝕔(1, 1, +1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, +1//2, 1, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 2, -1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 2, -1//2, 1, [0.5, 0.5], [0.0, 0.0])),
-        Operator(1.25, 𝕔(1, 1, -1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, -1//2, 1, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 2, +1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 2, +1//2, 1, [0.5, 0.5], [0.0, 0.0]))
+        Operator(1.25, 𝕔⁺(1, 1, +1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, +1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔⁺(1, 2, -1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 2, -1//2, [0.5, 0.5], [0.0, 0.0])),
+        Operator(1.25, 𝕔⁺(1, 1, -1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, -1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔⁺(1, 2, +1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 2, +1//2, [0.5, 0.5], [0.0, 0.0]))
     )
     @test expand(term, bond, hilbert, half=true) == operators
     @test expand(term, bond, hilbert, half=false) == operators*2
@@ -295,8 +304,8 @@ end
     hilbert = Hilbert(point.site=>Fock{:f}(2, 2))
     term = InterOrbitalIntraSpin(:H, 2.5)
     operators = Operators(
-        Operator(1.25, 𝕔(1, 1, -1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, -1//2, 1, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 2, -1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 2, -1//2, 1, [0.5, 0.5], [0.0, 0.0])),
-        Operator(1.25, 𝕔(1, 1, 1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, 1//2, 1, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 2, 1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 2, 1//2, 1, [0.5, 0.5], [0.0, 0.0]))
+        Operator(1.25, 𝕔⁺(1, 1, -1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, -1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔⁺(1, 2, -1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 2, -1//2, [0.5, 0.5], [0.0, 0.0])),
+        Operator(1.25, 𝕔⁺(1, 1, 1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, 1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔⁺(1, 2, 1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 2, 1//2, [0.5, 0.5], [0.0, 0.0]))
     )
     @test expand(term, bond, hilbert, half=true) == operators
     @test expand(term, bond, hilbert, half=false) == operators*2
@@ -308,7 +317,7 @@ end
     hilbert = Hilbert(point.site=>Fock{:f}(2, 2))
     term = SpinFlip(:H, 2.5)
     operators = Operators(
-        Operator(2.5, 𝕔(1, 1, +1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 2, -1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, -1//2, 1, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 2, +1//2, 1, [0.5, 0.5], [0.0, 0.0]))
+        Operator(2.5, 𝕔⁺(1, 1, +1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔⁺(1, 2, -1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, -1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 2, +1//2, [0.5, 0.5], [0.0, 0.0]))
     )
     @test expand(term, bond, hilbert, half=true) == operators
     @test expand(term, bond, hilbert, half=false) == operators+operators'
@@ -320,7 +329,7 @@ end
     hilbert = Hilbert(point.site=>Fock{:f}(2, 2))
     term = PairHopping(:H, 2.5)
     operators = Operators(
-        Operator(2.5, 𝕔(1, 1, +1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, -1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 2, -1//2, 1, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 2, +1//2, 1, [0.5, 0.5], [0.0, 0.0]))
+        Operator(2.5, 𝕔⁺(1, 1, +1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔⁺(1, 1, -1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 2, -1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 2, +1//2, [0.5, 0.5], [0.0, 0.0]))
     )
     @test expand(term, bond, hilbert, half=true) == operators
     @test expand(term, bond, hilbert, half=false) == operators+operators'
@@ -330,22 +339,22 @@ end
     bond = Bond(1, Point(2, (0.0, 0.0), (0.0, 0.0)), Point(1, (0.5, 0.5), (0.0, 0.0)))
     hilbert = Hilbert(site=>Fock{:f}(1, 2) for site=1:2)
 
-    term = Coulomb(:V, 2.5, 1, 𝕕⁺𝕕(:, :, σᶻ, :)^2)
+    term = Coulomb(:V, 2.5, 1, 𝕕⁺𝕕(:, :, σᶻ)^2)
     operators = Operators(
-        Operator(-1.25, 𝕔(2, 1, -1//2, 2, [0.0, 0.0], [0.0, 0.0]), 𝕔(2, 1, -1//2, 1, [0.0, 0.0], [0.0, 0.0]), 𝕔(1, 1, +1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, +1//2, 1, [0.5, 0.5], [0.0, 0.0])),
-        Operator(+1.25, 𝕔(2, 1, -1//2, 2, [0.0, 0.0], [0.0, 0.0]), 𝕔(2, 1, -1//2, 1, [0.0, 0.0], [0.0, 0.0]), 𝕔(1, 1, -1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, -1//2, 1, [0.5, 0.5], [0.0, 0.0])),
-        Operator(-1.25, 𝕔(2, 1, +1//2, 2, [0.0, 0.0], [0.0, 0.0]), 𝕔(2, 1, +1//2, 1, [0.0, 0.0], [0.0, 0.0]), 𝕔(1, 1, -1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, -1//2, 1, [0.5, 0.5], [0.0, 0.0])),
-        Operator(+1.25, 𝕔(2, 1, +1//2, 2, [0.0, 0.0], [0.0, 0.0]), 𝕔(2, 1, +1//2, 1, [0.0, 0.0], [0.0, 0.0]), 𝕔(1, 1, +1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, +1//2, 1, [0.5, 0.5], [0.0, 0.0]))
+        Operator(-1.25, 𝕔⁺(2, 1, -1//2, [0.0, 0.0], [0.0, 0.0]), 𝕔(2, 1, -1//2, [0.0, 0.0], [0.0, 0.0]), 𝕔⁺(1, 1, +1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, +1//2, [0.5, 0.5], [0.0, 0.0])),
+        Operator(+1.25, 𝕔⁺(2, 1, -1//2, [0.0, 0.0], [0.0, 0.0]), 𝕔(2, 1, -1//2, [0.0, 0.0], [0.0, 0.0]), 𝕔⁺(1, 1, -1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, -1//2, [0.5, 0.5], [0.0, 0.0])),
+        Operator(-1.25, 𝕔⁺(2, 1, +1//2, [0.0, 0.0], [0.0, 0.0]), 𝕔(2, 1, +1//2, [0.0, 0.0], [0.0, 0.0]), 𝕔⁺(1, 1, -1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, -1//2, [0.5, 0.5], [0.0, 0.0])),
+        Operator(+1.25, 𝕔⁺(2, 1, +1//2, [0.0, 0.0], [0.0, 0.0]), 𝕔(2, 1, +1//2, [0.0, 0.0], [0.0, 0.0]), 𝕔⁺(1, 1, +1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, +1//2, [0.5, 0.5], [0.0, 0.0]))
     )
     @test expand(term, bond, hilbert, half=true) == operators
     @test expand(term, bond, hilbert, half=false) == operators*2
 
-    term = Coulomb(:V, 2.5, 1, 𝕕⁺𝕕(:, :, σˣ, :)*𝕕⁺𝕕(:, :, σᶻ, :))
+    term = Coulomb(:V, 2.5, 1, 𝕕⁺𝕕(:, :, σˣ)*𝕕⁺𝕕(:, :, σᶻ))
     operators = Operators(
-        Operator(-1.25, 𝕔(2, 1, +1//2, 2, [0.0, 0.0], [0.0, 0.0]), 𝕔(2, 1, -1//2, 1, [0.0, 0.0], [0.0, 0.0]), 𝕔(1, 1, -1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, -1//2, 1, [0.5, 0.5], [0.0, 0.0])),
-        Operator(+1.25, 𝕔(2, 1, -1//2, 2, [0.0, 0.0], [0.0, 0.0]), 𝕔(2, 1, +1//2, 1, [0.0, 0.0], [0.0, 0.0]), 𝕔(1, 1, +1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, +1//2, 1, [0.5, 0.5], [0.0, 0.0])),
-        Operator(+1.25, 𝕔(2, 1, +1//2, 2, [0.0, 0.0], [0.0, 0.0]), 𝕔(2, 1, -1//2, 1, [0.0, 0.0], [0.0, 0.0]), 𝕔(1, 1, +1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, +1//2, 1, [0.5, 0.5], [0.0, 0.0])),
-        Operator(-1.25, 𝕔(2, 1, -1//2, 2, [0.0, 0.0], [0.0, 0.0]), 𝕔(2, 1, +1//2, 1, [0.0, 0.0], [0.0, 0.0]), 𝕔(1, 1, -1//2, 2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, -1//2, 1, [0.5, 0.5], [0.0, 0.0]))
+        Operator(-1.25, 𝕔⁺(2, 1, +1//2, [0.0, 0.0], [0.0, 0.0]), 𝕔(2, 1, -1//2, [0.0, 0.0], [0.0, 0.0]), 𝕔⁺(1, 1, -1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, -1//2, [0.5, 0.5], [0.0, 0.0])),
+        Operator(+1.25, 𝕔⁺(2, 1, -1//2, [0.0, 0.0], [0.0, 0.0]), 𝕔(2, 1, +1//2, [0.0, 0.0], [0.0, 0.0]), 𝕔⁺(1, 1, +1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, +1//2, [0.5, 0.5], [0.0, 0.0])),
+        Operator(+1.25, 𝕔⁺(2, 1, +1//2, [0.0, 0.0], [0.0, 0.0]), 𝕔(2, 1, -1//2, [0.0, 0.0], [0.0, 0.0]), 𝕔⁺(1, 1, +1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, +1//2, [0.5, 0.5], [0.0, 0.0])),
+        Operator(-1.25, 𝕔⁺(2, 1, -1//2, [0.0, 0.0], [0.0, 0.0]), 𝕔(2, 1, +1//2, [0.0, 0.0], [0.0, 0.0]), 𝕔⁺(1, 1, -1//2, [0.5, 0.5], [0.0, 0.0]), 𝕔(1, 1, -1//2, [0.5, 0.5], [0.0, 0.0]))
     )
     @test expand(term, bond, hilbert, half=true) == operators
     @test expand(term, bond, hilbert, half=false) == operators*2
@@ -367,7 +376,6 @@ end
     index = 𝕊('z')
     @test index == 𝕊{:}('z')
     @test string(index) == "𝕊('z')"
-    @test string(𝕊{:}) == "𝕊"
     @test 𝕊(:, 'z') == Index(:, index)
     @test 𝕊(:, 'z', [0.0], [0.0]) == CoordinatedIndex(Index(:, index), [0.0], [0.0])
 
@@ -381,11 +389,8 @@ end
     @test internalindextype(SpinIndex, Char) == SpinIndex{:, Char}
     @test internalindextype(SpinIndex{1//2}, Symbol) == SpinIndex{1//2, Symbol}
 
-    # @test OperatorIndex[SpinIndex] == OperatorIndex[Index{<:SpinIndex}] == OperatorIndex[CoordinatedIndex{<:Index{<:SpinIndex}}] == 𝕊
-    # @test OperatorIndex[SpinIndex{:}] == OperatorIndex[Index{<:SpinIndex{:}}] == OperatorIndex[CoordinatedIndex{<:Index{<:SpinIndex{:}}}] == 𝕊
-    # @test OperatorIndex[SpinIndex{1//2}] == OperatorIndex[Index{<:SpinIndex{1//2}}] == OperatorIndex[CoordinatedIndex{<:Index{<:SpinIndex{1//2}}}] == 𝕊{1//2}
-    @test OperatorIndex[𝕊] == SpinIndex{:}
-    @test OperatorIndex[𝕊{1//2}] == SpinIndex{1//2}
+    @test OperatorIndex[𝕊('z')] == "𝕊"
+    @test OperatorIndex[𝕊{1//2}('z')] == "𝕊{1//2}"
 end
 
 @testset "matrix" begin
@@ -453,7 +458,7 @@ end
 end
 
 @testset "Spin Coupling" begin
-    @test collect(MatrixCoupling(:, SpinIndex, [1 0 0; 0 1 0; 0 0 1])) == collect(MatrixCoupling(𝕊, :, [1 0 0; 0 1 0; 0 0 1])) == collect(𝕊ᵀ𝕊(:, [1 0 0; 0 1 0; 0 0 1])) == [
+    @test collect(MatrixCoupling(:, SpinIndex, [1 0 0; 0 1 0; 0 0 1])) == collect(𝕊ᵀ𝕊(:, [1 0 0; 0 1 0; 0 0 1])) == [
         Coupling(𝕊, :, ('x', 'x')), Coupling(𝕊, :, ('y', 'y')), Coupling(𝕊, :, ('z', 'z'))
     ]
 
@@ -703,10 +708,8 @@ end
     @test internalindextype(PhononIndex{:p}, Symbol) == PhononIndex{:p, Symbol}
     @test internalindextype(PhononIndex{:}, Colon) == PhononIndex{:, Colon}
 
-    # @test OperatorIndex[PhononIndex{:u}] == OperatorIndex[Index{<:PhononIndex{:u}}] == OperatorIndex[CoordinatedIndex{<:Index{<:PhononIndex{:u}}}] == 𝕦
-    # @test OperatorIndex[PhononIndex{:p}] == OperatorIndex[Index{<:PhononIndex{:p}}] == OperatorIndex[CoordinatedIndex{<:Index{<:PhononIndex{:p}}}] == 𝕡
-    @test OperatorIndex[𝕦] == PhononIndex{:u}
-    @test OperatorIndex[𝕡] == PhononIndex{:p}
+    @test OperatorIndex[𝕦('x')] == "𝕦"
+    @test OperatorIndex[𝕡('x')] == "𝕡"
 end
 
 @testset "Phonon latex" begin
@@ -788,7 +791,7 @@ end
 end
 
 @testset "Phonon Coupling" begin
-    @test collect(MatrixCoupling(:, PhononIndex{:u}, [1 0 1; 0 1 0; 1 0 1])) == collect(MatrixCoupling(𝕦, :, [1 0 1; 0 1 0; 1 0 1])) == collect(𝕦ᵀ𝕦(:, [1 0 1; 0 1 0; 1 0 1])) == [
+    @test collect(MatrixCoupling(:, PhononIndex{:u}, [1 0 1; 0 1 0; 1 0 1])) == collect(𝕦ᵀ𝕦(:, [1 0 1; 0 1 0; 1 0 1])) == [
         Coupling(𝕦(:, 'x'), 𝕦(:, 'x')), Coupling(𝕦(:, 'z'), 𝕦(:, 'x')), Coupling(𝕦(:, 'y'), 𝕦(:, 'y')), Coupling(𝕦(:, 'x'), 𝕦(:, 'z')), Coupling(𝕦(:, 'z'), 𝕦(:, 'z'))
     ]
 
