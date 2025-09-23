@@ -143,33 +143,33 @@ end
 end
 
 @testset "Fock Coupling" begin
-    @test collect(MatrixCoupling(:, FockIndex{:f}, :, :, σ¹¹)) == collect(𝕔⁺𝕔(:, :, :)) == [Coupling(𝕔⁺(:, :, :), 𝕔(:, :, :))]
-    @test collect(MatrixCoupling(:, FockIndex{:f}, :, :, σ¹²)) == collect(𝕔⁺𝕔⁺(:, :, :)) == [Coupling(𝕔⁺(:, :, :), 𝕔⁺(:, :, :))]
-    @test collect(MatrixCoupling(:, FockIndex{:f}, :, :, σ²¹)) == collect(𝕔𝕔(:, :, :)) == [Coupling(𝕔(:, :, :), 𝕔(:, :, :))]
-    @test collect(MatrixCoupling(:, FockIndex{:f}, :, :, σ²²)) == collect(𝕔𝕔⁺(:, :, :)) == [Coupling(𝕔(:, :, :), 𝕔⁺(:, :, :))]
+    @test collect(MatrixCoupling{FockIndex{:f}}(:, :, :, σ¹¹)) == collect(𝕔⁺𝕔(:, :, :)) == [Coupling(𝕔⁺(:, :, :), 𝕔(:, :, :))]
+    @test collect(MatrixCoupling{FockIndex{:f}}(:, :, :, σ¹²)) == collect(𝕔⁺𝕔⁺(:, :, :)) == [Coupling(𝕔⁺(:, :, :), 𝕔⁺(:, :, :))]
+    @test collect(MatrixCoupling{FockIndex{:f}}(:, :, :, σ²¹)) == collect(𝕔𝕔(:, :, :)) == [Coupling(𝕔(:, :, :), 𝕔(:, :, :))]
+    @test collect(MatrixCoupling{FockIndex{:f}}(:, :, :, σ²²)) == collect(𝕔𝕔⁺(:, :, :)) == [Coupling(𝕔(:, :, :), 𝕔⁺(:, :, :))]
 
-    @test collect(MatrixCoupling(:, FockIndex{:b}, :, :, σ¹¹)) == collect(𝕒⁺𝕒(:, :, :)) == [Coupling(𝕒⁺(:, :, :), 𝕒(:, :, :))]
-    @test collect(MatrixCoupling(:, FockIndex{:b}, :, :, σ¹²)) == collect(𝕒⁺𝕒⁺(:, :, :)) == [Coupling(𝕒⁺(:, :, :), 𝕒⁺(:, :, :))]
-    @test collect(MatrixCoupling(:, FockIndex{:b}, :, :, σ²¹)) == collect(𝕒𝕒(:, :, :)) == [Coupling(𝕒(:, :, :), 𝕒(:, :, :))]
-    @test collect(MatrixCoupling(:, FockIndex{:b}, :, :, σ²²)) == collect(𝕒𝕒⁺(:, :, :)) == [Coupling(𝕒(:, :, :), 𝕒⁺(:, :, :))]
+    @test collect(MatrixCoupling{FockIndex{:b}}(:, :, :, σ¹¹)) == collect(𝕒⁺𝕒(:, :, :)) == [Coupling(𝕒⁺(:, :, :), 𝕒(:, :, :))]
+    @test collect(MatrixCoupling{FockIndex{:b}}(:, :, :, σ¹²)) == collect(𝕒⁺𝕒⁺(:, :, :)) == [Coupling(𝕒⁺(:, :, :), 𝕒⁺(:, :, :))]
+    @test collect(MatrixCoupling{FockIndex{:b}}(:, :, :, σ²¹)) == collect(𝕒𝕒(:, :, :)) == [Coupling(𝕒(:, :, :), 𝕒(:, :, :))]
+    @test collect(MatrixCoupling{FockIndex{:b}}(:, :, :, σ²²)) == collect(𝕒𝕒⁺(:, :, :)) == [Coupling(𝕒(:, :, :), 𝕒⁺(:, :, :))]
 
 
-    @test collect(MatrixCoupling(:, FockIndex, :, :, σ¹¹)) == collect(𝕕⁺𝕕(:, :, :)) == [Coupling(𝕕⁺(:, :, :), 𝕕(:, :, :))]
-    @test collect(MatrixCoupling(:, FockIndex, :, :, σ¹²)) == collect(𝕕⁺𝕕⁺(:, :, :)) == [Coupling(𝕕⁺(:, :, :), 𝕕⁺(:, :, :))]
-    @test collect(MatrixCoupling(:, FockIndex, :, :, σ²¹)) == collect(𝕕𝕕(:, :, :)) == [Coupling(𝕕(:, :, :), 𝕕(:, :, :))]
-    @test collect(MatrixCoupling(:, FockIndex, :, :, σ²²)) == collect(𝕕𝕕⁺(:, :, :)) == [Coupling(𝕕(:, :, :), 𝕕⁺(:, :, :))]
+    @test collect(MatrixCoupling{FockIndex}(:, :, :, σ¹¹)) == collect(𝕕⁺𝕕(:, :, :)) == [Coupling(𝕕⁺(:, :, :), 𝕕(:, :, :))]
+    @test collect(MatrixCoupling{FockIndex}(:, :, :, σ¹²)) == collect(𝕕⁺𝕕⁺(:, :, :)) == [Coupling(𝕕⁺(:, :, :), 𝕕⁺(:, :, :))]
+    @test collect(MatrixCoupling{FockIndex}(:, :, :, σ²¹)) == collect(𝕕𝕕(:, :, :)) == [Coupling(𝕕(:, :, :), 𝕕(:, :, :))]
+    @test collect(MatrixCoupling{FockIndex}(:, :, :, σ²²)) == collect(𝕕𝕕⁺(:, :, :)) == [Coupling(𝕕(:, :, :), 𝕕⁺(:, :, :))]
 
-    @test collect(MatrixCoupling((1ˢᵗ, 2ⁿᵈ), FockIndex{:f}, :, σʸ, σᶻ)) == [
+    @test collect(MatrixCoupling{FockIndex{:f}}((1ˢᵗ, 2ⁿᵈ), :, σʸ, σᶻ)) == [
         Coupling(+1im, 𝕔⁺(1ˢᵗ, :, -1//2), 𝕔(2ⁿᵈ, :, 1//2)), Coupling(-1im, 𝕔⁺(1ˢᵗ, :, 1//2), 𝕔(2ⁿᵈ, :, -1//2)),
         Coupling(-1im, 𝕔(1ˢᵗ, :, -1//2), 𝕔⁺(2ⁿᵈ, :, 1//2)), Coupling(+1im, 𝕔(1ˢᵗ, :, 1//2), 𝕔⁺(2ⁿᵈ, :, -1//2))
     ]
 
-    @test collect(MatrixCoupling((1ˢᵗ, 2ⁿᵈ), FockIndex{:b}, σˣ, :, σ⁰)) == [
+    @test collect(MatrixCoupling{FockIndex{:b}}((1ˢᵗ, 2ⁿᵈ), σˣ, :, σ⁰)) == [
         Coupling(𝕒⁺(1ˢᵗ, 2, :), 𝕒(2ⁿᵈ, 1, :)), Coupling(𝕒⁺(1ˢᵗ, 1, :), 𝕒(2ⁿᵈ, 2, :)),
         Coupling(𝕒(1ˢᵗ, 2, :), 𝕒⁺(2ⁿᵈ, 1, :)), Coupling(𝕒(1ˢᵗ, 1, :), 𝕒⁺(2ⁿᵈ, 2, :))
     ]
 
-    fc = Coupling(2.0, (1ˢᵗ, 2ⁿᵈ), FockIndex, (1, 2), :, (2, 1))
+    fc = Coupling{FockIndex}(2.0, (1ˢᵗ, 2ⁿᵈ), (1, 2), :, (2, 1))
     bond = Bond(1, Point(1, SVector(0.0), SVector(0.0)), Point(2, SVector(0.5), SVector(0.0)))
     hilbert = Hilbert(site=>Fock{:f}(2, 2) for site=1:2)
     ex = expand(fc, Val(:Hopping), bond, hilbert)
@@ -178,7 +178,7 @@ end
         Operator(2.0, 𝕔⁺(1, 1, +1//2, SVector(0.0), SVector(0.0)), 𝕔(2, 2, +1//2, SVector(0.5), SVector(0.0)))
     ]
 
-    fc = Coupling(2.0, (1ˢᵗ, 1ˢᵗ, 1ˢᵗ, 1ˢᵗ), FockIndex, :, (1//2, 1//2, -1//2, -1//2), (2, 1, 2, 1))
+    fc = Coupling{FockIndex}(2.0, (1ˢᵗ, 1ˢᵗ, 1ˢᵗ, 1ˢᵗ), :, (1//2, 1//2, -1//2, -1//2), (2, 1, 2, 1))
     point = Point(1, SVector(0.0), SVector(0.0))
     hilbert = Hilbert(point.site=>Fock{:b}(2, 2))
     ex = expand(fc, Val(:term), Bond(point), hilbert)
@@ -197,8 +197,8 @@ end
         Operator(2.0, 𝕔⁺(1, 2, +1//2, SVector(0.5), SVector(0.0)), 𝕔⁺(1, 2, -1//2, SVector(0.5), SVector(0.0)), 𝕔(1, 3, -1//2, SVector(0.5), SVector(0.0)), 𝕔(1, 3, +1//2, SVector(0.5), SVector(0.0)))
     ]
 
-    fc₁ = Coupling(+1.0, :, FockIndex, :, (+1//2, +1//2), (2, 1))
-    fc₂ = Coupling(-1.0, :, FockIndex, :, (-1//2, -1//2), (2, 1))
+    fc₁ = Coupling{FockIndex}(+1.0, :, :, (+1//2, +1//2), (2, 1))
+    fc₂ = Coupling{FockIndex}(-1.0, :, :, (-1//2, -1//2), (2, 1))
     point = Point(1, SVector(0.0), SVector(0.0))
     hilbert = Hilbert(point.site=>Fock{:f}(2, 2))
     ex = expand(fc₁*fc₂, Val(:term), Bond(point), hilbert)
@@ -458,11 +458,11 @@ end
 end
 
 @testset "Spin Coupling" begin
-    @test collect(MatrixCoupling(:, SpinIndex, [1 0 0; 0 1 0; 0 0 1])) == collect(𝕊ᵀ𝕊(:, [1 0 0; 0 1 0; 0 0 1])) == [
-        Coupling(𝕊, :, ('x', 'x')), Coupling(𝕊, :, ('y', 'y')), Coupling(𝕊, :, ('z', 'z'))
+    @test collect(MatrixCoupling{SpinIndex}(:, [1 0 0; 0 1 0; 0 0 1])) == collect(𝕊ᵀ𝕊(:, [1 0 0; 0 1 0; 0 0 1])) == [
+        Coupling{𝕊}(:, ('x', 'x')), Coupling{𝕊}(:, ('y', 'y')), Coupling{𝕊}(:, ('z', 'z'))
     ]
 
-    sc = Coupling(2.0, 𝕊, (1ˢᵗ, 2ⁿᵈ), ('+', '-'))
+    sc = Coupling{𝕊}(2.0, (1ˢᵗ, 2ⁿᵈ), ('+', '-'))
     bond = Bond(1, Point(1, [0.0], [0.0]), Point(2, [0.5], [0.0]))
     hilbert = Hilbert(Spin{1}(), 2)
     ex = expand(sc, Val(:SpinTerm), bond, hilbert)
@@ -791,7 +791,7 @@ end
 end
 
 @testset "Phonon Coupling" begin
-    @test collect(MatrixCoupling(:, PhononIndex{:u}, [1 0 1; 0 1 0; 1 0 1])) == collect(𝕦ᵀ𝕦(:, [1 0 1; 0 1 0; 1 0 1])) == [
+    @test collect(MatrixCoupling{PhononIndex{:u}}(:, [1 0 1; 0 1 0; 1 0 1])) == collect(𝕦ᵀ𝕦(:, [1 0 1; 0 1 0; 1 0 1])) == [
         Coupling(𝕦(:, 'x'), 𝕦(:, 'x')), Coupling(𝕦(:, 'z'), 𝕦(:, 'x')), Coupling(𝕦(:, 'y'), 𝕦(:, 'y')), Coupling(𝕦(:, 'x'), 𝕦(:, 'z')), Coupling(𝕦(:, 'z'), 𝕦(:, 'z'))
     ]
 

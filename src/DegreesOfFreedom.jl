@@ -912,35 +912,27 @@ Construct a coupling with the input indexes as the pattern.
 @inline Coupling(value::Number, indexes::OneAtLeast{Index}) = Coupling(value, Pattern(indexes))
 
 """
-    Coupling(sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:InternalIndex}
-    Coupling(value::Number, sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:InternalIndex}
-    Coupling{N}(sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:InternalIndex}
-    Coupling{N}(value::Number, sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:InternalIndex}
+    Coupling{I}(sites::Union{NTuple{N, Ordinal}, Colon}, fields::Union{NTuple{N}, Colon}...) where {N, I<:InternalIndex}
+    Coupling{I}(value::Number, sites::Union{NTuple{N, Ordinal}, Colon}, fields::Union{NTuple{N}, Colon}...) where {N, I<:InternalIndex}
 
 Construct a `Coupling` with the input sites and the fields of a kind of internal index.
 """
-@inline Coupling(sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:InternalIndex} = Coupling{N}(sites, I, fields...)
-@inline Coupling(value::Number, sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:InternalIndex} = Coupling{N}(value, sites, I, fields...)
-@inline Coupling{N}(sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:InternalIndex} = Coupling{N}(1, sites, I, fields...)
-@inline function Coupling{N}(value::Number, sites::Union{NTuple{N, Ordinal}, Colon}, ::Type{I}, fields::Union{NTuple{N}, Colon}...) where {N, I<:InternalIndex}
+@inline Coupling{I}(sites::Union{NTuple{N, Ordinal}, Colon}, fields::Union{NTuple{N}, Colon}...) where {N, I<:InternalIndex} = Coupling{I}(1, sites, fields...)
+@inline function Coupling{I}(value::Number, sites::Union{NTuple{N, Ordinal}, Colon}, fields::Union{NTuple{N}, Colon}...) where {N, I<:InternalIndex}
     return Coupling(value, map(Index, default(sites, Val(N)), map(I, map(field->default(field, Val(N)), fields)...)))
 end
 @inline default(fields, ::Val) = fields
 @inline default(::Colon, N::Val) = ntuple(i->:, N)
 
 """
-    Coupling(f::Union{Function, Type{<:Function}}, sites::Union{NTuple{N, Ordinal}, Colon}, fields::Union{NTuple{N}, Colon}...) where N
-    Coupling(value::Number, f::Union{Function, Type{<:Function}}, sites::Union{NTuple{N, Ordinal}, Colon}, fields::Union{NTuple{N}, Colon}...) where N
-    Coupling{N}(f::Union{Function, Type{<:Function}}, sites::Union{NTuple{N, Ordinal}, Colon}, fields::Union{NTuple{N}, Colon}...) where N
-    Coupling{N}(value::Number, f::Union{Function, Type{<:Function}}, sites::Union{NTuple{N, Ordinal}, Colon}, fields::Union{NTuple{N}, Colon}...) where N
+    Coupling{F}(sites::Union{NTuple{N, Ordinal}, Colon}, fields::Union{NTuple{N}, Colon}...) where {N, F}
+    Coupling{F}(value::Number, sites::Union{NTuple{N, Ordinal}, Colon}, fields::Union{NTuple{N}, Colon}...) where {N, F}
 
 Construct a `Coupling` by a function that can construct an `Index` with the input sites and the fields of a kind of internal index.
 """
-@inline Coupling(f::Union{Function, Type{<:Function}}, sites::Union{NTuple{N, Ordinal}, Colon}, fields::Union{NTuple{N}, Colon}...) where N = Coupling{N}(f, sites, fields...)
-@inline Coupling(value::Number, f::Union{Function, Type{<:Function}}, sites::Union{NTuple{N, Ordinal}, Colon}, fields::Union{NTuple{N}, Colon}...) where N = Coupling{N}(value, f, sites, fields...)
-@inline Coupling{N}(f::Union{Function, Type{<:Function}}, sites::Union{NTuple{N, Ordinal}, Colon}, fields::Union{NTuple{N}, Colon}...) where N = Coupling{N}(1, f, sites, fields...)
-@inline function Coupling{N}(value::Number, f::Union{Function, Type{<:Function}}, sites::Union{NTuple{N, Ordinal}, Colon}, fields::Union{NTuple{N}, Colon}...) where N
-    return Coupling(value, map(f, default(sites, Val(N)), map(field->default(field, Val(N)), fields)...))
+@inline Coupling{F}(sites::Union{NTuple{N, Ordinal}, Colon}, fields::Union{NTuple{N}, Colon}...) where {N, F} = Coupling{F}(1, sites, fields...)
+@inline function Coupling{F}(value::Number, sites::Union{NTuple{N, Ordinal}, Colon}, fields::Union{NTuple{N}, Colon}...) where {N, F}
+    return Coupling(value, map(F, default(sites, Val(N)), map(field->default(field, Val(N)), fields)...))
 end
 
 """
@@ -1064,8 +1056,9 @@ Matrix coupling, i.e., a set of couplings whose coefficients are specified by ma
 struct MatrixCoupling{I<:InternalIndex, S<:Union{Ordinal, Colon}, C<:OneAtLeast{MatrixCouplingComponent}, E<:Coupling} <: VectorSpace{E}
     sites::Tuple{S, S}
     contents::C
-    function MatrixCoupling{I}(sites::Union{NTuple{2, Ordinal}, NTuple{2, Colon}}, contents::OneAtLeast{MatrixCouplingComponent}) where {I<:InternalIndex}
+    function MatrixCoupling{I}(sites::Union{NTuple{2, Ordinal}, NTuple{2, Colon}, Colon}, contents::OneAtLeast{MatrixCouplingComponent}) where {I<:InternalIndex}
         @assert fieldcount(I)==length(contents) "MatrixCoupling error: mismatched type of internal index ($nameof(I)) and components (len=$length(contents))."
+        sites = default(sites, Val(2))
         new{I, eltype(sites), typeof(contents), _eltype_(I, eltype(sites), typeof(contents))}(sites, contents)
     end
 end
@@ -1094,12 +1087,12 @@ end
 end
 
 """
-    MatrixCoupling{I}(sites::Union{NTuple{2, Ordinal}, NTuple{2, Colon}}, contents::OneAtLeast{MatrixCouplingComponent}) where {I<:InternalIndex}
-    MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{I}, contents::MatrixCouplingComponent...) where {I<:InternalIndex}
+    MatrixCoupling{I}(sites::Union{NTuple{2, Ordinal}, NTuple{2, Colon}, Colon}, contents::MatrixCouplingComponent...) where {I<:InternalIndex}
+    MatrixCoupling{I}(sites::Union{NTuple{2, Ordinal}, NTuple{2, Colon}, Colon}, contents::OneAtLeast{MatrixCouplingComponent}) where {I<:InternalIndex}
 
 Construct a `MatrixCoupling`.
 """
-@inline MatrixCoupling(sites::Union{NTuple{2, Ordinal}, Colon}, ::Type{I}, contents::MatrixCouplingComponent...) where {I<:InternalIndex} = MatrixCoupling{I}(default(sites, Val(2)), contents)
+@inline MatrixCoupling{I}(sites::Union{NTuple{2, Ordinal}, NTuple{2, Colon}, Colon}, contents::MatrixCouplingComponent...) where {I<:InternalIndex} = MatrixCoupling{I}(sites, contents)
 
 """
     MatrixCouplingProd{V<:Number, C<:OneAtLeast{MatrixCoupling}, E<:Coupling} <: VectorSpace{E}

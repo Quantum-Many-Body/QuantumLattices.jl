@@ -77,8 +77,8 @@ end
     bs = bonds(lattice, 1)
     hilbert = Hilbert(site=>FFock(2) for site=1:length(lattice))
     boundary = Boundary{(:θ,)}([0.1], lattice.vectors)
-    t = Term{:Hp}(:t, 2.0, 1, Coupling(1.0, :, FID, (2, 1)), false; ismodulatable=false)
-    μ = Term{:Mu}(:μ, 1.0, 0, Coupling(1.0, :, FID, (2, 1)), true)
+    t = Term{:Hp}(:t, 2.0, 1, Coupling{FID}(1.0, :, (2, 1)), false; ismodulatable=false)
+    μ = Term{:Mu}(:μ, 1.0, 0, Coupling{FID}(1.0, :, (2, 1)), true)
     i = LinearFunction(identity)
 
     optp = Operator{ComplexF64, ZeroAtLeast{CoordinatedIndex{Index{FID{Int}, Int}, SVector{1, Float64}}, 2}}
@@ -126,8 +126,8 @@ end
     lattice = Lattice([0.0], [0.5]; vectors=[[1.0]])
     bs = bonds(lattice, 1)
     hilbert = Hilbert(site=>FFock(2) for site=1:length(lattice))
-    t = Term{:Hp}(:t, 2.0, 1, Coupling(1.0, :, FID, (2, 1)), false; ismodulatable=false)
-    μ = Term{:Mu}(:μ, 1.0, 0, Coupling(1.0, :, FID, (2, 1)), true)
+    t = Term{:Hp}(:t, 2.0, 1, Coupling{FID}(1.0, :, (2, 1)), false; ismodulatable=false)
+    μ = Term{:Mu}(:μ, 1.0, 0, Coupling{FID}(1.0, :, (2, 1)), true)
     i = LinearFunction(identity)
     optp = Operator{ComplexF64, ZeroAtLeast{CoordinatedIndex{Index{FID{Int}, Int}, SVector{1, Float64}}, 2}}
     tops = expand(t, bs, hilbert; half=true)
@@ -158,8 +158,8 @@ end
     bs = bonds(lattice, 1)
     hilbert = Hilbert(site=>FFock(2) for site=1:length(lattice))
     boundary = Boundary{(:θ,)}([0.1], lattice.vectors)
-    t = Term{:Hp}(:t, 2.0, 1, Coupling(1.0, :, FID, (2, 1)), false; ismodulatable=false)
-    μ = Term{:Mu}(:μ, 1.0, 0, Coupling(1.0, :, FID, (2, 1)), true)
+    t = Term{:Hp}(:t, 2.0, 1, Coupling{FID}(1.0, :, (2, 1)), false; ismodulatable=false)
+    μ = Term{:Mu}(:μ, 1.0, 0, Coupling{FID}(1.0, :, (2, 1)), true)
     optp = Operator{ComplexF64, ZeroAtLeast{CoordinatedIndex{Index{FID{Int}, Int}, SVector{1, Float64}}, 2}}
     tops₁ = expand(t, filter(bond->isintracell(bond), bs), hilbert; half=true)
     tops₂ = boundary(expand(one(t), filter(bond->!isintracell(bond), bs), hilbert; half=true))
@@ -195,8 +195,8 @@ end
     lattice = Lattice([0.0], [0.5]; vectors=[[1.0]])
     bs = bonds(lattice, 1)
     hilbert = Hilbert(site=>FFock(2) for site=1:length(lattice))
-    t = Term{:Hp}(:t, 2.0, 1, Coupling(1.0, :, FID, (2, 1)), false; ismodulatable=false)
-    μ = Term{:Mu}(:μ, 1.0, 0, Coupling(1.0, :, FID, (2, 1)), true)
+    t = Term{:Hp}(:t, 2.0, 1, Coupling{FID}(1.0, :, (2, 1)), false; ismodulatable=false)
+    μ = Term{:Mu}(:μ, 1.0, 0, Coupling{FID}(1.0, :, (2, 1)), true)
     optp = Operator{ComplexF64, ZeroAtLeast{CoordinatedIndex{Index{FID{Int}, Int}, SVector{1, Float64}}, 2}}
     tops = expand(t, bs, hilbert; half=true)
     μops = expand(one(μ), bs, hilbert; half=true)

@@ -77,42 +77,39 @@ julia> Coupling(𝕔⁺(1ˢᵗ, 1, -1//2), 𝕔(2ⁿᵈ, 1, -1//2))
 When all [`Index`](@ref)es are of the same type, a [`Coupling`](@ref) can be initialized in different simpler ways:
 ```julia
 # Coupling pattern for Fock systems
-Coupling(
+Coupling{F}(
     [value, ]
-    sites::Union{Colon, NTuple{N, Ordinal}},
-    ::Type{<:FockIndex},
+    sites::Union{NTuple{N, Ordinal}, Colon},
     orbitals::Union{NTuple{N, Int}, Colon},
     spins::Union{NTuple{N, Union{Rational{Int}, Int}}, Colon},
     nambus::NTuple{N, Int}
-) where N
+) where {N, F<:FockIndex}
 
 # Coupling pattern for spin systems
-Coupling(
+Coupling{S}(
     [value, ]
-    sites::Union{Colon, NTuple{N, Ordinal}},
-    ::Type{<:SpinIndex},
+    sites::Union{NTuple{N, Ordinal}, Colon},
     tags::NTuple{N, Char}
-) where N
+) where {N, S<:SpinIndex}
 
 # Coupling pattern for phonon systems
-Coupling(
+Coupling{P}(
     [value, ]
-    sites::Union{Colon, NTuple{N, Ordinal}},
-    ::Type{<:Union{PhononIndex{:u}, PhononIndex{:p}}},
-    directions::Union{Colon, NTuple{N, Char}}
-) where N
+    sites::Union{NTuple{N, Ordinal}, Colon},
+    directions::Union{NTuple{N, Char}, Colon}
+) where {N, P<:Union{PhononIndex{:u}, PhononIndex{:p}}}
 ```
 Here, as is usual, when `value` is omitted, the coefficient of the [`Coupling`](@ref) will be set to be 1.
 
 See examples:
 ```jldoctest HM
-julia> Coupling((1ˢᵗ, 1ˢᵗ, 2ⁿᵈ, 2ⁿᵈ), FockIndex, :, :, (2, 2, 1, 1))
+julia> Coupling{FockIndex}((1ˢᵗ, 1ˢᵗ, 2ⁿᵈ, 2ⁿᵈ), :, :, (2, 2, 1, 1))
 ∑[𝕕⁺(1ˢᵗ, :, :) 𝕕⁺(1ˢᵗ, :, :) 𝕕(2ⁿᵈ, :, :) 𝕕(2ⁿᵈ, :, :)]
 
-julia> Coupling((1ˢᵗ, 2ⁿᵈ), SpinIndex, ('z', 'z'))
+julia> Coupling{SpinIndex}((1ˢᵗ, 2ⁿᵈ), ('z', 'z'))
 𝕊(1ˢᵗ, 'z') 𝕊(2ⁿᵈ, 'z')
 
-julia> Coupling((1ˢᵗ, 1ˢᵗ), PhononIndex{:p}, :)
+julia> Coupling{PhononIndex{:p}}((1ˢᵗ, 1ˢᵗ), :)
 ∑[𝕡(1ˢᵗ, :) 𝕡(1ˢᵗ, :)]
 ```
 
@@ -129,9 +126,9 @@ julia> 3 * coupling
 
 Two [`Coupling`](@ref)s can be multiplied together:
 ```jldoctest
-julia> cp₁ = Coupling((1ˢᵗ, 1ˢᵗ), FockIndex, (:, :), (1//2, 1//2), (2, 1));
+julia> cp₁ = Coupling{FockIndex}((1ˢᵗ, 1ˢᵗ), :, (1//2, 1//2), (2, 1));
 
-julia> cp₂ = Coupling((1ˢᵗ, 1ˢᵗ), FockIndex, (:, :), (-1//2, -1//2), (2, 1));
+julia> cp₂ = Coupling{FockIndex}((1ˢᵗ, 1ˢᵗ), :, (-1//2, -1//2), (2, 1));
 
 julia> cp₁ * cp₂
 ∑[𝕕⁺(1ˢᵗ, :, 1//2) 𝕕(1ˢᵗ, :, 1//2)] ⊗ ∑[𝕕⁺(1ˢᵗ, :, -1//2) 𝕕(1ˢᵗ, :, -1//2)]
@@ -139,11 +136,11 @@ julia> cp₁ * cp₂
 
 It is noted that due to the implicit summation of the orbital index in the coupling pattern, the above product is not equal to the coupling pattern of the Hubbard term $U\sum_i c^†_{i↑} c_{i↑} c^†_{i↓}c_{i↓}$:
 ```jldoctest
-julia> cp₁ = Coupling((1ˢᵗ, 1ˢᵗ), FockIndex, :, (1//2, 1//2), (2, 1));
+julia> cp₁ = Coupling{FockIndex}((1ˢᵗ, 1ˢᵗ), :, (1//2, 1//2), (2, 1));
 
-julia> cp₂ = Coupling((1ˢᵗ, 1ˢᵗ), FockIndex, :, (-1//2, -1//2), (2, 1));
+julia> cp₂ = Coupling{FockIndex}((1ˢᵗ, 1ˢᵗ), :, (-1//2, -1//2), (2, 1));
 
-julia> cp = Coupling((1ˢᵗ, 1ˢᵗ, 1ˢᵗ, 1ˢᵗ), FockIndex, :, (1//2, 1//2, -1//2, -1//2), (2, 1, 2, 1)) # Hubbard coupling pattern
+julia> cp = Coupling{FockIndex}((1ˢᵗ, 1ˢᵗ, 1ˢᵗ, 1ˢᵗ), :, (1//2, 1//2, -1//2, -1//2), (2, 1, 2, 1)) # Hubbard coupling pattern
 ∑[𝕕⁺(1ˢᵗ, :, 1//2) 𝕕(1ˢᵗ, :, 1//2) 𝕕⁺(1ˢᵗ, :, -1//2) 𝕕(1ˢᵗ, :, -1//2)]
 
 julia> cp == cp₁ * cp₂
@@ -193,13 +190,12 @@ One more remark. **The constraints can only act on the `internal` attribute but 
 At times, the coupling pattern of a term is not compact enough to be represented by a single [`Coupling`](@ref). Then as has been pointed out, they can be represented by an iterator of [`Coupling`](@ref)s. A particular common case in condensed matter physics is that it can be represented by a matrix acting on specific sub internal spaces, e.g., a spin-dependent hopping $t\sum_{⟨ij⟩}c^\dagger_i σᶻ c_j + h.c.$ where $σᶻ$ acts on the local spin space. A new type, the [`MatrixCoupling`](@ref), as a vector of [`Coupling`](@ref), which can be constructed by the following functions:
 ```julia
 # Fock systems
-MatrixCoupling(
+MatrixCoupling{F}(
     sites::Union{NTuple{2, Ordinal}, Colon},
-    ::Type{<:FockIndex},
     orbital::Union{AbstractMatrix, Colon},
     spin::Union{AbstractMatrix, Colon},
     nambu::AbstractMatrix
-)
+) where {F<:FockIndex}
 𝕔⁺𝕔(
     sites::Union{NTuple{2, Ordinal}, Colon},
     orbital::Union{AbstractMatrix, Colon},
@@ -262,22 +258,20 @@ MatrixCoupling(
 )
 
 # Spin systems
-MatrixCoupling(
+MatrixCoupling{S}(
     sites::Union{NTuple{2, Ordinal}, Colon},
-    ::Type{<:SpinIndex},
     matrix::AbstractMatrix
-)
+) where {S<:SpinIndex}
 𝕊ᵀ𝕊(
     sites::Union{NTuple{2, Ordinal}, Colon},
     matrix::AbstractMatrix
 )
 
 # Phonon systems
-MatrixCoupling(
+MatrixCoupling{P}(
     sites::Union{NTuple{2, Ordinal}, Colon},
-    ::Type{<:PhononIndex{:u}},
     matrix::AbstractMatrix
-)
+) where {P<:PhononIndex{:u}}
 𝕦ᵀ𝕦(
     sites::Union{NTuple{2, Ordinal}, Colon},
     matrix::AbstractMatrix
@@ -287,7 +281,7 @@ is designed to represent the coupling patterns in such cases. Here, in construct
 
 The following codes construct the coupling pattern of the above spin-dependent hopping example:
 ```jldoctest
-julia> mc = MatrixCoupling(:, FockIndex, :, σᶻ, σ¹¹);
+julia> mc = MatrixCoupling{FockIndex}(:, :, σᶻ, σ¹¹);
 
 julia> length(mc)
 2
@@ -316,40 +310,40 @@ const σ²² = SparseMatrixCSC([0 0; 0 1])
 ```
 Note in the nambu space, `σ¹¹`, `σ¹²`, `σ²¹` and `σ²²` correspond to `𝕔⁺𝕔`/`𝕒⁺𝕒`/`𝕕⁺𝕕`, `𝕔⁺𝕔⁺`/`𝕒⁺𝕒⁺`/`𝕕⁺𝕕⁺`, `𝕔𝕔`/`𝕒𝕒`/`𝕕𝕕` and `𝕔𝕔⁺`/`𝕒𝕒⁺`/`𝕕𝕕⁺`, respectively:
 ```jldoctest
-julia> MatrixCoupling(:, FockIndex{:f}, :, :, σ¹¹) == 𝕔⁺𝕔(:, :, :)
+julia> MatrixCoupling{FockIndex{:f}}(:, :, :, σ¹¹) == 𝕔⁺𝕔(:, :, :)
 true
 
-julia> MatrixCoupling(:, FockIndex{:f}, :, :, σ¹²) == 𝕔⁺𝕔⁺(:, :, :)
+julia> MatrixCoupling{FockIndex{:f}}(:, :, :, σ¹²) == 𝕔⁺𝕔⁺(:, :, :)
 true
 
-julia> MatrixCoupling(:, FockIndex{:f}, :, :, σ²¹) == 𝕔𝕔(:, :, :)
+julia> MatrixCoupling{FockIndex{:f}}(:, :, :, σ²¹) == 𝕔𝕔(:, :, :)
 true
 
-julia> MatrixCoupling(:, FockIndex{:f}, :, :, σ²²) == 𝕔𝕔⁺(:, :, :)
+julia> MatrixCoupling{FockIndex{:f}}(:, :, :, σ²²) == 𝕔𝕔⁺(:, :, :)
 true
 
-julia> MatrixCoupling(:, FockIndex{:b}, :, :, σ¹¹) == 𝕒⁺𝕒(:, :, :)
+julia> MatrixCoupling{FockIndex{:b}}(:, :, :, σ¹¹) == 𝕒⁺𝕒(:, :, :)
 true
 
-julia> MatrixCoupling(:, FockIndex{:b}, :, :, σ¹²) == 𝕒⁺𝕒⁺(:, :, :)
+julia> MatrixCoupling{FockIndex{:b}}(:, :, :, σ¹²) == 𝕒⁺𝕒⁺(:, :, :)
 true
 
-julia> MatrixCoupling(:, FockIndex{:b}, :, :, σ²¹) == 𝕒𝕒(:, :, :)
+julia> MatrixCoupling{FockIndex{:b}}(:, :, :, σ²¹) == 𝕒𝕒(:, :, :)
 true
 
-julia> MatrixCoupling(:, FockIndex{:b}, :, :, σ²²) == 𝕒𝕒⁺(:, :, :)
+julia> MatrixCoupling{FockIndex{:b}}(:, :, :, σ²²) == 𝕒𝕒⁺(:, :, :)
 true
 
-julia> MatrixCoupling(:, FockIndex, :, :, σ¹¹) == 𝕕⁺𝕕(:, :, :)
+julia> MatrixCoupling{FockIndex}(:, :, :, σ¹¹) == 𝕕⁺𝕕(:, :, :)
 true
 
-julia> MatrixCoupling(:, FockIndex, :, :, σ¹²) == 𝕕⁺𝕕⁺(:, :, :)
+julia> MatrixCoupling{FockIndex}(:, :, :, σ¹²) == 𝕕⁺𝕕⁺(:, :, :)
 true
 
-julia> MatrixCoupling(:, FockIndex, :, :, σ²¹) == 𝕕𝕕(:, :, :)
+julia> MatrixCoupling{FockIndex}(:, :, :, σ²¹) == 𝕕𝕕(:, :, :)
 true
 
-julia> MatrixCoupling(:, FockIndex, :, :, σ²²) == 𝕕𝕕⁺(:, :, :)
+julia> MatrixCoupling{FockIndex}(:, :, :, σ²²) == 𝕕𝕕⁺(:, :, :)
 true
 ```
 
@@ -409,9 +403,9 @@ the coupling pattern can be represented by the following function:
 ```julia
 function kitaev(bond::Bond)
     ϕ = azimuth(rcoordinate(bond)) # get the azimuth angle of a bond in radians
-    any(≈(ϕ), (π/6, 7π/6)) && return Coupling(𝕊, :, ('x', 'x'))
-    any(≈(ϕ), (5π/6, 11π/6)) && return Coupling(𝕊, :, ('y', 'y'))
-    any(≈(ϕ), (π/2, 3π/2)) && return Coupling(𝕊, :, ('z', 'z'))
+    any(≈(ϕ), (π/6, 7π/6)) && return Coupling{𝕊}(:, ('x', 'x'))
+    any(≈(ϕ), (5π/6, 11π/6)) && return Coupling{𝕊}(:, ('y', 'y'))
+    any(≈(ϕ), (π/2, 3π/2)) && return Coupling{𝕊}(:, ('z', 'z'))
     error("kitaev error: wrong input bond.")
 end
 ```
@@ -479,7 +473,7 @@ Pairing(id::Symbol, value, bondkind, coupling; amplitude::Union{Function, Nothin
 
 # termkind = :Hubbard
 # bondkind = 0
-# coupling = Coupling(:, FockIndex, :, (1//2, 1//2, -1//2, -1//2), (2, 1, 2, 1))
+# coupling = Coupling(𝕕⁺(:, :, 1//2), 𝕕(:, :, 1//2), 𝕕⁺(:, :, -1//2), 𝕕(:, :, -1//2))
 # ishermitian = true
 Hubbard(id::Symbol, value; amplitude::Union{Function, Nothing}=nothing)
 

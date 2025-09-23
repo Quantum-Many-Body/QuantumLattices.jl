@@ -251,8 +251,8 @@ end
 end
 
 @testset "Coupling" begin
-    tc = Coupling(:, DID, (2,))
-    @test tc == Coupling(tc.pattern) == Coupling(1, :, DID, (2,)) == Coupling(𝕕(:, 2)) == Coupling(𝕕, :, (2,)) == Coupling(1, 𝕕, :, (2,))
+    tc = Coupling(𝕕(:, 2))
+    @test tc == Coupling(tc.pattern) == Coupling{DID}(:, (2,)) == Coupling{DID}(1, :, (2,)) == Coupling{𝕕}(:, (2,)) == Coupling{𝕕}(1, :, (2,))
     @test id(tc) == tc.pattern
     @test length(tc) == length(typeof(tc)) == 1
     @test eltype(tc) == eltype(typeof(tc)) == typeof(tc)
@@ -266,7 +266,7 @@ end
     point = Point(1, (0.0, 0.0), (0.0, 0.0))
     bond = Bond(point)
     hilbert = Hilbert(point.site=>DFock(2))
-    tc₁ = Coupling(1.5, 𝕕, :, (1, 2))
+    tc₁ = Coupling{𝕕}(1.5, :, (1, 2))
     tc₂ = Coupling(2.0, @pattern(𝕕(:, a), 𝕕(:, b); constraint=a<b))
     ex = expand(tc₁, Val(:), bond, hilbert)
     @test eltype(ex) == eltype(typeof(ex)) == Operator{Float64, NTuple{2, CoordinatedIndex{Index{DID{Int}, Int}, SVector{2, Float64}}}}
@@ -287,7 +287,7 @@ end
     @test component[1] == (1, 2, -1)
     @test component[2] == (2, 1, +1)
 
-    mc = MatrixCoupling(:, DID, component)
+    mc = MatrixCoupling{DID}(:, component)
     @test parameternames(typeof(mc)) == (:internal, :site, :components)
     @test eltype(typeof(mc)) == Coupling{Int64, Pattern{NTuple{2, Index{DID{Int}, Colon}}, (2,), 1, Tuple{typeof(isdiagonal)}}}
     @test mc[1] == Coupling(-1, 𝕕(:, 1), 𝕕(:, 2))
@@ -297,7 +297,7 @@ end
     @test mc//2 == mc*(1//2)
     @test -mc  == (-1)*mc
 
-    another = MatrixCoupling((1ˢᵗ, 2ⁿᵈ), DID, MatrixCouplingComponent([:], [:], hcat(2.0)))
+    another = MatrixCoupling{DID}((1ˢᵗ, 2ⁿᵈ), MatrixCouplingComponent([:], [:], hcat(2.0)))
     @test another[1] == Coupling(2.0, 𝕕(1ˢᵗ, :), 𝕕(2ⁿᵈ, :))
 
     mcp = 2 * mc * another
@@ -315,8 +315,8 @@ end
     @test mcp//4 == mcp*(1//4) == MatrixCouplingProd(1//2, mc, another)
     @test -mcp == (-1)*mcp
 
-    mc₁ = MatrixCoupling((1ˢᵗ, 2ⁿᵈ), DID, MatrixCouplingComponent([1, 2], [2, 1], [0 1; 1 0]))
-    mc₂ = MatrixCoupling((2ⁿᵈ, 1ˢᵗ), DID, MatrixCouplingComponent([1, 2], [2, 1], [0 1im; -1im 0]))
+    mc₁ = MatrixCoupling{DID}((1ˢᵗ, 2ⁿᵈ), MatrixCouplingComponent([1, 2], [2, 1], [0 1; 1 0]))
+    mc₂ = MatrixCoupling{DID}((2ⁿᵈ, 1ˢᵗ), MatrixCouplingComponent([1, 2], [2, 1], [0 1im; -1im 0]))
     mcs = mc₁ + mc₂
     @test mcs == MatrixCouplingSum(mc₁, mc₂)
     @test eltype(mcs) == Coupling{Complex{Int64}, Pattern{NTuple{2, Index{DID{Int}, Ordinal}}, (2,), 1, Tuple{typeof(isdiagonal)}}}
@@ -360,7 +360,7 @@ end
     @test ta(bond) == 4.0
     @test valtype(ta, bond) == valtype(typeof(ta), typeof(bond)) == Float64
 
-    tcs = Coupling(1.0, 𝕕, (1ˢᵗ, 2ⁿᵈ), (1, 1)) + Coupling(2.0, 𝕕, (1ˢᵗ, 2ⁿᵈ), (2, 2))
+    tcs = Coupling{𝕕}(1.0, (1ˢᵗ, 2ⁿᵈ), (1, 1)) + Coupling{𝕕}(2.0, (1ˢᵗ, 2ⁿᵈ), (2, 2))
     termcouplings = TermCoupling(tcs)
     @test termcouplings==deepcopy(termcouplings) && isequal(termcouplings, deepcopy(termcouplings))
     @test valtype(termcouplings) == valtype(typeof(termcouplings)) == eltype(typeof(tcs))
@@ -369,7 +369,7 @@ end
     bond₁ = Bond(1, Point(1, [0.0], [0.0]), Point(2, [0.5], [0.0]))
     bond₂ = Bond(2, Point(1, [0.0], [0.0]), Point(2, [0.5], [0.0]))
 
-    fx = bond::Bond -> bond.kind==1 ? Coupling(1.0, 𝕕, (1ˢᵗ, 2ⁿᵈ), (1, 1)) : Coupling(1.0, 𝕕, (1ˢᵗ, 2ⁿᵈ), (2, 2))
+    fx = bond::Bond -> bond.kind==1 ? Coupling{𝕕}(1.0, (1ˢᵗ, 2ⁿᵈ), (1, 1)) : Coupling{𝕕}(1.0, (1ˢᵗ, 2ⁿᵈ), (2, 2))
     termcouplings = TermCoupling(fx)
     @test termcouplings==TermCoupling{eltype(tcs)}(fx) && isequal(termcouplings, TermCoupling{eltype(tcs)}(fx))
     @test valtype(termcouplings) == valtype(typeof(termcouplings)) == typejoin(typeof(fx(bond₁)), typeof(fx(bond₂)))
@@ -378,7 +378,7 @@ end
 end
 
 @testset "Term" begin
-    term = Term{:Mu}(:μ, 1.5, 0, bond->iseven(bond[1].site) ? Coupling(1.0, 𝕕, (1ˢᵗ, 1ˢᵗ), (2, 2)) : Coupling(1.0, 𝕕, (1ˢᵗ, 1ˢᵗ), (1, 1)), true; amplitude=bond->3)
+    term = Term{:Mu}(:μ, 1.5, 0, bond->iseven(bond[1].site) ? Coupling{𝕕}(1.0, (1ˢᵗ, 1ˢᵗ), (2, 2)) : Coupling{𝕕}(1.0, (1ˢᵗ, 1ˢᵗ), (1, 1)), true; amplitude=bond->3)
     @test term == deepcopy(term)
     @test isequal(term, deepcopy(term))
     @test term|>kind == term|>typeof|>kind == :Mu
@@ -397,7 +397,7 @@ end
     @test update!(term, μ=4.25) == replace(term, 4.25)
     @test term.value == 4.25
 
-    another = Term{:Mu}(:μ, 1.5, 0, Coupling(1.0, 𝕕, :, (2, 1)), true; amplitude=bond->3, ismodulatable=false)
+    another = Term{:Mu}(:μ, 1.5, 0, Coupling{𝕕}(1.0, :, (2, 1)), true; amplitude=bond->3, ismodulatable=false)
     bond = Bond(Point(1, (0.0, 0.0), (0.0, 0.0)))
     hilbert = Hilbert(DFock(2))
     @test string(another, bond, hilbert) == "4.5 𝕕(:, 2) 𝕕(:, 1)"
@@ -405,7 +405,7 @@ end
     @test expand(another, bond, hilbert, half=true) == expand(another, [bond], hilbert, half=true) == operators
     @test expand(another, bond, hilbert, half=false) == expand(another, [bond], hilbert, half=false) == operators*2
 
-    third = Term{:Hp}(:t, 1.5, 1, Coupling(1.0, 𝕕, (1ˢᵗ, 2ⁿᵈ), (2, 1)), false; amplitude=bond->3.0)
+    third = Term{:Hp}(:t, 1.5, 1, Coupling{𝕕}(1.0, (1ˢᵗ, 2ⁿᵈ), (2, 1)), false; amplitude=bond->3.0)
     bond = Bond(1, Point(2, (1.5, 1.5), (1.0, 1.0)), Point(1, (0.5, 0.5), (0.0, 0.0)))
     hilbert = Hilbert(DFock(2), 2)
     @test string(third, bond, hilbert) == "4.5 𝕕(1ˢᵗ, 2) 𝕕(2ⁿᵈ, 1) + h.c."
