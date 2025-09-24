@@ -106,7 +106,7 @@ It plays the role of the symbols as in usual computer algebras while it can host
 abstract type OperatorIndex <: QuantumOperator end
 @inline Base.show(io::IO, u::OperatorIndex) = @printf io "%s(%s)" nameof(typeof(u)) join(map(repr, ntuple(i->getfield(u, i), Val(fieldcount(typeof(u))))), ", ")
 @inline @generated Base.hash(u::OperatorIndex, h::UInt) = Expr(:call, :hash, Expr(:tuple, [:(getfield(u, $i)) for i=1:fieldcount(u)]...), :h)
-@inline Base.getindex(::Type{OperatorIndex}, ::Type{I}) where {I<:OperatorIndex} = I
+@inline Base.getindex(::Type{OperatorIndex}, index::OperatorIndex) = string(nameof(typeof(index)))
 
 """
     iszero(u::OperatorIndex) -> Bool

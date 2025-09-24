@@ -46,6 +46,8 @@ end
     @test string(sid) == "AID(1, 1)"
     @test !iszero(sid)
     @test sid'==AID(1, 2)
+    @test hash(sid) == hash((1, 1))
+    @test OperatorIndex[sid] == "AID"
 
     cid = (AID(2, 1), AID(Inf, 1))
     @test cid == (AID(2, 1) ⊗ AID(Inf, 1))
