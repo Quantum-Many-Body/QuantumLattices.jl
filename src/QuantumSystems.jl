@@ -716,7 +716,7 @@ end
 @inline Base.match(::Type{<:SpinIndex{S₁}}, ::Type{<:Spin{S₂}}) where {S₁, S₂} = false
 ### requested by ConstrainedInternal
 @inline function shape(::Spin, index::SpinIndex)
-    @assert isa(index.tag, Char) "shape error: input `SpinIndex` not definite."
+    @assert isa(index.tag, Char) "shape error: input index ($index) not definite."
     pos = Int(index.tag) - Int('x') + 1
     return (pos:pos,)
 end
