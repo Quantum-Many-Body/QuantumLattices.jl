@@ -242,6 +242,7 @@ end
     @test lattice|>typeof|>contentnames == (:name, :coordinates, :vectors)
     @test lattice|>deepcopy == lattice
     @test isequal(lattice|>deepcopy, lattice)
+    @test lattice|>eltype == lattice|>typeof|>eltype == SVector{2, Float64}
     @test lattice|>string == "Lattice(Tuanzi)\n  with 1 point:\n    [0.5, 0.5]\n  with 2 translation vectors:\n    [1.0, 0.0]\n    [0.0, 1.0]\n"
     @test lattice|>length == 1
     @test lattice|>dimension == lattice|>typeof|>dimension == 2
