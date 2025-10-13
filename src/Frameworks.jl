@@ -711,7 +711,7 @@ abstract type Data end
 
 Convert `Data` to `Tuple`.
 """
-@inline @generated function Tuple(data::Data)
+@inline @generated function Base.Tuple(data::Data)
     exprs = [:(getfield(data, $i)) for i in 1:fieldcount(data)]
     return Expr(:tuple, exprs...)
 end

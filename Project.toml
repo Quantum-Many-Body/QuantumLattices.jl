@@ -1,7 +1,7 @@
 name = "QuantumLattices"
 uuid = "78ae1a1f-1d5d-5174-b61c-66e31b2346dc"
 authors = ["waltergu <waltergu1989@gmail.com>"]
-version = "0.14.0"
+version = "0.14.1"
 
 [deps]
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
@@ -38,4 +38,4 @@ Serialization = "1.10 - 1"
 SparseArrays = "1.10 - 1"
 StaticArrays = "1.4 - 1"
 TimerOutputs = "0.5"
-julia = "1.10 - 1.11"
+julia = "1.10 - 1.12"

@@ -1,5 +1,4 @@
 using Documenter
-using DocumenterTools
 using QuantumLattices
 
 makedocs(

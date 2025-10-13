@@ -3,12 +3,12 @@ module QuantumOperators
 using DataStructures: OrderedDict
 using Latexify: unicode2latex
 using Printf: @printf, @sprintf
-using ..QuantumLattices: OneAtLeast, ZeroAtLeast, str
+using ..QuantumLattices: OneAtLeast, str
 using ..Toolkit: atol, efficientoperations, rtol, contentorder, fulltype, getcontent, parameterpairs, parametertype, promoteparameters, rawtype, reparameter
 
 import LaTeXStrings: latexstring
 import LinearAlgebra: dot
-import ..QuantumLattices: ⊗, add!, div!, expand, id, ishermitian, mul!, permute, rank, sub!, update!, value
+import ..QuantumLattices: ZeroAtLeast, ⊗, add!, div!, expand, id, ishermitian, mul!, permute, rank, sub!, update!, value
 import ..Toolkit: contentnames, dissolve, isparameterbound, parameternames, subscript, superscript
 
 export LaTeX, Operator, OperatorIndex, OperatorPack, OperatorProd, Operators, OperatorSet, OperatorSum, QuantumOperator

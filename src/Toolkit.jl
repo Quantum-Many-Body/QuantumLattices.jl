@@ -1077,7 +1077,7 @@ abstract type VectorSpaceStyle end
 @inline Base.searchsortedfirst(vs::VectorSpace{B}, basis::B) where B = searchsortedfirst(VectorSpaceStyle(vs), vs, basis)
 @inline Base.in(basis::B, vs::VectorSpace{B}) where B = in(VectorSpaceStyle(vs), basis, vs)
 @inline Base.CartesianIndex(i::Integer, vs::VectorSpace) = CartesianIndex(VectorSpaceStyle(vs), i, vs)
-@inline Int(index::CartesianIndex, vs::VectorSpace) = Int(VectorSpaceStyle(vs), index, vs)
+@inline Base.Int(index::CartesianIndex, vs::VectorSpace) = Int(VectorSpaceStyle(vs), index, vs)
 
 """
     VectorSpaceGeneral <: VectorSpaceStyle
@@ -1114,8 +1114,8 @@ struct VectorSpaceDirectSummed <: VectorSpaceStyle end
     return getcontent(vs, :contents)[m][n]
 end
 @inline Base.CartesianIndex(::VectorSpaceDirectSummed, i::Integer, vs::VectorSpace) = DirectSummedIndices(map(eachindex, getcontent(vs, :contents)))[i]
-@inline Int(::VectorSpaceDirectSummed, index::CartesianIndex{3}, vs::VectorSpace) = searchsortedfirst(eachindex(getcontent(vs, :contents)[index[1]]), index[2]) + index[3]
-@inline function Int(::VectorSpaceDirectSummed, index::CartesianIndex{2}, vs::VectorSpace)
+@inline Base.Int(::VectorSpaceDirectSummed, index::CartesianIndex{3}, vs::VectorSpace) = searchsortedfirst(eachindex(getcontent(vs, :contents)[index[1]]), index[2]) + index[3]
+@inline function Base.Int(::VectorSpaceDirectSummed, index::CartesianIndex{2}, vs::VectorSpace)
     contents = getcontent(vs, :contents)
     result = searchsortedfirst(eachindex(contents[index[1]]), index[2])
     for i in 1:(index[1]-1)
@@ -1149,7 +1149,7 @@ function Base.searchsortedfirst(::VectorSpaceDirectProducted{Order}, vs::VectorS
 end
 @inline Base.in(::VectorSpaceDirectProducted{Order}, basis::B, vs::VectorSpace{B}) where {Order, B} = convert(CartesianIndex, basis, vs) in DirectProductedIndices{Order}(shape(vs))
 @inline Base.CartesianIndex(::VectorSpaceDirectProducted{Order}, i::Integer, vs::VectorSpace) where Order = DirectProductedIndices{Order}(shape(vs))[i]
-@inline Int(::VectorSpaceDirectProducted{Order}, index::CartesianIndex, vs::VectorSpace) where Order = searchsortedfirst(DirectProductedIndices{Order}(shape(vs)), index)
+@inline Base.Int(::VectorSpaceDirectProducted{Order}, index::CartesianIndex, vs::VectorSpace) where Order = searchsortedfirst(DirectProductedIndices{Order}(shape(vs)), index)
 
 """
     VectorSpaceZipped <: VectorSpaceStyle
@@ -1165,7 +1165,7 @@ struct VectorSpaceZipped <: VectorSpaceStyle end
     index = map(content->eachindex(content)[i], contents)
     return CartesianIndex(index)
 end
-@inline function Int(::VectorSpaceZipped, index::CartesianIndex, vs::VectorSpace)
+@inline function Base.Int(::VectorSpaceZipped, index::CartesianIndex, vs::VectorSpace)
     contents = getcontent(vs, :contents)
     result = searchsortedfirst(eachindex(contents[1]), index[1])
     for i = 2:length(contents)

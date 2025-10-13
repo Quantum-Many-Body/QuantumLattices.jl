@@ -7,13 +7,13 @@ using StaticArrays: SVector
 using ..QuantumLattices: OneAtLeast, OneOrMore, ZeroAtLeast, add!, decompose, str
 using ..QuantumOperators: LinearTransformation, Operator, OperatorIndex, OperatorPack, Operators, QuantumOperator, scalartype, valuetolatextext
 using ..Spatials: Bond, Point
-using ..Toolkit: atol, efficientoperations, rtol, CompositeDict, Float, VectorSpace, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceStyle, concatenate, fulltype, parametertype, rawtype, reparameter
+using ..Toolkit: atol, efficientoperations, rtol, CompositeDict, Float, VectorSpace, VectorSpaceDirectProducted, VectorSpaceDirectSummed, concatenate, fulltype, parametertype, rawtype, reparameter
 
 import LaTeXStrings: latexstring
 import ..QuantumLattices: ⊕, ⊗, dimension, expand, expand!, id, ishermitian, kind, permute, rank, reset!, shape, update!, value
 import ..QuantumOperators: idtype, operatortype, script
 import ..Spatials: icoordinate, nneighbor, rcoordinate
-import ..Toolkit: contentnames, getcontent, parameternames
+import ..Toolkit: VectorSpaceStyle, contentnames, getcontent, parameternames
 
 export CompositeInternal, CompositeIndex, CoordinatedIndex, Hilbert, Index, Internal, InternalIndex, InternalProd, InternalSum, SimpleInternal
 export Boundary, Coupling, MatrixCoupling, MatrixCouplingComponent, MatrixCouplingProd, MatrixCouplingSum, Metric, OperatorIndexToTuple, Ordinal, Pattern, Table, Term, TermAmplitude, TermCoupling

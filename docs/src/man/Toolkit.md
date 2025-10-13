@@ -35,6 +35,7 @@ delta
 id
 value
 DirectSummedIndices
+DirectProductedIndices
 Segment
 ```
 
@@ -494,8 +495,6 @@ SubTypeTree
 commontype
 fulltype
 rawtype
-DataType
-supertype
 ```
 
 For traits with type parameters:

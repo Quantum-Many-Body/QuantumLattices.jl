@@ -8,11 +8,11 @@ using Printf: @printf, @sprintf
 using RecipesBase: RecipesBase, @recipe, @series, @layout
 using StaticArrays: MVector, SVector
 using ..QuantumLattices: OneAtLeast, OneOrMore, ZeroAtLeast
-using ..Toolkit: atol, rtol, efficientoperations, CompositeDict, DirectProductedIndices, DirectProductedVectorSpace, Float, Segment, VectorSpace, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceEnumerative, VectorSpaceStyle, concatenate, getcontent, subscript
+using ..Toolkit: atol, rtol, efficientoperations, CompositeDict, DirectProductedIndices, DirectProductedVectorSpace, Float, Segment, VectorSpace, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceEnumerative, concatenate, getcontent, subscript
 
 import ..QuantumLattices: decompose, dimension, expand, kind, matrix, rank, shape
 import ..QuantumOperators: scalartype
-import ..Toolkit: contentnames
+import ..Toolkit: VectorSpaceStyle, contentnames
 
 export azimuth, azimuthd, direction, distance, isintratriangle, isonline, isparallel, issubordinate, interlinks, minimumlengths, nneighbor, polar, polard, reciprocals, rotate, translate, tile, volume
 export AbstractLattice, Bond, BrillouinZone, FractionalReciprocalSpace, Lattice, Neighbors, Point, ReciprocalCurve, ReciprocalScatter, ReciprocalSpace, ReciprocalZone, ReciprocalPath
@@ -1054,7 +1054,7 @@ function Base.convert(::Type{<:CartesianIndex}, momentum::AbstractVector{<:Numbe
     @assert all(j->isapprox(is[j], ks[j]; atol=atol, rtol=rtol), eachindex(is, ks)) "convert error: input momentum not on grid."
     return CartesianIndex(is)
 end
-@inline function Int(index::CartesianIndex, brillouinzone::BrillouinZone)
+@inline function Base.Int(index::CartesianIndex, brillouinzone::BrillouinZone)
     index = CartesianIndex(map(mod, index.I, periods(brillouinzone)))
     return Int(VectorSpaceStyle(brillouinzone), index, brillouinzone)
 end
