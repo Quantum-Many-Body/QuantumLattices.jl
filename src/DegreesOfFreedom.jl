@@ -4,12 +4,13 @@ using DataStructures: OrderedDict
 using Printf: @printf, @sprintf
 using SparseArrays: SparseMatrixCSC, nnz
 using StaticArrays: SVector
+using Latexify: Latexify, @latexrecipe, latexify
+using LaTeXStrings: LaTeXString
 using ..QuantumLattices: OneAtLeast, OneOrMore, ZeroAtLeast, add!, decompose, str
-using ..QuantumOperators: LinearTransformation, Operator, OperatorIndex, OperatorPack, Operators, QuantumOperator, scalartype, valuetolatextext
+using ..QuantumOperators: LinearTransformation, Operator, OperatorIndex, OperatorPack, Operators, QuantumOperator, scalartype
 using ..Spatials: Bond, Point
 using ..Toolkit: atol, efficientoperations, rtol, CompositeDict, Float, VectorSpace, VectorSpaceDirectProducted, VectorSpaceDirectSummed, concatenate, fulltype, parametertype, rawtype, reparameter
 
-import LaTeXStrings: latexstring
 import ..QuantumLattices: ⊕, ⊗, dimension, expand, expand!, id, ishermitian, kind, permute, rank, reset!, shape, update!, value
 import ..QuantumOperators: idtype, operatortype, script
 import ..Spatials: icoordinate, nneighbor, rcoordinate
@@ -461,8 +462,8 @@ Get the adjoint of a coordinated index.
 
 Get the rcoordinate/icoordinate script of a coordinated index.
 """
-@inline script(index::CoordinatedIndex, ::Val{:rcoordinate}; kwargs...) = @sprintf "[%s]" join(valuetolatextext.(index.rcoordinate), ", ")
-@inline script(index::CoordinatedIndex, ::Val{:icoordinate}; kwargs...) = @sprintf "[%s]" join(valuetolatextext.(index.icoordinate), ", ")
+@inline script(index::CoordinatedIndex, ::Val{:rcoordinate}; kwargs...) = @sprintf "[%s]" join(latexify.(index.rcoordinate; env=:raw), ", ")
+@inline script(index::CoordinatedIndex, ::Val{:icoordinate}; kwargs...) = @sprintf "[%s]" join(latexify.(index.icoordinate; env=:raw), ", ")
 
 """
     script(index::CoordinatedIndex, ::Val{:integercoordinate}; vectors, kwargs...)
@@ -678,12 +679,8 @@ Get the ith rank of the coupling pattern where the ith constraint can apply.
 @inline rank(pattern::Pattern, i::Integer) = rank(typeof(pattern), i)
 @inline rank(::Type{P}, i::Integer) where {P<:Pattern} = partition(P)[i]
 
-"""
-    latexstring(pattern::Pattern) -> String
-
-Convert a coupling pattern to the latex format.
-"""
-function latexstring(pattern::Pattern)
+# LaTeX format of a coupling pattern.
+@latexrecipe function f(pattern::Pattern)
     result = String[]
     len, count = length(pattern.representations), 1
     for i = 1:len
@@ -695,12 +692,12 @@ function latexstring(pattern::Pattern)
         summation=="" || (summation = join(push!(symbols(indexes.internals, representation), summation), ",\\,"))
         context = isdefinite(indexes) ? "" : "\\sum_{$summation}" 
         for content in indexes
-            context = @sprintf "%s%s%s" context (length(context)>0 ? " " : "") latexstring(content)
+            context = @sprintf "%s%s%s" context (length(context)>0 ? " " : "") String(latexify(content; env=:raw))
         end
         push!(result, context)
         count = stop+1
     end
-    return join(result, " \\cdot ")
+    return LaTeXString(join(result, " \\cdot "))
 end
 function symbols(indexes::OneAtLeast{InternalIndex}, constraint::String)
     result = String[]
@@ -951,12 +948,14 @@ Get the multiplication between two coupling.
 """
 @inline Base.:*(cp₁::Coupling, cp₂::Coupling) = Coupling(cp₁.value*cp₂.value, cp₁.pattern⊗cp₂.pattern)
 
-"""
-    latexstring(coupling::Coupling) -> String
-
-Convert a coupling to the latex format.
-"""
-@inline latexstring(coupling::Coupling) = @sprintf "%s%s" (coupling.value≈1 ? "" : coupling.value≈-1 ? "- " : string(str(coupling.value), "\\,")) latexstring(coupling.pattern)
+# LaTeX format of a coupling pattern.
+@latexrecipe function f(coupling::Coupling)
+    result = Expr(:latexifymerge)
+    v = isequal(coupling.value, 1) ? "" : isequal(coupling.value, -1) ? "- " : latexify(coupling.value; env=:raw)
+    length(v)>0 && push!(result.args, v, "\\,")
+    push!(result.args, coupling.pattern)
+    return result
+end
 
 """
     expand(coupling::Coupling, ::Val{Rule}, bond::Bond, hilbert::Hilbert) where Rule

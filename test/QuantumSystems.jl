@@ -1,4 +1,4 @@
-using LaTeXStrings: latexstring
+using Latexify: latexify
 using QuantumLattices: expand, kind, permute, rank
 using QuantumLattices.DegreesOfFreedom: ˢᵗ, ⁿᵈ, CompositeIndex, CoordinatedIndex, Coupling, Hilbert, Index, InternalIndex, MatrixCoupling, diagonalfields, internalindextype, isdefinite, patternrule, showablefields, statistics, @pattern
 using QuantumLattices.QuantumOperators: Operator, OperatorIndex, Operators, latexname, matrix, script
@@ -115,7 +115,7 @@ end
     @test opt|>isnormalordered
     opt = Operator(1.0, id₁, id₂, id₃, id₄)
     @test opt|>isnormalordered == false
-    @test latexstring(opt) == "c^{\\dagger}_{2,\\,1,\\,↓}c^{}_{2,\\,1,\\,↓}c^{\\dagger}_{1,\\,1,\\,↑}c^{}_{1,\\,1,\\,↑}"
+    @test String(latexify(opt; env=:raw)) == "c^{\\dagger}_{2,\\,1,\\,\\downarrow}c^{}_{2,\\,1,\\,\\downarrow}c^{\\dagger}_{1,\\,1,\\,\\uparrow}c^{}_{1,\\,1,\\,\\uparrow}"
     op₁ = Operator(1.5, id₁, id₂)
     op₂ = Operator(2.0, id₂, id₁)
     @test op₁*op₂ == Operator(0.0, id₁, id₂, id₂, id₁)
@@ -132,7 +132,7 @@ end
     id₃ = 𝕒⁺(1, 1, 1//2, SVector(0.0, 0.0), SVector(0.0, 0.0))
     id₄ = 𝕒(1, 1, 1//2, SVector(0.0, 0.0), SVector(0.0, 0.0))
     opt = Operator(1.0, id₁, id₂)
-    @test latexstring(opt) == "b^{\\dagger}_{2,\\,1,\\,↓}b^{}_{2,\\,1,\\,↓}"
+    @test String(latexify(opt; env=:raw)) == "b^{\\dagger}_{2,\\,1,\\,\\downarrow}b^{}_{2,\\,1,\\,\\downarrow}"
     @test permute(id₁, id₂) == (Operator(-1), Operator(1, id₂, id₁))
     @test permute(id₂, id₁) == (Operator(+1), Operator(1, id₁, id₂))
     @test permute(id₁, id₄) == (Operator(1, id₄, id₁),)
@@ -441,7 +441,7 @@ end
 @testset "Spin operator" begin
     opt = Operator(1.0, 𝕊{1//2}(1, '+', [0.0, 0.0], [0.0, 0.0]), 𝕊{1//2}(1, '-', [0.0, 0.0], [0.0, 0.0]))
     @test opt' == Operator(1.0, 𝕊{1//2}(1, '+', [0.0, 0.0], [0.0, 0.0]), 𝕊{1//2}(1, '-', [0.0, 0.0], [0.0, 0.0]))
-    @test latexstring(opt) == "S^{+}_{1}S^{-}_{1}"
+    @test String(latexify(opt; env=:raw)) == "S^{+}_{1}S^{-}_{1}"
 
     representation(opt::Operator) = opt.value * prod([matrix(opt[i]) for i = 1:rank(opt)])
     for S in (1//2, 1, 3//2)
@@ -774,7 +774,7 @@ end
 @testset "PhononOperator" begin
     opt = Operator(1.0, 𝕡(1, 'x', [0.0, 0.0], [0.0, 0.0]), 𝕡(1, 'x', [0.0, 0.0], [0.0, 0.0]))
     @test opt' == Operator(1.0, 𝕡(1, 'x', [0.0, 0.0], [0.0, 0.0]), 𝕡(1, 'x', [0.0, 0.0], [0.0, 0.0]))
-    @test latexstring(opt) == "(p^{x}_{1})^2"
+    @test String(latexify(opt; env=:raw)) == "(p^{x}_{1})^2"
 
     id₁ = 𝕦(1, 'x', [0.0, 0.0], [0.0, 0.0])
     id₂ = 𝕡(1, 'x', [0.0, 0.0], [0.0, 0.0])

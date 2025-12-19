@@ -1,12 +1,12 @@
 module QuantumOperators
 
 using DataStructures: OrderedDict
-using Latexify: unicode2latex
+using Latexify: Latexify, latexify, @latexrecipe
+using LaTeXStrings: LaTeXString
 using Printf: @printf, @sprintf
 using ..QuantumLattices: OneAtLeast, str
 using ..Toolkit: atol, efficientoperations, rtol, contentorder, fulltype, getcontent, parameterpairs, parametertype, promoteparameters, rawtype, reparameter
 
-import LaTeXStrings: latexstring
 import LinearAlgebra: dot
 import ..QuantumLattices: ZeroAtLeast, ⊗, add!, div!, expand, id, ishermitian, mul!, permute, rank, sub!, update!, value
 import ..Toolkit: contentnames, dissolve, isparameterbound, parameternames, subscript, superscript
@@ -913,111 +913,76 @@ Default script for an operator index, which always return an empty string.
 """
 @inline script(u::OperatorIndex, ::Val{}; kwargs...) = ""
 
-"""
-    latexstring(u::OperatorIndex) -> String
-
-LaTeX string representation of an operator index.
-"""
-@inline function latexstring(u::OperatorIndex)
+# LaTeX format of an operator index.
+@latexrecipe function f(u::OperatorIndex)
+    env --> :inline
     l = latexformat(typeof(u))
     body = script(u, l, Val(:BD))
     superscript = join((str for str in script(u, l, Val(:SP)) if length(str)>0), l.spdelimiter)
     subscript = join((str for str in script(u, l, Val(:SB)) if length(str)>0), l.sbdelimiter)
-    return @sprintf "%s^{%s}_{%s}" body superscript subscript
+    return LaTeXString(@sprintf "%s^{%s}_{%s}" body superscript subscript)
 end
 
-"""
-    latexstring(opt::OperatorProd) -> String
-
-Get the string representation of an operator in the LaTeX format.
-"""
-function latexstring(opt::OperatorProd)
-    rank(opt)==0 && return replace(valuetolatextext(value(opt)), " "=>"")
+# LaTeX format of an operator product.
+@latexrecipe function f(opt::OperatorProd)
+    env --> :inline
+    rank(opt)==0 && return value(opt)
     poses = Int[]
     push!(poses, 1)
     for i = 2:rank(opt)
         opt[i]≠opt[i-1] && push!(poses, i)
     end
     push!(poses, rank(opt)+1)
-    result = valuetostr(value(opt))
+    result = Expr(:latexifymerge)
+    v = valuetostr(value(opt))
+    length(v)>0 && push!(result.args, v)
     for i = 1:length(poses)-1
         order = poses[i+1] - poses[i]
         if order == 1
-            result = @sprintf "%s%s" result latexstring(opt[poses[i]])
+            push!(result.args, opt[poses[i]])
         else
-            result = @sprintf "%s(%s)^%s" result latexstring(opt[poses[i]]) order
+            push!(result.args, "(", opt[poses[i]], ")^", order)
         end
     end
     return result
 end
 function valuetostr(v)
-    v==+1 && return ""
-    v==-1 && return "-"
-    result = valuetolatextext(v)
-    if occursin(" ", result) || (isa(v, Complex) && real(v)≠0 && imag(v)≠0)
-        bra, ket = occursin("(", result) ? ("[", "]") : ("(", ")")
-        result = @sprintf "%s%s%s" bra replace(result, " "=>"") ket
+    isequal(v, 1) && return ""
+    isequal(v, -1) && return "-"
+    result = String(latexify(v; env=:raw))
+    if issum(v)
+        bra, ket = occursin("(", result) ? ("\\left[", "\\right]") : ("\\left(", "\\right)")
+        result = @sprintf "%s%s%s" bra result ket
     end
     return result
 end
-@inline valuetolatextext(value::Union{Real, Complex}) = str(value)
-function valuetolatextext(value)
-    io = IOBuffer()
-    if showable(MIME"text/latex"(), value)
-        show(IOContext(io, :limit=>false), MIME"text/latex"(), value)
-    else
-        show(IOContext(io, :limit=>false), MIME"text/plain"(), value)
-    end
-    return replace(replace(replace(replace(String(take!(io)), "\\begin{equation*}" => ""), "\\end{equation*}" => ""), "\$" => ""), "\n" => "")
-end
+@inline issum(v) = false
+@inline issum(v::Complex) = !isequal(real(v), 0) && !isequal(imag(v), 0)
 
-"""
-    latexstring(opts::OperatorSet) -> String
-
-Get the string representation of a set of operators in the LaTeX format.
-"""
-function latexstring(opts::OperatorSet)
+# LaTeX format of a set of operators.
+@latexrecipe function f(opts::OperatorSet)
+    env --> :inline
     result = String[]
     for (i, opt) in enumerate(opts)
-        rep = latexstring(opt)
+        rep = String(latexify(opt; env=:raw))
         i>1 && rep[1]≠'-' && push!(result, "+")
         push!(result, rep)
     end
-    return join(result, "")
+    return LaTeXString(join(result, ""))
 end
 
 """
-    show(io::IO, ::MIME"text/latex", m::QuantumOperator)
-
-Show a quantum operator.
-"""
-@inline Base.show(io::IO, ::MIME"text/latex", m::QuantumOperator) = show(io, MIME"text/latex"(), latexstring(unicode2latex(latexstring(m))))
-
-"""
+    show(io::IO, ::MIME"text/latex", op::QuantumOperator)
+    show(io::IO, m::MIME"text/latex", ops::OneAtLeast{<:QuantumOperator})
     show(io::IO, ::MIME"text/latex", ops::AbstractVector{<:QuantumOperator})
     show(io::IO, ::MIME"text/latex", ops::AbstractMatrix{<:QuantumOperator})
 
-Show a vector/matrix of quantum operators.
+Show a quantum operator.
 """
-function Base.show(io::IO, ::MIME"text/latex", ops::AbstractVector{<:QuantumOperator})
-    print(io, "\\begin{bmatrix}")
-    for (i, op) in enumerate(ops)
-        print(io, latexstring(op))
-        i < length(ops) && print(io, " & ")
-    end
-    print(io, "\\end{bmatrix}")
-end
-function Base.show(io::IO, ::MIME"text/latex", ops::AbstractMatrix{<:QuantumOperator})
-    print(io, "\\begin{pmatrix}")
-    for i in 1:size(ops, 1)
-        for j in 1:size(ops, 2)
-            print(io, latexstring(ops[i, j]))
-            j < size(ops, 2) && print(io, " & ")
-        end
-        i < size(ops, 1) && print(io, " \\\\ ")
-    end
-    print(io, "\\end{pmatrix}")
-end
+@inline Base.show(io::IO, m::MIME"text/latex", op::QuantumOperator) = show(io, m, latexify(op))
+@inline Base.show(io::IO, m::MIME"text/latex", ops::OneAtLeast{<:QuantumOperator}) = show(io, m, latexify(ops))
+@inline Base.show(io::IO, m::MIME"text/latex", ops::AbstractVector{<:QuantumOperator}) = show(io, m, latexify(ops))
+@inline Base.show(io::IO, m::MIME"text/latex", ops::AbstractMatrix{<:QuantumOperator}) = show(io, m, latexify(ops))
 
 # Linear Transformations
 """

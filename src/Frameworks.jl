@@ -5,7 +5,7 @@ using Base.Iterators: flatten, repeated
 using DelimitedFiles: writedlm
 using IndentWrappers: indent
 using JLD2: jldopen, loadtodict!
-using LaTeXStrings: latexstring
+using Latexify: latexify
 using RecipesBase: RecipesBase, @recipe
 using Serialization: deserialize, serialize
 using TimerOutputs: TimerOutput, time, @timeit
@@ -197,7 +197,7 @@ Generator of (representations of) quantum operators in a quantum lattice system.
 abstract type Generator{V} end
 @inline Base.:(==)(gen₁::Generator, gen₂::Generator) = ==(efficientoperations, gen₁, gen₂)
 @inline Base.isequal(gen₁::Generator, gen₂::Generator) = isequal(efficientoperations, gen₁, gen₂)
-@inline Base.show(io::IO, ::MIME"text/latex", gen::Generator) = show(io, MIME"text/latex"(), latexstring(latexstring(expand(gen))))
+@inline Base.show(io::IO, m::MIME"text/latex", gen::Generator) = show(io, m, latexify(expand(gen)))
 @inline ExpansionStyle(gen::Generator) = ExpansionStyle(typeof(gen))
 @inline Base.IteratorSize(::Type{<:Generator}) = Base.SizeUnknown()
 

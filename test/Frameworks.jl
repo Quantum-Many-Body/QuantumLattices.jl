@@ -12,25 +12,8 @@ import QuantumLattices: update!
 import QuantumLattices.Frameworks: Parameters, options, run!
 import QuantumLattices.Toolkit: shape
 
-struct FID{N<:Union{Int, Symbol}} <: InternalIndex
-    nambu::N
-end
-@inline Base.adjoint(sl::FID{Int}) = FID(3-sl.nambu)
-function Base.angle(id::CoordinatedIndex{<:Index{FID{Int}}}, vectors::AbstractVector{<:AbstractVector{Float64}}, values::AbstractVector{Float64})
-    phase=  (length(vectors) == 1) ? 2pi*dot(decompose(id.icoordinate, vectors[1]), values) :
-            (length(vectors) == 2) ? 2pi*dot(decompose(id.icoordinate, vectors[1], vectors[2]), values) :
-            (length(vectors) == 3) ? 2pi*dot(decompose(id.icoordinate, vectors[1], vectors[2], vectors[3]), values) :
-            error("angle error: not supported number of input basis vectors.")
-    (id.index.internal.nambu == 1) ? phase : -phase
-end
-
-struct FFock <: SimpleInternal{FID{Int}}
-    nnambu::Int
-end
-@inline shape(f::FFock) = (1:f.nnambu,)
-@inline Base.convert(::Type{<:FID}, i::CartesianIndex, ::FFock) = FID(i.I...)
-@inline Base.convert(::Type{<:CartesianIndex}, fid::FID{Int}, ::FFock) = CartesianIndex(fid.nambu)
-@inline shape(::FFock, index::FID{Int}) = (index.nambu:index.nambu,)
+include("TestUtils.jl")
+using .TestUtils
 
 @testset "Parameters" begin
     ps1 = Parameters{(:t₁, :t₂, :U)}(1.0im, 1.0, 2.0)
@@ -51,7 +34,7 @@ end
     bound = Boundary{(:θ₁, :θ₂)}([0.1, 0.2], [[1.0, 0.0], [0.0, 1.0]])
     @test Parameters(bound) == (θ₁=0.1, θ₂=0.2)
 
-    ops = Operator(1, FID(1)) + Operator(2, FID(2))
+    ops = Operator(1, DID(1)) + Operator(2, DID(2))
     @test Parameters(ops) == Parameters()
 end
 
@@ -75,13 +58,13 @@ end
 @testset "CategorizedGenerator twist" begin
     lattice = Lattice([0.0], [0.5]; vectors=[[1.0]])
     bs = bonds(lattice, 1)
-    hilbert = Hilbert(site=>FFock(2) for site=1:length(lattice))
+    hilbert = Hilbert(site=>DFock(2) for site=1:length(lattice))
     boundary = Boundary{(:θ,)}([0.1], lattice.vectors)
-    t = Term{:Hp}(:t, 2.0, 1, Coupling{FID}(1.0, :, (2, 1)), false; ismodulatable=false)
-    μ = Term{:Mu}(:μ, 1.0, 0, Coupling{FID}(1.0, :, (2, 1)), true)
+    t = Term{:Hp}(:t, 2.0, 1, Coupling{DID}(1.0, :, (2, 1)), false; ismodulatable=false)
+    μ = Term{:Mu}(:μ, 1.0, 0, Coupling{DID}(1.0, :, (2, 1)), true)
     i = LinearFunction(identity)
 
-    optp = Operator{ComplexF64, ZeroAtLeast{CoordinatedIndex{Index{FID{Int}, Int}, SVector{1, Float64}}, 2}}
+    optp = Operator{ComplexF64, ZeroAtLeast{CoordinatedIndex{Index{DID{Int}, Int}, SVector{1, Float64}}, 2}}
     tops₁ = expand(t, filter(bond->isintracell(bond), bs), hilbert; half=true)
     tops₂ = boundary(expand(one(t), filter(bond->!isintracell(bond), bs), hilbert; half=true))
     μops = expand(one(μ), filter(bond->length(bond)==1, bs), hilbert; half=true)
@@ -125,11 +108,11 @@ end
 @testset "CategorizedGenerator plain" begin
     lattice = Lattice([0.0], [0.5]; vectors=[[1.0]])
     bs = bonds(lattice, 1)
-    hilbert = Hilbert(site=>FFock(2) for site=1:length(lattice))
-    t = Term{:Hp}(:t, 2.0, 1, Coupling{FID}(1.0, :, (2, 1)), false; ismodulatable=false)
-    μ = Term{:Mu}(:μ, 1.0, 0, Coupling{FID}(1.0, :, (2, 1)), true)
+    hilbert = Hilbert(site=>DFock(2) for site=1:length(lattice))
+    t = Term{:Hp}(:t, 2.0, 1, Coupling{DID}(1.0, :, (2, 1)), false; ismodulatable=false)
+    μ = Term{:Mu}(:μ, 1.0, 0, Coupling{DID}(1.0, :, (2, 1)), true)
     i = LinearFunction(identity)
-    optp = Operator{ComplexF64, ZeroAtLeast{CoordinatedIndex{Index{FID{Int}, Int}, SVector{1, Float64}}, 2}}
+    optp = Operator{ComplexF64, ZeroAtLeast{CoordinatedIndex{Index{DID{Int}, Int}, SVector{1, Float64}}, 2}}
     tops = expand(t, bs, hilbert; half=true)
     μops = expand(one(μ), bs, hilbert; half=true)
 
@@ -156,11 +139,11 @@ end
 @testset "OperatorGenerator twist" begin
     lattice = Lattice([0.0], [0.5]; vectors=[[1.0]])
     bs = bonds(lattice, 1)
-    hilbert = Hilbert(site=>FFock(2) for site=1:length(lattice))
+    hilbert = Hilbert(site=>DFock(2) for site=1:length(lattice))
     boundary = Boundary{(:θ,)}([0.1], lattice.vectors)
-    t = Term{:Hp}(:t, 2.0, 1, Coupling{FID}(1.0, :, (2, 1)), false; ismodulatable=false)
-    μ = Term{:Mu}(:μ, 1.0, 0, Coupling{FID}(1.0, :, (2, 1)), true)
-    optp = Operator{ComplexF64, ZeroAtLeast{CoordinatedIndex{Index{FID{Int}, Int}, SVector{1, Float64}}, 2}}
+    t = Term{:Hp}(:t, 2.0, 1, Coupling{DID}(1.0, :, (2, 1)), false; ismodulatable=false)
+    μ = Term{:Mu}(:μ, 1.0, 0, Coupling{DID}(1.0, :, (2, 1)), true)
+    optp = Operator{ComplexF64, ZeroAtLeast{CoordinatedIndex{Index{DID{Int}, Int}, SVector{1, Float64}}, 2}}
     tops₁ = expand(t, filter(bond->isintracell(bond), bs), hilbert; half=true)
     tops₂ = boundary(expand(one(t), filter(bond->!isintracell(bond), bs), hilbert; half=true))
     μops = expand(one(μ), filter(bond->length(bond)==1, bs), hilbert; half=true)
@@ -194,10 +177,10 @@ end
 @testset "OperatorGenerator plain" begin
     lattice = Lattice([0.0], [0.5]; vectors=[[1.0]])
     bs = bonds(lattice, 1)
-    hilbert = Hilbert(site=>FFock(2) for site=1:length(lattice))
-    t = Term{:Hp}(:t, 2.0, 1, Coupling{FID}(1.0, :, (2, 1)), false; ismodulatable=false)
-    μ = Term{:Mu}(:μ, 1.0, 0, Coupling{FID}(1.0, :, (2, 1)), true)
-    optp = Operator{ComplexF64, ZeroAtLeast{CoordinatedIndex{Index{FID{Int}, Int}, SVector{1, Float64}}, 2}}
+    hilbert = Hilbert(site=>DFock(2) for site=1:length(lattice))
+    t = Term{:Hp}(:t, 2.0, 1, Coupling{DID}(1.0, :, (2, 1)), false; ismodulatable=false)
+    μ = Term{:Mu}(:μ, 1.0, 0, Coupling{DID}(1.0, :, (2, 1)), true)
+    optp = Operator{ComplexF64, ZeroAtLeast{CoordinatedIndex{Index{DID{Int}, Int}, SVector{1, Float64}}, 2}}
     tops = expand(t, bs, hilbert; half=true)
     μops = expand(one(μ), bs, hilbert; half=true)
     cat = CategorizedGenerator(tops, (t=Operators{optp}(), μ=μops), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain, eager)

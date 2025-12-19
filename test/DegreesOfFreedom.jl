@@ -1,4 +1,4 @@
-using LaTeXStrings: latexstring
+using Latexify: latexify
 using LinearAlgebra: dot, ishermitian
 using Printf: @printf
 using QuantumLattices: ⊕, ⊗, dimension, expand, kind, rank, reset!, update!, value
@@ -13,44 +13,8 @@ import QuantumLattices.DegreesOfFreedom: internalindextype, isdefinite, statisti
 import QuantumLattices.QuantumOperators: latexname, script
 import QuantumLattices.Toolkit: shape
 
-struct DID{N<:Union{Int, Symbol, Colon}} <: InternalIndex
-    nambu::N
-end
-@inline Base.show(io::IO, ::Type{<:DID}) = @printf io "%s" "DID"
-@inline Base.adjoint(sl::DID{Int}) = DID(3-sl.nambu)
-@inline statistics(::Type{<:DID}) = :f
-function permute(did₁::DID, did₂::DID)
-    @assert did₁ ≠ did₂ "permute error: two identical fermionic indexes should vanish due to the fermionic statistics."
-    return (Operator(1), Operator(-1, did₂, did₁))
-end
-@inline isdefinite(::Type{DID{Int}}) = true
-@inline script(did::DID, ::Val{:nambu}; kwargs...) = did.nambu==Colon() ? ":" : string(did.nambu)
-function Base.angle(id::CoordinatedIndex{Index{DID{Int}, Int}}, vectors::AbstractVector{<:AbstractVector{Float}}, values::AbstractVector{Float})
-    phase = (length(vectors) == 1) ? 2pi*dot(decompose(id.icoordinate, vectors[1]), values) :
-            (length(vectors) == 2) ? 2pi*dot(decompose(id.icoordinate, vectors[1], vectors[2]), values) :
-            (length(vectors) == 3) ? 2pi*dot(decompose(id.icoordinate, vectors[1], vectors[2], vectors[3]), values) :
-            error("angle error: not supported number of input basis vectors.")
-    return (id.index.internal.nambu == 1) ? phase : -phase
-end
-@inline internalindextype(::Type{DID}, ::Type{T}) where {T<:Union{Int, Symbol, Colon}} = DID{T}
-@inline 𝕕(nambu) = DID(nambu)
-@inline 𝕕(site, nambu) = Index(site, DID(nambu))
-@inline 𝕕(site, nambu, rcoordinate, icoordinate) = CoordinatedIndex(Index(site, DID(nambu)), rcoordinate, icoordinate)
-@inline Base.getindex(::Type{OperatorIndex}, ::DID) = "𝕕"
-
-struct DFock <: SimpleInternal{DID{Int}}
-    nnambu::Int
-end
-@inline shape(f::DFock) = (1:f.nnambu,)
-@inline Base.show(io::IO, ::Type{DFock}) = @printf io "%s" "DFock"
-@inline Base.convert(::Type{<:DID}, i::CartesianIndex, ::DFock) = DID(i.I...)
-@inline Base.convert(::Type{<:CartesianIndex}, did::DID{Int}, ::DFock) = CartesianIndex(did.nambu)
-@inline shape(::DFock, index::DID{Int}) = (index.nambu:index.nambu,)
-@inline latexname(::Type{<:CoordinatedIndex{<:Index{<:DID, <:Union{Int, Ordinal, Colon}}}}) = Symbol("CoordinatedIndex{Index{DID, Union{Int, Ordinal, Colon}}}")
-@inline latexname(::Type{<:Index{<:DID, <:Union{Int, Ordinal, Colon}}}) = Symbol("Index{DID, Union{Int, Ordinal, Colon}}")
-latexformat(CoordinatedIndex{<:Index{<:DID, <:Union{Int, Ordinal, Colon}}}, LaTeX{(), (:site, :nambu)}('d'))
-latexformat(Index{<:DID, <:Union{Int, Ordinal, Colon}}, LaTeX{(), (:site, :nambu)}('d'))
-latexformat(DID, LaTeX{(), (:nambu,)}('d'))
+include("TestUtils.jl")
+using .TestUtils
 
 @testset "InternalIndex" begin
     did = 𝕕(1)
@@ -213,14 +177,14 @@ end
     @test partition(pattern) == partition(typeof(pattern)) == (4,)
     @test rank(pattern) == rank(typeof(pattern)) == 4
     @test rank(pattern, 1) == rank(typeof(pattern), 1) == 4
-    @test latexstring(pattern) == "\\sum_{} d^{}_{1ˢᵗ,\\,a} d^{}_{1ˢᵗ,\\,a} d^{}_{2ⁿᵈ,\\,b} d^{}_{2ⁿᵈ,\\,b}"
+    @test String(latexify(pattern; env=:raw)) == "\\sum_{} d^{}_{1ˢᵗ,\\,a} d^{}_{1ˢᵗ,\\,a} d^{}_{2ⁿᵈ,\\,b} d^{}_{2ⁿᵈ,\\,b}"
     @test match(pattern, (𝕕(3), 𝕕(3), 𝕕(1), 𝕕(1)))
     @test !match(pattern, (𝕕(3), 𝕕(3), 𝕕(1), 𝕕(2)))
     @test !match(pattern, (𝕕(3), 𝕕(1), 𝕕(2), 𝕕(2)))
 
     pattern = @pattern(𝕕(1ˢᵗ, 1), 𝕕(1ˢᵗ, a), 𝕕(2ⁿᵈ, 2), 𝕕(2ⁿᵈ, b); constraint=a<b)
     @test string(pattern) == "∑[𝕕(1ˢᵗ, 1) 𝕕(1ˢᵗ, a) 𝕕(2ⁿᵈ, 2) 𝕕(2ⁿᵈ, b)](a < b)"
-    @test latexstring(pattern) == "\\sum_{a < b} d^{}_{1ˢᵗ,\\,1} d^{}_{1ˢᵗ,\\,a} d^{}_{2ⁿᵈ,\\,2} d^{}_{2ⁿᵈ,\\,b}"
+    @test String(latexify(pattern; env=:raw)) == "\\sum_{a < b} d^{}_{1ˢᵗ,\\,1} d^{}_{1ˢᵗ,\\,a} d^{}_{2ⁿᵈ,\\,2} d^{}_{2ⁿᵈ,\\,b}"
     @test match(pattern, (𝕕(1), 𝕕(3), 𝕕(2), 𝕕(4)))
     @test !match(pattern, (𝕕(10), 𝕕(3), 𝕕(2), 𝕕(4)))
     @test !match(pattern, (𝕕(1), 𝕕(3), 𝕕(2), 𝕕(3)))
@@ -228,13 +192,13 @@ end
 
     pattern = Pattern(𝕕(1ˢᵗ, :), 𝕕(1ˢᵗ, :))
     @test string(pattern) == "∑[𝕕(1ˢᵗ, :) 𝕕(1ˢᵗ, :)]"
-    @test latexstring(pattern) == "\\sum_{} d^{}_{1ˢᵗ,\\,:} d^{}_{1ˢᵗ,\\,:}"
+    @test String(latexify(pattern; env=:raw)) == "\\sum_{} d^{}_{1ˢᵗ,\\,:} d^{}_{1ˢᵗ,\\,:}"
     @test match(pattern, (𝕕(1), 𝕕(1)))
     @test !match(pattern, (𝕕(1), 𝕕(3)))
 
     another = pattern ⊗ pattern
     @test string(another) == "∑[𝕕(1ˢᵗ, :) 𝕕(1ˢᵗ, :)] ⊗ ∑[𝕕(1ˢᵗ, :) 𝕕(1ˢᵗ, :)]"
-    @test latexstring(another) == "\\sum_{} d^{}_{1ˢᵗ,\\,:} d^{}_{1ˢᵗ,\\,:} \\cdot \\sum_{} d^{}_{1ˢᵗ,\\,:} d^{}_{1ˢᵗ,\\,:}"
+    @test String(latexify(another; env=:raw)) == "\\sum_{} d^{}_{1ˢᵗ,\\,:} d^{}_{1ˢᵗ,\\,:} \\cdot \\sum_{} d^{}_{1ˢᵗ,\\,:} d^{}_{1ˢᵗ,\\,:}"
     @test match(another, (𝕕(1), 𝕕(1), 𝕕(2), 𝕕(2)))
     @test !match(another, (𝕕(1), 𝕕(3), 𝕕(2), 𝕕(2)))
     @test !match(another, (𝕕(1), 𝕕(1), 𝕕(3), 𝕕(2)))
@@ -260,7 +224,7 @@ end
     @test rank(tc) == rank(typeof(tc)) == 1
     @test tc * tc == Coupling(tc.pattern⊗tc.pattern)
     @test string(tc) == "𝕕(:, 2)"
-    @test latexstring(tc) == "d^{}_{:,\\,2}"
+    @test String(latexify(tc; env=:raw)) == "d^{}_{:,\\,2}"
     @test summary([tc]) == "1-element Vector{Coupling}"
 
     point = Point(1, (0.0, 0.0), (0.0, 0.0))
@@ -277,7 +241,7 @@ end
 
     tc = tc₁*tc₂
     @test string(tc) == "3.0 [𝕕(:, 1) 𝕕(:, 2)] ⊗ ∑[𝕕(:, a) 𝕕(:, b)](a < b)"
-    @test latexstring(tc) == "3.0\\,d^{}_{:,\\,1} d^{}_{:,\\,2} \\cdot \\sum_{a < b} d^{}_{:,\\,a} d^{}_{:,\\,b}"
+    @test String(latexify(tc; env=:raw)) == "3.0\\,d^{}_{:,\\,1} d^{}_{:,\\,2} \\cdot \\sum_{a < b} d^{}_{:,\\,a} d^{}_{:,\\,b}"
 end
 
 @testset "MatrixCoupling" begin

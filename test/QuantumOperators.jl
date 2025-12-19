@@ -1,33 +1,12 @@
-using LaTeXStrings: latexstring
+using Latexify: latexify
 using LinearAlgebra: dot
 using Printf: @sprintf
 using QuantumLattices: ZeroAtLeast, ⊗, add!, div!, expand, mul!, id, rank, sub!, update!, value
 using QuantumLattices.QuantumOperators
 using QuantumLattices.Toolkit: Float, contentnames, isparameterbound, parameternames, parametertype, subscript, superscript
 
-import QuantumLattices: permute
-import QuantumLattices.QuantumOperators: script
-
-struct AID{O<:Real, S<:Real} <: OperatorIndex
-    orbital::O
-    nambu::S
-end
-@inline Base.adjoint(id::AID) = AID(id.orbital, 3-id.nambu)
-@inline script(id::AID, ::Val{:orbital}; kwargs...) = id.orbital
-@inline script(id::AID, ::Val{:nambu}; kwargs...) = id.nambu==2 ? "\\dagger" : ""
-latexformat(AID, LaTeX{(:nambu,), (:orbital,)}('c'))
-function permute(u₁::AID, u₂::AID)
-    @assert u₁ ≠ u₂ "permute error: permuted operator units should not be equal to each other."
-    if (u₁.nambu == 3-u₂.nambu) && (u₁.orbital == u₂.orbital)
-        if u₁.nambu == 2
-            return (Operator(1), Operator(1, u₂, u₁))
-        else
-            return (Operator(-1), Operator(1, u₂, u₁))
-        end
-    else
-        return (Operator(1, u₂, u₁),)
-    end
-end
+include("TestUtils.jl")
+using .TestUtils
 
 @testset "scalartype" begin
     @test scalartype(1) == scalartype(Int) == Int
@@ -201,28 +180,27 @@ end
     @test script(aid, latex, Val(:SP)) == ("\\dagger",)
     @test script(aid, latex, Val(:SB)) == (1,)
     @test script(aid, Val(:spin)) == ""
-    @test latexstring(aid) == "d^{\\dagger}_{1}"
+    @test String(latexify(aid; env=:raw)) == "d^{\\dagger}_{1}"
 
     opt = Operator(1.0, AID(2, 2), AID(1, 1))
-    @test latexstring(opt) == "d^{\\dagger}_{2}d^{}_{1}"
+    @test String(latexify(opt; env=:raw)) == "d^{\\dagger}_{2}d^{}_{1}"
     io = IOBuffer()
     show(io, MIME"text/latex"(), opt)
     @test String(take!(io)) == "\$d^{\\dagger}_{2}d^{}_{1}\$"
-    @test latexstring(Operator(1.0, aid, aid)) == "(d^{\\dagger}_{1})^2"
+    @test String(latexify(Operator(1.0, aid, aid); env=:raw)) == "(d^{\\dagger}_{1})^2"
 
     latexformat(AID, LaTeX{(:nambu,), (:orbital,)}('c'))
     opts = Operators(
             Operator(1.0-1.0im, AID(2, 2), AID(1, 1)),
             Operator(-1.0, AID(1, 2), AID(1, 1))
             )
-    candidate₁ = "(1.0-1.0im)c^{\\dagger}_{2}c^{}_{1}-c^{\\dagger}_{1}c^{}_{1}"
-    candidate₂ = "-c^{\\dagger}_{1}c^{}_{1}+(1.0-1.0im)c^{\\dagger}_{2}c^{}_{1}"
-    @test latexstring(opts) ∈ (candidate₁, candidate₂)
+    str = "\\left(1.0-1.0\\mathit{i}\\right)c^{\\dagger}_{2}c^{}_{1}-c^{\\dagger}_{1}c^{}_{1}"
+    @test String(latexify(opts; env=:raw)) == str
 
     show(io, MIME"text/latex"(), [opts, opts])
-    @test String(take!(io)) == "\\begin{bmatrix}(1.0-1.0im)c^{\\dagger}_{2}c^{}_{1}-c^{\\dagger}_{1}c^{}_{1} & (1.0-1.0im)c^{\\dagger}_{2}c^{}_{1}-c^{\\dagger}_{1}c^{}_{1}\\end{bmatrix}"
+    @test String(take!(io)) == "\\begin{equation}\n\\left[\n\\begin{array}{c}\n$str \\\\\n$str \\\\\n\\end{array}\n\\right]\n\\end{equation}\n"
     show(io, MIME"text/latex"(), [opts opts; opts opts])
-    @test String(take!(io)) == "\\begin{pmatrix}(1.0-1.0im)c^{\\dagger}_{2}c^{}_{1}-c^{\\dagger}_{1}c^{}_{1} & (1.0-1.0im)c^{\\dagger}_{2}c^{}_{1}-c^{\\dagger}_{1}c^{}_{1} \\\\ (1.0-1.0im)c^{\\dagger}_{2}c^{}_{1}-c^{\\dagger}_{1}c^{}_{1} & (1.0-1.0im)c^{\\dagger}_{2}c^{}_{1}-c^{\\dagger}_{1}c^{}_{1}\\end{pmatrix}"
+    @test String(take!(io)) == "\\begin{equation}\n\\left[\n\\begin{array}{cc}\n$str & $str \\\\\n$str & $str \\\\\n\\end{array}\n\\right]\n\\end{equation}\n"
 end
 
 struct DoubleCoeff <: LinearTransformation end
