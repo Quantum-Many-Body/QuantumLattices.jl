@@ -47,7 +47,7 @@ function azimuth(v::AbstractVector{<:Number})
     else
         e₁, e₂ = v
         result = acos(e₁/(length(v)==3 ? sqrt(e₁^2+e₂^2) : norm(v)))
-        e₂<0 && (result = 2*convert(typeof(result), pi) - result)
+        isless(e₂, 0) && (result = 2*convert(typeof(result), pi) - result)
     end
     isnan(result) && (result = zero(result))
     return result
@@ -65,7 +65,7 @@ function azimuthd(v::AbstractVector{<:Number})
     else
         e₁, e₂ = v
         result = acosd(e₁/(length(v)==3 ? sqrt(e₁^2+e₂^2) : norm(v)))
-        e₂<0 && (result = 360 - result)
+        isless(e₂, 0) && (result = 360 - result)
     end
     isnan(result) && (result = zero(result))
     return result
@@ -168,9 +168,9 @@ Decompose a vector with respect to input basis vectors.
 function decompose(v₀::AbstractVector{<:Number}, v₁::AbstractVector{<:Number})
     @assert length(v₀)==length(v₁) "decompose error: mismatched length of input vectors."
     n₀, n₁ = norm(v₀), norm(v₁)
-    abs(n₀)≈0 && return zero(n₀)
+    isapprox(abs(n₀), 0) && return zero(n₀)
     sign = dot(v₀, v₁) / n₀ / n₁
-    @assert isapprox(abs(sign), 1.0, atol=atol, rtol=rtol) "decompose error: insufficient basis vectors."
+    @assert isapprox(abs(sign), 1, atol=atol, rtol=rtol) "decompose error: insufficient basis vectors."
     return sign*n₀/n₁
 end
 function decompose(v₀::AbstractVector{<:Number}, v₁::AbstractVector{<:Number}, v₂::AbstractVector{<:Number})
@@ -182,7 +182,7 @@ function decompose(v₀::AbstractVector{<:Number}, v₁::AbstractVector{<:Number
     else
         v₁, v₂ = SVector{3}(v₁), SVector{3}(v₂)
         x₁, x₂, x₃ = decompose(v₀, v₁, v₂, cross(v₁, v₂))
-        @assert isapprox(x₃, 0.0, atol=atol, rtol=rtol) "decompose error: insufficient basis vectors."
+        @assert isapprox(x₃, 0, atol=atol, rtol=rtol) "decompose error: insufficient basis vectors."
         return x₁, x₂
     end
 end
@@ -249,8 +249,8 @@ function isintratriangle(
         p, p₁, p₂, p₃ = SVector{3}(p), SVector{3}(p₁), SVector{3}(p₂), SVector{3}(p₃)
         decompose(p-p₁, p₂-p₁, p₃-p₁)
     end
-    x₁_approx_0, x₂_approx_0 = isapprox(x[1], 0.0, atol=atol, rtol=rtol), isapprox(x[2], 0.0, atol=atol, rtol=rtol)
-    x₁_approx_1, x₂_approx_1 = isapprox(x[1], 1.0, atol=atol, rtol=rtol), isapprox(x[2], 1.0, atol=atol, rtol=rtol)
+    x₁_approx_0, x₂_approx_0 = isapprox(x[1], 0, atol=atol, rtol=rtol), isapprox(x[2], 0, atol=atol, rtol=rtol)
+    x₁_approx_1, x₂_approx_1 = isapprox(x[1], 1, atol=atol, rtol=rtol), isapprox(x[2], 1, atol=atol, rtol=rtol)
     x₁₂_approx_1 = isapprox(x[1]+x[2], 1.0, atol=atol, rtol=rtol)
     x₁_approx_0 && x₂_approx_0 && return vertexes[1]
     x₁_approx_1 && x₂_approx_0 && return vertexes[2]
@@ -275,8 +275,8 @@ function isonline(
 )
     @assert length(p)==length(p₁)==length(p₂) "isonline error: shape mismatch of input point and line segment."
     d₁, d₂, d = distance(p, p₁), distance(p, p₂), distance(p₁, p₂)
-    isapprox(d₁, 0.0, atol=atol, rtol=rtol) && return ends[1]
-    isapprox(d₂, 0.0, atol=atol, rtol=rtol) && return ends[2]
+    isapprox(d₁, 0, atol=atol, rtol=rtol) && return ends[1]
+    isapprox(d₂, 0, atol=atol, rtol=rtol) && return ends[2]
     return isapprox(d₁+d₂, d, atol=atol, rtol=rtol)
 end
 
@@ -287,7 +287,7 @@ Judge whether two vectors are parallel to each other with the given tolerance, `
 """
 function isparallel(v₁::AbstractVector{<:Number}, v₂::AbstractVector{<:Number}; atol::Real=atol, rtol::Real=rtol)
     norm₁, norm₂ = norm(v₁), norm(v₂)
-    if isapprox(norm₁, 0.0, atol=atol, rtol=rtol) || isapprox(norm₂, 0.0, atol=atol, rtol=rtol)
+    if isapprox(norm₁, 0, atol=atol, rtol=rtol) || isapprox(norm₂, 0, atol=atol, rtol=rtol)
         result = 1
     elseif length(v₁) == length(v₂)
         temp = dot(v₁, v₂) / norm₁ / norm₂
@@ -592,7 +592,7 @@ Get the data type of the coordinates of a point.
 
 Judge whether a point is intra the unitcell.
 """
-@inline isintracell(point::Point) = isapprox(norm(point.icoordinate), 0.0, atol=atol, rtol=rtol)
+@inline isintracell(point::Point) = isapprox(norm(point.icoordinate), 0, atol=atol, rtol=rtol)
 
 """
     Bond{K, P<:Point} <: AbstractVector{P}
@@ -669,7 +669,7 @@ end
 
 Judge whether a bond is intra the unit cell of a lattice.
 """
-@inline isintracell(bond::Bond) = all(point->isapprox(norm(point.icoordinate), 0.0, atol=atol, rtol=rtol), bond)
+@inline isintracell(bond::Bond) = all(point->isapprox(norm(point.icoordinate), 0, atol=atol, rtol=rtol), bond)
 
 """
     AbstractLattice{N, D<:Number, M}

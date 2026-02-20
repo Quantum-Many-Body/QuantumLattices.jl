@@ -1292,7 +1292,7 @@ mutable struct Term{K, I, V, B, C<:TermCoupling, A<:TermAmplitude}
         @assert isa(K, Symbol) "Term error: kind must be a Symbol."
         @assert isa(I, Symbol) "Term error: id must be a Symbol."
         (isa(bondkind, Number) && iszero(bondkind) && !ishermitian) || @assert(
-            value==value',
+            isequal(value, value'),
             "Term error: real value required. For an Hermitian term, the value must be real. So is the case for a term beyond onsite even in the on-Hermitian situation because a complex value always has the positive direction and it should be specified by the amplitude function.")
         new{K, I, typeof(value), typeof(bondkind), typeof(coupling), typeof(amplitude)}(value, bondkind, coupling, amplitude, ishermitian, ismodulatable, factor)
     end
