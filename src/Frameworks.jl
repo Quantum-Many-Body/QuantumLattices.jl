@@ -6,7 +6,6 @@ using DelimitedFiles: writedlm
 using IndentWrappers: indent
 using JLD2: jldopen, loadtodict!
 using Latexify: latexify
-using RecipesBase: RecipesBase, @recipe
 using Serialization: deserialize, serialize
 using TimerOutputs: TimerOutput, time, @timeit
 using ..DegreesOfFreedom: plain, Boundary, Hilbert, Term
@@ -844,31 +843,6 @@ Check whether the keyword arguments are legal options of a certain type of `Assi
         @assert(hasoption(A, candidate), "checkoptions error: improper option(`:$candidate`). See following.\n$(optionsinfo(A))")
     end
 end
-
-"""
-    @recipe plot(assignment::Assignment)
-
-Define the recipe for the visualization of an assignment of an algorithm.
-"""
-@recipe function plot(assignment::Assignment)
-    title --> str(assignment)
-    titlefontsize --> 10
-    attr = seriestype(assignment.data)
-    isnothing(attr) || begin
-        seriestype --> attr
-        attr==:path && begin
-            legend --> false
-            minorgrid --> true
-            xminorticks --> 10
-            yminorticks --> 10
-        end
-    end
-    Tuple(assignment.data)
-end
-@inline seriestype(_...) = nothing
-@inline seriestype(data::Data) = seriestype(Tuple(data)...)
-@inline seriestype(::AbstractVector{<:Number}, ::Union{AbstractVector{<:Number}, AbstractMatrix{<:Number}}, _...) = :path
-@inline seriestype(::AbstractVector{<:Number}, ::AbstractVector{<:Number}, ::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}}, _...) = :heatmap
 
 """
     Algorithm{F<:Frontend, P<:Parameters, M<:Function} <: Function

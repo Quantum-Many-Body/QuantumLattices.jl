@@ -3,7 +3,6 @@ using Plots: plot, savefig
 using QuantumLattices: ZeroAtLeast, expand, expand!, reset!, str, update
 using QuantumLattices.DegreesOfFreedom: plain, Boundary, CoordinatedIndex, Coupling, Hilbert, Index, InternalIndex, SimpleInternal, Term
 using QuantumLattices.Frameworks
-using QuantumLattices.Frameworks: seriestype
 using QuantumLattices.QuantumOperators: LinearFunction, Operator, Operators, idtype, scalartype
 using QuantumLattices.Spatials: BrillouinZone, Lattice, bonds, decompose, dlmsave, isintracell, periods
 using StaticArrays: SVector, SMatrix, @SMatrix
@@ -337,8 +336,4 @@ end
     dos = loaded(:DOS, DensityOfStates(), eigensystem)
     dlmsave(dos)
     savefig(plot(loaded(dos)), "$(string(dos)).png")
-
-    @test isnothing(seriestype())
-    @test seriestype(dos.data) == seriestype(dos.data.energies, dos.data.values) == :path
-    @test seriestype(zeros(0), zeros(0), zeros(0, 0)) == :heatmap
 end
