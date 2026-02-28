@@ -31,14 +31,14 @@ using QuantumLattices
 using SymPy: Sym, symbols
 
 # 1. Define the lattice (1D chain with 2 sites)
-lattice = Lattice([zero(Sym), 1.0], [one(Sym)])
+lattice = Lattice([zero(Sym)], [one(Sym)])
 
 # 2. Define the internal degrees of freedom (spin-1/2 fermions)
 hilbert = Hilbert(site => Fock{:f}(1, 2) for site in eachindex(lattice))
 
 # 3. Define the Hamiltonian terms
-t = Hopping(:t, 1.0, 1)           # nearest-neighbor hopping
-U = Hubbard(:U, 2.0)             # on-site interaction
+t = Hopping(:t, symbols("t", real=true), 1) # nearest-neighbor hopping
+U = Hubbard(:U, symbols("U", real=true))    # Hubbard interaction
 
 # 4. Generate the Hamiltonian operators
 operators = expand(OperatorGenerator(bonds(lattice, 1), hilbert, (t, U)))
