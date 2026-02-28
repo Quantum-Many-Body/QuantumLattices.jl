@@ -21,7 +21,7 @@ Define recipe for visualization of a lattice.
             markerstrokewidth --> 0
             coordinates = NTuple{dimension(lattice), scalartype(lattice)}[]
             sites = String[]
-            for i = 1:length(lattice)
+            for i in eachindex(lattice)
                 bond = Bond(Point(i, lattice[i], zero(lattice[i])))
                 if filter(bond)
                     push!(coordinates, Tuple(lattice[i]))

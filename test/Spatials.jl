@@ -245,9 +245,14 @@ end
     @test lattice|>eltype == lattice|>typeof|>eltype == SVector{2, Float64}
     @test lattice|>string == "Lattice(Tuanzi)\n  with 1 point:\n    [0.5, 0.5]\n  with 2 translation vectors:\n    [1.0, 0.0]\n    [0.0, 1.0]\n"
     @test lattice|>length == 1
+    @test lattice|>size == (1,)
+    @test lattice|>firstindex == 1
+    @test lattice|>lastindex == 1
     @test lattice|>dimension == lattice|>typeof|>dimension == 2
     @test lattice|>scalartype == lattice|>typeof|>scalartype == Float
     @test lattice[1] == SVector(0.5, 0.5)
+    @test lattice[1:1] == [SVector(0.5, 0.5)]
+    @test collect(lattice) == [SVector(0.5, 0.5)]
     @test reciprocals(lattice) == reciprocals(lattice.vectors)
     @test Neighbors(lattice, 1) == Neighbors([0.0, 1.0])
     @test Neighbors(lattice, 2) == Neighbors([0.0, 1.0, √2])

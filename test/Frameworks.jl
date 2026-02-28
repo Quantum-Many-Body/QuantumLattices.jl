@@ -54,7 +54,7 @@ end
 @testset "CategorizedGenerator twist" begin
     lattice = Lattice([0.0], [0.5]; vectors=[[1.0]])
     bs = bonds(lattice, 1)
-    hilbert = Hilbert(site=>Fock{:f}(1, 1) for site=1:length(lattice))
+    hilbert = Hilbert(site=>Fock{:f}(1, 1) for site in eachindex(lattice))
     boundary = Boundary{(:θ,)}([0.1], lattice.vectors)
     t = Hopping(:t, 2.0, 1; ismodulatable=false)
     μ = Onsite(:μ, 1.0)
@@ -104,7 +104,7 @@ end
 @testset "CategorizedGenerator plain" begin
     lattice = Lattice([0.0], [0.5]; vectors=[[1.0]])
     bs = bonds(lattice, 1)
-    hilbert = Hilbert(site=>Fock{:f}(1, 1) for site=1:length(lattice))
+    hilbert = Hilbert(site=>Fock{:f}(1, 1) for site in eachindex(lattice))
     t = Hopping(:t, 2.0, 1; ismodulatable=false)
     μ = Onsite(:μ, 1.0)
     i = LinearFunction(identity)
@@ -135,7 +135,7 @@ end
 @testset "OperatorGenerator twist" begin
     lattice = Lattice([0.0], [0.5]; vectors=[[1.0]])
     bs = bonds(lattice, 1)
-    hilbert = Hilbert(site=>Fock{:f}(1, 1) for site=1:length(lattice))
+    hilbert = Hilbert(site=>Fock{:f}(1, 1) for site in eachindex(lattice))
     boundary = Boundary{(:θ,)}([0.1], lattice.vectors)
     t = Hopping(:t, 2.0, 1; ismodulatable=false)
     μ = Onsite(:μ, 1.0)
@@ -173,7 +173,7 @@ end
 @testset "OperatorGenerator plain" begin
     lattice = Lattice([0.0], [0.5]; vectors=[[1.0]])
     bs = bonds(lattice, 1)
-    hilbert = Hilbert(site=>Fock{:f}(1, 1) for site=1:length(lattice))
+    hilbert = Hilbert(site=>Fock{:f}(1, 1) for site in eachindex(lattice))
     t = Hopping(:t, 2.0, 1; ismodulatable=false)
     μ = Onsite(:μ, 1.0)
     optp = Operator{ComplexF64, ZeroAtLeast{CoordinatedIndex{Index{FockIndex{:f, Int, Rational{Int}}, Int}, SVector{1, Float64}}, 2}}

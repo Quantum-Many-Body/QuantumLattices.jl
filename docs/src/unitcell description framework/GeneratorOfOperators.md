@@ -33,7 +33,7 @@ This is based on the expansion of terms introduced in the last section of the pr
 Now, let's return to the example proposed in the page of [Introduction](@ref UnitcellDescriptionIntroduction):
 ```@repl gen
 lattice = Lattice([zero(Sym)], [one(Sym)]);
-hilbert = Hilbert(site=>Fock{:f}(1, 2) for site=1:length(lattice));
+hilbert = Hilbert(site=>Fock{:f}(1, 2) for site in eachindex(lattice));
 t = Hopping(:t, symbols("t", real=true), 1);
 U = Hubbard(:U, symbols("U", real=true));
 operators = expand(OperatorGenerator(bonds(lattice, 1), hilbert, (t, U)))
@@ -63,7 +63,7 @@ Let's see an example.
 ```jldoctest
 julia> lattice = Lattice([0.0], [1.0]);
 
-julia> hilbert = Hilbert(site=>Fock{:f}(1, 2) for site=1:length(lattice));
+julia> hilbert = Hilbert(site=>Fock{:f}(1, 2) for site in eachindex(lattice));
 
 julia> t = Hopping(:t, 1.0, 1);
 

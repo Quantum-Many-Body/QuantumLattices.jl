@@ -26,7 +26,7 @@ using SymPy: Sym, symbols
 lattice = Lattice([zero(Sym)], [one(Sym)])
 
 # define the internal degrees of freedom, i.e., the single-orbital spin-1/2 fermionic algebra
-hilbert = Hilbert(site=>Fock{:f}(1, 2) for site=1:length(lattice))
+hilbert = Hilbert(site=>Fock{:f}(1, 2) for site in eachindex(lattice))
 
 # define the terms
 t = Hopping(:t, symbols("t", real=true), 1)

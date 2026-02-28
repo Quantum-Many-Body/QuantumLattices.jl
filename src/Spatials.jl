@@ -671,7 +671,7 @@ Judge whether a bond is intra the unit cell of a lattice.
 @inline isintracell(bond::Bond) = all(point->isapprox(norm(point.icoordinate), 0, atol=atol, rtol=rtol), bond)
 
 """
-    AbstractLattice{N, D<:Number, M}
+    AbstractLattice{N, D<:Number, M} <: AbstractVector{SVector{N, D}}
 
 Abstract type of a unitcell-described lattice.
 
@@ -680,19 +680,16 @@ It should have the following contents:
 - `coordinates::Matrix{D}`: the coordinates of the lattice
 - `vectors::SVector{M, SVector{N, D}}`: the translation vectors of the lattice
 """
-abstract type AbstractLattice{N, D<:Number, M} end
+abstract type AbstractLattice{N, D<:Number, M} <: AbstractVector{SVector{N, D}} end
 @inline contentnames(::Type{<:AbstractLattice}) = (:name, :coordinates, :vectors)
 @inline Base.:(==)(lattice₁::AbstractLattice, lattice₂::AbstractLattice) = ==(efficientoperations, lattice₁, lattice₂)
 @inline Base.isequal(lattice₁::AbstractLattice, lattice₂::AbstractLattice) = isequal(efficientoperations, lattice₁, lattice₂)
-@inline Base.eltype(lattice::AbstractLattice) = eltype(typeof(lattice))
-@inline Base.eltype(::Type{<:AbstractLattice{N, D}}) where {N, D<:Number} = SVector{N, D}
-@inline Base.iterate(lattice::AbstractLattice, state=1) = state>length(lattice) ? nothing : (lattice[state], state+1)
 function Base.show(io::IO, lattice::AbstractLattice)
     @printf io "%s(%s)\n" lattice|>typeof|>nameof getcontent(lattice, :name)
     len = length(lattice)
     if len > 0
         @printf io "  with %s %s:\n" len len==1 ? "point" : "points"
-        for i = 1:len
+        for i in eachindex(lattice)
             @printf io "    %s\n" lattice[i]
         end
     end
@@ -720,6 +717,13 @@ Get the space dimension of the lattice.
 Get the data type of the coordinates of a lattice.
 """
 @inline scalartype(::Type{<:AbstractLattice{N, D} where N}) where {D<:Number} = D
+
+"""
+    size(lattice::AbstractLattice) -> Tuple{Int}
+
+Get the size of the lattice as a vector.
+"""
+@inline Base.size(lattice::AbstractLattice) = (length(lattice),)
 
 """
     length(lattice::AbstractLattice) -> Int
@@ -803,7 +807,7 @@ end
 
 Get the all-to-all bonds in a lattice.
 """
-@inline  bonds(lattice::AbstractLattice, ::Colon) = [Bond(:, Point(i, lattice[i]), Point(j, lattice[j])) for i=1:length(lattice), j=1:length(lattice)]
+@inline  bonds(lattice::AbstractLattice, ::Colon) = [Bond(:, Point(i, lattice[i]), Point(j, lattice[j])) for i in eachindex(lattice), j in eachindex(lattice)]
 
 """
     Lattice{N, D<:Number, M} <: AbstractLattice{N, D, M}
