@@ -22,50 +22,80 @@ In Julia **v1.8+**, please type `]` in the REPL to use the package mode, then ty
 pkg> add QuantumLattices
 ```
 
+## Quick Start
+
+Build your first quantum lattice system in just a few lines:
+
+```julia
+using QuantumLattices
+using SymPy: Sym, symbols
+
+# 1. Define the lattice (1D chain with 2 sites)
+lattice = Lattice([zero(Sym), 1.0], [one(Sym)])
+
+# 2. Define the internal degrees of freedom (spin-1/2 fermions)
+hilbert = Hilbert(site => Fock{:f}(1, 2) for site in eachindex(lattice))
+
+# 3. Define the Hamiltonian terms
+t = Hopping(:t, 1.0, 1)           # nearest-neighbor hopping
+U = Hubbard(:U, 2.0)             # on-site interaction
+
+# 4. Generate the Hamiltonian operators
+operators = expand(OperatorGenerator(bonds(lattice, 1), hilbert, (t, U)))
+```
+
+This generates all the operators in the Hamiltonian:
+```math
+H = t c^\dagger_{1\uparrow} c_{2\uparrow} + t c^\dagger_{2\uparrow} c_{1\uparrow} + t c^\dagger_{1\downarrow} c_{2\downarrow} + t c^\dagger_{2\downarrow} c_{1\downarrow} + U n_{1\uparrow} n_{1\downarrow} + U n_{2\uparrow} n_{2\downarrow}
+```
+
 ## Package Features
 
-The mathematical foundations of our package is that the operators in a lattice Hamiltonian:
+The mathematical foundations of our package are that the operators in a lattice Hamiltonian:
 * **act on local Hilbert spaces**, and
 * **form an algebra over the complex field**.
 
-Based on this, the package has the following features:
-* **Unitcell Description Framework**: the Hamiltonian can be constructed based on the unitcell of a lattice with the information of the local algebra acting on the local Hilbert space living on each point and the terms that couples different degrees of freedom on the same or different points. Such information can be input into the program as simple as describing the quantum system in a usual research paper.
+Based on this, the package provides the following features:
+* **Unitcell Description Framework**: The Hamiltonian can be constructed based on the unitcell of a lattice, using information about the local algebra acting on the local Hilbert space at each point and the terms that couple different degrees of freedom on the same or different points. This information can be provided to the program in the same way as describing the quantum system in a research paper.
 
-* **Complete Symbolic Computation**: with only this package, symbolic computation between operators is realized while the coefficient of any operator remains numeric; by integrating it with [SymPy](https://github.com/JuliaPy/SymPy.jl), complete symbolic computation can be achieved and no modifications need be made on the methods in this package.
+* **Complete Symbolic Computation**: With this package alone, symbolic computation between operators is supported while keeping the coefficients of any operator numeric. By integrating it with [SymPy](https://github.com/JuliaPy/SymPy.jl), complete symbolic computation can be achieved without requiring any modifications to the methods in this package.
 
-* **Generic Frontend of Many-Body Algorithms**: with the operator-formed Hamiltonian as the foothold, quantum many-body algorithms can be initialized in quite similar ways with only minor modifications needed. Moreover, automatic project management is realized, including that of result recording, data caching, parameter updating, information logging, dependency managing, etc.
+* **Generic Frontend of Many-Body Algorithms**: Using the operator-formed Hamiltonian as a foundation, quantum many-body algorithms can be initialized in a consistent manner with minimal modifications. Moreover, automatic project management is provided, including result recording, data caching, parameter updating, information logging, dependency management, and more.
 
 ## Supported Systems
 
 Four common categories of quantum lattice systems in condensed matter physics are supported:
-* **canonical complex fermionic systems**
-* **canonical complex and hard-core bosonic systems**
+* **Canonical complex fermionic systems**
+* **Canonical complex and hard-core bosonic systems**
 * **SU(2) spin systems**
 * **Phononic systems**
 
-Furthermore, other systems can be supported easily by extending the generic protocols provided in this package.
+Furthermore, other systems can be easily supported by extending the generic protocols provided in this package.
 
 ## Supported Algorithms
 
-Concrete algorithms could be considered as the "backend" of quantum lattice systems. They are developed in separate packages (still in progress):
-* **[TBA](https://github.com/Quantum-Many-Body/TightBindingApproximation.jl)**: tight-binding approximation for complex-fermionic/complex-bosonic/phononic systems;
-* **[LSWT](https://github.com/Quantum-Many-Body/SpinWaveTheory.jl)**: linear spin wave theory for magnetically ordered local-spin systems;
-* **[SCMF](https://github.com/Quantum-Many-Body/MeanFieldTheory.jl)**: self-consistent mean field theory for complex fermionic systems;
-* **[ED](https://github.com/Quantum-Many-Body/ExactDiagonalization.jl)**: exact diagonalization for complex-fermionic/hard-core-bosonic/local-spin systems;
-* **[CPT/VCA](https://github.com/Quantum-Many-Body/QuantumClusterTheories.jl)**: cluster perturbation theory and variational cluster approach for complex fermionic and local spin systems;
-* **[DMRG](https://github.com/ZongYongyue/DynamicalCorrelators.jl)**: density matrix renormalization group for complex-fermionic/hard-core-bosonic/local-spin systems based on [TensorKit](https://github.com/Jutho/TensorKit.jl) and [MPSKit](https://github.com/QuantumKitHub/MPSKit.jl);
-* **[RPA](https://github.com/Quantum-Many-Body/RandomPhaseApproximation.jl)**: random phase approximation for complex fermionic systems.
+Concrete algorithms can be considered as the "backend" of quantum lattice systems. They are developed in separate packages:
+* **[TBA](https://github.com/Quantum-Many-Body/TightBindingApproximation.jl)**: Tight-binding approximation for complex-fermionic/complex-bosonic/phononic systems.
+* **[LSWT](https://github.com/Quantum-Many-Body/SpinWaveTheory.jl)**: Linear spin wave theory for magnetically ordered local-spin systems.
+* **[SCMF](https://github.com/Quantum-Many-Body/MeanFieldTheory.jl)**: Self-consistent mean field theory for complex fermionic systems.
+* **[ED](https://github.com/Quantum-Many-Body/ExactDiagonalization.jl)**: Exact diagonalization for complex-fermionic/hard-core-bosonic/local-spin systems.
+* **[CPT/VCA](https://github.com/Quantum-Many-Body/QuantumClusterTheories.jl)**: Cluster perturbation theory and variational cluster approach for complex fermionic and local spin systems.
+* **[DMRG](https://github.com/ZongYongyue/DynamicalCorrelators.jl)**: Density matrix renormalization group for complex-fermionic/hard-core-bosonic/local-spin systems based on [TensorKit](https://github.com/Jutho/TensorKit.jl) and [MPSKit](https://github.com/QuantumKitHub/MPSKit.jl).
+* **[RPA](https://github.com/Quantum-Many-Body/RandomPhaseApproximation.jl)**: Random phase approximation for complex fermionic systems.
 
 ## Getting Started
-* [Tutorials: unitcell description](@ref UnitcellDescriptionIntroduction)
-* [Tutorials: advanced topics](@ref AdvancedTopicsIntroduction)
+
+* [Tutorial: Unitcell Description](@ref UnitcellDescriptionIntroduction)
+* [Tutorial: Advanced Topics](@ref AdvancedTopicsIntroduction)
 
 ## Note
 
-Due to the fast development of this package, releases with different minor version numbers are **not** guaranteed to be compatible with previous ones **before** the release of v1.0.0. Comments are welcomed in the GitHub issues.
+Due to the rapid development of this package, releases with different minor version numbers are **not** guaranteed to be compatible with previous ones **before** the release of v1.0.0. Comments are welcomed in the GitHub issues.
 
 ## Contact
-waltergu1989@gmail.com
 
-## Python counterpart
-[HamiltonianPy](https://github.com/waltergu/HamiltonianPy): in fact, the authors of this Julia package worked on the python package at first and only turned to Julia later.
+* Email: waltergu1989@gmail.com
+
+## Python Counterpart
+
+[HamiltonianPy](https://github.com/waltergu/HamiltonianPy): The authors of this Julia package initially worked on a Python package before transitioning to Julia.

@@ -9,17 +9,17 @@ end
 
 # Internal degrees of freedom
 
-Now let's move to the second step, the internal degrees of freedom.
+Now let's move to the second step: the internal degrees of freedom.
 
 ## Hierarchy of the internal degrees of freedom
 
-In general, a lattice Hamiltonian can be expressed by the generators of the [algebra](https://en.wikipedia.org/wiki/Algebra_over_a_field) that acts on the Hilbert space of the system. For example for the complex fermionic (bosonic) system, the Hilbert space is the [Fock space](https://en.wikipedia.org/wiki/Fock_space), and the lattice Hamiltonian can be expressed by the generators of the fermionic (bosonic) algebra, i.e., the the creation and annihilation operators $\{c^\dagger_\alpha, c_\alpha\}$ $\left(\{b^\dagger_\alpha, b_\alpha\}\right)$. For another example for the local spin-1/2 system, the Hilbert space is the ``\otimes_\alpha\{\lvert\uparrow\rangle, \lvert\downarrow\rangle\}_\alpha`` space, and the lattice Hamiltonian can be expressed by the generators of the SU(2) spin algebra, i.e., the spin operators $\{S^x_\alpha, S^y_\alpha, S^z_\alpha\}$ or $\{S^+_\alpha, S^-_\alpha, S^z_\alpha\}$. In both examples, the subscript $\alpha$ denotes a complete set of indexes of the internal degrees of freedom of the quantum system. Therefore, the determination of the algebra acting on the system's Hilbert space and its corresponding generators lies at the center of the constructions of the operator representations of lattice Hamiltonians.
+In general, a lattice Hamiltonian can be expressed by the generators of the [algebra](https://en.wikipedia.org/wiki/Algebra_over_a_field) that acts on the Hilbert space of the system. For example, for complex fermionic (bosonic) systems, the Hilbert space is the [Fock space](https://en.wikipedia.org/wiki/Fock_space), and the lattice Hamiltonian can be expressed by the generators of the fermionic (bosonic) algebra, i.e., the creation and annihilation operators $\{c^\dagger_\alpha, c_\alpha\}$ $\left(\{b^\dagger_\alpha, b_\alpha\}\right)$. For another example, for local spin-1/2 systems, the Hilbert space is the $\otimes_\alpha\{\lvert\uparrow\rangle, \lvert\downarrow\rangle\}_\alpha$ space, and the lattice Hamiltonian can be expressed by the generators of the SU(2) spin algebra, i.e., the spin operators $\{S^x_\alpha, S^y_\alpha, S^z_\alpha\}$ or $\{S^+_\alpha, S^-_\alpha, S^z_\alpha\}$. In both examples, the subscript $\alpha$ denotes a complete set of indices of the internal degrees of freedom of the quantum system. Therefore, determining the algebra acting on the system's Hilbert space and its corresponding generators lies at the center of constructing operator representations of lattice Hamiltonians.
 
-The global Hilbert space of a lattice system can be decomposed into the direct product of the local internal spaces "living" on individual points, leading to a similar decomposition of the global algebra into local ones. To incorporate with the unitcell construction of the lattice, an extra intermediate representation of the translation-equivalent internal degrees of freedom within the origin unitcell is also needed. Thus, from the microscopic to the macroscopic, we arrive at a three level hierarchy, namely the local-unitcell-global hierarchy, of the internal degrees of freedom.
+The global Hilbert space of a lattice system can be decomposed into the direct product of the local internal spaces "living" on individual points, leading to a similar decomposition of the global algebra into local ones. To incorporate the unitcell construction of the lattice, an extra intermediate representation of the translation-equivalent internal degrees of freedom within the origin unitcell is also needed. Thus, from the microscopic to the macroscopic, we arrive at a three level hierarchy, namely the local-unitcell-global hierarchy, of the internal degrees of freedom.
 
 At the local or the individual-point level, the local algebra is represented by the type [`Internal`](@ref), and a local generator of the local algebra is represented by the type [`InternalIndex`](@ref). Both types are abstract types with their concrete subtypes to represent concrete local algebras and concrete local generators of different quantum lattice systems with different internal structures, respectively.
 
-At the unitcell level, the algebra of the system is represented by the type [`Hilbert`](@ref), which defines the concrete local algebras point by point within the origin unitcell. Accordingly, the type [`Index`](@ref), which combines a site index and an instance of [`InternalIndex`](@ref), could specify a translation-equivalent generator within the origin unitcell.
+At the unitcell level, the algebra of the system is represented by the type [`Hilbert`](@ref), which defines the concrete local algebras point by point within the origin unitcell. Accordingly, the type [`Index`](@ref), which combines a site index and an instance of [`InternalIndex`](@ref), can specify a translation-equivalent generator within the origin unitcell.
 
 At the global or the whole-lattice level, we do not actually need a representation of the algebra of the system, but really do for the generators because we have to specify them outside the origin unitcell when the bond goes across the unitcell boundaries. The type [`CoordinatedIndex`](@ref), which combines an instance of [`Index`](@ref) and the coordinates $\mathbf{R}$ and $\mathbf{R}_i$ of the underlying point, represents a generator at such a level.
 
@@ -33,7 +33,7 @@ The above discussions can be summarized by the following table, which also displ
 
 ## Quantum lattice systems with different internal structures
 
-In this section, we will explain in detail for the common categories of quantum lattice systems implemented in this package about how their algebras and generators are organized according to the above three level hierarchy.
+In this section, we will explain in detail the common categories of quantum lattice systems implemented in this package, focusing on how their algebras and generators are organized according to the above three-level hierarchy.
 
 ### Canonical complex fermionic, canonical complex bosonic and hard-core bosonic systems
 
@@ -42,7 +42,7 @@ In this section, we will explain in detail for the common categories of quantum 
 Roughly speaking, these systems share similar internal structures of local Hilbert spaces termed as the [Fock space](https://en.wikipedia.org/wiki/Fock_space) where the generators of local algebras are the annihilation and creation operators. Besides the nambu index to distinguish whether it is an annihilation one or a creation one, such a generator usually adopts an orbital index and a spin index. Thus, the type [`FockIndex`](@ref)`<:`[`InternalIndex`](@ref), which specifies a certain local generator of a local Fock algebra, has the following attributes:
 * `orbital::Int`: the orbital index
 * `spin::Rational{Int}`: the spin index, which must be a half integer
-* `nambu::Int`: the nambu index, which must be 1(annihilation) or 2(creation).
+* `nambu::Int`: the nambu index, which must be 1 (annihilation) or 2 (creation).
 Correspondingly, the type [`Fock`](@ref)`<:`[`Internal`](@ref), which specifies the local algebra acting on the local [Fock space](https://en.wikipedia.org/wiki/Fock_space), has the following attributes:
 * `norbital::Int`: the number of allowed orbital indices
 * `nspin::Int`: the number of allowed spin indices
@@ -133,7 +133,7 @@ This is isomorphic to the mathematical fact that a local algebra is a vector spa
 
 #### Unitcell level: Hilbert and Index
 
-To specify the Fock algebra at the unitcell level, [`Hilbert`](@ref) associate each point within the origin unitcell with an instance of [`Fock`](@ref):
+To specify the Fock algebra at the unitcell level, [`Hilbert`](@ref) associates each point within the origin unitcell with an instance of [`Fock`](@ref):
 ```jldoctest FFF
 julia> Hilbert(1=>Fock{:f}(1, 2), 2=>Fock{:f}(1, 2))
 Hilbert{Fock{:f}} with 2 entries:
@@ -232,7 +232,7 @@ julia> 𝕒(1, 1, -1//2)'
 
 #### Global level: CoordinatedIndex
 
-Since the local algebra of a quantum lattice system can be defined point by point, the global algebra can be completely compressed into the origin unitcell. However, the generator outside the origin unitcell cannot be avoided because we have to use them to compose the Hamiltonian on the bonds that goes across the unitcell boundaries. This situation is similar to the case of [`Lattice`](@ref) and [`Point`](@ref). Therefore, we take a similar solution for the generators to that is adopted for the [`Point`](@ref), i.e., we include the $\mathbf{R}$ coordinate (by the `rcoordinate` attribute) and the $\mathbf{R}_i$ coordinate (by the `icoordinate` attribute) of the underlying point together with the `index::Index` attribute in the [`CoordinatedIndex`](@ref) type to represent a generator that could be inside or outside the origin unitcell:
+Since the local algebra of a quantum lattice system can be defined point by point, the global algebra can be completely compressed into the origin unitcell. However, generators outside the origin unitcell cannot be avoided because we have to use them to compose the Hamiltonian on the bonds that go across the unitcell boundaries. This situation is similar to the case of [`Lattice`](@ref) and [`Point`](@ref). Therefore, we take a similar solution for the generators to that adopted for the [`Point`](@ref), i.e., we include the $\mathbf{R}$ coordinate (by the `rcoordinate` attribute) and the $\mathbf{R}_i$ coordinate (by the `icoordinate` attribute) of the underlying point together with the `index::Index` attribute in the [`CoordinatedIndex`](@ref) type to represent a generator that could be inside or outside the origin unitcell:
 ```jldoctest FFF
 julia> index = CoordinatedIndex(Index(1, FockIndex{:f}(1, 0, 2)), [0.5, 0.0], [0.0, 0.0])
 𝕔⁺(1, 1, 0, [0.5, 0.0], [0.0, 0.0])
@@ -414,7 +414,7 @@ true
 
 #### Local level: Phonon and PhononIndex
 
-Phononic systems are also bosonic systems. However, the canonical creation and annihilation operators of phonons depends on the eigenvalues and eigenvectors of the dynamical matrix, making them difficult to be defined locally at each point. Instead, we resort to the displacement ($\mathbf{u}$) and momentum ($\mathbf{p}$) operators of lattice vibrations as the generators, which can be easily defined locally. The type [`PhononIndex`](@ref)`<:`[`InternalIndex`](@ref) could specify such a local generator, which has the following attributes:
+Phononic systems are also bosonic systems. However, the canonical creation and annihilation operators of phonons depend on the eigenvalues and eigenvectors of the dynamical matrix, making them difficult to define locally at each point. Instead, we resort to the displacement ($\mathbf{u}$) and momentum ($\mathbf{p}$) operators of lattice vibrations as the generators, which can be easily defined locally. The type [`PhononIndex`](@ref)`<:`[`InternalIndex`](@ref) can specify such a local generator, which has the following attributes:
 * `direction::Char`: the direction, which must be one of `'x'`, `'y'` and `'z'`, to indicate which spatial directional component of the generator it is
 Correspondingly, the type [`Phonon`](@ref)`<:`[`Internal`](@ref), which defines the local $\{\mathbf{u}, \mathbf{p}\}$ algebra of the lattice vibrations, has the following attributes:
 * `ndirection::Int`: the spatial dimension of the lattice vibrations, which must be 1, 2, or 3.
@@ -523,9 +523,9 @@ Operator(2, 𝕔⁺(1, -1//2), 𝕔(1, -1//2), 𝕊{1//2}('z'))
 julia> 2 * 𝕔⁺(1, 1, -1//2) * 𝕊{1//2}(2, 'z')
 Operator(2, 𝕔⁺(1, 1, -1//2), 𝕊{1//2}(2, 'z'))
 ```
-It is noted that the number of the generators can be any natural number.
+Note that the number of generators can be any natural number.
 
-Although generators at different levels can be producted to make an [`Operator`](@ref), it is not recommended to do so because the logic will be muddled:
+Although generators at different levels can be multiplied to form an [`Operator`](@ref), it is not recommended to do so because the logic will become confusing:
 ```jldoctest OO
 julia> Operator(2, 𝕔⁺(1, 0), 𝕔(2, 1, 0, [0.0], [0.0])) # never do this !!!
 Operator(2, 𝕔⁺(1, 0), 𝕔(2, 1, 0, [0.0], [0.0]))
@@ -643,7 +643,7 @@ Operators with 2 Operator
   Operator(4, 𝕔(1, 1//2))
   Operator(6, 𝕔⁺(1, 1//2))
 ```
-It is noted that in the result, the distributive law automatically applies. Besides, the fermion operator relation $c^2=(c^\dagger)^2=0$ is also used.
+Note that in the result, the distributive law automatically applies. Besides, the fermion operator relation $c^2=(c^\dagger)^2=0$ is also used.
 
 As is usual, the Hermitian conjugate of an [`Operators`](@ref) can be obtained by the adjoint operator:
 ```jldoctest

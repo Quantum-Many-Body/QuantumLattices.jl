@@ -6,9 +6,9 @@ CurrentModule = QuantumLattices.QuantumOperators
 
 Quantum operators form an algebra over a field, which are vector spaces with a bilinear operation (often called the "multiplication") between vectors defined.
 
-With the help of the structure constants of the algebra, the result of the bilinear operation between any arbitrary two vectors can be expressed by a sum of individual ones. Therefore, in principle, an algebra can be represented by the complete basis set of its corresponding vector space and a rank-3 tensor encapsulating its structure constants. It is noted that the "bilinear operation" is not restricted to the usual multiplication. For example, it is the commutator, which is a composition of the usual multiplication and subtraction (for any A and B, the commutator [A, B] is defined as [A, B]≝AB-BA) that serves as the bilinear operator for Lie algebras.
+With the help of the structure constants of the algebra, the result of the bilinear operation between any two vectors can be expressed as a sum of individual ones. Therefore, in principle, an algebra can be represented by the complete basis set of its corresponding vector space and a rank-3 tensor encapsulating its structure constants. Note that the "bilinear operation" is not restricted to the usual multiplication. For example, in Lie algebras, it is the commutator (defined as [A, B] ≝ AB - BA), which is a composition of the usual multiplication and subtraction.
 
-In general, there are three basic operations on quantum operators, i.e. the scalar multiplication between a scalar and a quantum operator, the usual addition and the usual multiplication between quantum operators. Other complicated operations can be composed from these basic ones. These basic operations are implemented in this module.
+In general, there are three basic operations on quantum operators: the scalar multiplication between a scalar and a quantum operator, the usual addition, and the usual multiplication between quantum operators. Other more complicated operations can be composed from these basic ones. These basic operations are implemented in this module.
 
 ## OperatorIndex
 

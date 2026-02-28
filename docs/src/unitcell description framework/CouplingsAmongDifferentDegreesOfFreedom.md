@@ -9,19 +9,19 @@ end
 
 # [Couplings among different degrees of freedom](@id CouplingsAmongDifferentDegreesOfFreedom)
 
-Now we arrive at the final step toward the complete description of a quantum lattice system, i.e., the terms that represent the couplings among different degrees of freedom.
+Now we arrive at the final step toward completely describing a quantum lattice system: the terms that represent the couplings among different degrees of freedom.
 
 ## Ingredients of terms in Hamiltonians
 
 In this package, the type [`Term`](@ref) is the representation of a term in lattice Hamiltonians.
 
-As is well-known, different quantum lattice models have different terms. For example, the [Hubbard model](https://en.wikipedia.org/wiki/Hubbard_model) consists of an usual hopping term $t\sum_{⟨ij⟩}c^†_ic_j + h.c.$ and a Hubbard term $U\sum_i c^†_{i↑} c_{i↑} c^†_{i↓}c_{i↓}$ while the [transverse-field Ising model](https://en.wikipedia.org/wiki/Transverse-field_Ising_model) contains an Ising term $J\sum_{⟨ij⟩}S^z_iS^z_j$ as well as a transverse-field term $h\sum_iS^x_i$. Despite the rich diversity of the terms in quantum lattice models, they host common ingredients:
+As is well-known, different quantum lattice models have different terms. For example, the [Hubbard model](https://en.wikipedia.org/wiki/Hubbard_model) consists of a usual hopping term $t\sum_{\langle ij\rangle}c^\dagger_ic_j + \text{h.c.}$ and a Hubbard term $U\sum_i c^\dagger_{i\uparrow} c_{i\uparrow} c^\dagger_{i\downarrow}c_{i\downarrow}$, while the [transverse-field Ising model](https://en.wikipedia.org/wiki/Transverse-field_Ising_model) contains an Ising term $J\sum_{\langle ij\rangle}S^z_iS^z_j$ as well as a transverse-field term $h\sum_iS^x_i$. Despite the rich diversity of terms in quantum lattice models, they share common ingredients:
 
-* **Overall coefficient**: every term has an overall coefficient, e.g., the hopping amplitude $t$ for the usual hopping term, the Hubbard interaction strength $U$ for the Hubbard term, etc.
-* **Kind of bonds to be summed over**: as the natural result of lattice symmetry, every term contains a summation over some kind of generic bonds, e.g., the usual hopping term sums over the nearest-neighbor bonds $⟨ij⟩$, the Hubbard term sums over all individual points (namely the 1-point bonds), etc.
-* **Coupling pattern**: in the body of the summation over bonds, every term contains a coupling pattern that can be represented by a certain combination of operators, e.g., the coupling pattern of the usual hopping term can be represented by $c^†_ic_j$, of the Hubbard term can be represented by $c^†_{i↑} c_{i↑} c^†_{i↓}c_{i↓}$, etc.
-* **Hermiticity**: to guarantee the Hamiltonian to be Hermitian, the Hermitian conjugate (h.c.) of non-Hermitian terms must be added, e.g., the Hermitian conjugate of the usual hopping term must be added in the expression of the lattice Hamiltonian while that of the Hubbard term need not.
-* **Bond-dependent amplitude** (optional): the amplitude of a term can be dependent on the generic bonds, e.g., the staggered local chemical potential $Δ\sum_i(-1)^ic^†_ic_i$ depends on the site index of a point, the $p+ip$ pairing potential $Δ\sum_{⟨ij⟩}e^{iϕ_{ij}}c^†_ic^†_j + h.c.$ depends on the azimuth angle $ϕ_{ij}$ of the bond $⟨ij⟩$, etc.
+* **Overall coefficient**: Every term has an overall coefficient, e.g., the hopping amplitude $t$ for the usual hopping term, the Hubbard interaction strength $U$ for the Hubbard term, etc.
+* **Kind of bonds to be summed over**: As a natural result of lattice symmetry, every term contains a summation over some kind of generic bonds, e.g., the usual hopping term sums over the nearest-neighbor bonds $\langle ij\rangle$, the Hubbard term sums over all individual points (namely the 1-point bonds), etc.
+* **Coupling pattern**: In the body of the summation over bonds, every term contains a coupling pattern that can be represented by a certain combination of operators, e.g., the coupling pattern of the usual hopping term can be represented by $c^\dagger_ic_j$, of the Hubbard term can be represented by $c^\dagger_{i\uparrow} c_{i\uparrow} c^\dagger_{i\downarrow}c_{i\downarrow}$, etc.
+* **Hermiticity**: To guarantee the Hamiltonian to be Hermitian, the Hermitian conjugate (h.c.) of non-Hermitian terms must be added, e.g., the Hermitian conjugate of the usual hopping term must be added in the expression of the lattice Hamiltonian, while that of the Hubbard term need not.
+* **Bond-dependent amplitude** (optional): The amplitude of a term can depend on the generic bonds, e.g., the staggered local chemical potential $\Delta\sum_i(-1)^ic^\dagger_ic_i$ depends on the site index of a point, the $p+ip$ pairing potential $\Delta\sum_{\langle ij\rangle}e^{i\phi_{ij}}c^\dagger_ic^\dagger_j + \text{h.c.}$ depends on the azimuth angle $\phi_{ij}$ of the bond $\langle ij\rangle$, etc.
 
 Such common ingredients determine the underlying organization of [`Term`](@ref). In fact, all of them manifest themselves in the basic construction function of [`Term`](@ref) shown as follows:
 ```julia
@@ -30,11 +30,11 @@ Term{termkind}(
     amplitude::Union{Function, Nothing}=nothing
 ) where termkind
 ```
-where `termkind` must be a `Symbol`, `value` is the overall coefficient which should be a real number, `coupling` specifies the coupling pattern of the term which can accept an instance of [`Coupling`](@ref), or an iterator of [`Coupling`](@ref)s, or a function that returns a [`Coupling`](@ref) or an iterator of [`Coupling`](@ref)s, and the keyword argument `amplitude` specifies the bond dependency of the amplitude if it is not `nothing`. Here, the new type [`Coupling`](@ref) is the building block of the coupling pattern, which will be discussed in detail in the following section. It is also noted that an extra id is also assigned with each term which can be used for fast lookup for later convenience.
+where `termkind` must be a `Symbol`, `value` is the overall coefficient which should be a real number, `coupling` specifies the coupling pattern of the term which can accept an instance of [`Coupling`](@ref), or an iterator of [`Coupling`](@ref)s, or a function that returns a [`Coupling`](@ref) or an iterator of [`Coupling`](@ref)s, and the keyword argument `amplitude` specifies the bond dependency of the amplitude if it is not `nothing`. Here, the new type [`Coupling`](@ref) is the building block of the coupling pattern, which will be discussed in detail in the following section. Note that an extra id is also assigned to each term for fast lookup.
 
 ## Coupling patterns
 
-Before the further discussion of [`Term`](@ref), we at first turn to the coupling patterns, which lie at the center of the constructions of [`Term`](@ref)s.
+Before discussing [`Term`](@ref) further, we first turn to the coupling patterns, which lie at the center of the construction of [`Term`](@ref)s.
 
 ### Coupling: building block of coupling patterns
 
@@ -49,9 +49,9 @@ Let's see a typical example, which represents the coupling pattern of the usual 
 julia> Coupling(Index(1ˢᵗ, FockIndex(:, :, 2)), Index(2ⁿᵈ, FockIndex(:, :, 1)))
 ∑[𝕕⁺(1ˢᵗ, :, :) 𝕕(2ⁿᵈ, :, :)]
 ```
-There are several differences of the [`Index`](@ref)es here compared to those introduced in the previous page of [Internal degrees of freedom](@ref):
-* **The `site` attributes are not the site indexes of the points in a lattice, instead, they are the ordinals of the points contained in a bond**. In fact, in the expression of $c^†_ic_j$, $i$ is always the first site of a bond while $j$ is always the second, thus, the `site` attributes here are `1ˢᵗ` and `2ⁿᵈ` for the first [`Index`](@ref) and the second [`Index`](@ref), respectively. Here, `1ˢᵗ` and `2ⁿᵈ` are instances of [`Ordinal`](@ref), and an arbitrary ordinal can be obtained by an integer followed by the corresponding special constants, e.g., `1ˢᵗ`, `2ⁿᵈ`, `3ʳᵈ`, `4ᵗʰ`, `5ᵗʰ`, etc.
-* The `internal` attributes are initialized by special [`FockIndex`](@ref) instances, which do not have the type parameter `:f` or `:b` to specify the statistics, and whose `orbital` and `spin` attributes are initialized by the `:` operator rather than integers. **Without the statistics of `:f` or `:b`, [`FockIndex`](@ref) could suit for both fermionic and bosonic quantum lattice systems**, as the coupling pattern of an usual hopping term is the same for both kinds of systems. Here, `𝕕` (\bbd<tab>) and `𝕕⁺` (\bbd<tab>\^+<tab>) are the functions that are convenient to construct and display instances of [`FockIndex`](@ref) suitable for both fermionic and bosonic statistics. **When the `:` operator is used in the initialization for either the `orbital` or the `spin` attribute, the default rule applies in the coupling pattern, that orbitals or spins are summed diagonally**, i.e., $c^†_ic_j≡\sum_{ασ}c^†_{iασ}c_{jασ}$. This rule is in fact a tradition in the literature of condensed matter physics. This implicit summation in the construction of a [`Coupling`](@ref) is made explicit in its string representation by the `∑` symbol, as can be seen in the above example.
+There are several differences in the [`Index`](@ref)es here compared to those introduced in the previous page of [Internal degrees of freedom](@ref):
+* **The `site` attributes are not the site indexes of the points in a lattice, instead, they are the ordinals of the points contained in a bond**. In fact, in the expression of $c^\dagger_ic_j$, $i$ is always the first site of a bond while $j$ is always the second, thus, the `site` attributes here are `1ˢᵗ` and `2ⁿᵈ` for the first [`Index`](@ref) and the second [`Index`](@ref), respectively. Here, `1ˢᵗ` and `2ⁿᵈ` are instances of [`Ordinal`](@ref), and an arbitrary ordinal can be obtained by an integer followed by the corresponding special constants, e.g., `1ˢᵗ`, `2ⁿᵈ`, `3ʳᵈ`, `4ᵗʰ`, `5ᵗʰ`, etc.
+* The `internal` attributes are initialized by special [`FockIndex`](@ref) instances, which do not have the type parameter `:f` or `:b` to specify the statistics, and whose `orbital` and `spin` attributes are initialized by the `:` operator rather than integers. **Without the statistics of `:f` or `:b`, [`FockIndex`](@ref) can suit both fermionic and bosonic quantum lattice systems**, as the coupling pattern of a usual hopping term is the same for both kinds of systems. Here, `𝕕` (\bbd<tab>) and `𝕕⁺` (\bbd<tab>\^+<tab>) are the functions that are convenient for constructing and displaying instances of [`FockIndex`](@ref) suitable for both fermionic and bosonic statistics. **When the `:` operator is used in the initialization for either the `orbital` or the `spin` attribute, the default rule applies in the coupling pattern, that orbitals or spins are summed diagonally**, i.e., $c^\dagger_ic_j\equiv\sum_{\alpha\sigma}c^\dagger_{i\alpha\sigma}c_{j\alpha\sigma}$. This rule is in fact a tradition in the literature of condensed matter physics. This implicit summation in the construction of a [`Coupling`](@ref) is made explicit in its string representation by the $\sum$ symbol, as can be seen in the above example.
 
 Similarly, **the total spin of [`SpinIndex`](@ref) can be omitted during the construction of the coupling patterns of spin terms, meaning that it suits any allowable value of total spins**, e.g., the coupling pattern of the spin-flip term of any total spin $J\sum_{⟨ij⟩}S^+_iS^-_j + h.c.$ is as follows:
 ```jldoctest
@@ -60,7 +60,7 @@ julia> Coupling(1//2, Index(1ˢᵗ, SpinIndex('+')), Index(2ⁿᵈ, SpinIndex('-
 ```
 Note that in this coupling pattern, there is no summation symbol `∑` in the string representation because all indexes are definite. Therefore, **the summation symbol `∑` in the string representation of a coupling pattern only reflects the summation over local internal degrees of freedom, but not the summation over bonds**.
 
-**The diagonal summation rule also applies to the `direction` attribute of [`PhononIndex`](@ref) if initialized by the `:` operator**, e.g., the the coupling pattern of the phonon kinetic term $\frac{1}{2M}\sum_i p^2_i$ can be constructed as:
+**The diagonal summation rule also applies to the `direction` attribute of [`PhononIndex`](@ref) if initialized by the `:` operator**, e.g., the coupling pattern of the phonon kinetic term $\frac{1}{2M}\sum_i p^2_i$ can be constructed as:
 ```jldoctest HM
 julia> Coupling(𝕡(1ˢᵗ, :), 𝕡(1ˢᵗ, :))
 ∑[𝕡(1ˢᵗ, :) 𝕡(1ˢᵗ, :)]
@@ -97,7 +97,7 @@ Coupling{P}(
     directions::Union{NTuple{N, Char}, Colon}
 ) where {N, P<:Union{PhononIndex{:u}, PhononIndex{:p}}}
 ```
-Here, as is usual, when `value` is omitted, the coefficient of the [`Coupling`](@ref) will be set to be 1.
+Here, as usual, when `value` is omitted, the coefficient of the [`Coupling`](@ref) will be set to 1.
 
 See examples:
 ```jldoctest HM
@@ -132,7 +132,7 @@ julia> cp₁ * cp₂
 ∑[𝕕⁺(1ˢᵗ, :, 1//2) 𝕕(1ˢᵗ, :, 1//2)] ⊗ ∑[𝕕⁺(1ˢᵗ, :, -1//2) 𝕕(1ˢᵗ, :, -1//2)]
 ```
 
-It is noted that due to the implicit summation of the orbital index in the coupling pattern, the above product is not equal to the coupling pattern of the Hubbard term $U\sum_i c^†_{i↑} c_{i↑} c^†_{i↓}c_{i↓}$:
+Note that due to the implicit summation of the orbital index in the coupling pattern, the above product is not equal to the coupling pattern of the Hubbard term $U\sum_i c^\dagger_{i\uparrow} c_{i\uparrow} c^\dagger_{i\downarrow}c_{i\downarrow}$:
 ```jldoctest
 julia> cp₁ = Coupling{FockIndex}((1ˢᵗ, 1ˢᵗ), :, (1//2, 1//2), (2, 1));
 
@@ -345,7 +345,7 @@ julia> MatrixCoupling{FockIndex}(:, :, :, σ²²) == 𝕕𝕕⁺(:, :, :)
 true
 ```
 
-[`MatrixCoupling`](@ref)s can be producted or summed.
+[`MatrixCoupling`](@ref)s can be multiplied or summed.
 
 For one example, for the nearest-neighbor spin exchange interactions of itinerant fermions $J\sum_{⟨ij⟩}c^†_i\vec{σ}_ic_i ⋅ c^†_j\vec{σ}_jc_j$ where $\vec{σ}_i=(σ^x_i, σ^y_i, σ^z_i)^T$ acts on the local spin space at site $i$, the coupling pattern can be constructed as follows:
 ```jldoctest

@@ -8,18 +8,18 @@ end
 
 # Spatial information of a unitcell
 
-The first step toward the complete description of a quantum lattice system is the understanding of the spatial information of a unitcell.
+The first step toward completely describing a quantum lattice system is understanding the spatial information of a unitcell.
 
 ## Construction of a lattice
 
-In general, a lattice has translation symmetry. This symmetry introduces an equivalence relation for the points in a lattice when they can be translated into each other by multiple times of the translation vectors. This observation sets the mathematical foundation of the unitcell construction. As a result, it is enough for a lattice to restrict all points within the origin unitcell together with the translation vectors.
+In general, a lattice has translation symmetry. This symmetry introduces an equivalence relation for the points in a lattice when they can be translated into each other by multiples of the translation vectors. This observation sets the mathematical foundation for the unitcell construction. As a result, it is sufficient to represent a lattice by restricting all points within the origin unitcell along with the translation vectors.
 
-[`Lattice`](@ref) is the simplest structure to encode all the spatial information within the origin unitcell. Apparently, it must contain all the coordinates of the points in the origin unitcell and the translation vectors of the lattice. It also appears to be useful to associate a lattice with a name. Therefore, in this package, [`Lattice`](@ref) has three attributes:
+[`Lattice`](@ref) is the simplest structure to encode all the spatial information within the origin unitcell. It must contain the coordinates of all points in the origin unitcell and the translation vectors of the lattice. It is also useful to associate a lattice with a name. Therefore, in this package, [`Lattice`](@ref) has three attributes:
 * `name::Symbol`: the name of the lattice
 * `coordinates::Matrix{<:Number}`: the coordinates of the points within the origin unitcell
 * `vectors::Vector{<:StaticArraysCore.SVector}`: the translation vectors of the lattice
 
-[`Lattice`](@ref) can be constructed by offering the coordinates, with optional keyword arguments to specify its name and translation vectors:
+[`Lattice`](@ref) can be constructed by providing the coordinates, with optional keyword arguments to specify its name and translation vectors:
 ```jldoctest unitcell
 julia> Lattice([0.0])
 Lattice(lattice)
@@ -48,9 +48,9 @@ Lattice(Cube)
     [0.0, 1.0, 0.0]
     [0.0, 0.0, 1.0]
 ```
-The coordinates could be specified by vectors or tuples.
+The coordinates can be specified using vectors or tuples.
 
-Iteration over a lattice will get the coordinates of the points in it:
+Iteration over a lattice yields the coordinates of the points in it:
 ```jldoctest unitcell
 julia> lattice = Lattice((0.0, 0.0), (0.5, 0.5); vectors=[[1.0, 0.0], [0.0, 1.0]]);
 
@@ -80,16 +80,18 @@ julia> reciprocals(lattice)
 
 ## Request for the bonds of a lattice
 
-Before the introduction of how to obtain the bonds of a lattice, let's discuss more about the unitcell construction to clarify the logic behind the definitions of the [`Point`](@ref) type and the [`Bond`](@ref) type in this package.
+Before explaining how to obtain the bonds of a lattice, let's discuss the unitcell construction further to clarify the logic behind the definitions of the [`Point`](@ref) type and the [`Bond`](@ref) type in this package.
 
 ### Point
 
-With the translation symmetry, all points of a lattice are equivalent to those within the origin unitcell. However, it becomes complicated when the bonds are requested. The bonds inter different unitcells cannot be compressed into a single unitcell. Therefore, even in the unitcell construction framework, it turns out to be unavoidable to specify a point outside the origin unitcell, which requires extra information beyond a single coordinate if we want to remember which point it is equivalent to within the origin unitcell at the same time. In fact, it is customary in literature to express the coordinate $\mathbf{R}$ of a point in a lattice as $\mathbf{R}=\mathbf{R}_i+\mathbf{r}$, where $\mathbf{R}_i$ is the integral coordinate of the unitcell the point belongs to and $\mathbf{r}$ is the relative displacement of the point in the unitcell. Apparently, any two of these three coordinates are complete to get the full information. In this package, we choose $\mathbf{R}$ and $\mathbf{R}_i$ as the complete set for a individual lattice point. Besides, we also associate a `site` index with a point for the fast lookup for its equivalence within the origin unitcell although it is redundant in theory. Thus, the [`Point`](@ref) defined in this package has three attributes as follows:
+With translation symmetry, all points of a lattice are equivalent to those within the origin unitcell. However, things become complicated when bonds are requested. Bonds between different unitcells cannot be compressed into a single unitcell. Therefore, even in the unitcell construction framework, it is necessary to specify a point outside the origin unitcell, which requires extra information beyond a single coordinate if we want to remember which point it is equivalent to within the origin unitcell at the same time.
+
+In the literature, it is customary to express the coordinate $\mathbf{R}$ of a point in a lattice as $\mathbf{R} = \mathbf{R}_i + \mathbf{r}$, where $\mathbf{R}_i$ is the integral coordinate of the unitcell the point belongs to and $\mathbf{r}$ is the relative displacement of the point in the unitcell. Any two of these three coordinates are sufficient to get the full information. In this package, we choose $\mathbf{R}$ and $\mathbf{R}_i$ as the complete set for an individual lattice point. Additionally, we also associate a `site` index with a point for fast lookup of its equivalence within the origin unitcell, although this is redundant in theory. Thus, the [`Point`](@ref) defined in this package has three attributes as follows:
 * `site::Int`: the site index of a point that specifies the equivalent point within the origin unitcell
 * `rcoordinate::`[`StaticArraysCore.SVector`](https://github.com/JuliaArrays/StaticArrays.jl): the **r**eal **coordinate** of the point ($\mathbf{R}$)
 * `icoordinate::`[`StaticArraysCore.SVector`](https://github.com/JuliaArrays/StaticArrays.jl): the **i**ntegral **coordinate** of the unitcell the point belongs to ($\mathbf{R}_i$)
 
-At the construction of a [`Point`](@ref), `rcoordinate` and `icoordinate` can accept tuples or usual vectors as inputs, such as
+When constructing a [`Point`](@ref), `rcoordinate` and `icoordinate` can accept tuples or standard vectors as inputs, such as:
 ```jldoctest unitcell
 julia> Point(1, [0.0], [0.0])
 Point(1, [0.0], [0.0])
@@ -105,7 +107,7 @@ Point(1, [0.0, 0.5], [0.0, 0.0])
 
 ### Bond
 
-A bond in the narrow sense consist of two points. However, in quantum lattice systems, it is common to refer to generic bonds with only one or more than two points. In addition, it is also convenient to associate a bond with a kind information, such as the order of the nearest neighbors of the bond. Thus, the [`Bond`](@ref) is defined as follows:
+A bond in the narrow sense consists of two points. However, in quantum lattice systems, it is common to refer to generic bonds with only one or more than two points. Additionally, it is convenient to associate a bond with kind information, such as the order of the nearest neighbors of the bond. Thus, the [`Bond`](@ref) is defined as follows:
 * `kind`: the kind information of a generic bond
 * `points::Vector{<:Point}`: the points a generic bond contains
 ```jldoctest unitcell
@@ -118,9 +120,9 @@ Bond(2, Point(1, [0.0, 0.0], [0.0, 0.0]), Point(1, [1.0, 1.0], [1.0, 1.0]))
 julia> Bond(:plaquette, Point(1, [0.0, 0.0]), Point(2, [1.0, 0.0]), Point(3, [1.0, 1.0]), Point(4, [0.0, 1.0])) # generic bond with 4 points
 Bond(:plaquette, Point(1, [0.0, 0.0], [0.0, 0.0]), Point(2, [1.0, 0.0], [0.0, 0.0]), Point(3, [1.0, 1.0], [0.0, 0.0]), Point(4, [0.0, 1.0], [0.0, 0.0]))
 ```
-It is noted that the `kind` attribute of a bond with only one point is set to be 0.
+Note that the `kind` attribute of a bond with only one point is set to 0.
 
-Iteration over a bond will get the points it contains:
+Iteration over a bond will yield the points it contains:
 ```jldoctest unitcell
 julia> bond = Bond(2, Point(1, [0.0, 0.0], [0.0, 0.0]), Point(2, [1.0, 0.0], [0.0, 0.0]));
 
@@ -170,7 +172,7 @@ In this package, we provide the function [`bonds`](@ref) to get the 1-point and 
 bonds(lattice::Lattice, nneighbor::Int) -> Vector{<:Bond}
 bonds(lattice::Lattice, neighbors::Neighbors) -> Vector{<:Bond}
 ```
-which is based on the `KDTree` type provided by the [`NearestNeighbors.jl`](https://github.com/KristofferC/NearestNeighbors.jl) package. In the first method, all the bonds up to the `nneighbor`th nearest neighbors are returned, including the 1-point bonds:
+This function is based on the `KDTree` type provided by the [`NearestNeighbors.jl`](https://github.com/KristofferC/NearestNeighbors.jl) package. In the first method, all bonds up to the `nneighbor`th nearest neighbors are returned, including the 1-point bonds:
 ```jldoctest unitcell
 julia> lattice = Lattice([0.0, 0.0]; vectors=[[1.0, 0.0], [0.0, 1.0]]);
 
@@ -182,7 +184,7 @@ julia> bonds(lattice, 2)
  Bond(2, Point(1, [1.0, -1.0], [1.0, -1.0]), Point(1, [0.0, 0.0], [0.0, 0.0]))
  Bond(1, Point(1, [-1.0, 0.0], [-1.0, 0.0]), Point(1, [0.0, 0.0], [0.0, 0.0]))
 ```
-However, this method is not so efficient, as `KDTree` only searches the bonds with the lengths less than a value, and it does not know the bond lengths for each order of nearest neighbors. Such information must be computed as first. Therefore, in the second method, [`bonds`](@ref) can accept a new type, the [`Neighbors`](@ref), as its second positional parameter to improve the efficiency, which could tell the program the information of the bond lengths in priori:
+However, this method is not very efficient, as `KDTree` only searches for bonds with lengths less than a given value, and it does not know the bond lengths for each order of nearest neighbors. This information must be computed first. Therefore, in the second method, [`bonds`](@ref) can accept a new type, [`Neighbors`](@ref), as its second positional parameter to improve efficiency, as it can tell the program the bond length information a priori:
 ```jldoctest unitcell
 julia> lattice = Lattice([0.0, 0.0]; vectors=[[1.0, 0.0], [0.0, 1.0]]);
 
@@ -194,7 +196,7 @@ julia> bonds(lattice, Neighbors(0=>0.0, 1=>1.0, 2=>√2))
  Bond(2, Point(1, [1.0, -1.0], [1.0, -1.0]), Point(1, [0.0, 0.0], [0.0, 0.0]))
  Bond(1, Point(1, [-1.0, 0.0], [-1.0, 0.0]), Point(1, [0.0, 0.0], [0.0, 0.0]))
 ```
-Meanwhile, an instance of [`Neighbors`](@ref) could also serve as a filter of the generated bonds, which select those bonds with the given bond lengths:
+Meanwhile, an instance of [`Neighbors`](@ref) can also serve as a filter for the generated bonds, selecting those bonds with the given bond lengths:
 ```jldoctest unitcell
 julia> lattice = Lattice([0.0, 0.0]; vectors=[[1.0, 0.0], [0.0, 1.0]]);
 
@@ -203,5 +205,5 @@ julia> bonds(lattice, Neighbors(2=>√2))
  Bond(2, Point(1, [-1.0, -1.0], [-1.0, -1.0]), Point(1, [0.0, 0.0], [0.0, 0.0]))
  Bond(2, Point(1, [1.0, -1.0], [1.0, -1.0]), Point(1, [0.0, 0.0], [0.0, 0.0]))
 ```
- 
- To obtain generic bonds containing more points, user are encouraged to implement their own `bonds` methods. Pull requests are welcomed.
+
+To obtain generic bonds containing more points, users are encouraged to implement their own `bonds` methods. Pull requests are welcomed.

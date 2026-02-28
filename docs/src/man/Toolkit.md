@@ -17,9 +17,9 @@ using QuantumLattices.Toolkit
 
 *This module contains the toolkit of the package.*
 
-The constants, types, macros, functions defined in this module will **not** be exported by the package. Instead, they serve as the prerequisites. The range of the contents are quite wide, but basically, they fall into two categories:
-* Utilities, such as global constants and miscellaneous tiny useful functions;
-* Basic data structures as supplements to the `Julia.Base` and other common packages.
+The constants, types, macros, and functions defined in this module will **not** be exported by the package. Instead, they serve as prerequisites. The contents are wide-ranging, but essentially fall into two categories:
+* Utilities, such as global constants and miscellaneous useful helper functions;
+* Basic data structures as supplements to `Julia.Base` and other common packages.
 
 ## Utilities
 
@@ -41,16 +41,17 @@ Segment
 
 ## Combinatorics
 
-The combinations and permutations of an indexable object are implemented, with duplicate elements allowed or not. Compared to another Julia package [Combinatorics](https://github.com/JuliaMath/Combinatorics.jl), the iterators return tuples instead of vectors, which could greatly decrease the memory allocation times and improves the code efficiency.
+The combinations and permutations of an indexable object are implemented, with or without allowing duplicate elements. Compared to another Julia package [Combinatorics](https://github.com/JuliaMath/Combinatorics.jl), these iterators return tuples instead of vectors, which can significantly reduce memory allocation and improve code efficiency.
 
 [`Combinatorics{M, C}`](@ref) is the abstract type of all combinatorial algorithms. It has two type parameters:
 * `M`: the number of elements to be taken
 * `C`: the type of the collection of candidate elements
-To avoid memory allocation, the iteration of a concrete combinatorial algorithm returns a tuple, whose length is `M` and eltype is `eltype(C)`.
+
+To avoid memory allocation, the iteration of a concrete combinatorial algorithm returns a tuple whose length is `M` and eltype is `eltype(C)`.
 
 ### Combinations and DuplicateCombinations
 
-[`Combinations{M, C}`](@ref) and [`DuplicateCombinations{M, C}`](@ref) generate all the combinations of `M` elements from an indexable collection whose type is `C`, with the differences being that the former forbids duplicate elements in the combinations while the latter allows.
+[`Combinations{M, C}`](@ref) and [`DuplicateCombinations{M, C}`](@ref) generate all the combinations of `M` elements from an indexable collection whose type is `C`. They differ in that the former forbids duplicate elements in the combinations while the latter allows.
 
 All combinations of 2 integers taken from 1 to 3 without duplicate:
 ```@example toolkit
@@ -64,7 +65,7 @@ DuplicateCombinations{2}(1:3) |> collect
 
 ### Permutations and DuplicatePermutations
 
-[`Permutations{M, C}`](@ref) and [`DuplicatePermutations{M, C}`](@ref) generate all the permutations of `M` elements from an indexable collection whose type is `C`, with the differences being that the former forbids duplicate elements in the permutations while the latter allows.
+[`Permutations{M, C}`](@ref) and [`DuplicatePermutations{M, C}`](@ref) generate all the permutations of `M` elements from an indexable collection whose type is `C`. They differ in that the former forbids duplicate elements in the permutations while the latter allows.
 
 All permutations of 2 integers taken from 1 to 3 without duplicate:
 ```@example toolkit
@@ -88,15 +89,15 @@ DuplicatePermutations
 
 ## Traits
 
-Trait functions and trait types that are useful to the package are defined.
+Trait functions and trait types that are useful for the package are defined.
 
-Generally speaking, traits in Julia could fall into two categories according to their usages, the first may be term as "type helpers" and the second are usually called "Holy traits" named after [Tim Holy](https://github.com/timholy). Type helpers aim at the inquiry, alteration and computation of the compile-time information of types, while Holy traits can be applied as an alternative to multi-inheritance by use of the Julia multidispatch feature.
+Generally speaking, traits in Julia can be categorized into two types according to their usage. The first may be termed "type helpers," and the second are usually called "Holy traits" named after [Tim Holy](https://github.com/timholy). Type helpers aim at the inquiry, alteration, and computation of compile-time information of types, while Holy traits can be applied as an alternative to multi-inheritance using Julia's multidispatch feature.
 
 ### Type helpers
 
-Type helpers are important for the generic programming in Julia, especially in the design of generic interfaces and abstract types.
+Type helpers are important for generic programming in Julia, especially in the design of generic interfaces and abstract types.
 
-Let's see a simple situation, i.e. the elemental addition of two vectors of numbers. The numbers can assume different types and the type of the result depends on both of them, for example, the result between two vectors of integers is a vector of integers while that between a vector of integers and a vector of floats is a vector of floats. Of course, one can explicitly define every elemental addition function between any two different types of vectors of numbers, like this:
+Consider a simple example: the element-wise addition of two vectors of numbers. The numbers can assume different types, and the type of the result depends on both of them. For example, the result of adding two vectors of integers is a vector of integers, while that between a vector of integers and a vector of floats is a vector of floats. Of course, one can explicitly define every element-wise addition function between any two different types of vectors of numbers, like this:
 ```julia
 # wrong design pattern
 
@@ -111,9 +112,9 @@ end
 ...
 ...
 ```
-Writing down all such methods is already a heavy repetition. What's worse, you will quickly find that a lot more functions, such as the elemental subtraction, elemental multiplication and elemental division, are waiting for you to implement. This is a total disaster.
+Writing down all such methods is already a heavy repetition. What's worse, you will quickly find that many more functions, such as element-wise subtraction, multiplication, and division, are waiting for you to implement. This is a total disaster.
 
-The correct strategy is to define the promotion rule of any two types of numbers and use it to define the type of the result:
+The correct strategy is to define the promotion rule for any two types of numbers and use it to define the type of the result:
 ```julia
 # correct design pattern
 
@@ -133,17 +134,17 @@ end
 ...
 ...
 ```
-The promotion rule applies equally to all the arithmetic operations on numbers. Therefore, tedious code repetition could be avoided with it. In fact, similar promotion rules have already been defined in Julia base, and the default implementations of arithmetic operations in Julia are indeed based on them (see [`Base.promote_rule`](https://docs.julialang.org/en/v1/base/base/#Base.promote_type) and [`Base.promote_type`](https://docs.julialang.org/en/v1/base/base/#Base.promote_rule)). When new user-defined numeric types are introduced, the only things you need to do is to add new promotion rules and implement a few basic arithmetic functions for these new types. Then quite a lot of generic codes could apply to them without any modification.
+The promotion rule applies equally to all arithmetic operations on numbers. Therefore, tedious code repetition can be avoided with it. In fact, similar promotion rules have already been defined in Julia base, and the default implementations of arithmetic operations in Julia are indeed based on them (see [`Base.promote_rule`](https://docs.julialang.org/en/v1/base/base/#Base.promote_type) and [`Base.promote_type`](https://docs.julialang.org/en/v1/base/base/#Base.promote_rule)). When new user-defined numeric types are introduced, the only things you need to do are add new promotion rules and implement a few basic arithmetic functions for these new types. Then quite a lot of generic code can apply to them without any modification.
 
 #### Type helpers with type parameters
 
-The input and output types of a promotion rule are known at compile time, thus, the promotion rule is a trait function aiming at the computation of compile-time information of types. Trait functions dealing with the inquiries of compile-time information of types are also widely used in Julia, such as the [`eltype`](https://docs.julialang.org/en/v1/base/collections/#Base.eltype) function of [`Vector`](https://docs.julialang.org/en/v1/base/arrays/#Base.Vector):
+The input and output types of a promotion rule are known at compile time; thus, the promotion rule is a trait function aimed at computing compile-time information of types. Trait functions dealing with the inquiries of compile-time information of types are also widely used in Julia, such as the [`eltype`](https://docs.julialang.org/en/v1/base/collections/#Base.eltype) function of [`Vector`](https://docs.julialang.org/en/v1/base/arrays/#Base.Vector):
 ```jldoctest traits
 julia> eltype(Vector{String})
 String
 ```
 
-For a user-defined parametric type, it is also useful to provide an inquiry function to access to the type parameters:
+For a user-defined parametric type, it is also useful to provide an inquiry function to access the type parameters:
 ```jldoctest traits
 julia> struct Hi{T<:Number}
            content::T
@@ -153,23 +154,23 @@ julia> struct Hi{T<:Number}
 Int64
 ```
 
-However, the above defined function `contenttype` could not apply to a [`UnionAll`](https://docs.julialang.org/en/v1/manual/types/#UnionAll-Types) type, such as `Hi{<:Real}`:
+However, the above defined function `contenttype` cannot apply to a [`UnionAll`](https://docs.julialang.org/en/v1/manual/types/#UnionAll-Types) type, such as `Hi{<:Real}`:
 ```jldoctest traits
 julia> contenttype(Hi{<:Real})
 ERROR: MethodError: no method matching contenttype(::Type{Hi{<:Real}})
 [...]
 ```
 
-In fact in Julia base, all such inquiry functions, e.g., the `eltype` function, work poor for the `UnionAll` types:
+In fact, in Julia base, all such inquiry functions (e.g., the `eltype` function) work poorly for `UnionAll` types:
 ```jldoctest traits
 julia> eltype(Vector{<:Real})
 Any
 ```
-In concept, `eltype(Vector{<:Real}` should return `Real` instead of `Any` as every element in `Vector{<:Real}` is indeed a real number. Similarly, we expect that `contenttype(Hi{<:Real})` should also give us `Real`. Unfortunately, functions defined in the similar form like this could never achieve such goals. Julia base doesn't provide generic functions to access or change the information of the parameters of a type. In this module, we try to fill this gap with a set of generic trait functions.
+Conceptually, `eltype(Vector{<:Real})` should return `Real` instead of `Any`, as every element in `Vector{<:Real}` is indeed a real number. Similarly, we expect that `contenttype(Hi{<:Real})` should also give us `Real`. Unfortunately, functions defined in a similar form can never achieve such goals. Julia base doesn't provide generic functions to access or modify the parameter information of a type. In this module, we try to fill this gap with a set of generic trait functions.
 
 ##### Access or change the type parameters by their position orders
 
-The most direct information of the parameters of a type is their position orders. We provide [`parametertype`](@ref) to access to them by such information:
+The most direct information about the parameters of a type is their position order. We provide [`parametertype`](@ref) to access them by this information:
 ```jldoctest traits
 julia> parametertype(Hi{<:Real}, 1)
 Real
@@ -189,7 +190,7 @@ julia> parametercount(Hi)
 julia> parametercount(Vector)
 2
 ```
-It is noted that `Vector` has 2 type parameters because it is just a type alias for `Array{T, 1} where T`.
+Note that `Vector` has 2 type parameters because it is just a type alias for `Array{T, 1} where T`.
 
 To change the parameters of a type, [`reparameter`](@ref) can be used:
 ```jldoctest traits
@@ -208,7 +209,7 @@ Hi{Real}
 julia> reparameter(Hi{Int64}, 1, Real, true)
 Hi{<:Real}
 ```
-We want to remark that by providing the fourth positional argument with the `true` value, a `UnionAll` type could be generated. When the fourth positional argument is omitted, it is actually determined by another trait function, i.e., [`isparameterbound`](@ref). This function judges whether an input type should be considered as the upper bound of the new parameter of a type. By default, it is defined to be
+Note that by providing the fourth positional argument with the `true` value, a `UnionAll` type can be generated. When the fourth positional argument is omitted, it is actually determined by another trait function, i.e., [`isparameterbound`](@ref). This function judges whether an input type should be considered as the upper bound of the new parameter of a type. By default, it is defined to be
 ```julia
 isparameterbound(::Type{}, ::Val{}, ::Type{D}) where D = !isconcretetype(D)
 isparameterbound(::Type{}, ::Val{}, ::Any) = false
@@ -246,7 +247,7 @@ Matrix{Real} (alias for Array{Real, 2})
 julia> fulltype(Vector{Int64}, Tuple{Real, 2}, (true, false))
 Matrix{<:Real} (alias for Array{<:Real, 2})
 ```
-Like [`reparameter`](@ref), the last positional argument of [`fulltype`](@ref) could determine whether the corresponding types specified by the type parameters of the input `Tuple` should be considered as the upper bounds of the new parameters of a type. When this argument is omitted, it is determined by another trait function [`isparameterbounds`](@ref), which successively calls the [`isparameterbound`](@ref) function to determine the behaviors for all the parameters of a type as the literal indicates.
+Like [`reparameter`](@ref), the last positional argument of [`fulltype`](@ref) can determine whether the corresponding types specified by the type parameters of the input `Tuple` should be considered as the upper bounds of the new parameters of a type. When this argument is omitted, it is determined by another trait function [`isparameterbounds`](@ref), which successively calls the [`isparameterbound`](@ref) function to determine the behaviors for all the parameters of a type as the literal indicates.
 
 ##### Associate type parameters with names
 
@@ -341,7 +342,7 @@ Here, the last positional argument can be omitted whose default value would be d
 
 #### Type helpers with predefined contents
 
-Julia abstract types don't have any field or attribute. They are only tags on the type tree. However, we may expect sometimes an abstract type to possess some kind of predefined content so that the design of some methods could be highly simplified. For example, we may need an abstract type that describes a composite vector. Apparently, it should have a field that is the vector contained in it. Of course, we can appoint a fixed field name with it and force every concrete subtype must contain such a field. In such a design pattern, the name of this field in every concrete subtype must be kept unchanged, which may be annoying when it conflicts with that of another field. What's worse, a predefined content of an abstract type is not always limited to a certain field. Maybe we need more than one fields to construct such a content. The just mentioned design pattern cannot deal with such situations.
+Julia abstract types don't have any field or attribute. They are only tags on the type tree. However, we may sometimes expect an abstract type to possess some kind of predefined content so that the design of some methods can be highly simplified. For example, we may need an abstract type that describes a composite vector. Apparently, it should have a field that is the vector contained in it. Of course, we can appoint a fixed field name and force every concrete subtype to contain such a field. In such a design pattern, the name of this field in every concrete subtype must be kept unchanged, which may be annoying when it conflicts with that of another field. What's worse, a predefined content of an abstract type is not always limited to a certain field. Maybe we need more than one field to construct such a content. The design pattern mentioned above cannot deal with such situations.
 
 Here, we provide a set of trait functions to help the design of abstract types with predefined contents. We take the case of composite vector for illustration, and the generalization to other situations is straightforward. First, the trait function [`contentnames`](@ref) should be overloaded to define the names of the predefined contents:
 ```jldoctest traits
@@ -408,15 +409,15 @@ julia> v = BeyondSingleField([1, 2, 3], [4, 5, 6])
  5
  6
 ```
-Note that for the method overloading of [`getcontent`](@ref), the second argument is of type `Val{:content}`. This is convenient because in principle an abstract type could have more than only one predefined content, thus, the behaviors of the [`getcontent`](@ref) function could be defined separately for different predefined contents in this way. In fact, the function call `getcontent(m, contentname)` is just an alias for `getcontent(m, contentname|>Val)`.
+Note that for the method overloading of [`getcontent`](@ref), the second argument is of type `Val{:content}`. This is convenient because in principle an abstract type could have more than one predefined content, thus, the behaviors of the [`getcontent`](@ref) function could be defined separately for different predefined contents in this way. In fact, the function call `getcontent(m, contentname)` is just an alias for `getcontent(m, contentname|>Val)`.
 
 ### Holy traits
 
-As an emergent feature of Julia, basically speaking, a Holy trait is a Julia type that could direct the generic function of a user-defined type to a certain implementation based on the Julia multi-dispatch mechanism. For different user-defined types, they could be assigned with different Holy traits, leading to different implementations of the same generic interface. Since the information of Holy traits are known at compile time, such design pattern doesn't affect the runtime efficiency as long as type stability is ensured.
+A Holy trait, an emergent feature of Julia, is a type that can direct the generic function of a user-defined type to a certain implementation based on Julia's multi-dispatch mechanism. For different user-defined types, they can be assigned different Holy traits, leading to different implementations of the same generic interface. Since the information of Holy traits is known at compile time, this design pattern doesn't affect runtime efficiency as long as type stability is ensured.
 
-#### Alternative of multi-inheritance
+#### Alternative to multi-inheritance
 
-Maybe the most common application of Holy traits is to serve as the alternative of multi-inheritance. Let's see a simple scenario. You have defined an abstract type. It is natural to demand that for every concrete subtype of it, a pair of instances could be compared and judge whether they are equivalent to each other by the value. Unfortunately, for a new user-defined type, the default `==` function in Julia actually judges whether they are the same object, but not equal to each other by the value. Therefore, you need to define your own `==` function for this abstract type. However, you may need define a lot of abstract types when you are developing a Julia package. It is annoying if such simple functions must be written for each of them. In other languages like Python, this could be solved with the help of multi-inheritance. But Julia does not support multi-inheritance. The common way is to use Holy traits. For example, the above issue could be solved like this:
+Perhaps the most common application of Holy traits is as an alternative to multi-inheritance. Let's consider a simple scenario. You have defined an abstract type. It is natural to demand that for every concrete subtype of it, a pair of instances could be compared to judge whether they are equivalent by value. Unfortunately, for a new user-defined type, the default `==` function in Julia actually judges whether they are the same object, not equal by value. Therefore, you need to define your own `==` function for this abstract type. However, you may need to define many abstract types when developing a Julia package. It is annoying if such simple functions must be written for each of them. In other languages like Python, this could be solved with multi-inheritance. But Julia does not support multi-inheritance. The common approach is to use Holy traits. For example, the above issue could be solved like this:
 ```@example traits
 struct Equivalence end
 const equivalence = Equivalence()
@@ -481,7 +482,7 @@ a₁ == a₂
 ```@example traits
 @benchmark $a₁ == $a₂
 ```
-At runtime of the generated `==` function, it compares the values of `getfield(o₁, 1)` and `getfield(o₂, 1)`, `getfield(o₁, 2)` and `getfield(o₂, 2)`, etc., whose types are known at compile time. Therefore, type stability could be ensured.
+At runtime of the generated `==` function, it compares the values of `getfield(o₁, 1)` and `getfield(o₂, 1)`, `getfield(o₁, 2)` and `getfield(o₂, 2)`, etc., whose types are known at compile time. Therefore, type stability can be ensured.
 
 #### EfficientOperations
 
@@ -534,7 +535,7 @@ efficientoperations
 
 ## Composite structures
 
-In principle, Julia is not an object-oriented programming language. For example, only abstract types can be inherited so that subtype cannot inherit fields from their parents. Therefore, Julia prefers composition over inheritance. However, to make a new concrete type behaves much alike another one, tedious repetitions of redefining the generic interfaces are usually not avoidable, especially for the basic types in Julia base. In this module, we implement two such composited types, [`CompositeVector`](@ref) and [`CompositeDict`](@ref), for the sake of future usages.
+Julia is not an object-oriented programming language. For example, only abstract types can be inherited so that subtypes cannot inherit fields from their parents. Therefore, Julia prefers composition over inheritance. However, to make a new concrete type behave much like another one, tedious repetitions of redefining the generic interfaces are usually not avoidable, especially for the basic types in Julia base. In this module, we implement two such composite types, [`CompositeVector`](@ref) and [`CompositeDict`](@ref), for the sake of future usage.
 
 ### CompositeVector
 
@@ -576,7 +577,7 @@ CompositeVector
 
 A [vector space](https://en.wikipedia.org/wiki/Vector_space) is a linear space, in which the addition of vectors and multiplication of a vector by a scalar are defined.
 
-Vector spaces are frequently encountered in physics, e.g. the Hilbert space in quantum mechanics. In this submodule, we only implement those with finite dimensions. We want to remark that in our implementation, a vector space is a subtype of an abstract vector, therefore, the bases always possess a order, which means, two vector spaces are not considered to be equal to each other even if their corresponding actual mathematical spaces are the same but the orders of the bases are different.
+Vector spaces are frequently encountered in physics, e.g. the Hilbert space in quantum mechanics. In this submodule, we only implement those with finite dimensions. Note that in our implementation, a vector space is a subtype of an abstract vector, therefore, the bases always possess an order, which means two vector spaces are not considered equal to each other even if their corresponding actual mathematical spaces are the same but the orders of the bases are different.
 
 ### VectorSpace
 
