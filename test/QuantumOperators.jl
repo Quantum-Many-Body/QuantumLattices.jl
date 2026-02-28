@@ -5,8 +5,30 @@ using QuantumLattices: ZeroAtLeast, ⊗, add!, div!, expand, mul!, id, rank, sub
 using QuantumLattices.QuantumOperators
 using QuantumLattices.Toolkit: Float, contentnames, isparameterbound, parameternames, parametertype, subscript, superscript
 
-include("TestUtils.jl")
-using .TestUtils
+import QuantumLattices: permute
+import QuantumLattices.QuantumOperators: script
+
+# Bose
+struct Bose{O<:Real, S<:Real} <: OperatorIndex
+    orbital::O
+    nambu::S
+end
+@inline Base.adjoint(id::Bose) = Bose(id.orbital, 3-id.nambu)
+@inline script(id::Bose, ::Val{:orbital}; kwargs...) = id.orbital
+@inline script(id::Bose, ::Val{:nambu}; kwargs...) = id.nambu==2 ? "\\dagger" : ""
+latexformat(Bose, LaTeX{(:nambu,), (:orbital,)}('c'))
+function permute(u₁::Bose, u₂::Bose)
+    @assert u₁ ≠ u₂ "permute error: permuted operator units should not be equal to each other."
+    if (u₁.nambu == 3-u₂.nambu) && (u₁.orbital == u₂.orbital)
+        if u₁.nambu == 2
+            return (Operator(1), Operator(1, u₂, u₁))
+        else
+            return (Operator(-1), Operator(1, u₂, u₁))
+        end
+    else
+        return (Operator(1, u₂, u₁),)
+    end
+end
 
 @testset "scalartype" begin
     @test scalartype(1) == scalartype(Int) == Int
@@ -15,31 +37,31 @@ using .TestUtils
 end
 
 @testset "ID" begin
-    @test promote_type(ZeroAtLeast{AID{Int, Int}, 1}, ZeroAtLeast{AID{Int, Int}}) == ZeroAtLeast{AID{Int, Int}}
-    @test promote_type(ZeroAtLeast{AID{Int, Int}}, ZeroAtLeast{AID{Int, Int}, 1}) == ZeroAtLeast{AID{Int, Int}}
-    @test promote_type(ZeroAtLeast{AID{Int, Int}}, ZeroAtLeast{AID{Int, Float}}) == ZeroAtLeast{AID{Int, <:Real}}
-    @test promote_type(Tuple{}, ZeroAtLeast{AID{Int, Int}}) == ZeroAtLeast{AID{Int, Int}}
-    @test promote_type(Tuple{}, ZeroAtLeast{AID{Int, Int}, 2}) == ZeroAtLeast{AID{Int, Int}}
+    @test promote_type(ZeroAtLeast{Bose{Int, Int}, 1}, ZeroAtLeast{Bose{Int, Int}}) == ZeroAtLeast{Bose{Int, Int}}
+    @test promote_type(ZeroAtLeast{Bose{Int, Int}}, ZeroAtLeast{Bose{Int, Int}, 1}) == ZeroAtLeast{Bose{Int, Int}}
+    @test promote_type(ZeroAtLeast{Bose{Int, Int}}, ZeroAtLeast{Bose{Int, Float}}) == ZeroAtLeast{Bose{Int, <:Real}}
+    @test promote_type(Tuple{}, ZeroAtLeast{Bose{Int, Int}}) == ZeroAtLeast{Bose{Int, Int}}
+    @test promote_type(Tuple{}, ZeroAtLeast{Bose{Int, Int}, 2}) == ZeroAtLeast{Bose{Int, Int}}
 
-    sid = AID(1, 1)
-    @test string(sid) == "AID(1, 1)"
+    sid = Bose(1, 1)
+    @test string(sid) == "Bose(1, 1)"
     @test !iszero(sid)
-    @test sid'==AID(1, 2)
+    @test sid'==Bose(1, 2)
     @test hash(sid) == hash((1, 1))
-    @test OperatorIndex[sid] == "AID"
+    @test OperatorIndex[sid] == "Bose"
 
-    cid = (AID(2, 1), AID(Inf, 1))
-    @test cid == (AID(2, 1) ⊗ AID(Inf, 1))
-    @test ⊗(sid, cid) == ⊗(AID(1, 1), AID(2, 1), AID(Inf, 1))
-    @test ⊗(cid, sid) == ⊗(AID(2, 1), AID(Inf, 1), AID(1, 1))
-    @test ⊗(cid, cid) == ⊗(AID(2, 1), AID(Inf, 1), AID(2, 1), AID(Inf, 1))
-    @test cid == ZeroAtLeast(AID, (2, Inf), (1, 1))
+    cid = (Bose(2, 1), Bose(Inf, 1))
+    @test cid == (Bose(2, 1) ⊗ Bose(Inf, 1))
+    @test ⊗(sid, cid) == ⊗(Bose(1, 1), Bose(2, 1), Bose(Inf, 1))
+    @test ⊗(cid, sid) == ⊗(Bose(2, 1), Bose(Inf, 1), Bose(1, 1))
+    @test ⊗(cid, cid) == ⊗(Bose(2, 1), Bose(Inf, 1), Bose(2, 1), Bose(Inf, 1))
+    @test cid == ZeroAtLeast(Bose, (2, Inf), (1, 1))
     @test cid|>propertynames == (:orbitals, :nambus)
     @test cid.orbitals == (2, Inf)
     @test cid.nambus == (1, 1)
-    @test cid|>eltype == AID{<:Real, Int}
+    @test cid|>eltype == Bose{<:Real, Int}
     @test cid|>rank == cid|>typeof|>rank == 2
-    @test cid'==(AID(Inf, 2), AID(2, 2))
+    @test cid'==(Bose(Inf, 2), Bose(2, 2))
     @test ishermitian(cid)==false
     @test ishermitian(cid ⊗ cid')
 end
@@ -52,50 +74,50 @@ end
     @test valtype(OperatorProd) == parametertype(OperatorProd, :value) == parametertype(OperatorProd, 1) == Any
     @test valtype(OperatorProd{Int}) == parametertype(OperatorProd{Int}, :value) == parametertype(OperatorProd{Int}, 1) == Int
     @test idtype(OperatorProd{<:Number}) == parametertype(OperatorProd{<:Number}, :id) == parametertype(OperatorProd{<:Number}, 2) == Tuple
-    @test idtype(OperatorProd{<:Number, ZeroAtLeast{AID}}) == parametertype(OperatorProd{<:Number, ZeroAtLeast{AID}}, :id) == parametertype(OperatorProd{<:Number, ZeroAtLeast{AID}}, 2) == ZeroAtLeast{AID}
+    @test idtype(OperatorProd{<:Number, ZeroAtLeast{Bose}}) == parametertype(OperatorProd{<:Number, ZeroAtLeast{Bose}}, :id) == parametertype(OperatorProd{<:Number, ZeroAtLeast{Bose}}, 2) == ZeroAtLeast{Bose}
 
     @test promote_type(Operator{Int}, Operator) == Operator
     @test promote_type(Operator, Operator{Int}) == Operator
     @test promote_type(Operator{Int}, Operator{Float}) == Operator{Float}
-    @test promote_type(Operator{Int, ZeroAtLeast{AID{Int, Int}, 2}}, Operator{Float, ZeroAtLeast{AID{Int, Int}, 2}}) == Operator{Float, ZeroAtLeast{AID{Int, Int}, 2}}
-    @test promote_type(Operator{Int, ZeroAtLeast{AID}}, Operator{Float, ZeroAtLeast{AID}}) == Operator{Float, <:ZeroAtLeast{AID}}
+    @test promote_type(Operator{Int, ZeroAtLeast{Bose{Int, Int}, 2}}, Operator{Float, ZeroAtLeast{Bose{Int, Int}, 2}}) == Operator{Float, ZeroAtLeast{Bose{Int, Int}, 2}}
+    @test promote_type(Operator{Int, ZeroAtLeast{Bose}}, Operator{Float, ZeroAtLeast{Bose}}) == Operator{Float, <:ZeroAtLeast{Bose}}
     @test promote_type(Operator{Int}, Float) == Operator{Float}
 
-    opt = Operator(2.0, AID(1, 1))
+    opt = Operator(2.0, Bose(1, 1))
     @test deepcopy(opt)==expand(opt) && isequal(deepcopy(opt), expand(opt))
-    @test eltype(opt) == eltype(typeof(opt)) == AID{Int, Int}
-    @test collect(opt) == [AID(1, 1)]
+    @test eltype(opt) == eltype(typeof(opt)) == Bose{Int, Int}
+    @test collect(opt) == [Bose(1, 1)]
     @test opt|>rank == opt|>typeof|>rank == 1
     @test opt|>valtype == opt|>typeof|>valtype == parametertype(opt|>typeof, :value) == Float
-    @test opt|>idtype == opt|>typeof|>idtype == parametertype(opt|>typeof, :id) == ZeroAtLeast{AID{Int, Int}, 1}
+    @test opt|>idtype == opt|>typeof|>idtype == parametertype(opt|>typeof, :id) == ZeroAtLeast{Bose{Int, Int}, 1}
     @test opt|>scalartype == opt|>typeof|>scalartype == Float
     @test opt|>isequivalenttoscalar == opt|>typeof|>isequivalenttoscalar == false
     @test value(opt) == 2.0
-    @test id(opt) == ⊗(AID(1, 1))
-    @test replace(opt, 3) == Operator(3, AID(1, 1))
+    @test id(opt) == ⊗(Bose(1, 1))
+    @test replace(opt, 3) == Operator(3, Bose(1, 1))
     @test !iszero(opt) && iszero(replace(opt, 0))
     @test isapprox(opt, replace(opt, opt.value+10^-6); atol=10^-5)
     @test length(opt) == 1 && firstindex(opt) == 1 && lastindex(opt) ==1
-    @test opt[1]==opt[begin]==opt[end]==AID(1, 1) && opt[1:1]==Operator(1.0, AID(1, 1))
-    @test split(opt) == (2.0, AID(1, 1))
+    @test opt[1]==opt[begin]==opt[end]==Bose(1, 1) && opt[1:1]==Operator(1.0, Bose(1, 1))
+    @test split(opt) == (2.0, Bose(1, 1))
     @test opt|>typeof|>one == opt|>one == Operator(1.0)
-    @test convert(Operator{Float, Tuple{AID{Int, Int}}}, Operator(2, AID(1, 1))) == Operator(2.0, AID(1, 1))
+    @test convert(Operator{Float, Tuple{Bose{Int, Int}}}, Operator(2, Bose(1, 1))) == Operator(2.0, Bose(1, 1))
     @test Operator(2.0) == Operator(2.0)
-    @test string(opt) == "Operator(2.0, AID(1, 1))"
-    @test opt' == Operator(2.0, AID(1, 2))
+    @test string(opt) == "Operator(2.0, Bose(1, 1))"
+    @test opt' == Operator(2.0, Bose(1, 2))
     @test ishermitian(opt) == false
-    @test ishermitian(Operator(2.0, AID(1, 1), AID(1, 2)))
-    @test sequence(opt, Dict(AID(1, 1)=>1, AID(1, 2)=>2)) == (1,)
-    @test convert(typeof(opt), AID(1, 1)) == Operator(1.0, AID(1, 1))
-    @test convert(Operator{Float, <:ZeroAtLeast{AID}}, AID(1, 1)) == Operator(1.0, AID(1, 1))
+    @test ishermitian(Operator(2.0, Bose(1, 1), Bose(1, 2)))
+    @test sequence(opt, Dict(Bose(1, 1)=>1, Bose(1, 2)=>2)) == (1,)
+    @test convert(typeof(opt), Bose(1, 1)) == Operator(1.0, Bose(1, 1))
+    @test convert(Operator{Float, <:ZeroAtLeast{Bose}}, Bose(1, 1)) == Operator(1.0, Bose(1, 1))
     @test convert(Operator{Float, Tuple{}}, 2) == Operator(2.0)
-    @test convert(Operator{Float, <:ZeroAtLeast{AID}}, 2) == Operator(2.0)
+    @test convert(Operator{Float, <:ZeroAtLeast{Bose}}, 2) == Operator(2.0)
 
-    opt₁ = Operator(1.0, AID(1, 1))
-    opt₂ = Operator(2.0, AID(1, 2))
+    opt₁ = Operator(1.0, Bose(1, 1))
+    opt₂ = Operator(2.0, Bose(1, 2))
     opts = Operators(opt₁, opt₂)
     @test opts == Operators{eltype(opts)}(opt₁, opt₂) == OperatorSum(opt₁, opt₂) == OperatorSum((opt₁, opt₂)) == OperatorSum{eltype(opts)}(opt₁, opt₂) == OperatorSum{eltype(opts)}((opt₁, opt₂)) == expand(opts)
-    @test eltype(opts) == eltype(typeof(opts)) == Operator{Float, ZeroAtLeast{AID{Int, Int}, 1}}
+    @test eltype(opts) == eltype(typeof(opts)) == Operator{Float, ZeroAtLeast{Bose{Int, Int}, 1}}
     @test scalartype(opts) == scalartype(typeof(opts)) == Float
     @test isequivalenttoscalar(opts) == isequivalenttoscalar(typeof(opts)) == false
     @test update!(opts) == opts
@@ -103,14 +125,14 @@ end
     @test length(opts) == 2
     @test summary(opts) == "Operators"
     @test string(opts) == @sprintf "Operators with 2 Operator\n  %s\n" join(opts, "\n  ")
-    @test haskey(opts, id(opt₁)) && haskey(opts, id(opt₂)) && !haskey(opts, ⊗(AID(3, 1)))
+    @test haskey(opts, id(opt₁)) && haskey(opts, id(opt₂)) && !haskey(opts, ⊗(Bose(3, 1)))
     @test opts[1]==opts[begin]==opt₁ && opts[2]==opts[end]==opt₂
     @test opts[1:2] == opts[:] == opts
     @test empty(opts) == empty!(deepcopy(opts)) == zero(opts)
     @test !iszero(opts) && iszero(zero(opts))
     @test !invoke(iszero, Tuple{OperatorSet}, opts) && invoke(iszero, Tuple{OperatorSet}, zero(opts))
-    optp₁ = promote_type(typeof(opts), OperatorSum{Operator{Complex{Int}, NTuple{2, AID{Float, Float}}}, NTuple{2, AID{Float, Float}}})
-    optp₂ = OperatorSum{Operator{Complex{Float}, <:Tuple{AID, Vararg{AID{Float, Float}}}}, Tuple{AID, Vararg{AID{Float, Float}}}}
+    optp₁ = promote_type(typeof(opts), OperatorSum{Operator{Complex{Int}, NTuple{2, Bose{Float, Float}}}, NTuple{2, Bose{Float, Float}}})
+    optp₂ = OperatorSum{Operator{Complex{Float}, <:Tuple{Bose, Vararg{Bose{Float, Float}}}}, Tuple{Bose, Vararg{Bose{Float, Float}}}}
     @test optp₁ == optp₂
     @test isapprox(opts, deepcopy(opts)) && isapprox(opts, opts+10^-6; atol=10^-5) && isapprox(opts+10^-6, opts; atol=10^-5)
     @test !isapprox(opts, opts+10^-6) && !isapprox(opts+10^-6, opts)
@@ -122,31 +144,31 @@ end
     @test mul!(deepcopy(opts), 2.0) == opts*2
     @test div!(deepcopy(opts), 2.0) == opts/2
 
-    @test operatortype(AID(1, 1)) == operatortype(AID{Int, Int}) == Operator{Int, Tuple{AID{Int, Int}}}
-    @test operatortype(AID) == Operator{Int, <:Tuple{AID}}
-    @test operatortype(opt) == operatortype(typeof(opt)) == Operator{Float, Tuple{AID{Int, Int}}}
+    @test operatortype(Bose(1, 1)) == operatortype(Bose{Int, Int}) == Operator{Int, Tuple{Bose{Int, Int}}}
+    @test operatortype(Bose) == Operator{Int, <:Tuple{Bose}}
+    @test operatortype(opt) == operatortype(typeof(opt)) == Operator{Float, Tuple{Bose{Int, Int}}}
     @test operatortype(opts) == operatortype(typeof(opts)) == eltype(opts)
 
-    @test zero(AID(1, 1)) == zero(Operator(1, AID(1, 1))) == zero(Operator(1, AID(1, 1))+Operator(1, AID(2, 1)))
-    @test conj(AID(1, 1)) == AID(1, 1)
-    @test conj(Operator(2im, AID(2, 1), AID(1, 1))) == Operator(-2im, AID(2, 1), AID(1, 1))
-    @test conj(Operator(2im, AID(2, 1), AID(1, 1))+Operator(2, AID(1, 1), AID(1, 1))) == Operator(-2im, AID(2, 1), AID(1, 1))+Operator(2, AID(1, 1), AID(1, 1))
-    @test dot(Operator(2im, AID(1, 1)), Operator(2im, AID(1, 1), AID(2, 1))) == Operator(4, AID(1, 1), AID(1, 1), AID(2, 1))
-    @test dot(Operator(2im, AID(2, 1), AID(1, 1)), 2) == Operator(-4im, AID(2, 1), AID(1, 1))
-    @test dot(2im, Operator(2im, AID(2, 1), AID(1, 1))) == Operator(4, AID(2, 1), AID(1, 1))
+    @test zero(Bose(1, 1)) == zero(Operator(1, Bose(1, 1))) == zero(Operator(1, Bose(1, 1))+Operator(1, Bose(2, 1)))
+    @test conj(Bose(1, 1)) == Bose(1, 1)
+    @test conj(Operator(2im, Bose(2, 1), Bose(1, 1))) == Operator(-2im, Bose(2, 1), Bose(1, 1))
+    @test conj(Operator(2im, Bose(2, 1), Bose(1, 1))+Operator(2, Bose(1, 1), Bose(1, 1))) == Operator(-2im, Bose(2, 1), Bose(1, 1))+Operator(2, Bose(1, 1), Bose(1, 1))
+    @test dot(Operator(2im, Bose(1, 1)), Operator(2im, Bose(1, 1), Bose(2, 1))) == Operator(4, Bose(1, 1), Bose(1, 1), Bose(2, 1))
+    @test dot(Operator(2im, Bose(2, 1), Bose(1, 1)), 2) == Operator(-4im, Bose(2, 1), Bose(1, 1))
+    @test dot(2im, Operator(2im, Bose(2, 1), Bose(1, 1))) == Operator(4, Bose(2, 1), Bose(1, 1))
 
     @test +opt == opt
-    @test -opt == Operator(-2.0, AID(1, 1))
-    @test opt*2 == 2*opt == Operator(4.0, AID(1, 1))
-    @test opt/2 == Operator(1.0, AID(1, 1))
-    @test opt^2 == opt*opt == Operator(4.0, AID(1, 1), AID(1, 1))
+    @test -opt == Operator(-2.0, Bose(1, 1))
+    @test opt*2 == 2*opt == Operator(4.0, Bose(1, 1))
+    @test opt/2 == Operator(1.0, Bose(1, 1))
+    @test opt^2 == opt*opt == Operator(4.0, Bose(1, 1), Bose(1, 1))
     @test opt+1 == 1+opt == Operators(Operator(1), opt)
     @test 1-opt == Operators(Operator(1), -opt)
     @test opt-1 == Operators(opt, Operator(-1))
-    @test 2*AID(1, 1) == AID(1, 1)*2 == Operator(2, AID(1, 1))
-    @test AID(1, 1)*AID(1, 2) == Operator(1, AID(1, 1), AID(1, 2))
-    @test AID(1, 1)*Operator(2, AID(1, 2)) == Operator(2, AID(1, 1), AID(1, 2)) == Operator(2, AID(1, 1))*AID(1, 2)
-    @test Operator(2, AID(1, 1))//3 == Operator(2//3, AID(1, 1))
+    @test 2*Bose(1, 1) == Bose(1, 1)*2 == Operator(2, Bose(1, 1))
+    @test Bose(1, 1)*Bose(1, 2) == Operator(1, Bose(1, 1), Bose(1, 2))
+    @test Bose(1, 1)*Operator(2, Bose(1, 2)) == Operator(2, Bose(1, 1), Bose(1, 2)) == Operator(2, Bose(1, 1))*Bose(1, 2)
+    @test Operator(2, Bose(1, 1))//3 == Operator(2//3, Bose(1, 1))
 
     @test +opts == opts
     @test -opts == Operators(-opt₁, -opt₂)
@@ -167,32 +189,32 @@ end
 end
 
 @testset "LaTeX" begin
-    @test latexname(AID) == :AID
-    @test latexformat(AID) == LaTeX{(:nambu,), (:orbital,)}('c')
+    @test latexname(Bose) == :Bose
+    @test latexformat(Bose) == LaTeX{(:nambu,), (:orbital,)}('c')
 
     latex = LaTeX{(:nambu,), (:orbital,)}('d')
     @test superscript(latex|>typeof) == (:nambu,)
     @test subscript(latex|>typeof) == (:orbital,)
-    latexformat(AID, latex)
+    latexformat(Bose, latex)
 
-    aid = AID(1, 2)
+    aid = Bose(1, 2)
     @test script(aid, latex, Val(:BD)) == 'd'
     @test script(aid, latex, Val(:SP)) == ("\\dagger",)
     @test script(aid, latex, Val(:SB)) == (1,)
     @test script(aid, Val(:spin)) == ""
     @test String(latexify(aid; env=:raw)) == "d^{\\dagger}_{1}"
 
-    opt = Operator(1.0, AID(2, 2), AID(1, 1))
+    opt = Operator(1.0, Bose(2, 2), Bose(1, 1))
     @test String(latexify(opt; env=:raw)) == "d^{\\dagger}_{2}d^{}_{1}"
     io = IOBuffer()
     show(io, MIME"text/latex"(), opt)
     @test String(take!(io)) == "\$d^{\\dagger}_{2}d^{}_{1}\$"
     @test String(latexify(Operator(1.0, aid, aid); env=:raw)) == "(d^{\\dagger}_{1})^2"
 
-    latexformat(AID, LaTeX{(:nambu,), (:orbital,)}('c'))
+    latexformat(Bose, LaTeX{(:nambu,), (:orbital,)}('c'))
     opts = Operators(
-            Operator(1.0-1.0im, AID(2, 2), AID(1, 1)),
-            Operator(-1.0, AID(1, 2), AID(1, 1))
+            Operator(1.0-1.0im, Bose(2, 2), Bose(1, 1)),
+            Operator(-1.0, Bose(1, 2), Bose(1, 1))
             )
     str = "\\left(1.0-1.0\\mathit{i}\\right)c^{\\dagger}_{2}c^{}_{1}-c^{\\dagger}_{1}c^{}_{1}"
     @test String(latexify(opts; env=:raw)) == str
@@ -208,13 +230,13 @@ struct DoubleCoeff <: LinearTransformation end
 @inline (double::DoubleCoeff)(m::Operator) = replace(m, value(m)*2)
 
 @testset "LinearTransformation" begin
-    m = Operator(1, AID(1, 1))
+    m = Operator(1, Bose(1, 1))
     s = Operators(m)
 
     double = DoubleCoeff()
     @test valtype(double, m) == valtype(typeof(double), typeof(m)) == typeof(m)
     @test valtype(double, s) == valtype(typeof(double), typeof(s)) == typeof(s)
-    @test map!(double, s) == s == Operators(Operator(2, AID(1, 1)))
+    @test map!(double, s) == s == Operators(Operator(2, Bose(1, 1)))
 
     i = LinearFunction(identity)
     @test i==deepcopy(i) && isequal(i, deepcopy(i))
@@ -222,15 +244,15 @@ struct DoubleCoeff <: LinearTransformation end
     @test valtype(LinearFunction{typeof(m), typeof(identity)}, typeof(m)) == typeof(m)
     @test valtype(LinearFunction{typeof(m), typeof(identity)}, typeof(s)) == typeof(s)
 
-    op₀, op₁, op₂ = Operator(1), Operator(2, AID(1, 1)), Operator(3, AID(1, 1), AID(2, 1))
+    op₀, op₁, op₂ = Operator(1), Operator(2, Bose(1, 1)), Operator(3, Bose(1, 1), Bose(2, 1))
     ops = Operators(op₀, op₁, op₂)
     @test LinearFunction{Operator{Int, Tuple{}}}(op->rank(op)==0 ? op : 0)(ops) == Operators(op₀)
-    @test LinearFunction{Operator{Int, Tuple{AID{Int, Int}}}}(op->rank(op)==1 ? op : 0)(ops) == Operators(op₁)
-    @test LinearFunction{Operator{Int, NTuple{2, AID{Int, Int}}}}(op->rank(op)==2 ? op : 0)(ops) == Operators(op₂)
+    @test LinearFunction{Operator{Int, Tuple{Bose{Int, Int}}}}(op->rank(op)==1 ? op : 0)(ops) == Operators(op₁)
+    @test LinearFunction{Operator{Int, NTuple{2, Bose{Int, Int}}}}(op->rank(op)==2 ? op : 0)(ops) == Operators(op₂)
 end
 
 @testset "Permutation" begin
-    id₁, id₂ = AID(1, 1), AID(1, 2)
+    id₁, id₂ = Bose(1, 1), Bose(1, 2)
     opt₀ = Operator(1.5)
     opt₁ = Operator(1.5, id₁, id₂)
     opt₂ = Operator(1.5, id₂, id₁)
@@ -245,10 +267,10 @@ end
 end
 
 @testset "Substitution" begin
-    id₁, id₂ = AID(1, 1), AID(1, 2)
+    id₁, id₂ = Bose(1, 1), Bose(1, 2)
     opt = Operator(1.5, id₁, id₂)
 
-    id₃, id₄ = AID(2, 1), AID(2, 2)
+    id₃, id₄ = Bose(2, 1), Bose(2, 2)
     ops₁ = Operator(2.0, id₃) + Operator(3.0, id₄) + 1
     ops₂ = Operator(2.0, id₃) - Operator(3.0, id₄)
 
