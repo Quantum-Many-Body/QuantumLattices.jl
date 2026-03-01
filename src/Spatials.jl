@@ -684,7 +684,8 @@ abstract type AbstractLattice{N, D<:Number, M} <: AbstractVector{SVector{N, D}} 
 @inline contentnames(::Type{<:AbstractLattice}) = (:name, :coordinates, :vectors)
 @inline Base.:(==)(lattice₁::AbstractLattice, lattice₂::AbstractLattice) = ==(efficientoperations, lattice₁, lattice₂)
 @inline Base.isequal(lattice₁::AbstractLattice, lattice₂::AbstractLattice) = isequal(efficientoperations, lattice₁, lattice₂)
-function Base.show(io::IO, lattice::AbstractLattice)
+@inline Base.show(io::IO, lattice::AbstractLattice) = show(io, MIME"text/plain"(), lattice)
+@inline Base.show(io::IO, ::MIME"text/plain", lattice::AbstractLattice) = begin
     @printf io "%s(%s)\n" lattice|>typeof|>nameof getcontent(lattice, :name)
     len = length(lattice)
     if len > 0
