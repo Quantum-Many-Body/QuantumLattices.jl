@@ -591,7 +591,7 @@ function reset!(gen::OperatorGenerator, bonds::AbstractVector{<:Bond}, hilbert::
     append!(empty!(gen.bonds), bonds)
     merge!(empty!(gen.hilbert), hilbert)
     empty!(gen.operators)
-    merge!(gen.operators.boundary, replace(gen.operators.boundary; vectors=vectors))
+    reset!(gen.operators.boundary, vectors)
     emptybonds = eltype(gen.bonds)[]
     innerbonds, boundbonds = if gen.operators.boundary == plain
         gen.bonds, eltype(gen.bonds)[]

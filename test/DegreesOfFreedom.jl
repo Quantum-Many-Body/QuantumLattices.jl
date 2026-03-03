@@ -483,7 +483,9 @@ end
 
     another = Boundary{(:θ₁, :θ₂)}([0.0, 0.0], [[2.0, 0.0], [0.0, 2.0]])
     @test merge!(deepcopy(bound), another) == another
-    @test replace(bound; values=another.values, vectors=another.vectors) == another
+    @test reset!(deepcopy(bound), another.values) == Boundary{(:θ₁, :θ₂)}(another.values, bound.vectors)
+    @test reset!(deepcopy(bound), another.vectors) == Boundary{(:θ₁, :θ₂)}(bound.values, another.vectors)
+    @test reset!(deepcopy(bound), another.values, another.vectors) == another
 
     @test bound(op) ≈ replace(op, 4.5*exp(2im*pi*0.3))
     @test bound(op, origin=[0.05, 0.15]) ≈ replace(op, 4.5*exp(2im*pi*0.1))
@@ -501,5 +503,7 @@ end
     @test plain(op) == op
     @test plain(ops) == ops
     @test update!(plain) == plain
-    @test replace(plain; values=another.values, vectors=another.vectors) == plain
+    @test reset!(plain, another.values) == plain
+    @test reset!(plain, another.vectors) == plain
+    @test reset!(plain, another.values, another.vectors) == plain
 end

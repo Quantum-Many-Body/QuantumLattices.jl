@@ -1762,14 +1762,31 @@ Merge the values and vectors of the twisted boundary condition from another one.
 end
 
 """
-    replace(bound::Boundary; values=bound.values, vectors=bound.vectors) -> Boundary
+    reset!(bound::Boundary, values::AbstractVector{<:Number}) -> Boundary
+    reset!(bound::Boundary, vectors::AbstractVector{<:AbstractVector{<:Number}}) -> Boundary
+    reset!(bound::Boundary, values::AbstractVector{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}) -> Boundary
 
-Replace the values or vectors of a twisted boundary condition and get the new one.
+Reset the values or vectors of a twisted boundary condition in-place.
 
 !!! note
-    The plain boundary condition keeps plain even when replaced with new values or new vectors.
+    The plain boundary condition keeps plain even when reset with new values or new vectors.
 """
-@inline Base.replace(bound::Boundary; values=bound.values, vectors=bound.vectors) = Boundary{keys(bound)}(values, vectors)
+@inline function reset!(bound::Boundary, values::AbstractVector{<:Number})
+    isempty(keys(bound)) && return bound
+    bound.values .= values
+    return bound
+end
+@inline function reset!(bound::Boundary, vectors::AbstractVector{<:AbstractVector{<:Number}})
+    isempty(keys(bound)) && return bound
+    bound.vectors .= vectors
+    return bound
+end
+@inline function reset!(bound::Boundary, values::AbstractVector{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}})
+    isempty(keys(bound)) && return bound
+    bound.values .= values
+    bound.vectors .= vectors
+    return bound
+end
 
 """
     plain
@@ -1780,6 +1797,5 @@ const plain = Boundary{()}(Float[], SVector{0, Float}[])
 @inline Base.valtype(::Type{typeof(plain)}, M::Type{<:Operator}) = M
 @inline Base.valtype(::Type{typeof(plain)}, M::Type{<:Operators}) = M
 @inline (::typeof(plain))(operator::Operator; kwargs...) = operator
-@inline Base.replace(::(typeof(plain)); kwargs...) = plain
 
 end #module
