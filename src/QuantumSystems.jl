@@ -70,10 +70,6 @@ end
 @inline Base.isequal(index₁::FockIndex, index₂::FockIndex) = isequal(statistics(index₁), statistics(index₂)) && isequal(efficientoperations, index₁, index₂)
 @inline Base.hash(index::FockIndex, h::UInt) = hash((statistics(index), index.orbital, index.spin, index.nambu), h)
 @inline Base.adjoint(index::FockIndex) = FockIndex{statistics(index)}(index.orbital, index.spin, 3-index.nambu)
-@inline @generated function Base.replace(index::FockIndex; kwargs...)
-    exprs = [:(get(kwargs, $name, getfield(index, $name))) for name in QuoteNode.(fieldnames(index))]
-    return :(rawtype(typeof(index)){statistics(index)}($(exprs...)))
-end
 ### requested by show
 @inline showablefields(::Type{<:FockIndex}) = (:orbital, :spin)
 ### requested by Pattern
@@ -587,10 +583,6 @@ end
 @inline Base.isequal(index₁::SpinIndex, index₂::SpinIndex) = isequal(totalspin(index₁), totalspin(index₂)) && isequal(efficientoperations, index₁, index₂)
 @inline Base.hash(index::SpinIndex, h::UInt) = hash((totalspin(index), index.tag), h)
 @inline Base.adjoint(index::SpinIndex) = SpinIndex{totalspin(index)}(spinajointmap[index.tag])
-@inline @generated function Base.replace(index::SpinIndex; kwargs...)
-    exprs = [:(get(kwargs, $name, getfield(index, $name))) for name in QuoteNode.(fieldnames(index))]
-    return :(rawtype(typeof(index)){totalspin(index)}($(exprs...)))
-end
 ### requested by MatrixCoupling
 @inline internalindextype(::Type{SpinIndex}, ::Type{T}) where {T<:Union{Char, Symbol, Colon}} = SpinIndex{:, T}
 @inline internalindextype(::Type{SpinIndex{S}}, ::Type{T}) where {S, T<:Union{Char, Symbol, Colon}} = SpinIndex{S, T}
@@ -1130,10 +1122,6 @@ end
 @inline Base.isequal(index₁::PhononIndex, index₂::PhononIndex) = isequal(kind(index₁), kind(index₂)) && isequal(efficientoperations, index₁, index₂)
 @inline Base.hash(index::PhononIndex, h::UInt) = hash((kind(index), index.direction), h)
 @inline Base.adjoint(index::PhononIndex) = index
-@inline @generated function Base.replace(index::PhononIndex; kwargs...)
-    exprs = [:(get(kwargs, $name, getfield(index, $name))) for name in QuoteNode.(fieldnames(index))]
-    return :(rawtype(typeof(index)){kind(index)}($(exprs...)))
-end
 ### requested by MatrixCoupling
 @inline internalindextype(::Type{PhononIndex{K}}, ::Type{D}) where {K, D<:Union{Char, Symbol, Colon}} = PhononIndex{K, D}
 

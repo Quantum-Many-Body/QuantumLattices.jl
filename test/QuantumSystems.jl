@@ -13,8 +13,8 @@ using StaticArrays: SVector
     @test FockIndex{:f, Colon, Colon}(1, 1//2, 1) == index
     @test statistics(index) == statistics(typeof(index)) == :f
     @test isdefinite(index) == isdefinite(typeof(index)) == true
-    @test index' == replace(index, nambu=2) == 𝕔⁺(1, 1//2)
-    @test isequal(index'', replace(index, nambu=1))
+    @test index' == 𝕔⁺(1, 1//2)
+    @test isequal(index'', index)
     @test hash(index) == hash((:f, 1, 1//2, 1))
     @test string(index)=="𝕔(1, 1//2)" && string(index')=="𝕔⁺(1, 1//2)"
     @test isannihilation(index) && isannihilation(𝕔(1, 1, 1//2)) && isannihilation(𝕔(1, 1, 1//2, [0.0], [0.0]))
@@ -367,7 +367,7 @@ end
     @test index == SpinIndex{3//2, Colon}('x')
     @test isequal(index, index')
     @test hash(index) == hash((3//2, 'x'))
-    @test replace(index, tag='z') == 𝕊{3//2}('z')
+    @test SpinIndex{3//2}('z') == 𝕊{3//2}('z')
     @test string(index) == "𝕊{3//2}('x')"
     @test totalspin(index) == totalspin(typeof(index)) == 3//2
     @test totalspin(𝕊{3//2}(:, 'x')) == totalspin(typeof(𝕊{3//2}(:, 'x'))) ==3//2
@@ -679,7 +679,7 @@ end
     @test index == PhononIndex{:u, Colon}('x')
     @test isequal(index, index')
     @test hash(index) == hash((:u, 'x'))
-    @test replace(index, direction='y') == 𝕦('y')
+    @test PhononIndex{:u}('y') == 𝕦('y')
     @test string(index) == "𝕦('x')"
     @test kind(index) == kind(typeof(index)) == :u
     @test kind(𝕦(1, 'x')) == kind(typeof(𝕦(1, 'x'))) == :u
@@ -691,7 +691,7 @@ end
     @test index == PhononIndex{:p, Colon}('x')
     @test isequal(index, index')
     @test hash(index) == hash((:p, 'x'))
-    @test replace(index, direction='y') == 𝕡('y')
+    @test PhononIndex{:p}('y') == 𝕡('y')
     @test string(index) == "𝕡('x')"
     @test kind(index) == kind(typeof(index)) == :p
     @test kind(𝕡(1, 'x')) == kind(typeof(𝕡(1, 'x'))) == :p
