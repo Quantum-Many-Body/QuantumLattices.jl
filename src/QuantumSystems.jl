@@ -105,7 +105,7 @@ Judge whether the nambu index is `creation`.
 @inline iscreation(index::Index) = iscreation(InternalIndex(index))
 @inline iscreation(index::CompositeIndex) = iscreation(Index(index))
 
-### convenient construction and string representation 
+### convenient construction and string representation
 """
     𝕔(orbital, spin) -> FockIndex{:f}
     𝕔(site, orbital, spin) -> Index{<:FockIndex{:f}}
@@ -255,7 +255,7 @@ end
 @inline Base.match(::Type{<:FockIndex{:}}, ::Type{<:Fock{T}}) where T = true
 @inline Base.match(::Type{<:FockIndex{T}}, ::Type{<:Fock{T}}) where T = true
 @inline Base.match(::Type{<:FockIndex{T₁}}, ::Type{<:Fock{T₂}}) where {T₁, T₂} = false
-### requested by ConstrainedInternal
+### requested by Coupling expansion
 @inline function shape(internal::Fock, index::FockIndex{T, <:Union{Int, Symbol, Colon}, <:Union{Rational{Int}, Symbol, Colon}}) where T
     return (fockshape(index.orbital, internal.norbital), fockshape(index.spin, internal.nspin), index.nambu:index.nambu)
 end
@@ -609,7 +609,7 @@ Get the total spin.
 @inline totalspin(::Type{I}) where {I<:Index{<:SpinIndex}} = totalspin(internalindextype(I))
 @inline totalspin(::Type{I}) where {I<:CompositeIndex{<:Index{<:SpinIndex}}} = totalspin(indextype(I))
 
-### convenient construction and string representation 
+### convenient construction and string representation
 """
     𝕊(tag) -> SpinIndex
     𝕊(site, tag) -> Index{<:SpinIndex}
@@ -698,7 +698,7 @@ end
 @inline Base.match(::Type{<:SpinIndex{:}}, ::Type{<:Spin{S}}) where S = true
 @inline Base.match(::Type{<:SpinIndex{S}}, ::Type{<:Spin{S}}) where S = true
 @inline Base.match(::Type{<:SpinIndex{S₁}}, ::Type{<:Spin{S₂}}) where {S₁, S₂} = false
-### requested by ConstrainedInternal
+### requested by Coupling expansion
 @inline function shape(::Spin, index::SpinIndex)
     @assert isa(index.tag, Char) "shape error: input index ($index) not definite."
     pos = Int(index.tag) - Int('x') + 1
@@ -1122,7 +1122,7 @@ Construct a phonon index.
 """
 @inline PhononIndex{K, D}(direction::Union{Char, Symbol, Colon}) where {K, D} = PhononIndex{K}(direction)
 
-### convenient construction and string representation 
+### convenient construction and string representation
 """
     𝕦(direction) -> PhononIndex{:u}
     𝕦(site, direction) -> Index{<:PhononIndex{:u}}
@@ -1218,7 +1218,7 @@ end
 @inline Base.match(::Type{<:PhononIndex{K₁}}, ::Type{<:Phonon{K₂}}) where {K₁, K₂} = false
 @inline Base.filter(::Type{<:PhononIndex{K}}, ph::Phonon{:}) where K = Phonon{K}(ph.ndirection)
 @inline Base.filter(::Type{<:PhononIndex{K}}, ::Type{Phonon{:}}) where K = Phonon{K}
-### requested by ConstrainedInternal
+### requested by Coupling expansion
 @inline shape(pn::Phonon, index::PhononIndex) = (phononshape(index.direction, pn.ndirection),)
 @inline phononshape(::Union{Symbol, Colon}, n::Int) = 1:n
 @inline function phononshape(v::Char, n::Int)
