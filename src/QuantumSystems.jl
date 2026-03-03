@@ -10,7 +10,7 @@ using ..QuantumOperators: LaTeX, Operator, OperatorIndex, OperatorProd, Operator
 using ..Spatials: Bond, Point, direction, isparallel, rcoordinate
 using ..Toolkit: atol, efficientoperations, rtol, Float, VectorSpace, VectorSpaceDirectProducted, delta, rawtype
 
-import ..DegreesOfFreedom: MatrixCoupling, MatrixCouplingComponent, VectorSpaceStyle, diagonalfields, internalindextype, isdefinite, patternrule, showablefields, statistics
+import ..DegreesOfFreedom: MatrixCoupling, MatrixCouplingComponent, VectorSpaceStyle, internalindextype, isdefinite, patternrule, showablefields, statistics
 import ..QuantumLattices: expand, expand!, kind, permute, shape
 import ..QuantumOperators: latexname, matrix, script
 
@@ -69,8 +69,6 @@ end
 @inline Base.adjoint(index::FockIndex) = FockIndex{statistics(index)}(index.orbital, index.spin, 3-index.nambu)
 ### requested by show
 @inline showablefields(::Type{<:FockIndex}) = (:orbital, :spin)
-### requested by Pattern
-@inline diagonalfields(::Type{<:FockIndex}) = (:orbital, :spin)
 ### requested by MatrixCoupling
 @inline internalindextype(::Type{FockIndex}, ::Type{O}, ::Type{S}, ::Type{Int}) where {O<:Union{Int, Symbol, Colon}, S<:Union{Rational{Int}, Symbol, Colon}} = FockIndex{:, O, S}
 @inline internalindextype(::Type{FockIndex{T}}, ::Type{O}, ::Type{S}, ::Type{Int}) where {T, O<:Union{Int, Symbol, Colon}, S<:Union{Rational{Int}, Symbol, Colon}} = FockIndex{T, O, S}

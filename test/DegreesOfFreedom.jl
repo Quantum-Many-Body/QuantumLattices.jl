@@ -206,8 +206,8 @@ end
 end
 
 @testset "Pattern" begin
-    @test isdiagonal(Fermi{Int}, (𝕕(1), 𝕕(1))) && isdiagonal(Fermi{Int}, (𝕕(1), 𝕕(2)))
-    @test isdiagonal(Fermi{Colon}, (𝕕(1), 𝕕(1))) && !isdiagonal(Fermi{Colon}, (𝕕(1), 𝕕(2)))
+    @test isdiagonal(diagonalfields(Fermi{Int}), (𝕕(1), 𝕕(1))) && isdiagonal(diagonalfields(Fermi{Int}), (𝕕(1), 𝕕(2)))
+    @test isdiagonal(diagonalfields(Fermi{Colon}), (𝕕(1), 𝕕(1))) && !isdiagonal(diagonalfields(Fermi{Colon}), (𝕕(1), 𝕕(2)))
 
     @test parameternames(Pattern) == (:indexes, :partition, :npartition, :constraints)
     pattern = @pattern(Index(1ˢᵗ, 𝕕(a)), Index(1ˢᵗ, 𝕕(a)), Index(2ⁿᵈ, 𝕕(b)), Index(2ⁿᵈ, 𝕕(b)))

@@ -569,21 +569,25 @@ Construct a Hilbert space with all same internal spaces.
 
 Get the field names that can be subject to all-equal constraint based on the type of an internal index.
 """
-@inline diagonalfields(::Type{I}) where {I<:InternalIndex} = fieldnames(I)
-
-"""
-    isdiagonal(indexes::OneAtLeast{InternalIndex}, ::Val{fields}) where fields -> Bool
-
-Judge whether a set of homogenous internal indexes is subject to the "diagonal" constraint.
-"""
-@inline isdiagonal(::Type{I}, indexes::OneAtLeast{InternalIndex}) where {I<:InternalIndex} = _isdiagonal_(I, I|>diagonalfields|>Val, indexes)
-@generated function _isdiagonal_(::Type{I}, ::Val{candidates}, indexes::OneAtLeast{InternalIndex}) where {I<:InternalIndex, candidates}
+@generated function diagonalfields(::Type{I}) where {I<:InternalIndex}
     fields = Symbol[]
-    for field in candidates
+    for field in fieldnames(I)
         F = fieldtype(I, field)
-        F==Symbol && error("isdiagonal error: $I is too complicated for the \"diagonal\" constraint since it host the `:$field` field represented by a `Symbol` other than a `Colon`.")
+        F==Symbol && error("diagonalfields error: $I is too complicated for the \"diagonal\" constraint since it host the `:$field` field represented by a `Symbol` other than a `Colon`.")
         F==Colon && push!(fields, field)
     end
+    return Expr(:tuple, QuoteNode.(fields)...)
+end
+
+"""
+    isdiagonal(fields::ZeroAtLeast{Symbol}, indexes::OneAtLeast{InternalIndex}) -> Bool
+    isdiagonal(::Val{fields}, indexes::OneAtLeast{InternalIndex}) where fields -> Bool
+
+Judge whether a set of homogenous internal indexes is subject to the "diagonal" constraint, i.e., whether the fields specified by `fields` are all equal among the given indexes.
+"""
+@inline isdiagonal(fields::ZeroAtLeast{Symbol}, indexes::OneAtLeast{InternalIndex}) = isdiagonal(Val{fields}(), indexes)
+@generated function isdiagonal(::Val{fields}, indexes::OneAtLeast{InternalIndex}) where fields
+    @assert isa(fields, ZeroAtLeast{Symbol}) "isdiagonal error: fields should be a tuple of `Symbol`s."
     length(fields)==0 && return true
     exprs = []
     for field in QuoteNode.(fields)
@@ -731,7 +735,7 @@ Judge whether a set of internal indexes satisfies a coupling pattern.
         segment = Expr(:tuple, [:(indexes[$pos]) for pos=start:stop]...)
         if fieldtype(fieldtype(pattern, :constraints), i) == typeof(isdiagonal)
             I = Expr(:call, eltype, Expr(:tuple, [:(pattern.indexes[$pos].internal) for pos=start:stop]...))
-            push!(exprs, :(pattern.constraints[$i]($I, $segment)::Bool))
+            push!(exprs, :(pattern.constraints[$i](diagonalfields($I), $segment)::Bool))
         else
             push!(exprs, :(pattern.constraints[$i]($segment)::Bool))
         end

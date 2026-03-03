@@ -1,6 +1,6 @@
 using Latexify: latexify
 using QuantumLattices: expand, kind, permute, rank
-using QuantumLattices.DegreesOfFreedom: ˢᵗ, ⁿᵈ, CompositeIndex, CoordinatedIndex, Coupling, Hilbert, Index, InternalIndex, MatrixCoupling, diagonalfields, internalindextype, isdefinite, patternrule, showablefields, statistics, @pattern
+using QuantumLattices.DegreesOfFreedom: ˢᵗ, ⁿᵈ, CompositeIndex, CoordinatedIndex, Coupling, Hilbert, Index, InternalIndex, MatrixCoupling, internalindextype, isdefinite, patternrule, showablefields, statistics, @pattern
 using QuantumLattices.QuantumOperators: Operator, OperatorIndex, Operators, latexname, matrix, script
 using QuantumLattices.QuantumSystems
 using QuantumLattices.Spatials: Bond, Lattice, Neighbors, Point, azimuthd, bonds, rcoordinate, icoordinate
@@ -43,7 +43,6 @@ using StaticArrays: SVector
 
     @test statistics(FockIndex) == statistics(Index{<:FockIndex}) == statistics(CoordinatedIndex{<:Index{<:FockIndex}}) == Symbol(":")
     @test showablefields(FockIndex) == (:orbital, :spin)
-    @test diagonalfields(FockIndex) == (:orbital, :spin)
     @test isdefinite(FockIndex{:, Int, Rational{Int}})
     @test !isdefinite(FockIndex{:f, Symbol, typeof(:)})
     @test internalindextype(FockIndex, Int, typeof(:), Int) == FockIndex{:, Int, typeof(:)}
