@@ -31,6 +31,7 @@ abstract type InternalIndex <: OperatorIndex end
 @inline Base.isequal(index₁::I, index₂::I) where {I<:InternalIndex} = isequal(efficientoperations, index₁, index₂)
 @inline Base.:(==)(index₁::I, index₂::J) where {I<:InternalIndex, J<:InternalIndex} = false
 @inline Base.isequal(index₁::I, index₂::J) where {I<:InternalIndex, J<:InternalIndex} = false
+@inline @generated Base.hash(index::I, h::UInt) where {I<:InternalIndex} = Expr(:call, :hash, Expr(:tuple, I, [:(getfield(index, $i)) for i=1:fieldcount(I)]...), :h)
 @inline Base.show(io::IO, index::InternalIndex) = @printf io "%s(%s)" OperatorIndex[index] join(map(field->str(getfield(index, field)), showablefields(index)), ", ")
 
 """

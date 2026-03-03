@@ -66,7 +66,6 @@ end
 @inline statistics(::Type{<:FockIndex}) = Symbol(":")
 @inline statistics(::Type{<:FockIndex{T}}) where T = T
 @inline isdefinite(::Type{<:FockIndex{T, Int, Rational{Int}} where T}) = true
-@inline Base.hash(index::FockIndex, h::UInt) = hash((statistics(index), index.orbital, index.spin, index.nambu), h)
 @inline Base.adjoint(index::FockIndex) = FockIndex{statistics(index)}(index.orbital, index.spin, 3-index.nambu)
 ### requested by show
 @inline showablefields(::Type{<:FockIndex}) = (:orbital, :spin)
@@ -577,7 +576,6 @@ end
 ### basic methods of concrete InternalIndex
 @inline statistics(::Type{<:SpinIndex}) = :b
 @inline isdefinite(::Type{<:SpinIndex{T, Char} where T}) = true
-@inline Base.hash(index::SpinIndex, h::UInt) = hash((totalspin(index), index.tag), h)
 @inline Base.adjoint(index::SpinIndex) = SpinIndex{totalspin(index)}(spinajointmap[index.tag])
 ### requested by MatrixCoupling
 @inline internalindextype(::Type{SpinIndex}, ::Type{T}) where {T<:Union{Char, Symbol, Colon}} = SpinIndex{:, T}
@@ -1114,7 +1112,6 @@ end
 ### basic methods of concrete InternalIndex
 @inline statistics(::Type{<:PhononIndex}) = :b
 @inline isdefinite(::Type{<:PhononIndex{K, Char} where K}) = true
-@inline Base.hash(index::PhononIndex, h::UInt) = hash((kind(index), index.direction), h)
 @inline Base.adjoint(index::PhononIndex) = index
 ### requested by MatrixCoupling
 @inline internalindextype(::Type{PhononIndex{K}}, ::Type{D}) where {K, D<:Union{Char, Symbol, Colon}} = PhononIndex{K, D}

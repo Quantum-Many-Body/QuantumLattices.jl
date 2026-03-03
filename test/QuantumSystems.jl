@@ -15,7 +15,7 @@ using StaticArrays: SVector
     @test isdefinite(index) == isdefinite(typeof(index)) == true
     @test index' == 𝕔⁺(1, 1//2)
     @test isequal(index'', index)
-    @test hash(index) == hash((:f, 1, 1//2, 1))
+    @test hash(index) == hash((typeof(index), index.orbital, index.spin, index.nambu))
     @test string(index)=="𝕔(1, 1//2)" && string(index')=="𝕔⁺(1, 1//2)"
     @test isannihilation(index) && isannihilation(𝕔(1, 1, 1//2)) && isannihilation(𝕔(1, 1, 1//2, [0.0], [0.0]))
     @test !iscreation(index) && !iscreation(𝕔(1, 1, 1//2)) && !iscreation(𝕔(1, 1, 1//2, [0.0], [0.0]))
@@ -25,7 +25,7 @@ using StaticArrays: SVector
     @test statistics(index) == statistics(typeof(index)) == :b
     @test isdefinite(index) == isdefinite(typeof(index)) == true
     @test index' == 𝕒(1, -1//2)
-    @test hash(index) == hash((:b, 1, -1//2, 2))
+    @test hash(index) == hash((typeof(index), index.orbital, index.spin, index.nambu))
     @test string(index)=="𝕒⁺(1, -1//2)" && string(index')=="𝕒(1, -1//2)"
     @test !isannihilation(index) && !isannihilation(𝕒⁺(1, 1, -1//2)) && !isannihilation(𝕒⁺(1, 1, -1//2, [0.0], [0.0]))
     @test iscreation(index) && iscreation(𝕒⁺(1, 1, -1//2)) && iscreation(𝕒⁺(1, 1, -1//2, [0.0], [0.0]))
@@ -35,7 +35,7 @@ using StaticArrays: SVector
     @test statistics(index) == statistics(typeof(index)) == Colon()
     @test isdefinite(index) == isdefinite(typeof(index)) == false
     @test index' == 𝕕⁺(1, :α)
-    @test hash(index) == hash((:, 1, :α, 1))
+    @test hash(index) == hash((typeof(index), index.orbital, index.spin, index.nambu))
     @test string(index)=="𝕕(1, α)" && string(index')=="𝕕⁺(1, α)"
 
     @test 𝕔(1, 1//2) ≠ 𝕒(1, 1//2)
@@ -366,7 +366,7 @@ end
     @test isdefinite(index) == isdefinite(typeof(index)) == true
     @test index == SpinIndex{3//2, Colon}('x')
     @test isequal(index, index')
-    @test hash(index) == hash((3//2, 'x'))
+    @test hash(index) == hash((typeof(index), index.tag))
     @test SpinIndex{3//2}('z') == 𝕊{3//2}('z')
     @test string(index) == "𝕊{3//2}('x')"
     @test totalspin(index) == totalspin(typeof(index)) == 3//2
@@ -678,7 +678,7 @@ end
     @test isdefinite(index) == isdefinite(typeof(index)) == true
     @test index == PhononIndex{:u, Colon}('x')
     @test isequal(index, index')
-    @test hash(index) == hash((:u, 'x'))
+    @test hash(index) == hash((typeof(index), index.direction))
     @test PhononIndex{:u}('y') == 𝕦('y')
     @test string(index) == "𝕦('x')"
     @test kind(index) == kind(typeof(index)) == :u
@@ -690,7 +690,7 @@ end
     @test isdefinite(index) == isdefinite(typeof(index)) == true
     @test index == PhononIndex{:p, Colon}('x')
     @test isequal(index, index')
-    @test hash(index) == hash((:p, 'x'))
+    @test hash(index) == hash((typeof(index), index.direction))
     @test PhononIndex{:p}('y') == 𝕡('y')
     @test string(index) == "𝕡('x')"
     @test kind(index) == kind(typeof(index)) == :p
