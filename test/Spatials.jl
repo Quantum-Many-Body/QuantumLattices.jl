@@ -1,12 +1,13 @@
 using OffsetArrays: OffsetArray
 using LinearAlgebra: cross, det, dot, norm
-using Plots: plot, savefig, plot!
 using QuantumLattices.Spatials
 using QuantumLattices: decompose, dimension, expand, rank, shape
 using QuantumLattices.QuantumOperators: scalartype
 using QuantumLattices.Toolkit: Float, Segment, contentnames
 using Random: seed!
 using StaticArrays: SVector
+
+import Plots
 
 @testset "distance" begin
     @test distance([0.0, 0.0], [1.0, 1.0]) ≈ sqrt(2.0)
@@ -274,7 +275,7 @@ end
 
 @testset "plot" begin
     lattice = Lattice((0.0, 0.0); name=:Tuanzi, vectors=[[1.0, 0.0], [0.0, 1.0]])
-    savefig(plot(lattice, 2), "Lattice.png")
+    Plots.savefig(Plots.plot(lattice, 2), "PlotsLattice.png")
 end
 
 @testset "BrillouinZone" begin
@@ -303,8 +304,8 @@ end
     @test volume(bz) == 6.0
     @test iscontinuous(bz) == iscontinuous(typeof(bz)) == false
     @test isdiscrete(bz) == isdiscrete(typeof(bz)) == true
-    savefig(plot(bz; fractional=false), "BrillouinZone.png")
-    savefig(plot(bz; fractional=true), "BrillouinZone-fractional.png")
+    Plots.savefig(Plots.plot(bz; fractional=false), "PlotsBrillouinZone.png")
+    Plots.savefig(Plots.plot(bz; fractional=true), "PlotsBrillouinZone-fractional.png")
 
     bz = BrillouinZone(recipls, Inf)
     @test iscontinuous(bz) == iscontinuous(typeof(bz)) == true
@@ -352,8 +353,8 @@ end
     rz = ReciprocalZone(bz)
     @test rz == ReciprocalZone{:q}([[1.0, 0.0], [0.0, 1.0]], 0=>1, 0=>1; length=8)
     @test collect(rz) == collect(bz)
-    savefig(plot(rz; fractional=false), "ReciprocalZone.png")
-    savefig(plot(rz; fractional=true), "ReciprocalZone-fractional.png")
+    Plots.savefig(Plots.plot(rz; fractional=false), "PlotsReciprocalZone.png")
+    Plots.savefig(Plots.plot(rz; fractional=true), "PlotsReciprocalZone-fractional.png")
 end
 
 @testset "ReciprocalScatter" begin
@@ -363,8 +364,8 @@ end
     for (i, fractional) in enumerate(fractionals(rs))
         @test rs[i] == expand(rs, fractional) == b₁*fractional[1] + b₂*fractional[2]
     end
-    savefig(plot(rs; fractional=false), "ReciprocalScatter.png")
-    savefig(plot(rs; fractional=true), "ReciprocalScatter-fractional.png")
+    Plots.savefig(Plots.plot(rs; fractional=false), "PlotsReciprocalScatter.png")
+    Plots.savefig(Plots.plot(rs; fractional=true), "PlotsReciprocalScatter-fractional.png")
 
     rs = ReciprocalScatter{:q}([b₁, b₂], [[0.0, 0.0], [0.0, 0.25], [0.0, 0.5], [0.0, 0.75], [0.5, 0.0], [0.5, 0.25], [0.5, 0.5], [0.5, 0.75]])
     @test rs == ReciprocalScatter(BrillouinZone{:q}([b₁, b₂], (2, 4)))
@@ -386,13 +387,13 @@ end
     positions, labels = ticks(rp)
     @test all(map((x, y)->isapprox(x, y; atol=10^-12), positions, [0.0, 0.5, 1.0, 1.0+sqrt(2)/2]))
     @test labels == ["(0.0, 0.0)", "(0.5, 0.0)", "(0.5, 0.5)", "(0.0, 0.0)"]
-    savefig(plot(rp), "ReciprocalPath-1.png")
+    Plots.savefig(Plots.plot(rp), "PlotsReciprocalPath-1.png")
 
     rp = ReciprocalPath([b₁, b₂], s₁, s₃; labels=("Γ"=>"X", "M"=>"Γ"))
     positions, labels = ticks(rp)
     @test all(map((x, y)->isapprox(x, y; atol=10^-12), positions, [0.0, 0.5, (1+sqrt(2))/2]))
     @test labels == ["Γ", "X / M", "Γ"]
-    savefig(plot(rp), "ReciprocalPath-2.png")
+    Plots.savefig(Plots.plot(rp), "PlotsReciprocalPath-2.png")
 
     rp = ReciprocalPath{:q}([b₁, b₂], s₁, s₂, s₃)
     @test rp == ReciprocalPath{:q}(rp.contents, rp.labels)
@@ -423,17 +424,17 @@ end
     @test collect(path) == [[-1.5, 0.5], [-2.25, 0.25], [-3.0, 0.0]]
     @test bz[indexes] == [[0.5, 0.5], [0.75, 0.25], [0.0, 0.0]]
 
-    plt = plot()
-    plot!(plt, bz)
-    plot!(plt, path)
-    plot!(plt, map(index->Tuple(bz[index]), indexes), seriestype=:scatter)
-    savefig(plt, "PickPoint.png")
+    plt = Plots.plot()
+    Plots.plot!(plt, bz)
+    Plots.plot!(plt, path)
+    Plots.plot!(plt, map(index->Tuple(bz[index]), indexes), seriestype=:scatter)
+    Plots.savefig(plt, "PlotsPickPoint.png")
 end
 
 @testset "ReciprocalCurve" begin
     rc = ReciprocalCurve([[0.0, 0.0], [0.5, 0.0], [0.5, 0.5], [0.0, 0.0]])
     @test rc == ReciprocalCurve([(0.0, 0.0), (0.5, 0.0), (0.5, 0.5), (0.0, 0.0)])
-    savefig(plot(rc), "ReciprocalCurve.png")
+    Plots.savefig(Plots.plot(rc), "PlotsReciprocalCurve.png")
 
     rp = ReciprocalPath([[1.0, 0.0], [0.0, 1.0]], (0.0, 0.0)=>(0.5, 0.0), (0.5, 0.0)=>(0.5, 0.5), (0.5, 0.5)=>(0.0, 0.0); length=1)
     @test rc == ReciprocalCurve(rp)
@@ -448,14 +449,14 @@ end
     for (i, k) in enumerate(bz)
         surface[i] = -imag(1/(0.1im+2cos(k[1])+2cos(k[2])))
     end
-    savefig(plot(bz, surface), "SingleSurface.png")
+    Plots.savefig(Plots.plot(bz, surface), "PlotsSingleSurface.png")
     dlmsave("SingleSurface-1.dlm", bz, surface; fractional=false)
     dlmsave("SingleSurface-2.dlm", bz, surface; fractional=true)
 
     surfaces = zeros(size(surface)..., 2)
     surfaces[:, :, 1] = surface
     surfaces[:, :, 2] = surface
-    savefig(plot(bz, surfaces), "MultiSurfaces.png")
+    Plots.savefig(Plots.plot(bz, surfaces), "PlotsMultiSurfaces.png")
     dlmsave("MultiSurfaces-1.dlm", bz, surfaces; fractional=false)
     dlmsave("MultiSurfaces-2.dlm", bz, surfaces; fractional=true)
 
@@ -464,14 +465,14 @@ end
     for (i, k) in enumerate(rz)
         surface[i] = -imag(1/(0.1im+2cos(k[1])+2cos(k[2])))
     end
-    savefig(plot(rz, surface), "SingleExtendedSurface.png")
+    Plots.savefig(Plots.plot(rz, surface), "PlotsSingleExtendedSurface.png")
     dlmsave("SingleExtendedSurface-1.dlm", rz, surface; fractional=false)
     dlmsave("SingleExtendedSurface-2.dlm", rz, surface; fractional=true)
 
     surfaces = zeros(size(surface)..., 2)
     surfaces[:, :, 1] = surface
     surfaces[:, :, 2] = surface
-    savefig(plot(rz, surfaces), "MultiExtendedSurfaces.png")
+    Plots.savefig(Plots.plot(rz, surfaces), "PlotsMultiExtendedSurfaces.png")
     dlmsave("MultiExtendedSurfaces-1.dlm", rz, surfaces; fractional=false)
     dlmsave("MultiExtendedSurfaces-2.dlm", rz, surfaces; fractional=true)
 
@@ -486,35 +487,35 @@ end
     weights[201:300, 1] = fill(1.0, 100)
     weights[301:400, 2] = fill(1.0, 100)
     rs = ReciprocalScatter([[2pi, 0], [0, 2pi]], coordinates)
-    savefig(plot(rs, weights; fractional=false), "Surface-1.png")
-    savefig(plot(rs, weights; fractional=true), "Surface-2.png")
+    Plots.savefig(Plots.plot(rs, weights; fractional=false), "PlotsSurface-1.png")
+    Plots.savefig(Plots.plot(rs, weights; fractional=true), "PlotsSurface-2.png")
     dlmsave("Surface-1.dlm", rs, weights; fractional=false)
     dlmsave("Surface-2.dlm", rs, weights; fractional=true)
 
     path = ReciprocalPath([[2pi, 0], [0, 2pi]], rectangle"Γ-X-M-Γ")
     band = map(k->-2cos(k[1])-2cos(k[2]), path)
     bands = [band -band]
-    savefig(plot(path, bands), "MultiBands.png")
+    Plots.savefig(Plots.plot(path, bands), "PlotsMultiBands.png")
     dlmsave("MultiBands-1.dlm", path, bands; distance=false)
     dlmsave("MultiBands-2.dlm", path, bands; distance=true)
 
     weights = zeros(length(band), 2, 2)
     weights[:, 1, 1] = abs2.(band)
     weights[:, 2, 2] = abs2.(band)
-    savefig(plot(path, bands, weights; weightmultiplier=1.0, weightwidth=2.0, weightcolors=(:blue, :red), weightlabels=("↑", "↓")), "MultiBandsWithWeights.png")
+    Plots.savefig(Plots.plot(path, bands, weights; weightmultiplier=1.0, weightwidth=2.0, weightcolors=(:blue, :red), weightlabels=("↑", "↓")), "PlotsMultiBandsWithWeights.png")
     dlmsave("MultiBandsWithWeights-1.dlm", path, bands, weights; distance=false)
     dlmsave("MultiBandsWithWeights-2.dlm", path, bands, weights; distance=true)
 
     energies = LinRange(-6.0, 6.0, 401)
     spectrum = [-imag(1/(e+0.1im-b)) for e in energies, b in band]
-    savefig(plot(path, energies, spectrum), "SingleSpectrum.png")
+    Plots.savefig(Plots.plot(path, energies, spectrum), "PlotsSingleSpectrum.png")
     dlmsave("SingleSpectrum-1.dlm", path, energies, spectrum; distance=false)
     dlmsave("SingleSpectrum-2.dlm", path, energies, spectrum; distance=true)
 
     spectra = zeros(size(spectrum)..., 2)
     spectra[:, :, 1] = spectrum
     spectra[:, :, 2] = spectrum
-    savefig(plot(path, energies, spectra), "MultiSpectra.png")
+    Plots.savefig(Plots.plot(path, energies, spectra), "PlotsMultiSpectra.png")
     dlmsave("MultiSpectra-1.dlm", path, energies, spectra; distance=false)
     dlmsave("MultiSpectra-2.dlm", path, energies, spectra; distance=true)
 end

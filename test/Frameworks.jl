@@ -1,5 +1,4 @@
 using LinearAlgebra: dot, eigen
-using Plots: plot, savefig
 using QuantumLattices: ZeroAtLeast, expand, expand!, reset!, str, update
 using QuantumLattices.DegreesOfFreedom: plain, Boundary, CoordinatedIndex, Hilbert, Index
 using QuantumLattices.Frameworks
@@ -8,6 +7,7 @@ using QuantumLattices.Spatials: BrillouinZone, Lattice, bonds, decompose, dlmsav
 using QuantumLattices.QuantumSystems: Fock, FockIndex, Hopping, Onsite
 using StaticArrays: SVector, SMatrix, @SMatrix
 
+import Plots
 import QuantumLattices: update!
 import QuantumLattices.Frameworks: Parameters, options, run!
 
@@ -309,15 +309,15 @@ params(parameters::Parameters) = (t=parameters.t, μ=parameters.U/2)
     @test hasoption(typeof(dos), :emin) && hasoption(typeof(dos), :emax) && hasoption(typeof(dos), :ne) && hasoption(typeof(dos), :σ) && hasoption(typeof(dos), :showinfo) && !hasoption(typeof(dos), :hello)
     @test sum(dos.data.values)*(maximum(dos.data.energies)-minimum(dos.data.energies))/(length(dos.data.energies)-1)/length(eigensystem.action.brillouinzone) ≈ 0.9964676726997486
     dlmsave(dos)
-    savefig(plot(dos), "$(string(dos)).png")
+    Plots.savefig(Plots.plot(dos), "Plots$(str(dos)).png")
     update!(dos; U=8.0)
     tba(dos)
     dlmsave(dos)
-    savefig(plot(tba(dos)), "$(string(dos)).png")
+    Plots.savefig(Plots.plot(tba(dos)), "Plots$(str(dos)).png")
     update!(dos; U=0.0)
     tba(dos; emin=-5.0, emax=5.0)
     dlmsave(dos)
-    savefig(plot(tba(dos)), "$(string(dos)).png")
+    Plots.savefig(Plots.plot(tba(dos)), "Plots$(str(dos)).png")
     summary(tba)
 end
 
@@ -332,5 +332,5 @@ end
     eigensystem = loaded(:eigensystem, EigenSystem(BrillouinZone([[2pi, 0], [0, 2pi]], 100)); delay=true)
     dos = loaded(:DOS, DensityOfStates(), eigensystem)
     dlmsave(dos)
-    savefig(plot(loaded(dos)), "$(string(dos)).png")
+    Plots.savefig(Plots.plot(loaded(dos)), "Plots$(str(dos)).png")
 end
