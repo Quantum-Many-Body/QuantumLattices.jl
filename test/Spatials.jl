@@ -441,10 +441,12 @@ end
     Plots.plot!(plt, map(index->Tuple(bz[index]), indexes), seriestype=:scatter)
     Plots.savefig(plt, "PlotsPickPoint.png")
 
-    # Makie equivalent using plot! for multi-layer plotting
-    fig = Makie.plot(bz)
-    Makie.plot!(fig, path)
-    Makie.plot!(fig, map(index->Tuple(bz[index]), indexes), seriestype=:scatter)
+    # Makie equivalent using multi-layer plotting
+    fig = Makie.Figure()
+    ax = Makie.Axis(fig[1, 1])
+    Makie.plot!(ax, bz)
+    Makie.plot!(ax, path)
+    Makie.scatter!(ax, [bz[index][1] for index in indexes], [bz[index][2] for index in indexes])
     Makie.save("MakiePickPoint.png", fig)
 end
 
