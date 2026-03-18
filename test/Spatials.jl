@@ -8,6 +8,8 @@ using Random: seed!
 using StaticArrays: SVector
 
 import Plots
+import Makie
+import CairoMakie
 
 @testset "distance" begin
     @test distance([0.0, 0.0], [1.0, 1.0]) ≈ sqrt(2.0)
@@ -276,6 +278,7 @@ end
 @testset "plot" begin
     lattice = Lattice((0.0, 0.0); name=:Tuanzi, vectors=[[1.0, 0.0], [0.0, 1.0]])
     Plots.savefig(Plots.plot(lattice, 2), "PlotsLattice.png")
+    Makie.save("MakieLattice.png", Makie.plot(lattice, 2))
 end
 
 @testset "BrillouinZone" begin
@@ -306,6 +309,8 @@ end
     @test isdiscrete(bz) == isdiscrete(typeof(bz)) == true
     Plots.savefig(Plots.plot(bz; fractional=false), "PlotsBrillouinZone.png")
     Plots.savefig(Plots.plot(bz; fractional=true), "PlotsBrillouinZone-fractional.png")
+    Makie.save("MakieBrillouinZone.png", Makie.plot(bz; fractional=false))
+    Makie.save("MakieBrillouinZone-fractional.png", Makie.plot(bz; fractional=true))
 
     bz = BrillouinZone(recipls, Inf)
     @test iscontinuous(bz) == iscontinuous(typeof(bz)) == true
@@ -355,6 +360,8 @@ end
     @test collect(rz) == collect(bz)
     Plots.savefig(Plots.plot(rz; fractional=false), "PlotsReciprocalZone.png")
     Plots.savefig(Plots.plot(rz; fractional=true), "PlotsReciprocalZone-fractional.png")
+    Makie.save("MakieReciprocalZone.png", Makie.plot(rz; fractional=false))
+    Makie.save("MakieReciprocalZone-fractional.png", Makie.plot(rz; fractional=true))
 end
 
 @testset "ReciprocalScatter" begin
@@ -366,6 +373,8 @@ end
     end
     Plots.savefig(Plots.plot(rs; fractional=false), "PlotsReciprocalScatter.png")
     Plots.savefig(Plots.plot(rs; fractional=true), "PlotsReciprocalScatter-fractional.png")
+    Makie.save("MakieReciprocalScatter.png", Makie.plot(rs; fractional=false))
+    Makie.save("MakieReciprocalScatter-fractional.png", Makie.plot(rs; fractional=true))
 
     rs = ReciprocalScatter{:q}([b₁, b₂], [[0.0, 0.0], [0.0, 0.25], [0.0, 0.5], [0.0, 0.75], [0.5, 0.0], [0.5, 0.25], [0.5, 0.5], [0.5, 0.75]])
     @test rs == ReciprocalScatter(BrillouinZone{:q}([b₁, b₂], (2, 4)))
@@ -388,12 +397,14 @@ end
     @test all(map((x, y)->isapprox(x, y; atol=10^-12), positions, [0.0, 0.5, 1.0, 1.0+sqrt(2)/2]))
     @test labels == ["(0.0, 0.0)", "(0.5, 0.0)", "(0.5, 0.5)", "(0.0, 0.0)"]
     Plots.savefig(Plots.plot(rp), "PlotsReciprocalPath-1.png")
+    Makie.save("MakieReciprocalPath-1.png", Makie.plot(rp))
 
     rp = ReciprocalPath([b₁, b₂], s₁, s₃; labels=("Γ"=>"X", "M"=>"Γ"))
     positions, labels = ticks(rp)
     @test all(map((x, y)->isapprox(x, y; atol=10^-12), positions, [0.0, 0.5, (1+sqrt(2))/2]))
     @test labels == ["Γ", "X / M", "Γ"]
     Plots.savefig(Plots.plot(rp), "PlotsReciprocalPath-2.png")
+    Makie.save("MakieReciprocalPath-2.png", Makie.plot(rp))
 
     rp = ReciprocalPath{:q}([b₁, b₂], s₁, s₂, s₃)
     @test rp == ReciprocalPath{:q}(rp.contents, rp.labels)
@@ -429,12 +440,19 @@ end
     Plots.plot!(plt, path)
     Plots.plot!(plt, map(index->Tuple(bz[index]), indexes), seriestype=:scatter)
     Plots.savefig(plt, "PlotsPickPoint.png")
+
+    # Makie equivalent using plot! for multi-layer plotting
+    fig = Makie.plot(bz)
+    Makie.plot!(fig, path)
+    Makie.plot!(fig, map(index->Tuple(bz[index]), indexes), seriestype=:scatter)
+    Makie.save("MakiePickPoint.png", fig)
 end
 
 @testset "ReciprocalCurve" begin
     rc = ReciprocalCurve([[0.0, 0.0], [0.5, 0.0], [0.5, 0.5], [0.0, 0.0]])
     @test rc == ReciprocalCurve([(0.0, 0.0), (0.5, 0.0), (0.5, 0.5), (0.0, 0.0)])
     Plots.savefig(Plots.plot(rc), "PlotsReciprocalCurve.png")
+    Makie.save("MakieReciprocalCurve.png", Makie.plot(rc))
 
     rp = ReciprocalPath([[1.0, 0.0], [0.0, 1.0]], (0.0, 0.0)=>(0.5, 0.0), (0.5, 0.0)=>(0.5, 0.5), (0.5, 0.5)=>(0.0, 0.0); length=1)
     @test rc == ReciprocalCurve(rp)
@@ -450,6 +468,7 @@ end
         surface[i] = -imag(1/(0.1im+2cos(k[1])+2cos(k[2])))
     end
     Plots.savefig(Plots.plot(bz, surface), "PlotsSingleSurface.png")
+    Makie.save("MakieSingleSurface.png", Makie.plot(bz, surface))
     dlmsave("SingleSurface-1.dlm", bz, surface; fractional=false)
     dlmsave("SingleSurface-2.dlm", bz, surface; fractional=true)
 
@@ -457,6 +476,7 @@ end
     surfaces[:, :, 1] = surface
     surfaces[:, :, 2] = surface
     Plots.savefig(Plots.plot(bz, surfaces), "PlotsMultiSurfaces.png")
+    Makie.save("MakieMultiSurfaces.png", Makie.plot(bz, surfaces))
     dlmsave("MultiSurfaces-1.dlm", bz, surfaces; fractional=false)
     dlmsave("MultiSurfaces-2.dlm", bz, surfaces; fractional=true)
 
@@ -466,6 +486,7 @@ end
         surface[i] = -imag(1/(0.1im+2cos(k[1])+2cos(k[2])))
     end
     Plots.savefig(Plots.plot(rz, surface), "PlotsSingleExtendedSurface.png")
+    Makie.save("MakieSingleExtendedSurface.png", Makie.plot(rz, surface))
     dlmsave("SingleExtendedSurface-1.dlm", rz, surface; fractional=false)
     dlmsave("SingleExtendedSurface-2.dlm", rz, surface; fractional=true)
 
@@ -473,6 +494,7 @@ end
     surfaces[:, :, 1] = surface
     surfaces[:, :, 2] = surface
     Plots.savefig(Plots.plot(rz, surfaces), "PlotsMultiExtendedSurfaces.png")
+    Makie.save("MakieMultiExtendedSurfaces.png", Makie.plot(rz, surfaces))
     dlmsave("MultiExtendedSurfaces-1.dlm", rz, surfaces; fractional=false)
     dlmsave("MultiExtendedSurfaces-2.dlm", rz, surfaces; fractional=true)
 
@@ -489,6 +511,8 @@ end
     rs = ReciprocalScatter([[2pi, 0], [0, 2pi]], coordinates)
     Plots.savefig(Plots.plot(rs, weights; fractional=false), "PlotsSurface-1.png")
     Plots.savefig(Plots.plot(rs, weights; fractional=true), "PlotsSurface-2.png")
+    Makie.save("MakieSurface-1.png", Makie.plot(rs, weights; fractional=false))
+    Makie.save("MakieSurface-2.png", Makie.plot(rs, weights; fractional=true))
     dlmsave("Surface-1.dlm", rs, weights; fractional=false)
     dlmsave("Surface-2.dlm", rs, weights; fractional=true)
 
@@ -496,6 +520,7 @@ end
     band = map(k->-2cos(k[1])-2cos(k[2]), path)
     bands = [band -band]
     Plots.savefig(Plots.plot(path, bands), "PlotsMultiBands.png")
+    Makie.save("MakieMultiBands.png", Makie.plot(path, bands))
     dlmsave("MultiBands-1.dlm", path, bands; distance=false)
     dlmsave("MultiBands-2.dlm", path, bands; distance=true)
 
@@ -503,12 +528,14 @@ end
     weights[:, 1, 1] = abs2.(band)
     weights[:, 2, 2] = abs2.(band)
     Plots.savefig(Plots.plot(path, bands, weights; weightmultiplier=1.0, weightwidth=2.0, weightcolors=(:blue, :red), weightlabels=("↑", "↓")), "PlotsMultiBandsWithWeights.png")
+    Makie.save("MakieMultiBandsWithWeights.png", Makie.plot(path, bands, weights; weightmultiplier=1.0, weightcolors=(:blue, :red), weightlabels=("↑", "↓")))
     dlmsave("MultiBandsWithWeights-1.dlm", path, bands, weights; distance=false)
     dlmsave("MultiBandsWithWeights-2.dlm", path, bands, weights; distance=true)
 
     energies = LinRange(-6.0, 6.0, 401)
     spectrum = [-imag(1/(e+0.1im-b)) for e in energies, b in band]
     Plots.savefig(Plots.plot(path, energies, spectrum), "PlotsSingleSpectrum.png")
+    Makie.save("MakieSingleSpectrum.png", Makie.plot(path, energies, spectrum))
     dlmsave("SingleSpectrum-1.dlm", path, energies, spectrum; distance=false)
     dlmsave("SingleSpectrum-2.dlm", path, energies, spectrum; distance=true)
 
@@ -516,6 +543,7 @@ end
     spectra[:, :, 1] = spectrum
     spectra[:, :, 2] = spectrum
     Plots.savefig(Plots.plot(path, energies, spectra), "PlotsMultiSpectra.png")
+    Makie.save("MakieMultiSpectra.png", Makie.plot(path, energies, spectra))
     dlmsave("MultiSpectra-1.dlm", path, energies, spectra; distance=false)
     dlmsave("MultiSpectra-2.dlm", path, energies, spectra; distance=true)
 end
