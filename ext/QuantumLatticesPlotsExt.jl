@@ -3,6 +3,7 @@ module QuantumLatticesPlotsExt
 using RecipesBase: @layout, @recipe, @series
 using QuantumLattices: AbstractLattice, Assignment, Bond, BrillouinZone, Data, FractionalReciprocalSpace, Neighbors, Point, ReciprocalCurve, ReciprocalPath, ReciprocalScatter, ReciprocalZone
 using QuantumLattices: atol, bonds, dimension, distance, fractionals, getcontent, label, rank, scalartype, str, ticks
+using QuantumLattices.Frameworks: seriestype
 
 """
     @recipe plot(lattice::AbstractLattice, neighbors::Union{Int, Neighbors}, filter::Function=bond->true; siteon=false)
@@ -311,9 +312,5 @@ Define the recipe for the visualization of an assignment of an algorithm.
     end
     Tuple(assignment.data)
 end
-@inline seriestype(_...) = nothing
-@inline seriestype(data::Data) = seriestype(Tuple(data)...)
-@inline seriestype(::AbstractVector{<:Number}, ::Union{AbstractVector{<:Number}, AbstractMatrix{<:Number}}, _...) = :path
-@inline seriestype(::AbstractVector{<:Number}, ::AbstractVector{<:Number}, ::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}}, _...) = :heatmap
 
 end # module

@@ -19,7 +19,7 @@ import ..QuantumOperators: scalartype
 import ..Spatials: dlmsave
 
 export Action, Algorithm, Assignment, CategorizedGenerator, Data, Eager, ExpansionStyle, Formula, Frontend, Generator, Lazy, OperatorGenerator, Parameters
-export eager, lazy, checkoptions, datatype, hasoption, options, optionsinfo, qldload, qldsave, run!
+export eager, lazy, checkoptions, datatype, hasoption, options, optionsinfo, qldload, qldsave, run!, seriestype
 
 """
     Parameters{Names}(values::Number...) where Names
@@ -1114,5 +1114,15 @@ Save the data of an assignment to a delimited file.
 @inline function dlmsave(assignment::Assignment, delim='\t'; prefix::String="", suffix::String="", ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="")
     dlmsave(joinpath(dirname(assignment), string(str(assignment; prefix=prefix, suffix=suffix, ndecimal=ndecimal, select=select, front=front, rear=rear), ".dlm")), Tuple(assignment.data)..., delim)
 end
+
+"""
+    seriestype(data::Data) -> Union{Symbol, Nothing}
+
+Determine the plot seriestype for data. Returns `:path`, `:heatmap`, or `nothing`.
+"""
+@inline seriestype(data::Data) = seriestype(Tuple(data)...)
+@inline seriestype(_...) = nothing
+@inline seriestype(::AbstractVector{<:Number}, ::Union{AbstractVector{<:Number}, AbstractMatrix{<:Number}}, _...) = :path
+@inline seriestype(::AbstractVector{<:Number}, ::AbstractVector{<:Number}, ::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}}, _...) = :heatmap
 
 end  # module
