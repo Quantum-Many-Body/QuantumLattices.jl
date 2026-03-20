@@ -4,7 +4,7 @@ module QuantumLattices
 import LinearAlgebra: ishermitian, mul!, rank
 include("Interfaces.jl")
 export OneAtLeast, OneOrMore, ZeroAtLeast, ZeroOrMore
-export ⊕, ⊗, add!, decompose, decompose!, dimension, div!, expand, expand!, id, ishermitian, kind, mul!, permute, rank, reset!, shape, str, sub!, update, update!, value
+export add!, decompose, decompose!, dimension, div!, expand, expand!, id, ishermitian, kind, mul!, permute, rank, reset!, shape, str, sub!, update, update!, value, ⊕, ⊗
 
 # Toolkit
 include("Toolkit.jl")
@@ -15,7 +15,7 @@ include("QuantumOperators.jl")
 using .QuantumOperators
 export LaTeX, Operator, OperatorIndex, OperatorPack, OperatorProd, Operators, OperatorSet, OperatorSum, QuantumOperator
 export LinearFunction, LinearTransformation, Matrixization, Permutation, TabledUnitSubstitution, UnitSubstitution
-export idtype, isequivalenttoscalar, ishermitian, latexname, latexformat, matrix, scalartype, script, sequence
+export idtype, isequivalenttoscalar, ishermitian, latexformat, latexname, matrix, scalartype, script, sequence
 
 # Spatials
 include("Spatials.jl")
@@ -29,7 +29,7 @@ include("DegreesOfFreedom.jl")
 using .DegreesOfFreedom
 export CompositeInternal, CompositeIndex, CoordinatedIndex, Hilbert, Index, Internal, InternalIndex, InternalProd, InternalSum, SimpleInternal
 export Boundary, Coupling, MatrixCoupling, MatrixCouplingComponent, MatrixCouplingProd, MatrixCouplingSum, Metric, OperatorIndexToTuple, Ordinal, Pattern, Table, Term, TermAmplitude, TermCoupling
-export ˢᵗ, ⁿᵈ, ʳᵈ, ᵗʰ, plain, coordinatedindextype, diagonalfields, indextype, internalindextype, isdefinite, isdiagonal, partition, patternrule, showablefields, statistics, @pattern
+export coordinatedindextype, diagonalfields, indextype, internalindextype, isdefinite, isdiagonal, partition, patternrule, plain, showablefields, statistics, @pattern, ˢᵗ, ⁿᵈ, ʳᵈ, ᵗʰ
 
 # QuantumSystems
 include("QuantumSystems.jl")
@@ -48,6 +48,6 @@ export Elastic, Kinetic, Hooke, PhononTerm
 include("Frameworks.jl")
 using .Frameworks
 export Action, Algorithm, Assignment, CategorizedGenerator, Data, Eager, ExpansionStyle, Formula, Frontend, Generator, Lazy, OperatorGenerator, Parameters
-export eager, lazy, checkoptions, datatype, hasoption, options, optionsinfo, qldload, qldsave, run!
+export checkoptions, datatype, eager, hasoption, lazy, options, optionsinfo, qldload, qldsave, run!
 
 end

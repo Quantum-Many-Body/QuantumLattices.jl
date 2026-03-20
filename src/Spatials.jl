@@ -7,7 +7,7 @@ using NearestNeighbors: KDTree, inrange, knn
 using Printf: @printf, @sprintf
 using StaticArrays: MVector, SVector
 using ..QuantumLattices: OneAtLeast, OneOrMore, ZeroAtLeast
-using ..Toolkit: CompositeDict, DirectProductedIndices, DirectProductedVectorSpace, Float, Segment, VectorSpace, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceEnumerative, atol, efficientoperations, rtol, concatenate, getcontent, subscript
+using ..Toolkit: CompositeDict, DirectProductedIndices, DirectProductedVectorSpace, Float, Segment, VectorSpace, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceEnumerative, atol, concatenate, efficientoperations, getcontent, rtol, subscript
 
 import ..QuantumLattices: decompose, dimension, expand, matrix, rank, shape
 import ..QuantumOperators: scalartype

@@ -13,7 +13,7 @@ import ..Toolkit: contentnames, dissolve, isparameterbound, parameternames, subs
 
 export LaTeX, Operator, OperatorIndex, OperatorPack, OperatorProd, Operators, OperatorSet, OperatorSum, QuantumOperator
 export LinearFunction, LinearTransformation, Matrixization, Permutation, TabledUnitSubstitution, UnitSubstitution
-export idtype, isequivalenttoscalar, ishermitian, latexname, latexformat, matrix, operatortype, scalartype, script, sequence
+export idtype, isequivalenttoscalar, ishermitian, latexformat, latexname, matrix, operatortype, scalartype, script, sequence
 
 # Generic quantum operator
 """

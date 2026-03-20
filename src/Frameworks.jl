@@ -9,7 +9,7 @@ using Serialization: deserialize, serialize
 using TimerOutputs: @timeit, TimerOutput, time
 using ..DegreesOfFreedom: Boundary, Hilbert, Term, plain
 using ..QuantumLattices: OneOrMore, ZeroAtLeast, ZeroOrMore, id, value
-using ..QuantumOperators: LinearTransformation, identity, operatortype, OperatorPack, Operators, OperatorSet, OperatorSum
+using ..QuantumOperators: LinearTransformation, OperatorPack, OperatorSet, OperatorSum, Operators, identity, operatortype
 using ..Spatials: Bond, isintracell
 using ..Toolkit: atol, efficientoperations, parametertype, rtol
 
@@ -18,7 +18,7 @@ import ..QuantumOperators: scalartype
 import ..Spatials: dlmsave
 
 export Action, Algorithm, Assignment, CategorizedGenerator, Data, Eager, ExpansionStyle, Formula, Frontend, Generator, Lazy, OperatorGenerator, Parameters
-export eager, lazy, checkoptions, datatype, hasoption, options, optionsinfo, qldload, qldsave, run!, seriestype
+export checkoptions, datatype, eager, hasoption, lazy, options, optionsinfo, qldload, qldsave, run!
 
 """
     Parameters{Names}(values::Number...) where Names
