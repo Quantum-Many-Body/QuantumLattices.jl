@@ -1,7 +1,7 @@
 using Latexify: latexify
 using LinearAlgebra: dot
 using Printf: @sprintf
-using QuantumLattices: ZeroAtLeast, ⊗, add!, div!, expand, mul!, id, rank, sub!, update!, value
+using QuantumLattices: ZeroAtLeast, add!, div!, expand, id, mul!, rank, sub!, update!, value, ⊗
 using QuantumLattices.QuantumOperators
 using QuantumLattices.Toolkit: Float, contentnames, isparameterbound, parameternames, parametertype, subscript, superscript
 

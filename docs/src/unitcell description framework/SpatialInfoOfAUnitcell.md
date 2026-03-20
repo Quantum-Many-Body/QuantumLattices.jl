@@ -206,4 +206,4 @@ julia> bonds(lattice, Neighbors(2=>√2))
  Bond(2, Point(1, [1.0, -1.0], [1.0, -1.0]), Point(1, [0.0, 0.0], [0.0, 0.0]))
 ```
 
-To obtain generic bonds containing more points, users are encouraged to implement their own `bonds` methods. Pull requests are welcomed.
+To obtain generic bonds containing more points, users are encouraged to implement their own `bonds` methods. Pull requests are welcome.

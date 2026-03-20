@@ -4,7 +4,7 @@ CurrentModule = QuantumLattices.QuantumOperators
 
 # Quantum operators
 
-Quantum operators form an algebra over a field, which are vector spaces with a bilinear operation (often called the "multiplication") between vectors defined.
+Quantum operators form an algebra over a field, i.e., a vector space with a bilinear operation (often called the "multiplication") between vectors defined.
 
 With the help of the structure constants of the algebra, the result of the bilinear operation between any two vectors can be expressed as a sum of individual ones. Therefore, in principle, an algebra can be represented by the complete basis set of its corresponding vector space and a rank-3 tensor encapsulating its structure constants. Note that the "bilinear operation" is not restricted to the usual multiplication. For example, in Lie algebras, it is the commutator (defined as [A, B] ≝ AB - BA), which is a composition of the usual multiplication and subtraction.
 

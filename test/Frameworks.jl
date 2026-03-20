@@ -1,15 +1,15 @@
 using LinearAlgebra: dot, eigen
 using QuantumLattices: ZeroAtLeast, expand, expand!, reset!, str, update
-using QuantumLattices.DegreesOfFreedom: plain, Boundary, CoordinatedIndex, Hilbert, Index
+using QuantumLattices.DegreesOfFreedom: Boundary, CoordinatedIndex, Hilbert, Index, plain
 using QuantumLattices.Frameworks
 using QuantumLattices.QuantumOperators: LinearFunction, Operator, Operators, idtype, scalartype
-using QuantumLattices.Spatials: BrillouinZone, Lattice, bonds, decompose, dlmsave, isintracell, periods
+using QuantumLattices.Spatials: BrillouinZone, Lattice, bonds, dlmsave, isintracell, periods
 using QuantumLattices.QuantumSystems: Fock, FockIndex, Hopping, Onsite
 using StaticArrays: SVector, SMatrix, @SMatrix
 
-import Plots
-import Makie
 import CairoMakie
+import Makie
+import Plots
 import QuantumLattices: update!
 import QuantumLattices.Frameworks: Parameters, options, run!
 

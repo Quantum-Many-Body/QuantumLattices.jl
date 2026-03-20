@@ -48,7 +48,7 @@ Here, we have two comments:
 
 ## Parameter tuning of lattice Hamiltonians
 
-It is customary to tune the parameters of a lattice Hamiltonian. This can be achieved using the [`update!`](@ref) function exported by this package:
+It is customary to tune the parameters in a lattice Hamiltonian. This can be achieved using the [`update!`](@ref) function exported by this package:
 ```julia
 update!(gen::OperatorGenerator; termid₁=termvalue₁, termid₂=termvalue₂, ...)
 ```

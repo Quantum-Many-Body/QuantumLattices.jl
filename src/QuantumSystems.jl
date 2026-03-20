@@ -8,7 +8,7 @@ using ..DegreesOfFreedom: CompositeIndex, CoordinatedIndex, Coupling, Hilbert, I
 using ..QuantumLattices: OneAtLeast, ZeroAtLeast, decompose, rank, str
 using ..QuantumOperators: LaTeX, Operator, OperatorIndex, OperatorProd, Operators, latexformat
 using ..Spatials: Bond, Point, direction, isparallel, rcoordinate
-using ..Toolkit: atol, efficientoperations, rtol, Float, VectorSpace, VectorSpaceDirectProducted, delta, rawtype
+using ..Toolkit: Float, VectorSpace, VectorSpaceDirectProducted, atol, delta, efficientoperations, rawtype, rtol
 
 import ..DegreesOfFreedom: MatrixCoupling, MatrixCouplingComponent, VectorSpaceStyle, internalindextype, isdefinite, patternrule, showablefields, statistics
 import ..QuantumLattices: expand, expand!, kind, permute, shape
@@ -1128,7 +1128,7 @@ Construct a phonon index.
     𝕦(site, direction) -> Index{<:PhononIndex{:u}}
     𝕦(site, direction, rcoordinate, icoordinate) -> CoordinatedIndex{<:Index{<:PhononIndex{:u}}}
 
-Convenient construction of `SpinIndex{:u}`, `Index{<:SpinIndex{:u}}`, `CoordinatedIndex{<:Index{<:SpinIndex{:u}}}`.
+Convenient construction of `PhononIndex{:u}`, `Index{<:PhononIndex{:u}}`, `CoordinatedIndex{<:Index{<:PhononIndex{:u}}}`.
 """
 @inline 𝕦(direction) = PhononIndex{:u}(direction)
 @inline 𝕦(site, direction) = Index(site, PhononIndex{:u}(direction))
@@ -1139,7 +1139,7 @@ Convenient construction of `SpinIndex{:u}`, `Index{<:SpinIndex{:u}}`, `Coordinat
     𝕡(site, direction) -> Index{<:PhononIndex{:p}}
     𝕡(site, direction, rcoordinate, icoordinate) -> CoordinatedIndex{<:Index{<:PhononIndex{:p}}}
 
-Convenient construction of `SpinIndex{:p}`, `Index{<:SpinIndex{:p}}`, `CoordinatedIndex{<:Index{<:SpinIndex{:p}}}`.
+Convenient construction of `PhononIndex{:p}`, `Index{<:PhononIndex{:p}}`, `CoordinatedIndex{<:Index{<:PhononIndex{:p}}}`.
 """
 @inline 𝕡(direction) = PhononIndex{:p}(direction)
 @inline 𝕡(site, direction) = Index(site, PhononIndex{:p}(direction))

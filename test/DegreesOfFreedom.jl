@@ -1,7 +1,7 @@
 using Latexify: latexify
 using LinearAlgebra: dot, ishermitian
 using Printf: @printf
-using QuantumLattices: ⊕, ⊗, dimension, expand, kind, rank, reset!, update!, value
+using QuantumLattices: dimension, expand, kind, rank, reset!, update!, value, ⊕, ⊗
 using QuantumLattices.DegreesOfFreedom
 using QuantumLattices.QuantumOperators: LaTeX, Operator, OperatorIndex, Operators, id, latexformat, sequence
 using QuantumLattices.Spatials: Bond, Point, decompose, icoordinate, nneighbor, rcoordinate

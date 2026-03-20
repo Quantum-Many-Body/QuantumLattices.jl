@@ -477,7 +477,7 @@ true
 
 #### Unitcell and global levels: Hilbert, Index and CoordinatedIndex
 
-At the unitcell and global levels, lattice-vibration algebras and generators are the same to previous situations by [`Phonon`](@ref) and [`PhononIndex`](@ref) replaced with in the corresponding types:
+At the unitcell and global levels, lattice-vibration algebras and generators are the same as in the previous cases by replacing [`Phonon`](@ref) and [`PhononIndex`](@ref) with the corresponding types:
 ```jldoctest PPP
 julia> Hilbert(site=>Phonon(2) for site=1:3)
 Hilbert{Phonon{:}} with 3 entries:

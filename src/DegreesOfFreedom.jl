@@ -1,15 +1,15 @@
 module DegreesOfFreedom
 
 using DataStructures: OrderedDict
+using LaTeXStrings: LaTeXString
+using Latexify: @latexrecipe, Latexify, latexify
 using Printf: @printf, @sprintf
 using SparseArrays: SparseMatrixCSC, nnz
 using StaticArrays: SVector
-using Latexify: Latexify, @latexrecipe, latexify
-using LaTeXStrings: LaTeXString
 using ..QuantumLattices: OneAtLeast, OneOrMore, ZeroAtLeast, add!, decompose, str
 using ..QuantumOperators: LinearTransformation, Operator, OperatorIndex, OperatorPack, Operators, QuantumOperator, scalartype
 using ..Spatials: Bond, Point
-using ..Toolkit: atol, efficientoperations, rtol, CompositeDict, Float, VectorSpace, VectorSpaceDirectProducted, VectorSpaceDirectSummed, concatenate, fulltype, parametertype, rawtype, reparameter
+using ..Toolkit: CompositeDict, Float, VectorSpace, VectorSpaceDirectProducted, VectorSpaceDirectSummed, atol, concatenate, efficientoperations, fulltype, parametertype, rawtype, reparameter, rtol
 
 import ..QuantumLattices: ⊕, ⊗, dimension, expand, expand!, id, ishermitian, kind, permute, rank, reset!, shape, update!, value
 import ..QuantumOperators: idtype, operatortype, script
@@ -1497,7 +1497,7 @@ end
     nneighbor(term::Term) -> Int
     nneighbor(terms::OneAtLeast{Term}) -> Int
 
-Get the
+Get the:
 1) order of neighbor in a single term;
 2) highest order of neighbors in a set of terms.
 """

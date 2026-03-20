@@ -1,14 +1,14 @@
 module QuantumOperators
 
 using DataStructures: OrderedDict
-using Latexify: Latexify, latexify, @latexrecipe
 using LaTeXStrings: LaTeXString
+using Latexify: @latexrecipe, Latexify, latexify
 using Printf: @printf, @sprintf
 using ..QuantumLattices: OneAtLeast, str
-using ..Toolkit: atol, efficientoperations, rtol, contentorder, fulltype, getcontent, parameterpairs, parametertype, promoteparameters, rawtype, reparameter
+using ..Toolkit: atol, contentorder, efficientoperations, fulltype, getcontent, parameterpairs, parametertype, promoteparameters, rawtype, reparameter, rtol
 
 import LinearAlgebra: dot
-import ..QuantumLattices: ZeroAtLeast, ⊗, add!, div!, expand, id, ishermitian, mul!, permute, rank, sub!, update!, value
+import ..QuantumLattices: ZeroAtLeast, add!, div!, expand, id, ishermitian, mul!, permute, rank, sub!, update!, value, ⊗
 import ..Toolkit: contentnames, dissolve, isparameterbound, parameternames, subscript, superscript
 
 export LaTeX, Operator, OperatorIndex, OperatorPack, OperatorProd, Operators, OperatorSet, OperatorSum, QuantumOperator
@@ -200,7 +200,7 @@ end
 """
     OperatorPack{V, I} <: QuantumOperator
 
-Entity that represent the pack of a number and an id of a quantum operator.
+Entity that represents the pack of a number and an id of a quantum operator.
 
 Basically, a concrete subtype should contain two predefined contents:
 - `value::V`: the coefficient of the pack
@@ -1028,7 +1028,7 @@ end
 """
     LinearFunction{O<:Union{Union{}, OperatorPack}, F<:Function} <: LinearTransformation
 
-Wrapper a function to be a linear transformation.
+Wrap a function to be a linear transformation.
 """
 struct LinearFunction{O<:Union{Union{}, OperatorPack}, F<:Function} <: LinearTransformation
     f::F

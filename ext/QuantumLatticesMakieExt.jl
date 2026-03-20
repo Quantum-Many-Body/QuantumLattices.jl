@@ -1,9 +1,9 @@
 module QuantumLatticesMakieExt
 
-import Makie: plot, plot!
 using Makie: AbstractAxis, Axis, Axis3, Colorbar, DataAspect, Figure, Heatmap, IntervalsBetween, Lines, Scatter, attribute_names, axislegend, heatmap!, limits!, lines!, scatter!, text!, wong_colors, xlims!, ylims!
 using QuantumLattices: AbstractLattice, Assignment, Bond, BrillouinZone, FractionalReciprocalSpace, Neighbors, Point, ReciprocalCurve, ReciprocalPath, ReciprocalScatter, ReciprocalZone
 using QuantumLattices: atol, bonds, dimension, distance, fractionals, getcontent, label, rank, scalartype, seriestype, str, ticks
+import Makie: plot, plot!
 
 # Helper function to filter kwargs for plot functions
 _filter_kwargs(kwargs, plot_type::Type) = NamedTuple(k => v for (k, v) in kwargs if k in attribute_names(plot_type))

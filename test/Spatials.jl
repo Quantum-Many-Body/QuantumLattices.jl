@@ -1,15 +1,15 @@
-using OffsetArrays: OffsetArray
 using LinearAlgebra: cross, det, dot, norm
-using QuantumLattices.Spatials
+using OffsetArrays: OffsetArray
 using QuantumLattices: decompose, dimension, expand, rank, shape
 using QuantumLattices.QuantumOperators: scalartype
+using QuantumLattices.Spatials
 using QuantumLattices.Toolkit: Float, Segment, contentnames
 using Random: seed!
 using StaticArrays: SVector
 
-import Plots
-import Makie
 import CairoMakie
+import Makie
+import Plots
 
 @testset "distance" begin
     @test distance([0.0, 0.0], [1.0, 1.0]) ≈ sqrt(2.0)

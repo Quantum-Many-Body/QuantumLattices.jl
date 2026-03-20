@@ -1,9 +1,7 @@
 module QuantumLatticesPlotsExt
 
+using QuantumLattices: AbstractLattice, Assignment, Bond, BrillouinZone, FractionalReciprocalSpace, Neighbors, Point, ReciprocalCurve, ReciprocalPath, ReciprocalScatter, ReciprocalZone, atol, bonds, dimension, distance, fractionals, getcontent, label, rank, scalartype, seriestype, str, ticks
 using RecipesBase: @layout, @recipe, @series
-using QuantumLattices: AbstractLattice, Assignment, Bond, BrillouinZone, Data, FractionalReciprocalSpace, Neighbors, Point, ReciprocalCurve, ReciprocalPath, ReciprocalScatter, ReciprocalZone
-using QuantumLattices: atol, bonds, dimension, distance, fractionals, getcontent, label, rank, scalartype, str, ticks
-using QuantumLattices.Frameworks: seriestype
 
 """
     @recipe plot(lattice::AbstractLattice, neighbors::Union{Int, Neighbors}, filter::Function=bond->true; siteon=false)

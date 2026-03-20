@@ -7,7 +7,7 @@ using InteractiveUtils: subtypes
 using Printf: @printf
 using StaticArrays: SVector
 
-import QuantumLattices: OneAtLeast, ZeroOrMore, ZeroAtLeast, id, shape, str, value
+import QuantumLattices: OneAtLeast, ZeroAtLeast, ZeroOrMore, id, shape, str, value
 
 # Utilities
 export atol, rtol, Float

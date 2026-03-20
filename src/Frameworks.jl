@@ -2,17 +2,16 @@ module Frameworks
 
 using Base: @propagate_inbounds
 using Base.Iterators: flatten, repeated
-using DelimitedFiles: writedlm
 using IndentWrappers: indent
 using JLD2: jldopen, loadtodict!
 using Latexify: latexify
 using Serialization: deserialize, serialize
-using TimerOutputs: TimerOutput, time, @timeit
-using ..DegreesOfFreedom: plain, Boundary, Hilbert, Term
+using TimerOutputs: @timeit, TimerOutput, time
+using ..DegreesOfFreedom: Boundary, Hilbert, Term, plain
 using ..QuantumLattices: OneOrMore, ZeroAtLeast, ZeroOrMore, id, value
-using ..QuantumOperators: OperatorPack, Operators, OperatorSet, OperatorSum, LinearTransformation, identity, operatortype
+using ..QuantumOperators: LinearTransformation, identity, operatortype, OperatorPack, Operators, OperatorSet, OperatorSum
 using ..Spatials: Bond, isintracell
-using ..Toolkit: atol, efficientoperations, rtol, parametertype
+using ..Toolkit: atol, efficientoperations, parametertype, rtol
 
 import ..QuantumLattices: add!, expand, expand!, reset!, str, update, update!
 import ..QuantumOperators: scalartype
@@ -847,7 +846,7 @@ end
 """
     Algorithm{F<:Frontend, P<:Parameters, M<:Function} <: Function
 
-An algorithm associated with an frontend.
+An algorithm associated with a frontend.
 """
 mutable struct Algorithm{F<:Frontend, P<:Parameters, M<:Function} <: Function
     const dir::String
@@ -988,7 +987,7 @@ end
     (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters, dependencies::ZeroOrMore{Assignment}; dir::String=alg.dir, delay::Bool=false, options...) -> Assignment
     (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters=Parameters(), map::Function=identity, dependencies::ZeroOrMore{Assignment}=(); dir::String=alg.dir, delay::Bool=false, options...) -> Assignment
 
-Add an assignment on a algorithm by providing the contents of the assignment, and run this assignment.
+Add an assignment on an algorithm by providing the contents of the assignment, and run this assignment.
 """
 @inline function (alg::Algorithm)(name::Symbol, action::Action, dependencies::ZeroOrMore{Assignment}; dir::String=alg.dir, delay::Bool=false, options...)
     return alg(name, action, Parameters(), dependencies; delay=delay, dir=dir, options...)

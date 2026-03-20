@@ -3,7 +3,6 @@ using OffsetArrays: OffsetArray
 using QuantumLattices: id, shape, str, value
 using QuantumLattices.Toolkit
 using StaticArrays: SVector
-
 import QuantumLattices.Toolkit: VectorSpaceStyle, contentnames, contenttype, dissolve, getcontent, isparameterbound, parameternames
 
 @testset "str" begin

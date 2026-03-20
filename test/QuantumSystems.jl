@@ -3,7 +3,7 @@ using QuantumLattices: expand, kind, permute, rank
 using QuantumLattices.DegreesOfFreedom: ˢᵗ, ⁿᵈ, CompositeIndex, CoordinatedIndex, Coupling, Hilbert, Index, InternalIndex, MatrixCoupling, internalindextype, isdefinite, patternrule, showablefields, statistics, @pattern
 using QuantumLattices.QuantumOperators: Operator, OperatorIndex, Operators, latexname, matrix, script
 using QuantumLattices.QuantumSystems
-using QuantumLattices.Spatials: Bond, Lattice, Neighbors, Point, azimuthd, bonds, rcoordinate, icoordinate
+using QuantumLattices.Spatials: Bond, Lattice, Neighbors, Point, azimuthd, bonds, icoordinate, rcoordinate
 using QuantumLattices.Toolkit: DuplicatePermutations, shape
 using SparseArrays: SparseMatrixCSC
 using StaticArrays: SVector

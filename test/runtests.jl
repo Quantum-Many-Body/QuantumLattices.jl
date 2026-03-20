@@ -1,5 +1,5 @@
-using Test
 using SafeTestsets
+using Test
 
 @testset "all" begin
     @time @safetestset "Interfaces" begin include("Interfaces.jl") end
