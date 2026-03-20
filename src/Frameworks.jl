@@ -18,7 +18,7 @@ import ..QuantumOperators: scalartype
 import ..Spatials: dlmsave
 
 export Action, Algorithm, Assignment, CategorizedGenerator, Data, Eager, ExpansionStyle, Formula, Frontend, Generator, Lazy, OperatorGenerator, Parameters
-export checkoptions, datatype, eager, hasoption, lazy, options, optionsinfo, qldload, qldsave, run!
+export checkoptions, datatype, eager, hasoption, lazy, options, optionsinfo, qldload, qldsave, run!, seriestype
 
 """
     Parameters{Names}(values::Number...) where Names
