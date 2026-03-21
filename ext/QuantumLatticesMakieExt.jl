@@ -2,7 +2,7 @@ module QuantumLatticesMakieExt
 
 using Makie: AbstractAxis, Axis, Axis3, Colorbar, DataAspect, Figure, Heatmap, IntervalsBetween, Lines, Scatter, attribute_names, axislegend, heatmap!, limits!, lines!, scatter!, text!, wong_colors, xlims!, ylims!
 using QuantumLattices: AbstractLattice, Assignment, Bond, BrillouinZone, FractionalReciprocalSpace, Neighbors, Point, ReciprocalCurve, ReciprocalPath, ReciprocalScatter, ReciprocalZone
-using QuantumLattices: atol, bonds, dimension, distance, fractionals, getcontent, label, rank, scalartype, seriestype, str, ticks
+using QuantumLattices: atol, bonds, dimension, distance, fractionals, getcontent, label, rank, scalartype, str, ticks
 import Makie: plot, plot!
 
 # Helper function to filter kwargs for plot functions
@@ -306,37 +306,44 @@ function plot(path::ReciprocalPath, y::AbstractVector{<:Number}, data::AbstractA
     return fig
 end
 
-# 11. Assignment plotting
+# 11. path plotting for (x, y)
+function plot(x::AbstractVector{<:Number}, y::AbstractMatrix{<:Number}; kwargs...)
+    fig = Figure()
+    ax = Axis(fig[1, 1])
+    plot!(ax, x, y; kwargs...)
+    return fig
+end
+function plot!(ax::AbstractAxis, x::AbstractVector{<:Number}, y::AbstractMatrix{<:Number}; kwargs...)
+    ax isa Axis || error("Axis required for line plot")
+    ax.titlesize = get(kwargs, :titlesize, 10)
+    ax.xgridvisible = get(kwargs, :xgridvisible, true)
+    ax.ygridvisible = get(kwargs, :ygridvisible, true)
+    ax.xminorgridvisible = get(kwargs, :xminorgridvisible, true)
+    ax.yminorgridvisible = get(kwargs, :yminorgridvisible, true)
+    ax.xminorticksvisible = get(kwargs, :xminorticksvisible, true)
+    ax.yminorticksvisible = get(kwargs, :yminorticksvisible, true)
+    ax.xminorticks = get(kwargs, :xminorticks, IntervalsBetween(10))
+    ax.yminorticks = get(kwargs, :yminorticks, IntervalsBetween(10))
+    xlims!(ax, get(kwargs, :xlims, extrema(x))...)
+    ylims!(ax, get(kwargs, :ylims, extrema(y))...)
+    for j in 1:size(y, 2)
+        lines!(ax, x, y[:, j]; linewidth=1, _filter_kwargs(kwargs, Lines)...)
+    end
+    return ax
+end
+
+# 12. Assignment plotting
 function plot(assignment::Assignment; kwargs...)
     fig = Figure()
-    attr = seriestype(assignment.data)
-    attr in (:path, :heatmap) || error("plot error: unsupported seriestype for Assignment plotting, only :path and :heatmap are supported.")
     ax = Axis(fig[1, 1])
     plot!(ax, assignment; kwargs...)
-    attr == :heatmap && Colorbar(fig[1, 2], ax.scene.plots[end])
+    ax.scene.plots[end] isa Heatmap && Colorbar(fig[1, 2], ax.scene.plots[end])
     return fig
 end
 function plot!(ax::AbstractAxis, assignment::Assignment; kwargs...)
-    attr = seriestype(assignment.data)
-    attr in (:path, :heatmap) || error("plot! error: unsupported seriestype for Assignment plotting, only :path and :heatmap are supported.")
     ax.title = get(kwargs, :title, str(assignment))
-    ax.titlesize = get(kwargs, :titlesize, 10)
     data = Tuple(assignment.data)
-    if attr == :path
-        ax.xgridvisible = get(kwargs, :xgridvisible, true)
-        ax.ygridvisible = get(kwargs, :ygridvisible, true)
-        ax.xminorgridvisible = get(kwargs, :xminorgridvisible, true)
-        ax.yminorgridvisible = get(kwargs, :yminorgridvisible, true)
-        ax.xminorticksvisible = get(kwargs, :xminorticksvisible, true)
-        ax.yminorticksvisible = get(kwargs, :yminorticksvisible, true)
-        ax.xminorticks = get(kwargs, :xminorticks, IntervalsBetween(10))
-        ax.yminorticks = get(kwargs, :yminorticks, IntervalsBetween(10))
-        for j in 1:size(data[2], 2)
-            lines!(ax, data[1], data[2][:, j]; linewidth=1, _filter_kwargs(kwargs, Lines)...)
-        end
-    else
-        heatmap!(ax, data[1], data[2], transpose(data[3]); colorrange=extrema(data[3]), _filter_kwargs(kwargs, Heatmap)...)
-    end
+    plot!(ax, data...; kwargs...)
     return ax
 end
 
