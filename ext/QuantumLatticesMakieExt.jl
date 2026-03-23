@@ -1,6 +1,6 @@
 module QuantumLatticesMakieExt
 
-using Makie: AbstractAxis, Axis, Axis3, Colorbar, DataAspect, Figure, Heatmap, IntervalsBetween, Lines, Scatter, attribute_names, axislegend, heatmap!, limits!, lines!, scatter!, text!, wong_colors, xlims!, ylims!
+using Makie: AbstractAxis, Axis, Axis3, Colorbar, DataAspect, Figure, Heatmap, IntervalsBetween, Lines, Scatter, Series, attribute_names, axislegend, heatmap!, limits!, lines!, scatter!, series!, text!, wong_colors, xlims!, ylims!
 using QuantumLattices: AbstractLattice, Assignment, Bond, BrillouinZone, FractionalReciprocalSpace, Neighbors, Point, ReciprocalCurve, ReciprocalPath, ReciprocalScatter, ReciprocalZone
 using QuantumLattices: atol, bonds, dimension, distance, fractionals, getcontent, label, rank, scalartype, str, ticks
 import Makie: plot, plot!
@@ -9,13 +9,13 @@ import Makie: plot, plot!
 _filter_kwargs(kwargs, plot_type::Type) = NamedTuple(k => v for (k, v) in kwargs if k in attribute_names(plot_type))
 
 # 1. Lattice plotting
-function plot(lattice::AbstractLattice, neighbors::Union{Int, Neighbors}, filter::Function=bond->true; siteon=false, kwargs...)
-    fig = Figure()
+@inline plot(lattice::AbstractLattice, neighbors::Union{Int, Neighbors}, filter::Function=bond->true; kwargs...) = plot!(Figure(), lattice, neighbors, filter; kwargs...)
+function plot!(fig::Figure, lattice::AbstractLattice, neighbors::Union{Int, Neighbors}, filter::Function=bond->true; kwargs...)
     ax = dimension(lattice) <= 2 ? Axis(fig[1, 1]) : Axis3(fig[1, 1])
-    plot!(ax, lattice, neighbors, filter; siteon, kwargs...)
+    plot!(ax, lattice, neighbors, filter; kwargs...)
     return fig
 end
-function plot!(ax::AbstractAxis, lattice::AbstractLattice, neighbors::Union{Int, Neighbors}, filter::Function=bond->true; siteon=false, kwargs...)
+function plot!(ax::AbstractAxis, lattice::AbstractLattice, neighbors::Union{Int, Neighbors}, filter::Function=bond->true; siteon::Bool=false, kwargs...)
     ax.title = get(kwargs, :title, string(getcontent(lattice, :name)))
     ax.titlesize = get(kwargs, :titlesize, 10)
     ax isa Axis && (ax.aspect = get(kwargs, :aspect, DataAspect()))
@@ -49,13 +49,13 @@ function plot!(ax::AbstractAxis, lattice::AbstractLattice, neighbors::Union{Int,
 end
 
 # 2. FractionalReciprocalSpace plotting (BrillouinZone, ReciprocalZone, ReciprocalScatter)
-function plot(reciprocalspace::FractionalReciprocalSpace; fractional=false, autolims=true, kwargs...)
-    fig = Figure()
+@inline plot(reciprocalspace::FractionalReciprocalSpace; kwargs...) = plot!(Figure(), reciprocalspace; kwargs...)
+function plot!(fig::Figure, reciprocalspace::FractionalReciprocalSpace; fractional::Bool=false, kwargs...)
     ax = (dimension(reciprocalspace) <= 2 || (fractional && rank(reciprocalspace) <= 2)) ? Axis(fig[1, 1]) : Axis3(fig[1, 1])
-    plot!(ax, reciprocalspace; fractional=fractional, autolims=autolims, kwargs...)
+    plot!(ax, reciprocalspace; fractional, kwargs...)
     return fig
 end
-function plot!(ax::AbstractAxis, reciprocalspace::FractionalReciprocalSpace; fractional=false, autolims=true, kwargs...)
+function plot!(ax::AbstractAxis, reciprocalspace::FractionalReciprocalSpace; fractional::Bool=false, autolims::Bool=true, kwargs...)
     dim = fractional ? rank(reciprocalspace) : dimension(reciprocalspace)
     dim <= 2 ? (ax isa Axis || error("Axis required for $(dim)D reciprocal space")) : (ax isa Axis3 || error("Axis3 required for 3D reciprocal space"))
     ax.titlesize = get(kwargs, :titlesize, 10)
@@ -81,15 +81,13 @@ function plot!(ax::AbstractAxis, reciprocalspace::FractionalReciprocalSpace; fra
 end
 
 # 3. ReciprocalPath plotting
-function plot(path::ReciprocalPath; kwargs...)
-    dimension(path)==2 || error("Only 2D reciprocal path can be plotted.")
-    fig = Figure()
-    ax = Axis(fig[1, 1])
-    plot!(ax, path; kwargs...)
+@inline plot(path::ReciprocalPath; kwargs...) = plot!(Figure(), path; kwargs...)
+function plot!(fig::Figure, path::ReciprocalPath; kwargs...)
+    plot!(Axis(fig[1, 1]), path; kwargs...)
     return fig
 end
 function plot!(ax::AbstractAxis, path::ReciprocalPath; kwargs...)
-    ax isa Axis || error("Axis required for reciprocal path.")
+    dimension(path) == 2 || error("Only 2D reciprocal path can be plotted.")
     ax.aspect = get(kwargs, :aspect, DataAspect())
     ax.titlesize = get(kwargs, :titlesize, 10)
     ax.xlabel = get(kwargs, :xlabel, label(path, 1))
@@ -116,15 +114,13 @@ function plot!(ax::AbstractAxis, path::ReciprocalPath; kwargs...)
 end
 
 # 4. ReciprocalCurve plotting
-function plot(curve::ReciprocalCurve; kwargs...)
-    dimension(curve)==2 || error("Only 2D reciprocal curve can be plotted.")
-    fig = Figure()
-    ax = Axis(fig[1, 1])
-    plot!(ax, curve; kwargs...)
+@inline plot(curve::ReciprocalCurve; kwargs...) = plot!(Figure(), curve; kwargs...)
+function plot!(fig::Figure, curve::ReciprocalCurve; kwargs...)
+    plot!(Axis(fig[1, 1]), curve; kwargs...)
     return fig
 end
 function plot!(ax::AbstractAxis, curve::ReciprocalCurve; kwargs...)
-    ax isa Axis || error("Axis required for reciprocal curve.")
+    dimension(curve) == 2 || error("Only 2D reciprocal curve can be plotted.")
     ax.aspect = get(kwargs, :aspect, DataAspect())
     ax.titlesize = get(kwargs, :titlesize, 10)
     ax.xlabel = get(kwargs, :xlabel, label(curve, 1))
@@ -142,16 +138,15 @@ function plot!(ax::AbstractAxis, curve::ReciprocalCurve; kwargs...)
 end
 
 # 5. Heatmap for BrillouinZone/ReciprocalZone with data
-function plot(reciprocalspace::Union{BrillouinZone, ReciprocalZone}, data::AbstractMatrix{<:Number}; clims=nothing, kwargs...)
-    @assert length(reciprocalspace.reciprocals)==2 "plot error: only two dimensional reciprocal spaces are supported."
-    fig = Figure()
+@inline plot(reciprocalspace::Union{BrillouinZone, ReciprocalZone}, data::AbstractMatrix{<:Number}; kwargs...) = plot!(Figure(), reciprocalspace, data; kwargs...)
+function plot!(fig::Figure, reciprocalspace::Union{BrillouinZone, ReciprocalZone}, data::AbstractMatrix{<:Number}; kwargs...)
     ax = Axis(fig[1, 1])
-    plot!(ax, reciprocalspace, data; clims=clims, kwargs...)
+    plot!(ax, reciprocalspace, data; kwargs...)
     Colorbar(fig[1, 2], ax.scene.plots[end])
     return fig
 end
 function plot!(ax::AbstractAxis, reciprocalspace::Union{BrillouinZone, ReciprocalZone}, data::AbstractMatrix{<:Number}; clims=nothing, kwargs...)
-    ax isa Axis || error("Axis required for heatmap")
+    length(reciprocalspace.reciprocals)==2 || error("Only two dimensional reciprocal spaces are supported.")
     ax.aspect = get(kwargs, :aspect, DataAspect())
     ax.titlesize = get(kwargs, :titlesize, 10)
     ax.xlabel = get(kwargs, :xlabel, label(reciprocalspace, 1))
@@ -167,13 +162,12 @@ function plot!(ax::AbstractAxis, reciprocalspace::Union{BrillouinZone, Reciproca
 end
 
 # 6. ReciprocalScatter with weights
-function plot(reciprocalscatter::ReciprocalScatter, weights::AbstractMatrix{<:Number}; fractional=true, weightmultiplier=5.0, weightcolors=nothing, weightlabels=nothing, kwargs...)
-    fig = Figure()
-    ax = Axis(fig[1, 1])
-    plot!(ax, reciprocalscatter, weights; fractional=fractional, weightmultiplier=weightmultiplier, weightcolors=weightcolors, weightlabels=weightlabels, kwargs...)
+@inline plot(reciprocalscatter::ReciprocalScatter, weights::AbstractMatrix{<:Number}; kwargs...) = plot!(Figure(), reciprocalscatter, weights; kwargs...)
+function plot!(fig::Figure, reciprocalscatter::ReciprocalScatter, weights::AbstractMatrix{<:Number}; kwargs...)
+    plot!(Axis(fig[1, 1]), reciprocalscatter, weights; kwargs...)
     return fig
 end
-function plot!(ax::AbstractAxis, reciprocalscatter::ReciprocalScatter, weights::AbstractMatrix{<:Number}; fractional=true, weightmultiplier=5.0, weightcolors=nothing, weightlabels=nothing, kwargs...)
+function plot!(ax::AbstractAxis, reciprocalscatter::ReciprocalScatter, weights::AbstractMatrix{<:Number}; fractional::Bool=true, weightmultiplier::Real=5.0, weightcolors=nothing, weightlabels=nothing, kwargs...)
     ax isa Axis || error("Axis required for reciprocal scatter")
     ax.aspect = get(kwargs, :aspect, DataAspect())
     ax.titlesize = get(kwargs, :titlesize, 10)
@@ -200,10 +194,9 @@ function plot!(ax::AbstractAxis, reciprocalscatter::ReciprocalScatter, weights::
 end
 
 # 7. Line plot for ReciprocalPath with data
-function plot(path::ReciprocalPath, data::AbstractMatrix{<:Number}; kwargs...)
-    fig = Figure()
-    ax = Axis(fig[1, 1])
-    plot!(ax, path, data; kwargs...)
+@inline plot(path::ReciprocalPath, data::AbstractMatrix{<:Number}; kwargs...) = plot!(Figure(), path, data; kwargs...)
+function plot!(fig::Figure, path::ReciprocalPath, data::AbstractMatrix{<:Number}; kwargs...)
+    plot!(Axis(fig[1, 1]), path, data; kwargs...)
     return fig
 end
 function plot!(ax::AbstractAxis, path::ReciprocalPath, data::AbstractMatrix{<:Number}; kwargs...)
@@ -220,20 +213,17 @@ function plot!(ax::AbstractAxis, path::ReciprocalPath, data::AbstractMatrix{<:Nu
     ax.xminorgridvisible = get(kwargs, :xminorgridvisible, true)
     ax.yminorgridvisible = get(kwargs, :yminorgridvisible, true)
     xlims!(ax, get(kwargs, :xlims, (0, distance(path)))...)
-    for j in 1:size(data, 2)
-        lines!(ax, [distance(path, i) for i=1:length(path)], data[:, j]; linewidth=1, _filter_kwargs(kwargs, Lines)...)
-    end
+    series!(ax, [distance(path, i) for i=1:length(path)], transpose(data); linewidth=1, _filter_kwargs(kwargs, Series)...)
     return ax
 end
 
 # 8. Scatter plot for ReciprocalPath with data and weights
-function plot(path::ReciprocalPath, data::AbstractMatrix{<:Number}, weights::AbstractArray{<:Number, 3}; weightmultiplier=5.0, weightcolors=nothing, weightlabels=nothing, kwargs...)
-    fig = Figure()
-    ax = Axis(fig[1, 1])
-    plot!(ax, path, data, weights; weightmultiplier=weightmultiplier, weightcolors=weightcolors, weightlabels=weightlabels, kwargs...)
+@inline plot(path::ReciprocalPath, data::AbstractMatrix{<:Number}, weights::AbstractArray{<:Number, 3}; kwargs...) = plot!(Figure(), path, data, weights; kwargs...)
+function plot!(fig::Figure, path::ReciprocalPath, data::AbstractMatrix{<:Number}, weights::AbstractArray{<:Number, 3}; kwargs...)
+    plot!(Axis(fig[1, 1]), path, data, weights; kwargs...)
     return fig
 end
-function plot!(ax::AbstractAxis, path::ReciprocalPath, data::AbstractMatrix{<:Number}, weights::AbstractArray{<:Number, 3}; weightmultiplier=5.0, weightcolors=nothing, weightlabels=nothing, kwargs...)
+function plot!(ax::AbstractAxis, path::ReciprocalPath, data::AbstractMatrix{<:Number}, weights::AbstractArray{<:Number, 3}; weightmultiplier::Real=5.0, weightcolors=nothing, weightlabels=nothing, kwargs...)
     ax isa Axis || error("Axis required for scatter plot")
     ax.titlesize = get(kwargs, :titlesize, 10)
     ax.xlabel = get(kwargs, :xlabel, string(label(path)))
@@ -261,10 +251,10 @@ function plot!(ax::AbstractAxis, path::ReciprocalPath, data::AbstractMatrix{<:Nu
 end
 
 # 9. Heatmap for ReciprocalPath with y data
-function plot(path::ReciprocalPath, y::AbstractVector{<:Number}, data::AbstractMatrix{<:Number}; clims=nothing, kwargs...)
-    fig = Figure()
+@inline plot(path::ReciprocalPath, y::AbstractVector{<:Number}, data::AbstractMatrix{<:Number}; kwargs...) = plot!(Figure(), path, y, data; kwargs...)
+function plot!(fig::Figure, path::ReciprocalPath, y::AbstractVector{<:Number}, data::AbstractMatrix{<:Number}; kwargs...)
     ax = Axis(fig[1, 1])
-    plot!(ax, path, y, data; clims=clims, kwargs...)
+    plot!(ax, path, y, data; kwargs...)
     Colorbar(fig[1, 2], ax.scene.plots[end])
     return fig
 end
@@ -280,37 +270,34 @@ function plot!(ax::AbstractAxis, path::ReciprocalPath, y::AbstractVector{<:Numbe
     return ax
 end
 
-# 10. Multiple heatmaps for 3D data
-function plot(reciprocalspace::Union{BrillouinZone, ReciprocalZone}, data::AbstractArray{<:Number, 3}; subtitles=nothing, titlesize=8, nrow=nothing, ncol=nothing, clims=nothing, kwargs...)
+# 10. Multiple heatmaps for 3D data (multi-panel only)
+@inline plot(reciprocalspace::Union{BrillouinZone, ReciprocalZone}, data::AbstractArray{<:Number, 3}; kwargs...) = plot!(Figure(), reciprocalspace, data; kwargs...)
+function plot!(fig::Figure, reciprocalspace::Union{BrillouinZone, ReciprocalZone}, data::AbstractArray{<:Number, 3}; subtitles=nothing, titlesize::Int=8, nrow=nothing, ncol=nothing, clims=nothing, kwargs...)
     isnothing(clims) && (clims = extrema(data))
     isnothing(nrow) && (nrow = round(Int, sqrt(size(data, 3))))
     isnothing(ncol) && (ncol = ceil(Int, size(data, 3)/nrow))
-    fig = Figure()
     for i = 1:size(data, 3)
-        ax = Axis(fig[div(i-1, ncol) + 1, (i-1) % ncol + 1])
-        plot!(ax, reciprocalspace, data[:, :, i]; title=isnothing(subtitles) ? nothing : subtitles[i], titlesize=titlesize, clims=clims, kwargs...)
+        plot!(Axis(fig[div(i-1, ncol) + 1, (i-1) % ncol + 1]), reciprocalspace, data[:, :, i]; title=isnothing(subtitles) ? nothing : subtitles[i], titlesize=titlesize, clims=clims, kwargs...)
     end
     Colorbar(fig[nrow+1, 1:ncol], limits=clims, vertical=false)
     return fig
 end
-function plot(path::ReciprocalPath, y::AbstractVector{<:Number}, data::AbstractArray{<:Number, 3}; subtitles=nothing, titlesize=8, nrow=nothing, ncol=nothing, clims=nothing, kwargs...)
+@inline plot(path::ReciprocalPath, y::AbstractVector{<:Number}, data::AbstractArray{<:Number, 3}; kwargs...) = plot!(Figure(), path, y, data; kwargs...)
+function plot!(fig::Figure, path::ReciprocalPath, y::AbstractVector{<:Number}, data::AbstractArray{<:Number, 3}; subtitles=nothing, titlesize::Int=8, nrow=nothing, ncol=nothing, clims=nothing, kwargs...)
     isnothing(clims) && (clims = extrema(data))
     isnothing(nrow) && (nrow = round(Int, sqrt(size(data, 3))))
     isnothing(ncol) && (ncol = ceil(Int, size(data, 3)/nrow))
-    fig = Figure()
     for i = 1:size(data, 3)
-        ax = Axis(fig[div(i-1, ncol) + 1, (i-1) % ncol + 1])
-        plot!(ax, path, y, data[:, :, i]; title=isnothing(subtitles) ? nothing : subtitles[i], titlesize=titlesize, clims=clims, kwargs...)
+        plot!(Axis(fig[div(i-1, ncol) + 1, (i-1) % ncol + 1]), path, y, data[:, :, i]; title=isnothing(subtitles) ? nothing : subtitles[i], titlesize=titlesize, clims=clims, kwargs...)
     end
     Colorbar(fig[nrow+1, 1:ncol], limits=clims, vertical=false)
     return fig
 end
 
 # 11. path plotting for (x, y)
-function plot(x::AbstractVector{<:Number}, y::AbstractMatrix{<:Number}; kwargs...)
-    fig = Figure()
-    ax = Axis(fig[1, 1])
-    plot!(ax, x, y; kwargs...)
+@inline plot(x::AbstractVector{<:Number}, y::AbstractMatrix{<:Number}; kwargs...) = plot!(Figure(), x, y; kwargs...)
+function plot!(fig::Figure, x::AbstractVector{<:Number}, y::AbstractMatrix{<:Number}; kwargs...)
+    plot!(Axis(fig[1, 1]), x, y; kwargs...)
     return fig
 end
 function plot!(ax::AbstractAxis, x::AbstractVector{<:Number}, y::AbstractMatrix{<:Number}; kwargs...)
@@ -326,15 +313,13 @@ function plot!(ax::AbstractAxis, x::AbstractVector{<:Number}, y::AbstractMatrix{
     ax.yminorticks = get(kwargs, :yminorticks, IntervalsBetween(10))
     xlims!(ax, get(kwargs, :xlims, extrema(x))...)
     ylims!(ax, get(kwargs, :ylims, extrema(y))...)
-    for j in 1:size(y, 2)
-        lines!(ax, x, y[:, j]; linewidth=1, _filter_kwargs(kwargs, Lines)...)
-    end
+    series!(ax, x, transpose(y); linewidth=1, _filter_kwargs(kwargs, Series)...)
     return ax
 end
 
 # 12. Assignment plotting
-function plot(assignment::Assignment; kwargs...)
-    fig = Figure()
+@inline plot(assignment::Assignment; kwargs...) = plot!(Figure(), assignment; kwargs...)
+function plot!(fig::Figure, assignment::Assignment; kwargs...)
     ax = Axis(fig[1, 1])
     plot!(ax, assignment; kwargs...)
     ax.scene.plots[end] isa Heatmap && Colorbar(fig[1, 2], ax.scene.plots[end])
