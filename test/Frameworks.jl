@@ -7,8 +7,7 @@ using QuantumLattices.Spatials: BrillouinZone, Lattice, bonds, dlmsave, isintrac
 using QuantumLattices.QuantumSystems: Fock, FockIndex, Hopping, Onsite
 using StaticArrays: SVector, SMatrix, @SMatrix
 
-import CairoMakie
-import Makie
+import CairoMakie as Makie
 import Plots
 import QuantumLattices: update!
 import QuantumLattices.Frameworks: Parameters, options, run!

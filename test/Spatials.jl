@@ -7,8 +7,7 @@ using QuantumLattices.Toolkit: Float, Segment, contentnames
 using Random: seed!
 using StaticArrays: SVector
 
-import CairoMakie
-import Makie
+import CairoMakie as Makie
 import Plots
 
 @testset "distance" begin
