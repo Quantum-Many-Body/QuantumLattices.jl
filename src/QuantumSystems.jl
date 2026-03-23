@@ -8,7 +8,7 @@ using ..DegreesOfFreedom: CompositeIndex, CoordinatedIndex, Coupling, Hilbert, I
 using ..QuantumLattices: OneAtLeast, ZeroAtLeast, decompose, rank, str
 using ..QuantumOperators: LaTeX, Operator, OperatorIndex, OperatorProd, Operators, latexformat
 using ..Spatials: Bond, Point, direction, isparallel, rcoordinate
-using ..Toolkit: Float, VectorSpace, VectorSpaceDirectProducted, atol, delta, efficientoperations, rawtype, rtol
+using ..Toolkit: Float, VectorSpace, VectorSpaceDirectProducted, atol, delta, rtol
 
 import ..DegreesOfFreedom: MatrixCoupling, MatrixCouplingComponent, VectorSpaceStyle, internalindextype, isdefinite, patternrule, showablefields, statistics
 import ..QuantumLattices: expand, expand!, kind, permute, shape
@@ -111,7 +111,7 @@ Judge whether the nambu index is `creation`.
     𝕔(site, orbital, spin) -> Index{<:FockIndex{:f}}
     𝕔(site, orbital, spin, rcoordinate, icoordinate) -> CoordinatedIndex{<:Index{<:FockIndex{:f}}}
 
-Convenient construction of `FockIndex{:f}`, `Index{<:FockIndex{:f}}`, `CoordinatedIndex{<:Index{<:FockIndex{f}}}` with the `nambu` attribute being `annihilation`.
+Convenient construction of `FockIndex{:f}`, `Index{<:FockIndex{:f}}`, `CoordinatedIndex{<:Index{<:FockIndex{:f}}}` with the `nambu` attribute being `annihilation`.
 """
 function 𝕔 end
 
@@ -120,7 +120,7 @@ function 𝕔 end
     𝕔⁺(site, orbital, spin) -> Index{<:FockIndex{:f}}
     𝕔⁺(site, orbital, spin, rcoordinate, icoordinate) -> CoordinatedIndex{<:Index{<:FockIndex{:f}}}
 
-Convenient construction of `FockIndex{:f}`, `Index{<:FockIndex{:f}}`, `CoordinatedIndex{<:Index{<:FockIndex{f}}}` with the `nambu` attribute being `creation`.
+Convenient construction of `FockIndex{:f}`, `Index{<:FockIndex{:f}}`, `CoordinatedIndex{<:Index{<:FockIndex{:f}}}` with the `nambu` attribute being `creation`.
 """
 function 𝕔⁺ end
 
@@ -1097,7 +1097,7 @@ end
 """
     PhononIndex{K, D<:Union{Char, Symbol, Colon}} <: InternalIndex
 
-Phonon index, i.e., the internal index to specify the generators of the vibration of a lattice point.
+Phonon index, i.e., the internal index to specify the generators of lattice vibrations at a single point.
 """
 struct PhononIndex{K, D<:Union{Char, Symbol, Colon}} <: InternalIndex
     direction::D

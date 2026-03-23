@@ -56,7 +56,7 @@ The mathematical foundations of our package are that the operators in a lattice 
 * **form an algebra over the complex field**.
 
 Based on this, the package provides the following features:
-* **Unitcell Description Framework**: The Hamiltonian can be constructed based on the unitcell of a lattice, using information about the local algebra acting on the local Hilbert space at each point and the terms that couple different degrees of freedom on the same or different points. This information can be provided to the program in the same way as describing the quantum system in a research paper.
+* **Unitcell Description Framework**: The Hamiltonian can be constructed based on the unitcell of a lattice, using information about the local algebra acting on the local Hilbert space at each point and the terms that couple different degrees of freedom at the same or different points. This information can be provided to the program in the same way as describing the quantum system in a research paper.
 
 * **Complete Symbolic Computation**: With this package alone, symbolic computation between operators is supported while keeping the coefficients of any operator numeric. By integrating it with [SymPy](https://github.com/JuliaPy/SymPy.jl), complete symbolic computation can be achieved without requiring any modifications to the methods in this package.
 
@@ -90,7 +90,7 @@ Concrete algorithms can be considered as the "backend" of quantum lattice system
 
 ## Note
 
-Due to the rapid development of this package, releases with different minor version numbers are **not** guaranteed to be compatible with previous ones **before** the release of v1.0.0. Comments are welcomed in the GitHub issues.
+Due to the rapid development of this package, releases with different minor version numbers are **not** guaranteed to be compatible with previous ones **before** the release of v1.0.0. Comments are welcome in the GitHub issues.
 
 ## Contact
 

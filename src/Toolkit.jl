@@ -531,7 +531,7 @@ Get the DataType.
 """
     supertype(T, termination::Symbol) -> DataType
 
-Get the supertype of `T` till termination.
+Get the supertype of `T` until termination.
 """
 @inline Base.supertype(::Type{T}, termination::Symbol) where T = _supertype(T, Val(termination))
 @inline @generated function _supertype(::Type{T}, ::Val{termination}) where {T, termination}
@@ -614,7 +614,7 @@ The result is stored in the type parameters of a `Pair`.
 For a type `T`, judge whether a type `D` should be considered as the upper bound of one of its type parameters.
 
 !!! note
-    The default implementations of this function is
+    The default implementations of this function are
     ```julia
     isparameterbound(::Type{}, ::Val{}, ::Type{D}) where D = !isconcretetype(D)
     isparameterbound(::Type{}, ::Val{}, ::Any) = false

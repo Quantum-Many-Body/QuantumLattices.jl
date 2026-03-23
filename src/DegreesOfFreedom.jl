@@ -79,7 +79,7 @@ Get the type of the `InternalIndex` part of an `OperatorIndex`.
     isdefinite(indexes::OneAtLeast{InternalIndex}) -> Bool
     isdefinite(::Type{T}) where {T<:OneAtLeast{InternalIndex}} -> Bool
 
-Judge whether all of a set of internal indexes denote definite internal degrees of freedom.
+Judge whether a set of internal indexes denotes definite internal degrees of freedom.
 """
 @inline isdefinite(indexes::OneAtLeast{InternalIndex}) = isdefinite(typeof(indexes))
 @inline isdefinite(::Type{T}) where {T<:OneAtLeast{InternalIndex}} = all(map(isdefinite, fieldtypes(T)))
@@ -231,7 +231,7 @@ end
     ⊕(internals::InternalSum, internal::SimpleInternal) -> InternalSum
     ⊕(internals₁::InternalSum, internals₂::InternalSum) -> InternalSum
 
-Direct sum between simple internal spaces and composite internal spaces.
+Direct sum among simple internal spaces and composite internal spaces.
 """
 @inline ⊕(internal::SimpleInternal, internals::SimpleInternal...) = InternalSum(internal, internals...)
 @inline ⊕(internal::SimpleInternal, internals::InternalSum) = InternalSum(internal, internals.contents...)
@@ -259,7 +259,7 @@ end
     ⊗(internals::InternalProd, internal::SimpleInternal) -> InternalProd
     ⊗(internals₁::InternalProd, internals₂::InternalProd) -> InternalProd
 
-Direct product between simple internal spaces and composite internal spaces.
+Direct product among simple internal spaces and composite internal spaces.
 """
 @inline ⊗(internal::SimpleInternal, internals::SimpleInternal...) = InternalProd(internal, internals...)
 @inline ⊗(internal::SimpleInternal, internals::InternalProd) = InternalProd(internal, internals.contents...)
@@ -290,7 +290,7 @@ const ˢᵗ = ⁿᵈ = ʳᵈ = ᵗʰ = Ordinal(1)
 """
     Index(site::Union{Int, Ordinal, Colon}, internal::InternalIndex)
 
-Index of a degree of freedom, which consist of the spatial part (i.e., the site index) and the internal part (i.e., the internal index).
+Index of a degree of freedom, which consists of the spatial part (i.e., the site index) and the internal part (i.e., the internal index).
 """
 struct Index{I<:InternalIndex, S<:Union{Int, Ordinal, Colon}} <: OperatorIndex
     site::S
@@ -421,7 +421,7 @@ Get the `attr` script of a composite index.
 """
     CoordinatedIndex{I<:Index, V<:SVector} <: CompositeIndex{I}
 
-Coordinated index, i.e., index with coordinates in the unitcell.
+Coordinated index, i.e., index with coordinates in the unit cell.
 """
 struct CoordinatedIndex{I<:Index, V<:SVector} <: CompositeIndex{I}
     index::I
@@ -583,7 +583,7 @@ end
     isdiagonal(fields::ZeroAtLeast{Symbol}, indexes::OneAtLeast{InternalIndex}) -> Bool
     isdiagonal(::Val{fields}, indexes::OneAtLeast{InternalIndex}) where fields -> Bool
 
-Judge whether a set of homogenous internal indexes is subject to the "diagonal" constraint, i.e., whether the fields specified by `fields` are all equal among the given indexes.
+Judge whether a set of homogeneous internal indexes is subject to the "diagonal" constraint, i.e., whether the fields specified by `fields` are all equal among the given indexes.
 """
 @inline isdiagonal(fields::ZeroAtLeast{Symbol}, indexes::OneAtLeast{InternalIndex}) = isdiagonal(Val{fields}(), indexes)
 @generated function isdiagonal(::Val{fields}, indexes::OneAtLeast{InternalIndex}) where fields
@@ -865,7 +865,7 @@ end
 """
     patternrule(indexes::OneAtLeast{InternalIndex}, ::Val{Name}) where Name -> OneAtLeast{InternalIndex}
 
-Define the default rule for the internal index in a coupling pattern.
+Define the default rule for internal indexes in a coupling pattern.
 """
 @inline @generated function patternrule(indexes::OneAtLeast{InternalIndex}, ::Val{Name}) where Name
     allequal(map(nameof, fieldtypes(indexes))) || return :(indexes)
@@ -953,7 +953,7 @@ Get the rank of a coupling.
 """
     *(cp₁::Coupling, cp₂::Coupling) -> Coupling
 
-Get the multiplication between two coupling.
+Get the multiplication between two couplings.
 """
 @inline Base.:*(cp₁::Coupling, cp₂::Coupling) = Coupling(cp₁.value*cp₂.value, cp₁.pattern⊗cp₂.pattern)
 
@@ -1418,7 +1418,7 @@ Get a zero term.
 """
     update!(term::Term, args...; kwargs...) -> Term
 
-Update the value of a term if it is ismodulatable.
+Update the value of a term if it is modulatable.
 """
 function update!(term::Term, args...; kwargs...)
     @assert term.ismodulatable "update! error: not modulatable term."
@@ -1594,7 +1594,7 @@ end
 """
     Table{I, B<:Metric} <: CompositeDict{I, Int}
 
-Table of operator index v.s. sequence pairs.
+Table of operator index vs. sequence pairs.
 """
 struct Table{I, B<:Metric} <: CompositeDict{I, Int}
     by::B
@@ -1607,7 +1607,7 @@ end
 """
     getindex(table::Table, index::OperatorIndex) -> Int
 
-Inquiry the sequence of an operator index.
+Get the sequence of an operator index.
 """
 @inline Base.getindex(table::Table, index::OperatorIndex) = table[convert(keytype(table), table.by(index))]
 
@@ -1615,7 +1615,7 @@ Inquiry the sequence of an operator index.
     haskey(table::Table, index::OperatorIndex) -> Bool
     haskey(table::Table, indexes::ZeroAtLeast{OperatorIndex}) -> ZeroAtLeast{Bool}
 
-Judge whether a single operator index or a set of operator indexes have been assigned with sequences in table.
+Judge whether a single operator index or a set of operator indexes have sequences assigned in the table.
 """
 @inline Base.haskey(table::Table, index::OperatorIndex) = haskey(table, table.by(index))
 @inline Base.haskey(table::Table, indexes::ZeroAtLeast{OperatorIndex}) = map(index->haskey(table, index), indexes)
@@ -1625,7 +1625,7 @@ Judge whether a single operator index or a set of operator indexes have been ass
 
 Convert a set of operator units to the corresponding table of operator index vs. sequence pairs.
 
-The input operator units are measured by the input `by` function with the duplicates removed. The resulting unique values are sorted, which determines the sequence of the input `indexes`. Note that two operator units have the same sequence if their converted values are equal to each other.
+The input operator units are measured by the `by` function with the duplicates removed. The resulting unique values are sorted, which determines the sequence of the input `indexes`. Note that two operator units have the same sequence if their converted values are equal to each other.
 """
 @inline Table(indexes::AbstractVector{<:OperatorIndex}, by::Metric=OperatorIndexToTuple(eltype(indexes))) = Table(by, [by(index) for index in indexes]|>unique!|>sort!|>vec2dict)
 

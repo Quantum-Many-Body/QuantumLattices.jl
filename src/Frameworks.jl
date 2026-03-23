@@ -59,7 +59,7 @@ end
 """
     str(params::Parameters; ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="") -> String
 
-Convert a set of `Parameters` to a string with each number hosting at most `ndecimal` decimal places. Here, the `select` function can select the key-value pairs to be contained by the keys.
+Convert a set of `Parameters` to a string with each number rounded to at most `ndecimal` decimal places. The `select` function can be used to filter which key-value pairs to include.
 """
 function str(params::Parameters; ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="")
     result = String[]
@@ -584,7 +584,7 @@ end
 """
     reset!(gen::OperatorGenerator, bonds::AbstractVector{<:Bond}, hilbert::Hilbert; vectors::AbstractVector{<:AbstractVector}=gen.operators.boundary.vectors) -> OperatorGenerator
 
-Reset an operator generator by a new lattice and the corresponding new hilbert space.
+Reset an operator generator by a new lattice and the corresponding hilbert space.
 """
 function reset!(gen::OperatorGenerator, bonds::AbstractVector{<:Bond}, hilbert::Hilbert; vectors::AbstractVector{<:AbstractVector}=gen.operators.boundary.vectors)
     append!(empty!(gen.bonds), bonds)

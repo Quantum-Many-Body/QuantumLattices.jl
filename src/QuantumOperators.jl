@@ -99,9 +99,9 @@ Expand a `QuantumOperator`, which is defined to be itself.
 """
     OperatorIndex <: QuantumOperator
 
-An operator index is the irreducible symbolic unit to completely represent a quantum operator.
+An operator index is the irreducible symbolic unit for completely representing a quantum operator.
 
-It plays the role of the symbols as in usual computer algebras while it can host internal structures, which is convenient to represent quantum operators with complicated spatial and/or internal degrees of freedom.
+It plays the role of the symbols in computer algebra systems while it can host internal structures, which is convenient to represent quantum operators with complicated spatial and/or internal degrees of freedom.
 """
 abstract type OperatorIndex <: QuantumOperator end
 @inline Base.show(io::IO, u::OperatorIndex) = @printf io "%s(%s)" nameof(typeof(u)) join(map(repr, ntuple(i->getfield(u, i), Val(fieldcount(typeof(u))))), ", ")
@@ -313,7 +313,7 @@ end
 """
     OperatorProd{V, I<:Tuple} <: OperatorPack{V, I}
 
-A special kind of `OperatorPack`, where the relation between the coefficient and each component of the operator id can be viewed as product.
+A special kind of `OperatorPack`, where the relation between the coefficient and each component of the operator id can be viewed as a product.
 """
 abstract type OperatorProd{V, I<:Tuple} <: OperatorPack{V, I} end
 @inline Base.promote_rule(::Type{M}, ::Type{N}) where {M<:OperatorProd, N<:Number} = reparameter(M, :value, promote_type(valtype(M), N))
@@ -409,7 +409,7 @@ Get the sequence of the id of a quantum operator according to a table.
 """
     Operator{V, I<:ZeroAtLeast{OperatorIndex}} <: OperatorProd{V, I}
 
-Operator.
+A quantum operator with a scalar coefficient and a composite id (an id of type `ZeroAtLeast{OperatorIndex}`).
 """
 struct Operator{V, I<:ZeroAtLeast{OperatorIndex}} <: OperatorProd{V, I}
     value::V
@@ -474,7 +474,7 @@ Get the eltype of an `OperatorSet`.
 """
     iszero(ms::OperatorSet) -> Bool
 
-Judge whether an `OperatorSet` is zero, i.e, it does not contain any `OperatorPack`.
+Judge whether an `OperatorSet` is zero, i.e., it does not contain any `OperatorPack`.
 """
 @inline Base.iszero(ms::OperatorSet) = isempty(ms)
 
@@ -530,7 +530,7 @@ Iterate over the `OperatorPack`s contained in an `OperatorSum`.
 """
     iszero(ms::OperatorSum) -> Bool
 
-Judge whether an `OperatorSum` is zero, i.e, it does not contain any `OperatorPack`.
+Judge whether an `OperatorSum` is zero, i.e., it does not contain any `OperatorPack`.
 """
 @inline Base.iszero(ms::OperatorSum) = iszero(length(ms))
 
@@ -546,7 +546,7 @@ Get the number of `OperatorPack`s contained in an `OperatorSum`.
 """
     haskey(ms::OperatorSum, id) -> Bool
 
-Judge whether an `OperatorSum` contains an `OperatorPack` with the given `id`. 
+Judge whether an `OperatorSum` contains an `OperatorPack` with the given `id`.
 """
 @inline Base.haskey(ms::OperatorSum, id) = haskey(ms.contents, id)
 
@@ -666,7 +666,7 @@ end
 """
     map!(f::Function, ms::OperatorSum; kwargs...) -> typeof(ms)
 
-In place map of an `OperatorSum` by the function `f` elementally.
+Map in place an `OperatorSum` by the function `f` elementwise.
 """
 function Base.map!(f::Function, ms::OperatorSum; kwargs...)
     for m in ms
@@ -909,7 +909,7 @@ Get the body/superscript/subscript of the LaTeX string representation of an oper
 """
     script(u::OperatorIndex, ::Val{}; kwargs...) -> String
 
-Default script for an operator index, which always return an empty string.
+Default script for an operator index, which always returns an empty string.
 """
 @inline script(u::OperatorIndex, ::Val{}; kwargs...) = ""
 

@@ -7,7 +7,7 @@ using NearestNeighbors: KDTree, inrange, knn
 using Printf: @printf, @sprintf
 using StaticArrays: MVector, SVector
 using ..QuantumLattices: OneAtLeast, OneOrMore, ZeroAtLeast
-using ..Toolkit: CompositeDict, DirectProductedIndices, DirectProductedVectorSpace, Float, Segment, VectorSpace, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceEnumerative, atol, concatenate, efficientoperations, getcontent, rtol, subscript
+using ..Toolkit: CompositeDict, DirectProductedVectorSpace, Float, Segment, VectorSpace, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceEnumerative, atol, concatenate, efficientoperations, getcontent, rtol, subscript
 
 import ..QuantumLattices: decompose, dimension, expand, matrix, rank, shape
 import ..QuantumOperators: scalartype
@@ -230,7 +230,7 @@ end
         vertexes::NTuple{3, Bool}=(true, true, true), edges::NTuple{3, Bool}=(true, true, true), atol::Real=atol, rtol::Real=rtol
     ) -> Bool
 
-Judge whether a point belongs to the interior of a triangle whose vertexes are `p₁`, 'p₂' and `p₃` with the give tolerance. `vertexes` and `edges` define whether the interior should contain the vertexes or edges, respectively.
+Judge whether a point belongs to the interior of a triangle whose vertexes are `p₁`, `p₂` and `p₃` with the give tolerance. `vertexes` and `edges` define whether the interior should contain the vertexes or edges, respectively.
 !!! note
     1. The vertexes are in the order (p₁, p₂, p₃) and the edges are in the order (p₁p₂, p₂p₃, p₃p₁).
     2. The edges do not contain the vertexes.
@@ -454,7 +454,7 @@ end
 
 Use kdtree to search the lowest several minimum bond lengths within a lattice translated by a cluster.
 
-When the translation vectors are not empty, the lattice will be considered periodic in the corresponding directions. Otherwise the lattice will be open in all directions. To search for the bonds across the periodic boundaries, the cluster will be pre-translated to become a supercluster, which has open boundaries but is large enough to contain all the nearest neighbors within the required order. The `coordination` parameter sets the average number of each order of nearest neighbors. If it is to small, larger bond lengths may not be searched, and the result will contain `Inf`. This is a sign that you may need a larger `coordination`. Another situation that `Inf` appears in the result occurs when the minimum lengths are searched in open lattices. Indeed, the cluster may be too small so that the required order just goes beyond it. In this case the warning message can be safely ignored.
+When the translation vectors are not empty, the lattice will be considered periodic in the corresponding directions. Otherwise the lattice will be open in all directions. To search for the bonds across the periodic boundaries, the cluster will be pre-translated to become a supercluster, which has open boundaries but is large enough to contain all the nearest neighbors within the required order. The `coordination` parameter sets the average number of each order of nearest neighbors. If it is too small, larger bond lengths may not be searched, and the result will contain `Inf`. This is a sign that you may need a larger `coordination`. Another situation that `Inf` appears in the result occurs when the minimum lengths are searched in open lattices. Indeed, the cluster may be too small so that the required order just goes beyond it. In this case the warning message can be safely ignored.
 """
 @inline function minimumlengths(cluster::AbstractVector{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}, nneighbor::Integer=1; coordination::Integer=12)
     return minimumlengths(reshape(cluster, axes(cluster, 1), 1), vectors, nneighbor; coordination=coordination)
@@ -1010,7 +1010,7 @@ end
     periods(brillouinzone::BrillouinZone) -> Tuple
     periods(::Type{<:BrillouinZone{K, P} where K}) -> P
 
-Get the periods of a brillouin zone.
+Get the periods of a Brillouin zone.
 """
 @inline periods(brillouinzone::BrillouinZone) = periods(typeof(brillouinzone))
 @inline periods(::Type{<:BrillouinZone{K, P} where K}) where P = P
@@ -1019,7 +1019,7 @@ Get the periods of a brillouin zone.
     period(brillouinzone::BrillouinZone, i::Integer) -> Integer/Inf
     period(::Type{<:BrillouinZone{K, P} where K}, i::Integer) where P -> Integer/Inf
 
-Get the ith period of a brillouin zone.
+Get the ith period of a Brillouin zone.
 """
 @inline period(brillouinzone::BrillouinZone, i::Integer) = period(typeof(brillouinzone), i)
 @inline period(::Type{<:BrillouinZone{K, P} where K}, i::Integer) where P = P[i]

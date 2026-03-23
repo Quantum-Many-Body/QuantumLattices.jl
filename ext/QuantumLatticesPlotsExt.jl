@@ -237,7 +237,7 @@ end
 """
     @recipe plot(path::ReciprocalPath, y::AbstractVector{<:Number}, data::AbstractMatrix{<:Number})
 
-Define the recipe for the heatmap visualization of data on x-y plain with x axis being a reciprocal path.
+Define the recipe for the heatmap visualization of data on x-y plane with x axis being a reciprocal path.
 """
 @recipe function plot(path::ReciprocalPath, y::AbstractVector{<:Number}, data::AbstractMatrix{<:Number})
     seriestype --> :heatmap

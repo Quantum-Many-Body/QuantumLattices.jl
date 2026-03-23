@@ -303,7 +303,7 @@ Hi{Real}
     ```julia
     reparameter(Hi{Int}, :content, Real)
     ```
-    Rather, it only affect the result of the function call like
+    Rather, it only affects the result of the function call like
     ```julia
     reparameter(Hi{Int}, 1, Real)
     ```
@@ -535,7 +535,7 @@ efficientoperations
 
 ## Composite structures
 
-Julia is not an object-oriented programming language. For example, only abstract types can be inherited so that subtypes cannot inherit fields from their parents. Therefore, Julia prefers composition over inheritance. However, to make a new concrete type behave much like another one, tedious repetitions of redefining the generic interfaces are usually not avoidable, especially for the basic types in Julia base. In this module, we implement two such composite types, [`CompositeVector`](@ref) and [`CompositeDict`](@ref), for the sake of future usage.
+Julia is not an object-oriented programming language. For example, only abstract types support inheritance, so subtypes cannot inherit fields from their parents. Therefore, Julia prefers composition over inheritance. However, to make a new concrete type behave much like another one, tedious repetitions of redefining the generic interfaces are usually not avoidable, especially for the basic types in Julia base. In this module, we implement two such composite types, [`CompositeVector`](@ref) and [`CompositeDict`](@ref), for the sake of future usage.
 
 ### CompositeVector
 
