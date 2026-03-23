@@ -39,8 +39,10 @@ function Makie.plot!(ax::Makie.AbstractAxis, lattice::AbstractLattice, neighbors
             end
         end
     end
-    filtered_bonds = [bond for bond in bonds(lattice, neighbors) if length(bond)==2 && filter(bond)]
-    return Makie.linesegments!(ax, [Makie.Point{dim}(p.rcoordinate...) for bond in filtered_bonds for p in bond]; _filter_kwargs(kwargs, Makie.LineSegments)...)
+    return Makie.linesegments!(
+        ax, [Makie.Point{dim}(point.rcoordinate...) for bond in bonds(lattice, neighbors) if length(bond)==2 && filter(bond) for point in bond];
+        _filter_kwargs(kwargs, Makie.LineSegments)...
+    )
 end
 
 # 2. FractionalReciprocalSpace plotting (BrillouinZone, ReciprocalZone, ReciprocalScatter)
@@ -132,9 +134,7 @@ end
 # 5. Heatmap for BrillouinZone/ReciprocalZone with data
 @inline Makie.plot(reciprocalspace::Union{BrillouinZone, ReciprocalZone}, data::AbstractMatrix{<:Number}; kwargs...) = Makie.plot!(Makie.Figure(), reciprocalspace, data; kwargs...)
 function Makie.plot!(fig::Makie.Figure, reciprocalspace::Union{BrillouinZone, ReciprocalZone}, data::AbstractMatrix{<:Number}; kwargs...)
-    ax = Makie.Axis(fig[1, 1])
-    Makie.plot!(ax, reciprocalspace, data; kwargs...)
-    Makie.Colorbar(fig[1, 2], ax.scene.plots[end])
+    Makie.Colorbar(fig[1, 2], Makie.plot!(Makie.Axis(fig[1, 1]), reciprocalspace, data; kwargs...))
     return fig
 end
 function Makie.plot!(ax::Makie.AbstractAxis, reciprocalspace::Union{BrillouinZone, ReciprocalZone}, data::AbstractMatrix{<:Number}; clims=nothing, kwargs...)
@@ -175,15 +175,23 @@ function Makie.plot!(ax::Makie.AbstractAxis, reciprocalscatter::ReciprocalScatte
     x, y = [c[1] for c in coordinates], [c[2] for c in coordinates]
     Makie.xlims!(ax, get(kwargs, :xlims, extrema(x))...)
     Makie.ylims!(ax, get(kwargs, :ylims, extrema(y))...)
-    plt = nothing
-    for (i, index) in enumerate(axes(weights, 2))
-        color = isnothing(weightcolors) ? Makie.wong_colors()[mod1(i, 7)] : weightcolors[i]
-        isnothing(weightlabels) || Makie.scatter!(ax, [x[1]], [y[1]]; markersize=5, color=color, label=weightlabels[i])
-        plt = Makie.scatter!(ax, x, y; markersize=weights[:, index] .* weightmultiplier .+ atol, color=color, strokewidth=0, _filter_kwargs(kwargs, Makie.Scatter)...)
+    if !isnothing(weightlabels)
+        for (i, label) in enumerate(weightlabels)
+            Makie.scatter!(ax, [first(x)], [first(y)]; markersize=5, color=ith_color(weightcolors, i), label)
+        end
+        Makie.axislegend(ax)
     end
-    isnothing(weightlabels) || Makie.axislegend(ax)
-    return plt
+    num = size(weights, 2)
+    return Makie.scatter!(
+        ax, repeat(x, outer=num), repeat(y, outer=num);
+        markersize=vec(weights) .* weightmultiplier .+ atol,
+        color=reduce(vcat, [fill(ith_color(weightcolors, i), length(reciprocalscatter)) for i in 1:num]),
+        strokewidth=0,
+        _filter_kwargs(kwargs, Makie.Scatter)...
+    )
 end
+@inline ith_color(weightcolors, i::Int) = weightcolors[i]
+@inline ith_color(::Nothing, i::Int) = Makie.wong_colors()[mod1(i, 7)]
 
 # 7. Line plot for ReciprocalPath with data
 @inline Makie.plot(path::ReciprocalPath, data::AbstractMatrix{<:Number}; kwargs...) = Makie.plot!(Makie.Figure(), path, data; kwargs...)
@@ -205,7 +213,7 @@ function Makie.plot!(ax::Makie.AbstractAxis, path::ReciprocalPath, data::Abstrac
     ax.xminorgridvisible = get(kwargs, :xminorgridvisible, true)
     ax.yminorgridvisible = get(kwargs, :yminorgridvisible, true)
     Makie.xlims!(ax, get(kwargs, :xlims, (0, distance(path)))...)
-    return Makie.series!(ax, [distance(path, i) for i=1:length(path)], transpose(data); linewidth=1, _filter_kwargs(kwargs, Makie.Series)...)
+    return Makie.series!(ax, [distance(path, i) for i in eachindex(path)], transpose(data); linewidth=1, _filter_kwargs(kwargs, Makie.Series)...)
 end
 
 # 8. Scatter plot for ReciprocalPath with data and weights
@@ -228,25 +236,28 @@ function Makie.plot!(ax::Makie.AbstractAxis, path::ReciprocalPath, data::Abstrac
     ax.xminorticks = get(kwargs, :xminorticks, Makie.IntervalsBetween(10))
     ax.yminorticks = get(kwargs, :yminorticks, Makie.IntervalsBetween(10))
     Makie.xlims!(ax, get(kwargs, :xlims, (0, distance(path)))...)
-    x = [distance(path, i) for i=1:length(path)]
-    plt = nothing
-    for i in 1:size(weights, 3)
-        color = isnothing(weightcolors) ? Makie.wong_colors()[mod1(i, 7)] : weightcolors[i]
-        !isnothing(weightlabels) && Makie.scatter!(ax, [0.0], [0.0]; markersize=5, color=color, label=weightlabels[i])
-        for j in 1:size(data, 2)
-            plt = Makie.scatter!(ax, x, data[:, j]; markersize=weights[:, j, i] .* weightmultiplier .+ atol, color=color, alpha=0.8, strokewidth=0, _filter_kwargs(kwargs, Makie.Scatter)...)
+    x = repeat([distance(path, i) for i in eachindex(path)], outer=length(weights)÷length(path))
+    y = repeat(vec(data), length(weights)÷length(data))
+    if !isnothing(weightlabels)
+        for (i, label) in enumerate(weightlabels)
+            Makie.scatter!(ax, [first(x)], [first(y)]; markersize=5, color=ith_color(weightcolors, i), label=label)
         end
+        Makie.axislegend(ax)
     end
-    !isnothing(weightlabels) && Makie.axislegend(ax)
-    return plt
+    return Makie.scatter!(
+        ax, x, y;
+        markersize=vec(weights) .* weightmultiplier .+ atol,
+        color=reduce(vcat, [fill(ith_color(weightcolors, i), length(data)) for i in 1:length(weights)÷length(data)]),
+        alpha=0.8,
+        strokewidth=0,
+        _filter_kwargs(kwargs, Makie.Scatter)...
+    )
 end
 
 # 9. Heatmap for ReciprocalPath with y data
 @inline Makie.plot(path::ReciprocalPath, y::AbstractVector{<:Number}, data::AbstractMatrix{<:Number}; kwargs...) = Makie.plot!(Makie.Figure(), path, y, data; kwargs...)
 function Makie.plot!(fig::Makie.Figure, path::ReciprocalPath, y::AbstractVector{<:Number}, data::AbstractMatrix{<:Number}; kwargs...)
-    ax = Makie.Axis(fig[1, 1])
-    Makie.plot!(ax, path, y, data; kwargs...)
-    Makie.Colorbar(fig[1, 2], ax.scene.plots[end])
+    Makie.Colorbar(fig[1, 2], Makie.plot!(Makie.Axis(fig[1, 1]), path, y, data; kwargs...))
     return fig
 end
 function Makie.plot!(ax::Makie.AbstractAxis, path::ReciprocalPath, y::AbstractVector{<:Number}, data::AbstractMatrix{<:Number}; clims=nothing, kwargs...)
@@ -257,7 +268,7 @@ function Makie.plot!(ax::Makie.AbstractAxis, path::ReciprocalPath, y::AbstractVe
     Makie.xlims!(ax, get(kwargs, :xlims, (0, distance(path)))...)
     Makie.ylims!(ax, get(kwargs, :ylims, extrema(y))...)
     isnothing(clims) && (clims = extrema(data))
-    return Makie.heatmap!(ax, [distance(path, i) for i=1:length(path)], y, transpose(data); colorrange=clims, _filter_kwargs(kwargs, Makie.Heatmap)...)
+    return Makie.heatmap!(ax, [distance(path, i) for i in eachindex(path)], y, transpose(data); colorrange=clims, _filter_kwargs(kwargs, Makie.Heatmap)...)
 end
 
 # 10. Multiple heatmaps for 3D data (multi-panel only)
@@ -267,7 +278,7 @@ function Makie.plot!(fig::Makie.Figure, reciprocalspace::Union{BrillouinZone, Re
     isnothing(nrow) && (nrow = round(Int, sqrt(size(data, 3))))
     isnothing(ncol) && (ncol = ceil(Int, size(data, 3)/nrow))
     for i = 1:size(data, 3)
-        Makie.plot!(Makie.Axis(fig[div(i-1, ncol) + 1, (i-1) % ncol + 1]), reciprocalspace, data[:, :, i]; title=isnothing(subtitles) ? nothing : subtitles[i], titlesize=titlesize, clims=clims, kwargs...)
+        Makie.plot!(Makie.Axis(fig[div(i-1, ncol)+1, (i-1)%ncol+1]), reciprocalspace, data[:, :, i]; title=isnothing(subtitles) ? nothing : subtitles[i], titlesize=titlesize, clims=clims, kwargs...)
     end
     Makie.Colorbar(fig[nrow+1, 1:ncol], limits=clims, vertical=false)
     return fig
@@ -278,7 +289,7 @@ function Makie.plot!(fig::Makie.Figure, path::ReciprocalPath, y::AbstractVector{
     isnothing(nrow) && (nrow = round(Int, sqrt(size(data, 3))))
     isnothing(ncol) && (ncol = ceil(Int, size(data, 3)/nrow))
     for i = 1:size(data, 3)
-        Makie.plot!(Makie.Axis(fig[div(i-1, ncol) + 1, (i-1) % ncol + 1]), path, y, data[:, :, i]; title=isnothing(subtitles) ? nothing : subtitles[i], titlesize=titlesize, clims=clims, kwargs...)
+        Makie.plot!(Makie.Axis(fig[div(i-1, ncol)+1, (i-1)%ncol+1]), path, y, data[:, :, i]; title=isnothing(subtitles) ? nothing : subtitles[i], titlesize=titlesize, clims=clims, kwargs...)
     end
     Makie.Colorbar(fig[nrow+1, 1:ncol], limits=clims, vertical=false)
     return fig
@@ -309,9 +320,8 @@ end
 # 12. Assignment plotting
 @inline Makie.plot(assignment::Assignment; kwargs...) = Makie.plot!(Makie.Figure(), assignment; kwargs...)
 function Makie.plot!(fig::Makie.Figure, assignment::Assignment; kwargs...)
-    ax = Makie.Axis(fig[1, 1])
-    Makie.plot!(ax, assignment; kwargs...)
-    ax.scene.plots[end] isa Makie.Heatmap && Makie.Colorbar(fig[1, 2], ax.scene.plots[end])
+    plt = Makie.plot!(Makie.Axis(fig[1, 1]), assignment; kwargs...)
+    isa(plt, Makie.Heatmap) && Makie.Colorbar(fig[1, 2], plt)
     return fig
 end
 function Makie.plot!(ax::Makie.AbstractAxis, assignment::Assignment; kwargs...)
