@@ -230,7 +230,7 @@ end
 struct DensityOfStates <:Action end
 mutable struct DensityOfStatesData <: Data
     energies::Vector{Float64}
-    values::Vector{Float64}
+    values::Matrix{Float64}
 end
 @inline options(::Type{<:Assignment{<:DensityOfStates}}) = (
     emin = "lower bound of the energy range",
@@ -243,7 +243,7 @@ function run!(tba::Algorithm{<:TBA}, dos::Assignment{<:DensityOfStates}; emin=no
     eigensystem = first(dos.dependencies)
     isnothing(emin) && (emin = mapreduce(minimum, min, eigensystem.data.values))
     isnothing(emax) && (emax = mapreduce(maximum, max, eigensystem.data.values))
-    data = DensityOfStatesData(range(emin, emax, ne), zeros(ne))
+    data = DensityOfStatesData(range(emin, emax, ne), zeros(ne, 1))
     for (i, ω) in enumerate(data.energies)
         data.values[i] = 0.0
         for energies in eigensystem.data.values

@@ -326,8 +326,7 @@ function Makie.plot!(fig::Makie.Figure, assignment::Assignment; kwargs...)
 end
 function Makie.plot!(ax::Makie.AbstractAxis, assignment::Assignment; kwargs...)
     ax.title = get(kwargs, :title, str(assignment))
-    data = Tuple(assignment.data)
-    return Makie.plot!(ax, data...; kwargs...)
+    return Makie.plot!(ax, Tuple(assignment.data)...; kwargs...)
 end
 
 end # module
