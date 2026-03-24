@@ -5,7 +5,16 @@ using QuantumLattices: AbstractLattice, Assignment, Bond, BrillouinZone, Fractio
 using QuantumLattices: atol, bonds, dimension, distance, fractionals, getcontent, label, rank, scalartype, str, ticks
 
 # Helper function to filter kwargs for plot functions
-_filter_kwargs(kwargs, plot_type::Type) = NamedTuple(k => v for (k, v) in kwargs if k in Makie.attribute_names(plot_type))
+@inline _filter_kwargs(kwargs, plot_type::Type) = NamedTuple(k => v for (k, v) in kwargs if k in Makie.attribute_names(plot_type))
+
+# Helper function to set remaining axis properties from kwargs
+@inline function _set_axis_properties!(ax, kwargs)
+    for (k, v) in pairs(kwargs)
+        if hasproperty(ax, k)
+            setproperty!(ax, k, v)
+        end
+    end
+end
 
 # 1. Lattice plotting
 @inline Makie.plot(lattice::AbstractLattice, neighbors::Union{Int, Neighbors}, filter::Function=bond->true; kwargs...) = Makie.plot!(Makie.Figure(), lattice, neighbors, filter; kwargs...)
@@ -15,9 +24,10 @@ function Makie.plot!(fig::Makie.Figure, lattice::AbstractLattice, neighbors::Uni
     return fig
 end
 function Makie.plot!(ax::Makie.AbstractAxis, lattice::AbstractLattice, neighbors::Union{Int, Neighbors}, filter::Function=bond->true; siteon::Bool=false, kwargs...)
-    ax.title = get(kwargs, :title, string(getcontent(lattice, :name)))
-    ax.titlesize = get(kwargs, :titlesize, 10)
-    ax isa Makie.Axis && (ax.aspect = get(kwargs, :aspect, Makie.DataAspect()))
+    ax.title = string(getcontent(lattice, :name))
+    ax.titlesize = 16
+    ax isa Makie.Axis && (ax.aspect = Makie.DataAspect())
+    _set_axis_properties!(ax, kwargs)
     dim = dimension(lattice)
     if isa(neighbors, Int) || 0 in keys(neighbors)
         coords = NTuple{dim, scalartype(lattice)}[]
@@ -34,7 +44,7 @@ function Makie.plot!(ax::Makie.AbstractAxis, lattice::AbstractLattice, neighbors
             Makie.scatter!(ax, coords...; marker=:circle, strokewidth=0, _filter_kwargs(kwargs, Makie.Scatter)...)
             if siteon
                 for (i, label) in enumerate(labels)
-                    isempty(label) || Makie.text!(ax, coords[1][i], coords[2][i]; text=label, fontsize=get(kwargs, :fontsize, 8))
+                    isempty(label) || Makie.text!(ax, coords[1][i], coords[2][i]; text=label, fontsize=get(kwargs, :fontsize, 14))
                 end
             end
         end
@@ -55,24 +65,25 @@ end
 function Makie.plot!(ax::Makie.AbstractAxis, reciprocalspace::FractionalReciprocalSpace; fractional::Bool=false, autolims::Bool=true, kwargs...)
     dim = fractional ? rank(reciprocalspace) : dimension(reciprocalspace)
     dim <= 2 ? (ax isa Makie.Axis || error("Makie.Axis required for $(dim)D reciprocal space")) : (ax isa Makie.Axis3 || error("Makie.Axis3 required for 3D reciprocal space"))
-    ax.titlesize = get(kwargs, :titlesize, 10)
+    ax.titlesize = 16
     if dim == 2
-        ax.aspect = get(kwargs, :aspect, Makie.DataAspect())
-        ax.xgridvisible = get(kwargs, :xgridvisible, true)
-        ax.ygridvisible = get(kwargs, :ygridvisible, true)
-        ax.xminorgridvisible = get(kwargs, :xminorgridvisible, true)
-        ax.yminorgridvisible = get(kwargs, :yminorgridvisible, true)
-        ax.xminorticksvisible = get(kwargs, :xminorticksvisible, true)
-        ax.yminorticksvisible = get(kwargs, :yminorticksvisible, true)
-        ax.xminorticks = get(kwargs, :xminorticks, Makie.IntervalsBetween(10))
-        ax.yminorticks = get(kwargs, :yminorticks, Makie.IntervalsBetween(10))
+        ax.aspect = Makie.DataAspect()
+        ax.xgridvisible = true
+        ax.ygridvisible = true
+        ax.xminorgridvisible = true
+        ax.yminorgridvisible = true
+        ax.xminorticksvisible = true
+        ax.yminorticksvisible = true
+        ax.xminorticks = Makie.IntervalsBetween(10)
+        ax.yminorticks = Makie.IntervalsBetween(10)
     end
     for (name, default) in zip((:xlabel, :ylabel, :zlabel), ntuple(i->label(reciprocalspace, i), dim))
-        setproperty!(ax, name, get(kwargs, name, default))
+        setproperty!(ax, name, default)
     end
     coords = fractional ? fractionals(reciprocalspace) : collect(reciprocalspace)
     coords = [[c[d] for c in coords] for d in 1:dim]
     autolims || Makie.limits!(ax, extrema.(coords)...)
+    _set_axis_properties!(ax, kwargs)
     return Makie.scatter!(ax, coords...; marker=:circle, strokewidth=0, _filter_kwargs(kwargs, Makie.Scatter)...)
 end
 
@@ -84,24 +95,25 @@ function Makie.plot!(fig::Makie.Figure, path::ReciprocalPath; kwargs...)
 end
 function Makie.plot!(ax::Makie.AbstractAxis, path::ReciprocalPath; kwargs...)
     dimension(path) == 2 || error("Only 2D reciprocal path can be plotted.")
-    ax.aspect = get(kwargs, :aspect, Makie.DataAspect())
-    ax.titlesize = get(kwargs, :titlesize, 10)
-    ax.xlabel = get(kwargs, :xlabel, label(path, 1))
-    ax.ylabel = get(kwargs, :ylabel, label(path, 2))
-    ax.xgridvisible = get(kwargs, :xgridvisible, true)
-    ax.ygridvisible = get(kwargs, :ygridvisible, true)
-    ax.xminorgridvisible = get(kwargs, :xminorgridvisible, true)
-    ax.yminorgridvisible = get(kwargs, :yminorgridvisible, true)
-    ax.xminorticksvisible = get(kwargs, :xminorticksvisible, true)
-    ax.yminorticksvisible = get(kwargs, :yminorticksvisible, true)
-    ax.xminorticks = get(kwargs, :xminorticks, Makie.IntervalsBetween(10))
-    ax.yminorticks = get(kwargs, :yminorticks, Makie.IntervalsBetween(10))
+    ax.aspect = Makie.DataAspect()
+    ax.titlesize = 16
+    ax.xlabel = label(path, 1)
+    ax.ylabel = label(path, 2)
+    ax.xgridvisible = true
+    ax.ygridvisible = true
+    ax.xminorgridvisible = true
+    ax.yminorgridvisible = true
+    ax.xminorticksvisible = true
+    ax.yminorticksvisible = true
+    ax.xminorticks = Makie.IntervalsBetween(10)
+    ax.yminorticks = Makie.IntervalsBetween(10)
+    _set_axis_properties!(ax, kwargs)
     for i = 1:length(path.contents)
         if length(path.contents[i]) > 0
-            Makie.text!(ax, path.contents[i][1][1], path.contents[i][1][2]; text=string(path.labels[i].first), fontsize=get(kwargs, :fontsize, 8))
+            Makie.text!(ax, path.contents[i][1][1], path.contents[i][1][2]; text=string(path.labels[i].first), fontsize=get(kwargs, :fontsize, 14))
             j = i%length(path.labels) + 1
             if length(path.contents[i])>1 && path.labels[i].second≠path.labels[j].first
-                Makie.text!(ax, path.contents[i][end][1], path.contents[i][end][2]; text=string(path.labels[i].second), fontsize=get(kwargs, :fontsize, 8))
+                Makie.text!(ax, path.contents[i][end][1], path.contents[i][end][2]; text=string(path.labels[i].second), fontsize=get(kwargs, :fontsize, 14))
             end
         end
     end
@@ -116,18 +128,19 @@ function Makie.plot!(fig::Makie.Figure, curve::ReciprocalCurve; kwargs...)
 end
 function Makie.plot!(ax::Makie.AbstractAxis, curve::ReciprocalCurve; kwargs...)
     dimension(curve) == 2 || error("Only 2D reciprocal curve can be plotted.")
-    ax.aspect = get(kwargs, :aspect, Makie.DataAspect())
-    ax.titlesize = get(kwargs, :titlesize, 10)
-    ax.xlabel = get(kwargs, :xlabel, label(curve, 1))
-    ax.ylabel = get(kwargs, :ylabel, label(curve, 2))
-    ax.xgridvisible = get(kwargs, :xgridvisible, true)
-    ax.ygridvisible = get(kwargs, :ygridvisible, true)
-    ax.xminorgridvisible = get(kwargs, :xminorgridvisible, true)
-    ax.yminorgridvisible = get(kwargs, :yminorgridvisible, true)
-    ax.xminorticksvisible = get(kwargs, :xminorticksvisible, true)
-    ax.yminorticksvisible = get(kwargs, :yminorticksvisible, true)
-    ax.xminorticks = get(kwargs, :xminorticks, Makie.IntervalsBetween(10))
-    ax.yminorticks = get(kwargs, :yminorticks, Makie.IntervalsBetween(10))
+    ax.aspect = Makie.DataAspect()
+    ax.titlesize = 16
+    ax.xlabel = label(curve, 1)
+    ax.ylabel = label(curve, 2)
+    ax.xgridvisible = true
+    ax.ygridvisible = true
+    ax.xminorgridvisible = true
+    ax.yminorgridvisible = true
+    ax.xminorticksvisible = true
+    ax.yminorticksvisible = true
+    ax.xminorticks = Makie.IntervalsBetween(10)
+    ax.yminorticks = Makie.IntervalsBetween(10)
+    _set_axis_properties!(ax, kwargs)
     return Makie.scatter!(ax, [c[1] for c in curve], [c[2] for c in curve]; marker=:circle, strokewidth=0, _filter_kwargs(kwargs, Makie.Scatter)...)
 end
 
@@ -139,15 +152,16 @@ function Makie.plot!(fig::Makie.Figure, reciprocalspace::Union{BrillouinZone, Re
 end
 function Makie.plot!(ax::Makie.AbstractAxis, reciprocalspace::Union{BrillouinZone, ReciprocalZone}, data::AbstractMatrix{<:Number}; clims=nothing, kwargs...)
     length(reciprocalspace.reciprocals)==2 || error("Only two dimensional reciprocal spaces are supported.")
-    ax.aspect = get(kwargs, :aspect, Makie.DataAspect())
-    ax.titlesize = get(kwargs, :titlesize, 10)
-    ax.xlabel = get(kwargs, :xlabel, label(reciprocalspace, 1))
-    ax.ylabel = get(kwargs, :ylabel, label(reciprocalspace, 2))
+    ax.aspect = Makie.DataAspect()
+    ax.titlesize = 16
+    ax.xlabel = label(reciprocalspace, 1)
+    ax.ylabel = label(reciprocalspace, 2)
     x = collect(range(reciprocalspace, 1))
     y = collect(range(reciprocalspace, 2))
     Δx, Δy = x[2]-x[1], y[2]-y[1]
     Makie.xlims!(ax, get(kwargs, :xlims, (x[1]-Δx, x[end]+Δx))...)
     Makie.ylims!(ax, get(kwargs, :ylims, (y[1]-Δy, y[end]+Δy))...)
+    _set_axis_properties!(ax, kwargs)
     isnothing(clims) && (clims = extrema(data))
     return Makie.heatmap!(ax, x, y, transpose(data); colorrange=clims, _filter_kwargs(kwargs, Makie.Heatmap)...)
 end
@@ -158,23 +172,24 @@ function Makie.plot!(fig::Makie.Figure, reciprocalscatter::ReciprocalScatter, we
     Makie.plot!(Makie.Axis(fig[1, 1]), reciprocalscatter, weights; kwargs...)
     return fig
 end
-function Makie.plot!(ax::Makie.AbstractAxis, reciprocalscatter::ReciprocalScatter, weights::AbstractMatrix{<:Number}; fractional::Bool=true, weightmultiplier::Real=2.0, weightcolors=nothing, weightlabels=nothing, kwargs...)
+function Makie.plot!(ax::Makie.AbstractAxis, reciprocalscatter::ReciprocalScatter, weights::AbstractMatrix{<:Number}; fractional::Bool=true, weightmultiplier::Real=5.0, weightcolors=nothing, weightlabels=nothing, kwargs...)
     ax isa Makie.Axis || error("Makie.Axis required for reciprocal scatter")
-    ax.aspect = get(kwargs, :aspect, Makie.DataAspect())
-    ax.titlesize = get(kwargs, :titlesize, 10)
-    ax.xgridvisible = get(kwargs, :xgridvisible, true)
-    ax.ygridvisible = get(kwargs, :ygridvisible, true)
-    ax.xminorgridvisible = get(kwargs, :xminorgridvisible, true)
-    ax.yminorgridvisible = get(kwargs, :yminorgridvisible, true)
-    ax.xminorticksvisible = get(kwargs, :xminorticksvisible, true)
-    ax.yminorticksvisible = get(kwargs, :yminorticksvisible, true)
-    ax.xminorticks = get(kwargs, :xminorticks, Makie.IntervalsBetween(10))
-    ax.yminorticks = get(kwargs, :yminorticks, Makie.IntervalsBetween(10))
+    ax.aspect = Makie.DataAspect()
+    ax.titlesize = 16
+    ax.xgridvisible = true
+    ax.ygridvisible = true
+    ax.xminorgridvisible = true
+    ax.yminorgridvisible = true
+    ax.xminorticksvisible = true
+    ax.yminorticksvisible = true
+    ax.xminorticks = Makie.IntervalsBetween(10)
+    ax.yminorticks = Makie.IntervalsBetween(10)
     coordinates = fractional ? [tuple(c...) for c in fractionals(reciprocalscatter)] : [tuple(c...) for c in reciprocalscatter]
     length(first(coordinates)) == 2 || error("ReciprocalScatter with weights requires 2D coordinates")
     x, y = [c[1] for c in coordinates], [c[2] for c in coordinates]
     Makie.xlims!(ax, get(kwargs, :xlims, extrema(x))...)
     Makie.ylims!(ax, get(kwargs, :ylims, extrema(y))...)
+    _set_axis_properties!(ax, kwargs)
     if !isnothing(weightlabels)
         for (i, label) in enumerate(weightlabels)
             Makie.scatter!(ax, [first(x)], [first(y)]; markersize=5, color=ith_color(weightcolors, i), label)
@@ -200,7 +215,7 @@ function Makie.plot!(fig::Makie.Figure, path::ReciprocalPath, data::AbstractMatr
     return fig
 end
 function Makie.plot!(ax::Makie.AbstractAxis, path::ReciprocalPath, data::AbstractMatrix{<:Number}; kwargs...)
-    return Makie.plot!(ax, [distance(path, i) for i in eachindex(path)], data; linewidth=1, xlabel=string(label(path)), xticks=ticks(path), _filter_kwargs(kwargs, Makie.Series)...)
+    return Makie.plot!(ax, [distance(path, i) for i in eachindex(path)], data; linewidth=1, xlabel=string(label(path)), xticks=ticks(path), kwargs...)
 end
 
 # 8. Scatter plot for ReciprocalPath with data and weights
@@ -209,20 +224,21 @@ function Makie.plot!(fig::Makie.Figure, path::ReciprocalPath, data::AbstractMatr
     Makie.plot!(Makie.Axis(fig[1, 1]), path, data, weights; kwargs...)
     return fig
 end
-function Makie.plot!(ax::Makie.AbstractAxis, path::ReciprocalPath, data::AbstractMatrix{<:Number}, weights::AbstractArray{<:Number, 3}; weightmultiplier::Real=2.0, weightcolors=nothing, weightlabels=nothing, kwargs...)
+function Makie.plot!(ax::Makie.AbstractAxis, path::ReciprocalPath, data::AbstractMatrix{<:Number}, weights::AbstractArray{<:Number, 3}; weightmultiplier::Real=5.0, weightcolors=nothing, weightlabels=nothing, kwargs...)
     ax isa Makie.Axis || error("Makie.Axis required for scatter plot")
-    ax.titlesize = get(kwargs, :titlesize, 10)
-    ax.xlabel = get(kwargs, :xlabel, string(label(path)))
-    ax.xticks = get(kwargs, :xticks, ticks(path))
-    ax.xgridvisible = get(kwargs, :xgridvisible, true)
-    ax.ygridvisible = get(kwargs, :ygridvisible, true)
-    ax.xminorgridvisible = get(kwargs, :xminorgridvisible, true)
-    ax.yminorgridvisible = get(kwargs, :yminorgridvisible, true)
-    ax.xminorticksvisible = get(kwargs, :xminorticksvisible, true)
-    ax.yminorticksvisible = get(kwargs, :yminorticksvisible, true)
-    ax.xminorticks = get(kwargs, :xminorticks, Makie.IntervalsBetween(10))
-    ax.yminorticks = get(kwargs, :yminorticks, Makie.IntervalsBetween(10))
+    ax.titlesize = 16
+    ax.xlabel = string(label(path))
+    ax.xticks = ticks(path)
+    ax.xgridvisible = true
+    ax.ygridvisible = true
+    ax.xminorgridvisible = true
+    ax.yminorgridvisible = true
+    ax.xminorticksvisible = true
+    ax.yminorticksvisible = true
+    ax.xminorticks = Makie.IntervalsBetween(10)
+    ax.yminorticks = Makie.IntervalsBetween(10)
     Makie.xlims!(ax, get(kwargs, :xlims, (0, distance(path)))...)
+    _set_axis_properties!(ax, kwargs)
     x = repeat([distance(path, i) for i in eachindex(path)], outer=length(weights)÷length(path))
     y = repeat(vec(data), length(weights)÷length(data))
     if !isnothing(weightlabels)
@@ -249,38 +265,39 @@ function Makie.plot!(fig::Makie.Figure, path::ReciprocalPath, y::AbstractVector{
 end
 function Makie.plot!(ax::Makie.AbstractAxis, path::ReciprocalPath, y::AbstractVector{<:Number}, data::AbstractMatrix{<:Number}; clims=nothing, kwargs...)
     ax isa Makie.Axis || error("Makie.Axis required for heatmap")
-    ax.titlesize = get(kwargs, :titlesize, 10)
-    ax.xlabel = get(kwargs, :xlabel, string(label(path)))
-    ax.xticks = get(kwargs, :xticks, ticks(path))
+    ax.titlesize = 16
+    ax.xlabel = string(label(path))
+    ax.xticks = ticks(path)
     Makie.xlims!(ax, get(kwargs, :xlims, (0, distance(path)))...)
     Makie.ylims!(ax, get(kwargs, :ylims, extrema(y))...)
+    _set_axis_properties!(ax, kwargs)
     isnothing(clims) && (clims = extrema(data))
     return Makie.heatmap!(ax, [distance(path, i) for i in eachindex(path)], y, transpose(data); colorrange=clims, _filter_kwargs(kwargs, Makie.Heatmap)...)
 end
 
 # 10. Multiple heatmaps for 3D data (multi-panel only)
 @inline Makie.plot(reciprocalspace::Union{BrillouinZone, ReciprocalZone}, data::AbstractArray{<:Number, 3}; kwargs...) = Makie.plot!(Makie.Figure(), reciprocalspace, data; kwargs...)
-function Makie.plot!(fig::Makie.Figure, reciprocalspace::Union{BrillouinZone, ReciprocalZone}, data::AbstractArray{<:Number, 3}; title=nothing, titlesize::Int=10, subtitles=nothing, subtitlesize::Int=8, nrow=nothing, ncol=nothing, clims=nothing, kwargs...)
+function Makie.plot!(fig::Makie.Figure, reciprocalspace::Union{BrillouinZone, ReciprocalZone}, data::AbstractArray{<:Number, 3}; title=nothing, titlesize::Int=16, subtitles=nothing, subtitlesize::Int=14, nrow=nothing, ncol=nothing, clims=nothing, kwargs...)
     isnothing(clims) && (clims = extrema(data))
     isnothing(nrow) && (nrow = round(Int, sqrt(size(data, 3))))
     isnothing(ncol) && (ncol = ceil(Int, size(data, 3)/nrow))
     for i = 1:size(data, 3)
-        Makie.plot!(Makie.Axis(fig[div(i-1, ncol)+1, (i-1)%ncol+1]), reciprocalspace, data[:, :, i]; clims=clims, kwargs..., title=isnothing(subtitles) ? nothing : subtitles[i], titlesize=subtitlesize)
+        Makie.plot!(Makie.Axis(fig[div(i-1, ncol)+1, (i-1)%ncol+1]), reciprocalspace, data[:, :, i]; clims=clims, kwargs..., title=isnothing(subtitles) ? "" : subtitles[i], titlesize=subtitlesize)
     end
     Makie.Colorbar(fig[nrow+1, 1:ncol], limits=clims, vertical=false)
-    isnothing(title) || Makie.Label(fig[0, :], title; tellwidth=false, fontsize=titlesize)
+    isnothing(title) || Makie.Label(fig[0, :], title; tellwidth=false, font=:bold, fontsize=titlesize)
     return fig
 end
 @inline Makie.plot(path::ReciprocalPath, y::AbstractVector{<:Number}, data::AbstractArray{<:Number, 3}; kwargs...) = Makie.plot!(Makie.Figure(), path, y, data; kwargs...)
-function Makie.plot!(fig::Makie.Figure, path::ReciprocalPath, y::AbstractVector{<:Number}, data::AbstractArray{<:Number, 3}; title=nothing, titlesize::Int=10, subtitles=nothing, subtitlesize::Int=8, nrow=nothing, ncol=nothing, clims=nothing, kwargs...)
+function Makie.plot!(fig::Makie.Figure, path::ReciprocalPath, y::AbstractVector{<:Number}, data::AbstractArray{<:Number, 3}; title=nothing, titlesize::Int=16, subtitles=nothing, subtitlesize::Int=14, nrow=nothing, ncol=nothing, clims=nothing, kwargs...)
     isnothing(clims) && (clims = extrema(data))
     isnothing(nrow) && (nrow = round(Int, sqrt(size(data, 3))))
     isnothing(ncol) && (ncol = ceil(Int, size(data, 3)/nrow))
     for i = 1:size(data, 3)
-        Makie.plot!(Makie.Axis(fig[div(i-1, ncol)+1, (i-1)%ncol+1]), path, y, data[:, :, i]; clims=clims, kwargs..., title=isnothing(subtitles) ? nothing : subtitles[i], titlesize=subtitlesize)
+        Makie.plot!(Makie.Axis(fig[div(i-1, ncol)+1, (i-1)%ncol+1]), path, y, data[:, :, i]; clims=clims, kwargs..., title=isnothing(subtitles) ? "" : subtitles[i], titlesize=subtitlesize)
     end
     Makie.Colorbar(fig[nrow+1, 1:ncol], limits=clims, vertical=false)
-    isnothing(title) || Makie.Label(fig[0, :], title; tellwidth=false, fontsize=titlesize)
+    isnothing(title) || Makie.Label(fig[0, :], title; tellwidth=false, font=:bold, fontsize=titlesize)
     return fig
 end
 
@@ -292,17 +309,18 @@ function Makie.plot!(fig::Makie.Figure, x::AbstractVector{<:Number}, y::Abstract
 end
 function Makie.plot!(ax::Makie.AbstractAxis, x::AbstractVector{<:Number}, y::AbstractMatrix{<:Number}; kwargs...)
     ax isa Makie.Axis || error("Makie.Axis required for line plot")
-    ax.titlesize = get(kwargs, :titlesize, 10)
-    ax.xgridvisible = get(kwargs, :xgridvisible, true)
-    ax.ygridvisible = get(kwargs, :ygridvisible, true)
-    ax.xminorgridvisible = get(kwargs, :xminorgridvisible, true)
-    ax.yminorgridvisible = get(kwargs, :yminorgridvisible, true)
-    ax.xminorticksvisible = get(kwargs, :xminorticksvisible, true)
-    ax.yminorticksvisible = get(kwargs, :yminorticksvisible, true)
-    ax.xminorticks = get(kwargs, :xminorticks, Makie.IntervalsBetween(10))
-    ax.yminorticks = get(kwargs, :yminorticks, Makie.IntervalsBetween(10))
+    ax.titlesize = 16
+    ax.xgridvisible = true
+    ax.ygridvisible = true
+    ax.xminorgridvisible = true
+    ax.yminorgridvisible = true
+    ax.xminorticksvisible = true
+    ax.yminorticksvisible = true
+    ax.xminorticks = Makie.IntervalsBetween(10)
+    ax.yminorticks = Makie.IntervalsBetween(10)
     Makie.xlims!(ax, get(kwargs, :xlims, extrema(x))...)
     Makie.ylims!(ax, get(kwargs, :ylims, extrema(y))...)
+    _set_axis_properties!(ax, kwargs)
     color = get(kwargs, :color, [ith_color(nothing, i) for i = 1:size(y, 2)])
     isa(color, AbstractVector) || (color = fill(color, size(y, 2)))
     return Makie.series!(ax, x, transpose(y); linewidth=1, _filter_kwargs(kwargs, Makie.Series)..., color)
@@ -316,8 +334,7 @@ function Makie.plot!(fig::Makie.Figure, assignment::Assignment; kwargs...)
     return fig
 end
 function Makie.plot!(ax::Makie.AbstractAxis, assignment::Assignment; kwargs...)
-    ax.title = get(kwargs, :title, str(assignment))
-    return Makie.plot!(ax, Tuple(assignment.data)...; kwargs...)
+    return Makie.plot!(ax, Tuple(assignment.data)...; title=str(assignment), titlesize=16, kwargs...)
 end
 
 end # module
