@@ -8,13 +8,7 @@ using QuantumLattices: atol, bonds, dimension, distance, fractionals, getcontent
 @inline _filter_kwargs(kwargs, plot_type::Type) = NamedTuple(k => v for (k, v) in kwargs if k in Makie.attribute_names(plot_type))
 
 # Helper function to set remaining axis properties from kwargs
-@inline function _set_axis_properties!(ax, kwargs)
-    for (k, v) in pairs(kwargs)
-        if hasproperty(ax, k)
-            setproperty!(ax, k, v)
-        end
-    end
-end
+@inline _set_axis_properties!(ax, kwargs) = for (k, v) in pairs(kwargs) hasproperty(ax, k) && setproperty!(ax, k, v) end
 
 # 1. Lattice plotting
 @inline Makie.plot(lattice::AbstractLattice, neighbors::Union{Int, Neighbors}, filter::Function=bond->true; kwargs...) = Makie.plot!(Makie.Figure(), lattice, neighbors, filter; kwargs...)
