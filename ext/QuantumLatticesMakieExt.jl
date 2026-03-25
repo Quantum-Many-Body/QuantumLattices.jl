@@ -12,7 +12,7 @@ using QuantumLattices: atol, bonds, dimension, distance, fractionals, getcontent
 
 # 1. Lattice plotting
 @inline Makie.plot(lattice::AbstractLattice, neighbors::Union{Int, Neighbors}, filter::Function=bond->true; kwargs...) = Makie.plot!(Makie.Figure(), lattice, neighbors, filter; kwargs...)
-function Makie.plot!(fig::Makie.Figure, lattice::AbstractLattice, neighbors::Union{Int, Neighbors}, filter::Function=bond->true; kwargs...)
+@inline function Makie.plot!(fig::Makie.Figure, lattice::AbstractLattice, neighbors::Union{Int, Neighbors}, filter::Function=bond->true; kwargs...)
     ax = dimension(lattice) <= 2 ? Makie.Axis(fig[1, 1]) : Makie.Axis3(fig[1, 1])
     Makie.plot!(ax, lattice, neighbors, filter; kwargs...)
     return fig
@@ -51,7 +51,7 @@ end
 
 # 2. FractionalReciprocalSpace plotting (BrillouinZone, ReciprocalZone, ReciprocalScatter)
 @inline Makie.plot(reciprocalspace::FractionalReciprocalSpace; kwargs...) = Makie.plot!(Makie.Figure(), reciprocalspace; kwargs...)
-function Makie.plot!(fig::Makie.Figure, reciprocalspace::FractionalReciprocalSpace; fractional::Bool=false, kwargs...)
+@inline function Makie.plot!(fig::Makie.Figure, reciprocalspace::FractionalReciprocalSpace; fractional::Bool=false, kwargs...)
     ax = (dimension(reciprocalspace) <= 2 || (fractional && rank(reciprocalspace) <= 2)) ? Makie.Axis(fig[1, 1]) : Makie.Axis3(fig[1, 1])
     Makie.plot!(ax, reciprocalspace; fractional, kwargs...)
     return fig
@@ -83,7 +83,7 @@ end
 
 # 3. ReciprocalPath plotting
 @inline Makie.plot(path::ReciprocalPath; kwargs...) = Makie.plot!(Makie.Figure(), path; kwargs...)
-function Makie.plot!(fig::Makie.Figure, path::ReciprocalPath; kwargs...)
+@inline function Makie.plot!(fig::Makie.Figure, path::ReciprocalPath; kwargs...)
     Makie.plot!(Makie.Axis(fig[1, 1]), path; kwargs...)
     return fig
 end
@@ -116,7 +116,7 @@ end
 
 # 4. ReciprocalCurve plotting
 @inline Makie.plot(curve::ReciprocalCurve; kwargs...) = Makie.plot!(Makie.Figure(), curve; kwargs...)
-function Makie.plot!(fig::Makie.Figure, curve::ReciprocalCurve; kwargs...)
+@inline function Makie.plot!(fig::Makie.Figure, curve::ReciprocalCurve; kwargs...)
     Makie.plot!(Makie.Axis(fig[1, 1]), curve; kwargs...)
     return fig
 end
@@ -140,7 +140,7 @@ end
 
 # 5. Heatmap for BrillouinZone/ReciprocalZone with data
 @inline Makie.plot(reciprocalspace::Union{BrillouinZone, ReciprocalZone}, data::AbstractMatrix{<:Number}; kwargs...) = Makie.plot!(Makie.Figure(), reciprocalspace, data; kwargs...)
-function Makie.plot!(fig::Makie.Figure, reciprocalspace::Union{BrillouinZone, ReciprocalZone}, data::AbstractMatrix{<:Number}; kwargs...)
+@inline function Makie.plot!(fig::Makie.Figure, reciprocalspace::Union{BrillouinZone, ReciprocalZone}, data::AbstractMatrix{<:Number}; kwargs...)
     Makie.Colorbar(fig[1, 2], Makie.plot!(Makie.Axis(fig[1, 1]), reciprocalspace, data; kwargs...))
     return fig
 end
@@ -153,8 +153,7 @@ function Makie.plot!(ax::Makie.AbstractAxis, reciprocalspace::Union{BrillouinZon
     x = collect(range(reciprocalspace, 1))
     y = collect(range(reciprocalspace, 2))
     Δx, Δy = x[2]-x[1], y[2]-y[1]
-    Makie.xlims!(ax, get(kwargs, :xlims, (x[1]-Δx, x[end]+Δx))...)
-    Makie.ylims!(ax, get(kwargs, :ylims, (y[1]-Δy, y[end]+Δy))...)
+    Makie.limits!(ax, x[1]-Δx, x[end]+Δx, y[1]-Δy, y[end]+Δy)
     _set_axis_properties!(ax, kwargs)
     isnothing(clims) && (clims = extrema(data))
     return Makie.heatmap!(ax, x, y, transpose(data); colorrange=clims, _filter_kwargs(kwargs, Makie.Heatmap)...)
@@ -162,7 +161,7 @@ end
 
 # 6. ReciprocalScatter with weights
 @inline Makie.plot(reciprocalscatter::ReciprocalScatter, weights::AbstractMatrix{<:Number}; kwargs...) = Makie.plot!(Makie.Figure(), reciprocalscatter, weights; kwargs...)
-function Makie.plot!(fig::Makie.Figure, reciprocalscatter::ReciprocalScatter, weights::AbstractMatrix{<:Number}; kwargs...)
+@inline function Makie.plot!(fig::Makie.Figure, reciprocalscatter::ReciprocalScatter, weights::AbstractMatrix{<:Number}; kwargs...)
     Makie.plot!(Makie.Axis(fig[1, 1]), reciprocalscatter, weights; kwargs...)
     return fig
 end
@@ -181,8 +180,7 @@ function Makie.plot!(ax::Makie.AbstractAxis, reciprocalscatter::ReciprocalScatte
     coordinates = fractional ? [tuple(c...) for c in fractionals(reciprocalscatter)] : [tuple(c...) for c in reciprocalscatter]
     length(first(coordinates)) == 2 || error("ReciprocalScatter with weights requires 2D coordinates")
     x, y = [c[1] for c in coordinates], [c[2] for c in coordinates]
-    Makie.xlims!(ax, get(kwargs, :xlims, extrema(x))...)
-    Makie.ylims!(ax, get(kwargs, :ylims, extrema(y))...)
+    Makie.limits!(ax, extrema(x)..., extrema(y)...)
     _set_axis_properties!(ax, kwargs)
     if !isnothing(weightlabels)
         for (i, label) in enumerate(weightlabels)
@@ -204,17 +202,17 @@ end
 
 # 7. Line plot for ReciprocalPath with data
 @inline Makie.plot(path::ReciprocalPath, data::AbstractMatrix{<:Number}; kwargs...) = Makie.plot!(Makie.Figure(), path, data; kwargs...)
-function Makie.plot!(fig::Makie.Figure, path::ReciprocalPath, data::AbstractMatrix{<:Number}; kwargs...)
+@inline function Makie.plot!(fig::Makie.Figure, path::ReciprocalPath, data::AbstractMatrix{<:Number}; kwargs...)
     Makie.plot!(Makie.Axis(fig[1, 1]), path, data; kwargs...)
     return fig
 end
-function Makie.plot!(ax::Makie.AbstractAxis, path::ReciprocalPath, data::AbstractMatrix{<:Number}; kwargs...)
+@inline function Makie.plot!(ax::Makie.AbstractAxis, path::ReciprocalPath, data::AbstractMatrix{<:Number}; kwargs...)
     return Makie.plot!(ax, [distance(path, i) for i in eachindex(path)], data; linewidth=1, xlabel=string(label(path)), xticks=ticks(path), kwargs...)
 end
 
 # 8. Scatter plot for ReciprocalPath with data and weights
 @inline Makie.plot(path::ReciprocalPath, data::AbstractMatrix{<:Number}, weights::AbstractArray{<:Number, 3}; kwargs...) = Makie.plot!(Makie.Figure(), path, data, weights; kwargs...)
-function Makie.plot!(fig::Makie.Figure, path::ReciprocalPath, data::AbstractMatrix{<:Number}, weights::AbstractArray{<:Number, 3}; kwargs...)
+@inline function Makie.plot!(fig::Makie.Figure, path::ReciprocalPath, data::AbstractMatrix{<:Number}, weights::AbstractArray{<:Number, 3}; kwargs...)
     Makie.plot!(Makie.Axis(fig[1, 1]), path, data, weights; kwargs...)
     return fig
 end
@@ -232,6 +230,7 @@ function Makie.plot!(ax::Makie.AbstractAxis, path::ReciprocalPath, data::Abstrac
     ax.xminorticks = Makie.IntervalsBetween(10)
     ax.yminorticks = Makie.IntervalsBetween(10)
     Makie.xlims!(ax, get(kwargs, :xlims, (0, distance(path)))...)
+    haskey(kwargs, :ylims) && Makie.ylims!(ax, kwargs.ylims...)
     _set_axis_properties!(ax, kwargs)
     x = repeat([distance(path, i) for i in eachindex(path)], outer=length(weights)÷length(path))
     y = repeat(vec(data), length(weights)÷length(data))
@@ -253,7 +252,7 @@ end
 
 # 9. Heatmap for ReciprocalPath with y data
 @inline Makie.plot(path::ReciprocalPath, y::AbstractVector{<:Number}, data::AbstractMatrix{<:Number}; kwargs...) = Makie.plot!(Makie.Figure(), path, y, data; kwargs...)
-function Makie.plot!(fig::Makie.Figure, path::ReciprocalPath, y::AbstractVector{<:Number}, data::AbstractMatrix{<:Number}; kwargs...)
+@inline function Makie.plot!(fig::Makie.Figure, path::ReciprocalPath, y::AbstractVector{<:Number}, data::AbstractMatrix{<:Number}; kwargs...)
     Makie.Colorbar(fig[1, 2], Makie.plot!(Makie.Axis(fig[1, 1]), path, y, data; kwargs...))
     return fig
 end
@@ -297,7 +296,7 @@ end
 
 # 11. path plotting for (x, y)
 @inline Makie.plot(x::AbstractVector{<:Number}, y::AbstractMatrix{<:Number}; kwargs...) = Makie.plot!(Makie.Figure(), x, y; kwargs...)
-function Makie.plot!(fig::Makie.Figure, x::AbstractVector{<:Number}, y::AbstractMatrix{<:Number}; kwargs...)
+@inline function Makie.plot!(fig::Makie.Figure, x::AbstractVector{<:Number}, y::AbstractMatrix{<:Number}; kwargs...)
     Makie.plot!(Makie.Axis(fig[1, 1]), x, y; kwargs...)
     return fig
 end
@@ -313,7 +312,7 @@ function Makie.plot!(ax::Makie.AbstractAxis, x::AbstractVector{<:Number}, y::Abs
     ax.xminorticks = Makie.IntervalsBetween(10)
     ax.yminorticks = Makie.IntervalsBetween(10)
     Makie.xlims!(ax, get(kwargs, :xlims, extrema(x))...)
-    Makie.ylims!(ax, get(kwargs, :ylims, extrema(y))...)
+    haskey(kwargs, :ylims) && Makie.ylims!(ax, kwargs.ylims...)
     _set_axis_properties!(ax, kwargs)
     color = get(kwargs, :color, [ith_color(nothing, i) for i = 1:size(y, 2)])
     isa(color, AbstractVector) || (color = fill(color, size(y, 2)))
@@ -322,7 +321,7 @@ end
 
 # 12. Assignment plotting
 @inline Makie.plot(assignment::Assignment; kwargs...) = Makie.plot!(Makie.Figure(), assignment; kwargs...)
-function Makie.plot!(fig::Makie.Figure, assignment::Assignment; kwargs...)
+@inline function Makie.plot!(fig::Makie.Figure, assignment::Assignment; kwargs...)
     plt = Makie.plot!(Makie.Axis(fig[1, 1]), assignment; kwargs...)
     isa(plt, Makie.Heatmap) && Makie.Colorbar(fig[1, 2], plt)
     return fig
