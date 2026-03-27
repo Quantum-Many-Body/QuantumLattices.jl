@@ -504,24 +504,28 @@ Get the compatible type of the coordinated index based on the type of an interna
 @inline coordinatedindextype(I::Type{<:SimpleInternal}, P::Type{<:Point}) = fulltype(CoordinatedIndex, NamedTuple{(:index, :coordination), Tuple{indextype(I), SVector{dimension(P), scalartype(P)}}})
 
 """
+    rcoordinate(index::CoordinatedIndex) -> SVector
     rcoordinate(opt::Operator{<:Number, <:ZeroAtLeast{CoordinatedIndex}}) -> SVector
 
 Get the whole rcoordinate of an operator.
 """
+@inline rcoordinate(index::CoordinatedIndex) = index.rcoordinate
 @inline function rcoordinate(opt::Operator{<:Number, <:ZeroAtLeast{CoordinatedIndex}})
-    rank(opt)==1 && return id(opt)[1].rcoordinate
-    rank(opt)==2 && return id(opt)[2].rcoordinate-id(opt)[1].rcoordinate
+    rank(opt)==1 && return rcoordinate(id(opt)[1])
+    rank(opt)==2 && return rcoordinate(id(opt)[2])-rcoordinate(id(opt)[1])
     error("rcoordinate error: not supported rank($(rank(opt))) of $(nameof(opt)).")
 end
 
 """
+    icoordinate(index::CoordinatedIndex) -> SVector
     icoordinate(opt::Operator{<:Number, <:ZeroAtLeast{CoordinatedIndex}}) -> SVector
 
 Get the whole icoordinate of an operator.
 """
+@inline icoordinate(index::CoordinatedIndex) = index.icoordinate
 @inline function icoordinate(opt::Operator{<:Number, <:ZeroAtLeast{CoordinatedIndex}})
-    rank(opt)==1 && return id(opt)[1].icoordinate
-    rank(opt)==2 && return id(opt)[2].icoordinate-id(opt)[1].icoordinate
+    rank(opt)==1 && return icoordinate(id(opt)[1])
+    rank(opt)==2 && return icoordinate(id(opt)[2])-icoordinate(id(opt)[1])
     error("icoordinate error: not supported rank($(rank(opt))) of $(nameof(opt)).")
 end
 
