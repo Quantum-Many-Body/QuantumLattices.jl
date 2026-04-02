@@ -146,8 +146,10 @@ end
 @testset "issubordinate" begin
     @test issubordinate([2.0], [[1.0]]) == true
     @test issubordinate([1.5], [[1.0]]) == false
+    @test issubordinate([1.0, 0.0], [[1.0, 1.0]]) == false
     @test issubordinate([0.5, 3.5], [[0.5, 0.5], [-0.5, 0.5]]) == true
     @test issubordinate([0.5, 3.0], [[0.5, 0.5], [-0.5, 0.5]]) == false
+    @test issubordinate([0.5, 3.5, 1.0], [[0.5, 0.5, 0.0], [-0.5, 0.5, 0.0]]) == false
     @test issubordinate([4.0, 4.0, 4.0], [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]) == true
     @test issubordinate([4.0, 4.0, 2.5], [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]) == false
 end

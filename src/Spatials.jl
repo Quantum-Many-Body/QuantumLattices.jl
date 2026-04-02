@@ -169,7 +169,7 @@ function decompose(v₀::AbstractVector{<:Number}, v₁::AbstractVector{<:Number
     n₀, n₁ = norm(v₀), norm(v₁)
     isapprox(abs(n₀), 0) && return zero(n₀)
     sign = dot(v₀, v₁) / n₀ / n₁
-    @assert isapprox(abs(sign), 1, atol=atol, rtol=rtol) "decompose error: insufficient basis vectors."
+    isapprox(abs(sign), 1, atol=atol, rtol=rtol) || error("decompose error: insufficient basis vectors.")
     return sign*n₀/n₁
 end
 function decompose(v₀::AbstractVector{<:Number}, v₁::AbstractVector{<:Number}, v₂::AbstractVector{<:Number})
@@ -181,7 +181,7 @@ function decompose(v₀::AbstractVector{<:Number}, v₁::AbstractVector{<:Number
     else
         v₁, v₂ = SVector{3}(v₁), SVector{3}(v₂)
         x₁, x₂, x₃ = decompose(v₀, v₁, v₂, cross(v₁, v₂))
-        @assert isapprox(x₃, 0, atol=atol, rtol=rtol) "decompose error: insufficient basis vectors."
+        isapprox(x₃, 0, atol=atol, rtol=rtol) || error("decompose error: insufficient basis vectors.")
         return x₁, x₂
     end
 end
@@ -306,15 +306,19 @@ function issubordinate(coordinate::AbstractVector{<:Number}, vectors::AbstractVe
     @assert length(coordinate)∈(1, 2, 3) "issubordinate error: only 1, 2 and 3 dimensional coordinates are supported."
     @assert length(vectors)∈(1, 2, 3) "issubordinate error: the number of input basis vectors must be 1, 2 or 3."
     fapprox = xi->isapprox(round(xi), xi, atol=atol, rtol=rtol)
-    if length(vectors) == 1
-        result = mapreduce(fapprox, &, decompose(coordinate, first(vectors)))
-    elseif length(vectors) == 2
-        result = mapreduce(fapprox, &, decompose(coordinate, first(vectors), last(vectors)))
-    else
-        v₁, v₂, v₃ = vectors
-        result = mapreduce(fapprox, &, decompose(coordinate, v₁, v₂, v₃))
+    try
+        return if length(vectors) == 1
+            mapreduce(fapprox, &, decompose(coordinate, first(vectors)))
+        elseif length(vectors) == 2
+            mapreduce(fapprox, &, decompose(coordinate, first(vectors), last(vectors)))
+        else
+            v₁, v₂, v₃ = vectors
+            mapreduce(fapprox, &, decompose(coordinate, v₁, v₂, v₃))
+        end
+    catch exception
+        isa(exception, ErrorException) && return false
+        rethrow()
     end
-    return result
 end
 
 """
