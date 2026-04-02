@@ -1,6 +1,6 @@
 name = "QuantumLattices"
 uuid = "78ae1a1f-1d5d-5174-b61c-66e31b2346dc"
-version = "0.14.5"
+version = "0.14.6"
 authors = ["waltergu <waltergu1989@gmail.com>"]
 
 [deps]
