@@ -400,6 +400,7 @@ end
     @test string(term, Bond(p₂), hilbert) == "4.5 𝕕(1ˢᵗ, 2) 𝕕(1ˢᵗ, 2)"
     @test one(term) == replace(term, 1.0)
     @test zero(term) == replace(term, 0.0)
+    @test replace(term; factor=3.567) == Term{kind(term), id(term)}(term.value, term.bondkind, term.coupling, term.amplitude, term.ishermitian, term.ismodulatable, 3.567)
     @test update!(term, μ=4.25) == replace(term, 4.25)
     @test term.value == 4.25
 

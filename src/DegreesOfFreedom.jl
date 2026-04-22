@@ -1307,6 +1307,7 @@ mutable struct Term{K, I, V, B, C<:TermCoupling, A<:TermAmplitude}
         (isa(bondkind, Number) && iszero(bondkind) && !ishermitian) || @assert(
             isreal(value),
             "Term error: real value required. For an Hermitian term, the value must be real. So is the case for a term beyond onsite even in the non-Hermitian situation because a complex value always has the positive direction and it should be specified by the amplitude function.")
+            value, factor = promote(value, factor)
         new{K, I, typeof(value), typeof(bondkind), typeof(coupling), typeof(amplitude)}(value, bondkind, coupling, amplitude, ishermitian, ismodulatable, factor)
     end
 end
@@ -1402,7 +1403,16 @@ end
 Replace the value of a term.
 """
 @inline function Base.replace(term::Term, value)
-    return Term{kind(term), id(term)}(value, term.bondkind, term.coupling, term.amplitude, term.ishermitian, term.ismodulatable, convert(typeof(value), term.factor))
+    return Term{kind(term), id(term)}(value, term.bondkind, term.coupling, term.amplitude, term.ishermitian, term.ismodulatable, term.factor)
+end
+
+"""
+    replace(term::Term; factor) -> Term
+
+Replace the factor of a term.
+"""
+@inline function Base.replace(term::Term; factor)
+    return Term{kind(term), id(term)}(term.value, term.bondkind, term.coupling, term.amplitude, term.ishermitian, term.ismodulatable, factor)
 end
 
 """
