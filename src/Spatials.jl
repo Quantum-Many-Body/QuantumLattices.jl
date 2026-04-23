@@ -304,7 +304,8 @@ Judge whether a coordinate belongs to a lattice defined by `vectors` with the gi
 """
 function issubordinate(coordinate::AbstractVector{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}; atol::Real=atol, rtol::Real=rtol)
     @assert length(coordinate)∈(1, 2, 3) "issubordinate error: only 1, 2 and 3 dimensional coordinates are supported."
-    @assert length(vectors)∈(1, 2, 3) "issubordinate error: the number of input basis vectors must be 1, 2 or 3."
+    @assert length(vectors)∈(0, 1, 2, 3) "issubordinate error: the number of input basis vectors must be 0, 1, 2 or 3."
+    length(vectors)==0 && return isapprox(norm(coordinate), 0; atol, rtol)
     fapprox = xi->isapprox(round(xi), xi, atol=atol, rtol=rtol)
     try
         return if length(vectors) == 1

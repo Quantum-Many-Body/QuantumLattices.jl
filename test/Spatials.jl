@@ -144,6 +144,8 @@ end
 end
 
 @testset "issubordinate" begin
+    @test issubordinate([0.0], Vector{Int}[]) == true
+    @test issubordinate([1.0], Vector{Int}[]) == false
     @test issubordinate([2.0], [[1.0]]) == true
     @test issubordinate([1.5], [[1.0]]) == false
     @test issubordinate([1.0, 0.0], [[1.0, 1.0]]) == false
