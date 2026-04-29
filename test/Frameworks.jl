@@ -339,3 +339,18 @@ end
     Plots.savefig(Plots.plot(loaded(dos)), "Plots$(str(dos)).png")
     Makie.save("Makie$(str(dos)).png", Makie.plot(loaded(dos)))
 end
+
+@testset "fingerprint" begin
+    @test fingerprint(42) == "Int64"
+
+    tba = Algorithm(:Square, TBA(Formula(A, (t=1.0, μ=2.0))))
+    @test fingerprint(tba) == "Square-TBA-t(1.0)μ(2.0)"
+
+    tba = Algorithm(:Square, TBA(Formula(A, (t=2.0, μ=2.0))))
+    @test fingerprint(tba) == "Square-TBA-t(2.0)μ(2.0)"
+
+    tba = Algorithm(:Square, TBA(Formula(A, (t=1.123456, μ=2.0))))
+    @test fingerprint(tba; ndecimal=2) == "Square-TBA-t(1.12)μ(2.0)"
+    @test fingerprint(tba; ndecimal=10) == "Square-TBA-t(1.123456)μ(2.0)"
+end
+

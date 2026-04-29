@@ -8,17 +8,17 @@ using Latexify: latexify
 using Serialization: deserialize, serialize
 using TimerOutputs: @timeit, TimerOutput, time
 using ..DegreesOfFreedom: Boundary, Hilbert, Term, plain
-using ..QuantumLattices: OneOrMore, ZeroAtLeast, ZeroOrMore, id, value
+using ..QuantumLattices: OneOrMore, ZeroAtLeast, ZeroOrMore, value
 using ..QuantumOperators: LinearTransformation, OperatorPack, OperatorSet, OperatorSum, Operators, identity, operatortype
 using ..Spatials: Bond, isintracell
 using ..Toolkit: atol, efficientoperations, parametertype, rtol
 
-import ..QuantumLattices: add!, expand, expand!, reset!, str, update, update!
+import ..QuantumLattices: add!, expand, expand!, id, reset!, str, update, update!
 import ..QuantumOperators: scalartype
 import ..Spatials: dlmsave
 
 export Action, Algorithm, Assignment, CategorizedGenerator, Data, Eager, ExpansionStyle, Formula, Frontend, Generator, Lazy, OperatorGenerator, Parameters
-export checkoptions, datatype, eager, hasoption, lazy, options, optionsinfo, qldload, qldsave, run!, seriestype
+export checkoptions, datatype, eager, fingerprint, hasoption, lazy, options, optionsinfo, qldload, qldsave, run!, seriestype
 
 """
     Parameters{Names}(values::Number...) where Names
@@ -940,6 +940,13 @@ function Base.show(io::IO, ::MIME"text/plain", alg::Algorithm)
 end
 
 """
+    id(obj::Union{Assignment, Algorithm})
+
+Get the identifier of an assignment/algorithm.
+"""
+@inline id(obj::Union{Assignment, Algorithm}) = string(obj)
+
+"""
     summary(alg::Algorithm)
 
 Provide a summary of an algorithm.
@@ -958,7 +965,7 @@ Run an assignment based on an algorithm.
 The difference between these two methods is that the first uses the parameters of `assign` as the current parameters while the second uses those of `alg`.
 """
 function (alg::Algorithm)(assign::Assignment, checkoptions::Bool=true; options...)
-    @timeit alg.timer string(assign) begin
+    @timeit alg.timer id(assign) begin
         checkoptions && Frameworks.checkoptions(typeof(assign); options...)
         ismatched = match(assign.parameters, alg.parameters)
         if !(isdefined(assign, :data) && ismatched)
@@ -970,7 +977,7 @@ function (alg::Algorithm)(assign::Assignment, checkoptions::Bool=true; options..
     return assign
 end
 function (assign::Assignment)(alg::Algorithm, checkoptions::Bool=true; options...)
-    @timeit alg.timer string(assign) begin
+    @timeit alg.timer id(assign) begin
         checkoptions && Frameworks.checkoptions(typeof(assign); options...)
         ismatched = match(alg.parameters, assign.parameters)
         if !(isdefined(assign, :data) && ismatched)
@@ -999,7 +1006,7 @@ end
     assign = Assignment(datatype(typeof(action), typeof(alg.frontend)), dir, name, action, merge(alg.parameters, parameters), map, ZeroOrMore(dependencies))
     delay || begin
         alg(assign; options...)
-        @info "Assignment $name: time consumed $(time(alg.timer[string(assign)])/10^9)s."
+        @info "Assignment $name: time consumed $(time(alg.timer[id(assign)])/10^9)s."
     end
     return assign
 end
@@ -1024,7 +1031,7 @@ Get the dirname of the data file of an assignment/algorithm.
 Get the basename of the data file of an assignment/algorithm.
 """
 @inline function Base.basename(obj::Union{Assignment, Algorithm}; prefix::String="", suffix::String="", extension::String="qld")
-    return string(append(prefix, "-"), string(obj), prepend(suffix, "-"), prepend(extension, "."))
+    return string(append(prefix, "-"), id(obj), prepend(suffix, "-"), prepend(extension, "."))
 end
 
 """
@@ -1062,7 +1069,7 @@ end
 """
     qldsave(filename::String, args...; mode::String="a+")
 
-Save arbitrary data to a qld file.
+Save arbitrary data as key-value pairs to a qld file.
 """
 function qldsave(filename::String, args...; mode::String="a+")
     @assert mode∈("a+", "w") "qldsave error: mode ($(repr(mode))) is not \"a+\" or \"w\"."
@@ -1071,7 +1078,7 @@ function qldsave(filename::String, args...; mode::String="a+")
         io = IOBuffer()
         for i in 1:2:length(args)
             serialize(io, args[i+1])
-            file[args[i]] = take!(io)
+            file[string(args[i])] = take!(io)
         end
     end
 end
@@ -1082,26 +1089,60 @@ end
     qldload(filename::String, name₁::String, name₂::String, names::String...) -> Tuple
 
 Load data from a qld file.
+With a single filename argument, returns all entries as a flat `Dict`.
+With a key, returns that single entry.
+With multiple keys, returns a `Tuple`.
 """
 function qldload(filename::String)
-    result = jldopen(filename, "r") do file
+    raw = jldopen(filename, "r") do file
         loadtodict!(Dict{String, Any}(), file)
     end
-    for (key, bytes) in result
+    result = Dict{String, Any}()
+    for (key, bytes) in raw
+        bytes isa Vector{UInt8} || continue
         result[key] = deserialize(IOBuffer(bytes))
     end
     return result
 end
 function qldload(filename::String, name::String)
     return jldopen(filename, "r") do file
-        deserialize(IOBuffer(file[name]))
+        haskey(file, name) || error("qldload error: key '$name' not found in '$filename'.")
+        data = file[name]
+        data isa Vector{UInt8} || error("qldload error: key '$name' is not a data entry.")
+        deserialize(IOBuffer(data))
     end
 end
 function qldload(filename::String, name₁::String, name₂::String, names::String...)
     return jldopen(filename, "r") do file
-        map((name₁, name₁, names...)) do name
-            deserialize(IOBuffer(file[name]))
+        map((name₁, name₂, names...)) do name
+            haskey(file, name) || error("qldload error: key '$name' not found.")
+            data = file[name]
+            data isa Vector{UInt8} || error("qldload error: key '$name' is not a data entry.")
+            deserialize(IOBuffer(data))
         end
+    end
+end
+
+"""
+    fingerprint(obj; ndecimal::Int=10) -> String
+
+Generate a deterministic string fingerprint for an object, combining the string representation of `id(obj)` with that of `Parameters(obj)` (with numeric values rounded to `ndecimal` digits). When `id(obj)`/`Parameters(obj)` are not defined, the type name and an empty parameter list are used as fallbacks respectively.
+"""
+function fingerprint(obj; ndecimal::Int=10)
+    id_str = try
+        string(id(obj))
+    catch
+        string(nameof(typeof(obj)))
+    end
+    p = try
+        Parameters(obj)
+    catch
+        Parameters()
+    end
+    if !isempty(p)
+        return str(p; ndecimal=ndecimal, front=id_str)
+    else
+        return id_str
     end
 end
 
