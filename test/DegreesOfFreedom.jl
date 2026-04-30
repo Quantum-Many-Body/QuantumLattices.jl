@@ -1,11 +1,11 @@
 using Latexify: latexify
-using LinearAlgebra: dot, ishermitian
+using LinearAlgebra: ishermitian
 using Printf: @printf
 using QuantumLattices: dimension, expand, kind, rank, reset!, update!, value, ⊕, ⊗
 using QuantumLattices.DegreesOfFreedom
 using QuantumLattices.QuantumOperators: LaTeX, Operator, OperatorIndex, Operators, id, latexformat, sequence
-using QuantumLattices.Spatials: Bond, Point, decompose, icoordinate, nneighbor, rcoordinate
-using QuantumLattices.Toolkit: Float, contentnames, parameternames, reparameter
+using QuantumLattices.Spatials: Bond, Point, icoordinate, nneighbor, rcoordinate
+using QuantumLattices.Toolkit: Float, contentnames, parameternames
 using StaticArrays: SVector
 
 import QuantumLattices: permute
@@ -27,13 +27,6 @@ function permute(fermi₁::Fermi, fermi₂::Fermi)
 end
 @inline isdefinite(::Type{Fermi{Int}}) = true
 @inline script(fermi::Fermi, ::Val{:nambu}; kwargs...) = fermi.nambu==Colon() ? ":" : string(fermi.nambu)
-function Base.angle(id::CoordinatedIndex{<:Index{Fermi{Int}}}, vectors::AbstractVector{<:AbstractVector{Float64}}, values::AbstractVector{Float64})
-    phase=  (length(vectors) == 1) ? 2pi*dot(decompose(id.icoordinate, vectors[1]), values) :
-            (length(vectors) == 2) ? 2pi*dot(decompose(id.icoordinate, vectors[1], vectors[2]), values) :
-            (length(vectors) == 3) ? 2pi*dot(decompose(id.icoordinate, vectors[1], vectors[2], vectors[3]), values) :
-            error("angle error: not supported number of input basis vectors.")
-    (id.index.internal.nambu == 1) ? phase : -phase
-end
 @inline internalindextype(::Type{Fermi}, ::Type{T}) where {T<:Union{Int, Symbol, Colon}} = Fermi{T}
 @inline 𝕕(nambu) = Fermi(nambu)
 @inline 𝕕(site, nambu) = Index(site, Fermi(nambu))
@@ -469,42 +462,4 @@ end
     hilbert = Hilbert(Fock(2), 5)
     table = Table(hilbert)
     @test findall(index->index.site∈2:4 && index.internal.nambu==1, hilbert, table) == [3, 5, 7]
-end
-
-@testset "Boundary" begin
-    op = Operator(4.5, 𝕕(1, 2, SVector(0.5, 0.5), SVector(0.0, 0.0)), 𝕕(2, 1, SVector(1.5, 1.5), SVector(1.0, 1.0)))
-    bound = Boundary{(:θ₁, :θ₂)}([0.1, 0.2], [[1.0, 0.0], [0.0, 1.0]])
-    M = reparameter(typeof(op), :value, Complex{Float64})
-    @test valtype(typeof(bound), typeof(op)) == M
-    @test keys(bound) == keys(typeof(bound)) == (:θ₁, :θ₂)
-    @test bound == deepcopy(bound)
-    @test bound≠Boundary{(:ϕ₁, :ϕ₂)}(bound.values, bound.vectors)
-    @test isequal(bound, deepcopy(bound))
-    @test !isequal(bound, Boundary{(:ϕ₁, :ϕ₂)}(bound.values, bound.vectors))
-
-    another = Boundary{(:θ₁, :θ₂)}([0.0, 0.0], [[2.0, 0.0], [0.0, 2.0]])
-    @test merge!(deepcopy(bound), another) == another
-    @test reset!(deepcopy(bound), another.values) == Boundary{(:θ₁, :θ₂)}(another.values, bound.vectors)
-    @test reset!(deepcopy(bound), another.vectors) == Boundary{(:θ₁, :θ₂)}(bound.values, another.vectors)
-    @test reset!(deepcopy(bound), another.values, another.vectors) == another
-
-    @test bound(op) ≈ replace(op, 4.5*exp(2im*pi*0.3))
-    @test bound(op, origin=[0.05, 0.15]) ≈ replace(op, 4.5*exp(2im*pi*0.1))
-    update!(bound, θ₁=0.3)
-    @test bound(op) ≈ replace(op, 4.5*exp(2im*pi*0.5))
-    @test bound(op, origin=[0.1, 0.1]) ≈ replace(op, 4.5*exp(2im*pi*0.3))
-
-    ops = Operators{M}(op)
-    @test valtype(typeof(bound), typeof(ops)) == typeof(ops)
-    @test bound(ops) ≈ Operators(replace(op, 4.5*exp(2im*pi*0.5)))
-    @test map!(bound, ops) ≈ ops ≈ Operators(replace(op, 4.5*exp(2im*pi*0.5)))
-
-    @test valtype(typeof(plain), typeof(op)) == typeof(op)
-    @test valtype(typeof(plain), typeof(ops)) == typeof(ops)
-    @test plain(op) == op
-    @test plain(ops) == ops
-    @test update!(plain) == plain
-    @test reset!(plain, another.values) == plain
-    @test reset!(plain, another.vectors) == plain
-    @test reset!(plain, another.values, another.vectors) == plain
 end

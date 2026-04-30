@@ -28,8 +28,8 @@ export bonds, bonds!, dlmsave, fractionals, icoordinate, iscontinuous, isdiscret
 include("DegreesOfFreedom.jl")
 using .DegreesOfFreedom
 export CompositeInternal, CompositeIndex, CoordinatedIndex, Hilbert, Index, Internal, InternalIndex, InternalProd, InternalSum, SimpleInternal
-export Boundary, Coupling, MatrixCoupling, MatrixCouplingComponent, MatrixCouplingProd, MatrixCouplingSum, Metric, OperatorIndexToTuple, Ordinal, Pattern, Table, Term, TermAmplitude, TermCoupling
-export coordinatedindextype, diagonalfields, indextype, internalindextype, isdefinite, isdiagonal, partition, patternrule, plain, showablefields, statistics, @pattern, ˢᵗ, ⁿᵈ, ʳᵈ, ᵗʰ
+export Coupling, MatrixCoupling, MatrixCouplingComponent, MatrixCouplingProd, MatrixCouplingSum, Metric, OperatorIndexToTuple, Ordinal, Pattern, Table, Term, TermAmplitude, TermCoupling
+export coordinatedindextype, diagonalfields, indextype, internalindextype, isdefinite, isdiagonal, partition, patternrule, showablefields, statistics, @pattern, ˢᵗ, ⁿᵈ, ʳᵈ, ᵗʰ
 
 # QuantumSystems
 include("QuantumSystems.jl")
@@ -47,7 +47,7 @@ export Elastic, Kinetic, Hooke, PhononTerm
 # Frameworks
 include("Frameworks.jl")
 using .Frameworks
-export Action, Algorithm, Assignment, CategorizedGenerator, Data, Eager, ExpansionStyle, Formula, Frontend, Generator, LatticeModel, Lazy, OperatorGenerator, ParametricGenerator, Parameters, StaticGenerator
-export checkoptions, datatype, eager, fingerprint, hasoption, lazy, options, optionsinfo, qldload, qldsave, run!
+export Action, Algorithm, Assignment, Boundary, CategorizedGenerator, Data, Eager, ExpansionStyle, Formula, Frontend, Generator, LatticeModel, Lazy, OperatorGenerator, ParametricGenerator, Parameters, StaticGenerator
+export checkoptions, datatype, eager, fingerprint, hasoption, lazy, options, optionsinfo, plain, qldload, qldsave, run!
 
 end

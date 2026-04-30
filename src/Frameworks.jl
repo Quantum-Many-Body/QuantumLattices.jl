@@ -6,19 +6,20 @@ using IndentWrappers: indent
 using JLD2: jldopen, loadtodict!
 using Latexify: latexify
 using Serialization: deserialize, serialize
+using StaticArrays: SVector
 using TimerOutputs: @timeit, TimerOutput, time
-using ..DegreesOfFreedom: Boundary, Hilbert, Term, plain
+using ..DegreesOfFreedom: Hilbert, Term
 using ..QuantumLattices: OneOrMore, ZeroAtLeast, ZeroOrMore, value
-using ..QuantumOperators: LinearTransformation, OperatorPack, OperatorSet, OperatorSum, Operators, identity, operatortype
+using ..QuantumOperators: LinearTransformation, Operator, OperatorPack, OperatorSet, OperatorSum, Operators, identity, idtype, operatortype
 using ..Spatials: Bond, isintracell
-using ..Toolkit: atol, efficientoperations, parametertype, rtol
+using ..Toolkit: Float, atol, efficientoperations, parametertype, reparameter, rtol
 
 import ..QuantumLattices: add!, expand, expand!, id, reset!, str, update, update!
 import ..QuantumOperators: scalartype
 import ..Spatials: dlmsave
 
-export Action, Algorithm, Assignment, CategorizedGenerator, Data, Eager, ExpansionStyle, Formula, Frontend, Generator, LatticeModel, Lazy, OperatorGenerator, Parameters, ParametricGenerator, StaticGenerator
-export checkoptions, datatype, eager, fingerprint, hasoption, lazy, options, optionsinfo, qldload, qldsave, run!, seriestype
+export Action, Algorithm, Assignment, Boundary, CategorizedGenerator, Data, Eager, ExpansionStyle, Formula, Frontend, Generator, LatticeModel, Lazy, OperatorGenerator, Parameters, ParametricGenerator, StaticGenerator
+export checkoptions, datatype, eager, fingerprint, hasoption, lazy, options, optionsinfo, plain, qldload, qldsave, run!, seriestype
 
 """
     Parameters{Names}(values::Number...) where Names
@@ -74,11 +75,111 @@ end
 @inline prepend(s::String, prefix::String) = isempty(s) ? s : string(prefix, s)
 
 """
+    Boundary{Names}(values::AbstractVector{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}) where Names
+
+Boundary twist of operators.
+"""
+struct Boundary{Names, D<:Number, V<:AbstractVector} <: LinearTransformation
+    values::Vector{D}
+    vectors::Vector{V}
+    function Boundary{Names}(values::AbstractVector{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}) where Names
+        @assert length(Names)==length(values)==length(vectors) "Boundary error: mismatched names, values and vectors."
+        datatype = promote_type(eltype(values), Float)
+        new{Names, datatype, eltype(vectors)}(convert(Vector{datatype}, values), vectors)
+    end
+end
+@inline Base.:(==)(bound₁::Boundary, bound₂::Boundary) = keys(bound₁)==keys(bound₂) && ==(efficientoperations, bound₁, bound₂)
+@inline Base.isequal(bound₁::Boundary, bound₂::Boundary) = isequal(keys(bound₁), keys(bound₂)) && isequal(efficientoperations, bound₁, bound₂)
+@inline Base.valtype(::Type{<:Boundary}, M::Type{<:Operator}) = reparameter(M, :value, promote_type(Complex{Int}, scalartype(M)))
+@inline Base.valtype(B::Type{<:Boundary}, MS::Type{<:Operators}) = (M = valtype(B, eltype(MS)); Operators{M, idtype(M)})
+
+"""
+    keys(bound::Boundary) -> ZeroAtLeast{Symbol}
+    keys(::Type{<:Boundary{Names}}) where Names -> Names
+
+Get the names of the boundary parameters.
+"""
+@inline Base.keys(bound::Boundary) = keys(typeof(bound))
+@inline Base.keys(::Type{<:Boundary{Names}}) where Names = Names
+
+"""
+    (bound::Boundary)(operator::Operator; origin::Union{AbstractVector, Nothing}=nothing) -> Operator
+
+Get the boundary twisted operator.
+"""
+@inline function (bound::Boundary)(operator::Operator; origin::Union{AbstractVector, Nothing}=nothing)
+    values = isnothing(origin) ? bound.values : bound.values-origin
+    return replace(operator, operator.value*exp(1im*mapreduce(u->angle(u, bound.vectors, values), +, id(operator))))
+end
+
+"""
     Parameters(bound::Boundary)
 
 Get the parameters of the twisted boundary condition.
 """
 @inline Parameters(bound::Boundary) = NamedTuple{keys(bound)}(ntuple(i->bound.values[i], Val(fieldcount(typeof(keys(bound))))))
+
+"""
+    update!(bound::Boundary; parameters...) -> Boundary
+
+Update the values of the boundary twisted phase.
+"""
+@inline @generated function update!(bound::Boundary; parameters...)
+    exprs = []
+    for (i, name) in enumerate(QuoteNode.(keys(bound)))
+        push!(exprs, :(bound.values[$i] = get(parameters, $name, bound.values[$i])))
+    end
+    return Expr(:block, exprs..., :(return bound))
+end
+
+"""
+    merge!(bound::Boundary, another::Boundary) -> typeof(bound)
+
+Merge the values and vectors of the twisted boundary condition from another one.
+"""
+@inline function Base.merge!(bound::Boundary, another::Boundary)
+    @assert keys(bound)==keys(another) "merge! error: mismatched names of boundary parameters."
+    bound.values .= another.values
+    bound.vectors .= another.vectors
+    return bound
+end
+
+"""
+    reset!(bound::Boundary, values::AbstractVector{<:Number}) -> Boundary
+    reset!(bound::Boundary, vectors::AbstractVector{<:AbstractVector{<:Number}}) -> Boundary
+    reset!(bound::Boundary, values::AbstractVector{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}}) -> Boundary
+
+Reset the values or vectors of a twisted boundary condition in-place.
+
+!!! note
+    The plain boundary condition keeps plain even when reset with new values or new vectors.
+"""
+@inline function reset!(bound::Boundary, values::AbstractVector{<:Number})
+    isempty(keys(bound)) && return bound
+    bound.values .= values
+    return bound
+end
+@inline function reset!(bound::Boundary, vectors::AbstractVector{<:AbstractVector{<:Number}})
+    isempty(keys(bound)) && return bound
+    bound.vectors .= vectors
+    return bound
+end
+@inline function reset!(bound::Boundary, values::AbstractVector{<:Number}, vectors::AbstractVector{<:AbstractVector{<:Number}})
+    isempty(keys(bound)) && return bound
+    bound.values .= values
+    bound.vectors .= vectors
+    return bound
+end
+
+"""
+    plain
+
+Plain boundary condition without any twist.
+"""
+const plain = Boundary{()}(Float[], SVector{0, Float}[])
+@inline Base.valtype(::Type{typeof(plain)}, M::Type{<:Operator}) = M
+@inline Base.valtype(::Type{typeof(plain)}, M::Type{<:Operators}) = M
+@inline (::typeof(plain))(operator::Operator; kwargs...) = operator
 
 """
     LatticeModel
