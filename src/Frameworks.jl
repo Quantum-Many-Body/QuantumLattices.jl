@@ -17,7 +17,7 @@ import ..QuantumLattices: add!, expand, expand!, id, reset!, str, update, update
 import ..QuantumOperators: scalartype
 import ..Spatials: dlmsave
 
-export Action, Algorithm, Assignment, CategorizedGenerator, Data, Eager, ExpansionStyle, Formula, Frontend, Generator, Lazy, OperatorGenerator, Parameters
+export Action, Algorithm, Assignment, CategorizedGenerator, Data, Eager, ExpansionStyle, Formula, Frontend, Generator, LatticeModel, Lazy, OperatorGenerator, Parameters, ParametricGenerator, StaticGenerator
 export checkoptions, datatype, eager, fingerprint, hasoption, lazy, options, optionsinfo, qldload, qldsave, run!, seriestype
 
 """
@@ -81,18 +81,48 @@ Get the parameters of the twisted boundary condition.
 @inline Parameters(bound::Boundary) = NamedTuple{keys(bound)}(ntuple(i->bound.values[i], Val(fieldcount(typeof(keys(bound))))))
 
 """
-    Parameters(ops::OperatorSet) -> NamedTuple{(), Tuple{}}
+    LatticeModel
 
-Get the parameters of an `OperatorSet`, which is defined to be an empty `NamedTuple`.
+Abstract supertype for all representations of a quantum lattice system.
+
+Subtypes must implement `valtype`. `Parameters` and `update!` should also be implemented as applicable.
 """
-@inline Parameters(ops::OperatorSet) = Parameters()
+abstract type LatticeModel end
+@inline Base.:(==)(model₁::LatticeModel, model₂::LatticeModel) = ==(efficientoperations, model₁, model₂)
+@inline Base.isequal(model₁::LatticeModel, model₂::LatticeModel) = isequal(efficientoperations, model₁, model₂)
+
+"""
+    valtype(model::LatticeModel)
+    valtype(::Type{<:LatticeModel})
+
+Get the valtype of a `LatticeModel`. Subtypes must implement the type-level method.
+"""
+@inline Base.valtype(model::LatticeModel) = valtype(typeof(model))
+
+"""
+    scalartype(model::LatticeModel)
+    scalartype(::Type{T}) where {T<:LatticeModel}
+
+Get the scalar type of a `LatticeModel`.
+"""
+@inline scalartype(model::LatticeModel) = scalartype(typeof(model))
+@inline scalartype(::Type{T}) where {T<:LatticeModel} = scalartype(valtype(T))
+
+"""
+    eltype(model::LatticeModel)
+    eltype(::Type{T}) where {T<:LatticeModel}
+
+Get the eltype of a `LatticeModel`.
+"""
+@inline Base.eltype(model::LatticeModel) = eltype(typeof(model))
+@inline Base.eltype(::Type{T}) where {T<:LatticeModel} = eltype(valtype(T))
 
 """
     Formula{V, F<:Function, P<:Parameters}
 
 Representation of a quantum lattice system with an explicit analytical formula.
 """
-mutable struct Formula{V, F<:Function, P<:Parameters}
+mutable struct Formula{V, F<:Function, P<:Parameters} <: LatticeModel
     const expression::F
     parameters::P
     function Formula(expression::Function, parameters::Parameters)
@@ -104,24 +134,7 @@ mutable struct Formula{V, F<:Function, P<:Parameters}
         new{V, typeof(expression), typeof(parameters)}(expression, parameters)
     end
 end
-@inline Base.:(==)(formula₁::Formula, formula₂::Formula) = ==(efficientoperations, formula₁, formula₂)
-@inline Base.isequal(formula₁::Formula, formula₂::Formula) = isequal(efficientoperations, formula₁, formula₂)
-
-"""
-    valtype(formula::Formula)
-    valtype(::Type{<:Formula{V}})
-
-Get the valtype of a `Formula`.
-"""
-@inline Base.valtype(formula::Formula) = valtype(typeof(formula))
 @inline Base.valtype(::Type{<:Formula{V}}) where V = V
-
-"""
-    scalartype(::Type{F}) where {F<:Formula}
-
-Get the scalar type of a `Formula`.
-"""
-@inline scalartype(::Type{F}) where {F<:Formula} = scalartype(valtype(F))
 
 """
     update!(formula::Formula; parameters...) -> Formula
@@ -188,50 +201,50 @@ Singleton instance of [`Lazy`](@ref).
 const lazy = Lazy()
 
 """
-    Generator{V}
+    Generator{V} <: LatticeModel
 
-Generator of (representations of) quantum operators in a quantum lattice system.
-"""
-abstract type Generator{V} end
-@inline Base.:(==)(gen₁::Generator, gen₂::Generator) = ==(efficientoperations, gen₁, gen₂)
-@inline Base.isequal(gen₁::Generator, gen₂::Generator) = isequal(efficientoperations, gen₁, gen₂)
-@inline Base.show(io::IO, m::MIME"text/latex", gen::Generator) = show(io, m, latexify(expand(gen)))
-@inline ExpansionStyle(gen::Generator) = ExpansionStyle(typeof(gen))
-@inline Base.IteratorSize(::Type{<:Generator}) = Base.SizeUnknown()
+Abstract supertype for lattice models that are represented by generators of operators.
 
-"""
-    valtype(gen::Generator)
-    valtype(::Type{<:Generator{V}}) where V
+It has three branches: [`StaticGenerator`](@ref), and [`ParametricGenerator`](@ref) (which includes [`CategorizedGenerator`](@ref) and [`OperatorGenerator`](@ref)).
 
-Get the valtype of a `Generator`.
+`Generator` also serves as a constructor factory, dispatching to the appropriate concrete subtype based on the arguments.
 """
-@inline Base.valtype(gen::Generator) = valtype(typeof(gen))
+abstract type Generator{V} <: LatticeModel end
 @inline Base.valtype(::Type{<:Generator{V}}) where V = V
 
 """
-    eltype(gen::Generator)
-    eltype(::Type{T}) where {T<:Generator}
+    expand(gen::Generator) -> valtype(gen)
+    expand(gen::Generator, ::Eager) -> valtype(gen)
+    expand(gen::Generator, ::Lazy) -> valtype(gen)
 
-Get the eltype of a `Generator`.
+Expand a `Generator`. Defaults to eager expansion which combines similar terms;
+pass `lazy` to preserve separate terms.
+
+Subtypes must implement `expand(gen, ::Lazy)`.
 """
-@inline Base.eltype(gen::Generator) = eltype(typeof(gen))
-@inline Base.eltype(::Type{T}) where {T<:Generator} = eltype(valtype(T))
+@inline expand(gen::Generator) = expand(gen, eager)
+@inline expand(gen::Generator, ::Eager) = expand!(zero(valtype(gen)), gen)
 
 """
-    scalartype(::Type{T}) where {T<:Generator}
+    expand!(result, gen::Generator) -> typeof(result)
 
-Get the scalar type of a `Generator`.
+Expand the generator lazily and add the operators to `result`.
 """
-@inline scalartype(::Type{T}) where {T<:Generator} = scalartype(valtype(T))
+function expand!(result, gen::Generator)
+    for op in expand(gen, lazy)
+        add!(result, op)
+    end
+    return result
+end
 
 """
     iterate(gen::Generator)
     iterate(::Generator, state)
 
-Iterate over a `Generator`.
+Iterate over a `Generator` lazily.
 """
 @propagate_inbounds function Base.iterate(gen::Generator)
-    ops = expand(gen)
+    ops = expand(gen, lazy)
     index = iterate(ops)
     isnothing(index) && return nothing
     return index[1], (ops, index[2])
@@ -243,45 +256,106 @@ end
 end
 
 """
-    expand(gen::Generator)
-    expand(gen::Generator, ::Eager)
-    expand(gen::Generator, ::Lazy)
+    length(gen::Generator) -> Int
 
-Expand the generator to get the (representations of) quantum operators in a quantum lattice system.
+Get the number of operators after lazy expansion.
 """
-@inline expand(gen::Generator) = expand(gen, ExpansionStyle(gen))
-@inline expand(gen::Generator, ::Eager) = expand!(zero(valtype(gen)), gen)
-@inline expand(gen::Generator, ::Lazy) = error("expand! error: not implemented for $(nameof(typeof(gen))).")
+@inline Base.length(gen::Generator) = length(expand(gen, lazy))
 
 """
-    expand!(result, gen::Generator) -> typeof(result)
+    isempty(gen::Generator) -> Bool
 
-Expand the generator to add the (representations of) quantum operators in a quantum lattice system to `result`.
+Judge whether a `Generator` is empty after lazy expansion.
 """
-function expand!(result, gen::Generator)
-    for op in expand(gen, lazy)
-        add!(result, op)
-    end
-    return result
+@inline Base.isempty(gen::Generator) = iszero(length(gen))
+
+"""
+    StaticGenerator{M<:OperatorSet} <: Generator{M}
+
+A `LatticeModel` that wraps a static `OperatorSet`.
+
+Unlike `ParametricGenerator`, the operators have no parameter-update mechanism — they are treated as a fixed set.
+"""
+struct StaticGenerator{M<:OperatorSet} <: Generator{M}
+    operators::M
+end
+@inline expand(gen::StaticGenerator, ::Lazy) = gen.operators
+
+"""
+    (transformation::LinearTransformation)(gen::StaticGenerator; kwargs...) -> StaticGenerator
+
+Apply a linear transformation to a static generator of (representations of) quantum operators.
+"""
+@inline (transformation::LinearTransformation)(gen::StaticGenerator; kwargs...) = StaticGenerator(transformation(gen.operators; kwargs...))
+
+"""
+    Parameters(gen::StaticGenerator) -> Parameters
+
+Get the parameters of a static generator, which are always empty.
+"""
+@inline Parameters(gen::StaticGenerator) = Parameters()
+
+"""
+    empty(gen::StaticGenerator) -> StaticGenerator
+    empty!(gen::StaticGenerator) -> StaticGenerator
+
+Get an empty copy of a static generator or empty it in place.
+"""
+@inline Base.empty(gen::StaticGenerator) = StaticGenerator(empty(gen.operators))
+@inline function Base.empty!(gen::StaticGenerator)
+    empty!(gen.operators)
+    return gen
 end
 
 """
-    CategorizedGenerator{V, C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:Boundary, S<:ExpansionStyle} <: Generator{V}
+    update!(gen::StaticGenerator; parameters...) -> StaticGenerator
 
-Categorized generator that groups the (representations of) quantum operators in a quantum lattice system into three categories, i.e., the constant, the alterable, and the boundary.
+Update the parameters of a static generator. Since a static generator has no parameters, this is a no-op that returns the generator unchanged.
 """
-mutable struct CategorizedGenerator{V, C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:Boundary, S<:ExpansionStyle} <: Generator{V}
+@inline update!(gen::StaticGenerator; parameters...) = gen
+
+"""
+    update!(gen::StaticGenerator, transformation::LinearTransformation, source::StaticGenerator; kwargs...) -> StaticGenerator
+
+Update the parameters of a static generator from a source. Since a static generator has no parameters, this is a no-op that returns the generator unchanged.
+"""
+@inline update!(gen::StaticGenerator, transformation::LinearTransformation, source::StaticGenerator; kwargs...) = gen
+
+"""
+    reset!(gen::StaticGenerator, transformation::LinearTransformation, source::StaticGenerator; kwargs...) -> StaticGenerator
+
+Reset a static generator from a source by applying the linear transformation to the source operators.
+"""
+@inline function reset!(gen::StaticGenerator, transformation::LinearTransformation, source::StaticGenerator; kwargs...)
+    add!(empty!(gen.operators), transformation, source.operators; kwargs...)
+    return gen
+end
+
+"""
+    ParametricGenerator{V} <: Generator{V}
+
+Abstract supertype for generators that carry parameters and support [`update!`](@ref).
+
+Its concrete subtypes are [`CategorizedGenerator`](@ref) and [`OperatorGenerator`](@ref).
+"""
+abstract type ParametricGenerator{V} <: Generator{V} end
+
+"""
+    CategorizedGenerator{V, C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:Boundary} <: ParametricGenerator{V}
+
+Parameterized generator that groups the (representations of) quantum operators in a quantum lattice system into three categories, i.e., the constant, the alterable, and the boundary.
+"""
+mutable struct CategorizedGenerator{V, C, A<:NamedTuple, B<:NamedTuple, P<:Parameters, D<:Boundary} <: ParametricGenerator{V}
     const constops::C
     const alterops::A
     const boundops::B
     parameters::P
     const boundary::D
-    function CategorizedGenerator(constops, alterops::NamedTuple, boundops::NamedTuple, parameters::Parameters, boundary::Boundary, style::ExpansionStyle)
+    function CategorizedGenerator(constops, alterops::NamedTuple, boundops::NamedTuple, parameters::Parameters, boundary::Boundary)
         C, A, B = typeof(constops), typeof(alterops), typeof(boundops)
-        new{commontype(C, A, B), C, A, B, typeof(parameters), typeof(boundary), typeof(style)}(constops, alterops, boundops, parameters, boundary)
+        new{commontype(C, A, B), C, A, B, typeof(parameters), typeof(boundary)}(constops, alterops, boundops, parameters, boundary)
     end
 end
-@inline ExpansionStyle(::Type{<:CategorizedGenerator{V, C, <:NamedTuple, <:NamedTuple, <:Parameters, <:Boundary, S} where {V, C}}) where {S<:ExpansionStyle} = S()
 @inline @generated function commontype(::Type{C}, ::Type{A}, ::Type{B}) where {C, A<:NamedTuple, B<:NamedTuple}
     exprs = [:(optp = C)]
     fieldcount(A)>0 && append!(exprs, [:(optp = promote_type(optp, $T)) for T in fieldtypes(A)])
@@ -289,118 +363,6 @@ end
     push!(exprs, :(return optp))
     return Expr(:block, exprs...)
 end
-
-"""
-    Generator(constops, alterops::NamedTuple, boundops::NamedTuple, parameters::Parameters, boundary::Boundary, style::ExpansionStyle) -> CategorizedGenerator
-
-Construct a `CategorizedGenerator`.
-"""
-@inline function Generator(constops, alterops::NamedTuple, boundops::NamedTuple, parameters::Parameters, boundary::Boundary, style::ExpansionStyle)
-    return CategorizedGenerator(constops, alterops, boundops, parameters, boundary, style)
-end
-
-"""
-    (transformation::LinearTransformation)(cat::CategorizedGenerator; kwargs...) -> CategorizedGenerator
-
-Apply a linear transformation to a categorized generator of (representations of) quantum operators.
-"""
-function (transformation::LinearTransformation)(cat::CategorizedGenerator; kwargs...)
-    wrapper(m) = transformation(m; kwargs...)
-    constops = wrapper(cat.constops)
-    alterops = NamedTuple{keys(cat.alterops)}(map(wrapper, values(cat.alterops)))
-    boundops = NamedTuple{keys(cat.boundops)}(map(wrapper, values(cat.boundops)))
-    return CategorizedGenerator(constops, alterops, boundops, cat.parameters, deepcopy(cat.boundary), ExpansionStyle(cat))
-end
-
-"""
-    Parameters(cat::CategorizedGenerator)
-
-Get the complete set of parameters of a categorized generator of (representations of) quantum operators.
-"""
-@inline Parameters(cat::CategorizedGenerator) = merge(cat.parameters, Parameters(cat.boundary))
-
-"""
-    isempty(cat::CategorizedGenerator) -> Bool
-
-Judge whether a categorized generator is empty.
-"""
-@inline Base.isempty(cat::CategorizedGenerator) = isempty(cat.constops) && all(map(isempty, values(cat.alterops))) && all(map(isempty, values(cat.boundops)))
-
-"""
-    empty(cat::CategorizedGenerator) -> CategorizedGenerator
-    empty!(cat::CategorizedGenerator) -> CategorizedGenerator
-
-Get an empty copy of a categorized generator or empty a categorized generator of (representations of) quantum operators.
-"""
-@inline function Base.empty(cat::CategorizedGenerator)
-    constops = empty(cat.constops)
-    alterops = NamedTuple{keys(cat.alterops)}(map(empty, values(cat.alterops)))
-    boundops = NamedTuple{keys(cat.boundops)}(map(empty, values(cat.boundops)))
-    return CategorizedGenerator(constops, alterops, boundops, cat.parameters, deepcopy(cat.boundary), ExpansionStyle(cat))
-end
-@inline function Base.empty!(cat::CategorizedGenerator)
-    empty!(cat.constops)
-    map(empty!, values(cat.alterops))
-    map(empty!, values(cat.boundops))
-    return cat
-end
-
-"""
-    *(cat::CategorizedGenerator, factor::Number) -> CategorizedGenerator
-    *(factor::Number, cat::CategorizedGenerator) -> CategorizedGenerator
-
-Multiply a categorized generator of (representations of) quantum operators with a factor.
-"""
-@inline Base.:*(cat::CategorizedGenerator, factor::Number) = factor * cat
-@inline function Base.:*(factor::Number, cat::CategorizedGenerator)
-    parameters = NamedTuple{keys(cat.parameters)}(map(value->factor*value, values(cat.parameters)))
-    return CategorizedGenerator(factor*cat.constops, cat.alterops, cat.boundops, parameters, cat.boundary, ExpansionStyle(cat))
-end
-
-"""
-    +(cat₁::CategorizedGenerator, cat₂::CategorizedGenerator) -> CategorizedGenerator
-
-Addition of two categorized generators of (representations of) quantum operators.
-"""
-function Base.:+(cat₁::CategorizedGenerator, cat₂::CategorizedGenerator)
-    @assert cat₁.boundary==cat₂.boundary "+ error: in order to be added, two entries must share the same boundary condition (including the twist angles at the boundary)."
-    @assert ExpansionStyle(cat₁)==ExpansionStyle(cat₂) "+ error: in order to be added, two entries must share the same expansion style."
-    constops = cat₁.constops + cat₂.constops
-    alls, allshares = totalkeys(cat₁.parameters, cat₂.parameters), sharedkeys(cat₁.parameters, cat₂.parameters)
-    allmatches = NamedTuple{keymaps(allshares)}(map(key->opsmatch(cat₁.alterops, cat₂.alterops, key) && opsmatch(cat₁.boundops, cat₂.boundops, key), allshares))
-    parameters = NamedTuple{keymaps(alls)}(map(key->combinevalue(cat₁.parameters, cat₂.parameters, allmatches, key), alls))
-    alteralls, altershares = totalkeys(cat₁.alterops, cat₂.alterops), sharedkeys(cat₁.alterops, cat₂.alterops)
-    boundalls, boundshares = totalkeys(cat₁.boundops, cat₂.boundops), sharedkeys(cat₁.boundops, cat₂.boundops)
-    altermatches = NamedTuple{keymaps(altershares)}(map(((::Val{key}) where key)->getfield(allmatches, key), altershares))
-    boundmatches = NamedTuple{keymaps(boundshares)}(map(((::Val{key}) where key)->getfield(allmatches, key), boundshares))
-    alterops = NamedTuple{keymaps(alteralls)}(map(key->combineops(cat₁.alterops, cat₁.parameters, cat₂.alterops, cat₂.parameters, altermatches, key), alteralls))
-    boundops = NamedTuple{keymaps(boundalls)}(map(key->combineops(cat₁.boundops, cat₁.parameters, cat₂.boundops, cat₂.parameters, boundmatches, key), boundalls))
-    return CategorizedGenerator(constops, alterops, boundops, parameters, deepcopy(cat₁.boundary), ExpansionStyle(cat₁))
-end
-@inline keymaps(keys) = map(((::Val{key}) where key)->key, keys)
-@generated totalkeys(content₁::NamedTuple, content₂::NamedTuple) = map(Val, Tuple(unique((fieldnames(content₁)..., fieldnames(content₂)...))))
-@generated sharedkeys(content₁::NamedTuple, content₂::NamedTuple) = map(Val, Tuple(intersect(fieldnames(content₁), fieldnames(content₂))))
-@inline function opsmatch(ops₁::NamedTuple, ops₂::NamedTuple, ::Val{key}) where key
-    content = (get(ops₁, key, nothing), get(ops₂, key, nothing))
-    return any(isnothing, content) || opsmatch(content...)
-end
-@inline opsmatch(ops₁, ops₂) = ops₁==ops₂ || zero(ops₁)==ops₁ || zero(ops₂)==ops₂
-@inline combinevalue(params₁::Parameters, params₂::Parameters, matches::NamedTuple, ::Val{key}) where key = combinevalue(get(params₁, key, nothing), get(params₂, key, nothing), get(matches, key, nothing))
-@inline combinevalue(value₁, value₂, flag::Bool) = flag ? value₁+value₂ : value₁==value₂ ? value₁ : promote(one(value₁), one(value₂))[1]
-@inline combinevalue(value, ::Nothing, ::Nothing) = value
-@inline combinevalue(::Nothing, value, ::Nothing) = value
-@inline function combineops(ops₁::NamedTuple, params₁::Parameters, ops₂::NamedTuple, params₂::Parameters, matches::NamedTuple, ::Val{key}) where key
-    combineops(get(ops₁, key, nothing), get(params₁, key, nothing), get(ops₂, key, nothing), get(params₂, key, nothing), get(matches, key, nothing))
-end
-@inline combineops(ops₁, value₁, ops₂, value₂, flag::Bool) = flag ? deepcopy(ops₁) : value₁==value₂ ? ops₁+ops₂ : ops₁*value₁+ops₂*value₂
-@inline combineops(ops, value, ::Nothing, ::Nothing, ::Nothing) = deepcopy(ops)
-@inline combineops(::Nothing, ::Nothing, ops, value, ::Nothing) = deepcopy(ops)
-
-"""
-    expand(cat::CategorizedGenerator, ::Lazy)
-
-Expand a categorized generator to get the (representations of) quantum operators in a quantum lattice system.
-"""
 function expand(cat::CategorizedGenerator, ::Lazy)
     params = (one(eltype(cat.parameters)), values(cat.parameters, keys(cat.alterops)|>Val)..., values(cat.parameters, keys(cat.alterops)|>Val)...)
     counts = (length(cat.constops), map(length, values(cat.alterops))..., map(length, values(cat.boundops))...)
@@ -422,6 +384,45 @@ end
     isnothing(v) && return nothing
     op = iterate(ee.ops, state[2])
     return op[1]*v[1], (v[2], op[2])
+end
+
+"""
+    (transformation::LinearTransformation)(cat::CategorizedGenerator; kwargs...) -> CategorizedGenerator
+
+Apply a linear transformation to a categorized generator of (representations of) quantum operators.
+"""
+function (transformation::LinearTransformation)(cat::CategorizedGenerator; kwargs...)
+    wrapper(m) = transformation(m; kwargs...)
+    constops = wrapper(cat.constops)
+    alterops = NamedTuple{keys(cat.alterops)}(map(wrapper, values(cat.alterops)))
+    boundops = NamedTuple{keys(cat.boundops)}(map(wrapper, values(cat.boundops)))
+    return CategorizedGenerator(constops, alterops, boundops, cat.parameters, deepcopy(cat.boundary))
+end
+
+"""
+    Parameters(cat::CategorizedGenerator)
+
+Get the complete set of parameters of a categorized generator of (representations of) quantum operators.
+"""
+@inline Parameters(cat::CategorizedGenerator) = merge(cat.parameters, Parameters(cat.boundary))
+
+"""
+    empty(cat::CategorizedGenerator) -> CategorizedGenerator
+    empty!(cat::CategorizedGenerator) -> CategorizedGenerator
+
+Get an empty copy of a categorized generator or empty a categorized generator of (representations of) quantum operators.
+"""
+@inline function Base.empty(cat::CategorizedGenerator)
+    constops = empty(cat.constops)
+    alterops = NamedTuple{keys(cat.alterops)}(map(empty, values(cat.alterops)))
+    boundops = NamedTuple{keys(cat.boundops)}(map(empty, values(cat.boundops)))
+    return CategorizedGenerator(constops, alterops, boundops, cat.parameters, deepcopy(cat.boundary))
+end
+@inline function Base.empty!(cat::CategorizedGenerator)
+    empty!(cat.constops)
+    map(empty!, values(cat.alterops))
+    map(empty!, values(cat.boundops))
+    return cat
 end
 
 """
@@ -474,11 +475,11 @@ function reset!(cat::CategorizedGenerator, transformation::LinearTransformation,
 end
 
 """
-    OperatorGenerator{V<:Operators, CG<:CategorizedGenerator{V}, B<:Bond, H<:Hilbert, TS<:ZeroAtLeast{Term}} <: Generator{V}
+    OperatorGenerator{V<:Operators, CG<:CategorizedGenerator{V}, B<:Bond, H<:Hilbert, TS<:ZeroAtLeast{Term}} <: ParametricGenerator{V}
 
 A generator of operators based on the terms, bonds and Hilbert space of a quantum lattice system.
 """
-struct OperatorGenerator{V<:Operators, CG<:CategorizedGenerator{V}, B<:Bond, H<:Hilbert, TS<:ZeroAtLeast{Term}} <: Generator{V}
+struct OperatorGenerator{V<:Operators, CG<:CategorizedGenerator{V}, B<:Bond, H<:Hilbert, TS<:ZeroAtLeast{Term}} <: ParametricGenerator{V}
     operators::CG
     bonds::Vector{B}
     hilbert::H
@@ -489,18 +490,16 @@ struct OperatorGenerator{V<:Operators, CG<:CategorizedGenerator{V}, B<:Bond, H<:
         new{valtype(operators), typeof(operators), eltype(bonds), typeof(hilbert), typeof(terms)}(operators, bonds, hilbert, terms, half)
     end
 end
-@inline ExpansionStyle(::Type{<:OperatorGenerator{<:Operators, CG}}) where {CG<:CategorizedGenerator} = ExpansionStyle(CG)
-@inline Base.valtype(::Type{<:OperatorGenerator{V}}) where {V<:Operators} = V
 @inline expand(gen::OperatorGenerator, ::Lazy) = expand(gen.operators, lazy)
 
 """
-    OperatorGenerator(bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term}, boundary::Boundary=plain, style::ExpansionStyle=eager; half::Bool=false)
+    OperatorGenerator(bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term}, boundary::Boundary=plain; half::Bool=false)
 
 Construct a generator of quantum operators based on the input bonds, Hilbert space, terms and (twisted) boundary condition.
 
 When the boundary condition is [`plain`](@ref), the boundary operators will be set to be empty for simplicity and efficiency.
 """
-function OperatorGenerator(bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term}, boundary::Boundary=plain, style::ExpansionStyle=eager; half::Bool=false)
+function OperatorGenerator(bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term}, boundary::Boundary=plain; half::Bool=false)
     emptybonds = eltype(bonds)[]
     innerbonds, boundbonds = if boundary == plain
         bonds, eltype(bonds)[]
@@ -513,7 +512,7 @@ function OperatorGenerator(bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOr
     alterops = NamedTuple{map(id, terms)}(expansion(terms, emptybonds, innerbonds, hilbert, scalartype(constops); half=half))
     boundops = NamedTuple{map(id, terms)}(expansion(terms, boundbonds, hilbert, boundary, scalartype(constops); half=half))
     parameters = NamedTuple{map(id, terms)}(map(value, terms))
-    return OperatorGenerator(CategorizedGenerator(constops, alterops, boundops, parameters, boundary, style), bonds, hilbert, terms, half)
+    return OperatorGenerator(CategorizedGenerator(constops, alterops, boundops, parameters, boundary), bonds, hilbert, terms, half)
 end
 function expansion(terms::ZeroAtLeast{Term}, emptybonds::Vector{<:Bond}, innerbonds::Vector{<:Bond}, hilbert::Hilbert, ::Type{V}; half) where V
     return map(terms) do term
@@ -528,31 +527,11 @@ function expansion(terms::ZeroAtLeast{Term}, bonds::Vector{<:Bond}, hilbert::Hil
 end
 
 """
-    Generator(operators::CategorizedGenerator{<:Operators}, bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term}, half::Bool) -> OperatorGenerator
-    Generator(bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term}, boundary::Boundary=plain, style::ExpansionStyle=eager; half::Bool=false) -> OperatorGenerator
-
-Construct an `OperatorGenerator`.
-"""
-@inline function Generator(operators::CategorizedGenerator{<:Operators}, bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term}, half::Bool)
-    return OperatorGenerator(operators, bonds, hilbert, terms, half)
-end
-@inline function Generator(bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term}, boundary::Boundary=plain, style::ExpansionStyle=eager; half::Bool=false)
-    return OperatorGenerator(bonds, hilbert, terms, boundary, style; half=half)
-end
-
-"""
     Parameters(gen::OperatorGenerator) -> Parameters
 
 Get the parameters of an `OperatorGenerator`.
 """
 @inline Parameters(gen::OperatorGenerator) = Parameters(gen.operators)
-
-"""
-    isempty(gen::OperatorGenerator) -> Bool
-
-Judge whether an `OperatorGenerator` is empty.
-"""
-@inline Base.isempty(gen::OperatorGenerator) = isempty(gen.operators)
 
 """
     update!(gen::OperatorGenerator; parameters...) -> typeof(gen)
@@ -671,13 +650,45 @@ Reset a categorized generator by its source operator generator of (representatio
 @inline reset!(cat::CategorizedGenerator, transformation::LinearTransformation, source::OperatorGenerator; kwargs...) = reset!(cat, transformation, source.operators; kwargs...)
 
 """
-    Frontend
+    Generator(ops::OperatorSet) -> StaticGenerator
+    Generator(constops, alterops::NamedTuple, boundops::NamedTuple, parameters::Parameters, boundary::Boundary) -> CategorizedGenerator
+    Generator(ops::CategorizedGenerator{<:Operators}, bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term}, half::Bool) -> OperatorGenerator
+    Generator(bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term}, boundary::Boundary=plain; half::Bool=false) -> OperatorGenerator
+
+Factory constructor for `Generator` subtypes.
+
+Dispatches on the argument types to construct the appropriate concrete representation.
+Unlike [`LatticeModel`](@ref), this factory only constructs `Generator` subtypes (not `Formula`).
+"""
+@inline Generator(ops::OperatorSet) = StaticGenerator(ops)
+@inline Generator(constops, alterops::NamedTuple, boundops::NamedTuple, parameters::Parameters, boundary::Boundary) = CategorizedGenerator(constops, alterops, boundops, parameters, boundary)
+@inline Generator(ops::CategorizedGenerator{<:Operators}, bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term}, half::Bool) = OperatorGenerator(ops, bonds, hilbert, terms, half)
+@inline Generator(bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term}, boundary::Boundary=plain; half::Bool=false) = OperatorGenerator(bonds, hilbert, terms, boundary; half=half)
+
+"""
+    LatticeModel(expression::Function, parameters::Parameters) -> Formula
+    LatticeModel(ops::OperatorSet) -> StaticGenerator
+    LatticeModel(constops, alterops::NamedTuple, boundops::NamedTuple, parameters::Parameters, boundary::Boundary) -> CategorizedGenerator
+    LatticeModel(ops::CategorizedGenerator{<:Operators}, bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term}, half::Bool) -> OperatorGenerator
+    LatticeModel(bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term}, boundary::Boundary=plain; half::Bool=false) -> OperatorGenerator
+
+Unified factory constructor for `LatticeModel` subtypes.
+
+Dispatches on the argument types to construct the appropriate concrete representation.
+`Frontend` subtypes and `Algorithm` are not constructed via this factory.
+"""
+@inline LatticeModel(expression::Function, parameters::Parameters) = Formula(expression, parameters)
+@inline LatticeModel(ops::OperatorSet) = StaticGenerator(ops)
+@inline LatticeModel(constops, alterops::NamedTuple, boundops::NamedTuple, parameters::Parameters, boundary::Boundary) = CategorizedGenerator(constops, alterops, boundops, parameters, boundary)
+@inline LatticeModel(ops::CategorizedGenerator{<:Operators}, bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term}, half::Bool) = OperatorGenerator(ops, bonds, hilbert, terms, half)
+@inline LatticeModel(bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term}, boundary::Boundary=plain; half::Bool=false) = OperatorGenerator(bonds, hilbert, terms, boundary; half=half)
+
+"""
+    Frontend <: LatticeModel
 
 Frontend of algorithms applied to a quantum lattice system.
 """
-abstract type Frontend end
-@inline Base.:(==)(frontend₁::Frontend, frontend₂::Frontend) = ==(efficientoperations, frontend₁, frontend₂)
-@inline Base.isequal(frontend₁::Frontend, frontend₂::Frontend) = isequal(efficientoperations, frontend₁, frontend₂)
+abstract type Frontend <: LatticeModel end
 
 """
     Action
@@ -844,11 +855,11 @@ Check whether the keyword arguments are legal options of a certain type of `Assi
 end
 
 """
-    Algorithm{F<:Frontend, P<:Parameters, M<:Function} <: Function
+    Algorithm{F<:Frontend, P<:Parameters, M<:Function} <: LatticeModel
 
 An algorithm associated with a frontend.
 """
-mutable struct Algorithm{F<:Frontend, P<:Parameters, M<:Function} <: Function
+mutable struct Algorithm{F<:Frontend, P<:Parameters, M<:Function} <: LatticeModel
     const dir::String
     const name::Symbol
     const frontend::F
@@ -868,6 +879,7 @@ end
         (algorithm₂.dir, algorithm₂.name, algorithm₂.frontend, algorithm₂.parameters, algorithm₂.map),
     )
 end
+@inline Base.valtype(::Type{<:Algorithm{F}}) where {F<:Frontend} = valtype(F)
 
 """
     Algorithm(name::Symbol, frontend::Frontend, parameters::Parameters=Parameters(frontend), map::Function=identity; dir::String=".", timer::TimerOutput=TimerOutput())

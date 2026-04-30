@@ -47,7 +47,7 @@ export Elastic, Kinetic, Hooke, PhononTerm
 # Frameworks
 include("Frameworks.jl")
 using .Frameworks
-export Action, Algorithm, Assignment, CategorizedGenerator, Data, Eager, ExpansionStyle, Formula, Frontend, Generator, Lazy, OperatorGenerator, Parameters
+export Action, Algorithm, Assignment, CategorizedGenerator, Data, Eager, ExpansionStyle, Formula, Frontend, Generator, LatticeModel, Lazy, OperatorGenerator, ParametricGenerator, Parameters, StaticGenerator
 export checkoptions, datatype, eager, fingerprint, hasoption, lazy, options, optionsinfo, qldload, qldsave, run!
 
 end

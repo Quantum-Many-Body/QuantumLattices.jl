@@ -8,7 +8,7 @@ using ..QuantumLattices: OneAtLeast, str
 using ..Toolkit: atol, contentorder, efficientoperations, fulltype, getcontent, parameterpairs, parametertype, promoteparameters, rawtype, reparameter, rtol
 
 import LinearAlgebra: dot
-import ..QuantumLattices: ZeroAtLeast, add!, div!, expand, id, ishermitian, mul!, permute, rank, sub!, update!, value, ⊗
+import ..QuantumLattices: ZeroAtLeast, add!, div!, id, ishermitian, mul!, permute, rank, sub!, value, ⊗
 import ..Toolkit: contentnames, dissolve, isparameterbound, parameternames, subscript, superscript
 
 export LaTeX, Operator, OperatorIndex, OperatorPack, OperatorProd, Operators, OperatorSet, OperatorSum, QuantumOperator
@@ -78,22 +78,6 @@ Judge whether a `QuantumOperator` is equivalent to a scalar.
 """
 @inline isequivalenttoscalar(m::QuantumOperator) = isequivalenttoscalar(typeof(m))
 @inline isequivalenttoscalar(::Type{M}) where {M<:QuantumOperator} = isequivalenttoscalar(operatortype(M))
-
-"""
-    update!(m::QuantumOperator; parameters...) -> typeof(m)
-
-Update the parameters of a `QuantumOperator` in place and return the updated one.
-
-By default, the parameter update of a `QuantumOperator` does nothing.
-"""
-@inline update!(m::QuantumOperator; parameters...) = m
-
-"""
-    expand(m::QuantumOperator) -> typeof(m)
-
-Expand a `QuantumOperator`, which is defined to be itself.
-"""
-@inline expand(m::QuantumOperator) = m
 
 # Operator index
 """
@@ -1038,7 +1022,7 @@ end
 @inline (f::LinearFunction)(op::OperatorPack; kwargs...) = f.f(op; kwargs...)
 @inline (f::LinearFunction{Union{}})(op::OperatorSet; kwargs...) = f.f(op; kwargs...)
 @inline Base.valtype(::Type{<:LinearFunction{O}}, ::Type{<:OperatorPack}) where {O<:OperatorPack} = O
-@inline Base.valtype(::Type{<:LinearFunction{O}}, ::Type{<:OperatorSum}) where {O<:OperatorPack} = OperatorSum{O, idtype(O)}
+@inline Base.valtype(::Type{<:LinearFunction{O}}, ::Type{<:OperatorSet}) where {O<:OperatorPack} = OperatorSum{O, idtype(O)}
 
 """
     Matrixization <: LinearTransformation
@@ -1066,7 +1050,7 @@ end
     M = reparameter(M, :id, ZeroAtLeast{eltype(M)})
     return OperatorSum{M, idtype(M)}
 end
-@inline Base.valtype(P::Type{<:Permutation}, M::Type{<:OperatorSum}) = valtype(P, eltype(M))
+@inline Base.valtype(P::Type{<:Permutation}, M::Type{<:OperatorSet}) = valtype(P, eltype(M))
 
 """
     (permutation::Permutation)(m::OperatorProd; rev::Bool=false, kwargs...) -> OperatorSum
@@ -1119,7 +1103,7 @@ abstract type UnitSubstitution{U<:OperatorIndex, S<:OperatorSum} <: LinearTransf
     V = fulltype(eltype(S), NamedTuple{(:value, :id), Tuple{promote_type(valtype(eltype(S)), valtype(M)), ZeroAtLeast{eltype(eltype(S))}}})
     return OperatorSum{V, idtype(V)}
 end
-@inline Base.valtype(P::Type{<:UnitSubstitution}, M::Type{<:OperatorSum}) = valtype(P, eltype(M))
+@inline Base.valtype(P::Type{<:UnitSubstitution}, M::Type{<:OperatorSet}) = valtype(P, eltype(M))
 
 """
     (unitsubstitution::UnitSubstitution)(m::OperatorProd; kwargs...) -> OperatorSum

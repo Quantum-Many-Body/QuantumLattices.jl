@@ -1,7 +1,7 @@
 using Latexify: latexify
 using LinearAlgebra: dot
 using Printf: @sprintf
-using QuantumLattices: ZeroAtLeast, add!, div!, expand, id, mul!, rank, sub!, update!, value, ⊗
+using QuantumLattices: ZeroAtLeast, add!, div!, id, mul!, rank, sub!, value, ⊗
 using QuantumLattices.QuantumOperators
 using QuantumLattices.Toolkit: Float, contentnames, isparameterbound, parameternames, parametertype, subscript, superscript
 
@@ -84,7 +84,7 @@ end
     @test promote_type(Operator{Int}, Float) == Operator{Float}
 
     opt = Operator(2.0, Bose(1, 1))
-    @test deepcopy(opt)==expand(opt) && isequal(deepcopy(opt), expand(opt))
+    @test deepcopy(opt)==opt && isequal(deepcopy(opt), opt)
     @test eltype(opt) == eltype(typeof(opt)) == Bose{Int, Int}
     @test collect(opt) == [Bose(1, 1)]
     @test opt|>rank == opt|>typeof|>rank == 1
@@ -116,11 +116,10 @@ end
     opt₁ = Operator(1.0, Bose(1, 1))
     opt₂ = Operator(2.0, Bose(1, 2))
     opts = Operators(opt₁, opt₂)
-    @test opts == Operators{eltype(opts)}(opt₁, opt₂) == OperatorSum(opt₁, opt₂) == OperatorSum((opt₁, opt₂)) == OperatorSum{eltype(opts)}(opt₁, opt₂) == OperatorSum{eltype(opts)}((opt₁, opt₂)) == expand(opts)
+    @test opts == Operators{eltype(opts)}(opt₁, opt₂) == OperatorSum(opt₁, opt₂) == OperatorSum((opt₁, opt₂)) == OperatorSum{eltype(opts)}(opt₁, opt₂) == OperatorSum{eltype(opts)}((opt₁, opt₂))
     @test eltype(opts) == eltype(typeof(opts)) == Operator{Float, ZeroAtLeast{Bose{Int, Int}, 1}}
     @test scalartype(opts) == scalartype(typeof(opts)) == Float
     @test isequivalenttoscalar(opts) == isequivalenttoscalar(typeof(opts)) == false
-    @test update!(opts) == opts
     @test collect(opts) == collect(values(opts.contents))
     @test length(opts) == 2
     @test summary(opts) == "Operators"

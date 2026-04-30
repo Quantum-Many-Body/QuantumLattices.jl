@@ -30,9 +30,6 @@ import QuantumLattices.Frameworks: Parameters, options, run!
 
     bound = Boundary{(:θ₁, :θ₂)}([0.1, 0.2], [[1.0, 0.0], [0.0, 1.0]])
     @test Parameters(bound) == (θ₁=0.1, θ₂=0.2)
-
-    ops = Operator(1, FockIndex{:f}(1, 1, 1)) + Operator(2, FockIndex{:f}(1, 1, 2))
-    @test Parameters(ops) == Parameters()
 end
 
 @testset "Formula" begin
@@ -41,6 +38,7 @@ end
         -2im*Δ*sin(k[1]) + 2Δ*sin(k[2])   -2t*cos(k[1]) - 2t*cos(k[2]) - μ
     ])
     f = Formula(A, (t=1.0, μ=0.0, Δ=0.1))
+    @test f == LatticeModel(A, (t=1.0, μ=0.0, Δ=0.1))
     @test f == Formula{SMatrix{2, 2, ComplexF64, 4}}(A, (t=1.0, μ=0.0, Δ=0.1))
     @test isequal(f, Formula{SMatrix{2, 2, ComplexF64, 4}}(A, (t=1.0, μ=0.0, Δ=0.1)))
     @test valtype(f) == valtype(typeof(f)) == SMatrix{2, 2, ComplexF64, 4}
@@ -50,6 +48,33 @@ end
 
     update!(f; μ=0.3)
     @test f([pi/2, pi/2]) ≈ [0.3 0.2+0.2im; 0.2-0.2im -0.3]
+end
+
+@testset "StaticGenerator" begin
+    lattice = Lattice([0.0], [0.5]; vectors=[[1.0]])
+    bs = bonds(lattice, 1)
+    hilbert = Hilbert(site=>Fock{:f}(1, 1) for site in eachindex(lattice))
+    t = Hopping(:t, 2.0, 1; ismodulatable=false)
+    optp = Operator{Float64, ZeroAtLeast{CoordinatedIndex{Index{FockIndex{:f, Int, Rational{Int}}, Int}, SVector{1, Float64}}, 2}}
+    ops = expand(t, filter(bond->isintracell(bond), bs), hilbert; half=true)
+    i = LinearFunction(identity)
+
+    gen = StaticGenerator(ops)
+    @test gen == Generator(ops) == LatticeModel(ops)
+    @test isequal(gen, i(gen))
+    @test valtype(gen) == valtype(typeof(gen)) == Operators{optp, idtype(optp)}
+    @test eltype(gen) == eltype(typeof(gen)) == optp
+    @test scalartype(gen) == scalartype(typeof(gen)) == Float64
+    @test Parameters(gen) == Parameters()
+    @test length(gen) == length(collect(gen)) == length(ops)
+    @test !isempty(gen) && isempty(empty(gen)) && isempty(empty!(deepcopy(gen)))
+    @test empty(gen) == empty!(deepcopy(gen)) == StaticGenerator(empty(ops))
+    @test expand(gen) == expand(gen, lazy) == expand(gen, eager) == ops
+    @test update!(deepcopy(gen); t=3.0) == gen
+    @test update!(deepcopy(gen), i, deepcopy(gen)) == gen
+
+    new = StaticGenerator(ops*2)
+    @test reset!(new, i, gen) == gen
 end
 
 @testset "CategorizedGenerator twist" begin
@@ -68,31 +93,21 @@ end
     μops₁ = expand(one(μ), bs[1], hilbert; half=true)
     μops₂ = expand(one(μ), bs[2], hilbert; half=true)
 
-    cat = CategorizedGenerator(tops₁, (t=Operators{optp}(), μ=μops), (t=tops₂, μ=Operators{optp}()), (t=2.0, μ=1.0), boundary, eager)
-    @test cat == deepcopy(cat)
+    cat = CategorizedGenerator(tops₁, (t=Operators{optp}(), μ=μops), (t=tops₂, μ=Operators{optp}()), (t=2.0, μ=1.0), boundary)
+    @test cat == Generator(tops₁, (t=Operators{optp}(), μ=μops), (t=tops₂, μ=Operators{optp}()), (t=2.0, μ=1.0), boundary)
+    @test cat == LatticeModel(tops₁, (t=Operators{optp}(), μ=μops), (t=tops₂, μ=Operators{optp}()), (t=2.0, μ=1.0), boundary)
     @test isequal(cat, i(cat))
-    @test cat == Generator(tops₁, (t=Operators{optp}(), μ=μops), (t=tops₂, μ=Operators{optp}()), (t=2.0, μ=1.0), boundary, eager)
     @test cat|>valtype == cat|>typeof|>valtype == Operators{optp, idtype(optp)}
     @test cat|>eltype == cat|>typeof|>eltype == optp
     @test cat|>scalartype == cat|>typeof|>scalartype == ComplexF64
     @test Parameters(cat) == (t=2.0, μ=1.0, θ=0.1)
     @test !isempty(cat) && isempty(empty(cat))
-    @test empty(cat) == empty!(deepcopy(cat)) == CategorizedGenerator(Operators{optp}(), (t=Operators{optp}(), μ=Operators{optp}()), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), boundary, eager)
-    @test cat * 2 == 2 * cat == cat + cat == CategorizedGenerator(tops₁*2, (t=Operators{optp}(), μ=μops), (t=tops₂, μ=Operators{optp}()), (t=4.0, μ=2.0), boundary, eager)
+    @test empty(cat) == empty!(deepcopy(cat)) == CategorizedGenerator(Operators{optp}(), (t=Operators{optp}(), μ=Operators{optp}()), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), boundary)
     @test expand(cat) == expand!(Operators{optp}(), cat) ≈ tops₁ + tops₂*2.0 + μops
     @test collect(cat) == collect(tops₁ + μops + tops₂*2.0)
 
-    cat₁ = CategorizedGenerator(tops₁, (t=Operators{optp}(),), (t=tops₂,), (t=2.0,), boundary, eager)
-    cat₂ = CategorizedGenerator(Operators{optp}(), (μ=μops,), (μ=Operators{optp}(),), (μ=1.0,), boundary, eager)
-    @test cat₁+cat₂ == CategorizedGenerator(tops₁, (t=Operators{optp}(), μ=μops), (t=tops₂, μ=Operators{optp}()), (t=2.0, μ=1.0), boundary, eager)
-
-    cat₁ = CategorizedGenerator(Operators{optp}(), (μ=μops₁,), (μ=Operators{optp}(),), (μ=1.0,), boundary, eager)
-    cat₂ = CategorizedGenerator(Operators{optp}(), (μ=μops₂,), (μ=Operators{optp}(),), (μ=1.0,), boundary, eager)
-    @test cat₁*2 + cat₂*2 == CategorizedGenerator(Operators{optp}(), (μ=μops,), (μ=Operators{optp}(),), (μ=2.0,), boundary, eager)
-    @test cat₁*2 + cat₂*3 == CategorizedGenerator(Operators{optp}(), (μ=μops₁*2+μops₂*3,), (μ=Operators{optp}(),), (μ=1.0,), boundary, eager)
-
     nb = update!(deepcopy(boundary); θ=0.5)
-    new = CategorizedGenerator(tops₁, (t=Operators{optp}(), μ=μops), (t=nb(tops₂, origin=[0.1]), μ=Operators{optp}()), (t=2.0, μ=1.5), nb, eager)
+    new = CategorizedGenerator(tops₁, (t=Operators{optp}(), μ=μops), (t=nb(tops₂, origin=[0.1]), μ=Operators{optp}()), (t=2.0, μ=1.5), nb)
     dest = update!(deepcopy(cat); μ=1.5, θ=0.5)
     @test dest == new
     @test expand(dest) ≈ tops₁ + new.boundary(tops₂, origin=[0.1])*2.0 + μops*1.5
@@ -113,18 +128,14 @@ end
     tops = expand(t, bs, hilbert; half=true)
     μops = expand(one(μ), bs, hilbert; half=true)
 
-    cat = CategorizedGenerator(tops, (t=Operators{optp}(), μ=μops), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain, eager)
-    @test cat == deepcopy(cat)
+    cat = CategorizedGenerator(tops, (t=Operators{optp}(), μ=μops), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain)
+    @test cat == Generator(tops, (t=Operators{optp}(), μ=μops), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain)
+    @test cat == LatticeModel(tops, (t=Operators{optp}(), μ=μops), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain)
     @test isequal(cat, i(cat))
     @test Parameters(cat) == (t=2.0, μ=1.0)
-    @test cat*2 == 2*cat == cat+cat == CategorizedGenerator(tops*2, (t=Operators{optp}(), μ=μops), (t=Operators{optp}(), μ=Operators{optp}()), (t=4.0, μ=2.0), plain, eager)
     @test expand(cat) == expand!(Operators{optp}(), cat) ≈ tops+μops
 
-    cat₁ = CategorizedGenerator(tops, (t=Operators{optp}(),), (t=Operators{optp}(),), (t=2.0,), plain, eager)
-    cat₂ = CategorizedGenerator(Operators{optp}(), (μ=μops,), (μ=Operators{optp}(),), (μ=1.0,), plain, eager)
-    @test cat₁+cat₂ == CategorizedGenerator(tops, (t=Operators{optp}(), μ=μops), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain, eager)
-
-    new = CategorizedGenerator(Operators{optp}(), (t=Operators{optp}(), μ=Operators{optp}()), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain, eager)
+    new = CategorizedGenerator(Operators{optp}(), (t=Operators{optp}(), μ=Operators{optp}()), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain)
     @test empty(cat) == empty!(deepcopy(cat)) == new
     dest = update!(deepcopy(cat); μ=1.5)
     @test expand(dest) ≈ tops + μops*1.5
@@ -144,16 +155,17 @@ end
     tops₁ = expand(t, filter(bond->isintracell(bond), bs), hilbert; half=true)
     tops₂ = boundary(expand(one(t), filter(bond->!isintracell(bond), bs), hilbert; half=true))
     μops = expand(one(μ), filter(bond->length(bond)==1, bs), hilbert; half=true)
-    cat = CategorizedGenerator(tops₁, (t=Operators{optp}(), μ=μops), (t=tops₂, μ=Operators{optp}()), (t=2.0, μ=1.0), boundary, eager)
+    cat = CategorizedGenerator(tops₁, (t=Operators{optp}(), μ=μops), (t=tops₂, μ=Operators{optp}()), (t=2.0, μ=1.0), boundary)
 
     cgen = OperatorGenerator(cat, bs, hilbert, (t, μ), true)
     @test cgen == OperatorGenerator(bs, hilbert, (t, μ), boundary; half=true)
+    @test cgen == Generator(bs, hilbert, (t, μ), boundary; half=true) == Generator(cat, bs, hilbert, (t, μ), true)
+    @test cgen == LatticeModel(bs, hilbert, (t, μ), boundary; half=true) == LatticeModel(cat, bs, hilbert, (t, μ), true)
     @test isequal(cgen, OperatorGenerator(bs, hilbert, (t, μ), boundary; half=true))
-    @test cgen == Generator(cat, bs, hilbert, (t, μ), true) == Generator(bs, hilbert, (t, μ), boundary; half=true)
     @test cgen|>valtype == cgen|>typeof|>valtype == Operators{optp, idtype(optp)}
     @test cgen|>eltype == cgen|>typeof|>eltype == optp
     @test cgen|>scalartype == cgen|>typeof|>scalartype == ComplexF64
-    @test collect(cgen) == collect(expand(cgen))
+    @test collect(cgen) == collect(expand(cgen, lazy))
     @test Parameters(cgen) == (t=2.0, μ=1.0, θ=0.1)
     @test expand!(Operators{optp}(), cgen) == expand(cgen) ≈ tops₁ + tops₂*2.0 + μops
     @test expand(cgen, :t) ≈ tops₁ + tops₂*2.0
@@ -163,7 +175,7 @@ end
     @test expand(cgen, :t, 3) ≈ tops₁
     @test expand(cgen, :t, 4) ≈ tops₂*2.0
     @test empty!(deepcopy(cgen)) == OperatorGenerator(empty(bs), empty(hilbert), (t, μ), boundary; half=true) == empty(cgen)
-    @test !isempty(cgen) && isempty(empty(cgen)) 
+    @test !isempty(cgen) && isempty(empty(cgen))
     @test reset!(empty(cgen), bs, hilbert; vectors=lattice.vectors) == cgen
     @test update!(deepcopy(cgen), μ=1.5)|>expand ≈ tops₁ + tops₂*2.0 + μops*1.5
     @test LinearFunction(identity)(cgen) == cgen.operators
@@ -180,10 +192,12 @@ end
     optp = Operator{ComplexF64, ZeroAtLeast{CoordinatedIndex{Index{FockIndex{:f, Int, Rational{Int}}, Int}, SVector{1, Float64}}, 2}}
     tops = expand(t, bs, hilbert; half=true)
     μops = expand(one(μ), bs, hilbert; half=true)
-    cat = CategorizedGenerator(tops, (t=Operators{optp}(), μ=μops), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain, eager)
+    cat = CategorizedGenerator(tops, (t=Operators{optp}(), μ=μops), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain)
 
     cgen = OperatorGenerator(cat, bs, hilbert, (t, μ), true)
     @test cgen == OperatorGenerator(bs, hilbert, (t, μ), plain; half=true)
+    @test cgen == Generator(bs, hilbert, (t, μ), plain; half=true) == Generator(cat, bs, hilbert, (t, μ), true)
+    @test cgen == LatticeModel(bs, hilbert, (t, μ), plain; half=true) == LatticeModel(cat, bs, hilbert, (t, μ), true)
     @test expand(cgen) ≈ tops + μops
     @test expand(cgen, :t) ≈ tops
     @test expand(cgen, :μ) ≈ μops
@@ -200,6 +214,7 @@ end
 struct TBA{F<:Formula} <: Frontend
     formula::F
 end
+@inline Base.valtype(::Type{<:TBA{F}}) where {F<:Formula} = valtype(F)
 @inline Base.show(io::IO, ::TBA) = print(io, "TBA")
 @inline Parameters(tba::TBA) = tba.formula.parameters
 @inline update!(tba::TBA; parameters...) = (update!(tba.formula; parameters...); tba)
@@ -275,6 +290,7 @@ params(parameters::Parameters) = (t=parameters.t, μ=parameters.U/2)
 @testset "Assignment & Algorithm with map" begin
     tba = Algorithm(:Square, TBA(Formula(A, (t=1.0, μ=0.5))), (t=1.0, U=2.0), params)
     @test tba==deepcopy(tba) && isequal(tba, deepcopy(tba))
+    @test valtype(tba) == valtype(tba.frontend) == SMatrix{1, 1, Float64, 1}
     update!(tba; U=1.0)
     @test Parameters(tba) == (t=1.0, U=1.0)
     @test string(tba) == "Square-TBA"
