@@ -29,15 +29,15 @@ true</code></pre><p>The adjoint of a <a href="../../man/QuantumSystems/#QuantumL
 julia&gt; 𝕒⁺(3, 3//2)&#39;
 𝕒(3, 3//2)</code></pre><p>Apparently, this operation is nothing but the &quot;Hermitian conjugate&quot;.</p><p>A <a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.Fock"><code>Fock</code></a> instance can be initialized by giving all its attributes:</p><pre><code class="language-julia-repl hljs">julia&gt; Fock{:f}(1, 2)
 4-element Fock{:f}:
- 𝕔(1, -1//2)
- 𝕔(1, 1//2)
- 𝕔⁺(1, -1//2)
- 𝕔⁺(1, 1//2)
+  𝕔(1, -1//2)
+  𝕔(1, 1//2)
+  𝕔⁺(1, -1//2)
+  𝕔⁺(1, 1//2)
 
 julia&gt; Fock{:b}(1, 1)
 2-element Fock{:b}:
- 𝕒(1, 0)
- 𝕒⁺(1, 0)</code></pre><p>As can be seen, a <a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.Fock"><code>Fock</code></a> instance behaves like a vector (because the parent type <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Internal"><code>Internal</code></a> is a subtype of <code>AbstractVector</code>), and its iteration just generates all the allowed <a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.FockIndex"><code>FockIndex</code></a> instances on its associated spatial point:</p><pre><code class="language-julia-repl hljs">julia&gt; fck = Fock{:f}(2, 1);
+  𝕒(1, 0)
+  𝕒⁺(1, 0)</code></pre><p>As can be seen, a <a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.Fock"><code>Fock</code></a> instance behaves like a vector (because the parent type <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Internal"><code>Internal</code></a> is a subtype of <code>AbstractVector</code>), and its iteration just generates all the allowed <a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.FockIndex"><code>FockIndex</code></a> instances on its associated spatial point:</p><pre><code class="language-julia-repl hljs">julia&gt; fck = Fock{:f}(2, 1);
 
 julia&gt; fck |&gt; typeof |&gt; eltype
 FockIndex{:f, Int64, Rational{Int64}}
@@ -197,15 +197,15 @@ julia&gt; 𝕊{1//2}(&#39;-&#39;) |&gt; matrix
  0.0+0.0im  0.0+0.0im
  1.0+0.0im  0.0+0.0im</code></pre><p>A <a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.Spin"><code>Spin</code></a> instance can be initialized as follows:</p><pre><code class="language-julia-repl hljs">julia&gt; Spin{1}()
 3-element Spin{1}:
- 𝕊{1}(&#39;x&#39;)
- 𝕊{1}(&#39;y&#39;)
- 𝕊{1}(&#39;z&#39;)
+  𝕊{1}(&#39;x&#39;)
+  𝕊{1}(&#39;y&#39;)
+  𝕊{1}(&#39;z&#39;)
 
 julia&gt; Spin{1//2}()
 3-element Spin{1//2}:
- 𝕊{1//2}(&#39;x&#39;)
- 𝕊{1//2}(&#39;y&#39;)
- 𝕊{1//2}(&#39;z&#39;)</code></pre><p>Similar to <a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.Fock"><code>Fock</code></a>, a <a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.Spin"><code>Spin</code></a> instance behaves like a vector whose iteration generates the <a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.SpinIndex"><code>SpinIndex</code></a> instances on its associated spatial point:</p><pre><code class="language-julia-repl hljs">julia&gt; sp = Spin{1}();
+  𝕊{1//2}(&#39;x&#39;)
+  𝕊{1//2}(&#39;y&#39;)
+  𝕊{1//2}(&#39;z&#39;)</code></pre><p>Similar to <a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.Fock"><code>Fock</code></a>, a <a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.Spin"><code>Spin</code></a> instance behaves like a vector whose iteration generates the <a href="../../man/QuantumSystems/#QuantumLattices.QuantumSystems.SpinIndex"><code>SpinIndex</code></a> instances on its associated spatial point:</p><pre><code class="language-julia-repl hljs">julia&gt; sp = Spin{1}();
 
 julia&gt; sp |&gt; typeof |&gt; eltype
 SpinIndex{1, Char}
@@ -248,37 +248,37 @@ julia&gt; # one-dimensional lattice vibration only has the x component
 
 julia&gt; Phonon{:u}(1)
 1-element Phonon{:u}:
- 𝕦(&#39;x&#39;)
+  𝕦(&#39;x&#39;)
 
 julia&gt; Phonon{:p}(1)
 1-element Phonon{:p}:
- 𝕡(&#39;x&#39;)
+  𝕡(&#39;x&#39;)
 
 julia&gt; # two-dimensional lattice vibration only has the x and y components
 
 julia&gt; Phonon{:u}(2) 
 2-element Phonon{:u}:
- 𝕦(&#39;x&#39;)
- 𝕦(&#39;y&#39;)
+  𝕦(&#39;x&#39;)
+  𝕦(&#39;y&#39;)
 
 julia&gt; Phonon{:p}(2)
 2-element Phonon{:p}:
- 𝕡(&#39;x&#39;)
- 𝕡(&#39;y&#39;)
+  𝕡(&#39;x&#39;)
+  𝕡(&#39;y&#39;)
 
 julia&gt; # three-dimensional lattice vibration has the x, y and z components
 
 julia&gt; Phonon{:u}(3)
 3-element Phonon{:u}:
- 𝕦(&#39;x&#39;)
- 𝕦(&#39;y&#39;)
- 𝕦(&#39;z&#39;)
+  𝕦(&#39;x&#39;)
+  𝕦(&#39;y&#39;)
+  𝕦(&#39;z&#39;)
 
 julia&gt; Phonon{:p}(3)
 3-element Phonon{:p}:
- 𝕡(&#39;x&#39;)
- 𝕡(&#39;y&#39;)
- 𝕡(&#39;z&#39;)</code></pre><p>As is usual, we define functions <code>𝕦</code> (\bbu&lt;tab&gt;) and <code>𝕡</code> (\bbp&lt;tab&gt;) to construct and display instances of <code>PhononIndex{:u}</code> and <code>PhononIndex{:p}</code> for convenience, respectively.</p><pre><code class="language-julia-repl hljs">julia&gt; 𝕦(&#39;x&#39;) isa PhononIndex{:u}
+  𝕡(&#39;x&#39;)
+  𝕡(&#39;y&#39;)
+  𝕡(&#39;z&#39;)</code></pre><p>As is usual, we define functions <code>𝕦</code> (\bbu&lt;tab&gt;) and <code>𝕡</code> (\bbp&lt;tab&gt;) to construct and display instances of <code>PhononIndex{:u}</code> and <code>PhononIndex{:p}</code> for convenience, respectively.</p><pre><code class="language-julia-repl hljs">julia&gt; 𝕦(&#39;x&#39;) isa PhononIndex{:u}
 true
 
 julia&gt; 𝕡(&#39;x&#39;) isa PhononIndex{:p}
@@ -408,4 +408,4 @@ julia&gt; ops[1]
 Operator(2, 𝕔(1, 1//2))
 
 julia&gt; ops[2]
-Operator(3, 𝕔⁺(1, 1//2))</code></pre><p>The index order of an <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operators"><code>Operators</code></a> is the insertion order of the operators it contains.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../SpatialInfoOfAUnitcell/">« Spatial information of a unitcell</a><a class="docs-footer-nextpage" href="../CouplingsAmongDifferentDegreesOfFreedom/">Couplings among different degrees of freedom »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Thursday 30 April 2026 12:29">Thursday 30 April 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+Operator(3, 𝕔⁺(1, 1//2))</code></pre><p>The index order of an <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operators"><code>Operators</code></a> is the insertion order of the operators it contains.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../SpatialInfoOfAUnitcell/">« Spatial information of a unitcell</a><a class="docs-footer-nextpage" href="../CouplingsAmongDifferentDegreesOfFreedom/">Couplings among different degrees of freedom »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Saturday 9 May 2026 11:41">Saturday 9 May 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
