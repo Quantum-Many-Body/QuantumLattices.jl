@@ -12,11 +12,12 @@ using ..DegreesOfFreedom: Hilbert, Term
 using ..QuantumLattices: OneOrMore, ZeroAtLeast, ZeroOrMore, value
 using ..QuantumOperators: LinearTransformation, Operator, OperatorPack, OperatorSet, OperatorSum, Operators, identity, idtype, operatortype
 using ..Spatials: Bond, isintracell
-using ..Toolkit: Float, atol, efficientoperations, parametertype, reparameter, rtol
+using ..Toolkit: Float, ShowEach, atol, efficientoperations, parametertype, reparameter, rtol
 
 import ..QuantumLattices: add!, expand, expand!, id, reset!, str, update, update!
 import ..QuantumOperators: scalartype
 import ..Spatials: dlmsave
+import ..Toolkit: contenttoshow, showasleaf, showcontent
 
 export Action, Algorithm, Assignment, Boundary, CategorizedGenerator, Data, Eager, ExpansionStyle, Formula, Frontend, Generator, LatticeModel, Lazy, OperatorGenerator, Parameters, ParametricGenerator, StaticGenerator
 export checkoptions, datatype, eager, fingerprint, hasoption, lazy, options, optionsinfo, plain, qldload, qldsave, run!, seriestype
@@ -92,6 +93,7 @@ end
 @inline Base.isequal(bound₁::Boundary, bound₂::Boundary) = isequal(keys(bound₁), keys(bound₂)) && isequal(efficientoperations, bound₁, bound₂)
 @inline Base.valtype(::Type{<:Boundary}, M::Type{<:Operator}) = reparameter(M, :value, promote_type(Complex{Int}, scalartype(M)))
 @inline Base.valtype(B::Type{<:Boundary}, MS::Type{<:Operators}) = (M = valtype(B, eltype(MS)); Operators{M, idtype(M)})
+@inline contenttoshow(bound::Boundary) = (keys=keys(bound), values=bound.values, vectors=bound.vectors)
 
 """
     keys(bound::Boundary) -> ZeroAtLeast{Symbol}
@@ -180,6 +182,7 @@ const plain = Boundary{()}(Float[], SVector{0, Float}[])
 @inline Base.valtype(::Type{typeof(plain)}, M::Type{<:Operator}) = M
 @inline Base.valtype(::Type{typeof(plain)}, M::Type{<:Operators}) = M
 @inline (::typeof(plain))(operator::Operator; kwargs...) = operator
+@inline showcontent(io::IO, ::Boundary{()}) = print(io, "plain")
 
 """
     LatticeModel
@@ -191,6 +194,9 @@ Subtypes must implement `valtype`. `Parameters` and `update!` should also be imp
 abstract type LatticeModel end
 @inline Base.:(==)(model₁::LatticeModel, model₂::LatticeModel) = ==(efficientoperations, model₁, model₂)
 @inline Base.isequal(model₁::LatticeModel, model₂::LatticeModel) = isequal(efficientoperations, model₁, model₂)
+@inline showasleaf(::Type{<:LatticeModel}) = false
+@inline Base.show(io::IO, model::LatticeModel) = show(io, MIME"text/plain"(), model)
+@inline Base.show(io::IO, ::MIME"text/plain", model::LatticeModel) = showcontent(io, model)
 
 """
     valtype(model::LatticeModel)
@@ -592,6 +598,13 @@ struct OperatorGenerator{V<:Operators, CG<:CategorizedGenerator{V}, B<:Bond, H<:
     end
 end
 @inline expand(gen::OperatorGenerator, ::Lazy) = expand(gen.operators, lazy)
+@inline contenttoshow(gen::OperatorGenerator) = (;
+    bonds = ShowEach(gen.bonds),
+    hilbert = gen.hilbert,
+    terms = map(id, gen.terms),
+    half = gen.half,
+    operators = gen.operators,
+)
 
 """
     OperatorGenerator(bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term}, boundary::Boundary=plain; half::Bool=false)
@@ -845,6 +858,9 @@ mutable struct Assignment{A<:Action, P<:Parameters, M<:Function, T<:Tuple, D<:Da
 end
 @inline Base.:(==)(assign₁::Assignment, assign₂::Assignment) = ==(efficientoperations, assign₁, assign₂)
 @inline Base.isequal(assign₁::Assignment, assign₂::Assignment) = isequal(efficientoperations, assign₁, assign₂)
+@inline showasleaf(::Type{<:Assignment}) = false
+@inline Base.show(io::IO, ::MIME"text/plain", assign::Assignment) = showcontent(io, assign)
+@inline contenttoshow(assign::Assignment) = (; name=assign.name, action=assign.action, parameters=assign.parameters)
 
 """
     Parameters(assignment::Assignment) -> Parameters
@@ -881,29 +897,6 @@ end
 Show an assignment.
 """
 @inline Base.show(io::IO, assign::Assignment) = print(io, assign.name)
-
-"""
-    show(io::IO, ::MIME"text/plain", assign::Assignment)
-
-Show an assignment.
-
-Optionally, some parameters of the algorithm can be filtered by specifying the `:select` context in `io`. Besides, the maximum number of decimals of the parameters can also be specified by the `:ndecimal` context in `io`.
-"""
-function Base.show(io::IO, ::MIME"text/plain", assign::Assignment)
-    io₁ = indent(io, 2)
-    io₂ = indent(io, 4)
-    print(io, assign.name)
-    print(io₁, '\n', "action:")
-    print(io₂, '\n', assign.action)
-    print(io₁, '\n', "parameters:")
-    select = get(io, :select, param->true)
-    ndecimal = get(io, :ndecimal, 10)
-    for (name, value) in pairs(assign.parameters)
-        if select(name)
-            print(io₂, '\n', name, ": ", str(value; ndecimal=ndecimal))
-        end
-    end
-end
 
 """
     options(::Type{<:Assignment}) -> NamedTuple
@@ -981,6 +974,7 @@ end
     )
 end
 @inline Base.valtype(::Type{<:Algorithm{F}}) where {F<:Frontend} = valtype(F)
+@inline contenttoshow(alg::Algorithm) = (; name=alg.name, frontend=alg.frontend, parameters=alg.parameters)
 
 """
     Algorithm(name::Symbol, frontend::Frontend, parameters::Parameters=Parameters(frontend), map::Function=identity; dir::String=".", timer::TimerOutput=TimerOutput())
@@ -1028,29 +1022,6 @@ end
 Show an algorithm.
 """
 @inline Base.show(io::IO, alg::Algorithm) = print(io, alg.name, "-", nameof(typeof(alg.frontend)))
-
-"""
-    show(io::IO, ::MIME"text/plain", alg::Algorithm)
-
-Show an algorithm.
-
-Optionally, some parameters of the algorithm can be filtered by specifying the `:select` context in `io`. Besides, the maximum number of decimals of the parameters can also be specified by the `:ndecimal` context in `io`.
-"""
-function Base.show(io::IO, ::MIME"text/plain", alg::Algorithm)
-    io₁ = indent(io, 2)
-    io₂ = indent(io, 4)
-    print(io, alg.name)
-    print(io₁, '\n', "frontend:")
-    print(io₂, '\n', alg.frontend)
-    print(io₁, '\n', "parameters:")
-    select = get(io, :select, param->true)
-    ndecimal = get(io, :ndecimal, 10)
-    for (name, value) in pairs(alg.parameters)
-        if select(name)
-            print(io₂, '\n', name, ": ", str(value; ndecimal=ndecimal))
-        end
-    end
-end
 
 """
     id(obj::Union{Assignment, Algorithm})

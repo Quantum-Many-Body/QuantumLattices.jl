@@ -205,9 +205,7 @@ end
 
     opt = Operator(1.0, Bose(2, 2), Bose(1, 1))
     @test String(latexify(opt; env=:raw)) == "d^{\\dagger}_{2}d^{}_{1}"
-    io = IOBuffer()
-    show(io, MIME"text/latex"(), opt)
-    @test String(take!(io)) == "\$d^{\\dagger}_{2}d^{}_{1}\$"
+    @test repr(MIME"text/latex"(), opt) == "\$d^{\\dagger}_{2}d^{}_{1}\$"
     @test String(latexify(Operator(1.0, aid, aid); env=:raw)) == "(d^{\\dagger}_{1})^2"
 
     latexformat(Bose, LaTeX{(:nambu,), (:orbital,)}('c'))
@@ -217,11 +215,8 @@ end
             )
     str = "\\left(1.0-1.0\\mathit{i}\\right)c^{\\dagger}_{2}c^{}_{1}-c^{\\dagger}_{1}c^{}_{1}"
     @test String(latexify(opts; env=:raw)) == str
-
-    show(io, MIME"text/latex"(), [opts, opts])
-    @test String(take!(io)) == "\\begin{equation}\n\\left[\n\\begin{array}{c}\n$str \\\\\n$str \\\\\n\\end{array}\n\\right]\n\\end{equation}\n"
-    show(io, MIME"text/latex"(), [opts opts; opts opts])
-    @test String(take!(io)) == "\\begin{equation}\n\\left[\n\\begin{array}{cc}\n$str & $str \\\\\n$str & $str \\\\\n\\end{array}\n\\right]\n\\end{equation}\n"
+    @test repr(MIME"text/latex"(), [opts, opts]) == "\\begin{equation}\n\\left[\n\\begin{array}{c}\n$str \\\\\n$str \\\\\n\\end{array}\n\\right]\n\\end{equation}\n"
+    @test repr(MIME"text/latex"(), [opts opts; opts opts]) == "\\begin{equation}\n\\left[\n\\begin{array}{cc}\n$str & $str \\\\\n$str & $str \\\\\n\\end{array}\n\\right]\n\\end{equation}\n"
 end
 
 struct DoubleCoeff <: LinearTransformation end
@@ -233,11 +228,13 @@ struct DoubleCoeff <: LinearTransformation end
     s = Operators(m)
 
     double = DoubleCoeff()
+    @test repr(MIME"text/plain"(), double) == "DoubleCoeff"
     @test valtype(double, m) == valtype(typeof(double), typeof(m)) == typeof(m)
     @test valtype(double, s) == valtype(typeof(double), typeof(s)) == typeof(s)
     @test map!(double, s) == s == Operators(Operator(2, Bose(1, 1)))
 
     i = LinearFunction(identity)
+    @test repr(MIME"text/plain"(), i) == "LinearFunction\n  f: identity (generic function with 1 method)"
     @test i==deepcopy(i) && isequal(i, deepcopy(i))
     @test i(m)==m && i(s)==s
     @test valtype(LinearFunction{typeof(m), typeof(identity)}, typeof(m)) == typeof(m)

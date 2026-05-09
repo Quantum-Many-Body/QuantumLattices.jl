@@ -440,7 +440,8 @@ function Base.show(io::IO, index::CoordinatedIndex)
         push!(internal, str(value))
     end
     internal = join(internal, ", ")
-    @printf io "%s(%s%s%s, %s, %s)" OperatorIndex[index.index.internal] str(index.index.site) (length(internal)>0 ? ", " : "") internal index.rcoordinate index.icoordinate
+    ndecimal = get(io, :ndecimal, 10)
+    @printf io "%s(%s%s%s, %s, %s)" OperatorIndex[index.index.internal] str(index.index.site) (length(internal)>0 ? ", " : "") internal str(index.rcoordinate; ndecimal=ndecimal) str(index.icoordinate; ndecimal=ndecimal)
 end
 @inline compositeindexcoordinate(vector::SVector) = vector
 @inline compositeindexcoordinate(vector::SVector{N, Float}) where N = SVector(ntuple(i->vector[i]===-0.0 ? 0.0 : vector[i], Val(N)))

@@ -1,15 +1,16 @@
 module QuantumOperators
 
 using DataStructures: OrderedDict
+using IndentWrappers: indent
 using LaTeXStrings: LaTeXString
 using Latexify: @latexrecipe, Latexify, latexify
 using Printf: @printf, @sprintf
 using ..QuantumLattices: OneAtLeast, str
-using ..Toolkit: atol, contentorder, efficientoperations, fulltype, getcontent, parameterpairs, parametertype, promoteparameters, rawtype, reparameter, rtol
+using ..Toolkit: atol, contentorder, efficientoperations, fulltype, getcontent, parameterpairs, parametertype, promoteparameters, rawtype, reparameter, rtol, showcontent
 
 import LinearAlgebra: dot
 import ..QuantumLattices: ZeroAtLeast, add!, div!, id, ishermitian, mul!, permute, rank, sub!, value, ⊗
-import ..Toolkit: contentnames, dissolve, isparameterbound, parameternames, subscript, superscript
+import ..Toolkit: contentnames, dissolve, isparameterbound, parameternames, showasleaf, subscript, superscript
 
 export LaTeX, Operator, OperatorIndex, OperatorPack, OperatorProd, Operators, OperatorSet, OperatorSum, QuantumOperator
 export LinearFunction, LinearTransformation, Matrixization, Permutation, TabledUnitSubstitution, UnitSubstitution
@@ -440,10 +441,15 @@ Set of `OperatorPack`s.
 """
 abstract type OperatorSet{M<:OperatorPack} <: QuantumOperator end
 function Base.show(io::IO, ms::OperatorSet)
-    @printf io "%s with %s %s\n" summary(ms) length(ms) nameof(eltype(ms))
-    for m in ms
-        @printf io "  %s\n" m
+    print(io, summary(ms), " with ", length(ms), " ", nameof(eltype(ms)))
+    if !isempty(ms)
+        io′ = indent(io, 2)
+        for m in ms
+            print(io′, '\n')
+            show(io′, m)
+        end
     end
+    println(io)
 end
 
 """
@@ -975,6 +981,9 @@ Show a quantum operator.
 Abstract linear transformation on quantum operators.
 """
 abstract type LinearTransformation <: Function end
+@inline showasleaf(::Type{<:LinearTransformation}) = false
+@inline Base.show(io::IO, transformation::LinearTransformation) = show(io, MIME"text/plain"(), transformation)
+@inline Base.show(io::IO, ::MIME"text/plain", transformation::LinearTransformation) = showcontent(io, transformation)
 @inline Base.:(==)(transformation₁::LinearTransformation, transformation₂::LinearTransformation) = ==(efficientoperations, transformation₁, transformation₂)
 @inline Base.isequal(transformation₁::LinearTransformation, transformation₂::LinearTransformation) = isequal(efficientoperations, transformation₁, transformation₂)
 @inline Base.valtype(transformation::LinearTransformation, m::QuantumOperator) = valtype(typeof(transformation), typeof(m))

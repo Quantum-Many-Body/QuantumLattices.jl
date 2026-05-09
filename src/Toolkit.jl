@@ -3,6 +3,7 @@ module Toolkit
 using Base: @propagate_inbounds
 using DataStructures: OrderedDict
 using Format: FormatSpec, pyfmt
+using IndentWrappers: indent
 using InteractiveUtils: subtypes
 using Printf: @printf
 using StaticArrays: SVector
@@ -11,7 +12,7 @@ import QuantumLattices: OneAtLeast, ZeroAtLeast, ZeroOrMore, id, shape, str, val
 
 # Utilities
 export atol, rtol, Float
-export DirectProductedIndices, DirectSummedIndices, Segment, concatenate, delta, subscript, superscript
+export DirectProductedIndices, DirectSummedIndices, Segment, ShowEach, concatenate, contenttoshow, delta, showasleaf, showcontent, subscript, superscript
 
 # Combinatorics
 export Combinatorics, Combinations, DuplicateCombinations, DuplicatePermutations, Permutations
@@ -43,15 +44,15 @@ const Float = Float64
     str(number; kwargs...) -> String
     str(number::Integer; kwargs...) -> String
     str(number::Rational; kwargs...) -> String
-    str(number::AbstractFloat; ndecimal::Integer=5) -> String
-    str(number::Complex; ndecimal::Integer=5) -> String
+    str(number::AbstractFloat; ndecimal::Integer=10) -> String
+    str(number::Complex; ndecimal::Integer=10) -> String
 
 Convert a number to a string with at most `ndecimal` decimal places.
 """
 @inline str(number; kwargs...) = repr(number)
 @inline str(number::Integer; kwargs...) = string(number)
 @inline str(number::Rational; kwargs...) = number.den==1 ? repr(number.num) : repr(number)
-function str(number::AbstractFloat; ndecimal::Integer=5)
+function str(number::AbstractFloat; ndecimal::Integer=10)
     if number == 0.0
         result = "0.0"
     elseif 10^-5 < abs(number) < 10^6
@@ -65,7 +66,7 @@ function str(number::AbstractFloat; ndecimal::Integer=5)
     end
     return result
 end
-function str(number::Complex; ndecimal::Integer=5)
+function str(number::Complex; ndecimal::Integer=10)
     sreal = (real(number) == 0) ? "0" : str(real(number), ndecimal=ndecimal)
     simag = (imag(number) == 0) ? "0" : str(imag(number), ndecimal=ndecimal)
     result = ""
@@ -74,6 +75,13 @@ function str(number::Complex; ndecimal::Integer=5)
     (length(result) == 0) && (result = "0.0")
     return result
 end
+
+"""
+    str(value::AbstractVector{<:Number}; ndecimal::Integer=10) -> String
+
+Convert a vector of numbers to a string with each element rounded to at most `ndecimal` decimal places.
+"""
+@inline str(value::AbstractVector{<:Number}; ndecimal::Integer=10) = "[" * join(map(v->str(v; ndecimal=ndecimal), value), ", ") * "]"
 
 """
     str(value::Symbol; kwargs...) -> String
@@ -129,6 +137,83 @@ Get the ith value of an `OrderedDict`.
 @inline value(od::OrderedDict, i) = od.vals[i]
 
 """
+    showasleaf(::Type) -> Bool
+
+Return whether a type is displayed as a leaf node (inline or via `show(io, MIME"text/plain"(), obj)`) in the multi-line display system.
+
+Defaults to `true`; override to `false` for types that should be recursively expanded via [`contenttoshow`](@ref).
+"""
+@inline showasleaf(::Type) = true
+@inline showasleaf(::Type{<:NamedTuple}) = false
+
+"""
+    ShowEach{C}
+
+Wrapper for displaying a collection element by element with proper nested indentation.
+
+Use in [`contenttoshow`](@ref) return values to show each item on its own indented line.
+"""
+struct ShowEach{C}
+    items::C
+    ShowEach(items::C) where C = new{C}(items)
+end
+@inline showasleaf(::Type{<:ShowEach}) = false
+
+"""
+    showcontent(io::IO, obj)
+
+Recursively display a multi-line hierarchical view of an object.
+
+Leaf types (see [`showasleaf`](@ref)) are shown inline or delegated to `show(io, MIME"text/plain"(), obj)`.
+Non-leaf types print their type name then expand `contenttoshow(obj)`.
+"""
+function showcontent(io::IO, obj)
+    showasleaf(typeof(obj)) && return show(io, MIME"text/plain"(), obj)
+    content = contenttoshow(obj)
+    if isa(content, ShowEach)
+        showcontent(io, content)
+    else
+        print(io, nameof(typeof(obj)))
+        showcontent(indent(io, 2), content)
+    end
+end
+function showcontent(io::IO, content::NamedTuple)
+    for (label, value) in pairs(content)
+        print(io, '\n', label, ": ")
+        if isa(value, NamedTuple)
+            showcontent(indent(io, 2), value)
+        else
+            showcontent(io, value)
+        end
+    end
+end
+function showcontent(io::IO, items::ShowEach)
+    print(io, summary(items.items))
+    if !isempty(items.items)
+        io′ = indent(io, 2)
+        for item in items.items
+            print(io′, '\n')
+            showcontent(io′, item)
+        end
+    end
+end
+function showcontent(io::IO, value::Union{Number, AbstractVector{<:Number}})
+    ndecimal = get(io, :ndecimal, 10)
+    print(io, str(value; ndecimal=ndecimal))
+end
+
+"""
+    contenttoshow(obj)
+
+Return a `NamedTuple` of an object's field names and values for multi-line display. The generic fallback uses `fieldnames`; specific types may override.
+"""
+@inline @generated function contenttoshow(obj)
+    names = fieldnames(obj)
+    exprs = [:(getfield(obj, $(QuoteNode(name)))) for name in names]
+    return :(NamedTuple{$names}(($(exprs...),)))
+end
+
+"""
     searchsortedfirst(table, basis; by=identity, lt=isless, rev=false) -> Int
 
 Use the binary search method to find the position of a basis in a sorted table so that the order is preserved if the basis in inserted in that position.
@@ -154,6 +239,9 @@ Direct sum of indexes.
 struct DirectSummedIndices{T<:OneAtLeast{OrdinalRange{Int, Int}}} <: AbstractVector{CartesianIndex{3}}
     indices::T
 end
+@inline showasleaf(::Type{<:DirectSummedIndices}) = false
+@inline contenttoshow(indices::DirectSummedIndices) = ShowEach(indices)
+@inline Base.show(io::IO, ::MIME"text/plain", indices::DirectSummedIndices) = showcontent(io, indices)
 @inline Base.size(indexes::DirectSummedIndices) = (sum(map(length, indexes.indices)),)
 @inline Base.iterate(indexes::DirectSummedIndices) = CartesianIndex(1, first(first(indexes.indices)), 0), (1, first(first(indexes.indices)), 0)
 function Base.iterate(indexes::DirectSummedIndices, state::NTuple{3, Int})
@@ -206,6 +294,9 @@ struct DirectProductedIndices{Order, N, T<:NTuple{N, OrdinalRange{Int, Int}}} <:
         new{Order, N, typeof(indices)}(indices)
     end
 end
+@inline showasleaf(::Type{<:DirectProductedIndices}) = false
+@inline contenttoshow(indices::DirectProductedIndices) = ShowEach(indices)
+@inline Base.show(io::IO, ::MIME"text/plain", indices::DirectProductedIndices) = showcontent(io, indices)
 @inline Base.size(indexes::DirectProductedIndices) = (mapreduce(length, *, indexes.indices),)
 @inline Base.getindex(indexes::DirectProductedIndices{:forward}, i::Integer) = CartesianIndices(indexes.indices)[i]
 @inline Base.getindex(indexes::DirectProductedIndices{:backward}, i::Integer) = CartesianIndex(reverse(CartesianIndices(reverse(indexes.indices))[i].I)...)
@@ -989,6 +1080,9 @@ end
 A composite vector can be considered as a vector that is implemented by including a concrete subtype of `AbstractVector` as its data attribute.
 """
 abstract type CompositeVector{T} <: AbstractVector{T} end
+@inline showasleaf(::Type{<:CompositeVector}) = false
+@inline contenttoshow(cv::CompositeVector) = ShowEach(cv)
+@inline Base.show(io::IO, ::MIME"text/plain", cv::CompositeVector) = invoke(showcontent, Tuple{IO, Any}, io, cv)
 @inline contentnames(::Type{<:CompositeVector}) = (:contents,)
 @inline dissolve(cv::CompositeVector, ::Val{:contents}, f::Function, args...; kwargs...) = f(getcontent(cv, :contents), args...; kwargs...)
 @inline Base.axes(cv::CompositeVector) = axes(getcontent(cv, :contents))
@@ -1019,6 +1113,9 @@ abstract type CompositeVector{T} <: AbstractVector{T} end
 A composite dict can be considered as a dict that is implemented by including a concrete subtype of `AbstractDict` as its data attribute.
 """
 abstract type CompositeDict{K, V} <: AbstractDict{K, V} end
+@inline showasleaf(::Type{<:CompositeDict}) = false
+@inline contenttoshow(cd::CompositeDict) = ShowEach(cd)
+@inline Base.show(io::IO, ::MIME"text/plain", cd::CompositeDict) = showcontent(io, cd)
 @inline contentnames(::Type{<:CompositeDict}) = (:contents,)
 @inline dissolve(cd::CompositeDict, ::Val{:contents}, f::Function, args...; kwargs...) = f(getcontent(cd, :contents), args...; kwargs...)
 @inline Base.isempty(cd::CompositeDict) = isempty(getcontent(cd, :contents))
@@ -1056,6 +1153,9 @@ abstract type CompositeDict{K, V} <: AbstractDict{K, V} end
 Abstract vector space.
 """
 abstract type VectorSpace{B} <: AbstractVector{B} end
+@inline showasleaf(::Type{<:VectorSpace}) = false
+@inline contenttoshow(vs::VectorSpace) = ShowEach(vs)
+@inline Base.show(io::IO, ::MIME"text/plain", vs::VectorSpace) = showcontent(io, vs)
 @inline Base.:(==)(vs₁::VS, vs₂::VS) where {VS<:VectorSpace} = ==(efficientoperations, vs₁, vs₂)
 @inline Base.:(==)(vs₁::VS₁, vs₂::VS₂) where {VS₁<:VectorSpace, VS₂<:VectorSpace} = invoke(==, Tuple{AbstractVector, AbstractVector}, vs₁, vs₂)
 @inline Base.isequal(vs₁::VS, vs₂::VS) where {VS<:VectorSpace} = isequal(efficientoperations, vs₁, vs₂)

@@ -3,7 +3,7 @@ using OffsetArrays: OffsetArray
 using QuantumLattices: id, shape, str, value
 using QuantumLattices.Toolkit
 using StaticArrays: SVector
-import QuantumLattices.Toolkit: VectorSpaceStyle, contentnames, contenttype, dissolve, getcontent, isparameterbound, parameternames
+import QuantumLattices.Toolkit: VectorSpaceStyle, contentnames, contenttoshow, contenttype, dissolve, getcontent, isparameterbound, parameternames, showasleaf
 
 @testset "str" begin
     @test str((1, 2)) == "(1, 2)"
@@ -14,7 +14,7 @@ import QuantumLattices.Toolkit: VectorSpaceStyle, contentnames, contenttype, dis
     @test str(1.0) == "1.0"
     @test str(10.0^6) == "1.0e+06"
     @test str(10^-5) == "1.0e-05"
-    @test str(1/7) == "0.14286"
+    @test str(1/7) == "0.1428571429"
     @test str(1/7; ndecimal=8) == "0.14285714"
     @test str(0im) == "0.0"
     @test str(1//7+0im) == "1//7"
@@ -25,6 +25,7 @@ import QuantumLattices.Toolkit: VectorSpaceStyle, contentnames, contenttype, dis
     @test str(:a) =="a"
     @test str(:) == ":"
     @test str('a') == "'a'"
+    @test str([0.123456789]; ndecimal=8) == "[0.12345679]"
 end
 
 @testset "superscript" begin
@@ -50,6 +51,47 @@ end
     @test value(od, 1)=='a' && value(od, 2)=='b' && value(od, 3)=='c'
 end
 
+struct Leaf
+    value
+end
+@inline Base.show(io::IO, ::MIME"text/plain", leaf::Leaf) = print(io, "Leaf($(leaf.value))")
+
+struct NonLeaf
+    value
+end
+@inline showasleaf(::Type{NonLeaf}) = false
+
+struct NonLeafContainer
+    value::Vector{Float64}
+end
+@inline showasleaf(::Type{NonLeafContainer}) = false
+@inline contenttoshow(nl::NonLeafContainer) = ShowEach(nl.value)
+
+@testset "multiline show" begin
+    @test showasleaf(String)
+    @test showasleaf(Leaf)
+    @test !showasleaf(NamedTuple)
+    @test !showasleaf(ShowEach)
+
+    @test sprint(showcontent, (a=1.0, b=42)) == "\na: 1.0\nb: 42"
+    @test sprint(showcontent, (outer=(inner=1.0,),)) == "\nouter: \n  inner: 1.0"
+    @test sprint(showcontent, ShowEach([1.0, 2.0])) == "2-element Vector{Float64}\n  1.0\n  2.0"
+    @test sprint(showcontent, ShowEach(Int[])) == "0-element Vector{Int64}"
+    @test sprint(showcontent, (bonds=ShowEach([1.0, 2.0]),)) == "\nbonds: 2-element Vector{Float64}\n  1.0\n  2.0"
+    @test sprint(showcontent, 1.23456789) == "1.23456789"
+    @test sprint(showcontent, 1.23456789; context=IOContext(IOBuffer(), :ndecimal=>2)) == "1.23"
+    @test sprint(showcontent, [1.23456789, 2.5, 3.0]) == "[1.23456789, 2.5, 3.0]"
+    @test sprint(showcontent, [1.23456789, 2.5, 3.0]; context=IOContext(IOBuffer(), :ndecimal=>2)) == "[1.23, 2.5, 3.0]"
+
+    @test contenttoshow(Leaf(1)) == (; value=1)
+    @test sprint(showcontent, Leaf(1)) == "Leaf(1)"
+
+    @test contenttoshow(NonLeaf(1)) == (; value=1)
+    @test sprint(showcontent, NonLeaf(1)) == "NonLeaf\n  value: 1"
+
+    @test sprint(showcontent, NonLeafContainer([1.0, 2.0])) == "2-element Vector{Float64}\n  1.0\n  2.0"
+end
+
 @testset "searchsortedfirst" begin
     idx = CartesianIndices((2, 2, 2))
     for (i, index) in enumerate(idx)
@@ -60,15 +102,17 @@ end
 end
 
 @testset "DirectSummedIndices" begin
-    indexes₁ = DirectSummedIndices((-3:-1, 1:3, 1:4))
-    indexes₂ = collect(indexes₁)
-    for i in eachindex(indexes₁, indexes₂)
-        @test indexes₁[i] == indexes₂[i]
+    indexes = DirectSummedIndices((-3:-1, 1:3, 1:4))
+    @test repr(MIME"text/plain"(), indexes) == "10-element QuantumLattices.Toolkit.DirectSummedIndices{Tuple{UnitRange{Int64}, UnitRange{Int64}, UnitRange{Int64}}}\n  CartesianIndex(1, -3, 0)\n  CartesianIndex(1, -2, 0)\n  CartesianIndex(1, -1, 0)\n  CartesianIndex(2, 1, 3)\n  CartesianIndex(2, 2, 3)\n  CartesianIndex(2, 3, 3)\n  CartesianIndex(3, 1, 6)\n  CartesianIndex(3, 2, 6)\n  CartesianIndex(3, 3, 6)\n  CartesianIndex(3, 4, 6)"
+    indexes′ = collect(indexes)
+    for i in eachindex(indexes, indexes′)
+        @test indexes[i] == indexes′[i]
     end
 end
 
 @testset "DirectProductedIndices" begin
     forward = DirectProductedIndices{:forward}((-2:-1, 2:3))
+    @test repr(MIME"text/plain"(), forward) == "4-element QuantumLattices.Toolkit.DirectProductedIndices{:forward, 2, Tuple{UnitRange{Int64}, UnitRange{Int64}}}\n  CartesianIndex(-2, 2)\n  CartesianIndex(-1, 2)\n  CartesianIndex(-2, 3)\n  CartesianIndex(-1, 3)"
     @test length(forward) == 4
     @test collect(forward) == [CartesianIndex(-2, 2), CartesianIndex(-1, 2), CartesianIndex(-2, 3), CartesianIndex(-1, 3)]
     for i in eachindex(forward)
@@ -78,6 +122,7 @@ end
     @test CartesianIndex(1, 1) ∉ forward
 
     backward = DirectProductedIndices{:backward}((-2:-1, 2:3))
+    @test repr(MIME"text/plain"(), backward) == "4-element QuantumLattices.Toolkit.DirectProductedIndices{:backward, 2, Tuple{UnitRange{Int64}, UnitRange{Int64}}}\n  CartesianIndex(-2, 2)\n  CartesianIndex(-2, 3)\n  CartesianIndex(-1, 2)\n  CartesianIndex(-1, 3)"
     @test length(backward) == 4
     @test collect(backward) == [CartesianIndex(-2, 2), CartesianIndex(-2, 3), CartesianIndex(-1, 2), CartesianIndex(-1, 3)]
     for i in eachindex(backward)
@@ -327,11 +372,13 @@ struct CV{S, T} <: CompositeVector{T}
     contents::Vector{T}
 end
 @inline contentnames(::Type{<:CV}) = (:info, :contents)
+@inline Base.summary(v::CV{S, T}) where {S, T} = "$(length(v))-element CV{$S, $T}"
 
 @testset "CompositeVector" begin
     @test contentnames(CompositeVector) == (:contents,)
 
     v = CV("Info", [1, 3, 2, 4])
+    @test repr(MIME"text/plain"(), v) == "4-element CV{String, Int64}\n  1\n  3\n  2\n  4"
     @test contentnames(typeof(v)) == (:info, :contents)
     @test axes(v) == (Base.OneTo(4),)
     @test size(v) == (4,)
@@ -379,11 +426,13 @@ struct CD{S, P, I} <: CompositeDict{P, I}
 end
 @inline contentnames(::Type{<:CD}) = (:info, :contents)
 @inline getcontent(m::CD, ::Val{:contents}) = getfield(m, :newcontents)
+@inline Base.summary(m::CD{S, P, I}) where {S, P, I} = "CD{$S, $P, $I} with $(length(m)) " * (length(m)==1 ? "entry" : "entries")
 
 @testset "CompositeDict" begin
     @test contentnames(CompositeDict) == (:contents,)
 
     d = CD("Info", Dict("a"=>1, "b"=>2))
+    @test repr(MIME"text/plain"(), d) == "CD{String, String, Int64} with 2 entries\n  \"b\" => 2\n  \"a\" => 1"
     @test contentnames(typeof(d)) == (:info, :contents)
     @test d == deepcopy(d)
     @test isequal(d, deepcopy(d))
@@ -423,11 +472,13 @@ struct SimpleVectorSpace{B, N} <: VectorSpace{B}
 end
 @inline VectorSpaceStyle(::Type{<:SimpleVectorSpace}) = VectorSpaceEnumerative()
 @inline SimpleVectorSpace(contents...) = SimpleVectorSpace(contents)
+@inline Base.summary(vs::SimpleVectorSpace{B, N}) where {B, N} = "$(length(vs))-element SimpleVectorSpace{$B, $N}"
 
 @testset "VectorSpaceEnumerative" begin
     id₀, id₄ = (1, 0), (1, 4)
     id₁, id₂, id₃ = (1, 1), (1, 2), (1, 3)
     vs = SimpleVectorSpace(id₁, id₂, id₃)
+    @test repr(MIME"text/plain"(), vs) == "3-element SimpleVectorSpace{Tuple{Int64, Int64}, 3}\n  (1, 1)\n  (1, 2)\n  (1, 3)"
     @test vs==deepcopy(vs) && isequal(vs, deepcopy(vs))
     @test axes(vs) == (Base.OneTo(3),)
     @test vs|>size == (3,)

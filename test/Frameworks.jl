@@ -34,6 +34,7 @@ end
     bound = Boundary{(:θ₁, :θ₂)}([0.1, 0.2], [[1.0, 0.0], [0.0, 1.0]])
     M = reparameter(typeof(op), :value, Complex{Float64})
     @test valtype(typeof(bound), typeof(op)) == M
+    @test repr(MIME"text/plain"(), bound) == "Boundary\n  keys: (:θ₁, :θ₂)\n  values: [0.1, 0.2]\n  vectors: 2-element Vector{Vector{Float64}}:   [1.0, 0.0]\n [0.0, 1.0]"
     @test keys(bound) == keys(typeof(bound)) == (:θ₁, :θ₂)
     @test Parameters(bound) == (θ₁=0.1, θ₂=0.2)
     @test bound == deepcopy(bound)
@@ -60,6 +61,7 @@ end
 
     @test valtype(typeof(plain), typeof(op)) == typeof(op)
     @test valtype(typeof(plain), typeof(ops)) == typeof(ops)
+    @test repr(MIME"text/plain"(), plain) == "plain"
     @test plain(op) == op
     @test plain(ops) == ops
     @test update!(plain) == plain
@@ -194,6 +196,7 @@ end
     cat = CategorizedGenerator(tops₁, (t=Operators{optp}(), μ=μops), (t=tops₂, μ=Operators{optp}()), (t=2.0, μ=1.0), boundary)
 
     cgen = OperatorGenerator(cat, bs, hilbert, (t, μ), true)
+    @test string(cgen) == "OperatorGenerator\n  bonds: 4-element Vector{QuantumLattices.Spatials.Bond{Int64, QuantumLattices.Spatials.Point{1, Float64}}}\n    Bond(0, Point(1, [0.0], [0.0]))\n    Bond(0, Point(2, [0.5], [0.0]))\n    Bond(1, Point(2, [0.5], [0.0]), Point(1, [0.0], [0.0]))\n    Bond(1, Point(2, [-0.5], [-1.0]), Point(1, [0.0], [0.0]))\n  hilbert: QuantumLattices.DegreesOfFreedom.Hilbert{QuantumLattices.QuantumSystems.Fock{:f}} with 2 entries\n    1 => Fock{:f}(norbital=1, nspin=1)\n    2 => Fock{:f}(norbital=1, nspin=1)\n  terms: (:t, :μ)\n  half: true\n  operators: CategorizedGenerator\n    constops: Operators with 1 Operator\n      Operator(2.0, 𝕔⁺(2, 1, 0, [0.5], [0.0]), 𝕔(1, 1, 0, [0.0], [0.0]))    \n    alterops: \n      t: Operators with 0 Operator      \n      μ: Operators with 2 Operator\n        Operator(0.5, 𝕔⁺(1, 1, 0, [0.0], [0.0]), 𝕔(1, 1, 0, [0.0], [0.0]))\n        Operator(0.5, 𝕔⁺(2, 1, 0, [0.5], [0.0]), 𝕔(2, 1, 0, [0.5], [0.0]))      \n    boundops: \n      t: Operators with 1 Operator\n        Operator(0.8090169944+0.5877852523im, 𝕔⁺(2, 1, 0, [-0.5], [-1.0]), 𝕔(1, 1, 0, [0.0], [0.0]))      \n      μ: Operators with 0 Operator      \n    parameters: \n      t: 2.0\n      μ: 1.0\n    boundary: Boundary\n      keys: (:θ,)\n      values: [0.1]\n      vectors: 1-element Vector{StaticArraysCore.SVector{1, Float64}}:       [1.0]"
     @test cgen == OperatorGenerator(bs, hilbert, (t, μ), boundary; half=true)
     @test cgen == Generator(bs, hilbert, (t, μ), boundary; half=true) == Generator(cat, bs, hilbert, (t, μ), true)
     @test cgen == LatticeModel(bs, hilbert, (t, μ), boundary; half=true) == LatticeModel(cat, bs, hilbert, (t, μ), true)
@@ -231,6 +234,7 @@ end
     cat = CategorizedGenerator(tops, (t=Operators{optp}(), μ=μops), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain)
 
     cgen = OperatorGenerator(cat, bs, hilbert, (t, μ), true)
+    @test string(cgen) == "OperatorGenerator\n  bonds: 4-element Vector{QuantumLattices.Spatials.Bond{Int64, QuantumLattices.Spatials.Point{1, Float64}}}\n    Bond(0, Point(1, [0.0], [0.0]))\n    Bond(0, Point(2, [0.5], [0.0]))\n    Bond(1, Point(2, [0.5], [0.0]), Point(1, [0.0], [0.0]))\n    Bond(1, Point(2, [-0.5], [-1.0]), Point(1, [0.0], [0.0]))\n  hilbert: QuantumLattices.DegreesOfFreedom.Hilbert{QuantumLattices.QuantumSystems.Fock{:f}} with 2 entries\n    1 => Fock{:f}(norbital=1, nspin=1)\n    2 => Fock{:f}(norbital=1, nspin=1)\n  terms: (:t, :μ)\n  half: true\n  operators: CategorizedGenerator\n    constops: Operators with 2 Operator\n      Operator(2.0, 𝕔⁺(2, 1, 0, [0.5], [0.0]), 𝕔(1, 1, 0, [0.0], [0.0]))\n      Operator(2.0, 𝕔⁺(2, 1, 0, [-0.5], [-1.0]), 𝕔(1, 1, 0, [0.0], [0.0]))    \n    alterops: \n      t: Operators with 0 Operator      \n      μ: Operators with 2 Operator\n        Operator(0.5, 𝕔⁺(1, 1, 0, [0.0], [0.0]), 𝕔(1, 1, 0, [0.0], [0.0]))\n        Operator(0.5, 𝕔⁺(2, 1, 0, [0.5], [0.0]), 𝕔(2, 1, 0, [0.5], [0.0]))      \n    boundops: \n      t: Operators with 0 Operator      \n      μ: Operators with 0 Operator      \n    parameters: \n      t: 2.0\n      μ: 1.0\n    boundary: plain"
     @test cgen == OperatorGenerator(bs, hilbert, (t, μ), plain; half=true)
     @test cgen == Generator(bs, hilbert, (t, μ), plain; half=true) == Generator(cat, bs, hilbert, (t, μ), true)
     @test cgen == LatticeModel(bs, hilbert, (t, μ), plain; half=true) == LatticeModel(cat, bs, hilbert, (t, μ), true)
@@ -337,9 +341,7 @@ params(parameters::Parameters) = (t=parameters.t, μ=parameters.U/2)
     @test basename(tba; extension="dat") == "Square-TBA.dat"
     @test pathof(tba) == joinpath(dirname(tba), basename(tba))
     @test str(tba) == "Square-TBA-t(1.0)U(1.0)"
-    io = IOBuffer()
-    show(io, MIME"text/plain"(), tba)
-    @test String(take!(io)) == "Square\n  frontend:\n    TBA\n  parameters:\n    t: 1.0\n    U: 1.0"
+    @test startswith(repr(MIME"text/plain"(), tba), "Algorithm\n  name: :Square\n  frontend:")
 
     @test options(Assignment) == NamedTuple()
 
@@ -349,9 +351,7 @@ params(parameters::Parameters) = (t=parameters.t, μ=parameters.U/2)
     update!(eigensystem; U=2.0)
     @test Parameters(eigensystem) == (t=1.0, U=2.0)
     @test string(eigensystem) == "eigensystem"
-    io = IOBuffer()
-    show(io, MIME"text/plain"(), eigensystem)
-    @test String(take!(io)) == "eigensystem\n  action:\n    EigenSystem(100×100)\n  parameters:\n    t: 1.0\n    U: 2.0"
+    @test startswith(repr(MIME"text/plain"(), eigensystem), "Assignment\n  name: :eigensystem\n  action:")
     @test options(typeof(eigensystem)) == (showinfo="show the information",)
     @test optionsinfo(typeof(eigensystem)) == "Assignment{<:EigenSystem} options:\n  (1) `:showinfo`: show the information.\n"
 

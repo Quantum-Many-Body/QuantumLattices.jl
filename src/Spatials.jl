@@ -2,11 +2,12 @@ module Spatials
 
 using Base.Iterators: flatten, product
 using DelimitedFiles: writedlm
+using IndentWrappers: indent
 using LinearAlgebra: cross, det, dot, norm
 using NearestNeighbors: KDTree, inrange, knn
 using Printf: @printf, @sprintf
 using StaticArrays: MVector, SVector
-using ..QuantumLattices: OneAtLeast, OneOrMore, ZeroAtLeast
+using ..QuantumLattices: OneAtLeast, OneOrMore, ZeroAtLeast, str
 using ..Toolkit: CompositeDict, DirectProductedVectorSpace, Float, Segment, VectorSpace, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceEnumerative, atol, concatenate, efficientoperations, getcontent, rtol, subscript
 
 import ..QuantumLattices: decompose, dimension, expand, matrix, rank, shape
@@ -557,7 +558,10 @@ struct Point{N, D<:Number}
 end
 @inline Base.:(==)(point₁::Point, point₂::Point) = ==(efficientoperations, point₁, point₂)
 @inline Base.isequal(point₁::Point, point₂::Point) = isequal(efficientoperations, point₁, point₂)
-@inline Base.show(io::IO, p::Point) = @printf io "Point(%s, %s, %s)" p.site p.rcoordinate p.icoordinate
+@inline function Base.show(io::IO, p::Point)
+    ndecimal = get(io, :ndecimal, 10)
+    print(io, "Point(", p.site, ", ", str(p.rcoordinate; ndecimal=ndecimal), ", ", str(p.icoordinate; ndecimal=ndecimal), ")")
+end
 
 """
     Point(site::Integer, rcoordinate::SVector{N, D}, icoordinate::SVector{N, D}) where {N, D<:Number}
@@ -690,20 +694,25 @@ abstract type AbstractLattice{N, D<:Number, M} <: AbstractVector{SVector{N, D}} 
 @inline Base.:(==)(lattice₁::AbstractLattice, lattice₂::AbstractLattice) = ==(efficientoperations, lattice₁, lattice₂)
 @inline Base.isequal(lattice₁::AbstractLattice, lattice₂::AbstractLattice) = isequal(efficientoperations, lattice₁, lattice₂)
 @inline Base.show(io::IO, lattice::AbstractLattice) = show(io, MIME"text/plain"(), lattice)
-@inline Base.show(io::IO, ::MIME"text/plain", lattice::AbstractLattice) = begin
-    @printf io "%s(%s)\n" lattice|>typeof|>nameof getcontent(lattice, :name)
+function Base.show(io::IO, ::MIME"text/plain", lattice::AbstractLattice)
+    ndecimal = get(io, :ndecimal, 10)
+    print(io, nameof(typeof(lattice)), "(", getcontent(lattice, :name), ")")
     len = length(lattice)
     if len > 0
-        @printf io "  with %s %s:\n" len len==1 ? "point" : "points"
+        io′ = indent(io, 2)
+        print(io′, '\n', "with ", len, " ", len==1 ? "point:" : "points:")
+        io″ = indent(io, 4)
         for i in eachindex(lattice)
-            @printf io "    %s\n" lattice[i]
+            print(io″, '\n', str(lattice[i]; ndecimal=ndecimal))
         end
     end
     len = length(getcontent(lattice, :vectors))
     if len > 0
-        @printf io "  with %s translation %s:\n" len len==1 ? "vector" : "vectors"
+        io′ = indent(io, 2)
+        print(io′, '\n', "with ", len, " ", len==1 ? "translation vector:" : "translation vectors:")
+        io″ = indent(io, 4)
         for i = 1:len
-            @printf io "    %s\n" getcontent(lattice, :vectors)[i]
+            print(io″, '\n', str(getcontent(lattice, :vectors)[i]; ndecimal=ndecimal))
         end
     end
 end
