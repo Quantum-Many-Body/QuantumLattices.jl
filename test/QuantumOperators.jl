@@ -123,7 +123,7 @@ end
     @test collect(opts) == collect(values(opts.contents))
     @test length(opts) == 2
     @test summary(opts) == "Operators"
-    @test string(opts) == @sprintf "Operators with 2 Operator\n  %s\n" join(opts, "\n  ")
+    @test string(opts) == @sprintf "Operators with 2 Operator\n  %s" join(opts, "\n  ")
     @test haskey(opts, id(opt₁)) && haskey(opts, id(opt₂)) && !haskey(opts, ⊗(Bose(3, 1)))
     @test opts[1]==opts[begin]==opt₁ && opts[2]==opts[end]==opt₂
     @test opts[1:2] == opts[:] == opts

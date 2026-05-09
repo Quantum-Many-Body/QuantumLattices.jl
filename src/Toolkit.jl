@@ -179,10 +179,11 @@ function showcontent(io::IO, obj)
 end
 function showcontent(io::IO, content::NamedTuple)
     for (label, value) in pairs(content)
-        print(io, '\n', label, ": ")
         if isa(value, NamedTuple)
+            print(io, '\n', label, ":")
             showcontent(indent(io, 2), value)
         else
+            print(io, '\n', label, ": ")
             showcontent(io, value)
         end
     end

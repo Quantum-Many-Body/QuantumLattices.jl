@@ -311,6 +311,7 @@ Define the recipe for the visualization of an assignment of an algorithm.
     Tuple(assignment.data)
 end
 @inline seriestype(data::Data) = seriestype(Tuple(data)...)
+@inline seriestype(_...) = nothing
 @inline seriestype(::AbstractVector{<:Number}, ::Union{AbstractVector{<:Number}, AbstractMatrix{<:Number}}, _...) = :path
 @inline seriestype(::AbstractVector{<:Number}, ::AbstractVector{<:Number}, ::Union{AbstractMatrix{<:Number}, AbstractArray{<:Number, 3}}, _...) = :heatmap
 

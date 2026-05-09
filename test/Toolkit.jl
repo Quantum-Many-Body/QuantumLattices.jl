@@ -74,7 +74,7 @@ end
     @test !showasleaf(ShowEach)
 
     @test sprint(showcontent, (a=1.0, b=42)) == "\na: 1.0\nb: 42"
-    @test sprint(showcontent, (outer=(inner=1.0,),)) == "\nouter: \n  inner: 1.0"
+    @test sprint(showcontent, (outer=(inner=1.0,),)) == "\nouter:\n  inner: 1.0"
     @test sprint(showcontent, ShowEach([1.0, 2.0])) == "2-element Vector{Float64}:\n  1.0\n  2.0"
     @test sprint(showcontent, ShowEach(Int[])) == "0-element Vector{Int64}"
     @test sprint(showcontent, (bonds=ShowEach([1.0, 2.0]),)) == "\nbonds: 2-element Vector{Float64}:\n  1.0\n  2.0"

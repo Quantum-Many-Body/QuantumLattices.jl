@@ -445,11 +445,9 @@ function Base.show(io::IO, ms::OperatorSet)
     if !isempty(ms)
         io′ = indent(io, 2)
         for m in ms
-            print(io′, '\n')
-            show(io′, m)
+            print(io′, '\n', m)
         end
     end
-    println(io)
 end
 
 """
