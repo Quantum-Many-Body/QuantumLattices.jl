@@ -75,9 +75,9 @@ end
 
     @test sprint(showcontent, (a=1.0, b=42)) == "\na: 1.0\nb: 42"
     @test sprint(showcontent, (outer=(inner=1.0,),)) == "\nouter: \n  inner: 1.0"
-    @test sprint(showcontent, ShowEach([1.0, 2.0])) == "2-element Vector{Float64}\n  1.0\n  2.0"
+    @test sprint(showcontent, ShowEach([1.0, 2.0])) == "2-element Vector{Float64}:\n  1.0\n  2.0"
     @test sprint(showcontent, ShowEach(Int[])) == "0-element Vector{Int64}"
-    @test sprint(showcontent, (bonds=ShowEach([1.0, 2.0]),)) == "\nbonds: 2-element Vector{Float64}\n  1.0\n  2.0"
+    @test sprint(showcontent, (bonds=ShowEach([1.0, 2.0]),)) == "\nbonds: 2-element Vector{Float64}:\n  1.0\n  2.0"
     @test sprint(showcontent, 1.23456789) == "1.23456789"
     @test sprint(showcontent, 1.23456789; context=IOContext(IOBuffer(), :ndecimal=>2)) == "1.23"
     @test sprint(showcontent, [1.23456789, 2.5, 3.0]) == "[1.23456789, 2.5, 3.0]"
@@ -89,7 +89,7 @@ end
     @test contenttoshow(NonLeaf(1)) == (; value=1)
     @test sprint(showcontent, NonLeaf(1)) == "NonLeaf\n  value: 1"
 
-    @test sprint(showcontent, NonLeafContainer([1.0, 2.0])) == "2-element Vector{Float64}\n  1.0\n  2.0"
+    @test sprint(showcontent, NonLeafContainer([1.0, 2.0])) == "2-element Vector{Float64}:\n  1.0\n  2.0"
 end
 
 @testset "searchsortedfirst" begin
@@ -103,7 +103,7 @@ end
 
 @testset "DirectSummedIndices" begin
     indexes = DirectSummedIndices((-3:-1, 1:3, 1:4))
-    @test repr(MIME"text/plain"(), indexes) == "10-element QuantumLattices.Toolkit.DirectSummedIndices{Tuple{UnitRange{Int64}, UnitRange{Int64}, UnitRange{Int64}}}\n  CartesianIndex(1, -3, 0)\n  CartesianIndex(1, -2, 0)\n  CartesianIndex(1, -1, 0)\n  CartesianIndex(2, 1, 3)\n  CartesianIndex(2, 2, 3)\n  CartesianIndex(2, 3, 3)\n  CartesianIndex(3, 1, 6)\n  CartesianIndex(3, 2, 6)\n  CartesianIndex(3, 3, 6)\n  CartesianIndex(3, 4, 6)"
+    @test repr(MIME"text/plain"(), indexes) == "10-element QuantumLattices.Toolkit.DirectSummedIndices{Tuple{UnitRange{Int64}, UnitRange{Int64}, UnitRange{Int64}}}:\n  CartesianIndex(1, -3, 0)\n  CartesianIndex(1, -2, 0)\n  CartesianIndex(1, -1, 0)\n  CartesianIndex(2, 1, 3)\n  CartesianIndex(2, 2, 3)\n  CartesianIndex(2, 3, 3)\n  CartesianIndex(3, 1, 6)\n  CartesianIndex(3, 2, 6)\n  CartesianIndex(3, 3, 6)\n  CartesianIndex(3, 4, 6)"
     indexes′ = collect(indexes)
     for i in eachindex(indexes, indexes′)
         @test indexes[i] == indexes′[i]
@@ -112,7 +112,7 @@ end
 
 @testset "DirectProductedIndices" begin
     forward = DirectProductedIndices{:forward}((-2:-1, 2:3))
-    @test repr(MIME"text/plain"(), forward) == "4-element QuantumLattices.Toolkit.DirectProductedIndices{:forward, 2, Tuple{UnitRange{Int64}, UnitRange{Int64}}}\n  CartesianIndex(-2, 2)\n  CartesianIndex(-1, 2)\n  CartesianIndex(-2, 3)\n  CartesianIndex(-1, 3)"
+    @test repr(MIME"text/plain"(), forward) == "4-element QuantumLattices.Toolkit.DirectProductedIndices{:forward, 2, Tuple{UnitRange{Int64}, UnitRange{Int64}}}:\n  CartesianIndex(-2, 2)\n  CartesianIndex(-1, 2)\n  CartesianIndex(-2, 3)\n  CartesianIndex(-1, 3)"
     @test length(forward) == 4
     @test collect(forward) == [CartesianIndex(-2, 2), CartesianIndex(-1, 2), CartesianIndex(-2, 3), CartesianIndex(-1, 3)]
     for i in eachindex(forward)
@@ -122,7 +122,7 @@ end
     @test CartesianIndex(1, 1) ∉ forward
 
     backward = DirectProductedIndices{:backward}((-2:-1, 2:3))
-    @test repr(MIME"text/plain"(), backward) == "4-element QuantumLattices.Toolkit.DirectProductedIndices{:backward, 2, Tuple{UnitRange{Int64}, UnitRange{Int64}}}\n  CartesianIndex(-2, 2)\n  CartesianIndex(-2, 3)\n  CartesianIndex(-1, 2)\n  CartesianIndex(-1, 3)"
+    @test repr(MIME"text/plain"(), backward) == "4-element QuantumLattices.Toolkit.DirectProductedIndices{:backward, 2, Tuple{UnitRange{Int64}, UnitRange{Int64}}}:\n  CartesianIndex(-2, 2)\n  CartesianIndex(-2, 3)\n  CartesianIndex(-1, 2)\n  CartesianIndex(-1, 3)"
     @test length(backward) == 4
     @test collect(backward) == [CartesianIndex(-2, 2), CartesianIndex(-2, 3), CartesianIndex(-1, 2), CartesianIndex(-1, 3)]
     for i in eachindex(backward)
@@ -378,7 +378,7 @@ end
     @test contentnames(CompositeVector) == (:contents,)
 
     v = CV("Info", [1, 3, 2, 4])
-    @test repr(MIME"text/plain"(), v) == "4-element CV{String, Int64}\n  1\n  3\n  2\n  4"
+    @test repr(MIME"text/plain"(), v) == "4-element CV{String, Int64}:\n  1\n  3\n  2\n  4"
     @test contentnames(typeof(v)) == (:info, :contents)
     @test axes(v) == (Base.OneTo(4),)
     @test size(v) == (4,)
@@ -432,7 +432,7 @@ end
     @test contentnames(CompositeDict) == (:contents,)
 
     d = CD("Info", Dict("a"=>1, "b"=>2))
-    @test repr(MIME"text/plain"(), d) == "CD{String, String, Int64} with 2 entries\n  \"b\" => 2\n  \"a\" => 1"
+    @test repr(MIME"text/plain"(), d) == "CD{String, String, Int64} with 2 entries:\n  \"b\" => 2\n  \"a\" => 1"
     @test contentnames(typeof(d)) == (:info, :contents)
     @test d == deepcopy(d)
     @test isequal(d, deepcopy(d))
@@ -478,7 +478,7 @@ end
     id₀, id₄ = (1, 0), (1, 4)
     id₁, id₂, id₃ = (1, 1), (1, 2), (1, 3)
     vs = SimpleVectorSpace(id₁, id₂, id₃)
-    @test repr(MIME"text/plain"(), vs) == "3-element SimpleVectorSpace{Tuple{Int64, Int64}, 3}\n  (1, 1)\n  (1, 2)\n  (1, 3)"
+    @test repr(MIME"text/plain"(), vs) == "3-element SimpleVectorSpace{Tuple{Int64, Int64}, 3}:\n  (1, 1)\n  (1, 2)\n  (1, 3)"
     @test vs==deepcopy(vs) && isequal(vs, deepcopy(vs))
     @test axes(vs) == (Base.OneTo(3),)
     @test vs|>size == (3,)

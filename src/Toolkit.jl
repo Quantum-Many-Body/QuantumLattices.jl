@@ -190,6 +190,7 @@ end
 function showcontent(io::IO, items::ShowEach)
     print(io, summary(items.items))
     if !isempty(items.items)
+        print(io, ":")
         io′ = indent(io, 2)
         for item in items.items
             print(io′, '\n')

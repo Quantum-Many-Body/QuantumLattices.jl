@@ -93,7 +93,7 @@ end
 @inline Base.isequal(bound₁::Boundary, bound₂::Boundary) = isequal(keys(bound₁), keys(bound₂)) && isequal(efficientoperations, bound₁, bound₂)
 @inline Base.valtype(::Type{<:Boundary}, M::Type{<:Operator}) = reparameter(M, :value, promote_type(Complex{Int}, scalartype(M)))
 @inline Base.valtype(B::Type{<:Boundary}, MS::Type{<:Operators}) = (M = valtype(B, eltype(MS)); Operators{M, idtype(M)})
-@inline contenttoshow(bound::Boundary) = (keys=keys(bound), values=bound.values, vectors=bound.vectors)
+@inline contenttoshow(bound::Boundary) = (keys=keys(bound), values=bound.values, vectors=ShowEach(bound.vectors))
 
 """
     keys(bound::Boundary) -> ZeroAtLeast{Symbol}
