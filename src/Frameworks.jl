@@ -2,7 +2,6 @@ module Frameworks
 
 using Base: @propagate_inbounds
 using Base.Iterators: flatten, repeated
-using IndentWrappers: indent
 using JLD2: jldopen, loadtodict!
 using Latexify: latexify
 using Serialization: deserialize, serialize
@@ -12,7 +11,7 @@ using ..DegreesOfFreedom: Hilbert, Term
 using ..QuantumLattices: OneOrMore, ZeroAtLeast, ZeroOrMore, value
 using ..QuantumOperators: LinearTransformation, Operator, OperatorPack, OperatorSet, OperatorSum, Operators, identity, idtype, operatortype
 using ..Spatials: Bond, isintracell
-using ..Toolkit: Float, ShowEach, atol, efficientoperations, parametertype, reparameter, rtol
+using ..Toolkit: Float, atol, efficientoperations, indent, parametertype, reparameter, rtol
 
 import ..QuantumLattices: add!, expand, expand!, id, reset!, str, update, update!
 import ..QuantumOperators: scalartype
@@ -93,7 +92,7 @@ end
 @inline Base.isequal(bound₁::Boundary, bound₂::Boundary) = isequal(keys(bound₁), keys(bound₂)) && isequal(efficientoperations, bound₁, bound₂)
 @inline Base.valtype(::Type{<:Boundary}, M::Type{<:Operator}) = reparameter(M, :value, promote_type(Complex{Int}, scalartype(M)))
 @inline Base.valtype(B::Type{<:Boundary}, MS::Type{<:Operators}) = (M = valtype(B, eltype(MS)); Operators{M, idtype(M)})
-@inline contenttoshow(bound::Boundary) = (keys=keys(bound), values=bound.values, vectors=ShowEach(bound.vectors))
+@inline contenttoshow(bound::Boundary) = (keys=keys(bound), values=bound.values, vectors=bound.vectors)
 
 """
     keys(bound::Boundary) -> ZeroAtLeast{Symbol}
@@ -599,7 +598,7 @@ struct OperatorGenerator{V<:Operators, CG<:CategorizedGenerator{V}, B<:Bond, H<:
 end
 @inline expand(gen::OperatorGenerator, ::Lazy) = expand(gen.operators, lazy)
 @inline contenttoshow(gen::OperatorGenerator) = (;
-    bonds = ShowEach(gen.bonds),
+    bonds = gen.bonds,
     hilbert = gen.hilbert,
     terms = map(id, gen.terms),
     half = gen.half,

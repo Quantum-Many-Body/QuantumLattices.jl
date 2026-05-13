@@ -2,13 +2,12 @@ module Spatials
 
 using Base.Iterators: flatten, product
 using DelimitedFiles: writedlm
-using IndentWrappers: indent
 using LinearAlgebra: cross, det, dot, norm
 using NearestNeighbors: KDTree, inrange, knn
-using Printf: @printf, @sprintf
+using Printf: @sprintf
 using StaticArrays: MVector, SVector
 using ..QuantumLattices: OneAtLeast, OneOrMore, ZeroAtLeast, str
-using ..Toolkit: CompositeDict, DirectProductedVectorSpace, Float, Segment, VectorSpace, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceEnumerative, atol, concatenate, efficientoperations, getcontent, rtol, subscript
+using ..Toolkit: CompositeDict, DirectProductedVectorSpace, Float, Segment, VectorSpace, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceEnumerative, atol, concatenate, efficientoperations, getcontent, indent, rtol, subscript
 
 import ..QuantumLattices: decompose, dimension, expand, matrix, rank, shape
 import ..QuantumOperators: scalartype
@@ -615,8 +614,14 @@ end
 @inline Base.firstindex(bond::Bond) = 1
 @inline Base.lastindex(bond::Bond) = length(bond.points)
 @inline Base.show(io::IO, bond::Bond) = show(io, MIME"text/plain"(), bond)
-@inline Base.show(io::IO, ::MIME"text/plain", bond::Bond) = @printf io "Bond(%s, %s)" repr(bond.kind) join(map(string, bond.points), ", ")
-@inline Base.show(io::IO, ::MIME"text/plain", bond::Bond{Colon}) = @printf io "Bond(:, %s)" join(map(string, bond.points), ", ")
+function Base.show(io::IO, ::MIME"text/plain", bond::Bond)
+    print(io, "Bond(", bond.kind==(:) ? ":" : repr(bond.kind))
+    for point in bond.points
+        print(io, ", ")
+        print(io, point)
+    end
+    print(io, ")")
+end
 
 """
     Bond(point::Point)

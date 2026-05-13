@@ -32,7 +32,14 @@ abstract type InternalIndex <: OperatorIndex end
 @inline Base.:(==)(index₁::I, index₂::J) where {I<:InternalIndex, J<:InternalIndex} = false
 @inline Base.isequal(index₁::I, index₂::J) where {I<:InternalIndex, J<:InternalIndex} = false
 @inline @generated Base.hash(index::I, h::UInt) where {I<:InternalIndex} = Expr(:call, :hash, Expr(:tuple, I, [:(getfield(index, $i)) for i=1:fieldcount(I)]...), :h)
-@inline Base.show(io::IO, index::InternalIndex) = @printf io "%s(%s)" OperatorIndex[index] join(map(field->str(getfield(index, field)), showablefields(index)), ", ")
+@inline function Base.show(io::IO, index::InternalIndex)
+    print(io, OperatorIndex[index], "(")
+    for (i, field) in enumerate(showablefields(index))
+        i > 1 && print(io, ", ")
+        print(io, str(getfield(index, field)))
+    end
+    print(io, ")")
+end
 
 """
     showablefields(index::InternalIndex) -> ZeroAtLeast{Symbol}
@@ -105,7 +112,14 @@ Simple internal space at a single point.
 """
 abstract type SimpleInternal{I<:InternalIndex} <: Internal{I} end
 @inline VectorSpaceStyle(::Type{<:SimpleInternal}) = VectorSpaceDirectProducted(:forward)
-@inline Base.show(io::IO, internal::SimpleInternal) = @printf io "%s(%s)" typeof(internal) join(("$name=$(getfield(internal, name))" for name in fieldnames(typeof(internal))), ", ")
+@inline function Base.show(io::IO, internal::SimpleInternal)
+    print(io, typeof(internal), "(")
+    for (i, name) in enumerate(fieldnames(typeof(internal)))
+        i > 1 && print(io, ", ")
+        print(io, name, "=", str(getfield(internal, name)))
+    end
+    print(io, ")")
+end
 
 """
     statistics(internal::SimpleInternal) -> Symbol
@@ -222,7 +236,12 @@ struct InternalSum{T<:OneAtLeast{SimpleInternal}, I<:InternalIndex} <: Composite
 end
 @inline VectorSpaceStyle(::Type{<:InternalSum}) = VectorSpaceDirectSummed()
 @inline Base.eltype(::Type{InternalSum}, types...) = mapreduce(eltype, typejoin, types; init=Union{})
-@inline Base.show(io::IO, internal::InternalSum) = @printf io "%s" join((string(internal.contents[i]) for i = 1:rank(internal)), " ⊕ ")
+@inline function Base.show(io::IO, internal::InternalSum)
+    for (i, u) in enumerate(internal.contents)
+        i > 1 && print(io, " ⊕ ")
+        print(io, u)
+    end
+end
 @inline InternalSum(contents::SimpleInternal...) = InternalSum(contents)
 
 """
@@ -250,7 +269,12 @@ end
 @inline VectorSpaceStyle(::Type{<:InternalProd}) = VectorSpaceDirectProducted(:forward)
 @inline Base.eltype(::Type{InternalProd}, types...) = Tuple{map(eltype, types)...}
 @inline Base.convert(::Type{<:OneAtLeast{InternalIndex}}, index::CartesianIndex, internal::InternalProd) = map(getindex, internal.contents, index.I)
-@inline Base.show(io::IO, internal::InternalProd) = @printf io "%s" join((string(internal.contents[i]) for i = 1:rank(internal)), " ⊗ ")
+@inline function Base.show(io::IO, internal::InternalProd)
+    for (i, u) in enumerate(internal.contents)
+        i > 1 && print(io, " ⊗ ")
+        print(io, u)
+    end
+end
 @inline InternalProd(contents::SimpleInternal...) = InternalProd(contents)
 
 """
@@ -298,13 +322,11 @@ struct Index{I<:InternalIndex, S<:Union{Int, Ordinal, Colon}} <: OperatorIndex
 end
 @inline parameternames(::Type{<:Index}) = (:internal, :site)
 function Base.show(io::IO, index::Index)
-    internal = String[]
+    print(io, OperatorIndex[index.internal], "(", str(index.site))
     for field in showablefields(internalindextype(index))
-        value = getfield(index.internal, field)
-        push!(internal, str(value))
+        print(io, ", ", str(getfield(index.internal, field)))
     end
-    internal = join(internal, ", ")
-    @printf io "%s(%s%s%s)" OperatorIndex[index.internal] str(index.site) (length(internal)>0 ? ", " : "") internal
+    print(io, ")")
 end
 @inline InternalIndex(index::Index) = index.internal
 @inline internalindextype(::Type{I}) where {I<:Index} = parametertype(I, :internal)
@@ -434,14 +456,12 @@ end
 @inline Base.hash(index::CoordinatedIndex, h::UInt) = hash((index.index, Tuple(index.rcoordinate)), h)
 @inline Base.propertynames(::OneAtLeast{CoordinatedIndex}) = (:indexes, :rcoordinates, :icoordinates)
 function Base.show(io::IO, index::CoordinatedIndex)
-    internal = String[]
-    for field in showablefields(internalindextype(index))
-        value = getfield(InternalIndex(index), field)
-        push!(internal, str(value))
-    end
-    internal = join(internal, ", ")
     ndecimal = get(io, :ndecimal, 10)
-    @printf io "%s(%s%s%s, %s, %s)" OperatorIndex[index.index.internal] str(index.index.site) (length(internal)>0 ? ", " : "") internal str(index.rcoordinate; ndecimal=ndecimal) str(index.icoordinate; ndecimal=ndecimal)
+    print(io, OperatorIndex[index.index.internal], "(", str(index.index.site))
+    for field in showablefields(internalindextype(index))
+        print(io, ", ", str(getfield(InternalIndex(index), field)))
+    end
+    print(io, ", ", str(index.rcoordinate; ndecimal=ndecimal), ", ", str(index.icoordinate; ndecimal=ndecimal), ")")
 end
 @inline compositeindexcoordinate(vector::SVector) = vector
 @inline compositeindexcoordinate(vector::SVector{N, Float}) where N = SVector(ntuple(i->vector[i]===-0.0 ? 0.0 : vector[i], Val(N)))
@@ -634,7 +654,10 @@ function Base.show(io::IO, pattern::Pattern)
         else
             @printf io " ⊗ %s[" (isdefinite(indexes) ? "" : "∑")
         end
-        @printf io "%s" join(indexes, " ")
+        for (j, idx) in enumerate(indexes)
+            j > 1 && print(io, " ")
+            print(io, idx)
+        end
         (len>1 || !isdefinite(indexes)) && @printf io "%s" "]"
         representation = pattern.representations[i]
         length(representation)==0 || occursin("isdiagonal", representation) || @printf io "(%s)" representation
@@ -900,7 +923,11 @@ end
 @inline Base.eltype(C::Type{<:Coupling}) = C
 @inline Base.iterate(coupling::Coupling) = (coupling, nothing)
 @inline Base.iterate(::Coupling, ::Nothing) = nothing
-@inline Base.show(io::IO, coupling::Coupling) = @printf io "%s%s" (coupling.value≈1 ? "" : coupling.value≈-1 ? "- " : string(str(coupling.value), " ")) coupling.pattern
+@inline function Base.show(io::IO, coupling::Coupling)
+    ndecimal = get(io, :ndecimal, 10)
+    print(io, coupling.value≈1 ? "" : coupling.value≈-1 ? "- " : string(str(coupling.value; ndecimal=ndecimal), " "))
+    print(io, coupling.pattern)
+end
 @inline Base.summary(io::IO, couplings::Vector{<:Coupling}) = @printf io "%s-element Vector{Coupling}" length(couplings)
 
 """

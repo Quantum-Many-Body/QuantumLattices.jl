@@ -1,12 +1,11 @@
 module QuantumOperators
 
 using DataStructures: OrderedDict
-using IndentWrappers: indent
 using LaTeXStrings: LaTeXString
 using Latexify: @latexrecipe, Latexify, latexify
 using Printf: @printf, @sprintf
 using ..QuantumLattices: OneAtLeast, str
-using ..Toolkit: atol, contentorder, efficientoperations, fulltype, getcontent, parameterpairs, parametertype, promoteparameters, rawtype, reparameter, rtol, showcontent
+using ..Toolkit: atol, contentorder, efficientoperations, fulltype, getcontent, indent, parameterpairs, parametertype, promoteparameters, rawtype, reparameter, rtol, showcontent
 
 import LinearAlgebra: dot
 import ..QuantumLattices: ZeroAtLeast, add!, div!, id, ishermitian, mul!, permute, rank, sub!, value, ⊗
@@ -402,7 +401,14 @@ struct Operator{V, I<:ZeroAtLeast{OperatorIndex}} <: OperatorProd{V, I}
 end
 @inline Operator(value::Number, id::OperatorIndex...) = Operator(value, id)
 function Base.show(io::IO, m::Operator)
-    @printf io "%s(%s%s%s)" nameof(typeof(m)) str(value(m)) (rank(m)>0 ? ", " : "") join(id(m), ", ")
+    ndecimal = get(io, :ndecimal, 10)
+    print(io, nameof(typeof(m)), "(", str(value(m); ndecimal=ndecimal))
+    rank(m) > 0 && print(io, ", ")
+    for (i, u) in enumerate(id(m))
+        i > 1 && print(io, ", ")
+        print(io, u)
+    end
+    print(io, ")")
 end
 
 """

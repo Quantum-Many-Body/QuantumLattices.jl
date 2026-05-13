@@ -95,15 +95,15 @@ A [`Fock`](@ref) instance can be initialized by giving all its attributes:
 ```jldoctest FFF
 julia> Fock{:f}(1, 2)
 4-element Fock{:f}:
-  𝕔(1, -1//2)
-  𝕔(1, 1//2)
-  𝕔⁺(1, -1//2)
-  𝕔⁺(1, 1//2)
+ 𝕔(1, -1//2)
+ 𝕔(1, 1//2)
+ 𝕔⁺(1, -1//2)
+ 𝕔⁺(1, 1//2)
 
 julia> Fock{:b}(1, 1)
 2-element Fock{:b}:
-  𝕒(1, 0)
-  𝕒⁺(1, 0)
+ 𝕒(1, 0)
+ 𝕒⁺(1, 0)
 ```
 As can be seen, a [`Fock`](@ref) instance behaves like a vector (because the parent type [`Internal`](@ref) is a subtype of `AbstractVector`), and its iteration just generates all the allowed [`FockIndex`](@ref) instances on its associated spatial point:
 ```jldoctest FFF
@@ -353,15 +353,15 @@ A [`Spin`](@ref) instance can be initialized as follows:
 ```jldoctest SSS
 julia> Spin{1}()
 3-element Spin{1}:
-  𝕊{1}('x')
-  𝕊{1}('y')
-  𝕊{1}('z')
+ 𝕊{1}('x')
+ 𝕊{1}('y')
+ 𝕊{1}('z')
 
 julia> Spin{1//2}()
 3-element Spin{1//2}:
-  𝕊{1//2}('x')
-  𝕊{1//2}('y')
-  𝕊{1//2}('z')
+ 𝕊{1//2}('x')
+ 𝕊{1//2}('y')
+ 𝕊{1//2}('z')
 ```
 
 Similar to [`Fock`](@ref), a [`Spin`](@ref) instance behaves like a vector whose iteration generates the [`SpinIndex`](@ref) instances on its associated spatial point:
@@ -433,37 +433,37 @@ julia> # one-dimensional lattice vibration only has the x component
 
 julia> Phonon{:u}(1)
 1-element Phonon{:u}:
-  𝕦('x')
+ 𝕦('x')
 
 julia> Phonon{:p}(1)
 1-element Phonon{:p}:
-  𝕡('x')
+ 𝕡('x')
 
 julia> # two-dimensional lattice vibration only has the x and y components
 
 julia> Phonon{:u}(2) 
 2-element Phonon{:u}:
-  𝕦('x')
-  𝕦('y')
+ 𝕦('x')
+ 𝕦('y')
 
 julia> Phonon{:p}(2)
 2-element Phonon{:p}:
-  𝕡('x')
-  𝕡('y')
+ 𝕡('x')
+ 𝕡('y')
 
 julia> # three-dimensional lattice vibration has the x, y and z components
 
 julia> Phonon{:u}(3)
 3-element Phonon{:u}:
-  𝕦('x')
-  𝕦('y')
-  𝕦('z')
+ 𝕦('x')
+ 𝕦('y')
+ 𝕦('z')
 
 julia> Phonon{:p}(3)
 3-element Phonon{:p}:
-  𝕡('x')
-  𝕡('y')
-  𝕡('z')
+ 𝕡('x')
+ 𝕡('y')
+ 𝕡('z')
 ```
 
 As is usual, we define functions `𝕦` (\bbu<tab>) and `𝕡` (\bbp<tab>) to construct and display instances of `PhononIndex{:u}` and `PhononIndex{:p}` for convenience, respectively.

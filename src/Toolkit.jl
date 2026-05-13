@@ -3,16 +3,14 @@ module Toolkit
 using Base: @propagate_inbounds
 using DataStructures: OrderedDict
 using Format: FormatSpec, pyfmt
-using IndentWrappers: indent
 using InteractiveUtils: subtypes
-using Printf: @printf
 using StaticArrays: SVector
 
 import QuantumLattices: OneAtLeast, ZeroAtLeast, ZeroOrMore, id, shape, str, value
 
 # Utilities
 export atol, rtol, Float
-export DirectProductedIndices, DirectSummedIndices, Segment, ShowEach, concatenate, contenttoshow, delta, showasleaf, showcontent, subscript, superscript
+export DirectProductedIndices, DirectSummedIndices, Segment, concatenate, contenttoshow, delta, indent, showasleaf, showcontent, subscript, superscript
 
 # Combinatorics
 export Combinatorics, Combinations, DuplicateCombinations, DuplicatePermutations, Permutations
@@ -136,6 +134,50 @@ Get the ith value of an `OrderedDict`.
 """
 @inline value(od::OrderedDict, i) = od.vals[i]
 
+# Indentation wrapper for multi-line display
+struct IndentWrapper{T<:IO} <: Base.AbstractPipe
+    parent::T
+    spaces::Int
+    function IndentWrapper(io::T, spaces::Integer) where {T<:IO}
+        spaces ≥ 0 || throw(ArgumentError("negative indent not allowed"))
+        new{T}(io, Int(spaces))
+    end
+end
+@inline Base.show(io::IO, iw::IndentWrapper) = print(io, iw.parent, " indented by $(iw.spaces) spaces")
+@inline Base.pipe_reader(iw::IndentWrapper) = iw.parent
+@inline Base.pipe_writer(iw::IndentWrapper) = iw.parent
+@inline Base.lock(iw::IndentWrapper) = lock(iw.parent)
+@inline Base.unlock(iw::IndentWrapper) = unlock(iw.parent)
+@inline Base.displaysize(iw::IndentWrapper) = displaysize(iw.parent)
+@inline Base.in(key_value::Pair, iw::IndentWrapper) = in(key_value, iw.parent)
+@inline Base.haskey(iw::IndentWrapper, key) = haskey(iw.parent, key)
+@inline Base.getindex(iw::IndentWrapper, key) = getindex(iw.parent, key)
+@inline Base.get(iw::IndentWrapper, key, default) = get(iw.parent, key, default)
+@inline Base.ioproperties(iw::IndentWrapper) = Base.ioproperties(iw.parent)
+@inline Base.write(iw::IndentWrapper, chr::Char) = write(iw.parent, chr) + (chr=='\n' ? write(iw.parent, ' '^iw.spaces) : 0)
+function Base.write(iw::IndentWrapper, str::Union{SubString{String}, String})
+    write_count = 0
+    for (i, line) in enumerate(split(str, '\n'; keepempty=true))
+        i == 1 || (write_count += write(iw, '\n'))
+        write_count += write(iw.parent, line)
+    end
+    return write_count
+end
+@inline isindented(::Type{<:IndentWrapper}) = true
+@inline isindented(::Type{<:IOContext{I}}) where {I<:IO} = isindented(I)
+@inline isindented(::Type{<:IO}) = false
+@generated Base.print(io::IOContext, s::String) = isindented(io) ? :(write(io.io, s); nothing) : :(invoke(print, Tuple{IO, typeof(s)}, io, s))
+@generated Base.print(io::IOContext, s::SubString{String}) = isindented(io) ? :(write(io.io, s); nothing) : :(invoke(print, Tuple{IO, typeof(s)}, io, s))
+
+"""
+    indent(io, spaces)
+
+Return a wrapper around `io` that prepends each `\\n` with `spaces` spaces.
+Blocks should begin with a newline and end without one.
+"""
+@inline indent(io::IO, spaces::Integer) = IndentWrapper(io, spaces)
+@inline indent(iw::IndentWrapper, spaces::Integer) = IndentWrapper(iw.parent, iw.spaces + spaces)
+
 """
     showasleaf(::Type) -> Bool
 
@@ -147,19 +189,6 @@ Defaults to `true`; override to `false` for types that should be recursively exp
 @inline showasleaf(::Type{<:NamedTuple}) = false
 
 """
-    ShowEach{C}
-
-Wrapper for displaying a collection element by element with proper nested indentation.
-
-Use in [`contenttoshow`](@ref) return values to show each item on its own indented line.
-"""
-struct ShowEach{C}
-    items::C
-    ShowEach(items::C) where C = new{C}(items)
-end
-@inline showasleaf(::Type{<:ShowEach}) = false
-
-"""
     showcontent(io::IO, obj)
 
 Recursively display a multi-line hierarchical view of an object.
@@ -169,13 +198,8 @@ Non-leaf types print their type name then expand `contenttoshow(obj)`.
 """
 function showcontent(io::IO, obj)
     showasleaf(typeof(obj)) && return show(io, MIME"text/plain"(), obj)
-    content = contenttoshow(obj)
-    if isa(content, ShowEach)
-        showcontent(io, content)
-    else
-        print(io, nameof(typeof(obj)))
-        showcontent(indent(io, 2), content)
-    end
+    print(io, nameof(typeof(obj)))
+    showcontent(indent(io, 2), contenttoshow(obj))
 end
 function showcontent(io::IO, content::NamedTuple)
     for (label, value) in pairs(content)
@@ -185,17 +209,6 @@ function showcontent(io::IO, content::NamedTuple)
         else
             print(io, '\n', label, ": ")
             showcontent(io, value)
-        end
-    end
-end
-function showcontent(io::IO, items::ShowEach)
-    print(io, summary(items.items))
-    if !isempty(items.items)
-        print(io, ":")
-        io′ = indent(io, 2)
-        for item in items.items
-            print(io′, '\n')
-            showcontent(io′, item)
         end
     end
 end
@@ -241,9 +254,6 @@ Direct sum of indexes.
 struct DirectSummedIndices{T<:OneAtLeast{OrdinalRange{Int, Int}}} <: AbstractVector{CartesianIndex{3}}
     indices::T
 end
-@inline showasleaf(::Type{<:DirectSummedIndices}) = false
-@inline contenttoshow(indices::DirectSummedIndices) = ShowEach(indices)
-@inline Base.show(io::IO, ::MIME"text/plain", indices::DirectSummedIndices) = showcontent(io, indices)
 @inline Base.size(indexes::DirectSummedIndices) = (sum(map(length, indexes.indices)),)
 @inline Base.iterate(indexes::DirectSummedIndices) = CartesianIndex(1, first(first(indexes.indices)), 0), (1, first(first(indexes.indices)), 0)
 function Base.iterate(indexes::DirectSummedIndices, state::NTuple{3, Int})
@@ -296,9 +306,6 @@ struct DirectProductedIndices{Order, N, T<:NTuple{N, OrdinalRange{Int, Int}}} <:
         new{Order, N, typeof(indices)}(indices)
     end
 end
-@inline showasleaf(::Type{<:DirectProductedIndices}) = false
-@inline contenttoshow(indices::DirectProductedIndices) = ShowEach(indices)
-@inline Base.show(io::IO, ::MIME"text/plain", indices::DirectProductedIndices) = showcontent(io, indices)
 @inline Base.size(indexes::DirectProductedIndices) = (mapreduce(length, *, indexes.indices),)
 @inline Base.getindex(indexes::DirectProductedIndices{:forward}, i::Integer) = CartesianIndices(indexes.indices)[i]
 @inline Base.getindex(indexes::DirectProductedIndices{:backward}, i::Integer) = CartesianIndex(reverse(CartesianIndices(reverse(indexes.indices))[i].I)...)
@@ -354,12 +361,14 @@ function Base.iterate(segment::Segment, state)
     return middle, (i+1, middle, step)
 end
 function Base.show(io::IO, segment::Segment{<:Number})
+    ndecimal = get(io, :ndecimal, 10)
     left, right = (segment.ends[1] ? "[" : "("), (segment.ends[2] ? "]" : ")")
-    @printf io "%s%s, %s%s" left segment.start segment.stop right
+    print(io, left, str(segment.start; ndecimal=ndecimal), ", ", str(segment.stop; ndecimal=ndecimal), right)
 end
 function Base.show(io::IO, segment::Segment)
+    ndecimal = get(io, :ndecimal, 10)
     left, right = (segment.ends[1] ? "[" : "("), (segment.ends[2] ? "]" : ")")
-    @printf io "%sp₁, p₂%s with p₁=%s and p₂=%s" left right segment.start segment.stop
+    print(io, left, "p₁, p₂", right, " with p₁=", str(segment.start; ndecimal=ndecimal), " and p₂=", str(segment.stop; ndecimal=ndecimal))
 end
 
 """
@@ -1082,9 +1091,6 @@ end
 A composite vector can be considered as a vector that is implemented by including a concrete subtype of `AbstractVector` as its data attribute.
 """
 abstract type CompositeVector{T} <: AbstractVector{T} end
-@inline showasleaf(::Type{<:CompositeVector}) = false
-@inline contenttoshow(cv::CompositeVector) = ShowEach(cv)
-@inline Base.show(io::IO, ::MIME"text/plain", cv::CompositeVector) = invoke(showcontent, Tuple{IO, Any}, io, cv)
 @inline contentnames(::Type{<:CompositeVector}) = (:contents,)
 @inline dissolve(cv::CompositeVector, ::Val{:contents}, f::Function, args...; kwargs...) = f(getcontent(cv, :contents), args...; kwargs...)
 @inline Base.axes(cv::CompositeVector) = axes(getcontent(cv, :contents))
@@ -1115,9 +1121,6 @@ abstract type CompositeVector{T} <: AbstractVector{T} end
 A composite dict can be considered as a dict that is implemented by including a concrete subtype of `AbstractDict` as its data attribute.
 """
 abstract type CompositeDict{K, V} <: AbstractDict{K, V} end
-@inline showasleaf(::Type{<:CompositeDict}) = false
-@inline contenttoshow(cd::CompositeDict) = ShowEach(cd)
-@inline Base.show(io::IO, ::MIME"text/plain", cd::CompositeDict) = showcontent(io, cd)
 @inline contentnames(::Type{<:CompositeDict}) = (:contents,)
 @inline dissolve(cd::CompositeDict, ::Val{:contents}, f::Function, args...; kwargs...) = f(getcontent(cd, :contents), args...; kwargs...)
 @inline Base.isempty(cd::CompositeDict) = isempty(getcontent(cd, :contents))
@@ -1155,9 +1158,6 @@ abstract type CompositeDict{K, V} <: AbstractDict{K, V} end
 Abstract vector space.
 """
 abstract type VectorSpace{B} <: AbstractVector{B} end
-@inline showasleaf(::Type{<:VectorSpace}) = false
-@inline contenttoshow(vs::VectorSpace) = ShowEach(vs)
-@inline Base.show(io::IO, ::MIME"text/plain", vs::VectorSpace) = showcontent(io, vs)
 @inline Base.:(==)(vs₁::VS, vs₂::VS) where {VS<:VectorSpace} = ==(efficientoperations, vs₁, vs₂)
 @inline Base.:(==)(vs₁::VS₁, vs₂::VS₂) where {VS₁<:VectorSpace, VS₂<:VectorSpace} = invoke(==, Tuple{AbstractVector, AbstractVector}, vs₁, vs₂)
 @inline Base.isequal(vs₁::VS, vs₂::VS) where {VS<:VectorSpace} = isequal(efficientoperations, vs₁, vs₂)
