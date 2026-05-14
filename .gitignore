@@ -1,6 +1,11 @@
 *.jl.cov
 *.jl.*.cov
 *.jl.mem
+*.png
+*.dat
+*.dlm
+*.qld
+*.qlc
 Manifest.toml
 
 deps/deps.jl
@@ -10,6 +15,7 @@ test/*.png
 test/*.dat
 test/*.dlm
 test/*.qld
+test/*.qlc
 test/Manifest.toml
 
 .ipynb_checkpoints/

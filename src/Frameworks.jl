@@ -2,24 +2,24 @@ module Frameworks
 
 using Base: @propagate_inbounds
 using Base.Iterators: flatten, repeated
-using JLD2: jldopen, loadtodict!
+using HDF5: attrs, delete_object, h5open
 using Latexify: latexify
 using Serialization: deserialize, serialize
 using StaticArrays: SVector
 using TimerOutputs: @timeit, TimerOutput, time
 using ..DegreesOfFreedom: Hilbert, Term
-using ..QuantumLattices: OneOrMore, ZeroAtLeast, ZeroOrMore, value
+using ..QuantumLattices: OneOrMore, ZeroAtLeast, ZeroOrMore, id, value
 using ..QuantumOperators: LinearTransformation, Operator, OperatorPack, OperatorSet, OperatorSum, Operators, identity, idtype, operatortype
 using ..Spatials: Bond, isintracell
 using ..Toolkit: Float, atol, efficientoperations, indent, parametertype, reparameter, rtol
 
-import ..QuantumLattices: add!, expand, expand!, id, reset!, str, update, update!
+import ..QuantumLattices: add!, expand, expand!, reset!, str, update, update!
 import ..QuantumOperators: scalartype
 import ..Spatials: dlmsave
 import ..Toolkit: contenttoshow, showasleaf, showcontent
 
 export Action, Algorithm, Assignment, Boundary, CategorizedGenerator, Data, Eager, ExpansionStyle, Formula, Frontend, Generator, LatticeModel, Lazy, OperatorGenerator, Parameters, ParametricGenerator, StaticGenerator
-export checkoptions, datatype, eager, fingerprint, hasoption, lazy, options, optionsinfo, plain, qldload, qldsave, run!
+export checkoptions, config, contenttocache, datatype, eager, hasoption, lazy, options, optionsinfo, plain, qlcclean, qlclean, qlcsave, qldclean, qldsave, qlload, qlsave, run!, stamp
 
 """
     Parameters{Names}(values::Number...) where Names
@@ -60,7 +60,9 @@ end
 """
     str(params::Parameters; ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="") -> String
 
-Convert a set of `Parameters` to a string with each number rounded to at most `ndecimal` decimal places. The `select` function can be used to filter which key-value pairs to include.
+Convert a set of `Parameters` to a string of the form `"front-name₁(value₁)name₂(value₂)-rear"`.
+
+Each parameter `nameᵢ(valueᵢ)` is included only when `select(nameᵢ)` returns `true`. Numeric values are rounded to `ndecimal` decimal places. If `front` or `rear` is empty, the leading/trailing `"-"` is omitted.
 """
 function str(params::Parameters; ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="")
     result = String[]
@@ -193,8 +195,8 @@ Subtypes must implement `valtype`. `Parameters` and `update!` should also be imp
 abstract type LatticeModel end
 @inline Base.:(==)(model₁::LatticeModel, model₂::LatticeModel) = ==(efficientoperations, model₁, model₂)
 @inline Base.isequal(model₁::LatticeModel, model₂::LatticeModel) = isequal(efficientoperations, model₁, model₂)
+@inline Base.show(io::IO, model::LatticeModel) = print(io, nameof(typeof(model)))
 @inline showasleaf(::Type{<:LatticeModel}) = false
-@inline Base.show(io::IO, model::LatticeModel) = show(io, MIME"text/plain"(), model)
 @inline Base.show(io::IO, ::MIME"text/plain", model::LatticeModel) = showcontent(io, model)
 
 """
@@ -222,6 +224,129 @@ Get the eltype of a `LatticeModel`.
 """
 @inline Base.eltype(model::LatticeModel) = eltype(typeof(model))
 @inline Base.eltype(::Type{T}) where {T<:LatticeModel} = eltype(valtype(T))
+
+"""
+    config(model::LatticeModel) -> String
+
+Get the configuration label of a lattice model.
+
+Defaults to an empty string.
+"""
+@inline config(model::LatticeModel) = ""
+
+"""
+    Parameters(model::LatticeModel) -> NamedTuple
+
+Get the parameters of a lattice model.
+
+Returns `model.parameters` if the type has a `:parameters` field, otherwise an empty `NamedTuple`.
+"""
+@inline @generated Parameters(model::LatticeModel) = :parameters in fieldnames(model) ? :(model.parameters) : Parameters()
+
+"""
+    contenttocache(model::LatticeModel) -> NamedTuple
+
+Return the cacheable content of a lattice model as a `NamedTuple`.
+
+Returns an empty `NamedTuple` by default.
+Subtypes should override this to specify what should be cached.
+"""
+@inline contenttocache(model::LatticeModel) = NamedTuple()
+
+"""
+    dirname(model::LatticeModel) -> String
+
+Get the dirname of the data/cache file of a lattice model.
+
+Defaults to `"."` if the type has no `dir` field.
+"""
+@inline @generated Base.dirname(model::LatticeModel) = :dir in fieldnames(model) ? :(model.dir) : "."
+
+"""
+    basename(model::LatticeModel, target::Symbol=:void; prefix::String="", suffix::String="") -> String
+
+Get the basename of a lattice model file, formed as `"prefix-string(model)-suffix.ext"`.
+
+- `target::Symbol`: `:data` → `.qld`, `:cache` → `.qlc`, `:void` (default) → no extension.
+- `prefix`, `suffix`: prepended/appended to the base name. The separator `"-"` is omitted when the corresponding part is empty.
+"""
+@inline function Base.basename(model::LatticeModel, target::Symbol=:void; prefix::String="", suffix::String="")
+    ext = target==:data ? "qld" : target==:cache ? "qlc" : ""
+    return string(append(prefix, "-"), string(model), prepend(suffix, "-"), isempty(ext) ? "" : prepend(ext, "."))
+end
+
+"""
+    pathof(model::LatticeModel, target::Symbol; prefix::String="", suffix::String="") -> String
+
+Get the full path of a lattice model file.
+
+Equivalent to `joinpath(dirname(model), basename(model, target; prefix, suffix))`.
+"""
+@inline function Base.pathof(model::LatticeModel, target::Symbol; prefix::String="", suffix::String="")
+    return joinpath(dirname(model), basename(model, target; prefix=prefix, suffix=suffix))
+end
+
+"""
+    stamp(model::LatticeModel; ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="") -> String
+
+Generate a deterministic stamp for a lattice model, formed as `"[config][-][parameters]"`.
+
+The stamp serves as the internal key in data/cache files.
+`ndecimal`, `select`, `front`, and `rear` are passed to `str(::Parameters)`.
+When either `config(::Model)` or `str(::Parameters)` returns an empty string, the intermediate `"-"` will be omitted.
+"""
+function stamp(model::LatticeModel; ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="")
+    configuration = config(model)
+    parameters = str(Parameters(model); ndecimal=ndecimal, select=select, front=front, rear=rear)
+    isempty(configuration) && return parameters
+    isempty(parameters) && return configuration
+    return string(configuration, "-", parameters)
+end
+
+"""
+    str(model::LatticeModel; prefix::String="", suffix::String="", ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="") -> String
+
+Get the string representation of a lattice model, formed as `basename[-config][-parameters]`.
+
+- `prefix` and `suffix`: passed to `basename(::LatticeModel)`.
+- `ndecimal`, `select`, `front`, `rear`: passed to `stamp` → `str(::Parameters)`.
+"""
+@inline function str(model::LatticeModel; prefix::String="", suffix::String="", ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="")
+    base = basename(model; prefix=prefix, suffix=suffix)
+    return string(base, prepend(stamp(model; ndecimal=ndecimal, select=select, front=front, rear=rear), "-"))
+end
+
+"""
+    qlsave(target::Symbol, model::LatticeModel, models::LatticeModel...; prefix::String="", suffix::String="", ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="")
+
+Save lattice models to data (`.qld`) or cache (`.qlc`) files.
+
+- `target::Symbol`: `:data` or `:cache`.
+- `prefix`, `suffix`: passed to `pathof` → `basename`.
+- `ndecimal`, `select`, `front`, `rear`: passed to `stamp` → `str(::Parameters)`.
+"""
+function qlsave(target::Symbol, model::LatticeModel, models::LatticeModel...; prefix::String="", suffix::String="", ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="")
+    @assert target∈(:data, :cache) "qlsave error: target must be :data or :cache."
+    for m in (model, models...)
+        content = target==:data ? m : contenttocache(m)
+        path = pathof(m, target; prefix=prefix, suffix=suffix)
+        qlsave(path, stamp(m; ndecimal=ndecimal, select=select, front=front, rear=rear), content)
+    end
+end
+
+"""
+    qldsave(model::LatticeModel, models::LatticeModel...; kwargs...) -> String
+
+Shortcut for `qlsave(:data, model, models...; kwargs...)`.
+"""
+@inline qldsave(model::LatticeModel, models::LatticeModel...; kwargs...) = qlsave(:data, model, models...; kwargs...)
+
+"""
+    qlcsave(model::LatticeModel, models::LatticeModel...; kwargs...) -> String
+
+Shortcut for `qlsave(:cache, model, models...; kwargs...)`.
+"""
+@inline qlcsave(model::LatticeModel, models::LatticeModel...; kwargs...) = qlsave(:cache, model, models...; kwargs...)
 
 """
     Formula{V, F<:Function, P<:Parameters}
@@ -253,13 +378,6 @@ Update the parameters of a `Formula` in place and return itself after update.
     return formula
 end
 @inline update!(expression::Function; parameters...) = expression
-
-"""
-    Parameters(formula::Formula) -> Parameters
-
-Get the parameters of a `Formula`.
-"""
-@inline Parameters(formula::Formula) = formula.parameters
 
 """
     (formula::Formula)(args...; kwargs...) -> valtype(formula)
@@ -393,13 +511,6 @@ end
 Apply a linear transformation to a static generator of (representations of) quantum operators.
 """
 @inline (transformation::LinearTransformation)(gen::StaticGenerator; kwargs...) = StaticGenerator(transformation(gen.operators; kwargs...))
-
-"""
-    Parameters(gen::StaticGenerator) -> Parameters
-
-Get the parameters of a static generator, which are always empty.
-"""
-@inline Parameters(gen::StaticGenerator) = Parameters()
 
 """
     empty(gen::StaticGenerator) -> StaticGenerator
@@ -839,11 +950,11 @@ Convert `Data` to `Tuple`.
 end
 
 """
-    Assignment{A<:Action, P<:Parameters, M<:Function, N, D<:Data} <: Function
+    Assignment{A<:Action, P<:Parameters, M<:Function, T<:Tuple, D<:Data} <: LatticeModel
 
 An assignment associated with an action.
 """
-mutable struct Assignment{A<:Action, P<:Parameters, M<:Function, T<:Tuple, D<:Data} <: Function
+mutable struct Assignment{A<:Action, P<:Parameters, M<:Function, T<:Tuple, D<:Data} <: LatticeModel
     const dir::String
     const name::Symbol
     const action::A
@@ -855,27 +966,8 @@ mutable struct Assignment{A<:Action, P<:Parameters, M<:Function, T<:Tuple, D<:Da
         new{typeof(action), typeof(parameters), typeof(map), typeof(dependencies), D}(dir, name, action, parameters, map, dependencies)
     end
 end
-@inline Base.:(==)(assign₁::Assignment, assign₂::Assignment) = ==(efficientoperations, assign₁, assign₂)
-@inline Base.isequal(assign₁::Assignment, assign₂::Assignment) = isequal(efficientoperations, assign₁, assign₂)
-@inline showasleaf(::Type{<:Assignment}) = false
-@inline Base.show(io::IO, ::MIME"text/plain", assign::Assignment) = showcontent(io, assign)
-@inline contenttoshow(assign::Assignment) = (; name=assign.name, action=assign.action, parameters=assign.parameters)
-
-"""
-    Parameters(assignment::Assignment) -> Parameters
-
-Get the parameters of an assignment.
-"""
-@inline Parameters(assignment::Assignment) = assignment.parameters
-
-"""
-    valtype(assign::Assignment)
-    valtype(::Type{<:Assignment})
-
-Type of the data (result) of an assignment.
-"""
-@inline Base.valtype(assign::Assignment) = valtype(typeof(assign))
 @inline Base.valtype(::Type{<:Assignment{<:Action, <:Parameters, <:Function, <:Tuple, D}}) where {D<:Data} = D
+@inline contenttoshow(assign::Assignment) = (; name=assign.name, action=assign.action, parameters=assign.parameters)
 
 """
     update!(assign::Assignment; parameters...) -> Assignment
@@ -948,6 +1040,15 @@ Check whether the keyword arguments are legal options of a certain type of `Assi
 end
 
 """
+    dlmsave(assignment::Assignment, delim='\t'; prefix::String="", suffix::String="", ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="")
+
+Save the data of an assignment to a delimited file.
+"""
+@inline function dlmsave(assignment::Assignment, delim='\t'; prefix::String="", suffix::String="", ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="")
+    dlmsave(joinpath(dirname(assignment), string(str(assignment; prefix=prefix, suffix=suffix, ndecimal=ndecimal, select=select, front=front, rear=rear), ".dlm")), Tuple(assignment.data)..., delim)
+end
+
+"""
     Algorithm{F<:Frontend, P<:Parameters, M<:Function} <: LatticeModel
 
 An algorithm associated with a frontend.
@@ -996,13 +1097,6 @@ Get the concrete subtype of `Data` according to the types of an `Action` and a `
 end
 
 """
-    Parameters(algorithm::Algorithm)
-
-Get the parameters of an algorithm.
-"""
-@inline Parameters(algorithm::Algorithm) = algorithm.parameters
-
-"""
     update!(alg::Algorithm; parameters...) -> Algorithm
 
 Update the parameters of an algorithm and its associated frontend.
@@ -1023,11 +1117,11 @@ Show an algorithm.
 @inline Base.show(io::IO, alg::Algorithm) = print(io, alg.name, "-", nameof(typeof(alg.frontend)))
 
 """
-    id(obj::Union{Assignment, Algorithm})
+    config(alg::Algorithm) -> String
 
-Get the identifier of an assignment/algorithm.
+Get the configuration label of an algorithm, inherited from its frontend.
 """
-@inline id(obj::Union{Assignment, Algorithm}) = string(obj)
+@inline config(alg::Algorithm) = config(alg.frontend)
 
 """
     summary(alg::Algorithm)
@@ -1048,7 +1142,7 @@ Run an assignment based on an algorithm.
 The difference between these two methods is that the first uses the parameters of `assign` as the current parameters while the second uses those of `alg`.
 """
 function (alg::Algorithm)(assign::Assignment, checkoptions::Bool=true; options...)
-    @timeit alg.timer id(assign) begin
+    @timeit alg.timer string(assign) begin
         checkoptions && Frameworks.checkoptions(typeof(assign); options...)
         ismatched = match(assign.parameters, alg.parameters)
         if !(isdefined(assign, :data) && ismatched)
@@ -1060,7 +1154,7 @@ function (alg::Algorithm)(assign::Assignment, checkoptions::Bool=true; options..
     return assign
 end
 function (assign::Assignment)(alg::Algorithm, checkoptions::Bool=true; options...)
-    @timeit alg.timer id(assign) begin
+    @timeit alg.timer string(assign) begin
         checkoptions && Frameworks.checkoptions(typeof(assign); options...)
         ismatched = match(alg.parameters, assign.parameters)
         if !(isdefined(assign, :data) && ismatched)
@@ -1089,7 +1183,7 @@ end
     assign = Assignment(datatype(typeof(action), typeof(alg.frontend)), dir, name, action, merge(alg.parameters, parameters), map, ZeroOrMore(dependencies))
     delay || begin
         alg(assign; options...)
-        @info "Assignment $name: time consumed $(time(alg.timer[id(assign)])/10^9)s."
+        @info "Assignment $name: time consumed $(time(alg.timer[string(assign)])/10^9)s."
     end
     return assign
 end
@@ -1102,140 +1196,128 @@ Run an assignment based on an algorithm.
 function run! end
 
 """
-    dirname(obj::Union{Assignment, Algorithm}) -> String
+    qlsave(filename::String, args...)
 
-Get the dirname of the data file of an assignment/algorithm.
-"""
-@inline Base.dirname(obj::Union{Assignment, Algorithm}) = obj.dir
+Save arbitrary data as key-value pairs to a file.
 
+If the file does not exist, it is created. If a key already exists, it is replaced.
 """
-    basename(obj::Union{Assignment, Algorithm}; prefix::String="", suffix::String="", extension::String="qld") -> String
-
-Get the basename of the data file of an assignment/algorithm.
-"""
-@inline function Base.basename(obj::Union{Assignment, Algorithm}; prefix::String="", suffix::String="", extension::String="qld")
-    return string(append(prefix, "-"), id(obj), prepend(suffix, "-"), prepend(extension, "."))
-end
-
-"""
-    pathof(obj::Union{Assignment, Algorithm}; prefix::String="", suffix::String="", extension::String="qld") -> String
-
-Get the path of the data file of an assignment/algorithm.
-"""
-@inline function Base.pathof(obj::Union{Assignment, Algorithm}; prefix::String="", suffix::String="", extension::String="qld")
-    return joinpath(dirname(obj), basename(obj; prefix=prefix, suffix=suffix, extension=extension))
-end
-
-"""
-    str(obj::Union{Assignment, Algorithm}; prefix::String="", suffix::String="", ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="") -> String
-
-Get the string representation of an assignment/algorithm.
-"""
-@inline function str(obj::Union{Assignment, Algorithm}; prefix::String="", suffix::String="", ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="")
-    base = basename(obj; prefix=prefix, suffix=suffix, extension="")
-    parameters = str(Parameters(obj); ndecimal=ndecimal, select=select, front=front, rear=rear)
-    return string(base, prepend(parameters, "-"))
-end
-
-"""
-    qldsave(obj::Union{Assignment, Algorithm}, objs::Union{Assignment, Algorithm}...; mode::String="a+", prefix::String="", suffix::String="", ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="")
-
-Save a series of assignments/algorithms to qld files.
-"""
-function qldsave(obj::Union{Assignment, Algorithm}, objs::Union{Assignment, Algorithm}...; mode::String="a+", prefix::String="", suffix::String="", ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="")
-    @assert mode∈("a+", "w") "qldsave error: mode ($(repr(mode))) is not \"a+\" or \"w\"."
-    map((obj, objs...)) do object
-        qldsave(pathof(object; prefix=prefix, suffix=suffix), str(Parameters(object); ndecimal=ndecimal, select=select, front=front, rear=rear), object; mode=mode)
-    end
-end
-
-"""
-    qldsave(filename::String, args...; mode::String="a+")
-
-Save arbitrary data as key-value pairs to a qld file.
-"""
-function qldsave(filename::String, args...; mode::String="a+")
-    @assert mode∈("a+", "w") "qldsave error: mode ($(repr(mode))) is not \"a+\" or \"w\"."
-    @assert iseven(length(args)) "qldsave error: wrong formed input data."
-    jldopen(filename, mode) do file
-        io = IOBuffer()
+function qlsave(filename::String, args...)
+    @assert iseven(length(args)) "qlsave error: wrong formed input data."
+    h5open(filename, "cw") do file
         for i in 1:2:length(args)
+            key = string(args[i])
+            haskey(file, key) && delete_object(file, key)
+            io = IOBuffer()
             serialize(io, args[i+1])
-            file[string(args[i])] = take!(io)
+            write(file, key, take!(io))
+            attrs(file[key])["touchtime"] = Base.time()
         end
     end
 end
 
 """
-    qldload(filename::String) -> Dict{String, Any}
-    qldload(filename::String, name::String) -> Any
-    qldload(filename::String, name₁::String, name₂::String, names::String...) -> Tuple
+    qlload(filename::String) -> Dict{String, Any}
+    qlload(filename::String, name::String) -> Any
+    qlload(filename::String, name₁::String, name₂::String, names::String...) -> Tuple
 
-Load data from a qld file.
+Load data from a qld/qlc file.
+
 With a single filename argument, returns all entries as a flat `Dict`.
 With a key, returns that single entry.
 With multiple keys, returns a `Tuple`.
 """
-function qldload(filename::String)
-    raw = jldopen(filename, "r") do file
-        loadtodict!(Dict{String, Any}(), file)
-    end
+function qlload(filename::String)
+    isfile(filename) || error("qlload error: file '$filename' not found.")
     result = Dict{String, Any}()
-    for (key, bytes) in raw
-        bytes isa Vector{UInt8} || continue
-        result[key] = deserialize(IOBuffer(bytes))
+    h5open(filename, "r+") do file
+        for name in keys(file)
+            result[name] = load(file, name)
+        end
     end
     return result
 end
-function qldload(filename::String, name::String)
-    return jldopen(filename, "r") do file
-        haskey(file, name) || error("qldload error: key '$name' not found in '$filename'.")
-        data = file[name]
-        data isa Vector{UInt8} || error("qldload error: key '$name' is not a data entry.")
-        deserialize(IOBuffer(data))
+function qlload(filename::String, name::String)
+    isfile(filename) || error("qlload error: file '$filename' not found.")
+    return h5open(filename, "r+") do file
+        load(file, name)
     end
 end
-function qldload(filename::String, name₁::String, name₂::String, names::String...)
-    return jldopen(filename, "r") do file
+function qlload(filename::String, name₁::String, name₂::String, names::String...)
+    isfile(filename) || error("qlload error: file '$filename' not found.")
+    return h5open(filename, "r+") do file
         map((name₁, name₂, names...)) do name
-            haskey(file, name) || error("qldload error: key '$name' not found.")
-            data = file[name]
-            data isa Vector{UInt8} || error("qldload error: key '$name' is not a data entry.")
-            deserialize(IOBuffer(data))
+            load(file, name)
         end
     end
 end
-
-"""
-    fingerprint(obj; ndecimal::Int=10) -> String
-
-Generate a deterministic string fingerprint for an object, combining the string representation of `id(obj)` with that of `Parameters(obj)` (with numeric values rounded to `ndecimal` digits). When `id(obj)`/`Parameters(obj)` are not defined, the type name and an empty parameter list are used as fallbacks respectively.
-"""
-function fingerprint(obj; ndecimal::Int=10)
-    id_str = try
-        string(id(obj))
-    catch
-        string(nameof(typeof(obj)))
-    end
-    p = try
-        Parameters(obj)
-    catch
-        Parameters()
-    end
-    if !isempty(p)
-        return str(p; ndecimal=ndecimal, front=id_str)
-    else
-        return id_str
-    end
+@inline function load(file, name)
+    haskey(file, name) || error("qlload error: key '$name' not found.")
+    dataset = file[name]
+    attrs(dataset)["touchtime"] = Base.time()
+    bytes = read(dataset)
+    bytes isa Vector{UInt8} || error("qlload error: key '$name' is not a data entry.")
+    return deserialize(IOBuffer(bytes))
 end
 
 """
-    dlmsave(assignment::Assignment, delim='\t'; prefix::String="", suffix::String="", ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="")
+    qlclean(filename::String; age::Real=Inf, maxcount::Int=typemax(Int)) -> Int
+    qlclean(target::Symbol, dir::String="."; age::Real=Inf, maxcount::Int=typemax(Int)) -> Int
 
-Save the data of an assignment to a delimited file.
+Clean up entries in qld/qlc files.
+
+- `filename`: clean a single file.
+- `target=:data`/`:cache`: clean all `.qld`/`.qlc` files in `dir`.
+- `age`: delete entries whose `touchtime` is older than `age` seconds (default `Inf`).
+- `maxcount`: keep at most `maxcount` most recent entries per file (default `typemax(Int)`).
+
+Files that become empty after cleaning are removed. Returns the number of entries deleted.
 """
-@inline function dlmsave(assignment::Assignment, delim='\t'; prefix::String="", suffix::String="", ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="")
-    dlmsave(joinpath(dirname(assignment), string(str(assignment; prefix=prefix, suffix=suffix, ndecimal=ndecimal, select=select, front=front, rear=rear), ".dlm")), Tuple(assignment.data)..., delim)
+function qlclean(filename::String; age::Real=Inf, maxcount::Int=typemax(Int))
+    isfile(filename) || return 0
+    deleted = 0
+    nowtime = Base.time()
+    entries = Pair{String, Float64}[]
+    removable = false
+    h5open(filename, "r+") do file
+        for name in keys(file)
+            touchtime = try attrs(file[name])["touchtime"] catch; 0.0 end
+            push!(entries, name=>touchtime)
+        end
+        sort!(entries; by=pair->pair.second, rev=true)
+        kept = 0
+        for (name, touchtime) in entries
+            if (nowtime-touchtime > age) || (kept >= maxcount)
+                delete_object(file, name)
+                deleted += 1
+            else
+                kept += 1
+            end
+        end
+        removable = isempty(keys(file))
+    end
+    removable && rm(filename; force=true)
+    return deleted
 end
+function qlclean(target::Symbol, dir::String="."; age::Real=Inf, maxcount::Int=typemax(Int))
+    @assert target∈(:data, :cache) "qlclean error: target must be :data or :cache."
+    extension = target==:data ? ".qld" : ".qlc"
+    files = filter(file->endswith(file, extension), readdir(dir; join=true))
+    return sum(qlclean(file; age=age, maxcount=maxcount) for file in files)
+end
+
+"""
+    qldclean(dir::String="."; kwargs...) -> Int
+
+Shortcut for `qlclean(:data, dir; kwargs...)`.
+"""
+@inline qldclean(dir::String="."; kwargs...) = qlclean(:data, dir; kwargs...)
+
+"""
+    qlcclean(dir::String="."; kwargs...) -> Int
+
+Shortcut for `qlclean(:cache, dir; kwargs...)`.
+"""
+@inline qlcclean(dir::String="."; kwargs...) = qlclean(:cache, dir; kwargs...)
 
 end  # module

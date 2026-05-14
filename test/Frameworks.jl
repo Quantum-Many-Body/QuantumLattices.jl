@@ -10,7 +10,7 @@ using StaticArrays: SVector, SMatrix, @SMatrix
 import CairoMakie as Makie
 import Plots
 import QuantumLattices: update!
-import QuantumLattices.Frameworks: Parameters, options, run!
+import QuantumLattices.Frameworks: Parameters, config, contenttocache, options, run!
 
 @testset "Parameters" begin
     ps1 = Parameters{(:t₁, :t₂, :U)}(1.0im, 1.0, 2.0)
@@ -79,9 +79,20 @@ end
     @test f == LatticeModel(A, (t=1.0, μ=0.0, Δ=0.1))
     @test f == Formula{SMatrix{2, 2, ComplexF64, 4}}(A, (t=1.0, μ=0.0, Δ=0.1))
     @test isequal(f, Formula{SMatrix{2, 2, ComplexF64, 4}}(A, (t=1.0, μ=0.0, Δ=0.1)))
+    @test string(f) == "Formula"
     @test valtype(f) == valtype(typeof(f)) == SMatrix{2, 2, ComplexF64, 4}
     @test scalartype(f) == scalartype(typeof(f)) == ComplexF64
+    @test config(f) == ""
     @test Parameters(f) == (t=1.0, μ=0.0, Δ=0.1)
+    @test contenttocache(f) == NamedTuple()
+    @test dirname(f) == "."
+    @test basename(f) == "Formula"
+    @test basename(f, :data; prefix="Prefix") == "Prefix-Formula.qld"
+    @test basename(f, :cache; suffix="Suffix") == "Formula-Suffix.qlc"
+    @test pathof(f, :data) == joinpath(dirname(f), basename(f, :data))
+    @test pathof(f, :cache) == joinpath(dirname(f), basename(f, :cache))
+    @test stamp(f) == "t(1.0)μ(0.0)Δ(0.1)"
+    @test str(f) == "Formula-t(1.0)μ(0.0)Δ(0.1)"
     @test f([0.0, 0.0]) ≈ [4 0; 0 -4]
 
     update!(f; μ=0.3)
@@ -196,7 +207,7 @@ end
     cat = CategorizedGenerator(tops₁, (t=Operators{optp}(), μ=μops), (t=tops₂, μ=Operators{optp}()), (t=2.0, μ=1.0), boundary)
 
     cgen = OperatorGenerator(cat, bs, hilbert, (t, μ), true)
-    @test string(cgen) == "OperatorGenerator\n  bonds: 4-element Vector{QuantumLattices.Spatials.Bond{Int64, QuantumLattices.Spatials.Point{1, Float64}}}:\n   Bond(0, Point(1, [0.0], [0.0]))\n   Bond(0, Point(2, [0.5], [0.0]))\n   Bond(1, Point(2, [0.5], [0.0]), Point(1, [0.0], [0.0]))\n   Bond(1, Point(2, [-0.5], [-1.0]), Point(1, [0.0], [0.0]))\n  hilbert: QuantumLattices.DegreesOfFreedom.Hilbert{QuantumLattices.QuantumSystems.Fock{:f}} with 2 entries:\n    1 => Fock{:f}(norbital=1, nspin=1)\n    2 => Fock{:f}(norbital=1, nspin=1)\n  terms: (:t, :μ)\n  half: true\n  operators: CategorizedGenerator\n    constops: Operators with 1 Operator\n      Operator(2.0, 𝕔⁺(2, 1, 0, [0.5], [0.0]), 𝕔(1, 1, 0, [0.0], [0.0]))\n    alterops:\n      t: Operators with 0 Operator\n      μ: Operators with 2 Operator\n        Operator(0.5, 𝕔⁺(1, 1, 0, [0.0], [0.0]), 𝕔(1, 1, 0, [0.0], [0.0]))\n        Operator(0.5, 𝕔⁺(2, 1, 0, [0.5], [0.0]), 𝕔(2, 1, 0, [0.5], [0.0]))\n    boundops:\n      t: Operators with 1 Operator\n        Operator(0.8090169944+0.5877852523im, 𝕔⁺(2, 1, 0, [-0.5], [-1.0]), 𝕔(1, 1, 0, [0.0], [0.0]))\n      μ: Operators with 0 Operator\n    parameters:\n      t: 2.0\n      μ: 1.0\n    boundary: Boundary\n      keys: (:θ,)\n      values: [0.1]\n      vectors: 1-element Vector{StaticArraysCore.SVector{1, Float64}}:\n       [1.0]"
+    @test repr(MIME"text/plain"(), cgen) == "OperatorGenerator\n  bonds: 4-element Vector{QuantumLattices.Spatials.Bond{Int64, QuantumLattices.Spatials.Point{1, Float64}}}:\n   Bond(0, Point(1, [0.0], [0.0]))\n   Bond(0, Point(2, [0.5], [0.0]))\n   Bond(1, Point(2, [0.5], [0.0]), Point(1, [0.0], [0.0]))\n   Bond(1, Point(2, [-0.5], [-1.0]), Point(1, [0.0], [0.0]))\n  hilbert: QuantumLattices.DegreesOfFreedom.Hilbert{QuantumLattices.QuantumSystems.Fock{:f}} with 2 entries:\n    1 => Fock{:f}(norbital=1, nspin=1)\n    2 => Fock{:f}(norbital=1, nspin=1)\n  terms: (:t, :μ)\n  half: true\n  operators: CategorizedGenerator\n    constops: Operators with 1 Operator\n      Operator(2.0, 𝕔⁺(2, 1, 0, [0.5], [0.0]), 𝕔(1, 1, 0, [0.0], [0.0]))\n    alterops:\n      t: Operators with 0 Operator\n      μ: Operators with 2 Operator\n        Operator(0.5, 𝕔⁺(1, 1, 0, [0.0], [0.0]), 𝕔(1, 1, 0, [0.0], [0.0]))\n        Operator(0.5, 𝕔⁺(2, 1, 0, [0.5], [0.0]), 𝕔(2, 1, 0, [0.5], [0.0]))\n    boundops:\n      t: Operators with 1 Operator\n        Operator(0.8090169944+0.5877852523im, 𝕔⁺(2, 1, 0, [-0.5], [-1.0]), 𝕔(1, 1, 0, [0.0], [0.0]))\n      μ: Operators with 0 Operator\n    parameters:\n      t: 2.0\n      μ: 1.0\n    boundary: Boundary\n      keys: (:θ,)\n      values: [0.1]\n      vectors: 1-element Vector{StaticArraysCore.SVector{1, Float64}}:\n       [1.0]"
     @test cgen == OperatorGenerator(bs, hilbert, (t, μ), boundary; half=true)
     @test cgen == Generator(bs, hilbert, (t, μ), boundary; half=true) == Generator(cat, bs, hilbert, (t, μ), true)
     @test cgen == LatticeModel(bs, hilbert, (t, μ), boundary; half=true) == LatticeModel(cat, bs, hilbert, (t, μ), true)
@@ -234,7 +245,7 @@ end
     cat = CategorizedGenerator(tops, (t=Operators{optp}(), μ=μops), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain)
 
     cgen = OperatorGenerator(cat, bs, hilbert, (t, μ), true)
-    @test string(cgen) == "OperatorGenerator\n  bonds: 4-element Vector{QuantumLattices.Spatials.Bond{Int64, QuantumLattices.Spatials.Point{1, Float64}}}:\n   Bond(0, Point(1, [0.0], [0.0]))\n   Bond(0, Point(2, [0.5], [0.0]))\n   Bond(1, Point(2, [0.5], [0.0]), Point(1, [0.0], [0.0]))\n   Bond(1, Point(2, [-0.5], [-1.0]), Point(1, [0.0], [0.0]))\n  hilbert: QuantumLattices.DegreesOfFreedom.Hilbert{QuantumLattices.QuantumSystems.Fock{:f}} with 2 entries:\n    1 => Fock{:f}(norbital=1, nspin=1)\n    2 => Fock{:f}(norbital=1, nspin=1)\n  terms: (:t, :μ)\n  half: true\n  operators: CategorizedGenerator\n    constops: Operators with 2 Operator\n      Operator(2.0, 𝕔⁺(2, 1, 0, [0.5], [0.0]), 𝕔(1, 1, 0, [0.0], [0.0]))\n      Operator(2.0, 𝕔⁺(2, 1, 0, [-0.5], [-1.0]), 𝕔(1, 1, 0, [0.0], [0.0]))\n    alterops:\n      t: Operators with 0 Operator\n      μ: Operators with 2 Operator\n        Operator(0.5, 𝕔⁺(1, 1, 0, [0.0], [0.0]), 𝕔(1, 1, 0, [0.0], [0.0]))\n        Operator(0.5, 𝕔⁺(2, 1, 0, [0.5], [0.0]), 𝕔(2, 1, 0, [0.5], [0.0]))\n    boundops:\n      t: Operators with 0 Operator\n      μ: Operators with 0 Operator\n    parameters:\n      t: 2.0\n      μ: 1.0\n    boundary: plain"
+    @test repr(MIME"text/plain"(), cgen) == "OperatorGenerator\n  bonds: 4-element Vector{QuantumLattices.Spatials.Bond{Int64, QuantumLattices.Spatials.Point{1, Float64}}}:\n   Bond(0, Point(1, [0.0], [0.0]))\n   Bond(0, Point(2, [0.5], [0.0]))\n   Bond(1, Point(2, [0.5], [0.0]), Point(1, [0.0], [0.0]))\n   Bond(1, Point(2, [-0.5], [-1.0]), Point(1, [0.0], [0.0]))\n  hilbert: QuantumLattices.DegreesOfFreedom.Hilbert{QuantumLattices.QuantumSystems.Fock{:f}} with 2 entries:\n    1 => Fock{:f}(norbital=1, nspin=1)\n    2 => Fock{:f}(norbital=1, nspin=1)\n  terms: (:t, :μ)\n  half: true\n  operators: CategorizedGenerator\n    constops: Operators with 2 Operator\n      Operator(2.0, 𝕔⁺(2, 1, 0, [0.5], [0.0]), 𝕔(1, 1, 0, [0.0], [0.0]))\n      Operator(2.0, 𝕔⁺(2, 1, 0, [-0.5], [-1.0]), 𝕔(1, 1, 0, [0.0], [0.0]))\n    alterops:\n      t: Operators with 0 Operator\n      μ: Operators with 2 Operator\n        Operator(0.5, 𝕔⁺(1, 1, 0, [0.0], [0.0]), 𝕔(1, 1, 0, [0.0], [0.0]))\n        Operator(0.5, 𝕔⁺(2, 1, 0, [0.5], [0.0]), 𝕔(2, 1, 0, [0.5], [0.0]))\n    boundops:\n      t: Operators with 0 Operator\n      μ: Operators with 0 Operator\n    parameters:\n      t: 2.0\n      μ: 1.0\n    boundary: plain"
     @test cgen == OperatorGenerator(bs, hilbert, (t, μ), plain; half=true)
     @test cgen == Generator(bs, hilbert, (t, μ), plain; half=true) == Generator(cat, bs, hilbert, (t, μ), true)
     @test cgen == LatticeModel(bs, hilbert, (t, μ), plain; half=true) == LatticeModel(cat, bs, hilbert, (t, μ), true)
@@ -334,13 +345,6 @@ params(parameters::Parameters) = (t=parameters.t, μ=parameters.U/2)
     update!(tba; U=1.0)
     @test Parameters(tba) == (t=1.0, U=1.0)
     @test string(tba) == "Square-TBA"
-    @test dirname(tba) == "."
-    @test basename(tba) == "Square-TBA.qld"
-    @test basename(tba; prefix="Prefix") == "Prefix-Square-TBA.qld"
-    @test basename(tba; suffix="Suffix") == "Square-TBA-Suffix.qld"
-    @test basename(tba; extension="dat") == "Square-TBA.dat"
-    @test pathof(tba) == joinpath(dirname(tba), basename(tba))
-    @test str(tba) == "Square-TBA-t(1.0)U(1.0)"
     @test startswith(repr(MIME"text/plain"(), tba), "Algorithm\n  name: :Square\n  frontend:")
 
     @test options(Assignment) == NamedTuple()
@@ -379,11 +383,11 @@ end
 
 @testset "Assignment & Algorithm without map" begin
     tba = Algorithm(:Square, TBA(Formula(A, (t=1.0, μ=2.0))))
-    qldsave(tba; mode="w")
-    qldsave("Arbitrary.qld", "first copy", tba, "second copy", tba; mode="w")
-    loaded = qldload(pathof(tba), str(Parameters(tba)))
-    @test loaded == qldload(pathof(tba))[str(Parameters(tba))]
-    @test all(isequal(loaded), qldload("Arbitrary.qld", "first copy", "second copy"))
+    qldsave(tba)
+    qlsave("Arbitrary.qld", "first copy", tba, "second copy", tba)
+    loaded = qlload(pathof(tba, :data), str(Parameters(tba)))
+    @test loaded == qlload(pathof(tba, :data))[str(Parameters(tba))]
+    @test all(isequal(loaded), qlload("Arbitrary.qld", "first copy", "second copy"))
 
     eigensystem = loaded(:eigensystem, EigenSystem(BrillouinZone([[2pi, 0], [0, 2pi]], 100)); delay=true)
     dos = loaded(:DOS, DensityOfStates(), eigensystem)
@@ -392,17 +396,42 @@ end
     Makie.save("Makie$(str(dos)).png", Makie.plot(loaded(dos)))
 end
 
-@testset "fingerprint" begin
-    @test fingerprint(42) == "Int64"
+mutable struct Cache <: LatticeModel
+    U::Float64
+    info::String
+    value::Float64
+end
+@inline config(cache::Cache) = cache.info
+@inline Parameters(cache::Cache) = (U=cache.U,)
+@inline contenttocache(cache::Cache) = (value=cache.value,)
 
-    tba = Algorithm(:Square, TBA(Formula(A, (t=1.0, μ=2.0))))
-    @test fingerprint(tba) == "Square-TBA-t(1.0)μ(2.0)"
+@testset "cache & qlload & qlclean" begin
+    cache = Cache(0.0, "1st", 3.14)
+    cache′ = Cache(1.0, "2nd", 6.28)
+    qlcsave(cache, cache′)
 
-    tba = Algorithm(:Square, TBA(Formula(A, (t=2.0, μ=2.0))))
-    @test fingerprint(tba) == "Square-TBA-t(2.0)μ(2.0)"
+    loaded = qlload(pathof(cache, :cache))
+    content = qlload(pathof(cache, :cache), stamp(cache))
+    @test content == loaded[stamp(cache)] == (value=3.14,)
+    content′ = qlload(pathof(cache′, :cache), stamp(cache′))
+    @test content′ == loaded[stamp(cache′)] == (value=6.28,)
+    @test qlload(pathof(cache, :cache), stamp(cache), stamp(cache′)) == (content, content′)
 
-    tba = Algorithm(:Square, TBA(Formula(A, (t=1.123456, μ=2.0))))
-    @test fingerprint(tba; ndecimal=2) == "Square-TBA-t(1.12)μ(2.0)"
-    @test fingerprint(tba; ndecimal=10) == "Square-TBA-t(1.123456)μ(2.0)"
+    # qlclean by age removes entries with old touchtime
+    @test qlclean(pathof(cache, :cache); age=-1) == 2
+    @test !isfile(pathof(cache, :cache))
+
+    # qlclean by maxcount keeps only the newest entry
+    qlcsave(cache)
+    sleep(0.1)
+    qlcsave(cache′)
+    @test qlclean(pathof(cache, :cache); maxcount=1) == 1
+    loaded = qlload(pathof(cache, :cache))
+    @test length(loaded) == 1
+    @test loaded[stamp(cache′)] == content′
+
+    # qlcclean and qldclean on current directory
+    @test qlcclean(".") == 0
+    @test qldclean(".") == 0
 end
 
