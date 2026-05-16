@@ -201,6 +201,17 @@ abstract type OperatorPack{V, I} <: QuantumOperator end
     M = s₂ ? rawtype(M₁) : s₁ ? rawtype(M₂) : typejoin(rawtype(M₁), rawtype(M₂))
     return fulltype(M, promoteparameters(parameterpairs(M₁), parameterpairs(M₂)))
 end
+function Base.show(io::IO, m::OperatorPack)
+    ndecimal = get(io, :ndecimal, 10)
+    print(io, nameof(typeof(m)), "(", str(value(m); ndecimal=ndecimal))
+    mid = id(m)
+    if mid isa Tuple
+        for u in mid
+            print(io, ", ", u)
+        end
+    end
+    print(io, ")")
+end
 
 """
     valtype(m::OperatorPack)
@@ -400,16 +411,6 @@ struct Operator{V, I<:ZeroAtLeast{OperatorIndex}} <: OperatorProd{V, I}
     id::I
 end
 @inline Operator(value::Number, id::OperatorIndex...) = Operator(value, id)
-function Base.show(io::IO, m::Operator)
-    ndecimal = get(io, :ndecimal, 10)
-    print(io, nameof(typeof(m)), "(", str(value(m); ndecimal=ndecimal))
-    rank(m) > 0 && print(io, ", ")
-    for (i, u) in enumerate(id(m))
-        i > 1 && print(io, ", ")
-        print(io, u)
-    end
-    print(io, ")")
-end
 
 """
     adjoint(m::Operator) -> Operator
