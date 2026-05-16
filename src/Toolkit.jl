@@ -153,7 +153,8 @@ end
 @inline Base.haskey(iw::IndentWrapper, key) = haskey(iw.parent, key)
 @inline Base.getindex(iw::IndentWrapper, key) = getindex(iw.parent, key)
 @inline Base.get(iw::IndentWrapper, key, default) = get(iw.parent, key, default)
-@inline Base.ioproperties(iw::IndentWrapper) = Base.ioproperties(iw.parent)
+@static VERSION < v"1.12" && @inline Base.unwrapcontext(iw::IndentWrapper) = (iw, Base.unwrapcontext(iw.parent)[2])
+@static VERSION >= v"1.12" && @inline Base.ioproperties(iw::IndentWrapper) = Base.ioproperties(iw.parent)
 @inline Base.write(iw::IndentWrapper, chr::Char) = write(iw.parent, chr) + (chr=='\n' ? write(iw.parent, ' '^iw.spaces) : 0)
 function Base.write(iw::IndentWrapper, str::Union{SubString{String}, String})
     write_count = 0
@@ -166,6 +167,7 @@ end
 @inline isindented(::Type{<:IndentWrapper}) = true
 @inline isindented(::Type{<:IOContext{I}}) where {I<:IO} = isindented(I)
 @inline isindented(::Type{<:IO}) = false
+@generated Base.print(io::IOContext, s::Char) = isindented(io) ? :(write(io.io, s); nothing) : :(invoke(print, Tuple{IO, typeof(s)}, io, s))
 @generated Base.print(io::IOContext, s::String) = isindented(io) ? :(write(io.io, s); nothing) : :(invoke(print, Tuple{IO, typeof(s)}, io, s))
 @generated Base.print(io::IOContext, s::SubString{String}) = isindented(io) ? :(write(io.io, s); nothing) : :(invoke(print, Tuple{IO, typeof(s)}, io, s))
 
