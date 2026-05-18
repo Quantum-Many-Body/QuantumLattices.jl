@@ -5,6 +5,7 @@ using Base.Iterators: flatten, repeated
 using HDF5: attrs, delete_object, h5open
 using Latexify: latexify
 using Serialization: deserialize, serialize
+using SHA: sha256
 using StaticArrays: SVector
 using TimerOutputs: @timeit, TimerOutput, time
 using ..DegreesOfFreedom: Hilbert, Term
@@ -19,7 +20,7 @@ import ..Spatials: dlmsave
 import ..Toolkit: contenttoshow, showasleaf, showcontent
 
 export Action, Algorithm, Assignment, Boundary, CategorizedGenerator, Data, Eager, ExpansionStyle, Formula, Frontend, Generator, LatticeModel, Lazy, OperatorGenerator, Parameters, ParametricGenerator, StaticGenerator
-export checkoptions, config, contenttocache, datatype, eager, hasoption, lazy, options, optionsinfo, plain, qlcclean, qlclean, qlcsave, qldclean, qldsave, qlload, qlsave, run!, stamp
+export checkoptions, config, contenttocache, contenttoconfig, datatype, eager, hasoption, lazy, options, optionsinfo, plain, qlcclean, qlclean, qlcsave, qldclean, qldsave, qlload, qlsave, run!, stamp
 
 """
     Parameters{Names}(values::Number...) where Names
@@ -226,15 +227,6 @@ Get the eltype of a `LatticeModel`.
 @inline Base.eltype(::Type{T}) where {T<:LatticeModel} = eltype(valtype(T))
 
 """
-    config(model::LatticeModel) -> String
-
-Get the configuration label of a lattice model.
-
-Defaults to an empty string.
-"""
-@inline config(model::LatticeModel) = ""
-
-"""
     Parameters(model::LatticeModel) -> NamedTuple
 
 Get the parameters of a lattice model.
@@ -242,6 +234,42 @@ Get the parameters of a lattice model.
 Returns `model.parameters` if the type has a `:parameters` field, otherwise an empty `NamedTuple`.
 """
 @inline @generated Parameters(model::LatticeModel) = :parameters in fieldnames(model) ? :(model.parameters) : Parameters()
+
+"""
+    contenttoconfig(model::LatticeModel) -> Tuple
+
+Return the structural components that characterize a lattice model.
+
+Together with [`Parameters`](@ref), these components determine the model's identity.
+Defaults to an empty `Tuple`. Subtypes should override this to specify which structural components to include.
+"""
+@inline contenttoconfig(model::LatticeModel) = ()
+
+"""
+    config(model::LatticeModel) -> String
+
+Get the configuration fingerprint: the SHA-256 digest of [`contenttoconfig`](@ref).
+"""
+function config(model::LatticeModel)
+    io = IOBuffer()
+    serialize(io, contenttoconfig(model))
+    return bytes2hex(sha256(take!(io)))
+end
+
+"""
+    stamp(model::LatticeModel; ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="") -> String
+
+Generate a deterministic stamp for a lattice model, formed as `"config[-parameters]"`.
+
+The stamp serves as the internal key in data/cache files.
+`ndecimal`, `select`, `front`, and `rear` are passed to `str(::Parameters)`.
+When `str(::Parameters)` returns an empty string, the intermediate `"-"` is omitted.
+"""
+function stamp(model::LatticeModel; ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="")
+    configuration = config(model)
+    parameters = str(Parameters(model); ndecimal=ndecimal, select=select, front=front, rear=rear)
+    return string(configuration, prepend(parameters, "-"))
+end
 
 """
     contenttocache(model::LatticeModel) -> NamedTuple
@@ -287,33 +315,16 @@ Equivalent to `joinpath(dirname(model), basename(model, target; prefix, suffix))
 end
 
 """
-    stamp(model::LatticeModel; ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="") -> String
-
-Generate a deterministic stamp for a lattice model, formed as `"[config][-][parameters]"`.
-
-The stamp serves as the internal key in data/cache files.
-`ndecimal`, `select`, `front`, and `rear` are passed to `str(::Parameters)`.
-When either `config(::Model)` or `str(::Parameters)` returns an empty string, the intermediate `"-"` will be omitted.
-"""
-function stamp(model::LatticeModel; ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="")
-    configuration = config(model)
-    parameters = str(Parameters(model); ndecimal=ndecimal, select=select, front=front, rear=rear)
-    isempty(configuration) && return parameters
-    isempty(parameters) && return configuration
-    return string(configuration, "-", parameters)
-end
-
-"""
     str(model::LatticeModel; prefix::String="", suffix::String="", ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="") -> String
 
-Get the string representation of a lattice model, formed as `basename[-config][-parameters]`.
+Get the string representation of a lattice model, formed as `basename[-parameters]`.
 
 - `prefix` and `suffix`: passed to `basename(::LatticeModel)`.
-- `ndecimal`, `select`, `front`, `rear`: passed to `stamp` â†’ `str(::Parameters)`.
+- `ndecimal`, `select`, `front`, `rear`: passed to `str(::Parameters)`.
 """
 @inline function str(model::LatticeModel; prefix::String="", suffix::String="", ndecimal::Int=10, select::Function=name::Symbol->true, front::String="", rear::String="")
     base = basename(model; prefix=prefix, suffix=suffix)
-    return string(base, prepend(stamp(model; ndecimal=ndecimal, select=select, front=front, rear=rear), "-"))
+    return string(base, prepend(str(Parameters(model); ndecimal=ndecimal, select=select, front=front, rear=rear), "-"))
 end
 
 """
@@ -366,6 +377,7 @@ mutable struct Formula{V, F<:Function, P<:Parameters} <: LatticeModel
     end
 end
 @inline Base.valtype(::Type{<:Formula{V}}) where V = V
+@inline contenttoconfig(formula::Formula) = (formula.expression,)
 
 """
     update!(formula::Formula; parameters...) -> Formula
@@ -503,6 +515,7 @@ Unlike `ParametricGenerator`, the operators have no parameter-update mechanism â
 struct StaticGenerator{M<:OperatorSet} <: Generator{M}
     operators::M
 end
+@inline contenttoconfig(gen::StaticGenerator) = (gen.operators,)
 @inline expand(gen::StaticGenerator, ::Lazy) = gen.operators
 
 """
@@ -602,6 +615,7 @@ end
     op = iterate(ee.ops, state[2])
     return op[1]*v[1], (v[2], op[2])
 end
+@inline contenttoconfig(cat::CategorizedGenerator) = (cat.constops, cat.alterops, cat.boundops, cat.boundary)
 
 """
     (transformation::LinearTransformation)(cat::CategorizedGenerator; kwargs...) -> CategorizedGenerator
@@ -707,6 +721,7 @@ struct OperatorGenerator{V<:Operators, CG<:CategorizedGenerator{V}, B<:Bond, H<:
         new{valtype(operators), typeof(operators), eltype(bonds), typeof(hilbert), typeof(terms)}(operators, bonds, hilbert, terms, half)
     end
 end
+@inline contenttoconfig(gen::OperatorGenerator) = (contenttoconfig(gen.operators), gen.half)
 @inline expand(gen::OperatorGenerator, ::Lazy) = expand(gen.operators, lazy)
 @inline contenttoshow(gen::OperatorGenerator) = (;
     bonds = gen.bonds,

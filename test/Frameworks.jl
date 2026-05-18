@@ -10,7 +10,7 @@ using StaticArrays: SVector, SMatrix, @SMatrix
 import CairoMakie as Makie
 import Plots
 import QuantumLattices: update!
-import QuantumLattices.Frameworks: Parameters, config, contenttocache, options, run!
+import QuantumLattices.Frameworks: Parameters, contenttocache, contenttoconfig, options, run!
 
 @testset "Parameters" begin
     ps1 = Parameters{(:t₁, :t₂, :U)}(1.0im, 1.0, 2.0)
@@ -82,8 +82,10 @@ end
     @test string(f) == "Formula"
     @test valtype(f) == valtype(typeof(f)) == SMatrix{2, 2, ComplexF64, 4}
     @test scalartype(f) == scalartype(typeof(f)) == ComplexF64
-    @test config(f) == ""
     @test Parameters(f) == (t=1.0, μ=0.0, Δ=0.1)
+    @test contenttoconfig(f) == (f.expression,)
+    @test isa(config(f), String) && length(config(f))==64
+    @test endswith(stamp(f), "-t(1.0)μ(0.0)Δ(0.1)")
     @test contenttocache(f) == NamedTuple()
     @test dirname(f) == "."
     @test basename(f) == "Formula"
@@ -91,7 +93,6 @@ end
     @test basename(f, :cache; suffix="Suffix") == "Formula-Suffix.qlc"
     @test pathof(f, :data) == joinpath(dirname(f), basename(f, :data))
     @test pathof(f, :cache) == joinpath(dirname(f), basename(f, :cache))
-    @test stamp(f) == "t(1.0)μ(0.0)Δ(0.1)"
     @test str(f) == "Formula-t(1.0)μ(0.0)Δ(0.1)"
     @test f([0.0, 0.0]) ≈ [4 0; 0 -4]
 
@@ -115,6 +116,7 @@ end
     @test eltype(gen) == eltype(typeof(gen)) == optp
     @test scalartype(gen) == scalartype(typeof(gen)) == Float64
     @test Parameters(gen) == Parameters()
+    @test contenttoconfig(gen) == (gen.operators,)
     @test length(gen) == length(collect(gen)) == length(ops)
     @test !isempty(gen) && isempty(empty(gen)) && isempty(empty!(deepcopy(gen)))
     @test empty(gen) == empty!(deepcopy(gen)) == StaticGenerator(empty(ops))
@@ -149,6 +151,7 @@ end
     @test cat|>valtype == cat|>typeof|>valtype == Operators{optp, idtype(optp)}
     @test cat|>eltype == cat|>typeof|>eltype == optp
     @test cat|>scalartype == cat|>typeof|>scalartype == ComplexF64
+    @test contenttoconfig(cat) == (cat.constops, cat.alterops, cat.boundops, cat.boundary)
     @test Parameters(cat) == (t=2.0, μ=1.0, θ=0.1)
     @test !isempty(cat) && isempty(empty(cat))
     @test empty(cat) == empty!(deepcopy(cat)) == CategorizedGenerator(Operators{optp}(), (t=Operators{optp}(), μ=Operators{optp}()), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), boundary)
@@ -181,6 +184,7 @@ end
     @test cat == Generator(tops, (t=Operators{optp}(), μ=μops), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain)
     @test cat == LatticeModel(tops, (t=Operators{optp}(), μ=μops), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain)
     @test isequal(cat, i(cat))
+    @test contenttoconfig(cat) == (cat.constops, cat.alterops, cat.boundops, cat.boundary)
     @test Parameters(cat) == (t=2.0, μ=1.0)
     @test expand(cat) == expand!(Operators{optp}(), cat) ≈ tops+μops
 
@@ -215,6 +219,7 @@ end
     @test cgen|>valtype == cgen|>typeof|>valtype == Operators{optp, idtype(optp)}
     @test cgen|>eltype == cgen|>typeof|>eltype == optp
     @test cgen|>scalartype == cgen|>typeof|>scalartype == ComplexF64
+    @test contenttoconfig(cgen) == (contenttoconfig(cgen.operators), cgen.half)
     @test collect(cgen) == collect(expand(cgen, lazy))
     @test Parameters(cgen) == (t=2.0, μ=1.0, θ=0.1)
     @test expand!(Operators{optp}(), cgen) == expand(cgen) ≈ tops₁ + tops₂*2.0 + μops
@@ -249,6 +254,7 @@ end
     @test cgen == OperatorGenerator(bs, hilbert, (t, μ), plain; half=true)
     @test cgen == Generator(bs, hilbert, (t, μ), plain; half=true) == Generator(cat, bs, hilbert, (t, μ), true)
     @test cgen == LatticeModel(bs, hilbert, (t, μ), plain; half=true) == LatticeModel(cat, bs, hilbert, (t, μ), true)
+    @test contenttoconfig(cgen) == (contenttoconfig(cgen.operators), cgen.half)
     @test expand(cgen) ≈ tops + μops
     @test expand(cgen, :t) ≈ tops
     @test expand(cgen, :μ) ≈ μops
@@ -385,8 +391,8 @@ end
     tba = Algorithm(:Square, TBA(Formula(A, (t=1.0, μ=2.0))))
     qldsave(tba)
     qlsave("Arbitrary.qld", "first copy", tba, "second copy", tba)
-    loaded = qlload(pathof(tba, :data), str(Parameters(tba)))
-    @test loaded == qlload(pathof(tba, :data))[str(Parameters(tba))]
+    loaded = qlload(pathof(tba, :data), stamp(tba))
+    @test loaded == qlload(pathof(tba, :data))[stamp(tba)]
     @test all(isequal(loaded), qlload("Arbitrary.qld", "first copy", "second copy"))
 
     eigensystem = loaded(:eigensystem, EigenSystem(BrillouinZone([[2pi, 0], [0, 2pi]], 100)); delay=true)
@@ -401,8 +407,8 @@ mutable struct Cache <: LatticeModel
     info::String
     value::Float64
 end
-@inline config(cache::Cache) = cache.info
 @inline Parameters(cache::Cache) = (U=cache.U,)
+@inline contenttoconfig(cache::Cache) = (cache.info,)
 @inline contenttocache(cache::Cache) = (value=cache.value,)
 
 @testset "cache & qlload & qlclean" begin
