@@ -698,7 +698,25 @@ abstract type AbstractLattice{N, D<:Number, M} <: AbstractVector{SVector{N, D}} 
 @inline contentnames(::Type{<:AbstractLattice}) = (:name, :coordinates, :vectors)
 @inline Base.:(==)(lattice₁::AbstractLattice, lattice₂::AbstractLattice) = ==(efficientoperations, lattice₁, lattice₂)
 @inline Base.isequal(lattice₁::AbstractLattice, lattice₂::AbstractLattice) = isequal(efficientoperations, lattice₁, lattice₂)
-@inline Base.show(io::IO, lattice::AbstractLattice) = show(io, MIME"text/plain"(), lattice)
+function Base.show(io::IO, lattice::AbstractLattice)
+    ndecimal = get(io, :ndecimal, 10)
+    print(io, nameof(typeof(lattice)), "(")
+    for i in 1:length(lattice)
+        i > 1 && print(io, ", ")
+        print(io, str(lattice[i]; ndecimal=ndecimal))
+    end
+    print(io, "; name=", repr(getcontent(lattice, :name)))
+    vectors = getcontent(lattice, :vectors)
+    length(vectors) > 0 && begin
+        print(io, ", vectors=[")
+        for i in 1:length(vectors)
+            i > 1 && print(io, ", ")
+            print(io, str(vectors[i]; ndecimal=ndecimal))
+        end
+        print(io, "]")
+    end
+    print(io, ")")
+end
 function Base.show(io::IO, ::MIME"text/plain", lattice::AbstractLattice)
     ndecimal = get(io, :ndecimal, 10)
     print(io, nameof(typeof(lattice)), "(", getcontent(lattice, :name), ")")
