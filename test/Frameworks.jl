@@ -84,7 +84,7 @@ end
     @test scalartype(f) == scalartype(typeof(f)) == ComplexF64
     @test Parameters(f) == (t=1.0, μ=0.0, Δ=0.1)
     @test contenttoconfig(f) == (f.expression,)
-    @test isa(config(f), String) && length(config(f))==64
+    @test isa(config(f), String) && length(config(f))==128
     @test endswith(stamp(f), "-t(1.0)μ(0.0)Δ(0.1)")
     @test contenttocache(f) == NamedTuple()
     @test dirname(f) == "."

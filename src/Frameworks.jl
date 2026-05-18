@@ -5,7 +5,7 @@ using Base.Iterators: flatten, repeated
 using HDF5: attrs, delete_object, h5open
 using Latexify: latexify
 using Serialization: deserialize, serialize
-using SHA: sha256
+using SHA: sha512
 using StaticArrays: SVector
 using TimerOutputs: @timeit, TimerOutput, time
 using ..DegreesOfFreedom: Hilbert, Term
@@ -248,12 +248,12 @@ Defaults to an empty `Tuple`. Subtypes should override this to specify which str
 """
     config(model::LatticeModel) -> String
 
-Get the configuration fingerprint: the SHA-256 digest of [`contenttoconfig`](@ref).
+Get the configuration fingerprint: the SHA-512 digest of [`contenttoconfig`](@ref).
 """
 function config(model::LatticeModel)
     io = IOBuffer()
     serialize(io, contenttoconfig(model))
-    return bytes2hex(sha256(take!(io)))
+    return bytes2hex(sha512(take!(io)))
 end
 
 """
