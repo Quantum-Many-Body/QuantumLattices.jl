@@ -177,7 +177,7 @@ This function is based on the `KDTree` type provided by the [`NearestNeighbors.j
 julia> lattice = Lattice([0.0, 0.0]; vectors=[[1.0, 0.0], [0.0, 1.0]]);
 
 julia> bonds(lattice, 2)
-5-element Vector{Bond{Int64, Point{2, Float64}}}:
+5-element Vector{Bond{Int64, Point{2, Float64}, Vector{Point{2, Float64}}}}:
  Bond(0, Point(1, [0.0, 0.0], [0.0, 0.0]))
  Bond(2, Point(1, [-1.0, -1.0], [-1.0, -1.0]), Point(1, [0.0, 0.0], [0.0, 0.0]))
  Bond(1, Point(1, [0.0, -1.0], [0.0, -1.0]), Point(1, [0.0, 0.0], [0.0, 0.0]))
@@ -189,7 +189,7 @@ However, this method is not very efficient, as `KDTree` only searches for bonds 
 julia> lattice = Lattice([0.0, 0.0]; vectors=[[1.0, 0.0], [0.0, 1.0]]);
 
 julia> bonds(lattice, Neighbors(0=>0.0, 1=>1.0, 2=>√2))
-5-element Vector{Bond{Int64, Point{2, Float64}}}:
+5-element Vector{Bond{Int64, Point{2, Float64}, Vector{Point{2, Float64}}}}:
  Bond(0, Point(1, [0.0, 0.0], [0.0, 0.0]))
  Bond(2, Point(1, [-1.0, -1.0], [-1.0, -1.0]), Point(1, [0.0, 0.0], [0.0, 0.0]))
  Bond(1, Point(1, [0.0, -1.0], [0.0, -1.0]), Point(1, [0.0, 0.0], [0.0, 0.0]))
@@ -201,7 +201,7 @@ Meanwhile, an instance of [`Neighbors`](@ref) can also serve as a filter for the
 julia> lattice = Lattice([0.0, 0.0]; vectors=[[1.0, 0.0], [0.0, 1.0]]);
 
 julia> bonds(lattice, Neighbors(2=>√2))
-2-element Vector{Bond{Int64, Point{2, Float64}}}:
+2-element Vector{Bond{Int64, Point{2, Float64}, Vector{Point{2, Float64}}}}:
  Bond(2, Point(1, [-1.0, -1.0], [-1.0, -1.0]), Point(1, [0.0, 0.0], [0.0, 0.0]))
  Bond(2, Point(1, [1.0, -1.0], [1.0, -1.0]), Point(1, [0.0, 0.0], [0.0, 0.0]))
 ```

@@ -602,13 +602,13 @@ Judge whether a point is intra the unitcell.
 @inline isintracell(point::Point) = isapprox(norm(point.icoordinate), 0, atol=atol, rtol=rtol)
 
 """
-    Bond{K, P<:Point} <: AbstractVector{P}
+    Bond{K, P<:Point, V<:AbstractVector{P}} <: AbstractVector{P}
 
 A generic bond, which could contains several points.
 """
-struct Bond{K, P<:Point} <: AbstractVector{P}
+struct Bond{K, P<:Point, V<:AbstractVector{P}} <: AbstractVector{P}
     kind::K
-    points::Vector{P}
+    points::V
 end
 @inline Base.size(bond::Bond) = (length(bond.points),)
 @inline Base.firstindex(bond::Bond) = 1
@@ -641,12 +641,12 @@ Get the ith point contained in a generic bond.
 
 """
     dimension(bond::Bond) -> Int
-    dimension(::Type{<:Bond{K, P} where K}) where {P<:Point} -> Int
+    dimension(::Type{B}) where {B<:Bond} -> Int
 
 Get the space dimension of a concrete bond.
 """
 @inline dimension(bond::Bond) = dimension(typeof(bond))
-@inline dimension(::Type{<:Bond{K, P} where K}) where {P<:Point} = dimension(P)
+@inline dimension(::Type{B}) where {B<:Bond} = dimension(eltype(B))
 
 """
     reverse(bond::Bond) -> Bond
@@ -792,13 +792,21 @@ Get the neighbor vs. bond length map of a lattice up to the `nneighbor`th order.
 @inline Neighbors(lattice::AbstractLattice, nneighbor::Integer; coordination::Integer=12) = Neighbors(minimumlengths(getcontent(lattice, :coordinates), getcontent(lattice, :vectors), nneighbor; coordination=coordination))
 
 """
-    bonds(lattice::AbstractLattice, nneighbor::Integer; coordination::Integer=12) -> Vector{Bond{Int, Point{dimension(lattice), scalartype(lattice)}}}
-    bonds(lattice::AbstractLattice, neighbors::Neighbors) -> Vector{Bond{keytype(neighbors), Point{dimension(lattice), scalartype(lattice)}}}
+    bonds(lattice::AbstractLattice, nneighbor::Integer; coordination::Integer=12) -> Vector{Bond{Int, P, Vector{P}}
+    bonds(lattice::AbstractLattice, neighbors::Neighbors) -> Vector{Bond{Int, P, Vector{P}}
 
 Get the required bonds of a lattice.
+
+Here, `P = Point{dimension(lattice), scalartype(lattice)}`.
 """
-@inline bonds(lattice::AbstractLattice, nneighbor::Integer; coordination::Integer=12) = bonds!(Bond{Int, Point{dimension(lattice), scalartype(lattice)}}[], lattice, nneighbor; coordination=coordination)
-@inline bonds(lattice::AbstractLattice, neighbors::Neighbors) = bonds!(Bond{keytype(neighbors), Point{dimension(lattice), scalartype(lattice)}}[], lattice, neighbors)
+@inline function bonds(lattice::AbstractLattice, nneighbor::Integer; coordination::Integer=12)
+    P = Point{dimension(lattice), scalartype(lattice)}
+    return bonds!(Bond{Int, P, Vector{P}}[], lattice, nneighbor; coordination=coordination)
+end
+@inline function bonds(lattice::AbstractLattice, neighbors::Neighbors)
+    P = Point{dimension(lattice), scalartype(lattice)}
+    return bonds!(Bond{keytype(neighbors), P, Vector{P}}[], lattice, neighbors)
+end
 
 """
     bonds!(bonds::Vector, lattice::AbstractLattice, nneighbor::Integer; coordination::Integer=12) -> typeof(bonds)
@@ -841,9 +849,11 @@ function bonds!(bonds::Vector, lattice::AbstractLattice, neighbors::Neighbors)
 end
 
 """
-    bonds(lattice::AbstractLattice, ::Colon) -> Matrix{Bond{Colon, Point{dimension(lattice), scalartype(lattice)}}}
+    bonds(lattice::AbstractLattice, ::Colon) -> Matrix{Bond{Colon, P, Vector{P}}}
 
 Get the all-to-all bonds in a lattice.
+
+Here, `P = Point{dimension(lattice), scalartype(lattice)}`.
 """
 @inline  bonds(lattice::AbstractLattice, ::Colon) = [Bond(:, Point(i, lattice[i]), Point(j, lattice[j])) for i in eachindex(lattice), j in eachindex(lattice)]
 
