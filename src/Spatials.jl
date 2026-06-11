@@ -685,6 +685,71 @@ Judge whether a bond is intra the unit cell of a lattice.
 @inline isintracell(bond::Bond) = all(point->isapprox(norm(point.icoordinate), 0, atol=atol, rtol=rtol), bond)
 
 """
+    isparallel(ref::Bond, bond::Bond, vectors::AbstractVector{<:AbstractVector{<:Number}}, nsublattice::Int) -> Int
+
+Judge whether two bonds are related by lattice translation.
+
+Returns:
+- `+1`: `bond` can be obtained by translating `ref` (forward direction).
+- `-1`: `bond` can be obtained by translating the reverse copy of `ref`.
+- `0`: neither of the above.
+
+Both bonds must contain exactly 1 or 2 points. Bonds of other lengths return `0`.
+
+# Two-point bonds
+
+The judgment is based on four criteria:
+1. **Kind matching**: `ref.kind == bond.kind`. If the kinds differ, return `0` immediately.
+2. **Sublattice matching**: map each site to its sublattice index via `sublattice(site) = (site-1) % nsublattice + 1`.
+   - Forward (`+1`): `sublattice(ref[1]) == sublattice(bond[1])` and `sublattice(ref[2]) == sublattice(bond[2])`.
+   - Reverse (`-1`): `sublattice(ref[1]) == sublattice(bond[2])` and `sublattice(ref[2]) == sublattice(bond[1])`.
+3. **Bond vector matching**:
+   - Forward (`+1`): `rcoordinate(ref) ≈ rcoordinate(bond)` up to the default tolerances `atol`/`rtol`.
+   - Reverse (`-1`): `rcoordinate(ref) ≈ -rcoordinate(bond)` up to the default tolerances `atol`/`rtol`.
+4. **Lattice translation validity**: the implied translation between the two bonds must be a lattice vector, i.e., an integer linear combination of `vectors`.
+   - Forward (`+1`): `t = bond[2].rcoordinate - ref[2].rcoordinate`, and `issubordinate(t, vectors)` must hold.
+   - Reverse (`-1`): `t = bond[2].rcoordinate - ref[1].rcoordinate`, and `issubordinate(t, vectors)` must hold.
+
+# Single-point bonds
+
+For length-1 bonds, `reverse` is an identity operation, so there is no `-1` case. The criteria simplify to:
+1. **Kind matching**: `ref.kind == bond.kind`.
+2. **Sublattice matching**: `sublattice(ref[1]) == sublattice(bond[1])`.
+3. **Lattice translation validity**: `t = bond[1].rcoordinate - ref[1].rcoordinate`, and `issubordinate(t, vectors)` must hold.
+
+If all criteria pass, `+1` is returned; otherwise `0`.
+
+!!! note
+    The `icoordinate` of the involved points is **not** checked independently — it is automatically determined by the sublattice matching and the bond vector matching. Two bonds that are translation-equivalent may have different `icoordinate` values because each bond is anchored with its own `bond[2].icoordinate ≡ 0` (the origin unit cell in its own lattice frame). See also [`rcoordinate`](@ref) and [`icoordinate`](@ref).
+
+    The `vectors` parameter plays an essential role here: even when two bonds have the same `rcoordinate` difference and matching sublattice sites, they may still be unrelated by lattice translation if the implied displacement between their anchor points is not a valid lattice vector (criterion 4 / criterion 3 for single-point bonds).
+"""
+function isparallel(ref::Bond, bond::Bond, vectors::AbstractVector{<:AbstractVector{<:Number}}, nsublattice::Int)
+    ref.kind == bond.kind || return 0
+    len = length(ref)
+    len == length(bond) || return 0
+    sublattice(site::Int) = (site - 1) % nsublattice + 1
+    if len == 1
+        sublattice(ref[1].site) == sublattice(bond[1].site) || return 0
+        t = bond[1].rcoordinate - ref[1].rcoordinate
+        issubordinate(t, vectors; atol=atol, rtol=rtol) && return +1
+        return 0
+    elseif len == 2
+        rᵢ, rⱼ = sublattice(ref[1].site), sublattice(ref[2].site)
+        bᵢ, bⱼ = sublattice(bond[1].site), sublattice(bond[2].site)
+        rcoord, bcoord = rcoordinate(ref), rcoordinate(bond)
+        if rᵢ == bᵢ && rⱼ == bⱼ && isapprox(rcoord, bcoord; atol=atol, rtol=rtol)
+            t = bond[2].rcoordinate - ref[2].rcoordinate
+            issubordinate(t, vectors; atol=atol, rtol=rtol) && return +1
+        elseif rᵢ == bⱼ && rⱼ == bᵢ && isapprox(rcoord, -bcoord; atol=atol, rtol=rtol)
+            t = bond[2].rcoordinate - ref[1].rcoordinate
+            issubordinate(t, vectors; atol=atol, rtol=rtol) && return -1
+        end
+    end
+    return 0
+end
+
+"""
     AbstractLattice{N, D<:Number, M} <: AbstractVector{SVector{N, D}}
 
 Abstract type of a unitcell-described lattice.

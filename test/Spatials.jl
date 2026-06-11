@@ -240,6 +240,60 @@ end
     @test bond|>icoordinate == [0.0, -1.0]
     @test bond|>isintracell == false
     @test Bond(:, Point(2, [1.0], [0.0]), Point(1, [0.0], [0.0]))|>string == "Bond(:, Point(2, [1.0], [0.0]), Point(1, [0.0], [0.0]))"
+
+    vectors = [SVector(1.0, 0.0), SVector(0.0, 1.0)]
+    # Length-2, forward (+1): same kind, same sublattice, same rcoordinate, valid translation
+    ref = Bond(1, Point(1, (1.0, 0.0), (1.0, 0.0)), Point(1, (0.0, 0.0), (0.0, 0.0)))
+    bond = Bond(1, Point(1, (3.0, 0.0), (0.0, 0.0)), Point(1, (2.0, 0.0), (0.0, 0.0)))
+    @test isparallel(ref, bond, vectors, 1) == +1
+    # Length-2, forward (+1) with nsublattice=2: distinct sublattices, same order
+    ref = Bond(1, Point(1, (1.0, 0.0), (1.0, 0.0)), Point(2, (0.0, 0.0), (0.0, 0.0)))
+    bond = Bond(1, Point(1, (3.0, 0.0), (0.0, 0.0)), Point(2, (2.0, 0.0), (0.0, 0.0)))
+    @test isparallel(ref, bond, vectors, 2) == +1
+    # Length-2, reverse (-1): sublattice reversed and bond vector reversed, valid translation
+    ref = Bond(1, Point(1, (1.0, 0.0), (1.0, 0.0)), Point(2, (0.0, 0.0), (0.0, 0.0)))
+    bond = Bond(1, Point(2, (2.0, 0.0), (0.0, 0.0)), Point(1, (3.0, 0.0), (0.0, 0.0)))
+    @test isparallel(ref, bond, vectors, 2) == -1
+    # Length-2, reverse (-1) with nsublattice=1: bond[1] vs bond[2] reversed
+    ref = Bond(1, Point(1, (1.0, 0.0), (1.0, 0.0)), Point(1, (0.0, 0.0), (0.0, 0.0)))
+    bond = Bond(1, Point(1, (-1.0, 0.0), (-1.0, 0.0)), Point(1, (0.0, 0.0), (0.0, 0.0)))
+    @test isparallel(ref, bond, vectors, 1) == -1
+    # Length-2, kind mismatch (0)
+    ref = Bond(1, Point(1, (1.0, 0.0), (1.0, 0.0)), Point(1, (0.0, 0.0), (0.0, 0.0)))
+    bond = Bond(2, Point(1, (3.0, 0.0), (0.0, 0.0)), Point(1, (2.0, 0.0), (0.0, 0.0)))
+    @test isparallel(ref, bond, vectors, 1) == 0
+    # Length-2, sublattice mismatch (0)
+    ref = Bond(1, Point(1, (1.0, 0.0), (1.0, 0.0)), Point(2, (0.0, 0.0), (0.0, 0.0)))
+    bond = Bond(1, Point(1, (2.0, 0.0), (0.0, 0.0)), Point(1, (1.0, 0.0), (0.0, 0.0)))
+    @test isparallel(ref, bond, vectors, 2) == 0
+    # Length-2, sublattice matches but rcoordinate differs (0)
+    ref = Bond(1, Point(1, (1.0, 0.0), (1.0, 0.0)), Point(1, (0.0, 0.0), (0.0, 0.0)))
+    bond = Bond(1, Point(1, (1.0, 1.0), (0.0, 0.0)), Point(1, (0.0, 0.0), (0.0, 0.0)))
+    @test isparallel(ref, bond, vectors, 1) == 0
+    # Length-2, invalid translation: rcoordinate matches but displacement not a lattice vector (0)
+    ref = Bond(1, Point(1, (1.0, 0.0), (1.0, 0.0)), Point(1, (0.0, 0.0), (0.0, 0.0)))
+    bond = Bond(1, Point(1, (1.5, 0.0), (0.0, 0.0)), Point(1, (0.5, 0.0), (0.0, 0.0)))
+    @test isparallel(ref, bond, vectors, 1) == 0
+    # Length-1, valid translation (+1)
+    ref = Bond(Point(1, (0.0, 0.0), (0.0, 0.0)))
+    bond = Bond(Point(1, (2.0, 0.0), (0.0, 0.0)))
+    @test isparallel(ref, bond, vectors, 1) == +1
+    # Length-1, sublattice mismatch (0)
+    ref = Bond(Point(1, (0.0, 0.0), (0.0, 0.0)))
+    bond = Bond(Point(2, (2.0, 0.0), (0.0, 0.0)))
+    @test isparallel(ref, bond, vectors, 2) == 0
+    # Length-1, invalid translation (0)
+    ref = Bond(Point(1, (0.0, 0.0), (0.0, 0.0)))
+    bond = Bond(Point(1, (0.5, 0.0), (0.0, 0.0)))
+    @test isparallel(ref, bond, vectors, 1) == 0
+    # Length-1, kind mismatch (0)
+    ref = Bond(Point(1, (0.0, 0.0), (0.0, 0.0)))
+    bond = Bond(1, [Point(1, (2.0, 0.0), (0.0, 0.0))])
+    @test isparallel(ref, bond, vectors, 1) == 0
+    # Length mismatch: one length-1, one length-2 (0)
+    ref = Bond(1, Point(1, (1.0, 0.0), (1.0, 0.0)), Point(1, (0.0, 0.0), (0.0, 0.0)))
+    bond = Bond(Point(1, (2.0, 0.0), (0.0, 0.0)))
+    @test isparallel(ref, bond, vectors, 1) == 0
 end
 
 @testset "Lattice" begin
