@@ -685,9 +685,9 @@ Judge whether a bond is intra the unit cell of a lattice.
 @inline isintracell(bond::Bond) = all(point->isapprox(norm(point.icoordinate), 0, atol=atol, rtol=rtol), bond)
 
 """
-    isparallel(ref::Bond, bond::Bond, vectors::AbstractVector{<:AbstractVector{<:Number}}, nsublattice::Int) -> Int
+    isparallel(ref::Bond, bond::Bond, vectors::AbstractVector{<:AbstractVector{<:Number}}, nsublattice::Int; atol::Real=atol, rtol::Real=rtol) -> Int
 
-Judge whether two bonds are related by lattice translation.
+Judge whether two bonds are related by lattice translation with the given tolerance.
 
 Returns:
 - `+1`: `bond` can be obtained by translating `ref` (forward direction).
@@ -724,7 +724,7 @@ If all criteria pass, `+1` is returned; otherwise `0`.
 
     The `vectors` parameter plays an essential role here: even when two bonds have the same `rcoordinate` difference and matching sublattice sites, they may still be unrelated by lattice translation if the implied displacement between their anchor points is not a valid lattice vector (criterion 4 / criterion 3 for single-point bonds).
 """
-function isparallel(ref::Bond, bond::Bond, vectors::AbstractVector{<:AbstractVector{<:Number}}, nsublattice::Int)
+function isparallel(ref::Bond, bond::Bond, vectors::AbstractVector{<:AbstractVector{<:Number}}, nsublattice::Int; atol::Real=atol, rtol::Real=rtol)
     ref.kind == bond.kind || return 0
     len = length(ref)
     len == length(bond) || return 0
