@@ -4,14 +4,15 @@ using Base: @propagate_inbounds
 using Base.Iterators: flatten, repeated
 using HDF5: attrs, delete_object, h5open
 using Latexify: latexify
+using LinearAlgebra: norm
 using Serialization: deserialize, serialize
 using SHA: sha512
 using StaticArrays: SVector
 using TimerOutputs: @timeit, TimerOutput, time
-using ..DegreesOfFreedom: Hilbert, Term
-using ..QuantumLattices: OneOrMore, ZeroAtLeast, ZeroOrMore, id, value
-using ..QuantumOperators: LinearTransformation, Operator, OperatorPack, OperatorSet, OperatorSum, Operators, identity, idtype, operatortype
-using ..Spatials: Bond, isintracell
+using ..DegreesOfFreedom: CoordinatedIndex, Hilbert, Index, Term
+using ..QuantumLattices: OneOrMore, ZeroAtLeast, ZeroOrMore, dimension, id, value
+using ..QuantumOperators: LinearTransformation, Operator, OperatorPack, OperatorProd, OperatorSet, OperatorSum, Operators, identity, idtype, operatortype
+using ..Spatials: AbstractLattice, Bond, Neighbors, Point, bonds, isintracell, isparallel, minimumlengths, rcoordinate
 using ..Toolkit: Float, atol, efficientoperations, indent, parametertype, reparameter, rtol
 
 import ..QuantumLattices: add!, expand, expand!, reset!, str, update, update!
@@ -19,7 +20,7 @@ import ..QuantumOperators: scalartype
 import ..Spatials: dlmsave
 import ..Toolkit: contenttoshow, showasleaf, showcontent
 
-export Action, Algorithm, Assignment, Boundary, CategorizedGenerator, Data, Eager, ExpansionStyle, Formula, Frontend, Generator, LatticeModel, Lazy, OperatorGenerator, Parameters, ParametricGenerator, StaticGenerator
+export Action, Algorithm, Assignment, Boundary, CategorizedGenerator, Data, Eager, Embedding, ExpansionStyle, Formula, Frontend, Generator, LatticeModel, Lazy, OperatorGenerator, Parameters, ParametricGenerator, StaticGenerator
 export checkoptions, config, contenttocache, contenttoconfig, datatype, eager, hasoption, lazy, options, optionsinfo, plain, qlcclean, qlclean, qlcsave, qldclean, qldsave, qlload, qlsave, run!, stamp
 
 """
@@ -185,6 +186,121 @@ const plain = Boundary{()}(Float[], SVector{0, Float}[])
 @inline Base.valtype(::Type{typeof(plain)}, M::Type{<:Operators}) = M
 @inline (::typeof(plain))(operator::Operator; kwargs...) = operator
 @inline showcontent(io::IO, ::Boundary{()}) = print(io, "plain")
+
+# Embedding
+"""
+    Embedding{U<:AbstractLattice, L<:AbstractLattice, B<:Bond} <: LinearTransformation
+
+Replicate a unitcell operator to every translation-equivalent copy inside a lattice.
+
+# Fields
+- `unitcell::U` — the unitcell lattice, which must carry non-empty translation vectors.
+- `lattice::L` — the target lattice; every lattice bond must be translatable from a unitcell bond.
+- `order::Int` — neighbor-shell scope (`0` = on-site only, `1` = NN, `2` = NNN, …).
+- `lengths::Vector{Float64}` — cached neighbor lengths; `lengths[kind+1]` is the length of a `kind`th nearest neighbor of bond, computed by [`minimumlengths`](@ref).
+- `mapping::Dict{B, Vector{Tuple{B, Int}}}` — precomputed lookup. Keys are unitcell bonds in forward orientation only (for 1-point bonds) or both forward and reverse orientations (for 2-point bonds). Values are lists of `(lattice_bond, direction)` where `direction = +1` (forward match) or `-1` (reverse match) as returned by [`isparallel`](@ref).
+"""
+struct Embedding{U<:AbstractLattice, L<:AbstractLattice, B<:Bond} <: LinearTransformation
+    unitcell::U
+    lattice::L
+    order::Int
+    lengths::Vector{Float64}
+    mapping::Dict{B, Vector{Tuple{B, Int}}}
+end
+
+"""
+    Embedding(unitcell::AbstractLattice, lattice::AbstractLattice, order::Int)
+
+Construct an `Embedding` by precomputing the mapping from unitcell bonds to lattice bonds.
+
+The construction computes neighbor lengths via [`minimumlengths`](@ref), enumerates all bonds up to `order` on the unitcell and lattice, and builds a mapping using [`isparallel`](@ref). Each lattice bond is iterated and matched to exactly one unitcell bond (or its reverse). For 1-point bonds the reverse entry is skipped since `reverse(bond) == bond`.
+
+# Validation (all checked eagerly)
+- `order ≥ 0`.
+- `!isempty(unitcell.vectors)`.
+- `dimension(unitcell) == dimension(lattice)`.
+- Every lattice bond must match a unitcell bond; unmatched bonds raise an `AssertionError`.
+
+# See also
+- [`Embedding`](@ref) — the struct documentation.
+- [`isparallel`](@ref) — the bond equivalence check reused from `Spatials`.
+"""
+function Embedding(unitcell::AbstractLattice, lattice::AbstractLattice, order::Int)
+    @assert order ≥ 0 "Embedding error: order must be non-negative."
+    @assert !isempty(unitcell.vectors) "Embedding error: unitcell must have non-empty vectors."
+    @assert dimension(unitcell)==dimension(lattice) "Embedding error: mismatched space dimension."
+    lengths = minimumlengths(unitcell.coordinates, unitcell.vectors, order)
+    neighbors = Neighbors(lengths)
+    refs = bonds(unitcell, neighbors)
+    B = eltype(refs)
+    mapping = Dict{B, Vector{Tuple{B, Int}}}()
+    for bond in bonds(lattice, neighbors)
+        matched = false
+        for ref in refs
+            dir = isparallel(ref, bond, unitcell.vectors, length(unitcell))
+            if dir != 0
+                push!(get!(()->Vector{Tuple{B, Int}}(), mapping, ref), (bond, dir))
+                length(ref)==2 && push!(get!(()->Vector{Tuple{B, Int}}(), mapping, reverse(ref)), (bond, -dir))
+                matched = true
+                break
+            end
+        end
+        @assert matched "Embedding error: lattice bond $bond matches no unitcell bond."
+    end
+    return Embedding(unitcell, lattice, order, lengths, mapping)
+end
+
+"""
+    (em::Embedding)(m::Operator{<:Number, <:NTuple{2, CoordinatedIndex}}) -> OperatorSum
+
+Apply the embedding to a rank-2 operator.
+
+The bond that generated the operator is reconstructed from its `CoordinatedIndex` ids and the cached `lengths`: the spatial separation `‖r₂ − r₁‖` determines the neighbor order, and the appropriate 1-point or 2-point [`Bond`](@ref) is formed. On a cache hit in `mapping`, a copy is emitted at each matching lattice bond position:
+
+- If `direction = +1`, the operator is placed at the lattice bond as-is.
+- If `direction = -1`, the operator is placed at `reverse(bond)`.
+
+The internal index and operator value are preserved from the unitcell operator.
+
+# Errors
+- `AssertionError` if the reconstructed bond is not found in `mapping` (operator was not generated from a unitcell bond), or if the bond length does not match any neighbor order in `lengths`.
+"""
+function (em::Embedding)(m::Operator{<:Number, <:NTuple{2, CoordinatedIndex}})
+    len = norm(rcoordinate(m))
+    neighbor = findfirst(l -> isapprox(l, len; atol=atol, rtol=rtol), em.lengths)
+    isnothing(neighbor) && error("Embedding error: bond length $(len) does not match any neighbor order in lengths $(em.lengths).")
+    ref = if neighbor == 1
+        Bond(Point(m[1].index.site, m[1].rcoordinate, m[1].icoordinate))
+    else
+        Bond(
+            neighbor - 1,
+            Point(m[1].index.site, m[1].rcoordinate, m[1].icoordinate),
+            Point(m[2].index.site, m[2].rcoordinate, m[2].icoordinate)
+        )
+    end
+    @assert haskey(em.mapping, ref) "Embedding error: operator was not generated from a unitcell bond."
+    result = zero(em, m)
+    for (bond, dir) in em.mapping[ref]
+        dir < 0 && (bond = reverse(bond))
+        point₁ = bond[1]
+        point₂ = length(bond) ≥ 2 ? bond[2] : bond[1]
+        add!(result, Operator(
+            m.value,
+            CoordinatedIndex(Index(point₁.site, m[1].index.internal), point₁.rcoordinate, point₁.icoordinate),
+            CoordinatedIndex(Index(point₂.site, m[2].index.internal), point₂.rcoordinate, point₂.icoordinate)
+        ))
+    end
+    return result
+end
+
+"""
+    valtype(::Type{<:Embedding}, M::Type{<:OperatorProd}) -> Type{<:OperatorSum}
+    valtype(P::Type{<:Embedding}, M::Type{<:OperatorSet}) -> Type{<:OperatorSum}
+
+Return the concrete `OperatorSum` type that `Embedding` produces when applied to an `OperatorProd` or `OperatorSet`.
+"""
+@inline Base.valtype(::Type{<:Embedding}, M::Type{<:OperatorProd}) = OperatorSum{M, idtype(M)}
+@inline Base.valtype(P::Type{<:Embedding}, M::Type{<:OperatorSet}) = valtype(P, eltype(M))
 
 """
     LatticeModel

@@ -3,7 +3,7 @@ using QuantumLattices: ZeroAtLeast, expand, expand!, reparameter, reset!, str, u
 using QuantumLattices.DegreesOfFreedom: CoordinatedIndex, Hilbert, Index
 using QuantumLattices.Frameworks
 using QuantumLattices.QuantumOperators: LinearFunction, Operator, Operators, idtype, scalartype
-using QuantumLattices.Spatials: BrillouinZone, Lattice, bonds, dlmsave, isintracell, periods
+using QuantumLattices.Spatials: Bond, BrillouinZone, Lattice, azimuth, bonds, dlmsave, isintracell, periods, rcoordinate
 using QuantumLattices.QuantumSystems: Fock, FockIndex, Hopping, Onsite, 𝕔⁺, 𝕔
 using StaticArrays: SVector, SMatrix, @SMatrix
 
@@ -266,6 +266,18 @@ end
     @test LinearFunction(identity)(cgen) == cgen.operators
     @test reset!(empty(cat), LinearFunction(identity), cgen) == cat
     @test update!(deepcopy(cat), LinearFunction(identity), update!(deepcopy(cgen), μ=1.5))|>expand ≈ tops + μops*1.5
+end
+
+@testset "Embedding" begin
+    unitcell = Lattice([0.0, 0.0], [0.0, √3/3]; vectors=[[1.0, 0.0], [0.5, √3/2]])
+    lattice = Lattice(unitcell, (4, 3), ('P', 'P'))
+    t₁ = Hopping(:t₁, rand(), 1)
+    t₂ = Hopping(:t₂, rand(), 2)
+    λ₂ = Hopping(:λ₂, rand(), 2; amplitude=bond::Bond->1im*cos(3*azimuth(rcoordinate(bond)))*(-1)^(bond[1].site%2))
+    Δ = Onsite(:Δ, rand(); amplitude=bond::Bond->(-1)^(only(bond).site%2))
+    opsᵤ = expand(OperatorGenerator(bonds(unitcell, 2), Hilbert(Fock{:f}(1, 2), length(unitcell)), (t₁, t₂, λ₂, Δ)))
+    ops = expand(OperatorGenerator(bonds(lattice, 2), Hilbert(Fock{:f}(1, 2), length(lattice)), (t₁, t₂, λ₂, Δ)))
+    @test ops == Embedding(unitcell, lattice, 2)(opsᵤ)
 end
 
 struct TBA{F<:Formula} <: Frontend
