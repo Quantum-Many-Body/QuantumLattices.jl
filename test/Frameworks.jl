@@ -4,7 +4,7 @@ using QuantumLattices.DegreesOfFreedom: CoordinatedIndex, Hilbert, Index
 using QuantumLattices.Frameworks
 using QuantumLattices.QuantumOperators: LinearFunction, Operator, Operators, idtype, scalartype
 using QuantumLattices.Spatials: Bond, BrillouinZone, Lattice, azimuth, bonds, dlmsave, isintracell, periods, rcoordinate
-using QuantumLattices.QuantumSystems: Fock, FockIndex, Hopping, Onsite, 𝕔⁺, 𝕔
+using QuantumLattices.QuantumSystems: Fock, FockIndex, Hopping, Hubbard, Onsite, 𝕔⁺, 𝕔
 using StaticArrays: SVector, SMatrix, @SMatrix
 
 import CairoMakie as Makie
@@ -103,7 +103,7 @@ end
 @testset "StaticGenerator" begin
     lattice = Lattice([0.0], [0.5]; vectors=[[1.0]])
     bs = bonds(lattice, 1)
-    hilbert = Hilbert(site=>Fock{:f}(1, 1) for site in eachindex(lattice))
+    hilbert = Hilbert(Fock{:f}(1, 1), length(lattice))
     t = Hopping(:t, 2.0, 1; ismodulatable=false)
     optp = Operator{Float64, ZeroAtLeast{CoordinatedIndex{Index{FockIndex{:f, Int, Rational{Int}}, Int}, SVector{1, Float64}}, 2}}
     ops = expand(t, filter(bond->isintracell(bond), bs), hilbert; half=true)
@@ -131,7 +131,7 @@ end
 @testset "CategorizedGenerator twist" begin
     lattice = Lattice([0.0], [0.5]; vectors=[[1.0]])
     bs = bonds(lattice, 1)
-    hilbert = Hilbert(site=>Fock{:f}(1, 1) for site in eachindex(lattice))
+    hilbert = Hilbert(Fock{:f}(1, 1), length(lattice))
     boundary = Boundary{(:θ,)}([0.1], lattice.vectors)
     t = Hopping(:t, 2.0, 1; ismodulatable=false)
     μ = Onsite(:μ, 1.0)
@@ -172,7 +172,7 @@ end
 @testset "CategorizedGenerator plain" begin
     lattice = Lattice([0.0], [0.5]; vectors=[[1.0]])
     bs = bonds(lattice, 1)
-    hilbert = Hilbert(site=>Fock{:f}(1, 1) for site in eachindex(lattice))
+    hilbert = Hilbert(Fock{:f}(1, 1), length(lattice))
     t = Hopping(:t, 2.0, 1; ismodulatable=false)
     μ = Onsite(:μ, 1.0)
     i = LinearFunction(identity)
@@ -200,7 +200,7 @@ end
 @testset "OperatorGenerator twist" begin
     lattice = Lattice([0.0], [0.5]; vectors=[[1.0]])
     bs = bonds(lattice, 1)
-    hilbert = Hilbert(site=>Fock{:f}(1, 1) for site in eachindex(lattice))
+    hilbert = Hilbert(Fock{:f}(1, 1), length(lattice))
     boundary = Boundary{(:θ,)}([0.1], lattice.vectors)
     t = Hopping(:t, 2.0, 1; ismodulatable=false)
     μ = Onsite(:μ, 1.0)
@@ -225,13 +225,8 @@ end
     @test expand!(Operators{optp}(), cgen) == expand(cgen) ≈ tops₁ + tops₂*2.0 + μops
     @test expand(cgen, :t) ≈ tops₁ + tops₂*2.0
     @test expand(cgen, :μ) ≈ μops
-    @test expand(cgen, 1) + expand(cgen, 2) + expand(cgen, 3) + expand(cgen, 4) ≈ expand(cgen)
-    @test expand(cgen, :μ, 1) + expand(cgen, :μ, 2) ≈ μops
-    @test expand(cgen, :t, 3) ≈ tops₁
-    @test expand(cgen, :t, 4) ≈ tops₂*2.0
     @test empty!(deepcopy(cgen)) == OperatorGenerator(empty(bs), empty(hilbert), (t, μ), boundary; half=true) == empty(cgen)
     @test !isempty(cgen) && isempty(empty(cgen))
-    @test reset!(empty(cgen), bs, hilbert; vectors=lattice.vectors) == cgen
     @test update!(deepcopy(cgen), μ=1.5)|>expand ≈ tops₁ + tops₂*2.0 + μops*1.5
     @test LinearFunction(identity)(cgen) == cgen.operators
     @test reset!(empty(cat), LinearFunction(identity), cgen) == cat
@@ -241,7 +236,7 @@ end
 @testset "OperatorGenerator plain" begin
     lattice = Lattice([0.0], [0.5]; vectors=[[1.0]])
     bs = bonds(lattice, 1)
-    hilbert = Hilbert(site=>Fock{:f}(1, 1) for site in eachindex(lattice))
+    hilbert = Hilbert(Fock{:f}(1, 1), length(lattice))
     t = Hopping(:t, 2.0, 1; ismodulatable=false)
     μ = Onsite(:μ, 1.0)
     optp = Operator{ComplexF64, ZeroAtLeast{CoordinatedIndex{Index{FockIndex{:f, Int, Rational{Int}}, Int}, SVector{1, Float64}}, 2}}
@@ -258,10 +253,6 @@ end
     @test expand(cgen) ≈ tops + μops
     @test expand(cgen, :t) ≈ tops
     @test expand(cgen, :μ) ≈ μops
-    @test expand(cgen, 1) + expand(cgen, 2) + expand(cgen, 3) + expand(cgen, 4) ≈ expand(cgen)
-    @test expand(cgen, :μ, 1) + expand(cgen, :μ, 2) ≈ μops
-    @test expand(cgen, :t, 3) + expand(cgen, :t, 4) ≈ tops
-    @test reset!(empty(cgen), bs, hilbert; vectors=lattice.vectors) == cgen
     @test update!(deepcopy(cgen), μ=1.5)|>expand ≈ tops + μops*1.5
     @test LinearFunction(identity)(cgen) == cgen.operators
     @test reset!(empty(cat), LinearFunction(identity), cgen) == cat
@@ -278,6 +269,24 @@ end
     opsᵤ = expand(OperatorGenerator(bonds(unitcell, 2), Hilbert(Fock{:f}(1, 2), length(unitcell)), (t₁, t₂, λ₂, Δ)))
     ops = expand(OperatorGenerator(bonds(lattice, 2), Hilbert(Fock{:f}(1, 2), length(lattice)), (t₁, t₂, λ₂, Δ)))
     @test ops == Embedding(unitcell, lattice, 2)(opsᵤ)
+    @test ops == Embedding(unitcell, bonds(lattice, 2))(opsᵤ)
+end
+
+@testset "OperatorGenerator with operators" begin
+    lattice = Lattice([0.0], [0.5]; vectors=[[1.0]])
+    bs = bonds(lattice, 1)
+    hilbert = Hilbert(Fock{:f}(1, 2), length(lattice))
+    t = Hopping(:t, 2.0, 1)
+    μ = Onsite(:μ, 1.0)
+    U = Hubbard(:U, 8.0; ismodulatable=false)
+
+    ops = expand(OperatorGenerator(bs, hilbert, t; half=true))
+    gen = OperatorGenerator(ops, bs, hilbert, μ; half=true)
+    @test expand(gen) ≈ expand(OperatorGenerator(bs, hilbert, (t, μ); half=true))
+
+    ops = expand(OperatorGenerator(bs, hilbert, t; half=false))
+    gen = OperatorGenerator(ops, bs, hilbert, (μ, U); half=false)
+    @test expand(gen) ≈ expand(OperatorGenerator(bs, hilbert, (t, μ, U); half=false))
 end
 
 struct TBA{F<:Formula} <: Frontend

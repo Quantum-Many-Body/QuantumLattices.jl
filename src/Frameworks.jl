@@ -189,65 +189,90 @@ const plain = Boundary{()}(Float[], SVector{0, Float}[])
 
 # Embedding
 """
-    Embedding{U<:AbstractLattice, L<:AbstractLattice, B<:Bond} <: LinearTransformation
+    Embedding{U<:AbstractLattice, B<:Bond} <: LinearTransformation
 
-Replicate a unitcell operator to every translation-equivalent copy inside a lattice.
+Replicate a unitcell operator to every translation-equivalent copy inside a set of bonds.
 
 # Fields
-- `unitcell::U` — the unitcell lattice, which must carry non-empty translation vectors.
-- `lattice::L` — the target lattice; every lattice bond must be translatable from a unitcell bond.
-- `order::Int` — neighbor-shell scope (`0` = on-site only, `1` = NN, `2` = NNN, …).
-- `lengths::Vector{Float64}` — cached neighbor lengths; `lengths[kind+1]` is the length of a `kind`th nearest neighbor of bond, computed by [`minimumlengths`](@ref).
+- `unitcell::U` — the unitcell, which must carry non-empty translation vectors.
+- `lengths::Vector{Float64}` — cached neighbor lengths.
 - `mapping::Dict{B, Vector{Tuple{B, Int}}}` — precomputed lookup. Keys are unitcell bonds in forward orientation only (for 1-point bonds) or both forward and reverse orientations (for 2-point bonds). Values are lists of `(lattice_bond, direction)` where `direction = +1` (forward match) or `-1` (reverse match) as returned by [`isparallel`](@ref).
 """
-struct Embedding{U<:AbstractLattice, L<:AbstractLattice, B<:Bond} <: LinearTransformation
+struct Embedding{U<:AbstractLattice, B<:Bond} <: LinearTransformation
     unitcell::U
-    lattice::L
-    order::Int
     lengths::Vector{Float64}
     mapping::Dict{B, Vector{Tuple{B, Int}}}
 end
 
 """
-    Embedding(unitcell::AbstractLattice, lattice::AbstractLattice, order::Int)
+    Embedding(unitcell::AbstractLattice, bonds::AbstractVector{<:Bond}, lengths::AbstractVector{<:Real})
 
-Construct an `Embedding` by precomputing the mapping from unitcell bonds to lattice bonds.
+Construct an `Embedding` by precomputing the mapping from unitcell bonds to the target bonds.
 
-The construction computes neighbor lengths via [`minimumlengths`](@ref), enumerates all bonds up to `order` on the unitcell and lattice, and builds a mapping using [`isparallel`](@ref). Each lattice bond is iterated and matched to exactly one unitcell bond (or its reverse). For 1-point bonds the reverse entry is skipped since `reverse(bond) == bond`.
+`lengths` must be precomputed (e.g., from [`minimumlengths`](@ref) or derived from operators).
 
-# Validation (all checked eagerly)
-- `order ≥ 0`.
+# Validation
 - `!isempty(unitcell.vectors)`.
-- `dimension(unitcell) == dimension(lattice)`.
-- Every lattice bond must match a unitcell bond; unmatched bonds raise an `AssertionError`.
-
-# See also
-- [`Embedding`](@ref) — the struct documentation.
-- [`isparallel`](@ref) — the bond equivalence check reused from `Spatials`.
+- Every target bond must match a unitcell bond; unmatched bonds raise an `AssertionError`.
 """
-function Embedding(unitcell::AbstractLattice, lattice::AbstractLattice, order::Int)
-    @assert order ≥ 0 "Embedding error: order must be non-negative."
+function Embedding(unitcell::AbstractLattice, targets::AbstractVector{<:Bond}, lengths::AbstractVector{<:Real})
     @assert !isempty(unitcell.vectors) "Embedding error: unitcell must have non-empty vectors."
-    @assert dimension(unitcell)==dimension(lattice) "Embedding error: mismatched space dimension."
-    lengths = minimumlengths(unitcell.coordinates, unitcell.vectors, order)
     neighbors = Neighbors(lengths)
     refs = bonds(unitcell, neighbors)
     B = eltype(refs)
     mapping = Dict{B, Vector{Tuple{B, Int}}}()
-    for bond in bonds(lattice, neighbors)
+    for ref in refs
+        mapping[ref] = Vector{Tuple{B, Int}}()
+        length(ref)==2 && (mapping[reverse(ref)] = Vector{Tuple{B, Int}}())
+    end
+    for bond in targets
         matched = false
         for ref in refs
             dir = isparallel(ref, bond, unitcell.vectors, length(unitcell))
             if dir != 0
-                push!(get!(()->Vector{Tuple{B, Int}}(), mapping, ref), (bond, dir))
-                length(ref)==2 && push!(get!(()->Vector{Tuple{B, Int}}(), mapping, reverse(ref)), (bond, -dir))
+                push!(mapping[ref], (bond, dir))
+                length(ref)==2 && push!(mapping[reverse(ref)], (bond, -dir))
                 matched = true
                 break
             end
         end
-        @assert matched "Embedding error: lattice bond $bond matches no unitcell bond."
+        @assert matched "Embedding error: bond $bond matches no unitcell bond."
     end
-    return Embedding(unitcell, lattice, order, lengths, mapping)
+    return Embedding(unitcell, lengths, mapping)
+end
+
+"""
+    Embedding(unitcell::AbstractLattice, bonds::AbstractVector{<:Bond})
+
+Construct an `Embedding` without precomputed lengths.
+
+Derives the neighbor order from the maximum [`kind`](@ref) among the bonds, then computes lengths via [`minimumlengths`](@ref).
+"""
+function Embedding(unitcell::AbstractLattice, bonds::AbstractVector{<:Bond})
+    order = maximum(bond->bond.kind, bonds)
+    lengths = minimumlengths(unitcell.coordinates, unitcell.vectors, order)
+    return Embedding(unitcell, bonds, lengths)
+end
+
+"""
+    Embedding(unitcell::AbstractLattice, lattice::AbstractLattice, lengths::AbstractVector{<:Real})
+
+Legacy constructor: takes a lattice and precomputed lengths, generates bonds via [`bonds`](@ref)(lattice, [`Neighbors`](@ref)(lattice, lengths)), and delegates to the bonds-based constructor.
+"""
+@inline function Embedding(unitcell::AbstractLattice, lattice::AbstractLattice, lengths::AbstractVector{<:Real})
+    return Embedding(unitcell, bonds(lattice, Neighbors(lengths)), lengths)
+end
+
+"""
+    Embedding(unitcell::AbstractLattice, lattice::AbstractLattice, order::Int)
+
+Legacy constructor: computes lengths from `order` via [`minimumlengths`](@ref), then delegates to the lattice+lengths constructor.
+"""
+function Embedding(unitcell::AbstractLattice, lattice::AbstractLattice, order::Int)
+    @assert order ≥ 0 "Embedding error: order must be non-negative."
+    @assert dimension(unitcell)==dimension(lattice) "Embedding error: mismatched space dimension."
+    lengths = minimumlengths(unitcell.coordinates, unitcell.vectors, order)
+    return Embedding(unitcell, lattice, lengths)
 end
 
 """
@@ -255,15 +280,15 @@ end
 
 Apply the embedding to a rank-2 operator.
 
-The bond that generated the operator is reconstructed from its `CoordinatedIndex` ids and the cached `lengths`: the spatial separation `‖r₂ − r₁‖` determines the neighbor order, and the appropriate 1-point or 2-point [`Bond`](@ref) is formed. On a cache hit in `mapping`, a copy is emitted at each matching lattice bond position:
+The bond that generated the operator is reconstructed from its `CoordinatedIndex` ids and the cached `lengths`: the spatial separation `‖r₂ − r₁‖` determines the neighbor index, and the appropriate 1-point or 2-point [`Bond`](@ref) is formed. On a cache hit in `mapping`, a copy is emitted at each matching bond position:
 
-- If `direction = +1`, the operator is placed at the lattice bond as-is.
+- If `direction = +1`, the operator is placed at the bond as-is.
 - If `direction = -1`, the operator is placed at `reverse(bond)`.
 
 The internal index and operator value are preserved from the unitcell operator.
 
 # Errors
-- `AssertionError` if the reconstructed bond is not found in `mapping` (operator was not generated from a unitcell bond), or if the bond length does not match any neighbor order in `lengths`.
+- `AssertionError` if the reconstructed bond is not found in `mapping` (operator was not generated from a unitcell bond), or if the bond length does not match any neighbor length in `lengths`.
 """
 function (em::Embedding)(m::Operator{<:Number, <:NTuple{2, CoordinatedIndex}})
     len = norm(rcoordinate(m))
@@ -882,6 +907,35 @@ function expansion(terms::ZeroAtLeast{Term}, bonds::Vector{<:Bond}, hilbert::Hil
 end
 
 """
+    OperatorGenerator(
+        operators::OperatorSet, bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term};
+        half::Bool=false
+    )
+
+Construct an operator generator combining pre-computed operators with term-based operators.
+
+Here, `operators` are treated as static operators (e.g., from [`Embedding`](@ref)) while `terms` provide parameterized operators.
+
+!!! note
+    Only `boundary=plain` is supported because pre-computed operators are added wholesale to `constops` without distinguishing boundary-crossing operators — a distinction that would require a key (like `id(term)`) which isn't available.
+"""
+function OperatorGenerator(
+    operators::OperatorSet, bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term};
+    half::Bool=false
+)
+    terms = OneOrMore(terms)
+    constops = Operators{promote_type(eltype(operators), mapreduce(term->operatortype(eltype(bonds), typeof(hilbert), typeof(term)), promote_type, terms))}()
+    add!(constops, operators)
+    emptybonds = eltype(bonds)[]
+    map(term->expand!(constops, term, term.ismodulatable ? emptybonds : bonds, hilbert; half=half), terms)
+    alterops = NamedTuple{map(id, terms)}(expansion(terms, emptybonds, bonds, hilbert, scalartype(constops); half=half))
+    boundops = NamedTuple{map(id, terms)}(expansion(terms, emptybonds, hilbert, plain, scalartype(constops); half=half))
+    parameters = NamedTuple{map(id, terms)}(map(value, terms))
+    cat = CategorizedGenerator(constops, alterops, boundops, parameters, plain)
+    return OperatorGenerator(cat, bonds, hilbert, terms, half)
+end
+
+"""
     Parameters(gen::OperatorGenerator) -> Parameters
 
 Get the parameters of an `OperatorGenerator`.
@@ -916,36 +970,9 @@ function Base.empty!(gen::OperatorGenerator)
 end
 
 """
-    reset!(gen::OperatorGenerator, bonds::AbstractVector{<:Bond}, hilbert::Hilbert; vectors::AbstractVector{<:AbstractVector}=gen.operators.boundary.vectors) -> OperatorGenerator
-
-Reset an operator generator by a new lattice and the corresponding hilbert space.
-"""
-function reset!(gen::OperatorGenerator, bonds::AbstractVector{<:Bond}, hilbert::Hilbert; vectors::AbstractVector{<:AbstractVector}=gen.operators.boundary.vectors)
-    append!(empty!(gen.bonds), bonds)
-    merge!(empty!(gen.hilbert), hilbert)
-    empty!(gen.operators)
-    reset!(gen.operators.boundary, vectors)
-    emptybonds = eltype(gen.bonds)[]
-    innerbonds, boundbonds = if gen.operators.boundary == plain
-        gen.bonds, eltype(gen.bonds)[]
-    else
-        filter(bond->isintracell(bond), gen.bonds), filter(bond->!isintracell(bond), gen.bonds)
-    end
-    map(term->expand!(gen.operators.constops, term, term.ismodulatable ? emptybonds : innerbonds, gen.hilbert; half=gen.half), gen.terms)
-    map(term->expand!(getfield(gen.operators.alterops, id(term)), one(term), term.ismodulatable ? innerbonds : emptybonds, gen.hilbert; half=gen.half), gen.terms)
-    map(term->map!(gen.operators.boundary, expand!(getfield(gen.operators.boundops, id(term)), one(term), boundbonds, gen.hilbert; half=gen.half)), gen.terms)
-    return gen
-end
-
-"""
     expand(gen::OperatorGenerator, name::Symbol) -> Operators
-    expand(gen::OperatorGenerator, i::Int) -> Operators
-    expand(gen::OperatorGenerator, name::Symbol, i::Int) -> Operators
 
-Expand an operator generator to get:
-1) the operators of a specific term;
-2) the operators on a specific bond;
-3) the operators of a specific term on a specific bond.
+Expand an operator generator to get the operators of a specific term.
 """
 function expand(gen::OperatorGenerator, name::Symbol)
     result = zero(valtype(gen))
@@ -959,20 +986,6 @@ function expand(gen::OperatorGenerator, name::Symbol)
             end
         end
     end
-    return result
-end
-function expand(gen::OperatorGenerator, i::Int)
-    bond = gen.bonds[i]
-    result = zero(valtype(gen))
-    map(term->expand!(result, term, bond, gen.hilbert; half=gen.half), gen.terms)
-    isintracell(bond) || map!(gen.operators.boundary, result)
-    return result
-end
-function expand(gen::OperatorGenerator, name::Symbol, i::Int)
-    bond = gen.bonds[i]
-    term = get(gen.terms, Val(name))
-    result = expand!(zero(valtype(gen)), term, bond, gen.hilbert; half=gen.half)
-    isintracell(bond) || map!(gen.operators.boundary, result)
     return result
 end
 @inline @generated function Base.get(terms::ZeroAtLeast{Term}, ::Val{Name}) where Name
