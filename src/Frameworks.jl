@@ -246,7 +246,7 @@ end
 
 Construct an `Embedding` without precomputed lengths.
 
-Derives the neighbor order from the maximum [`kind`](@ref) among the bonds, then computes lengths via [`minimumlengths`](@ref).
+Derives the neighbor order from the maximum bond kind, then computes lengths via [`minimumlengths`](@ref).
 """
 function Embedding(unitcell::AbstractLattice, bonds::AbstractVector{<:Bond})
     order = maximum(bond->bond.kind, bonds)
