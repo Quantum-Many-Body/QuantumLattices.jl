@@ -280,12 +280,16 @@ end
     μ = Onsite(:μ, 1.0)
     U = Hubbard(:U, 8.0; ismodulatable=false)
 
+    ops = expand(OperatorGenerator(bs, hilbert, (t, μ, U)))
+    gen = OperatorGenerator(ops, bs, hilbert, ())
+    @test expand(gen) ≈ ops
+
     ops = expand(OperatorGenerator(bs, hilbert, t; half=true))
-    gen = OperatorGenerator(ops, bs, hilbert, μ; half=true)
+    gen = Generator(ops, bs, hilbert, μ; half=true)
     @test expand(gen) ≈ expand(OperatorGenerator(bs, hilbert, (t, μ); half=true))
 
     ops = expand(OperatorGenerator(bs, hilbert, t; half=false))
-    gen = OperatorGenerator(ops, bs, hilbert, (μ, U); half=false)
+    gen = LatticeModel(ops, bs, hilbert, (μ, U); half=false)
     @test expand(gen) ≈ expand(OperatorGenerator(bs, hilbert, (t, μ, U); half=false))
 end
 

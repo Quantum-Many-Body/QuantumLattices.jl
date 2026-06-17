@@ -13,7 +13,7 @@ using ..DegreesOfFreedom: CoordinatedIndex, Hilbert, Index, Term
 using ..QuantumLattices: OneOrMore, ZeroAtLeast, ZeroOrMore, dimension, id, value
 using ..QuantumOperators: LinearTransformation, Operator, OperatorPack, OperatorProd, OperatorSet, OperatorSum, Operators, identity, idtype, operatortype
 using ..Spatials: AbstractLattice, Bond, Neighbors, Point, bonds, isintracell, isparallel, minimumlengths, rcoordinate
-using ..Toolkit: Float, atol, efficientoperations, indent, parametertype, reparameter, rtol
+using ..Toolkit: Float, atol, efficientoperations, parametertype, reparameter, rtol
 
 import ..QuantumLattices: add!, expand, expand!, reset!, str, update, update!
 import ..QuantumOperators: scalartype
@@ -734,6 +734,7 @@ end
     push!(exprs, :(return optp))
     return Expr(:block, exprs...)
 end
+@inline expand(cat::CategorizedGenerator{<:Any, <:Any, @NamedTuple{}, @NamedTuple{}, @NamedTuple{}}, ::Lazy) = cat.constops
 function expand(cat::CategorizedGenerator, ::Lazy)
     params = (one(eltype(cat.parameters)), values(cat.parameters, keys(cat.alterops)|>Val)..., values(cat.parameters, keys(cat.alterops)|>Val)...)
     counts = (length(cat.constops), map(length, values(cat.alterops))..., map(length, values(cat.boundops))...)
@@ -857,8 +858,8 @@ struct OperatorGenerator{V<:Operators, CG<:CategorizedGenerator{V}, B<:Bond, H<:
     hilbert::H
     terms::TS
     half::Bool
-    function OperatorGenerator(operators::CategorizedGenerator, bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term}, half::Bool)
-        terms = OneOrMore(terms)
+    function OperatorGenerator(operators::CategorizedGenerator, bonds::Vector{<:Bond}, hilbert::Hilbert, terms::ZeroOrMore{Term}, half::Bool)
+        terms = ZeroOrMore(terms)
         new{valtype(operators), typeof(operators), eltype(bonds), typeof(hilbert), typeof(terms)}(operators, bonds, hilbert, terms, half)
     end
 end
@@ -907,10 +908,7 @@ function expansion(terms::ZeroAtLeast{Term}, bonds::Vector{<:Bond}, hilbert::Hil
 end
 
 """
-    OperatorGenerator(
-        operators::OperatorSet, bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term};
-        half::Bool=false
-    )
+    OperatorGenerator(operators::OperatorSet, bonds::Vector{<:Bond}, hilbert::Hilbert, terms::ZeroOrMore{Term}; half::Bool=false)
 
 Construct an operator generator combining pre-computed operators with term-based operators.
 
@@ -919,11 +917,11 @@ Here, `operators` are treated as static operators (e.g., from [`Embedding`](@ref
 !!! note
     Only `boundary=plain` is supported because pre-computed operators are added wholesale to `constops` without distinguishing boundary-crossing operators — a distinction that would require a key (like `id(term)`) which isn't available.
 """
-function OperatorGenerator(
-    operators::OperatorSet, bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term};
-    half::Bool=false
-)
-    terms = OneOrMore(terms)
+@inline function OperatorGenerator(operators::OperatorSet, bonds::Vector{<:Bond}, hilbert::Hilbert, ::Tuple{}; half::Bool=false)
+    return OperatorGenerator(CategorizedGenerator(operators, NamedTuple(), NamedTuple(), NamedTuple(), plain), bonds, hilbert, (), half)
+end
+function OperatorGenerator(operators::OperatorSet, bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term}; half::Bool=false)
+    terms = ZeroOrMore(terms)
     constops = Operators{promote_type(eltype(operators), mapreduce(term->operatortype(eltype(bonds), typeof(hilbert), typeof(term)), promote_type, terms))}()
     add!(constops, operators)
     emptybonds = eltype(bonds)[]
@@ -1022,6 +1020,7 @@ Reset a categorized generator by its source operator generator of (representatio
     Generator(constops, alterops::NamedTuple, boundops::NamedTuple, parameters::Parameters, boundary::Boundary) -> CategorizedGenerator
     Generator(ops::CategorizedGenerator{<:Operators}, bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term}, half::Bool) -> OperatorGenerator
     Generator(bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term}, boundary::Boundary=plain; half::Bool=false) -> OperatorGenerator
+    Generator(operators::OperatorSet, bonds::Vector{<:Bond}, hilbert::Hilbert, terms::ZeroOrMore{Term}; half::Bool=false) -> OperatorGenerator
 
 Factory constructor for `Generator` subtypes.
 
@@ -1032,6 +1031,7 @@ Unlike [`LatticeModel`](@ref), this factory only constructs `Generator` subtypes
 @inline Generator(constops, alterops::NamedTuple, boundops::NamedTuple, parameters::Parameters, boundary::Boundary) = CategorizedGenerator(constops, alterops, boundops, parameters, boundary)
 @inline Generator(ops::CategorizedGenerator{<:Operators}, bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term}, half::Bool) = OperatorGenerator(ops, bonds, hilbert, terms, half)
 @inline Generator(bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term}, boundary::Boundary=plain; half::Bool=false) = OperatorGenerator(bonds, hilbert, terms, boundary; half=half)
+@inline Generator(operators::OperatorSet, bonds::Vector{<:Bond}, hilbert::Hilbert, terms::ZeroOrMore{Term}; half::Bool=false) = OperatorGenerator(operators, bonds, hilbert, terms; half=half)
 
 """
     LatticeModel(expression::Function, parameters::Parameters) -> Formula
@@ -1039,6 +1039,7 @@ Unlike [`LatticeModel`](@ref), this factory only constructs `Generator` subtypes
     LatticeModel(constops, alterops::NamedTuple, boundops::NamedTuple, parameters::Parameters, boundary::Boundary) -> CategorizedGenerator
     LatticeModel(ops::CategorizedGenerator{<:Operators}, bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term}, half::Bool) -> OperatorGenerator
     LatticeModel(bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term}, boundary::Boundary=plain; half::Bool=false) -> OperatorGenerator
+    LatticeModel(operators::OperatorSet, bonds::Vector{<:Bond}, hilbert::Hilbert, terms::ZeroOrMore{Term}; half::Bool=false) -> OperatorGenerator
 
 Unified factory constructor for `LatticeModel` subtypes.
 
@@ -1050,6 +1051,7 @@ Dispatches on the argument types to construct the appropriate concrete represent
 @inline LatticeModel(constops, alterops::NamedTuple, boundops::NamedTuple, parameters::Parameters, boundary::Boundary) = CategorizedGenerator(constops, alterops, boundops, parameters, boundary)
 @inline LatticeModel(ops::CategorizedGenerator{<:Operators}, bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term}, half::Bool) = OperatorGenerator(ops, bonds, hilbert, terms, half)
 @inline LatticeModel(bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term}, boundary::Boundary=plain; half::Bool=false) = OperatorGenerator(bonds, hilbert, terms, boundary; half=half)
+@inline LatticeModel(operators::OperatorSet, bonds::Vector{<:Bond}, hilbert::Hilbert, terms::ZeroOrMore{Term}; half::Bool=false) = OperatorGenerator(operators, bonds, hilbert, terms; half=half)
 
 """
     Frontend <: LatticeModel
