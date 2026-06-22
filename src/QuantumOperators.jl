@@ -202,7 +202,7 @@ abstract type OperatorPack{V, I} <: QuantumOperator end
     return fulltype(M, promoteparameters(parameterpairs(M₁), parameterpairs(M₂)))
 end
 function Base.show(io::IO, m::OperatorPack)
-    ndecimal = get(io, :ndecimal, 10)
+    ndecimal = get(io, :ndecimal, 14)
     print(io, nameof(typeof(m)), "(", str(value(m); ndecimal=ndecimal))
     mid = id(m)
     if mid isa Tuple

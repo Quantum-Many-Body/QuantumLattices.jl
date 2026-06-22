@@ -6,10 +6,10 @@ using LinearAlgebra: cross, det, dot, norm
 using NearestNeighbors: KDTree, inrange, knn
 using Printf: @sprintf
 using StaticArrays: MVector, SVector
-using ..QuantumLattices: OneAtLeast, OneOrMore, ZeroAtLeast, str
+using ..QuantumLattices: OneAtLeast, OneOrMore, ZeroAtLeast
 using ..Toolkit: CompositeDict, DirectProductedVectorSpace, Float, Segment, VectorSpace, VectorSpaceDirectProducted, VectorSpaceDirectSummed, VectorSpaceEnumerative, atol, concatenate, efficientoperations, getcontent, indent, rtol, subscript
 
-import ..QuantumLattices: decompose, dimension, expand, matrix, rank, shape
+import ..QuantumLattices: decompose, dimension, expand, matrix, rank, shape, str
 import ..QuantumOperators: scalartype
 import ..Toolkit: VectorSpaceStyle, contentnames
 
@@ -558,7 +558,7 @@ end
 @inline Base.:(==)(point₁::Point, point₂::Point) = ==(efficientoperations, point₁, point₂)
 @inline Base.isequal(point₁::Point, point₂::Point) = isequal(efficientoperations, point₁, point₂)
 @inline function Base.show(io::IO, p::Point)
-    ndecimal = get(io, :ndecimal, 10)
+    ndecimal = get(io, :ndecimal, 14)
     print(io, "Point(", p.site, ", ", str(p.rcoordinate; ndecimal=ndecimal), ", ", str(p.icoordinate; ndecimal=ndecimal), ")")
 end
 
@@ -631,6 +631,16 @@ Construct a bond.
 """
 @inline Bond(point::Point) = Bond(0, [point])
 @inline Bond(kind, point₁::Point, point₂::Point, points::Point...) = Bond(kind, [point₁, point₂, points...])
+
+"""
+    str(bond::Bond; ndecimal::Int=14) -> String
+
+Convert a bond to a deterministic string with coordinates rounded to `ndecimal` decimal places。
+"""
+@inline function str(bond::Bond; ndecimal::Int=14)
+    points = map(p->Point(p.site, round.(p.rcoordinate; digits=ndecimal), round.(p.icoordinate; digits=ndecimal)), bond.points)
+    return sprint(show, Bond(bond.kind, points); context=:ndecimal=>ndecimal)
+end
 
 """
     getindex(bond::Bond, i::Integer) -> Point
@@ -764,7 +774,7 @@ abstract type AbstractLattice{N, D<:Number, M} <: AbstractVector{SVector{N, D}} 
 @inline Base.:(==)(lattice₁::AbstractLattice, lattice₂::AbstractLattice) = ==(efficientoperations, lattice₁, lattice₂)
 @inline Base.isequal(lattice₁::AbstractLattice, lattice₂::AbstractLattice) = isequal(efficientoperations, lattice₁, lattice₂)
 function Base.show(io::IO, lattice::AbstractLattice)
-    ndecimal = get(io, :ndecimal, 10)
+    ndecimal = get(io, :ndecimal, 14)
     print(io, nameof(typeof(lattice)), "(")
     for i in 1:length(lattice)
         i > 1 && print(io, ", ")
@@ -783,7 +793,7 @@ function Base.show(io::IO, lattice::AbstractLattice)
     print(io, ")")
 end
 function Base.show(io::IO, ::MIME"text/plain", lattice::AbstractLattice)
-    ndecimal = get(io, :ndecimal, 10)
+    ndecimal = get(io, :ndecimal, 14)
     print(io, nameof(typeof(lattice)), "(", getcontent(lattice, :name), ")")
     len = length(lattice)
     if len > 0
@@ -843,6 +853,13 @@ Get the ith coordinate.
 @inline Base.getindex(lattice::AbstractLattice, i::Integer) = SVector{dimension(lattice), scalartype(lattice)}(ntuple(j->lattice.coordinates[j, i], Val(dimension(lattice))))
 
 """
+    volume(lattice::AbstractLattice) -> Number
+
+Get the volume of the unit cell of a lattice.
+"""
+@inline volume(lattice::AbstractLattice) = volume(getcontent(lattice, :vectors))
+
+"""
     reciprocals(lattice::AbstractLattice) -> Vector{<:SVector}
 
 Get the reciprocal translation vectors of the dual lattice.
@@ -850,11 +867,25 @@ Get the reciprocal translation vectors of the dual lattice.
 @inline reciprocals(lattice::AbstractLattice) = reciprocals(getcontent(lattice, :vectors))
 
 """
+    tile(lattice::AbstractLattice, translations) -> AbstractMatrix{<:Number}
+
+Tile a lattice into a supercluster by the given translations.
+"""
+@inline tile(lattice::AbstractLattice, translations) = tile(getcontent(lattice, :coordinates), getcontent(lattice, :vectors), translations)
+
+"""
+    minimumlengths(lattice::AbstractLattice, nneighbor::Integer=1; coordination::Integer=12) -> Vector{Float}
+
+Get the lowest several minimum bond lengths of a lattice.
+"""
+@inline minimumlengths(lattice::AbstractLattice, nneighbor::Integer=1; coordination::Integer=12) = minimumlengths(getcontent(lattice, :coordinates), getcontent(lattice, :vectors), nneighbor; coordination=coordination)
+
+"""
     Neighbors(lattice::AbstractLattice, nneighbor::Integer; coordination::Integer=12)
 
 Get the neighbor vs. bond length map of a lattice up to the `nneighbor`th order.
 """
-@inline Neighbors(lattice::AbstractLattice, nneighbor::Integer; coordination::Integer=12) = Neighbors(minimumlengths(getcontent(lattice, :coordinates), getcontent(lattice, :vectors), nneighbor; coordination=coordination))
+@inline Neighbors(lattice::AbstractLattice, nneighbor::Integer; coordination::Integer=12) = Neighbors(minimumlengths(lattice, nneighbor; coordination=coordination))
 
 """
     bonds(lattice::AbstractLattice, nneighbor::Integer; coordination::Integer=12) -> Vector{Bond{Int, P, Vector{P}}
@@ -900,7 +931,7 @@ function bonds!(bonds::Vector, lattice::AbstractLattice, neighbors::Neighbors)
         filter!(≠(remove), translations)
     end
     if length(translations) > 0
-        superrcoordinates = tile(getcontent(lattice, :coordinates), getcontent(lattice, :vectors), translations)
+        superrcoordinates = tile(lattice, translations)
         supericoordinates = tile(zero(getcontent(lattice, :coordinates)), getcontent(lattice, :vectors), translations)
         for (k, index₁, index₂) in interlinks(superrcoordinates, getcontent(lattice, :coordinates), neighbors)
             rcoordinate = SVector{dimension(lattice), scalartype(lattice)}(ntuple(j->superrcoordinates[j, index₁], Val(dimension(lattice))))
@@ -984,7 +1015,7 @@ function Lattice(lattice::AbstractLattice, ranges::OneAtLeast{UnitRange{Int}}, b
     @assert length(ranges)==length(boundaries) "Lattice error: mismatched ranges and boundaries."
     boundaries = map(boundary, boundaries)
     name = Symbol(@sprintf "%s%s" getcontent(lattice, :name) join([@sprintf("%s%s%s", boundary=='P' ? "[" : "(", range, boundary=='P' ? "]" : ")") for (range, boundary) in zip(ranges, boundaries)]))
-    coordinates = tile(getcontent(lattice, :coordinates), getcontent(lattice, :vectors), product(ranges...))
+    coordinates = tile(lattice, product(ranges...))
     vectors = SVector{dimension(lattice), scalartype(lattice)}[]
     for (i, vector) in enumerate(getcontent(lattice, :vectors))
         boundaries[i]=='P' && push!(vectors, vector*length(ranges[i]))
@@ -1117,6 +1148,21 @@ Construct a Brillouin zone.
     return BrillouinZone{K, nk}(reciprocals)
 end
 @inline BrillouinZone{K, P}(reciprocals::AbstractVector{<:AbstractVector{<:Number}}) where {K, P} = BrillouinZone{K, P}(vectorconvert(reciprocals))
+
+"""
+    BrillouinZone(lattice::AbstractLattice, nk)
+    BrillouinZone{K}(lattice::AbstractLattice, nk) where K
+    BrillouinZone{P}(lattice::AbstractLattice) where P
+    BrillouinZone{K, P}(lattice::AbstractLattice) where {K, P}
+
+Construct a Brillouin zone from a lattice.
+
+These convenience methods extract the reciprocal vectors from the lattice and delegate to the generic [`BrillouinZone`](@ref) constructors.
+"""
+@inline BrillouinZone(lattice::AbstractLattice, nk) = BrillouinZone(reciprocals(lattice), nk)
+@inline BrillouinZone{K}(lattice::AbstractLattice, nk) where K = BrillouinZone{K}(reciprocals(lattice), nk)
+@inline BrillouinZone{P}(lattice::AbstractLattice) where P = BrillouinZone{P}(reciprocals(lattice))
+@inline BrillouinZone{K, P}(lattice::AbstractLattice) where {K, P} = BrillouinZone{K, P}(reciprocals(lattice))
 
 """
     periods(brillouinzone::BrillouinZone) -> Tuple
@@ -1265,6 +1311,32 @@ end
 end
 
 """
+    ReciprocalZone(lattice::AbstractLattice; length=100, ends=(true, false))
+    ReciprocalZone{K}(lattice::AbstractLattice; length=100, ends=(true, false)) where K
+
+    ReciprocalZone(lattice::AbstractLattice, bounds::Pair{<:Number, <:Number}...; length=100, ends=(true, false))
+    ReciprocalZone{K}(lattice::AbstractLattice, bounds::Pair{<:Number, <:Number}...; length=100, ends=(true, false)) where K
+
+    ReciprocalZone(lattice::AbstractLattice, bounds::AbstractVector{<:Pair{<:Number, <:Number}}; length=100, ends=(true, false))
+    ReciprocalZone{K}(lattice::AbstractLattice, bounds::AbstractVector{<:Pair{<:Number, <:Number}}; length=100, ends=(true, false)) where K
+
+    ReciprocalZone(lattice::AbstractLattice, bounds::OneAtLeast{Pair{<:Number, <:Number}}; length=100, ends=(true, false))
+    ReciprocalZone{K}(lattice::AbstractLattice, bounds::OneAtLeast{Pair{<:Number, <:Number}}; length=100, ends=(true, false)) where K
+
+Construct a rectangular zone in the reciprocal space from a lattice.
+
+These convenience methods extract the reciprocal vectors from the lattice and delegate to the generic [`ReciprocalZone`](@ref) constructors.
+"""
+@inline ReciprocalZone(lattice::AbstractLattice; length=100, ends=(true, false)) = ReciprocalZone(reciprocals(lattice); length=length, ends=ends)
+@inline ReciprocalZone{K}(lattice::AbstractLattice; length=100, ends=(true, false)) where K = ReciprocalZone{K}(reciprocals(lattice); length=length, ends=ends)
+@inline ReciprocalZone(lattice::AbstractLattice, bounds::Pair{<:Number, <:Number}...; length=100, ends=(true, false)) = ReciprocalZone(reciprocals(lattice), bounds...; length=length, ends=ends)
+@inline ReciprocalZone{K}(lattice::AbstractLattice, bounds::Pair{<:Number, <:Number}...; length=100, ends=(true, false)) where K = ReciprocalZone{K}(reciprocals(lattice), bounds...; length=length, ends=ends)
+@inline ReciprocalZone(lattice::AbstractLattice, bounds::AbstractVector{<:Pair{<:Number, <:Number}}; length=100, ends=(true, false)) = ReciprocalZone(reciprocals(lattice), bounds; length=length, ends=ends)
+@inline ReciprocalZone{K}(lattice::AbstractLattice, bounds::AbstractVector{<:Pair{<:Number, <:Number}}; length=100, ends=(true, false)) where K = ReciprocalZone{K}(reciprocals(lattice), bounds; length=length, ends=ends)
+@inline ReciprocalZone(lattice::AbstractLattice, bounds::OneAtLeast{Pair{<:Number, <:Number}}; length=100, ends=(true, false)) = ReciprocalZone(reciprocals(lattice), bounds; length=length, ends=ends)
+@inline ReciprocalZone{K}(lattice::AbstractLattice, bounds::OneAtLeast{Pair{<:Number, <:Number}}; length=100, ends=(true, false)) where K = ReciprocalZone{K}(reciprocals(lattice), bounds; length=length, ends=ends)
+
+"""
     ReciprocalZone(brillouinzone::BrillouinZone)
 
 Construct a reciprocal zone from a Brillouin zone.
@@ -1340,6 +1412,18 @@ function ReciprocalScatter{K}(reciprocals::AbstractVector{<:AbstractVector{<:Num
     fractionals = collect(SVector{length(reciprocals), eltype(eltype(reciprocals))}, fractionals)
     return ReciprocalScatter{K}(reciprocals, fractionals)
 end
+
+"""
+    ReciprocalScatter(lattice::AbstractLattice, fractionals::AbstractVector{<:AbstractVector{<:Number}})
+    ReciprocalScatter{K}(lattice::AbstractLattice, fractionals::AbstractVector{<:AbstractVector{<:Number}}) where K
+
+Construct a set of reciprocal scatter points from a lattice.
+
+These convenience methods extract the reciprocal vectors from the lattice and delegate
+to the generic [`ReciprocalScatter`](@ref) constructors.
+"""
+@inline ReciprocalScatter(lattice::AbstractLattice, fractionals::AbstractVector{<:AbstractVector{<:Number}}) = ReciprocalScatter(reciprocals(lattice), fractionals)
+@inline ReciprocalScatter{K}(lattice::AbstractLattice, fractionals::AbstractVector{<:AbstractVector{<:Number}}) where K = ReciprocalScatter{K}(reciprocals(lattice), fractionals)
 
 """
     ReciprocalScatter(reciprocalspace::FractionalReciprocalSpace)
@@ -1439,6 +1523,27 @@ end
     return ntuple(i->NTuple{N, D}(labels[i].first)=>NTuple{N, D}(labels[i].second), Val(fieldcount(typeof(labels))))
 end
 @inline homogenization(labels::OneAtLeast{Pair}) = labels
+
+"""
+    ReciprocalPath(lattice::AbstractLattice, contents::NamedTuple{(:points, :labels), <:Tuple{<:Tuple, <:Tuple}}; kwargs...)
+    ReciprocalPath{K}(lattice::AbstractLattice, contents::NamedTuple{(:points, :labels), <:Tuple{<:Tuple, <:Tuple}}; kwargs...) where K
+
+    ReciprocalPath(lattice::AbstractLattice, points::OneOrMore{Number}...; kwargs...)
+    ReciprocalPath{K}(lattice::AbstractLattice, points::OneOrMore{Number}...; kwargs...) where K
+
+    ReciprocalPath(lattice::AbstractLattice, segments::Pair{<:OneOrMore{Number}, <:OneOrMore{Number}}...; kwargs...)
+    ReciprocalPath{K}(lattice::AbstractLattice, segments::Pair{<:OneOrMore{Number}, <:OneOrMore{Number}}...; kwargs...) where K
+
+Construct a path in the reciprocal space from a lattice.
+
+These convenience methods extract the reciprocal vectors from the lattice and delegate to the generic [`ReciprocalPath`](@ref) constructors.
+"""
+@inline ReciprocalPath(lattice::AbstractLattice, contents::NamedTuple{(:points, :labels), <:Tuple{<:Tuple, <:Tuple}}; kwargs...) = ReciprocalPath(reciprocals(lattice), contents; kwargs...)
+@inline ReciprocalPath{K}(lattice::AbstractLattice, contents::NamedTuple{(:points, :labels), <:Tuple{<:Tuple, <:Tuple}}; kwargs...) where K = ReciprocalPath{K}(reciprocals(lattice), contents; kwargs...)
+@inline ReciprocalPath(lattice::AbstractLattice, point₁::OneOrMore{Number}, point₂::OneOrMore{Number}, points::OneOrMore{Number}...; kwargs...) = ReciprocalPath(reciprocals(lattice), point₁, point₂, points...; kwargs...)
+@inline ReciprocalPath{K}(lattice::AbstractLattice, point₁::OneOrMore{Number}, point₂::OneOrMore{Number}, points::OneOrMore{Number}...; kwargs...) where K = ReciprocalPath{K}(reciprocals(lattice), point₁, point₂, points...; kwargs...)
+@inline ReciprocalPath(lattice::AbstractLattice, segments::Pair{<:OneOrMore{Number}, <:OneOrMore{Number}}...; kwargs...) = ReciprocalPath(reciprocals(lattice), segments...; kwargs...)
+@inline ReciprocalPath{K}(lattice::AbstractLattice, segments::Pair{<:OneOrMore{Number}, <:OneOrMore{Number}}...; kwargs...) where K = ReciprocalPath{K}(reciprocals(lattice), segments...; kwargs...)
 
 """
     step(path::ReciprocalPath, i::Integer) -> scalartype(path)

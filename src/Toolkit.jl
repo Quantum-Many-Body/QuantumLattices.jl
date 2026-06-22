@@ -42,15 +42,15 @@ const Float = Float64
     str(number; kwargs...) -> String
     str(number::Integer; kwargs...) -> String
     str(number::Rational; kwargs...) -> String
-    str(number::AbstractFloat; ndecimal::Integer=10) -> String
-    str(number::Complex; ndecimal::Integer=10) -> String
+    str(number::AbstractFloat; ndecimal::Integer=14) -> String
+    str(number::Complex; ndecimal::Integer=14) -> String
 
 Convert a number to a string with at most `ndecimal` decimal places.
 """
 @inline str(number; kwargs...) = repr(number)
 @inline str(number::Integer; kwargs...) = string(number)
 @inline str(number::Rational; kwargs...) = number.den==1 ? repr(number.num) : repr(number)
-function str(number::AbstractFloat; ndecimal::Integer=10)
+function str(number::AbstractFloat; ndecimal::Integer=14)
     if number == 0.0
         result = "0.0"
     elseif 10^-5 < abs(number) < 10^6
@@ -64,7 +64,7 @@ function str(number::AbstractFloat; ndecimal::Integer=10)
     end
     return result
 end
-function str(number::Complex; ndecimal::Integer=10)
+function str(number::Complex; ndecimal::Integer=14)
     sreal = (real(number) == 0) ? "0" : str(real(number), ndecimal=ndecimal)
     simag = (imag(number) == 0) ? "0" : str(imag(number), ndecimal=ndecimal)
     result = ""
@@ -75,11 +75,11 @@ function str(number::Complex; ndecimal::Integer=10)
 end
 
 """
-    str(value::AbstractVector{<:Number}; ndecimal::Integer=10) -> String
+    str(value::AbstractVector{<:Number}; ndecimal::Integer=14) -> String
 
 Convert a vector of numbers to a string with each element rounded to at most `ndecimal` decimal places.
 """
-@inline str(value::AbstractVector{<:Number}; ndecimal::Integer=10) = "[" * join(map(v->str(v; ndecimal=ndecimal), value), ", ") * "]"
+@inline str(value::AbstractVector{<:Number}; ndecimal::Integer=14) = "[" * join(map(v->str(v; ndecimal=ndecimal), value), ", ") * "]"
 
 """
     str(value::Symbol; kwargs...) -> String
@@ -215,7 +215,7 @@ function showcontent(io::IO, content::NamedTuple)
     end
 end
 function showcontent(io::IO, value::Union{Number, AbstractVector{<:Number}})
-    ndecimal = get(io, :ndecimal, 10)
+    ndecimal = get(io, :ndecimal, 14)
     print(io, str(value; ndecimal=ndecimal))
 end
 
@@ -363,12 +363,12 @@ function Base.iterate(segment::Segment, state)
     return middle, (i+1, middle, step)
 end
 function Base.show(io::IO, segment::Segment{<:Number})
-    ndecimal = get(io, :ndecimal, 10)
+    ndecimal = get(io, :ndecimal, 14)
     left, right = (segment.ends[1] ? "[" : "("), (segment.ends[2] ? "]" : ")")
     print(io, left, str(segment.start; ndecimal=ndecimal), ", ", str(segment.stop; ndecimal=ndecimal), right)
 end
 function Base.show(io::IO, segment::Segment)
-    ndecimal = get(io, :ndecimal, 10)
+    ndecimal = get(io, :ndecimal, 14)
     left, right = (segment.ends[1] ? "[" : "("), (segment.ends[2] ? "]" : ")")
     print(io, left, "p₁, p₂", right, " with p₁=", str(segment.start; ndecimal=ndecimal), " and p₂=", str(segment.stop; ndecimal=ndecimal))
 end

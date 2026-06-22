@@ -456,7 +456,7 @@ end
 @inline Base.hash(index::CoordinatedIndex, h::UInt) = hash((index.index, Tuple(index.rcoordinate)), h)
 @inline Base.propertynames(::OneAtLeast{CoordinatedIndex}) = (:indexes, :rcoordinates, :icoordinates)
 function Base.show(io::IO, index::CoordinatedIndex)
-    ndecimal = get(io, :ndecimal, 10)
+    ndecimal = get(io, :ndecimal, 14)
     print(io, OperatorIndex[index.index.internal], "(", str(index.index.site))
     for field in showablefields(internalindextype(index))
         print(io, ", ", str(getfield(InternalIndex(index), field)))
@@ -924,7 +924,7 @@ end
 @inline Base.iterate(coupling::Coupling) = (coupling, nothing)
 @inline Base.iterate(::Coupling, ::Nothing) = nothing
 @inline function Base.show(io::IO, coupling::Coupling)
-    ndecimal = get(io, :ndecimal, 10)
+    ndecimal = get(io, :ndecimal, 14)
     print(io, coupling.value≈1 ? "" : coupling.value≈-1 ? "- " : string(str(coupling.value; ndecimal=ndecimal), " "))
     print(io, coupling.pattern)
 end

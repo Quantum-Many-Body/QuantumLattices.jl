@@ -1,6 +1,6 @@
 using LinearAlgebra: cross, det, dot, norm
 using OffsetArrays: OffsetArray
-using QuantumLattices: decompose, dimension, expand, rank, shape
+using QuantumLattices: decompose, dimension, expand, rank, shape, str
 using QuantumLattices.QuantumOperators: scalartype
 using QuantumLattices.Spatials
 using QuantumLattices.Toolkit: Float, Segment, contentnames
@@ -241,6 +241,11 @@ end
     @test bond|>isintracell == false
     @test Bond(:, Point(2, [1.0], [0.0]), Point(1, [0.0], [0.0]))|>string == "Bond(:, Point(2, [1.0], [0.0]), Point(1, [0.0], [0.0]))"
 
+    # str(bond)
+    ref = Bond(1, Point(2, SVector(0.5, 0.0), SVector(0.0, 0.0)), Point(1, SVector(0.0, 0.0), SVector(0.0, 0.0)))
+    bond = Bond(1, Point(2, SVector(0.5, 0.0), SVector(0.0, 0.0)), Point(1, SVector(1e-15, 0.0), SVector(0.0, 0.0)))
+    @test str(bond) == str(ref) == "Bond(1, Point(2, [0.5, 0.0], [0.0, 0.0]), Point(1, [0.0, 0.0], [0.0, 0.0]))"
+
     vectors = [SVector(1.0, 0.0), SVector(0.0, 1.0)]
     # Length-2, forward (+1): same kind, same sublattice, same rcoordinate, valid translation
     ref = Bond(1, Point(1, (1.0, 0.0), (1.0, 0.0)), Point(1, (0.0, 0.0), (0.0, 0.0)))
@@ -314,7 +319,10 @@ end
     @test lattice[1] == SVector(0.5, 0.5)
     @test lattice[1:1] == [SVector(0.5, 0.5)]
     @test collect(lattice) == [SVector(0.5, 0.5)]
+    @test volume(lattice) == volume(lattice.vectors)
     @test reciprocals(lattice) == reciprocals(lattice.vectors)
+    @test tile(lattice, ((0.5, 0.5), (-0.5, -0.5))) == tile(lattice.coordinates, lattice.vectors, ((0.5, 0.5), (-0.5, -0.5)))
+    @test minimumlengths(lattice, 7) == minimumlengths(lattice.coordinates, lattice.vectors, 7)
     @test Neighbors(lattice, 1) == Neighbors([0.0, 1.0])
     @test Neighbors(lattice, 2) == Neighbors([0.0, 1.0, √2])
 
@@ -386,6 +394,12 @@ end
 
     recipls = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
     @test BrillouinZone{(10, 10, 10)}(recipls) == BrillouinZone(recipls, 10)
+
+    lattice = Lattice((0.0, 0.0); vectors=[[2.0, 0.0], [0.0, 3.0]])
+    @test BrillouinZone(lattice, 4) == BrillouinZone(reciprocals(lattice), 4)
+    @test BrillouinZone{:q}(lattice, 4) == BrillouinZone{:q}(reciprocals(lattice), 4)
+    @test BrillouinZone{(2, 4)}(lattice) == BrillouinZone{(2, 4)}(reciprocals(lattice))
+    @test BrillouinZone{:q, (2, 4)}(lattice) == BrillouinZone{:q, (2, 4)}(reciprocals(lattice))
 end
 
 @testset "ReciprocalZone" begin
@@ -420,6 +434,16 @@ end
     Plots.savefig(Plots.plot(rz; fractional=true), "PlotsReciprocalZone-fractional.png")
     Makie.save("MakieReciprocalZone.png", Makie.plot(rz; fractional=false))
     Makie.save("MakieReciprocalZone-fractional.png", Makie.plot(rz; fractional=true))
+
+    lattice = Lattice((0.0, 0.0); vectors=[[2.0, 0.0], [0.0, 3.0]])
+    @test ReciprocalZone(lattice; length=10) == ReciprocalZone(reciprocals(lattice); length=10)
+    @test ReciprocalZone{:q}(lattice; length=5) == ReciprocalZone{:q}(reciprocals(lattice); length=5)
+    @test ReciprocalZone(lattice, 0=>1, 0=>1; length=10) == ReciprocalZone(reciprocals(lattice), 0=>1, 0=>1; length=10)
+    @test ReciprocalZone{:q}(lattice, 0=>1, 0=>1; length=5) == ReciprocalZone{:q}(reciprocals(lattice), 0=>1, 0=>1; length=5)
+    @test ReciprocalZone(lattice, [0=>1, 0=>1]; length=10) == ReciprocalZone(reciprocals(lattice), [0=>1, 0=>1]; length=10)
+    @test ReciprocalZone{:q}(lattice, [0=>1, 0=>1]; length=5) == ReciprocalZone{:q}(reciprocals(lattice), [0=>1, 0=>1]; length=5)
+    @test ReciprocalZone(lattice, (0=>1, 0=>1); length=5) == ReciprocalZone(reciprocals(lattice), (0=>1, 0=>1); length=5)
+    @test ReciprocalZone{:q}(lattice, (0=>1, 0=>1); length=5) == ReciprocalZone{:q}(reciprocals(lattice), (0=>1, 0=>1); length=5)
 end
 
 @testset "ReciprocalScatter" begin
@@ -433,6 +457,10 @@ end
     Plots.savefig(Plots.plot(rs; fractional=true), "PlotsReciprocalScatter-fractional.png")
     Makie.save("MakieReciprocalScatter.png", Makie.plot(rs; fractional=false))
     Makie.save("MakieReciprocalScatter-fractional.png", Makie.plot(rs; fractional=true))
+
+    lattice = Lattice((0.0, 0.0, 0.0); vectors=[b₁, b₂])
+    @test ReciprocalScatter(lattice, coordinates) == ReciprocalScatter(reciprocals(lattice), coordinates)
+    @test ReciprocalScatter{:q}(lattice, coordinates) == ReciprocalScatter{:q}(reciprocals(lattice), coordinates)
 
     rs = ReciprocalScatter{:q}([b₁, b₂], [[0.0, 0.0], [0.0, 0.25], [0.0, 0.5], [0.0, 0.75], [0.5, 0.0], [0.5, 0.25], [0.5, 0.5], [0.5, 0.75]])
     @test rs == ReciprocalScatter(BrillouinZone{:q}([b₁, b₂], (2, 4)))
@@ -475,6 +503,14 @@ end
 
     rp = ReciprocalPath{:q}([b₁, b₂], hexagon"Γ-K-M-Γ", length=10)
     @test rp ≈ ReciprocalPath{:q}([b₁, b₂], (0, 0), (2//3, 1//3), (1//2, 1//2), (0, 0); labels=("Γ", "K", "M", "Γ"), length=10)
+
+    lattice = Lattice((0.0, 0.0); vectors=[b₁, b₂])
+    @test ReciprocalPath(lattice, s₁, s₂, s₃; length=5) == ReciprocalPath(reciprocals(lattice), s₁, s₂, s₃; length=5)
+    @test ReciprocalPath{:q}(lattice, s₁, s₂, s₃; length=5) == ReciprocalPath{:q}(reciprocals(lattice), s₁, s₂, s₃; length=5)
+    @test ReciprocalPath(lattice, (0, 0), (1, 0); labels=("G", "X"), length=5) == ReciprocalPath(reciprocals(lattice), (0, 0), (1, 0); labels=("G", "X"), length=5)
+    @test ReciprocalPath{:q}(lattice, (0, 0), (1, 0); labels=("G", "X"), length=5) == ReciprocalPath{:q}(reciprocals(lattice), (0, 0), (1, 0); labels=("G", "X"), length=5)
+    @test ReciprocalPath(lattice, (points=((0, 0), (1, 0)), labels=("G", "X")); length=5) == ReciprocalPath(reciprocals(lattice), (points=((0, 0), (1, 0)), labels=("G", "X")); length=5)
+    @test ReciprocalPath{:q}(lattice, (points=((0, 0), (1, 0)), labels=("G", "X")); length=5) == ReciprocalPath{:q}(reciprocals(lattice), (points=((0, 0), (1, 0)), labels=("G", "X")); length=5)
 end
 
 @testset "selectpath" begin
