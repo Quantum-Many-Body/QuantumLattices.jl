@@ -307,14 +307,14 @@ function Embedding(unitcell::AbstractLattice, lattice::AbstractLattice, order::I
 end
 
 """
-    (em::Embedding)(m::Operator{<:Number, <:NTuple{2, CoordinatedIndex}}; ndecimal::Int=14) -> OperatorSum
+    (em::Embedding)(m::Operator{<:Number, <:NTuple{2, CoordinatedIndex}}; atol::Real=atol, rtol::Real=rtol, ndecimal::Int=14) -> OperatorSum
 
 Apply the embedding to a rank-2 operator.
 
 The bond that generated the operator is reconstructed via [`Bond`](@ref)(m, neighbors), and [`isparallel`](@ref) looks up the matching unitcell reference bond in `refs`. The cached `mapping` then expands the operator to every translation-equivalent copy. Here, the combined direction determines whether the bond is emitted as-is (>0) or reversed (<0).
 """
-function (em::Embedding)(m::Operator{<:Number, <:NTuple{2, CoordinatedIndex}}; ndecimal::Int=14)
-    bond = Bond(m, em.neighbors)
+function (em::Embedding)(m::Operator{<:Number, <:NTuple{2, CoordinatedIndex}}; atol::Real=atol, rtol::Real=rtol, ndecimal::Int=14)
+    bond = Bond(m, em.neighbors; atol=atol, rtol=rtol)
     matched = nothing
     dir′ = 0
     haskey(em.refs, bond.kind) && for ref in em.refs[bond.kind]
