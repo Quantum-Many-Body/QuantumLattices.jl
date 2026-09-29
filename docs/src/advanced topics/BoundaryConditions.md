@@ -7,4 +7,4 @@ DocTestSetup = quote
 end
 ```
 
-# Boundary conditions
+# [Boundary conditions](@id BoundaryConditions)

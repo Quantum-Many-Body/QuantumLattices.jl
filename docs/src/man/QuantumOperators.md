@@ -2,13 +2,17 @@
 CurrentModule = QuantumLattices.QuantumOperators
 ```
 
-# Quantum operators
+# Quantum Operators
 
-Quantum operators form an algebra over a field, i.e., a vector space equipped with a bilinear operation (often called the "multiplication") defined between vectors.
+*Module for the operator algebra of quantum lattice systems.*
 
-With the help of the structure constants of the algebra, the result of the bilinear operation between any two vectors can be expressed as a sum of individual ones. Therefore, in principle, an algebra can be represented by the complete basis set of its corresponding vector space and a rank-3 tensor encapsulating its structure constants. Note that the "bilinear operation" is not restricted to the usual multiplication. For example, in Lie algebras, it is the commutator (defined as [A, B] ≝ AB - BA), which is a composition of the usual multiplication and subtraction.
+The `QuantumOperators` module implements the concrete operator algebra, the types that represent individual operators, their sums, products, and collections. These types form the algebraic backbone described in tutorial chapter 5.
 
-In general, there are three basic operations on quantum operators: the scalar multiplication between a scalar and a quantum operator, the usual addition, and the usual multiplication between quantum operators. Other more complicated operations can be composed from these basic ones. These basic operations are implemented in this module.
+**Key types:** [`Operator`](@ref), [`OperatorSum`](@ref), [`OperatorProd`](@ref), [`OperatorSet`](@ref), [`Operators`](@ref).
+
+**Key operations:** Addition, scalar multiplication, and operator multiplication are supported between all operator types. Linear transformations ([`LinearTransformation`](@ref), [`Permutation`](@ref), [`UnitSubstitution`](@ref), [`Matrixization`](@ref)) act systematically on the algebra.
+
+Quantum operators form an algebra over a field, i.e., a vector space equipped with a bilinear operation (multiplication) defined between vectors. There are three basic operations: scalar multiplication between a scalar and a quantum operator, the usual addition, and the usual multiplication between quantum operators. More complicated operations can be composed from these basic ones.
 
 ## OperatorIndex
 
@@ -23,6 +27,8 @@ An [`OperatorProd`](@ref) must have two predefined contents:
 - `id::ID`: the id of the quantum operator
 
 Arithmetic operations (`+`, `-`, `*`, `/`) between a scalar, an [`OperatorProd`](@ref) or an [`OperatorSum`](@ref) are defined. See Manual for details.
+
+In addition to [`Operator`](@ref) and [`Operators`](@ref) (covered in [Chapter 4](@ref TutorialOperators)), this module provides specialized container types: [`OperatorSum`](@ref) (explicit sum), [`OperatorProd`](@ref) (product), and [`OperatorSet`](@ref) (unordered collection). It also defines the linear transformation framework: [`LinearTransformation`](@ref), [`Permutation`](@ref), [`UnitSubstitution`](@ref), [`TabledUnitSubstitution`](@ref), and [`Matrixization`](@ref).
 
 ## Manual
 

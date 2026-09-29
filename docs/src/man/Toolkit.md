@@ -2,7 +2,7 @@
 CurrentModule = QuantumLattices.Toolkit
 DocTestFilters = [r"var\".*\"", r"generic function with [0-9]* method", r".*s \(.*\% GC\)", r"evals/sample:.*"]
 DocTestSetup = quote
-    push!(LOAD_PATH, "../../../../src/")
+    push!(LOAD_PATH, "../../../src/")
     using QuantumLattices.Toolkit
     import QuantumLattices.Toolkit: isparameterbound, parameternames, contentnames, getcontent
 end

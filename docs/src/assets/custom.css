@@ -1,0 +1,8 @@
+@media screen and (min-width: 1056px) {
+    #documenter .docs-main {
+        max-width: 56.5rem !important;
+    }
+}
+#documenter .docs-main > article {
+    max-width: 56.5rem !important;
+}

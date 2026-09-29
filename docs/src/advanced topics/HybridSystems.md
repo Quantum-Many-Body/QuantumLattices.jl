@@ -7,4 +7,4 @@ DocTestSetup = quote
 end
 ```
 
-# Hybrid systems
+# [Hybrid systems](@id HybridSystems)
