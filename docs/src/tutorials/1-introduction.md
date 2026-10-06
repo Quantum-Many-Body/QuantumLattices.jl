@@ -14,7 +14,7 @@ A large class of problems in quantum many-body physics involves particles that i
 
 These three ingredients are combined into a [`LatticeModel`](@ref), a unifying abstraction that automatically generates the Hamiltonian and bundles it together with the model parameters into a single object. From there, the model can be passed directly to any supported quantum many-body algorithm.
 
-Beyond this standard pipeline, which is covered in detail throughout this tutorial, [`LatticeModel`](@ref) can also wrap a Julia function or precomputed operators, making it possible to interface with external inputs such as [Wannier90](https://github.com/wannier-developers/wannier90) Hamiltonians. This flexibility, together with the symbolic algebra powered by [SymPy](https://github.com/JuliaPy/SymPy.jl), makes [QuantumLattices](https://github.com/Quantum-Many-Body/QuantumLattices.jl) a truly generic frontend for quantum many-body computations.
+Beyond this standard pipeline, which is covered in detail throughout this tutorial, [`LatticeModel`](@ref) can also wrap a Julia function or precomputed operators, making it possible to interface with external inputs such as [Wannier90](https://github.com/wannier-developers/wannier90) Hamiltonians. This flexibility, together with the symbolic algebra powered by [SymPy](https://github.com/JuliaPy/SymPy.jl), makes [QuantumLattices](https://github.com/Quantum-Many-Body/QuantumLattices.jl) a truly generic platform for quantum many-body computations.
 
 ## 1.1 Standard workflow: unitcell description framework
 
@@ -67,7 +67,8 @@ The tutorial follows the natural structure of a quantum lattice system. Each cha
 | 4 | Operator algebra: Operator, Operators, LaTeX output, and linear transformations |
 | 5 | Couplings: Terms, coupling patterns, and automatic operator expansion |
 | 6 | LatticeModel in depth: representations, parameters, and worked examples |
-| 7 | The algorithm interface: connecting models to solvers, project management |
+| 7 | The algorithm interface, user guide: connecting models to solvers, project management |
+| 8 | The algorithm interface, developer guide: writing an algorithm package |
 
 By the end, you will be able to define an arbitrary quantum lattice model as a [`LatticeModel`](@ref) and connect it to numerical algorithms.
 

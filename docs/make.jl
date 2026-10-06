@@ -20,6 +20,7 @@ makedocs(
                         "tutorials/5-couplings-and-terms.md",
                         "tutorials/6-latticemodel.md",
                         "tutorials/7-algorithm-interface.md",
+                        "tutorials/8-algorithm-interface-developer.md",
                     ],
                     "Advanced Topics" => [
                         "advanced topics/Introduction.md",

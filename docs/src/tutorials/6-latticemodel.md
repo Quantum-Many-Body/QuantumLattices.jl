@@ -12,28 +12,24 @@ using SymPy: Sym, symbols
 
 # [6. LatticeModel: the Unifying Abstraction](@id TutorialLatticeModel)
 
-We have now covered the entire pipeline: lattices ([Chapter 2](@ref TutorialLattice)), internal degrees of freedom ([Chapter 3](@ref TutorialDOF)), operators ([Chapter 4](@ref TutorialOperators)), and coupling terms ([Chapter 5](@ref TutorialCouplings)). The final piece is the container that ties everything together into a single object: **`LatticeModel`**.
+We have now covered the entire pipeline: lattices ([Chapter 2](@ref TutorialLattice)), internal degrees of freedom ([Chapter 3](@ref TutorialDOF)), operators ([Chapter 4](@ref TutorialOperators)), and coupling terms ([Chapter 5](@ref TutorialCouplings)). The final piece is the container that ties everything together into a single object: [`LatticeModel`](@ref).
 
 ## 6.1 What a LatticeModel Is
 
 [`LatticeModel`](@ref) is an abstract supertype that aims at generating the Hamiltonian of a quantum lattice system. It is the object that algorithms accept as their input. Its concrete representations differ in what they store. The standard workflow of this tutorial uses the first of them:
 
-* **[`OperatorGenerator`](@ref)**: the standard, operator-based representation. It stores the bonds, the Hilbert space, the coupling terms and the parameters, and generates the operator Hamiltonian on demand.
+* [`OperatorGenerator`](@ref): the standard, operator-based representation. It stores the bonds, the Hilbert space, the coupling terms and the parameters, and generates the operator Hamiltonian on demand.
 
 The standard workflow is not always convenient, however: a Hamiltonian may come from an external code, such as a [Wannier90](https://github.com/wannier-developers/wannier90)-exported tight-binding model, which can be efficiently converted into operator form, but would be inefficient to reconstruct from a lattice, a Hilbert space and coupling terms; or it may be known analytically, so that regenerating it term by term would be wasteful. For these cases, two further representations exist:
 
-* **[`StaticGenerator`](@ref)**: wraps a fixed set of prebuilt operators, e.g. a Hamiltonian exported by an external code.
-* **[`Formula`](@ref)**: wraps a Julia function of the parameters, e.g. an analytically known Hamiltonian.
+* [`StaticGenerator`](@ref): wraps a fixed set of prebuilt operators, e.g. a Hamiltonian exported by an external code.
+* [`Formula`](@ref): wraps a Julia function of the parameters, e.g. an analytically known Hamiltonian.
 
-Despite the differences in what they store, all three representations support a common set of generic interfaces, which are grouped below by their purposes. The first three groups make a model interchangeable between algorithms, so that one model can be passed to any algorithm and one algorithm can accept any model:
+Despite the differences in what they store, all three representations support a common set of generic interfaces, which are grouped below by their purposes. These groups make a model interchangeable between algorithms, so that one model can be passed to any algorithm and one algorithm can accept any model:
 
 * **Hamiltonian access**: [`expand`](@ref) expands the Hamiltonian into operators, and the collection interface (`length`, `iterate`, `isempty`) inspects the result (a [`Formula`](@ref), whose value may be of any type rather than operators, supports neither).
 * **Parameter management**: [`Parameters`](@ref) returns the model parameters, and [`update!`](@ref) changes the tunable ones.
 * **Value types**: [`valtype`](@ref), [`eltype`](@ref) and [`scalartype`](@ref) report the types of the Hamiltonian, of its elements, and of its coefficients, the static information an algorithm needs before it runs.
-
-The last group gives every model a stable identity and a place on disk, which underlies automatic project management: results are recorded, cached and tracked together with the parameters that produced them.
-
-* **Identity and persistence**: [`str`](@ref) returns a compact string tag of the model, [`contenttoconfig`](@ref) extracts its defining structural content, from which [`config`](@ref) and [`stamp`](@ref) derive a stable fingerprint, and the save/load functions ([`qlsave`](@ref), [`qlload`](@ref) and their relatives) keep its records on disk.
 
 This uniformity of the interface is precisely the benefit of unifying the three representations under [`LatticeModel`](@ref). Which representation is created is decided by the arguments passed to the [`LatticeModel`](@ref) constructor, as the following sections show.
 
@@ -95,7 +91,7 @@ The first model expands into 4 hopping operators and the second into 2 Hubbard o
 
 ### 6.2.3 Parameter Management and Value Types
 
-This section demonstrates two more interface groups of Section 6.1, namely parameter management and value types, with an [`OperatorGenerator`](@ref). The last group of Section 6.1, identity and persistence, is deferred to [Chapter 7](@ref TutorialAlgorithmInterface), where its motivation becomes concrete.
+This section demonstrates two more interface groups of Section 6.1, namely parameter management and value types, with an [`OperatorGenerator`](@ref).
 
 #### Parameter management
 
@@ -423,6 +419,6 @@ The kinetic term acts on the one-point bonds and the Hooke term on the 1st-neigh
 - It bundles the spatial structure, the Hilbert space, the Hamiltonian, and the parameters into a single object.
 - Its Hamiltonian may be represented by an [`OperatorGenerator`](@ref), a [`StaticGenerator`](@ref), or a [`Formula`](@ref), and algorithms work with any of them uniformly.
 - Parameters are managed uniformly through [`Parameters`](@ref) and [`update!`](@ref).
-- All representations share the generic interfaces of Section 6.1; the last of them, identity and persistence, underlies the automatic project management introduced in the next chapter.
+- All representations share the generic interfaces of Section 6.1.
 
 To learn how a [`LatticeModel`](@ref) connects to numerical algorithms, continue to [Chapter 7](@ref TutorialAlgorithmInterface).

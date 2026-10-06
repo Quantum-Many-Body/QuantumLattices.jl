@@ -167,3 +167,50 @@ Data：保留（Tuple(data) 协议 + datatype 的 <:Data 断言）
 - **Bug 3（ED v₀ 路径，Core.jl:159/:188-199）**：修复——① 向量 v₀ 走 KrylovKit 4 位置参数形式（Int v₀ 路径不变）；② 多 sector 版归一化后统一用 `m.ket`（Sector 键）查找，未知键报错；docstring 对齐。
 - **Bug 4（ED SectorFilter 置零，Core.jl:258）**：**最终结论：代码维持元素级投影原状不动**，仅 docstring 写明设计契约——"元素级线性投影 + `OperatorSum` 经 `add!` 保证不含零元素（公共 API 不变量）= 集合级有效剔除"。讨论时的"幽灵零本征值"担忧经实证不复现（`add!` 丢零，QuantumOperators.jl:597-598）；曾尝试的集合级剔除方法经两轮复审认定为冗余（行为与不变量保证的结果完全一致），已撤除。净产出：docstring 契约 + 一组钉住该不变量链的回归测试（过滤结果无零块、元素级投影行为、正能量谱 sector 选择）。
 - **Bug 5（ED GreenFunction 未纳入 Assignment 框架）**：**不动，关闭**。结论：GF 是交互式求值对象，与 Assignment 的"一次性计算+缓存结果"是两种合法设计，不强行套框架；RawStderrLogger 保留。
+
+---
+
+# 附：文档讨论产生的追加改名决议（2026-09-29 晚）
+
+- **Assignment 字段 `action` → `task`**：action 角色改名为 task（computation task）。理由：物理包中 "action" 与作用量撞词；且改名后 `Assignment` 获得字面意义——assign a task to an algorithm。无类型牵连（Action 类型已删，角色词无 Base.Task 混淆风险，prose 首次出现写全 computation task）。波及：QL + 下游各包 run! 内的 `.action` 访问、docstring、文档。
+- **Algorithm 字段 `model` → `frontend`（撤回 A2 决议②）**：理由：字段应按角色命名（与 task 对称），所装对象是"体系在具体算法下的预备形态"（TBA/ED 实例），叫 model 抹掉物理模型与算法预备形态的区别；frontend 的编译器语义准确，且角色词在文档中有定义，不再是化石。波及：全部迁移时 `.frontend`→`.model` 的改动机械还原。
+- **Algorithm 存在理由的文档表述**（教程 7.1 采用）：执行层横向统一（存储/恢复/计时）+ 高一级参数管理（map：物理参数→terms 参数）+ Assignment 工厂与缓存权威。
+
+---
+
+# 附：文档更新决议（2026-09-29 逐节讨论定稿）
+
+## 总原则
+
+- 章节结构保留；"frontend/task"作为**角色词**（无类型、小写、无 @ref 链接），Data/Algorithm/Assignment/FrameworkElement 保留类型与链接。
+- **FrameworkElement 在教程中完全不点名**（含 7.8），只在 man/Frameworks.md 出现；教程统一用 "share the model interface" 表述。
+- 教程不教显式 datatype 注册（只讲推断路径）；教 dependencytypes 与 @delegate。
+- 数值旋钮的缺省占位一律用 **NaN** 而非 nothing（类型稳定），推广到所有涉及包与测试。
+- 所有 `[Frontend](@ref)`/`[Action](@ref)` 断链清扫。
+
+## ToyTBA.jl 终版要点
+
+`ToyTBA{M<:LatticeModel,T} <: LatticeModel`，字段 `hamiltonian`+`table`；写全契约四件套 valtype/Parameters/update!/contenttoconfig + show；`matrix` 两方法标 `@delegate`；EigenSystem/DensityOfStates 无父类；DensityOfStates 收字段 `emin::Float64=NaN, emax::Float64=NaN, ne::Int=101, σ::Float64=0.1`（关键字构造器），run! 用 `isnan` 判断并从 `assignment.task` 解构；`dependencytypes(::Type{<:DensityOfStates}) = (EigenSystem,)`；EigenSystem 保留 showinfo option（文中点明其为纯执行提示）。
+
+## 第 7 章逐节决议
+
+- **7.1**：引言段与 minimal-example 段不动；五角色压缩为三对象（model/Algorithm/Assignment）+两附属（task/Data）；动机改为从具体算法着手（TBA 要单粒子二次型、ED 要占据数表象稀疏矩阵 → 每算法一个 LatticeModel 子类做适配，同时统一 chap6 的表示）；末尾段不提 FrameworkElement，只说 "share the model interface"；流程图 `Frontend(model)`→`ToyTBA(model)`。
+- **7.2**：标题不动；ToyTBA 代码块换新形态（含 valtype 行）；matrix 块标 @delegate 并新增接口透明性段落（transparent proxy，仅注入执行上下文）。
+- **7.3**：Haldane 示例全段不动；"algorithm is a LatticeModel" 表述两处改 "shares the model interface"；:229 段改为"Algorithm 单一具体类型 vs frontend 角色每包各填"；结尾段 action→task、"assignment is a task"→"assigns a computation task to the algorithm"。
+- **7.4**：标题改 "Task, Data and `run!`"；EigenSystem 去父类 + "无父类因 dispatch 于具体 struct"教学；run! 中 `.action`→`.task`、`matrix(algorithm.frontend, k)`→`matrix(algorithm, k)`；datatype 段只讲推断。
+- **7.5**：对偶调用段加 C1 规则"参数权威是括号内的对象"；DOS 代码块按 ToyTBA 终版重写；删除 Assignment map 的括号句；注册段加"per-call 参数键须 ⊆ 算法参数键"。
+- **7.6**：开头新增定义性 vs 提示的分类段（缓存契约为理由）；DOS options 声明删除；typo 示例改用 `shwoinfo`；optionsinfo 叙事改为"showinfo 来自依赖链"；checkoptions 改关键字参数表述；删 map 从句；结尾示例拆为 `update!`+重跑 与 `DensityOfStates(emin=-4.0, emax=4.0)` 新 assignment 两个演示。
+- **7.7**：开篇句改 "share the model interface"；缓存小节补两句（options 不参与身份比较；强制重算=构造新 assignment）；共享依赖抖动不写进教程；其余不动。
+- **7.8**：标题改 "Why the interface has this shape"；Julia 限制段保留但结论翻转；新增"为什么 frontend/task 没有抽象类型"段（标记抽象不强制任何东西；契约由 datatype/dependencytypes/类型化字段强制；继承是打包不是分类学）；表格按三对象+两角色重写（Assignment 无 map）；Data 论述保留、"nothing to inherit"措辞软化；FrameworkElement 不点名。
+- **7.9/Summary**：表格不动；"reuses its actions"→"tasks"；Summary 逐条按新词汇改写（algorithm/assignment "share the model interface"）。
+
+## 小处
+
+- `1-introduction.md:17` "generic frontend"→"generic platform"。
+- `6-latticemodel.md` 通读核查类型归属断言。
+- `man/Frameworks.md` 引言重写：FrameworkElement 为根（此处点名）、角色清单更新、清单加 dependencytypes/@delegate。
+- showinfo 保留并点明"纯执行提示"身份。
+
+## 验收
+
+Documenter docs build 必须通过（@example 块真实执行 ToyTBA）。实施顺序：先代码改名（action→task、model→frontend 回退，QL+下游五包测试全绿），再文档改写，最后 docs build。

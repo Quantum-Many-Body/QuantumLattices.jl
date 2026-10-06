@@ -33,7 +33,7 @@ The above discussions can be summarized by the following table, which also displ
 
 ## 3.2 Fermionic and Bosonic Systems
 
-### Local Level: Fock and FockIndex
+### 3.2.1 Local Level: Fock and FockIndex
 
 Roughly speaking, these systems share similar internal structures of local Hilbert spaces termed as the [Fock space](https://en.wikipedia.org/wiki/Fock_space) where the generators of local algebras are the annihilation and creation operators. Besides the nambu index to distinguish whether it is an annihilation one or a creation one, such a generator usually adopts an orbital index and a spin index. Thus, the type [`FockIndex`](@ref)`<:`[`InternalIndex`](@ref), which specifies a certain local generator of a local Fock algebra, has the following attributes:
 * `orbital::Int`: the orbital index
@@ -142,7 +142,7 @@ julia> Fock{:b}(2, 2) |> statistics
 :b
 ```
 
-### Unitcell Level: Hilbert and Index
+### 3.2.2 Unitcell Level: Hilbert and Index
 
 To specify the Fock algebra at the unitcell level, [`Hilbert`](@ref) associates each point within the origin unitcell with an instance of [`Fock`](@ref):
 ```jldoctest FFF
@@ -247,7 +247,7 @@ julia> 𝕒(1, 1, -1//2) |> statistics
 :b
 ```
 
-### Global Level: CoordinatedIndex
+### 3.2.3 Global Level: CoordinatedIndex
 
 Since the local algebra of a quantum lattice system can be defined point by point, the global algebra can be completely compressed into the origin unitcell. However, generators outside the origin unitcell cannot be avoided because we have to use them to compose the Hamiltonian on the bonds that go across the unitcell boundaries. This situation is similar to the case of [`Lattice`](@ref) and [`Point`](@ref). Therefore, we take a similar solution for the generators to that adopted for the [`Point`](@ref), i.e., we include the $\mathbf{R}_{im}$ coordinate (by the `rcoordinate` attribute) and the $\mathbf{R}_m$ coordinate (by the `icoordinate` attribute) of the underlying point together with the `index::Index` attribute in the [`CoordinatedIndex`](@ref) type to represent a generator that could be inside or outside the origin unitcell:
 ```jldoctest FFF
@@ -291,7 +291,7 @@ true
 
 ## 3.3 Spin Systems
 
-### Local Level: Spin and SpinIndex
+### 3.3.1 Local Level: Spin and SpinIndex
 
 [`Spin`](@ref)`<:`[`Internal`](@ref) and [`SpinIndex`](@ref)`<:`[`InternalIndex`](@ref) are designed to deal with SU(2) spin systems at the local level.
 
@@ -417,7 +417,7 @@ julia> Spin{1}() |> totalspin
 1
 ```
 
-### Unitcell and Global Levels
+### 3.3.2 Unitcell and Global Levels
 
 At the unitcell and global levels to construct the SU(2) spin algebra and spin generators, it is completely the same to that of the Fock algebra and Fock generators as long as we replace [`Fock`](@ref) and [`FockIndex`](@ref) with [`Spin`](@ref) and [`SpinIndex`](@ref), respectively:
 ```jldoctest SSS
@@ -447,7 +447,7 @@ true
 
 ## 3.4 Phononic Systems
 
-### Local Level: Phonon and PhononIndex
+### 3.4.1 Local Level: Phonon and PhononIndex
 
 Phononic systems are also bosonic systems. However, the canonical creation and annihilation operators of phonons depend on the eigenvalues and eigenvectors of the dynamical matrix, making them difficult to define locally at each point. Instead, we resort to the displacement ($\mathbf{u}$) and momentum ($\mathbf{p}$) operators of lattice vibrations as the generators, which can be easily defined locally. The type [`PhononIndex`](@ref)`<:`[`InternalIndex`](@ref) can specify such a local generator, which has the following attributes:
 * `direction::Char`: the direction, which must be one of `'x'`, `'y'` and `'z'`, to indicate which spatial directional component of the generator it is
@@ -527,7 +527,7 @@ julia> Phonon{:p}(3) |> kind
 :p
 ```
 
-### Unitcell and Global Levels
+### 3.4.2 Unitcell and Global Levels
 
 At the unitcell and global levels, lattice-vibration algebras and generators are the same as in the previous cases by replacing [`Fock`](@ref) and [`FockIndex`](@ref) with [`Phonon`](@ref) and [`PhononIndex`](@ref):
 ```jldoctest PPP
@@ -579,7 +579,7 @@ It is noted that `Phonon{:}` is a special kind of [`Phonon`](@ref), which are us
 
 To construct matrix representations of operators, we need an ordering of their indices, which maps each [`Index`](@ref)/[`CoordinatedIndex`](@ref) to an integer sequence number. This is the role of [`Table`](@ref) and [`Metric`](@ref).
 
-### Metric and OperatorIndexToTuple
+### 3.5.1 Metric and OperatorIndexToTuple
 
 [`Metric`](@ref) (abstract `<: Function`) is a rule that converts an operator index into a value that can be compared and sorted. The concrete subtype provided by the package is [`OperatorIndexToTuple`](@ref), which converts an [`Index`](@ref)/[`CoordinatedIndex`](@ref) to a tuple element-by-element, as specified by the type parameter `Fields`. Each field can be either a `Symbol` (an attribute name of the internal index) or a `Function` (a trait function).
 
@@ -646,7 +646,7 @@ julia> 𝕡(1, 'y', [0.0], [0.0]) |> metric
 
 Different `Fields` combinations produce different ordering conventions, which can be chosen to match the conventions of specific algorithms or physical setups.
 
-### Table
+### 3.5.2 Table
 
 [`Table{I, B<:Metric}`](@ref) is an `OrderedDict` that maps each [`Index`](@ref)/[`CoordinatedIndex`](@ref) to an integer sequence number. The construction proceeds as:
 1. Convert each [`Index`](@ref)/[`CoordinatedIndex`](@ref) via the [`Metric`](@ref) to obtain comparable values
