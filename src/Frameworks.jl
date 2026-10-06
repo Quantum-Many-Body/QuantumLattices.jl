@@ -12,7 +12,7 @@ using TimerOutputs: @timeit, TimerOutput, time
 using ..DegreesOfFreedom: CoordinatedIndex, Hilbert, Index, Term
 using ..QuantumLattices: OneOrMore, ZeroAtLeast, ZeroOrMore, dimension, id, value
 using ..QuantumOperators: LinearTransformation, Operator, OperatorPack, OperatorProd, OperatorSet, OperatorSum, Operators, identity, idtype, operatortype
-using ..Spatials: AbstractLattice, Bond, Neighbors, Point, bonds, isintracell, isparallel, rcoordinate
+using ..Spatials: AbstractLattice, Bond, Neighbors, Point, bonds, isintracell, isparallel, nneighbor, rcoordinate
 using ..Toolkit: Float, atol, efficientoperations, parametertype, reparameter, rtol
 
 import ..QuantumLattices: add!, expand, expand!, reset!, str, update, update!
@@ -20,8 +20,8 @@ import ..QuantumOperators: scalartype
 import ..Spatials: Bond, dlmsave
 import ..Toolkit: contenttoshow, showasleaf, showcontent
 
-export Action, Algorithm, Assignment, Boundary, CategorizedGenerator, Data, Eager, Embedding, ExpansionStyle, Formula, Frontend, Generator, LatticeModel, Lazy, OperatorGenerator, Parameters, ParametricGenerator, StaticGenerator
-export checkoptions, config, contenttocache, contenttoconfig, datatype, eager, hasoption, lazy, options, optionsinfo, plain, qlcclean, qlclean, qlcsave, qldclean, qldsave, qlload, qlsave, run!, stamp
+export Algorithm, Assignment, Boundary, CategorizedGenerator, Data, Eager, Embedding, ExpansionStyle, Formula, FrameworkElement, Generator, LatticeModel, Lazy, OperatorGenerator, Parameters, ParametricGenerator, StaticGenerator
+export checkoptions, config, contenttocache, contenttoconfig, datatype, dependencytypes, eager, hasoption, lazy, options, optionsinfo, plain, qlcclean, qlclean, qlcsave, qldclean, qldsave, qlload, qlsave, run!, stamp, @delegate
 
 """
     Parameters{Names}(values::Number...) where Names
@@ -350,158 +350,156 @@ Return the concrete `OperatorSum` type that `Embedding` produces when applied to
 @inline Base.valtype(P::Type{<:Embedding}, M::Type{<:OperatorSet}) = valtype(P, eltype(M))
 
 """
-    LatticeModel
+    FrameworkElement
 
-Abstract supertype for all representations of a quantum lattice system.
+Abstract supertype for all elements managed by the `Frameworks` submodule: lattice models, algorithms and assignments.
 
-Subtypes must implement `valtype`. `Parameters` and `update!` should also be implemented as applicable.
+It provides a unified protocol: parameters ([`Parameters`](@ref)/[`update!`](@ref)), naming ([`str`](@ref)/[`basename`](@ref)/[`pathof`](@ref)), persistence ([`config`](@ref)/[`stamp`](@ref)/[`qlsave`](@ref)) and display, plus an optional `valtype` protocol (a type-level `valtype` automatically grants `scalartype`/`eltype`).
 """
-abstract type LatticeModel end
-@inline Base.:(==)(model₁::LatticeModel, model₂::LatticeModel) = ==(efficientoperations, model₁, model₂)
-@inline Base.isequal(model₁::LatticeModel, model₂::LatticeModel) = isequal(efficientoperations, model₁, model₂)
-@inline Base.show(io::IO, model::LatticeModel) = print(io, nameof(typeof(model)))
-@inline showasleaf(::Type{<:LatticeModel}) = false
-@inline Base.show(io::IO, ::MIME"text/plain", model::LatticeModel) = showcontent(io, model)
+abstract type FrameworkElement end
+@inline Base.show(io::IO, element::FrameworkElement) = print(io, nameof(typeof(element)))
+@inline showasleaf(::Type{<:FrameworkElement}) = false
+@inline Base.show(io::IO, ::MIME"text/plain", element::FrameworkElement) = showcontent(io, element)
 
 """
-    valtype(model::LatticeModel)
-    valtype(::Type{<:LatticeModel})
+    valtype(element::FrameworkElement)
+    valtype(::Type{<:FrameworkElement})
 
-Get the valtype of a `LatticeModel`. Subtypes must implement the type-level method.
+Get the valtype of a framework element. The instance-level method forwards to the type-level one, which subtypes may implement.
 """
-@inline Base.valtype(model::LatticeModel) = valtype(typeof(model))
-
-"""
-    scalartype(model::LatticeModel)
-    scalartype(::Type{T}) where {T<:LatticeModel}
-
-Get the scalar type of a `LatticeModel`.
-"""
-@inline scalartype(model::LatticeModel) = scalartype(typeof(model))
-@inline scalartype(::Type{T}) where {T<:LatticeModel} = scalartype(valtype(T))
+@inline Base.valtype(element::FrameworkElement) = valtype(typeof(element))
 
 """
-    eltype(model::LatticeModel)
-    eltype(::Type{T}) where {T<:LatticeModel}
+    scalartype(element::FrameworkElement)
+    scalartype(::Type{T}) where {T<:FrameworkElement}
 
-Get the eltype of a `LatticeModel`.
+Get the scalar type of a framework element, derived from its valtype.
 """
-@inline Base.eltype(model::LatticeModel) = eltype(typeof(model))
-@inline Base.eltype(::Type{T}) where {T<:LatticeModel} = eltype(valtype(T))
-
-"""
-    Parameters(model::LatticeModel) -> NamedTuple
-
-Get the parameters of a lattice model.
-
-Returns `model.parameters` if the type has a `:parameters` field, otherwise an empty `NamedTuple`.
-"""
-@inline @generated Parameters(model::LatticeModel) = :parameters in fieldnames(model) ? :(model.parameters) : Parameters()
+@inline scalartype(element::FrameworkElement) = scalartype(typeof(element))
+@inline scalartype(::Type{T}) where {T<:FrameworkElement} = scalartype(valtype(T))
 
 """
-    contenttoconfig(model::LatticeModel) -> Tuple
+    eltype(element::FrameworkElement)
+    eltype(::Type{T}) where {T<:FrameworkElement}
 
-Return the structural components that characterize a lattice model.
+Get the eltype of a framework element, derived from its valtype.
+"""
+@inline Base.eltype(element::FrameworkElement) = eltype(typeof(element))
+@inline Base.eltype(::Type{T}) where {T<:FrameworkElement} = eltype(valtype(T))
 
-Together with [`Parameters`](@ref), these components determine the model's identity.
+"""
+    Parameters(element::FrameworkElement) -> NamedTuple
+
+Get the parameters of a framework element.
+
+Returns `element.parameters` if the type has a `:parameters` field, otherwise an empty `NamedTuple`.
+"""
+@inline @generated Parameters(element::FrameworkElement) = :parameters in fieldnames(element) ? :(element.parameters) : Parameters()
+
+"""
+    contenttoconfig(element::FrameworkElement) -> Tuple
+
+Return the structural components that characterize a framework element.
+
+Together with [`Parameters`](@ref), these components determine the element's identity.
 Defaults to an empty `Tuple`. Subtypes should override this to specify which structural components to include.
 """
-@inline contenttoconfig(model::LatticeModel) = ()
+@inline contenttoconfig(element::FrameworkElement) = ()
 
 """
-    config(model::LatticeModel) -> String
+    config(element::FrameworkElement) -> String
 
 Get the configuration fingerprint: the SHA-512 digest of [`contenttoconfig`](@ref).
 """
-function config(model::LatticeModel)
+function config(element::FrameworkElement)
     io = IOBuffer()
-    serialize(io, contenttoconfig(model))
+    serialize(io, contenttoconfig(element))
     return bytes2hex(sha512(take!(io)))
 end
 
 """
-    stamp(model::LatticeModel; ndecimal::Int=14, select::Function=name::Symbol->true, front::String="", rear::String="") -> String
+    stamp(element::FrameworkElement; ndecimal::Int=14, select::Function=name::Symbol->true, front::String="", rear::String="") -> String
 
-Generate a deterministic stamp for a lattice model, formed as `"config[-parameters]"`.
+Generate a deterministic stamp for a framework element, formed as `"config[-parameters]"`.
 
 The stamp serves as the internal key in data/cache files.
 `ndecimal`, `select`, `front`, and `rear` are passed to `str(::Parameters)`.
 When `str(::Parameters)` returns an empty string, the intermediate `"-"` is omitted.
 """
-function stamp(model::LatticeModel; ndecimal::Int=14, select::Function=name::Symbol->true, front::String="", rear::String="")
-    configuration = config(model)
-    parameters = str(Parameters(model); ndecimal=ndecimal, select=select, front=front, rear=rear)
+function stamp(element::FrameworkElement; ndecimal::Int=14, select::Function=name::Symbol->true, front::String="", rear::String="")
+    configuration = config(element)
+    parameters = str(Parameters(element); ndecimal=ndecimal, select=select, front=front, rear=rear)
     return string(configuration, prepend(parameters, "-"))
 end
 
 """
-    contenttocache(model::LatticeModel) -> NamedTuple
+    contenttocache(element::FrameworkElement) -> NamedTuple
 
-Return the cacheable content of a lattice model as a `NamedTuple`.
+Return the cacheable content of a framework element as a `NamedTuple`.
 
 Returns an empty `NamedTuple` by default.
 Subtypes should override this to specify what should be cached.
 """
-@inline contenttocache(model::LatticeModel) = NamedTuple()
+@inline contenttocache(element::FrameworkElement) = NamedTuple()
 
 """
-    dirname(model::LatticeModel) -> String
+    dirname(element::FrameworkElement) -> String
 
-Get the dirname of the data/cache file of a lattice model.
+Get the dirname of the data/cache file of a framework element.
 
 Defaults to `"."` if the type has no `dir` field.
 """
-@inline @generated Base.dirname(model::LatticeModel) = :dir in fieldnames(model) ? :(model.dir) : "."
+@inline @generated Base.dirname(element::FrameworkElement) = :dir in fieldnames(element) ? :(element.dir) : "."
 
 """
-    basename(model::LatticeModel, target::Symbol=:void; prefix::String="", suffix::String="") -> String
+    basename(element::FrameworkElement, target::Symbol=:void; prefix::String="", suffix::String="") -> String
 
-Get the basename of a lattice model file, formed as `"prefix-string(model)-suffix.ext"`.
+Get the basename of a framework element file, formed as `"prefix-string(element)-suffix.ext"`.
 
 - `target::Symbol`: `:data` → `.qld`, `:cache` → `.qlc`, `:void` (default) → no extension.
 - `prefix`, `suffix`: prepended/appended to the base name. The separator `"-"` is omitted when the corresponding part is empty.
 """
-@inline function Base.basename(model::LatticeModel, target::Symbol=:void; prefix::String="", suffix::String="")
+@inline function Base.basename(element::FrameworkElement, target::Symbol=:void; prefix::String="", suffix::String="")
     ext = target==:data ? "qld" : target==:cache ? "qlc" : ""
-    return string(append(prefix, "-"), string(model), prepend(suffix, "-"), isempty(ext) ? "" : prepend(ext, "."))
+    return string(append(prefix, "-"), string(element), prepend(suffix, "-"), isempty(ext) ? "" : prepend(ext, "."))
 end
 
 """
-    pathof(model::LatticeModel, target::Symbol; prefix::String="", suffix::String="") -> String
+    pathof(element::FrameworkElement, target::Symbol; prefix::String="", suffix::String="") -> String
 
-Get the full path of a lattice model file.
+Get the full path of a framework element file.
 
-Equivalent to `joinpath(dirname(model), basename(model, target; prefix, suffix))`.
+Equivalent to `joinpath(dirname(element), basename(element, target; prefix, suffix))`.
 """
-@inline function Base.pathof(model::LatticeModel, target::Symbol; prefix::String="", suffix::String="")
-    return joinpath(dirname(model), basename(model, target; prefix=prefix, suffix=suffix))
+@inline function Base.pathof(element::FrameworkElement, target::Symbol; prefix::String="", suffix::String="")
+    return joinpath(dirname(element), basename(element, target; prefix=prefix, suffix=suffix))
 end
 
 """
-    str(model::LatticeModel; prefix::String="", suffix::String="", ndecimal::Int=14, select::Function=name::Symbol->true, front::String="", rear::String="") -> String
+    str(element::FrameworkElement; prefix::String="", suffix::String="", ndecimal::Int=14, select::Function=name::Symbol->true, front::String="", rear::String="") -> String
 
-Get the string representation of a lattice model, formed as `basename[-parameters]`.
+Get the string representation of a framework element, formed as `basename[-parameters]`.
 
-- `prefix` and `suffix`: passed to `basename(::LatticeModel)`.
+- `prefix` and `suffix`: passed to `basename(::FrameworkElement)`.
 - `ndecimal`, `select`, `front`, `rear`: passed to `str(::Parameters)`.
 """
-@inline function str(model::LatticeModel; prefix::String="", suffix::String="", ndecimal::Int=14, select::Function=name::Symbol->true, front::String="", rear::String="")
-    base = basename(model; prefix=prefix, suffix=suffix)
-    return string(base, prepend(str(Parameters(model); ndecimal=ndecimal, select=select, front=front, rear=rear), "-"))
+@inline function str(element::FrameworkElement; prefix::String="", suffix::String="", ndecimal::Int=14, select::Function=name::Symbol->true, front::String="", rear::String="")
+    base = basename(element; prefix=prefix, suffix=suffix)
+    return string(base, prepend(str(Parameters(element); ndecimal=ndecimal, select=select, front=front, rear=rear), "-"))
 end
 
 """
-    qlsave(target::Symbol, model::LatticeModel, models::LatticeModel...; prefix::String="", suffix::String="", ndecimal::Int=14, select::Function=name::Symbol->true, front::String="", rear::String="")
+    qlsave(target::Symbol, element::FrameworkElement, elements::FrameworkElement...; prefix::String="", suffix::String="", ndecimal::Int=14, select::Function=name::Symbol->true, front::String="", rear::String="")
 
-Save lattice models to data (`.qld`) or cache (`.qlc`) files.
+Save framework elements to data (`.qld`) or cache (`.qlc`) files.
 
 - `target::Symbol`: `:data` or `:cache`.
 - `prefix`, `suffix`: passed to `pathof` → `basename`.
 - `ndecimal`, `select`, `front`, `rear`: passed to `stamp` → `str(::Parameters)`.
 """
-function qlsave(target::Symbol, model::LatticeModel, models::LatticeModel...; prefix::String="", suffix::String="", ndecimal::Int=14, select::Function=name::Symbol->true, front::String="", rear::String="")
+function qlsave(target::Symbol, element::FrameworkElement, elements::FrameworkElement...; prefix::String="", suffix::String="", ndecimal::Int=14, select::Function=name::Symbol->true, front::String="", rear::String="")
     @assert target∈(:data, :cache) "qlsave error: target must be :data or :cache."
-    for m in (model, models...)
+    for m in (element, elements...)
         content = target==:data ? m : contenttocache(m)
         path = pathof(m, target; prefix=prefix, suffix=suffix)
         qlsave(path, stamp(m; ndecimal=ndecimal, select=select, front=front, rear=rear), content)
@@ -509,18 +507,29 @@ function qlsave(target::Symbol, model::LatticeModel, models::LatticeModel...; pr
 end
 
 """
-    qldsave(model::LatticeModel, models::LatticeModel...; kwargs...) -> String
+    qldsave(element::FrameworkElement, elements::FrameworkElement...; kwargs...) -> String
 
-Shortcut for `qlsave(:data, model, models...; kwargs...)`.
+Shortcut for `qlsave(:data, element, elements...; kwargs...)`.
 """
-@inline qldsave(model::LatticeModel, models::LatticeModel...; kwargs...) = qlsave(:data, model, models...; kwargs...)
+@inline qldsave(element::FrameworkElement, elements::FrameworkElement...; kwargs...) = qlsave(:data, element, elements...; kwargs...)
 
 """
-    qlcsave(model::LatticeModel, models::LatticeModel...; kwargs...) -> String
+    qlcsave(element::FrameworkElement, elements::FrameworkElement...; kwargs...) -> String
 
-Shortcut for `qlsave(:cache, model, models...; kwargs...)`.
+Shortcut for `qlsave(:cache, element, elements...; kwargs...)`.
 """
-@inline qlcsave(model::LatticeModel, models::LatticeModel...; kwargs...) = qlsave(:cache, model, models...; kwargs...)
+@inline qlcsave(element::FrameworkElement, elements::FrameworkElement...; kwargs...) = qlsave(:cache, element, elements...; kwargs...)
+
+"""
+    LatticeModel <: FrameworkElement
+
+Abstract supertype for all representations of a quantum lattice system.
+
+Subtypes must implement the type-level `valtype`. `Parameters` and `update!` should also be implemented as applicable.
+"""
+abstract type LatticeModel <: FrameworkElement end
+@inline Base.:(==)(model₁::LatticeModel, model₂::LatticeModel) = ==(efficientoperations, model₁, model₂)
+@inline Base.isequal(model₁::LatticeModel, model₂::LatticeModel) = isequal(efficientoperations, model₁, model₂)
 
 """
     Formula{V, F<:Function, P<:Parameters}
@@ -930,6 +939,17 @@ function expansion(terms::ZeroAtLeast{Term}, bonds::Vector{<:Bond}, hilbert::Hil
 end
 
 """
+    OperatorGenerator(lattice::AbstractLattice, hilbert::Hilbert, terms::OneOrMore{Term}, boundary::Boundary=plain; half::Bool=false, neighbors::Union{Int, Neighbors}=nneighbor(terms))
+
+Convenience constructor that takes a lattice instead of a pre-computed bond list.
+
+The required bonds are determined automatically from the terms via [`nneighbor`](@ref).
+"""
+@inline function OperatorGenerator(lattice::AbstractLattice, hilbert::Hilbert, terms::OneOrMore{Term}, boundary::Boundary=plain; half::Bool=false, neighbors::Union{Int, Neighbors}=nneighbor(terms))
+    return OperatorGenerator(bonds(lattice, neighbors), hilbert, terms, boundary; half=half)
+end
+
+"""
     OperatorGenerator(operators::OperatorSet, bonds::Vector{<:Bond}, hilbert::Hilbert, terms::ZeroOrMore{Term}; half::Bool=false)
 
 Construct an operator generator combining pre-computed operators with term-based operators.
@@ -1042,6 +1062,7 @@ Reset a categorized generator by its source operator generator of (representatio
     Generator(constops, alterops::NamedTuple, boundops::NamedTuple, parameters::Parameters, boundary::Boundary) -> CategorizedGenerator
     Generator(ops::CategorizedGenerator{<:Operators}, bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term}, half::Bool) -> OperatorGenerator
     Generator(bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term}, boundary::Boundary=plain; half::Bool=false) -> OperatorGenerator
+    Generator(lattice::AbstractLattice, hilbert::Hilbert, terms::OneOrMore{Term}, boundary::Boundary=plain; half::Bool=false, neighbors::Union{Int, Neighbors}=nneighbor(terms)) -> OperatorGenerator
     Generator(operators::OperatorSet, bonds::Vector{<:Bond}, hilbert::Hilbert, terms::ZeroOrMore{Term}; half::Bool=false) -> OperatorGenerator
 
 Factory constructor for `Generator` subtypes.
@@ -1053,6 +1074,7 @@ Unlike [`LatticeModel`](@ref), this factory only constructs `Generator` subtypes
 @inline Generator(constops, alterops::NamedTuple, boundops::NamedTuple, parameters::Parameters, boundary::Boundary) = CategorizedGenerator(constops, alterops, boundops, parameters, boundary)
 @inline Generator(ops::CategorizedGenerator{<:Operators}, bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term}, half::Bool) = OperatorGenerator(ops, bonds, hilbert, terms, half)
 @inline Generator(bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term}, boundary::Boundary=plain; half::Bool=false) = OperatorGenerator(bonds, hilbert, terms, boundary; half=half)
+@inline Generator(lattice::AbstractLattice, hilbert::Hilbert, terms::OneOrMore{Term}, boundary::Boundary=plain; half::Bool=false, neighbors::Union{Int, Neighbors}=nneighbor(terms)) = OperatorGenerator(lattice, hilbert, terms, boundary; half=half, neighbors=neighbors)
 @inline Generator(operators::OperatorSet, bonds::Vector{<:Bond}, hilbert::Hilbert, terms::ZeroOrMore{Term}; half::Bool=false) = OperatorGenerator(operators, bonds, hilbert, terms; half=half)
 
 """
@@ -1061,47 +1083,26 @@ Unlike [`LatticeModel`](@ref), this factory only constructs `Generator` subtypes
     LatticeModel(constops, alterops::NamedTuple, boundops::NamedTuple, parameters::Parameters, boundary::Boundary) -> CategorizedGenerator
     LatticeModel(ops::CategorizedGenerator{<:Operators}, bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term}, half::Bool) -> OperatorGenerator
     LatticeModel(bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term}, boundary::Boundary=plain; half::Bool=false) -> OperatorGenerator
+    LatticeModel(lattice::AbstractLattice, hilbert::Hilbert, terms::OneOrMore{Term}, boundary::Boundary=plain; half::Bool=false, neighbors::Union{Int, Neighbors}=nneighbor(terms)) -> OperatorGenerator
     LatticeModel(operators::OperatorSet, bonds::Vector{<:Bond}, hilbert::Hilbert, terms::ZeroOrMore{Term}; half::Bool=false) -> OperatorGenerator
 
 Unified factory constructor for `LatticeModel` subtypes.
 
 Dispatches on the argument types to construct the appropriate concrete representation.
-`Frontend` subtypes and `Algorithm` are not constructed via this factory.
+`Algorithm` and `Assignment` are not constructed via this factory.
 """
 @inline LatticeModel(expression::Function, parameters::Parameters) = Formula(expression, parameters)
 @inline LatticeModel(ops::OperatorSet) = StaticGenerator(ops)
 @inline LatticeModel(constops, alterops::NamedTuple, boundops::NamedTuple, parameters::Parameters, boundary::Boundary) = CategorizedGenerator(constops, alterops, boundops, parameters, boundary)
 @inline LatticeModel(ops::CategorizedGenerator{<:Operators}, bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term}, half::Bool) = OperatorGenerator(ops, bonds, hilbert, terms, half)
 @inline LatticeModel(bonds::Vector{<:Bond}, hilbert::Hilbert, terms::OneOrMore{Term}, boundary::Boundary=plain; half::Bool=false) = OperatorGenerator(bonds, hilbert, terms, boundary; half=half)
+@inline LatticeModel(lattice::AbstractLattice, hilbert::Hilbert, terms::OneOrMore{Term}, boundary::Boundary=plain; half::Bool=false, neighbors::Union{Int, Neighbors}=nneighbor(terms)) = OperatorGenerator(lattice, hilbert, terms, boundary; half=half, neighbors=neighbors)
 @inline LatticeModel(operators::OperatorSet, bonds::Vector{<:Bond}, hilbert::Hilbert, terms::ZeroOrMore{Term}; half::Bool=false) = OperatorGenerator(operators, bonds, hilbert, terms; half=half)
-
-"""
-    Frontend <: LatticeModel
-
-Frontend of algorithms applied to a quantum lattice system.
-"""
-abstract type Frontend <: LatticeModel end
-
-"""
-    Action
-
-Abstract type for all actions.
-"""
-abstract type Action end
-@inline Base.:(==)(action₁::Action, action₂::Action) = ==(efficientoperations, action₁, action₂)
-@inline Base.isequal(action₁::Action, action₂::Action) = isequal(efficientoperations, action₁, action₂)
-
-"""
-    update!(action::Action; parameters...) -> Action
-
-Update the parameters of an action.
-"""
-@inline update!(action::Action; parameters...) = action
 
 """
     Data
 
-Abstract type for the data of an action.
+Abstract type for the data of a task.
 """
 abstract type Data end
 @inline Base.:(==)(data₁::Data, data₂::Data) = ==(efficientoperations, data₁, data₂)
@@ -1118,35 +1119,57 @@ Convert `Data` to `Tuple`.
 end
 
 """
-    Assignment{A<:Action, P<:Parameters, M<:Function, T<:Tuple, D<:Data} <: LatticeModel
+    Assignment{A, P<:Parameters, T<:Tuple, D<:Data} <: FrameworkElement
 
-An assignment associated with an action.
+An assignment associated with a computation task (task for short).
+
+The fields fall into four groups: identity (`name`), storage (`dir`, only used by `pathof`/persistence), computation (`task`, `parameters`, `dependencies`) and result (`data`).
 """
-mutable struct Assignment{A<:Action, P<:Parameters, M<:Function, T<:Tuple, D<:Data} <: LatticeModel
+mutable struct Assignment{A, P<:Parameters, T<:Tuple, D<:Data} <: FrameworkElement
     const dir::String
     const name::Symbol
-    const action::A
+    const task::A
     parameters::P
-    const map::M
     const dependencies::T
     data::D
-    function Assignment(::Type{D}, dir::String, name::Symbol, action::Action, parameters::Parameters, map::Function, dependencies::ZeroAtLeast{Assignment}) where {D<:Data}
-        new{typeof(action), typeof(parameters), typeof(map), typeof(dependencies), D}(dir, name, action, parameters, map, dependencies)
+    function Assignment(::Type{D}, dir::String, name::Symbol, task, parameters::Parameters, dependencies::ZeroAtLeast{Assignment}) where {D<:Data}
+        new{typeof(task), typeof(parameters), typeof(dependencies), D}(dir, name, task, parameters, dependencies)
     end
 end
-@inline Base.valtype(::Type{<:Assignment{<:Action, <:Parameters, <:Function, <:Tuple, D}}) where {D<:Data} = D
-@inline contenttoshow(assign::Assignment) = (; name=assign.name, action=assign.action, parameters=assign.parameters)
+@inline contenttoshow(assign::Assignment) = (; name=assign.name, task=assign.task, parameters=assign.parameters)
+
+"""
+    ==(assign₁::Assignment, assign₂::Assignment) -> Bool
+    isequal(assign₁::Assignment, assign₂::Assignment) -> Bool
+
+Judge whether two assignments are equivalent.
+
+The compared fields are `(name, task, parameters, dependencies)` and `data`; `dir` is excluded. The `task` fields are compared fieldwise via `efficientoperations`, and an undefined `data` only matches another undefined `data`.
+"""
+@inline function Base.:(==)(assign₁::Assignment, assign₂::Assignment)
+    ==((assign₁.name, assign₁.parameters, assign₁.dependencies), (assign₂.name, assign₂.parameters, assign₂.dependencies)) || return false
+    ==(efficientoperations, assign₁.task, assign₂.task) || return false
+    d₁, d₂ = isdefined(assign₁, :data), isdefined(assign₂, :data)
+    d₁ == d₂ || return false
+    !d₁ && return true
+    return assign₁.data == assign₂.data
+end
+@inline function Base.isequal(assign₁::Assignment, assign₂::Assignment)
+    isequal((assign₁.name, assign₁.parameters, assign₁.dependencies), (assign₂.name, assign₂.parameters, assign₂.dependencies)) || return false
+    isequal(efficientoperations, assign₁.task, assign₂.task) || return false
+    d₁, d₂ = isdefined(assign₁, :data), isdefined(assign₂, :data)
+    d₁ == d₂ || return false
+    !d₁ && return true
+    return isequal(assign₁.data, assign₂.data)
+end
 
 """
     update!(assign::Assignment; parameters...) -> Assignment
 
-Update the parameters of an assignment and the status of its associated action.
+Update the parameters of an assignment.
 """
 function update!(assign::Assignment; parameters...)
-    if length(parameters)>0
-        assign.parameters = update(assign.parameters; parameters...)
-        update!(assign.action; assign.map(assign.parameters)...)
-    end
+    length(parameters)>0 && (assign.parameters = update(assign.parameters; parameters...))
     return assign
 end
 
@@ -1172,7 +1195,7 @@ Get the complete info of the options of a certain type of `Assignment`, includin
 function optionsinfo(::Type{A}; level::Int=1) where {A<:Assignment}
     io = IOBuffer()
     indent = repeat(" ", 2level)
-    print(io, "Assignment{<:$(nameof(fieldtype(A, :action)))} options:\n")
+    print(io, "Assignment{<:$(nameof(fieldtype(A, :task)))} options:\n")
     options = Frameworks.options(A)
     for (i, (key, value)) in enumerate(pairs(options))
         print(io, indent, "($i) `:$key`: $value", i<length(options) ? ";" : ".", '\n')
@@ -1217,52 +1240,287 @@ Save the data of an assignment to a delimited file.
 end
 
 """
-    Algorithm{F<:Frontend, P<:Parameters, M<:Function} <: LatticeModel
+    Algorithm{L<:LatticeModel, P<:Parameters, M<:Function} <: FrameworkElement
 
 An algorithm associated with a frontend.
+
+An algorithm is a transparent proxy of its `frontend`: any pure query interface `f` of the frontend satisfies `f(alg, ...) ≡ f(alg.frontend, ...)` (see [`@delegate`](@ref)), with only the execution context (e.g. the `timer`) injected.
+
+The fields fall into four groups: identity (`name`), storage (`dir`, only used by `pathof`/persistence), computation (`frontend`, `parameters`, `map`) and observation (`timer`).
 """
-mutable struct Algorithm{F<:Frontend, P<:Parameters, M<:Function} <: LatticeModel
+mutable struct Algorithm{L<:LatticeModel, P<:Parameters, M<:Function} <: FrameworkElement
     const dir::String
     const name::Symbol
-    const frontend::F
+    const frontend::L
     parameters::P
     const map::M
     const timer::TimerOutput
 end
+
+"""
+    ==(algorithm₁::Algorithm, algorithm₂::Algorithm) -> Bool
+    isequal(algorithm₁::Algorithm, algorithm₂::Algorithm) -> Bool
+
+Judge whether two algorithms are equivalent.
+
+The compared fields are `(name, frontend, parameters, map)`; `dir` (storage) and `timer` (observation) are excluded.
+"""
 @inline function Base.:(==)(algorithm₁::Algorithm, algorithm₂::Algorithm)
     return ==(
-        (algorithm₁.dir, algorithm₁.name, algorithm₁.frontend, algorithm₁.parameters, algorithm₁.map),
-        (algorithm₂.dir, algorithm₂.name, algorithm₂.frontend, algorithm₂.parameters, algorithm₂.map),
+        (algorithm₁.name, algorithm₁.frontend, algorithm₁.parameters, algorithm₁.map),
+        (algorithm₂.name, algorithm₂.frontend, algorithm₂.parameters, algorithm₂.map),
     )
 end
 @inline function Base.isequal(algorithm₁::Algorithm, algorithm₂::Algorithm)
     return isequal(
-        (algorithm₁.dir, algorithm₁.name, algorithm₁.frontend, algorithm₁.parameters, algorithm₁.map),
-        (algorithm₂.dir, algorithm₂.name, algorithm₂.frontend, algorithm₂.parameters, algorithm₂.map),
+        (algorithm₁.name, algorithm₁.frontend, algorithm₁.parameters, algorithm₁.map),
+        (algorithm₂.name, algorithm₂.frontend, algorithm₂.parameters, algorithm₂.map),
     )
 end
-@inline Base.valtype(::Type{<:Algorithm{F}}) where {F<:Frontend} = valtype(F)
+@inline Base.valtype(::Type{<:Algorithm{L}}) where {L<:LatticeModel} = valtype(L)
 @inline contenttoshow(alg::Algorithm) = (; name=alg.name, frontend=alg.frontend, parameters=alg.parameters)
 
 """
-    Algorithm(name::Symbol, frontend::Frontend, parameters::Parameters=Parameters(frontend), map::Function=identity; dir::String=".", timer::TimerOutput=TimerOutput())
+    Algorithm(name::Symbol, frontend::LatticeModel, parameters::Parameters=Parameters(frontend), map::Function=identity; dir::String=".", timer::TimerOutput=TimerOutput())
 
 Construct an algorithm.
 """
-@inline function Algorithm(name::Symbol, frontend::Frontend, parameters::Parameters=Parameters(frontend), map::Function=identity; dir::String=".", timer::TimerOutput=TimerOutput())
+@inline function Algorithm(name::Symbol, frontend::LatticeModel, parameters::Parameters=Parameters(frontend), map::Function=identity; dir::String=".", timer::TimerOutput=TimerOutput())
     return Algorithm(dir, name, frontend, parameters, map, timer)
 end
 
 """
-    datatype(::Type{A}, ::Type{F}) where {A<:Action, F<:Frontend}
+    @delegate function f(x::X, args...; kwargs...) ... end
+    @delegate inject=(s₁, ...) function f(x::X, args...; kwargs...) ... end
+    @delegate function f(::Type{<:X}, args...; kwargs...) ... end
+    @delegate @wrapper f(x::X, args...; kwargs...) = ...
 
-Get the concrete subtype of `Data` according to the types of an `Action` and a `Frontend`.
+Annotate a pure query interface of a `LatticeModel` subtype `X` so that it is transparently delegated to [`Algorithm`](@ref).
+
+The expansion is the original method plus a forwarding method:
+- instance level (`x::X`): `f(x::Algorithm{<:X}, args...; kwargs...) = f(x.frontend, args...; kwargs...)`;
+- type level (`::Type{<:X}`): `f(::Type{<:Algorithm{L}}, args...; kwargs...) where {L<:X} = f(L, args...; kwargs...)`.
+
+The forwarding method keeps the original argument names (with type annotations), default values and definition form (long/short). Wrapping macros (e.g. `@inline`) are copied verbatim to the forwarding method; `@generated` is not supported.
+
+With `inject=(s₁, ...)`, each listed symbol must be a keyword argument of the original signature (checked at macro expansion time; type annotations such as `timer::TimerOutput=tbatimer` are recognized): in the forwarding signature its default is replaced by the same-named field of the algorithm (`x.s₁`), and it is passed explicitly in the forwarding call. Injection is only available at the instance level.
+
+# Boundaries
+- Only annotate pure query interfaces; never annotate `update!`/`Parameters`.
+- `@delegate` must be the outermost macro of the definition (wrapping macros such as `@inline` go inside it). A docstring can be attached directly; it binds to the original method.
 """
-@inline function datatype(::Type{A}, ::Type{F}) where {A<:Action, F<:Frontend}
+macro delegate(args...)
+    isempty(args) && error("@delegate error: nothing to delegate.")
+    inject = Symbol[]
+    for arg in args[1:end-1]
+        (arg isa Expr && arg.head == :(=) && arg.args[1] == :inject) || error("@delegate error: unsupported option `$arg`; only `inject=(...)` is allowed.")
+        entries = arg.args[2]
+        entries = entries isa Expr && entries.head == :tuple ? entries.args : Any[entries]
+        for entry in entries
+            entry isa QuoteNode && (entry = entry.value)
+            entry isa Symbol || error("@delegate error: inject entries must be symbols, got `$entry`.")
+            push!(inject, entry)
+        end
+    end
+    ex = args[end]
+
+    wrappers = Expr[]
+    while ex isa Expr && ex.head == :macrocall
+        name = ex.args[1]
+        macname = name isa Symbol ? name : name isa GlobalRef ? name.name : nothing
+        macname == Symbol("@generated") && error("@delegate error: `@generated` functions are not supported.")
+        push!(wrappers, ex)
+        ex = ex.args[end]
+    end
+
+    whereparams = Any[]
+    if ex isa Expr && ex.head == :where
+        append!(whereparams, ex.args[2:end])
+        ex = ex.args[1]
+    end
+    (ex isa Expr && (ex.head == :function || ex.head == :(=))) || error("@delegate error: expected a function definition, got `$ex`.")
+    long = ex.head == :function
+    sig = ex.args[1]
+    if sig isa Expr && sig.head == :where
+        append!(whereparams, sig.args[2:end])
+        sig = sig.args[1]
+    end
+    (sig isa Expr && sig.head == :call) || error("@delegate error: expected a call signature, got `$sig`.")
+
+    fname = sig.args[1]
+    posargs = sig.args[2:end]
+    kwargs = Any[]
+    if !isempty(posargs) && posargs[1] isa Expr && posargs[1].head == :parameters
+        kwargs = posargs[1].args
+        posargs = posargs[2:end]
+    end
+    isempty(posargs) && error("@delegate error: the signature must have at least one positional argument.")
+
+    firstarg = posargs[1]
+    (firstarg isa Expr && firstarg.head == :(::)) || error("@delegate error: the first positional argument must be annotated, e.g. `x::X` or `::Type{<:X}`.")
+    if length(firstarg.args) == 1
+        ann = firstarg.args[1]
+        (ann isa Expr && ann.head == :curly && ann.args[1] == :Type) || error("@delegate error: an unnamed first positional argument is only supported in the type-level form `::Type{<:X}`.")
+        inner = ann.args[2]
+        X = inner isa Expr && inner.head == :<: ? inner.args[end] : inner
+        typelevel = true
+        xname = nothing
+    else
+        xname = firstarg.args[1]
+        xname isa Symbol || error("@delegate error: the first positional argument must be annotated, e.g. `x::X` or `::Type{<:X}`.")
+        ann = firstarg.args[2]
+        X = ann isa Expr && ann.head == :<: ? ann.args[end] : ann
+        typelevel = false
+    end
+    kwargname(kw::Symbol) = kw
+    kwargname(kw::Expr) = kw.head == :kw ? kwargname(kw.args[1]) : kw.head == :(::) && !isempty(kw.args) && kw.args[1] isa Symbol ? kw.args[1] : nothing
+    kwargname(kw) = nothing
+    (typelevel && !isempty(inject)) && error("@delegate error: `inject` is only available at the instance level.")
+    for entry in inject
+        found = any(kw -> kwargname(kw) === entry, kwargs)
+        found || error("@delegate error: `:$entry` declared in `inject` is not a keyword argument of the original signature.")
+    end
+
+    algtype = GlobalRef(Frameworks, :Algorithm)
+    fsigpos, callpos = Any[], Any[]
+    if typelevel
+        L = :L in whereparams ? gensym(:L) : :L
+        push!(whereparams, Expr(:<:, L, X))
+        push!(fsigpos, Expr(:(::), Expr(:curly, :Type, Expr(:<:, Expr(:curly, algtype, Expr(:<:, L))))))
+        push!(callpos, L)
+    else
+        push!(fsigpos, Expr(:(::), xname, Expr(:curly, algtype, Expr(:<:, X))))
+        push!(callpos, Expr(:., xname, QuoteNode(:frontend)))
+    end
+    for (i, arg) in enumerate(posargs[2:end])
+        if arg isa Symbol
+            push!(fsigpos, arg)
+            push!(callpos, arg)
+        elseif arg isa Expr && arg.head == :(::) && length(arg.args) == 2
+            push!(fsigpos, arg)
+            push!(callpos, arg.args[1])
+        elseif arg isa Expr && arg.head == :(::)
+            name = Symbol("_arg", i)
+            push!(fsigpos, Expr(:(::), name, arg.args[1]))
+            push!(callpos, name)
+        elseif arg isa Expr && arg.head == :kw
+            inner = arg.args[1]
+            if inner isa Symbol
+                push!(fsigpos, arg)
+                push!(callpos, inner)
+            elseif inner isa Expr && inner.head == :(::) && length(inner.args) == 2
+                push!(fsigpos, arg)
+                push!(callpos, inner.args[1])
+            elseif inner isa Expr && inner.head == :(::)
+                name = Symbol("_arg", i)
+                push!(fsigpos, Expr(:kw, Expr(:(::), name, inner.args[1]), arg.args[2]))
+                push!(callpos, name)
+            else
+                error("@delegate error: unsupported positional argument `$arg`.")
+            end
+        elseif arg isa Expr && arg.head == :...
+            inner = arg.args[1]
+            if inner isa Symbol
+                push!(fsigpos, arg)
+                push!(callpos, Expr(:..., inner))
+            elseif inner isa Expr && inner.head == :(::) && length(inner.args) == 2
+                push!(fsigpos, arg)
+                push!(callpos, Expr(:..., inner.args[1]))
+            elseif inner isa Expr && inner.head == :(::)
+                name = Symbol("_arg", i)
+                push!(fsigpos, Expr(:..., Expr(:(::), name, inner.args[1])))
+                push!(callpos, Expr(:..., name))
+            else
+                error("@delegate error: unsupported positional argument `$arg`.")
+            end
+        else
+            error("@delegate error: unsupported positional argument `$arg`.")
+        end
+    end
+    fsigkw, callkw = Any[], Any[]
+    for kw in kwargs
+        if kw isa Symbol
+            push!(fsigkw, kw)
+            push!(callkw, Expr(:kw, kw, kw))
+        elseif kw isa Expr && kw.head == :kw
+            inner = kw.args[1]
+            if inner isa Symbol
+                name, siginner = inner, inner
+            elseif inner isa Expr && inner.head == :(::) && length(inner.args) == 2 && inner.args[1] isa Symbol
+                name, siginner = inner.args[1], inner
+            else
+                error("@delegate error: unsupported keyword argument `$kw`.")
+            end
+            default = name in inject ? Expr(:., xname, QuoteNode(name)) : kw.args[2]
+            push!(fsigkw, Expr(:kw, siginner, default))
+            push!(callkw, Expr(:kw, name, name))
+        elseif kw isa Expr && kw.head == :(::) && length(kw.args) == 2 && kw.args[1] isa Symbol
+            push!(fsigkw, kw)
+            push!(callkw, Expr(:kw, kw.args[1], kw.args[1]))
+        elseif kw isa Expr && kw.head == :...
+            push!(fsigkw, kw)
+            push!(callkw, kw)
+        else
+            error("@delegate error: unsupported keyword argument `$kw`.")
+        end
+    end
+
+    fsig = Expr(:call, fname)
+    isempty(fsigkw) || push!(fsig.args, Expr(:parameters, fsigkw...))
+    append!(fsig.args, fsigpos)
+    fcall = Expr(:call, fname)
+    isempty(callkw) || push!(fcall.args, Expr(:parameters, callkw...))
+    append!(fcall.args, callpos)
+    fbody = Expr(:block, __source__, fcall)
+
+    function hasname(s::Symbol, ex)::Bool
+        ex === s && return true
+        ex isa QuoteNode && ex.value === s && return true
+        ex isa Expr && any(arg->hasname(s, arg), ex.args) && return true
+        return false
+    end
+    kept = Any[]
+    while true
+        newkept = Any[]
+        for p in whereparams
+            s = p isa Symbol ? p : p isa Expr && p.head == :<: ? p.args[1] : nothing
+            (s === nothing || hasname(s, fsig) || any(q->hasname(s, q), kept)) && push!(newkept, p)
+        end
+        length(newkept) == length(kept) && break
+        kept = newkept
+    end
+    whereparams = kept
+
+    isempty(whereparams) || (fsig = Expr(:where, fsig, whereparams...))
+    fdef = long ? Expr(:function, fsig, fbody) : Expr(:(=), fsig, fbody)
+    for wrapper in reverse(wrappers)
+        fdef = Expr(:macrocall, wrapper.args[1:end-1]..., fdef)
+    end
+    marked = Expr(:macrocall, GlobalRef(Core, Symbol("@__doc__")), __source__, args[end])
+    return Expr(:block, __source__, esc(marked), esc(fdef))
+end
+
+"""
+    datatype(::Type{A}, ::Type{F}) where {A, F<:LatticeModel}
+
+Get the concrete subtype of `Data` produced by running a task of type `A` on a frontend of type `F`.
+
+Explicit registration by defining a more specific method is optional; by default the data type is inferred from the return type of the corresponding `run!`.
+"""
+@inline function datatype(::Type{A}, ::Type{F}) where {A, F<:LatticeModel}
     D = Core.Compiler.return_type(run!, Tuple{Algorithm{F}, Assignment{A}})
-    @assert isconcretetype(D) && D<:Data "datatype error: failure ($D) of the default method for type $A and type $F."
+    @assert isconcretetype(D) && D<:Data "datatype error: inference failed ($D) for task type $A on frontend type $F. Please define `datatype(::Type{$(nameof(A))}, ::Type{$(nameof(F))}) = YourData` explicitly, or check the type stability of the corresponding `run!`."
     return D
 end
+
+"""
+    dependencytypes(::Type) -> Union{Nothing, Tuple}
+
+Declare the expected dependency types of a task, checked when an assignment is registered on an algorithm.
+
+Returns `nothing` by default, which means no validation. Opt in by defining e.g. `dependencytypes(::Type{<:MyTask}) = (SomeOtherTask,)`; the dependencies are then required to match in count and to satisfy `dep isa Assignment{<:Tᵢ}` elementwise. Only fixed-length dependency lists are supported.
+"""
+@inline dependencytypes(::Type) = nothing
 
 """
     update!(alg::Algorithm; parameters...) -> Algorithm
@@ -1302,32 +1560,34 @@ function Base.summary(alg::Algorithm)
 end
 
 """
-    (alg::Algorithm)(assign::Assignment, checkoptions::Bool=true; options...) -> Assignment
-    (assign::Assignment)(alg::Algorithm, checkoptions::Bool=true; options...) -> Assignment
+    (alg::Algorithm)(assign::Assignment; checkoptions::Bool=true, options...) -> Assignment
+    (assign::Assignment)(alg::Algorithm; checkoptions::Bool=true, options...) -> Assignment
 
 Run an assignment based on an algorithm.
 
-The difference between these two methods is that the first uses the parameters of `assign` as the current parameters while the second uses those of `alg`.
+The object in parentheses is the authority on parameters: the first form uses the parameters of `assign` as the current parameters (the algorithm is updated to them), while the second uses those of `alg` (the assignment is updated to them). Dependencies are always recursed in the reverse form (`dependency(alg; ...)`), so that they inherit the parameter context of the call site.
+
+Each assignment is a single-slot cache: the cached data is hit only when `assign.data` is defined and the stored parameters match the current context parameters within `(atol, rtol)` as judged by `match`; `task`/`dependencies` are const and never compared, options do not trigger recomputation, and dependency identities are not compared recursively (a hit `data` is a self-consistent snapshot regardless of the current state of the dependencies, while a miss is corrected by the local check of each node). As corollaries: ① parameters within the tolerance are regarded as identical; ② the only way to force recomputation is to construct a new assignment; ③ a shared dependency switching between different parameter contexts will thrash — duplicate the dependency instance if both must coexist.
 """
-function (alg::Algorithm)(assign::Assignment, checkoptions::Bool=true; options...)
+function (alg::Algorithm)(assign::Assignment; checkoptions::Bool=true, options...)
     @timeit alg.timer string(assign) begin
         checkoptions && Frameworks.checkoptions(typeof(assign); options...)
         ismatched = match(assign.parameters, alg.parameters)
         if !(isdefined(assign, :data) && ismatched)
             ismatched || update!(alg; assign.parameters...)
-            map(dependency->dependency(alg, false; options...), assign.dependencies)
+            map(dependency->dependency(alg; checkoptions=false, options...), assign.dependencies)
             @timeit alg.timer "run!" (assign.data = run!(alg, assign; options...))
         end
     end
     return assign
 end
-function (assign::Assignment)(alg::Algorithm, checkoptions::Bool=true; options...)
+function (assign::Assignment)(alg::Algorithm; checkoptions::Bool=true, options...)
     @timeit alg.timer string(assign) begin
         checkoptions && Frameworks.checkoptions(typeof(assign); options...)
         ismatched = match(alg.parameters, assign.parameters)
         if !(isdefined(assign, :data) && ismatched)
             ismatched || update!(assign; alg.parameters...)
-            map(dependency->dependency(alg, false; options...), assign.dependencies)
+            map(dependency->dependency(alg; checkoptions=false, options...), assign.dependencies)
             @timeit alg.timer "run!" (assign.data = run!(alg, assign; options...))
         end
     end
@@ -1335,20 +1595,28 @@ function (assign::Assignment)(alg::Algorithm, checkoptions::Bool=true; options..
 end
 
 """
-    (alg::Algorithm)(name::Symbol, action::Action, dependencies::ZeroOrMore{Assignment}; dir::String=alg.dir, delay::Bool=false, options...) -> Assignment
-    (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters, dependencies::ZeroOrMore{Assignment}; dir::String=alg.dir, delay::Bool=false, options...) -> Assignment
-    (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters=Parameters(), map::Function=identity, dependencies::ZeroOrMore{Assignment}=(); dir::String=alg.dir, delay::Bool=false, options...) -> Assignment
+    (alg::Algorithm)(name::Symbol, task, dependencies::ZeroOrMore{Assignment}; dir::String=alg.dir, delay::Bool=false, options...) -> Assignment
+    (alg::Algorithm)(name::Symbol, task, parameters::Parameters=Parameters(), dependencies::ZeroOrMore{Assignment}=(); dir::String=alg.dir, delay::Bool=false, options...) -> Assignment
 
-Add an assignment on an algorithm by providing the contents of the assignment, and run this assignment.
+Construct an assignment based on an algorithm by providing the contents of the assignment, and run this assignment.
+
+At construction time, the keys of the local `parameters` must be a subset of those of `alg.parameters`, and the dependencies must satisfy the [`dependencytypes`](@ref) declaration of the task (if any).
 """
-@inline function (alg::Algorithm)(name::Symbol, action::Action, dependencies::ZeroOrMore{Assignment}; dir::String=alg.dir, delay::Bool=false, options...)
-    return alg(name, action, Parameters(), dependencies; delay=delay, dir=dir, options...)
+@inline function (alg::Algorithm)(name::Symbol, task, dependencies::ZeroOrMore{Assignment}; dir::String=alg.dir, delay::Bool=false, options...)
+    return alg(name, task, Parameters(), dependencies; delay=delay, dir=dir, options...)
 end
-@inline function (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters, dependencies::ZeroOrMore{Assignment}; dir::String=alg.dir, delay::Bool=false, options...)
-    return alg(name, action, parameters, identity, dependencies; delay=delay, dir=dir, options...)
-end
-@inline function (alg::Algorithm)(name::Symbol, action::Action, parameters::Parameters=Parameters(), map::Function=identity, dependencies::ZeroOrMore{Assignment}=(); dir::String=alg.dir, delay::Bool=false, options...)
-    assign = Assignment(datatype(typeof(action), typeof(alg.frontend)), dir, name, action, merge(alg.parameters, parameters), map, ZeroOrMore(dependencies))
+@inline function (alg::Algorithm)(name::Symbol, task, parameters::Parameters=Parameters(), dependencies::ZeroOrMore{Assignment}=(); dir::String=alg.dir, delay::Bool=false, options...)
+    unknown = setdiff(keys(parameters), keys(alg.parameters))
+    @assert isempty(unknown) "registration error: unknown local parameter keys $unknown; the algorithm $(alg.name) only has parameters $(keys(alg.parameters))."
+    dtypes = dependencytypes(typeof(task))
+    if !isnothing(dtypes)
+        deps = ZeroOrMore(dependencies)
+        @assert length(deps)==length(dtypes) "registration error: task $(nameof(typeof(task))) expects $(length(dtypes)) dependencies of types $dtypes, but got $(length(deps)) dependencies of types $(map(typeof, deps))."
+        for (i, (dep, T)) in enumerate(zip(deps, dtypes))
+            @assert dep isa Assignment{<:T} "registration error: dependency $i of task $(nameof(typeof(task))) is expected to be an Assignment{<:$T}, but got $(typeof(dep))."
+        end
+    end
+    assign = Assignment(datatype(typeof(task), typeof(alg.frontend)), dir, name, task, merge(alg.parameters, parameters), ZeroOrMore(dependencies))
     delay || begin
         alg(assign; options...)
         @info "Assignment $name: time consumed $(time(alg.timer[string(assign)])/10^9)s."

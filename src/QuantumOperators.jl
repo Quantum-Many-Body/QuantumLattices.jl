@@ -959,8 +959,10 @@ end
     env --> :inline
     result = String[]
     for (i, opt) in enumerate(opts)
-        rep = String(latexify(opt; env=:raw))
-        i>1 && rep[1]≠'-' && push!(result, "+")
+        # a negative coefficient is rendered with a leading space, e.g., " - Ku^{}_{1}u^{}_{2}",
+        # which must be stripped so that the sign can be detected and the space removed
+        rep = strip(String(latexify(opt; env=:raw)))
+        i>1 && !startswith(rep, "-") && push!(result, "+")
         push!(result, rep)
     end
     return LaTeXString(join(result, ""))

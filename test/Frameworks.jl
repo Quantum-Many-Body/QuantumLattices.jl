@@ -1,5 +1,5 @@
 using LinearAlgebra: eigen
-using QuantumLattices: ZeroAtLeast, expand, expand!, reparameter, reset!, str, update
+using QuantumLattices: ZeroAtLeast, efficientoperations, expand, expand!, reparameter, reset!, str, update
 using QuantumLattices.DegreesOfFreedom: CoordinatedIndex, Hilbert, Index
 using QuantumLattices.Frameworks
 using QuantumLattices.QuantumOperators: LinearFunction, Operator, Operators, idtype, scalartype
@@ -7,10 +7,12 @@ using QuantumLattices.Spatials: Bond, BrillouinZone, Lattice, azimuth, bonds, dl
 using QuantumLattices.QuantumSystems: Fock, FockIndex, Hopping, Hubbard, Onsite, 𝕔⁺, 𝕔
 using StaticArrays: SVector, SMatrix, @SMatrix
 
+const TimerOutput = Frameworks.TimerOutput
+
 import CairoMakie as Makie
 import Plots
 import QuantumLattices: update!
-import QuantumLattices.Frameworks: Parameters, contenttocache, contenttoconfig, options, run!
+import QuantumLattices.Frameworks: Parameters, contenttocache, contenttoconfig, dependencytypes, options, run!
 
 @testset "Parameters" begin
     ps1 = Parameters{(:t₁, :t₂, :U)}(1.0im, 1.0, 2.0)
@@ -212,9 +214,9 @@ end
 
     cgen = OperatorGenerator(cat, bs, hilbert, (t, μ), true)
     @test repr(MIME"text/plain"(), cgen) == "OperatorGenerator\n  bonds: 4-element Vector{QuantumLattices.Spatials.Bond{Int64, QuantumLattices.Spatials.Point{1, Float64}, Vector{QuantumLattices.Spatials.Point{1, Float64}}}}:\n   Bond(0, Point(1, [0.0], [0.0]))\n   Bond(0, Point(2, [0.5], [0.0]))\n   Bond(1, Point(2, [0.5], [0.0]), Point(1, [0.0], [0.0]))\n   Bond(1, Point(2, [-0.5], [-1.0]), Point(1, [0.0], [0.0]))\n  hilbert: QuantumLattices.DegreesOfFreedom.Hilbert{QuantumLattices.QuantumSystems.Fock{:f}} with 2 entries:\n    1 => Fock{:f}(norbital=1, nspin=1)\n    2 => Fock{:f}(norbital=1, nspin=1)\n  terms: (:t, :μ)\n  half: true\n  operators: CategorizedGenerator\n    constops: Operators with 1 Operator\n      Operator(2.0, 𝕔⁺(2, 1, 0, [0.5], [0.0]), 𝕔(1, 1, 0, [0.0], [0.0]))\n    alterops:\n      t: Operators with 0 Operator\n      μ: Operators with 2 Operator\n        Operator(0.5, 𝕔⁺(1, 1, 0, [0.0], [0.0]), 𝕔(1, 1, 0, [0.0], [0.0]))\n        Operator(0.5, 𝕔⁺(2, 1, 0, [0.5], [0.0]), 𝕔(2, 1, 0, [0.5], [0.0]))\n    boundops:\n      t: Operators with 1 Operator\n        Operator(0.80901699437495+0.58778525229247im, 𝕔⁺(2, 1, 0, [-0.5], [-1.0]), 𝕔(1, 1, 0, [0.0], [0.0]))\n      μ: Operators with 0 Operator\n    parameters:\n      t: 2.0\n      μ: 1.0\n    boundary: Boundary\n      keys: (:θ,)\n      values: [0.1]\n      vectors: 1-element Vector{StaticArraysCore.SVector{1, Float64}}:\n       [1.0]"
-    @test cgen == OperatorGenerator(bs, hilbert, (t, μ), boundary; half=true)
-    @test cgen == Generator(bs, hilbert, (t, μ), boundary; half=true) == Generator(cat, bs, hilbert, (t, μ), true)
-    @test cgen == LatticeModel(bs, hilbert, (t, μ), boundary; half=true) == LatticeModel(cat, bs, hilbert, (t, μ), true)
+    @test cgen == OperatorGenerator(bs, hilbert, (t, μ), boundary; half=true) == OperatorGenerator(lattice, hilbert, (t, μ), boundary; half=true)
+    @test cgen == Generator(bs, hilbert, (t, μ), boundary; half=true) == Generator(lattice, hilbert, (t, μ), boundary; half=true) == Generator(cat, bs, hilbert, (t, μ), true)
+    @test cgen == LatticeModel(bs, hilbert, (t, μ), boundary; half=true) == LatticeModel(lattice, hilbert, (t, μ), boundary; half=true) == LatticeModel(cat, bs, hilbert, (t, μ), true)
     @test isequal(cgen, OperatorGenerator(bs, hilbert, (t, μ), boundary; half=true))
     @test cgen|>valtype == cgen|>typeof|>valtype == Operators{optp, idtype(optp)}
     @test cgen|>eltype == cgen|>typeof|>eltype == optp
@@ -246,9 +248,9 @@ end
 
     cgen = OperatorGenerator(cat, bs, hilbert, (t, μ), true)
     @test repr(MIME"text/plain"(), cgen) == "OperatorGenerator\n  bonds: 4-element Vector{QuantumLattices.Spatials.Bond{Int64, QuantumLattices.Spatials.Point{1, Float64}, Vector{QuantumLattices.Spatials.Point{1, Float64}}}}:\n   Bond(0, Point(1, [0.0], [0.0]))\n   Bond(0, Point(2, [0.5], [0.0]))\n   Bond(1, Point(2, [0.5], [0.0]), Point(1, [0.0], [0.0]))\n   Bond(1, Point(2, [-0.5], [-1.0]), Point(1, [0.0], [0.0]))\n  hilbert: QuantumLattices.DegreesOfFreedom.Hilbert{QuantumLattices.QuantumSystems.Fock{:f}} with 2 entries:\n    1 => Fock{:f}(norbital=1, nspin=1)\n    2 => Fock{:f}(norbital=1, nspin=1)\n  terms: (:t, :μ)\n  half: true\n  operators: CategorizedGenerator\n    constops: Operators with 2 Operator\n      Operator(2.0, 𝕔⁺(2, 1, 0, [0.5], [0.0]), 𝕔(1, 1, 0, [0.0], [0.0]))\n      Operator(2.0, 𝕔⁺(2, 1, 0, [-0.5], [-1.0]), 𝕔(1, 1, 0, [0.0], [0.0]))\n    alterops:\n      t: Operators with 0 Operator\n      μ: Operators with 2 Operator\n        Operator(0.5, 𝕔⁺(1, 1, 0, [0.0], [0.0]), 𝕔(1, 1, 0, [0.0], [0.0]))\n        Operator(0.5, 𝕔⁺(2, 1, 0, [0.5], [0.0]), 𝕔(2, 1, 0, [0.5], [0.0]))\n    boundops:\n      t: Operators with 0 Operator\n      μ: Operators with 0 Operator\n    parameters:\n      t: 2.0\n      μ: 1.0\n    boundary: plain"
-    @test cgen == OperatorGenerator(bs, hilbert, (t, μ), plain; half=true)
-    @test cgen == Generator(bs, hilbert, (t, μ), plain; half=true) == Generator(cat, bs, hilbert, (t, μ), true)
-    @test cgen == LatticeModel(bs, hilbert, (t, μ), plain; half=true) == LatticeModel(cat, bs, hilbert, (t, μ), true)
+    @test cgen == OperatorGenerator(bs, hilbert, (t, μ), plain; half=true) == OperatorGenerator(lattice, hilbert, (t, μ), plain; half=true)
+    @test cgen == Generator(bs, hilbert, (t, μ), plain; half=true) == Generator(lattice, hilbert, (t, μ), plain; half=true) == Generator(cat, bs, hilbert, (t, μ), true)
+    @test cgen == LatticeModel(bs, hilbert, (t, μ), plain; half=true) == LatticeModel(lattice, hilbert, (t, μ), plain; half=true) == LatticeModel(cat, bs, hilbert, (t, μ), true)
     @test contenttoconfig(cgen) == (contenttoconfig(cgen.operators), cgen.half)
     @test expand(cgen) ≈ tops + μops
     @test expand(cgen, :t) ≈ tops
@@ -293,17 +295,38 @@ end
     @test expand(gen) ≈ expand(OperatorGenerator(bs, hilbert, (t, μ, U); half=false))
 end
 
-struct TBA{F<:Formula} <: Frontend
+struct TBA{F<:Formula} <: LatticeModel
     formula::F
 end
 @inline Base.valtype(::Type{<:TBA{F}}) where {F<:Formula} = valtype(F)
 @inline Base.show(io::IO, ::TBA) = print(io, "TBA")
 @inline Parameters(tba::TBA) = tba.formula.parameters
 @inline update!(tba::TBA; parameters...) = (update!(tba.formula; parameters...); tba)
+@delegate function matrixof(tba::TBA, k=SVector(0.0, 0.0))
+    return tba.formula(k)
+end
+@delegate inject=(:timer,) function timedelegate(tba::TBA; timer=nothing)
+    return isnothing(timer) ? :notimer : :withtimer
+end
+@delegate function formulatype(::Type{<:TBA{F}}) where F
+    return F
+end
+@delegate @inline tvalue(tba::TBA) = tba.formula.parameters.t
+@delegate @inline kindof(tba::TBA{F}) where F = F
+@delegate @inline scalarof(::Type{<:TBA{F}}) where F = scalartype(F)
+@delegate inject=(:timer,) function timerof(tba::TBA; timer::TimerOutput=TimerOutput(), o...)
+    return timer
+end
+"""A documented delegated query."""
+@delegate function documented(tba::TBA)
+    return :documented
+end
 
-struct EigenSystem{B<:BrillouinZone} <: Action
+struct EigenSystem{B<:BrillouinZone}
     brillouinzone::B
 end
+@inline Base.:(==)(e₁::EigenSystem, e₂::EigenSystem) = ==(efficientoperations, e₁, e₂)
+@inline Base.isequal(e₁::EigenSystem, e₂::EigenSystem) = isequal(efficientoperations, e₁, e₂)
 Base.show(io::IO, eigensystem::EigenSystem) = print(io, "EigenSystem(", join(periods(eigensystem.brillouinzone), "×"), ")")
 struct EigenSystemData <: Data
     values::Vector{Vector{Float64}}
@@ -315,7 +338,7 @@ end
 function run!(tba::Algorithm{<:TBA}, eigensystem::Assignment{<:EigenSystem}; options...)
     get(options, :showinfo, false) && @info string(eigensystem)
     data = EigenSystemData(Vector{Float64}[], Matrix{ComplexF64}[])
-    for k in eigensystem.action.brillouinzone
+    for k in eigensystem.task.brillouinzone
         values, vectors = eigen(tba.frontend.formula(k))
         push!(data.values, values)
         push!(data.vectors, vectors)
@@ -323,7 +346,8 @@ function run!(tba::Algorithm{<:TBA}, eigensystem::Assignment{<:EigenSystem}; opt
     return data
 end
 
-struct DensityOfStates <:Action end
+struct DensityOfStates end
+@inline dependencytypes(::Type{<:DensityOfStates}) = (EigenSystem,)
 mutable struct DensityOfStatesData <: Data
     energies::Vector{Float64}
     values::Matrix{Float64}
@@ -354,23 +378,44 @@ end
 
 A(t, μ, k=SVector(0.0, 0.0); kwargs...) = SMatrix{1, 1}(2t*cos(k[1])+2t*cos(k[2])+μ)
 
-@testset "Frontend & Action & Data" begin
+@testset "LatticeModel & task & Data" begin
     tba = TBA(Formula(A, (t=1.0, μ=0.5)))
+    @test tba isa FrameworkElement
     @test tba==deepcopy(tba) && isequal(tba, deepcopy(tba))
 
     eigensystem = EigenSystem(BrillouinZone([[2pi, 0], [0, 2pi]], 100))
     @test eigensystem==deepcopy(eigensystem) && isequal(eigensystem, deepcopy(eigensystem))
-    @test update!(eigensystem; Parameters(tba)...) == eigensystem
 
     eigensystemdata = EigenSystemData(Vector{Float64}[], Matrix{ComplexF64}[])
     @test eigensystemdata==deepcopy(eigensystemdata) && isequal(eigensystemdata, deepcopy(eigensystemdata))
     @test Tuple(eigensystemdata) == (Vector{Float64}[], Matrix{ComplexF64}[])
 end
 
+@testset "@delegate" begin
+    model = TBA(Formula(A, (t=1.0, μ=0.5)))
+    alg = Algorithm(:Square, model)
+    @test matrixof(alg) == matrixof(alg.frontend) == matrixof(model)
+    @test matrixof(alg, SVector(0.5, 0.5)) == matrixof(model, SVector(0.5, 0.5))
+    @test timedelegate(alg) == :withtimer
+    @test timedelegate(alg; timer=nothing) == :notimer
+    @test timedelegate(model) == :notimer
+    @test formulatype(typeof(alg)) == formulatype(typeof(model))
+    @test tvalue(alg) == tvalue(model) == 1.0
+    @test kindof(alg) == kindof(model) == formulatype(typeof(model))
+    @test scalarof(typeof(alg)) == scalarof(typeof(model)) == Float64
+    @test timerof(alg) === alg.timer
+    @test timerof(alg; timer=TimerOutput()) !== alg.timer
+    @test timerof(model) isa TimerOutput
+    @test documented(alg) == documented(model) == :documented
+    @test occursin("documented delegated query", string(Base.Docs.doc(Base.Docs.Binding(@__MODULE__, :documented))))
+    @test_throws ErrorException @macroexpand(@delegate inject=(:wrong,) function badinject(tba::TBA; timer=nothing) timer end)
+end
+
 params(parameters::Parameters) = (t=parameters.t, μ=parameters.U/2)
 
 @testset "Assignment & Algorithm with map" begin
     tba = Algorithm(:Square, TBA(Formula(A, (t=1.0, μ=0.5))), (t=1.0, U=2.0), params)
+    @test tba isa FrameworkElement
     @test tba==deepcopy(tba) && isequal(tba, deepcopy(tba))
     @test valtype(tba) == valtype(tba.frontend) == SMatrix{1, 1, Float64, 1}
     update!(tba; U=1.0)
@@ -381,12 +426,14 @@ params(parameters::Parameters) = (t=parameters.t, μ=parameters.U/2)
     @test options(Assignment) == NamedTuple()
 
     eigensystem = tba(:eigensystem, EigenSystem(BrillouinZone([[2pi, 0], [0, 2pi]], 100)); delay=true)
+    @test eigensystem isa FrameworkElement
+    @test eigensystem==deepcopy(eigensystem) && isequal(eigensystem, deepcopy(eigensystem))
     @test Parameters(eigensystem) == (t=1.0, U=1.0)
-    @test valtype(eigensystem) == valtype(typeof(eigensystem)) == EigenSystemData
+    @test datatype(typeof(eigensystem.task), typeof(tba.frontend)) == EigenSystemData
     update!(eigensystem; U=2.0)
     @test Parameters(eigensystem) == (t=1.0, U=2.0)
     @test string(eigensystem) == "eigensystem"
-    @test startswith(repr(MIME"text/plain"(), eigensystem), "Assignment\n  name: :eigensystem\n  action:")
+    @test startswith(repr(MIME"text/plain"(), eigensystem), "Assignment\n  name: :eigensystem\n  task:")
     @test options(typeof(eigensystem)) == (showinfo="show the information",)
     @test optionsinfo(typeof(eigensystem)) == "Assignment{<:EigenSystem} options:\n  (1) `:showinfo`: show the information.\n"
 
@@ -395,7 +442,7 @@ params(parameters::Parameters) = (t=parameters.t, μ=parameters.U/2)
     @test options(typeof(dos)) == (emin="lower bound of the energy range", emax="upper bound of the energy range", ne ="number of sample points in the energy range", σ="broadening factor")
     @test optionsinfo(typeof(dos)) == "Assignment{<:DensityOfStates} options:\n  (1) `:emin`: lower bound of the energy range;\n  (2) `:emax`: upper bound of the energy range;\n  (3) `:ne`: number of sample points in the energy range;\n  (4) `:σ`: broadening factor.\n\n  Dependency 1) Assignment{<:EigenSystem} options:\n    (1) `:showinfo`: show the information.\n"
     @test hasoption(typeof(dos), :emin) && hasoption(typeof(dos), :emax) && hasoption(typeof(dos), :ne) && hasoption(typeof(dos), :σ) && hasoption(typeof(dos), :showinfo) && !hasoption(typeof(dos), :hello)
-    @test sum(dos.data.values)*(maximum(dos.data.energies)-minimum(dos.data.energies))/(length(dos.data.energies)-1)/length(eigensystem.action.brillouinzone) ≈ 0.9964676726997486
+    @test sum(dos.data.values)*(maximum(dos.data.energies)-minimum(dos.data.energies))/(length(dos.data.energies)-1)/length(eigensystem.task.brillouinzone) ≈ 0.9964676726997486
     dlmsave(dos)
     Plots.savefig(Plots.plot(dos), "Plots$(str(dos)).png")
     Makie.save("Makie$(str(dos)).png", Makie.plot(dos))
@@ -410,6 +457,32 @@ params(parameters::Parameters) = (t=parameters.t, μ=parameters.U/2)
     Plots.savefig(Plots.plot(tba(dos)), "Plots$(str(dos)).png")
     Makie.save("Makie$(str(dos)).png", Makie.plot(tba(dos)))
     summary(tba)
+end
+
+@testset "registration validation & Assignment equivalence" begin
+    tba = Algorithm(:Square, TBA(Formula(A, (t=1.0, μ=0.5))))
+    bz = BrillouinZone([[2pi, 0], [0, 2pi]], 10)
+    eigensystem = tba(:eigensystem, EigenSystem(bz))
+
+    # local parameter keys must be a subset of the algorithm's parameter keys
+    @test_throws AssertionError tba(:bad, EigenSystem(bz), (wrong=2.0,); delay=true)
+
+    # dependencies must match the dependencytypes declaration in count and in type
+    @test dependencytypes(DensityOfStates) == (EigenSystem,)
+    @test dependencytypes(EigenSystem) |> isnothing
+    @test_throws AssertionError tba(:dos, DensityOfStates(); delay=true)
+    dos = tba(:dos, DensityOfStates(), eigensystem)
+    @test_throws AssertionError tba(:dos₂, DensityOfStates(), dos; delay=true)
+
+    # Assignment ==/isequal: undefined data only matches undefined data
+    a₁ = tba(:same, EigenSystem(bz); delay=true)
+    a₂ = tba(:same, EigenSystem(bz); delay=true)
+    @test a₁==a₂ && isequal(a₁, a₂)
+    tba(a₂)
+    @test a₁!=a₂ && !isequal(a₁, a₂)
+    a₃ = tba(:same, EigenSystem(bz); delay=true)
+    tba(a₃)
+    @test a₂==a₃ && isequal(a₂, a₃)
 end
 
 @testset "Assignment & Algorithm without map" begin
