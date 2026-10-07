@@ -26,4 +26,4 @@ When a [`LinearTransformation`](@ref) is applied to an [`OperatorGenerator`](@re
 
 ## Matrixization
 
-[`Matrixization`](@ref) (abstract `<: LinearTransformation`) converts operators to matrix representations in a specified basis. The [`matrix`](@ref) function uses a [`Table`](@ref) ([Section 3.5](@ref)) to determine the basis ordering.
+[`Matrixization`](@ref) (abstract `<: LinearTransformation`) converts operators to matrix representations in a specified basis. The [`matrix`](@ref) function uses a [`Table`](@ref) ([Section 3.5](@ref TutorialTableAndMetric)) to determine the basis ordering.
