@@ -97,9 +97,12 @@ end
     @test String(take!(io)) == "4-element Vector{Int64}:\n   1\n   2\n   3\n   4"
 
     # Dict show
+    # The order of the entries is unspecified and differs between Julia versions, so only the set of lines is checked.
     io = IOBuffer()
     show(indent(io, 2), MIME"text/plain"(), Dict(1=>2, 3=>4, 5=>6))
-    @test String(take!(io)) == "Dict{Int64, Int64} with 3 entries:\n    5 => 6\n    3 => 4\n    1 => 2"
+    lines = split(String(take!(io)), '\n')
+    @test lines[1] == "Dict{Int64, Int64} with 3 entries:"
+    @test Set(lines[2:end]) == Set(["    1 => 2", "    3 => 4", "    5 => 6"])
 end
 
 struct Leaf
@@ -481,11 +484,13 @@ end
     @test d["d"] == 4
     @test (push!(d, Pair("e", 4)) == CD("Info", Dict("a"=>1, "b"=>2, "d"=>4, "e"=>4))) && (d == CD("Info", Dict("a"=>1, "b"=>2, "d"=>4, "e"=>4)))
     @test (d["d"] = 4; d["e"] = 5; d == CD("Info", Dict("a"=>1, "b"=>2, "d"=>4, "e"=>5)))
-    @test (pop!(d) == Pair("e", 5)) && (d == CD("Info", Dict("a"=>1, "b"=>2, "d"=>4)))
+    @test (pop!(d, "e") == 5) && (d == CD("Info", Dict("a"=>1, "b"=>2, "d"=>4)))
     @test (pop!(d, "a") == 1) && (d == CD("Info", Dict("b"=>2, "d"=>4)))
     @test (pop!(d, "a", 1) == 1) && (d == CD("Info", Dict("b"=>2, "d"=>4)))
     @test (delete!(d, "b") == CD("Info", Dict("d"=>4))) && (d == CD("Info", Dict("d"=>4)))
     @test (empty!(d) == CD("Info", Dict{String, Int}())) && (d == CD("Info", Dict{String, Int}()))
+    # The entry removed by the one-argument `pop!` is unspecified; with a single entry it is deterministic.
+    @test (d["x"] = 10; pop!(d) == Pair("x", 10)) && isempty(d)
 
     d = CD("Info", Dict("a"=>1, "b"=>2, "c"=>3, "d"=>4))
     @test merge(CD("Info", Dict("a"=>1, "b"=>2)), CD("Info", Dict("c"=>3, "d"=>4))) == d

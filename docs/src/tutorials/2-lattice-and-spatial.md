@@ -12,7 +12,7 @@ In the standard workflow to define a quantum lattice system, we must first speci
 
 ## 2.1 Constructing a Lattice
 
-### 2.1.1 Spatial information of a unitcell
+### 2.1.1 Spatial Information of a Unitcell
 
 A lattice in condensed matter physics is a set of points in $\mathbb{R}^d$ closed under translations by a discrete set of vectors. Translation symmetry introduces an equivalence relation: two points related by multiples of the translation vectors are physically equivalent. This observation leads to the **unitcell construction**: it suffices to specify a finite set of points $\{\mathbf{r}_1, \ldots, \mathbf{r}_n\}$ within the origin unitcell, together with a set of translation vectors $\{\mathbf{a}_1, \ldots, \mathbf{a}_d\}$.
 
@@ -108,7 +108,7 @@ Lattice(Square[1:2][1:2])
 ```
 When the third argument `boundaries` is provided, `'P'` (or `:periodic`) retains the translation vector in that direction (scaled by the number of repetitions), while `'O'` (or `:open`) drops it. In the automatically generated name of the new lattice, each direction is shown as `[range]` when it is periodic and as `(range)` when it is open, as in `Square[1:2][1:2]` and `Square(0:1)(0:1)` above.
 
-## 2.2 Points: Specifying Positions Beyond the Unitcell
+## [2.2 Points: Specifying Positions Beyond the Unitcell](@id TutorialPoint)
 
 With translation symmetry, all points of a lattice are equivalent to those within the origin unitcell. However, things become complicated when bonds are requested. Bonds between different unitcells cannot be compressed into a single unitcell. Therefore, even in the unitcell construction framework, it is necessary to specify a point outside the origin unitcell, which requires extra information beyond a single coordinate if we wish to simultaneously keep track of which point it is equivalent to within the origin unitcell.
 
@@ -139,7 +139,7 @@ Point(1, [0.0, 0.5], [0.0, 0.0])
 
 ## 2.3 Request for the Bonds of a Lattice
 
-### 2.3.1 Generic bonds
+### [2.3.1 Generic Bonds](@id TutorialBond)
 
 A bond in the narrow sense consists of two points. However, in quantum lattice systems, it is common to refer to generic bonds with only one or more than two points. Additionally, it is convenient to associate a bond with kind information, such as the order of the nearest neighbors of the bond. Thus, the [`Bond`](@ref) is defined as follows:
 * `kind`: the kind information of a generic bond
@@ -199,7 +199,7 @@ julia> icoordinate(bond)
  -1.0
 ```
 
-### 2.3.2 Generation of 1-point and 2-point bonds
+### 2.3.2 Generation of 1-Point and 2-Point Bonds
 
 In this package, we provide the function [`bonds`](@ref) to get the 1-point and 2-point bonds of a lattice:
 ```julia
@@ -393,7 +393,7 @@ julia> rp = ReciprocalPath(
  [0.0, 0.0]
 ```
 
-### 2.4.4 High-symmetry points: the string macros
+### 2.4.4 High-Symmetry Points: The String Macros
 
 For the common one-dimensional, rectangular, and hexagonal Brillouin zones, the standard high-symmetry points can be referred to by name through the exported string macros [`@line_str`](@ref), [`@rectangle_str`](@ref) and [`@hexagon_str`](@ref), with the point names separated by `-` (spaces are ignored), e.g.:
 

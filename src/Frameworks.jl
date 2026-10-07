@@ -782,7 +782,13 @@ struct CategorizedGeneratorExpand{M<:OperatorPack, VS, OS} <: OperatorSet{M}
     CategorizedGeneratorExpand{M}(values, ops) where {M<:OperatorPack} = new{M, typeof(values), typeof(ops)}(values, ops)
 end
 @inline Base.length(ee::CategorizedGeneratorExpand) = mapreduce(length, +, ee.values.it)
-@propagate_inbounds function Base.iterate(ee::CategorizedGeneratorExpand, state=((), ()))
+@propagate_inbounds function Base.iterate(ee::CategorizedGeneratorExpand)
+    v = iterate(ee.values)
+    isnothing(v) && return nothing
+    op = iterate(ee.ops)
+    return op[1]*v[1], (v[2], op[2])
+end
+@propagate_inbounds function Base.iterate(ee::CategorizedGeneratorExpand, state)
     v = iterate(ee.values, state[1])
     isnothing(v) && return nothing
     op = iterate(ee.ops, state[2])

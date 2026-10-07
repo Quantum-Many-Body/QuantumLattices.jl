@@ -93,7 +93,7 @@ The first model expands into 4 hopping operators and the second into 2 Hubbard o
 
 This section demonstrates two more interface groups of Section 6.1, namely parameter management and value types, with an [`OperatorGenerator`](@ref).
 
-#### Parameter management
+#### Parameter Management
 
 [`Parameters`](@ref) gives the parameter name-value pairs of a model, and [`update!`](@ref) changes them in place while keeping the structure of the expansion intact:
 
@@ -130,7 +130,7 @@ expand(model)
 
     In general, a model never copies its terms; if terms are reused or modified afterwards, pass copies.
 
-#### Value types
+#### Value Types
 
 [`valtype`](@ref), [`eltype`](@ref) and [`scalartype`](@ref) report the type of the Hamiltonian represented by the model, the type of its elements, and the type of the coefficients:
 
@@ -228,7 +228,7 @@ valtype(model)
 
 ## 6.5 Worked Examples
 
-Here we present some common examples. Except the Kitaev model, which must be defined on a honeycomb lattice, all of them are built on the one-dimensional periodic chain with a single point in the unitcell and a translation vector, just for simplicity. The `latexformat` lines in the following examples serve only to keep the typeset Hamiltonians compact on this page ([Section 4.3](@ref TutorialOperators)); they can be skipped when the examples are run in a REPL.
+Here we present some common examples. Except the Kitaev model, which must be defined on a honeycomb lattice, all of them are built on the one-dimensional periodic chain with a single point in the unitcell and a translation vector, just for simplicity. The `latexformat` lines in the following examples serve only to keep the typeset Hamiltonians compact on this page ([Section 4.3](@ref TutorialLaTeX)); they can be skipped when the examples are run in a REPL.
 
 ### 6.5.1 Fermionic and Bosonic Systems
 

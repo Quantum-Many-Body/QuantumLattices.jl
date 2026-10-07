@@ -11,7 +11,7 @@ end
 
 With the spatial structure defined, we now turn to the internal degrees of freedom.
 
-## 3.1 Hierarchy of the Internal Degrees of Freedom
+## [3.1 Hierarchy of the Internal Degrees of Freedom](@id TutorialHierarchy)
 
 In general, a lattice Hamiltonian can be expressed in terms of the generators of an [algebra](https://en.wikipedia.org/wiki/Algebra_over_a_field) acting on the system's Hilbert space. For complex fermionic (bosonic) systems, the Hilbert space is the [Fock space](https://en.wikipedia.org/wiki/Fock_space), and the Hamiltonian is built from the generators of the fermionic (bosonic) algebra, i.e., the creation and annihilation operators $\{c^\dagger_\alpha, c_\alpha\}$ $\left(\{b^\dagger_\alpha, b_\alpha\}\right)$. For local spin-1/2 systems, the Hilbert space is $\otimes_\alpha\{\lvert\uparrow\rangle, \lvert\downarrow\rangle\}_\alpha$, and the Hamiltonian is built from the generators of the SU(2) spin algebra, i.e., the spin operators $\{S^x_\alpha, S^y_\alpha, S^z_\alpha\}$ or $\{S^+_\alpha, S^-_\alpha, S^z_\alpha\}$. In both cases, the subscript $\alpha$ represents a complete set of internal indices. Identifying the algebra and its generators is therefore the central task in constructing the operator representation of a lattice Hamiltonian.
 
@@ -43,7 +43,7 @@ Correspondingly, the type [`Fock`](@ref)`<:`[`Internal`](@ref), which specifies 
 * `norbital::Int`: the number of allowed orbital indices
 * `nspin::Int`: the number of allowed spin indices
 
-To distinguish whether the system is a fermionic one or a bosonic one, [`FockIndex`](@ref) and [`Fock`](@ref) take a symbol `:f`(for fermionic) or `:b`(for bosonic) to be their first type parameters.
+To distinguish whether the system is a fermionic one or a bosonic one, [`FockIndex`](@ref) and [`Fock`](@ref) take a symbol `:f` (for fermionic) or `:b` (for bosonic) to be their first type parameters.
 
 Now let's see some examples.
 
@@ -247,7 +247,7 @@ julia> 𝕒(1, 1, -1//2) |> statistics
 :b
 ```
 
-### 3.2.3 Global Level: CoordinatedIndex
+### [3.2.3 Global Level: CoordinatedIndex](@id TutorialCoordinatedIndex)
 
 Since the local algebra of a quantum lattice system can be defined point by point, the global algebra can be completely compressed into the origin unitcell. However, generators outside the origin unitcell cannot be avoided because we have to use them to compose the Hamiltonian on the bonds that go across the unitcell boundaries. This situation is similar to the case of [`Lattice`](@ref) and [`Point`](@ref). Therefore, we take a similar solution for the generators to that adopted for the [`Point`](@ref), i.e., we include the $\mathbf{R}_{im}$ coordinate (by the `rcoordinate` attribute) and the $\mathbf{R}_m$ coordinate (by the `icoordinate` attribute) of the underlying point together with the `index::Index` attribute in the [`CoordinatedIndex`](@ref) type to represent a generator that could be inside or outside the origin unitcell:
 ```jldoctest FFF
@@ -584,19 +584,19 @@ To construct matrix representations of operators, we need an ordering of their i
 [`Metric`](@ref) (abstract `<: Function`) is a rule that converts an operator index into a value that can be compared and sorted. The concrete subtype provided by the package is [`OperatorIndexToTuple`](@ref), which converts an [`Index`](@ref)/[`CoordinatedIndex`](@ref) to a tuple element-by-element, as specified by the type parameter `Fields`. Each field can be either a `Symbol` (an attribute name of the internal index) or a `Function` (a trait function).
 
 For fermionic/bosonic operators, common fields include:
-- `:site` -- the site index
-- `:orbital` -- the orbital index
-- `:spin` -- the spin index
-- `:nambu` -- the nambu index
-- [`statistics`](@ref) -- the function that obtains the statistics of a fermionic/bosonic operator
+- `:site`: the site index
+- `:orbital`: the orbital index
+- `:spin`: the spin index
+- `:nambu`: the nambu index
+- [`statistics`](@ref): the function that obtains the statistics of a fermionic/bosonic operator
 
 For spin operators, common fields include:
-- `:tag` -- the spin tag
-- [`totalspin`](@ref) -- the function that obtains the total spin of a spin operator
+- `:tag`: the spin tag
+- [`totalspin`](@ref): the function that obtains the total spin of a spin operator
 
 For phononic operators, common fields include:
-- `:direction` -- the direction
-- [`kind`](@ref) -- the function that obtains the kind of a phononic operator
+- `:direction`: the direction
+- [`kind`](@ref): the function that obtains the kind of a phononic operator
 
 Let's see examples of constructing a [`Metric`](@ref) and applying it to an [`Index`](@ref)/[`CoordinatedIndex`](@ref):
 ```jldoctest table-metric

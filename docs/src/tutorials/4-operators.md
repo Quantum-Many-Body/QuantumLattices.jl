@@ -20,7 +20,7 @@ A Hamiltonian is a sum of operators, and each operator is a scalar coefficient m
 t\,\hat{g}_{\mu_1}\hat{g}_{\mu_2}\cdots\hat{g}_{\mu_k},
 ```
 
-where ``t`` is the scalar coefficient and each ``\hat{g}_{\mu_j}`` is a generator specified by the labels ``\mu_j``. Following the local-unitcell-global hierarchy of Section 3.1, these labels include its site together with its internal indices, supplemented by the coordinates when the generator lies outside the origin unitcell. In this package every generator is stored, together with its labels, as a single object of type [`OperatorIndex`](@ref), so that each component of the product above is such a whole generator rather than a bare set of labels. The Hamiltonian is then the sum of all such operators,
+where ``t`` is the scalar coefficient and each ``\hat{g}_{\mu_j}`` is a generator specified by the labels ``\mu_j``. Following the local-unitcell-global hierarchy of [Section 3.1](@ref TutorialHierarchy), these labels include its site together with its internal indices, supplemented by the coordinates when the generator lies outside the origin unitcell. In this package every generator is stored, together with its labels, as a single object of type [`OperatorIndex`](@ref), so that each component of the product above is such a whole generator rather than a bare set of labels. The Hamiltonian is then the sum of all such operators,
 
 ```math
 H = \sum_j t_j\,\hat{g}_{\mu^{(j)}_1}\hat{g}_{\mu^{(j)}_2}\cdots\hat{g}_{\mu^{(j)}_{k_j}}.
@@ -212,7 +212,7 @@ op_hop + op_hub
 
 Here, the last result is displayed in LaTeX (see Section 4.3): the coefficients `t` and `U` remain as symbols throughout the addition. Only when you explicitly substitute numeric values does an operator become numeric. This separation of symbolic manipulation from numeric evaluation is a core design principle.
 
-## 4.3 LaTeX Output
+## [4.3 LaTeX Output](@id TutorialLaTeX)
 
 Operators are displayed in LaTeX format by default in Jupyter notebooks and in Documenter-generated documentation such as this one (but not in the plain REPL), as has been seen above. This is extremely useful for verifying generated Hamiltonians against hand-written expressions. The typesetting is recursive: to render an [`Operators`](@ref), each of its constituent [`Operator`](@ref)s is rendered in turn and the results are joined by ``+``/``-``; to render an [`Operator`](@ref), its coefficient is rendered first, followed by each of its generators in order. What remains to be specified is the LaTeX form of a single generator, and this is customizable: the form of each generator type is set manually through a [`LaTeX`](@ref) format stored per type and accessed through [`latexformat`](@ref). Such a format consists of a body, the literal symbol of the generator, together with two tuples of symbols that single out the attributes entering its typeset form:
 
@@ -249,7 +249,7 @@ latexformat(Index{<:FockIndex{:f}}, old)
 nothing # hide
 ```
 
-Two further attributes can enter the typeset form, `rcoordinate` and `icoordinate`, but they are special in that they exist only for [`CoordinatedIndex`](@ref), the generators that carry the coordinates of their underlying point ([Section 3.2](@ref TutorialDOF)). Both are typeset as their bracketed value, and displaying them is what makes the generators on translationally equivalent bonds distinguishable. Adding them to the subscript of the coordinated fermionic index gives, for instance:
+Two further attributes can enter the typeset form, `rcoordinate` and `icoordinate`, but they are special in that they exist only for [`CoordinatedIndex`](@ref), the generators that carry the coordinates of their underlying point ([Section 3.2.3](@ref TutorialCoordinatedIndex)). Both are typeset as their bracketed value, and displaying them is what makes the generators on translationally equivalent bonds distinguishable. Adding them to the subscript of the coordinated fermionic index gives, for instance:
 
 ```@example operators
 # rcoordinate and icoordinate exist only for CoordinatedIndex

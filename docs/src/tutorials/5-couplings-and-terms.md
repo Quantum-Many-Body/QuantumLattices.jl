@@ -35,7 +35,7 @@ where `termkind` must be a `Symbol`, `value` is the overall coefficient which sh
 
 Before discussing [`Term`](@ref) further, we first turn to the coupling patterns, which lie at the center of the construction of [`Term`](@ref)s.
 
-### 5.2.1 Coupling: Building Block of Coupling Patterns
+### [5.2.1 Coupling: Building Block of Coupling Patterns](@id TutorialCoupling)
 
 [`Coupling`](@ref) uses a set of [`Index`](@ref)es together with a coefficient to represent the coupling pattern, as the following construction function implies:
 ```julia
@@ -381,7 +381,7 @@ function staggered(bond::Bond)
     return (-1)^bond[1].site
 end
 ```
-Note that `bond[1].site` here denotes the site index of a point within the origin unitcell (Section 2.2), which should not be confused with the ordinal of a point within a bond used for the `site` attribute of an [`Index`](@ref) in a coupling pattern (Section 5.2.1).
+Note that `bond[1].site` here denotes the site index of a point within the origin unitcell ([Section 2.2](@ref TutorialPoint)), which should not be confused with the ordinal of a point within a bond used for the `site` attribute of an [`Index`](@ref) in a coupling pattern ([Section 5.2.1](@ref TutorialCoupling)).
 
 ### 5.3.1 Terms with Complex Coefficients
 

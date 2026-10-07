@@ -14,11 +14,11 @@ include(joinpath(@__DIR__, "ToyTBA.jl"))
 
 [Chapter 6](@ref TutorialLatticeModel) ended with a [`LatticeModel`](@ref), which is a complete **description** of a quantum lattice system. Turning that description into numbers is the job of **algorithms**, which are developed separately from [QuantumLattices](https://github.com/Quantum-Many-Body/QuantumLattices.jl) (e.g., [TightBindingApproximation](https://github.com/Quantum-Many-Body/TightBindingApproximation.jl), [ExactDiagonalization](https://github.com/Quantum-Many-Body/ExactDiagonalization.jl), [QuantumClusterTheories](https://github.com/Quantum-Many-Body/QuantumClusterTheories.jl), [DynamicalCorrelators](https://github.com/ZongYongyue/DynamicalCorrelators.jl), [SpinWaveTheory](https://github.com/Quantum-Many-Body/SpinWaveTheory.jl), [RandomPhaseApproximation](https://github.com/Quantum-Many-Body/RandomPhaseApproximation.jl), [MeanFieldTheory](https://github.com/Quantum-Many-Body/MeanFieldTheory.jl), etc.). The algorithm interface described in this chapter is what connects the two, and it sets itself two goals: a **uniform interface** to all the supported algorithms, so that a model is defined once and can then be handed to any of them, and **automatic project management**, so that the bookkeeping of a calculation is carried by the interface rather than left to the user.
 
-## 7.1 How to read this chapter
+## 7.1 How to Read This Chapter
 
-This chapter is for the user of an algorithm package. If you want to hand a model to an existing algorithm and run it, it is all you need: it shows the complete usage, from defining the model all the way to saving and visualizing the results, and the architecture of the interface is introduced as we go. The running example is `ToyTBA`, a minimal but complete algorithm package modelled on the real [TightBindingApproximation](https://github.com/Quantum-Many-Body/TightBindingApproximation.jl) package, whose whole source fits in a single file, `ToyTBA.jl`, included in this documentation. It computes the band structure and the density of states of a free-fermion lattice model, and the real packages of Section 7.6 are used in exactly the same way from the user's side. If you want to write such an algorithm package yourself, continue with [Chapter 8](@ref TutorialAlgorithmInterfaceDeveloper), which dissects `ToyTBA.jl` piece by piece.
+This chapter is for the user of an algorithm package. If you want to hand a model to an existing algorithm and run it, it is all you need: it shows the complete usage, from defining the model all the way to saving and visualizing the results, and the architecture of the interface is introduced as we go. The running example is `ToyTBA`, a minimal but complete algorithm package modelled on the real [TightBindingApproximation](https://github.com/Quantum-Many-Body/TightBindingApproximation.jl) package, whose whole source fits in a single file, `ToyTBA.jl`, included in this documentation. It computes the band structure and the density of states of a free-fermion lattice model, and the real packages of [Section 7.6](@ref TutorialEcosystem) are used in exactly the same way from the user's side. If you want to write such an algorithm package yourself, continue with [Chapter 8](@ref TutorialAlgorithmInterfaceDeveloper), which dissects `ToyTBA.jl` piece by piece.
 
-## 7.2 A complete calculation
+## 7.2 A Complete Calculation
 
 The user side of the interface is small enough to be shown in full. First, build the model in the standard way of [Chapter 6](@ref TutorialLatticeModel), wrap it by `ToyTBA`, and compute the band structure along a high-symmetry path:
 
@@ -63,7 +63,7 @@ dos′ = graphene′(:DOS′, DensityOfStates(), eigensystem′)
 plot(plot(dos), plot(dos′), size=(800, 350))
 ```
 
-## 7.3 The frontend, the algorithm and the assignment
+## 7.3 The Frontend, the Algorithm and the Assignment
 
 The computations above come in pairs that differ only in how the model is represented: an [`OperatorGenerator`](@ref) in one, and a [`Formula`](@ref) in the other. Everything else, including the computation tasks such as `EigenSystem` and `DensityOfStates`, the assignments named by `:EB`, `:EB′`, `:DOS` and `:DOS′`, and the corresponding results that come back, is identical within each pair. It is `ToyTBA` that absorbs the difference between the representations, so that a single algorithm works with any model. Such a type is called a **frontend**, which itself is a subtype of [`LatticeModel`](@ref). Every algorithm package defines its own frontend, allowing the computational workflow independent of the underlying representations.
 
@@ -93,15 +93,15 @@ frontend ──▶ Algorithm(name, frontend, [parameters, map])
 
 The examples of Section 7.2 have already exercised two parts of this flow. The eigen-system assignments were created with `delay=true`, so they were registered but not computed; the computation happened only when the density of states, whose assignment was given the eigen-system assignment as a dependency, was called for. And as the diagram shows, [`run!`](@ref) is not a step the user performs: it is the hook an algorithm package implements, invoked from inside the algorithm call.
 
-## 7.4 Parameter management
+## 7.4 Parameter Management
 
 A calculation is rarely a single run: parameters are scanned, results are compared across runs, and the same model is revisited many times, often long after it was first defined. The interface therefore carries the bookkeeping along with it, rather than leaving it to the user. Every result is recorded together with the parameters that produced it, so that nothing is silently overwritten and nothing is read back wrongly. Results can be cached and reused, so that nothing is recomputed unnecessarily. And the tasks of a calculation may depend on one another, so that when the parameters of a task are changed, its next call recomputes it together with exactly those dependencies that are affected, and no others.
 
-This automatic project management rests on two groups of the interface. **Parameter management**, built on [`Parameters`](@ref) and [`update!`](@ref), tracks the current parameter values, which are what staleness is judged by; it is the subject of this section. **Identity and persistence**, built on [`str`](@ref), [`config`](@ref) and [`stamp`](@ref) together with the save and load functions, keeps the records on disk; it is the subject of Section 7.5.
+This automatic project management rests on two groups of the interface. **Parameter management**, built on [`Parameters`](@ref) and [`update!`](@ref), tracks the current parameter values, which are what staleness is judged by; it is the subject of this section. **Identity and persistence**, built on [`str`](@ref), [`config`](@ref) and [`stamp`](@ref) together with the save and load functions, keeps the records on disk; it is the subject of [Section 7.5](@ref TutorialPersistence).
 
 Parameter management comes in two forms, depending on whether the assignment carries dependencies.
 
-### 7.4.1 Updating the algorithm
+### 7.4.1 Updating the Algorithm
 
 When the assignment carries no dependency, the algorithm itself is updated and a fresh assignment is registered, so that the results of different parameter values accumulate and can be compared side by side:
 
@@ -113,7 +113,7 @@ plot(plot(energybands), plot(energybands″))
 
 An algorithm shares the model interface, so it can be updated and inspected like any model. The update acts on the frontend, and through it on the very model the frontend was built from, just as [Chapter 6](@ref TutorialLatticeModel) described for a [`LatticeModel`](@ref) and its terms.
 
-### 7.4.2 Updating an assignment
+### 7.4.2 Updating an Assignment
 
 When the assignment carries a dependency chain, it is updated in place instead, and the chain is refreshed by the next call. Note that only the parameters of `dos` are touched by hand: the algorithm and the eigen-system dependency follow by themselves, and exactly the stale links are recomputed. This is where the *automatic* in automatic project management comes from:
 
@@ -123,7 +123,7 @@ graphene(dos)
 plot(dos)
 ```
 
-### 7.4.3 Translating parameters: the `map`
+### 7.4.3 Translating Parameters: The `map`
 
 An [`Algorithm`](@ref) wraps a frontend, gives it a name, and carries the parameters of the *method* rather than of the model. With neither of the last two constructor arguments given, the algorithm inherits the parameters of the frontend, and the translation between its own parameters and those of the frontend is the identity, which is exactly right when the two sets coincide, as they do for graphene.
 
@@ -159,11 +159,11 @@ Parameters(algorithm), Parameters(algorithm.frontend)
 
 Lowering the flux has moved the 2nd-neighbor hopping towards its real part, which is what a change of the enclosed flux should do.
 
-## 7.5 Identity and persistence
+## [7.5 Identity and Persistence](@id TutorialPersistence)
 
 The parameter management of Section 7.4 judges staleness by the current parameter values; the identity and persistence group is what turns every result into a managed record. [`str`](@ref), [`config`](@ref) and [`stamp`](@ref) give every result a stable key, and the save and load functions, [`qlsave`](@ref), [`qlload`](@ref) and their relatives, keep the records on disk. This is not a convenience but the point of the design: it is what lets results be recorded, reused and invalidated correctly no matter which algorithm produced them. The presentation is in four parts: the in-session reuse of results, the identity of a model, the on-disk records, and the export of results.
 
-### 7.5.1 Not recomputing what is already known
+### 7.5.1 Not Recomputing What Is Already Known
 
 A task remembers its parameters and its result, so a call that changes nothing costs nothing:
 
@@ -207,7 +207,7 @@ stamp(dos)
 
 Therefore, [`update!`](@ref) never changes the fingerprint, and each parameter set has its own stamp. An [`Assignment`](@ref) declares no structural content of its own, so its stamp encodes its parameter values alone, within the file named after the task, which is exactly the granularity that recording needs.
 
-### 7.5.3 Data and cache files
+### 7.5.3 Data and Cache Files
 
 The identity of a model makes its records recognizable; persistence makes them survive beyond the current session. On disk, the records live in two files, one for each kind of content: the *data* file stores the model itself, or the assignment together with its result, while the *cache* file stores the cacheable content [`contenttocache`](@ref), intermediate results that can in principle be recomputed but are expensive enough to be worth keeping (see the note at the end of this section). Both files are located in the same way: the file of a model is `pathof(model, target)`, which is `joinpath(dirname(model), basename(model, target))`. By default, [`dirname`](@ref) is `"."` (a model subtype with a `dir` field uses that directory instead), and [`basename`](@ref) is the representation name plus the extension `.qld` for `target=:data` or `.qlc` for `target=:cache`:
 
@@ -251,7 +251,7 @@ The other record still carries the parameters it was computed with, untouched by
 qlclean(pathof(dos, :data); maxcount=1)
 ```
 
-### 7.5.4 Exporting and visualizing
+### 7.5.4 Exporting and Visualizing
 
 A result can also be written out as plain text, in which case the fields of its `Data` are used as the columns:
 
@@ -269,7 +269,7 @@ plot(dos)
 !!! note
     A frontend can additionally declare what should be cached through [`contenttocache`](@ref), and [`qlcsave`](@ref) then stores that content under the stamp of the model. This is how an expensive preparation, such as the expansion of a large Hamiltonian, is computed once and reused across sessions. Nothing in the toy frontend is expensive enough to be worth caching, so its default empty cache is kept.
 
-## 7.6 The ecosystem
+## [7.6 The Ecosystem](@id TutorialEcosystem)
 
 Real algorithms are developed in separate packages, all of them built on the protocol of this chapter and [Chapter 8](@ref TutorialAlgorithmInterfaceDeveloper). The following table lists the main ones; the same packages are listed on the home page of these docs, which always reflects the current state of the ecosystem.
 

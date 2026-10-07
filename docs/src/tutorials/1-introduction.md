@@ -16,7 +16,7 @@ These three ingredients are combined into a [`LatticeModel`](@ref), a unifying a
 
 Beyond this standard pipeline, which is covered in detail throughout this tutorial, [`LatticeModel`](@ref) can also wrap a Julia function or precomputed operators, making it possible to interface with external inputs such as [Wannier90](https://github.com/wannier-developers/wannier90) Hamiltonians. This flexibility, together with the symbolic algebra powered by [SymPy](https://github.com/JuliaPy/SymPy.jl), makes [QuantumLattices](https://github.com/Quantum-Many-Body/QuantumLattices.jl) a truly generic platform for quantum many-body computations.
 
-## 1.1 Standard workflow: unitcell description framework
+## 1.1 Standard Workflow: Unitcell Description Framework
 
 Let's start with a simple example, *"the single orbital electronic Hubbard model with only nearest neighbor hopping on a one dimensional lattice with only two sites"*. Here, *"one dimensional lattice with only two sites"* describes the spatial information, *"single orbital electronic"* defines the local Hilbert space and thus the local operator algebra, and *"Hubbard model with only nearest neighbor hopping"* expresses the terms present in the Hamiltonian. From this description, we can derive that the Hamiltonian of the system is
 
