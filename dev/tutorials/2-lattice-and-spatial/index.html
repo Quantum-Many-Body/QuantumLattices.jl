@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>2. Lattice and Spatial Structure · QuantumLattices.jl</title><meta name="title" content="2. Lattice and Spatial Structure · QuantumLattices.jl"/><meta property="og:title" content="2. Lattice and Spatial Structure · QuantumLattices.jl"/><meta property="twitter:title" content="2. Lattice and Spatial Structure · QuantumLattices.jl"/><meta name="description" content="Documentation for QuantumLattices.jl."/><meta property="og:description" content="Documentation for QuantumLattices.jl."/><meta property="twitter:description" content="Documentation for QuantumLattices.jl."/><meta property="og:url" content="https://quantum-many-body.github.io/QuantumLattices.jl/latest/tutorials/2-lattice-and-spatial/"/><meta property="twitter:url" content="https://quantum-many-body.github.io/QuantumLattices.jl/latest/tutorials/2-lattice-and-spatial/"/><link rel="canonical" href="https://quantum-many-body.github.io/QuantumLattices.jl/latest/tutorials/2-lattice-and-spatial/"/><script async src="https://www.googletagmanager.com/gtag/js?id=UA-89508993-1"></script><script>  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'UA-89508993-1', {'page_path': location.pathname + location.search + location.hash});
+</script><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.63.2/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script><link href="../../assets/favicon.ico" rel="icon" type="image/x-icon"/><link href="../../assets/custom.css" rel="stylesheet" type="text/css"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="QuantumLattices.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">QuantumLattices.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Tutorials</span><ul><li><a class="tocitem" href="../1-introduction/">1. Introduction</a></li><li class="is-active"><a class="tocitem" href>2. Lattice and Spatial Structure</a><ul class="internal"><li><a class="tocitem" href="#2.1-Constructing-a-Lattice"><span>2.1 Constructing a Lattice</span></a></li><li><a class="tocitem" href="#TutorialPoint"><span>2.2 Points: Specifying Positions Beyond the Unitcell</span></a></li><li><a class="tocitem" href="#2.3-Request-for-the-Bonds-of-a-Lattice"><span>2.3 Request for the Bonds of a Lattice</span></a></li><li><a class="tocitem" href="#2.4-Reciprocal-Space"><span>2.4 Reciprocal Space</span></a></li><li><a class="tocitem" href="#Summary"><span>Summary</span></a></li></ul></li><li><a class="tocitem" href="../3-internal-degrees-of-freedom/">3. Internal Degrees of Freedom</a></li><li><a class="tocitem" href="../4-operators/">4. Operator Algebra</a></li><li><a class="tocitem" href="../5-couplings-and-terms/">5. Couplings and Terms</a></li><li><a class="tocitem" href="../6-latticemodel/">6. LatticeModel: the Unifying Abstraction</a></li><li><a class="tocitem" href="../7-algorithm-interface/">7. The Algorithm Interface: User Guide</a></li><li><a class="tocitem" href="../8-algorithm-interface-developer/">8. The Algorithm Interface: Developer Guide</a></li></ul></li><li><span class="tocitem">Advanced Topics</span><ul><li><a class="tocitem" href="../../advanced topics/Introduction/">Introduction</a></li><li><a class="tocitem" href="../../advanced topics/HybridSystems/">Hybrid systems</a></li><li><a class="tocitem" href="../../advanced topics/BoundaryConditions/">Boundary conditions</a></li><li><a class="tocitem" href="../../advanced topics/LinearTransformations/">Linear Transformations</a></li></ul></li><li><span class="tocitem">Manual</span><ul><li><a class="tocitem" href="../../man/Toolkit/">Toolkit</a></li><li><a class="tocitem" href="../../man/QuantumOperators/">Quantum Operators</a></li><li><a class="tocitem" href="../../man/Spatials/">Spatials</a></li><li><a class="tocitem" href="../../man/DegreesOfFreedom/">Degrees of Freedom</a></li><li><a class="tocitem" href="../../man/QuantumSystems/">Quantum Systems</a></li><li><a class="tocitem" href="../../man/Frameworks/">Frameworks</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>2. Lattice and Spatial Structure</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>2. Lattice and Spatial Structure</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/Quantum-Many-Body/QuantumLattices.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/Quantum-Many-Body/QuantumLattices.jl/blob/master/docs/src/tutorials/2-lattice-and-spatial.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="TutorialLattice"><a class="docs-heading-anchor" href="#TutorialLattice">2. Lattice and Spatial Structure</a><a id="TutorialLattice-1"></a><a class="docs-heading-anchor-permalink" href="#TutorialLattice" title="Permalink"></a></h1><p>In the standard workflow to define a quantum lattice system, we must first specify where the sites are and how they are connected. This chapter introduces the spatial building blocks: the lattice, its points, and the bonds between them. Besides, the reciprocal-space types essential for momentum-space analysis are also covered.</p><h2 id="2.1-Constructing-a-Lattice"><a class="docs-heading-anchor" href="#2.1-Constructing-a-Lattice">2.1 Constructing a Lattice</a><a id="2.1-Constructing-a-Lattice-1"></a><a class="docs-heading-anchor-permalink" href="#2.1-Constructing-a-Lattice" title="Permalink"></a></h2><h3 id="2.1.1-Spatial-Information-of-a-Unitcell"><a class="docs-heading-anchor" href="#2.1.1-Spatial-Information-of-a-Unitcell">2.1.1 Spatial Information of a Unitcell</a><a id="2.1.1-Spatial-Information-of-a-Unitcell-1"></a><a class="docs-heading-anchor-permalink" href="#2.1.1-Spatial-Information-of-a-Unitcell" title="Permalink"></a></h3><p>A lattice in condensed matter physics is a set of points in <span>$\mathbb{R}^d$</span> closed under translations by a discrete set of vectors. Translation symmetry introduces an equivalence relation: two points related by multiples of the translation vectors are physically equivalent. This observation leads to the <strong>unitcell construction</strong>: it suffices to specify a finite set of points <span>$\{\mathbf{r}_1, \ldots, \mathbf{r}_n\}$</span> within the origin unitcell, together with a set of translation vectors <span>$\{\mathbf{a}_1, \ldots, \mathbf{a}_d\}$</span>.</p><p><a href="../../man/Spatials/#QuantumLattices.Spatials.Lattice"><code>Lattice</code></a> is the concrete type representing the unitcell of an infinite lattice. It has three attributes:</p><ul><li><code>name::Symbol</code>: the name of the lattice</li><li><code>coordinates::Matrix{&lt;:Number}</code>: the coordinates of the points within the origin unitcell</li><li><code>vectors::SVector{N, &lt;:SVector}</code>: the translation vectors of the lattice</li></ul><p>Here, <a href="https://juliaarrays.github.io/StaticArrays.jl/stable/api/#SVector"><code>SVector</code></a> is an immutable vector defined and exported by the <a href="https://github.com/JuliaArrays/StaticArrays.jl">StaticArrays</a> package.</p><p><a href="../../man/Spatials/#QuantumLattices.Spatials.Lattice"><code>Lattice</code></a> can be constructed by providing the coordinates, with optional keyword arguments to specify its name and translation vectors:</p><pre><code class="language-julia-repl hljs">julia&gt; Lattice([0.0])
+Lattice(lattice)
+  with 1 point:
+    [0.0]
+
+julia&gt; Lattice((0.0, 0.0), (0.5, 0.5); vectors=[[1.0, 0.0], [0.0, 1.0]], name=:Square)
+Lattice(Square)
+  with 2 points:
+    [0.0, 0.0]
+    [0.5, 0.5]
+  with 2 translation vectors:
+    [1.0, 0.0]
+    [0.0, 1.0]
+
+julia&gt; Lattice(
+           (0.0, 0.0, 0.0);
+           name=:Cube,
+           vectors=[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
+       )
+Lattice(Cube)
+  with 1 point:
+    [0.0, 0.0, 0.0]
+  with 3 translation vectors:
+    [1.0, 0.0, 0.0]
+    [0.0, 1.0, 0.0]
+    [0.0, 0.0, 1.0]</code></pre><p>The coordinates can be specified using vectors or tuples. When the <code>vectors</code> keyword is omitted, as in the first example above, the lattice is a finite cluster: it possesses no translation symmetry, and the &quot;unitcell&quot; coincides with the whole system.</p><p>Iteration over a lattice yields the coordinates of the points in it:</p><pre><code class="language-julia-repl hljs">julia&gt; lattice = Lattice((0.0, 0.0), (0.5, 0.5); vectors=[[1.0, 0.0], [0.0, 1.0]]);
+
+julia&gt; length(lattice)
+2
+
+julia&gt; [lattice[1], lattice[2]]
+2-element Vector{SVector{2, Float64}}:
+ [0.0, 0.0]
+ [0.5, 0.5]
+
+julia&gt; collect(lattice)
+2-element Vector{SVector{2, Float64}}:
+ [0.0, 0.0]
+ [0.5, 0.5]</code></pre><p>The reciprocal translation vectors of the dual lattice can be obtained by <a href="../../man/Spatials/#QuantumLattices.Spatials.reciprocals-Tuple{AbstractLattice}"><code>reciprocals</code></a>:</p><pre><code class="language-julia-repl hljs">julia&gt; lattice = Lattice((0.0, 0.0); vectors=[[1.0, 0.0], [0.0, 1.0]]);
+
+julia&gt; reciprocals(lattice)
+2-element SVector{2, SVector{2, Float64}} with indices SOneTo(2):
+ [6.283185307179586, -0.0]
+ [-0.0, 6.283185307179586]</code></pre><h3 id="2.1.2-Building-Larger-Lattices"><a class="docs-heading-anchor" href="#2.1.2-Building-Larger-Lattices">2.1.2 Building Larger Lattices</a><a id="2.1.2-Building-Larger-Lattices-1"></a><a class="docs-heading-anchor-permalink" href="#2.1.2-Building-Larger-Lattices" title="Permalink"></a></h3><p>Often we need a supercell, a lattice obtained by translating a unitcell several times along each direction. This is done by passing the base lattice and the number of repetitions (or explicit ranges) to the <code>Lattice</code> constructor:</p><pre><code class="language-julia-repl hljs">julia&gt; lattice = Lattice((0.0, 0.0); vectors=[[1.0, 0.0], [0.0, 1.0]], name=:Square);
+
+julia&gt; Lattice(lattice, (2, 2))  # 2x2 open boundaries
+Lattice(Square(0:1)(0:1))
+  with 4 points:
+    [0.0, 0.0]
+    [1.0, 0.0]
+    [0.0, 1.0]
+    [1.0, 1.0]
+
+julia&gt; Lattice(lattice, (1:2, 1:2), (&#39;P&#39;, &#39;P&#39;))  # 2x2 periodic
+Lattice(Square[1:2][1:2])
+  with 4 points:
+    [1.0, 1.0]
+    [2.0, 1.0]
+    [1.0, 2.0]
+    [2.0, 2.0]
+  with 2 translation vectors:
+    [2.0, 0.0]
+    [0.0, 2.0]</code></pre><p>When the third argument <code>boundaries</code> is provided, <code>&#39;P&#39;</code> (or <code>:periodic</code>) retains the translation vector in that direction (scaled by the number of repetitions), while <code>&#39;O&#39;</code> (or <code>:open</code>) drops it. In the automatically generated name of the new lattice, each direction is shown as <code>[range]</code> when it is periodic and as <code>(range)</code> when it is open, as in <code>Square[1:2][1:2]</code> and <code>Square(0:1)(0:1)</code> above.</p><h2 id="TutorialPoint"><a class="docs-heading-anchor" href="#TutorialPoint">2.2 Points: Specifying Positions Beyond the Unitcell</a><a id="TutorialPoint-1"></a><a class="docs-heading-anchor-permalink" href="#TutorialPoint" title="Permalink"></a></h2><p>With translation symmetry, all points of a lattice are equivalent to those within the origin unitcell. However, things become complicated when bonds are requested. Bonds between different unitcells cannot be compressed into a single unitcell. Therefore, even in the unitcell construction framework, it is necessary to specify a point outside the origin unitcell, which requires extra information beyond a single coordinate if we wish to simultaneously keep track of which point it is equivalent to within the origin unitcell.</p><p>In literature, it is customary to express the coordinate <span>$\mathbf{R}_{i\mathbf{m}}$</span> of a point in the infinite lattice as</p><p class="math-container">\[\mathbf{R}_{i\mathbf{m}} = \mathbf{r}_i + \mathbf{R}_\mathbf{m}, \qquad \mathbf{R}_{\mathbf{m}}\equiv\sum_{\alpha=1}^{d} m_\alpha \mathbf{a}_\alpha, \; m_\alpha \in \mathbb{Z}\]</p><p>Here, <span>$\mathbf{R}_\mathbf{m}$</span> is the integral coordinate of the unitcell the point belongs to and <span>$\mathbf{r}_i$</span> is the relative displacement of the point in the unitcell, where <span>$i \in \{1, \ldots, n\}$</span> identifies the site index and <span>$\mathbf{m} = (m_1, \ldots, m_d)$</span> identifies the unitcell. Any two of these three coordinates are sufficient to get the full information. In this package, we choose <span>$\mathbf{R}_{i\mathbf{m}}$</span> and <span>$\mathbf{R}_\mathbf{m}$</span> as the complete set for an individual lattice point. Additionally, we also include the <code>site</code> index for fast lookup of the equivalence of a point within the origin unitcell, although it is redundant in theory. Thus, the <a href="../../man/Spatials/#QuantumLattices.Spatials.Point"><code>Point</code></a> defined in this package has three attributes as follows:</p><ul><li><code>site::Int</code>: the site index of a point that specifies the equivalent point within the origin unitcell</li><li><code>rcoordinate::</code><a href="https://github.com/JuliaArrays/StaticArrays.jl"><code>SVector</code></a>: the <strong>r</strong>eal <strong>coordinate</strong> of the point (<span>$\mathbf{R}_{i\mathbf{m}}$</span>)</li><li><code>icoordinate::</code><a href="https://github.com/JuliaArrays/StaticArrays.jl"><code>SVector</code></a>: the <strong>i</strong>ntegral <strong>coordinate</strong> of the unitcell the point belongs to (<span>$\mathbf{R}_\mathbf{m}$</span>)</li></ul><p>When constructing a <a href="../../man/Spatials/#QuantumLattices.Spatials.Point"><code>Point</code></a>, <code>rcoordinate</code> and <code>icoordinate</code> can accept tuples or standard vectors as inputs, such as:</p><pre><code class="language-julia-repl hljs">julia&gt; Point(1, [0.0], [0.0])
+Point(1, [0.0], [0.0])
+
+julia&gt; Point(1, (1.5, 0.0), (1.0, 0.0))
+Point(1, [1.5, 0.0], [1.0, 0.0])</code></pre><p><code>icoordinate</code> can be omitted, then it will be initialized by a zero <a href="https://github.com/JuliaArrays/StaticArrays.jl"><code>SVector</code></a>:</p><pre><code class="language-julia-repl hljs">julia&gt; Point(1, [0.0, 0.5])
+Point(1, [0.0, 0.5], [0.0, 0.0])</code></pre><h2 id="2.3-Request-for-the-Bonds-of-a-Lattice"><a class="docs-heading-anchor" href="#2.3-Request-for-the-Bonds-of-a-Lattice">2.3 Request for the Bonds of a Lattice</a><a id="2.3-Request-for-the-Bonds-of-a-Lattice-1"></a><a class="docs-heading-anchor-permalink" href="#2.3-Request-for-the-Bonds-of-a-Lattice" title="Permalink"></a></h2><h3 id="TutorialBond"><a class="docs-heading-anchor" href="#TutorialBond">2.3.1 Generic Bonds</a><a id="TutorialBond-1"></a><a class="docs-heading-anchor-permalink" href="#TutorialBond" title="Permalink"></a></h3><p>A bond in the narrow sense consists of two points. However, in quantum lattice systems, it is common to refer to generic bonds with only one or more than two points. Additionally, it is convenient to associate a bond with kind information, such as the order of the nearest neighbors of the bond. Thus, the <a href="../../man/Spatials/#QuantumLattices.Spatials.Bond"><code>Bond</code></a> is defined as follows:</p><ul><li><code>kind</code>: the kind information of a generic bond</li><li><code>points::AbstractVector{&lt;:Point}</code>: the points a generic bond contains</li></ul><pre><code class="language-julia-repl hljs">julia&gt; Bond(Point(1, [0.0, 0.0], [0.0, 0.0])) # 1-point bond
+Bond(0, Point(1, [0.0, 0.0], [0.0, 0.0]))
+
+julia&gt; Bond(2, Point(1, [0.0, 0.0], [0.0, 0.0]), Point(1, [1.0, 1.0], [1.0, 1.0])) # 2-point bond
+Bond(2, Point(1, [0.0, 0.0], [0.0, 0.0]), Point(1, [1.0, 1.0], [1.0, 1.0]))
+
+julia&gt; Bond(:plaquette, Point(1, [0.0, 0.0]), Point(2, [1.0, 0.0]), Point(3, [1.0, 1.0]), Point(4, [0.0, 1.0])) # generic bond with 4 points
+Bond(:plaquette, Point(1, [0.0, 0.0], [0.0, 0.0]), Point(2, [1.0, 0.0], [0.0, 0.0]), Point(3, [1.0, 1.0], [0.0, 0.0]), Point(4, [0.0, 1.0], [0.0, 0.0]))</code></pre><p>Note that the <code>kind</code> attribute of a bond with only one point is set to 0.</p><p>Iteration over a bond will yield the points it contains:</p><pre><code class="language-julia-repl hljs">julia&gt; bond = Bond(2, Point(1, [0.0, 0.0], [0.0, 0.0]), Point(2, [1.0, 0.0], [0.0, 0.0]));
+
+julia&gt; length(bond)
+2
+
+julia&gt; [bond[1], bond[2]]
+2-element Vector{Point{2, Float64}}:
+ Point(1, [0.0, 0.0], [0.0, 0.0])
+ Point(2, [1.0, 0.0], [0.0, 0.0])
+
+julia&gt; collect(bond)
+2-element Vector{Point{2, Float64}}:
+ Point(1, [0.0, 0.0], [0.0, 0.0])
+ Point(2, [1.0, 0.0], [0.0, 0.0])</code></pre><p>The coordinate of a bond as a whole is also defined for those that only contain one or two points. The coordinate of a 1-point bond is defined to be the corresponding coordinate of this point, and the coordinate of a 2-point bond is defined to be the corresponding coordinate of the second point minus that of the first:</p><pre><code class="language-julia-repl hljs">julia&gt; bond = Bond(Point(1, [2.0], [1.0]));
+
+julia&gt; rcoordinate(bond)
+1-element SVector{1, Float64} with indices SOneTo(1):
+ 2.0
+
+julia&gt; icoordinate(bond)
+1-element SVector{1, Float64} with indices SOneTo(1):
+ 1.0
+
+julia&gt; bond = Bond(1, Point(1, [1.0, 1.0], [1.0, 1.0]), Point(2, [0.5, 0.5], [0.0, 0.0]));
+
+julia&gt; rcoordinate(bond)
+2-element SVector{2, Float64} with indices SOneTo(2):
+ -0.5
+ -0.5
+
+julia&gt; icoordinate(bond)
+2-element SVector{2, Float64} with indices SOneTo(2):
+ -1.0
+ -1.0</code></pre><h3 id="2.3.2-Generation-of-1-Point-and-2-Point-Bonds"><a class="docs-heading-anchor" href="#2.3.2-Generation-of-1-Point-and-2-Point-Bonds">2.3.2 Generation of 1-Point and 2-Point Bonds</a><a id="2.3.2-Generation-of-1-Point-and-2-Point-Bonds-1"></a><a class="docs-heading-anchor-permalink" href="#2.3.2-Generation-of-1-Point-and-2-Point-Bonds" title="Permalink"></a></h3><p>In this package, we provide the function <a href="../../man/Spatials/#QuantumLattices.Spatials.bonds-Tuple{AbstractLattice, Colon}"><code>bonds</code></a> to get the 1-point and 2-point bonds of a lattice:</p><pre><code class="language-julia hljs">bonds(lattice::Lattice, nneighbor::Int) -&gt; Vector{&lt;:Bond}
+bonds(lattice::Lattice, neighbors::Neighbors) -&gt; Vector{&lt;:Bond}</code></pre><p>This function is based on the <code>KDTree</code> type provided by the <a href="https://github.com/KristofferC/NearestNeighbors.jl"><code>NearestNeighbors.jl</code></a> package. In the first method, all bonds up to the <code>nneighbor</code>th nearest neighbors are returned, including the 1-point bonds:</p><pre><code class="language-julia-repl hljs">julia&gt; lattice = Lattice([0.0, 0.0]; vectors=[[1.0, 0.0], [0.0, 1.0]]);
+
+julia&gt; bonds(lattice, 2)
+5-element Vector{Bond{Int64, Point{2, Float64}, Vector{Point{2, Float64}}}}:
+ Bond(0, Point(1, [0.0, 0.0], [0.0, 0.0]))
+ Bond(2, Point(1, [-1.0, -1.0], [-1.0, -1.0]), Point(1, [0.0, 0.0], [0.0, 0.0]))
+ Bond(1, Point(1, [0.0, -1.0], [0.0, -1.0]), Point(1, [0.0, 0.0], [0.0, 0.0]))
+ Bond(2, Point(1, [1.0, -1.0], [1.0, -1.0]), Point(1, [0.0, 0.0], [0.0, 0.0]))
+ Bond(1, Point(1, [-1.0, 0.0], [-1.0, 0.0]), Point(1, [0.0, 0.0], [0.0, 0.0]))</code></pre><p>Note that for a lattice with translation symmetry, only one representative bond is returned for each class of bonds related by lattice translations, and every two-point representative is oriented so that its <strong>second</strong> point lies in the origin unitcell (with zero <code>icoordinate</code>). Every other bond is a translated copy of one of these representatives, possibly with the two points exchanged, so listing them all would be redundant. The returned bonds are not sorted by neighbor order: the single-point bonds come first, and the two-point bonds follow in the order in which they are found by the underlying <code>KDTree</code> search.</p><p>However, this method is not very efficient, as <code>KDTree</code> only searches for bonds with lengths less than a given value, and it does not know the bond lengths for each order of nearest neighbors. This information must be computed first. Therefore, in the second method, <a href="../../man/Spatials/#QuantumLattices.Spatials.bonds-Tuple{AbstractLattice, Colon}"><code>bonds</code></a> can accept a new type, <a href="../../man/Spatials/#QuantumLattices.Spatials.Neighbors"><code>Neighbors</code></a>, as its second positional parameter to improve efficiency, as it can tell the program the bond length information a priori:</p><pre><code class="language-julia-repl hljs">julia&gt; lattice = Lattice([0.0, 0.0]; vectors=[[1.0, 0.0], [0.0, 1.0]]);
+
+julia&gt; bonds(lattice, Neighbors(0=&gt;0.0, 1=&gt;1.0, 2=&gt;√2))
+5-element Vector{Bond{Int64, Point{2, Float64}, Vector{Point{2, Float64}}}}:
+ Bond(0, Point(1, [0.0, 0.0], [0.0, 0.0]))
+ Bond(2, Point(1, [-1.0, -1.0], [-1.0, -1.0]), Point(1, [0.0, 0.0], [0.0, 0.0]))
+ Bond(1, Point(1, [0.0, -1.0], [0.0, -1.0]), Point(1, [0.0, 0.0], [0.0, 0.0]))
+ Bond(2, Point(1, [1.0, -1.0], [1.0, -1.0]), Point(1, [0.0, 0.0], [0.0, 0.0]))
+ Bond(1, Point(1, [-1.0, 0.0], [-1.0, 0.0]), Point(1, [0.0, 0.0], [0.0, 0.0]))</code></pre><p>Meanwhile, an instance of <a href="../../man/Spatials/#QuantumLattices.Spatials.Neighbors"><code>Neighbors</code></a> can also serve as a filter for the generated bonds, selecting those bonds with the given bond lengths:</p><pre><code class="language-julia-repl hljs">julia&gt; lattice = Lattice([0.0, 0.0]; vectors=[[1.0, 0.0], [0.0, 1.0]]);
+
+julia&gt; bonds(lattice, Neighbors(2=&gt;√2))
+2-element Vector{Bond{Int64, Point{2, Float64}, Vector{Point{2, Float64}}}}:
+ Bond(2, Point(1, [-1.0, -1.0], [-1.0, -1.0]), Point(1, [0.0, 0.0], [0.0, 0.0]))
+ Bond(2, Point(1, [1.0, -1.0], [1.0, -1.0]), Point(1, [0.0, 0.0], [0.0, 0.0]))</code></pre><p>To obtain generic bonds containing more points, users are encouraged to implement their own <code>bonds</code> methods. Pull requests are welcome.</p><h2 id="2.4-Reciprocal-Space"><a class="docs-heading-anchor" href="#2.4-Reciprocal-Space">2.4 Reciprocal Space</a><a id="2.4-Reciprocal-Space-1"></a><a class="docs-heading-anchor-permalink" href="#2.4-Reciprocal-Space" title="Permalink"></a></h2><p>The reciprocal space dual to a lattice is essential for momentum-space analysis. This package provides three common types for different use cases, all of which are subtypes of <a href="https://docs.julialang.org/en/v1/base/arrays/#Base.AbstractVector"><code>AbstractVector</code></a>: the discrete Brillouin zone (<a href="../../man/Spatials/#QuantumLattices.Spatials.BrillouinZone"><code>BrillouinZone</code></a>), the rectangular reciprocal zone (<a href="../../man/Spatials/#QuantumLattices.Spatials.ReciprocalZone"><code>ReciprocalZone</code></a>), and the high-symmetry reciprocal path (<a href="../../man/Spatials/#QuantumLattices.Spatials.ReciprocalPath"><code>ReciprocalPath</code></a>). All of them support <a href="https://docs.julialang.org/en/v1/base/arrays/#Base.length-Tuple{AbstractArray}"><code>length</code></a>, integer indexing, <a href="https://docs.julialang.org/en/v1/base/collections/#Base.collect-Tuple{Any}"><code>collect</code></a>, and iteration. Iteration and indexing yield the coordinates of the <span>$\mathbf{k}$</span>-points. These types will be put to use in <a href="../7-algorithm-interface/#TutorialAlgorithmInterface">Chapter 7</a>, where a <a href="../../man/Spatials/#QuantumLattices.Spatials.BrillouinZone"><code>BrillouinZone</code></a> supplies the <span>$\mathbf{k}$</span>-point grid for a band-structure calculation, and a <a href="../../man/Spatials/#QuantumLattices.Spatials.ReciprocalPath"><code>ReciprocalPath</code></a> defines the high-symmetry path along which bands are plotted.</p><h3 id="2.4.1-BrillouinZone"><a class="docs-heading-anchor" href="#2.4.1-BrillouinZone">2.4.1 BrillouinZone</a><a id="2.4.1-BrillouinZone-1"></a><a class="docs-heading-anchor-permalink" href="#2.4.1-BrillouinZone" title="Permalink"></a></h3><p><a href="../../man/Spatials/#QuantumLattices.Spatials.BrillouinZone"><code>BrillouinZone</code></a> represents the first Brillouin zone of a lattice, parameterized by a grid of discrete <span>$\mathbf{k}$</span>-points. It can be constructed from a lattice or directly from reciprocal vectors:</p><pre><code class="language-julia-repl hljs">julia&gt; lattice = Lattice((0.0, 0.0); vectors=[[1.0, 0.0], [0.0, 1.0]]);
+
+julia&gt; bz = BrillouinZone(lattice, 2)
+4-element BrillouinZone{:k, (2, 2), 2, SVector{2, Float64}}:
+ [0.0, 0.0]
+ [0.0, 3.141592653589793]
+ [3.141592653589793, 0.0]
+ [3.141592653589793, 3.141592653589793]
+
+julia&gt; bz == BrillouinZone(reciprocals(lattice), 2)
+true
+
+julia&gt; length(bz)
+4
+
+julia&gt; collect(bz) == [bz[1], bz[2], bz[3], bz[4]]
+true</code></pre><p>The periods along different directions can be different:</p><pre><code class="language-julia-repl hljs">julia&gt; lattice = Lattice((0.0, 0.0); vectors=[[1.0, 0.0], [0.0, 1.0]]);
+
+julia&gt; BrillouinZone(lattice, (2, 4))
+8-element BrillouinZone{:k, (2, 4), 2, SVector{2, Float64}}:
+ [0.0, 0.0]
+ [0.0, 1.5707963267948966]
+ [0.0, 3.141592653589793]
+ [0.0, 4.71238898038469]
+ [3.141592653589793, 0.0]
+ [3.141592653589793, 1.5707963267948966]
+ [3.141592653589793, 3.141592653589793]
+ [3.141592653589793, 4.71238898038469]</code></pre><p>Query methods include <a href="../../man/Spatials/#QuantumLattices.Spatials.periods-Tuple{BrillouinZone}"><code>periods</code></a>, <a href="../../man/DegreesOfFreedom/#QuantumLattices.dimension-Tuple{Internal}"><code>dimension</code></a>, and <a href="../../man/Frameworks/#QuantumLattices.QuantumOperators.scalartype-Tuple{FrameworkElement}"><code>scalartype</code></a>:</p><pre><code class="language-julia-repl hljs">julia&gt; lattice = Lattice((0.0, 0.0); vectors=[[1.0, 0.0], [0.0, 1.0]]);
+
+julia&gt; bz = BrillouinZone(lattice, (2, 4));
+
+julia&gt; periods(bz)
+(2, 4)
+
+julia&gt; dimension(bz)
+2
+
+julia&gt; scalartype(bz)
+Float64</code></pre><h3 id="2.4.2-ReciprocalZone"><a class="docs-heading-anchor" href="#2.4.2-ReciprocalZone">2.4.2 ReciprocalZone</a><a id="2.4.2-ReciprocalZone-1"></a><a class="docs-heading-anchor-permalink" href="#2.4.2-ReciprocalZone" title="Permalink"></a></h3><p><a href="../../man/Spatials/#QuantumLattices.Spatials.ReciprocalZone"><code>ReciprocalZone</code></a> provides a rectangular zone defined by per-axis fractional bounds. It can be constructed from reciprocal vectors with explicit bounds and grid resolution:</p><pre><code class="language-julia-repl hljs">julia&gt; recipls = [[1.0, 0.0], [0.0, 1.0]];
+
+julia&gt; rz = ReciprocalZone(recipls, -1//2=&gt;1//2, -1//2=&gt;1//2; length=2)
+4-element ReciprocalZone{:k, 2, SVector{2, Float64}, Float64}:
+ [-0.5, -0.5]
+ [-0.5, 0.0]
+ [0.0, -0.5]
+ [0.0, 0.0]
+
+julia&gt; length(rz)
+4
+
+julia&gt; dimension(rz)
+2
+
+julia&gt; scalartype(rz)
+Float64</code></pre><p>Note that the bounds are given in fractional coordinates: the actual <span>$\mathbf{k}$</span>-points are the fractional values multiplied by the corresponding reciprocal vectors, which in this example happen to be the unit vectors.</p><p>Like <a href="../../man/Spatials/#QuantumLattices.Spatials.BrillouinZone"><code>BrillouinZone</code></a>, a <a href="../../man/Spatials/#QuantumLattices.Spatials.ReciprocalZone"><code>ReciprocalZone</code></a> can also be constructed from a lattice, and the lengths along different directions can be different:</p><pre><code class="language-julia-repl hljs">julia&gt; lattice = Lattice((0.0, 0.0); vectors=[[1.0, 0.0], [0.0, 1.0]]);
+
+julia&gt; rz = ReciprocalZone(lattice, -1//2=&gt;1//2, -1//2=&gt;1//2; length=(2, 4))
+8-element ReciprocalZone{:k, 2, SVector{2, Float64}, Float64}:
+ [-3.141592653589793, -3.141592653589793]
+ [-3.141592653589793, -1.5707963267948966]
+ [-3.141592653589793, 0.0]
+ [-3.141592653589793, 1.5707963267948966]
+ [0.0, -3.141592653589793]
+ [0.0, -1.5707963267948966]
+ [0.0, 0.0]
+ [0.0, 1.5707963267948966]</code></pre><h3 id="2.4.3-ReciprocalPath"><a class="docs-heading-anchor" href="#2.4.3-ReciprocalPath">2.4.3 ReciprocalPath</a><a id="2.4.3-ReciprocalPath-1"></a><a class="docs-heading-anchor-permalink" href="#2.4.3-ReciprocalPath" title="Permalink"></a></h3><p><a href="../../man/Spatials/#QuantumLattices.Spatials.ReciprocalPath"><code>ReciprocalPath</code></a> defines a piecewise-linear path through high-symmetry points, useful for computing and displaying band structures:</p><pre><code class="language-julia-repl hljs">julia&gt; recipls = [[1.0, 0.0], [0.0, 1.0]];
+
+julia&gt; rp = ReciprocalPath(
+           recipls, (0, 0)=&gt;(1//2, 0), (1//2, 0)=&gt;(1//2, 1//2), (1//2, 1//2)=&gt;(0, 0);
+           length=2
+       )
+7-element ReciprocalPath{:k, SVector{2, Float64}, 3, Tuple{Rational{Int64}, Rational{Int64}}}:
+ [0.0, 0.0]
+ [0.25, 0.0]
+ [0.5, 0.0]
+ [0.5, 0.25]
+ [0.5, 0.5]
+ [0.25, 0.25]
+ [0.0, 0.0]
+
+julia&gt; length(rp)
+7
+
+julia&gt; dimension(rp)
+2</code></pre><p>A path can also be constructed directly from a lattice:</p><pre><code class="language-julia-repl hljs">julia&gt; lattice = Lattice((0.0, 0.0); vectors=[[1.0, 0.0], [0.0, 1.0]]);
+
+julia&gt; rp = ReciprocalPath(
+           lattice, (0, 0)=&gt;(1//2, 0), (1//2, 0)=&gt;(1//2, 1//2), (1//2, 1//2)=&gt;(0, 0);
+           length=2
+       )
+7-element ReciprocalPath{:k, SVector{2, Float64}, 3, Tuple{Rational{Int64}, Rational{Int64}}}:
+ [0.0, 0.0]
+ [1.5707963267948966, 0.0]
+ [3.141592653589793, 0.0]
+ [3.141592653589793, 1.5707963267948966]
+ [3.141592653589793, 3.141592653589793]
+ [1.5707963267948966, 1.5707963267948966]
+ [0.0, 0.0]</code></pre><h3 id="2.4.4-High-Symmetry-Points:-The-String-Macros"><a class="docs-heading-anchor" href="#2.4.4-High-Symmetry-Points:-The-String-Macros">2.4.4 High-Symmetry Points: The String Macros</a><a id="2.4.4-High-Symmetry-Points:-The-String-Macros-1"></a><a class="docs-heading-anchor-permalink" href="#2.4.4-High-Symmetry-Points:-The-String-Macros" title="Permalink"></a></h3><p>For the common one-dimensional, rectangular, and hexagonal Brillouin zones, the standard high-symmetry points can be referred to by name through the exported string macros <a href="../../man/Spatials/#QuantumLattices.Spatials.@line_str-Tuple{String}"><code>@line_str</code></a>, <a href="../../man/Spatials/#QuantumLattices.Spatials.@rectangle_str-Tuple{String}"><code>@rectangle_str</code></a> and <a href="../../man/Spatials/#QuantumLattices.Spatials.@hexagon_str-Tuple{String}"><code>@hexagon_str</code></a>, with the point names separated by <code>-</code> (spaces are ignored), e.g.:</p><pre><code class="language-julia hljs">ReciprocalPath(lattice, line&quot;Γ-X-...&quot;)
+ReciprocalPath(lattice, rectangle&quot;Γ-X-M-...&quot;)
+ReciprocalPath(lattice, hexagon&quot;Γ-K-M-...&quot;)</code></pre><p>Here, the supported names and their positions as fractional coordinates in the reciprocal basis are:</p><ul><li><p><strong><code>line&quot;P₁-P₂-...&quot;</code></strong></p><table><tr><th style="text-align: right">Names</th><th style="text-align: right"><code>Γ</code>/<code>Γ₁</code></th><th style="text-align: right"><code>X</code>/<code>X₁</code></th><th style="text-align: right"><code>Γ₂</code></th><th style="text-align: right"><code>X₂</code></th></tr><tr><td style="text-align: right">Position</td><td style="text-align: right">0</td><td style="text-align: right">1/2</td><td style="text-align: right">1</td><td style="text-align: right">-1/2</td></tr></table></li><li><p><strong><code>rectangle&quot;P₁-P₂-...&quot;</code></strong></p><table><tr><th style="text-align: right">Names</th><th style="text-align: right"><code>Γ</code></th><th style="text-align: right"><code>X</code>/<code>X₁</code></th><th style="text-align: right"><code>X₂</code></th><th style="text-align: right"><code>Y</code>/<code>Y₁</code></th><th style="text-align: right"><code>Y₂</code></th><th style="text-align: right"><code>M</code>/<code>M₁</code></th><th style="text-align: right"><code>M₂</code></th><th style="text-align: right"><code>M₃</code></th><th style="text-align: right"><code>M₄</code></th></tr><tr><td style="text-align: right">Position</td><td style="text-align: right">(0, 0)</td><td style="text-align: right">(1/2, 0)</td><td style="text-align: right">(-1/2, 0)</td><td style="text-align: right">(0, 1/2)</td><td style="text-align: right">(0, -1/2)</td><td style="text-align: right">(1/2, 1/2)</td><td style="text-align: right">(-1/2, 1/2)</td><td style="text-align: right">(-1/2, -1/2)</td><td style="text-align: right">(1/2, -1/2)</td></tr></table></li><li><p><strong><code>hexagon&quot;P₁-P₂-...&quot;</code></strong>: the angle between the two reciprocal vectors is 120° by default; append <code>, 60°</code> (e.g., <code>hexagon&quot;Γ-K-M-Γ, 60°&quot;</code>) when it is 60°.</p><table><tr><th style="text-align: right">Names</th><th style="text-align: right"><code>Γ</code></th><th style="text-align: right"><code>K</code>/<code>K₁</code></th><th style="text-align: right"><code>K₂</code></th><th style="text-align: right"><code>K₃</code></th><th style="text-align: right"><code>K₄</code></th><th style="text-align: right"><code>K₅</code></th><th style="text-align: right"><code>K₆</code></th><th style="text-align: right"><code>M</code>/<code>M₁</code></th><th style="text-align: right"><code>M₂</code></th><th style="text-align: right"><code>M₃</code></th><th style="text-align: right"><code>M₄</code></th><th style="text-align: right"><code>M₅</code></th><th style="text-align: right"><code>M₆</code></th></tr><tr><td style="text-align: right">120°</td><td style="text-align: right">(0, 0)</td><td style="text-align: right">(2/3, 1/3)</td><td style="text-align: right">(1/3, 2/3)</td><td style="text-align: right">(1/3, -1/3)</td><td style="text-align: right">(-2/3, -1/3)</td><td style="text-align: right">(-1/3, -2/3)</td><td style="text-align: right">(-1/3, 1/3)</td><td style="text-align: right">(1/2, 1/2)</td><td style="text-align: right">(1/2, 0)</td><td style="text-align: right">(0, -1/2)</td><td style="text-align: right">(-1/2, -1/2)</td><td style="text-align: right">(-1/2, 0)</td><td style="text-align: right">(0, 1/2)</td></tr><tr><td style="text-align: right">60°</td><td style="text-align: right">(0, 0)</td><td style="text-align: right">(1/3, 1/3)</td><td style="text-align: right">(2/3, -1/3)</td><td style="text-align: right">(1/3, -2/3)</td><td style="text-align: right">(-1/3, -1/3)</td><td style="text-align: right">(-2/3, 1/3)</td><td style="text-align: right">(-1/3, 2/3)</td><td style="text-align: right">(0, 1/2)</td><td style="text-align: right">(1/2, 0)</td><td style="text-align: right">(1/2, -1/2)</td><td style="text-align: right">(0, -1/2)</td><td style="text-align: right">(-1/2, 0)</td><td style="text-align: right">(-1/2, 1/2)</td></tr></table></li></ul><p>The subscripted names enumerate the symmetry-equivalent copies of a point, so that a path can visit a specific one: for example, <code>line&quot;Γ₁-Γ₂&quot;</code> sweeps a full period of the reciprocal lattice instead of staying at Γ, and <code>hexagon&quot;Γ-K₁-K₂-Γ&quot;</code> visits along the edges of the small equilateral triangle contained in the hexagonal Brillouin zone.</p><h2 id="Summary"><a class="docs-heading-anchor" href="#Summary">Summary</a><a id="Summary-1"></a><a class="docs-heading-anchor-permalink" href="#Summary" title="Permalink"></a></h2><table><tr><th style="text-align: right">Type</th><th style="text-align: right">Purpose</th></tr><tr><td style="text-align: right"><a href="../../man/Spatials/#QuantumLattices.Spatials.Lattice"><code>Lattice</code></a></td><td style="text-align: right">Unitcell description with translation vectors</td></tr><tr><td style="text-align: right"><a href="../../man/Spatials/#QuantumLattices.Spatials.Point"><code>Point</code></a></td><td style="text-align: right">Labeled point with real and integral coordinates</td></tr><tr><td style="text-align: right"><a href="../../man/Spatials/#QuantumLattices.Spatials.Bond"><code>Bond</code></a></td><td style="text-align: right">Ordered set of points, classified by kind</td></tr><tr><td style="text-align: right"><a href="../../man/Spatials/#QuantumLattices.Spatials.Neighbors"><code>Neighbors</code></a></td><td style="text-align: right">Map from neighbor order to bond length</td></tr><tr><td style="text-align: right"><a href="../../man/Spatials/#QuantumLattices.Spatials.BrillouinZone"><code>BrillouinZone</code></a></td><td style="text-align: right">Discrete Brillouin zone grid</td></tr><tr><td style="text-align: right"><a href="../../man/Spatials/#QuantumLattices.Spatials.ReciprocalZone"><code>ReciprocalZone</code></a></td><td style="text-align: right">Rectangular reciprocal zone grid</td></tr><tr><td style="text-align: right"><a href="../../man/Spatials/#QuantumLattices.Spatials.ReciprocalPath"><code>ReciprocalPath</code></a></td><td style="text-align: right">High-symmetry path in reciprocal space</td></tr></table><p>With the spatial structure in place, we now turn to <a href="../3-internal-degrees-of-freedom/#TutorialDOF">Chapter 3</a>, where we define what lives at each lattice point.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../1-introduction/">« 1. Introduction</a><a class="docs-footer-nextpage" href="../3-internal-degrees-of-freedom/">3. Internal Degrees of Freedom »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Thursday 8 October 2026 01:26">Thursday 8 October 2026</span>. Using Julia version 1.13.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>4. Operator Algebra · QuantumLattices.jl</title><meta name="title" content="4. Operator Algebra · QuantumLattices.jl"/><meta property="og:title" content="4. Operator Algebra · QuantumLattices.jl"/><meta property="twitter:title" content="4. Operator Algebra · QuantumLattices.jl"/><meta name="description" content="Documentation for QuantumLattices.jl."/><meta property="og:description" content="Documentation for QuantumLattices.jl."/><meta property="twitter:description" content="Documentation for QuantumLattices.jl."/><meta property="og:url" content="https://quantum-many-body.github.io/QuantumLattices.jl/latest/tutorials/4-operators/"/><meta property="twitter:url" content="https://quantum-many-body.github.io/QuantumLattices.jl/latest/tutorials/4-operators/"/><link rel="canonical" href="https://quantum-many-body.github.io/QuantumLattices.jl/latest/tutorials/4-operators/"/><script async src="https://www.googletagmanager.com/gtag/js?id=UA-89508993-1"></script><script>  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'UA-89508993-1', {'page_path': location.pathname + location.search + location.hash});
+</script><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.63.2/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script><link href="../../assets/favicon.ico" rel="icon" type="image/x-icon"/><link href="../../assets/custom.css" rel="stylesheet" type="text/css"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="QuantumLattices.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">QuantumLattices.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Tutorials</span><ul><li><a class="tocitem" href="../1-introduction/">1. Introduction</a></li><li><a class="tocitem" href="../2-lattice-and-spatial/">2. Lattice and Spatial Structure</a></li><li><a class="tocitem" href="../3-internal-degrees-of-freedom/">3. Internal Degrees of Freedom</a></li><li class="is-active"><a class="tocitem" href>4. Operator Algebra</a><ul class="internal"><li><a class="tocitem" href="#4.1-Operator-and-Operators"><span>4.1 Operator and Operators</span></a></li><li><a class="tocitem" href="#4.2-Symbolic-Computation"><span>4.2 Symbolic Computation</span></a></li><li><a class="tocitem" href="#TutorialLaTeX"><span>4.3 LaTeX Output</span></a></li><li><a class="tocitem" href="#4.4-Linear-Transformation"><span>4.4 Linear Transformation</span></a></li><li><a class="tocitem" href="#4.5-Permutation"><span>4.5 Permutation</span></a></li><li><a class="tocitem" href="#Summary"><span>Summary</span></a></li></ul></li><li><a class="tocitem" href="../5-couplings-and-terms/">5. Couplings and Terms</a></li><li><a class="tocitem" href="../6-latticemodel/">6. LatticeModel: the Unifying Abstraction</a></li><li><a class="tocitem" href="../7-algorithm-interface/">7. The Algorithm Interface: User Guide</a></li><li><a class="tocitem" href="../8-algorithm-interface-developer/">8. The Algorithm Interface: Developer Guide</a></li></ul></li><li><span class="tocitem">Advanced Topics</span><ul><li><a class="tocitem" href="../../advanced topics/Introduction/">Introduction</a></li><li><a class="tocitem" href="../../advanced topics/HybridSystems/">Hybrid systems</a></li><li><a class="tocitem" href="../../advanced topics/BoundaryConditions/">Boundary conditions</a></li><li><a class="tocitem" href="../../advanced topics/LinearTransformations/">Linear Transformations</a></li></ul></li><li><span class="tocitem">Manual</span><ul><li><a class="tocitem" href="../../man/Toolkit/">Toolkit</a></li><li><a class="tocitem" href="../../man/QuantumOperators/">Quantum Operators</a></li><li><a class="tocitem" href="../../man/Spatials/">Spatials</a></li><li><a class="tocitem" href="../../man/DegreesOfFreedom/">Degrees of Freedom</a></li><li><a class="tocitem" href="../../man/QuantumSystems/">Quantum Systems</a></li><li><a class="tocitem" href="../../man/Frameworks/">Frameworks</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>4. Operator Algebra</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>4. Operator Algebra</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/Quantum-Many-Body/QuantumLattices.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/Quantum-Many-Body/QuantumLattices.jl/blob/master/docs/src/tutorials/4-operators.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="TutorialOperators"><a class="docs-heading-anchor" href="#TutorialOperators">4. Operator Algebra</a><a id="TutorialOperators-1"></a><a class="docs-heading-anchor-permalink" href="#TutorialOperators" title="Permalink"></a></h1><p>The previous two chapters provided the two ingredients out of which the Hamiltonian of a quantum lattice system is composed: the spatial structure of the lattice (<a href="../2-lattice-and-spatial/#TutorialLattice">Chapter 2</a>) and the generators acting on the local Hilbert space at each lattice point (<a href="../3-internal-degrees-of-freedom/#TutorialDOF">Chapter 3</a>). This chapter turns to the operator representation of the Hamiltonian, which is built from these generators.</p><p>A Hamiltonian is a sum of operators, and each operator is a scalar coefficient multiplying a product of generators,</p><p class="math-container">\[t\,\hat{g}_{\mu_1}\hat{g}_{\mu_2}\cdots\hat{g}_{\mu_k},\]</p><p>where <span>$t$</span> is the scalar coefficient and each <span>$\hat{g}_{\mu_j}$</span> is a generator specified by the labels <span>$\mu_j$</span>. Following the local-unitcell-global hierarchy of <a href="../3-internal-degrees-of-freedom/#TutorialHierarchy">Section 3.1</a>, these labels include its site together with its internal indices, supplemented by the coordinates when the generator lies outside the origin unitcell. In this package every generator is stored, together with its labels, as a single object of type <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.OperatorIndex"><code>OperatorIndex</code></a>, so that each component of the product above is such a whole generator rather than a bare set of labels. The Hamiltonian is then the sum of all such operators,</p><p class="math-container">\[H = \sum_j t_j\,\hat{g}_{\mu^{(j)}_1}\hat{g}_{\mu^{(j)}_2}\cdots\hat{g}_{\mu^{(j)}_{k_j}}.\]</p><p>In this way a single operator and the whole Hamiltonian are realized by two types: each operator of the form above corresponds to an <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operator"><code>Operator</code></a>, and their sum, i.e., the Hamiltonian itself, to an <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operators"><code>Operators</code></a>. Together they form an algebra over <span>$\mathbb{C}$</span>: operators can be added, multiplied, and scaled by complex numbers, yielding other operators or their sums. This chapter introduces these concrete types, and their algebraic operations and transformations.</p><div class="admonition is-info" id="Note-835218ac6aa594e5"><header class="admonition-header">Note<a class="admonition-anchor" href="#Note-835218ac6aa594e5" title="Permalink"></a></header><div class="admonition-body"><p>In this chapter the word &quot;operator&quot; denotes a single summand of the Hamiltonian, i.e., a scalar coefficient times a product of generators. This is different from the coupling <em>terms</em> to be introduced in <a href="../5-couplings-and-terms/#TutorialCouplings">Chapter 5</a>: a coupling term is a physical specification that expands into many operators.</p></div></div><h2 id="4.1-Operator-and-Operators"><a class="docs-heading-anchor" href="#4.1-Operator-and-Operators">4.1 Operator and Operators</a><a id="4.1-Operator-and-Operators-1"></a><a class="docs-heading-anchor-permalink" href="#4.1-Operator-and-Operators" title="Permalink"></a></h2><p><a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operator"><code>Operator</code></a> represents a product of generators with a coefficient. It can be initialized in two ways:</p><pre><code class="language-julia-repl hljs">julia&gt; Operator(2, 𝕔⁺(1, -1//2), 𝕔(1, -1//2), 𝕊{1//2}(&#39;z&#39;))
+Operator(2, 𝕔⁺(1, -1//2), 𝕔(1, -1//2), 𝕊{1//2}(&#39;z&#39;))
+
+julia&gt; 2 * 𝕔⁺(1, 1, -1//2) * 𝕊{1//2}(2, &#39;z&#39;)
+Operator(2, 𝕔⁺(1, 1, -1//2), 𝕊{1//2}(2, &#39;z&#39;))</code></pre><p>Note that the number of generators can be any natural number.</p><p>Although generators at different levels can be multiplied to form an <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operator"><code>Operator</code></a>, it is not recommended to do so because the logic will become confusing:</p><pre><code class="language-julia-repl hljs">julia&gt; Operator(2, 𝕔⁺(1, 0), 𝕔(2, 1, 0, [0.0], [0.0])) # never do this !!!
+Operator(2, 𝕔⁺(1, 0), 𝕔(2, 1, 0, [0.0], [0.0]))</code></pre><p><a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operator"><code>Operator</code></a> can be iterated and indexed by integers, which will give the corresponding generators in the product:</p><pre><code class="language-julia-repl hljs">julia&gt; op = Operator(2, 𝕔⁺(1, 1//2), 𝕔(1, 1//2));
+
+julia&gt; length(op)
+2
+
+julia&gt; [op[1], op[2]]
+2-element Vector{FockIndex{:f, Int64, Rational{Int64}}}:
+ 𝕔⁺(1, 1//2)
+ 𝕔(1, 1//2)
+
+julia&gt; collect(op)
+2-element Vector{FockIndex{:f, Int64, Rational{Int64}}}:
+ 𝕔⁺(1, 1//2)
+ 𝕔(1, 1//2)</code></pre><p>To get the coefficient of an <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operator"><code>Operator</code></a> or all its individual generators as a whole, use the <a href="../../man/Toolkit/#QuantumLattices.value"><code>value</code></a> and <a href="../../man/Toolkit/#QuantumLattices.id"><code>id</code></a> function, respectively:</p><pre><code class="language-julia-repl hljs">julia&gt; op = Operator(2, 𝕔⁺(1, 0), 𝕔(1, 0));
+
+julia&gt; value(op)
+2
+
+julia&gt; id(op)
+(𝕔⁺(1, 0), 𝕔(1, 0))</code></pre><p>The product between two <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operator"><code>Operator</code></a>s, or the scalar multiplication between a number and an <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operator"><code>Operator</code></a> is also an <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operator"><code>Operator</code></a>:</p><pre><code class="language-julia-repl hljs">julia&gt; Operator(2, 𝕔⁺(1, 1//2)) * Operator(3, 𝕔(1, 1//2))
+Operator(6, 𝕔⁺(1, 1//2), 𝕔(1, 1//2))
+
+julia&gt; 3 * Operator(2, 𝕔⁺(1, 1//2))
+Operator(6, 𝕔⁺(1, 1//2))
+
+julia&gt; Operator(2, 𝕔⁺(1, 1//2)) * 3
+Operator(6, 𝕔⁺(1, 1//2))</code></pre><p>The Hermitian conjugate of an <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operator"><code>Operator</code></a> can be obtained by the adjoint operator:</p><pre><code class="language-julia-repl hljs">julia&gt; op = Operator(6, 𝕔⁺(2, 1//2), 𝕔(1, 1//2));
+
+julia&gt; op&#39;
+Operator(6, 𝕔⁺(1, 1//2), 𝕔(2, 1//2))</code></pre><p>There also exists a special <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operator"><code>Operator</code></a>, which only has the coefficient:</p><pre><code class="language-julia-repl hljs">julia&gt; Operator(2)
+Operator(2)</code></pre><p><a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operators"><code>Operators</code></a> represents a sum of <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operator"><code>Operator</code></a> instances. It can be initialized in two ways:</p><pre><code class="language-julia-repl hljs">julia&gt; Operators(Operator(2, 𝕔(1, 1//2)), Operator(3, 𝕔⁺(1, 1//2)))
+Operators with 2 Operator
+  Operator(2, 𝕔(1, 1//2))
+  Operator(3, 𝕔⁺(1, 1//2))
+
+julia&gt; Operator(2, 𝕔(1, 1//2)) - Operator(3, 𝕒⁺(1, 1//2))
+Operators with 2 Operator
+  Operator(2, 𝕔(1, 1//2))
+  Operator(-3, 𝕒⁺(1, 1//2))</code></pre><p>Similar items are automatically merged during the construction of <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operators"><code>Operators</code></a>:</p><pre><code class="language-julia-repl hljs">julia&gt; Operators(Operator(2, 𝕔(1, 1//2)), Operator(3, 𝕔(1, 1//2)))
+Operators with 1 Operator
+  Operator(5, 𝕔(1, 1//2))
+
+julia&gt; Operator(2, 𝕔(1, 1//2)) + Operator(3, 𝕔(1, 1//2))
+Operators with 1 Operator
+  Operator(5, 𝕔(1, 1//2))</code></pre><p>The multiplication between two <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operators"><code>Operators</code></a>es, or between an <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operators"><code>Operators</code></a> and an <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operator"><code>Operator</code></a>, or between a number and an <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operators"><code>Operators</code></a> is defined:</p><pre><code class="language-julia-repl hljs">julia&gt; ops = Operator(2, 𝕔(1, 1//2)) + Operator(3, 𝕔⁺(1, 1//2));
+
+julia&gt; op = Operator(2, 𝕔(2, 1//2));
+
+julia&gt; ops * op
+Operators with 2 Operator
+  Operator(4, 𝕔(1, 1//2), 𝕔(2, 1//2))
+  Operator(6, 𝕔⁺(1, 1//2), 𝕔(2, 1//2))
+
+julia&gt; op * ops
+Operators with 2 Operator
+  Operator(4, 𝕔(2, 1//2), 𝕔(1, 1//2))
+  Operator(6, 𝕔(2, 1//2), 𝕔⁺(1, 1//2))
+
+julia&gt; another = Operator(2, 𝕔(1, 1//2)) + Operator(3, 𝕔⁺(1, 1//2));
+
+julia&gt; ops * another
+Operators with 2 Operator
+  Operator(6, 𝕔(1, 1//2), 𝕔⁺(1, 1//2))
+  Operator(6, 𝕔⁺(1, 1//2), 𝕔(1, 1//2))
+
+julia&gt; 2 * ops
+Operators with 2 Operator
+  Operator(4, 𝕔(1, 1//2))
+  Operator(6, 𝕔⁺(1, 1//2))
+
+julia&gt; ops * 2
+Operators with 2 Operator
+  Operator(4, 𝕔(1, 1//2))
+  Operator(6, 𝕔⁺(1, 1//2))</code></pre><p>Note that in the result, the distributive law automatically applies. Besides, the fermion operator relation <span>$c^2=(c^\dagger)^2=0$</span> is also used.</p><p>As is usual, the Hermitian conjugate of an <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operators"><code>Operators</code></a> can be obtained by the adjoint operator:</p><pre><code class="language-julia-repl hljs">julia&gt; op₁ = Operator(6, 𝕔⁺(1, 1//2), 𝕔(2, 1//2));
+
+julia&gt; op₂ = Operator(4, 𝕔(1, 1//2), 𝕔(2, 1//2));
+
+julia&gt; ops = op₁ + op₂;
+
+julia&gt; ops&#39;
+Operators with 2 Operator
+  Operator(6, 𝕔⁺(2, 1//2), 𝕔(1, 1//2))
+  Operator(4, 𝕔⁺(2, 1//2), 𝕔⁺(1, 1//2))</code></pre><p><a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operators"><code>Operators</code></a> can be iterated and indexed:</p><pre><code class="language-julia-repl hljs">julia&gt; ops = Operator(2, 𝕔(1, 1//2)) + Operator(3, 𝕔⁺(1, 1//2));
+
+julia&gt; collect(ops)
+2-element Vector{Operator{Int64, Tuple{FockIndex{:f, Int64, Rational{Int64}}}}}:
+ Operator(2, 𝕔(1, 1//2))
+ Operator(3, 𝕔⁺(1, 1//2))
+
+julia&gt; ops[1]
+Operator(2, 𝕔(1, 1//2))
+
+julia&gt; ops[2]
+Operator(3, 𝕔⁺(1, 1//2))</code></pre><p>The index order of an <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operators"><code>Operators</code></a> is the insertion order of the operators it contains.</p><h2 id="4.2-Symbolic-Computation"><a class="docs-heading-anchor" href="#4.2-Symbolic-Computation">4.2 Symbolic Computation</a><a id="4.2-Symbolic-Computation-1"></a><a class="docs-heading-anchor-permalink" href="#4.2-Symbolic-Computation" title="Permalink"></a></h2><p>When combined with <a href="https://github.com/JuliaPy/SymPy.jl">SymPy</a>, the operator algebra supports fully symbolic manipulation. The coefficient of any operator can be a SymPy symbol, and the algebraic operations of Section 4.1 preserve this symbolic nature:</p><pre><code class="language-julia hljs"># symbolic coefficients
+t, U = symbols(&quot;t U&quot;, real=true)
+
+# hopping and Hubbard operators
+op_hop = Operator(t, 𝕔⁺(1, 1, 1//2), 𝕔(2, 1, 1//2))
+op_hub = Operator(U, 𝕔⁺(1, 1, 1//2), 𝕔(1, 1, 1//2), 𝕔⁺(1, 1, -1//2), 𝕔(1, 1, -1//2))
+
+# their sum keeps the coefficients symbolic
+op_hop + op_hub</code></pre><p class="math-container">\[tc^{\dagger}_{1,\,1,\,\uparrow}c^{}_{2,\,1,\,\uparrow}+Uc^{\dagger}_{1,\,1,\,\uparrow}c^{}_{1,\,1,\,\uparrow}c^{\dagger}_{1,\,1,\,\downarrow}c^{}_{1,\,1,\,\downarrow}\]</p><p>Here, the last result is displayed in LaTeX (see Section 4.3): the coefficients <code>t</code> and <code>U</code> remain as symbols throughout the addition. Only when you explicitly substitute numeric values does an operator become numeric. This separation of symbolic manipulation from numeric evaluation is a core design principle.</p><h2 id="TutorialLaTeX"><a class="docs-heading-anchor" href="#TutorialLaTeX">4.3 LaTeX Output</a><a id="TutorialLaTeX-1"></a><a class="docs-heading-anchor-permalink" href="#TutorialLaTeX" title="Permalink"></a></h2><p>Operators are displayed in LaTeX format by default in Jupyter notebooks and in Documenter-generated documentation such as this one (but not in the plain REPL), as has been seen above. This is extremely useful for verifying generated Hamiltonians against hand-written expressions. The typesetting is recursive: to render an <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operators"><code>Operators</code></a>, each of its constituent <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operator"><code>Operator</code></a>s is rendered in turn and the results are joined by <span>$+$</span>/<span>$-$</span>; to render an <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operator"><code>Operator</code></a>, its coefficient is rendered first, followed by each of its generators in order. What remains to be specified is the LaTeX form of a single generator, and this is customizable: the form of each generator type is set manually through a <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.LaTeX"><code>LaTeX</code></a> format stored per type and accessed through <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.latexformat-Tuple{Type{&lt;:OperatorIndex}}"><code>latexformat</code></a>. Such a format consists of a body, the literal symbol of the generator, together with two tuples of symbols that single out the attributes entering its typeset form:</p><pre><code class="language-julia hljs">LaTeX{SP, SB}(body, spdelimiter=&quot;,\\,&quot;, sbdelimiter=&quot;,\\,&quot;)</code></pre><p>where <code>body</code> is the symbol of the operator (any literal works, e.g. the string <code>&quot;c&quot;</code> or the character <code>&#39;c&#39;</code> for a fermionic operator), the attributes named in <code>SP</code> form the <strong>super</strong>script, and those named in <code>SB</code> form the <strong>sub</strong>script, with the entries of each tuple joined by its own delimiter. For instance, the default format of the fermionic <code>Index{&lt;:FockIndex{:f}}</code> type is</p><pre><code class="language-julia hljs">LaTeX{(:nambu,), (:site, :orbital, :spinsym)}(&quot;c&quot;)</code></pre><p>That is, the <code>nambu</code> attribute is superscripted, e.g., a creation operator acquires a <span>$\dagger$</span>, while the <code>site</code>, the <code>orbital</code>, and the spin symbol <code>spinsym</code> (<span>$↓$</span> for <code>-1//2</code> and <span>$↑$</span> for <code>1//2</code>) are subscripted. The rendering of a concrete operator under this default format is:</p><pre><code class="language-julia hljs"># the default format typesets the spin as a symbol, i.e. ↓ for -1//2 and ↑ for 1//2
+op = Operator(2, 𝕔⁺(1, 1, -1//2), 𝕔(2, 1, 1//2))</code></pre><p class="math-container">\[2c^{\dagger}_{1,\,1,\,\downarrow}c^{}_{2,\,1,\,\uparrow}\]</p><p>To customize the appearance of a given generator type, register a new <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.LaTeX"><code>LaTeX</code></a> format with the two-argument <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.latexformat-Tuple{Type{&lt;:OperatorIndex}}"><code>latexformat</code></a>. The body, the superscript, and the subscript are set independently, so one can change the symbol of the generator, drop some of its labels, or alter how a particular label is typeset. For example, suppose the fermionic operator should be written with the body <code>&quot;f&quot;</code> instead of <code>&quot;c&quot;</code>, should not show its orbital, and should spell the spin out numerically rather than as a symbol; this is achieved by</p><pre><code class="language-julia hljs"># redefine the format of the Index{&lt;:FockIndex{:f}} type
+old = latexformat(Index{&lt;:FockIndex{:f}})
+latexformat(Index{&lt;:FockIndex{:f}}, LaTeX{(:nambu,), (:site, :spin)}(&quot;f&quot;))
+op</code></pre><p class="math-container">\[2f^{\dagger}_{1,\,-1//2}f^{}_{2,\,1//2}\]</p><p>The effect is threefold: the operator is now typeset with an <code>f</code>, the orbital label no longer appears in the subscript, and the spin is shown as a number (<code>-1//2</code> instead of <span>$\downarrow$</span> and <code>1//2</code> instead of <span>$\uparrow$</span>). Since the registration is global, the format is restored afterwards so that the rest of the documentation is unaffected:</p><pre><code class="language-julia hljs">latexformat(Index{&lt;:FockIndex{:f}}, old)</code></pre><p>Two further attributes can enter the typeset form, <code>rcoordinate</code> and <code>icoordinate</code>, but they are special in that they exist only for <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.CoordinatedIndex"><code>CoordinatedIndex</code></a>, the generators that carry the coordinates of their underlying point (<a href="../3-internal-degrees-of-freedom/#TutorialCoordinatedIndex">Section 3.2.3</a>). Both are typeset as their bracketed value, and displaying them is what makes the generators on translationally equivalent bonds distinguishable. Adding them to the subscript of the coordinated fermionic index gives, for instance:</p><pre><code class="language-julia hljs"># rcoordinate and icoordinate exist only for CoordinatedIndex
+oldcoord = latexformat(CoordinatedIndex{&lt;:Index{&lt;:FockIndex{:f}}})
+latexformat(
+    CoordinatedIndex{&lt;:Index{&lt;:FockIndex{:f}}},
+    LaTeX{(:nambu,), (:site, :orbital, :spinsym, :rcoordinate, :icoordinate)}(&quot;c&quot;)
+)
+Operator(2, 𝕔⁺(1, 1, -1//2, [0.5, 0.0], [0.0, 0.0]), 𝕔(2, 1, 1//2, [1.5, 0.0], [1.0, 0.0]))</code></pre><p class="math-container">\[2c^{\dagger}_{1,\,1,\,\downarrow,\,[0.5, 0.0],\,[0.0, 0.0]}c^{}_{2,\,1,\,\uparrow,\,[1.5, 0.0],\,[1.0, 0.0]}\]</p><p>Naming them in the format of the <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Index"><code>Index</code></a> type itself, by contrast, has no effect, because an <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Index"><code>Index</code></a> carries no coordinates and the two entries are simply dropped from the subscript:</p><pre><code class="language-julia hljs"># naming them for the non-coordinated type has no effect
+oldindex = latexformat(Index{&lt;:FockIndex{:f}})
+latexformat(
+    Index{&lt;:FockIndex{:f}},
+    LaTeX{(:nambu,), (:site, :orbital, :spinsym, :rcoordinate, :icoordinate)}(&quot;c&quot;)
+)
+Operator(2, 𝕔⁺(1, 1, -1//2), 𝕔(2, 1, 1//2))</code></pre><p class="math-container">\[2c^{\dagger}_{1,\,1,\,\downarrow}c^{}_{2,\,1,\,\uparrow}\]</p><pre><code class="language-julia hljs">latexformat(Index{&lt;:FockIndex{:f}}, oldindex)
+latexformat(CoordinatedIndex{&lt;:Index{&lt;:FockIndex{:f}}}, oldcoord)</code></pre><h2 id="4.4-Linear-Transformation"><a class="docs-heading-anchor" href="#4.4-Linear-Transformation">4.4 Linear Transformation</a><a id="4.4-Linear-Transformation-1"></a><a class="docs-heading-anchor-permalink" href="#4.4-Linear-Transformation" title="Permalink"></a></h2><p>A key feature of the operator algebra is that operators can be systematically transformed. The abstract type <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.LinearTransformation"><code>LinearTransformation</code></a> represents any linear map on the operator algebra:</p><p class="math-container">\[T(t₁O₁ + t₂O₂) = t₁T(O₁) + t₂T(O₂)\]</p><p>All subtypes implement the callable interface <code>(transformation::LinearTransformation)(operator::Operator)</code>, making them composable and uniformly applicable to <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operators"><code>Operators</code></a>, and other containers. For a simple illustration, one can wrap an arbitrary function as a <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.LinearTransformation"><code>LinearTransformation</code></a> via <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.LinearFunction"><code>LinearFunction</code></a>. Linearity means that applying <code>f</code> to each operator of a sum yields the same result as applying it to the sum directly, so acting on an <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operators"><code>Operators</code></a> simply transforms each constituent <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operator"><code>Operator</code></a>:</p><pre><code class="language-julia-repl hljs">julia&gt; f = LinearFunction(op -&gt; 2 * op);
+
+julia&gt; op = Operator(3, 𝕔(1, 1, 1//2));
+
+julia&gt; f(op)
+Operator(6, 𝕔(1, 1, 1//2))
+
+julia&gt; ops = Operator(3, 𝕔(1, 1, 1//2)) + Operator(5, 𝕔⁺(1, 1, 1//2));
+
+julia&gt; f(ops)
+Operators with 2 Operator
+  Operator(6, 𝕔(1, 1, 1//2))
+  Operator(10, 𝕔⁺(1, 1, 1//2))</code></pre><h2 id="4.5-Permutation"><a class="docs-heading-anchor" href="#4.5-Permutation">4.5 Permutation</a><a id="4.5-Permutation-1"></a><a class="docs-heading-anchor-permalink" href="#4.5-Permutation" title="Permalink"></a></h2><p><a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Permutation"><code>Permutation</code></a> is a concrete <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.LinearTransformation"><code>LinearTransformation</code></a> that reorders the generators in an operator product according to a reference <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Table"><code>Table</code></a> (introduced in <a href="../3-internal-degrees-of-freedom/#TutorialTableAndMetric">Section 3.5</a>).</p><h3 id="4.5.1-Commutation-Relations"><a class="docs-heading-anchor" href="#4.5.1-Commutation-Relations">4.5.1 Commutation Relations</a><a id="4.5.1-Commutation-Relations-1"></a><a class="docs-heading-anchor-permalink" href="#4.5.1-Commutation-Relations" title="Permalink"></a></h3><p>When two adjacent generators are swapped, the result depends on the algebraic relations of the system, which differ from one category of system to another. In each case below, <span>$\alpha$</span> stands for the labels carried by a generator, and the function <a href="../../man/DegreesOfFreedom/#QuantumLattices.permute-Tuple{CoordinatedIndex, CoordinatedIndex}"><code>permute</code></a> returns the outcome of exchanging the two generators.</p><h4 id="**Fermions**"><a class="docs-heading-anchor" href="#**Fermions**"><strong>Fermions</strong></a><a id="**Fermions**-1"></a><a class="docs-heading-anchor-permalink" href="#**Fermions**" title="Permalink"></a></h4><p>The generators of a fermionic algebra anticommute,</p><p class="math-container">\[\{c_\alpha, c_\beta\} = 0, \qquad \{c^\dagger_\alpha, c^\dagger_\beta\} = 0, \qquad \{c_\alpha, c^\dagger_\beta\} = \delta_{\alpha\beta}.\]</p><p>Whenever the two generators carry <em>different</em> labels, the swap merely introduces a factor of <span>$-1$</span>, regardless of whether they are two annihilations, two creations, or one of each. The only non-trivial case is an annihilation and a creation with the <em>same</em> label, where <span>$c_\alpha c^\dagger_\alpha = 1 - c^\dagger_\alpha c_\alpha$</span>: the swap then produces the constant operator <span>$1$</span> alongside the reordered <span>$-c^\dagger_\alpha c_\alpha$</span>. Two identical annihilations or creations would instead vanish, since <span>$c_\alpha^2 = (c^\dagger_\alpha)^2 = 0$</span>:</p><pre><code class="language-julia-repl hljs">julia&gt; permute(𝕔(1, 1//2), 𝕔(1, -1//2))
+(Operator(-1, 𝕔(1, -1//2), 𝕔(1, 1//2)),)
+
+julia&gt; permute(𝕔(1, 1//2), 𝕔⁺(1, -1//2))
+(Operator(-1, 𝕔⁺(1, -1//2), 𝕔(1, 1//2)),)
+
+julia&gt; permute(𝕔(1, 1//2), 𝕔⁺(1, 1//2))
+(Operator(1), Operator(-1, 𝕔⁺(1, 1//2), 𝕔(1, 1//2)))
+
+julia&gt; permute(𝕔⁺(1, 1//2), 𝕔⁺(1, -1//2))
+(Operator(-1, 𝕔⁺(1, -1//2), 𝕔⁺(1, 1//2)),)</code></pre><h4 id="**Bosons**"><a class="docs-heading-anchor" href="#**Bosons**"><strong>Bosons</strong></a><a id="**Bosons**-1"></a><a class="docs-heading-anchor-permalink" href="#**Bosons**" title="Permalink"></a></h4><p>The generators of a bosonic algebra commute,</p><p class="math-container">\[[a_\alpha, a_\beta] = 0, \qquad [a^\dagger_\alpha, a^\dagger_\beta] = 0, \qquad [a_\alpha, a^\dagger_\beta] = \delta_{\alpha\beta}.\]</p><p>Generators with <em>different</em> labels therefore swap without any sign change. As for fermions, the sole non-trivial case is an annihilation and a creation with the <em>same</em> label, where <span>$a_\alpha a^\dagger_\alpha = 1 + a^\dagger_\alpha a_\alpha$</span>: the swap produces the constant operator <span>$1$</span> together with the reordered <span>$a^\dagger_\alpha a_\alpha$</span>:</p><pre><code class="language-julia-repl hljs">julia&gt; permute(𝕒(1, 0), 𝕒(1, 1))
+(Operator(1, 𝕒(1, 1), 𝕒(1, 0)),)
+
+julia&gt; permute(𝕒(1, 0), 𝕒⁺(1, 1))
+(Operator(1, 𝕒⁺(1, 1), 𝕒(1, 0)),)
+
+julia&gt; permute(𝕒(1, 0), 𝕒⁺(1, 0))
+(Operator(1), Operator(1, 𝕒⁺(1, 0), 𝕒(1, 0)))
+
+julia&gt; permute(𝕒⁺(1, 0), 𝕒⁺(1, 1))
+(Operator(1, 𝕒⁺(1, 1), 𝕒⁺(1, 0)),)</code></pre><h4 id="**Spins**"><a class="docs-heading-anchor" href="#**Spins**"><strong>Spins</strong></a><a id="**Spins**-1"></a><a class="docs-heading-anchor-permalink" href="#**Spins**" title="Permalink"></a></h4><p>On the same lattice site the spin operators obey the SU(2) algebra,</p><p class="math-container">\[[S^\alpha, S^\beta] = i\varepsilon^{\alpha\beta\gamma} S^\gamma,\]</p><p>so that swapping two <em>different</em> components of the same site produces the third one, with the sign fixed by the orientation of the pair, <span>$S^\alpha S^\beta = S^\beta S^\alpha + i\varepsilon^{\alpha\beta\gamma} S^\gamma$</span>. Two identical components commute, and so do components at different sites; in both cases the swap merely reorders:</p><pre><code class="language-julia-repl hljs">julia&gt; permute(𝕊{1//2}(&#39;x&#39;), 𝕊{1//2}(&#39;y&#39;))
+(Operator(1im, 𝕊{1//2}(&#39;z&#39;)), Operator(1, 𝕊{1//2}(&#39;y&#39;), 𝕊{1//2}(&#39;x&#39;)))
+
+julia&gt; permute(𝕊{1//2}(&#39;y&#39;), 𝕊{1//2}(&#39;x&#39;))
+(Operator(-1im, 𝕊{1//2}(&#39;z&#39;)), Operator(1, 𝕊{1//2}(&#39;x&#39;), 𝕊{1//2}(&#39;y&#39;)))
+
+julia&gt; permute(𝕊{1//2}(&#39;x&#39;), 𝕊{1//2}(&#39;x&#39;))
+(Operator(1, 𝕊{1//2}(&#39;x&#39;), 𝕊{1//2}(&#39;x&#39;)),)
+
+julia&gt; permute(𝕊{1//2}(1, &#39;x&#39;), 𝕊{1//2}(2, &#39;y&#39;))
+(Operator(1, 𝕊{1//2}(2, &#39;y&#39;), 𝕊{1//2}(1, &#39;x&#39;)),)</code></pre><h4 id="**Phonons**"><a class="docs-heading-anchor" href="#**Phonons**"><strong>Phonons</strong></a><a id="**Phonons**-1"></a><a class="docs-heading-anchor-permalink" href="#**Phonons**" title="Permalink"></a></h4><p>The displacement and momentum operators obey</p><p class="math-container">\[[u^\mu, p^\nu] = i\delta^{\mu\nu}.\]</p><p>The outcome depends on the two generators being the same kind or not, and on their directions. When they are a <span>$u$</span> and a <span>$p$</span> of the <em>same</em> direction, swapping them produces the constant operator <span>$\pm i$</span> together with the reordered one; all other pairs (two generators of the same kind, or generators of different directions) commute, and the swap merely reorders them:</p><pre><code class="language-julia-repl hljs">julia&gt; permute(𝕦(&#39;x&#39;), 𝕡(&#39;x&#39;))
+(Operator(1im), Operator(1, 𝕡(&#39;x&#39;), 𝕦(&#39;x&#39;)))
+
+julia&gt; permute(𝕡(&#39;x&#39;), 𝕦(&#39;x&#39;))
+(Operator(-1im), Operator(1, 𝕦(&#39;x&#39;), 𝕡(&#39;x&#39;)))
+
+julia&gt; permute(𝕦(&#39;x&#39;), 𝕦(&#39;y&#39;))
+(Operator(1, 𝕦(&#39;y&#39;), 𝕦(&#39;x&#39;)),)
+
+julia&gt; permute(𝕦(&#39;x&#39;), 𝕡(&#39;y&#39;))
+(Operator(1, 𝕡(&#39;y&#39;), 𝕦(&#39;x&#39;)),)</code></pre><h3 id="4.5.2-Permutation-in-Action"><a class="docs-heading-anchor" href="#4.5.2-Permutation-in-Action">4.5.2 Permutation in Action</a><a id="4.5.2-Permutation-in-Action-1"></a><a class="docs-heading-anchor-permalink" href="#4.5.2-Permutation-in-Action" title="Permalink"></a></h3><p><code>Permutation(table)</code> holds a <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Table"><code>Table</code></a> as the target ordering. When called on an operator, it performs a bubble-sort-like scan: find the first adjacent pair that is out of order (according to the Table sequences), call <a href="../../man/DegreesOfFreedom/#QuantumLattices.permute-Tuple{CoordinatedIndex, CoordinatedIndex}"><code>permute</code></a> on that pair, and continue on each resulting operator until all are ordered. Applied to an <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operators"><code>Operators</code></a>, the permutation acts on each constituent <a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operator"><code>Operator</code></a> independently. By default the product is arranged into the <em>descending</em> order of the Table sequences; the keyword <code>rev</code> requests the ascending order instead. To keep the prescribed order transparent, we build the <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Table"><code>Table</code></a> explicitly from the generators that occur, together with a chosen <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Metric"><code>Metric</code></a>, and the <a href="../../man/DegreesOfFreedom/#QuantumLattices.DegreesOfFreedom.Table"><code>Table</code></a> must contain every generator appearing in the operators to be permuted.</p><h4 id="**Fermions**-2"><a class="docs-heading-anchor" href="#**Fermions**-2"><strong>Fermions</strong></a><a class="docs-heading-anchor-permalink" href="#**Fermions**-2" title="Permalink"></a></h4><p>Suppose we order the fermionic generators by the fields <code>(site, orbital, spin, nambu)</code>. All generators below share the same orbital <span>$1$</span> and spin <span>$1//2$</span>, so they are distinguished by site and nambu alone. Consider a sum of two operators: the first one is an annihilation followed by a creation of the <em>same</em> label (same site, orbital, and spin), of sequences <span>$1$</span> and <span>$2$</span>; the second one is a hopping-like product <span>$c_1 c^\dagger_2$</span> of sequences <span>$1$</span> and <span>$3$</span>:</p><pre><code class="language-julia-repl hljs">julia&gt; metric = OperatorIndexToTuple(:site, :orbital, :spin, :nambu);
+
+julia&gt; indexes = [𝕔(1, 1, 1//2), 𝕔⁺(1, 1, 1//2), 𝕔⁺(2, 1, 1//2)];
+
+julia&gt; table = Table(indexes, metric);
+
+julia&gt; table[𝕔(1, 1, 1//2)]
+1
+
+julia&gt; table[𝕔⁺(1, 1, 1//2)]
+2
+
+julia&gt; table[𝕔⁺(2, 1, 1//2)]
+3
+
+julia&gt; P = Permutation(table);
+
+julia&gt; ops = Operator(2, 𝕔(1, 1, 1//2), 𝕔⁺(1, 1, 1//2)) + Operator(3, 𝕔(1, 1, 1//2), 𝕔⁺(2, 1, 1//2));
+
+julia&gt; P(ops)
+Operators with 3 Operator
+  Operator(-2, 𝕔⁺(1, 1, 1//2), 𝕔(1, 1, 1//2))
+  Operator(2)
+  Operator(-3, 𝕔⁺(2, 1, 1//2), 𝕔(1, 1, 1//2))</code></pre><p>Each operator is permuted independently: reordering the same-label pair <span>$c_1 c^\dagger_1$</span> into <span>$c^\dagger_1 c_1$</span> uses <span>$c c^\dagger = 1 - c^\dagger c$</span>, yielding the reordered <span>$-2\,c^\dagger_1 c_1$</span> together with the constant <span>$2$</span>; the hopping-like operator <span>$c_1 c^\dagger_2$</span> is merely exchanged into <span>$-c^\dagger_2 c_1$</span>.</p><h4 id="**Bosons**-2"><a class="docs-heading-anchor" href="#**Bosons**-2"><strong>Bosons</strong></a><a class="docs-heading-anchor-permalink" href="#**Bosons**-2" title="Permalink"></a></h4><p>Suppose we order the bosonic generators by the fields <code>(site, orbital, spin, nambu)</code>, with all spins set to <span>$0$</span>. The first one is again a same-label pair, an annihilation followed by a creation of the same label (sequences <span>$1$</span> and <span>$2$</span>), while the second one is the hopping-like <span>$a_1 a^\dagger_2$</span> of sequences <span>$1$</span> and <span>$3$</span>:</p><pre><code class="language-julia-repl hljs">julia&gt; metric = OperatorIndexToTuple(:site, :orbital, :spin, :nambu);
+
+julia&gt; indexes = [𝕒(1, 1, 0), 𝕒⁺(1, 1, 0), 𝕒⁺(2, 1, 0)];
+
+julia&gt; table = Table(indexes, metric);
+
+julia&gt; table[𝕒(1, 1, 0)]
+1
+
+julia&gt; table[𝕒⁺(1, 1, 0)]
+2
+
+julia&gt; table[𝕒⁺(2, 1, 0)]
+3
+
+julia&gt; P = Permutation(table);
+
+julia&gt; ops = Operator(2, 𝕒(1, 1, 0), 𝕒⁺(1, 1, 0)) + Operator(3, 𝕒(1, 1, 0), 𝕒⁺(2, 1, 0));
+
+julia&gt; P(ops)
+Operators with 3 Operator
+  Operator(2, 𝕒⁺(1, 1, 0), 𝕒(1, 1, 0))
+  Operator(2)
+  Operator(3, 𝕒⁺(2, 1, 0), 𝕒(1, 1, 0))</code></pre><p>Both operators are permuted independently. The same-label pair is reordered through <span>$a a^\dagger = 1 + a^\dagger a$</span>, giving the reordered <span>$2\,a^\dagger_1 a_1$</span> together with the constant <span>$2$</span>; the hopping-like operator <span>$a_1 a^\dagger_2$</span> is exchanged into <span>$a^\dagger_2 a_1$</span> without any sign change, as befits bosonic statistics.</p><h4 id="**Spins**-2"><a class="docs-heading-anchor" href="#**Spins**-2"><strong>Spins</strong></a><a class="docs-heading-anchor-permalink" href="#**Spins**-2" title="Permalink"></a></h4><p>Suppose we order the spin generators by <code>(site, tag)</code>. Let&#39;s take a sum whose first operator is the same-site product <span>$S^x S^y$</span>, of sequences <span>$1$</span> and <span>$2$</span>, together with an <span>$S^x$</span> at another site. Reordering <span>$S^x S^y$</span> into <span>$S^y S^x$</span> now uses the SU(2) relation <span>$S^x S^y = S^y S^x + \mathrm{i} S^z$</span>, so the result acquires an extra <span>$\mathrm{i} S^z$</span> operator. A complex coefficient is used for the operators so that this complex operator can be accumulated:</p><pre><code class="language-julia-repl hljs">julia&gt; metric = OperatorIndexToTuple(:site, :tag);
+
+julia&gt; indexes = [𝕊{1//2}(1, &#39;x&#39;), 𝕊{1//2}(1, &#39;y&#39;), 𝕊{1//2}(1, &#39;z&#39;), 𝕊{1//2}(2, &#39;x&#39;)];
+
+julia&gt; table = Table(indexes, metric);
+
+julia&gt; table[𝕊{1//2}(1, &#39;x&#39;)]
+1
+
+julia&gt; table[𝕊{1//2}(1, &#39;y&#39;)]
+2
+
+julia&gt; P = Permutation(table);
+
+julia&gt; ops = Complex(2)*𝕊{1//2}(1, &#39;x&#39;)*𝕊{1//2}(1, &#39;y&#39;) + Complex(1)*𝕊{1//2}(2, &#39;x&#39;);
+
+julia&gt; P(ops)
+Operators with 3 Operator
+  Operator(2, 𝕊{1//2}(1, &#39;y&#39;), 𝕊{1//2}(1, &#39;x&#39;))
+  Operator(2im, 𝕊{1//2}(1, &#39;z&#39;))
+  Operator(1, 𝕊{1//2}(2, &#39;x&#39;))</code></pre><h4 id="**Phonons**-2"><a class="docs-heading-anchor" href="#**Phonons**-2"><strong>Phonons</strong></a><a class="docs-heading-anchor-permalink" href="#**Phonons**-2" title="Permalink"></a></h4><p>Suppose we order the phononic generators by <code>(site, direction)</code> and, to distinguish a <span>$u$</span> from a <span>$p$</span> of the same site and direction, include the trait function <a href="../../man/DegreesOfFreedom/#QuantumLattices.kind-Tuple{Term}"><code>kind</code></a> in the metric. A <span>$p\,u$</span> product of the same site and direction then lies in the ascending order and must be exchanged into <span>$u\,p$</span>, which through <span>$[u, p] = \mathrm{i}$</span> produces a constant operator <span>$-\mathrm{i}$</span>:</p><pre><code class="language-julia-repl hljs">julia&gt; metric = OperatorIndexToTuple(kind, :site, :direction);
+
+julia&gt; indexes = [𝕡(1, &#39;x&#39;), 𝕦(1, &#39;x&#39;), 𝕦(2, &#39;x&#39;)];
+
+julia&gt; table = Table(indexes, metric);
+
+julia&gt; table[𝕡(1, &#39;x&#39;)]
+1
+
+julia&gt; table[𝕦(1, &#39;x&#39;)]
+2
+
+julia&gt; P = Permutation(table);
+
+julia&gt; ops = Operator(Complex(3), 𝕡(1, &#39;x&#39;), 𝕦(1, &#39;x&#39;)) + Operator(Complex(1), 𝕦(2, &#39;x&#39;));
+
+julia&gt; P(ops)
+Operators with 3 Operator
+  Operator(3, 𝕦(1, &#39;x&#39;), 𝕡(1, &#39;x&#39;))
+  Operator(-3im)
+  Operator(1, 𝕦(2, &#39;x&#39;))</code></pre><h2 id="Summary"><a class="docs-heading-anchor" href="#Summary">Summary</a><a id="Summary-1"></a><a class="docs-heading-anchor-permalink" href="#Summary" title="Permalink"></a></h2><table><tr><th style="text-align: right">Type</th><th style="text-align: right">Represents</th></tr><tr><td style="text-align: right"><a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operator"><code>Operator</code></a></td><td style="text-align: right">Scalar × product of local generators</td></tr><tr><td style="text-align: right"><a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Operators"><code>Operators</code></a></td><td style="text-align: right">Sum of <code>Operator</code> instances</td></tr><tr><td style="text-align: right"><a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.LinearTransformation"><code>LinearTransformation</code></a></td><td style="text-align: right">Linear map on the operator algebra</td></tr><tr><td style="text-align: right"><a href="../../man/QuantumOperators/#QuantumLattices.QuantumOperators.Permutation"><code>Permutation</code></a></td><td style="text-align: right">Reordering generators according to a reference Table</td></tr></table><p>Now that we understand the operator algebra, the next step is to learn how these operators are generated automatically from physical coupling terms (<a href="../5-couplings-and-terms/#TutorialCouplings">Chapter 5</a>).</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../3-internal-degrees-of-freedom/">« 3. Internal Degrees of Freedom</a><a class="docs-footer-nextpage" href="../5-couplings-and-terms/">5. Couplings and Terms »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Thursday 8 October 2026 01:26">Thursday 8 October 2026</span>. Using Julia version 1.13.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
