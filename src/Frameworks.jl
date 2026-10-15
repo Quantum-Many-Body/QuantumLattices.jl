@@ -1490,7 +1490,7 @@ macro delegate(args...)
         newkept = Any[]
         for p in whereparams
             s = p isa Symbol ? p : p isa Expr && p.head == :<: ? p.args[1] : nothing
-            (s === nothing || hasname(s, fsig) || any(q->hasname(s, q), kept)) && push!(newkept, p)
+            (isnothing(s) || hasname(s, fsig) || any(q->hasname(s, q), kept)) && push!(newkept, p)
         end
         length(newkept) == length(kept) && break
         kept = newkept
