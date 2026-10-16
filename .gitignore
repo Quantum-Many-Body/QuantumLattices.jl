@@ -4,6 +4,8 @@
 *.png
 *.dat
 *.dlm
+*.jld2
+*.log
 *.qld
 *.qlc
 Manifest.toml
