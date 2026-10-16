@@ -2,11 +2,10 @@ module Frameworks
 
 using Base: @propagate_inbounds
 using Base.Iterators: flatten, repeated
-using HDF5: attrs, delete_object, h5open
 using Latexify: latexify
 using LinearAlgebra: norm
 using Serialization: deserialize, serialize
-using SHA: sha512
+using SHA: sha256, sha512
 using StaticArrays: SVector
 using TimerOutputs: @timeit, TimerOutput, time
 using ..DegreesOfFreedom: CoordinatedIndex, Hilbert, Index, Term
@@ -21,7 +20,7 @@ import ..Spatials: Bond, dlmsave
 import ..Toolkit: contenttoshow, showasleaf, showcontent
 
 export Algorithm, Assignment, Boundary, CategorizedGenerator, Data, Eager, Embedding, ExpansionStyle, Formula, FrameworkElement, Generator, LatticeModel, Lazy, OperatorGenerator, Parameters, ParametricGenerator, StaticGenerator
-export checkoptions, config, contenttocache, contenttoconfig, datatype, dependencytypes, eager, hasoption, lazy, options, optionsinfo, plain, qlcclean, qlclean, qlcsave, qldclean, qldsave, qlload, qlsave, run!, stamp, @delegate
+export checkoptions, config, contenttocache, contenttoconfig, datatype, dependencytypes, eager, hasoption, lazy, options, optionsinfo, plain, qlcclean, qlcsave, qldclean, qldsave, qlload, qlsave, run!, stamp, @delegate
 
 """
     Parameters{Names}(values::Number...) where Names
@@ -354,7 +353,7 @@ Return the concrete `OperatorSum` type that `Embedding` produces when applied to
 
 Abstract supertype for all elements managed by the `Frameworks` submodule: lattice models, algorithms and assignments.
 
-It provides a unified protocol: parameters ([`Parameters`](@ref)/[`update!`](@ref)), naming ([`str`](@ref)/[`basename`](@ref)/[`pathof`](@ref)), persistence ([`config`](@ref)/[`stamp`](@ref)/[`qlsave`](@ref)) and display, plus an optional `valtype` protocol (a type-level `valtype` automatically grants `scalartype`/`eltype`).
+It provides a unified protocol: parameters ([`Parameters`](@ref)/[`update!`](@ref)), naming ([`str`](@ref)/[`basename`](@ref)/[`pathof`](@ref)), persistence ([`config`](@ref)/[`stamp`](@ref)/[`qldsave`](@ref)/[`qlcsave`](@ref)/[`qlload`](@ref)) and display, plus an optional `valtype` protocol (a type-level `valtype` automatically grants `scalartype`/`eltype`).
 """
 abstract type FrameworkElement end
 @inline Base.show(io::IO, element::FrameworkElement) = print(io, nameof(typeof(element)))
@@ -404,7 +403,7 @@ Return the structural components that characterize a framework element.
 Together with [`Parameters`](@ref), these components determine the element's identity.
 Defaults to an empty `Tuple`. Subtypes should override this to specify which structural components to include.
 """
-@inline contenttoconfig(element::FrameworkElement) = ()
+@inline contenttoconfig(::FrameworkElement) = ()
 
 """
     config(element::FrameworkElement) -> String
@@ -452,27 +451,25 @@ Defaults to `"."` if the type has no `dir` field.
 @inline @generated Base.dirname(element::FrameworkElement) = :dir in fieldnames(element) ? :(element.dir) : "."
 
 """
-    basename(element::FrameworkElement, target::Symbol=:void; prefix::String="", suffix::String="") -> String
+    basename(element::FrameworkElement; prefix::String="", suffix::String="") -> String
 
-Get the basename of a framework element file, formed as `"prefix-string(element)-suffix.ext"`.
+Get the basename of a framework element, formed as `"prefix-string(element)-suffix"`.
 
-- `target::Symbol`: `:data` → `.qld`, `:cache` → `.qlc`, `:void` (default) → no extension.
 - `prefix`, `suffix`: prepended/appended to the base name. The separator `"-"` is omitted when the corresponding part is empty.
 """
-@inline function Base.basename(element::FrameworkElement, target::Symbol=:void; prefix::String="", suffix::String="")
-    ext = target==:data ? "qld" : target==:cache ? "qlc" : ""
-    return string(append(prefix, "-"), string(element), prepend(suffix, "-"), isempty(ext) ? "" : prepend(ext, "."))
+@inline function Base.basename(element::FrameworkElement; prefix::String="", suffix::String="")
+    return string(append(prefix, "-"), string(element), prepend(suffix, "-"))
 end
 
 """
-    pathof(element::FrameworkElement, target::Symbol; prefix::String="", suffix::String="") -> String
+    pathof(element::FrameworkElement; prefix::String="", suffix::String="") -> String
 
-Get the full path of a framework element file.
+Get the full path of a framework element.
 
-Equivalent to `joinpath(dirname(element), basename(element, target; prefix, suffix))`.
+Equivalent to `joinpath(dirname(element), basename(element; prefix, suffix))`.
 """
-@inline function Base.pathof(element::FrameworkElement, target::Symbol; prefix::String="", suffix::String="")
-    return joinpath(dirname(element), basename(element, target; prefix=prefix, suffix=suffix))
+@inline function Base.pathof(element::FrameworkElement; prefix::String="", suffix::String="")
+    return joinpath(dirname(element), basename(element; prefix=prefix, suffix=suffix))
 end
 
 """
@@ -487,38 +484,6 @@ Get the string representation of a framework element, formed as `basename[-param
     base = basename(element; prefix=prefix, suffix=suffix)
     return string(base, prepend(str(Parameters(element); ndecimal=ndecimal, select=select, front=front, rear=rear), "-"))
 end
-
-"""
-    qlsave(target::Symbol, element::FrameworkElement, elements::FrameworkElement...; prefix::String="", suffix::String="", ndecimal::Int=14, select::Function=name::Symbol->true, front::String="", rear::String="")
-
-Save framework elements to data (`.qld`) or cache (`.qlc`) files.
-
-- `target::Symbol`: `:data` or `:cache`.
-- `prefix`, `suffix`: passed to `pathof` → `basename`.
-- `ndecimal`, `select`, `front`, `rear`: passed to `stamp` → `str(::Parameters)`.
-"""
-function qlsave(target::Symbol, element::FrameworkElement, elements::FrameworkElement...; prefix::String="", suffix::String="", ndecimal::Int=14, select::Function=name::Symbol->true, front::String="", rear::String="")
-    @assert target∈(:data, :cache) "qlsave error: target must be :data or :cache."
-    for m in (element, elements...)
-        content = target==:data ? m : contenttocache(m)
-        path = pathof(m, target; prefix=prefix, suffix=suffix)
-        qlsave(path, stamp(m; ndecimal=ndecimal, select=select, front=front, rear=rear), content)
-    end
-end
-
-"""
-    qldsave(element::FrameworkElement, elements::FrameworkElement...; kwargs...) -> String
-
-Shortcut for `qlsave(:data, element, elements...; kwargs...)`.
-"""
-@inline qldsave(element::FrameworkElement, elements::FrameworkElement...; kwargs...) = qlsave(:data, element, elements...; kwargs...)
-
-"""
-    qlcsave(element::FrameworkElement, elements::FrameworkElement...; kwargs...) -> String
-
-Shortcut for `qlsave(:cache, element, elements...; kwargs...)`.
-"""
-@inline qlcsave(element::FrameworkElement, elements::FrameworkElement...; kwargs...) = qlsave(:cache, element, elements...; kwargs...)
 
 """
     LatticeModel <: FrameworkElement
@@ -1638,128 +1603,147 @@ Run an assignment based on an algorithm.
 function run! end
 
 """
-    qlsave(filename::String, args...)
+    qlsave(path::String, args...)
 
-Save arbitrary data as key-value pairs to a file.
+Save arbitrary data as key-value pairs to a bundle.
 
-If the file does not exist, it is created. If a key already exists, it is replaced.
+A bundle is a directory at `path` with one entry file per key: the entry file is named by the sha256 hex digest of the key (so that arbitrarily long keys never hit filename limits) and contains `[8 bytes: UInt64 key length][key bytes][serialize(content) bytes]`, with the key embedded so that full-bundle reads and collision checks can recover it.
+
+If the bundle does not exist, it is created. If a key already exists, its entry is replaced atomically: the new entry is written to a temporary file and moved over the old one, so readers from other threads or processes never observe a half-written entry. Since the content under a key is deterministic, concurrent same-key writes are harmless. A mismatch between the key embedded in an existing entry and the new key means a sha256 collision of the entry file names and is reported as an error.
 """
-function qlsave(filename::String, args...)
-    @assert iseven(length(args)) "qlsave error: wrong formed input data."
-    h5open(filename, "cw") do file
-        for i in 1:2:length(args)
-            key = string(args[i])
-            haskey(file, key) && delete_object(file, key)
-            io = IOBuffer()
-            serialize(io, args[i+1])
-            write(file, key, take!(io))
-            attrs(file[key])["touchtime"] = Base.time()
+function qlsave(path::String, args...)
+    iseven(length(args)) || error("qlsave error: wrong formed input data.")
+    mkpath(path)
+    for i in 1:2:length(args)
+        key = string(args[i])
+        entry = qlentryfile(path, key)
+        if isfile(entry)
+            stored = open(qlentrykey, entry, "r")
+            stored==key || error("qlsave error: the entry file '$entry' for key '$key' contains the different key '$stored' (sha256 collision).")
         end
+        io = IOBuffer()
+        serialize(io, args[i+1])
+        tmp = tempname(path)
+        open(tmp, "w") do file
+            write(file, UInt64(length(codeunits(key))), codeunits(key), take!(io))
+        end
+        mv(tmp, entry; force=true)
     end
 end
+@inline qlentryfile(path::String, key::String) = joinpath(path, bytes2hex(sha256(codeunits(key)))*".bin")
+@inline qlentrykey(io::IO) = String(read(io, read(io, UInt64)))
+@inline qlentrykey(file::String) = open(qlentrykey, file, "r")
 
 """
-    qlload(filename::String) -> Dict{String, Any}
-    qlload(filename::String, name::String) -> Any
-    qlload(filename::String, name₁::String, name₂::String, names::String...) -> Tuple
+    qlload(path::String) -> Dict{String, Any}
+    qlload(path::String, name::String) -> Any
+    qlload(path::String, name₁::String, name₂::String, names::String...) -> Tuple
 
-Load data from a qld/qlc file.
+Load entries from a qld/qlc bundle.
 
-With a single filename argument, returns all entries as a flat `Dict`.
-With a key, returns that single entry.
-With multiple keys, returns a `Tuple`.
+With a single path argument, returns all entries as a flat `Dict` keyed by the embedded keys. With a key, returns that single entry. With multiple keys, returns a `Tuple`. Reads are pure file reads (no locks are needed anywhere) and refresh the entry's mtime via `touch`, which is what `qldclean`/`qlcclean` use as the recency of an entry. A mismatch between the embedded key and the requested key means a sha256 collision and is reported as an error.
 """
-function qlload(filename::String)
-    isfile(filename) || error("qlload error: file '$filename' not found.")
+function qlload(path::String)
+    isdir(path) || error("qlload error: bundle '$path' not found.")
     result = Dict{String, Any}()
-    h5open(filename, "r+") do file
-        for name in keys(file)
-            result[name] = load(file, name)
-        end
+    for entry in readdir(path; join=true)
+        endswith(entry, ".bin") || continue
+        key, content = open(qlentryread, entry, "r")
+        result[key] = content
+        try touch(entry) catch end
     end
     return result
 end
-function qlload(filename::String, name::String)
-    isfile(filename) || error("qlload error: file '$filename' not found.")
-    return h5open(filename, "r+") do file
-        load(file, name)
+function qlload(path::String, name::String)
+    entry = qlentryfile(path, name)
+    isfile(entry) || error("qlload error: key '$name' not found in bundle '$path'.")
+    key, content = open(qlentryread, entry, "r")
+    key==name || error("qlload error: the entry file '$entry' for key '$name' contains the different key '$key' (sha256 collision).")
+    try touch(entry) catch end
+    return content
+end
+function qlload(path::String, name₁::String, name₂::String, names::String...)
+    return map((name₁, name₂, names...)) do name
+        qlload(path, name)
     end
 end
-function qlload(filename::String, name₁::String, name₂::String, names::String...)
-    isfile(filename) || error("qlload error: file '$filename' not found.")
-    return h5open(filename, "r+") do file
-        map((name₁, name₂, names...)) do name
-            load(file, name)
-        end
+@inline qlentryread(io::IO) = (qlentrykey(io), deserialize(io))
+
+"""
+    qldsave(element::FrameworkElement, elements::FrameworkElement...; prefix::String="", suffix::String="", ndecimal::Int=14, select::Function=name::Symbol->true, front::String="", rear::String="")
+
+Save framework elements as data records (the elements themselves) into their `.qld` bundles.
+
+The bundle of an element is `pathof(element; prefix, suffix)*".qld"`, and the key of an entry is `stamp(element; ndecimal, select, front, rear)` (see [`qlsave`](@ref) for the bundle format and the concurrency and atomicity guarantees).
+"""
+@inline qldsave(element::FrameworkElement, elements::FrameworkElement...; kwargs...) = qlelementsave("qld", m->m, element, elements...; kwargs...)
+
+"""
+    qlcsave(element::FrameworkElement, elements::FrameworkElement...; prefix::String="", suffix::String="", ndecimal::Int=14, select::Function=name::Symbol->true, front::String="", rear::String="")
+
+Save framework elements as cache entries (their [`contenttocache`](@ref) contents) into their `.qlc` bundles.
+
+The bundle of an element is `pathof(element; prefix, suffix)*".qlc"`, and the key of an entry is `stamp(element; ndecimal, select, front, rear)` (see [`qlsave`](@ref) for the bundle format and the concurrency and atomicity guarantees).
+"""
+@inline qlcsave(element::FrameworkElement, elements::FrameworkElement...; kwargs...) = qlelementsave("qlc", contenttocache, element, elements...; kwargs...)
+function qlelementsave(extension::String, contents::Function, element::FrameworkElement, elements::FrameworkElement...; prefix::String="", suffix::String="", ndecimal::Int=14, select::Function=name::Symbol->true, front::String="", rear::String="")
+    for m in (element, elements...)
+        path = pathof(m; prefix=prefix, suffix=suffix)*"."*extension
+        qlsave(path, stamp(m; ndecimal=ndecimal, select=select, front=front, rear=rear), contents(m))
     end
-end
-@inline function load(file, name)
-    haskey(file, name) || error("qlload error: key '$name' not found.")
-    dataset = file[name]
-    attrs(dataset)["touchtime"] = Base.time()
-    bytes = read(dataset)
-    bytes isa Vector{UInt8} || error("qlload error: key '$name' is not a data entry.")
-    return deserialize(IOBuffer(bytes))
 end
 
 """
-    qlclean(filename::String; age::Real=Inf, maxcount::Int=typemax(Int)) -> Int
-    qlclean(target::Symbol, dir::String="."; age::Real=Inf, maxcount::Int=typemax(Int)) -> Int
+    qldclean(path::String="."; age::Real=Inf, maxcount::Int=typemax(Int)) -> Int
 
-Clean up entries in qld/qlc files.
+Clean up entries in `.qld` bundles.
 
-- `filename`: clean a single file.
-- `target=:data`/`:cache`: clean all `.qld`/`.qlc` files in `dir`.
-- `age`: delete entries whose `touchtime` is older than `age` seconds (default `Inf`).
-- `maxcount`: keep at most `maxcount` most recent entries per file (default `typemax(Int)`).
+- `path` is a `.qld` bundle: clean that bundle.
+- `path` is a directory (default `"."`): clean every `.qld` bundle in it.
+- `age`: delete entries not touched for longer than `age` seconds (default `Inf`).
+- `maxcount`: keep at most `maxcount` most recently touched entries per bundle (default `typemax(Int)`).
 
-Files that become empty after cleaning are removed. Returns the number of entries deleted.
+Bundles that become empty are removed. Returns the number of entries deleted. Entry recency is the file mtime, refreshed by every read (see [`qlload`](@ref)). Deletions need no locks: a file being written by another process is moved into place atomically after the cleaning's directory scan, and a file being read either cannot be removed (kept for the next round) or is removed without affecting the reader's open handle.
 """
-function qlclean(filename::String; age::Real=Inf, maxcount::Int=typemax(Int))
-    isfile(filename) || return 0
-    deleted = 0
+@inline qldclean(path::String="."; kwargs...) = qlcleanext("qld", path; kwargs...)
+
+"""
+    qlcclean(path::String="."; age::Real=Inf, maxcount::Int=typemax(Int)) -> Int
+
+Clean up entries in `.qlc` bundles.
+
+- `path` is a `.qlc` bundle: clean that bundle.
+- `path` is a directory (default `"."`): clean every `.qlc` bundle in it.
+- `age`: delete entries not touched for longer than `age` seconds (default `Inf`).
+- `maxcount`: keep at most `maxcount` most recently touched entries per bundle (default `typemax(Int)`).
+
+Bundles that become empty are removed. Returns the number of entries deleted. Entry recency is the file mtime, refreshed by every read (see [`qlload`](@ref)). Deletions need no locks: a file being written by another process is moved into place atomically after the cleaning's directory scan, and a file being read either cannot be removed (kept for the next round) or is removed without affecting the reader's open handle.
+"""
+@inline qlcclean(path::String="."; kwargs...) = qlcleanext("qlc", path; kwargs...)
+function qlcleanext(extension::String, path::String; kwargs...)
+    if isdir(path) && !endswith(path, "."*extension)
+        bundles = filter(dir->endswith(dir, "."*extension), readdir(path; join=true))
+        return sum(qlcleanbundle(bundle; kwargs...) for bundle in bundles; init=0)
+    end
+    return qlcleanbundle(path; kwargs...)
+end
+function qlcleanbundle(path::String; age::Real=Inf, maxcount::Int=typemax(Int))
+    isdir(path) || return 0
     nowtime = Base.time()
-    entries = Pair{String, Float64}[]
-    removable = false
-    h5open(filename, "r+") do file
-        for name in keys(file)
-            touchtime = try attrs(file[name])["touchtime"] catch; 0.0 end
-            push!(entries, name=>touchtime)
+    entries = filter(entry->endswith(entry, ".bin"), readdir(path; join=true))
+    sort!(entries; by=mtime, rev=true)
+    deleted = 0
+    kept = 0
+    for entry in entries
+        if (nowtime-mtime(entry) > age) || (kept >= maxcount)
+            rm(entry; force=true)
+            deleted += 1
+        else
+            kept += 1
         end
-        sort!(entries; by=pair->pair.second, rev=true)
-        kept = 0
-        for (name, touchtime) in entries
-            if (nowtime-touchtime > age) || (kept >= maxcount)
-                delete_object(file, name)
-                deleted += 1
-            else
-                kept += 1
-            end
-        end
-        removable = isempty(keys(file))
     end
-    removable && rm(filename; force=true)
+    try rm(path) catch end   # remove the bundle itself when it became empty (fails harmlessly otherwise)
     return deleted
 end
-function qlclean(target::Symbol, dir::String="."; age::Real=Inf, maxcount::Int=typemax(Int))
-    @assert target∈(:data, :cache) "qlclean error: target must be :data or :cache."
-    extension = target==:data ? ".qld" : ".qlc"
-    files = filter(file->endswith(file, extension), readdir(dir; join=true))
-    return sum(qlclean(file; age=age, maxcount=maxcount) for file in files)
-end
-
-"""
-    qldclean(dir::String="."; kwargs...) -> Int
-
-Shortcut for `qlclean(:data, dir; kwargs...)`.
-"""
-@inline qldclean(dir::String="."; kwargs...) = qlclean(:data, dir; kwargs...)
-
-"""
-    qlcclean(dir::String="."; kwargs...) -> Int
-
-Shortcut for `qlclean(:cache, dir; kwargs...)`.
-"""
-@inline qlcclean(dir::String="."; kwargs...) = qlclean(:cache, dir; kwargs...)
 
 end  # module

@@ -6,7 +6,7 @@ CurrentModule = QuantumLattices.Frameworks
 
 *Module for high-level abstractions: models, algorithms, and project management.*
 
-The `Frameworks` module provides the top-level abstractions that tie everything together. Its root is [`FrameworkElement`](@ref), the common supertype of everything the module manages: it carries the unified protocol of parameters ([`Parameters`](@ref)/[`update!`](@ref)), naming ([`str`](@ref)/`basename`/`pathof`), persistence ([`config`](@ref)/[`stamp`](@ref)/[`qlsave`](@ref)) and display, plus the optional `valtype` machinery from which `scalartype`/`eltype` are derived. Its three branches are [`LatticeModel`](@ref), the description of a quantum lattice system; [`Algorithm`](@ref), the execution context; and [`Assignment`](@ref), a single computation task assigned to an algorithm.
+The `Frameworks` module provides the top-level abstractions that tie everything together. Its root is [`FrameworkElement`](@ref), the common supertype of everything the module manages: it carries the unified protocol of parameters ([`Parameters`](@ref)/[`update!`](@ref)), naming ([`str`](@ref)/`basename`/`pathof`), persistence ([`config`](@ref)/[`stamp`](@ref)/[`qldsave`](@ref)/[`qlcsave`](@ref)) and display, plus the optional `valtype` machinery from which `scalartype`/`eltype` are derived. Its three branches are [`LatticeModel`](@ref), the description of a quantum lattice system; [`Algorithm`](@ref), the execution context; and [`Assignment`](@ref), a single computation task assigned to an algorithm.
 
 **Model layer:**
 - **[`LatticeModel`](@ref)**: the complete description of a quantum lattice system. Acts as a constructor factory dispatching to [`Formula`](@ref), [`StaticGenerator`](@ref), or [`OperatorGenerator`](@ref).
@@ -29,7 +29,7 @@ The `Frameworks` module provides the top-level abstractions that tie everything 
 - **[`Parameters`](@ref)**, **[`Boundary`](@ref)**: parameter and boundary condition management.
 - **[`ParametricGenerator`](@ref)**, **[`StaticGenerator`](@ref)**: parameter sweep utilities.
 
-**Configuration management:** [`config`](@ref), [`stamp`](@ref), [`qlsave`](@ref)/[`qlload`](@ref), [`qlcsave`](@ref)/[`qldclean`](@ref) provide automatic caching, persistence, and reproducibility.
+**Configuration management:** [`config`](@ref), [`stamp`](@ref), [`qldsave`](@ref)/[`qlcsave`](@ref), [`qlload`](@ref), [`qldclean`](@ref)/[`qlcclean`](@ref) provide automatic caching, persistence, and reproducibility. Records live in *bundles*: a directory `<name>.qld` or `<name>.qlc` with one entry file per stamp, each written to a temporary file and atomically moved into place. Every operation is therefore thread- and process-safe without any locks: readers never observe a half-written entry, and concurrent saves of the same stamp write identical content by construction. Entry recency is the file's mtime, refreshed by every read.
 
 See tutorial chapters 6, 7 and 8 for detailed narratives.
 

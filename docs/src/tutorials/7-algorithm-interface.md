@@ -161,7 +161,7 @@ Lowering the flux has moved the 2nd-neighbor hopping towards its real part, whic
 
 ## [7.5 Identity and Persistence](@id TutorialPersistence)
 
-The parameter management of Section 7.4 judges staleness by the current parameter values; the identity and persistence group is what turns every result into a managed record. [`str`](@ref), [`config`](@ref) and [`stamp`](@ref) give every result a stable key, and the save and load functions, [`qlsave`](@ref), [`qlload`](@ref) and their relatives, keep the records on disk. This is not a convenience but the point of the design: it is what lets results be recorded, reused and invalidated correctly no matter which algorithm produced them. The presentation is in four parts: the in-session reuse of results, the identity of a model, the on-disk records, and the export of results.
+The parameter management of Section 7.4 judges staleness by the current parameter values; the identity and persistence group is what turns every result into a managed record. [`str`](@ref), [`config`](@ref) and [`stamp`](@ref) give every result a stable key, and the save and load functions, [`qldsave`](@ref)/[`qlcsave`](@ref), [`qlload`](@ref) and their relatives, keep the records on disk. This is not a convenience but the point of the design: it is what lets results be recorded, reused and invalidated correctly no matter which algorithm produced them. The presentation is in four parts: the in-session reuse of results, the identity of a model, the on-disk records, and the export of results.
 
 ### 7.5.1 Not Recomputing What Is Already Known
 
@@ -209,17 +209,19 @@ Therefore, [`update!`](@ref) never changes the fingerprint, and each parameter s
 
 ### 7.5.3 Data and Cache Files
 
-The identity of a model makes its records recognizable; persistence makes them survive beyond the current session. On disk, the records live in two files, one for each kind of content: the *data* file stores the model itself, or the assignment together with its result, while the *cache* file stores the cacheable content [`contenttocache`](@ref), intermediate results that can in principle be recomputed but are expensive enough to be worth keeping (see the note at the end of this section). Both files are located in the same way: the file of a model is `pathof(model, target)`, which is `joinpath(dirname(model), basename(model, target))`. By default, [`dirname`](@ref) is `"."` (a model subtype with a `dir` field uses that directory instead), and [`basename`](@ref) is the representation name plus the extension `.qld` for `target=:data` or `.qlc` for `target=:cache`:
+The identity of a model makes its records recognizable; persistence makes them survive beyond the current session. On disk, the records live in two *bundles*, one for each kind of content: the *data* bundle stores the model itself, or the assignment together with its result, while the *cache* bundle stores the cacheable content [`contenttocache`](@ref), intermediate results that can in principle be recomputed but are expensive enough to be worth keeping (see the note at the end of this section). A bundle is a directory with one entry file per record, located by the model's path: `pathof(model)*".qld"` for the data bundle and `pathof(model)*".qlc"` for the cache bundle, where `pathof(model)` is `joinpath(dirname(model), basename(model))`. By default, [`dirname`](@ref) is `"."` (a model subtype with a `dir` field uses that directory instead), and [`basename`](@ref) is just the representation name:
 
 ```@example algorithm
-basename(dos, :data), basename(dos, :cache)
+basename(dos)*".qld", basename(dos)*".qlc"
 ```
 
-Note that the file name contains no parameter part: all parameter sets of a task share one file, and even different tasks sharing the same name coexist in it, with the stamps distinguishing the records. Within such a file, the save and load functions operate on the records:
+Note that the bundle name contains no parameter part: all parameter sets of a task share one bundle, and even different tasks sharing the same name coexist in it, with the stamps distinguishing the records. Within a bundle, each record is a single entry file, named by the sha256 digest of its stamp (so that arbitrarily long stamps never hit filename limits) with the full stamp embedded in the file. The save and load functions operate on the records:
 
-* [`qlsave`](@ref)`(target, model)` saves a record under the key `stamp(model)`: with `target=:data` it saves the model itself into the data file, and with `target=:cache` it saves the cacheable content into the cache file. Repeated saves accumulate in the file as long as the stamps differ, while saving with an unchanged stamp replaces the old record. [`qldsave`](@ref)`(model)` and [`qlcsave`](@ref)`(model)` are the shortcuts for the two targets.
-* [`qlload`](@ref) is the inverse: `qlload(path)` returns all records of a file as a `Dict` keyed by the stamps, and `qlload(path, stamp)` returns the single record under the given stamp. Therefore, an old parameter set can be recovered as long as its stamp is kept.
-* [`qlclean`](@ref) removes records from a file: those not touched for longer than `age` seconds, or all but the `maxcount` most recent ones. [`qldclean`](@ref) and [`qlcclean`](@ref) apply it to all `.qld` and `.qlc` files in a directory, respectively. Every save and load refreshes the timestamp of a record, so recently used records survive the cleaning.
+* [`qldsave`](@ref)`(model)` saves the model itself into the data bundle, and [`qlcsave`](@ref)`(model)` saves its cacheable content into the cache bundle, both under the key `stamp(model)`. Repeated saves accumulate in the bundle as long as the stamps differ, while saving with an unchanged stamp atomically replaces the old entry.
+* [`qlload`](@ref) is the inverse: `qlload(path)` returns all records of a bundle as a `Dict` keyed by the stamps, and `qlload(path, stamp)` returns the single record under the given stamp. Therefore, an old parameter set can be recovered as long as its stamp is kept.
+* [`qldclean`](@ref) and [`qlcclean`](@ref) remove records: those not touched for longer than `age` seconds, or all but the `maxcount` most recently touched ones. Every save and every read refreshes the entry's timestamp (its mtime) immediately, so recently used records survive the cleaning.
+
+All of these operations are thread- and process-safe without any locks: an entry is written to a temporary file and then atomically moved into place, so readers never observe a half-written entry, and concurrent saves of the same stamp write identical content by construction.
 
 Saving therefore never overwrites an earlier result obtained with different parameters, and loading can never pick up the wrong one:
 
@@ -229,26 +231,26 @@ oldstamp = stamp(dos)
 update!(dos; t=-1.2)
 graphene(dos)
 qldsave(dos)
-records = qlload(pathof(dos, :data))
+records = qlload(pathof(dos)*".qld")
 length(records)
 ```
 
-Two records now sit in the same file, and each is retrieved by its own stamp:
+Two records now sit in the same bundle, and each is retrieved by its own stamp:
 
 ```@example algorithm
-isequal(qlload(pathof(dos, :data), stamp(dos)), dos)
+isequal(qlload(pathof(dos)*".qld", stamp(dos)), dos)
 ```
 
 (`isequal` rather than `==` here: the unset energy window of the task is stored as `NaN`, and `NaN == NaN` is `false`.)
 
 ```@example algorithm
-Parameters(qlload(pathof(dos, :data), oldstamp))
+Parameters(qlload(pathof(dos)*".qld", oldstamp))
 ```
 
 The other record still carries the parameters it was computed with, untouched by the one saved afterwards. A record loaded this way is an ordinary object again: it can be inspected, updated and plotted exactly like the assignment it was copied from. Records accumulate over time, so there is a cleanup interface as well:
 
 ```@example algorithm
-qlclean(pathof(dos, :data); maxcount=1)
+qldclean(pathof(dos)*".qld"; maxcount=1)
 ```
 
 ### 7.5.4 Exporting and Visualizing
@@ -292,7 +294,7 @@ The algorithm interface connects a [`LatticeModel`](@ref) to a numerical method,
 - Build the model, wrap it in the frontend of an algorithm package, and hand the result to an [`Algorithm`](@ref): `Algorithm(name, frontend, [parameters, map])`.
 - Call the algorithm with a task to create an [`Assignment`](@ref): `alg(name, task, dependencies...)`; pass `delay=true` to register without computing, and call `alg(assignment)` to compute or to refresh what has gone stale.
 - Manage parameters with [`update!`](@ref): update the algorithm and register fresh assignments to accumulate results for comparison, or update an assignment in place and let the next call recompute exactly the stale links of its dependency chain. When the parameters of the user and of the model differ, the `map` of the algorithm translates between them.
-- Let the interface keep the records: [`str`](@ref), [`config`](@ref) and [`stamp`](@ref) give every result a stable key, [`qlsave`](@ref) and [`qlload`](@ref) keep the records on disk keyed by the stamps, `dlmsave` exports plain text, and plots work out of the box.
+- Let the interface keep the records: [`str`](@ref), [`config`](@ref) and [`stamp`](@ref) give every result a stable key, [`qldsave`](@ref)/[`qlcsave`](@ref) and [`qlload`](@ref) keep the records on disk keyed by the stamps, `dlmsave` exports plain text, and plots work out of the box.
 - Real calculations use the packages of Section 7.6 in exactly the same way as `ToyTBA` was used here.
 
 To write an algorithm package of your own, continue to [Chapter 8](@ref TutorialAlgorithmInterfaceDeveloper).

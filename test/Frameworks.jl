@@ -1,4 +1,6 @@
 using LinearAlgebra: eigen
+using Distributed: @everywhere, addprocs, remotecall, rmprocs
+using Serialization: serialize
 using QuantumLattices: ZeroAtLeast, efficientoperations, expand, expand!, reparameter, reset!, str, update
 using QuantumLattices.DegreesOfFreedom: CoordinatedIndex, Hilbert, Index
 using QuantumLattices.Frameworks
@@ -91,10 +93,9 @@ end
     @test contenttocache(f) == NamedTuple()
     @test dirname(f) == "."
     @test basename(f) == "Formula"
-    @test basename(f, :data; prefix="Prefix") == "Prefix-Formula.qld"
-    @test basename(f, :cache; suffix="Suffix") == "Formula-Suffix.qlc"
-    @test pathof(f, :data) == joinpath(dirname(f), basename(f, :data))
-    @test pathof(f, :cache) == joinpath(dirname(f), basename(f, :cache))
+    @test basename(f; prefix="Prefix")*".qld" == "Prefix-Formula.qld"
+    @test basename(f; suffix="Suffix")*".qlc" == "Formula-Suffix.qlc"
+    @test pathof(f) == joinpath(dirname(f), basename(f))
     @test str(f) == "Formula-t(1.0)μ(0.0)Δ(0.1)"
     @test f([0.0, 0.0]) ≈ [4 0; 0 -4]
 
@@ -487,11 +488,14 @@ end
 
 @testset "Assignment & Algorithm without map" begin
     tba = Algorithm(:Square, TBA(Formula(A, (t=1.0, μ=2.0))))
-    qldsave(tba)
-    qlsave("Arbitrary.qld", "first copy", tba, "second copy", tba)
-    loaded = qlload(pathof(tba, :data), stamp(tba))
-    @test loaded == qlload(pathof(tba, :data))[stamp(tba)]
-    @test all(isequal(loaded), qlload("Arbitrary.qld", "first copy", "second copy"))
+    loaded = cd(mktempdir()) do
+        qldsave(tba)
+        qlsave("Arbitrary.qld", "first copy", tba, "second copy", tba)
+        loaded = qlload(pathof(tba)*".qld", stamp(tba))
+        @test loaded == qlload(pathof(tba)*".qld")[stamp(tba)]
+        @test all(isequal(loaded), qlload("Arbitrary.qld", "first copy", "second copy"))
+        loaded
+    end
 
     eigensystem = loaded(:eigensystem, EigenSystem(BrillouinZone([[2pi, 0], [0, 2pi]], 100)); delay=true)
     dos = loaded(:DOS, DensityOfStates(), eigensystem)
@@ -509,33 +513,136 @@ end
 @inline contenttoconfig(cache::Cache) = (cache.info,)
 @inline contenttocache(cache::Cache) = (value=cache.value,)
 
-@testset "cache & qlload & qlclean" begin
+@testset "cache & qlload & qlcclean" begin
     cache = Cache(0.0, "1st", 3.14)
     cache′ = Cache(1.0, "2nd", 6.28)
-    qlcsave(cache, cache′)
+    cd(mktempdir()) do
+        qlcsave(cache, cache′)
 
-    loaded = qlload(pathof(cache, :cache))
-    content = qlload(pathof(cache, :cache), stamp(cache))
-    @test content == loaded[stamp(cache)] == (value=3.14,)
-    content′ = qlload(pathof(cache′, :cache), stamp(cache′))
-    @test content′ == loaded[stamp(cache′)] == (value=6.28,)
-    @test qlload(pathof(cache, :cache), stamp(cache), stamp(cache′)) == (content, content′)
+        bundle = pathof(cache)*".qlc"
+        loaded = qlload(bundle)
+        content = qlload(bundle, stamp(cache))
+        @test content == loaded[stamp(cache)] == (value=3.14,)
+        content′ = qlload(bundle, stamp(cache′))
+        @test content′ == loaded[stamp(cache′)] == (value=6.28,)
+        @test qlload(bundle, stamp(cache), stamp(cache′)) == (content, content′)
 
-    # qlclean by age removes entries with old touchtime
-    @test qlclean(pathof(cache, :cache); age=-1) == 2
-    @test !isfile(pathof(cache, :cache))
+        # qlcclean by age removes entries with old touchtime
+        @test qlcclean(bundle; age=-1) == 2
+        @test !isdir(bundle)
 
-    # qlclean by maxcount keeps only the newest entry
-    qlcsave(cache)
-    sleep(0.1)
-    qlcsave(cache′)
-    @test qlclean(pathof(cache, :cache); maxcount=1) == 1
-    loaded = qlload(pathof(cache, :cache))
-    @test length(loaded) == 1
-    @test loaded[stamp(cache′)] == content′
+        # qlcclean by maxcount keeps only the most recently touched entry
+        qlcsave(cache)
+        sleep(0.1)
+        qlcsave(cache′)
+        @test qlcclean(bundle; maxcount=1) == 1
+        loaded = qlload(bundle)
+        @test length(loaded) == 1
+        @test loaded[stamp(cache′)] == content′
 
-    # qlcclean and qldclean on current directory
-    @test qlcclean(".") == 0
-    @test qldclean(".") == 0
+        # qlcclean and qldclean on a directory clean every bundle in it
+        @test qlcclean("."; age=-1) == 1
+        @test !isdir(bundle)
+        @test qldclean(".") == 0
+    end
+end
+
+@testset "bundle thread safety" begin
+    dir = mktempdir()
+    path = joinpath(dir, "Concurrent.qld")
+    try
+        # threads: concurrent saves of distinct keys, then concurrent loads
+        n = 16
+        Threads.@threads for i = 1:n
+            qlsave(path, "key-$i", collect(1:i))
+        end
+        Threads.@threads for i = 1:n
+            qlload(path, "key-$i")
+        end
+        for i = 1:n
+            @test qlload(path, "key-$i") == collect(1:i)
+        end
+        @test length(qlload(path)) == n
+
+        # threads: concurrent saves of the same key with identical content
+        Threads.@threads for i = 1:8
+            qlsave(path, "shared", [1, 2, 3])
+        end
+        @test qlload(path, "shared") == [1, 2, 3]
+
+        # threads: mixed save/load/clean smoke — no corruption, no leftover temporary files
+        Threads.@threads for i = 1:32
+            qlsave(path, "mix-$(i%4)", i)
+            qlload(path, "mix-$(i%4)")
+            i%8==0 && qlcclean(path; maxcount=1000)
+        end
+        @test !isempty(qlload(path))
+        @test all(endswith(".bin"), readdir(path))
+    finally
+        rm(dir; recursive=true, force=true)
+    end
+end
+
+@testset "bundle semantics" begin
+    dir = mktempdir()
+    path = joinpath(dir, "Semantics.qlc")
+    try
+        # recency is the entry mtime, refreshed immediately by every read
+        qlsave(path, "touch-a", 1)
+        sleep(0.1)
+        qlsave(path, "touch-b", 2)
+        sleep(0.1)
+        qlload(path, "touch-a")
+        @test qlcclean(path; maxcount=1) == 1
+        @test qlload(path) == Dict("touch-a"=>1)
+
+        # a mismatch between the embedded key and the requested key is an error (sha256-collision guard)
+        entry = Frameworks.qlentryfile(path, "touch-a")
+        tmp = tempname(path)
+        open(tmp, "w") do io
+            write(io, UInt64(length(codeunits("intruder"))), codeunits("intruder"))
+            serialize(io, -1)
+        end
+        mv(tmp, entry; force=true)
+        @test_throws ErrorException qlload(path, "touch-a")
+        @test_throws ErrorException qlsave(path, "touch-a", 3)
+
+        # an emptied bundle is removed
+        @test qlcclean(path; age=-1) == 1
+        @test !isdir(path)
+    finally
+        rm(dir; recursive=true, force=true)
+    end
+end
+
+@testset "bundle multi-process safety" begin
+    dir = mktempdir()
+    path = joinpath(dir, "Distributed.qld")
+    procs = addprocs(2)
+    try
+        @everywhere using QuantumLattices
+        @everywhere function qlsave_load(p, prefix, i)
+            qlsave(p, "$prefix-$i", (myid(), i))
+            qlload(p, "$prefix-$i")
+        end
+        @everywhere function qlsave_load_clean(p, i)
+            qlsave(p, "wave-$(i%5)", i)
+            qlload(p, "wave-$(i%5)")
+            i%10==0 && qlcclean(p; maxcount=1000)
+            return nothing
+        end
+        foreach(fetch, [remotecall(Main.qlsave_load, procs[mod1(i, 2)], path, "worker", i) for i = 1:16])
+        loaded = qlload(path)
+        for i = 1:16
+            @test haskey(loaded, "worker-$i")
+            @test loaded["worker-$i"][2] == i
+        end
+        foreach(fetch, [remotecall(Main.qlsave_load_clean, procs[mod1(i, 2)], path, i) for i = 1:20])
+        @test !isempty(qlload(path))
+        @test all(endswith(".bin"), readdir(path))
+    finally
+        rmprocs(procs)
+        rm(dir; recursive=true, force=true)
+    end
 end
 
