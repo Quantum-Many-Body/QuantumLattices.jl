@@ -25,3 +25,5 @@ test/Manifest.toml
 
 desktop.ini
 JuliaLint.toml
+*.qld.bak
+*.qlc.bak
