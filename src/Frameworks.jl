@@ -5,7 +5,7 @@ using Base.Iterators: flatten, repeated
 using Latexify: latexify
 using LinearAlgebra: norm
 using Serialization: deserialize, serialize
-using SHA: sha256, sha512
+using SHA: sha256
 using StaticArrays: SVector
 using TimerOutputs: @timeit, TimerOutput, time
 using ..DegreesOfFreedom: CoordinatedIndex, Hilbert, Index, Term
@@ -14,13 +14,13 @@ using ..QuantumOperators: LinearTransformation, Operator, OperatorPack, Operator
 using ..Spatials: AbstractLattice, Bond, Neighbors, Point, bonds, isintracell, isparallel, nneighbor, rcoordinate
 using ..Toolkit: Float, atol, efficientoperations, parametertype, reparameter, rtol
 
-import ..QuantumLattices: add!, expand, expand!, reset!, str, update, update!
+import ..QuantumLattices: add!, config, contenttocache, contenttoconfig, expand, expand!, reset!, str, update, update!
 import ..QuantumOperators: scalartype
 import ..Spatials: Bond, dlmsave
 import ..Toolkit: contenttoshow, showasleaf, showcontent
 
 export Algorithm, Assignment, Boundary, CategorizedGenerator, Data, Eager, Embedding, ExpansionStyle, Formula, FrameworkElement, Generator, LatticeModel, Lazy, OperatorGenerator, Parameters, ParametricGenerator, StaticGenerator
-export checkoptions, config, contenttocache, contenttoconfig, datatype, dependencytypes, eager, hasoption, lazy, options, optionsinfo, plain, qlcclean, qlcsave, qldclean, qldsave, qlload, qlsave, run!, stamp, @delegate
+export checkoptions, datatype, dependencytypes, eager, hasoption, lazy, options, optionsinfo, plain, qlcclean, qlcsave, qldclean, qldsave, qlload, qlsave, run!, stamp, @delegate
 
 """
     Parameters{Names}(values::Number...) where Names
@@ -406,17 +406,6 @@ Defaults to an empty `Tuple`. Subtypes should override this to specify which str
 @inline contenttoconfig(::FrameworkElement) = ()
 
 """
-    config(element::FrameworkElement) -> String
-
-Get the configuration fingerprint: the SHA-512 digest of [`contenttoconfig`](@ref).
-"""
-function config(element::FrameworkElement)
-    io = IOBuffer()
-    serialize(io, contenttoconfig(element))
-    return bytes2hex(sha512(take!(io)))
-end
-
-"""
     stamp(element::FrameworkElement; ndecimal::Int=14, select::Function=name::Symbol->true, front::String="", rear::String="") -> String
 
 Generate a deterministic stamp for a framework element, formed as `"config[-parameters]"`.
@@ -430,16 +419,6 @@ function stamp(element::FrameworkElement; ndecimal::Int=14, select::Function=nam
     parameters = str(Parameters(element); ndecimal=ndecimal, select=select, front=front, rear=rear)
     return string(configuration, prepend(parameters, "-"))
 end
-
-"""
-    contenttocache(element::FrameworkElement) -> NamedTuple
-
-Return the cacheable content of a framework element as a `NamedTuple`.
-
-Returns an empty `NamedTuple` by default.
-Subtypes should override this to specify what should be cached.
-"""
-@inline contenttocache(element::FrameworkElement) = NamedTuple()
 
 """
     dirname(element::FrameworkElement) -> String

@@ -13,8 +13,8 @@ const TimerOutput = Frameworks.TimerOutput
 
 import CairoMakie as Makie
 import Plots
-import QuantumLattices: update!
-import QuantumLattices.Frameworks: Parameters, contenttocache, contenttoconfig, dependencytypes, options, run!
+import QuantumLattices: config, contenttocache, contenttoconfig, update!
+import QuantumLattices.Frameworks: Parameters, dependencytypes, options, run!
 
 @testset "Parameters" begin
     ps1 = Parameters{(:t₁, :t₂, :U)}(1.0im, 1.0, 2.0)

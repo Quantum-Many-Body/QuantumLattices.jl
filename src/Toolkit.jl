@@ -4,9 +4,11 @@ using Base: @propagate_inbounds
 using DataStructures: OrderedDict
 using Format: FormatSpec, pyfmt
 using InteractiveUtils: subtypes
+using Serialization: serialize
+using SHA: sha512
 using StaticArrays: SVector
 
-import QuantumLattices: OneAtLeast, ZeroAtLeast, ZeroOrMore, id, shape, str, value
+import QuantumLattices: OneAtLeast, ZeroAtLeast, ZeroOrMore, config, contenttocache, contenttoconfig, id, shape, str, value
 
 # Utilities
 export atol, rtol, Float
@@ -91,6 +93,33 @@ Convert a single value to string.
 @inline str(value::Symbol; kwargs...) = string(value)
 @inline str(::Colon; kwargs...) = ":"
 @inline str(value::Char; kwargs...) = repr(value)
+
+"""
+    contenttoconfig(content) -> Any
+
+Return the content that determines the identity of an object for fingerprinting (see [`config`](@ref)).
+
+Defaults to the object itself (value semantics). Container types should override this to project out the structural components that characterize the identity, excluding volatile or lazily-filled fields.
+"""
+@inline contenttoconfig(content) = content
+
+"""
+    contenttocache(content) -> NamedTuple
+
+Return the cacheable content of an object as a `NamedTuple`: intermediate results that can in principle be recomputed but are expensive enough to be worth keeping. Defaults to an empty `NamedTuple`.
+"""
+@inline contenttocache(content) = NamedTuple()
+
+"""
+    config(content) -> String
+
+Get the configuration fingerprint: the SHA-512 digest of the serialization of [`contenttoconfig`](@ref).
+"""
+function config(content)
+    io = IOBuffer()
+    serialize(io, contenttoconfig(content))
+    return bytes2hex(sha512(take!(io)))
+end
 
 """
     superscript(i::Integer) -> String

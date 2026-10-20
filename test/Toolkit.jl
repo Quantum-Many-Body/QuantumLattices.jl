@@ -1,6 +1,6 @@
 using DataStructures: OrderedDict
 using OffsetArrays: OffsetArray
-using QuantumLattices: id, shape, str, value
+using QuantumLattices: config, contenttocache, contenttoconfig, id, shape, str, value
 using QuantumLattices.Toolkit
 using StaticArrays: SVector
 import QuantumLattices.Toolkit: VectorSpaceStyle, contentnames, contenttoshow, contenttype, dissolve, getcontent, isparameterbound, parameternames, showasleaf
@@ -26,6 +26,18 @@ import QuantumLattices.Toolkit: VectorSpaceStyle, contentnames, contenttoshow, c
     @test str(:) == ":"
     @test str('a') == "'a'"
     @test str([0.123456789]; ndecimal=8) == "[0.12345679]"
+end
+
+@testset "contenttoconfig & contenttocache & config" begin
+    @test contenttoconfig(1) === 1
+    @test contenttoconfig("abc") === "abc"
+    @test contenttoconfig((1, "a")) === (1, "a")
+    @test contenttocache(1) == NamedTuple()
+    @test contenttocache(nothing) == NamedTuple()
+    @test isa(config(1), String) && length(config(1)) == 128
+    @test config(1) == config(1)
+    @test config(1) != config(2)
+    @test config((1, "a")) != config((1, "b"))
 end
 
 @testset "superscript" begin

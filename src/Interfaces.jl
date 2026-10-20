@@ -38,6 +38,9 @@ const ZeroOrMore{A, N} = Union{A, Tuple{Vararg{A, N}}}
 function ⊕ end
 function ⊗ end
 function add! end
+function config end
+function contenttocache end
+function contenttoconfig end
 function decompose end
 function decompose! end
 function dimension end
