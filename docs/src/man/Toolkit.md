@@ -28,6 +28,9 @@ atol
 rtol
 Float
 concatenate
+config
+contenttocache
+contenttoconfig
 str
 subscript
 superscript
