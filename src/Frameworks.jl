@@ -9,12 +9,12 @@ using SHA: sha256
 using StaticArrays: SVector
 using TimerOutputs: @timeit, TimerOutput, time
 using ..DegreesOfFreedom: CoordinatedIndex, Hilbert, Index, Term
-using ..QuantumLattices: OneOrMore, ZeroAtLeast, ZeroOrMore, dimension, id, value
+using ..QuantumLattices: OneOrMore, ZeroAtLeast, ZeroOrMore, contenttocache, dimension, id, value
 using ..QuantumOperators: LinearTransformation, Operator, OperatorPack, OperatorProd, OperatorSet, OperatorSum, Operators, identity, idtype, operatortype
 using ..Spatials: AbstractLattice, Bond, Neighbors, Point, bonds, isintracell, isparallel, nneighbor, rcoordinate
 using ..Toolkit: Float, atol, efficientoperations, parametertype, reparameter, rtol
 
-import ..QuantumLattices: add!, config, contenttocache, contenttoconfig, expand, expand!, reset!, str, update, update!
+import ..QuantumLattices: add!, config, contenttoconfig, expand, expand!, reset!, str, update, update!
 import ..QuantumOperators: scalartype
 import ..Spatials: Bond, dlmsave
 import ..Toolkit: contenttoshow, showasleaf, showcontent
