@@ -314,6 +314,7 @@ end
     @test lattice|>size == (1,)
     @test lattice|>firstindex == 1
     @test lattice|>lastindex == 1
+    @test lattice|>rank == lattice|>typeof|>rank == 2
     @test lattice|>dimension == lattice|>typeof|>dimension == 2
     @test lattice|>scalartype == lattice|>typeof|>scalartype == Float
     @test lattice[1] == SVector(0.5, 0.5)

@@ -816,6 +816,15 @@ function Base.show(io::IO, ::MIME"text/plain", lattice::AbstractLattice)
 end
 
 """
+    rank(lattice::AbstractLattice) -> Int
+    rank(::Type{<:AbstractLattice{N, <:Number, M} where N}) where M -> Int
+
+Get the rank of the lattice, which is the number of translation vectors.
+"""
+@inline rank(lattice::AbstractLattice) = rank(typeof(lattice))
+@inline rank(::Type{<:AbstractLattice{N, <:Number, M} where N}) where M = M
+
+"""
     dimension(lattice::AbstractLattice) -> Int
     dimension(::Type{<:AbstractLattice{N}}) where N -> Int
 
