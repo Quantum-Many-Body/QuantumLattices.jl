@@ -43,6 +43,7 @@ function contenttocache end
 function contenttoconfig end
 function decompose end
 function decompose! end
+function derivative end
 function dimension end
 function div! end
 function expand end
