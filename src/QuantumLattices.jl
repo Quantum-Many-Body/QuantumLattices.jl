@@ -4,7 +4,7 @@ module QuantumLattices
 import LinearAlgebra: ishermitian, mul!, rank
 include("Interfaces.jl")
 export OneAtLeast, OneOrMore, ZeroAtLeast, ZeroOrMore
-export add!, config, contenttocache, contenttoconfig, decompose, decompose!, derivative, dimension, div!, expand, expand!, id, ishermitian, kind, mul!, permute, rank, reset!, shape, str, sub!, update, update!, value, ⊕, ⊗
+export add!, config, contenttocache, contenttoconfig, decompose, decompose!, derivative, derivative!, dimension, div!, expand, expand!, id, ishermitian, kind, mul!, permute, rank, reset!, shape, str, sub!, update, update!, value, ⊕, ⊗
 
 # Toolkit
 include("Toolkit.jl")
