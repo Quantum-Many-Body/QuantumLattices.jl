@@ -4,7 +4,7 @@ module QuantumLattices
 import LinearAlgebra: ishermitian, mul!, rank
 include("Interfaces.jl")
 export OneAtLeast, OneOrMore, ZeroAtLeast, ZeroOrMore
-export add!, config, contenttocache, contenttoconfig, decompose, decompose!, derivative, derivative!, dimension, div!, expand, expand!, id, ishermitian, kind, mul!, permute, rank, reset!, shape, str, sub!, update, update!, value, ⊕, ⊗
+export add!, decompose, decompose!, derivative, derivative!, dimension, div!, expand, expand!, id, ishermitian, kind, mul!, permute, rank, reset!, shape, str, sub!, update, update!, value, ⊕, ⊗
 
 # Toolkit
 include("Toolkit.jl")
@@ -48,6 +48,6 @@ export Elastic, Kinetic, Hooke, PhononTerm
 include("Frameworks.jl")
 using .Frameworks
 export Algorithm, Assignment, Boundary, CategorizedGenerator, Data, Eager, Embedding, ExpansionStyle, Formula, FrameworkElement, Generator, LatticeModel, Lazy, OperatorGenerator, ParametricGenerator, Parameters, StaticGenerator
-export checkoptions, datatype, dependencytypes, eager, hasoption, lazy, options, optionsinfo, plain, qlcclean, qlcsave, qldclean, qldsave, qlload, qlsave, run!, stamp, @delegate
+export checkoptions, contenttocache, contenttofingerprint, datatype, dependencytypes, eager, fingerprint, hasoption, lazy, options, optionsinfo, plain, qlcclean, qlcsave, qldclean, qldsave, qlload, qlsave, run!, @delegate
 
 end

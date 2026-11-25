@@ -4,23 +4,24 @@ using Base: @propagate_inbounds
 using Base.Iterators: flatten, repeated
 using Latexify: latexify
 using LinearAlgebra: norm
-using Serialization: deserialize, serialize
-using SHA: sha256
+using Serialization: EMPTYTUPLE_TAG, MODULE_TAG, AbstractSerializer, deserialize, ser_version, writeheader, writetag
+using SHA: sha256, sha512
 using StaticArrays: SVector
 using TimerOutputs: @timeit, TimerOutput, time
 using ..DegreesOfFreedom: CoordinatedIndex, Hilbert, Index, Term
-using ..QuantumLattices: OneOrMore, ZeroAtLeast, ZeroOrMore, contenttocache, dimension, id, value
+using ..QuantumLattices: OneOrMore, ZeroAtLeast, ZeroOrMore, dimension, id, value
 using ..QuantumOperators: LinearTransformation, Operator, OperatorPack, OperatorProd, OperatorSet, OperatorSum, Operators, identity, idtype, operatortype
 using ..Spatials: AbstractLattice, Bond, Neighbors, Point, bonds, isintracell, isparallel, nneighbor, rcoordinate
 using ..Toolkit: Float, atol, efficientoperations, parametertype, reparameter, rtol
 
-import ..QuantumLattices: add!, config, contenttoconfig, expand, expand!, reset!, str, update, update!
+import Serialization: serialize
+import ..QuantumLattices: add!, expand, expand!, reset!, str, update, update!
 import ..QuantumOperators: scalartype
 import ..Spatials: Bond, dlmsave
 import ..Toolkit: contenttoshow, showasleaf, showcontent
 
 export Algorithm, Assignment, Boundary, CategorizedGenerator, Data, Eager, Embedding, ExpansionStyle, Formula, FrameworkElement, Generator, LatticeModel, Lazy, OperatorGenerator, Parameters, ParametricGenerator, StaticGenerator
-export checkoptions, datatype, dependencytypes, eager, hasoption, lazy, options, optionsinfo, plain, qlcclean, qlcsave, qldclean, qldsave, qlload, qlsave, run!, stamp, @delegate
+export checkoptions, contenttocache, contenttofingerprint, datatype, dependencytypes, eager, fingerprint, hasoption, lazy, options, optionsinfo, plain, qlcclean, qlcsave, qldclean, qldsave, qlload, qlsave, run!, @delegate
 
 """
     Parameters{Names}(values::Number...) where Names
@@ -353,7 +354,7 @@ Return the concrete `OperatorSum` type that `Embedding` produces when applied to
 
 Abstract supertype for all elements managed by the `Frameworks` submodule: lattice models, algorithms and assignments.
 
-It provides a unified protocol: parameters ([`Parameters`](@ref)/[`update!`](@ref)), naming ([`str`](@ref)/[`basename`](@ref)/[`pathof`](@ref)), persistence ([`config`](@ref)/[`stamp`](@ref)/[`qldsave`](@ref)/[`qlcsave`](@ref)/[`qlload`](@ref)) and display, plus an optional `valtype` protocol (a type-level `valtype` automatically grants `scalartype`/`eltype`).
+It provides a unified protocol: parameters ([`Parameters`](@ref)/[`update!`](@ref)), naming ([`str`](@ref)/[`basename`](@ref)/[`pathof`](@ref)), persistence ([`fingerprint`](@ref)/[`qldsave`](@ref)/[`qlcsave`](@ref)/[`qlload`](@ref)) and display, plus an optional `valtype` protocol (a type-level `valtype` automatically grants `scalartype`/`eltype`).
 """
 abstract type FrameworkElement end
 @inline Base.show(io::IO, element::FrameworkElement) = print(io, nameof(typeof(element)))
@@ -396,28 +397,91 @@ Returns `element.parameters` if the type has a `:parameters` field, otherwise an
 @inline @generated Parameters(element::FrameworkElement) = :parameters in fieldnames(element) ? :(element.parameters) : Parameters()
 
 """
-    contenttoconfig(element::FrameworkElement) -> Tuple
+    contenttocache(element::FrameworkElement) -> NamedTuple
 
-Return the structural components that characterize a framework element.
+Return the cacheable content of a framework element as a `NamedTuple`: intermediate results that can in principle be recomputed but are expensive enough to be worth keeping. Defaults to an empty `NamedTuple`.
+"""
+@inline contenttocache(::FrameworkElement) = NamedTuple()
 
-Together with [`Parameters`](@ref), these components determine the element's identity.
+"""
+    contenttofingerprint(element::FrameworkElement) -> Tuple
+
+Return the structural components that enter the fingerprint of a framework element.
+
+Together with [`Parameters`](@ref), these components determine the element's fingerprint: they are hashed into the fixed-length part of the fingerprint (see [`fingerprint`](@ref)), while the value parameters are mixed into the fingerprint by `fingerprint` itself.
+
 Defaults to an empty `Tuple`. Subtypes should override this to specify which structural components to include.
 """
-@inline contenttoconfig(::FrameworkElement) = ()
+@inline contenttofingerprint(::FrameworkElement) = ()
 
 """
-    stamp(element::FrameworkElement; ndecimal::Int=14, select::Function=name::Symbol->true, front::String="", rear::String="") -> String
+    fingerprint(element::FrameworkElement; ndecimal::Int=14, select::Function=name::Symbol->true, front::String="", rear::String="") -> String
 
-Generate a deterministic stamp for a framework element, formed as `"config[-parameters]"`.
+Generate the fingerprint of a framework element, formed as `"digest[-parameters]"`: the SHA-512 hex digest (128 characters) of the serialized structural content (see [`contenttofingerprint`](@ref)), optionally followed by `"-"` and the string of its parameters (see [`Parameters`](@ref)), which is produced by `str(::Parameters; ndecimal, select, front, rear)` and rendered as `name₁(value₁)name₂(value₂)…`, e.g. `"a83f…-t(1.0)μ(0.0)"` (digest abbreviated). When the parameter string is empty, the digest stands alone without the separator.
 
-The stamp serves as the internal key in data/cache files.
-`ndecimal`, `select`, `front`, and `rear` are passed to `str(::Parameters)`.
-When `str(::Parameters)` returns an empty string, the intermediate `"-"` is omitted.
+For elements whose structural content contains `TypeVar`s (i.e. parametric types), the key is stable across processes.
 """
-function stamp(element::FrameworkElement; ndecimal::Int=14, select::Function=name::Symbol->true, front::String="", rear::String="")
-    configuration = config(element)
+function fingerprint(element::FrameworkElement; ndecimal::Int=14, select::Function=name::Symbol->true, front::String="", rear::String="")
+    io = IOBuffer()
+    serializer = FingerprintSerializer(io)
+    writeheader(serializer)
+    serialize(serializer, contenttofingerprint(element))
     parameters = str(Parameters(element); ndecimal=ndecimal, select=select, front=front, rear=rear)
-    return string(configuration, prepend(parameters, "-"))
+    return string(bytes2hex(sha512(take!(io))), prepend(parameters, "-"))
+end
+mutable struct FingerprintSerializer{I<:IO} <: AbstractSerializer
+    io::I
+    counter::Int
+    table::IdDict{Any, Any}
+    pending_refs::Vector{Int}
+    known_object_data::Dict{UInt64, Any}
+    version::Int
+    variables::Vector{Any}
+    FingerprintSerializer(io::I) where {I<:IO} = new{I}(io, 0, IdDict{Any, Any}(), Int[], Dict{UInt64, Any}(), ser_version, Any[])
+end
+# Tag bytes: 0xfa/0xfb = UnionAll envelope; 0xfc = bound TypeVar (scope index); 0xfd = free named TypeVar (name+lb+ub)
+function serialize(serializer::FingerprintSerializer, value::UnionAll)
+    write(serializer.io, UInt8(0xfa))
+    serialize(serializer, value.var.lb)
+    serialize(serializer, value.var.ub)
+    push!(serializer.variables, value.var)
+    try
+        serialize(serializer, value.body)
+    finally
+        pop!(serializer.variables)
+    end
+    write(serializer.io, UInt8(0xfb))
+end
+function serialize(serializer::FingerprintSerializer, value::TypeVar)
+    index = findlast(candidate -> candidate === value, serializer.variables)
+    if isnothing(index)
+        startswith(string(value.name), "##") && error("Unbound anonymous TypeVar: $(value.name)")
+        write(serializer.io, UInt8(0xfd))
+        serialize(serializer, value.name)
+        serialize(serializer, value.lb)
+        serialize(serializer, value.ub)
+    else
+        write(serializer.io, UInt8(0xfc))
+        write(serializer.io, Int32(index))
+    end
+end
+function serialize(serializer::FingerprintSerializer, m::Module)
+    writetag(serializer.io, MODULE_TAG)
+    serialize_mod_names(serializer, m)
+    writetag(serializer.io, EMPTYTUPLE_TAG)
+end
+function serialize_mod_names(serializer::FingerprintSerializer, m::Module)
+    p = parentmodule(m)
+    if p === m || m === Base
+        key = Base.root_module_key(m)
+        uuid = key.uuid
+        serialize(serializer, uuid === nothing ? nothing : uuid.value)
+        serialize(serializer, Symbol(key.name))
+    else
+        serialize_mod_names(serializer, p)
+        # Strip the leading "#" prefix and the trailing "#counter" from gensym/eval module names ("##Frameworks#148", "#Foo"); ordinary module names pass through unchanged
+        serialize(serializer, Symbol(replace(string(nameof(m)), r"^#+" => "", r"#\d+$" => "")))
+    end
 end
 
 """
@@ -493,7 +557,7 @@ mutable struct Formula{V, F<:Function, P<:Parameters} <: LatticeModel
     end
 end
 @inline Base.valtype(::Type{<:Formula{V}}) where V = V
-@inline contenttoconfig(formula::Formula) = (formula.expression,)
+@inline contenttofingerprint(formula::Formula) = (formula.expression,)
 
 """
     update!(formula::Formula; parameters...) -> Formula
@@ -631,7 +695,7 @@ Unlike `ParametricGenerator`, the operators have no parameter-update mechanism �
 struct StaticGenerator{M<:OperatorSet} <: Generator{M}
     operators::M
 end
-@inline contenttoconfig(gen::StaticGenerator) = (gen.operators,)
+@inline contenttofingerprint(gen::StaticGenerator) = (gen.operators,)
 @inline expand(gen::StaticGenerator, ::Lazy) = gen.operators
 
 """
@@ -738,7 +802,7 @@ end
     op = iterate(ee.ops, state[2])
     return op[1]*v[1], (v[2], op[2])
 end
-@inline contenttoconfig(cat::CategorizedGenerator) = (cat.constops, cat.alterops, cat.boundops, cat.boundary)
+@inline contenttofingerprint(cat::CategorizedGenerator) = (cat.constops, cat.alterops, cat.boundops, cat.boundary)
 
 """
     (transformation::LinearTransformation)(cat::CategorizedGenerator; kwargs...) -> CategorizedGenerator
@@ -844,7 +908,7 @@ struct OperatorGenerator{V<:Operators, CG<:CategorizedGenerator{V}, B<:Bond, H<:
         new{valtype(operators), typeof(operators), eltype(bonds), typeof(hilbert), typeof(terms)}(operators, bonds, hilbert, terms, half)
     end
 end
-@inline contenttoconfig(gen::OperatorGenerator) = (contenttoconfig(gen.operators), gen.half)
+@inline contenttofingerprint(gen::OperatorGenerator) = (contenttofingerprint(gen.operators), gen.half)
 @inline expand(gen::OperatorGenerator, ::Lazy) = expand(gen.operators, lazy)
 @inline contenttoshow(gen::OperatorGenerator) = (;
     bonds = gen.bonds,
@@ -1493,11 +1557,11 @@ Show an algorithm.
 @inline Base.show(io::IO, alg::Algorithm) = print(io, alg.name, "-", nameof(typeof(alg.frontend)))
 
 """
-    config(alg::Algorithm) -> String
+    fingerprint(alg::Algorithm) -> String
 
-Get the configuration label of an algorithm, inherited from its frontend.
+Get the fingerprint of an algorithm, inherited from its frontend.
 """
-@inline config(alg::Algorithm) = config(alg.frontend)
+@inline fingerprint(alg::Algorithm) = fingerprint(alg.frontend)
 
 """
     summary(alg::Algorithm)
@@ -1653,7 +1717,7 @@ end
 
 Save framework elements as data records (the elements themselves) into their `.qld` bundles.
 
-The bundle of an element is `pathof(element; prefix, suffix)*".qld"`, and the key of an entry is `stamp(element; ndecimal, select, front, rear)` (see [`qlsave`](@ref) for the bundle format and the concurrency and atomicity guarantees).
+The bundle of an element is `pathof(element; prefix, suffix)*".qld"`, and the key of an entry is `fingerprint(element; ndecimal, select, front, rear)` (see [`qlsave`](@ref) for the bundle format and the concurrency and atomicity guarantees).
 """
 @inline qldsave(element::FrameworkElement, elements::FrameworkElement...; kwargs...) = qlelementsave("qld", m->m, element, elements...; kwargs...)
 
@@ -1662,13 +1726,13 @@ The bundle of an element is `pathof(element; prefix, suffix)*".qld"`, and the ke
 
 Save framework elements as cache entries (their [`contenttocache`](@ref) contents) into their `.qlc` bundles.
 
-The bundle of an element is `pathof(element; prefix, suffix)*".qlc"`, and the key of an entry is `stamp(element; ndecimal, select, front, rear)` (see [`qlsave`](@ref) for the bundle format and the concurrency and atomicity guarantees).
+The bundle of an element is `pathof(element; prefix, suffix)*".qlc"`, and the key of an entry is `fingerprint(element; ndecimal, select, front, rear)` (see [`qlsave`](@ref) for the bundle format and the concurrency and atomicity guarantees).
 """
 @inline qlcsave(element::FrameworkElement, elements::FrameworkElement...; kwargs...) = qlelementsave("qlc", contenttocache, element, elements...; kwargs...)
 function qlelementsave(extension::String, contents::Function, element::FrameworkElement, elements::FrameworkElement...; prefix::String="", suffix::String="", ndecimal::Int=14, select::Function=name::Symbol->true, front::String="", rear::String="")
     for m in (element, elements...)
         path = pathof(m; prefix=prefix, suffix=suffix)*"."*extension
-        qlsave(path, stamp(m; ndecimal=ndecimal, select=select, front=front, rear=rear), contents(m))
+        qlsave(path, fingerprint(m; ndecimal=ndecimal, select=select, front=front, rear=rear), contents(m))
     end
 end
 

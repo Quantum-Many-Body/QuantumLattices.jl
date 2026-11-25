@@ -97,7 +97,7 @@ The examples of Section 7.2 have already exercised two parts of this flow. The e
 
 A calculation is rarely a single run: parameters are scanned, results are compared across runs, and the same model is revisited many times, often long after it was first defined. The interface therefore carries the bookkeeping along with it, rather than leaving it to the user. Every result is recorded together with the parameters that produced it, so that nothing is silently overwritten and nothing is read back wrongly. Results can be cached and reused, so that nothing is recomputed unnecessarily. And the tasks of a calculation may depend on one another, so that when the parameters of a task are changed, its next call recomputes it together with exactly those dependencies that are affected, and no others.
 
-This automatic project management rests on two groups of the interface. **Parameter management**, built on [`Parameters`](@ref) and [`update!`](@ref), tracks the current parameter values, which are what staleness is judged by; it is the subject of this section. **Identity and persistence**, built on [`str`](@ref), [`config`](@ref) and [`stamp`](@ref) together with the save and load functions, keeps the records on disk; it is the subject of [Section 7.5](@ref TutorialPersistence).
+This automatic project management rests on two groups of the interface. **Parameter management**, built on [`Parameters`](@ref) and [`update!`](@ref), tracks the current parameter values, which are what staleness is judged by; it is the subject of this section. **Identity and persistence**, built on [`str`](@ref) and [`fingerprint`](@ref) together with the save and load functions, keeps the records on disk; it is the subject of [Section 7.5](@ref TutorialPersistence).
 
 Parameter management comes in two forms, depending on whether the assignment carries dependencies.
 
@@ -161,7 +161,7 @@ Lowering the flux has moved the 2nd-neighbor hopping towards its real part, whic
 
 ## [7.5 Identity and Persistence](@id TutorialPersistence)
 
-The parameter management of Section 7.4 judges staleness by the current parameter values; the identity and persistence group is what turns every result into a managed record. [`str`](@ref), [`config`](@ref) and [`stamp`](@ref) give every result a stable key, and the save and load functions, [`qldsave`](@ref)/[`qlcsave`](@ref), [`qlload`](@ref) and their relatives, keep the records on disk. This is not a convenience but the point of the design: it is what lets results be recorded, reused and invalidated correctly no matter which algorithm produced them. The presentation is in four parts: the in-session reuse of results, the identity of a model, the on-disk records, and the export of results.
+The parameter management of Section 7.4 judges staleness by the current parameter values; the identity and persistence group is what turns every result into a managed record. [`str`](@ref) and [`fingerprint`](@ref) give every result a stable key, and the save and load functions, [`qldsave`](@ref)/[`qlcsave`](@ref), [`qlload`](@ref) and their relatives, keep the records on disk. This is not a convenience but the point of the design: it is what lets results be recorded, reused and invalidated correctly no matter which algorithm produced them. The presentation is in four parts: the in-session reuse of results, the identity of a model, the on-disk records, and the export of results.
 
 ### 7.5.1 Not Recomputing What Is Already Known
 
@@ -183,7 +183,7 @@ eigensystem.data === snapshot
 
 The eigensystem data is a different object now: the dependency graph was walked, and the stale result was refreshed automatically. Three qualifications complete the picture. The walk is *top-down*: a dependency is visited only when the called task itself is stale, and it then runs with the parameters of the calling algorithm, so a calculation is steered from the top-level task, and updating a dependency directly followed by a call to a downstream task recomputes nothing. The comparison of the parameters is approximate, so a change below the tolerance does not trigger a recomputation. And the keyword arguments of a call are execution hints: they never take part in this comparison, so the only way to force a recomputation with unchanged parameters is to create a fresh assignment.
 
-### 7.5.2 Identity: `str`, `config` and `stamp`
+### 7.5.2 Identity: `str` and `fingerprint`
 
 [`str`](@ref) returns a compact string tag of any model, an algorithm or an assignment included; it is what labels the records and the figures of this chapter:
 
@@ -193,19 +193,19 @@ str(dos)
 
 Beyond the tag, the identity of a model has two parts: its defining structure, which is independent of the parameter values, and the parameter values themselves. The two parts exist because they serve two different distinctions: the structure is what defines the physical model, and a model remains the same model when its parameters are tuned, so records from different models must be distinguishable, and so must records from the same model at different parameter values.
 
-The structural part is extracted by [`contenttoconfig`](@ref): for an [`OperatorGenerator`](@ref), it is the expanded coupling structure of the terms on the bonds. [`config`](@ref) returns the fingerprint of this content as a SHA-512 digest, so it is blind to parameter values, and serves the first distinction:
+The structural part is extracted by [`contenttofingerprint`](@ref): for an [`OperatorGenerator`](@ref), it is the expanded coupling structure of the terms on the bonds. It enters the [`fingerprint`](@ref) as a SHA-512 digest of the structural content, which is blind to parameter values and serves the first distinction; with no value parameter admitted by `select`, the digest stands alone:
 
 ```@example algorithm
-config(dos)
+fingerprint(dos; select=name->false)
 ```
 
-[`stamp`](@ref) appends a human-readable rendering of the current parameter values, in the form `"config-name₁(value₁)name₂(value₂)…"`, and serves the second distinction:
+The [`fingerprint`](@ref) then appends a human-readable rendering of the current parameter values, in the form `"digest-name₁(value₁)name₂(value₂)…"`, and serves the second distinction:
 
 ```@example algorithm
-stamp(dos)
+fingerprint(dos)
 ```
 
-Therefore, [`update!`](@ref) never changes the fingerprint, and each parameter set has its own stamp. An [`Assignment`](@ref) declares no structural content of its own, so its stamp encodes its parameter values alone, within the file named after the task, which is exactly the granularity that recording needs.
+Therefore, [`update!`](@ref) never changes the digest part of the fingerprint, and each parameter set has its own fingerprint. An [`Assignment`](@ref) declares no structural content of its own, so its fingerprint encodes its parameter values alone, within the file named after the task, which is exactly the granularity that recording needs.
 
 ### 7.5.3 Data and Cache Files
 
@@ -215,19 +215,19 @@ The identity of a model makes its records recognizable; persistence makes them s
 basename(dos)*".qld", basename(dos)*".qlc"
 ```
 
-Note that the bundle name contains no parameter part: all parameter sets of a task share one bundle, and even different tasks sharing the same name coexist in it, with the stamps distinguishing the records. Within a bundle, each record is a single entry file, named by the sha256 digest of its stamp (so that arbitrarily long stamps never hit filename limits) with the full stamp embedded in the file. The save and load functions operate on the records:
+Note that the bundle name contains no parameter part: all parameter sets of a task share one bundle, and even different tasks sharing the same name coexist in it, with the fingerprints distinguishing the records. Within a bundle, each record is a single entry file, named by the sha256 digest of its fingerprint (so that arbitrarily long fingerprints never hit filename limits) with the full fingerprint embedded in the file. The save and load functions operate on the records:
 
-* [`qldsave`](@ref)`(model)` saves the model itself into the data bundle, and [`qlcsave`](@ref)`(model)` saves its cacheable content into the cache bundle, both under the key `stamp(model)`. Repeated saves accumulate in the bundle as long as the stamps differ, while saving with an unchanged stamp atomically replaces the old entry.
-* [`qlload`](@ref) is the inverse: `qlload(path)` returns all records of a bundle as a `Dict` keyed by the stamps, and `qlload(path, stamp)` returns the single record under the given stamp. Therefore, an old parameter set can be recovered as long as its stamp is kept.
+* [`qldsave`](@ref)`(model)` saves the model itself into the data bundle, and [`qlcsave`](@ref)`(model)` saves its cacheable content into the cache bundle, both under the key `fingerprint(model)`. Repeated saves accumulate in the bundle as long as the fingerprints differ, while saving with an unchanged fingerprint atomically replaces the old entry.
+* [`qlload`](@ref) is the inverse: `qlload(path)` returns all records of a bundle as a `Dict` keyed by the fingerprints, and `qlload(path, fingerprint)` returns the single record under the given fingerprint. Therefore, an old parameter set can be recovered as long as its fingerprint is kept.
 * [`qldclean`](@ref) and [`qlcclean`](@ref) remove records: those not touched for longer than `age` seconds, or all but the `maxcount` most recently touched ones. Every save and every read refreshes the entry's timestamp (its mtime) immediately, so recently used records survive the cleaning.
 
-All of these operations are thread- and process-safe without any locks: an entry is written to a temporary file and then atomically moved into place, so readers never observe a half-written entry, and concurrent saves of the same stamp write identical content by construction.
+All of these operations are thread- and process-safe without any locks: an entry is written to a temporary file and then atomically moved into place, so readers never observe a half-written entry, and concurrent saves of the same fingerprint write identical content by construction.
 
 Saving therefore never overwrites an earlier result obtained with different parameters, and loading can never pick up the wrong one:
 
 ```@example algorithm
 qldsave(dos)
-oldstamp = stamp(dos)
+oldfingerprint = fingerprint(dos)
 update!(dos; t=-1.2)
 graphene(dos)
 qldsave(dos)
@@ -235,16 +235,16 @@ records = qlload(pathof(dos)*".qld")
 length(records)
 ```
 
-Two records now sit in the same bundle, and each is retrieved by its own stamp:
+Two records now sit in the same bundle, and each is retrieved by its own fingerprint:
 
 ```@example algorithm
-isequal(qlload(pathof(dos)*".qld", stamp(dos)), dos)
+isequal(qlload(pathof(dos)*".qld", fingerprint(dos)), dos)
 ```
 
 (`isequal` rather than `==` here: the unset energy window of the task is stored as `NaN`, and `NaN == NaN` is `false`.)
 
 ```@example algorithm
-Parameters(qlload(pathof(dos)*".qld", oldstamp))
+Parameters(qlload(pathof(dos)*".qld", oldfingerprint))
 ```
 
 The other record still carries the parameters it was computed with, untouched by the one saved afterwards. A record loaded this way is an ordinary object again: it can be inspected, updated and plotted exactly like the assignment it was copied from. Records accumulate over time, so there is a cleanup interface as well:
@@ -269,7 +269,7 @@ plot(dos)
 ```
 
 !!! note
-    A frontend can additionally declare what should be cached through [`contenttocache`](@ref), and [`qlcsave`](@ref) then stores that content under the stamp of the model. This is how an expensive preparation, such as the expansion of a large Hamiltonian, is computed once and reused across sessions. Nothing in the toy frontend is expensive enough to be worth caching, so its default empty cache is kept.
+    A frontend can additionally declare what should be cached through [`contenttocache`](@ref), and [`qlcsave`](@ref) then stores that content under the fingerprint of the model. This is how an expensive preparation, such as the expansion of a large Hamiltonian, is computed once and reused across sessions. Nothing in the toy frontend is expensive enough to be worth caching, so its default empty cache is kept.
 
 ## [7.6 The Ecosystem](@id TutorialEcosystem)
 
@@ -294,7 +294,7 @@ The algorithm interface connects a [`LatticeModel`](@ref) to a numerical method,
 - Build the model, wrap it in the frontend of an algorithm package, and hand the result to an [`Algorithm`](@ref): `Algorithm(name, frontend, [parameters, map])`.
 - Call the algorithm with a task to create an [`Assignment`](@ref): `alg(name, task, dependencies...)`; pass `delay=true` to register without computing, and call `alg(assignment)` to compute or to refresh what has gone stale.
 - Manage parameters with [`update!`](@ref): update the algorithm and register fresh assignments to accumulate results for comparison, or update an assignment in place and let the next call recompute exactly the stale links of its dependency chain. When the parameters of the user and of the model differ, the `map` of the algorithm translates between them.
-- Let the interface keep the records: [`str`](@ref), [`config`](@ref) and [`stamp`](@ref) give every result a stable key, [`qldsave`](@ref)/[`qlcsave`](@ref) and [`qlload`](@ref) keep the records on disk keyed by the stamps, `dlmsave` exports plain text, and plots work out of the box.
+- Let the interface keep the records: [`str`](@ref) and [`fingerprint`](@ref) give every result a stable key, [`qldsave`](@ref)/[`qlcsave`](@ref) and [`qlload`](@ref) keep the records on disk keyed by the fingerprints, `dlmsave` exports plain text, and plots work out of the box.
 - Real calculations use the packages of Section 7.6 in exactly the same way as `ToyTBA` was used here.
 
 To write an algorithm package of your own, continue to [Chapter 8](@ref TutorialAlgorithmInterfaceDeveloper).

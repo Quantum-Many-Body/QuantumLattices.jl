@@ -1,6 +1,7 @@
 using LinearAlgebra: eigen
 using Distributed: @everywhere, addprocs, remotecall, rmprocs
 using Serialization: serialize
+using SHA: sha512
 using QuantumLattices: ZeroAtLeast, efficientoperations, expand, expand!, reparameter, reset!, str, update
 using QuantumLattices.DegreesOfFreedom: CoordinatedIndex, Hilbert, Index
 using QuantumLattices.Frameworks
@@ -8,12 +9,12 @@ using QuantumLattices.QuantumOperators: LinearFunction, Operator, Operators, idt
 using QuantumLattices.Spatials: Bond, BrillouinZone, Lattice, azimuth, bonds, dlmsave, isintracell, periods, rcoordinate
 using QuantumLattices.QuantumSystems: Fock, FockIndex, Hopping, Hubbard, Onsite, 𝕔⁺, 𝕔
 using StaticArrays: SVector, SMatrix, @SMatrix
-
-const TimerOutput = Frameworks.TimerOutput
+using TimerOutputs: TimerOutput
 
 import CairoMakie as Makie
 import Plots
-import QuantumLattices: config, contenttocache, contenttoconfig, update!
+import QuantumLattices
+import QuantumLattices: contenttocache, contenttofingerprint, fingerprint, update!
 import QuantumLattices.Frameworks: Parameters, dependencytypes, options, run!
 
 @testset "Parameters" begin
@@ -87,9 +88,8 @@ end
     @test valtype(f) == valtype(typeof(f)) == SMatrix{2, 2, ComplexF64, 4}
     @test scalartype(f) == scalartype(typeof(f)) == ComplexF64
     @test Parameters(f) == (t=1.0, μ=0.0, Δ=0.1)
-    @test contenttoconfig(f) == (f.expression,)
-    @test isa(config(f), String) && length(config(f))==128
-    @test endswith(stamp(f), "-t(1.0)μ(0.0)Δ(0.1)")
+    @test contenttofingerprint(f) == (f.expression,)
+    @test endswith(fingerprint(f), "-t(1.0)μ(0.0)Δ(0.1)")
     @test contenttocache(f) == NamedTuple()
     @test dirname(f) == "."
     @test basename(f) == "Formula"
@@ -119,7 +119,7 @@ end
     @test eltype(gen) == eltype(typeof(gen)) == optp
     @test scalartype(gen) == scalartype(typeof(gen)) == Float64
     @test Parameters(gen) == Parameters()
-    @test contenttoconfig(gen) == (gen.operators,)
+    @test contenttofingerprint(gen) == (gen.operators,)
     @test length(gen) == length(collect(gen)) == length(ops)
     @test !isempty(gen) && isempty(empty(gen)) && isempty(empty!(deepcopy(gen)))
     @test empty(gen) == empty!(deepcopy(gen)) == StaticGenerator(empty(ops))
@@ -154,7 +154,7 @@ end
     @test cat|>valtype == cat|>typeof|>valtype == Operators{optp, idtype(optp)}
     @test cat|>eltype == cat|>typeof|>eltype == optp
     @test cat|>scalartype == cat|>typeof|>scalartype == ComplexF64
-    @test contenttoconfig(cat) == (cat.constops, cat.alterops, cat.boundops, cat.boundary)
+    @test contenttofingerprint(cat) == (cat.constops, cat.alterops, cat.boundops, cat.boundary)
     @test Parameters(cat) == (t=2.0, μ=1.0, θ=0.1)
     @test !isempty(cat) && isempty(empty(cat))
     @test empty(cat) == empty!(deepcopy(cat)) == CategorizedGenerator(Operators{optp}(), (t=Operators{optp}(), μ=Operators{optp}()), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), boundary)
@@ -187,7 +187,7 @@ end
     @test cat == Generator(tops, (t=Operators{optp}(), μ=μops), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain)
     @test cat == LatticeModel(tops, (t=Operators{optp}(), μ=μops), (t=Operators{optp}(), μ=Operators{optp}()), (t=2.0, μ=1.0), plain)
     @test isequal(cat, i(cat))
-    @test contenttoconfig(cat) == (cat.constops, cat.alterops, cat.boundops, cat.boundary)
+    @test contenttofingerprint(cat) == (cat.constops, cat.alterops, cat.boundops, cat.boundary)
     @test Parameters(cat) == (t=2.0, μ=1.0)
     @test expand(cat) == expand!(Operators{optp}(), cat) ≈ tops+μops
 
@@ -222,7 +222,7 @@ end
     @test cgen|>valtype == cgen|>typeof|>valtype == Operators{optp, idtype(optp)}
     @test cgen|>eltype == cgen|>typeof|>eltype == optp
     @test cgen|>scalartype == cgen|>typeof|>scalartype == ComplexF64
-    @test contenttoconfig(cgen) == (contenttoconfig(cgen.operators), cgen.half)
+    @test contenttofingerprint(cgen) == (contenttofingerprint(cgen.operators), cgen.half)
     @test collect(cgen) == collect(expand(cgen, lazy))
     @test Parameters(cgen) == (t=2.0, μ=1.0, θ=0.1)
     @test expand!(Operators{optp}(), cgen) == expand(cgen) ≈ tops₁ + tops₂*2.0 + μops
@@ -252,7 +252,7 @@ end
     @test cgen == OperatorGenerator(bs, hilbert, (t, μ), plain; half=true) == OperatorGenerator(lattice, hilbert, (t, μ), plain; half=true)
     @test cgen == Generator(bs, hilbert, (t, μ), plain; half=true) == Generator(lattice, hilbert, (t, μ), plain; half=true) == Generator(cat, bs, hilbert, (t, μ), true)
     @test cgen == LatticeModel(bs, hilbert, (t, μ), plain; half=true) == LatticeModel(lattice, hilbert, (t, μ), plain; half=true) == LatticeModel(cat, bs, hilbert, (t, μ), true)
-    @test contenttoconfig(cgen) == (contenttoconfig(cgen.operators), cgen.half)
+    @test contenttofingerprint(cgen) == (contenttofingerprint(cgen.operators), cgen.half)
     @test expand(cgen) ≈ tops + μops
     @test expand(cgen, :t) ≈ tops
     @test expand(cgen, :μ) ≈ μops
@@ -294,6 +294,58 @@ end
     ops = expand(OperatorGenerator(bs, hilbert, t; half=false))
     gen = LatticeModel(ops, bs, hilbert, (μ, U); half=false)
     @test expand(gen) ≈ expand(OperatorGenerator(bs, hilbert, (t, μ, U); half=false))
+end
+
+@testset "contenttofingerprint & contenttocache defaults" begin
+    struct PlainElement <: FrameworkElement end
+    @test contenttofingerprint(PlainElement()) == ()
+    @test contenttocache(PlainElement()) == NamedTuple()
+    @test_throws MethodError contenttofingerprint(1)
+end
+
+function rawbytes(value)
+    io = IOBuffer()
+    serialize(io, value)
+    return take!(io)
+end
+struct FingerprintBox{T} end
+struct FingerprintElement <: FrameworkElement
+    parameters::NamedTuple
+    content::Any
+end
+@inline contenttofingerprint(element::FingerprintElement) = (element.content,)
+@testset "fingerprint" begin
+    element = FingerprintElement((t=1.0,), 42)
+    # compatibility lock: byte-for-byte equality with the legacy formula (hand-computed with the native serialization)
+    expected = bytes2hex(sha512(rawbytes(contenttofingerprint(element)))) * "-" * str(Parameters(element))
+    @test fingerprint(element) == expected
+    # identical structure and parameters give identical fingerprints; a different structure diverges
+    @test fingerprint(element) == fingerprint(FingerprintElement((t=1.0,), 42))
+    @test fingerprint(element) != fingerprint(FingerprintElement((t=1.0,), 43))
+    # parameter changes within 14 decimals are transparent, beyond they diverge
+    @test fingerprint(element) == fingerprint(FingerprintElement((t=1.0+1e-15,), 42))
+    @test fingerprint(element) != fingerprint(FingerprintElement((t=1.0+1e-13,), 42))
+    # select filters the parameters out of the fingerprint
+    @test fingerprint(element; select=isequal(:μ)) != fingerprint(element)
+    # empty parameters: no "-" suffix, and the fingerprint is the bare structure hash
+    bare = FingerprintElement(NamedTuple(), 42)
+    @test fingerprint(bare) == bytes2hex(sha512(rawbytes(contenttofingerprint(bare))))
+    @test !occursin("-", fingerprint(bare))
+    # parametric types: the fingerprint is immune to process-local counters (regression of the anonymous TypeVar numbering bug) and α-equivalent in bound variables
+    typed(value) = FingerprintElement(NamedTuple(), value)
+    var₁, var₂ = TypeVar(Symbol("##142")), TypeVar(Symbol("##143"))
+    @test fingerprint(typed(UnionAll(var₁, FingerprintBox{var₁}))) == fingerprint(typed(UnionAll(var₂, FingerprintBox{var₂})))
+    αT, αS = TypeVar(:T), TypeVar(:S)
+    @test fingerprint(typed(UnionAll(αT, FingerprintBox{αT}))) == fingerprint(typed(UnionAll(αS, FingerprintBox{αS})))
+    # while type bodies, variable order, and free variable names remain discriminating
+    @test fingerprint(typed(UnionAll(αT, FingerprintBox{αT}))) != fingerprint(typed(UnionAll(αT, Tuple{αT, αT})))
+    @test fingerprint(typed(UnionAll(αT, Tuple{αT, αS}))) != fingerprint(typed(UnionAll(αT, Tuple{αS, αT})))
+    shadowed() = (inner = TypeVar(:T); outer = TypeVar(:T); UnionAll(outer, Tuple{Vector{inner}, outer}))
+    altered() = (inner = TypeVar(:T); outer = TypeVar(:T); UnionAll(outer, Tuple{Vector{inner}, Int}))
+    @test fingerprint(typed(shadowed())) == fingerprint(typed(shadowed()))
+    @test fingerprint(typed(shadowed())) != fingerprint(typed(altered()))
+    # free anonymous TypeVars are rejected
+    @test_throws ErrorException fingerprint(typed(TypeVar(Symbol("##42"))))
 end
 
 struct TBA{F<:Formula} <: LatticeModel
@@ -491,8 +543,8 @@ end
     loaded = cd(mktempdir()) do
         qldsave(tba)
         qlsave("Arbitrary.qld", "first copy", tba, "second copy", tba)
-        loaded = qlload(pathof(tba)*".qld", stamp(tba))
-        @test loaded == qlload(pathof(tba)*".qld")[stamp(tba)]
+        loaded = qlload(pathof(tba)*".qld", fingerprint(tba))
+        @test loaded == qlload(pathof(tba)*".qld")[fingerprint(tba)]
         @test all(isequal(loaded), qlload("Arbitrary.qld", "first copy", "second copy"))
         loaded
     end
@@ -510,7 +562,7 @@ mutable struct Cache <: LatticeModel
     value::Float64
 end
 @inline Parameters(cache::Cache) = (U=cache.U,)
-@inline contenttoconfig(cache::Cache) = (cache.info,)
+@inline contenttofingerprint(cache::Cache) = (cache.info,)
 @inline contenttocache(cache::Cache) = (value=cache.value,)
 
 @testset "cache & qlload & qlcclean" begin
@@ -521,11 +573,11 @@ end
 
         bundle = pathof(cache)*".qlc"
         loaded = qlload(bundle)
-        content = qlload(bundle, stamp(cache))
-        @test content == loaded[stamp(cache)] == (value=3.14,)
-        content′ = qlload(bundle, stamp(cache′))
-        @test content′ == loaded[stamp(cache′)] == (value=6.28,)
-        @test qlload(bundle, stamp(cache), stamp(cache′)) == (content, content′)
+        content = qlload(bundle, fingerprint(cache))
+        @test content == loaded[fingerprint(cache)] == (value=3.14,)
+        content′ = qlload(bundle, fingerprint(cache′))
+        @test content′ == loaded[fingerprint(cache′)] == (value=6.28,)
+        @test qlload(bundle, fingerprint(cache), fingerprint(cache′)) == (content, content′)
 
         # qlcclean by age removes entries with old touchtime
         @test qlcclean(bundle; age=-1) == 2
@@ -538,7 +590,7 @@ end
         @test qlcclean(bundle; maxcount=1) == 1
         loaded = qlload(bundle)
         @test length(loaded) == 1
-        @test loaded[stamp(cache′)] == content′
+        @test loaded[fingerprint(cache′)] == content′
 
         # qlcclean and qldclean on a directory clean every bundle in it
         @test qlcclean("."; age=-1) == 1

@@ -11,7 +11,7 @@ in a module; here they are meant to be `include`d directly.
 =#
 
 using QuantumLattices
-import QuantumLattices: Parameters, contenttoconfig, dependencytypes, matrix, options, run!, update!
+import QuantumLattices: Parameters, contenttofingerprint, dependencytypes, matrix, options, run!, update!
 using LinearAlgebra: Hermitian, dot, eigen
 
 # The frontend role: a model prepared in the form this algorithm needs
@@ -28,7 +28,7 @@ ToyTBA(hamiltonian::OperatorGenerator) = ToyTBA(hamiltonian, Table(hamiltonian.h
 @inline Base.show(io::IO, ::ToyTBA) = print(io, "ToyTBA")
 @inline Parameters(toytba::ToyTBA) = Parameters(toytba.hamiltonian)
 @inline update!(toytba::ToyTBA; parameters...) = (update!(toytba.hamiltonian; parameters...); toytba)
-@inline contenttoconfig(toytba::ToyTBA) = contenttoconfig(toytba.hamiltonian)
+@inline contenttofingerprint(toytba::ToyTBA) = contenttofingerprint(toytba.hamiltonian)
 
 # The momentum-space matrix, one method per representation of the model
 
